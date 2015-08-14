@@ -90,6 +90,7 @@ static void exited_child(FAR struct tcb_s *rtcb, FAR struct child_status_s *chil
 
 	info->si_signo = SIGCHLD;
 	info->si_code = CLD_EXITED;
+	info->si_errno = OK;
 	info->si_value.sival_ptr = NULL;
 	info->si_pid = child->ch_pid;
 	info->si_status = child->ch_status;

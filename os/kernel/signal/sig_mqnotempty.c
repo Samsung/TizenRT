@@ -128,6 +128,7 @@ int sig_mqnotempty(int pid, int signo, void *sival_ptr)
 
 	info.si_signo = signo;
 	info.si_code = SI_MESGQ;
+	info.si_errno = OK;
 #ifdef CONFIG_CAN_PASS_STRUCTS
 	info.si_value = value;
 #else

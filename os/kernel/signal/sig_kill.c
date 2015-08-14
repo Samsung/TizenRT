@@ -129,6 +129,7 @@ int kill(pid_t pid, int signo)
 
 	info.si_signo = signo;
 	info.si_code = SI_USER;
+	info.si_errno = EINTR;
 	info.si_value.sival_ptr = NULL;
 #ifdef CONFIG_SCHED_HAVE_PARENT
 	info.si_pid = rtcb->pid;
