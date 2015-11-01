@@ -668,7 +668,8 @@ static void eap_pwd_perform_confirm_exchange(struct eap_sm *sm, struct eap_pwd_d
 	wpabuf_put_data(data->outbuf, conf, SHA256_MAC_LEN);
 
 fin:
-	bin_clear_free(cruft, BN_num_bytes(data->grp->prime));
+	if (data->grp)
+		bin_clear_free(cruft, BN_num_bytes(data->grp->prime));
 	BN_clear_free(x);
 	BN_clear_free(y);
 	if (data->outbuf == NULL) {
