@@ -784,7 +784,7 @@ static struct wpabuf *eap_pwd_process(struct eap_sm *sm, void *priv, struct eap_
 	/*
 	 * buffer and ACK the fragment
 	 */
-	if (EAP_PWD_GET_MORE_BIT(lm_exch)) {
+	if (EAP_PWD_GET_MORE_BIT(lm_exch) || data->in_frag_pos) {
 		data->in_frag_pos += len;
 		if (data->in_frag_pos > wpabuf_size(data->inbuf)) {
 			wpa_printf(MSG_INFO, "EAP-pwd: Buffer overflow attack " "detected (%d vs. %d)!", (int)data->in_frag_pos, (int)wpabuf_len(data->inbuf));
@@ -794,7 +794,8 @@ static struct wpabuf *eap_pwd_process(struct eap_sm *sm, void *priv, struct eap_
 			return NULL;
 		}
 		wpabuf_put_data(data->inbuf, pos, len);
-
+	}
+	if (EAP_PWD_GET_MORE_BIT(lm_exch)) {
 		resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_PWD, EAP_PWD_HDR_SIZE, EAP_CODE_RESPONSE, eap_get_id(reqData));
 		if (resp != NULL) {
 			wpabuf_put_u8(resp, (EAP_PWD_GET_EXCHANGE(lm_exch)));
@@ -806,9 +807,7 @@ static struct wpabuf *eap_pwd_process(struct eap_sm *sm, void *priv, struct eap_
 	 * we're buffering and this is the last fragment
 	 */
 	if (data->in_frag_pos) {
-		wpabuf_put_data(data->inbuf, pos, len);
 		wpa_printf(MSG_DEBUG, "EAP-pwd: Last fragment, %d bytes", (int)len);
-		data->in_frag_pos += len;
 		pos = wpabuf_head_u8(data->inbuf);
 		len = data->in_frag_pos;
 	}
