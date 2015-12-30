@@ -221,6 +221,13 @@ static void lio_sighandler(int signo, siginfo_t *info, void *ucontext)
 #endif
 		}
 
+#ifdef CONFIG_SIG_EVTHREAD
+      /* Notify the client via a function call */
+
+		else if (ighand->sig->sigev_notify == SIGEV_THREAD) {
+#warning Missing SIGEV_THREAD logic
+		}
+#endif
 		/* And free the container */
 
 		lib_free(sighand);
@@ -684,6 +691,14 @@ int lio_listio(int mode, FAR struct aiocb *const list[], int nent, FAR struct si
 			}
 		}
 	}
+
+#ifdef CONFIG_SIG_EVTHREAD
+	/* Notify the client via a function call */
+
+	else if (sig && sig->sigev_notify == SIGEV_THREAD) {
+#warning Missing SIGEV_THREAD logic
+	}
+#endif
 
 	/* Case 3: mode == LIO_NOWAIT and sig == NULL
 	 *

@@ -92,7 +92,7 @@ struct posix_timer_s {
 	int pt_delay;				/* If non-zero, used to reset repetitive timers */
 	int pt_last;				/* Last value used to set watchdog */
 	WDOG_ID pt_wdog;			/* The watchdog that provides the timing */
-	union sigval pt_value;		/* Data passed with notification */
+	struct sigevent pt_event;		/* Notification information */
 };
 
 #define PT_ISVALID(x)         (((x) != NULL) && (((struct posix_timer_s *)(x))->pt_flags & PT_FLAGS_INUSE))

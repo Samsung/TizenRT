@@ -139,6 +139,17 @@ int aio_signal(pid_t pid, FAR struct aiocb *aiocbp)
 		}
 	}
 
+#ifdef CONFIG_SIG_EVTHREAD
+	/* Notify the client via a function call */
+
+	else if (aiocbp->aio_sigevent.sigev_notify == SIGEV_THREAD) {
+		ret = sig_notification(pid, &aiocbp->aio_sigevent);
+		if (ret < 0) {
+			fdbg("ERROR: sig_notification failed: %d\n", ret);
+		}
+	}
+#endif
+
 	/* Send the poll signal in any event in case the caller is waiting
 	 * on sig_suspend();
 	 */

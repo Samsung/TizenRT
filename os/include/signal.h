@@ -248,8 +248,11 @@
 
 /* Values for the sigev_notify field of struct sigevent */
 
-#define SIGEV_NONE      0		/* No notification desired */
-#define SIGEV_SIGNAL    1		/* Notify via signal */
+#define SIGEV_NONE      0		/* No asynchronous notification is delivered */
+#define SIGEV_SIGNAL    1		/* Notify via signal,with an application-defined value */
+#ifdef CONFIG_SIG_EVTHREAD
+#define SIGEV_THREAD    3		/* A notification function is called */
+#endif
 
 /* Special values of sigaction (all treated like NULL) */
 
@@ -289,9 +292,13 @@ union sigval {
  * available on a queue
  */
 struct sigevent {
-	uint8_t sigev_notify;		/* Notification method: SIGEV_SIGNAL or SIGEV_NONE */
+	uint8_t sigev_notify;		/* Notification method: SIGEV_SIGNAL, SIGEV_NONE, or SIGEV_THREAD */
 	uint8_t sigev_signo;		/* Notification signal */
 	union sigval sigev_value;	/* Data passed with notification */
+#ifdef CONFIG_SIG_EVTHREAD
+	CODE void         (*sigev_notify_function)(union sigval); /* Notification function */
+	FAR pthread_attr_t *sigev_notify_attributes;              /* Notification attributes (not used) */
+#endif
 };
 
 /**
