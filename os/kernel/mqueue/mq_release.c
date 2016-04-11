@@ -18,7 +18,7 @@
 /************************************************************************
  *  kernel/mqueue/mq_release.c
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -103,6 +103,6 @@
 void mq_release(FAR struct task_group_s *group)
 {
 	while (group->tg_msgdesq.head) {
-		mq_close((mqd_t)group->tg_msgdesq.head);
+		mq_close_group((mqd_t)group->tg_msgdesq.head, group);
 	}
 }
