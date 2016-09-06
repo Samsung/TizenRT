@@ -228,7 +228,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 	/* Get the TCB corresponding to this PID */
 
 	ctcb = sched_gettcb(pid);
-	if (!ctcb) {
+	if (ctcb == NULL) {
 		err = ECHILD;
 		goto errout_with_errno;
 	}
@@ -343,14 +343,15 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 		err = ECHILD;
 		goto errout_with_errno;
 	} else if (pid != (pid_t)-1) {
-		/* Get the TCB corresponding to this PID and make sure it is our child. */
+		/* Get the TCB corresponding to this PID and make sure that the thread it is our child. */
 
 		ctcb = sched_gettcb(pid);
 #ifdef HAVE_GROUP_MEMBERS
-		if (!ctcb || ctcb->group->tg_pgid != rtcb->group->tg_gid)
+		if (ctcb == NULL || ctcb->group->tg_pgid != rtcb->group->tg_gid)
 #else
-		if (!ctcb || ctcb->ppid != rtcb->pid)
+		if (ctcb == NULL || ctcb->group->tg_ppid != rtcb->pid)
 #endif
+
 		{
 			err = ECHILD;
 			goto errout_with_errno;
@@ -369,20 +370,21 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 	}
 #else							/* CONFIG_SCHED_CHILD_STATUS */
 
-	if (rtcb->nchildren == 0) {
+	if (rtcb->group->tg_nchildren == 0) {
 		/* There are no children */
 
 		err = ECHILD;
 		goto errout_with_errno;
 	} else if (pid != (pid_t)-1) {
-		/* Get the TCB corresponding to this PID and make sure it is our child. */
+		/* Get the TCB corresponding to this PID and make sure that the thread it is our child. */
 
 		ctcb = sched_gettcb(pid);
 #ifdef HAVE_GROUP_MEMBERS
-		if (!ctcb || ctcb->group->tg_pgid != rtcb->group->tg_gid)
+		if (ctcb == NULL || ctcb->group->tg_pgid != rtcb->group->tg_gid)
 #else
-		if (!ctcb || ctcb->ppid != rtcb->pid)
+		if (ctcb == NULL || ctcb->group->tg_ppid != rtcb->pid)
 #endif
+
 		{
 			err = ECHILD;
 			goto errout_with_errno;
@@ -471,7 +473,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 		 * instead).
 		 */
 
-		if (rtcb->nchildren == 0 || (pid != (pid_t)-1 && (ret = kill(pid, 0)) < 0)) {
+		if (rtcb->group->tg_nchildren == 0 || (pid != (pid_t)-1 && (ret = kill(pid, 0)) < 0)) {
 			/* We know that the child task was running okay we stared,
 			 * so we must have lost the signal.  What can we do?
 			 * Let's return ECHILD.. that is at least informative.
