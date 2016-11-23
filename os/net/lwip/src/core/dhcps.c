@@ -783,18 +783,20 @@ err_t dhcps_start(struct netif *netif)
 	/* no DHCP server attached yet? */
 	if (dhcps == NULL) {
 		LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start() : starting new DHCP server\n"));
-		dhcps = udp_new();
-		if (dhcps == NULL) {
-			LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start() : could not allocate DHCP server\n"));
-			return ERR_MEM;
-		}
-		netif->dhcps_pcb = dhcps;
 	} else {
 		LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start() : re-starting DHCP server configuration\n"));
 		if (netif->dhcps_pcb != NULL) {
 			udp_remove(netif->dhcps_pcb);
 		}
 	}
+
+	dhcps = udp_new();
+	if (dhcps == NULL) {
+		LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start() : could not allocate DHCP server\n"));
+		return ERR_MEM;
+	}
+
+	netif->dhcps_pcb = dhcps;
 
 	pcb_dhcps = dhcps;
 
