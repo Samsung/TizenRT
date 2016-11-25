@@ -799,17 +799,17 @@ err_t dhcps_start(struct netif *netif)
 	pcb_dhcps = dhcps;
 
 	if (netif->ip_addr.addr == 0) {
-		netif->ip_addr.addr = inet_addr("LWIP_DHCPS_SERVER_IP");
+		netif->ip_addr.addr = inet_addr(LWIP_DHCPS_SERVER_IP);
 	}
 
 	if (netif->gw.addr == 0) {
-		netif->gw.addr = inet_addr("LWIP_DHCPS_SERVER_IP");
+		netif->gw.addr = inet_addr(LWIP_DHCPS_SERVER_IP);
 	}
 
 	server_address = netif->ip_addr;
 
 	if (netif->netmask.addr == 0) {
-		netif->netmask.addr = inet_addr("LWIP_DHCPS_SERVER_NETMASK");
+		netif->netmask.addr = inet_addr(LWIP_DHCPS_SERVER_NETMASK);
 	}
 
 	ipaddr_tmp = htonl(netif->ip_addr.addr);
