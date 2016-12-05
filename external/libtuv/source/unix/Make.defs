@@ -42,6 +42,7 @@ CSRCS += uv_unix_process.c
 CSRCS += uv_unix_stream.c
 CSRCS += uv_unix_tcp.c
 CSRCS += uv_unix_thread.c
+CSRCS += uv_unix_signal.c
 
 DEPPATH += --dep-path source/unix
 VPATH += :source/unix
