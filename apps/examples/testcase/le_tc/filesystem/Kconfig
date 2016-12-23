@@ -1,0 +1,22 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_TESTCASE_FILESYSTEM
+	bool "FileSystem TestCase Example"
+	default n
+	---help---
+		Enable the FileSystem TestCase example
+
+if EXAMPLES_TESTCASE_FILESYSTEM
+
+config EXAMPLES_FS_SAMPLE_PROGNAME
+	string "Program name"
+	default "fs_sample"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+endif

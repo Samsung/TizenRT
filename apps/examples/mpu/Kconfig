@@ -1,0 +1,32 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig EXAMPLES_MPU_TEST
+	bool "MPU TestCase Example"
+	depends on BUILD_PROTECTED
+	---help---
+		Enable the MPU TestCase Example
+
+if EXAMPLES_MPU_TEST
+
+config TC_MPU_ALL
+	bool "All"
+	default n
+	select TC_MPU_READ
+	select TC_MPU_WRITE
+
+config TC_MPU_READ
+	bool "Read"
+	default n
+
+config TC_MPU_WRITE
+	bool "Write"
+	default n
+
+endif #EXAMPLES_MPU_TEST
+
+config USER_ENTRYPOINT
+	string
+	default "mpu_tc_main" if ENTRY_MPU_TEST

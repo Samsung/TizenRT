@@ -1,0 +1,38 @@
+
+
+config TASH
+	bool "Enable shell"
+	default y
+
+if TASH
+config TASH_MAX_COMMANDS
+	int "Max number of TASH commands"
+	default 32
+	---help---
+		The maximum number of TASH commands to register.
+
+config DEBUG_TASH
+	bool "enable debug messages in TASH"
+	default n
+	depends on DEBUG
+	---help---
+		Enable debugging message in TASH.
+
+config TASH_TELNET_INTERFACE
+	bool "enable telnet interface to TASH"
+	default n
+	---help---
+		Enable TASH commands to be executed in TELNET shell.
+
+config TASH_CMDTHREAD_STACKSIZE
+	int "TASH thread stack size to run command with ASYNC type"
+	default 4096
+	---help---
+		The stack size allocated for TASH command thread
+
+config TASH_CMDTHREAD_PRIORITY
+	int "TASH thread priority to run command with ASYNC type"
+	default 100
+	---help---
+		The priority set for TASH command thread
+endif

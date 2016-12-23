@@ -1,0 +1,26 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig EXAMPLES_TESTCASE
+	bool "TestCase Example"
+	default n
+	---help---
+		Enable the TestCase Example
+
+if EXAMPLES_TESTCASE
+source "$APPSDIR/examples/testcase/ta_tc/arastorage/utc/Kconfig"
+source "$APPSDIR/examples/testcase/ta_tc/arastorage/itc/Kconfig"
+source "$APPSDIR/examples/testcase/le_tc/filesystem/Kconfig"
+source "$APPSDIR/examples/testcase/le_tc/kernel/Kconfig"
+source "$APPSDIR/examples/testcase/le_tc/network/Kconfig"
+source "$APPSDIR/examples/testcase/ta_tc/systemio/utc/Kconfig"
+source "$APPSDIR/examples/testcase/ta_tc/systemio/itc/Kconfig"
+source "$APPSDIR/examples/testcase/ta_tc/device_management/utc/Kconfig"
+source "$APPSDIR/examples/testcase/ta_tc/device_management/itc/Kconfig"
+endif #EXAMPLES_TESTCASE
+
+config USER_ENTRYPOINT
+	string
+	default "tc_main" if ENTRY_TESTCASE

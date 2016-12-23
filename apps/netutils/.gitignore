@@ -1,0 +1,15 @@
+/Make.dep
+/Make.str
+/.depend
+/.strings
+/http_*.c
+/smtp_*.c
+/netutil-strings.h
+/makestrings
+*.asm
+*.rel
+*.lst
+*.sym
+*.adb
+*.lib
+*.src

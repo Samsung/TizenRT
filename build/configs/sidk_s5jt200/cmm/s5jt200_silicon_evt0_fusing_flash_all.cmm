@@ -1,0 +1,235 @@
+;--------------------------------------------------------------------------
+;
+; Copyright 2016 Samsung Electronics All Rights Reserved.
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+; http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing,
+; software distributed under the License is distributed on an
+; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+; either express or implied. See the License for the specific
+; language governing permissions and limitations under the License.
+;
+;--------------------------------------------------------------------------
+;------------------------------
+;  Configuring JTAG interface
+;-----------------------------
+
+AREA.RESet
+AREA.CREATE
+AREA.SELECT
+AREA.VIEW
+
+LOCAL &BASE_DIR
+&DIR=OS.PPD()			; get current dir
+&BASE_DIR="&DIR"
+
+ENTRY &image_file &image_size &dest_addr
+
+SYStem.Option ResBreak OFF
+SYStem.Option WaitReset 100.ms 
+SYStem.Option EnReset OFF
+SYStem.Option IMASKASM ON
+SYStem.Option IMASKHLL ON
+System.JtagClock 5Mhz
+
+print "s5jt200 evt0 jtag start.."
+
+System.CPU CortexR4
+
+Sys.Config.COREBASE 0x801E0000 ; R4
+;Sys.Config.CTIBASE 0x80820000
+
+System.Config AXIACCESSPORT 0.
+System.Config DEBUGACCESSPORT 1.
+System.Config MEMORYACCESSPORT 5.
+
+Sys.attach
+B.Select.Program Onchip
+
+if run()
+	break
+
+wait 0.2s
+
+;print "Disable Watchdog Reset"
+d.s SD:0x80030000 %LE %LONG 0x0
+
+LOCAL &BASE_DIR
+&DIR=OS.PPD()			; get current dir
+&BASE_DIR="&DIR"
+
+do s5jt200_silicon_evt0_cmu_init.cmm	; Flash Clock init
+GOSUB	enable_region			; Set Memory region for FLASH write
+
+;------------------------------
+; S5JT200 FLASH FUSING MAP (16.08.18)
+; nBl1, tinyara, wlan F/W
+;-----------------------------	
+&MIRROR_OFFSET=0x5C000000		;0x6000_0000 mirror with 0x0400_0000
+&FLASH_BASE=0x04000000+&MIRROR_OFFSET		
+
+&BL1_FLASH_START=0x04000000+&MIRROR_OFFSET
+&BL2_FLASH_START=0x04004000+&MIRROR_OFFSET
+&tinyARA_FLASH_START=0x0400C000+&MIRROR_OFFSET	
+&led_FW_FLASH_START=0x042BC000+&MIRROR_OFFSET ; 256KB  -> 0x042F_C000
+&sss_FW_FLASH_START=0x042FC000+&MIRROR_OFFSET ; 32KB  ->0x0430_4000
+&wlan_FW_FLASH_START=0x04304000+&MIRROR_OFFSET ; 744KB ->0x043BE000
+
+
+&BL1_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.nbl1.bin"
+&BL2_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.bl2.head.bin"
+&tinyARA_FLASH_FILE="&BASE_DIR\..\..\..\output\bin\tinyara_head.bin"
+&led_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.ledctrlblk.m0.bin"
+&sss_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.sss.fw.bin"
+&wlan_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.wlan.bin"
+
+GOSUB	flash_init
+;erase area for flashing
+;GOSUB flash_erase &BL1_FLASH_FILE &BL1_FLASH_START
+;GOSUB flash_erase &tinyARA_FLASH_FILE &tinyARA_FLASH_START
+;GOSUB flash_erase &wlan_FW_FLASH_FILE &wlan_FW_FLASH_START
+
+GOSUB flash_erase_by_se &BL1_FLASH_FILE &BL1_FLASH_START
+GOSUB flash_erase_by_se &BL2_FLASH_FILE &BL2_FLASH_START
+GOSUB flash_erase_by_se &tinyARA_FLASH_FILE &tinyARA_FLASH_START
+GOSUB flash_erase_by_se &led_FW_FLASH_FILE &led_FW_FLASH_START
+GOSUB flash_erase_by_se &sss_FW_FLASH_FILE &sss_FW_FLASH_START
+GOSUB flash_erase_by_se &wlan_FW_FLASH_FILE &wlan_FW_FLASH_START
+
+
+;flash images
+GOSUB	flash_write	&BL1_FLASH_FILE &BL1_FLASH_START	
+GOSUB	flash_write	&BL2_FLASH_FILE &BL2_FLASH_START	
+GOSUB	flash_write	&tinyARA_FLASH_FILE &tinyARA_FLASH_START
+GOSUB	flash_write	&led_FW_FLASH_FILE &led_FW_FLASH_START	
+GOSUB	flash_write	&sss_FW_FLASH_FILE &sss_FW_FLASH_START	
+GOSUB	flash_write	&wlan_FW_FLASH_FILE &wlan_FW_FLASH_START
+
+;Reset Board
+;d.s SD:0x8009200c %LE %LONG 0x00000001	;;PORESET
+
+enddo
+;-----------------------------------------
+flash_init:
+	print "Initialize Serial Flash Interface..."
+	d.s SD:0x80040020 %LE %LONG 0x00222222 ;;GPCON
+	d.s SD:0x80040028 %LE %LONG 0x00333333 ;;GPPUD
+	d.s SD:0x80310004 %LE %LONG 0x8010001A ;;Disable WP, Disable erase_wait
+
+	RETURN		
+
+;-----------------------------------------
+flash_write:
+
+	ENTRY &file &fstart 
+
+	d.load.b &file &fstart
+
+	RETURN
+
+;-----------------------------------------
+flash_erase:
+
+ ENTRY &file &fstart 
+ LOCAL &temp &write_size &target_addr &end_addr
+ &write_size=OS.FILE.SIZE(&file)
+ print "erase address :0x" &fstart
+ &target_addr=&fstart-&FLASH_BASE-(&fstart%0x10000)
+ &end_addr=&target_addr+&write_size
+ print "Logical Flash Address :0x" &target_addr
+ print "Memory Map in Flash Addr 0x" &fstart  
+ while &target_addr<&end_addr
+ (
+   d.s SD:0x80310010 %LE %LONG &target_addr ;;Erase Address(base 0x0 -- mapped 0x0400_0000)
+   d.s SD:0x803100BE %BYTE 0xFF ;;Block Erase
+   &target_addr=&target_addr+0x10000
+   print "Erase Flash :0x" &target_addr
+   ;print "remain :0x" &write_size-&target_addr
+   GOSUB flash_erase_wait
+ ) 
+ ;wait 0.8s
+ ;READ SERIAL FLASH ID
+ &temp=DATA.LONG(SD:0x803100AC)
+
+ RETURN
+
+;-----------------------------------------
+flash_erase_by_se:
+ ENTRY &file &fstart 
+ LOCAL &temp &write_size &target_addr &end_addr
+ &write_size=OS.FILE.SIZE(&file)
+ print &fstart
+ &target_addr=&fstart-&FLASH_BASE
+ &end_addr=&target_addr+&write_size
+ print "Logical Flash Address :0x" &target_addr
+ print "Memory Map in Flash Addr 0x" &fstart
+ while &target_addr<&end_addr
+ (
+  d.s SD:0x80310010 %LE %LONG &target_addr ;;Erase Address(base 0x0 -- mapped 0x0400_0000)
+  d.s SD:0x8031005E %BYTE 0xFF ;;Sector Erase
+  &target_addr=&target_addr+0x1000
+  print "Erase Flash :0x" &target_addr
+;print "remain :0x" &write_size-&target_addr
+  GOSUB flash_erase_wait
+  )
+ ;wait 0.8s
+ ;READ SERIAL FLASH ID
+ &temp=DATA.LONG(SD:0x803100AC)
+
+ RETURN
+
+;-----------------------------------------
+enable_region:
+	PER.S.SI C15:0x26 %L 0x0 0x0 C15:0x16 %Long 0x0		;Region 0 off
+	PER.S.SI C15:0x26 %L 0x0 0x0 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x1 0x1 C15:0x16 %Long 0x1		;Region 1 off
+	PER.S.SI C15:0x26 %L 0x1 0x1 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x2 0x2 C15:0x16 %Long 0x2		;Region 2 off
+	PER.S.SI C15:0x26 %L 0x2 0x2 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x3 0x3 C15:0x16 %Long 0x3		;Region 3 off
+	PER.S.SI C15:0x26 %L 0x3 0x3 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x4 0x4 C15:0x16 %Long 0x4		;Region 4 off
+	PER.S.SI C15:0x26 %L 0x4 0x4 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x5 0x5 C15:0x16 %Long 0x5		;Region 5 off
+	PER.S.SI C15:0x26 %L 0x5 0x5 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x6 0x6 C15:0x16 %Long 0x6		;Region 6 off
+	PER.S.SI C15:0x26 %L 0x6 0x6 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x7 0x7 C15:0x16 %Long 0x7		;Region 7 off
+	PER.S.SI C15:0x26 %L 0x7 0x7 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x8 0x8 C15:0x16 %Long 0x8		;Region 8 off
+	PER.S.SI C15:0x26 %L 0x8 0x8 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x9 0x9 C15:0x16 %Long 0x9		;Region 9 off
+	PER.S.SI C15:0x26 %L 0x9 0x9 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0xA 0xA C15:0x16 %Long 0xA		;Region 10 off
+	PER.S.SI C15:0x26 %L 0xA 0xA C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0xB 0xB C15:0x16 %Long 0xB		;Region 11 off
+	PER.S.SI C15:0x26 %L 0xB 0xB C15:0x216 %Long 0x8	;32bytes but disable
+
+	PER.S.SI C15:0x26 %L 0x0 0x0 C15:0x416 %Long 0x300	;strongly ordered, non-shared
+	PER.S.SI C15:0x26 %L 0x0 0x0 C15:0x216 %Long 0x3F	;4GB
+	PER.S.SI C15:0x26 %L 0x0 0x0 C15:0x16 %Long 0x0
+
+	PER.S.SI C15:0x26 %L 0x4 0x4 C15:0x416 %Long 0x310	;device
+	PER.S.SI C15:0x26 %L 0x4 0x4 C15:0x216 %Long 0x31	;32MB
+	PER.S.SI C15:0x26 %L 0x4 0x4 C15:0x16 %Long 0x60000000
+	PER.Set C15:0x1 %Long 0x00e50879			;enable region
+	RETURN
+
+;-----------------------------------------
+flash_erase_wait:
+
+ LOCAL &status
+
+ &status=(DATA.BYTE(SD:0x803100DC)&1)
+ while &status==1
+ (
+  &status=(DATA.BYTE(SD:0x803100DC)&1)
+ )
+ return
+
+enddo

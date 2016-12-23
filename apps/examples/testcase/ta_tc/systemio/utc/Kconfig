@@ -1,0 +1,33 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig EXAMPLES_TESTCASE_SYSTEMIO_UTC
+	bool "System IO UTC TestCase Example"
+	default n
+	---help---
+		Enable the System IO TestCase Example
+
+if EXAMPLES_TESTCASE_SYSTEMIO_UTC
+config SYSIO_UTC_UART
+	bool "Sysio UART TC"
+	default n
+
+config SYSIO_UTC_SPI
+	bool "Sysio SPI TC"
+	default n
+
+config SYSIO_UTC_I2C
+	bool "Sysio I2C TC"
+	default n
+
+config SYSIO_UTC_PWM
+	bool "Sysio PWM TC"
+	default n
+
+config SYSIO_UTC_GPIO
+	bool "Sysio GPIO TC"
+	default n
+endif
+

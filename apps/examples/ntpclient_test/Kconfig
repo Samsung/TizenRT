@@ -1,0 +1,27 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_NTPCLIENT_TEST
+	bool "\"NTP Client Test\" example"
+	default n
+	depends on NETUTILS_NTPCLIENT
+	---help---
+		Enable the \"NTP Client Test\" example
+
+if EXAMPLES_NTPCLIENT_TEST
+
+config EXAMPLES_NTPCLIENT_TEST_PROGNAME
+	string "Program name"
+	default "ntpclient"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "ntpclient_main" if ENTRY_NTPCLIENT_TEST

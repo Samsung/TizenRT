@@ -1,0 +1,57 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+comment "AraStorage database configuration"
+
+config ARASTORAGE
+	bool "AraStorage database Support"
+	default n
+	---help---
+		Enables overall support for AraStorage library.
+
+if ARASTORAGE
+
+config NODE_LIMIT
+        int "AraStorage Bplustree node limit"
+        default 110
+        ---help---
+                Default : 110
+
+config BUCKETS_LIMIT
+        int "AraStorage Bplustree bucket limit"
+        default 80
+        ---help---
+                Default : 80
+
+config BRANCH_FACTOR
+        int "AraStorage Bplustree Branch Factor"
+        default 5
+        ---help---
+                Default : 5
+
+config DB_TUPLES_LIMIT
+        int "AraStorage Bplustree tuples limit"
+        default 1000
+        ---help---
+                Default : 1000
+
+config ARASTORAGE_ENABLE_FLUSHING
+        bool "Enable Flushing"
+        default n
+        ---help---
+                Enables delete old tuples based on policies
+
+config ARASTORAGE_ENABLE_VACUUM
+        bool "Enable Vacuum"
+        default y
+        ---help---
+                Enables Vacuum Functionality
+
+config ARASTORAGE_ENABLE_WRITE_BUFFER
+	bool "Enable Write Buffer"
+	default y
+	---help---
+		Enables insert buffer for AraStorage.
+endif

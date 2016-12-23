@@ -1,0 +1,32 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config ADC
+	bool "Analog-to-Digital Conversion"
+	default n
+	---help---
+		Select to enable support for analog input device support.  This includes
+		not only Analog-to-Digital Converters (ADC) but also amplifiers and
+		analog multiplexers.
+
+if ADC
+
+config ADC_FIFOSIZE
+	int "ADC buffer size"
+	default 8
+	---help---
+		This variable defines the size of the ADC ring buffer that is used
+		to queue received ADC data until they can be retrieved by the
+		application by reading from the ADC character device.  NOTE:  Since
+		this is a ring buffer, the actual number of bytes that can be
+		retained in buffer is (ADC_FIFOSIZE - 1).
+
+endif # ADC
+
+config DAC
+	bool "Digital-to-Analog Conversion"
+	default n
+	---help---
+		Select to enable support for Digital-to-Analog Converters (DACs).

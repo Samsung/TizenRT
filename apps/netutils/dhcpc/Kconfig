@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NETUTILS_DHCPC
+	bool "DHCP client"
+	default n
+	# This depend will be added when Network Config implementation is finished
+	# depends on NET_UDP && NET_BROADCAST && NET_IPv4
+	---help---
+		Enable support for the DHCP client.
+
+if NETUTILS_DHCPC
+endif

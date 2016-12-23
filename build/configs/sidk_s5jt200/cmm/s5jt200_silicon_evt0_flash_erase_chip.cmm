@@ -1,0 +1,108 @@
+;--------------------------------------------------------------------------
+;
+; Copyright 2016 Samsung Electronics All Rights Reserved.
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+; http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing,
+; software distributed under the License is distributed on an
+; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+; either express or implied. See the License for the specific
+; language governing permissions and limitations under the License.
+;
+;--------------------------------------------------------------------------
+;------------------------------
+;  Configuring JTAG interface
+;-----------------------------
+
+AREA.RESet
+AREA.CREATE
+AREA.SELECT
+AREA.VIEW
+
+LOCAL &BASE_DIR
+&DIR=OS.PPD()			; get current dir
+&BASE_DIR="&DIR"
+
+ENTRY &image_file &image_size &dest_addr
+
+SYStem.Option ResBreak OFF
+SYStem.Option WaitReset 300.ms 
+SYStem.Option EnReset OFF
+SYStem.Option IMASKASM ON
+SYStem.Option IMASKHLL ON
+System.JtagClock 500Khz
+
+print "s5jt200 evt0 jtag start.."
+
+System.CPU CortexR4
+
+Sys.Config.COREBASE 0x801E0000 ; R4
+;Sys.Config.CTIBASE 0x80820000
+
+System.Config AXIACCESSPORT 0.
+System.Config DEBUGACCESSPORT 1.
+System.Config MEMORYACCESSPORT 5.
+
+Sys.attach
+B.Select.Program Onchip
+
+if run()
+	break
+;print "Disable Watchdog Reset"
+d.s SD:0x80030000 %LE %LONG 0x0
+
+wait 0.2s
+LOCAL &BASE_DIR
+&DIR=OS.PPD()			; get current dir
+&BASE_DIR="&DIR"
+
+;------------------------------
+; S5JT200 FLASH FUSING MAP (16.08.18)
+; nBl1, tinyara, wlbt F/W
+;-----------------------------
+
+
+GOSUB	flash_init
+print   "Erase Nor Flash(8MB)"
+GOSUB	flash_erase_chip
+
+enddo
+;-----------------------------------------
+flash_init:
+	R.S PC 0x02020000
+	print "Initialize Serial Flash Interface..."
+	d.s SD:0x80040020 %LE %LONG 0x00222222 ;;GPCON
+	d.s SD:0x80040028 %LE %LONG 0x00333333 ;;GPPUD
+	d.s SD:0x80310004 %LE %LONG 0x8010000A ;;Disable WP
+
+	RETURN		
+;-----------------------------------------
+flash_erase_chip:
+	d.s SD:0x803100CE %LE %BYTE 0xFF
+	wait 0.8s
+	GOSUB flash_erase_wait
+
+	RETURN
+
+;-----------------------------------------
+flash_erase_wait:
+
+ LOCAL &status &elapsed
+ &elapsed=0
+ &status=(DATA.BYTE(SD:0x803100DC)&1)
+ while &status==1
+ (
+  &status=(DATA.BYTE(SD:0x803100DC)&1)
+  wait 1s
+  &elapsed=&elapsed+1
+  print "wait for erase done..elapsed " FORMAT.DECIMAL(0.,&elapsed) "s"
+
+
+ )
+ RETURN
+enddo

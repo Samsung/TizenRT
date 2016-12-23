@@ -1,0 +1,157 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * net/netdev/netdev_foreach.c
+ *
+ *   Copyright (C) 2007-2009, 2012 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name NuttX nor the names of its contributors may be
+ *    used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/config.h>
+#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
+
+#include <net/if.h>
+#include <debug.h>
+#include <tinyara/net/net.h>
+#include <net/lwip/netif.h>
+#include "netdev/netdev.h"
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Function: netdev_foreach
+ *
+ * Description:
+ *   Enumerate each registered network device.
+ *
+ *   NOTE: netdev semaphore held throughout enumeration.
+ *
+ * Parameters:
+ *   callback - Will be called for each registered device
+ *   arg      - User argument passed to callback()
+ *
+ * Returned Value:
+ *  0:Enumeration completed 1:Enumeration terminated early by callback
+ *
+ * Assumptions:
+ *  Called from normal user mode
+ *
+ ****************************************************************************/
+
+int netdev_foreach(netdev_callback_t callback, void *arg)
+{
+	struct netif *dev;
+	int ret = 0;
+
+	if (callback) {
+		netdev_semtake();
+		for (dev = g_netdevices; dev; dev = dev->next) {
+			if (callback(dev, arg) != 0) {
+				ret = 1;
+				break;
+			}
+		}
+		netdev_semgive();
+	}
+	return ret;
+}
+
+int netdev_foreach_sync(void *arg)
+{
+	struct netif *dev = g_netdevices;
+	if (!arg || !dev) {
+		return -1;
+	}
+
+	struct ifconf *ifc = (struct ifconf *)arg;
+	struct ifreq *ifr = ifc->ifc_req;
+	int size = ifc->ifc_len;
+	int bsize = 0;
+	ifc->ifc_len = 0;
+	netdev_semtake();
+	for (; dev; ifr++, dev = dev->next) {
+		if (bsize > size) {
+			bsize -= sizeof(struct ifreq);
+			break;
+		}
+		strncpy(ifr->ifr_name, dev->d_ifname, IF_NAMESIZE);
+		ifr->ifr_name[IF_NAMESIZE - 1] = '\0';
+		struct sockaddr_in *sin = (struct sockaddr_in *)&(ifr->ifr_addr);
+		sin->sin_addr.s_addr = dev->ip_addr.addr;
+		bsize += sizeof(struct ifreq);
+	}
+	netdev_semgive();
+	ifc->ifc_len = bsize;
+	return 0;
+}
+#endif							/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */

@@ -1,0 +1,3 @@
+config ENTRY_TESTCASE
+	bool "TestCase Example"
+	depends on EXAMPLES_TESTCASE

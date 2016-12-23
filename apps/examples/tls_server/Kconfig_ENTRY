@@ -1,0 +1,3 @@
+config ENTRY_TLS_SERVER
+	bool "TLS server application"
+	depends on EXAMPLES_TLS_SERVER

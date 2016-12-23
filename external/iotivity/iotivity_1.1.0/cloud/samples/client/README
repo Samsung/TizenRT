@@ -1,0 +1,25 @@
+To build cloud client sample, add WITH_TCP, TARGET_TRANSPORT=IP and WITH_CLOUD option to build command
+
+ex) scons WITH_TCP=yes TARGET_TRANSPORT=IP WITH_CLOUD=yes
+
+Cloud client runs using CoAP over TCP transport. So you should add WITH_TCP option.
+
+Once you get sample which file name is 'cloud_device', you need 'Auth Code' to register resources on cloud with account scenario.
+
+Cloud stack has sample github oauth2 adaptor.
+
+So you can instantly test sample using 'Auth Code'.
+
+Paste below URL to your browser
+
+https://github.com/login?return_to=%2Flogin%2Foauth%2Fauthorize%3Fclient_id%3Dea9c18f540323b0213d0%26redirect_uri%3Dhttp%253A%252F%252Fwww.example.com%252Foauth_callback%252F
+
+And you'll see login page provided by github, and after logged in, you'll be redirectd to below site.
+
+http://www.example.com/oauth_callback/?code=bf9beb5db17ea476fa46
+
+You can get 'Auth Code', value of '?code' query string.
+
+The 'Auth Code' is one time token. So you need other token to run other device.
+
+Account server has pre-coded admin credential which session is '00000000'. You can use this credential for immediate tests.

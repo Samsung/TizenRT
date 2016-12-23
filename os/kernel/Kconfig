@@ -1,0 +1,1027 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig DISABLE_OS_API
+	bool "Disable TinyAra interfaces"
+	default y
+	---help---
+		The following can be used to disable categories of
+		APIs supported by the OS.  If the compiler supports
+		weak functions, then it should not be necessary to
+		disable functions unless you want to restrict usage
+		of those APIs.
+
+		There are certain dependency relationships in these
+		features.
+
+		1) mq_notify logic depends on signals to awaken tasks
+		waiting for queues to become full or empty.
+		2) pthread_condtimedwait() depends on signals to wake
+		up waiting tasks.
+
+if DISABLE_OS_API
+
+config DISABLE_POSIX_TIMERS
+	bool "Disable POSIX timers"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+config DISABLE_PTHREAD
+	bool "Disable pthread support"
+	default n
+
+config DISABLE_SIGNALS
+	bool "Disable signal support"
+	default n
+
+config DISABLE_MQUEUE
+	bool "Disable POSIX message queue support"
+	default n
+
+config DISABLE_ENVIRON
+	bool "Disable environment variable support"
+	default y if DEFAULT_SMALL
+	default n if !DEFAULT_SMALL
+
+endif # DISABLE_OS_API
+
+menu "Clocks and Timers"
+
+config ARCH_HAVE_TICKLESS
+	bool "Enable if ARCH supports"
+	default n
+
+config SCHED_TICKLESS
+	bool "Support tick-less OS"
+	default n
+	depends on ARCH_HAVE_TICKLESS
+	---help---
+		By default, system time is driven by a periodic timer interrupt.  An
+		alternative configurations is a tick-less configuration in which
+		there is no periodic timer interrupt.  Instead and interval timer is
+		used to schedule the next OS time event.  This option selects that
+		tick-less OS option.  If the tick-less OS is selected, then there are
+		additional platform specific interfaces that must be provided as
+		defined include/tinyara/arch.h
+
+if SCHED_TICKLESS
+
+config SCHED_TICKLESS_ALARM
+	bool "Tickless alarm"
+	default n
+	---help---
+		The tickless option can be supported either via a simple interval
+		timer (plus elapsed time) or via an alarm.  The interval timer allows
+		programming events to occur after an interval.  With the alarm,
+		you can set a time in the future and get an event when that alarm
+		goes off.  This option selects the use of an alarm.
+
+		The advantage of an alarm is that it avoids some small timing
+		errors; the advantage of the use of the interval timer is that
+		the hardware requirement may be less.
+
+config SCHED_TICKLESS_LIMIT_MAX_SLEEP
+	bool "Max sleep period (in microseconds)"
+	default n
+	---help---
+		Enables use of the g_oneshot_maxticks variable. This variable is
+		initialized by platform-specific logic at runtime to the maximum
+		delay that the timer can wait (in configured clock ticks).  The
+		RTOS tickless logic will then limit all requested delays to this
+		value.
+
+endif
+
+config USEC_PER_TICK
+	int "System timer tick period (microseconds)"
+	default 10000 if !SCHED_TICKLESS
+	default 100 if SCHED_TICKLESS
+	---help---
+		In the "normal" configuration where system time is provided by a
+		periodic timer interrupt, the default system timer is expected to
+		run at 100Hz or USEC_PER_TICK=10000.  This setting must be defined
+		to inform of TinyAra the interval that the the processor hardware is
+		providing system timer interrupts to the OS.
+
+		If SCHED_TICKLESS is selected, then there are no system timer
+		interrupts.  In this case, USEC_PER_TICK does not control any timer
+		rates.  Rather, it only determines the resolution of time reported
+		by clock_systimer() and the resolution of times that can be set for
+		certain delays including watchdog timers and delayed work.  In this
+		case there is a trade-off:  It is better to have the USEC_PER_TICK as
+		low as possible for higher timing resolution.  However, the the time
+		is currently held in 'unsigned int' on some systems, this may be
+		16-bits but on most contemporary systems it will be 32-bits.  In
+		either case, smaller values of USEC_PER_TICK will reduce the range
+		of values that delays that can be represented.  So the trade-off is
+		between range and resolution (you could also modify the code to use
+		a 64-bit value if you really want both).
+
+		The default, 100 microseconds, will provide for a range of delays
+		up to 120 hours.
+
+		This value should never be less than the underlying resolution of
+		the timer.  Error may ensue.
+
+if !SCHED_TICKLESS
+
+config SYSTEMTICK_EXTCLK
+	bool "Use external clock"
+	default n
+	depends on ARCH_HAVE_EXTCLK
+	---help---
+		Use external clock for system tick. When enabled, the platform-specific
+		logic must start its own timer interrupt to make periodic calls to the
+		sched_process_timer() or the functions called within. The purpose is
+		to move the scheduling off the processor clock to allow entering low
+		power states that would disable that clock.
+
+endif # !SCHED_TICKLESS
+
+config SYSTEM_TIME64
+	bool "64-bit system clock"
+	default n
+	---help---
+		The system timer is incremented at the rate determined by
+		USEC_PER_TICK, typically at 100Hz. The count at any given time is
+		then the "uptime" in units of system timer ticks.  By default, the
+		system time is 32-bits wide.  Those defaults provide a range of about
+		13.6 years which is probably a sufficient range for "uptime".
+
+		However, if the system timer rate is significantly higher than 100Hz
+		and/or if a very long "uptime" is required, then this option can be
+		selected to support a 64-bit wide timer.
+
+config CLOCK_MONOTONIC
+	bool "Support CLOCK_MONOTONIC"
+	default n
+	---help---
+		CLOCK_MONOTONIC is an optional standard POSIX clock.  Unlike
+		CLOCK_REALTIME which can move forward and backward when the
+		time-of-day changes, CLOCK_MONOTONIC is the elapsed time since some
+		arbitrary point in the post (the system start-up time for TinyAra)
+		and, hence, is always monotonically increasing.  CLOCK_MONOTONIC
+		is, hence, the more appropriate clock for determining time
+		differences.
+
+		The value of the CLOCK_MONOTONIC clock cannot be set via clock_settime().
+
+config JULIAN_TIME
+	bool "Enables Julian time conversions"
+	default n
+	---help---
+		Enables Julian time conversions
+
+if !RTC
+
+config START_YEAR
+	int "Start year"
+	default 2014
+
+config START_MONTH
+	int "Start month"
+	default 1
+
+config START_DAY
+	int "Start day"
+	default 1
+
+endif # !RTC
+
+config MAX_WDOGPARMS
+	int "Maximum number of watchdog parameters"
+	default 4
+	---help---
+		Maximum number of parameters that can be passed to a watchdog handler
+
+config PREALLOC_WDOGS
+	int "Number of pre-allocated watchdog timers"
+	default 32
+	---help---
+		The number of pre-allocated watchdog structures.  The system manages
+		a pool of preallocated watchdog structures to minimize dynamic
+		allocations.  Dynamic allocations will still be made if this pool is
+		exhausted.  You will, however, get better performance and memory
+		usage if this value is tuned to minimize such allocations.
+
+config WDOG_INTRESERVE
+	int "Watchdog structures reserved for interrupt handlers"
+	default 4
+	---help---
+		Watchdog structures may be allocated from normal task and also from
+		interrupt handlers.  Interrupt handlers, however, can only use pre-
+		allocated watchdog timer.  So, in order to keep normal task
+		allocations from exhausting all watchdog structures, a small number
+		of pre-allocated watchdog timers must be reserved for exclusive use
+		by interrupt handler.  This setting determines that number of
+		reserved watchdogs.
+
+config PREALLOC_TIMERS
+	int "Number of pre-allocated POSIX timers"
+	default 8
+	---help---
+		The number of pre-allocated POSIX timer structures.  The system manages a
+		pool of preallocated timer structures to minimize dynamic allocations.  Set to
+		zero for all dynamic allocations.
+
+endmenu # Clocks and Timers
+
+menu "Tasks and Scheduling"
+
+choice
+	prompt "Initialization Task"
+	default INIT_ENTRYPOINT if !BUILD_KERNEL
+
+config INIT_ENTRYPOINT
+	bool "Via application entry point"
+	depends on !BUILD_KERNEL
+
+endchoice # Initialization task
+
+if INIT_FILEPATH
+
+config USER_INITPATH
+	string "Application initialization path"
+	default "/bin/init"
+	---help---
+		The name of the entry point for user applications.  For the example
+		applications this is of the form 'app_main' where 'app' is the application
+		name. If not defined, USER_ENTRYPOINT defaults to "main".
+
+config INIT_SYMTAB
+	string "Symbol table"
+	default "NULL"
+	depends on !BUILD_PROTECTED && !BUILD_KERNEL
+	---help---
+		The name of othe global array that holds the exported symbol table.
+		The special string "NULL" may be provided if there is no symbol
+		table.  Quotation marks will be stripped when config.h is generated.
+
+		NOTE: This setting cannot be used in protected or kernel builds.
+		Any kernel mode symbols tables would not be usable for resolving
+		symbols in user mode executables.
+
+config INIT_NEXPORTS
+	string "Symbol table size"
+	default "0"
+	depends on !BUILD_PROTECTED && !BUILD_KERNEL
+	---help---
+		The size of the symbol table.  NOTE that is is logically a numeric
+		value but is represent by a string.  That allows you to put
+		sizeof(something) or a macro or a global variable name for the
+		symbol table size.  Quotation marks will be stripped when config.h
+		is generated.
+
+		NOTE: This setting cannot be used in protected or kernel builds.
+		Any kernel mode symbols tables would not be usable for resolving
+		symbols in user mode executables.
+
+endif # INIT_FILEPATH
+
+config RR_INTERVAL
+	int "Round robin timeslice (MSEC)"
+	default 0
+	---help---
+		The round robin timeslice will be set this number of milliseconds;
+		Round robin scheduling can be disabled by setting this value to zero.
+
+config TASK_NAME_SIZE
+	int "Maximum task name size"
+	default 31
+	---help---
+		Spcifies that maximum size of a task name to save in the TCB.
+		Useful if scheduler instrumentation is selected.  Set to zero to
+		disable.  Excludes the NUL terminator; the actual allocated size
+		willl be TASK_NAME_SIZE + 1.  The default of 31 then results in
+		a align-able 32-byte allocation.::
+
+config MAX_TASKS
+	int "Max number of tasks"
+	default 32
+	---help---
+		The maximum number of simultaneously active tasks. This value must be
+		a power of two.
+
+config SCHED_HAVE_PARENT
+	bool "Support parent/child task relationships"
+	default n
+	---help---
+		Remember the ID of the parent task when a new child task is
+		created.  This support enables some additional features (such as
+		SIGCHLD) and modifies the behavior of other interfaces.  For
+		example, it makes waitpid() more standards complete by restricting
+		the waited-for tasks to the children of the caller. Default:
+		disabled.
+
+config SCHED_CHILD_STATUS
+	bool "Retain child exit status"
+	default n
+	depends on SCHED_HAVE_PARENT
+	---help---
+		If this option is selected, then the exit status of the child task
+		will be retained after the child task exits.  This option should be
+		selected if you require knowledge of a child process' exit status.
+		Without this setting, wait(), waitpid() or waitid() may fail.  For
+		example, if you do:
+
+		1) Start child task
+		2) Wait for exit status (using wait(), waitpid(), or waitid()).
+
+		This can fail because the child task may run to completion before
+		the wait begins.  There is a non-standard work-around in this case:
+		The above sequence will work if you disable pre-emption using
+		sched_lock() prior to starting the child task, then re-enable pre-
+		emption with sched_unlock() after the wait completes.  This works
+		because the child task is not permitted to run until the wait is in
+		place.
+
+		The standard solution would be to enable SCHED_CHILD_STATUS.  In
+		this case the exit status of the child task is retained after the
+		child exits and the wait will successful obtain the child task's
+		exit status whether it is called before the child task exits or not.
+
+		Warning:  If you enable this feature, then your application must
+		either (1) take responsibility for reaping the child status with wait(),
+		waitpid(), or waitid(), or (2) suppress retention of child status.
+		If you do not reap the child status, then you have a memory leak and
+		your system will eventually fail.
+
+		Retention of child status can be suppressed on the parent using logic like:
+
+			struct sigaction sa;
+
+			sa.sa_handler = SIG_IGN;
+			sa.sa_flags = SA_NOCLDWAIT;
+			int ret = sigaction(SIGCHLD, &sa, NULL);
+
+if SCHED_CHILD_STATUS
+
+config PREALLOC_CHILDSTATUS
+	int "Number of pre-allocated child status"
+	default 0
+	---help---
+		To prevent runaway child status allocations and to improve
+		allocation performance, child task exit status structures are pre-
+		allocated when the system boots.  This setting determines the number
+		of child status structures that will be pre-allocated.  If this
+		setting is not defined or if it is defined to be zero then a value
+		of 2*MAX_TASKS is used.
+
+		Note that there cannot be more than MAX_TASKS tasks in total.
+		However, the number of child status structures may need to be
+		significantly larger because this number includes the maximum number
+		of tasks that are running PLUS the number of tasks that have exit'ed
+		without having their exit status reaped (via wait(), waitid(), or
+		waitpid()).
+
+		Obviously, if tasks spawn children indefinitely and never have the
+		exit status reaped, then you may have a memory leak!  If you enable
+		the SCHED_CHILD_STATUS feature, then your application must take
+		responsibility for either (1) reaping the child status with wait(),
+		waitpid(), or waitid() or it must (2) suppress retention of child
+		status.  Otherwise, your system will eventually fail.
+
+		Retention of child status can be suppressed on the parent using logic like:
+
+			struct sigaction sa;
+
+			sa.sa_handler = SIG_IGN;
+			sa.sa_flags = SA_NOCLDWAIT;
+			int ret = sigaction(SIGCHLD, &sa, NULL);
+
+config DEBUG_CHILDSTATUS
+	bool "Enable Child Status Debug Output"
+	default n
+	depends on SCHED_CHILD_STATUS && DEBUG
+	---help---
+		Very detailed... I am sure that you do not want this.
+
+endif # SCHED_CHILD_STATUS
+
+config SCHED_WAITPID
+	bool "Enable waitpid() API"
+	default n
+	---help---
+		Enables the waitpid() interface in a default, non-standard mode
+		(non-standard in the sense that the waited for PID need not be child
+		of the caller).  If SCHED_HAVE_PARENT is also defined, then this
+		setting will modify the behavior or waitpid() (making more spec
+		compliant) and will enable the waitid() and wait() interfaces as
+		well.
+
+endmenu # Tasks and Scheduling
+
+menu "Pthread Options"
+	depends on !DISABLE_PTHREAD
+
+config MUTEX_TYPES:
+	bool "Enable mutex types"
+	default n
+	---help---
+		Set to enable support for recursive and errorcheck mutexes. Enables
+		pthread_mutexattr_settype().
+
+config NPTHREAD_KEYS
+	int "Maximum number of pthread keys"
+	default 4
+	---help---
+		The number of items of thread-
+		specific data that can be retained
+
+endmenu # Pthread Options
+
+menu "Performance Monitoring"
+
+config SCHED_CPULOAD
+	bool "Enable CPU load monitoring"
+	default n
+	select SCHED_CPULOAD_EXTCLK if SCHED_TICKLESS
+	---help---
+		If this option is selected, the timer interrupt handler will monitor
+		if the system is IDLE or busy at the time of that the timer interrupt
+		occurs.  This is a very coarse measurement, but over a period of time,
+		it can very accurately determined the percentage of the time that the
+		CPU is IDLE.
+
+		The statistics collected in this could be used, for example in the
+		PROCFS file system to provide CPU load measurements when read.
+
+if SCHED_CPULOAD
+
+config SCHED_CPULOAD_EXTCLK
+	bool "Use external clock"
+	default n
+	---help---
+		The CPU load measurements are determined by sampling the active
+		tasks periodically at the occurrence to a timer expiration.  By
+		default, the system clock is used to do that sampling.
+
+		There is a serious issue for the accuracy of measurements if the
+		system clock is used, however.  TinyAra threads are often started at
+		the time of the system timer expiration.  Others may be stopped at
+		the time of the system timer expiration (if round-robin time-slicing
+		is enabled).  Such thread behavior occurs synchronously with the
+		system timer and, hence, is not randomly sampled.  As a consequence,
+		the CPU load attributed to these threads that run synchronously with
+		they system timer may be grossly in error.
+
+		The solution is to use some other clock that runs at a different
+		rate and has timer expirations that are asynchronous with the
+		system timer.  Then truly accurate load measurements can be
+		achieved.  This option enables use of such an "external" clock.  The
+		implementation of the clock must be provided by platform-specific
+		logic; that platform-specific logic must call the system function
+		sched_process_cpuload() at each timer expiration with interrupts
+		disabled.
+
+config SCHED_CPULOAD_TICKSPERSEC
+	int "External clock rate"
+	default 100
+	depends on SCHED_CPULOAD_EXTCLK
+	---help---
+		If an external clock is used to drive the sampling for the CPU load
+		calculations, then this value must be provided.  This value provides
+		the rate of the external clock in units of ticks per second.  The
+		default value of 100 corresponds to 100Hz clock.  NOTE: that 100Hz
+		is the default frequency of the system time and, hence, the worst
+		possible choice in most cases.
+
+config SCHED_CPULOAD_TIMECONSTANT
+	int "CPU load time constant"
+	default 2
+	---help---
+		The accumulated CPU count is divided by two when the accumulated
+		tick count exceeds this time constant.  This time constant is in
+		units of seconds.
+
+endif # SCHED_CPULOAD
+
+config SCHED_INSTRUMENTATION
+	bool "System performance monitor hooks"
+	default n
+	---help---
+		Enables instrumentation in scheduler to monitor system performance.
+		If enabled, then the board-specific logic must provide the following
+		functions (see include/sched.h):
+
+		void sched_note_start(FAR struct tcb_s *tcb);
+		void sched_note_stop(FAR struct tcb_s *tcb);
+		void sched_note_switch(FAR struct tcb_s *pFromTcb, FAR struct tcb_s *pToTcb);
+
+endmenu # Performance Monitoring
+
+menu "Latency optimization"
+
+config SCHED_YIELD_OPTIMIZATION
+	bool "Improve the scheduling latency of sched_yield API"
+	default n
+	---help---
+		Improves the scheduling latency offered by sched_yield API by
+		optimizing the logic of releasing the cpu resource to other
+		ready to run tasks if available.
+endmenu
+
+menu "Files and I/O"
+
+config DEV_CONSOLE
+	bool "Enable /dev/console"
+	default y
+	---help---
+		Set if architecture-specific logic provides /dev/console at boot-up
+		time.  Enables stdout, stderr, stdin in the start-up application.
+
+		You need this setting if your console device is ready at boot time.
+		For example, if you are using a serial console, then /dev/console
+		(aka, /dev/ttyS0) will be available when the application first starts.
+
+		You must not select DEV_CONSOLE if you console device comes up later
+		and is not ready until after the application starts.  At this time,
+		the only console device that behaves this way is a USB serial console.
+		When the application first starts, the USB is (probably) not yet
+		connected and /dev/console will not be created until later when the
+		host connects to the USB console.
+
+config FDCLONE_DISABLE
+	bool "Disable cloning of file descriptors"
+	default n
+	---help---
+		Disable cloning of all file descriptors by task_create() when a new
+		ask is started.  If set, all files/drivers will appear to be closed
+		in the new task.
+
+config FDCLONE_STDIO
+	bool "Disable clone file descriptors without stdio"
+	default n
+	---help---
+		Disable cloning of all but the first three file descriptors (stdin,
+		stdout, stderr) by task_create() when a new task is started. If set,
+		all files/drivers will appear to be closed in the new task except
+		for stdin, stdout, and stderr.
+
+config SDCLONE_DISABLE
+	bool "Disable cloning of socket descriptors"
+	default n
+	---help---
+	Disable cloning of all socket
+	desciptors by task_create() when a new task is started. If
+	set, all sockets will appear to be closed in the new task.
+
+config NFILE_DESCRIPTORS
+	int "Maximum number of file descriptors per task"
+	default 16
+	---help---
+		The maximum number of file descriptors per task (one for each open)
+
+config NFILE_STREAMS
+	int "Maximum number of FILE streams"
+	default 16
+	---help---
+		The maximum number of streams that can be fopen'ed
+
+config NAME_MAX
+	int "Maximum size of a file name"
+	default 32
+	---help---
+	The maximum size of a file name.
+
+endmenu # Files and I/O
+
+menuconfig PRIORITY_INHERITANCE
+	bool "Enable priority inheritance "
+	default n
+	---help---
+		Set to enable support for priority inheritance on mutexes and semaphores.
+
+if PRIORITY_INHERITANCE
+
+config SEM_PREALLOCHOLDERS
+	int "Number of pre-allocated holders"
+	default 16
+	---help---
+		This setting is only used if priority inheritance is enabled.
+		It defines the maximum number of different threads (minus one) that
+		can take counts on a semaphore with priority inheritance support.
+		This may be set to zero if priority inheritance is disabled OR if you
+		are only using semaphores as mutexes (only one holder) OR if no more
+		than two threads participate using a counting semaphore.
+
+config SEM_NNESTPRIO
+	int "Maximum number of higher priority threads"
+	default 16
+	---help---
+		If priority inheritance is enabled, then this setting is the
+		maximum number of higher priority threads (minus 1) than can be
+		waiting for another thread to release a count on a semaphore.
+		This value may be set to zero if no more than one thread is
+		expected to wait for a semaphore.
+
+endif # PRIORITY_INHERITANCE
+
+menu "RTOS hooks"
+
+config BOARD_INITIALIZE
+	bool "Custom board/driver initialization"
+	default n
+	---help---
+		By default, there are three points in time where you can insert
+		custom initialization logic:
+
+		1) <arch>_boardinitialize():  This function is used only for
+		initialization of very low-level things like configuration of
+		GPIO pins, power setting.  The OS has not been initialized
+		at this point, so you cannot allocate memory or initialize
+		device drivers at this phase.
+
+		2) The next level of initialization is performed by a call to
+		up_initialize() (in arch/<arch>/src/common/up_initialize.c).
+		The OS has been initialized at this point and it is okay to
+		initialize drivers in this phase.
+
+		3) And, finally, when the user application code starts.
+
+		If BOARD_INITIALIZE is selected, then an additional initialization
+		call will be performed in the boot-up sequence to a function
+		called board_initialize().  board_initialize() will be
+		call between phases 2) and 3) above, immediately after
+		up_initialize() is called.  This additional initialization
+		phase may be used, for example, to initialize board-specific
+		device drivers.
+
+if BOARD_INITIALIZE
+
+config BOARD_INITTHREAD
+	bool "Board initialization thread"
+	default n
+	---help---
+		Some initialization operations cannot be performed on the start-up,
+		initialization thread.  That is because the initialization thread
+		cannot wait for event.  If waiting is required as part of the board
+		initialization then this option must be selected.  Waiting may be
+		required, for example, to mount a file system or or initialize a
+		device such as an SD card.
+
+if BOARD_INITTHREAD
+
+config BOARD_INITTHREAD_STACKSIZE
+	int "Board initialization thread stack size"
+	default 2048
+	---help---
+		The size of the stack to allocate when starting the board
+		initialization thread.
+
+config BOARD_INITTHREAD_PRIORITY
+	int "Board initialization thread priority"
+	default 240
+	---help---
+		The priority of the board initialization thread.  This priority is
+		not a critical setting.  No other application threads will be
+		started until the board initialization is completed.  Hence, there
+		is very little competition for the CPU.
+
+endif # BOARD_INITTHREAD
+endif # BOARD_INITIALIZE
+
+config SCHED_STARTHOOK
+	bool "Enable startup hook"
+	default n
+	---help---
+		Enable a non-standard, internal OS API call task_starthook().
+		task_starthook() registers a function that will be called on task
+		startup before that actual task entry point is called.  The
+		starthook is useful, for example, for setting up automatic
+		configuration of C++ constructors.
+
+config SCHED_ATEXIT
+	bool "Enable atexit() API"
+	default n
+	---help---
+		Enables the atexit() API
+
+config SCHED_ATEXIT_MAX
+	int "Max number of atexit() functions"
+	default 1
+	depends on SCHED_ATEXIT && !SCHED_ONEXIT
+	---help---
+		By default if SCHED_ATEXIT is selected, only a single atexit() function
+		is supported. That number can be increased by defined this setting to
+		the number that you require.
+
+		If both SCHED_ONEXIT and SCHED_ATEXIT are selected, then atexit() is built
+		on top of the on_exit() implementation.  In that case, SCHED_ONEXIT_MAX
+		determines the size of the combined number of atexit(0) and on_exit calls
+		and SCHED_ATEXIT_MAX is not used.
+
+config SCHED_ONEXIT
+	bool "Enable on_exit() API"
+	default n
+	---help---
+		Enables the on_exit() API
+
+config SCHED_ONEXIT_MAX
+	int "Max number of on_exit() functions"
+	default 1
+	depends on SCHED_ONEXIT
+	---help---
+		By default if SCHED_ONEXIT is selected, only a single on_exit() function
+		is supported. That number can be increased by defined this setting to the
+		number that you require.
+
+		If both SCHED_ONEXIT and SCHED_ATEXIT are selected, then atexit() is built
+		on top of the on_exit() implementation.  In that case, SCHED_ONEXIT_MAX
+		determines the size of the combined number of atexit(0) and on_exit calls.
+
+endmenu # RTOS hooks
+
+menu "Signal Numbers"
+	depends on !DISABLE_SIGNALS
+
+config SIG_SIGUSR1
+	int "SIGUSR1"
+	default 1
+	---help---
+		Value of standard user signal 1 (SIGUSR1). Default: 1
+
+config SIG_SIGUSR2
+	int "SIGUSR2"
+	default 2
+	---help---
+		Value of standard user signal 2 (SIGUSR2). Default: 2
+
+config SIG_SIGALARM
+	int "SIGALRM"
+	default 3
+	---help---
+		Default the signal number used with POSIX timers (SIGALRM).
+		Default: 3
+
+config SIG_SIGCHLD
+	int "SIGCHLD"
+	default 4
+	depends on SCHED_HAVE_PARENT
+	---help---
+		The SIGCHLD signal is sent to the parent of a child process when it
+		exits, is interrupted (stopped), or resumes after being interrupted.
+		Default: 4
+
+config SIG_POLL
+	int "SIGPOLL"
+	default 5
+	depends on FS_AIO
+	---help---
+		The SIGPOLL signal is sent to a process when an asynchronous I/O
+		event occurs (meaning it has been polled).  Default: 5
+
+config SIG_SIGCONDTIMEDOUT
+	int "SIGCONDTIMEDOUT"
+	default 16
+	depends on !DISABLE_PTHREAD
+	---help---
+		This non-standard signal number is used the implementation of
+		pthread_cond_timedwait(). Default 16.
+
+config SIG_SIGWORK
+	int "SIGWORK"
+	default 17
+	depends on SCHED_WORKQUEUE || LIB_USRWORK
+	---help---
+		SIGWORK is a non-standard signal used to wake up the internal TinyAra
+		worker thread.  This setting specifies the signal number that will be
+		used for SIGWORK.  Default: 17
+
+endmenu # Signal Numbers
+
+menu "POSIX Message Queue Options"
+	depends on !DISABLE_MQUEUE
+
+config PREALLOC_MQ_MSGS
+	int "Number of pre-allocated messages"
+	default 32
+	---help---
+		The number of pre-allocated message structures.  The system manages
+		a pool of preallocated message structures to minimize dynamic allocations
+
+config MQ_MAXMSGSIZE
+	int "Maximum message size"
+	default 32
+	---help---
+		Message structures are allocated with a fixed payload size given by this
+		setting (does not include other message structure overhead.
+
+endmenu # POSIX Message Queue Options
+
+menu "Work Queue Support"
+
+config SCHED_WORKQUEUE
+#	bool "Enable worker thread"
+	bool
+	default y
+	depends on !DISABLE_SIGNALS
+	---help---
+		Create dedicated "worker" threads to handle delayed or asynchronous
+		processing.
+
+config SCHED_WORKQUEUE_SORTING
+	bool "Sort workers by delay"
+	default y
+	select SCHED_WORKQUEUE
+	---help---
+		Sort workers by delay when worker is inserted
+
+
+config SCHED_HPWORK
+	bool "High priority (kernel) worker thread"
+	default y
+	depends on !DISABLE_SIGNALS
+	select SCHED_WORKQUEUE
+	---help---
+		Create a dedicated high-priority "worker" thread to handle delayed
+		processing from interrupt handlers.  This feature is required for
+		some drivers but, if there are no complaints, can be safely
+		disabled.  The high priority worker thread also performs garbage
+		collection -- completing any delayed memory deallocations from
+		interrupt handlers.  If the high-priority worker thread is disabled,
+		then that clean up will be performed either by (1) the low-priority
+		worker thread, if enabled, and if not (2) the IDLE thread instead
+		(which runs at the lowest of priority and may not be appropriate if
+		memory reclamation is of high priority)
+
+		For other, less-critical asynchronous or delayed process, the
+		low-priority worker thread is recommended.
+
+if SCHED_HPWORK
+
+config SCHED_HPWORKPRIORITY
+	int "High priority worker thread priority"
+	default 224
+	---help---
+		The execution priority of the higher priority worker thread.
+
+		The higher priority worker thread is intended to serve as the
+		"bottom" half for device drivers.  As a consequence it must run at
+		a very high, fixed priority.  Typically, it should be the highest
+		priority thread in your system.  Default: 224
+
+		For lower priority, application oriented worker thread support,
+		please consider enabling the lower priority work queue.  The lower
+		priority work queue runs at a lower priority, of course, but has
+		the added advantage that it supports "priority inheritance" (if
+		PRIORITY_INHERITANCE is also selected):  The priority of the lower
+		priority worker thread can then be adjusted to match the highest
+		priority client.
+
+config SCHED_HPWORKPERIOD
+	int "High priority worker thread period"
+	default 100000 if SCHED_LPWORK
+	default 50000 if !SCHED_LPWORK
+	---help---
+		How often the worker thread checks for work in units of microseconds.
+		Default:  If the high priority worker thread is performing garbage
+		collection, then the default is 50*1000 (50 MS).  Otherwise, if the
+		lower priority worker thread is performing garbage collection, the
+		default is 100*1000.
+
+config SCHED_HPWORKSTACKSIZE
+	int "High priority worker thread stack size"
+	default 2048
+	---help---
+		The stack size allocated for the worker thread.  Default: 2K.
+
+endif # SCHED_HPWORK
+
+config SCHED_LPWORK
+	bool "Low priority (kernel) worker thread"
+	default y
+	depends on !DISABLE_SIGNALS
+	select SCHED_WORKQUEUE
+	---help---
+		If SCHED_LPWORK is defined then a lower-priority work queue will
+		be created.  This lower priority work queue is better suited for
+		more extended, application oriented processing (such as file system
+		clean-up operations or asynchronous I/O)
+
+if SCHED_LPWORK
+
+config SCHED_LPNTHREADS
+	int "Number of low-priority worker threads"
+	default 1 if !FS_AIO
+	default 4 if FS_AIO
+	---help---
+		This options selects multiple, low-priority threads.  This is
+		essentially a "thread pool" that provides multi-threaded servicing
+		of the low-priority work queue.  This breaks the serialization
+		of the "queue" (hence, it is no longer a queue at all).
+
+		This options is required to support, for example, I/O operations
+		that stall waiting for input.  If there is only a single thread,
+		then the entire low-priority queue processing stalls in such cases.
+		Such behavior is necessary to support asynchronous I/O, AIO (for example).
+
+config SCHED_LPWORKPRIORITY
+	int "Low priority worker thread priority"
+	default 50
+	---help---
+		The minimum execution priority of the lower priority worker thread.
+
+		The lower priority worker thread is intended support application-
+		oriented functions.  The lower priority work queue runs at a lower
+		priority, of course, but has the added advantage that it supports
+		"priority inheritance" (if PRIORITY_INHERITANCE is also selected):
+		The priority of the lower priority worker thread can then be
+		adjusted to match the highest priority client.  Default: 50
+
+		NOTE: This priority inheritance feature is not automatic.  The
+		lower priority worker thread will always a fixed priority unless
+		you implement logic that calls lpwork_boostpriority() to raise the
+		priority of the lower priority worker thread (typically called
+		before scheduling the work) and then call the matching
+		lpwork_restorepriority() when the work is completed (typically
+		called within the work handler at the completion of the work).
+		Currently, only the TinyAra asynchronous I/O logic uses this dynamic
+		prioritization feature.
+
+		The higher priority worker thread, on the other hand, is intended
+		to serve as the "bottom" half for device drivers.  As a consequence
+		it must run at a very high, fixed priority.  Typically, it should
+		be the highest priority thread in your system.
+
+config SCHED_LPWORKPRIOMAX
+	int "Low priority worker thread maximum priority"
+	default 176
+	depends on PRIORITY_INHERITANCE
+	---help---
+		The maximum execution priority of the lower priority worker thread.
+
+		The lower priority worker thread is intended support application-
+		oriented functions.  The lower priority work queue runs at a lower
+		priority, of course, but has the added advantage that it supports
+		"priority inheritance" (if PRIORITY_INHERITANCE is also selected):
+		The priority of the lower priority worker thread can then be
+		adjusted to match the highest priority client.
+
+		The higher priority worker thread, on the other hand, is intended
+		to serve as the "bottom" half for device drivers.  As a consequence
+		it must run at a very high, fixed priority.  Typically, it should
+		be the highest priority thread in your system.
+
+		This value provides an upper limit on the priority of the lower
+		priority worker thread.  This would be necessary, for example, if
+		the higher priority worker thread were to defer work to the lower
+		priority thread.  Clearly, in such a case, you would want to limit
+		the maximum priority of the lower priority work thread.  Default:
+		176
+
+config SCHED_LPWORKPERIOD
+	int "Low priority worker thread period"
+	default 50000
+	---help---
+		How often the lower priority worker thread checks for work in units
+		of microseconds. Default: 50*1000 (50 MS).
+
+config SCHED_LPWORKSTACKSIZE
+	int "Low priority worker thread stack size"
+	default 2048
+	---help---
+		The stack size allocated for the lower priority worker thread.  Default: 2K.
+
+endif # SCHED_LPWORK
+endmenu # Work Queue Support
+
+menu "Stack size information"
+
+config IDLETHREAD_STACKSIZE
+	int "Idle thread stack size"
+	default 1024
+	---help---
+		The size of the initial stack used by the IDLE thread.  The IDLE thread
+		is the thread that (1) performs the initial boot of the system up to the
+		point where start-up appliation is spawned, and (2) there after is the
+		IDLE thread that executes only when there is no other thread ready to run.
+
+config USERMAIN_STACKSIZE
+	int "Main thread stack size"
+	default 2048
+	---help---
+		The size of the stack to allocate for the user initialization thread
+		that is started as soon as the OS completes its initialization.
+
+config PREAPP_STACKSIZE
+	int "pre-app thread stack size"
+	default 2048
+	---help---
+		The size of the stack to allocate for the pre-application thread
+		that is started as soon as the OS completes its initialization.
+
+config PTHREAD_STACK_MIN
+	int "Minimum pthread stack size"
+	default 256
+	---help---
+		Minimum pthread stack size
+
+config PTHREAD_STACK_DEFAULT
+	int "Default pthread stack size"
+	default 2048
+	---help---
+		Default pthread stack size
+endmenu # Stack size information

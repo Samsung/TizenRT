@@ -1,0 +1,3 @@
+config ENTRY_SELECT_TEST
+	bool "select_test"
+	depends on EXAMPLES_SELECT_TEST

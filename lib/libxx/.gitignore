@@ -1,0 +1,11 @@
+/Make.dep
+/.depend
+/uClibc++
+/*.asm
+/*.obj
+/*.rel
+/*.lst
+/*.sym
+/*.adb
+/*.lib
+/*.src

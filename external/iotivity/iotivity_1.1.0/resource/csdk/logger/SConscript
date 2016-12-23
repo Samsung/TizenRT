@@ -1,0 +1,32 @@
+Import('env')
+import os
+
+env.AppendUnique(CPPPATH = [os.path.join(Dir('.').abspath, './include')])
+if env.get('TARGET_OS') in ['arduino']:
+	env.AppendUnique(CPPPATH = [os.path.join(env.get('BUILD_DIR'), 'resource/c_common/oic_string/include')])
+if env.get('TARGET_OS') == 'tizen':
+	env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
+else:
+	env.AppendUnique(LIBPATH = [os.path.join(env.get('BUILD_DIR'), 'resource/csdk/logger/')])
+
+env.PrependUnique(LIBS = ['logger'])
+
+local_env = env.Clone()
+
+######################################################################
+# Source files and Targets
+######################################################################
+
+#TODO work-around: at the moment if an Arduino build is done the logger.c file
+# ends up using C++ such as for the arduino Time Library, Serial, etc.
+# Therefore we copy it to a .cpp name so it is compiled correctly.
+
+if env.get('TARGET_OS') in ['arduino']:
+	Command("./src/logger.cpp", "./src/logger.c", Copy("$TARGET", "$SOURCE"))
+	logger_src = ['./src/logger.cpp']
+else:
+	logger_src = ['./src/logger.c']
+
+loggerlib = local_env.StaticLibrary('logger', logger_src)
+local_env.InstallTarget(loggerlib, 'logger')
+

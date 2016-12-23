@@ -1,0 +1,143 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if ARCH_ARM
+comment "ARM Options"
+
+choice
+	prompt "ARM chip selection"
+	default ARCH_CHIP_S5J
+
+config ARCH_CHIP_S5J
+	bool "Samsung S5J"
+	select ARCH_CORTEXR4
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_FPU
+	select ARCH_HAVE_TICKLESS
+	select ARM_HAVE_MPU_UNIFIED
+	select ARMV7R_MEMINIT
+	---help---
+		Samsung IoT SoC architectures (ARM Cortex R)
+endchoice
+
+config ARCH_CORTEXM3
+	bool
+	default n
+	select ARCH_HAVE_IRQPRIO
+	select ARCH_HAVE_RAMVECTORS
+	select ARCH_HAVE_HIPRI_INTERRUPT
+
+config ARCH_CORTEXM4
+	bool
+	default n
+	select ARCH_HAVE_IRQPRIO
+	select ARCH_HAVE_RAMVECTORS
+	select ARCH_HAVE_HIPRI_INTERRUPT
+
+config ARCH_CORTEXR4
+	bool
+	default n
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_COHERENT_DCACHE if ELF || MODULE
+
+config ARCH_FAMILY
+	string
+	default "armv7-m"	if ARCH_CORTEXM3 || ARCH_CORTEXM4
+	default "armv7-r"	if ARCH_CORTEXR4
+
+config ARCH_CHIP
+	string
+	default "s5j"       if ARCH_CHIP_S5J
+
+config ARMV7M_USEBASEPRI
+	bool "Use BASEPRI Register"
+	default n
+	depends on ARCH_CORTEXM3 || ARCH_CORTEXM4
+	---help---
+		Use the BASEPRI register to enable and disable interrupts. By
+		default, the PRIMASK register is used for this purpose. This
+		usually results in hardfaults when supervisor calls are made.
+		Though, these hardfaults are properly handled by the RTOS, the
+		hardfaults can confuse some debuggers. With the BASEPRI
+		register, these hardfaults, will be avoided.
+
+config ARCH_HAVE_CMNVECTOR
+	bool
+
+config ARMV7M_CMNVECTOR
+	bool "Use common ARMv7-M vectors"
+	default n
+	depends on ARCH_HAVE_CMNVECTOR
+	---help---
+		Some architectures use their own, built-in vector logic.  Some use only
+		the common vector logic.  Some can use either their own built-in vector
+		logic or the common vector logic.  This applies only to ARMv7-M
+		architectures.
+
+config ARCH_HAVE_FPU
+	bool
+	default n
+
+config ARCH_FPU
+	bool "FPU support"
+	default y
+	depends on ARCH_HAVE_FPU
+	---help---
+		Build in support for the ARM Cortex-M4 Floating Point Unit (FPU).
+		Check your chip specifications first; not all Cortex-M4 chips support the FPU.
+
+config ARMV7M_MPU
+	bool "MPU support"
+	default n
+	depends on ARCH_HAVE_MPU
+	select ARCH_USE_MPU
+	---help---
+		Build in support for the ARM Cortex-M3/4 Memory Protection Unit (MPU).
+		Check your chip specifications first; not all Cortex-M3/4 chips support the MPU.
+
+config ARMV7M_MPU_NREGIONS
+	int "Number of MPU regions"
+	default 8
+	depends on ARMV7M_MPU
+	---help---
+		This is the number of protection regions supported by the MPU.
+
+config ARCH_HAVE_LOWVECTORS
+	bool
+
+config ARCH_LOWVECTORS
+	bool "Vectors in low memory"
+	default n
+	depends on ARCH_HAVE_LOWVECTORS
+	---help---
+		Support ARM vectors in low memory.
+
+config ARCH_ROMPGTABLE
+	bool "ROM page table"
+	default n
+	depends on ARCH_USE_MMU
+	---help---
+		Support a fixed memory mapping use a (read-only) page table in ROM/FLASH.
+
+config DEBUG_HARDFAULT
+	bool "Verbose Hard-Fault Debug"
+	default n
+	depends on DEBUG && (ARCH_CORTEXM3 || ARCH_CORTEXM4)
+	---help---
+		Enables verbose debug output when a hard fault is occurs.  This verbose
+		output is sometimes helpful when debugging difficult hard fault problems,
+		but may be more than you typcially want to see.
+
+if ARCH_CORTEXM3 || ARCH_CORTEXM4
+source arch/arm/src/armv7-m/Kconfig
+endif
+if ARCH_CORTEXR4
+source arch/arm/src/armv7-r/Kconfig
+endif
+if ARCH_CHIP_S5J
+source arch/arm/src/s5j/Kconfig
+endif
+
+endif

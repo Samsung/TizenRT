@@ -1,0 +1,10 @@
+
+
+# secure samples source files
+
+NET_CSRCS += common.cpp ocamsservice.cpp occlientdirectpairing.cpp
+# Include secure build support
+
+DEPPATH += --dep-path inux/secure
+VPATH += :linux/secure
+

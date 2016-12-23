@@ -1,0 +1,16 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menu "LwIP DHCP options"
+
+config NET_LWIP_DHCPC
+	bool "DHCP client"
+	default y
+
+config NET_LWIP_DHCPS
+	bool "DHCP server"
+	default y
+	
+endmenu

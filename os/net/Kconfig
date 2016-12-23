@@ -1,0 +1,167 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config ARCH_HAVE_NET
+	bool
+	default n
+
+config ARCH_HAVE_PHY
+	bool
+	default n
+
+config NET
+	bool "System Networking support"
+	default n
+	select ARCH_HAVE_NET
+	---help---
+		Enable or disable all system network features
+
+if NET
+
+choice
+	prompt "Networking stack"
+	default NET_LWIP
+
+config	NET_LWIP
+	bool "LwIP"
+
+endchoice
+
+if NET_LWIP
+source net/lwip/Kconfig
+endif #NET_LWIP
+
+config NET_SECURITY_TLS
+	bool "TLS Support"
+	default n
+
+if NET_SECURITY_TLS
+source net/tls/Kconfig
+endif #NET_SECURITY_TLS
+
+config NET_NOINTS
+	bool "Not interrupt driven"
+	default n
+	---help---
+		NET_NOINT indicates that uIP is not called from the interrupt level.
+		If NET_NOINTS is defined, critical sections will be managed with semaphores;
+		Otherwise, it assumed that uIP will be called from interrupt level handling
+		and critical sections will be managed by enabling and disabling interrupts.
+
+menu "Driver buffer configuration"
+
+config NET_MULTIBUFFER
+	bool "Use multiple device-side I/O buffers"
+	default n
+	---help---
+		Traditionally, uIP has used a single buffer for all incoming and
+		outgoing traffic.  If this configuration is selected, then the
+		driver can manage multiple I/O buffers and can, for example,
+		be filling one input buffer while sending another output buffer.
+		Or, as another example, the driver may support queuing of concurrent
+		input/ouput and output transfers for better performance.
+
+config NET_ETH_MTU
+	int "Ethernet packet buffer size (MTU)"
+	default 1294 if NET_IPv6
+	default 590 if !NET_IPv6
+	depends on NET_ETHERNET
+	range 590 1518
+	---help---
+		Packet buffer size.  This size includes the TCP/UDP payload plus the
+		size of TCP/UDP header, the IP header, and the Ethernet header.
+		This value is normally referred to as the MTU (Maximum Transmission
+		Unit); the payload is the MSS (Maximum Segment Size).
+
+		IPv4 hosts are required to be able to handle an MSS of at least
+		536 octets, resulting in a minimum buffer size of 536+20+20+14 =
+		590.
+
+		IPv6 hosts are required to be able to handle an MSS of 1220 octets,
+		resulting in a minimum buffer size of of 1220+20+40+14 = 1294
+
+config NET_ETH_TCP_RECVWNDO
+	int "Ethernet TCP receive window size"
+	default 1220 if NET_IPv6
+	default 536 if !NET_IPv6
+	depends on NET_ETHERNET && NET_TCP
+	---help---
+		The size of the advertised receiver's window.   Should be set low
+		(i.e., to the size of the MSS) if the application is slow to process
+		incoming data, or high (32768 bytes) if the application processes
+		data quickly.
+
+config NET_SLIP_MTU
+	int # "SLIP packet buffer size (MTU)"
+	default 296
+	depends on NET_SLIP
+	range 296 1518
+	---help---
+		Packet buffer size.  This size includes the TCP/UDP payload plus the
+		size of TCP/UDP header and the IP header.  This value is normally
+		referred to as the MTU (Maximum Transmission Unit); the payload
+		payload is the MSS (Maximum Segment Size).  SLIP is required to
+		support at lest 256+20+20 = 296.  Values other than 296 are not
+		recommended.
+
+config NET_SLIP_TCP_RECVWNDO
+	int "SLIP TCP receive window size"
+	default 256
+	depends on NET_SLIP && NET_TCP
+	---help---
+		The size of the advertised receiver's window.   Should be set low
+		(i.e., to the size of the MSS) if the application is slow to process
+		incoming data, or high (32768 bytes) if the application processes
+		data quickly.
+
+config NET_GUARDSIZE
+	int "Driver I/O guard size"
+	default 2
+	---help---
+		Network drivers often receive packets with garbage at the end and
+		are longer than the size of packet in the TCP header.  The following
+		"fudge" factor increases the size of the I/O buffering by a small
+		amount to allocate slightly oversize packets.  After receipt, the
+		packet size will be chopped down to the size indicated in the TCP
+		header.
+
+endmenu # Driver buffer configuration
+
+menu "Data link support"
+
+config NET_MULTILINK
+	bool
+	default n
+
+config NET_ETHERNET
+	bool "Ethernet support"
+	default y if !NET_SLIP
+	default n if NET_SLIP
+	select NETDEV_MULTINIC if NET_SLIP
+	select NET_MULTILINK if NET_SLIP
+	---help---
+		If NET_SLIP is not selected, then Ethernet will be used (there is
+		no need to define anything special in the configuration file to use
+		Ethernet -- it is the default).
+
+endmenu # Data link support
+
+menu "Internet Protocol Selection"
+
+config NET_IPv4
+	bool "IPv4"
+	depends on NET_LWIP
+	default y
+	---help---
+		Build in support for IPv4.
+
+endmenu # Internet Protocol Selection
+
+source net/netdev/Kconfig
+source net/socket/Kconfig
+source net/utils/Kconfig
+source net/route/Kconfig
+
+endif # NET

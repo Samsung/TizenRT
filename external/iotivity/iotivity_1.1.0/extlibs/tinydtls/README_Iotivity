@@ -1,0 +1,26 @@
+SUPPORTED CIPHER-SUITES
+  TLS_PSK_WITH_AES_128_CCM_8(0xC0A8)
+  TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8(0xC0AE)
+  TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256(0xC037)
+  TLS_ECDH_anon_WITH_AES_128_CBC_SHA256(0xC018)
+
+TEST APPLICATIONS
+These applications can be build from Iotivity's root directory using below commands:
+scons extlibs/tinydtls/dtls-client SECURED=1 RELEASE=0
+scons extlibs/tinydtls/dtls-server SECURED=1 RELEASE=0
+
+
+INTER-OPERABILITY TESTING
+tinyDTLS's cipher-suite implementations can be verified for compatibility against other
+SSL libraries.
+Use below commands to perform compatibility testing against mBed SSL library.
+./ssl_server2 debug_level=5 dtls=1 psk=73656372657450534b psk_identity=Client_identity \
+    force_version=dtls1_2 force_ciphersuite=TLS-ECDHE-PSK-WITH-AES-128-CBC-SHA256
+./dtls-client -v 6 -c 4 localhost 4433
+
+./ssl_client2 debug_level=5 dtls=1 psk=73656372657450534b psk_identity=Client_identity \
+    force_version=dtls1_2 force_ciphersuite=TLS-ECDHE-PSK-WITH-AES-128-CBC-SHA256
+./dtls-server -v 6 localhost -p 4433
+
+Above commands can also be tested with TLS-PSK-WITH-AES-128-CCM-8 cipher suite.
+

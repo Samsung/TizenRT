@@ -1,0 +1,3 @@
+config ENTRY_WEBSOCKET
+	bool "Websocket example"
+	depends on EXAMPLES_WEBSOCKET

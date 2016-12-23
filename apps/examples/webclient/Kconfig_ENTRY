@@ -1,0 +1,3 @@
+config ENTRY_WEBCLIENT
+	bool "TinyAra Webclient example"
+	depends on EXAMPLES_WEBCLIENT

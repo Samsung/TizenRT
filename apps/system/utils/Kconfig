@@ -1,0 +1,132 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+config KERNEL_CMDS
+	bool "Kernel shell commands"
+	default y
+	depends on TASH
+	---help---
+		register shell commands for kernel
+
+config FS_CMDS
+	bool "FS shell commands"
+	default y
+	depends on TASH
+	---help---
+		Disable File System command in TASH.
+		Command including ls, cd, cat, mount, and so on.
+
+if FS_CMDS
+config FSCMD_FSCMD_BUFFER_LEN
+       int "Buffer length of FSCMD"
+       default 32
+       ---help---
+             Buffer length of FS command's I/O operation
+             Using this buffer in cat, and so on.
+endif
+
+config NET_CMDS
+	bool "Network shell commands"
+	default y
+	depends on TASH && NETUTILS_DHCPC && NETUTILS_NETLIB
+	---help---
+		Disable Network command in TASH.
+		Command including ifconfig, ifdown, ifup, and so on.
+
+config ENABLE_DATE
+	bool "date"
+	default y
+	---help---
+		Display or set time
+
+config ENABLE_DMESG
+	bool "dmesg"
+	default y
+	depends on SYSLOG && RAMLOG_SYSLOG
+	---help---
+		Print the contents of log message buffer
+
+if !DISABLE_ENVIRON
+config ENABLE_ENV_GET
+	bool "env get"
+	default y
+	---help---
+		print the current contents of env
+
+config ENABLE_ENV_SET
+	bool "env set"
+	default y
+	---help---
+		set a env variable
+
+config ENABLE_ENV_UNSET
+	bool "env unset"
+	default y
+	---help---
+		unset a specific env variable
+endif #!DISABLE_ENVIRON
+
+config ENABLE_FREE
+	bool "free"
+	default y
+	---help---
+		Show information about memory status
+
+config ENABLE_HEAPINFO
+	bool "heapinfo"
+	default y
+	depends on !BUILD_PROTECTED
+	select DEBUG_MM_HEAPINFO
+	---help---
+		Show information about memory status per thread
+
+if !DISABLE_SIGNALS
+config ENABLE_KILL
+	bool "kill"
+	default y
+	depends on !BUILD_PROTECTED
+	---help---
+		Send a signal to processes or process groups
+
+config ENABLE_KILLALL
+	bool "killall"
+	default y
+	depends on !BUILD_PROTECTED
+	---help---
+		Send a signal to all processes running any of the specified commands
+endif #!DISABLE_SIGNALS
+
+config ENABLE_PS
+	bool "ps"
+	default y
+	depends on !BUILD_PROTECTED
+	---help---
+		List of tasks/threads
+
+config ENABLE_STACKMONITOR
+	bool "Stack monitor"
+	default n
+	select STACK_COLORATION
+	---help---
+		The stack monitor is a daemon that will periodically assess
+		stack usage by all tasks and threads in the system.  This
+		feature depends on internal OS features and, hence, is
+		not available if the kernel build is selected.
+
+if ENABLE_STACKMONITOR
+config STACKMONITOR_PRIORITY
+	int "Stack monitor daemon priority"
+	default 100
+	---help---
+		The priority to use the the stack monitor daemon.  Default: 100
+
+config STACKMONITOR_INTERVAL
+	int "Stack monitor dump frequency"
+	default 5
+	---help---
+		The rate in seconds that the stack monitor will wait before dumping
+		the next set stack usage information.  Default:  2 seconds.
+
+endif #ENABLE_STACKMONITOR
+

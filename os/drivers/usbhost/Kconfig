@@ -1,0 +1,533 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config USBHOST_NPREALLOC
+	int "Number of pre-allocated class instances"
+	default 4
+	---help---
+		Number of pre-allocated class instances
+
+config USBHOST_BULK_DISABLE
+	bool "Disable bulk endpoint support"
+	default n
+	---help---
+		On some architectures, selecting this setting will reduce driver size
+		by disabling bulk endpoint support
+
+config USBHOST_INT_DISABLE
+	bool "Disable interrupt endpoint support"
+	default n
+	---help---
+		On some architectures, selecting this setting will reduce driver size
+		by disabling interrupt endpoint support
+
+config USBHOST_ISOC_DISABLE
+	bool "Disable isochronous endpoint support"
+	default n
+	---help---
+		On some architectures, selecting this setting will reduce driver size
+		by disabling isochronous endpoint support
+
+config USBHOST_HAVE_ASYNCH
+	bool
+	default n
+
+config USBHOST_ASYNCH
+	bool "Asynchronous transfer support"
+	default n
+	depends on USBHOST_HAVE_ASYNCH
+	---help---
+		Select if the host controller driver needs to support asynchronous
+		I/O transfer.  This may be required, for example, to receive
+		infrequent, asynchronous input from an interrupt pipe.
+
+config USBHOST_HUB
+	bool "USB Hub Support"
+	default n
+	depends on USBHOST_HAVE_ASYNCH && !USBHOST_INT_DISABLE
+	select USBHOST_ASYNCH
+	---help---
+		Select this option to build in support for USB hubs.
+
+if USBHOST_HUB
+
+config USBHOST_HUB_POLLMSEC
+	int "USB Hub Polling Interval (MSec)"
+	default 400
+	---help---
+		On higher end host controllers (OHCI and EHCI), the asynchronous,
+		interrupt IN transfers will pend until data is available from the
+		hub.  On lower end host controllers (like STM32 and EFM32), the
+		transfer will fail immediately when the device NAKs the first
+		attempted interrupt IN transfer (with result == EGAIN) and the hub
+		class driver will fall back to polling the hub.
+
+		For the case of the higher end controllers, this polling interval
+		is not critical since it would really only be used in the event of
+		failures to communicate with the hub.
+
+		But for the lower end host controllers, the asynchronous transfers
+		are ineffective and this polling interval becomes a critical
+		parameter that must be tuned to tradeoff CPU usage with
+		responsiveness to hub-related events (It would, I suppose, be more
+		efficient to use synchronous transfers with these lower end host
+		controllers).
+
+endif # USBHOST_HUB
+
+config USBHOST_MSC
+	bool "Mass Storage Class Support"
+	default n
+	depends on !BULK_DISABLE
+	---help---
+		Enable support for the keyboard class driver.  This also depends on
+		NFILE_DESCRIPTORS > 0 && SCHED_WORKQUEUE=y
+
+config USBHOST_CDCACM
+	bool "CDC/ACM support"
+	default n
+	depends on USBHOST_HAVE_ASYNCH && !USBHOST_BULK_DISABLE && !USBHOST_INT_DISABLE
+	select USBHOST_ASYNCH
+	select SERIAL_REMOVABLE
+	---help---
+		Select this option to build in host support for CDC/ACM serial
+		devices.
+
+if USBHOST_CDCACM
+
+choice
+	prompt "CDC/ACM Protocol"
+	default USBHOST_CDCACM_COMPLIANT if SERIAL_OFLOWCONTROL && !USBHOST_INT_DISABLE
+	default USBHOST_CDCACM_REDUCED  if !SERIAL_OFLOWCONTROL || USBHOST_INT_DISABLE
+
+config USBHOST_CDCACM_COMPLIANT
+	bool "CDC/ACM compliant"
+	depends on SERIAL_OFLOWCONTROL && !USBHOST_INT_DISABLE
+	---help---
+		The device needs to implement the Abstract Control Model (ACM)
+		subclass defined in the USB Communication Device Class (CDC)
+		specification. This protocol requires two USB interfaces, a data
+		interface which consists of two endpoints (bulk in + bulk out) and a
+		control interface which consists of one interrupt in endpoint.
+		Furthermore, on EP0 the device must implement the class-specific
+		requests defined by the CDC specification. Because this USB protocol
+		is compliant to the CDC/ACM standard on some other operating systems
+		(e.g. Linux, MacOS) the device can work with in-box drivers.
+
+config USBHOST_CDCACM_REDUCED
+	bool "CDC/ACM reduced"
+	---help---
+		This mode uses the CDC data interface (bulk in + bulk out endpoint)
+		only. No control interface (interrupt in endpoint) is required. The
+		device needs to implement the CDC class-specific requests, so that
+		is still possible to support baud rate settings and serial control/
+		status lines. This mode is useful if the number of available
+		endpoints is limited by hardware restrictions.
+
+		If the the CDC/ACM compliant protocol is selected, then the reduced
+		protocol is supported for devices that provide not interrupt IN
+		endpoint.  This option is then most useful for testing purposes or
+		if there are insufficient resources to support the compliant
+		protocol.   The interrupt IN control interface will not be used even
+		if it is available in this case.
+
+config USBHOST_CDCACM_BULKONLY
+	bool "Bulk only protocol"
+	---help---
+		The device implements only the data interface (bulk in + bulk out
+		endpoint). The device does not provide an additional control
+		interface and does not need to implement any class-specific requests
+		on EP0. Because bulk transfer mode provides flow control, there is
+		no need to support serial control/status lines. The advantage of
+		the bulk-only protocol is that the implementation efforts on the
+		device side are reduced to a minimum.
+
+		By default, both the CDC/ACM compliant protocol and the reduced
+		protocol are supported.  This option is then most useful for testing
+		purposes.  The interrupt IN control interface will not be used even
+		if it is available; nor will EP0 class requestes.
+
+endchoice # CDC/ACM Protocol
+
+config USBHOST_CDCACM_NTDELAY
+	int "CDC/ACM notification polling interval (MSec)"
+	default 400
+	depends on USBHOST_CDCACM_COMPLIANT
+	---help---
+		On higher end host controllers (OHCI and EHCI), the asynchronous,
+		interrupt IN transfers will pend until data is available from the
+		hub.  On lower end host controllers (like STM32 and EFM32), the
+		transfer will fail immediately when the device NAKs the first
+		attempted interrupt IN transfer (with result == EGAIN) and the hub
+		class driver will fall back to polling the hub.
+
+		For the case of the higher end controllers, this polling interval
+		is not critical since it would really only be used in the event of
+		failures to communicate with the hub.
+
+		But for the lower end host controllers, the asynchronous transfers
+		are ineffective and this polling interval becomes a critical
+		parameter that must be tuned to tradeoff CPU usage with
+		responsiveness to hub-related events (It would, I suppose, be more
+		efficient to use synchronous transfers with these lower end host
+		controllers).
+
+config USBHOST_CDCACM_RXDELAY
+	int "RX poll delay (MSec)"
+	default 200
+	---help---
+		When the CDC/ACM device is inactive, the host must poll it at this
+		rate in order to discover if it has serial data to send to us.
+
+config USBHOST_CDCACM_TXDELAY
+	int "TX poll delay (MSec)"
+	default 200
+	---help---
+		When the appellation is inactive, the host must poll it at this
+		rate in order to discover if it has serial data to send to to the
+		device.
+
+config USBHOST_CDCACM_NPREALLOC
+	int "Preallocated state"
+	default 0
+	---help---
+		If this setting is zero, the CDC/ACM class driver will allocate
+		memory as needed for CDC/ACM device state.  If this value is non-
+		zero, then it provides a number of preallocated CDC/ACM state
+		structures.  This increases the static size of the code image, but
+		eliminates all, direct, run-time allocations by the driver.
+
+config USBHOST_CDCACM_BAUD
+	int "Initialize CDC/ACM BAUD"
+	default 115200
+
+config USBHOST_CDCACM_PARITY
+	int "Initialize CDC/ACM parity"
+	default 0
+	range 0 2
+	---help---
+		Initialize CDC/ACM parity.  0=None, 1=Odd, 2=Even.  Default: None
+
+config USBHOST_CDCACM_BITS
+	int "Initialize CDC/ACM number of bits"
+	default 8
+	---help---
+		Initialize CDC/ACM number of bits.  Default: 8
+
+config USBHOST_CDCACM_2STOP
+	int "Initialize CDC/ACM two stop bits"
+	default 0
+	---help---
+		0=1 stop bit, 1=Two stop bits.  Default: 1 stop bit
+
+config USBHOST_CDCACM_RXBUFSIZE
+	int "Serial RX buffer size"
+	default 128
+	---help---
+		This is the size of the serial buffer that will be used to hold
+		received data.
+
+config USBHOST_CDCACM_TXBUFSIZE
+	int "Serial TX buffer size"
+	default 128
+	---help---
+		This is the size of the serial buffer that will be used to hold
+		data waiting for tranmission.
+
+endif # USBHOST_CDCACM
+
+config USBHOST_HIDKBD
+	bool "HID Keyboard Class Support"
+	default n
+	depends on !INT_DISABLE
+	---help---
+		Enable support for the keyboard class driver.  This also depends on
+		SCHED_WORKQUEUE && !DISABLE_SIGNALS
+
+if  USBHOST_HIDKBD
+
+config HIDKBD_POLLUSEC
+	int "Keyboard Poll Rate (MSEC)"
+	default 100000
+	---help---
+		Device poll rate in microseconds. Default: 100,000 microseconds.
+
+config HIDKBD_DEFPRIO
+	int "Polling Thread Priority"
+	default 50
+	---help---
+		Priority of the polling thread.  Default: 50.
+
+config HIDKBD_STACKSIZE
+	int "Polling thread stack size"
+	default 1024
+	---help---
+		Stack size for polling thread.  Default: 1024
+
+config HIDKBD_BUFSIZE
+	int "Scancode Buffer Size"
+	default 64
+	---help---
+		Scancode buffer size.  Default: 64.
+
+config HIDKBD_NPOLLWAITERS
+	int "Max Number of Waiters for Poll Event"
+	default 2
+	depends on !DISABLE_POLL
+	---help---
+		If the poll() method is enabled, this defines the maximum number
+		of threads that can be waiting for keyboard events.  Default: 2.
+
+config HIDKBD_RAWSCANCODES
+	bool "Use Raw Scan Codes"
+	default n
+	---help---
+		If set to y no conversions will be made on the raw keyboard scan
+		codes.  This option is useful during testing. Default: ASCII conversion.
+
+config HIDKBD_ENCODED
+	bool "Encode Special Keys"
+	default n
+	depends on !HIDKBD_RAWSCANCODES && LIB_KBDCODEC
+	---help---
+		Encode special key press events in the user buffer.  In this case,
+		the user end must decode the encoded special key values using the
+		interfaces.  These special keys include such things as up/down arrows, home and end
+		keys, etc.  If this not defined, only 7-bit print-able and control
+		ASCII characters will be provided to the user.
+
+config HIDKBD_ALLSCANCODES
+	bool "Use All Scancodes"
+	default n
+	---help---
+		If set to y all 231 possible scancodes will be converted to
+		something.  Default:  104 key US keyboard.
+
+config HIDKBD_NODEBOUNCE
+	bool "Disable Debounce"
+	default n
+	---help---
+		If set to y normal debouncing is disabled.  Default:
+		Debounce enabled (No repeat keys).
+
+endif
+
+config USBHOST_HIDMOUSE
+	bool "HID Mouse Class Support"
+	default n
+	depends on !INT_DISABLE
+	select INPUT
+	select MOUSE
+	---help---
+		Enable support for the mouse class driver.  This also depends on
+		SCHED_WORKQUEUE && !DISABLE_SIGNALS
+
+		NOTE:  This driver checks out on a Labtec and an AOpen mouse, but
+		does not work correctly on a Microsoft mouse.  A little more work
+		would be needed to support the Microsoft mouse.
+
+if USBHOST_HIDMOUSE
+
+config HIDMOUSE_TSCIF
+	bool "Touchscreen Emulation"
+	default n
+	---help---
+		Normally, the HID mouse driver uses the mouse report structure
+		defined in include/nuttx/input/mouse.h.  The mouse driver can,
+		however, be configured to use the touchscreen interface defined in
+		include/nuttx/input/touchcreen.h.  If the touch screen interface is
+		used, only support for the left button will be provided.
+
+		NOTE:  Unlike touchscreen drivers, mouse drivers will report
+		position data even when the "pen is up", i.e., when no buttons are
+		pressed.  This behavior is necessary to provide the positional data
+		would would be needed to drive a cursor.  Without a cursor of some
+		kind, the mouse is not very useful.  So this option may not be useful.
+
+config HIDMOUSE_DEFPRIO
+	int "Polling Thread Priority"
+	default 50
+	---help---
+		Priority of the polling thread.  Default: 50.
+
+config HIDMOUSE_STACKSIZE
+	int "Polling thread stack size"
+	default 1024
+	---help---
+		Stack size for polling thread.  Default: 1024
+
+config HIDMOUSE_BUFSIZE
+	int "Scancode Buffer Size"
+	default 64
+	---help---
+		Scancode buffer size.  Default: 64.
+
+config HIDMOUSE_NPOLLWAITERS
+	int "Max Number of Waiters for Poll Event"
+	default 2
+	depends on !DISABLE_POLL
+	---help---
+		If the poll() method is enabled, this defines the maximum number
+		of threads that can be waiting for mouse events.  Default: 2.
+
+config HIDMOUSE_SWAPXY
+	bool "Swap X/Y"
+	default n
+	---help---
+		Reverse the meaning of X and Y to handle different display orientations.
+		NOTE:  All of the following settings apply AFTER X and Y have been swapped.
+
+config HIDMOUSE_XMAX
+	int "Maximum X position"
+	default 320
+	range 0 32767
+	---help---
+		This is the maximum value of the X position that will be reported.
+		Default: 320
+
+config HIDMOUSE_YMAX
+	int "Maximum Y position"
+	default 240
+	range 0 32767
+	---help---
+		This is the maximum value of the Y position that will be reported.
+		Default: 240
+
+config HIDMOUSE_XSCALE
+	hex "X scaling factor"
+	default 0x00010000
+	---help---
+		Mouse positions are accumulated from X/Y displacements reported by
+		the mouse device. This setting provides a scaling value for the X
+		displacement.  This is a fixed precision floating point number with
+		16 bits of fraction.  So a value of 0x00010000 is 1.0, 0x00018000
+		is 1.5, 0x00024000 is 2.25, etc.
+
+		NOTE that a negative value of HIDMOUSE_XSCALE such as 0xffff0000
+		(-1.0) can be used to change the direction of movement.
+
+		Default: 0x00010000 (1.0)
+
+config HIDMOUSE_YSCALE
+	hex "Y scaling factor"
+	default 0x00010000
+	---help---
+		Mouse positions are accumulated from X/Y displacements reported by
+		the mouse device. This setting provides a scaling value for the Y
+		displacement.  This is a fixed precision floating point number with
+		16 bits of fraction.  So a value of 0x00010000 is 1.0, 0x00018000
+		is 1.5, 0x00024000 is 2.25, etc.
+
+		NOTE that a negative value of HIDMOUSE_YSCALE such as 0xffff0000
+		(-1.0) can be used to change the direction of movement.
+
+		Default: 0x00010000 (1.0)
+
+config HIDMOUSE_XTHRESH
+	int "X threshold"
+	default 12
+	---help---
+		New mouse positions will only be reported when the X or Y data changes by these
+		thresholds. This tradeoff reduces data rate for some loss in dragging accuracy.
+		Both X and Y axis thresholding can be disabled by setting this value to zero.
+
+		Default: 12
+
+config HIDMOUSE_THRESHY
+	int "Y threshold"
+	default 12
+	---help---
+		New touch positions will only be reported when the X or Y data changes by these
+		thresholds. This tradeoff reduces data rate for some loss in dragging accuracy.
+		Both X and Y axis thresholding can be disabled by setting this value to zero.
+
+		Default: 12
+
+if MOUSE_WHEEL
+
+config HIDMOUSE_WMAX
+	int "Maximum wheel position"
+	default 320
+	range 0 32767
+	---help---
+		This is the maximum value of the wheel position that will be
+		reported. Default: 320
+
+config HIDMOUSE_WSCALE
+	hex "Wheel scaling factor"
+	default 0x00010000
+	---help---
+		Mouse wheel position are accumulated from wheel displacements
+		reported by the mouse device. This setting provides a scaling
+		value for the wheel displacement.  This is a fixed precision
+		floating point number with 16 bits of fraction.  So a value of
+		0x00010000 is 1.0, 0x00018000 is 1.5, 0x00024000 is 2.25, etc.
+
+		NOTE that a negative value of HIDMOUSE_XSCALE such as 0xffff0000
+		(-1.0) can be used to change the direction of wheel output.
+
+		Default: 0x00010000 (1.0)
+
+config HIDMOUSE_WTHRESH
+	int "Wheel threshold"
+	default 1
+	---help---
+		New wheel positions will only be reported when the wheel position
+		changes by these thresholds. This tradeoff reduces data rate for some
+		loss in wheel responsiveness.
+
+		Default: 1
+
+endif # MOUSE_WHEEL
+endif # USBHOST_HIDMOUSE
+
+config USBHOST_RTL8187
+	bool "RTL8187-based wireless LAN"
+	default n
+	depends on NET
+
+if USBHOST_RTL8187
+
+config RTL8187B
+	bool "RTL8187B chip"
+	default y
+
+config RTL8187_VID
+	hex "RTL8187 VID"
+	default 0x0bda
+
+config RTL8187_PID
+	hex "RTL8187 PID"
+	default 0x8189
+
+endif # USBHOST_RTL8187
+
+config USBHOST_TRACE
+	bool "Enable USB HCD tracing for debug"
+	default n
+	---help---
+		Enables USB tracing for debug.  Only supported for the HCD and,
+		further, no supported by all HCD implementations.
+
+if USBHOST_TRACE
+
+config USBHOST_TRACE_NRECORDS
+	int "Number of trace entries to remember"
+	default 128
+	---help---
+		Number of trace entries to remember.
+
+config USBHOST_TRACE_VERBOSE
+	bool "Enable verbose debug trace"
+	default n
+	---help---
+		Enable verbose trace output if supported by the platform.  The
+		intent is that if USBHOST_TRACE_VERBOSE is not defined, then only
+		errors, warnings, and critical messages would be logged.  If
+		USBHOST_TRACE_VERBOSE is defined, then general informative trace
+		information would also be included.
+
+endif
+

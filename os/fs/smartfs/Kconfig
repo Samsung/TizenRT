@@ -1,0 +1,108 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FS_SMARTFS
+	bool "SMART file system"
+	default y
+	depends on !DISABLE_MOUNTPOINT
+	select FS_READABLE
+	select FS_WRITABLE
+	---help---
+		Enable TinyAra SMART Flash file system (SMARTFS) support.
+
+if FS_SMARTFS
+
+menu "SMARTFS options"
+
+config SMARTFS_ERASEDSTATE
+	hex "FLASH erased state"
+	default 0xff
+	---help---
+		The erased state of FLASH.
+		This must have one of the values of 0xff or 0x00.
+		Default: 0xff.
+
+config SMARTFS_MAXNAMLEN
+	int "Maximum file name length"
+	default 32
+	---help---	
+		The maximum size of a SMARTFS file name at a given
+		directory level.  Overall path name is not restricted
+		by this value, only individual segments in a path,
+		such as (assuming /usr is the mount point):
+
+			/usr/games/chess/player_stats/game1.xml
+
+		Default: 16.
+
+config SMARTFS_MULTI_ROOT_DIRS
+	bool "Support multiple Root Directories / Mount Points"
+	default n
+	---help---
+		Enables support for multiple root directory entries
+		on the SMART FLASH.  Multiple root directories means
+		the device can have multiple mount point in the VFS,
+		each with it's own unique directory structure under it.
+
+		When this option is enabled, instead of reporting the
+		SMART block devices as "/dev/mtdsmart0", they will be
+		reported as "/dev/mtdsmart0d1", "/dev/mtdsmart0d2", etc.
+		The number of root entries actually created is set
+		during the "mksmartfs" command when the device is
+		initialized.
+
+		Default: y.
+
+config SMARTFS_ALIGNED_ACCESS
+	bool "Ensure 16 and 32 bit accesses are alined"
+	default y
+	---help---
+		Performs little endian byte accesses to 16 and 32 values
+		within the directory list to ensure processors that can't
+		handle un-aligned accesses don't bomb out.  Default should
+		probably by 'Y', but set to 'N' in case any existing Big
+		Endian instances of SmartFS exist that already have
+		directories with data stored in big endian mode.
+
+config SMARTFS_BAD_SECTOR
+bool "Bad Sector Management"
+	default n
+	---help---
+		Enables Bad Sector Management for SMART FS to ensure data
+                consistency of the persistant storage (Flash).
+
+config SMARTFS_DYNAMIC_HEADER
+bool "Dynamic Header"
+	default n
+	---help---
+		Using Modified Used Byte Method to Reduce Sector Relocation 
+
+config SMARTFS_JOURNALING
+        bool "Enable filesystem journaling for smartfs"
+        default n
+        ---help---
+                Enables logging of write operations on filesystem, so that in
+                case of power failure the filesystem can be brought to a stable
+                state with minimal data loss.
+                Enabling journaling will increase the delay in filesystem
+                operations, because before doing any fs operation, journaling
+                will first log it in journal area. The journal area will also
+                take up space in the flash, leaving lesser space for filesystem.
+                The space reserved for journal area is proportional to max number
+                of file descriptors allowed and sector size defined. Thus, to
+                minimize the area reserved for journaling, it is advised to keep
+                sector size small.
+
+config SMARTFS_SECTOR_RECOVERY
+	bool "Enable recovery of lost sectors in Filesystem"
+	default n
+	---help---
+		Enables recovery of lost sectors after power failure. Lost
+		sectors are the sectors which are allocated but not reachable
+		from root directory.
+
+endmenu
+
+endif

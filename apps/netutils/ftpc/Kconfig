@@ -1,0 +1,22 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NETUTILS_FTPC
+	bool "FTP client"
+	default n
+	---help---
+		Enable support for the FTP client.
+
+if NETUTILS_FTPC
+
+config DEBUG_FTPC
+	bool "Debug FTP client"
+	default n
+	depends on DEBUG
+	---help---
+		Enable debug support for the FTP client.  This option simple forces
+		CONFIG_DEBUG_NET to be on, but only for the files within this directory.
+
+endif

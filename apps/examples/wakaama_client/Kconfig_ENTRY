@@ -1,0 +1,3 @@
+config ENTRY_WAKAAMA_CLIENT
+	bool "TinyAra wakaama_client example"
+	depends on EXAMPLES_WAKAAMA_CLIENT

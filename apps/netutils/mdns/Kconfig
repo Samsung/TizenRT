@@ -1,0 +1,21 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NETUTILS_MDNS
+	bool "Multicast DNS"
+	default n
+	---help---
+		Enable support for Multicast DNS
+
+if NETUTILS_MDNS
+
+config NETUTILS_MDNS_RESPONDER_SUPPORT
+        bool "mDNS Responder"
+        default n
+	---help---
+		Enable mDNS Responder
+
+endif # NETUTILS_MDNS
+

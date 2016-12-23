@@ -1,0 +1,24 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menu "Examples"
+source "$APPSDIR/examples/Kconfig"
+endmenu
+
+menu "Network Utilities"
+source "$APPSDIR/netutils/Kconfig"
+endmenu
+
+menu "Platform-specific Support"
+source "$APPSDIR/platform/Kconfig"
+endmenu
+
+menu "Enable Shell"
+source "$APPSDIR/shell/Kconfig"
+endmenu
+
+menu "System Libraries"
+source "$APPSDIR/system/Kconfig"
+endmenu

@@ -1,0 +1,3 @@
+config ENTRY_HELLOXX
+	bool "\"Hello, World!\" C++ example"
+	depends on EXAMPLES_HELLOXX

@@ -1,0 +1,3 @@
+config ENTRY_PROC_TEST
+	bool "\"Procfs\" example"
+	depends on EXAMPLES_PROC_TEST

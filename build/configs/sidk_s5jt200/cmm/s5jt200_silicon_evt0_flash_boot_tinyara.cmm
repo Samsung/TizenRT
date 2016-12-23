@@ -1,0 +1,94 @@
+;--------------------------------------------------------------------------
+;
+; Copyright 2016 Samsung Electronics All Rights Reserved.
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+; http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing,
+; software distributed under the License is distributed on an
+; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+; either express or implied. See the License for the specific
+; language governing permissions and limitations under the License.
+;
+;--------------------------------------------------------------------------
+;------------------------------
+;  Configuring JTAG interface
+;-----------------------------
+LOCAL &BASE_DIR
+&DIR=OS.PPD()			; get current dir
+&BASE_DIR="&DIR"
+&filename="&BASE_DIR\..\..\..\output\bin\tinyara_head.bin"
+SYStem.Option ResBreak OFF
+SYStem.Option WaitReset 100.ms 
+SYStem.Option EnReset OFF
+SYStem.Option IMASKASM ON
+SYStem.Option IMASKHLL ON
+System.JtagClock 500Khz
+
+print "s5jt200 evt0 jtag start.."
+
+System.CPU CortexR4
+
+Sys.Config.COREBASE 0x801E0000 ; R4
+
+System.Config AXIACCESSPORT 64.
+System.Config DEBUGACCESSPORT 1.
+System.Config MEMORYACCESSPORT 5.
+
+Sys.attach
+B.Select.Program Onchip
+
+if run()
+	break
+
+wait 0.2s
+;print "Disable Watchdog Reset"
+d.s SD:0x80030000 %LE %LONG 0x0
+
+;;QSPI INIT
+;do qspi_write_flash.cmm 0x04000000 0x100000;1MB
+ENTRY &flash_write_addr &write_size
+
+&flash_write_addr=0x04004000
+&flash_base=0x04000000
+&write_size=OS.FILE.SIZE(&filename)
+&target_addr=&flash_write_addr-&flash_base
+&end_addr=&target_addr+&write_size
+
+d.s SD:0x80040020 %LE %LONG 0x00222222 ;;GPCON
+d.s SD:0x80040028 %LE %LONG 0x00333333 ;;GPPUD
+wait 800ms
+
+d.s SD:0x80310004 %LE %LONG 0x8010001A ;;Disable WP
+print "Flash write Addressin Physical :0x" &target_addr
+print "Logically 0x" &target_addr+&flash_base
+while &target_addr<&end_addr
+(
+ d.s SD:0x80310010 %LE %LONG &target_addr ;;Erase Address(base 0x0 -- mapped 0x0400_0000)
+ d.s SD:0x8031005E %BYTE 0xFF ;;Sector Erase
+ &target_addr=&target_addr+0x1000
+ print "Erase Flash :0x" &target_addr
+ ;print "remain :0x" &write_size-&target_addr
+)
+wait 800ms
+
+;READ SERIAL FLASH ID
+&temp=DATA.LONG(SD:0x803100AC)
+print "flash value SD:0x803100AC:" &temp
+
+print "load images..."
+sYmbol.SourcePATH.Translate "\home\jh6186.park\" "W:\"
+d.load.b &filename 0x04004000
+r.s PC 0x04004020
+d.l
+
+d.s SD:0x80310004 %LE %LONG 0x0010001A ;;Enable WP
+d.load.elf "&BASE_DIR\..\..\..\output\bin\tinyara" /nocode
+
+enddo
+
+

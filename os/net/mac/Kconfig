@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menu "Link Layer Device Interface"
+
+config MAC_ETHERNETIF
+	bool "Enable Ethernet Interface between ethernet driver and LWIP network layer"
+	default y
+	---help---
+		Enable support for ethernet interface required for LWIP network layer"
+
+endmenu # Link Layer Device Interface

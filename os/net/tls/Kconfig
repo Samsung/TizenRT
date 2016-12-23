@@ -1,0 +1,60 @@
+if NET_SECURITY_TLS
+
+config TLS_WITH_SSS
+	bool "Enable HW Accelerator(SSS)"
+	depends on S5J_SSS
+	default n
+
+if TLS_WITH_SSS
+
+menu "HW Selection"
+
+config HW_RNG
+	bool "HW RNG"
+	default n
+	---help---
+
+config HW_AES
+	bool "HW AES enc/dec"
+	default n
+	---help---
+
+config HW_HASH
+	bool "HW Hash"
+	default n
+	---help---
+
+config HW_HMAC
+	bool "HW Hmac"
+	default n
+	---help---
+
+config HW_DHM_PARAM
+	bool "HW generates DH params"
+	default n
+	---help---
+
+config HW_RSA_SIGN
+	bool "HW rsa signature"
+	default n
+	---help---
+
+config HW_RSA_ENCDEC
+	bool "HW rsa enc/dec"
+	default n
+	---help---
+
+config HW_ECDSA_SIGN
+	bool "HW ecdsa signature"
+	default n
+	---help---
+
+config HW_ECDSA_ENCDEC
+	bool "HW ecdsa enc/dec"
+	default n
+	---help---
+
+endmenu
+
+endif
+endif

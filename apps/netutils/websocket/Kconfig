@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NETUTILS_WEBSOCKET
+	bool "Web socket"
+	default n
+	depends on NET_SECURITY_TLS
+	---help---
+		Enable support for the web socket.

@@ -1,0 +1,3 @@
+config ENTRY_MDNS_TEST
+	bool "\"Multicast DNS Test\" example"
+	depends on EXAMPLES_MDNS_TEST

@@ -1,0 +1,3 @@
+config ENTRY_DTLS_CLIENT
+	bool "DTLS client application"
+	depends on EXAMPLES_DTLS_CLIENT

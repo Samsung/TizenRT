@@ -1,0 +1,893 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+mainmenu "TinyAra Configuration"
+
+config APPSDIR
+	string
+	option env="APPSDIR"
+
+config CONFIGSDIR
+	string
+	option env="CONFIGSDIR"
+
+config EXTERNALDIR
+	string
+	option env="EXTERNALDIR"
+
+config LIBDIR
+	string
+	option env="LIBDIR"
+
+menu "Build Setup"
+
+config EXPERIMENTAL
+	bool "Prompt for development and/or incomplete code/drivers"
+
+config DEFAULT_SMALL
+	bool "Default to smallest size"
+	default n
+	---help---
+		When options are present, the default value for certain options will
+		be the one the results in the smallest size (at a loss of featurs).
+		The default is a fuller feature set at a larger size.
+
+		NOTE: This option does not prevent you from overriding the default
+		to select another alternative.  Nor does it affect the settings that
+		have already been selected in your configuration file.  This applies
+		only to new settings that require a default value.
+
+choice
+	prompt "Build Host Platform"
+	default HOST_LINUX
+
+config HOST_LINUX
+	bool "Linux"
+
+config HOST_OSX
+	bool "OSX"
+
+config HOST_WINDOWS
+	bool "Windows"
+
+config HOST_OTHER
+	bool "Other"
+
+endchoice
+
+choice
+	prompt "Windows Build Environment"
+	default WINDOWS_CYGWIN
+	depends on HOST_WINDOWS
+
+config WINDOWS_NATIVE
+	bool "Windows Native"
+	---help---
+		Build natively in a CMD.exe environment with Windows style paths (like C:\cgywin\home)
+
+config WINDOWS_CYGWIN
+	bool "Cygwin"
+	---help---
+		Build natively in a Cygwin environment with POSIX style paths (like /cygdrive/c/cgywin/home)
+
+config WINDOWS_MSYS
+	bool "MSYS"
+	---help---
+		Build natively in a Cygwin environment with POSIX style paths (like /cygdrive/c/cgywin/home)
+
+config WINDOWS_OTHER
+	bool "Windows POSIX-like environment"
+	---help---
+		Build natively in another POSIX-like environment.  Additional support may be necessary
+
+endchoice
+
+config WINDOWS_MKLINK
+	bool "Use mklink"
+	default n
+	depends on WINDOWS_NATIVE
+	---help---
+		Use the mklink command to set up symbolic links when TinyAra is
+		configured.  Otherwise, configuration directories will be copied to
+		establish the configuration.
+
+		If directories are copied, then some confusion can result ("Which
+		version of the file did I modify?").  In that case, it is recommended
+		that you re-build using 'make clean_context all'.  That will cause the
+		configured directories to be recopied on each build.
+
+		NOTE: This option also (1) that you have administrator privileges, (2)
+		that you are using Windows 2000 or better, and (3) that you are using
+		the NTFS file system.  Select 'n' is that is not the case.
+
+menu "Build Configuration"
+
+config APPS_DIR
+	string "Application directory"
+	default "../apps" if !WINDOWS_NATIVE
+	default "..\apps" if WINDOWS_NATIVE
+	---help---
+		Identifies the directory that builds the
+		application to link with TinyAra.  Default: ../apps This symbol must be assigned
+		to the path to the application build directory *relative* to
+		the TinyAra top build directory. If you had an application
+		directory and the TinyAra directory each in separate directory
+		trees like this:
+
+			build
+			|-tinyara
+			|  |
+			|  `- Makefile
+			`-application
+			|
+			`- Makefile
+
+		Then you would set APPS_DIR=../application.
+
+		The application direction must contain Makefile and this make
+		file must support the following targets:
+
+		1)libapps$(LIBEXT) (usually libapps.a). libapps.a is a static
+		library ( an archive) that contains all of application object
+		files.
+
+		2)clean. Do whatever is appropriate to clean the application
+		directories for a fresh build.
+
+		3)distclean. Clean everything -- auto-generated files, symbolic
+		links etc. -- so that the directory contents are the same as
+		the contents in your configuration management system.
+		This is only done when you change the TinyAra configuration.
+
+		4)depend. Make or update the application build dependencies.
+
+		When this application is invoked it will receive the setting TOPDIR like:
+
+		$(MAKE) -C $(CONFIG_APPS_DIR) TOPDIR="$(TOPDIR)" <target>
+
+		TOPDIR is the full path to the TinyAra directory. It can be used, for
+		example, to include makefile fragments (e.g., .config or Make.defs)
+		or to set up include file paths.
+
+config FRAMEWORK_DIR
+	string "FRAMEWORK directory"
+	default "../framework" if !WINDOWS_NATIVE
+	default "..\framework" if WINDOWS_NATIVE
+
+config TOOLS_DIR
+	string "tools directory"
+	default "../tools" if !WINDOWS_NATIVE
+	default "..\tools" if WINDOWS_NATIVE
+
+choice
+	prompt "Memory organization"
+	default BUILD_FLAT
+
+config BUILD_FLAT
+	bool "Flat address space"
+	---help---
+		Build TinyAra as one large, executable "blob".  All of the code
+		within the blob can interrupt with all of the other code within
+		the blob.  There are no special privileges, protections, or
+		restraints.
+
+config BUILD_PROTECTED
+	bool "TinyAra protected build"
+	depends on ARCH_USE_MPU
+	select LIB_SYSCALL
+	select BUILD_2PASS
+	---help---
+		Builds TinyAra and selected applications as two "blobs":  A protected, privileged kernel blob and a separate unprivileged, user blob.  This require sue of the two pass build with each blob being build on each pass.
+
+		NOTE:  This build configuration requires that the platform support
+		a memory protection unit (MPU).  Support, however, may not be
+		implemented on all platforms.
+
+config BUILD_KERNEL
+	bool "TinyAra kernel build"
+	depends on ARCH_USE_MMU && ARCH_ADDRENV && EXPERIMENTAL
+	select LIB_SYSCALL
+	---help---
+		Builds TinyAra as a separately compiled kernel.  No applications are
+		built.  All user applications must reside in a file system where
+		they can be loaded into memory for execution.
+
+		NOTE:  This build configuration requires that the platform support
+		a memory management unit (MPU) and address environments.  Support,
+		however, may not be implemented on all platforms.
+
+endchoice # Build configuration
+
+config BUILD_2PASS
+	bool "Two pass build"
+	default n
+	depends on !BUILD_KERNEL
+	---help---
+		Enables the two pass build options.
+
+		Two-pass build options.  If the 2 pass build option is selected, then these
+		options configure the make system build a extra link object. This link object
+		is assumed to be an incremental (relative) link object, but could be a static
+		library (archive) (some modification to this Makefile would be required if
+		PASS1_TARGET generates an archive). Pass 1 1ncremental (relative) link
+		objects should be put into the processor-specific source directory (where other
+		link objects will be created).  If the pass1 object is an archive, it could
+		go anywhere.
+
+if BUILD_2PASS
+
+config PASS1_TARGET
+	string "Pass one target"
+	default "all"
+	---help---
+		The name of the first pass build target.  This
+		can be specific build target, a special build target (all, default, etc.)
+		or may just be left undefined.
+
+config PASS1_OBJECT
+	string "Pass one object"
+	default ""
+	---help---
+		May be used to include an extra, pass1 object
+		into the final link.  This would probably be the object generated
+		from the PASS1_TARGET.  It may be available at link time
+		in the arch/<architecture>/src directory.
+
+config TINYARA_USERSPACE
+	hex "Beginning of user-space blob"
+	default 0x0
+	depends on BUILD_PROTECTED
+	---help---
+		In the kernel build, the TinyAra kernel and the user-space blob are
+		built separately linked objects.  TINYARA_USERSPACE provides the
+		address where the user-space blob is loaded into memory.  TinyAra will
+		expect to find and instance of struct userspace_s at this location.
+
+endif # Build 2-pass
+endmenu # Build Setup
+
+menu "Binary Output Formats"
+
+config INTELHEX_BINARY
+	bool "Intel HEX binary format"
+	default n
+	---help---
+		Create the tinyara.hex in the Intel HEX binary format that is
+		used with many different loaders. This option will use the GNU objcopy program
+		and should not be selected if you are not using the GNU toolchain.
+
+config MOTOROLA_SREC
+	bool "Motorola S-Record binary format"
+	default n
+	---help---
+		Create the tinyara.srec in the Motorola S-Record binary format that is
+		used with many different loaders. This option will use the GNU objcopy program
+		and should not be selected if you are not using the GNU toolchain.
+
+config RAW_BINARY
+	bool "Raw binary format"
+	default n
+	---help---
+		Create the tinyara.bin in the raw binary format that is used with many
+		different loaders using the GNU objcopy program.  This option
+		should not be selected if you are not using the GNU toolchain.
+
+menuconfig UBOOT_UIMAGE
+	bool "U-Boot uImage"
+	select RAW_BINARY
+	depends on !WINDOWS_NATIVE
+	---help---
+		Create the uImage binary used with U-Boot.
+
+if UBOOT_UIMAGE
+
+config UIMAGE_LOAD_ADDRESS
+	hex "uImage load address"
+	default 0x0
+
+config UIMAGE_ENTRY_POINT
+	hex "uImage entry point"
+	default 0x0
+
+endif
+
+menuconfig DOWNLOAD_IMAGE
+	bool "Convert RAW binary to download image"
+	select RAW_BINARY
+	depends on !WINDOWS_NATIVE
+	---help---
+		Create download image based on RAW binary
+
+menuconfig SMARTFS_IMAGE
+	bool "Make smartfs binary image"
+	select RAW_BINARY
+	depends on !WINDOWS_NATIVE
+	---help---
+		Generate smartfs image by using nxfuse tools
+		Note that libfuse-dev should be installed on your build system
+
+endmenu # Binary Output Formats
+
+menu "Customize Header Files"
+
+config ARCH_STDINT_H
+	bool "stdint.h"
+	default n
+	---help---
+		The stdint.h header file can be found at tinyara/include/stdint.h.
+		However, that header includes logic to redirect the inclusion of an
+		architecture specific header file like:
+
+			#ifdef CONFIG_ARCH_STDINT_H
+			#  include <arch/stdint.h>
+			#else
+			...
+			#endif
+
+		Recall that that include path, include/arch, is a symbolic link and
+		will refer to a version of stdint.h at tinyara/arch/<architecture>/include/stdint.h.
+
+config ARCH_STDBOOL_H
+	bool "stdbool.h"
+	default n
+	---help---
+		The stdbool.h header file can be found at tinyara/include/stdbool.h.
+		However, that header includes logic to redirect the inclusion of an
+		architecture specific header file like:
+
+			#ifdef CONFIG_ARCH_STDBOOL_H
+			#  include <arch/stdbool.h>
+			#else
+			...
+			#endif
+
+		Recall that that include path, include/arch, is a symbolic link and
+		will refer to a version of stdbool.h at tinyara/arch/<architecture>/include/stdbool.h.
+
+config ARCH_MATH_H
+	bool "math.h"
+	default n
+	---help---
+		There is also a re-directing version of math.h in the source tree.
+		However, it resides out-of-the-way at include/tinyara/math.h because it
+		conflicts too often with the system math.h. If ARCH_MATH_H=y is
+		defined, however, the top-level makefile will copy the redirecting
+		math.h header file from include/tinyara/math.h to include/math.h. math.h
+		will then include the architecture-specific version of math.h that you
+		must provide at tinyara/arch/>architecture</include/math.h.
+
+			#ifdef CONFIG_ARCH_MATH_H
+			#  include <arch/math.h>
+			#endif
+
+		So for the architectures that define ARCH_MATH_H=y, include/math.h
+		will be the redirecting math.h header file; for the architectures
+		that don't select ARCH_MATH_H, the redirecting math.h header file
+		will stay out-of-the-way in include/tinyara/.
+
+config ARCH_FLOAT_H
+	bool "float.h"
+	default n
+	---help---
+		The float.h header file defines the properties of your floating
+		point implementation.  It would always be best to use your
+		toolchain's float.h header file but if none is available, a default
+		float.h header file will provided if this option is selected.  However
+		there is no assurance that the settings in this float.h are actually
+		correct for your platform!
+
+config ARCH_STDARG_H
+	bool "stdarg.h"
+	default n
+	---help---
+		There is also a redirecting version of stdarg.h in the source tree
+		as well. It also resides out-of-the-way at include/tinyara/stdarg.h.
+		This is because you should normally use your toolchain's stdarg.h
+		file. But sometimes, your toolchain's stdarg.h file may have other
+		header file dependencies and so may not be usable in the TinyAra build
+		environment. In those cases, you may have to create a architecture-
+		specific stdarg.h header file at tinyara/arch/<architecture>/include/stdarg.h
+
+		If ARCH_STDARG_H=y is defined, the top-level makefile will copy the
+		re-directing stdarg.h header file from include/tinyara/stdarg.h to
+		include/stdarg.h. So for the architectures that cannot use their
+		toolchain's stdarg.h file, they can use this alternative by defining
+		ARCH_STDARG_H=y and providing. If ARCH_STDARG_H, is not defined, then
+		the stdarg.h header file will stay out-of-the-way in include/tinyara/.
+
+endmenu # Customize Header Files
+
+menu "Debug Options"
+
+config DEBUG
+	bool "Enable Debug Output Features"
+	default n
+	select DEBUG_ERROR
+	---help---
+		Enables built-in debug features.  Selecting this option will (1) Enable
+		debug assertions in the code, (2) enable extended parameter testing in
+		many functions, and (3) enable support for debug output to the SYSLOG.
+		Note that enabling this option by itself does not produce debug output.
+		Debug output must also be selected on a subsystem-by-subsystem basis.
+
+if DEBUG
+
+config DEBUG_ERROR
+	bool "Enable Error Debug Output"
+	default n
+	---help---
+		Enables ERROR debug output (assuming debug features are enabled).
+		If you enable DEBUG_ERROR, debug messages for error will be reported in the
+		debug SYSLOG output.
+		Errors are significant system exceptions that require immediate attention.
+
+config DEBUG_WARN
+	bool "Enable Warning Debug Output"
+	default n
+	---help---
+		Enables Warning debug output (assuming debug features are enabled).
+		If you enable DEBUG_WARN, debug messages for warning will be reported in the
+		debug SYSLOG output.
+		Warnings are considered to be various unexpected conditions, potential errors
+		or errors that will not have serious consequences.
+
+config DEBUG_VERBOSE
+	bool "Enable Informational(Verbose) Debug Output"
+	default n
+	---help---
+		Enables Informational debug output (assuming debug features are enabled).
+		If you enable DEBUG_VERBOSE, debug messages for information will be reported in the
+		debug SYSLOG output.
+
+comment "Subsystem Debug Options"
+
+config DEBUG_FS
+	bool "File System Debug Output"
+	default n
+	---help---
+		Enable file system debug SYSLOG output (disabled by default)
+
+if DEBUG_FS
+
+config DEBUG_FS_ERROR
+	bool "File System Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable file system error debug SYSLOG output.
+
+config DEBUG_FS_WARN
+	bool "File System Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable file system warning debug SYSLOG output.
+
+config DEBUG_FS_INFO
+	bool "File System Infomational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable file system informational debug SYSLOG output.
+
+endif #DEBUG_FS
+
+config DEBUG_LIB
+	bool "C Library Debug Output"
+	default n
+	---help---
+		Enable C library debug SYSLOG output (disabled by default)
+
+if DEBUG_LIB
+
+config DEBUG_LIB_ERROR
+	bool "C Library Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable C Library error debug SYSLOG output.
+
+config DEBUG_LIB_WARN
+	bool "C Library Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable C Library warning debug SYSLOG output.
+
+config DEBUG_LIB_INFO
+	bool "C Library Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable C Library informational debug SYSLOG output.
+
+endif #DEBUG_LIB
+
+config DEBUG_MM
+	bool "Memory Manager Debug Output"
+	default n
+	---help---
+		Enable memory management debug SYSLOG output (disabled by default)
+
+if DEBUG_MM
+
+config DEBUG_MM_ERROR
+	bool "Memory Manager Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable memory management error debug SYSLOG output.
+
+config DEBUG_MM_WARN
+	bool "Memory Manager Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable memory management Warning debug SYSLOG output.
+
+config DEBUG_MM_INFO
+	bool "Memory Manager Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable memory management informational debug SYSLOG output.
+
+endif #DEBUG_MM
+
+config DEBUG_SHM
+	bool "Shared Memory Debug Output"
+	default n
+	depends on MM_SHM
+	---help---
+		Enable shared memory management debug SYSLOG output (disabled by default)
+
+if DEBUG_SHM
+
+config DEBUG_SHM_ERROR
+	bool "Shared Memory Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable shared memory management error debug SYSLOG output.
+
+config DEBUG_SHM_WARN
+	bool "Shared Memory Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable shared memory management warning debug SYSLOG output.
+
+config DEBUG_SHM_INFO
+	bool "Shared Memory Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable shared memory management informational debug SYSLOG output.
+
+endif #DEBUG_SHM
+
+config DEBUG_NET
+	bool "Network Debug Output"
+	default n
+	depends on ARCH_HAVE_NET
+	---help---
+		Enable network debug SYSLOG output (disabled by default)
+
+if DEBUG_NET
+
+config DEBUG_NET_ERROR
+	bool "Network Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable network error debug SYSLOG output.
+
+config DEBUG_NET_WARN
+	bool "Network Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable network warning debug SYSLOG output.
+
+config DEBUG_NET_INFO
+	bool "Network Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable network informational debug SYSLOG output.
+
+endif #DEBUG_NET
+
+config DEBUG_SCHED
+	bool "Scheduler Debug Output"
+	default n
+	---help---
+		Enable OS debug SYSLOG output (disabled by default)
+
+if DEBUG_SCHED
+
+config DEBUG_SCHED_ERROR
+	bool "Scheduler Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable OS error debug SYSLOG output.
+
+config DEBUG_SCHED_WARN
+	bool "Scheduler Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable OS warning debug SYSLOG output.
+
+config DEBUG_SCHED_INFO
+	bool "Scheduler Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable OS informational debug SYSLOG output.
+
+endif #DEBUG_SCHED
+
+config DEBUG_SYSCALL
+	bool "SYSCALL Debug Output"
+	default n
+	depends on LIB_SYSCALL
+	---help---
+		Enable very low level output related to system calls.  This gives
+		you basically a poor man's version of strace.
+
+if DEBUG_SYSCALL
+
+config DEBUG_SYSCALL_ERROR
+	bool "SYSCALL Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable system calls error debug SYSLOG output.
+
+config DEBUG_SYSCALL_WARN
+	bool "SYSCALL Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable system calls warning debug SYSLOG output.
+
+config DEBUG_SYSCALL_INFO
+	bool "SYSCALL Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable system calls informational debug SYSLOG output.
+
+endif #DEBUG_SYSCALL
+
+comment "OS Function Debug Options"
+
+config DEBUG_DMA
+	bool "DMA Debug Output"
+	default n
+	depends on ARCH_DMA
+	---help---
+		Enable DMA-releated debug SYSLOG output (disabled by default).
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_HEAP
+	bool "Heap usage debug hooks"
+	default n
+	depends on ARCH_HAVE_HEAPCHECK
+	---help---
+		Enable hooks to check heap usage.  Only supported by a few architectures.
+
+config ARCH_HAVE_HEAPCHECK
+	bool
+	default n
+
+config DEBUG_MM_HEAPINFO
+	bool "Heap Info debug option"
+	default n
+	---help---
+		Enable task wise malloc debug.
+
+config DEBUG_IRQ
+	bool "Interrupt Controller Debug Output"
+	default n
+	---help---
+		Some (but not all) architectures support debug output to verify
+		interrupt controller logic.  If supported, then option will enable
+		that output.  This may interfere with normal operations!  You
+		should *not* enable interrupt controller debug unless you suspect
+		that here is a problem with that logic.  On some platforms, this
+		option may even cause crashes! Use with care!
+
+config DEBUG_PAGING
+	bool "Demand Paging Debug Output"
+	default n
+	depends on PAGING
+	---help---
+		Enable demand paging debug SYSLOG output (disabled by default)
+
+comment "Driver Debug Options"
+
+config DEBUG_PWM
+	bool "PWM Debug Output"
+	default n
+	depends on PWM
+	---help---
+		Enable PWM driver debug SYSLOG output (disabled by default).
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_RTC
+	bool "RTC Debug Output"
+	default n
+	depends on RTC
+	---help---
+		Enable RTC driver debug SYSLOG output (disabled by default).
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_SPI
+	bool "SPI Debug Output"
+	default n
+	depends on SPI
+	---help---
+		Enable I2C driver debug SYSLOG output (disabled by default).
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_TIMER
+	bool "Timer Debug Output"
+	default n
+	depends on TIMER
+	---help---
+		Enable timer debug SYSLOG output (disabled by default).
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_WATCHDOG
+	bool "Watchdog Timer Debug Output"
+	default n
+	depends on WATCHDOG
+	---help---
+		Enable watchdog timer debug SYSLOG output (disabled by default).
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+endif # DEBUG
+
+comment "Stack Debug Options"
+
+config ARCH_HAVE_STACKCHECK
+	bool
+	default n
+
+config STACK_COLORATION
+	bool "Stack coloration"
+	default n
+	depends on ARCH_HAVE_STACKCHECK
+	---help---
+		Enable stack coloration to initialize the stack memory to the value
+		of STACK_COLOR and enable the stack checking APIs that can be used
+		to monitor the level of stack usage.
+
+		Only supported by a few architectures.
+
+comment "Build Debug Options"
+
+config DEBUG_SYMBOLS
+	bool "Generate Debug Symbols"
+	default y
+	---help---
+		Build with debug symbols (needed for use with a debugger).
+
+config FRAME_POINTER
+	bool "Enable backtracking using Frame pointer register"
+	default n
+	---help---
+		This option uses -fno-omit-frame-pointer flag of gcc. This flag makes
+		use of frame pointer register to push PC,SP and FP for every function
+		call in the stack during runtime. If you say N here, the resulting
+		binary will be slightly smaller amd faster. However, if neither
+		FRAME_POINTER nor ARM_UNWIND are enabled, the information
+		reported during system crash is very limited.
+
+endmenu # Debug Options
+
+config ARCH_HAVE_CUSTOMOPT
+	bool
+	default n
+
+choice
+	prompt "Optimization Level"
+	default DEBUG_NOOPT if DEBUG_SYMBOLS
+	default DEBUG_FULLOPT if !DEBUG_SYMBOLS
+
+config DEBUG_NOOPT
+	bool "Suppress Optimization"
+	---help---
+		Build without optimization.  This is often helpful when debugging code.
+
+config DEBUG_CUSTOMOPT
+	bool "Custom Optimization"
+	depends on ARCH_HAVE_CUSTOMOPT
+	---help---
+		Select a custom debug level.  This is often helpful if you suspect an
+		optimization level error and want to lower the level of optimization.
+
+config DEBUG_FULLOPT
+	bool "Normal, Full optimization"
+	---help---
+		Build full optimization.  This is the normal case for production
+		firmware.
+
+endchoice # Optimization Level
+
+config DEBUG_OPTLEVEL
+	string "Custom Optimization Level"
+	default "-O2"
+	depends on DEBUG_CUSTOMOPT
+	---help---
+		This string represents the custom optimization level that will be used if DEBUG_CUSTOMOPT.
+
+endmenu # Build Setup
+
+menu "System Type"
+source arch/Kconfig
+endmenu
+
+menu "Board Selection"
+source "$CONFIGSDIR/Kconfig"
+endmenu
+
+menu "RTOS Features"
+source kernel/Kconfig
+endmenu
+
+menu "System Call"
+source syscall/Kconfig
+endmenu
+
+menu "Device Drivers"
+source drivers/Kconfig
+endmenu
+
+menu "Networking Support"
+source net/Kconfig
+endmenu
+
+menu "File Systems"
+source fs/Kconfig
+endmenu
+
+menu "Arastorage"
+source "$FRAMEWORK_DIR/src/arastorage/Kconfig"
+endmenu
+
+menu "Memory Management"
+source mm/Kconfig
+endmenu
+
+menu "Power Management"
+source pm/Kconfig
+endmenu
+
+menu "Logger Module"
+source logm/Kconfig
+endmenu
+
+menu "Library Routines"
+source "$LIBDIR/libc/Kconfig"
+source "$LIBDIR/libxx/Kconfig"
+endmenu
+
+menu "External Functions"
+source "$EXTERNALDIR/Kconfig"
+endmenu
+
+menu "Application Configuration"
+source "$APPSDIR/Kconfig"
+endmenu

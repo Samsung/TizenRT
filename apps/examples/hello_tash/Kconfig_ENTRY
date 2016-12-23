@@ -1,0 +1,3 @@
+config ENTRY_HELLO_TASH
+	bool "\"Hello, World!\" example in tash"
+	depends on EXAMPLES_HELLO_TASH

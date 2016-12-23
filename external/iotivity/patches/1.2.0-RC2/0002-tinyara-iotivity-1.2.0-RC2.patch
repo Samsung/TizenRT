@@ -1,0 +1,195 @@
+From 61dd3576371d8ede4cd39dec0ceb995e50b3cb1a Mon Sep 17 00:00:00 2001
+From: Samson <samson.k@samsung.com>
+Date: Wed, 5 Oct 2016 12:22:06 +0530
+Subject: [PATCH 2/2] Adding the changes for IoTivity 1.2 support in Tinyara.
+
+---
+ build_common/SConscript                                |  2 +-
+ resource/SConscript                                    | 10 +++-------
+ resource/c_common/SConscript                           |  8 +++++---
+ resource/csdk/SConscript                               |  5 ++---
+ resource/csdk/connectivity/inc/caadapterutils.h        |  4 ++++
+ resource/csdk/connectivity/src/ip_adapter/SConscript   |  2 +-
+ resource/csdk/connectivity/src/ip_adapter/caipserver.c |  2 +-
+ resource/csdk/logger/src/logger.c                      |  6 +++---
+ 8 files changed, 20 insertions(+), 19 deletions(-)
+
+diff --git a/build_common/SConscript b/build_common/SConscript
+index 2ad35a5..14880af 100644
+--- a/build_common/SConscript
++++ b/build_common/SConscript
+@@ -188,7 +188,7 @@ if target_os in targets_support_cc:
+ 	if target_os == 'tinyara':
+ 		#TODO: Check the correct path to be used here!
+ 		sys_root = env.GetLaunchDir()
+-		env.AppendUnique(CPPPATH= [sys_root + '/../../../os/include/', sys_root + '/../../../os/include/tinyara/', '/usr/lib/arm-none-eabi/include/'])
++		env.AppendUnique(CPPPATH= [sys_root + '/../../../os/include/', sys_root + '/../../../os/include/tinyara/', '/usr/lib/arm-none-eabi/include/', sys_root + '/../../../os/include/netinet'])
+ 		env.AppendUnique(LIBPATH= [sys_root + '/../../../os/include/lib/', '/usr/lib/arm-none-eabi/include/'])
+ 		env.AppendUnique(CPPDEFINES = ['__TINYARA__'])
+ 		#env.AppendUnique(CPPDEFINES = ['CONFIG_CLOCK_MONOTONIC'])
+diff --git a/resource/SConscript b/resource/SConscript
+index 1545d1a..64a3b17 100644
+--- a/resource/SConscript
++++ b/resource/SConscript
+@@ -28,10 +28,11 @@ Import('env')
+ target_os = env.get('TARGET_OS')
+ src_dir = env.get('SRC_DIR')
+ 
++env.AppendUnique(CCFLAGS = ['-g'])
+ # Build liblogger
+ SConscript('csdk/logger/SConscript')
+ 
+-if target_os not in ['arduino', 'darwin', 'ios', 'android', 'msys_nt', 'windows']:
++if target_os not in ['arduino', 'darwin', 'ios', 'android', 'msys_nt', 'windows', 'tinyara']:
+ 	env.AppendUnique(LIBS=['rt'])
+ 
+ # Build libcoap
+@@ -48,8 +49,7 @@ if env.get('ROUTING') in ['GW', 'EP']:
+ 	SConscript('csdk/routing/SConscript')
+ 
+ # Build libocsrm
+-if target_os not in ['tinyara']:
+-	SConscript('csdk/security/SConscript')
++SConscript('csdk/security/SConscript')
+ 
+ # Build liboctbstack
+ SConscript('csdk/SConscript')
+@@ -94,7 +94,3 @@ elif target_os == 'msys_nt':
+ 
+ 	# Build C/C++ unit tests
+ 	SConscript('unit_tests.scons')
+-
+-elif target_os == 'tinyara':
+-	# Build C Samples
+-	SConscript('csdk/stack/samples/linux/SimpleClientServer/SConscript')
+diff --git a/resource/c_common/SConscript b/resource/c_common/SConscript
+index 907651a..26df45e 100644
+--- a/resource/c_common/SConscript
++++ b/resource/c_common/SConscript
+@@ -89,6 +89,10 @@ if target_os == 'arduino':
+ 	# Detection of headers on the Arduino platform is currently broken.
+ 	cxx_headers = []
+ 
++if target_os in ['tinyara']:
++	env.AppendUnique(CCFLAGS = ['-std=c99'])
++	cxx_headers.remove('sys/timeb.h')
++
+ if target_os == 'msys_nt':
+ 	# WinPThread provides a pthread.h, but we want to use native threads.
+ 	cxx_headers.remove('pthread.h')
+@@ -98,7 +102,7 @@ def get_define_from_header_file(header_file):
+ 	return "HAVE_" + header_file_converted
+ 
+ for header_file_name in cxx_headers:
+-	if conf.CheckCXXHeader(header_file_name):
++	if conf.CheckCXXHeader(header_file_name) or header_file_name=='pthread.h':
+ 		config_h_body += "#define %s 1\n\n" % get_define_from_header_file(header_file_name)
+ conf.Finish()
+ 
+@@ -149,8 +153,6 @@ else:
+ if target_os in ['tizen', 'linux']:
+ 	env.ParseConfig("pkg-config --cflags --libs uuid")
+ 
+-if target_os in ['tinyara']:
+-	env.AppendUnique(CCFLAGS = ['-std=c99'])
+ 
+ common_env = env.Clone()
+ 
+diff --git a/resource/csdk/SConscript b/resource/csdk/SConscript
+index 1d17c0e..3fe3557 100644
+--- a/resource/csdk/SConscript
++++ b/resource/csdk/SConscript
+@@ -95,7 +95,7 @@ if env.get('SECURED') == '1':
+ 	if env.get('WITH_TCP') == True:
+ 		liboctbstack_env.AppendUnique(LIBS = ['mbedtls','mbedx509','mbedcrypto'])
+ 
+-if target_os in ['android', 'linux', 'tizen', 'msys_nt', 'windows']:
++if target_os in ['android', 'linux', 'tizen', 'msys_nt', 'windows', 'tinyara']:
+ 	liboctbstack_env.PrependUnique(LIBS = ['connectivity_abstraction'])
+ 
+ 	if with_ra_ibb:
+@@ -196,8 +196,7 @@ else:
+ 	static_liboctbstack = liboctbstack_env.StaticLibrary('octbstack', liboctbstack_src)
+ 
+ octbstack_libs = Flatten(static_liboctbstack)
+-
+-if target_os not in ['arduino','darwin','ios'] :
++if target_os not in ['arduino','darwin','ios','tinyara'] :
+ 	shared_liboctbstack = liboctbstack_env.SharedLibrary('octbstack', liboctbstack_src)
+ 	octbstack_libs += Flatten(shared_liboctbstack)
+ 	liboctbstack_env.UserInstallTargetHeader('stack/include/ocstack.h', 'resource', 'ocstack.h')
+diff --git a/resource/csdk/connectivity/inc/caadapterutils.h b/resource/csdk/connectivity/inc/caadapterutils.h
+index 5c2dcc7..e413154 100644
+--- a/resource/csdk/connectivity/inc/caadapterutils.h
++++ b/resource/csdk/connectivity/inc/caadapterutils.h
+@@ -46,6 +46,10 @@
+ #include <sys/socket.h>
+ #endif
+ 
++#ifdef __TINYARA__
++#include <netdb.h>
++#endif
++
+ #include "cacommon.h"
+ #include "logger.h"
+ #include "pdu.h"
+diff --git a/resource/csdk/connectivity/src/ip_adapter/SConscript b/resource/csdk/connectivity/src/ip_adapter/SConscript
+index 8706ecf..d228041 100644
+--- a/resource/csdk/connectivity/src/ip_adapter/SConscript
++++ b/resource/csdk/connectivity/src/ip_adapter/SConscript
+@@ -44,7 +44,7 @@ if os.path.exists(target_sconscript_abspath):
+ target_files = [ os.path.join(src_dir, target_os, f) for f in target_files ]
+ 
+ # Source files to build for Linux-like platforms
+-if target_os in ['linux','darwin','ios']:
++if target_os in ['linux','darwin','ios','tinyara']:
+     target_files += [ os.path.join(src_dir,
+                                    'linux/caipnwmonitor.c') ]
+ 
+diff --git a/resource/csdk/connectivity/src/ip_adapter/caipserver.c b/resource/csdk/connectivity/src/ip_adapter/caipserver.c
+index 488e59f..53c2cd2 100644
+--- a/resource/csdk/connectivity/src/ip_adapter/caipserver.c
++++ b/resource/csdk/connectivity/src/ip_adapter/caipserver.c
+@@ -1030,7 +1030,7 @@ static void applyMulticastToInterface4(uint32_t ifindex)
+         return;
+     }
+ 
+-#if 0
++#if 1
+ #if defined(USE_IP_MREQN)
+     struct ip_mreqn mreq = { .imr_multiaddr = IPv4MulticastAddress,
+                              .imr_address.s_addr = htonl(INADDR_ANY),
+diff --git a/resource/csdk/logger/src/logger.c b/resource/csdk/logger/src/logger.c
+index edeb167..a114677 100644
+--- a/resource/csdk/logger/src/logger.c
++++ b/resource/csdk/logger/src/logger.c
+@@ -66,7 +66,7 @@ static const uint16_t LINE_BUFFER_SIZE = (16 * 2) + 16 + 1;  // Show 16 bytes, 2
+ #endif //defined(_MSC_VER)
+ 
+ #ifdef __ANDROID__
+-#elif defined __linux__ || defined __APPLE__ || defined _WIN32
++#elif defined __linux__ || defined __APPLE__ || defined _WIN32 || defined(__TINYARA__)
+ static oc_log_level LEVEL_XTABLE[] = {OC_LOG_DEBUG, OC_LOG_INFO,
+                                       OC_LOG_WARNING, OC_LOG_ERROR, OC_LOG_FATAL};
+ #endif
+@@ -81,7 +81,7 @@ static oc_log_level LEVEL_XTABLE[] = {OC_LOG_DEBUG, OC_LOG_INFO,
+     static android_LogPriority LEVEL[] =
+     {ANDROID_LOG_DEBUG, ANDROID_LOG_INFO, ANDROID_LOG_WARN, ANDROID_LOG_ERROR, ANDROID_LOG_FATAL};
+ #endif
+-#elif defined(__linux__) || defined(__APPLE__) || defined(__msys_nt__)
++#elif defined(__linux__) || defined(__APPLE__) || defined(__msys_nt__)|| defined(__TINYARA__)
+     static const char * LEVEL[] __attribute__ ((unused)) = {"DEBUG", "INFO", "WARNING", "ERROR", "FATAL"};
+ #elif defined(_MSC_VER)
+     static const char * LEVEL[] = {"DEBUG", "INFO", "WARNING", "ERROR", "FATAL"};
+@@ -168,7 +168,7 @@ void OCLogInit()
+ 
+ void OCLogShutdown()
+ {
+-#if defined(__linux__) || defined(__APPLE__) || defined(_WIN32)
++#if defined(__linux__) || defined(__APPLE__) || defined(_WIN32)|| defined(__TINYARA__)
+     if (logCtx && logCtx->destroy)
+     {
+         logCtx->destroy(logCtx);
+-- 
+1.9.1
+

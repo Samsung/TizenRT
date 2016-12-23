@@ -1,0 +1,117 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_IOTIVITY
+	bool "IOTIVITY demo"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		Enable the IOTIVITY demo
+
+config EXAMPLES_IOTIVITY_CLOUD
+	bool "IOTIVITY cloud demo"
+	default n
+	depends on ENABLE_IOTIVITY_CLOUD
+	---help---
+		Enable the IOTIVITY cloud demo
+
+config EXAMPLE_IOTIVITY_SECURED
+	bool "IOTIVITY demo with security enabled"
+	default n
+	depends on ENABLE_IOTIVITY_SECURED
+	---help---
+		Enable the IOTIVITY demo with security
+
+if EXAMPLES_IOTIVTIY
+
+config EXAMPLES_IOTIVITY_PROGNAME
+	string "Program name"
+	default "iotivity"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the TASH ELF
+		program is installed.
+
+config USER_ENTRYPOINT
+	string
+	default "iotivity_main" if ENTRY_IOTIVITY
+
+endif
+
+if EXAMPLES_IOTIVTIY_CLOUD
+
+config EXAMPLES_IOTIVITY_PROGNAME
+	string "Program name"
+	default "iotivity_cloud"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the TASH ELF
+		program is installed.
+
+config USER_ENTRYPOINT
+	string
+	default "iotivity_cloud_main" if ENTRY_IOTIVITY_CLOUD
+
+endif
+
+if EXAMPLES_IOTIVTIY_SECURED
+
+config EXAMPLES_IOTIVITY_PROGNAME
+	string "Program name"
+	default "iotivity_sec"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the TASH ELF
+		program is installed.
+
+config USER_ENTRYPOINT
+	string
+	default "iotivity_sec_main" if ENTRY_IOTIVITY_SECURED
+
+endif
+
+config TB_LOG
+	bool "enable / disable iotivity stack logs"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		select to enable all iotivity stack logs (DEBUG / INFO etc.)
+
+config TCP_ADAPTER
+	bool "enable / disable TCP_ADAPTER in iotivity stack"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		select to enable TCP_ADAPTER in iotivity stack
+
+config WITH_TCP
+	bool "build iotivity stack with TCP enabled"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		required to makeuse of TCP adapter (by libcoap module)
+
+config WITH_DTLS
+	bool "enable / disable iotivity secure data transmission"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		select to enable DTLS security mechanism in Iotivity for data in transit
+
+config WITH_SHA256
+	bool "enable / disable SHA256 encryption in iotivity"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		select to enable SHA256 mode of security in IoTivity
+
+config WITH_X509
+	bool "standard for a public key infrastructure (PKI) to manage digital certificates"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		select to enable X509 standard for PKI in IoTivity
+
+

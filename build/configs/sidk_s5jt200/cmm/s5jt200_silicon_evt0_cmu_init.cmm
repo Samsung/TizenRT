@@ -1,0 +1,90 @@
+;--------------------------------------------------------------------------
+;
+; Copyright 2016 Samsung Electronics All Rights Reserved.
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+; http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing,
+; software distributed under the License is distributed on an
+; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+; either express or implied. See the License for the specific
+; language governing permissions and limitations under the License.
+;
+;--------------------------------------------------------------------------
+
+ENTRY &EVT &CmuRoutine &UsePll &ATLAS_PLL_MHZ &APOLLO_PLL_MHZ &MIF_PLL_MHZ
+LOCAL &G3D_PLL_MHZ &CCI_PLL_MHZ &BUS0_PLL_MHZ &BUS1_PLL_MHZ &MFC_PLL_MHZ &AUD_PLL_MHZ &ISP_PLL_MHZ &CAM_PLL_MHZ &DISP_PLL_MHZ &HSIC_PLL_MHZ &DPHY_PLL_MHZ
+
+;-----------------------------------------
+
+GOSUB Outp32 0x80081818 0x00000002		;//"DIV_WPLL_DIV3"
+GOSUB Outp32 0x8008181c 0x00000001		;//"DIV_WPLL_DIV6"
+GOSUB Outp32 0x80081814 0x00000001		;//"DIV_WPLL_DIV12"
+GOSUB Outp32 0x80081804 0x00000000		;//"DIV_CLK_SPI0"
+GOSUB Outp32 0x80081808 0x00000000		;//"DIV_CLK_SPI1"
+GOSUB Outp32 0x8008180c 0x00000000		;//"DIV_CLK_SPI2"
+GOSUB Outp32 0x80081810 0x00000000		;//"DIV_CLK_SPI3"
+GOSUB Outp32 0x80081800 0x00000003		;//"DIV_CLK_SERIALFLASH"
+
+
+GOSUB Outp32 0x80080000 0x007f0000		;//"PLL_WPLL"
+wait 1ms
+GOSUB Outp32 0x80080004 0x03104000		;//"PLL_WPLL"
+wait 1ms
+GOSUB Outp32 0x80080014 0x1071bf00		;//"PLL_WPLL"
+
+GOSUB Outp32 0x80081000 0x00000000		;//"MUX_CLKCMU_IS2B"
+GOSUB Outp32 0x8008100c 0x00000000		;//"MUX_CLKCMU_UART"
+GOSUB Outp32 0x80080180 0x00000010		;//"MUX_WPLL"
+
+ENDDO
+
+
+;-------------------------------------------------------------------------------
+;static void Outp32(u32 addr, u32 data, const char *comment)
+;-------------------------------------------------------------------------------
+Outp32:
+
+	ENTRY &addr &data &comment
+
+	DATA.SET SD:&addr %LE %LONG &data
+
+	RETURN
+
+;------------------------------------------------------------------------------
+;static u32 Inp32(u32 addr, const char *comment)
+;------------------------------------------------------------------------------
+Inp32:
+
+	ENTRY &addr &comment
+	LOCAL &data
+
+	&data=DATA.LONG(SD:&addr)
+
+	RETURN &data
+
+;------------------------------------------------------------------------------
+setmux:
+
+	ENTRY &addr &src
+	LOCAL &value
+
+	&value = &src << 12;
+
+	DATA.SET SD:&addr %LE %LONG &value
+
+	RETURN
+
+;------------------------------------------------------------------------------
+setdiv:
+
+	ENTRY &addr &value
+
+	DATA.SET SD:&addr %LE %LONG &value
+
+	RETURN
+

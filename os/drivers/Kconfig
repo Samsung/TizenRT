@@ -1,0 +1,452 @@
+
+config DISABLE_POLL
+	bool "Disable driver poll interfaces"
+	default n
+	---help---
+		The sizes of drivers can be reduced if the poll() method is not
+		supported.  If you do not use poll() or select(), then you can
+		select DISABLE_POLL to reduce the code footprint by a small amount.
+
+config DEV_NULL
+	bool "Enable /dev/null"
+	default y
+
+config DEV_ZERO
+	bool "Enable /dev/zero"
+	default n
+
+menu "Buffering"
+
+config DRVR_WRITEBUFFER
+	bool "Enable write buffer support"
+	default n
+	---help---
+		Enable generic write buffering support that can be used by a variety
+		of drivers.
+
+if DRVR_WRITEBUFFER
+
+config DRVR_WRDELAY
+	int "Write flush delay"
+	default 350
+	---help---
+		If there is no write activity for this configured amount of time,
+		then the contents will be automatically flushed to the media.  This
+		reduces the likelihood that data will be stuck in the write buffer
+		at the time of power down.
+
+endif # DRVR_WRITEBUFFER
+
+config DRVR_READAHEAD
+	bool "Enable read-ahead buffer support"
+	default n
+	---help---
+		Enable generic read-ahead buffering support that can be used by a
+		variety of drivers.
+
+if DRVR_WRITEBUFFER || DRVR_READAHEAD
+
+config DRVR_READBYTES
+	bool "Support byte read method"
+	default y if MTD_BYTE_WRITE
+	default n if !MTD_BYTE_WRITE
+
+config DRVR_REMOVABLE
+	bool "Support removable media"
+	default n
+
+config DRVR_INVALIDATE
+	bool "Support cache invalidation"
+	default n
+
+endif # DRVR_WRITEBUFFER || DRVR_READAHEAD
+
+endmenu # Buffering
+
+config RAMDISK
+	bool "RAM Disk Support"
+	default n
+	---help---
+		Can be used to set up a block of memory or (read-only) FLASH as
+		a block driver that can be mounted as a files system.  See
+		include/tinyara/fs/ramdisk.h.
+
+menuconfig CAN
+	bool "CAN Driver Support"
+	default n
+	---help---
+		This selection enables building of the "upper-half" CAN driver.
+		See include/tinyara/can.h for further CAN driver information.
+
+if CAN
+config CAN_EXTID
+	bool "CAN extended IDs"
+	default n
+	---help---
+		Enables support for the 29-bit extended ID.  Default Standard 11-bit
+		IDs.
+
+config CAN_FIFOSIZE
+	int "CAN driver I/O buffer size"
+	default 8
+	---help---
+		The size of the circular buffer of CAN messages. Default: 8
+
+config CAN_NPENDINGRTR
+	int "Number of pending RTRs"
+	default 4
+	---help---
+		The size of the list of pending RTR requests. Default: 4
+
+config CAN_LOOPBACK
+	bool "CAN loopback mode"
+	default n
+	---help---
+		A CAN driver may or may not support a loopback mode for testing. If the
+		driver does support loopback mode, the setting will enable it. (If the
+		driver does not, this setting will have no effect).
+
+endif # CAN
+
+config ARCH_HAVE_PWM_PULSECOUNT
+	bool
+	default n
+
+menuconfig PWM
+	bool "PWM Driver Support"
+	default n
+	---help---
+		This selection enables building of the "upper-half" PWM driver.
+		See include/tinyara/pwm.h for further PWM driver information.
+
+if PWM
+config PWM_PULSECOUNT
+	bool "PWM Pulse Count Support"
+	default n
+	depends on ARCH_HAVE_PWM_PULSECOUNT
+	---help---
+		Some hardware will support generation of a fixed number of pulses.
+		This might be used, for example to support a stepper motor.  If the
+		hardware will support a fixed pulse count, then this configuration
+		should be set to enable the capability.
+
+endif # PWM
+
+config ARCH_HAVE_I2CRESET
+	bool
+	default n
+
+menuconfig I2C
+	bool "I2C Driver Support"
+	default n
+	---help---
+		This selection enables building of the "upper-half" I2C driver.
+		See include/tinyara/i2c.h for further I2C driver information.
+
+if I2C
+
+config I2C_SLAVE
+	bool "I2C Slave"
+	default n
+
+config I2C_TRANSFER
+	bool "Support the I2C transfer() method"
+	default n
+
+config I2C_WRITEREAD
+	bool "Support the I2C writeread() method"
+	default n
+
+config I2C_POLLED
+	bool "Polled I2C (no interrupts)"
+	default n
+
+config I2C_TRACE
+	bool "Enable I2C trace debug"
+	default n
+
+config I2C_NTRACE
+	int "Number of I2C trace records"
+	default 32
+	depends on I2C_TRACE
+
+config I2C_RESET
+	bool "Support up_i2creset"
+	default n
+	depends on ARCH_HAVE_I2CRESET
+
+config I2C_USERIO
+	bool "Support I2C User IO"
+	default n
+
+endif # I2C
+
+menuconfig SPI
+	bool "SPI Driver Support"
+	default n
+	---help---
+		This selection enables selection of common SPI options.  This option
+		should be enabled by all platforms that support SPI interfaces.
+		See include/tinyara/spi/spi.h for further SPI driver information.
+
+if SPI
+source drivers/spi/Kconfig
+endif
+
+menuconfig GPIO
+        bool "GPIO Driver Support"
+        default n
+        ---help---
+                This selection enables building of the "upper-half" GPIO driver.
+                See include/tinyara/gpio.h for further GPIO driver information.
+
+if GPIO
+source drivers/gpio/Kconfig
+endif
+
+menuconfig I2S
+	bool "I2S Driver Support"
+	default n
+	---help---
+		This selection enables selection of common I2S options.  This option
+		should be enabled by all platforms that support I2S interfaces.
+		See include/tinyara/audio/i2s.h for further I2S driver information.
+
+if I2S
+endif # I2S
+
+menuconfig RTC
+	bool "RTC Driver Support"
+	default n
+	---help---
+		This selection enables configuration of a real time clock (RTCdriver.
+		See include/tinyara/rtc.h for further watchdog timer driver information.
+		Most RTC drivers are MCU specific and may require other specific
+		settings.
+
+if RTC
+
+config RTC_DATETIME
+	bool "Date/Time RTC Support"
+	default n
+	---help---
+		There are two general types of RTC:  (1) A simple battery backed
+		counter that keeps the time when power is down, and (2) a full
+		date / time RTC the provides the date and time information, often in
+		BCD format.  If RTC_DATETIME is selected, it specifies this second kind
+		of RTC. 
+
+if !RTC_DATETIME
+
+config RTC_HIRES
+	bool "Hi-Res RTC Support"
+	default n
+	---help---
+		If RTC_DATETIME not selected, then the simple, battery backed counter
+		is used.  There are two different implementations of such simple
+		counters based on the time resolution of the counter: The typical RTC
+		keeps time to resolution of 1 second, usually supporting a 32-bit
+		time_t value. 
+
+config RTC_FREQUENCY
+	int "Hi-Res RTC frequency"
+	default 1
+	depends on RTC_HIRES
+	---help---
+		If RTC_HIRES is defined, then the frequency of the high resolution RTC
+		must be provided.  If RTC_HIRES is not defined, RTC_FREQUENCY is
+		assumed to be one Hz.
+
+endif # !RTC_DATETIME
+
+config RTC_ALARM
+	bool "RTC Alarm Support"
+	default n
+	---help---
+		Enable if the RTC hardware supports setting of an alarm.  A callback
+		function will be executed when the alarm goes off.
+
+config RTC_DRIVER
+	bool "RTC Driver Support"
+	default n
+	---help---
+		This selection enables building of the "upper-half" RTC
+		driver. See os/include/tinyara/rtc.h for further RTC driver
+		information.
+
+if RTC_DRIVER
+
+config RTC_PERIODIC
+	bool "RTC Periodic Interrupts"
+	default n
+	depends on EXPERIMENTAL
+	---help---
+		Add interrupt controls for RTCs that support periodic interrupts.
+
+config RTC_ONESEC
+	bool "RTC Once-per-second interrupts"
+	default n
+	depends on EXPERIMENTAL
+	---help---
+		Add interrupt controls for RTCs that support once-per-second interrupts.
+
+config RTC_EPOCHYEAR
+	bool "RTC epoch year"
+	default n
+	depends on EXPERIMENTAL
+	---help---
+		Add controls for RTCs that support epoch year settings.
+
+		Many RTCs encode the year in an 8-bit register which is either interpreted
+		as an 8-bit binary number or as a BCD number. In both cases, the number is
+		interpreted relative to this RTC's Epoch. The RTC's Epoch is initialized to
+		1900 on most systems but on Alpha and MIPS it might also be initialized to
+		1952, 1980, or 2000, depending on the value of an RTC register for the year.
+		With some RTCs, these operations can be used to read or to set the RTC's
+		Epoch, respectively.
+
+config RTC_IOCTL
+	bool "RTC IOCTLs"
+	default n
+	---help---
+		Support the RTC interface ioctl() method.  This allows you to add
+		architecture-specific RTC operations to the RTC interface
+
+endif # RTC_DRIVER
+endif # RTC
+
+menuconfig WATCHDOG
+	bool "Watchdog Timer Support"
+	default n
+	---help---
+		This selection enables building of the "upper-half" watchdog timer
+		driver. See include/tinyara/watchdog.h for further watchdog timer driver
+		information.
+
+if WATCHDOG
+
+config WATCHDOG_DEVPATH
+	string "Watchdog Device Path"
+	default "/dev/watchdog0"
+
+endif # WATCHDOG
+
+menuconfig TIMER
+	bool "Timer Support"
+	default n
+	---help---
+		This selection enables building of the "upper-half" timer
+		driver. See include/tinyara/timer.h for further timer driver
+		information.
+
+menuconfig ANALOG
+	bool "Analog Device(ADC/DAC) Support"
+	default n
+	---help---
+		This directory holds implementations of analog device drivers.
+		This includes drivers for Analog to Digital Conversion (ADC)as
+		well as drivers for Digital to Analog Conversion (DAC).
+		See include/tinyara/analog/*.h for registration information.
+
+if ANALOG
+source drivers/analog/Kconfig
+endif # ANALOG
+
+menuconfig LCD
+	bool "LCD Driver Support"
+	default n
+	select NX_LCDDRIVER
+	---help---
+		Drivers for parallel and serial LCD and OLED type devices.  These
+		drivers support interfaces as defined in include/tinyara/lcd/lcd.h
+
+		This selection is necessary to enable support for LCD drivers in
+		drivers/lcd as well as for board-specific LCD drivers in the configs/
+		subdirectories.
+
+if LCD
+source drivers/lcd/Kconfig
+endif # LCD
+
+menuconfig NETDEVICES
+	bool "Network Device/PHY Support"
+	default n if !ARCH_HAVE_PHY
+	default y if ARCH_HAVE_PHY
+	depends on NET
+	---help---
+		Network interface driver and PHY selections.  This options enables
+		selection of drivers for external Ethernet MAC chips.  The majority
+		of MCUs, however, have built-in, internal Ethernet MAC peripherals
+		and that Ethernet support is selected in the MCU-specific
+		configuration menus.
+
+		Most Ethernet MAC drivers, whether internal or external, will
+		require configuration of an external PHY device.  That external PHY
+		device is also selected via this menu.
+
+if NETDEVICES
+source drivers/net/Kconfig
+endif # NETDEVICES
+
+menuconfig PIPES
+	bool "FIFO and named pipe drivers"
+	default n
+	---help---
+		FIFO and named pipe drivers.  Standard interfaces are declared
+		in include/unistd.h
+
+if PIPES
+source drivers/pipes/Kconfig
+endif # PIPES
+
+menuconfig POWER
+	bool "Power Management Support"
+	default n
+	---help---
+		Enable building of power-related devices (battery monitors, chargers,
+		etc).
+
+if POWER
+source drivers/power/Kconfig
+endif # POWER
+
+menuconfig SERCOMM_CONSOLE
+	bool "Osmocom-bb Sercomm Driver Support"
+	default n
+	---help---
+		Sercomm is the transport used by osmocom-bb that runs on top of serial.
+
+if SERCOMM_CONSOLE
+source drivers/sercomm/Kconfig
+endif # SERCOMM_CONSOLE
+
+menuconfig SERIAL
+	bool "Serial Driver Support"
+	default y
+	---help---
+		Front-end character drivers for chip-specific UARTs. 
+
+if SERIAL
+source drivers/serial/Kconfig
+endif # SERIAL
+
+menuconfig USBDEV
+	bool "USB Device Driver Support"
+	default n
+	---help---
+		USB device drivers.  See also include/tinyara/usb/usbdev.h
+
+if USBDEV
+source drivers/usbdev/Kconfig
+endif # USBDEV
+
+config FOTA_DRIVER
+	bool "FOTA Device Driver Support"
+	default n
+	---help---
+		FOTA Device Driver
+
+comment "System Logging Device Options"
+
+source drivers/syslog/Kconfig
+

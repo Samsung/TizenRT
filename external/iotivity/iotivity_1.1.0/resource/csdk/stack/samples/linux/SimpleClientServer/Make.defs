@@ -1,0 +1,10 @@
+
+# SimpleClientServer  source files
+
+NET_CSRCS += occlient.cpp ocserver.cpp occlientbasicops.cpp occlientcoll.cpp occlientslow.cpp ocremoteaccessclient.cpp ocserverbasicops.cpp ocservercoll.cpp ocserverslow.cpp
+
+# Include SimpleClientServer build support
+
+DEPPATH += --dep-path linux/SimpleClientServer
+VPATH += :linux/SimpleClientServer
+

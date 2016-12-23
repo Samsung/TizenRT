@@ -1,0 +1,3 @@
+config ENTRY_ARTIK_DEMO
+	bool "Artik API Demo Example"
+	depends on EXAMPLES_ARTIK_DEMO

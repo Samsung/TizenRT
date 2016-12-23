@@ -1,0 +1,190 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig EXAMPLES_TESTCASE_KERNEL
+	bool "Kernel TestCase Example"
+	default n
+	---help---
+		Enable the Kernel TestCase Example
+
+if EXAMPLES_TESTCASE_KERNEL
+config DEBUG_TC_KN
+	bool "Kernel Testcase Debug Output"
+	default n
+	depends on DEBUG
+
+config TC_KN_ALL
+	bool "All"
+	default n
+	select TC_KERNEL_CLOCK
+	select TC_KERNEL_ENVIRON
+	select TC_KERNEL_ERRNO
+	select TC_KERNEL_LIBC_SYSLOG
+	select TC_KERNEL_LIBC_LIBGEN
+	select TC_KERNEL_LIBC_MATH
+	select TC_KERNEL_LIBC_MISC
+	select TC_KERNEL_LIBC_PTHREAD
+	select TC_KERNEL_LIBC_QUEUE
+	select TC_KERNEL_LIBC_SCHED
+	select TC_KERNEL_LIBC_SEMAPHORE
+	select TC_KERNEL_LIBC_SIGNAL
+	select TC_KERNEL_LIBC_SPAWN
+	select TC_KERNEL_LIBC_STDIO
+	select TC_KERNEL_LIBC_STDLIB
+	select TC_KERNEL_LIBC_STRING
+	select TC_KERNEL_LIBC_TIMER
+	select TC_KERNEL_LIBC_UNISTD
+	select TC_KERNEL_MQUEUE
+	select TC_KERNEL_PTHREAD
+	select TC_KERNEL_ROUNDROBIN
+	select TC_KERNEL_SCHED
+	select TC_KERNEL_SEMAPHORE
+	select TC_KERNEL_SIGNAL
+	select TC_KERNEL_TASK
+	select TC_KERNEL_TIMER
+	select TC_KERNEL_UMM_HEAP
+
+config TC_KERNEL_CLOCK
+	bool "Clock"
+	default n
+	select SYSTEM_TIME64
+
+config TC_KERNEL_ENVIRON
+	bool "Environ"
+	default n
+
+config TC_KERNEL_ERRNO
+	bool "Errno"
+	default n
+	select LIBC_STRERROR
+
+config TC_KERNEL_GROUP
+	bool "Group"
+	default n
+	select SCHED_HAVE_PARENT
+	select SCHED_CHILD_STATUS
+
+config TC_KERNEL_LIBC_LIBGEN
+	bool "Libc Libgen"
+	default n
+
+config TC_KERNEL_LIBC_MATH
+	bool "Libc Math"
+	default n
+	depends on LIBM
+
+config TC_KERNEL_LIBC_MISC
+	bool "Libc Misc"
+	default n
+	select DEBUG
+	select DEBUG_ERROR
+	select DEBUG_VERBOSE
+
+config TC_KERNEL_LIBC_PTHREAD
+	bool "Libc Pthread"
+	default n
+	select MUTEX_TYPES
+
+config TC_KERNEL_LIBC_QUEUE
+	bool "Libc Queue"
+	default n
+
+config TC_KERNEL_LIBC_SCHED
+	bool "Libc Sched"
+	default n
+
+config TC_KERNEL_LIBC_SEMAPHORE
+	bool "Libc Semaphore"
+	default n
+
+config TC_KERNEL_LIBC_SIGNAL
+	bool "Libc Signal"
+	default n
+
+config TC_KERNEL_LIBC_SPAWN
+	bool "Libc Spawn"
+	default n
+
+config TC_KERNEL_LIBC_STDIO
+	bool "Libc Stdio"
+	default n
+
+config TC_KERNEL_LIBC_STDLIB
+	bool "Libc Stdlib"
+	default n
+
+config TC_KERNEL_LIBC_STRING
+	bool "Libc String"
+	default n
+	select LIBC_STRERROR
+
+config TC_KERNEL_LIBC_TIMER
+	bool "Libc Timer"
+	default n
+
+config TC_KERNEL_LIBC_UNISTD
+	bool "Libc Unistd"
+	default n
+
+config TC_KERNEL_LIBC_SYSLOG
+	bool "Libc Syslog"
+	default n
+
+config TC_KERNEL_MQUEUE
+	bool "Mqueue"
+	default n
+
+config TC_KERNEL_PTHREAD
+	bool "Pthread"
+	default n
+	select MUTEX_TYPES
+
+config TC_KERNEL_ROUNDROBIN
+	bool "RoundRobin"
+	default n
+
+config TC_KERNEL_SCHED
+	bool "Sched"
+	default n
+#	select SCHED_HAVE_PARENT
+
+config TC_KERNEL_SEMAPHORE
+	bool "Semaphore"
+	default n
+	select DEBUG
+	select PRIORITY_INHERITANCE
+
+config TC_KERNEL_SIGNAL
+	bool "Signal"
+	default n
+
+config TC_KERNEL_TASK
+	bool "Task"
+	default n
+	select SCHED_ATEXIT
+	select SCHED_ONEXIT
+
+config TC_KERNEL_TERMIOS
+	bool "Termios"
+	default n
+
+config TC_KERNEL_TIMER
+	bool "Timer"
+	default n
+
+config TC_KERNEL_UMM_HEAP
+	bool "Umm Heap"
+	default n
+
+config TC_KERNEL_TASH_HEAPINFO
+	bool "Heapinfo"
+	default n
+
+config TC_KERNEL_TASH_STACKMONITOR
+	bool "StackMonitor"
+	default n
+
+endif #EXAMPLES_TESTCASE_KERNEL
+

@@ -1,0 +1,3 @@
+config ENTRY_MPU_TEST
+	bool "MPU TestCase Example"
+	depends on EXAMPLES_MPU_TEST

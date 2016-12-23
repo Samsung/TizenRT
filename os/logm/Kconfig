@@ -1,0 +1,58 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig LOGM
+	bool "Logger Module"
+	default n
+	select PRINTF2LOGM
+	select SYSLOG2LOGM
+	---help---
+		Logger.
+
+if LOGM
+
+config PRINTF2LOGM
+	bool "Route printf through logm"
+	default y
+
+config SYSLOG2LOGM
+	bool "Route all syslogs through logm"
+	default y
+
+config LOGM_BUFFER_COUNT
+	int "Number of buffers to store log messages"
+	default 80
+	---help---
+		This is the number of messages that can
+		be queued untill logm task start executing
+		and start pumping the messages out.
+		logm would drop messages if buffers are
+		not sufficient.It depends on logm task
+		priority, how frequently messages are
+		written by modules and sleep duration of
+		logm task which is 1 second now.
+
+config LOGM_MAX_MSG_LENGTH
+	int "Maximum msg length for each message"
+	default 64
+	---help---
+		Each message through logm would be truncated
+		for this length.
+
+config LOGM_TASK_PRIORITY
+	int "Logm Task priority"
+	default 110
+
+config LOGM_TASK_STACKSIZE
+	int "Logm Task stack size"
+	default 2048
+
+config LOGM_TEST
+	bool "Test code for logger module "
+	default n
+	---help---
+		Test code for logger module
+
+endif # LOGM

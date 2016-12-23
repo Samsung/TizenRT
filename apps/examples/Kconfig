@@ -1,0 +1,76 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if INIT_ENTRYPOINT
+choice
+	prompt "Application entry point"
+
+config ENTRY_MANUAL
+	bool "manual entry"
+
+source "$APPSDIR/examples/artik_demo/Kconfig_ENTRY"
+source "$APPSDIR/examples/dtls_client/Kconfig_ENTRY"
+source "$APPSDIR/examples/dtls_server/Kconfig_ENTRY"
+source "$APPSDIR/examples/fota_sample/Kconfig_ENTRY"
+source "$APPSDIR/examples/hello/Kconfig_ENTRY"
+source "$APPSDIR/examples/hello_tash/Kconfig_ENTRY"
+source "$APPSDIR/examples/helloxx/Kconfig_ENTRY"
+source "$APPSDIR/examples/iotivity/Kconfig_ENTRY"
+source "$APPSDIR/examples/iperf/Kconfig_ENTRY"
+source "$APPSDIR/examples/kernel_sample/Kconfig_ENTRY"
+source "$APPSDIR/examples/mdns_test/Kconfig_ENTRY"
+source "$APPSDIR/examples/mpu/Kconfig_ENTRY"
+source "$APPSDIR/examples/nettest/Kconfig_ENTRY"
+source "$APPSDIR/examples/ntpclient_test/Kconfig_ENTRY"
+source "$APPSDIR/examples/proc_test/Kconfig_ENTRY"
+source "$APPSDIR/examples/select_test/Kconfig_ENTRY"
+source "$APPSDIR/examples/sysio_test/Kconfig_ENTRY"
+source "$APPSDIR/examples/telnetd/Kconfig_ENTRY"
+source "$APPSDIR/examples/testcase/Kconfig_ENTRY"
+source "$APPSDIR/examples/tls_client/Kconfig_ENTRY"
+source "$APPSDIR/examples/tls_selftest/Kconfig_ENTRY"
+source "$APPSDIR/examples/tls_server/Kconfig_ENTRY"
+source "$APPSDIR/examples/wakaama_client/Kconfig_ENTRY"
+source "$APPSDIR/examples/webclient/Kconfig_ENTRY"
+source "$APPSDIR/examples/webserver/Kconfig_ENTRY"
+source "$APPSDIR/examples/websocket/Kconfig_ENTRY"
+source "$APPSDIR/examples/workqueue/Kconfig_ENTRY"
+
+endchoice
+
+config USER_ENTRYPOINT
+	string "Application entry point" if ENTRY_MANUAL
+	---help---
+		The name of the entry point for user applications.
+
+endif # INIT_ENTRYPOINT
+
+source "$APPSDIR/examples/dtls_client/Kconfig"
+source "$APPSDIR/examples/dtls_server/Kconfig"
+source "$APPSDIR/examples/fota_sample/Kconfig"
+source "$APPSDIR/examples/hello/Kconfig"
+source "$APPSDIR/examples/hello_tash/Kconfig"
+source "$APPSDIR/examples/helloxx/Kconfig"
+source "$APPSDIR/examples/iotivity/Kconfig"
+source "$APPSDIR/examples/iperf/Kconfig"
+source "$APPSDIR/examples/kernel_sample/Kconfig"
+source "$APPSDIR/examples/mdns_test/Kconfig"
+source "$APPSDIR/examples/mpu/Kconfig"
+source "$APPSDIR/examples/nettest/Kconfig"
+source "$APPSDIR/examples/ntpclient_test/Kconfig"
+source "$APPSDIR/examples/proc_test/Kconfig"
+source "$APPSDIR/examples/select_test/Kconfig"
+source "$APPSDIR/examples/sysio_test/Kconfig"
+source "$APPSDIR/examples/telnetd/Kconfig"
+source "$APPSDIR/examples/testcase/Kconfig"
+source "$APPSDIR/examples/tls_client/Kconfig"
+source "$APPSDIR/examples/tls_selftest/Kconfig"
+source "$APPSDIR/examples/tls_server/Kconfig"
+source "$APPSDIR/examples/wakaama_client/Kconfig"
+source "$APPSDIR/examples/webclient/Kconfig"
+source "$APPSDIR/examples/webserver/Kconfig"
+source "$APPSDIR/examples/websocket/Kconfig"
+source "$APPSDIR/examples/workqueue/Kconfig"
+source "$APPSDIR/examples/artik_demo/Kconfig"

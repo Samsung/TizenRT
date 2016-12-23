@@ -1,0 +1,72 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FS_PROCFS
+	bool "PROCFS File System"
+	default n
+	select FS_READABLE
+	---help---
+		The PROCFS file system provides access to task status and other driver
+		status through the TinyAra file system.  The PROCFS may, for example, be
+		mount at /proc.  Then information about all of the currently active
+		tasks and threads will be available in /proc.
+
+if FS_PROCFS
+
+menu "Exclude individual procfs entries"
+
+config FS_PROCFS_EXCLUDE_PROCESS
+	bool "Exclude process information"
+	default n
+	---help---
+		Causes the process information to be excluded from the procfs system.
+		This will reduce code space, but then giving access to process info
+		was kinda the whole point of procfs, but hey, whatever.
+
+config FS_PROCFS_EXCLUDE_UPTIME
+	bool "Exclude uptime"
+	default n
+
+config FS_PROCFS_EXCLUDE_VERSION
+	bool "Exclude version"
+	default n
+
+config FS_PROCFS_EXCLUDE_CPULOAD
+	bool "Exclude CPU load"
+	default n
+	depends on SCHED_CPULOAD
+
+config FS_PROCFS_EXCLUDE_MOUNTS
+	bool "Exclude mounts"
+	default n
+	depends on !DISABLE_MOUNTPOINT
+
+config FS_PROCFS_EXCLUDE_MTD
+	bool "Exclude mtd"
+	depends on MTD
+	default n
+
+config FS_PROCFS_EXCLUDE_PARTITIONS
+	bool "Exclude partitions"
+	depends on MTD_PARTITION
+	default n
+
+config FS_PROCFS_EXCLUDE_SMARTFS
+	bool "Exclude fs/smartfs"
+	depends on FS_SMARTFS
+	default n
+
+config FS_PROCFS_EXCLUDE_POWER
+	bool "Exclude power/domains"
+	depends on PM
+	default n
+
+config FS_PROCFS_EXCLUDE_CCM
+	bool "Exclude CCM memory usage"
+	depends on STM32_CCM_PROCFS
+	default n
+
+endmenu #
+endif # FS_PROCFS

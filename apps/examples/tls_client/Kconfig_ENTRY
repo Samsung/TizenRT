@@ -1,0 +1,3 @@
+config ENTRY_TLS_CLIENT
+	bool "TLS client application"
+	depends on EXAMPLES_TLS_CLIENT

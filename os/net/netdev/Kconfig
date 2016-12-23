@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menu "Network Device Operations"
+
+config NETDEV_PHY_IOCTL
+	bool "Enable PHY ioctl()"
+	default n
+	---help---
+		Enable support for ioctl() commands to access PHY registers"	
+		
+
+endmenu # Network Device Operations

@@ -1,0 +1,78 @@
+
+config WICED
+	bool "WICED"
+	default n
+	---help---
+		enable the WICED function to use WiFi, but this is in external.
+		must check whether there are WICED codes in external or not.
+
+config DM
+	bool "DM"
+	default n
+	depends on NET
+	---help---
+		enable the DM functionality
+if DM
+config LWM2M_BOOTSTRAP
+	bool "BOOTSTRAP_MODE"
+	default n
+
+config LWM2M_CLIENT_MODE
+	bool "CLIENT_MODE"
+	default n
+
+config LWM2M_LITTLE_ENDIAN
+	bool "LITTLE_ENDIAN"
+	default n
+endif
+
+config ENABLE_IOTIVITY
+	bool "enable / disable iotivity stack"
+	default n
+	select LIBC_NETDB
+	select LIBC_LOCALTIME
+	---help---
+		select to enable the iotivity stack in tinyara
+
+config IOTIVITY_RELEASE_VERSION
+	string "iotivity stack version"
+	default "1.2.1"
+	depends on ENABLE_IOTIVITY
+	---help---
+		define this to iotivity stack release veriosn in use
+
+config IOTIVITY_ROUTING
+	string "Enable routing, allowed values : 'EP' / 'GW' "
+	default "EP"
+	depends on ENABLE_IOTIVITY
+	---help---
+		define this to enable routing, allowed values : 'EP' / 'GW'
+
+config IOTIVITY_PTHREAD_STACKSIZE
+	int "Default pthread stack size for iotivity threads"
+	default 8192
+	depends on ENABLE_IOTIVITY
+	---help---
+		Default pthread stack size for iotivity threads
+
+config ENABLE_IOTIVITY_SECURED
+	bool "enable / disable iotivity security"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		select to enable the security for iotivity stack in tinyara
+
+config ENABLE_IOTIVITY_CLOUD
+	bool "enable / disable iotivity cloud"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		select to enable the cloud for iotivity stack in tinyara
+
+config IOTIVITY_DEBUG
+	bool "enable / disable iotivity stack logs"
+	default n
+	depends on ENABLE_IOTIVITY
+	---help---
+		select to enable all iotivity stack logs (DEBUG / INFO etc.)
+

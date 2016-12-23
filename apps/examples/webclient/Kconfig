@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_WEBCLIENT
+	bool "TinyAra Webclient example"
+	default n
+	---help---
+		Enable the TinyAra Webclient example
+
+config USER_ENTRYPOINT
+	string
+	default "webclient_main" if ENTRY_WEBCLIENT

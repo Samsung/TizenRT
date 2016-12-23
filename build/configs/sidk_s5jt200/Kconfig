@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if ARCH_BOARD_SIDK_S5JT200
+config DISABLE_MAKING_BINARY_HEADER
+	bool "Disable making attachheader on build system"
+	default y
+endif

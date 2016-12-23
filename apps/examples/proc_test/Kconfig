@@ -1,0 +1,26 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_PROC_TEST
+	bool "\"Procfs\" example"
+	default n
+	---help---
+		Enable the \"Procfs\" example
+
+if EXAMPLES_PROC_TEST
+
+config EXAMPLES_PROC_TEST_PROGNAME
+	string "Program name"
+	default "proc"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "proc_test_main" if ENTRY_PROC_TEST

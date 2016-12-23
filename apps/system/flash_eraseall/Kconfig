@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config SYSTEM_FLASH_ERASEALL
+	bool "FLASH eraseall tool"
+	default n
+	depends on MTD && NSH_BUILTIN_APPS && !BUILD_PROTECTED && !BUILD_KERNEL
+	---help---
+		Enable support for the FLASH eraseall tool.
+
+if SYSTEM_FLASH_ERASEALL
+endif
+

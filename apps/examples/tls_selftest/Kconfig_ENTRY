@@ -1,0 +1,3 @@
+config ENTRY_TLS_SELFTEST
+	bool "TLS test application"
+	depends on EXAMPLES_TLS_SELFTEST

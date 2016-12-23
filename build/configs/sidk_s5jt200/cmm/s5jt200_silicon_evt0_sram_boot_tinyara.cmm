@@ -1,0 +1,60 @@
+;--------------------------------------------------------------------------
+;
+; Copyright 2016 Samsung Electronics All Rights Reserved.
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+; http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing,
+; software distributed under the License is distributed on an
+; "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+; either express or implied. See the License for the specific
+; language governing permissions and limitations under the License.
+;
+;--------------------------------------------------------------------------
+;------------------------------
+;  Configuring JTAG interface
+;-----------------------------
+
+SYStem.Option ResBreak OFF
+SYStem.Option WaitReset 100.ms 
+SYStem.Option EnReset OFF
+SYStem.Option IMASKASM ON
+SYStem.Option IMASKHLL ON
+System.JtagClock 3MHz
+
+print "s5jt200 evt0 jtag start.."
+
+System.CPU CortexR4
+
+Sys.Config.COREBASE 0x801E0000 ; R4
+;Sys.Config.CTIBASE 0x80820000
+
+System.Config AXIACCESSPORT 64.
+System.Config DEBUGACCESSPORT 1.
+System.Config MEMORYACCESSPORT 5.
+
+Sys.attach
+B.Select.Program Onchip
+
+if run()
+	break
+
+wait 0.2s
+
+print "load images..."
+sYmbol.SourcePATH.Translate "\home\jh6186.park\" "W:\"
+d.load.elf "W:\01_PROJECT\00_IOT\swp_tinyara\tinyara\build\bin\tinyara"
+enddo
+
+d.load.elf "W:\01_PROJECT\00_IOT\swp_tinyara\tinyara\build\bin\tinyara" /nocode
+;do qspi_write_flash.cmm 0x04000000 0x100000
+;d.load.elf "W:\work\t20\tinyara\build\bin\tinyara"
+b.s arm_boot
+d.l
+
+
+

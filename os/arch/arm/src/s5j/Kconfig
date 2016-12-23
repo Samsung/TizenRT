@@ -1,0 +1,348 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+comment "Samsung S5J Chip Configuration Options"
+
+choice
+	prompt "Samsung Chip Selection"
+	default ARCH_CHIP_S5JT200
+
+config ARCH_CHIP_S5JT200
+	bool "S5JT200 "
+	depends on ARCH_CHIP_S5J
+	select S5J_S5JT200
+	select ARCH_CORTEXR4
+	select ARMV7A_HAVE_GICv2
+	select ARMV7R_ICACHE
+	select ARMV7R_DCACHE
+
+endchoice
+
+config S5J_S5JT200
+	bool
+	default y
+	select S5J_UARTDBG
+	select S5J_UART0
+	select S5J_UART1
+	select S5J_UART2
+	select S5J_UART3
+
+menu "S5J DEBUG UART Configuration"
+config S5J_UART_CLOCK_FROM_WPLL
+	bool "Set Uart Clock using WPLL"
+	default n
+
+config SERIAL_TERMIOS
+	bool
+	default y
+
+config ARCH_HAVE_SERIAL_TERMIOS
+	bool
+	default y
+
+config S5J_HAVE_UARTDBG
+	bool
+	default y
+
+config S5J_HAVE_UART0
+	bool
+	default y
+
+config S5J_HAVE_UART1
+	bool
+	default y
+
+config S5J_HAVE_UART2
+	bool
+	default y
+
+config S5J_HAVE_UART3
+	bool
+	default y
+
+if S5J_HAVE_UARTDBG
+config UARTDBG_RXBUFSIZE
+	int "uartdbg rx buffer size"
+	default 256
+
+config UARTDBG_TXBUFSIZE
+	int "uartdbg tx buffer size"
+	default 256
+
+config UARTDBG_BAUD
+	int "baudrate"
+	default 115200
+
+config UARTDBG_BITS
+	int "uart bits"
+	default 8
+
+config UARTDBG_PARITY
+	int "party bit"
+	default 0
+
+config UARTDBG_2STOP
+	int "stop bit"
+	default 0
+endif
+
+
+config S5J_UARTDBG
+	bool
+	default n
+	select ARCH_HAVE_UARTDBG
+	select S5J_HAVE_UARTDBG
+	select UART0_SERIAL_CONSOLE
+	select UARTDBG_SERIAL_CONSOLE
+
+
+config S5J_UART0
+	bool
+	default n
+	select ARCH_HAVE_UART0
+	select UART0_SERIAL_CONSOLE
+
+config S5J_UART1
+	bool
+	default n
+	select ARCH_HAVE_UART1
+	select S5J_HAVE_UART1
+	select UART1_SERIAL_CONSOLE
+
+config S5J_UART2
+	bool
+	default n
+	select ARCH_HAVE_UART2
+	select S5J_HAVE_UART2
+	select UART2_SERIAL_CONSOLE
+
+config S5J_UART3
+	bool
+	default n
+	select ARCH_HAVE_UART3
+	select S5J_HAVE_UART3
+	select UART2_SERIAL_CONSOLE
+
+config UARTDBG_SERIAL_CONSOLE
+	bool
+	default n
+
+
+endmenu #"S5J UART Configuration"
+
+config S5J_PWM
+	bool "S5J PWM support"
+	default n
+
+config S5J_SSS
+	bool "S5J SSS support"
+	default y
+
+menu "S5J SPI(Serial Peripheral Interface Bus)"
+config S5J_SPI
+	bool "S5J SPI support"
+	default y
+endmenu
+
+
+menu "S5J WDT(Watch Dog Timer)"
+config S5J_WATCHDOG
+	bool "S5J WDT support"
+	default n
+
+config S5J_WATCHDOG_DEBUG
+	bool "S5J Watchdog debug"
+	default n
+	depends on S5J_WATCHDOG
+
+config S5J_WATCHDOG_INT
+	bool "S5J Watchdog interrupt enable"
+	default n
+	depends on S5J_WATCHDOG
+
+config S5J_WATCHDOG_RESET
+	bool "S5J Watchdog reset enable"
+	default n
+	depends on S5J_WATCHDOG
+
+config S5J_WDT_DEFTIMEOUT
+	int "S5J Watchdog Timeout(in msec)"
+	default 7000
+	depends on S5J_WATCHDOG
+
+endmenu
+
+menu "S5J RTC(Real Time Clock)"
+config S5J_RTC
+	bool "S5J RTC support"
+	default n
+	select RTC
+
+config START_YEAR
+	int "year"
+	default 2016
+	depends on S5J_RTC
+
+config START_MONTH
+	int "month"
+	default 8
+	depends on S5J_RTC
+
+config START_DAY
+	int "day"
+	default 11
+	depends on S5J_RTC
+
+config GREGORIAN_TIME
+	bool "S5J RTC for GREGORIAN TIME"
+	default n
+	depends on S5J_RTC
+
+config RTC_BASE_YEAR
+	int "Offset of year for S5JRTC(BASE + BCD)"
+	default 1900
+	depends on S5J_RTC
+endmenu #"S5J_RTC"
+
+menu "S5J TICK COUNTER"
+config S5J_TICK_COUNTER
+	bool "S5J tick counter support"
+	default n
+
+endmenu #"S5J_TICK_COUNTER"
+
+
+menu "S5J ADC"
+config S5J_ADC
+	bool "S5J ADC support"
+	default n
+
+config S5J_ADC_CH
+	int "Setup ADC channel number"
+	default 0
+    depends on S5J_ADC
+endmenu
+
+menu "S5J I2C"
+config S5J_I2C
+	bool "S5J I2C support"
+	default n
+endmenu
+
+config S5J_MAILBOX
+	bool "S5J MAILBOX support"
+	default n
+	select MAILBOX
+
+config S5J_GPIO
+	bool "S5J GPIO support"
+	default n
+
+config S5J_CHIPID
+	bool "S5J CHIPID support"
+	default n
+
+config S5J_EFUSE
+	bool "S5J EFUSE support"
+	default n
+
+config S5J_SDIO_SLAVE
+	bool "S5J SDIO support"
+	default n
+
+config S5J_LEDCTRLBLK
+	bool "S5J LED BLK controller support"
+	default y
+
+config S5J_SFLASH
+  bool "S5J Serial Flash support"
+	default y
+
+if S5J_SFLASH
+menu "Serial FLASH region"
+config S5J_FLASH_BASE
+	hex "Nor Flash start address (physical)"
+	default 0x04000000
+	help
+		Samsung IoT uses serial nor flash memory, this needs base address of memory map
+
+config S5J_FLASH_SIZE
+	hex "Nor Flash size (KB)"
+	default 8192
+	help
+		Samsung IoT uses serial nor flash memory, set to default size
+
+config S5J_FLASH_SECTOR_SIZE
+	hex "Flash sector size (Byte)"
+	default 4096
+
+config S5J_BOOTLOADER_REGION_SIZE
+	hex "Boot loader region size(KB)"
+	default 4096
+	help
+		When smartfs initialize flash, it will be skipped. This features is used to
+		prevent for erasing or accessing to Non smartfs region.
+
+config NVRAM_WIFI_START
+	hex "WiFi shared memory size"
+	default 0x043BE000
+	help
+		The physical start address of the WiFi non-volatile memoryM.
+endmenu
+endif
+
+menu "S5J binary version"
+
+config S5J_BL2_VERSION_ADDR
+       hex "bl2 base address"
+       default 0x04003FF4
+       help
+
+config S5J_LEDFW_VERSION_ADDR
+       hex "LEDFW base address"
+       default 0x042FBFF4
+       help
+
+config S5J_SSSFW_VERSION_ADDR
+       hex "SSSFW base address"
+       default 0x04303FF4
+       help
+
+config S5J_WLANFW_VERSION_ADDR
+       hex "WLANFW base address"
+       default 0x043BDFF4
+       help
+
+endmenu
+
+
+config S5J_DEBUG_BREAK
+	bool "S5J debug break on boot process"
+	help
+		this enable break during booting, on s5j_boot.c before os_start()
+
+config S5J_PM
+	bool "S5J Power Management"
+	default n
+
+menu "S5J PMU Config"
+config S5J_PWR
+	bool "S5J PMU feature"
+	default n
+
+config S5J_PWR_DSTOP
+	bool "S5J DSTOP Power Mode"
+	default n
+
+config S5J_PWR_SLEEP
+	bool "S5J SLEEP Power Mode"
+	default n
+
+endmenu
+
+
+config S5J_DMA
+	bool "S5J DMA enable"
+	default n

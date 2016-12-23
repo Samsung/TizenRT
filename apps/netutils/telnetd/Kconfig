@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NETUTILS_TELNETD
+	bool "Telnet daemon"
+	default n
+	select NETDEV_TELNET
+	---help---
+		Enable support for the Telnet daemon.
+
+if NETUTILS_TELNETD
+endif

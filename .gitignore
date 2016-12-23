@@ -1,0 +1,17 @@
+.depend
+Make.dep
+.built
+*.o
+*.a
+*.d
+*.i
+*~
+*.orig
+.swp
+.*.swp
+.gdbinit
+cscope.out
+
+# ctags index file
+.tags
+.tags_sorted_by_file

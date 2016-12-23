@@ -1,0 +1,18 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if GPIO
+
+config GPIO_EXPORT
+	bool "Support GPIO Export/Unexport."
+	default n
+	---help---
+    Like a linux, userspace may ask the kernel to export control a GPIO to
+    userspace by writing its number to this file. Then You can make easily new
+    gpio pin is possible to read and write.
+    For example: "echo 14 > /dev/gpio_export" will create a "gpio14" node for
+    GPIO #14.
+
+endif # GPIO
