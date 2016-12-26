@@ -170,7 +170,7 @@ int board_app_initialize(void)
 
 #if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
 	up_rtc_getdatetime(&tp);
-	lldbg("RTC getdatetime 20%d/%d/%d/%d/%d/%d\n", tp.tm_year, tp.tm_mon + 1, tp.tm_mday, tp.tm_hour, tp.tm_min, tp.tm_sec);
+	lldbg("RTC getdatetime %d/%d/%d/%d/%d/%d\n", tp.tm_year + CONFIG_RTC_BASE_YEAR, tp.tm_mon + 1, tp.tm_mday, tp.tm_hour, tp.tm_min, tp.tm_sec);
 	lldbg("Version Info :\n");
 	lldbg("tinyARA %s\n", __TIMESTAMP__);
 #endif
