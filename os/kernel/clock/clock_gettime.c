@@ -15,10 +15,10 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
+/****************************************************************************
  * kernel/clock/clock_gettime.c
  *
- *   Copyright (C) 2007, 2009, 2011, 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2009, 2011, 2014, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
 /************************************************************************
  * Included Files
@@ -145,7 +145,7 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp)
 		 */
 
 		if (clock_id == CLOCK_REALTIME) {
-			/* Get the elapsedcd s time since the time-of-day was last set.
+			/* Get the elapsed time since the time-of-day was last set.
 			 * clock_systimespec() provides the time since power was applied;
 			 * the bias value corresponds to the time when the time-of-day was
 			 * last set.
