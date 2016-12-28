@@ -18,7 +18,7 @@
 /****************************************************************************
  * drivers/pipes/pipe_common.c
  *
- *   Copyright (C) 2008-2009, 2011, 2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2008-2009, 2011, 2015-2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -373,13 +373,17 @@ ssize_t pipecommon_read(FAR struct file *filep, FAR char *buffer, size_t len)
 	struct inode *inode = filep->f_inode;
 	struct pipe_dev_s *dev = inode->i_private;
 #ifdef CONFIG_DEV_PIPEDUMP
-	FAR uint8_t *start = (uint8_t *) buffer;
+	FAR uint8_t *start = (uint8_t *)buffer;
 #endif
 	ssize_t nread = 0;
 	int sval;
 	int ret;
 
 	DEBUGASSERT(dev);
+
+	if (len == 0) {
+		return 0;
+	}
 
 	/* Make sure that we have exclusive access to the device structure */
 
@@ -456,7 +460,11 @@ ssize_t pipecommon_write(FAR struct file *filep, FAR const char *buffer, size_t 
 	int sval;
 
 	DEBUGASSERT(dev);
-	pipe_dumpbuffer("To PIPE:", (uint8_t *) buffer, len);
+	pipe_dumpbuffer("To PIPE:", (uint8_t *)buffer, len);
+
+	if (len == 0) {
+		return 0;
+	}
 
 	/* At present, this method cannot be called from interrupt handlers.  That is
 	 * because it calls sem_wait (via pipecommon_semtake below) and sem_wait cannot
