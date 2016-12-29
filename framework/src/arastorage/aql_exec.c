@@ -121,33 +121,6 @@ db_result_t aql_deinit_handle(db_handle_t **handle)
 	return res;
 }
 
-db_result_t db_process(db_handle_t **handle, db_cursor_t *cursor)
-{
-	uint32_t optype;
-	if (handle == NULL || *handle == NULL) {
-		return DB_ARGUMENT_ERROR;
-	}
-	optype = AQL_GET_EXEC_TYPE((*handle)->optype);
-	switch (optype) {
-	case AQL_TYPE_REMOVE_TUPLES:
-		return relation_process_remove(handle, cursor);
-	case AQL_TYPE_SELECT:
-		return relation_process_select(handle, cursor);
-	default:
-		DB_LOG_E("DB: Invalid operation type: %d\n", optype);
-		return DB_INCONSISTENCY_ERROR;
-	}
-}
-
-/* Process tuples iteratively tuple by tuple  */
-int db_processing_status(db_handle_t *handle)
-{
-	if (handle == NULL) {
-		return DB_HANDLE_FLAG_INVALID;
-	}
-	return handle->flags & DB_HANDLE_FLAG_PROCESSING;
-}
-
 /****************************************************************************
 * Public Functions
 ****************************************************************************/
@@ -263,53 +236,18 @@ db_result_t db_exec(char *format)
 	return res;
 }
 
-db_result_t cursor_tuple_process(db_handle_t *handler, db_cursor_t *cursor)
-{
-	source_dest_map_t *attr_map_ptr;
-	attr_map_ptr = handler->attr_map;
-	int i;
-	db_result_t res;
-	for (i = 0; i < handler->result_rel->attribute_count; i++) {
-		memset(cursor->attr_map[i].name, 0, sizeof(cursor->attr_map[i].name));
-		memcpy(cursor->attr_map[i].name, attr_map_ptr->to_attr->name, sizeof(attr_map_ptr->to_attr->name));
-		cursor->attr_map[i].from_data_size = attr_map_ptr->from_attr->element_size;
-		cursor->attr_map[i].from_offset = attr_map_ptr->from_offset;
-		cursor->attr_map[i].domain = attr_map_ptr->to_attr->domain;
-		attr_map_ptr++;
-	}
-	res = DB_OK;
-	cursor->attribute_count = handler->result_rel->attribute_count;
-	while (db_processing_status(handler)) {
-		res = db_process(&handler, cursor);
-		if (DB_ERROR(res)) {
-			DB_LOG_E("db_process Failed : %d\n", res);
-			return res;
-		}
-		switch (res) {
-		case DB_FINISHED:
-			return res;
-		case DB_OK:
-			continue;
-		case DB_GOT_ROW:
-			break;
-		default:
-			DB_LOG_E("[%d]\n", res);
-			break;
-		}
-	}
-	return res;
-}
-
 db_cursor_t *db_query(char *format)
 {
 	aql_adt_t adt;
 	relation_t *rel;
 	uint32_t optype;
 	db_handle_t *handler;
-	attribute_t *relattr, *attr_ptr;
+	attribute_t *attr_ptr;
 	db_cursor_t *cursor;
 
 	handler = NULL;
+	cursor = NULL;
+
 	if (DB_ERROR(aql_get_parse_result(format, &adt))) {
 		DB_LOG_E("DB : Parsing Error in db_create : %d\n");
 		return NULL;
@@ -336,48 +274,50 @@ db_cursor_t *db_query(char *format)
 		/* Overwrite the attribute array with a full copy of the original
 		   relation's attributes. */
 		adt.attribute_count = 0;
-		relattr = list_head(rel->attributes);
-		for (attr_ptr = relattr; attr_ptr != NULL; attr_ptr = attr_ptr->next) {
+		for (attr_ptr = list_head(rel->attributes); attr_ptr != NULL; attr_ptr = attr_ptr->next) {
 			AQL_ADD_ATTRIBUTE(&adt, attr_ptr->name, DOMAIN_UNSPECIFIED, 0);
 		}
-		relation_rename(adt.relations[1], adt.relations[0]);
-		memcpy(rel->name, adt.relations[0], sizeof(rel->name));
-
-		/* FALLTHROUGH */
-
+	/* FALLTHROUGH */
 	case AQL_TYPE_SELECT:
 		if (DB_ERROR(aql_init_handle(&handler))) {
 			DB_LOG_E("DB: Init handle failed\n");
-			return NULL;;
+			goto errout;
 		}
-		relation_select(&handler, rel, &adt);
-		cursor = (db_cursor_t *) malloc(sizeof(db_cursor_t));
+		if (DB_ERROR(relation_select(&handler, rel, &adt))) {
+			DB_LOG_E("DB: Failed relation_select\n");
+			goto errout;
+		}
+		cursor = relation_process_result(handler);
 		if (cursor == NULL) {
-			DB_LOG_E("DB: Failed to malloc cursor\n");
-			aql_deinit_handle(&handler);
-			return NULL;
-		}
-		if (DB_ERROR(cursor_init(&cursor, rel))) {
-			DB_LOG_E("DB: Failed to init cursor\n");
-			aql_deinit_handle(&handler);
-			return NULL;
-		}
-		if (DB_ERROR(cursor_tuple_process(handler, cursor))) {
-			aql_deinit_handle(&handler);
-			handler = NULL;
-			return NULL;
+			DB_LOG_E("DB: Failed to process cursor tuples\n");
+			goto errout;
 		}
 		break;
 	case AQL_TYPE_FLUSH:
-		//TODO flush operation will be implemented later
+	//TODO flush operation will be implemented later
 	default:
 		break;
 	}
+
 	if (rel != NULL) {
 		if (handler == NULL || !(handler->flags & DB_HANDLE_FLAG_PROCESSING)) {
 			relation_release(rel);
 		}
 	}
 	aql_deinit_handle(&handler);
+
 	return cursor;
+
+errout:
+	if (rel != NULL) {
+		relation_release(rel);
+	}
+
+	if (cursor != NULL) {
+		cursor_deinit(cursor);
+	}
+
+	aql_deinit_handle(&handler);
+
+	return NULL;
 }

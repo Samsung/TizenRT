@@ -180,12 +180,7 @@ db_result_t storage_get_relation(relation_t *rel, char *name)
 		return DB_STORAGE_ERROR;
 	}
 
-	r = storage_read(fd, rel->name, sizeof(rel->name));
-	if (r != sizeof(rel->name)) {
-		storage_close(fd);
-		DB_LOG_E("DB: Failed to read name, got %d of %d bytes\n", r, sizeof(rel->name));
-		return DB_STORAGE_ERROR;
-	}
+	strncpy(rel->name, name, sizeof(rel->name));
 
 	r = storage_read(fd, rel->tuple_filename, sizeof(rel->tuple_filename));
 	if (r != sizeof(rel->tuple_filename)) {
@@ -234,17 +229,10 @@ db_result_t storage_put_relation(relation_t *rel)
 		return DB_STORAGE_ERROR;
 	}
 
-	r = storage_write(fd, rel->name, sizeof(rel->name));
-	if (r != sizeof(rel->name)) {
-		storage_close(fd);
-		storage_remove(rel->name);
-		return DB_STORAGE_ERROR;
-	}
-
 	if (rel->tuple_filename[0] == '\0') {
 		snprintf(tuple_path, TUPLE_NAME_LENGTH, "%s.%x\0", TUPLE_FILE_NAME, (unsigned)(random_rand() & 0xffff));
 		result = storage_generate_file(tuple_path);
-		if (result == DB_STORAGE_ERROR) {
+		if (DB_ERROR(result)) {
 			storage_close(fd);
 			storage_remove(rel->tuple_filename);
 			return DB_STORAGE_ERROR;
@@ -296,16 +284,25 @@ db_result_t storage_drop_relation(relation_t *rel, int remove_tuples)
 	DB_LOG_D("Unlink rel = %s, tuple = %s\n", rel->name, rel->tuple_filename);
 	if (remove_tuples && RELATION_HAS_TUPLES(rel)) {
 		storage_close(rel->tuple_storage);
-		storage_remove(rel->tuple_filename);
+		if (DB_ERROR(storage_remove(rel->tuple_filename))) {
+			DB_LOG_D("Failed to remove tuple file : %s\n", rel->tuple_filename);
+			return DB_STORAGE_ERROR;
+		}
 	}
-	return storage_remove(rel->name) != 0 ? DB_STORAGE_ERROR : DB_OK;
+
+	if (DB_ERROR(storage_remove(rel->name))) {
+		DB_LOG_D("Failed to remove relation file : %s\n", rel->name);
+		return DB_STORAGE_ERROR;
+	}
+
+	return DB_OK;
 }
 
 db_result_t storage_rename_relation(char *old_name, char *new_name)
 {
 	ssize_t r;
 
-	r = rename(old_name, new_name);
+	r = storage_rename(old_name, new_name);
 	if (r < 0) {
 		return DB_STORAGE_ERROR;
 	}

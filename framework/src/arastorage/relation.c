@@ -317,7 +317,7 @@ relation_t *relation_create(char *name, db_direction_t dir)
 db_result_t relation_rename(char *old_name, char *new_name)
 {
 
-	if (DB_ERROR(relation_remove(new_name, 0)) || DB_ERROR(storage_rename_relation(old_name, new_name))) {
+	if (DB_ERROR(relation_remove(new_name, 1)) || DB_ERROR(storage_rename_relation(old_name, new_name))) {
 		return DB_STORAGE_ERROR;
 	}
 
@@ -649,7 +649,7 @@ static void relation_index_clear(relation_t *rel)
 	int len;
 
 	len = strlen(rel->name) + strlen(INDEX_NAME_SUFFIX) + 1;
-	filename = (char *)malloc(sizeof(char) * len);
+	filename = (char *) malloc(sizeof(char) * len);
 	if (filename == NULL) {
 		return;
 	}
@@ -716,6 +716,33 @@ static db_result_t generate_selection_result(db_handle_t **handle, relation_t *r
 	(*handle)->flags |= DB_HANDLE_FLAG_PROCESSING;
 
 	return DB_OK;
+}
+
+db_result_t relation_process(db_handle_t **handle, db_cursor_t *cursor)
+{
+	uint32_t optype;
+	if (handle == NULL || *handle == NULL) {
+		return DB_ARGUMENT_ERROR;
+	}
+	optype = AQL_GET_EXEC_TYPE((*handle)->optype);
+	switch (optype) {
+	case AQL_TYPE_REMOVE_TUPLES:
+		return relation_process_remove(handle, cursor);
+	case AQL_TYPE_SELECT:
+		return relation_process_select(handle, cursor);
+	default:
+		DB_LOG_E("DB: Invalid operation type: %d\n", optype);
+		return DB_INCONSISTENCY_ERROR;
+	}
+}
+
+/* Process tuples iteratively tuple by tuple  */
+int db_processing_status(db_handle_t *handle)
+{
+	if (handle == NULL) {
+		return DB_HANDLE_FLAG_INVALID;
+	}
+	return handle->flags & DB_HANDLE_FLAG_PROCESSING;
 }
 
 db_result_t relation_process_select(db_handle_t **handle, db_cursor_t *cursor)
@@ -870,23 +897,18 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 	storage_row_t row = NULL;
 	tuple_t result_row;
 	source_dest_map_t *attr_map_ptr, *attr_map_end;
-	attribute_count = (*handle)->result_rel->attribute_count;
+	int i;
 
 	if ((*handle)->tuple == NULL) {
 		return DB_ALLOCATION_ERROR;
 	}
-	result_row = (*handle)->tuple;
 
-	if ((*handle)->flags & DB_HANDLE_FLAG_SEARCH_INDEX) {
-		(*handle)->tuple_id = index_get_next(&((*handle)->index_iterator), FALSE);
-		if ((*handle)->tuple_id == INVALID_TUPLE) {
-			DB_LOG_E("DB: An attribute value could not be found in the index\n");
-			if ((*handle)->index_iterator.next_item_no == 0) {
-				return DB_INDEX_ERROR;
-			}
-			goto end_removal;
-		}
-	}
+	result_row = (*handle)->tuple;
+	attribute_count = (*handle)->result_rel->attribute_count;
+	attr_map_end = (*handle)->attr_map + attribute_count;
+
+	/* Search all tuples sequentially without index. */
+	(*handle)->tuple_id++;
 
 	row = (storage_row_t) malloc(sizeof(char) * (*handle)->rel->row_length + 1);
 	if (row == NULL) {
@@ -897,15 +919,12 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 	/* Put the tuples fulfilling the- given condition into a new relation.
 	   The tuples may be projected. */
 	result = storage_get_row((*handle)->rel, &((*handle)->tuple_id), row);
-	(*handle)->tuple_id++;
 	if (DB_ERROR(result)) {
 		DB_LOG_E("DB: Failed to get a row in relation %s!\n", (*handle)->rel->name);
 		goto errout;
 	} else if (result == DB_FINISHED) {
 		goto end_removal;
 	}
-
-	attr_map_end = (*handle)->attr_map + attribute_count;
 
 	/* Process the attributes in the result relation. */
 	for (attr_map_ptr = (*handle)->attr_map; attr_map_ptr < attr_map_end; attr_map_ptr++) {
@@ -933,9 +952,6 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 			goto errout;
 		}
 
-
-
-
 		(*handle)->current_row++;
 		if (row != NULL) {
 			free(row);
@@ -950,17 +966,45 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 
 end_removal:
 	DB_LOG_E("DB: Finished removing tuples. Result relation has %d tuples\n", (*handle)->result_rel->cardinality);
-	result = storage_drop_relation((*handle)->rel, 1);
+
+#ifdef CONFIG_ARASTORAGE_ENABLE_WRITE_BUFFER
+	/* Flush insert buffer to make sure of writing tuples in new relation */
+	if (DB_SUCCESS(storage_flush_insert_buffer())) {
+		DB_LOG_D("DB : flush insert buffer!!\n");
+	}
+#endif
+
+	relation_release((*handle)->rel);
+
+	/* Rename the name of new relation to old relation */
+	result = relation_rename((*handle)->result_rel->name, (*handle)->rel->name);
 	if (DB_ERROR(result)) {
+		DB_LOG_E("DB: Failed to rename newly created relation\n");
 		goto errout;
 	}
+	memcpy((*handle)->result_rel->name, (*handle)->rel->name, sizeof((*handle)->result_rel->name));
 
-	relation_free((*handle)->rel);
+	/* Destory exsting index for old relation */
 	index = (*handle)->index_iterator.index;
 	if (index != NULL) {
 		index_destroy(index);
 		relation_index_clear((*handle)->result_rel);
 	}
+
+	/* Process finished, we allocate cursor for result of remove */
+	if (DB_ERROR(cursor_init(&cursor, (*handle)->result_rel)) || DB_ERROR(cursor_data_set(cursor, (*handle)->attr_map, (*handle)->result_rel->attribute_count))) {
+		DB_LOG_E("DB: Failed to init cursor and set cursor data\n");
+		goto errout;
+	}
+
+	/* Add cursor tuple data to new relation created by remove operation for update. */
+	for (i = 0; i < (*handle)->result_rel->cardinality; i++) {
+		if (DB_ERROR(cursor_data_add(cursor, i))) {
+			DB_LOG_E("DB: Failed to add cursor tuple data into new relation\n");
+			goto errout;
+		}
+	}
+
 	if (row != NULL) {
 		free(row);
 	}
@@ -968,11 +1012,61 @@ end_removal:
 	return DB_FINISHED;
 
 errout:
+#ifdef CONFIG_ARASTORAGE_ENABLE_WRITE_BUFFER
+	storage_write_buffer_clean();
+#endif
+
 	if (row != NULL) {
 		free(row);
 	}
 
 	return result;
+}
+
+db_cursor_t *relation_process_result(db_handle_t *handler)
+{
+	db_result_t res;
+	db_cursor_t *cursor;
+
+	cursor = (db_cursor_t *) malloc(sizeof(db_cursor_t));
+	if (cursor == NULL) {
+		DB_LOG_E("DB: Failed to malloc cursor\n");
+		return NULL;
+	}
+	memset(cursor, 0, sizeof(db_cursor_t));
+
+	/* when SELECT, cursor row data is set in processing tuple by tuple.
+	   So we need to initialize cursor and make cursor data before processing tuples */
+	if (handler->optype == AQL_TYPE_SELECT) {
+		if (DB_ERROR(cursor_init(&cursor, handler->rel)) || DB_ERROR(cursor_data_set(cursor, handler->attr_map, handler->result_rel->attribute_count))) {
+			DB_LOG_E("DB: Failed to init cursor and set cursor data\n");
+			cursor_deinit(cursor);
+			return NULL;
+		}
+	}
+
+	res = DB_ARGUMENT_ERROR;
+	while (db_processing_status(handler)) {
+		res = relation_process(&handler, cursor);
+		if (DB_ERROR(res)) {
+			DB_LOG_E("DB: Failed to process tuples : %d\n", res);
+			cursor_deinit(cursor);
+			return NULL;
+		}
+		switch (res) {
+		case DB_FINISHED:
+			DB_LOG_V("DB: Processing tuples is done!\n");
+			return cursor;
+		case DB_OK:
+			continue;
+		case DB_GOT_ROW:
+			break;
+		default:
+			DB_LOG_E("[%d]\n", res);
+			break;
+		}
+	}
+	return NULL;
 }
 
 db_result_t relation_select(db_handle_t **handle, relation_t *rel, void *adt_ptr)
@@ -992,7 +1086,7 @@ db_result_t relation_select(db_handle_t **handle, relation_t *rel, void *adt_ptr
 	(*handle)->lvm_instance = (lvm_instance_t *) adt->lvm_instance;
 
 	if (AQL_GET_FLAGS(adt) & AQL_FLAG_ASSIGN) {
-		name = adt->relations[1];
+		name = adt->relations[0];
 		dir = DB_STORAGE;
 	} else {
 		name = RESULT_RELATION;

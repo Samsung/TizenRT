@@ -173,6 +173,7 @@ db_result_t relation_init(void);
 db_result_t relation_deinit(void);
 db_result_t relation_process_remove(db_handle_t **, db_cursor_t *);
 db_result_t relation_process_select(db_handle_t **, db_cursor_t *);
+db_cursor_t *relation_process_result(db_handle_t *);
 relation_t *relation_load(char *);
 db_result_t relation_release(relation_t *);
 relation_t *relation_create(char *, db_direction_t);

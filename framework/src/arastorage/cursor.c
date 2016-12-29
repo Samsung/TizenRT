@@ -344,6 +344,37 @@ unsigned char *cursor_get_string_value(db_cursor_t *cursor, int attr_index)
 	return (unsigned char *)VALUE_STRING(&value);
 }
 
+db_result_t cursor_data_set(db_cursor_t *cursor, source_dest_map_t *attr_map, attribute_id_t attribute_count)
+{
+	source_dest_map_t *attr_map_ptr;
+	int i;
+
+	if (cursor == NULL) {
+		DB_LOG_E("DB: Invalid cursor\n");
+		return DB_CURSOR_ERROR;
+	}
+
+	if (attr_map == NULL) {
+		DB_LOG_E("DB: Invalid attribute map\n");
+		return DB_ARGUMENT_ERROR;
+	}
+
+	attr_map_ptr = attr_map;
+
+	for (i = 0; i < attribute_count; i++) {
+		memset(cursor->attr_map[i].name, 0, sizeof(cursor->attr_map[i].name));
+		memcpy(cursor->attr_map[i].name, attr_map_ptr->to_attr->name, sizeof(attr_map_ptr->to_attr->name));
+		cursor->attr_map[i].from_data_size = attr_map_ptr->from_attr->element_size;
+		cursor->attr_map[i].from_offset = attr_map_ptr->from_offset;
+		cursor->attr_map[i].domain = attr_map_ptr->to_attr->domain;
+		attr_map_ptr++;
+	}
+
+	cursor->attribute_count = attribute_count;
+
+	return DB_OK;
+}
+
 void cursor_clean_data(db_cursor_t *cursor)
 {
 	memset(cursor->name, 0, sizeof(cursor->name));
@@ -353,6 +384,9 @@ void cursor_clean_data(db_cursor_t *cursor)
 	cursor->total_rows = 0;
 	cursor->attribute_count = 0;
 	cursor->storage_row_length = 0;
+	if (cursor->row_arr != NULL) {
+		free(cursor->row_arr);
+	}
 	cursor->row_arr = NULL;
 }
 
@@ -380,6 +414,7 @@ db_result_t cursor_init(db_cursor_t **cursor, relation_t *rel)
 	(*cursor)->storage_row_length = rel->row_length;
 	memcpy((*cursor)->name, rel->tuple_filename, sizeof(rel->tuple_filename));
 	memcpy((*cursor)->rel_name, rel->name, sizeof(rel->name));
+
 	return DB_OK;
 }
 
