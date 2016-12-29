@@ -33,7 +33,6 @@ int logm_task(int argc, char *argv[])
 	g_logm_head = 0;
 	g_logm_tail = 0;
 	g_logm_count = 0;
-
 	/* Now logm is ready */
 	g_logm_isready = 1;
 
@@ -45,8 +44,8 @@ int logm_task(int argc, char *argv[])
 		while (g_logm_count > 0) {
 			fputs(g_logm_rsvbuf[g_logm_head], stdout);
 			g_logm_head += 1;
-			if (g_logm_head >= LOGM_RSVBUF_COUNT) {
-				g_logm_head -= LOGM_RSVBUF_COUNT;
+			if (g_logm_head >= (LOGM_RSVBUF_COUNT + 1)) {
+				g_logm_head -= (LOGM_RSVBUF_COUNT + 1);
 			}
 			g_logm_count--;
 		}

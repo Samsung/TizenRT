@@ -33,7 +33,14 @@
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
-#define LOGM_PRIVATE_SIGNO (13)
+
+enum buffer_state_e {
+	LESS = 0,
+	EQUAL = 1,
+	GREATER = 2
+};
+
+typedef enum buffer_state_e buffer_state_t;
 
 /* Structure for a single debug message */
 

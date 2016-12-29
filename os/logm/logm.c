@@ -27,7 +27,7 @@
 
 #include "logm.h"
 
-char g_logm_rsvbuf[LOGM_RSVBUF_COUNT][LOGM_MAX_MSG_LEN];
+char g_logm_rsvbuf[LOGM_RSVBUF_COUNT + 1][LOGM_MAX_MSG_LEN];
 int g_logm_head;
 int g_logm_tail;
 int g_logm_count;
@@ -37,22 +37,43 @@ int logm_internal(int priority, const char *fmt, va_list ap)
 {
 	irqstate_t flags;
 	int ret = 0;
-
-	/* Need logic for set here */
+	buffer_state_t op;
 
 	if (g_logm_isready) {
 		flags = irqsave();
 
-		/* choose a available buffer */
-		/* This section will be optimized later */
 		if (g_logm_count < LOGM_RSVBUF_COUNT) {
-			ret = vsnprintf((char *)&g_logm_rsvbuf[g_logm_tail], LOGM_MAX_MSG_LEN - 1, fmt, ap);
-			g_logm_tail += 1;
-			if (g_logm_tail >= LOGM_RSVBUF_COUNT) {
-				g_logm_tail -= LOGM_RSVBUF_COUNT;
-			}
-			g_logm_count++;
+			op = LESS;
 		}
+		else if (g_logm_count == LOGM_RSVBUF_COUNT) {
+			op = EQUAL;
+		}
+		else {
+			op = GREATER;
+		}
+
+		switch (op) {
+		case LESS:
+			ret = vsnprintf((char *)&g_logm_rsvbuf[g_logm_tail], LOGM_MAX_MSG_LEN - 1, fmt, ap);
+			break;
+		case EQUAL:
+			ret = vsnprintf((char *)&g_logm_rsvbuf[g_logm_tail], LOGM_MAX_MSG_LEN - 1, "LOGM: Buffer Overflow dropping messages\n", ap);
+			break;
+		case GREATER:
+			irqrestore(flags);
+			return 0;
+		}
+		/* choose a available buffer */
+
+		if (ret > LOGM_MAX_MSG_LEN - 1) {
+			g_logm_rsvbuf[g_logm_tail][LOGM_MAX_MSG_LEN - 1] = '\n';
+		}
+		g_logm_tail += 1;
+		if (g_logm_tail >= (LOGM_RSVBUF_COUNT + 1)) {
+			g_logm_tail -= (LOGM_RSVBUF_COUNT + 1) ;
+		}
+		g_logm_count++;
+
 		irqrestore(flags);
 	} else {
 		/* Low Output: Sytem is not yet completely ready  */
