@@ -56,6 +56,7 @@
  * Included Files
  ****************************************************************************/
 #include <string.h>
+#include <stdbool.h>
 #include <pthread.h>
 #include <arastorage/arastorage.h>
 #include "attribute.h"
@@ -80,7 +81,7 @@ pthread_attr_t g_attr;
  * Private function prototypes
  ****************************************************************************/
 static index_api_t *find_index_api(index_type_t index_type);
-db_result_t db_indexing(void);
+db_result_t db_indexing(relation_t*);
 LIST(indices);
 MEMB(index_memb, index_t, DB_INDEX_POOL_SIZE);
 
@@ -158,13 +159,13 @@ db_result_t index_create(index_type_t index_type, relation_t *rel, attribute_t *
 	index->rel = rel;
 	index->attr = attr;
 	index->api = api;
-	index->flags = 0;
+	index->state = INDEX_LOAD_NEEDED;
 	index->opaque_data = NULL;
 	index->descriptor_file[0] = '\0';
 	index->type = index_type;
 
 	if (DB_ERROR(api->create(index))) {
-		memb_free(&index_memb, index);
+		index_release(index);
 		DB_LOG_E("DB: Index-specific creation failed for attribute %s\n", attr->name);
 		return DB_INDEX_ERROR;
 	}
@@ -173,26 +174,25 @@ db_result_t index_create(index_type_t index_type, relation_t *rel, attribute_t *
 	list_push(indices, index);
 
 	if (index->descriptor_file[0] != '\0' && DB_ERROR(storage_put_index(index))) {
-		api->destroy(index);
-		memb_free(&index_memb, index);
+		index_destroy(index);
 		DB_LOG_E("DB: Failed to store index data in file \"%s\"\n", index->descriptor_file);
 		return DB_INDEX_ERROR;
 	}
 
 	if (!(api->flags & INDEX_API_INLINE) && cardinality > 0) {
 		DB_LOG_D("DB: Created an index for an old relation; issuing a load request\n");
-		index->flags = INDEX_LOAD_NEEDED;
-		//[TODO] change to pthread_create(&db_indexer, &g_attr, db_indexer_thread, NULL); from indexing();
-		if (DB_ERROR(db_indexing())) {
+		if (DB_ERROR(db_indexing(rel))) {
+			index_destroy(index);
+			DB_LOG_E("DB: Failed to create index for an old relation %s.\n", rel->name);
 			return DB_INDEX_ERROR;
 		}
 	} else {
 		/* Inline indexes (i.e., those using the existing storage of the relation)
 		   do not need to be reloaded after restarting the system. */
 		DB_LOG_D("DB: Index created for attribute %s\n", attr->name);
-		index->flags |= INDEX_READY;
 	}
 
+	index->state = INDEX_READY;
 	return DB_OK;
 }
 
@@ -248,7 +248,7 @@ db_result_t index_load(relation_t *rel, attribute_t *attr)
 				attr->index = index;
 				index->rel = rel;
 				index->attr = attr;
-				index->flags = INDEX_READY;
+				index->state = INDEX_READY;
 				break;
 			}
 		}
@@ -289,7 +289,7 @@ db_result_t index_load(relation_t *rel, attribute_t *attr)
 		}
 		list_add(indices, index);
 		attr->index = index;
-		index->flags = INDEX_READY;
+		index->state = INDEX_READY;
 	}
 	return DB_OK;
 }
@@ -308,7 +308,7 @@ db_result_t index_insert(index_t *index, attribute_value_t *value, tuple_id_t tu
 
 db_result_t index_delete(index_t *index, attribute_value_t *value)
 {
-	if (index->flags != INDEX_READY) {
+	if (index->state != INDEX_READY) {
 		return DB_INDEX_ERROR;
 	}
 
@@ -328,7 +328,7 @@ db_result_t index_get_iterator(index_iterator_t *iterator, index_t *index, attri
 		return DB_STORAGE_ERROR;
 	}
 
-	if (index->flags != INDEX_READY) {
+	if (index->state != INDEX_READY) {
 		return DB_INDEX_ERROR;
 	}
 
@@ -420,7 +420,7 @@ static index_t *get_next_index_to_load(void)
 	index_t *index;
 
 	for (index = list_head(indices); index != NULL; index = index->next) {
-		if (index->flags & INDEX_LOAD_NEEDED) {
+		if (index->state == INDEX_LOAD_NEEDED) {
 			return index;
 		}
 	}
@@ -428,9 +428,84 @@ static index_t *get_next_index_to_load(void)
 	return NULL;
 }
 
-//TODO change to static void * db_indexer_thread(void *arg)
-// This will need some thinking
-db_result_t db_indexing()
+db_result_t db_indexing(relation_t *rel)
 {
+	index_t *index;
+	tuple_id_t tuple_id;
+	tuple_id_t cardinality;
+	storage_row_t row;
+	attribute_value_t value;
+	attribute_t *attr;
+	db_result_t result;
+	int offset;
+	bool isfound;
+
+	index = get_next_index_to_load();
+	if (index == NULL) {
+		DB_LOG_E("DB: Request to load an index, but no index is set to be loaded\n");
+		goto errout;
+	}
+
+	row = NULL;
+	row = (storage_row_t) malloc(sizeof(char) * rel->row_length + 1);
+	if (row == NULL) {
+		DB_LOG_E("DB: Failed to allocate row\n");
+		return DB_ALLOCATION_ERROR;
+	}
+
+	DB_LOG_D("DB: Loading the index for %s.%s...\n", index->rel->name, index->attr->name);
+
+	offset  = 0;
+	isfound = false;
+
+	attr = list_head(rel->attributes);
+	while (attr != NULL) {
+		if (strcmp(attr->name, index->attr->name) == 0) {
+			DB_LOG_D("DB: Found attribute %s in %s\n", index->attr->name, rel->name);
+			isfound = true;
+			break;
+		}
+		offset += attr->element_size;
+		attr = attr->next;
+	}
+
+	if (!isfound) {
+		DB_LOG_E("DB: Failed to find attribute %s in %s\n", index->attr->name, rel->name);
+		goto errout;
+	}
+
+	cardinality = relation_cardinality(rel);
+
+	for(tuple_id = 0; tuple_id < cardinality; tuple_id++) {
+		memset(row, 0, sizeof(row));
+		result = storage_get_row(rel, &tuple_id, row);
+		if (DB_ERROR(result)) {
+			DB_LOG_E("DB: Failed to get a row in relation %s!\n", rel->name);
+			goto errout;
+		}
+
+		row += offset;
+		result = db_phy_to_value(&value, index->attr, row);
+		if (DB_ERROR(result)) {
+			DB_LOG_E("DB: Failed to get value from row\n");
+			goto errout;
+		}
+
+		if (DB_ERROR(index_insert(index, &value, tuple_id))) {
+			DB_LOG_E("DB: Failed to get a row in relation %s!\n", rel->name);
+			goto errout;
+		}
+	}
+
+	free(row);
+	DB_LOG_D("DB: Loaded %lu rows into the index\n", cardinality);
+
+	return DB_OK;
+
+errout:
+	if (row != NULL) {
+		free(row);
+	}
+
 	return DB_INDEX_ERROR;
 }

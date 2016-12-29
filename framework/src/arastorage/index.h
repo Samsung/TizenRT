@@ -63,10 +63,6 @@
 /****************************************************************************
 * Pre-processor Definitions
 ****************************************************************************/
-#define INDEX_READY             0x00
-#define INDEX_LOAD_NEEDED       0x01
-#define INDEX_LOAD_ERROR        0x02
-
 #define INDEX_API_INTERNAL      0x01
 #define INDEX_API_EXTERNAL      0x02
 #define INDEX_API_INLINE        0x04
@@ -85,6 +81,12 @@ enum index_e {
 };
 typedef enum index_e index_type_t;
 
+enum index_state_e {
+	INDEX_READY = 0,
+	INDEX_LOAD_NEEDED = 1
+};
+typedef enum index_state_e index_state_t;
+
 struct index_s {
 	struct index_s *next;
 	char descriptor_file[DB_MAX_FILENAME_LENGTH];
@@ -93,7 +95,7 @@ struct index_s {
 	struct index_api_s *api;
 	void *opaque_data;
 	index_type_t type;
-	uint8_t flags;
+	index_state_t state;
 };
 typedef struct index_s index_t;
 
