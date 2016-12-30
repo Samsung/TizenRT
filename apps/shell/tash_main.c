@@ -47,7 +47,7 @@ enum tash_input_state_e {
 #define SELECT_TIMEOUT_USECS  (0)
 #endif
 #define TASH_THREAD_STACKSIZE (4096)
-#define TASH_THREAD_PRIORITY  (252)	/* (SCHED_PRIORITY_MAX-3) */
+#define TASH_THREAD_PRIORITY  (125)
 
 const char tash_prompt[] = "TASH>>";
 #endif							/* CONFIG_TASH */
