@@ -6,8 +6,6 @@
 menuconfig LOGM
 	bool "Logger Module"
 	default n
-	select PRINTF2LOGM
-	select SYSLOG2LOGM
 	---help---
 		Logger.
 
