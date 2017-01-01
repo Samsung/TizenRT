@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/irq.h>
+#include <chip/mpu-reg.h>
 #include "up_internal.h"
 
 /****************************************************************************
@@ -123,6 +124,24 @@ up_saveusercontext:
 	 * But right now, I can't find the definitive list of the volatile
 	 * floating point registers.
 	 */
+#ifdef CONFIG_MPU_STACKGUARD
+	mov     r5, #MPU_REG_STK_GUARD
+	mcr     p15, 0, r5, c6, c2, 0
+	add     r1,  r0, #(4*REG_RNUM_STKGUARD)
+	str     r5, [r1]
+
+	mrc     p15, 0, r7, c6, c1, 0
+	add     r1, r0, #(4*REG_RBASE_STKGUARD)
+	str     r7, [r1]
+
+	mrc     p15, 0, r7, c6, c1, 2
+	add     r1, r0, #(4*REG_RSIZE_STKGUARD)
+	str     r7, [r1]
+
+	mrc     p15, 0, r7, c6, c1, 4
+	add     r1, r0, #(4*REG_RATTR_STKGUARD)
+	str     r7, [r1]
+#endif
 
 #ifdef CONFIG_ARCH_FPU
 	add		r1, r0, #(4*REG_S0)		/* R1=Address of FP register storage */

@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/irq.h>
+#include <chip/mpu-reg.h>
 
 #include "arm.h"
 #include "cp15.h"
@@ -165,12 +166,30 @@ arm_vectorirq:
 	ldr		r0, .Lirqtmp			/* Points to temp storage */
 	ldmia	r0, {r3, r4}			/* Recover r3=lr_IRQ, r4=spsr_IRQ */
 
+#ifdef CONFIG_MPU_STACKGUARD
+	mov     r5, #MPU_REG_STK_GUARD
+	mcr     p15, 0, r5, c6, c2, 0
+	add     r1,  sp, #(4*REG_RNUM_STKGUARD)
+	str     r5, [r1]
+
+	mrc     p15, 0, r7, c6, c1, 0
+	add     r1, sp, #(4*REG_RBASE_STKGUARD)
+	str     r7, [r1]
+
+	mrc     p15, 0, r7, c6, c1, 2
+	add     r1, sp, #(4*REG_RSIZE_STKGUARD)
+	str     r7, [r1]
+
+	mrc     p15, 0, r7, c6, c1, 4
+	add     r1, sp, #(4*REG_RATTR_STKGUARD)
+	str     r7, [r1]
+#endif
 #ifdef CONFIG_BUILD_PROTECTED
 	/* Did we enter from user mode?  If so then we need get the values of
 	 * USER mode r13(sp) and r14(lr).
 	 */
        mov             r6, #0
-       mov     r5, #MPU_REG_USER_CONFIG1
+       mov     r5, #MPU_REG_USER_CONFIG0
 3:
        mcr     p15, 0, r5, c6, c2, 0
        add     r1,  sp, #(4*REG_RNUM)
@@ -264,13 +283,31 @@ arm_vectorirq:
 	ldr		r1, [r0, #(4*REG_CPSR)]	/* Fetch the return SPSR */
 	msr		spsr_cxsf, r1				/* Set the return mode SPSR */
 
+#ifdef CONFIG_MPU_STACKGUARD
+	mov     r5, #MPU_REG_STK_GUARD
+	mcr     p15, 0, r5, c6, c2, 0
+	add     r6,  r0, #(4*REG_RNUM_STKGUARD)
+	str     r5, [r6]
+
+	add     r6, r0, #(4*REG_RBASE_STKGUARD)
+	ldr     r2, [r6]
+	mcr     p15, 0, r2, c6, c1, 0
+
+	add     r6, r0, #(4*REG_RSIZE_STKGUARD)
+	ldr     r2, [r6]
+	mcr     p15, 0, r2, c6, c1, 2
+
+	add     r6, r0, #(4*REG_RATTR_STKGUARD)
+	ldr     r2, [r6]
+	mcr     p15, 0, r2, c6, c1, 4
+#endif
 #ifdef CONFIG_BUILD_PROTECTED
 	/* Are we leaving in user mode?  If so then we need to restore the
 	 * values of USER mode r13(sp) and r14(lr).
 	 */
        mov             r3, #0
        mov             r6, #0
-       mov     r5, #MPU_REG_USER_CONFIG1
+       mov     r5, #MPU_REG_USER_CONFIG0
 4:
        mcr     p15, 0, r5, c6, c2, 0
        add     r6,  r0, #(4*REG_RNUM)

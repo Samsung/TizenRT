@@ -68,30 +68,30 @@ up_mpucontextsave:
 	 *
 	 * save the MPU context information 
 	 */
-	mov		r6, #0
-	mov 	r5, #MPU_REG_USER_CONFIG1
+	mov     r6, #0
+	mov     r5, #MPU_REG_USER_CONFIG0
 1:
 	mcr     p15, 0, r5, c6, c2, 0
 	add     r1,  r0, #(4*REG_RNUM)
 	str     r5, [r1, r6]
 
-	mrc 	p15, 0, r7, c6, c1, 0
+	mrc     p15, 0, r7, c6, c1, 0
 	add     r1, r0, #(4*REG_RBASE)
 	str     r7, [r1, r6]
 
-	mrc 	p15, 0, r7, c6, c1, 2
+	mrc     p15, 0, r7, c6, c1, 2
 	add     r1, r0, #(4*REG_RSIZE)
 	str     r7, [r1, r6]
 
-	mrc 	p15, 0, r7, c6, c1, 4
+	mrc     p15, 0, r7, c6, c1, 4
 	add     r1, r0, #(4*REG_RATTR)
 	str     r7, [r1, r6]
 
-	add		r6, #16
-	add 	r5, #1
-	cmp		r6, #MPU_CONTEXT_SIZE
-	bne		1b
-	mov		pc, lr
+	add     r6, #16
+	add     r5, #1
+	cmp     r6, #MPU_CONTEXT_SIZE
+	bne     1b
+	mov     pc, lr
 
 	.size up_mpucontextsave, . - up_mpucontextsave
 	.end

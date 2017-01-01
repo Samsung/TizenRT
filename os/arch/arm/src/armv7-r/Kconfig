@@ -39,6 +39,12 @@ config ARMV7R_DCACHE_WRITETHROUGH
 	default n
 	depends on ARMV7R_DCACHE
 
+config MPU_STACKGUARD
+	bool "Hardware stack guard"
+	default n
+	---help---
+		Enable hardware enabled stack guard for every task
+
 config ARMV7R_HAVE_L2CC
 	bool
 	default n
