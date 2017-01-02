@@ -473,7 +473,7 @@ static void tc_task_on_exit(void)
 	g_callback = false;
 
 	pid = task_create("tc_on_exit", SCHED_PRIORITY_DEFAULT, 2048, onexit_task, (char *const *)NULL);
-	if (pid == ENOMEM || pid < 0) {
+	if (pid < 0) {
 		printf("tc_task_on_exit task_create FAIL, Error No: %d %d\n", errno, pid);
 		total_fail++;
 		RETURN_ERR;
