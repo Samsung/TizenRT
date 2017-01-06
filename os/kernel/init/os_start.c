@@ -499,6 +499,10 @@ void os_start(void)
 
 	up_initialize();
 
+#if defined(CONFIG_TTRACE)
+	ttrace_init();
+#endif
+
 #ifdef CONFIG_MM_SHM
 	/* Initialize shared memory support */
 

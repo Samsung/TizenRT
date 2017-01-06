@@ -65,6 +65,7 @@
 #include "sched/sched.h"
 #include "group/group.h"
 #include "pthread/pthread.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -126,6 +127,7 @@ int pthread_join(pthread_t thread, FAR pthread_addr_t *pexit_value)
 	FAR struct join_s *pjoin;
 	int ret;
 
+	trace_begin(TTRACE_TAG_TASK, "pthread_join");
 	svdbg("thread=%d group=%p\n", thread, group);
 	DEBUGASSERT(group);
 
@@ -138,6 +140,7 @@ int pthread_join(pthread_t thread, FAR pthread_addr_t *pexit_value)
 
 	if ((pid_t)thread == getpid()) {
 		leave_cancellation_point();
+		trace_end(TTRACE_TAG_TASK);
 		return EDEADLK;
 	}
 
@@ -263,5 +266,6 @@ int pthread_join(pthread_t thread, FAR pthread_addr_t *pexit_value)
 
 	svdbg("Returning %d\n", ret);
 	leave_cancellation_point();
+	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }

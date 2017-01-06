@@ -64,6 +64,7 @@
 #include "sched/sched.h"
 #include "task/task.h"
 #include "pthread/pthread.h"
+#include <ttrace.h>
 
 /**************************************************************************
  * Private Definitions
@@ -97,12 +98,16 @@ int pthread_cancel(pthread_t thread)
 {
 	FAR struct pthread_tcb_s *tcb;
 
+	trace_begin(TTRACE_TAG_TASK, "pthread_cancel");
+
 	/* First, make sure that the handle references a valid thread */
 
 	if (thread == 0) {
 		/* pid == 0 is the IDLE task.  Callers cannot cancel the
 		 * IDLE task.
 		 */
+
+		trace_end(TTRACE_TAG_TASK);
 		return ESRCH;
 	}
 
@@ -112,6 +117,8 @@ int pthread_cancel(pthread_t thread)
 		/* The pid does not correspond to any known thread.  The thread
 		 * has probably already exited.
 		 */
+
+		trace_end(TTRACE_TAG_TASK);
 		return ESRCH;
 	}
 
@@ -139,6 +146,7 @@ int pthread_cancel(pthread_t thread)
 
 		tcb->cmn.flags |= TCB_FLAG_CANCEL_PENDING;
 		sched_unlock();
+		trace_end(TTRACE_TAG_TASK);
 		return OK;
 	}
 
@@ -197,5 +205,6 @@ int pthread_cancel(pthread_t thread)
 
 	/* Then let task_terminate do the real work */
 
+	trace_end(TTRACE_TAG_TASK);
 	return task_terminate((pid_t)thread, false);
 }

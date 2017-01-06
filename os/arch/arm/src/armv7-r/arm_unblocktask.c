@@ -58,6 +58,7 @@
 
 #include <sched.h>
 #include <debug.h>
+#include <ttrace.h>
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 
@@ -134,9 +135,12 @@ void up_unblock_task(struct tcb_s *tcb)
 
 			rtcb = (struct tcb_s *)g_readytorun.head;
 
+			trace_sched(NULL, rtcb);
+
 			/* Then switch contexts.  Any necessary address environment
 			 * changes will be made when the interrupt returns.
 			 */
+
 			up_restorestate(rtcb->xcp.regs);
 		}
 
@@ -153,8 +157,10 @@ void up_unblock_task(struct tcb_s *tcb)
 			 */
 
 			rtcb = (struct tcb_s *)g_readytorun.head;
+			trace_sched(NULL, rtcb);
 
 			/* Then switch contexts */
+
 			up_fullcontextrestore(rtcb->xcp.regs);
 		}
 	}

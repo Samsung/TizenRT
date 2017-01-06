@@ -64,6 +64,7 @@
 #include "signal/signal.h"
 #endif
 #include "task/task.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -127,6 +128,8 @@ int task_exit(void)
 	FAR struct tcb_s *rtcb;
 	int ret;
 
+	trace_begin(TTRACE_TAG_TASK, "task_exit");
+
 	/* Remove the TCB of the current task from the ready-to-run list.  A context
 	 * switch will definitely be necessary -- that must be done by the
 	 * architecture-specific logic.
@@ -177,5 +180,6 @@ int task_exit(void)
 	 */
 
 	rtcb->lockcount--;
+	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }

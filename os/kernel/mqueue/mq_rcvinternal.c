@@ -70,6 +70,7 @@
 
 #include "sched/sched.h"
 #include "mqueue/mqueue.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -275,6 +276,8 @@ ssize_t mq_doreceive(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR char *ubuf
 	FAR struct mqueue_inode_s *msgq;
 	ssize_t rcvmsglen;
 
+	trace_begin(TTRACE_TAG_IPC, "mq_doreceive");
+
 	/* Get the length of the message (also the return value) */
 
 	rcvmsglen = mqmsg->msglen;
@@ -320,6 +323,9 @@ ssize_t mq_doreceive(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR char *ubuf
 		irqrestore(saved_state);
 	}
 
+	trace_end(TTRACE_TAG_IPC);
+
 	/* Return the length of the message transferred to the user buffer */
+
 	return rcvmsglen;
 }

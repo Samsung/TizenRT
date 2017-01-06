@@ -70,6 +70,7 @@
 #include "group/group.h"
 #include "task/task.h"
 #include "clock/clock.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -126,6 +127,8 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 	int hash_ndx;
 	int tries;
 
+	trace_begin(TTRACE_TAG_TASK, "task_assignpid");
+
 	/* Disable pre-emption.  This should provide sufficient protection
 	 * for the following operation.
 	 */
@@ -163,6 +166,7 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 			tcb->pid = next_pid;
 
 			(void)sched_unlock();
+			trace_end(TTRACE_TAG_TASK);
 			return OK;
 		}
 	}
@@ -172,6 +176,7 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 	 */
 
 	(void)sched_unlock();
+	trace_end(TTRACE_TAG_TASK);
 	return ERROR;
 }
 
@@ -353,6 +358,8 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		return ERROR;
 	}
 
+	trace_begin(TTRACE_TAG_TASK, "thread_schedsetup");
+
 	/* Assign a unique task ID to the task. */
 
 	ret = task_assignpid(tcb);
@@ -426,6 +433,8 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		tcb->task_state = TSTATE_TASK_INACTIVE;
 		sched_unlock();
 	}
+
+	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }
 

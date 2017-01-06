@@ -75,6 +75,7 @@
 #include "group/group.h"
 #include "clock/clock.h"
 #include "pthread/pthread.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Public Data
@@ -249,6 +250,8 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 #ifdef HAVE_TASK_GROUP
 	bool group_joined = false;
 #endif
+
+	trace_begin(TTRACE_TAG_TASK, "pthread_create");
 
 	/* If attributes were not supplied, use the default attributes */
 
@@ -449,6 +452,8 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		errcode = EIO;
 		goto errout_with_join;
 	}
+
+	trace_end(TTRACE_TAG_TASK);
 	return ret;
 
 errout_with_join:
@@ -465,5 +470,6 @@ errout_with_tcb:
 #endif
 
 	sched_releasetcb((FAR struct tcb_s *)ptcb, TCB_FLAG_TTYPE_PTHREAD);
+	trace_end(TTRACE_TAG_TASK);
 	return errcode;
 }
