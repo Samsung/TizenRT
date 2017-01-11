@@ -1,0 +1,23 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig EXAMPLES_TESTCASE_STACKGUARD
+	bool "Stack Guard TestCase Examples"
+	depends on MPU_STACKGUARD
+	---help---
+		Enable the TestCase to test the stack guard feature.
+		This feature enables the hardware enabled stack guard.
+
+if EXAMPLES_TESTCASE_STACKGUARD
+
+config TC_SG_RECURSION_TEST
+	bool "Recursive call Test for Stack guard feature"
+	default n
+
+endif #EXAMPLES_TESTCASE_STACKGUARD
+
+config USER_ENTRYPOINT
+	string
+	default "sg_tc_main" if ENTRY_STACKGUARD_TEST
