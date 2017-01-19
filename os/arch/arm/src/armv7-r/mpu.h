@@ -463,18 +463,18 @@ static inline void mpu_show_regioninfo(void)
 	/* save the current region before printing the information */
 	temp = get_mpu_region_num();
 
-	dbg("*****************************************************************************\n");
-	dbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t    STATUS\tATTRIBUTES*\n");
-	dbg("*****************************************************************************\n");
+	lldbg("*****************************************************************************\n");
+	lldbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t    STATUS\tATTRIBUTES*\n");
+	lldbg("*****************************************************************************\n");
 	for (idx = 0; idx < 8; idx++) {
 		mpu_set_rgnr(idx);
 		regval = get_mpu_region_num();
 		base = get_mpu_region_base();
 		size = get_mpu_region_size();
 		attr = get_mpu_region_access_ctrl();
-		dbg("%8d\t\t%8X\t%8X\t%8d\t%8X\n", (regval & MPU_RGNR_MASK), (base & MPU_RBAR_ADDR_MASK), (size ? (1 << (((size & MPU_RASR_RSIZE_MASK) >> MPU_RASR_RSIZE_SHIFT) + 1)) : 0), (size & MPU_RASR_ENABLE) ? 1 : 0, attr);
+		lldbg("%8d\t\t%8X\t%8X\t%8d\t%8X\n", (regval & MPU_RGNR_MASK), (base & MPU_RBAR_ADDR_MASK), (size ? (1 << (((size & MPU_RASR_RSIZE_MASK) >> MPU_RASR_RSIZE_SHIFT) + 1)) : 0), (size & MPU_RASR_ENABLE) ? 1 : 0, attr);
 	}
-	dbg("*****************************************************************************\n");
+	lldbg("*****************************************************************************\n");
 	/* restore the previous region */
 	mpu_set_rgnr(temp);
 #endif

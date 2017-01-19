@@ -256,15 +256,15 @@ static inline void mpu_show_regioninfo(void)
 	/* save the current region before printing the information */
 	temp = getreg32(MPU_RNR);
 
-	dbg("*****************************************************************************\n");
-	dbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t REG\t   \tSTATUS\tATTRIBUTES*\n");
-	dbg("*****************************************************************************\n");
+	lldbg("*****************************************************************************\n");
+	lldbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t REG\t   \tSTATUS\tATTRIBUTES*\n");
+	lldbg("*****************************************************************************\n");
 	for (idx = 0; idx < 8; idx++) {
 		putreg32(idx, MPU_RNR);
 		base = getreg32(MPU_RBAR);
 		size = getreg32(MPU_RASR);
 		attr = getreg32(MPU_RASR);
-		dbg("%8d\t\t%8X\t%8X\t%8X\t%8X\t%8X\n",
+		lldbg("%8d\t\t%8X\t%8X\t%8X\t%8X\t%8X\n",
 			(base & MPU_RBAR_REGION_MASK),
 			(base & MPU_RBAR_ADDR_MASK),
 			(size ? (1 << (((size & MPU_RASR_SIZE_MASK) >> MPU_RASR_SIZE_SHIFT) + 1)) : 0),
@@ -272,7 +272,7 @@ static inline void mpu_show_regioninfo(void)
 			(size & MPU_RASR_ENABLE) ? 1 : 0,
 			((attr & MPU_RASR_ATTR_MASK) >> MPU_RASR_ATTR_SHIFT));
 	}
-	dbg("*****************************************************************************\n");
+	lldbg("*****************************************************************************\n");
 	/* restore the previous region */
 	putreg32(temp, MPU_RNR);
 #endif
