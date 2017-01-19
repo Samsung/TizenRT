@@ -16,7 +16,6 @@
  *
  ****************************************************************************/
 
-#include <tinyara/streams.h>
 #include <signal.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -24,9 +23,14 @@
 #include <unistd.h>
 #include <string.h>
 #include <sched.h>
+#include <tinyara/config.h>
+#ifdef CONFIG_ARCH_LOWPUTC
+#include <tinyara/streams.h>
+#endif
 
 #include "logm.h"
 
+/* An additional line is for logm buffer overflow message */
 char g_logm_rsvbuf[LOGM_RSVBUF_COUNT + 1][LOGM_MAX_MSG_LEN];
 int g_logm_head;
 int g_logm_tail;
@@ -37,35 +41,22 @@ int logm_internal(int priority, const char *fmt, va_list ap)
 {
 	irqstate_t flags;
 	int ret = 0;
-	buffer_state_t op;
 
 	if (g_logm_isready && !up_interrupt_context()) {
 		flags = irqsave();
 
 		if (g_logm_count < LOGM_RSVBUF_COUNT) {
-			op = LESS;
-		}
-		else if (g_logm_count == LOGM_RSVBUF_COUNT) {
-			op = EQUAL;
-		}
-		else {
-			op = GREATER;
-		}
-
-		switch (op) {
-		case LESS:
-			ret = vsnprintf((char *)&g_logm_rsvbuf[g_logm_tail], LOGM_MAX_MSG_LEN - 1, fmt, ap);
-			break;
-		case EQUAL:
-			ret = vsnprintf((char *)&g_logm_rsvbuf[g_logm_tail], LOGM_MAX_MSG_LEN - 1, "LOGM: Buffer Overflow dropping messages\n", ap);
-			break;
-		case GREATER:
+			ret = vsnprintf((char *)&g_logm_rsvbuf[g_logm_tail], LOGM_MAX_MSG_LEN, fmt, ap);
+		} else if (g_logm_count == LOGM_RSVBUF_COUNT) {
+			ret = vsnprintf((char *)&g_logm_rsvbuf[g_logm_tail], LOGM_MAX_MSG_LEN, "LOGM: Buffer Overflow dropping messages\n", ap);
+		} else {
 			irqrestore(flags);
 			return 0;
 		}
+
 		/* choose a available buffer */
 
-		if (ret > LOGM_MAX_MSG_LEN - 1) {
+		if (ret >= LOGM_MAX_MSG_LEN - 1) {
 			g_logm_rsvbuf[g_logm_tail][LOGM_MAX_MSG_LEN - 1] = '\n';
 		}
 		g_logm_tail += 1;

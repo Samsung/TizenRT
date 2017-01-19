@@ -20,6 +20,7 @@
 
 #include <queue.h>
 #include <stdio.h>
+#include <tinyara/config.h>
 
 /****************************************************************************
  * Preprocessor Definitions
@@ -33,14 +34,6 @@
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
-
-enum buffer_state_e {
-	LESS = 0,
-	EQUAL = 1,
-	GREATER = 2
-};
-
-typedef enum buffer_state_e buffer_state_t;
 
 /* Structure for a single debug message */
 
