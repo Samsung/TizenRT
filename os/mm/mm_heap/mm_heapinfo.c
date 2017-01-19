@@ -62,34 +62,49 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define MM_PIDHASH(pid) ((pid) & (CONFIG_MAX_TASKS - 1))
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-
 /****************************************************************************
- * Name: mm_heapinfo_parse
+ * Name: heapinfo_parse
  *
  * Description:
  *   This function walk through heap and displays alloc info.
  ****************************************************************************/
-void heapinfo_parse(FAR struct mm_heap_s *heap)
+void heapinfo_parse(FAR struct mm_heap_s *heap, int mode)
 {
 	struct mm_allocnode_s *node;
 	size_t mxordblk = 0;
 	int    ordblks  = 0;		/* Number of non-inuse chunks */
 	size_t fordblks = 0;		/* Total non-inuse space */
-	FAR struct tcb_s *tcb;
+	int nonsched_resource;
+	int nonsched_idx;
+
+	/* This nonsched can be 3 types : group resources, freed when child task finished, leak */
+	pid_t nonsched_list[CONFIG_MAX_TASKS];
+	int nonsched_size[CONFIG_MAX_TASKS];
+
 #if CONFIG_MM_REGIONS > 1
 	int region;
 #else
 #define region 0
 #endif
-	printf("****************************************************************\n");
-	printf("Heap Walker Output for Heap =0x%p\n", heap);
-	printf("****************************************************************\n");
+	/* initialize the nonsched */
+	nonsched_resource = 0;
+	for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
+		nonsched_list[nonsched_idx] = -1;
+		nonsched_size[nonsched_idx] = 0;
+	}
+
+	if (mode == HEAPINFO_TRACE) {
+		printf("****************************************************************\n");
+		printf("Heap Walker Output for Heap =0x%p\n", heap);
+		printf("****************************************************************\n");
+	}
 
 	/* Visit each region */
 
@@ -102,28 +117,29 @@ void heapinfo_parse(FAR struct mm_heap_s *heap)
 		 */
 		mm_takesemaphore(heap);
 
-		printf("HeapReg#%d Heap StartAddr=0x%p, EndAddr=0x%p\n\n", region, heap->mm_heapstart[region], heap->mm_heapend[region]);
-		printf("****************************************************************\n");
-		printf("Heap Alloation Info- (Size in Bytes)\n");
-		printf("****************************************************************\n");
+		if (mode == HEAPINFO_TRACE) {
+			printf("HeapReg#%d Heap StartAddr=0x%p, EndAddr=0x%p\n\n", region, heap->mm_heapstart[region], heap->mm_heapend[region]);
+			printf("****************************************************************\n");
+			printf("Heap Alloation Info- (Size in Bytes)\n");
+			printf("****************************************************************\n");
+		}
 
 		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 
 			/* Check if the node corresponds to an allocated memory chunk */
 
 			if ((node->preceding & MM_ALLOC_BIT) != 0) {
-				printf("MemAddr=0x%x Size=%5d (%c) Owner=0x%x Pid=%3d ", node, node->size, 'A', node->alloc_call_addr, node->pid);
+				if (mode == HEAPINFO_TRACE) {
+					printf("MemAddr=0x%x Size=%6d (%c) Owner=0x%x Pid=%3d \n", node, node->size, 'A', node->alloc_call_addr, node->pid);
+				}
 
 #if CONFIG_TASK_NAME_SIZE > 0
-				if (node->pid == -1) {
+				if (node->pid == -1 && mode == HEAPINFO_TRACE) {
 					printf("INT Context\n");
-				} else {
-					tcb = sched_gettcb(node->pid);
-					if (tcb != NULL) {
-						printf("%s\n", tcb->name);
-					} else {
-						printf("Unknown Context\n");
-					}
+				} else if (sched_gettcb(node->pid) == NULL) {
+					nonsched_list[MM_PIDHASH(node->pid)] = node->pid;
+					nonsched_size[MM_PIDHASH(node->pid)] += node->size;
+					nonsched_resource += node->size;
 				}
 #else
 				printf("\n");
@@ -134,21 +150,37 @@ void heapinfo_parse(FAR struct mm_heap_s *heap)
 				if (node->size > mxordblk) {
 					mxordblk = node->size;
 				}
-				printf("MemAddr=0x%x Size=%5d (%c)\n", node, node->size, 'F');
+				if (mode == HEAPINFO_TRACE) {
+					printf("MemAddr=0x%x Size=%6d (%c)\n", node, node->size, 'F');
+				}
 			}
 		}
 
 		mm_givesemaphore(heap);
-		printf("HeapReg#=%d End node=0x%p Size=%5d (%c)\n", region, node, node->size, 'A');
+		if (mode == HEAPINFO_TRACE) {
+			printf("HeapReg#=%d End node=0x%p Size=%5d (%c)\n", region, node, node->size, 'A');
+		}
 	}
 #undef region
-	printf("\nHeap Alloation Summary(Size in Bytes)\n");
+	printf("\nHeap Alloation Summary(Bytes)\n");
 	printf("Heap Size                      : %d\n", heap->mm_heapsize);
 	printf("Current Allocated Node Size    : %d\n", heap->total_alloc_size + SIZEOF_MM_ALLOCNODE * 2);
 	printf("Peak Allocated Node Size       : %d\n", heap->peak_alloc_size);
 	printf("Free Size                      : %d\n", fordblks);
-	printf("Largest Free Chunk Size        : %d\n", mxordblk);
-	printf("Allocated not used(free)Chunks : %d\n", ordblks);
+	printf("Largest Free Node Size         : %d\n", mxordblk);
+	printf("Number of Free Node            : %d\n", ordblks);
+
+	printf("\nNon Scheduled Task Resources   : %d\n", nonsched_resource);
+	if (mode == HEAPINFO_TRACE) {
+		printf("PID  SIZE\n");
+		printf("----------\n");
+		for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
+			if (nonsched_list[nonsched_idx] != -1) {
+				printf("%4d %5d\n", nonsched_list[nonsched_idx], nonsched_size[nonsched_idx]);
+			}
+		}
+	}
+
 	return;
 }
 
@@ -158,9 +190,9 @@ void heapinfo_parse(FAR struct mm_heap_s *heap)
  * Description:
  * Add the allocated size in tcb
  ****************************************************************************/
-void heapinfo_add_size(size_t size)
+void heapinfo_add_size(int16_t pid, size_t size)
 {
-	struct tcb_s *rtcb = sched_self();
+	struct tcb_s *rtcb = sched_gettcb(pid);
 	if (rtcb) {
 		rtcb->curr_alloc_size += size;
 		rtcb->num_alloc_free++;
@@ -176,9 +208,9 @@ void heapinfo_add_size(size_t size)
  * Description:
  * Subtract the allocated size in tcb
  ****************************************************************************/
-void heapinfo_subtract_size(struct mm_allocnode_s *node, size_t size)
+void heapinfo_subtract_size(int16_t pid, size_t size)
 {
-	struct tcb_s *rtcb = sched_gettcb(node->pid);
+	struct tcb_s *rtcb = sched_gettcb(pid);
 
 	if (rtcb) {
 		rtcb->curr_alloc_size -= size;
