@@ -246,26 +246,32 @@ db_result_t cursor_get_value_storage(attribute_value_t *value, db_cursor_t *curs
 		return DB_CURSOR_ERROR;
 	}
 
-	buf = cursor->tuple;
-
 	if (IS_INVALID_STORAGE_ROW(cursor)) {
 		DB_LOG_E("invalid storage row id\n");
 		return DB_CURSOR_ERROR;
 	}
 
-	offset = cursor->current_storage_row * cursor->storage_row_length + cursor->attr_map[col].from_offset;
-
-	fd = storage_open(cursor->name, O_RDONLY);
-	if (fd < 0) {
-		DB_LOG_E("failed to open storage %s\n", cursor->name);
-		return DB_CURSOR_ERROR;
-	}
-	storage_read_from(fd, buf, offset, cursor->attr_map[col].from_data_size);
-	storage_close(fd);
+	buf = cursor->tuple;
 
 	memcpy(attr.name, cursor->attr_map[col].name, sizeof(attr.name));
 	attr.domain = cursor->attr_map[col].domain;
-	attr.element_size = cursor->attr_map[col].from_data_size;
+	attr.element_size = cursor->attr_map[col].data_size;
+
+	if (cursor->attr_map[col].valuetype == AGGREGATE_VALUE) {
+		/* If the type of value is aggregate value, we don't need to read storage.
+		 Because aggregate result is already calculated and stored in buffer. */
+		buf += cursor->attr_map[col].offset;
+	} else {
+		/* Otherwise, Read tuple value from storage. */
+		offset = cursor->current_storage_row * cursor->storage_row_length + cursor->attr_map[col].offset;
+		fd = storage_open(cursor->name, O_RDONLY);
+		if (fd < 0) {
+			DB_LOG_E("failed to open storage %s\n", cursor->name);
+			return DB_CURSOR_ERROR;
+		}
+		storage_read_from(fd, buf, offset, attr.element_size);
+		storage_close(fd);
+	}
 
 	return db_phy_to_value(value, &attr, buf);
 }
@@ -364,9 +370,15 @@ db_result_t cursor_data_set(db_cursor_t *cursor, source_dest_map_t *attr_map, at
 	for (i = 0; i < attribute_count; i++) {
 		memset(cursor->attr_map[i].name, 0, sizeof(cursor->attr_map[i].name));
 		memcpy(cursor->attr_map[i].name, attr_map_ptr->to_attr->name, sizeof(attr_map_ptr->to_attr->name));
-		cursor->attr_map[i].from_data_size = attr_map_ptr->from_attr->element_size;
-		cursor->attr_map[i].from_offset = attr_map_ptr->from_offset;
 		cursor->attr_map[i].domain = attr_map_ptr->to_attr->domain;
+		cursor->attr_map[i].valuetype = attr_map_ptr->valuetype;
+		if (cursor->attr_map[i].valuetype == AGGREGATE_VALUE) {
+			cursor->attr_map[i].data_size = attr_map_ptr->to_attr->element_size;
+			cursor->attr_map[i].offset = attr_map_ptr->to_offset;
+		} else {
+			cursor->attr_map[i].data_size = attr_map_ptr->from_attr->element_size;
+			cursor->attr_map[i].offset = attr_map_ptr->from_offset;
+		}
 		attr_map_ptr++;
 	}
 

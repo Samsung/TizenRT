@@ -520,7 +520,7 @@ db_result_t relation_insert(relation_t *rel, attribute_value_t *values)
 static db_result_t aggregate(attribute_t *attr, attribute_value_t *value, tuple_id_t count)
 {
 	long long_value;
-	static long sum_value;
+	double sum_value;
 
 	switch (value->domain) {
 	case DOMAIN_INT:
@@ -533,6 +533,7 @@ static db_result_t aggregate(attribute_t *attr, attribute_value_t *value, tuple_
 		return DB_TYPE_ERROR;
 	}
 
+	sum_value = 0;
 	switch (attr->aggregator) {
 	case AQL_COUNT:
 		attr->aggregation_value++;
@@ -542,11 +543,10 @@ static db_result_t aggregate(attribute_t *attr, attribute_value_t *value, tuple_
 		break;
 	case AQL_MEAN:
 		if (count == 1) {
-			sum_value = 0;
 			attr->aggregation_value = (double)long_value;
 		} else {
-			sum_value += long_value;
-			attr->aggregation_value = (double)sum_value / count;
+			sum_value = (double) (attr->aggregation_value * (count - 1));
+			attr->aggregation_value = (double) ((sum_value + long_value) / count);
 		}
 		break;
 	case AQL_MAX:
@@ -563,6 +563,8 @@ static db_result_t aggregate(attribute_t *attr, attribute_value_t *value, tuple_
 		return DB_TYPE_ERROR;
 		break;
 	}
+
+	DB_LOG_D("DB: aggregation value of attribute %s is %f.\n", attr->name, attr->aggregation_value);
 
 	return DB_OK;
 }
@@ -596,6 +598,13 @@ static db_result_t generate_attribute_map(source_dest_map_t *attr_map, unsigned 
 		attr_map_ptr->from_offset = offset;
 		attr_map_ptr->to_offset = size_sum;
 		size_sum += to_attr->element_size;
+
+		if (to_attr->aggregator != 0) {
+			attr_map_ptr->valuetype = AGGREGATE_VALUE;
+		} else {
+			attr_map_ptr->valuetype = NORMAL_VALUE;
+		}
+
 		attr_map_ptr++;
 		to_attr = to_attr->next;
 	}
@@ -831,6 +840,7 @@ db_result_t relation_process_select(db_handle_t **handle, db_cursor_t *cursor)
 	/* Check whether the given predicate is true for this tuple. */
 	if ((*handle)->lvm_instance == NULL || lvm_execute((*handle)->lvm_instance) == TRUE) {
 		(*handle)->current_row++;
+
 		if ((*handle)->adt_flags & AQL_FLAG_AGGREGATE) {
 			for (attr_map_ptr = (*handle)->attr_map; attr_map_ptr < attr_map_end; attr_map_ptr++) {
 				from_ptr = row + attr_map_ptr->from_offset;
@@ -849,10 +859,6 @@ db_result_t relation_process_select(db_handle_t **handle, db_cursor_t *cursor)
 			if (DB_ERROR(result)) {
 				goto errout;
 			}
-			if (row != NULL) {
-				free(row);
-			}
-			return DB_GOT_ROW;
 		}
 	}
 
@@ -867,17 +873,27 @@ processing_aggregation:
 		result_attr = attr_map_ptr->to_attr;
 		to_ptr = result_row + attr_map_ptr->to_offset;
 
-		snprintf(aggr_buf, sizeof(aggr_buf), "%.8f", result_attr->aggregation_value);
+		snprintf(aggr_buf, sizeof(aggr_buf), "%f", result_attr->aggregation_value);
 		from_ptr = (unsigned char *)aggr_buf;
 		memcpy(to_ptr, from_ptr, sizeof(aggr_buf));
 	}
 
-	(*handle)->current_row = 1;
-	(*handle)->adt_flags &= ~AQL_FLAG_AGGREGATE;  /* Stop the aggregation. */
+	/* Copy aggregated result to tuple in cursor */
+	memcpy(cursor->tuple, result_row, sizeof(cursor->tuple));
+
+	(*handle)->current_row = 0;
+	(*handle)->adt_flags &= ~AQL_FLAG_AGGREGATE; /* Stop the aggregation. */
+
+	result = cursor_data_add(cursor, (*handle)->current_row);
+	if (DB_ERROR(result)) {
+		goto errout;
+	}
+	cursor->total_rows = 1;
+
 	if (row != NULL) {
 		free(row);
 	}
-	return DB_GOT_ROW;
+	return DB_FINISHED;
 
 errout:
 	if (row != NULL) {

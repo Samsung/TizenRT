@@ -112,6 +112,11 @@ enum db_direction_e {
 };
 typedef enum db_direction_e db_direction_t;
 
+enum db_value_type_e {
+	NORMAL_VALUE = 0,
+	AGGREGATE_VALUE = 1
+};
+typedef enum db_value_type_e db_value_type_t;
 
 /*
  * A relation consists of a name, a set of domains, a set of indexes,
@@ -138,8 +143,9 @@ typedef struct relation_s relation_t;
 struct cursor_data_map_s {
 	char name[ATTRIBUTE_NAME_LENGTH + 1];
 	domain_t domain;
-	unsigned from_data_size;
-	unsigned from_offset;
+	db_value_type_t valuetype;
+	unsigned data_size;
+	unsigned offset;
 };
 typedef struct cursor_data_map_s cursor_data_map_t;
 

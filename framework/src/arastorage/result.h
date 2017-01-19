@@ -90,6 +90,7 @@ struct source_dest_map_s {
 	attribute_t *to_attr;
 	unsigned from_offset;
 	unsigned to_offset;
+	db_value_type_t valuetype;
 };
 typedef struct source_dest_map_s source_dest_map_t;
 
