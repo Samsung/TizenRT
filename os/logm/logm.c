@@ -39,7 +39,7 @@ int logm_internal(int priority, const char *fmt, va_list ap)
 	int ret = 0;
 	buffer_state_t op;
 
-	if (g_logm_isready) {
+	if (g_logm_isready && !up_interrupt_context()) {
 		flags = irqsave();
 
 		if (g_logm_count < LOGM_RSVBUF_COUNT) {
@@ -76,7 +76,7 @@ int logm_internal(int priority, const char *fmt, va_list ap)
 
 		irqrestore(flags);
 	} else {
-		/* Low Output: Sytem is not yet completely ready  */
+		/* Low Output: Sytem is not yet completely ready or this is called from interrupt handler */
 #ifdef CONFIG_ARCH_LOWPUTC
 		struct lib_outstream_s strm;
 		lib_lowoutstream(&strm);
