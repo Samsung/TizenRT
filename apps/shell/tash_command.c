@@ -33,29 +33,27 @@
  * Preprocessor Definitions
  ****************************************************************************/
 
-/** Following defines are fixed to avoid many configuration variables
-for TASH
-*/
-#define TASH_CMD_MAXSTRLENGTH    (16) /** example: len of ifconfig is 8 */
+/* Following defines are fixed to avoid many configuration variables for TASH */
+#define TASH_CMD_MAXSTRLENGTH		(16) /* example: length of "ifconfig" command is 8 */
 #ifdef CONFIG_TASH_MAX_COMMANDS
-#define TASH_MAX_COMMANDS        CONFIG_TASH_MAX_COMMANDS
+#define TASH_MAX_COMMANDS			CONFIG_TASH_MAX_COMMANDS
 #else
-#define TASH_MAX_COMMANDS        (32)
+#define TASH_MAX_COMMANDS			(32)
 #endif
-#ifdef CONFIG_TASH_CMDTHREAD_STACKSIZE
-#define TASH_CMDTHREAD_STACKSIZE CONFIG_TASH_CMDTHREAD_STACKSIZE
+#ifdef CONFIG_TASH_CMDTASK_STACKSIZE
+#define TASH_CMDTASK_STACKSIZE		CONFIG_TASH_CMDTASK_STACKSIZE
 #else
-#define TASH_CMDTHREAD_STACKSIZE (4096)
+#define TASH_CMDTASK_STACKSIZE		(4096)
 #endif
-#ifdef CONFIG_TASH_CMDTHREAD_PRIORITY
-#define TASH_CMDTHREAD_PRIORITY  CONFIG_TASH_CMDTHREAD_PRIORITY
+#ifdef CONFIG_TASH_CMDTASK_PRIORITY
+#define TASH_CMDTASK_PRIORITY		CONFIG_TASH_CMDTASK_PRIORITY
 #else
-#define TASH_CMDTHREAD_PRIORITY  (SCHED_PRIORITY_DEFAULT)
+#define TASH_CMDTASK_PRIORITY		(SCHED_PRIORITY_DEFAULT)
 #endif
-#define TASH_CMDS_PER_LINE       (4)
+#define TASH_CMDS_PER_LINE			(4)
 #ifndef CONFIG_DISABLE_ENIVRON
-#define TASH_ASYNC_CMD_PRI_STR   "CMD_PRI"
-#define TASH_ASYNC_CMD_STACK_STR "CMD_STACK"
+#define TASH_ASYNC_CMD_PRI_STR		"CMD_PRI"
+#define TASH_ASYNC_CMD_STACK_STR	"CMD_STACK"
 #endif
 
 /****************************************************************************
@@ -82,12 +80,6 @@ struct tash_cmd_info_s {
 	pthread_mutex_t tmutex;						/* Mutex for protection */
 	struct tash_cmd_s cmd[TASH_MAX_COMMANDS];
 	int count;									/* Number of TASH commands */
-};
-
-struct tash_cmd_targs_s {
-	TASH_CMD_CALLBACK cb;
-	char **args;
-	int argc;
 };
 
 /********************************************************************************
@@ -180,41 +172,14 @@ static int tash_exit(int argc, char **args)
 	exit(0);
 }
 
-/** @brief Thread Entry point for commands to execute in a seperate thread
+/** @brief Launch a task to run tash cmd asynchronously
  *  @ingroup tash
  */
-static void *tash_cmdthread_entry(void *arg)
-{
-	int args_idx;
-	struct tash_cmd_targs_s *tash_cmdthread_s;
-
-	tash_cmdthread_s = (struct tash_cmd_targs_s *)arg;
-
-	/* excute a callback function */
-	tash_cmdthread_s->cb(tash_cmdthread_s->argc, tash_cmdthread_s->args);
-
-	/* Free up the memory */
-	for (args_idx = 0; args_idx < tash_cmdthread_s->argc; args_idx++) {
-		tash_free(tash_cmdthread_s->args[args_idx]);
-	}
-	tash_free(tash_cmdthread_s->args);
-	tash_free(tash_cmdthread_s);
-
-	return NULL;
-}
-
-/** @brief Launch a pthread to run tash cmd asynchronously
- *  @ingroup tash
- */
-static int tash_launch_cmdthread(struct tash_cmd_targs_s *arg)
+static int tash_launch_cmdtask(TASH_CMD_CALLBACK cb, int argc, char **args)
 {
 	int ret = 0;
-	pthread_attr_t attr;
-	pthread_t tid;
-	pthread_attr_init(&attr);
-	struct sched_param sparam;
-	int pri = TASH_CMDTHREAD_PRIORITY;
-	long stack_size = TASH_CMDTHREAD_STACKSIZE;
+	int pri = TASH_CMDTASK_PRIORITY;
+	long stack_size = TASH_CMDTASK_STACKSIZE;
 #ifndef CONFIG_DISABLE_ENIVRON
 	char *env_pri;
 	char *env_stack;
@@ -237,53 +202,9 @@ static int tash_launch_cmdthread(struct tash_cmd_targs_s *arg)
 		printf("Command will be launched with pri (%d), stack size(%d)\n", pri, stack_size);
 	}
 #endif
-	sparam.sched_priority = pri;
-	(void)pthread_attr_setschedparam(&attr, &sparam);
-	(void)pthread_attr_setstacksize(&attr, stack_size);
-
-	ret = pthread_create(&tid, &attr, &tash_cmdthread_entry, (void *)arg);
-	if (ret == OK) {
-		pthread_setname_np(tid, arg->args[0]);
-	}
-
-	pthread_detach(tid);
+	ret = task_create(args[0], pri, stack_size, cb, &args[1]);
 
 	return ret;
-}
-
-/** @brief Duplicate args to be passed to pthread
- *  @ingroup tash
- */
-static struct tash_cmd_targs_s *tash_dupargs(int argc, char *args[], TASH_CMD_CALLBACK cb)
-{
-	struct tash_cmd_targs_s *new_arg_s = NULL;
-	int dup_idx;
-	int cancel_idx;
-
-	new_arg_s = (struct tash_cmd_targs_s *)tash_alloc(sizeof(struct tash_cmd_targs_s));
-	if (new_arg_s != NULL) {
-		new_arg_s->argc = argc;
-		new_arg_s->cb = cb;
-		new_arg_s->args = (char **)tash_alloc(argc * sizeof(char *));
-		if (new_arg_s->args != NULL) {
-			for (dup_idx = 0; dup_idx < argc; dup_idx++) {
-				new_arg_s->args[dup_idx] = strdup(args[dup_idx]);
-				if (new_arg_s->args[dup_idx] == NULL) {
-					for (cancel_idx = 0; cancel_idx < dup_idx; cancel_idx++) {
-						tash_free(new_arg_s->args[cancel_idx]);
-					}
-					tash_free(new_arg_s->args);
-					tash_free(new_arg_s);
-					return NULL;
-				}
-			}
-		} else {
-			tash_free(new_arg_s);
-			return NULL;
-		}
-	}
-
-	return new_arg_s;
 }
 
 /****************************************************************************
@@ -304,30 +225,18 @@ int tash_execute_cmd(char **args, int argc)
 	for (cmd_idx = 0; cmd_idx < tash_cmds_info.count; cmd_idx++) {
 		cmd_found = (strncmp(args[0], tash_cmds_info.cmd[cmd_idx].str, TASH_CMD_MAXSTRLENGTH - 1) == 0) ? 1 : 0;
 		if (cmd_found) {
-			if (tash_cmds_info.cmd[cmd_idx].exec_type == TASH_EXECMD_SYNC) {
 				/* unlock mutex before executing */
 				pthread_mutex_unlock(&tash_cmds_info.tmutex);
 
+			if (tash_cmds_info.cmd[cmd_idx].exec_type == TASH_EXECMD_SYNC) {
 				/* function call to execute SYNC command */
 				(*tash_cmds_info.cmd[cmd_idx].cb) (argc, args);
 			} else if (tash_cmds_info.cmd[cmd_idx].exec_type == TASH_EXECMD_ASYNC) {
-				/* Save arguments to launch a pthread */
-				struct tash_cmd_targs_s *targs = NULL;
-				targs = tash_dupargs(argc, args, tash_cmds_info.cmd[cmd_idx].cb);
-
-				/* unlock mutex before executing */
-				pthread_mutex_unlock(&tash_cmds_info.tmutex);
-
-				if (targs != NULL) {
-					/* launch a pthread to execute ASYNC command */
-					if (tash_launch_cmdthread(targs)) {
-						shdbg("TASH: error in command thread launch \n");
-					}
+				/* launch a task to execute ASYNC command */
+				if (tash_launch_cmdtask(tash_cmds_info.cmd[cmd_idx].cb, argc, args)) {
+					shdbg("TASH: error in command task launch \n");
 				}
 			} else {
-				/* unlock mutex */
-				pthread_mutex_unlock(&tash_cmds_info.tmutex);
-
 				shdbg("TASH: cmd (%s) has wrong value on exec type\n", args[0]);
 			}
 			break;

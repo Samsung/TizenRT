@@ -24,15 +24,15 @@ config TASH_TELNET_INTERFACE
 	---help---
 		Enable TASH commands to be executed in TELNET shell.
 
-config TASH_CMDTHREAD_STACKSIZE
-	int "TASH thread stack size to run command with ASYNC type"
+config TASH_CMDTASK_STACKSIZE
+	int "TASH task stack size to run command with ASYNC type"
 	default 4096
 	---help---
-		The stack size allocated for TASH command thread
+		The stack size allocated for TASH command task
 
-config TASH_CMDTHREAD_PRIORITY
-	int "TASH thread priority to run command with ASYNC type"
+config TASH_CMDTASK_PRIORITY
+	int "TASH task priority to run command with ASYNC type"
 	default 100
 	---help---
-		The priority set for TASH command thread
+		The priority set for TASH command task
 endif
