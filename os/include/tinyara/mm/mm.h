@@ -195,6 +195,9 @@
  * Public Types
  ****************************************************************************/
 
+#define HEAPINFO_TRACE 0
+#define HEAPINFO_NORMAL 1
+
 /* Determines the size of the chunk size/offset type */
 
 #ifdef CONFIG_MM_SMALL
@@ -586,12 +589,12 @@ int mm_size2ndx(size_t size);
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions contained in kmm_mallinfo.c . Used to display memory allocation details */
-void heapinfo_parse(FAR struct mm_heap_s *heap);
+void heapinfo_parse(FAR struct mm_heap_s *heap, int mode);
 /* Funciton to add memory allocation info */
 void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_retaddr);
 
-void heapinfo_add_size(size_t size);
-void heapinfo_subtract_size(struct mm_allocnode_s *node, size_t size);
+void heapinfo_add_size(int16_t pid, size_t size);
+void heapinfo_subtract_size(int16_t pid, size_t size);
 void heapinfo_update_total_size(struct mm_heap_s *heap, int size);
 #endif
 

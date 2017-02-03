@@ -205,22 +205,13 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 
 		node->preceding |= MM_ALLOC_BIT;
 
-		/* Add memory allocation info for heap issue debug */
-
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		if (0 != caller_retaddr) {
-			heapinfo_update_node((struct mm_allocnode_s *)node, caller_retaddr);
-		}
+		heapinfo_update_node((struct mm_allocnode_s *)node, caller_retaddr);
+		heapinfo_add_size(((struct mm_allocnode_s *)node)->pid, node->size);
+		heapinfo_update_total_size(heap, node->size);
 #endif
-
 		ret = (void *)((char *)node + SIZEOF_MM_ALLOCNODE);
 	}
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	if (ret) {
-		heapinfo_add_size(node->size);
-		heapinfo_update_total_size(heap, node->size);
-	}
-#endif
 
 	mm_givesemaphore(heap);
 
@@ -232,7 +223,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	if (!ret) {
 		mdbg("Allocation failed, size %d\n", size);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_parse(heap);
+		heapinfo_parse(heap, HEAPINFO_NORMAL);
 #endif
 	} else {
 		mvdbg("Allocated %p, size %d\n", ret, size);

@@ -127,7 +127,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/*Passing Zero as caller addr to avoid adding memalloc info in malloc function,
 	   alloc info will be added in this functiona after memory aligment . */
-	rawchunk = (size_t)mm_malloc(heap, allocsize, 0x0);
+	rawchunk = (size_t)mm_malloc(heap, allocsize, caller_retaddr);
 #else
 	rawchunk = (size_t)mm_malloc(heap, allocsize);
 #endif
@@ -147,6 +147,10 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 
 	node = (FAR struct mm_allocnode_s *)(rawchunk - SIZEOF_MM_ALLOCNODE);
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		heapinfo_subtract_size(node->pid, node->size);
+		heapinfo_update_total_size(heap, ((-1) * (node->size)));
+#endif
 	/* Find the aligned subregion */
 
 	alignedchunk = (rawchunk + mask) & ~mask;
@@ -212,16 +216,11 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 
 		/* Add the original, newly freed node to the free nodelist */
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_subtract_size(node, node->size);
-		heapinfo_update_total_size(heap, ((-1) * (node->size)));
-#endif
 		mm_addfreechunk(heap, (FAR struct mm_freenode_s *)node);
 
 		/* Replace the original node with the newlay realloaced,
 		 * aligned node
 		 */
-
 		node = newnode;
 	}
 
@@ -232,15 +231,13 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 		 * internal chunk sizes that include SIZEOF_MM_ALLOCNODE, and not the
 		 * malloc-compatible sizes that we have.
 		 */
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_subtract_size(node, (node->size - (size + SIZEOF_MM_ALLOCNODE)));
-		heapinfo_update_total_size(heap, (size + SIZEOF_MM_ALLOCNODE - node->size));
-
-#endif
 		mm_shrinkchunk(heap, node, size + SIZEOF_MM_ALLOCNODE);
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	heapinfo_update_node((struct mm_allocnode_s *)((char *)alignedchunk - SIZEOF_MM_ALLOCNODE), caller_retaddr);
+	heapinfo_update_node(node, caller_retaddr);
+
+	heapinfo_add_size(node->pid, node->size);
+	heapinfo_update_total_size(heap, node->size);
 #endif
 	mm_givesemaphore(heap);
 	return (FAR void *)alignedchunk;
