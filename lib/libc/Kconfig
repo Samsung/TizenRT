@@ -206,6 +206,11 @@ config LIBC_LOCALTIME
 	---help---
 		localtime API call support
 
+config TIME_EXTENDED
+	bool "enable time extended"
+	default "n"
+	depends on !LIBC_LOCALTIME
+
 if LIBC_LOCALTIME
 
 config LIBC_TZ_MAX_TIMES

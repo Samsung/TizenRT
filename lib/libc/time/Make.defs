@@ -59,6 +59,13 @@ ifdef CONFIG_ENABLE_IOTIVITY
 CSRCS +=lib_strptime.c
 endif
 
+ifdef CONFIG_LIBC_LOCALTIME
+CSRCS +=lib_asctime.c lib_asctimer.c lib_ctime.c lib_ctimer.c
+else
+ifdef CONFIG_TIME_EXTENDED
+CSRCS +=lib_asctime.c lib_asctimer.c lib_ctime.c lib_ctimer.c lib_dayofweek.c
+endif
+endif
 
 ifdef CONFIG_LIBC_LOCALTIME
 CSRCS += lib_localtime.c

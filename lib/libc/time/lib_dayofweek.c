@@ -16,9 +16,11 @@
  *
  ****************************************************************************/
 /****************************************************************************
+ * libc/time/lib_dayofweek.c
  *
- *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *           David Sidrane <david_s5@nscdg.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,11 +50,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-///@file tinyara/time.h
-///@brief Time APIs
-
-#ifndef __INCLUDE_TINYARA_TIME_H
-#define __INCLUDE_TINYARA_TIME_H
 
 /****************************************************************************
  * Included Files
@@ -60,101 +57,69 @@
 
 #include <tinyara/config.h>
 
+#include <stdint.h>
 #include <stdbool.h>
-#include <time.h>
+
+#include <tinyara/time.h>
+
+#if defined(CONFIG_TIME_EXTENDED)
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* If Gregorian time is not supported, then neither is Julian */
+/****************************************************************************
+ * Private Type Declarations
+ ****************************************************************************/
 
-#ifndef CONFIG_GREGORIAN_TIME
-#undef CONFIG_JULIAN_TIME
-#else
-#define JD_OF_EPOCH           2440588	/* Julian Date of noon, J1970 */
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
 
-#ifdef CONFIG_JULIAN_TIME
-#define GREG_DUTC           -141427	/* Default is October 15, 1582 */
-#define GREG_YEAR            1582
-#define GREG_MONTH           10
-#define GREG_DAY             15
-#endif							/* CONFIG_JULIAN_TIME */
-#endif							/* !CONFIG_GREGORIAN_TIME */
+/****************************************************************************
+ * Public Constant Data
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 
 /****************************************************************************
- * Public Function Prototypes
+ * Private Data
  ****************************************************************************/
 
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
-/**
- * @ingroup TIME_KERNEL
- * @brief Return true if the specified year is a leap year
- * @param[in] year to check whether a leap year or not
- * @return if leap year, TRUE or FALSE
- * @since Tizen RT v1.0
- */
-EXTERN int clock_isleapyear(int year);
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
-/**
- * @ingroup TIME_KERNEL
- * @brief Get the number of days that occurred before the beginning of the month.
- * @param[in] the beginning of the month
- * @param[in] leap year
- * @return the number of days
- * @since Tizen RT v1.0
- */
-EXTERN int clock_daysbeforemonth(int month, bool leapyear);
+/****************************************************************************
+ * Function:  clock_dayoftheweek
+ *
+ * Description:
+ *    Get the day of the week
+ *
+ * Input Parameters:
+ *   mday  - The day of the month 1 - 31
+ *   month - The month of the year 1 - 12
+ *   year  - the year including the 1900
+ *
+ * Returned value:
+ *   Zero based day of the week 0-6, 0 = Sunday, 1 = Monday... 6 = Saturday
+ *
+ ****************************************************************************/
 
-/**
- * @cond
- * @internal
- */
-/**
- * @ingroup TIME_KERNEL
- * @todo
- * @brief Get the day of the week
- * @param[in] The day of the month 1 - 31
- * @param[in] The month of the year 1 - 12
- * @param[in] the year including the 1900
- * @return Zero based day of the week 0-6, 0 = Sunday, 1 = Monday... 6 = Saturday
- * @since Tizen RT v1.0
- */
-#if defined(CONFIG_TIME_EXTENDED)
-int clock_dayoftheweek(int mday, int month, int year);
-#endif
-/**
- * @endcond
- */
+int clock_dayoftheweek(int mday, int month, int year)
+{
+	if (month <= 2) {
+		year--;
+		month += 12;
+	}
 
-/**
- * @ingroup TIME_KERNEL
- * @brief Conversion Calendar/UTC
- * @details based on algorithms from p. 604
- *    of Seidelman, P. K. 1992.  Explanatory Supplement to
- *    the Astronomical Almanac.  University Science Books,
- *    Mill Valley.
- * @param[in] year to change
- * @param[in] month to change
- * @param[in] day to change
- * @return the specific time
- * @since Tizen RT v1.0
- */
-EXTERN time_t clock_calendar2utc(int year, int month, int day);
-
-#undef EXTERN
-#ifdef __cplusplus
+	month -= 2;
+	return (mday + year + year / 4 - year / 100 + year / 400 + (31 * month) / 12) % 7;
 }
-#endif
-
-#endif							/* __INCLUDE_TINYARA_TIME_H */
+#endif							/* CONFIG_TIME_EXTENDED */

@@ -171,7 +171,7 @@ struct tm {
 	int tm_mday;				/* day of the month (1-31) */
 	int tm_mon;					/* month (0-11) */
 	int tm_year;				/* years since 1900 */
-#ifdef CONFIG_LIBC_LOCALTIME
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	int tm_wday;				/* day of the week (0-6) */
 	int tm_yday;				/* day of the year (0-365) */
 	int tm_isdst;				/* non-0 if daylight savings time is in effect */
@@ -272,6 +272,32 @@ FAR struct tm *localtime_r(FAR const time_t *timer, FAR struct tm *result);
  * @since Tizen RT v1.0
  */
 size_t strftime(char *s, size_t max, FAR const char *format, FAR const struct tm *tm);
+
+/**
+ * @cond
+ * @internal
+ */
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
+/**
+ * @internal
+ */
+FAR char *asctime(FAR const struct tm *tp);
+/**
+ * @internal
+ */
+FAR char *asctime_r(FAR const struct tm *tp, FAR char *buf);
+/**
+ * @internal
+ */
+FAR char *ctime(FAR const time_t *timep);
+/**
+ * @internal
+ */
+FAR char *ctime_r(FAR const time_t *timep, FAR char *buf);
+#endif
+/**
+ * @endcond
+ */
 
 #ifdef CONFIG_ENABLE_IOTIVITY
 /**
