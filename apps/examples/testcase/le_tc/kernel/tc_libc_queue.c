@@ -138,16 +138,13 @@ static void tc_libc_queue_dq_addlast(void)
 
 	struct dq_struct *conng = (struct dq_struct *)g_active_dqlist.head;
 	while (conng) {
-		if (conng->key != istart_node_val || conng->data_value != (istart_node_val + 1)) {
-			printf("tc_libc_queue_dq_addlast FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("dq_addlast", conng->key, istart_node_val);
+		TC_ASSERT_EQ("dq_addlast", conng->data_value, istart_node_val + 1);
 		istart_node_val = istart_node_val + 1;
 		conng = (FAR struct dq_struct *)conng->node.flink;
 	}
-	printf("tc_libc_queue_dq_addlast PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -172,16 +169,13 @@ static void tc_libc_queue_dq_addfirst(void)
 
 	struct dq_struct *conng = (struct dq_struct *)g_active_dqlist.head;
 	while (conng) {
-		if (conng->key != istart_node_val || conng->data_value != (istart_node_val + 1)) {
-			printf("tc_libc_queue_dq_addfirst FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("dq_addfirst", conng->key, istart_node_val);
+		TC_ASSERT_EQ("dq_addfirst", conng->data_value, istart_node_val + 1);
 		istart_node_val = istart_node_val - 1;
 		conng = (FAR struct dq_struct *)conng->node.flink;
 	}
-	printf("tc_libc_queue_dq_addfirst PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -206,40 +200,27 @@ static void tc_libc_queue_dq_addafter(void)
 	/* verifying queue item inserted as expected or not. */
 	while (conng) {
 		i_index++;
-		if (conng->key != istart_node_val) {
-			printf("tc_libc_queue_dq_addafter FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("dq_addfirst", conng->key, istart_node_val);
 		istart_node_val = istart_node_val - 1;
 		conng = (FAR struct dq_struct *)conng->node.flink;
 	}
 	/* Adding key value KEY_VAL after key value 3 */
 	g_dqstruct_array[i_index].key = KEY_VAL;
 	g_dqstruct_array[i_index].data_value = KEY_VAL + 1;
-	if (i_index < 1) {
-		printf("tc_libc_qeue_dq_addafter : failed to add on queue\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ("dq_addfirst", i_index, 1);
 	dq_addafter(&g_dqstruct_array[i_index - 1].node, &g_dqstruct_array[i_index].node, &g_active_dqlist);
 	conng = (struct dq_struct *)g_active_dqlist.head;
 	/* verifying that newly queue item, inserted after key value 3 or not. */
 	while (conng) {
 		if (prev_key == (i_index - 1)) {
-			if (conng->key == added_key) {
-				printf("tc_libc_queue_dq_addafter PASS\n");
-				break;
-			} else {
-				printf("tc_libc_queue_dq_addafter FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_EQ("dq_addafter", conng->key, added_key);
+			break;
 		}
 		prev_key = conng->key;
 		conng = (FAR struct dq_struct *)conng->node.flink;
 	}
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -272,22 +253,15 @@ static void tc_libc_queue_dq_addbefore(void)
 	conng = (struct dq_struct *)g_active_dqlist.head;
 	while (conng) {
 		if (prev_key == 2) {
-			if (conng->key == add_before_key) {
-				conng = (FAR struct dq_struct *)conng->node.flink;
-				if (conng->key == 3) {
-					printf("tc_libc_queue_dq_addbefore PASS\n");
-					break;
-				}
-			} else {
-				printf("tc_libc_queue_dq_addbefore FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_EQ("dq_addbefore", conng->key, add_before_key);
+			conng = (FAR struct dq_struct *)conng->node.flink;
+			TC_ASSERT_EQ("dq_addbefore", conng->key, 3);
 		}
 		prev_key = conng->key;
 		conng = (FAR struct dq_struct *)conng->node.flink;
 	}
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -315,16 +289,12 @@ static void tc_libc_queue_dq_remfirst(void)
 
 	while (conng) {
 		/* Since first item is removed then dqueue item order would be 2,1,0 */
-		if (conng->key != arrlist[cur_idx]) {
-			printf("tc_libc_queue_dq_remfirst FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("dq_remfirst", conng->key, arrlist[cur_idx]);
 		cur_idx = cur_idx + 1;
 		conng = (FAR struct dq_struct *)conng->node.flink;
 	}
-	printf("tc_libc_queue_dq_remfirst PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -346,23 +316,15 @@ static void tc_libc_queue_dq_remlast(void)
 	initialize_dq_addfirst();
 
 	struct dq_struct *conng = (struct dq_struct *)g_active_dqlist.tail;
+	TC_ASSERT_EQ("dq_addfirst", conng->key, ilast_node_val);
 
-	if (conng->key != ilast_node_val) {
-		printf("tc_libc_queue_dq_remlast FAIL, values not added successfully\n");
-		total_fail++;
-		RETURN_ERR;
-	}
 	dq_remlast(&g_active_dqlist);
 
 	conng = (struct dq_struct *)g_active_dqlist.tail;
+	TC_ASSERT_NEQ("dq_remlast", conng->key, ilast_node_val);
+	TC_ASSERT_EQ("dq_remlast", conng->key, icurrentlast_node_val);
 
-	if (conng->key == ilast_node_val || conng->key != icurrentlast_node_val) {
-		printf("tc_libc_queue_dq_remlast FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_queue_dq_remlast PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -390,17 +352,13 @@ static void tc_libc_queue_dq_rem(void)
 
 	while (conng) {
 		/* Since item 1 is removed then dqueue item order would be 3,2,0 */
-		if (conng->key != item_arr[cur_idx]) {
-			printf("tc_libc_queue_dq_rem FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("dq_rem", conng->key, item_arr[cur_idx]);
 
 		cur_idx = cur_idx + 1;
 		conng = (FAR struct dq_struct *)conng->node.flink;
 	}
-	printf("tc_libc_queue_dq_rem PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -419,17 +377,14 @@ static void tc_libc_queue_sq_addlast(void)
 	initialize_sq_addlast();
 	struct sq_struct *conng = (struct sq_struct *)g_active_sqlist.head;
 	while (conng) {
-		if (conng->key != istart_node_val || conng->data_value != (istart_node_val + 1)) {
-			printf("tc_libc_queue_sq_addlast FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("sq_addlast", conng->key, istart_node_val);
+		TC_ASSERT_EQ("sq_addlast", conng->data_value, istart_node_val + 1);
 
 		istart_node_val = istart_node_val + 1;
 		conng = (FAR struct sq_struct *)conng->node.flink;
 	}
-	printf("tc_libc_queue_sq_addlast PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -448,16 +403,14 @@ static void tc_libc_queue_sq_addfirst(void)
 	initialize_sq_addfirst();
 	struct sq_struct *conng = (struct sq_struct *)g_active_sqlist.head;
 	while (conng) {
-		if (conng->key != istart_node_val || conng->data_value != (istart_node_val + 1)) {
-			printf("tc_libc_queue_sq_addfirst FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("sq_addfirst", conng->key, istart_node_val);
+		TC_ASSERT_EQ("sq_addfirst", conng->data_value, istart_node_val + 1);
+
 		istart_node_val = istart_node_val - 1;
 		conng = (FAR struct sq_struct *)conng->node.flink;
 	}
-	printf("tc_libc_queue_sq_addfirst PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -482,14 +435,9 @@ static void tc_libc_queue_sq_addafter(void)
 	struct sq_struct *conng = (struct sq_struct *)g_active_sqlist.head;
 	while (conng) {
 		i_index++;
-		if (conng->key == istart_node_val) {
-			istart_node_val = istart_node_val - 1;
-		} else {
-			printf("tc_libc_queue_sq_addafter FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("sq_addfirst", conng->key, istart_node_val);
 
+		istart_node_val = istart_node_val - 1;
 		conng = (FAR struct sq_struct *)conng->node.flink;
 	}
 	/* Adding key value 44 after key value 3 */
@@ -499,19 +447,14 @@ static void tc_libc_queue_sq_addafter(void)
 	conng = (struct sq_struct *)g_active_sqlist.head;
 	while (conng) {
 		if (prev_key == 3) {
-			if (conng->key == addafterKey) {
-				printf("tc_libc_queue_sq_addafter PASS\n");
-				break;
-			} else {
-				printf("tc_libc_queue_sq_addafter FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_EQ("sq_addafter", conng->key, addafterKey);
+			break;
 		}
 		prev_key = conng->key;
 		conng = (FAR struct sq_struct *)conng->node.flink;
 	}
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -537,16 +480,12 @@ static void tc_libc_queue_sq_remafter(void)
 	sq_remafter(&g_sqstruct_array[2].node, &g_active_sqlist);
 	conng = (struct sq_struct *)g_active_sqlist.head;
 	while (conng) {
-		if (conng->key != arrlist[cur_idx]) {
-			printf("tc_libc_queue_sq_remafter FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("sq_remafter", conng->key, arrlist[cur_idx]);
 		cur_idx = cur_idx + 1;
 		conng = (FAR struct sq_struct *)conng->node.flink;
 	}
-	printf("tc_libc_queue_sq_remafter PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -567,22 +506,16 @@ static void tc_libc_queue_sq_remfirst(void)
 	initialize_sq_addfirst();	/* initialises queue with value {3,2,1,0} */
 	struct sq_struct *conng = (struct sq_struct *)g_active_sqlist.head;
 
-	if (conng->key != ifirst_node_val) {
-		printf("tc_libc_queue_sq_remfirst FAIL, Values not added correctly in queue\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sq_addfirst", conng->key, ifirst_node_val);
+
 	/* Removing first item from the queue i.e removed item is 3 */
 	sq_remfirst(&g_active_sqlist);
 	conng = (struct sq_struct *)g_active_sqlist.head;
 
-	if (conng->key == ifirst_node_val || conng->key != icurrentfirst_node_val) {
-		printf("tc_libc_queue_sq_remfirst FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_queue_sq_remfirst PASS\n");
-	total_pass++;
+	TC_ASSERT_NEQ("sq_remfirst", conng->key, ifirst_node_val);
+	TC_ASSERT_EQ("sq_remfirst", conng->key, icurrentfirst_node_val);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -608,13 +541,10 @@ static void tc_libc_queue_sq_remlast(void)
 	conng = (struct sq_struct *)g_active_sqlist.tail;
 	/* Verifying last queue item value */
 
-	if (conng->key == ikeyVal || conng->key != ilast_node_value) {
-		printf("tc_libc_queue_sq_remlast FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_queue_sq_remlast PASS\n");
-	total_pass++;
+	TC_ASSERT_NEQ("sq_remlast", conng->key, ikeyVal);
+	TC_ASSERT_EQ("sq_remlast", conng->key, ilast_node_value);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -640,16 +570,12 @@ static void tc_libc_queue_sq_rem(void)
 	conng = (struct sq_struct *)g_active_sqlist.head;
 	while (conng) {
 		/* Since first item is removed then dqueue item order would be 3,2,0 */
-		if (conng->key != item_arr[cur_idx]) {
-			printf("tc_libc_queue_sq_rem FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("sq_rem", conng->key, item_arr[cur_idx]);
 		cur_idx = cur_idx + 1;
 		conng = (FAR struct sq_struct *)conng->node.flink;
 	}
-	printf("tc_libc_queue_sq_rem PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

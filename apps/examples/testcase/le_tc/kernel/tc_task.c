@@ -32,15 +32,13 @@
 #include <unistd.h>
 #include "tc_internal.h"
 
-#define USECVAL         1000000
 #define TEST_STRING     "test"
 #define ONEXIT_VAL      123
+#define SEC_1           1
 #define SEC_2           2
-#define SEC_3           3
+#define USEC_10         10
 
-static int g_icounter = 0;
-static bool g_callback = false;
-static bool g_exit_val = false;
+static int g_callback;
 #ifndef CONFIG_BUILD_PROTECTED
 static volatile int vfork_val;
 static volatile int task_cnt;
@@ -48,7 +46,126 @@ pid_t existed_pid[CONFIG_MAX_TASKS];
 static volatile int vfork_cnt;
 static volatile pid_t ppid;
 static volatile int existed_pid_idx;
+#endif
 
+/**
+* @fn                   :create_task
+* @brief                :utility function for tc_task_create
+* @return               :int
+*/
+static int create_task(int argc, char *argv[])
+{
+	if (strcmp(argv[1], TEST_STRING) == 0) {
+		g_callback = OK;
+	}
+
+	return OK;
+}
+
+/**
+* @fn                   :delete_task
+* @brief                :utility function for tc_task_task_delete
+* @return               :int
+*/
+static int delete_task(int argc, char *argv[])
+{
+	g_callback = OK;
+	task_delete(getpid());
+
+	/* this sleep is for entering callcellation point */
+
+	sleep(SEC_1);
+	g_callback = ERROR;
+	return OK;
+}
+
+/**
+* @fn                   :restart_task
+* @brief                :utility function for tc_task_task_restart
+* @return               :int
+*/
+static int restart_task(int argc, char *argv[])
+{
+	g_callback++;
+	sleep(SEC_1);
+	return OK;
+}
+
+/**
+* @fn                   :exit_task function
+* @brief                :utility function for tc_task_exit
+* @return               :void
+*/
+static int exit_task(int argc, char *argv[])
+{
+	g_callback = OK;
+	exit(OK);
+	g_callback = ERROR;
+	return OK;
+}
+
+/**
+* @fn                   :fn_atexit
+* @brief                :utility function for tc_task_atexit
+* @return               :void
+*/
+static void fn_atexit(void)
+{
+	g_callback = OK;
+}
+
+/**
+* @fn                   :atexit_task
+* @brief                :utility function for tc_task_atexit
+* @return               :int
+*/
+static int atexit_task(int argc, char *argv[])
+{
+	atexit(fn_atexit);
+	return OK;
+}
+
+/**
+* @fn                   :fn_onExit
+* @brief                :utility function for tc_task_on_exit
+* @return               :void
+*/
+static void fn_onexit(int status, void *arg)
+{
+	if (status != ONEXIT_VAL || strcmp((char *)arg, TEST_STRING) != 0) {
+		return;
+	}
+
+	g_callback = OK;
+}
+
+/**
+* @fn                   :onexit_task
+* @brief                :utility function for tc_task_on_exit
+* @return               :int
+*/
+static int onexit_task(int argc, char *argv[])
+{
+	if (on_exit(fn_onexit, TEST_STRING) != OK) {
+		return ERROR;
+	}
+
+	exit(ONEXIT_VAL);
+	return OK;
+}
+
+/**
+* @fn                   :getpid_task
+* @brief                :utility function for tc_task_getpid
+* @return               :int
+*/
+static int getpid_task(int argc, char *argv[])
+{
+	g_callback = (int)getpid();
+	return OK;
+}
+
+#ifndef CONFIG_BUILD_PROTECTED
 /**
 * @fn                   :task_cnt_func
 * @brief                :handler of sched_foreach for counting the alive tasks and saving the pids
@@ -68,7 +185,6 @@ static void task_cnt_func(struct tcb_s *tcb, void *arg)
 static int vfork_task(int argc, char *argv[])
 {
 	pid_t pid;
-	bool result_chk = true;
 	int repeat_criteria;
 	int repeat_iter;
 
@@ -89,8 +205,8 @@ static int vfork_task(int argc, char *argv[])
 			vfork_val++;
 			/* check that created pid is repeated or not */
 			if (existed_pid[existed_pid_idx] != -1) {
-				result_chk = false;
-				exit(0);
+				g_callback = ERROR;
+				exit(OK);
 			} else {
 				existed_pid[existed_pid_idx++] = getpid();
 			}
@@ -99,212 +215,34 @@ static int vfork_task(int argc, char *argv[])
 				/* the num of tasks is full, and the errno is set to EPERM */
 				break;
 			}
-			result_chk = false;
+			g_callback = ERROR;
 		}
 	}
 
 	while (vfork_val != CONFIG_MAX_TASKS - task_cnt) {
-		usleep(10);
+		usleep(USEC_10);
 	}
 
 	if (getpid() != ppid) {
-		exit(0);
+		exit(OK);
 	}
 
 	/* check all pids in existed_pid arr whether repeated or not */
 	for (repeat_criteria = 0; repeat_criteria < CONFIG_MAX_TASKS; repeat_criteria++) {
 		for (repeat_iter = repeat_criteria + 1; repeat_iter < CONFIG_MAX_TASKS; repeat_iter++) {
 			if (existed_pid[repeat_criteria] == existed_pid[repeat_iter]) {
-				result_chk = false;
+				g_callback = ERROR;
 				break;
 			}
 		}
-		if (result_chk == false) {
+		if (g_callback == ERROR) {
 			break;
 		}
 	}
 
-	if (result_chk == true) {
-		printf("tc_task_vfork PASS\n");
-		total_pass++;
-	} else {
-		printf("tc_task_vfork FAIL\n");
-		total_fail++;
-	}
-
-	return 0;
-}
-#endif
-/**
-* @fn                   :exit_task function
-* @brief                :utility function for tc_task_exit
-* @return               :void
-*/
-static int exit_task(int argc, char *argv[])
-{
-	g_exit_val = true;
-	exit(0);
-	g_exit_val = false;
-	return false;
-}
-
-/**
-* @fn                   :Fn_exit
-* @brief                :utility function for tc_task_atexit
-* @return               :void
-*/
-static void fn_exit(void)
-{
-	usleep(USECVAL);
-}
-
-/**
-* @fn                   :temp_task
-* @brief                :utility function for tc_task_getpid
-* @return               :int
-*/
-static int temp_task(int argc, char *argv[])
-{
-	g_callback = true;
-	sleep(SEC_2);
-	task_delete(getpid());
-	return 0;
-}
-
-/**
-* @fn                   :restart_task
-* @brief                :utility function for tc_task_task_restart
-* @return               :int
-*/
-static int restart_task(int argc, char *argv[])
-{
-	g_icounter++;
-	sleep(SEC_3);
-	task_delete(getpid());
-	return 0;
-}
-
-/**
-* @fn                   :delete_task
-* @brief                :utility function for tc_task_task_delete
-* @return               :int
-*/
-static int delete_task(int argc, char *argv[])
-{
-	int ret_chk;
-	g_callback = true;
-	ret_chk = task_delete(getpid());
-	if (ret_chk != OK) {
-		printf("tc_task_task_delete FAIL : ret_chk is %d\n", ret_chk);
-	}
-	g_callback = false;
-	return 0;
-}
-
-/**
-* @fn                   :fn_onExit
-* @brief                :utility function for tc_task_on_exit
-* @return               :void
-*/
-static void fn_onexit(int status, void *arg)
-{
-	char *ptr = (char *)arg;
-
-	if (strcmp(ptr, TEST_STRING) != 0 || status != OK) {
-		printf("%s FAIL, Error No: %d\n", __func__, errno);
-		total_fail++;
-	}
-	g_callback = true;
-}
-
-/**
-* @fn                   :onexit_task
-* @brief                :utility function for tc_task_on_exit
-* @return               :int
-*/
-static int onexit_task(int argc, char *argv[])
-{
-	usleep(USECVAL);
-	int ret_chk = 0;
-	char *ptr = TEST_STRING;
-	ret_chk = on_exit(fn_onexit, ptr);
-	if (ret_chk != OK) {
-		printf("%s FAIL, Error No: %d\n", __func__, errno);
-		total_fail++;
-		return ERROR;
-	}
-	task_delete(getpid());
-	return ONEXIT_VAL;
-}
-
-/**
-* @fn                   :atexit_test
-* @brief                :utility function for tc_task_atexit
-* @return               :int
-*/
-static int atexit_test(int argc, char *argv[])
-{
-	int ret_chk;
-	ret_chk = atexit(fn_exit);
-	if (ret_chk != OK) {
-		printf("tc_task_atexit FAIL, Error No: %d\n", errno);
-		total_fail++;
-		return ERROR;
-	}
-	printf("tc_task_atexit PASS\n");
-	total_pass++;
-	task_delete(getpid());
 	return OK;
 }
-
-/**
-* @fn                   :tc_task_atexit
-* @brief                :Register a function to be called at normal process termination
-* @Scenario             :Register a function to be called at normal process termination
-* API's covered         :atexit
-* Preconditions         :none
-* Postconditions        :none
-* @return               :return SUCCESS on success
-*/
-
-static void tc_task_atexit(void)
-{
-	int pid;
-
-	pid = task_create("tc_atexit", SCHED_PRIORITY_DEFAULT, 2048, atexit_test, (char *const *)NULL);
-	if (pid < 0) {
-		printf("tc_task_atexit FAIL : task_create\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-}
-
-/**
-* @fn                   :tc_task_getpid
-* @brief                :Returns the process ID of the calling process
-* @Scenario             :Returns the process ID of the calling process
-* API's covered         :getpid
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
-*/
-
-static void tc_task_getpid(void)
-{
-	int id;
-	pid_t pid;
-	id = task_create("tc_getpid", SCHED_PRIORITY_DEFAULT, 2048, temp_task, (char *const *)NULL);
-	if (id == 0) {
-		pid = getpid();
-		if (pid < 0) {
-			printf("tc_task_getpid FAIL, Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
-	}
-	printf("tc_task_getpid PASS\n");
-	total_pass++;
-}
+#endif
 
 /**
 * @fn                   :tc_task_task_create
@@ -315,26 +253,15 @@ static void tc_task_getpid(void)
 * Postconditions        :none
 * @return               :void
 */
-
 static void tc_task_task_create(void)
 {
 	int pid;
-	g_callback = false;
-	pid = task_create("tc_task_create", SCHED_PRIORITY_DEFAULT, 2048, temp_task, (char *const *)NULL);
-	sleep(SEC_2);
-	if (pid < 0 || g_callback == false) {
-		printf("tc_task_task_create FAIL %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (pid == ENOMEM) {
-		printf("Not enough memory to create task \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	printf("tc_task_task_create PASS\n");
-	total_pass++;
+	const char *task_param[2] = { TEST_STRING, NULL };
+	g_callback = ERROR;
+	pid = task_create("tc_task_create", SCHED_PRIORITY_MAX - 1, 1024, create_task, (char * const *)task_param);
+	TC_ASSERT_GT("task_create", pid, 0);
+	TC_ASSERT_EQ("task_create", g_callback, OK);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -346,18 +273,18 @@ static void tc_task_task_create(void)
 * Postconditions        :none
 * @return               :void
 */
-
 static void tc_task_task_delete(void)
 {
-	task_create("tc_task_del", SCHED_PRIORITY_DEFAULT, 2048, delete_task, (char *const *)NULL);
-	sleep(1);
-	if (g_callback == false) {
-		printf("tc_task_task_delete FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_task_task_delete PASS\n");
-	total_pass++;
+	int pid;
+	int ret_chk;
+	g_callback = ERROR;
+	pid = task_create("tc_task_del", SCHED_PRIORITY_MAX - 1, 1024, delete_task, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, 0);
+
+	ret_chk = task_delete(pid);
+	TC_ASSERT_LT("task_delete", ret_chk, 0);
+	TC_ASSERT_EQ("task_delete", g_callback, OK);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -369,90 +296,70 @@ static void tc_task_task_delete(void)
 * Postconditions        :none
 * @return               :void
 */
-
 static void tc_task_task_restart(void)
 {
+	int pid;
 	int ret_chk;
-	pid_t pid = -1;
-	g_icounter = 0;
-	pid = task_create("tc_task_re", SCHED_PRIORITY_DEFAULT, 2048, restart_task, (char *const *)NULL);
-	sleep(SEC_2);
+	unsigned int remain;
+	g_callback = 0;
+	pid = task_create("tc_task_re", SCHED_PRIORITY_MAX - 1, 1024, restart_task, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, 0);
+
 	ret_chk = task_restart(pid);
-	if (ret_chk != OK) {
-		printf("tc_task_task_restart FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
+
+	/* wait for terminating restart_task */
+
+	remain = sleep(SEC_2);
+	while (remain > 0) {
+		remain = sleep(remain);
 	}
-	sleep(SEC_2);
+
+	TC_ASSERT_EQ("task_restart", ret_chk, 0);
+
 	/* g_icounter shall be increment when do start and restart operation */
-	if (g_icounter != 2) {
-		printf("tc_task_task_restart FAIL, unexpected value of function counter %d \n", g_icounter);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_task_task_restart PASS\n");
-	total_pass++;
+
+	TC_ASSERT_EQ("task_restart", g_callback, 2);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
-* @fn                   :tc_task_prctl
-* @brief                :functions will set and get the process name and then compare the fetched\
-*                        name with the set name child task, constructed from a regular executable file.
-* @Scenario             :functions will set and get the process name and then compare the fetched\
-*                        name with the set name child task, constructed from a regular executable file.
-* API's covered         :prctl
-* Preconditions         :none
+* @fn                   :tc_task_exit
+* @brief                :exit function will terminate the task
+* @Scenario             :make a task which calls exit(). after calling exit,
+*                       that task cannot do anything such as printf
+* API's covered         :on_exit
+* Preconditions         :task_create
 * Postconditions        :none
 * @return               :void
 */
-
-static void tc_task_prctl(void)
+static void tc_task_exit(void)
 {
-	int ret_chk;
-	const char *setname = "a Test program";
-	char getname[CONFIG_TASK_NAME_SIZE + 1];
-	char oldname[CONFIG_TASK_NAME_SIZE + 1];
+	int pid;
+	g_callback = ERROR;
+	pid = task_create("tc_exit", SCHED_PRIORITY_MAX - 1, 1024, exit_task, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, 0);
+	TC_ASSERT_EQ("task_exit", g_callback, OK);
+	TC_SUCCESS_RESULT();
+}
 
-	/* save taskname */
-
-	ret_chk = prctl(PR_GET_NAME, (unsigned long)oldname, 0, 0, 0);
-	if (ret_chk != OK) {
-		printf("tc_task_prctl FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	/* set taskname */
-
-	ret_chk = prctl(PR_SET_NAME, (unsigned long)setname, 0, 0, 0);
-	if (ret_chk != OK) {
-		printf("tc_task_prctl FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	/* get taskname */
-
-	ret_chk = prctl(PR_GET_NAME, (unsigned long)getname, 0, 0, 0);
-	if (ret_chk != OK) {
-		printf("tc_task_prctl FAIL, Error No: %d\n", errno);
-		prctl(PR_SET_NAME, (unsigned long)oldname, 0, 0, 0);
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	/* compare getname and setname */
-
-	if (strncmp(getname, setname, CONFIG_TASK_NAME_SIZE) != 0) {
-		printf("tc_task_prctl FAIL, The new process name doesn't match the expected FAIL, Error No: %d\n", errno);
-		prctl(PR_SET_NAME, (unsigned long)oldname, 0, 0, 0);
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	prctl(PR_SET_NAME, (unsigned long)oldname, 0, 0, 0);
-	printf("tc_task_prctl PASS\n");
-	total_pass++;
+/**
+* @fn                   :tc_task_atexit
+* @brief                :Register a function to be called at normal process termination
+* @Scenario             :Register a function to be called at normal process termination
+* API's covered         :atexit
+* Preconditions         :none
+* Postconditions        :none
+* @return               :return SUCCESS on success
+*/
+static void tc_task_atexit(void)
+{
+	int pid;
+	g_callback = ERROR;
+	pid = task_create("tc_atexit", SCHED_PRIORITY_MAX - 1, 1024, atexit_task, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, 0);
+	TC_ASSERT_EQ("task_atexit", g_callback, OK);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -469,51 +376,72 @@ static void tc_task_prctl(void)
 static void tc_task_on_exit(void)
 {
 	int pid;
-	unsigned int remain;
-	g_callback = false;
+	g_callback = ERROR;
 
-	pid = task_create("tc_on_exit", SCHED_PRIORITY_DEFAULT, 2048, onexit_task, (char *const *)NULL);
-	if (pid < 0) {
-		printf("tc_task_on_exit task_create FAIL, Error No: %d %d\n", errno, pid);
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	remain = sleep(SEC_3);
-	while (remain > 0) {
-		remain = sleep(remain);
-	}
-
-	if (!g_callback) {
-		printf("tc_task_on_exit FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_task_on_exit PASS\n");
-	total_pass++;
+	pid = task_create("tc_on_exit", SCHED_PRIORITY_MAX - 1, 1024, onexit_task, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, 0);
+	TC_ASSERT_EQ("on_exit", g_callback, OK);
+	TC_SUCCESS_RESULT();
 }
 
 /**
-* @fn                   :tc_task_exit
-* @brief                :exit function will terminate the task
-* @Scenario             :make a task which calls exit(). after calling exit,
-*                       that task cannot do anything such as printf
-* API's covered         :on_exit
-* Preconditions         :task_create
+* @fn                   :tc_task_prctl
+* @brief                :functions will set and get the process name and then compare the fetched\
+*                        name with the set name child task, constructed from a regular executable file.
+* @Scenario             :functions will set and get the process name and then compare the fetched\
+*                        name with the set name child task, constructed from a regular executable file.
+* API's covered         :prctl
+* Preconditions         :none
 * Postconditions        :none
 * @return               :void
 */
-static void tc_task_exit(void)
+static void tc_task_prctl(void)
 {
-	task_create("tc_exit", SCHED_PRIORITY_MAX - 1, 1024, exit_task, (char *const *)NULL);
+	int ret_chk;
+	const char *setname = "a Test program";
+	char getname[CONFIG_TASK_NAME_SIZE + 1];
+	char oldname[CONFIG_TASK_NAME_SIZE + 1];
 
-	if (g_exit_val == true) {
-		printf("tc_task_exit PASS\n");
-		total_pass++;
-	} else {
-		printf("tc_task_exit FAIL\n");
-		total_fail++;
-	}
+	/* save taskname */
+
+	ret_chk = prctl(PR_GET_NAME, (unsigned long)oldname, 0, 0, 0);
+	TC_ASSERT_EQ("prctl", ret_chk, OK);
+
+	/* set taskname */
+
+	ret_chk = prctl(PR_SET_NAME, (unsigned long)setname, 0, 0, 0);
+	TC_ASSERT_EQ("prctl", ret_chk, OK);
+
+	/* get taskname */
+
+	ret_chk = prctl(PR_GET_NAME, (unsigned long)getname, 0, 0, 0);
+	TC_ASSERT_EQ_CLEANUP("prctl", ret_chk, OK, get_errno(), prctl(PR_SET_NAME, (unsigned long)oldname, 0, 0, 0));
+
+	/* compare getname and setname */
+
+	TC_ASSERT_EQ_CLEANUP("prctl", strncmp(getname, setname, CONFIG_TASK_NAME_SIZE), 0, get_errno(), prctl(PR_SET_NAME, (unsigned long)oldname, 0, 0, 0));
+
+	prctl(PR_SET_NAME, (unsigned long)oldname, 0, 0, 0);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_task_getpid
+* @brief                :Returns the process ID of the calling process
+* @Scenario             :Returns the process ID of the calling process
+* API's covered         :getpid
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_task_getpid(void)
+{
+	int pid;
+	g_callback = ERROR;
+	pid = task_create("tc_getpid", SCHED_PRIORITY_MAX - 1, 1024, getpid_task, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, 0);
+	TC_ASSERT_EQ("getpid", pid, g_callback);
+	TC_SUCCESS_RESULT();
 }
 
 #ifndef CONFIG_BUILD_PROTECTED
@@ -529,7 +457,13 @@ static void tc_task_exit(void)
 */
 static void tc_task_vfork(void)
 {
-	task_create("tc_vfork", SCHED_PRIORITY_MAX - 1, 1024, vfork_task, (char *const *)NULL);
+	int pid;
+	g_callback = OK;
+	pid = task_create("tc_vfork", SCHED_PRIORITY_MAX - 1, 1024, vfork_task, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, 0);
+	TC_ASSERT_EQ("task_restart", g_callback, OK);
+
+	TC_SUCCESS_RESULT();
 }
 #endif
 /****************************************************************************
@@ -537,17 +471,16 @@ static void tc_task_vfork(void)
  ****************************************************************************/
 int task_main(void)
 {
-	tc_task_task_restart();
-	tc_task_atexit();
-	tc_task_getpid();
 	tc_task_task_create();
 	tc_task_task_delete();
-	tc_task_prctl();
-	tc_task_on_exit();
+	tc_task_task_restart();
 	tc_task_exit();
+	tc_task_atexit();
+	tc_task_on_exit();
+	tc_task_prctl();
+	tc_task_getpid();
 #if defined(CONFIG_ARCH_HAVE_VFORK) && defined(CONFIG_SCHED_WAITPID) && !defined(CONFIG_BUILD_PROTECTED)
 	tc_task_vfork();
 #endif
-
 	return 0;
 }

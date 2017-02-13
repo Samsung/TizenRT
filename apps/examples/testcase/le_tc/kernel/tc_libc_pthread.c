@@ -158,65 +158,34 @@ static void *work_usrthread(void *arg)
 static void tc_libc_pthread_pthread_attr_set_get_stacksize(void)
 {
 	pthread_attr_t attr;
-	int status;
+	int ret_chk;
 	long nstacksize = ST_SIZE;
 	long nretstacksize;
 
-	status = pthread_attr_init(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_stacksize FAIL : pthread_attr_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_init(&attr);
+	TC_ASSERT_EQ("pthread_attr_init", ret_chk, OK);
 
-	status = pthread_attr_setstacksize(&attr, nstacksize);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_stacksize FAIL : pthread_attr_setstacksize failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_setstacksize(&attr, nstacksize);
+	TC_ASSERT_EQ("pthread_attr_setstacksize", ret_chk, OK);
 
-	status = pthread_create(&g_pthread_usr, &attr, work_usrthread, NULL);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_stacksize FAIL : pthread_create failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&g_pthread_usr, &attr, work_usrthread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	status = pthread_attr_getstacksize(&attr, &nretstacksize);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_stacksize FAIL : pthread_attr_getstacksize failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_getstacksize(&attr, &nretstacksize);
+	TC_ASSERT_EQ_CLEANUP("pthread_attr_getstacksize", ret_chk, OK, get_errno(), goto errout);
+	TC_ASSERT_EQ_CLEANUP("pthread_attr_getstacksize", nstacksize, nretstacksize, get_errno(), goto errout);
 
-	if (nstacksize != nretstacksize) {
-		printf("tc_libc_pthread_pthread_attr_set_get_stacksize FAIL :pthread_attr_stack was set as %d\n", nstacksize);
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_join(g_pthread_usr, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, get_errno(), goto errout);
 
-	status = pthread_join(g_pthread_usr, NULL);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_stacksize FAIL : pthread_join failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_destroy(&attr);
+	TC_ASSERT_EQ_CLEANUP("pthread_attr_destroy", ret_chk, OK, get_errno(), goto errout);
 
-	status = pthread_attr_destroy(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_stacksize FAIL : pthread_attr_destroy failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_SUCCESS_RESULT();
+	return;
 
-	printf("tc_libc_pthread_pthread_attr_set_get_stacksize PASS\n");
-	total_pass++;
+errout:
+	pthread_detach(g_pthread_usr);
 }
 
 /**
@@ -236,64 +205,33 @@ static void tc_libc_pthread_pthread_attr_set_get_schedparam(void)
 	pthread_attr_t attr;
 	struct sched_param param;
 	struct sched_param rparam;
-	int status;
-	status = pthread_attr_init(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_schedparam FAIL : pthread_attr_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	int ret_chk;
+
+	ret_chk = pthread_attr_init(&attr);
+	TC_ASSERT_EQ("pthread_attr_init", ret_chk, OK);
 
 	param.sched_priority = SCHED_PRIOR;
 
-	status = pthread_attr_setschedparam(&attr, &param);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_schedparam FAIL : pthread_attr_setschedparam failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_setschedparam(&attr, &param);
+	TC_ASSERT_EQ("pthread_attr_setschedparam", ret_chk, OK);
 
-	status = pthread_create(&g_pthread_usr, &attr, work_usrthread, NULL);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_schedparam FAIL : pthread_create failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&g_pthread_usr, &attr, work_usrthread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	status = pthread_attr_getschedparam(&attr, &rparam);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_schedparam FAIL : pthread_attr_getschedparam failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_getschedparam(&attr, &rparam);
+	TC_ASSERT_EQ_CLEANUP("pthread_attr_getschedparam", ret_chk, OK, get_errno(), goto errout);
+	TC_ASSERT_EQ_CLEANUP("pthread_attr_getschedparam", rparam.sched_priority, param.sched_priority, get_errno(), goto errout);
 
-	if (rparam.sched_priority != param.sched_priority) {
-		printf("tc_libc_pthread_pthread_attr_set_get_schedparam FAIL : pthread_attr_schedparam(priority) was set as %d\n", rparam.sched_priority);
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_join(g_pthread_usr, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, get_errno(), goto errout);
 
-	status = pthread_join(g_pthread_usr, NULL);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_schedparam FAIL : pthread_join failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_destroy(&attr);
+	TC_ASSERT_EQ("pthread_attr_destroy", ret_chk, OK);
 
-	status = pthread_attr_destroy(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_set_get_schedparam FAIL : pthread_attr_destroy failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_SUCCESS_RESULT();
+	return;
 
-	printf("tc_libc_pthread_pthread_attr_set_get_schedparam PASS\n");
-	total_pass++;
+errout:
 	pthread_detach(g_pthread_usr);
 }
 
@@ -317,63 +255,32 @@ static void tc_libc_pthread_pthread_attr_init_destroy_set_get_inheritsched(void)
 	pthread_attr_t attr;
 	int inherit_sched_setval = PTHREAD_EXPLICIT_SCHED;
 	int inherit_sched_getval;
-	int status;
-	status = pthread_attr_init(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_init_destroy_set_get_inheritsched FAIL : pthread_attr_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	int ret_chk;
 
-	status = pthread_attr_setinheritsched(&attr, inherit_sched_setval);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_init_destroy_set_get_inheritsched FAIL : pthread_attr_setinheritsched failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_init(&attr);
+	TC_ASSERT_EQ("pthread_attr_init", ret_chk, OK);
 
-	status = pthread_create(&g_pthread_usr, &attr, work_usrthread, NULL);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_init_destroy_set_get_inheritsched FAIL : pthread_create failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_setinheritsched(&attr, inherit_sched_setval);
+	TC_ASSERT_EQ("pthread_attr_setinheritsched", ret_chk, OK);
 
-	status = pthread_attr_getinheritsched(&attr, &inherit_sched_getval);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_init_destroy_set_get_inheritsched FAIL : pthread_attr_getinheritsched failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&g_pthread_usr, &attr, work_usrthread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	if (inherit_sched_setval != inherit_sched_getval) {
-		printf("tc_libc_pthread_pthread_attr_init_destroy_set_get_inheritsched FAIL : Inherit scheduler was set as %d\n", inherit_sched_setval);
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_getinheritsched(&attr, &inherit_sched_getval);
+	TC_ASSERT_EQ_CLEANUP("pthread_attr_getinheritsched", ret_chk, OK, get_errno(), goto errout);
+	TC_ASSERT_EQ_CLEANUP("pthread_attr_getinheritsched", inherit_sched_setval, inherit_sched_getval, get_errno(), goto errout);
 
-	status = pthread_join(g_pthread_usr, NULL);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_init_destroy_set_get_inheritsched FAIL : pthread_attr_join failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_join(g_pthread_usr, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, get_errno(), goto errout);
 
-	status = pthread_attr_destroy(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_init_destroy_set_get_inheritsched FAIL : pthread_attr_destroy failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_destroy(&attr);
+	TC_ASSERT_EQ("pthread_attr_destroy", ret_chk, OK);
 
-	printf("tc_libc_pthread_pthread_attr_init_destroy_set_get_inheritsched PASS\n");
-	total_pass++;
-	pthread_cancel(g_pthread_usr);
+	TC_SUCCESS_RESULT();
+	return;
+
+errout:
+	pthread_detach(g_pthread_usr);
 }
 
 /**
@@ -395,61 +302,30 @@ static void tc_libc_pthread_pthread_attr_schedpolicy(void)
 	pthread_attr_t attr;
 	int sched_policy_setval = SCHED_RR;
 	int sched_policy_getval;
-	int status;
-	status = pthread_attr_init(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_schedpolicy FAIL : pthread_attr_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	int ret_chk;
 
-	status = pthread_attr_setschedpolicy(&attr, sched_policy_setval);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_schedpolicy FAIL : pthread_attr_setschedpolicy failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_init(&attr);
+	TC_ASSERT_EQ("pthread_attr_init", ret_chk, OK);
 
-	status = pthread_create(&g_pthread_usr, &attr, work_usrthread, NULL);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_schedpolicy FAIL : pthread_create failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_setschedpolicy(&attr, sched_policy_setval);
+	TC_ASSERT_EQ("pthread_attr_setschedpolicy", ret_chk, OK);
 
-	status = pthread_attr_getschedpolicy(&attr, &sched_policy_getval);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_schedpolicy FAIL : pthread_attr_getschedpolicy failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&g_pthread_usr, &attr, work_usrthread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	if (sched_policy_setval != sched_policy_getval) {
-		printf("tc_libc_pthread_pthread_attr_schedpolicy FAIL :Scheduler Policy  was set as %d\n", sched_policy_setval);
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
-	status = pthread_join(g_pthread_usr, NULL);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_schedpolicy FAIL : pthread_join failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_getschedpolicy(&attr, &sched_policy_getval);
+	TC_ASSERT_EQ_CLEANUP("pthread_attr_getschedpolicy", ret_chk, OK, get_errno(), goto errout);
+	TC_ASSERT_EQ_CLEANUP("pthread_attr_getschedpolicy", sched_policy_setval, sched_policy_getval, get_errno(), goto errout);
 
-	status = pthread_attr_destroy(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_attr_schedpolicy FAIL : pthread_attr_destroy failed\n");
-		pthread_detach(g_pthread_usr);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_join(g_pthread_usr, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_attr_getschedpolicy", ret_chk, OK, get_errno(), goto errout);
 
-	printf("tc_libc_pthread_pthread_attr_schedpolicy PASS\n");
-	total_pass++;
+	ret_chk = pthread_attr_destroy(&attr);
+	TC_ASSERT_EQ("pthread_attr_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+
+errout:
 	pthread_detach(g_pthread_usr);
 }
 
@@ -469,80 +345,44 @@ static void tc_libc_pthread_pthread_attr_schedpolicy(void)
 static void tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared(void)
 {
 	pthread_barrierattr_t attr;
-	int status = 0;
+	int ret_chk = 0;
 	int thread_count = THREAD_CNT;
 	int pshared = PTHREAD_PROCESS_PRIVATE;
 	int pshared_ret;
 
-	status = pthread_barrierattr_init(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared FAIL : pthread_barrierattr_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_barrierattr_init(&attr);
+	TC_ASSERT_EQ("pthread_barrierattr_init", ret_chk, OK);
 
-	status = pthread_barrierattr_setpshared(&attr, pshared);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared FAIL : pthread_barrierattr_setpshared failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_barrierattr_setpshared(&attr, pshared);
+	TC_ASSERT_EQ("pthread_barrierattr_setpshared", ret_chk, OK);
 
-	status = pthread_barrier_init(&g_pthreadbarrier, &attr, thread_count);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared FAIL : pthread_barrier_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_barrier_init(&g_pthreadbarrier, &attr, thread_count);
+	TC_ASSERT_EQ("pthread_barrier_init", ret_chk, OK);
 
-	status = pthread_create(&g_pthread_barrier1, NULL, barrier_thread_1, NULL);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared FAIL : pthread_create failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&g_pthread_barrier1, NULL, barrier_thread_1, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	status = pthread_barrierattr_getpshared(&attr, &pshared_ret);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared FAIL : pthread_barrierattr_getpshared failed\n");
-		pthread_detach(g_pthread_barrier1);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_barrierattr_getpshared(&attr, &pshared_ret);
+	TC_ASSERT_EQ_CLEANUP("pthread_barrierattr_getpshared", ret_chk, OK, get_errno(), goto errout);
+	TC_ASSERT_EQ_CLEANUP("pthread_barrierattr_getpshared", pshared_ret, pshared, get_errno(), goto errout);
 
-	if (pshared_ret != pshared) {
-		printf("tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared FAIL\n");
-		pthread_detach(g_pthread_barrier1);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&g_pthread_barrier2, NULL, barrier_thread_2, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, get_errno(), goto errout);
 
-	status = pthread_create(&g_pthread_barrier2, NULL, barrier_thread_2, NULL);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared FAIL : pthread_create failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_barrierattr_destroy(&attr);
+	TC_ASSERT_EQ_CLEANUP("pthread_barrierattr_destroy", ret_chk, OK, get_errno(), goto errout);
 
-	status = pthread_barrierattr_destroy(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared FAIL : pthread_barrierattr_destroy failed\n");
-		pthread_detach(g_pthread_barrier2);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_barrier_destroy(&g_pthreadbarrier);
+	TC_ASSERT_EQ_CLEANUP("pthread_barrier_destroy", ret_chk, OK, get_errno(), goto errout);
 
-	status = pthread_barrier_destroy(&g_pthreadbarrier);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared FAIL : pthread_barrier_destroy failed\n");
-		pthread_detach(g_pthread_barrier2);
-		total_fail++;
-		RETURN_ERR;
-	}
 	pthread_join(g_pthread_barrier1, 0);
 	pthread_join(g_pthread_barrier2, 0);
-	printf("tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
+	return;
+
+errout:
+	pthread_detach(g_pthread_barrier1);
+	pthread_detach(g_pthread_barrier2);
 }
 
 /**
@@ -561,40 +401,26 @@ static void tc_libc_pthread_pthread_barrierattr_init_destroy_set_get_pshared(voi
 */
 static void tc_libc_pthread_pthread_condattr(void)
 {
-	int status = 0;
+	int ret_chk = 0;
 	g_counter = 0;
 	g_icondition_met = 0;
 	int pthread_num;
 	pthread_condattr_t attr;
 
 	/* Create a default condition attribute */
-	status = pthread_condattr_init(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_condattr FAIL : pthread_condattr_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_condattr_init(&attr);
+	TC_ASSERT_EQ("pthread_condattr_init", ret_chk, OK);
 
 	/* Create the condition using the condition attributes object */
-	status = pthread_cond_init(&g_pthread_cond, &attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_condattr FAIL : pthread_cond_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_cond_init(&g_pthread_cond, &attr);
+	TC_ASSERT_EQ("pthread_cond_init", ret_chk, OK);
+
 	for (pthread_num = 0; pthread_num < PTHREAD_NUM; pthread_num++) {
-		pthread_create(&g_rgpthread[pthread_num], NULL, pthread_condattr_thread_func, NULL);
+		ret_chk = pthread_create(&g_rgpthread[pthread_num], NULL, pthread_condattr_thread_func, NULL);
+		TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, get_errno(), goto errout);
 	}
 	sleep(SEC_5);
-	if (g_counter != PTHREAD_NUM) {
-		printf("FAIL:g_counter!=threadcount\n");
-		total_fail++;
-		for (pthread_num = 0; pthread_num < PTHREAD_NUM; pthread_num++) {
-			pthread_detach(g_rgpthread[pthread_num]);
-		}
-		printf("tc_libc_pthread_pthread_condattr FAIL : pthread_create failed\n");
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ_CLEANUP("pthread_create", g_counter, PTHREAD_NUM, get_errno(), goto errout);
 
 	pthread_mutex_lock(&g_pthread_mutex);
 	g_icondition_met = 1;
@@ -602,38 +428,28 @@ static void tc_libc_pthread_pthread_condattr(void)
 	pthread_mutex_unlock(&g_pthread_mutex);
 
 	for (pthread_num = 0; pthread_num < PTHREAD_NUM; pthread_num++) {
-		status = pthread_join(g_rgpthread[pthread_num], NULL);
-		if (status != OK) {
-			printf("tc_libc_pthread_pthread_condattr FAIL : pthread_join failed\n");
-			pthread_detach(g_rgpthread[pthread_num]);
-			total_fail++;
-			RETURN_ERR;
-		}
+		ret_chk = pthread_join(g_rgpthread[pthread_num], NULL);
+		TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, get_errno(), goto errout);
 	}
-	if (g_counter != 0) {
-		printf("FAIL:g_counter!=0\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ_CLEANUP("pthread_join", g_counter, 0, get_errno(), goto errout);
 
 	/* Destroy cond attribute */
-	status = pthread_condattr_destroy(&attr);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_condattr FAIL : pthread_condattr_destroy failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_condattr_destroy(&attr);
+	TC_ASSERT_EQ_CLEANUP("pthread_condattr_destroy", ret_chk, OK, get_errno(), goto errout);
 
 	/* Destroy condition */
-	status = pthread_cond_destroy(&g_pthread_cond);
-	if (status != OK) {
-		printf("tc_libc_pthread_pthread_condattr FAIL : pthread_cond_destroy failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_cond_destroy(&g_pthread_cond);
+	TC_ASSERT_EQ("pthread_cond_destroy", ret_chk, OK);
 
-	printf("tc_libc_pthread_pthread_condattr PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
+	return;
+
+errout:
+	for (pthread_num = 0; pthread_num < PTHREAD_NUM; pthread_num++) {
+		pthread_detach(g_rgpthread[pthread_num]);
+	}
+	pthread_cond_destroy(&g_pthread_cond);
+	pthread_condattr_destroy(&attr);
 }
 
 /**
@@ -651,7 +467,7 @@ static void tc_libc_pthread_pthread_condattr(void)
 */
 static void tc_libc_pthread_pthread_mutexattr(void)
 {
-	int iret = 0;
+	int ret_chk = 0;
 	int ithreadid = 0;
 	int mutex_settype;
 	int mutex_gettype = -1;
@@ -663,86 +479,54 @@ static void tc_libc_pthread_pthread_mutexattr(void)
 	mutex_settype = PTHREAD_PROCESS_SHARED;
 	pthread_t threads[ithreadcount];
 	pthread_mutexattr_t mutexAttr;
-	iret = pthread_mutexattr_init(&mutexAttr);
 
-	if (iret != OK) {
-		printf("tc_libc_pthread_pthread_mutexattr FAIL : pthread_mutexattr_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_mutexattr_init(&mutexAttr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
 
-	iret = pthread_mutexattr_setpshared(&mutexAttr, mutex_pshared_set);
-	if (iret != OK) {
-		printf("tc_libc_pthread_pthread_mutexattr FAIL : pthread_mutexattr_setpshared failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_mutexattr_setpshared(&mutexAttr, mutex_pshared_set);
+	TC_ASSERT_EQ("pthread_mutexattr_setpshared", ret_chk, OK);
 
-	iret = pthread_mutexattr_settype(&mutexAttr, mutex_settype);
-	if (iret != OK) {
-		printf("tc_libc_pthread_pthread_mutexattr FAIL : pthread_mutexattr_settype failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_mutexattr_settype(&mutexAttr, mutex_settype);
+	TC_ASSERT_EQ("pthread_mutexattr_settype", ret_chk, OK);
 
-	iret = pthread_mutex_init(&g_mutex, &mutexAttr);
-	if (iret != OK) {
-		printf("tc_libc_pthread_pthread_mutexattr FAIL : pthread_mutex_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_mutex_init(&g_mutex, &mutexAttr);
+	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
 
 	for (ithreadid = 0; ithreadid < ithreadcount; ++ithreadid) {
-		iret = pthread_create(&threads[ithreadid], NULL, mutex_testing, (void *)ithreadid);
-		if (iret != 0) {
-			printf("[%s]pthread_create fail \n", __func__);
-		}
+		ret_chk = pthread_create(&threads[ithreadid], NULL, mutex_testing, (void *)ithreadid);
+		TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, get_errno(), goto errout);
 	}
 
 	/* apply join on thread */
 	for (ithreadid = 0; ithreadid < ithreadcount; ++ithreadid) {
-		iret = pthread_join(threads[ithreadid], &ithread);
-		if (iret != OK) {
-			printf("[%s]pthread_join failed \n", __func__);
-		}
+		ret_chk = pthread_join(threads[ithreadid], &ithread);
+		TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, get_errno(), goto errout);
 	}
 
-	iret = pthread_mutexattr_gettype(&mutexAttr, &mutex_gettype);
-	if (iret != OK || mutex_gettype != mutex_settype) {
-		printf("tc_libc_pthread_pthread_mutexattr FAIL : pthread_mutexattr_gettype failed\n");
-		pthread_mutexattr_destroy(&mutexAttr);
-		pthread_mutex_destroy(&g_mutex);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_mutexattr_gettype(&mutexAttr, &mutex_gettype);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutexattr_gettype", ret_chk, OK, get_errno(), goto errout);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutexattr_gettype", mutex_gettype, mutex_settype, get_errno(), goto errout);
 
-	iret = pthread_mutexattr_getpshared(&mutexAttr, &mutex_pshared_get);
+	ret_chk = pthread_mutexattr_getpshared(&mutexAttr, &mutex_pshared_get);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutexattr_getpshared", ret_chk, OK, get_errno(), goto errout);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutexattr_getpshared", mutex_pshared_get, mutex_pshared_set, get_errno(), goto errout);
 
-	if (iret != OK || mutex_pshared_get != mutex_pshared_set) {
-		printf("[%s]pthread_mutexattr_getpshared failed \n", __func__);
-		pthread_mutexattr_destroy(&mutexAttr);
-		pthread_mutex_destroy(&g_mutex);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_mutexattr_destroy(&mutexAttr);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutexattr_destroy", ret_chk, OK, get_errno(), goto errout);
 
-	iret = pthread_mutexattr_destroy(&mutexAttr);
-	if (iret != OK) {
-		printf("[%s]pthread_mutexattr_destroy failed \n", __func__);
-		pthread_mutex_destroy(&g_mutex);
-		total_fail++;
-		RETURN_ERR;
-	}
 	/* Destroying mutex object */
-	iret = pthread_mutex_destroy(&g_mutex);
-	if (iret != OK) {
-		printf("tc_libc_pthread_pthread_mutexattr FAIL : pthread_mutexattr_destroy failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_mutex_destroy(&g_mutex);
+	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, OK);
 
-	printf("tc_libc_pthread_pthread_mutexattr PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
+	return;
+
+errout:
+	for (ithreadid = 0; ithreadid < ithreadcount; ++ithreadid) {
+		pthread_detach(threads[ithreadid]);		
+	}
+	pthread_mutex_destroy(&g_mutex);
+	pthread_mutexattr_destroy(&mutexAttr);
 }
 
 /****************************************************************************

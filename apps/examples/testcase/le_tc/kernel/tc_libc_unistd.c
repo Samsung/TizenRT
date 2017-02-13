@@ -85,19 +85,12 @@ static void tc_libc_unistd_chdir_getcwd(void)
 	int ret_chk;
 
 	ret_chk = chdir(directory);
-	if (ret_chk != OK) {
-		printf("tc_libc_unistd_chdir_getcwd FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("chdir", ret_chk, OK);
+
 	cwd = getcwd(buff, BUFFSIZE);
-	if (strcmp(directory, cwd) != OK) {
-		printf("tc_libc_unistd_chdir_getcwd FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_unistd_chdir_getcwd PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("getcwd", strcmp(directory, cwd), 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -130,13 +123,10 @@ static void tc_libc_unistd_getopt(void)
 		default:
 			break;
 		}
-	if (flag_a != 1 || flag_b != 1) {
-		printf("tc_libc_unistd_getopt FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_unistd_getopt PASS \n");
-	total_pass++;
+	TC_ASSERT_EQ("getopt", flag_a, 1);
+	TC_ASSERT_EQ("getopt", flag_b, 1);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -158,19 +148,12 @@ static void tc_libc_unistd_sleep(void)
 	clock_gettime(CLOCK_REALTIME, &st_init_time);
 
 	ret_chk = sleep(SEC_3);
-	if (ret_chk != OK) {
-		printf("tc_libc_unistd_sleep FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sleep", ret_chk, 0);
+
 	clock_gettime(CLOCK_REALTIME, &st_final_time);
-	if ((st_final_time.tv_sec - st_init_time.tv_sec) != SEC_3) {
-		printf("tc_libc_unistd_sleep FAIL st_final_time: %lld, st_init_time: %lld \n", st_final_time.tv_sec, st_init_time.tv_sec);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_unistd_sleep PASS \n");
-	total_pass++;
+	TC_ASSERT_EQ("sleep", st_final_time.tv_sec - st_init_time.tv_sec, SEC_3);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -190,19 +173,12 @@ static void tc_libc_unistd_usleep(void)
 
 	clock_gettime(CLOCK_REALTIME, &st_init_time);
 	ret_chk = usleep(USLEEP_INTERVAL);
-	if (ret_chk != OK) {
-		printf("tc_libc_unistd_chdir FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("usleep", ret_chk, 0);
+
 	clock_gettime(CLOCK_REALTIME, &st_final_time);
-	if ((st_final_time.tv_sec - st_init_time.tv_sec) != SEC_3) {
-		printf("tc_libc_unistd_usleep FAIL, st_final_time: %lld, st_init_time: %lld \n", st_final_time.tv_sec, st_init_time.tv_sec);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_unistd_usleep PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("usleep", st_final_time.tv_sec - st_init_time.tv_sec, SEC_3);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -216,42 +192,26 @@ static void tc_libc_unistd_usleep(void)
 */
 static void tc_libc_unistd_pipe(void)
 {
+	int ret_chk;
 	int pid[2];
 
-	if (pipe(pipe_fd) < 0) {
-		printf("tc_libc_unistd_pipe FAIL: pipe error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pipe(pipe_fd);
+	TC_ASSERT_NEQ("pipe", ret_chk, ERROR);
 
 	sem_init(&pipe_sem, 0, 0);
 	pid[0] = task_create("tx", 99, 1024, pipe_tx_func, NULL);
-	if (pid[0] < 0) {
-		printf("tc_libc_unistd_pipe FAIL: tx task creation fail\n");
-		total_fail++;
-		goto close_pipe;
-	}
+	TC_ASSERT_GEQ_CLEANUP("task_create", pid[0], 0, get_errno(), goto cleanup_pipe);
 
 	pid[1] = task_create("rx", 99, 1024, pipe_rx_func, NULL);
-	if (pid[1] < 0) {
-		printf("tc_libc_unistd_pipe FAIL: rx task creation fail\n");
-		total_fail++;
-		goto close_pipe;
-	}
+	TC_ASSERT_GEQ_CLEANUP("task_create", pid[1], 0, get_errno(), goto cleanup_pipe);
 
 	sem_wait(&pipe_sem);
 
-	if (pipe_tc_chk == ERROR) {
-		printf("tc_libc_unistd_pipe FAIL: tx-rx data not matched\n");
-		total_fail++;
-		goto close_pipe;
-	}
+	TC_ASSERT_NEQ_CLEANUP("pipe", pipe_tc_chk, ERROR, get_errno(), goto cleanup_pipe);
 
-	printf("tc_libc_unistd_pipe PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 
-close_pipe:
-
+cleanup_pipe:
 	close(pipe_fd[0]);
 	close(pipe_fd[1]);
 }

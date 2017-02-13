@@ -67,25 +67,11 @@ static void tc_libc_spawn_posix_spawnattr_init(void)
 	posix_spawnattr_t st_attr;
 
 	ret_chk = posix_spawnattr_init(&st_attr);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_init  : posix_spawnattr_init ret_chk FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_init", ret_chk, OK);
+	TC_ASSERT_EQ("posix_spawnattr_init", st_attr.flags, 0);
+	TC_ASSERT_EQ("posix_spawnattr_init", st_attr.stacksize, CONFIG_TASK_SPAWN_DEFAULT_STACKSIZE);
 
-	if (st_attr.flags != 0) {
-		printf("tc_libc_spawn_posix_spawnattr_init FAIL:  st_attr.flags is not 0  \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	if (st_attr.stacksize != CONFIG_TASK_SPAWN_DEFAULT_STACKSIZE) {
-		printf("tc_libc_spawn_posix_spawnattr_init FAIL: st_attr.stacksize is not correct \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_spawn_posix_spawnattr_init PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -106,41 +92,21 @@ static void tc_libc_spawn_posix_spawnattr_setgetschedparam(void)
 	posix_spawnattr_t st_attr;
 
 	ret_chk = posix_spawnattr_init(&st_attr);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetschedparam  : posix_spawnattr_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_init", ret_chk, OK);
 
 	setParam.sched_priority = HIGH_PRIORITY;
 	ret_chk = posix_spawnattr_setschedparam(&st_attr, &setParam);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetschedparam : posix_spawnattr_setschedparam FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_setschedparam", ret_chk, OK);
 
 	ret_chk = task_spawn(&pid, "spawn", function_name_spawn, NULL, &st_attr, (char *const *)NULL, (char *const *)NULL);
 	sleep(SEC_4);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetschedparam : task_spawn FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("task_spawn", ret_chk, OK);
 
 	ret_chk = posix_spawnattr_getschedparam(&st_attr, &getParam);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetschedparam : posix_spawnattr_getschedparam FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (setParam.sched_priority != getParam.sched_priority) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetschedparam : posix_spawnattr_getschedparam FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_spawn_posix_spawnattr_setgetschedparam PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("posix_spawnattr_getschedparam", ret_chk, OK);
+	TC_ASSERT_EQ("posix_spawnattr_getschedparam", setParam.sched_priority, getParam.sched_priority);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -161,41 +127,20 @@ static void tc_libc_spawn_posix_spawnattr_setgetflags(void)
 	short int flags;
 
 	ret_chk = posix_spawnattr_init(&st_attr);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetflags  : posix_spawnattr_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_init", ret_chk, OK);
 
 	ret_chk = posix_spawnattr_setflags(&st_attr, POSIX_SPAWN_SETSCHEDPARAM);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetflags : posix_spawnattr_setflags FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_setflags", ret_chk, OK);
 
 	ret_chk = task_spawn(&pid, "spawn_flag", function_name_spawn, NULL, &st_attr, (char *const *)NULL, (char *const *)NULL);
 	sleep(SEC_3);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetflags : task_spawn FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("task_spawn", ret_chk, OK);
 
 	ret_chk = posix_spawnattr_getflags(&st_attr, &flags);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetflags : posix_spawnattr_getflags FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_getflags", ret_chk, OK);
+	TC_ASSERT_EQ("posix_spawnattr_getflags", flags, POSIX_SPAWN_SETSCHEDPARAM);
 
-	if (flags != POSIX_SPAWN_SETSCHEDPARAM) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetflags FAIL: set and get not equal FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_spawn_posix_spawnattr_setgetflags PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -216,43 +161,20 @@ static void tc_libc_spawn_posix_spawnattr_setgetschedpolicy(void)
 	int schedpolicy;
 
 	ret_chk = posix_spawnattr_init(&st_attr);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetschedpolicy  : posix_spawnattr_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_init", ret_chk, OK);
 
 	ret_chk = posix_spawnattr_setschedpolicy(&st_attr, SCHED_RR);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetschedpolicy  : posix_spawnattr_setschedpolicy FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_setschedpolicy", ret_chk, OK);
 
 	ret_chk = task_spawn(&pid, "spawn_policy", function_name_spawn, NULL, &st_attr, (char *const *)NULL, (char *const *)NULL);
 	sleep(SEC_4);
-
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetschedpolicy : task_spawn FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("task_spawn", ret_chk, OK);
 
 	ret_chk = posix_spawnattr_getschedpolicy(&st_attr, &schedpolicy);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetschedpolicy  : posix_spawnattr_getschedpolicy FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_getschedpolicy", ret_chk, OK);
+	TC_ASSERT_EQ("posix_spawnattr_getschedpolicy", schedpolicy, SCHED_RR);
 
-	if (schedpolicy != SCHED_RR) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetschedpolicy : set and get not equal FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	printf("tc_libc_spawn_posix_spawnattr_setgetschedpolicy PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -273,42 +195,20 @@ static void tc_libc_spawn_task_spawnattr_setgetstacksize(void)
 	size_t stacksize;
 
 	ret_chk = posix_spawnattr_init(&st_attr);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_task_spawnattr_setgetstacksize  : posix_spawnattr_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_init", ret_chk, OK);
 
 	ret_chk = task_spawnattr_setstacksize(&st_attr, CONFIG_USERMAIN_STACKSIZE);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_task_spawnattr_setgetstacksize : task_spawnattr_setstacksize FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("task_spawnattr_setstacksize", ret_chk, OK);
 
 	ret_chk = task_spawn(&pid, "spawn_stacksize", function_name_spawn, NULL, &st_attr, (char *const *)NULL, (char *const *)NULL);
 	sleep(SEC_4);
-
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_task_spawnattr_setgetstacksize : task_spawn FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("task_spawn", ret_chk, OK);
 
 	ret_chk = task_spawnattr_getstacksize(&st_attr, &stacksize);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_task_spawnattr_setgetstacksize  : task_spawnattr_getstacksize FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("task_spawnattr_getstacksize", ret_chk, OK);
+	TC_ASSERT_EQ("task_spawnattr_getstacksize", stacksize, CONFIG_USERMAIN_STACKSIZE);
 
-	if (stacksize != CONFIG_USERMAIN_STACKSIZE) {
-		printf("tc_libc_spawn_task_spawnattr_setgetstacksize  : set and get not equal FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_spawn_task_spawnattr_setgetstacksize PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -329,42 +229,20 @@ static void tc_libc_spawn_posix_spawnattr_setgetsigmask(void)
 	pid_t pid;
 
 	ret_chk = posix_spawnattr_init(&st_attr);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetsigmask  : posix_spawnattr_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_init", ret_chk, OK);
 
 	ret_chk = posix_spawnattr_setsigmask(&st_attr, &setMask);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetsigmask  : posix_spawnattr_setsigmask FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_setsigmask", ret_chk, OK);
 
 	ret_chk = task_spawn(&pid, "spawn_sigmask", function_name_spawn, NULL, &st_attr, (char *const *)NULL, (char *const *)NULL);
 	sleep(SEC_4);
-
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetsigmask : task_spawn FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("task_spawn", ret_chk, OK);
 
 	ret_chk = posix_spawnattr_getsigmask(&st_attr, &getMask);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetsigmask  : posix_spawnattr_getsigmask FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_getsigmask", ret_chk, OK);
+	TC_ASSERT_EQ("posix_spawnattr_getsigmask", setMask, getMask);
 
-	if (setMask != getMask) {
-		printf("tc_libc_spawn_posix_spawnattr_setgetsigmask  : set and get not equal FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_spawn_posix_spawnattr_setgetsigmask PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -383,31 +261,17 @@ static void tc_libc_spawn_posix_spawnattr_dump(void)
 	posix_spawnattr_t st_attr;
 
 	ret_chk = posix_spawnattr_init(&st_attr);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_dump  : posix_spawnattr_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_init", ret_chk, OK);
 
 	ret_chk = posix_spawnattr_setschedpolicy(&st_attr, SCHED_RR);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_dump  : posix_spawnattr_setschedpolicy FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_setschedpolicy", ret_chk, OK);
 
 	ret_chk = task_spawn(&pid, "spawn_dump", function_name_spawn, NULL, &st_attr, (char *const *)NULL, (char *const *)NULL);
 	sleep(SEC_4);
-
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawnattr_dump : task_spawn FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("task_spawn", ret_chk, OK);
 
 	posix_spawnattr_dump(&st_attr);
-	printf("tc_libc_spawn_posix_spawnattr_dump PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -425,26 +289,13 @@ static void tc_libc_spawn_posix_spawn_file_actions_init(void)
 	int ret_chk = ERROR;
 
 	ret_chk = posix_spawn_file_actions_init(&st_fileactions);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_init : posix_spawn_file_actions_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	if (st_fileactions != NULL) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_init FAIL: st_fileactions is not NULL  \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_init", ret_chk, OK);
+	TC_ASSERT_EQ("posix_spawn_file_actions_init", st_fileactions, NULL);
 
 	ret_chk = posix_spawn_file_actions_destroy(&st_fileactions);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_init : posix_spawn_file_actions_destroy FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_spawn_posix_spawn_file_actions_init PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("posix_spawn_file_actions_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -465,41 +316,21 @@ static void tc_libc_spawn_posix_spawn_file_actions_addopenclose(void)
 	int ret_chk = ERROR;
 
 	ret_chk = posix_spawnattr_init(&st_attr);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_addopenclose  : posix_spawnattr_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawnattr_init", ret_chk, OK);
 
 	ret_chk = posix_spawn_file_actions_init(&st_fileactions);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_addopenclose : posix_spawn_file_actions_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_init", ret_chk, OK);
 
 	ret_chk = posix_spawn_file_actions_addopen(&st_fileactions, 0, szfilepath, O_RDONLY, 0644);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_addopenclose : posix_spawn_file_actions_addopen FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_addopen", ret_chk, OK);
 
 	ret_chk = posix_spawn_file_actions_addclose(&st_fileactions, 0);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_addopenclose : posix_spawn_file_actions_addclose FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_addclose", ret_chk, OK);
 
 	ret_chk = posix_spawn_file_actions_destroy(&st_fileactions);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_addopenclose : posix_spawn_file_actions_destroy FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_spawn_posix_spawn_file_actions_addopenclose PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("posix_spawn_file_actions_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -518,38 +349,17 @@ static void tc_libc_spawn_posix_spawn_file_actions_destroy(void)
 	int ret_chk = ERROR;
 
 	ret_chk = posix_spawn_file_actions_init(&st_fileactions);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_destroy : posix_spawn_file_actions_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_init", ret_chk, OK);
 
 	ret_chk = posix_spawn_file_actions_addopen(&st_fileactions, 1, szfilepath, O_WRONLY, 0644);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_destroy : posix_spawn_file_actions_addopen FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_addopen", ret_chk, OK);
+	TC_ASSERT_NOT_NULL("posix_spawn_file_actions_addopen", st_fileactions);
 
-	if (st_fileactions == NULL) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_destroy FAIL:st_fileactions is NULL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
 	ret_chk = posix_spawn_file_actions_destroy(&st_fileactions);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_destroy : posix_spawn_file_actions_destroy FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_destroy", ret_chk, OK);
+	TC_ASSERT_EQ("posix_spawn_file_actions_destroy", st_fileactions, NULL);
 
-	if (st_fileactions != NULL) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_destroy FAIL:st_fileactions is not NULL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_spawn_posix_spawn_file_actions_destroy PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -568,29 +378,19 @@ static void tc_libc_spawn_posix_spawn_file_actions_dump(void)
 	int ret_chk = ERROR;
 
 	ret_chk = posix_spawn_file_actions_init(&st_fileactions);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_dump : posix_spawn_file_actions_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_init", ret_chk, OK);
 
 	ret_chk = posix_spawn_file_actions_addopen(&st_fileactions, 1, szfilepath, O_WRONLY, 0644);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_dump : posix_spawn_file_actions_addopen FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_addopen", ret_chk, OK);
+
 	/* posix_spawn_file_actions_dump returns (void) */
+
 	posix_spawn_file_actions_dump(&st_fileactions);
 
 	ret_chk = posix_spawn_file_actions_destroy(&st_fileactions);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_posix_spawn_file_actions_dump : posix_spawn_file_actions_destroy FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_spawn_posix_spawn_file_actions_dump PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("posix_spawn_file_actions_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -613,18 +413,10 @@ static void tc_libc_spawn_add_file_action(void)
 	int ret_chk = ERROR;
 
 	ret_chk = posix_spawn_file_actions_init(&st_fileactions);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_add_file_action : posix_spawn_file_actions_init FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_init", ret_chk, OK);
 
 	ret_chk = posix_spawn_file_actions_addopen(&st_fileactions, 1, szfilepath, O_WRONLY, 0644);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_add_file_action : posix_spawn_file_actions_addopen FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_addopen", ret_chk, OK);
 
 	length = strlen(szfilepath);
 	alloc_num = SIZEOF_OPEN_FILE_ACTION_S(length);
@@ -632,41 +424,24 @@ static void tc_libc_spawn_add_file_action(void)
 	/* Allocate the action list entry of this size */
 
 	entry1 = (struct spawn_open_file_action_s *)zalloc(alloc_num);
-	if (!entry1) {
-		printf("tc_libc_spawn_add_file_action : lib_zalloc for entry1 FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("zalloc", entry1);
 
 	/* And add it to the file action list */
 
 	add_file_action(st_fileactions, (struct spawn_general_file_action_s *)entry1);
 
 	entry2 = (struct spawn_open_file_action_s *)zalloc(alloc_num);
-	if (!entry2) {
-		printf("tc_libc_spawn_add_file_action : lib_zalloc for entry2 FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("zalloc", entry2);
 
 	/* And add it to the file action list */
-	add_file_action(st_fileactions, (struct spawn_general_file_action_s *)entry2);
 
-	if (entry1->flink != (struct spawn_general_file_action_s *)entry2) {
-		printf("tc_libc_spawn_add_file_action : entry1->flink is not equal to entry2 FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	add_file_action(st_fileactions, (struct spawn_general_file_action_s *)entry2);
+	TC_ASSERT_EQ("add_file_action", entry1->flink, (struct spawn_general_file_action_s *)entry2);
 
 	ret_chk = posix_spawn_file_actions_destroy(&st_fileactions);
-	if (ret_chk != OK) {
-		printf("tc_libc_spawn_add_file_action : posix_spawn_file_actions_destroy FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("posix_spawn_file_actions_destroy", ret_chk, OK);
 
-	printf("tc_libc_spawn_add_file_action PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

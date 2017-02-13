@@ -33,171 +33,13 @@
 #include <sys/types.h>
 #include "tc_internal.h"
 
-#define BUFF_SIZE 32
+#define BUFF_SIZE 128
+
+const char *printable_chars = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
-/**
-* @fn                   :asprintf_func
-* @description          :Function for tc_libc_stdio_asprintf
-* @return               :int
-*/
-static int asprintf_func(const char *format, ...)
-{
-	int ret_chk;
-	char *buffer;
-	const char *pname = "Example";
-	va_list args;
-	va_start(args, format);
-	ret_chk = avsprintf(&buffer, format, args);
-	va_end(args);
-
-	if (buffer == NULL) {
-		printf("tc_libc_stdio_avsprintf FAIL\n");
-		return ERROR;
-	}
-	if (ret_chk != strlen(pname)) {
-		printf("tc_libc_stdio_avsprintf FAIL\n");
-		free(buffer);
-		return ERROR;
-	}
-	if (strcmp(pname, buffer) != 0) {
-		printf("tc_libc_stdio_avsprintf FAIL, Error No: %d\n", errno);
-		free(buffer);
-		return ERROR;
-	}
-
-	free(buffer);
-	return OK;
-}
-
-/**
-* @fn                   :vfprintf_func
-* @description          :Function for tc_libc_stdio_vfprintf
-* @return               :int
-*/
-static int vfprintf_func(const char *format, ...)
-{
-	int ret_chk;
-	const char *pstr = "tc_libc_stdio_vfprintf";
-	va_list args;
-	va_start(args, format);
-	ret_chk = vfprintf(stdout, format, args);
-	va_end(args);
-
-	if (ret_chk != strlen(pstr)) {
-		printf(" FAIL\n");
-		return ERROR;
-	}
-
-	return OK;
-}
-
-/**
-* @fn                   :avsprintf_func
-* @description          :Function for tc_libc_stdio_avsprintf
-* @return               :int
-*/
-static int avsprintf_func(const char *format, ...)
-{
-	int ret_chk;
-	char *buffer;
-	const char *pname = "Example";
-	va_list args;
-	va_start(args, format);
-	ret_chk = avsprintf(&buffer, format, args);
-	va_end(args);
-
-	if (buffer == NULL) {
-		printf("tc_libc_stdio_avsprintf FAIL\n");
-		return ERROR;
-	}
-	if (ret_chk != strlen(pname)) {
-		printf("tc_libc_stdio_avsprintf FAIL\n");
-		free(buffer);
-		return ERROR;
-	}
-	if (strcmp(pname, buffer) != 0) {
-		printf("tc_libc_stdio_avsprintf FAIL, Error No: %d\n", errno);
-		free(buffer);
-		return ERROR;
-	}
-
-	free(buffer);
-	return OK;
-}
-
-/**
-* @fn                   :vsscanf_func
-* @description          :function for tc_libc_stdio_vsscanf_vsprintf
-* @return               :NA
-*/
-static void vsscanf_func(const char *str, const char *format, ...)
-{
-	va_list args;
-	va_start(args, format);
-	vsscanf(str, format, args);
-	va_end(args);
-}
-
-/**
-* @fn                   :vsprintf_func
-* @description          :function for tc_libc_stdio_vsscanf_vsprintf
-* @return               :int
-*/
-static int vsprintf_func(const char *format, ...)
-{
-	int ret_chk = ERROR;
-	char buffer[BUFF_SIZE];
-	char *pname = "test";
-	va_list args;
-	va_start(args, format);
-	ret_chk = vsprintf(buffer, format, args);
-	va_end(args);
-	if (ret_chk != strlen(pname)) {
-		printf("tc_libc_stdio_vsscanf_vsprintf vsprintf FAIL");
-		return ERROR;
-	}
-	if (strncmp(pname, buffer, strlen(pname)) != OK) {
-		printf("tc_libc_stdio_vsscanf_vsprintf sprintf FAIL");
-		return ERROR;
-	}
-	return OK;
-}
-
-/**
-* @fn                   :vprintf_func
-* @description          :Function for tc_libc_stdio_vprintf
-* @return               :int
-*/
-static int vprintf_func(const char *format, ...)
-{
-	int val;
-	va_list args;
-	va_start(args, format);
-	val = vprintf(format, args);
-	va_end(args);
-
-	return val;
-}
-
-/**
-* @fn                   :vsnprintf_func
-* @description          :Function for tc_libc_stdio_vsnprintf
-* @return               :int
-*/
-static int vsnprintf_func(const char *format, ...)
-{
-	char buffer[BUFF_SIZE];
-	va_list args;
-	va_start(args, format);
-	vsnprintf(buffer, BUFF_SIZE, format, args);
-	va_end(args);
-
-	return strlen(buffer);
-}
 
 /**
 * @fn                   :tc_libc_stdio_flush
@@ -210,21 +52,27 @@ static int vsnprintf_func(const char *format, ...)
 */
 static void tc_libc_stdio_flush(void)
 {
-	int ret_chk = ERROR;
-	char *str1 = "tc_libc_stdio_flush ";
-	char *str2 = "PASS\n";
+	int ret_chk;
 
-	fprintf(stdout, str1);
-	fprintf(stdout, str2);
+	/* Without fflush, stream output will printed when buffer meet '\n'.
+	 * So, stream output will printed after 3 sec */
+
+	printf("fflush test : without fflush\n");
+	fprintf(stdout, "%s", "You can see this line after 3 sec");
+	sleep(3);
+	printf("\n");
+
+	/* Using fflush, stream output will printed when fflush is called.
+	 * So, stream output will printed right now */
+
+	printf("fflush test : using fflush\n");
+	fprintf(stdout, "%s", "You can see this line right now");
 	ret_chk = fflush(stdout);
-	/* Flushes the output buffer of stream, cannot be checked for scenario TC, as output is flushed on screen
-	   flused output is checked manually on screen */
-	if (ret_chk != OK) {
-		printf("tc_libc_stdio_fflush FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	total_pass++;
+	TC_ASSERT_EQ("fflush", ret_chk, OK);
+	sleep(3);
+	printf("\n");
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -236,19 +84,26 @@ static void tc_libc_stdio_flush(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_stdio_avsprintf(void)
+static void tc_libc_stdio_avsprintf(const char *format, ...)
 {
-	int ret_chk = ERROR;
-	const char *pname = "Example";
-	ret_chk = avsprintf_func("%s", pname);
+	int ret_chk;
+	char *buffer;
+	va_list args;
+	va_start(args, format);
+	ret_chk = avsprintf(&buffer, format, args);
+	va_end(args);
+	TC_ASSERT_NOT_NULL("avsprintf", buffer);
+	TC_ASSERT_EQ_CLEANUP("avsprintf",
+						 ret_chk, strlen(printable_chars),
+						 get_errno(),
+						 TC_FREE_MEMORY(buffer));
+	TC_ASSERT_EQ_CLEANUP("avsprintf",
+						 strcmp(printable_chars, buffer), 0,
+						 get_errno(),
+						 TC_FREE_MEMORY(buffer));
 
-	if (ret_chk != OK) {
-		printf("tc_libc_stdio_avsprintf FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_stdio_avsprintf PASS\n");
-	total_pass++;
+	TC_FREE_MEMORY(buffer);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -262,25 +117,14 @@ static void tc_libc_stdio_avsprintf(void)
 */
 static void tc_libc_stdio_snprintf(void)
 {
-	int ret_chk = ERROR;
-	char *pname = "Example";
-	char buff[BUFF_SIZE];
+	int ret_chk;
+	char buffer[BUFF_SIZE];
 
-	ret_chk = snprintf(buff, BUFF_SIZE, "%s", pname);
-	if (ret_chk != strlen(pname)) {
-		printf("tc_libc_stdio_snprintf FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = snprintf(buffer, BUFF_SIZE, "%s", printable_chars);
+	TC_ASSERT_EQ("snprintf", ret_chk, strlen(printable_chars));
+	TC_ASSERT_EQ("snprintf", strncmp(printable_chars, buffer, strlen(printable_chars)), 0);
 
-	if (strncmp(pname, buff, strlen(pname)) != OK) {
-		printf("tc_libc_stdio_snprintf FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	printf("tc_libc_stdio_snprintf PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -299,35 +143,35 @@ static void tc_libc_stdio_snprintf(void)
 */
 static void tc_libc_stdio_sscanf_sprintf(void)
 {
-	int ret_chk = ERROR;
-	char *pname = "test";
+	int ret_chk;
 	char char_arr[BUFF_SIZE], sz_pptr[BUFF_SIZE];
 
-	ret_chk = sscanf(pname, "%s", char_arr);
-	if (ret_chk == OK) {
-		printf("tc_libc_stdio_sscanf_sprintf sscanf FAIL");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (strncmp(pname, char_arr, strlen(pname)) != OK) {
-		printf("tc_libc_stdio_sscanf_sprintf sscanf FAIL");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = sscanf(printable_chars, "%s", char_arr);
+	TC_ASSERT_EQ("sscanf", ret_chk, 1);
+	TC_ASSERT_EQ("sscanf", strncmp(printable_chars, char_arr, strlen(printable_chars)), -1);
 
-	ret_chk = sprintf(sz_pptr, "%s", pname);
-	if (ret_chk != strlen(pname)) {
-		printf("tc_libc_stdio_sscanf_sprintf sprintf FAIL");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (strncmp(pname, sz_pptr, strlen(pname)) != OK) {
-		printf("tc_libc_stdio_sscanf_sprintf sprintf FAIL");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_stdio_sscanf_sprintf PASS\n");
-	total_pass++;
+	ret_chk = sscanf(printable_chars + 1, "%s", char_arr);
+	TC_ASSERT_EQ("sscanf", ret_chk, 1);
+	TC_ASSERT_EQ("sscanf", strncmp(printable_chars + 1, char_arr, strlen(printable_chars + 1)), 0);
+
+	ret_chk = sprintf(sz_pptr, "%s", printable_chars);
+	TC_ASSERT_EQ("sprintf", ret_chk, strlen(printable_chars));
+	TC_ASSERT_EQ("sprintf", strncmp(printable_chars, sz_pptr, strlen(printable_chars)), 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :vsscanf_func
+* @description          :function for tc_libc_stdio_vsscanf_vsprintf
+* @return               :NA
+*/
+static void vsscanf_func(const char *str, const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	vsscanf(str, format, args);
+	va_end(args);
 }
 
 /**
@@ -345,28 +189,25 @@ static void tc_libc_stdio_sscanf_sprintf(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_stdio_vsscanf_vsprintf(void)
+static void tc_libc_stdio_vsscanf_vsprintf(const char *format, ...)
 {
-	int ret_chk = ERROR;
-	char *pname = "test";
-	char char_arr[BUFF_SIZE];
+	int ret_chk;
+	char buffer[BUFF_SIZE];
+	va_list args;
 
-	vsscanf_func(pname, "%s", char_arr);
-	if (strncmp(pname, char_arr, strlen(pname)) != OK) {
-		printf("tc_libc_stdio_vsscanf_vsprintf vsscanf FAIL");
-		total_fail++;
-		RETURN_ERR;
-	}
+	vsscanf_func(printable_chars, "%s", buffer);
+	TC_ASSERT_EQ("vsscanf", strncmp(printable_chars, buffer, strlen(printable_chars)), -1);
 
-	ret_chk = vsprintf_func("%s", pname);
-	if (ret_chk != OK) {
-		printf("tc_libc_stdio_vsscanf_vsprintf vsprintf FAIL");
-		total_fail++;
-		RETURN_ERR;
-	}
+	vsscanf_func(printable_chars + 1, "%s", buffer);
+	TC_ASSERT_EQ("vsscanf", strncmp(printable_chars + 1, buffer, strlen(printable_chars + 1)), 0);
 
-	printf("tc_libc_stdio_vsscanf_vsprintf PASS\n");
-	total_pass++;
+	va_start(args, format);
+	ret_chk = vsprintf(buffer, format, args);
+	va_end(args);
+	TC_ASSERT_EQ("vsprintf", ret_chk, strlen(printable_chars));
+	TC_ASSERT_EQ("vsprintf", strncmp(printable_chars, buffer, strlen(printable_chars)), 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -380,20 +221,17 @@ static void tc_libc_stdio_vsscanf_vsprintf(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_stdio_vprintf(void)
+static void tc_libc_stdio_vprintf(const char *format, ...)
 {
-	int ret_chk = ERROR;
-	char *pname = "tc_";
+	int ret_chk;
+	va_list args;
 
-	ret_chk = vprintf_func("%s", pname);
-	if (ret_chk != strlen(pname)) {
-		printf("tc_libc_stdio_vprintf FAIL");
-		total_fail++;
-		RETURN_ERR;
-	}
+	va_start(args, format);
+	ret_chk = vprintf(format, args);
+	va_end(args);
+	TC_ASSERT_EQ("vprintf", ret_chk, strlen(printable_chars));
 
-	printf("libc_stdio_vprintf PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -408,20 +246,18 @@ static void tc_libc_stdio_vprintf(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_stdio_vsnprintf(void)
+static void tc_libc_stdio_vsnprintf(const char *format, ...)
 {
-	int ret_chk = ERROR;
-	char *pname = "Example";
+	int ret_chk;
+	char buffer[BUFF_SIZE];
+	va_list args;
 
-	ret_chk = vsnprintf_func("%s", pname);
-	if (ret_chk != strlen(pname)) {
-		printf("tc_libc_stdio_vsnprintf FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	va_start(args, format);
+	ret_chk = vsnprintf(buffer, BUFF_SIZE, format, args);
+	va_end(args);
+	TC_ASSERT_EQ("vsnprintf", ret_chk, strlen(printable_chars));
 
-	printf("tc_libc_stdio_vsnprintf PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -438,18 +274,20 @@ static void tc_libc_stdio_vsnprintf(void)
 */
 static void tc_libc_stdio_puts(void)
 {
-	int ret_chk = ERROR;
+	int ret_chk;
 	int ret_length;
-	char *str_ptr = "tc_libc_stdio_puts PASS";
-	ret_length = strlen(str_ptr) + 1;	/* appends a newline character ('\n'). */
-	ret_chk = puts(str_ptr);
-	/* scenario testcase is covered by checking the return value, which must be equal to characters written to standard output */
-	if (ret_chk != ret_length) {
-		printf("tc_libc_stdio_puts FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	total_pass++;
+
+	/* appends a newline character ('\n'). */
+
+	ret_length = strlen(printable_chars) + 1;
+
+	/* scenario testcase is covered by checking the return value,
+	 * which must be equal to characters written to standard output */
+
+	ret_chk = puts(printable_chars);
+	TC_ASSERT_EQ("puts", ret_chk, ret_length);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -469,15 +307,11 @@ static void tc_libc_stdio_perror(void)
 	set_errno(ENODATA);
 #ifdef CONFIG_LIBC_STRERROR
 	test_msg = strerror(get_errno());
-	if (strncmp(test_msg, result_msg, strlen(result_msg)) != 0) {
-		total_fail++;
-		printf("tc_libc_stdio_perror FAIL\n");
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("strerror", strncmp(test_msg, result_msg, strlen(result_msg)), 0);
 #endif
 	perror("Perror Test : Err Msg - No data available");
-	total_pass++;
-	printf("tc_libc_stdio_perror PASS\n");
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -491,16 +325,10 @@ static void tc_libc_stdio_perror(void)
 static void tc_libc_stdio_printf(void)
 {
 	int ret_chk;
-	const char *str = "tc_libc_stdio_printf";
+	ret_chk = printf("%s", printable_chars);
+	TC_ASSERT_EQ("printf", ret_chk, strlen(printable_chars));
 
-	ret_chk = printf("%s", str);
-	if (ret_chk != strlen(str)) {
-		printf(" FAIL %d %d\n", strlen(str), ret_chk);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf(" PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -511,19 +339,17 @@ static void tc_libc_stdio_printf(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_stdio_vfprintf(void)
+static void tc_libc_stdio_vfprintf(const char *format, ...)
 {
-	int ret_chk = ERROR;
-	const char *pstr = "tc_libc_stdio_vfprintf";
+	int ret_chk;
+	va_list args;
 
-	ret_chk = vfprintf_func("%s", pstr);
-	if (ret_chk != OK) {
-		total_fail++;
-		RETURN_ERR;
-	}
+	va_start(args, format);
+	ret_chk = vfprintf(stdout, format, args);
+	va_end(args);
+	TC_ASSERT_EQ("vfprintf", ret_chk, strlen(printable_chars));
 
-	printf(" PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -535,19 +361,27 @@ static void tc_libc_stdio_vfprintf(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_stdio_asprintf(void)
+static void tc_libc_stdio_asprintf(const char *format, ...)
 {
-	int ret_chk = ERROR;
-	const char *pname = "Example";
-	ret_chk = asprintf_func("%s", pname);
+	int ret_chk;
+	char *buffer;
+	va_list args;
 
-	if (ret_chk != OK) {
-		printf("tc_libc_stdio_asprintf FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_stdio_asprintf PASS\n");
-	total_pass++;
+	va_start(args, format);
+	ret_chk = avsprintf(&buffer, format, args);
+	va_end(args);
+	TC_ASSERT_NOT_NULL("asprintf", buffer);
+	TC_ASSERT_EQ_CLEANUP("asprintf",
+						 ret_chk, strlen(printable_chars),
+						 get_errno(),
+						 TC_FREE_MEMORY(buffer));
+	TC_ASSERT_EQ_CLEANUP("asprintf",
+						 strcmp(printable_chars, buffer), 0,
+						 get_errno(),
+						 TC_FREE_MEMORY(buffer));
+
+	TC_FREE_MEMORY(buffer);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -561,17 +395,17 @@ static void tc_libc_stdio_asprintf(void)
 */
 static void tc_libc_stdio_putchar(void)
 {
-	int ret;
+	int ret_chk;
+	int c;
 
-	ret = putchar('t');
-	if (ret < 0) {
-		printf("tc_libc_stdio_putchar FAIL%d\n");
-		total_fail++;
-		RETURN_ERR;
+	/* 32( ) to 126(~) is printable ASCII code */
+
+	for (c = 32; c <= 126; c++) {
+		ret_chk = putchar((char)c);
+		TC_ASSERT_EQ("putchar", ret_chk, c);
 	}
 
-	printf("c_libc_stdio_putchar PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
@@ -581,18 +415,19 @@ static void tc_libc_stdio_putchar(void)
 int libc_stdio_main(void)
 {
 	tc_libc_stdio_flush();
-	tc_libc_stdio_avsprintf();
+	tc_libc_stdio_avsprintf("%s", printable_chars);
 	tc_libc_stdio_snprintf();
 	tc_libc_stdio_sscanf_sprintf();
-	tc_libc_stdio_vsscanf_vsprintf();
+	tc_libc_stdio_vsscanf_vsprintf("%s", printable_chars);
 	tc_libc_stdio_puts();
-	tc_libc_stdio_vprintf();
-	tc_libc_stdio_vsnprintf();
+	tc_libc_stdio_vprintf("%s", printable_chars);
+	tc_libc_stdio_vsnprintf("%s", printable_chars);
 	tc_libc_stdio_perror();
 	tc_libc_stdio_printf();
-	tc_libc_stdio_vfprintf();
-	tc_libc_stdio_asprintf();
+	tc_libc_stdio_vfprintf("%s", printable_chars);
+	tc_libc_stdio_asprintf("%s", printable_chars);
 	tc_libc_stdio_putchar();
 
 	return 0;
 }
+

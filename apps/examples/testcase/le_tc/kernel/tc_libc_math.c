@@ -54,15 +54,10 @@ static void tc_libc_math_fabs(void)
 
 	for (fabs_idx = 0; fabs_idx < 5; fabs_idx++) {
 		ret_val[fabs_idx] = fabs(in_val[fabs_idx]);
-		if (sol_val[fabs_idx] != ret_val[fabs_idx]) {
-			printf("tc_libc_math_fabs FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("fabs", sol_val[fabs_idx], ret_val[fabs_idx]);
 	}
 
-	printf("tc_libc_math_fabs PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -83,15 +78,10 @@ static void tc_libc_math_floor(void)
 
 	for (floor_idx = 0; floor_idx < 8; floor_idx++) {
 		ret_val[floor_idx] = floor(in_val[floor_idx]);
-		if (sol_val[floor_idx] != ret_val[floor_idx]) {
-			printf("tc_libc_math_floor FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("floor", sol_val[floor_idx], ret_val[floor_idx]);
 	}
 
-	printf("tc_libc_math_floor PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -114,22 +104,13 @@ static void tc_libc_math_pow(void)
 	for (pow_idx = 0; pow_idx < 13; pow_idx++) {
 		ret_val[pow_idx] = pow(in_val[pow_idx][0], in_val[pow_idx][1]);
 		if (isinf(sol_val[pow_idx])) {
-			if (sol_val[pow_idx] != ret_val[pow_idx]) {
-				printf("tc_libc_math_pow FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_EQ("pow", sol_val[pow_idx], ret_val[pow_idx]);
 		} else {
-			if (fabs(sol_val[pow_idx] - ret_val[pow_idx]) > 0.00000000000001) {
-				printf("tc_libc_math_pow FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_LT("pow", fabs(sol_val[pow_idx] - ret_val[pow_idx]), 0.00000000000001);
 		}
 	}
 
-	printf("tc_libc_math_pow PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 #endif
 

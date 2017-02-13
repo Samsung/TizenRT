@@ -39,6 +39,7 @@ static void tc_termios_tcsetattr_tcgetattr(void)
 	struct termios prev_tio;
 
 	ret_chk = tcgetattr(fileno(stdin), &prev_tio);
+	TC_ASSERT_EQ("tcgetattr", ret_chk, 0);
 	if (ret_chk != 0) {
 		printf("tc_termios_tcsetattr_tcgetattr fail : getattr %d\n", errno);
 	}
@@ -46,6 +47,7 @@ static void tc_termios_tcsetattr_tcgetattr(void)
 	sleep(1);
 	prev_tio.c_oflag &= ~ONLCR;
 	ret_chk = tcsetattr(fileno(stdin), TCSANOW, &prev_tio);
+	TC_ASSERT_EQ("tcsetattr", ret_chk, 0);
 	if (ret_chk != 0) {
 		printf("tc_termios_tcsetattr_tcgetattr fail : setattr %d\n", errno);
 	}
@@ -57,6 +59,7 @@ static void tc_termios_tcsetattr_tcgetattr(void)
 	sleep(1);
 	prev_tio.c_oflag |= ONLCR;
 	ret_chk = tcsetattr(fileno(stdin), TCSANOW, &prev_tio);
+	TC_ASSERT_EQ("tcsetattr", ret_chk, 0);
 	if (ret_chk != 0) {
 		printf("tc_termios_tcsetattr_tcgetattr fail : setattr %d\n", errno);
 	}

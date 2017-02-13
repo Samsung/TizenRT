@@ -56,40 +56,28 @@ static void tc_errno_set_get_errno_and_ptr(void)
 		if (err_index != 41 && err_index != 58) {
 			errcode = err_index;
 			set_errno(errcode);
+
 			ret_chk = get_errno();
+			TC_ASSERT_EQ("get_errno", ret_chk, errcode);
+
 #if !defined(CONFIG_BUILD_PROTECTED)
 			ret_ptr_chk = *get_errno_ptr();
+			TC_ASSERT_EQ("get_errno_ptr", ret_ptr_chk, errcode);
 #endif
-			if (ret_chk != errcode
-#if !defined(CONFIG_BUILD_PROTECTED)
-				|| ret_ptr_chk != errcode
-#endif
-				) {
-				printf("tc_errno_set_get_errno_and_ptr FAIL, Error No: %d\n", errno);
-				total_fail++;
-				RETURN_ERR;
-			}
 
 			ret_err = (char *)strerror(ret_chk);
-			if (strncmp(ret_err, errstr_arr[err_index - 1], strlen(ret_err)) != OK) {
-				printf("tc_errno_perror FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_NOT_NULL("strerror", ret_err);
+			TC_ASSERT_EQ("strerror", strncmp(ret_err, errstr_arr[err_index - 1], strlen(ret_err)), 0);
+
 #if !defined(CONFIG_BUILD_PROTECTED)
-			ret_err = NULL;
 			ret_err = (char *)strerror(ret_ptr_chk);
-			if (strncmp(ret_err, errstr_arr[err_index - 1], strlen(ret_err)) != OK) {
-				printf("tc_errno_perror FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_NOT_NULL("strerror", ret_err);
+			TC_ASSERT_EQ("strerror", strncmp(ret_err, errstr_arr[err_index - 1], strlen(ret_err)), 0);
 #endif
 		}
 	}
 
-	printf("tc_errno_set_get_errno_and_ptr PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

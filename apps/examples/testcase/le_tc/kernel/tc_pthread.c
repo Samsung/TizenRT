@@ -38,6 +38,7 @@
 #define SEC_3                   3
 #define SEC_5                   5
 #define SEC_8                   8
+#define VAL_ONE                 1
 #define VAL_TWO                 2
 #define VAL_THREE               3
 #define PTHREAD_CNT             4
@@ -54,7 +55,7 @@ pthread_t g_thread1;
 pthread_t g_thread2;
 pthread_t thread[PTHREAD_CNT];
 
-pthread_mutex_t g_mutex;
+pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t g_cond;
 pthread_once_t g_once = PTHREAD_ONCE_INIT;
 pthread_key_t g_tlskey;
@@ -74,11 +75,7 @@ static pthread_cond_t cond;
 static int g_mutex_cnt = 0;
 static int isemaphore;
 
-int g_cond_sig_chk = 0;
-bool g_chk_err = false;
-bool g_sig_chk = false;
-pthread_cond_t g_cond_signal;
-pthread_mutex_t g_mutex_cond_signal = PTHREAD_MUTEX_INITIALIZER;
+int g_cond_sig_val = 0;
 
 static bool g_sig_handle = false;
 
@@ -417,40 +414,40 @@ static void *thread_yield_callback(void *arg)
 static void *thread_waiter(void *parameter)
 {
 	struct timespec ts;
-	int ret;
+	int ret_chk;
 
 	pthread_setname_np(0, "thread_waiter");
 	/* Take the mutex */
 	g_bpthreadcallback = true;
-	ret = pthread_mutex_lock(&g_mutex_timedwait);
-	if (ret != OK) {
-		printf("thread_waiter: ERROR pthread_mutex_lock failed, ret=%d\n", ret);
+	ret_chk = pthread_mutex_lock(&g_mutex_timedwait);
+	if (ret_chk != OK) {
+		printf("thread_waiter: ERROR pthread_mutex_lock failed, ret_chk=%d\n", ret_chk);
 	}
 
-	ret = clock_gettime(CLOCK_REALTIME, &ts);
-	if (ret != OK) {
+	ret_chk = clock_gettime(CLOCK_REALTIME, &ts);
+	if (ret_chk != OK) {
 		printf("thread_waiter: ERROR clock_gettime failed\n");
 	}
 	ts.tv_sec += SEC_5;
 
 	/* The wait -- no-one is ever going to awaken us */
 
-	ret = pthread_cond_timedwait(&cond, &g_mutex_timedwait, &ts);
-	if (ret != OK) {
-		if (ret != ETIMEDOUT) {
+	ret_chk = pthread_cond_timedwait(&cond, &g_mutex_timedwait, &ts);
+	if (ret_chk != OK) {
+		if (ret_chk != ETIMEDOUT) {
 			g_bpthreadcallback = false;
-			printf("thread_waiter: ERROR pthread_cond_timedwait failed, ret=%d\n", ret);
+			printf("thread_waiter: ERROR pthread_cond_timedwait failed, ret_chk=%d\n", ret_chk);
 		}
 	} else {
 		g_bpthreadcallback = false;
-		printf("thread_waiter: ERROR pthread_cond_timedwait returned without timeout, ret=%d\n", ret);
+		printf("thread_waiter: ERROR pthread_cond_timedwait returned without timeout, ret_chk=%d\n", ret_chk);
 	}
 
 	/* Release the mutex */
-	ret = pthread_mutex_unlock(&g_mutex_timedwait);
-	if (ret != OK) {
+	ret_chk = pthread_mutex_unlock(&g_mutex_timedwait);
+	if (ret_chk != OK) {
 		g_bpthreadcallback = false;
-		printf("thread_waiter: ERROR pthread_mutex_unlock failed, ret=%d\n", ret);
+		printf("thread_waiter: ERROR pthread_mutex_unlock failed, ret_chk=%d\n", ret_chk);
 	}
 
 	pthread_exit((pthread_addr_t)0x12345678);
@@ -470,7 +467,6 @@ void *thread_mutex(void *arg)
 	if (ret_chk != OK) {
 		g_bpthreadcallback = false;
 		printf("tc_pthread_pthread_mutex_lock_unlock_trylock  FAIL  Error No: %d\n", errno);
-		total_fail++;
 		return NULL;
 	}
 
@@ -487,7 +483,6 @@ void *thread_mutex(void *arg)
 	if (ret_chk != OK) {
 		g_bpthreadcallback = false;
 		printf("tc_pthread_pthread_mutex_lock_unlock_trylock  FAIL  Error No: %d\n", errno);
-		total_fail++;
 		goto err;
 	}
 
@@ -505,43 +500,30 @@ void *thread_cond_signal(void *parm)
 {
 	int ret_chk;
 
-	while (!g_chk_err) {
-		/* Usually worker threads will loop on these operations */
-		ret_chk = pthread_mutex_lock(&g_mutex_cond_signal);
-		if (ret_chk != OK) {
-			printf("pthread_mutex_lock FAIL \n");
-			g_chk_err = true;
-			goto err;
-		}
+	/* Wait mutex */
+	ret_chk = pthread_mutex_lock(&g_mutex);
+	if (ret_chk != OK) {
+		g_cond_sig_val = ERROR;
+		goto err;
+	}
 
-		while (!g_cond_sig_chk) {
-			g_sig_chk = true;
-			/* printf("Thread blocked\n"); */
-			ret_chk = pthread_cond_wait(&g_cond_signal, &g_mutex_cond_signal);
-			if (g_sig_chk == true) {
-				printf(" g_sig_chk should be false \n");
-				g_chk_err = true;
-				goto err;
-			}
-			if (ret_chk != OK) {
-				printf("pthread_cond_wait FAIL \n");
-				g_chk_err = true;
-				goto err;
-			}
-		}
-		/* printf("Thread awake, finish work!\n"); */
+	g_cond_sig_val = VAL_TWO;
 
-		g_cond_sig_chk = 0;
+	/* Wait pthread_cond_signal */
+	ret_chk = pthread_cond_wait(&g_cond, &g_mutex);
+	if (ret_chk != OK) {
+		g_cond_sig_val = ERROR;
+		goto err;
+	}
 
-		ret_chk = pthread_mutex_unlock(&g_mutex_cond_signal);
-		if (ret_chk != OK) {
-			printf("pthread_mutex_unlock FAIL \n");
-			g_chk_err = true;
-			goto err;
-		}
+	g_cond_sig_val = VAL_THREE;
+
+	ret_chk = pthread_mutex_unlock(&g_mutex);
+	if (ret_chk != OK) {
+		g_cond_sig_val = ERROR;
+		goto err;
 	}
 err:
-	pthread_exit(NULL);
 	return NULL;
 }
 
@@ -563,49 +545,39 @@ err:
 */
 static void tc_pthread_pthread_barrier_init_destroy_wait(void)
 {
+	int ret_chk;
 	int ithread = PTHREAD_CNT;
-	int iret = ERROR;
 	int ithreadid;
 	g_barrier_count_in = 0;
 	g_barrier_count_out = 0;
 	g_barrier_count_spare = 0;
 
 	pthread_t rgthreads[ithread];
-	iret = pthread_barrier_init(&g_pthread_barrier, 0, ithread);
-	if (iret != OK) {
-		printf("[%s] pthread_barrier_init FAIL \n", __func__);
-		total_fail++;
-		RETURN_ERR;
+	ret_chk = pthread_barrier_init(&g_pthread_barrier, 0, ithread);
+	TC_ASSERT_EQ("pthread_barrier_init", ret_chk, OK);
+
+	for (ithreadid = 0; ithreadid < ithread; ithreadid++) {
+		ret_chk = pthread_create(&rgthreads[ithreadid], NULL, task_barrier, (void *)ithreadid);
 	}
 
-	for (ithreadid = 0; ithreadid < ithread; ithreadid++)
-		iret = pthread_create(&rgthreads[ithreadid], NULL, task_barrier, (void *)ithreadid);
-
-	if (iret != OK) {
+	if (ret_chk != OK) {
 		printf("[%s] pthread_create FAIL \n", __func__);
 	}
 	for (ithreadid = 0; ithreadid < ithread; ithreadid++) {
-		iret = pthread_join(rgthreads[ithreadid], 0);
-		if (iret != OK) {
+		ret_chk = pthread_join(rgthreads[ithreadid], 0);
+		if (ret_chk != OK) {
 			printf("[%s] pthread_join FAIL \n", __func__);
 		}
 	}
 
-	iret = pthread_barrier_destroy(&g_pthread_barrier);
-	if (iret != OK) {
-		printf("[%s] pthread_barrier_init FAIL \n", __func__);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_barrier_destroy(&g_pthread_barrier);
+	TC_ASSERT_EQ("pthread_barrier_destroy", ret_chk, OK);
 
-	if (g_barrier_count_spare != OK || g_barrier_count_in != ithread || g_barrier_count_out != ithread) {
-		printf("[%s] pthread_barrier_init FAIL \n", __func__);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_barrier_init_destroy_wait", g_barrier_count_spare, OK);
+	TC_ASSERT_EQ("pthread_barrier_init_destroy_wait", g_barrier_count_in, ithread);
+	TC_ASSERT_EQ("pthread_barrier_init_destroy_wait", g_barrier_count_out, ithread);
 
-	printf("tc_pthread_pthread_barrier_init_destroy_wait PASS \n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -621,40 +593,24 @@ static void tc_pthread_pthread_barrier_init_destroy_wait(void)
 */
 static void tc_pthread_pthread_create_exit_join(void)
 {
-
+	int ret_chk;
 	pthread_t pthread;
 	void *p_value = 0;
 	isemaphore = ERROR;
-	int iret = ERROR;
 
-	iret = pthread_create(&pthread, NULL, task_exit, NULL);
-	if (iret != OK) {
-		printf("[%s] pthread_create FAIL \n", __func__);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&pthread, NULL, task_exit, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
 
 	/* To make sure thread is created before we join it */
 	while (isemaphore == INTHREAD) {
 		sleep(SEC_1);
 	}
 
-	iret = pthread_join(pthread, &p_value);
-	if (iret != OK) {
-		printf("[%s] pthread_join FAIL \n", __func__);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_join(pthread, &p_value);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_join", p_value, RETURN_PTHREAD_JOIN);
 
-	if (p_value != RETURN_PTHREAD_JOIN) {
-		printf("[%s] pthread_join FAIL : did not return pthread_exit() value\n", __func__);
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	printf("tc_pthread_pthread_create_exit_join PASS \n");
-	total_pass++;
-
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -670,27 +626,23 @@ static void tc_pthread_pthread_create_exit_join(void)
 */
 static void tc_pthread_pthread_kill(void)
 {
-	int status = OK;
+	int ret_chk;
 	g_bpthreadcallback = false;
 
-	status = pthread_create(&g_thread1, NULL, thread_kill_func_callback, NULL);
-	if (status != OK) {
+	ret_chk = pthread_create(&g_thread1, NULL, thread_kill_func_callback, NULL);
+	if (ret_chk != OK) {
 		tckndbg("ERROR pthread_create FAIL\n");
 		pthread_detach(g_thread1);
 	}
 	sleep(SEC_2);
 
-	status = pthread_kill(g_thread1, SIGUSR1);
+	ret_chk = pthread_kill(g_thread1, SIGUSR1);
 	sleep(SEC_1);
-	if (status != OK || !g_bpthreadcallback) {
-		pthread_detach(g_thread1);
-		printf("tc_pthread_pthread_kill FAIL\n");
-		total_fail++;
-	} else {
-		pthread_join(g_thread1, NULL);
-	}
-	printf("tc_pthread_pthread_kill PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ_CLEANUP("pthread_kill", ret_chk, OK, get_errno(), pthread_detach(g_thread1));
+	TC_ASSERT_EQ_CLEANUP("pthread_kill", g_bpthreadcallback, true, get_errno(), pthread_detach(g_thread1));
+	pthread_join(g_thread1, NULL);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -704,42 +656,22 @@ static void tc_pthread_pthread_kill(void)
 */
 static void tc_pthread_pthread_cond_broadcast(void)
 {
-	pthread_t rgthread[PTHREAD_CNT];
-	int iret = 0;
+	int ret_chk;
 	int ipthread_id = 0;
+	pthread_t rgthread[PTHREAD_CNT];
 	g_barrier_count_in = 0;
 	g_barrier_count_out = 0;
 	g_cnt = 0;
 
-	iret = pthread_mutex_init(&g_mutex, NULL);
-	if (iret != OK) {
-		printf("[%s]pthread_mutex_init FAIL,error : %d\n", __func__, iret);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_mutex_init(&g_mutex, NULL);
+	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
 
-	iret = pthread_cond_init(&g_cond, NULL);
-	if (iret != OK) {
-		printf("[%s]pthread_cond_init FAIL,error : %d\n", __func__, iret);
-		pthread_mutex_destroy(&g_mutex);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_cond_init(&g_cond, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_init", ret_chk, OK, get_errno(), pthread_mutex_destroy(&g_mutex));
 
 	for (ipthread_id = 0; ipthread_id < PTHREAD_CNT; ipthread_id++) {
-		iret = pthread_create(&rgthread[ipthread_id], NULL, pthread_wait_callback, NULL);
-		if (iret != OK) {
-			printf("[%s] pthread_create :  %d FAIL\n", __func__, ipthread_id);
-			int iindex;
-			for (iindex = 0; iindex < ipthread_id; iindex++) {
-				pthread_cancel(rgthread[iindex]);
-				pthread_join(rgthread[iindex], NULL);
-			}
-			pthread_cond_destroy(&g_cond);
-			pthread_mutex_destroy(&g_mutex);
-			total_fail++;
-			RETURN_ERR;
-		}
+		ret_chk = pthread_create(&rgthread[ipthread_id], NULL, pthread_wait_callback, NULL);
+		TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, get_errno(), goto cleanup_cond);
 	}
 
 	/* To check all thread block conditional lock */
@@ -748,84 +680,40 @@ static void tc_pthread_pthread_cond_broadcast(void)
 	}
 
 	/* To make sure all waiter are currently block on pthread_cond_wait */
-	iret = pthread_mutex_lock(&g_mutex);
-	if (iret != OK) {
-		printf("[%s]pthread_mutex_lock FAIL,error : %d\n", __func__, iret);
-		total_fail++;
-		pthread_cond_broadcast(&g_cond);
-		for (ipthread_id = 0; ipthread_id < PTHREAD_CNT; ++ipthread_id) {
-			pthread_cancel(rgthread[ipthread_id]);
-			pthread_join(rgthread[ipthread_id], NULL);
-		}
-		pthread_cond_destroy(&g_cond);
-		pthread_mutex_destroy(&g_mutex);
-		RETURN_ERR;
-	}
+	ret_chk = pthread_mutex_lock(&g_mutex);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_lock", ret_chk, OK, get_errno(), goto cleanup_mutex);
 
-	iret = pthread_mutex_unlock(&g_mutex);
-	if (iret != OK) {
-		pthread_cond_broadcast(&g_cond);
-		printf("[%s]pthread_mutex_unlock FAIL,error : %d\n", __func__, iret);
-		total_fail++;
-		for (ipthread_id = 0; ipthread_id < PTHREAD_CNT; ++ipthread_id) {
-			pthread_cancel(rgthread[ipthread_id]);
-			pthread_join(rgthread[ipthread_id], NULL);
-		}
-		pthread_cond_destroy(&g_cond);
-		pthread_mutex_destroy(&g_mutex);
-		RETURN_ERR;
-	}
+	ret_chk = pthread_mutex_unlock(&g_mutex);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_unlock", ret_chk, OK, get_errno(), goto cleanup_mutex);
 
-	iret = pthread_cond_broadcast(&g_cond);
-	if (iret != OK) {
-		printf("[%s] pthread_cond_broadcast FAIL, error no: %d\n", iret);
-		total_fail++;
-		for (ipthread_id = 0; ipthread_id < PTHREAD_CNT; ++ipthread_id) {
-			pthread_cancel(rgthread[ipthread_id]);
-			pthread_join(rgthread[ipthread_id], NULL);
-		}
-		pthread_cond_destroy(&g_cond);
-		pthread_mutex_destroy(&g_mutex);
-		RETURN_ERR;
-	}
+	ret_chk = pthread_cond_broadcast(&g_cond);
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_broadcast", ret_chk, OK, get_errno(), goto cleanup_cond);
 
 	sleep(SEC_1);
-
-	if (g_barrier_count_out < PTHREAD_CNT) {
-		printf("[%s]pthread_cond_broadcast FAIL, unable to release lock for all thread \n", __func__);
-		for (ipthread_id = 0; ipthread_id < PTHREAD_CNT; ++ipthread_id) {
-			pthread_cancel(rgthread[ipthread_id]);
-			pthread_join(rgthread[ipthread_id], NULL);
-		}
-		pthread_cond_destroy(&g_cond);
-		pthread_mutex_destroy(&g_mutex);
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ_CLEANUP("pthread_cond_broadcast", g_barrier_count_out, PTHREAD_CNT, get_errno(), goto cleanup_cond);
 
 	/* Wait till terminate all thread */
 	for (ipthread_id = 0; ipthread_id < PTHREAD_CNT; ipthread_id++) {
-		iret = pthread_join(rgthread[ipthread_id], NULL);
-		if (iret != OK) {
-			printf("[%s]pthread_join FAIL,error : %d\n", __func__, iret);
-		}
+		ret_chk = pthread_join(rgthread[ipthread_id], NULL);
+		TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, get_errno(), goto cleanup_cond);
 	}
 
-	iret = pthread_cond_destroy(&g_cond);
-	if (iret != OK) {
-		printf("[%s]pthread_cond_destroy FAIL,error : %d\n", __func__, iret);
-		pthread_mutex_destroy(&g_mutex);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_cond_destroy(&g_cond);
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_destroy", ret_chk, OK, ret_chk, pthread_mutex_destroy(&g_mutex));
 
-	iret = pthread_mutex_destroy(&g_mutex);
-	if (iret != OK) {
-		printf("[%s]pthread_mutex_destroy FAIL,error : %d\n", __func__, iret);
-		total_fail++;
-		RETURN_ERR;
+	ret_chk = pthread_mutex_destroy(&g_mutex);
+	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+cleanup_mutex:
+	pthread_cond_broadcast(&g_cond);
+cleanup_cond:
+	for (ipthread_id = 0; ipthread_id < PTHREAD_CNT; ++ipthread_id) {
+		pthread_cancel(rgthread[ipthread_id]);
+		pthread_join(rgthread[ipthread_id], NULL);
 	}
-	printf("tc_pthread_pthread_cond_broadcast PASS\n");
-	total_pass++;
+	pthread_cond_destroy(&g_cond);
+	pthread_mutex_destroy(&g_mutex);
 }
 
 /**
@@ -841,53 +729,31 @@ static void tc_pthread_pthread_cond_broadcast(void)
 */
 static void tc_pthread_pthread_cond_init_destroy(void)
 {
-	int ret_chk = ERROR;
+	int ret_chk;
 	pthread_condattr_t attr;
 	pthread_cond_t cond_nullparam;
 	pthread_cond_t cond_attrparam;
 
 	ret_chk = pthread_condattr_init(&attr);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_cond_init_destroy: TC FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_condattr_init", ret_chk, OK);
+
 	/* parameters of pthread_cond_init are of opaque data type hence parameter check not possible */
 	ret_chk = pthread_cond_init(&cond_nullparam, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_cond_init_destroy: TC FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_cond_init", ret_chk, OK);
 
 	ret_chk = pthread_cond_init(&cond_attrparam, &attr);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_cond_init_destroy: TC FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_cond_init", ret_chk, OK);
 
 	ret_chk = pthread_cond_destroy(&cond_nullparam);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_cond_init_destroy: TC FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_cond_destroy", ret_chk, OK);
+
 	ret_chk = pthread_cond_destroy(&cond_attrparam);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_cond_init_destroy: TC FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_cond_destroy", ret_chk, OK);
 
 	ret_chk = pthread_condattr_destroy(&attr);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_cond_init_destroy: TC FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_pthread_pthread_cond_init_destroy PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("pthread_condattr_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -904,7 +770,7 @@ static void tc_pthread_pthread_cond_init_destroy(void)
 */
 static void tc_pthread_pthread_set_get_schedparam(void)
 {
-	int ret_chk = 0;
+	int ret_chk;
 	struct sched_param st_setparam;
 	struct sched_param st_getparam;
 	int getpolicy;
@@ -915,48 +781,23 @@ static void tc_pthread_pthread_set_get_schedparam(void)
 	st_setparam.sched_priority = SCHED_PRIORITY;
 
 	ret_chk = pthread_create(&g_thread1, NULL, threadfunc_sched, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_set_get_schedparam: pthread_create FAIL, Error No: %d\n", errno);
-		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
-
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, errno, pthread_detach(g_thread1));
 	sleep(SEC_2);
 
 	ret_chk = pthread_setschedparam(g_thread1, setpolicy, &st_setparam);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_set_get_schedparam: pthread_setschedparam FAIL, Error No: %d\n", errno);
-		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ_CLEANUP("pthread_setschedparam", ret_chk, OK, errno, pthread_detach(g_thread1));
 
 	sleep(SEC_1);
 
 	ret_chk = pthread_getschedparam(g_thread1, &getpolicy, &st_getparam);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_set_get_schedparam: pthread_setschedparam FAIL, Error No: %d\n", errno);
-		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (getpolicy != setpolicy || st_getparam.sched_priority != st_setparam.sched_priority) {
-		printf("tc_pthread_pthread_set_get_schedparam: FAIL, Values Mismatch\n");
-		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ_CLEANUP("pthread_getschedparam", ret_chk, OK, errno, pthread_detach(g_thread1));
+	TC_ASSERT_EQ_CLEANUP("pthread_getschedparam", getpolicy, setpolicy, errno, pthread_detach(g_thread1));
+	TC_ASSERT_EQ_CLEANUP("pthread_getschedparam", st_getparam.sched_priority, st_setparam.sched_priority, errno, pthread_detach(g_thread1));
 
 	ret_chk = pthread_join(g_thread1, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_set_get_schedparam: pthread_join FAIL, Error No: %d\n", errno);
-		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_pthread_pthread_set_get_schedparam PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, errno, pthread_detach(g_thread1));
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -973,44 +814,29 @@ static void tc_pthread_pthread_set_get_schedparam(void)
 */
 static void tc_pthread_pthread_key_create_set_getspecific(void)
 {
-	int ret_chk = 0;
+	int ret_chk;
 	g_bpthreadcallback = false;
 	g_tlskey = 0;
 
 	/* Cannot create keys more than PTHREAD_KEYS_MAX, Not able to delete key */
 	ret_chk = pthread_key_create(&g_tlskey, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_key_create_set_getspecific FAIL : pthread_key_create FAIL\n Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_key_create", ret_chk, OK);
 
 	sleep(SEC_2);
 
 	ret_chk = pthread_create(&g_thread1, NULL, func_set_get_callback, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_key_create_set_getspecific FAIL : pthread_create FAIL\n Error No: %d\n", errno);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, errno, {
 		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
+	});
 
 	ret_chk = pthread_join(g_thread1, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_key_create_set_getspecific FAIL : pthread_create FAIL\n Error No: %d\n", errno);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, errno, {
 		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
+	});
 
-	if (g_bpthreadcallback != true) {
-		printf("tc_pthread_pthread_key_create_set_getspecific: g_bpthreadcallback FAIL\n ");
-		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_pthread_pthread_key_create_set_getspecific PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("pthread_join", g_bpthreadcallback, true);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -1028,44 +854,28 @@ static void tc_pthread_pthread_key_create_set_getspecific(void)
 */
 static void tc_pthread_pthread_cancel_setcancelstate(void)
 {
-	int ret_chk = 0;
+	int ret_chk;
 	g_bpthreadcallback = false;
 
 	ret_chk = pthread_create(&g_thread1, NULL, cancel_state_func, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_cancel_setcancelstate PTHREAD CREATE_EXIT FAIL, Error No: %d\n", errno);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, errno, {
 		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
+	});
 
 	sleep(SEC_1);
 	/* this cancel request goes to pending if cancel is disabled */
 	ret_chk = pthread_cancel(g_thread1);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_cancel_setcancelstate pthread_cancel FAIL, Error No: %d\n", errno);
+	TC_ASSERT_EQ_CLEANUP("pthread_cancel", ret_chk, OK, errno, {
 		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
+	});
 
 	sleep(SEC_3);
-
-	if (g_bpthreadcallback == false) {
-		printf("tc_pthread_pthread_cancel_setcancelstate FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT("pthread_cancel", g_bpthreadcallback);
 
 	ret_chk = pthread_detach(g_thread1);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_cancel_setcancelstate pthread_detach FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_detach", ret_chk, OK);
 
-	printf("tc_pthread_pthread_cancel_setcancelstate PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -1080,39 +890,24 @@ static void tc_pthread_pthread_cancel_setcancelstate(void)
 #if !defined(CONFIG_BUILD_PROTECTED)
 static void tc_pthread_pthread_take_give_semaphore(void)
 {
-	int ret_chk = 0;
+	int ret_chk;
 	int get_value;
 	sem_t sem;
 	sem_init(&sem, 0, VAL_THREE);
 
 	ret_chk = pthread_takesemaphore(&sem);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_takesemaphore: Error No %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_takesemaphore", ret_chk, OK);
+
 	sem_getvalue(&sem, &get_value);
-	if (get_value != VAL_TWO) {
-		printf("tc_pthread_pthread_takesemaphore: Value Mismatch Error No %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sem_getvalue", get_value, VAL_TWO);
 
 	ret_chk = pthread_givesemaphore(&sem);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_givesemaphore: Error No %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_givesemaphore", ret_chk, OK);
 
 	sem_getvalue(&sem, &get_value);
-	if (get_value != VAL_THREE) {
-		printf("tc_pthread_pthread_takesemaphore: Value Mismatch Error No %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_pthread_pthread_take_give_semaphore PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("sem_getvalue", get_value, VAL_THREE);
+
+	TC_SUCCESS_RESULT();
 }
 #endif
 /**
@@ -1126,76 +921,47 @@ static void tc_pthread_pthread_take_give_semaphore(void)
  */
 static void tc_pthread_pthread_timed_wait(void)
 {
+	int ret_chk;
 	pthread_t waiter;
 	pthread_attr_t attr;
 	struct sched_param sparam;
 	void *result;
 	int prio_max;
-	int ret;
 
 	/* Initialize the mutex */
 	g_bpthreadcallback = false;
-	ret = pthread_mutex_init(&g_mutex_timedwait, NULL);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_timed_wait FAIL: ERROR pthread_mutex_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_mutex_init(&g_mutex_timedwait, NULL);
+	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
 
 	/* Initialize the condition variable */
 
-	ret = pthread_cond_init(&cond, NULL);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_timed_wait FAIL: ERROR pthread_condinit failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_cond_init(&cond, NULL);
+	TC_ASSERT_EQ("pthread_cond_init", ret_chk, OK);
 
 	/* Start the waiter thread at higher priority */
 
-	ret = pthread_attr_init(&attr);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_timed_wait FAIL: pthread_attr_init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_init(&attr);
+	TC_ASSERT_EQ("pthread_attr_init", ret_chk, OK);
 
 	prio_max = sched_get_priority_max(SCHED_FIFO);
-	ret = sched_getparam(getpid(), &sparam);
-	if (ret != OK) {
+	ret_chk = sched_getparam(getpid(), &sparam);
+	if (ret_chk != OK) {
 		sparam.sched_priority = PTHREAD_DEFAULT_PRIORITY;
 	}
 
 	sparam.sched_priority = (prio_max + sparam.sched_priority) / 2;
-	ret = pthread_attr_setschedparam(&attr, &sparam);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_timed_wait FAIL: pthread_attr_setschedparam failed, ret=%d\n", ret);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_attr_setschedparam(&attr, &sparam);
+	TC_ASSERT_EQ("pthread_attr_setschedparam", ret_chk, OK);
 
-	ret = pthread_create(&waiter, &attr, thread_waiter, NULL);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_timed_wait FAIL: pthread_create failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&waiter, &attr, thread_waiter, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	if (g_bpthreadcallback == false) {
-		printf("tc_pthread_pthread_timed_wait FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT("pthread_create", g_bpthreadcallback);
 
-	ret = pthread_join(waiter, &result);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_timed_wait FAIL: ERROR pthread_join failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_join(waiter, &result);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
 
-	printf("tc_pthread_pthread_timed_wait PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -1216,27 +982,20 @@ static void tc_pthread_pthread_timed_wait(void)
 #if !defined(CONFIG_BUILD_PROTECTED)
 static void tc_pthread_pthread_findjoininfo_destroyjoin(void)
 {
-	int ret_chk = ERROR;
+	int ret_chk;
 	g_bpthreadcallback = false;
 
 	ret_chk = pthread_create(&g_thread1, NULL, findjoininfo_callback, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_findjoininfo_destroyjoin fail\n");
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, errno, {
 		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
+	});
 
 	pthread_join(g_thread1, NULL);
-
-	if (g_bpthreadcallback == false) {
-		printf("tc_pthread_pthread_findjoininfo_destroyjoin g_bpthreadcallback fail\n");
+	TC_ASSERT_EQ_CLEANUP("pthread_join", g_bpthreadcallback, true, errno, {
 		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_pthread_pthread_findjoininfo_destroyjoin PASS \n");
-	total_pass++;
+	});
+
+	TC_SUCCESS_RESULT();
 }
 #endif
 /**
@@ -1252,46 +1011,29 @@ static void tc_pthread_pthread_findjoininfo_destroyjoin(void)
 */
 static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 {
-	int ret_chk = ERROR;
+	int ret_chk;
 	pthread_mutexattr_t attr;
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 
 	pthread_mutex_init(&g_mutex, NULL);
 	ret_chk = pthread_mutex_lock(&g_mutex);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock PTHREAD_MUTEX_DEFAULT FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_lock", ret_chk, OK);
 
 	ret_chk = pthread_mutex_trylock(&g_mutex);
-	if (ret_chk != EBUSY) {
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_trylock", ret_chk, EBUSY, errno, {
 		pthread_mutex_unlock(&g_mutex);
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock PTHREAD_MUTEX_DEFAULT FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	});
 
 	ret_chk = pthread_mutex_unlock(&g_mutex);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock PTHREAD_MUTEX_DEFAULT FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
 
 	ret_chk = pthread_mutex_trylock(&g_mutex);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock PTHREAD_MUTEX_DEFAULT FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_trylock", ret_chk, OK);
+
 	ret_chk = pthread_mutex_unlock(&g_mutex);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock PTHREAD_MUTEX_DEFAULT FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
+
 	pthread_mutex_destroy(&g_mutex);
 
 	sleep(SEC_2);
@@ -1300,61 +1042,36 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 	pthread_mutex_init(&g_mutex, &attr);
 
 	ret_chk = pthread_mutex_lock(&g_mutex);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock PTHREAD_MUTEX_RECURSIVE FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_lock", ret_chk, OK);
 
 	ret_chk = pthread_mutex_lock(&g_mutex);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock PTHREAD_MUTEX_RECURSIVE FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_lock", ret_chk, OK);
 
 	ret_chk = pthread_mutex_unlock(&g_mutex);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock PTHREAD_MUTEX_RECURSIVE FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
+
 	ret_chk = pthread_mutex_unlock(&g_mutex);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock PTHREAD_MUTEX_RECURSIVE FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
 
 	/* mutex_lock mutex_unlock check through multi threads */
 	g_mutex_cnt = 0;
 	ret_chk = pthread_mutex_init(&g_mutex, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock FAIL: mutex init failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
 
 	ret_chk = pthread_create(&g_thread1, NULL, &thread_mutex, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock FAIL: pthread_create failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+
 	ret_chk = pthread_create(&g_thread2, NULL, &thread_mutex, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_lock_unlock_trylock FAIL: pthread_create failed\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
 	pthread_join(g_thread1, NULL);
 	pthread_join(g_thread2, NULL);
 
+	TC_ASSERT("pthread_mutex_lock_unlock", g_bpthreadcallback);
+
 	pthread_mutex_destroy(&g_mutex);
 
-	printf("tc_pthread_pthread_mutex_lock_unlock_trylock PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -1379,39 +1096,23 @@ static void tc_pthread_pthread_mutex_init_destroy(void)
 	pthread_mutexattr_settype(&attr, nType);
 
 	ret_chk = pthread_mutex_init(&mMutex, &attr);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_init FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
 
 	ret_chk = pthread_mutex_lock(&mMutex);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_init FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_lock", ret_chk, OK);
 
 	pthread_mutex_unlock(&mMutex);
 
 	ret_chk = pthread_mutex_destroy(&mMutex);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_mutex_destroy FAIL  Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, OK);
+
 	pthread_mutexattr_destroy(&attr);
 
 	/* if Mutex is destoryed, then sem of mutex will be set to 1. */
-	if (mMutex.sem.semcount != 1) {
-		printf("tc_pthread_pthread_mutex_destroy trylock FAIL Error No: %d %d\n", ret_chk, errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_mutexattr_destroy", mMutex.sem.semcount, 1);
 
-	printf("tc_pthread_pthread_mutex_init_destroy PASS\n");
-	total_pass++;
 	pthread_mutex_destroy(&mMutex);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -1429,26 +1130,18 @@ static void tc_pthread_pthread_once(void)
 {
 	int ret_chk = ERROR;
 	ret_chk = pthread_once(&g_once, &run_once);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_once FAIL : pthread_create FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+
 	sleep(SEC_1);
+
 	ret_chk = pthread_once(&g_once, &run_once);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_once FAIL : pthread_create FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_once", ret_chk, OK);
+
 	sleep(SEC_1);
-	if (g_bpthreadcallback != true) {
-		printf("tc_pthread_pthread_once FAIL : pthread_create FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_pthread_pthread_once PASS\n");
-	total_pass++;
+
+	TC_ASSERT("pthread_once", g_bpthreadcallback);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -1469,48 +1162,26 @@ static void tc_pthread_pthread_yield(void)
 	g_bpthreadcallback = false;
 
 	ret_chk = pthread_create(&g_thread1, NULL, thread_yield_callback, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_yield FAIL : pthread_create FAIL!\n");
-		pthread_detach(g_thread1);
-	}
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+
 	sleep(SEC_1);
-	if (g_bpthreadcallback == false) {
-		printf("tc_pthread_pthread_yield FAIL\n");
-		pthread_detach(g_thread1);
-		total_fail++;
-		RETURN_ERR;
-	}
+
+	TC_ASSERT_EQ_CLEANUP("pthread_yield", g_bpthreadcallback, true, get_errno(), {pthread_detach(g_thread1);});
+
 	ret_chk = pthread_create(&g_thread2, NULL, thread_yield_callback, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_yield FAIL : pthread_create FAIL!\n");
-		pthread_detach(g_thread2);
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (g_bpthreadcallback == false) {
-		printf("tc_pthread_pthread_yield FAIL\n");
-		pthread_detach(g_thread2);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, get_errno(), {pthread_detach(g_thread2);});
+	TC_ASSERT_EQ_CLEANUP("pthread_create", g_bpthreadcallback, true, get_errno(), {pthread_detach(g_thread2);});
+
 	/* wait for threads to exit */
 	sleep(SEC_5);
 
 	ret_chk = pthread_join(g_thread1, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_yield FAIL, pthread_join FAIL: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	ret_chk = pthread_join(g_thread2, NULL);
-	if (ret_chk != OK) {
-		printf("tc_pthread_pthread_yield FAIL, pthread_join FAIL: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
 
-	printf("tc_pthread_pthread_yield PASS\n");
-	total_pass++;
+	ret_chk = pthread_join(g_thread2, NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -1525,117 +1196,70 @@ static void tc_pthread_pthread_yield(void)
 */
 static void tc_pthread_pthread_cond_signal_wait(void)
 {
-	pthread_t pthread_1;
-	pthread_t pthread_2;
-	pthread_cond_init(&g_cond_signal, NULL);
-	g_sig_chk = false;
-	g_chk_err = false;
-	int iret = ERROR;
-	int indexloop = 0;
+	pthread_t pthread_waiter;
+	int ret_chk = ERROR;
+	g_cond_sig_val = VAL_ONE;
 
-	iret = pthread_create(&pthread_1, NULL, thread_cond_signal, NULL);
-	if (iret != OK) {
-		printf("[%s] tc_pthread_pthread_cond_signal_wait FAIL \n", __func__);
-		total_fail++;
-		RETURN_ERR;
-	}
-	iret = pthread_create(&pthread_2, NULL, thread_cond_signal, NULL);
-	if (iret != OK) {
-		printf("[%s] tc_pthread_pthread_cond_signal_wait FAIL \n", __func__);
-		total_fail++;
-		RETURN_ERR;
-	}
-	sleep(SEC_3);
+	ret_chk = pthread_mutex_init(&g_mutex, NULL);
+	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
 
-	for (indexloop = 0; indexloop < VAL_THREE; ++indexloop) {
-		/* printf("Wake up a worker, work to do...\n"); */
-		if (g_sig_chk == false) {
-			printf("[%s] tc_pthread_pthread_cond_signal_wait FAIL \n", __func__);
-			total_fail++;
-			RETURN_ERR;
-		}
-		iret = pthread_mutex_lock(&g_mutex_cond_signal);
-		if (iret != OK) {
-			printf("[%s] tc_pthread_pthread_cond_signal_wait FAIL \n", __func__);
-			total_fail++;
-			RETURN_ERR;
-		}
+	ret_chk = pthread_cond_init(&g_cond, NULL);
+	TC_ASSERT_EQ("pthread_cond_init", ret_chk, OK);
 
-		if (g_cond_sig_chk) {
-			tckndbg("Work already present, likely threads are busy\n");
-		}
-		g_cond_sig_chk = 1;
-		g_sig_chk = false;
-		iret = pthread_cond_signal(&g_cond_signal);
-		if (iret != OK) {
-			pthread_mutex_unlock(&g_mutex_cond_signal);
-			printf("[%s] tc_pthread_pthread_cond_signal_wait FAIL \n", __func__);
-			total_fail++;
-			RETURN_ERR;
-		}
+	ret_chk = pthread_mutex_lock(&g_mutex);
+	TC_ASSERT_EQ("pthread_mutex_lock", ret_chk, OK);
 
-		iret = pthread_mutex_unlock(&g_mutex_cond_signal);
-		if (iret != OK) {
-			printf("[%s] tc_pthread_pthread_cond_signal_wait FAIL \n", __func__);
-			total_fail++;
-			RETURN_ERR;
-		}
-		sleep(SEC_3);
-	}
+	ret_chk = pthread_create(&pthread_waiter, NULL, thread_cond_signal, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	if (g_chk_err == true) {
-		printf("[%s] tc_pthread_pthread_cond_signal_wait FAIL, g_chk_err is true \n", __func__);
-		total_fail++;
-		RETURN_ERR;
-	}
-	g_chk_err = true;
-	pthread_cancel(pthread_1);
-	pthread_cancel(pthread_2);
-	pthread_join(pthread_1, NULL);
-	pthread_join(pthread_2, NULL);
-	printf("tc_pthread_pthread_cond_signal_wait PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("pthread_mutex_lock", g_cond_sig_val, VAL_ONE);
+
+	ret_chk = pthread_mutex_unlock(&g_mutex);
+	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
+
+	sleep(SEC_1);
+
+	TC_ASSERT_EQ("pthread_cond_signal_wait", g_cond_sig_val, VAL_TWO);
+
+	ret_chk = pthread_cond_signal(&g_cond);
+	TC_ASSERT_EQ("pthread_cond_signal", ret_chk, OK);
+
+	sleep(SEC_1);
+
+	TC_ASSERT_EQ("pthread_cond_signal", g_cond_sig_val, VAL_THREE);
+
+	pthread_cancel(pthread_waiter);
+	pthread_join(pthread_waiter, NULL);
+
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_pthread_pthread_detach(void)
 {
+	int ret_chk;
 	pthread_t new_th;
-	int ret;
 
 	/* Create the thread */
-	if (pthread_create(&new_th, NULL, do_nothing_thread, NULL) != 0) {
-		printf("tc_pthread_pthread_detach FAIL : pthread_create\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&new_th, NULL, do_nothing_thread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
 	/* Wait 'till the thread returns.
 	 * The thread could have ended by the time we try to join, so
 	 * don't worry about it, just so long as other errors don't
 	 * occur. The point is to make sure the thread has ended execution. */
-	if (pthread_join(new_th, NULL) == EDEADLK) {
-		printf("tc_pthread_pthread_detach FAIL : pthread_join\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_join(new_th, NULL);
+	TC_ASSERT_NEQ("pthread_join", ret_chk, EDEADLK);
 
 	/* Detach the non-existant thread. */
-	ret = pthread_detach(new_th);
+	ret_chk = pthread_detach(new_th);
+	TC_ASSERT_NEQ("pthread_detach", ret_chk, OK);
 
-	/* Check return value of pthread_detach() */
-	if (ret == OK) {
-		printf("tc_pthread_pthread_detach FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	total_pass++;
-	printf("tc_pthread_pthread_detach PASS\n");
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_pthread_pthread_sigmask(void)
 {
-	int ret_chk = ERROR;
+	int ret_chk;
 	pid_t pid = getpid();
 
 	sigset_t st_newmask;
@@ -1653,205 +1277,123 @@ static void tc_pthread_pthread_sigmask(void)
 	memset(&st_act, 0, sizeof(st_act));
 	st_act.sa_handler = sigmask_handler;
 
-	if (sigaction(SIGQUIT, &st_act, &st_oact)) {
-		printf("tc_pthread_pthread_sigmask FAIL : sigaction error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = sigaction(SIGQUIT, &st_act, &st_oact);
+	TC_ASSERT_EQ("signaction", ret_chk, OK);
+
 	sigemptyset(&st_newmask);
 	sigaddset(&st_newmask, SIGQUIT);
 
 	ret_chk = pthread_sigmask(SIG_BLOCK, &st_newmask, &st_oldmask);
-	if (ret_chk < 0) {
-		printf("tc_pthread_pthread_sigmask FAIL SIG_BLOCK error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ("pthread_sigmask", ret_chk, 0);
 
 	nanosleep(&st_timespec, NULL);
 
 	kill(pid, SIGQUIT);
 	/* to call the handler function for verifying the sigpromask */
 	ret_chk = pthread_sigmask(SIG_SETMASK, &st_oldmask, NULL);
-	if (ret_chk < 0) {
-		printf("tc_pthread_pthread_sigmask FAIL SIG_SETMASK error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ("pthread_sigmask", ret_chk, 0);
 
 	st_timespec.tv_sec = 1;
 
 	nanosleep(&st_timespec, NULL);
 
 	ret_chk = pthread_sigmask(SIG_UNBLOCK, &st_oldmask, NULL);
-	if (ret_chk < 0) {
-		printf("tc_pthread_pthread_sigmask FAIL SIG_UNBLOCK error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ("pthread_sigmask", ret_chk, 0);
 
 	ret_chk = sigpending(&st_pendmask);
-	if (ret_chk < 0) {
-		printf("tc_pthread_pthread_sigmask FAIL sigpending error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ("sigpending", ret_chk, 0);
 
 	nanosleep(&st_timespec, NULL);
+	TC_ASSERT("pthread_sigmask", g_sig_handle);
 
-	if (!g_sig_handle) {
-		printf("tc_pthread_pthread_sigmask FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = sigaction(SIGQUIT, &st_oact, NULL);
+	TC_ASSERT_EQ("signaction", ret_chk, OK);
 
-	if (sigaction(SIGQUIT, &st_oact, NULL)) {
-		printf("tc_pthread_pthread_sigmask FAIL sigaction error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_pthread_pthread_sigmask PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_pthread_pthread_self(void)
 {
+	int ret_chk;
 	pthread_t tcb_pid;
-	if (pthread_create(&tcb_pid, NULL, self_test_thread, NULL) != 0) {
-		printf("tc_pthread_pthread_self FAIL : pthread_create\n");
-		total_fail++;
-		RETURN_ERR;
-	}
 
-	if (self_pid != tcb_pid) {
-		printf("tc_pthread_pthread_self FAIL : pids are not matched %d %d\n", tcb_pid, self_pid);
-		total_fail++;
-		RETURN_ERR;
-	} else {
-		total_pass++;
-		printf("tc_pthread_pthread_self PASS\n");
-	}
+	ret_chk = pthread_create(&tcb_pid, NULL, self_test_thread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
 	pthread_join(tcb_pid, NULL);
+	TC_ASSERT_EQ("pthread_self", self_pid, tcb_pid);
+
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_pthread_pthread_equal(void)
 {
+	int ret_chk;
 	pthread_t first_th;
 	pthread_t second_th;
 	bool check_same;
 
-	if (pthread_create(&first_th, NULL, do_nothing_thread, NULL) != 0) {
-		printf("tc_pthread_pthread_equal FAIL : pthread_create\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&first_th, NULL, do_nothing_thread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	if (pthread_create(&second_th, NULL, do_nothing_thread, NULL) != 0) {
-		printf("tc_pthread_pthread_equal FAIL : pthread_create\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&second_th, NULL, do_nothing_thread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
 	pthread_join(first_th, NULL);
 	pthread_join(second_th, NULL);
 
 	check_same = pthread_equal(first_th, second_th);
-	if (check_same != FALSE) {
-		total_fail++;
-		printf("tc_pthread_pthread_equal FAIL\n");
-		RETURN_ERR;
-	} else {
-		total_pass++;
-		printf("tc_pthread_pthread_equal PASS\n");
-	}
+	TC_ASSERT_EQ("pthread_equal", check_same, false);
+
+	TC_SUCCESS_RESULT();
 }
 
 #if !defined(CONFIG_BUILD_PROTECTED)
 static void tc_pthread_pthread_setschedprio(void)
 {
-	int ret;
+	int ret_chk;
 	pthread_t set_th;
 	uint8_t set_prio = 101;
 
-	if (pthread_create(&set_th, NULL, setschedprio_test_thread, NULL) != 0) {
-		printf("tc_pthread_pthread_setschedprio FAIL : pthread_create\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	/* change set_th PID's priority to set_prio */
-	ret = pthread_setschedprio(set_th, set_prio);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_setschedprio FAIL : setschedprio, returned value = %d\n", ret);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&set_th, NULL, setschedprio_test_thread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	ret = pthread_join(set_th, NULL);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_setschedprio FAIL : pthread_join, returned value = %d\n", ret);
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (check_prio != set_prio) {
-		printf("tc_pthread_pthread_setschedprio FAIL : not matched - SETPID = %d, GETPID = %d\n", set_prio, check_prio);
-		total_fail++;
-		RETURN_ERR;
-	} else {
-		total_pass++;
-		printf("tc_pthread_pthread_setschedprio PASS\n");
-	}
+	/* change set_th PID's priority to set_prio */
+	ret_chk = pthread_setschedprio(set_th, set_prio);
+	TC_ASSERT_EQ("pthread_setschedprio", ret_chk, OK);
+
+	ret_chk = pthread_join(set_th, NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_setschedprio", check_prio, set_prio);
+
+	TC_SUCCESS_RESULT();
 }
 #endif
 
 static void tc_pthread_pthread_setgetname_np(void)
 {
-	int ret;
+	int ret_chk;
 	pthread_t name_th;
 	char *thread_name = "NameThread";
 	char get_name[32];
 
-	ret = pthread_create(&name_th, NULL, setgetname_thread, NULL);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_setgetname_np FAIL : pthread_create\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&name_th, NULL, setgetname_thread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	ret = pthread_setname_np(name_th, "NameThread");
-	if (ret != OK) {
-		printf("tc_pthread_pthread_setgetname_np FAIL : pthread_setname_np\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_setname_np(name_th, "NameThread");
+	TC_ASSERT_EQ("pthread_setname_np", ret_chk, OK);
 
-	ret = pthread_getname_np(name_th, get_name);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_setgetname_np FAIL : pthread_getname_np, errno : %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_getname_np(name_th, get_name);
+	TC_ASSERT_EQ("pthread_getname_np", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_getname_np", strcmp(get_name, thread_name), 0);
 
-	if (strcmp(get_name, thread_name) != 0) {
-		printf("tc_pthread_pthread_setgetname_np FAIL : not matched between set and get name\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_cancel(name_th);
+	TC_ASSERT_EQ("pthread_cancel", ret_chk, OK);
 
-	ret = pthread_cancel(name_th);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_setgetname_np FAIL : pthread_cancel, returned value = %d\n", ret);
-		total_fail++;
-		RETURN_ERR;
-	}
-	ret = pthread_join(name_th, NULL);
-	if (ret != OK) {
-		printf("tc_pthread_pthread_setgetname_np FAIL : pthread_join, returned value = %d\n", ret);
-		total_fail++;
-		RETURN_ERR;
-	}
-	total_pass++;
-	printf("tc_pthread_pthread_setgetname_np PASS\n");
+	ret_chk = pthread_join(name_th, NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

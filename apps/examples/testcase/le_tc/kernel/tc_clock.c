@@ -57,17 +57,14 @@ static void tc_clock_clock_initialize(void)
 	jdn = clock_calendar2utc(CONFIG_START_YEAR, CONFIG_START_MONTH, CONFIG_START_DAY);
 
 	clock_initialize();
-	/*
-	   g_basetime.tv_sec base time is getting as seconds into this julian day. hence we need to compare it that same
-	 */
-	if (g_basetime.tv_nsec != 0 || g_basetime.tv_sec != (jdn * SEC_PER_DAY)) {
-		printf("tc_clock_clock_initialize FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 
-	printf("tc_clock_clock_initialize PASS\n");
-	total_pass++;
+	/* g_basetime.tv_sec base time is getting as seconds into this julian day.
+	 * hence we need to compare it that same */
+
+	TC_ASSERT_EQ("clock_initialize", g_basetime.tv_nsec, 0);
+	TC_ASSERT_EQ("clock_initialize", g_basetime.tv_sec, jdn * SEC_PER_DAY);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -85,19 +82,15 @@ static void tc_clock_clock_getres(void)
 	struct timespec st_res;
 
 	st_res.tv_sec = SEC_10;
-	ret_chk = clock_getres(CLOCK_REALTIME, &st_res);	/* It only work for realtime. */
-	if (ret_chk != OK) {
-		printf("tc_clock_clock_getres CLOCK_REALTIME FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	if ((st_res.tv_sec != 0) || (st_res.tv_nsec != NSEC_PER_TICK)) {
-		printf("tc_clock_clock_getres CLOCK_REALTIME FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_clock_clock_getres PASS\n");
-	total_pass++;
+
+	/* It only work for realtime. */
+
+	ret_chk = clock_getres(CLOCK_REALTIME, &st_res);
+	TC_ASSERT_EQ("clock_getres", ret_chk, OK);
+	TC_ASSERT_EQ("clock_getres", st_res.tv_sec, 0);
+	TC_ASSERT_EQ("clock_getres", st_res.tv_nsec, NSEC_PER_TICK);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -111,45 +104,34 @@ static void tc_clock_clock_getres(void)
 */
 static void tc_clock_clock_set_get_time(void)
 {
+	int ret_chk;
 	struct timespec stime;
 	struct timespec gtime;
-	if (clock_gettime(CLOCK_REALTIME, &stime) == ERROR) {
-		printf("tc_clock_clock_set_get_time: initial gettime FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+
+	ret_chk = clock_gettime(CLOCK_REALTIME, &stime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
+
 	stime.tv_sec += l_day;		/* Add one day */
 	stime.tv_nsec = 0;
-	if (clock_settime(CLOCK_REALTIME, &stime) == ERROR) {
-		printf("tc_clock_clock_set_get_time FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = clock_settime(CLOCK_REALTIME, &stime);
+	TC_ASSERT_EQ("clock_settime", ret_chk, OK);
 
 	sleep(SEC_2);
 
-	if (clock_gettime(CLOCK_REALTIME, &gtime) == ERROR) {
-		printf("tc_clock_clock_set_get_time: gettime FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = clock_gettime(CLOCK_REALTIME, &gtime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
 
-	if (!(stime.tv_sec + SEC_2 <= gtime.tv_sec && stime.tv_nsec <= gtime.tv_nsec)) {
-		printf("tc_clock_clock_set_get_time FAIL: get value should be greater than set value\n");
-		total_fail++;
-		RETURN_ERR;
+	TC_ASSERT_GEQ("clock_gettime", gtime.tv_sec, stime.tv_sec + SEC_2);
+	if (gtime.tv_sec == stime.tv_sec + SEC_2) {
+		TC_ASSERT_GEQ("clock_gettime", gtime.tv_nsec, stime.tv_nsec);
 	}
 
 	stime.tv_sec -= l_day;		/* Setting original time to system */
 
-	if (clock_settime(CLOCK_REALTIME, &stime) == ERROR) {
-		printf("tc_clock_clock_set_get_time FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = clock_settime(CLOCK_REALTIME, &stime);
+	TC_ASSERT_EQ("clock_setime", ret_chk, OK);
 
-	printf("tc_clock_clock_set_get_time PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -163,56 +145,24 @@ static void tc_clock_clock_set_get_time(void)
 */
 static void tc_clock_clock_gettimeofday(void)
 {
-	int ret_chk = 0;
+	int ret_chk;
+	struct timeval tv1;
+	struct timeval tv2;
 
-	struct timeval *st_tvptr_1 = (struct timeval *)malloc(sizeof(struct timeval));
-	struct timeval *st_tvptr_2 = (struct timeval *)malloc(sizeof(struct timeval));
-
-	ret_chk = gettimeofday(st_tvptr_1, NULL);
-	if (ret_chk != OK) {
-		printf("tc_clock_clock_gettimeofday FAIL, Error No: %d\n", errno);
-		total_fail++;
-		free(st_tvptr_1);
-		free(st_tvptr_2);
-		RETURN_ERR;
-	}
-	if (st_tvptr_1 == NULL) {	/* check fail condition */
-		printf("tc_clock_clock_gettimeofday FAIL: Time Value is not filled\n");
-		total_fail++;
-		free(st_tvptr_1);
-		free(st_tvptr_2);
-		RETURN_ERR;
-	}
+	ret_chk = gettimeofday(&tv1, NULL);
+	TC_ASSERT_EQ("gettimeofday", ret_chk, OK);
 
 	sleep(SEC_2);
 
-	ret_chk = gettimeofday(st_tvptr_2, NULL);
-	if (ret_chk != OK) {
-		printf("tc_clock_clock_gettimeofday FAIL, Error No: %d\n", errno);
-		total_fail++;
-		free(st_tvptr_1);
-		free(st_tvptr_2);
-		RETURN_ERR;
-	}
-	if (st_tvptr_2 == NULL) {	/* check total_fail condition */
-		printf("tc_clock_clock_gettimeofday FAIL: Time Value is not filled\n");
-		total_fail++;
-		free(st_tvptr_1);
-		RETURN_ERR;
+	ret_chk = gettimeofday(&tv2, NULL);
+	TC_ASSERT_EQ("gettimeofday", ret_chk, OK);
+
+	TC_ASSERT_GEQ("gettimeofday", tv2.tv_sec, tv1.tv_sec + SEC_2);
+	if (tv2.tv_sec == tv1.tv_sec + SEC_2) {
+		TC_ASSERT_GEQ("gettimeofday", tv2.tv_usec, tv1.tv_usec);
 	}
 
-	if (st_tvptr_2->tv_sec < st_tvptr_1->tv_sec || st_tvptr_2->tv_usec < st_tvptr_1->tv_usec) {
-		printf("tc_clock_clock_gettimeofday FAIL: Time Value error\n");
-		total_fail++;
-		free(st_tvptr_1);
-		free(st_tvptr_2);
-		RETURN_ERR;
-	}
-
-	free(st_tvptr_1);
-	free(st_tvptr_2);
-	printf("tc_clock_clock_gettimeofday PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -231,14 +181,9 @@ static void tc_clock_clock_timer(void)
 	systime_t itime = g_system_timer;
 	clock_timer();
 	itime++;
-	if (itime != g_system_timer) {
-		printf("tc_clock_clock_timer FAIL.\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("clock_timer", itime, g_system_timer);
 
-	printf("tc_clock_clock_timer PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -255,13 +200,9 @@ static void tc_clock_clock_systimer(void)
 {
 	systime_t itime = ERROR;
 	itime = clock_systimer();
-	if (itime < 0) {
-		printf("tc_clock_clock_systimer FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_clock_clock_systimer PASS\n");
-	total_pass++;
+	TC_ASSERT_GEQ("clock_systimer", itime, 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -277,13 +218,9 @@ static void tc_clock_clock_systimer64(void)
 {
 	systime_t itime = ERROR;
 	itime = clock_systimer();
-	if (itime < 0) {
-		printf("tc_clock_clock_systimer64, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_clock_clock_systimer64 PASS\n");
-	total_pass++;
+	TC_ASSERT_GEQ("clock_systimer", itime, 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -297,37 +234,27 @@ static void tc_clock_clock_systimer64(void)
  */
 static void tc_clock_clock_abstime2ticks(void)
 {
-	struct timespec base_time;
-	struct timespec comparison_time;
+	int ret_chk;
 	int base_tick;
 	int comparison_tick;
-	int ret = ERROR;
+	struct timespec base_time;
+	struct timespec comparison_time;
 
 	clock_gettime(CLOCK_REALTIME, &base_time);
 	base_time.tv_sec *= 2;
 	comparison_time.tv_sec = base_time.tv_sec * 2;
 
-	ret = clock_abstime2ticks(CLOCK_REALTIME, &base_time, &base_tick);
-	if (ret != OK) {
-		total_fail++;
-		printf("tc_clock_clock_abstime2ticks FAIL %d\n", base_tick);
-		RETURN_ERR;
-	}
-	ret = clock_abstime2ticks(CLOCK_REALTIME, &comparison_time, &comparison_tick);
-	if (ret != OK) {
-		total_fail++;
-		printf("tc_clock_clock_abstime2ticks FAIL %d %d\n", base_tick, comparison_tick);
-		RETURN_ERR;
-	}
+	ret_chk = clock_abstime2ticks(CLOCK_REALTIME, &base_time, &base_tick);
+	TC_ASSERT_EQ("clock_abstime2ticks", ret_chk, OK);
+
+	ret_chk = clock_abstime2ticks(CLOCK_REALTIME, &comparison_time, &comparison_tick);
+	TC_ASSERT_EQ("clock_abstime2ticks", ret_chk, OK);
 
 	/* the difference can be 0 or 1, but should be smaller than 2 */
-	if (comparison_tick - (base_tick * 2) < 2) {
-		total_fail++;
-		printf("tc_clock_clock_abstime2ticks FAIL %d %d\n", base_tick, comparison_tick);
-		RETURN_ERR;
-	}
-	total_pass++;
-	printf("tc_clock_clock_abstime2ticks PASS\n");
+
+	TC_ASSERT_GEQ("clock_abstime2ticks", comparison_tick - (base_tick * 2), 2);
+
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

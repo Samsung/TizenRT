@@ -48,28 +48,22 @@ static void *producer_func(void *arg)
 	for (index = 0; index < g_loop_cnt; index++) {
 		ret_val = sem_wait(&g_empty);
 		if (ret_val == ERROR) {
-			printf("tc_semaphore_sem_init_post_wait FAIL, Error No: %d\n", errno);
-			total_fail++;
-			return NULL;
+			pthread_exit("sem_wait(&g_empty)");
 		}
+
 		ret_val = sem_wait(&g_mutex);
 		if (ret_val == ERROR) {
-			printf("tc_semaphore_sem_init_post_wait FAIL, Error No: %d\n", errno);
-			total_fail++;
-			return NULL;
+			pthread_exit("sem_wait(&g_mutex)");
 		}
-		//printf("Producer val %d\n", index);
+
 		ret_val = sem_post(&g_mutex);
 		if (ret_val == ERROR) {
-			printf("tc_semaphore_sem_init_post_wait FAIL, Error No: %d\n", errno);
-			total_fail++;
-			return NULL;
+			pthread_exit("sem_post(&g_mutex)");
 		}
+
 		ret_val = sem_post(&g_full);
 		if (ret_val == ERROR) {
-			printf("tc_semaphore_sem_init_post_wait FAIL, Error No: %d\n", errno);
-			total_fail++;
-			return NULL;
+			pthread_exit("sem_post(&g_full)");
 		}
 	}
 	pthread_exit(NULL);
@@ -88,27 +82,22 @@ static void *consumer_func(void *arg)
 	for (index = 0; index < g_loop_cnt; index++) {
 		ret_val = sem_wait(&g_full);
 		if (ret_val == ERROR) {
-			printf("tc_semaphore_sem_init_post_wait FAIL, Error No: %d\n", errno);
-			total_fail++;
-			return NULL;
+			pthread_exit("sem_wait(&g_full)");
 		}
+
 		ret_val = sem_wait(&g_mutex);
 		if (ret_val == ERROR) {
-			printf("tc_semaphore_sem_init_post_wait FAIL, Error No: %d\n", errno);
-			total_fail++;
-			return NULL;
+			pthread_exit("sem_wait(&g_mutex)");
 		}
+
 		ret_val = sem_post(&g_mutex);
 		if (ret_val == ERROR) {
-			printf("tc_semaphore_sem_init_post_wait FAIL, Error No: %d\n", errno);
-			total_fail++;
-			return NULL;
+			pthread_exit("sem_post(&g_mutex)");
 		}
+
 		ret_val = sem_post(&g_empty);
 		if (ret_val == ERROR) {
-			printf("tc_semaphore_sem_init_post_wait FAIL, Error No: %d\n", errno);
-			total_fail++;
-			return NULL;
+			pthread_exit("sem_post(&g_empty)");
 		}
 	}
 	pthread_exit(NULL);
@@ -126,60 +115,38 @@ static void *consumer_func(void *arg)
 */
 static void tc_semaphore_sem_init_post_wait(void)
 {
-	int ret_val = ERROR;
+	int ret_val;
+	pthread_addr_t *pexit_value = NULL;
 	pthread_t pid;
 	pthread_t cid;
 
 	ret_val = sem_init(&g_empty, g_pshared, g_count);
-	if (ret_val == ERROR) {
-		printf("tc_semaphore_sem_init_post_wait FAIL : sem_init FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
+
 	ret_val = sem_init(&g_full, g_pshared, 0);
-	if (ret_val == ERROR) {
-		printf("tc_semaphore_sem_init_post_wait FAIL : sem_init FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
+
 	ret_val = sem_init(&g_mutex, g_pshared, g_count);
-	if (ret_val == ERROR) {
-		printf("tc_semaphore_sem_init_post_wait FAIL : sem_init FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
 
 	ret_val = pthread_create(&pid, NULL, producer_func, NULL);
-	if (ret_val != OK) {
-		printf("tc_semaphore_sem_init_post_wait, pthread_create FAIL Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_create", ret_val, OK);
+
 	ret_val = pthread_create(&cid, NULL, consumer_func, NULL);
-	if (ret_val != OK) {
-		printf("tc_semaphore_sem_init_post_wait, pthread_create FAIL Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_create", ret_val, OK);
 
-	ret_val = pthread_join(pid, NULL);
-	if (ret_val != OK) {
-		printf("tc_semaphore_sem_init_post_wait, pthread_join FAIL Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	ret_val = pthread_join(cid, NULL);
-	if (ret_val != OK) {
-		printf("tc_semaphore_sem_init_post_wait, pthread_join FAIL Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_val = pthread_join(pid, &pexit_value);
+	TC_ASSERT_EQ("pthread_join", ret_val, OK);
+	TC_ASSERT_EQ("pthread_join", pexit_value, NULL);
 
-	printf("tc_semaphore_sem_init_post_wait PASS\n");
-	total_pass++;
+	ret_val = pthread_join(cid, &pexit_value);
+	TC_ASSERT_EQ("pthread_join", ret_val, OK);
+	TC_ASSERT_EQ("pthread_join", pexit_value, NULL);
+
 	sem_destroy(&g_empty);
 	sem_destroy(&g_full);
 	sem_destroy(&g_mutex);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -202,40 +169,22 @@ static void tc_semaphore_sem_trywait(void)
 	sem_t sem_name;
 
 	ret_val = sem_init(&sem_name, g_pshared, 0);
-	if (ret_val == ERROR) {
-		printf("tc_semaphore_sem_trywait FAIL : sem_init FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
 
 	/* semname count is 0, sem_trywait will not block, but return immediately with error */
 	ret_val = sem_trywait(&sem_name);
-	if (ret_val != ERROR) {
-		printf("tc_semaphore_sem_trywait FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sem_trywait", ret_val, ERROR);
 	sem_destroy(&sem_name);
 
 	ret_val = sem_init(&sem_name, g_pshared, g_count);
-	if (ret_val == ERROR) {
-		printf("tc_semaphore_sem_trywait FAIL : sem_init FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
+
 	ret_val = sem_trywait(&sem_name);
-	if (ret_val == ERROR) {
-		printf("tc_semaphore_sem_trywait FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sem_trywait", ret_val, ERROR);
 
 	ret_val = sem_post(&sem_name);
-	if (ret_val == ERROR) {
-		printf("tc_semaphore_sem_trywait FAIL : sem_post Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sem_post", ret_val, ERROR);
+
 	/* locking semaphore to test sem_trywait */
 	ret_val = sem_wait(&sem_name);
 	if (ret_val == ERROR) {
@@ -243,16 +192,10 @@ static void tc_semaphore_sem_trywait(void)
 	} else {
 		/* locking semaphore in locked state using sem_trywait will return ERROR on pass */
 		ret_val = sem_trywait(&sem_name);
-		if (ret_val != ERROR) {
-			printf("tc_semaphore_sem_trywait FAIL \n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("sem_trywait", ret_val, ERROR);
 	}
-
-	printf("tc_semaphore_sem_trywait PASS \n");
-	total_pass++;
 	sem_destroy(&sem_name);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -274,44 +217,24 @@ static void tc_semaphore_sem_timedwait(void)
 	struct timespec st_final_time;
 	sem_t sem_name;
 	ret_val = sem_init(&sem_name, g_pshared, g_count);
-	if (ret_val == ERROR) {
-		printf("tc_semaphore_sem_timedwait FAIL : sem_init FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
 
 	ret_val = clock_gettime(CLOCK_REALTIME, &st_init_time);
-	if (ret_val != OK) {
-		printf("tc_semaphore_sem_timedwait FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("clock_gettime", ret_val, OK);
 
 	st_set_time.tv_sec = st_init_time.tv_sec + SEC_1;
 
 	ret_val = sem_timedwait(&sem_name, &st_set_time);
-	if (ret_val == ERROR) {
-		printf("tc_semaphore_sem_timedwait FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sem_timedwait", ret_val, ERROR);
 
 	ret_val = clock_gettime(CLOCK_REALTIME, &st_final_time);
-	if (ret_val != OK) {
-		printf("tc_semaphore_sem_timedwait FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("clock_gettime", ret_val, OK);
+
 	if (g_count == 0) {
-		if (st_init_time.tv_sec + SEC_1 != st_final_time.tv_sec) {
-			printf("tc_semaphore_sem_timedwait FAIL, Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("sem_timedwait", st_init_time.tv_sec + SEC_1, st_final_time.tv_sec);
 	}
-	printf("tc_semaphore_sem_timedwait PASS \n");
-	total_pass++;
 	sem_destroy(&sem_name);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -328,21 +251,14 @@ static void tc_semaphore_sem_destroy(void)
 	int ret_val = ERROR;
 	sem_t sem_name;
 	ret_val = sem_init(&sem_name, g_pshared, g_count);
-	if (ret_val == ERROR) {
-		printf("tc_semaphore_sem_destroy FAIL : sem_init FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
+
 	ret_val = sem_destroy(&sem_name);
-	if (ret_val != OK) {
-		printf("tc_semaphore_sem_destroy FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sem_destroy", ret_val, OK);
+
 	/* The effect of subsequent use of the semaphore sem is undefined until sem is re-initialised
 	   by another call to sem_init(). */
-	printf("tc_semaphore_sem_destroy PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT()
 }
 
 /****************************************************************************

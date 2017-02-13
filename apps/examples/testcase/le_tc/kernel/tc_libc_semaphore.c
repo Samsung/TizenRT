@@ -56,23 +56,18 @@ static void tc_libc_semaphore_sem_init_getvalue(void)
 	for (sem_num = 1; sem_num <= SEM_VALUE_MAX; sem_num++) {
 		sem_value = sem_num;
 		ret_chk = sem_init(&g_semaphore, PSHARED, sem_value);
-		if (ret_chk != OK) {
-			printf("tc_libc_semaphore_sem_init FAIL %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
 		ret_chk = sem_getvalue(&g_semaphore, &getvalue_num);
-		if (ret_chk != OK || getvalue_num != sem_value) {
-			printf("tc_libc_semaphore_sem_init_getvalue getvalue FAIL\n");
-			sem_destroy(&g_semaphore);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("sem_getvalue", ret_chk, OK);
+		TC_ASSERT_EQ_CLEANUP("sem_getvalue",
+							 getvalue_num, sem_value,
+							 get_errno(),
+							 sem_destroy(&g_semaphore));
 		sem_destroy(&g_semaphore);
 	}
-	printf("tc_libc_semaphore_sem_init_getvalue PASS\n");
 
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

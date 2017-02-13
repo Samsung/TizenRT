@@ -63,50 +63,50 @@ static int compare(const void *a, const void *b)
 */
 static void tc_libc_stdlib_abs_labs_llabs(void)
 {
-	int val1 = NVAL1;
-	int val2 = -NVAL2;
-	int ret_chk1;
-	int ret_chk2;
-	long int lval1 = LVAL1;
-	long int lval2 = -LVAL2;
-	long int lret_chk1;
-	long int lret_chk2;
-	long long int llval1 = LLVAL1;
-	long long int llval2 = -LLVAL2;
-	long long int llret_chk1;
-	long long int llret_chk2;
+	int val;
+	int ret_chk;
+	long int lval;
+	long int lret_chk;
+	long long int llval;
+	long long int llret_chk;
 
-	/* val1 is a positive number, ret_chk1 should be positive */
-	ret_chk1 = abs(val1);
-	/* val2 is a negative number, ret_chk2 should be positive */
-	ret_chk2 = abs(val2);
-	if (ret_chk1 != NVAL1 || ret_chk2 != NVAL2) {
-		printf("tc_libc_stdlib_abs FAIL Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	/* val is a positive number, ret_chk should be positive */
 
-	/* lval1 is a positive number, lret_chk1 should be positive */
-	lret_chk1 = labs(lval1);
-	/* lval2 is a negative number, lret_chk2 should be positive */
-	lret_chk2 = labs(lval2);
-	if (lret_chk1 != LVAL1 || lret_chk2 != LVAL2) {
-		printf("tc_libc_stdlib_labs FAIL Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	val = NVAL1;
+	ret_chk = abs(val);
+	TC_ASSERT_EQ("abs", ret_chk, NVAL1);
 
-	/* llVal1 is a positive number, llret_chk1 should be positive */
-	llret_chk1 = llabs(llval1);
-	/* llVal2 is a negative number, llret_chk2 should be positive */
-	llret_chk2 = llabs(llval2);
-	if (llret_chk1 != LLVAL1 || llret_chk2 != LLVAL2) {
-		printf("tc_libc_stdlib_llabs FAIL Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_stdlib_abs_labs_llabs PASS\n");
-	total_pass++;
+	/* val is a negative number, ret_chk should be positive */
+
+	val = -NVAL2;
+	ret_chk = abs(val);
+	TC_ASSERT_EQ("abs", ret_chk, NVAL2);
+
+	/* lval is a positive number, lret_chk should be positive */
+
+	lval = LVAL1;
+	lret_chk = labs(lval);
+	TC_ASSERT_EQ("labs", lret_chk, LVAL1);
+
+	/* lval is a negative number, lret_chk should be positive */
+
+	lval = -LVAL2;
+	lret_chk = labs(lval);
+	TC_ASSERT_EQ("labs", lret_chk, LVAL2);
+
+	/* llVal is a positive number, llret_chk should be positive */
+
+	llval = LLVAL1;
+	llret_chk = llabs(llval);
+	TC_ASSERT_EQ("llabs", llret_chk, LLVAL1);
+
+	/* llVal is a negative number, llret_chk should be positive */
+
+	llval = -LLVAL2;
+	llret_chk = llabs(llval);
+	TC_ASSERT_EQ("llabs", llret_chk, LLVAL2);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -122,13 +122,9 @@ static void tc_libc_stdlib_imaxabs(void)
 {
 	intmax_t val = -NVAL1;
 	intmax_t ret_chk = imaxabs(val);
-	if (ret_chk != NVAL1) {
-		printf("tc_libc_stdlib_imaxabs FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_stdlib_imaxabs PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("imaxabs", ret_chk, NVAL1);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -144,33 +140,26 @@ static void tc_libc_stdlib_imaxabs(void)
 static void tc_libc_stdlib_itoa(void)
 {
 	/* ITOA_VAL = 12 */
+
 	int val = ITOA_VAL;
 	char buffer[BUFF_SIZE];
 
 	/* conversion in decimal */
-	itoa(val, buffer, DECIMAL);
-	if (strcmp(buffer, "12") != OK) {
-		printf("tc_libc_stdlib_itoa FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	/* conversion in hexadecimal */
-	itoa(val, buffer, HEXADECIMAL);
-	if (strcmp(buffer, "c") != OK) {
-		printf("tc_libc_stdlib_itoa FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	/* conversion in binary */
-	itoa(val, buffer, BINARY);
-	if (strcmp(buffer, "1100") != OK) {
-		printf("tc_libc_stdlib_itoa FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
 
-	printf("tc_libc_stdlib_itoa PASS\n");
-	total_pass++;
+	itoa(val, buffer, DECIMAL);
+	TC_ASSERT_EQ("itoa", strcmp(buffer, "12"), 0);
+
+	/* conversion in hexadecimal */
+
+	itoa(val, buffer, HEXADECIMAL);
+	TC_ASSERT_EQ("itoa", strcmp(buffer, "c"), 0);
+
+	/* conversion in binary */
+
+	itoa(val, buffer, BINARY);
+	TC_ASSERT_EQ("itoa", strcmp(buffer, "1100"), 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -192,15 +181,11 @@ static void tc_libc_stdlib_qsort(void)
 	qsort(value_arr, arr_length, sizeof(int), compare);
 	for (data_idx = 0; data_idx < arr_length; data_idx++) {
 		if (data_idx != arr_length - 1) {
-			if (value_arr[data_idx] > value_arr[data_idx + 1]) {
-				printf("tc_libc_stdlib_qsort FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_LEQ("qsort", value_arr[data_idx], value_arr[data_idx + 1]);
 		}
 	}
-	printf("tc_libc_stdlib_qsort PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -214,20 +199,21 @@ static void tc_libc_stdlib_qsort(void)
 */
 static void tc_libc_stdlib_rand(void)
 {
-	int ret_chk1 = ERROR;
-	int ret_chk2 = ERROR;
-	int ret_chk3 = ERROR;
-	ret_chk1 = rand();
-	ret_chk2 = rand();
-	ret_chk3 = rand();
-	if ((ret_chk1 < 0 || ret_chk1 > MAX_RAND) || (ret_chk2 < 0 || ret_chk2 > MAX_RAND) || (ret_chk3 < 0 || ret_chk3 > MAX_RAND)) {
-		printf("tc_libc_stdlib_rand FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	int ret_chk = ERROR;
 
-	printf("tc_libc_stdlib_rand PASS\n");
-	total_pass++;
+	ret_chk = rand();
+	TC_ASSERT_GEQ("rand", ret_chk, 0);
+	TC_ASSERT_LT("rand", ret_chk, MAX_RAND);
+
+	ret_chk = rand();
+	TC_ASSERT_GEQ("rand", ret_chk, 0);
+	TC_ASSERT_LT("rand", ret_chk, MAX_RAND);
+
+	ret_chk = rand();
+	TC_ASSERT_GEQ("rand", ret_chk, 0);
+	TC_ASSERT_LT("rand", ret_chk, MAX_RAND);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -245,25 +231,29 @@ static void tc_libc_stdlib_strtol(void)
 	/* random string used for conversion */
 	char str_lnum[] = "2001 60c0c0 -1101110100110100100000 0x6fffff";
 	char *end_ptr;
-	long int li1;
-	long int li2;
-	long int li3;
-	long int li4;
-	/* li1 = 2001 for string 2001 in decimal */
-	li1 = strtol(str_lnum, &end_ptr, DECIMAL);
-	/* li2 = 6340800 for string 60c0c0 in hexadecimal */
-	li2 = strtol(end_ptr, &end_ptr, HEXADECIMAL);
-	/* li3 = -3624224 for string -1101110100110100100000 in binary */
-	li3 = strtol(end_ptr, &end_ptr, BINARY);
-	/* li4 = 7340031 for string 0x6fffff with base value 0 */
-	li4 = strtol(end_ptr, NULL, 0);
-	if (li1 != 2001 || li2 != 6340800 || li3 != -3624224 || li4 != 7340031) {
-		printf("tc_libc_stdlib_strtol FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_stdlib_strtol PASS\n");
-	total_pass++;
+	long int ret_chk;
+
+	/* ret_chk = 2001 for string 2001 in decimal */
+
+	ret_chk = strtol(str_lnum, &end_ptr, DECIMAL);
+	TC_ASSERT_EQ("strtol", ret_chk, 2001);
+
+	/* ret_chk = 6340800 for string 60c0c0 in hexadecimal */
+
+	ret_chk = strtol(end_ptr, &end_ptr, HEXADECIMAL);
+	TC_ASSERT_EQ("strtol", ret_chk, 6340800);
+
+	/* ret_chk = -3624224 for string -1101110100110100100000 in binary */
+
+	ret_chk = strtol(end_ptr, &end_ptr, BINARY);
+	TC_ASSERT_EQ("strtol", ret_chk, -3624224);
+
+	/* ret_chk = 7340031 for string 0x6fffff with base value 0 */
+
+	ret_chk = strtol(end_ptr, NULL, 0);
+	TC_ASSERT_EQ("strtol", ret_chk, 7340031);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -279,26 +269,29 @@ static void tc_libc_stdlib_strtoll(void)
 {
 	char str_llnum[] = "1856892505 17b00a12b -01100011010110000010001101100 0x6fffff";
 	char *end_ptr;
-	long long int lli1;
-	long long int lli2;
-	long long int lli3;
-	long long int lli4;
+	long long int ret_chk;
 
-	/* li1 = 1856892505 for string 1856892505 in decimal */
-	lli1 = strtoll(str_llnum, &end_ptr, DECIMAL);
-	/* lli2 = 6358606123 for string 17b00a12b in hexadecimal */
-	lli2 = strtoll(end_ptr, &end_ptr, HEXADECIMAL);
-	/* lli3 = -208340076 for string -01100011010110000010001101100 in binary */
-	lli3 = strtoll(end_ptr, &end_ptr, BINARY);
-	/* lli4 = 7340031 for string 0x6fffff with base 0 */
-	lli4 = strtoll(end_ptr, NULL, 0);
-	if (lli1 != 1856892505 || lli2 != 6358606123 || lli3 != -208340076 || lli4 != 7340031) {
-		printf("tc_libc_stdlib_strtoll FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_stdlib_strtoll PASS\n");
-	total_pass++;
+	/* ret_chk = 1856892505 for string 1856892505 in decimal */
+
+	ret_chk = strtoll(str_llnum, &end_ptr, DECIMAL);
+	TC_ASSERT_EQ("strtoll", ret_chk, 1856892505);
+
+	/* ret_chk = 6358606123 for string 17b00a12b in hexadecimal */
+
+	ret_chk = strtoll(end_ptr, &end_ptr, HEXADECIMAL);
+	TC_ASSERT_EQ("strtoll", ret_chk, 6358606123);
+
+	/* ret_chk = -208340076 for string -01100011010110000010001101100 in binary */
+
+	ret_chk = strtoll(end_ptr, &end_ptr, BINARY);
+	TC_ASSERT_EQ("strtoll", ret_chk, -208340076);
+
+	/* ret_chk = 7340031 for string 0x6fffff with base 0 */
+
+	ret_chk = strtoll(end_ptr, NULL, 0);
+	TC_ASSERT_EQ("strtoll", ret_chk, 7340031);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -315,26 +308,29 @@ static void tc_libc_stdlib_strtoul(void)
 {
 	char str_ulnum[] = "201 60 1100 0x6f";
 	char *end_ptr;
-	unsigned long int uli1;
-	unsigned long int uli2;
-	unsigned long int uli3;
-	unsigned long int uli4;
+	unsigned long int ret_chk;
 
-	/* uli1 = 201 for string 201 in decimal */
-	uli1 = strtoul(str_ulnum, &end_ptr, DECIMAL);
-	/* uli2 = 96 for string 60 in hexadecimal */
-	uli2 = strtoul(end_ptr, &end_ptr, HEXADECIMAL);
-	/* uli3 = 12 for string 1100 in binary */
-	uli3 = strtoul(end_ptr, &end_ptr, BINARY);
-	/* uli4 = 111 for string 0x6f with base 0 */
-	uli4 = strtoul(end_ptr, NULL, 0);
-	if (uli1 != 201 || uli2 != 96 || uli3 != 12 || uli4 != 111) {
-		printf("tc_libc_stdlib_strtoul FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_stdlib_strtoul PASS\n");
-	total_pass++;
+	/* ret_chk = 201 for string 201 in decimal */
+
+	ret_chk = strtoul(str_ulnum, &end_ptr, DECIMAL);
+	TC_ASSERT_EQ("strtoul", ret_chk, 201);
+
+	/* ret_chk = 96 for string 60 in hexadecimal */
+
+	ret_chk = strtoul(end_ptr, &end_ptr, HEXADECIMAL);
+	TC_ASSERT_EQ("strtoul", ret_chk, 96);
+
+	/* ret_chk = 12 for string 1100 in binary */
+
+	ret_chk = strtoul(end_ptr, &end_ptr, BINARY);
+	TC_ASSERT_EQ("strtoul", ret_chk, 12);
+
+	/* ret_chk = 111 for string 0x6f with base 0 */
+
+	ret_chk = strtoul(end_ptr, NULL, 0);
+	TC_ASSERT_EQ("strtoul", ret_chk, 111);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -350,93 +346,77 @@ static void tc_libc_stdlib_strtoull(void)
 {
 	char str_ullnum[] = "250068492 7b06af00 1100011011110101010001100000 0x6fffff";
 	char *end_ptr;
-	unsigned long long int ulli1;
-	unsigned long long int ulli2;
-	unsigned long long int ulli3;
-	unsigned long long int ulli4;
+	unsigned long long int ret_chk;
 
-	/* ulli1 = 250068492 for string 250068492 in decimal */
-	ulli1 = strtoull(str_ullnum, &end_ptr, DECIMAL);
-	/* ulli2 = 2064035584 for string 7b06af00 in hexadecimal */
-	ulli2 = strtoull(end_ptr, &end_ptr, HEXADECIMAL);
-	/* ulli3 = 208622688 for string 1100011011110101010001100000 in binary */
-	ulli3 = strtoull(end_ptr, &end_ptr, BINARY);
-	/* ulli4 = 7340031 for string 0x6fffff with base 0 */
-	ulli4 = strtoull(end_ptr, NULL, 0);
-	if (ulli1 != 250068492 || ulli2 != 2064035584 || ulli3 != 208622688 || ulli4 != 7340031) {
-		printf("tc_libc_stdlib_strtoull FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_stdlib_strtoull PASS\n");
-	total_pass++;
+	/* ret_chk = 250068492 for string 250068492 in decimal */
+
+	ret_chk = strtoull(str_ullnum, &end_ptr, DECIMAL);
+	TC_ASSERT_EQ("strtoull", ret_chk, 250068492);
+
+	/* ret_chk = 2064035584 for string 7b06af00 in hexadecimal */
+
+	ret_chk = strtoull(end_ptr, &end_ptr, HEXADECIMAL);
+	TC_ASSERT_EQ("strtoull", ret_chk, 2064035584);
+
+	/* ret_chk = 208622688 for string 1100011011110101010001100000 in binary */
+
+	ret_chk = strtoull(end_ptr, &end_ptr, BINARY);
+	TC_ASSERT_EQ("strtoull", ret_chk, 208622688);
+
+	/* ret_chk = 7340031 for string 0x6fffff with base 0 */
+
+	ret_chk = strtoull(end_ptr, NULL, 0);
+	TC_ASSERT_EQ("strtoull", ret_chk, 7340031);
+
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_libc_stdlib_strtod(void)
 {
 	char target[100] = "1234.56abcd";
 	char *pos = NULL;
-	double value = 0;
+	double ret_chk = 0;
 
-	value = strtod(target, &pos);
-	if (value != 1234.56) {
-		total_fail++;
-		printf("tc_libc_stdlib_strtod FAIL : not matched %d %s\n", value, pos);
-		RETURN_ERR;
-	}
-	total_pass++;
-	printf("tc_libc_stdlib_strtod PASS\n");
+	ret_chk = strtod(target, &pos);
+	TC_ASSERT_EQ("atoi", ret_chk, 1234.56);
+
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_libc_stdlib_atoi(void)
 {
 	/* random string used for conversion */
 	char str_lnum[] = "2016";
-	int target;
-	/* target = 2001 for string 2001 in decimal */
-	target = atoi(str_lnum);
-	if (target != 2016) {
-		total_fail++;
-		printf("tc_libc_stdlib_atoi FAIL\n");
-		RETURN_ERR;
-	}
+	int ret_chk;
+	/* ret_chk = 2001 for string 2001 in decimal */
+	ret_chk = atoi(str_lnum);
+	TC_ASSERT_EQ("atoi", ret_chk, 2016);
 
-	printf("tc_libc_stdlib_atoi PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_libc_stdlib_atol(void)
 {
 	/* random string used for conversion */
 	char str_lnum[] = "20162015";
-	long int target;
+	long int ret_chk;
 
-	target = atol(str_lnum);
-	if (target != 20162015) {
-		total_fail++;
-		printf("tc_libc_stdlib_atol FAIL\n");
-		RETURN_ERR;
-	}
+	ret_chk = atol(str_lnum);
+	TC_ASSERT_EQ("atol", ret_chk, 20162015);
 
-	printf("tc_libc_stdlib_atol PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_libc_stdlib_atoll(void)
 {
 	/* random string used for conversion */
 	char str_lnum[] = "201620152014";
-	long long int target;
+	long long int ret_chk;
 
-	target = atoll(str_lnum);
-	if (target != 201620152014) {
-		total_fail++;
-		printf("tc_libc_stdlib_atoll FAIL\n");
-		RETURN_ERR;
-	}
+	ret_chk = atoll(str_lnum);
+	TC_ASSERT_EQ("atoll", ret_chk, 201620152014);
 
-	printf("tc_libc_stdlib_atoll PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_libc_stdlib_srand(void)
@@ -457,30 +437,21 @@ static void tc_libc_stdlib_srand(void)
 	}
 
 	for (result_iter = 0; result_iter < 3; result_iter++) {
-		if (first_result[result_iter] != second_result[result_iter]) {
-			total_fail++;
-			printf("tc_libc_stdlib_srand FAIL : not matched\n");
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("srand", first_result[result_iter], second_result[result_iter]);
 	}
 
-	printf("tc_libc_stdlib_srand PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_libc_stdlib_atof(void)
 {
 	char target[100] = "1234.56abcd";
-	double value = 0;
+	double ret_chk = 0;
 
-	value = atof(target);
-	if (value != 1234.56) {
-		total_fail++;
-		printf("tc_libc_stdlib_atof FAIL\n");
-		RETURN_ERR;
-	}
-	total_pass++;
-	printf("tc_libc_stdlib_atof PASS\n");
+	ret_chk = atof(target);
+	TC_ASSERT_EQ("atof", ret_chk, 1234.56);
+
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

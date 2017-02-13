@@ -220,11 +220,8 @@ static void tc_roundrobin_rr_pthread(void)
 	int tc;
 	int ret;
 	ret = pthread_attr_set();
-	if (ret == ERROR) {
-		printf("tc_roundrobin_rr_pthread FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("pthread_attr_set", ret, ERROR);
+
 	for (tc = 0; tc < TESTCASE; tc++) {
 		int pthread_cnt;
 		pthread_t pth[NTHREAD];
@@ -234,17 +231,11 @@ static void tc_roundrobin_rr_pthread(void)
 		for (pthread_cnt = 0; pthread_cnt < NTHREAD; pthread_cnt++) {
 			param.sched_priority = priority[tc][pthread_cnt];
 			ret = pthread_attr_setschedparam(&attr, &param);
-			if (ret != OK) {
-				printf("tc_roundrobin_rr_pthread FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_EQ("pthread_attr_setschedparam", ret, OK);
+
 			ret = pthread_create(&pth[pthread_cnt], &attr, pthread_func, NULL);
-			if (ret != OK) {
-				printf("tc_roundrobin_rr_pthread FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_EQ("pthread_create ", ret, OK);
+
 			created++;
 			pid_prio[PIDHASH(pth[pthread_cnt])] = priority[tc][pthread_cnt];
 		}
@@ -254,15 +245,10 @@ static void tc_roundrobin_rr_pthread(void)
 		}
 
 		ret = check_log();
-		if (ret != OK) {
-			printf("tc_roundrobin_rr_pthread FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("check_log", ret, OK);
 	}
 
-	printf("tc_roundrobin_rr_pthread PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_roundrobin_rr_task(void)
@@ -270,11 +256,8 @@ static void tc_roundrobin_rr_task(void)
 	int tc;
 	int ret;
 	ret = pthread_attr_set();
-	if (ret == ERROR) {
-		printf("tc_roundrobin_rr_task FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("pthread_attr_set", ret, ERROR);
+
 	for (tc = 0; tc < TESTCASE; tc++) {
 		int task_cnt;
 		pid_t task_pid[NTHREAD];
@@ -283,19 +266,13 @@ static void tc_roundrobin_rr_task(void)
 		sleep(1);
 		for (task_cnt = 0; task_cnt < NTHREAD; task_cnt++) {
 			task_pid[task_cnt] = task_create("rrtask", priority[tc][task_cnt], 1024, task_func, NULL);
-			if (task_pid[task_cnt] == ERROR) {
-				printf("tc_roundrobin_rr_task FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_NEQ("task_create", task_pid[task_cnt], ERROR);
+
 			created++;
 			param.sched_priority = priority[tc][task_cnt];
 			ret = sched_setscheduler(task_pid[task_cnt], SCHED_RR, &param);
-			if (ret != OK) {
-				printf("tc_roundrobin_rr_task FAIL\n");
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_EQ("sched_setscheduler", ret, OK);
+
 			pid_prio[PIDHASH(task_pid[task_cnt])] = priority[tc][task_cnt];
 		}
 
@@ -309,15 +286,10 @@ static void tc_roundrobin_rr_task(void)
 		}
 
 		ret = check_log();
-		if (ret != OK) {
-			printf("tc_roundrobin_rr_task FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("check_log", ret, OK);
 	}
 
-	printf("tc_roundrobin_rr_task PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_roundrobin_rr_taskNpthread(void)
@@ -325,11 +297,8 @@ static void tc_roundrobin_rr_taskNpthread(void)
 	int tc;
 	int ret;
 	ret = pthread_attr_set();
-	if (ret == ERROR) {
-		printf("tc_roundrobin_rr_taskNpthread FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("pthread_attr_set", ret, ERROR);
+
 	for (tc = 0; tc < TESTCASE; tc++) {
 		int task_pid;
 		FAR char *argv[2];
@@ -339,20 +308,14 @@ static void tc_roundrobin_rr_taskNpthread(void)
 		logidx = 0;
 		start = created = 0;
 		sleep(1);
-		task_pid = task_create("rrtaskpth", priority[tc][0], 1024, taskNpthread_func, (FAR char *const *)argv);
-		if (task_pid == ERROR) {
-			printf("tc_roundrobin_rr_taskNpthread FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		task_pid = task_create("rrtaskpth", priority[tc][0], 1024, taskNpthread_func, (FAR char * const *)argv);
+		TC_ASSERT_NEQ("task_create", task_pid, ERROR);
+
 		created++;
 		param.sched_priority = priority[tc][0];
 		ret = sched_setscheduler(task_pid, SCHED_RR, &param);
-		if (ret != OK) {
-			printf("tc_roundrobin_rr_taskNpthread FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("sched_setscheduler", ret, OK);
+
 		pid_prio[PIDHASH(task_pid)] = priority[tc][0];
 
 		if (task_pid != ERROR) {
@@ -363,15 +326,10 @@ static void tc_roundrobin_rr_taskNpthread(void)
 		}
 
 		ret = check_log();
-		if (ret != OK) {
-			printf("tc_roundrobin_rr_taskNpthread FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("check_log", ret, OK);
 	}
 
-	printf("tc_roundrobin_rr_taskNpthread PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

@@ -124,7 +124,7 @@ static void *threadfunc_callback(void *param)
 */
 static void tc_sched_sched_setget_scheduler_param(void)
 {
-	int ret_val = ERROR;
+	int ret_chk = ERROR;
 	struct sched_param st_setparam;
 	struct sched_param st_getparam;
 	int loop_cnt = LOOPCOUNT;
@@ -133,44 +133,22 @@ static void tc_sched_sched_setget_scheduler_param(void)
 
 	while (arr_idx < loop_cnt) {
 		st_setparam.sched_priority = SCHED_PRIORITY;
-		ret_val = sched_setparam(getpid(), &st_setparam);
-		if (ret_val != OK) {
-			printf("tc_sched_sched_setget_scheduler_param SETPARAM FAIL, Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		ret_chk = sched_setparam(getpid(), &st_setparam);
+		TC_ASSERT_EQ("sched_setparam", ret_chk, OK);
 
-		ret_val = sched_setscheduler(getpid(), sched_arr[arr_idx], &st_setparam);
-		if (ret_val == ERROR) {
-			printf("tc_sched_sched_setget_scheduler_param SETSCHEDULER FAIL1 Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		ret_chk = sched_setscheduler(getpid(), sched_arr[arr_idx], &st_setparam);
+		TC_ASSERT_NEQ("sched_setscheduler", ret_chk, ERROR);
 
-		/* ret_val should be SCHED set */
-		ret_val = sched_getscheduler(getpid());
-		if (ret_val != sched_arr[arr_idx]) {
-			printf("tc_sched_sched_setget_scheduler_param FAIL, Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		/* ret_chk should be SCHED set */
+		ret_chk = sched_getscheduler(getpid());
+		TC_ASSERT_EQ("sched_getscheduler", ret_chk, sched_arr[arr_idx]);
 
-		ret_val = sched_getparam(getpid(), &st_getparam);
-		if (ret_val != OK) {
-			printf("tc_sched_sched_setget_scheduler_param FAIL, Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
-
-		if (st_setparam.sched_priority != st_getparam.sched_priority) {
-			printf("tc_sched_sched_setget_scheduler_param FAIL, Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		ret_chk = sched_getparam(getpid(), &st_getparam);
+		TC_ASSERT_EQ("sched_getparam", ret_chk, OK);
+		TC_ASSERT_EQ("sched_getparam", st_setparam.sched_priority, st_getparam.sched_priority);
 		arr_idx++;
 	}
-	printf("tc_sched_sched_setget_scheduler_param PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -184,7 +162,7 @@ static void tc_sched_sched_setget_scheduler_param(void)
 */
 static void tc_sched_sched_rr_get_interval(void)
 {
-	int ret_val;
+	int ret_chk;
 	struct timespec st_timespec1;
 	struct timespec st_timespec2;
 	st_timespec1.tv_sec = 0;
@@ -193,29 +171,21 @@ static void tc_sched_sched_rr_get_interval(void)
 	st_timespec2.tv_sec = 0;
 	st_timespec2.tv_nsec = -1;
 	/* Values are filled in st_timespec structure to differentiate them with values overwritten by rr_interval */
-	ret_val = sched_rr_get_interval(0, &st_timespec1);
-	if (ret_val == ERROR || st_timespec1.tv_nsec < 0 || st_timespec1.tv_nsec >= 1000000000) {
-		printf("tc_sched_sched_rr_get_interval API FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = sched_rr_get_interval(0, &st_timespec1);
+	TC_ASSERT_NEQ("sched_rr_get_interval", ret_chk, ERROR);
+	TC_ASSERT_GEQ("sched_rr_get_interval", st_timespec1.tv_nsec, 0);
+	TC_ASSERT_LT("sched_rr_get_interval", st_timespec1.tv_nsec, 1000000000);
 
-	ret_val = sched_rr_get_interval(getpid(), &st_timespec2);
-	if (ret_val == ERROR || st_timespec2.tv_nsec < 0 || st_timespec2.tv_nsec >= 1000000000) {
-		printf("tc_sched_sched_rr_get_interval API FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = sched_rr_get_interval(getpid(), &st_timespec2);
+	TC_ASSERT_NEQ("sched_rr_get_interval", ret_chk, ERROR);
+	TC_ASSERT_GEQ("sched_rr_get_interval", st_timespec2.tv_nsec, 0);
+	TC_ASSERT_LT("sched_rr_get_interval", st_timespec2.tv_nsec, 1000000000);
 
 	/* after sched_rr_get_interval() call, st_timespec structure should be overwritten with rr_interval values */
-	if ((st_timespec1.tv_sec - st_timespec2.tv_sec) != 0 || (st_timespec1.tv_nsec - st_timespec2.tv_nsec) != 0) {
-		printf("tc_sched_sched_rr_get_interval get interval FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sched_rr_get_interval", st_timespec1.tv_sec, st_timespec2.tv_sec);
+	TC_ASSERT_EQ("sched_rr_get_interval", st_timespec1.tv_nsec, st_timespec2.tv_nsec);
 
-	printf("tc_sched_sched_rr_get_interval PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -230,33 +200,20 @@ static void tc_sched_sched_rr_get_interval(void)
 */
 static void tc_sched_sched_yield(void)
 {
-	int ret_val = 0;
+	int ret_chk = 0;
 
-	ret_val = pthread_create(&thread1, NULL, threadfunc_callback, NULL);
-	if (ret_val != OK) {
-		printf("tc_sched_sched_yield FAIL : pthread_create FAIL!\n");
-	}
-	if (g_pthread_callback == false) {
-		printf("tc_sched_sched_yield FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	ret_val = pthread_create(&thread2, NULL, threadfunc_callback, NULL);
-	if (ret_val != OK) {
-		printf("tc_sched_sched_yield FAIL : pthread_create FAIL!\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (g_pthread_callback == false) {
-		printf("tc_sched_sched_yield FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = pthread_create(&thread1, NULL, threadfunc_callback, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+	TC_ASSERT("sched_yield", g_pthread_callback);
+
+	ret_chk = pthread_create(&thread2, NULL, threadfunc_callback, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+	TC_ASSERT("sched_yield", g_pthread_callback);
+
 	/* wait for threads to exit */
 	pthread_join(thread1, 0);
 	pthread_join(thread2, 0);
-	printf("tc_sched_sched_yield PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -274,39 +231,30 @@ static void tc_sched_sched_yield(void)
 #ifdef CONFIG_SCHED_HAVE_PARENT
 static void tc_sched_wait(void)
 {
-	int ret_val = 0;
+	int ret_chk;
 	pid_t child1_pid;
 	pid_t child2_pid;
 	int status;
 
 	/* creating new process */
-	child1_pid = task_create("sched1", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_wait, (char *const *)NULL);
-	child2_pid = task_create("sched2", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_waitlong, (char *const *)NULL);
-	if (child1_pid >= 0 && child2_pid >= 0) {
-		/* child which exits first is handled by wait, here child1_pid exits earlier. */
-		usleep(SLEEPVAL);
-		ret_val = wait(&status);	/* wait for child to exit, and store child's exit status */
-		if (ret_val == ERROR) {
-			printf("tc_sched_wait FAIL, wait() didn't work Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
-		if (!(child1_pid == (pid_t)ret_val || child2_pid == (pid_t)ret_val)) {
-			printf("tc_sched_wait FAIL, child_pid mismatched to retVal of wait() Error No: %d\n", errno);
-			printf("retval is %d\n", ret_val);
-			total_fail++;
-			RETURN_ERR;
-		}
-	} else {
-		printf("tc_sched_wait FAIL: Child PID < 0. Could not be created, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	child1_pid = task_create("sched1", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_wait, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", child1_pid, 0);
+
+	child2_pid = task_create("sched2", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_waitlong, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", child2_pid, 0);
+
+	/* child which exits first is handled by wait, here child1_pid exits earlier. */
+	usleep(SLEEPVAL);
+
+	/* wait for child to exit, and store child's exit status */
+	ret_chk = wait(&status);
+	TC_ASSERT_NEQ("wait", ret_chk, ERROR);
+
+	TC_ASSERT("wait", child1_pid == (pid_t)ret_chk || child2_pid == (pid_t)ret_chk);
 
 	/* wait for second child to exit */
 	sleep(SEC_2);
-	printf("tc_sched_wait PASS \n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -321,30 +269,18 @@ static void tc_sched_wait(void)
 
 static void tc_sched_waitid(void)
 {
-	int ret_val = 0;
+	int ret_chk;
 	pid_t child_pid;
 	siginfo_t info;
-	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_waitid, (char *const *)NULL);
 
-	if (child_pid >= 0) {
-		ret_val = waitid(P_PID, child_pid, &info, WEXITED);
-		if (ret_val == ERROR) {
-			printf("tc_sched_waitid FAIL: waitid fails, Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
-		if (info.si_pid != child_pid) {
-			printf("tc_sched_waitid FAIL: pid mismatch, Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
-	} else {
-		printf("tc_sched_waitid FAIL: child could not be created, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_sched_waitid PASS\n");
-	total_pass++;
+	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_waitid, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", child_pid, 0);
+
+	ret_chk = waitid(P_PID, child_pid, &info, WEXITED);
+	TC_ASSERT_NEQ("waitid", ret_chk, ERROR);
+	TC_ASSERT_EQ("waitid", info.si_pid, child_pid);
+
+	TC_SUCCESS_RESULT();
 }
 #endif
 
@@ -362,34 +298,19 @@ static void tc_sched_waitid(void)
 
 static void tc_sched_waitpid(void)
 {
-	int ret_val = ERROR;
+	int ret_chk;
 	pid_t child_pid;
 	int *status = (int *)malloc(sizeof(int));
-	child_pid = task_create("tc_waitpid", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_wait, (char *const *)NULL);
 
-	if (child_pid >= 0) {
-		ret_val = waitpid(child_pid, status, 0);
-		if (ret_val == ERROR) {
-			printf("tc_sched_waitpid FAIL: waitpid fails, Error No: %d\n", errno);
-			free(status);
-			total_fail++;
-			RETURN_ERR;
-		}
-		if (ret_val != child_pid) {
-			printf("tc_sched_waitpid FAIL, child_pid mismatched to retVal of waitpid() Error No: %d\n", errno);
-			free(status);
-			total_fail++;
-			RETURN_ERR;
-		}
-	} else {
-		printf("tc_sched_waitpid FAIL: Child PID Could not be created, Error No: %d\n", errno);
-		free(status);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_sched_waitpid PASS\n");
-	total_pass++;
+	child_pid = task_create("tc_waitpid", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_wait, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", child_pid, 0);
+
+	ret_chk = waitpid(child_pid, status, 0);
+	TC_ASSERT_NEQ_CLEANUP("waitpid", ret_chk, ERROR, errno, TC_FREE_MEMORY(status));
+	TC_ASSERT_EQ_CLEANUP("waitpid", ret_chk, child_pid, errno, free(status));
+
 	free(status);
+	TC_SUCCESS_RESULT();
 }
 #endif
 
@@ -406,20 +327,13 @@ static void tc_sched_sched_gettcb(void)
 {
 	struct tcb_s *st_tcb;
 	pid_t child_pid;
-	child_pid = task_create("tc_gettcb", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_wait, (char *const *)NULL);
+	child_pid = task_create("tc_gettcb", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_wait, (char * const *)NULL);
 	st_tcb = sched_gettcb(child_pid);
-	if (st_tcb == NULL) {
-		printf("tc_sched_sched_gettcb API FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (st_tcb->pid != child_pid) {
-		printf("tc_sched_sched_gettcb FAIL,child_pid mismatch with st_tcb->pid Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_sched_sched_gettcb PASS\n");
-	total_pass++;
+
+	TC_ASSERT_NOT_NULL("sched_gettcb", st_tcb);
+	TC_ASSERT_EQ("sched_gettcb", st_tcb->pid, child_pid);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -435,78 +349,48 @@ static void tc_sched_sched_gettcb(void)
 
 static void tc_sched_sched_lock_unlock(void)
 {
-	int ret_val = ERROR;
+	int ret_chk = ERROR;
 	int cntlock;
 	struct tcb_s *st_tcb = NULL;
 
 	st_tcb = sched_self();
-	if (st_tcb == NULL) {
-		printf("tc_sched_sched_lock_unlock LOCK FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
+
 	cntlock = st_tcb->lockcount;
-	ret_val = sched_lock();
-	if (ret_val == ERROR) {
-		printf("tc_sched_sched_lock_unlock LOCK FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+
+	ret_chk = sched_lock();
+	TC_ASSERT_NEQ("sched_lock", ret_chk, ERROR);
+
 	/* after sched_lock, lock count gets incremented */
-	ret_val = cntlock;
+	ret_chk = cntlock;
 	cntlock = st_tcb->lockcount;
-	if (ret_val != cntlock - 1) {
-		printf("tc_sched_sched_lock_unlock Lock FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sched_lock", ret_chk, cntlock - 1);
 
-	ret_val = sched_lock();
-	if (ret_val == ERROR) {
-		printf("tc_sched_sched_lock_unlock Lock FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = sched_lock();
+	TC_ASSERT_NEQ("sched_lock", ret_chk, ERROR);
+
 	/* after sched_lock, lock count gets incremented */
-	ret_val = cntlock;
+	ret_chk = cntlock;
 	cntlock = st_tcb->lockcount;
-	if (ret_val != cntlock - 1) {
-		printf("tc_sched_sched_lock_unlock Lock FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sched_lock", ret_chk, cntlock - 1);
 
-	ret_val = sched_unlock();
-	if (ret_val == ERROR) {
-		printf("tc_sched_sched_lock_unlock UnLock FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	/* after sched_unlock, lock count gets decremented */
-	ret_val = cntlock;
-	cntlock = st_tcb->lockcount;
-	if (ret_val != cntlock + 1) {
-		printf("tc_sched_sched_lock_unlock UnLock FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = sched_unlock();
+	TC_ASSERT_NEQ("sched_unlock", ret_chk, ERROR);
 
-	ret_val = sched_unlock();
-	if (ret_val == ERROR) {
-		printf("tc_sched_sched_lock_unlock UnLock FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 	/* after sched_unlock, lock count gets decremented */
-	ret_val = cntlock;
+	ret_chk = cntlock;
 	cntlock = st_tcb->lockcount;
-	if (ret_val != cntlock + 1) {
-		printf("tc_sched_sched_lock_unlock UnLock FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_sched_sched_lock_unlock PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("sched_unlock", ret_chk, cntlock + 1);
+
+	ret_chk = sched_unlock();
+	TC_ASSERT_NEQ("sched_unlock", ret_chk, ERROR);
+
+	/* after sched_unlock, lock count gets decremented */
+	ret_chk = cntlock;
+	cntlock = st_tcb->lockcount;
+	TC_ASSERT_EQ("sched_unlock", ret_chk, cntlock + 1);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -525,25 +409,14 @@ static void tc_sched_sched_self(void)
 	/* get process id */
 
 	st_tcbpid = sched_self();
-	if (st_tcbpid == NULL) {
-		printf("tc_sched_sched_self sched_gettcb FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_self", st_tcbpid);
+
 	/* should return tcb for current process */
 	st_tcbself = sched_self();
-	if (st_tcbself == NULL) {
-		printf("tc_sched_sched_self API FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (st_tcbself->pid != st_tcbpid->pid) {
-		printf("tc_sched_sched_self FAIL, pid's not matched Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_sched_sched_self PASS\n");
-	total_pass++;
+	TC_ASSERT_NOT_NULL("sched_self", st_tcbself);
+	TC_ASSERT_EQ("sched_self", st_tcbself->pid, st_tcbpid->pid);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -561,13 +434,9 @@ static void tc_sched_sched_verifytcb(void)
 	struct tcb_s *st_tcb;
 	st_tcb = sched_self();
 	ret_chk = sched_verifytcb(st_tcb);
-	if (ret_chk == false) {
-		printf("tc_sched_sched_verifytcb FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_sched_sched_verifytcb PASS\n");
-	total_pass++;
+	TC_ASSERT("verfiytcb fail", ret_chk);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -585,15 +454,12 @@ static void tc_sched_sched_foreach(void)
 	struct tcb_s *st_tcb;
 	st_tcb = sched_self();
 	g_task_pid = st_tcb->pid;
+
 	/* provides TCB to user callback function "sched_foreach_callback" */
 	sched_foreach(sched_foreach_callback, NULL);
-	if (g_callback != true) {
-		printf("tc_sched_sched_foreach FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_sched_sched_foreach PASS\n");
-	total_pass++;
+	TC_ASSERT("sched_foreach", g_callback);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -608,50 +474,32 @@ static void tc_sched_sched_foreach(void)
 
 static void tc_sched_sched_lockcount(void)
 {
-	int ret_val = ERROR;
+	int ret_chk = ERROR;
 	int prev_cnt;
 	int cur_cnt;
 	struct tcb_s *st_tcb = NULL;
 
 	st_tcb = sched_self();
-	if (st_tcb == NULL) {
-		printf("tc_sched_sched_lockcount LOCK FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
+
 	prev_cnt = sched_lockcount();
-	ret_val = sched_lock();
-	if (ret_val == ERROR) {
-		printf("tc_sched_sched_lockcount FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = sched_lock();
+	TC_ASSERT_NEQ("sched_lock", ret_chk, ERROR);
+
 	/* after sched_lock, lock count gets incremented */
 	cur_cnt = sched_lockcount();
-	if (prev_cnt != cur_cnt-1) {
-		printf("tc_sched_sched_lockcount FAIL: not matched\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sched_lockcount", prev_cnt, cur_cnt - 1);
 
 	prev_cnt = cur_cnt;
 
-	ret_val = sched_unlock();
-	if (ret_val == ERROR) {
-		printf("tc_sched_sched_lockcount FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = sched_unlock();
+	TC_ASSERT_NEQ("sched_unlock", ret_chk, ERROR);
+
 	/* after sched_unlock, lock count gets decremented */
 	cur_cnt = sched_lockcount();
-	if (prev_cnt != cur_cnt+1) {
-		printf("tc_sched_sched_lockcount FAIL: not matched\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sched_lockcount", prev_cnt, cur_cnt + 1);
 
-	printf("tc_sched_sched_lockcount PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -669,14 +517,9 @@ static void tc_sched_sched_getstreams(void)
 	struct streamlist *stream;
 
 	stream = sched_getstreams();
-	if (stream == NULL) {
-		printf("tc_sched_sched_getstreams FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_getstreams", stream);
 
-	printf("tc_sched_sched_getstreams PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

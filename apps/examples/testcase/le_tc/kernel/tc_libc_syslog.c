@@ -20,6 +20,7 @@
 
 /// @brief Test Case Example for Syslog API
 #include <tinyara/config.h>
+#include <unistd.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -29,6 +30,7 @@
 
 #define PRIORITY_NUM 8
 #define MAX_SYSLOG_MSG 32
+#define USEC_100 100
 
 int g_prioidx[PRIORITY_NUM] = { LOG_EMERG, LOG_ALERT, LOG_CRIT, LOG_ERR, LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG };
 const char *g_priostr[PRIORITY_NUM] = { "Emergency", "Alert", "Critical", "Error", "Warning", "Notice", "Information", "Debug" };
@@ -49,31 +51,25 @@ static void tc_libc_syslog_setlogmask(void)
 	int oldmask, newmask, mask_chk;
 	setlogmask(LOG_ALL);
 
-	//The initial value of logmask is LOG_ALL, 0xff
+	/* The initial value of logmask is LOG_ALL, 0xff */
+
 	oldmask = LOG_ALL;
 	newmask = LOG_MASK(LOG_WARNING);
 	mask_chk = -1;
 
-	//It sets the logmask and returns the previous mask.
+	/* It sets the logmask and returns the previous mask. */
+
 	mask_chk = setlogmask(newmask);
-	if (oldmask != mask_chk) {
-		printf("tc_syslog_setlogmask FAIL, %d, %d\n", oldmask, mask_chk);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("setlogmask", oldmask, mask_chk);
 
 	oldmask = newmask;
 	newmask = LOG_UPTO(LOG_INFO);
 
 	mask_chk = setlogmask(newmask);
-	if (oldmask != mask_chk) {
-		printf("tc_syslog_setlogmask FAIL, %d, %d\n", oldmask, mask_chk);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("setlogmask", oldmask, mask_chk);
 	setlogmask(LOG_ALL);
-	printf("tc_libc_syslog_setlogmask PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -87,21 +83,17 @@ static void tc_libc_syslog_setlogmask(void)
  */
 static void tc_libc_syslog_syslog(void)
 {
+	int ret_chk;
 	int i;
-	int ret;
 
 	for (i = 0; i < PRIORITY_NUM; i++) {
 		sprintf(g_syslogmsg, "%s message\n", g_priostr[i]);
-		ret = syslog(g_prioidx[i], g_syslogmsg);
-		if (ret != strlen(g_syslogmsg)) {
-			printf("tc_libc_syslog_syslog FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		usleep(USEC_100);
+		ret_chk = syslog(g_prioidx[i], g_syslogmsg);
+		TC_ASSERT_EQ("syslog", ret_chk, strlen(g_syslogmsg));
 	}
 
-	printf("tc_libc_syslog_syslog PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -132,20 +124,17 @@ static int vsyslogFunc(int priority, FAR const char *msg, ...)
  */
 static void tc_libc_syslog_vsyslog(void)
 {
+	int ret_chk;
 	int i;
-	int ret;
 
 	for (i = 0; i < PRIORITY_NUM; i++) {
 		sprintf(g_syslogmsg, "%s message\n", g_priostr[i]);
-		ret = vsyslogFunc(g_prioidx[i], g_syslogmsg);
-		if (ret != strlen(g_syslogmsg)) {
-			printf("tc_libc_syslog_vsyslog FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		usleep(USEC_100);
+		ret_chk = vsyslogFunc(g_prioidx[i], g_syslogmsg);
+		TC_ASSERT_EQ("vsyslog", ret_chk, strlen(g_syslogmsg));
 	}
-	printf("tc_libc_syslog_vsyslog PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 #if defined(CONFIG_ARCH_LOWPUTC) || defined(CONFIG_SYSLOG)
@@ -160,20 +149,17 @@ static void tc_libc_syslog_vsyslog(void)
  */
 static void tc_libc_syslog_lowsyslog(void)
 {
+	int ret_chk;
 	int i;
-	int ret;
 
 	for (i = 0; i < PRIORITY_NUM; i++) {
 		sprintf(g_syslogmsg, "%s message\n", g_priostr[i]);
-		ret = lowsyslog(g_prioidx[i], g_syslogmsg);
-		if (ret != strlen(g_syslogmsg)) {
-			printf("tc_libc_syslog_lowsyslog FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		usleep(USEC_100);
+		ret_chk = lowsyslog(g_prioidx[i], g_syslogmsg);
+		TC_ASSERT_EQ("lowsyslog", ret_chk, strlen(g_syslogmsg));
 	}
-	printf("tc_libc_syslog_lowsyslog PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -204,20 +190,17 @@ static int lowvsyslogFunc(int priority, FAR const char *msg, ...)
  */
 static void tc_libc_syslog_lowvsyslog(void)
 {
+	int ret_chk;
 	int i;
-	int ret;
 
 	for (i = 0; i < PRIORITY_NUM; i++) {
 		sprintf(g_syslogmsg, "%s message\n", g_priostr[i]);
-		ret = lowvsyslogFunc(g_prioidx[i], g_syslogmsg);
-		if (ret != strlen(g_syslogmsg)) {
-			printf("tc_libc_syslog_lowvsyslog FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		usleep(USEC_100);
+		ret_chk = lowvsyslogFunc(g_prioidx[i], g_syslogmsg);
+		TC_ASSERT_EQ("lowvsyslog", ret_chk, strlen(g_syslogmsg));
 	}
-	printf("tc_libc_syslog_lowvsyslog PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 #endif

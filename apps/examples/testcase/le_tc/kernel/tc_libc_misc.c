@@ -26,6 +26,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <errno.h>
 #include <libgen.h>
 #include <crc8.h>
@@ -33,6 +34,7 @@
 #include <crc32.h>
 #include "tc_internal.h"
 
+#define USEC_100 100
 #define VAL_50 50
 #define VAL_71 71
 #define VAL_100 100
@@ -57,26 +59,22 @@
  */
 static void tc_libc_misc_crc8(void)
 {
+	uint8_t ret_chk;
 	uint8_t src_arr[1] = { VAL_100 };
 	size_t length = 1;
-	uint8_t ret_chk = crc8(src_arr, length);
+
 	/* Return value should be 213 as calculated by crc8 */
-	if (ret_chk != VAL_213) {
-		printf("tc_libc_misc_crc8 FAIL, Value: 213 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+
+	ret_chk = crc8(src_arr, length);
+	TC_ASSERT_EQ("crc8", ret_chk, VAL_213);
+
+	/* Return value should be 71 as calculated by crc8 */
 
 	src_arr[0] = VAL_50;
 	ret_chk = crc8(src_arr, length);
-	/* eturn value should be 71 as calculated by crc8 */
-	if (ret_chk != VAL_71) {
-		printf("tc_libc_misc_crc8 FAIL, Value: 71 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_misc_crc8 PASS \n");
-	total_pass++;
+	TC_ASSERT_EQ("crc8", ret_chk, VAL_71);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -90,27 +88,23 @@ static void tc_libc_misc_crc8(void)
  */
 static void tc_libc_misc_crc8part(void)
 {
+	uint8_t ret_chk;
 	uint8_t src_arr[1] = { VAL_100 };
 	uint8_t crc_8val = 0;
 	size_t length = 1;
-	uint8_t ret_chk = crc8part(src_arr, length, crc_8val);
+
 	/* Return value should be 213 as calculated by crc8part */
-	if (ret_chk != VAL_213) {
-		printf("tc_libc_misc_crc8part FAIL, Value: 213 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+
+	ret_chk = crc8part(src_arr, length, crc_8val);
+	TC_ASSERT_EQ("crc8part", ret_chk, VAL_213);
+
+	/* Return value should be 192 as calculated by crc8part */
 
 	crc_8val = VAL_255;
 	ret_chk = crc8part(src_arr, length, crc_8val);
-	/* Return value should be 192 as calculated by crc8part */
-	if (ret_chk != VAL_192) {
-		printf("tc_libc_misc_crc8part FAIL, Value: 192 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_misc_crc8part PASS \n");
-	total_pass++;
+	TC_ASSERT_EQ("crc8part", ret_chk, VAL_192);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -124,26 +118,22 @@ static void tc_libc_misc_crc8part(void)
  */
 static void tc_libc_misc_crc16(void)
 {
+	uint16_t ret_chk;
 	uint8_t src_arr[1] = { VAL_100 };
 	size_t length = 1;
-	uint16_t ret_chk = crc16(src_arr, length);
+
 	/* Return value should be VAL_100 as calculated by crc16 */
-	if (ret_chk != VAL_100) {
-		printf("tc_libc_misc_crc16 FAIL, Value: VAL_100 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+
+	ret_chk = crc16(src_arr, length);
+	TC_ASSERT_EQ("crc16", ret_chk, VAL_100);
+
+	/* Return value should be 50 as calculated by crc16 */
 
 	src_arr[0] = VAL_50;
 	ret_chk = crc16(src_arr, length);
-	/* Return value should be 50 as calculated by crc16 */
-	if (ret_chk != VAL_50) {
-		printf("tc_libc_misc_crc16 FAIL, Value: 50 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_misc_crc16 PASS \n");
-	total_pass++;
+	TC_ASSERT_EQ("crc16", ret_chk, VAL_50);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -157,27 +147,23 @@ static void tc_libc_misc_crc16(void)
  */
 static void tc_libc_misc_crc16part(void)
 {
+	uint16_t ret_chk;
 	uint8_t src_arr[1] = { VAL_100 };
 	uint16_t crc_16val = 0;
 	size_t length = 1;
-	uint16_t ret_chk = crc16part(src_arr, length, crc_16val);
+
 	/* Return value should be 100 as calculated by crc16part */
-	if (ret_chk != VAL_100) {
-		printf("tc_libc_misc_crc16part FAIL, Value: 100 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+
+	ret_chk = crc16part(src_arr, length, crc_16val);
+	TC_ASSERT_EQ("crc16part", ret_chk, VAL_100);
+
+	/* Return value should be 65380 as calculated by crc16part */
 
 	crc_16val = VAL_255;
 	ret_chk = crc16part(src_arr, length, crc_16val);
-	/* Return value should be 65380 as calculated by crc16part */
-	if (ret_chk != VAL_65380) {
-		printf("tc_libc_misc_crc16part FAIL, Value: VAL_65380 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_misc_crc16part PASS \n");
-	total_pass++;
+	TC_ASSERT_EQ("crc16part", ret_chk, VAL_65380);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -191,28 +177,22 @@ static void tc_libc_misc_crc16part(void)
  */
 static void tc_libc_misc_crc32(void)
 {
+	uint32_t ret_chk;
 	uint8_t src_arr[1] = { VAL_100 };
 	size_t length = 1;
-	uint32_t ret_chk = crc32(src_arr, length);
-	uint32_t test_val = VAL_CRC32_1;
 
 	/* Return value should be 0x4adfa541 as calculated by crc32 */
-	if (ret_chk != test_val) {
-		printf("tc_libc_misc_crc32 FAIL, Value: VAL_CRC32_1 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+
+	ret_chk = crc32(src_arr, length);
+	TC_ASSERT_EQ("crc32", ret_chk, VAL_CRC32_1);
+
+	/* Return value should be VAL_CRC32_2 as calculated by crc32 */
 
 	src_arr[0] = VAL_50;
 	ret_chk = crc32(src_arr, length);
-	/* Return value should be VAL_CRC32_2 as calculated by crc32 */
-	if (ret_chk != VAL_CRC32_2) {
-		printf("tc_libc_misc_crc32 FAIL, Value: VAL_CRC32_2 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_misc_crc32 PASS \n");
-	total_pass++;
+	TC_ASSERT_EQ("crc32", ret_chk, VAL_CRC32_2);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -226,28 +206,23 @@ static void tc_libc_misc_crc32(void)
  */
 static void tc_libc_misc_crc32part(void)
 {
+	uint32_t ret_chk;
 	uint8_t src_arr[1] = { VAL_100 };
 	uint32_t crc_32val = 0;
 	size_t length = 1;
-	uint32_t ret_chk = crc32part(src_arr, length, crc_32val);
 
 	/* Return value should be 0x4adfa541 as calculated by crc32part */
-	if (ret_chk != (uint32_t)VAL_CRC32_1) {
-		printf("tc_libc_misc_crc32part FAIL, Value: VAL_CRC32_1 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+
+	ret_chk = crc32part(src_arr, length, crc_32val);
+	TC_ASSERT_EQ("crc32part", ret_chk, (uint32_t)VAL_CRC32_1);
+
+	/* Return value should be 0x67dd4acc as calculated by crc32part */
 
 	crc_32val = VAL_255;
 	ret_chk = (uint32_t)crc32part(src_arr, length, crc_32val);
-	/* Return value should be 0x67dd4acc as calculated by crc32part */
-	if (ret_chk != VAL_CRC32_3) {
-		printf("tc_libc_misc_crc32part FAIL, Value: VAL_CRC32_3 not returned as expected \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_misc_crc32part PASS \n");
-	total_pass++;
+	TC_ASSERT_EQ("crc32part", ret_chk, (uint32_t)VAL_CRC32_3);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -270,15 +245,14 @@ static void tc_libc_misc_dbg(void)
 	   # define dbg(format, ...) \
 	   syslog(LOG_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 	 */
-	ret_chk = dbg("Examples");
+
 	/* Message displayed is:  "tc_libc_misc_dbg: Examples" */
-	if (ret_chk != strlen(msg_output)) {
-		printf("tc_libc_misc_dbg FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_misc_dbg PASS \n");
-	total_pass++;
+
+	usleep(USEC_100);
+	ret_chk = dbg("Examples");
+	TC_ASSERT_EQ("dbg", ret_chk, strlen(msg_output));
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -302,15 +276,14 @@ static void tc_libc_misc_lldbg(void)
 	   #  define lldbg(format, ...) \
 	   lowsyslog(LOG_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 	 */
-	ret_chk = lldbg("Examples");
+
 	/* Message displayed is:  "tc_libc_misc_lldbg: Examples" */
-	if (ret_chk != strlen(msg_output)) {
-		printf("tc_libc_misc_lldbg FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_misc_lldbg PASS \n");
-	total_pass++;
+
+	usleep(USEC_100);
+	ret_chk = lldbg("Examples");
+	TC_ASSERT_EQ("lldbg", ret_chk, strlen(msg_output));
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -333,15 +306,14 @@ static void tc_libc_misc_llvdbg(void)
 	   # define llvdbg(format, ...) \
 	   lowsyslog(LOG_DEBUG, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 	 */
-	ret_chk = llvdbg("Examples");
+
 	/* Message displayed is:  "tc_libc_misc_llvdbg: Examples" */
-	if (ret_chk != strlen(msg_output)) {
-		printf("tc_libc_misc_llvdbg FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_misc_llvdbg PASS \n");
-	total_pass++;
+
+	usleep(USEC_100);
+	ret_chk = llvdbg("Examples");
+	TC_ASSERT_EQ("llvdbg", ret_chk, strlen(msg_output));
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -365,15 +337,14 @@ static void tc_libc_misc_vdbg(void)
 	   #  define vdbg(format, ...) \
 	   syslog(LOG_DEBUG, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 	 */
-	ret_chk = vdbg("Examples");
+
 	/* Message displayed is:  "tc_libc_misc_vdbg: Examples" */
-	if (ret_chk != strlen(msg_output)) {
-		printf("tc_libc_misc_vdbg FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_misc_vdbg PASS \n");
-	total_pass++;
+
+	usleep(USEC_100);
+	ret_chk = vdbg("Examples");
+	TC_ASSERT_EQ("vdbg", ret_chk, strlen(msg_output));
+
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

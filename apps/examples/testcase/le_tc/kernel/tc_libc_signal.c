@@ -52,42 +52,24 @@ static void tc_libc_signal_sigaddset_sigdelset(void)
 	sigset_t sigset;
 
 	ret_chk = sigemptyset(&sigset);
-	if (ret_chk != OK) {
-		printf("tc_libc_signal_sigaddset_sigdelset sigemptyset FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigemptyset", ret_chk, OK);
 
 	ret_chk = sigaddset(&sigset, SIGQUIT);
-	if (ret_chk != OK) {
-		printf("tc_libc_signal_sigaddset_sigdelset sigaddset FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigaddset", ret_chk, OK);
 
 	ret_chk = sigismember(&sigset, SIGQUIT);
-	if (ret_chk != 1) {
-		printf("tc_libc_signal_sigaddset_sigdelset :sigaddset FAIL to add signal, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigismember", ret_chk, 1);
 
 	ret_chk = sigdelset(&sigset, SIGQUIT);
-	if (ret_chk != OK) {
-		printf("tc_libc_signal_sigaddset_sigdelset :sigdelset FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	/* should not find that signal as it has already deleted */
-	ret_chk = sigismember(&sigset, SIGQUIT);
-	if (ret_chk == ERROR) {
-		printf("tc_libc_signal_sigaddset_sigdelset sigdelset FAIL to delete signal, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigdelset", ret_chk, OK);
 
-	printf("tc_libc_signal_sigaddset_sigdelset PASS\n");
-	total_pass++;
+	/* should not find that signal as it has already deleted */
+
+	ret_chk = sigismember(&sigset, SIGQUIT);
+	TC_ASSERT_NEQ("sigismember", ret_chk, 1);
+	TC_ASSERT_NEQ("sigismember", ret_chk, ERROR);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -107,69 +89,35 @@ static void tc_libc_signal_sigemptyset_sigfillset(void)
 	sigset_t sigset;
 
 	ret_chk = sigfillset(&sigset);
-	if (ret_chk != OK) {
-		printf("tc_libc_signal_sigemptyset_sigfillset sigfillset FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigfillset", ret_chk, OK);
 
 	ret_chk = sigismember(&sigset, SIGQUIT);
-	if (ret_chk != 1) {
-		printf("tc_libc_signal_sigemptyset_sigfillset sigfillset FAIL, SIGQUIT not found Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigismember", ret_chk, 1);
 
 	ret_chk = sigismember(&sigset, SIGINT);
-	if (ret_chk != 1) {
-		printf("tc_libc_signal_sigemptyset_sigfillset sigfillset FAIL, SIGINT not found Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigismember", ret_chk, 1);
 
 	ret_chk = sigemptyset(&sigset);
-	if (ret_chk != OK) {
-		printf("tc_libc_signal_sigemptyset_sigfillset sigemptyset FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigemptyset", ret_chk, OK);
 
 	/* sigismember should not find any signal as all signals are set empty */
-	ret_chk = sigismember(&sigset, SIGQUIT);
-	if (ret_chk == 1 || ret_chk == ERROR) {
-		printf("tc_libc_signal_sigemptyset_sigfillset sigemptyset FAIL, SIGQUIT found Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 
-	ret_chk = sigismember(&sigset, SIGINT);
-	if (ret_chk == 1 || ret_chk == ERROR) {
-		printf("tc_libc_signal_sigemptyset_sigfillset sigemptyset FAIL, SIGINT found Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	ret_chk = sigismember(&sigset, SIGQUIT);
+	TC_ASSERT_NEQ("sigemptyset", ret_chk, 1);
+	TC_ASSERT_NEQ("sigismember", ret_chk, ERROR);
+
 	/* sigfillset will fill all signals to signal set */
-	ret_chk = sigfillset(&sigset);
-	if (ret_chk != OK) {
-		printf("tc_libc_signal_sigemptyset_sigfillset sigfillset FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	ret_chk = sigismember(&sigset, SIGQUIT);
-	if (ret_chk != 1) {
-		printf("tc_libc_signal_sigemptyset_sigfillset sigfillset FAIL,SIGQUIT not found Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	ret_chk = sigismember(&sigset, SIGINT);
-	if (ret_chk != 1) {
-		printf("tc_libc_signal_sigemptyset_sigfillset sigfillset FAIL, SIGINT not found Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 
-	printf("tc_libc_signal_sigemptyset_sigfillset PASS\n");
-	total_pass++;
+	ret_chk = sigfillset(&sigset);
+	TC_ASSERT_EQ("sigfillset", ret_chk, OK);
+
+	ret_chk = sigismember(&sigset, SIGQUIT);
+	TC_ASSERT_EQ("sigismember", ret_chk, 1);
+
+	ret_chk = sigismember(&sigset, SIGINT);
+	TC_ASSERT_EQ("sigismember", ret_chk, 1);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -189,35 +137,23 @@ static void tc_libc_signal_sigismember(void)
 	sigset_t sigset;
 
 	ret_chk = sigemptyset(&sigset);
-	if (ret_chk != OK) {
-		printf("tc_libc_signal_sigismember sigemptyset FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigemptyset", ret_chk, OK);
 
 	ret_chk = sigismember(&sigset, SIGQUIT);
-	if (ret_chk == 1 || ret_chk == ERROR) {
-		printf("tc_libc_signal_sigismember sigismember FAIL,member found Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sigismember", ret_chk, 1);
+	TC_ASSERT_NEQ("sigismember", ret_chk, ERROR);
+
 	/* sigfillset will fill all signals to signal set */
-	ret_chk = sigfillset(&sigset);
-	if (ret_chk != OK) {
-		printf("tc_libc_signal_sigismember sigfillset FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	/* sigismember will find the signals which were filled by sigfillset */
-	ret_chk = sigismember(&sigset, SIGQUIT);
-	if (ret_chk != 1) {
-		printf("tc_libc_signal_sigismember sigismember FAIL, member not found Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 
-	printf("tc_libc_signal_sigismember PASS\n");
-	total_pass++;
+	ret_chk = sigfillset(&sigset);
+	TC_ASSERT_EQ("sigfillset", ret_chk, OK);
+
+	/* sigismember will find the signals which were filled by sigfillset */
+
+	ret_chk = sigismember(&sigset, SIGQUIT);
+	TC_ASSERT_EQ("sigismember", ret_chk, 1);
+
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

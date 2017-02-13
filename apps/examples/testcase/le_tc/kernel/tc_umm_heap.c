@@ -69,28 +69,13 @@ static void tc_umm_heap_malloc_free(struct tcb_s *st_tcb)
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
 			mem_ptr[alloc_cnt] = (int *)malloc(ALLOC_SIZE_VAL * sizeof(int));
-			if (mem_ptr[alloc_cnt] == NULL) {
-				mem_deallocate_func(mem_ptr, alloc_cnt);
-				printf("tc_umm_heap_malloc_free FAIL : errno %d\n", errno);
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_NOT_NULL("malloc", mem_ptr[alloc_cnt]);
 		}
-		if (st_tcb->curr_alloc_size != TOTAL_ALLOC_SIZE) {
-			printf("tc_umm_heap_malloc_free malloc FAIL : errno %d size %d definedSize %d\n", errno, st_tcb->curr_alloc_size, TOTAL_ALLOC_SIZE);
-			mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ_CLEANUP("malloc", st_tcb->curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-		if (st_tcb->curr_alloc_size != ALL_FREE) {
-			printf("tc_umm_heap_malloc_free free FAIL : errno %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("malloc", st_tcb->curr_alloc_size, ALL_FREE);
 	}
-	total_pass++;
-	printf("tc_umm_heap_malloc_free PASS\n");
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -112,28 +97,15 @@ static void tc_umm_heap_calloc(struct tcb_s *st_tcb)
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
 			mem_ptr[alloc_cnt] = (int *)calloc(ALLOC_SIZE_VAL, sizeof(int));
-			if (mem_ptr[alloc_cnt] == NULL) {
-				mem_deallocate_func(mem_ptr, alloc_cnt);
-				printf("tc_umm_heap_calloc FAIL : errno %d\n", errno);
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_NOT_NULL("calloc", mem_ptr[alloc_cnt]);
 		}
-		if (st_tcb->curr_alloc_size != TOTAL_ALLOC_SIZE) {
-			printf("tc_umm_heap_calloc calloc FAIL : errno %d\n", errno);
-			mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-			total_fail++;
-			RETURN_ERR;
-		}
+
+		TC_ASSERT_EQ_CLEANUP("calloc", st_tcb->curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-		if (st_tcb->curr_alloc_size != ALL_FREE) {
-			printf("tc_umm_heap_calloc free FAIL : errno %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+
+		TC_ASSERT_EQ("calloc", st_tcb->curr_alloc_size, ALL_FREE);
 	}
-	total_pass++;
-	printf("tc_umm_heap_calloc PASS \n");
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -157,28 +129,14 @@ static void tc_umm_heap_realloc(struct tcb_s *st_tcb)
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
 			mem_ptr[alloc_cnt] = (int *)realloc(val, ALLOC_SIZE_VAL * sizeof(int));
-			if (mem_ptr[alloc_cnt] == NULL) {
-				mem_deallocate_func(mem_ptr, alloc_cnt);
-				printf("tc_umm_heap_realloc FAIL : errno %d\n", errno);
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_NOT_NULL("realloc", mem_ptr[alloc_cnt]);
 		}
-		if (st_tcb->curr_alloc_size != TOTAL_ALLOC_SIZE) {
-			printf("tc_umm_heap_realloc realloc FAIL : errno %d\n", errno);
-			mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ_CLEANUP("realloc", st_tcb->curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-		if (st_tcb->curr_alloc_size != ALL_FREE) {
-			printf("tc_umm_heap_realloc free FAIL : errno %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+
+		TC_ASSERT_EQ("realloc", st_tcb->curr_alloc_size, ALL_FREE);
 	}
-	total_pass++;
-	printf("tc_umm_heap_realloc PASS \n");
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -200,28 +158,14 @@ static void tc_umm_heap_memalign(struct tcb_s *st_tcb)
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
 			mem_ptr[alloc_cnt] = (int *)memalign(sizeof(int), ALLOC_SIZE_VAL * sizeof(int));
-			if (mem_ptr[alloc_cnt] == NULL) {
-				mem_deallocate_func(mem_ptr, alloc_cnt);
-				printf("tc_umm_heap_memalign FAIL : errno %d\n", errno);
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_NOT_NULL("memalign", mem_ptr[alloc_cnt]);
 		}
-		if (st_tcb->curr_alloc_size != TOTAL_ALLOC_SIZE) {
-			printf("tc_umm_heap_memalign realloc FAIL : errno %d\n", errno);
-			mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ_CLEANUP("memalign", st_tcb->curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-		if (st_tcb->curr_alloc_size != ALL_FREE) {
-			printf("tc_umm_heap_memalign free FAIL : errno %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+
+		TC_ASSERT_EQ("memalign", st_tcb->curr_alloc_size, ALL_FREE);
 	}
-	total_pass++;
-	printf("tc_umm_heap_memalign PASS \n");
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -249,36 +193,19 @@ static void tc_umm_heap_random_malloc(struct tcb_s *st_tcb)
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
 			allocated[alloc_cnt] = rand();
 			mem_ptr[alloc_cnt] = (int *)malloc(allocated[alloc_cnt]);
-			if (mem_ptr[alloc_cnt] == NULL) {
-				mem_deallocate_func(mem_ptr, alloc_cnt);
-				printf("tc_umm_heap_random_malloc FAIL : errno %d\n", errno);
-				total_fail++;
-				RETURN_ERR;
-			}
+			TC_ASSERT_NOT_NULL("malloc", mem_ptr[alloc_cnt]);
 		}
-
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
 			/* do alloc 'allocated[alloc_cnt]',
 			   but allocated MM_ALIGN_UP'(allocated[alloc_cnt] + SIZEOF_MM_ALLOCNODE)',
 			   because of the chunk size */
 			allocated_size += MM_ALIGN_UP(allocated[alloc_cnt] + SIZEOF_MM_ALLOCNODE);
 		}
-		if (st_tcb->curr_alloc_size != allocated_size) {
-			printf("tc_umm_heap_random_malloc FAIL : errno %d\n", errno);
-			mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ_CLEANUP("malloc", st_tcb->curr_alloc_size, allocated_size, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
-		if (st_tcb->curr_alloc_size != ALL_FREE) {
-			printf("tc_umm_heap_random_malloc free FAIL : errno %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("random_malloc", st_tcb->curr_alloc_size, ALL_FREE);
 	}
-	total_pass++;
-	printf("tc_umm_heap_random_malloc PASS\n");
-
+	TC_SUCCESS_RESULT();
 }
 #endif
 
@@ -301,23 +228,13 @@ static void tc_umm_heap_mallinfo(void)
 
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		mem_ptr = (int *)malloc(sizeof(int));
-		if (mem_ptr == NULL) {
-			printf("tc_umm_heap_mallinfo malloc FAIL : errno %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_NOT_NULL("malloc", mem_ptr);
+
 		st_mallinfo = mallinfo();
-		if (st_mallinfo.fordblks <= 0) {
-			printf("tc_umm_heap_mallinfo FAIL : errno %d\n", errno);
-			free(mem_ptr);
-			total_fail++;
-			RETURN_ERR;
-		}
-		free(mem_ptr);
-		mem_ptr = NULL;
+		TC_ASSERT_GT_CLEANUP("mallinfo", st_mallinfo.fordblks, 0, get_errno(), TC_FREE_MEMORY(mem_ptr));
+		TC_FREE_MEMORY(mem_ptr);
 	}
-	total_pass++;
-	printf("tc_umm_heap_mallinfo PASS \n");
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_umm_heap_zalloc(void)
@@ -325,25 +242,13 @@ static void tc_umm_heap_zalloc(void)
 	int mem_idx;
 	int *mem_ptr = NULL;
 	mem_ptr = zalloc(sizeof(int) * 5);
-
-	if (mem_ptr == NULL) {
-		printf("tc_umm_heap_zalloc FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("zalloc", mem_ptr);
 
 	for (mem_idx = 0; mem_idx < 5; mem_idx++) {
-		if (mem_ptr[mem_idx] != 0) {
-			printf("tc_umm_heap_zalloc FAIL\n");
-			free(mem_ptr);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ_CLEANUP("zalloc", mem_ptr[mem_idx], 0, get_errno(), TC_FREE_MEMORY(mem_ptr));
 	}
-
-	free(mem_ptr);
-	total_pass++;
-	printf("tc_umm_heap_zalloc PASS\n");
+	TC_FREE_MEMORY(mem_ptr);
+	TC_SUCCESS_RESULT();
 }
 
 static int umm_task(int argc, char *argv[])
@@ -369,7 +274,7 @@ static int umm_task(int argc, char *argv[])
 
 int umm_heap_main(void)
 {
-	task_create("umm_task", 150, 2048, umm_task, (char *const *)NULL);
+	task_create("umm_task", 150, 2048, umm_task, (char * const *)NULL);
 	sleep(1);
 
 	return 0;

@@ -39,8 +39,9 @@
 #endif
 #define SIGKILL 9
 #define SIGTERM 15
-#define SEC_2 2
 #define SEC_1 1
+#define SEC_2 2
+#define SEC_3 3
 #define SEC_5 5
 #define VAL_100 100
 
@@ -55,11 +56,8 @@ static bool g_sig_handle = false;
 */
 static void sigquit_handler(int signo)
 {
-	if (signo != SIGQUIT) {
-		printf("tc_signal_sig_pending_procmask_emptyset_addset FAIL sigquit_handler error\n");
-		total_fail++;
-	}
 	g_sig_handle = true;
+	TC_ASSERT_EQ("sigquit_handler", signo, SIGQUIT);
 }
 
 /**
@@ -69,11 +67,8 @@ static void sigquit_handler(int signo)
 */
 static void sigint_handler(int signo, siginfo_t *info, void *ctx)
 {
-	if (info->si_value.sival_int != VAL_100) {
-		printf("tc_signal_sigqueue FAIL sigint_handler error\n");
-		total_fail++;
-	}
 	g_sig_handle = true;
+	TC_ASSERT_EQ("sigint handler", info->si_value.sival_int, VAL_100);
 }
 
 /**
@@ -130,32 +125,24 @@ void sigaction_handler(int signo)
 */
 static void tc_signal_sigwaitinfo(void)
 {
-	int ret;
+	int ret_chk;
 	struct siginfo value;
 	sigset_t sigset;
 
 	g_sig_pid = getpid();
 
-	task_create("sigwaitinfo", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char *const *)NULL);
+	task_create("sigwaitinfo", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
 
 	/* Wait for a signal */
 
 	(void)sigemptyset(&sigset);
 	(void)sigaddset(&sigset, SIGUSR1);
 	value.si_value.sival_int = -1;
-	ret = sigwaitinfo(&sigset, &value);
-	if (ret != SIGUSR1) {
-		printf("tc_signal_sigwaitinfo FAIL: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (value.si_value.sival_int < 0) {
-		printf("tc_signal_sigwaitinfo FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_signal_sigwaitinfo PASS\n");
-	total_pass++;
+	ret_chk = sigwaitinfo(&sigset, &value);
+	TC_ASSERT_EQ("sigwaitinfo", ret_chk, SIGUSR1);
+	TC_ASSERT_GEQ("sigwaitinfo", value.si_value.sival_int, 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -183,37 +170,20 @@ static void tc_signal_sigaction(void)
 	sigemptyset(&st_act.sa_mask);
 
 	ret_chk = sigaction(SIGINT, &st_act, &st_oact);
-	if (ret_chk < 0) {
-		printf("tc_signal_sigaction FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ("sigaction", ret_chk, 0);
 
 	st_act.sa_handler = NULL;
 
 	ret_chk = sigaction(SIGINT, &st_oact, &st_act);
-	if (ret_chk < 0) {
-		printf("tc_signal_sigaction FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ("sigaction", ret_chk, 0);
 
-	if (st_act.sa_handler != sigaction_handler) {
-		printf("tc_signal_sigaction FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigaction", st_act.sa_handler, sigaction_handler);
 
 	/* make sure action is not changed */
 	sigact_after = sig_findaction(sched_self(), SIGINT);
-	if (sigact_before != sigact_after) {
-		printf("tc_signal_sigaction FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sig_findaction", sigact_before, sigact_after);
 
-	printf("tc_signal_sigaction PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -236,28 +206,17 @@ static void tc_signal_kill(void)
 	if (pid != 0) {
 		ret_chk = kill(pid, SIGHUP);
 		sleep(SEC_1);
-		if (ret_chk == ERROR) {
-			printf("tc_signal_kill FAIL : not able to kill() SIGHUP Error is %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_NEQ("kill", ret_chk, ERROR);
+
 		ret_chk = kill(pid, SIGINT);
 		sleep(SEC_1);
-		if (ret_chk == ERROR) {
-			printf("tc_signal_kill FAIL : not able to kill() SIGINT Error is %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_NEQ("kill", ret_chk, ERROR);
+
 		ret_chk = kill(pid, SIGQUIT);
 		sleep(SEC_1);
-		if (ret_chk == ERROR) {
-			printf("tc_signal_kill FAIL : not able to kill SIGQUIT Error is %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_NEQ("kill", ret_chk, ERROR);
 	}
-	printf("tc_signal_kill PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -285,20 +244,11 @@ static void tc_signal_nanosleep(void)
 	clock_gettime(clock_id, &st_init_timespec);
 
 	ret_chk = nanosleep(&st_timespec, NULL);
-	if (ret_chk == ERROR) {
-		printf("tc_signal_nanosleep FAIL, Error: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("nanosleep", ret_chk, ERROR);
 
 	clock_gettime(clock_id, &st_final_timespec);
-	if (st_final_timespec.tv_sec - st_init_timespec.tv_sec != st_timespec.tv_sec) {
-		printf("tc_signal_nanosleep FAIL: Time mismatch\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_signal_nanosleep PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("clock_gettime", st_final_timespec.tv_sec - st_init_timespec.tv_sec, st_timespec.tv_sec);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -326,46 +276,30 @@ static void tc_signal_pause(void)
 	/* Save the current sigprocmask */
 
 	ret_chk = sigprocmask(SIG_SETMASK, &newmask, &saved);
-	if (ret_chk != OK) {
-		printf("tc_signal_pause FAIL : sigprocmask errno:%d\n", get_errno());
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigprocmask", ret_chk, OK);
 
 	clock_gettime(clock_id, &st_init_timespec);
-	task_create("sigpause1", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char *const *)NULL);
-	task_create("sigpause2", SCHED_PRIORITY_DEFAULT, 512, sigusr2_func, (char *const *)NULL);
+	task_create("sigpause1", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
+	task_create("sigpause2", SCHED_PRIORITY_DEFAULT, 512, sigusr2_func, (char * const *)NULL);
 
 	/* Wait for a signal */
 
 	ret_chk = pause();
-	if (ret_chk != ERROR || get_errno() != EINTR) {
-		printf("tc_signal_pause FAIL : pause errno:%d\n", get_errno());
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pause", ret_chk, ERROR);
+	TC_ASSERT_EQ("pause", get_errno(), EINTR);
 
 	clock_gettime(clock_id, &st_final_timespec);
 	if (st_final_timespec.tv_sec - st_init_timespec.tv_sec < SEC_5) {
 		ret_chk = sigprocmask(SIG_SETMASK, &saved, NULL);
-		if (ret_chk != OK) {
-			printf("tc_signal_pause FAIL : sigprocmask errno:%d\n", get_errno());
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("sigprocmask", ret_chk, OK);
 	}
 
 	/* Restore sigprocmask */
 
 	ret_chk = sigprocmask(SIG_SETMASK, &saved, NULL);
-	if (ret_chk != OK) {
-		printf("tc_signal_pause FAIL : sigprocmask errno:%d\n", get_errno());
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigprocmask", ret_chk, OK);
 
-	printf("tc_signal_pause PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 	return;
 }
 
@@ -395,37 +329,38 @@ static void tc_signal_sigsuspend(void)
 	/* Save the current sigprocmask */
 
 	ret_chk = sigprocmask(SIG_SETMASK, &newmask, &saved);
-	if (ret_chk != OK) {
-		tckndbg("ERROR sigprocmask failed: %d\n", get_errno());
-		goto errout;
+	TC_ASSERT_EQ_CLEANUP("sigprocmask", ret_chk, OK, errno, {
+		tckndbg("ERROR sigprocmask failed: %d\n", get_errno()); goto errout;
 	}
+						);
 
 	clock_gettime(clock_id, &st_init_timespec);
-	task_create("sigsuspend1", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char *const *)NULL);
-	task_create("sigsuspend2", SCHED_PRIORITY_DEFAULT, 512, sigusr2_func, (char *const *)NULL);
+	task_create("sigsuspend1", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
+	task_create("sigsuspend2", SCHED_PRIORITY_DEFAULT, 512, sigusr2_func, (char * const *)NULL);
 
 	/* Wait for a signal */
 
 	ret_chk = sigsuspend(&newmask);
-	if (ret_chk != ERROR) {
-		tckndbg("ERROR sigsuspend failed: %d\n", get_errno());
-		goto errout_with_mask;
+	TC_ASSERT_EQ_CLEANUP("sigsuspend", ret_chk, ERROR, get_errno(), {
+		tckndbg("ERROR sigsuspend failed: %d\n", get_errno()); goto errout_with_mask;
 	}
+						);
+
 	clock_gettime(clock_id, &st_final_timespec);
-	if (st_final_timespec.tv_sec - st_init_timespec.tv_sec < SEC_5) {
+	TC_ASSERT_GEQ_CLEANUP("clock_gettime", st_final_timespec.tv_sec - st_init_timespec.tv_sec, SEC_5, "Difference less than 5", {
 		goto errout_with_mask;
 	}
+						 );
 
 	/* Restore sigprocmask */
 
 	ret_chk = sigprocmask(SIG_SETMASK, &saved, NULL);
-	if (ret_chk != OK) {
-		tckndbg("ERROR sigprocmask failed: %d\n", get_errno());
-		goto errout;
+	TC_ASSERT_EQ_CLEANUP("sigprocmask", ret_chk, OK, errno, {
+		tckndbg("ERROR sognprocmask failed: %d\n", get_errno()); goto errout;
 	}
+						);
 
-	printf("tc_signal_sigsuspend PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 	return;
 
 errout_with_mask:
@@ -435,8 +370,6 @@ errout_with_mask:
 	sigprocmask(SIG_SETMASK, &saved, NULL);
 errout:
 
-	printf("tc_signal_sigsuspend FAIL\n");
-	total_fail++;
 	RETURN_ERR;
 }
 
@@ -471,65 +404,38 @@ static void tc_signal_sig_pending_procmask_emptyset_addset(void)
 	memset(&st_act, 0, sizeof(st_act));
 	st_act.sa_handler = sigquit_handler;
 
-	if (sigaction(SIGQUIT, &st_act, &st_oact)) {
-		printf("tc_signal_sig_pending_procmask_emptyset_addset FAIL sigaction error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT("sigaction", !(sigaction(SIGQUIT, &st_act, &st_oact)));
+
 	sigemptyset(&st_newmask);
 	sigaddset(&st_newmask, SIGQUIT);
 
 	ret_chk = sigprocmask(SIG_BLOCK, &st_newmask, &st_oldmask);
-	if (ret_chk < 0) {
-		printf("tc_signal_sig_pending_procmask_emptyset_addset FAIL SIG_BLOCK error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ("sigprocmask", ret_chk, 0);
 
 	nanosleep(&st_timespec, NULL);
 
 	kill(pid, SIGQUIT);
 	/* to call the handler function for verifying the sigpromask */
 	ret_chk = sigprocmask(SIG_SETMASK, &st_oldmask, NULL);
-	if (ret_chk < 0) {
-		printf("tc_signal_sig_pending_procmask_emptyset_addset FAIL SIG_SETMASK error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ("sigprocmask", ret_chk, 0);
 
 	st_timespec.tv_sec = 1;
 
 	nanosleep(&st_timespec, NULL);
 
 	ret_chk = sigprocmask(SIG_UNBLOCK, &st_oldmask, NULL);
-	if (ret_chk < 0) {
-		printf("tc_signal_sig_pending_procmask_emptyset_addset FAIL SIG_UNBLOCK error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ("sigprocmask", ret_chk, 0);
 
 	ret_chk = sigpending(&st_pendmask);
-	if (ret_chk < 0) {
-		printf("tc_signal_sig_pending_procmask_emptyset_addset FAIL sigpending error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_GEQ("sigpending", ret_chk, 0);
 
 	nanosleep(&st_timespec, NULL);
 
-	if (!g_sig_handle) {
-		printf("tc_signal_sig_pending_procmask_emptyset_addset FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT("nanosleep", g_sig_handle);
 
-	if (sigaction(SIGQUIT, &st_oact, NULL)) {
-		printf("tc_signal_sig_pending_procmask_emptyset_addset FAIL sigaction error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_signal_sig_pending_procmask_emptyset_addset PASS\n");
-	total_pass++;
+	TC_ASSERT("sigaction", !sigaction(SIGQUIT, &st_oact, NULL));
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -552,34 +458,21 @@ static void tc_signal_sigqueue(void)
 	sigemptyset(&st_act.sa_mask);
 	/*information transfer switch */
 	st_act.sa_flags = SA_SIGINFO;
-	if (sigaction(SIGINT, &st_act, &st_oact) == ERROR) {
-		printf("tc_signal_sigqueue error %d \n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sigaction", sigaction(SIGINT, &st_act, &st_oact), ERROR);
 
 	sleep(SEC_2);
 
 	union sigval mysigval;
 	mysigval.sival_int = VAL_100;
-	if (sigqueue(getpid(), SIGINT, mysigval) == ERROR) {
-		printf("tc_signal_sigqueue error %d \n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sigqueue", sigqueue(getpid(), SIGINT, mysigval), ERROR);
+
 	sleep(SEC_1);
-	if (!g_sig_handle) {
-		printf("tc_signal_sigqueue FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (sigaction(SIGINT, &st_oact, NULL) == ERROR) {
-		printf("tc_signal_sigqueue error %d \n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_signal_sigqueue PASS\n");
-	total_pass++;
+
+	TC_ASSERT("sigqueue", g_sig_handle);
+
+	TC_ASSERT_NEQ("sigaction", sigaction(SIGINT, &st_oact, NULL), ERROR);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -596,54 +489,35 @@ static void tc_signal_sigqueue(void)
 
 static void tc_signal_sigtimedwait(void)
 {
-	int ret;
+	int ret_chk;
 	struct siginfo value;
 	sigset_t sigset;
-	/* ssize_t nread; */
 	struct timespec st_timeout;
-	struct timespec st_timespec;
-
-	st_timeout.tv_sec = SEC_5;
-	st_timeout.tv_nsec = 0;
-
-	st_timespec.tv_sec = SEC_2;
-	st_timespec.tv_nsec = 0;
-
 	struct timespec st_init_timespec;
 	struct timespec st_final_timespec;
 	clockid_t clock_id = CLOCK_REALTIME;
 
-	clock_gettime(clock_id, &st_init_timespec);
-
 	g_sig_pid = getpid();
-
-	task_create("tc_sig_time", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char *const *)NULL);
-
-	/* Wait for a signal */
-	(void)sigemptyset(&sigset);
-	(void)sigaddset(&sigset, SIGUSR1);
-
+	st_timeout.tv_sec = SEC_5;
+	st_timeout.tv_nsec = 0;
 	value.si_value.sival_int = -1;
-	ret = sigtimedwait(&sigset, &value, &st_timeout);
-	if (ret < 0) {
-		fprintf(stderr, "ERROR: sigwaitinfo() failed: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	clock_gettime(clock_id, &st_final_timespec);
-	if (st_final_timespec.tv_sec - st_init_timespec.tv_sec != st_timespec.tv_sec) {
-		printf("tc_signal_sigtimedwait waittime FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (value.si_value.sival_int < 0) {
-		printf("tc_signal_sigtimedwait FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
 
-	printf("tc_signal_sigtimedwait PASS\n");
-	total_pass++;
+	/* Set signal set */
+
+	sigemptyset(&sigset);
+	sigaddset(&sigset, SIGUSR1);
+
+	task_create("tc_sig_time", SCHED_PRIORITY_DEFAULT - 1, 512, sigusr1_func, (char * const *)NULL);
+
+	clock_gettime(clock_id, &st_init_timespec);
+	ret_chk = sigtimedwait(&sigset, &value, &st_timeout);
+	TC_ASSERT_NEQ("sigtimedwait", ret_chk, ERROR);
+
+	clock_gettime(clock_id, &st_final_timespec);
+	TC_ASSERT_LEQ("clock_gettime", st_final_timespec.tv_sec - st_init_timespec.tv_sec, SEC_3);
+
+	TC_ASSERT_GEQ("sigtimedwait", value.si_value.sival_int, 0);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -666,35 +540,20 @@ static void tc_signal_sighold_sigrelse(void)
 	org_set = cur_tcb->sigprocmask;
 
 	ret_chk = sighold(SIGUSR1);
-	if (ret_chk != OK) {
-		printf("tc_signal_sighold_sigrelse FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+
+	TC_ASSERT_EQ("sighold", ret_chk, OK);
 
 	hold_set = cur_tcb->sigprocmask;
-	if (org_set == hold_set) {
-		printf("tc_signal_sighold_sigrelse FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sighold", org_set, hold_set);
 
 	ret_chk = sigrelse(SIGUSR1);
-	if (ret_chk != OK) {
-		printf("tc_signal_sighold_sigrelse FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("sigrelease", ret_chk, OK);
 
 	relse_set = cur_tcb->sigprocmask;
-	if (hold_set == relse_set || org_set != relse_set) {
-		printf("tc_signal_sighold_sigrelse FAIL \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("sighold", hold_set, relse_set);
+	TC_ASSERT_EQ("Sigrelease", org_set, relse_set);
 
-	printf("tc_signal_sighold_sigrelse PASS \n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

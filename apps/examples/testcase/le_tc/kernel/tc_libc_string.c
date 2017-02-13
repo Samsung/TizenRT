@@ -55,19 +55,11 @@ static void tc_libc_string_memcpy(void)
 	char *res_ptr = NULL;
 
 	res_ptr = (char *)memcpy(sz_dest, sz_src, BUFF_SIZE);
-	if (res_ptr == NULL || strncmp(sz_dest, res_ptr, BUFF_SIZE) != OK) {
-		printf("tc_libc_string_memcpy FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("memcpy", res_ptr);
+	TC_ASSERT_EQ("memcpy", strncmp(sz_dest, res_ptr, BUFF_SIZE), 0);
+	TC_ASSERT_EQ("memcpy", strncmp(sz_dest, sz_src, BUFF_SIZE), 0);
 
-	if (strncmp(sz_dest, sz_src, BUFF_SIZE) != OK) {
-		printf("tc_libc_string_memcpy FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_memcpy PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -86,19 +78,11 @@ static void tc_libc_string_memset(void)
 	char *res_ptr = NULL;
 
 	res_ptr = (char *)memset(buffer, 'a', BUFF_SIZE - 1);
-	if (res_ptr == NULL || strncmp(res_ptr, ctarget, BUFF_SIZE) != OK) {
-		printf("tc_libc_string_memset return ERROR\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("memset", res_ptr);
+	TC_ASSERT_EQ("memset", strncmp(res_ptr, ctarget, BUFF_SIZE), 0);
+	TC_ASSERT_EQ("memset", strncmp(ctarget, buffer, BUFF_SIZE), 0);
 
-	if (strncmp(ctarget, buffer, BUFF_SIZE) != OK) {
-		printf("tc_libc_string_memset compare FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_memset PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -117,18 +101,10 @@ static void tc_libc_string_memchr(void)
 	char *res_ptr = NULL;
 
 	res_ptr = (char *)memchr(buffer, 's', BUFF_SIZE);
-	if (res_ptr == NULL) {
-		printf("tc_libc_string_memchr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if ((*res_ptr) != 's') {
-		printf("tc_libc_string_strchr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_memchr PASS\n");
-	total_pass++;
+	TC_ASSERT_NOT_NULL("memchr", res_ptr);
+	TC_ASSERT_EQ("memchr", *res_ptr, 's');
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -151,25 +127,15 @@ static void tc_libc_string_memcmp(void)
 	char buffer4[BUFF_SIZE] = "tesa";
 
 	ret_chk = memcmp(buffer1, buffer2, BUFF_SIZE);
-	if (ret_chk != OK) {
-		printf("tc_libc_string_memcmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("memcmp", ret_chk, 0);
+
 	ret_chk = memcmp(buffer1, buffer3, BUFF_SIZE);
-	if (!(ret_chk < 0)) {
-		printf("tc_libc_string_memcmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("memcmp", ret_chk, -1);
+
 	ret_chk = memcmp(buffer1, buffer4, BUFF_SIZE);
-	if (!(ret_chk > 0)) {
-		printf("tc_libc_string_memcmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_memcmp PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("memcmp", ret_chk, 1);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -188,18 +154,11 @@ static void tc_libc_string_memmove(void)
 	char *res_ptr = NULL;
 
 	res_ptr = (char *)memmove(buffer1, buffer2, sizeof(buffer1));
-	if (res_ptr == NULL || strncmp(res_ptr, buffer2, BUFF_SIZE) != OK) {
-		printf("tc_libc_string_memmove FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (strncmp(buffer1, buffer2, BUFF_SIZE) != OK) {
-		printf("tc_libc_string_memmove FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_memmove PASS\n");
-	total_pass++;
+	TC_ASSERT_NOT_NULL("memmove", res_ptr);
+	TC_ASSERT_EQ("memmove", strncmp(res_ptr, buffer2, BUFF_SIZE), 0);
+	TC_ASSERT_EQ("memmove", strncmp(buffer1, buffer2, BUFF_SIZE), 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -219,19 +178,11 @@ static void tc_libc_string_stpcpy(void)
 	char *res_ptr = NULL;
 
 	res_ptr = stpcpy(dest_arr, src_buf);
-	if (res_ptr == NULL || *(res_ptr - 1) != 'd') {
-		printf("tc_libc_string_stpcpy FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("stpcpy", res_ptr);
+	TC_ASSERT_EQ("stpcpy", *(res_ptr - 1), 'd');
+	TC_ASSERT_EQ("stpcpy", strncmp(dest_arr, src, BUFF_SIZE), 0);
 
-	if (strncmp(dest_arr, src, BUFF_SIZE) != OK) {
-		printf("tc_libc_string_stpcpy FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_stpcpy PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -252,25 +203,15 @@ static void tc_libc_string_strcasecmp(void)
 	char buffer4[BUFF_SIZE] = "tesa";
 
 	ret_chk = strcasecmp(buffer1, buffer2);
-	if (ret_chk != OK) {
-		printf("tc_libc_string_strcasecmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("strcasecmp", ret_chk, 0);
+
 	ret_chk = strcasecmp(buffer1, buffer3);
-	if (!(ret_chk < 0)) {
-		printf("tc_libc_string_strcasecmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_LT("strcasecmp", ret_chk, 0);
+
 	ret_chk = strcasecmp(buffer1, buffer4);
-	if (!(ret_chk > 0)) {
-		printf("tc_libc_string_strcasecmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strcasecmp PASS\n");
-	total_pass++;
+	TC_ASSERT_GT("strcasecmp", ret_chk, 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -290,18 +231,11 @@ static void tc_libc_string_strcat(void)
 	char *res_ptr = NULL;
 
 	res_ptr = strcat(dest_arr, src);
-	if (res_ptr == NULL || strncmp(res_ptr, final_arr, BUFF_SIZE_10) != 0) {
-		printf("tc_libc_string_strcat FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (strncmp(dest_arr, final_arr, BUFF_SIZE_10) != 0) {
-		printf("tc_libc_string_strcat FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strcat PASS\n");
-	total_pass++;
+	TC_ASSERT_NOT_NULL("strcat", res_ptr);
+	TC_ASSERT_EQ("strcat", strncmp(res_ptr, final_arr, BUFF_SIZE_10), 0);
+	TC_ASSERT_EQ("strcat", strncmp(dest_arr, final_arr, BUFF_SIZE_10), 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -319,24 +253,13 @@ static void tc_libc_string_strchr(void)
 	char *res_ptr = NULL;
 
 	res_ptr = strchr(dest_arr, 'z');
-	if (res_ptr != NULL) {
-		printf("tc_libc_string_strchr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("strchr", res_ptr, NULL);
+
 	res_ptr = strchr(dest_arr, 's');
-	if (res_ptr == NULL) {
-		printf("tc_libc_string_strchr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if ((*res_ptr) != 's') {
-		printf("tc_libc_string_strchr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strchr PASS\n");
-	total_pass++;
+	TC_ASSERT_NOT_NULL("strchr", res_ptr);
+	TC_ASSERT_EQ("strchr", *res_ptr, 's');
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -358,25 +281,15 @@ static void tc_libc_string_strcmp(void)
 	char buffer4[BUFF_SIZE] = "tesa";
 
 	ret_chk = strcmp(buffer1, buffer2);
-	if (ret_chk != OK) {
-		printf("tc_libc_string_strcmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("strcmp", ret_chk, 0);
+
 	ret_chk = strcmp(buffer1, buffer3);
-	if (!(ret_chk < 0)) {
-		printf("tc_libc_string_strcmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_LT("strcmp", ret_chk, 0);
+
 	ret_chk = strcmp(buffer1, buffer4);
-	if (!(ret_chk > 0)) {
-		printf("tc_libc_string_strcmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strcmp PASS\n");
-	total_pass++;
+	TC_ASSERT_GT("strcmp", ret_chk, 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -395,18 +308,11 @@ static void tc_libc_string_strcpy(void)
 	char *res_ptr = NULL;
 
 	res_ptr = strcpy(dest_arr, src);
-	if (res_ptr == NULL || strncmp(res_ptr, src, BUFF_SIZE) != 0) {
-		printf("tc_libc_string_strcpy FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (strncmp(dest_arr, src, BUFF_SIZE) != 0) {
-		printf("tc_libc_string_strcpy FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strcpy PASS\n");
-	total_pass++;
+	TC_ASSERT_NOT_NULL("strcpy", res_ptr);
+	TC_ASSERT_EQ("strcpy", strncmp(res_ptr, src, BUFF_SIZE), 0);
+	TC_ASSERT_EQ("strcpy", strncmp(dest_arr, src, BUFF_SIZE), 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -427,21 +333,16 @@ static void tc_libc_string_strcspn(void)
 	int ret_chk = 0, pos_a = 3, lenDest = 4;
 	/* "tesa" has "a" which is the only character that is in "abcd", strcspn will return characters read
 	   in "tesa" before reaching "a", so return value will be 3 in this case */
+
 	ret_chk = strcspn(dest_arr, src1);
-	if (ret_chk != pos_a) {
-		printf("tc_libc_string_strcspn FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("strcspn", ret_chk, pos_a);
+
 	/* src2 has no charater that matches with any character of dest_arr */
+
 	ret_chk = strcspn(dest_arr, src2);
-	if (ret_chk != lenDest) {
-		printf("tc_libc_string_strcspn FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strcspn PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("strcspn", ret_chk, lenDest);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -461,20 +362,14 @@ static void tc_libc_string_strdup(void)
 	char src[BUFF_SIZE] = "test";
 
 	dest_arr = strdup(src);
-	if (dest_arr == NULL) {
-		printf("tc_libc_string_strdup FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (strncmp(dest_arr, src, BUFF_SIZE) != OK) {
-		free(dest_arr);
-		printf("tc_libc_string_strdup FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	free(dest_arr);
-	printf("tc_libc_string_strdup PASS\n");
-	total_pass++;
+	TC_ASSERT_NOT_NULL("strdup", dest_arr);
+	TC_ASSERT_EQ_CLEANUP("strdup",
+						 strncmp(dest_arr, src, BUFF_SIZE), OK,
+						 get_errno(),
+						 TC_FREE_MEMORY(dest_arr));
+
+	TC_FREE_MEMORY(dest_arr);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -494,18 +389,10 @@ static void tc_libc_string_strerror(void)
 
 	/* EFAULT is defined as 14 which gives Bad address in strerror */
 	dest_arr = (char *)strerror(EFAULT);
-	if (dest_arr == NULL) {
-		printf("tc_libc_string_strerror NULL FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (strncmp(dest_arr, src, BUFF_SIZE_12) != 0) {
-		printf("tc_libc_string_strerror CMP FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strerror PASS\n");
-	total_pass++;
+	TC_ASSERT_NOT_NULL("strerror", dest_arr);
+	TC_ASSERT_EQ("strerror", strncmp(dest_arr, src, BUFF_SIZE_12), 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -523,13 +410,9 @@ static void tc_libc_string_strlen(void)
 	int ret_chk = ERROR;
 
 	ret_chk = strlen(src);
-	if (ret_chk != BUFF_SIZE - 1) {
-		printf("tc_libc_string_strlen FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strlen PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("strlen", ret_chk, BUFF_SIZE - 1);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -550,25 +433,15 @@ static void tc_libc_string_strncasecmp(void)
 	char buffer4[BUFF_SIZE] = "tesa";
 
 	ret_chk = strncasecmp(buffer1, buffer2, BUFF_SIZE);
-	if (ret_chk != OK) {
-		printf("tc_libc_string_strncasecmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("strncasecmp", ret_chk, 0);
+
 	ret_chk = strncasecmp(buffer1, buffer3, BUFF_SIZE);
-	if (!(ret_chk < 0)) {
-		printf("tc_libc_string_strncasecmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_LT("strncasecmp", ret_chk, 0);
+
 	ret_chk = strncasecmp(buffer1, buffer4, BUFF_SIZE);
-	if (!(ret_chk > 0)) {
-		printf("tc_libc_string_strncasecmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strncasecmp PASS\n");
-	total_pass++;
+	TC_ASSERT_GT("strncasecmp", ret_chk, 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -590,19 +463,11 @@ static void tc_libc_string_strncat(void)
 	char *res_ptr = NULL;
 
 	res_ptr = strncat(dest_arr, src, BUFF_SIZE);
-	if (res_ptr == NULL || strncmp(res_ptr, final_arr, BUFF_SIZE_10) != OK) {
-		printf("tc_libc_string_strncat FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("strncat", res_ptr);
+	TC_ASSERT_EQ("strncat", strncmp(res_ptr, final_arr, BUFF_SIZE_10), 0);
+	TC_ASSERT_EQ("strncat", strncmp(dest_arr, final_arr, BUFF_SIZE_10), 0);
 
-	if (strncmp(dest_arr, final_arr, BUFF_SIZE_10) != OK) {
-		printf("tc_libc_string_strncat FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strncat PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -623,25 +488,15 @@ static void tc_libc_string_strncmp(void)
 	char buffer4[BUFF_SIZE] = "tesa";
 
 	ret_chk = strncmp(buffer1, buffer2, BUFF_SIZE);
-	if (ret_chk != OK) {
-		printf("tc_libc_string_strncmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("strncmp", ret_chk, 0);
+
 	ret_chk = strncmp(buffer1, buffer3, BUFF_SIZE);
-	if (!(ret_chk < 0)) {
-		printf("tc_libc_string_strncmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_LT("strncmp", ret_chk, 0);
+
 	ret_chk = strncmp(buffer1, buffer4, BUFF_SIZE);
-	if (!(ret_chk > 0)) {
-		printf("tc_libc_string_strncmp FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strncmp PASS\n");
-	total_pass++;
+	TC_ASSERT_GT("strncmp", ret_chk, 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -660,18 +515,11 @@ static void tc_libc_string_strncpy(void)
 	char *res_ptr = NULL;
 
 	res_ptr = strncpy(dest_arr, src, BUFF_SIZE);
-	if (res_ptr == NULL || strncmp(res_ptr, src, BUFF_SIZE) != OK) {
-		printf("tc_libc_string_strncpy FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (strncmp(dest_arr, src, BUFF_SIZE) != OK) {
-		printf("tc_libc_string_strncpy FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strncpy PASS\n");
-	total_pass++;
+	TC_ASSERT_NOT_NULL("strncpy", res_ptr);
+	TC_ASSERT_EQ("strncpy", strncmp(res_ptr, src, BUFF_SIZE), 0);
+	TC_ASSERT_EQ("strncpy", strncmp(dest_arr, src, BUFF_SIZE), 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -691,20 +539,14 @@ static void tc_libc_string_strndup(void)
 	char src[BUFF_SIZE] = "test";
 
 	dest_arr = strndup(src, BUFF_SIZE);
-	if (dest_arr == NULL) {
-		printf("tc_libc_string_strndup FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (strncmp(dest_arr, src, BUFF_SIZE) != OK) {
-		free(dest_arr);
-		printf("tc_libc_string_strndup FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	free(dest_arr);
-	printf("tc_libc_string_strndup PASS\n");
-	total_pass++;
+	TC_ASSERT_NOT_NULL("strndup", dest_arr);
+	TC_ASSERT_EQ_CLEANUP("strndup",
+						 strncmp(dest_arr, src, BUFF_SIZE), 0,
+						 get_errno(),
+						 TC_FREE_MEMORY(dest_arr));
+
+	TC_FREE_MEMORY(dest_arr);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -725,19 +567,12 @@ static void tc_libc_string_strnlen(void)
 	int ret_chk = 0;
 
 	ret_chk = strnlen(src1, BUFF_SIZE);
-	if (ret_chk != BUFF_SIZE - 1) {
-		printf("tc_libc_string_strnlen FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("strnlen", ret_chk, BUFF_SIZE - 1);
+
 	ret_chk = strnlen(src2, BUFF_SIZE);
-	if (ret_chk != BUFF_SIZE) {
-		printf("tc_libc_string_strnlen FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strnlen PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("strnlen", ret_chk, BUFF_SIZE);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -760,24 +595,14 @@ static void tc_libc_string_strpbrk(void)
 	char *res_ptrstr = "mple";
 
 	res_ptr = strpbrk(dest_arr, cbuf);
-	if (res_ptr == NULL || strncmp(res_ptr, res_ptrstr, BUFF_SIZE_10) != OK) {
-		printf("tc_libc_string_strpbrk FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if ((*res_ptr) != 'm') {
-		printf("tc_libc_string_strpbrk FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("strpbrk", res_ptr);
+	TC_ASSERT_EQ("strpbrk", strncmp(res_ptr, res_ptrstr, BUFF_SIZE_10), 0);
+	TC_ASSERT_EQ("strpbrk", *res_ptr, 'm');
+
 	res_ptr = strpbrk(dest_arr, cStr);
-	if (res_ptr != NULL) {
-		printf("tc_libc_string_strpbrk FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strpbrk PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("strpbrk", res_ptr, NULL);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -797,23 +622,11 @@ static void tc_libc_string_strrchr(void)
 	char *res_ptrstr = "es";
 
 	res_ptr = strrchr(dest_arr, 'e');
-	if (res_ptr == NULL) {
-		printf("tc_libc_string_strrchr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (res_ptr == NULL || strncmp(res_ptr, res_ptrstr, BUFF_SIZE) != OK) {
-		printf("tc_libc_string_strrchr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if ((*res_ptr) != 'e') {
-		printf("tc_libc_string_strrchr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strrchr PASS\n");
-	total_pass++;
+	TC_ASSERT_NOT_NULL("strrchr", res_ptr);
+	TC_ASSERT_EQ("strrchr", strncmp(res_ptr, res_ptrstr, BUFF_SIZE), 0);
+	TC_ASSERT_EQ("strrchr", *res_ptr, 'e');
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -837,27 +650,15 @@ static void tc_libc_string_strspn(void)
 	char *cbuf = "me";
 
 	ret_chk = strspn(cbuf, dest_arr1);
-	if (ret_chk != 2) {
-		printf("tc_libc_string_strspn FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("strspn", ret_chk, 2);
 
 	ret_chk = strspn(cbuf, dest_arr2);
-	if (ret_chk != OK) {
-		printf("tc_libc_string_strspn FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("strspn", ret_chk, 0);
 
 	ret_chk = strspn(cbuf, dest_arr3);
-	if (ret_chk != 1) {
-		printf("tc_libc_string_strspn FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_string_strspn PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("strspn", ret_chk, 1);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -877,14 +678,10 @@ static void tc_libc_string_strstr(void)
 	char *psz = "str";
 
 	res_ptr = strstr(dest_arr, psz);
-	if (res_ptr == NULL || strncmp(res_ptr, dest_arr, BUFF_SIZE_10) != OK) {
-		printf("tc_libc_string_strstr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("strstr", res_ptr);
+	TC_ASSERT_EQ("strspn", strncmp(res_ptr, dest_arr, BUFF_SIZE_10), 0);
 
-	printf("tc_libc_string_strstr PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -906,23 +703,15 @@ static void tc_libc_string_strtok(void)
 	int arr_idx = 0;
 	char *res_ptr = NULL;
 	res_ptr = strtok(szbuffer, " ");
-	if (res_ptr == NULL) {
-		printf("tc_libc_string_strtok FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("strtok", res_ptr);
 
 	while (res_ptr != NULL) {
-		if (strncmp(res_ptr, dest_arr[arr_idx], BUFF_SIZE_10) != OK) {
-			printf("tc_libc_string_strtok FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("strtok", strncmp(res_ptr, dest_arr[arr_idx], BUFF_SIZE_10), 0);
 		arr_idx++;
 		res_ptr = strtok(NULL, " ");
 	}
-	printf("tc_libc_string_strtok PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -947,28 +736,17 @@ static void tc_libc_string_strtok_r(void)
 	char *psz_save;
 
 	res_ptr = strtok_r(cbuf, " ", &psz_save);
-	if (res_ptr == NULL || psz_save == NULL) {
-		printf("tc_libc_string_strtok_r FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("strtok_r", res_ptr);
+	TC_ASSERT_NOT_NULL("strtok_r", psz_save);
 
 	while (res_ptr != NULL) {
-		if (strncmp(res_ptr, dest_arr[arr_idx], BUFF_SIZE_10) != OK) {
-			printf("tc_libc_string_strtok_r FAIL,dest_arr and res_ptr didnot match \n");
-			total_fail++;
-			RETURN_ERR;
-		}
-		if (strncmp(psz_save, psz_save_dest[arr_idx], BUFF_SIZE_10) != OK) {
-			printf("tc_libc_string_strtok_r FAIL, psz_save_dest and psz_save didnot match\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("strtok_r", strncmp(res_ptr, dest_arr[arr_idx], BUFF_SIZE_10), 0);
+		TC_ASSERT_EQ("strtok_r", strncmp(psz_save, psz_save_dest[arr_idx], BUFF_SIZE_10), 0);
 		arr_idx++;
 		res_ptr = strtok_r(NULL, " ", &psz_save);
 	}
-	printf("tc_libc_string_strtok_r PASS\n");
-	total_pass++;
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -990,14 +768,10 @@ static void tc_libc_string_strcasestr(void)
 	char *psz = "str";
 
 	res_ptr = strcasestr(dest_arr, psz);
-	if (res_ptr == NULL || strncmp(res_ptr, dest_arr, BUFF_SIZE_10) != OK) {
-		printf("tc_libc_string_strcasestr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("strcasestr", res_ptr);
+	TC_ASSERT_EQ("strcasestr", strncmp(res_ptr, dest_arr, BUFF_SIZE_10), 0);
 
-	printf("tc_libc_string_strcasestr PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_libc_string_memccpy(void)
@@ -1005,24 +779,15 @@ static void tc_libc_string_memccpy(void)
 	char *test1_src = "abcdefghijkl";
 	char some_str[50];
 	char test_result[50] = "abcdefg";
-	char *ptr;
+	char *res_ptr;
 
 	memset(some_str, 0, sizeof(some_str));
 
-	ptr = (char *)memccpy(some_str, test1_src, 'g', strlen(test1_src));
-	if (!ptr) {
-		printf("tc_libc_string_memccpy FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (strcmp(some_str, test_result) != 0) {
-		printf("tc_libc_string_memccpy FAIL : not matched %s\n", some_str);
-		total_fail++;
-		RETURN_ERR;
-	}
+	res_ptr = (char *)memccpy(some_str, test1_src, 'g', strlen(test1_src));
+	TC_ASSERT_NOT_NULL("memccpy", res_ptr);
+	TC_ASSERT_EQ("memccpy", strcmp(some_str, test_result), 0);
 
-	total_pass++;
-	printf("tc_libc_string_memccpy PASS\n");
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -1041,30 +806,16 @@ static void tc_libc_string_strlcpy(void)
 	char str_dest[BUFF_SIZE_10] = "abcdefghi";
 	char str_src[BUFF_SIZE_10] = "jklmnopqr";
 
+	/* 1. check that the return val is the total length of src
+	 * 2. check that NUL-terminating
+	 * 3. check that copied string is correct */
+
 	cpy_len = strlcpy(str_dest, str_src, BUFF_SIZE_10 / 2);
-	/* check that the return val is the total length of src */
-	if (cpy_len != strlen(str_src)) {
-		printf("tc_libc_string_strlcpy FAIL : not matched the length\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("strlcpy", cpy_len, strlen(str_src));
+	TC_ASSERT_EQ("strlcpy", str_dest[(BUFF_SIZE_10 / 2) - 1], '\0');
+	TC_ASSERT_EQ("strlcpy", strncmp(str_dest, str_src, (BUFF_SIZE_10 / 2) - 1), 0);
 
-	/* check that NUL-terminating */
-	if (str_dest[(BUFF_SIZE_10 / 2) - 1] != '\0') {
-		printf("tc_libc_string_strlcpy FAIL : not NUL-terminated\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	/* check that copied string is correct */
-	if (strncmp(str_dest, str_src, (BUFF_SIZE_10 / 2) - 1) != 0) {
-		printf("tc_libc_string_strlcpy FAIL : not copied well\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	printf("tc_libc_string_strlcpy PASS \n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

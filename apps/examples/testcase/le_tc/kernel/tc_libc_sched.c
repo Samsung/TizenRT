@@ -49,20 +49,12 @@ static void tc_libc_sched_sched_get_priority_max(void)
 	int ret_chk;
 
 	ret_chk = sched_get_priority_max(SCHED_FIFO);
-	if (ret_chk != MAX_FIFO) {
-		printf("tc_libc_sched_sched_get_priority_max FAIL Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	} else {
-		ret_chk = sched_get_priority_max(SCHED_RR);
-		if (ret_chk != MAX_RR) {
-			printf("tc_libc_sched_sched_get_priority_max FAIL Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
-	}
-	printf("tc_libc_sched_sched_get_priority_max PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("sched_get_priority_max", ret_chk, MAX_FIFO);
+
+	ret_chk = sched_get_priority_max(SCHED_RR);
+	TC_ASSERT_EQ("sched_get_priority_max", ret_chk, MAX_RR);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -79,21 +71,12 @@ static void tc_libc_sched_sched_get_priority_min(void)
 	int ret_chk;
 
 	ret_chk = sched_get_priority_min(SCHED_FIFO);
-	if (ret_chk != MIN_FIFO) {
-		printf("tc_libc_sched_sched_get_priority_min FAIL Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	} else {
-		ret_chk = sched_get_priority_min(SCHED_RR);
-		if (ret_chk != MIN_RR) {
-			printf("tc_libc_sched_sched_get_priority_min FAIL Error No: %d\n", errno);
-			total_fail++;
-			RETURN_ERR;
-		}
-	}
+	TC_ASSERT_EQ("sched_get_priority_min", ret_chk, MIN_FIFO);
 
-	printf("tc_libc_sched_sched_get_priority_min PASS\n");
-	total_pass++;
+	ret_chk = sched_get_priority_min(SCHED_RR);
+	TC_ASSERT_EQ("sched_get_priority_min", ret_chk, MIN_RR);
+
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

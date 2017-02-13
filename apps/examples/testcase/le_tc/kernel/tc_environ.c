@@ -55,64 +55,40 @@ static void tc_environ_setenv_getenv_unsetenv(void)
 	char *psz_getvalue = NULL;
 
 	ret_chk = setenv(psz_name, psz_value, overwrite_num);
-	if (ret_chk != OK) {
-		printf("tc_environ_setenv FAIL in setting environment with overwrite_num = 1, Error No: %d\n", errno);
-		total_fail++;
-		clearenv();
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, get_errno(), clearenv());
 
 	psz_getvalue = getenv(psz_name);
-	if (strcmp(psz_getvalue, psz_value) != OK) {
-		printf("tc_environ_getenv FAIL, set and get value are not same, Error No: %d\n", errno);
-		total_fail++;
-		clearenv();
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, get_errno(), clearenv());
 
 	/* with overwrite_num = 0, psz_value should not be updated */
+
 	psz_value = "pqr";
 	overwrite_num = 0;
 	ret_chk = setenv(psz_name, psz_value, overwrite_num);
-	if (ret_chk != OK) {
-		printf("tc_environ_setenv FAIL in setting environment with overwrite_num = 0, Error No: %d\n", errno);
-		total_fail++;
-		clearenv();
-		RETURN_ERR;
-	}
-	psz_getvalue = getenv(psz_name);
+	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, get_errno(), clearenv());
+
 	/* set and get value should not be equal as overwrite is 0 */
-	if (strcmp(psz_getvalue, psz_value) == OK) {
-		printf("tc_environ_setenv FAIL, it should have not set environment variable as overwrite_num = 0, Error No: %d\n", errno);
-		total_fail++;
-		clearenv();
-		RETURN_ERR;
-	}
 
-	psz_getvalue = getenv("arv");	/* random value, getenv should fail */
-	if (psz_getvalue != NULL) {
-		printf("tc_environ_getenv FAIL, returned value should be null, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	psz_getvalue = getenv(psz_name);
+	TC_ASSERT_NEQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, get_errno(), clearenv());
+
+	/* random value, getenv should fail */
+
+	psz_getvalue = getenv("arv");
+	TC_ASSERT_EQ("getenv", psz_getvalue, NULL);
+
 	/* random value, unsetenv should not fail */
+
 	ret_chk = unsetenv(pusz_name);
-	if (ret_chk != OK) {
-		printf("tc_environ_unsetenv FAIL in unseting environment, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("unsetenv", ret_chk, OK);
 
-	psz_getvalue = getenv("arv");	/* getvalue should be null */
-	if (psz_getvalue != NULL) {
-		printf("tc_environ_unsetenv FAIL, getenv should return null Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_environ_setenv_getenv_unsetenv PASS \n");
+	/* getvalue should be null */
 
-	total_pass++;
+	psz_getvalue = getenv("arv");
+	TC_ASSERT_EQ("getenv", psz_getvalue, NULL);
+
 	clearenv();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -134,27 +110,15 @@ static void tc_environ_clearenv(void)
 	int overwrite_num = 1;
 
 	ret_chk = setenv(psz_name, psz_value, overwrite_num);
-	if (ret_chk != OK) {
-		printf("tc_environ_setenv FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("setenv", ret_chk, OK);
 
 	ret_chk = clearenv();
-	if (ret_chk != OK) {
-		printf("tc_environ_clearenv FAIL, Error No: %d\n", errno);
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("clearenv", ret_chk, OK);
 
 	psz_getvalue = getenv(psz_name);
-	if (psz_getvalue != NULL) {
-		printf("tc_environ_getenv, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("getenv", psz_getvalue, NULL);
 
-	printf("tc_environ_clearenv PASS \n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -169,33 +133,26 @@ static void tc_environ_clearenv(void)
 */
 static void tc_environ_putenv(void)
 {
+	int ret_chk;
 	char *psz_getvalue = NULL;
 	/* adding enviroment variable */
 
-	putenv("PATH=C:");
+	ret_chk = putenv("PATH=C:");
+	TC_ASSERT_EQ("putenv", ret_chk, OK);
+
 	psz_getvalue = getenv("PATH");
-	if (psz_getvalue == NULL) {
-		printf("tc_environ_putenv, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (strcmp(psz_getvalue, "C:") != OK) {
-		printf("tc_environ_putenv FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("getenv", psz_getvalue);
+	TC_ASSERT_EQ("getenv", strcmp(psz_getvalue, "C:"), 0);
 
 	/* Changing the value of already existing PATH variable */
-	putenv("PATH=D:");
+	ret_chk = putenv("PATH=D:");
+	TC_ASSERT_EQ("putenv", ret_chk, OK);
+
 	psz_getvalue = getenv("PATH");
-	if (strcmp(psz_getvalue, "D:") != OK) {
-		printf("tc_environ_putenv FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_environ_putenv PASS \n");
-	total_pass++;
+	TC_ASSERT_EQ("getenv", strcmp(psz_getvalue, "D:"), 0);
+
 	clearenv();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -225,31 +182,21 @@ static void tc_environ_get_environ_ptr(void)
 		setenv(env_name, env_val, TRUE);
 		snprintf(env_arr[env_idx], ENV_TEST_LEN * 2, "%s=%s", env_name, getenv(env_name));
 	}
-	env_ptr = get_environ_ptr(&env_size);
 
-	if (env_ptr == NULL) {
-		printf("tc_environ_get_environ_ptr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	env_ptr = get_environ_ptr(&env_size);
+	TC_ASSERT_NOT_NULL("get_environ_ptr", env_ptr);
+
 	/* env_size is set to length of all env name and val pair */
-	if (env_size != cmp_size) {
-		printf("tc_environ_get_environ_ptr FAIL : size of env, not matched\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+
+	TC_ASSERT_EQ("get_environ_ptr", env_size, cmp_size);
+
 	for (env_idx = 0; env_idx < ENV_TEST_MAX_NUM; env_idx++) {
-		if (strcmp(env_arr[env_idx], env_ptr)) {
-			printf("tc_environ_get_environ_ptr FAIL : not matched\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("get_environ_ptr", strcmp(env_arr[env_idx], env_ptr), 0);
 		env_ptr += strlen(env_ptr) + 1;
 	}
 
-	printf("tc_environ_get_environ_ptr PASS \n");
-	total_pass++;
 	clearenv();
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

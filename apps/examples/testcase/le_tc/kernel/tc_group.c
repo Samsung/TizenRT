@@ -52,25 +52,13 @@ static void tc_group_group_add_find_remove_child(void)
 	pid_t child_pid;
 
 	st_tcb = sched_self();
-	if (!st_tcb) {
-		printf("tc_group_group_add_find_remove_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
 
 	group = st_tcb->group;
-	if (!group) {
-		printf("tc_group_group_add_find_remove_child FAIL");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_self", group);
 
 	child = group_allocchild();
-	if (child == NULL) {
-		printf("tc_group_group_add_find_remove_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("group_allocchild", child);
 
 	child_pid = -1;
 	child->ch_flags = TCB_FLAG_TTYPE_TASK;
@@ -81,30 +69,20 @@ static void tc_group_group_add_find_remove_child(void)
 
 	/* cross check starts */
 	child_returned = group_findchild(group, child_pid);
-	if (child != child_returned) {
-		printf("tc_group_group_add_find_remove_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("group_findchild", child, child_returned);
 
 	child_returned = group_removechild(group, child_pid);
-	if (child != child_returned) {
-		printf("tc_group_group_add_find_remove_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	child_returned = group_findchild(group, child_pid);
-	if (child_returned != NULL) {
-		printf("tc_group_group_add_find_remove_child FAIL\n");
-		group_removechild(group, child_pid);
-		group_freechild(child);
-		total_fail++;
-		RETURN_ERR;
-	}
-	group_freechild(child);
+	TC_ASSERT_EQ("group_removechild", child, child_returned);
 
-	printf("tc_group_group_add_find_remove_child PASS\n");
-	total_pass++;
+	child_returned = group_findchild(group, child_pid);
+	TC_ASSERT_EQ_CLEANUP("group_removechild",
+						 child_returned,
+						 NULL,
+						 get_errno(),
+						 (group_removechild(group, child_pid), group_freechild(child)));
+
+	group_freechild(child);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -122,41 +100,20 @@ static void tc_group_group_alloc_free_child(void)
 	struct child_status_s child_dummy;
 
 	st_tcb = sched_self();
-	if (!st_tcb) {
-		printf("tc_group_group_alloc_free_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
 
 	group = st_tcb->group;
-	if (!group) {
-		printf("tc_group_group_alloc_free_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_self", group);
 
 	child = group_allocchild();
-	if (child == NULL) {
-		printf("tc_group_group_alloc_free_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (child->flink != NULL) {
-		printf("tc_group_group_alloc_free_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("group_allocchild", child);
+	TC_ASSERT_EQ("group_allocchild", child->flink, NULL);
 
 	child->flink = &child_dummy;
 	group_freechild(child);
-	if (child->flink == &child_dummy) {
-		printf("tc_group_group_alloc_free_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("group_allocchild", child->flink, &child_dummy);
 
-	printf("tc_group_group_alloc_free_child PASS \n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -176,47 +133,27 @@ static void tc_group_group_exit_child(void)
 	pid_t child_pid;
 
 	st_tcb = sched_self();
-	if (!st_tcb) {
-		printf("tc_group_group_exit_child FAIL");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
 
 	group = st_tcb->group;
-	if (!group) {
-		printf("tc_group_group_exit_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_self", group);
 
 	child_pid = task_create("group", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, group_exitchild_func, (char *const *)NULL);
 
 	child = group_findchild(group, child_pid);
-	if (child == NULL) {
-		printf("tc_group_group_exit_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("group_findchild", child);
+
 	sleep(3);
 
 	child_returned = group_exitchild(group);
-	if (child != child_returned) {
-		printf("tc_group_group_exit_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("group_exitchild", child, child_returned);
 
 	child_returned = group_removechild(group, child_pid);
-	if (child != child_returned) {
-		printf(" tc_group_group_exit_child FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("group_removechild", child, child_returned);
 
 	group_freechild(child);
 
-	printf("tc_group_group_exit_child PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -235,25 +172,13 @@ static void tc_group_group_removechildren(void)
 	pid_t child_pid;
 
 	st_tcb = sched_self();
-	if (!st_tcb) {
-		printf("tc_group_group_removechildren FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
 
 	group = st_tcb->group;
-	if (!group) {
-		printf("tc_group_group_removechildren FAIL");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("sched_self", group);
 
 	child = group_allocchild();
-	if (child == NULL) {
-		printf("tc_group_group_removechildren FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("group_allocchild", child);
 
 	child_pid = -1;
 	child->ch_flags = TCB_FLAG_TTYPE_TASK;
@@ -264,21 +189,12 @@ static void tc_group_group_removechildren(void)
 
 	/* cross check starts */
 	child_returned = group_findchild(group, child_pid);
-	if (child != child_returned) {
-		printf("tc_group_group_removechildren FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("group_findchild", child, child_returned);
 
 	group_removechildren(group);
-	if (group->tg_children != NULL) {
-		printf("tc_group_group_removechildren FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("group_removechildren", group->tg_children, NULL);
 
-	printf("tc_group_group_removechildren PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

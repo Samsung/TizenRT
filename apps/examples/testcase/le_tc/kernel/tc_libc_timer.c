@@ -69,14 +69,12 @@ static void tc_libc_timer_clock_calendar2utc(void)
 
 	time1 = clock_calendar2utc(year, month, day1);
 	time2 = clock_calendar2utc(year, month, day2);
+
 	/* difference in time values should equal to exact number of seconds in 1 day */
-	if ((time2 - time1) != 1) {
-		printf("tc_libc_timer_clock_calendar2utc FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_timer_clock_calendar2utc PASS\n");
-	total_pass++;
+
+	TC_ASSERT_EQ("clock_calendar2utc", time2 - time1, 1);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -98,29 +96,23 @@ static void tc_libc_timer_gmtime_r(void)
 	struct tm *st_localtime;
 
 	time(&test_time);
+
 	/* calculate current date */
+
 	st_localtime = localtime(&test_time);
 	today = st_localtime->tm_mday;
 	year = st_localtime->tm_year;
-	st_rettime = gmtime_r(&test_time, &st_time);
-	if (st_rettime == NULL) {
-		printf("tc_libc_timer_gmtime_r FAIL, st_rettime is null\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+
 	/* verifying the structures returned and filled by comparing their parameters */
-	if (st_rettime->tm_year != st_time.tm_year || st_rettime->tm_mon != st_time.tm_mon) {
-		printf("tc_libc_timer_gmtime_r FAIL, st_rettime and st_time mismatch \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (year != st_time.tm_year || today != st_time.tm_mday) {
-		printf("tc_libc_timer_gmtime_r FAIL, year and day mismatch \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_timer_gmtime_r PASS\n");
-	total_pass++;
+
+	st_rettime = gmtime_r(&test_time, &st_time);
+	TC_ASSERT_NOT_NULL("gmtime_r", st_rettime);
+	TC_ASSERT_EQ("gmtime_r", st_rettime->tm_year, st_time.tm_year);
+	TC_ASSERT_EQ("gmtime_r", st_rettime->tm_mon, st_time.tm_mon);
+	TC_ASSERT_EQ("gmtime_r", year, st_time.tm_year);
+	TC_ASSERT_EQ("gmtime_r", today, st_time.tm_mday);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -139,59 +131,35 @@ static void tc_libc_timer_gmtime(void)
 	struct tm *st_localtime = NULL;
 	time_t time1;
 	time_t time2;
+
 	ret_chk = time(&time1);
-	if (ret_chk == (time_t)ERROR) {
-		printf("tc_libc_timer_gmtime FAIL, time(&time1) is error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("time", ret_chk, (time_t)ERROR);
 
 	st_rettime = gmtime(&time1);
-	if (st_rettime == NULL) {
-		printf("tc_libc_timer_gmtime FAIL, st_rettime for time1 is null\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("gmtime", st_rettime);
+
 	st_localtime = localtime(&time1);
-	if (st_localtime == NULL) {
-		printf("tc_libc_timer_localtime FAIL, st_localtime should point to tm structure \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (st_rettime->tm_year != st_localtime->tm_year || st_rettime->tm_mon != st_localtime->tm_mon) {
-		printf("tc_libc_timer_gmtime FAIL, localtime and gmtime mismatch \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("localtime", st_localtime);
+	TC_ASSERT_EQ("localtime", st_rettime->tm_year, st_localtime->tm_year);
+	TC_ASSERT_EQ("localtime", st_rettime->tm_mon, st_localtime->tm_mon);
+
 	sleep(SEC_5);
 
 	ret_chk = time(&time2);
-	if (ret_chk == (time_t)ERROR) {
-		printf("tc_libc_timer_gmtime FAIL, time(&time2) is error\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("time", ret_chk, (time_t)ERROR);
+
+	/* verifying the returned structure's parameter, year should not be negative, month range is 0-11 */
+
 	st_rettime = gmtime(&time2);
-	if (st_rettime == NULL) {
-		printf("tc_libc_timer_gmtime FAIL, st_rettime for time2 is null\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NOT_NULL("gmtime", st_rettime);
+	TC_ASSERT_GEQ("gtime", st_rettime->tm_year, 0);
+	TC_ASSERT_GEQ("gtime", st_rettime->tm_mon, 0);
+	TC_ASSERT_LT("gtime", st_rettime->tm_mon, 12);
 
 	ret_chk = (long long int)(time2) - (long long int)(time1);
-	/* verifying the returned structure's parameter, year should not be negative, month range is 0-11 */
-	if (st_rettime->tm_year <= 0 || st_rettime->tm_mon < 0 || st_rettime->tm_mon > 11) {
-		printf("tc_libc_timer_gmtime FAIL, st_rettime and st_time mismatch \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (ret_chk < SEC_5) {
-		printf("tc_libc_timer_gmtime FAIL, gmtime not getting correct time \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_timer_gmtime PASS\n");
-	total_pass++;
+	TC_ASSERT_GEQ("gtime", ret_chk, SEC_5);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -207,25 +175,20 @@ static void tc_libc_timer_clock_isleapyear(void)
 {
 	int ret_chk = ERROR;
 	int year;
-	year = ISLEAPYEAR;
+
 	/* Entered year is a leap year */
+
+	year = ISLEAPYEAR;
 	ret_chk = clock_isleapyear(year);
-	if (ret_chk != 1) {
-		printf("tc_libc_timer_clock_isleapyear FAIL, should return a leap year \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("clock_isleapyear", ret_chk, 1);
+
+	/*Entered year is not a leap year */
 
 	year = ISNOTLEAPYEAR;
-	/*Entered year is not a leap year */
 	ret_chk = clock_isleapyear(year);
-	if (ret_chk != OK) {
-		printf("tc_libc_timer_clock_isleapyear FAIL, should not return a leap year \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_timer_clock_isleapyear PASS\n");
-	total_pass++;
+	TC_ASSERT_EQ("clock_isleapyear", ret_chk, 0);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -244,29 +207,18 @@ static void tc_libc_timer_localtime(void)
 {
 	time_t test_time;
 	struct tm *st_rettime = NULL;
-	time(&test_time);
-
 	struct tm *st_gmtime = NULL;
-	st_gmtime = gmtime(&test_time);
-	if (st_gmtime == NULL) {
-		printf("tc_libc_timer_gmtime FAIL, st_rettime for time1 is null\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	st_rettime = localtime(&test_time);
-	if (st_rettime == NULL) {
-		printf("tc_libc_timer_localtime FAIL, st_rettime should point to tm structure \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (st_rettime->tm_year != st_gmtime->tm_year || st_rettime->tm_mon != st_gmtime->tm_mon) {
-		printf("tc_libc_timer_localtime FAIL, localtime and gmtime mismatch \n");
-		total_fail++;
-		RETURN_ERR;
-	}
 
-	printf("tc_libc_timer_localtime PASS\n");
-	total_pass++;
+	time(&test_time);
+	st_gmtime = gmtime(&test_time);
+	TC_ASSERT_NOT_NULL("gmtime", st_gmtime);
+
+	st_rettime = localtime(&test_time);
+	TC_ASSERT_NOT_NULL("localtime", st_gmtime);
+	TC_ASSERT_EQ("localtime", st_rettime->tm_year, st_gmtime->tm_year);
+	TC_ASSERT_EQ("localtime", st_rettime->tm_mon, st_gmtime->tm_mon);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -290,27 +242,20 @@ static void tc_libc_timer_localtime_r(void)
 
 	test_time = time(&test_time);
 
-	gmtime_r(&test_time, &st_gettime);	/* get time through gmtime_r */
-	st_rettime = localtime_r(&test_time, &st_time);
-	if (st_rettime == NULL) {
-		printf("tc_libc_timer_localtime_r FAIL, st_rettime should point to tm structure \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	/* verifying the structures "returned and filled" by comparing their parameters */
-	if (st_rettime->tm_year != st_time.tm_year || st_rettime->tm_mon != st_time.tm_mon) {
-		printf("tc_libc_timer_localtime_r FAIL, st_rettime and st_time mismatch \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (st_gettime.tm_year != st_time.tm_year || st_gettime.tm_mon != st_time.tm_mon) {
-		printf("tc_libc_timer_localtime_r FAIL, st_rettime and st_gettime mismatch \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	/* get time through gmtime_r */
 
-	printf("tc_libc_timer_localtime_r PASS\n");
-	total_pass++;
+	gmtime_r(&test_time, &st_gettime);
+
+	/* verifying the structures "returned and filled" by comparing their parameters */
+
+	st_rettime = localtime_r(&test_time, &st_time);
+	TC_ASSERT_NOT_NULL("localtime_r", st_rettime);
+	TC_ASSERT_EQ("localtime_r", st_rettime->tm_year, st_time.tm_year);
+	TC_ASSERT_EQ("localtime_r", st_rettime->tm_mon, st_time.tm_mon);
+	TC_ASSERT_EQ("localtime_r", st_gettime.tm_year, st_time.tm_year);
+	TC_ASSERT_EQ("localtime_r", st_gettime.tm_mon, st_time.tm_mon);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -331,26 +276,20 @@ static void tc_libc_timer_mktime(void)
 	int after5days;
 	struct tm *st_time;
 	time_t test_time;
+
 	time(&test_time);
 	/* calculate current date */
 	st_time = localtime(&test_time);
 	today = st_time->tm_mday;
-	st_time->tm_mday = st_time->tm_mday + SEC_5;
+	st_time->tm_mday = st_time->tm_mday + 5;
 
 	ret_chk = mktime(st_time);
+	TC_ASSERT_NEQ("mktime", ret_chk, ERROR);
+
 	after5days = st_time->tm_mday;
-	if (ret_chk == ERROR) {
-		printf("tc_libc_timer_mktime FAIL, mktime API fails, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (today + SEC_5 != after5days) {
-		printf("tc_libc_timer_mktime FAIL, fails to update struct tm st_time, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_timer_mktime PASS \n");
-	total_pass++;
+	TC_ASSERT_EQ("mktime", today + 5, after5days);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -372,24 +311,19 @@ static void tc_libc_timer_strftime(void)
 	time(&test_time);
 	st_time = localtime(&test_time);
 
-	/* Verifying year and month filled in time structure */
-	strftime(buffer, BUFF_SIZE, "%m", st_time);
-	/* time structure has month in range 0-11, so tm_mon + 1 represents actual month number */
-	if (atoi(buffer) != (st_time->tm_mon + 1)) {
-		printf("tc_libc_timer_strftime FAIL, month val mismatch \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	strftime(buffer, BUFF_SIZE, "%Y", st_time);
-	/* st_time->tm_year represents year relative to YEAR_BASE */
-	if (atoi(buffer) != (st_time->tm_year + YEAR_BASE)) {
-		printf("tc_libc_timer_strftime FAIL, year val mismatch \n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	/* Verifying year and month filled in time structure.
+	 * time structure has month in range 0-11,
+	 * so tm_mon + 1 represents actual month number */
 
-	printf("tc_libc_timer_strftime PASS\n");
-	total_pass++;
+	strftime(buffer, BUFF_SIZE, "%m", st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time->tm_mon + 1);
+
+	/* st_time->tm_year represents year relative to YEAR_BASE */
+
+	strftime(buffer, BUFF_SIZE, "%Y", st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time->tm_year + YEAR_BASE);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -410,21 +344,16 @@ static void tc_libc_timer_time(void)
 	struct tm st_gmtime;
 
 	ret_time = time(&get_time);
-	gmtime_r(&get_time, &st_gmtime);	/* get time through gmtime_r */
-	localtime_r(&get_time, &st_localtime);	/* get time through localtime_r */
+	TC_ASSERT_NEQ("time", ret_time, (time_t)ERROR);
 
-	if (ret_time <= 0) {
-		printf("tc_libc_timer_time FAIL, ret_time value is negative, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (st_gmtime.tm_year != st_localtime.tm_year || st_gmtime.tm_mon != st_localtime.tm_mon) {
-		printf("tc_libc_timer_time FAIL, st_localtime and st_gmtime mismatch \n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_timer_time PASS \n");
-	total_pass++;
+	/* get time through gmtime_r, localtime_r */
+
+	gmtime_r(&get_time, &st_gmtime);
+	localtime_r(&get_time, &st_localtime);
+	TC_ASSERT_EQ("time", st_gmtime.tm_year, st_localtime.tm_year);
+	TC_ASSERT_EQ("time", st_gmtime.tm_mon, st_localtime.tm_mon);
+
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -445,29 +374,22 @@ static void tc_libc_timer_clock_daysbeforemonth(void)
 	int notleapyear_days[13] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 	/* test with not leapyear */
+
 	for (month_iter = 1; month_iter < 12; month_iter++) {
 		prev_month = clock_daysbeforemonth(month_iter, FALSE);
 		cur_month = clock_daysbeforemonth(month_iter+1, FALSE);
-		if (cur_month-prev_month != notleapyear_days[month_iter]) {
-			printf("tc_libc_timer_clock_daysbeforemonth FAIL : not matched \n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("clock_daysbeforemonth", cur_month-prev_month, notleapyear_days[month_iter]);
 	}
 
 	/* test with leapyear */
+
 	for (month_iter = 1; month_iter < 12; month_iter++) {
 		prev_month = clock_daysbeforemonth(month_iter, TRUE);
 		cur_month = clock_daysbeforemonth(month_iter+1, TRUE);
-		if (cur_month-prev_month != leapyear_days[month_iter]) {
-			printf("!tc_libc_timer_clock_daysbeforemonth FAIL : not matched \n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_EQ("clock_daysbeforemonth", cur_month-prev_month, leapyear_days[month_iter]);
 	}
 
-	printf("tc_libc_timer_clock_daysbeforemonth PASS \n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

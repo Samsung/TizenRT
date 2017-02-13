@@ -433,18 +433,10 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 	/* Start the sending thread at higher priority */
 
 	status = pthread_attr_init(&attr);
-	if (status != OK) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : pthread_attr_init failed, status=%d\n", status);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_attr_init", status, OK);
 
 	status = pthread_attr_setstacksize(&attr, STACKSIZE);
-	if (status != OK) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : pthread_attr_setstacksize failed, status=%d\n", status);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_attr_setstacksize", status, OK);
 
 	prio_min = sched_get_priority_min(SCHED_FIFO);
 	prio_max = sched_get_priority_max(SCHED_FIFO);
@@ -452,56 +444,28 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 
 	sparam.sched_priority = prio_mid;
 	status = pthread_attr_setschedparam(&attr, &sparam);
-	if (status != OK) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : pthread_attr_setschedparam failed, status=%d\n", status);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_attr_setschedparam", status, OK);
 
 	status = pthread_create(&receiver, &attr, receiver_thread, NULL);
-	if (status != OK) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : pthread_create failed, status=%d\n", status);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_create", status, OK);
 
 	/* Start the sending thread at lower priority */
 
 	status = pthread_attr_init(&attr);
-	if (status != OK) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : pthread_attr_init failed, status=%d\n", status);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_attr_init", status, OK);
 
 	status = pthread_attr_setstacksize(&attr, STACKSIZE);
-	if (status != OK) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : pthread_attr_setstacksize failed, status=%d\n", status);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_attr_setstacksize", status, OK);
 
 	sparam.sched_priority = (prio_min + prio_mid) / 2;
 	status = pthread_attr_setschedparam(&attr, &sparam);
-	if (status != OK) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : pthread_attr_setschedparam failed, status=%d\n", status);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_attr_setschedparam", status, OK);
 
 	status = pthread_create(&sender, &attr, sender_thread, NULL);
-	if (status != OK) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : pthread_create failed, status=%d\n", status);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_create", status, OK);
 
 	pthread_join(sender, &result);
-	if (result != (void *)0) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : ERROR sender thread exited with %d errors\n", (int)result);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_join", result, (void *)0);
 #ifndef CONFIG_DISABLE_SIGNALS
 	/* Wake up the receiver thread with a signal */
 
@@ -527,12 +491,7 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 	 */
 
 	pthread_join(receiver, &result);
-	if (result != expected) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : ERROR receiver thread should have exited with %p\n", expected);
-		tckndbg(" ERROR Instead exited with nerrors=%d\n", (int)result);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("pthread_join", result, expected);
 
 	/* Message queues are global resources and persist for the life the the
 	 * task group.  The message queue opened by the sender_thread must be closed
@@ -541,41 +500,19 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 	 */
 
 	if (result == PTHREAD_CANCELED && g_recv_mqfd) {
-		if (mq_close(g_recv_mqfd) < 0) {
-			printf("tc_mqueue_mq_open_close_send_receive FAIL\n");
-			total_fail++;
-			RETURN_ERR;
-		}
+		TC_ASSERT_GEQ("mq_close", mq_close(g_recv_mqfd), 0);
 	} else if (result != PTHREAD_CANCELED && g_recv_mqfd) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : ERROR send mqd_t left open\n");
-		if (mq_close(g_recv_mqfd) < 0) {
-			printf("tc_mqueue_mq_close FAIL\n");
-		}
-		total_fail++;
-		RETURN_ERR;
+		TC_ASSERT_EQ("mq_close", mq_close(g_recv_mqfd), 0);
+		TC_ASSERT("pthread_join", false);
 	}
 
 	/* Make sure that the receive queue is closed as well */
-
-	if (g_send_mqfd) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL : receiver mqd_t left open\n");
-		if (mq_close(g_send_mqfd) < 0) {
-			printf("tc_mqueue_mq_open_close_send_receive FAIL : sender_thread ERROR mq_close failed\n");
-		}
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT("mq_close", !g_send_mqfd);
 
 	/* Destroy the message queue */
+	TC_ASSERT_GEQ("mq_unlink", mq_unlink("mqueue"), 0);
 
-	if (mq_unlink("mqueue") < 0) {
-		printf("tc_mqueue_mq_open_close_send_receive FAIL: mq_unlink FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-
-	total_pass++;
-	printf("tc_mqueue_mq_open_close_send_receive PASS\n");
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_libc_mqueue_mq_setattr_getattr(void)
@@ -585,44 +522,29 @@ static void tc_libc_mqueue_mq_setattr_getattr(void)
 	struct mq_attr nmqstat;
 
 	mqdes = mq_open("mqsetget", O_CREAT | O_RDWR, 0666, 0);
-	if (mqdes == (mqd_t)-1) {
-		printf("tc_libc_mqueue_mq_setattr_getattr FAIL : mq_open fail\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
+
 	memset(&mqstat, 0, sizeof(mqstat));
 	memset(&nmqstat, 0, sizeof(mqstat));
 
-	if (mq_getattr(mqdes, &mqstat) == ERROR) {
-		printf("tc_libc_mqueue_mq_setattr_getattr FAIL : mq_getattr fail\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("mq_getattr", mq_getattr(mqdes, &mqstat), ERROR);
+
 	mqstat.mq_maxmsg = mqstat.mq_maxmsg + 1;
 	mqstat.mq_msgsize = mqstat.mq_msgsize + 1;
 	mqstat.mq_curmsgs = mqstat.mq_curmsgs + 1;
 
-	if (mq_setattr(mqdes, &mqstat, NULL) != OK) {
-		printf("tc_libc_mqueue_mq_setattr_getattr FAIL : mq_setattr fail\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if (mq_getattr(mqdes, &nmqstat) == ERROR) {
-		printf("tc_libc_mqueue_mq_setattr_getattr FAIL : mq_getattr fail\n");
-		total_fail++;
-		RETURN_ERR;
-	}
-	if ((nmqstat.mq_maxmsg == mqstat.mq_maxmsg) || (nmqstat.mq_msgsize == mqstat.mq_msgsize) || (nmqstat.mq_curmsgs == mqstat.mq_curmsgs)) {
-		printf("tc_libc_mqueue_mq_setattr_getattr FAIL\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("mq_setattr", mq_setattr(mqdes, &mqstat, NULL), OK);
+
+	TC_ASSERT_NEQ("mq_getattr", mq_getattr(mqdes, &nmqstat), ERROR);
+
+	TC_ASSERT_NEQ("mq_setattr_getattr", nmqstat.mq_maxmsg, mqstat.mq_maxmsg);
+	TC_ASSERT_NEQ("mq_setattr_getattr", nmqstat.mq_msgsize, mqstat.mq_msgsize);
+	TC_ASSERT_NEQ("mq_setattr_getattr", nmqstat.mq_curmsgs, mqstat.mq_curmsgs);
 
 	mq_close(mqdes);
 	mq_unlink("mqsetget");
 
-	total_pass++;
-	printf("tc_libc_mqueue_mq_setattr_getattr PASS\n");
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_libc_mqueue_mq_notify(void)
@@ -634,44 +556,31 @@ static void tc_libc_mqueue_mq_notify(void)
 	unsigned int prio = 1;
 
 	mqdes = mq_open("noti_queue", O_CREAT | O_RDWR, 0666, 0);
-	if (mqdes == (mqd_t)-1) {
-		printf("tc_libc_mqueue_mq_notify FAIL : mq_open\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
 
 	notification.sigev_notify = SIGEV_SIGNAL;
 	notification.sigev_signo = SIGUSR1;
 	sa.sa_handler = mq_notify_handler;
 	sa.sa_flags = 0;
 	sigaction(SIGUSR1, &sa, NULL);
-	if (mq_notify(mqdes, &notification) != OK) {
-		printf("tc_libc_mqueue_mq_notify FAIL : mq_notify\n");
-		total_fail++;
-		mq_close(mqdes);
-		mq_unlink("noti_queue");
-		RETURN_ERR;
+
+	TC_ASSERT_EQ_CLEANUP("mq_notify", mq_notify(mqdes, &notification), OK, get_errno(), {
+		goto cleanup;
 	}
-	if (mq_send(mqdes, s_msg_ptr, 15, prio) == ERROR) {
-		printf("tc_libc_mqueue_mq_notify FAIL : mq_send %d\n", errno);
-		total_fail++;
-		mq_close(mqdes);
-		mq_unlink("noti_queue");
-		RETURN_ERR;
+						);
+
+	TC_ASSERT_NEQ_CLEANUP("mq_send", mq_send(mqdes, s_msg_ptr, 15, prio), ERROR, get_errno(), {
+		goto cleanup;
 	}
+						 );
+
 	sleep(1);
-	if (!enter_notify_handler) {
-		printf("tc_libc_mqueue_mq_notify FAIL\n");
-		total_fail++;
-		mq_close(mqdes);
-		mq_unlink("noti_queue");
-		RETURN_ERR;
-	} else {
-		printf("tc_libc_mqueue_mq_notify PASS\n");
-		total_pass++;
-		mq_close(mqdes);
-		mq_unlink("noti_queue");
-	}
+	TC_ASSERT("mq_notify", enter_notify_handler);
+
+	TC_SUCCESS_RESULT();
+cleanup:
+	mq_close(mqdes);
+	mq_unlink("noti_queue");
 }
 
 static void tc_libc_mqueue_mq_timedsend_timedreceive(void)
@@ -680,19 +589,12 @@ static void tc_libc_mqueue_mq_timedsend_timedreceive(void)
 
 	timedsend_check = timedreceive_check = 0;
 	ret_chk = timedsend_test();
-	if (ret_chk != OK) {
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("timedsend_test", ret_chk, OK);
 
 	ret_chk = timedreceive_test();
-	if (ret_chk != OK) {
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("timedreceive_test", ret_chk, OK);
 
-	total_pass++;
-	printf("tc_libc_mqueue_mq_timedsend_timedreceive PASS\n");
+	TC_SUCCESS_RESULT();
 }
 
 static void tc_libc_mqueue_mq_unlink(void)
@@ -701,30 +603,23 @@ static void tc_libc_mqueue_mq_unlink(void)
 	mqd_t mqdes;
 
 	mqdes = mq_open("mqunlink", O_CREAT | O_RDWR, 0666, 0);
-	if (mqdes == (mqd_t)-1) {
-		printf("tc_libc_mqueue_mq_setattr_getattr FAIL : mq_open fail\n");
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
 
 	ret = mq_unlink("mqunlink");
-	if (ret != OK) {
-		printf("tc_mqueue_mq_unlink FAIL\n");
-		total_fail++;
+	TC_ASSERT_EQ_CLEANUP("mq_unlink", ret, OK, get_errno(), {
 		mq_close(mqdes);
-		RETURN_ERR;
-	}
-	ret = mq_unlink("mqunlink");
-	if (ret != ERROR || errno != ENOENT) {
-		printf("tc_mqueue_mq_unlink FAIL2\n");
-		total_fail++;
-		mq_close(mqdes);
-		RETURN_ERR;
-	}
+	});
 
-	total_pass++;
+	ret = mq_unlink("mqunlink");
+	TC_ASSERT_EQ_CLEANUP("mq_unlink", ret, ERROR, get_errno(), {
+		mq_close(mqdes);
+	});
+	TC_ASSERT_EQ_CLEANUP("mq_unlink", errno, ENOENT, get_errno(), {
+		mq_close(mqdes);
+	});
+
 	mq_close(mqdes);
-	printf("tc_mqueue_mq_unlink PASS\n");
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

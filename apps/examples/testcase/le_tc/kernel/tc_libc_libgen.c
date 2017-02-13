@@ -45,55 +45,29 @@ static void tc_libc_libgen_basename(void)
 	char *path = "/etc/passwd";
 
 	psz_str = basename(path);
+	TC_ASSERT_EQ("basename", strncmp(psz_str, "passwd", strlen(psz_str)), 0);
 
-	if (strncmp(psz_str, "passwd", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen_basename path: /etc/passwd FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 	path = "/etc";
 	psz_str = basename(path);
+	TC_ASSERT_EQ("basename", strncmp(psz_str, "etc", strlen(psz_str)), 0);
 
-	if (strncmp(psz_str, "etc", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen_basename path: /etc FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 	path = "etc";
 	psz_str = basename(path);
-
-	if (strncmp(psz_str, "etc", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen_basename path: etc FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("basename", strncmp(psz_str, "etc", strlen(psz_str)), 0);
 
 	path = "/";
 	psz_str = basename(path);
+	TC_ASSERT_EQ("basename", strncmp(psz_str, "/", strlen(psz_str)), 0);
 
-	if (strncmp(psz_str, "/", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen_basename path: / FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 	path = ".";
 	psz_str = basename(path);
+	TC_ASSERT_EQ("basename", strncmp(psz_str, ".", strlen(psz_str)), 0);
 
-	if (strncmp(psz_str, ".", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen_basename path: . FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 	path = "..";
 	psz_str = basename(path);
+	TC_ASSERT_EQ("basename", strncmp(psz_str, "..", strlen(psz_str)), 0);
 
-	if (strncmp(psz_str, "..", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen_basename path: .. FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_libgen_basename PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -112,55 +86,29 @@ static void tc_libc_libgen_dirname(void)
 	char path[] = "/etc/passwd";
 
 	psz_str = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(psz_str, "/etc", strlen(psz_str)), 0);
 
-	if (strncmp(psz_str, "/etc", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen__dirname path: /etc/passwd FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 	strncpy(path, "/etc", strlen(path));
 	psz_str = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(psz_str, "/", strlen(psz_str)), 0);
 
-	if (strncmp(psz_str, "/", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen__dirname path: /etc FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 	strncpy(path, "etc", strlen(path));
 	psz_str = dirname(path);
-
-	if (strncmp(psz_str, ".", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen__dirname path: etc FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
+	TC_ASSERT_EQ("dirname", strncmp(psz_str, ".", strlen(psz_str)), 0);
 
 	strncpy(path, "/", strlen(path));
 	psz_str = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(psz_str, "/", strlen(psz_str)), 0);
 
-	if (strncmp(psz_str, "/", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen__dirname path: / FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 	strncpy(path, ".", strlen(path));
 	psz_str = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(psz_str, ".", strlen(psz_str)), 0);
 
-	if (strncmp(psz_str, ".", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen__dirname path: . FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
 	strncpy(path, "..", strlen(path));
 	psz_str = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(psz_str, ".", strlen(psz_str)), 0);
 
-	if (strncmp(psz_str, ".", strlen(psz_str)) != OK) {
-		printf("tc_libc_libgen__dirname path: .. FAIL, Error No: %d\n", errno);
-		total_fail++;
-		RETURN_ERR;
-	}
-	printf("tc_libc_libgen_dirname PASS\n");
-	total_pass++;
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

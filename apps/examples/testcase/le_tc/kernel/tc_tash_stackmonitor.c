@@ -61,13 +61,11 @@ static int tc_tash_stackmonitor(int argc, char *args[])
 	tc_thread_attr.priority = TC_STACKMONITOR_PRIO;
 
 	ret = pthread_create(&tc_thread, &tc_thread_attr, stkmon_thread, NULL);
-	if (ret != OK) {
-		printf("tc_tash_stackmonitor FAIL : pthread_create\n");
-		return ERROR;
-	}
+	TC_ASSERT_EQ("pthread_create", ret, OK);
 	pthread_setname_np(tc_thread, TC_STACKMONITOR_TASKNAME);
 
 	pthread_detach(tc_thread);
+	TC_SUCCESS_RESULT();
 	return OK;
 }
 
