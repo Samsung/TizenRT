@@ -31,7 +31,7 @@ LOCAL &BASE_DIR
 ENTRY &image_file &image_size &dest_addr
 
 SYStem.Option ResBreak OFF
-SYStem.Option WaitReset 100.ms 
+SYStem.Option WaitReset 100.ms
 SYStem.Option EnReset OFF
 SYStem.Option IMASKASM ON
 SYStem.Option IMASKHLL ON
@@ -69,24 +69,24 @@ GOSUB	enable_region			; Set Memory region for FLASH write
 ;------------------------------
 ; S5JT200 FLASH FUSING MAP (16.08.18)
 ; nBl1, tinyara, wlan F/W
-;-----------------------------	
+;-----------------------------
 &MIRROR_OFFSET=0x5C000000		;0x6000_0000 mirror with 0x0400_0000
-&FLASH_BASE=0x04000000+&MIRROR_OFFSET		
+&FLASH_BASE=0x04000000+&MIRROR_OFFSET
 
 &BL1_FLASH_START=0x04000000+&MIRROR_OFFSET
 &BL2_FLASH_START=0x04004000+&MIRROR_OFFSET
-&tinyARA_FLASH_START=0x0400C000+&MIRROR_OFFSET	
-&led_FW_FLASH_START=0x042BC000+&MIRROR_OFFSET ; 256KB  -> 0x042F_C000
-&sss_FW_FLASH_START=0x042FC000+&MIRROR_OFFSET ; 32KB  ->0x0430_4000
-&wlan_FW_FLASH_START=0x04304000+&MIRROR_OFFSET ; 744KB ->0x043BE000
+&tinyARA_FLASH_START=0x0400C000+&MIRROR_OFFSET
+;&led_FW_FLASH_START=0x042BC000+&MIRROR_OFFSET ; 256KB  -> 0x042F_C000
+;&sss_FW_FLASH_START=0x042FC000+&MIRROR_OFFSET ; 32KB  ->0x0430_4000
+;&wlan_FW_FLASH_START=0x04304000+&MIRROR_OFFSET ; 744KB ->0x043BE000
 
 
 &BL1_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.nbl1.bin"
 &BL2_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.bl2.head.bin"
 &tinyARA_FLASH_FILE="&BASE_DIR\..\..\..\output\bin\tinyara_head.bin"
-&led_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.ledctrlblk.m0.bin"
-&sss_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.sss.fw.bin"
-&wlan_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.wlan.bin"
+;&led_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.ledctrlblk.m0.bin"
+;&sss_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.sss.fw.bin"
+;&wlan_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.wlan.bin"
 
 GOSUB	flash_init
 ;erase area for flashing
@@ -97,18 +97,18 @@ GOSUB	flash_init
 GOSUB flash_erase_by_se &BL1_FLASH_FILE &BL1_FLASH_START
 GOSUB flash_erase_by_se &BL2_FLASH_FILE &BL2_FLASH_START
 GOSUB flash_erase_by_se &tinyARA_FLASH_FILE &tinyARA_FLASH_START
-GOSUB flash_erase_by_se &led_FW_FLASH_FILE &led_FW_FLASH_START
-GOSUB flash_erase_by_se &sss_FW_FLASH_FILE &sss_FW_FLASH_START
-GOSUB flash_erase_by_se &wlan_FW_FLASH_FILE &wlan_FW_FLASH_START
+;GOSUB flash_erase_by_se &led_FW_FLASH_FILE &led_FW_FLASH_START
+;GOSUB flash_erase_by_se &sss_FW_FLASH_FILE &sss_FW_FLASH_START
+;GOSUB flash_erase_by_se &wlan_FW_FLASH_FILE &wlan_FW_FLASH_START
 
 
 ;flash images
-GOSUB	flash_write	&BL1_FLASH_FILE &BL1_FLASH_START	
-GOSUB	flash_write	&BL2_FLASH_FILE &BL2_FLASH_START	
+GOSUB	flash_write	&BL1_FLASH_FILE &BL1_FLASH_START
+GOSUB	flash_write	&BL2_FLASH_FILE &BL2_FLASH_START
 GOSUB	flash_write	&tinyARA_FLASH_FILE &tinyARA_FLASH_START
-GOSUB	flash_write	&led_FW_FLASH_FILE &led_FW_FLASH_START	
-GOSUB	flash_write	&sss_FW_FLASH_FILE &sss_FW_FLASH_START	
-GOSUB	flash_write	&wlan_FW_FLASH_FILE &wlan_FW_FLASH_START
+;GOSUB	flash_write	&led_FW_FLASH_FILE &led_FW_FLASH_START
+;GOSUB	flash_write	&sss_FW_FLASH_FILE &sss_FW_FLASH_START
+;GOSUB	flash_write	&wlan_FW_FLASH_FILE &wlan_FW_FLASH_START
 
 ;Reset Board
 ;d.s SD:0x8009200c %LE %LONG 0x00000001	;;PORESET
@@ -121,12 +121,12 @@ flash_init:
 	d.s SD:0x80040028 %LE %LONG 0x00333333 ;;GPPUD
 	d.s SD:0x80310004 %LE %LONG 0x8010001A ;;Disable WP, Disable erase_wait
 
-	RETURN		
+	RETURN
 
 ;-----------------------------------------
 flash_write:
 
-	ENTRY &file &fstart 
+	ENTRY &file &fstart
 
 	d.load.b &file &fstart
 
@@ -135,14 +135,14 @@ flash_write:
 ;-----------------------------------------
 flash_erase:
 
- ENTRY &file &fstart 
+ ENTRY &file &fstart
  LOCAL &temp &write_size &target_addr &end_addr
  &write_size=OS.FILE.SIZE(&file)
  print "erase address :0x" &fstart
  &target_addr=&fstart-&FLASH_BASE-(&fstart%0x10000)
  &end_addr=&target_addr+&write_size
  print "Logical Flash Address :0x" &target_addr
- print "Memory Map in Flash Addr 0x" &fstart  
+ print "Memory Map in Flash Addr 0x" &fstart
  while &target_addr<&end_addr
  (
    d.s SD:0x80310010 %LE %LONG &target_addr ;;Erase Address(base 0x0 -- mapped 0x0400_0000)
@@ -151,7 +151,7 @@ flash_erase:
    print "Erase Flash :0x" &target_addr
    ;print "remain :0x" &write_size-&target_addr
    GOSUB flash_erase_wait
- ) 
+ )
  ;wait 0.8s
  ;READ SERIAL FLASH ID
  &temp=DATA.LONG(SD:0x803100AC)
@@ -160,7 +160,7 @@ flash_erase:
 
 ;-----------------------------------------
 flash_erase_by_se:
- ENTRY &file &fstart 
+ ENTRY &file &fstart
  LOCAL &temp &write_size &target_addr &end_addr
  &write_size=OS.FILE.SIZE(&file)
  print &fstart
