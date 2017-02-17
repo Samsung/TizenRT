@@ -475,9 +475,7 @@ static void s5j_sflash_select(FAR struct spi_dev_s *spidev, enum spi_dev_e devid
  * Name: s5j_sflash_setfrequency
  *
  * Description:
- *  Support changing frequency. But we can't change frequency.
- *  If you need to change frequency, please ask the broadcom.
- *  This function is a part of spi_ops.
+ *  Support changing frequency.
  *
  *****************************************************************************/
 
@@ -490,9 +488,7 @@ static uint32_t s5j_sflash_setfrequency(FAR struct spi_dev_s *spidev, uint32_t f
  * Name: s5j_sflash_setmode
  *
  * Description:
- *  Support changing mode(CPHA/CPOL). But we can't change mode.
- *  If you need to change mode, please ask the broadcom.
- *  This function is a part of spi_ops.
+ *  Support changing mode(CPHA/CPOL).
  *
  *****************************************************************************/
 
