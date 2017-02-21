@@ -269,6 +269,7 @@ int s5j_sflash_erase(struct s5j_sflash_dev_s *dev, uint8_t cmd, uint32_t addr)
 {
 	int ret;
 	uint32_t val;
+	int size = 0;
 
 #ifdef S5J_SFLASH_USE_DIRECT_RW
 	/* debug code */
@@ -299,8 +300,10 @@ int s5j_sflash_erase(struct s5j_sflash_dev_s *dev, uint8_t cmd, uint32_t addr)
 	case SFLASH_SECTOR_ERASE:
 		Outp32(rERASE_ADDRESS, addr);
 		Outp8(rSE, QSPI_DUMMY_DATA);
+		size = 4096; /* Sub-sector size */
 		break;
 	case SFLASH_BLOCK_ERASE_LARGE:
+		size = 65536; /* block size */
 		SetBits(rCOMMAND2, 16, 0xFF, COMMAND_ERASE_64KB);
 		/* SetBits(rCOMMAND2, 16, 0xFF, COMMAND_ERASE_32KB); */
 
@@ -312,8 +315,10 @@ int s5j_sflash_erase(struct s5j_sflash_dev_s *dev, uint8_t cmd, uint32_t addr)
 		break;
 	}
 
-	while (getreg32(rRDSR) & 0x1) {
-		usleep(10);
+	while (getreg8(rRDSR) & 0x1) ;
+
+	if (cmd != SFLASH_CHIP_ERASE1) {
+		arch_invalidate_dcache(addr + S5J_SFLASH_MAPPED_ADDR, (addr + S5J_SFLASH_MAPPED_ADDR + size));
 	}
 
 	return OK;
@@ -405,6 +410,9 @@ int s5j_sflash_write(struct s5j_sflash_dev_s *dev, uint32_t addr, uint8_t *buf, 
 		addr += readsize;
 		i += readsize;
 		size -= readsize;
+
+		/* check write in progress */
+		while (getreg8(rRDSR) & 0x1) ;
 	}
 
 	return OK;

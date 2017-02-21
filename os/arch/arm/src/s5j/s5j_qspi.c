@@ -418,19 +418,27 @@ void QSPI_Sector_Erase(u32 targetAddr)
 	Outp32(rERASE_ADDRESS, targetAddr);
 
 	Outp8(rSE, QSPI_DUMMY_DATA);
+
+	arch_invalidate_dcache(targetAddr + CONFIG_S5J_FLASH_BASE, (targetAddr + CONFIG_S5J_FLASH_BASE + QSPI_SIZE_4KB));
 }
 
 void QSPI_Block_Erase(u32 targetAddr, eQSPI_BLOCK_SIZE unit)
 {
+	u32 blockEraseSize = 0;
+
 	if (unit == BLOCK_64KB) {
 		SetBits(rCOMMAND2, 16, 0xFF, COMMAND_ERASE_64KB);
+		blockEraseSize = QSPI_SIZE_64KB;
 	} else {
 		SetBits(rCOMMAND2, 16, 0xFF, COMMAND_ERASE_32KB);
+		blockEraseSize = QSPI_SIZE_32KB;
 	}
 
 	Outp32(rERASE_ADDRESS, targetAddr);
 
 	Outp8(rBE, QSPI_DUMMY_DATA);
+
+	arch_invalidate_dcache(targetAddr + CONFIG_S5J_FLASH_BASE, (targetAddr + CONFIG_S5J_FLASH_BASE + blockEraseSize));
 }
 
 void QSPI_Chip_Erase(void)
