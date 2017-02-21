@@ -138,7 +138,7 @@ int pthread_mutex_trylock(FAR pthread_mutex_t *mutex)
 		/* Try to get the semaphore. */
 
 		if (sem_trywait((sem_t *)&mutex->sem) == OK) {
-			/* If we succussfully obtained the semaphore, then indicate
+			/* If we successfully obtained the semaphore, then indicate
 			 * that we own it.
 			 */
 			mutex->pid = mypid;
