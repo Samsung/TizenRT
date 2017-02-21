@@ -116,7 +116,7 @@ static void *consumer_func(void *arg)
 static void tc_semaphore_sem_init_post_wait(void)
 {
 	int ret_val;
-	pthread_addr_t *pexit_value = NULL;
+	pthread_addr_t pexit_value = NULL;
 	pthread_t pid;
 	pthread_t cid;
 
