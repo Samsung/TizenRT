@@ -17,9 +17,9 @@
 ###########################################################################
 
 ############################################################################
-# apps/examples/testcase/Makefile
+# apps/examples/testcase/ttrace/Make.defs
 #
-#   Copyright (C) 2011-2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,109 +51,9 @@
 #
 ############################################################################
 
--include $(TOPDIR)/.config
--include $(TOPDIR)/Make.defs
-include $(APPDIR)/Make.defs
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_TTRACE),y)
+CSRCS += ttrace_tc_main.c
 
-# built-in application info
-
-APPNAME = tc
-THREADEXEC = TASH_EXECMD_ASYNC
-
-# testcase example
-
-ASRCS =
-CSRCS =
-
-ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
-
-CSRCS += tc_main.c
-DEPPATH = --dep-path .
-VPATH = .
-
-ifeq ($(WINTOOL),y)
-INCDIROPT = -w
+DEPPATH += --dep-path le_tc/ttrace
+VPATH += :le_tc/ttrace
 endif
-
-include le_tc/filesystem/Make.defs
-include le_tc/kernel/Make.defs
-include le_tc/network/Make.defs
-include le_tc/ttrace/Make.defs
-include ta_tc/systemio/utc/Make.defs
-include ta_tc/systemio/itc/Make.defs
-include ta_tc/arastorage/utc/Make.defs
-include ta_tc/arastorage/itc/Make.defs
-include ta_tc/device_management/utc/Make.defs
-include ta_tc/device_management/itc/Make.defs
-
-endif
-
-AOBJS		= $(ASRCS:.S=$(OBJEXT))
-COBJS		= $(CSRCS:.c=$(OBJEXT))
-
-SRCS		= $(ASRCS) $(CSRCS)
-OBJS		= $(AOBJS) $(COBJS)
-
-ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN		= ..\..\libapps$(LIBEXT)
-else
-ifeq ($(WINTOOL),y)
-  BIN		= ..\\..\\libapps$(LIBEXT)
-else
-  BIN		= ../../libapps$(LIBEXT)
-endif
-endif
-
-# Build targets
-
-all:	.built
-.PHONY: context .depend depend clean distclean
-
-ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
-
-$(AOBJS): %$(OBJEXT): %.S
-	$(call ASSEMBLE, $<, $@)
-
-$(COBJS): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
-endif
-
-.built: $(OBJS)
-ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
-	$(call ARCHIVE, $(BIN), $(OBJS))
-	$(Q) touch .built
-endif
-
-install:
-
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_TESTCASE),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(Q) $(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
-
-context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
-
-else
-context:
-
-endif
-
-.depend: Makefile $(SRCS)
-ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
-	$(Q) touch $@
-endif
-
-depend: .depend
-
-clean:
-	$(call DELFILE, .built)
-	$(call CLEAN)
-
-distclean: clean
-	$(call DELFILE, Make.dep)
-	$(call DELFILE, .depend)
-
-
--include Make.dep
-.PHONY: preconfig
-preconfig:

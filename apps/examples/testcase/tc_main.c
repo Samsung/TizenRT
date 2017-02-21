@@ -41,6 +41,9 @@
 #ifdef CONFIG_EXAMPLES_TESTCASE_NETWORK
 #define TC_NETWORK_STACK  2048
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_TTRACE
+#define TC_TTRACE_STACK  2048
+#endif
 #if defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_ITC)
 #define TC_SYSTEMIO_STACK 2048
 #endif
@@ -55,6 +58,7 @@ int working_tc;
 extern int fs_main(int argc, char *argv[]);
 extern int kernel_tc_main(int argc, char *argv[]);
 extern int network_tc_main(int argc, char *argv[]);
+extern int ttrace_tc_main(int argc, char *argv[]);
 
 /* TinyAra Public API Test Case as ta_tc */
 extern int utc_arastorage_main(int argc, char *argv[]);
@@ -112,6 +116,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("nettc", SCHED_PRIORITY_DEFAULT, TC_NETWORK_STACK, network_tc_main, argv);
 	if (pid < 0) {
 		printf("Network tc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_TTRACE
+	pid = task_create("ttracetc", SCHED_PRIORITY_DEFAULT, TC_TTRACE_STACK, ttrace_tc_main, argv);
+	if (pid < 0) {
+		printf("T-trace tc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_DM_UTC
