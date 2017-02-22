@@ -348,19 +348,16 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 {
 	int ret;
 
+	if (priority < SCHED_PRIORITY_MIN || priority > SCHED_PRIORITY_MAX) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
+
 	/* Assign a unique task ID to the task. */
 
 	ret = task_assignpid(tcb);
 	if (ret == OK) {
 		/* Save task priority and entry point in the TCB */
-
-		if (priority < SCHED_PRIORITY_MIN) {
-			svdbg("WARNING: Requested priority is lower than min value (1)\n");
-			priority = SCHED_PRIORITY_MIN;
-		} else if (priority > SCHED_PRIORITY_MAX) {
-			svdbg("WARNING: Requested priority is higher than max value (255)\n");
-			priority = SCHED_PRIORITY_MAX;
-		}
 
 		tcb->sched_priority = (uint8_t)priority;
 #ifdef CONFIG_PRIORITY_INHERITANCE
