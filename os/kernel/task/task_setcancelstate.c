@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * fs/vfs/fs_pwrite.c
+ * kernel/task/task_setcancelstate.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2008, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,124 +56,111 @@
 
 #include <tinyara/config.h>
 
-#include <sys/types.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <sched.h>
 #include <errno.h>
 
-#include <tinyara/cancelpt.h>
-#include <tinyara/fs/fs.h>
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#include "sched/sched.h"
+#include "task/task.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: file_pwrite
+ * Name: task_setcancelstate
  *
  * Description:
- *   Equivalent to the standard pwrite function except that is accepts a
- *   struct file instance instead of a file descriptor.  Currently used
- *   only by aio_write();
+ *   The task_setcancelstate() function atomically both sets the calling
+ *   task's cancelability state to the indicated state and returns the
+ *   previous cancelability state at the location referenced by oldstate.
+ *   Legal values for state are TASK_CANCEL_ENABLE and TASK_CANCEL_DISABLE.
+ *
+ *   The cancelability state and type of any newly created tasks are
+ *   TASK_CANCEL_ENABLE and TASK_CANCEL_DEFERRED respectively.
+ *
+ * Input Parameters:
+ *   state    - the new cancellability state, either TASK_CANCEL_ENABLE or
+ *              TASK_CANCEL_DISABLE
+ *   oldstate - The location to return the old cancellability state.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; ERROR is returned on any failure with the
+ *   errno value set appropriately.
  *
  ****************************************************************************/
 
-ssize_t file_pwrite(FAR struct file *filep, FAR const void *buf, size_t nbytes, off_t offset)
+int task_setcancelstate(int state, FAR int *oldstate)
 {
-	off_t savepos;
-	off_t pos;
-	ssize_t ret;
-	int errcode;
+	FAR struct tcb_s *tcb = (FAR struct tcb_s *)g_readytorun.head;
+	int ret = OK;
 
-	/* Perform the seek to the current position.  This will not move the
-	 * file pointer, but will return its current setting
+	/* Suppress context changes for a bit so that the flags are stable. (the
+	 * flags should not change in interrupt handling).
 	 */
 
-	savepos = file_seek(filep, 0, SEEK_CUR);
-	if (savepos == (off_t)-1) {
-		/* file_seek might fail if this if the media is not seekable */
+	sched_lock();
 
-		return ERROR;
+	/* Return the current state if so requrested */
+
+	if (oldstate != NULL) {
+		if ((tcb->flags & TCB_FLAG_NONCANCELABLE) != 0) {
+			*oldstate = TASK_CANCEL_DISABLE;
+		} else {
+			*oldstate = TASK_CANCEL_ENABLE;
+		}
 	}
 
-	/* Then seek to the correct position in the file */
+	/* Set the new cancellation state */
 
-	pos = file_seek(filep, offset, SEEK_SET);
-	if (pos == (off_t)-1) {
-		/* This might fail is the offset is beyond the end of file */
+	if (state == TASK_CANCEL_ENABLE) {
+		/* Clear the non-cancelable flag */
 
-		return ERROR;
-	}
+		tcb->flags &= ~TCB_FLAG_NONCANCELABLE;
 
-	/* Then perform the write operation */
+		/* Check if a cancellation was pending */
 
-	ret = file_write(filep, buf, nbytes);
-	errcode = get_errno();
+		if ((tcb->flags & TCB_FLAG_CANCEL_PENDING) != 0) {
+#ifdef CONFIG_CANCELLATION_POINTS
+			/* If we are using deferred cancellation? */
 
-	/* Restore the file position */
+			if ((tcb->flags & TCB_FLAG_CANCEL_DEFERRED) != 0) {
+			/* Yes.. If we are within a cancellation point, then
+			 * notify of the cancellation.
+			 */
 
-	pos = file_seek(filep, savepos, SEEK_SET);
-	if (pos == (off_t)-1 && ret >= 0) {
-		/* This really should not fail */
+				if (tcb->cpcount > 0) {
+					notify_cancellation(tcb);
+				}
+			} else
+#endif
+			{
+			/* No.. We are using asynchronous cancellation.  If the
+			 * cancellation was pending in this case, then just exit.
+			 */
 
-		return ERROR;
-	}
+			tcb->flags &= ~TCB_FLAG_CANCEL_PENDING;
 
-	set_errno(errcode);
-	return ret;
-}
+#ifndef CONFIG_DISABLE_PTHREAD
+				if ((tcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD) {
+					pthread_exit(PTHREAD_CANCELED);
+				} else
+#endif
+				{
+					exit(EXIT_FAILURE);
+				}
+			}
+		}
+	} else if (state == TASK_CANCEL_DISABLE) {
+	/* Set the non-cancelable state */
 
-/****************************************************************************
- * Name: pwrite
- *
- * Description:
- *   The pwrite() function performs the same action as write(), except that
- *   it writes into a given position without changing the file pointer. The
- *   first three arguments to pwrite() are the same as write() with the
- *   addition of a fourth argument offset for the desired position inside
- *   the file.
- *
- *   NOTE: This function could have been wholly implemented within libc but
- *   it is not.  Why?  Because if pwrite were implemented in libc, it would
- *   require four system calls.  If it is implemented within the kernel,
- *   only three.
- *
- * Parameters:
- *   fd       file descriptor (or socket descriptor) to write to
- *   buf      Data to write
- *   nbytes   Length of data to write
- *
- * Return:
- *   The positive non-zero number of bytes read on success, 0 on if an
- *   end-of-file condition, or -1 on failure with errno set appropriately.
- *   See write() return values
- *
- ****************************************************************************/
-
-ssize_t pwrite(int fd, FAR const void *buf, size_t nbytes, off_t offset)
-{
-	FAR struct file *filep;
-	ssize_t ret;
-
-	/* pwrite() is a cancellation point */
-	(void)enter_cancellation_point();
-
-	/* Get the file structure corresponding to the file descriptor. */
-
-	filep = fs_getfilep(fd);
-	if (!filep) {
-		/* The errno value has already been set */
-
-		ret = (ssize_t)ERROR;
+		tcb->flags |= TCB_FLAG_NONCANCELABLE;
 	} else {
-		/* Let file_pread do the real work */
-
-		ret = file_pwrite(filep, buf, nbytes, offset);
+		set_errno(EINVAL);
+		ret = ERROR;
 	}
 
-	leave_cancellation_point();
+	sched_unlock();
 	return ret;
 }

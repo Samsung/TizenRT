@@ -65,6 +65,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/wdog.h>
+#include <tinyara/cancelpt.h>
 
 #include "sched/sched.h"
 #include "clock/clock.h"
@@ -188,6 +189,9 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 
 	DEBUGASSERT(up_interrupt_context() == false && rtcb->waitdog == NULL);
 
+	/* sem_timedwait() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	/* Verify the input parameters and, in case of an error, set
 	 * errno appropriately.
 	 */
@@ -229,6 +233,7 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 		irqrestore(flags);
 		wd_delete(rtcb->waitdog);
 		rtcb->waitdog = NULL;
+		leave_cancellation_point();
 		return OK;
 	}
 
@@ -278,6 +283,7 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	irqrestore(flags);
 	wd_delete(rtcb->waitdog);
 	rtcb->waitdog = NULL;
+	leave_cancellation_point();
 
 	/* We are either returning success or an error detected by sem_wait()
 	 * or the timeout detected by sem_timeout().  The 'errno' value has
@@ -296,5 +302,6 @@ errout_disabled:
 
 errout:
 	set_errno(err);
+	leave_cancellation_point();
 	return ERROR;
 }

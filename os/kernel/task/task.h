@@ -97,4 +97,8 @@ void task_recover(FAR struct tcb_s *tcb);
 
 bool sched_addreadytorun(FAR struct tcb_s *rtrtcb);
 
+#ifdef CONFIG_CANCELLATION_POINTS
+void notify_cancellation(FAR struct tcb_s *tcb);
+#endif
+
 #endif							/* __SCHED_TASK_TASK_H */

@@ -61,6 +61,7 @@
 #include <errno.h>
 
 #include <tinyara/sched.h>
+#include <tinyara/cancelpt.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -178,6 +179,9 @@ int waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options)
 	sigset_t sigset;
 	int err;
 	int ret;
+
+	/* waitid() is a cancellation point */
+	(void)enter_cancellation_point();
 
 	/* MISSING LOGIC:   If WNOHANG is provided in the options, then this function
 	 * should returned immediately.  However, there is no mechanism available now
@@ -387,12 +391,14 @@ int waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options)
 		}
 	}
 
+	leave_cancellation_point();
 	sched_unlock();
 	return OK;
 
 errout_with_errno:
 	set_errno(err);
 errout:
+	leave_cancellation_point();
 	sched_unlock();
 	return ERROR;
 }

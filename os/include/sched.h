@@ -87,6 +87,15 @@
 #define SCHED_SPORADIC 3		/* Not supported */
 #define SCHED_OTHER    4		/* Not supported */
 
+
+/* Cancellation definitions *****************************************************/
+/* Cancellation states used by task_setcancelstate() */
+#define TASK_CANCEL_ENABLE (0)
+#define TASK_CANCEL_DISABLE (1)
+/* Cancellation types used by task_setcanceltype() */
+#define TASK_CANCEL_DEFERRED (0)
+#define TASK_CANCEL_ASYNCHRONOUS (1)
+
 /* Pthread definitions **********************************************************/
 
 #define PTHREAD_KEYS_MAX CONFIG_NPTHREAD_KEYS
@@ -216,6 +225,10 @@ int task_delete(pid_t pid);
  * @since Tizen RT v1.0
  */
 int task_restart(pid_t pid);
+
+int    task_setcancelstate(int state, FAR int *oldstate);
+int    task_setcanceltype(int type, FAR int *oldtype);
+void   task_testcancel(void);
 
 /* Task Scheduling Interfaces (based on POSIX APIs) */
 /**

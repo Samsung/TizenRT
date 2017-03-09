@@ -66,6 +66,7 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/cancelpt.h>
 
 #include "sched/sched.h"
 #include "mqueue/mqueue.h"
@@ -174,6 +175,19 @@ FAR struct mqueue_msg_s *mq_waitreceive(mqd_t mqdes)
 	FAR struct mqueue_inode_s *msgq;
 	FAR struct mqueue_msg_s *rcvmsg;
 
+	/* mq_waitreceive() is not a cancellation point, but it is always called
+	 * from a cancellation point.
+	 */
+
+	if (enter_cancellation_point()) {
+		/* If there is a pending cancellation, then do not perform
+		 * the wait. Exit now with ECANCELED.
+		 */
+		set_errno(ECANCELED);
+		leave_cancellation_point();
+		return NULL;
+	}
+
 	/* Get a pointer to the message queue */
 
 	msgq = mqdes->msgq;
@@ -222,6 +236,7 @@ FAR struct mqueue_msg_s *mq_waitreceive(mqd_t mqdes)
 		msgq->nmsgs--;
 	}
 
+	leave_cancellation_point();
 	return rcvmsg;
 }
 
@@ -306,6 +321,5 @@ ssize_t mq_doreceive(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR char *ubuf
 	}
 
 	/* Return the length of the message transferred to the user buffer */
-
 	return rcvmsglen;
 }

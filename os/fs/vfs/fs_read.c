@@ -62,6 +62,7 @@
 #include <fcntl.h>
 #include <sched.h>
 #include <errno.h>
+#include <tinyara/cancelpt.h>
 
 #include "inode/inode.h"
 
@@ -150,6 +151,11 @@ ssize_t file_read(FAR struct file *filep, FAR void *buf, size_t nbytes)
 
 ssize_t read(int fd, FAR void *buf, size_t nbytes)
 {
+	ssize_t ret;
+
+	/* read() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	/* Did we get a valid file descriptor? */
 
 #if CONFIG_NFILE_DESCRIPTORS > 0
@@ -157,16 +163,17 @@ ssize_t read(int fd, FAR void *buf, size_t nbytes)
 #endif
 	{
 		/* No.. If networking is enabled, read() is the same as recv() with
-		 * the flags parameter set to zero.
+		 * the flags parameter set to zero. Note that recv() sets
+		 * the errno variables
 		 */
 
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
-		return recv(fd, buf, nbytes, 0);
+		ret = recv(fd, buf, nbytes, 0);
 #else
 		/* No networking... it is a bad descriptor in any event */
 
 		set_errno(EBADF);
-		return ERROR;
+		ret = ERROR;
 #endif
 	}
 #if CONFIG_NFILE_DESCRIPTORS > 0
@@ -174,19 +181,24 @@ ssize_t read(int fd, FAR void *buf, size_t nbytes)
 		FAR struct file *filep;
 
 		/* The descriptor is in a valid range to file descriptor... do the
-		 * read.  First, get the file structure.
+		 * read.  First, get the file structure. Note that on failure,
+		 * fs_getfilep() will set the errno variable.
 		 */
 
 		filep = fs_getfilep(fd);
 		if (!filep) {
 			/* The errno value has already been set */
 
-			return ERROR;
+			ret = ERROR;
+		} else {
+
+			/* Then let file_read do all of the work */
+
+			ret = file_read(filep, buf, nbytes);
 		}
-
-		/* Then let file_read do all of the work */
-
-		return file_read(filep, buf, nbytes);
 	}
 #endif
+
+	leave_cancellation_point();
+	return ret;
 }

@@ -65,6 +65,7 @@
 #include <stdarg.h>
 #endif
 
+#include <tinyara/cancelpt.h>
 #include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
@@ -117,6 +118,9 @@ int open(const char *path, int oflags, ...)
 #ifdef CONFIG_CPP_HAVE_WARNING
 #warning "File creation not implemented"
 #endif
+
+	/* open() is a cancellation point */
+	(void)enter_cancellation_point();
 
 	/* If the file is opened for creation, then get the mode bits */
 
@@ -177,7 +181,7 @@ int open(const char *path, int oflags, ...)
 	filep = fs_getfilep(fd);
 	if (!filep) {
 		/* The errno value has already been set */
-
+		leave_cancellation_point();
 		return ERROR;
 	}
 
@@ -203,6 +207,7 @@ int open(const char *path, int oflags, ...)
 		goto errout_with_fd;
 	}
 
+	leave_cancellation_point();
 	return fd;
 
 errout_with_fd:
@@ -211,5 +216,6 @@ errout_with_inode:
 	inode_release(inode);
 errout:
 	set_errno(ret);
+	leave_cancellation_point();
 	return ERROR;
 }

@@ -62,6 +62,7 @@
 #include <errno.h>
 
 #include <tinyara/sched.h>
+#include <tinyara/cancelpt.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -207,11 +208,15 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 	DEBUGASSERT(stat_loc);
 
+	/* waitpid() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	/* None of the options are supported */
 
 #ifdef CONFIG_DEBUG
 	if (options != 0) {
 		set_errno(ENOSYS);
+		leave_cancellation_point();
 		return ERROR;
 	}
 #endif
@@ -262,12 +267,14 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 	/* On success, return the PID */
 
+	leave_cancellation_point();
 	sched_unlock();
 	return pid;
 
 errout_with_errno:
 	set_errno(err);
 errout:
+	leave_cancellation_point();
 	sched_unlock();
 	return ERROR;
 }
@@ -301,11 +308,15 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 	DEBUGASSERT(stat_loc);
 
+	/* waitpid() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	/* None of the options are supported */
 
 #ifdef CONFIG_DEBUG
 	if (options != 0) {
 		set_errno(ENOSYS);
+		leave_cancellation_point();
 		return ERROR;
 	}
 #endif
@@ -491,6 +502,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 		}
 	}
 
+	leave_cancellation_point();
 	sched_unlock();
 	return (int)pid;
 
@@ -498,6 +510,7 @@ errout_with_errno:
 	set_errno(err);
 
 errout_with_lock:
+	leave_cancellation_point();
 	sched_unlock();
 	return ERROR;
 }

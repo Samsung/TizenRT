@@ -68,6 +68,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/wdog.h>
+#include <tinyara/cancelpt.h>
 
 #include "sched/sched.h"
 #include "signal/signal.h"
@@ -196,6 +197,9 @@ int sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *info, FAR const st
 	int ret = ERROR;
 
 	DEBUGASSERT(rtcb->waitdog == NULL);
+
+	/* sigtimedwait() is a cancellation point */
+	(void)enter_cancellation_point();
 
 	sched_lock();				/* Not necessary */
 
@@ -350,5 +354,6 @@ int sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *info, FAR const st
 	}
 
 	sched_unlock();
+	leave_cancellation_point();
 	return ret;
 }

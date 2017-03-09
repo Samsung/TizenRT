@@ -65,6 +65,7 @@
 
 #include <tinyara/sched.h>
 #include <tinyara/clock.h>
+#include <tinyara/cancelpt.h>
 #include <tinyara/fs/fs.h>
 
 #ifdef CONFIG_NET_LWIP
@@ -303,6 +304,9 @@ int poll(FAR struct pollfd *fds, nfds_t nfds, int timeout)
 	int count = 0;
 	int ret;
 
+	/* poll() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	sem_init(&sem, 0, 0);
 	ret = poll_setup(fds, nfds, &sem);
 	if (ret >= 0) {
@@ -369,6 +373,7 @@ int poll(FAR struct pollfd *fds, nfds_t nfds, int timeout)
 	}
 
 	sem_destroy(&sem);
+	leave_cancellation_point();
 
 	/* Check for errors */
 

@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/signal/sig_waitinfo.c
+ * libc/pthread/pthread_testcancel.c
  *
- *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,61 +54,26 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-#include <signal.h>
-#include <tinyara/cancelpt.h>
-
-/****************************************************************************
- * Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#include <pthread.h>
+#include <sched.h>
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: sigwaitinfo
+ * Name: pthread_testcancel
  *
  * Description:
- *   This function is equivalent to sigtimedwait with a NULL timeout
- *   parameter.
- *
- * Parameters:
- *   set - The pending signal set
- *   info - The returned value
- *
- * Return Value:
- *   Signal number that cause the wait to be terminated, otherwise -1 (ERROR)
- *   is returned.
- *
- * Assumptions:
+ *   The pthread_testcancel() function creates a cancellation point in the
+ *   calling thread. The pthread_testcancel() function has no effect if
+ *   cancelability is disabled
  *
  ****************************************************************************/
 
-int sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *info)
+void pthread_testcancel(void)
 {
-	int ret;
+	/* task_testcancel() does the real work */
 
-	/* sigwaitinfo() is a cancellation point */
-	(void)enter_cancellation_point();
-
-	ret = sigtimedwait(set, info, NULL);
-	leave_cancellation_point();
-	return ret;
+	task_testcancel();
 }

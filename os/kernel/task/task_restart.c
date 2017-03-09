@@ -211,7 +211,7 @@ int task_restart(pid_t pid)
 
 		status = task_activate((FAR struct tcb_s *)tcb);
 		if (status != OK) {
-			(void)task_delete(pid);
+			(void)task_terminate(pid, true);
 			set_errno(-status);
 			return ERROR;
 		}

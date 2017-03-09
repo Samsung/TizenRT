@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/signal/sig_waitinfo.c
+ * libc/pthread/pthread_setcancelstate.c
  *
- *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2008, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,60 +55,53 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <signal.h>
-#include <tinyara/cancelpt.h>
+#include <pthread.h>
+#include <sched.h>
+#include <errno.h>
 
 /****************************************************************************
- * Definitions
+ * Public Functions
  ****************************************************************************/
+/* These are defined in different header files but must have the same values. */
 
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
+#if PTHREAD_CANCEL_ENABLE != TASK_CANCEL_ENABLE
+#  error We must have  PTHREAD_CANCEL_ENABLE == TASK_CANCEL_ENABLE
+#endif
 
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#if PTHREAD_CANCEL_DISABLE != TASK_CANCEL_DISABLE
+#  error We must have  PTHREAD_CANCEL_DISABLE == TASK_CANCEL_DISABLE
+#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: sigwaitinfo
+ * Name: pthread_setcancelstate
  *
  * Description:
- *   This function is equivalent to sigtimedwait with a NULL timeout
- *   parameter.
+ *   The pthread_setcancelstate() function atomically both sets the calling
+ *   thread's cancelability state to the indicated state and returns the
+ *   previous cancelability state at the location referenced by oldstate.
+ *   Legal values for state are PTHREAD_CANCEL_ENABLE and
+ *   PTHREAD_CANCEL_DISABLE.
  *
- * Parameters:
- *   set - The pending signal set
- *   info - The returned value
- *
- * Return Value:
- *   Signal number that cause the wait to be terminated, otherwise -1 (ERROR)
- *   is returned.
- *
- * Assumptions:
+ *   The cancelability state and type of any newly created threads,
+ *   including the thread in which main() was first invoked, are
+ *   PTHREAD_CANCEL_ENABLE and PTHREAD_CANCEL_DEFERRED respectively.
  *
  ****************************************************************************/
 
-int sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *info)
+int pthread_setcancelstate(int state, FAR int *oldstate)
 {
 	int ret;
 
-	/* sigwaitinfo() is a cancellation point */
-	(void)enter_cancellation_point();
+	/* task_setcancelstate() can do this */
 
-	ret = sigtimedwait(set, info, NULL);
-	leave_cancellation_point();
+	ret = task_setcancelstate(state, oldstate);
+	if (ret < 0) {
+		ret = errno;
+	}
+
 	return ret;
 }

@@ -68,6 +68,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
+#include <tinyara/cancelpt.h>
 #include "sched/sched.h"
 #ifndef CONFIG_DISABLE_SIGNALS
 #include "signal/signal.h"
@@ -252,6 +253,18 @@ int mq_waitsend(mqd_t mqdes)
 	FAR struct tcb_s *rtcb;
 	FAR struct mqueue_inode_s *msgq;
 
+	/* mq_waitsend() is not a cancellation point, but it is always called from
+	 * a cancellation point.
+	 */
+	if (enter_cancellation_point()) {
+		/* If there is a pending cancellation, then do not perform
+		 * the wait. Exit now with ECANCELED.
+		 */
+		set_errno(ECANCELED);
+		leave_cancellation_point();
+		return ERROR;
+	}
+
 	/* Get a pointer to the message queue */
 
 	msgq = mqdes->msgq;
@@ -267,6 +280,7 @@ int mq_waitsend(mqd_t mqdes)
 			/* No... We will return an error to the caller. */
 
 			set_errno(EAGAIN);
+			leave_cancellation_point();
 			return ERROR;
 		}
 
@@ -298,11 +312,13 @@ int mq_waitsend(mqd_t mqdes)
 				 */
 
 				if (get_errno() != OK) {
+					leave_cancellation_point();
 					return ERROR;
 				}
 			}
 		}
 	}
+	leave_cancellation_point();
 	return OK;
 }
 

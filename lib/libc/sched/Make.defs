@@ -58,6 +58,10 @@ ifeq ($(CONFIG_BUILD_PROTECTED),y)
 CSRCS += task_startup.c
 endif
 
+ifeq ($(CONFIG_CANCELLATION_POINTS),y)
+CSRCS += task_setcanceltype.c task_testcancel.c
+endif
+
 # Add the sched directory to the build
 
 DEPPATH += --dep-path sched

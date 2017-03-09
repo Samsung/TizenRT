@@ -66,6 +66,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/wdog.h>
+#include <tinyara/cancelpt.h>
 
 #include "sched/sched.h"
 #include "clock/clock.h"
@@ -204,16 +205,21 @@ ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio
 
 	DEBUGASSERT(up_interrupt_context() == false && rtcb->waitdog == NULL);
 
+	/* mq_timedreceive() is not a cancellation point */
+	(void)enter_cancellation_point();
+
 	/* Verify the input parameters and, in case of an error, set
 	 * errno appropriately.
 	 */
 
 	if (mq_verifyreceive(mqdes, msg, msglen) != OK) {
+		leave_cancellation_point();
 		return ERROR;
 	}
 
 	if (!abstime || abstime->tv_nsec < 0 || abstime->tv_nsec >= 1000000000) {
 		set_errno(EINVAL);
+		leave_cancellation_point();
 		return ERROR;
 	}
 
@@ -225,6 +231,7 @@ ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio
 	rtcb->waitdog = wd_create();
 	if (!rtcb->waitdog) {
 		set_errno(EINVAL);
+		leave_cancellation_point();
 		return ERROR;
 	}
 
@@ -272,6 +279,7 @@ ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio
 			sched_unlock();
 			wd_delete(rtcb->waitdog);
 			rtcb->waitdog = NULL;
+			leave_cancellation_point();
 			return ERROR;
 		}
 
@@ -309,5 +317,6 @@ ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio
 	sched_unlock();
 	wd_delete(rtcb->waitdog);
 	rtcb->waitdog = NULL;
+	leave_cancellation_point();
 	return ret;
 }
