@@ -123,7 +123,7 @@ int up_timerisr(int irq, uint32_t *regs)
 #endif
 
 	sched_process_timer();
-	mct_isr_lt0_handler();
+	s5j_mct_clear_pending(MCT_L0);
 	/* for interrupt debug */
 	//lldbg("%s, %llu\n", __func__, g_system_timer);
 #ifdef CONFIG_S5J_WATCHDOG_RESET
@@ -143,11 +143,9 @@ int up_timerisr(int irq, uint32_t *regs)
 
 void up_timer_initialize(void)
 {
-	mct_init();
-
 	//enable local0 for tick count
-	mct_local_start_timer0();
-	irq_attach(IRQ_MCT_L0, (xcpt_t)up_timerisr);
+	s5j_mct_local_start_timer0();
+	irq_attach(IRQ_MCT_L0, (xcpt_t) up_timerisr);
 
 	/* Enable SysTick interrupts */
 	up_enable_irq(IRQ_MCT_L0);
