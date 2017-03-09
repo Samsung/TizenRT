@@ -62,6 +62,7 @@
 #include <sched.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/cancelpt.h>
 
 #include "sched/sched.h"
 #include "signal/signal.h"
@@ -134,6 +135,9 @@ int sigsuspend(FAR const sigset_t *set)
 	irqstate_t saved_state;
 	int unblocksigno;
 
+	/* sigsuspend() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	/* Several operations must be performed below:  We must determine if any
 	 * signal is pending and, if not, wait for the signal.  Since signals can
 	 * be posted from the interrupt level, there is a race condition that
@@ -187,5 +191,6 @@ int sigsuspend(FAR const sigset_t *set)
 	}
 
 	sched_unlock();
+	leave_cancellation_point();
 	return ERROR;
 }

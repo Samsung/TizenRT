@@ -61,9 +61,11 @@ CSRCS += pthread_attrinit.c pthread_attrdestroy.c \
 		  pthread_barrierattrgetpshared.c pthread_barrierattrsetpshared.c \
 		  pthread_condattrinit.c pthread_condattrdestroy.c \
 		  pthread_mutexattrinit.c pthread_mutexattrdestroy.c \
-		  pthread_mutexattrgetpshared.c pthread_mutexattrsetpshared.c
+		  pthread_mutexattrgetpshared.c pthread_mutexattrsetpshared.c \
+		  pthread_setcancelstate.c pthread_setcanceltype.c  \
+		  pthread_testcancel.c
 
-ifeq ($(CONFIG_IOTIVITY_SCONS_BUILD),y)
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 CSRCS += pthread_condattrsetclock.c
 endif
 

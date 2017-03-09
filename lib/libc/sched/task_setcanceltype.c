@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/signal/sig_waitinfo.c
+ * libc/sched/task_setcanceltype.c
  *
- *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,61 +54,37 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-#include <signal.h>
-#include <tinyara/cancelpt.h>
-
-/****************************************************************************
- * Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#include <sched.h>
+#include <errno.h>
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: sigwaitinfo
+ * Name: task_setcancelstate
  *
  * Description:
- *   This function is equivalent to sigtimedwait with a NULL timeout
- *   parameter.
+ *   The task_setcanceltype() function atomically both sets the calling
+ *   task's cancelability type to the indicated type and returns the
+ *   previous cancelability type at the location referenced by oldtype
+ *   Legal values for type are TASK_CANCEL_DEFERRED and
+ *   TASK_CANCEL_ASYNCHRONOUS.
  *
- * Parameters:
- *   set - The pending signal set
- *   info - The returned value
- *
- * Return Value:
- *   Signal number that cause the wait to be terminated, otherwise -1 (ERROR)
- *   is returned.
- *
- * Assumptions:
+ *   The cancelability state and type of any newly created tasks are
+ *   TASK_CANCEL_ENABLE and TASK_CANCEL_DEFERRED respectively.
  *
  ****************************************************************************/
 
-int sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *info)
+int task_setcanceltype(int type, FAR int *oldtype)
 {
-	int ret;
+	/* Return the current type if so requrested */
 
-	/* sigwaitinfo() is a cancellation point */
-	(void)enter_cancellation_point();
+	if (oldtype != NULL) {
+		*oldtype = TASK_CANCEL_ASYNCHRONOUS;
+	}
 
-	ret = sigtimedwait(set, info, NULL);
-	leave_cancellation_point();
-	return ret;
+	/* Check the requested cancellation type */
+
+	return (type == TASK_CANCEL_ASYNCHRONOUS) ? OK : ENOSYS;
 }

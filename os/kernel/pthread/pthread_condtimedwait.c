@@ -65,6 +65,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <debug.h>
+#include <tinyara/cancelpt.h>
 
 #include <tinyara/wdog.h>
 
@@ -206,6 +207,9 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 
 	DEBUGASSERT(rtcb->waitdog == NULL);
 
+	/* pthread_cond_timedwait() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	/* Make sure that non-NULL references were provided. */
 
 	if (!cond || !mutex) {
@@ -343,5 +347,6 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 	}
 
 	svdbg("Returning %d\n", ret);
+	leave_cancellation_point();
 	return ret;
 }

@@ -374,6 +374,11 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		tcb->flags &= ~TCB_FLAG_TTYPE_MASK;
 		tcb->flags |= ttype;
 
+#ifdef CONFIG_CANCELLATION_POINTS
+		/* Set the deferred cancellation type */
+		tcb->flags |= TCB_FLAG_CANCEL_DEFERRED;
+#endif
+
 		/* Save initial thread scheduling policy int the TCB */
 
 #if CONFIG_RR_INTERVAL > 0
@@ -421,7 +426,6 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		tcb->task_state = TSTATE_TASK_INACTIVE;
 		sched_unlock();
 	}
-
 	return ret;
 }
 

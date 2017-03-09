@@ -62,6 +62,7 @@
 #include <errno.h>
 
 #include "sched/sched.h"
+#include "task/task.h"
 #include "pthread/pthread.h"
 
 /**************************************************************************
@@ -94,24 +95,22 @@
 
 int pthread_cancel(pthread_t thread)
 {
-	struct tcb_s *tcb;
+	struct pthread_tcb_s *tcb;
 
 	/* First, make sure that the handle references a valid thread */
 
-	if (!thread) {
+	if (thread == 0) {
 		/* pid == 0 is the IDLE task.  Callers cannot cancel the
 		 * IDLE task.
 		 */
-
 		return ESRCH;
 	}
 
-	tcb = sched_gettcb((pid_t)thread);
+	tcb = (FAR struct pthread_tcb_s *)sched_gettcb((pid_t)thread);
 	if (!tcb) {
 		/* The pid does not correspond to any known thread.  The thread
 		 * has probably already exited.
 		 */
-
 		return ESRCH;
 	}
 
@@ -121,7 +120,7 @@ int pthread_cancel(pthread_t thread)
 	 */
 
 	sched_lock();
-	if ((tcb->flags & TCB_FLAG_NONCANCELABLE) != 0) {
+	if ((tcb->cmn.flags & TCB_FLAG_NONCANCELABLE) != 0) {
 		/* Then we cannot cancel the thread now.  Here is how this is
 		 * supposed to work:
 		 *
@@ -135,10 +134,31 @@ int pthread_cancel(pthread_t thread)
 		 *  processing."
 		 */
 
-		tcb->flags |= TCB_FLAG_CANCEL_PENDING;
+		tcb->cmn.flags |= TCB_FLAG_CANCEL_PENDING;
 		sched_unlock();
 		return OK;
 	}
+
+#ifdef CONFIG_CANCELLATION_POINTS
+	/* Check if this thread supports deferred cancellation */
+
+	if ((tcb->cmn.flags & TCB_FLAG_CANCEL_DEFERRED) != 0) {
+		/* If the thread is waiting at a cancellation point, then notify of the
+		 * cancellation thereby waking the task up with an ECANCELED error.
+		 *
+		 * REVISIT: is locking the scheduler sufficent in SMP mode?
+		 */
+
+		tcb->cmn.flags |= TCB_FLAG_CANCEL_PENDING;
+
+		if (tcb->cmn.cpcount > 0) {
+			notify_cancellation(&tcb->cmn);
+		}
+
+		sched_unlock();
+		return OK;
+	}
+#endif
 
 	sched_unlock();
 
@@ -146,16 +166,28 @@ int pthread_cancel(pthread_t thread)
 	 * same as pthread_exit(PTHREAD_CANCELED).
 	 */
 
-	if (tcb == (struct tcb_s *)g_readytorun.head) {
+	if (tcb == (struct pthread_tcb_s *)g_readytorun.head) {
 		pthread_exit(PTHREAD_CANCELED);
 	}
+
+#ifdef CONFIG_PTHREAD_CLEANUP
+		/* Perform any stack pthread clean-up callbacks.
+		 *
+		 * REVISIT: In this case, the clean-up callback will execute on the
+		 * thread of the caller of pthread cancel, not on the thread of
+		 * the thread-to-be-canceled.  Is that an issue?  Presumably they
+		 * are both within the same group and within the same process address
+		 * space.
+		 */
+
+		pthread_cleanup_popall(tcb);
+#endif
 
 	/* Complete pending join operations */
 
 	(void)pthread_completejoin((pid_t)thread, PTHREAD_CANCELED);
 
-	/* Then let pthread_delete do the real work */
+	/* Then let task_terminate do the real work */
 
-	task_delete((pid_t)thread);
-	return OK;
+	return task_terminate((pid_t)thread, false);
 }

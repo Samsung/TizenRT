@@ -66,6 +66,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/wdog.h>
+#include <tinyara/cancelpt.h>
 
 #include "clock/clock.h"
 #include "sched/sched.h"
@@ -206,16 +207,21 @@ int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR 
 
 	DEBUGASSERT(up_interrupt_context() == false && rtcb->waitdog == NULL);
 
+	/* mq_timedsend() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	/* Verify the input parameters -- setting errno appropriately
 	 * on any failures to verify.
 	 */
 
 	if (mq_verifysend(mqdes, msg, msglen, prio) != OK) {
+		leave_cancellation_point();
 		return ERROR;
 	}
 
 	if (!abstime || abstime->tv_nsec < 0 || abstime->tv_nsec >= 1000000000) {
 		set_errno(EINVAL);
+		leave_cancellation_point();
 		return ERROR;
 	}
 
@@ -231,6 +237,7 @@ int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR 
 	rtcb->waitdog = wd_create();
 	if (!rtcb->waitdog) {
 		set_errno(EINVAL);
+		leave_cancellation_point();
 		return ERROR;
 	}
 
@@ -320,5 +327,6 @@ int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR 
 	sched_unlock();
 	wd_delete(rtcb->waitdog);
 	rtcb->waitdog = NULL;
+	leave_cancellation_point();
 	return ret;
 }

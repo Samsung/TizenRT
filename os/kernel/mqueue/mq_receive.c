@@ -62,6 +62,7 @@
 #include <mqueue.h>
 #include <debug.h>
 #include <tinyara/arch.h>
+#include <tinyara/cancelpt.h>
 
 #include "mqueue/mqueue.h"
 
@@ -141,7 +142,11 @@ ssize_t mq_receive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio)
 	 * errno appropriately.
 	 */
 
+	/* mq_receive() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	if (mq_verifyreceive(mqdes, msg, msglen) != OK) {
+		leave_cancellation_point();
 		return ERROR;
 	}
 
@@ -177,5 +182,6 @@ ssize_t mq_receive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio)
 	}
 
 	sched_unlock();
+	leave_cancellation_point();
 	return ret;
 }

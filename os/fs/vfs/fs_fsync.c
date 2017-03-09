@@ -61,8 +61,9 @@
 #include <errno.h>
 #include <assert.h>
 
-#include <tinyara/fs/fs.h>
 #include <tinyara/sched.h>
+#include <tinyara/cancelpt.h>
+#include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
 
@@ -146,6 +147,10 @@ errout:
 int fsync(int fd)
 {
 	FAR struct file *filep;
+	int ret;
+
+	/* fsync() is a cancellation point */
+	(void)enter_cancellation_point();
 
 	/* Get the file structure corresponding to the file descriptor. */
 
@@ -153,12 +158,15 @@ int fsync(int fd)
 	if (!filep) {
 		/* The errno value has already been set */
 
+		leave_cancellation_point();
 		return ERROR;
 	}
 
 	/* Perform the fsync operation */
 
-	return file_fsync(filep);
+	ret = file_fsync(filep);
+	leave_cancellation_point();
+	return ret;
 }
 
 #endif							/* !CONFIG_DISABLE_MOUNTPOINT */

@@ -430,7 +430,36 @@ config NPTHREAD_KEYS
 		The number of items of thread-
 		specific data that can be retained
 
+config PTHREAD_CLEANUP
+	bool "pthread cleanup stack"
+	default n
+	---help---
+		Select to enable support for pthread exit cleanup stacks.  This
+		enables the interfaces pthread_cleanup_push() and
+		pthread_cleanup_pop().
+
+config PTHREAD_CLEANUP_STACKSIZE
+	int "pthread cleanup stack size"
+	default 1
+	range 1 32
+	depends on PTHREAD_CLEANUP
+	---help---
+		The maximum number of cleanup actions that may be pushed by
+		pthread_clean_push().  This setting will increase the size of EVERY
+		pthread task control block by about n * CONFIG_PTHREAD_CLEANUP_STACKSIZE
+		where n is the size of a pointer, 2* sizeof(uintptr_t), this would be
+		8 for a CPU with 32-bit addressing and 4 for a CPU with 16-bit
+		addressing.
+
 endmenu # Pthread Options
+
+config CANCELLATION_POINTS
+	bool "Cancellation points"
+	default n
+	---help---
+		Enable POSIX cancellation points for pthread_cancel().  If selected,
+		cancellation points will also used with the () task_delete() API even if
+		pthreads are not enabled.
 
 menu "Performance Monitoring"
 
@@ -1013,6 +1042,9 @@ config PREAPP_STACKSIZE
 		The size of the stack to allocate for the pre-application thread
 		that is started as soon as the OS completes its initialization.
 
+config MPU_STACKGAURD
+	default n
+
 config PTHREAD_STACK_MIN
 	int "Minimum pthread stack size"
 	default 256
@@ -1025,3 +1057,9 @@ config PTHREAD_STACK_DEFAULT
 	---help---
 		Default pthread stack size
 endmenu # Stack size information
+
+comment "Kernel Latency utility"
+source kernel/latency/Kconfig
+
+comment "Kernel Debug and Simulation"
+source kernel/debug/Kconfig

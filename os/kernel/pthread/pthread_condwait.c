@@ -62,6 +62,7 @@
 #include <errno.h>
 #include <debug.h>
 
+#include <tinyara/cancelpt.h>
 #include "pthread/pthread.h"
 
 /****************************************************************************
@@ -110,6 +111,9 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 
 	svdbg("cond=0x%p mutex=0x%p\n", cond, mutex);
 
+	/* pthread_cond_wait() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	/* Make sure that non-NULL references were provided. */
 
 	if (!cond || !mutex) {
@@ -144,5 +148,6 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 	}
 
 	svdbg("Returning %d\n", ret);
+	leave_cancellation_point();
 	return ret;
 }

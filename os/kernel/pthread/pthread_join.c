@@ -54,9 +54,11 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <tinyara/cancelpt.h>
 #include <errno.h>
 #include <debug.h>
 
@@ -127,11 +129,15 @@ int pthread_join(pthread_t thread, FAR pthread_addr_t *pexit_value)
 	svdbg("thread=%d group=%p\n", thread, group);
 	DEBUGASSERT(group);
 
+	/* pthread_join() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	/* First make sure that this is not an attempt to join to
 	 * ourself.
 	 */
 
 	if ((pid_t)thread == getpid()) {
+		leave_cancellation_point();
 		return EDEADLK;
 	}
 
@@ -256,5 +262,6 @@ int pthread_join(pthread_t thread, FAR pthread_addr_t *pexit_value)
 	}
 
 	svdbg("Returning %d\n", ret);
+	leave_cancellation_point();
 	return ret;
 }

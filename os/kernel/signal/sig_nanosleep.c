@@ -63,6 +63,7 @@
 
 #include <tinyara/clock.h>
 #include <arch/irq.h>
+#include <tinyara/cancelpt.h>
 
 #include "clock/clock.h"
 
@@ -149,6 +150,9 @@ int nanosleep(FAR const struct timespec *rqtp, FAR struct timespec *rmtp)
 	int ret;
 #endif
 
+	/* nanosleep() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	if (!rqtp || rqtp->tv_nsec < 0 || rqtp->tv_nsec >= 1000000000) {
 		errval = EINVAL;
 		goto errout;
@@ -189,6 +193,7 @@ int nanosleep(FAR const struct timespec *rqtp, FAR struct timespec *rmtp)
 		/* The timeout "error" is the normal, successful result */
 
 		irqrestore(flags);
+		leave_cancellation_point();
 		return OK;
 	}
 
@@ -229,5 +234,6 @@ int nanosleep(FAR const struct timespec *rqtp, FAR struct timespec *rmtp)
 
 errout:
 	set_errno(errval);
+	leave_cancellation_point();
 	return ERROR;
 }

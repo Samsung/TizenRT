@@ -64,6 +64,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/net/net.h>
 #include <tinyara/sched.h>
+#include <tinyara/cancelpt.h>
 
 #include "inode/inode.h"
 
@@ -242,6 +243,9 @@ int fcntl(int fd, int cmd, ...)
 	va_list ap;
 	int ret;
 
+	/* fcntl() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	/* Setup to access the variable argument list */
 
 	va_start(ap, cmd);
@@ -257,6 +261,7 @@ int fcntl(int fd, int cmd, ...)
 			/* The errno value has already been set */
 
 			va_end(ap);
+			leave_cancellation_point();
 			return ERROR;
 		}
 
@@ -282,5 +287,6 @@ int fcntl(int fd, int cmd, ...)
 	}
 
 	va_end(ap);
+	leave_cancellation_point();
 	return ret;
 }

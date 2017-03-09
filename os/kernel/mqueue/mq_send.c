@@ -62,6 +62,7 @@
 #include  <debug.h>
 
 #include  <tinyara/arch.h>
+#include  <tinyara/cancelpt.h>
 
 #include  "mqueue/mqueue.h"
 
@@ -143,7 +144,11 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 	 * on any failures to verify.
 	 */
 
+	/* mq_send() is a cancellation point */
+	(void)enter_cancellation_point();
+
 	if (mq_verifysend(mqdes, msg, msglen, prio) != OK) {
+		leave_cancellation_point();
 		return ERROR;
 	}
 
@@ -190,5 +195,6 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 	}
 
 	sched_unlock();
+	leave_cancellation_point();
 	return ret;
 }

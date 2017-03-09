@@ -61,9 +61,14 @@
 #include <errno.h>
 #include <assert.h>
 #include <tinyara/arch.h>
+#include <tinyara/cancelpt.h>
 
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
+
+#if defined(CONFIG_TINYARA_DEBUG) && defined(CONFIG_SEMAPHORE_HISTORY)
+#include <tinyara/debug/tinyara_debug.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -119,18 +124,30 @@ int sem_wait(FAR sem_t *sem)
 
 	/* This API should not be called from interrupt handlers */
 
-	DEBUGASSERT(up_interrupt_context() == false)
+	DEBUGASSERT(up_interrupt_context() == false);
 
 	/* Assume any errors reported are due to invalid arguments. */
 	set_errno(EINVAL);
 
-	if (sem) {
-		/* The following operations must be performed with interrupts
-		 * disabled because sem_post() may be called from an interrupt
-		 * handler.
-		 */
+	/* The following operations must be performed with interrupts
+	 * disabled because sem_post() may be called from an interrupt
+	 * handler.
+	 */
+	saved_state = irqsave();
 
-		saved_state = irqsave();
+	/* sem_wait() is a cancellation point */
+	if (enter_cancellation_point()) {
+		/* If there is a pending cancellation, then do not perform
+		 * the wait. Exit now with ECANCELED.
+		 */
+		set_errno(ECANCELED);
+		leave_cancellation_point();
+		irqrestore(saved_state);
+		return ERROR;
+	}
+
+	/* Make sure we were supplied with a valid semaphore */
+	if (sem) {
 
 		/* Check if the lock is available */
 
@@ -140,6 +157,9 @@ int sem_wait(FAR sem_t *sem)
 			sem->semcount--;
 			sem_addholder(sem);
 			rtcb->waitsem = NULL;
+#if defined(CONFIG_TINYARA_DEBUG) && defined(CONFIG_SEMAPHORE_HISTORY)
+			save_semaphore_history(sem, (void *)rtcb, SEM_AQUIRE);
+#endif
 			ret = OK;
 		}
 
@@ -161,6 +181,10 @@ int sem_wait(FAR sem_t *sem)
 			/* Save the waited on semaphore in the TCB */
 
 			rtcb->waitsem = sem;
+
+#if defined(CONFIG_TINYARA_DEBUG) && defined(CONFIG_SEMAPHORE_HISTORY)
+			save_semaphore_history(sem, (void *)rtcb, SEM_WAITING);
+#endif
 
 			/* If priority inheritance is enabled, then check the priority of
 			 * the holder of the semaphore.
@@ -212,12 +236,10 @@ int sem_wait(FAR sem_t *sem)
 			sched_unlock();
 #endif
 		}
-
-		/* Interrupts may now be enabled. */
-
-		irqrestore(saved_state);
 	}
 
+	leave_cancellation_point();
+	irqrestore(saved_state);
 	return ret;
 }
 
@@ -253,18 +275,30 @@ int sem_wait_for_isr(FAR sem_t *sem)
 
 	/* This API should not be called from interrupt handlers */
 
-	DEBUGASSERT(up_interrupt_context() == false)
+	DEBUGASSERT(up_interrupt_context() == false);
 
 	/* Assume any errors reported are due to invalid arguments. */
 	set_errno(EINVAL);
 
-	if (sem) {
-		/* The following operations must be performed with interrupts
-		 * disabled because sem_post() may be called from an interrupt
-		 * handler.
-		 */
 
-		saved_state = irqsave();
+	/* The following operations must be performed with interrupts
+	 * disabled because sem_post() may be called from an interrupt
+	 * handler.
+	 */
+	saved_state = irqsave();
+
+	/* sem_wait() is a cancellation point */
+	if (enter_cancellation_point()) {
+		/* If there is a pending cancellation, then do not perform
+		 * the wait. Exit now with ECANCELED.
+		 */
+		set_errno(ECANCELED);
+		leave_cancellation_point();
+		irqrestore(saved_state);
+		return ERROR;
+	}
+
+	if (sem) {
 
 		/* Check if the lock is available */
 
@@ -273,6 +307,9 @@ int sem_wait_for_isr(FAR sem_t *sem)
 
 			sem->semcount--;
 			rtcb->waitsem = NULL;
+#if defined(CONFIG_TINYARA_DEBUG) && defined(CONFIG_SEMAPHORE_HISTORY)
+			save_semaphore_history(sem, (void *)rtcb, SEM_AQUIRE);
+#endif
 			ret = OK;
 		}
 
@@ -294,6 +331,10 @@ int sem_wait_for_isr(FAR sem_t *sem)
 			/* Save the waited on semaphore in the TCB */
 
 			rtcb->waitsem = sem;
+
+#if defined(CONFIG_TINYARA_DEBUG) && defined(CONFIG_SEMAPHORE_HISTORY)
+			save_semaphore_history(sem, (void *)rtcb, SEM_WAITING);
+#endif
 
 			/* Add the TCB to the prioritized semaphore wait queue */
 			set_errno(0);
@@ -326,9 +367,10 @@ int sem_wait_for_isr(FAR sem_t *sem)
 		}
 
 		/* Interrupts may now be enabled. */
-
-		irqrestore(saved_state);
 	}
+
+	leave_cancellation_point();
+	irqrestore(saved_state);
 
 	return ret;
 }

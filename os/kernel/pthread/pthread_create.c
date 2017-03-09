@@ -382,6 +382,10 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 #endif
 	}
 
+#ifdef CONFIG_CANCELLATION_POINTS
+	/* Set the deferred cancellation types */
+	ptcb->cmn.flags |= TCB_FLAG_CANCEL_DEFERRED;
+#endif
 	/* Get the assigned pid before we start the task (who knows what
 	 * could happen to ptcb after this!).  Copy this ID into the join structure
 	 * as well.
@@ -432,7 +436,6 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		errcode = EIO;
 		goto errout_with_join;
 	}
-
 	return ret;
 
 errout_with_join:

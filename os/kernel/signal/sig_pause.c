@@ -59,6 +59,8 @@
 #include <unistd.h>
 #include <signal.h>
 
+#include <tinyara/cancelpt.h>
+
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
@@ -111,6 +113,10 @@ int pause(void)
 {
 	sigset_t set;
 	struct siginfo value;
+	int ret;
+
+	/* pause() is a cancellation point */
+	(void)enter_cancellation_point();
 
 	/* Set up for the sleep.  Using the empty set means that we are not
 	 * waiting for any particular signal.  However, any unmasked signal
@@ -123,5 +129,7 @@ int pause(void)
 	 * meaning that some unblocked signal was caught.
 	 */
 
-	return sigwaitinfo(&set, &value);
+	ret = sigwaitinfo(&set, &value);
+	leave_cancellation_point();
+	return ret;
 }

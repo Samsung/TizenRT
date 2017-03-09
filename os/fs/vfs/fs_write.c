@@ -62,6 +62,7 @@
 #include <errno.h>
 #include <assert.h>
 
+#include <tinyara/cancelpt.h>
 #include <sys/socket.h>
 
 #include "inode/inode.h"
@@ -87,7 +88,7 @@
 ssize_t file_write(FAR struct file *filep, FAR const void *buf, size_t nbytes)
 {
 	FAR struct inode *inode;
-	int ret;
+	ssize_t ret;
 	int err;
 
 	/* Was this file opened for write access? */
@@ -175,6 +176,10 @@ ssize_t write(int fd, FAR const void *buf, size_t nbytes)
 #if CONFIG_NFILE_DESCRIPTORS > 0
 	FAR struct file *filep;
 #endif
+	ssize_t ret;
+
+	/* write() is a cancellation point */
+	(void)enter_cancellation_point();
 
 	/* Did we get a valid file descriptor? */
 
@@ -185,26 +190,32 @@ ssize_t write(int fd, FAR const void *buf, size_t nbytes)
 		/* Write to a socket descriptor is equivalent to send with flags == 0 */
 
 #if (defined(CONFIG_NET_TCP) || defined(CONFIG_NET_LWIP)) && CONFIG_NSOCKET_DESCRIPTORS > 0
-		return send(fd, buf, nbytes, 0);
+		ret = send(fd, buf, nbytes, 0);
 #else
 		set_errno(EBADF);
-		return ERROR;
+		ret = ERROR;
 #endif
 	}
 #if CONFIG_NFILE_DESCRIPTORS > 0
-	/* The descriptor is in the right range to be a file descriptor... write
-	 * to the file.
-	 */
+	else {
+		/* The descriptor is in the right range to be a file descriptor... write
+		 * to the file. Note that fs_getfilep() will set the errno on failure.
+		 */
 
-	filep = fs_getfilep(fd);
-	if (!filep) {
-		/* The errno value has already been set */
+		filep = fs_getfilep(fd);
+		if (!filep) {
+			/* The errno value has already been set */
 
-		return ERROR;
+			ret = ERROR;
+		} else {
+			/* Perform the write operation using the file descriptor as an index.
+			 * Note that file_write() will set the errno on failure.
+			 */
+
+			ret = file_write(filep, buf, nbytes);
+		}
 	}
-
-	/* Perform the write operation using the file descriptor as an index */
-
-	return file_write(filep, buf, nbytes);
 #endif
+	leave_cancellation_point();
+	return ret;
 }
