@@ -171,6 +171,7 @@ endif
 
 ifeq ($(CONFIG_S5J_PWR),y)
 CHIP_CSRCS += s5j_pwr.c
+CHIP_CSRCS += s5j_pwrcal.c
 endif
 
 ifeq ($(CONFIG_S5J_SDIO_SLAVE),y)
@@ -208,6 +209,3 @@ endif
 ifeq ($(CONFIG_S5J_DMA),y)
 CHIP_CSRCS += s5j_dma.c
 endif
-
-EXTRA_LIBS = chip/soc/pwrcal/libks5jpwrcal.a
-

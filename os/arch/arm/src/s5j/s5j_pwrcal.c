@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/sidk_s5jt200/src/s5jt200_tash.c
+ * arch/arm/src/s5j/s5j_pwrcal.c
  *
- *   Copyright (C) 2010 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,148 +49,95 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-
-#include <stdio.h>
-#include <syslog.h>
-#include <errno.h>
-
-#include <tinyara/board.h>
-#include <tinyara/spi/spi.h>
-#include <tinyara/mmcsd.h>
-#include <tinyara/rtc.h>
-#include <time.h>
-#include <chip.h>
+#include <stddef.h>
+#include <sys/types.h>
+#include <string.h>
 #include <tinyara/kmalloc.h>
+#include <arch/chip/chip_types.h>
+#include <arch/chip/irq.h>
+#include <chip.h>
 
-#include "s5j_rtc.h"
-#include "up_internal.h"
+#include "s5j_cmu.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Configuration ************************************************************/
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: board_app_initialize
- *
- * Description:
- *   Perform architecture specific initialization
- *
- ****************************************************************************/
-extern void qspi_register(void);
-extern void qspi_get_base(void);
-extern void sdio_drv_register(void);
-extern void pwmdrv_register(void);
-extern void chipid_register(void);
-extern void s5j_i2c_register(int bus);
-extern uint32_t _vector_start;
-extern void wlbt_if_booting(void);
-extern void pdma_init(void);
-
-char *s5j_get_binary_version(uint32_t baddr)
+unsigned int cal_clk_is_enabled(unsigned int id)
 {
-	static char version[13];
-	version[12] = '\0';
-	strncpy(version, (char *)baddr, sizeof(version) - 1);
-	return version;
-
+	return 0;
 }
 
-int board_app_initialize(void)
+int cal_clk_setrate(unsigned int id, unsigned long rate)
 {
-#ifdef S5J_DISPLAY_MAC_ADDR
-	char mac_buf[6];
-#endif
-#ifdef S5J_PERFORMANCE_TEST
-	uint32_t src;
-	uint32_t dst;
-	uint32_t t1;
-	uint32_t t2;
-#endif
-#if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
-	/* FAR struct rtc_lowerhalf_s *lower; */
-	FAR struct tm tp;
-#endif
+	unsigned long parents;
+	unsigned int div;
+	switch(id) {
+	case d1_spi0:
+		break;
+	case d1_spi1:
+		break;
+	case d1_serialflash:
+		/* CLK_CON_DIV_DIV_CLK_SERIALFLASH */
+		parents = 320000000;
+		div = parents / rate;
+		SetBits(0x80081800, 0, 0xF, (div - 1));
+		break;
+	default:
+		break;
+	}
 
-#ifdef CONFIG_S5J_ADC
-	adcdrv_register();
-#endif
+	return -1;
+}
 
-	qspi_get_base();
-	qspi_register();
+unsigned long cal_clk_getrate(unsigned int id)
+{
+	unsigned long rate;
 
-#ifdef CONFIG_S5J_EFUSE
-	efusedrv_register();
-#endif
+	switch(id)
+	{
+	case d1_spi0:
+		break;
+	case d1_spi1:
+		break;
+	case d1_serialflash:
+		break;
+	case m1_clkcmu_uart:
+		rate = 26*1000*1000;
+		break;
+	default:
+		break;
+	}
 
-#ifdef CONFIG_S5J_CHIPID
-	chipid_register();
-#endif
+	return rate;
+}
 
-#ifdef CONFIG_S5J_I2C
-	s5j_i2c_register(0);
-	s5j_i2c_register(1);
-#endif
+int cal_clk_enable(unsigned int id)
+{
+	return 0;
+}
 
-	up_timer_initialize();
+int cal_clk_disable(unsigned int id)
+{
+	return 0;
+}
 
-	/* clk_print_info_all(-1); */
-
-#ifdef CONFIG_S5J_PWM
-	pwmdrv_register();
-#endif
-
-#ifdef CONFIG_S5J_SDIO_SLAVE
-	sdio_drv_register();
-#endif
-
-#ifdef CONFIG_S5J_LEDCTRLBLK
-	ledctrlblk_drv_init();
-#endif
-
-#ifdef CONFIG_S5J_WATCHDOG
-	up_wdginitialize();
-#ifdef CONFIG_S5J_WATCHDOG_RESET
-	s5j_wdg_set_reset(WDT_CPUCL_BASE, 1);
-#endif
-#endif
-
-#if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
-	up_rtc_getdatetime(&tp);
-	lldbg("RTC getdatetime %d/%d/%d/%d/%d/%d\n", tp.tm_year + CONFIG_RTC_BASE_YEAR, tp.tm_mon + 1, tp.tm_mday, tp.tm_hour, tp.tm_min, tp.tm_sec);
-	lldbg("Version Info :\n");
-	lldbg("tinyARA %s\n", __TIMESTAMP__);
-#endif
-
-#ifdef CONFIG_S5J_WLBTBLK
-	wlbt_if_booting();
-#endif
-
-#ifdef CONFIG_EXAMPLES_LDO_TEST
-	register_ldo_drver();
-#endif
-
-#ifdef CONFIG_S5J_TICK_COUNTER
-	s5j_tickcnt_initialize();
-#endif
-
-#ifdef CONFIG_S5J_DMA
-	pdma_init();
-#endif
-
-	QSPI_print_mode();
-
-	lldbg("SIDK S5JT200 boot from 0x%x\n", &_vector_start);
-	return OK;
+int cal_init(void)
+{
+	return 0;
 }

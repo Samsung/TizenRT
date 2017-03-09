@@ -65,7 +65,7 @@
 #include "soc/s5jt200_memorymap.h"
 #ifndef __ASSEMBLY__
 #include "soc/s5jt200_gpio.h"
-#define VECTOR_BASE   S5J_VECTOR_BASE;
+#define VECTOR_BASE   S5J_VECTOR_BASE
 #endif
 #endif
 
@@ -74,8 +74,7 @@
 #include "s5j_gpio.h"
 #include "s5j_mct.h"
 #include "s5j_qspi.h"
-#include "soc/pwrcal/pwrcal.h"
-#include "soc/pwrcal/S5JT200/S5JT200_vclk.h"
+#include "s5j_vclk.h"
 #endif
 
 /************************************************************************************
