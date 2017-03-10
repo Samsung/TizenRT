@@ -82,17 +82,6 @@ config NET_ETH_MTU
 		IPv6 hosts are required to be able to handle an MSS of 1220 octets,
 		resulting in a minimum buffer size of of 1220+20+40+14 = 1294
 
-config NET_ETH_TCP_RECVWNDO
-	int "Ethernet TCP receive window size"
-	default 1220 if NET_IPv6
-	default 536 if !NET_IPv6
-	depends on NET_ETHERNET && NET_TCP
-	---help---
-		The size of the advertised receiver's window.   Should be set low
-		(i.e., to the size of the MSS) if the application is slow to process
-		incoming data, or high (32768 bytes) if the application processes
-		data quickly.
-
 config NET_SLIP_MTU
 	int # "SLIP packet buffer size (MTU)"
 	default 296
