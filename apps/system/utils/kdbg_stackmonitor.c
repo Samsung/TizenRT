@@ -90,6 +90,9 @@ struct stkmon_save_s {
 	pid_t chk_pid;
 	size_t chk_stksize;
 	size_t chk_peaksize;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	int chk_peakheap;
+#endif
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	char chk_name[CONFIG_TASK_NAME_SIZE + 1];
 #endif
@@ -107,10 +110,15 @@ static int stkmon_chk_idx;
  ****************************************************************************/
 static void stkmon_title_print(void)
 {
-#if (CONFIG_TASK_NAME_SIZE > 0)
-	printf("%-5s %s %8s %5s %7s %s\n", "PID", "STATUS", "SIZE", "PEAK", "TIME", "THREAD NAME");
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	printf("%-5s %s %8s %5s %7s %7s ", "PID", "STATUS", "SIZE", "PEAK_STACK", "PEAK_HEAP", "TIME");
 #else
-	printf("%-5s %s %8s %5s %7s\n", "PID", "STATUS", "SIZE", "PEAK", "TIME");
+	printf("%-5s %s %8s %5s %7s\n", "PID", "STATUS", "SIZE", "PEAK_STACK", "TIME");
+#endif
+#if (CONFIG_TASK_NAME_SIZE > 0)
+	printf("THREAD NAME\n");
+#else
+	printf("\n");
 #endif
 }
 
@@ -119,10 +127,15 @@ static void stkmon_inactive_check(void)
 	int inactive_idx;
 	for (inactive_idx = 0; inactive_idx < CONFIG_MAX_TASKS * 2; inactive_idx++) {
 		if (stkmon_arr[inactive_idx].timestamp != 0) {
-#if (CONFIG_TASK_NAME_SIZE > 0)
-			printf("%5d %s %6d %6d %7lld %s\n", stkmon_arr[inactive_idx].chk_pid, "INACTIVE", stkmon_arr[inactive_idx].chk_stksize, stkmon_arr[inactive_idx].chk_peaksize, (uint64_t)((systime_t)stkmon_arr[inactive_idx].timestamp), stkmon_arr[inactive_idx].chk_name);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+			printf("%5d %s %6d %9d %10d %7lld ", stkmon_arr[inactive_idx].chk_pid, "INACTIVE", stkmon_arr[inactive_idx].chk_stksize, stkmon_arr[inactive_idx].chk_peaksize, stkmon_arr[inactive_idx].chk_peakheap, (uint64_t)((systime_t)stkmon_arr[inactive_idx].timestamp));
 #else
-			printf("%5d %s %6d %6d %7lld\n", stkmon_arr[inactive_idx].chk_pid, "INACTIVE", stkmon_arr[inactive_idx].chk_stksize, stkmon_arr[inactive_idx].chk_peaksize, (uint64_t)((systime_t)stkmon_arr[inactive_idx].timestamp));
+			printf("%5d %s %6d %9d %7lld ", stkmon_arr[inactive_idx].chk_pid, "INACTIVE", stkmon_arr[inactive_idx].chk_stksize, stkmon_arr[inactive_idx].chk_peaksize, (uint64_t)((systime_t)stkmon_arr[inactive_idx].timestamp));
+#endif
+#if (CONFIG_TASK_NAME_SIZE > 0)
+			printf("%s\n", stkmon_arr[inactive_idx].chk_name);
+#else
+			printf("\n");
 #endif
 			stkmon_arr[inactive_idx].timestamp = 0;
 		}
@@ -134,10 +147,15 @@ static void stkmon_active_check(struct tcb_s *tcb, void *arg)
 	if (tcb->pid == 0) {
 		tcb->adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
 	}
-#if (CONFIG_TASK_NAME_SIZE > 0)
-	printf("%5d %s %8d %6d %7lld %s\n", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), (uint64_t)((systime_t)clock_systimer()), tcb->name);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	printf("%5d %s %9d %8d %10d %7lld ", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), tcb->peak_alloc_size, (uint64_t)((systime_t)clock_systimer()));
 #else
-	printf("%5d %s %8d %6d %7lld\n", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), (uint64_t)((systime_t)clock_systimer()));
+	printf("%5d %s %9d %8d %7lld", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), (uint64_t)((systime_t)clock_systimer()));
+#endif
+#if (CONFIG_TASK_NAME_SIZE > 0)
+	printf("%s\n", tcb->name);
+#else
+	printf("\n");
 #endif
 }
 
@@ -147,11 +165,11 @@ static void *stackmonitor_daemon(void *arg)
 
 	/* Loop until we detect that there is a request to stop. */
 	while (stkmon_started) {
-		printf("=====================================================\n");
+		printf("===============================================================\n");
 		stkmon_title_print();
-		printf("-----------------------------------------------------\n");
+		printf("---------------------------------------------------------------\n");
 		stkmon_inactive_check();
-		printf("-----------------------------------------------------\n");
+		printf("---------------------------------------------------------------\n");
 		sched_foreach(stkmon_active_check, NULL);
 		sleep(CONFIG_STACKMONITOR_INTERVAL);
 	}
@@ -188,6 +206,9 @@ void stkmon_logging(struct tcb_s *tcb)
 	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_pid = tcb->pid;
 	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_stksize = tcb->adj_stack_size;
 	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_peaksize = up_check_tcbstack(tcb);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_peakheap = tcb->peak_alloc_size;
+#endif
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	for (name_idx = 0; name_idx < CONFIG_TASK_NAME_SIZE + 1; name_idx++) {
 		stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_name[name_idx] = tcb->name[name_idx];
