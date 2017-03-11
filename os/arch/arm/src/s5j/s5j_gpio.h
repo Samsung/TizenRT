@@ -159,9 +159,6 @@ struct gpio_bank {
 	int filter_offset_addr;
 };
 
-#define GPIO_BANK(name)         \
-	static struct gpio_bank name##_gpio_bank[] __attribute__((used, aligned(4), section(".gpio_bank."#name)))
-
 #define irq_id_to_gpio(irq_id) (GPIO_MAGIC | (irq_id >> 16))
 #define gpio_irq_id(gpio, isr_num) ((gpio & 0xFFFF) << 16 | isr_num)
 

@@ -110,7 +110,7 @@ static struct gpio_dev_s s5j_gpio_all[NUM_GPIO];
  * Public Data
  ****************************************************************************/
 #if defined(CONFIG_ARCH_CHIP_S5JT200)
-GPIO_BANK(s5jt200) = {
+static struct gpio_bank s5jt200_gpio_bank[] = {
 	/* ALIVE */
 	[GPP0] = {
 		.name = "GPP0",
@@ -213,9 +213,6 @@ GPIO_BANK(s5jt200) = {
 };
 #endif
 
-extern struct gpio_bank gpio_bank_start;
-extern struct gpio_bank gpio_bank_end;
-struct gpio_bank *mach_gpio_bank = &gpio_bank_start;
 #if defined(CONFIG_S5E_GPIO_LOG_DUMP)
 static char *pull_str[] = { "none", "?", "down", "up" };
 static char *drv_str[] = { "1x", "3x", "2x", "4x" };
@@ -272,7 +269,7 @@ static struct gpio_bank *gpio_to_bank(int gpio)
 		return NULL;
 	}
 
-	return mach_gpio_bank + bank;
+	return s5jt200_gpio_bank + bank;
 }
 
 static void *__gpio_to_eint_base(int gpio)
@@ -488,7 +485,7 @@ int gpio_valid(int gpio)
 		return 0;
 	}
 
-	if (port >= mach_gpio_bank[bank].nr_port) {
+	if (port >= s5jt200_gpio_bank[bank].nr_port) {
 		return 0;
 	}
 
