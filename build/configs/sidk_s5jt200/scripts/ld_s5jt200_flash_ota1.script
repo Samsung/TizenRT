@@ -81,13 +81,6 @@ SECTIONS
 		*(.got)
 		*(.gcc_except_table)
 		*(.gnu.linkonce.r.*)
-
-		. = ALIGN(4);
-		PROVIDE_HIDDEN (gpio_bank_start = .);
-		KEEP(*(SORT(.gpio_bank.*)))
-		KEEP(*(.gpio_bank))
-		PROVIDE_HIDDEN (gpio_bank_end = .);
-
 		_etext = ABSOLUTE(.);
 	} > flash
 
