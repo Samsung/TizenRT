@@ -54,11 +54,7 @@ include ${TOPDIR}/.config
 include ${TOPDIR}/tools/Config.mk
 include ${TOPDIR}/arch/arm/src/armv7-r/Toolchain.defs
 
-ifeq ($(CONFIG_BOOT_RUNFROMFLASH),y)
 LDSCRIPT = ld_s5jt200_flash.script
-else
-LDSCRIPT = ld_s5jt200.script
-endif
 ifeq ($(CONFIG_UCLIBCXX_HAVE_LIBSUPCXX),y)
 LIBSUPXX = ${shell $(CC) --print-file-name=libsupc++.a}
 EXTRA_LIBPATHS = -L "${shell dirname "$(LIBSUPXX)"}"
