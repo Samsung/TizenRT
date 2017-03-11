@@ -943,29 +943,6 @@ void gpio_dump(int gpio)
 
 /**
  *
- * @brief void gpio_status(void) / Print informations of all gpio pin
- * @param[in] gpio	gpio id
- * @return    No return
- *
- */
-void gpio_status(void)
-{
-	struct gpio_bank *bank;
-	int i;
-	int port;
-	int gpio;
-
-	bank = (struct gpio_bank *)&gpio_bank_start;
-	i = 0;
-	for (; bank < (struct gpio_bank *)&gpio_bank_end; bank++, i++)
-		for (port = 0; port < bank->nr_port; port++) {
-			gpio = s5j_gpio(i, port);
-			gpio_dump(gpio);
-		}
-}
-
-/**
- *
  * @brief int gpio_eint_mask(int gpio) / Mask a gpio external interrupt
  * @param[in] gpio	gpio id
  * @return    == 0: success
