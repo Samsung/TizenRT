@@ -527,18 +527,8 @@ void up_uart_set_gpio(UART_CHANNEL eCh, bool bEnable)
 	s32 gpio_rxd, gpio_txd;
 
 	if (eCh == UARTDBG) {
-#ifdef CONFIG_BOOT_RUNFROMFLASH
 		HW_REG32(0x80040000, 0x160) = 0x22;	//GPA3_CON Xdebug_TXD, Xdebug_RXD
 		HW_REG32(0x80040000, 0x168) = 0x00;	// PULLUP/DOWN disabled
-#else
-		gpio_rxd = s5j_gpio(GPA3, 0);
-		gpio_txd = s5j_gpio(GPA3, 1);
-
-		gpio_cfg_pin(gpio_rxd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_rxd, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_txd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_txd, GPIO_PULL_NONE);
-#endif
 	} else if (eCh == UART0) {
 		gpio_rxd = s5j_gpio(GPA2, 0);
 		gpio_txd = s5j_gpio(GPA2, 1);

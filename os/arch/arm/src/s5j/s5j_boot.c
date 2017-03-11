@@ -111,7 +111,6 @@ int s5j_mpu_initialize(void)
 	uint32_t size;
 	int region = 0;
 
-#ifdef CONFIG_BOOT_RUNFROMFLASH
 	/* flash region
 	 * region 0 : 0x0400_0000 ++ 4MB  BL1 + TinyAra OS + SSS F/W
 	 */
@@ -133,12 +132,6 @@ int s5j_mpu_initialize(void)
 
 	mpu_priv_noncache(0x020E0000, 0x20000, region++);	// priority higher than region 0, allows overlapping
 	mpu_priv_noncache(0x02100000, 0x80000, region++);	// priority higher than region 0, allows overlapping
-#else
-	/* access permission for available area */
-	/* Region 0, for ISRAM(0x0200_0000++2048KB, RW-WBWA */
-
-	mpu_user_intsram_wb(0x02000000, 0x200000, region++);
-#endif
 
 	/*
 	 * Region 4 for RO in Flash : 0x0400_0000 ++ 4MB, RO-WT
