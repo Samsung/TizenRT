@@ -64,7 +64,9 @@ INCDIROPT = -w
 endif
 
 ASRCS =
+ifeq ($(CONFIG_FS_CMDS),y)
 CSRCS = fs_getpath.c
+endif
 MAINSRC =
 
 ifeq ($(CONFIG_TASH),y)
