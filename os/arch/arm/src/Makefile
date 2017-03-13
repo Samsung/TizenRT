@@ -84,9 +84,6 @@ ifeq ($(WINTOOL),y)
   CFLAGS += -I "${shell cygpath -w $(TOPDIR)/kernel}"
 else
   TINYARA = "$(TOPDIR)/$(BIN_DIR)/tinyara$(EXEEXT)"
-ifeq ($(CONFIG_BOARD_FOTA_SUPPORT),y)
-  TINYARA_OTA1 = "$(TOPDIR)/$(BIN_DIR)/tinyara_ota1$(EXEEXT)"
-endif
   CFLAGS += -I$(ARCH_SRCDIR)/chip
   CFLAGS += -I$(ARCH_SRCDIR)/common
   CFLAGS += -I$(ARCH_SRCDIR)/$(ARCH_SUBDIR)
@@ -124,11 +121,6 @@ UOBJS = $(UAOBJS) $(UCOBJS)
 KBIN = libkarch$(LIBEXT)
 UBIN = libuarch$(LIBEXT)
 BIN  = libarch$(LIBEXT)
-
-ifeq ($(CONFIG_BOARD_FOTA_SUPPORT),y)
-LDFLAGS_FOTA := $(LDFLAGS)
-LDFLAGS_FOTA += $(ARCHSCRIPT_FOTA)
-endif
 
 LDFLAGS += $(ARCHSCRIPT)
 
@@ -200,17 +192,6 @@ ifneq ($(CONFIG_WINDOWS_NATIVE),y)
 	$(Q) $(NM) $(TINYARA) | \
 	grep -v '\(compiled\)\|\(\$(OBJEXT)$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
 	sort > $(TOPDIR)/$(BIN_DIR)/System.map
-endif
-ifeq ($(CONFIG_BOARD_FOTA_SUPPORT),y)
-	$(Q) echo "LD: tinyara OTA1"
-	$(Q) $(LD) --entry=__start $(LDFLAGS_FOTA) $(LIBPATHS) $(EXTRA_LIBPATHS) \
-		-o $(TINYARA_OTA1) $(HEAD_OBJ) $(EXTRA_OBJS) \
-		--start-group $(LDLIBS) $(EXTRA_LIBS) $(LIBGCC) --end-group
-ifneq ($(CONFIG_WINDOWS_NATIVE),y)
-	$(Q) $(NM) $(TINYARA_OTA1) | \
-	grep -v '\(compiled\)\|\(\$(OBJEXT)$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
-	sort > $(TOPDIR)/$(BIN_DIR)/System_ota1.map
-endif
 endif
 
 # This is part of the top-level export target

@@ -492,9 +492,6 @@ endif
 ifeq ($(CONFIG_RAW_BINARY),y)
 	@echo "CP: $(BIN_EXE).bin"
 	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary $(BIN) $(BIN).bin
-ifeq ($(CONFIG_BOARD_FOTA_SUPPORT),y)
-	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary $(BIN)_ota1 $(BIN)_ota1.bin
-endif
 endif
 ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 	@echo "MKIMAGE: uImage"
@@ -519,14 +516,8 @@ ifeq ($(CONFIG_DISABLE_MAKING_BINARY_HEADER),y)
 	dd if=/dev/zero of=$(BIN)_dummy bs=1 count=32
 
 	cat $(BIN)_dummy $(BIN).bin > $(BIN)_head.bin
-ifeq ($(CONFIG_BOARD_FOTA_SUPPORT),y)
-	cat $(BIN)_dummy $(BIN)_ota1.bin > $(BIN)_ota1_head.bin
-endif
 else
 	$(GEN_BINHEADER) $(BIN).bin $(BIN)_head.bin -embd
-ifeq ($(CONFIG_BOARD_FOTA_SUPPORT),y)
-	$(GEN_BINHEADER) $(BIN)_ota1.bin $(BIN)_ota1_head.bin -embd
-endif
 endif # DISABLE_MAKING_BINARY_HEADER
 
 endif # S5JT200
