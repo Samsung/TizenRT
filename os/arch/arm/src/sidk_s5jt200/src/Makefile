@@ -79,10 +79,6 @@ ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
 CSRCS += s5jt200_crashdump.c
 endif
 
-ifeq ($(CONFIG_BOARD_FOTA_SUPPORT),y)
-CSRCS += s5jt200_fota.c
-endif
-
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)

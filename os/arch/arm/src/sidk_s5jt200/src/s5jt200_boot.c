@@ -96,9 +96,6 @@ extern void up_coredump_init(void);
 /************************************************************************************
  * Private Data
  ************************************************************************************/
-#if defined(CONFIG_BOARD_FOTA_SUPPORT)
-extern volatile bool g_sflash_nonsleep_mode;
-#endif
 
 /************************************************************************************
  * Private Functions
@@ -390,8 +387,7 @@ void board_initialize(void)
 	slsi_driver_initialize();
 #endif
 
-#if defined(CONFIG_BOARD_COREDUMP_FLASH) || defined(CONFIG_BOARD_RAMDUMP_FLASH) || \
-	defined(CONFIG_BOARD_FOTA_SUPPORT)
+#if defined(CONFIG_BOARD_COREDUMP_FLASH) || defined(CONFIG_BOARD_RAMDUMP_FLASH)
 	up_spiflashinitialize();
 #endif
 
@@ -400,24 +396,6 @@ void board_initialize(void)
 #endif
 
 	sflash_partitionmap_dump();
-
-#if defined(CONFIG_BOARD_FOTA_SUPPORT)
-	/* Need to update bootparam during boottime */
-	/* Set a global flag, before using flash driver */
-	g_sflash_nonsleep_mode = true;
-
-	/* Update fota details in bootparam */
-	s5jt200_fota_update_notify();
-
-	/* Initialize fota */
-	if (s5jt200_fota_init() != OK) {
-		dbg(" fota init failed\n");
-	}
-
-	/* we are done!!. switch of fota flag */
-	g_sflash_nonsleep_mode = false;
-
-#endif							/* CONFIG_BOARD_FOTA_SUPPORT */
 
 #if 0
 #ifdef CONFIG_FS_PROCFS
