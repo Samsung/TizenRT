@@ -60,6 +60,7 @@
 #include <string.h>
 #include <assert.h>
 #include <debug.h>
+#include <errno.h>
 
 #include <arch/irq.h>
 #include <arch/chip/chip_types.h>
