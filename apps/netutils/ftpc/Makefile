@@ -59,7 +59,6 @@ include $(APPDIR)/Make.defs
 ASRCS		=
 CSRCS		=
 
-ifeq ($(CONFIG_NET_TCP),y)
 # FTP connection management
 CSRCS = ftpc_connect.c ftpc_disconnect.c
 
@@ -77,7 +76,6 @@ CSRCS += ftpc_response.c ftpc_getreply.c
 
 # FTP helpers
 CSRCS += ftpc_utils.c ftpc_socket.c
-endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))

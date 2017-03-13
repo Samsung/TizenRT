@@ -275,7 +275,6 @@ int main(int argc, char **argv, char **envp)
 	printf("#endif\n\n");
 	printf("/* Protocol support can only be provided on top of basic network support */\n\n");
 	printf("#ifndef CONFIG_NET\n");
-	printf("# undef CONFIG_NET_TCP\n");
 	printf("# undef CONFIG_NET_UDP\n");
 	printf("# undef CONFIG_NET_ICMP\n");
 	printf("#endif\n\n");

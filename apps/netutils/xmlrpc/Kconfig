@@ -6,7 +6,6 @@
 config NETUTILS_XMLRPC
 	bool "XML RPC library"
 	default n
-	depends on NET_TCP
 	select NETUTILS_NETLIB
 	---help---
 		Enables the Embeddable Lightweight XML-RPC Server discussed at

@@ -59,9 +59,7 @@ include $(APPDIR)/Make.defs
 ASRCS		=
 CSRCS		=
 
-ifeq ($(CONFIG_NET_TCP),y)
 CSRCS		+= smtp.c
-endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))

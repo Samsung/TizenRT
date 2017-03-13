@@ -189,7 +189,7 @@ ssize_t write(int fd, FAR const void *buf, size_t nbytes)
 	{
 		/* Write to a socket descriptor is equivalent to send with flags == 0 */
 
-#if (defined(CONFIG_NET_TCP) || defined(CONFIG_NET_LWIP)) && CONFIG_NSOCKET_DESCRIPTORS > 0
+#if defined(CONFIG_NET_LWIP) && CONFIG_NSOCKET_DESCRIPTORS > 0
 		ret = send(fd, buf, nbytes, 0);
 #else
 		set_errno(EBADF);

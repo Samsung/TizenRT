@@ -66,11 +66,6 @@
 #include <apps/netutils/tftp.h>
 #endif
 
-#if defined(CONFIG_NET_TCP) && CONFIG_NFILE_DESCRIPTORS > 0
-#include <apps/netutils/netlib.h>
-#include <apps/netutils/webclient.h>
-#endif
-
 #if defined(CONFIG_NETUTILS_DHCPC) || defined(CONFIG_SYSTEM_NETDB)
 #ifdef CONFIG_HAVE_GETHOSTBYNAME
 #include <netdb.h>
@@ -198,9 +193,6 @@ static inline void net_statistics()
 #ifdef CONFIG_NET_IPv6
 	printf("  IPv6");
 #endif
-#ifdef CONFIG_NET_TCP
-	printf("   TCP");
-#endif
 #ifdef CONFIG_NET_UDP
 	printf("   UDP");
 #endif
@@ -221,9 +213,6 @@ static inline void net_statistics()
 #ifdef CONFIG_NET_IPv6
 	printf("  %04x", g_netstats.ipv6.recv);
 #endif
-#ifdef CONFIG_NET_TCP
-	printf("  %04x", g_netstats.tcp.recv);
-#endif
 #ifdef CONFIG_NET_UDP
 	printf("  %04x", g_netstats.udp.recv);
 #endif
@@ -243,9 +232,6 @@ static inline void net_statistics()
 #endif
 #ifdef CONFIG_NET_IPv6
 	printf("  %04x", g_netstats.ipv6.drop);
-#endif
-#ifdef CONFIG_NET_TCP
-	printf("  %04x", g_netstats.tcp.drop);
 #endif
 #ifdef CONFIG_NET_UDP
 	printf("  %04x", g_netstats.udp.drop);
@@ -276,9 +262,6 @@ static inline void net_statistics()
 #ifdef CONFIG_NET_IPv6
 	printf("  ----");
 #endif
-#ifdef CONFIG_NET_TCP
-	printf("  %04x", g_netstats.tcp.chkerr);
-#endif
 #ifdef CONFIG_NET_UDP
 	printf("  %04x", g_netstats.udp.chkerr);
 #endif
@@ -290,11 +273,6 @@ static inline void net_statistics()
 #endif
 	printf("\n");
 
-#ifdef CONFIG_NET_TCP
-	printf("  TCP         ACK: %04x   SYN: %04x\n", g_netstats.tcp.ackerr, g_netstats.tcp.syndrop);
-	printf("              RST: %04x  %04x\n", g_netstats.tcp.rst, g_netstats.tcp.synrst);
-#endif
-
 	/* Prototype errors */
 
 	printf("  Type     ");
@@ -303,9 +281,6 @@ static inline void net_statistics()
 #endif
 #ifdef CONFIG_NET_IPv6
 	printf("  %04x", g_netstats.ipv6.protoerr);
-#endif
-#ifdef CONFIG_NET_TCP
-	printf("  ----");
 #endif
 #ifdef CONFIG_NET_UDP
 	printf("  ----");
@@ -327,9 +302,6 @@ static inline void net_statistics()
 #ifdef CONFIG_NET_IPv6
 	printf("  %04x", g_netstats.ipv6.sent);
 #endif
-#ifdef CONFIG_NET_TCP
-	printf("  %04x", g_netstats.tcp.sent);
-#endif
 #ifdef CONFIG_NET_UDP
 	printf("  %04x", g_netstats.udp.sent);
 #endif
@@ -340,29 +312,6 @@ static inline void net_statistics()
 	printf("  %04x", g_netstats.icmpv6.sent);
 #endif
 	printf("\n");
-
-	/* TCP retransmissions */
-
-#ifdef CONFIG_NET_TCP
-	printf("  Rexmit   ");
-#ifdef CONFIG_NET_IPv4
-	printf("  ----");
-#endif
-#ifdef CONFIG_NET_IPv6
-	printf("  ----");
-#endif
-	printf("  %04x", g_netstats.tcp.rexmit);
-#ifdef CONFIG_NET_UDP
-	printf("  ----");
-#endif
-#ifdef CONFIG_NET_ICMP
-	printf("  ----");
-#endif
-#ifdef CONFIG_NET_ICMPv6
-	printf("  ----");
-#endif
-	printf("\n");
-#endif							/* CONFIG_NET_TCP */
 }
 #else
 #define net_statistics()

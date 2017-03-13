@@ -86,10 +86,6 @@
 #define AIO_HAVE_FILEP
 #endif
 
-#if defined(CONFIG_NET_TCP) && CONFIG_NSOCKET_DESCRIPTORS > 0
-#define AIO_HAVE_PSOCK
-#endif
-
 #if !defined(AIO_HAVE_FILEP)
 #error AIO needs file and/or socket descriptors
 #endif
