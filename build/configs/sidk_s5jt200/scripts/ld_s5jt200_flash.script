@@ -108,37 +108,16 @@ SECTIONS
 	} > flash
 	__exidx_end = ABSOLUTE(.);
 
-	/* WLBT F/W binary */
-	.wlbt.fw 0x04200000 : {
-	  *(.wlbt.fw*)
-	} > flash
-
 	_eronly = ABSOLUTE(.);
 
 	.data : {
 		_sdata = ABSOLUTE(.);
 		*(.data .data.*)
 		*(.gnu.linkonce.d.*)
-			    . = ALIGN(8);clk_dbg_node_start = .; KEEP(*(.clk_dbg_node .clk_dbg_node.*))clk_dbg_node_end = .;
-                . = ALIGN(8);blkpwr_start = .; KEEP(*(.blkpwr .blkpwr.*))blkpwr_end = .;
-                . = ALIGN(8);vclk_grpgate_start = .; KEEP(*(.vclk_grpgate .vclk_grpgate.*))vclk_grpgate_end = .;
-                . = ALIGN(8);vclk_pxmxdx_start = .; KEEP(*(.vclk_pxmxdx .vclk_pxmxdx.*))vclk_pxmxdx_end = .;
-                . = ALIGN(8);vclk_umux_start = .; KEEP(*(.vclk_umux .vclk_umux.*))vclk_umux_end = .;
-                . = ALIGN(8);vclk_m1d1g1_start = .; KEEP(*(.vclk_m1d1g1 .vclk_m1d1g1.*))vclk_m1d1g1_end = .;
-                . = ALIGN(8);vclk_p1_start = .; KEEP(*(.vclk_p1 .vclk_p1.*))vclk_p1_end = .;
-                . = ALIGN(8);vclk_m1_start = .; KEEP(*(.vclk_m1 .vclk_m1.*))vclk_m1_end = .;
-                . = ALIGN(8);vclk_d1_start = .; KEEP(*(.vclk_d1 .vclk_d1.*))vclk_d1_end = .;
-                . = ALIGN(8);vclk_dfs_start = .; KEEP(*(.vclk_dfs .vclk_dfs.*))vclk_dfs_end = .;
-                . = ALIGN(8);clk_fixed_rate_start = .; KEEP(*(.clk_fixed_rate .clk_fixed_rate.*))clk_fixed_rate_end = .;
-                . = ALIGN(8);clk_fixed_factor_start = .; KEEP(*(.clk_fixed_factor .clk_fixed_factor.*))clk_fixed_factor_end = .;
-                . = ALIGN(8);clk_pll_start = .; KEEP(*(.clk_pll .clk_pll.*))clk_pll_end = .;
-                . = ALIGN(8);clk_mux_start = .; KEEP(*(.clk_mux .clk_mux.*))clk_mux_end = .;
-                . = ALIGN(8);clk_div_start = .; KEEP(*(.clk_div .clk_div.*))clk_div_end = .;
-                . = ALIGN(8);clk_gate_start = .; KEEP(*(.clk_gate .clk_gate.*))clk_gate_end = .;
-
-	     CONSTRUCTORS
+		CONSTRUCTORS
 		_edata = ABSOLUTE(.);
-	} > sram AT > flash 
+	} > sram AT > flash
+
 	.bss : {
 		_sbss = ABSOLUTE(.);
 		*(.bss .bss.*)
