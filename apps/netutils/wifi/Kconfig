@@ -1,0 +1,43 @@
+#
+# For a description of the syntax of this configuration file,
+# see misc/tools/kconfig-language.txt.
+#
+config NETUTILS_WIFI
+	bool "SLSI Wi-Fi API"
+	default n
+	select SCSC_WLAN
+	select WPA_SUPPLICANT
+	---help---
+		Enable support for the SLSI WI-Fi Networking API.
+
+if NETUTILS_WIFI
+config SLSI_WIFI_DEFAULT_WLAN_COUNTRY_CODE
+	string "Country code (2 chars)"
+	default "00"
+	---help---
+		The country code to use for the board when starting the first time.
+		The country code is a two char upper-case value, e.g. DK, KR, JP, US.
+		Use "00" for multi-country international.
+
+config SLSI_WIFI_DEFAULT_WLAN_TX_POWER
+	int "TX power in dBm (12-30)"
+	range 12 30
+	default 30
+	---help---
+		The default tx power value in dBm to use for the board when starting the first time.
+		The tx power value is in the range 0-30 and is of the type dBm.
+endif
+
+
+if DRIVERS_WIRELESS
+
+menuconfig SCSC_WLAN
+	bool "SCSC Wireless Module support"
+	default n
+
+
+menuconfig SCSC_CORE
+	bool "SCSC Core driver Module support"
+	default n
+
+endif # DRIVERS_WIRELESS
