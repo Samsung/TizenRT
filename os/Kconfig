@@ -270,6 +270,15 @@ config RAW_BINARY
 		different loaders using the GNU objcopy program.  This option
 		should not be selected if you are not using the GNU toolchain.
 
+config SAMSUNG_NS2
+	bool "Samsung NS2 binary format"
+	select RAW_BINARY
+	default n
+	---help---
+		Create the tinyara.head.bin from the raw binary, putting
+		a checksum value into it. It is used with S5J boot loaders,
+		which check the integrity of the binary using SHA256 at boot.
+
 menuconfig UBOOT_UIMAGE
 	bool "U-Boot uImage"
 	select RAW_BINARY
