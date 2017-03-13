@@ -686,19 +686,6 @@ FAR struct file_struct *fs_fdopen(int fd, int oflags, FAR struct tcb_s *tcb);
 int lib_flushall(FAR struct streamlist *list);
 #endif
 
-/* libc/misc/lib_sendfile.c *************************************************/
-/****************************************************************************
- * Name: lib_sendfile
- *
- * Description:
- *   Transfer a file
- *
- ****************************************************************************/
-
-#ifdef CONFIG_NET_SENDFILE
-ssize_t lib_sendfile(int outfd, int infd, off_t *offset, size_t count);
-#endif
-
 /* fs/fs_getfilep.c *********************************************************/
 /****************************************************************************
  * Name: fs_getfilep

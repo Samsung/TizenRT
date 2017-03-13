@@ -219,9 +219,6 @@ SYSCALL_LOOKUP(fdopen,                  3, STUB_fs_fdopen)
 SYSCALL_LOOKUP(sched_getstreams,        0, STUB_sched_getstreams)
 #  endif
 
-#  if defined(CONFIG_NET_SENDFILE)
-SYSCALL_LOOKUP(sendfile,                4, STUB_fs_sendifile)
-#  endif
 
 #  if !defined(CONFIG_DISABLE_MOUNTPOINT)
 SYSCALL_LOOKUP(fsync,                   1, STUB_fsync)

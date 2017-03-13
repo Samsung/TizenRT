@@ -130,11 +130,7 @@
  *
  ************************************************************************/
 
-#ifdef CONFIG_NET_SENDFILE
-ssize_t lib_sendfile(int outfd, int infd, off_t *offset, size_t count)
-#else
 ssize_t sendfile(int outfd, int infd, off_t *offset, size_t count)
-#endif
 {
 	FAR uint8_t *iobuffer;
 	FAR uint8_t *wrbuffer;
