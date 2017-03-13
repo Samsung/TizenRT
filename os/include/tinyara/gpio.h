@@ -146,7 +146,9 @@ struct gpio_dev_s {
 #if defined(CONFIG_ARCH_CHIP_S5JT200)
 	CODE void (*callback)(void);
 	WDOG_ID wdog;
+#if defined(CONFIG_SCHED_WORKQUEUE)
 	struct work_s work;			/* Supports the interrupt handling "bottom half" */
+#endif
 #endif
 };
 

@@ -364,17 +364,21 @@ static void s5j_gpio_poll_expiry(int argc, uint32_t arg, ...)
 	const uint32_t S5J_WDDELAY = 1 * CLK_TCK;
 	FAR struct gpio_dev_s *dev = (FAR struct gpio_dev_s *)arg;
 
+#ifdef CONFIG_SCHED_WORKQUEUE
 	if (work_available(&dev->work)) {
 		/* Schedule to perform the interrupt processing on the worker thread. */
 
 		work_queue(HPWORK, &dev->work, s5j_gpio_callback_wqueue, dev, 0);
 	} else {
+#endif
 		/* No.. Just re-start the watchdog poll timer, missing one polling
 		 * cycle.
 		 */
 
 		(void)wd_start(dev->wdog, S5J_WDDELAY, s5j_gpio_poll_expiry, 1, (uint32_t)dev);
+#ifdef CONFIG_SCHED_WORKQUEUE
 	}
+#endif
 }
 
 static int s5j_gpio_irq_handler(int irq, void *context)
