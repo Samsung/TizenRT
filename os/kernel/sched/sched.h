@@ -78,6 +78,9 @@
  * tasks built into the design).
  */
 
+#if CONFIG_MAX_TASKS & (CONFIG_MAX_TASKS - 1)
+#error "Max number of tasks(CONFIG_MAX_TASKS) should be power of 2"
+#endif
 #define MAX_TASKS_MASK      (CONFIG_MAX_TASKS-1)
 #define PIDHASH(pid)        ((pid) & MAX_TASKS_MASK)
 
