@@ -79,8 +79,7 @@
 
 #define MIN(a, b) (a > b) ? b : a
 
-#if defined(CONFIG_BOARD_COREDUMP_FLASH) || defined(CONFIG_BOARD_RAMDUMP_FLASH) || \
-	defined(CONFIG_BOARD_FOTA_SUPPORT)
+#if defined(CONFIG_BOARD_COREDUMP_FLASH) || defined(CONFIG_BOARD_RAMDUMP_FLASH)
 volatile bool g_sflash_nonsleep_mode = false;
 
 #define usleep(x) \
