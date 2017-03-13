@@ -467,8 +467,8 @@ ifeq ($(CONFIG_RAW_BINARY),y)
 	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary $(BIN) $(BIN).bin
 endif
 ifeq ($(CONFIG_SAMSUNG_NS2),y)
-	@echo "ATTACHNS2: $(BIN) --> $(BIN).head.bin"
-	$(Q) tools/s5jchksum.py $(BIN).bin $(BIN).head.bin
+	@echo "ATTACHNS2: $(BIN) --> $(BIN)_head.bin"
+	$(Q) tools/s5jchksum.py $(BIN).bin $(BIN)_head.bin
 endif
 
 # $(BIN)

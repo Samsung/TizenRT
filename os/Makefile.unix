@@ -138,16 +138,6 @@ IOTIVITY_LIBS_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/out/tinyara/$(
 IOTIVITY_CONFIG_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/resource/c_common
 endif
 
-ifeq ($(CONFIG_ARCH_CHIP_S5JT200),y)
-LBITS := $(shell getconf LONG_BIT)
-GEN_BINHEADER_PATH = tools/genbin
-ifeq ($(LBITS),64)
-GEN_BINHEADER = $(GEN_BINHEADER_PATH)/AttachHeaderNS2
-else
-GEN_BINHEADER = $(GEN_BINHEADER_PATH)/AttachHeaderNS2_for_32bit
-endif
-endif
-
 # Add-on directories.  These may or may not be in place in the
 # TinyAra source tree (they must be specifically installed)
 #
@@ -494,8 +484,8 @@ ifeq ($(CONFIG_RAW_BINARY),y)
 	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary $(BIN) $(BIN).bin
 endif
 ifeq ($(CONFIG_SAMSUNG_NS2),y)
-	@echo "ATTACHNS2: $(BIN).bin --> $(BIN).head.bin"
-	$(Q) tools/s5jchksum.py $(BIN).bin $(BIN).head.bin
+	@echo "ATTACHNS2: $(BIN).bin --> $(BIN)_head.bin"
+	$(Q) tools/s5jchksum.py $(BIN).bin $(BIN)_head.bin
 endif
 ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 	@echo "MKIMAGE: uImage"
@@ -505,27 +495,6 @@ ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 		cp -f uImage /tftpboot/uImage; \
 	fi
 endif
-
-ifeq ($(CONFIG_RAW_BINARY),y)
-ifeq ($(CONFIG_ARCH_CHIP_S5JT200),y)
-
-ifeq ($(CONFIG_BOOT_RUNFROMFLASH),y)
-	@echo "Make image for FLASH BOOTUP"
-else
-	@echo "Make image for SRAM BOOTUP"
-endif # RUNFROMFLASH
-
-ifeq ($(CONFIG_DISABLE_MAKING_BINARY_HEADER),y)
-	@echo "Make dummy for CRC header"
-	dd if=/dev/zero of=$(BIN)_dummy bs=1 count=32
-
-	cat $(BIN)_dummy $(BIN).bin > $(BIN)_head.bin
-else
-	$(GEN_BINHEADER) $(BIN).bin $(BIN)_head.bin -embd
-endif # DISABLE_MAKING_BINARY_HEADER
-
-endif # S5JT200
-endif # RAW_BINARY
 
 # $(BIN)
 #

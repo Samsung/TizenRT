@@ -59,7 +59,7 @@
 
 MEMORY
 {
-    flash (rx) : ORIGIN = 0x0400C020, LENGTH = 3M
+    flash (rx) : ORIGIN = 0x0400C000, LENGTH = 3M
     sram (rwx) : ORIGIN = 0x02021000, LENGTH = 732K	/* skip 4K from 0x0202_0000 for vector table */
 }
 
@@ -68,6 +68,14 @@ OUTPUT_ARCH(arm)
 ENTRY(_stext)
 SECTIONS
 {
+	.header : {
+		_start = .;
+		LONG((_end - _start) / 512);
+		LONG(0);
+		LONG(0x656d6264);
+		. = ALIGN(0x20);
+	} > flash =0x0
+
 	.text : {
 		_stext = ABSOLUTE(.);
 		*(.vectors)
@@ -153,4 +161,11 @@ SECTIONS
 	.debug_line 0 : { *(.debug_line) }
 	.debug_pubnames 0 : { *(.debug_pubnames) }
 	.debug_aranges 0 : { *(.debug_aranges) }
+
+	.padding : {
+		. = ALIGN(512);
+		. = . + 1020;
+		LONG(0);
+		_end = .;
+	} > flash
 }
