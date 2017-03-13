@@ -56,13 +56,10 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
-#include <unistd.h>
 
 /****************************************************************************
  * hello_main
  ****************************************************************************/
-
-#define PRINT_INTERVAL_SECS 20
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -70,13 +67,6 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-	int i;
-
-	printf("This Hello World msg will be printed third every 20 seconds\n");
-	for (i = 0; i < 3; i++) {
-		printf("Hello, World!!\n");
-		sleep(PRINT_INTERVAL_SECS);
-	}
-
+	printf("Hello, World!!\n");
 	return 0;
 }
