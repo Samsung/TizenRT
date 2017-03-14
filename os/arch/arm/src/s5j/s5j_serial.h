@@ -59,10 +59,7 @@
 
 #include <arch/chip/chip_types.h>
 
-/**
- *  Register Map
- *
- */
+/* Register Map */
 #define UART_LCON       0x00
 #define UART_CON        0x04
 #define UART_FCON       0x08
@@ -79,12 +76,14 @@
 #define UART_INTSP      0x34
 #define UART_INTM       0x38
 
-/**
- *  Enumultion & Structure
- *
- */
+#define UART_INTP_MASK		0x0F
+#define UART_FSTAT_RX_MASK	0x1FF
+#define UART_FSTAT_TX_MASK	(0x1FF << 16)
+#define UART_RX_MASK		0xFF
+
+/* Enumultion & Structure */
 typedef enum {
-	WL_5BIT = 0,	/**< 5-bit */
+	WL_5BIT = 0,		/**< 5-bit */
 	WL_6BIT,		/**< 6-bit */
 	WL_7BIT,		/**< 7-bit */
 	WL_8BIT,		/**< 8-bit */
@@ -137,36 +136,37 @@ typedef enum {
 } UART_RTS_TRIGGER_LEVEL;
 
 typedef enum {
-	DISABLE_MODE = 0,	/**<  Disabled */
+	DISABLE_MODE = 0,		/**<  Disabled */
 	POLL_MODE,			/**<  Polling mode */
 	INT_MODE,			/**<  Interrupt mode */
-	DMA_MODE	,		/**<  DMA mode */
+	DMA_MODE,			/**<  DMA mode */
 } UART_MODE;
 
 typedef enum {
-	RX_BUF_FILL = (1 << 0),		/**<       Rx buffer register fill      */
-	TX_BUF_EMPTY = (1 << 1),	/**<       Tx buffer register empty      */
-	TX_EMPTY = (1 << 2),		/**<       Tx (transmitter buffer & shift register) empty      */
+	RX_BUF_FILL = (1 << 0),		/**<  Rx buffer register fill      */
+	TX_BUF_EMPTY = (1 << 1),	/**<  Tx buffer register empty      */
+	TX_EMPTY = (1 << 2),		/**<  Tx (transmitter buffer & shift register) empty      */
 } UART_TXRX_STATUS;
 
 typedef enum {
-	ERR_OVERRUN = (1 << 0),		/**<      Overrun Error     */
-	ERR_PARITY = (1 << 1),		/**<      Parity Error     */
-	ERR_FRAME = (1 << 2),		/**<      Frame Error      */
-	ERR_BREAK = (1 << 3),		/**<      Break Signal Detection      */
+	ERR_OVERRUN = (1 << 0),		/**<  Overrun Error     */
+	ERR_PARITY = (1 << 1),		/**<  Parity Error     */
+	ERR_FRAME = (1 << 2),		/**<  Frame Error      */
+	ERR_BREAK = (1 << 3),		/**<  Break Signal Detection      */
 } UART_ERROR_STATUS;
 
 typedef enum {
-	CTS_ACTIVATE = (1 << 0),	/**<      CTS Activate     */
-	CTS_CHANGE = (1 << 4),		/**<      Delta CTS     */
+	CTS_ACTIVATE = (1 << 0),	/**<  CTS Activate     */
+	CTS_CHANGE = (1 << 4),		/**<  Delta CTS     */
 } UART_MODEM_STATUS;
 
 typedef enum {
-	RX_INT = (1 << 0),		/**<      Receive Interrupt     */
-	ERROR_INT = (1 << 1),	/**<      Error Interrupt     */
-	TX_INT = (1 << 2),		/**<      Transmit Interrupt     */
-	MODEM_INT = (1 << 3),	/**<      Modem Interrupt     */
-	ALL_INT = 0xF,			/**<      All Interrupts: Receive, Transmit, Error, Modem     */
+	NONE_INT = 0,
+	RX_INT = (1 << 0),		/**<  Receive Interrupt     */
+	ERROR_INT = (1 << 1),		/**<  Error Interrupt     */
+	TX_INT = (1 << 2),		/**<  Transmit Interrupt     */
+	MODEM_INT = (1 << 3),		/**<  Modem Interrupt     */
+	ALL_INT = 0xF,			/**<  All Interrupts: Receive, Transmit, Error, Modem     */
 } UART_INTERRUPT;
 
 typedef enum {
@@ -202,28 +202,14 @@ typedef struct {
 	u32 nClock;
 } UART_CONTEXT;
 
-enum uart_baudrate {
-	BAUD_9600,
-	BAUD_14400,
-	BAUD_38400,
-	BAUD_57600,
-	BAUD_115200,
-	BAUD_230400,
-};
+typedef enum uart_baudrate {
+	BAUD_9600 = 9600,
+	BAUD_14400 = 14400,
+	BAUD_38400 = 38400,
+	BAUD_57600 = 57600,
+	BAUD_115200 = 115200,
+	BAUD_230400 = 230400,
+} UART_BAUDRATE;
 
-/**
- *  Public Function
- *
- */
 
-void uart_init(uint8_t uart, uint8_t interrupts);
-void uart_putchar_wait(uint8_t uart, int c);
-int uart_putchar_nb(uint8_t uart, int c);
-int uart_getchar_nb(uint8_t uart, uint8_t *ch);
-int uart_tx_busy(uint8_t uart);
-int uart_baudrate(uint8_t uart, enum uart_baudrate bdrt);
-void uart_irq_enable(uint8_t uart, UART_INTERRUPT irq, int on);
-
-void uart_poll(uint8_t uart);
-
-#endif							/* __ARCH_ARM_SRC_S5J_S5J_SERIAL_H */
+#endif	/* __ARCH_ARM_SRC_S5J_S5J_SERIAL_H */
