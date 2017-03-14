@@ -492,13 +492,12 @@ static inline void mpu_control(bool enable)
  ****************************************************************************/
 
 #if defined(CONFIG_ARMV7R_HAVE_ICACHE) || defined(CONFIG_ARMV7R_DCACHE)
-static inline void mpu_priv_stronglyordered(uintptr_t base, size_t size, int region)
+static inline void mpu_priv_stronglyordered(uintptr_t base, size_t size)
 {
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);
@@ -532,13 +531,12 @@ static inline void mpu_priv_stronglyordered(uintptr_t base, size_t size, int reg
  *
  ****************************************************************************/
 
-static inline void mpu_user_flash(uintptr_t base, size_t size, int region)
+static inline void mpu_user_flash(uintptr_t base, size_t size)
 {
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);
@@ -571,13 +569,12 @@ static inline void mpu_user_flash(uintptr_t base, size_t size, int region)
  *
  ****************************************************************************/
 
-static inline void mpu_priv_noncache(uintptr_t base, size_t size, int region)
+static inline void mpu_priv_noncache(uintptr_t base, size_t size)
 {
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);
@@ -613,13 +610,12 @@ static inline void mpu_priv_noncache(uintptr_t base, size_t size, int region)
  *
  ****************************************************************************/
 
-static inline void mpu_priv_flash(uintptr_t base, size_t size, int region)
+static inline void mpu_priv_flash(uintptr_t base, size_t size)
 {
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);
@@ -650,13 +646,12 @@ static inline void mpu_priv_flash(uintptr_t base, size_t size, int region)
  *
  ****************************************************************************/
 
-static inline void mpu_user_intsram(uintptr_t base, size_t size, int region)
+static inline void mpu_user_intsram(uintptr_t base, size_t size)
 {
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);
@@ -690,12 +685,10 @@ static inline void mpu_user_intsram(uintptr_t base, size_t size, int region)
 
 static inline void mpu_priv_intsram(uintptr_t base, size_t size)
 {
-	unsigned int region = MPU_REG_KERN_DATA;
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);
@@ -727,13 +720,12 @@ static inline void mpu_priv_intsram(uintptr_t base, size_t size)
  *
  ****************************************************************************/
 
-static inline void mpu_user_extsram(uintptr_t base, size_t size, int region)
+static inline void mpu_user_extsram(uintptr_t base, size_t size)
 {
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);
@@ -768,12 +760,10 @@ static inline void mpu_user_extsram(uintptr_t base, size_t size, int region)
 
 static inline void mpu_priv_extsram(uintptr_t base, size_t size)
 {
-	unsigned int region = MPU_REG_KERN_DATA;
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);
@@ -808,12 +798,10 @@ static inline void mpu_priv_extsram(uintptr_t base, size_t size)
 
 static inline void mpu_peripheral(uintptr_t base, size_t size)
 {
-	unsigned int region = MPU_REG_KERN_FLASH;
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);
@@ -847,13 +835,12 @@ static inline void mpu_peripheral(uintptr_t base, size_t size)
  *
  ****************************************************************************/
 
-static inline void mpu_priv_intsram_wb(uintptr_t base, size_t size, int region)
+static inline void mpu_priv_intsram_wb(uintptr_t base, size_t size)
 {
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);
@@ -879,13 +866,12 @@ static inline void mpu_priv_intsram_wb(uintptr_t base, size_t size, int region)
 	mpu_set_drsr(regval);
 }
 
-static inline void mpu_user_intsram_ro(uintptr_t base, size_t size, int region)
+static inline void mpu_user_intsram_ro(uintptr_t base, size_t size)
 {
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);
@@ -920,13 +906,12 @@ static inline void mpu_user_intsram_ro(uintptr_t base, size_t size, int region)
  *
  ****************************************************************************/
 
-static inline void mpu_user_intsram_wb(uintptr_t base, size_t size, int region)
+static inline void mpu_user_intsram_wb(uintptr_t base, size_t size)
 {
+	unsigned int region = mpu_allocregion();
 	uint32_t regval;
 	uint8_t l2size;
 	uint8_t subregions;
-
-	DEBUGASSERT(region < (uintptr_t)CONFIG_ARMV7M_MPU_NREGIONS);
 
 	/* Select the region */
 	mpu_set_rgnr(region);

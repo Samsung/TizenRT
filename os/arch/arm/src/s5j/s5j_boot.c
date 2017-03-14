@@ -109,13 +109,11 @@ int s5j_mpu_initialize(void)
 {
 	uint32_t base;
 	uint32_t size;
-	int region = 0;
 
 	/* flash region
 	 * region 0 : 0x0400_0000 ++ 4MB  BL1 + TinyAra OS + SSS F/W
 	 */
-
-	mpu_priv_flash(0x0, 0x04000000, region++);
+	mpu_priv_flash(0x0, 0x04000000);
 
 	/* S5JT200 memory address in below
 	 * 0x0202_0000 ~ 0x0215_FFFF  ~1280KB
@@ -125,36 +123,31 @@ int s5j_mpu_initialize(void)
 
 	/* access permission for available area */
 	/* Region 1, for ISRAM(0x0200_0000++2048KB, RW-WBWA */
-
-	mpu_user_intsram_wb(0x02000000, 0x200000, region++);
+	mpu_user_intsram_wb(0x02000000, 0x200000);
 
 	/* Region 2,3, for wifi driver non-$(0x020E_0000++512KB(+128KB), RW-NCNB */
-
-	mpu_priv_noncache(0x020E0000, 0x20000, region++);	// priority higher than region 0, allows overlapping
-	mpu_priv_noncache(0x02100000, 0x80000, region++);	// priority higher than region 0, allows overlapping
+	mpu_priv_noncache(0x020E0000, 0x20000);
+	mpu_priv_noncache(0x02100000, 0x80000);
 
 	/*
 	 * Region 4 for RO in Flash : 0x0400_0000 ++ 4MB, RO-WT
 	 * BL1 + TinyAra OS + SSS F/W, wifi F/W, CM0 F/W
 	 */
-
 	base = CONFIG_S5J_FLASH_BASE;
-	size = CONFIG_S5J_BOOTLOADER_REGION_SIZE * 1024;	/* 4096*1024 */
-	mpu_priv_flash(base, size, region++);
+	size = CONFIG_S5J_BOOTLOADER_REGION_SIZE * 1024; /* 4096*1024 */
+	mpu_priv_flash(base, size);
 
 	/* Region 5, for wifi dedicated area, RW-WBWA, 0x043C_0000 -- 8KB */
-	mpu_user_intsram_wb(CONFIG_NVRAM_WIFI_START, 8 * 1024, region++);
-	mpu_control(true);
+	mpu_user_intsram_wb(CONFIG_NVRAM_WIFI_START, 8 * 1024);
 
 #ifdef CONFIG_FS_SMARTFS
 	/*
 	 * Region 6, FILE SYSTEM : 0x0440_0000 ++ 4MB - 256KB
 	 * filesystem - smartfs
 	 */
-
 	base = CONFIG_S5J_FLASH_BASE + CONFIG_S5J_BOOTLOADER_REGION_SIZE * 1024;
 	size = (CONFIG_S5J_FLASH_SIZE - CONFIG_S5J_BOOTLOADER_REGION_SIZE) * 1024;
-	mpu_user_intsram_wb(base, size, region++);
+	mpu_user_intsram_wb(base, size);
 #endif
 
 	/*
@@ -163,18 +156,18 @@ int s5j_mpu_initialize(void)
 	 */
 	base = CONFIG_S5J_FLASH_BASE + (CONFIG_S5J_FLASH_SIZE) * 1024;
 	size = 256 * 1024;
-	mpu_user_intsram_wb(base, size, region++);
+	mpu_user_intsram_wb(base, size);
 
 	/* region 8, for Sflash Mirror(0x6000_0000, RO) */
-	mpu_priv_flash(0x60000000, CONFIG_S5J_FLASH_SIZE * 1024, region++);
+	mpu_priv_flash(0x60000000, CONFIG_S5J_FLASH_SIZE * 1024);
 
 	/* Region 9, for vecotr table(0x8000_0000, RW-STRONG-ORDER */
-	mpu_priv_stronglyordered(0x80000000, 0x10000000, region++);	// SFR access area, set to stronglyorder
-	mpu_control(true);
+	mpu_priv_stronglyordered(0x80000000, 0x10000000);
 
 	/* Region 10, for vecotr table(0xFFFF_0000++4KB, RO-WT */
+	mpu_priv_flash(0xFFFF0000, 0x1000);
 
-	mpu_priv_flash(0xFFFF0000, 0x1000, region++);
+	mpu_control(true);
 
 	return 0;
 }
