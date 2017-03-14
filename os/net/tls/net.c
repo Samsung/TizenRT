@@ -124,6 +124,9 @@ int mbedtls_net_connect(mbedtls_net_context *ctx, const char *host, const char *
 {
 	int ret;
 	struct addrinfo hints, *addr_list, *cur;
+#ifndef CONFIG_LIBC_NETDB
+	struct sockaddr_in myaddr;
+#endif
 
 	if ((ret = net_prepare()) != 0) {
 		return (ret);
@@ -135,10 +138,20 @@ int mbedtls_net_connect(mbedtls_net_context *ctx, const char *host, const char *
 	hints.ai_socktype = proto == MBEDTLS_NET_PROTO_UDP ? SOCK_DGRAM : SOCK_STREAM;
 	hints.ai_protocol = proto == MBEDTLS_NET_PROTO_UDP ? IPPROTO_UDP : IPPROTO_TCP;
 
+#ifdef CONFIG_LIBC_NETDB
 	if (getaddrinfo(host, port, &hints, &addr_list) != 0) {
 		return (MBEDTLS_ERR_NET_UNKNOWN_HOST);
 	}
-
+#else
+	addr_list = &hints;
+	hints.ai_family = AF_INET;
+	hints.ai_addrlen = (socklen_t)sizeof(struct sockaddr_in);
+	myaddr.sin_family = AF_INET;
+	myaddr.sin_port = HTONS(atoi(port));
+	inet_pton(AF_INET, host, &(myaddr.sin_addr));
+	hints.ai_addr = (struct sockaddr *)(&myaddr);
+	hints.ai_next = NULL;
+#endif
 	/* Try the sockaddrs until a connection succeeds */
 	ret = MBEDTLS_ERR_NET_UNKNOWN_HOST;
 	for (cur = addr_list; cur != NULL; cur = cur->ai_next) {
@@ -156,9 +169,9 @@ int mbedtls_net_connect(mbedtls_net_context *ctx, const char *host, const char *
 		close(ctx->fd);
 		ret = MBEDTLS_ERR_NET_CONNECT_FAILED;
 	}
-
+#ifdef CONFIG_LIBC_NETDB
 	freeaddrinfo(addr_list);
-
+#endif
 	return (ret);
 }
 
@@ -169,6 +182,9 @@ int mbedtls_net_bind(mbedtls_net_context *ctx, const char *bind_ip, const char *
 {
 	int n, ret;
 	struct addrinfo hints, *addr_list, *cur;
+#ifndef CONFIG_LIBC_NETDB
+	struct sockaddr_in myaddr;
+#endif
 
 	if ((ret = net_prepare()) != 0) {
 		return (ret);
@@ -183,9 +199,19 @@ int mbedtls_net_bind(mbedtls_net_context *ctx, const char *bind_ip, const char *
 		hints.ai_flags = AI_PASSIVE;
 	}
 
+#ifdef CONFIG_LIBC_NETDB
 	if (getaddrinfo(bind_ip, port, &hints, &addr_list) != 0) {
 		return (MBEDTLS_ERR_NET_UNKNOWN_HOST);
 	}
+#else
+	addr_list = &hints;
+	hints.ai_family = AF_INET;
+	hints.ai_addrlen = (socklen_t)sizeof(struct sockaddr_in);
+	myaddr.sin_family = AF_INET;
+	myaddr.sin_port = HTONS(atoi(port));
+	hints.ai_addr = (struct sockaddr *)(&myaddr);
+	hints.ai_next = NULL;
+#endif
 
 	/* Try the sockaddrs until a binding succeeds */
 	ret = MBEDTLS_ERR_NET_UNKNOWN_HOST;
@@ -222,9 +248,9 @@ int mbedtls_net_bind(mbedtls_net_context *ctx, const char *bind_ip, const char *
 		ret = 0;
 		break;
 	}
-
+#ifdef CONFIG_LIBC_NETDB
 	freeaddrinfo(addr_list);
-
+#endif
 	return (ret);
 
 }
@@ -252,9 +278,20 @@ static int net_would_block(const mbedtls_net_context *ctx)
 	/*
 	 * Never return 'WOULD BLOCK' on a non-blocking socket
 	 */
+#ifdef CONFIG_OS_TINYARA
+	/*
+	 * Because fcntl() changes an errno to the unexpected value,
+	 * store the errno before calling fcntl.
+	 */
+	int errval = errno;
+#endif
 	if ((fcntl(ctx->fd, F_GETFL) & O_NONBLOCK) != O_NONBLOCK) {
 		return (0);
 	}
+
+#ifdef CONFIG_OS_TINYARA
+	set_errno(errval);
+#endif
 
 	switch (errno) {
 #if defined EAGAIN
