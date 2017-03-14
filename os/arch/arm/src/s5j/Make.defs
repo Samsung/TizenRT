@@ -212,6 +212,10 @@ ifeq ($(CONFIG_S5J_DMA),y)
 CHIP_CSRCS += s5j_dma.c
 endif
 
+ifeq ($(CONFIG_S5J_SSS),y)
+EXTRA_LIBS += chip/soc/sss/libispdriver.a
+endif
+
 EXTRA_LIBS += chip/soc/wireless/libwifidriver.a
 EXTRA_LIBS += chip/soc/wireless/libwifistack.a
 EXTRA_LIBS += chip/soc/wireless/libwifiapi.a
