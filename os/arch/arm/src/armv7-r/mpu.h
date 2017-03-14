@@ -447,46 +447,6 @@ static inline inline uint32_t get_mpu_region_num(void)
 }
 
 /****************************************************************************
- * Name: mpu_show_regioninfo
- *
- * Description:
- *   Show the current mpu region setting
- *
- ****************************************************************************/
-
-static inline void mpu_show_regioninfo(void)
-{
-#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_ERROR)
-	int idx, temp;
-	uint32_t regval, base, size, attr;
-
-	/* save the current region before printing the information */
-	temp = get_mpu_region_num();
-
-	lldbg("*****************************************************************************\n");
-	lldbg("*REGION_NO.\tBASE_ADDRESS\t    SIZE\t    STATUS\tATTRIBUTES*\n");
-	lldbg("*****************************************************************************\n");
-	for (idx = 0; idx < 8; idx++) {
-		mpu_set_rgnr(idx);
-		regval = get_mpu_region_num();
-		base = get_mpu_region_base();
-		size = get_mpu_region_size();
-		attr = get_mpu_region_access_ctrl();
-		lldbg("%8d\t\t%8X\t%8X\t%8d\t%8X\n",
-			regval & MPU_RGNR_MASK,
-			base & MPU_RBAR_ADDR_MASK,
-			size ? (1 << (((size & MPU_RASR_RSIZE_MASK) >> MPU_RASR_RSIZE_SHIFT) + 1)) : 0,
-			size & MPU_RASR_ENABLE ? 1 : 0,
-			attr);
-	}
-	lldbg("*****************************************************************************\n");
-
-	/* restore the previous region */
-	mpu_set_rgnr(temp);
-#endif
-}
-
-/****************************************************************************
  * Name: mpu_control
  *
  * Description:

@@ -685,10 +685,6 @@ static void up_dumpstate(void)
 
 	dump_stack();
 
-#ifdef CONFIG_ARMV7M_MPU
-	mpu_show_regioninfo();
-#endif
-
 	/* Dump the state of all tasks (if available) */
 
 	up_showtasks();
