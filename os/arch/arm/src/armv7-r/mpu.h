@@ -899,9 +899,6 @@ static inline void mpu_priv_intsram_wb(uintptr_t base, size_t size, int region)
 	/* WB/Write Allocate: TEX(5), C(0), B(1), S(1) */
 	regval =					  /* Not Cacheable  */
 		 MPU_RACR_B				| /* Not Bufferable */
-#if !defined(CONFIG_ARCH_CORTEXR4)
-		 MPU_RACR_S				| /* Shareable      */
-#endif
 		 MPU_RACR_TEX(5)			| /* TEX */
 		 MPU_RACR_AP_RWNO;			  /* P:RW   U:NO */
 	mpu_set_dracr(regval);
@@ -931,12 +928,9 @@ static inline void mpu_user_intsram_ro(uintptr_t base, size_t size, int region)
 	subregions = mpu_subregion(base, size, l2size);
 
 	/* The configure the region */
-	/* WB/Write Allocate: TEX(5), C(0), B(1), S(1) except cortex-r4(S(0)) */
+	/* WB/Write Allocate: TEX(5), C(0), B(1), S(1) */
 	regval =					  /* Not Cacheable  */
 		 MPU_RACR_B				| /* Not Bufferable */
-#if !defined(CONFIG_ARCH_CORTEXR4)
-		 MPU_RACR_S				| /* Shareable      */
-#endif
 		 MPU_RACR_TEX(5)			| /* TEX */
 		 MPU_RACR_AP_RWNO;			  /* P:RW   U:NO */
 	mpu_set_dracr(regval);
@@ -975,12 +969,9 @@ static inline void mpu_user_intsram_wb(uintptr_t base, size_t size, int region)
 	subregions = mpu_subregion(base, size, l2size);
 
 	/* The configure the region */
-	/* WB/Write Allocate: TEX(5), C(0), B(1), S(1) except cortex-r4(S(0)) */
+	/* WB/Write Allocate: TEX(5), C(0), B(1), S(1) */
 	regval =					  /* Not Cacheable  */
 		 MPU_RACR_B				| /* Not Bufferable */
-#if !defined(CONFIG_ARCH_CORTEXR4)
-		 MPU_RACR_S				| /* Shareable      */
-#endif
 		 MPU_RACR_TEX(5)			| /* TEX            */
 		 MPU_RACR_AP_RWRW;			  /* P:RW   U:RW    */
 	mpu_set_dracr(regval);
