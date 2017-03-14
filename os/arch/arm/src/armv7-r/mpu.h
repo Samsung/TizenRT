@@ -152,6 +152,16 @@ extern "C" {
 #endif
 
 /****************************************************************************
+ * Name: mpu_allocregion
+ *
+ * Description:
+ *  Allocate the next region
+ *
+ ****************************************************************************/
+
+unsigned int mpu_allocregion(void);
+
+/****************************************************************************
  * Name: mpu_log2regionceil
  *
  * Description:
