@@ -132,7 +132,7 @@ int s5j_mpu_initialize(void)
 	 * BL1 + TinyAra OS + SSS F/W, wifi F/W, CM0 F/W
 	 */
 	base = CONFIG_S5J_FLASH_BASE;
-	size = CONFIG_S5J_BOOTLOADER_REGION_SIZE * 1024; /* 4096*1024 */
+	size = CONFIG_S5J_BOOTLOADER_REGION_SIZE;
 	mpu_priv_flash(base, size);
 
 	/* Region 5, for wifi dedicated area, RW-WBWA, 0x043C_0000 -- 8KB */
@@ -143,8 +143,8 @@ int s5j_mpu_initialize(void)
 	 * Region 6, FILE SYSTEM : 0x0440_0000 ++ 4MB - 256KB
 	 * filesystem - smartfs
 	 */
-	base = CONFIG_S5J_FLASH_BASE + CONFIG_S5J_BOOTLOADER_REGION_SIZE * 1024;
-	size = (CONFIG_S5J_FLASH_SIZE - CONFIG_S5J_BOOTLOADER_REGION_SIZE) * 1024;
+	base = CONFIG_S5J_FLASH_BASE + CONFIG_S5J_BOOTLOADER_REGION_SIZE;
+	size = CONFIG_S5J_FLASH_SIZE - CONFIG_S5J_BOOTLOADER_REGION_SIZE;
 	mpu_user_intsram_wb(base, size);
 #endif
 
@@ -152,12 +152,12 @@ int s5j_mpu_initialize(void)
 	 * Region 7, SSS F/W region2 : 0x047C_0000 ++ 256KB
 	 * SSS key area RW, priority higher than 0x0400_0000, 4MB attribute(WBWA, RO)
 	 */
-	base = CONFIG_S5J_FLASH_BASE + (CONFIG_S5J_FLASH_SIZE) * 1024;
+	base = CONFIG_S5J_FLASH_BASE + CONFIG_S5J_FLASH_SIZE;
 	size = 256 * 1024;
 	mpu_user_intsram_wb(base, size);
 
 	/* region 8, for Sflash Mirror(0x6000_0000, RO) */
-	mpu_priv_flash(0x60000000, CONFIG_S5J_FLASH_SIZE * 1024);
+	mpu_priv_flash(0x60000000, CONFIG_S5J_FLASH_SIZE);
 
 	/* Region 9, for vecotr table(0x8000_0000, RW-STRONG-ORDER */
 	mpu_priv_stronglyordered(0x80000000, 0x10000000);
