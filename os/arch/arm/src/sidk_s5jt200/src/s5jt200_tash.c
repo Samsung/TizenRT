@@ -127,8 +127,10 @@ int board_app_initialize(void)
 	adcdrv_register();
 #endif
 
+#ifdef CONFIG_S5J_SFLASH
 	qspi_get_base();
 	qspi_register();
+#endif
 
 #ifdef CONFIG_S5J_EFUSE
 	efusedrv_register();
@@ -189,7 +191,9 @@ int board_app_initialize(void)
 	pdma_init();
 #endif
 
+#ifdef CONFIG_S5J_SFLASH
 	QSPI_print_mode();
+#endif
 
 	lldbg("SIDK S5JT200 boot from 0x%x\n", &_vector_start);
 	return OK;
