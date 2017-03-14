@@ -89,7 +89,6 @@
  *
  ****************************************************************************/
 extern void qspi_register(void);
-extern void qspi_get_base(void);
 extern void sdio_drv_register(void);
 extern void pwmdrv_register(void);
 extern void chipid_register(void);
@@ -123,13 +122,12 @@ int board_app_initialize(void)
 	FAR struct tm tp;
 #endif
 
-#ifdef CONFIG_S5J_ADC
-	adcdrv_register();
+#ifdef CONFIG_S5J_SFLASH
+	s5j_qspi_init();
 #endif
 
-#ifdef CONFIG_S5J_SFLASH
-	qspi_get_base();
-	qspi_register();
+#ifdef CONFIG_S5J_ADC
+	adcdrv_register();
 #endif
 
 #ifdef CONFIG_S5J_EFUSE
@@ -189,10 +187,6 @@ int board_app_initialize(void)
 
 #ifdef CONFIG_S5J_DMA
 	pdma_init();
-#endif
-
-#ifdef CONFIG_S5J_SFLASH
-	QSPI_print_mode();
 #endif
 
 	lldbg("SIDK S5JT200 boot from 0x%x\n", &_vector_start);

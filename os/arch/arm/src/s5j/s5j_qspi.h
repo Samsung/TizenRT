@@ -59,20 +59,9 @@
 
 #define QSPI_DUMMY_DATA     0x1
 
-#define QSPI_SECTOR_OFFSET       (12)
-#define QSPI_BLOCK32K_OFFSET     (15)
-#define QSPI_BLOCK64K_OFFSET     (16)
-
 #define QSPI_SIZE_64KB   (1<<QSPI_BLOCK64K_OFFSET)
 #define QSPI_SIZE_32KB   (1<<QSPI_BLOCK32K_OFFSET)
 #define QSPI_SIZE_4KB    (1<<QSPI_SECTOR_OFFSET)
-
-#define QSPI_FLASH_END_ADDRESS           (CONFIG_S5J_FLASH_BASE + (CONFIG_S5J_FLASH_SIZE + 256) * 1024)	/* SSS Key is stored in end of FLASH 4MB , see t20 tinyara BSP memory map */
-#define QSPI_SECURE_AREA_SIZE            (92*1024)
-#define QSPI_SECURE_AREA_START_ADDRESS   (CONFIG_S5J_FLASH_BASE + CONFIG_S5J_FLASH_SIZE * 1024)
-#define QSPI_SECURE_AREA_START_ADDRESS_A (QSPI_SECURE_AREA_START_ADDRESS)
-#define QSPI_SECURE_AREA_START_ADDRESS_B (QSPI_SECURE_AREA_START_ADDRESS + QSPI_SECURE_AREA_SIZE)
-#define QSPI_SECURE_AREA_CTRL_ADDRESS    (QSPI_SECURE_AREA_START_ADDRESS_B + QSPI_SECURE_AREA_SIZE)
 
 #define COMMAND_ERASE_32KB  (0x52)
 #define COMMAND_ERASE_64KB  (0xD8)
@@ -162,29 +151,6 @@ typedef struct _status_register_t {
 		unsigned QE:1;			//Quad enable
 		unsigned SRWD:1;		//Status Register Write Disable
 	} b;
-} sRead_Status_Register;
-
-void QSPI_Read_ID(u32 *vendor);
-void QSPI_Set_ReadMode(eQSPI_MODE mode, u32 command);
-void QSPI_Set_WriteMode(eQSPI_WR_MODE mode, u32 command);
-bool QSPI_Erase(u32 targetAddr, u32 size);
-void QSPI_Read(u32 targetAddr, u32 sourceAddr, u32 sizeByte);
-void QSPI_Secure_Read(u32 targetOffset, u32 sourceAddr, u32 sizeByte);
-u32 QSPI_Write(u32 targetAddr, u32 sourceAddr, u32 sizeByte);
-u32 QSPI_Write_No_Erase(u32 targetAddr, u32 sourceAddr, u32 sizeByte);
-u32 QSPI_Secure_Write(u32 targetOffset, u32 sourceAddr, u32 sizeByte);
-u32 QSPI_Secure_Write_NoWL(u32 targetOffset, u32 sourceAddr, u32 sizeByte);
-
-sRead_Status_Register QSPI_Get_Status_Register(void);
-void QSPI_Write_Status_Register(u16 wrsr);
-
-void QSPI_Set_Vendor_Command(u8 vendor);
-u8 QSPI_Get_Vendor(void);
-
-void QSPI_Set_User_Instruction(u8 command);
-
-ssize_t qspi_Wtest(void);
-ssize_t qspi_Rtest(void);
-u32 wear_leveling(u32 targetAddr);
+} flash_status_register;
 
 #endif							/* __ARCH_ARM_SRC_S5J_S5J_QSPI_H */
