@@ -61,8 +61,6 @@
 #include <debug.h>
 
 #include <tinyara/init.h>
-#include <arch/board/board.h>
-#include <arch/board/s5jt200_partitions.h>
 
 #include "up_arch.h"
 #include "up_internal.h"
