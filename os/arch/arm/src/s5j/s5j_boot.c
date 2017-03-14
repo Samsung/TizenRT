@@ -172,11 +172,9 @@ int s5j_mpu_initialize(void)
 	mpu_priv_stronglyordered(0x80000000, 0x10000000, region++);	// SFR access area, set to stronglyorder
 	mpu_control(true);
 
-#ifndef CONFIG_ARCH_LOWVECTORS
 	/* Region 10, for vecotr table(0xFFFF_0000++4KB, RO-WT */
 
 	mpu_priv_flash(0xFFFF0000, 0x1000, region++);
-#endif
 
 	return 0;
 }
@@ -188,9 +186,7 @@ void arm_boot(void)
 	__asm__ __volatile__("b  .");
 #endif
 
-#ifndef CONFIG_ARCH_LOWVECTORS
 	up_copyvectorblock();
-#endif
 
 #ifdef CONFIG_ARMV7R_MEMINIT
 	/* Initialize the .bss and .data sections as well as RAM functions
