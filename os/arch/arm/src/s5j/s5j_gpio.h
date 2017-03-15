@@ -180,35 +180,22 @@ extern "C" {
 #endif
 
 /****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
-int gpio_cfg_pin(int gpio, int cfg);
-int gpio_set_pull(int gpio, int mode);
-
-int gpio_direction_output(int gpio, int value);
-int gpio_direction_input(int gpio);
-int gpio_set_value(int gpio, int value);
-int gpio_get_value(int gpio);
-
 int gpio_valid(int gpio);
-const char *gpio_bank_name(int gpio);
-int name_to_gpio(const char *name);
-int periph_to_gpio(const char *name, char *port);
-
+int gpio_cfg_pin(int gpio, int cfg);
 int gpio_cfg_get_pin(int gpio);
+int gpio_direction_output(int gpio, int high);
+int gpio_direction_input(int gpio);
+int gpio_set_value(int gpio, int high);
+int gpio_get_value(int gpio);
+int gpio_set_pull(int gpio, int mode);
+int gpio_get_pull(int gpio);
 int gpio_set_drv(int gpio, int mode);
+int gpio_get_drv(int gpio);
 int gpio_set_rate(int gpio, int mode);
-
 int gpio_cfg_pin_pdn(int gpio, int cfg);
 int gpio_set_pull_pdn(int gpio, int mode);
-
-void gpio_dump(int gpio);
-void gpio_status(void);
-
 int gpio_eint_mask(int gpio);
 int gpio_eint_unmask(int gpio);
 bool gpio_eint_ispending(int gpio);
@@ -217,6 +204,7 @@ int gpio_eint_enable_filter(int gpio);
 int gpio_eint_disable_filter(int gpio);
 int gpio_eint_set_filter(int gpio, unsigned type, unsigned width);
 int gpio_eint_set_type(int gpio, unsigned type);
+int gpio_eint_get_type(int gpio);
 
 #if defined(__cplusplus)
 }

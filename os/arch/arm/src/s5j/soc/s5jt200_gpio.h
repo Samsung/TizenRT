@@ -34,43 +34,6 @@ enum {
 	GPP4,
 	ETC0,
 
-#if 0
-	GPA0 = 0,					// ALIVE
-	GPA1,
-	GPA2,
-	GPA3,
-	GPP0,
-	GPP1,
-	GPP2,
-	GPP3,
-	GPP4,
-	GPG0,
-	GPG1,
-	GPG2,
-	GPG3,
-	ETC0,
-#if 1
-	ETC1,
-	GPQ0,
-	GPZ1,						// DISP_AUD
-	GPC7,						// ESE
-	GPC2,						// NFC
-	GPR0,						//FSYS
-	GPR1,
-	GPR4,
-	GPM0,						// TOP
-	GPC0,
-	GPC1,
-	GPC4,
-	GPD1,
-	GPE0,
-	GPF0,
-	GPF1,
-	GPF3,
-	GPC3,						// TOUCH
-	GPD2,
-#endif
-#endif
 	GPEND,
 };
 

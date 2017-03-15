@@ -86,13 +86,27 @@ struct s5j_gpio_priv {
 	int idx;
 	int isr_num;
 };
-CODE int s5j_gpio_open(FAR struct gpio_dev_s *dev);
-CODE int s5j_gpio_close(FAR struct gpio_dev_s *dev);
-CODE void s5j_gpio_set(FAR struct gpio_dev_s *dev, FAR unsigned int value);
-CODE int s5j_gpio_get(FAR struct gpio_dev_s *dev);
-CODE int s5j_gpio_ctrl(struct gpio_dev_s *dev, int cmd, unsigned long args);
-static void s5j_gpio_disable_irq(struct gpio_dev_s *dev);
+
+/****************************************************************************
+ * Private Functions prototypes
+ ****************************************************************************/
+static struct gpio_bank *gpio_to_bank(int gpio);
+static void *__gpio_to_eint_base(int gpio);
+static unsigned __gpio_to_eint_bank(int gpio);
+static void *__gpio_eint_filter_get_addr(int gpio);
+static void *__gpio_eint_get_addr(int gpio, unsigned offset);
+static void s5j_gpio_callback_wqueue(FAR void *arg);
+static void s5j_gpio_poll_expiry(int argc, uint32_t arg, ...);
+static int s5j_gpio_irq_handler(int irq, void *context);
 static void s5j_gpio_enable_irq(struct gpio_dev_s *dev);
+static void s5j_gpio_disable_irq(struct gpio_dev_s *dev);
+static u32 gpio_get_irq_id(int gpio);
+static const char *gpio_bank_name(int gpio);
+static int s5j_gpio_open(FAR struct gpio_dev_s *dev);
+static int s5j_gpio_close(FAR struct gpio_dev_s *dev);
+static int s5j_gpio_get(FAR struct gpio_dev_s *dev);
+static void s5j_gpio_set(FAR struct gpio_dev_s *dev, FAR unsigned int value);
+static int s5j_gpio_ctrl(struct gpio_dev_s *dev, int cmd, unsigned long args);
 
 /****************************************************************************
  * Private Data
@@ -112,7 +126,6 @@ static struct gpio_dev_s s5j_gpio_all[NUM_GPIO];
  ****************************************************************************/
 #if defined(CONFIG_ARCH_CHIP_S5JT200)
 static struct gpio_bank s5jt200_gpio_bank[] = {
-	/* ALIVE */
 	[GPP0] = {
 		.name = "GPP0",
 		.base = (void *)(GPIO_CON_BASE),
@@ -214,52 +227,26 @@ static struct gpio_bank s5jt200_gpio_bank[] = {
 };
 #endif
 
-#if defined(CONFIG_S5E_GPIO_LOG_DUMP)
-static char *pull_str[] = { "none", "?", "down", "up" };
-static char *drv_str[] = { "1x", "3x", "2x", "4x" };
-#endif
 bool isinit = 0;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static u32 gpio_get_irq_id(int gpio);
 
-int up_create_gpio(int32_t idx)
-{
-#ifdef CONFIG_GPIO
-	char path[20];
-	struct s5j_gpio_priv *pgpio;
-	int bank = 0;
-	int port;
-	int idx_table[] = { 7, 15, 22, 28, 36, 44, 52, 56, 59, 63, 66 };
 
-	pgpio = (struct s5j_gpio_priv *)kmm_malloc(sizeof(struct s5j_gpio_priv));
-	s5j_gpio_all[idx].ops = &s5j_gpio_ops;
-	s5j_gpio_all[idx].priv = pgpio;
-	s5j_gpio_all[idx].wdog = NULL;
-	s5j_gpio_all[idx].callback = NULL;
 
-	for (bank = 0; bank < sizeof(idx_table) / sizeof(int); bank++) {
-		if (idx_table[bank] >= idx) {
-			break;
-		}
-	}
-	if (bank) {
-		port = idx - (idx_table[bank - 1] + 1);
-	} else {
-		port = idx;
-	}
-	pgpio->gpio = s5j_gpio(bank, port);
-	pgpio->idx = idx;
-	pgpio->isr_num = gpio_get_irq_id(pgpio->gpio);
-	snprintf(path, sizeof(path), "/dev/gpio%d", idx);
-	gpio_register(path, &s5j_gpio_all[idx]);
-	return 0;
-#else
-	return 0;
-#endif
-}
-
+/****************************************************************************
+ * Name: gpio_to_bank 
+ *
+ * Description:
+ *  Converts gpio port index into gpio bank structure address 
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *
+ * Returned Value:
+ *  gpio bank structure address
+ ****************************************************************************/
 static struct gpio_bank *gpio_to_bank(int gpio)
 {
 	unsigned bank;
@@ -273,6 +260,18 @@ static struct gpio_bank *gpio_to_bank(int gpio)
 	return s5jt200_gpio_bank + bank;
 }
 
+/****************************************************************************
+ * Name: __gpio_to_eint_base 
+ *
+ * Description:
+ *  Converts gpio port index into eint base address
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *
+ * Returned Value:
+ *  eint base address
+ ****************************************************************************/
 static void *__gpio_to_eint_base(int gpio)
 {
 	struct gpio_bank *gb;
@@ -284,6 +283,19 @@ static void *__gpio_to_eint_base(int gpio)
 	return gb->base;
 }
 
+
+/****************************************************************************
+ * Name: __gpio_to_eint_bank 
+ *
+ * Description:
+ *  Converts gpio port index into eint bank
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *
+ * Returned Value:
+ *  eint bank
+ ****************************************************************************/
 static unsigned __gpio_to_eint_bank(int gpio)
 {
 	int bank;
@@ -297,6 +309,19 @@ static unsigned __gpio_to_eint_bank(int gpio)
 	}
 }
 
+
+/****************************************************************************
+ * Name: __gpio_eint_filter_get_addr
+ *
+ * Description:
+ *  Returns EINT filter register address
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *
+ * Returned Value:
+ *  Address
+ ****************************************************************************/
 static void *__gpio_eint_filter_get_addr(int gpio)
 {
 	void *gpio_filter_addr;
@@ -307,6 +332,19 @@ static void *__gpio_eint_filter_get_addr(int gpio)
 	return gpio_filter_addr;
 }
 
+/****************************************************************************
+ * Name: __gpio_eint_get_addr
+ *
+ * Description:
+ *  Returns EINT CON/FLTCON/MASK/PEND register address
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  offset - EINT CON/FLTCON/MASK/PEND offset addr 
+ *
+ * Returned Value:
+ *  Address
+ ****************************************************************************/
 static void *__gpio_eint_get_addr(int gpio, unsigned offset)
 {
 	void *gpio_base;
@@ -315,7 +353,6 @@ static void *__gpio_eint_get_addr(int gpio, unsigned offset)
 	int port;
 
 	gpio_base = __gpio_to_eint_base(gpio);
-	/* gpio_base = (void *)(((u64)gpio_base >> 16) << 16); TODO check this code correct or NOT */
 	bank_num = __gpio_to_eint_bank(gpio);
 	port = s5j_gpio_port(gpio);
 
@@ -331,6 +368,18 @@ static void *__gpio_eint_get_addr(int gpio, unsigned offset)
 	return eint_addr;
 }
 
+/****************************************************************************
+ * Name: s5j_gpio_callback_wqueue
+ *
+ * Description:
+ *  Callback function assigned by s5j_gpio_poll_expiry, to execute by work queue
+ *
+ * Input Parameters:
+ *  arg - arguments
+ * 
+ * Returned Value:
+ *  None
+ ****************************************************************************/
 static void s5j_gpio_callback_wqueue(FAR void *arg)
 {
 	struct gpio_dev_s *dev;
@@ -382,6 +431,21 @@ static void s5j_gpio_poll_expiry(int argc, uint32_t arg, ...)
 #endif
 }
 
+/****************************************************************************
+ * Name: s5j_gpio_irq_handler
+ *
+ * Description:
+ *  IRQ handler to assign to handle IRQ and perform gpio notify, if configured
+ *
+ * Input Parameters:
+ *  irq - IRQ number
+ *  context - pointer to a dedicated context structure
+ * 
+ * Returned Value:
+ *  Ok
+ *  -1, if Error
+ *
+ ****************************************************************************/
 static int s5j_gpio_irq_handler(int irq, void *context)
 {
 	int i;
@@ -413,6 +477,20 @@ static int s5j_gpio_irq_handler(int irq, void *context)
 	return OK;
 }
 
+/****************************************************************************
+ * Name: s5j_gpio_enable_irq
+ *
+ * Description:
+ *  Enable IRQ
+ *
+ * Input Parameters:
+ *  dev - GPIO device 
+ * 
+ * Returned Value:
+ *  None
+ *  
+ *
+ ****************************************************************************/
 static void s5j_gpio_enable_irq(struct gpio_dev_s *dev)
 {
 	int gpio;
@@ -428,6 +506,20 @@ static void s5j_gpio_enable_irq(struct gpio_dev_s *dev)
 	up_enable_irq(irq);
 }
 
+/****************************************************************************
+ * Name: s5j_gpio_disable_irq
+ *
+ * Description:
+ *  Disable IRQ
+ *
+ * Input Parameters:
+ *  dev - GPIO device 
+ * 
+ * Returned Value:
+ *  None
+ *  
+ *
+ ****************************************************************************/
 static void s5j_gpio_disable_irq(struct gpio_dev_s *dev)
 {
 	int gpio;
@@ -439,6 +531,22 @@ static void s5j_gpio_disable_irq(struct gpio_dev_s *dev)
 	up_disable_irq(irq);
 }
 
+
+
+/****************************************************************************
+ * Name: gpio_get_irq_id
+ *
+ * Description:
+ *  Return IRQ ID 
+ *
+ * Input Parameters:
+ *  gpio - port id
+ * 
+ * Returned Value:
+ *  irq ID  
+ *  < 0, Error 
+ *
+ ****************************************************************************/
 static u32 gpio_get_irq_id(int gpio)
 {
 	unsigned port;
@@ -461,49 +569,20 @@ static u32 gpio_get_irq_id(int gpio)
 }
 
 /****************************************************************************
- * Public Functions
+ * Name: gpio_bank_name
+ *
+ * Description:
+ *  Find and return a gpio bank name from a gpio id
+ *
+ * Input Parameters:
+ *  gpio - port id
+ * 
+ * Returned Value:
+ *  gpio bank name
+ *  NULL in case of error 
+ *
  ****************************************************************************/
-
-/**
- * int gpio_valid(int gpio / Check if given gpio is in a valid range
- * @param[in] gpio	gpio id
- * @return    == 1: valid gpio
- *            == 0: invalid gpio
- *
- */
-int gpio_valid(int gpio)
-{
-	unsigned bank, port;
-
-	if (gpio < 0) {
-		return 0;
-	}
-
-	if ((gpio & 0xffff0000) != GPIO_MAGIC) {
-		return 0;
-	}
-
-	bank = s5j_gpio_bank(gpio);
-	port = s5j_gpio_port(gpio);
-
-	if (bank >= GPEND) {
-		return 0;
-	}
-
-	if (port >= s5jt200_gpio_bank[bank].nr_port) {
-		return 0;
-	}
-
-	return 1;
-}
-
-/**
- * const char *gpio_bank_name(int gpio) / Find and return a gpio bank name from a gpio id
- * @param int gpio id
- * @return gpio bank name
- *
- */
-const char *gpio_bank_name(int gpio)
+static const char *gpio_bank_name(int gpio)
 {
 	struct gpio_bank *gb = gpio_to_bank(gpio);
 
@@ -514,763 +593,20 @@ const char *gpio_bank_name(int gpio)
 	return gb->name;
 }
 
-/**
- * int gpio_cfg_pin(int gpio, int cfg) /  Configure a gpio pin
- * @param[in] gpio	gpio id
- * @param[in] cfg	a mode of gpio pin(input/output/function/irq)
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- */
-int gpio_cfg_pin(int gpio, int cfg)
-{
-	struct gpio_bank *gb;
-	unsigned port, value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_CON);
-	value &= ~CON_MASK(port);
-	value |= CON_SFR(port, cfg);
-
-	__raw_writel(value, gb->base + GPIO_CON);
-
-	return 0;
-}
-
-/**
- * @brief int gpio_cfg_get_pin(int gpio) / Configure a gpio get pin
- * @param[in] gpio	gpio id
- * @return    == 0: input
- *            == 1: output
- *            == f: eint
- *            >= 2: function
- *            < 0: error
- */
-int gpio_cfg_get_pin(int gpio)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_CON);
-
-	return ((value >> (port << 2)) & 0xF);
-}
-
-/**
- * @brief int gpio_direction_output(int gpio, int high) / Configure a direction of gpio pin as output and set an initial data
- * @param[in] gpio	gpio id
- * @param[in] high	a value of gpio pin(low/high)
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
+/****************************************************************************
+ * Name: s5j_gpio_open 
  *
- */
-int gpio_direction_output(int gpio, int high)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_DAT);
-	value &= ~(1 << port);
-	if (high) {
-		value |= (1 << port);
-	}
-
-	__raw_writel(value, gb->base + GPIO_DAT);
-
-	return gpio_cfg_pin(gpio, GPIO_OUTPUT);
-}
-
-/**
- * @brief  int gpio_direction_input(int gpio) / Configure a direction of gpio pin as input
- * @fn        int gpio_direction_input(int gpio)
- * @param[in] gpio	gpio id
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
+ * Description:
+ *   Open GPIO port
  *
- */
-int gpio_direction_input(int gpio)
-{
-	return gpio_cfg_pin(gpio, GPIO_INPUT);
-}
-
-/**
- * @brief int gpio_set_value(int gpio, int high) / Set a data value of gpio pin
- * @param[in] gpio	gpio id
- * @param[in] high	a value of gpio pin(low/high)
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
+ * Input Parameters:
+ *   dev - device
  *
- */
-int gpio_set_value(int gpio, int high)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_DAT);
-	value &= ~(1 << port);
-	if (high) {
-		value |= (1 << port);
-	}
-
-	__raw_writel(value, gb->base + GPIO_DAT);
-
-	return 0;
-}
-
-/**
- * @brief  int gpio_get_value(int gpio) / Get a data value of gpio pin
- * @fn        int gpio_get_value(int gpio)
- * @param[in] gpio	gpio id
- * @return    == 1: gpio read as high
- *            == 0: gpio read as low
- *             < 0: error
- *
- */
-int gpio_get_value(int gpio)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_DAT);
-
-	return (value >> port) & 1;
-}
-
-/**
- * @brief  int gpio_set_pull(int gpio, int mode) / Set a gpio pin as pull up or pull-down
- * @param[in] gpio	gpio id
- * @param[in] mode	gpio pin mode(pull up/pull down)
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_set_pull(int gpio, int mode)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_PUD);
-	value &= ~PULL_MASK(port);
-
-	switch (mode) {
-	case GPIO_PULL_DOWN:
-	case GPIO_PULL_UP:
-		value |= PULL_MODE(port, mode);
-		break;
-	case GPIO_PULL_NONE:
-		/* do nothing: bit is cleared */
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	__raw_writel(value, gb->base + GPIO_PUD);
-
-	return 0;
-}
-
-/**
- * @brief  int gpio_get_pull(int gpio) / Set a gpio pin as pull up or pull-down
- * @param[in] gpio	gpio id
- * @return    >= 0: pull up down data
- *
- */
-int gpio_get_pull(int gpio)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_PUD);
-	value &= PULL_MASK(port);
-
-	return value;
-}
-
-/**
- *
- * @brief  int gpio_set_drv(int gpio, int mode) / Set drive strength of gpio pin
- * @param[in] gpio	gpio id
- * @param[in] mode	strength of gpio pin mode
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_set_drv(int gpio, int mode)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_DRVSR);
-	value &= ~DRV_MASK(port);
-
-	switch (mode) {
-	case GPIO_DRV_1X:
-	case GPIO_DRV_2X:
-	case GPIO_DRV_3X:
-	case GPIO_DRV_4X:
-		value |= DRV_SET(port, mode);
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	__raw_writel(value, gb->base + GPIO_DRVSR);
-
-	return 0;
-}
-
-/**
- *
- * @brief  int gpio_get_drv(int gpio) / Get drive strength of gpio pin
- * @param[in] gpio	gpio id
- * @return    <= 0: strength of gpio pin mode
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_get_drv(int gpio)
-{
-	struct gpio_bank *gb;
-	unsigned port, value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_DRVSR);
-	value &= ~DRV_MASK(port);
-
-	return value;
-}
-
-/**
- *
- * @brief int gpio_set_rate(int gpio, int mode) / Set a slew rate of gpio pin
- * @param[in] gpio	gpio id
- * @param[in] mode	slew rate of a gpio pin
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_set_rate(int gpio, int mode)
-{
-	struct gpio_bank *gb;
-	unsigned port, value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_DRVSR);
-	value &= ~RATE_MASK(port);
-
-	switch (mode) {
-	case GPIO_DRV_FAST:
-	case GPIO_DRV_SLOW:
-		value |= RATE_SET(port);
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	__raw_writel(value, gb->base + GPIO_DRVSR);
-
-	return 0;
-}
-
-/**
- *
- * @brief int gpio_cfg_pin_pdn(int gpio, int cfg) / Configure a power down mode of gpio pin
- * @param[in] gpio	gpio id
- * @param[in] cfg	configuration a power down mode of a gpio pin
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_cfg_pin_pdn(int gpio, int cfg)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_CONPDN);
-	value &= ~CONPDN_MASK(port);
-	value |= CONPDN_SFR(port, cfg);
-
-	__raw_writel(value, gb->base + GPIO_CONPDN);
-
-	return 0;
-}
-
-/**
- *
- * @brief  int gpio_set_pull_pdn(int gpio, int mode) / Configure a gpio pin as pull-up or pull-down for power down mode
- * @param[in] gpio	gpio id
- * @param[in] mode	gpio pin mode(pull up/pull down)
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_set_pull_pdn(int gpio, int mode)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = __raw_readl(gb->base + GPIO_PUDPDN);
-	value &= ~PUDPDN_MASK(port);
-
-	switch (mode) {
-	case GPIO_PULL_DOWN:
-	case GPIO_PULL_UP:
-		value |= PUDPDN_MODE(port, mode);
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	__raw_writel(value, gb->base + GPIO_PUDPDN);
-
-	return 0;
-}
-
-/**
- *
- * @brief  void gpio_dump(int gpio) / Print a information of a gpio pin
- * @param[in] gpio	gpio id
- * @return    No return
- *
- */
-void gpio_dump(int gpio)
-{
-	struct gpio_bank *gb = gpio_to_bank(gpio);
-	int port = s5j_gpio_port(gpio);
-	unsigned int con;
-	unsigned int dat;
-	unsigned int pull;
-	unsigned int drv;
-	unsigned int conpdn;
-	unsigned int pudpdn;
-
-	con = __raw_readl(gb->base + GPIO_CON) >> (port * 4);
-	con &= 0xf;
-
-	dat = __raw_readl(gb->base + GPIO_DAT) >> port;
-	dat &= 1;
-
-	pull = __raw_readl(gb->base + GPIO_PUD) >> (port * 2);
-	pull &= 0x3;
-
-	drv = __raw_readl(gb->base + GPIO_DRVSR) >> (port * 2);
-	drv &= 0x3;
-
-	conpdn = __raw_readl(gb->base + GPIO_CONPDN) >> (port * 2);
-	conpdn &= 0x3;
-
-	pudpdn = __raw_readl(gb->base + GPIO_PUDPDN) >> (port * 2);
-	pudpdn &= 0x3;
-
-#if defined(CONFIG_S5J_GPIO_LOG_DUMP)
-	cprintf("%s.%d: con=%x (%s), dat=%s, pull=%s, drv=%s, conpdn=%x (%s), pudpdn=%s\n", gb->name, port, con, con == 0 ? "input" : (con == 1 ? "output" : "function"), dat ? "high" : "low", pull_str[pull], drv_str[drv], conpdn, conpdn == 0 ? "output0" : (conpdn == 1 ? "output1" : (conpdn == 2 ? "input" : "previous state")), pull_str[pudpdn]);
-#endif
-}
-
-/**
- *
- * @brief int gpio_eint_mask(int gpio) / Mask a gpio external interrupt
- * @param[in] gpio	gpio id
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_eint_mask(int gpio)
-{
-	u32 mask;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_MASK);
-
-	mask = __raw_readl(eint_addr);
-	mask |= 1 << port;
-	__raw_writel(mask, eint_addr);
-
-	return 0;
-}
-
-/**
- *
- * @brief  int gpio_eint_unmask(int gpio) / Unmask a gpio external interrupt
- * @param[in] gpio	gpio id
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_eint_unmask(int gpio)
-{
-	u32 mask;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_MASK);
-
-	mask = __raw_readl(eint_addr);
-	mask &= ~(1 << port);
-	__raw_writel(mask, eint_addr);
-
-	return 0;
-}
-
-/**
- *
- * @brief bool gpio_eint_ispending(int gpio) / Check if a gpio external interrupt is pending
- * @param[in] gpio	gpio id
- * @return    == true: gpio external interrupt is pending
- *            == false: gpio external interrupt is not pending
- *
- */
-bool gpio_eint_ispending(int gpio)
-{
-	u32 pend;
-	void *eint_addr;
-	int port;
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_PEND);
-
-	pend = __raw_readl(eint_addr);
-
-	return (pend & (1 << port)) ? true : false;
-}
-
-/**
- *
- * @brief  int gpio_eint_clear_pending(int gpio) / Clear a gpio external interrupt pending
- * @param[in] gpio	gpio id
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_eint_clear_pending(int gpio)
-{
-	u32 pend;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	if (!gpio_eint_ispending(gpio)) {
-		/* cprintf("%s bank %d port is not pending\n",gpio_bank_name(gpio),s5j_gpio_port(gpio)); */
-		/* err("eint%d: port '%d' is not pending.\n"); */
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_PEND);
-
-	pend = __raw_readl(eint_addr);
-	pend &= 1 << port;
-	__raw_writel(pend, eint_addr);
-
-	return 0;
-}
-
-/**
- *
- * @brief  int gpio_eint_enable_filter(int gpio) / Enable a gpio external interrupt filter
- * @param[in] gpio	gpio id
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_eint_enable_filter(int gpio)
-{
-	u32 filter_con;
-	unsigned shift_port;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_FLTCON);
-	if (port < 4) {
-		shift_port = 8 * port;
-	} else {
-		shift_port = 8 * (port - 4);
-	}
-
-	filter_con = __raw_readl(eint_addr);
-	filter_con |= (1 << 7) << shift_port;
-	__raw_writel(filter_con, eint_addr);
-
-	return 0;
-}
-
-/**
- *
- * @brief int gpio_eint_disable_filter(int gpio) / Disable a gpio external interrupt filter
- * @param[in] gpio	gpio id
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_eint_disable_filter(int gpio)
-{
-	u32 filter_con;
-	unsigned shift_port;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_FLTCON);
-	if (port < 4) {
-		shift_port = 8 * port;
-	} else {
-		shift_port = 8 * (port - 4);
-	}
-
-	filter_con = __raw_readl(eint_addr);
-	filter_con &= ~((1 << 7) << shift_port);
-	__raw_writel(filter_con, eint_addr);
-
-	return 0;
-}
-
-/**
- *
- * @brief  int gpio_eint_set_filter(int gpio, unsigned type, unsigned width) / Configure type and width of a gpio external interrupt filter
- * @param[in] gpio	gpio id
- * @param[in] type	filter type(delay/digital)
- * @param[in] width	filter width(it will be ignored when filter type is delay)
- * @return    == 0: success
- *            == -EINVAL: invalid gpio
- *
- */
-int gpio_eint_set_filter(int gpio, unsigned type, unsigned width)
-{
-	u32 filter_con;
-	unsigned shift_port;
-	void *eint_addr;
-	int port;
-	int bank;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	switch (type) {
-	case EINT_FILTER_DELAY:
-	case EINT_FILTER_DIGITAL:
-		break;
-	default:
-		/* err("No such eint filter type %d", type); */
-		return -EINVAL;
-	}
-
-	bank = s5j_gpio_bank(gpio);
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_FLTCON);
-	if (port < 4) {
-		shift_port = 8 * port;
-	} else {
-		shift_port = 8 * (port - 4);
-	}
-
-	filter_con = __raw_readl(eint_addr);
-
-	if (bank < 4) {				/* Alive Filter Setting */
-		if (type == EINT_FILTER_DELAY) {
-			filter_con &= ~((1 << 6) << shift_port);
-		} else if (type == EINT_FILTER_DIGITAL) {
-			filter_con |= (1 << 6) << shift_port;
-		}
-
-		filter_con |= ((1 << 7) << shift_port);	/* Filter Enable */
-		filter_con &= ~(0x3f << shift_port);
-		filter_con |= width << shift_port;
-	}
-
-	else {
-		filter_con |= ((1 << 7) << shift_port);	/* Filter Enable */
-		filter_con &= ~(0x7f << shift_port);
-		filter_con |= width << shift_port;
-	}
-	__raw_writel(filter_con, eint_addr);
-
-	return 0;
-}
-
-/**
- *
- * @brief  int gpio_eint_set_type(int gpio, unsigned type) / Configure type of a gpio external interrurt
- * @param[in] gpio	gpio id
- * @param[in] type	eint interrupt type (edge/level)
- * @return == 0: success
- *         == -EINVAL: invalid gpio
- *
- */
-int gpio_eint_set_type(int gpio, unsigned type)
-{
-	u32 ctrl, mask;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	switch (type) {
-	case EINT_TYPE_LEVEL_LOW:
-	case EINT_TYPE_LEVEL_HIGH:
-	case EINT_TYPE_EDGE_FALLING:
-	case EINT_TYPE_EDGE_RISING:
-	case EINT_TYPE_EDGE_BOTH:
-		break;
-
-	default:
-		/* err("No such irq type %d", type); */
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_CON);
-	mask = 0x7 << (port * 4);
-	ctrl = __raw_readl(eint_addr);
-	ctrl &= ~mask;
-	ctrl |= type << (port * 4);
-	__raw_writel(ctrl, eint_addr);
-
-	if (gpio_eint_ispending(gpio)) {
-		gpio_eint_clear_pending(gpio);
-	}
-
-	return 0;
-}
-
-/**
- *
- * @brief  int gpio_eint_get_type(int gpio) / Get Eage type of a gpio external interrurt
- * @param[in] gpio	gpio id
- * @return >= 0: eint interrupt type (edge/level)
- *         == -EINVAL: invalid gpio
- *
- */
-int gpio_eint_get_type(int gpio)
-{
-	u32 ctrl, mask;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_CON);
-	mask = 0x7 << (port * 4);
-	ctrl = __raw_readl(eint_addr);
-	ctrl &= mask;
-	ctrl = ctrl >> (port * 4);
-
-	return ctrl;
-}
-
-/**
- *
- * @brief  int  s5j_gpio_open(FAR struct gpio_dev_s *dev) / GPIO Driver Open
- * @param[in] dev	Device
- * @return == 0: Open success
- *         == -EINVAL: invalid gpio
- *
- */
-int s5j_gpio_open(FAR struct gpio_dev_s *dev)
+ * Returned Value:
+ *   == OK: Open success     
+ *   == -EINVAL: invalid gpio
+ ****************************************************************************/
+static int s5j_gpio_open(FAR struct gpio_dev_s *dev)
 {
 	int idx = ((struct s5j_gpio_priv *)(dev->priv))->idx;
 	if (!isinit) {
@@ -1279,15 +615,20 @@ int s5j_gpio_open(FAR struct gpio_dev_s *dev)
 	return OK;
 }
 
-/**
+/****************************************************************************
+ * Name: s5j_gpio_close 
  *
- * @brief  int  s5j_gpio_close(FAR struct gpio_dev_s *dev) / GPIO Driver close
- * @param[in] dev	Device
- * @return == 0: close success
- *         == -EINVAL: invalid gpio
+ * Description:
+ *   Close GPIO port
  *
- */
-int s5j_gpio_close(FAR struct gpio_dev_s *dev)
+ * Input Parameters:
+ *   dev - device
+ *
+ * Returned Value:
+ *   == 0: close success     
+ *   == -EINVAL: invalid gpio
+ ****************************************************************************/
+static int s5j_gpio_close(FAR struct gpio_dev_s *dev)
 {
 	struct s5j_gpio_priv *priv = (struct s5j_gpio_priv *)(dev->priv);
 	int idx = priv->idx;
@@ -1301,15 +642,20 @@ int s5j_gpio_close(FAR struct gpio_dev_s *dev)
 	return OK;
 }
 
-/**
+/****************************************************************************
+ * Name: s5j_gpio_get
  *
- * @brief  int  s5j_gpio_get(FAR struct gpio_dev_s *dev) / Get GPIO Value
- * @param[in] dev	Device
- * @return >= 0: gpio value
- *         == -EINVAL: invalid gpio
+ * Description:
+ *   Get GPIO value
  *
- */
-int s5j_gpio_get(FAR struct gpio_dev_s *dev)
+ * Input Parameters:
+ *   dev - device
+ *
+ * Returned Value:
+ *   >= 0: gpio value        
+ *   == -EINVAL: invalid gpio
+ ****************************************************************************/
+static int s5j_gpio_get(FAR struct gpio_dev_s *dev)
 {
 	int gpio = ((struct s5j_gpio_priv *)(dev->priv))->gpio;
 	if (!gpio_valid(gpio)) {
@@ -1318,31 +664,43 @@ int s5j_gpio_get(FAR struct gpio_dev_s *dev)
 	return gpio_get_value(gpio);
 }
 
-/**
+/****************************************************************************
+ * Name: s5j_gpio_set
  *
- * @brief  void  s5j_gpio_set(FAR struct gpio_dev_s *dev) / Set GPIO Value
- * @param[in] dev	Device
- * @return    No return
+ * Description:
+ *   Set GPIO value
  *
- */
-void s5j_gpio_set(FAR struct gpio_dev_s *dev, FAR unsigned int value)
+ * Input Parameters:
+ *   dev - device
+ *   value - value to set
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+static void s5j_gpio_set(FAR struct gpio_dev_s *dev, FAR unsigned int value)
 {
 	int gpio = ((struct s5j_gpio_priv *)(dev->priv))->gpio;
 	gpio_set_value(gpio, value);
 }
 
-/**
+/****************************************************************************
+ * Name: s5j_gpio_ctrl
  *
- * @brief  int  s5j_gpio_ctrl(struct gpio_dev_s *dev, int cmd, unsigned long args) / GPIO IOCTL Control
- * @param[in] dev	Device
- * @param[in] cmd	ioctl command
- * @param[in] arg	ioctl arg
- * @return >= 0: gpio eage value or OK
- *         == -EINVAL: invalid gpio
+ * Description:
+ *   GPIO IOCTRL function
  *
- */
-
-int s5j_gpio_ctrl(struct gpio_dev_s *dev, int cmd, unsigned long args)
+ * Input Parameters:
+ *   dev - device
+ *   cmd - ioctl command
+ *   arg - ioctl argument
+ *
+ * Returned Value:
+ *   >= 0: gpio ret value or OK
+ *   == -EINVAL: invalid gpio
+ *
+ ****************************************************************************/
+static int s5j_gpio_ctrl(struct gpio_dev_s *dev, int cmd, unsigned long args)
 {
 	int gpio = ((struct s5j_gpio_priv *)(dev->priv))->gpio;
 	bool isenable = true;
@@ -1461,12 +819,960 @@ int s5j_gpio_ctrl(struct gpio_dev_s *dev, int cmd, unsigned long args)
 	return OK;
 }
 
-/**
+
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: gpio_valid
  *
- * @brief  void up_gpioinitialize(void) / GPIO initailize for Device Driver
- * @return no return
+ * Description:
+ *  Check if given gpio is in a valid range
  *
- */
+ * Input Parameters:
+ *  gpio - port id
+ * 
+ * Returned Value:
+ *  == 1: valid gpio  
+ *  == 0: invalid gpio 
+ *
+ ****************************************************************************/
+int gpio_valid(int gpio)
+{
+	unsigned bank, port;
+
+	if (gpio < 0) {
+		return 0;
+	}
+
+	if ((gpio & 0xffff0000) != GPIO_MAGIC) {
+		return 0;
+	}
+
+	bank = s5j_gpio_bank(gpio);
+	port = s5j_gpio_port(gpio);
+
+	if (bank >= GPEND) {
+		return 0;
+	}
+
+	if (port >= s5jt200_gpio_bank[bank].nr_port) {
+		return 0;
+	}
+
+	return 1;
+}
+
+/****************************************************************************
+ * Name: gpio_cfg_pin
+ *
+ * Description:
+ *  Set gpio pin configuration
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  cfg	a mode of gpio pin(input/output/function/irq)
+ * 
+ * Returned Value:
+ *  == 0: success
+ *  == -EINVAL: invalid gpio
+ *
+ ****************************************************************************/
+int gpio_cfg_pin(int gpio, int cfg)
+{
+	struct gpio_bank *gb;
+	unsigned port, value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_CON);
+	value &= ~CON_MASK(port);
+	value |= CON_SFR(port, cfg);
+
+	__raw_writel(value, gb->base + GPIO_CON);
+
+	return 0;
+}
+
+
+/****************************************************************************
+ * Name: gpio_cfg_get_pin
+ *
+ * Description:
+ *  Get gpio pin configuration
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  
+ * Returned Value:
+ *  == 0: input
+ *  == 1: output
+ *  == f: eint
+ *   >= 2: function
+ *   < 0: error
+ *
+ ****************************************************************************/
+int gpio_cfg_get_pin(int gpio)
+{
+	struct gpio_bank *gb;
+	unsigned int port;
+	unsigned int value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_CON);
+
+	return ((value >> (port << 2)) & 0xF);
+}
+
+
+/****************************************************************************
+ * Name: gpio_direction_output
+ *
+ * Description:
+ *  Configure a direction of gpio pin as output and set an initial data
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  high - a value of gpio pin(low/high)
+ *
+ * Returned Value:
+ *  == 0: success
+ *  == -EINVAL: invalid gpio
+ *  
+ ****************************************************************************/
+int gpio_direction_output(int gpio, int high)
+{
+	struct gpio_bank *gb;
+	unsigned int port;
+	unsigned int value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_DAT);
+	value &= ~(1 << port);
+	if (high) {
+		value |= (1 << port);
+	}
+
+	__raw_writel(value, gb->base + GPIO_DAT);
+
+	return gpio_cfg_pin(gpio, GPIO_OUTPUT);
+}
+
+/****************************************************************************
+ * Name: gpio_direction_input
+ *
+ * Description:
+ *  Configure a direction of gpio pin as input
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  
+ * Returned Value:
+ *  == 0: success
+ *  == -EINVAL: invalid gpio
+ *  
+ ****************************************************************************/
+int gpio_direction_input(int gpio)
+{
+	return gpio_cfg_pin(gpio, GPIO_INPUT);
+}
+
+/****************************************************************************
+ * Name: gpio_set_value
+ *
+ * Description:
+ *  Set a data value of gpio pin
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  high - value of gpio pin(low/high)
+ *
+ * Returned Value:
+ *  == 0: success
+ *  == -EINVAL: invalid gpio
+ *  
+ ****************************************************************************/
+int gpio_set_value(int gpio, int high)
+{
+	struct gpio_bank *gb;
+	unsigned int port;
+	unsigned int value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_DAT);
+	value &= ~(1 << port);
+	if (high) {
+		value |= (1 << port);
+	}
+
+	__raw_writel(value, gb->base + GPIO_DAT);
+
+	return 0;
+}
+
+
+/****************************************************************************
+ * Name: gpio_get_value
+ *
+ * Description:
+ *  Get a data value of gpio pin
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  
+ *
+ * Returned Value:
+ *  == 1: gpio read as high== 0: success            
+ *  == 0: gpio read as low == -EINVAL: invalid gpio
+ *   < 0: error
+ ****************************************************************************/
+int gpio_get_value(int gpio)
+{
+	struct gpio_bank *gb;
+	unsigned int port;
+	unsigned int value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_DAT);
+
+	return (value >> port) & 1;
+}
+
+
+/****************************************************************************
+ * Name: gpio_set_pull
+ *
+ * Description:
+ *  Set a gpio pin as pull up or pull-down
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  mode - gpio pin mode(pull up/pull down)
+ *
+ * Returned Value:
+ *  == 0: success            
+ *  == -EINVAL: invalid gpio 
+ ****************************************************************************/
+int gpio_set_pull(int gpio, int mode)
+{
+	struct gpio_bank *gb;
+	unsigned int port;
+	unsigned int value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_PUD);
+	value &= ~PULL_MASK(port);
+
+	switch (mode) {
+	case GPIO_PULL_DOWN:
+	case GPIO_PULL_UP:
+		value |= PULL_MODE(port, mode);
+		break;
+	case GPIO_PULL_NONE:
+		/* do nothing: bit is cleared */
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	__raw_writel(value, gb->base + GPIO_PUD);
+
+	return 0;
+}
+
+/****************************************************************************
+ * Name: gpio_get_pull
+ *
+ * Description:
+ *  Get a gpio pin as pull up or pull-down
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  
+ *
+ * Returned Value:
+ *  >= 0: pull up down data 
+ *   
+ ****************************************************************************/
+int gpio_get_pull(int gpio)
+{
+	struct gpio_bank *gb;
+	unsigned int port;
+	unsigned int value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_PUD);
+	value &= PULL_MASK(port);
+
+	return value;
+}
+
+/****************************************************************************
+ * Name: gpio_set_drv
+ *
+ * Description:
+ *  Set drive strength of gpio pin
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  mode - strength of gpio pin mode
+ *
+ * Returned Value:
+ *   == 0: success           
+ *   == -EINVAL: invalid gpio
+ ****************************************************************************/
+int gpio_set_drv(int gpio, int mode)
+{
+	struct gpio_bank *gb;
+	unsigned int port;
+	unsigned int value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_DRVSR);
+	value &= ~DRV_MASK(port);
+
+	switch (mode) {
+	case GPIO_DRV_1X:
+	case GPIO_DRV_2X:
+	case GPIO_DRV_3X:
+	case GPIO_DRV_4X:
+		value |= DRV_SET(port, mode);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	__raw_writel(value, gb->base + GPIO_DRVSR);
+
+	return 0;
+}
+
+/****************************************************************************
+ * Name: gpio_get_drv
+ *
+ * Description:
+ *  Get drive strength of gpio pin
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *   
+ *
+ * Returned Value:
+ *   <= 0: strength of gpio pin mode
+ *   == -EINVAL: invalid gpio
+ ****************************************************************************/
+int gpio_get_drv(int gpio)
+{
+	struct gpio_bank *gb;
+	unsigned port, value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_DRVSR);
+	value &= ~DRV_MASK(port);
+
+	return value;
+}
+
+
+/****************************************************************************
+ * Name: gpio_set_rate
+ *
+ * Description:
+ *  Set a slew rate of gpio pin
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  mode - slew rate of a gpio pin 
+ *
+ * Returned Value:
+ *  == 0: success            
+ *  == -EINVAL: invalid gpio 
+ ****************************************************************************/
+int gpio_set_rate(int gpio, int mode)
+{
+	struct gpio_bank *gb;
+	unsigned port, value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_DRVSR);
+	value &= ~RATE_MASK(port);
+
+	switch (mode) {
+	case GPIO_DRV_FAST:
+	case GPIO_DRV_SLOW:
+		value |= RATE_SET(port);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	__raw_writel(value, gb->base + GPIO_DRVSR);
+
+	return 0;
+}
+
+/****************************************************************************
+ * Name: gpio_cfg_pin_pdn
+ *
+ * Description:
+ *  Configure a power down mode of gpio pin
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  cfg - configuration a power down mode of a gpio pin
+ *
+ * Returned Value:
+ *  == 0: success            
+ *  == -EINVAL: invalid gpio 
+ ****************************************************************************/
+int gpio_cfg_pin_pdn(int gpio, int cfg)
+{
+	struct gpio_bank *gb;
+	unsigned int port;
+	unsigned int value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_CONPDN);
+	value &= ~CONPDN_MASK(port);
+	value |= CONPDN_SFR(port, cfg);
+
+	__raw_writel(value, gb->base + GPIO_CONPDN);
+
+	return 0;
+}
+
+
+/****************************************************************************
+ * Name: gpio_set_pull_pdn
+ *
+ * Description:
+ *  Configure a gpio pin as pull-up or pull-down for power down mode
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *  mode - gpio pin mode(pull up/pull down)
+ *
+ * Returned Value:
+ *  == 0: success            
+ *  == -EINVAL: invalid gpio 
+ ****************************************************************************/
+int gpio_set_pull_pdn(int gpio, int mode)
+{
+	struct gpio_bank *gb;
+	unsigned int port;
+	unsigned int value;
+
+	if (!(gb = gpio_to_bank(gpio))) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+
+	value = __raw_readl(gb->base + GPIO_PUDPDN);
+	value &= ~PUDPDN_MASK(port);
+
+	switch (mode) {
+	case GPIO_PULL_DOWN:
+	case GPIO_PULL_UP:
+		value |= PUDPDN_MODE(port, mode);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	__raw_writel(value, gb->base + GPIO_PUDPDN);
+
+	return 0;
+}
+
+
+/****************************************************************************
+ * Name: gpio_eint_mask
+ *
+ * Description:
+ *  Mask a gpio external interrupt
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *
+ * Returned Value:
+ *  == 0: success            
+ *  == -EINVAL: invalid gpio 
+ ****************************************************************************/
+int gpio_eint_mask(int gpio)
+{
+	u32 mask;
+	void *eint_addr;
+	int port;
+
+	if (!gpio_valid(gpio)) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_MASK);
+
+	mask = __raw_readl(eint_addr);
+	mask |= 1 << port;
+	__raw_writel(mask, eint_addr);
+
+	return 0;
+}
+
+/****************************************************************************
+ * Name: gpio_eint_unmask
+ *
+ * Description:
+ *  Unmask a gpio external interrupt
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *
+ * Returned Value:
+ *  == 0: success            
+ *  == -EINVAL: invalid gpio 
+ ****************************************************************************/
+int gpio_eint_unmask(int gpio)
+{
+	u32 mask;
+	void *eint_addr;
+	int port;
+
+	if (!gpio_valid(gpio)) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_MASK);
+
+	mask = __raw_readl(eint_addr);
+	mask &= ~(1 << port);
+	__raw_writel(mask, eint_addr);
+
+	return 0;
+}
+
+/****************************************************************************
+ * Name: gpio_eint_ispending
+ *
+ * Description:
+ *  Check if gpio external interrupt is pending
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *
+ * Returned Value:
+ *  == true: gpio external interrupt is pending      
+ *  == false: gpio external interrupt is not pending 
+ ****************************************************************************/
+bool gpio_eint_ispending(int gpio)
+{
+	u32 pend;
+	void *eint_addr;
+	int port;
+
+	port = s5j_gpio_port(gpio);
+	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_PEND);
+
+	pend = __raw_readl(eint_addr);
+
+	return (pend & (1 << port)) ? true : false;
+}
+
+
+/****************************************************************************
+ * Name: gpio_eint_clear_pending
+ *
+ * Description:
+ *   Clear  gpio pending external interrupt
+ *
+ * Input Parameters:
+ *   gpio - port id
+ *
+ * Returned Value:
+ *   >= 0: success 
+ *   == -EINVAL: invalid gpio              
+ ****************************************************************************/
+int gpio_eint_clear_pending(int gpio)
+{
+	u32 pend;
+	void *eint_addr;
+	int port;
+
+	if (!gpio_valid(gpio)) {
+		return -EINVAL;
+	}
+
+	if (!gpio_eint_ispending(gpio)) {
+		/* cprintf("%s bank %d port is not pending\n",gpio_bank_name(gpio),s5j_gpio_port(gpio)); */
+		/* err("eint%d: port '%d' is not pending.\n"); */
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_PEND);
+
+	pend = __raw_readl(eint_addr);
+	pend &= 1 << port;
+	__raw_writel(pend, eint_addr);
+
+	return 0;
+}
+
+
+/****************************************************************************
+ * Name: gpio_eint_enable_filter
+ *
+ * Description:
+ *   Enable gpio external interrupt filter
+ *
+ * Input Parameters:
+ *   gpio - port id
+ *
+ * Returned Value:
+ *   >= 0: success 
+ *   == -EINVAL: invalid gpio              
+ ****************************************************************************/
+int gpio_eint_enable_filter(int gpio)
+{
+	u32 filter_con;
+	unsigned shift_port;
+	void *eint_addr;
+	int port;
+
+	if (!gpio_valid(gpio)) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_FLTCON);
+	if (port < 4) {
+		shift_port = 8 * port;
+	} else {
+		shift_port = 8 * (port - 4);
+	}
+
+	filter_con = __raw_readl(eint_addr);
+	filter_con |= (1 << 7) << shift_port;
+	__raw_writel(filter_con, eint_addr);
+
+	return 0;
+}
+
+
+/****************************************************************************
+ * Name: gpio_eint_disable_filter
+ *
+ * Description:
+ *   Disable a gpio external interrupt filter
+ *
+ * Input Parameters:
+ *   gpio - port id
+ *
+ * Returned Value:
+ *   >= 0: success 
+ *   == -EINVAL: invalid gpio              
+ ****************************************************************************/
+int gpio_eint_disable_filter(int gpio)
+{
+	u32 filter_con;
+	unsigned shift_port;
+	void *eint_addr;
+	int port;
+
+	if (!gpio_valid(gpio)) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_FLTCON);
+	if (port < 4) {
+		shift_port = 8 * port;
+	} else {
+		shift_port = 8 * (port - 4);
+	}
+
+	filter_con = __raw_readl(eint_addr);
+	filter_con &= ~((1 << 7) << shift_port);
+	__raw_writel(filter_con, eint_addr);
+
+	return 0;
+}
+
+/****************************************************************************
+ * Name: gpio_eint_set_filter
+ *
+ * Description:
+ *   Configure type and width of a gpio external interrupt filter
+ *
+ * Input Parameters:
+ *   gpio - port id
+ *   type - filter type(delay/digital) 
+ *   width - filter width(it will be ignored when filter type is delay)
+ *
+ * Returned Value:
+ *   >= 0: success 
+ *   == -EINVAL: invalid gpio              
+ ****************************************************************************/
+int gpio_eint_set_filter(int gpio, unsigned type, unsigned width)
+{
+	u32 filter_con;
+	unsigned shift_port;
+	void *eint_addr;
+	int port;
+	int bank;
+
+	if (!gpio_valid(gpio)) {
+		return -EINVAL;
+	}
+
+	switch (type) {
+	case EINT_FILTER_DELAY:
+	case EINT_FILTER_DIGITAL:
+		break;
+	default:
+		/* err("No such eint filter type %d", type); */
+		return -EINVAL;
+	}
+
+	bank = s5j_gpio_bank(gpio);
+	port = s5j_gpio_port(gpio);
+	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_FLTCON);
+	if (port < 4) {
+		shift_port = 8 * port;
+	} else {
+		shift_port = 8 * (port - 4);
+	}
+
+	filter_con = __raw_readl(eint_addr);
+
+	if (bank < 4) {				/* Alive Filter Setting */
+		if (type == EINT_FILTER_DELAY) {
+			filter_con &= ~((1 << 6) << shift_port);
+		} else if (type == EINT_FILTER_DIGITAL) {
+			filter_con |= (1 << 6) << shift_port;
+		}
+
+		filter_con |= ((1 << 7) << shift_port);	/* Filter Enable */
+		filter_con &= ~(0x3f << shift_port);
+		filter_con |= width << shift_port;
+	}
+
+	else {
+		filter_con |= ((1 << 7) << shift_port);	/* Filter Enable */
+		filter_con &= ~(0x7f << shift_port);
+		filter_con |= width << shift_port;
+	}
+	__raw_writel(filter_con, eint_addr);
+
+	return 0;
+}
+
+/****************************************************************************
+ * Name: gpio_eint_set_type
+ *
+ * Description:
+ *   Set edge/level type of a gpio external interrurt
+ *
+ * Input Parameters:
+ *   gpio - port id 
+ *   type - eint interrupt type (edge/level)
+ *
+ * Returned Value:
+ *   >= 0: success 
+ *   == -EINVAL: invalid gpio              
+ ****************************************************************************/
+int gpio_eint_set_type(int gpio, unsigned type)
+{
+	u32 ctrl, mask;
+	void *eint_addr;
+	int port;
+
+	if (!gpio_valid(gpio)) {
+		return -EINVAL;
+	}
+
+	switch (type) {
+	case EINT_TYPE_LEVEL_LOW:
+	case EINT_TYPE_LEVEL_HIGH:
+	case EINT_TYPE_EDGE_FALLING:
+	case EINT_TYPE_EDGE_RISING:
+	case EINT_TYPE_EDGE_BOTH:
+		break;
+
+	default:
+		/* err("No such irq type %d", type); */
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_CON);
+	mask = 0x7 << (port * 4);
+	ctrl = __raw_readl(eint_addr);
+	ctrl &= ~mask;
+	ctrl |= type << (port * 4);
+	__raw_writel(ctrl, eint_addr);
+
+	if (gpio_eint_ispending(gpio)) {
+		gpio_eint_clear_pending(gpio);
+	}
+
+	return 0;
+}
+
+/****************************************************************************
+ * Name: gpio_eint_get_type
+ *
+ * Description:
+ *   Get edge/level type of a gpio external interrurt
+ *
+ * Input Parameters:
+ *   gpio - port id
+ *
+ * Returned Value:
+ *   >= 0: eint interrupt type (edge/level)
+ *   == -EINVAL: invalid gpio              
+ ****************************************************************************/
+int gpio_eint_get_type(int gpio)
+{
+	u32 ctrl, mask;
+	void *eint_addr;
+	int port;
+
+	if (!gpio_valid(gpio)) {
+		return -EINVAL;
+	}
+
+	port = s5j_gpio_port(gpio);
+	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_CON);
+	mask = 0x7 << (port * 4);
+	ctrl = __raw_readl(eint_addr);
+	ctrl &= mask;
+	ctrl = ctrl >> (port * 4);
+
+	return ctrl;
+}
+
+
+/****************************************************************************
+ * Name: up_create_gpio
+ *
+ * Description:
+ *  Creates GPIO port and expose it to file system: dev/gpioXX 
+ *
+ * Input Parameters:
+ *  gpio - port id
+ *
+ * Returned Value:
+ *  0
+ ****************************************************************************/
+
+int up_create_gpio(int32_t idx)
+{
+#ifdef CONFIG_GPIO
+	char path[20];
+	struct s5j_gpio_priv *pgpio;
+	int bank = 0;
+	int port;
+	int idx_table[] = { 7, 15, 22, 28, 36, 44, 52, 56, 59, 63, 66 };
+
+	pgpio = (struct s5j_gpio_priv *)kmm_malloc(sizeof(struct s5j_gpio_priv));
+	s5j_gpio_all[idx].ops = &s5j_gpio_ops;
+	s5j_gpio_all[idx].priv = pgpio;
+	s5j_gpio_all[idx].wdog = NULL;
+	s5j_gpio_all[idx].callback = NULL;
+
+	for (bank = 0; bank < sizeof(idx_table) / sizeof(int); bank++) {
+		if (idx_table[bank] >= idx) {
+			break;
+		}
+	}
+	if (bank) {
+		port = idx - (idx_table[bank - 1] + 1);
+	} else {
+		port = idx;
+	}
+	pgpio->gpio = s5j_gpio(bank, port);
+	pgpio->idx = idx;
+	pgpio->isr_num = gpio_get_irq_id(pgpio->gpio);
+	snprintf(path, sizeof(path), "/dev/gpio%d", idx);
+	gpio_register(path, &s5j_gpio_all[idx]);
+	return 0;
+#else
+	return 0;
+#endif
+}
+
+
+/****************************************************************************
+ * Name: up_gpioinitialize 
+ *
+ * Description:
+ *   Init all available GPIO, exposing them to file system: dev/gpioXX
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
 void up_gpioinitialize(void)
 {
 	int i;
@@ -1477,12 +1783,19 @@ void up_gpioinitialize(void)
 	isinit = OK;
 }
 
-/**
+/****************************************************************************
+ * Name: up_destroy_gpio 
  *
- * @brief  int up_destroy_gpio(int32_t idx) / GPIO Destroy for Device Driver
- * @return == 0 return OK
+ * Description:
+ *   Destroy GPIO idx entry, release allocated priv memory. 
  *
- */
+ * Input Parameters:
+ *   idx - GPIO index
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 int up_destroy_gpio(int32_t idx)
 {
 	struct s5j_gpio_priv *priv = (struct s5j_gpio_priv *)(s5j_gpio_all[idx].priv);
