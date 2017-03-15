@@ -146,11 +146,6 @@ uint8_t netlib_ipv6netmask2prefix(FAR const uint16_t *mask);
 void netlib_prefix2ipv6netmask(uint8_t preflen, FAR struct in6_addr *netmask);
 #endif
 
-/* ICMPv6 Autoconfiguration */
-
-#ifdef CONFIG_NET_ICMPv6_AUTOCONF
-int netlib_icmpv6_autoconfiguration(FAR const char *ifname);
-#endif
 
 /* HTTP support */
 

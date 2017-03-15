@@ -212,30 +212,6 @@ uint16_t tcp_chksum(FAR struct net_driver_s *dev);
 #define tcp_chksum(d) tcp_ipv6_chksum(d)
 #endif
 
-/****************************************************************************
- * Name: icmp_chksum
- *
- * Description:
- *   Calculate the checksum of the IPv4 ICMP message
- *
- ****************************************************************************/
-
-#if defined(CONFIG_NET_ICMP) && defined(CONFIG_NET_ICMP_PING)
-uint16_t icmp_chksum(FAR struct net_driver_s *dev, int len);
-#endif
-
-/****************************************************************************
- * Name: icmpv6_chksum
- *
- * Description:
- *   Calculate the checksum of the ICMPv6 message
- *
- ****************************************************************************/
-
-#ifdef CONFIG_NET_ICMPv6
-uint16_t icmpv6_chksum(FAR struct net_driver_s *dev);
-#endif
-
 #undef EXTERN
 #ifdef __cplusplus
 }

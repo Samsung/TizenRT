@@ -58,10 +58,6 @@
 #include "netcmd.h"
 #include "netcmd_ping.h"
 
-#if defined(CONFIG_NET_ICMPv6) && defined(CONFIG_NET_ICMPv6_PING) && !defined(CONFIG_DISABLE_SIGNALS)
-#define HAVE_PING6
-#endif
-
 #undef htons
 #define htons HTONS
 #define PING_ID        0xAFAF
@@ -341,11 +337,3 @@ int cmd_ping(int argc, char **argv)
 	return OK;
 }
 
-
-
-#ifdef HAVE_PING6
-int cmd_ping6(int argc, char **argv)
-{
-	return OK;
-}
-#endif							/* CONFIG_NET_ICMPv6 && CONFIG_NET_ICMPv6_PING */

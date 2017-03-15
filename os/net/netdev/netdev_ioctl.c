@@ -550,16 +550,6 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	}
 	break;
 
-#ifdef CONFIG_NET_ICMPv6_AUTOCONF
-	case SIOCIFAUTOCONF: {		/* Perform ICMPv6 auto-configuration */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			ret = icmpv6_autoconfig(dev);
-		}
-	}
-	break;
-#endif
-
 #endif
 	case SIOCSIFFLAGS: {		/* Sets the interface flags */
 		/* Is this a request to bring the interface up? */

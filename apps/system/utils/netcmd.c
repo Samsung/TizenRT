@@ -57,10 +57,6 @@
 #include <apps/netutils/netlib.h>
 #endif
 
-#if defined(CONFIG_NET_ICMP) && defined(CONFIG_NET_ICMP_PING) && !defined(CONFIG_DISABLE_SIGNALS)
-#include <apps/netutils/netlib.h>
-#endif
-
 #if CONFIG_NFILE_DESCRIPTORS > 0
 #include <apps/netutils/netlib.h>
 #include <apps/netutils/tftp.h>
@@ -804,9 +800,6 @@ const static tash_cmdlist_t net_utilcmds[] = {
 	{"lwip_stats", stats_display, TASH_EXECMD_ASYNC},
 #endif
 	{"ping", cmd_ping, TASH_EXECMD_SYNC},
-#if defined(CONFIG_NET_ICMPv6) && defined(CONFIG_NET_ICMPv6_PING) && !defined(CONFIG_DISABLE_SIGNALS)
-	{"ping6", cmd_ping6, TASH_EXECMD_SYNC},
-#endif
 	{NULL, NULL, 0}
 };
 

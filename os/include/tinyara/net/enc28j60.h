@@ -147,9 +147,6 @@ struct enc_driver_s {
 	WDOG_ID txpoll;				/* TX poll timer */
 	WDOG_ID txtimeout;			/* TX timeout timer */
 
-#if defined(CONFIG_NET_ICMPv6) && defined(CONFIG_NET_MCAST_MAC_FILTER)
-	struct mac_filter_s mac_filter[NET_IPV6_MADDR_NB];
-#endif
 	/* If we don't own the SPI bus, then we cannot do SPI accesses from the
 	 * interrupt handler.
 	 */
