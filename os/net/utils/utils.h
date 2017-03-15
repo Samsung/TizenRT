@@ -213,30 +213,6 @@ uint16_t tcp_chksum(FAR struct net_driver_s *dev);
 #endif
 
 /****************************************************************************
- * Name: udp_ipv4_chksum
- *
- * Description:
- *   Calculate the UDP/IPv4 checksum of the packet in d_buf and d_appdata.
- *
- ****************************************************************************/
-
-#if defined(CONFIG_NET_UDP_CHECKSUMS) && defined(CONFIG_NET_IPv4)
-uint16_t udp_ipv4_chksum(FAR struct net_driver_s *dev);
-#endif
-
-/****************************************************************************
- * Name: udp_ipv6_chksum
- *
- * Description:
- *   Calculate the UDP/IPv6 checksum of the packet in d_buf and d_appdata.
- *
- ****************************************************************************/
-
-#if defined(CONFIG_NET_UDP_CHECKSUMS) && defined(CONFIG_NET_IPv6)
-uint16_t udp_ipv6_chksum(FAR struct net_driver_s *dev);
-#endif
-
-/****************************************************************************
  * Name: icmp_chksum
  *
  * Description:
