@@ -59,10 +59,8 @@ include $(APPDIR)/Make.defs
 ASRCS		=
 CSRCS		=
 
-ifeq ($(CONFIG_NET_UDP),y)
 ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
 CSRCS		+= tftpc_get.c tftpc_put.c tftpc_packets.c
-endif
 endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))

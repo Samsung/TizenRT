@@ -61,7 +61,7 @@
 #include <apps/netutils/netlib.h>
 #endif
 
-#if defined(CONFIG_NET_UDP) && CONFIG_NFILE_DESCRIPTORS > 0
+#if CONFIG_NFILE_DESCRIPTORS > 0
 #include <apps/netutils/netlib.h>
 #include <apps/netutils/tftp.h>
 #endif
@@ -170,7 +170,7 @@ extern int websocket_main(int argc, char *argv[]);
 extern int artik_demo_main(int argc, char *argv[]);
 #endif
 
-#if defined(CONFIG_NET_UDP) && CONFIG_NFILE_DESCRIPTORS > 0
+#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_NETUTILS_TFTPC)
 struct tftpc_args_s {
 	bool binary;				/* true:binary ("octet") false:text ("netascii") */
 	bool allocated;				/* true: destpath is allocated */
@@ -236,7 +236,7 @@ DONE:
 }
 
 
-#if defined(CONFIG_NET_UDP) && CONFIG_NFILE_DESCRIPTORS > 0
+#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_NETUTILS_TFTPC)
 int tftpc_parseargs(int argc, char **argv, struct tftpc_args_s *args)
 {
 	FAR const char *fmt = fmtarginvalid;
@@ -357,7 +357,7 @@ int tftpc_parseargs(int argc, char **argv, struct tftpc_args_s *args)
 }
 #endif
 
-#if defined(CONFIG_NET_UDP) && CONFIG_NFILE_DESCRIPTORS > 0 && CONFIG_NETUTILS_TFTPC
+#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_NETUTILS_TFTPC)
 int cmd_get(int argc, char **argv)
 {
 	struct tftpc_args_s args;

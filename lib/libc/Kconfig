@@ -429,7 +429,7 @@ endif # NETDB_HOSTFILE
 menuconfig NETDB_DNSCLIENT
 	bool "DNS Name resolution"
 	default n
-	depends on NET_LWIP || (NET && NET_UDP)
+	depends on NET_LWIP
 	select LIBC_NETDB
 	---help---
 		Enable support for the name resolution; Enable network host

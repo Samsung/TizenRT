@@ -6,7 +6,7 @@
 config NETUTILS_DHCPD
 	bool "DHCP server"
 	default n
-	depends on NET_UDP && NET_IPv4
+	depends on NET_IPv4
 	---help---
 		Enable support for the DHCP server.
 

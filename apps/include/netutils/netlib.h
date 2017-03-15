@@ -81,7 +81,7 @@
  * if UDP is disabled.
  */
 
-#if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_LWIP)
+#if defined(CONFIG_NET_LWIP)
 #define NETLIB_SOCK_IOCTL SOCK_DGRAM
 #else
 #define NETLIB_SOCK_IOCTL SOCK_STREAM
