@@ -59,6 +59,10 @@
 
 #define QSPI_DUMMY_DATA     0x1
 
+#define QSPI_SECTOR_OFFSET       (12)
+#define QSPI_BLOCK32K_OFFSET     (15)
+#define QSPI_BLOCK64K_OFFSET     (16)
+
 #define QSPI_SIZE_64KB   (1<<QSPI_BLOCK64K_OFFSET)
 #define QSPI_SIZE_32KB   (1<<QSPI_BLOCK32K_OFFSET)
 #define QSPI_SIZE_4KB    (1<<QSPI_SECTOR_OFFSET)
@@ -152,5 +156,33 @@ typedef struct _status_register_t {
 		unsigned SRWD:1;		//Status Register Write Disable
 	} b;
 } flash_status_register;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+static void s5j_qspi_copy_4byte(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
+static void s5j_qspi_copy_1byte(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
+static void s5j_qspi_set_gpio(void);
+static flash_status_register s5j_qspi_get_status_register(void);
+eERASE_UNIT s5j_qspi_get_eraseunit(unsigned int offset_start, unsigned int target);
+static void s5j_qspi_sector_erase(unsigned int target_addr);
+static void s5j_qspi_block_erase(unsigned int target_addr, eQSPI_BLOCK_SIZE unit);
+static void s5j_qspi_chip_erase(void);
+static bool s5j_qspi_erase(unsigned int target_addr, unsigned int size);
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+void s5j_qspi_disable_wp(void);
+void s5j_qspi_enable_wp(void);
+void s5j_qspi_take_sem(void);
+void s5j_qspi_release_sem(void);
+unsigned int s5j_qspi_nv_write(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
+unsigned int s5j_qspi_nv_read(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
+unsigned int s5j_qspi_nv_erase(unsigned int target_addr, unsigned int sizebyte);
+unsigned int Nv_Write(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
+unsigned int Nv_Read(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
+unsigned int Nv_Erase(unsigned int target_addr, unsigned int sizebyte);
+	
 
 #endif							/* __ARCH_ARM_SRC_S5J_S5J_QSPI_H */

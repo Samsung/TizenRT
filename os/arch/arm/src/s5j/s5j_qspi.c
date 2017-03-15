@@ -182,6 +182,122 @@ static flash_status_register s5j_qspi_get_status_register(void)
 	return reg;
 }
 
+eERASE_UNIT s5j_qspi_get_eraseunit(unsigned int offset_start, unsigned int target)
+{
+	unsigned int sizeleft;
+	sizeleft = target - offset_start;
+
+	if (offset_start == 0) {
+		if (sizeleft >= QSPI_SIZE_64KB) {
+			return TYPE_64KB;
+		} else if (sizeleft >= QSPI_SIZE_32KB) {
+			return TYPE_32KB;
+		} else if (sizeleft >= QSPI_SIZE_4KB) {
+			return TYPE_4KB;
+		} else {
+			return TYPE_ERR;
+		}
+	}
+
+	if ((offset_start / QSPI_SIZE_64KB) && (sizeleft >= QSPI_SIZE_64KB) && !(offset_start % QSPI_SIZE_64KB)) {
+		return TYPE_64KB;
+	} else if ((offset_start / QSPI_SIZE_32KB) && (sizeleft >= QSPI_SIZE_32KB) && !(offset_start % QSPI_SIZE_32KB)) {
+		return TYPE_32KB;
+	} else if ((offset_start / QSPI_SIZE_4KB) && (sizeleft >= QSPI_SIZE_4KB) && !(offset_start % QSPI_SIZE_4KB)) {
+		return TYPE_4KB;
+	} else {
+		return TYPE_ERR;
+	}
+}
+
+static void s5j_qspi_sector_erase(unsigned int target_addr)
+{
+	Outp32(rERASE_ADDRESS, target_addr);
+
+	Outp8(rSE, QSPI_DUMMY_DATA);
+
+	arch_invalidate_dcache(target_addr + CONFIG_S5J_FLASH_BASE, (target_addr + CONFIG_S5J_FLASH_BASE + QSPI_SIZE_4KB));
+}
+
+static void s5j_qspi_block_erase(unsigned int target_addr, eQSPI_BLOCK_SIZE unit)
+{
+	unsigned int block_erasesize = 0;
+
+	if (unit == BLOCK_64KB) {
+		SetBits(rCOMMAND2, 16, 0xFF, COMMAND_ERASE_64KB);
+		block_erasesize = QSPI_SIZE_64KB;
+	} else {
+		SetBits(rCOMMAND2, 16, 0xFF, COMMAND_ERASE_32KB);
+		block_erasesize = QSPI_SIZE_32KB;
+	}
+
+	Outp32(rERASE_ADDRESS, target_addr);
+
+	Outp8(rBE, QSPI_DUMMY_DATA);
+
+	arch_invalidate_dcache(target_addr + CONFIG_S5J_FLASH_BASE, (target_addr + CONFIG_S5J_FLASH_BASE + block_erasesize));
+}
+
+static void s5j_qspi_chip_erase(void)
+{
+	Outp8(rCE, QSPI_DUMMY_DATA);
+}
+
+//size should 4KB aligned
+static bool s5j_qspi_erase(unsigned int target_addr, unsigned int size)
+{
+	unsigned int temp = 0;
+	unsigned int target;
+
+	eERASE_UNIT type;
+
+	target_addr = target_addr - CONFIG_S5J_FLASH_BASE;
+
+	temp = target_addr % QSPI_SIZE_4KB;
+	if (temp) {
+		return false;
+	}
+
+	//Check address alignment
+	if ((size % QSPI_SIZE_4KB) != 0) {
+		return false;
+	}
+
+	if (size < QSPI_SIZE_4KB) {
+		return false;
+	}
+
+	//Erase Offset
+	temp = target_addr;
+	target = temp + size;
+
+	do {
+		type = s5j_qspi_get_eraseunit(temp, target);
+
+		switch (type) {
+		case TYPE_4KB:
+			s5j_qspi_sector_erase(temp);
+			temp += QSPI_SIZE_4KB;
+			continue;
+
+		case TYPE_32KB:
+			s5j_qspi_block_erase(temp, BLOCK_32KB);
+			temp += QSPI_SIZE_32KB;
+			continue;
+
+		case TYPE_64KB:
+			s5j_qspi_block_erase(temp, BLOCK_64KB);
+			temp += QSPI_SIZE_64KB;
+			continue;
+
+		default:
+			return false;
+		}
+	} while (temp < target);
+
+	return true;
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -248,6 +364,104 @@ void s5j_qspi_take_sem(void)
 void s5j_qspi_release_sem(void)
 {
 	sem_post(&count_sem);
+}
+
+unsigned int Nv_Write(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte)
+{
+	int ret;
+
+	ret = false;
+	if ((target_addr < CONFIG_NVRAM_WIFI_START)
+		|| ((target_addr + sizebyte) > (CONFIG_NVRAM_WIFI_START + 8 * 1024))
+		|| (sizebyte > (8 * 1024))) {
+		lldbg("Unable to access\n");
+		return false;
+	}
+
+	s5j_qspi_disable_wp();
+
+	//Page Programming
+	SetBits(rSF_CON, 15, 0x1, 1);
+
+	// Checks Address range (16MB)
+	if (((target_addr - CONFIG_S5J_FLASH_BASE) >> 24) > 0) {	// 16MB
+		lldbg("Flash Address range over!(24bit range)\n");
+		goto err;
+	}
+
+	memcpy((void *)target_addr, (void *)source_addr, sizebyte);
+	arch_flush_dcache(CONFIG_NVRAM_WIFI_START, CONFIG_NVRAM_WIFI_START + 8 * 1024);
+
+	ret = true;
+err:
+	s5j_qspi_enable_wp();
+	return ret;
+}
+
+unsigned int Nv_Read(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte)
+{
+	if ((source_addr < CONFIG_NVRAM_WIFI_START)
+		|| ((source_addr + sizebyte) > (CONFIG_NVRAM_WIFI_START + 8 * 1024))
+		|| (sizebyte > (8 * 1024))) {
+		lldbg("Unable to access\n");
+		return false;
+	}
+
+	memcpy((void *)target_addr, (void *)source_addr, sizebyte);
+	return true;
+}
+
+unsigned int Nv_Erase(unsigned int target_addr, unsigned int sizebyte)
+{
+	if ((target_addr < CONFIG_NVRAM_WIFI_START)
+		|| ((target_addr + sizebyte) > (CONFIG_NVRAM_WIFI_START + 8 * 1024))
+		|| (sizebyte > (8 * 1024))) {
+		lldbg("Unable to access\n");
+		return false;
+	}
+
+	//Disable WP(Write Protect)
+	SetBits(rSF_CON, 31, 0x1U, 1U);
+
+	//Page Programming
+	SetBits(rSF_CON, 15, 0x1, 1);
+
+	// Checks Address range (16MB)
+	if (((target_addr - CONFIG_S5J_FLASH_BASE) >> 24) > 0) {	// 16MB
+		lldbg("Flash Address range over!(24bit range)\n");
+		return false;
+	}
+	//Checks sector(4KB) align
+	if ((target_addr & 0xFFF) != 0) {
+		lldbg("4KB alignment failure\n");
+		return false;
+	}
+
+	arch_flush_dcache(CONFIG_NVRAM_WIFI_START, CONFIG_NVRAM_WIFI_START + 8 * 1024);
+
+	//should be erased before writing.
+	if (s5j_qspi_erase(target_addr, sizebyte) == false) {
+		lldbg("Erase Failure\n");
+		return false;
+	}
+
+	return true;
+}
+
+
+unsigned int s5j_qspi_nv_write(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte)
+{
+	return Nv_Write(target_addr, source_addr, sizebyte);
+}
+
+unsigned int s5j_qspi_nv_read(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte)
+{
+	return Nv_Read(target_addr, source_addr, sizebyte);
+}
+
+unsigned int s5j_qspi_nv_erase(unsigned int target_addr, unsigned int sizebyte)
+{
+	return Nv_Erase(target_addr, sizebyte);
 }
 
 /**
