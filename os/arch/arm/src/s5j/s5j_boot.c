@@ -200,6 +200,18 @@ void arm_boot(void)
 #ifdef USE_EARLYSERIALINIT
 	up_earlyserialinit();
 #endif
-	os_start();
 
+	/*
+	 * Perform board-specific initialization. This must include:
+	 *
+	 * - Initialization of board-specific memory resources (e.g., SDRAM)
+	 * - Configuration of board specific resources (GPIOs, LEDs, etc).
+	 *
+	 * NOTE: we must use caution prior to this point to make sure that
+	 * the logic does not access any global variables that might lie
+	 * in SDRAM.
+	 */
+	s5j_board_initialize();
+
+	os_start();
 }

@@ -380,6 +380,35 @@ void wlan_initup(struct netif *dev)
 #endif
 
 /****************************************************************************
+ * Name: s5j_board_initialize
+ *
+ * Description:
+ *   All S5J architectures must provide the following entry point. This entry
+ *   point is called early in the initialization -- after all memory has been
+ *   configured and mapped but before any devices have been initialized.
+ *
+ *   This function must perform low level initialization including:
+ *
+ *   - Initialization of board-specific memory resources (e.g., SDRAM)
+ *   - Configuration of board-specific resources (GPIOs, LEDs, etc).
+ *   - Setup of the console UART. This UART done early so that the serial
+ *     console is available for debugging very early in the boot sequence.
+ *
+ *   Special precautions must be taken if .data/.bss lie in SRAM. In that
+ *   case, the boot logic cannot initialize .data or .bss. The function
+ *   must then:
+ *
+ *   - Take precautions to assume that logic does not access any global
+ *     data that might lie in SDRAM.
+ *   - Call the function arm_data_initialize() as soon as SDRAM has been
+ *     properly configured for use.
+ *
+ ****************************************************************************/
+void s5j_board_initialize(void)
+{
+}
+
+/****************************************************************************
  * Name: board_initialize
  *
  * Description:
