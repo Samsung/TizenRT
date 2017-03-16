@@ -424,8 +424,6 @@ void s5j_board_initialize(void)
 #ifdef CONFIG_BOARD_INITIALIZE
 void board_initialize(void)
 {
-	unsigned int val;
-
 	/* Perform app-specific initialization here instead of from the TASH. */
 	board_app_initialize();
 
@@ -441,14 +439,6 @@ void board_initialize(void)
 #if defined(CONFIG_BOARD_COREDUMP_FLASH)
 	up_coredump_init();
 #endif
-
-	/* temoprally disable watchdog reset */
-#define WDT_EN        (1 << 5)
-#define WDT_INT_EN    (1 << 2)
-#define WDT_RESET_EN  (1 << 0)
-	val = getreg32(0x80030000 + 0x0);
-	val &= ~(WDT_EN);
-	putreg32(val, 0x80030000 + 0x0);
 
 #if 0
 #ifdef CONFIG_FS_PROCFS

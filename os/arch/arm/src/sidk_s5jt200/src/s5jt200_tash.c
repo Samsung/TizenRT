@@ -140,12 +140,6 @@ int board_app_initialize(void)
 	pwmdrv_register();
 #endif
 
-#ifdef CONFIG_S5J_WATCHDOG
-	up_wdginitialize();
-#ifdef CONFIG_S5J_WATCHDOG_RESET
-	s5j_wdg_set_reset(WDT_CPUCL_BASE, 1);
-#endif
-#endif
 
 #if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
 	up_rtc_getdatetime(&tp);
