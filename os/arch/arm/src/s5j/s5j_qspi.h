@@ -146,14 +146,14 @@ typedef enum {
 typedef struct _status_register_t {
 	u8 rdsr;
 	struct {
-		unsigned WIP:1;
-		unsigned WEL:1;
-		unsigned BP0:1;
-		unsigned BP1:1;
-		unsigned BP2:1;
-		unsigned BP3:1;
-		unsigned QE:1;			//Quad enable
-		unsigned SRWD:1;		//Status Register Write Disable
+		unsigned WIP: 1;
+		unsigned WEL: 1;
+		unsigned BP0: 1;
+		unsigned BP1: 1;
+		unsigned BP2: 1;
+		unsigned BP3: 1;
+		unsigned QE: 1;			//Quad enable
+		unsigned SRWD: 1;		//Status Register Write Disable
 	} b;
 } flash_status_register;
 
@@ -168,7 +168,6 @@ eERASE_UNIT s5j_qspi_get_eraseunit(unsigned int offset_start, unsigned int targe
 static void s5j_qspi_sector_erase(unsigned int target_addr);
 static void s5j_qspi_block_erase(unsigned int target_addr, eQSPI_BLOCK_SIZE unit);
 static void s5j_qspi_chip_erase(void);
-static bool s5j_qspi_erase(unsigned int target_addr, unsigned int size);
 
 /****************************************************************************
  * Public Functions
@@ -177,12 +176,6 @@ void s5j_qspi_disable_wp(void);
 void s5j_qspi_enable_wp(void);
 void s5j_qspi_take_sem(void);
 void s5j_qspi_release_sem(void);
-unsigned int s5j_qspi_nv_write(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
-unsigned int s5j_qspi_nv_read(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
-unsigned int s5j_qspi_nv_erase(unsigned int target_addr, unsigned int sizebyte);
-unsigned int Nv_Write(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
-unsigned int Nv_Read(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
-unsigned int Nv_Erase(unsigned int target_addr, unsigned int sizebyte);
-	
+bool s5j_qspi_erase(unsigned int target_addr, unsigned int size);
 
 #endif							/* __ARCH_ARM_SRC_S5J_S5J_QSPI_H */
