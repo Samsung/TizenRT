@@ -106,6 +106,33 @@ char *s5j_get_binary_version(uint32_t baddr)
 
 }
 
+#ifdef CONFIG_SCSC_WLAN
+static void scsc_wpa_ctrl_iface_init(void)
+{
+	int ret;
+
+	ret = mkfifo("/dev/wpa_ctrl_req", 666);
+	if(ret != 0 && ret != -EEXIST) {
+		lldbg("mkfifo error ret:%d\n", ret);
+		return;
+	}
+
+	ret = mkfifo("/dev/wpa_ctrl_cfm", 666);
+	if(ret != 0 && ret != -EEXIST) {
+		lldbg("mkfifo error ret:%d\n", ret);
+		return;
+	}
+
+	ret = mkfifo("/dev/wpa_monitor", 666);
+	if(ret != 0 && ret != -EEXIST) {
+		lldbg("mkfifo error ret:%d\n", ret);
+		return;
+	}
+
+	return;
+}
+#endif
+
 int board_app_initialize(void)
 {
 #ifdef S5J_DISPLAY_MAC_ADDR
@@ -187,6 +214,10 @@ int board_app_initialize(void)
 
 #ifdef CONFIG_S5J_DMA
 	pdma_init();
+#endif
+
+#ifdef CONFIG_SCSC_WLAN
+	scsc_wpa_ctrl_iface_init();
 #endif
 
 	lldbg("SIDK S5JT200 boot from 0x%x\n", &_vector_start);
