@@ -136,8 +136,6 @@ int board_app_initialize(void)
 	s5j_i2c_register(1);
 #endif
 
-	up_timer_initialize();
-
 #ifdef CONFIG_S5J_PWM
 	pwmdrv_register();
 #endif
