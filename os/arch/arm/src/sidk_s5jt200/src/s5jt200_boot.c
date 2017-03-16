@@ -442,7 +442,6 @@ void board_initialize(void)
 	up_coredump_init();
 #endif
 
-	/* sflash_partitionmap_dump(); */
 	/* temoprally disable watchdog reset */
 #define WDT_EN        (1 << 5)
 #define WDT_INT_EN    (1 << 2)

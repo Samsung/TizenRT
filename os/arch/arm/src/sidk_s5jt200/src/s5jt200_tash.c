@@ -61,12 +61,9 @@
 #include <errno.h>
 
 #include <tinyara/board.h>
-#include <tinyara/spi/spi.h>
-#include <tinyara/mmcsd.h>
 #include <tinyara/rtc.h>
 #include <time.h>
 #include <chip.h>
-#include <tinyara/kmalloc.h>
 
 #include "s5j_rtc.h"
 #include "up_internal.h"
@@ -75,27 +72,11 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Configuration ************************************************************/
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: board_app_initialize
- *
- * Description:
- *   Perform architecture specific initialization
- *
- ****************************************************************************/
-extern void qspi_register(void);
-extern void sdio_drv_register(void);
 extern void pwmdrv_register(void);
-extern void chipid_register(void);
 extern void s5j_i2c_register(int bus);
-extern uint32_t _vector_start;
-extern void wlbt_if_booting(void);
-extern void pdma_init(void);
 
 char *s5j_get_binary_version(uint32_t baddr)
 {
@@ -106,32 +87,30 @@ char *s5j_get_binary_version(uint32_t baddr)
 
 }
 
-#ifdef CONFIG_SCSC_WLAN
 static void scsc_wpa_ctrl_iface_init(void)
 {
+#ifdef CONFIG_SCSC_WLAN
 	int ret;
 
 	ret = mkfifo("/dev/wpa_ctrl_req", 666);
-	if(ret != 0 && ret != -EEXIST) {
+	if (ret != 0 && ret != -EEXIST) {
 		lldbg("mkfifo error ret:%d\n", ret);
 		return;
 	}
 
 	ret = mkfifo("/dev/wpa_ctrl_cfm", 666);
-	if(ret != 0 && ret != -EEXIST) {
+	if (ret != 0 && ret != -EEXIST) {
 		lldbg("mkfifo error ret:%d\n", ret);
 		return;
 	}
 
 	ret = mkfifo("/dev/wpa_monitor", 666);
-	if(ret != 0 && ret != -EEXIST) {
+	if (ret != 0 && ret != -EEXIST) {
 		lldbg("mkfifo error ret:%d\n", ret);
 		return;
 	}
-
-	return;
-}
 #endif
+}
 
 /****************************************************************************
  * Name: board_app_initialize
@@ -142,37 +121,14 @@ static void scsc_wpa_ctrl_iface_init(void)
  *   (non-standard) boardctl() interface using the command BOARDIOC_INIT.
  *
  ****************************************************************************/
-
 int board_app_initialize(void)
 {
-#ifdef S5J_DISPLAY_MAC_ADDR
-	char mac_buf[6];
-#endif
-#ifdef S5J_PERFORMANCE_TEST
-	uint32_t src;
-	uint32_t dst;
-	uint32_t t1;
-	uint32_t t2;
-#endif
 #if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
-	/* FAR struct rtc_lowerhalf_s *lower; */
 	FAR struct tm tp;
 #endif
 
 #ifdef CONFIG_S5J_SFLASH
 	s5j_qspi_init();
-#endif
-
-#ifdef CONFIG_S5J_ADC
-	adcdrv_register();
-#endif
-
-#ifdef CONFIG_S5J_EFUSE
-	efusedrv_register();
-#endif
-
-#ifdef CONFIG_S5J_CHIPID
-	chipid_register();
 #endif
 
 #ifdef CONFIG_S5J_I2C
@@ -182,18 +138,8 @@ int board_app_initialize(void)
 
 	up_timer_initialize();
 
-	/* clk_print_info_all(-1); */
-
 #ifdef CONFIG_S5J_PWM
 	pwmdrv_register();
-#endif
-
-#ifdef CONFIG_S5J_SDIO_SLAVE
-	sdio_drv_register();
-#endif
-
-#ifdef CONFIG_S5J_LEDCTRLBLK
-	ledctrlblk_drv_init();
 #endif
 
 #ifdef CONFIG_S5J_WATCHDOG
@@ -205,31 +151,14 @@ int board_app_initialize(void)
 
 #if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
 	up_rtc_getdatetime(&tp);
-	lldbg("RTC getdatetime %d/%d/%d/%d/%d/%d\n", tp.tm_year + CONFIG_RTC_BASE_YEAR, tp.tm_mon + 1, tp.tm_mday, tp.tm_hour, tp.tm_min, tp.tm_sec);
+	lldbg("RTC getdatetime %d/%d/%d/%d/%d/%d\n",
+			tp.tm_year + CONFIG_RTC_BASE_YEAR, tp.tm_mon + 1,
+			tp.tm_mday, tp.tm_hour, tp.tm_min, tp.tm_sec);
 	lldbg("Version Info :\n");
 	lldbg("tinyARA %s\n", __TIMESTAMP__);
 #endif
 
-#ifdef CONFIG_S5J_WLBTBLK
-	wlbt_if_booting();
-#endif
-
-#ifdef CONFIG_EXAMPLES_LDO_TEST
-	register_ldo_drver();
-#endif
-
-#ifdef CONFIG_S5J_TICK_COUNTER
-	s5j_tickcnt_initialize();
-#endif
-
-#ifdef CONFIG_S5J_DMA
-	pdma_init();
-#endif
-
-#ifdef CONFIG_SCSC_WLAN
 	scsc_wpa_ctrl_iface_init();
-#endif
 
-	lldbg("SIDK S5JT200 boot from 0x%x\n", &_vector_start);
 	return OK;
 }
