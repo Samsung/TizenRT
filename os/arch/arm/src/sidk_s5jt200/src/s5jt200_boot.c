@@ -381,6 +381,7 @@ void wlan_initup(struct netif *dev)
 
 void board_initialize(void)
 {
+	unsigned int val;
 	board_app_initialize();
 #ifdef CONFIG_SCSC_WLAN
 	slldbg("Initialize SCSC driver\n");
@@ -395,7 +396,14 @@ void board_initialize(void)
 	up_coredump_init();
 #endif
 
-	sflash_partitionmap_dump();
+	/* sflash_partitionmap_dump(); */
+	/* temoprally disable watchdog reset */
+#define WDT_EN        (1 << 5)
+#define WDT_INT_EN    (1 << 2)
+#define WDT_RESET_EN  (1 << 0)
+	val = getreg32(0x80030000 + 0x0);
+	val &= ~(WDT_EN);
+	putreg32(val, 0x80030000 + 0x0);
 
 #if 0
 #ifdef CONFIG_FS_PROCFS

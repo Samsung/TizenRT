@@ -59,8 +59,8 @@
 
 MEMORY
 {
-    flash (rx) : ORIGIN = 0x0400C000, LENGTH = 3M
-    sram (rwx) : ORIGIN = 0x02021000, LENGTH = 732K	/* skip 4K from 0x0202_0000 for vector table */
+    flash   (rx)    : ORIGIN = 0x040C8000, LENGTH = 2400K
+    sram    (rwx)   : ORIGIN = 0x02023800, LENGTH = 722K
 }
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
