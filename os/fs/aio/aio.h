@@ -81,7 +81,6 @@
 #endif
 
 #undef AIO_HAVE_FILEP
-#undef AIO_HAVE_PSOCK
 
 #if CONFIG_NFILE_DESCRIPTORS > 0
 #define AIO_HAVE_FILEP
@@ -91,7 +90,7 @@
 #define AIO_HAVE_PSOCK
 #endif
 
-#if !defined(AIO_HAVE_FILEP) && !defined(AIO_HAVE_PSOCK)
+#if !defined(AIO_HAVE_FILEP)
 #error AIO needs file and/or socket descriptors
 #endif
 
@@ -110,9 +109,6 @@ struct aio_container_s {
 	union {
 #ifdef AIO_HAVE_FILEP
 		FAR struct file *aioc_filep;	/* File structure to use with the I/O */
-#endif
-#ifdef AIO_HAVE_PSOCK
-		FAR struct socket *aioc_psock;	/* Socket structure to use with the I/O */
 #endif
 		FAR void *ptr;			/* Generic pointer to FAR data */
 	} u;

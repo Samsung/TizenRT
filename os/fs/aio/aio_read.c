@@ -127,9 +127,6 @@ static void aio_read_worker(FAR void *arg)
 #endif
 	aiocbp = aioc_decant(aioc);
 
-#if defined(AIO_HAVE_FILEP) && defined(AIO_HAVE_PSOCK)
-	if (aiocbp->aio_fildes < CONFIG_NFILE_DESCRIPTORS)
-#endif
 #ifdef AIO_HAVE_FILEP
 	{
 		/* Perform the file read using:
@@ -141,21 +138,6 @@ static void aio_read_worker(FAR void *arg)
 		 */
 
 		nread = file_pread(aioc->u.aioc_filep, (FAR void *)aiocbp->aio_buf, aiocbp->aio_nbytes, aiocbp->aio_offset);
-	}
-#endif
-#if defined(AIO_HAVE_FILEP) && defined(AIO_HAVE_PSOCK)
-	else
-#endif
-#ifdef AIO_HAVE_PSOCK
-	{
-		/* Perform the socket receive using:
-		 *
-		 *   u.aioc_psock - Socket structure pointer
-		 *   aio_buf      - Location of buffer
-		 *   aio_nbytes   - Length of transfer
-		 */
-
-		nread = psock_recv(aioc->u.aioc_psock, (FAR void *)aiocbp->aio_buf, aiocbp->aio_nbytes, 0);
 	}
 #endif
 

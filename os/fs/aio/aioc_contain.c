@@ -122,9 +122,6 @@ FAR struct aio_container_s *aio_contain(FAR struct aiocb *aiocbp)
 	struct sched_param param;
 #endif
 
-#if defined(AIO_HAVE_FILEP) && defined(AIO_HAVE_PSOCK)
-	if (aiocbp->aio_fildes < CONFIG_NFILE_DESCRIPTORS)
-#endif
 #ifdef AIO_HAVE_FILEP
 	{
 		/* Get the file structure corresponding to the file descriptor. */
@@ -133,22 +130,6 @@ FAR struct aio_container_s *aio_contain(FAR struct aiocb *aiocbp)
 		if (!u.filep) {
 			/* The errno value has already been set */
 
-			return NULL;
-		}
-	}
-#endif
-#if defined(AIO_HAVE_FILEP) && defined(AIO_HAVE_PSOCK)
-	else
-#endif
-#ifdef AIO_HAVE_PSOCK
-	{
-		/* Get the socket structure corresponding to the socket descriptor */
-
-		u.psock = sockfd_socket(aiocbp->aio_fildes);
-		if (!u.psock) {
-			/* Does not set the errno.  EBADF is the most likely explanation. */
-
-			set_errno(EBADF);
 			return NULL;
 		}
 	}
