@@ -80,6 +80,10 @@ ifeq ($(CONFIG_NET_CMDS),y)
 CSRCS += netcmd.c netcmd_ping.c
 endif
 
+ifeq ($(CONFIG_NETUTILS_DHCPD),y)
+CSRCS += netcmd_dhcpd.c
+endif
+
 endif #CONFIG_TASH
 
 ifeq ($(CONFIG_ENABLE_DATE),y)

@@ -59,7 +59,9 @@ include $(APPDIR)/Make.defs
 ASRCS		=
 CSRCS		=
 
+ifeq ($(CONFIG_NETUTILS_DHCPD),y)
 CSRCS		+= dhcpd.c
+endif
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
