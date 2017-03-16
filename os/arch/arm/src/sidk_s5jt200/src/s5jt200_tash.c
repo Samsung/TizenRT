@@ -133,6 +133,16 @@ static void scsc_wpa_ctrl_iface_init(void)
 }
 #endif
 
+/****************************************************************************
+ * Name: board_app_initialize
+ *
+ * Description:
+ *   Perform application specific initialization. THis function is never
+ *   called directly from application code, but only indirectly via the
+ *   (non-standard) boardctl() interface using the command BOARDIOC_INIT.
+ *
+ ****************************************************************************/
+
 int board_app_initialize(void)
 {
 #ifdef S5J_DISPLAY_MAC_ADDR

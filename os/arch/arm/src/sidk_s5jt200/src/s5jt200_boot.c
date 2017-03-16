@@ -379,10 +379,27 @@ void wlan_initup(struct netif *dev)
 
 #endif
 
+/****************************************************************************
+ * Name: board_initialize
+ *
+ * Description:
+ *   If CONFIG_BOARD_INITIALIZE is selected, then an additional
+ *   initialization call will be performed in the boot-up sequence to a
+ *   function called board_initialize(). board_initialize() will be
+ *   called immediately after up_intiialize() is called and just before the
+ *   initial application is started.  This additional initialization phase
+ *   may be used, for example, to initialize board-specific device drivers.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BOARD_INITIALIZE
 void board_initialize(void)
 {
 	unsigned int val;
+
+	/* Perform app-specific initialization here instead of from the TASH. */
 	board_app_initialize();
+
 #ifdef CONFIG_SCSC_WLAN
 	slldbg("Initialize SCSC driver\n");
 	slsi_driver_initialize();
@@ -416,3 +433,4 @@ void board_initialize(void)
 #endif
 #endif
 }
+#endif /* CONFIG_BOARD_INITIALIZE */
