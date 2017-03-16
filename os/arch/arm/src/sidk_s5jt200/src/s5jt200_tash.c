@@ -127,10 +127,6 @@ int board_app_initialize(void)
 	FAR struct tm tp;
 #endif
 
-#ifdef CONFIG_S5J_SFLASH
-	s5j_qspi_init();
-#endif
-
 #ifdef CONFIG_S5J_I2C
 	s5j_i2c_register(0);
 	s5j_i2c_register(1);
