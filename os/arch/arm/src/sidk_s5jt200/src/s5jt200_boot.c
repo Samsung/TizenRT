@@ -49,11 +49,11 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 #include <tinyara/spi/spi.h>
@@ -77,14 +77,14 @@
 #endif
 #include "up_arch.h"
 
-/************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
+ ****************************************************************************/
 #define PHY_ADDR(offset)  (MTD_SFLASH_ADDR + (offset))
 
-/************************************************************************************
+/****************************************************************************
  * Public Functions Prototypes
- ************************************************************************************/
+ ****************************************************************************/
 #if defined(CONFIG_BOARD_COREDUMP_FLASH) || defined(CONFIG_BOARD_RAMDUMP_FLASH)
 extern FAR struct spi_dev_s *up_spiflashinitialize(void);
 #endif
@@ -93,13 +93,13 @@ extern FAR struct spi_dev_s *up_spiflashinitialize(void);
 extern void up_coredump_init(void);
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Private Data
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Private Functions
- ************************************************************************************/
+ ****************************************************************************/
 static void sflash_partitionmap_dump(void)
 {
 	int32_t size;
@@ -116,106 +116,118 @@ static void sflash_partitionmap_dump(void)
 	start_addr = PHY_ADDR(MTD_BLK_BOOTLDR_START);
 	size = MTD_BLK_BOOTLDR_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "BOOTLOADER", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "BOOTLOADER", start_addr, end_addr, size);
 
 	/* OTA0 Partition */
 	part_no = 2;
 	start_addr = PHY_ADDR(MTD_BLK_OTA0_START);
 	size = MTD_BLK_OTA0_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "OTA0", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "OTA0", start_addr, end_addr, size);
 
 	/* LED F/W Partition */
 	part_no = 3;
 	start_addr = PHY_ADDR(MTD_BLK_LEDFW_START);
 	size = MTD_BLK_LEDFW_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "LED F/W", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "LED F/W", start_addr, end_addr, size);
 
 	/* SSS F/W Partition */
 	part_no = 4;
 	start_addr = PHY_ADDR(MTD_BLK_SSSFW_START);
 	size = MTD_BLK_SSSFW_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "SSS F/W", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "SSS F/W", start_addr, end_addr, size);
 
 	/* WLAN F/W Partition */
 	part_no = 5;
 	start_addr = PHY_ADDR(MTD_BLK_WLANFW_START);
 	size = MTD_BLK_WLANFW_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "WLAN F/W", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "WLAN F/W", start_addr, end_addr, size);
 
 	/* SSS KEY Partition */
 	part_no = 6;
 	start_addr = PHY_ADDR(MTD_BLK_SSSKEY_START);
 	size = MTD_BLK_SSSKEY_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "SSS KEY", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "SSS KEY", start_addr, end_addr, size);
 
 	/* OTA1 Partition */
 	part_no = 7;
 	start_addr = PHY_ADDR(MTD_BLK_OTA1_START);
 	size = MTD_BLK_OTA1_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "OTA1", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "OTA1", start_addr, end_addr, size);
 
 	/* ROMFS Partition */
 	part_no = 8;
 	start_addr = PHY_ADDR(MTD_BLK_ROMFS_START);
 	size = MTD_BLK_ROMFS_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "ROMFS", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "ROMFS", start_addr, end_addr, size);
 
 	/* SMARTFS Partition */
 	part_no = 9;
 	start_addr = PHY_ADDR(MTD_BLK_SMARTFS_START);
 	size = MTD_BLK_SMARTFS_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "SMARTFS", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "SMARTFS", start_addr, end_addr, size);
 
 	/* RAMDUMP Partition */
 	part_no = 10;
 	start_addr = PHY_ADDR(MTD_BLK_RAMDUMP_START);
 	size = MTD_BLK_RAMDUMP_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "RAMDUMP", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "RAMDUMP", start_addr, end_addr, size);
 
 	/* COREDUMP Partition */
 	part_no = 11;
 	start_addr = PHY_ADDR(MTD_BLK_COREDUMP_START);
 	size = MTD_BLK_COREDUMP_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "COREDUMP", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "COREDUMP", start_addr, end_addr, size);
 
 	/* NV Partition */
 	part_no = 12;
 	start_addr = PHY_ADDR(MTD_BLK_NV_START);
 	size = MTD_BLK_NV_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "NV", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "NV", start_addr, end_addr, size);
 
 	/* BOOTPARAM Partition */
 	part_no = 13;
 	start_addr = PHY_ADDR(MTD_BLK_BOOTPARAM_START);
 	size = MTD_BLK_BOOTPARAM_SIZE;
 	end_addr = start_addr + size;
-	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n", part_no, "BOOTPARAM", start_addr, end_addr, size);
+	dbg("*%12d\t%14s\t%#13X\t%#11X\t%10d\n",
+			part_no, "BOOTPARAM", start_addr, end_addr, size);
 
 	dbg("*****************************************************************************\n");
 
 }
 
-/************************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************************/
+ ****************************************************************************/
 /****************************************************************************
  * Name: up_create_romdevice
  *
  * Description:
  *  It creates a smart device using ROMFS MTD Partition
  ****************************************************************************/
-
 #ifdef CONFIG_FS_ROMFS
 int up_create_romdevice(void)
 {
@@ -242,6 +254,7 @@ error_out:
 	return ret > 0 ? -ret : ret;
 }
 #endif
+
 /****************************************************************************
  * Name: up_flashinitialize
  *
@@ -282,12 +295,10 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 #endif
 
 #ifdef CONFIG_MTD_PARTITION
-
 	DEBUGASSERT(mtd);
 
 	/* Get the geometry of the FLASH device */
-
-	ret = mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)((uintptr_t)&geo));
+	ret = mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo);
 	if (ret < 0) {
 		dbg("ERROR: mtd->ioctl failed: %d\n", ret);
 		return NULL;
@@ -324,6 +335,7 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 		dbg("ERROR: mtd partition failed for smartfs\n");
 		return NULL;
 	}
+
 #ifdef CONFIG_MTD_REGISTRATION
 	/* register each of MTD here to get info through the procfs */
 	if (mtd) {
@@ -342,9 +354,9 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 	if (mtd_romfs) {
 		mtd_register(mtd_romfs, "ROMFS");
 	}
-#endif							/* CONFIG_FS_ROMFS */
-#endif							/* CONFIG_MTD_REGISTRATION */
-#endif							/* CONFIG_MTD_PARTITION */
+#endif /* CONFIG_FS_ROMFS */
+#endif /* CONFIG_MTD_REGISTRATION */
+#endif /* CONFIG_MTD_PARTITION */
 
 	return mtd;
 }
@@ -364,19 +376,16 @@ void wlan_initup(struct netif *dev)
 	struct ip_addr gw;
 
 	/* Start LWIP network thread */
-
-//  memset(g_wlanif, 0, sizeof(struct netif));
-
 	ipaddr.addr = inet_addr("0.0.0.0");
 	netmask.addr = inet_addr("255.255.255.255");
 	gw.addr = inet_addr("0.0.0.0");
 
 	netif_set_default(dev);
 
-	wlan_netif = netif_add(dev, &ipaddr, &netmask, &gw, NULL, wlan_init, tcpip_input);
+	wlan_netif = netif_add(dev, &ipaddr, &netmask, &gw,
+					NULL, wlan_init, tcpip_input);
 	wlan_netif->flags |= NETIF_FLAG_IGMP;
 }
-
 #endif
 
 /****************************************************************************
@@ -441,17 +450,6 @@ void board_initialize(void)
 
 #if defined(CONFIG_BOARD_COREDUMP_FLASH)
 	up_coredump_init();
-#endif
-
-#if 0
-#ifdef CONFIG_FS_PROCFS
-	int ret;
-	ret = mount(NULL, "/proc", "procfs", 0, NULL);
-	if (ret < 0) {
-		syslog(LOG_ERR, "ERROR: Failed to mount the PROC filesystem: %d \n", ret);
-		return;
-	}
-#endif
 #endif
 }
 #endif /* CONFIG_BOARD_INITIALIZE */
