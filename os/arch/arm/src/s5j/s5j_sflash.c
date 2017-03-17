@@ -102,15 +102,11 @@ enum s5j_sflash_command_e {
 	SFLASH_DUMMY			= 0xA5, /* Dummy */
 };
 
-struct s5j_sflash_priv_s {
+struct s5j_sflash_dev_s {
+	struct spi_dev_s spi_dev;
 	uint32_t addr;
 	sem_t sem_excl;
 	void *priv;
-};
-
-struct s5j_sflash_dev_s {
-	FAR const struct spi_ops_s *ops;
-	struct s5j_sflash_priv_s priv;
 };
 
 /* this ptr can be used in nsh_cmd */
@@ -190,7 +186,7 @@ static FAR const struct spi_ops_s s5j_spi_ops = {
  ****************************************************************************/
 static inline void s5j_sflash_sem_post(struct s5j_sflash_dev_s *dev)
 {
-	sem_post(&dev->priv.sem_excl);
+	sem_post(&dev->sem_excl);
 }
 
 /****************************************************************************
@@ -208,7 +204,7 @@ static inline void s5j_sflash_sem_post(struct s5j_sflash_dev_s *dev)
  ****************************************************************************/
 static inline void s5j_sflash_sem_init(struct s5j_sflash_dev_s *dev)
 {
-	sem_init(&dev->priv.sem_excl, 0, 1);
+	sem_init(&dev->sem_excl, 0, 1);
 }
 
 /****************************************************************************
@@ -226,7 +222,7 @@ static inline void s5j_sflash_sem_init(struct s5j_sflash_dev_s *dev)
  ****************************************************************************/
 static inline void s5j_sflash_sem_wait(struct s5j_sflash_dev_s *dev)
 {
-	while (sem_wait(&dev->priv.sem_excl) != OK) {
+	while (sem_wait(&dev->sem_excl) != OK) {
 		ASSERT(errno == EINTR);
 	}
 }
@@ -627,7 +623,7 @@ static uint16_t s5j_sflash_send(FAR struct spi_dev_s *spidev, uint16_t wd)
 	dev = (struct s5j_sflash_dev_s *)spidev;
 
 	if (addrmode) {
-		dev->priv.addr |= (wd << addroffset);
+		dev->addr |= (wd << addroffset);
 
 		addroffset -= 8;
 
@@ -636,7 +632,7 @@ static uint16_t s5j_sflash_send(FAR struct spi_dev_s *spidev, uint16_t wd)
 
 			if (erasemode) {
 				erasemode = 0;
-				s5j_sflash_erase(dev, cmd, dev->priv.addr);
+				s5j_sflash_erase(dev, cmd, dev->addr);
 			}
 		}
 
@@ -664,12 +660,12 @@ static uint16_t s5j_sflash_send(FAR struct spi_dev_s *spidev, uint16_t wd)
 	case SFLASH_READ:
 		addrmode = 1;
 		addroffset = 16;
-		dev->priv.addr = 0;
+		dev->addr = 0;
 		break;
 	case SFLASH_WRITE:
 		addrmode = 1;
 		addroffset = 16;
-		dev->priv.addr = 0;
+		dev->addr = 0;
 		break;
 	case SFLASH_WRITE_ENABLE:
 		s5j_sflash_write_enable(dev);
@@ -683,7 +679,7 @@ static uint16_t s5j_sflash_send(FAR struct spi_dev_s *spidev, uint16_t wd)
 		addrmode = 1;
 		erasemode = 1;
 		addroffset = 16;
-		dev->priv.addr = 0;
+		dev->addr = 0;
 		cmd = wd;
 		break;
 	default:
@@ -745,7 +741,7 @@ static void s5j_sflash_sndblock(FAR struct spi_dev_s *spidev,
 	dev = (struct s5j_sflash_dev_s *)spidev;
 
 	/* it's not word, it's byte */
-	s5j_sflash_write(dev, dev->priv.addr, (uint8_t *) buffer, nwords);
+	s5j_sflash_write(dev, dev->addr, (uint8_t *) buffer, nwords);
 }
 
 /****************************************************************************
@@ -772,7 +768,7 @@ static void s5j_sflash_recvblock(FAR struct spi_dev_s *spidev,
 	dev = (struct s5j_sflash_dev_s *)spidev;
 
 	/* it's not word, it's byte */
-	s5j_sflash_read(dev, dev->priv.addr, buffer, nwords);
+	s5j_sflash_read(dev, dev->addr, buffer, nwords);
 }
 
 /****************************************************************************
@@ -800,10 +796,10 @@ FAR struct spi_dev_s *up_spiflashinitialize(void)
 			return NULL;
 		}
 
-		sflashdev->ops = (FAR const struct spi_ops_s *)&s5j_spi_ops;
+		sflashdev->spi_dev.ops = &s5j_spi_ops;
 
 		s5j_sflash_init(sflashdev);
-		sflashdev->priv.priv = NULL;
+		sflashdev->priv = NULL;
 	}
 
 	return (FAR struct spi_dev_s *)sflashdev;
@@ -825,7 +821,7 @@ FAR struct spi_dev_s *up_spiflashinitialize(void)
  ****************************************************************************/
 int up_spiflashinitialized(void)
 {
-	if (sflashdev->priv.priv) {
+	if (sflashdev->priv) {
 		return 1;
 	}
 
@@ -847,7 +843,7 @@ int up_spiflashinitialized(void)
  ****************************************************************************/
 void update_spiflashmtd(struct mtd_dev_s *mtd)
 {
-	sflashdev->priv.priv = mtd;
+	sflashdev->priv = mtd;
 }
 
 /****************************************************************************
@@ -865,5 +861,5 @@ void update_spiflashmtd(struct mtd_dev_s *mtd)
  ****************************************************************************/
 struct mtd_dev_s *getspiflashmtd(void)
 {
-	return (struct mtd_dev_s *)sflashdev->priv.priv;
+	return (struct mtd_dev_s *)sflashdev->priv;
 }
