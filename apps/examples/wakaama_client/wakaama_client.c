@@ -33,11 +33,6 @@
 
 #define NET_DEVNAME "wl1"
 
-#if defined(CONFIG_NET_LWIP_DHCPC) && !defined(CONFIG_NETUTILS_DHCPC)
-struct dhcp dhcp_handle;
-#endif
-
-
 #define DM_LIFETIME 300
 #define DM_SERVERIP "192.168.1.152"
 #define DM_SERVERPORT LWM2M_STANDARD_PORT_STR

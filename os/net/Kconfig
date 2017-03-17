@@ -29,10 +29,6 @@ config	NET_LWIP
 
 endchoice
 
-if NET_LWIP
-source net/lwip/Kconfig
-endif #NET_LWIP
-
 config NET_SECURITY_TLS
 	bool "TLS Support"
 	default n

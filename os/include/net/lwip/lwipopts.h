@@ -110,21 +110,7 @@
 #define UDP_TTL                         255
 #define LWIP_UDP_TODO                   1
 
-/* ---------- DHCP options ---------- */
-/* Define LWIP_DHCP to 1 if you want DHCP configuration of
-   interfaces.
-*/
-#ifdef CONFIG_NET_LWIP_DHCPC
-#define LWIP_DHCP                       0
-#endif
-
-/* ---------- DHCPS options ---------- */
-/* Caution. Define LWIP_DHCP to 1 before enabling DHCP server configuration
-  * Define LWIP_DHCPS, DHCP Server Function
-* **/
-#ifdef CONFIG_NET_LWIP_DHCPS
-#define LWIP_DHCPS                      1
-#endif
+#define LWIP_DHCPS                      0
 
 /*
    ----------------------------------------------
