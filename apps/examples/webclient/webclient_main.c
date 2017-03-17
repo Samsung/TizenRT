@@ -51,14 +51,14 @@
  ****************************************************************************/
 
 /**
-* @testcase		lwip_http_01 (client)
-* @brief		To send HTTP request messages and receive response messages.
-*			supported methods: GET, POST, PUT, DELETE
-*			Entity and encoding are needed only for POST and PUT methods. If an encoding is not for "C", it always uses the content-length.
-* @scenario		1. Start webserver at TASH using the command "webserver start". Refer to webserver_main.c to run HTTP server.
-*			2. Start webclient at TASH using the command "webclient GET http://[serverip]/".
+* @testcase            lwip_http_01 (client)
+* @brief               To send HTTP request messages and receive response messages.
+*                      supported methods: GET, POST, PUT, DELETE
+*                      Entity and encoding are needed only for POST and PUT methods. If an encoding is not for "C", it always uses the content-length.
+* @scenario            1. Start webserver at TASH using the command "webserver start". Refer to webserver_main.c to run HTTP server.
+*                      2. Start webclient at TASH using the command "webclient GET http://[serverip]/".
 * @apicovered
-* @precondition		Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
+* @precondition                Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
 * @postcondition
 */
 
@@ -78,9 +78,9 @@
  ****************************************************************************/
 
 #ifdef CONFIG_TLS_WITH_SSS
-#define WEBCLIENT_STACK_SIZE   32768
+#define WEBCLIENT_STACK_SIZE   (1024 * 12)
 #else
-#define WEBCLIENT_STACK_SIZE   8192
+#define WEBCLIENT_STACK_SIZE   (1024 * 8)
 #endif
 #define WEBCLIENT_SCHED_PRI    100
 #define WEBCLIENT_SCHED_POLICY SCHED_RR
@@ -96,8 +96,8 @@ struct webclient_input {
 	char **argv;
 };
 
-#ifdef CONFIG_HW_RSA_SIGN
-#include "sss_certnkey_client.h"
+#ifdef CONFIG_HW_RSA
+#include "tls/sss_key.h"
 #include "tls/see_api.h"
 
 #define WEBCLIENT_CA_KEY_INDEX    3
@@ -179,12 +179,12 @@ const char c_cli_key_rsa[] =
 	"bHFVW2r0dBTqegP2/KTOxKzaHfC1qf0RGDsUoJCNJrd1cwoCLG8P2EF4w3OBrKqv\r\n"
 	"8u4ytY0F+Vlanj5lm3TaoHSVF1+NWPyOTiwevIECGKwSxvlki4fDAA==\r\n"
 	"-----END RSA PRIVATE KEY-----\r\n";
-#endif							/* CONFIG_HW_RSA_SIGN */
+#endif /* CONFIG_HW_RSA */
 
-static const char headerfield_connect[]   = "Connect";
-static const char headerfield_close[]     = "close";
+static const char headerfield_connect[] = "Connect";
+static const char headerfield_close[] = "close";
 static const char headerfield_useragent[] = "User-Agent";
-static const char headerfield_tinyara[]   = "TinyARA";
+static const char headerfield_tinyara[] = "TinyARA";
 
 /****************************************************************************
  * Private Functions
@@ -227,8 +227,10 @@ pthread_addr_t webclient_cb(void *arg)
 	struct webclient_input *input;
 	struct http_client_request_t request;
 	struct http_keyvalue_list_t headers;
-	struct http_client_ssl_config_t ssl_config;
 	struct http_client_response_t response;
+#ifdef CONFIG_NET_SECURITY_TLS
+	struct http_client_ssl_config_t ssl_config;
+#endif
 
 	input = arg;
 	argc = input->argc;
@@ -288,42 +290,46 @@ pthread_addr_t webclient_cb(void *arg)
 #ifdef CONFIG_NET_SECURITY_TLS
 	/* send HTTPS request */
 	if (!strncmp(request.url, "https", 5)) {
-#ifdef CONFIG_HW_RSA_SIGN
+#ifdef CONFIG_HW_RSA
 		int ret;
 		see_init();
 
 		/* Setup post key */
-		if ((ret = see_setup_key(webclient_da_rsa_ca, sizeof(webclient_da_rsa_ca), SECURE_STORAGE_TYPE_KEY_RSA, WEBCLIENT_CA_KEY_INDEX)) != 0) {
+		if ((ret = see_setup_key(sss_da_rsa_ca, sizeof(sss_da_rsa_ca),
+								 SECURE_STORAGE_TYPE_KEY_RSA, WEBCLIENT_CA_KEY_INDEX)) != 0) {
 			printf(" failed\n  !  see_setup_key ca 0x%x\n\n", ret);
 			goto release_out_tls;
 		}
-		if ((ret = see_setup_key(webclient_da_rsa_dev, sizeof(webclient_da_rsa_dev), SECURE_STORAGE_TYPE_KEY_RSA, WEBCLIENT_DEV_KEY_INDEX)) != 0) {
+		if ((ret = see_setup_key(sss_da_rsa_dev, sizeof(sss_da_rsa_dev),
+								 SECURE_STORAGE_TYPE_KEY_RSA, WEBCLIENT_DEV_KEY_INDEX)) != 0) {
 			printf(" failed\n  !  see_setup_key dev 0x%x\n\n", ret);
 			goto release_out_tls;
 		}
 
-		if ((ret = see_set_certificate(webclient_ca_crt, sizeof(webclient_ca_crt), WEBCLIENT_CA_CERT_INDEX, CERT_PEM)) != 0) {
+		if ((ret = see_set_certificate(sss_ca_crt, sizeof(sss_ca_crt),
+									   WEBCLIENT_CA_CERT_INDEX, CERT_PEM)) != 0) {
 			printf("Error: set_cert fail %d\n", ret);
 			goto release_out_tls;
 		}
 
-		if ((ret = see_set_certificate(webclient_dev_crt, sizeof(webclient_dev_crt), WEBCLIENT_DEV_CERT_INDEX, CERT_PEM)) != 0) {
+		if ((ret = see_set_certificate(sss_dev_crt, sizeof(sss_dev_crt),
+									   WEBCLIENT_DEV_CERT_INDEX, CERT_PEM)) != 0) {
 			printf("Error: set_cert fail %d\n", ret);
 			goto release_out_tls;
 		}
 
-		ssl_config.ca_key_index = WEBCLIENT_CA_KEY_INDEX;
-		ssl_config.dev_key_index = WEBCLIENT_DEV_KEY_INDEX;
-		ssl_config.ca_cert_index = WEBCLIENT_CA_CERT_INDEX;
-		ssl_config.dev_cert_index = WEBCLIENT_DEV_CERT_INDEX;
+		ssl_config.ca_key_index    = WEBCLIENT_CA_KEY_INDEX;
+		ssl_config.dev_key_index   = WEBCLIENT_DEV_KEY_INDEX;
+		ssl_config.ca_cert_index   = WEBCLIENT_CA_CERT_INDEX;
+		ssl_config.dev_cert_index  = WEBCLIENT_DEV_CERT_INDEX;
 #else
 		ssl_config.root_ca = (char *)c_ca_crt_rsa;
-		ssl_config.root_ca_len = sizeof(c_ca_crt_rsa);
+		ssl_config.root_ca_len  = sizeof(c_ca_crt_rsa);
 		ssl_config.dev_cert = (char *)c_cli_crt_rsa;
-		ssl_config.dev_cert_len = sizeof(c_cli_crt_rsa);
+		ssl_config.dev_cert_len  = sizeof(c_cli_crt_rsa);
 		ssl_config.private_key = (char *)c_cli_key_rsa;
 		ssl_config.private_key_len = sizeof(c_cli_key_rsa);
-#endif							/* CONFIG_HW_RSA_SIGN */
+#endif /* CONFIG_HW_RSA */
 		/* before sending request by sync function,
 		 * must initialize response structure
 		 */
@@ -377,15 +383,22 @@ pthread_addr_t webclient_cb(void *arg)
 		}
 	}
 	/* sleep for end request */
-	sleep(5);
+	while (request.async_flag > 0) {
+		usleep(100000);
+	}
+	if (request.async_flag < 0) {
+		printf("fail to send request\n");
+	}
+#ifdef CONFIG_NET_SECURITY_TLS
+release_out_tls:
+#ifdef CONFIG_HW_RSA
+	see_free();
+#endif
+#endif
+release_out:
 	/* before finish of app,
 	 * must release keyvalue list for request headers
 	 */
- release_out_tls:
-#ifdef CONFIG_HW_RSA_SIGN
-	see_free();
-#endif
- release_out:
 	http_keyvalue_list_release(&headers);
 	printf("end request\n");
 
@@ -425,3 +438,4 @@ int webclient_main(int argc, char *argv[])
 
 	return 0;
 }
+

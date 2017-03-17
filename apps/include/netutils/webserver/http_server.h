@@ -23,6 +23,7 @@
 /**
  * @defgroup HTTP_SERVER HTTP Server
  * @ingroup HTTP
+ *   The server side of Hypertext Transfer Protocol
  * @{
  */
 
@@ -83,12 +84,12 @@
 #define HTTP_CONF_CLIENT_STACKSIZE              8192
 #define HTTP_CONF_MIN_TLS_MEMORY                80000
 #define HTTP_CONF_SOCKET_TIMEOUT_MSEC           5000
-#define HTTP_CONF_MAX_CLIENT_HANDLE             2
+#define HTTP_CONF_MAX_CLIENT_HANDLE             1
 #define HTTP_CONF_SERVER_MQ_MAX_MSG             10
 #define HTTP_CONF_SERVER_MQ_PRIO                50
 #define HTTP_CONF_SERVER_SIGWAKEUP              18
 
-#define HTTP_CONF_MAX_REQUEST_LENGTH            2048
+#define HTTP_CONF_MAX_REQUEST_LENGTH            4096
 #define HTTP_CONF_MAX_REQUEST_LINE_LENGTH       256
 #define HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH 128
 #define HTTP_CONF_MAX_URL_QUERY_LENGTH          64
@@ -116,7 +117,7 @@ struct http_keyvalue_list_t;
  */
 
 struct ssl_config_t {
-#ifdef CONFIG_HW_RSA_SIGN
+#ifdef CONFIG_HW_RSA
 	unsigned int ca_key_index;
 	unsigned int dev_key_index;
 	unsigned int ca_cert_index;
@@ -128,7 +129,8 @@ struct ssl_config_t {
 	unsigned int root_ca_len;
 	unsigned int dev_cert_len;
 	unsigned int private_key_len;
-#endif							/* CONFIG_HW_RSA_SIGN */
+#endif /* CONFIG_HW_RSA */
+	int auth_mode;
 };
 
 typedef enum {
@@ -150,39 +152,40 @@ struct http_req_message {
 	struct http_keyvalue_list_t *headers;
 	char *entity;
 	char *query_string;
+	int encoding;
 };
 
 /**
  * @brief typedef for callback function.
  */
 
-typedef void (*http_cb_t)(struct http_client_t * client, struct http_req_message * msg);
+typedef void (*http_cb_t)(struct http_client_t *client, struct http_req_message *msg);
 
 /**
  * @brief http server structure.
  */
 
 struct http_server_t {
-	int port;
-	int listen_fd;
+	int  port;
+	int  listen_fd;
 	http_server_state_t state;
 	sem_t sem_thread_sync;
 	pthread_t tid;
 	pthread_t c_tid[HTTP_CONF_MAX_CLIENT_HANDLE];
 	mqd_t msg_q;
 
+	int                       tls_init;
 #ifdef CONFIG_NET_SECURITY_TLS
-	int tls_init;
-	mbedtls_ssl_config tls_conf;
-	mbedtls_entropy_context tls_entropy;
-	mbedtls_ctr_drbg_context tls_ctr_drbg;
-	mbedtls_x509_crt tls_srvcert;
-	mbedtls_pk_context tls_pkey;
+	mbedtls_ssl_config        tls_conf;
+	mbedtls_entropy_context   tls_entropy;
+	mbedtls_ctr_drbg_context  tls_ctr_drbg;
+	mbedtls_x509_crt          tls_srvcert;
+	mbedtls_pk_context        tls_pkey;
 	mbedtls_ssl_cache_context tls_cache;
-	mbedtls_net_context tls_ctx;
+	mbedtls_net_context       tls_ctx;
 #endif
 
-	struct sockaddr_in servaddr;
+	struct sockaddr_in             servaddr;
 	http_cb_t cb[4];
 	struct http_query_handler_t
 	*query_handlers[HTTP_CONF_MAX_QUERY_HANDLER_COUNT];

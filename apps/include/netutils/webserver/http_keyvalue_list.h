@@ -70,7 +70,7 @@ struct http_keyvalue_list_t {
  *         On failure, HTTP_ERROR(-1) is returned.
  * @since Tizen RT v1.0
  */
-int http_keyvalue_list_init(struct http_keyvalue_list_t *list);
+int   http_keyvalue_list_init(struct http_keyvalue_list_t *list);
 
 /**
  * @brief http_keyvalue_list_release() frees list.
@@ -80,7 +80,7 @@ int http_keyvalue_list_init(struct http_keyvalue_list_t *list);
  *         On failure, HTTP_ERROR(-1) is returned.
  * @since Tizen RT v1.0
  */
-int http_keyvalue_list_release(struct http_keyvalue_list_t *list);
+int   http_keyvalue_list_release(struct http_keyvalue_list_t *list);
 
 /**
  * @brief http_keyvalue_list_add() adds keyvalue to list.
@@ -92,7 +92,7 @@ int http_keyvalue_list_release(struct http_keyvalue_list_t *list);
  *         On failure, HTTP_ERROR(-1) is returned.
  * @since Tizen RT v1.0
  */
-int http_keyvalue_list_add(struct http_keyvalue_list_t *list, const char *key, const char *value);
+int   http_keyvalue_list_add(struct http_keyvalue_list_t *list, const char *key, const char *value);
 
 /**
  * @brief http_keyvalue_list_delete_tail() deletes keyvalue to list
@@ -103,7 +103,7 @@ int http_keyvalue_list_add(struct http_keyvalue_list_t *list, const char *key, c
  *         On failure, HTTP_ERROR(-1) is returned.
  * @since Tizen RT v1.0
  */
-int http_keyvalue_list_delete_tail(struct http_keyvalue_list_t *list);
+int   http_keyvalue_list_delete_tail(struct http_keyvalue_list_t *list);
 
 /**
  * @brief http_keyvalue_list_find() finds a value with a specific key.

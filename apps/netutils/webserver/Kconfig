@@ -4,27 +4,24 @@
 #
 
 config NETUTILS_WEBSERVER
-	bool "TinyAra Webserver"
+	bool "Webserver"
 	default n
+	depends on NET
 	---help---
-		Enable TinyAra Webserver.
+		Enables the webserver.
+		This webserver supports multi requests and multi instance.
+		User can configure webserver by modifying CONF values in http_server.h.
 
 if NETUTILS_WEBSERVER
-config NETUTILS_WEBSERVER_MULTICLIENT
-	bool "Support Multi-clients connection"
-	default y
-	---help---
-		Support Multi-clients connection
-
-config NETUTILS_WEBSERVER_LOGD
-	bool "Allow HTTP_LOGD definition"
+	config NETUTILS_WEBSERVER_LOGD
+	bool "HTTP debugging log"
 	default n
 	---help---
-		Allow HTTP_LOGD definition
+		Enables HTTP debugging logs.
 
 config NETUTILS_WEBSERVER_LOGE
-	bool "Allow HTTP_LOGE definition"
+	bool "HTTP error log"
 	default n
 	---help---
-		Allow HTTP_LOGE definition
+		Enables HTTP error logs.
 endif

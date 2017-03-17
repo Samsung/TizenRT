@@ -66,7 +66,7 @@
 #include <apps/netutils/webserver/http_server.h>
 #include <apps/netutils/webserver/http_keyvalue_list.h>
 
-#define WEBSERVER_STACK_SIZE   16384
+#define WEBSERVER_STACK_SIZE   (1024 * 8)
 #define WEBSERVER_SCHED_PRI    100
 #define WEBSERVER_SCHED_POLICY SCHED_RR
 
@@ -75,8 +75,8 @@ struct webserver_input {
 	char **argv;
 };
 
-#ifdef CONFIG_HW_RSA_SIGN
-#include "sss_certnkey_server.h"
+#ifdef CONFIG_HW_RSA
+#include "tls/sss_key.h"
 #include "tls/see_api.h"
 
 #define WEBSERVER_CA_KEY_INDEX          1
@@ -93,7 +93,20 @@ const char ca_crt_rsa[] =
 	"A1UEChMIUG9sYXJTU0wxGTAXBgNVBAMTEFBvbGFyU1NMIFRlc3QgQ0EwggEiMA0G\r\n"
 	"CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDA3zf8F7vglp0/ht6WMn1EpRagzSHx\r\n"
 	"mdTs6st8GFgIlKXsm8WL3xoemTiZhx57wI053zhdcHgH057Zk+i5clHFzqMwUqny\r\n"
-	"50BwFMtEonILwuVA+T7lpg6z+exKY8C4KQB0nFc7qKUEkHHxvYPZP9al4jwqj+8n\r\n" "YMPGn8u67GB9t+aEMr5P+1gmIgNb1LTV+/Xjli5wwOQuvfwu7uJBVcA0Ln0kcmnL\r\n" "R7EUQIN9Z/SG9jGr8XmksrUuEvmEF/Bibyc+E1ixVA0hmnM3oTDPb5Lc9un8rNsu\r\n" "KNF+AksjoBXyOGVkCeoMbo4bF6BxyLObyavpw/LPh5aPgAIynplYb6LVAgMBAAGj\r\n" "gZUwgZIwDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQUtFrkpbPe0lL2udWmlQ/rPrzH\r\n" "/f8wYwYDVR0jBFwwWoAUtFrkpbPe0lL2udWmlQ/rPrzH/f+hP6Q9MDsxCzAJBgNV\r\n" "BAYTAk5MMREwDwYDVQQKEwhQb2xhclNTTDEZMBcGA1UEAxMQUG9sYXJTU0wgVGVz\r\n" "dCBDQYIBADANBgkqhkiG9w0BAQUFAAOCAQEAuP1U2ABUkIslsCfdlc2i94QHHYeJ\r\n" "SsR4EdgHtdciUI5I62J6Mom+Y0dT/7a+8S6MVMCZP6C5NyNyXw1GWY/YR82XTJ8H\r\n" "DBJiCTok5DbZ6SzaONBzdWHXwWwmi5vg1dxn7YxrM9d0IjxM27WNKs4sDQhZBQkF\r\n" "pjmfs2cb4oPl4Y9T9meTx/lvdkRYEug61Jfn6cA+qHpyPYdTH+UshITnmp5/Ztkf\r\n" "m/UTSLBNFNHesiTZeH31NcxYGdHSme9Nc/gfidRa0FLOCfWxRlFqAI47zG9jAQCZ\r\n" "7Z2mCGDNMhjQc+BYcdnl0lPXjdDK6V0qCg1dVewhUBcW5gZKzV7e9+DpVA==\r\n" "-----END CERTIFICATE-----\r\n";
+	"50BwFMtEonILwuVA+T7lpg6z+exKY8C4KQB0nFc7qKUEkHHxvYPZP9al4jwqj+8n\r\n"
+	"YMPGn8u67GB9t+aEMr5P+1gmIgNb1LTV+/Xjli5wwOQuvfwu7uJBVcA0Ln0kcmnL\r\n"
+	"R7EUQIN9Z/SG9jGr8XmksrUuEvmEF/Bibyc+E1ixVA0hmnM3oTDPb5Lc9un8rNsu\r\n"
+	"KNF+AksjoBXyOGVkCeoMbo4bF6BxyLObyavpw/LPh5aPgAIynplYb6LVAgMBAAGj\r\n"
+	"gZUwgZIwDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQUtFrkpbPe0lL2udWmlQ/rPrzH\r\n"
+	"/f8wYwYDVR0jBFwwWoAUtFrkpbPe0lL2udWmlQ/rPrzH/f+hP6Q9MDsxCzAJBgNV\r\n"
+	"BAYTAk5MMREwDwYDVQQKEwhQb2xhclNTTDEZMBcGA1UEAxMQUG9sYXJTU0wgVGVz\r\n"
+	"dCBDQYIBADANBgkqhkiG9w0BAQUFAAOCAQEAuP1U2ABUkIslsCfdlc2i94QHHYeJ\r\n"
+	"SsR4EdgHtdciUI5I62J6Mom+Y0dT/7a+8S6MVMCZP6C5NyNyXw1GWY/YR82XTJ8H\r\n"
+	"DBJiCTok5DbZ6SzaONBzdWHXwWwmi5vg1dxn7YxrM9d0IjxM27WNKs4sDQhZBQkF\r\n"
+	"pjmfs2cb4oPl4Y9T9meTx/lvdkRYEug61Jfn6cA+qHpyPYdTH+UshITnmp5/Ztkf\r\n"
+	"m/UTSLBNFNHesiTZeH31NcxYGdHSme9Nc/gfidRa0FLOCfWxRlFqAI47zG9jAQCZ\r\n"
+	"7Z2mCGDNMhjQc+BYcdnl0lPXjdDK6V0qCg1dVewhUBcW5gZKzV7e9+DpVA==\r\n"
+	"-----END CERTIFICATE-----\r\n";
 
 const char srv_crt_rsa[] =
 	"-----BEGIN CERTIFICATE-----\r\n"
@@ -101,7 +114,21 @@ const char srv_crt_rsa[] =
 	"MA8GA1UEChMIUG9sYXJTU0wxGTAXBgNVBAMTEFBvbGFyU1NMIFRlc3QgQ0EwHhcN\r\n"
 	"MTEwMjEyMTQ0NDA2WhcNMjEwMjEyMTQ0NDA2WjA0MQswCQYDVQQGEwJOTDERMA8G\r\n"
 	"A1UEChMIUG9sYXJTU0wxEjAQBgNVBAMTCWxvY2FsaG9zdDCCASIwDQYJKoZIhvcN\r\n"
-	"AQEBBQADggEPADCCAQoCggEBAMFNo93nzR3RBNdJcriZrA545Do8Ss86ExbQWuTN\r\n" "owCIp+4ea5anUrSQ7y1yej4kmvy2NKwk9XfgJmSMnLAofaHa6ozmyRyWvP7BBFKz\r\n" "NtSj+uGxdtiQwWG0ZlI2oiZTqqt0Xgd9GYLbKtgfoNkNHC1JZvdbJXNG6AuKT2kM\r\n" "tQCQ4dqCEGZ9rlQri2V5kaHiYcPNQEkI7mgM8YuG0ka/0LiqEQMef1aoGh5EGA8P\r\n" "hYvai0Re4hjGYi/HZo36Xdh98yeJKQHFkA4/J/EwyEoO79bex8cna8cFPXrEAjya\r\n" "HT4P6DSYW8tzS1KW2BGiLICIaTla0w+w3lkvEcf36hIBMJcCAwEAAaNNMEswCQYD\r\n" "VR0TBAIwADAdBgNVHQ4EFgQUpQXoZLjc32APUBJNYKhkr02LQ5MwHwYDVR0jBBgw\r\n" "FoAUtFrkpbPe0lL2udWmlQ/rPrzH/f8wDQYJKoZIhvcNAQEFBQADggEBAJxnXClY\r\n" "oHkbp70cqBrsGXLybA74czbO5RdLEgFs7rHVS9r+c293luS/KdliLScZqAzYVylw\r\n" "UfRWvKMoWhHYKp3dEIS4xTXk6/5zXxhv9Rw8SGc8qn6vITHk1S1mPevtekgasY5Y\r\n" "iWQuM3h4YVlRH3HHEMAD1TnAexfXHHDFQGe+Bd1iAbz1/sH9H8l4StwX6egvTK3M\r\n" "wXRwkKkvjKaEDA9ATbZx0mI8LGsxSuCqe9r9dyjmttd47J1p1Rulz3CLzaRcVIuS\r\n" "RRQfaD8neM9c1S/iJ/amTVqJxA1KOdOS5780WhPfSArA+g4qAmSjelc3p4wWpha8\r\n" "zhuYwjVuX6JHG0c=\r\n" "-----END CERTIFICATE-----\r\n";
+	"AQEBBQADggEPADCCAQoCggEBAMFNo93nzR3RBNdJcriZrA545Do8Ss86ExbQWuTN\r\n"
+	"owCIp+4ea5anUrSQ7y1yej4kmvy2NKwk9XfgJmSMnLAofaHa6ozmyRyWvP7BBFKz\r\n"
+	"NtSj+uGxdtiQwWG0ZlI2oiZTqqt0Xgd9GYLbKtgfoNkNHC1JZvdbJXNG6AuKT2kM\r\n"
+	"tQCQ4dqCEGZ9rlQri2V5kaHiYcPNQEkI7mgM8YuG0ka/0LiqEQMef1aoGh5EGA8P\r\n"
+	"hYvai0Re4hjGYi/HZo36Xdh98yeJKQHFkA4/J/EwyEoO79bex8cna8cFPXrEAjya\r\n"
+	"HT4P6DSYW8tzS1KW2BGiLICIaTla0w+w3lkvEcf36hIBMJcCAwEAAaNNMEswCQYD\r\n"
+	"VR0TBAIwADAdBgNVHQ4EFgQUpQXoZLjc32APUBJNYKhkr02LQ5MwHwYDVR0jBBgw\r\n"
+	"FoAUtFrkpbPe0lL2udWmlQ/rPrzH/f8wDQYJKoZIhvcNAQEFBQADggEBAJxnXClY\r\n"
+	"oHkbp70cqBrsGXLybA74czbO5RdLEgFs7rHVS9r+c293luS/KdliLScZqAzYVylw\r\n"
+	"UfRWvKMoWhHYKp3dEIS4xTXk6/5zXxhv9Rw8SGc8qn6vITHk1S1mPevtekgasY5Y\r\n"
+	"iWQuM3h4YVlRH3HHEMAD1TnAexfXHHDFQGe+Bd1iAbz1/sH9H8l4StwX6egvTK3M\r\n"
+	"wXRwkKkvjKaEDA9ATbZx0mI8LGsxSuCqe9r9dyjmttd47J1p1Rulz3CLzaRcVIuS\r\n"
+	"RRQfaD8neM9c1S/iJ/amTVqJxA1KOdOS5780WhPfSArA+g4qAmSjelc3p4wWpha8\r\n"
+	"zhuYwjVuX6JHG0c=\r\n"
+	"-----END CERTIFICATE-----\r\n";
 
 const char srv_key_rsa[] =
 	"-----BEGIN RSA PRIVATE KEY-----\r\n"
@@ -117,14 +144,27 @@ const char srv_key_rsa[] =
 	"WYI5wxO+bvRELR2Mcz5DmVnL8jRyml6l6582bSv5oufReFIbyPZbQWlXgYnpu6He\r\n"
 	"GTc7E1zKYQGG/9+DQUl/1vQuCPqQwny0tQoX2w5tdYpdMdVm+zkLtbajzdTviJJa\r\n"
 	"TWzL6lt5AoGBAN86+SVeJDcmQJcv4Eq6UhtRr4QGMiQMz0Sod6ettYxYzMgxtw28\r\n"
-	"CIrgpozCc+UaZJLo7UxvC6an85r1b2nKPCLQFaggJ0H4Q0J/sZOhBIXaoBzWxveK\r\n" "nupceKdVxGsFi8CDy86DBfiyFivfBj+47BbaQzPBj7C4rK7UlLjab2rDAoGBAN2u\r\n" "AM2gchoFiu4v1HFL8D7lweEpi6ZnMJjnEu/dEgGQJFjwdpLnPbsj4c75odQ4Gz8g\r\n" "sw9lao9VVzbusoRE/JGI4aTdO0pATXyG7eG1Qu+5Yc1YGXcCrliA2xM9xx+d7f+s\r\n" "mPzN+WIEg5GJDYZDjAzHG5BNvi/FfM1C9dOtjv2dAoGAF0t5KmwbjWHBhcVqO4Ic\r\n" "BVvN3BIlc1ue2YRXEDlxY5b0r8N4XceMgKmW18OHApZxfl8uPDauWZLXOgl4uepv\r\n" "whZC3EuWrSyyICNhLY21Ah7hbIEBPF3L3ZsOwC+UErL+dXWLdB56Jgy3gZaBeW7b\r\n" "vDrEnocJbqCm7IukhXHOBK8CgYEAwqdHB0hqyNSzIOGY7v9abzB6pUdA3BZiQvEs\r\n" "3LjHVd4HPJ2x0N8CgrBIWOE0q8+0hSMmeE96WW/7jD3fPWwCR5zlXknxBQsfv0gP\r\n" "3BC5PR0Qdypz+d+9zfMf625kyit4T/hzwhDveZUzHnk1Cf+IG7Q+TOEnLnWAWBED\r\n" "ISOWmrUCgYAFEmRxgwAc/u+D6t0syCwAYh6POtscq9Y0i9GyWk89NzgC4NdwwbBH\r\n" "4AgahOxIxXx2gxJnq3yfkJfIjwf0s2DyP0kY2y6Ua1OeomPeY9mrIS4tCuDQ6LrE\r\n" "TB6l9VGoxJL4fyHnZb8L5gGvnB1bbD8cL6YPaDiOhcRseC9vBiEuVg==\r\n" "-----END RSA PRIVATE KEY-----\r\n";
-#endif							/* CONFIG_HW_RSA_SIGN */
+	"CIrgpozCc+UaZJLo7UxvC6an85r1b2nKPCLQFaggJ0H4Q0J/sZOhBIXaoBzWxveK\r\n"
+	"nupceKdVxGsFi8CDy86DBfiyFivfBj+47BbaQzPBj7C4rK7UlLjab2rDAoGBAN2u\r\n"
+	"AM2gchoFiu4v1HFL8D7lweEpi6ZnMJjnEu/dEgGQJFjwdpLnPbsj4c75odQ4Gz8g\r\n"
+	"sw9lao9VVzbusoRE/JGI4aTdO0pATXyG7eG1Qu+5Yc1YGXcCrliA2xM9xx+d7f+s\r\n"
+	"mPzN+WIEg5GJDYZDjAzHG5BNvi/FfM1C9dOtjv2dAoGAF0t5KmwbjWHBhcVqO4Ic\r\n"
+	"BVvN3BIlc1ue2YRXEDlxY5b0r8N4XceMgKmW18OHApZxfl8uPDauWZLXOgl4uepv\r\n"
+	"whZC3EuWrSyyICNhLY21Ah7hbIEBPF3L3ZsOwC+UErL+dXWLdB56Jgy3gZaBeW7b\r\n"
+	"vDrEnocJbqCm7IukhXHOBK8CgYEAwqdHB0hqyNSzIOGY7v9abzB6pUdA3BZiQvEs\r\n"
+	"3LjHVd4HPJ2x0N8CgrBIWOE0q8+0hSMmeE96WW/7jD3fPWwCR5zlXknxBQsfv0gP\r\n"
+	"3BC5PR0Qdypz+d+9zfMf625kyit4T/hzwhDveZUzHnk1Cf+IG7Q+TOEnLnWAWBED\r\n"
+	"ISOWmrUCgYAFEmRxgwAc/u+D6t0syCwAYh6POtscq9Y0i9GyWk89NzgC4NdwwbBH\r\n"
+	"4AgahOxIxXx2gxJnq3yfkJfIjwf0s2DyP0kY2y6Ua1OeomPeY9mrIS4tCuDQ6LrE\r\n"
+	"TB6l9VGoxJL4fyHnZb8L5gGvnB1bbD8cL6YPaDiOhcRseC9vBiEuVg==\r\n"
+	"-----END RSA PRIVATE KEY-----\r\n";
+#endif /* CONFIG_HW_RSA */
 
-static const char g_httpcontype[] = "Content-type";
-static const char g_httpconhtml[] = "text/html";
+static const char g_httpcontype[]  = "Content-type";
+static const char g_httpconhtml[]  = "text/html";
 static const char g_httpcontsize[] = "Content-Length";
-static const char g_httpconnect[] = "Connection";
-static const char g_httpcnlost[] = "close";
+static const char g_httpconnect[]  = "Connection";
+static const char g_httpcnlost[]   = "close";
 
 struct http_server_t *http_server = NULL;
 struct http_server_t *https_server = NULL;
@@ -133,8 +173,7 @@ void get_root(struct http_client_t *client, struct http_req_message *req)
 {
 	struct http_keyvalue_list_t response_headers;
 	const char *msg = "This is a root page";
-	char contlen[6] = { 0, };
-	char *hostname;
+	char contlen[6] = {0,};
 
 	http_keyvalue_list_init(&response_headers);
 
@@ -144,19 +183,15 @@ void get_root(struct http_client_t *client, struct http_req_message *req)
 	http_keyvalue_list_add(&response_headers, g_httpconnect, g_httpcnlost);
 
 	printf(">>>> get_root\n");
-	hostname = http_keyvalue_list_find(req->headers, "host");
-	printf("host : %s\n", hostname);
 	if (http_send_response(client, 200, msg, &response_headers) < 0) {
 		printf("Error: Fail to send response\n");
 	}
-
-	http_keyvalue_list_delete_tail(req->headers);
 	http_keyvalue_list_release(&response_headers);
 }
 
 void get_device_id(struct http_client_t *client, struct http_req_message *req)
 {
-	char buf[128] = { 0, };
+	char buf[128] = {0, };
 
 	printf("%s\n", req->url);
 	printf("%s\n", req->query_string);
@@ -176,52 +211,107 @@ void get_callback(struct http_client_t *client, struct http_req_message *req)
 	}
 }
 
+void post_callback(struct http_client_t *client, struct http_req_message *req)
+{
+	/*
+	 * in callback for POST and PUT request,
+	 * entity must be checked it is null when received chunked entity.
+	 * if it has chunked encoding entity, it must not send response.
+	 */
+	if (req->encoding == HTTP_CHUNKED_ENCODING && req->entity[0] != '\0') {
+		printf("chunk : \n%s\n", req->entity);
+		return;
+	}
+
+	if (http_send_response(client, 200, NULL, NULL) < 0) {
+		printf("Error: Fail to send response\n");
+	}
+}
+
 #ifdef CONFIG_NETUTILS_WEBSOCKET
 /* receive packets from TCP socket */
-ssize_t ws_recv_cb(websocket_context_ptr ctx, uint8_t * buf, size_t len, int flags, void *user_data)
+ssize_t ws_recv_cb(websocket_context_ptr ctx, uint8_t *buf, size_t len, int flags, void *user_data)
 {
-	struct websocket_info_t *info = user_data;
 	ssize_t r;
-	int fd = info->data->fd;
+	int fd;
+	int retry_cnt = 3;
+	struct websocket_info_t *info = user_data;
 
+	fd = info->data->fd;
+RECV_RETRY:
 	if (info->data->tls_enabled) {
 		r = mbedtls_ssl_read(info->data->tls_ssl, buf, len);
+		if (r == 0) {
+			websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+		} else if (r < 0) {
+			printf("mbedtls_ssl_read err : %d\n", errno);
+			if (retry_cnt == 0) {
+				websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+				return r;
+			}
+			retry_cnt--;
+			goto RECV_RETRY;
+		}
 	} else {
 		r = recv(fd, buf, len, 0);
 		if (r == 0) {
-			r = -1;
 			websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+		} else if (r < 0) {
+			printf("recv err : %d\n", errno);
+			if (errno == EAGAIN || errno == EBUSY) {
+				if (retry_cnt == 0) {
+					websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+					return r;
+				}
+				retry_cnt--;
+				goto RECV_RETRY;
+			}
+		}
+	}
+	return r;
+}
+
+/* send packets from TCP socket */
+ssize_t ws_send_cb(websocket_context_ptr ctx, const uint8_t *buf, size_t len, int flags, void *user_data)
+{
+	ssize_t r;
+	int fd;
+	int retry_cnt = 3;
+	struct websocket_info_t *info = user_data;
+
+	fd = info->data->fd;
+SEND_RETRY:
+	if (info->data->tls_enabled) {
+		r = mbedtls_ssl_write(info->data->tls_ssl, buf, len);
+		if (r < 0) {
+			printf("mbedtls_ssl_write err : %d\n", errno);
+			if (retry_cnt == 0) {
+				websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+				return r;
+			}
+			retry_cnt--;
+			goto SEND_RETRY;
+		}
+	} else {
+		r = send(fd, buf, len, flags);
+		if (r < 0) {
+			printf("send err : %d\n", errno);
+			if (errno == EAGAIN || errno == EBUSY) {
+				if (retry_cnt == 0) {
+					websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+					return r;
+				}
+				retry_cnt--;
+				goto SEND_RETRY;
+			}
 		}
 	}
 
 	return r;
 }
 
-/* send packets from TCP socket */
-ssize_t ws_send_cb(websocket_context_ptr ctx, const uint8_t * buf, size_t len, int flags, void *user_data)
+void ws_server_on_msg_cb(websocket_context_ptr ctx, const websocket_on_msg_arg *arg, void *user_data)
 {
-	struct websocket_info_t *info = user_data;
-	ssize_t r;
-	int sflags = 0;
-	int fd = info->data->fd;
-
-#ifdef MSG_MORE
-	if (flags & WEBSOCKET_MSG_MORE) {
-		sflags |= MSG_MORE;
-	}
-#endif							// MSG_MORE
-	if (info->data->tls_enabled) {
-		r = mbedtls_ssl_write(info->data->tls_ssl, buf, len);
-	} else {
-		r = send(fd, buf, len, sflags);
-	}
-
-	return r;
-}
-
-void ws_server_on_msg_cb(websocket_context_ptr ctx, const websocket_on_msg_arg * arg, void *user_data)
-{
-	int i, len = arg->msg_length;
 	struct websocket_info_t *info = user_data;
 	websocket_frame_t msgarg = {
 		arg->opcode, arg->msg, arg->msg_length
@@ -230,13 +320,8 @@ void ws_server_on_msg_cb(websocket_context_ptr ctx, const websocket_on_msg_arg *
 	/* Echo back non-closing message */
 	if (WEBSOCKET_CHECK_NOT_CTRL_FRAME(arg->opcode)) {
 		websocket_queue_msg(info->data, &msgarg);
-		printf("on_msg echo back : ");
-		for (i = 0; i < len; i++) {
-			printf("%c", msgarg.msg[i]);
-		}
-		printf("\n");
 	} else {
-		printf("on_msg recevied close message : ");
+		printf("server on_msg received close message\n");
 	}
 }
 #endif
@@ -259,6 +344,7 @@ pthread_addr_t httptest_cb(void *arg)
 #endif
 	struct webserver_input *input;
 
+
 	input = arg;
 	if (input->argc != 2) {
 		print_webserver_usage();
@@ -274,51 +360,65 @@ pthread_addr_t httptest_cb(void *arg)
 		return NULL;
 	}
 
- start:
+start:
+	if (http_server != NULL) {
+		printf("Error: HTTP server is already run\n");
+		return NULL;
+	}
 #ifdef CONFIG_NET_SECURITY_TLS
+	if (https_server != NULL) {
+		printf("Error: HTTPS server is already run\n");
+		return NULL;
+	}
 	https_server = http_server_init(https_port);
 	if (https_server == NULL) {
 		printf("Error: Cannot allocate server structure!!\n");
 		return NULL;
 	}
-#if defined(CONFIG_HW_RSA_SIGN)
+#if defined(CONFIG_HW_RSA)
 	int ret;
 
 	see_init();
 
 	/* Setup post key */
 	/* THIS CODE SHOULD BE REMOVED AFTER USING SSS KEY AND CERT */
-	if ((ret = see_setup_key(webserver_da_rsa_ca, sizeof(webserver_da_rsa_ca), SECURE_STORAGE_TYPE_KEY_RSA, WEBSERVER_CA_KEY_INDEX)) != 0) {
+	if ((ret = see_setup_key(sss_da_rsa_ca, sizeof(sss_da_rsa_ca),
+							 SECURE_STORAGE_TYPE_KEY_RSA, WEBSERVER_CA_KEY_INDEX)) != 0) {
 		printf(" failed\n  !  see_setup_key ca 0x%x\n\n", ret);
 		return NULL;
 	}
-	if ((ret = see_setup_key(webserver_da_rsa_dev, sizeof(webserver_da_rsa_dev), SECURE_STORAGE_TYPE_KEY_RSA, WEBSERVER_DEV_KEY_INDEX)) != 0) {
+	if ((ret = see_setup_key(sss_da_rsa_dev, sizeof(sss_da_rsa_dev),
+							 SECURE_STORAGE_TYPE_KEY_RSA, WEBSERVER_DEV_KEY_INDEX)) != 0) {
 		printf(" failed\n  !  see_setup_key dev 0x%x\n\n", ret);
 		return NULL;
 	}
 
-	if ((ret = see_set_certificate(webserver_ca_crt, sizeof(webserver_ca_crt), WEBSERVER_CA_CERT_INDEX, CERT_PEM)) != 0) {
+	if ((ret = see_set_certificate(sss_ca_crt, sizeof(sss_ca_crt),
+								   WEBSERVER_CA_CERT_INDEX, CERT_PEM)) != 0) {
 		printf("Error: set_cert fail %d\n", ret);
 		return NULL;
 	}
 
-	if ((ret = see_set_certificate(webserver_dev_crt, sizeof(webserver_dev_crt), WEBSERVER_DEV_CERT_INDEX, CERT_PEM)) != 0) {
+	if ((ret = see_set_certificate(sss_dev_crt, sizeof(sss_dev_crt),
+								   WEBSERVER_DEV_CERT_INDEX, CERT_PEM)) != 0) {
 		printf("Error: set_cert fail %d\n", ret);
 		return NULL;
 	}
 
-	ssl_config.ca_key_index = WEBSERVER_CA_KEY_INDEX;
-	ssl_config.dev_key_index = WEBSERVER_DEV_KEY_INDEX;
-	ssl_config.ca_cert_index = WEBSERVER_CA_CERT_INDEX;
-	ssl_config.dev_cert_index = WEBSERVER_DEV_CERT_INDEX;
+	ssl_config.ca_key_index    = WEBSERVER_CA_KEY_INDEX;
+	ssl_config.dev_key_index   = WEBSERVER_DEV_KEY_INDEX;
+	ssl_config.ca_cert_index   = WEBSERVER_CA_CERT_INDEX;
+	ssl_config.dev_cert_index  = WEBSERVER_DEV_CERT_INDEX;
+	ssl_config.auth_mode       = MBEDTLS_SSL_VERIFY_REQUIRED;
 #else
 	ssl_config.root_ca = (char *)ca_crt_rsa;
-	ssl_config.root_ca_len = sizeof(ca_crt_rsa);
+	ssl_config.root_ca_len  = sizeof(ca_crt_rsa);
 	ssl_config.dev_cert = (char *)srv_crt_rsa;
-	ssl_config.dev_cert_len = sizeof(srv_crt_rsa);
+	ssl_config.dev_cert_len  = sizeof(srv_crt_rsa);
 	ssl_config.private_key = (char *)srv_key_rsa;
 	ssl_config.private_key_len = sizeof(srv_key_rsa);
-#endif							/* CONFIG_HW_RSA_SIGN */
+	ssl_config.auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
+#endif /* CONFIG_HW_RSA */
 
 	if (http_tls_init(https_server, &ssl_config) != 0) {
 		printf("ssl config Error\n");
@@ -331,10 +431,13 @@ pthread_addr_t httptest_cb(void *arg)
 		printf("Error: Cannot allocate server structure!!\n");
 		return NULL;
 	}
+
 #ifdef CONFIG_NET_SECURITY_TLS
 	http_server_register_cb(https_server, HTTP_METHOD_GET, NULL, get_callback);
 	http_server_register_cb(https_server, HTTP_METHOD_GET, root_url, get_root);
-	http_server_register_cb(https_server, HTTP_METHOD_GET, devid_url, get_device_id);
+	http_server_register_cb(https_server, HTTP_METHOD_POST, NULL, post_callback);
+	http_server_register_cb(https_server, HTTP_METHOD_GET, devid_url,
+							get_device_id);
 #ifdef CONFIG_NETUTILS_WEBSOCKET
 	https_server->ws_cb.recv_callback = ws_recv_cb;
 	https_server->ws_cb.send_callback = ws_send_cb;
@@ -343,7 +446,9 @@ pthread_addr_t httptest_cb(void *arg)
 #endif
 	http_server_register_cb(http_server, HTTP_METHOD_GET, NULL, get_callback);
 	http_server_register_cb(http_server, HTTP_METHOD_GET, root_url, get_root);
-	http_server_register_cb(http_server, HTTP_METHOD_GET, devid_url, get_device_id);
+	http_server_register_cb(http_server, HTTP_METHOD_POST, NULL, post_callback);
+	http_server_register_cb(http_server, HTTP_METHOD_GET, devid_url,
+							get_device_id);
 #ifdef CONFIG_NETUTILS_WEBSOCKET
 	http_server->ws_cb.recv_callback = ws_recv_cb;
 	http_server->ws_cb.send_callback = ws_send_cb;
@@ -362,7 +467,7 @@ pthread_addr_t httptest_cb(void *arg)
 	}
 	return NULL;
 
- stop:
+stop:
 	printf("Exit Web server...\n");
 	http_server_stop(http_server);
 #ifdef CONFIG_NET_SECURITY_TLS
@@ -387,7 +492,7 @@ pthread_addr_t httptest_cb(void *arg)
 	/* sleep for requests in processing */
 	sleep(5);
 	printf("webserver end\n");
-#ifdef CONFIG_HW_RSA_SIGN
+#ifdef CONFIG_HW_RSA
 	see_free();
 #endif
 

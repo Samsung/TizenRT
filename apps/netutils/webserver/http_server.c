@@ -26,7 +26,7 @@
 
 struct http_server_t *http_server_init(int port)
 {
-	struct http_server_t *p = (struct http_server_t *)HTTP_MALLOC(sizeof(struct http_server_t));
+	struct http_server_t *p = (struct http_server_t *) HTTP_MALLOC(sizeof(struct http_server_t));
 	if (p == NULL) {
 		HTTP_LOGE("Error: Failed to malloc server\n");
 		return NULL;
@@ -47,8 +47,7 @@ struct http_server_t *http_server_init(int port)
 	p->state = HTTP_SERVER_INIT;
 
 	/* Init server query handler */
-	HTTP_MEMSET(p->query_handlers, 0, sizeof(struct http_query_handler_t *)
-				*HTTP_CONF_MAX_QUERY_HANDLER_COUNT);
+	HTTP_MEMSET(p->query_handlers, 0, sizeof(struct http_query_handler_t *) * HTTP_CONF_MAX_QUERY_HANDLER_COUNT);
 
 	return p;
 }
