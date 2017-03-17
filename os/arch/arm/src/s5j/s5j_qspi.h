@@ -49,49 +49,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+#ifndef __ARCH_ARM_SRC_S5J_S5J_QSPI_H__
+#define __ARCH_ARM_SRC_S5J_S5J_QSPI_H__
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
+#define QSPI_DUMMY_DATA		0x1
 
-#ifndef __ARCH_ARM_SRC_S5J_S5J_QSPI_H
-#define __ARCH_ARM_SRC_S5J_S5J_QSPI_H
+#define QSPI_SECTOR_OFFSET	(12)
+#define QSPI_BLOCK32K_OFFSET	(15)
+#define QSPI_BLOCK64K_OFFSET	(16)
 
-#define QSPI_DUMMY_DATA     0x1
+#define QSPI_SIZE_64KB		(1<<QSPI_BLOCK64K_OFFSET)
+#define QSPI_SIZE_32KB		(1<<QSPI_BLOCK32K_OFFSET)
+#define QSPI_SIZE_4KB		(1<<QSPI_SECTOR_OFFSET)
 
-#define QSPI_SECTOR_OFFSET       (12)
-#define QSPI_BLOCK32K_OFFSET     (15)
-#define QSPI_BLOCK64K_OFFSET     (16)
+#define COMMAND_ERASE_32KB	(0x52)
+#define COMMAND_ERASE_64KB	(0xD8)
 
-#define QSPI_SIZE_64KB   (1<<QSPI_BLOCK64K_OFFSET)
-#define QSPI_SIZE_32KB   (1<<QSPI_BLOCK32K_OFFSET)
-#define QSPI_SIZE_4KB    (1<<QSPI_SECTOR_OFFSET)
-
-#define COMMAND_ERASE_32KB  (0x52)
-#define COMMAND_ERASE_64KB  (0xD8)
-
-#define rSF_CON                                     (SFI_BASE + 0x0004)
-#define rERASE_ADDRESS                              (SFI_BASE + 0x0010)
-#define rCOMMAND1                                   (SFI_BASE + 0x001C)
-#define rCOMMAND2                                   (SFI_BASE + 0x0020)
-#define rCOMMAND3                                   (SFI_BASE + 0x0024)
-#define rCOMMAND4                                   (SFI_BASE + 0x0028)
-#define rCOMMAND5                                   (SFI_BASE + 0x002C)
-#define rADDR_CMD                                   (SFI_BASE + 0x0059)
-#define rSE                                         (SFI_BASE + 0x005E)
-#define rFLASH_IO_MODE                              (SFI_BASE + 0x0074)
-#define rFLASH_PERF_MODE                            (SFI_BASE + 0x0078)
-#define rRDID                                       (SFI_BASE + 0x00AC)
-#define rBE                                         (SFI_BASE + 0x00BE)
-#define rCE                                         (SFI_BASE + 0x00CE)
-#define rRDSR                                       (SFI_BASE + 0x00DC)
-#define rWRDI                                       (SFI_BASE + 0x00DD)
-#define rWRSR                                       (SFI_BASE + 0x00DE)
-#define rWREN                                       (SFI_BASE + 0x00EE)
+#define rSF_CON			(SFI_BASE + 0x0004)
+#define rERASE_ADDRESS		(SFI_BASE + 0x0010)
+#define rCOMMAND1		(SFI_BASE + 0x001C)
+#define rCOMMAND2		(SFI_BASE + 0x0020)
+#define rCOMMAND3		(SFI_BASE + 0x0024)
+#define rCOMMAND4		(SFI_BASE + 0x0028)
+#define rCOMMAND5		(SFI_BASE + 0x002C)
+#define rADDR_CMD		(SFI_BASE + 0x0059)
+#define rSE			(SFI_BASE + 0x005E)
+#define rFLASH_IO_MODE		(SFI_BASE + 0x0074)
+#define rFLASH_PERF_MODE	(SFI_BASE + 0x0078)
+#define rRDID			(SFI_BASE + 0x00AC)
+#define rBE			(SFI_BASE + 0x00BE)
+#define rCE			(SFI_BASE + 0x00CE)
+#define rRDSR			(SFI_BASE + 0x00DC)
+#define rWRDI			(SFI_BASE + 0x00DD)
+#define rWRSR			(SFI_BASE + 0x00DE)
+#define rWREN			(SFI_BASE + 0x00EE)
 
 typedef enum {
-	TYPE_ERR = 0,
-	TYPE_4KB = 1,
+	TYPE_ERR  = 0,
+	TYPE_4KB  = 1,
 	TYPE_32KB = 2,
 	TYPE_64KB = 3,
 } eERASE_UNIT;
@@ -125,22 +120,22 @@ typedef enum {
 } eQSPI_WR_MODE;
 
 typedef enum {
-	QSPI_VENDOR_SST = 0x1,
-	QSPI_VENDOR_STMICRO = 0x2,
-	QSPI_VENDOR_AMD = 0x4,
-	QSPI_VENDOR_ATMEL = 0x8,
-	QSPI_VENDOR_MACRONIX = 0x10,
-	QSPI_VENDOR_WINBOND = 0x20,
+	QSPI_VENDOR_SST		= 0x1,
+	QSPI_VENDOR_STMICRO	= 0x2,
+	QSPI_VENDOR_AMD		= 0x4,
+	QSPI_VENDOR_ATMEL	= 0x8,
+	QSPI_VENDOR_MACRONIX	= 0x10,
+	QSPI_VENDOR_WINBOND	= 0x20,
 } eQSPI_VENDOR;
 
 typedef enum {
-	QSPI_PAGE_4BYTES = 0x0,
-	QSPI_PAGE_8BYTES = 0x1,
-	QSPI_PAGE_16BYTES = 0x2,
-	QSPI_PAGE_32BYTES = 0x3,
-	QSPI_PAGE_64BYTES = 0x4,
-	QSPI_PAGE_128BYTES = 0x5,
-	QSPI_PAGE_256BYTES = 0x6,
+	QSPI_PAGE_4BYTES	= 0x0,
+	QSPI_PAGE_8BYTES	= 0x1,
+	QSPI_PAGE_16BYTES	= 0x2,
+	QSPI_PAGE_32BYTES	= 0x3,
+	QSPI_PAGE_64BYTES	= 0x4,
+	QSPI_PAGE_128BYTES	= 0x5,
+	QSPI_PAGE_256BYTES	= 0x6,
 } eQSPI_PAGE_SIZE;
 
 typedef struct _status_register_t {
@@ -152,8 +147,8 @@ typedef struct _status_register_t {
 		unsigned BP1: 1;
 		unsigned BP2: 1;
 		unsigned BP3: 1;
-		unsigned QE: 1;			//Quad enable
-		unsigned SRWD: 1;		//Status Register Write Disable
+		unsigned QE:  1;	/* Quad enable */
+		unsigned SRWD: 1;	/* Status Register Write Disable */
 	} b;
 } flash_status_register;
 
@@ -178,4 +173,4 @@ void s5j_qspi_take_sem(void);
 void s5j_qspi_release_sem(void);
 bool s5j_qspi_erase(unsigned int target_addr, unsigned int size);
 
-#endif							/* __ARCH_ARM_SRC_S5J_S5J_QSPI_H */
+#endif /* __ARCH_ARM_SRC_S5J_S5J_QSPI_H__ */

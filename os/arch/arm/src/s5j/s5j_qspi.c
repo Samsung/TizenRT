@@ -92,18 +92,21 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-
 static sem_t count_sem;
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void s5j_qspi_copy_4byte(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte)
+static void s5j_qspi_copy_4byte(unsigned int target_addr,
+		unsigned int source_addr, unsigned int sizebyte)
 {
 	unsigned int loopt;
 	unsigned int roundup;
@@ -123,29 +126,29 @@ static void s5j_qspi_copy_4byte(unsigned int target_addr, unsigned int source_ad
 	return;
 }
 
-static void s5j_qspi_copy_1byte(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte)
+static void s5j_qspi_copy_1byte(unsigned int target_addr,
+		unsigned int source_addr, unsigned int sizebyte)
 {
 	unsigned int loopt;
 	int i;
+
 	loopt = sizebyte;
 
 	for (i = 0; i < loopt; i++) {
 		Outp8(target_addr + (i), Inp8(source_addr + (i)));
 	}
-
-	return;
-
 }
 
 static void s5j_qspi_set_gpio(void)
 {
-	signed int gpio_sf_clk, gpio_sf_cs, gpio_sf_si, gpio_sf_so, gpio_sf_wp, gpio_sf_hld;
+	int gpio_sf_clk;
+	int gpio_sf_cs, gpio_sf_si, gpio_sf_so, gpio_sf_wp, gpio_sf_hld;
 
 	gpio_sf_clk = s5j_gpio(GPP1, 0);
-	gpio_sf_cs = s5j_gpio(GPP1, 1);
-	gpio_sf_si = s5j_gpio(GPP1, 2);
-	gpio_sf_so = s5j_gpio(GPP1, 3);
-	gpio_sf_wp = s5j_gpio(GPP1, 4);
+	gpio_sf_cs  = s5j_gpio(GPP1, 1);
+	gpio_sf_si  = s5j_gpio(GPP1, 2);
+	gpio_sf_so  = s5j_gpio(GPP1, 3);
+	gpio_sf_wp  = s5j_gpio(GPP1, 4);
 	gpio_sf_hld = s5j_gpio(GPP1, 5);
 
 	gpio_cfg_pin(gpio_sf_clk, GPIO_FUNC(2));
@@ -161,17 +164,14 @@ static void s5j_qspi_set_gpio(void)
 	gpio_set_pull(gpio_sf_so, GPIO_PULL_UP);
 	gpio_set_pull(gpio_sf_wp, GPIO_PULL_UP);
 	gpio_set_pull(gpio_sf_hld, GPIO_PULL_UP);
-
-	return;
 }
 
 /**
-*
-* @brief read status register from FLASH
-* @param void
-* @return void
-* @note
-*/
+ * @brief	read status register from FLASH
+ * @param	void
+ * @return	void
+ * @note
+ */
 static flash_status_register s5j_qspi_get_status_register(void)
 {
 	flash_status_register reg = { 0 };
@@ -182,9 +182,11 @@ static flash_status_register s5j_qspi_get_status_register(void)
 	return reg;
 }
 
-eERASE_UNIT s5j_qspi_get_eraseunit(unsigned int offset_start, unsigned int target)
+eERASE_UNIT s5j_qspi_get_eraseunit(unsigned int offset_start,
+		unsigned int target)
 {
 	unsigned int sizeleft;
+
 	sizeleft = target - offset_start;
 
 	if (offset_start == 0) {
@@ -199,11 +201,17 @@ eERASE_UNIT s5j_qspi_get_eraseunit(unsigned int offset_start, unsigned int targe
 		}
 	}
 
-	if ((offset_start / QSPI_SIZE_64KB) && (sizeleft >= QSPI_SIZE_64KB) && !(offset_start % QSPI_SIZE_64KB)) {
+	if ((offset_start / QSPI_SIZE_64KB) &&
+	    (sizeleft >= QSPI_SIZE_64KB) &&
+	    !(offset_start % QSPI_SIZE_64KB)) {
 		return TYPE_64KB;
-	} else if ((offset_start / QSPI_SIZE_32KB) && (sizeleft >= QSPI_SIZE_32KB) && !(offset_start % QSPI_SIZE_32KB)) {
+	} else if ((offset_start / QSPI_SIZE_32KB) &&
+		   (sizeleft >= QSPI_SIZE_32KB) &&
+		   !(offset_start % QSPI_SIZE_32KB)) {
 		return TYPE_32KB;
-	} else if ((offset_start / QSPI_SIZE_4KB) && (sizeleft >= QSPI_SIZE_4KB) && !(offset_start % QSPI_SIZE_4KB)) {
+	} else if ((offset_start / QSPI_SIZE_4KB) &&
+		   (sizeleft >= QSPI_SIZE_4KB) &&
+		   !(offset_start % QSPI_SIZE_4KB)) {
 		return TYPE_4KB;
 	} else {
 		return TYPE_ERR;
@@ -216,10 +224,12 @@ static void s5j_qspi_sector_erase(unsigned int target_addr)
 
 	Outp8(rSE, QSPI_DUMMY_DATA);
 
-	arch_invalidate_dcache(target_addr + CONFIG_S5J_FLASH_BASE, (target_addr + CONFIG_S5J_FLASH_BASE + QSPI_SIZE_4KB));
+	arch_invalidate_dcache(target_addr + CONFIG_S5J_FLASH_BASE,
+			(target_addr + CONFIG_S5J_FLASH_BASE + QSPI_SIZE_4KB));
 }
 
-static void s5j_qspi_block_erase(unsigned int target_addr, eQSPI_BLOCK_SIZE unit)
+static void s5j_qspi_block_erase(unsigned int target_addr,
+		eQSPI_BLOCK_SIZE unit)
 {
 	unsigned int block_erasesize = 0;
 
@@ -235,7 +245,8 @@ static void s5j_qspi_block_erase(unsigned int target_addr, eQSPI_BLOCK_SIZE unit
 
 	Outp8(rBE, QSPI_DUMMY_DATA);
 
-	arch_invalidate_dcache(target_addr + CONFIG_S5J_FLASH_BASE, (target_addr + CONFIG_S5J_FLASH_BASE + block_erasesize));
+	arch_invalidate_dcache(target_addr + CONFIG_S5J_FLASH_BASE,
+		(target_addr + CONFIG_S5J_FLASH_BASE + block_erasesize));
 }
 
 static void s5j_qspi_chip_erase(void)
@@ -247,12 +258,10 @@ static void s5j_qspi_chip_erase(void)
  * Public Functions
  ****************************************************************************/
 /**
-*
-* @brief disable write protection of FLASH
-* @param void
-* @return void
-* @note
-	writable when wp is disabled
+ * @brief	disable write protection of FLASH
+ * @param	void
+ * @return	void
+ * @note	writable when wp is disabled
 */
 void s5j_qspi_disable_wp(void)
 {
@@ -263,7 +272,6 @@ void s5j_qspi_disable_wp(void)
 	}
 
 	/* someone has been disabled wp, we should wait until it's released */
-
 	do {
 		reg = (HW_REG32(0x80310000, 0x04) & ~(0x1 << 31)) >> 31;
 	} while (reg);
@@ -273,12 +281,11 @@ void s5j_qspi_disable_wp(void)
 }
 
 /**
-*
-* @brief enable write protection of FLASH
-* @param void
-* @return void
-* @note
-*/
+ * @brief	enable write protection of FLASH
+ * @param	void
+ * @return	void
+ * @note
+ */
 void s5j_qspi_enable_wp(void)
 {
 	HW_REG32(0x80310000, 0x04) &= ~(0x1 << 31);
@@ -286,12 +293,11 @@ void s5j_qspi_enable_wp(void)
 }
 
 /**
-*
-* @brief semaphore for FLASH access transaction
-* @param void
-* @return void
-* @note
-*/
+ * @brief	semaphore for FLASH access transaction
+ * @param	void
+ * @return	void
+ * @note
+ */
 void s5j_qspi_take_sem(void)
 {
 	while (sem_wait(&count_sem) != OK) {
@@ -300,27 +306,24 @@ void s5j_qspi_take_sem(void)
 }
 
 /**
-*
-* @brief semaphore for FLASH access transaction
-* @param void
-* @return void
-* @note
-*/
+ * @brief	semaphore for FLASH access transaction
+ * @param	void
+ * @return	void
+ * @note
+ */
 void s5j_qspi_release_sem(void)
 {
 	sem_post(&count_sem);
 }
 
 /**
-*
-* @brief erase FLASH depending on size
-* @param
-*	target_addr	- address to be erased
-*	size		- size to be erased, this should align with 4Kbytes
-* @return void
-* @note
-*/
-
+ * @brief erase FLASH depending on size
+ * @param
+ *	target_addr	- address to be erased
+ *	size		- size to be erased, this should align with 4Kbytes
+ * @return void
+ * @note
+ */
 bool s5j_qspi_erase(unsigned int target_addr, unsigned int size)
 {
 	unsigned int temp = 0;
@@ -334,7 +337,8 @@ bool s5j_qspi_erase(unsigned int target_addr, unsigned int size)
 	if (temp) {
 		return false;
 	}
-	//Check address alignment
+
+	/* Check address alignment */
 	if ((size % QSPI_SIZE_4KB) != 0) {
 		return false;
 	}
@@ -342,7 +346,8 @@ bool s5j_qspi_erase(unsigned int target_addr, unsigned int size)
 	if (size < QSPI_SIZE_4KB) {
 		return false;
 	}
-	//Erase Offset
+
+	/* Erase Offset */
 	temp = target_addr;
 	target = temp + size;
 
@@ -374,25 +379,26 @@ bool s5j_qspi_erase(unsigned int target_addr, unsigned int size)
 }
 
 /**
-*
-* @brief initialize FLASH for QUAD IO in 80Mhz
-* @param void
-* @return void
-* @note
-*/
+ * @brief	initialize FLASH for QUAD IO in 80Mhz
+ * @param	void
+ * @return	void
+ * @note
+ */
 void s5j_qspi_init(void)
 {
 	/* Set mix i/o to be FLASH signal, CLK/CS/SI/SO/WP/HOLD */
 	s5j_qspi_set_gpio();
 
 	HW_REG32(0x80310000, 0x04) = 0x8010001A;	/* disable WP */
-	HW_REG32(0x80310000, 0x78) = 0x8;	/* FLASH_IO_MODE */
-	HW_REG32(0x80310000, 0x74) = 0x4;	/* QUAD */
+	HW_REG32(0x80310000, 0x78) = 0x8;		/* FLASH_IO_MODE */
+	HW_REG32(0x80310000, 0x74) = 0x4;		/* QUAD */
 
-	while (!(HW_REG8(0x80310000, 0xDC) & (0x1 << 6))) ;	/* Check FLASH has Quad Enabled */
+	/* Check FLASH has Quad Enabled */
+	while (!(HW_REG8(0x80310000, 0xDC) & (0x1 << 6)));
 	lldbg("FLASH Quad Enabled\n");
 
 	s5j_qspi_get_status_register();
+
 	HW_REG32(0x80310000, 0x04) = 0x0010001A;	/* Enable WP */
 
 	/* Set FLASH clk 80Mhz for Max performance */
