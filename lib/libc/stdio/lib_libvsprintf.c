@@ -1090,9 +1090,7 @@ int lib_vsprintf(FAR struct lib_outstream_s *obj, FAR const char *src, va_list a
 	FAR char *ptmp;
 #ifndef CONFIG_NOPRINTF_FIELDWIDTH
 	int width;
-#ifdef CONFIG_LIBC_FLOATINGPOINT
 	int trunc;
-#endif
 	uint8_t fmt;
 #endif
 	uint8_t flags;
@@ -1132,9 +1130,7 @@ int lib_vsprintf(FAR struct lib_outstream_s *obj, FAR const char *src, va_list a
 #ifndef CONFIG_NOPRINTF_FIELDWIDTH
 		fmt = FMT_RJUST;
 		width = 0;
-#ifdef CONFIG_LIBC_FLOATINGPOINT
 		trunc = 0;
-#endif
 #endif
 
 		/* Process each format qualifier. */
@@ -1175,10 +1171,8 @@ int lib_vsprintf(FAR struct lib_outstream_s *obj, FAR const char *src, va_list a
 #ifndef CONFIG_NOPRINTF_FIELDWIDTH
 				int value = va_arg(ap, int);
 				if (IS_HASDOT(flags)) {
-#ifdef CONFIG_LIBC_FLOATINGPOINT
 					trunc = value;
 					SET_HASASTERISKTRUNC(flags);
-#endif
 				} else {
 					width = value;
 					SET_HASASTERISKWIDTH(flags);
@@ -1207,9 +1201,7 @@ int lib_vsprintf(FAR struct lib_outstream_s *obj, FAR const char *src, va_list a
 				}
 
 				if (IS_HASDOT(flags)) {
-#ifdef CONFIG_LIBC_FLOATINGPOINT
 					trunc = n;
-#endif
 				} else {
 					width = n;
 				}
@@ -1254,6 +1246,7 @@ int lib_vsprintf(FAR struct lib_outstream_s *obj, FAR const char *src, va_list a
 		if (FMT_CHAR == 's') {
 #ifndef CONFIG_NOPRINTF_FIELDWIDTH
 			int swidth;
+			int left;
 #endif
 			/* Get the string to output */
 
@@ -1267,12 +1260,18 @@ int lib_vsprintf(FAR struct lib_outstream_s *obj, FAR const char *src, va_list a
 			 */
 
 #ifndef CONFIG_NOPRINTF_FIELDWIDTH
-			swidth = strlen(ptmp);
+			swidth = IS_HASASTERISKTRUNC(flags) ? strnlen(ptmp, trunc) : strlen(ptmp);
 			prejustify(obj, fmt, 0, width, swidth);
+			left = swidth;
 #endif
 			/* Concatenate the string into the output */
 
 			while (*ptmp) {
+#ifndef CONFIG_NOPRINTF_FIELDWIDTH
+				if (left-- <= 0) {
+					break;
+				}
+#endif
 				obj->put(obj, *ptmp);
 				ptmp++;
 			}
