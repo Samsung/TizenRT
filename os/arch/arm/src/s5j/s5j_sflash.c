@@ -109,9 +109,6 @@ struct s5j_sflash_dev_s {
 	void *priv;
 };
 
-/* this ptr can be used in nsh_cmd */
-FAR struct s5j_sflash_dev_s *sflashdev = NULL;
-
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -161,6 +158,14 @@ static FAR const struct spi_ops_s s5j_spi_ops = {
 	.recvblock	= s5j_sflash_recvblock,
 #endif
 	.registercallback = NULL
+};
+
+static struct s5j_sflash_dev_s sflashdev = {
+	.spi_dev = {
+		.ops = &s5j_spi_ops,
+	},
+	.sem_excl	= SEM_INITIALIZER(1),
+	.priv		= NULL,
 };
 
 /****************************************************************************
@@ -255,7 +260,7 @@ static int s5j_sflash_erase(struct s5j_sflash_dev_s *dev, uint8_t cmd,
 #ifdef S5J_SFLASH_USE_DIRECT_RW
 	/* debug code */
 	if (dev == NULL) {
-		dev = sflashdev;
+		dev = &sflashdev;
 	}
 #endif
 
@@ -389,7 +394,7 @@ static int s5j_sflash_read(struct s5j_sflash_dev_s *dev, uint32_t addr,
 	/* debug code */
 
 	if (dev == NULL) {
-		dev = sflashdev;
+		dev = &sflashdev;
 	}
 #endif
 
@@ -449,7 +454,7 @@ static int s5j_sflash_write(struct s5j_sflash_dev_s *dev, uint32_t addr,
 	/* debug code */
 
 	if (dev == NULL) {
-		dev = sflashdev;
+		dev = &sflashdev;
 	}
 #endif
 
@@ -790,19 +795,11 @@ static void s5j_sflash_recvblock(FAR struct spi_dev_s *spidev,
  ****************************************************************************/
 FAR struct spi_dev_s *up_spiflashinitialize(void)
 {
-	if (sflashdev == NULL) {
-		sflashdev = kmm_malloc(sizeof(struct s5j_sflash_dev_s));
-		if (!sflashdev) {
-			return NULL;
-		}
+	s5j_sflash_init(&sflashdev);
 
-		sflashdev->spi_dev.ops = &s5j_spi_ops;
+	sflashdev.priv = NULL;
 
-		s5j_sflash_init(sflashdev);
-		sflashdev->priv = NULL;
-	}
-
-	return (FAR struct spi_dev_s *)sflashdev;
+	return (FAR struct spi_dev_s *)&sflashdev;
 }
 
 /****************************************************************************
@@ -821,7 +818,7 @@ FAR struct spi_dev_s *up_spiflashinitialize(void)
  ****************************************************************************/
 int up_spiflashinitialized(void)
 {
-	if (sflashdev->priv) {
+	if (sflashdev.priv) {
 		return 1;
 	}
 
@@ -843,7 +840,7 @@ int up_spiflashinitialized(void)
  ****************************************************************************/
 void update_spiflashmtd(struct mtd_dev_s *mtd)
 {
-	sflashdev->priv = mtd;
+	sflashdev.priv = mtd;
 }
 
 /****************************************************************************
@@ -861,5 +858,5 @@ void update_spiflashmtd(struct mtd_dev_s *mtd)
  ****************************************************************************/
 struct mtd_dev_s *getspiflashmtd(void)
 {
-	return (struct mtd_dev_s *)sflashdev->priv;
+	return (struct mtd_dev_s *)sflashdev.priv;
 }
