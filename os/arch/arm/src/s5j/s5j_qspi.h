@@ -153,24 +153,10 @@ typedef struct _status_register_t {
 } flash_status_register;
 
 /****************************************************************************
- * Private Functions
- ****************************************************************************/
-static void s5j_qspi_copy_4byte(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
-static void s5j_qspi_copy_1byte(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
-static void s5j_qspi_set_gpio(void);
-static flash_status_register s5j_qspi_get_status_register(void);
-eERASE_UNIT s5j_qspi_get_eraseunit(unsigned int offset_start, unsigned int target);
-static void s5j_qspi_sector_erase(unsigned int target_addr);
-static void s5j_qspi_block_erase(unsigned int target_addr, eQSPI_BLOCK_SIZE unit);
-static void s5j_qspi_chip_erase(void);
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 void s5j_qspi_disable_wp(void);
 void s5j_qspi_enable_wp(void);
-void s5j_qspi_take_sem(void);
-void s5j_qspi_release_sem(void);
 bool s5j_qspi_erase(unsigned int target_addr, unsigned int size);
 
 #endif /* __ARCH_ARM_SRC_S5J_S5J_QSPI_H__ */

@@ -105,40 +105,6 @@ static sem_t count_sem;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void s5j_qspi_copy_4byte(unsigned int target_addr,
-		unsigned int source_addr, unsigned int sizebyte)
-{
-	unsigned int loopt;
-	unsigned int roundup;
-	int i;
-
-	roundup = sizebyte % 4;
-	if (roundup) {
-		sizebyte += (4 - roundup);
-	}
-
-	loopt = sizebyte / 4;
-
-	for (i = 0; i < loopt; i++) {
-		Outp32(target_addr + (4 * i), Inp32(source_addr + (4 * i)));
-	}
-
-	return;
-}
-
-static void s5j_qspi_copy_1byte(unsigned int target_addr,
-		unsigned int source_addr, unsigned int sizebyte)
-{
-	unsigned int loopt;
-	int i;
-
-	loopt = sizebyte;
-
-	for (i = 0; i < loopt; i++) {
-		Outp8(target_addr + (i), Inp8(source_addr + (i)));
-	}
-}
-
 static void s5j_qspi_set_gpio(void)
 {
 	int gpio_sf_clk;
@@ -166,23 +132,7 @@ static void s5j_qspi_set_gpio(void)
 	gpio_set_pull(gpio_sf_hld, GPIO_PULL_UP);
 }
 
-/**
- * @brief	read status register from FLASH
- * @param	void
- * @return	void
- * @note
- */
-static flash_status_register s5j_qspi_get_status_register(void)
-{
-	flash_status_register reg = { 0 };
-	reg.rdsr = Inp8(rRDSR);
-
-	lldbg("0x%x\n", reg.rdsr);
-
-	return reg;
-}
-
-eERASE_UNIT s5j_qspi_get_eraseunit(unsigned int offset_start,
+static eERASE_UNIT s5j_qspi_get_eraseunit(unsigned int offset_start,
 		unsigned int target)
 {
 	unsigned int sizeleft;
@@ -249,11 +199,6 @@ static void s5j_qspi_block_erase(unsigned int target_addr,
 		(target_addr + CONFIG_S5J_FLASH_BASE + block_erasesize));
 }
 
-static void s5j_qspi_chip_erase(void)
-{
-	Outp8(rCE, QSPI_DUMMY_DATA);
-}
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -289,30 +234,6 @@ void s5j_qspi_disable_wp(void)
 void s5j_qspi_enable_wp(void)
 {
 	HW_REG32(0x80310000, 0x04) &= ~(0x1 << 31);
-	sem_post(&count_sem);
-}
-
-/**
- * @brief	semaphore for FLASH access transaction
- * @param	void
- * @return	void
- * @note
- */
-void s5j_qspi_take_sem(void)
-{
-	while (sem_wait(&count_sem) != OK) {
-		ASSERT(errno == EINTR);
-	}
-}
-
-/**
- * @brief	semaphore for FLASH access transaction
- * @param	void
- * @return	void
- * @note
- */
-void s5j_qspi_release_sem(void)
-{
 	sem_post(&count_sem);
 }
 
