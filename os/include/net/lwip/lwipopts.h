@@ -233,14 +233,6 @@ a lot of data that needs to be copied, this should be set high. */
 
 #define LWIP_RAW                        1
 
-#if defined(CONFIG_ARCH_BOARD_SIDK_S5JT200) || defined(CONFIG_ARCH_BOARD_SMDK_S5E7570)
-#define LWIP_HAVE_SLIPIF 1
-
-#define SLIPIF_THREAD_STACKSIZE        (1024*4)
-#define SLIPIF_THREAD_PRIO     100
-
-#endif
-
 /*
    -----------------------------------
    ---------- DEBUG options ----------
