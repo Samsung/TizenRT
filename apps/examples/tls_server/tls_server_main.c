@@ -138,6 +138,7 @@ struct pthread_arg {
 #define DFL_BADMAC_LIMIT        -1
 #define DFL_EXTENDED_MS         -1
 #define DFL_ETM                 -1
+#define DFL_RETRY               1
 
 #define LONG_RESPONSE "<p>01-blah-blah-blah-blah-blah-blah-blah-blah-blah\r\n" \
 	"02-blah-blah-blah-blah-blah-blah-blah-blah-blah-blah-blah-blah-blah\r\n"  \
@@ -401,6 +402,7 @@ struct options {
 	uint32_t hs_to_min;         /* Initial value of DTLS handshake timer    */
 	uint32_t hs_to_max;         /* Max value of DTLS handshake timer        */
 	int badmac_limit;           /* Limit of records with bad MAC            */
+	int retry;                  /* Server retry count                       */
 } opt;
 
 static void my_debug(void *ctx, int level,
@@ -857,7 +859,6 @@ int tls_server_cb(void *args)
 #endif
 
 	int i;
-	int ots;
 	char *p;
 	char *q;
 	const int *list;
@@ -865,7 +866,6 @@ int tls_server_cb(void *args)
 	argc = ((struct pthread_arg *)args)->argc;
 	argv = ((struct pthread_arg *)args)->argv;
 
-	ots = (argc == 1 ? argc : 0xFFFF);
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 	mbedtls_memory_buffer_alloc_init(alloc_buf, sizeof(alloc_buf));
 #endif
@@ -967,6 +967,7 @@ usage:
 	opt.badmac_limit        = DFL_BADMAC_LIMIT;
 	opt.extended_ms         = DFL_EXTENDED_MS;
 	opt.etm                 = DFL_ETM;
+	opt.retry               = DFL_RETRY;
 
 	for (i = 1; i < argc; i++) {
 		p = argv[i];
@@ -1227,6 +1228,8 @@ usage:
 			}
 		} else if (strcmp(p, "sni") == 0) {
 			opt.sni = q;
+		} else if (strcmp(p, "retry") == 0) {
+			opt.retry = atoi(q);
 		} else {
 			goto usage;
 		}
@@ -1796,6 +1799,10 @@ usage:
 	mbedtls_printf(" ok\n");
 
 reset:
+	if(!(opt.retry--)) {
+		goto exit;
+	}
+
 #if !defined(_WIN32)
 	if (received_sigterm) {
 		mbedtls_printf(" interrupted by SIGTERM\n");
@@ -1896,6 +1903,7 @@ handshake:
 	if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
 		mbedtls_printf(" hello verification requested\n");
 		ret = 0;
+		opt.retry++;
 		goto reset;
 	} else if (ret != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_ssl_handshake returned -0x%x\n\n", -ret);
@@ -1910,9 +1918,6 @@ handshake:
 			mbedtls_printf("%s\n", vrfy_buf);
 		}
 #endif
-		if (ots == 1) {
-			goto exit;
-		}
 		goto reset;
 	} else { /* ret == 0 */
 		mbedtls_printf(" ok\n    [ Protocol is %s ]\n    [ Ciphersuite is %s ]\n",
@@ -2003,17 +2008,11 @@ data_exchange:
 				case MBEDTLS_ERR_NET_CONN_RESET:
 					mbedtls_printf(" connection was reset by peer\n");
 					ret = MBEDTLS_ERR_NET_CONN_RESET;
-					if (ots != 1) {
-						goto reset;
-					}
-					goto exit;
+					goto reset;
 
 				default:
 					mbedtls_printf(" mbedtls_ssl_read returned -0x%x\n", -ret);
-					if (ots != 1) {
-						goto reset;
-					}
-					goto exit;
+					goto reset;
 				}
 			}
 
@@ -2039,10 +2038,7 @@ data_exchange:
 				if (larger_buf == NULL) {
 					mbedtls_printf("  ! memory allocation failed\n");
 					ret = 1;
-					if (ots != 1) {
-						goto reset;
-					}
-					goto exit;
+					goto reset;
 				}
 
 				memset(larger_buf, 0, ori_len + extra_len);
@@ -2054,9 +2050,7 @@ data_exchange:
 					mbedtls_ssl_get_bytes_avail(&ssl) != 0) {
 					mbedtls_printf("  ! mbedtls_ssl_read failed on cached data\n");
 					ret = 1;
-					if (ots != 1) {
-						goto reset;
-					}
+					goto reset;
 				}
 
 				larger_buf[ori_len + extra_len] = '\0';
@@ -2095,9 +2089,7 @@ data_exchange:
 
 			default:
 				mbedtls_printf(" mbedtls_ssl_read returned -0x%x\n", -ret);
-				if (ots != 1) {
-					goto reset;
-				}
+				goto reset;
 			}
 		}
 
@@ -2120,9 +2112,7 @@ data_exchange:
 			if (ret != MBEDTLS_ERR_SSL_WANT_READ &&
 				ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
 				mbedtls_printf(" failed\n  ! mbedtls_ssl_renegotiate returned %d\n\n", ret);
-				if (ots != 1) {
-					goto reset;
-				}
+				goto reset;
 			}
 		}
 
@@ -2145,17 +2135,13 @@ data_exchange:
 				   <= 0) {
 				if (ret == MBEDTLS_ERR_NET_CONN_RESET) {
 					mbedtls_printf(" failed\n  ! peer closed the connection\n\n");
-					if (ots != 1) {
-						goto reset;
-					}
+					goto reset;
 				}
 
 				if (ret != MBEDTLS_ERR_SSL_WANT_READ &&
 					ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
 					mbedtls_printf(" failed\n  ! mbedtls_ssl_write returned %d\n\n", ret);
-					if (ots != 1) {
-						goto reset;
-					}
+					goto reset;
 				}
 			}
 		}
@@ -2167,9 +2153,7 @@ data_exchange:
 
 		if (ret < 0) {
 			mbedtls_printf(" failed\n  ! mbedtls_ssl_write returned %d\n\n", ret);
-			if (ots != 1) {
-				goto reset;
-			}
+			goto reset;
 		}
 
 		frags = 1;
@@ -2202,9 +2186,7 @@ close_notify:
 
 	mbedtls_printf(" done\n");
 
-	if (--ots) {
-		goto reset;
-	}
+	goto reset;
 
 	/*
 	 * Cleanup and exit
