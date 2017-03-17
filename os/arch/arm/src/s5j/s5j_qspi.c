@@ -397,8 +397,6 @@ void s5j_qspi_init(void)
 	while (!(HW_REG8(0x80310000, 0xDC) & (0x1 << 6)));
 	lldbg("FLASH Quad Enabled\n");
 
-	s5j_qspi_get_status_register();
-
 	HW_REG32(0x80310000, 0x04) = 0x0010001A;	/* Enable WP */
 
 	/* Set FLASH clk 80Mhz for Max performance */
