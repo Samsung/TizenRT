@@ -99,7 +99,7 @@ FAR int up_setup_regions(FAR struct tcb_s *tcb, uint8_t ttype)
 
 	/* Allocate regions for the user requested configurations */
 	for (idx = 0; idx < MPU_TOTAL_USER_REG; idx++) {
-		offset = REG_USR_CFG1 + idx * 4;
+		offset = REG_USR_CFG + idx * 4;
 		regs[offset] = idx + 2;	/* start of user configuration till stack region */
 		regs[offset + 1] = 0;
 		regs[offset + 2] = 0;
@@ -135,7 +135,7 @@ FAR int up_setup_regions(FAR struct tcb_s *tcb, uint8_t ttype)
 
 		/* Allocate regions for the user requested configurations */
 		for (idx = 0; idx < MPU_TOTAL_USER_REG - 1; idx++) {
-			offset = REG_USR_CFG0 - idx * 4;
+			offset = REG_USR_CFG - idx * 4;
 			if (regn[idx].size >= 32) {
 				regs[offset] = (MPU_REG_USER_CONFIG0 - idx);
 				regs[offset + 1] = ((uint32_t)regn[idx].address & MPU_RBAR_ADDR_MASK);

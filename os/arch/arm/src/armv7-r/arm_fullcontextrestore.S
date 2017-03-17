@@ -103,6 +103,25 @@
 
 up_fullcontextrestore:
 
+#ifdef CONFIG_MPU_STACKGUARD
+	mov 	r5, #MPU_REG_STK_GUARD
+	mcr     p15, 0, r5, c6, c2, 0
+	add     r6,  r0, #(4*REG_RNUM_STKGUARD)
+	str     r5, [r6]
+	mcr 	p15, 0, r6, c6, c1, 2
+
+	add     r6, r0, #(4*REG_RBASE_STKGUARD)
+	ldr     r2, [r6]
+	mcr 	p15, 0, r2, c6, c1, 0
+
+	add     r6, r0, #(4*REG_RSIZE_STKGUARD)
+	ldr     r2, [r6]
+	mcr 	p15, 0, r2, c6, c1, 2
+
+	add     r6, r0, #(4*REG_RATTR_STKGUARD)
+	ldr     r2, [r6]
+	mcr 	p15, 0, r2, c6, c1, 4
+#endif
 	/* On entry, a1 (r0) holds address of the register save area.  All other
 	 * registers are available for use.
 	 */

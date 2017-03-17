@@ -73,6 +73,13 @@ int hello_main(int argc, char *argv[])
 	int i;
 
 	printf("This Hello World msg will be printed third every 20 seconds\n");
+#ifdef CONFIG_MPU_STACKGUARD
+#ifdef CONFIG_BUILD_KERNEL
+	main(NULL, NULL);
+#else
+	hello_main(NULL, NULL);
+#endif
+#endif
 	for (i = 0; i < 3; i++) {
 		printf("Hello, World!!\n");
 		sleep(PRINT_INTERVAL_SECS);

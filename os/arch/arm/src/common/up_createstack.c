@@ -185,6 +185,12 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 			tcb->stack_alloc_ptr = (uint32_t *)kumm_memalign(stack_size, stack_size);
 		}
 
+#ifdef CONFIG_MPU_STACKGUARD
+    /* stack guard region overlaps with the task stack's 32 bytes at the end */
+		tcb->stack_guard = (uint32_t *)tcb->stack_alloc_ptr;	
+		tcb->guard_size = 32;
+#endif
+
 #ifdef CONFIG_DEBUG
 		/* Was the allocation successful? */
 
@@ -226,8 +232,13 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		/* Save the adjusted stack values in the struct tcb_s */
 
 		tcb->adj_stack_ptr = (uint32_t *)top_of_stack;
+#ifdef CONFIG_MPU_STACKGUARD
+               /* reduced stack size to accomodate the gaurd region */
+		tcb->adj_stack_size = size_of_stack - tcb->guard_size;
+#else
 		tcb->adj_stack_size = size_of_stack;
-
+#endif
+		
 		/* If stack debug is enabled, then fill the stack with a
 		 * recognizable value that we can use later to test for high
 		 * water marks.

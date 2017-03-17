@@ -60,10 +60,12 @@
 #include <string.h>
 
 #include <tinyara/arch.h>
+#include <arch/irq.h>
 
 #include "arm.h"
 #include "up_internal.h"
 #include "up_arch.h"
+#include "mpu.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -95,6 +97,25 @@
  *
  ****************************************************************************/
 
+FAR int up_setup_guard_region(FAR struct tcb_s *tcb, uint8_t ttype)
+{
+  FAR struct pthread_tcb_s *ptcb;
+  uint32_t idx;
+  uint32_t *regs = tcb->xcp.regs;
+  uint32_t  offset = 0;
+
+  if(!tcb->stack_alloc_ptr)
+      return OK;
+
+#ifdef CONFIG_MPU_STACKGUARD
+      regs[REG_RNUM_STKGUARD]  =  MPU_REG_STK_GUARD;
+      regs[REG_RBASE_STKGUARD] = ((uint32_t)tcb->stack_alloc_ptr & MPU_RBAR_ADDR_MASK);
+      regs[REG_RSIZE_STKGUARD] = MPU_RASR_RSIZE_LOG2(mpu_log2regionceil(tcb->guard_size)) | MPU_RASR_ENABLE;
+      regs[REG_RATTR_STKGUARD] = MPU_RACR_B | MPU_RACR_TEX(5) | MPU_RACR_AP_RONO | MPU_RACR_XN;
+#endif
+  return OK;
+}
+
 void up_initial_state(struct tcb_s *tcb)
 {
 	struct xcptcontext *xcp = &tcb->xcp;
@@ -111,6 +132,10 @@ void up_initial_state(struct tcb_s *tcb)
 	/* Save the task entry point */
 
 	xcp->regs[REG_PC] = (uint32_t)tcb->start;
+
+#ifdef CONFIG_MPU_STACKGUARD
+	up_setup_guard_region(tcb, tcb->flags);
+#endif
 
 #if defined(CONFIG_BUILD_PROTECTED)
 	up_setup_regions(tcb, tcb->flags);
