@@ -22,4 +22,41 @@ config SIDK_S5JT200_FLASH_PAGE_SIZE
 		on the SIDK S5JT200 evaluation board. It can be the
 		size of erase unit flash memory supports.
 
+config SIDK_S5JT200_FLASH_MINOR
+	int "Minor number for the FLASH /dev/smart entry"
+	default 0
+	depends on S5J_SFLASH
+	---help---
+		Sets the minor number for /dev node of the external flash
+		device.
+
+config SIDK_S5JT200_FLASH_PART
+	bool "Enable partition support on FLASH"
+	default n
+	depends on S5J_SFLASH
+	---help---
+		Enables creation of partitions on the FLASH
+
+config SIDK_S5JT200_FLASH_PART_LIST
+	string "Flash partition size list (in KBytes)"
+	default "8192,"
+	depends on SIDK_S5JT200_FLASH_PART
+	---help---
+		Comma separated list of partition sizes in KB.
+
+config SIDK_S5JT200_FLASH_PART_TYPE
+	string "Flash partition type list"
+	default "none,"
+	---help---
+		Comma separated list of partition types that can be
+		one of followings: none, smartfs
+
+config SIDK_S5JT200_FLASH_PART_NAME
+	string "FLash partition name list"
+	default "mx25,"
+	depends on SIDK_S5JT200_FLASH_PART
+	depends on MTD_PARTITION_NAMES
+	---help---
+		Comma separated list of partition names.
+
 endif
