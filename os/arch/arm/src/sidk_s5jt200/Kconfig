@@ -4,4 +4,22 @@
 #
 
 if ARCH_BOARD_SIDK_S5JT200
+
+config SIDK_S5JT200_FLASH_CAPACITY
+	int "Size of external flash memory (in bytes)"
+	default 8388608
+	depends on S5J_SFLASH
+	---help---
+		Sets the capacity of the external flash memory
+		on the SIDK S5JT200 evaluation board.
+
+config SIDK_S5JT200_FLASH_PAGE_SIZE
+	int "Page size of external flash memory (in bytes)"
+	default 4096
+	depends on S5J_SFLASH
+	---help---
+		Sets the page size of the external flash memory
+		on the SIDK S5JT200 evaluation board. It can be the
+		size of erase unit flash memory supports.
+
 endif
