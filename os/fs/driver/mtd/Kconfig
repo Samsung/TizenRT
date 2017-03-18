@@ -51,6 +51,14 @@ config MTD_PARTITION_NAMES
 		file system interface.  This adds an API which must be called to
 		specify the partition name.
 
+config MTD_PROGMEM
+	bool "Enable on-chip program FLASH MTD device"
+	default n
+	---help---
+		Enable to support an MTD device that supports the on-chip
+		FLASH using the interfaces defined in include/tinyara/progmem.
+		Those interfaces must be exported by chip-specific logic.
+
 config MTD_CONFIG
 	bool "Enable Dev Config (MTD based) device"
 	default n
