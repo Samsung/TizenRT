@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics Co., LTD. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/s5j/s5j_nvram.h
+ * arch/arm/src/sidk_s5jt200/sidk200_nvram.c
  *
- *   Copyright (C) 2009, 2014 Gregory Nutt. All rights reserved.
- *   Author:
+ *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,7 +31,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
+ * 3. Neither the name tinyara nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -49,19 +49,79 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-#ifndef __ARCH_ARM_SRC_S5J_S5J_NVRAM_H
-#define __ARCH_ARM_SRC_S5J_S5J_NVRAM_H
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
+#include <tinyara/config.h>
+
+#include <fcntl.h>
+#include <stdbool.h>
+#include <debug.h>
+
+#include <tinyara/configdata.h>
+
+#include "sidk_s5jt200.h"
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-unsigned int Nv_Write(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
-unsigned int Nv_Read(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
-unsigned int Nv_Erase(unsigned int target_addr, unsigned int sizebyte);
-unsigned int s5j_nvram_write(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
-unsigned int s5j_nvram_read(unsigned int target_addr, unsigned int source_addr, unsigned int sizebyte);
-unsigned int s5j_nvram_erase(unsigned int target_addr, unsigned int sizebyte);
-#endif							/* __ARCH_ARM_SRC_S5J_S5J_NVRAM_H */
+unsigned int Nv_Write(unsigned int target_addr, unsigned int source_addr,
+		unsigned int sizebyte)
+{
+#if defined(CONFIG_MTD_CONFIG)
+	int fd;
+	struct config_data_s config;
+
+	fd = open("/dev/config", O_RDOK);
+	if (fd < 0) {
+		lldbg("Failed to open /dev/config\n");
+		return false;
+	}
+
+	config.id = SIDK_S5JT200_CONFIGDATA_WIFI_NVRAM;
+	config.instance = 0;
+	config.configdata = (unsigned char *)source_addr;
+	config.len = sizebyte;
+
+	ioctl(fd, CFGDIOC_SETCONFIG, &config);
+	close(fd);
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+unsigned int Nv_Read(unsigned int target_addr, unsigned int source_addr,
+		unsigned int sizebyte)
+{
+#if defined(CONFIG_MTD_CONFIG)
+	int fd;
+	struct config_data_s config;
+
+	fd = open("/dev/config", O_RDOK);
+	if (fd < 0) {
+		lldbg("Failed to open /dev/config\n");
+		return false;
+	}
+
+	config.id = SIDK_S5JT200_CONFIGDATA_WIFI_NVRAM;
+	config.instance = 0;
+	config.configdata = (unsigned char *)target_addr;
+	config.len = sizebyte;
+
+	ioctl(fd, CFGDIOC_GETCONFIG, &config);
+	close(fd);
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+unsigned int Nv_Erase(unsigned int target_addr, unsigned int sizebyte)
+{
+#if defined(CONFIG_MTD_CONFIG)
+	return true;
+#else
+	return false;
+#endif
+}
