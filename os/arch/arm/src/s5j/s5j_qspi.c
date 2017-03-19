@@ -63,8 +63,6 @@
 #include "chip.h"
 #include "up_arch.h"
 
-#include <semaphore.h>
-
 /****************************************************************************
  * Private Functions Prototypes
  ****************************************************************************/
@@ -80,7 +78,6 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-static sem_t count_sem;
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -133,10 +130,6 @@ void s5j_qspi_disable_wp(void)
 {
 	unsigned int reg;
 
-	while (sem_wait(&count_sem) != OK) {
-		ASSERT(errno == EINTR);
-	}
-
 	/* someone has been disabled wp, we should wait until it's released */
 	do {
 		reg = (HW_REG32(0x80310000, 0x04) & ~(0x1 << 31)) >> 31;
@@ -155,7 +148,6 @@ void s5j_qspi_disable_wp(void)
 void s5j_qspi_enable_wp(void)
 {
 	HW_REG32(0x80310000, 0x04) &= ~(0x1 << 31);
-	sem_post(&count_sem);
 }
 
 /**
@@ -181,6 +173,4 @@ void s5j_qspi_init(void)
 
 	/* Set FLASH clk 80Mhz for Max performance */
 	cal_clk_setrate(d1_serialflash, 80000000);
-
-	sem_init(&count_sem, 0, 1);
 }
