@@ -69,12 +69,6 @@ ifeq ($(CONFIG_NET), y)
 CSRCS += slip_if.c
 endif
 
-ifeq ($(CONFIG_WATCHDOG),y)
-ifeq ($(CONFIG_S5J_WATCHDOG),y)
-CSRCS += s5jt200_watchdog.c
-endif
-endif
-
 ifeq ($(CONFIG_MTD_PROGMEM),y)
 CSRCS += s5jt200_progmem.c
 endif
