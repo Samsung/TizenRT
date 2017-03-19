@@ -60,22 +60,10 @@
 #include <string.h>
 #include <errno.h>
 
-#include <tinyara/kmalloc.h>
-
-#include <arch/chip/irq.h>
-#include <tinyara/watchdog.h>
-#include <arch/chip/chip_types.h>
-
 #include "chip.h"
 #include "up_arch.h"
-#include "cache.h"
-#include "mpu.h"
 
-#include <tinyara/clock.h>
-#include <clock/clock.h>
-#include <pthread.h>
 #include <semaphore.h>
-#include <up_internal.h>
 
 /****************************************************************************
  * Private Functions Prototypes
@@ -132,73 +120,6 @@ static void s5j_qspi_set_gpio(void)
 	gpio_set_pull(gpio_sf_hld, GPIO_PULL_UP);
 }
 
-static eERASE_UNIT s5j_qspi_get_eraseunit(unsigned int offset_start,
-		unsigned int target)
-{
-	unsigned int sizeleft;
-
-	sizeleft = target - offset_start;
-
-	if (offset_start == 0) {
-		if (sizeleft >= QSPI_SIZE_64KB) {
-			return TYPE_64KB;
-		} else if (sizeleft >= QSPI_SIZE_32KB) {
-			return TYPE_32KB;
-		} else if (sizeleft >= QSPI_SIZE_4KB) {
-			return TYPE_4KB;
-		} else {
-			return TYPE_ERR;
-		}
-	}
-
-	if ((offset_start / QSPI_SIZE_64KB) &&
-	    (sizeleft >= QSPI_SIZE_64KB) &&
-	    !(offset_start % QSPI_SIZE_64KB)) {
-		return TYPE_64KB;
-	} else if ((offset_start / QSPI_SIZE_32KB) &&
-		   (sizeleft >= QSPI_SIZE_32KB) &&
-		   !(offset_start % QSPI_SIZE_32KB)) {
-		return TYPE_32KB;
-	} else if ((offset_start / QSPI_SIZE_4KB) &&
-		   (sizeleft >= QSPI_SIZE_4KB) &&
-		   !(offset_start % QSPI_SIZE_4KB)) {
-		return TYPE_4KB;
-	} else {
-		return TYPE_ERR;
-	}
-}
-
-static void s5j_qspi_sector_erase(unsigned int target_addr)
-{
-	Outp32(rERASE_ADDRESS, target_addr);
-
-	Outp8(rSE, QSPI_DUMMY_DATA);
-
-	arch_invalidate_dcache(target_addr + CONFIG_S5J_FLASH_BASE,
-			(target_addr + CONFIG_S5J_FLASH_BASE + QSPI_SIZE_4KB));
-}
-
-static void s5j_qspi_block_erase(unsigned int target_addr,
-		eQSPI_BLOCK_SIZE unit)
-{
-	unsigned int block_erasesize = 0;
-
-	if (unit == BLOCK_64KB) {
-		SetBits(rCOMMAND2, 16, 0xFF, COMMAND_ERASE_64KB);
-		block_erasesize = QSPI_SIZE_64KB;
-	} else {
-		SetBits(rCOMMAND2, 16, 0xFF, COMMAND_ERASE_32KB);
-		block_erasesize = QSPI_SIZE_32KB;
-	}
-
-	Outp32(rERASE_ADDRESS, target_addr);
-
-	Outp8(rBE, QSPI_DUMMY_DATA);
-
-	arch_invalidate_dcache(target_addr + CONFIG_S5J_FLASH_BASE,
-		(target_addr + CONFIG_S5J_FLASH_BASE + block_erasesize));
-}
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -235,68 +156,6 @@ void s5j_qspi_enable_wp(void)
 {
 	HW_REG32(0x80310000, 0x04) &= ~(0x1 << 31);
 	sem_post(&count_sem);
-}
-
-/**
- * @brief erase FLASH depending on size
- * @param
- *	target_addr	- address to be erased
- *	size		- size to be erased, this should align with 4Kbytes
- * @return void
- * @note
- */
-bool s5j_qspi_erase(unsigned int target_addr, unsigned int size)
-{
-	unsigned int temp = 0;
-	unsigned int target;
-
-	eERASE_UNIT type;
-
-	target_addr = target_addr - CONFIG_S5J_FLASH_BASE;
-
-	temp = target_addr % QSPI_SIZE_4KB;
-	if (temp) {
-		return false;
-	}
-
-	/* Check address alignment */
-	if ((size % QSPI_SIZE_4KB) != 0) {
-		return false;
-	}
-
-	if (size < QSPI_SIZE_4KB) {
-		return false;
-	}
-
-	/* Erase Offset */
-	temp = target_addr;
-	target = temp + size;
-
-	do {
-		type = s5j_qspi_get_eraseunit(temp, target);
-
-		switch (type) {
-		case TYPE_4KB:
-			s5j_qspi_sector_erase(temp);
-			temp += QSPI_SIZE_4KB;
-			continue;
-
-		case TYPE_32KB:
-			s5j_qspi_block_erase(temp, BLOCK_32KB);
-			temp += QSPI_SIZE_32KB;
-			continue;
-
-		case TYPE_64KB:
-			s5j_qspi_block_erase(temp, BLOCK_64KB);
-			temp += QSPI_SIZE_64KB;
-			continue;
-
-		default:
-			return false;
-		}
-	} while (temp < target);
-
-	return true;
 }
 
 /**

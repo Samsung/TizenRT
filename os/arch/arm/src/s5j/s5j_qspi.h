@@ -157,6 +157,5 @@ typedef struct _status_register_t {
  ****************************************************************************/
 void s5j_qspi_disable_wp(void);
 void s5j_qspi_enable_wp(void);
-bool s5j_qspi_erase(unsigned int target_addr, unsigned int size);
 
 #endif /* __ARCH_ARM_SRC_S5J_S5J_QSPI_H__ */
