@@ -66,7 +66,6 @@
 
 #include <tinyara/board.h>
 #include <arch/board/board.h>
-#include <arch/board/s5jt200_fota.h>
 #include <arch/board/s5jt200_partitions.h>
 
 #include <sys/mount.h>
@@ -85,13 +84,6 @@
 /****************************************************************************
  * Public Functions Prototypes
  ****************************************************************************/
-#if defined(CONFIG_BOARD_COREDUMP_FLASH) || defined(CONFIG_BOARD_RAMDUMP_FLASH)
-extern FAR struct spi_dev_s *up_spiflashinitialize(void);
-#endif
-
-#if defined(CONFIG_BOARD_COREDUMP_FLASH)
-extern void up_coredump_init(void);
-#endif
 
 /****************************************************************************
  * Private Data
@@ -442,14 +434,6 @@ void board_initialize(void)
 #ifdef CONFIG_SCSC_WLAN
 	slldbg("Initialize SCSC driver\n");
 	slsi_driver_initialize();
-#endif
-
-#if defined(CONFIG_BOARD_COREDUMP_FLASH) || defined(CONFIG_BOARD_RAMDUMP_FLASH)
-	up_spiflashinitialize();
-#endif
-
-#if defined(CONFIG_BOARD_COREDUMP_FLASH)
-	up_coredump_init();
 #endif
 }
 #endif /* CONFIG_BOARD_INITIALIZE */

@@ -75,10 +75,6 @@ CSRCS += s5jt200_watchdog.c
 endif
 endif
 
-ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
-CSRCS += s5jt200_crashdump.c
-endif
-
 ifeq ($(CONFIG_MTD_PROGMEM),y)
 CSRCS += s5jt200_progmem.c
 endif
