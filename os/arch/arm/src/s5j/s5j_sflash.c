@@ -122,20 +122,26 @@ static void s5j_sflash_set_gpio(void)
 #ifdef CONFIG_MTD_PROGMEM
 static void s5j_sflash_disable_wp(void)
 {
-	unsigned int reg;
+	unsigned int sfcon;
 
 	/* someone has been disabled wp, we should wait until it's released */
 	do {
-		reg = (HW_REG32(0x80310000, 0x04) & ~(0x1 << 31)) >> 31;
-	} while (reg);
+		sfcon = getreg32(rSF_CON);
+	} while (sfcon & (1 << 31));
 
-	HW_REG32(0x80310000, 0x04) &= ~(0x1 << 31);
-	HW_REG32(0x80310000, 0x04) |= (0x1 << 31);
+	sfcon = getreg32(rSF_CON) & ~(1 << 31);
+	putreg32(sfcon, rSF_CON);
+
+	sfcon = getreg32(rSF_CON) | (1 << 31);
+	putreg32(sfcon, rSF_CON);
 }
 
 static void s5j_sflash_enable_wp(void)
 {
-	HW_REG32(0x80310000, 0x04) &= ~(0x1 << 31);
+	unsigned int sfcon;
+
+	sfcon = getreg32(rSF_CON) & ~(1 << 31);
+	putreg32(sfcon, rSF_CON);
 }
 
 static uint8_t s5j_sflash_read_status(void)
@@ -261,15 +267,15 @@ void s5j_sflash_init(void)
 	/* Set mix i/o to be FLASH signal, CLK/CS/SI/SO/WP/HOLD */
 	s5j_sflash_set_gpio();
 
-	HW_REG32(0x80310000, 0x04) = 0x8010001A;	/* disable WP */
-	HW_REG32(0x80310000, 0x78) = 0x8;		/* FLASH_IO_MODE */
-	HW_REG32(0x80310000, 0x74) = 0x4;		/* QUAD */
+	putreg32(0x8010001A, rSF_CON);			/* disable WP */
+	putreg32(0x8, rFLASH_PERF_MODE);		/* FLASH_PERF_MODE */
+	putreg32(0x4, rFLASH_IO_MODE);			/* QUAD */
 
 	/* Check FLASH has Quad Enabled */
-	while (!(HW_REG8(0x80310000, 0xDC) & (0x1 << 6)));
+	while (!(s5j_sflash_read_status() & (0x1 << 6)));
 	lldbg("FLASH Quad Enabled\n");
 
-	HW_REG32(0x80310000, 0x04) = 0x0010001A;	/* Enable WP */
+	putreg32(0x0010001A, rSF_CON);			/* Enable WP */
 
 	/* Set FLASH clk 80Mhz for Max performance */
 	cal_clk_setrate(d1_serialflash, 80000000);
