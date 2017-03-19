@@ -159,7 +159,7 @@ void wlan_initup(struct netif *dev)
 void s5j_board_initialize(void)
 {
 #ifdef CONFIG_S5J_SFLASH
-	s5j_qspi_init();
+	s5j_sflash_init();
 #endif
 }
 

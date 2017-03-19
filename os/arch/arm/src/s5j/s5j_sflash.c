@@ -258,7 +258,7 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
  * @return	void
  * @note
  */
-void s5j_qspi_init(void)
+void s5j_sflash_init(void)
 {
 	/* Set mix i/o to be FLASH signal, CLK/CS/SI/SO/WP/HOLD */
 	s5j_sflash_set_gpio();
