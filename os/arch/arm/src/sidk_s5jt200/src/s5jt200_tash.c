@@ -70,6 +70,8 @@
 
 #include <tinyara/fs/mtd.h>
 
+#include "sidk_s5jt200.h"
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -205,11 +207,22 @@ static void sidk_s5jt200_configure_partitions(void)
  ****************************************************************************/
 int board_app_initialize(void)
 {
+	int ret;
+
 #if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
 	FAR struct tm tp;
 #endif
 
 	sidk_s5jt200_configure_partitions();
+
+#ifdef CONFIG_FS_PROCFS
+	/* Mount the procfs file system */
+	ret = mount(NULL, SIDK_S5JT200_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
+	if (ret < 0) {
+		lldbg("Failed to mount procfs at %s: %d\n",
+				SIDK_S5JT200_PROCFS_MOUNTPOINT, ret);
+	}
+#endif
 
 #ifdef CONFIG_S5J_I2C
 	s5j_i2c_register(0);
@@ -231,6 +244,9 @@ int board_app_initialize(void)
 #endif
 
 	scsc_wpa_ctrl_iface_init();
+
+	/* to suppress a compiler warning */
+	UNUSED(ret);
 
 	return OK;
 }
