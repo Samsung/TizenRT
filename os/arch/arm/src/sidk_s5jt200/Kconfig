@@ -49,7 +49,7 @@ config SIDK_S5JT200_FLASH_PART_TYPE
 	default "none,"
 	---help---
 		Comma separated list of partition types that can be
-		one of followings: none, smartfs
+		one of followings: none, smartfs, config
 
 config SIDK_S5JT200_FLASH_PART_NAME
 	string "FLash partition name list"

@@ -168,14 +168,21 @@ static void sidk_s5jt200_configure_partitions(void)
 			return;
 		}
 
+#if defined(CONFIG_MTD_CONFIG)
+		if (!strncmp(types, "config,", 7)) {
+			mtdconfig_register(mtd_part);
+		} else
+#endif
 #if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
 		if (!strncmp(types, "smartfs,", 8)) {
 			char partref[4];
 			sprintf(partref, "p%d", partno);
 			smart_initialize(CONFIG_SIDK_S5JT200_FLASH_MINOR,
 					mtd_part, partref);
-		}
+		} else
 #endif
+		{
+		}
 
 #if defined(CONFIG_MTD_PARTITION_NAMES)
 		if (strcmp(names, ""))
