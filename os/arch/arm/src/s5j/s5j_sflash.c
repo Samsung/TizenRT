@@ -129,9 +129,6 @@ static void s5j_sflash_disable_wp(void)
 		sfcon = getreg32(rSF_CON);
 	} while (sfcon & (1 << 31));
 
-	sfcon = getreg32(rSF_CON) & ~(1 << 31);
-	putreg32(sfcon, rSF_CON);
-
 	sfcon = getreg32(rSF_CON) | (1 << 31);
 	putreg32(sfcon, rSF_CON);
 }
