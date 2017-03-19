@@ -62,17 +62,84 @@
 #include "up_arch.h"
 #include "soc/s5jt200_memorymap.h"
 #include "cache.h"
-#include "s5j_qspi.h"
+#include "chip.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 #define S5J_SFLASH_MAPPED_ADDR   (CONFIG_S5J_FLASH_BASE)
 
+#define rSF_CON			(SFI_BASE + 0x0004)
+#define rERASE_ADDRESS		(SFI_BASE + 0x0010)
+#define rCOMMAND1		(SFI_BASE + 0x001C)
+#define rCOMMAND2		(SFI_BASE + 0x0020)
+#define rCOMMAND3		(SFI_BASE + 0x0024)
+#define rCOMMAND4		(SFI_BASE + 0x0028)
+#define rCOMMAND5		(SFI_BASE + 0x002C)
+#define rADDR_CMD		(SFI_BASE + 0x0059)
+#define rSE			(SFI_BASE + 0x005E)
+#define rFLASH_IO_MODE		(SFI_BASE + 0x0074)
+#define rFLASH_PERF_MODE	(SFI_BASE + 0x0078)
+#define rRDID			(SFI_BASE + 0x00AC)
+#define rBE			(SFI_BASE + 0x00BE)
+#define rCE			(SFI_BASE + 0x00CE)
+#define rRDSR			(SFI_BASE + 0x00DC)
+#define rWRDI			(SFI_BASE + 0x00DD)
+#define rWRSR			(SFI_BASE + 0x00DE)
+#define rWREN			(SFI_BASE + 0x00EE)
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+static void s5j_sflash_set_gpio(void)
+{
+	int gpio_sf_clk;
+	int gpio_sf_cs, gpio_sf_si, gpio_sf_so, gpio_sf_wp, gpio_sf_hld;
+
+	gpio_sf_clk = s5j_gpio(GPP1, 0);
+	gpio_sf_cs  = s5j_gpio(GPP1, 1);
+	gpio_sf_si  = s5j_gpio(GPP1, 2);
+	gpio_sf_so  = s5j_gpio(GPP1, 3);
+	gpio_sf_wp  = s5j_gpio(GPP1, 4);
+	gpio_sf_hld = s5j_gpio(GPP1, 5);
+
+	gpio_cfg_pin(gpio_sf_clk, GPIO_FUNC(2));
+	gpio_cfg_pin(gpio_sf_cs, GPIO_FUNC(2));
+	gpio_cfg_pin(gpio_sf_si, GPIO_FUNC(2));
+	gpio_cfg_pin(gpio_sf_so, GPIO_FUNC(2));
+	gpio_cfg_pin(gpio_sf_wp, GPIO_FUNC(2));
+	gpio_cfg_pin(gpio_sf_hld, GPIO_FUNC(2));
+
+	gpio_set_pull(gpio_sf_clk, GPIO_PULL_UP);
+	gpio_set_pull(gpio_sf_cs, GPIO_PULL_UP);
+	gpio_set_pull(gpio_sf_si, GPIO_PULL_UP);
+	gpio_set_pull(gpio_sf_so, GPIO_PULL_UP);
+	gpio_set_pull(gpio_sf_wp, GPIO_PULL_UP);
+	gpio_set_pull(gpio_sf_hld, GPIO_PULL_UP);
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 #ifdef CONFIG_MTD_PROGMEM
+static void s5j_sflash_disable_wp(void)
+{
+	unsigned int reg;
+
+	/* someone has been disabled wp, we should wait until it's released */
+	do {
+		reg = (HW_REG32(0x80310000, 0x04) & ~(0x1 << 31)) >> 31;
+	} while (reg);
+
+	HW_REG32(0x80310000, 0x04) &= ~(0x1 << 31);
+	HW_REG32(0x80310000, 0x04) |= (0x1 << 31);
+}
+
+static void s5j_sflash_enable_wp(void)
+{
+	HW_REG32(0x80310000, 0x04) &= ~(0x1 << 31);
+}
+
 static uint8_t s5j_sflash_read_status(void)
 {
 	return getreg8(rRDSR);
@@ -101,7 +168,7 @@ ssize_t up_progmem_erasepage(size_t page)
 	/* Disable IRQs while erasing sector */
 	irqs = irqsave();
 
-	s5j_qspi_disable_wp();
+	s5j_sflash_disable_wp();
 
 	/* Set sector address and then send erase command */
 	putreg32(addr - S5J_SFLASH_MAPPED_ADDR, rERASE_ADDRESS);
@@ -110,7 +177,7 @@ ssize_t up_progmem_erasepage(size_t page)
 	/* Wait for the completion */
 	while (s5j_sflash_read_status() & 0x1);
 
-	s5j_qspi_enable_wp();
+	s5j_sflash_enable_wp();
 
 	/* Invalidate cache */
 	arch_invalidate_dcache(addr, addr + up_progmem_pagesize(page));
@@ -163,7 +230,7 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 		/* Disable IRQs */
 		irqs = irqsave();
 
-		s5j_qspi_disable_wp();
+		s5j_sflash_disable_wp();
 
 		/* Load and write data */
 		memcpy((void *)addr, buf, tmp);
@@ -171,7 +238,7 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 		/* Flush cache */
 		arch_flush_dcache(addr, addr + tmp);
 
-		s5j_qspi_enable_wp();
+		s5j_sflash_enable_wp();
 
 		/* Restore IRQs */
 		irqrestore(irqs);
@@ -184,3 +251,28 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 	return count;
 }
 #endif /* CONFIG_MTD_PROGMEM */
+
+/**
+ * @brief	initialize FLASH for QUAD IO in 80Mhz
+ * @param	void
+ * @return	void
+ * @note
+ */
+void s5j_qspi_init(void)
+{
+	/* Set mix i/o to be FLASH signal, CLK/CS/SI/SO/WP/HOLD */
+	s5j_sflash_set_gpio();
+
+	HW_REG32(0x80310000, 0x04) = 0x8010001A;	/* disable WP */
+	HW_REG32(0x80310000, 0x78) = 0x8;		/* FLASH_IO_MODE */
+	HW_REG32(0x80310000, 0x74) = 0x4;		/* QUAD */
+
+	/* Check FLASH has Quad Enabled */
+	while (!(HW_REG8(0x80310000, 0xDC) & (0x1 << 6)));
+	lldbg("FLASH Quad Enabled\n");
+
+	HW_REG32(0x80310000, 0x04) = 0x0010001A;	/* Enable WP */
+
+	/* Set FLASH clk 80Mhz for Max performance */
+	cal_clk_setrate(d1_serialflash, 80000000);
+}

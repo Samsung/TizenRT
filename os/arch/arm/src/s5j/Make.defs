@@ -157,7 +157,6 @@ endif
 
 ifeq ($(CONFIG_S5J_SFLASH),y)
 CHIP_CSRCS += s5j_sflash.c
-CHIP_CSRCS += s5j_qspi.c
 endif
 
 ifeq ($(CONFIG_ARCH_IDLE_CUSTOM),y)

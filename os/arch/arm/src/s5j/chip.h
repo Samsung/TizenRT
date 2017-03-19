@@ -73,7 +73,6 @@
 #include "s5j_serial.h"
 #include "s5j_gpio.h"
 #include "s5j_mct.h"
-#include "s5j_qspi.h"
 #include "s5j_vclk.h"
 #endif
 
