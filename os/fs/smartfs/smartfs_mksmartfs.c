@@ -106,9 +106,9 @@
  ****************************************************************************/
 
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-int mksmartfs(FAR const char *pathname, uint8_t nrootdirs, bool format)
+int mksmartfs(FAR const char *pathname, uint8_t nrootdirs, bool force)
 #else
-int mksmartfs(FAR const char *pathname, bool format)
+int mksmartfs(FAR const char *pathname, bool force)
 #endif
 {
 	struct inode *inode;
@@ -126,11 +126,20 @@ int mksmartfs(FAR const char *pathname, bool format)
 	}
 
 	/* Make sure that the inode supports the write and geometry methods at a minimum */
-
 	if (!inode->u.i_bops->write || !inode->u.i_bops->geometry) {
 		fdbg("%s does not support write or geometry methods\n", pathname);
 		ret = -EACCES;
 		goto errout_with_driver;
+	}
+
+	/* check if it is already formatted */
+	if (!force) {
+		ret = inode->u.i_bops->ioctl(inode, BIOC_GETFORMAT,
+							(unsigned long)&fmt);
+		if (ret == OK && (fmt.flags & SMART_FMT_ISFORMATTED) != 0) {
+			close_blockdriver(inode);
+			return OK;
+		}
 	}
 
 	/* Validate the block device is a SMART device */
