@@ -77,6 +77,7 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define MAX_GPIO          67
 
 /****************************************************************************
  * Public Functions Prototypes
@@ -89,6 +90,21 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_gpioinitialize
+ *
+ * Description:
+ *  Expose board dependent GPIOs
+ ****************************************************************************/
+static void s5j_gpioinitialize(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_GPIO; i++) {
+		up_create_gpio(i);
+	}
+}
 
 /****************************************************************************
  * Public Functions
@@ -186,5 +202,7 @@ void board_initialize(void)
 	slldbg("Initialize SCSC driver\n");
 	slsi_driver_initialize();
 #endif
+
+	s5j_gpioinitialize();
 }
 #endif /* CONFIG_BOARD_INITIALIZE */
