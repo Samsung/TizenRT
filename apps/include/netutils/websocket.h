@@ -100,17 +100,6 @@
 #define WEBSOCKET_HANDSHAKE_HEADER_SIZE              (2048)
 
 /**
- * @brief Set host name for servername TLS extension.
- *
- *    This definition will be used in TLS handshake routine for authentication.
- */
-#ifdef CONFIG_HW_RSA_SIGN
-#define WEBSOCKET_SERVERNAME                         "ARTIK051_dev"
-#else
-#define WEBSOCKET_SERVERNAME                         "localhost"
-#endif
-
-/**
  * @brief Websocket socket input timeout value, msec.
  */
 #define WEBSOCKET_SOCK_RCV_TIMEOUT                   (5 * 1000)	//mili second
@@ -155,6 +144,11 @@
  * @brief The maximun retry of tls handshake.
  */
 #define WEBSOCKET_MAX_TLS_HANDSHAKE                  (3)
+
+/**
+ * @brief Enable and disable the Server name indication(SNI)
+ */
+#define WEBSOCKET_CONF_CHECK_TLS_HOSTNAME            (0)   // 0- disable, 1- enable
 
 /*
  *  Pre-definition variables from wslay below.
@@ -372,10 +366,14 @@ typedef struct {
 	websocket_cb_t *cb;
 ///< Each server of client should define callbacks to use websocket functions
 	mbedtls_net_context tls_net;
+///< User data set by the calling application
+	void *user_data;
 ///< Contain network file descriptor
 	mbedtls_ssl_context *tls_ssl;
 ///< Handling all tls context informations
 	mbedtls_ssl_config *tls_conf;
+///< Authentication mode to use when doing TLS
+	int auth_mode;
 ///< TLS Initial configuration structure
 	struct work_s time_worker;
 ///< Ping timer structure

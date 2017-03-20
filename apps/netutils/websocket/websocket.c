@@ -85,12 +85,14 @@ int websocket_tls_handshake(websocket_t *data, char *hostname, int auth_mode)
 		return -1;
 	}
 
+#if WEBSOCKET_CONF_CHECK_TLS_HOSTNAME
 	if (hostname != NULL) {
 		if ((r = mbedtls_ssl_set_hostname(data->tls_ssl, hostname)) != 0) {
 			WEBSOCKET_DEBUG("Error: mbedtls_hostname fail %d\n", r);
 			return -1;
 		}
 	}
+#endif
 
 	mbedtls_ssl_set_bio(data->tls_ssl, &(data->tls_net), mbedtls_net_send, mbedtls_net_recv, NULL);
 
@@ -231,7 +233,7 @@ int websocket_handler(websocket_t *websocket)
 
 /* client oriented sources */
 
-int websocket_client_handshake(websocket_t *client, char *addr, char *port, char *path)
+int websocket_client_handshake(websocket_t *client, char *host, char *port, char *path)
 {
 	int r = WEBSOCKET_SUCCESS;
 	int fd = client->fd;
@@ -260,7 +262,7 @@ int websocket_client_handshake(websocket_t *client, char *addr, char *port, char
 	}
 	client_key[WEBSOCKET_CLIENT_KEY_LEN] = '\0';
 
-	snprintf(header, WEBSOCKET_HANDSHAKE_HEADER_SIZE, "GET %s HTTP/1.1\r\n" "Host: %s:%s\r\n" "Upgrade: websocket\r\n" "Connection: Upgrade\r\n" "Sec-WebSocket-Key: %s\r\n" "Sec-WebSocket-Version: 13\r\n" "\r\n", path, addr, port, client_key);
+	snprintf(header, WEBSOCKET_HANDSHAKE_HEADER_SIZE, "GET %s HTTP/1.1\r\n" "Host: %s:%s\r\n" "Upgrade: websocket\r\n" "Connection: Upgrade\r\n" "Sec-WebSocket-Key: %s\r\n" "Sec-WebSocket-Version: 13\r\n" "\r\n", path, host, port, client_key);
 	header_length = strlen(header);
 
 	while (header_sent < header_length) {
@@ -331,11 +333,21 @@ EXIT_WEBSOCKET_HANDSHAKE_ERROR:
 	return WEBSOCKET_HANDSHAKE_ERROR;
 }
 
-int connect_socket(websocket_t *client, const char *addr, const char *port)
+int connect_socket(websocket_t *client, const char *host, const char *port)
 {
 	int fd;
 	socklen_t addrlen;
 	struct sockaddr_in serveraddr;
+	struct hostent *he = NULL;
+	char ip_str[INET6_ADDRSTRLEN];
+
+	/* Resolve hostname to IP address */
+	he = gethostbyname(host);
+	if (!he || (he->h_addrtype != AF_INET)) {
+		WEBSOCKET_DEBUG("failed to resolve hostname\n");
+		return WEBSOCKET_CONNECT_ERROR;
+	}
+	inet_ntop(he->h_addrtype, he->h_addr, ip_str, he->h_length);
 
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (fd == -1) {
@@ -345,10 +357,10 @@ int connect_socket(websocket_t *client, const char *addr, const char *port)
 
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_port = htons(atoi(port));
-	serveraddr.sin_addr.s_addr = inet_addr(addr);
+	serveraddr.sin_addr.s_addr = inet_addr(ip_str);
 	addrlen = sizeof(struct sockaddr);
 	if (connect(fd, (struct sockaddr *)&serveraddr, addrlen) < 0) {
-		WEBSOCKET_DEBUG("fail to connect socket\n");
+		WEBSOCKET_DEBUG("fail to connect socket (errno=%d)\n", errno);
 		close(fd);
 		return WEBSOCKET_CONNECT_ERROR;
 	}
@@ -359,13 +371,13 @@ int connect_socket(websocket_t *client, const char *addr, const char *port)
 	return WEBSOCKET_SUCCESS;
 }
 
-int websocket_connect(websocket_t *client, const char *addr, const char *port)
+int websocket_connect(websocket_t *client, char *host, const char *port)
 {
 	int r;
 	int tls_hs_retry = WEBSOCKET_MAX_TLS_HANDSHAKE;
 
 TLS_HS_RETRY:
-	if ((r = connect_socket(client, addr, port)) != WEBSOCKET_SUCCESS) {
+	if ((r = connect_socket(client, host, port)) != WEBSOCKET_SUCCESS) {
 		return r;
 	}
 
@@ -377,7 +389,7 @@ TLS_HS_RETRY:
 	}
 
 	if (client->tls_enabled) {
-		if ((r = websocket_tls_handshake(client, WEBSOCKET_SERVERNAME, MBEDTLS_SSL_VERIFY_REQUIRED)) != WEBSOCKET_SUCCESS) {
+		if ((r = websocket_tls_handshake(client, host, client->auth_mode)) != WEBSOCKET_SUCCESS) {
 			if (r == MBEDTLS_ERR_NET_SEND_FAILED ||
 				r == MBEDTLS_ERR_NET_RECV_FAILED ||
 				r == MBEDTLS_ERR_SSL_CONN_EOF) {
@@ -493,7 +505,7 @@ int websocket_server_start(websocket_t *server)
 		mbedtls_ssl_init(server->tls_ssl);
 		mbedtls_net_init(&(server->tls_net));
 
-		if ((r = websocket_tls_handshake(server, NULL, MBEDTLS_SSL_VERIFY_REQUIRED)) != WEBSOCKET_SUCCESS) {
+		if ((r = websocket_tls_handshake(server, NULL, server->auth_mode)) != WEBSOCKET_SUCCESS) {
 			r = WEBSOCKET_TLS_HANDSHAKE_ERROR;
 			goto EXIT_SERVER_START;
 		}
@@ -712,23 +724,23 @@ websocket_t *websocket_find_table(void)
 	return &ws_srv_table[i];
 }
 
-websocket_return_t websocket_client_open(websocket_t *client, char *addr, char *port, char *path)
+websocket_return_t websocket_client_open(websocket_t *client, char *host, char *port, char *path)
 {
 	int fd;
 	struct websocket_info_t *socket_data;
 	struct sched_param ws_sparam;
 
-	if (client == NULL || addr == NULL || port == NULL || path == NULL) {
+	if (client == NULL || host == NULL || port == NULL || path == NULL) {
 		WEBSOCKET_DEBUG("function returned for null parameter\n");
 		return WEBSOCKET_ALLOCATION_ERROR;
 	}
 
-	if (websocket_connect(client, addr, port) != WEBSOCKET_SUCCESS) {
+	if (websocket_connect(client, host, port) != WEBSOCKET_SUCCESS) {
 		return WEBSOCKET_CONNECT_ERROR;
 	}
 	fd = client->fd;
 
-	if (websocket_client_handshake(client, addr, port, path) != WEBSOCKET_SUCCESS) {
+	if (websocket_client_handshake(client, host, port, path) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to http handshake\n");
 		close(fd);
 		return WEBSOCKET_HANDSHAKE_ERROR;
@@ -904,7 +916,7 @@ websocket_return_t websocket_queue_close(websocket_t *websocket, const char *clo
 	}
 
 	if (websocket->state != WEBSOCKET_STOP) {
-		if (wslay_event_queue_close(websocket->ctx, 0, (const uint8_t *)close_message, strlen(close_message)) != WEBSOCKET_SUCCESS) {
+		if (wslay_event_queue_close(websocket->ctx, 1000, (const uint8_t *)close_message, strlen(close_message)) != WEBSOCKET_SUCCESS) {
 			WEBSOCKET_DEBUG("fail to queue close message\n");
 			close(websocket->fd);
 			if (websocket->ctx) {
