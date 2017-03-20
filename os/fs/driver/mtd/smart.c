@@ -429,27 +429,10 @@ static const struct block_operations g_bops = {
 /****************************************************************************
  * Private variables
  ****************************************************************************/
-static bool is_smart_formated;
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
-/****************************************************************************
- *   This is used to format the flash in smartFs
- ****************************************************************************/
-void smart_set_format_status(bool value)
-{
-	is_smart_formated = value;
-}
-
-/****************************************************************************
- *   This is used to know if flash is already formated by smartFs
- ****************************************************************************/
-bool smart_get_format_status(void)
-{
-	return is_smart_formated;
-}
 
 /****************************************************************************
  * Name: smart_malloc
@@ -2049,17 +2032,6 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 				fdbg("Error reading physical sector %d.\n", sector);
 				goto err_out;
 			}
-
-			/* Validate the format signature */
-
-			if (dev->rwbuffer[SMART_FMT_POS1] != SMART_FMT_SIG1 || dev->rwbuffer[SMART_FMT_POS2] != SMART_FMT_SIG2 || dev->rwbuffer[SMART_FMT_POS3] != SMART_FMT_SIG3 || dev->rwbuffer[SMART_FMT_POS4] != SMART_FMT_SIG4) {
-				/* Invalid signature on a sector claiming to be sector 0!
-				 * What should we do?  Release it?*/
-				smart_set_format_status(false);
-				continue;
-			}
-			smart_set_format_status(true);
-			/* Mark the volume as formatted and set the sector size */
 
 			dev->formatstatus = SMART_FMT_STAT_FORMATTED;
 			dev->namesize = dev->rwbuffer[SMART_FMT_NAMESIZE_POS];
@@ -5191,7 +5163,6 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 	used_block_divident = chunk_shift + 3;
 	smart_sect_header_size = sizeof(struct smart_sect_header_s);
 #endif
-	smart_set_format_status(false);
 	/* Sanity check */
 
 #ifdef CONFIG_DEBUG
