@@ -168,6 +168,10 @@ extern int websocket_main(int argc, char *argv[]);
 #ifdef CONFIG_EXAMPLES_ARTIK_DEMO
 extern int artik_demo_main(int argc, char *argv[]);
 #endif
+#ifdef CONFIG_EXAMPLES_MQTT_TEST
+extern int mqtt_client_sub_main(int argc, char *argv[]);
+extern int mqtt_client_pub_main(int argc, char *argv[]);
+#endif
 
 #if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_NETUTILS_TFTPC)
 struct tftpc_args_s {
@@ -892,6 +896,10 @@ const static tash_cmdlist_t net_appcmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_WICEDWIFI
 	{"wicedwifi", wicedwifi_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_EXAMPLES_MQTT_TEST
+	{"mqtt_sub", mqtt_client_sub_main, TASH_EXECMD_SYNC},
+	{"mqtt_pub", mqtt_client_pub_main, TASH_EXECMD_SYNC},
 #endif
 	{NULL, NULL, 0}
 };
