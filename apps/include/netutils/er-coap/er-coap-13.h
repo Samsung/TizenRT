@@ -57,9 +57,12 @@
 #define COAP_RESPONSE_TIMEOUT                2
 #define COAP_MAX_RETRANSMIT                  4
 
+#define COAP_TCP_SHIM_LEN                    4 /* 32bit Length shim header for TCP */
 #define COAP_HEADER_LEN                      4 /* | version:0x03 type:0x0C tkl:0xF0 | code | mid:0x00FF | mid:0xFF00 | */
 #define COAP_ETAG_LEN                        8 /* The maximum number of bytes for the ETag */
 #define COAP_TOKEN_LEN                       8 /* The maximum number of bytes for the Token */
+#define COAP_OPTIONS_MARKER_LEN              1 /* Length of marker (0xFF) between options and payload */
+
 #define COAP_MAX_ACCEPT_NUM                  2 /* The maximum number of accept preferences to parse/store */
 
 #define COAP_MAX_OPTION_HEADER_LEN           5
@@ -79,14 +82,14 @@
  */
 #ifndef COAP_MAX_HEADER_SIZE
 /*                            Hdr CoT Age  Tag              Obs  Tok               Blo strings */
-#define COAP_MAX_HEADER_SIZE  (4 + 3 + 5 + 1+COAP_ETAG_LEN + 3 + 1+COAP_TOKEN_LEN + 4 + 30) /* 70 */
+#define COAP_MAX_HEADER_SIZE  (COAP_HEADER_LEN + 3 + 5 + 1+COAP_ETAG_LEN + 3 + 1+COAP_TOKEN_LEN + 4 + 30) /* 70 */
 #endif /* COAP_MAX_HEADER_SIZE */
 
 #define COAP_MAX_PACKET_SIZE  (COAP_MAX_HEADER_SIZE + REST_MAX_CHUNK_SIZE)
 /*                                        0/14          48 for IPv6 (28 for IPv4) */
-// #if COAP_MAX_PACKET_SIZE > (UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN)
+#if COAP_MAX_PACKET_SIZE > (UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN)
 //#error "UIP_CONF_BUFFER_SIZE too small for REST_MAX_CHUNK_SIZE"
-// #endif
+#endif
 
 
 /* Bitmap for set options */
@@ -97,6 +100,14 @@ enum { OPTION_MAP_SIZE = sizeof(uint8_t) * 8 };
 #ifndef MIN
 #define MIN(a, b) ((a) < (b)? (a) : (b))
 #endif /* MIN */
+
+/* CoAP protocols */
+typedef enum {
+  COAP_UDP,
+  COAP_UDP_DTLS,
+  COAP_TCP,
+  COAP_TCP_TLS
+} coap_protocol_t;
 
 /* CoAP message types */
 typedef enum {
@@ -196,8 +207,7 @@ typedef enum {
   APPLICATION_FASTINFOSET = 48,
   APPLICATION_SOAP_FASTINFOSET = 49,
   APPLICATION_JSON = 50,
-  APPLICATION_X_OBIX_BINARY = 51,
-  APPLICATION_FILLER=65535,
+  APPLICATION_X_OBIX_BINARY = 51
 } coap_content_type_t;
 
 typedef struct _multi_option_t {
@@ -217,6 +227,7 @@ typedef struct {
   uint16_t mid;
 
   uint8_t options[COAP_OPTION_PROXY_URI / OPTION_MAP_SIZE + 1]; /* Bitmap to check if option is set */
+  uint16_t options_len;
 
   coap_content_type_t content_type; /* Parse options once and store; allows setting options in random order  */
   uint32_t max_age;
@@ -252,6 +263,8 @@ typedef struct {
 
   uint16_t payload_len;
   uint8_t *payload;
+
+  coap_protocol_t protocol;
 
 } coap_packet_t;
 
@@ -316,10 +329,10 @@ extern const char *coap_error_message;
 
 uint16_t coap_get_mid(void);
 
-void coap_init_message(void *packet, coap_message_type_t type, uint8_t code, uint16_t mid);
+void coap_init_message(void *packet, coap_protocol_t protocol, coap_message_type_t type, uint8_t code, uint16_t mid);
 size_t coap_serialize_get_size(void *packet);
 size_t coap_serialize_message(void *packet, uint8_t *buffer);
-coap_status_t coap_parse_message(void *request, uint8_t *data, uint16_t data_len);
+coap_status_t coap_parse_message(void *request, coap_protocol_t protocol, uint8_t *data, uint16_t data_len);
 void coap_free_header(void *packet);
 
 char * coap_get_multi_option_as_string(multi_option_t * option);

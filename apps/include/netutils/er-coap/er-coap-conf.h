@@ -84,22 +84,4 @@
 /* Interval in notifies in which NON notifies are changed to CON notifies to check client. */
 #define COAP_OBSERVE_REFRESH_INTERVAL  20
 
-/**
- * @brief This definition describes that CoAP message will be sent over TCP
- */
-#ifdef CONFIG_NETUTILS_ERCOAP_TCP_SUPPORT
-#define COAP_TCP_SUPPORT               1
-#else
-#define COAP_TCP_SUPPORT               0
-#endif
-
-/**
- * @brief This definition describes that CoAP library supports TLS
- */
-#ifdef CONFIG_NETUTILS_ERCOAP_TLS_SUPPORT
-#define COAP_TLS_SUPPORT               1
-#else
-#define COAP_TLS_SUPPORT               0
-#endif
-
 #endif /* ER_COAP_CONF_H_ */
