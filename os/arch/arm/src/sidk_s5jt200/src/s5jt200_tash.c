@@ -222,6 +222,38 @@ int board_app_initialize(void)
 
 	sidk_s5jt200_configure_partitions();
 
+#ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
+	/* Initialize and mount user partition (if we have) */
+	ret = mksmartfs(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, false);
+	if (ret != OK) {
+		lldbg("ERROR: mksmartfs on %s failed",
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
+	} else {
+		ret = mount(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME,
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_MOUNTPOINT,
+				"smartfs", 0, NULL);
+		if (ret != OK)
+			lldbg("ERROR: mounting '%s' failed\n",
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
+	}
+#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME */
+
+#ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME
+	/* Initialize and mount sssrw partition (if we have) */
+	ret = mksmartfs(CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME, false);
+	if (ret != OK) {
+		lldbg("ERROR: mksmartfs on %s failed",
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME);
+	} else {
+		ret = mount(CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME,
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_MOUNTPOINT,
+				"smartfs", 0, NULL);
+		if (ret != OK)
+			lldbg("ERROR: mounting '%s' failed\n",
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME);
+	}
+#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME */
+
 #ifdef CONFIG_FS_PROCFS
 	/* Mount the procfs file system */
 	ret = mount(NULL, SIDK_S5JT200_PROCFS_MOUNTPOINT, "procfs", 0, NULL);

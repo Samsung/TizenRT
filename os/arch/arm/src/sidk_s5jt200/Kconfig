@@ -59,4 +59,59 @@ config SIDK_S5JT200_FLASH_PART_NAME
 	---help---
 		Comma separated list of partition names.
 
+config SIDK_S5JT200_AUTOMOUNT
+	bool "Automount partitions"
+	default n
+	depends on SIDK_S5JT200_FLASH_PART
+	---help---
+		If enabled, mount userrw and sssrw partitions at boot.
+
+config SIDK_S5JT200_AUTOMOUNT_USERFS
+	bool "Automount user r/w partiton"
+	default n
+	depends on SIDK_S5JT200_AUTOMOUNT
+	---help---
+		If enabled, user r/w partition will be mounted automatically
+		at boot.
+
+config SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
+	string "Device name of the partition for user r/w file system"
+	default "/dev/smart0p13"
+	depends on SIDK_S5JT200_AUTOMOUNT_USERFS
+	---help---
+		Specifies the device name (/dev/smart0pX) of the partition
+		for user r/w file system.
+
+config SIDK_S5JT200_AUTOMOUNT_USERFS_MOUNTPOINT
+	string "Mountpoint of the partition for user r/w file system"
+	default "/mnt"
+	depends on SIDK_S5JT200_AUTOMOUNT_USERFS
+	---help---
+		Specifies the mount point where user r/w file system
+		will be mounted at.
+
+config SIDK_S5JT200_AUTOMOUNT_SSSRW
+	bool "Automount sss r/w partiton"
+	default n
+	depends on SIDK_S5JT200_AUTOMOUNT
+	---help---
+		If enabled, SSS r/w partition will be mounted automatically
+		at boot.
+
+config SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME
+	string "Device name of the partition for SSS r/w file system"
+	default "/dev/smart0p14"
+	depends on SIDK_S5JT200_AUTOMOUNT_SSSRW
+	---help---
+		Specifies the device name (/dev/smart0pX) of the partition
+		for SSS r/w file system.
+
+config SIDK_S5JT200_AUTOMOUNT_SSSRW_MOUNTPOINT
+	string "Mountpoint of the partition for SSS r/w file system"
+	default "/sss"
+	depends on SIDK_S5JT200_AUTOMOUNT_SSSRW
+	---help---
+		Specifies the mount point where SSS r/w file system
+		will be mounted at.
+
 endif
