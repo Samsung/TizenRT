@@ -118,15 +118,13 @@ int mksmartfs(FAR const char *pathname, bool format)
 	bool is_smart;
 	uint8_t type;
 	struct smart_read_write_s request;
-#if (CONFIG_MTD && CONFIG_MTD_SMART)
+
 	if (format) {
 		is_smart = false;
 	} else {
 		is_smart = smart_get_format_status();
 	}
-#else
-	is_smart = false;
-#endif
+
 	/* Find the inode of the block driver indentified by 'source' */
 
 	ret = open_blockdriver(pathname, 0, &inode);
