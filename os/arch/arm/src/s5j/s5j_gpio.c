@@ -227,8 +227,6 @@ static struct gpio_bank s5jt200_gpio_bank[] = {
 };
 #endif
 
-bool isinit = 0;
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -608,10 +606,6 @@ static const char *gpio_bank_name(int gpio)
  ****************************************************************************/
 static int s5j_gpio_open(FAR struct gpio_dev_s *dev)
 {
-	int idx = ((struct s5j_gpio_priv *)(dev->priv))->idx;
-	if (!isinit) {
-		up_create_gpio(idx);
-	}
 	return OK;
 }
 
@@ -1764,7 +1758,8 @@ int up_create_gpio(int32_t idx)
  * Name: up_gpioinitialize 
  *
  * Description:
- *   Init all available GPIO, exposing them to file system: dev/gpioXX
+ *  Dummy function. Real function s5j_gpioinitialize, where GPIOs are exposed, 
+ *  called from board_init().
  *
  * Input Parameters:
  *   None
@@ -1775,12 +1770,7 @@ int up_create_gpio(int32_t idx)
  ****************************************************************************/
 void up_gpioinitialize(void)
 {
-	int i;
 
-	for (i = 0; i < NUM_GPIO; i++) {
-		up_create_gpio(i);
-	}
-	isinit = OK;
 }
 
 /****************************************************************************
