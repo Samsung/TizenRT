@@ -126,7 +126,7 @@
 /**
  * @brief Websocket event handler select() timeout value, msec.
  */
-#define WEBSOCKET_HANDLER_TIMEOUT                    (300)	//mili second
+#define WEBSOCKET_HANDLER_TIMEOUT                    (100)	//mili second
 
 /**
  * @brief Ping message limits without pong.
@@ -150,6 +150,11 @@
  * @brief The maximum amount of client to accept from server.
  */
 #define WEBSOCKET_MAX_CLIENT                         (3)
+
+/**
+ * @brief The maximun retry of tls handshake.
+ */
+#define WEBSOCKET_MAX_TLS_HANDSHAKE                  (3)
 
 /*
  *  Pre-definition variables from wslay below.

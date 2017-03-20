@@ -362,10 +362,33 @@ int connect_socket(websocket_t *client, const char *addr, const char *port)
 int websocket_connect(websocket_t *client, const char *addr, const char *port)
 {
 	int r;
+	int tls_hs_retry = WEBSOCKET_MAX_TLS_HANDSHAKE;
 
-	r = connect_socket(client, addr, port);
-	if (r == WEBSOCKET_SUCCESS && client->tls_enabled) {
+TLS_HS_RETRY:
+	if ((r = connect_socket(client, addr, port)) != WEBSOCKET_SUCCESS) {
+		return r;
+	}
+
+	websocket_update_state(client, WEBSOCKET_RUNNING);
+
+	if (websocket_make_block(client->fd) != WEBSOCKET_SUCCESS) {
+		close(client->fd);
+		return WEBSOCKET_SOCKET_ERROR;
+	}
+
+	if (client->tls_enabled) {
 		if ((r = websocket_tls_handshake(client, WEBSOCKET_SERVERNAME, MBEDTLS_SSL_VERIFY_REQUIRED)) != WEBSOCKET_SUCCESS) {
+			if (r == MBEDTLS_ERR_NET_SEND_FAILED ||
+				r == MBEDTLS_ERR_NET_RECV_FAILED ||
+				r == MBEDTLS_ERR_SSL_CONN_EOF) {
+				if (tls_hs_retry-- > 0) {
+					WEBSOCKET_DEBUG("Handshake again.... \n");
+					mbedtls_net_free(&(client->tls_net));
+					mbedtls_ssl_free(client->tls_ssl);
+					mbedtls_ssl_init(client->tls_ssl);
+					goto TLS_HS_RETRY;
+				}
+			}
 			return WEBSOCKET_TLS_HANDSHAKE_ERROR;
 		}
 	}
