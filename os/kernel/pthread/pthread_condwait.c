@@ -130,7 +130,7 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 		svdbg("Give up mutex / take cond\n");
 
 		sched_lock();
-		mutex->pid = 0;
+		mutex->pid = -1;
 		ret = pthread_givesemaphore((sem_t *)&mutex->sem);
 
 		/* Take the semaphore */
@@ -143,7 +143,7 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 		svdbg("Reacquire mutex...\n");
 		ret |= pthread_takesemaphore((sem_t *)&mutex->sem);
 		if (!ret) {
-			mutex->pid = getpid();;
+			mutex->pid = getpid();
 		}
 	}
 
