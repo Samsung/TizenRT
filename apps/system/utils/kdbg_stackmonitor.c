@@ -199,9 +199,6 @@ static void stackmonitor_stop(void)
  ****************************************************************************/
 void stkmon_logging(struct tcb_s *tcb)
 {
-#if (CONFIG_TASK_NAME_SIZE > 0)
-	int name_idx;
-#endif
 	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].timestamp = clock_systimer();
 	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_pid = tcb->pid;
 	stkmon_arr[stkmon_chk_idx % (CONFIG_MAX_TASKS * 2)].chk_stksize = tcb->adj_stack_size;
