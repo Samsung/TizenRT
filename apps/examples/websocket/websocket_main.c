@@ -169,7 +169,7 @@
  * Private Data
  ****************************************************************************/
 
-int g_cnt;
+int received_cnt;
 
 /****************************************************************************
  * Public Functions
@@ -434,21 +434,24 @@ ssize_t recv_cb(websocket_context_ptr ctx, uint8_t *buf, size_t len, int flags, 
 RECV_RETRY:
 	if (info->data->tls_enabled) {
 		r = mbedtls_ssl_read(info->data->tls_ssl, buf, len);
-	} else {
-		r = recv(fd, buf, len, 0);
-		if (r == 0) {
-			websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
-		} else if (r < 0) {
-			printf("recv err : %d\n", errno);
-			if (errno == EAGAIN || errno == EBUSY) {
-				if (retry_cnt == 0) {
-					return r;
-				}
-				retry_cnt--;
-				goto RECV_RETRY;
-			}
-		}
 	}
+	else {
+		r = recv(fd, buf, len, 0);
+	}
+
+	if (r == 0) {
+		websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+	}
+	else if (r < 0) {
+		printf("recv err : %d\n", errno);
+		if (retry_cnt == 0) {
+			websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+			return r;
+		}
+		retry_cnt--;
+		goto RECV_RETRY;
+	}
+
 
 	return r;
 }
@@ -465,18 +468,19 @@ ssize_t send_cb(websocket_context_ptr ctx, const uint8_t *buf, size_t len, int f
 SEND_RETRY:
 	if (info->data->tls_enabled) {
 		r = mbedtls_ssl_write(info->data->tls_ssl, buf, len);
-	} else {
+	}
+	else {
 		r = send(fd, buf, len, flags);
-		if (r < 0) {
-			printf("send err : %d\n", errno);
-			if (errno == EAGAIN || errno == EBUSY) {
-				if (retry_cnt == 0) {
-					return r;
-				}
-				retry_cnt--;
-				goto SEND_RETRY;
-			}
+	}
+
+	if (r < 0) {
+		printf("send err : %d\n", errno);
+		if (retry_cnt == 0) {
+			websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+			return r;
 		}
+		retry_cnt--;
+		goto SEND_RETRY;
 	}
 
 	return r;
@@ -496,8 +500,8 @@ void print_on_msg_cb(websocket_context_ptr ctx, const websocket_on_msg_arg *arg,
 
 	/* Echo back non-closing message */
 	if (WEBSOCKET_CHECK_NOT_CTRL_FRAME(arg->opcode)) {
-		g_cnt++;				//to check communication is done.
-		printf("on_msg length : %d print : %s, [#%d]\n", msgarg.msg_length, msgarg.msg, g_cnt);
+		received_cnt++;				//to check communication is done.
+		printf("on_msg length : %d print : %s, [#%d]\n", msgarg.msg_length, msgarg.msg, received_cnt);
 	} else if (WEBSOCKET_CHECK_CTRL_CLOSE(arg->opcode)) {
 		printf("print_on_msg recevied close message\n");
 	} else if (WEBSOCKET_CHECK_CTRL_PING(arg->opcode)) {
@@ -569,14 +573,13 @@ int websocket_client(void *arg)
 {
 	int i;
 	int r = WEBSOCKET_SUCCESS;
-	int tmp;
 	char **argv = arg;
 	char *addr = NULL;
 	char *port = NULL;
 	char *path = NULL;
 	int tls = atoi(argv[3]);
 	int size = atoi(argv[4]);
-	int num = atoi(argv[5]);
+	int send_cnt = atoi(argv[5]);
 	websocket_frame_t *tx_frame = NULL;
 	websocket_t *websocket_cli = NULL;
 	char *test_message = NULL;
@@ -587,7 +590,7 @@ int websocket_client(void *arg)
 		NULL,					/* recv frame start callback */
 		NULL,					/* recv frame chunk callback */
 		NULL,					/* recv frame end callback */
-		print_on_msg_cb			/* recv message callback */
+		print_on_msg_cb				/* recv message callback */
 	};
 
 	mbedtls_ssl_config conf;
@@ -621,14 +624,7 @@ int websocket_client(void *arg)
 	strncpy(port, argv[1], strlen(argv[1]));
 	strncpy(path, argv[2], strlen(argv[2]));
 
-	memset(&conf, 0, sizeof(mbedtls_ssl_config));
-	memset(&cert, 0, sizeof(mbedtls_x509_crt));
-	memset(&pkey, 0, sizeof(mbedtls_pk_context));
-	memset(&entropy, 0, sizeof(mbedtls_entropy_context));
-	memset(&ctr_drbg, 0, sizeof(mbedtls_ctr_drbg_context));
-	memset(&cache, 0, sizeof(mbedtls_ssl_cache_context));
-
-	g_cnt = 0;
+	received_cnt = 0;
 	websocket_cli = malloc(sizeof(websocket_t));
 	if (websocket_cli == NULL) {
 		printf("fail to allocate memory\n");
@@ -636,6 +632,7 @@ int websocket_client(void *arg)
 	}
 	memset(websocket_cli, 0, sizeof(websocket_t));
 
+	websocket_cli->fd = -1;
 	websocket_cli->cb = &cb;
 	websocket_cli->tls_enabled = tls;
 
@@ -666,22 +663,14 @@ int websocket_client(void *arg)
 		goto WEB_CLI_EXIT;
 	}
 
-	websocket_register_cb(websocket_cli, &cb);
-
-	i = 0;
-	tmp = size;
-	while (tmp) {
-		tmp = tmp / 10;
-		i++;
-	}
 	test_message = malloc(size + 1);
 	if (test_message == NULL) {
 		goto WEB_CLI_EXIT;
 	}
 	memset(test_message, '.', size);
-	snprintf(&test_message[size - i - 1], i + 1, "%d", size);
-	strncpy(test_message, "hello websocket", 15);
-	test_message[size - 1] = '\0';
+
+	sprintf(test_message, "[%d] hello websocket", size);
+	test_message[size] = '\0';
 
 	tx_frame = malloc(sizeof(websocket_frame_t));
 	if (tx_frame == NULL) {
@@ -692,30 +681,31 @@ int websocket_client(void *arg)
 
 	tx_frame->opcode = WEBSOCKET_TEXT_FRAME;
 	tx_frame->msg = (const uint8_t *)test_message;
-	tx_frame->msg_length = strlen((const char *)tx_frame->msg) + 1;
+	tx_frame->msg_length = size + 1;
 
-	printf("websocket ping message test\n");
-	sleep(60);					//if there's no I/O for 20 sec, websocket starts heart-beat ping-pong.
-
-	/* send and receive small message num times */
-	for (i = 0; i < num; i++) {
-		tmp = g_cnt + 1;
+	/* send and receive small message */
+	for (i = 1; i <= send_cnt; i++) {
 
 		r = websocket_queue_msg(websocket_cli, tx_frame);
 		if (r != WEBSOCKET_SUCCESS) {
 			printf("websocket_queue_msg returned error : %d\n", r);
+			goto WEB_CLI_EXIT;
 		}
 
 		/* wait for server echoes back */
-		while (g_cnt != tmp) {
+		while (received_cnt != i) {
+			if (websocket_cli->state == WEBSOCKET_STOP) {
+				goto WEB_CLI_EXIT;
+			}
 			usleep(100000);
 		}
 	}
 
 	/* wait until every message is tested. */
-	while (g_cnt < num) {
-		if (websocket_cli->state == WEBSOCKET_STOP) {
-			printf("test is not finished and websocket client is expired\n");
+	while (websocket_cli->state == WEBSOCKET_RUNNING) {
+		/* all echo back message received */
+		if(received_cnt == send_cnt) {
+			printf("all message was received well\n");
 			break;
 		}
 		usleep(100000);
@@ -762,14 +752,15 @@ WEB_CLI_EXIT:
 int websocket_server(void *arg)
 {
 	int r;
-	int tls = atoi((const char *)arg);
+	char **argv = arg;
+	int tls = atoi(argv[0]);
 	static websocket_cb_t cb = {
-		recv_cb,				/* recv callback */
-		send_cb,				/* send callback */
-		NULL,					/* gen mask callback */
-		NULL,					/* recv frame start callback */
-		NULL,					/* recv frame chunk callback */
-		NULL,					/* recv frame end callback */
+		recv_cb,			/* recv callback */
+		send_cb,			/* send callback */
+		NULL,				/* gen mask callback */
+		NULL,				/* recv frame start callback */
+		NULL,				/* recv frame chunk callback */
+		NULL,				/* recv frame end callback */
 		echoback_on_msg_cb		/* recv message callback */
 	};
 
@@ -780,7 +771,6 @@ int websocket_server(void *arg)
 	mbedtls_ctr_drbg_context ctr_drbg;
 	mbedtls_ssl_cache_context cache;
 
-	g_cnt = 0;
 	websocket_t *websocket_srv = malloc(sizeof(websocket_t));
 	if (websocket_srv == NULL) {
 		printf("fail to allocate memory\n");
@@ -789,6 +779,7 @@ int websocket_server(void *arg)
 
 	memset(websocket_srv, 0, sizeof(websocket_t));
 
+	websocket_srv->fd = -1;
 	websocket_srv->cb = &cb;
 	websocket_srv->tls_enabled = tls;
 
@@ -821,6 +812,14 @@ WEB_SRV_EXIT:
 	return 0;
 }
 
+#define WEBSOCKET_USAGE	\
+"-----------------------------\n"	\
+"Server usage:\n"			\
+"$websocket server [addr] [port] [path] [tls_enable] [size] [num]\n"	\
+"Client usage:\n"			\
+"$websocket client [tls option]\n"	\
+"-----------------------------\n"
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -831,61 +830,58 @@ int websocket_main(int argc, char *argv[])
 	pthread_attr_t attr;
 	pthread_t tid;
 
-	if (argc == 3 || argc == 8) {
-		if (memcmp(argv[1], "client", strlen("client")) == 0) {
-			if (argc != 8) {
-				printf("not enough arguments\n  usage: %s %s [addr] [port] [path] [tls_enable] [size] [num]\n", argv[0], argv[1]);
-				return -1;
-			} else {
-				if (atoi(argv[6]) < 16) {
-					printf("size too small, minimum 16\n");
-					return -1;
-				}
-				if (atoi(argv[7]) < 1) {
-					printf("test number too small, minimum 1\n");
-					return -1;
-				}
-				status = pthread_attr_init(&attr);
-				if (status != 0) {
-					printf("fail to init thread\n");
-				}
-				pthread_attr_setstacksize(&attr, WEBSOCKET_EXAMPLE_STACKSIZE);
-				pthread_attr_setschedpolicy(&attr, WEBSOCKET_SCHED_POLICY);
-				status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_client, (void *)(argv + 2));
-				if (status != 0) {
-					printf("fail to create thread\n");
-					return -1;
-				}
-				pthread_setname_np(tid, "websocket client");
-				sleep(1);
-				pthread_detach(tid);
-			}
-		} else if (memcmp(argv[1], "server", strlen("server")) == 0) {
-			if (argc != 3) {
-				printf("not enough arguments\n	usage: %s %s [tls_enable]\n", argv[0], argv[1]);
-				return -1;
-			} else {
-				status = pthread_attr_init(&attr);
-				if (status != 0) {
-					printf("fail to init thread\n");
-				}
-				pthread_attr_setstacksize(&attr, WEBSOCKET_EXAMPLE_STACKSIZE);
-				pthread_attr_setschedpolicy(&attr, WEBSOCKET_SCHED_POLICY);
-				status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_server, (void *)argv[2]);
-				if (status != 0) {
-					printf("fail to create thread\n");
-					return -1;
-				}
-				pthread_setname_np(tid, "websocket server");
-				sleep(1);
-				pthread_detach(tid);
-			}
-		} else {
-			printf("choose client or server\n");
+	if (argc != 3 && argc != 8) {
+		printf("Not enough arguments\n\n %s", WEBSOCKET_USAGE);
+		return -1;
+	}
+
+	if (memcmp(argv[1], "client", strlen("client")) == 0) {
+		if (atoi(argv[6]) < 16) {
+			printf("size too small, minimum 16\n");
 			return -1;
 		}
-	} else {
-		printf("not enough arguments\n");
+		if (atoi(argv[7]) < 1) {
+			printf("test number too small, minimum 1\n");
+			return -1;
+		}
+		status = pthread_attr_init(&attr);
+		if (status != 0) {
+			printf("fail to init thread\n");
+			return -1;
+		}
+		pthread_attr_setstacksize(&attr, WEBSOCKET_EXAMPLE_STACKSIZE);
+		pthread_attr_setschedpolicy(&attr, WEBSOCKET_SCHED_POLICY);
+		status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_client, (void *)(argv + 2));
+		if (status != 0) {
+			printf("fail to create thread\n");
+			return -1;
+		}
+		pthread_setname_np(tid, "websocket client");
+		pthread_detach(tid);
+	}
+	else if (memcmp(argv[1], "server", strlen("server")) == 0) {
+		if ((atoi(argv[2]) != 0) && (atoi(argv[2]) != 1)) {
+			printf("Please choose 0 or 1 for TLS option\n");
+			printf("TLS option value 1 is tls enabled, 0 is tls disabled\n");
+			return -1;
+		}
+		status = pthread_attr_init(&attr);
+		if (status != 0) {
+			printf("fail to init thread\n");
+			return -1;
+		}
+		pthread_attr_setstacksize(&attr, WEBSOCKET_EXAMPLE_STACKSIZE);
+		pthread_attr_setschedpolicy(&attr, WEBSOCKET_SCHED_POLICY);
+		status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_server, (void *)(argv + 2));
+		if (status != 0) {
+			printf("fail to create thread\n");
+			return -1;
+		}
+		pthread_setname_np(tid, "websocket server");
+		pthread_detach(tid);
+	}		
+	else {
+		printf("choose client or server\n");
 		return -1;
 	}
 	return 0;
