@@ -134,11 +134,24 @@
 #define TCP_WND                         (40*TCP_MSS)
 
 /* ---------- UDP options ---------- */
+#ifdef CONFIG_NET_LWIP_UDP
 #define LWIP_UDP                        1
+#else
+#define LWIP_UDP                        0
+#endif
+
+#ifdef CONFIG_NET_LWIP_UDPLITE
+#define LWIP_UDPLITE                    1
+#else
+#define LWIP_UDPLITE                    0
+#endif
+
 #define UDP_TTL                         255
 #define LWIP_UDP_TODO                   1
-
 #define LWIP_DHCPS                      0
+/* ---------- UDP options ---------- */
+
+
 
 /*
    ----------------------------------------------

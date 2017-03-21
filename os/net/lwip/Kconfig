@@ -182,4 +182,18 @@ config NET_LWIP_MEMP_NUM_IGMP_GROUP
 		can be members at the same time
 endif #NET_LWIP_IGMP
 
+
+menuconfig NET_LWIP_UDP
+	bool "UDP support"
+	default y
+
+if NET_LWIP_UDP
+
+config NET_LWIP_UDPLITE
+	bool "UDP-Lite support"
+	default n
+
+endif #NET_LWIP_UDP
+
+
 endmenu #LwIP options
