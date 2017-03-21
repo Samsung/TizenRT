@@ -347,6 +347,8 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 	int fd;
 	socklen_t addrlen;
 	struct sockaddr_in serveraddr;
+
+#ifdef CONFIG_NET_LOOPBACK
 	struct hostent *he = NULL;
 	char ip_str[INET6_ADDRSTRLEN];
 
@@ -357,6 +359,7 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 		return WEBSOCKET_CONNECT_ERROR;
 	}
 	inet_ntop(he->h_addrtype, he->h_addr, ip_str, he->h_length);
+#endif
 
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (fd == -1) {
@@ -366,14 +369,17 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_port = htons(atoi(port));
+#ifdef CONFIG_NET_LOOPBACK
 	serveraddr.sin_addr.s_addr = inet_addr(ip_str);
+#else
+	serveraddr.sin_addr.s_addr = inet_addr(host);
+#endif
 	addrlen = sizeof(struct sockaddr);
 	if (connect(fd, (struct sockaddr *)&serveraddr, addrlen) < 0) {
 		WEBSOCKET_DEBUG("fail to connect socket (errno=%d)\n", errno);
 		close(fd);
 		return WEBSOCKET_CONNECT_ERROR;
 	}
-
 	client->fd = fd;
 	WEBSOCKET_DEBUG("connect server, fd == %d\n", fd);
 
@@ -389,8 +395,6 @@ TLS_HS_RETRY:
 	if ((r = connect_socket(client, host, port)) != WEBSOCKET_SUCCESS) {
 		return r;
 	}
-
-	websocket_update_state(client, WEBSOCKET_RUNNING);
 
 	if (websocket_make_block(client->fd) != WEBSOCKET_SUCCESS) {
 		websocket_socket_free(client);
@@ -594,62 +598,61 @@ int websocket_accept_loop(websocket_t *init_server)
 			}
 		} else {
 			timeout_cnt = 0;
-			while ((accept_fd = accept(listen_fd, (struct sockaddr *)&clientaddr, &addrlen)) == -1 && errno == EINTR) ;
-			if (accept_fd == -1) {
+
+			accept_fd = accept(listen_fd, (struct sockaddr *)&clientaddr, &addrlen);
+			if (accept_fd < 0) {
 				WEBSOCKET_DEBUG("Error in accept err == %d\n", errno);
 				return WEBSOCKET_SOCKET_ERROR;
-			} else if (accept_fd >= 0) {
-				websocket_t *server_handler = NULL;
+			}
+			websocket_t *server_handler = NULL;
 
-				server_handler = websocket_find_table();
-				if (server_handler == NULL) {
-					close(accept_fd);
-					continue;
-				};
+			server_handler = websocket_find_table();
+			if (server_handler == NULL) {
+				close(accept_fd);
+				continue;
+			}
 
-				if (init_server->tls_enabled) {
-					server_handler->tls_ssl = malloc(sizeof(mbedtls_ssl_context));
-					if (server_handler->tls_ssl == NULL) {
-						WEBSOCKET_DEBUG("fail to allocate memory for server\n");
-						r = WEBSOCKET_ALLOCATION_ERROR;
-						close(accept_fd);
-						websocket_update_state(server_handler, WEBSOCKET_STOP);
-						goto EXIT_INIT_SERVER;
-					}
-				}
-
-				if (websocket_make_block(accept_fd) != WEBSOCKET_SUCCESS) {
-					if (server_handler->tls_ssl) {
-						free(server_handler->tls_ssl);
-					}
-					r = WEBSOCKET_SOCKET_ERROR;
+			if (init_server->tls_enabled) {
+				server_handler->tls_ssl = malloc(sizeof(mbedtls_ssl_context));
+				if (server_handler->tls_ssl == NULL) {
+					WEBSOCKET_DEBUG("fail to allocate memory for server\n");
+					r = WEBSOCKET_ALLOCATION_ERROR;
 					close(accept_fd);
 					websocket_update_state(server_handler, WEBSOCKET_STOP);
 					goto EXIT_INIT_SERVER;
 				}
-
-
-				WEBSOCKET_DEBUG("accept client, fd == %d\n", accept_fd);
-				server_handler->fd = accept_fd;
-
-				pthread_attr_init(&server_handler->thread_attr);
-				pthread_attr_setstacksize(&server_handler->thread_attr, WEBSOCKET_STACKSIZE);
-				ws_sparam.sched_priority = WEBSOCKET_PRI;
-				pthread_attr_setschedparam(&server_handler->thread_attr, &ws_sparam);
-				pthread_attr_setschedpolicy(&server_handler->thread_attr, WEBSOCKET_SCHED_POLICY);
-				if (pthread_create(&server_handler->thread_id, &server_handler->thread_attr, (pthread_startroutine_t)websocket_server_start, (pthread_addr_t)server_handler) != 0) {
-					WEBSOCKET_DEBUG("fail to create thread, fd == %d\n", accept_fd);
-					close(accept_fd);
-					if (server_handler->tls_ssl) {
-						free(server_handler->tls_ssl);
-					}
-					websocket_update_state(server_handler, WEBSOCKET_STOP);
-					continue;
-				}
-				pthread_setname_np(server_handler->thread_id, "websocket server handler");
-				/* Detach thread in order to avoid memory leaks. */
-				pthread_detach(server_handler->thread_id);
 			}
+
+			if (websocket_make_block(accept_fd) != WEBSOCKET_SUCCESS) {
+				if (server_handler->tls_ssl) {
+					free(server_handler->tls_ssl);
+				}
+				r = WEBSOCKET_SOCKET_ERROR;
+				close(accept_fd);
+				websocket_update_state(server_handler, WEBSOCKET_STOP);
+				goto EXIT_INIT_SERVER;
+			}
+
+			WEBSOCKET_DEBUG("accept client, fd == %d\n", accept_fd);
+			server_handler->fd = accept_fd;
+
+			pthread_attr_init(&server_handler->thread_attr);
+			pthread_attr_setstacksize(&server_handler->thread_attr, WEBSOCKET_STACKSIZE);
+			ws_sparam.sched_priority = WEBSOCKET_PRI;
+			pthread_attr_setschedparam(&server_handler->thread_attr, &ws_sparam);
+			pthread_attr_setschedpolicy(&server_handler->thread_attr, WEBSOCKET_SCHED_POLICY);
+			if (pthread_create(&server_handler->thread_id, &server_handler->thread_attr, (pthread_startroutine_t)websocket_server_start, (pthread_addr_t)server_handler) != 0) {
+				WEBSOCKET_DEBUG("fail to create thread, fd == %d\n", accept_fd);
+				close(accept_fd);
+				if (server_handler->tls_ssl) {
+					free(server_handler->tls_ssl);
+				}
+				websocket_update_state(server_handler, WEBSOCKET_STOP);
+				continue;
+			}
+			pthread_setname_np(server_handler->thread_id, "websocket server handler");
+				/* Detach thread in order to avoid memory leaks. */
+			pthread_detach(server_handler->thread_id);
 		}
 	}
 
@@ -788,6 +791,8 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	}
 
 	WEBSOCKET_DEBUG("start websocket client handling thread\n");
+	websocket_update_state(client, WEBSOCKET_RUNNING);
+
 	pthread_attr_init(&client->thread_attr);
 	pthread_attr_setstacksize(&client->thread_attr, WEBSOCKET_STACKSIZE);
 	ws_sparam.sched_priority = WEBSOCKET_PRI;
@@ -800,6 +805,8 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	}
 	pthread_setname_np(client->thread_id, "websocket client handler");
 	pthread_detach(client->thread_id);
+
+	return r;
 
 EXIT_CLIENT_OPEN:
 	if (fd >= 0) {
@@ -824,7 +831,6 @@ websocket_return_t websocket_server_open(websocket_t *init_server)
 		WEBSOCKET_DEBUG("function returned for null parameter\n");
 		return WEBSOCKET_ALLOCATION_ERROR;
 	}
-
 	port = init_server->tls_enabled ? 443 : 80;
 
 	if (websocket_listen(&(init_server->fd), port) != WEBSOCKET_SUCCESS) {
