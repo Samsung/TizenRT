@@ -68,9 +68,43 @@
 #define SYS_LIGHTWEIGHT_PROT            1
 
 /* ---------- ARP options ---------- */
+#ifdef CONFIG_NET_LWIP_ARP
+#define LWIP_ARP                        1
+#else
+#define LWIP_ARP                        0
+#endif
 
+#if defined(CONFIG_NET_LWIP_ARP)
+#if !defined(CONFIG_NET_LWIP_ARP_TABLESIZE)
+#error "Please define LWIP ARP Table size"
+#else
+#define ARP_TABLE_SIZE  CONFIG_NET_LWIP_ARP_TABLESIZE
+#endif
+#endif
+
+#ifdef CONFIG_NET_LWIP_ARP_QUEUEING
 #define ARP_QUEUEING                    1
+#else
+#define ARP_QUEUEING                    0
+#endif
+
+
+#ifdef CONFIG_NET_LWIP_ARP_TRUST_IP_MAC
 #define ETHARP_TRUST_IP_MAC             1
+#else
+#define ETHARP_TRUST_IP_MAC             0
+#endif
+
+#ifdef CONFIG_NET_LWIP_ETH_PAD_SIZE
+#define ETH_PAD_SIZE                    CONFIG_NET_LWIP_ETH_PAD_SIZE
+#endif
+
+#ifdef CONFIG_NET_LWIP_ARP_STATIC_ENTRIES
+#define ETHARP_SUPPORT_STATIC_ENTRIES   1
+#endif
+/* ---------- ARP options ---------- */
+
+
 
 /* ---------- IP options ---------- */
 #define IP_REASS_MAXAGE                 5
