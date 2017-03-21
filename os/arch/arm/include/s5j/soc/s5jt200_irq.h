@@ -58,7 +58,7 @@
 #ifndef __ARCH_ARM_INCLUDE_S5J_S5JT200_IRQ_H
 #define __ARCH_ARM_INCLUDE_S5J_S5JT200_IRQ_H
 
-#define NR_IRQS				512
+#define NR_IRQS				128
 
 #define IRQ_INVALID			0x3FF
 #define IRQ_SPI(x)			(32 + (x))
