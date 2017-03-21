@@ -427,7 +427,11 @@
 
 #define LWIP_TIMEVAL_PRIVATE            0
 
+#ifdef CONFIG_NET_LWIP_LOOPBACK_INTERFACE
 #define LWIP_HAVE_LOOPIF                1
+#else
+#define LWIP_HAVE_LOOPIF                0
+#endif
 
 
 /*

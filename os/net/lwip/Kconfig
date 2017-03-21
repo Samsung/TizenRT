@@ -388,4 +388,10 @@ config NET_LWIP_VLAN_CHECK_ID
 	default 1
 	depends on NET_LWIP_VLAN_CHECK
 
+config NET_LWIP_LOOPBACK_INTERFACE
+	bool "Support loopback interface"
+	default n
+	---help---
+		Support loop interface (127.0.0.1).
+
 endmenu #LwIP options
