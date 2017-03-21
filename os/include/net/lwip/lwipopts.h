@@ -570,7 +570,6 @@
 /* Thread options */
 
 /* ---------- Debug options ---------- */
-
 #ifdef CONFIG_NET_LWIP_DEBUG
 #define LWIP_DEBUG                      1
 
@@ -762,9 +761,86 @@
 
 #endif
 
+/* ---------- Debug options ---------- */
 
+
+/* ---------- Stat options ---------- */
+#ifdef CONFIG_NET_LWIP_STATS
 #define LWIP_STATS                      1
-#define LWIP_COMPAT_MUTEX               1
-#define LWIP_STATS_DISPLAY              1
 
+#ifdef CONFIG_NET_LWIP_STATS_DISPLAY
+#define  LWIP_STATS_DISPLAY             1
+#else
+#define  LWIP_STATS_DISPLAY             0
+#endif
+
+#ifdef CONFIG_NET_LWIP_STATS_LINK
+#define  LINK_STATS                     1
+#else
+#define  LINK_STATS                     0
+#endif
+
+#ifdef CONFIG_NET_LWIP_STATS_ARP
+#define  ETHARP_STATS                   1
+#else
+#define  ETHARP_STATS                   0
+#endif
+
+#ifdef CONFIG_NET_LWIP_STATS_IP
+#define  IP_STATS                       1
+#else
+#define  IP_STATS                       0
+#endif
+
+#ifdef CONFIG_NET_LWIP_STATS_IPFRAG
+#define  IPFRAG_STATS                   1
+#else
+#define  IPFRAG_STATS                   0
+#endif
+
+#ifdef CONFIG_NET_LWIP_STATS_ICMP
+#define  ICMP_STATS                     1
+#else
+#define  ICMP_STATS                     0
+#endif
+
+
+#ifdef CONFIG_NET_LWIP_STATS_IGMP
+#define  IGMP_STATS                     1
+#else
+#define  IGMP_STATS                     0
+#endif
+
+#ifdef CONFIG_NET_LWIP_STATS_UDP
+#define  UDP_STATS                      1
+#else
+#define  UDP_STATS                      0
+#endif
+
+#ifdef CONFIG_NET_LWIP_STATS_TCP
+#define  TCP_STATS                      1
+#else
+#define  TCP_STATS                      0
+#endif
+
+#ifdef CONFIG_NET_LWIP_STATS_MEM
+#define  MEM_STATS                      1
+#else
+#define  MEM_STATS                      0
+#endif
+
+
+#ifdef CONFIG_NET_LWIP_STATS_SYS
+#define  SYS_STATS                      1
+#else
+#define  SYS_STATS                      0
+#endif
+
+#else
+#define LWIP_STATS                      0
+#endif
+/* ---------- Stat options ---------- */
+
+
+#define LWIP_COMPAT_MUTEX               1
 #endif							/* __LWIP_LWIPOPTS_H__ */

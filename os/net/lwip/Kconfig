@@ -676,4 +676,56 @@ config NET_LWIP_DEBUG_SNMP_MIB
 
 endif #NET_LWIP_DEBUG
 
+menuconfig NET_LWIP_STATS
+	bool "LwIP stats options"
+	default y
+
+if NET_LWIP_STATS
+
+config NET_LWIP_STATS_DISPLAY
+	bool "Compile in the statistics output functions"
+	default n
+
+config NET_LWIP_STATS_LINK
+	bool "Enable link stats"
+	default y
+
+config NET_LWIP_STATS_ARP
+	bool "Enable ARP stats"
+	default y
+
+config NET_LWIP_STATS_IP
+	bool "Enable IP stats"
+	default y
+
+config NET_LWIP_STATS_IPFRAG
+	bool "Enable IP fragmentation stats"
+	default y
+
+config NET_LWIP_STATS_ICMP
+	bool "Enable ICMP stats"
+	default n
+
+config NET_LWIP_STATS_IGMP
+	bool "Enable IGMP stats"
+	default n
+
+config NET_LWIP_STATS_UDP
+	bool "Enable UDP stats"
+	default y
+
+config NET_LWIP_STATS_TCP
+	bool "Enable TCP stats"
+	default y
+
+config NET_LWIP_STATS_MEM
+	bool "Enable MEM stats"
+	default y
+
+config NET_LWIP_STATS_SYS
+	bool "Enable Sys stats"
+	default y
+
+endif #NET_LWIP_STATS
+
 endmenu #LwIP options
