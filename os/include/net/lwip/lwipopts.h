@@ -204,20 +204,57 @@
 #define PBUF_POOL_SIZE          50
 
 
-
-/*
-   ------------------------------------
-   ---------- Socket options ----------
-   ------------------------------------
-*/
-/**
- * LWIP_SOCKET==1: Enable Socket API (require to use sockets.c)
- */
-#ifdef CONFIG_CUSTOM_SOCKETS
+/* ---------- Socket options ---------- */
+#ifdef CONFIG_NET_LWIP_SOCKET
 #define LWIP_SOCKET                     1
+
+#ifdef CONFIG_NET_LWIP_RAW
+#define LWIP_RAW                        1
+#else
+#define LWIP_RAW                        0
+#endif
+
+#ifdef CONFIG_NET_LWIP_SOCKET_OPTION_BROADCAST
+#define IP_SOF_BROADCAST                1
+#else
+#define IP_SOF_BROADCAST                0
+#endif
+
+
+#ifdef CONFIG_NET_LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS
+#define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS      1
+#else
+#define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS      0
+#endif
+
+#ifdef CONFIG_NET_LWIP_SOCKET_SENDTIMEOUT
+#define LWIP_SO_SNDTIMEO                        1
+#else
+#define LWIP_SO_SNDTIMEO                        0
+#endif
+
+#ifdef CONFIG_NET_LWIP_SOCKET_RECVTIMEOUT
+#define LWIP_SO_RCVTIMEO                        1
+#else
+#define LWIP_SO_RCVTIMEO                        0
+#endif
+
+#ifdef CONFIG_NET_LWIP_SOCKET_RCVBUF
+#define LWIP_SO_RCVBUF                          1
+#else
+#define LWIP_SO_RCVBUF                          0
+#endif
+
+#ifdef CONFIG_NET_LWIP_SOCKET_REUSE
+#define SO_REUSE                                1
+#else
+#define SO_REUSE                                0
+#endif
+
 #else
 #define LWIP_SOCKET                     0
 #endif
+/* ---------- Socket options ---------- */
 
 #ifdef CONFIG_DISABLE_POLL
 #define LWIP_SELECT                     1
@@ -227,15 +264,6 @@
 
 #define LWIP_POSIX_SOCKETS_IO_NAMES     0
 #define LWIP_SOCKET_OFFSET              CONFIG_NFILE_DESCRIPTORS
-/**
- * LWIP_SO_RCVTIMEO==1: Enable receive timeout for sockets/netconns and
- * SO_RCVTIMEO processing.
- */
-#define LWIP_SO_RCVTIMEO                1
-/**
- * SO_REUSE==1: Enable SO_REUSEADDR option.
- */
-#define SO_REUSE                        1
 
 #define SOCKLEN_T_DEFINED               1
 
@@ -243,7 +271,6 @@
 
 #define LWIP_HAVE_LOOPIF                1
 
-#define LWIP_RAW                        1
 
 /*
    -----------------------------------

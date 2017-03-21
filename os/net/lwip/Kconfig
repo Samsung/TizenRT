@@ -105,4 +105,46 @@ config NET_LWIP_MEMP_NUM_ARP_QUEUE
 		destination address) to finish.
 
 endmenu #LwIP memory options
+
+menuconfig NET_LWIP_SOCKET
+	bool "Socket support"
+	default y
+
+if NET_LWIP_SOCKET
+
+config NET_LWIP_RAW
+	bool "Raw socket support"
+	default y
+
+config NET_LWIP_SOCKET_OPTION_BROADCAST
+	bool "Support SO_BROADCAST Option"
+	default n
+	---help---
+		Enable SO_BROADCAST option support.
+
+config NET_LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS
+	bool "Randomize the initial local port for TCP/UDP"
+	default n
+	---help---
+		Randomize the local port for the first local TCP/UDP pcb (default==0).
+		This can prevent creating predictable port numbers after booting a device.
+
+config NET_LWIP_SOCKET_SENDTIMEOUT
+	bool "Enable send timeout socket option"
+	default n
+
+config NET_LWIP_SOCKET_RECVTIMEOUT
+	bool "Enable receive timeout socket option"
+	default n
+
+config NET_LWIP_SOCKET_RCVBUF
+	bool "Enable SO_RCVBUF socket option"
+	default y
+
+config NET_LWIP_SOCKET_REUSE
+	bool "Enable SO_REUSE socket option"
+	default n
+
+endif #NET_LWIP_SOCKET
+
 endmenu #LwIP options
