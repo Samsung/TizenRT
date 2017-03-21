@@ -1384,19 +1384,16 @@ static int lwip_poll_scan(int fd, struct socket * sock, struct pollfd * fds)
 	/* ... then examine it: */
 	/* See if netconn of this socket is ready for read */
 	if ((fds->events & POLLIN) && ((lastdata != NULL) || (rcvevent > 0))) {
-		LWIP_DEBUGF(POLL_DEBUG, ("fd=%d ready for reading\n", fd));
 		fds->revents |= POLLIN;
 		nready++;
 	}
 	/* See if netconn of this socket is ready for write */
 	if ((fds->events & POLLOUT) && (sendevent != 0)) {
-		LWIP_DEBUGF(POLL_DEBUG, ("fd=%d ready for writing\n", fd));
 		fds->revents |= POLLOUT;
 		nready++;
 	}
 	/* See if netconn of this socket had an error */
 	if ((fds->events & POLLERR) && (errevent != 0)) {
-		LWIP_DEBUGF(POLL_DEBUG, ("fd=%d ready for exception\n", fd));
 		fds->revents |= POLLERR;
 		nready++;
 	}
@@ -1420,7 +1417,6 @@ static int lwip_poll_setup(int fd, struct socket * sock, struct pollfd * fds)
 	SYS_ARCH_DECL_PROTECT(lev);
 	fds->scb = NULL;
 	nready = lwip_poll_scan(fd, sock, fds);
-	LWIP_DEBUGF(POLL_DEBUG, ("first nready=%d\n", nready));
 
 	/* Check if any requested events are already in effect */
 	if (nready > 0 && fds->revents != 0) {
@@ -1471,7 +1467,6 @@ static int lwip_poll_setup(int fd, struct socket * sock, struct pollfd * fds)
 	/* Call lwip_pollscan again: there could have been events between
 	   the last scan (without us on the list) and putting us on the list! */
 	nready = lwip_poll_scan(fd, sock, fds);
-	LWIP_DEBUGF(POLL_DEBUG, ("second nready=%d\n", nready));
 
 	/* Check if any requested events are already in effect */
 	if (nready > 0 && fds->revents != 0) {
@@ -1556,11 +1551,9 @@ int lwip_poll(int fd, struct pollfd * fds, bool setup)
 
 	if (setup) {
 		/* Perform the LWIP poll() setup */
-		LWIP_DEBUGF(POLL_DEBUG, ("calling  lwip_poll_setup \n"));
 		ret = lwip_poll_setup(fd, sock, fds);
 	} else {
 		/* Perform the LWIP poll() teardown */
-		LWIP_DEBUGF(POLL_DEBUG, ("calling  lwip_poll_teardown \n"));
 		ret = lwip_poll_teardown(fd, sock, fds);
 	}
 

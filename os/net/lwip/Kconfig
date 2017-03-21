@@ -528,4 +528,152 @@ config NET_LWIP_SNMP_MAX_TREE_DEPTH
 		this depends on your MIB! This affects the size of MEMP_SNMP_VALUE elements.
 
 endif #NET_LWIP_SNMP
+
+menuconfig NET_LWIP_DEBUG
+	bool "LwIP debugging options"
+	default n
+	---help---
+		This feature enables LwIP debugging options.
+
+if NET_LWIP_DEBUG
+
+config NET_LWIP_DEBUG_LEVEL
+	int "LWIP debug level"
+	default 0
+	range 0 3
+	---help---
+		Configure LwIP log level.
+		0 : debug all
+		1 : warning (bad checksums, dropped packets, ...)
+		2 : serious (memory allocation failures, ... )
+		3 : severe
+
+config NET_LWIP_DEBUG_ETHARP
+	bool "Enable Ethernet ARP debugging"
+	default n
+
+config NET_LWIP_DEBUG_NETIF
+	bool "Enable netif debugging"
+	default n
+
+config NET_LWIP_DEBUG_PBUF
+	bool "Enable pbuf debugging"
+	default n
+
+config NET_LWIP_DEBUG_API_LIB
+	bool "Enable debugging in api_lib.c"
+	default n
+
+config NET_LWIP_DEBUG_API_MSG
+	bool "Enable debugging in api_msg.c"
+	default n
+
+config NET_LWIP_DEBUG_SOCKETS
+	bool "Enable debugging in sockets.c"
+	default n
+
+config NET_LWIP_DEBUG_ICMP
+	bool "Enable debugging in icmp.c"
+	default n
+
+config NET_LWIP_DEBUG_IGMP
+	bool "Enable debugging in igmp.c"
+	default n
+
+config NET_LWIP_DEBUG_INET
+	bool "Enable debugging in inet.c"
+	default n
+
+config NET_LWIP_DEBUG_IP
+	bool "Enable debugging for IP"
+	default n
+
+config NET_LWIP_DEBUG_IP_REASS
+	bool "Enable debugging in ip_frag.c"
+	default n
+	---help---
+		Enable debugging in ip_frag.c for both frag & reass.
+
+config NET_LWIP_DEBUG_RAW
+	bool "Enable debugging in raw.c"
+	default n
+
+config NET_LWIP_DEBUG_MEM
+	bool "Enable debugging in mem.c"
+	default n
+
+config NET_LWIP_DEBUG_SYS
+	bool "Enable debugging in sys.c"
+	default n
+
+config NET_LWIP_DEBUG_TIMER
+	bool "Enable debugging in timers.c"
+	default n
+
+config NET_LWIP_DEBUG_TCP
+	bool "Enable debugging for TCP"
+	default n
+
+config NET_LWIP_DEBUG_TCP_INPUT
+	bool "Enable debugging in tcp_in.c"
+	default n
+	---help---
+		Enable debugging in tcp_in.c for incoming debug.
+
+config NET_LWIP_DEBUG_TCP_FR
+	bool "Enable debugging in tcp_in.c for fast retransmit"
+	default n
+	---help---
+		Enable debugging in tcp_in.c for fast retransmit.
+
+config NET_LWIP_DEBUG_TCP_RTO
+	bool "Enable debugging in TCP for retransmit"
+	default n
+
+config NET_LWIP_DEBUG_TCP_CWND
+	bool "Enable debugging for TCP congestion window"
+	default n
+
+config NET_LWIP_DEBUG_TCP_WND
+	bool "Enable debugging in tcp_in.c for window updating"
+	default n
+
+config NET_LWIP_DEBUG_TCP_OUTPUT
+	bool "Enable debugging in tcp_out.c"
+	default n
+
+config NET_LWIP_DEBUG_TCP_RST
+	bool "Enable debugging for TCP with the RST message"
+	default n
+
+config NET_LWIP_DEBUG_TCP_QLEN
+	bool "Enable debugging for TCP queue lengths"
+	default n
+
+config NET_LWIP_DEBUG_UDP
+	bool "Enable debugging in UDP"
+	default n
+
+config NET_LWIP_DEBUG_TCPIP
+	bool "Enable debugging in tcpip.c"
+	default n
+
+config NET_LWIP_DEBUG_PPP
+	bool "Enable debugging for PPP"
+	default n
+
+config NET_LWIP_DEBUG_SLIP
+	bool "Enable debugging in slipif.c"
+	default n
+
+config NET_LWIP_DEBUG_SNMP_MSG
+	bool "Enable debugging for SNMP messages"
+	default n
+
+config NET_LWIP_DEBUG_SNMP_MIB
+	bool "Enable debugging for SNMP MIBs"
+	default n
+
+endif #NET_LWIP_DEBUG
+
 endmenu #LwIP options

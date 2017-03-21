@@ -533,49 +533,6 @@
 /* ---------- PPP options ---------- */
 
 
-/*
-   -----------------------------------
-   ---------- DEBUG options ----------
-   -----------------------------------
-*/
-
-#define LWIP_DEBUG                      1
-
-#define API_LIB_DEBUG               LWIP_DBG_OFF
-#define API_MSG_DEBUG               LWIP_DBG_OFF
-#define DHCP_DEBUG                  LWIP_DBG_OFF
-#define DNS_DEBUG                   LWIP_DBG_OFF
-#define ETHARP_DEBUG                LWIP_DBG_OFF
-#define ETHIF_DEBUG                 LWIP_DBG_OFF
-#define UDP_DEBUG                   LWIP_DBG_OFF
-#define UDP_LPC_EMAC                LWIP_DBG_OFF
-#define IP_DEBUG                    LWIP_DBG_OFF
-#define IP_REASS_DEBUG              LWIP_DBG_OFF
-#define ICMP_DEBUG                  LWIP_DBG_OFF
-#define IGMP_DEBUG                  LWIP_DBG_OFF
-#define MEM_DEBUG                   LWIP_DBG_OFF
-#define MEMP_DEBUG                  LWIP_DBG_OFF
-#define NETIF_DEBUG                 LWIP_DBG_OFF
-#define PBUF_DEBUG                  LWIP_DBG_OFF
-#define POLL_DEBUG                  LWIP_DBG_OFF
-#define PPP_DEBUG                   LWIP_DBG_OFF
-#define SOCKETS_DEBUG               LWIP_DBG_OFF
-#define SYS_DEBUG                   LWIP_DBG_OFF
-#define SYSARCH_DEBUG               LWIP_DBG_OFF
-#define TCPIP_DEBUG                 LWIP_DBG_OFF
-#define TCP_DEBUG                   LWIP_DBG_OFF
-#define TCP_INPUT_DEBUG             LWIP_DBG_OFF
-#define TCP_FR_DEBUG                LWIP_DBG_OFF
-#define TCP_RTO_DEBUG               LWIP_DBG_OFF
-#define TCP_CWND_DEBUG              LWIP_DBG_OFF
-#define TCP_WND_DEBUG               LWIP_DBG_OFF
-#define TCP_OUTPUT_DEBUG            LWIP_DBG_OFF
-#define TCP_RST_DEBUG               LWIP_DBG_OFF
-#define TCP_QLEN_DEBUG              LWIP_DBG_OFF
-#define TIMERS_DEBUG                LWIP_DBG_OFF
-
-#define LWIP_DEBUG_TIMERNAMES       0
-
 /* Thread options */
 
 #ifdef CONFIG_NET_LWIP_TCPIP_THREAD_NAME
@@ -612,6 +569,198 @@
 #define DEFAULT_ACCEPTMBOX_SIZE         64
 /* Thread options */
 
+/* ---------- Debug options ---------- */
+
+#ifdef CONFIG_NET_LWIP_DEBUG
+#define LWIP_DEBUG                      1
+
+
+#ifdef CONFIG_NET_LWIP_DEBUG_LEVEL
+#define LWIP_DBG_MIN_LEVEL              CONFIG_NET_LWIP_DEBUG_LEVEL
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_ETHARP
+#define ETHARP_DEBUG                    LWIP_DBG_ON
+#else
+#define ETHARP_DEBUG                    LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_NETIF
+#define NETIF_DEBUG                     LWIP_DBG_ON
+#else
+#define NETIF_DEBUG                     LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_PBUF
+#define PBUF_DEBUG                      LWIP_DBG_ON
+#else
+#define PBUF_DEBUG                      LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_API_LIB
+#define API_LIB_DEBUG                   LWIP_DBG_ON
+#else
+#define API_LIB_DEBUG                   LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_API_MSG
+#define API_MSG_DEBUG                   LWIP_DBG_ON
+#else
+#define API_MSG_DEBUG                   LWIP_DBG_OFF
+#endif
+
+
+#ifdef CONFIG_NET_LWIP_DEBUG_SOCKETS
+#define SOCKETS_DEBUG                   LWIP_DBG_ON
+#else
+#define SOCKETS_DEBUG                   LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_ICMP
+#define ICMP_DEBUG                      LWIP_DBG_ON
+#else
+#define ICMP_DEBUG                      LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_IGMP
+#define IGMP_DEBUG                      LWIP_DBG_ON
+#else
+#define IGMP_DEBUG                      LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_INET
+#define INET_DEBUG                      LWIP_DBG_ON
+#else
+#define INET_DEBUG                      LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_IP
+#define IP_DEBUG                        LWIP_DBG_ON
+#else
+#define IP_DEBUG                        LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_IP_REASS
+#define IP_REASS_DEBUG                  LWIP_DBG_ON
+#else
+#define IP_REASS_DEBUG                  LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_RAW
+#define RAW_DEBUG                       LWIP_DBG_ON
+#else
+#define RAW_DEBUG                       LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_MEM
+#define MEM_DEBUG                       LWIP_DBG_ON
+#else
+#define MEM_DEBUG                       LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_SYS
+#define SYS_DEBUG                       LWIP_DBG_ON
+#else
+#define SYS_DEBUG                       LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_TIMER
+#define TIMER_DEBUG                     LWIP_DBG_ON
+#else
+#define TIMER_DEBUG                     LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_TCP
+#define TCP_DEBUG                       LWIP_DBG_ON
+#else
+#define TCP_DEBUG                       LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_TCP_INPUT
+#define TCP_INPUT_DEBUG                 LWIP_DBG_ON
+#else
+#define TCP_INPUT_DEBUG                 LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_TCP_FR
+#define TCP_FR_DEBUG                    LWIP_DBG_ON
+#else
+#define TCP_FR_DEBUG                    LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_TCP_RTO
+#define TCP_RTO_DEBUG                   LWIP_DBG_ON
+#else
+#define TCP_RTO_DEBUG                   LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_TCP_CWND
+#define TCP_CWND_DEBUG                  LWIP_DBG_ON
+#else
+#define TCP_CWND_DEBUG                  LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_TCP_WND
+#define TCP_WND_DEBUG                   LWIP_DBG_ON
+#else
+#define TCP_WND_DEBUG                   LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_TCP_OUTPUT
+#define TCP_OUTPUT_DEBUG                LWIP_DBG_ON
+#else
+#define TCP_OUTPUT_DEBUG                LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_TCP_RST
+#define TCP_RST_DEBUG                   LWIP_DBG_ON
+#else
+#define TCP_RST_DEBUG                   LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_TCP_QLEN
+#define TCP_QLEN_DEBUG                  LWIP_DBG_ON
+#else
+#define TCP_QLEN_DEBUG                  LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_UDP
+#define UDP_DEBUG                       LWIP_DBG_ON
+#else
+#define UDP_DEBUG                       LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_TCPIP
+#define TCPIP_DEBUG                     LWIP_DBG_ON
+#else
+#define TCPIP_DEBUG                     LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_PPP
+#define PPP_DEBUG                       LWIP_DBG_ON
+#else
+#define PPP_DEBUG                       LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_SLIP
+#define SLIP_DEBUG                      LWIP_DBG_ON
+#else
+#define SLIP_DEBUG                      LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_SNMP_MSG
+#define SNMP_MSG_DEBUG                  LWIP_DBG_ON
+#else
+#define SNMP_MSG_DEBUG                  LWIP_DBG_OFF
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEBUG_SNMP_MIB
+#define SNMP_MIB_DEBUG                  LWIP_DBG_ON
+#else
+#define SNMP_MIB_DEBUG                  LWIP_DBG_OFF
+#endif
+
+#endif
 
 
 #define LWIP_STATS                      1
