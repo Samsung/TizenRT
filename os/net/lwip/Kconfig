@@ -167,4 +167,19 @@ config NET_LWIP_ICMP_MULTICAST_PING
 
 endif #NET_LWIP_ICMP
 
+
+menuconfig NET_LWIP_IGMP
+	bool "IGMP support"
+	default n
+
+if NET_LWIP_IGMP
+
+config NET_LWIP_MEMP_NUM_IGMP_GROUP
+	int "Maximum number of IGMP group"
+	default 8
+	---help---
+		Number of multicast groups whose network interfaces
+		can be members at the same time
+endif #NET_LWIP_IGMP
+
 endmenu #LwIP options

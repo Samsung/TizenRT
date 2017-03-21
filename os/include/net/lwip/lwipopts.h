@@ -98,8 +98,18 @@
 /* ---------- ICMP options ---------- */
 
 /* ---------- IGMP options ---------- */
-
+#ifdef CONFIG_NET_LWIP_IGMP
 #define LWIP_IGMP                       1
+#else
+#define LWIP_IGMP                       0
+#endif
+
+#ifdef CONFIG_NET_LWIP_MEMP_NUM_IGMP_GROUP
+#define MEMP_NUM_IGMP_GROUP             CONFIG_NET_LWIP_MEMP_NUM_IGMP_GROUP
+#endif
+
+/* ---------- IGMP options ---------- */
+
 #define LWIP_RAND()                     rand()
 
 /* ---------- TCP options ---------- */
