@@ -108,10 +108,11 @@
  ****************************************************************************/
 int up_timerisr(int irq, uint32_t *regs)
 {
-	/* Process timer interrupt */
-
-	sched_process_timer();
+	/* Reset timer */
 	s5j_mct_clear_pending(MCT_L0);
+
+	/* Process timer interrupt */
+	sched_process_timer();
 
 	return 0;
 }
