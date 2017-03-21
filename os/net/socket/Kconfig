@@ -5,13 +5,6 @@
 
 menu "Socket Support"
 
-config CUSTOM_SOCKETS
-	bool "Enable external Socket Layer(for e.g. LWIP sockets)"
-	default y
-	depends on NET_LWIP
-	---help---
-		"Enable external Socket Layer(for e.g. LWIP sockets)"
-
 config NSOCKET_DESCRIPTORS
 	int "Number of socket descriptor"
 	default 8
