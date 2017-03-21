@@ -132,35 +132,11 @@
 
 #include <sys/socket.h>
 
-#ifdef CONFIG_HW_RSA_SIGN
-#include <tls/pk.h>
-#include <tls/pk_internal.h>
-#include <tls/see_api.h>
-#include <tls/sss_key.h>
-#endif
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* SSS configure */
-#ifdef CONFIG_HW_RSA_SIGN
-#define WEBSOCKET_S_CA_KEYINDEX   1
-#define WEBSOCKET_S_DEV_KEYINDEX  2
-#define WEBSOCKET_S_CA_CERTINDEX  1
-#define WEBSOCKET_S_DEV_CERTINDEX 2
-#define WEBSOCKET_C_CA_KEYINDEX   3
-#define WEBSOCKET_C_DEV_KEYINDEX  4
-#define WEBSOCKET_C_CA_CERTINDEX  3
-#define WEBSOCKET_C_DEV_CERTINDEX 4
-#endif
-
-/* Stack size of examples */
-#ifdef CONFIG_HW_RSA_SIGN
-#define WEBSOCKET_EXAMPLE_STACKSIZE (1024 * 28)
-#else
 #define WEBSOCKET_EXAMPLE_STACKSIZE (1024 * 10)
-#endif
 
 /* TLS configure */
 #define MBEDTLS_DEBUG_LEVEL 2
@@ -175,48 +151,6 @@ int received_cnt;
  * Public Functions
  ****************************************************************************/
 
-#ifdef CONFIG_HW_RSA_SIGN
-int set_key_and_cert_vector(void)
-{
-	int ret;
-	/* Setup post key */
-	/* THIS CODE SHOULD BE REMOVED AFTER USING SSS KEY AND CERT */
-	if ((ret = see_setup_key(sss_da_rsa_ca, sizeof(sss_da_rsa_ca), SECURE_STORAGE_TYPE_KEY_RSA, WEBSOCKET_S_CA_KEYINDEX)) != 0) {
-		printf("Error: set_key fail %d\n", ret);
-		return -1;
-	}
-	if ((ret = see_setup_key(sss_da_rsa_dev, sizeof(sss_da_rsa_dev), SECURE_STORAGE_TYPE_KEY_RSA, WEBSOCKET_S_DEV_KEYINDEX)) != 0) {
-		printf("Error: set_key fail %d\n", ret);
-		return -1;
-	}
-	if ((ret = see_set_certificate(sss_ca_crt, sizeof(sss_ca_crt), WEBSOCKET_S_CA_CERTINDEX, CERT_PEM)) != 0) {
-		printf("Error: set_cert fail %d\n", ret);
-		return -1;
-	}
-	if ((ret = see_set_certificate(sss_dev_crt, sizeof(sss_dev_crt), WEBSOCKET_S_DEV_CERTINDEX, CERT_PEM)) != 0) {
-		printf("Error: set_cert fail %d\n", ret);
-		return -1;
-	}
-	if ((ret = see_setup_key(sss_da_rsa_ca, sizeof(sss_da_rsa_ca), SECURE_STORAGE_TYPE_KEY_RSA, WEBSOCKET_C_CA_KEYINDEX)) != 0) {
-		printf("Error: set_key fail %d\n", ret);
-		return -1;
-	}
-	if ((ret = see_setup_key(sss_da_rsa_dev, sizeof(sss_da_rsa_dev), SECURE_STORAGE_TYPE_KEY_RSA, WEBSOCKET_C_DEV_KEYINDEX)) != 0) {
-		printf("Error: set_key fail %d\n", ret);
-		return -1;
-	}
-	if ((ret = see_set_certificate(sss_ca_crt, sizeof(sss_ca_crt), WEBSOCKET_C_CA_CERTINDEX, CERT_PEM)) != 0) {
-		printf("Error: set_cert fail %d\n", ret);
-		return -1;
-	}
-	if ((ret = see_set_certificate(sss_dev_crt, sizeof(sss_dev_crt), WEBSOCKET_C_DEV_CERTINDEX, CERT_PEM)) != 0) {
-		printf("Error: set_cert fail %d\n", ret);
-		return -1;
-	}
-	return 0;
-}
-#endif
-
 static void websocket_tls_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
 	printf("%s:%04d: %s", file, line, str);
@@ -225,19 +159,6 @@ static void websocket_tls_debug(void *ctx, int level, const char *file, int line
 websocket_return_t websocket_tls_init(int param, websocket_t *data, mbedtls_ssl_config *conf, mbedtls_x509_crt *cert, mbedtls_pk_context *pkey, mbedtls_entropy_context *entropy, mbedtls_ctr_drbg_context *ctr_drbg, mbedtls_ssl_cache_context *cache)
 {
 	int r;
-#ifdef CONFIG_HW_RSA_SIGN
-	unsigned int ca_keyindex = WEBSOCKET_S_CA_KEYINDEX;
-	unsigned int dev_keyindex = WEBSOCKET_S_DEV_KEYINDEX;
-	unsigned int ca_certindex = WEBSOCKET_S_CA_CERTINDEX;
-	unsigned int dev_certindex = WEBSOCKET_S_DEV_CERTINDEX;
-
-	if (param) {
-		ca_keyindex = WEBSOCKET_C_CA_KEYINDEX;
-		dev_keyindex = WEBSOCKET_C_DEV_KEYINDEX;
-		ca_certindex = WEBSOCKET_C_CA_CERTINDEX;
-		dev_certindex = WEBSOCKET_C_DEV_CERTINDEX;
-	}
-#else
 	const char *crt = mbedtls_test_srv_crt;
 	const char *key = mbedtls_test_srv_key;
 	const char *ca_crt = mbedtls_test_cas_pem;
@@ -253,7 +174,6 @@ websocket_return_t websocket_tls_init(int param, websocket_t *data, mbedtls_ssl_
 		cacrt_len = mbedtls_test_cas_pem_len;
 		key_len = mbedtls_test_cli_key_len;
 	}
-#endif
 
 	/* initialize tls context for server */
 	mbedtls_ssl_config_init(conf);
@@ -262,88 +182,6 @@ websocket_return_t websocket_tls_init(int param, websocket_t *data, mbedtls_ssl_
 	mbedtls_entropy_init(entropy);
 	mbedtls_ctr_drbg_init(ctr_drbg);
 
-#ifdef CONFIG_HW_RSA_SIGN
-	see_init();
-
-	if (set_key_and_cert_vector()) {
-		printf("Error: set key and cert fail\n");
-		return WEBSOCKET_INIT_ERROR;
-	}
-
-	/* 1. Load the certificates and private key */
-	printf("  . [SSS] Loading the cert. and key...");
-
-	unsigned char *cert_buf;
-	unsigned int cert_len = 1500;
-
-	cert_buf = malloc(cert_len);
-	if (cert_buf == NULL) {
-		printf("Error: cert_buf malloc fail\n");
-		return WEBSOCKET_INIT_ERROR;
-	}
-
-	if ((r = see_get_certificate(cert_buf, &cert_len, dev_certindex, CERT_PEM)) != 0) {
-		free(cert_buf);
-		printf("Error: see_get_cert returned %d\n", r);
-		return WEBSOCKET_INIT_ERROR;
-	}
-
-	if ((r = mbedtls_x509_crt_parse(cert, cert_buf, cert_len)) != 0) {
-		free(cert_buf);
-		printf("Error: cert_parse returned %d\n", r);
-		return WEBSOCKET_INIT_ERROR;
-	}
-
-	((mbedtls_rsa_context *)(cert->pk.pk_ctx))->key_index = ca_keyindex;
-
-	cert_len = 1500;
-
-	if ((r = see_get_certificate(cert_buf, &cert_len, ca_certindex, CERT_PEM)) != 0) {
-		free(cert_buf);
-		printf("Error: see_get_cert returned %d\n", r);
-		return WEBSOCKET_INIT_ERROR;
-	}
-
-	if ((r = mbedtls_x509_crt_parse(cert, cert_buf, cert_len)) != 0) {
-		free(cert_buf);
-		printf("Error: cert_parse returned %d\n", r);
-		return WEBSOCKET_INIT_ERROR;
-	}
-
-	((mbedtls_rsa_context *)(cert->next->pk.pk_ctx))->key_index = ca_keyindex;
-
-	free(cert_buf);
-
-	unsigned char rsa_public[292] = { 0x30, 0x82, 0x01, 0x20, 0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01,
-									  0x01, 0x05, 0x00, 0x03, 0x82, 0x01, 0x0d, 0x00, 0x30, 0x82, 0x01, 0x08, 0x02, 0x82, 0x01, 0x01,
-									  0x00, 0xa2, 0x64, 0x21, 0xcf, 0x1c, 0xdb, 0x49, 0x6c, 0x44, 0x01, 0xf8, 0xd5, 0x8b, 0x8d, 0x20,
-									  0xfe, 0x2a, 0x46, 0x4d, 0x29, 0xf4, 0x82, 0x3c, 0xa4, 0x29, 0x7d, 0x6b, 0xdc, 0xc4, 0x04, 0xd6,
-									  0x0f, 0xf3, 0x6b, 0xa8, 0xb1, 0xad, 0x2b, 0xa1, 0xa5, 0xad, 0xfb, 0x9a, 0xba, 0x72, 0x6e, 0x4e,
-									  0x71, 0x93, 0x54, 0x8d, 0x90, 0x02, 0x34, 0x80, 0x1d, 0x8c, 0x83, 0xc9, 0x84, 0xa3, 0xcf, 0x9f,
-									  0x80, 0xe9, 0x4f, 0x5b, 0xf6, 0x29, 0x17, 0xf6, 0x7f, 0x5a, 0x79, 0x47, 0x0c, 0x2c, 0xcf, 0x98,
-									  0x88, 0x6a, 0x31, 0x4e, 0x0a, 0x2c, 0x8e, 0x8c, 0xe5, 0xa5, 0x9f, 0xd7, 0x8f, 0xd0, 0xc1, 0x04,
-									  0x1a, 0xe9, 0x54, 0xa1, 0x36, 0x4e, 0x92, 0x5e, 0x41, 0x9c, 0x07, 0xc8, 0x48, 0xac, 0x9c, 0x7c,
-									  0xcb, 0xa0, 0x8a, 0x51, 0x52, 0x4f, 0x47, 0xa2, 0xc8, 0x48, 0xbc, 0xcd, 0x55, 0x85, 0x24, 0xff,
-									  0xfa, 0x58, 0xe6, 0x75, 0x61, 0x14, 0x1a, 0x82, 0x4e, 0x6b, 0x40, 0x63, 0x9e, 0xef, 0xbd, 0x70,
-									  0x88, 0x9e, 0xc8, 0x59, 0x89, 0x16, 0x0c, 0x4e, 0x71, 0xec, 0x2d, 0xa4, 0x0b, 0xb3, 0x20, 0xca,
-									  0x04, 0x5b, 0x37, 0xf6, 0x5c, 0x80, 0x8d, 0x6a, 0xe4, 0x26, 0x95, 0xe4, 0xd5, 0x35, 0xcd, 0xd3,
-									  0x90, 0x67, 0x48, 0xef, 0x14, 0x8e, 0xc6, 0xcc, 0x16, 0xdb, 0x7a, 0x96, 0xd6, 0xbf, 0x01, 0xef,
-									  0x5f, 0x8d, 0xee, 0x35, 0xd1, 0x66, 0xa3, 0x26, 0x96, 0x5e, 0x73, 0x3b, 0x1e, 0xf6, 0x72, 0xc9,
-									  0x78, 0xc8, 0xdd, 0x81, 0x21, 0x0f, 0x0d, 0xdc, 0x3f, 0x63, 0x7a, 0x92, 0xf1, 0x31, 0x53, 0xe6,
-									  0x34, 0xd7, 0x70, 0xb0, 0x1d, 0x2f, 0x97, 0xab, 0x44, 0xf1, 0x70, 0x58, 0x0e, 0xca, 0xab, 0x26,
-									  0x23, 0x39, 0x6e, 0xdb, 0xf5, 0x5a, 0x15, 0x4a, 0x09, 0x00, 0x7c, 0xe5, 0x82, 0x78, 0xb8, 0xf0,
-									  0xd1, 0x02, 0x01, 0x03
-									};
-
-	if ((r = mbedtls_pk_parse_public_key(pkey, rsa_public, 292)) != 0) {
-		printf("Error: pk_parse_public returned %d\n", r);
-		return WEBSOCKET_INIT_ERROR;
-	}
-
-	if (pkey->pk_info->type == MBEDTLS_PK_RSA) {
-		((mbedtls_rsa_context *)(pkey->pk_ctx))->key_index = dev_keyindex;
-	}
-#else
 	/* 1. Load the certificates and private RSA key */
 	printf("  . Loading the cert. and key...");
 
@@ -364,7 +202,6 @@ websocket_return_t websocket_tls_init(int param, websocket_t *data, mbedtls_ssl_
 	}
 
 	printf("Ok\n");
-#endif
 
 	/* 2. Seed the RNG */
 	printf("  . Seeding the random number generator...");
@@ -412,10 +249,6 @@ void websocket_tls_release(int param, mbedtls_ssl_config *conf, mbedtls_x509_crt
 	mbedtls_pk_free(pkey);
 	mbedtls_x509_crt_free(cert);
 	mbedtls_ssl_config_free(conf);
-
-#ifdef CONFIG_HW_RSA_SIGN
-	see_free();
-#endif
 }
 
 /****************************************************************************
@@ -451,7 +284,6 @@ RECV_RETRY:
 		retry_cnt--;
 		goto RECV_RETRY;
 	}
-
 
 	return r;
 }

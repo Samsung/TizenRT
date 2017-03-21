@@ -75,16 +75,6 @@ struct webserver_input {
 	char **argv;
 };
 
-#ifdef CONFIG_HW_RSA
-#include "tls/sss_key.h"
-#include "tls/see_api.h"
-
-#define WEBSERVER_CA_KEY_INDEX          1
-#define WEBSERVER_DEV_KEY_INDEX         2
-#define WEBSERVER_CA_CERT_INDEX         1
-#define WEBSERVER_DEV_CERT_INDEX        2
-
-#else
 const char ca_crt_rsa[] =
 	"-----BEGIN CERTIFICATE-----\r\n"
 	"MIIDhzCCAm+gAwIBAgIBADANBgkqhkiG9w0BAQUFADA7MQswCQYDVQQGEwJOTDER\r\n"
@@ -158,7 +148,6 @@ const char srv_key_rsa[] =
 	"4AgahOxIxXx2gxJnq3yfkJfIjwf0s2DyP0kY2y6Ua1OeomPeY9mrIS4tCuDQ6LrE\r\n"
 	"TB6l9VGoxJL4fyHnZb8L5gGvnB1bbD8cL6YPaDiOhcRseC9vBiEuVg==\r\n"
 	"-----END RSA PRIVATE KEY-----\r\n";
-#endif /* CONFIG_HW_RSA */
 
 static const char g_httpcontype[]  = "Content-type";
 static const char g_httpconhtml[]  = "text/html";
@@ -375,42 +364,6 @@ start:
 		printf("Error: Cannot allocate server structure!!\n");
 		return NULL;
 	}
-#if defined(CONFIG_HW_RSA)
-	int ret;
-
-	see_init();
-
-	/* Setup post key */
-	/* THIS CODE SHOULD BE REMOVED AFTER USING SSS KEY AND CERT */
-	if ((ret = see_setup_key(sss_da_rsa_ca, sizeof(sss_da_rsa_ca),
-							 SECURE_STORAGE_TYPE_KEY_RSA, WEBSERVER_CA_KEY_INDEX)) != 0) {
-		printf(" failed\n  !  see_setup_key ca 0x%x\n\n", ret);
-		return NULL;
-	}
-	if ((ret = see_setup_key(sss_da_rsa_dev, sizeof(sss_da_rsa_dev),
-							 SECURE_STORAGE_TYPE_KEY_RSA, WEBSERVER_DEV_KEY_INDEX)) != 0) {
-		printf(" failed\n  !  see_setup_key dev 0x%x\n\n", ret);
-		return NULL;
-	}
-
-	if ((ret = see_set_certificate(sss_ca_crt, sizeof(sss_ca_crt),
-								   WEBSERVER_CA_CERT_INDEX, CERT_PEM)) != 0) {
-		printf("Error: set_cert fail %d\n", ret);
-		return NULL;
-	}
-
-	if ((ret = see_set_certificate(sss_dev_crt, sizeof(sss_dev_crt),
-								   WEBSERVER_DEV_CERT_INDEX, CERT_PEM)) != 0) {
-		printf("Error: set_cert fail %d\n", ret);
-		return NULL;
-	}
-
-	ssl_config.ca_key_index    = WEBSERVER_CA_KEY_INDEX;
-	ssl_config.dev_key_index   = WEBSERVER_DEV_KEY_INDEX;
-	ssl_config.ca_cert_index   = WEBSERVER_CA_CERT_INDEX;
-	ssl_config.dev_cert_index  = WEBSERVER_DEV_CERT_INDEX;
-	ssl_config.auth_mode       = MBEDTLS_SSL_VERIFY_REQUIRED;
-#else
 	ssl_config.root_ca = (char *)ca_crt_rsa;
 	ssl_config.root_ca_len  = sizeof(ca_crt_rsa);
 	ssl_config.dev_cert = (char *)srv_crt_rsa;
@@ -418,7 +371,6 @@ start:
 	ssl_config.private_key = (char *)srv_key_rsa;
 	ssl_config.private_key_len = sizeof(srv_key_rsa);
 	ssl_config.auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
-#endif /* CONFIG_HW_RSA */
 
 	if (http_tls_init(https_server, &ssl_config) != 0) {
 		printf("ssl config Error\n");
@@ -470,31 +422,23 @@ start:
 stop:
 	printf("Exit Web server...\n");
 	http_server_stop(http_server);
-#ifdef CONFIG_NET_SECURITY_TLS
-	http_server_stop(https_server);
-#endif
-
-#ifdef CONFIG_NET_SECURITY_TLS
-	http_server_deregister_cb(https_server, HTTP_METHOD_GET, NULL);
-	http_server_deregister_cb(https_server, HTTP_METHOD_GET, root_url);
-	http_server_deregister_cb(https_server, HTTP_METHOD_GET, devid_url);
-#endif
 
 	http_server_deregister_cb(http_server, HTTP_METHOD_GET, NULL);
 	http_server_deregister_cb(http_server, HTTP_METHOD_GET, root_url);
 	http_server_deregister_cb(http_server, HTTP_METHOD_GET, devid_url);
-
 	http_server_release(&http_server);
 #ifdef CONFIG_NET_SECURITY_TLS
+	http_server_stop(https_server);
+
+	http_server_deregister_cb(https_server, HTTP_METHOD_GET, NULL);
+	http_server_deregister_cb(https_server, HTTP_METHOD_GET, root_url);
+	http_server_deregister_cb(https_server, HTTP_METHOD_GET, devid_url);
 	http_server_release(&https_server);
 #endif
 
 	/* sleep for requests in processing */
 	sleep(5);
 	printf("webserver end\n");
-#ifdef CONFIG_HW_RSA
-	see_free();
-#endif
 
 	return NULL;
 }

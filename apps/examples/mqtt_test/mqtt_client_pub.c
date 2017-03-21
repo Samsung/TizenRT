@@ -36,11 +36,9 @@
 
 #include <apps/netutils/mqtt_api.h>
 
-#if defined(CONFIG_NETUTILS_MQTT_SECURITY) && defined(CONFIG_HW_RSA)
+#if defined(CONFIG_NETUTILS_MQTT_SECURITY)
 #include "tls/x509_crt.h"
 #include "tls/pem.h"
-#include "tls/sss_key.h"
-#include "tls/see_api.h"
 #endif
 
 /****************************************************************************
@@ -504,32 +502,6 @@ int mqtt_client_pub_task(void *arg)
 	g_tls.key = mqtt_get_client_key();	/* the pointer of key buffer */
 	g_tls.key_len = mqtt_get_client_key_size();	/* the length of key buffer */
 
-#if defined(CONFIG_HW_RSA)
-	see_init();
-
-	mbedtls_pem_context pem;
-
-	mbedtls_pem_init(&pem);
-
-	if ((ret = (mbedtls_pem_read_buffer(&pem, "-----BEGIN RSA PRIVATE KEY-----", "-----END RSA PRIVATE KEY-----", g_tls.key, NULL, 0, (unsigned int *)&g_tls.key_len))) != 0) {
-		fprintf(stderr, "Error: parse key fail. (ret: %d)\n", ret);
-		mbedtls_pem_free(&pem);
-		goto done;
-	}
-
-	unsigned int index1 = see_get_keyindex(SECURE_STORAGE_TYPE_KEY_RSA);
-
-	if (see_setup_key(pem.buf, pem.buflen, SECURE_STORAGE_TYPE_KEY_RSA, index1)) {
-		fprintf(stderr, "Error: set_key fail. (ret: %d)\n", ret);
-		mbedtls_pem_free(&pem);
-		goto done;
-	}
-
-	g_tls.key = (const unsigned char *)index1;
-	g_tls.key_len = pem.buflen;
-
-	mbedtls_pem_free(&pem);
-#endif
 #endif
 	/* set mqtt config */
 	memset(&g_mqtt_client_config, 0, sizeof(g_mqtt_client_config));
@@ -607,11 +579,6 @@ done:
 	deinit_variables();
 	destroy_config();
 	sem_destroy(&g_mqtt_pub_sem);
-
-#if defined(CONFIG_NETUTILS_MQTT_SECURITY) && defined(CONFIG_HW_RSA)
-	see_free_keyindex(SECURE_STORAGE_TYPE_KEY_RSA, (unsigned int)g_tls.key);
-	see_free();
-#endif
 
 	return result;
 }

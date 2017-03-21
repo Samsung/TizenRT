@@ -343,23 +343,6 @@ struct options {
 	int etm;                    /* negotiate encrypt then mac?              */
 } opt;
 
-#if defined(MBEDTLS_HAS_SECURE_STORAGE)
-int see_generate_random_wrap_client(void *ctx, unsigned char *buf, size_t len)
-{
-	uint32_t ret;
-	see_data_t ran;
-	ran.length = len;
-
-	if ((ret = see_generate_random(&ran)) != 0) {
-		return -1;
-	}
-
-	memcpy(buf, ran.data, len);
-	free(ran.data);
-	return 0;
-}
-#endif
-
 static void my_debug(void *ctx, int level,
 					 const char *file, int line,
 					 const char *str)
@@ -466,13 +449,6 @@ int tls_client_cb(void *args)
 	const char *alpn_list[10];
 #endif
 	const char *pers = "ssl_client2";
-
-#if defined(MBEDTLS_HAS_SECURE_STORAGE)
-	uint8_t type = 20;
-	unsigned char cer_buf[1500];
-	size_t cer_buflen;
-	see_data_t cert;
-#endif
 
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
@@ -935,37 +911,14 @@ usage:
 
 	mbedtls_printf("ok\n");
 
-#if defined(MBEDTLS_HAS_SECURE_STORAGE)
-	/*
-	 * 0.1. Initialize Secure Element (T9MF)
-	 */
-	mbedtls_printf("\n  . Init Secure Element...");
-
-	if ((ret = see_init()) != 0) {
-		printf(" failed\n  ! Init Secure Element Fail %d\n", ret);
-		goto exit;
-	}
-
-	mbedtls_printf(" ok\n");
-#endif
-
 	/*
 	 * 1. Load the trusted CA
 	 */
 	mbedtls_printf("  . Loading the CA root certificate ...");
 	fflush(stdout);
-#if defined(MBEDTLS_HAS_SECURE_STORAGE)
-	if ((ret = mbedtls_x509_crt_parse(&cacert,
-									  (const unsigned char *)samsung_ca_cert,
-									  samsung_ca_cert_len)) < 0)
-#else
-	if ((ret = mbedtls_x509_crt_parse(&cacert,
-									  (const unsigned char *)mbedtls_test_ca_crt_rsa,
-									  mbedtls_test_ca_crt_rsa_len)) < 0)
-#endif
+	if ((ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)mbedtls_test_ca_crt_rsa, mbedtls_test_ca_crt_rsa_len)) < 0)
 	{
-		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n",
-					   -ret);
+		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
 		goto exit;
 	}
 
@@ -974,54 +927,16 @@ usage:
 	/*
 	 * 1.2. Load own certificate
 	 */
-#if defined(MBEDTLS_HAS_SECURE_STORAGE)
-	mbedtls_printf("  . Loading the SE cert...");
-	fflush(stdout);
-
-	/* Get cert from Secure element */
-	if ((ret = see_get_certificate(0, &cert, &type)) != 0) {
-		return NULL;
-	}
-
-	memcpy(cer_buf, cert.data, cert.length);
-
-	cer_buflen = cert.length + 1;
-	cer_buf[cer_buflen - 1] = '\0';
-
-	if ((ret = mbedtls_x509_crt_parse(&clicert, (const unsigned char *)cer_buf,
-									  cer_buflen)) != 0)
-#else
 	mbedtls_printf("  . Loading the own cert...");
 	fflush(stdout);
 
-	if ((ret = mbedtls_x509_crt_parse(&clicert,
-									  (const unsigned char *)mbedtls_test_cli_crt_rsa,
-									  mbedtls_test_cli_crt_rsa_len)) != 0)
-#endif
+	if ((ret = mbedtls_x509_crt_parse(&clicert, (const unsigned char *)mbedtls_test_cli_crt_rsa, mbedtls_test_cli_crt_rsa_len)) != 0)
 	{
-		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n",
-					   -ret);
+		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
 		goto exit;
 	}
 
 	mbedtls_printf(" ok\n");
-
-#if !defined(MBEDTLS_HAS_SECURE_ELEMENT)
-	/*
-	 * 1.3. Load private key
-	 */
-	mbedtls_printf("  . Loading the Private Key...");
-	fflush(stdout);
-
-	if ((ret = mbedtls_pk_parse_key(&pkey,
-									(const unsigned char *)mbedtls_test_cli_key_rsa,
-									mbedtls_test_cli_key_rsa_len, NULL, 0)) != 0) {
-		mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
-		goto exit;
-	}
-
-	mbedtls_printf(" ok\n");
-#endif
 
 	/*
 	 * 2. Start the connection
@@ -1059,12 +974,6 @@ usage:
 	 */
 	mbedtls_printf("  . Setting up the SSL/TLS structure...");
 	fflush(stdout);
-
-#if defined(MBEDTLS_HAS_SECURE_ELEMENT)
-	/* Setup SE callback routine */
-	ret = mbedtls_pk_setup_ecdsa_alt(&pkey, NULL, see_ecdsa_decrypt_func,
-									 see_ecdsa_sign_func, see_ecdsa_key_len_func);
-#endif
 
 	if ((ret = mbedtls_ssl_config_defaults(&conf,
 										   MBEDTLS_SSL_IS_CLIENT,
@@ -1139,11 +1048,7 @@ usage:
 		}
 #endif
 
-#if defined(MBEDTLS_HAS_SECURE_STORAGE)
-	mbedtls_ssl_conf_rng(&conf, see_generate_random_wrap_client, &ctr_drbg);
-#else
 	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
-#endif
 	mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
 
 	mbedtls_ssl_conf_read_timeout(&conf, opt.read_timeout);
