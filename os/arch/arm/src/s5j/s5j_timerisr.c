@@ -109,12 +109,6 @@
 int up_timerisr(int irq, uint32_t *regs)
 {
 	/* Process timer interrupt */
-#ifdef CONFIG_S5J_WATCHDOG_RESET
-	if ((g_system_timer * CONFIG_USEC_PER_TICK) % (5 * 100 * 1000) == 0) {
-		/* check every 500msec */
-		s5j_wdg_keepreset(WDT_CPUCL_BASE, CONFIG_S5J_WDT_DEFTIMEOUT);
-	}
-#endif
 
 	sched_process_timer();
 	s5j_mct_clear_pending(MCT_L0);
