@@ -433,6 +433,80 @@
 #define LWIP_HAVE_LOOPIF                0
 #endif
 
+/* ---------- SLIP options ---------- */
+#ifdef CONFIG_NET_LWIP_SLIP_INTERFACE
+#define LWIP_HAVE_SLIPIF                1
+
+#ifdef CONFIG_NET_LWIP_SLIPIF_THREAD_NAME
+#define SLIPIF_THREAD_NAME              CONFIG_NET_LWIP_SLIPIF_THREAD_NAME
+#endif
+
+#ifdef CONFIG_NET_LWIP_SLIPIF_THREAD_STACKSIZE
+#define SLIPIF_THREAD_STACKSIZE         CONFIG_NET_LWIP_SLIPIF_THREAD_STACKSIZE
+#endif
+
+#ifdef CONFIG_NET_LWIP_SLIPIF_THREAD_PRIO
+#define SLIPIF_THREAD_PRIO              CONFIG_NET_LWIP_SLIPIF_THREAD_PRIO
+#endif
+
+#else
+#define LWIP_HAVE_SLIPIF                0
+#endif
+/* ---------- SLIP options ---------- */
+
+/* ---------- PPP options ---------- */
+#ifdef CONFIG_NET_LWIP_PPP_SUPPORT
+#define PPP_SUPPORT                     1
+
+#ifdef CONFIG_NET_LWIP_PPP_SESSIONS
+#define NUM_PPP                         CONFIG_NET_LWIP_PPP_SESSIONS
+#endif
+
+#ifdef CONFIG_NET_LWIP_PAP_SUPPORT
+#define PAP_SUPPORT                     1
+#else
+#define PAP_SUPPORT                     0
+#endif
+
+#ifdef CONFIG_NET_LWIP_CHAP_SUPPORT
+#define CHAP_SUPPORT                    1
+#else
+#define CHAP_SUPPORT                    0
+#endif
+
+#ifdef CONFIG_NET_LWIP_VJ_SUPPORT
+#define VJ_SUPPORT                      1
+#else
+#define VJ_SUPPORT                      0
+#endif
+
+#ifdef CONFIG_NET_LWIP_MD5_SUPPORT
+#define MD5_SUPPORT                     1
+#else
+#define MD5_SUPPORT                     0
+#endif
+
+#ifdef CONFIG_NET_LWIP_MD5_SUPPORT
+#define PPP_MTU                         CONFIG_NET_LWIP_MD5_SUPPORT
+#endif
+
+#ifdef CONFIG_NET_LWIP_PPP_THREAD_NAME
+#define PPP_THREAD_NAME                 CONFIG_NET_LWIP_PPP_THREAD_NAME
+#endif
+
+#ifdef CONFIG_NET_LWIP_PPP_THREAD_STACKSIZE
+#define PPP_THREAD_STACKSIZE            CONFIG_NET_LWIP_PPP_THREAD_STACKSIZE
+#endif
+
+#ifdef CONFIG_NET_LWIP_PPP_THREAD_PRIO
+#define PPP_THREAD_PRIO                 CONFIG_NET_LWIP_PPP_THREAD_PRIO
+#endif
+
+#else
+#define PPP_SUPPORT                     0
+#endif
+/* ---------- PPP options ---------- */
+
 
 /*
    -----------------------------------

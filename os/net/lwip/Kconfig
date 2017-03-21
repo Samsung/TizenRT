@@ -426,4 +426,67 @@ config NET_LWIP_LOOPBACK_INTERFACE
 	---help---
 		Support loop interface (127.0.0.1).
 
+menuconfig NET_LWIP_SLIP_INTERFACE
+	bool "Support serial line IP interface"
+	default n
+
+if NET_LWIP_SLIP_INTERFACE
+
+config NET_LWIP_SLIPIF_THREAD_NAME
+	string "The name assigned to the slipif_loop thread"
+	default "slipif_loop"
+
+config NET_LWIP_SLIPIF_THREAD_STACKSIZE
+	int "The stack size used by the slipif_loop thread"
+	default 1024
+
+config NET_LWIP_SLIPIF_THREAD_PRIO
+	int "The priority assigned to the slipif_loop thread"
+	default 100
+
+endif #NET_LWIP_SLIP_INTERFACE
+
+menuconfig NET_LWIP_PPP_SUPPORT
+	bool "Enable PPP"
+	default n
+
+if NET_LWIP_PPP_SUPPORT
+
+config NET_LWIP_PPP_SESSIONS
+	int "Max PPP sessions"
+	default 1
+
+config NET_LWIP_PAP_SUPPORT
+	bool "Support PAP"
+	default n
+
+config NET_LWIP_CHAP_SUPPORT
+	bool "Support CHAP"
+	default n
+
+config NET_LWIP_VJ_SUPPORT
+	bool "Support VJ header compression"
+	default n
+
+config NET_LWIP_MD5_SUPPORT
+	bool "Support MD5"
+	default n
+
+config NET_LWIP_PPP_MTU
+	int "PPP MTU size in bytes"
+	default 1500
+
+config NET_LWIP_PPP_THREAD_NAME
+	string "The name assigned to the pppInputThread"
+	default "pppInputThread"
+
+config NET_LWIP_PPP_THREAD_STACKSIZE
+	int "The stack size used by the pppInputThread"
+	default 1024
+
+config NET_LWIP_PPP_THREAD_PRIO
+	int "The priority assigned to the pppInputThread"
+	default 100
+
+endif #NET_LWIP_PPP_SUPPORT
 endmenu #LwIP options
