@@ -388,6 +388,38 @@ config NET_LWIP_VLAN_CHECK_ID
 	default 1
 	depends on NET_LWIP_VLAN_CHECK
 
+menu "Thread options"
+
+config NET_LWIP_TCPIP_THREAD_NAME
+	string "The name assigned to the main tcpip thread"
+	default "tcpip_thread"
+
+config NET_LWIP_TCPIP_THREAD_STACKSIZE
+	int "The stack size used by the main tcpip thread"
+	default 1024
+
+config NET_LWIP_TCPIP_THREAD_PRIO
+	int "The priority assigned to the main tcpip thread"
+	default 100
+
+config NET_LWIP_TCPIP_MBOX_SIZE
+	int "The mailbox size for the tcpip thread messages"
+	default 0
+
+config NET_LWIP_DEFAULT_THREAD_NAME
+	string "The name assigned to any other lwIP thread"
+	default "lwIP"
+
+config NET_LWIP_DEFAULT_THREAD_STACKSIZE
+	int "The stack size used by any other lwIP thread"
+	default 1024
+
+config NET_LWIP_DEFAULT_THREAD_PRIO
+	int "The priority assigned to any other lwIP thread"
+	default 100
+
+endmenu #Thread options
+
 config NET_LWIP_LOOPBACK_INTERFACE
 	bool "Support loopback interface"
 	default n

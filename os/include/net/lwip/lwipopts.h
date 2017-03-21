@@ -477,21 +477,43 @@
 
 #define LWIP_DEBUG_TIMERNAMES       0
 
-/*
-   ---------------------------------
-   ---------- OS options ----------
-   ---------------------------------
-*/
+/* Thread options */
 
-#define TCPIP_THREAD_NAME              "LWIP_TCP/IP"
-#define TCPIP_THREAD_STACKSIZE          (1024*4)
-#define TCPIP_MBOX_SIZE                 64
+#ifdef CONFIG_NET_LWIP_TCPIP_THREAD_NAME
+#define TCPIP_THREAD_NAME               CONFIG_NET_LWIP_TCPIP_THREAD_NAME
+#endif
+
+#ifdef CONFIG_NET_LWIP_TCPIP_THREAD_STACKSIZE
+#define TCPIP_THREAD_STACKSIZE          CONFIG_NET_LWIP_TCPIP_THREAD_STACKSIZE
+#endif
+
+#ifdef CONFIG_NET_LWIP_TCPIP_THREAD_PRIO
+#define TCPIP_THREAD_PRIO               CONFIG_NET_LWIP_TCPIP_THREAD_PRIO
+#endif
+
+#ifdef CONFIG_NET_LWIP_TCPIP_MBOX_SIZE
+#define TCPIP_MBOX_SIZE                 CONFIG_NET_LWIP_TCPIP_MBOX_SIZE
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEFAULT_THREAD_NAME
+#define DEFAULT_THREAD_NAME             CONFIG_NET_LWIP_DEFAULT_THREAD_NAME
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEFAULT_THREAD_STACKSIZE
+#define DEFAULT_THREAD_STACKSIZE        CONFIG_NET_LWIP_DEFAULT_THREAD_STACKSIZE
+#endif
+
+#ifdef CONFIG_NET_LWIP_DEFAULT_THREAD_PRIO
+#define DEFAULT_THREAD_PRIO             CONFIG_NET_LWIP_DEFAULT_THREAD_PRIO
+#endif
+
 #define DEFAULT_RAW_RECVMBOX_SIZE       64
 #define DEFAULT_UDP_RECVMBOX_SIZE       64
 #define DEFAULT_TCP_RECVMBOX_SIZE       54
 #define DEFAULT_ACCEPTMBOX_SIZE         64
-#define DEFAULT_THREAD_STACKSIZE        (1024*4)
-#define TCPIP_THREAD_PRIO               110
+/* Thread options */
+
+
 
 #define LWIP_STATS                      1
 #define LWIP_COMPAT_MUTEX               1
