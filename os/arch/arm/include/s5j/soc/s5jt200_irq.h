@@ -15,7 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/****************************************************************************************************
+/****************************************************************************
  * arch/arm/include/s5j/soc/s5jt200_irq.h
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
@@ -48,104 +48,107 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ****************************************************************************************************/
+ ****************************************************************************/
 
-/* This file should never be included directed but, rather, only indirectly through tinyara/irq.h */
+/*
+ * This file should never be included directed but,
+ * rather, only indirectly through tinyara/irq.h
+ */
 
 #ifndef __ARCH_ARM_INCLUDE_S5J_S5JT200_IRQ_H
 #define __ARCH_ARM_INCLUDE_S5J_S5JT200_IRQ_H
 
-#define NR_VECTORS   (512)
-#define NR_IRQS      (512)
+#define NR_VECTORS			512
+#define NR_IRQS				512
 
-#define S5J_IRQ_INVALID 0x3FF
-#define IRQ_INVALID     0x3FF
+#define S5J_IRQ_INVALID			0x3FF
+#define IRQ_INVALID			0x3FF
 
-#define IRQ_SPI(x)      (x + 32)
+#define IRQ_SPI(x)			(32 + (x))
 
-#define IRQ_EINT0                       IRQ_SPI(0)
-#define IRQ_EINT1                       IRQ_SPI(1)
-#define IRQ_EINT2                       IRQ_SPI(2)
-#define IRQ_EINT3                       IRQ_SPI(3)
-#define IRQ_GPIO_GIC_0                  IRQ_SPI(4)
-#define IRQ_GPIO_GIC_1                  IRQ_SPI(5)
-#define IRQ_EINT6                       IRQ_SPI(6)
-#define IRQ_EINT7                       IRQ_SPI(7)
-#define IRQ_EINT8                       IRQ_SPI(8)
-#define IRQ_EINT9                       IRQ_SPI(9)
-#define IRQ_EINT10                      IRQ_SPI(10)
-#define IRQ_EINT11                      IRQ_SPI(11)
-#define IRQ_EINT12                      IRQ_SPI(12)
-#define IRQ_EINT13                      IRQ_SPI(13)
-#define IRQ_EINT14                      IRQ_SPI(14)
-#define IRQ_EINT15                      IRQ_SPI(15)
-#define IRQ_EINT16_31                   IRQ_SPI(16)
+#define IRQ_EINT0			IRQ_SPI(0)
+#define IRQ_EINT1			IRQ_SPI(1)
+#define IRQ_EINT2			IRQ_SPI(2)
+#define IRQ_EINT3			IRQ_SPI(3)
+#define IRQ_GPIO_GIC_0			IRQ_SPI(4)
+#define IRQ_GPIO_GIC_1			IRQ_SPI(5)
+#define IRQ_EINT6			IRQ_SPI(6)
+#define IRQ_EINT7			IRQ_SPI(7)
+#define IRQ_EINT8			IRQ_SPI(8)
+#define IRQ_EINT9			IRQ_SPI(9)
+#define IRQ_EINT10			IRQ_SPI(10)
+#define IRQ_EINT11			IRQ_SPI(11)
+#define IRQ_EINT12			IRQ_SPI(12)
+#define IRQ_EINT13			IRQ_SPI(13)
+#define IRQ_EINT14			IRQ_SPI(14)
+#define IRQ_EINT15			IRQ_SPI(15)
+#define IRQ_EINT16_31			IRQ_SPI(16)
 
-#define IRQ_MCT_G0                      IRQ_SPI(18)
-#define IRQ_MCT_G1                      IRQ_SPI(19)
-#define IRQ_MCT_G2                      IRQ_SPI(20)
-#define IRQ_MCT_G3                      IRQ_SPI(21)
-#define IRQ_MCT_L0                      IRQ_SPI(22)
-#define IRQ_MCT_L1                      IRQ_SPI(23)
-#define IRQ_MCT_L2                      IRQ_SPI(24)
-#define IRQ_MCT_L3                      IRQ_SPI(25)
-#define IRQ_TOP_RTC_TIC                 IRQ_SPI(26)
-#define IRQ_TOP_RTC_ALARM               IRQ_SPI(27)
-#define IRQ_TICK_COUNTER_TIC            IRQ_SPI(28)
-#define IRQ_TICK_COUNTER_ALARM          IRQ_SPI(29)
+#define IRQ_MCT_G0			IRQ_SPI(18)
+#define IRQ_MCT_G1			IRQ_SPI(19)
+#define IRQ_MCT_G2			IRQ_SPI(20)
+#define IRQ_MCT_G3			IRQ_SPI(21)
+#define IRQ_MCT_L0			IRQ_SPI(22)
+#define IRQ_MCT_L1			IRQ_SPI(23)
+#define IRQ_MCT_L2			IRQ_SPI(24)
+#define IRQ_MCT_L3			IRQ_SPI(25)
+#define IRQ_TOP_RTC_TIC			IRQ_SPI(26)
+#define IRQ_TOP_RTC_ALARM		IRQ_SPI(27)
+#define IRQ_TICK_COUNTER_TIC		IRQ_SPI(28)
+#define IRQ_TICK_COUNTER_ALARM		IRQ_SPI(29)
 
-#define IRQ_WDT                         IRQ_SPI(32)
-#define IRQ_UHD_EFUSE_WRITER            IRQ_SPI(33)
+#define IRQ_WDT				IRQ_SPI(32)
+#define IRQ_UHD_EFUSE_WRITER		IRQ_SPI(33)
 
-#define IRQ_MAILBOX_WIFI                IRQ_SPI(35)
-#define IRQ_MAILBOX_M0                  IRQ_SPI(36)
+#define IRQ_MAILBOX_WIFI		IRQ_SPI(35)
+#define IRQ_MAILBOX_M0			IRQ_SPI(36)
 
-#define IRQ_PMU_CM0                     IRQ_SPI(39)
-#define IRQ_PMU_CR4                     IRQ_SPI(40)
-#define IRQ_PMU_ALIVE_WIFI_ACTIVE       IRQ_SPI(41)
+#define IRQ_PMU_CM0			IRQ_SPI(39)
+#define IRQ_PMU_CR4			IRQ_SPI(40)
+#define IRQ_PMU_ALIVE_WIFI_ACTIVE	IRQ_SPI(41)
 
-#define IRQ_PDMA_U1                     IRQ_SPI(44)
+#define IRQ_PDMA_U1			IRQ_SPI(44)
 
-#define IRQ_SSS_KM                      IRQ_SPI(47)
-#define IRQ_SSS_MB                      IRQ_SPI(48)
-#define IRQ_SSS                         IRQ_SPI(49)
-#define IRQ_SSS_SWDT_HOST_1             IRQ_SPI(50)
-#define IRQ_SSS_SWDT_HOST_2             IRQ_SPI(51)
+#define IRQ_SSS_KM			IRQ_SPI(47)
+#define IRQ_SSS_MB			IRQ_SPI(48)
+#define IRQ_SSS				IRQ_SPI(49)
+#define IRQ_SSS_SWDT_HOST_1		IRQ_SPI(50)
+#define IRQ_SSS_SWDT_HOST_2		IRQ_SPI(51)
 
-#define S5J_IRQ_UART0                   IRQ_SPI(54)
-#define S5J_IRQ_UART1                   IRQ_SPI(55)
-#define S5J_IRQ_UART2                   IRQ_SPI(56)
-#define S5J_IRQ_UART3                   IRQ_SPI(57)
-#define S5J_IRQ_UARTDBG                 IRQ_SPI(58)
+#define S5J_IRQ_UART0			IRQ_SPI(54)
+#define S5J_IRQ_UART1			IRQ_SPI(55)
+#define S5J_IRQ_UART2			IRQ_SPI(56)
+#define S5J_IRQ_UART3			IRQ_SPI(57)
+#define S5J_IRQ_UARTDBG			IRQ_SPI(58)
 
-#define S5J_IRQ_SPI_0                   IRQ_SPI(60)
-#define S5J_IRQ_SPI_1                   IRQ_SPI(61)
-#define S5J_IRQ_SPI_2                   IRQ_SPI(62)
-#define S5J_IRQ_SPI_3                   IRQ_SPI(63)
+#define S5J_IRQ_SPI_0			IRQ_SPI(60)
+#define S5J_IRQ_SPI_1			IRQ_SPI(61)
+#define S5J_IRQ_SPI_2			IRQ_SPI(62)
+#define S5J_IRQ_SPI_3			IRQ_SPI(63)
 
-#define IRQ_HSI2C_0                     IRQ_SPI(65)
-#define IRQ_HSI2C_1                     IRQ_SPI(66)
-#define IRQ_HSI2C_2                     IRQ_SPI(67)
-#define IRQ_HSI2C_3                     IRQ_SPI(68)
+#define IRQ_HSI2C_0			IRQ_SPI(65)
+#define IRQ_HSI2C_1			IRQ_SPI(66)
+#define IRQ_HSI2C_2			IRQ_SPI(67)
+#define IRQ_HSI2C_3			IRQ_SPI(68)
 
-#define IRQ_I2S                         IRQ_SPI(71)
+#define IRQ_I2S				IRQ_SPI(71)
 
-#define IRQ_ADC                         IRQ_SPI(74)
+#define IRQ_ADC				IRQ_SPI(74)
 
-#define IRQ_PWM0_0                      IRQ_SPI(77)
-#define IRQ_PWM0_1                      IRQ_SPI(78)
-#define IRQ_PWM0_2                      IRQ_SPI(79)
-#define IRQ_PWM0_3                      IRQ_SPI(80)
-#define IRQ_PWM0_4                      IRQ_SPI(81)
-#define IRQ_PWM1_0                      IRQ_SPI(82)
-#define IRQ_PWM1_1                      IRQ_SPI(83)
-#define IRQ_SDIO_DEVICE_SDIO            IRQ_SPI(84)
-#define IRQ_SDIO_DEVICE_RSTSOFT         IRQ_SPI(85)
-#define IRQ_SDIO_DEVICE_RSTFUN          IRQ_SPI(86)
-#define IRQ_WIFI_WB2AP_WDOG_RESET       IRQ_SPI(87)
+#define IRQ_PWM0_0			IRQ_SPI(77)
+#define IRQ_PWM0_1			IRQ_SPI(78)
+#define IRQ_PWM0_2			IRQ_SPI(79)
+#define IRQ_PWM0_3			IRQ_SPI(80)
+#define IRQ_PWM0_4			IRQ_SPI(81)
+#define IRQ_PWM1_0			IRQ_SPI(82)
+#define IRQ_PWM1_1			IRQ_SPI(83)
+#define IRQ_SDIO_DEVICE_SDIO		IRQ_SPI(84)
+#define IRQ_SDIO_DEVICE_RSTSOFT		IRQ_SPI(85)
+#define IRQ_SDIO_DEVICE_RSTFUN		IRQ_SPI(86)
+#define IRQ_WIFI_WB2AP_WDOG_RESET	IRQ_SPI(87)
 
-#define IRQ_CR4_PMUIRQ                  IRQ_SPI(90)
-#define IRQ_CR4_VALIRQ                  IRQ_SPI(91)
-#define IRQ_CR4_VALFIQ                  IRQ_SPI(92)
+#define IRQ_CR4_PMUIRQ			IRQ_SPI(90)
+#define IRQ_CR4_VALIRQ			IRQ_SPI(91)
+#define IRQ_CR4_VALFIQ			IRQ_SPI(92)
 
-#endif							//__ARCH_ARM_INCLUDE_S5J_S5JT200_IRQ_H
+#endif /* __ARCH_ARM_INCLUDE_S5J_S5JT200_IRQ_H */
