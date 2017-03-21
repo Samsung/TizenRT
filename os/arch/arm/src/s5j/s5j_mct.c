@@ -963,32 +963,3 @@ void s5j_mct_clear_pending(MCT_CHANNEL mct_id)
 		__raw_writel(1 << G_INT_OFFS(mct_id), mct_base + G_INT_CSTAT);
 	}
 }
-
-/****************************************************************************
- * Name: s5j_mct_local_start_timer0
- *
- * Description:
- *   Initializes MCT_L0 local timer to operate as a tick source.
- *   Expectd that CLK cource is 26MHz.
- *   Used is in timerisr.c
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-void s5j_mct_local_start_timer0(void)
-{
-	MCT_CHANNEL mct = MCT_L0;
-	int tick = (26 * USEC_PER_TICK);	/*  Fin*TargetPeriod  */
-	int icnt = 0;
-	s5j_mct_local_int_ctrl(mct, LINT_INT);
-	s5j_mct_local_set_tick_cnt(mct, tick);
-	s5j_mct_local_set_int_cnt_manual(mct, icnt);
-
-	s5j_mct_local_set_interval(mct);
-	s5j_mct_local_start_int(mct);
-	s5j_mct_local_start_timer(mct);
-}

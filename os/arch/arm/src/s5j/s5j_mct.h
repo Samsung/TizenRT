@@ -129,7 +129,6 @@ static "C" {
 	void s5j_mct_global_enable_comp(MCT_CHANNEL mct_id);
 	void s5j_mct_reset(MCT_CHANNEL mct_id);
 	void s5j_mct_clear_pending(MCT_CHANNEL mct_id);
-	void s5j_mct_local_start_timer0(void);
 
 #ifdef __cplusplus
 }

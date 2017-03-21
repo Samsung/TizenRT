@@ -127,8 +127,14 @@ int up_timerisr(int irq, uint32_t *regs)
  ****************************************************************************/
 void up_timer_initialize(void)
 {
-	/* Configure timer to interrupt at the requested rate */
-	s5j_mct_local_start_timer0();
+	/* Configure local timer0 to interrupt at the requested rate */
+	s5j_mct_local_int_ctrl(MCT_L0, LINT_INT);
+	s5j_mct_local_set_tick_cnt(MCT_L0, SYSTICK_RELOAD);
+	s5j_mct_local_set_int_cnt_manual(MCT_L0, 0);
+
+	s5j_mct_local_set_interval(MCT_L0);
+	s5j_mct_local_start_int(MCT_L0);
+	s5j_mct_local_start_timer(MCT_L0);
 
 	/* Attach the timer interrupt vector */
 	irq_attach(IRQ_MCT_L0, (xcpt_t) up_timerisr);
