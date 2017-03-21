@@ -27,24 +27,24 @@
 
 #include <stdio.h>
 
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/mb_cmd_dh.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/mb_cmd_hash.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/mb_cmd_rsa.h"
+#include "../../arch/arm/src/s5j/soc/sss/mb_cmd_dh.h"
+#include "../../arch/arm/src/s5j/soc/sss/mb_cmd_hash.h"
+#include "../../arch/arm/src/s5j/soc/sss/mb_cmd_rsa.h"
 
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_define.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_driver_hash.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_driver_rng.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_driver_secure_storage_factorykey.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_driver_secure_storage.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_driver_secure_storage_key.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_driver_aes_securekey.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_driver_dh_securekey.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_driver_rsa_securekey.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_driver_hmac_securekey.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_driver_ecdsa_securekey.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/mb_cmd_secure_storage_data.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_driver_error.h"
-#include "../../arch/arm/src/s5j/isp/isp_driver/driver/isp_oid.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_define.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_driver_hash.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_driver_rng.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_driver_secure_storage_factorykey.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_driver_secure_storage.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_driver_secure_storage_key.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_driver_aes_securekey.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_driver_dh_securekey.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_driver_rsa_securekey.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_driver_hmac_securekey.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_driver_ecdsa_securekey.h"
+#include "../../arch/arm/src/s5j/soc/sss/mb_cmd_secure_storage_data.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_driver_error.h"
+#include "../../arch/arm/src/s5j/soc/sss/isp_oid.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -99,6 +99,8 @@
 #define ECC_KEY_NIST256   ((ECC_KEY) | (0x23))
 #define ECC_KEY_NIST384   ((ECC_KEY) | (0x24))
 #define ECC_KEY_NIST512   ((ECC_KEY) | (0x25))
+
+#define SEE_MAX_RANDOM_SIZE		(256)
 
 /* cert type */
 #define CERT_DER      0x01

@@ -635,19 +635,28 @@ int see_generate_random(unsigned int *data, unsigned int len)
 {
 	int r;
 
-	SEE_DEBUG("%s called \n", __func__);
-
-	if (data == NULL) {
+	if (data == NULL || len > SEE_MAX_RANDOM_SIZE) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	_SEE_MUTEX_LOCK ISP_CHECKBUSY();
-	if ((r = isp_generate_random(data, len)) != 0) {
-		SEE_DEBUG("isp_generate_random fail %x\n", r);
-		isp_clear(0);
-		_SEE_MUTEX_UNLOCK return SEE_ERROR;
+	SEE_DEBUG("%s len : %d\n", __func__, len);
+
+	/* Change length to word number */
+	if (len & 0x3) {
+		len = len + 4 - (len & 0x3);
 	}
-	_SEE_MUTEX_UNLOCK return SEE_OK;
+
+	_SEE_MUTEX_LOCK
+	ISP_CHECKBUSY();
+	if ((r = isp_generate_random(data, len / 4)) != 0) {
+		isp_clear(0);
+		_SEE_MUTEX_UNLOCK
+		SEE_DEBUG("isp_generate_random fail %x\n", r);
+		return SEE_ERROR;
+	}
+	_SEE_MUTEX_UNLOCK
+
+	return SEE_OK;
 }
 
 /* Generate G, P, GX (G^X mod P) */

@@ -288,6 +288,30 @@ int mbedtls_nv_seed_poll(void *data, unsigned char *output, size_t len, size_t *
 #endif							/* MBEDTLS_ENTROPY_NV_SEED */
 
 #if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
+#if defined(CONFIG_HW_RNG)
+#include "tls/see_api.h"
+
+int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
+{
+	unsigned int inlen = SEE_MAX_RANDOM_SIZE;
+	unsigned int inbuf[SEE_MAX_RANDOM_SIZE];
+
+	((void) data);
+
+	if (see_generate_random(inbuf, inlen) < 0) {
+		return (MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
+	}
+
+	if (len < inlen) {
+		inlen = len;
+	}
+
+	memcpy(output, inbuf, inlen);
+	*olen = inlen;
+
+	return 0;
+}
+#else
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
 	/* It should be changed to hardware random generator */
@@ -306,6 +330,7 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t 
 
 	return (0);
 }
+#endif /* CONFIG_HW_RNG */
 #endif /* MBEDTLS_ENTROPY_HARDWARE_ALT */
 
 #endif /* MBEDTLS_ENTROPY_C */
