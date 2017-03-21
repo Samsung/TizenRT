@@ -370,4 +370,22 @@ config NET_LWIP_IP_DEFAULT_TTL
 
 endmenu #IP options
 
+config NET_LWIP_VLAN
+	bool "Support VLAN"
+	default n
+	---help---
+		support receiving ethernet packets with VLAN header.
+		Additionally, you can define ETHARP_VLAN_CHECK to an u16_t VLAN ID to check.
+		If VLAN_CHECK is defined, only VLAN-traffic for this VLAN is accepted.
+
+config NET_LWIP_VLAN_CHECK
+	bool "Check VLAN ID for receiviing packet"
+	default n
+	depends on NET_LWIP_VLAN
+
+config NET_LWIP_VLAN_CHECK_ID
+	int "VLAN ID for receiviing packet"
+	default 1
+	depends on NET_LWIP_VLAN_CHECK
+
 endmenu #LwIP options

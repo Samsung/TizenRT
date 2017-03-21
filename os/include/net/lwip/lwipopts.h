@@ -105,6 +105,17 @@
 /* ---------- ARP options ---------- */
 
 
+/* ---------- VLAN options ---------- */
+#ifdef CONFIG_NET_LWIP_VLAN
+#define ETHARP_SUPPORT_VLAN             1
+#ifdef NET_LWIP_VLAN_CHECK
+#define ETHARP_VLAN_CHECK               CONFIG_NET_LWIP_VLAN_CHECK_ID
+#endif
+#else
+#define ETHARP_SUPPORT_VLAN             0
+#endif
+/* ---------- VLAN options ---------- */
+
 
 /* ---------- IP options ---------- */
 #ifdef CONFIG_NET_LWIP_IP_FORWARD
