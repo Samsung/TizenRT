@@ -107,8 +107,43 @@
 
 
 /* ---------- IP options ---------- */
-#define IP_REASS_MAXAGE                 5
-#define IP_REASS_MAX_PBUFS              20
+#ifdef CONFIG_NET_LWIP_IP_FORWARD
+#define IP_FORWARD                      1
+#else
+#define IP_FORWARD                      0
+#endif
+
+#ifdef CONFIG_NET_LWIP_IP_OPTIONS_ALLOWED
+#define IP_OPTIONS_ALLOWED              1
+#else
+#define IP_OPTIONS_ALLOWED              0
+#endif
+
+
+#ifdef CONFIG_NET_LWIP_IP_REASSEMBLY
+#define IP_REASSEMBLY                   1
+#else
+#define IP_REASSEMBLY                   0
+#endif
+
+#ifdef CONFIG_NET_LWIP_IP_FRAG
+#define IP_FRAG                         1
+#else
+#define IP_FRAG                         0
+#endif
+
+#ifdef CONFIG_NET_LWIP_IP_REASSEMBLY_MAXAGE
+#define IP_REASS_MAXAGE                 CONFIG_NET_LWIP_IP_REASSEMBLY_MAXAGE
+#endif
+
+#ifdef CONFIG_NET_LWIP_IP_REASS_MAX_PBUFS
+#define IP_REASS_MAX_PBUFS              CONFIG_NET_LWIP_IP_REASS_MAX_PBUFS
+#endif
+
+#ifdef CONFIG_NET_LWIP_IP_DEFAULT_TTL
+#define IP_DEFAULT_TTL                  CONFIG_NET_LWIP_IP_DEFAULT_TTL
+#endif
+/* ---------- IP options ---------- */
 
 
 /* ---------- ICMP options ---------- */
