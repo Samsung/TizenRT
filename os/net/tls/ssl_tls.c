@@ -1173,7 +1173,7 @@ static int ssl_encrypt_buf(mbedtls_ssl_context *ssl)
 #if defined(MBEDTLS_SSL_PROTO_TLS1) || defined(MBEDTLS_SSL_PROTO_TLS1_1) || \
 defined(MBEDTLS_SSL_PROTO_TLS1_2)
 			if (ssl->minor_ver >= MBEDTLS_SSL_MINOR_VERSION_1) {
-mbedtls_md_hmac_update(&ssl->transform_out->md_ctx_enc, ssl->out_ctr, 8);
+				mbedtls_md_hmac_update(&ssl->transform_out->md_ctx_enc, ssl->out_ctr, 8);
 				mbedtls_md_hmac_update(&ssl->transform_out->md_ctx_enc, ssl->out_hdr, 3);
 				mbedtls_md_hmac_update(&ssl->transform_out->md_ctx_enc, ssl->out_len, 2);
 				mbedtls_md_hmac_update(&ssl->transform_out->md_ctx_enc, ssl->out_msg, ssl->out_msglen);

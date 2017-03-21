@@ -2076,7 +2076,7 @@ const int *mbedtls_ssl_list_ciphersuites(void)
 #else
 			if (mbedtls_ssl_ciphersuite_from_id(*p) != NULL)
 #endif
-				*(q++) = *p;
+				* (q++) = *p;
 		}
 		*q = 0;
 

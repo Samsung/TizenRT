@@ -228,8 +228,9 @@ void mbedtls_aesni_gcm_mult(unsigned char c[16], const unsigned char a[16], cons
 		:		"memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 
 	/* Now byte-reverse the outputs */
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < 16; i++) {
 		c[i] = cc[15 - i];
+	}
 
 	return;
 }
