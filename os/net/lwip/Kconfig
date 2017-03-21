@@ -195,5 +195,67 @@ config NET_LWIP_UDPLITE
 
 endif #NET_LWIP_UDP
 
+menuconfig NET_LWIP_TCP
+	bool "TCP support"
+	default y
 
+if NET_LWIP_TCP
+
+config NET_LWIP_TCP_KEEPALIVE
+	bool "Enable TCP Keepalive"
+	default n
+
+
+config NET_LWIP_TCP_WINDOW_SIZE
+	int "The size of a TCP window"
+	default 2144
+	---help---
+		The size of a TCP window.  This must be at least
+		(2 * TCP_MSS) for things to work well
+
+config NET_LWIP_TCP_MAX_RETRANS
+	int "Maximum number of retransmissions of data segments"
+	default 12
+	---help---
+		The Maximum number of retransmissions of data segments.
+
+config NET_LWIP_TCP_SYN_MAX_RETRANS
+	int "Maximum number of retransmissions of SYN segments"
+	default 6
+	---help---
+		The maximum number of retransmissions of SYN segments
+
+config NET_LWIP_TCP_QUEUE_OOSEQ
+	bool "Enable queueing out of order packets"
+	default y
+	---help---
+		Queue segments that arrive out of order.
+		Disable if your device is low on memory.
+
+config NET_LWIP_TCP_MSS
+	int "TCP Maximum segment size"
+	default 536
+	---help---
+		TCP Maximum segment size in bytes.
+
+config NET_LWIP_TCP_SEND_BUF
+	int "TCP send buffer size in bytes"
+	default 1072
+	---help---
+		TCP sender buffer space (bytes).
+		To achieve good performance, this should be at least 2 * TCP_MSS.
+
+config NET_LWIP_TCP_TIMESTAMPS
+	bool "Support the TCP timestamp option"
+	default n
+	---help---
+		Support the TCP timestamp option.
+
+config NET_LWIP_TCP_LISTEN_BACKLOG
+	bool "Support the backlog option for tcp listen pcb"
+	default n
+	---help---
+		Support the the backlog option for tcp listen pcb.
+
+endif #NET_LWIP_TCP
 endmenu #LwIP options

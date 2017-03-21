@@ -113,25 +113,62 @@
 #define LWIP_RAND()                     rand()
 
 /* ---------- TCP options ---------- */
-#define LWIP_TCP                        1
-#define TCP_TTL                         255
+#ifdef CONFIG_NET_LWIP_TCP
+#define LWIP_TCP                1
+
+#ifdef CONFIG_NET_LWIP_TCP_WINDOW_SIZE
+#define TCP_WND                 CONFIG_NET_LWIP_TCP_WINDOW_SIZE
+#endif
+
+#ifdef CONFIG_NET_LWIP_TCP_MAX_RETRANS
+#define TCP_MAXRTX              CONFIG_NET_LWIP_TCP_MAX_RETRANS
+#endif
+
+#ifdef CONFIG_NET_LWIP_TCP_SYN_MAX_RETRANS
+#define TCP_SYNMAXRTX           CONFIG_NET_LWIP_TCP_SYN_MAX_RETRANS
+#endif
+
+#ifdef CONFIG_NET_LWIP_TCP_QUEUE_OOSEQ
+#define TCP_QUEUE_OOSEQ         1
+#else
+#define TCP_QUEUE_OOSEQ         0
+#endif
+
+#ifdef CONFIG_NET_LWIP_TCP_MSS
+#define TCP_MSS                 CONFIG_NET_LWIP_TCP_MSS
+#endif
+
+#ifdef CONFIG_NET_LWIP_TCP_SEND_BUF
+#define TCP_SND_BUF             CONFIG_NET_LWIP_TCP_SEND_BUF
+#endif
+
+#ifdef CONFIG_NET_LWIP_TCP_TIMESTAMPS
+#define LWIP_TCP_TIMESTAMPS             1
+#else
+#define LWIP_TCP_TIMESTAMPS             0
+#endif
+
+#ifdef CONFIG_NET_LWIP_TCP_KEEPALIVE
 #define LWIP_TCP_KEEPALIVE              1
+#else
+#define LWIP_TCP_KEEPALIVE              0
+#endif
+
+#ifdef CONFIG_NET_LWIP_TCP_LISTEN_BACKLOG
+#define TCP_LISTEN_BACKLOG              1
+#else
+#define TCP_LISTEN_BACKLOG              0
+#endif
+
+#else
+#define LWIP_TCP                0
+#endif
+
+#define TCP_TTL                         255
 #define LWIP_TCPIP_CORE_LOCKING_INPUT   0
 #define LWIP_TCPIP_CORE_LOCKING         0
+/* ---------- TCP options ---------- */
 
-/* TCP Maximum segment size. */
-#define TCP_MSS                         (1500 - 40)	/* TCP_MSS = (Ethernet MTU - IP header size - TCP header size) */
-
-/* TCP sender buffer space (bytes). */
-#define TCP_SND_BUF                     (20*TCP_MSS)
-
-/*  TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
-  as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work. */
-
-//#define TCP_SND_QUEUELEN                (4*TCP_SND_BUF/TCP_MSS)
-
-/* TCP receive window. */
-#define TCP_WND                         (40*TCP_MSS)
 
 /* ---------- UDP options ---------- */
 #ifdef CONFIG_NET_LWIP_UDP
