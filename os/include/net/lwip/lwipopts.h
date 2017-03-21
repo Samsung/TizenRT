@@ -269,6 +269,31 @@
 /* ---------- UDP options ---------- */
 
 
+/* ---------- SNMP options ---------- */
+#ifdef CONFIG_NET_LWIP_SNMP
+#define LWIP_SNMP                       1
+#else
+#define LWIP_SNMP                       0
+#endif
+
+#ifdef CONFIG_NET_LWIP_SNMP_CONCURRENT_REQUESTS
+#define SNMP_CONCURRENT_REQUESTS        CONFIG_NET_LWIP_SNMP_CONCURRENT_REQUESTS
+#endif
+
+#ifdef CONFIG_NET_LWIP_SNMP_TRAP_DESTINATIONS
+#define SNMP_TRAP_DESTINATIONS          CONFIG_NET_LWIP_SNMP_TRAP_DESTINATIONS
+#endif
+
+#ifdef CONFIG_NET_LWIP_SNMP_PRIVATE_MIB
+#define SNMP_PRIVATE_MIB                1
+#else
+#define SNMP_PRIVATE_MIB                0
+#endif
+
+#ifdef CONFIG_NET_LWIP_SNMP_MAX_TREE_DEPTH
+#define SNMP_MAX_TREE_DEPTH             CONFIG_NET_LWIP_SNMP_MAX_TREE_DEPTH
+#endif
+/* ---------- SNMP options ---------- */
 
 /*
    ----------------------------------------------
