@@ -134,50 +134,76 @@
 #define MEMP_NUM_TCPIP_INPKT            16
 
 /* ---------- Memory options ---------- */
+#if !defined(CONFIG_NET_LWIP_MEM_ALIGNMENT)
+#error "CONFIG_NET_LWIP_MEM_ALIGNMENT is undefined"
+#else
+#define MEM_ALIGNMENT                   CONFIG_NET_LWIP_MEM_ALIGNMENT
+#endif
 
-/* MEM_ALIGNMENT: should be set to the alignment of the CPU for which
-   lwIP is compiled. 4 byte alignment -> define MEM_ALIGNMENT to 4, 2
-   byte alignment -> define MEM_ALIGNMENT to 2. */
-#define MEM_ALIGNMENT                   4
+#if !defined(CONFIG_NET_LWIP_MEM_SIZE)
+#error "CONFIG_NET_LWIP_MEM_SIZE is undefined"
+#else
+#define MEM_SIZE                	CONFIG_NET_LWIP_MEM_SIZE
+#endif
 
-/* MEM_SIZE: the size of the heap memory. If the application will send
-a lot of data that needs to be copied, this should be set high. */
-#define MEM_SIZE                (150*1024)
+#ifdef CONFIG_NET_LWIP_MEMP_OVERFLOW_CHECK
+#define MEMP_OVERFLOW_CHECK		CONFIG_NET_LWIP_MEMP_OVERFLOW_CHECK
+#else
+#define MEMP_OVERFLOW_CHECK		0
+#endif
 
-/* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
-   sends a lot of data out of ROM (or other static memory), this
-   should be set high. */
-#define MEMP_NUM_PBUF          50
+#ifdef CONFIG_NET_LWIP_MEMP_SANITY_CHECK
+#define MEMP_SANITY_CHECK               1
+#else
+#define MEMP_SANITY_CHECK               0
+#endif
 
-/* MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
-   per active UDP "connection". */
-#define MEMP_NUM_UDP_PCB        8
+#define MEMP_MEM_MALLOC                 1
 
-/* MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
-   connections. */
-#define MEMP_NUM_TCP_PCB        8
+#ifdef CONFIG_NET_LWIP_MEMP_NUM_PBUF
+#define MEMP_NUM_PBUF                   CONFIG_NET_LWIP_MEMP_NUM_PBUF
+#endif
 
-/* MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP
-   connections. */
-#define MEMP_NUM_TCP_PCB_LISTEN 8
+#ifdef CONFIG_NET_LWIP_MEMP_NUM_RAW_PCB
+#define MEMP_NUM_RAW_PCB                CONFIG_NET_LWIP_MEMP_NUM_RAW_PCB
+#endif
 
-/* MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP
-   segments. */
-#define MEMP_NUM_TCP_SEG        (2 * TCP_SND_QUEUELEN)
+#ifdef CONFIG_NET_LWIP_MEMP_NUM_UDP_PCB
+#define MEMP_NUM_UDP_PCB		CONFIG_NET_LWIP_MEMP_NUM_UDP_PCB
+#endif
+
+
+#ifdef CONFIG_NET_LWIP_MEMP_NUM_TCP_PCB
+#define MEMP_NUM_TCP_PCB		CONFIG_NET_LWIP_MEMP_NUM_TCP_PCB
+#endif
+
+#ifdef CONFIG_NET_LWIP_MEMP_NUM_TCP_PCB_LISTEN
+#define MEMP_NUM_TCP_PCB_LISTEN         CONFIG_NET_LWIP_MEMP_NUM_TCP_PCB_LISTEN
+#endif
+
+#ifdef CONFIG_NET_LWIP_MEMP_NUM_TCP_SEG
+#define MEMP_NUM_TCP_SEG                CONFIG_NET_LWIP_MEMP_NUM_TCP_SEG
+#endif
+
+#ifdef CONFIG_NET_LWIP_MEMP_NUM_REASSDATA
+#define MEMP_NUM_REASSDATA              CONFIG_NET_LWIP_MEMP_NUM_REASSDATA
+#endif
+
+#ifdef CONFIG_NET_LWIP_MEMP_NUM_FRAG_PBUF
+#define MEMP_NUM_FRAG_PBUF              CONFIG_NET_LWIP_MEMP_NUM_FRAG_PBUF
+#endif
+
+#ifdef CONFIG_NET_LWIP_MEMP_NUM_ARP_QUEUE
+#define MEMP_NUM_ARP_QUEUE		CONFIG_NET_LWIP_MEMP_NUM_ARP_QUEUE
+#endif
+/* ---------- Memory options ---------- */
+
 
 /* ---------- Pbuf options ---------- */
 /* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
 #define PBUF_POOL_SIZE          50
 
-/*
-* MEMP_MEM_MALLOC==1: Use mem_malloc/mem_free instead of the lwip pool allocator.
-* Especially useful with MEM_LIBC_MALLOC but handle with care regarding execution
-* speed and usage from interrupts!
-*/
-#define MEMP_MEM_MALLOC                 1
 
-#define MEMP_OVERFLOW_CHECK             1
-#define MEMP_SANITY_CHECK               1
 
 /*
    ------------------------------------
