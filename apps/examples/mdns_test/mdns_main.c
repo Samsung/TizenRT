@@ -49,8 +49,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-/// @file mdns_main.c
-/// @brief the program for testing mdns
+/**
+ * @file mdns_main.c
+ * @brief the program for testing mdns
+ */
 
 /****************************************************************************
  * Included Files
@@ -68,8 +70,13 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#define MDNS_HOST_NAME          "tinyara.local"
+#if defined(CONFIG_ARCH_BOARD_SIDK_S5JT200) || defined(CONFIG_ARCH_BOARD_ARTIK053)
+#define MDNS_NETIF_NAME         "wl1"
+#elif defined(CONFIG_WICED)
 #define MDNS_NETIF_NAME         "en1"
+#else
+#error "cannot set MDNS_NETIF_NAME"
+#endif
 
 /****************************************************************************
  * Enumeration
@@ -96,14 +103,15 @@ static void show_usage(FAR const char *progname)
 	printf("\nWhere:\n");
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 	printf(" <command>   command string (start | stop | hostname | resolve | discover) [2nd param] [3rd param]\n");
-	printf("              - start    : start mdns daemon. 2nd param should be hostname. \n");
-	printf("              - stop     : terminate mdns daemon \n");
-	printf("              - hostname : get current host name as mdns style \n");
+	printf("              - start    : start mdns daemon. 2nd param should be hostname.\n");
+	printf("              - stop     : terminate mdns daemon\n");
+	printf("              - hostname : get current host name as mdns style\n");
 #else
 	printf(" <command>   command string (resolve | discover) [2nd param] [3rd param]\n");
 #endif
-	printf("              - resolve  : resolve hostname to ipaddr. 2nd param should be hostname. \n");
-	printf("              - discover : discover service. 2nd param should be service type string. 3rd param is discovery time in ms. (default=3000ms) \n");
+	printf("              - resolve  : resolve hostname to ipaddr. 2nd param should be hostname.\n");
+	printf("              - discover : discover service. 2nd param should be service type string.\n");
+	printf("                          3rd param is discovery time in ms. (default=3000ms)\n");
 	printf("\n");
 }
 
@@ -150,7 +158,7 @@ int mdns_main(int argc, char *argv[])
 				show_usage(argv[0]);
 				break;
 			}
-		/* Fall Through */
+			/* Fall Through */
 
 		case 3:
 			if (strcmp(argv[1], "resolve") == 0) {
@@ -206,11 +214,7 @@ int mdns_main(int argc, char *argv[])
 
 	case 4:					/* resolve */
 		if (mdnsd_resolve_hostname(hostname, &ipaddr) == 0) {
-			printf("%s : %d.%d.%d.%d \n",
-				   hostname, (ipaddr >> 0) & 0xFF,
-				   (ipaddr >> 8) & 0xFF,
-				   (ipaddr >> 16) & 0xFF,
-				   (ipaddr >> 24) & 0xFF);
+			printf("%s : %d.%d.%d.%d \n", hostname, (ipaddr >> 0) & 0xFF, (ipaddr >> 8) & 0xFF, (ipaddr >> 16) & 0xFF, (ipaddr >> 24) & 0xFF);
 		} else {
 			printf("%s is not found \n", hostname);
 		}
@@ -225,15 +229,7 @@ int mdns_main(int argc, char *argv[])
 			printf(" %-4s %-25s %-25s %8s \n", "no", "hostname", "service name", "ip:port");
 			printf("-------------------------------------------------------------------------------- \n");
 			for (i = 0; i < num_of_result; i++) {
-				printf(" %-4d %-25s %-25s %d.%d.%d.%d:%d \n",
-					   i + 1,
-					   sd_result[i].hostname ? sd_result[i].hostname : "(null)",
-					   sd_result[i].instance_name ? sd_result[i].instance_name : "(null)",
-					   (sd_result[i].ipaddr >> 0) & 0xFF,
-					   (sd_result[i].ipaddr >> 8) & 0xFF,
-					   (sd_result[i].ipaddr >> 16) & 0xFF,
-					   (sd_result[i].ipaddr >> 24) & 0xFF,
-					   sd_result[i].port);
+				printf(" %-4d %-25s %-25s %d.%d.%d.%d:%d \n", i + 1, sd_result[i].hostname ? sd_result[i].hostname : "(null)", sd_result[i].instance_name ? sd_result[i].instance_name : "(null)", (sd_result[i].ipaddr >> 0) & 0xFF, (sd_result[i].ipaddr >> 8) & 0xFF, (sd_result[i].ipaddr >> 16) & 0xFF, (sd_result[i].ipaddr >> 24) & 0xFF, sd_result[i].port);
 			}
 			printf("-------------------------------------------------------------------------------- \n");
 		} else {
