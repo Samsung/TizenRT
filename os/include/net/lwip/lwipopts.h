@@ -76,8 +76,26 @@
 #define IP_REASS_MAXAGE                 5
 #define IP_REASS_MAX_PBUFS              20
 
+
 /* ---------- ICMP options ---------- */
+#ifdef CONFIG_NET_LWIP_ICMP
 #define LWIP_ICMP                       1
+#else
+#define LWIP_ICMP                       0
+#endif
+
+#ifdef CONFIG_NET_LWIP_ICMP_BROADCAST_PING
+#define LWIP_BROADCAST_PING             1
+#else
+#define LWIP_BROADCAST_PING             0
+#endif
+
+#ifdef CONFIG_NET_LWIP_ICMP_MULTICAST_PING
+#define LWIP_MULTICAST_PING             1
+#else
+#define LWIP_MULTICAST_PING             0
+#endif
+/* ---------- ICMP options ---------- */
 
 /* ---------- IGMP options ---------- */
 

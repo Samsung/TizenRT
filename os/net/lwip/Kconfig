@@ -147,4 +147,24 @@ config NET_LWIP_SOCKET_REUSE
 
 endif #NET_LWIP_SOCKET
 
+menuconfig NET_LWIP_ICMP
+	bool "ICMP support"
+	default y
+
+if NET_LWIP_ICMP
+
+config NET_LWIP_ICMP_BROADCAST_PING
+	bool "Enable respond to broadcast pings"
+	default n
+	---help---
+		respond to broadcast pings (default is unicast only)
+
+config NET_LWIP_ICMP_MULTICAST_PING
+	bool "Enable respond to multicast pings"
+	default n
+	---help---
+		respond to multicast pings (default is unicast only)
+
+endif #NET_LWIP_ICMP
+
 endmenu #LwIP options
