@@ -30,21 +30,7 @@
 
 #include "tls/see_api.h"
 
-static see_mutex_t m_handler = { PTHREAD_MUTEX_INITIALIZER, 0 };
-
-#define _SEE_MUTEX_LOCK                     \
-{                                          \
-	if (see_mutex_lock(&m_handler) != 0)    \
-		return -1;                         \
-}
-#define _SEE_MUTEX_UNLOCK                   \
-{                                          \
-	if (see_mutex_unlock(&m_handler) != 0)  \
-		return -1;                         \
-}
-
-//#define ISP_CHECKBUSY() while(isp_get_status()){}
-#define ISP_CHECKBUSY()
+see_mutex_t m_handler = { PTHREAD_MUTEX_INITIALIZER, 0 };
 
 int see_init(void)
 {

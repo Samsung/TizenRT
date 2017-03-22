@@ -111,6 +111,20 @@
 #define MAX_KEY_INDEX	0x08
 #define MAX_CERT_INDEX	0x08
 
+//#define ISP_CHECKBUSY() while(isp_get_status()){}
+#define ISP_CHECKBUSY()
+
+#define _SEE_MUTEX_LOCK                     \
+{                                          \
+	if (see_mutex_lock(&m_handler) != 0)    \
+		return -1;                         \
+}
+#define _SEE_MUTEX_UNLOCK                   \
+{                                         \
+	if (see_mutex_unlock(&m_handler) != 0)  \
+		return -1;                         \
+}
+
 /****************************************************************************
  * Public types
 ****************************************************************************/
@@ -141,6 +155,8 @@ typedef struct cert_options {
 	int max_pathlen;			/* maximum CA path length               */
 	int selfsign;
 } cert_opt;
+
+extern see_mutex_t m_handler;
 
 /****************************************************************************
  * Public Function Prototypes
