@@ -155,6 +155,10 @@ typedef struct {
 	void *t_data;			/*!< unused                         */
 	mbedtls_ecp_point *T;	/*!<  pre-computed points for ecp_mul_comb()        */
 	size_t T_size;			/*!<  number for pre-computed points                */
+#if defined(CONFIG_HW_ECDH_PARAM)
+	unsigned char *key_buf;
+	unsigned int key_index;
+#endif
 } mbedtls_ecp_group;
 
 /**

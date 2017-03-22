@@ -204,6 +204,11 @@ int mbedtls_ecdh_read_public(mbedtls_ecdh_context *ctx, const unsigned char *buf
  */
 int mbedtls_ecdh_calc_secret(mbedtls_ecdh_context *ctx, size_t *olen, unsigned char *buf, size_t blen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
 
+#if defined(CONFIG_HW_ECDH_PARAM)
+int hw_ecp_gen_keypair(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q);
+int hw_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mbedtls_ecp_point *Q);
+#endif /* CONFIG_HW_ECDH_PARAM */
+
 #ifdef __cplusplus
 }
 #endif

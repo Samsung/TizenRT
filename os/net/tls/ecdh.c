@@ -52,12 +52,21 @@
 
 #include <string.h>
 
+#if defined(CONFIG_HW_ECDH_PARAM)
+#include "tls/see_api.h"
+#include "tls/see_internal.h"
+#endif
+
 /*
  * Generate public key: simple wrapper around mbedtls_ecp_gen_keypair
  */
 int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
 {
+#if defined(CONFIG_HW_ECDH_PARAM)
+	return hw_ecp_gen_keypair(grp, d, Q);
+#else
 	return mbedtls_ecp_gen_keypair(grp, d, Q, f_rng, p_rng);
+#endif
 }
 
 /*
@@ -66,6 +75,10 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
 int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mbedtls_ecp_point *Q, const mbedtls_mpi *d, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
 {
 	int ret;
+
+#if defined(CONFIG_HW_ECDH_PARAM)
+	return hw_ecdh_compute_shared(grp, z, Q);
+#else
 	mbedtls_ecp_point P;
 
 	mbedtls_ecp_point_init(&P);
@@ -86,7 +99,7 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mb
 
 cleanup:
 	mbedtls_ecp_point_free(&P);
-
+#endif
 	return (ret);
 }
 
@@ -106,6 +119,14 @@ void mbedtls_ecdh_free(mbedtls_ecdh_context *ctx)
 	if (ctx == NULL) {
 		return;
 	}
+
+#if defined(CONFIG_HW_ECDH_PARAM)
+	if (ctx->grp.key_buf) {
+		memset(ctx->grp.key_buf, 0, SEE_MAX_ENCRYPTED_KEY_SIZE);
+		free(ctx->grp.key_buf);
+		ctx->grp.key_buf = NULL;
+	}
+#endif
 
 	mbedtls_ecp_group_free(&ctx->grp);
 	mbedtls_ecp_point_free(&ctx->Q);
@@ -202,6 +223,10 @@ int mbedtls_ecdh_get_params(mbedtls_ecdh_context *ctx, const mbedtls_ecp_keypair
 		return (ret);
 	}
 
+#if defined(CONFIG_HW_ECDSA_SIGN)
+	ctx->grp.key_index = key->key_index;
+#endif
+
 	return (0);
 }
 
@@ -270,4 +295,162 @@ int mbedtls_ecdh_calc_secret(mbedtls_ecdh_context *ctx, size_t *olen, unsigned c
 	return mbedtls_mpi_write_binary(&ctx->z, buf, *olen);
 }
 
-#endif							/* MBEDTLS_ECDH_C */
+#if defined(CONFIG_HW_ECDH_PARAM)
+int hw_ecp_gen_keypair(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q)
+{
+	unsigned int ret;
+	unsigned int key_type = ECC_KEY;
+	unsigned int curve;
+
+	switch (grp->id) {
+	case MBEDTLS_ECP_DP_SECP192R1:
+		curve = OID_ECC_P192;
+		break;
+	case MBEDTLS_ECP_DP_SECP224R1:
+		curve = OID_ECC_P224;
+		break;
+	case MBEDTLS_ECP_DP_SECP256R1:
+		curve = OID_ECC_P256;
+		break;
+	case MBEDTLS_ECP_DP_SECP384R1:
+		curve = OID_ECC_P384;
+		break;
+	case MBEDTLS_ECP_DP_SECP521R1:
+		curve = OID_ECC_P521;
+		break;
+	case MBEDTLS_ECP_DP_BP256R1:
+		curve = OID_ECC_BP256;
+		break;
+	default:
+		ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+		goto cleanup;
+	}
+
+	if (grp->key_buf == NULL) {
+		grp->key_buf = (unsigned char *)malloc(SEE_MAX_ENCRYPTED_KEY_SIZE);
+		if (grp->key_buf == NULL) {
+			return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		}
+	}
+
+	if ((ret = see_generate_key_internal(key_type | curve, grp->key_buf, 0, 0)) != 0) {
+		return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+	}
+
+	struct sECC_KEY ecc_pub;
+
+	memset(&ecc_pub, 0, sizeof(struct sECC_KEY));
+
+	ecc_pub.publickey_x = (unsigned char *)malloc(SEE_MAX_ECP_KEY_SIZE);
+	ecc_pub.publickey_y = (unsigned char *)malloc(SEE_MAX_ECP_KEY_SIZE);
+
+	if (ecc_pub.publickey_x == NULL) {
+		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+	}
+
+	if (ecc_pub.publickey_y == NULL) {
+		free(ecc_pub.publickey_x);
+		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+	}
+
+	/* Get Public value from sss */
+	if ((ret = see_get_ecc_publickey_internal(&ecc_pub, grp->key_buf, curve)) != 0) {
+		ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+		goto cleanup;
+	}
+
+	/* Copy pub value to Q */
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&Q->X, ecc_pub.publickey_x, ecc_pub.x_byte_len));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&Q->Y, ecc_pub.publickey_y, ecc_pub.y_byte_len));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&Q->Z, 1));
+
+cleanup:
+	if (ecc_pub.publickey_x) {
+		free(ecc_pub.publickey_x);
+	}
+
+	if (ecc_pub.publickey_y) {
+		free(ecc_pub.publickey_y);
+	}
+
+	return (ret);
+}
+int hw_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mbedtls_ecp_point *Q)
+{
+	int ret;
+	struct sECC_KEY ecc_pub;
+	unsigned int olen = SEE_MAX_ECP_KEY_SIZE;
+	unsigned char output[SEE_MAX_ECP_KEY_SIZE];
+
+	memset(&ecc_pub, 0, sizeof(struct sECC_KEY));
+
+	ecc_pub.x_byte_len = mbedtls_mpi_size(&Q->X);
+	ecc_pub.y_byte_len = mbedtls_mpi_size(&Q->Y);
+
+	if (!(ecc_pub.publickey_x = (unsigned char *)malloc(ecc_pub.x_byte_len))) {
+		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+	}
+
+	if (!(ecc_pub.publickey_y = (unsigned char *)malloc(ecc_pub.y_byte_len))) {
+		free(ecc_pub.publickey_x);
+		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+	}
+
+	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->X, ecc_pub.publickey_x, ecc_pub.x_byte_len));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->Y, ecc_pub.publickey_y, ecc_pub.y_byte_len));
+
+	switch (grp->id) {
+	case MBEDTLS_ECP_DP_SECP192R1:
+		ecc_pub.curve |= OID_ECC_P192;
+		break;
+	case MBEDTLS_ECP_DP_SECP224R1:
+		ecc_pub.curve |= OID_ECC_P224;
+		break;
+	case MBEDTLS_ECP_DP_SECP256R1:
+		ecc_pub.curve |= OID_ECC_P256;
+		break;
+	case MBEDTLS_ECP_DP_SECP384R1:
+		ecc_pub.curve |= OID_ECC_P384;
+		break;
+	case MBEDTLS_ECP_DP_SECP521R1:
+		ecc_pub.curve |= OID_ECC_P521;
+		break;
+	case MBEDTLS_ECP_DP_BP256R1:
+		ecc_pub.curve |= OID_ECC_BP256;
+		break;
+	default:
+		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+		goto cleanup;
+	}
+
+#if defined(CONFIG_HW_ECDSA_SIGN)
+	/* Compute P  = d * Q */
+	if (grp->key_buf == NULL) {
+		/* compute ECC shared secret with stored key (permanent) */
+		if ((ret = see_compute_ecdh_param(&ecc_pub, grp->key_index, output, &olen)) != 0) {
+			goto cleanup;
+		}
+	} else
+#endif
+	{
+		/* compute ECC shared secret with generated key (temporary) */
+		if ((ret = see_compute_ecdh_param_internal(&ecc_pub, grp->key_buf, output, &olen)) != 0) {
+			goto cleanup;
+		}
+	}
+
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(z, output, olen));
+
+cleanup:
+	if (ecc_pub.publickey_x) {
+		free(ecc_pub.publickey_x);
+	}
+
+	if (ecc_pub.publickey_y) {
+		free(ecc_pub.publickey_y);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_HW_ECDH_PARAM */
+#endif /* MBEDTLS_ECDH_C */

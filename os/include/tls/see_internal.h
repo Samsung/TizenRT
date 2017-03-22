@@ -33,6 +33,7 @@
  ****************************************************************************/
 
 #define SEE_MAX_ENCRYPTED_KEY_SIZE  (1280)
+#define SEE_MAX_ECP_KEY_SIZE  (68)
 
 #define DHM_1024 (128)
 #define DHM_2048 (256)
