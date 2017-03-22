@@ -1534,8 +1534,6 @@ int dhcpd_run(void *arg)
 		} else if (ret == 0) {
 			/* Debugging purpose : Timeout case */
 			ndbg("select ret %d [errno %d]\n", ret, errno);
-			close(sockfd);
-			sockfd = -1;
 
 			if (!g_dhcpd_quit)
 				continue;
