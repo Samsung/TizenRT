@@ -211,6 +211,8 @@ ifeq ($(CONFIG_S5J_DMA),y)
 CHIP_CSRCS += s5j_dma.c
 endif
 
+CHIP_CSRCS += s5j_watchdog.c
+
 ifeq ($(CONFIG_S5J_SSS),y)
 EXTRA_LIBS += chip/soc/sss/libispdriver.a
 endif

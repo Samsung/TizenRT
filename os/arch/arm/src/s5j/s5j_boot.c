@@ -67,6 +67,7 @@
 
 #include <chip.h>
 #include <arch/chip/chip_types.h>
+#include <arch/chip/s5j_watchdog.h>
 #include "arm.h"
 #ifdef CONFIG_ARMV7M_MPU
 #include "mpu.h"
@@ -88,21 +89,6 @@
 extern uint32_t _vector_start;
 extern uint32_t _vector_end;
 
-/****************************************************************************
- * Name: s5j_watchdog_disable
- *
- * Description:
- *   Disable the watchdog timer. The S5J always boots with the watchdog
- *   timer enabled at timeout of 10 - 20 seconds by the second stage boot
- *   loader to detect any boot failure. So, the watchdog timer must be
- *   disabled as part of the start up logic.
- *
- ****************************************************************************/
-static inline void s5j_watchdog_disable(void)
-{
-	unsigned int wtcon = getreg32(0x80030000) & ~(1 << 5);
-	putreg32(wtcon, 0x80030000);
-}
 
 /****************************************************************************
  * Public Functions
