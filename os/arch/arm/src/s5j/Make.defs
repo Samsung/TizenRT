@@ -126,7 +126,7 @@ ifeq ($(CONFIG_S5J_GPIO),y)
 CHIP_CSRCS += s5j_gpio.c
 endif
 ifeq ($(CONFIG_S5J_SPI),y)
-CHIP_CSRCS += s5j_iot_spidrv.c
+CHIP_CSRCS += s5j_spi.c
 endif
 
 ifeq ($(CONFIG_S5J_CHIPID),y)

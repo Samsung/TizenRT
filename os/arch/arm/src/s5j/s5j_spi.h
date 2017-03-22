@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/s5j/s5j_spidrv.h
+ * arch/arm/src/s5j/s5j_spi.h
  *
  *   Copyright (C) 2013-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

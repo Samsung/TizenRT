@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/s5j/s5j_iot_spidrv.c
+ * arch/arm/src/s5j/s5j_spi.c
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -66,7 +66,7 @@
 #include <tinyara/spi/spi.h>
 
 #include "up_arch.h"
-#include <s5j_spidrv.h>
+#include <s5j_spi.h>
 #include <string.h>
 #include <assert.h>
 #include <debug.h>
