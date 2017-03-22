@@ -1058,8 +1058,3 @@ config PTHREAD_STACK_DEFAULT
 		Default pthread stack size
 endmenu # Stack size information
 
-comment "Kernel Latency utility"
-source kernel/latency/Kconfig
-
-comment "Kernel Debug and Simulation"
-source kernel/debug/Kconfig
