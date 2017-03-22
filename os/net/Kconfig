@@ -33,6 +33,12 @@ if NET_LWIP
 source net/lwip/Kconfig
 endif #NET_LWIP
 
+config NSOCKET_DESCRIPTORS
+	int "Number of socket descriptor"
+	default 8
+	---help---
+		Maximum number of socket descriptors.
+
 config NET_SECURITY_TLS
 	bool "TLS Support"
 	default n
@@ -126,7 +132,6 @@ config NET_IPv4
 endmenu # Internet Protocol Selection
 
 source net/netdev/Kconfig
-source net/socket/Kconfig
 source net/utils/Kconfig
 source net/route/Kconfig
 

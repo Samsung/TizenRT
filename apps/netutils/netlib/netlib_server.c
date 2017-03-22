@@ -98,9 +98,6 @@
 void netlib_server(uint16_t portno, pthread_startroutine_t handler, int stacksize)
 {
 	struct sockaddr_in myaddr;
-#ifdef CONFIG_NET_SOLINGER
-	struct linger ling;
-#endif
 	pthread_t child;
 	pthread_attr_t attr;
 	socklen_t addrlen;
@@ -128,22 +125,6 @@ void netlib_server(uint16_t portno, pthread_startroutine_t handler, int stacksiz
 		}
 
 		nvdbg("Connection accepted -- spawning sd=%d\n", acceptsd);
-
-		/* Configure to "linger" until all data is sent when the socket is
-		 * closed.
-		 */
-
-#ifdef CONFIG_NET_SOLINGER
-		ling.l_onoff = 1;
-		ling.l_linger = 30;		/* timeout is seconds */
-
-		ret = setsockopt(acceptsd, SOL_SOCKET, SO_LINGER, &ling, sizeof(struct linger));
-		if (ret < 0) {
-			close(acceptsd);
-			ndbg("setsockopt SO_LINGER failure: %d\n", errno);
-			break;
-		}
-#endif
 
 		/* Create a thread to handle the connection.  The socket descriptor is
 		 * provided in as the single argument to the new thread.

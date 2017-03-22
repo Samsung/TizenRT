@@ -143,9 +143,6 @@ static int telnetd_daemon(int argc, char *argv[])
 	FAR struct telnetd_s *daemon;
 	struct sockaddr_in myaddr;
 	struct telnet_session_s session;
-#ifdef CONFIG_NET_SOLINGER
-	struct linger ling;
-#endif
 #ifdef CONFIG_SCHED_HAVE_PARENT
 	struct sigaction sa;
 	sigset_t blockset;
@@ -267,17 +264,6 @@ static int telnetd_daemon(int argc, char *argv[])
 				goto errout_with_socket;
 			}
 		}
-
-		/* Configure to "linger" until all data is sent when the socket is closed */
-
-#ifdef CONFIG_NET_SOLINGER
-		ling.l_onoff = 1;
-		ling.l_linger = 30;		/* timeout is seconds */
-		if (setsockopt(acceptsd, SOL_SOCKET, SO_LINGER, &ling, sizeof(struct linger)) < 0) {
-			nlldbg("ERROR: setsockopt failed: %d\n", errno);
-			goto errout_with_acceptsd;
-		}
-#endif
 
 		/* Open the Telnet factory */
 
