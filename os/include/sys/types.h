@@ -319,8 +319,6 @@ typedef CODE int (*preapp_main_t)(int argc, char *argv[]);
 
 #endif
 
-typedef unsigned int uint;
-
 /****************************************************************************
  * Global Function Prototypes
  ****************************************************************************/
