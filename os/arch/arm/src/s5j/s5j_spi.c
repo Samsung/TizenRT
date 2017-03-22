@@ -82,8 +82,6 @@
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
-#define SPI_FILE_OPT 1
-
 #define SPI0_BASE S5J_SPI0_BASE
 #define SPI1_BASE S5J_SPI1_BASE
 #define SPI2_BASE S5J_SPI2_BASE
@@ -94,23 +92,17 @@
 /*****************************************************************************
  * Private Types
  *****************************************************************************/
-
 struct s5jt200_spidev_s {
 	struct spi_dev_s spidev;
 
 #ifndef CONFIG_SPI_POLLWAIT
-	sem_t xfrsem;				/* Wait for transfer to complete */
+	sem_t xfrsem;		/* Wait for transfer to complete */
 #endif
-	void *txbuffer;				/* Source buffer */
-	void *rxbuffer;				/* Destination buffer */
-
-	/* Do we need it ???
-	   void  (*txword)(struct s5jt200_spidev_s *priv);
-	   void  (*rxword)(struct s5jt200_spidev_s *priv);
-	 */
+	void *txbuffer;		/* Source buffer */
+	void *rxbuffer;		/* Destination buffer */
 
 	uint32_t base;
-	uint8_t spiirq;				/* SPI IRQ number */
+	uint8_t spiirq;		/* SPI IRQ number */
 
 #ifdef CONFIG_SPI_DMA
 	/* Put some here if we will decide to use DMA some day */
@@ -130,18 +122,22 @@ struct s5jt200_spidev_s {
 /*****************************************************************************
  * Private Function Prototypes
  *****************************************************************************/
-
 static int spi_lock(struct spi_dev_s *dev, bool lock);
-static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
+static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid,
+		bool selected);
 static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency);
 static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode);
 static void spi_setbits(struct spi_dev_s *dev, int nbits);
 static uint8_t spi_status(struct spi_dev_s *dev, enum spi_dev_e devid);
 static uint16_t spi_send(struct spi_dev_s *dev, uint16_t word);
-static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords);
+static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer,
+		void *rxbuffer, size_t nwords);
+
 #ifndef CONFIG_SPI_EXCHANGE
-static void spi_sndblock(struct spi_dev_s *dev, const void *txbuffer, size_t nwords);
-static void spi_recvblock(struct spi_dev_s *dev, void *rxbuffer, size_t nwords);
+static void spi_sndblock(struct spi_dev_s *dev, const void *txbuffer,
+		size_t nwords);
+static void spi_recvblock(struct spi_dev_s *dev, void *rxbuffer,
+		size_t nwords);
 #endif
 
 /*****************************************************************************
@@ -166,33 +162,35 @@ struct gsio_s5jt200_regs_s {
 
 static const struct gsio_s5jt200_regs_s gsio_regs[2] = {
 	{
-		.interface = (volatile struct gsio_s5jt200_ctrl_regs_s *)GSIO_0_IF,
+		.interface =
+			(volatile struct gsio_s5jt200_ctrl_regs_s *)GSIO_0_IF,
 		.clkdiv = (volatile uint32_t *)GSIO_0_CLKDIV,
 	},
 	{
-		.interface = (volatile struct gsio_s5jt200_ctrl_regs_s *)GSIO_1_IF,
+		.interface =
+			(volatile struct gsio_s5jt200_ctrl_regs_s *)GSIO_1_IF,
 		.clkdiv = (volatile uint32_t *)GSIO_1_CLKDIV,
 	},
 };
 
 static const struct spi_ops_s g_spiops = {
 #ifndef CONFIG_SPI_OWNBUS
-	.lock = spi_lock,			//done
+	.lock = spi_lock,
 #endif
-	.select = spi_select,		//done
-	.setfrequency = spi_setfrequency,	//more
-	.setmode = (void *)spi_setmode,	//done
-	.setbits = (void *)spi_setbits,	//done
-	.status = spi_status,		//done
+	.select = spi_select,
+	.setfrequency = spi_setfrequency,
+	.setmode = (void *)spi_setmode,
+	.setbits = (void *)spi_setbits,
+	.status = spi_status,
 #ifdef CONFIG_SPI_CMDDATA
 	.cmddata = MISSING FUNCTION;
 #endif
 	.send = spi_send,
 #ifdef CONFIG_SPI_EXCHANGE
-	.exchange = spi_exchange,	//more
+	.exchange = spi_exchange,
 #else
-	.sndblock = spi_sndblock,	//more
-	.recvblock = spi_recvblock,	//more
+	.sndblock = spi_sndblock,
+	.recvblock = spi_recvblock,
 #endif
 	.registercallback = 0,
 };
@@ -304,7 +302,7 @@ static void spi_set_gpio(SPI_PORT ePort, u32 DrvStrength)
 	}
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Name: spi_lock
  *
  * Description:
@@ -316,8 +314,7 @@ static void spi_set_gpio(SPI_PORT ePort, u32 DrvStrength)
  *   configured for the device.  If the SPI buss is being shared, then it
  *   may have been left in an incompatible state.
  *
- *****************************************************************************/
-
+ ****************************************************************************/
 static int spi_lock(struct spi_dev_s *dev, bool lock)
 {
 	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
@@ -337,14 +334,13 @@ static int spi_lock(struct spi_dev_s *dev, bool lock)
 	return 0;
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Name: spi_setfrequency
  *
  * Description:
  *   Set the SPI frequency.
  *
- *****************************************************************************/
-
+ ****************************************************************************/
 static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 {
 	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
@@ -376,8 +372,8 @@ static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
  *   all other attempts to select the device until the device is deselecte.
  *
  ****************************************************************************/
-
-static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
+static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid,
+		bool selected)
 {
 	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
 	SPI_SFR *pSPIRegs;
@@ -400,10 +396,10 @@ void spi_set_initial(struct spi_dev_s *dev)
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *)priv->base;
 
-	Outp32(&pSPIRegs->CH_CFG, 0x03);	// TX/RX enable. Master.CPHA 00.
-	Outp32(&pSPIRegs->MODE_CFG, 0);	// No FIFO. N0 DMA. 8 bits
-	Outp32(&pSPIRegs->CS_REG, 1);	// CS Manual Passive
-	Outp32(&pSPIRegs->SPI_INT_EN, 0);	// Disable Interrupts
+	Outp32(&pSPIRegs->CH_CFG, 0x03); /* TX/RX enable. Master.CPHA 00. */
+	Outp32(&pSPIRegs->MODE_CFG, 0);  /*  No FIFO. N0 DMA. 8 bits */
+	Outp32(&pSPIRegs->CS_REG, 1);    /* CS Manual Passive */
+	Outp32(&pSPIRegs->SPI_INT_EN, 0); /* Disable Interrupts */
 }
 
 /*****************************************************************************
@@ -413,7 +409,6 @@ void spi_set_initial(struct spi_dev_s *dev)
  *   Set the SPI mode.  see enum spi_mode_e for mode definitions
  *
  *****************************************************************************/
-
 static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 {
 	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
@@ -435,14 +430,13 @@ inline void spi_fifo_flush(SPI_SFR *pSPIRegs)
 	Outp32(&pSPIRegs->CH_CFG, ch_cfg);
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Name: spi_setbits
  *
  * Description:
  *   Set the number of bits per word.
  *
- *****************************************************************************/
-
+ ****************************************************************************/
 static void spi_setbits(struct spi_dev_s *dev, int nbits)
 {
 	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
@@ -477,29 +471,27 @@ static void spi_setbits(struct spi_dev_s *dev, int nbits)
 	Outp32(&pSPIRegs->MODE_CFG, mode_cfg);
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Name: spi_status
  *
  * Description:
  *   Get SPI status
  *
  ****************************************************************************/
-
 static uint8_t spi_status(struct spi_dev_s *dev, enum spi_dev_e devid)
 {
-	while (1) ;					/*STATUS? What status? */
+	while (1) ;	/* STATUS? What status? */
 
 	return SPI_STATUS_PRESENT;
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Name: spi_send
  *
  * Description:
  *   Exchange one word on SPI
  *
- *****************************************************************************/
-
+ ****************************************************************************/
 static uint16_t spi_send(struct spi_dev_s *dev, uint16_t word)
 {
 	uint8_t txbyte;
@@ -512,14 +504,15 @@ static uint16_t spi_send(struct spi_dev_s *dev, uint16_t word)
 	return (uint16_t)rxbyte;
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Name: spi_exchange
  *
  * Description:
  *   Exchange a block data with the SPI device
  *
  ****************************************************************************/
-static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
+static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer,
+		void *rxbuffer, size_t nwords)
 {
 	size_t sent = 0;
 	size_t received = 0;
@@ -591,44 +584,43 @@ static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbu
 	}
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Name: spi_sndblock
  *
  * Description:
  *   Send a block of data on SPI
  *
- *****************************************************************************/
-
-static void spi_sndblock(struct spi_dev_s *dev, const void *txbuffer, size_t nwords)
+ ****************************************************************************/
+static void spi_sndblock(struct spi_dev_s *dev, const void *txbuffer,
+		size_t nwords)
 {
 	spi_exchange(dev, txbuffer, NULL, nwords);
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Name: spi_recvblock
  *
  * Description:
  *   Revice a block of data from SPI
  *
- *****************************************************************************/
-
-static void spi_recvblock(struct spi_dev_s *dev, void *rxbuffer, size_t nwords)
+ ****************************************************************************/
+static void spi_recvblock(struct spi_dev_s *dev, void *rxbuffer,
+		size_t nwords)
 {
 	spi_exchange(dev, NULL, rxbuffer, nwords);
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Public Functions
- *****************************************************************************/
+ ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Name: up_spiinitialize
  *
  * Description:
  *   Initialize the selected SPI port
  *
- *****************************************************************************/
-
+ ****************************************************************************/
 struct spi_dev_s *up_spiinitialize(int port)
 {
 	struct s5jt200_spidev_s *priv = NULL;
@@ -639,8 +631,8 @@ struct spi_dev_s *up_spiinitialize(int port)
 
 	priv = &g_spidev[port];
 	lldbg("Prepare SPI0 for Master operation\n");
-	//spi_init(&gpCtrlInfo);
-	/*SET GPIO for the port */
+
+	/* SET GPIO for the port */
 	spi_set_gpio(port, 0xFFFF);
 
 	priv->port = port;
@@ -648,6 +640,7 @@ struct spi_dev_s *up_spiinitialize(int port)
 #ifndef CONFIG_SPI_POLLWAIT
 	sem_init(&priv->xfrsem, 0, 0);
 #endif
+
 #ifndef CONFIG_SPI_OWNBUS
 	sem_init(&priv->exclsem, 0, 1);
 #endif
