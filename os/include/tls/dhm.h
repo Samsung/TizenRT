@@ -175,6 +175,9 @@ typedef struct {
 	mbedtls_mpi Vi;			/*!<  blinding value    */
 	mbedtls_mpi Vf;			/*!<  un-blinding value */
 	mbedtls_mpi pX;			/*!<  previous X        */
+#if defined(CONFIG_HW_DH_PARAM)
+	unsigned char *key_buf;
+#endif
 } mbedtls_dhm_context;
 
 /**
@@ -299,6 +302,12 @@ int mbedtls_dhm_parse_dhmfile(mbedtls_dhm_context *dhm, const char *path);
  * \return         0 if successful, or 1 if the test failed
  */
 int mbedtls_dhm_self_test(int verbose);
+
+#if defined(CONFIG_HW_DH_PARAM)
+int hw_generate_dhm_param(mbedtls_dhm_context *ctx, int x_size, unsigned char *output, size_t *olen);
+int hw_generate_dhm_public(mbedtls_dhm_context *ctx, int x_size, unsigned char *output, size_t olen);
+int hw_calculate_dhm_secret(mbedtls_dhm_context *ctx, unsigned char *output, size_t output_size, size_t *olen);
+#endif
 
 #ifdef __cplusplus
 }
