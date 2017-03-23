@@ -62,6 +62,13 @@
 #define mbedtls_free       free
 #endif
 
+#if defined(CONFIG_HW_ECDSA_SIGN) || defined(CONFIG_HW_ECDSA_VERIFICATION)
+#include "tls/see_api.h"
+#include "tls/see_internal.h"
+
+#include "tls/asn1.h"
+#endif
+
 #if defined(MBEDTLS_PK_RSA_ALT_SUPPORT)
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize(void *v, size_t n)
@@ -355,7 +362,11 @@ const mbedtls_pk_info_t mbedtls_ecdsa_info = {
 	"ECDSA",
 	eckey_get_bitlen,			/* Compatible key structures */
 	ecdsa_can_do,
+#if defined(CONFIG_HW_ECDSA_VERIFICATION)
+	hw_ecdsa_verify_wrap,
+#else
 	ecdsa_verify_wrap,
+#endif
 	ecdsa_sign_wrap,
 	NULL,
 	NULL,
@@ -468,6 +479,171 @@ const mbedtls_pk_info_t mbedtls_rsa_alt_info = {
 	NULL,
 };
 
-#endif							/* MBEDTLS_PK_RSA_ALT_SUPPORT */
+#endif	/* MBEDTLS_PK_RSA_ALT_SUPPORT */
 
-#endif							/* MBEDTLS_PK_C */
+#if defined(CONFIG_HW_ECDSA_VERIFICATION)
+int hw_ecdsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, const unsigned char *sig, size_t sig_len)
+{
+	int ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+	unsigned char *der_buf = NULL;
+	unsigned char *key_buf = NULL;
+	const unsigned char *end = sig + sig_len;
+	unsigned char *p = (unsigned char *) sig;
+	unsigned char *t_hash = (unsigned char *)hash;
+	struct sECC_SIGN ecc_sign;
+
+	((void) md_alg);
+
+	if (ctx == NULL) {
+		return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+	}
+
+	/*
+	 * 1. Encrypt publickey for using SSS accelator.
+	 */
+	mbedtls_pk_context t_pk;
+	unsigned int len, curve = ((mbedtls_ecdsa_context *)ctx)->grp.id, der_buflen = 1024;
+
+	t_pk.pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY);
+	t_pk.pk_ctx = (mbedtls_ecdsa_context *)ctx;
+
+	der_buf = (unsigned char *)malloc(der_buflen);
+
+	if (der_buf == NULL) {
+		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
+	}
+
+	if ((len = mbedtls_pk_write_pubkey_der(&t_pk, der_buf, der_buflen)) == 0) {
+		ret = MBEDTLS_ERR_ECP_INVALID_KEY;
+		goto cleanup;
+	}
+
+	key_buf = (unsigned char *)malloc(SEE_MAX_ENCRYPTED_KEY_SIZE);
+
+	if (key_buf == NULL) {
+		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
+		goto cleanup;
+	}
+
+	if ((ret = see_setup_key_internal(der_buf + der_buflen - len, len, SECURE_STORAGE_TYPE_KEY_ECC, key_buf) != 0)) {
+		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+		goto cleanup;
+	}
+
+	/*
+	 * 2. Seperate 'r' and 's' from received signature.
+	 */
+	memset(&ecc_sign, 0, sizeof(struct sECC_SIGN));
+
+	if (mbedtls_asn1_get_tag(&p, end, &len, MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE)) {
+		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+		goto cleanup;
+	}
+
+	if (p + len != end) {
+		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA + MBEDTLS_ERR_ASN1_LENGTH_MISMATCH;
+		goto cleanup;
+	}
+
+	unsigned int n, tmp = 0;
+
+	/*
+	 * 2-1 Get 'r' value
+	 */
+	if (mbedtls_asn1_get_tag(&p, end, &tmp, MBEDTLS_ASN1_INTEGER)) {
+		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+		goto cleanup;
+	}
+
+	for (n = 0; n < tmp; n++) {
+		if (p[n] != 0) {
+			break;
+		}
+	}
+
+	ecc_sign.r = p + n;
+	ecc_sign.r_byte_len = tmp - n;
+	p += tmp;
+
+	/*
+	 * 2-2 Get 's' value
+	 */
+	if (mbedtls_asn1_get_tag(&p, end, &tmp, MBEDTLS_ASN1_INTEGER)) {
+		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+		goto cleanup;
+	}
+
+	for (n = 0; n < tmp; n++) {
+		if (p[n] != 0) {
+			break;
+		}
+	}
+
+	ecc_sign.s = p + n;
+	ecc_sign.s_byte_len = tmp - n;
+	p += tmp;
+
+	/*
+	 * 3. Choose digest algorithm and curve type.
+	 */
+	switch (md_alg) {
+	case MBEDTLS_MD_SHA1:
+		ecc_sign.sign_type |= OID_SHA1_160;
+		break;
+	case MBEDTLS_MD_SHA256:
+		ecc_sign.sign_type |= OID_SHA2_256;
+		break;
+	case MBEDTLS_MD_SHA384:
+		ecc_sign.sign_type |= OID_SHA2_384;
+		break;
+	case MBEDTLS_MD_SHA512:
+		ecc_sign.sign_type |= OID_SHA2_512;
+		break;
+	default:
+		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+		goto cleanup;
+	}
+
+	switch (curve) {
+	case MBEDTLS_ECP_DP_SECP192R1:
+		ecc_sign.sign_type |= OID_ECC_P192;
+		break;
+	case MBEDTLS_ECP_DP_SECP224R1:
+		ecc_sign.sign_type |= OID_ECC_P224;
+		break;
+	case MBEDTLS_ECP_DP_SECP256R1:
+		ecc_sign.sign_type |= OID_ECC_P256;
+		break;
+	case MBEDTLS_ECP_DP_SECP384R1:
+		ecc_sign.sign_type |= OID_ECC_P384;
+		break;
+	case MBEDTLS_ECP_DP_SECP521R1:
+		ecc_sign.sign_type |= OID_ECC_P521;
+		break;
+	case MBEDTLS_ECP_DP_BP256R1:
+		ecc_sign.sign_type |= OID_ECC_BP256;
+		break;
+	default:
+		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+		goto cleanup;
+	}
+
+	/*
+	 *  4. Verify signature with public key.
+	 */
+	ret = see_verify_ecdsa_signature_internal(&ecc_sign, t_hash, hash_len, key_buf);
+
+cleanup:
+	if (der_buf) {
+		free(der_buf);
+	}
+
+	if (key_buf) {
+		free(key_buf);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_HW_ECDSA_VERIFICATION */
+
+#endif /* MBEDTLS_PK_C */
