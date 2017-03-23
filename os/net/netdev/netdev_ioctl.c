@@ -394,9 +394,13 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	case SIOCSIFADDR: {			/* Set IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			netdev_ifdown(dev);
+#ifdef CONFIG_NET_LWIP
+			netif_set_down(dev);
+#endif
 			ioctl_setipv4addr(&dev->ip_addr.addr, &req->ifr_addr);
-			netdev_ifup(dev);
+#ifdef CONFIG_NET_LWIP
+			netif_set_up(dev);
+#endif
 			ret = OK;
 		}
 	}
@@ -611,7 +615,9 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	case SIOCDIFADDR: {			/* Delete IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			netdev_ifdown(dev);
+#ifdef CONFIG_NET_LWIP
+			netif_set_down(dev);
+#endif
 #ifdef CONFIG_NET_IPv4
 			dev->d_ipaddr = 0;
 #endif
