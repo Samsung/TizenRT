@@ -266,7 +266,13 @@ config S5J_FLASH_BASE
 	hex "Nor Flash start address (physical)"
 	default 0x04000000
 	help
-		Samsung IoT uses serial nor flash memory, this needs base address of memory map
+		Samsung S5J SoC uses serial nor flash memory, this needs base address of memory map
+
+config S5J_FLASH_MIRROR_BASE
+	hex "Nor Flash mirrored address (physical)"
+	default 0x60000000
+	help
+		Provides mirror address mapped to Nor flash with same space
 
 config S5J_FLASH_SIZE
 	hex "Nor Flash size (KB)"

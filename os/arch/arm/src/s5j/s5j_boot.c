@@ -89,7 +89,6 @@
 extern uint32_t _vector_start;
 extern uint32_t _vector_end;
 
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -97,7 +96,7 @@ void up_copyvectorblock(void)
 {
 	uint32_t *src = (uint32_t *)&_vector_start;
 	uint32_t *end = (uint32_t *)&_vector_end;
-	uint32_t *dest = (uint32_t *)VECTOR_BASE;
+	uint32_t *dest = (uint32_t *) VECTOR_BASE;
 
 	while (src < end) {
 		*dest++ = *src++;
@@ -107,68 +106,43 @@ void up_copyvectorblock(void)
 #ifdef CONFIG_ARMV7M_MPU
 int s5j_mpu_initialize(void)
 {
-	uint32_t base;
-	uint32_t size;
-
-	/* flash region
-	 * region 0 : 0x0400_0000 ++ 4MB  BL1 + TinyAra OS + SSS F/W
-	 */
-	mpu_priv_flash(0x0, 0x04000000);
-
-	/* S5JT200 memory address in below
-	 * 0x0202_0000 ~ 0x0215_FFFF  ~1280KB
-	 * 0x0203_0000 ~ 0x0231_FFFF  ~128KB
-	 * 0x0400_0000 ~ 0x04FF_FFFF  ~16MB(sidk s5jt200 has 8MB)
+#ifdef CONFIG_ARCH_CHIP_S5JT200
+	/*
+	 * Vector Table	0x02020000	0x02020FFF	4
+	 * Reserved	0x02021000	0x020217FF	2
+	 * BL1		0x02021800	0x020237FF	8
+	 * TinyARA	0x02023800	0x020E7FFF	786(WBWA)
+	 * Reserved	0x020E8000	0x020FFFFF	96 (WBWA)
+	 * Reserved	0x02100000	0x021FFFFF	64 (NCNB)
+	 * WIFI		0x02110000	0x0215FFFF	320(NCNB)
 	 */
 
-	/* access permission for available area */
+	/* Region 0, Set read only for memory area */
+	mpu_priv_flash(0x0, 0x80000000);
+
 	/* Region 1, for ISRAM(0x0200_0000++2048KB, RW-WBWA */
 	mpu_user_intsram_wb(0x02000000, 0x200000);
 
-	/* Region 2,3, for wifi driver non-$(0x020E_0000++512KB(+128KB), RW-NCNB */
-	mpu_priv_noncache(0x020E0000, 0x20000);
+	/* Region 2, wifi driver needs non-$(0x0211_0000++320KB, RW-NCNB */
 	mpu_priv_noncache(0x02100000, 0x80000);
 
-	/*
-	 * Region 4 for RO in Flash : 0x0400_0000 ++ 4MB, RO-WT
-	 * BL1 + TinyAra OS + SSS F/W, wifi F/W, CM0 F/W
-	 */
-	base = CONFIG_S5J_FLASH_BASE;
-	size = CONFIG_S5J_BOOTLOADER_REGION_SIZE;
-	mpu_priv_flash(base, size);
+	/* Region 3, for FLASH area, default to set WBWA */
+	mpu_user_intsram_wb(CONFIG_S5J_FLASH_BASE, CONFIG_S5J_FLASH_SIZE);
 
-	/* Region 5, for wifi dedicated area, RW-WBWA, 0x043C_0000 -- 8KB */
-	mpu_user_intsram_wb(CONFIG_NVRAM_WIFI_START, 8 * 1024);
+	/* region 4, for Sflash Mirror area to be read only */
+	mpu_priv_flash(CONFIG_S5J_FLASH_MIRROR_BASE, CONFIG_S5J_FLASH_SIZE);
 
-#ifdef CONFIG_FS_SMARTFS
-	/*
-	 * Region 6, FILE SYSTEM : 0x0440_0000 ++ 4MB - 256KB
-	 * filesystem - smartfs
-	 */
-	base = CONFIG_S5J_FLASH_BASE + CONFIG_S5J_BOOTLOADER_REGION_SIZE;
-	size = CONFIG_S5J_FLASH_SIZE - CONFIG_S5J_BOOTLOADER_REGION_SIZE;
-	mpu_user_intsram_wb(base, size);
-#endif
-
-	/*
-	 * Region 7, SSS F/W region2 : 0x047C_0000 ++ 256KB
-	 * SSS key area RW, priority higher than 0x0400_0000, 4MB attribute(WBWA, RO)
-	 */
-	base = CONFIG_S5J_FLASH_BASE + CONFIG_S5J_FLASH_SIZE;
-	size = 256 * 1024;
-	mpu_user_intsram_wb(base, size);
-
-	/* region 8, for Sflash Mirror(0x6000_0000, RO) */
-	mpu_priv_flash(0x60000000, CONFIG_S5J_FLASH_SIZE);
-
-	/* Region 9, for vecotr table(0x8000_0000, RW-STRONG-ORDER */
+	/* Region 5, for SFR area read/write, strongly-ordered */
 	mpu_priv_stronglyordered(0x80000000, 0x10000000);
 
-	/* Region 10, for vecotr table(0xFFFF_0000++4KB, RO-WT */
+	/*
+	 * Region 6, for vector table,
+	 * s5j uses high vector in 0xFFFF_0000++4KB, read only
+	 */
 	mpu_priv_flash(0xFFFF0000, 0x1000);
 
 	mpu_control(true);
-
+#endif
 	return 0;
 }
 #endif
