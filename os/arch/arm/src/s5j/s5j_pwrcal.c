@@ -89,9 +89,26 @@ int cal_clk_setrate(unsigned int id, unsigned long rate)
 	unsigned int div;
 	switch(id) {
 	case d1_spi0:
+		parents = 80000000;
+		div = parents / rate;
+		SetBits(CLK_CON_DIV_DIV_CLK_SPI, 0, 0x3FF, (div - 1));
 		break;
 	case d1_spi1:
+		parents = 80000000;
+		div = parents / rate;
+		SetBits(CLK_CON_DIV_DIV_CLK_SPI1, 0, 0x3FF, (div - 1));
 		break;
+	case d1_spi2:
+		parents = 80000000;
+		div = parents / rate;
+		SetBits(CLK_CON_DIV_DIV_CLK_SPI2, 0, 0x3FF, (div - 1));
+		break;
+	case d1_spi3:
+		parents = 80000000;
+		div = parents / rate;
+		SetBits(CLK_CON_DIV_DIV_CLK_SPI3, 0, 0x3FF, (div - 1));
+		break;
+
 	case d1_serialflash:
 		/* CLK_CON_DIV_DIV_CLK_SERIALFLASH */
 		parents = 320000000;
