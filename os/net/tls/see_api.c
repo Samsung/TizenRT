@@ -692,6 +692,33 @@ int see_compute_dhm_param(struct sDH_PARAM *d_param, unsigned int key_index, uns
 	_SEE_MUTEX_UNLOCK return SEE_OK;
 }
 
+int see_compute_ecdh_param(struct sECC_KEY *ecc_pub, unsigned int key_index, unsigned char *output, unsigned int *olen)
+{
+	int r;
+
+	if (ecc_pub == NULL || output == NULL || olen == NULL) {
+		return SEE_INVALID_INPUT_PARAMS;
+	}
+
+	if (see_check_keyindex(key_index)) {
+		return SEE_INVALID_INPUT_PARAMS;
+	}
+
+	SEE_DEBUG("%s : key_index : %d \n", __func__, key_index);
+
+	_SEE_MUTEX_LOCK
+	ISP_CHECKBUSY();
+	if ((r = isp_compute_ecdh_securekey(output, olen, *ecc_pub, key_index)) != 0) {
+		isp_clear(0);
+		_SEE_MUTEX_UNLOCK
+		SEE_DEBUG("isp_compute_ecdh_param fail %x\n", r);
+		return SEE_ERROR;
+	}
+	_SEE_MUTEX_UNLOCK
+
+	return SEE_OK;
+}
+
 int see_rsa_decryption(unsigned int key_index, unsigned int pad_type, unsigned char *output, unsigned int *outlen, unsigned char *input, unsigned int inlen)
 {
 	int r;
@@ -927,4 +954,26 @@ unsigned int see_get_keyindex(unsigned int key_type)
 	}
 
 	return 0xFF;
+}
+
+int see_check_keyindex(unsigned int index)
+{
+#ifdef SEE_SUPPORT_USERKEY
+	if (index < MAX_KEY_INDEX) {
+		return 0;
+	}
+#endif
+
+	switch (index) {
+	case FACTORYKEY_ARTIK_PSK:
+	case FACTORYKEY_ARTIK_DEVICE:
+	case FACTORYKEY_DA_CA:
+	case FACTORYKEY_DA_DEVICE:
+	case FACTORYKEY_DA_PBKEY:
+	case FACTORYKEY_IOTIVITY_ECC:
+		return 0;
+	default:
+		return -1;
+	}
+	return -1;
 }

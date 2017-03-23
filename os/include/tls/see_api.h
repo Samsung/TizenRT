@@ -251,4 +251,5 @@ int see_mutex_unlock(see_mutex_t *m);
 
 unsigned int see_get_keyindex(unsigned int key_type);
 unsigned int see_free_keyindex(unsigned int key_type, unsigned int key_index);
+int see_check_keyindex(unsigned int key_index);
 #endif							/* __SEE_API_H */

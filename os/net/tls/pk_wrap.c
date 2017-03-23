@@ -231,6 +231,9 @@ static int eckey_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned c
 
 	mbedtls_ecdsa_init(&ecdsa);
 
+#if defined(CONFIG_HW_ECDSA_SIGN)
+	ecdsa.key_index = ((mbedtls_ecp_keypair *)ctx)->key_index;
+#endif
 	if ((ret = mbedtls_ecdsa_from_keypair(&ecdsa, ctx)) == 0) {
 		ret = ecdsa_sign_wrap(&ecdsa, md_alg, hash, hash_len, sig, sig_len, f_rng, p_rng);
 	}
@@ -366,8 +369,12 @@ const mbedtls_pk_info_t mbedtls_ecdsa_info = {
 	hw_ecdsa_verify_wrap,
 #else
 	ecdsa_verify_wrap,
-#endif
+#endif /* CONFIG_HW_ECDSA_VERIFICATION */
+#if defined(CONFIG_HW_ECDSA_SIGN)
+	hw_ecdsa_sign_wrap,
+#else
 	ecdsa_sign_wrap,
+#endif /* CONFIG_HW_ECDSA_SIGN */
 	NULL,
 	NULL,
 	eckey_check_pair,			/* Compatible key structures */
@@ -480,6 +487,98 @@ const mbedtls_pk_info_t mbedtls_rsa_alt_info = {
 };
 
 #endif	/* MBEDTLS_PK_RSA_ALT_SUPPORT */
+
+#if defined(CONFIG_HW_ECDSA_SIGN)
+int hw_ecdsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, unsigned char *sig, size_t *sig_len, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+{
+	int ret;
+        unsigned int curve = ((mbedtls_ecdsa_context *)ctx)->grp.id;
+        unsigned int key_index = ((mbedtls_ecdsa_context *)ctx)->key_index;
+        unsigned char s_buf[SEE_MAX_ECP_KEY_SIZE];
+        unsigned char r_buf[SEE_MAX_ECP_KEY_SIZE];
+        unsigned char *t_hash = (unsigned char *)hash;
+
+	/*
+	 * 1. Check key existance
+	 */
+	if (see_check_keyindex(key_index)) {
+		return MBEDTLS_ERR_ECP_INVALID_KEY;
+	}
+
+	/*
+	 * 2. Check hash algorithm and sign curve
+	 */
+        mbedtls_mpi r, s;
+        struct sECC_SIGN ecc_sign;
+        memset(&ecc_sign, 0, sizeof(struct sECC_SIGN));
+
+        ecc_sign.s = s_buf;
+        ecc_sign.r = r_buf;
+
+        switch(md_alg) {
+                case MBEDTLS_MD_SHA1:
+                        ecc_sign.sign_type |= OID_SHA1_160;
+                        break;
+                case MBEDTLS_MD_SHA256:
+                        ecc_sign.sign_type |= OID_SHA2_256;
+                        break;
+                case MBEDTLS_MD_SHA384:
+                        ecc_sign.sign_type |= OID_SHA2_384;
+                        break;
+                case MBEDTLS_MD_SHA512:
+                        ecc_sign.sign_type |= OID_SHA2_512;
+                        break;
+                default:
+                        ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+                        goto cleanup;
+        }
+        switch(curve) {
+                case MBEDTLS_ECP_DP_SECP192R1:
+                        ecc_sign.sign_type |= OID_ECC_P192;
+                        break;
+                case MBEDTLS_ECP_DP_SECP224R1:
+                        ecc_sign.sign_type |= OID_ECC_P224;
+                        break;
+                case MBEDTLS_ECP_DP_SECP256R1:
+                        ecc_sign.sign_type |= OID_ECC_P256;
+                        break;
+                case MBEDTLS_ECP_DP_SECP384R1:
+                        ecc_sign.sign_type |= OID_ECC_P384;
+                        break;
+                case MBEDTLS_ECP_DP_SECP521R1:
+                        ecc_sign.sign_type |= OID_ECC_P521;
+                        break;
+                case MBEDTLS_ECP_DP_BP256R1:
+                        ecc_sign.sign_type |= OID_ECC_BP256;
+                        break;
+                default:
+                        ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+                        goto cleanup;
+        }
+
+        mbedtls_mpi_init(&r);
+        mbedtls_mpi_init(&s);
+
+	/*
+	 * 3. Sign
+	 */
+        if((ret = see_get_ecdsa_signature(&ecc_sign, t_hash, hash_len, key_index)) != 0) {
+		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+                goto cleanup;
+	}
+
+        mbedtls_mpi_read_binary(&r, ecc_sign.r, ecc_sign.r_byte_len);
+        mbedtls_mpi_read_binary(&s, ecc_sign.s, ecc_sign.s_byte_len);
+
+        MBEDTLS_MPI_CHK( ecdsa_signature_to_asn1( &r, &s, sig, sig_len ));
+
+cleanup:
+        mbedtls_mpi_free(&r);
+        mbedtls_mpi_free(&s);
+
+        return ret;
+}
+#endif /* CONFIG_HW_ECDSA_SIGN */
 
 #if defined(CONFIG_HW_ECDSA_VERIFICATION)
 int hw_ecdsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, const unsigned char *sig, size_t sig_len)

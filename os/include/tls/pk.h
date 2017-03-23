@@ -592,6 +592,9 @@ int mbedtls_pk_write_pubkey(unsigned char **p, unsigned char *start, const mbedt
 int mbedtls_pk_load_file(const char *path, unsigned char **buf, size_t *n);
 #endif
 
+#if defined(CONFIG_HW_ECDSA_SIGN)
+int hw_ecdsa_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, unsigned char *sig, size_t *sig_len, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+#endif
 #if defined(CONFIG_HW_ECDSA_VERIFICATION)
 int hw_ecdsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, const unsigned char *sig, size_t sig_len);
 #endif
