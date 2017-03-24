@@ -416,7 +416,7 @@ endmenu # Tasks and Scheduling
 menu "Pthread Options"
 	depends on !DISABLE_PTHREAD
 
-config MUTEX_TYPES:
+config MUTEX_TYPES
 	bool "Enable mutex types"
 	default n
 	---help---

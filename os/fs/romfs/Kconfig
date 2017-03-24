@@ -11,5 +11,3 @@ config FS_ROMFS
 	---help---
 		Enable ROMFS filesystem support
 
-if FS_ROMFS
-endif

@@ -45,8 +45,7 @@ config UCLIBCXX
 	default n
 	---help---
 		If you have installed uClibc++ into the TinyAra source try, then it can
-		be built by selecting this option.  See misc/uClibc++/README.txt for
-		information on installing uClibc++.
+		be built by selecting this option.
 
 if UCLIBCXX
 
