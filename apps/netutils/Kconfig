@@ -22,4 +22,5 @@ source "$APPSDIR/netutils/xmlrpc/Kconfig"
 source "$APPSDIR/netutils/mdns/Kconfig"
 source "$APPSDIR/netutils/wifi/Kconfig"
 source "$APPSDIR/netutils/mqtt/Kconfig"
+source "$APPSDIR/netutils/er-coap/Kconfig"
 endmenu
