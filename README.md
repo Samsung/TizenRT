@@ -1,8 +1,10 @@
-# TinyAra
-lightweight RTOS-based platform to support low-end IoT devices
+# Tizen RT
+
 [![License](https://img.shields.io/badge/licence-Apache%202.0-brightgreen.svg?style=flat)](LICENSE)
 
-You can find project details on our [wiki](https://github.com/Samsung/TinyAra/wiki).
+lightweight RTOS-based platform to support low-end IoT devices.
+
+You can find project details on our [wiki](https://github.com/Samsung/TizenRT/wiki).
 
 ## Quick Start
 ### Getting the toolchain
@@ -19,33 +21,33 @@ export PATH=<Your Toolchain PATH>:$PATH
 ### Getting the sources
 
 ```bash
-git clone https://github.com/Samsung/TinyAra.git
-cd TinyAra
-TINYARA_BASEDIR="$PWD"
+git clone https://github.com/Samsung/TizenRT.git
+cd TizenRT
+TIZENRT_BASEDIR="$PWD"
 ```
 
 ### How to Build
 
-Configure the build from $TINYARA_BASEDIR/os/tools directory
+Configure the build from $TIZENRT_BASEDIR/os/tools directory
 ```bash
 cd os/tools
 ./configure.sh <board>/<configuration_set>
 ```
 For list of boards and configuration set supported, refer belows.
-Above copies the canned configuration-set for the particular board, into the $TINYARA_BASEDIR/os directory.
+Above copies the canned configuration-set for the particular board, into the $TIZENRT_BASEDIR/os directory.
 
-Configuration can be modified through make menuconfig from $TINYARA_BASEDIR/os.
+Configuration can be modified through make menuconfig from $TIZENRT_BASEDIR/os.
 ```bash
 cd ..
 make menuconfig
 ```
 
-Finally, initiate build by make from $TINYARA_BASEDIR/os
+Finally, initiate build by make from $TIZENRT_BASEDIR/os
 ```bash
 make
 ```
 
-Built binaries are in $TINYARA_BASEDIR/build/output/bin.
+Built binaries are in $TIZENRT_BASEDIR/build/output/bin.
 
 ## Board
 Tizen RT currently supports one board called sidk_s5jt200. However, this board is not available in public markets till now. sidk_s5jt200 or other boards for Tizen RT will be coming soon.
