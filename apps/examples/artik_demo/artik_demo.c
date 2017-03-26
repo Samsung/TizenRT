@@ -233,7 +233,6 @@ static char NET_DEVNAME[10];
 
 static int app_dhcp_main(void)
 {
-	uint32_t timeleft = 15000;
 	struct dhcpc_state state;
 	void *dhcp_handle;
 	int ret;

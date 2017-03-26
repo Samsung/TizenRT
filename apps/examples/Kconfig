@@ -73,4 +73,5 @@ source "$APPSDIR/examples/webserver/Kconfig"
 source "$APPSDIR/examples/websocket/Kconfig"
 source "$APPSDIR/examples/workqueue/Kconfig"
 source "$APPSDIR/examples/artik_demo/Kconfig"
+source "$APPSDIR/examples/slsiwifi/Kconfig"
 endmenu
