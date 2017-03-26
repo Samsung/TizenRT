@@ -68,6 +68,8 @@
 #include "s5j_rtc.h"
 #include "up_internal.h"
 
+#include <apps/shell/tash.h>
+
 #include <tinyara/fs/mtd.h>
 
 #include "sidk_s5jt200.h"
@@ -87,9 +89,22 @@ char *s5j_get_binary_version(uint32_t baddr)
 	static char version[13];
 	version[12] = '\0';
 	strncpy(version, (char *)baddr, sizeof(version) - 1);
-	return version;
 
+	return version;
 }
+
+#ifdef CONFIG_TASH
+#ifdef CONFIG_EXAMPLES_SLSIWIFI
+int slsi_wifi_main(int argc, char *argv[]);
+#endif
+
+const static tash_cmdlist_t tash_s5j_cmds[] = {
+#ifdef CONFIG_EXAMPLES_SLSIWIFI
+	{ "artikwifi",		slsi_wifi_main,		TASH_EXECMD_SYNC },
+#endif
+	{ NULL,			NULL,			0 }
+};
+#endif
 
 static void scsc_wpa_ctrl_iface_init(void)
 {
@@ -272,7 +287,6 @@ int board_app_initialize(void)
 	pwmdrv_register();
 #endif
 
-
 #if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
 	up_rtc_getdatetime(&tp);
 	lldbg("RTC getdatetime %d/%d/%d/%d/%d/%d\n",
@@ -283,6 +297,10 @@ int board_app_initialize(void)
 #endif
 
 	scsc_wpa_ctrl_iface_init();
+
+#ifdef CONFIG_TASH
+	tash_cmdlist_install(tash_s5j_cmds);
+#endif
 
 	/* to suppress a compiler warning */
 	UNUSED(ret);
