@@ -67,7 +67,7 @@
 #else
 #define NET_DEVNAME "en0"
 #endif
-#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
+#elif defined(CONFIG_ARCH_CHIP_S5JT200)
 #if LWIP_HAVE_LOOPIF
 #define NET_DEVNAME "wl1"
 #else
