@@ -265,9 +265,18 @@
 
 #define UDP_TTL                         255
 #define LWIP_UDP_TODO                   1
-#define LWIP_DHCPS                      0
 /* ---------- UDP options ---------- */
 
+/* ---------- DHCP options ---------- */
+
+/*
+ * Note
+ * In this platform, DHCP client and server are supported through netutils
+ * Instead of using lwIP DHCP, please use netutils dhcpc and dhcpd
+ */
+#define LWIP_DHCPS                      0
+#define LWIP_DHCP                       0
+/* ---------- DHCP options ---------- */
 
 /* ---------- SNMP options ---------- */
 #ifdef CONFIG_NET_LWIP_SNMP
