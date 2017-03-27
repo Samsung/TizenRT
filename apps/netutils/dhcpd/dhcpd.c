@@ -974,10 +974,58 @@ static int dhcpd_sendpacket(int bbroadcast)
 		nvdbg("sendto %08lx:%04x len=%d\n", (long)ntohl(addr.sin_addr.s_addr), ntohs(addr.sin_port), len);
 		ret = sendto(sockfd, &g_state.ds_outpacket, len, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 		close(sockfd);
+	} else {
+		ndbg("create socket failed : %d\n", sockfd);
 	}
 
 	return ret;
 }
+
+/****************************************************************************
+ * Name: dhcpd_send_offerpacket
+ ****************************************************************************/
+
+static int dhcpd_send_offerpacket(void)
+{
+	struct sockaddr_in addr;
+	in_addr_t ipaddr;
+	int sockfd;
+	int len;
+	int ret = ERROR;
+
+	memcpy(&ipaddr, g_state.ds_outpacket.yiaddr, 4);
+
+#if HAVE_NETMASK
+	/* A dhcp offer message should be sent as broadcast message
+	 *  Some platform might discard 255.255.255.255 broadcast message, so replace it to subnet broadcast message
+	 */
+	ipaddr |= (~htonl(CONFIG_NETUTILS_DHCPD_NETMASK));
+#else
+	ipaddr = htonl(IPADDR_BROADCAST);
+#endif
+
+	sockfd = dhcpd_openresponder();
+	if (sockfd >= 0) {
+		/* Then send the reponse to the DHCP client port at that address */
+
+		memset(&addr, 0, sizeof(struct sockaddr_in));
+		addr.sin_family = AF_INET;
+		addr.sin_port = HTONS(DHCP_CLIENT_PORT);
+		addr.sin_addr.s_addr = ipaddr;
+
+		/* Send the minimum sized packet that includes the END option */
+
+		len = (g_state.ds_optend - (uint8_t *)&g_state.ds_outpacket) + 1;
+		nvdbg("dhcp offer sendto %08lx:%04x len=%d\n", (long)ntohl(addr.sin_addr.s_addr), ntohs(addr.sin_port), len);
+		ret = sendto(sockfd, &g_state.ds_outpacket, len, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+		close(sockfd);
+	} else {
+		ndbg("create socket failed : %d\n", sockfd);
+	}
+
+	return ret;
+}
+
 
 /****************************************************************************
  * Name: dhcpd_sendoffer
@@ -1017,7 +1065,7 @@ static inline int dhcpd_sendoffer(in_addr_t ipaddr, uint32_t leasetime)
 #endif
 
 	/* Send the offer response */
-	return dhcpd_sendpacket(true);
+	return dhcpd_send_offerpacket();
 }
 
 /****************************************************************************
