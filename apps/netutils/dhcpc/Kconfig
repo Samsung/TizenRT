@@ -10,6 +10,3 @@ config NETUTILS_DHCPC
 	# depends on NET_UDP && NET_BROADCAST && NET_IPv4
 	---help---
 		Enable support for the DHCP client.
-
-if NETUTILS_DHCPC
-endif

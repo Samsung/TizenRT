@@ -8,6 +8,3 @@ config NETUTILS_SMTP
 	default n
 	---help---
 		Enable support for SMTP.
-
-if NETUTILS_SMTP
-endif

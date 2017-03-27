@@ -9,6 +9,3 @@ config SYSTEM_MDIO
 	depends on NETDEV_PHY_IOCTL
 	---help---
 		Enable the MDIO tool
-
-if SYSTEM_MDIO
-endif

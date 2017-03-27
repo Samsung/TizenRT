@@ -8,6 +8,3 @@ config NETUTILS_FTPD
 	default n
 	---help---
 		Enable support for the FTP server.
-
-if NETUTILS_FTPD
-endif
