@@ -56,6 +56,7 @@ APPDIR = ${shell pwd}
 TOPDIR ?= $(APPDIR)/import
 
 -include $(TOPDIR)/Make.defs
+-include $(APPDIR)/Make.defs
 
 # Application Directories
 
@@ -128,6 +129,12 @@ context_serialize:
 
 context: context_serialize
 
+Kconfig:
+	$(foreach SDIR, $(BUILDIRS), $(call MAKE_template,$(SDIR),preconfig))
+	$(Q) $(MKKCONFIG)
+
+preconfig: Kconfig
+
 .depdirs: $(foreach SDIR, $(CONFIGURED_APPS), $(SDIR)_depend)
 
 .depend: context Makefile .depdirs
@@ -137,6 +144,7 @@ depend: .depend
 
 clean: $(foreach SDIR, $(CLEANDIRS), $(SDIR)_clean)
 	$(call DELFILE, $(BIN))
+	$(call DELFILE, Kconfig)
 	$(call DELDIR, $(BIN_DIR))
 	$(call CLEAN)
 
@@ -156,6 +164,7 @@ else
 	)
 endif
 	$(call DELFILE, .depend)
+	$(call DELFILE, $(BIN))
+	$(call DELFILE, Kconfig)
 	$(call DELDIR, $(BIN_DIR))
-
-
+	$(call CLEAN)
