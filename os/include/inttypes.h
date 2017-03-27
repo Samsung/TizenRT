@@ -226,7 +226,7 @@ intmax_t wcstoimax(const wchar_t *, wchar_t **, int);
  */
 uintmax_t wcstoumax(const wchar_t *, wchar_t **, int);
 
-#if __WORDSIZE == 64
+#if defined(__WORDSIZE) && __WORDSIZE == 64
 #define __PRI64_PREFIX  "l"
 #define __PRIPTR_PREFIX "l"
 #else
