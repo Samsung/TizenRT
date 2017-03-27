@@ -209,19 +209,19 @@ static void hsi2c_set_hs_timing(unsigned int base, unsigned int nClkDiv, unsigne
 	tSTART_SU &= 0xFF;
 	tSTART_HD &= 0xFF;
 	tSTOP_SU &= 0xFF;
-	__raw_writel(((tSTART_SU << 24) | (tSTART_HD << 16) | (tSTOP_SU << 8)), base + I2C_TIMING_HS1);
+	putreg32(((tSTART_SU << 24) | (tSTART_HD << 16) | (tSTOP_SU << 8)), base + I2C_TIMING_HS1);
 
 	tDATA_SU &= 0xFF;
 	tSCL_L &= 0xFF;
 	tSCL_H &= 0xFF;
-	__raw_writel(((tDATA_SU << 24) | (tSCL_L << 8) | (tSCL_H << 0)), base + I2C_TIMING_HS2);
+	putreg32(((tDATA_SU << 24) | (tSCL_L << 8) | (tSCL_H << 0)), base + I2C_TIMING_HS2);
 
 	nClkDiv &= 0xFF;
 	tSR_RELEASE &= 0xFF;
-	__raw_writel(((nClkDiv << 16) | (tSR_RELEASE << 0)), base + I2C_TIMING_HS3);
+	putreg32(((nClkDiv << 16) | (tSR_RELEASE << 0)), base + I2C_TIMING_HS3);
 
 	tDATA_HD &= 0xFFFF;
-	__raw_writel(tDATA_HD, base + I2C_TIMING_SLA);
+	putreg32(tDATA_HD, base + I2C_TIMING_SLA);
 
 }
 
@@ -230,23 +230,24 @@ static void hsi2c_set_fs_timing(unsigned int base, unsigned int nClkDiv, unsigne
 	tSTART_SU &= 0xFF;
 	tSTART_HD &= 0xFF;
 	tSTOP_SU &= 0xFF;
-	__raw_writel(((tSTART_SU << 24) | (tSTART_HD << 16) | (tSTOP_SU << 8)), base + I2C_TIMING_FS1);
+	putreg32(((tSTART_SU << 24) | (tSTART_HD << 16) | (tSTOP_SU << 8)), base + I2C_TIMING_FS1);
 
 	tDATA_SU &= 0xFF;
 	tSCL_L &= 0xFF;
 	tSCL_H &= 0xFF;
-	__raw_writel(((tDATA_SU << 24) | (tSCL_L << 8) | (tSCL_H << 0)), base + I2C_TIMING_FS2);
+	putreg32(((tDATA_SU << 24) | (tSCL_L << 8) | (tSCL_H << 0)), base + I2C_TIMING_FS2);
 
 	nClkDiv &= 0xFF;
 	tSR_RELEASE &= 0xFF;
-	__raw_writel(((nClkDiv << 16) | (tSR_RELEASE << 0)), base + I2C_TIMING_FS3);
+	putreg32(((nClkDiv << 16) | (tSR_RELEASE << 0)), base + I2C_TIMING_FS3);
 
 	tDATA_HD &= 0xFFFF;
-	__raw_writel(tDATA_HD, base + I2C_TIMING_SLA);
+	putreg32(tDATA_HD, base + I2C_TIMING_SLA);
 }
 
 static void hsi2c_calculate_timing(unsigned int base, unsigned int nPclk, unsigned int nOpClk)
 {
+	unsigned int reg;
 	unsigned int nClkDiv;
 	unsigned int tFTL_CYCLE_SCL;
 	s32 i;
@@ -254,9 +255,15 @@ static void hsi2c_calculate_timing(unsigned int base, unsigned int nPclk, unsign
 	s32 uTemp1;
 	s32 uTemp2 = 0;
 
-	HW_REG32(base, I2C_CONF) &= ~(0x7 << 13);
-	HW_REG32(base, I2C_CONF) &= ~(0x7 << 16);
-	tFTL_CYCLE_SCL = (HW_REG32(base, I2C_CONF) >> 16) & 0x7;
+	reg = getreg32(base + I2C_CONF);
+	reg &= ~(0x7 << 13);
+	putreg32(reg, base + I2C_CONF);
+
+	reg = getreg32(base + I2C_CONF);
+	reg &= ~(0x7 << 16);
+	putreg32(reg, base + I2C_CONF);
+
+	tFTL_CYCLE_SCL = getreg32((base + I2C_CONF) >> 16) & 0x7;
 
 	uTemp0 = (float)(nPclk / nOpClk) - (tFTL_CYCLE_SCL + 3) * 2;
 
@@ -297,41 +304,41 @@ static void hsi2c_conf(unsigned int base, unsigned int nOpClk)
 {
 	unsigned int val;
 
-	val = __raw_readl(base + I2C_CONF);
+	val = getreg32(base + I2C_CONF);
 	val &= ~(3 << 30);
 	if (nOpClk > I2C_SPEED_400KHZ) {
 		val |= (1 << 29);
 	} else {
 		val &= ~(1 << 29);
 	}
-	__raw_writel(val, base + I2C_CONF);
+	putreg32(val, base + I2C_CONF);
 }
 
 static void hsi2c_enable_int(unsigned int base, unsigned int bit)
 {
 	unsigned int val;
-	val = __raw_readl(base + INT_EN);
+	val = getreg32(base + INT_EN);
 	val |= bit;
-	__raw_writel(val, base + INT_EN);
+	putreg32(val, base + INT_EN);
 }
 
 static void hsi2c_disable_int(unsigned int base, unsigned int bit)
 {
 	unsigned int val;
 
-	val = __raw_readl(base + INT_EN);
+	val = getreg32(base + INT_EN);
 	val &= ~bit;
-	__raw_writel(val, base + INT_EN);
+	putreg32(val, base + INT_EN);
 }
 
 static void hsi2c_clear_int(unsigned int base, unsigned int bit)
 {
-	__raw_writel(bit, base + INT_STAT);
+	putreg32(bit, base + INT_STAT);
 }
 
 static unsigned int hsi2c_read_int_status(unsigned int base)
 {
-	return __raw_readl(base + INT_STAT) & __raw_readl(base + INT_EN);
+	return getreg32(base + INT_STAT) & getreg32(base + INT_EN);
 }
 
 static void hsi2c_set_slave_addr(unsigned int base, u16 addr, unsigned int is_master)
@@ -340,7 +347,7 @@ static void hsi2c_set_slave_addr(unsigned int base, u16 addr, unsigned int is_ma
 
 	addr &= 0x3FF;
 
-	val = __raw_readl(base + I2C_ADDR);
+	val = getreg32(base + I2C_ADDR);
 
 	if (is_master == 0) {
 		val &= ~0x3ff;
@@ -349,7 +356,7 @@ static void hsi2c_set_slave_addr(unsigned int base, u16 addr, unsigned int is_ma
 		val &= ~(0x3FF << 10);
 		val |= (addr << 10);
 	}
-	__raw_writel(val, base + I2C_ADDR);
+	putreg32(val, base + I2C_ADDR);
 }
 
 static int hsi2c_manual_fast_init(struct s5j_i2c_priv_s *priv)
@@ -363,9 +370,9 @@ static int hsi2c_manual_fast_init(struct s5j_i2c_priv_s *priv)
 
 	priv->initialized = 1;
 
-	val = __raw_readl(base + I2C_CONF);
+	val = getreg32(base + I2C_CONF);
 	val &= ~((1 << 31) | (1 << 29));
-	__raw_writel(val, base + I2C_CONF);
+	putreg32(val, base + I2C_CONF);
 
 	hsi2c_enable_int(base, HSI2C_INT_XFER_DONE);
 
@@ -380,9 +387,9 @@ static int hsi2c_wait_xfer_done(struct s5j_i2c_priv_s *priv)
 	unsigned int base = priv->config->base;
 
 	while (timeout-- > 0) {
-		val = __raw_readl(base + INT_STAT) & HSI2C_INT_XFER_DONE_MANUAL;
+		val = getreg32(base + INT_STAT) & HSI2C_INT_XFER_DONE_MANUAL;
 		if (val) {
-			__raw_writel(val, base + INT_STAT);
+			putreg32(val, base + INT_STAT);
 			return (val == HSI2C_INT_XFER_DONE_MANUAL);
 		}
 	}
@@ -398,9 +405,9 @@ static int hsi2c_wait_xfer_noack(struct s5j_i2c_priv_s *priv)
 	unsigned int base = priv->config->base;
 
 	while (timeout-- > 0) {
-		val = __raw_readl(base + INT_STAT) & HSI2C_INT_XFER_DONE_NOACK_MANUAL;
+		val = getreg32(base + INT_STAT) & HSI2C_INT_XFER_DONE_NOACK_MANUAL;
 		if (val) {
-			__raw_writel(val, base + INT_STAT);
+			putreg32(val, base + INT_STAT);
 			return (val == HSI2C_INT_XFER_DONE_NOACK_MANUAL);
 		}
 	}
@@ -414,9 +421,9 @@ static void hsi2c_start(struct s5j_i2c_priv_s *priv)
 
 //  dbg("S ");
 
-	__raw_writel(0x88, priv->config->base + CTL);
+	putreg32(0x88, priv->config->base + CTL);
 
-	__raw_writel(I2C_START, priv->config->base + I2C_MANUAL_CMD);
+	putreg32(I2C_START, priv->config->base + I2C_MANUAL_CMD);
 
 	debug_msg = hsi2c_wait_xfer_done(priv);
 }
@@ -425,7 +432,7 @@ static void hsi2c_stop(struct s5j_i2c_priv_s *priv)
 {
 //  dbg("P\n");
 
-	__raw_writel(I2C_STOP, priv->config->base + I2C_MANUAL_CMD);
+	putreg32(I2C_STOP, priv->config->base + I2C_MANUAL_CMD);
 
 	hsi2c_wait_xfer_done(priv);
 }
@@ -434,7 +441,7 @@ static void hsi2c_repstart(struct s5j_i2c_priv_s *priv)
 {
 //  dbg("Sr ");
 
-	__raw_writel(I2C_RESTART, priv->config->base + I2C_MANUAL_CMD);
+	putreg32(I2C_RESTART, priv->config->base + I2C_MANUAL_CMD);
 }
 
 static int hsi2c_outb(struct s5j_i2c_priv_s *priv, u8 data)
@@ -443,7 +450,7 @@ static int hsi2c_outb(struct s5j_i2c_priv_s *priv, u8 data)
 	int ret;
 
 	val = ((unsigned int)data) << 24 | I2C_SEND_DATA;
-	__raw_writel(val, priv->config->base + I2C_MANUAL_CMD);
+	putreg32(val, priv->config->base + I2C_MANUAL_CMD);
 
 	ret = hsi2c_wait_xfer_done(priv);
 
@@ -460,14 +467,14 @@ static int hsi2c_inb(struct s5j_i2c_priv_s *priv, bool is_ack)
 	if (!is_ack) {
 		val |= I2C_RX_ACK;
 	}
-	__raw_writel(val, base + I2C_MANUAL_CMD);
+	putreg32(val, base + I2C_MANUAL_CMD);
 
 	ret = hsi2c_wait_xfer_done(priv);
 	if (ret < 0) {
 		return ret;				/* timeout */
 	}
 
-	data = (__raw_readl(base + I2C_MANUAL_CMD) >> 16) & 0xff;
+	data = (getreg32(base + I2C_MANUAL_CMD) >> 16) & 0xff;
 //  dbg("[0x%02X] %s ", data, is_ack ? "A" : "NA");
 
 	return data;
@@ -596,7 +603,7 @@ static int do_address(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg)
 
 static void hsi2c_run_auto_mode(unsigned int base, int on)
 {
-	unsigned int val = __raw_readl(base + I2C_AUTO_CONF);
+	unsigned int val = getreg32(base + I2C_AUTO_CONF);
 
 	if (on) {
 		val |= (1 << 31);
@@ -604,12 +611,12 @@ static void hsi2c_run_auto_mode(unsigned int base, int on)
 		val &= ~(1 << 31);
 	}
 
-	__raw_writel(val, base + I2C_AUTO_CONF);
+	putreg32(val, base + I2C_AUTO_CONF);
 }
 
 static void hsi2c_tx_fifo_reset(unsigned int base, int resetb)
 {
-	unsigned int val = __raw_readl(base + FIFO_CTL);
+	unsigned int val = getreg32(base + FIFO_CTL);
 
 	if (resetb) {
 		val |= (1 << 3);
@@ -617,12 +624,12 @@ static void hsi2c_tx_fifo_reset(unsigned int base, int resetb)
 		val &= ~(1 << 3);
 	}
 
-	__raw_writel(val, base + FIFO_CTL);
+	putreg32(val, base + FIFO_CTL);
 }
 
 static void hsi2c_set_auto_config(unsigned int base, unsigned int stop, unsigned int tx, unsigned int len)
 {
-	unsigned int val = __raw_readl(base + I2C_AUTO_CONF);
+	unsigned int val = getreg32(base + I2C_AUTO_CONF);
 
 	if (stop) {
 		val |= (1 << 17);
@@ -637,12 +644,12 @@ static void hsi2c_set_auto_config(unsigned int base, unsigned int stop, unsigned
 
 	val &= ~0xFFFF;
 	val |= len;
-	__raw_writel(val, base + I2C_AUTO_CONF);
+	putreg32(val, base + I2C_AUTO_CONF);
 }
 
 static void hsi2c_set_trans_mode(unsigned int base, unsigned int master, unsigned int tx)
 {
-	unsigned int val = __raw_readl(base + CTL);
+	unsigned int val = getreg32(base + CTL);
 
 	val |= (1 << 0);			/* ctrl 0 bit write 1 */
 
@@ -659,13 +666,13 @@ static void hsi2c_set_trans_mode(unsigned int base, unsigned int master, unsigne
 		val |= (1 << 6);
 	}
 
-	__raw_writel(val, base + CTL);
+	putreg32(val, base + CTL);
 
 }
 
 static void hsi2c_set_hwacg_mode(unsigned int base, unsigned int slave)
 {
-	unsigned int val = __raw_readl(base + CTL);
+	unsigned int val = getreg32(base + CTL);
 
 	val &= ~(0x3 << 24);
 
@@ -675,7 +682,7 @@ static void hsi2c_set_hwacg_mode(unsigned int base, unsigned int slave)
 		val &= ~(0x1 << 24);
 	}
 
-	__raw_writel(val, base + CTL);
+	putreg32(val, base + CTL);
 }
 
 static int hsi2c_master_handler(void *args)
@@ -690,7 +697,7 @@ static int hsi2c_master_handler(void *args)
 	int_status = hsi2c_read_int_status(base);
 	if (int_status & HSI2C_INT_TX_ALMOST_EMPTY) {
 		if (buf_off < msg->length) {
-			__raw_writel(msg->buffer[buf_off], base + TXDATA);
+			putreg32(msg->buffer[buf_off], base + TXDATA);
 			priv->master_test_data->buf_count++;
 		} else {
 			hsi2c_disable_int(base, HSI2C_INT_TX_ALMOST_EMPTY);
@@ -698,7 +705,7 @@ static int hsi2c_master_handler(void *args)
 		hsi2c_clear_int(base, HSI2C_INT_TX_ALMOST_EMPTY);
 	}
 	if (int_status & HSI2C_INT_RX_ALMOST_FULL) {
-		msg->buffer[buf_off] = (u8) __raw_readl(base + RXDATA);
+		msg->buffer[buf_off] = (u8) getreg32(base + RXDATA);
 		priv->master_test_data->buf_count++;
 		hsi2c_clear_int(base, HSI2C_INT_RX_ALMOST_FULL);
 	}
@@ -746,7 +753,7 @@ static int hsi2c_slave_handler(void *args)
 	unsigned int base = priv->config->base;
 	int_status = hsi2c_read_int_status(base);
 	if (int_status & HSI2C_INT_SLAVE_ADDR_MATCH) {
-		val = __raw_readl(base + I2C_TRANS_STATUS);
+		val = getreg32(base + I2C_TRANS_STATUS);
 		if (val & SLAVE_TX_MODE) {
 			priv->slave_test_data->status = SLAVE_SET_DATA;
 			hsi2c_enable_int(base, HSI2C_INT_TX_ALMOST_EMPTY);
@@ -757,21 +764,21 @@ static int hsi2c_slave_handler(void *args)
 		hsi2c_clear_int(base, HSI2C_INT_SLAVE_ADDR_MATCH);
 	} else if (int_status & HSI2C_INT_RX_ALMOST_FULL) {
 		if (priv->slave_test_data->status == SLAVE_GET_REG) {
-			priv->slave_test_data->current_reg = __raw_readl(base + RXDATA);
+			priv->slave_test_data->current_reg = getreg32(base + RXDATA);
 			priv->slave_test_data->status = SLAVE_GET_DATA;
 		} else if (priv->slave_test_data->status == SLAVE_GET_DATA) {
-			priv->slave_test_data->data[priv->slave_test_data->current_reg] = __raw_readl(base + RXDATA);
+			priv->slave_test_data->data[priv->slave_test_data->current_reg] = getreg32(base + RXDATA);
 //          dbg("rx[%x] : 0x%x\n",  priv->slave_test_data->current_reg , priv->slave_test_data->data[priv->slave_test_data->current_reg]);
 			priv->slave_test_data->current_reg++;
 		}
 		hsi2c_clear_int(base, HSI2C_INT_RX_ALMOST_FULL);
 	} else if (int_status & HSI2C_INT_TX_ALMOST_EMPTY) {
-		if (__raw_readl(base + I2C_TRANS_STATUS) & STOP_COND) {
+		if (getreg32(base + I2C_TRANS_STATUS) & STOP_COND) {
 			hsi2c_disable_int(base, HSI2C_INT_TX_ALMOST_EMPTY);
 		} else {
 			if (priv->slave_test_data->status == SLAVE_SET_DATA) {
 //       dbg("tx[%x] : 0x%x\n",  priv->slave_test_data->current_reg , priv->slave_test_data->data[priv->slave_test_data->current_reg]);
-				__raw_writel(priv->slave_test_data->data[priv->slave_test_data->current_reg], base + TXDATA);
+				putreg32(priv->slave_test_data->data[priv->slave_test_data->current_reg], base + TXDATA);
 				priv->slave_test_data->current_reg++;
 			}
 		}
@@ -791,14 +798,14 @@ static void hsi2c_set_auto_mode(unsigned int base)
 {
 	unsigned int val;
 
-	val = __raw_readl(base + I2C_CONF);
+	val = getreg32(base + I2C_CONF);
 	val |= (1 << 31);
-	__raw_writel(val, base + I2C_CONF);
+	putreg32(val, base + I2C_CONF);
 }
 
 static void hsi2c_set_fifo_level(unsigned int base)
 {
-	__raw_writel(0x10013, base + FIFO_CTL);
+	putreg32(0x10013, base + FIFO_CTL);
 }
 
 static void hsi2c_master_setup(struct s5j_i2c_priv_s *priv, unsigned int mode, unsigned int speed, unsigned int slave_addr)
@@ -903,10 +910,10 @@ static int hsi2c_cleanup(struct s5j_i2c_priv_s *priv)
 	priv->mode = I2C_POLLING;
 	priv->xfer_speed = I2C_SPEED_400KHZ;
 
-	__raw_writel(0x80000000, priv->config->base + CTL);
+	putreg32(0x80000000, priv->config->base + CTL);
 	udelay(10);
 
-	__raw_writel(0x0, priv->config->base + CTL);
+	putreg32(0x0, priv->config->base + CTL);
 	udelay(100);
 
 	return 0;
@@ -1154,7 +1161,7 @@ int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc)
 
 	if (priv->xfer_speed > I2C_SPEED_400KHZ) {
 		hsi2c_conf(base, I2C_SPEED_400KHZ);
-		__raw_writel((0xF << 24 | I2C_SEND_DATA), base + I2C_MANUAL_CMD);
+		putreg32((0xF << 24 | I2C_SEND_DATA), base + I2C_MANUAL_CMD);
 		hsi2c_wait_xfer_noack(priv);
 
 		hsi2c_conf(base, priv->xfer_speed);
