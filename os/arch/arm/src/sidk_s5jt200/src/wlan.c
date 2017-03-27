@@ -112,5 +112,7 @@ err_t wlan_init(struct netif *netif)
 
 	snprintf(netif->d_ifname, IFNAMSIZ, "%c%c%d", netif->name[0], netif->name[1], netif->num);
 
+	netif->flags = NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_BROADCAST | NETIF_FLAG_IGMP;
+
 	return ERR_OK;
 }
