@@ -82,7 +82,9 @@ int main(int argc, FAR char *argv[])
 int preapp_start(int argc, char *argv[])
 #endif
 {
+#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH)
 	int pid;
+#endif
 
 #ifdef CONFIG_BUILD_PROTECTED
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
@@ -122,6 +124,10 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
+#if defined(CONFIG_LIB_USRWORK) || defined(CONFIG_TASH)
 error_out:
 	return pid;
+#else
+	return 0;
+#endif
 }
