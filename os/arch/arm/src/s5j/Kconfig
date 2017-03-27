@@ -179,6 +179,8 @@ config S5J_RTC
 	bool "S5J RTC support"
 	default n
 	select RTC
+	select RTC_DRIVER
+	select RTC_DATETIME
 
 config START_YEAR
 	int "year"

@@ -79,10 +79,11 @@
 /****************************************************************************
  * Private Types
  ****************************************************************************/
-/* This is the private type for the RTC state.  It must be cast compatible
- * with struct rtc_lowerhalf_s.
- */
 
+/***************************************************************************
+ * This is the private type for the RTC state.  It must be cast compatible
+ * with struct rtc_lowerhalf_s.
+ ***************************************************************************/
 #ifdef CONFIG_RTC_DRIVER
 struct s5j_rtc_lowerhalf_s {
 	FAR const struct rtc_ops_s *ops;
@@ -171,13 +172,19 @@ volatile bool g_rtc_enabled = false;
  * Private Functions
  ****************************************************************************/
 
-/**
+/****************************************************************************
+ * Name: rtc_bin2bcd
  *
- * @brief    Converts a binary to 3 digit BCD format.
- * @param    int value :  The byte to be converted.
- * @return   The value in BCD representation
- */
-
+ * Description:
+ *   Converts binary time format into bcd
+ *
+ * Input Parameters:
+ *   value - binary time value
+ *
+ * Returned Value:
+ *   BCD converted value
+ *
+ ****************************************************************************/
 static uint32_t rtc_bin2bcd(int value)
 {
 	uint32_t hundred = 0;
@@ -196,13 +203,19 @@ static uint32_t rtc_bin2bcd(int value)
 	return (hundred << 8) | (ten << 4) | value;
 }
 
-/**
+/****************************************************************************
+ * Name: rtc_bcd2bin
  *
- * @brief    Convert from 3 digit BCD to binary.
- * @param    uint32_t value : The BCD value to be converted.
- * @return   The value in binary representation.
- */
-
+ * Description:
+ *   Converts BCD time format into binary
+ *
+ * Input Parameters:
+ *   value - BCD value
+ *
+ * Returned Value:
+ *   binary converted value
+ *
+ ****************************************************************************/
 static int rtc_bcd2bin(uint32_t value)
 {
 	uint32_t tens = ((value >> 4) & 0xf) * 10;
@@ -210,56 +223,44 @@ static int rtc_bcd2bin(uint32_t value)
 	return (int)(hundred + tens + (value & 0x0f));
 }
 
-/**
- * @brief	 Function Description : This function is Interrupt Service Routine of RTC Tick Timer
+/****************************************************************************
+ * Name: __isr_rtc_tick
  *
- */
+ * Description:
+ *   RTC TICK ISR
+ ****************************************************************************/
 void __isr_rtc_tick(void)
 {
 	lldbg("%s\n", __func__);
-	HW_REG32(S5J_RTC_BASE, INTP) = (0x1 << 0);
+	HW_REG32(S5J_RTC_BASE, INTP) = RTC_INTP_TIC_MASK;
 }
 
+/****************************************************************************
+ * Name: __isr_rtc_alarm
+ *
+ * Description:
+ *   RTC ALARM ISR
+ ****************************************************************************/
 void __isr_rtc_alarm(void)
 {
 	lldbg("%s\n", __func__);
-	HW_REG32(S5J_RTC_BASE, INTP) = (0x1 << 1);
+	HW_REG32(S5J_RTC_BASE, INTP) = RTC_INTP_ALM_MASK;
 }
 
-#ifdef CONFIG_RTC_ALARM
-static int s5j_rtc_enable_alarm_interrupt(uint32_t sec)
-{
-	/*
-	 * RTC Tick Interrupt Period
-	 * Period = (n + 1) /(Tick clock source frequency) second. (n = tick counter value
-	 * Refer to Tick Interrupt Resolution in S5JT200 UM
-	 */
-	irq_attach(IRQ_TOP_RTC_ALARM, (xcpt_t)__isr_rtc_tick);
-	up_enable_irq(IRQ_TOP_RTC_ALARM);
-
-	/* Set TICKCNT value for every 1 sec  */
-	HW_REG32(S5J_RTC_BASE, TICCNT) = 32768 * sec;
-	HW_REG32(S5J_RTC_BASE, RTCCON) &= ~(0x1 << 8);
-	HW_REG32(S5J_RTC_BASE, RTCCON) |= (0x1 << 8);	/* Enable Tick Timer */
-
-	return 0;
-}
-#endif
-
-/**
+/****************************************************************************
+ * Name: s5j_gettime
  *
- * @brief    Time get from S5JXXXX RTC
- * @param    uintptr_t base : base address of RTC
- * @param    struct tm *t : time structure
- * @return    == 0: read ok
- * @note
+ * Description:
+ *   HW level get current time function call
  *
- *  Now convert the RTC date to fields in struct tm format:
- *  Days: 1-31 match in both cases.
- *   Month: S5J is 1-12, struct tm is 0-11.
- *   Years: S5H is 00-99, struct tm is years since 1900.
+ * Input Parameters:
+ *   base - base address on RTC IP SFRs
+ *   t - pointer on tm structure where current time values will be stored
  *
- */
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 int s5j_gettime(uintptr_t base, struct tm *t)
 {
 	uint32_t sec, min, hour, mday, mon, year;
@@ -297,6 +298,20 @@ int s5j_gettime(uintptr_t base, struct tm *t)
 	return OK;
 }
 
+/****************************************************************************
+ * Name: s5j_settime
+ *
+ * Description:
+ *   HW level set current time function call
+ *
+ * Input Parameters:
+ *   base - base address on RTC IP SFRs
+ *   t - pointer on tm structure with values to set
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 int s5j_settime(uintptr_t base, struct tm *t)
 {
 	uint32_t sec;
@@ -338,21 +353,22 @@ int s5j_settime(uintptr_t base, struct tm *t)
 }
 
 #ifdef CONFIG_RTC_ALARM
-/**
+
+/****************************************************************************
+ * Name: s5j_getalarm
  *
- * @brief    Alarm get from S5JXXXX RTC
- * @param    uintptr_t base : base address of RTC
- * @param    struct tm *t : time structure
- * @return    == 0: read ok
- * @note
+ * Description:
+ *   HW level get alarm function call
  *
- *  Now convert the RTC date to fields in struct tm format:
- *  Days: 1-31 match in both cases.
- *   Month: S5J is 1-12, struct tm is 0-11.
- *   Years: S5H is 00-99, struct tm is years since 1900.
+ * Input Parameters:
+ *   base - base address on RTC IP SFRs
+ *   t - pointer on tm structure where alarm values will be stored
  *
- */
-int s5j_getalarm(uintptr_t base, struct tm *t)
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
+static int s5j_getalarm(uintptr_t base, struct tm *t)
 {
 	uint32_t sec;
 	uint32_t min;
@@ -383,7 +399,21 @@ int s5j_getalarm(uintptr_t base, struct tm *t)
 	return OK;
 }
 
-int s5j_setalarm(uintptr_t base, struct tm *t)
+/****************************************************************************
+ * Name: s5j_setalarm
+ *
+ * Description:
+ *   HW level set alarm function call
+ *
+ * Input Parameters:
+ *   base - base address on RTC IP SFRs
+ *   t - pointer on tm structure with values to set
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
+static int s5j_setalarm(uintptr_t base, struct tm *t)
 {
 	uint32_t sec;
 	uint32_t min;
@@ -416,14 +446,22 @@ int s5j_setalarm(uintptr_t base, struct tm *t)
 
 #endif							/* CONFIG_RTC_ALARM */
 
-/**
+/****************************************************************************
+ * Name: s5j_rtc_rdtime
  *
- * @brief    This function is called when allocation  calls RDTIME IOCTL. It returns the RTC time.
- * @param    struct rtc_lowerhalf_s *lower : handle for RTC driver
- * @param    struct rtc_time *rtctime *lower : Return address pointer for RTC driver
- * @return   Current time of this system
- */
-
+ * Description:
+ *   Part of rtc_ops_s structure, used when CONFIG_RTC_ALARM is enabled.
+ *   Gets current time.
+ *
+ * Input Parameters:
+ *   lower - Lower half rtc structure pointer, corresponded to s5j_rtc
+ *   rtctime - pointer on rtc_time structure where current time
+ *   will be stored
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 #ifdef CONFIG_RTC_DRIVER
 static int s5j_rtc_rdtime(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_time *rtctime)
 {
@@ -432,54 +470,95 @@ static int s5j_rtc_rdtime(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_time
 #endif
 
 #ifdef CONFIG_RTC_ALARM
-/**
- * @brief    This function is called when allocation  calls ALM_READ. It returns the RTC alarm time.
- * @param    struct rtc_lowerhalf_s *lower : handle for RTC driver
- * @param    struct rtc_time *almtime : Return address pointer for RTC driver
- * @return   Current alarm time of this system
+/****************************************************************************
+ * Name: s5j_rtc_rdalarm
  *
- */
-
+ * Description:
+ *   Part of rtc_ops_s structure, used when CONFIG_RTC_ALARM is enabled.
+ *   Set ALARM time.
+ *
+ * Input Parameters:
+ *   lower - Lower half rtc structure pointer, corresponded to s5j_rtc
+ *   almtime - pointer on rtc_time structure where current alarm time
+ *   will be stored
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 static int s5j_rtc_rdalarm(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_time *almtime)
 {
 	return s5j_getalarm(S5J_RTC_BASE, (FAR struct tm *)almtime);
 }
 
-/**
- * @brief    This function is called when allocation  calls ALM_SET. It returns the RTC alarm time.
- * @param    struct rtc_lowerhalf_s *lower : handle for RTC driver
- * @param    struct rtc_time *almtime : Return address pointer for RTC driver
- * @return   Current alarm time of this system
+/****************************************************************************
+ * Name: s5j_rtc_setalarm
  *
- */
+ * Description:
+ *   Part of rtc_ops_s structure, used when CONFIG_RTC_ALARM is enabled.
+ *   Set ALARM time.
+ *
+ * Input Parameters:
+ *   lower - Lower half rtc structure pointer, corresponded to s5j_rtc
+ *   almtime - pointer on rtc_time structure with desired alarm time
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 static int s5j_rtc_setalarm(FAR struct rtc_lowerhalf_s *lower, FAR const struct rtc_time *almtime)
 {
 	return s5j_setalarm(S5J_RTC_BASE, (FAR struct tm *)almtime);
 }
 
+/****************************************************************************
+ * Name: s5j_rtc_aiealarm
+ *
+ * Description:
+ *   Part of rtc_ops_s structure, used when CONFIG_RTC_ALARM is enabled.
+ *   Enables ALARM interrupt.
+ *   RTC ISR __isr_rtc_alarm will be called.
+ *
+ * Input Parameters:
+ *   lower - Lower half rtc structure pointer, corresponded to s5j_rtc
+ *   enable - enable od disable alarm interrupt
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 static int s5j_rtc_aiealarm(FAR struct rtc_lowerhalf_s *lower, bool enable)
 {
 	if (enable) {
 		irq_attach(IRQ_TOP_RTC_ALARM, (xcpt_t) __isr_rtc_alarm);
 		up_enable_irq(IRQ_TOP_RTC_ALARM);
 
-		HW_REG32(S5J_RTC_BASE, RTCALM) &= ~(0x1 << 6);
-		HW_REG32(S5J_RTC_BASE, RTCALM) |= (0x1 << 6);	/* Enable Alarm Global */
+		HW_REG32(S5J_RTC_BASE, RTCALM) |= RTC_GLB_ALM_EN;	/* Enable Alarm Global */
 	} else {
-		/*
-		 * irq_attach(IRQ_TOP_RTC_TIC, (xcpt_t)__isr_rtc_tick);
-		 * up_enable_irq(IRQ_TOP_RTC_TIC);
-		 */
-		HW_REG32(S5J_RTC_BASE, RTCALM) &= ~(0x1 << 6);	/* Disable Alarm Global */
+		HW_REG32(S5J_RTC_BASE, RTCALM) &= ~RTC_GLB_ALM_EN;	/* Disable Alarm Global */
 	}
-	return 0;
+	return OK;
 
-	return 0;
+	return OK;
 }
 #endif							/* CONFIG_RTC_ALARM */
 
 #ifdef CONFIG_RTC_PERIODIC
-
+/****************************************************************************
+ * Name: s5j_rtc_set_tick_period
+ *
+ * Description:
+ *   Part of rtc_ops_s structure, used when CONFIG_RTC_PERIODIC is enabled.
+ *   Defines period (not freq) of rtc interrupts with 1 sec resolution.
+ *
+ * Input Parameters:
+ *   lower - Lower half rtc structure pointer, corresponded to s5j_rtc
+ *   irqfreq - periodic interrupt period, in seconds
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 static int s5j_rtc_set_tick_period(FAR struct rtc_lowerhalf_s *lower, FAR unsigned long irqpfreq)
 {
 	/* Set TICKCNT value for every 1 sec  */
@@ -488,38 +567,56 @@ static int s5j_rtc_set_tick_period(FAR struct rtc_lowerhalf_s *lower, FAR unsign
 	 * Period = (n + 1) /(Tick clock source frequency) second. (n = tick counter value
 	 * Refer to Tick Interrupt Resolution in S5JT200 UM
 	 */
-	HW_REG32(S5J_RTC_BASE, TICCNT) = 32768 * irqpfreq + 1;	/* in sec */
-	return 0;
+	HW_REG32(S5J_RTC_BASE, TICCNT) = RTC_CLK_FREQ * irqpfreq + 1;	/* in sec */
+	return OK;
 }
 
+/****************************************************************************
+ * Name: s5j_rtc_enable_tickirq
+ *
+ * Description:
+ *   Part of rtc_ops_s structure, used when CONFIG_RTC_PERIODIC is enabled.
+ *   Enables periodic interrupts, with defined period
+ *   by s5j_rtc_set_tick_period function call.
+ *   RTC ISR __isr_rtc_tick will be periodically called.
+ *
+ * Input Parameters:
+ *   lower - Lower half rtc structure pointer, corresponded to s5j_rtc
+ *   enable - enable od disable periodic interrupt
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 static int s5j_rtc_enable_tickirq(FAR struct rtc_lowerhalf_s *lower, bool enable)
 {
 	if (enable) {
 		irq_attach(IRQ_TOP_RTC_TIC, (xcpt_t) __isr_rtc_tick);
 		up_enable_irq(IRQ_TOP_RTC_TIC);
 
-		HW_REG32(S5J_RTC_BASE, RTCCON) &= ~(0x1 << 8);
-		HW_REG32(S5J_RTC_BASE, RTCCON) |= (0x1 << 8);	/* Enable Tick Timer */
+		HW_REG32(S5J_RTC_BASE, RTCCON) |= RTCCON_TICEN;		/* Enable Tick Timer */
 	} else {
-		/*
-		 * irq_attach(IRQ_TOP_RTC_TIC, (xcpt_t)__isr_rtc_tick);
-		 * up_enable_irq(IRQ_TOP_RTC_TIC);
-		 */
-		HW_REG32(S5J_RTC_BASE, RTCCON) &= ~(0x1 << 8);	/* disable Tick Timer */
+		HW_REG32(S5J_RTC_BASE, RTCCON) &= ~RTCCON_TICEN;	/* disable Tick Timer */
 	}
-	return 0;
+	return OK;
 }
 #endif
 
-/**
+/****************************************************************************
+ * Name: s5j_rtc_settime
  *
- * @brief    Initialize the hardware RTC per the selected configuration.  This function is
- *           called once during the OS initialization sequence
- * @return   == 0: Success
- *            < 0: Failure
- * @note     note here
- */
-
+ * Description:
+ *   Initialize the hardware RTC per the selected configuration.
+ *   This function is called once during the OS initialization sequence
+ *
+ * Input Parameters:
+ *   lower - Lower half rtc structure pointer, corresponded to s5j_rtc
+ *   rtctime - pointer on rtc_time structure with values to set
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 #ifdef CONFIG_RTC_DRIVER
 static int s5j_rtc_settime(FAR struct rtc_lowerhalf_s *lower, FAR const struct rtc_time *rtctime)
 {
@@ -531,15 +628,21 @@ static int s5j_rtc_settime(FAR struct rtc_lowerhalf_s *lower, FAR const struct r
  * Public Functions
  ************************************************************************************/
 
-/**
+/****************************************************************************
+ * Name: up_rtc_initialize
  *
- * @brief    Initialize the hardware RTC per the selected configuration.  This function is
- *           called once during the OS initialization sequence
- * @return   == 0: Success
- *            < 0: Failure
- * @note     note here
- */
-int up_rtc_initialize(void)
+ * Description:
+ *   Initialize the hardware RTC per the selected configuration.
+ *   This function is called once during the OS initialization sequence.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
+int s5j_rtc_initialize(void)
 {
 	irqstate_t flags;
 	struct tm t;
@@ -550,17 +653,14 @@ int up_rtc_initialize(void)
 
 	flags = irqsave();
 
-	/* Change MUX to RTC clock */
+	/* Set RTC input clock to external XTAL oscillator (32768HZ) explicily*/
 	HW_REG32(0x800A0000, 0x554) = 0x1;
 
 	/* Reset RTC and Tick timer. */
 	HW_REG32(S5J_RTC_BASE, RTCCON) = 0x0;
-	/*
-	 * Enable RTC counter, Tick clock 32768, Tick Timer enable
-	 */
-	HW_REG32(S5J_RTC_BASE, RTCCON) |= ((0x1 << 0) |	/* Enable RTC */
-									   (0x0 << 4));	/* Set Clock Source 32.768Khz */
-	/*(0x1 << 9)); // clock out selection */
+
+	/* Enable RTC counter, Tick clock 32768, Tick Timer enable */
+	HW_REG32(S5J_RTC_BASE, RTCCON) |= RTCCON_CTLEN | RTCCON_TICCKSEL(clk_32768HZ);
 
 	t.tm_sec = 0;
 	t.tm_min = 0;
@@ -585,18 +685,8 @@ int up_rtc_initialize(void)
 	t.tm_year = CONFIG_START_YEAR - CONFIG_RTC_BASE_YEAR;
 	s5j_setalarm(S5J_RTC_BASE, &t);
 
-	HW_REG32(S5J_RTC_BASE, RTCALM) = (/*0x1 << 6 | */ /* Enable Alarm Global */
-										 0x1 << 5 |	/* Enable Year Alarm */
-										 0x1 << 4 |	/* Enable Month Alarm */
-										 0x1 << 3 |	/* Enable Day Alarm */
-										 0x1 << 2 |	/* Enable Hour Alarm */
-										 0x1 << 1 |	/* Enable Min Alarm */
-										 0x1 << 0);	/* Enable Sec Alarm */
-	/*
-	 * Wakeup Source Setting
-	 * Wakeup by TRTC_TICK, TRTC_ALARM
-	 * HW_REG32(0x80090608, 0x0) = (0x1 << 4 | 0x1 << 3);
-	 */
+	HW_REG32(S5J_RTC_BASE, RTCALM) = RTC_YEAR_ALM_EN | RTC_MONTH_ALM_EN | RTC_DAY_ALM_EN | RTC_HOUR_ALM_EN | RTC_MIN_ALM_EN | RTC_SEC_ALM_EN;
+
 #endif
 
 	irqrestore(flags);
@@ -604,36 +694,47 @@ int up_rtc_initialize(void)
 	return OK;
 }
 
-/**
+/****************************************************************************
+ * Name: up_rtc_getdatetime
  *
- * @brief    Get the current date and time from the date/time RTC.  This interface
- *           is only supported by the date/time RTC hardware implementation.
- *           It is used to replace the system timer.  It is only used by the RTOS during
- *           initialization to set up the system time when CONFIG_RTC and CONFIG_RTC_DATETIME
- *           are selected (and CONFIG_RTC_HIRES is not).
- * @param    struct tm *tp : The location to return the high resolution time value.
- * @return   == 0: Success
- *            < 0: Failure
- * @note     Some date/time RTC hardware is capability of sub-second accuracy.  That
- *           sub-second accuracy is lost in this interface.  However, since the system time
- *           is reinitialized on each power-up/reset, there will be no timing inaccuracy in
- *           the long run.
- */
+ * Description:
+ *   Get the current date and time from the date/time RTC.  This interface
+ *   is only supported by the date/time RTC hardware implementation.
+ *   It is used to replace the system timer.  It is only used by the RTOS during
+ *   initialization to set up the system time when CONFIG_RTC and CONFIG_RTC_DATETIME
+ *   are selected (and CONFIG_RTC_HIRES is not). Due to low resoluton of RTC,
+ *   subsecond values will be lost.
+ *
+ * Input Parameters:
+ *   tp - pointer on tm type structure where date/time will be saved
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
+
 int up_rtc_getdatetime(FAR struct tm *tp)
 {
 	return s5j_gettime(S5J_RTC_BASE, tp);
 }
 
-/**
+/****************************************************************************
+ * Name: up_rtc_time
  *
- * @brief    Get the current time in seconds.  This is similar to the standard time()
- *           function.  This interface is only required if the low-resolution RTC/counter
- *           hardware implementation selected.  It is only used by the RTOS during
- *           initialization to set up the system time when CONFIG_RTC is set but neither
- *           CONFIG_RTC_HIRES nor CONFIG_RTC_DATETIME are set.
- * @return   The current time in seconds
- * @note     note here
- */
+ * Description:
+ *   Get the current time in seconds.  This is similar to the standard time()
+ *   function.  This interface is only required if the low-resolution RTC/counter
+ *   hardware implementation selected.  It is only used by the RTOS during
+ *   initialization to set up the system time when CONFIG_RTC is set but neither
+ *   CONFIG_RTC_HIRES nor CONFIG_RTC_DATETIME are set.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   time_t value in seconds
+ *
+ ****************************************************************************/
 
 #ifndef CONFIG_RTC_HIRES
 time_t up_rtc_time(void)
@@ -646,16 +747,22 @@ time_t up_rtc_time(void)
 }
 #endif
 
-/**
+/****************************************************************************
+ * Name: up_rtc_gettime
  *
- * @brief    Get the current time from the high resolution RTC clock/counter.  This interface
- *           is only supported by the high-resolution RTC/counter hardware implementation.
- *           It is used to replace the system timer.
- * @param    struct timespec *tp : The location to return the high resolution time value.
- * @return   == 0: Success
- *            < 0: Failure
- * @note     note here
- */
+ * Description:
+ *   Returns current time value in timespec structure.
+ *   Exists when RTC_HIRES configuration is enabled.
+ *   nsec value is always 0 due to low actual resolution of RTC counter.
+ *
+ * Input Parameters:
+ *   tp - pointer on timespec structure where time value will be stored.
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
+
 #ifdef CONFIG_RTC_HIRES
 int up_rtc_gettime(FAR struct timespec *tp)
 {
@@ -670,15 +777,19 @@ int up_rtc_gettime(FAR struct timespec *tp)
 }
 #endif
 
-/**
+/****************************************************************************
+ * Name: up_rtc_settime
  *
- * @brief    Set the RTC to the provided time.  All RTC implementations must be able to
- *           set their time based on a standard timespec.
- * @param    struct timespec *tp : the time to use
- * @return   == 0: Success
- *            < 0: Failure
- * @note     note here
- */
+ * Description:
+ *   Function called by OS to set RTC date/time value.
+ *
+ * Input Parameters:
+ *  tp - pointer on timespec structure with desired value.
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 
 int up_rtc_settime(FAR const struct timespec *tp)
 {
@@ -690,29 +801,26 @@ int up_rtc_settime(FAR const struct timespec *tp)
 
 }
 
-/**
+/****************************************************************************
+ * Name: up_rtcinitialize
  *
- * @brief    Initialize RTC driver
- * @param    uintptr_t base : S5JXXXX RTC base address
- * @param    int irqno : S5JXXXX RTC IRQ number
- * @return   == 0: Fail to allocate memory for RTC driver
- *            > 0: Driver initialization is success.
- */
-
-#ifdef CONFIG_RTC_DRIVER
-int s5j_rtc_initialize(uintptr_t base, int irqno)
-{
-	cal_clk_enable(gate_top_rtc);
-	up_rtc_initialize();
-	return 0;
-}
-#endif
+ * Description:
+ *   Function called by OS to initialize RTC.
+ *   Initialyizes HW and sublmits lower half OPS structure.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   OK
+ *
+ ****************************************************************************/
 
 int up_rtcinitialize(void)
 {
 #ifdef CONFIG_S5J_RTC
 	int ret;
-	s5j_rtc_initialize(S5J_RTC_BASE, IRQ_TOP_RTC_TIC);
+	s5j_rtc_initialize();
 	ret = rtc_initialize(0, &g_rtc_lowerhalf);
 	if (ret < 0) {
 		lldbg("Failed the RTC initialize. (%d)\n", ret);
@@ -724,20 +832,7 @@ int up_rtcinitialize(void)
 #else
 	lldbg("no support Hardware RTC functions\n");
 #endif
-	return 0;
+	return OK;
 }
 
-#ifdef CONFIG_SIDK_S5JT200_AUTOTEST
-int s5j_rtc_pmu_wakeup(int msec)
-{
-	HW_REG32(S5J_RTC_BASE, TICCNT) = (32768 / 1000) * msec + 1;	/* in sec */
-	irq_attach(IRQ_TOP_RTC_TIC, (xcpt_t) __isr_rtc_tick);
-	up_enable_irq(IRQ_TOP_RTC_TIC);
-	HW_REG32(S5J_RTC_BASE, RTCCON) &= ~(0x1 << 8);
-	HW_REG32(S5J_RTC_BASE, RTCCON) |= (0x1 << 8);	/* Enable Tick Timer */
-
-	HW_REG32(PMU_BASE, 0x81c) = 0xFCBA;	//check PMU dstop wokeup
-	return 0;
-}
-#endif
 #endif

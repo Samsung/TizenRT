@@ -85,11 +85,50 @@ extern "C" {
 #define BCDYEAR     0x0088
 #define CURTICCNT   0x0090
 
+#define RTC_GLB_ALM_EN		(0x1 << 6)
+#define RTC_YEAR_ALM_EN		(0x1 << 5)
+#define RTC_MONTH_ALM_EN	(0x1 << 4)
+#define RTC_DAY_ALM_EN		(0x1 << 3)
+#define RTC_HOUR_ALM_EN		(0x1 << 2)
+#define RTC_MIN_ALM_EN		(0x1 << 1)
+#define RTC_SEC_ALM_EN		(0x1 << 0)
+
+
+#define RTCCON_CLKOUTEN 	(1 << 9)
+#define RTCCON_TICEN 		(1 << 8)
+#define RTCCON_TICCKSEL(x) 	((x & 0xf) << 4)
+#define RTCCON_CLKSTOP 		(1 << 3)
+#define RTCCON_CTLEN 		(1 << 0)
+
+#define RTC_CLK_FREQ 		32768
+
+typedef enum t_ticcksel {
+	clk_32768HZ = 0,
+	clk_16384HZ,
+	clk_8192HZ,
+	clk_4096HZ,
+	clk_2048HZ,
+	clk_1024HZ,
+	clk_512HZ,
+	clk_256HZ,
+	clk_128HZ,
+	clk_64HZ,
+	clk_32HZ,
+	clk_16HZ,
+	clk_8HZ,
+	clk_4HZ,
+	clk_2HZ,
+	clk_1HZ,
+} d_ticcksel;
+
+
+#define RTC_INTP_TIC_MASK 	(1 << 0)
+#define RTC_INTP_ALM_MASK 	(1 << 1)
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-int s5j_rtc_initialize(uintptr_t base, int irqno);
 
 #ifdef __cplusplus
 }
