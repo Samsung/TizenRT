@@ -1043,6 +1043,7 @@ config PREAPP_STACKSIZE
 		that is started as soon as the OS completes its initialization.
 
 config MPU_STACKGAURD
+	bool "protect thread stack"
 	default n
 
 config PTHREAD_STACK_MIN
