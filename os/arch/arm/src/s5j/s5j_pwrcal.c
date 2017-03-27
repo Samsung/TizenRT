@@ -89,26 +89,14 @@ int cal_clk_setrate(unsigned int id, unsigned long rate)
 	unsigned int div;
 	switch(id) {
 	case d1_spi0:
-		parents = 80000000;
-		div = parents / rate;
-		SetBits(CLK_CON_DIV_DIV_CLK_SPI, 0, 0x3FF, (div - 1));
 		break;
 	case d1_spi1:
-		parents = 80000000;
-		div = parents / rate;
-		SetBits(CLK_CON_DIV_DIV_CLK_SPI1, 0, 0x3FF, (div - 1));
 		break;
-	case d1_spi2:
-		parents = 80000000;
-		div = parents / rate;
-		SetBits(CLK_CON_DIV_DIV_CLK_SPI2, 0, 0x3FF, (div - 1));
+	case gate_hsi2c0:
+	case gate_hsi2c1:
+	case gate_hsi2c2:
+	case gate_hsi2c3:
 		break;
-	case d1_spi3:
-		parents = 80000000;
-		div = parents / rate;
-		SetBits(CLK_CON_DIV_DIV_CLK_SPI3, 0, 0x3FF, (div - 1));
-		break;
-
 	case d1_serialflash:
 		/* CLK_CON_DIV_DIV_CLK_SERIALFLASH */
 		parents = 320000000;
@@ -124,7 +112,7 @@ int cal_clk_setrate(unsigned int id, unsigned long rate)
 
 unsigned long cal_clk_getrate(unsigned int id)
 {
-	unsigned long rate;
+	unsigned long rate=0;
 
 	switch(id)
 	{
@@ -135,8 +123,15 @@ unsigned long cal_clk_getrate(unsigned int id)
 	case d1_serialflash:
 		break;
 	case m1_clkcmu_uart:
-		rate = 26*1000*1000;
+		rate = S5J_DEFAULT_UART_CLOCK;
 		break;
+	case gate_hsi2c0:
+	case gate_hsi2c1:
+	case gate_hsi2c2:
+	case gate_hsi2c3:
+		rate = S5J_DEFAULT_I2C_CLOCK;
+		break;
+	
 	default:
 		break;
 	}

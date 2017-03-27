@@ -58,6 +58,10 @@
 enum {
 	gate_uhd_efuse_writer = 0x0A000000,
 	gate_top_rtc,
+	gate_hsi2c0,
+	gate_hsi2c1,
+	gate_hsi2c2,
+	gate_hsi2c3,
 	vclk_group_grpgate_end,
 	num_of_grpgate = vclk_group_grpgate_end - 0x0A000000,
 
@@ -95,4 +99,12 @@ enum {
 	vclk_group_dfs_end,
 	num_of_dfs = vclk_group_dfs_end - 0x0A070000,
 };
+
+#define S5J_DEFAULT_I2C_CLOCK	160*1000*1000
+#define S5J_DEFAULT_UART_CLOCK	26*1000*1000
+
 #endif /* __ARCH_ARM_SRC_S5J_S5J_VCLK_H__ */
+
+
+
+
