@@ -858,7 +858,7 @@ static inline int dhcpd_openresponder(void)
 	/* Bind the socket to a local port. */
 
 	addr.sin_family = AF_INET;
-	addr.sin_port = 0;
+	addr.sin_port = HTONS(DHCP_SERVER_PORT);
 	addr.sin_addr.s_addr = g_state.ds_serverip;
 
 	ret = bind(sockfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
