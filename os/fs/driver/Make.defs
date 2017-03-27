@@ -77,6 +77,10 @@ endif
 ifeq ($(CONFIG_MTD),y)
 CSRCS += mtd/mtd_config.c
 
+ifeq ($(CONFIG_MTD_FTL),y)
+CSRCS += mtd/ftl.c
+endif
+
 ifeq ($(CONFIG_MTD_SMART),y)
 ifeq ($(CONFIG_FS_SMARTFS),y)
 CSRCS += mtd/smart.c

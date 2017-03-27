@@ -241,6 +241,23 @@ int mtd_setpartitionname(FAR struct mtd_dev_s *mtd, FAR const char *name);
 #endif
 
 /****************************************************************************
+ * Name: ftl_initialize
+ *
+ * Description:
+ *   Initialize to provide a block driver wrapper around an MTD interface
+ *
+ * Input Parameters:
+ *   minor - The minor device number.  The MTD block device will be
+ *      registered as as /dev/mtdblockN where N is the minor number.
+ *   mtd - The MTD device that supports the FLASH interface.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_MTD_FTL)
+int ftl_initialize(int minor, FAR struct mtd_dev_s *mtd);
+#endif
+
+/****************************************************************************
 * Name: m25p_initialize
 *
 * Description:

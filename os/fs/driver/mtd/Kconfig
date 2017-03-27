@@ -59,6 +59,29 @@ config MTD_PROGMEM
 		FLASH using the interfaces defined in include/tinyara/progmem.
 		Those interfaces must be exported by chip-specific logic.
 
+config MTD_FTL
+	bool "Elable MTD ftl layer"
+	default n
+	---help---
+		Enable to support a MTD FTL layer.
+
+if MTD_FTL
+
+menu "MTD_FTL Configurations"
+
+config FTL_WRITEBUFFER
+	bool "Enable write buffering in the FTL layer"
+	default n
+	depends on DRVR_WRITEBUFFER
+
+config FTL_READAHEAD
+	bool "Enable read-ahead buffering in the FTL layer"
+	default n
+	depends on DRVR_READAHEAD
+
+endmenu
+endif
+
 config MTD_CONFIG
 	bool "Enable Dev Config (MTD based) device"
 	default n
