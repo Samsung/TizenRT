@@ -18,7 +18,7 @@ config FS_CMDS
 		Command including ls, cd, cat, mount, and so on.
 
 if FS_CMDS
-config FSCMD_FSCMD_BUFFER_LEN
+config FSCMD_BUFFER_LEN
        int "Buffer length of FSCMD"
        default 32
        ---help---
