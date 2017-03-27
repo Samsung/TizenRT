@@ -183,6 +183,13 @@ static void sidk_s5jt200_configure_partitions(void)
 			return;
 		}
 
+#if defined(CONFIG_MTD_FTL)
+		if (!strncmp(types, "ftl,", 4)) {
+			if (ftl_initialize(partno, mtd_part)) {
+				lldbg("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+			}
+		} else
+#endif
 #if defined(CONFIG_MTD_CONFIG)
 		if (!strncmp(types, "config,", 7)) {
 			mtdconfig_register(mtd_part);
