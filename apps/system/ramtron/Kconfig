@@ -8,7 +8,3 @@ config SYSTEM_RAMTRON
 	default n
 	---help---
 		Enable support for the NSH RAMTRON command.
-
-if SYSTEM_RAMTRON
-endif
-

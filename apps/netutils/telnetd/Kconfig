@@ -9,6 +9,3 @@ config NETUTILS_TELNETD
 	select NETDEV_TELNET
 	---help---
 		Enable support for the Telnet daemon.
-
-if NETUTILS_TELNETD
-endif

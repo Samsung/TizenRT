@@ -58,19 +58,4 @@ config SYSTEM_VI_DEBUGLEVEL
 		readable debug output, syslog'ing should sent to some device other
 		than /dev/console (which is the default).
 
-if NSH_BUILTIN_APPS
-
-config SYSTEM_VI_STACKSIZE
-	int "Builtin task stack size"
-	default 2048
-	---help---
-		Size of the task to configure when started VI from NSH
-
-config SYSTEM_VI_PRIORITY
-	int "Builtin task priority"
-	default 100
-	---help---
-		Priority of the task to configure when started VI from NSH
-
-endif # NSH_BUILTIN_APPS
 endif # SYSTEM_VI

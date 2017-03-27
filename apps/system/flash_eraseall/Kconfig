@@ -9,7 +9,3 @@ config SYSTEM_FLASH_ERASEALL
 	depends on MTD && NSH_BUILTIN_APPS && !BUILD_PROTECTED && !BUILD_KERNEL
 	---help---
 		Enable support for the FLASH eraseall tool.
-
-if SYSTEM_FLASH_ERASEALL
-endif
-

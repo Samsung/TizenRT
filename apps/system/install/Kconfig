@@ -8,7 +8,3 @@ config SYSTEM_INSTALL
 	default n
 	---help---
 		Enable support for the FLASH installation tool.
-
-if SYSTEM_INSTALL
-endif
-
