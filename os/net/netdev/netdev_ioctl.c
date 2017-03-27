@@ -543,7 +543,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	}
 	break;
 #endif
-
+#endif
 	case SIOCGLIFMTU:			/* Get MTU size */
 	case SIOCGIFMTU: {			/* Get MTU size */
 		dev = netdev_ifrdev(req);
@@ -554,7 +554,6 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	}
 	break;
 
-#endif
 	case SIOCSIFFLAGS: {		/* Sets the interface flags */
 		/* Is this a request to bring the interface up? */
 
