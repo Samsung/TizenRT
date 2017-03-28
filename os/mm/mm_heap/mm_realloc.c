@@ -109,6 +109,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 	FAR struct mm_allocnode_s *oldnode;
 	FAR struct mm_freenode_s  *prev;
 	FAR struct mm_freenode_s  *next;
+	size_t origsize;
 	size_t oldsize;
 	size_t prevsize = 0;
 	size_t nextsize = 0;
@@ -131,6 +132,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 		return NULL;
 	}
 
+	origsize = size;
 	/* Adjust the size to account for (1) the size of the allocated node and
 	 * (2) to make sure that it is an even multiple of our granule size.
 	 */
@@ -371,9 +373,9 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 		 */
 		mm_givesemaphore(heap);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		newmem = (FAR void *)mm_malloc(heap, size, caller_retaddr);
+		newmem = (FAR void *)mm_malloc(heap, origsize, caller_retaddr);
 #else
-		newmem = (FAR void *)mm_malloc(heap, size);
+		newmem = (FAR void *)mm_malloc(heap, origsize);
 #endif
 		if (newmem) {
 			memcpy(newmem, oldmem, oldsize);
