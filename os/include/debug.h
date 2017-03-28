@@ -137,7 +137,8 @@ Once LOGM is approved, each module should have its own index
 #define LOGM_PRI (1)
 #define LOGM_EN  (2)
 
-#if defined(CONFIG_DEBUG_ERROR) && defined(CONFIG_LOGM)
+#ifdef CONFIG_DEBUG_ERROR
+#ifdef CONFIG_LOGM
 #define dbg(format, ...) \
 	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
@@ -147,7 +148,7 @@ Once LOGM is approved, each module should have its own index
 #define lldbg(format, ...) \
 	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
-#elif CONFIG_DEBUG_ERROR
+#else
 /**
  * @brief  Error debug
  * @since Tizen RT v1.0
@@ -167,20 +168,22 @@ Once LOGM is approved, each module should have its own index
 #else
 #define lldbg(x...)
 #endif
+#endif
 
 #else
 #define dbg(x...)
 #define lldbg(x...)
 #endif
 
-#if defined(CONFIG_DEBUG_WARN) && defined(CONFIG_LOGM)
+#ifdef CONFIG_DEBUG_WARN
+#ifdef CONFIG_LOGM
 #define wdbg(format, ...) \
 	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
 #define llwdbg(format, ...) \
 	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
-#elif CONFIG_DEBUG_WARN
+#else
 /**
  * @brief  Warning debug
  * @since Tizen RT v1.0
@@ -198,20 +201,22 @@ Once LOGM is approved, each module should have its own index
 #else
 #define llwdbg(x...)
 #endif
+#endif
 
 #else
 #define wdbg(x...)
 #define llwdbg(x...)
 #endif
 
-#if defined(CONFIG_DEBUG_VERBOSE) && defined(CONFIG_LOGM)
+#ifdef CONFIG_DEBUG_VERBOSE
+#ifdef CONFIG_LOGM
 #define vdbg(format, ...) \
 	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
 #define llvdbg(format, ...) \
 	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
-#elif CONFIG_DEBUG_VERBOSE
+#else
 /**
  * @brief  Informational(Verbose) debug
  * @since Tizen RT v1.0
@@ -229,6 +234,7 @@ Once LOGM is approved, each module should have its own index
 
 #else
 #define llvdbg(x...)
+#endif
 #endif
 
 #else
