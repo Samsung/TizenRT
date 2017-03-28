@@ -57,6 +57,10 @@ CFLAGS += -I$(TOPDIR)/sched
 ASRCS =
 CSRCS = s5jt200_boot.c s5jt200_tash.c s5jt200_nvram.c
 
+ifeq ($(CONFIG_SIDK_S5JT200_TLC59116),y)
+CSRCS += s5jt200_tlc59116.c
+endif
+
 ifeq ($(CONFIG_ARCH_BUTTONS),y)
 CSRCS += s5j_buttons.c
 endif

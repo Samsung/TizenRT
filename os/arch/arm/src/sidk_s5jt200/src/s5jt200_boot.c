@@ -74,6 +74,8 @@
 #include <net/lwip/tcpip.h>
 #endif
 
+#include "sidk_s5jt200.h"
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -204,5 +206,9 @@ void board_initialize(void)
 #endif
 
 	s5j_gpioinitialize();
+
+#ifdef CONFIG_SIDK_S5JT200_TLC59116
+	tlc59116_initialize();
+#endif
 }
 #endif /* CONFIG_BOARD_INITIALIZE */

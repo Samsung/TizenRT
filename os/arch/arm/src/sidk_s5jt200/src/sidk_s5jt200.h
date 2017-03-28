@@ -68,4 +68,25 @@ enum configdata_id {
 	SIDK_S5JT200_CONFIGDATA_WIFI_NVRAM,
 };
 
+#ifdef CONFIG_SIDK_S5JT200_TLC59116
+#define TLC59116_ADDR		0x60
+#define TLC59116_MAX_LEDS	16
+
+#define TLC59116_REG_MODE1	0x00
+#define TLC59116_REG_MODE2	0x01
+#define TLC59116_REG_LED(x)	(0x14 + (x))
+#define TLC59116_REG_PWM(x)	(0x02 + (x))
+
+#define TLC59116_LED_0		0
+#define TLC59116_LED_1		1
+#define TLC59116_LED_2		2
+#define TLC59116_LED_3		3
+
+#define TLC59116_LED_R		0
+#define TLC59116_LED_G		1
+#define TLC59116_LED_B		2
+
+int tlc59116_initialize(void);
+#endif /* CONFIG_SIDK_S5JT200_TLC59116 */
+
 #endif /* __ARCH_ARM_SRC_SIDK_S5JT200_SRC_SIDK_S5JT200_H__ */
