@@ -20,9 +20,6 @@
 #include <tinyara/logm.h>
 #include <sys/types.h>
 #include "logm.h"
-#ifdef CONFIG_LOGM_TEST
-#include "logm_test.h"
-#endif
 
 pid_t g_logm_tid;
 
@@ -34,7 +31,8 @@ void logm_start(void)
 	g_logm_tid = task_create("logm", priority, stacksize, logm_task, NULL);
 
 	if (!g_logm_tid) {
-		LOGM_PRINTERR_AND_RETURN();
+		lmdbg("LOGM Launch Failed \n");
+		return;
 	}
 #ifdef CONFIG_TASH
 	logm_register_tashcmds();

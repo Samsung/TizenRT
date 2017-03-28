@@ -15,14 +15,17 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <arch/irq.h>
 #include <tinyara/logm.h>
 #include <tinyara/config.h>
 #include "logm.h"
+#ifdef CONFIG_LOGM_TEST
+#include "logm_test.h"
+#endif
 
 volatile int logm_bufsize = LOGM_BUFFER_SIZE;
 volatile int logm_print_interval = LOGM_PRINT_INTERVAL * 1000;

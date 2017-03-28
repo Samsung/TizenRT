@@ -16,18 +16,14 @@
  *
  ****************************************************************************/
 
-#include <signal.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
-#include <string.h>
-#include <sched.h>
+#include <arch/irq.h>
 #include <tinyara/config.h>
 #include <tinyara/logm.h>
-#ifdef CONFIG_ARCH_LOWPUTC
 #include <tinyara/streams.h>
-#endif
+
 #include "logm.h"
 
 volatile int g_logm_head;

@@ -18,7 +18,6 @@
 #ifndef __OS_LOGM_LOGM_H
 #define __OS_LOGM_LOGM_H
 
-#include <queue.h>
 #include <stdio.h>
 #include <tinyara/config.h>
 
@@ -27,7 +26,6 @@
  ****************************************************************************/
 #define LOGM_TASK_PRORITY CONFIG_LOGM_TASK_PRIORITY
 #define LOGM_TASK_STACKSIZE CONFIG_LOGM_TASK_STACKSIZE
-#define LOGM_PRINTERR_AND_RETURN() do { dbg("LOGM Launch Failed \n"); return; } while (0)
 #ifdef LOGM_DEBUG
 #define lmdbg(format, ...)    printf(format, ##__VA_ARGS__)
 #else

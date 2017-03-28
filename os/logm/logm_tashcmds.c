@@ -15,11 +15,11 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#include <tinyara/logm.h>
-#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <apps/shell/tash.h>
-#include <stdio.h>
+#include <tinyara/logm.h>
 #include "logm.h"
 
 const static tash_cmdlist_t logm_tashmds[] = {
@@ -73,27 +73,26 @@ static int logm_tash(int argc, char **args)
 	 * -b [bufsize] : set buffer size (bytes)
 	 * -i [time] : set buffer flushing interval (ms)
 	 */
-	while ((opt = getopt(argc, args, "b:i:")) != -1)
-	{
+	while ((opt = getopt(argc, args, "b:i:")) != -1) {
 		switch (opt) {
-			case 'b':
-				/* TASH>> logm -b 10240 */
-				/* set buffer size as 10240 (=10KB) */
-				if (optarg != NULL && atoi(optarg) > 0) {
-					logm_set(LOGM_NEW_BUFSIZE, atoi(optarg));
-					LOGM_STATUS_SET(LOGM_BUFFER_RESIZE_REQ);
-				}
-				break;
-			case 'i':
-				/* TASH>> logm -i 1000 */
-				/* sets interval for flushing buffer as 1000ms (=1sec) */
-				if (optarg != NULL && atoi(optarg) > 0) {
-					logm_set(LOGM_INTERVAL, atoi(optarg));
-				}
-				break;
-			default: /* '?' */
-				logm_usage();
-				return 0;
+		case 'b':
+			/* TASH>> logm -b 10240 */
+			/* set buffer size as 10240 (=10KB) */
+			if (optarg != NULL && atoi(optarg) > 0) {
+				logm_set(LOGM_NEW_BUFSIZE, atoi(optarg));
+				LOGM_STATUS_SET(LOGM_BUFFER_RESIZE_REQ);
+			}
+			break;
+		case 'i':
+			/* TASH>> logm -i 1000 */
+			/* sets interval for flushing buffer as 1000ms (=1sec) */
+			if (optarg != NULL && atoi(optarg) > 0) {
+				logm_set(LOGM_INTERVAL, atoi(optarg));
+			}
+			break;
+		default: /* '?' */
+			logm_usage();
+			return 0;
 		}
 	}
 
