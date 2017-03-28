@@ -62,7 +62,7 @@ CSRCS += s5jt200_tlc59116.c
 endif
 
 ifeq ($(CONFIG_ARCH_BUTTONS),y)
-CSRCS += s5j_buttons.c
+CSRCS += s5jt200_buttons.c
 endif
 
 ifeq ($(CONFIG_SCSC_WLAN),y)
