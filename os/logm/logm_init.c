@@ -20,7 +20,7 @@
 #include <tinyara/logm.h>
 #include <sys/types.h>
 #include "logm.h"
-#ifdef CONFIG_LOGMTEST
+#ifdef CONFIG_LOGM_TEST
 #include "logm_test.h"
 #endif
 
@@ -36,8 +36,7 @@ void logm_start(void)
 	if (!g_logm_tid) {
 		LOGM_PRINTERR_AND_RETURN();
 	}
-
-	/* Need to add a cofig variable */
+#ifdef CONFIG_TASH
 	logm_register_tashcmds();
-
+#endif
 }
