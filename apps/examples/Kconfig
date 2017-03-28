@@ -3,6 +3,7 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+menu "Examples"
 if INIT_ENTRYPOINT
 choice
 	prompt "Application entry point"
@@ -74,3 +75,4 @@ source "$APPSDIR/examples/webserver/Kconfig"
 source "$APPSDIR/examples/websocket/Kconfig"
 source "$APPSDIR/examples/workqueue/Kconfig"
 source "$APPSDIR/examples/artik_demo/Kconfig"
+endmenu

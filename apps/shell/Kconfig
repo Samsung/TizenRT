@@ -1,5 +1,5 @@
 
-
+menu "Enable Shell"
 config TASH
 	bool "Enable shell"
 	default y
@@ -36,3 +36,4 @@ config TASH_CMDTASK_PRIORITY
 	---help---
 		The priority set for TASH command task
 endif
+endmenu

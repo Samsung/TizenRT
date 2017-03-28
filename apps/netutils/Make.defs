@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2016-2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 # apps/netutils/Make.defs
 # Adds selected applications to apps/ build
 #
-#   Copyright (C) 2012 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2012, 2016 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in include and binary forms, with or without
@@ -51,67 +51,4 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_CODECS),y)
-CONFIGURED_APPS += netutils/codecs
-endif
-
-ifeq ($(CONFIG_NETUTILS_DHCPC),y)
-CONFIGURED_APPS += netutils/dhcpc
-endif
-
-ifeq ($(CONFIG_NETUTILS_DHCPD),y)
-CONFIGURED_APPS += netutils/dhcpd
-endif
-
-ifeq ($(CONFIG_NETUTILS_FTPC),y)
-CONFIGURED_APPS += netutils/ftpc
-endif
-
-ifeq ($(CONFIG_NETUTILS_FTPD),y)
-CONFIGURED_APPS += netutils/ftpd
-endif
-
-ifeq ($(CONFIG_NETUTILS_JSON),y)
-CONFIGURED_APPS += netutils/json
-endif
-
-ifeq ($(CONFIG_NETUTILS_MDNS),y)
-CONFIGURED_APPS += netutils/mdns
-endif
-
-ifeq ($(CONFIG_NETUTILS_NETLIB),y)
-CONFIGURED_APPS += netutils/netlib
-endif
-
-ifeq ($(CONFIG_NETUTILS_NTPCLIENT),y)
-CONFIGURED_APPS += netutils/ntpclient
-endif
-
-ifeq ($(CONFIG_NETUTILS_SMTP),y)
-CONFIGURED_APPS += netutils/smtp
-endif
-
-ifeq ($(CONFIG_NETUTILS_TELNETD),y)
-CONFIGURED_APPS += netutils/telnetd
-endif
-
-ifeq ($(CONFIG_NETUTILS_TFTPC),y)
-CONFIGURED_APPS += netutils/tftpc
-endif
-
-ifeq ($(CONFIG_NETUTILS_WEBCLIENT),y)
-CONFIGURED_APPS += netutils/webclient
-endif
-
-ifeq ($(CONFIG_NETUTILS_WEBSERVER),y)
-CONFIGURED_APPS += netutils/webserver
-endif
-
-ifeq ($(CONFIG_NETUTILS_WEBSOCKET),y)
-CONFIGURED_APPS += netutils/websocket
-endif
-
-ifeq ($(CONFIG_NETUTILS_XMLRPC),y)
-CONFIGURED_APPS += netutils/xmlrpc
-endif
-
+include $(wildcard netutils/*/Make.defs)

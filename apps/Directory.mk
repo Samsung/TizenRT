@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016-2017 Samsung Electronics All Rights Reserved.
+# Copyright 2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# apps/netutils/Makefile
+# apps/Directory.mk
 #
-#   Copyright (C) 2011-2012, 2016 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2011-2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,4 +50,37 @@
 #
 ############################################################################
 
-include $(APPDIR)/Directory.mk
+-include $(TOPDIR)/.config # Current configuration
+include $(APPDIR)/Make.defs
+
+# Sub-directories
+
+SUBDIRS = $(dir $(wildcard */Makefile))
+
+all: nothing
+
+.PHONY: nothing context depend clean distclean
+
+define SDIR_template
+$(1)_$(2):
+	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)"
+endef
+
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),context)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),depend)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),clean)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),distclean)))
+
+nothing:
+
+install:
+
+context: $(foreach SDIR, $(SUBDIRS), $(SDIR)_context)
+
+depend: $(foreach SDIR, $(SUBDIRS), $(SDIR)_depend)
+
+clean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_clean)
+
+distclean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_distclean)
+
+-include Make.dep

@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2016-2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 # apps/examples/Make.defs
 # Adds selected applications to apps/ build
 #
-#   Copyright (C) 2012 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2012, 2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,111 +51,4 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_EXAMPLES_DTLS_CLIENT),y)
-CONFIGURED_APPS += examples/dtls_client
-endif
-
-ifeq ($(CONFIG_EXAMPLES_DTLS_SERVER),y)
-CONFIGURED_APPS += examples/dtls_server
-endif
-
-ifeq ($(CONFIG_EXAMPLES_FOTA_SAMPLE),y)
-CONFIGURED_APPS += examples/fota_sample
-endif
-
-ifeq ($(CONFIG_EXAMPLES_HELLO),y)
-CONFIGURED_APPS += examples/hello
-endif
-
-ifeq ($(CONFIG_EXAMPLES_HELLO_TASH),y)
-CONFIGURED_APPS += examples/hello_tash
-endif
-
-ifeq ($(CONFIG_EXAMPLES_HELLOXX),y)
-CONFIGURED_APPS += examples/helloxx
-endif
-
-ifeq ($(CONFIG_EXAMPLES_IOTIVITY),y)
-CONFIGURED_APPS += examples/iotivity
-endif
-
-ifeq ($(CONFIG_EXAMPLES_IPERF),y)
-CONFIGURED_APPS += examples/iperf
-endif
-
-ifeq ($(CONFIG_EXAMPLES_KERNEL_SAMPLE),y)
-CONFIGURED_APPS += examples/kernel_sample
-endif
-
-ifeq ($(CONFIG_EXAMPLES_MDNS_TEST),y)
-CONFIGURED_APPS += examples/mdns_test
-endif
-
-ifeq ($(CONFIG_EXAMPLES_MPU_TEST),y)
-CONFIGURED_APPS += examples/mpu
-endif
-
-ifeq ($(CONFIG_EXAMPLES_NETTEST),y)
-CONFIGURED_APPS += examples/nettest
-endif
-
-ifeq ($(CONFIG_EXAMPLES_NTPCLIENT_TEST),y)
-CONFIGURED_APPS += examples/ntpclient_test
-endif
-
-ifeq ($(CONFIG_EXAMPLES_PROC_TEST),y)
-CONFIGURED_APPS += examples/proc_test
-endif
-
-ifeq ($(CONFIG_EXAMPLES_SELECT_TEST),y)
-CONFIGURED_APPS += examples/select_test
-endif
-
-ifeq ($(CONFIG_EXAMPLES_SYSIO_TEST),y)
-CONFIGURED_APPS += examples/sysio_test
-endif
-
-ifeq ($(CONFIG_EXAMPLES_TELNETD),y)
-CONFIGURED_APPS += examples/telnetd
-endif
-
-ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
-CONFIGURED_APPS += examples/testcase
-endif
-
-ifeq ($(CONFIG_EXAMPLES_TLS_CLIENT),y)
-CONFIGURED_APPS += examples/tls_client
-endif
-
-ifeq ($(CONFIG_EXAMPLES_TLS_SELFTEST),y)
-CONFIGURED_APPS += examples/tls_selftest
-endif
-
-ifeq ($(CONFIG_EXAMPLES_TLS_SERVER),y)
-CONFIGURED_APPS += examples/tls_server
-endif
-
-ifeq ($(CONFIG_EXAMPLES_WAKAAMA_CLIENT),y)
-CONFIGURED_APPS += examples/wakaama_client
-endif
-
-ifeq ($(CONFIG_EXAMPLES_WEBCLIENT),y)
-CONFIGURED_APPS += examples/webclient
-endif
-
-ifeq ($(CONFIG_EXAMPLES_WEBSERVER),y)
-CONFIGURED_APPS += examples/webserver
-endif
-
-ifeq ($(CONFIG_EXAMPLES_WEBSOCKET),y)
-CONFIGURED_APPS += examples/websocket
-endif
-
-ifeq ($(CONFIG_EXAMPLES_WORKQUEUE),y)
-CONFIGURED_APPS += examples/workqueue
-endif
-
-ifeq ($(CONFIG_EXAMPLES_ARTIK_DEMO),y)
-CONFIGURED_APPS += examples/artik_demo
-endif
-
+include $(wildcard examples/*/Make.defs)

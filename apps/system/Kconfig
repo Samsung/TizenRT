@@ -3,6 +3,7 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+menu "System Libraries"
 menu "EMACS-like Command Line Editor"
 source "$APPSDIR/system/cle/Kconfig"
 endmenu
@@ -69,5 +70,6 @@ endmenu
 
 menu "VI Work-Alike Editor"
 source "$APPSDIR/system/vi/Kconfig"
+endmenu
 endmenu
 

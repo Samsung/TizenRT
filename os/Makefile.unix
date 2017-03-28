@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2016-2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 ############################################################################
 # Makefile.unix
 #
-#   Copyright (C) 2007-2012, 2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2007-2012, 2014-2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -586,19 +586,19 @@ pass2dep: context tools/mkdeps$(HOSTEXEEXT)
 # must first download and install the kconfig-frontends package from this
 # location: http://ymorin.is-a-geek.org/projects/kconfig-frontends.
 
-config:
+config: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} CONFIGSDIR=${CONFIGS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-conf Kconfig
 
-oldconfig:
+oldconfig: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} CONFIGSDIR=${CONFIGS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-conf --oldconfig Kconfig
 
-menuconfig:
+menuconfig: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} CONFIGSDIR=${CONFIGS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-mconf Kconfig
 
-qconfig:
+qconfig: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} CONFIGSDIR=${CONFIGS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-qconf Kconfig
 
-gconfig:
+gconfig: apps_preconfig
 	$(Q) APPSDIR=${CONFIG_APPS_DIR} CONFIGSDIR=${CONFIGS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-gconf Kconfig
 
 # export
@@ -674,10 +674,16 @@ endif
 # as a convenience, the following targets are included to support housekeeping
 # functions in the user application directory from the TinyAra build directory.
 #
+# apps_preconfig: Prepare applications to be configured
 # apps_clean:     Perform the clean operation only in the user application
 #                 directory
 # apps_distclean: Perform the distclean operation only in the user application
 #                 directory.
+
+apps_preconfig:
+ifneq ($(APPDIR),)
+	$(Q) $(MAKE) -C "$(TOPDIR)/$(APPDIR)" TOPDIR="$(TOPDIR)" preconfig
+endif
 
 apps_clean:
 ifneq ($(APPDIR),)
