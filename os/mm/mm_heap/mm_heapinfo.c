@@ -75,7 +75,7 @@
  * Description:
  *   This function walk through heap and displays alloc info.
  ****************************************************************************/
-void heapinfo_parse(FAR struct mm_heap_s *heap, int mode)
+void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, int pid)
 {
 	struct mm_allocnode_s *node;
 	size_t mxordblk = 0;
@@ -100,7 +100,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode)
 		nonsched_size[nonsched_idx] = 0;
 	}
 
-	if (mode == HEAPINFO_TRACE) {
+	if (mode != HEAPINFO_SIMPLE) {
 		printf("****************************************************************\n");
 		printf("Heap Walker Output for Heap =0x%p\n", heap);
 		printf("****************************************************************\n");
@@ -117,24 +117,24 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode)
 		 */
 		mm_takesemaphore(heap);
 
-		if (mode == HEAPINFO_TRACE) {
+		if (mode != HEAPINFO_SIMPLE) {
 			printf("HeapReg#%d Heap StartAddr=0x%p, EndAddr=0x%p\n\n", region, heap->mm_heapstart[region], heap->mm_heapend[region]);
 			printf("****************************************************************\n");
 			printf("Heap Alloation Info- (Size in Bytes)\n");
 			printf("****************************************************************\n");
+			printf("  MemAddr    Size      Owner    Pid \n");
 		}
 
 		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 
 			/* Check if the node corresponds to an allocated memory chunk */
-
-			if ((node->preceding & MM_ALLOC_BIT) != 0) {
-				if (mode == HEAPINFO_TRACE) {
-					printf("MemAddr=0x%x Size=%6d (%c) Owner=0x%x Pid=%3d \n", node, node->size, 'A', node->alloc_call_addr, node->pid);
+			if ((pid == HEAPINFO_PID_NOTNEEDED || node->pid == pid) && (node->preceding & MM_ALLOC_BIT) != 0) {
+				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_PID) {
+					printf("0x%x %6d %c 0x%x %3d \n", node, node->size, 'A', node->alloc_call_addr, node->pid);
 				}
 
 #if CONFIG_TASK_NAME_SIZE > 0
-				if (node->pid == -1 && mode == HEAPINFO_TRACE) {
+				if (node->pid == -1 && mode != HEAPINFO_SIMPLE) {
 					printf("INT Context\n");
 				} else if (sched_gettcb(node->pid) == NULL) {
 					nonsched_list[MM_PIDHASH(node->pid)] = node->pid;
@@ -150,14 +150,14 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode)
 				if (node->size > mxordblk) {
 					mxordblk = node->size;
 				}
-				if (mode == HEAPINFO_TRACE) {
-					printf("MemAddr=0x%x Size=%6d (%c)\n", node, node->size, 'F');
+				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_FREE) {
+					printf("0x%x %6d %c\n", node, node->size, 'F');
 				}
 			}
 		}
 
 		mm_givesemaphore(heap);
-		if (mode == HEAPINFO_TRACE) {
+		if (mode != HEAPINFO_SIMPLE) {
 			printf("HeapReg#=%d End node=0x%p Size=%5d (%c)\n", region, node, node->size, 'A');
 		}
 	}
@@ -171,7 +171,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode)
 	printf("Number of Free Node            : %d\n", ordblks);
 
 	printf("\nNon Scheduled Task Resources   : %d\n", nonsched_resource);
-	if (mode == HEAPINFO_TRACE) {
+	if (mode != HEAPINFO_SIMPLE) {
 		printf("PID  SIZE\n");
 		printf("----------\n");
 		for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
