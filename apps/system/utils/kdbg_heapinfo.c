@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <tinyara/sched.h>
 #include <tinyara/config.h>
 #include <tinyara/mm/mm.h>
@@ -54,18 +55,41 @@ static void kdbg_heapinfo_task(FAR struct tcb_s *tcb, FAR void *arg)
 int kdbg_heapinfo(int argc, char **args)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
+	int option;
+	int mode = HEAPINFO_SIMPLE;
+	int pid = HEAPINFO_PID_NOTNEEDED;
 	struct mm_heap_s *user_heap = mm_get_heap_info();
-	if (argc > 1) {
-		if (strcmp(args[1], "init") == 0) {
+	while ((option = getopt(argc, args, "iap:fh")) != ERROR) {
+		switch (option) {
+		case 'i':
 			sched_foreach(kdbg_heapinfo_init, NULL);
 			printf("Peak allocated memory size is cleared\n");
 			return OK;
-		} else if (strcmp(args[1], "-v") == 0) {
-			heapinfo_parse(user_heap, HEAPINFO_TRACE);
+		case 'a':
+			mode = HEAPINFO_DETAIL_ALL;
+			pid = HEAPINFO_PID_NOTNEEDED;
+			break;
+		case 'p':
+			mode = HEAPINFO_DETAIL_PID;
+			pid = atoi(optarg);
+			break;
+		case 'f':
+			mode = HEAPINFO_DETAIL_FREE;
+			pid = HEAPINFO_PID_NOTNEEDED;
+			break;
+		case 'h':
+		case '?':
+		default:
+			printf("Usage: heapinfo [options]\n");
+			printf(" -i : initialize the heapinfo\n");
+			printf(" -a : show the all allocation details\n");
+			printf(" -p[pid] : show the specific pid allocation details \n");
+			printf(" -f : show the free list \n");
+			return OK;
 		}
-	} else {
-		heapinfo_parse(user_heap, HEAPINFO_NORMAL);
 	}
+	heapinfo_parse(user_heap, mode, pid);
+
 	printf("\nPID  ");
 #if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
 	printf("PPID  ");
