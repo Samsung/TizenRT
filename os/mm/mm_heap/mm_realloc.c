@@ -109,7 +109,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 	FAR struct mm_allocnode_s *oldnode;
 	FAR struct mm_freenode_s  *prev;
 	FAR struct mm_freenode_s  *next;
-	size_t origsize;
+	size_t newsize;
 	size_t oldsize;
 	size_t prevsize = 0;
 	size_t nextsize = 0;
@@ -132,12 +132,11 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 		return NULL;
 	}
 
-	origsize = size;
 	/* Adjust the size to account for (1) the size of the allocated node and
 	 * (2) to make sure that it is an even multiple of our granule size.
 	 */
 
-	size = MM_ALIGN_UP(size + SIZEOF_MM_ALLOCNODE);
+	newsize = MM_ALIGN_UP(size + SIZEOF_MM_ALLOCNODE);
 
 	/* Map the memory chunk into an allocated node structure */
 
@@ -152,19 +151,19 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 	oldsize = oldnode->size;
 
 #ifndef CONFIG_DISABLE_REALLOC_NEIGHBOR_EXTENTION
-	if (size <= oldsize) {
+	if (newsize <= oldsize) {
 		/* Handle the special case where we are not going to change the size
 		 * of the allocation.
 		 */
 
-		if (size < oldsize) {
+		if (newsize < oldsize) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 			/* modify the current allocated size of old node */
 			heapinfo_subtract_size(oldnode->pid, oldsize);
 			heapinfo_update_total_size(heap, (-1) * oldsize);
 #endif
 
-			mm_shrinkchunk(heap, oldnode, size);
+			mm_shrinkchunk(heap, oldnode, newsize);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 			/* update the chunk to realloc task information */
 			heapinfo_update_node(oldnode, caller_retaddr);
@@ -197,8 +196,8 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 
 	/* Now, check if we can extend the current allocation or not */
 
-	if (nextsize + prevsize + oldsize >= size) {
-		size_t needed   = size - oldsize;
+	if (nextsize + prevsize + oldsize >= newsize) {
+		size_t needed   = newsize - oldsize;
 		size_t takeprev = 0;
 		size_t takenext = 0;
 
@@ -373,9 +372,9 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 		 */
 		mm_givesemaphore(heap);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		newmem = (FAR void *)mm_malloc(heap, origsize, caller_retaddr);
+		newmem = (FAR void *)mm_malloc(heap, size, caller_retaddr);
 #else
-		newmem = (FAR void *)mm_malloc(heap, origsize);
+		newmem = (FAR void *)mm_malloc(heap, size);
 #endif
 		if (newmem) {
 			memcpy(newmem, oldmem, oldsize);
