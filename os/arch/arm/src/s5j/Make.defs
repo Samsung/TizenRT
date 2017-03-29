@@ -191,10 +191,6 @@ ifeq ($(CONFIG_RTC),y)
 CHIP_CSRCS += s5j_rtc.c
 endif
 
-ifeq ($(CONFIG_S5J_TICK_COUNTER),y)
-CHIP_CSRCS += s5j_tickcnt.c
-endif
-
 ifeq ($(CONFIG_S5J_MAILBOX),y)
 CHIP_CSRCS += s5j_mailbox.c
 endif

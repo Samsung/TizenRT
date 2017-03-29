@@ -208,14 +208,6 @@ config RTC_BASE_YEAR
 	depends on S5J_RTC
 endmenu #"S5J_RTC"
 
-menu "S5J TICK COUNTER"
-config S5J_TICK_COUNTER
-	bool "S5J tick counter support"
-	default n
-
-endmenu #"S5J_TICK_COUNTER"
-
-
 menu "S5J ADC"
 config S5J_ADC
 	bool "S5J ADC support"
