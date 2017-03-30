@@ -165,8 +165,8 @@
 
 /* Definitions to map some non-standard, BSD thread management interfaces to
  * the non-standard Linux-like prctl() interface.  Since these are simple
- * mappings to prctl, they will return 0 on sucess and -1 on failure with the
- * err number in errno.  This is an inconsistency with out pthread interfaces.
+ * mappings to prctl, they will return 0 on success and -1 on failure with the
+ * err number in errno.  This is an inconsistency with the pthread interfaces.
  */
 
 /**
