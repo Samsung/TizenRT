@@ -96,7 +96,7 @@
  *   of the systems.
  *
  ****************************************************************************/
-int up_timerisr(int irq, uint32_t *regs)
+int up_timerisr(int irq, uint32_t *regs, void *arg)
 {
 	/* Reset timer */
 	s5j_mct_clear_pending(MCT_L0);
@@ -127,7 +127,7 @@ void up_timer_initialize(void)
 	s5j_mct_local_start_timer(MCT_L0);
 
 	/* Attach the timer interrupt vector */
-	irq_attach(IRQ_MCT_L0, (xcpt_t) up_timerisr);
+	irq_attach(IRQ_MCT_L0, (xcpt_t) up_timerisr, NULL);
 
 	/* Enable the timer interrupt */
 	up_enable_irq(IRQ_MCT_L0);

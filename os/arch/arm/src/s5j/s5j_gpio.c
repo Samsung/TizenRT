@@ -97,7 +97,7 @@ static void *__gpio_eint_filter_get_addr(int gpio);
 static void *__gpio_eint_get_addr(int gpio, unsigned offset);
 static void s5j_gpio_callback_wqueue(FAR void *arg);
 static void s5j_gpio_poll_expiry(int argc, uint32_t arg, ...);
-static int s5j_gpio_irq_handler(int irq, void *context);
+static int s5j_gpio_irq_handler(int irq, void *context, void *arg);
 static void s5j_gpio_enable_irq(struct gpio_dev_s *dev);
 static void s5j_gpio_disable_irq(struct gpio_dev_s *dev);
 static u32 gpio_get_irq_id(int gpio);
@@ -444,7 +444,7 @@ static void s5j_gpio_poll_expiry(int argc, uint32_t arg, ...)
  *  -1, if Error
  *
  ****************************************************************************/
-static int s5j_gpio_irq_handler(int irq, void *context)
+static int s5j_gpio_irq_handler(int irq, void *context, void *arg)
 {
 	int i;
 	struct gpio_dev_s *dev;
@@ -500,7 +500,7 @@ static void s5j_gpio_enable_irq(struct gpio_dev_s *dev)
 	gpio_eint_unmask(gpio);
 
 	irq = gpio_to_bank(gpio)->isr_num[s5j_gpio_port(gpio)];
-	(void)irq_attach(irq, (xcpt_t)s5j_gpio_irq_handler);
+	(void)irq_attach(irq, (xcpt_t)s5j_gpio_irq_handler, NULL);
 	up_enable_irq(irq);
 }
 

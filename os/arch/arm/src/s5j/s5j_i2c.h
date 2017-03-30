@@ -167,7 +167,7 @@ struct s5j_i2c_config_s {
 	uintptr_t base;				/* I2C base address */
 	unsigned int scl_pin;			/* GPIO configuration for SCL as SCL */
 	unsigned int sda_pin;			/* GPIO configuration for SDA as SDA */
-	int (*isr)(int, void *);	/* Interrupt handler */
+	int (*isr)(int, void *, void *);	/* Interrupt handler */
 	unsigned int irq;				/* IRQ number */
 	uint8_t devno;				/* I2Cn where n = devno */
 };
@@ -255,10 +255,10 @@ static inline void s5j_i2c_sem_post(struct s5j_i2c_priv_s *priv);
 static inline void s5j_i2c_sem_init(struct s5j_i2c_priv_s *priv);
 static inline void s5j_i2c_sem_destroy(struct s5j_i2c_priv_s *priv);
 static int s5j_i2c_interrupt(struct s5j_i2c_priv_s *priv, unsigned int status);
-static int s5j_i2c0_interrupt(int irq, void *context);
-static int s5j_i2c1_interrupt(int irq, void *context);
-static int s5j_i2c2_interrupt(int irq, void *context);
-static int s5j_i2c3_interrupt(int irq, void *context);
+static int s5j_i2c0_interrupt(int irq, void *context, void *arg);
+static int s5j_i2c1_interrupt(int irq, void *context, void *arg);
+static int s5j_i2c2_interrupt(int irq, void *context, void *arg);
+static int s5j_i2c3_interrupt(int irq, void *context, void *arg);
 static int s5j_i2c_initialize(struct s5j_i2c_priv_s *priv, unsigned int frequency);
 static int s5j_i2c_uninitialize(struct s5j_i2c_priv_s *priv);
 

@@ -95,7 +95,7 @@
  *
  ****************************************************************************/
 
-int irq_unexpected_isr(int irq, FAR void *context)
+int irq_unexpected_isr(int irq, FAR void *context, FAR void *arg)
 {
 	(void)irqsave();
 	lldbg("irq: %d\n", irq);

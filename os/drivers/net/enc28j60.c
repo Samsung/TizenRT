@@ -314,7 +314,7 @@ static void enc_rxdispatch(FAR struct enc_driver_s *priv);
 #endif
 static void enc_pktif(FAR struct enc_driver_s *priv);
 static void enc_irqworker(FAR void *arg);
-static int enc_interrupt(int irq, FAR void *context);
+static int enc_interrupt(int irq, FAR void *context, FAR void *arg);
 
 /* Watchdog timer expirations */
 static void enc_toworker(FAR void *arg);
@@ -1759,7 +1759,7 @@ static void enc_irqworker(FAR void *arg)
  * Assumptions:
  *
  ****************************************************************************/
-static int enc_interrupt(int irq, FAR void *context)
+static int enc_interrupt(int irq, FAR void *context, FAR void *arg)
 {
 	register FAR struct enc_driver_s *priv = &g_enc28j60[0];
 

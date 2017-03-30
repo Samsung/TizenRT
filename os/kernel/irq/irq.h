@@ -71,7 +71,12 @@
  * Public Type Declarations
  ****************************************************************************/
 
-extern FAR xcpt_t g_irqvector[NR_IRQS + 1];
+struct irq {
+	xcpt_t handler;
+	FAR void *arg;
+};
+
+extern struct irq g_irqvector[NR_IRQS + 1];
 
 /****************************************************************************
  * Public Variables
@@ -89,7 +94,7 @@ extern "C" {
 #endif
 
 void weak_function irq_initialize(void);
-int irq_unexpected_isr(int irq, FAR void *context);
+int irq_unexpected_isr(int irq, FAR void *context, FAR void *arg);
 
 #undef EXTERN
 #ifdef __cplusplus

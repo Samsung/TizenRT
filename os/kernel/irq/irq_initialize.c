@@ -72,7 +72,7 @@
  * Global Variables
  ****************************************************************************/
 
-FAR xcpt_t g_irqvector[NR_IRQS + 1];
+struct irq g_irqvector[NR_IRQS + 1];
 
 /****************************************************************************
  * Private Variables
@@ -101,6 +101,7 @@ void irq_initialize(void)
 	/* Point all interrupt vectors to the unexpected interrupt */
 
 	for (i = 0; i < NR_IRQS; i++) {
-		g_irqvector[i] = irq_unexpected_isr;
+		g_irqvector[i].handler = irq_unexpected_isr;
+		g_irqvector[i].arg     = NULL;
 	}
 }

@@ -142,7 +142,7 @@ struct s5j_pwmtimer_s {
 };
 
 static int s5j_pwm_interrupt(struct s5j_pwmtimer_s *priv);
-static int s5j_pwm_timer_interrupt(int irq, void *context);
+static int s5j_pwm_timer_interrupt(int irq, void *context, void *arg);
 static int s5j_pwm_setup(FAR struct pwm_lowerhalf_s *dev);
 static int s5j_pwm_shutdown(FAR struct pwm_lowerhalf_s *dev);
 #ifdef CONFIG_PWM_PULSECOUNT

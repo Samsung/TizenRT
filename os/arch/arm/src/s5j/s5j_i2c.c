@@ -850,7 +850,7 @@ static void hsi2c_slave_setup(struct s5j_i2c_priv_s *priv, unsigned int mode, un
 	hsi2c_set_trans_mode(priv->config->base, 0, 0);
 #ifdef CONFIG_S5J_I2C_INTERRUPT_MODE
 	if ((priv->master == I2C_SLAVE_MODE) || (priv->mode == I2C_INTERRUPT)) {
-		irq_attach(priv->config->irq, priv->config->isr);
+		irq_attach(priv->config->irq, priv->config->isr, NULL);
 	}
 #endif
 
@@ -946,7 +946,7 @@ static inline void s5j_i2c_sem_destroy(struct s5j_i2c_priv_s *priv)
 #endif
 }
 
-static int s5j_i2c0_interrupt(int irq, void *context)
+static int s5j_i2c0_interrupt(int irq, void *context, void *arg)
 {
 	struct s5j_i2c_priv_s *priv;
 
@@ -957,7 +957,7 @@ static int s5j_i2c0_interrupt(int irq, void *context)
 	return hsi2c_master_handler(priv);
 }
 
-static int s5j_i2c1_interrupt(int irq, void *context)
+static int s5j_i2c1_interrupt(int irq, void *context, void *arg)
 {
 	struct s5j_i2c_priv_s *priv;
 
@@ -969,7 +969,7 @@ static int s5j_i2c1_interrupt(int irq, void *context)
 	return hsi2c_master_handler(priv);
 }
 
-static int s5j_i2c2_interrupt(int irq, void *context)
+static int s5j_i2c2_interrupt(int irq, void *context, void *arg)
 {
 	struct s5j_i2c_priv_s *priv;
 
@@ -982,7 +982,7 @@ static int s5j_i2c2_interrupt(int irq, void *context)
 	return hsi2c_master_handler(priv);
 }
 
-static int s5j_i2c3_interrupt(int irq, void *context)
+static int s5j_i2c3_interrupt(int irq, void *context, void *arg)
 {
 	struct s5j_i2c_priv_s *priv;
 
@@ -1025,7 +1025,7 @@ static int s5j_i2c_initialize(struct s5j_i2c_priv_s *priv, unsigned int frequenc
 
 #ifdef CONFIG_S5J_I2C_INTERRUPT_MODE
 	if ((priv->master == I2C_SLAVE_MODE) || (priv->mode == I2C_INTERRUPT)) {
-		irq_attach(config->irq, config->isr);
+		irq_attach(config->irq, config->isr, NULL);
 		up_enable_irq(config->irq);
 	}
 #endif

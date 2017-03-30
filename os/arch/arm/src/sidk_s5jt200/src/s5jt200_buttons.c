@@ -168,11 +168,11 @@ xcpt_t board_button_irq(int id, xcpt_t irqhandler)
 
 	if (irqhandler == NULL) {
 		up_disable_irq(IRQ_EINT0);
-		irq_attach(IRQ_EINT0, NULL);
+		irq_attach(IRQ_EINT0, NULL, NULL);
 		return oldhandler;
 	}
 
-	if (irq_attach(IRQ_EINT0, irqhandler) == OK) {
+	if (irq_attach(IRQ_EINT0, irqhandler, NULL) == OK) {
 		up_enable_irq(IRQ_EINT0);
 	} else {
 		/* TO DO: How can it contolled ? */

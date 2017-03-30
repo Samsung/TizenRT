@@ -80,6 +80,7 @@
 /****************************************************************************
  * Static Function Prototypes
  ****************************************************************************/
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -178,7 +179,7 @@ static int s5j_pwm_interrupt(struct s5j_pwmtimer_s *priv)
  *   Zero on success; a negated errno value on failure
  *
  ****************************************************************************/
-static int s5j_pwm_timer_interrupt(int irq, void *context)
+static int s5j_pwm_timer_interrupt(int irq, void *context, void *arg)
 {
 	signed int pwm_no;
 	signed int irq_no;
@@ -692,7 +693,7 @@ FAR struct pwm_lowerhalf_s *s5j_pwminitialize(int timer)
 	/* There is only 6 IRQ ID (PWM0_0 ~ PWM1_1 */
 	if (timer < TOTAL_NUMBER_OF_PWMOUT) {
 		/* IRQ register */
-		irq_attach(lower->irq, s5j_pwm_timer_interrupt);
+		irq_attach(lower->irq, s5j_pwm_timer_interrupt, NULL);
 		up_disable_irq(lower->irq);
 
 		/* IRQ trigger = level */

@@ -530,7 +530,7 @@ static int s5j_rtc_setalarm(FAR struct rtc_lowerhalf_s *lower, FAR const struct 
 static int s5j_rtc_aiealarm(FAR struct rtc_lowerhalf_s *lower, bool enable)
 {
 	if (enable) {
-		irq_attach(IRQ_TOP_RTC_ALARM, (xcpt_t) __isr_rtc_alarm);
+		irq_attach(IRQ_TOP_RTC_ALARM, (xcpt_t) __isr_rtc_alarm, NULL);
 		up_enable_irq(IRQ_TOP_RTC_ALARM);
 
 		HW_REG32(S5J_RTC_BASE, RTCALM) |= RTC_GLB_ALM_EN;	/* Enable Alarm Global */
@@ -591,7 +591,7 @@ static int s5j_rtc_set_tick_period(FAR struct rtc_lowerhalf_s *lower, FAR unsign
 static int s5j_rtc_enable_tickirq(FAR struct rtc_lowerhalf_s *lower, bool enable)
 {
 	if (enable) {
-		irq_attach(IRQ_TOP_RTC_TIC, (xcpt_t) __isr_rtc_tick);
+		irq_attach(IRQ_TOP_RTC_TIC, (xcpt_t) __isr_rtc_tick, NULL);
 		up_enable_irq(IRQ_TOP_RTC_TIC);
 
 		HW_REG32(S5J_RTC_BASE, RTCCON) |= RTCCON_TICEN;		/* Enable Tick Timer */
@@ -673,7 +673,7 @@ int s5j_rtc_initialize(void)
 
 #ifdef CONFIG_RTC_ALARM
 
-	irq_attach(IRQ_TOP_RTC_ALARM, (xcpt_t) __isr_rtc_alarm);
+	irq_attach(IRQ_TOP_RTC_ALARM, (xcpt_t) __isr_rtc_alarm, NULL);
 	up_enable_irq(IRQ_TOP_RTC_ALARM);
 
 	/* Set Alarm after 1 min */
