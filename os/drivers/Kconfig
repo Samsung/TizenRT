@@ -409,7 +409,9 @@ comment "System Logging Device Options"
 source drivers/syslog/Kconfig
 
 menuconfig DRIVERS_WIRELESS
-        bool "Wireless Device Support"
-        default n
-        ---help---
-                Drivers for various wireless devices.
+	bool "Wireless Device Support"
+	default n
+	---help---
+		Drivers for various wireless devices.
+
+source drivers/wireless/Kconfig

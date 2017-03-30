@@ -72,12 +72,15 @@ extern bool wifiStarted;
 extern sem_t ap_conn_sem;
 extern sem_t g_sem_join;
 extern char *g_client_ip_str;
+
+#ifdef CONFIG_SLSI_WIFI_SANITY
 static struct dhcp g_dhcp_handle;
 static int32_t timeleft = SLSI_SANITY_DHCP_TIMEOUT;
 static struct timespec g_dhcp_timer_start;
 static struct timespec g_dhcp_timer_end;
 static struct netif *g_netif;
 static ip_addr_t client_ip;
+
 #define SANITY_LOOP_COUNT    20
 
 #define SANITY_AP_OPEN_SSID "t20_sanity_open"
@@ -623,6 +626,7 @@ int8_t doSanityTest(int iterations){
     return SLSI_STATUS_SUCCESS;
 }
 
+#endif // CONFIG_SLSI_WIFI_SANITY
 
 int8_t doAutoTest(char *filename){
     int8_t result = SLSI_STATUS_ERROR;
@@ -941,6 +945,7 @@ int slsi_udp_client(void)
 }
 
 
+#ifdef SLSI_WIFI_SANITY
 /** Prepare a echo ICMP request */
 static void ping_prepare_echo( struct icmp_echo_hdr *iecho, u16_t len)
 {
@@ -1121,4 +1126,4 @@ static uint8_t doPing(ip_addr_t ip, int pingcount) {
     g_ping_counter = pingcount;
     return ping_thread(ip);
 }
-
+#endif

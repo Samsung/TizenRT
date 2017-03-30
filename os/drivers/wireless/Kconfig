@@ -1,0 +1,22 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+if DRIVERS_WIRELESS
+
+menuconfig SCSC_WLAN
+	bool "SCSC Wireless Module support"
+	default n
+	select SPI
+
+source drivers/wireless/scsc/Kconfig
+
+menuconfig SCSC_CORE
+	bool "SCSC Core driver Module support"
+	default n
+	select SPI
+
+source drivers/wireless/scsc/misc/Kconfig
+
+endif # DRIVERS_WIRELESS

@@ -1,0 +1,67 @@
+if SCSC_WLAN != n
+
+config SLSI_RX_PERFORMANCE_TEST
+	bool "Enable UDP RX performance test"
+	depends on SCSC_WLAN
+        default n
+	---help---
+	  This option enables RX UDP performance measurement without
+	  involving the LWIP stack
+
+config SCSC_TX_FLOW_CONTROL
+	bool "Enable TX flow control"
+	depends on SCSC_WLAN
+        default n
+	---help---
+	  This option enables TX flow control
+
+config SCSC_ENABLE_PORT_CONTROL
+	bool "Enable controlled/uncontrolled port logic in the driver"
+	depends on SCSC_WLAN
+	default y
+	---help---
+	  This option enables controlled/uncontrolled port logic in the driver
+
+config SCSC_WLAN_STA_ONLY
+	bool "Support WLAN STA only (no P2P/AP/IBSS)"
+	default n
+	---help---
+	  Enable only basic STA mode for debugging purposes
+
+config SCSC_WLAN_BLOCK_IPV6
+	bool "Block IPv6"
+	default n
+	---help---
+	  This option blocks IPv6 packets.
+
+config SCSC_WLAN_UDP_FLOWCONTROL
+	bool "Enable UDP Flow Control by changing LPWORK priority"
+	default n
+	---help---
+	  This option enables when iperf UDP Rx packet drops exist
+	  when mbox has been full, LPWORK drops its priority
+
+config SCSC_WLAN_AUTO_RECOVERY
+	bool "Enable Auto Recovery"
+	depends on SCSC_WLAN
+	default n
+	---help---
+	  Enables auto recovery on FW panic and SCSC driver watch dog timeouts,
+	  which will reset subsystem and re-enable state.
+
+config SCSC_WLAN_POWER_SAVE
+        bool "Enable Power Save mode"
+        depends on SCSC_WLAN
+        default y
+        ---help---
+          This option enables driver to configure power save mode in
+          firmware.
+
+config SCSC_WLAN_MAX_INTERFACES
+	int "Max number of virtual interfaces supported"
+	default 1
+	---help---
+	  The driver structures are sized to support this
+	  number of interfaces.
+
+endif

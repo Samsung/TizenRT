@@ -108,6 +108,12 @@ else
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
 endif
 
+# Add library for wifi driver
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libwifidriver$(LIBEXT)
+# Add library for wifi stack
+USERLIBS += $(LIBRARIES_DIR)$(DELIM)libwifistack$(LIBEXT)
+# Add library for wifi api
+USERLIBS += $(LIBRARIES_DIR)$(DELIM)libwifiapi$(LIBEXT)
 # Export only the user libraries
 
 EXPORTLIBS = $(USERLIBS)

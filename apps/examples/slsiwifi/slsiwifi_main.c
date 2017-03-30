@@ -597,7 +597,6 @@ int8_t parseCmdLine(int argc, char *argv[])
 		result = doStartAP(argv[1], sec, passphrase, channel);
 	} else if (strncmp("status", argv[0], MAXLEN(6, strlen(argv[0]))) == 0) {
 		(void)doIsConnected();
-		/*
 		    }else if (strncmp(argv[0], "tcpserver", MAXLEN(9, strlen(argv[0]))) == 0) {
 		        if(slsi_tcp_server() != 0){
 		            printf("TCP server failed\n");
@@ -610,7 +609,6 @@ int8_t parseCmdLine(int argc, char *argv[])
 		        if(slsi_udp_server() != 0){
 		            printf("UDP Server failed\n");
 		        }
-		*/
 	} else if (strncmp(argv[0], "ie", MAXLEN(2, strlen(argv[0]))) == 0) {
 		if (argv[1] != NULL && argv[2] != NULL && strlen(argv[1]) == 6 && strlen(argv[2]) <= 253) {
 			printf("Storing new OUI=%s IE=%s\n", argv[1], argv[2]);
@@ -640,12 +638,11 @@ int8_t parseCmdLine(int argc, char *argv[])
 			memcpy(g_vsie->content, argv[2], strlen(argv[2]));
 
 		}
-		/*
-		    }else if (strncmp(argv[0], "udpclient", MAXLEN(9,strlen(argv[0]))) == 0) {
+	} else if (strncmp(argv[0], "udpclient", MAXLEN(9,strlen(argv[0]))) == 0) {
 		        if(slsi_udp_client() != 0){
 		            printf("UDP Client failed\n");
 		        }
-		    }else if (strncmp(argv[0], "auto", MAXLEN(4, strlen(argv[0]))) == 0 && inAuto == false){
+	} else if (strncmp(argv[0], "auto", MAXLEN(4, strlen(argv[0]))) == 0 && inAuto == false){
 		        sem_init(&ap_conn_sem, 0, 0);
 		        if(argc > 1)
 		            result = doAutoTest(argv[1]); //filename if not null
@@ -654,7 +651,8 @@ int8_t parseCmdLine(int argc, char *argv[])
 		        sem_destroy(&ap_conn_sem);
 		        if(result == SLSI_STATUS_SUCCESS) return 0;
 		        else return 1;
-		    }else if (strncmp(argv[0], "sanity", MAXLEN(6,strlen(argv[0]))) == 0 && inAuto == false){
+#ifdef CONFIG_SLSI_WIFI_SANITY
+	} else if (strncmp(argv[0], "sanity", MAXLEN(6,strlen(argv[0]))) == 0 && inAuto == false){
 		        int iterations = 0;
 		        sem_init(&ap_conn_sem, 0, 0);
 		        if(argc > 1){
@@ -681,8 +679,7 @@ int8_t parseCmdLine(int argc, char *argv[])
 
 		        if(result == SLSI_STATUS_SUCCESS) return 0;
 		        else return 1;
-		        return 0;
-		    }else if (strncmp(argv[0], "nightly", MAXLEN(7,strlen(argv[0]))) == 0 && inAuto == false){
+	} else if (strncmp(argv[0], "nightly", MAXLEN(7,strlen(argv[0]))) == 0 && inAuto == false){
 		        int iterations = 0;
 		        sem_init(&ap_conn_sem, 0, 0);
 		        if(argc > 1){
@@ -709,8 +706,7 @@ int8_t parseCmdLine(int argc, char *argv[])
 
 		        if(result == SLSI_STATUS_SUCCESS) return 0;
 		        else return 1;
-		        return 0;
-		*/
+#endif
 	} else if (strncmp(argv[0], "help", MAXLEN(4, strlen(argv[0]))) == 0) {
 		sw_printFullHelp();
 	} else {

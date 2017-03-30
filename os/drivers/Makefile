@@ -80,7 +80,7 @@ include usbdev$(DELIM)Make.defs
 include usbhost$(DELIM)Make.defs
 include gpio$(DELIM)Make.defs
 include fota$(DELIM)Make.defs
--include wireless$(DELIM)Make.defs
+include wireless$(DELIM)Make.defs
 
 ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
   CSRCS += dev_null.c dev_zero.c

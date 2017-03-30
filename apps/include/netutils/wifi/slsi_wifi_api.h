@@ -56,6 +56,8 @@ typedef enum {
 #define SLSI_STATUS_ALREADY_CONNECTED                   8   // Failed - WiFi already connected
 #define SLSI_STATUS_NOT_CONNECTED                       9   // Failed - WiFi not connected
 #define SLSI_STATUS_SECURITY_FAILED                     10  // Failed - security setup failed
+#define SLSI_STATUS_NOT_ALLOWED                         11  // Failed - not allowed
+#define SLSI_STATUS_NOT_SUPPORTED                       12  // Failed - function not supported (maybe due to missing dependencies to filesystem)
 
 /* SLSI reason codes */
 /* Return values used from ieee802_11_defs.h
@@ -84,7 +86,8 @@ typedef enum {
  * in station mode.
  * Values: enabled - 1, disabled - 0 (default is enabled 1)
  */
-#define SLSI_STA_AUTOCONNECT        1
+#define SLSI_SAVE_CONFIG            1
+
 
 /**
  * Specify whether API layers should wait for multiple scan for network
@@ -251,13 +254,13 @@ int8_t WiFiRegisterScanCallback(
 
 /**
  * Scan for Wi-Fi network
- * @results_handler        A function pointer for the handler that will process
- *                         the scan complete.
  *
  * Return: Scan initiated successfully or failed
  *
- * Start a scan for Wi-Fi AP in the surroundings. Result is returned via
- * callback to a result handler: Scan complete event or Scan aborted.
+ * Start a scan for Wi-Fi AP in the surroundings.
+ * result is returned to the callback handler registered with
+ * WiFiRegisterScanCallback(). Events are : Scan complete event
+ * or Scan aborted.
  * The scan results are retrieved using WiFiGetScanResults().
  */
 int8_t WiFiScanNetwork(void);
@@ -353,8 +356,8 @@ int8_t WiFiGetChannel(int8_t *channel);
 /**
  * Request connected status:
  * In STA mode:
- *   @count      1 for connected in STA mode, count of connected devices in AP mode
- *               if count > 1 details are updated, otherwise NULL
+ *   @count      1 for connected in STA mode, count of connected devices in AP
+ *               mode if count > 1 details are updated, otherwise NULL
  *               0 for disconnected
  *   @details    a pointer to a data structure which will be filled in with
  *               BSSID and SSID of AP if connected. Set to NULL if this
@@ -372,7 +375,8 @@ int8_t WiFiIsConnected(uint8_t *count, slsi_reason_t *details);
 
 /**
  * Request the current mode of operation.
- *  @mode: sets to one of SLSI_WIFI_NONE, SLSI_WIFI_STATION_IF, SLSI_WIFI_SOFT_AP_IF
+ *  @mode:       sets to one of SLSI_WIFI_NONE, SLSI_WIFI_STATION_IF,
+ *               SLSI_WIFI_SOFT_AP_IF
  * Return: success or failure
  */
 int8_t WiFiGetOpMode(WiFi_InterFace_ID_t* mode);
@@ -383,6 +387,16 @@ int8_t WiFiGetOpMode(WiFi_InterFace_ID_t* mode);
  * Return: Completed successfully or failed
  */
 int8_t WiFiSetCountryCode(const char *country_code);
+
+/**
+ * Request to save network configuration file
+ * Return: Completed successfully or failed
+ *
+ *   Will save current network state in configuration file. E.g. if auto
+ *   connect is enabled and a network is saved, next time Wi-Fi is started
+ *   it will look into configuration file and try to connect known network
+ */
+int8_t WiFiSaveConfig(void);
 
 #ifdef  __cplusplus
 }

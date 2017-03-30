@@ -1,0 +1,31 @@
+
+
+if SCSC_CORE != n
+
+config SCSC_CORE_CM
+	tristate "Samsung SCSC Maxwell driver Core Module"
+	depends on SCSC_CORE
+
+config SCSC_PLATFORM
+	tristate "Samsung SCSC MIF Platform driver implementation"
+	depends on SCSC_CORE
+
+config SCSC_WLANLITE
+	bool "Samsung SCSC WLANLITE driver mode"
+	depends on SCSC_CORE
+	default n
+
+endif
+
+
+config SCSC_MMAP
+	tristate "Samsung SCSC MMAP/GDB User space interface"
+	depends on SCSC_CORE
+
+
+config SCSC_DISABLE_WLAN_RESET
+	bool "Never power down the Samsung SCSC WLAN CPU"
+	depends on SCSC_CORE
+	default n
+
+

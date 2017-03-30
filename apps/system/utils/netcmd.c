@@ -160,6 +160,9 @@ extern int websocket_main(int argc, char *argv[]);
 #ifdef CONFIG_EXAMPLES_ARTIK_DEMO
 extern int artik_demo_main(int argc, char *argv[]);
 #endif
+#ifdef CONFIG_EXAMPLES_SLSIWIFI
+extern int slsi_wifi_main(int argc, char *argv[]);
+#endif
 #ifdef CONFIG_EXAMPLES_MQTT_TEST
 extern int mqtt_client_sub_main(int argc, char *argv[]);
 extern int mqtt_client_pub_main(int argc, char *argv[]);
@@ -691,6 +694,9 @@ const static tash_cmdlist_t net_utilcmds[] = {
 const static tash_cmdlist_t net_appcmds[] = {
 #ifdef CONFIG_EXAMPLES_ARTIK_DEMO
 	{"artik_demo", artik_demo_main, TASH_EXECMD_SYNC},
+#endif
+#ifdef CONFIG_EXAMPLES_SLSIWIFI
+	{"artikwifi", slsi_wifi_main, TASH_EXECMD_SYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_LWIPDHCPC
 	{"dhcpc", lwipdhcpc_main, TASH_EXECMD_ASYNC},

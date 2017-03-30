@@ -218,6 +218,3 @@ CHIP_CSRCS += chip/sss/sss_driver_io.c
 EXTRA_LIBS += chip/sss/libispdriver.a
 endif
 
-EXTRA_LIBS += chip/soc/wireless/libwifidriver.a
-EXTRA_LIBS += chip/soc/wireless/libwifistack.a
-EXTRA_LIBS += chip/soc/wireless/libwifiapi.a

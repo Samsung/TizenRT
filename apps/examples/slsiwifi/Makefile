@@ -63,9 +63,17 @@ STACKSIZE = $(CONFIG_EXAMPLES_SLSIWIFI_STACKSIZE)
 
 ASRCS =
 CSRCS += \
-         output_functions.c	#\
-#         nettest_functions.c	# disabled temporarily
+         output_functions.c \
+         nettest_functions.c
 MAINSRC = slsiwifi_main.c
+
+OBJS = $(CSRCS:.c=$(OBJEXT))
+
+CFLAGS += -DCONFIG_CTRL_IFACE -DCONFIG_CTRL_IFACE_FIFO
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)$(DELIM)include$(DELIM)netutils$(DELIM)wifi}
+
+CONFIG_EXAMPLES_SLSIWIFI_PROGNAME ?= slsiwifi$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_SLSIWIFI_PROGNAME)
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

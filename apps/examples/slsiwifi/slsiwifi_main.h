@@ -39,7 +39,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include "slsi_wifi_api.h"
-// #include "nettest_functions.h"   // temporarily disable until dhcp functions being done refactoring
+#include "nettest_functions.h"
 
 void sw_linkUpHandler(slsi_reason_t *reason);
 void sw_linkDownHandler(slsi_reason_t *reason);

@@ -94,6 +94,7 @@ static const char *dequote_list[] = {
 	/* apps/ definitions */
 
 	"CONFIG_EXAMPLES_HELLO_PROGNAME",	/* Name of installed hello example program */
+	"CONFIG_WPA_SUPPLICANT_ENTRYPOINT",	/* Name of entry point function */
 
 	NULL						/* Marks the end of the list */
 };
