@@ -214,5 +214,9 @@ void board_initialize(void)
 #ifdef CONFIG_SIDK_S5JT200_TLC59116
 	tlc59116_initialize();
 #endif
+
+#ifdef CONFIG_SIDK_S5JT200_S8300
+	s5j_ledinitialize();
+#endif
 }
 #endif /* CONFIG_BOARD_INITIALIZE */

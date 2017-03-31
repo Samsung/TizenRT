@@ -63,6 +63,10 @@ endif
 
 CSRCS += s5jt200_pwm.c
 
+ifeq ($(CONFIG_SIDK_S5JT200_S8300),y)
+CSRCS += s5jt200_led.c
+endif
+
 ifeq ($(CONFIG_ARCH_BUTTONS),y)
 CSRCS += s5jt200_buttons.c
 endif
