@@ -838,8 +838,6 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 	return MOSQ_ERR_SUCCESS;
 #else
 #ifdef WITH_MBEDTLS
-	int r;
-
 	if(!mosq || !cafile)
 		return MOSQ_ERR_INVAL;
 
@@ -866,15 +864,15 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 
         /* 1. Load the certificates and private RSA key */
 	if (mosq->tls_cert) {
-	        if ((r = mbedtls_x509_crt_parse(mosq->cert,
-	                (const unsigned char *)mosq->tls_cert, mosq->tls_cert_len)) != 0) {
+	        if (mbedtls_x509_crt_parse(mosq->cert,
+	                (const unsigned char *)mosq->tls_cert, mosq->tls_cert_len) != 0) {
 	                _mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_x509_crt_parse fail");
 			return MOSQ_ERR_TLS;
 		}
 	}
 
-        if ((r = mbedtls_x509_crt_parse(mosq->cert,
-                (const unsigned char *)mosq->tls_ca_cert, mosq->tls_ca_cert_len)) != 0) {
+        if (mbedtls_x509_crt_parse(mosq->cert,
+                (const unsigned char *)mosq->tls_ca_cert, mosq->tls_ca_cert_len) != 0) {
                 _mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_x509_crt_parse_ca fail");
                 return MOSQ_ERR_TLS;
         }
@@ -885,7 +883,7 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 	if((pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_RSA))== NULL)
 		return MOSQ_ERR_TLS;
 
-	if((r = mbedtls_pk_setup(mosq->pkey, pk_info)) != 0)
+	if(mbedtls_pk_setup(mosq->pkey, pk_info) != 0)
 		return MOSQ_ERR_TLS;
 
 	mbedtls_rsa_init((mbedtls_rsa_context*)((mbedtls_pk_context*)mosq->pkey)->pk_ctx,
@@ -895,15 +893,15 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 	((mbedtls_rsa_context *)((mbedtls_pk_context*)mosq->pkey)->pk_ctx)->len = 256;
 #else
 	if (mosq->tls_key) {
-	        if ((r = mbedtls_pk_parse_key(mosq->pkey,
-	                (const unsigned char *)mosq->tls_key, mosq->tls_key_len, NULL, 0)) != 0) {
+	        if (mbedtls_pk_parse_key(mosq->pkey,
+	                (const unsigned char *)mosq->tls_key, mosq->tls_key_len, NULL, 0) != 0) {
 	                _mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_pk_parse_key fail");
 	                return MOSQ_ERR_TLS;
 	        }
 	}
 #endif
-        if ((r = mbedtls_ctr_drbg_seed(mosq->ctr_drbg, mbedtls_entropy_func,
-                                        mosq->entropy, NULL, 0)) != 0) {
+        if (mbedtls_ctr_drbg_seed(mosq->ctr_drbg, mbedtls_entropy_func,
+                                        mosq->entropy, NULL, 0) != 0) {
                 _mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_ctr_drbg_seed fail");
                 return MOSQ_ERR_TLS;
         }
@@ -919,8 +917,8 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 #endif
         mbedtls_ssl_config_init(mosq->ssl);
 
-        if ((r = mbedtls_ssl_config_defaults(mosq->ssl, MBEDTLS_SSL_IS_CLIENT,
-                MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
+        if (mbedtls_ssl_config_defaults(mosq->ssl, MBEDTLS_SSL_IS_CLIENT,
+                MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
                 _mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_ssl_config_defaults fail");
                 return MOSQ_ERR_TLS;
         }
@@ -930,7 +928,7 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 #if defined(CONFIG_HW_RSA)
 	mbedtls_ssl_conf_ca_chain(mosq->ssl, ((mbedtls_x509_crt *)mosq->cert)->next, NULL);
 
-	if ((r = mbedtls_ssl_conf_own_cert(mosq->ssl, mosq->cert, mosq->pkey)) != 0) {
+	if (mbedtls_ssl_conf_own_cert(mosq->ssl, mosq->cert, mosq->pkey) != 0) {
 	        _mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_ssl_conf_own_cert fail");
 	        return MOSQ_ERR_TLS;
 	}
@@ -938,7 +936,7 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 	if(mosq->tls_cert && mosq->tls_key) {
 	        mbedtls_ssl_conf_ca_chain(mosq->ssl, ((mbedtls_x509_crt *)mosq->cert)->next, NULL);
 
-	        if ((r = mbedtls_ssl_conf_own_cert(mosq->ssl, mosq->cert, mosq->pkey)) != 0) {
+	        if (mbedtls_ssl_conf_own_cert(mosq->ssl, mosq->cert, mosq->pkey) != 0) {
 	                _mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_ssl_conf_own_cert fail");
 	                return MOSQ_ERR_TLS;
 		}
@@ -946,7 +944,7 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 	else if(mosq->tls_cert) {
 	        mbedtls_ssl_conf_ca_chain(mosq->ssl, ((mbedtls_x509_crt *)mosq->cert)->next, NULL);
 
-	        if ((r = mbedtls_ssl_conf_own_cert(mosq->ssl, mosq->cert, NULL)) != 0) {
+	        if (mbedtls_ssl_conf_own_cert(mosq->ssl, mosq->cert, NULL) != 0) {
 	                _mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_ssl_conf_own_cert fail");
 	                return MOSQ_ERR_TLS;
 		}
