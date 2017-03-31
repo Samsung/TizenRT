@@ -436,7 +436,9 @@ static int procfs_opendir(FAR struct inode *mountpt, FAR const char *relpath, FA
 	FAR struct procfs_level0_s *level0;
 	FAR struct procfs_dir_priv_s *dirpriv;
 	FAR void *priv = NULL;
+#ifndef CONFIG_FS_PROCFS_EXCLUDE_PROCESS
 	irqstate_t flags;
+#endif
 
 	fvdbg("relpath: \"%s\"\n", relpath ? relpath : "NULL");
 	DEBUGASSERT(mountpt && relpath && dir && !dir->u.procfs);
@@ -583,11 +585,13 @@ static int procfs_readdir(struct inode *mountpt, struct fs_dirent_s *dir)
 {
 	FAR struct procfs_dir_priv_s *priv;
 	FAR struct procfs_level0_s *level0;
-	FAR struct tcb_s *tcb;
 	FAR const char *name = NULL;
 	unsigned int index;
+#ifndef CONFIG_FS_PROCFS_EXCLUDE_PROCESS
+	FAR struct tcb_s *tcb;
 	irqstate_t flags;
 	pid_t pid;
+#endif
 	int ret = -ENOENT;
 
 	DEBUGASSERT(mountpt && dir && dir->u.procfs);
