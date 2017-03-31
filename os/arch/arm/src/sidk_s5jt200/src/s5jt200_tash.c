@@ -81,7 +81,6 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-extern void pwmdrv_register(void);
 extern void s5j_i2c_register(int bus);
 
 char *s5j_get_binary_version(uint32_t baddr)
@@ -288,10 +287,6 @@ int board_app_initialize(void)
 #ifdef CONFIG_S5J_I2C
 	s5j_i2c_register(0);
 	s5j_i2c_register(1);
-#endif
-
-#ifdef CONFIG_S5J_PWM
-	pwmdrv_register();
 #endif
 
 #if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)

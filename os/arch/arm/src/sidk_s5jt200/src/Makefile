@@ -61,6 +61,8 @@ ifeq ($(CONFIG_SIDK_S5JT200_TLC59116),y)
 CSRCS += s5jt200_tlc59116.c
 endif
 
+CSRCS += s5jt200_pwm.c
+
 ifeq ($(CONFIG_ARCH_BUTTONS),y)
 CSRCS += s5jt200_buttons.c
 endif

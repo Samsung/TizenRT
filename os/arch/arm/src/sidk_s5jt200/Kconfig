@@ -13,6 +13,14 @@ config SIDK_S5JT200_TLC59116
 		SIDK S5JT200 evaluation board has TLC59116 IC attached to
 		its I2C bus. It can generate PWM signals to control RGB LEDs.
 
+config SIDK_S5JT200_PWM_CHNUM
+	int "Number of PWM channel"
+	default 6
+	depends on S5J_PWM
+	---help---
+		Sets the number of pwm channel exposed on SIDK S5JT200
+		evaluation board
+
 config SIDK_S5JT200_FLASH_CAPACITY
 	int "Size of external flash memory (in bytes)"
 	default 8388608

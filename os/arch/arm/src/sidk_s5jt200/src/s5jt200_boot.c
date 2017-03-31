@@ -205,6 +205,10 @@ void board_initialize(void)
 	slsi_driver_initialize();
 #endif
 
+#ifdef CONFIG_S5J_PWM
+	board_pwm_setup();
+#endif
+
 	s5j_gpioinitialize();
 
 #ifdef CONFIG_SIDK_S5JT200_TLC59116
