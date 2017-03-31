@@ -323,7 +323,7 @@ config WATCHDOG_DEVPATH
 
 endif # WATCHDOG
 
-menuconfig TIMER
+config TIMER
 	bool "Timer Support"
 	default n
 	---help---
