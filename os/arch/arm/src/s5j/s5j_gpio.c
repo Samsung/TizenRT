@@ -119,7 +119,7 @@ static const struct gpio_ops_s s5j_gpio_ops = {
 	.ctrl  = s5j_gpio_ctrl
 };
 
-static struct gpio_dev_s s5j_gpio_all[NUM_GPIO];
+static struct gpio_dev_s *s5j_gpio_all[NUM_GPIO];
 
 /****************************************************************************
  * Public Data
@@ -450,7 +450,7 @@ static int s5j_gpio_irq_handler(int irq, void *context, void *arg)
 	struct gpio_dev_s *dev;
 
 	for (i = 0; i < NUM_GPIO; i++) {
-		if (&(s5j_gpio_all[i]) && ((((struct s5j_gpio_priv *)(s5j_gpio_all[i].priv))->isr_num) & 0x3ff) == irq) {
+		if (s5j_gpio_all[i] && ((((struct s5j_gpio_priv *)(s5j_gpio_all[i]->priv))->isr_num) & 0x3ff) == irq) {
 				break;
 		}
 	}
@@ -459,16 +459,16 @@ static int s5j_gpio_irq_handler(int irq, void *context, void *arg)
 		return -1;
 	}
 
-	gpio_eint_clear_pending(((struct s5j_gpio_priv *)(s5j_gpio_all[i].priv))->gpio);
+	gpio_eint_clear_pending(((struct s5j_gpio_priv *)(s5j_gpio_all[i]->priv))->gpio);
 
-	dev = &(s5j_gpio_all[i]);
+	dev = s5j_gpio_all[i];
 
 	if (dev->callback) {
 		s5j_gpio_poll_expiry(1, (uint32_t)dev);
 	}
 #ifdef CONFIG_GPIO
 #ifndef CONFIG_DISABLE_POLL
-	gpio_notify(&s5j_gpio_all[i]);
+	gpio_notify(s5j_gpio_all[i]);
 #endif
 #endif
 
@@ -626,7 +626,7 @@ static int s5j_gpio_close(FAR struct gpio_dev_s *dev)
 {
 	struct s5j_gpio_priv *priv = (struct s5j_gpio_priv *)(dev->priv);
 	int idx = priv->idx;
-	s5j_gpio_disable_irq(&s5j_gpio_all[idx]);
+	s5j_gpio_disable_irq(s5j_gpio_all[idx]);
 
 	if (NULL != dev->wdog) {
 		wd_cancel(dev->wdog);
@@ -1727,10 +1727,11 @@ int up_create_gpio(int32_t idx)
 	int idx_table[] = { 7, 15, 22, 28, 36, 44, 52, 56, 59, 63, 66 };
 
 	pgpio = (struct s5j_gpio_priv *)kmm_malloc(sizeof(struct s5j_gpio_priv));
-	s5j_gpio_all[idx].ops = &s5j_gpio_ops;
-	s5j_gpio_all[idx].priv = pgpio;
-	s5j_gpio_all[idx].wdog = NULL;
-	s5j_gpio_all[idx].callback = NULL;
+	s5j_gpio_all[idx] = (struct gpio_dev_s *)kmm_malloc(sizeof(struct gpio_dev_s));
+	s5j_gpio_all[idx]->ops = &s5j_gpio_ops;
+	s5j_gpio_all[idx]->priv = pgpio;
+	s5j_gpio_all[idx]->wdog = NULL;
+	s5j_gpio_all[idx]->callback = NULL;
 
 	for (bank = 0; bank < sizeof(idx_table) / sizeof(int); bank++) {
 		if (idx_table[bank] >= idx) {
@@ -1746,7 +1747,7 @@ int up_create_gpio(int32_t idx)
 	pgpio->idx = idx;
 	pgpio->isr_num = gpio_get_irq_id(pgpio->gpio);
 	snprintf(path, sizeof(path), "/dev/gpio%d", idx);
-	gpio_register(path, &s5j_gpio_all[idx]);
+	gpio_register(path, s5j_gpio_all[idx]);
 	return 0;
 #else
 	return 0;
@@ -1788,16 +1789,17 @@ void up_gpioinitialize(void)
  ****************************************************************************/
 int up_destroy_gpio(int32_t idx)
 {
-	struct s5j_gpio_priv *priv = (struct s5j_gpio_priv *)(s5j_gpio_all[idx].priv);
+	struct s5j_gpio_priv *priv = (struct s5j_gpio_priv *)(s5j_gpio_all[idx]->priv);
 	if (priv) {
 		kmm_free(priv);
 	}
-	s5j_gpio_all[idx].ops = NULL;
-	s5j_gpio_all[idx].priv = NULL;
+	s5j_gpio_all[idx]->ops = NULL;
+	s5j_gpio_all[idx]->priv = NULL;
 
-	if (s5j_gpio_all[idx].wdog) {
-		wd_cancel(s5j_gpio_all[idx].wdog);
+	if (s5j_gpio_all[idx]->wdog) {
+		wd_cancel(s5j_gpio_all[idx]->wdog);
 	}
+	kmm_free(s5j_gpio_all[idx]);
 
 	return OK;
 }
