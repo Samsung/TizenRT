@@ -283,6 +283,9 @@ void freeaddrinfo(struct addrinfo *ai)
 		if (!ai->ai_addr) {
 			free(ai->ai_addr);
 		}
+		if (ai->ai_canonname) {
+			free(ai->ai_canonname);
+		}
 		free(ai);
 		ai = next;
 	}
