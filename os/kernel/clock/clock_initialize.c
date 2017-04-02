@@ -215,7 +215,7 @@ void clock_initialize(void)
 	/* Initialize the RTC hardware */
 
 #if defined(CONFIG_RTC)
-	up_rtcinitialize();
+	up_rtc_initialize();
 #endif
 
 	/* Initialize the time value to match the RTC */

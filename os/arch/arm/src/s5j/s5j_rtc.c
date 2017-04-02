@@ -802,7 +802,7 @@ int up_rtc_settime(FAR const struct timespec *tp)
 }
 
 /****************************************************************************
- * Name: up_rtcinitialize
+ * Name: up_rtc_initialize
  *
  * Description:
  *   Function called by OS to initialize RTC.
@@ -816,7 +816,7 @@ int up_rtc_settime(FAR const struct timespec *tp)
  *
  ****************************************************************************/
 
-int up_rtcinitialize(void)
+int up_rtc_initialize(void)
 {
 #ifdef CONFIG_S5J_RTC
 	int ret;
