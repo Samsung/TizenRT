@@ -885,11 +885,11 @@ int gpio_cfg_pin(int gpio, int cfg)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_CON);
+	value = getreg32(gb->base + GPIO_CON);
 	value &= ~CON_MASK(port);
 	value |= CON_SFR(port, cfg);
 
-	__raw_writel(value, gb->base + GPIO_CON);
+	putreg32(value, gb->base + GPIO_CON);
 
 	return 0;
 }
@@ -924,7 +924,7 @@ int gpio_cfg_get_pin(int gpio)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_CON);
+	value = getreg32(gb->base + GPIO_CON);
 
 	return ((value >> (port << 2)) & 0xF);
 }
@@ -957,13 +957,13 @@ int gpio_direction_output(int gpio, int high)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_DAT);
+	value = getreg32(gb->base + GPIO_DAT);
 	value &= ~(1 << port);
 	if (high) {
 		value |= (1 << port);
 	}
 
-	__raw_writel(value, gb->base + GPIO_DAT);
+	putreg32(value, gb->base + GPIO_DAT);
 
 	return gpio_cfg_pin(gpio, GPIO_OUTPUT);
 }
@@ -1014,13 +1014,13 @@ int gpio_set_value(int gpio, int high)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_DAT);
+	value = getreg32(gb->base + GPIO_DAT);
 	value &= ~(1 << port);
 	if (high) {
 		value |= (1 << port);
 	}
 
-	__raw_writel(value, gb->base + GPIO_DAT);
+	putreg32(value, gb->base + GPIO_DAT);
 
 	return 0;
 }
@@ -1053,7 +1053,7 @@ int gpio_get_value(int gpio)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_DAT);
+	value = getreg32(gb->base + GPIO_DAT);
 
 	return (value >> port) & 1;
 }
@@ -1085,7 +1085,7 @@ int gpio_set_pull(int gpio, int mode)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_PUD);
+	value = getreg32(gb->base + GPIO_PUD);
 	value &= ~PULL_MASK(port);
 
 	switch (mode) {
@@ -1100,7 +1100,7 @@ int gpio_set_pull(int gpio, int mode)
 		return -EINVAL;
 	}
 
-	__raw_writel(value, gb->base + GPIO_PUD);
+	putreg32(value, gb->base + GPIO_PUD);
 
 	return 0;
 }
@@ -1131,7 +1131,7 @@ int gpio_get_pull(int gpio)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_PUD);
+	value = getreg32(gb->base + GPIO_PUD);
 	value &= PULL_MASK(port);
 
 	return value;
@@ -1163,7 +1163,7 @@ int gpio_set_drv(int gpio, int mode)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_DRVSR);
+	value = getreg32(gb->base + GPIO_DRVSR);
 	value &= ~DRV_MASK(port);
 
 	switch (mode) {
@@ -1177,7 +1177,7 @@ int gpio_set_drv(int gpio, int mode)
 		return -EINVAL;
 	}
 
-	__raw_writel(value, gb->base + GPIO_DRVSR);
+	putreg32(value, gb->base + GPIO_DRVSR);
 
 	return 0;
 }
@@ -1207,7 +1207,7 @@ int gpio_get_drv(int gpio)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_DRVSR);
+	value = getreg32(gb->base + GPIO_DRVSR);
 	value &= ~DRV_MASK(port);
 
 	return value;
@@ -1239,7 +1239,7 @@ int gpio_set_rate(int gpio, int mode)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_DRVSR);
+	value = getreg32(gb->base + GPIO_DRVSR);
 	value &= ~RATE_MASK(port);
 
 	switch (mode) {
@@ -1251,7 +1251,7 @@ int gpio_set_rate(int gpio, int mode)
 		return -EINVAL;
 	}
 
-	__raw_writel(value, gb->base + GPIO_DRVSR);
+	putreg32(value, gb->base + GPIO_DRVSR);
 
 	return 0;
 }
@@ -1282,11 +1282,11 @@ int gpio_cfg_pin_pdn(int gpio, int cfg)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_CONPDN);
+	value = getreg32(gb->base + GPIO_CONPDN);
 	value &= ~CONPDN_MASK(port);
 	value |= CONPDN_SFR(port, cfg);
 
-	__raw_writel(value, gb->base + GPIO_CONPDN);
+	putreg32(value, gb->base + GPIO_CONPDN);
 
 	return 0;
 }
@@ -1318,7 +1318,7 @@ int gpio_set_pull_pdn(int gpio, int mode)
 
 	port = s5j_gpio_port(gpio);
 
-	value = __raw_readl(gb->base + GPIO_PUDPDN);
+	value = getreg32(gb->base + GPIO_PUDPDN);
 	value &= ~PUDPDN_MASK(port);
 
 	switch (mode) {
@@ -1330,7 +1330,7 @@ int gpio_set_pull_pdn(int gpio, int mode)
 		return -EINVAL;
 	}
 
-	__raw_writel(value, gb->base + GPIO_PUDPDN);
+	putreg32(value, gb->base + GPIO_PUDPDN);
 
 	return 0;
 }
@@ -1362,9 +1362,9 @@ int gpio_eint_mask(int gpio)
 	port = s5j_gpio_port(gpio);
 	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_MASK);
 
-	mask = __raw_readl(eint_addr);
+	mask = getreg32(eint_addr);
 	mask |= 1 << port;
-	__raw_writel(mask, eint_addr);
+	putreg32(mask, eint_addr);
 
 	return 0;
 }
@@ -1395,9 +1395,9 @@ int gpio_eint_unmask(int gpio)
 	port = s5j_gpio_port(gpio);
 	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_MASK);
 
-	mask = __raw_readl(eint_addr);
+	mask = getreg32(eint_addr);
 	mask &= ~(1 << port);
-	__raw_writel(mask, eint_addr);
+	putreg32(mask, eint_addr);
 
 	return 0;
 }
@@ -1424,7 +1424,7 @@ bool gpio_eint_ispending(int gpio)
 	port = s5j_gpio_port(gpio);
 	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_PEND);
 
-	pend = __raw_readl(eint_addr);
+	pend = getreg32(eint_addr);
 
 	return (pend & (1 << port)) ? true : false;
 }
@@ -1462,9 +1462,9 @@ int gpio_eint_clear_pending(int gpio)
 	port = s5j_gpio_port(gpio);
 	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_PEND);
 
-	pend = __raw_readl(eint_addr);
+	pend = getreg32(eint_addr);
 	pend &= 1 << port;
-	__raw_writel(pend, eint_addr);
+	putreg32(pend, eint_addr);
 
 	return 0;
 }
@@ -1502,9 +1502,9 @@ int gpio_eint_enable_filter(int gpio)
 		shift_port = 8 * (port - 4);
 	}
 
-	filter_con = __raw_readl(eint_addr);
+	filter_con = getreg32(eint_addr);
 	filter_con |= (1 << 7) << shift_port;
-	__raw_writel(filter_con, eint_addr);
+	putreg32(filter_con, eint_addr);
 
 	return 0;
 }
@@ -1542,9 +1542,9 @@ int gpio_eint_disable_filter(int gpio)
 		shift_port = 8 * (port - 4);
 	}
 
-	filter_con = __raw_readl(eint_addr);
+	filter_con = getreg32(eint_addr);
 	filter_con &= ~((1 << 7) << shift_port);
-	__raw_writel(filter_con, eint_addr);
+	putreg32(filter_con, eint_addr);
 
 	return 0;
 }
@@ -1594,7 +1594,7 @@ int gpio_eint_set_filter(int gpio, unsigned type, unsigned width)
 		shift_port = 8 * (port - 4);
 	}
 
-	filter_con = __raw_readl(eint_addr);
+	filter_con = getreg32(eint_addr);
 
 	if (bank < 4) {				/* Alive Filter Setting */
 		if (type == EINT_FILTER_DELAY) {
@@ -1613,7 +1613,7 @@ int gpio_eint_set_filter(int gpio, unsigned type, unsigned width)
 		filter_con &= ~(0x7f << shift_port);
 		filter_con |= width << shift_port;
 	}
-	__raw_writel(filter_con, eint_addr);
+	putreg32(filter_con, eint_addr);
 
 	return 0;
 }
@@ -1658,10 +1658,10 @@ int gpio_eint_set_type(int gpio, unsigned type)
 	port = s5j_gpio_port(gpio);
 	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_CON);
 	mask = 0x7 << (port * 4);
-	ctrl = __raw_readl(eint_addr);
+	ctrl = getreg32(eint_addr);
 	ctrl &= ~mask;
 	ctrl |= type << (port * 4);
-	__raw_writel(ctrl, eint_addr);
+	putreg32(ctrl, eint_addr);
 
 	if (gpio_eint_ispending(gpio)) {
 		gpio_eint_clear_pending(gpio);
@@ -1696,7 +1696,7 @@ int gpio_eint_get_type(int gpio)
 	port = s5j_gpio_port(gpio);
 	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_CON);
 	mask = 0x7 << (port * 4);
-	ctrl = __raw_readl(eint_addr);
+	ctrl = getreg32(eint_addr);
 	ctrl &= mask;
 	ctrl = ctrl >> (port * 4);
 

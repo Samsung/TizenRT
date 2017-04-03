@@ -394,14 +394,14 @@ static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selecte
 	pSPIRegs = (SPI_SFR *) priv->base;
 	unsigned int cs_reg;
 
-	cs_reg = Inp32(&pSPIRegs->CS_REG);
+	cs_reg = getreg32(&pSPIRegs->CS_REG);
 	cs_reg |= CS_REG_nSS_INACTIVE;
 
 	if (selected == TRUE) {
 		cs_reg &= ~CS_REG_nSS_INACTIVE;
 	}
 
-	Outp32(&pSPIRegs->CS_REG, cs_reg);
+	putreg32(cs_reg, &pSPIRegs->CS_REG);
 }
 
 /****************************************************************************
@@ -417,13 +417,13 @@ void spi_set_initial(struct spi_dev_s *dev)
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *) priv->base;
 
-	Outp32(&pSPIRegs->CH_CFG, CH_CFG_HIGH_SPEED_DIS | CH_CFG_FIFO_FLUSH_OFF | CH_CFG_MASTER | CH_CFG_MODE(SPIDEV_MODE0) | CH_CFG_RX_CH_ON | CH_CFG_TX_CH_ON);	/* TX/RX enable. Master.CPHA 00. */
+	putreg32(CH_CFG_HIGH_SPEED_DIS | CH_CFG_FIFO_FLUSH_OFF | CH_CFG_MASTER | CH_CFG_MODE(SPIDEV_MODE0) | CH_CFG_RX_CH_ON | CH_CFG_TX_CH_ON, &pSPIRegs->CH_CFG);	/* TX/RX enable. Master.CPHA 00. */
 
-	Outp32(&pSPIRegs->MODE_CFG, MODE_CFG_CH_WIDTH_8 | MODE_CFG_TRLNG_CNT(0) | MODE_CFG_BUS_WIDTH_8 | MODE_CFG_RX_RDY_LVL(0) | MODE_CFG_TX_RDY_LVL(0) | MODE_CFG_DMA_RX_OFF | MODE_CFG_DMA_TX_OFF | MODE_CFG_DMA_SINGLE);	/*  No FIFO. N0 DMA. 8 bits */
+	putreg32(MODE_CFG_CH_WIDTH_8 | MODE_CFG_TRLNG_CNT(0) | MODE_CFG_BUS_WIDTH_8 | MODE_CFG_RX_RDY_LVL(0) | MODE_CFG_TX_RDY_LVL(0) | MODE_CFG_DMA_RX_OFF | MODE_CFG_DMA_TX_OFF | MODE_CFG_DMA_SINGLE, &pSPIRegs->MODE_CFG);	/*  No FIFO. N0 DMA. 8 bits */
 
-	Outp32(&pSPIRegs->CS_REG, CS_REG_nSS_TIME_CNT(0) | CS_REG_nSS_MANUAL | CS_REG_nSS_INACTIVE);	/* CS Manual Passive */
+	putreg32(CS_REG_nSS_TIME_CNT(0) | CS_REG_nSS_MANUAL | CS_REG_nSS_INACTIVE, &pSPIRegs->CS_REG);	/* CS Manual Passive */
 
-	Outp32(&pSPIRegs->SPI_INT_EN, 0);	/* Disable Interrupts */
+	putreg32(0, &pSPIRegs->SPI_INT_EN);	/* Disable Interrupts */
 }
 
 /*****************************************************************************
@@ -440,9 +440,9 @@ static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 	pSPIRegs = (SPI_SFR *) priv->base;
 	unsigned int ch_cfg;
 
-	ch_cfg = Inp32(&pSPIRegs->CH_CFG);
+	ch_cfg = getreg32(&pSPIRegs->CH_CFG);
 	ch_cfg = (ch_cfg & CH_CFG_MODE_MASK) | CH_CFG_MODE(mode);
-	Outp32(&pSPIRegs->CH_CFG, ch_cfg);
+	putreg32(ch_cfg, &pSPIRegs->CH_CFG);
 }
 
 /*****************************************************************************
@@ -456,9 +456,9 @@ inline void spi_fifo_flush(SPI_SFR *pSPIRegs)
 {
 	unsigned int ch_cfg;
 
-	ch_cfg = Inp32(&pSPIRegs->CH_CFG);
-	Outp32(&pSPIRegs->CH_CFG, CH_CFG_FIFO_FLUSH);
-	Outp32(&pSPIRegs->CH_CFG, ch_cfg);
+	ch_cfg = getreg32(&pSPIRegs->CH_CFG);
+	putreg32(CH_CFG_FIFO_FLUSH, &pSPIRegs->CH_CFG);
+	putreg32(ch_cfg, &pSPIRegs->CH_CFG);
 }
 
 /****************************************************************************
@@ -475,7 +475,7 @@ static void spi_setbits(struct spi_dev_s *dev, int nbits)
 	pSPIRegs = (SPI_SFR *) priv->base;
 	unsigned int mode_cfg;
 
-	mode_cfg = Inp32(&pSPIRegs->MODE_CFG);
+	mode_cfg = getreg32(&pSPIRegs->MODE_CFG);
 	mode_cfg = mode_cfg & (~(MODE_CFG_BUS_WDT_MASK | MODE_CFG_CH_WDT_MASK));
 
 	switch (nbits) {
@@ -499,7 +499,7 @@ static void spi_setbits(struct spi_dev_s *dev, int nbits)
 		DEBUGASSERT(0 == 1);
 	}
 
-	Outp32(&pSPIRegs->MODE_CFG, mode_cfg);
+	putreg32(mode_cfg, &pSPIRegs->MODE_CFG);
 }
 
 /****************************************************************************
@@ -556,13 +556,13 @@ static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbu
 	if ((rxbuffer == NULL) && (txbuffer == NULL)) {
 		while (received < nwords) {
 			if (sent < nwords)
-				if (SPI_STAT_TX_FIFO_LVL(Inp32(&pSPIRegs->SPI_STATUS)) < 64) {
-					Outp32(&pSPIRegs->SPI_TX_DATA, 0);
+				if (SPI_STAT_TX_FIFO_LVL(getreg32(&pSPIRegs->SPI_STATUS)) < 64) {
+					putreg32(0, &pSPIRegs->SPI_TX_DATA);
 					sent++;
 				}
 
-			if (SPI_STAT_RX_FIFO_LVL(Inp32(&pSPIRegs->SPI_STATUS)) > 0) {
-				dummy_rx = Inp32(&pSPIRegs->SPI_RX_DATA);
+			if (SPI_STAT_RX_FIFO_LVL(getreg32(&pSPIRegs->SPI_STATUS)) > 0) {
+				dummy_rx = getreg32(&pSPIRegs->SPI_RX_DATA);
 				received++;
 			}
 		}
@@ -572,12 +572,12 @@ static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbu
 	if (rxbuffer == NULL) {
 		while (received < nwords) {
 			if (sent < nwords)
-				if (SPI_STAT_TX_FIFO_LVL(Inp32(&pSPIRegs->SPI_STATUS)) < 64) {
-					Outp32(&pSPIRegs->SPI_TX_DATA, ((unsigned char *)txbuffer)[sent++]);
+				if (SPI_STAT_TX_FIFO_LVL(getreg32(&pSPIRegs->SPI_STATUS)) < 64) {
+					putreg32(((unsigned char *)txbuffer)[sent++], &pSPIRegs->SPI_TX_DATA);
 				}
 
-			if (SPI_STAT_RX_FIFO_LVL(Inp32(&pSPIRegs->SPI_STATUS)) > 0) {
-				dummy_rx = Inp32(&pSPIRegs->SPI_RX_DATA);
+			if (SPI_STAT_RX_FIFO_LVL(getreg32(&pSPIRegs->SPI_STATUS)) > 0) {
+				dummy_rx = getreg32(&pSPIRegs->SPI_RX_DATA);
 				received++;
 			}
 		}
@@ -587,12 +587,12 @@ static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbu
 	if (txbuffer == NULL) {
 		while (received < nwords) {
 			if (sent < nwords)
-				if (SPI_STAT_TX_FIFO_LVL(Inp32(&pSPIRegs->SPI_STATUS)) < 64) {
-					Outp32(&pSPIRegs->SPI_TX_DATA, ((unsigned char *)rxbuffer)[sent++]);
+				if (SPI_STAT_TX_FIFO_LVL(getreg32(&pSPIRegs->SPI_STATUS)) < 64) {
+					putreg32(((unsigned char *)rxbuffer)[sent++], &pSPIRegs->SPI_TX_DATA);
 				}
 
-			if (SPI_STAT_RX_FIFO_LVL(Inp32(&pSPIRegs->SPI_STATUS)) > 0) {
-				((unsigned char *)rxbuffer)[received++] = Inp32(&pSPIRegs->SPI_RX_DATA);
+			if (SPI_STAT_RX_FIFO_LVL(getreg32(&pSPIRegs->SPI_STATUS)) > 0) {
+				((unsigned char *)rxbuffer)[received++] = getreg32(&pSPIRegs->SPI_RX_DATA);
 			}
 
 		}
@@ -601,12 +601,12 @@ static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbu
 
 	while (received < nwords) {
 		if (sent < nwords)
-			if (SPI_STAT_TX_FIFO_LVL(Inp32(&pSPIRegs->SPI_STATUS)) < 64) {
-				Outp32(&pSPIRegs->SPI_TX_DATA, ((unsigned char *)txbuffer)[sent++]);
+			if (SPI_STAT_TX_FIFO_LVL(getreg32(&pSPIRegs->SPI_STATUS)) < 64) {
+				putreg32(((unsigned char *)txbuffer)[sent++], &pSPIRegs->SPI_TX_DATA);
 			}
 
-		if (SPI_STAT_RX_FIFO_LVL(Inp32(&pSPIRegs->SPI_STATUS)) > 0) {
-			((unsigned char *)rxbuffer)[received++] = Inp32(&pSPIRegs->SPI_RX_DATA);
+		if (SPI_STAT_RX_FIFO_LVL(getreg32(&pSPIRegs->SPI_STATUS)) > 0) {
+			((unsigned char *)rxbuffer)[received++] = getreg32(&pSPIRegs->SPI_RX_DATA);
 		}
 
 	}

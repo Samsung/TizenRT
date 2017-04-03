@@ -470,14 +470,14 @@ void up_uart_set_gpio(UART_CHANNEL eCh)
 static void up_uart_enable_interrupt(uint32_t uBase, UART_INTERRUPT eInt)
 {
 	if (eInt & ERROR_INT) {
-		HW_REG32(uBase, UART_CON) |= (0x1 << 6);
+		modifyreg32(uBase + UART_CON, 0, (0x1 << 6));
 	}
 
 	if (eInt & MODEM_INT) {
-		HW_REG32(uBase, UART_MCON) |= (0x1 << 3);
+		modifyreg32(uBase + UART_MCON, 0, (0x1 << 3));
 	}
 
-	HW_REG32(uBase, UART_INTM) &= ~(eInt);
+	modifyreg32(uBase + UART_INTM, eInt, 0);
 }
 
 /****************************************************************************
@@ -495,14 +495,14 @@ static void up_uart_enable_interrupt(uint32_t uBase, UART_INTERRUPT eInt)
  ****************************************************************************/
 static void up_uart_disable_interrupt(uint32_t uBase, UART_INTERRUPT eInt)
 {
-	HW_REG32(uBase, UART_INTM) |= eInt;
+	modifyreg32(uBase + UART_INTM, 0, eInt);
 
 	if (eInt & ERROR_INT) {
-		HW_REG32(uBase, UART_CON) &= ~(0x1 << 6);
+		modifyreg32(uBase + UART_CON, 0x1 << 6, 0);
 	}
 
 	if (eInt & MODEM_INT) {
-		HW_REG32(uBase, UART_MCON) &= ~(0x1 << 3);
+		modifyreg32(uBase + UART_MCON, 0x1 << 3, 0);
 	}
 }
 
@@ -521,23 +521,23 @@ static void up_uart_disable_interrupt(uint32_t uBase, UART_INTERRUPT eInt)
  ****************************************************************************/
 static void up_uart_set_tx_mode(uint32_t uBase, UART_MODE eMode)
 {
-	HW_REG32(uBase, UART_CON) &= ~(0x3 << 2);
-	HW_REG32(uBase, UART_CON) &= ~(0x1 << 9);
+	modifyreg32(uBase + UART_CON, 0x3 << 2, 0);
+	modifyreg32(uBase + UART_CON, 0x1 << 9, 0);
 	up_uart_disable_interrupt(uBase, TX_INT);	/*  Disable TX Interrupt */
 
 	switch (eMode) {
 	case POLL_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x1 << 2);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 2);
 		break;
 
 	case INT_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x1 << 2);
-		HW_REG32(uBase, UART_CON) |= (0x1 << 9);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 2);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 9);
 		up_uart_enable_interrupt(uBase, TX_INT);	/*  Enable TX Interrupt */
 		break;
 
 	case DMA_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x2 << 2);
+		modifyreg32(uBase + UART_CON, 0, 0x2 << 2);
 		break;
 
 	case DISABLE_MODE:
@@ -561,25 +561,25 @@ static void up_uart_set_tx_mode(uint32_t uBase, UART_MODE eMode)
  ****************************************************************************/
 static void up_uart_set_rx_mode(uint32_t uBase, UART_MODE eMode)
 {
-	HW_REG32(uBase, UART_CON) &= ~(0x3 << 0);
-	HW_REG32(uBase, UART_CON) &= ~(0x1 << 8);
+	modifyreg32(uBase + UART_CON, 0x3 << 0, 0);
+	modifyreg32(uBase + UART_CON, 0x1 << 8, 0);
 	up_uart_disable_interrupt(uBase, (UART_INTERRUPT)(RX_INT | ERROR_INT));
 
 	switch (eMode) {
 	case POLL_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x1 << 0);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 0);
 		up_uart_enable_interrupt(uBase, ERROR_INT);
 		break;
 
 	case INT_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x1 << 0);
-		HW_REG32(uBase, UART_CON) |= (0x1 << 8);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 0);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 8);
 		up_uart_enable_interrupt(uBase, (UART_INTERRUPT)(RX_INT | ERROR_INT));
 		break;
 
 	case DMA_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x2 << 0);
-		HW_REG32(uBase, UART_CON) |= (0x1 << 8);
+		modifyreg32(uBase + UART_CON, 0, 0x2 << 0);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 8);
 		up_uart_enable_interrupt(uBase, (UART_INTERRUPT)(RX_INT | ERROR_INT));
 		break;
 
@@ -611,8 +611,8 @@ static void up_uart_set_baudrate(uint32_t uBase, UART_BAUDRATE nBaudrate, u32 nC
 	fDiv = ((float)nClock / (float)(nBaudrate * 16)) - 1.0;
 	fFrac = (u32)(((fDiv - (s32) fDiv) * 16));
 
-	HW_REG32(uBase, UART_BRDIV) = (u32) fDiv;
-	HW_REG32(uBase, UART_FRACVAL) = (u32) fFrac;
+	putreg32(fDiv, uBase + UART_BRDIV);
+	putreg32(fFrac, uBase + UART_FRACVAL);
 }
 
 /****************************************************************************
@@ -631,9 +631,9 @@ static void up_uart_set_baudrate(uint32_t uBase, UART_BAUDRATE nBaudrate, u32 nC
 static void up_uart_set_infrared_mode(uint32_t uBase, bool bEnable)
 {
 	if (bEnable) {
-		HW_REG32(uBase, UART_LCON) |= (0x1 << 6);
+		modifyreg32(uBase + UART_LCON, 0, 0x1 << 6);
 	} else {
-		HW_REG32(uBase, UART_LCON) &= ~(0x1 << 6);
+		modifyreg32(uBase + UART_LCON, 0x1 << 6, 0);
 	}
 }
 
@@ -652,8 +652,7 @@ static void up_uart_set_infrared_mode(uint32_t uBase, bool bEnable)
  ****************************************************************************/
 static void up_uart_set_parity_mode(uint32_t uBase, UART_PARITY_MODE eParityMode)
 {
-	HW_REG32(uBase, UART_LCON) &= ~(0x7 << 3);
-	HW_REG32(uBase, UART_LCON) |= (eParityMode << 3);
+	modifyreg32(uBase + UART_LCON, 0x7 << 3, eParityMode << 3);
 }
 
 /****************************************************************************
@@ -671,8 +670,7 @@ static void up_uart_set_parity_mode(uint32_t uBase, UART_PARITY_MODE eParityMode
  ****************************************************************************/
 static void up_uart_set_stop_bit(uint32_t uBase, UART_STOP_BIT eStopBit)
 {
-	HW_REG32(uBase, UART_LCON) &= ~(0x1 << 2);
-	HW_REG32(uBase, UART_LCON) |= (eStopBit << 2);
+	modifyreg32(uBase + UART_LCON, 0x1 << 2, eStopBit << 2);
 }
 
 /****************************************************************************
@@ -690,8 +688,7 @@ static void up_uart_set_stop_bit(uint32_t uBase, UART_STOP_BIT eStopBit)
  ****************************************************************************/
 static void up_uart_set_word_length(uint32_t uBase, UART_WORD_LENGTH eWordLen)
 {
-	HW_REG32(uBase, UART_LCON) &= ~(0x3 << 0);
-	HW_REG32(uBase, UART_LCON) |= (eWordLen << 0);
+	modifyreg32(uBase + UART_LCON, 0x3 << 0, eWordLen << 0);
 }
 
 /****************************************************************************
@@ -710,9 +707,9 @@ static void up_uart_set_word_length(uint32_t uBase, UART_WORD_LENGTH eWordLen)
 static void up_uart_set_loopback(uint32_t uBase, bool bEnable)
 {
 	if (bEnable) {
-		HW_REG32(uBase, UART_CON) |= (0x1 << 5);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 5);
 	} else {
-		HW_REG32(uBase, UART_CON) &= ~(0x1 << 5);
+		modifyreg32(uBase + UART_CON, 0x1 << 5, 0);
 	}
 }
 
@@ -731,8 +728,7 @@ static void up_uart_set_loopback(uint32_t uBase, bool bEnable)
  ****************************************************************************/
 static void up_uart_set_rx_timeout_interval(uint32_t uBase, u32 nTime)
 {
-	HW_REG32(uBase, UART_CON) &= ~(0xF << 12);
-	HW_REG32(uBase, UART_CON) |= ((nTime & 0xF) << 12);
+	modifyreg32(uBase + UART_CON, 0xf << 12, (nTime & 0xf) << 12);
 }
 
 /****************************************************************************
@@ -751,9 +747,9 @@ static void up_uart_set_rx_timeout_interval(uint32_t uBase, u32 nTime)
 static void up_uart_set_rx_timeout(uint32_t uBase, bool bEnable)
 {
 	if (bEnable) {
-		HW_REG32(uBase, UART_CON) |= (0x1 << 7);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 7);
 	} else {
-		HW_REG32(uBase, UART_CON) &= ~(0x1 << 7);
+		modifyreg32(uBase + UART_CON, 0x1 << 7, 0);
 	}
 }
 
@@ -773,9 +769,9 @@ static void up_uart_set_rx_timeout(uint32_t uBase, bool bEnable)
 static void up_uart_set_rx_timeout_with_empty_rx_fifo(uint32_t uBase, bool bEnable)
 {
 	if (bEnable) {
-		HW_REG32(uBase, UART_CON) |= (0x1 << 11);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 11);
 	} else {
-		HW_REG32(uBase, UART_CON) &= ~(0x1 << 11);
+		modifyreg32(uBase + UART_CON, 0x1 << 11, 0);
 	}
 }
 
@@ -795,9 +791,9 @@ static void up_uart_set_rx_timeout_with_empty_rx_fifo(uint32_t uBase, bool bEnab
 static void up_uart_set_rx_timeout_suspend_dma(uint32_t uBase, bool bEnable)
 {
 	if (bEnable) {
-		HW_REG32(uBase, UART_CON) |= (0x1 << 10);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 10);
 	} else {
-		HW_REG32(uBase, UART_CON) &= ~(0x1 << 10);
+		modifyreg32(uBase + UART_CON, 0x1 << 10, 0);
 	}
 }
 
@@ -816,12 +812,12 @@ static void up_uart_set_rx_timeout_suspend_dma(uint32_t uBase, bool bEnable)
  ****************************************************************************/
 static void up_uart_set_fifo_mode(uint32_t uBase, bool bEnable)
 {
-	HW_REG32(uBase, UART_FCON) |= (0x3 << 1);
+	modifyreg32(uBase + UART_FCON, 0, 0x3 << 1);
 
 	if (bEnable) {
-		HW_REG32(uBase, UART_FCON) |= (0x1 << 0);
+		modifyreg32(uBase + UART_FCON, 0, 0x1 << 0);
 	} else {
-		HW_REG32(uBase, UART_FCON) &= ~(0x1 << 0);
+		modifyreg32(uBase + UART_FCON, 0x1 << 0, 0);
 	}
 }
 
@@ -840,8 +836,7 @@ static void up_uart_set_fifo_mode(uint32_t uBase, bool bEnable)
  ****************************************************************************/
 static void up_uart_set_tx_trigger_level(uint32_t uBase, UART_TRIGGER_LEVEL eTriggerLevel)
 {
-	HW_REG32(uBase, UART_FCON) &= ~(0x7 << 8);
-	HW_REG32(uBase, UART_FCON) |= (eTriggerLevel << 8);
+	modifyreg32(uBase + UART_FCON, 0x7 << 8, eTriggerLevel << 8);
 }
 
 /****************************************************************************
@@ -859,8 +854,7 @@ static void up_uart_set_tx_trigger_level(uint32_t uBase, UART_TRIGGER_LEVEL eTri
  ****************************************************************************/
 static void up_uart_set_rx_trigger_level(uint32_t uBase, UART_TRIGGER_LEVEL eTriggerLevel)
 {
-	HW_REG32(uBase, UART_FCON) &= ~(0x7 << 4);
-	HW_REG32(uBase, UART_FCON) |= (eTriggerLevel << 4);
+	modifyreg32(uBase + UART_FCON, 0x7 << 4, eTriggerLevel << 4);
 }
 
 /****************************************************************************
@@ -878,8 +872,7 @@ static void up_uart_set_rx_trigger_level(uint32_t uBase, UART_TRIGGER_LEVEL eTri
  ****************************************************************************/
 static void up_uart_set_rts_trigger_level(uint32_t uBase, UART_RTS_TRIGGER_LEVEL eRTSTriggerLevel)
 {
-	HW_REG32(uBase, UART_MCON) &= ~(0x7 << 5);
-	HW_REG32(uBase, UART_MCON) |= (eRTSTriggerLevel << 5);
+	modifyreg32(uBase + UART_MCON, 0x7 << 5, eRTSTriggerLevel << 5);
 }
 
 /****************************************************************************
@@ -897,8 +890,7 @@ static void up_uart_set_rts_trigger_level(uint32_t uBase, UART_RTS_TRIGGER_LEVEL
  ****************************************************************************/
 static void up_uart_set_tx_dma_burst_size(uint32_t uBase, UART_BURST_LENGTH eBurstLength)
 {
-	HW_REG32(uBase, UART_CON) &= ~(0x7 << 20);
-	HW_REG32(uBase, UART_CON) |= (eBurstLength << 20);
+	modifyreg32(uBase + UART_CON, 0x7 << 20, eBurstLength << 20);
 }
 
 /****************************************************************************
@@ -916,8 +908,7 @@ static void up_uart_set_tx_dma_burst_size(uint32_t uBase, UART_BURST_LENGTH eBur
  ****************************************************************************/
 static void up_uart_set_rx_dma_burst_size(uint32_t uBase, UART_BURST_LENGTH eBurstLength)
 {
-	HW_REG32(uBase, UART_CON) &= ~(0x7 << 16);
-	HW_REG32(uBase, UART_CON) |= (eBurstLength << 16);
+	modifyreg32(uBase + UART_CON, 0x7 << 16, eBurstLength << 16);
 }
 
 /****************************************************************************
@@ -935,7 +926,7 @@ static void up_uart_set_rx_dma_burst_size(uint32_t uBase, UART_BURST_LENGTH eBur
  ****************************************************************************/
 static void up_uart_clear_interrupt_status(uint32_t uBase, UART_INTERRUPT eInt)
 {
-	HW_REG32(uBase, UART_INTP) |= eInt;
+	putreg32(eInt, uBase + UART_INTP);
 }
 
 /****************************************************************************
@@ -964,14 +955,14 @@ static inline void up_disableuartint(struct up_dev_s *priv, uint32_t *im)
 
 	priv->im = ALL_INT;
 
-	HW_REG32(priv->uartbase, UART_INTM) = priv->im;
+	putreg32(priv->im, priv->uartbase + UART_INTM);
 
 	if (priv->im & ERROR_INT) {
-		HW_REG32(priv->uartbase, UART_CON) &= ~(0x1 << 6);
+		modifyreg32(priv->uartbase + UART_CON, 0x1 << 6, 0);
 	}
 
 	if (priv->im & MODEM_INT) {
-		HW_REG32(priv->uartbase, UART_MCON) &= ~(0x1 << 3);
+		modifyreg32(priv->uartbase + UART_MCON, 0x1 << 3, 0);
 	}
 }
 
@@ -994,14 +985,14 @@ static inline void up_restoreuartint(struct up_dev_s *priv, uint32_t im)
 	priv->im = im;
 
 	if (priv->im & ERROR_INT) {
-		HW_REG32(priv->uartbase, UART_CON) |= (0x1 << 6);
+		modifyreg32(priv->uartbase + UART_CON, 0, 0x1 << 6);
 	}
 
 	if (priv->im & MODEM_INT) {
-		HW_REG32(priv->uartbase, UART_MCON) |= (0x1 << 3);
+		modifyreg32(priv->uartbase + UART_MCON, 0, 0x1 << 3);
 	}
 
-	HW_REG32(priv->uartbase, UART_INTM) = priv->im;
+	putreg32(priv->im, priv->uartbase + UART_INTM);
 }
 
 /****************************************************************************
@@ -1075,7 +1066,7 @@ static int up_setup(struct uart_dev_s *dev)
 
 	uart_init(priv->eCh);
 
-	priv->im = HW_REG32(priv->uartbase, UART_INTM);
+	priv->im = getreg32(priv->uartbase + UART_INTM);
 	return OK;
 }
 
@@ -1206,8 +1197,8 @@ static int up_interrupt(int irq, void *context, void *arg)
 
 		/* Get the masked UART status and clear the pending interrupts. */
 
-		mis = (HW_REG32(priv->uartbase, UART_INTP) & UART_INTP_MASK);
-		HW_REG32(priv->uartbase, UART_INTP) = mis;
+		mis = getreg32(priv->uartbase + UART_INTP) & UART_INTP_MASK;
+		putreg32(mis, priv->uartbase + UART_INTP);
 
 		/* Handle incoming, receive bytes (with or without timeout) */
 
@@ -1331,9 +1322,10 @@ static int up_receive(struct uart_dev_s *dev, uint32_t *status)
 	*status = 0;
 	int empty;
 	do {
-		empty = !(__raw_readl(priv->uartbase + UART_FSTAT) & UART_FSTAT_RX_MASK);
+		empty = !(getreg32(priv->uartbase + UART_FSTAT) & UART_FSTAT_RX_MASK);
 	} while (empty);
-	return (HW_REG32(priv->uartbase, UART_RXH) & UART_RX_MASK);
+
+	return getreg32(priv->uartbase + UART_RXH) & UART_RX_MASK;
 }
 
 /****************************************************************************
@@ -1379,7 +1371,7 @@ static bool up_rxavailable(struct uart_dev_s *dev)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 
-	return ((HW_REG32(priv->uartbase, UART_FSTAT) & UART_FSTAT_RX_MASK) != 0);
+	return ((getreg32(priv->uartbase + UART_FSTAT) & UART_FSTAT_RX_MASK) != 0);
 }
 
 /****************************************************************************
@@ -1398,8 +1390,7 @@ static bool up_rxavailable(struct uart_dev_s *dev)
 static void up_send(struct uart_dev_s *dev, int ch)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-	HW_REG32(priv->uartbase, UART_TXH) = ch;
-
+	putreg32(ch, priv->uartbase + UART_TXH);
 }
 
 /****************************************************************************
@@ -1463,7 +1454,7 @@ static void up_txint(struct uart_dev_s *dev, bool enable)
 static bool up_txready(struct uart_dev_s *dev)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-	return ((HW_REG32(priv->uartbase, UART_FSTAT) & UART_FSTAT_TX_MASK) == 0);
+	return ((getreg32(priv->uartbase + UART_FSTAT) & UART_FSTAT_TX_MASK) == 0);
 
 }
 
@@ -1482,7 +1473,7 @@ static bool up_txready(struct uart_dev_s *dev)
 static bool up_txempty(struct uart_dev_s *dev)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-	return ((HW_REG32(priv->uartbase, UART_FSTAT) & UART_FSTAT_TX_MASK) == 0);
+	return ((getreg32(priv->uartbase + UART_FSTAT) & UART_FSTAT_TX_MASK) == 0);
 }
 
 /****************************************************************************
@@ -1504,7 +1495,7 @@ static void uart_send_data(UART_CHANNEL eCh, char cData)
 	struct up_dev_s *priv;
 	priv = g_uart_port[CONSOLE_PORT].priv;
 	while (!up_txempty(&g_uart_port[CONSOLE_PORT])) ;
-	HW_REG32(priv->uartbase, UART_TXH) = cData;
+	putreg32(cData, priv->uartbase + UART_TXH);
 }
 
 /****************************************************************************

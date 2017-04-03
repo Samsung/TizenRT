@@ -101,7 +101,7 @@ int cal_clk_setrate(unsigned int id, unsigned long rate)
 		/* CLK_CON_DIV_DIV_CLK_SERIALFLASH */
 		parents = 320000000;
 		div = parents / rate;
-		SetBits(0x80081800, 0, 0xF, (div - 1));
+		modifyreg32(0x80081800, 0xf, (div - 1));
 		break;
 	default:
 		break;
