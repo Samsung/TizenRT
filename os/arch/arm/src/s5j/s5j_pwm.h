@@ -131,7 +131,7 @@ struct s5j_pwmtimer_s {
 	int irq;
 
 	/* Add private data structures if it is needed */
-	cycle_t timer_pclk;			/* input clock Hz */
+	unsigned long long timer_pclk;		/* input clock Hz */
 	int pre_scaler;
 	int divider;
 	int freq;

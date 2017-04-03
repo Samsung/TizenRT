@@ -197,9 +197,9 @@ typedef enum {
 } UART_DCACHE_CTRL;
 
 typedef struct {
-	u32 uBase;
-	u32 nBaudrate;
-	u32 nClock;
+	uint32_t uBase;
+	uint32_t nBaudrate;
+	uint32_t nClock;
 } UART_CONTEXT;
 
 typedef enum uart_baudrate {
