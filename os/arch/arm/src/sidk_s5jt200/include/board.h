@@ -58,7 +58,7 @@
  * Included Files
  ************************************************************************************/
 
-#define SYSCLK_FREQUENCY     26000000	/* 26MHz */
+#define SYSCLK_FREQUENCY	32768 /* RTC clock at 32768Hz */
 
 #ifndef __ASSEMBLY__
 extern void s5j_boardinitialize(void);

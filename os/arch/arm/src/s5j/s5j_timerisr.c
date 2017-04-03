@@ -60,6 +60,9 @@
 
 #include <arch/board/board.h>
 #include "chip.h"
+#include "up_arch.h"
+
+#include "s5j_rtc.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -96,10 +99,10 @@
  *   of the systems.
  *
  ****************************************************************************/
-int up_timerisr(int irq, uint32_t *regs, void *arg)
+int up_timerisr(int irq, FAR void *context, FAR void *arg)
 {
-	/* Reset timer */
-	s5j_mct_clear_pending(MCT_L0);
+	/* Clear interrupt pending */
+	putreg32(RTC_INTP_TIMETIC0, S5J_RTC_INTP);
 
 	/* Process timer interrupt */
 	sched_process_timer();
@@ -117,18 +120,14 @@ int up_timerisr(int irq, uint32_t *regs, void *arg)
  ****************************************************************************/
 void up_timer_initialize(void)
 {
-	/* Configure local timer0 to interrupt at the requested rate */
-	s5j_mct_local_int_ctrl(MCT_L0, LINT_INT);
-	s5j_mct_local_set_tick_cnt(MCT_L0, SYSTICK_RELOAD);
-	s5j_mct_local_set_int_cnt_manual(MCT_L0, 0);
-
-	s5j_mct_local_set_interval(MCT_L0);
-	s5j_mct_local_start_int(MCT_L0);
-	s5j_mct_local_start_timer(MCT_L0);
+	/* Configure the RTC timetick to generate periodic interrupts */
+	modifyreg32(S5J_RTC_RTCCON, RTC_RTCCON_TICKEN0, 0);
+	putreg32(SYSTICK_RELOAD, S5J_RTC_TICCNT0);
+	modifyreg32(S5J_RTC_RTCCON, 0, RTC_RTCCON_TICKEN0);
 
 	/* Attach the timer interrupt vector */
-	irq_attach(IRQ_MCT_L0, (xcpt_t) up_timerisr, NULL);
+	irq_attach(IRQ_TOP_RTC_TIC, up_timerisr, NULL);
 
 	/* Enable the timer interrupt */
-	up_enable_irq(IRQ_MCT_L0);
+	up_enable_irq(IRQ_TOP_RTC_TIC);
 }
