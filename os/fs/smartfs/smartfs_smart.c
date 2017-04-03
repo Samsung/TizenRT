@@ -1510,7 +1510,12 @@ static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **ha
 
 	*handle = (void *)fs;
 #ifdef CONFIG_SMARTFS_JOURNALING
-	smartfs_journal_init(fs);
+	ret = smartfs_journal_init(fs);
+	if (ret != 0) {
+		smartfs_semgive(fs);
+		kmm_free(fs);
+		return ret;
+	}
 #endif
 	smartfs_semgive(fs);
 
@@ -1546,6 +1551,11 @@ static int smartfs_unbind(void *handle, FAR struct inode **blkdriver)
 	}
 	/* Unmount ... close the block driver */
 	ret = smartfs_unmount(fs);
+#ifdef CONFIG_SMARTFS_JOURNALING
+	if (fs->journal) {
+		kmm_free(fs->journal);
+	}
+#endif
 	smartfs_semgive(fs);
 	kmm_free(fs);
 
