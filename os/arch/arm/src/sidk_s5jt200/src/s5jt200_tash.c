@@ -237,10 +237,6 @@ int board_app_initialize(void)
 {
 	int ret;
 
-#if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
-	FAR struct tm tp;
-#endif
-
 	sidk_s5jt200_configure_partitions();
 
 #ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
@@ -289,14 +285,32 @@ int board_app_initialize(void)
 	s5j_i2c_register(1);
 #endif
 
-#if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
-	up_rtc_getdatetime(&tp);
-	lldbg("RTC getdatetime %d/%d/%d/%d/%d/%d\n",
-			tp.tm_year + 1900, tp.tm_mon + 1,
-			tp.tm_mday, tp.tm_hour, tp.tm_min, tp.tm_sec);
-	lldbg("Version Info :\n");
-	lldbg("tinyARA %s\n", __TIMESTAMP__);
-#endif
+#if defined(CONFIG_RTC)
+	{
+		struct tm tp;
+
+		up_rtc_getdatetime(&tp);
+		lldbg("RTC getdatetime %d/%d/%d/%d/%d/%d\n",
+				tp.tm_year + 1900, tp.tm_mon + 1,
+				tp.tm_mday, tp.tm_hour, tp.tm_min, tp.tm_sec);
+		lldbg("Version Info :\n");
+		lldbg("tinyARA %s\n", __TIMESTAMP__);
+	}
+#if defined(CONFIG_RTC_DRIVER)
+	{
+		struct rtc_lowerhalf_s *rtclower;
+
+		rtclower = s5j_rtc_lowerhalf();
+		if (rtclower) {
+			ret = rtc_initialize(0, rtclower);
+			if (ret < 0) {
+				lldbg("Failed to register the RTC driver: %d\n",
+						ret);
+			}
+		}
+	}
+#endif /* CONFIG_RTC_DRIVER */
+#endif /* CONFIG_RTC */
 
 	scsc_wpa_ctrl_iface_init();
 
