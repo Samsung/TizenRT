@@ -122,9 +122,9 @@ int up_timerisr(int irq, FAR void *context, FAR void *arg)
 void up_timer_initialize(void)
 {
 	/* Configure the RTC timetick to generate periodic interrupts */
-	modifyreg32(S5J_RTC_RTCCON, RTC_RTCCON_TICKEN0, 0);
+	modifyreg32(S5J_RTC_RTCCON, RTC_RTCCON_TICKEN0_ENABLE, 0);
 	putreg32(SYSTICK_RELOAD, S5J_RTC_TICCNT0);
-	modifyreg32(S5J_RTC_RTCCON, 0, RTC_RTCCON_TICKEN0);
+	modifyreg32(S5J_RTC_RTCCON, 0, RTC_RTCCON_TICKEN0_ENABLE);
 
 	/* Attach the timer interrupt vector */
 	irq_attach(IRQ_TOP_RTC_TIC, up_timerisr, NULL);
