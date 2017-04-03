@@ -101,7 +101,6 @@ CONFIG_EXTERNAL_DIR = ..\external
 EXTDIR := ${shell if exist "$(CONFIG_EXTERNAL_DIR)\Makefile" echo $(CONFIG_EXTERNAL_DIR)}
 
 BUILD_DIR = ..\build
-CONFIGS_DIR = $(BUILD_DIR)\configs
 OUTPUT_DIR = $(BUILD_DIR)\output
 LIBRARIES_DIR = $(OUTPUT_DIR)\libraries
 BIN_DIR = $(OUTPUT_DIR)\bin
@@ -505,13 +504,13 @@ pass2dep: context tools\mkdeps$(HOSTEXEEXT)
 # misc\tools\README.txt for additional information.
 
 config:
-	$(Q) set APPSDIR=$(patsubst "%",%,${CONFIG_APPS_DIR})& set LIBDIR=${LIB_DIR}& set CONFIGSDIR=${CONFIGS_DIR}& set EXTERNALDIR=${CONFIG_EXTERNAL_DIR}& kconfig-conf Kconfig
+	$(Q) set APPSDIR=$(patsubst "%",%,${CONFIG_APPS_DIR})& set LIBDIR=${LIB_DIR}& set EXTERNALDIR=${CONFIG_EXTERNAL_DIR}& kconfig-conf Kconfig
 
 oldconfig:
-	$(Q) set APPSDIR=$(patsubst "%",%,${CONFIG_APPS_DIR})& set LIBDIR=${LIB_DIR}& set CONFIGSDIR=${CONFIGS_DIR}& set EXTERNALDIR=${CONFIG_EXTERNAL_DIR}& kconfig-conf --oldconfig Kconfig
+	$(Q) set APPSDIR=$(patsubst "%",%,${CONFIG_APPS_DIR})& set LIBDIR=${LIB_DIR}& set EXTERNALDIR=${CONFIG_EXTERNAL_DIR}& kconfig-conf --oldconfig Kconfig
 
 menuconfig: configenv
-	$(Q) set APPSDIR=$(patsubst "%",%,${CONFIG_APPS_DIR})& set LIBDIR=${LIB_DIR}& set CONFIGSDIR=${CONFIGS_DIR}& set EXTERNALDIR=${CONFIG_EXTERNAL_DIR}& kconfig-mconf Kconfig
+	$(Q) set APPSDIR=$(patsubst "%",%,${CONFIG_APPS_DIR})& set LIBDIR=${LIB_DIR}& set EXTERNALDIR=${CONFIG_EXTERNAL_DIR}& kconfig-mconf Kconfig
 
 # export
 #
