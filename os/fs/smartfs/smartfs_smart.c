@@ -1680,6 +1680,9 @@ static int smartfs_unlink(struct inode *mountpt, const char *relpath)
 	ret = OK;
 
 errout_with_semaphore:
+	if (entry.name != NULL) {
+		kmm_free(entry.name);
+	}
 	smartfs_semgive(fs);
 	return ret;
 }
@@ -1862,6 +1865,9 @@ int smartfs_rmdir(struct inode *mountpt, const char *relpath)
 	ret = OK;
 
 errout_with_semaphore:
+	if (entry.name != NULL) {
+		kmm_free(entry.name);
+	}
 	smartfs_semgive(fs);
 	return ret;
 }
