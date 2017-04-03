@@ -840,7 +840,7 @@ source arch/Kconfig
 endmenu
 
 menu "Board Selection"
-source "$CONFIGSDIR/Kconfig"
+source arch/Kconfig.board
 endmenu
 
 menu "RTOS Features"
