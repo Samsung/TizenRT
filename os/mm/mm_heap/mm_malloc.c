@@ -223,7 +223,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	if (!ret) {
 		mdbg("Allocation failed, size %d\n", size);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_parse(heap, HEAPINFO_NORMAL);
+		heapinfo_parse(heap, HEAPINFO_DETAIL_ALL, HEAPINFO_PID_NOTNEEDED);
 #endif
 	} else {
 		mvdbg("Allocated %p, size %d\n", ret, size);
