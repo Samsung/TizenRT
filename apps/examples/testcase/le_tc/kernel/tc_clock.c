@@ -40,6 +40,10 @@ extern struct timespec g_basetime;
 #define SEC_10  10
 #define NSEC_20 20
 
+#define START_YEAR	2017
+#define START_MONTH	4
+#define START_DAY	1
+
 /**
 * @fn                   :tc_clock_clock_initialize
 * @brief                :Initialize the time value to match the RTC
@@ -54,7 +58,7 @@ static void tc_clock_clock_initialize(void)
 	g_basetime.tv_nsec = NSEC_20;
 	time_t jdn = 0;
 
-	jdn = clock_calendar2utc(CONFIG_START_YEAR, CONFIG_START_MONTH, CONFIG_START_DAY);
+	jdn = clock_calendar2utc(START_YEAR, START_MONTH, START_DAY);
 
 	clock_initialize();
 

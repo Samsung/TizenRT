@@ -189,6 +189,9 @@ endif
 
 ifeq ($(CONFIG_RTC),y)
 CHIP_CSRCS += s5j_rtc.c
+ifeq ($(CONFIG_RTC_DRIVER),y)
+CHIP_CSRCS += s5j_rtc_lowerhalf.c
+endif
 endif
 
 ifeq ($(CONFIG_S5J_MAILBOX),y)

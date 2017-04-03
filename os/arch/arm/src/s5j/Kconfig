@@ -174,40 +174,6 @@ config S5J_WDT_DEFTIMEOUT
 
 endmenu
 
-menu "S5J RTC(Real Time Clock)"
-config S5J_RTC
-	bool "S5J RTC support"
-	default n
-	select RTC
-	select RTC_DRIVER
-	select RTC_DATETIME
-
-config START_YEAR
-	int "year"
-	default 2016
-	depends on S5J_RTC
-
-config START_MONTH
-	int "month"
-	default 8
-	depends on S5J_RTC
-
-config START_DAY
-	int "day"
-	default 11
-	depends on S5J_RTC
-
-config GREGORIAN_TIME
-	bool "S5J RTC for GREGORIAN TIME"
-	default n
-	depends on S5J_RTC
-
-config RTC_BASE_YEAR
-	int "Offset of year for S5JRTC(BASE + BCD)"
-	default 1900
-	depends on S5J_RTC
-endmenu #"S5J_RTC"
-
 menu "S5J ADC"
 config S5J_ADC
 	bool "S5J ADC support"

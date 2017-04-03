@@ -56,81 +56,140 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <tinyara/config.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define S5J_RTC_INTP			0x80100030
+#define S5J_RTC_RTCCON			0x80100040
+#define S5J_RTC_TICCNT0			0x80100044
+#define S5J_RTC_RTCALM			0x80100050
+#define S5J_RTC_ALMSEC			0x80100054
+#define S5J_RTC_ALMMIN			0x80100058
+#define S5J_RTC_ALMHOUR			0x8010005C
+#define S5J_RTC_ALMDAY			0x80100060
+#define S5J_RTC_ALMMON			0x80100064
+#define S5J_RTC_ALMYEAR			0x80100068
+#define S5J_RTC_BCDSEC			0x80100070
+#define S5J_RTC_BCDMIN			0x80100074
+#define S5J_RTC_BCDHOUR			0x80100078
+#define S5J_RTC_BCDDAY			0x8010007C
+#define S5J_RTC_BCDDAYWEEK		0x80100080
+#define S5J_RTC_BCDMON			0x80100084
+#define S5J_RTC_BCDYEAR			0x80100088
+#define S5J_RTC_CURTICCNT0		0x80100090
 
-/* Register definition for RTC */
-#define INTP        0x0030
-#define RTCCON      0x0040
-#define TICCNT      0x0044
-#define RTCALM      0x0050
-#define ALMSEC      0x0054
-#define ALMMIN      0x0058
-#define ALMHOUR     0x005C
-#define ALMDAY      0x0060
-#define ALMMON      0x0064
-#define ALMYEAR     0x0068
-#define BCDSEC      0x0070
-#define BCDMIN      0x0074
-#define BCDHOUR     0x0078
-#define BCDDAY      0x007C
-#define BCDDAYWEEK  0x0080
-#define BCDMON      0x0084
-#define BCDYEAR     0x0088
-#define CURTICCNT   0x0090
+/* S5J_RTC_INTP */
+#define RTC_INTP_ALARM			(0x1 << 1)
+#define RTC_INTP_TIMETIC0		(0x1 << 0)
 
-#define RTC_GLB_ALM_EN		(0x1 << 6)
-#define RTC_YEAR_ALM_EN		(0x1 << 5)
-#define RTC_MONTH_ALM_EN	(0x1 << 4)
-#define RTC_DAY_ALM_EN		(0x1 << 3)
-#define RTC_HOUR_ALM_EN		(0x1 << 2)
-#define RTC_MIN_ALM_EN		(0x1 << 1)
-#define RTC_SEC_ALM_EN		(0x1 << 0)
+/* S5J_RTC_RTCCON */
+#define RTC_RTCCON_CLKOUTEN		(0x1 << 9)
+#define RTC_RTCCON_TICKEN0		(0x1 << 8)
+#define RTC_RTCCON_TICCKSEL0_MASK	(0xf << 4)
+#define RTC_RTCCON_TICCKSEL0_32768HZ	(0x0 << 4)
+#define RTC_RTCCON_TICCKSEL0_16384HZ	(0x1 << 4)
+#define RTC_RTCCON_TICCKSEL0_8192HZ	(0x2 << 4)
+#define RTC_RTCCON_TICCKSEL0_4096HZ	(0x3 << 4)
+#define RTC_RTCCON_TICCKSEL0_2048HZ	(0x4 << 4)
+#define RTC_RTCCON_TICCKSEL0_1024HZ	(0x5 << 4)
+#define RTC_RTCCON_TICCKSEL0_512HZ	(0x6 << 4)
+#define RTC_RTCCON_TICCKSEL0_256HZ	(0x7 << 4)
+#define RTC_RTCCON_TICCKSEL0_128HZ	(0x8 << 4)
+#define RTC_RTCCON_TICCKSEL0_64HZ	(0x9 << 4)
+#define RTC_RTCCON_TICCKSEL0_32HZ	(0xa << 4)
+#define RTC_RTCCON_TICCKSEL0_16HZ	(0xb << 4)
+#define RTC_RTCCON_TICCKSEL0_8HZ	(0xc << 4)
+#define RTC_RTCCON_TICCKSEL0_4HZ	(0xd << 4)
+#define RTC_RTCCON_TICCKSEL0_2HZ	(0xe << 4)
+#define RTC_RTCCON_TICCKSEL0_1HZ	(0xf << 4)
+#define RTC_RTCCON_CLKRST_MASK		(0x1 << 3)
+#define RTC_RTCCON_CLKRST_ENABLE	(0x0 << 3)
+#define RTC_RTCCON_CLKRST_DISABLE	(0x1 << 3)
+#define RTC_RTCCON_CNTSEL_MASK		(0x1 << 2)
+#define RTC_RTCCON_CNTSEL_MERGE_BCDCNT	(0x0 << 2)
+#define RTC_RTCCON_CNTSEL_RESERVED	(0x1 << 2)
+#define RTC_RTCCON_CLKSEL_MASK		(0x1 << 1)
+#define RTC_RTCCON_CLKSEL_DIV32768	(0x0 << 1)
+#define RTC_RTCCON_CLKSEL_RESERVED	(0x1 << 1)
+#define RTC_RTCCON_CTLEN_MASK		(0x1 << 0)
+#define RTC_RTCCON_CTLEN_DISABLE	(0x0 << 0)
+#define RTC_RTCCON_CTLEN_ENABLE		(0x1 << 0)
 
+/* S5J_RTC_RTCALM */
+#define RTC_RTCALM_ALMEN_MASK		(0x1 << 6)
+#define RTC_RTCALM_ALMEN_DISABLE	(0x0 << 6)
+#define RTC_RTCALM_ALMEN_ENABLE		(0x1 << 6)
+#define RTC_RTCALM_YEAREN_MASK		(0x1 << 5)
+#define RTC_RTCALM_YEAREN_DISABLE	(0x0 << 5)
+#define RTC_RTCALM_YEAREN_ENABLE	(0x1 << 5)
+#define RTC_RTCALM_MONEN_MASK		(0x1 << 4)
+#define RTC_RTCALM_MONEN_DISABLE	(0x0 << 4)
+#define RTC_RTCALM_MONEN_ENABLE		(0x1 << 4)
+#define RTC_RTCALM_DAYEN_MASK		(0x1 << 3)
+#define RTC_RTCALM_DAYEN_DISABLE	(0x0 << 3)
+#define RTC_RTCALM_DAYEN_ENABLE		(0x1 << 3)
+#define RTC_RTCALM_HOUREN_MASK		(0x1 << 2)
+#define RTC_RTCALM_HOUREN_DISABLE	(0x0 << 2)
+#define RTC_RTCALM_HOUREN_ENABLE	(0x1 << 2)
+#define RTC_RTCALM_MINEN_MASK		(0x1 << 1)
+#define RTC_RTCALM_MINEN_DISABLE	(0x0 << 1)
+#define RTC_RTCALM_MINEN_ENABLE		(0x1 << 1)
+#define RTC_RTCALM_SECEN_MASK		(0x1 << 0)
+#define RTC_RTCALM_SECEN_DISABLE	(0x0 << 0)
+#define RTC_RTCALM_SECEN_ENABLE		(0x1 << 0)
 
-#define RTCCON_CLKOUTEN 	(1 << 9)
-#define RTCCON_TICEN 		(1 << 8)
-#define RTCCON_TICCKSEL(x) 	((x & 0xf) << 4)
-#define RTCCON_CLKSTOP 		(1 << 3)
-#define RTCCON_CTLEN 		(1 << 0)
+#ifndef __ASSEMBLY__
 
-#define RTC_CLK_FREQ 		32768
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
 
-typedef enum t_ticcksel {
-	clk_32768HZ = 0,
-	clk_16384HZ,
-	clk_8192HZ,
-	clk_4096HZ,
-	clk_2048HZ,
-	clk_1024HZ,
-	clk_512HZ,
-	clk_256HZ,
-	clk_128HZ,
-	clk_64HZ,
-	clk_32HZ,
-	clk_16HZ,
-	clk_8HZ,
-	clk_4HZ,
-	clk_2HZ,
-	clk_1HZ,
-} d_ticcksel;
-
-
-#define RTC_INTP_TIC_MASK 	(1 << 0)
-#define RTC_INTP_ALM_MASK 	(1 << 1)
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+/* The form of an alarm callback */
+typedef void (*alarmcb_t)(void);
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/****************************************************************************
+ * Name: s5j_rtc_lowerhalf
+ *
+ * Description:
+ *   Instantiate the RTC lower half driver for the S5J.
+ *   General usage:
+ *
+ *     #include <tinyara/rtc.h>
+ *     #include "s5j_rtc.h"
+ *
+ *     struct rtc_lowerhalf_s *lower;
+ *     lower = s5j_rtc_lowerhalf();
+ *     rtc_initialize(0, lower);
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   On success, a non-NULL RTC lower interface is returned. NULL is
+ *   returned on any failure.
+ *
+ ****************************************************************************/
+#ifdef CONFIG_RTC_DRIVER
+FAR struct rtc_lowerhalf_s *s5j_rtc_lowerhalf(void);
+#endif /* CONFIG_RTC_DRIVER */
 
-
-#ifdef __cplusplus
+#undef EXTERN
+#if defined(__cplusplus)
 }
 #endif
-#endif							/* __ARCH_ARM_SRC_S5J_S5J_RTC_H */
+
+#endif /* __ASSEMBLY__ */
+#endif /* __ARCH_ARM_SRC_S5J_S5J_RTC_H */
