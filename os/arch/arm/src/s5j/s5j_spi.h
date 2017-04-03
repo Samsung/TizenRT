@@ -56,7 +56,6 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-#include <arch/chip/chip_types.h>
 #include <arch/chip/irq.h>
 #include <chip.h>
 #include <chip/s5j_gpio.h>

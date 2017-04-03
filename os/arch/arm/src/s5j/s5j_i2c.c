@@ -536,7 +536,7 @@ static int try_address(struct s5j_i2c_priv_s *priv, u8 addr, int retries)
 			break;
 		}
 		hsi2c_stop(priv);
-		udelay(priv->timeout / 2);
+		up_udelay(priv->timeout / 2);
 		hsi2c_start(priv);
 	}
 
@@ -910,10 +910,10 @@ static int hsi2c_cleanup(struct s5j_i2c_priv_s *priv)
 	priv->xfer_speed = I2C_SPEED_400KHZ;
 
 	putreg32(0x80000000, priv->config->base + CTL);
-	udelay(10);
+	up_udelay(10);
 
 	putreg32(0x0, priv->config->base + CTL);
-	udelay(100);
+	up_udelay(100);
 
 	return 0;
 }

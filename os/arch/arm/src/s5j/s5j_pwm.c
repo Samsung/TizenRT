@@ -70,7 +70,6 @@
 #include <tinyara/pwm.h>
 
 #include <arch/chip/irq.h>
-#include <arch/chip/chip_types.h>
 
 #include "chip.h"
 #include "up_arch.h"

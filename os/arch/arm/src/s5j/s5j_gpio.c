@@ -63,7 +63,6 @@
 #include <errno.h>
 
 #include <arch/irq.h>
-#include <arch/chip/chip_types.h>
 #include <tinyara/gpio.h>
 #include <tinyara/wdog.h>
 #include <tinyara/wqueue.h>

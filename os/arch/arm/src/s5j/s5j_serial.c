@@ -81,7 +81,6 @@
 #include <termios.h>
 #endif
 
-#include <arch/chip/chip_types.h>
 #include <chip.h>
 
 /****************************************************************************

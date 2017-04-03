@@ -66,7 +66,6 @@
 
 #include "up_arch.h"
 
-#include <arch/chip/chip_types.h>
 #include "s5j_watchdog.h"
 #include <arch/irq.h>
 #include <chip.h>

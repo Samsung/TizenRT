@@ -57,8 +57,6 @@
 #ifndef __ARCH_ARM_SRC_S5J_S5J_SERIAL_H
 #define __ARCH_ARM_SRC_S5J_S5J_SERIAL_H
 
-#include <arch/chip/chip_types.h>
-
 /* Register Map */
 #define UART_LCON       0x00
 #define UART_CON        0x04

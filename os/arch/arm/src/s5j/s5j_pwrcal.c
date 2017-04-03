@@ -57,7 +57,6 @@
 #include <sys/types.h>
 #include <string.h>
 #include <tinyara/kmalloc.h>
-#include <arch/chip/chip_types.h>
 #include <arch/chip/irq.h>
 #include <chip.h>
 

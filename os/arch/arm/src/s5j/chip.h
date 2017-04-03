@@ -58,7 +58,6 @@
  ************************************************************************************/
 
 #include <tinyara/config.h>
-#include <arch/chip/chip.h>
 
 /* Then get all of the register definitions */
 #ifdef CONFIG_ARCH_CHIP_S5JT200

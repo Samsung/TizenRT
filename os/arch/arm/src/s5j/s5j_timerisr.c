@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
+#include <time.h>
 
 #include <arch/board/board.h>
 #include "chip.h"

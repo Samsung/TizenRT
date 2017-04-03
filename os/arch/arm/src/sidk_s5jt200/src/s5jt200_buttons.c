@@ -61,10 +61,8 @@
 #include <errno.h>
 
 #include <tinyara/board.h>
-#include <arch/chip/chip.h>
 #include <tinyara/irq.h>
 
-#include <arch/chip/chip_types.h>
 #include <chip.h>
 
 #ifdef CONFIG_ARCH_BUTTONS
