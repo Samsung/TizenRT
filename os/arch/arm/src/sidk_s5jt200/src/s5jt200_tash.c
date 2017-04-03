@@ -233,6 +233,11 @@ static void sidk_s5jt200_configure_partitions(void)
  *   (non-standard) boardctl() interface using the command BOARDIOC_INIT.
  *
  ****************************************************************************/
+
+#ifdef CONFIG_EXAMPLES_EEPROM_TEST
+int ee_test_main(int argc, char **args);
+#endif
+
 int board_app_initialize(void)
 {
 	int ret;
@@ -316,6 +321,10 @@ int board_app_initialize(void)
 
 #ifdef CONFIG_TASH
 	tash_cmdlist_install(tash_s5j_cmds);
+#endif
+
+#ifdef CONFIG_EXAMPLES_EEPROM_TEST
+        ee_test_main(0, NULL);
 #endif
 
 	/* to suppress a compiler warning */
