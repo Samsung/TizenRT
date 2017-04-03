@@ -67,7 +67,7 @@
 
 #include <chip.h>
 #include <arch/chip/chip_types.h>
-#include <arch/chip/s5j_watchdog.h>
+#include "s5j_watchdog.h"
 #include "arm.h"
 #ifdef CONFIG_ARMV7M_MPU
 #include "mpu.h"

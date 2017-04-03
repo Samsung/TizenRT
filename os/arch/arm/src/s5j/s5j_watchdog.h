@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/include/s5j/s5j_watchdog.h
+ * arch/arm/src/s5j/s5j_watchdog.h
  *
  *   Copyright (C) 2009, 2013, 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_INC_S5J_S5J_WATCHDOG_H
-#define __ARCH_ARM_INC_S5J_S5J_WATCHDOG_H
+#ifndef __ARCH_ARM_SRC_S5J_S5J_WATCHDOG_H
+#define __ARCH_ARM_SRC_S5J_S5J_WATCHDOG_H
 
 /****************************************************************************
  * Included Files
@@ -95,4 +95,4 @@ void s5j_watchdog_clear_int(void);
 #endif
 
 #endif /* __ASSEMBLY__ */
-#endif /* __ARCH_ARM_INC_S5J_S5J_WATCHDOG_H */
+#endif /* __ARCH_ARM_SRC_S5J_S5J_WATCHDOG_H */

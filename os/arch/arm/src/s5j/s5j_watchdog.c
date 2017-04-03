@@ -67,7 +67,7 @@
 #include "up_arch.h"
 
 #include <arch/chip/chip_types.h>
-#include <arch/chip/s5j_watchdog.h>
+#include "s5j_watchdog.h"
 #include <arch/irq.h>
 #include <chip.h>
 #include <tinyara/clock.h>
