@@ -64,7 +64,9 @@
 #include <tinyara/fs/ioctl.h>
 #include <chip.h>
 
+#include "s5j_rtc.h"
 #include "up_internal.h"
+
 #include <apps/shell/tash.h>
 
 #include "artik053.h"
@@ -238,6 +240,21 @@ int board_app_initialize(void)
 				ARTIK053_PROCFS_MOUNTPOINT, ret);
 	}
 #endif
+
+#if defined(CONFIG_RTC_DRIVER)
+	{
+		struct rtc_lowerhalf_s *rtclower;
+
+		rtclower = s5j_rtc_lowerhalf();
+		if (rtclower) {
+			ret = rtc_initialize(0, rtclower);
+			if (ret < 0) {
+				lldbg("Failed to register the RTC driver: %d\n",
+						ret);
+			}
+		}
+	}
+#endif /* CONFIG_RTC_DRIVER */
 
 	scsc_wpa_ctrl_iface_init();
 
