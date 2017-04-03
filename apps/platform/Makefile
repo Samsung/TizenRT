@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2016-2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@
 
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
-include $(APPDIR)$(DELIM)Make.defs
+include $(APPDIR)/Make.defs
 
 # Platform-specific Appliction Support
 # Tool stuff
@@ -73,10 +73,10 @@ endif
 
 # Directories
 
-PLATFORMDIR = $(APPDIR)$(DELIM)platform$(DELIM)board
-DUMMYDIR    = $(APPDIR)$(DELIM)platform$(DELIM)dummy
-BOARDDIR    = $(APPDIR)$(DELIM)platform$(DELIM)$(CONFIG_ARCH_BOARD)
-LINKDIR     = $(if $(wildcard $(BOARDDIR)$(DELIM)Make.defs),$(BOARDDIR),$(DUMMYDIR))
+PLATFORMDIR = $(APPDIR)/platform/board
+DUMMYDIR    = $(APPDIR)/platform/dummy
+BOARDDIR    = $(APPDIR)/platform/$(CONFIG_ARCH_BOARD)
+LINKDIR     = $(if $(wildcard $(BOARDDIR)/Make.defs),$(BOARDDIR),$(DUMMYDIR))
 
 VPATH       = board
 
@@ -85,10 +85,10 @@ VPATH       = board
 ASRCS =
 CSRCS =
 
--include $(PLATFORMDIR)$(DELIM)Make.defs
+-include $(PLATFORMDIR)/Make.defs
 
-AOBJS = $(patsubst %.S, bin$(DELIM)%$(OBJEXT), $(ASRCS))
-COBJS = $(patsubst %.c, bin$(DELIM)%$(OBJEXT), $(CSRCS))
+AOBJS = $(patsubst %.S, bin/%$(OBJEXT), $(ASRCS))
+COBJS = $(patsubst %.c, bin/%$(OBJEXT), $(CSRCS))
 
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
@@ -109,12 +109,12 @@ all: .built
 .PHONY: context .depend depend clean distclean
 
 ifneq ($(ASRCS),)
-$(AOBJS): bin$(DELIM)%$(OBJEXT): %.S
+$(AOBJS): bin/%$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 endif
 
 ifneq ($(CSRCS),)
-$(COBJS): bin$(DELIM)%$(OBJEXT): %.c
+$(COBJS): bin/%$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 endif
 
@@ -126,8 +126,8 @@ endif
 
 # Build context setup
 
-$(PLATFORMDIR): $(TOPDIR)$(DELIM).config
-	@echo "LN: platform$(DELIM)board to $(LINKDIR)"
+$(PLATFORMDIR): $(TOPDIR)/.config
+	@echo "LN: platform/board to $(LINKDIR)"
 	$(Q) $(DIRUNLINK) $(PLATFORMDIR)
 	$(Q) $(DIRLINK) $(LINKDIR) $(PLATFORMDIR)
 
@@ -145,7 +145,7 @@ depend: .depend
 
 # Clean targets
 
-clean: $(PLATFORMDIR)
+clean:
 	$(call DELFILE, .built)
 	$(Q) $(MAKE) -C bin TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" clean
 
