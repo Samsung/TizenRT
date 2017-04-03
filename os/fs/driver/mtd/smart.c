@@ -136,20 +136,7 @@
  * sectors.  All enries below this are reserved (some for root dir entries,
  * other for our use, such as format sector, etc.
  */
-#ifndef CONFIG_SMARTFS_JOURNALING
 #define SMART_FIRST_ALLOC_SECTOR    12
-#else
-/* At any time, the number of open files can not exceed the number of file
- * descriptors (CONFIG_NFILE_DESCRIPTORS).
- * Thus the number of unsynced write transactions can atmost be CONFIG_NFILE_DESCRIPTORS+1
- * (+1 because in case of 2 writes for same sector, we write the newer transaction before
- * finishing the older one.)
- * Therefore the safe journal area size to have is (CONFIG_NFILE_DESCRIPTORS+1)*2 sectors
- * As we have 2 journal areas, the number of sectors reserved for use as journal sectors is
- * ((CONFIG_NFILE_DESCRIPTORS+1)*2*2)
- */
-#define SMART_FIRST_ALLOC_SECTOR    (12 + 2*CONFIG_SMARTFS_NLOGGING_SECTORS)
-#endif
 
 #define SMART_BAD_SECTOR_NUMBER         11
 #define SMART_GOOD_SECTOR_RETRY     8
@@ -259,6 +246,7 @@ struct smart_struct_s {
 	uint32_t unusedsectors;	/* Count of unused sectors (i.e. free when erased) */
 	uint32_t blockerases;		/* Count of unused sectors (i.e. free when erased) */
 #endif
+	uint16_t reservedsector;    /* Number of reserved sector (i.e. logging sectors of journal) */
 	uint16_t neraseblocks;		/* Number of erase blocks or sub-sectors */
 	uint16_t lastallocblock;	/* Last  block we allocated a sector from */
 	uint16_t freesectors;		/* Total number of free sectors */
@@ -296,7 +284,7 @@ struct smart_struct_s {
 #endif
 #ifdef CONFIG_MTD_SMART_ENABLE_CRC
 	FAR struct smart_allocsector_s
-		*allocsector;				/* Pointer to first alloc sector */
+			*allocsector;				/* Pointer to first alloc sector */
 #endif
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 	FAR uint16_t *sMap;			/* Virtual to physical sector map */
@@ -314,7 +302,7 @@ struct smart_struct_s {
 #ifdef CONFIG_MTD_SMART_ALLOC_DEBUG
 	size_t bytesalloc;
 	struct smart_alloc_s
-		alloc[SMART_MAX_ALLOCS];	/* Array of memory allocations */
+			alloc[SMART_MAX_ALLOCS];	/* Array of memory allocations */
 #endif
 };
 
@@ -1411,7 +1399,7 @@ static int smart_add_sector_to_cache(FAR struct smart_struct_s *dev, uint16_t lo
 		for (x = 0; x < CONFIG_MTD_SMART_SECTOR_CACHE_SIZE; x++) {
 			/* Never replace cache entries for system sectors */
 
-			if (dev->sCache[x].logical < SMART_FIRST_ALLOC_SECTOR) {
+			if (dev->sCache[x].logical < dev->reservedsector) {
 				continue;
 			}
 
@@ -1858,6 +1846,14 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	/* Initialize the device variables */
 
 	totalsectors = dev->totalsectors;
+
+	dev->reservedsector = SMART_FIRST_ALLOC_SECTOR;
+#ifdef CONFIG_SMARTFS_JOURNALING
+	if (totalsectors > CONFIG_SMARTFS_JOURNALING_THRESHOLD) {
+		dev->reservedsector += 2 * CONFIG_SMARTFS_NLOGGING_SECTORS;
+	}
+#endif
+
 	dev->formatstatus = SMART_FMT_STAT_NOFMT;
 	dev->freesectors = dev->availSectPerBlk * dev->geo.neraseblocks;
 	dev->releasesectors = 0;
@@ -2243,7 +2239,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		/* Mark the logical sector as used in the bitmap */
 		dev->sBitMap[logicalsector >> 3] |= 1 << (logicalsector & 0x07);
 
-		if (logicalsector < SMART_FIRST_ALLOC_SECTOR) {
+		if (logicalsector < dev->reservedsector) {
 			smart_add_sector_to_cache(dev, logicalsector, sector, __LINE__);
 		}
 #endif
@@ -2777,7 +2773,7 @@ static int smart_write_bad_sector_info(FAR struct smart_struct_s *dev, int physi
 
 	bad_physical_sector_info = (uint16_t)(dev->sMap[SMART_BAD_SECTOR_NUMBER]);
 
-	if (bad_physical_sector_info == (uint16_t)-1) {
+	if (bad_physical_sector_info == (uint16_t) - 1) {
 		kmm_free(temp_rwbuffer);
 		return -1;				// bad management sector not allocated
 	}
@@ -4731,7 +4727,7 @@ static inline int smart_allocsector(FAR struct smart_struct_s *dev, unsigned lon
 		/* Validate the sector is not already allocated */
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-		if (dev->sMap[requested] == (uint16_t)-1)
+		if (dev->sMap[requested] == (uint16_t) - 1)
 #else
 		if (!(dev->sBitMap[requested >> 3] & (1 << (requested & 0x07))))
 #endif
@@ -4760,10 +4756,9 @@ static inline int smart_allocsector(FAR struct smart_struct_s *dev, unsigned lon
 
 	if (logsector == 0xFFFF) {
 		/* Loop through all sectors and find one to allocate */
-
-		for (x = SMART_FIRST_ALLOC_SECTOR; x < dev->totalsectors; x++) {
+		for (x = dev->reservedsector; x < dev->totalsectors; x++) {
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-			if (dev->sMap[x] == (uint16_t)-1)
+			if (dev->sMap[x] == (uint16_t) - 1)
 #else
 			if (!(dev->sBitMap[x >> 3] & (1 << (x & 0x07))))
 #endif
@@ -4911,7 +4906,7 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 		/* Validate the sector is actually allocated */
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-		if (dev->sMap[logicalsector] == (uint16_t)-1)
+		if (dev->sMap[logicalsector] == (uint16_t) - 1)
 #else
 		if (!(dev->sBitMap[logicalsector >> 3] & (1 << (logicalsector & 0x07))))
 #endif
@@ -4975,7 +4970,7 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 	/* Unmap this logical sector */
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-	dev->sMap[logicalsector] = (uint16_t)-1;
+	dev->sMap[logicalsector] = (uint16_t) - 1;
 #else
 	dev->sBitMap[logicalsector >> 3] &= ~(1 << (logicalsector & 0x07));
 	smart_update_cache(dev, logicalsector, 0xFFFF);
@@ -5441,7 +5436,7 @@ int smart_recoversectors(FAR struct inode *inode, char *validsectors, int *nobso
 	totalsectors = dev->totalsectors;
 
 	/* Mark the reserved sectors valid */
-	for (logicalsector = 0; logicalsector < SMART_FIRST_ALLOC_SECTOR; logicalsector++) {
+	for (logicalsector = 0; logicalsector < dev->reservedsector; logicalsector++) {
 		smart_validatesector(inode, logicalsector, validsectors);
 	}
 
@@ -5500,7 +5495,7 @@ int smart_recoversectors(FAR struct inode *inode, char *validsectors, int *nobso
 			/* if the mapping is sane, Unmap this logical->physicalsector map */
 			if (physsector == sector) {
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-				dev->sMap[logicalsector] = (uint16_t)-1;
+				dev->sMap[logicalsector] = (uint16_t) - 1;
 #else
 				dev->sBitMap[logicalsector >> 3] &= ~(1 << (logicalsector & 0x07));
 				smart_update_cache(dev, logicalsector, 0xFFFF);

@@ -385,13 +385,16 @@ struct smartfs_mountpt_s {
 	FAR struct inode *fs_blkdriver;	/* Our underlying block device */
 	sem_t *fs_sem;			/* Used to assure thread-safe access */
 	FAR struct smartfs_ofile_s
-		*fs_head;					/* A singly-linked list of open files */
+			*fs_head;					/* A singly-linked list of open files */
 	bool fs_mounted;			/* true: The file system is ready */
 	struct smart_format_s fs_llformat;	/* Low level device format info */
 	char *fs_rwbuffer;			/* Read/Write working buffer */
 	char *fs_workbuffer;		/* Working buffer */
 #ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
 	uint8_t *fs_chunk_buffer;
+#endif
+#ifdef CONFIG_SMARTFS_JOURNALING
+	struct journal_transaction_manager_s *journal;
 #endif
 	uint8_t fs_rootsector;		/* Root directory sector num */
 };
@@ -479,7 +482,7 @@ struct smartfs_logging_entry_s {
   This structure provides the transaction manager for all journaling operations
 */
 struct journal_transaction_manager_s {
-	struct smartfs_mountpt_s *fs;	/* Structure representing the mountpt state of the filesystem */
+	bool enabled;               /* State value to check journaling enabled or not */
 	uint8_t jarea;				/* 0 or 1. Specifies which journal area is usable */
 	uint16_t sector;			/* Sector number where next logging entry has to be written */
 	uint16_t offset;			/* Offset in the sector above */
