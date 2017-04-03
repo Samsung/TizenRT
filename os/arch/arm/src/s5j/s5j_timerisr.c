@@ -58,11 +58,11 @@
 
 #include <stdint.h>
 #include <time.h>
-
+#include <tinyara/arch.h>
 #include <arch/board/board.h>
-#include "chip.h"
 #include "up_arch.h"
 
+#include "chip.h"
 #include "s5j_rtc.h"
 
 /****************************************************************************

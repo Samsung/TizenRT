@@ -76,6 +76,9 @@
 #include "chip.h"
 #include "up_arch.h"
 #include "up_internal.h"
+#include "s5j_serial.h"
+#include "s5j_gpio.h"
+#include "s5j_vclk.h"
 
 #ifdef CONFIG_SERIAL_TERMIOS
 #include <termios.h>

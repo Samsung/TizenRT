@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/s5j/s5j_pwrcal.c
+ * arch/arm/src/s5j/chip/s5j_memorymap.h
  *
- *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,107 +49,64 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-/****************************************************************************
- * Included Files
- ****************************************************************************/
 
-#include <stddef.h>
-#include <sys/types.h>
-#include <string.h>
-#include <tinyara/kmalloc.h>
-#include <arch/chip/irq.h>
-#include <chip.h>
+#ifndef __ARCH_ARM_SRC_S5J_CHIP_S5J_MEMORYMAP_H
+#define __ARCH_ARM_SRC_S5J_CHIP_S5J_MEMORYMAP_H
 
-#include "s5j_cmu.h"
-#include "s5j_vclk.h"
+#define VECTOR_BASE		0xFFFF0000
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
+#define EFUSE_WRITER		0x80000000
+#define CHIPID_BASE		EFUSE_WRITER
+#define MCT0_BASE		0x80010000
+#define S5J_TICK_COUNTER	0x80020000
+#define S5J_WDT_BASE		0x80030000
+#define GPIO_CON_BASE		0x80040000
 
-/****************************************************************************
- * Private Types
- ****************************************************************************/
+#define UARTDBG_BASE		0x80180000
+#define UART0_BASE		0x80200000
+#define UART1_BASE		0x80210000
+#define UART2_BASE		0x80220000
+#define UART3_BASE		0x80230000
+#define OTP_CON_TOP_BASE	0x100D0000
+#define SDIO_BASE		0x80300000
+#define SFI_BASE		0x80310000
 
-/****************************************************************************
- * Public Data
- ****************************************************************************/
+#define S5J_GIC_BASE		0x80400000
+#define PMU_BASE		0x80090000
+#define PMU_ALIVE_BASE		PMU_BASE	/*Temp */
+#define PWM0_BASE		0x802E0000
+#define PWM1_BASE		0x802F0000
+#define S5J_SPI0_BASE		0x80240000
+#define S5J_SPI1_BASE		0x80250000
+#define S5J_SPI2_BASE		0x80260000
+#define S5J_SPI3_BASE		0x80270000
+#define S5J_TOP_RTC_BASE	0x80100000
+#define S5J_RTC_BASE		S5J_TOP_RTC_BASE
+#define S5J_PUF_BASE		0x80110000
+#define S5J_CSSYS__BASE		0x801D0000
+#define S5J_CSSYS_CR4_BASE	0x801E0000
+#define S5J_CSSYS_PMU_BASE	0x801F0000
+#define WDT_CPUCL_BASE		S5J_WDT_BASE	/*Temp */
+#define S5J_MAILBOX_WIFI_BASE	0x80050000
+#define S5J_MAILBOX_M0_BASE	0x80060000
+#define S5J_CMU_SSS_BASE	0x80070000
+#define S5J_CMU_BASE		0x80080000
 
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-unsigned int cal_clk_is_enabled(unsigned int id)
-{
-	return 0;
-}
+#define S5J_SYSREG_BASE		0x800A0000
+#define S5J_PDMA_BASE		0x800B0000
+#define S5J_SSS_SS_BASE		0x800C0000
+#define S5J_SSS_KM_BASE		0x800D0000
+#define S5J_SSS_MB_BASE		0x800E0000
+#define S5J_HSI2C0_BASE		0x80280000
+#define S5J_HSI2C1_BASE		0x80290000
+#define S5J_HSI2C2_BASE		0x802A0000
+#define S5J_HSI2C3_BASE		0x802B0000
+#define S5J_I2S_BASE		0x802C0000
+#define S5J_ADC_BASE		0x802D0000
 
-int cal_clk_setrate(unsigned int id, unsigned long rate)
-{
-	unsigned long parents;
-	unsigned int div;
-	switch(id) {
-	case d1_spi0:
-		break;
-	case d1_spi1:
-		break;
-	case gate_hsi2c0:
-	case gate_hsi2c1:
-	case gate_hsi2c2:
-	case gate_hsi2c3:
-		break;
-	case d1_serialflash:
-		/* CLK_CON_DIV_DIV_CLK_SERIALFLASH */
-		parents = 320000000;
-		div = parents / rate;
-		modifyreg32(0x80081800, 0xf, (div - 1));
-		break;
-	default:
-		break;
-	}
+#define S5J_UART0_BASE		UART0_BASE
+#define S5J_UART1_BASE		UART1_BASE
+#define S5J_UART2_BASE		UART2_BASE
+#define S5J_UART3_BASE		UART3_BASE
 
-	return -1;
-}
-
-unsigned long cal_clk_getrate(unsigned int id)
-{
-	unsigned long rate=0;
-
-	switch(id)
-	{
-	case d1_spi0:
-		break;
-	case d1_spi1:
-		break;
-	case d1_serialflash:
-		break;
-	case m1_clkcmu_uart:
-		rate = S5J_DEFAULT_UART_CLOCK;
-		break;
-	case gate_hsi2c0:
-	case gate_hsi2c1:
-	case gate_hsi2c2:
-	case gate_hsi2c3:
-		rate = S5J_DEFAULT_I2C_CLOCK;
-		break;
-	
-	default:
-		break;
-	}
-
-	return rate;
-}
-
-int cal_clk_enable(unsigned int id)
-{
-	return 0;
-}
-
-int cal_clk_disable(unsigned int id)
-{
-	return 0;
-}
-
-int cal_init(void)
-{
-	return 0;
-}
+#endif /* __ARCH_ARM_SRC_S5J_CHIP_S5J_MEMORYMAP_H */

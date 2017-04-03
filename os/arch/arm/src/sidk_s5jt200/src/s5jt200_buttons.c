@@ -65,6 +65,8 @@
 
 #include <chip.h>
 
+#include "s5j_gpio.h"
+
 #ifdef CONFIG_ARCH_BUTTONS
 
 /****************************************************************************

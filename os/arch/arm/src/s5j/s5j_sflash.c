@@ -60,9 +60,11 @@
 #include <tinyara/progmem.h>
 
 #include "up_arch.h"
-#include "soc/s5jt200_memorymap.h"
 #include "cache.h"
 #include "chip.h"
+
+#include "s5j_vclk.h"
+#include "s5j_gpio.h"
 
 /****************************************************************************
  * Pre-processor Definitions

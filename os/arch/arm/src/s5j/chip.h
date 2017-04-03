@@ -53,35 +53,20 @@
 #ifndef __ARCH_ARM_SRC_S5J_CHIP_H
 #define __ARCH_ARM_SRC_S5J_CHIP_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
 /* Then get all of the register definitions */
-#ifdef CONFIG_ARCH_CHIP_S5JT200
-#include "soc/s5jt200_memorymap.h"
-#ifndef __ASSEMBLY__
-#include "soc/s5jt200_gpio.h"
-#define VECTOR_BASE   S5J_VECTOR_BASE
-#endif
-#endif
+#include "chip/s5j_memorymap.h"
 
-#ifndef __ASSEMBLY__
-#include "s5j_serial.h"
-#include "s5j_gpio.h"
-#include "s5j_vclk.h"
-#endif
-
-/************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
-/* Cache line sizes (in bytes)for the SAVA5Dx */
-#define ARMV7A_DCACHE_LINESIZE 64	/* 32 bytes (8 words) */
-#define ARMV7A_ICACHE_LINESIZE 64	/* 32 bytes (8 words) */
+ ****************************************************************************/
 
 /* Interrupt Controller Address */
 #define CHIP_MPCORE_VBASE S5J_GIC_BASE
 
-#endif							/* __ARCH_ARM_SRC_SAMA5_CHIP_H */
+#endif /* __ARCH_ARM_SRC_S5J_CHIP_H */

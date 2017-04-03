@@ -75,6 +75,7 @@
 #include "up_arch.h"
 
 #include "s5j_pwm.h"
+#include "s5j_gpio.h"
 
 /****************************************************************************
  * Static Function Prototypes

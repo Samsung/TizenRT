@@ -71,6 +71,8 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define CONFIG_MAX_GPIO_PORT 8
+
 /* Pin configurations */
 #define GPIO_INPUT    0x0
 #define GPIO_OUTPUT   0x1
@@ -161,6 +163,31 @@ struct gpio_bank {
 
 #define irq_id_to_gpio(irq_id) (GPIO_MAGIC | (irq_id >> 16))
 #define gpio_irq_id(gpio, isr_num) ((gpio & 0xFFFF) << 16 | isr_num)
+
+enum {
+	GPP0,
+	GPP1,
+	GPP2,
+	GPP3,
+	GPG0,
+	GPG1,
+	GPG2,
+	GPG3,
+	GPA0,
+	GPA1,
+	GPA2,
+	GPA3,
+	GPP4,
+	ETC0,
+
+	GPEND,
+};
+
+enum {
+	GPIO_GROUP_ALIVE_EACH,
+	GPIO_GROUP_ALIVE,
+	GPIO_GROUP_COMMON,
+};
 
 /****************************************************************************
  * Public Types

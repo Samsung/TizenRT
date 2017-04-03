@@ -83,6 +83,7 @@
 #include "up_arch.h"
 #include "s5j_gpio.h"
 #include "s5j_i2c.h"
+#include "s5j_vclk.h"
 
 /************************************************************************************
  * Pre-processor Definitions
