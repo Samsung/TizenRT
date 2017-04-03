@@ -218,5 +218,9 @@ void board_initialize(void)
 #ifdef CONFIG_SIDK_S5JT200_S8300
 	s5j_ledinitialize();
 #endif
+
+#ifdef CONFIG_SIDK_S5JT200_EEPROM
+	sidk_s5jt200_eeprom_init();
+#endif
 }
 #endif /* CONFIG_BOARD_INITIALIZE */

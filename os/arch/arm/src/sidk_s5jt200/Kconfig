@@ -21,6 +21,15 @@ config SIDK_S5JT200_S8300
 		SIDK S5JT200 evaluation board has S8300 linear LED driver IC
 		which is driven by PWMs from S5J chipset.
 
+config SIDK_S5JT200_M93C66WMN6T
+	bool "Support M93C66WMN6T EEPROM"
+	default n
+	depends on SPI_BITBANG
+	depends on SPI_BITBANG_VARWIDTH
+	---help---
+		SIDK S5JT200 evaluation board has an SPI MicroWire serial
+		access EEPROM attached to GPIO pins.
+
 config SIDK_S5JT200_PWM_CHNUM
 	int "Number of PWM channel"
 	default 6

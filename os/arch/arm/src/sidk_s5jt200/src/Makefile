@@ -83,6 +83,10 @@ ifeq ($(CONFIG_MTD_PROGMEM),y)
 CSRCS += s5jt200_progmem.c
 endif
 
+ifeq ($(CONFIG_SIDK_S5JT200_EEPROM), y)
+CSRCS += s5jt200_eeprom.c
+endif
+
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)

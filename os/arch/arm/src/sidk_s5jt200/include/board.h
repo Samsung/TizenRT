@@ -61,7 +61,13 @@
 #define SYSCLK_FREQUENCY	32768 /* RTC clock at 32768Hz */
 
 #ifndef __ASSEMBLY__
-extern void s5j_boardinitialize(void);
-#endif
 
-#endif							/* __ARCH_ARM_SRC_SIDK_S5JT200_INCLUDE_BOARD_H */
+extern void s5j_boardinitialize(void);
+
+#ifdef CONFIG_SIDK_S5JT200_EEPROM
+extern struct spi_dev_s *eeprom_dev;
+extern void sidk_s5jt200_eeprom_init(void);
+#endif /* CONFIG_SIDK_S5JT200_EEPROM */
+
+#endif
+#endif /* __ARCH_ARM_SRC_SIDK_S5JT200_INCLUDE_BOARD_H */
