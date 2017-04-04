@@ -612,14 +612,15 @@ static uint16_t spi_exchange(FAR struct spi_bitbang_s *priv, uint16_t dataout)
 	 * rate.
 	 */
 
-	shift = priv->nbits - 1 for (bit = 1 << shift; bit != 0; bit >>= 1) {
+	shift = priv->nbits - 1;
+	for (bit = 1 << shift; bit != 0; bit >>= 1) {
 		/* Shift to make space for the next, less significant bit.
 		 * Then exchange bits with the slave an OR in the new, returned
 		 * bit.
 		 */
 
 		datain <<= 1;
-		datain |= exchange(dataout & bit, holdtime);
+		datain |= exchange(!!(dataout & bit), holdtime);
 	}
 
 	return datain;
