@@ -121,7 +121,6 @@ endif
 TOOLSDIR := ${shell if [ -r $(CONFIG_TOOLS_DIR)/Makefile ]; then echo "$(CONFIG_TOOLS_DIR)"; fi}
 
 BUILD_DIR = ../build
-CONFIGS_DIR = $(BUILD_DIR)/configs
 OUTPUT_DIR = $(BUILD_DIR)/output
 LIBRARIES_DIR = $(OUTPUT_DIR)/libraries
 BIN_DIR = $(OUTPUT_DIR)/bin
@@ -587,19 +586,19 @@ pass2dep: context tools/mkdeps$(HOSTEXEEXT)
 # location: http://ymorin.is-a-geek.org/projects/kconfig-frontends.
 
 config: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} CONFIGSDIR=${CONFIGS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-conf Kconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-conf Kconfig
 
 oldconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} CONFIGSDIR=${CONFIGS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-conf --oldconfig Kconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-conf --oldconfig Kconfig
 
 menuconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} CONFIGSDIR=${CONFIGS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-mconf Kconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-mconf Kconfig
 
 qconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} CONFIGSDIR=${CONFIGS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-qconf Kconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-qconf Kconfig
 
 gconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} CONFIGSDIR=${CONFIGS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-gconf Kconfig
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} kconfig-gconf Kconfig
 
 # export
 #

@@ -77,7 +77,7 @@ config ENABLE_HEAPINFO
 	bool "heapinfo"
 	default y
 	depends on !BUILD_PROTECTED
-	select DEBUG_MM_HEAPINFO
+	select DEBUG_MM_HEAPINFO if DEBUG
 	---help---
 		Show information about memory status per thread
 

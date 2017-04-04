@@ -9,10 +9,6 @@ config APPSDIR
 	string
 	option env="APPSDIR"
 
-config CONFIGSDIR
-	string
-	option env="CONFIGSDIR"
-
 config EXTERNALDIR
 	string
 	option env="EXTERNALDIR"
@@ -835,12 +831,12 @@ config DEBUG_OPTLEVEL
 
 endmenu # Build Setup
 
-menu "System Type"
+menu "Chip Selection"
 source arch/Kconfig
 endmenu
 
 menu "Board Selection"
-source "$CONFIGSDIR/Kconfig"
+source arch/Kconfig.board
 endmenu
 
 menu "RTOS Features"
