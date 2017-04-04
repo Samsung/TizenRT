@@ -30,7 +30,7 @@ void logm_start(void)
 
 	g_logm_tid = task_create("logm", priority, stacksize, logm_task, NULL);
 
-	if (!g_logm_tid) {
+	if (g_logm_tid < 0) {
 		lmdbg("LOGM Launch Failed \n");
 		return;
 	}

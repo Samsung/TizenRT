@@ -26,12 +26,12 @@
 
 #include "logm.h"
 
-volatile int g_logm_head;
-volatile int g_logm_tail;
-volatile int g_logm_available;
-volatile int g_logm_enqueued_count;
-volatile int g_logm_dropmsg_count;
-volatile int g_logm_overflow_offset;
+int g_logm_head;
+int g_logm_tail;
+int g_logm_available;
+int g_logm_enqueued_count;
+int g_logm_dropmsg_count;
+int g_logm_overflow_offset;
 
 static void logm_putc(FAR struct lib_outstream_s *this, int ch)
 {

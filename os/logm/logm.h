@@ -26,7 +26,8 @@
  ****************************************************************************/
 #define LOGM_TASK_PRORITY CONFIG_LOGM_TASK_PRIORITY
 #define LOGM_TASK_STACKSIZE CONFIG_LOGM_TASK_STACKSIZE
-#ifdef LOGM_DEBUG
+
+#ifdef CONFIG_LOGM_DEBUG
 #define lmdbg(format, ...)    printf(format, ##__VA_ARGS__)
 #else
 #define lmdbg(format, ...)
@@ -34,8 +35,6 @@
 
 #ifdef CONFIG_LOGM_BUFFER_SIZE
 #define LOGM_BUFFER_SIZE CONFIG_LOGM_BUFFER_SIZE
-#elif defined(CONFIG_LOGM_BUFFER_COUNT) && defined(CONFIG_LOGM_MAX_MSG_LENGTH)
-#define LOGM_BUFFER_SIZE CONFIG_LOGM_BUFFER_COUNT * CONFIG_LOGM_MAX_MSG_LENGTH
 #else
 #define LOGM_BUFFER_SIZE (10240)
 #endif
@@ -72,16 +71,16 @@ extern "C" {
 #define EXTERN extern
 #endif
 
-EXTERN volatile int g_logm_head;
-EXTERN volatile int g_logm_tail;
-EXTERN volatile int g_logm_available;
-EXTERN volatile int g_logm_enqueued_count;
-EXTERN volatile int g_logm_overflow_offset;
-EXTERN volatile int g_logm_dropmsg_count;
-EXTERN char *volatile g_logm_rsvbuf;
-EXTERN volatile int logm_bufsize;
+EXTERN int g_logm_head;
+EXTERN int g_logm_tail;
+EXTERN int g_logm_available;
+EXTERN int g_logm_enqueued_count;
+EXTERN int g_logm_overflow_offset;
+EXTERN int g_logm_dropmsg_count;
+EXTERN char *g_logm_rsvbuf;
+EXTERN int logm_bufsize;
+EXTERN uint8_t logm_status;
 EXTERN volatile int new_logm_bufsize;
-EXTERN volatile uint8_t logm_status;
 EXTERN volatile int logm_print_interval;
 
 /************************************************************************************

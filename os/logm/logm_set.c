@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include "logm.h"
 
+volatile int new_logm_bufsize = 0;
+
 /* This will be moved to upper layer or changed for protected build  */
 /* for setparam types, refer logm_param_type_e  */
 int logm_set(enum logm_param_type_e type, int value)
@@ -26,14 +28,10 @@ int logm_set(enum logm_param_type_e type, int value)
 	switch (type) {
 	case LOGM_BUFSIZE:
 		/* Buffer size should be adjusted to multiples of 4 */
-		logm_bufsize = (value + 3) & (~0x3);
+		new_logm_bufsize = (value + 3) & (~0x3);
 		break;
 	case LOGM_INTERVAL:
 		logm_print_interval = value * 1000;
-		break;
-	case LOGM_NEW_BUFSIZE:
-		/* Buffer size should be adjusted to multiples of 4 */
-		new_logm_bufsize = (value + 3) & (~0x3);
 		break;
 	default:
 		break;

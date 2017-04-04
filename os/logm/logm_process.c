@@ -27,20 +27,19 @@
 #include "logm_test.h"
 #endif
 
-volatile int logm_bufsize = LOGM_BUFFER_SIZE;
+uint8_t logm_status;
+int logm_bufsize = LOGM_BUFFER_SIZE;
+char * g_logm_rsvbuf = NULL;
 volatile int logm_print_interval = LOGM_PRINT_INTERVAL * 1000;
-char *volatile g_logm_rsvbuf = NULL;
-volatile uint8_t logm_status;
 
 static int logm_change_bufsize(void)
 {
 	int buflen;
 
 	/* Get new values */
-	logm_get(LOGM_NEW_BUFSIZE, &buflen);
 
 	/* Keep using old size because of invalid parameter */
-	if (buflen < 0) {
+	if (new_logm_bufsize <= 0) {
 		LOGM_STATUS_CLEAR(LOGM_BUFFER_RESIZE_REQ);
 		return 0;
 	}
@@ -62,7 +61,7 @@ static int logm_change_bufsize(void)
 	g_logm_dropmsg_count = 0;
 	g_logm_overflow_offset = -1;
 
-	LOGM_STATUS_CLEAR(LOGM_BUFFER_RESIZE_REQ);	// finish
+	LOGM_STATUS_CLEAR(LOGM_BUFFER_RESIZE_REQ);
 
 	return 0;
 }

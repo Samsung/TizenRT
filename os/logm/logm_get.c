@@ -18,21 +18,16 @@
 #include <tinyara/logm.h>
 #include "logm.h"
 
-volatile int new_logm_bufsize = 0;
-
 /* This will be moved to upper layer or changed for protected build  */
 /* Refer logm_param_type_e for getparam values */
-int logm_get(enum logm_param_type_e type, void *value)
+int logm_get(enum logm_param_type_e type, int *value)
 {
 	switch (type) {
 	case LOGM_BUFSIZE:
-		*((int *)value) = logm_bufsize;
+		*value = logm_bufsize;
 		break;
 	case LOGM_INTERVAL:
-		*((int *)value) = (int)(logm_print_interval / 1000);
-		break;
-	case LOGM_NEW_BUFSIZE:
-		*((int *)value) = new_logm_bufsize;
+		*value = (int)(logm_print_interval / 1000);
 		break;
 	default:
 		break;

@@ -43,6 +43,10 @@ config LOGM_TASK_STACKSIZE
 	int "Logm Task stack size"
 	default 1024
 
+config LOGM_DEBUG
+	bool "Enable to print debug messages regarding logm"
+	default n
+
 config LOGM_TEST
 	bool "Test code for logger module "
 	default n

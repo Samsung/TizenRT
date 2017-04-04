@@ -57,7 +57,7 @@ void logm_start(void);
 int logm_internal(int priority, const char *fmt, va_list valst);
 int logm(int flag, int mod, int priority, const char *fmt, ...);
 int logm_set(enum logm_param_type_e type, int value);
-int logm_get(enum logm_param_type_e type, void* value);
+int logm_get(enum logm_param_type_e type, int* value);
 
 #undef EXTERN
 #if defined(__cplusplus)
