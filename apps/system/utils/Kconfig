@@ -130,3 +130,9 @@ config STACKMONITOR_INTERVAL
 
 endif #ENABLE_STACKMONITOR
 
+config ENABLE_UPTIME
+	bool "uptime"
+	default y
+	---help---
+		print how long the system has been running
+

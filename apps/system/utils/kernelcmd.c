@@ -58,6 +58,9 @@ const static tash_cmdlist_t kdbg_cmds[] = {
 #if defined(CONFIG_ENABLE_ENV_UNSET) && !defined(CONFIG_DISABLE_ENVIRON)
 	{"unsetenv", kdbg_env_unset,    TASH_EXECMD_SYNC},
 #endif
+#if defined(CONFIG_ENABLE_UPTIME)
+	{"uptime",   kdbg_uptime,       TASH_EXECMD_SYNC},
+#endif
 	{NULL,       NULL,              0}
 };
 
