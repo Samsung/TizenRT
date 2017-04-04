@@ -43,6 +43,7 @@ static err_t wlan_init(struct netif *netif)
 	netif->name[1] = 'l';
 
 	snprintf(netif->d_ifname, IFNAMSIZ, "wl%d", netif->num);
+	netif->flags = NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_BROADCAST | NETIF_FLAG_IGMP;
 
 	return ERR_OK;
 }
@@ -62,5 +63,4 @@ void wlan_initup(struct netif *dev)
 
 	wlan_netif = netif_add(dev, &ipaddr, &netmask, &gw,
 					NULL, wlan_init, tcpip_input);
-	wlan_netif->flags |= NETIF_FLAG_IGMP;
 }
