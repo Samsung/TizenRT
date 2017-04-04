@@ -831,7 +831,7 @@ config DEBUG_OPTLEVEL
 
 endmenu # Build Setup
 
-menu "System Type"
+menu "Chip Selection"
 source arch/Kconfig
 endmenu
 
