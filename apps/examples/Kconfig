@@ -76,4 +76,5 @@ source "$APPSDIR/examples/artik_demo/Kconfig"
 source "$APPSDIR/examples/slsiwifi/Kconfig"
 source "$APPSDIR/examples/mqtt_test/Kconfig"
 source "$APPSDIR/examples/eeprom_test/Kconfig"
+source "$APPSDIR/examples/sensorbd_demo/Kconfig"
 endmenu
