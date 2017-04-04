@@ -37,7 +37,6 @@
 #include "../../arch/arm/src/s5j/soc/sss/isp_driver_secure_storage_factorykey.h"
 #include "../../arch/arm/src/s5j/soc/sss/isp_driver_secure_storage.h"
 #include "../../arch/arm/src/s5j/soc/sss/isp_driver_secure_storage_key.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_driver_aes_securekey.h"
 #include "../../arch/arm/src/s5j/soc/sss/isp_driver_dh_securekey.h"
 #include "../../arch/arm/src/s5j/soc/sss/isp_driver_rsa_securekey.h"
 #include "../../arch/arm/src/s5j/soc/sss/isp_driver_hmac_securekey.h"
@@ -76,15 +75,9 @@
 #define KEY_RSA_LEN_2048    256
 
 /* Key type */
-#define AES_KEY           0x010000
-#define HMAC_KEY          0x020000
 #define RSA_KEY           0x030000
 #define ECC_KEY           0x040000
 
-#define AES_KEY_128       ((AES_KEY)  | (0x1))
-#define AES_KEY_256       ((AES_KEY)  | (0x2))
-#define HMAC_KEY_128      ((HMAC_KEY) | (0x1))
-#define HMAC_KEY_256      ((HMAC_KEY) | (0x2))
 #define RSA_KEY_1024      ((RSA_KEY)  | (0xB1))
 #define RSA_KEY_2048      ((RSA_KEY)  | (0xB2))
 
@@ -181,62 +174,18 @@ int see_init(void);
 int see_free(void);
 
 /****************************************************************************
- * Name: Key Manager
- *
- * Description:
- *   - Manage symmetric and asymmetric keys.
- *   - Managed keys is not exposed to USER SPACE
- *
- ****************************************************************************/
-int see_generate_key(unsigned int key_type, unsigned int key_index, unsigned int key_len, unsigned int pukey_e);
-int see_setup_key(unsigned char *key_der, unsigned int key_len, unsigned int key_type, unsigned int key_index);
-int see_remove_key(unsigned int key_index, unsigned int key_type);
-
-/****************************************************************************
  * Name: Authentication
  *
  * Description:
  *
  ****************************************************************************/
 int see_generate_random(unsigned int *data, unsigned int len);
-int see_generate_certificate(cert_opt opt, unsigned char *out_buf, unsigned int *out_buflen);
 int see_get_certificate(unsigned char *cert, unsigned int *cert_len, unsigned int cert_index, unsigned int cert_type);
 int see_set_certificate(unsigned char *cert, unsigned int cert_len, unsigned int cert_index, unsigned int cert_type);
-int see_get_rsa_signature(struct sRSA_SIGN *rsa_sign, unsigned char *hash, unsigned int hash_len, unsigned int key_index);
-int see_verify_rsa_signature(struct sRSA_SIGN *rsa_sign, unsigned char *hash, unsigned int hash_len, unsigned int key_index);
 int see_get_ecdsa_signature(struct sECC_SIGN *ecc_sign, unsigned char *hash, unsigned int hash_len, unsigned int key_index);
 int see_verify_ecdsa_signature(struct sECC_SIGN *ecc_sign, unsigned char *hash, unsigned int hash_len, unsigned int key_index);
-int see_get_publickey(unsigned char *key_der, unsigned int *key_len);
-int see_generate_dhm_params(struct sDH_PARAM *d_param, unsigned int key_index);
-int see_compute_dhm_param(struct sDH_PARAM *d_param, unsigned int key_index, unsigned char *output, unsigned int *olen);
-
-/****************************************************************************
- * Name: Secure Storage
- *
- * Description:
- *   - Data, Credential (exclude certificates) and Keys can be stored
- *     in Secure Storage.
- *   - Limitation
- *     a. Each File size : 200B
- *     b. The number of all files : 32 ea
- *
- ****************************************************************************/
-int see_write_secure_storage(unsigned char *data, unsigned int data_len, unsigned int index);
-int see_read_secure_storage(unsigned char *data, unsigned int *data_len, unsigned int index);
-
-/****************************************************************************
- * Name: Encrypt and Decrypt
- *
- * Description:
- *   - Data can be encrypted and decrypted using a key in secure storage
- *
- ****************************************************************************/
-int see_aes_encrypt(unsigned int key_index, struct sAES_PARAM *aes_param);
-int see_aes_decrypt(unsigned int key_index, struct sAES_PARAM *aes_param);
-int see_get_hmac(struct sHMAC_MSG *hmac_msg, unsigned char *output, unsigned int object_id, unsigned int key_index);
 int see_get_hash(struct sHASH_MSG *h_param, unsigned char *hash, unsigned int mode);
-int see_rsa_decryption(unsigned int key_index, unsigned int pad_type, unsigned char *output, unsigned int *outlen, unsigned char *input, unsigned int inlen);
-int see_rsa_encryption(unsigned int key_index, unsigned int pad_type, unsigned char *output, unsigned int *outlen, unsigned char *input, unsigned int inlen);
+int see_compute_ecdh_param(struct sECC_KEY *ecc_pub, unsigned int key_index, unsigned char *output, unsigned int *olen);
 
 /****************************************************************************
  * Name: Internal functions

@@ -42,14 +42,6 @@ config HW_ECDH_PARAM
 		 . SECP 192, 224, 256, 384, 512
 		 . Brainpool 256
 
-config HW_RSA_SIGN
-	bool "HW rsa sign"
-	default n
-	---help---
-		Signing a RSA signature based on hardware.
-		CAUTION: For use this configuration, keys should be stored in secure storage.
-		Supporting key size : 1024, 2048
-
 config HW_RSA_VERIFICATION
 	bool "HW rsa verification"
 	default n
