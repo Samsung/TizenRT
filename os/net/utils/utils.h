@@ -172,42 +172,6 @@ unsigned int net_timeval2dsec(FAR struct timeval *tv);
 void net_ipv6_pref2mask(uint8_t preflen, net_ipv6addr_t mask);
 #endif
 
-/****************************************************************************
- * Name: tcp_chksum, tcp_ipv4_chksum, and tcp_ipv6_chksum
- *
- * Description:
- *   Calculate the TCP checksum of the packet in d_buf and d_appdata.
- *
- *   The TCP checksum is the Internet checksum of data contents of the
- *   TCP segment, and a pseudo-header as defined in RFC793.
- *
- *   Note: The d_appdata pointer that points to the packet data may
- *   point anywhere in memory, so it is not possible to simply calculate
- *   the Internet checksum of the contents of the d_buf buffer.
- *
- * Returned Value:
- *   The TCP checksum of the TCP segment in d_buf and pointed to by
- *   d_appdata.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_NET_IPv4
-uint16_t tcp_ipv4_chksum(FAR struct net_driver_s *dev);
-#endif
-
-#ifdef CONFIG_NET_IPv6
-/* REVIST: Is this used? */
-uint16_t tcp_ipv6_chksum(FAR struct net_driver_s *dev);
-#endif
-
-#if defined(CONFIG_NET_IPv4) && defined(CONFIG_NET_IPv6)
-uint16_t tcp_chksum(FAR struct net_driver_s *dev);
-#elif defined(CONFIG_NET_IPv4)
-#define tcp_chksum(d) tcp_ipv4_chksum(d)
-#else							/* if defined(CONFIG_NET_IPv6) */
-#define tcp_chksum(d) tcp_ipv6_chksum(d)
-#endif
-
 #undef EXTERN
 #ifdef __cplusplus
 }

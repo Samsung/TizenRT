@@ -395,54 +395,6 @@ int netdev_carrier_on(FAR struct net_driver_s *dev);
 int netdev_carrier_off(FAR struct net_driver_s *dev);
 
 /****************************************************************************
- * Name: net_chksum
- *
- * Description:
- *   Calculate the Internet checksum over a buffer.
- *
- *   The Internet checksum is the one's complement of the one's complement
- *   sum of all 16-bit words in the buffer.
- *
- *   See RFC1071.
- *
- *   If CONFIG_NET_ARCH_CHKSUM is defined, then this function must be
- *   provided by architecture-specific logic.
- *
- * Input Parameters:
- *
- *   buf - A pointer to the buffer over which the checksum is to be computed.
- *
- *   len - The length of the buffer over which the checksum is to be computed.
- *
- * Returned Value:
- *   The Internet checksum of the buffer.
- *
- ****************************************************************************/
-
-uint16_t net_chksum(FAR uint16_t *data, uint16_t len);
-
-/****************************************************************************
- * Name: ipv4_chksum
- *
- * Description:
- *   Calculate the IPv4 header checksum of the packet header in d_buf.
- *
- *   The IPv4 header checksum is the Internet checksum of the 20 bytes of
- *   the IPv4 header.
- *
- *   If CONFIG_NET_ARCH_CHKSUM is defined, then this function must be
- *   provided by architecture-specific logic.
- *
- * Returned Value:
- *   The IPv4 header checksum of the IPv4 header in the d_buf buffer.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_NET_IPv4
-uint16_t ipv4_chksum(FAR struct net_driver_s *dev);
-#endif
-
-/****************************************************************************
  * Name: ipv6_chksum
  *
  * Description:

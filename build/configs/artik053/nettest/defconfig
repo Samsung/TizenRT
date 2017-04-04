@@ -731,7 +731,6 @@ CONFIG_NET_IPv4=y
 # Network Device Operations
 #
 # CONFIG_NETDEV_PHY_IOCTL is not set
-# CONFIG_NET_ARCH_CHKSUM is not set
 
 #
 # Routing Table Configuration

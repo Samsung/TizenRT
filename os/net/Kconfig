@@ -123,7 +123,6 @@ config NET_IPv4
 endmenu # Internet Protocol Selection
 
 source net/netdev/Kconfig
-source net/utils/Kconfig
 source net/route/Kconfig
 
 endif # NET
