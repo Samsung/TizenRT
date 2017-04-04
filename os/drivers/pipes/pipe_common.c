@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -203,7 +203,7 @@ int pipecommon_open(FAR struct file *filep)
 
 	DEBUGASSERT(dev);
 
-	/* Make sure that we have exclusive access to the device structure.  The
+	/* Make sure that we have exclusive access to the device structure. The
 	 * sem_wait() call should fail only if we are awakened by a signal.
 	 */
 
@@ -330,7 +330,7 @@ int pipecommon_close(FAR struct file *filep)
 		}
 	}
 
-	/* What is the buffer management policy?  Do we free the buffe when the
+	/* What is the buffer management policy?  Do we free the buffer when the
 	 * last client closes the pipe policy 0, or when the buffer becomes empty.
 	 * In the latter case, the buffer data will remain valid and can be
 	 * obtained when the pipe is re-opened.
@@ -466,7 +466,7 @@ ssize_t pipecommon_write(FAR struct file *filep, FAR const char *buffer, size_t 
 		return 0;
 	}
 
-	/* At present, this method cannot be called from interrupt handlers.  That is
+	/* At present, this method cannot be called from interrupt handlers. That is
 	 * because it calls sem_wait (via pipecommon_semtake below) and sem_wait cannot
 	 * be called from interrupt level.  This actually happens fairly commonly
 	 * IF dbg() is called from interrupt handlers and stdout is being redirected
@@ -523,7 +523,7 @@ ssize_t pipecommon_write(FAR struct file *filep, FAR const char *buffer, size_t 
 				return len;
 			}
 		} else {
-			/* There is not enough room for the next byte.  Was anything written in this pass? */
+			/* There is not enough room for the next byte. Was anything written in this pass? */
 
 			if (last < nwritten) {
 				/* Yes.. Notify all of the waiting readers that more data is available */
@@ -571,11 +571,11 @@ int pipecommon_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 
 	DEBUGASSERT(dev && fds);
 
-	/* Are we setting up the poll?  Or tearing it down? */
+	/* Are we setting up the poll? Or tearing it down? */
 
 	pipecommon_semtake(&dev->d_bfsem);
 	if (setup) {
-		/* This is a request to set up the poll.  Find an available
+		/* This is a request to set up the poll. Find an available
 		 * slot for the poll structure reference
 		 */
 
