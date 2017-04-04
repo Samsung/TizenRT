@@ -3,15 +3,6 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config NET_ARCH_INCR32
-	bool "Architecture-specific net_incr32()"
-	default n
-	---help---
-		Define if you architecture provided an optimized version of
-		net_incr32() with prototype:
-
-			void net_incr32(FAR uint8_t *op32, uint16_t op16)
-
 config NET_ARCH_CHKSUM
 	bool "Architecture-specific net_chksum()"
 	default n

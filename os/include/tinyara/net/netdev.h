@@ -422,27 +422,6 @@ int netdev_carrier_off(FAR struct net_driver_s *dev);
 uint16_t net_chksum(FAR uint16_t *data, uint16_t len);
 
 /****************************************************************************
- * Name: net_incr32
- *
- * Description:
- *
- *   Carry out a 32-bit addition.
- *
- *   By defining CONFIG_NET_ARCH_INCR32, the architecture can replace
- *   net_incr32 with hardware assisted solutions.
- *
- * Input Parameters:
- *   op32 - A pointer to a 4-byte array representing a 32-bit integer in
- *          network byte order (big endian).  This value may not be word
- *          aligned. The value pointed to by op32 is modified in place
- *
- *   op16 - A 16-bit integer in host byte order.
- *
- ****************************************************************************/
-
-void net_incr32(FAR uint8_t *op32, uint16_t op16);
-
-/****************************************************************************
  * Name: ipv4_chksum
  *
  * Description:
