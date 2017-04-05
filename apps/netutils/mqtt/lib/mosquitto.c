@@ -877,21 +877,6 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
                 return MOSQ_ERR_TLS;
         }
 
-#if defined(CONFIG_TLS_WITH_SSS) && defined(CONFIG_HW_RSA)
-	const mbedtls_pk_info_t *pk_info;
-
-	if((pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_RSA))== NULL)
-		return MOSQ_ERR_TLS;
-
-	if(mbedtls_pk_setup(mosq->pkey, pk_info) != 0)
-		return MOSQ_ERR_TLS;
-
-	mbedtls_rsa_init((mbedtls_rsa_context*)((mbedtls_pk_context*)mosq->pkey)->pk_ctx,
-			 MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_SHA256);
-	((mbedtls_rsa_context *)((mbedtls_pk_context*)mosq->pkey)->pk_ctx)->key_index = \
-								(unsigned int)mosq->tls_key;
-	((mbedtls_rsa_context *)((mbedtls_pk_context*)mosq->pkey)->pk_ctx)->len = 256;
-#else
 	if (mosq->tls_key) {
 	        if (mbedtls_pk_parse_key(mosq->pkey,
 	                (const unsigned char *)mosq->tls_key, mosq->tls_key_len, NULL, 0) != 0) {
@@ -899,7 +884,7 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 	                return MOSQ_ERR_TLS;
 	        }
 	}
-#endif
+
         if (mbedtls_ctr_drbg_seed(mosq->ctr_drbg, mbedtls_entropy_func,
                                         mosq->entropy, NULL, 0) != 0) {
                 _mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_ctr_drbg_seed fail");
@@ -925,14 +910,6 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 
         mbedtls_ssl_conf_rng(mosq->ssl, mbedtls_ctr_drbg_random, mosq->ctr_drbg);
 
-#if defined(CONFIG_HW_RSA)
-	mbedtls_ssl_conf_ca_chain(mosq->ssl, ((mbedtls_x509_crt *)mosq->cert)->next, NULL);
-
-	if (mbedtls_ssl_conf_own_cert(mosq->ssl, mosq->cert, mosq->pkey) != 0) {
-	        _mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_ssl_conf_own_cert fail");
-	        return MOSQ_ERR_TLS;
-	}
-#else
 	if(mosq->tls_cert && mosq->tls_key) {
 	        mbedtls_ssl_conf_ca_chain(mosq->ssl, ((mbedtls_x509_crt *)mosq->cert)->next, NULL);
 
@@ -952,7 +929,6 @@ int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *ca
 	else {
 	        mbedtls_ssl_conf_ca_chain(mosq->ssl, ((mbedtls_x509_crt *)mosq->cert), NULL);
 	}
-#endif
 
 	mbedtls_ssl_conf_authmode(mosq->ssl, mosq->tls_cert_reqs);
 

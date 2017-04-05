@@ -23,13 +23,6 @@
 #include "http_arch.h"
 #include "http_log.h"
 
-#if defined(CONFIG_HW_RSA)
-#include "tls/see_api.h"
-#include "tls/sss_key.h"
-#include "tls/pk.h"
-#include "tls/pk_internal.h"
-#endif
-
 const char *pers = "http_tls_server";
 
 #define MBED_DEBUG_LEVEL 0
@@ -77,45 +70,6 @@ int http_tls_init(struct http_server_t *server, struct ssl_config_t *ssl_config)
 	/*
 	 * 2. Load the certificates and private key
 	 */
-#ifdef CONFIG_HW_RSA
-	HTTP_LOGD("  . [SSS] Loading the cert. and key...");
-
-	/* 2-1 Load device cert */
-	if ((result = mbedtls_x509_crt_parse(&(server->tls_srvcert), (const unsigned char *) sss_dev_crt, sizeof(sss_dev_crt))) != 0) {
-		HTTP_LOGE("Error: dev_cert parse fail, return %d\n", result);
-		goto http_exit;
-	}
-
-	/* 2-2 Load CA cert */
-	if ((result = mbedtls_x509_crt_parse(&(server->tls_srvcert), (const unsigned char *) sss_ca_crt, sizeof(sss_ca_crt))) != 0) {
-		HTTP_LOGE("Error: CA_cert parse fail, return %d\n", result);
-		goto http_exit;
-	}
-
-	/* 2-3 Setup device key */
-	const mbedtls_pk_info_t *pk_info;
-
-	if ((pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)) == NULL) {
-		return WEBSOCKET_INIT_ERROR;
-	}
-
-	if ((result = mbedtls_pk_setup(&server->tls_pkey, pk_info)) != 0) {
-		return WEBSOCKET_INIT_ERROR;
-	}
-
-	mbedtls_rsa_init((mbedtls_rsa_context *) server->tls_pkey.pk_ctx,
-					 MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_SHA256);
-
-	((mbedtls_rsa_context *)(server->tls_pkey.pk_ctx))->key_index = ssl_config->dev_key_index;
-	((mbedtls_rsa_context *)(server->tls_pkey.pk_ctx))->len = 256;
-
-	HTTP_LOGD("Ok\n");
-
-http_exit:
-	if (result) {
-		return result;
-	}
-#else
 	HTTP_LOGD("  . Loading the server cert. and key...");
 
 	if (ssl_config->dev_cert && ssl_config->private_key) {
@@ -156,8 +110,6 @@ http_exit:
 	mbedtls_ssl_conf_rng(&(server->tls_conf), mbedtls_ctr_drbg_random, &(server->tls_ctr_drbg));
 	mbedtls_ssl_conf_dbg(&(server->tls_conf), http_tls_debug, stdout);
 	mbedtls_ssl_conf_session_cache(&(server->tls_conf), &(server->tls_cache), mbedtls_ssl_cache_get, mbedtls_ssl_cache_set);
-
-#endif /* CONFIG_HW_RSA */
 
 	/*
 	 * 3. Setup ssl stuffs

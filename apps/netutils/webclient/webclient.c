@@ -103,13 +103,6 @@
 #  undef CONFIG_CODECS_BASE64
 #endif
 
-#if defined(CONFIG_HW_RSA)
-#include "tls/see_api.h"
-#include "tls/sss_key.h"
-#include "tls/pk.h"
-#include "tls/pk_internal.h"
-#endif
-
 #define CONFIG_WEBCLIENT_MAXHTTPLINE 200
 #define CONFIG_WEBCLIENT_MAXMIMESIZE 32
 #define CONFIG_WEBCLIENT_MAXHOSTNAME 40
@@ -516,50 +509,6 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 
 	ndbg("Ok\n");
 
-#ifdef CONFIG_HW_RSA
-	/* 2. Load the certificates and private key */
-	ndbg("  . [SSS] Loading the cert. and key...");
-
-	if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
-										 (const unsigned char *) sss_dev_crt,
-										 sizeof(sss_dev_crt))) != 0) {
-		ndbg("Error: dev_cert parse fail, return %d\n", result);
-		goto TLS_INIT_EXIT;
-	}
-
-	if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
-										 (const unsigned char *) sss_ca_crt,
-										 sizeof(sss_ca_crt))) != 0) {
-		ndbg("Error: ca_cert parse fail, return %d\n", result);
-		goto TLS_INIT_EXIT;
-	}
-
-	const mbedtls_pk_info_t *pk_info;
-
-	if ((pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)) == NULL) {
-		return WEBSOCKET_INIT_ERROR;
-	}
-
-	if ((result = mbedtls_pk_setup(&client->tls_pkey, pk_info)) != 0) {
-		return WEBSOCKET_INIT_ERROR;
-	}
-
-	mbedtls_rsa_init((mbedtls_rsa_context *) client->tls_pkey.pk_ctx, MBEDTLS_RSA_PKCS_V15, MBEDTLS_MD_SHA256);
-	((mbedtls_rsa_context *)(client->tls_pkey.pk_ctx))->key_index = ssl_config->dev_key_index;
-	((mbedtls_rsa_context *)(client->tls_pkey.pk_ctx))->len = 256;
-
-	if ((result = mbedtls_ssl_conf_own_cert(&(client->tls_conf),
-											&(client->tls_clicert),
-											&(client->tls_pkey))) != 0) {
-		ndbg("Error: mbedtls_ssl_conf_own_cert returned %d\n", result);
-		goto TLS_INIT_EXIT;
-	}
-
-	mbedtls_ssl_conf_ca_chain(&(client->tls_conf), client->tls_clicert.next, NULL);
-
-	ndbg("Ok\n");
-#else
-
 	if (ssl_config->dev_cert && ssl_config->private_key) {
 		/* 2. Load the certificates and private key */
 
@@ -608,7 +557,6 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 
 		ndbg("Ok\n");
 	}
-#endif /* CONFIG_HW_RSA */
 
 	return 0;
 TLS_INIT_EXIT:

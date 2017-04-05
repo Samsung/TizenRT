@@ -117,19 +117,12 @@ struct http_keyvalue_list_t;
  */
 
 struct ssl_config_t {
-#ifdef CONFIG_HW_RSA
-	unsigned int ca_key_index;
-	unsigned int dev_key_index;
-	unsigned int ca_cert_index;
-	unsigned int dev_cert_index;
-#else
 	char *root_ca;
 	char *dev_cert;
 	char *private_key;
 	unsigned int root_ca_len;
 	unsigned int dev_cert_len;
 	unsigned int private_key_len;
-#endif /* CONFIG_HW_RSA */
 	int auth_mode;
 };
 
