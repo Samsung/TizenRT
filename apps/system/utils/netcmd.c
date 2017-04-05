@@ -17,8 +17,6 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
-#ifdef CONFIG_NET
 #include <apps/shell/tash.h>
 
 #include <sys/stat.h>			/* Needed for open */
@@ -45,11 +43,9 @@
 #include <tinyara/clock.h>
 #include <tinyara/net/net.h>
 #include <tinyara/fs/fs_utils.h>
-#ifdef CONFIG_NET_LWIP
 #include <net/lwip/netif.h>
 #include <net/lwip/dhcp.h>
 #include <net/lwip/stats.h>
-#endif
 #include <tinyara/net/ip.h>
 #include <apps/netutils/dhcpc.h>
 
@@ -57,19 +53,15 @@
 #include <apps/netutils/netlib.h>
 #endif
 
-#if CONFIG_NFILE_DESCRIPTORS > 0
 #include <apps/netutils/netlib.h>
 #include <apps/netutils/tftp.h>
-#endif
 
-#if defined(CONFIG_NETUTILS_DHCPC) || defined(CONFIG_SYSTEM_NETDB)
 #ifdef CONFIG_HAVE_GETHOSTBYNAME
 #include <netdb.h>
 #endif
 #include <apps/netutils/dhcpc.h>
 #ifndef DNS_DEFAULT_PORT
 #define DNS_DEFAULT_PORT   53
-#endif
 #endif
 
 #include "netcmd.h"
@@ -173,7 +165,7 @@ extern int mqtt_client_sub_main(int argc, char *argv[]);
 extern int mqtt_client_pub_main(int argc, char *argv[]);
 #endif
 
-#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_NETUTILS_TFTPC)
+#if defined(CONFIG_NETUTILS_TFTPC)
 struct tftpc_args_s {
 	bool binary;				/* true:binary ("octet") false:text ("netascii") */
 	bool allocated;				/* true: destpath is allocated */
@@ -239,7 +231,7 @@ DONE:
 }
 
 
-#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_NETUTILS_TFTPC)
+#if defined(CONFIG_NETUTILS_TFTPC)
 int tftpc_parseargs(int argc, char **argv, struct tftpc_args_s *args)
 {
 	FAR const char *fmt = fmtarginvalid;
@@ -360,13 +352,12 @@ int tftpc_parseargs(int argc, char **argv, struct tftpc_args_s *args)
 }
 #endif
 
-#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_NETUTILS_TFTPC)
+#if defined(CONFIG_NETUTILS_TFTPC)
 int cmd_get(int argc, char **argv)
 {
 	struct tftpc_args_s args;
 	char *fullpath;
 
-//for fs
 	int i = 0;
 	int fd;
 	int ret = -1;
@@ -376,10 +367,8 @@ int cmd_get(int argc, char **argv)
 	char newfilename[30];
 	char seek_wbuffer[100];
 	char seek_rbuffer[101];
-//~for fs
 
 	/* Parse the input parameter list */
-
 	if (tftpc_parseargs(argc, argv, &args) != OK) {
 		return ERROR;
 	}
@@ -394,7 +383,6 @@ int cmd_get(int argc, char **argv)
 		printf("FS erase error\n");
 		return;
 	}
-	//printf("FS erase done\n");
 
 	ret = fs_initiate("/dev/smart1", "smartfs");
 	if (ret != OK) {
@@ -407,8 +395,6 @@ int cmd_get(int argc, char **argv)
 	/* Then perform the TFTP get operation */
 
 	printf("src: %s full: %s addr: %d bin: %d\n", args.srcpath, fullpath, args.ipaddr, args.binary);
-
-//if (tftpget(args.srcpath, fullpath, 0xC0A80022, args.binary) != OK)
 	if (tftpget(args.srcpath, fullpath, args.ipaddr, args.binary) != OK) {
 		printf(fmtcmdfailed, argv[0], "tftpget");
 	}
@@ -432,7 +418,6 @@ int cmd_get(int argc, char **argv)
 	}
 
 	/* Release any allocated memory */
-
 	if (args.allocated) {
 		free(args.destpath);
 	}
@@ -478,12 +463,7 @@ int cmd_ifdown(int argc, char **argv)
 
 int cmd_ifconfig(int argc, char **argv)
 {
-#ifdef CONFIG_NET_IPv4
 	struct in_addr addr;
-#endif
-#ifdef CONFIG_NET_IPv6
-	struct in6_addr addr6;
-#endif
 	in_addr_t gip;
 	int i;
 	FAR char *intf = NULL;
@@ -494,18 +474,10 @@ int cmd_ifconfig(int argc, char **argv)
 #ifdef CONFIG_NET_ETHERNET
 	FAR char *hw = NULL;
 #endif
-#if defined(CONFIG_NETUTILS_DHCPC) || defined(CONFIG_SYSTEM_NETDB)
 	FAR char *dns = NULL;
-#endif
-#if defined(CONFIG_NET_IPv4) && defined(CONFIG_NET_IPv6)
-	bool inet6 = false;
-#endif
 	bool badarg = false;
 	uint8_t mac[IFHWADDRLEN];
-
-#ifdef CONFIG_NET_LWIP
 	struct netif *netif;
-#endif
 
 	/* With one or no arguments, ifconfig simply shows the status of Ethernet
 	 * device:
@@ -547,18 +519,6 @@ int cmd_ifconfig(int argc, char **argv)
 					} else {
 						badarg = true;
 					}
-				} else if (!strcmp(tmp, "inet")) {
-#if defined(CONFIG_NET_IPv4) && defined(CONFIG_NET_IPv6)
-					inet6 = false;
-#elif !defined(CONFIG_NET_IPv4)
-					badarg = true;
-#endif
-				} else if (!strcmp(tmp, "inet6")) {
-#if defined(CONFIG_NET_IPv4) && defined(CONFIG_NET_IPv6)
-					inet6 = true;
-#elif !defined(CONFIG_NET_IPv6)
-					badarg = true;
-#endif
 				}
 #ifdef CONFIG_NET_ETHERNET
 				/* REVISIT: How will we handle Ethernet and SLIP networks together? */
@@ -573,8 +533,6 @@ int cmd_ifconfig(int argc, char **argv)
 					}
 				}
 #endif
-
-#if defined(CONFIG_NETUTILS_DHCPC) || defined(CONFIG_SYSTEM_NETDB)
 				else if (!strcmp(tmp, "dns")) {
 					if (argc - 1 >= i + 1) {
 						dns = argv[i + 1];
@@ -583,11 +541,8 @@ int cmd_ifconfig(int argc, char **argv)
 						badarg = true;
 					}
 				}
-#endif
 			}
-#ifdef CONFIG_NET_LWIP
 			netif = netif_find(intf);
-#endif
 		}
 	}
 
@@ -605,55 +560,31 @@ int cmd_ifconfig(int argc, char **argv)
 	}
 #endif
 
-	/* Set IP address */
+	if (hostip != NULL) {
+		if (!strcmp(hostip, "dhcp")) {
+			/* Set DHCP addr */
 
-#ifdef CONFIG_NET_IPv6
-#ifdef CONFIG_NET_IPv4
-	if (inet6)
-#endif
-	{
-		UNUSED(addr6);
-		UNUSED(gip);
-		UNUSED(hostip);
-	}
-#endif							/* CONFIG_NET_IPv6 */
-
-#ifdef CONFIG_NET_IPv4
-#ifdef CONFIG_NET_IPv6
-	else
-#endif
-	{
-		if (hostip != NULL) {
-
-#if defined(CONFIG_NETUTILS_DHCPC) || defined(CONFIG_NET_LWIP)
-			if (!strcmp(hostip, "dhcp")) {
-				/* Set DHCP addr */
-
-				ndbg("DHCPC Mode\n");
-				gip = addr.s_addr = 0;
-			} else
-#endif
-			{
-				/* Set host IP address */
-
-				ndbg("Host IP: %s\n", hostip);
-				gip = addr.s_addr = inet_addr(hostip);
-			}
-
-			netlib_set_ipv4addr(intf, &addr);
+			ndbg("DHCPC Mode\n");
+			gip = addr.s_addr = 0;
 		} else {
-			printf("hostip is not provided\n");
-			return ERROR;
+			/* Set host IP address */
+			ndbg("Host IP: %s\n", hostip);
+			gip = addr.s_addr = inet_addr(hostip);
 		}
+
+		netlib_set_ipv4addr(intf, &addr);
+
+	} else {
+		printf("hostip is not provided\n");
+		return ERROR;
 	}
-#endif							/* CONFIG_NET_IPv4 */
 
-#ifdef CONFIG_NETUTILS_DHCPC
 	/* Get the MAC address of the NIC */
-
 	if (!gip) {
 		FAR void *handle;
 		netlib_getmacaddr(intf, mac);
+		struct dhcpc_state ds;
+		int ret;
 
 		/* Set up the DHCPC modules */
 
@@ -667,9 +598,8 @@ int cmd_ifconfig(int argc, char **argv)
 		if (!handle) {
 			return ERROR;
 		}
-		struct dhcpc_state ds;
 
-		int ret = dhcpc_request(handle, &ds);
+		ret = dhcpc_request(handle, &ds);
 		if (ret < 0) {
 			dhcpc_close(handle);
 			return ERROR;
@@ -701,95 +631,41 @@ int cmd_ifconfig(int argc, char **argv)
 
 		return OK;
 	}
-#endif
 
-#ifdef CONFIG_NET_IPv6
-#ifdef CONFIG_NET_IPv4
-	if (inet6)
-#endif
-	{
-		UNUSED(gwip);
-	}
-#endif							/* CONFIG_NET_IPv6 */
-
-#ifdef CONFIG_NET_IPv4
-#ifdef CONFIG_NET_IPv6
-	else
-#endif
-	{
-		/* Set gateway */
-		if (gwip) {
-			ndbg("Gateway: %s\n", gwip);
-			gip = addr.s_addr = inet_addr(gwip);
-		} else {
-			if (gip) {
-				ndbg("Gateway: default\n");
-				gip = NTOHL(gip);
-				gip &= ~0x000000ff;
-				gip |= 0x00000001;
-				gip = HTONL(gip);
-			}
-
-			addr.s_addr = gip;
+	/* Set gateway */
+	if (gwip) {
+		ndbg("Gateway: %s\n", gwip);
+		gip = addr.s_addr = inet_addr(gwip);
+	} else {
+		if (gip) {
+			ndbg("Gateway: default\n");
+			gip = NTOHL(gip);
+			gip &= ~0x000000ff;
+			gip |= 0x00000001;
+			gip = HTONL(gip);
 		}
-		netlib_set_dripv4addr(intf, &addr);
+
+		addr.s_addr = gip;
 	}
-#endif							/* CONFIG_NET_IPv4 */
+	netlib_set_dripv4addr(intf, &addr);
 
 	/* Set network mask */
-
-#ifdef CONFIG_NET_IPv6
-#ifdef CONFIG_NET_IPv4
-	if (inet6)
-#endif
-	{
-		UNUSED(mask);
+	if (mask) {
+		ndbg("Netmask: %s\n", mask);
+		addr.s_addr = inet_addr(mask);
+	} else {
+		ndbg("Netmask: Default\n");
+		addr.s_addr = inet_addr("255.255.255.0");
 	}
-#endif							/* CONFIG_NET_IPv6 */
+	netlib_set_ipv4netmask(intf, &addr);
 
-#ifdef CONFIG_NET_IPv4
-#ifdef CONFIG_NET_IPv6
-	else
-#endif
-	{
-		if (mask) {
-			ndbg("Netmask: %s\n", mask);
-			addr.s_addr = inet_addr(mask);
-		} else {
-			ndbg("Netmask: Default\n");
-			addr.s_addr = inet_addr("255.255.255.0");
-		}
-		netlib_set_ipv4netmask(intf, &addr);
+	if (dns) {
+		ndbg("DNS: %s\n", dns);
+		addr.s_addr = inet_addr(dns);
+	} else {
+		ndbg("DNS: Default\n");
+		addr.s_addr = gip;
 	}
-#endif							/* CONFIG_NET_IPv4 */
-
-#if defined(CONFIG_NETUTILS_DHCPC) || defined(CONFIG_SYSTEM_NETDB)
-#ifdef CONFIG_NET_IPv6
-#ifdef CONFIG_NET_IPv4
-	if (inet6)
-#endif
-	{
-		UNUSED(dns);
-	}
-#endif							/* CONFIG_NET_IPv6 */
-
-#ifdef CONFIG_NET_IPv4
-#ifdef CONFIG_NET_IPv6
-	else
-#endif
-	{
-		if (dns) {
-			ndbg("DNS: %s\n", dns);
-			addr.s_addr = inet_addr(dns);
-		} else {
-			ndbg("DNS: Default\n");
-			addr.s_addr = gip;
-		}
-
-		//   dns_setserver(&addr);
-	}
-#endif							/* CONFIG_NET_IPv4 */
-#endif
 
 	return OK;
 }
@@ -803,7 +679,7 @@ const static tash_cmdlist_t net_utilcmds[] = {
 	{"ifconfig", cmd_ifconfig, TASH_EXECMD_SYNC},
 	{"ifdown", cmd_ifdown, TASH_EXECMD_SYNC},
 	{"ifup", cmd_ifup, TASH_EXECMD_SYNC},
-#ifdef CONFIG_NET_LWIP
+#ifdef NET_LWIP_STATS_DISPLAY
 	{"lwip_stats", stats_display, TASH_EXECMD_ASYNC},
 #endif
 	{"ping", cmd_ping, TASH_EXECMD_SYNC},
@@ -913,4 +789,3 @@ void net_register_appcmds(void)
 {
 	tash_cmdlist_install(net_appcmds);
 }
-#endif
