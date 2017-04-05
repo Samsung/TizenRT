@@ -212,8 +212,8 @@ endif
 CHIP_CSRCS += s5j_watchdog.c
 
 ifeq ($(CONFIG_S5J_SSS),y)
-CHIP_CSRCS += chip/soc/sss/sss_driver_io.c
-EXTRA_LIBS += chip/soc/sss/libispdriver.a
+CHIP_CSRCS += chip/sss/sss_driver_io.c
+EXTRA_LIBS += chip/sss/libispdriver.a
 endif
 
 EXTRA_LIBS += chip/soc/wireless/libwifidriver.a

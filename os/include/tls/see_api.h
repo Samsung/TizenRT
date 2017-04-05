@@ -27,23 +27,23 @@
 
 #include <stdio.h>
 
-#include "../../arch/arm/src/s5j/soc/sss/mb_cmd_dh.h"
-#include "../../arch/arm/src/s5j/soc/sss/mb_cmd_hash.h"
-#include "../../arch/arm/src/s5j/soc/sss/mb_cmd_rsa.h"
+#include "../../arch/arm/src/s5j/sss/mb_cmd_dh.h"
+#include "../../arch/arm/src/s5j/sss/mb_cmd_hash.h"
+#include "../../arch/arm/src/s5j/sss/mb_cmd_rsa.h"
 
-#include "../../arch/arm/src/s5j/soc/sss/isp_define.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_driver_hash.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_driver_rng.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_driver_secure_storage_factorykey.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_driver_secure_storage.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_driver_secure_storage_key.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_driver_dh_securekey.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_driver_rsa_securekey.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_driver_hmac_securekey.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_driver_ecdsa_securekey.h"
-#include "../../arch/arm/src/s5j/soc/sss/mb_cmd_secure_storage_data.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_driver_error.h"
-#include "../../arch/arm/src/s5j/soc/sss/isp_oid.h"
+#include "../../arch/arm/src/s5j/sss/isp_define.h"
+#include "../../arch/arm/src/s5j/sss/isp_driver_hash.h"
+#include "../../arch/arm/src/s5j/sss/isp_driver_rng.h"
+#include "../../arch/arm/src/s5j/sss/isp_driver_secure_storage_factorykey.h"
+#include "../../arch/arm/src/s5j/sss/isp_driver_secure_storage.h"
+#include "../../arch/arm/src/s5j/sss/isp_driver_secure_storage_key.h"
+#include "../../arch/arm/src/s5j/sss/isp_driver_dh_securekey.h"
+#include "../../arch/arm/src/s5j/sss/isp_driver_rsa_securekey.h"
+#include "../../arch/arm/src/s5j/sss/isp_driver_hmac_securekey.h"
+#include "../../arch/arm/src/s5j/sss/isp_driver_ecdsa_securekey.h"
+#include "../../arch/arm/src/s5j/sss/mb_cmd_secure_storage_data.h"
+#include "../../arch/arm/src/s5j/sss/isp_driver_error.h"
+#include "../../arch/arm/src/s5j/sss/isp_oid.h"
 
 /****************************************************************************
  * Pre-processor Definitions
