@@ -66,10 +66,6 @@
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
-#if defined(CONFIG_TINYARA_DEBUG) && defined(CONFIG_SEMAPHORE_HISTORY)
-#include <tinyara/debug/tinyara_debug.h>
-#endif
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -157,9 +153,7 @@ int sem_wait(FAR sem_t *sem)
 			sem->semcount--;
 			sem_addholder(sem);
 			rtcb->waitsem = NULL;
-#if defined(CONFIG_TINYARA_DEBUG) && defined(CONFIG_SEMAPHORE_HISTORY)
-			save_semaphore_history(sem, (void *)rtcb, SEM_AQUIRE);
-#endif
+
 			ret = OK;
 		}
 
@@ -181,10 +175,6 @@ int sem_wait(FAR sem_t *sem)
 			/* Save the waited on semaphore in the TCB */
 
 			rtcb->waitsem = sem;
-
-#if defined(CONFIG_TINYARA_DEBUG) && defined(CONFIG_SEMAPHORE_HISTORY)
-			save_semaphore_history(sem, (void *)rtcb, SEM_WAITING);
-#endif
 
 			/* If priority inheritance is enabled, then check the priority of
 			 * the holder of the semaphore.
@@ -307,9 +297,7 @@ int sem_wait_for_isr(FAR sem_t *sem)
 
 			sem->semcount--;
 			rtcb->waitsem = NULL;
-#if defined(CONFIG_TINYARA_DEBUG) && defined(CONFIG_SEMAPHORE_HISTORY)
-			save_semaphore_history(sem, (void *)rtcb, SEM_AQUIRE);
-#endif
+
 			ret = OK;
 		}
 
@@ -332,11 +320,9 @@ int sem_wait_for_isr(FAR sem_t *sem)
 
 			rtcb->waitsem = sem;
 
-#if defined(CONFIG_TINYARA_DEBUG) && defined(CONFIG_SEMAPHORE_HISTORY)
-			save_semaphore_history(sem, (void *)rtcb, SEM_WAITING);
-#endif
 
 			/* Add the TCB to the prioritized semaphore wait queue */
+
 			set_errno(0);
 
 			up_block_task(rtcb, TSTATE_WAIT_SEM);
