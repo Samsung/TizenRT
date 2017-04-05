@@ -26,6 +26,7 @@ choice
 
 config	NET_LWIP
 	bool "LwIP"
+	select NET_IPv4
 
 endchoice
 
@@ -111,16 +112,8 @@ config NET_ETHERNET
 
 endmenu # Data link support
 
-menu "Internet Protocol Selection"
-
 config NET_IPv4
-	bool "IPv4"
-	depends on NET_LWIP
-	default y
-	---help---
-		Build in support for IPv4.
-
-endmenu # Internet Protocol Selection
+	bool
 
 source net/netdev/Kconfig
 source net/route/Kconfig
