@@ -120,11 +120,11 @@ size_t
 coap_set_option_header(unsigned int delta, size_t length, uint8_t *buffer)
 {
   size_t written = 0;
+  unsigned int *x = &delta;
 
   buffer[0] = coap_option_nibble(delta)<<4 | coap_option_nibble(length);
 
   /* avoids code duplication without function overhead */
-  unsigned int *x = &delta;
   do
   {
     if (*x>268)
@@ -610,6 +610,11 @@ coap_status_t
 coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
+  uint8_t *current_option;
+  unsigned int option_number = 0;
+  unsigned int option_delta = 0;
+  size_t option_length = 0;
+  unsigned int *x;
 
   /* Initialize packet */
   memset(coap_pkt, 0, sizeof(coap_packet_t));
@@ -630,7 +635,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
     return BAD_REQUEST_4_00;
   }
 
-  uint8_t *current_option = data + COAP_HEADER_LEN;
+  current_option = data + COAP_HEADER_LEN;
 
   if (coap_pkt->token_len != 0)
   {
@@ -652,10 +657,6 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
   /* parse options */
   current_option += coap_pkt->token_len;
 
-  unsigned int option_number = 0;
-  unsigned int option_delta = 0;
-  size_t option_length = 0;
-
   while (current_option < data+data_len)
   {
     /* Payload marker 0xFF, currently only checking for 0xF* because rest is reserved */
@@ -672,7 +673,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
     ++current_option;
 
     /* avoids code duplication without function overhead */
-    unsigned int *x = &option_delta;
+    x = &option_delta;
     do
     {
       if (*x==13)
@@ -1034,7 +1035,7 @@ coap_get_header_proxy_uri(void *packet, const char **uri)
 
   if (!IS_OPTION(coap_pkt, COAP_OPTION_PROXY_URI)) return 0;
 
-  *uri = coap_pkt->proxy_uri;
+  *uri = (const char *)coap_pkt->proxy_uri;
   return coap_pkt->proxy_uri_len;
 }
 
@@ -1043,7 +1044,7 @@ coap_set_header_proxy_uri(void *packet, const char *uri)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 
-  coap_pkt->proxy_uri = uri;
+  coap_pkt->proxy_uri = (uint8_t *)uri;
   coap_pkt->proxy_uri_len = strlen(uri);
 
   SET_OPTION(coap_pkt, COAP_OPTION_PROXY_URI);
@@ -1215,7 +1216,7 @@ coap_get_header_location_query(void *packet, const char **query)
 
   if (!IS_OPTION(coap_pkt, COAP_OPTION_LOCATION_QUERY)) return 0;
 
-  *query = coap_pkt->location_query;
+  *query = (const char*)coap_pkt->location_query;
   return coap_pkt->location_query_len;
 }
 
@@ -1226,7 +1227,7 @@ coap_set_header_location_query(void *packet, char *query)
 
   while (query[0]=='?') ++query;
 
-  coap_pkt->location_query = query;
+  coap_pkt->location_query = (uint8_t *)query;
   coap_pkt->location_query_len = strlen(query);
 
   SET_OPTION(coap_pkt, COAP_OPTION_LOCATION_QUERY);

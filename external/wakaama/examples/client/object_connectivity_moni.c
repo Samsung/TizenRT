@@ -43,8 +43,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "connectivity_interface.h"
-
 // Resource Id's:
 #define RES_M_NETWORK_BEARER            0
 #define RES_M_AVL_NETWORK_BEARER        1
@@ -57,15 +55,7 @@
 #define RES_O_CELL_ID                   8
 #define RES_O_SMNC                      9
 #define RES_O_SMCC                      10
-#define RES_O_RFCHANNEL                 11
-#define RES_O_TX_POWER                  12
-#define RES_O_LISTEN_INTERVAL           13
-#define RES_O_NOISE                     14
-#define RES_O_RATE                      15
-#define RES_O_LQI                       16
-#define RES_O_WIFI_VERSION              17
 
-#if 0
 #define VALUE_NETWORK_BEARER_GSM    0   //GSM see 
 #define VALUE_AVL_NETWORK_BEARER_1  0   //GSM
 #define VALUE_AVL_NETWORK_BEARER_2  21  //WLAN
@@ -84,407 +74,24 @@
 #define VALUE_LINK_UTILIZATION          666
 #define VALUE_SMNC                      33
 #define VALUE_SMCC                      44
-#endif
-
-
 
 typedef struct
 {
-#if 0    
     char ipAddresses[2][16];        // limited to 2!
     char routerIpAddresses[2][16];  // limited to 2!
     long cellId;
     int signalStrength;
     int linkQuality;
     int linkUtilization;
-    int rfChannel;
-    uint8_t txPower;
-    int listenInterval;
-    
-    int noise;
-    int rate;
-    int lqi;
-    char version;
-#endif
-    char ipAddresses[2][16];        // limited to 2!
-    int signalStrength;
-    int rate;
-    int nwbearer;
-    int available_bearer;
 } conn_m_data_t;
 
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: fetch_network_bearer
- *
- * Description:
- *   To get the underlined network bearer for lwm2m from connectivity manager
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-#if 0
-static void fetch_network_bearer(int *value)
-{
-	(*value)=0;
-}
-#endif
-/****************************************************************************
- * Name: fetch_avl_network_bearer
- *
- * Description:
- *   To get the available underlined network bearer for lwm2m from connectivity manager
- *
- * Returned Value:
- *  
- *
- ****************************************************************************/
-#if 0
-static void fetch_avl_network_bearer(int *value)
-{
-	(*value)=0;
-}
-#endif
-/****************************************************************************
- * Name: fetch_rssi
- *
- * Description:
- *   Get signal strength value from connectivity manager
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-#if 0
-static void fetch_rssi(int *value)
-{
-#if defined(CONFIG_WICED) && (CONFIG_ARCH_CHIP_BCM4390X == 1)
-    wwd_wifi_get_rssi(value);
-    printf("address of rssi is %d\n", value);
-#else
-    (*value)=get_signal_strength();
-#endif
-}
-#endif
-/****************************************************************************
- * Name: fetch_channel
- *
- * Description:
- *   Get RF channel from driver
- *
- * Returned Value:
- *
- *
- ****************************************************************************/
-#if 0
-static void fetch_channel(int *value)
-{
-#if defined(CONFIG_WICED) && (CONFIG_ARCH_CHIP_BCM4390X == 1)
-    wwd_wifi_get_channel(WWD_STA_INTERFACE, value);
-#else
-    *value = 0;
-#endif
-
-}
-#endif
-/****************************************************************************
- * Name: fetch_lqi
- *
- * Description:
- *   Get link quality index value from connectivity manager
- *
- * Returned Value:
- * 
- *
- ****************************************************************************/
-#if 0
- static void fetch_lqi(int *value)
-{
-#if defined(CONFIG_WICED) && (CONFIG_ARCH_CHIP_BCM4390X == 1)
-    wwd_wifi_get_rssi(value);
-#else
-    (*value)=get_signal_strength();
-#endif
-}
-#endif
-
-/****************************************************************************
- * Name: fetch_tx_power
- *
- * Description:
- *   Get tx power
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-#if 0
-static void fetch_tx_power(uint8_t *value)
-{ 
-#if defined(CONFIG_WICED) && (CONFIG_ARCH_CHIP_BCM4390X == 1)
-    wwd_wifi_get_tx_power(value);
-#else
-    *value = 0;
-#endif
-
-}
-#endif
-/****************************************************************************
- * Name: fetch_listen_interval
- *
- * Description:
- *   Get tx power
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-#if 0
-static void fetch_listen_interval(wiced_listen_interval_t* value)
-{
-#if defined(CONFIG_WICED) && (CONFIG_ARCH_CHIP_BCM4390X == 1)
-    wwd_wifi_get_listen_interval(value);
-#else
-    *value = 0;
-#endif
-
-}
-#endif
-/****************************************************************************
- * Name: fetch_noise
- *
- * Description:
- *   Get noise
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-#if 0
-static void fetch_noise(int *value)
-{
-#if defined(CONFIG_WICED) && (CONFIG_ARCH_CHIP_BCM4390X == 1)
-    wwd_wifi_get_noise(value);
-#else
-    *value = 0;
-#endif
-}
-#endif
-/****************************************************************************
- * Name: fetch_rate
- *
- * Description:
- *   Get the transmision data rate for provided interface
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-#if 0
-static void fetch_rate(int *value)
-{
-#if defined(CONFIG_WICED) && (CONFIG_ARCH_CHIP_BCM4390X == 1)
-    wwd_wifi_get_rate(WWD_STA_INTERFACE,value);
-#else
-    *value = 0;
-#endif
-}
-#endif
-
-/****************************************************************************
- * Name: fetch_wifi_version
- *
- * Description:
- *   Get the transmision data rate for provided interface
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-//static void fetch_wifi_version(char* value, uint8_t length)
-//char fetch_wifi_version (char value, uint8_t length)
-//{
-//#if defined(CONFIG_WICED) && (CONFIG_ARCH_CHIP_BCM4390X == 1)
-//    wwd_wifi_get_wifi_version(value, sizeof(value));
-//    printf("wifi version called is %c\n", value);
-//#else
-//    *value = a;
-//#endif
-//    return value;
-//}
-
-/****************************************************************************
- * Name: fetch_ip_address
- *
- * Description:
- *   Get the assinged IPv4/IPv6 address from Connectivity Manager
- *
- * Returned Value:
- *   
- ****************************************************************************/
-#if 0 
-static void fetch_ip_address(char *value)
-{
-	get_ip_address(value);
-}
-#endif
-/****************************************************************************
- * Name: fetch_router_ip_address
- *
- * Description:
- *   Get the Router's IPv4/IPv6 address from Connectivity Manager
- *
- * Returned Value:
- *  
- *
- ****************************************************************************/
-#if 0
-static void fetch_router_ip_address(char *value)
-{
-	get_router_ip_address(value);
-}
-#endif
-/****************************************************************************
- * Name: fetch_link_utilization
- *
- * Description:
- *   Get the link utilization statistics from Connectivity Manager
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-#if 0 
-static void fetch_link_utilization(int *value)
-{
-	(*value)=get_link_utilization();
-}
-#endif
-/****************************************************************************
- * Name: fetch_APN
- *
- * Description:
- *   Get APN value from Connectivity Manager
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-#if 0 
-static void fetch_APN(char *value)
-{
-	strcpy(value,"\0");
-}
-#endif
-/****************************************************************************
- * Name: fetch_cell_id
- *
- * Description:
- *  Get cell id value from Connectivity Manager
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-#if 0 
-static void fetch_cell_id(int *value)
-{
-	(*value)=0;
-}
-#endif
-/****************************************************************************
- * Name: fetch_SMNC
- *
- * Description:
- *   
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-#if 0 
-static void fetch_SMNC(int *value)
-{
-	(*value)=0;
-}
-#endif
-/****************************************************************************
- * Name: fetch_SMCC
- *
- * Description:
- *  
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-#if 0 
-static void fetch_SMCC(int *value)
-{
-	(*value)=0;
-}
-#endif
-/****************************************************************************
- * Name: fetch_initial_values
- *
- * Description:
- *  Get initialization values from connectivity manager
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-static void fetch_initial_values(conn_m_data_t *myData)
-{
-#if 0    
-            fetch_cell_id(&myData->cellId);
-	   fetch_rssi(&myData->signalStrength);
-	   fetch_lqi(&myData->linkQuality);
-	   fetch_link_utilization(&myData->linkUtilization);
-	   fetch_ip_address(*(myData->ipAddresses + 0));		
-	   fetch_router_ip_address(*(myData->routerIpAddresses + 0));
-           fetch_channel(&myData->rfChannel);
-	   fetch_tx_power(&myData->txPower);
-	   fetch_listen_interval(&myData->listenInterval);
-           fetch_noise(&myData->noise);
-	   fetch_rate(&myData->rate);
-	   fetch_lqi(&myData->lqi);
-#endif
-    get_network_bearer(&myData->nwbearer);
-    get_avl_network_bearer(&myData->available_bearer);
-    get_signal_strength(&myData->signalStrength);
-    get_bitrate(&myData->rate);
-    get_ip_address(&myData->ipAddresses);
-}
-
-/****************************************************************************
- * Name: prv_set_value
- *
- * Description:
- *  
- *
- * Returned Value:
- *   Return the appropriate error code or success code value
- *
- ****************************************************************************/
- 
 static uint8_t prv_set_value(lwm2m_data_t * dataP,
                              conn_m_data_t * connDataP)
 {
-    int value;
-    uint8_t tx_val;
-    char apn[20];	
     switch (dataP->id)
     {
     case RES_M_NETWORK_BEARER:
-        get_network_bearer(&value);
-        connDataP->nwbearer = value;
-        printf("nwbearer is %d\n", value);
-        lwm2m_data_encode_int(connDataP->nwbearer, dataP);
+        lwm2m_data_encode_int(VALUE_NETWORK_BEARER_GSM, dataP);
         return COAP_205_CONTENT;
 
     case RES_M_AVL_NETWORK_BEARER:
@@ -493,25 +100,17 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         lwm2m_data_t * subTlvP;
         subTlvP = lwm2m_data_new(riCnt);
         subTlvP[0].id    = 0;
-        get_avl_network_bearer(&value);
-        connDataP->available_bearer = value;
-        lwm2m_data_encode_int(connDataP->available_bearer, subTlvP);
+        lwm2m_data_encode_int(VALUE_AVL_NETWORK_BEARER_1, subTlvP);
         lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT ;
     }
 
     case RES_M_RADIO_SIGNAL_STRENGTH: //s-int
-        get_signal_strength(&value);
-        connDataP->signalStrength =  value;
         lwm2m_data_encode_int(connDataP->signalStrength, dataP);
         return COAP_205_CONTENT;
 
     case RES_O_LINK_QUALITY: //s-int
-        /* TODO */
-#if 0        
-	connDataP->linkQuality=value;
         lwm2m_data_encode_int(connDataP->linkQuality, dataP);
-#endif
         return COAP_205_CONTENT ;
 
     case RES_M_IP_ADDRESSES:
@@ -521,7 +120,6 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         for (ri = 0; ri < riCnt; ri++)
         {
             subTlvP[ri].id = ri;
-	   get_ip_address(*(connDataP->ipAddresses + ri));
             lwm2m_data_encode_string(connDataP->ipAddresses[ri], subTlvP + ri);
         }
         lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
@@ -531,27 +129,20 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
 
     case RES_O_ROUTER_IP_ADDRESS:
     {
-        /* TODO */
-#if 0        
         int ri, riCnt = 1;   // reduced to 1 instance to fit in one block size
         lwm2m_data_t* subTlvP = lwm2m_data_new(riCnt);
         for (ri=0; ri<riCnt; ri++)
         {
             subTlvP[ri].id = ri;
-            /* TODO */
             lwm2m_data_encode_string(connDataP->routerIpAddresses[ri], subTlvP + ri);
         }
         lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
-#endif
         return COAP_205_CONTENT ;
     }
         break;
 
     case RES_O_LINK_UTILIZATION:
-	/* TODO */
-#if 0
         lwm2m_data_encode_int(connDataP->linkUtilization, dataP);
-#endif
         return COAP_205_CONTENT;
 
     case RES_O_APN:
@@ -560,74 +151,23 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         lwm2m_data_t * subTlvP;
         subTlvP = lwm2m_data_new(riCnt);
         subTlvP[0].id     = 0;
-	/* Not used */
-        lwm2m_data_encode_string(apn, subTlvP);
+        lwm2m_data_encode_string(VALUE_APN_1, subTlvP);
         lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
         return COAP_205_CONTENT;
     }
         break;
 
     case RES_O_CELL_ID:
-        /* Not used */
+        lwm2m_data_encode_int(connDataP->cellId, dataP);
         return COAP_205_CONTENT ;
 
     case RES_O_SMNC:
-        /* Not used */
-        lwm2m_data_encode_int(value, dataP);
+        lwm2m_data_encode_int(VALUE_SMNC, dataP);
         return COAP_205_CONTENT ;
 
     case RES_O_SMCC:
-        /* Not used */
-        lwm2m_data_encode_int(value, dataP);
+        lwm2m_data_encode_int(VALUE_SMCC, dataP);
         return COAP_205_CONTENT ;
-
-    case RES_O_RFCHANNEL:
-        /* TODO */
-        printf("channel: %d\n", value);
-        lwm2m_data_encode_int(value, dataP);
-        return COAP_205_CONTENT;
-    
-    case RES_O_TX_POWER:
-        /* TODO */
-        return COAP_205_CONTENT;
-
-   case RES_O_LISTEN_INTERVAL:
-{
-        /* TODO */
-#if 0
-	wiced_listen_interval_t interval_value;
-        fetch_listen_interval(&interval_value);
-#endif  
-        lwm2m_data_encode_int(value, dataP);
-        return COAP_205_CONTENT;
-}
- 
-   case RES_O_NOISE:
-        /* TODO */
-        printf("Noise: %d dbm\n", value);
-        lwm2m_data_encode_int(value, dataP);
-        return COAP_205_CONTENT;
-
-   case RES_O_RATE:
-        get_bitrate(&value);
-        printf("Rate: %d kbps\n ", value);
-        lwm2m_data_encode_int(value, dataP);
-        return COAP_205_CONTENT;
-
-   case RES_O_LQI:
-	/* TODO */
-        if (value < -100)
-            value = 0;
-        else{
-            if (value > -50)
-               value = 100;
-            else{
-               value = 2*(value+100);              
-            }
-        }
-        printf("LQI: %d (%)\n", value);
-        lwm2m_data_encode_int(value, dataP);
-        return COAP_205_CONTENT;
 
     default:
         return COAP_404_NOT_FOUND ;
@@ -652,7 +192,6 @@ static uint8_t prv_read(uint16_t instanceId,
     if (*numDataP == 0)
     {
         uint16_t resList[] = {
-#if 0
                 RES_M_NETWORK_BEARER,
                 RES_M_AVL_NETWORK_BEARER,
                 RES_M_RADIO_SIGNAL_STRENGTH,
@@ -663,14 +202,7 @@ static uint8_t prv_read(uint16_t instanceId,
                 RES_O_APN,
                 RES_O_CELL_ID,
                 RES_O_SMNC,
-                RES_O_SMCC,
-                RES_O_RFCHANNEL
-#endif
-                RES_M_NETWORK_BEARER,
-                RES_M_AVL_NETWORK_BEARER,
-                RES_M_RADIO_SIGNAL_STRENGTH,
-                RES_M_IP_ADDRESSES,
-                RES_O_RATE
+                RES_O_SMCC
         };
         int nbRes = sizeof(resList) / sizeof(uint16_t);
 
@@ -741,8 +273,7 @@ lwm2m_object_t * get_object_conn_m(void)
          */
         if (NULL != connObj->userData)
         {
-        conn_m_data_t *myData = (conn_m_data_t*) connObj->userData;
-#if 0        
+            conn_m_data_t *myData = (conn_m_data_t*) connObj->userData;
             myData->cellId          = VALUE_CELL_ID;
             myData->signalStrength  = VALUE_RADIO_SIGNAL_STRENGTH;
             myData->linkQuality     = VALUE_LINK_QUALITY;
@@ -751,9 +282,6 @@ lwm2m_object_t * get_object_conn_m(void)
             strcpy(myData->ipAddresses[1],       VALUE_IP_ADDRESS_2);
             strcpy(myData->routerIpAddresses[0], VALUE_ROUTER_IP_ADDRESS_1);
             strcpy(myData->routerIpAddresses[1], VALUE_ROUTER_IP_ADDRESS_2);
-#else	   
-	   fetch_initial_values(myData);
-#endif
         }
         else
         {
@@ -795,7 +323,6 @@ uint8_t connectivity_moni_change(lwm2m_data_t * dataArray,
         break;
 
     case RES_O_LINK_QUALITY:
-#if 0
         if (1 == lwm2m_data_decode_int(dataArray, &value))
         {
             data->linkQuality = value;
@@ -805,7 +332,6 @@ uint8_t connectivity_moni_change(lwm2m_data_t * dataArray,
         {
             result = COAP_400_BAD_REQUEST;
         }
-#endif
         break;
 
     case RES_M_IP_ADDRESSES:
@@ -823,7 +349,6 @@ uint8_t connectivity_moni_change(lwm2m_data_t * dataArray,
         break;
 
     case RES_O_ROUTER_IP_ADDRESS:
-#if 0
         if (sizeof(data->routerIpAddresses[0]) <= dataArray->value.asBuffer.length)
         {
             result = COAP_400_BAD_REQUEST;
@@ -835,11 +360,9 @@ uint8_t connectivity_moni_change(lwm2m_data_t * dataArray,
             data->routerIpAddresses[0][dataArray->value.asBuffer.length] = 0;
             result = COAP_204_CHANGED;
         }
-#endif
         break;
 
     case RES_O_CELL_ID:
-#if 0        
         if (1 == lwm2m_data_decode_int(dataArray, &value))
         {
             data->cellId = value;
@@ -849,7 +372,6 @@ uint8_t connectivity_moni_change(lwm2m_data_t * dataArray,
         {
             result = COAP_400_BAD_REQUEST;
         }
-#endif
         break;
 
     default:
@@ -858,3 +380,4 @@ uint8_t connectivity_moni_change(lwm2m_data_t * dataArray,
 
     return result;
 }
+

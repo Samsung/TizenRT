@@ -31,14 +31,17 @@
  *  Resources:
  *  Name        | ID  | Oper.|Instances|Mand.|  Type   | Range | Units | Description                                                                      |
  * -------------+-----+------+---------+-----+---------+-------+-------+----------------------------------------------------------------------------------+
- *  Latitude    |  0  |  R   | Single  | Yes | String  |       |  Deg  | The decimal notation of latitude  e.g. -  45.5723  [Worlds Geodetic System 1984].|
- *  Longitude   |  1  |  R   | Single  | Yes | String  |       |  Deg  | The decimal notation of longitude e.g. - 153.21760 [Worlds Geodetic System 1984].|
- *  Altidude    |  2  |  R   | Single  | No  | String  |       |   m   | The decimal notation of altidude in meters above sea level.                      |
- *  Uncertainty |  3  |  R   | Single  | No  | String  |       |   m   | The accuracy of the position in meters.                                          |
+ *  Latitude    |  0  |  R   | Single  | Yes | Float   |       |  Deg  | The decimal notation of latitude  e.g. -  45.5723  [Worlds Geodetic System 1984].|
+ *  Longitude   |  1  |  R   | Single  | Yes | Float   |       |  Deg  | The decimal notation of longitude e.g. - 153.21760 [Worlds Geodetic System 1984].|
+ *  Altitude    |  2  |  R   | Single  | No  | Float   |       |   m   | The decimal notation of altitude in meters above sea level.                      |
+ *  Radius      |  3  |  R   | Single  | No  | Float   |       |   m   | The value in the Radius Resource indicates the size in meters of a circular area |
+ *              |     |      |         |     |         |       |       | around a point of geometry.                                                      |
  *  Velocity    |  4  |  R   | Single  | No  | Opaque  |       |   *   | The velocity of the device as defined in 3GPP 23.032 GAD specification(*).       |
  *              |     |      |         |     |         |       |       | This set of values may not be available if the device is static.                 |
  *              |     |      |         |     |         |       |       | opaque: see OMA_TS 6.3.2                                                         |
  *  Timestamp   |  5  |  R   | Single  | Yes | Time    |       |   s   | The timestamp when the location measurement was performed.                       |
+ *  Speed       |  6  |  R   | Single  | No  | Float   |       |  m/s  | Speed is the time rate of change in position of a LwM2M Client without regard    |
+ *              |     |      |         |     |         |       |       | for direction: the scalar component of velocity.                                 |
  */
 
 #include "liblwm2m.h"
@@ -56,26 +59,27 @@
 #define RES_M_LATITUDE     0
 #define RES_M_LONGITUDE    1
 #define RES_O_ALTITUDE     2
-#define RES_O_UNCERTAINTY  3
+#define RES_O_RADIUS       3
 #define RES_O_VELOCITY     4
 #define RES_M_TIMESTAMP    5
+#define RES_O_SPEED        6
 
 //-----  3GPP TS 23.032 V11.0.0(2012-09) ---------
 #define HORIZONTAL_VELOCITY                  0  // for Octet-1 upper half(..<<4)
 #define HORIZONTAL_VELOCITY_VERTICAL         1  // set vertical direction bit!
 #define HORIZONTAL_VELOCITY_WITH_UNCERTAINTY 2
 
-#define VELOCITY_OCTETS                      5  // for HORITZOL_VELOCITY_WITH_UNCERTAINTY 
-#define DEG_DECIMAL_PLACES                   6  // configuration: degree decimals implementation
+#define VELOCITY_OCTETS                      5  // for HORIZONTAL_VELOCITY_WITH_UNCERTAINTY 
 
 typedef struct
 {
-    char     latitude   [5 + DEG_DECIMAL_PLACES]; //"359.12345" frag=5, 9+1=10! degrees +\0
-    char     longitude  [5 + DEG_DECIMAL_PLACES];
-    char     altitude   [5 + DEG_DECIMAL_PLACES];
-    char     uncertainty[5 + DEG_DECIMAL_PLACES];
-    uint8_t  velocity   [VELOCITY_OCTETS];        //3GPP notation 1st step: HORITZOL_VELOCITY_WITH_UNCERTAINTY
+    float    latitude;
+    float    longitude;
+    float    altitude;
+    float    radius;
+    uint8_t  velocity   [VELOCITY_OCTETS];        //3GPP notation 1st step: HORIZONTAL_VELOCITY_WITH_UNCERTAINTY
     unsigned long timestamp;
+    float    speed;
 } location_data_t;
 
 /**
@@ -89,22 +93,25 @@ static uint8_t prv_res2tlv(lwm2m_data_t* dataP,
     switch (dataP->id)     // location resourceId
     {
     case RES_M_LATITUDE:
-        lwm2m_data_encode_string(locDataP->latitude, dataP);
+        lwm2m_data_encode_float(locDataP->latitude, dataP);
         break;
     case RES_M_LONGITUDE:
-        lwm2m_data_encode_string(locDataP->longitude, dataP);
+        lwm2m_data_encode_float(locDataP->longitude, dataP);
         break;
     case RES_O_ALTITUDE:
-        lwm2m_data_encode_string(locDataP->altitude, dataP);
+        lwm2m_data_encode_float(locDataP->altitude, dataP);
         break;
-    case RES_O_UNCERTAINTY:
-        lwm2m_data_encode_string(locDataP->uncertainty, dataP);
+    case RES_O_RADIUS:
+        lwm2m_data_encode_float(locDataP->radius, dataP);
         break;
     case RES_O_VELOCITY:
-        lwm2m_data_encode_string(locDataP->velocity, dataP);
+        lwm2m_data_encode_string((const char*)locDataP->velocity, dataP);
         break;
     case RES_M_TIMESTAMP:
         lwm2m_data_encode_int(locDataP->timestamp, dataP);
+        break;
+    case RES_O_SPEED:
+        lwm2m_data_encode_float(locDataP->speed, dataP);
         break;
     default:
         ret = COAP_404_NOT_FOUND;
@@ -145,9 +152,10 @@ static uint8_t prv_location_read(uint16_t objInstId,
                 RES_M_LATITUDE,
                 RES_M_LONGITUDE,
                 RES_O_ALTITUDE,
-                RES_O_UNCERTAINTY,
+                RES_O_RADIUS,
                 RES_O_VELOCITY,
-                RES_M_TIMESTAMP
+                RES_M_TIMESTAMP,
+                RES_O_SPEED
         }; // readable resources!
         
         *numDataP  = sizeof(readResIds)/sizeof(uint16_t);
@@ -177,8 +185,8 @@ void display_location_object(lwm2m_object_t * object)
     fprintf(stdout, "  /%u: Location object:\r\n", object->objID);
     if (NULL != data)
     {
-        fprintf(stdout, "    latitude: %s, longitude: %s, altitude: %s, uncertainty: %s, timestamp: %lu\r\n",
-                data->latitude, data->longitude, data->altitude, data->uncertainty, data->timestamp);
+        fprintf(stdout, "    latitude: %.6f, longitude: %.6f, altitude: %.6f, radius: %.6f, timestamp: %lu, speed: %.6f\r\n",
+                data->latitude, data->longitude, data->altitude, data->radius, data->timestamp, data->speed);
     }
 #endif
 }
@@ -225,16 +233,9 @@ void location_setLocationAtTime(lwm2m_object_t* locationObj,
     //-------------------------------------------------------------------- JH --
     location_data_t* pData = locationObj->userData;
 
-#if defined(ARDUINO)
-    dtostrf (latitude,  -8, 6, pData->latitude);
-    dtostrf (longitude, -8, 6, pData->longitude);
-    dtostrf (altitude,  -8, 4, pData->altitude);
-#else
-    snprintf(pData->latitude, 5+DEG_DECIMAL_PLACES, "%-8.6f", (double)latitude);
-    snprintf(pData->longitude,5+DEG_DECIMAL_PLACES, "%-8.6f", (double)longitude);
-    snprintf(pData->altitude, 5+DEG_DECIMAL_PLACES, "%-8.4f", (double)altitude);
-#endif
-
+    pData->latitude  = latitude;
+    pData->longitude = longitude;
+    pData->altitude  = altitude;
     pData->timestamp = timestamp;
 }
 
@@ -280,12 +281,13 @@ lwm2m_object_t * get_object_location(void)
         if (NULL != locationObj->userData)
         {
             location_data_t* data = (location_data_t*)locationObj->userData;
-            strcpy (data->latitude,     "27.986065");  // Mount Everest :)
-            strcpy (data->longitude,    "86.922623");
-            strcpy (data->altitude,     "8495.0000");
-            strcpy (data->uncertainty,  "0.01");
+            data->latitude    = 27.986065;  // Mount Everest :)
+            data->longitude   = 86.922623;
+            data->altitude    = 8495.0000;
+            data->radius      = 0.0;
             location_setVelocity(locationObj, 0, 0, 255); // 255: speedUncertainty not supported!
             data->timestamp   = time(NULL);
+            data->speed       = 0.0;
         }
         else
         {

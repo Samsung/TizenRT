@@ -83,13 +83,17 @@
 ((S) == STATE_REGISTERED ? "STATE_REGISTERED" :                 \
 ((S) == STATE_REG_FAILED ? "STATE_REG_FAILED" :                 \
 ((S) == STATE_REG_UPDATE_PENDING ? "STATE_REG_UPDATE_PENDING" : \
+((S) == STATE_REG_UPDATE_NEEDED ? "STATE_REG_UPDATE_NEEDED" :   \
+((S) == STATE_REG_FULL_UPDATE_NEEDED ? "STATE_REG_FULL_UPDATE_NEEDED" :   \
 ((S) == STATE_DEREG_PENDING ? "STATE_DEREG_PENDING" :           \
 ((S) == STATE_BS_HOLD_OFF ? "STATE_BS_HOLD_OFF" :               \
 ((S) == STATE_BS_INITIATED ? "STATE_BS_INITIATED" :             \
 ((S) == STATE_BS_PENDING ? "STATE_BS_PENDING" :                 \
 ((S) == STATE_BS_FINISHED ? "STATE_BS_FINISHED" :               \
+((S) == STATE_BS_FINISHING ? "STATE_BS_FINISHING" :             \
+((S) == STATE_BS_FAILING ? "STATE_BS_FAILING" :                 \
 ((S) == STATE_BS_FAILED ? "STATE_BS_FAILED" :                   \
-"Unknown")))))))))))
+"Unknown")))))))))))))))
 #define STR_MEDIA_TYPE(M)                                \
 ((M) == LWM2M_CONTENT_TEXT ? "LWM2M_CONTENT_TEXT" :      \
 ((M) == LWM2M_CONTENT_LINK ? "LWM2M_CONTENT_LINK" :      \
@@ -114,7 +118,7 @@
 #define LWM2M_DEFAULT_LIFETIME  86400
 
 #ifdef LWM2M_SUPPORT_JSON
-#define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\";ct=1543,"   // Temporary value
+#define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\";ct=11543,"
 #define REG_LWM2M_RESOURCE_TYPE_LEN 25
 #else
 #define REG_LWM2M_RESOURCE_TYPE     ">;rt=\"oma.lwm2m\","
@@ -135,8 +139,9 @@
 #define URI_BOOTSTRAP_SEGMENT           "bs"
 #define URI_BOOTSTRAP_SEGMENT_LEN       2
 
-#define QUERY_TEMPLATE      "ep="
-#define QUERY_LENGTH        3       // strlen("ep=")
+#define QUERY_STARTER       "?"
+#define QUERY_NAME          "ep="
+#define QUERY_NAME_LEN      3       // strlen("ep=")
 #define QUERY_SMS           "sms="
 #define QUERY_SMS_LEN       4
 #define QUERY_LIFETIME      "lt="
@@ -147,8 +152,11 @@
 #define QUERY_BINDING_LEN   2
 #define QUERY_DELIMITER     "&"
 
-#define QUERY_VERSION_FULL      "lwm2m=1.0"
-#define QUERY_VERSION_FULL_LEN  9
+#define LWM2M_VERSION      "1.0"
+#define LWM2M_VERSION_LEN  3
+
+#define QUERY_VERSION_FULL      QUERY_VERSION LWM2M_VERSION
+#define QUERY_VERSION_FULL_LEN  QUERY_VERSION_LEN+LWM2M_VERSION_LEN
 
 #define REG_URI_START       '<'
 #define REG_URI_END         '>'
@@ -161,8 +169,8 @@
 #define REG_ATTR_TYPE_VALUE_LEN     11
 #define REG_ATTR_CONTENT_KEY        "ct"
 #define REG_ATTR_CONTENT_KEY_LEN    2
-#define REG_ATTR_CONTENT_JSON       "1543"   // Temporary value
-#define REG_ATTR_CONTENT_JSON_LEN   4
+#define REG_ATTR_CONTENT_JSON       "11543"   // Temporary value
+#define REG_ATTR_CONTENT_JSON_LEN   5
 
 #define ATTR_SERVER_ID_STR       "ep="
 #define ATTR_SERVER_ID_LEN       3
@@ -207,6 +215,7 @@
 
 typedef struct
 {
+    uint16_t clientID;
     lwm2m_uri_t uri;
     lwm2m_result_callback_t callback;
     void * userData;
@@ -242,7 +251,7 @@ coap_status_t object_write(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m
 coap_status_t object_create(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_media_type_t format, uint8_t * buffer, size_t length);
 coap_status_t object_execute(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
 coap_status_t object_delete(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
-coap_status_t object_discover(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, uint8_t ** bufferP, size_t * lengthP);
+coap_status_t object_discover(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, uint8_t ** bufferP, size_t * lengthP);
 uint8_t object_checkReadable(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 uint8_t object_checkNumeric(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 bool object_isInstanceNew(lwm2m_context_t * contextP, uint16_t objectId, uint16_t instanceId);
@@ -252,7 +261,7 @@ coap_status_t object_createInstance(lwm2m_context_t * contextP, lwm2m_uri_t * ur
 coap_status_t object_writeInstance(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_data_t * dataP);
 
 // defined in transaction.c
-lwm2m_transaction_t * transaction_new(coap_message_type_t type, coap_method_t method, char * altPath, lwm2m_uri_t * uriP, uint16_t mID, uint8_t token_len, uint8_t* token, lwm2m_endpoint_type_t peerType, void * peerP);
+lwm2m_transaction_t * transaction_new(void * sessionH, coap_method_t method, char * altPath, lwm2m_uri_t * uriP, uint16_t mID, uint8_t token_len, uint8_t* token);
 int transaction_send(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
 void transaction_free(lwm2m_transaction_t * transacP);
 void transaction_remove(lwm2m_context_t * contextP, lwm2m_transaction_t * transacP);
@@ -268,7 +277,7 @@ void observe_cancel(lwm2m_context_t * contextP, uint16_t mid, void * fromSession
 coap_status_t observe_setParameters(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, lwm2m_attributes_t * attrP);
 void observe_step(lwm2m_context_t * contextP, time_t currentTime, time_t * timeoutP);
 bool observe_handleNotify(lwm2m_context_t * contextP, void * fromSessionH, coap_packet_t * message, coap_packet_t * response);
-void observe_remove(lwm2m_client_t * clientP, lwm2m_observation_t * observationP);
+void observe_remove(lwm2m_observation_t * observationP);
 lwm2m_observed_t * observe_findByUri(lwm2m_context_t * contextP, lwm2m_uri_t * uriP);
 
 // defined in registration.c
@@ -293,16 +302,20 @@ lwm2m_status_t bootstrap_getStatus(lwm2m_context_t * contextP);
 
 // defined in tlv.c
 int tlv_parse(uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-size_t tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
+int tlv_serialize(bool isResourceInstance, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
 
 // defined in json.c
 #ifdef LWM2M_SUPPORT_JSON
 int json_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_data_t ** dataP);
-size_t json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
+int json_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * tlvP, uint8_t ** bufferP);
 #endif
 
 // defined in discover.c
-int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
+int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_server_t * serverP, int size, lwm2m_data_t * dataP, uint8_t ** bufferP);
+
+// defined in block1.c
+coap_status_t coap_block1_handler(lwm2m_block1_data_t ** block1Data, uint16_t mid, uint8_t * buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t ** outputBuffer, size_t * outputLength);
+void free_block1_buffer(lwm2m_block1_data_t * block1Data);
 
 // defined in utils.c
 lwm2m_data_type_t utils_depthToDatatype(uri_depth_t depth);

@@ -27,103 +27,105 @@
 #ifndef LWM2MCLIENT_H_
 #define LWM2MCLIENT_H_
 #include <pthread.h>
+
 #include "liblwm2m.h"
 
 extern int g_reboot;
-extern char *ipaddr;
-extern char *port;
 
 /*
  * object_device.c
  */
-lwm2m_object_t *get_object_device(void);
-void free_object_device(lwm2m_object_t *objectP);
-uint8_t device_change(lwm2m_data_t *dataArray, lwm2m_object_t *objectP);
-void display_device_object(lwm2m_object_t *objectP);
+lwm2m_object_t * get_object_device(void);
+void free_object_device(lwm2m_object_t * objectP);
+uint8_t device_change(lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
+void display_device_object(lwm2m_object_t * objectP);
 /*
  * object_firmware.c
  */
-lwm2m_object_t *get_object_firmware(void);
-void free_object_firmware(lwm2m_object_t *objectP);
-void display_firmware_object(lwm2m_object_t *objectP);
+lwm2m_object_t * get_object_firmware(void);
+void free_object_firmware(lwm2m_object_t * objectP);
+void display_firmware_object(lwm2m_object_t * objectP);
 /*
  * object_location.c
  */
-lwm2m_object_t *get_object_location(void);
-void free_object_location(lwm2m_object_t *object);
-void display_location_object(lwm2m_object_t *objectP);
+lwm2m_object_t * get_object_location(void);
+void free_object_location(lwm2m_object_t * object);
+void display_location_object(lwm2m_object_t * objectP);
 /*
  * object_test.c
  */
 #define TEST_OBJECT_ID 1024
-lwm2m_object_t *get_test_object(void);
-void free_test_object(lwm2m_object_t *object);
-void display_test_object(lwm2m_object_t *objectP);
+lwm2m_object_t * get_test_object(void);
+void free_test_object(lwm2m_object_t * object);
+void display_test_object(lwm2m_object_t * objectP);
 /*
  * object_server.c
  */
-lwm2m_object_t *get_server_object(int serverId, const char *binding, int lifetime, bool storing);
-void clean_server_object(lwm2m_object_t *object);
-void display_server_object(lwm2m_object_t *objectP);
-void copy_server_object(lwm2m_object_t *objectDest, lwm2m_object_t *objectSrc);
+lwm2m_object_t * get_server_object(int serverId, const char* binding, int lifetime, bool storing);
+void clean_server_object(lwm2m_object_t * object);
+void display_server_object(lwm2m_object_t * objectP);
+void copy_server_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
 
 /*
  * object_connectivity_moni.c
  */
-lwm2m_object_t *get_object_conn_m(void);
-void free_object_conn_m(lwm2m_object_t *objectP);
-uint8_t connectivity_moni_change(lwm2m_data_t *dataArray, lwm2m_object_t *objectP);
+lwm2m_object_t * get_object_conn_m(void);
+void free_object_conn_m(lwm2m_object_t * objectP);
+uint8_t connectivity_moni_change(lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
 
 /*
  * object_connectivity_stat.c
  */
-extern lwm2m_object_t *get_object_conn_s(void);
-void free_object_conn_s(lwm2m_object_t *objectP);
-extern void conn_s_updateTxStatistic(lwm2m_object_t *objectP, uint16_t txDataByte, bool smsBased);
-extern void conn_s_updateRxStatistic(lwm2m_object_t *objectP, uint16_t rxDataByte, bool smsBased);
+extern lwm2m_object_t * get_object_conn_s(void);
+void free_object_conn_s(lwm2m_object_t * objectP);
+extern void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, bool smsBased);
+extern void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataByte, bool smsBased);
 
 /*
  * object_access_control.c
  */
-lwm2m_object_t *acc_ctrl_create_object(void);
-void acl_ctrl_free_object(lwm2m_object_t *objectP);
-bool  acc_ctrl_obj_add_inst(lwm2m_object_t *accCtrlObjP, uint16_t instId,
-                            uint16_t acObjectId, uint16_t acObjInstId, uint16_t acOwner);
-bool  acc_ctrl_oi_add_ac_val(lwm2m_object_t *accCtrlObjP, uint16_t instId,
-                             uint16_t aclResId, uint16_t acValue);
+lwm2m_object_t* acc_ctrl_create_object(void);
+void acl_ctrl_free_object(lwm2m_object_t * objectP);
+bool  acc_ctrl_obj_add_inst (lwm2m_object_t* accCtrlObjP, uint16_t instId,
+                 uint16_t acObjectId, uint16_t acObjInstId, uint16_t acOwner);
+bool  acc_ctrl_oi_add_ac_val(lwm2m_object_t* accCtrlObjP, uint16_t instId,
+                 uint16_t aclResId, uint16_t acValue);
 /*
  * lwm2mclient.c
  */
-void handle_value_changed(lwm2m_context_t *lwm2mH, lwm2m_uri_t *uri, const char *value, size_t valueLength);
-/*
- * system_api.c
- */
-void init_value_change(lwm2m_context_t *lwm2m);
-void system_reboot(void);
+void handle_value_changed(lwm2m_context_t* lwm2mH, lwm2m_uri_t* uri, const char * value, size_t valueLength);
 
 /*
- * object_security.c
+ * TINYARA
+ * DM (Device Management) Frameworks APIs
  */
-lwm2m_object_t *get_security_object(int serverId, const char *serverUri, char *bsPskId, char *psk, uint16_t pskLen, bool isBootstrap);
-void clean_security_object(lwm2m_object_t *objectP);
-char *get_server_uri(lwm2m_object_t *objectP, uint16_t secObjInstID);
-void display_security_object(lwm2m_object_t *objectP);
-void copy_security_object(lwm2m_object_t *objectDest, lwm2m_object_t *objectSrc);
-pthread_addr_t client_main(void);
-
-/*
- * Server IP address, Port
- */
+pthread_addr_t lwm2m_client_run(void);
 
 char *client_set_serverAddr(FAR const char *serverAddr, bool isbootstrap);
 char *client_get_serverAddr(void);
 char *client_set_serverPort(FAR const char *serverPort, bool isbootstrap);
 char *client_get_serverPort(void);
+
 int client_object_dump(char *buffer);
-
-
 int client_set_lifetime(int lifetime);
+int client_change_resource(char *buffer, void *user_data);
+
 void client_initiate_bootstrap(void);
 void client_close(void);
-int client_change_resource(char *buffer, void *user_data);
+
+/*
+ * system_api.c
+ */
+void init_value_change(lwm2m_context_t * lwm2m);
+void system_reboot(void);
+
+/*
+ * object_security.c
+ */
+lwm2m_object_t * get_security_object(int serverId, const char* serverUri, char * bsPskId, char * psk, uint16_t pskLen, bool isBootstrap);
+void clean_security_object(lwm2m_object_t * objectP);
+char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
+void display_security_object(lwm2m_object_t * objectP);
+void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
+
 #endif /* LWM2MCLIENT_H_ */

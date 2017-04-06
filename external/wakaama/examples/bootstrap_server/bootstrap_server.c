@@ -565,7 +565,7 @@ int bootstrap_server_main(int argc, char *argv[])
     fclose(fd);
     if (data.bsInfo == NULL)
     {
-        fprintf(stderr, "Reading Bootsrap Info from file %s failed.\r\n", filename);
+        fprintf(stderr, "Reading Bootstrap Info from file %s failed.\r\n", filename);
         return -1;
     }
 

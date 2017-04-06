@@ -253,18 +253,15 @@ size_t utils_floatToText(double data,
     decLength = 0;
     if (decPart >= FLT_EPSILON)
     {
-        int i;
         double noiseFloor;
 
         if (intLength >= length - 1) return 0;
 
-        i = 0;
         noiseFloor = FLT_EPSILON;
         do
         {
             decPart *= 10;
             noiseFloor *= 10;
-            i++;
         } while (decPart - (int64_t)decPart > noiseFloor);
 
         decLength = utils_intToText(decPart, string + intLength, length - intLength);
@@ -386,8 +383,12 @@ lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type)
         return LWM2M_CONTENT_TEXT;
     case APPLICATION_OCTET_STREAM:
         return LWM2M_CONTENT_OPAQUE;
+    case LWM2M_CONTENT_TLV_OLD:
+        return LWM2M_CONTENT_TLV_OLD;
     case LWM2M_CONTENT_TLV:
         return LWM2M_CONTENT_TLV;
+    case LWM2M_CONTENT_JSON_OLD:
+        return LWM2M_CONTENT_JSON_OLD;
     case LWM2M_CONTENT_JSON:
         return LWM2M_CONTENT_JSON;
     case APPLICATION_LINK_FORMAT:
@@ -499,7 +500,7 @@ int utils_intCopy(char * buffer,
     if (len == 0) return -1;
     if (len > length + 1) return -1;
 
-    memcpy(buffer, str + _PRV_INT32_MAX_STR_LEN - len, len);
+    memcpy(buffer, str, len);
     buffer[len] = 0;
 
     return len;

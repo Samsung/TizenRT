@@ -1,28 +1,14 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <ctype.h>
-#include <stdint.h>
 
 
-#include<netinet/in.h>
-#include<arpa/inet.h>
-#include<sys/socket.h>
-//#include "../../../../net/dualmac/csma.h"
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 
 #include "connectivity_interface.h"
 
 #ifdef CONFIG_NET_LWIP
 #include <net/lwip/netif.h>
 #endif
-
-#include "common_monitor_interface.h"
-
-
-uint8_t cm_iobuffer[PROC_BUFFER_LEN];
-
 
 
 /*Read APIs*/
@@ -41,13 +27,11 @@ uint8_t cm_iobuffer[PROC_BUFFER_LEN];
 void get_interface_name(char *mac)
 {
 #if defined(CONFIG_WICED)
-    strcpy(mac,"en1");
+	strcpy(mac,"en1");
 #elif defined(CONFIG_NET_ETHERNET)
-    strcpy(mac,"eth0");
+	strcpy(mac,"eth0");
 #elif defined(CONFIG_NET_802154)
-    strcpy(mac,"wlan0");
-#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
-    strcpy(mac, "wl1");
+	strcpy(mac,"wlan0");
 #endif
 }
 
@@ -65,17 +49,20 @@ void get_interface_name(char *mac)
  
 void get_ip_address(char *ipAddr)
 {
-    int ret;    
-    uint8_t *filepath;
-    ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
-    printf("mount returns value %d\n", ret);
-    ret = asprintf(&filepath, "%s/connectivity/ipaddr", PROC_MOUNTPOINT);
-    ret = readonce(filepath, cm_iobuffer, PROC_BUFFER_LEN);
-    strncpy(ipAddr, cm_iobuffer, strlen(cm_iobuffer));    
-    if (ret == OK)
-    {
-        printf("IP addr is %s\n", ipAddr);
-    } 
+	printf("Calling inet_ntop\n");
+	char mac[4];
+	get_interface_name(mac);
+#ifdef CONFIG_NET_IPv4
+	struct in_addr addr;
+	netlib_get_ipv4addr(mac, &addr);
+	inet_ntop(AF_INET, &addr, ipAddr, INET_ADDRSTRLEN);
+#endif
+#ifdef CONFIG_NET_IPv6
+	struct in6_addr addr;
+	netlib_get_ipv6addr(mac, &addr);
+	inet_ntop(AF_INET6, &addr, ipAddr, INET6_ADDRSTRLEN);
+#endif
+	printf("After inet_ntop\n");
 }
 
 /****************************************************************************
@@ -91,17 +78,17 @@ void get_ip_address(char *ipAddr)
  
 void get_router_ip_address(char *routerIPAddr)
 {
-		char mac[4];
-		get_interface_name(mac);
+	char mac[4];
+	get_interface_name(mac);
 #ifdef CONFIG_NET_IPv4	
-		struct in_addr addr;
-		netlib_get_dripv4addr(mac,addr);
-		inet_ntop(AF_INET, &addr, routerIPAddr, INET_ADDRSTRLEN);
+	struct in_addr addr;
+	netlib_get_dripv4addr(mac,addr);
+	inet_ntop(AF_INET, &addr, routerIPAddr, INET_ADDRSTRLEN);
 #endif
 #ifdef CONFIG_NET_IPv6
-		struct in6_addr addr;
-		netlib_get_dripv6addr(mac,addr);		
-		inet_ntop(AF_INET6, &addr, routerIPAddr, INET6_ADDRSTRLEN);		
+	struct in6_addr addr;
+	netlib_get_dripv6addr(mac,addr);
+	inet_ntop(AF_INET6, &addr, routerIPAddr, INET6_ADDRSTRLEN);
 #endif		
 }
 
@@ -116,20 +103,12 @@ void get_router_ip_address(char *routerIPAddr)
  *
  ****************************************************************************/
  
-void get_signal_strength(int *rssi_value)
+uint8_t get_signal_strength(void)
 {
-    int ret;    
-    uint8_t *filepath;
-    ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
-    printf("mount returns value %d\n", ret);
-    ret = asprintf(&filepath, "%s/connectivity/rssi", PROC_MOUNTPOINT);
-    ret = readonce(filepath, cm_iobuffer, PROC_BUFFER_LEN);
-    if (ret == OK)
-    {
-//         *rssi_value = atoi(cm_iobuffer);
-        sscanf(cm_iobuffer, "%d", rssi_value);
-        printf("rssi is %d\n", *rssi_value);
-    } 
+#if defined(CONFIG_NET_802154)
+    return get_rssi();
+#endif
+    return -1;
 }
 
 /****************************************************************************
@@ -143,7 +122,7 @@ void get_signal_strength(int *rssi_value)
  *
  ****************************************************************************/
 
-int get_lqi()
+int get_lqi(void)
 {
 #if defined(CONFIG_NET_802154)
     return get_lqi_val();
@@ -162,7 +141,7 @@ int get_lqi()
  *
  ****************************************************************************/
  
-int get_link_utilization()
+int get_link_utilization(void)
 {
 	return 0;
 }
@@ -182,6 +161,7 @@ int get_link_utilization()
 int get_tx_data()
 {
 //TODO: Feature implementation
+	return 0;
 }
 
 /****************************************************************************
@@ -198,6 +178,7 @@ int get_tx_data()
 int get_rx_data()
 {
 ///TODO: Feature implementation
+	return 0;
 }
 
 /****************************************************************************
@@ -210,80 +191,8 @@ int get_rx_data()
  *   
  *
  ****************************************************************************/
- int get_max_message_size()
+int get_max_message_size()
 {
 ///TODO: Feature implementation
+	return 0;
 }
-
-
-/****************************************************************************
- * Name: get_bitrate
- *
- * Description:
- *   Get bitrate
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/ 
- void get_bitrate(int *bitrate)
- {
-    int ret;    
-    uint8_t *filepath;
-    ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
-    printf("mount returns value %d\n", ret);
-    ret = asprintf(&filepath, "%s/connectivity/bitrate", PROC_MOUNTPOINT);
-    ret = readonce(filepath, cm_iobuffer, PROC_BUFFER_LEN);
-    if (ret == OK)
-    {
-        *bitrate = atoi(cm_iobuffer);
-    }      
- }
-
-/****************************************************************************
- * Name: get_network_bearer
- *
- * Description:
- *   Get Network Bearer
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/ 
-void get_network_bearer(int *nwbearer)
-{
-    int ret;    
-    uint8_t *filepath;
-    ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
-    printf("mount returns value %d\n", ret);
-    ret = asprintf(&filepath, "%s/connectivity/nwbearer", PROC_MOUNTPOINT);
-    ret = readonce(filepath, cm_iobuffer, PROC_BUFFER_LEN);
-    if (ret == OK)
-        sscanf(cm_iobuffer, "%d", nwbearer);
-}
-
-/****************************************************************************
- * Name: get_avl_network_bearer
- *
- * Description:
- *   Get Available Network Bearer
- *
- * Returned Value:
- *   
- *
- ****************************************************************************/
-void get_avl_network_bearer(int *nwbearer)
-{
-    int ret;    
-    uint8_t *filepath;
-    ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
-    printf("mount returns value %d\n", ret);
-    ret = asprintf(&filepath, "%s/connectivity/available_bearer", PROC_MOUNTPOINT);
-    ret = readonce(filepath, cm_iobuffer, PROC_BUFFER_LEN);
-    if (ret == OK)
-        sscanf(cm_iobuffer, "%d", nwbearer);
-}
-
-
-
-

@@ -46,7 +46,7 @@ static void test_data(const char * uriStr,
     }
 
     length = lwm2m_data_serialize((uriStr != NULL) ? &uri : NULL, size, tlvP, &format, &buffer);
-    if (length <= 0)
+    if (length < 0)
     {
         printf("Serialize lwm2m_data_t %s to %s failed.\n", id, format==LWM2M_CONTENT_JSON?"JSON":"TLV");
         //dump_data_t(stdout, size, tlvP, 0);
@@ -54,8 +54,8 @@ static void test_data(const char * uriStr,
     }
     else
     {
-        //printf("\n\nSerialize lwm2m_data_t %s:\n", id);
-        //output_buffer(stdout, buffer, length, 0);
+        printf("\n\nSerialize lwm2m_data_t %s:\n", id);
+        output_buffer(stdout, buffer, length, 0);
         lwm2m_free(buffer);
     }
 }
@@ -214,7 +214,7 @@ static void test_raw_expected(const char * uriStr,
     // Serialize to the same format and compare to the input buffer
     test_data_and_compare(uriStr, format, tlvP, size, id, (uint8_t*)expectBuf, expectLen);
 
-    // Serialize to the other format respectivly.
+    // Serialize to the other format respectively.
     if (format == LWM2M_CONTENT_TLV)
         test_data(uriStr, LWM2M_CONTENT_JSON, tlvP, size, id);
     else if (format == LWM2M_CONTENT_JSON)
@@ -326,7 +326,7 @@ static void test_7(void)
                       }";
 
     // We do a string comparison. Because parsing+serialization changes double value
-    // precision, we expect a slighty different output than input.
+    // precision, we expect a slightly different output than input.
     const char * expect = "{\"e\":[                              \
                             {\"n\":\"0\",\"v\":1234},          \
                             {\"n\":\"1\",\"v\":56.78900146484375},        \
@@ -406,8 +406,8 @@ static void test_10(void)
     lwm2m_data_encode_bool(true, data1 + 15);
     lwm2m_data_encode_bool(false, data1 + 16);
 
-    test_data(NULL, LWM2M_CONTENT_TLV, data1, sizeof(data1)/sizeof(lwm2m_data_t), "1");
-    test_data(NULL, LWM2M_CONTENT_JSON, data1, sizeof(data1)/sizeof(lwm2m_data_t), "1");
+    test_data(NULL, LWM2M_CONTENT_TLV, data1, 17, "1");
+    test_data(NULL, LWM2M_CONTENT_JSON, data1, 17, "1");
 }
 
 static struct TestTable table[] = {

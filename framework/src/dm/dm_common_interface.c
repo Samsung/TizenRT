@@ -79,7 +79,6 @@ int readfile(FAR const char *filename, FAR char *buffer, uint8_t buflen)
 {
 	FAR char *bufptr;
 	size_t remaining;
-	ssize_t nread;
 	ssize_t ntotal;
 	int ret;
 

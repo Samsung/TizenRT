@@ -99,15 +99,15 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_PUBLIC_KEY_ID:
-        lwm2m_data_encode_opaque(targetP->publicIdentity, targetP->publicIdLen, dataP);
+        lwm2m_data_encode_opaque((uint8_t*)targetP->publicIdentity, targetP->publicIdLen, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SERVER_PUBLIC_KEY_ID:
-        lwm2m_data_encode_opaque(targetP->serverPublicKey, targetP->serverPublicKeyLen, dataP);
+        lwm2m_data_encode_opaque((uint8_t*)targetP->serverPublicKey, targetP->serverPublicKeyLen, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SECRET_KEY_ID:
-        lwm2m_data_encode_opaque(targetP->secretKey, targetP->secretKeyLen, dataP);
+        lwm2m_data_encode_opaque((uint8_t*)targetP->secretKey, targetP->secretKeyLen, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SECURITY_ID:
@@ -115,11 +115,11 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_KEY_PARAM_ID:
-        lwm2m_data_encode_opaque(targetP->smsParams, targetP->smsParamsLen, dataP);
+        lwm2m_data_encode_opaque((uint8_t*)targetP->smsParams, targetP->smsParamsLen, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SECRET_KEY_ID:
-        lwm2m_data_encode_opaque(targetP->smsSecret, targetP->smsSecretLen, dataP);
+        lwm2m_data_encode_opaque((uint8_t*)targetP->smsSecret, targetP->smsSecretLen, dataP);
         return COAP_205_CONTENT;
 
     case LWM2M_SECURITY_SMS_SERVER_NUMBER_ID:

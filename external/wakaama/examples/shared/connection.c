@@ -34,7 +34,7 @@ int create_socket(const char * portStr, int addressFamily)
     memset(&hints, 0, sizeof hints);
     hints.ai_family = addressFamily;
     hints.ai_socktype = SOCK_DGRAM;
-//     hints.ai_flags = AI_PASSIVE;
+    hints.ai_flags = AI_PASSIVE;
 
     if (0 != getaddrinfo(NULL, portStr, &hints, &res))
     {
@@ -126,9 +126,6 @@ connection_t * connection_create(connection_t * connList,
         if (s >= 0)
         {
             sa = p->ai_addr;
-#if CONFIG_NET_LWIP
-            sa->sa_len = p->ai_addrlen;
-#endif
             sl = p->ai_addrlen;
             if (-1 == connect(s, p->ai_addr, p->ai_addrlen))
             {
@@ -139,8 +136,8 @@ connection_t * connection_create(connection_t * connList,
     }
     if (s >= 0)
     {
-        connP = connection_new_incoming(connList, s, sa, sl);
-//         close(s);
+        connP = connection_new_incoming(connList, sock, sa, sl);
+        close(s);
     }
     if (NULL != servinfo) {
 #ifdef CONFIG_NET_LWIP

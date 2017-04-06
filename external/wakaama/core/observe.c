@@ -477,9 +477,7 @@ void observe_step(lwm2m_context_t * contextP,
             {
                 bool notify = false;
 
-#ifdef LWM2M_CLIENT_SHELL_ON
                 if (watcherP->update == true)
-#endif
                 {
                     // value changed, should we notify the server ?
 
@@ -594,8 +592,7 @@ void observe_step(lwm2m_context_t * contextP,
                     }
 
                     if (watcherP->parameters != NULL
-                     && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD) != 0
-                     && (notify == true))
+                     && (watcherP->parameters->toSet & LWM2M_ATTR_FLAG_MIN_PERIOD) != 0)
                     {
                         LOG_ARG("Checking minimal period (%d s)", watcherP->parameters->minPeriod);
 
@@ -606,13 +603,11 @@ void observe_step(lwm2m_context_t * contextP,
                             if (*timeoutP > interval) *timeoutP = interval;
                             notify = false;
                         }
-/***
                         else
                         {
                             LOG("Notify on minimal period");
                             notify = true;
                         }
-***/
                     }
                 }
 
@@ -636,8 +631,18 @@ void observe_step(lwm2m_context_t * contextP,
                     {
                         if (dataP != NULL)
                         {
-                            length = lwm2m_data_serialize(&targetP->uri, size, dataP, &format, &buffer);
-                            if (length == 0) break;
+                            int res;
+
+                            res = lwm2m_data_serialize(&targetP->uri, size, dataP, &format, &buffer);
+                            if (res < 0)
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                length = (size_t)res;
+                            }
+
                         }
                         else
                         {
@@ -722,11 +727,10 @@ static lwm2m_observation_t * prv_findObservationByURI(lwm2m_client_t * clientP,
     return targetP;
 }
 
-void observe_remove(lwm2m_client_t * clientP,
-                    lwm2m_observation_t * observationP)
+void observe_remove(lwm2m_observation_t * observationP)
 {
     LOG("Entering");
-    clientP->observationList = (lwm2m_observation_t *) LWM2M_LIST_RM(clientP->observationList, observationP->id, NULL);
+    observationP->clientP->observationList = (lwm2m_observation_t *) LWM2M_LIST_RM(observationP->clientP->observationList, observationP->id, NULL);
     lwm2m_free(observationP);
 }
 
@@ -741,7 +745,7 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
     {
     case STATE_DEREG_PENDING:
         // Observation was canceled by the user.
-        observe_remove(((lwm2m_client_t*)transacP->peerP), observationP);
+        observe_remove(observationP);
         return;
 
     case STATE_REG_PENDING:
@@ -768,16 +772,16 @@ static void prv_obsRequestCallback(lwm2m_transaction_t * transacP,
 
     if (code != COAP_205_CONTENT)
     {
-        observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
+        observationP->callback(observationP->clientP->internalID,
                                &observationP->uri,
                                code,
                                LWM2M_CONTENT_TEXT, NULL, 0,
                                observationP->userData);
-        observe_remove(((lwm2m_client_t*)transacP->peerP), observationP);
+        observe_remove(observationP);
     }
     else
     {
-        observationP->callback(((lwm2m_client_t*)transacP->peerP)->internalID,
+        observationP->callback(observationP->clientP->internalID,
                                &observationP->uri,
                                0,
                                packet->content_type, packet->payload, packet->payload_len,
@@ -804,7 +808,7 @@ static void prv_obsCancelRequestCallback(lwm2m_transaction_t * transacP,
 
     if (code != COAP_205_CONTENT)
     {
-        cancelP->callbackP(((lwm2m_client_t*)transacP->peerP)->internalID,
+        cancelP->callbackP(cancelP->observationP->clientP->internalID,
                            &cancelP->observationP->uri,
                            code,
                            LWM2M_CONTENT_TEXT, NULL, 0,
@@ -812,14 +816,14 @@ static void prv_obsCancelRequestCallback(lwm2m_transaction_t * transacP,
     }
     else
     {
-        cancelP->callbackP(((lwm2m_client_t*)transacP->peerP)->internalID,
+        cancelP->callbackP(cancelP->observationP->clientP->internalID,
                            &cancelP->observationP->uri,
                            0,
                            packet->content_type, packet->payload, packet->payload_len,
                            cancelP->userDataP);
     }
 
-    observe_remove(((lwm2m_client_t*)transacP->peerP), cancelP->observationP);
+    observe_remove(cancelP->observationP);
 
     lwm2m_free(cancelP);
 }
@@ -860,7 +864,7 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     token[2] = observationP->id >> 8;
     token[3] = observationP->id & 0xFF;
 
-    transactionP = transaction_new(COAP_TYPE_CON, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, token, ENDPOINT_CLIENT, (void *)clientP);
+    transactionP = transaction_new(clientP->sessionH, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, token);
     if (transactionP == NULL)
     {
         lwm2m_free(observationP);
@@ -905,7 +909,7 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
         lwm2m_transaction_t * transactionP;
         cancellation_data_t * cancelP;
 
-        transactionP = transaction_new(COAP_TYPE_CON, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 0, NULL, ENDPOINT_CLIENT, (void *)clientP);
+        transactionP = transaction_new(clientP->sessionH, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 0, NULL);
         if (transactionP == NULL)
         {
             return COAP_500_INTERNAL_SERVER_ERROR;

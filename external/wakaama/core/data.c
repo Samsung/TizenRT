@@ -21,32 +21,49 @@
 #include <float.h>
 
 // dataP array length is assumed to be 1.
-static size_t prv_textSerialize(lwm2m_data_t * dataP,
-                                uint8_t ** bufferP)
+static int prv_textSerialize(lwm2m_data_t * dataP,
+                             uint8_t ** bufferP)
 {
+    size_t res;
+
     switch (dataP->type)
     {
     case LWM2M_TYPE_STRING:
         *bufferP = (uint8_t *)lwm2m_malloc(dataP->value.asBuffer.length);
         if (*bufferP == NULL) return 0;
         memcpy(*bufferP, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
-        return dataP->value.asBuffer.length;
+        return (int)dataP->value.asBuffer.length;
 
     case LWM2M_TYPE_INTEGER:
-        return utils_int64ToPlainText(dataP->value.asInteger, bufferP);
+        res = utils_int64ToPlainText(dataP->value.asInteger, bufferP);
+        if (res == 0) return -1;
+        return (int)res;
 
     case LWM2M_TYPE_FLOAT:
-        return utils_float64ToPlainText(dataP->value.asFloat, bufferP);
+        res = utils_float64ToPlainText(dataP->value.asFloat, bufferP);
+        if (res == 0) return -1;
+        return (int)res;
 
     case LWM2M_TYPE_BOOLEAN:
-        return utils_boolToPlainText(dataP->value.asBoolean, bufferP);
+        res = utils_boolToPlainText(dataP->value.asBoolean, bufferP);
+        if (res == 0) return -1;
+        return (int)res;
 
     case LWM2M_TYPE_OBJECT_LINK:
-        // TODO: implement
+    {
+        char stringBuffer[20];
+        int len = snprintf(stringBuffer, 20, "%d:%d",
+                dataP->value.asObjLink.objectId,
+                dataP->value.asObjLink.objectInstanceId);
+        *bufferP = (uint8_t *)lwm2m_malloc(len);
+        if (*bufferP == NULL) return -1;
+        memcpy(*bufferP, stringBuffer, len);
+        return len;
+    }
     case LWM2M_TYPE_OPAQUE:
     case LWM2M_TYPE_UNDEFINED:
     default:
-        return 0;
+        return -1;
     }
 }
 
@@ -359,6 +376,16 @@ int lwm2m_data_decode_bool(const lwm2m_data_t * dataP,
     return result;
 }
 
+void lwm2m_data_encode_objlink(uint16_t objectId,
+                           uint16_t objectInstanceId,
+                           lwm2m_data_t * dataP)
+{
+    LOG_ARG("value: %d/%d", objectId, objectInstanceId);
+    dataP->type = LWM2M_TYPE_OBJECT_LINK;
+    dataP->value.asObjLink.objectId = objectId;
+    dataP->value.asObjLink.objectInstanceId = objectInstanceId;
+}
+
 void lwm2m_data_include(lwm2m_data_t * subDataP,
                         size_t count,
                         lwm2m_data_t * dataP)
@@ -422,10 +449,16 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
         (*dataP)->type = LWM2M_TYPE_OPAQUE;
         return prv_setBuffer(*dataP, buffer, bufferLen);
 
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+    case LWM2M_CONTENT_TLV_OLD:
+#endif
     case LWM2M_CONTENT_TLV:
         return tlv_parse(buffer, bufferLen, dataP);
 
 #ifdef LWM2M_SUPPORT_JSON
+#ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+    case LWM2M_CONTENT_JSON_OLD:
+#endif
     case LWM2M_CONTENT_JSON:
         return json_parse(uriP, buffer, bufferLen, dataP);
 #endif
@@ -435,13 +468,12 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
     }
 }
 
-size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
-                            int size,
-                            lwm2m_data_t * dataP,
-                            lwm2m_media_type_t * formatP,
-                            uint8_t ** bufferP)
+int lwm2m_data_serialize(lwm2m_uri_t * uriP,
+                         int size,
+                         lwm2m_data_t * dataP,
+                         lwm2m_media_type_t * formatP,
+                         uint8_t ** bufferP)
 {
-
     LOG_URI(uriP);
     LOG_ARG("size: %d, formatP: %s", size, STR_MEDIA_TYPE(*formatP));
 
@@ -450,7 +482,7 @@ size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
      || *formatP == LWM2M_CONTENT_OPAQUE)
     {
         if (size != 1
-         || !LWM2M_URI_IS_SET_RESOURCE(uriP)
+         || (uriP != NULL && !LWM2M_URI_IS_SET_RESOURCE(uriP))
          || dataP->type == LWM2M_TYPE_OBJECT
          || dataP->type == LWM2M_TYPE_OBJECT_INSTANCE
          || dataP->type == LWM2M_TYPE_MULTIPLE_RESOURCE)
@@ -477,20 +509,16 @@ size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
 
     case LWM2M_CONTENT_OPAQUE:
         *bufferP = (uint8_t *)lwm2m_malloc(dataP->value.asBuffer.length);
-        if (*bufferP == NULL) return 0;
+        if (*bufferP == NULL) return -1;
         memcpy(*bufferP, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
-        return dataP->value.asBuffer.length;
+        return (int)dataP->value.asBuffer.length;
 
     case LWM2M_CONTENT_TLV:
         {
-            uint8_t baseUriStr[URI_MAX_STRING_LEN];
-            size_t baseUriLen;
-            uri_depth_t rootLevel;
             bool isResourceInstance;
 
-            baseUriLen = uri_toString(uriP, baseUriStr, URI_MAX_STRING_LEN, &rootLevel);
-            if (baseUriLen <= 0) return 0;
-            if (rootLevel == URI_DEPTH_RESOURCE_INSTANCE)
+            if (uriP != NULL && LWM2M_URI_IS_SET_RESOURCE(uriP)
+             && (size != 1 || dataP->id != uriP->resourceId))
             {
                 isResourceInstance = true;
             }
@@ -503,7 +531,7 @@ size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
 
 #ifdef LWM2M_CLIENT_MODE
     case LWM2M_CONTENT_LINK:
-        return discover_serialize(NULL, uriP, size, dataP, bufferP);
+        return discover_serialize(NULL, uriP, NULL, size, dataP, bufferP);
 #endif
 #ifdef LWM2M_SUPPORT_JSON
     case LWM2M_CONTENT_JSON:
@@ -511,7 +539,7 @@ size_t lwm2m_data_serialize(lwm2m_uri_t * uriP,
 #endif
 
     default:
-        return 0;
+        return -1;
     }
 }
 
