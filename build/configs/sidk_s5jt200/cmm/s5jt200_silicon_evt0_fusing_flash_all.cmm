@@ -75,17 +75,17 @@ GOSUB	enable_region			; Set Memory region for FLASH write
 
 &BL1_FLASH_START=0x04000000+&MIRROR_OFFSET
 &BL2_FLASH_START=0x04010000+&MIRROR_OFFSET
+&sss_FW_FLASH_START=0x04040000+&MIRROR_OFFSET ; 
+&wlan_FW_FLASH_START=0x04048000+&MIRROR_OFFSET ; 
 &tinyARA_FLASH_START=0x040C8000+&MIRROR_OFFSET
 ;&led_FW_FLASH_START=0x042BC000+&MIRROR_OFFSET ; 
-;&sss_FW_FLASH_START=0x042FC000+&MIRROR_OFFSET ; 
-&wlan_FW_FLASH_START=0x04048000+&MIRROR_OFFSET ; 
 
 
 &BL1_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.nbl1.bin"
 &BL2_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.bl2.head.bin"
 &tinyARA_FLASH_FILE="&BASE_DIR\..\..\..\output\bin\tinyara_head.bin"
 ;&led_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.ledctrlblk.m0.bin"
-;&sss_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.sss.fw.bin"
+&sss_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.sss.fw.bin"
 &wlan_FW_FLASH_FILE="&BASE_DIR\..\..\..\configs\sidk_s5jt200\boot_bin\t20.wlan.bin"
 
 GOSUB	flash_init
@@ -98,7 +98,7 @@ GOSUB flash_erase_by_se &BL1_FLASH_FILE &BL1_FLASH_START
 GOSUB flash_erase_by_se &BL2_FLASH_FILE &BL2_FLASH_START
 GOSUB flash_erase_by_se &tinyARA_FLASH_FILE &tinyARA_FLASH_START
 ;GOSUB flash_erase_by_se &led_FW_FLASH_FILE &led_FW_FLASH_START
-;GOSUB flash_erase_by_se &sss_FW_FLASH_FILE &sss_FW_FLASH_START
+GOSUB flash_erase_by_se &sss_FW_FLASH_FILE &sss_FW_FLASH_START
 GOSUB flash_erase_by_se &wlan_FW_FLASH_FILE &wlan_FW_FLASH_START
 
 
@@ -107,7 +107,7 @@ GOSUB	flash_write	&BL1_FLASH_FILE &BL1_FLASH_START
 GOSUB	flash_write	&BL2_FLASH_FILE &BL2_FLASH_START
 GOSUB	flash_write	&tinyARA_FLASH_FILE &tinyARA_FLASH_START
 ;GOSUB	flash_write	&led_FW_FLASH_FILE &led_FW_FLASH_START
-;GOSUB	flash_write	&sss_FW_FLASH_FILE &sss_FW_FLASH_START
+GOSUB	flash_write	&sss_FW_FLASH_FILE &sss_FW_FLASH_START
 GOSUB	flash_write	&wlan_FW_FLASH_FILE &wlan_FW_FLASH_START
 
 ;Reset Board
