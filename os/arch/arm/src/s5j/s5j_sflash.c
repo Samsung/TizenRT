@@ -121,7 +121,6 @@ static void s5j_sflash_set_gpio(void)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-#ifdef CONFIG_MTD_PROGMEM
 static void s5j_sflash_disable_wp(void)
 {
 	unsigned int sfcon;
@@ -148,6 +147,7 @@ static uint8_t s5j_sflash_read_status(void)
 	return getreg8(rRDSR);
 }
 
+#ifdef CONFIG_MTD_PROGMEM
 size_t up_progmem_getaddress(size_t page)
 {
 	return CONFIG_S5J_FLASH_BASE + up_progmem_pagesize(page) * page;
