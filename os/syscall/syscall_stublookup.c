@@ -97,7 +97,6 @@ uintptr_t STUB_sched_yield(int nbr);
 
 uintptr_t STUB_sem_close(int nbr, uintptr_t parm1);
 uintptr_t STUB_sem_destroy(int nbr, uintptr_t parm1);
-uintptr_t STUB_sem_getprotocol(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_sem_open(int nbr, uintptr_t parm1, uintptr_t parm2,
 						uintptr_t parm3, uintptr_t parm4, uintptr_t parm5, uintptr_t parm6);
 uintptr_t STUB_sem_post(int nbr, uintptr_t parm1);

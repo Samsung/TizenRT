@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * ./kernel/semaphore/sem_getprotocol.c
+ * lib/libc/semaphore/sem_getprotocol.c
  *
  *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -56,10 +56,9 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <semaphore.h>
 #include <assert.h>
-
-#include "semaphore/semaphore.h"
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 
@@ -87,7 +86,7 @@
 
 int sem_getprotocol(FAR sem_t *sem, FAR int *protocol)
 {
-	DEBUGASSERT(sem != NULL);
+	DEBUGASSERT(sem != NULL && protocol != NULL);
 
 	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) != 0) {
 		return SEM_PRIO_NONE;
