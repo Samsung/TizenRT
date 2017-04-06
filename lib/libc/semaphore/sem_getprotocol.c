@@ -57,8 +57,9 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
-#include <semaphore.h>
 #include <assert.h>
+
+#include <tinyara/semaphore.h>
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 

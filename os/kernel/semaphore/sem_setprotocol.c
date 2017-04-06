@@ -56,9 +56,10 @@
 
 #include <tinyara/config.h>
 
-#include <semaphore.h>
 #include <assert.h>
 #include <errno.h>
+
+#include <tinyara/semaphore.h>
 
 #include "semaphore/semaphore.h"
 

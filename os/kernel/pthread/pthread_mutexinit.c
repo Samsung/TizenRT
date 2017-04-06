@@ -61,6 +61,8 @@
 #include <errno.h>
 #include <debug.h>
 
+#include <tinyara/semaphore.h>
+
 #include "pthread/pthread.h"
 
 /****************************************************************************
