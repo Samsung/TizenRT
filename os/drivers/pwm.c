@@ -18,7 +18,7 @@
 /****************************************************************************
  * drivers/pwm.c
  *
- *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011-2013, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,9 +72,10 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <tinyara/kmalloc.h>
-#include <tinyara/fs/fs.h>
 #include <tinyara/arch.h>
+#include <tinyara/kmalloc.h>
+#include <tinyara/semaphore.h>
+#include <tinyara/fs/fs.h>
 #include <tinyara/pwm.h>
 
 #include <arch/irq.h>
@@ -590,7 +591,14 @@ int pwm_register(FAR const char *path, FAR struct pwm_lowerhalf_s *dev)
 	sem_init(&upper->exclsem, 0, 1);
 #ifdef CONFIG_PWM_PULSECOUNT
 	sem_init(&upper->waitsem, 0, 0);
+
+	/*
+	 * The wait semaphore is used for signaling and, hence, should not
+	 * have priority inheritance enabled.
+	 */
+	sem_setprotocol(&upper->waitsem, SEM_PRIO_NONE);
 #endif
+
 	upper->dev = dev;
 
 	/* Register the PWM device */

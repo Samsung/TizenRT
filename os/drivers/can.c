@@ -67,8 +67,9 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <tinyara/fs/fs.h>
 #include <tinyara/arch.h>
+#include <tinyara/semaphore.h>
+#include <tinyara/fs/fs.h>
 #include <tinyara/can.h>
 
 #include <arch/irq.h>
@@ -651,12 +652,18 @@ int can_register(FAR const char *path, FAR struct can_dev_s *dev)
 
 	dev->cd_ocount = 0;
 
+	/* Initialize semaphores */
 	sem_init(&dev->cd_xmit.tx_sem, 0, 0);
 	sem_init(&dev->cd_recv.rx_sem, 0, 0);
 	sem_init(&dev->cd_closesem, 0, 1);
 
 	for (i = 0; i < CONFIG_CAN_NPENDINGRTR; i++) {
+		/*
+		 * Initialize wait semaphores. These semaphores are used for
+		 * signaling and should not have priority inheritance enabled.
+		 */
 		sem_init(&dev->cd_rtr[i].cr_sem, 0, 0);
+		sem_setprotocol(&dev->cd_rtr[i].cr_sem. SEM_PRIO_NONE);
 		dev->cd_rtr[i].cr_msg = NULL;
 		dev->cd_npendrtr--;
 	}
