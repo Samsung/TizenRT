@@ -66,9 +66,10 @@
 #include <errno.h>
 #include <queue.h>
 
+#include <tinyara/arch.h>
+#include <tinyara/semaphore.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/pthread.h>
-#include <tinyara/arch.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -399,6 +400,18 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 	ret = sem_init(&pjoin->data_sem, 0, 0);
 	if (ret == OK) {
 		ret = sem_init(&pjoin->exit_sem, 0, 0);
+	}
+
+	/*
+	 * These semapohres are used for signaling and, hence, should not have
+	 * priority inheritance enabled.
+	 */
+	if (ret == OK) {
+		ret = sem_setprotocol(&pjoin->data_sem, SEM_PRIO_NONE);
+	}
+
+	if (ret == OK) {
+		ret = sem_setprotocol(&pjoin->exit_sem, SEM_PRIO_NONE);
 	}
 
 	/* Activate the task */
