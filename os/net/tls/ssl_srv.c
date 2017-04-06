@@ -2485,7 +2485,9 @@ static int ssl_write_server_key_exchange(mbedtls_ssl_context *ssl)
 		p += len;
 		n += len;
 
+#if !defined(CONFIG_HW_DH_PARAM)
 		MBEDTLS_SSL_DEBUG_MPI(3, "DHM: X ", &ssl->handshake->dhm_ctx.X);
+#endif
 		MBEDTLS_SSL_DEBUG_MPI(3, "DHM: P ", &ssl->handshake->dhm_ctx.P);
 		MBEDTLS_SSL_DEBUG_MPI(3, "DHM: G ", &ssl->handshake->dhm_ctx.G);
 		MBEDTLS_SSL_DEBUG_MPI(3, "DHM: GX", &ssl->handshake->dhm_ctx.GX);

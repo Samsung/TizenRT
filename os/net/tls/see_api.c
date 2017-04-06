@@ -306,8 +306,12 @@ int see_mutex_free(see_mutex_t *m)
 
 int see_mutex_lock(see_mutex_t *m)
 {
-	if (m == NULL || !m->valid) {
+	if (m == NULL) {
 		return -1;
+	}
+
+	if (!m->valid) {
+		see_init();
 	}
 
 	if (pthread_mutex_lock(&m->mutex) != 0) {
