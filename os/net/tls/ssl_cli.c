@@ -2149,7 +2149,9 @@ defined(MBEDTLS_SSL_PROTO_TLS1_1)
 
 // Anonim cipher suite without sign, ecdh param only
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED)
-		goto exit;
+		if (ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ANON) {
+			goto exit;
+		}
 #endif
 		/*
 		 * Read signature
