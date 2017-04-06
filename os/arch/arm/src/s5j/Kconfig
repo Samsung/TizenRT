@@ -174,16 +174,16 @@ config S5J_WDT_DEFTIMEOUT
 
 endmenu
 
-menu "S5J ADC"
 config S5J_ADC
-	bool "S5J ADC support"
+	bool "ADC"
 	default n
-
-config S5J_ADC_CH
-	int "Setup ADC channel number"
-	default 0
-    depends on S5J_ADC
-endmenu
+	select ANALOG
+	select ADC
+	select SCHED_WORKQUEUE
+	select SCHED_LPWORK
+	---help---
+		S5J has 12-bits ADC with 4 channels. Say Y here, if you want
+		to use it.
 
 menu "S5J I2C"
 config S5J_I2C
