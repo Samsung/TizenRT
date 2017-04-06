@@ -69,22 +69,9 @@
 #include <stdint.h>
 #include <limits.h>
 
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
-/* Values for protocol attribute */
-
-#define SEM_PRIO_NONE		0
-#define SEM_PRIO_INHERIT	1
-#define SEM_PRIO_PROTECT	2
 
 /* Bit definitions for the struct sem_s flags field */
 
@@ -159,6 +146,14 @@ typedef struct sem_s sem_t;
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
+
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
 
 /****************************************************************************
  * Public Function Prototypes

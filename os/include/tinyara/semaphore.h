@@ -66,6 +66,12 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+/* Values for protocol attribute */
+
+#define SEM_PRIO_NONE		0
+#define SEM_PRIO_INHERIT	1
+#define SEM_PRIO_PROTECT	2
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -158,6 +164,8 @@ int sem_reset(FAR sem_t *sem, int16_t count);
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 int sem_getprotocol(FAR sem_t *sem, FAR int *protocol);
+#else
+#define sem_getprotocol(s,p) do { *(p) == SEM_PRIO_NONE); } while (0)
 #endif
 
 /****************************************************************************
@@ -165,6 +173,25 @@ int sem_getprotocol(FAR sem_t *sem, FAR int *protocol);
  *
  * Description:
  *    Set semaphore protocol attribute.
+ *
+ *    One particularly important use of this function is when a semaphore
+ *    is used for inter-task communication like:
+ *
+ *      TASK A                 TASK B
+ *      sem_init(sem, 0, 0);
+ *      sem_wait(sem);
+ *                             sem_post(sem);
+ *      Awakens as holder
+ *
+ *    In this case priority inheritance can interfere with the operation of
+ *    the semaphore.  The problem is that when TASK A is restarted it is a
+ *    holder of the semaphore.  However, it never calls sem_post(sem) so it
+ *    becomes *permanently* a holder of the semaphore and may have its
+ *    priority boosted when any other task tries to acquire the semaphore.
+ *
+ *    The fix is to call sem_setprotocol(SEM_PRIO_NONE) immediately after
+ *    the sem_init() call so that there will be no priority inheritance
+ *    operations on this semaphore.
  *
  * Parameters:
  *    sem      - A pointer to the semaphore whose attributes are to be
@@ -179,6 +206,8 @@ int sem_getprotocol(FAR sem_t *sem, FAR int *protocol);
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 int sem_setprotocol(FAR sem_t *sem, int protocol);
+#else
+#define sem_setprotocol(s,p) DEBUGASSERT((p) == SEM_PRIO_NONE);
 #endif
 
 #undef EXTERN

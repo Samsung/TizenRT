@@ -64,18 +64,19 @@
  * Included Files
  ********************************************************************************/
 
-#include <tinyara/config.h>		/* Default settings */
+#include <tinyara/config.h>	/* Default settings */
 #include <tinyara/compiler.h>	/* Compiler settings, noreturn_function */
 
-#include <sys/types.h>			/* Needed for general types */
-#include <sys/prctl.h>			/* Needed by pthread_[set|get]name_np */
+#include <sys/types.h>		/* Needed for general types */
+#include <sys/prctl.h>		/* Needed by pthread_[set|get]name_np */
 
-#include <stdint.h>				/* C99 fixed width integer types */
-#include <stdbool.h>			/* C99 boolean types */
-#include <unistd.h>				/* For getpid */
-#include <semaphore.h>			/* Needed for sem_t */
-#include <signal.h>				/* Needed for sigset_t */
-#include <time.h>				/* Needed for struct timespec */
+#include <stdint.h>		/* C99 fixed width integer types */
+#include <stdbool.h>		/* C99 boolean types */
+#include <unistd.h>		/* For getpid */
+#include <signal.h>		/* Needed for sigset_t */
+#include <time.h>		/* Needed for struct timespec */
+
+#include <tinyara/semaphore.h>	/* For sem_t and SEM_PRIO_* defines */
 
 /********************************************************************************
  * Pre-processor Definitions
@@ -136,9 +137,7 @@
 #define PTHREAD_INHERIT_SCHED         0
 #define PTHREAD_EXPLICIT_SCHED        1
 
-#define PTHREAD_PRIO_NONE             0
-#define PTHREAD_PRIO_INHERIT          1
-#define PTHREAD_PRIO_PROTECT          2
+/* Default priority */
 
 #define PTHREAD_DEFAULT_PRIORITY      100
 
@@ -163,7 +162,7 @@
 
 #define PTHREAD_BARRIER_SERIAL_THREAD 0x1000
 
-/* Values for protocol attribute */
+/* Values for protocol mutex attribute */
 
 #define PTHREAD_PRIO_NONE	SEM_PRIO_NONE
 #define PTHREAD_PRIO_INHERIT	SEM_PRIO_INHERIT
