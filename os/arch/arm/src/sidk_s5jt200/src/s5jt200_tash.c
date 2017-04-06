@@ -66,6 +66,7 @@
 #include <chip.h>
 
 #include "s5j_rtc.h"
+#include "s5j_adc.h"
 #include "up_internal.h"
 
 #include <apps/shell/tash.h>
@@ -225,6 +226,41 @@ static void sidk_s5jt200_configure_partitions(void)
 }
 
 /****************************************************************************
+ * Name: sidk_s5jt200_adc_setup
+ *
+ * Description:
+ *   Initialize ADC and register the ADC driver.
+ *
+ ****************************************************************************/
+int sidk_s5jt200_adc_setup(void)
+{
+#ifdef CONFIG_S5J_ADC
+	int ret;
+	struct adc_dev_s *adc;
+	uint8_t chanlist[] = {
+		adc_channel_0,
+		adc_channel_1,
+		adc_channel_2,
+		adc_channel_3,
+	};
+
+	/* Get an instance of the ADC interface */
+	adc = s5j_adc_initialize(chanlist, sizeof(chanlist));
+	if (adc == NULL) {
+		return -ENODEV;
+	}
+
+	/* Register the ADC driver at "/dev/adc0" */
+	ret = adc_register("/dev/adc0", adc);
+	if (ret < 0) {
+		return ret;
+	}
+#endif /* CONFIG_S5J_ADC */
+
+	return OK;
+}
+
+/****************************************************************************
  * Name: board_app_initialize
  *
  * Description:
@@ -316,6 +352,8 @@ int board_app_initialize(void)
 	}
 #endif /* CONFIG_RTC_DRIVER */
 #endif /* CONFIG_RTC */
+
+	sidk_s5jt200_adc_setup();
 
 	scsc_wpa_ctrl_iface_init();
 
