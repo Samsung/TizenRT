@@ -585,9 +585,16 @@ static void up_dumpstate(void)
 	uint32_t sp = up_getsp();
 	uint32_t ustackbase;
 	uint32_t ustacksize;
+#ifdef CONFIG_MPU_STACKGUARD
+	uint32_t uguardsize = 0;
+#endif
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 	uint32_t istackbase;
 	uint32_t istacksize;
+#endif
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+	uint32_t dabtstackbase;
+	uint32_t dabtstacksize;
 #endif
 #ifdef CONFIG_ARCH_KERNEL_STACK
 	uint32_t kstackbase = 0;
@@ -601,6 +608,9 @@ static void up_dumpstate(void)
 	} else {
 		ustackbase = (uint32_t)rtcb->adj_stack_ptr;
 		ustacksize = (uint32_t)rtcb->adj_stack_size;
+#ifdef CONFIG_MPU_STACKGUARD
+		uguardsize = (uint32_t)rtcb->guard_size;
+#endif
 	}
 
 	lldbg("Current sp: %08x\n", sp);
@@ -619,6 +629,19 @@ static void up_dumpstate(void)
 #ifdef CONFIG_STACK_COLORATION
 	lldbg("  used: %08x\n", up_check_intstack());
 #endif
+#endif
+
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+	/* Get the limits on the dabort stack memory */
+
+	dabtstackbase = (uint32_t)&g_dabtstackbase;
+	dabtstacksize = (CONFIG_ARCH_DABORTSTACK & ~3);
+
+	/* Show data abort stack info */
+
+	lldbg("Data abort stack:\n");
+	lldbg("  base: %08x\n", dabtstackbase);
+	lldbg("  size: %08x\n", dabtstacksize);
 #endif
 
 	/* Show user stack info */
@@ -660,14 +683,36 @@ static void up_dumpstate(void)
 	}
 #endif
 
-	/* Dump the user stack if the stack pointer lies within the allocated user
-	 * stack memory.
-	 */
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+	/* Does the current stack pointer lie within the databort stack? */
 
+	if (sp > dabtstackbase - dabtstacksize && sp < dabtstackbase) {
+		/* Yes.. dump the data abort stack */
+
+		lldbg("Dataabort Stack\n", sp);
+		up_stackdump(sp, dabtstackbase);
+
+		/* Extract the user stack pointer which should lie
+		 * at the base of the data abort stack.
+		 */
+
+		sp = g_dabtstackbase;
+		lldbg("User sp: %08x\n", sp);
+	}
+#endif
+
+	/* Dump the user stack if the stack pointer lies within the allocated user
+	 * stack memory including guard size if there any.
+	 */
+#ifdef CONFIG_MPU_STACKGUARD
+	if (sp > (ustackbase - ustacksize - uguardsize) && sp < ustackbase) {
+#else
 	if (sp > ustackbase - ustacksize && sp < ustackbase) {
+#endif
 		lldbg("User Stack\n", sp);
 		up_stackdump(sp, ustackbase);
 	}
+
 #ifdef CONFIG_ARCH_KERNEL_STACK
 	/* Dump the user stack if the stack pointer lies within the allocated
 	 * kernel stack memory.
