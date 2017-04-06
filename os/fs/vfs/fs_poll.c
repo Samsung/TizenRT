@@ -66,6 +66,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/clock.h>
 #include <tinyara/cancelpt.h>
+#include <tinyara/semaphore.h>
 #include <tinyara/fs/fs.h>
 
 #ifdef CONFIG_NET_LWIP
@@ -321,7 +322,13 @@ int poll(FAR struct pollfd *fds, nfds_t nfds, int timeout)
 	/* poll() is a cancellation point */
 	(void)enter_cancellation_point();
 
+	/*
+	 * This semaphore is used for signaling and, hence, should not have
+	 * priority inheritance enabled.
+	 */
 	sem_init(&sem, 0, 0);
+	sem_setprotocol(&sem, SEM_PRIO_NONE);
+
 	ret = poll_setup(fds, nfds, &sem);
 	if (ret >= 0) {
 		if (timeout == 0) {
