@@ -162,11 +162,7 @@ int sem_reset(FAR sem_t *sem, int16_t count);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_PRIORITY_INHERITANCE
 int sem_getprotocol(FAR sem_t *sem, FAR int *protocol);
-#else
-#define sem_getprotocol(s,p) do { *(p) == SEM_PRIO_NONE); } while (0)
-#endif
 
 /****************************************************************************
  * Function: sem_setprotocol
@@ -204,11 +200,7 @@ int sem_getprotocol(FAR sem_t *sem, FAR int *protocol);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_PRIORITY_INHERITANCE
 int sem_setprotocol(FAR sem_t *sem, int protocol);
-#else
-#define sem_setprotocol(s,p) ((p) == SEM_PRIO_NONE ? 0 : -ENOSYS);
-#endif
 
 #undef EXTERN
 #ifdef __cplusplus
