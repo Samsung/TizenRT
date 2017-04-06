@@ -75,11 +75,11 @@
 
 struct inode;
 struct nsem_inode_s {
+	sem_t ns_sem;			/* The contained semaphore */
+
 	/* Inode payload unique to named semaphores */
 
 	FAR struct inode *ns_inode;	/* Containing inode */
-	sem_t ns_sem;				/* The semaphore */
-
 };
 #endif
 

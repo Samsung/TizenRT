@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/pthread/pthread_attrdestroy.c
+ * lib/libc/pthread/pthread_mutexattr_setprotocol.c
  *
- *   Copyright (C) 2007-2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,63 +57,40 @@
 #include <tinyara/config.h>
 
 #include <pthread.h>
-#include <string.h>
-#include <debug.h>
+#include <assert.h>
 #include <errno.h>
-
-/****************************************************************************
- * Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#include <debug.h>
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Function:  pthread_attr_destroy
+ * Function: pthread_mutexattr_setprotocol
  *
  * Description:
- *    An attributes object can be deleted when it is no longer needed.
+ *    Set mutex protocol attribute.
  *
  * Parameters:
- *   attr
+ *    attr     - A pointer to the mutex attributes to be modified
+ *    protocol - The new protocol to use
  *
  * Return Value:
- *   0 meaning success
- *
- * Assumptions:
+ *   0 if successful.  Otherwise, an error code.
  *
  ****************************************************************************/
 
-int pthread_attr_destroy(FAR pthread_attr_t *attr)
+int pthread_mutexattr_setprotocol(FAR pthread_mutexattr_t *attr,
+				  int protocol)
 {
-	int ret;
+	linfo("attr=0x%p protocol=%d\n", attr, protocol);
+	DEBUGASSERT(attr != NULL);
 
-	sdbg("attr=0x%p\n", attr);
-
-	if (!attr) {
-		ret = EINVAL;
-	} else {
-		memset(attr, 0, sizeof(pthread_attr_t));
-		ret = OK;
+	if (protocol >= PTHREAD_PRIO_NONE &&
+				protocol <= PTHREAD_PRIO_PROTECT) {
+		attr->proto = protocol;
+		return OK;
 	}
 
-	sdbg("Returning %d\n", ret);
-	return ret;
+	return EINVAL;
 }

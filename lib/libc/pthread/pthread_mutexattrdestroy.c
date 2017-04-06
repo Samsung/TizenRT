@@ -92,7 +92,6 @@
  *
  * Parameters:
  *    attr
- *    pshared
  *
  * Return Value:
  *   0 if successful.  Otherwise, an error code.

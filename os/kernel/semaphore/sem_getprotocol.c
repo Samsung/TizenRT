@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/pthread/pthread_attrdestroy.c
+ * ./kernel/semaphore/sem_getprotocol.c
  *
- *   Copyright (C) 2007-2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,64 +56,44 @@
 
 #include <tinyara/config.h>
 
-#include <pthread.h>
-#include <string.h>
-#include <debug.h>
-#include <errno.h>
+#include <semaphore.h>
+#include <assert.h>
 
-/****************************************************************************
- * Definitions
- ****************************************************************************/
+#include "semaphore/semaphore.h"
 
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#ifdef CONFIG_PRIORITY_INHERITANCE
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Function:  pthread_attr_destroy
+ * Function: sem_getprotocol
  *
  * Description:
- *    An attributes object can be deleted when it is no longer needed.
+ *    Return the value of the semaphore protocol attribute.
  *
  * Parameters:
- *   attr
+ *    sem      - A pointer to the semaphore whose attributes are to be
+ *               queried.
+ *    protocol - The user provided location in which to store the protocol
+ *               value.
  *
  * Return Value:
- *   0 meaning success
- *
- * Assumptions:
+ *   0 if successful.  Otherwise, -1 is returned and the errno value is set
+ *   appropriately.
  *
  ****************************************************************************/
 
-int pthread_attr_destroy(FAR pthread_attr_t *attr)
+int sem_getprotocol(FAR sem_t *sem, FAR int *protocol)
 {
-	int ret;
+	DEBUGASSERT(sem != NULL);
 
-	sdbg("attr=0x%p\n", attr);
-
-	if (!attr) {
-		ret = EINVAL;
+	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) != 0) {
+		return SEM_PRIO_NONE;
 	} else {
-		memset(attr, 0, sizeof(pthread_attr_t));
-		ret = OK;
+		return SEM_PRIO_INHERIT;
 	}
-
-	sdbg("Returning %d\n", ret);
-	return ret;
 }
+
+#endif /* CONFIG_PRIORITY_INHERITANCE */
