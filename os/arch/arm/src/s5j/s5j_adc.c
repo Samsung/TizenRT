@@ -84,7 +84,7 @@ struct s5j_dev_s
 	uint8_t current;	/* Current ADC channel being converted */
 
 	struct work_s work;	/* Supports the IRQ handling */
-	uint8_t chanlist[4];
+	uint8_t chanlist[S5J_ADC_MAX_CHANNELS];
 };
 
 /****************************************************************************
@@ -469,6 +469,12 @@ struct adc_dev_s *s5j_adc_initialize(FAR const uint8_t *chanlist,
 	priv->cb         = NULL;
 	priv->dev        = &g_adcdev;
 	priv->cchannels  = cchannels;
+
+	if (cchannels > S5J_ADC_MAX_CHANNELS) {
+		lldbg("S5J has maximum %d ADC channels.\n",
+						S5J_ADC_MAX_CHANNELS);
+		return NULL;
+	}
 
 	memcpy(priv->chanlist, chanlist, cchannels);
 
