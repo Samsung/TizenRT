@@ -458,6 +458,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 			ws->tls_ssl = (mbedtls_ssl_context *)malloc(sizeof(mbedtls_ssl_context));
 			memcpy(ws->tls_ssl, &client->tls_ssl, sizeof(mbedtls_ssl_context));
 			ws->tls_conf = &client->server->tls_conf;
+			mbedtls_ssl_set_bio(ws->tls_ssl, &ws->tls_net, mbedtls_net_send, mbedtls_net_recv, NULL);
 		}
 #endif
 		pthread_attr_init(&ws->thread_attr);
