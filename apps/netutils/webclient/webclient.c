@@ -120,6 +120,8 @@
 
 #define WGET_OK                    0
 #define WGET_ERR                   -1
+#define WGET_MSG_CONSTRUCT_ERR     -2
+#define WGET_SOCKET_CONNECT_ERR    -3
 
 #define WEBCLIENT_STATE_STATUSLINE 0
 #define WEBCLIENT_STATE_HEADERS    1
@@ -647,6 +649,246 @@ HANDSHAKE_FAIL:
 }
 #endif
 
+static int wget_msg_construct(char *buf, struct http_client_request_t *param, struct wget_s *ws)
+{
+	int post_len;
+	char *dest = buf;
+	char post_size[8];
+	struct http_keyvalue_t *cur = NULL;
+
+	/* Send method */
+	if (param->method == WGET_MODE_GET) {
+		dest = wget_strcpy(dest, g_httpget, param);
+	} else if (param->method == WGET_MODE_POST) {
+		dest = wget_strcpy(dest, g_httppost, param);
+	} else if (param->method == WGET_MODE_PUT) {
+		dest = wget_strcpy(dest, g_httpput, param);
+	} else if (param->method == WGET_MODE_DELETE) {
+		dest = wget_strcpy(dest, g_httpdelete, param);
+	}
+
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+
+	dest = wget_strcpy(dest, ws->filename, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+
+	*dest++ = ISO_space;
+	dest = wget_strcpy(dest, g_http11, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+	dest = wget_strcpy(dest, g_httpcrnl, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+	dest = wget_strcpy(dest, g_httphost, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+	dest = wget_strcpy(dest, ws->hostname, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+	dest = wget_strcpy(dest, g_httpcrnl, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+
+	/* header of entity */
+
+	if (param->method == WGET_MODE_POST || param->method == WGET_MODE_PUT) {
+		/* Look for Content-Type in the headers */
+		cur = param->headers->head->next;
+		while (cur != param->headers->tail) {
+			if (!strncmp(cur->key, "Content-Type", strlen("Content-Type"))) {
+				break;
+			}
+			cur = cur->next;
+		}
+
+		/* Add default Content-Type if not found in headers */
+		if (cur == param->headers->tail) {
+			dest = wget_strcpy(dest, g_httpform, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+			dest = wget_strcpy(dest, g_httpcrnl, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+		}
+
+		/* content length */
+
+		if (!param->encoding) {
+			dest = wget_strcpy(dest, g_httpcontsize, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+			post_len = strlen((char *) param->entity);
+			sprintf(post_size, "%d", post_len);
+			dest = wget_strcpy(dest, post_size, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+			dest = wget_strcpy(dest, g_httpcrnl, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+		}
+
+		/* chuncked param->encoding */
+
+		else {
+			dest = wget_strcpy(dest, g_httpchunked, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+			dest = wget_strcpy(dest, g_httpcrnl, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+		}
+	}
+
+	cur = param->headers->head->next;
+	while (cur != param->headers->tail) {
+		dest = wget_strcpy(dest, cur->key, param);
+		if (dest == NULL) {
+			return WGET_MSG_CONSTRUCT_ERR;
+		}
+		dest = wget_strcpy(dest, ": ", param);
+		if (dest == NULL) {
+			return WGET_MSG_CONSTRUCT_ERR;
+		}
+		dest = wget_strcpy(dest, cur->value, param);
+		if (dest == NULL) {
+			return WGET_MSG_CONSTRUCT_ERR;
+		}
+		dest = wget_strcpy(dest, g_httpcrnl, param);
+		if (dest == NULL) {
+			return WGET_MSG_CONSTRUCT_ERR;
+		}
+		cur = cur->next;
+	}
+	dest = wget_strcpy(dest, g_httpcrnl, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+
+	/* entity is needed POST or PUT method */
+
+	if (param->method == WGET_MODE_POST || param->method == WGET_MODE_PUT) {
+
+		/* content length */
+
+		if (!param->encoding) {
+			dest = wget_strcpy(dest, (char *) param->entity, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+		}
+
+		/* chunked param->encoding */
+
+		else {
+			post_len = strlen(param->entity);
+			if (post_len > param->buflen) {
+				dest = wget_chunksize(dest, param->buflen, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, g_httpcrnl, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strlencpy(dest, (char *) param->entity, param->buflen, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, g_httpcrnl, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+			} else {
+				dest = wget_chunksize(dest, post_len, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, g_httpcrnl, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, (char *) param->entity, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, g_httpcrnl, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strlencpy(dest, "0", 1, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, g_httpcrnl, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+			}
+		}
+	}
+	return dest - param->buffer;
+}
+
+static int wget_socket_connect(struct wget_s *ws)
+{
+	int sockfd, ret;
+	struct timeval tv;
+	struct sockaddr_in server;
+
+	/* Create a socket */
+	sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sockfd < 0) {
+		return WGET_SOCKET_CONNECT_ERR;
+	}
+
+	/* Set send and receive timeout values */
+	tv.tv_sec = WEBCLIENT_CONF_TIMEOUT_MSEC / 1000;
+	tv.tv_usec = (WEBCLIENT_CONF_TIMEOUT_MSEC % 1000) * 1000;
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,
+				   (struct timeval *)&tv, sizeof(struct timeval)) < 0) {
+		ndbg("ERROR: setsockopt failed\n");
+	}
+
+	/* Get the server address from the host name */
+	server.sin_family = AF_INET;
+	server.sin_port = htons(ws->port);
+	ret = wget_gethostip(ws->hostname, &server.sin_addr.s_addr);
+	if (ret < 0) {
+		/* Could not resolve host (or malformed IP address) */
+		ndbg("ERROR: Failed to resolve hostname\n");
+		close(sockfd);
+		return WGET_SOCKET_CONNECT_ERR;
+	}
+
+	/* Connect to server.  First we have to set some fields in the
+	 * 'server' address structure.  The system will assign me an arbitrary
+	 * local port that is not in use.
+	 */
+	ret = connect(sockfd, (struct sockaddr *)&server, sizeof(struct sockaddr_in));
+	if (ret < 0) {
+		ndbg("ERROR: connect failed: %d errno: %d\n", ret, errno);
+		close(sockfd);
+		return WGET_SOCKET_CONNECT_ERR;
+	}
+	return sockfd;
+}
+
 /****************************************************************************
  * Name: wget_base
  *
@@ -679,21 +921,16 @@ HANDSHAKE_FAIL:
 static pthread_addr_t wget_base(void *arg)
 {
 	int sockfd = -1;
-	int len, post_len;
 	int ret;
-	int buf_len, sndlen;
+	int buf_len, sndlen, len;
 	int remain = WEBCLIENT_CONF_MAX_MESSAGE_SIZE;
 	int encoding = CONTENT_LENGTH;
 	int state = HTTP_REQUEST_HEADER;
 	struct http_message_len_t mlen = {0,};
-	struct sockaddr_in server;
 	struct wget_s ws;
-	struct timeval tv;
 	struct http_client_request_t *param = (struct http_client_request_t *)arg;
-	struct http_keyvalue_t *cur = NULL;
 	struct http_client_response_t response;
 	bool read_finish = false;
-	char *dest, post_size[8];
 
 #ifdef CONFIG_NET_SECURITY_TLS
 	struct http_client_tls_t *client_tls = (struct http_client_tls_t *)malloc(sizeof(
@@ -742,245 +979,16 @@ static pthread_addr_t wget_base(void *arg)
 	ws.datend = 0;
 	ws.ndx = 0;
 
-	/* Send method */
-
-	dest = ws.buffer;
-	if (param->method == WGET_MODE_GET) {
-		dest = wget_strcpy(dest, g_httpget, param);
-	} else if (param->method == WGET_MODE_POST) {
-		dest = wget_strcpy(dest, g_httppost, param);
-	} else if (param->method == WGET_MODE_PUT) {
-		dest = wget_strcpy(dest, g_httpput, param);
-	} else if (param->method == WGET_MODE_DELETE) {
-		dest = wget_strcpy(dest, g_httpdelete, param);
-	}
-
-	if (dest == NULL) {
+	if((sndlen = wget_msg_construct(ws.buffer, param, &ws)) <= 0) {
+		ndbg("ERROR: construction message failed\n");
 		goto errout_before_tlsinit;
 	}
-
-	dest = wget_strcpy(dest, ws.filename, param);
-	if (dest == NULL) {
-		goto errout_before_tlsinit;
-	}
-
-	*dest++ = ISO_space;
-	dest = wget_strcpy(dest, g_http11, param);
-	if (dest == NULL) {
-		goto errout_before_tlsinit;
-	}
-	dest = wget_strcpy(dest, g_httpcrnl, param);
-	if (dest == NULL) {
-		goto errout_before_tlsinit;
-	}
-	dest = wget_strcpy(dest, g_httphost, param);
-	if (dest == NULL) {
-		goto errout_before_tlsinit;
-	}
-	dest = wget_strcpy(dest, ws.hostname, param);
-	if (dest == NULL) {
-		goto errout_before_tlsinit;
-	}
-	dest = wget_strcpy(dest, g_httpcrnl, param);
-	if (dest == NULL) {
-		goto errout_before_tlsinit;
-	}
-
-	/* header of entity */
-
-	if (param->method == WGET_MODE_POST || param->method == WGET_MODE_PUT) {
-		/* Look for Content-Type in the headers */
-		cur = param->headers->head->next;
-		while (cur != param->headers->tail) {
-			if (!strncmp(cur->key, "Content-Type", strlen("Content-Type"))) {
-				break;
-			}
-			cur = cur->next;
-		}
-
-		/* Add default Content-Type if not found in headers */
-		if (cur == param->headers->tail) {
-			dest = wget_strcpy(dest, g_httpform, param);
-			if (dest == NULL) {
-				goto errout_before_tlsinit;
-			}
-			dest = wget_strcpy(dest, g_httpcrnl, param);
-			if (dest == NULL) {
-				goto errout_before_tlsinit;
-			}
-		}
-
-		/* content length */
-
-		if (!param->encoding) {
-			dest = wget_strcpy(dest, g_httpcontsize, param);
-			if (dest == NULL) {
-				goto errout_before_tlsinit;
-			}
-			post_len = strlen((char *) param->entity);
-			sprintf(post_size, "%d", post_len);
-			dest = wget_strcpy(dest, post_size, param);
-			if (dest == NULL) {
-				goto errout_before_tlsinit;
-			}
-			dest = wget_strcpy(dest, g_httpcrnl, param);
-			if (dest == NULL) {
-				goto errout_before_tlsinit;
-			}
-		}
-
-		/* chuncked param->encoding */
-
-		else {
-			dest = wget_strcpy(dest, g_httpchunked, param);
-			if (dest == NULL) {
-				goto errout_before_tlsinit;
-			}
-			dest = wget_strcpy(dest, g_httpcrnl, param);
-			if (dest == NULL) {
-				goto errout_before_tlsinit;
-			}
-		}
-	}
-
-	cur = param->headers->head->next;
-	while (cur != param->headers->tail) {
-		dest = wget_strcpy(dest, cur->key, param);
-		if (dest == NULL) {
-			goto errout_before_tlsinit;
-		}
-		dest = wget_strcpy(dest, ": ", param);
-		if (dest == NULL) {
-			goto errout_before_tlsinit;
-		}
-		dest = wget_strcpy(dest, cur->value, param);
-		if (dest == NULL) {
-			goto errout_before_tlsinit;
-		}
-		dest = wget_strcpy(dest, g_httpcrnl, param);
-		if (dest == NULL) {
-			goto errout_before_tlsinit;
-		}
-		cur = cur->next;
-	}
-	dest = wget_strcpy(dest, g_httpcrnl, param);
-	if (dest == NULL) {
-		goto errout_before_tlsinit;
-	}
-
-	/* entity is needed POST or PUT method */
-
-	if (param->method == WGET_MODE_POST || param->method == WGET_MODE_PUT) {
-
-		/* content length */
-
-		if (!param->encoding) {
-			dest = wget_strcpy(dest, (char *) param->entity, param);
-			if (dest == NULL) {
-				goto errout_before_tlsinit;
-			}
-		}
-
-		/* chunked param->encoding */
-
-		else {
-			post_len = strlen(param->entity);
-			if (post_len > param->buflen) {
-				dest = wget_chunksize(dest, param->buflen, param);
-				if (dest == NULL) {
-					goto errout_before_tlsinit;
-				}
-				dest = wget_strcpy(dest, g_httpcrnl, param);
-				if (dest == NULL) {
-					goto errout_before_tlsinit;
-				}
-				dest = wget_strlencpy(dest, (char *) param->entity, param->buflen, param);
-				if (dest == NULL) {
-					goto errout_before_tlsinit;
-				}
-				dest = wget_strcpy(dest, g_httpcrnl, param);
-				if (dest == NULL) {
-					goto errout_before_tlsinit;
-				}
-				post_len -= param->buflen;
-			} else {
-				dest = wget_chunksize(dest, post_len, param);
-				if (dest == NULL) {
-					goto errout_before_tlsinit;
-				}
-				dest = wget_strcpy(dest, g_httpcrnl, param);
-				if (dest == NULL) {
-					goto errout_before_tlsinit;
-				}
-				dest = wget_strcpy(dest, (char *) param->entity, param);
-				if (dest == NULL) {
-					goto errout_before_tlsinit;
-				}
-				dest = wget_strcpy(dest, g_httpcrnl, param);
-				if (dest == NULL) {
-					goto errout_before_tlsinit;
-				}
-				dest = wget_strlencpy(dest, "0", 1, param);
-				if (dest == NULL) {
-					goto errout_before_tlsinit;
-				}
-				dest = wget_strcpy(dest, g_httpcrnl, param);
-				if (dest == NULL) {
-					goto errout_before_tlsinit;
-				}
-			}
-		}
-	}
-
-	len = dest - param->buffer;
 
 #ifdef CONFIG_NET_SECURITY_TLS
 retry:
 #endif
-	/* Create a socket */
-	sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (sockfd < 0) {
-		/* socket failed.  It will set the errno appropriately */
+	if((sockfd = wget_socket_connect(&ws)) < 0) {
 		ndbg("ERROR: socket failed: %d\n", errno);
-		goto errout_before_tlsinit;
-	}
-
-	/* Set send and receive timeout values */
-
-	tv.tv_sec = WEBCLIENT_CONF_TIMEOUT_MSEC / 1000;
-	tv.tv_usec = (WEBCLIENT_CONF_TIMEOUT_MSEC % 1000) * 1000;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,
-				   (struct timeval *)&tv, sizeof(struct timeval)) < 0) {
-		ndbg("ERROR: setsockopt failed\n");
-	}
-
-	/* Get the server address from the host name */
-
-	server.sin_family = AF_INET;
-	server.sin_port = htons(ws.port);
-	ret = wget_gethostip(ws.hostname, &server.sin_addr.s_addr);
-	if (ret < 0) {
-
-		/* Could not resolve host (or malformed IP address) */
-
-		ndbg("ERROR: Failed to resolve hostname\n");
-		close(sockfd);
-		sockfd = -1;
-		ret = -EHOSTUNREACH;
-		goto errout_before_tlsinit;
-	}
-
-	/* Connect to server.  First we have to set some fields in the
-	 * 'server' address structure.  The system will assign me an arbitrary
-	 * local port that is not in use.
-	 */
-
-	ret = connect(sockfd, (struct sockaddr *)&server,
-				  sizeof(struct sockaddr_in));
-	if (ret < 0) {
-		ndbg("ERROR: connect failed: %d errno: %d\n", ret, errno);
-		close(sockfd);
-		sockfd = -1;
 		goto errout_before_tlsinit;
 	}
 
@@ -1000,8 +1008,6 @@ retry:
 		goto errout;
 	}
 #endif
-
-	sndlen = len;
 	buf_len = 0;
 	while (sndlen > 0) {
 #ifdef CONFIG_NET_SECURITY_TLS
