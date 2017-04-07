@@ -41,19 +41,14 @@ int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte
 	FAR struct inode *pnode = NULL;
 	char *devname = sss_get_flash_device_name();
 	unsigned char *read_buf = NULL;
-	unsigned int start_sector = 0, end_sector = 0;
-	unsigned int nsector = 0;
+	unsigned int start_sector, end_sector;
+	unsigned int nsector;
 	unsigned int end_offset = start_offset + byte_size;
 
 	/* Check input bound */
 	if (buf == NULL) {
 		return ERROR_SSTORAGE_SFS_FREAD;
 	}
-
-	/* Calculate the sector number what we sholuld read  */
-	start_sector = start_offset / CONFIG_S5J_FLASH_SECTOR_SIZE;
-	end_sector = end_offset / CONFIG_S5J_FLASH_SECTOR_SIZE;
-	nsector = end_sector - start_sector + ((end_offset % CONFIG_S5J_FLASH_SECTOR_SIZE) ? (1) : (0));
 
 	/* Open the mtd block device */
 	ret = open_blockdriver(devname, 0, &pnode);
@@ -69,13 +64,18 @@ int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte
 		goto read_out;
 	}
 
+	/* Calculate the sector number what we sholuld read  */
+	start_sector = start_offset / geo.erasesize;
+	end_sector = end_offset / geo.erasesize;
+	nsector = end_sector - start_sector + ((end_offset % geo.erasesize) ? (1) : (0));
+
 	if (geo.erasesize * geo.neraseblocks < end_offset) {
 		ret = ERROR_SSTORAGE_INVALID_DATA_LEN;
 		goto read_out;
 	}
 
 	/* Allocate temporary read buffer */
-	read_buf = (unsigned char *)malloc(nsector * CONFIG_S5J_FLASH_SECTOR_SIZE);
+	read_buf = (unsigned char *)malloc(nsector * geo.erasesize);
 	if (read_buf == NULL) {
 		fdbg("Fail to allocate memory\n");
 		ret = ERROR_SSTORAGE_SFS_FREAD;
@@ -89,7 +89,7 @@ int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte
 		ret = ERROR_SSTORAGE_SFS_FREAD;
 		goto read_out;
 	}
-	memcpy(buf, read_buf + (start_offset % CONFIG_S5J_FLASH_SECTOR_SIZE), byte_size);
+	memcpy(buf, read_buf + (start_offset % geo.erasesize), byte_size);
 
 read_out:
 	if (close_blockdriver(pnode)) {
