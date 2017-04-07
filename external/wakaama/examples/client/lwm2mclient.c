@@ -80,6 +80,10 @@
 #include <errno.h>
 #include <signal.h>
 
+#if defined (__TINYARA__)
+#include <tinyara/ascii.h>
+#endif
+
 #define MAX_PACKET_SIZE 1024
 #define DEFAULT_SERVER_IPV6 "[::1]"
 #define DEFAULT_SERVER_IPV4 "127.0.0.1"
@@ -106,19 +110,19 @@
 #define STDERR_FILENO 2
 #endif
 
-#define SET_PARAM_DM_FRAMEWORK -10
+#define SET_PARAM_BY_GLOBAL_VALUE -10
 
 #define DEFAULT_CLIENT_NAME "myawesomeclient"
 #define IPADDRLEN_MAX  32
 #define PORTLEN_MAX 6
 
 /* Global variables */
-static char g_serverAddr[IPADDRLEN_MAX];
-static char g_serverPort[PORTLEN_MAX];
-static char g_bootstrapserverAddr[IPADDRLEN_MAX];
-static char g_bootstrapserverPort[PORTLEN_MAX];
-static uint16_t g_lifetime;
-bool g_bootstrapRequested;
+static char g_serverAddr[IPADDRLEN_MAX] = {0,};
+static char g_serverPort[PORTLEN_MAX] = {0,};
+static char g_bootstrapserverAddr[IPADDRLEN_MAX] = {0,};
+static char g_bootstrapserverPort[PORTLEN_MAX] = {0,};
+static uint16_t g_lifetime = 300;
+bool g_bootstrapRequested = false;
 
 #endif /* __TINYARA__ */
 
@@ -154,6 +158,8 @@ static void clear_client_globals(void);
 static void prv_close_sock(void);
 static void prv_update_server(client_data_t *dataP, uint16_t secObjInstID);
 static void process_udpconn(int sockfd, fd_set *readfds, client_data_t data);
+
+static int read_input_command_line(char *buf);
 #endif /*__TINYARA__*/
 
 static void prv_quit(char * buffer,
@@ -1007,7 +1013,7 @@ int lwm2m_client_main(int argc, char *argv[])
         opt += 1;
     }
 #if defined (__TINYARA__)
-    if (argc == SET_PARAM_DM_FRAMEWORK) {
+    if (argc == SET_PARAM_BY_GLOBAL_VALUE) {
         /* To handling parameters set through dm frameworks */
         name = DEFAULT_CLIENT_NAME;
         lifetime = g_lifetime;
@@ -1405,7 +1411,7 @@ int lwm2m_client_main(int argc, char *argv[])
 #endif
             {
 #if defined (__TINYARA__)
-                numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE - 1);
+                numBytes = read_input_command_line((char *)buffer);
 #else
                 numBytes = read(stdin, buffer, MAX_PACKET_SIZE - 1);
 #endif
@@ -1474,10 +1480,16 @@ int lwm2m_client_main(int argc, char *argv[])
 
 /* Public APIs */
 
-pthread_addr_t lwm2m_client_run(void)
+pthread_addr_t lwm2m_client_run(void *arg)
 {
+	struct lwm2mclient_input *input;
 
-	lwm2m_client_main(SET_PARAM_DM_FRAMEWORK, NULL);
+	if (arg == NULL) {
+		lwm2m_client_main(SET_PARAM_BY_GLOBAL_VALUE, NULL);
+	} else {
+		input = arg;
+		lwm2m_client_main(input->argc, input->argv);
+	}
 	return 0;
 }
 
@@ -1633,6 +1645,67 @@ int client_object_dump(char *buffer)
 }
 
 /* Private APIs */
+
+static int read_input_command_line(char *buf)
+{
+	char buffer[MAX_PACKET_SIZE] = {0,};
+
+	int nbytes = 0;
+	int pos = 0;
+	int char_idx = 0;
+	int bufsize = MAX_PACKET_SIZE;
+
+	do {
+		nbytes = read(STDIN_FILENO, &buffer[pos], (bufsize - pos));
+		if (nbytes <= 0) {
+			fprintf(stderr, "cannot read command\n");
+			return 0;
+		}
+
+		for (char_idx = 0; char_idx < nbytes; char_idx++) {
+			if ((buffer[pos] == ASCII_BS) || (buffer[pos] == ASCII_DEL)) {
+				int valid_char_pos = pos + 1;
+
+				if (pos > 0) {
+					pos--;
+					/* update screen */
+					if (write(STDOUT_FILENO, "\b \b",3) <= 0) {
+						fprintf(stderr, "write failed (errno = %d)\n", get_errno());
+					}
+				}
+
+				if (buffer[valid_char_pos] != 0x0 && (valid_char_pos < MAX_PACKET_SIZE)) {
+					memcpy(&buffer[pos], &buffer[valid_char_pos], (bufsize - valid_char_pos));
+				}
+			} else {
+				if (buffer[pos] == ASCII_CR) {
+					buffer[pos] = ASCII_LF;
+				}
+
+				/* echo */
+				if (write(STDOUT_FILENO, &buffer[pos], 1) <= 0) {
+					fprintf(stderr, "failed to write (errno = %d)\n", get_errno());
+				}
+
+				if (buffer[pos] == ASCII_LF) {
+					pos++;
+					break;
+				}
+
+				pos++;
+				if (pos >= MAX_PACKET_SIZE) {
+					fprintf(stderr, "out of range : command is too long, maximum length %d\n", MAX_PACKET_SIZE);
+					memset(buf, 0x0, MAX_PACKET_SIZE);
+					return 0;
+				}
+			}
+		}
+	} while(buffer[pos - 1] != ASCII_LF);
+
+	memcpy(buf, buffer, pos);
+
+	return pos;
+}
 
 static void prv_close_sock(void)
 {

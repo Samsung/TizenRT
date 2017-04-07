@@ -30,6 +30,15 @@
 
 #include "liblwm2m.h"
 
+/*
+ * struct lwm2mclient_input can be used for
+ * pthread arguments called by lwm2m_client_run API
+ */
+struct lwm2mclient_input {
+	int argc;
+	char **argv;
+};
+
 extern int g_reboot;
 
 /*
@@ -99,7 +108,7 @@ void handle_value_changed(lwm2m_context_t* lwm2mH, lwm2m_uri_t* uri, const char 
  * TINYARA
  * DM (Device Management) Frameworks APIs
  */
-pthread_addr_t lwm2m_client_run(void);
+pthread_addr_t lwm2m_client_run(void *arg);
 
 char *client_set_serverAddr(FAR const char *serverAddr, bool isbootstrap);
 char *client_get_serverAddr(void);
