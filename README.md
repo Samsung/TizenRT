@@ -4,7 +4,7 @@
 
 lightweight RTOS-based platform to support low-end IoT devices.
 
-You can find project details on our [wiki](https://github.com/Samsung/TizenRT/wiki).
+You can find project details on our [Tizen wiki](https://wiki.tizen.org/wiki/Tizen_RT).
 
 ## Quick Start
 ### Getting the toolchain
@@ -34,6 +34,7 @@ cd os/tools
 ./configure.sh <board>/<configuration_set>
 ```
 For list of boards and configuration set supported, refer belows.
+
 Above copies the canned configuration-set for the particular board, into the $TIZENRT_BASEDIR/os directory.
 
 Configuration can be modified through make menuconfig from $TIZENRT_BASEDIR/os.
@@ -49,7 +50,9 @@ make
 
 Built binaries are in $TIZENRT_BASEDIR/build/output/bin.
 
-## Board
+## Supported Board
+sidk_s5jt200 [[details]](build/configs/sidk_s5jt200/README.md)
+
 Tizen RT currently supports one board called sidk_s5jt200. However, this board is not available in public markets till now. sidk_s5jt200 or other boards for Tizen RT will be coming soon.
   sidk_s5jt200 stands for Samsung IoT Development Kit for S5JT200 chipset.
 
