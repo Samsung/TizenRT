@@ -1,3 +1,0 @@
-config ENTRY_IOTIVITY
-	bool "IOTIVITY demo"
-	depends on EXAMPLES_IOTIVITY
