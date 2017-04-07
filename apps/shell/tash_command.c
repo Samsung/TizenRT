@@ -22,7 +22,7 @@
 #include <tinyara/config.h>
 #include <string.h>
 #include <stdio.h>
-#ifndef CONFIG_DISABLE_ENIVRON
+#ifndef CONFIG_DISABLE_ENVIRON
 #include <stdlib.h>
 #endif
 #include <sys/types.h>
@@ -51,7 +51,7 @@
 #define TASH_CMDTASK_PRIORITY		(SCHED_PRIORITY_DEFAULT)
 #endif
 #define TASH_CMDS_PER_LINE			(4)
-#ifndef CONFIG_DISABLE_ENIVRON
+#ifndef CONFIG_DISABLE_ENVIRON
 #define TASH_ASYNC_CMD_PRI_STR		"CMD_PRI"
 #define TASH_ASYNC_CMD_STACK_STR	"CMD_STACK"
 #endif
@@ -155,7 +155,7 @@ static int tash_help(int argc, char **args)
 		}
 	}
 	printf("\n");
-#ifndef CONFIG_DISABLE_ENIVRON
+#ifndef CONFIG_DISABLE_ENVIRON
 	printf("\nIf you want to run an ASYNC command with specific priority and stacksize\n");
 	printf("use \"setenv %s\" or \"%s\"\n", TASH_ASYNC_CMD_PRI_STR, TASH_ASYNC_CMD_STACK_STR);
 #endif
@@ -180,7 +180,7 @@ static int tash_launch_cmdtask(TASH_CMD_CALLBACK cb, int argc, char **args)
 	int ret = 0;
 	int pri = TASH_CMDTASK_PRIORITY;
 	long stack_size = TASH_CMDTASK_STACKSIZE;
-#ifndef CONFIG_DISABLE_ENIVRON
+#ifndef CONFIG_DISABLE_ENVIRON
 	char *env_pri;
 	char *env_stack;
 	int is_setenv = false;
