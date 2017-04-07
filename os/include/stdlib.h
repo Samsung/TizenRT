@@ -101,7 +101,7 @@
  * can be used in its place.
  */
 
-#ifndef CONFIG_DISABLE_ENIVRON
+#ifndef CONFIG_DISABLE_ENVIRON
 #define environ get_environ_ptr()
 #endif
 
@@ -184,7 +184,7 @@ int rand(void);
 
 /* Environment variable support */
 
-#ifndef CONFIG_DISABLE_ENIVRON
+#ifndef CONFIG_DISABLE_ENVIRON
 /**
  * @ingroup STDLIB_LIBC
  * @brief Return a pointer to the thread specific environ variable
