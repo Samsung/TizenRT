@@ -150,12 +150,12 @@ static uint8_t s5j_sflash_read_status(void)
 #ifdef CONFIG_MTD_PROGMEM
 size_t up_progmem_getaddress(size_t page)
 {
-	return CONFIG_S5J_FLASH_BASE + up_progmem_pagesize(page) * page;
+	return S5J_FLASH_PADDR + up_progmem_pagesize(page) * page;
 }
 
 ssize_t up_progmem_getpage(size_t addr)
 {
-	return (addr - CONFIG_S5J_FLASH_BASE) / up_progmem_pagesize(0);
+	return (addr - S5J_FLASH_PADDR) / up_progmem_pagesize(0);
 }
 
 ssize_t up_progmem_erasepage(size_t page)
@@ -174,7 +174,7 @@ ssize_t up_progmem_erasepage(size_t page)
 	s5j_sflash_disable_wp();
 
 	/* Set sector address and then send erase command */
-	putreg32(addr - CONFIG_S5J_FLASH_BASE, rERASE_ADDRESS);
+	putreg32(addr - S5J_FLASH_PADDR, rERASE_ADDRESS);
 	putreg8(0xff, rSE);
 
 	/* Wait for the completion */

@@ -126,19 +126,19 @@ int s5j_mpu_initialize(void)
 	mpu_priv_noncache(0x02100000, 0x80000);
 
 	/* Region 3, for FLASH area, default to set WBWA */
-	mpu_user_intsram_wb(CONFIG_S5J_FLASH_BASE, CONFIG_S5J_FLASH_SIZE);
+	mpu_user_intsram_wb(S5J_FLASH_PADDR, S5J_FLASH_SIZE);
 
 	/* region 4, for Sflash Mirror area to be read only */
-	mpu_priv_flash(CONFIG_S5J_FLASH_MIRROR_BASE, CONFIG_S5J_FLASH_SIZE);
+	mpu_priv_flash(S5J_FLASH_MIRROR_PADDR, S5J_FLASH_MIRROR_SIZE);
 
 	/* Region 5, for SFR area read/write, strongly-ordered */
-	mpu_priv_stronglyordered(0x80000000, 0x10000000);
+	mpu_priv_stronglyordered(S5J_PERIPHERAL_PADDR, S5J_PERIPHERAL_SIZE);
 
 	/*
 	 * Region 6, for vector table,
-	 * s5j uses high vector in 0xFFFF_0000++4KB, read only
+	 * set the entire high vector region as read-only.
 	 */
-	mpu_priv_flash(0xFFFF0000, 0x1000);
+	mpu_priv_flash(S5J_IRAM_MIRROR_PADDR, S5J_IRAM_MIRROR_SIZE);
 
 	mpu_control(true);
 #endif

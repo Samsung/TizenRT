@@ -222,34 +222,6 @@ config S5J_SFLASH
 
 if S5J_SFLASH
 menu "Serial FLASH region"
-config S5J_FLASH_BASE
-	hex "Nor Flash start address (physical)"
-	default 0x04000000
-	help
-		Samsung S5J SoC uses serial nor flash memory, this needs base address of memory map
-
-config S5J_FLASH_MIRROR_BASE
-	hex "Nor Flash mirrored address (physical)"
-	default 0x60000000
-	help
-		Provides mirror address mapped to Nor flash with same space
-
-config S5J_FLASH_SIZE
-	hex "Nor Flash size (Byte)"
-	default 0x800000
-	help
-		Samsung IoT uses serial nor flash memory, set to default size
-
-config S5J_FLASH_SECTOR_SIZE
-	hex "Flash sector size (Byte)"
-	default 4096
-
-config S5J_BOOTLOADER_REGION_SIZE
-	hex "Boot loader region size (Byte)"
-	default 0x400000
-	help
-		When smartfs initialize flash, it will be skipped. This features is used to
-		prevent for erasing or accessing to Non smartfs region.
 
 config NVRAM_WIFI_START
 	hex "WiFi shared memory size"
