@@ -167,6 +167,9 @@ extern int mqtt_client_pub_main(int argc, char *argv[]);
 #ifdef CONFIG_DM
 extern int lwm2m_client_main(int argc, char *argv[]);
 #endif
+#ifdef CONFIG_EXAMPLES_DNSCLIENT_TEST
+extern int dnsclient_main(int argc, char *argv[]);
+#endif
 
 #if defined(CONFIG_NETUTILS_TFTPC)
 struct tftpc_args_s {
@@ -782,6 +785,9 @@ const static tash_cmdlist_t net_appcmds[] = {
 #endif
 #ifdef CONFIG_DM
 	{"lwm2mclient", lwm2m_client_main, TASH_EXECMD_SYNC},
+#endif
+#ifdef CONFIG_EXAMPLES_DNSCLIENT_TEST
+	{"dnsclient", dnsclient_main, TASH_EXECMD_ASYNC},
 #endif
 	{NULL, NULL, 0}
 };

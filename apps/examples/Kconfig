@@ -12,6 +12,7 @@ config ENTRY_MANUAL
 	bool "manual entry"
 
 source "$APPSDIR/examples/artik_demo/Kconfig_ENTRY"
+source "$APPSDIR/examples/dnsclient_test/Kconfig_ENTRY"
 source "$APPSDIR/examples/dtls_client/Kconfig_ENTRY"
 source "$APPSDIR/examples/dtls_server/Kconfig_ENTRY"
 source "$APPSDIR/examples/fota_sample/Kconfig_ENTRY"
@@ -47,6 +48,7 @@ config USER_ENTRYPOINT
 
 endif # INIT_ENTRYPOINT
 
+source "$APPSDIR/examples/dnsclient_test/Kconfig"
 source "$APPSDIR/examples/dtls_client/Kconfig"
 source "$APPSDIR/examples/dtls_server/Kconfig"
 source "$APPSDIR/examples/fota_sample/Kconfig"
