@@ -234,7 +234,7 @@ typedef size_t mmaddress_t;		/* 32 bit address space */
 #error Unknown CONFIG_ARCH option, malloc debug feature wont work.
 #endif
 
-#define SIZEOF_MM_MALLOC_DEBUG_INO \
+#define SIZEOF_MM_MALLOC_DEBUG_INFO \
 	(sizeof(mmaddress_t) + sizeof(int16_t) + sizeof(uint16_t))
 #endif
 
@@ -284,7 +284,7 @@ struct mm_freenode_s {
 #define MM_PTR_SIZE sizeof(FAR struct mm_freenode_s *)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #define SIZEOF_MM_FREENODE \
-	(SIZEOF_MM_ALLOCNODE - SIZEOF_MM_MALLOC_DEBUG_INO + 2 * MM_PTR_SIZE)
+	(SIZEOF_MM_ALLOCNODE - SIZEOF_MM_MALLOC_DEBUG_INFO + 2 * MM_PTR_SIZE)
 #else
 #define SIZEOF_MM_FREENODE (SIZEOF_MM_ALLOCNODE + 2 * MM_PTR_SIZE)
 #endif
