@@ -42,7 +42,6 @@
 
 #include <tinyara/clock.h>
 #include <tinyara/net/net.h>
-#include <tinyara/fs/fs_utils.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/dhcp.h>
 #include <net/lwip/stats.h>
@@ -385,21 +384,6 @@ int cmd_get(int argc, char **argv)
 	/* Get the full path to the local file */
 
 	fullpath = get_fullpath(args.destpath);
-
-	printf("Doing FS setting...\n");
-	ret = fs_erase("/dev/smart1");
-	if (ret != OK) {
-		printf("FS erase error\n");
-		return;
-	}
-
-	ret = fs_initiate("/dev/smart1", "smartfs");
-	if (ret != OK) {
-		printf("FS initiate error");
-		return;
-	} else {
-		printf("FS initiate done\n");
-	}
 
 	/* Then perform the TFTP get operation */
 

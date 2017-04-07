@@ -151,13 +151,6 @@ void smart_set_format_status(bool value);
  ****************************************************************************/
 bool smart_get_format_status(void);
 
-/****************************************************************************
- * Description:
- *   This is called from the fs_clean() API to release the memory acquired by
- *   MTD driver
- *
- ****************************************************************************/
-int smart_clean(FAR struct inode *inode);
 
 #undef EXTERN
 #ifdef __cplusplus

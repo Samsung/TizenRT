@@ -86,44 +86,6 @@ extern "C" {
 #endif
 
 /****************************************************************************
- * Name: fs_initiate
- *
- * Description:
- *   This is called from the User application to initiate the file system
- *
- ****************************************************************************/
-int fs_initiate(char *dev_name, char *mount_name);
-
-/****************************************************************************
- * Name: fs_clean
- *
- * Description:
- *   This is called from the User application to clean the file system
- *
- ****************************************************************************/
-int fs_clean(char *dev_name);
-
-/****************************************************************************
- * Name: fs_erase
- *
- * Description:
- *   This is called from the User application to erase the file system
- *
- ****************************************************************************/
-int fs_erase(char *dev_name);
-
-#ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
-/****************************************************************************
- * Name: fs_recover
- *
- * Description:
- *   Recover corrupted sector due to sudden power off
- *
- ****************************************************************************/
-int fs_recover(void);
-#endif
-
-/****************************************************************************
  * Name: getwd
  *
  * Description:

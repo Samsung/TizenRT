@@ -55,7 +55,7 @@
 ASRCS =
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 
-CSRCS = fs_initialize.c fs_utils.c
+CSRCS = fs_initialize.c
 
 DEPPATH = --dep-path .
 VPATH = .

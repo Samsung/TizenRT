@@ -633,20 +633,6 @@ void itc_arastorage_cursor_get_string_value_p(void)
 
 int itc_arastorage_launcher(int argc, FAR char *argv[])
 {
-
-#ifdef CONFIG_FS_SMARTFS
-    if (fs_erase("/dev/smart1") != OK) {
-        printf("Error erasing file system, STOP TEST!!\n");
-        return ERROR;
-    }
-
-    if (fs_initiate("/dev/smart1", "smartfs") != OK) {
-        printf("Error initiating file system, STOP TEST!!\n");
-        return ERROR;
-    }
-    printf("File system initiated!! START TEST!!\n");
-#endif
-
     total_fail = 0;
     total_pass = 0;
     itc_arastorage_db_init_deinit_p();
