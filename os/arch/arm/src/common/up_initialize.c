@@ -268,9 +268,4 @@ void up_initialize(void)
 
 	up_l2ccinitialize();
 	board_led_on(LED_IRQSENABLED);
-
-#ifdef CONFIG_GPIO
-	/* Initialize GPIO */
-	up_gpioinitialize();
-#endif
 }

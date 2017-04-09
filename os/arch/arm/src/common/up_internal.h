@@ -553,13 +553,6 @@ void up_usbuninitialize(void);
 void up_rnginitialize(void);
 #endif
 
-/* GPIO  ********************************************************************/
-#ifdef CONFIG_GPIO
-void up_gpioinitialize(void);
-#else
-#define up_gpioinitialize()
-#endif
-
 /* Debug ********************************************************************/
 #ifdef CONFIG_STACK_COLORATION
 void up_stack_color(FAR void *stackbase, size_t nbytes);

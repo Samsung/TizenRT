@@ -1753,26 +1753,6 @@ int up_create_gpio(int32_t idx)
 #endif
 }
 
-
-/****************************************************************************
- * Name: up_gpioinitialize 
- *
- * Description:
- *  Dummy function. Real function s5j_gpioinitialize, where GPIOs are exposed, 
- *  called from board_init().
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-void up_gpioinitialize(void)
-{
-
-}
-
 /****************************************************************************
  * Name: up_destroy_gpio 
  *
