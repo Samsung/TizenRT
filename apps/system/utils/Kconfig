@@ -107,6 +107,7 @@ config ENABLE_PS
 config ENABLE_STACKMONITOR
 	bool "Stack monitor"
 	default n
+	depends on !BUILD_PROTECTED && !BUILD_KERNEL
 	select STACK_COLORATION
 	---help---
 		The stack monitor is a daemon that will periodically assess
