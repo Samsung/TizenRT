@@ -623,15 +623,8 @@ int cmd_ifconfig(int argc, char **argv)
 		printf("IP address %s\n", inet_ntoa(ds.ipaddr));
 		printf("Netmask %s\n", inet_ntoa(ds.netmask));
 		printf("Gateway %s\n", inet_ntoa(ds.default_router));
-
-#ifdef CONFIG_NETDB_DNSCLIENT
-		if (ds.dnsaddr.s_addr != 0) {
-			struct sockaddr_in sock_dns;
-			sock_dns.sin_family = AF_INET;
-			sock_dns.sin_port = htons(DNS_DEFAULT_PORT);
-			sock_dns.sin_addr.s_addr = htonl(ds.dnsaddr.s_addr);
-			dns_add_nameserver((FAR struct sockaddr *)&sock_dns, sizeof(struct sockaddr_in));
-		}
+#if defined (CONFIG_NETDB_DNSCLIENT) && defined (CONFIG_NETDB_DNSSERVER_BY_DHCP)
+		printf("Default DNS %s\n", inet_ntoa(ds.dnsaddr));
 #endif
 		dhcpc_close(handle);
 
