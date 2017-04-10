@@ -127,7 +127,7 @@ connection_t * connection_create(connection_t * connList,
         {
             sa = p->ai_addr;
 #ifdef CONFIG_NET_LWIP
-            sa = p->ai_addrlen;
+            sa->sa_len = p->ai_addrlen;
 #endif
             sl = p->ai_addrlen;
             if (-1 == connect(s, p->ai_addr, p->ai_addrlen))
