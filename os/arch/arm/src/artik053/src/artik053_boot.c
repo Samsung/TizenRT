@@ -78,12 +78,12 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: s5j_gpioinitialize
+ * Name: board_gpio_initialize
  *
  * Description:
  *  Expose board dependent GPIOs
  ****************************************************************************/
-static void s5j_gpioinitialize(void)
+static void board_gpio_initialize(void)
 {
 	/* List of available GPIO IDs */
 
@@ -203,6 +203,6 @@ void board_initialize(void)
 	board_pwm_setup();
 #endif
 
-	s5j_gpioinitialize();
+	board_gpio_initialize();
 }
 #endif /* CONFIG_BOARD_INITIALIZE */
