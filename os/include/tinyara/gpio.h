@@ -81,11 +81,11 @@
 
 /* vtable access helpers */
 
-#define gpio_open(dev)          dev->ops->open(dev)
-#define gpio_close(dev)         dev->ops->close(dev)
-#define gpio_get(dev)           dev->ops->get(dev)
-#define gpio_set(dev, s)        dev->ops->set(dev, s)
-#define gpio_ctrl(dev, s, v)    dev->ops->ctrl(dev, s, v)
+#define GPIO_OPEN(dev)		dev->ops->open(dev)
+#define GPIO_CLOSE(dev)		dev->ops->close(dev)
+#define GPIO_GET(dev)		dev->ops->get(dev)
+#define GPIO_SET(dev, s)	dev->ops->set(dev, s)
+#define GPIO_CTRL(dev, s, v)	dev->ops->ctrl(dev, s, v)
 
 /****************************************************************************
  * Public Types

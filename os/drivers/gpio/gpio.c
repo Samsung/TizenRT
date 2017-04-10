@@ -179,10 +179,9 @@ static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
 	FAR struct gpio_dev_s *dev = inode->i_private;
 
 	value = *(int32_t *) buffer;
-	gpio_set(dev, value);
+	GPIO_SET(dev, value);
 
 	return buflen;
-
 }
 
 /****************************************************************************
@@ -207,7 +206,7 @@ static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer,
 	 * return size, and resize fpos. next time return zero.
 	 */
 	if (filep->f_pos == 0) {
-		value = gpio_get(dev);
+		value = GPIO_GET(dev);
 
 		memcpy(buffer, &value, sizeof(int));
 
@@ -235,7 +234,7 @@ static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_dev_s *dev = inode->i_private;
 
-	ret = gpio_ctrl(dev, cmd, arg);
+	ret = GPIO_CTRL(dev, cmd, arg);
 
 	return ret;
 }
@@ -334,7 +333,7 @@ static int gpio_fclose(FAR struct file *filep)
 	/* There are no more references to the port */
 	dev->open_count = 0;
 
-	gpio_close(dev);
+	GPIO_CLOSE(dev);
 
 #ifndef CONFIG_DISABLE_POLL
 	sem_reinit(&dev->pollsem, 0, 1);
@@ -381,7 +380,7 @@ static int gpio_fopen(FAR struct file *filep)
 
 	/* Check if this is the first time that the driver has been opened. */
 	if (tmp == 1) {
-		ret = gpio_open(dev);
+		ret = GPIO_OPEN(dev);
 		if (ret != OK) {
 			goto errout_with_sem;
 		}
