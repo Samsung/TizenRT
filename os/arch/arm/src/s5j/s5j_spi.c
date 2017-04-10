@@ -443,7 +443,7 @@ static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 	unsigned int ch_cfg;
 
 	ch_cfg = getreg32(&pSPIRegs->CH_CFG);
-	ch_cfg = (ch_cfg & CH_CFG_MODE_MASK) | CH_CFG_MODE(mode);
+	ch_cfg = (ch_cfg & (~CH_CFG_MODE_MASK)) | CH_CFG_MODE(mode);
 	putreg32(ch_cfg, &pSPIRegs->CH_CFG);
 }
 
