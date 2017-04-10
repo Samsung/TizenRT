@@ -925,7 +925,7 @@ usage:
 	mbedtls_printf(" ok (%d skipped)\n", ret);
 
 	/*
-	 * 1.2. Load own certificate
+	 * 1.2. Load own certificate and key
 	 */
 	mbedtls_printf("  . Loading the own cert...");
 	fflush(stdout);
@@ -937,6 +937,15 @@ usage:
 	}
 
 	mbedtls_printf(" ok\n");
+
+	mbedtls_printf("  . Loading the Private Key...");
+	fflush(stdout);
+
+	if ((ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *) mbedtls_test_cli_key_rsa, mbedtls_test_cli_key_rsa_len, NULL, 0)) != 0)
+	{
+		mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
+		goto exit;
+	}
 
 	/*
 	 * 2. Start the connection
