@@ -61,7 +61,6 @@
 #include <errno.h>
 
 #include <tinyara/board.h>
-#include <tinyara/irq.h>
 
 #include <chip.h>
 
@@ -136,59 +135,4 @@ uint8_t board_buttons(void)
 	return ret;
 }
 
-/****************************************************************************
- * Button support.
- *
- * Description:
- *   board_button_initialize() must be called to initialize button resources.
- *   After that, board_buttons() may be called to collect the current state
- *   of all buttons or board_button_irq() may be called to register button
- *   interrupt handlers.
- *
- *   After board_button_initialize() has been called, board_buttons() may be
- *   called to collect the state of all buttons.  board_buttons() returns an
- *   8-bit bit set with each bit associated with a button.  See the
- *   BUTTON_*_BIT definitions in board.h for the meaning of each bit.
- *
- *   board_button_irq() may be called to register an interrupt handler that
- *   will be called when a button is depressed or released.  The ID value is
- *   a button enumeration value that uniquely identifies a button resource.
- *   See the BUTTON_* definitions in board.h for the meaning of enumeration
- *   value.  The previous interrupt handler address is returned (so that it
- *   may restored, if so desired).
- *
- ****************************************************************************/
-
-#ifdef CONFIG_ARCH_IRQBUTTONS
-xcpt_t board_button_irq(int id, xcpt_t irqhandler)
-{
-	xcpt_t oldhandler = NULL;
-
-	/* The following should be atomic */
-
-	if (irqhandler == NULL) {
-		up_disable_irq(IRQ_EINT0);
-		irq_attach(IRQ_EINT0, NULL, NULL);
-		return oldhandler;
-	}
-
-	if (irq_attach(IRQ_EINT0, irqhandler, NULL) == OK) {
-		up_enable_irq(IRQ_EINT0);
-	} else {
-		/* TO DO: How can it contolled ? */
-	}
-
-	return oldhandler;
-}
-#endif
-
-#ifdef CONFIG_ARCH_IRQBUTTONS
-void board_button_handler(int id, int irq)
-{
-	s32 gpio;
-
-	gpio = s5j_gpio(GPA0, 0);
-	gpio_eint_clear_pending(gpio);
-}
-#endif
 #endif /* CONFIG_ARCH_BUTTONS */
