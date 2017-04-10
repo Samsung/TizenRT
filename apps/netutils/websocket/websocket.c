@@ -396,6 +396,8 @@ TLS_HS_RETRY:
 		return r;
 	}
 
+	websocket_update_state(client, WEBSOCKET_RUNNING);
+
 	if (websocket_make_block(client->fd) != WEBSOCKET_SUCCESS) {
 		websocket_socket_free(client);
 		return WEBSOCKET_SOCKET_ERROR;
@@ -855,6 +857,8 @@ websocket_return_t websocket_server_init(websocket_t *server)
 		WEBSOCKET_DEBUG("function returned for null parameter\n");
 		return WEBSOCKET_ALLOCATION_ERROR;
 	}
+
+	websocket_update_state(server, WEBSOCKET_RUNNING);
 
 	socket_data = malloc(sizeof(struct websocket_info_t));
 	if (socket_data == NULL) {
