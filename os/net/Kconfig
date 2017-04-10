@@ -12,7 +12,7 @@ config ARCH_HAVE_PHY
 	default n
 
 config NET
-	bool "System Networking support"
+	bool "Networking support"
 	default n
 	select ARCH_HAVE_NET
 	---help---
@@ -31,7 +31,7 @@ config	NET_LWIP
 endchoice
 
 if NET_LWIP
-source net/lwip/Kconfig
+source net/lwip/configs/Kconfig
 endif #NET_LWIP
 
 config NSOCKET_DESCRIPTORS

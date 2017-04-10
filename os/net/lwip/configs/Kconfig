@@ -259,59 +259,7 @@ config NET_LWIP_TCP_LISTEN_BACKLOG
 
 endif #NET_LWIP_TCP
 
-menuconfig NET_LWIP_ARP
-	bool "Address Resolution Protocol"
-	default y
-
-
-if NET_LWIP_ARP
-
-config NET_LWIP_ARP_TABLESIZE
-	int "ARP table size"
-	default 10
-	---help---
-		Number of active MAC-IP address pairs cached.
-
-config NET_LWIP_ARP_QUEUEING
-	bool "Arp Queueing"
-	default n
-	---help---
-		Multiple outgoing packets are queued during hardware address
-		resolution. If disabled, only the most recent packet is queued per IP address.
-		This is sufficient for most protocols and mainly reduces TCP connection
-		startup time. Set this to 1 if you know your application sends more than one
-		packet in a row to an IP address that is not in the ARP cache.
-
-config NET_LWIP_ARP_TRUST_IP_MAC
-	bool "Trust IP MAC"
-	default n
-	---help---
-		Incoming IP packets cause the ARP table to be updated with the source
-		MAC and IP addresses supplied in the packet. You may want to disable
-		this if you do not trust LAN peers to have the correct addresses, or
-		as a limited approach to attempt to handle spoofing. If disabled,
-		lwIP will need to make a new ARP request if the peer is not already
-		in the ARP table, adding a little latency.
-		The peer *is* in the ARP table if it requested our address before.
-		Also notice that this slows down input processing of every IP packet!
-
-config NET_LWIP_ETH_PAD_SIZE
-	int "Number of ethernet padding bytes"
-	default 0
-	---help---
-		Number of bytes added before the ethernet header to ensure
-		alignment of payload after that header. Since the header is 14 bytes long,
-		without this padding e.g. addresses in the IP header will not be aligned
-		on a 32-bit boundary, so setting this to 2 can speed up 32-bit-platforms.
-
-config NET_LWIP_ARP_STATIC_ENTRIES
-	bool "Support ARP static entries"
-	default n
-	---help---
-		Enable code to support static ARP table
-		entries (using etharp_add_static_entry/etharp_remove_static_entry).
-
-endif #NET_LWIP_ARP
+source "net/lwip/configs/arp/Kconfig"
 
 menu "IP options"
 
