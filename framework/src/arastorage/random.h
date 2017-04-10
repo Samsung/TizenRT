@@ -52,7 +52,7 @@
 /****************************************************************************
 * Pre-processor Definitions
 ****************************************************************************/
-/* In gcc int rand() uses MAX_RAND and long random() uses RANDOM_MAX */
+/* In gcc int rand() uses RAND_MAX and long random() uses RANDOM_MAX */
 /* Since random_rand casts to unsigned short, we'll use this maxmimum */
 #define RANDOM_RAND_MAX 65535U
 
