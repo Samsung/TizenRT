@@ -94,12 +94,13 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_gpioinitialize
+ * Name: board_gpio_initialize
  *
  * Description:
  *  Expose board dependent GPIOs
+ *
  ****************************************************************************/
-static void s5j_gpioinitialize(void)
+static void board_gpio_initialize(void)
 {
 	int i;
 
@@ -209,7 +210,7 @@ void board_initialize(void)
 	board_pwm_setup();
 #endif
 
-	s5j_gpioinitialize();
+	board_gpio_initialize();
 
 #ifdef CONFIG_SIDK_S5JT200_TLC59116
 	tlc59116_initialize();
