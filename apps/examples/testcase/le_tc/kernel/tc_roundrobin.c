@@ -36,7 +36,11 @@
 #define LOOP     10
 #define LOG_SIZE 400
 #define TESTCASE 3
+#if CONFIG_MAX_TASKS > 16
 #define NTHREAD  5
+#else
+#define NTHREAD  3
+#endif
 #define MAX_TASKS_MASK      (CONFIG_MAX_TASKS-1)
 #define PIDHASH(pid)        ((pid) & MAX_TASKS_MASK)
 /****************************************************************************
@@ -47,7 +51,11 @@ int log_timeslice[LOG_SIZE];
 volatile int logidx;
 int start, created;
 int pid_prio[CONFIG_MAX_TASKS];
+#if CONFIG_MAX_TASKS > 16
 int priority[TESTCASE][NTHREAD] = { {90, 100, 100, 100, 110}, {110, 120, 120, 120, 130}, {70, 80, 80, 80, 90} };
+#else
+int priority[TESTCASE][NTHREAD] = { {90, 100, 110}, {110, 120, 130}, {70, 80, 90} };
+#endif
 
 pthread_attr_t attr;
 struct sched_param param;
