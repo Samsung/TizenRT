@@ -121,9 +121,11 @@ endif
 CHIP_CSRCS += s5j_boot.c s5j_irq.c
 CHIP_CSRCS += s5j_serial.c
 CHIP_CSRCS += s5j_mac.c
+
 ifeq ($(CONFIG_S5J_GPIO),y)
-CHIP_CSRCS += s5j_gpio.c
+CHIP_CSRCS += s5j_gpio.c s5j_gpio_lowerhalf.c
 endif
+
 ifeq ($(CONFIG_S5J_SPI),y)
 CHIP_CSRCS += s5j_spi.c
 endif

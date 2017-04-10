@@ -232,6 +232,7 @@ int gpio_eint_disable_filter(int gpio);
 int gpio_eint_set_filter(int gpio, unsigned type, unsigned width);
 int gpio_eint_set_type(int gpio, unsigned type);
 int gpio_eint_get_type(int gpio);
+struct gpio_bank *gpio_to_bank(int gpio);
 
 #if defined(__cplusplus)
 }
