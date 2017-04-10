@@ -110,6 +110,11 @@ int pthread_mutexattr_init(FAR pthread_mutexattr_t *attr)
 		ret = EINVAL;
 	} else {
 		attr->pshared = 0;
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
+		attr->proto   = SEM_PRIO_INHERIT;
+#endif
+
 #ifdef CONFIG_MUTEX_TYPES
 		attr->type = PTHREAD_MUTEX_DEFAULT;
 #endif
