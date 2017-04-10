@@ -15,7 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************************
+/****************************************************************************
  * include/tinyara/gpio.h
  *
  *   Copyright (C) 2016 SAMSUNG ELECTRONICS CO., LTD. All rights reserved.
@@ -48,27 +48,30 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ******************************************************************************/
+ ****************************************************************************/
 
 #ifndef __INCLUDE_TINYARA_GPIO_H
 #define __INCLUDE_TINYARA_GPIO_H
 
-/******************************************************************************
+/****************************************************************************
  * Included Files
- ******************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
+
 #include <stdint.h>
 #include <semaphore.h>
+
 #include <tinyara/wdog.h>
 #include <tinyara/wqueue.h>
 
 #ifndef CONFIG_DISABLE_POLL
-#include<tinyara/serial/serial.h>
+#include <tinyara/serial/serial.h>
 #endif
-/******************************************************************************
+
+/****************************************************************************
  * Pre-processor Definitions
- ******************************************************************************/
+ ****************************************************************************/
 
 /* Maximum number of threads than can be waiting for POLL events */
 
@@ -84,19 +87,19 @@
 #define gpio_set(dev, s)        dev->ops->set(dev, s)
 #define gpio_ctrl(dev, s, v)    dev->ops->ctrl(dev, s, v)
 
-/******************************************************************************
+/****************************************************************************
  * Public Types
- ******************************************************************************/
+ ****************************************************************************/
 typedef void (*GPIO_CB_FUNC)(void);
 
 typedef enum {
-	GPIO_EDGE_NONE,				/* No interrupt on GPIO */
-	GPIO_EDGE_BOTH,				/* Interrupt occures on rising and falling edge */
-	GPIO_EDGE_RISING,			/* Interrupt occurs on rising edge */
-	GPIO_EDGE_FALLING,			/* Interrupt occurs on falling edge */
+	GPIO_EDGE_NONE,		/* No interrupt on GPIO */
+	GPIO_EDGE_BOTH,		/* Interrupt occures on rising and falling edge */
+	GPIO_EDGE_RISING,	/* Interrupt occurs on rising edge */
+	GPIO_EDGE_FALLING,	/* Interrupt occurs on falling edge */
 
-	GPIO_LEVEL_LOW,				/* Not support in SystemIO */
-	GPIO_LEVEL_HIGH,			/* Not support in SystemIO */
+	GPIO_LEVEL_LOW,		/* Not support in SystemIO */
+	GPIO_LEVEL_HIGH,	/* Not support in SystemIO */
 } gpio_edge_t;
 
 typedef enum {
@@ -152,9 +155,9 @@ struct gpio_dev_s {
 #endif
 };
 
-/******************************************************************************
+/****************************************************************************
  * Public Data
- ******************************************************************************/
+ ****************************************************************************/
 
 #undef EXTERN
 #if defined(__cplusplus)
@@ -164,73 +167,73 @@ extern "C" {
 #define EXTERN extern
 #endif
 
-/******************************************************************************
+/****************************************************************************
  * Public Functions
- ******************************************************************************/
+ ****************************************************************************/
 
-/*******************************************************************************
+/****************************************************************************
  * Name: gpio_notify
  *
  * Description:
  *   This routine is called from irq handler. If you want to handle with
  *   async call or event, you have to register your fd with poll().
  *
- ******************************************************************************/
+ ****************************************************************************/
 
 void gpio_notify(FAR struct gpio_dev_s *dev);
 
-/******************************************************************************
+/****************************************************************************
  * Name: gpio_register
  *
  * Description:
  *   Register GPIO device.
  *
- ******************************************************************************/
+ ****************************************************************************/
 
 int gpio_register(FAR const char *path, FAR struct gpio_dev_s *dev);
 
-/******************************************************************************
+/****************************************************************************
  * Name: gpio_export_init
  *
  * Description:
  *   register export-file in filesystem
  *
- ******************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_GPIO_EXPORT
 int gpio_export_init();
 #endif
 
-/******************************************************************************
+/****************************************************************************
  * Name: gpio_unexport_init
  *
  * Description:
  *   register unexport-file in filesystem
  *
- ******************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_GPIO_EXPORT
 int gpio_unexport_init();
 #endif
 
-/*******************************************************************************
+/****************************************************************************
  * Name: up_destroy_gpio
  *
  * Description:
- *  Destroy device.
+ *   Destroy device.
  *
- ******************************************************************************/
+ ****************************************************************************/
 
 int up_destroy_gpio(int32_t idx);
 
-/*******************************************************************************
+/****************************************************************************
  * Name: up_create_gpio
  *
  * Description:
- * Create device. Userspace may ask the kernel to export control of
- * a GPIO to userspace by writing its number to file (gpio_export).
+ *   Create device. Userspace may ask the kernel to export control of
+ *   a GPIO to userspace by writing its number to file (gpio_export).
  *
- ******************************************************************************/
+ ****************************************************************************/
 
 int up_create_gpio(int32_t idx);
 
@@ -239,4 +242,4 @@ int up_create_gpio(int32_t idx);
 }
 #endif
 
-#endif							/* __INCLUDE_TINYARA_GPIO_H */
+#endif /* __INCLUDE_TINYARA_GPIO_H */
