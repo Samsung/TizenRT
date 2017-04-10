@@ -42,8 +42,8 @@
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
-static int     gpio_fopen(FAR struct file *filep);
-static int     gpio_fclose(FAR struct file *filep);
+static int     gpio_open(FAR struct file *filep);
+static int     gpio_close(FAR struct file *filep);
 static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer,
 			 size_t buflen);
 static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
@@ -59,8 +59,8 @@ static int     gpio_poll(FAR struct file *filep, FAR struct pollfd *fds,
  * Private Variables
  ****************************************************************************/
 static const struct file_operations g_gpioops = {
-	gpio_fopen,	/* open  */
-	gpio_fclose,	/* close */
+	gpio_open,	/* open  */
+	gpio_close,	/* close */
 	gpio_read,	/* read  */
 	gpio_write,	/* write */
 	NULL,		/* seek  */
@@ -312,13 +312,13 @@ errout:
 #endif /* CONFIG_DISABLE_POLL */
 
 /****************************************************************************
- * Name: gpio_fclose
+ * Name: gpio_close
  *
  * Description:
  *   This routine is called when the gpio gets closed.
  *
  ****************************************************************************/
-static int gpio_fclose(FAR struct file *filep)
+static int gpio_close(FAR struct file *filep)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_dev_s *dev = inode->i_private;
@@ -344,13 +344,13 @@ static int gpio_fclose(FAR struct file *filep)
 }
 
 /*****************************************************************************
- * Name: gpio_fopen
+ * Name: gpio_open
  *
  * Description:
  *   This routine is called whenever gpio is opened.
  *
  ****************************************************************************/
-static int gpio_fopen(FAR struct file *filep)
+static int gpio_open(FAR struct file *filep)
 {
 	int ret;
 	FAR struct inode *inode = filep->f_inode;
