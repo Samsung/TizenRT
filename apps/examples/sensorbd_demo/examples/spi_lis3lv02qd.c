@@ -105,7 +105,7 @@ static void spi_write(int port, int addr, int frequency, int bits, int conf, cha
 
 void lis3lv02qd_main(int argc, char *argv[])
 {
-	int port = 0;
+	int port = 2;
 	int freq = 1000000;
 	int bits = 8;
 	int conf = 0;
