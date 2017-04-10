@@ -158,7 +158,7 @@ static void artik053_configure_partitions(void)
 		}
 
 		mtd_part = mtd_partition(mtd, partoffset,
-				partsize / geo.erasesize, 0);
+				partsize / geo.erasesize, partno);
 		partoffset += partsize / geo.erasesize;
 
 		if (!mtd_part) {
