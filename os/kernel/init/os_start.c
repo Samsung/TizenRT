@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,6 +103,9 @@
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
+#ifdef CONFIG_ENABLE_STACKMONITOR
+extern const uint32_t g_idle_topstack;
+#endif
 
 /* Task Lists ***************************************************************/
 /* The state of a task is indicated both by the task_state field of the TCB
@@ -343,6 +346,12 @@ void os_start(void)
 #endif							/* CONFIG_TASK_NAME_SIZE */
 	g_idleargv[1]  = NULL;
 	g_idletcb.argv = g_idleargv;
+
+	/* Set the IDLE task stack size */
+#ifdef CONFIG_ENABLE_STACKMONITOR
+	g_idletcb.cmn.adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
+	g_idletcb.cmn.stack_alloc_ptr = (void *)(g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE);
+#endif
 
 	/* Then add the idle task's TCB to the head of the ready to run list */
 
