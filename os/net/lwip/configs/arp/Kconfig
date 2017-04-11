@@ -14,7 +14,7 @@ config NET_ARP
 
 if NET_ARP
 
-config NET_ARP_TABLE_SIZE
+config NET_ARP_TABLESIZE
 	int "ARP table size"
 	default 10
 	---help---
