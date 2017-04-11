@@ -394,6 +394,7 @@ void sys_mbox_set_invalid(sys_mbox_t *mbox)
 err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 {
 	int status = -1;
+
 	status = sem_init(sem, 0, count);
 	if (status != OK) {
 #if SYS_STATS
@@ -404,6 +405,8 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 #if SYS_STATS
 	SYS_STATS_INC_USED(sem);
 #endif							/* SYS_STATS */
+	if (count == 0)
+		sem_setprotocol(sem, SEM_PRIO_NONE);
 
 	return ERR_OK;
 }
