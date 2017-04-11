@@ -1,7 +1,7 @@
 #!/bin/bash
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2016-2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -126,14 +126,14 @@ if [ ! -r "${src_makedefs}" ]; then
   exit 4
 fi
 
-src_setenv="${boardconfigpath}/../scripts/setenv.sh"
+src_setenv="${WD}/setenv.sh"
 unset have_setenv
 
 if [ -r "${src_setenv}" ]; then
   dest_setenv=${TOPDIR}/setenv.sh
   have_setenv=y
 else
-  src_setenv="${boardconfigpath}/setenv.bat"
+  src_setenv="${WD}/setenv.bat"
   if [ -r "${src_setenv}" ]; then
     dest_setenv=${TOPDIR}/setenv.bat
     have_setenv=y
