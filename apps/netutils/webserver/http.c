@@ -207,6 +207,8 @@ stop :
 	HTTP_LOGD("http_server_hander stop :%d\n", server->port);
 
 	if (msg_q >= 0) {
+
+		int n_client = HTTP_CONF_MAX_CLIENT_HANDLE;
 		http_server_mq_flush(msg_q);
 
 		for (i = 0; i < HTTP_CONF_MAX_CLIENT_HANDLE; i++) {
@@ -215,9 +217,17 @@ stop :
 			mq_send(msg_q, (char *)&msg, mqattr.mq_msgsize, 1);
 		}
 
-		for (i = 0; i < HTTP_CONF_MAX_CLIENT_HANDLE;  i++) {
-			pthread_kill(server->c_tid[i], HTTP_CONF_SERVER_SIGWAKEUP);
-			usleep(100);
+		mq_getattr(msg_q, &mqattr);
+
+		while ((mqattr.mq_curmsgs != 0) && (n_client > 0)) {
+			usleep(100000);
+			mq_getattr(msg_q, &mqattr);
+			n_client = HTTP_CONF_MAX_CLIENT_HANDLE;
+			for (i = 0; i < HTTP_CONF_MAX_CLIENT_HANDLE;  i++) {
+				if (pthread_kill(server->c_tid[i], HTTP_CONF_SERVER_SIGWAKEUP) != OK) {
+					n_client--;
+				}
+			}
 		}
 
 		mq_close(msg_q);
