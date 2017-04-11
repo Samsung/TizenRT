@@ -1538,7 +1538,7 @@ int dhcpd_run(void *arg)
 	int sockfd;
 	int nbytes;
 #if DHCPD_SELECT
-	int ret;
+	int ret = OK;
 	fd_set sockfd_set;
 #endif
 	ndbg("Started on %s\n", DHCPD_IFNAME);
@@ -1547,16 +1547,20 @@ int dhcpd_run(void *arg)
 
 	memset(&g_state, 0, sizeof(struct dhcpd_state_s));
 
+	/* Initialize netif address (ip address, netmask, default gateway) */
+
+	if (dhcpd_netif_init(DHCPD_IFNAME) < 0) {
+		ndbg("Failed to initialize network interface %s\n", DHCPD_IFNAME);
+		ret = ERROR;
+		return ret;
+	}
+
 	/* Now loop indefinitely, reading packets from the DHCP server socket */
 
 	sockfd = -1;
 
 	g_dhcpd_quit = 0;
 	g_dhcpd_running = 1;
-
-	/* Initialize netif address (ip address, netmask, default gateway) */
-
-	dhcpd_netif_init(DHCPD_IFNAME);
 
 	while (!g_dhcpd_quit) {
 		/* Create a socket to listen for requests from DHCP clients */
@@ -1567,6 +1571,7 @@ int dhcpd_run(void *arg)
 			sockfd = dhcpd_openlistener();
 			if (sockfd < 0) {
 				ndbg("Failed to create socket\n");
+				ret = ERROR;
 				break;
 			}
 		}
@@ -1660,7 +1665,7 @@ int dhcpd_run(void *arg)
 
 	dhcpd_netif_deinit(DHCPD_IFNAME);
 
-	return OK;
+	return ret;
 }
 
 
