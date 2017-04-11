@@ -83,14 +83,55 @@ unsigned int cal_clk_is_enabled(unsigned int id)
 	return 0;
 }
 
+/*
+ *  This definition of SPI_CLK should be replaced by function
+ *  reruning actual CLK frequency
+ */
+#define SPI_CLK 40000000
+
+/* This definitions should be moved into the right place */
+#define S5J_CON_DIV_CLK_SPI0 (S5J_CMU_BASE + 0x1804)
+#define S5J_CON_DIV_CLK_SPI1 (S5J_CMU_BASE + 0x1808)
+#define S5J_CON_DIV_CLK_SPI2 (S5J_CMU_BASE + 0x180C)
+#define S5J_CON_DIV_CLK_SPI3 (S5J_CMU_BASE + 0x1810)
+
+
 int cal_clk_setrate(unsigned int id, unsigned long rate)
 {
 	unsigned long parents;
 	unsigned int div;
 	switch(id) {
 	case d1_spi0:
+		/* CLK_CON_DIV_DIV_CLK_SPI */
+		parents = SPI_CLK;
+		div = parents / rate;
+		if (div == 0)
+			div = 1;
+		modifyreg32(S5J_CON_DIV_CLK_SPI0, 0x7ff, (div - 1));
 		break;
 	case d1_spi1:
+		/* CLK_CON_DIV_DIV_CLK_SPI1 */
+		parents = SPI_CLK;
+		div = parents / rate;
+		if (div == 0)
+			div = 1;
+		modifyreg32(S5J_CON_DIV_CLK_SPI1, 0x7FF, (div - 1));
+		break;
+	case d1_spi2:
+		/* CLK_CON_DIV_DIV_CLK_SPI2 */
+		parents = SPI_CLK;
+		div = parents / rate;
+		if (div == 0)
+			div = 1;
+		modifyreg32(S5J_CON_DIV_CLK_SPI2, 0x7ff, (div - 1));
+		break;
+	case d1_spi3:
+		/* CLK_CON_DIV_DIV_CLK_SPI3 */
+		parents = SPI_CLK;
+		div = parents / rate;
+		if (div == 0)
+			div = 1;
+		modifyreg32(S5J_CON_DIV_CLK_SPI3, 0x7ff, (div - 1));
 		break;
 	case gate_hsi2c0:
 	case gate_hsi2c1:
