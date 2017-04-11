@@ -98,6 +98,8 @@ static void mbedtls_zeroize(void *v, size_t n)
 
 void mbedtls_ssl_cookie_init(mbedtls_ssl_cookie_ctx *ctx)
 {
+	mbedtls_zeroize(&ctx->mutex, sizeof(mbedtls_threading_mutex_t));
+
 	mbedtls_md_init(&ctx->hmac_ctx);
 #if !defined(MBEDTLS_HAVE_TIME)
 	ctx->serial = 0;
