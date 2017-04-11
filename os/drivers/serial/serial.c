@@ -152,34 +152,6 @@ static int uart_takesem(FAR sem_t *sem, bool errout)
 	return OK;
 }
 
-/*
- *   This function attempts to lock the semaphore referenced by 'sem'
- *   which will be posted from interrupt handler.
- *   Because this function should have nothing to do with the priority
- *   inheritance, call sem_wait_for_isr() instead of sem_wait().
- */
-static int uart_takesem_wo_prio_inherit(FAR sem_t *sem, bool errout)
-{
-	/* Loop, ignoring interrupts, until we have successfully acquired the semaphore */
-
-	while (sem_wait_for_isr(sem) != OK) {
-		/* The only case that an error should occur here is if the wait was awakened
-		 * by a signal.
-		 */
-
-		ASSERT(get_errno() == EINTR);
-
-		/* When the signal is received, should we errout? Or should we just continue
-		 * waiting until we have the semaphore?
-		 */
-
-		if (errout) {
-			return -EINTR;
-		}
-	}
-
-	return OK;
-}
 
 /************************************************************************************
  * Name: uart_givesem
@@ -288,7 +260,7 @@ static int uart_putxmitchar(FAR uart_dev_t *dev, int ch, bool oktoblock)
 
 				dev->xmitwaiting = true;
 				uart_enabletxint(dev);
-				ret = uart_takesem_wo_prio_inherit(&dev->xmitsem, true);
+				ret = uart_takesem(&dev->xmitsem, true);
 				uart_disabletxint(dev);
 			}
 
@@ -1340,7 +1312,7 @@ void uart_datasent(FAR uart_dev_t *dev)
 		/* Yes... wake it up */
 
 		dev->xmitwaiting = false;
-		(void)sem_post_from_isr(&dev->xmitsem);
+		(void)sem_post(&dev->xmitsem);
 	}
 
 	/* Notify all poll/select waiters that they can write to xmit buffer */
