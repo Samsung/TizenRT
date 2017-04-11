@@ -70,89 +70,96 @@ int see_free(void)
 	return SEE_OK;
 }
 
-#define SEE_BEGIN_CERT           "-----BEGIN CERTIFICATE-----\n"
-#define SEE_END_CERT             "-----END CERTIFICATE-----\n"
-
-#define PEM_BEGIN_CERT           "-----BEGIN CERTIFICATE-----"
-#define PEM_END_CERT             "-----END CERTIFICATE-----"
-
-/* Set certificate in Secure storage (support der and pem types) */
 int see_set_certificate(unsigned char *cert, unsigned int cert_len, unsigned int cert_index, unsigned int cert_type)
 {
 	int r;
-	unsigned int use_len;
-	mbedtls_pem_context pem;
+
+	(void)cert_type;
+
 	SEE_DEBUG("%s called\n", __func__);
 
 	if (cert == NULL || cert_len == 0) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	_SEE_MUTEX_LOCK if (cert_type == CERT_PEM) {
-		mbedtls_pem_init(&pem);
-		if ((r = mbedtls_pem_read_buffer(&pem, PEM_BEGIN_CERT, PEM_END_CERT, cert, NULL, 0, &use_len)) != 0) {
-			SEE_DEBUG("mbedtls_pem_read_buffer fail %x\n", -r);
-			_SEE_MUTEX_UNLOCK mbedtls_pem_free(&pem);
-			return SEE_INVALID_INPUT_PARAMS;
-		}
-
-		ISP_CHECKBUSY();
-		if ((r = isp_write_cert(pem.buf, pem.buflen, cert_index)) != 0) {
-			SEE_DEBUG("isp_write_cert fail %x\n", r);
-			isp_clear(0);
-			_SEE_MUTEX_UNLOCK mbedtls_pem_free(&pem);
-			return SEE_ERROR;
-		}
-	} else if (cert_type == CERT_DER) {
-		ISP_CHECKBUSY();
-		if ((r = isp_write_cert(cert, cert_len, cert_index)) != 0) {
-			_SEE_MUTEX_UNLOCK SEE_DEBUG("isp_write_cert fail %x\n", r);
-			isp_clear(0);
-			return SEE_ERROR;
-		}
-	} else {
-		_SEE_MUTEX_UNLOCK return SEE_INVALID_INPUT_PARAMS;
+	if (see_check_certindex(cert_index)) {
+		SEE_DEBUG("wrong index %d\n", cert_index);
+		return SEE_INVALID_INPUT_PARAMS;
 	}
-	_SEE_MUTEX_UNLOCK return SEE_OK;
+
+	_SEE_MUTEX_LOCK
+	ISP_CHECKBUSY();
+	if ((r = isp_write_cert(cert, cert_len, cert_index)) != 0) {
+		isp_clear(0);
+		_SEE_MUTEX_UNLOCK
+		SEE_DEBUG("isp_write_cert fail %x\n", r);
+		return SEE_ERROR;
+	}
+	_SEE_MUTEX_UNLOCK
+
+	return SEE_OK;
 }
 
 int see_get_certificate(unsigned char *cert, unsigned int *cert_len, unsigned int cert_index, unsigned int cert_type)
 {
 	int r;
-	unsigned int buf_len, olen;
-	unsigned char buf[4096];
+	unsigned int buf_len = 0;
+	unsigned char *buf = NULL;
+
+	(void)cert_type;
+
 	SEE_DEBUG("%s called\n", __func__);
 
 	if (cert == NULL || cert_len == NULL) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	if (cert_index >= MAX_CERT_INDEX) {
+	if (see_check_certindex(cert_index)) {
+		SEE_DEBUG("wrong index %d\n", cert_index);
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	if (cert_type != CERT_DER && cert_type != CERT_PEM) {
-		return SEE_INVALID_INPUT_PARAMS;
+	buf = malloc(SEE_MAX_BUF_SIZE);
+
+	if (buf == NULL) {
+		return SEE_ALLOC_ERROR;
 	}
 
-	_SEE_MUTEX_LOCK ISP_CHECKBUSY();
-	if ((r = isp_read_cert(buf, &buf_len, cert_index)) != 0) {
-		SEE_DEBUG("isp_read_cert fail %x\n", r);
-		isp_clear(0);
-		return SEE_ERROR;
-	}
-	_SEE_MUTEX_UNLOCK if (cert_type == CERT_PEM) {
-		if ((r = mbedtls_pem_write_buffer(SEE_BEGIN_CERT, SEE_END_CERT, buf, buf_len, cert, *cert_len, &olen)) != 0) {
-			SEE_DEBUG("change der to pem format fail %x\n", r);
-			return SEE_ERROR;
+	_SEE_MUTEX_LOCK
+	ISP_CHECKBUSY();
+#if defined(SEE_SUPPORT_USERCERT)
+	if (cert_index < MAX_CERT_INDEX) {
+		if ((r = isp_read_cert(buf, &buf_len, cert_index)) != 0) {
+			isp_clear(0);
+			_SEE_MUTEX_UNLOCK
+			SEE_DEBUG("isp_read_cert fail %x\n", r);
+			goto get_cert_exit;
 		}
-		*cert_len = olen;
-	} else {
-		memcpy(cert, buf, olen);
-		*cert_len = olen;
+	} else
+#endif
+	if ((r = isp_get_factorykey_data(buf, &buf_len, cert_index)) != 0) {
+		isp_clear(0);
+		_SEE_MUTEX_UNLOCK
+		SEE_DEBUG("isp_read_cert fail %x\n", r);
+		goto get_cert_exit;
+	}
+	_SEE_MUTEX_UNLOCK
+
+	if (*cert_len < buf_len) {
+		SEE_DEBUG("input buffer is too small\n");
+		free(buf);
+		return SEE_INVALID_INPUT_PARAMS;
 	}
 
+	memcpy(cert, buf, buf_len);
+	*cert_len = buf_len;
+
+	free(buf);
 	return SEE_OK;
+
+get_cert_exit:
+	free(buf);
+	return SEE_ERROR;
 }
 
 int see_get_hash(struct sHASH_MSG *h_param, unsigned char *hash, unsigned int mode)
@@ -332,6 +339,24 @@ int see_mutex_unlock(see_mutex_t *m)
 	}
 
 	return 0;
+}
+
+int see_check_certindex(unsigned int index)
+{
+#ifdef SEE_SUPPORT_USERCERT
+	if (index >= MIN_CERT_INDEX && index < MAX_CERT_INDEX) {
+		return 0;
+	}
+#endif
+	switch (index) {
+	case FACTORYKEY_ARTIK_CERT:
+	case FACTORYKEY_IOTIVITY_ECC_CERT:
+	case FACTORYKEY_IOTIVITY_SUB_CA_CERT:
+		return 0;
+	default:
+		return -1;
+	}
+	return -1;
 }
 
 int see_check_keyindex(unsigned int index)

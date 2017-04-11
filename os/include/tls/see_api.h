@@ -94,6 +94,7 @@
 #define ECC_KEY_NIST512   ((ECC_KEY) | (0x25))
 
 #define SEE_MAX_RANDOM_SIZE		(256)
+#define SEE_MAX_BUF_SIZE		(4096)
 
 /* cert type */
 #define CERT_DER      0x01
@@ -200,5 +201,6 @@ int see_mutex_unlock(see_mutex_t *m);
 
 unsigned int see_get_keyindex(unsigned int key_type);
 unsigned int see_free_keyindex(unsigned int key_type, unsigned int key_index);
+int see_check_certindex(unsigned int cert_index);
 int see_check_keyindex(unsigned int key_index);
 #endif							/* __SEE_API_H */
