@@ -369,7 +369,11 @@ void *dhcpc_open(const char *intf)
 	uint8_t macaddr[IFHWADDRLEN];
 	int maclen = IFHWADDRLEN;
 
-	netlib_getmacaddr(intf, macaddr);
+	if (netlib_getmacaddr(intf, macaddr) != OK) {
+		/* Do not open dhcpc socket on wrong interface name */
+		ndbg("ERROR : failed to netlib_getmacaddr\n");
+		return NULL;
+	}
 
 	ndbg("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", ((uint8_t *)macaddr)[0], ((uint8_t *)macaddr)[1], ((uint8_t *)macaddr)[2], ((uint8_t *)macaddr)[3], ((uint8_t *)macaddr)[4], ((uint8_t *)macaddr)[5]);
 
@@ -449,8 +453,15 @@ int g_dhcpc_state;
 
 int dhcpc_request(void *handle, struct dhcpc_state *presult)
 {
-	if (!handle)
+	if (!handle) {
+		ndbg("ERROR : handle must not be null\n");
 		return -100;
+	}
+
+	if (!presult) {
+		ndbg("ERROR : presult must not be null\n");
+		return -100;
+	}
 
 	struct dhcpc_state_s *pdhcpc = (struct dhcpc_state_s *)handle;
 	g_pResult = presult;
