@@ -49,74 +49,70 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+/*
+ * optional definitions
+ */
 //#define SEE_API_DEBUG
+//#define SEE_CHECK_SSS_BUSY
+//#define SEE_SUPPORT_USERCERT
+//#define SEE_SUPPORT_USERKEY
+
+/*
+ * Return values
+ */
+typedef enum {
+	SEE_OK,
+
+	SEE_ERROR,
+	SEE_ALLOC_ERROR,
+	SEE_INVALID_INPUT_PARAMS,
+	SEE_INVALID_CERT_INDEX,
+	SEE_INVALID_KEY_INDEX,
+	SEE_INVALID_BUFFER_SIZE,
+	SEE_MUTEX_INIT_ERROR,
+	SEE_MUTEX_LOCK_ERROR,
+	SEE_MUTEX_UNLOCK_ERROR,
+	SEE_MUTEX_FREE_ERROR,
+
+	SEE_WRITE_CERT_ERROR,
+	SEE_READ_CERT_ERROR,
+	SEE_GET_HASH_ERROR,
+	SEE_GET_RANDOM_ERROR,
+	SEE_ECDSA_SIGN_ERROR,
+	SEE_ECDSA_VERIFY_ERROR,
+	SEE_ECDH_COMPUTE_ERROR,
+}see_error;
+
+/*
+ * Definitions
+ */
+#define SEE_MAX_RANDOM_SIZE		(256)
+#define SEE_MAX_BUF_SIZE		(4096)
+#define SEE_MAX_KEY_INDEX		(0x08)
+#define SEE_MAX_CERT_INDEX		(0x08)
+#define ECC_KEY				(0x040000)
+
 #if defined(SEE_API_DEBUG)
 #define SEE_DEBUG printf
 #else
 #define SEE_DEBUG(...) do {} while (0)
 #endif
 
-/* Return value */
-#define SEE_OK                   0
-#define SEE_ERROR                1
-#define SEE_ALLOC_ERROR          2
-#define SEE_INVALID_INPUT_PARAMS 3
-
-/* Key index */
-#define SEE_AES_KEY_INDEX        1
-#define SEE_RSA_PUBLIC_INDEX     1
-#define SEE_RSA_PRIVATE_INDEX    2
-#define SEE_ECC_PUBLIC_INDEX     3
-#define SEE_ECC_PRIVATE_INDEX    4
-#define SEE_DH_KEY_INDEX         5
-#define SEE_HMAC_KEY_INDEX       6
-
-#define KEY_RSA_LEN_1024    128
-#define KEY_RSA_LEN_2048    256
-
-/* Key type */
-#define RSA_KEY           0x030000
-#define ECC_KEY           0x040000
-
-#define RSA_KEY_1024      ((RSA_KEY)  | (0xB1))
-#define RSA_KEY_2048      ((RSA_KEY)  | (0xB2))
-
-#define ECC_KEY_BP192     ((ECC_KEY) | (0x51))
-#define ECC_KEY_BP224     ((ECC_KEY) | (0x52))
-#define ECC_KEY_BP256     ((ECC_KEY) | (0x53))
-#define ECC_KEY_BP384     ((ECC_KEY) | (0x54))
-#define ECC_KEY_BP512     ((ECC_KEY) | (0x55))
-
-#define ECC_KEY_NIST192   ((ECC_KEY) | (0x21))
-#define ECC_KEY_NIST224   ((ECC_KEY) | (0x22))
-#define ECC_KEY_NIST256   ((ECC_KEY) | (0x23))
-#define ECC_KEY_NIST384   ((ECC_KEY) | (0x24))
-#define ECC_KEY_NIST512   ((ECC_KEY) | (0x25))
-
-#define SEE_MAX_RANDOM_SIZE		(256)
-#define SEE_MAX_BUF_SIZE		(4096)
-
-/* cert type */
-#define CERT_DER      0x01
-#define CERT_PEM      0x02
-
-/* index */
-#define MAX_DATA_INDEX	0x20
-#define MAX_KEY_INDEX	0x08
-#define MAX_CERT_INDEX	0x08
-
-//#define ISP_CHECKBUSY() while(isp_get_status()){}
+#if defined(SSS_CHECK_SSS_BUSY)
+#define ISP_CHECKBUSY() while(isp_get_status()){}
+#else
 #define ISP_CHECKBUSY()
+#endif
 
-#define _SEE_MUTEX_LOCK                     \
-{                                          \
-	if (see_mutex_lock(&m_handler) != 0)    \
-		return -1;                         \
+#define _SEE_MUTEX_LOCK					\
+{							\
+	if (see_mutex_lock(&m_handler) != SEE_OK)	\
+		return SEE_MUTEX_LOCK_ERROR;		\
 }
-#define _SEE_MUTEX_UNLOCK                   \
-{                                         \
-	if (see_mutex_unlock(&m_handler) != 0)  \
-		return -1;                         \
+#define _SEE_MUTEX_UNLOCK				\
+{							\
+	if (see_mutex_unlock(&m_handler) != SEE_OK)	\
+		return SEE_MUTEX_UNLOCK_ERROR;		\
 }
 
 /****************************************************************************
@@ -127,28 +123,6 @@ typedef struct see_mutex_s {
 	pthread_mutex_t mutex;
 	int valid;
 } see_mutex_t;
-
-typedef struct cert_options {
-	/* mandatory */
-	unsigned int cert_index;
-	unsigned int issuer_key_index;	/* index number of the issuer key       */
-	unsigned int subject_key_index;	/* index number of the subject key      */
-	unsigned int subject_pub_keylen;
-	unsigned char *subject_pub_key;
-	const char *subject_name;	/* subject name for certificate         */
-	const char *issuer_name;	/* issuer name for certificate          */
-	const char *not_before;		/* validity period not before           */
-	const char *not_after;		/* validity period not after            */
-
-	/* optional */
-	const unsigned char *subject_pwd;	/* password for the subject key file    */
-	const char *serial;			/* serial number string                 */
-	unsigned char key_usage;	/* key usage flags                      */
-	unsigned char ns_cert_type;	/* NS cert type                         */
-	int is_ca;					/* is a CA certificate                  */
-	int max_pathlen;			/* maximum CA path length               */
-	int selfsign;
-} cert_opt;
 
 extern see_mutex_t m_handler;
 

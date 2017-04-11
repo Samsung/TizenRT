@@ -20,13 +20,7 @@
 /// @brief SEE api is supporting security api for using secure storage.
 
 #include <stdio.h>
-#include <string.h>
 #include <pthread.h>
-
-#include "tls/pk.h"
-#include "tls/pem.h"
-#include "tls/x509_crt.h"
-#include "tls/pk_internal.h"
 
 #include "tls/see_api.h"
 
@@ -34,17 +28,14 @@ see_mutex_t m_handler = { PTHREAD_MUTEX_INITIALIZER, 0 };
 
 int see_init(void)
 {
-	SEE_DEBUG("%s called\n", __func__);
-
-	/* */
 	if (m_handler.valid) {
 		m_handler.valid++;
 		return SEE_OK;
 	}
 
 	/* Get Mutex */
-	if (see_mutex_init(&m_handler) != 0) {
-		return SEE_ERROR;
+	if (see_mutex_init(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_INIT_ERROR;
 	}
 
 	return SEE_OK;
@@ -52,17 +43,14 @@ int see_init(void)
 
 int see_free(void)
 {
-	SEE_DEBUG("%s called\n", __func__);
-
-	/* */
 	if (m_handler.valid > 1) {
 		m_handler.valid--;
 		return SEE_OK;
 	}
 
 	/* Free Mutex */
-	if (see_mutex_free(&m_handler) != 0) {
-		return SEE_ERROR;
+	if (see_mutex_free(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_FREE_ERROR;
 	}
 
 	memset(&m_handler, 0, sizeof(see_mutex_t));
@@ -84,7 +72,7 @@ int see_set_certificate(unsigned char *cert, unsigned int cert_len, unsigned int
 
 	if (see_check_certindex(cert_index)) {
 		SEE_DEBUG("wrong index %d\n", cert_index);
-		return SEE_INVALID_INPUT_PARAMS;
+		return SEE_INVALID_CERT_INDEX;
 	}
 
 	_SEE_MUTEX_LOCK
@@ -93,7 +81,7 @@ int see_set_certificate(unsigned char *cert, unsigned int cert_len, unsigned int
 		isp_clear(0);
 		_SEE_MUTEX_UNLOCK
 		SEE_DEBUG("isp_write_cert fail %x\n", r);
-		return SEE_ERROR;
+		return SEE_WRITE_CERT_ERROR;
 	}
 	_SEE_MUTEX_UNLOCK
 
@@ -116,10 +104,10 @@ int see_get_certificate(unsigned char *cert, unsigned int *cert_len, unsigned in
 
 	if (see_check_certindex(cert_index)) {
 		SEE_DEBUG("wrong index %d\n", cert_index);
-		return SEE_INVALID_INPUT_PARAMS;
+		return SEE_INVALID_CERT_INDEX;
 	}
 
-	buf = malloc(SEE_MAX_BUF_SIZE);
+	buf = (unsigned char *)malloc(SEE_MAX_BUF_SIZE);
 
 	if (buf == NULL) {
 		return SEE_ALLOC_ERROR;
@@ -128,11 +116,12 @@ int see_get_certificate(unsigned char *cert, unsigned int *cert_len, unsigned in
 	_SEE_MUTEX_LOCK
 	ISP_CHECKBUSY();
 #if defined(SEE_SUPPORT_USERCERT)
-	if (cert_index < MAX_CERT_INDEX) {
+	if (cert_index < SEE_MAX_CERT_INDEX) {
 		if ((r = isp_read_cert(buf, &buf_len, cert_index)) != 0) {
 			isp_clear(0);
 			_SEE_MUTEX_UNLOCK
 			SEE_DEBUG("isp_read_cert fail %x\n", r);
+			r = SEE_READ_CERT_ERROR;
 			goto get_cert_exit;
 		}
 	} else
@@ -141,42 +130,40 @@ int see_get_certificate(unsigned char *cert, unsigned int *cert_len, unsigned in
 		isp_clear(0);
 		_SEE_MUTEX_UNLOCK
 		SEE_DEBUG("isp_read_cert fail %x\n", r);
+		r = SEE_READ_CERT_ERROR;
 		goto get_cert_exit;
 	}
 	_SEE_MUTEX_UNLOCK
 
 	if (*cert_len < buf_len) {
 		SEE_DEBUG("input buffer is too small\n");
-		free(buf);
-		return SEE_INVALID_INPUT_PARAMS;
+		r = SEE_INVALID_BUFFER_SIZE;
+		goto get_cert_exit;
 	}
 
 	memcpy(cert, buf, buf_len);
 	*cert_len = buf_len;
 
-	free(buf);
-	return SEE_OK;
-
 get_cert_exit:
 	free(buf);
-	return SEE_ERROR;
+	return r;
 }
 
 int see_get_hash(struct sHASH_MSG *h_param, unsigned char *hash, unsigned int mode)
 {
 	int r;
 
-        SEE_DEBUG("%s called %d %x\n",__func__, h_param->msg_byte_len, mode);
-
 	if (hash == NULL || h_param == NULL) {
 		return SEE_INVALID_INPUT_PARAMS;
 	}
+
+        SEE_DEBUG("%s called %d %x\n",__func__, h_param->msg_byte_len, mode);
 
 	_SEE_MUTEX_LOCK ISP_CHECKBUSY();
 	if ((r = isp_hash(hash, h_param, mode)) != 0) {
 		SEE_DEBUG("isp_hash fail %x\n", r);
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK return SEE_ERROR;
+		_SEE_MUTEX_UNLOCK return SEE_GET_HASH_ERROR;
 	}
 	_SEE_MUTEX_UNLOCK return SEE_OK;
 }
@@ -202,7 +189,7 @@ int see_generate_random(unsigned int *data, unsigned int len)
 		isp_clear(0);
 		_SEE_MUTEX_UNLOCK
 		SEE_DEBUG("isp_generate_random fail %x\n", r);
-		return SEE_ERROR;
+		return SEE_GET_RANDOM_ERROR;
 	}
 	_SEE_MUTEX_UNLOCK
 
@@ -219,15 +206,15 @@ int see_get_ecdsa_signature(struct sECC_SIGN *ecc_sign, unsigned char *hash, uns
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	if (key_index >= MAX_KEY_INDEX && key_index < 0xFE) {
-		return SEE_INVALID_INPUT_PARAMS;
+	if (see_check_keyindex(key_index)) {
+		return SEE_INVALID_KEY_INDEX;
 	}
 
 	_SEE_MUTEX_LOCK ISP_CHECKBUSY();
 	if ((r = isp_ecdsa_sign_securekey(ecc_sign, hash, hash_len, key_index)) != 0) {
 		SEE_DEBUG("isp_ecdsa_sign fail %x\n", r);
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK return SEE_ERROR;
+		_SEE_MUTEX_UNLOCK return SEE_ECDSA_SIGN_ERROR;
 	}
 	_SEE_MUTEX_UNLOCK return SEE_OK;
 }
@@ -242,15 +229,15 @@ int see_verify_ecdsa_signature(struct sECC_SIGN *ecc_sign, unsigned char *hash, 
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	if (key_index >= MAX_KEY_INDEX && key_index < 0xFE) {
-		return SEE_INVALID_INPUT_PARAMS;
+	if (see_check_keyindex(key_index)) {
+		return SEE_INVALID_KEY_INDEX;
 	}
 
 	_SEE_MUTEX_LOCK ISP_CHECKBUSY();
 	if ((r = isp_ecdsa_verify_securekey(ecc_sign, hash, hash_len, key_index)) != 0) {
 		SEE_DEBUG("isp_ecdsa_verify fail %x\n", r);
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK return SEE_ERROR;
+		_SEE_MUTEX_UNLOCK return SEE_ECDSA_VERIFY_ERROR;
 	}
 	_SEE_MUTEX_UNLOCK return SEE_OK;
 }
@@ -264,7 +251,7 @@ int see_compute_ecdh_param(struct sECC_KEY *ecc_pub, unsigned int key_index, uns
 	}
 
 	if (see_check_keyindex(key_index)) {
-		return SEE_INVALID_INPUT_PARAMS;
+		return SEE_INVALID_KEY_INDEX;
 	}
 
 	SEE_DEBUG("%s : key_index : %d \n", __func__, key_index);
@@ -275,7 +262,7 @@ int see_compute_ecdh_param(struct sECC_KEY *ecc_pub, unsigned int key_index, uns
 		isp_clear(0);
 		_SEE_MUTEX_UNLOCK
 		SEE_DEBUG("isp_compute_ecdh_param fail %x\n", r);
-		return SEE_ERROR;
+		return SEE_ECDH_COMPUTE_ERROR;
 	}
 	_SEE_MUTEX_UNLOCK
 
@@ -285,85 +272,87 @@ int see_compute_ecdh_param(struct sECC_KEY *ecc_pub, unsigned int key_index, uns
 int see_mutex_init(see_mutex_t *m)
 {
 	if (m == NULL) {
-		return -1;
+		return SEE_MUTEX_INIT_ERROR;
 	}
 
 	if (pthread_mutex_init(&m->mutex, NULL)) {
 		m->valid = 0;
-		return -1;
+		return SEE_MUTEX_INIT_ERROR;
 	}
 
 	m->valid = 1;
-	return 0;
+	return SEE_OK;
 }
 
 int see_mutex_free(see_mutex_t *m)
 {
 	if (m == NULL) {
-		return -1;
+		return SEE_MUTEX_FREE_ERROR;
 	}
 
 	if (pthread_mutex_destroy(&m->mutex) != 0) {
-		return -1;
+		return SEE_MUTEX_FREE_ERROR;
 	}
 
 	m->valid = 0;
-	return 0;
+	return SEE_OK;
 }
 
 int see_mutex_lock(see_mutex_t *m)
 {
 	if (m == NULL) {
-		return -1;
+		return SEE_MUTEX_LOCK_ERROR;
 	}
 
 	if (!m->valid) {
-		see_init();
+		if (see_init()) {
+			return SEE_MUTEX_INIT_ERROR;
+		}
 	}
 
 	if (pthread_mutex_lock(&m->mutex) != 0) {
-		return -1;
+		return SEE_MUTEX_LOCK_ERROR;
 	}
 
-	return 0;
+	return SEE_OK;
 }
 
 int see_mutex_unlock(see_mutex_t *m)
 {
 	if (m == NULL || !m->valid) {
-		return -1;
+		return SEE_MUTEX_UNLOCK_ERROR;
 	}
 
 	if (pthread_mutex_unlock(&m->mutex) != 0) {
-		return -1;
+		return SEE_MUTEX_UNLOCK_ERROR;
 	}
 
-	return 0;
+	return SEE_OK;
 }
 
 int see_check_certindex(unsigned int index)
 {
 #ifdef SEE_SUPPORT_USERCERT
-	if (index >= MIN_CERT_INDEX && index < MAX_CERT_INDEX) {
-		return 0;
+	if (index >= MIN_CERT_INDEX && index < SEE_MAX_CERT_INDEX) {
+		return SEE_OK;
 	}
 #endif
 	switch (index) {
 	case FACTORYKEY_ARTIK_CERT:
 	case FACTORYKEY_IOTIVITY_ECC_CERT:
 	case FACTORYKEY_IOTIVITY_SUB_CA_CERT:
-		return 0;
+		return SEE_OK;
 	default:
-		return -1;
+		return SEE_INVALID_KEY_INDEX;
 	}
-	return -1;
+	return SEE_INVALID_KEY_INDEX;
 }
 
 int see_check_keyindex(unsigned int index)
 {
 #ifdef SEE_SUPPORT_USERKEY
-	if (index < MAX_KEY_INDEX) {
-		return 0;
+	if (index < SEE_MAX_KEY_INDEX) {
+		return SEE_OK;
 	}
 #endif
 
@@ -374,9 +363,9 @@ int see_check_keyindex(unsigned int index)
 	case FACTORYKEY_DA_DEVICE:
 	case FACTORYKEY_DA_PBKEY:
 	case FACTORYKEY_IOTIVITY_ECC:
-		return 0;
+		return SEE_OK;
 	default:
-		return -1;
+		return SEE_INVALID_KEY_INDEX;
 	}
-	return -1;
+	return SEE_INVALID_KEY_INDEX;
 }
