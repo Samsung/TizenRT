@@ -34,12 +34,6 @@ if NET_LWIP
 source net/lwip/configs/Kconfig
 endif #NET_LWIP
 
-config NSOCKET_DESCRIPTORS
-	int "Number of socket descriptor"
-	default 8
-	---help---
-		Maximum number of socket descriptors.
-
 config NET_SECURITY_TLS
 	bool "TLS Support"
 	default n

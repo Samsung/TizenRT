@@ -73,7 +73,7 @@
 
 #if CONFIG_NFILE_DESCRIPTORS > 0 || CONFIG_NSOCKET_DESCRIPTORS > 0
 
-#if defined(CONFIG_DISABLE_POLL) && defined(CONFIG_NET_LWIP_SOCKET)
+#if defined(CONFIG_DISABLE_POLL) && defined(CONFIG_NET_SOCKET)
 
 #include <net/lwip/sockets.h>
 

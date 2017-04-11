@@ -193,48 +193,48 @@
 #define LWIP_RAND()                     rand()
 
 /* ---------- TCP options ---------- */
-#ifdef CONFIG_NET_LWIP_TCP
+#ifdef CONFIG_NET_TCP
 #define LWIP_TCP                1
 
-#ifdef CONFIG_NET_LWIP_TCP_WINDOW_SIZE
-#define TCP_WND                 CONFIG_NET_LWIP_TCP_WINDOW_SIZE
+#ifdef CONFIG_NET_TCP_WND
+#define TCP_WND                 CONFIG_NET_TCP_WND
 #endif
 
-#ifdef CONFIG_NET_LWIP_TCP_MAX_RETRANS
-#define TCP_MAXRTX              CONFIG_NET_LWIP_TCP_MAX_RETRANS
+#ifdef CONFIG_NET_TCP_MAXRTX
+#define TCP_MAXRTX              CONFIG_NET_TCP_MAXRTX
 #endif
 
-#ifdef CONFIG_NET_LWIP_TCP_SYN_MAX_RETRANS
-#define TCP_SYNMAXRTX           CONFIG_NET_LWIP_TCP_SYN_MAX_RETRANS
+#ifdef CONFIG_NET_TCP_SYNMAXRTX
+#define TCP_SYNMAXRTX           CONFIG_NET_TCP_SYNMAXRTX
 #endif
 
-#ifdef CONFIG_NET_LWIP_TCP_QUEUE_OOSEQ
+#ifdef CONFIG_NET_TCP_QUEUE_OOSEQ
 #define TCP_QUEUE_OOSEQ         1
 #else
 #define TCP_QUEUE_OOSEQ         0
 #endif
 
-#ifdef CONFIG_NET_LWIP_TCP_MSS
-#define TCP_MSS                 CONFIG_NET_LWIP_TCP_MSS
+#ifdef CONFIG_NET_TCP_MSS
+#define TCP_MSS                 CONFIG_NET_TCP_MSS
 #endif
 
-#ifdef CONFIG_NET_LWIP_TCP_SEND_BUF
-#define TCP_SND_BUF             CONFIG_NET_LWIP_TCP_SEND_BUF
+#ifdef CONFIG_NET_TCP_SND_BUF
+#define TCP_SND_BUF             CONFIG_NET_TCP_SND_BUF
 #endif
 
-#ifdef CONFIG_NET_LWIP_TCP_TIMESTAMPS
+#ifdef CONFIG_NET_TCP_TIMESTAMPS
 #define LWIP_TCP_TIMESTAMPS             1
 #else
 #define LWIP_TCP_TIMESTAMPS             0
 #endif
 
-#ifdef CONFIG_NET_LWIP_TCP_KEEPALIVE
+#ifdef CONFIG_NET_TCP_KEEPALIVE
 #define LWIP_TCP_KEEPALIVE              1
 #else
 #define LWIP_TCP_KEEPALIVE              0
 #endif
 
-#ifdef CONFIG_NET_LWIP_TCP_LISTEN_BACKLOG
+#ifdef CONFIG_NET_TCP_LISTEN_BACKLOG
 #define TCP_LISTEN_BACKLOG              1
 #else
 #define TCP_LISTEN_BACKLOG              0
@@ -397,47 +397,47 @@
 
 
 /* ---------- Socket options ---------- */
-#ifdef CONFIG_NET_LWIP_SOCKET
+#ifdef CONFIG_NET_SOCKET
 #define LWIP_SOCKET                     1
 
-#ifdef CONFIG_NET_LWIP_RAW
+#ifdef CONFIG_NET_RAW
 #define LWIP_RAW                        1
 #else
 #define LWIP_RAW                        0
 #endif
 
-#ifdef CONFIG_NET_LWIP_SOCKET_OPTION_BROADCAST
+#ifdef CONFIG_NET_SOCKET_OPTION_BROADCAST
 #define IP_SOF_BROADCAST                1
 #else
 #define IP_SOF_BROADCAST                0
 #endif
 
 
-#ifdef CONFIG_NET_LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS
+#ifdef CONFIG_NET_RANDOMIZE_INITIAL_LOCAL_PORTS
 #define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS      1
 #else
 #define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS      0
 #endif
 
-#ifdef CONFIG_NET_LWIP_SOCKET_SENDTIMEOUT
+#ifdef CONFIG_NET_SO_SNDTIMEO
 #define LWIP_SO_SNDTIMEO                        1
 #else
 #define LWIP_SO_SNDTIMEO                        0
 #endif
 
-#ifdef CONFIG_NET_LWIP_SOCKET_RECVTIMEOUT
+#ifdef CONFIG_NET_SO_RCVTIMEO
 #define LWIP_SO_RCVTIMEO                        1
 #else
 #define LWIP_SO_RCVTIMEO                        0
 #endif
 
-#ifdef CONFIG_NET_LWIP_SOCKET_RCVBUF
+#ifdef CONFIG_NET_SO_RCVBUF
 #define LWIP_SO_RCVBUF                          1
 #else
 #define LWIP_SO_RCVBUF                          0
 #endif
 
-#ifdef CONFIG_NET_LWIP_SOCKET_REUSE
+#ifdef CONFIG_NET_SO_REUSE
 #define SO_REUSE                                1
 #else
 #define SO_REUSE                                0

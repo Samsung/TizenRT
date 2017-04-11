@@ -70,7 +70,7 @@
 #include <sys/sock_internal.h>
 #include <sys/types.h>
 
-#ifdef CONFIG_NET_LWIP_SOCKET 
+#ifdef CONFIG_NET_SOCKET
 #include <net/lwip/sockets.h>
 #include <net/lwip/api.h>
 #endif							/* CONFIG_CUSTOM_SOCKETS */
