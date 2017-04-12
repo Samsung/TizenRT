@@ -2562,7 +2562,7 @@ errout:
 static int8_t slsi_get_country_code(char* country_code) {
     int8_t result = SLSI_STATUS_ERROR;
     slsi_init_nvram();
-    if(Nv_Read((u32)nvram, SLSI_WIFI_NV_DATA_START,SLSI_WIFI_NV_DATA_SIZE)){
+    if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
         g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t*)nvram;
         memcpy(country_code,g_slsi_wifi_nv_data->country_code, 3);
         country_code[2] = '\0';
@@ -2600,10 +2600,10 @@ static int8_t slsi_set_country_code(const char* country_code, bool write_to_nvra
         }
         // set the country code in NV ram for next time
         //start by reading the existing values form NVRAM and Erase to be ready for writing
-        if (Nv_Read((u32) nvram, SLSI_WIFI_NV_DATA_START, SLSI_WIFI_NV_DATA_SIZE)) {
+        if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
             g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t*) nvram;
             VPRINT("Read from NVRAM: %s\n", g_slsi_wifi_nv_data->country_code);
-            Nv_Erase(SLSI_WIFI_NV_DATA_START, 4 * 1024); // flash blocksize is 4k
+            up_wlan_erase_config();
             memcpy(g_slsi_wifi_nv_data->country_code, country_code, 3);
             g_slsi_wifi_nv_data->country_code[2] = '\0';
             //store the country code for later
@@ -2611,7 +2611,7 @@ static int8_t slsi_set_country_code(const char* country_code, bool write_to_nvra
             g_country_code[1] = country_code[1];
             // write it back to nvram
             DPRINT("Writing countrycode %s to NVRAM\n", g_slsi_wifi_nv_data->country_code);
-            if (!Nv_Write(SLSI_WIFI_NV_DATA_START, (u32) nvram, SLSI_WIFI_NV_DATA_SIZE)) {
+            if (!up_wlan_write_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
                 EPRINT("NVRAM write failed\n");
             } else {
                 result = SLSI_STATUS_SUCCESS;
@@ -2652,7 +2652,7 @@ static int8_t slsi_get_tx_power(uint8_t *dbm) {
         if(nvram == NULL){
             nvram = malloc(4*1024); // flash block size of 4k
         }
-        if(Nv_Read((u32)nvram, SLSI_WIFI_NV_DATA_START,SLSI_WIFI_NV_DATA_SIZE)){
+        if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
             g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t*)nvram;
             *dbm = g_slsi_wifi_nv_data->tx_power;
             DPRINT("Tx Power found in NVRAM: %d dbm\n", dbm);
@@ -2680,14 +2680,14 @@ static int8_t slsi_set_tx_power(uint8_t *dbm, bool write_to_nvram, bool write_to
         slsi_init_nvram();
         // set the tx_power in NV ram for next time
         //start by reading the existing values form NVRAM and Erase to be ready for writing
-        if (Nv_Read((u32) nvram, SLSI_WIFI_NV_DATA_START, SLSI_WIFI_NV_DATA_SIZE)) {
+        if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
             g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t*) nvram;
             VPRINT("Tx Power read from NVRAM: %d\n", g_slsi_wifi_nv_data->tx_power);
-            Nv_Erase(SLSI_WIFI_NV_DATA_START, 4 * 1024); // flash blocksize is 4k
+            up_wlan_erase_config();
             g_slsi_wifi_nv_data->tx_power =  *dbm;
             // write it back to nvram
             DPRINT("Writing tx_power (dbm) %d to NVRAM\n", g_slsi_wifi_nv_data->tx_power);
-            if (!Nv_Write(SLSI_WIFI_NV_DATA_START, (u32) nvram, SLSI_WIFI_NV_DATA_SIZE)) {
+            if (!up_wlan_write_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
                 EPRINT("NVRAM write failed\n");
             } else {
                 result = SLSI_STATUS_SUCCESS;
@@ -2977,7 +2977,7 @@ static void slsi_init_nvram(void) {
             return;
         }
     }
-    if(Nv_Read((u32)nvram, SLSI_WIFI_NV_DATA_START,SLSI_WIFI_NV_DATA_SIZE)){
+    if (up_wlan_read_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
         g_slsi_wifi_nv_data = (slsi_wifi_nv_data_t*)nvram;
         //check if it this is not the first boot - it is already initialized
         if(memcmp("SLSI", g_slsi_wifi_nv_data->initialized, 4) != 0){
@@ -2985,7 +2985,7 @@ static void slsi_init_nvram(void) {
             uint8_t tx_power = SLSI_WIFI_NV_DEFAULT_TX_POWER;
 
             //erase the NVRAM area so we are ready to write to it
-            Nv_Erase(SLSI_WIFI_NV_DATA_START, 4 * 1024); // flash blocksize is 4k
+            up_wlan_erase_config();
             // write it back to nvram
             strncpy(&g_slsi_wifi_nv_data->initialized[0], "SLSI", 4);
             g_slsi_wifi_nv_data->initialized[4] = '\0'; //needed for svace
@@ -2999,7 +2999,7 @@ static void slsi_init_nvram(void) {
                 tx_power = 30;
             }
             g_slsi_wifi_nv_data->tx_power = tx_power;
-            if (!Nv_Write(SLSI_WIFI_NV_DATA_START, (u32) nvram, SLSI_WIFI_NV_DATA_SIZE)) {
+            if (!up_wlan_write_config((void *)nvram, SLSI_WIFI_NV_DATA_SIZE)) {
                 EPRINT("NVRAM write failed\n");
             } else {
                 VPRINT("NVRAM now contains:\n\tcountry-code: %s\n\ttx_power: %d\n",

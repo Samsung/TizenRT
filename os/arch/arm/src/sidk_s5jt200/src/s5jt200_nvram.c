@@ -63,8 +63,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-unsigned int Nv_Write(unsigned int target_addr, unsigned int source_addr,
-		unsigned int sizebyte)
+unsigned int up_wlan_write_config(void *buf, unsigned int bufsize)
 {
 #if defined(CONFIG_MTD_CONFIG)
 	int fd;
@@ -78,8 +77,8 @@ unsigned int Nv_Write(unsigned int target_addr, unsigned int source_addr,
 
 	config.id = SIDK_S5JT200_CONFIGDATA_WIFI_NVRAM;
 	config.instance = 0;
-	config.configdata = (unsigned char *)source_addr;
-	config.len = sizebyte;
+	config.configdata = (unsigned char *)buf;
+	config.len = bufsize;
 
 	ioctl(fd, CFGDIOC_SETCONFIG, &config);
 	close(fd);
@@ -90,8 +89,7 @@ unsigned int Nv_Write(unsigned int target_addr, unsigned int source_addr,
 #endif
 }
 
-unsigned int Nv_Read(unsigned int target_addr, unsigned int source_addr,
-		unsigned int sizebyte)
+unsigned int up_wlan_read_config(void *buf, unsigned int bufsize)
 {
 #if defined(CONFIG_MTD_CONFIG)
 	int fd;
@@ -105,8 +103,8 @@ unsigned int Nv_Read(unsigned int target_addr, unsigned int source_addr,
 
 	config.id = SIDK_S5JT200_CONFIGDATA_WIFI_NVRAM;
 	config.instance = 0;
-	config.configdata = (unsigned char *)target_addr;
-	config.len = sizebyte;
+	config.configdata = (unsigned char *)buf;
+	config.len = bufsize;
 
 	ioctl(fd, CFGDIOC_GETCONFIG, &config);
 	close(fd);
@@ -117,7 +115,7 @@ unsigned int Nv_Read(unsigned int target_addr, unsigned int source_addr,
 #endif
 }
 
-unsigned int Nv_Erase(unsigned int target_addr, unsigned int sizebyte)
+unsigned int up_wlan_erase_config(void)
 {
 #if defined(CONFIG_MTD_CONFIG)
 	return true;
