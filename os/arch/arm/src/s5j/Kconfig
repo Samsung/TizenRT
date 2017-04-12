@@ -220,17 +220,6 @@ config S5J_SFLASH
   bool "S5J Serial Flash support"
 	default y
 
-if S5J_SFLASH
-menu "Serial FLASH region"
-
-config NVRAM_WIFI_START
-	hex "WiFi shared memory size"
-	default 0x043BE000
-	help
-		The physical start address of the WiFi non-volatile memoryM.
-endmenu
-endif
-
 menu "S5J binary version"
 
 config S5J_BL2_VERSION_ADDR

@@ -32,7 +32,6 @@ typedef struct slsi_wifi_nv_data {
 #define SLSI_WIFI_NV_DEFAULT_TX_POWER       (uint8_t)30
 #endif
 
-#define SLSI_WIFI_NV_DATA_START (CONFIG_NVRAM_WIFI_START)
 #define SLSI_WIFI_NV_DATA_SIZE (sizeof(slsi_wifi_nv_data_t))
 
 #ifdef  __cplusplus
