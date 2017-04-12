@@ -278,7 +278,7 @@ static int net_would_block(const mbedtls_net_context *ctx)
 	/*
 	 * Never return 'WOULD BLOCK' on a non-blocking socket
 	 */
-#ifdef CONFIG_OS_TINYARA
+#if defined(MBED_TIZENRT)
 	/*
 	 * Because fcntl() changes an errno to the unexpected value,
 	 * store the errno before calling fcntl.
@@ -286,10 +286,12 @@ static int net_would_block(const mbedtls_net_context *ctx)
 	int errval = errno;
 #endif
 	if ((fcntl(ctx->fd, F_GETFL) & O_NONBLOCK) != O_NONBLOCK) {
+#if defined(MBED_TIZENRT)
+		set_errno(errval);
+#endif
 		return (0);
 	}
-
-#ifdef CONFIG_OS_TINYARA
+#if defined(MBED_TIZENRT)
 	set_errno(errval);
 #endif
 

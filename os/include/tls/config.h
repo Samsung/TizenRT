@@ -2587,6 +2587,15 @@
 //#define MBEDTLS_SSL_COOKIE_TIMEOUT        60 /**< Default expiration delay of DTLS cookies, in seconds if HAVE_TIME, or in number of cookies issued */
 
 /**
+ * \def MBED_TIZENRT
+ *
+ * Indicate the platform specific patches.
+ */
+#ifndef MBED_TIZENRT
+#define MBED_TIZENRT
+#endif
+
+/**
  * \def MBEDTLS_LIGHT_DEVICE
  *
  * Configuration for light devices.
@@ -2651,6 +2660,7 @@
 #undef MBEDTLS_XTEA_C
 
 #endif							/* MBEDTLS_LIGHT_DEVICE */
+
 
 //#undef MBEDTLS_ECDSA_DETERMINISTIC
 //#undef MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
