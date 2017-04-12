@@ -1,3 +1,8 @@
+menuconfig SCSC_WLAN
+	bool "SCSC Wireless Module support"
+	default n
+	select SPI
+
 if SCSC_WLAN
 
 config SLSI_RX_PERFORMANCE_TEST
@@ -58,5 +63,26 @@ config SCSC_WLAN_MAX_INTERFACES
 	---help---
 	  The driver structures are sized to support this
 	  number of interfaces.
+
+endif
+
+menuconfig SCSC_CORE
+	bool "SCSC Core driver Module support"
+	default n
+	select SPI
+
+if SCSC_CORE
+
+config SCSC_PLATFORM
+	bool "Samsung SCSC MIF Platform driver implementation"
+	default n
+
+config SCSC_WLANLITE
+	bool "Samsung SCSC WLANLITE driver mode"
+	default n
+
+config SCSC_DISABLE_WLAN_RESET
+	bool "Never power down the Samsung SCSC WLAN CPU"
+	default n
 
 endif
