@@ -1,8 +1,7 @@
-if SCSC_WLAN != n
+if SCSC_WLAN
 
 config SLSI_RX_PERFORMANCE_TEST
 	bool "Enable UDP RX performance test"
-	depends on SCSC_WLAN
         default n
 	---help---
 	  This option enables RX UDP performance measurement without
@@ -10,14 +9,12 @@ config SLSI_RX_PERFORMANCE_TEST
 
 config SCSC_TX_FLOW_CONTROL
 	bool "Enable TX flow control"
-	depends on SCSC_WLAN
         default n
 	---help---
 	  This option enables TX flow control
 
 config SCSC_ENABLE_PORT_CONTROL
 	bool "Enable controlled/uncontrolled port logic in the driver"
-	depends on SCSC_WLAN
 	default y
 	---help---
 	  This option enables controlled/uncontrolled port logic in the driver
@@ -43,7 +40,6 @@ config SCSC_WLAN_UDP_FLOWCONTROL
 
 config SCSC_WLAN_AUTO_RECOVERY
 	bool "Enable Auto Recovery"
-	depends on SCSC_WLAN
 	default n
 	---help---
 	  Enables auto recovery on FW panic and SCSC driver watch dog timeouts,
@@ -51,7 +47,6 @@ config SCSC_WLAN_AUTO_RECOVERY
 
 config SCSC_WLAN_POWER_SAVE
         bool "Enable Power Save mode"
-        depends on SCSC_WLAN
         default y
         ---help---
           This option enables driver to configure power save mode in
