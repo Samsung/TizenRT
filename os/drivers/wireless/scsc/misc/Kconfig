@@ -1,8 +1,9 @@
 if SCSC_CORE != n
 
 config SCSC_PLATFORM
-	tristate "Samsung SCSC MIF Platform driver implementation"
+	bool "Samsung SCSC MIF Platform driver implementation"
 	depends on SCSC_CORE
+	default n
 
 config SCSC_WLANLITE
 	bool "Samsung SCSC WLANLITE driver mode"
