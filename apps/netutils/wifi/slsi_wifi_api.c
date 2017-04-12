@@ -273,7 +273,7 @@ typedef struct slsi_recovery_data {
 static slsi_recovery_data_t g_recovery_data;
 static pthread_t g_recovery_thread;
 static int g_recovery_running = 0;
-
+static sem_t g_sem_recover;
 #endif // CONFIG_SCSC_WLAN_AUTO_RECOVERY
 
 static int g_recovering = 0;
@@ -289,7 +289,7 @@ static pthread_t g_monitoring_thread;
 static sem_t g_sem_terminate;
 static sem_t g_sem_ap_mode;
 static sem_t g_sem_disconnect;
-static sem_t g_sem_recover;
+
 static sem_t g_sem_api_block;
 static pthread_mutex_t mutex_state;
 static bool g_mutex_initialized = FALSE;
@@ -1403,7 +1403,6 @@ void slsi_monitor_thread_handler(void *param ) {
                     if (slsi_event_recieved(result, WPA_EVENT_DISCONNECTED)) {
                         slsi_sta_disconnect_event_handler(result, &reason);
                         g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
-                        sem_post(&g_sem_disconnect);
                         /* start by disabling all previous networks to make sure
                          * they are not running simultaneous */
                         uint8_t tmp_result = slsi_disable_all_networks();
@@ -1419,6 +1418,8 @@ void slsi_monitor_thread_handler(void *param ) {
                             VPRINT("SLSI_API slsi_link_event_handler send link_down\n");
                             g_link_down(&reason);
                         }
+                        // Release sem_wait after finished removing the network
+                        sem_post(&g_sem_disconnect);
                         // TODO: clean join info for recovery
                     } else {
                         VPRINT("Info: Event not handled %s in current state %s\n",
@@ -1428,8 +1429,8 @@ void slsi_monitor_thread_handler(void *param ) {
                 case SLSI_WIFIAPI_STATE_TERMINATING:
                     if (slsi_event_recieved(result, WPA_EVENT_TERMINATING)) {
                         VPRINT("WPA_EVENT_TERMINATING Received\n");
-                        sem_post(&g_sem_terminate);
                         g_running = 0;
+                        sem_post(&g_sem_terminate);
                     } else {
                         VPRINT("Info: Event not handled %s in current state %s\n",
                                 result, slsi_state_strings[g_state]);
@@ -1461,8 +1462,10 @@ void slsi_monitor_thread_handler(void *param ) {
                        }
                        // CLean up local
                        slsi_deinit();
+#ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
                        g_recovering = 1;
                        sem_post(&g_sem_recover);
+#endif
                     } else {
                         VPRINT("Info: Event not handled %s in current state %s\n",
                                 result, slsi_state_strings[g_state]);
