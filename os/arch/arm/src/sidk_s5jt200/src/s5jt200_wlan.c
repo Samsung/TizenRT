@@ -45,7 +45,7 @@ struct wlanif {
  *         ERR_MEM if private data couldn't be allocated
  *         any other err_t on error
  */
-err_t wlan_init(struct netif *netif)
+static err_t wlan_init(struct netif *netif)
 {
 	netif->name[0] = IFNAME0;
 	netif->name[1] = IFNAME1;
