@@ -280,7 +280,7 @@ void freeaddrinfo(struct addrinfo *ai)
 
 	for (; ai != NULL;) {
 		next = ai->ai_next;
-		if (!ai->ai_addr) {
+		if (ai->ai_addr) {
 			free(ai->ai_addr);
 		}
 		if (ai->ai_canonname) {
