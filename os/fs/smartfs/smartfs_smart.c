@@ -177,6 +177,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	struct smartfs_ofile_s *sf;
 
 #ifdef CONFIG_SMARTFS_JOURNALING
+	int retj;
 	uint16_t t_sector, t_offset;
 #endif
 
@@ -288,9 +289,10 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 #endif
 			ret = smartfs_createentry(fs, parentdirsector, filename, SMARTFS_DIRENT_TYPE_FILE, mode, &sf->entry, 0xFFFF, sf);
 #ifdef CONFIG_SMARTFS_JOURNALING
-			ret = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_CREATE);
-			if (ret != OK) {
+			retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_CREATE);
+			if (retj != OK) {
 				fdbg("Error finishing transaction\n");
+				ret = retj;
 				goto errout_with_buffer;
 			}
 #endif
@@ -586,6 +588,7 @@ static int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_of
 #endif
 
 #ifdef CONFIG_SMARTFS_JOURNALING
+	int retj;
 	uint16_t used_bytes;
 	uint16_t t_sector, t_offset;
 #endif
@@ -679,9 +682,10 @@ static int smartfs_sync_internal(struct smartfs_mountpt_s *fs, struct smartfs_of
 #endif
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 #ifdef CONFIG_SMARTFS_JOURNALING
-		ret = smartfs_finish_journalentry(fs, readwrite.logsector, t_sector, t_offset, T_SYNC);
-		if (ret != OK) {
+		retj = smartfs_finish_journalentry(fs, readwrite.logsector, t_sector, t_offset, T_SYNC);
+		if (retj != OK) {
 			fdbg("Error finishing transaction\n");
+			ret = retj;
 			goto errout;
 		}
 #endif
@@ -713,6 +717,7 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 	int ret;
 
 #ifdef CONFIG_SMARTFS_JOURNALING
+	int retj;
 	uint16_t t_sector, t_offset;
 #endif
 	/* Sanity checks.  I have seen the following assertion misfire if
@@ -794,17 +799,19 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 			}
 #endif
 			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+
+#ifdef CONFIG_SMARTFS_JOURNALING
+			retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_WRITE);
+			if (retj != OK) {
+				fdbg("Error finishing transaction\n");
+				ret = retj;
+				goto errout_with_semaphore;
+			}
+#endif
 			if (ret < 0) {
 				fdbg("Error %d writing sector %d data\n", ret, sf->currsector);
 				goto errout_with_semaphore;
 			}
-#ifdef CONFIG_SMARTFS_JOURNALING
-			ret = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_WRITE);
-			if (ret != OK) {
-				fdbg("Error finishing transaction\n");
-				goto errout_with_semaphore;
-			}
-#endif
 
 			/* Update our control variables */
 
@@ -1702,6 +1709,7 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 	uint16_t parentdirsector;
 	const char *filename;
 #ifdef CONFIG_SMARTFS_JOURNALING
+	int retj;
 	uint16_t t_sector, t_offset;
 #endif
 
@@ -1751,11 +1759,14 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 			goto errout_with_semaphore;
 		}
 #endif
-		ret = smartfs_createentry(fs, parentdirsector, filename, SMARTFS_DIRENT_TYPE_DIR, mode, &entry, 0xFFFF, NULL);
+
+		ret = smartfs_createentry(fs, parentdirsector, filename,
+								  SMARTFS_DIRENT_TYPE_DIR, mode, &entry, 0xFFFF, NULL);
 #ifdef CONFIG_SMARTFS_JOURNALING
-		ret = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_MKDIR);
-		if (ret != OK) {
+		retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_MKDIR);
+		if (retj != OK) {
 			fdbg("Error finishing transaction\n");
+			ret = retj;
 			goto errout_with_semaphore;
 		}
 #endif
@@ -1793,6 +1804,7 @@ int smartfs_rmdir(struct inode *mountpt, const char *relpath)
 	const char *filename;
 	uint16_t parentdirsector;
 #ifdef CONFIG_SMARTFS_JOURNALING
+	int retj;
 	uint16_t t_sector, t_offset;
 #endif
 
@@ -1847,9 +1859,10 @@ int smartfs_rmdir(struct inode *mountpt, const char *relpath)
 
 		ret = smartfs_deleteentry(fs, &entry);
 #ifdef CONFIG_SMARTFS_JOURNALING
-		ret = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_DELETE);
-		if (ret != OK) {
+		retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_DELETE);
+		if (retj != OK) {
 			fdbg("Error finishing transaction\n");
+			ret = retj;
 			goto errout_with_semaphore;
 		}
 #endif
@@ -1898,6 +1911,7 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 	struct smart_read_write_s readwrite;
 
 #ifdef CONFIG_SMARTFS_JOURNALING
+	int retj;
 	uint16_t t_sector, t_offset;
 #endif
 
@@ -2045,9 +2059,10 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 		readwrite.buffer = (uint8_t *)tmp_pntr;
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 #ifdef CONFIG_SMARTFS_JOURNALING
-		ret = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_RENAME);
-		if (ret != OK) {
+		retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_RENAME);
+		if (retj != OK) {
 			fdbg("Error finishing transaction\n");
+			ret = retj;
 			goto errout_with_semaphore;
 		}
 #endif
