@@ -432,10 +432,6 @@ static int s5j_gpio_ctrl(struct gpio_dev_s *dev, int cmd, unsigned long args)
 		}
 		break;
 
-	case GPIO_CMD_GET_DIRECTION:
-		return gpio_cfg_get_pin(gpio);
-		break;
-
 	case GPIO_CMD_SET_EDGE:
 		gpio_eint_set_filter(gpio, EINT_FILTER_DELAY, 0);
 		switch (args) {
@@ -466,28 +462,6 @@ static int s5j_gpio_ctrl(struct gpio_dev_s *dev, int cmd, unsigned long args)
 		}
 		break;
 
-	case GPIO_CMD_GET_EDGE:
-		switch (gpio_eint_get_type(gpio)) {
-		case EINT_TYPE_EDGE_BOTH:
-			return GPIO_EDGE_BOTH;
-			break;
-		case EINT_TYPE_EDGE_RISING:
-			return GPIO_EDGE_RISING;
-			break;
-		case EINT_TYPE_EDGE_FALLING:
-			return GPIO_EDGE_FALLING;
-			break;
-		case EINT_TYPE_LEVEL_LOW:
-			return GPIO_LEVEL_LOW;
-			break;
-		case EINT_TYPE_LEVEL_HIGH:
-			return GPIO_LEVEL_HIGH;
-			break;
-		default:
-			return -EINVAL;
-		}
-		break;
-
 	case GPIO_CMD_SET_DRIVE:
 		switch (args) {
 		case GPIO_DRIVE_NONE:
@@ -499,18 +473,6 @@ static int s5j_gpio_ctrl(struct gpio_dev_s *dev, int cmd, unsigned long args)
 		case GPIO_DRIVE_PULLDOWN:
 			gpio_set_pull(gpio, GPIO_PULL_DOWN);
 			break;
-		default:
-			return -EINVAL;
-		}
-		break;
-	case GPIO_CMD_GET_DRIVE:
-		switch (gpio_get_pull(gpio)) {
-		case GPIO_PULL_NONE:
-			return GPIO_DRIVE_NONE;
-		case GPIO_PULL_UP:
-			return GPIO_DRIVE_PULLUP;
-		case GPIO_PULL_DOWN:
-			return GPIO_DRIVE_PULLDOWN;
 		default:
 			return -EINVAL;
 		}
