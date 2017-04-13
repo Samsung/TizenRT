@@ -18,11 +18,17 @@
 #include <tinyara/config.h>
 
 #include <stdio.h>
+#include <fcntl.h>
+#include <debug.h>
 
 #include <net/if.h>
 #include <net/lwip/opt.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/tcpip.h>
+
+#include <tinyara/configdata.h>
+
+#include "sidk_s5jt200.h"
 
 struct wlanif {
 	struct eth_addr *ethaddr;
@@ -55,6 +61,67 @@ static err_t wlan_init(struct netif *netif)
 	netif->flags = NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_BROADCAST | NETIF_FLAG_IGMP;
 
 	return ERR_OK;
+}
+
+unsigned int up_wlan_write_config(void *buf, unsigned int bufsize)
+{
+#if defined(CONFIG_MTD_CONFIG)
+	int fd;
+	struct config_data_s config;
+
+	fd = open("/dev/config", O_RDOK);
+	if (fd < 0) {
+		lldbg("Failed to open /dev/config\n");
+		return false;
+	}
+
+	config.id = SIDK_S5JT200_CONFIGDATA_WIFI_NVRAM;
+	config.instance = 0;
+	config.configdata = (unsigned char *)buf;
+	config.len = bufsize;
+
+	ioctl(fd, CFGDIOC_SETCONFIG, &config);
+	close(fd);
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+unsigned int up_wlan_read_config(void *buf, unsigned int bufsize)
+{
+#if defined(CONFIG_MTD_CONFIG)
+	int fd;
+	struct config_data_s config;
+
+	fd = open("/dev/config", O_RDOK);
+	if (fd < 0) {
+		lldbg("Failed to open /dev/config\n");
+		return false;
+	}
+
+	config.id = SIDK_S5JT200_CONFIGDATA_WIFI_NVRAM;
+	config.instance = 0;
+	config.configdata = (unsigned char *)buf;
+	config.len = bufsize;
+
+	ioctl(fd, CFGDIOC_GETCONFIG, &config);
+	close(fd);
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+unsigned int up_wlan_erase_config(void)
+{
+#if defined(CONFIG_MTD_CONFIG)
+	return true;
+#else
+	return false;
+#endif
 }
 
 struct netif *wlan_netif;
