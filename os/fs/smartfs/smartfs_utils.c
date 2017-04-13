@@ -147,6 +147,10 @@ struct sector_queue_s {
 #define AREA_OLD_UNERASED 0xFF
 #endif
 
+#define NO_CHANGE 0
+#define NEXT_SECTOR 1
+#define MOVE_AREA 2
+
 #define SZ_UINT8 (sizeof(uint8_t)*8)
 #define IS_ACTIVE(x, s) ((x)[(s)/SZ_UINT8] & (1<<(SZ_UINT8-((s)%SZ_UINT8)-1)))
 #define SET_ACTIVE(x, s) ((x)[(s)/SZ_UINT8] |= (1<<(SZ_UINT8-((s)%SZ_UINT8)-1)))
@@ -1923,6 +1927,7 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 
 	if (fmt.nsectors < CONFIG_SMARTFS_JOURNALING_THRESHOLD) {
 		journal->enabled = false;
+		fdbg("Journal Manager Not enabled due to size constraints. %d %d\n", fmt.nsectors, CONFIG_SMARTFS_JOURNALING_THRESHOLD);
 		return 0;
 	}
 
@@ -2241,6 +2246,7 @@ int clear_journal_sectors(struct smartfs_mountpt_s *fs, struct journal_transacti
 		if (allocate) {
 			ret = FS_IOCTL(fs, BIOC_ALLOCSECT, (unsigned long)readsect);
 			if (ret < 0) {
+				fdbg("alloc failed!!\n");
 				break;
 			}
 		}
@@ -2339,7 +2345,7 @@ static int read_logging_data(struct smartfs_mountpt_s *fs, struct
 		req.offset = *offset;
 		req.count = entry->datalen - req.count;
 		if (req.offset + req.count > j_mgr->availbytes) {
-			fdbg("Data should never be more than available bytes in a sector\n");
+			fdbg("Data should never be more than available bytes in a sector offset : %d count : %d availbytes : %d\n", req.offset, req.count, j_mgr->availbytes);
 			return ERROR;
 		}
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
@@ -2902,6 +2908,41 @@ static int smartfs_set_transaction(struct smartfs_mountpt_s *fs, uint16_t sector
 }
 
 /****************************************************************************
+ * Name: get_next_sector_info
+ *
+ * Description: Calculate next sector and offset from given condition.
+ *              If current area filled with data, it returns value to change area.
+ *
+ ****************************************************************************/
+static int get_next_sector_info(struct journal_transaction_manager_s *j_mgr)
+{
+	int ret;
+	uint16_t startsector;
+	uint16_t newoffset, newsector;
+	struct smartfs_logging_entry_s *entry;
+
+	ret = NO_CHANGE;
+	newsector = j_mgr->sector;
+	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
+	startsector = SMARTFS_LOGGING_SECTOR + j_mgr->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
+	if ((j_mgr->offset + sizeof(struct smartfs_logging_entry_s)) > j_mgr->availbytes) {
+		ret = NEXT_SECTOR;
+	}
+	if (j_mgr->sector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
+		return MOVE_AREA;
+	}
+	newoffset = j_mgr->offset + sizeof(struct smartfs_logging_entry_s)
+				+ (GET_TRANS_TYPE(entry->trans_info) != T_DELETE ? entry->datalen : 0);
+	if (newoffset > j_mgr->availbytes) {
+		newsector++;
+		newoffset -= j_mgr->availbytes;
+	}
+	if (newsector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
+		ret = MOVE_AREA;
+	}
+	return ret;
+}
+/****************************************************************************
  * Name: smartfs_write_transaction
  *
  * Description: Write a transaction entry to Journal log at position 'sector'
@@ -2915,29 +2956,20 @@ static int smartfs_write_transaction(struct smartfs_mountpt_s *fs, struct journa
 									 uint16_t *sector, uint16_t *offset)
 {
 	int ret;
+	int info;
 	uint16_t startsector;
-	uint16_t nextentry_sector;
-	uint16_t nextentry_offset;
 	struct smart_read_write_s req;
 	struct smartfs_logging_entry_s *entry;
 
 	startsector = SMARTFS_LOGGING_SECTOR + j_mgr->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
 	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
-	if ((j_mgr->offset + sizeof(struct smartfs_logging_entry_s)) > j_mgr->availbytes) {
-		/* Uh-oh. This shouldnt have happened. It shouldve been checked while
-		 * setting j_mgr->offset */
-		return ERROR;
-	}
-	/* Before writing the entry, make sure that the entry will fit into current area */
-	nextentry_sector = j_mgr->sector;
-	nextentry_offset = j_mgr->offset + sizeof(struct smartfs_logging_entry_s)
-					   + (GET_TRANS_TYPE(entry->trans_info) != T_DELETE ? entry->datalen : 0);
-	if (nextentry_offset > j_mgr->availbytes) {
-		nextentry_sector++;
-		nextentry_offset -= j_mgr->availbytes;
-	}
-	if (nextentry_sector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-		/* Its time to move the current journal area to the other area */
+
+	info = get_next_sector_info(j_mgr);
+	if (info == NEXT_SECTOR) {
+		j_mgr->sector++;
+		j_mgr->offset = 0;
+	} else if (info == MOVE_AREA) {
+		fvdbg("entry : %d\n", entry->datalen);
 		ret = move_journal_area(fs);
 		if (ret != OK) {
 			fdbg("move_journal_area failed ret : %d\n", ret);
@@ -3009,22 +3041,13 @@ static int smartfs_write_transaction(struct smartfs_mountpt_s *fs, struct journa
 		}
 	}
 
-	/* Now update manager's sector and offset pointers. First, Check whether
-	 * there is enough space in sector to write the next transaction head
-	 */
-	if (j_mgr->offset + sizeof(struct smartfs_logging_entry_s) > j_mgr->availbytes) {
-		j_mgr->sector++;
-		if (j_mgr->sector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
-			/* No space to write next entry. Move areas. */
-			ret = move_journal_area(fs);
-			if (ret != OK) {
-				return ret;
-			}
-		}
-		j_mgr->offset = 0;
-	}
 	/* Mark the transaction as STARTED */
-	return smartfs_set_transaction(fs, *sector, *offset, TRANS_STARTED);
+	ret = smartfs_set_transaction(fs, *sector, *offset, TRANS_STARTED);
+	if (ret != OK) {
+		fdbg("setting status failed : %d\n", ret);
+	}
+
+	return ret;
 }
 
 /****************************************************************************
@@ -3239,7 +3262,7 @@ int smartfs_create_journalentry(struct smartfs_mountpt_s *fs, enum logging_trans
 		/* Now write the transaction on disk */
 		ret = smartfs_write_transaction(fs, j_mgr, t_sector, t_offset);
 		if (ret != OK) {
-			fdbg("smartfs write transaction failed type : %d ret : %d\n", type, ret);
+			fdbg("smartfs_write_transaction failed type : %d ret : %d\n", type, ret);
 			return ret;
 		}
 
