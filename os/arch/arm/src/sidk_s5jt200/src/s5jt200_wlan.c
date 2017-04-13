@@ -22,6 +22,7 @@
 #include <net/if.h>
 #include <net/lwip/opt.h>
 #include <net/lwip/netif.h>
+#include <net/lwip/tcpip.h>
 
 struct wlanif {
 	struct eth_addr *ethaddr;
@@ -54,4 +55,24 @@ err_t wlan_init(struct netif *netif)
 	netif->flags = NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_BROADCAST | NETIF_FLAG_IGMP;
 
 	return ERR_OK;
+}
+
+struct netif *wlan_netif;
+
+void wlan_initup(struct netif *dev)
+{
+	struct ip_addr ipaddr;
+	struct ip_addr netmask;
+	struct ip_addr gw;
+
+	/* Start LWIP network thread */
+	ipaddr.addr = inet_addr("0.0.0.0");
+	netmask.addr = inet_addr("255.255.255.255");
+	gw.addr = inet_addr("0.0.0.0");
+
+	netif_set_default(dev);
+
+	wlan_netif = netif_add(dev, &ipaddr, &netmask, &gw,
+					NULL, wlan_init, tcpip_input);
+	wlan_netif->flags |= NETIF_FLAG_IGMP;
 }

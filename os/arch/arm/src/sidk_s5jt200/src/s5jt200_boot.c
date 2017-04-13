@@ -68,11 +68,6 @@
 #include <arch/board/board.h>
 
 #include <sys/mount.h>
-#ifdef CONFIG_SCSC_WLAN
-#include <net/lwip/opt.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/tcpip.h>
-#endif
 
 #include "sidk_s5jt200.h"
 
@@ -126,29 +121,6 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 {
 	return NULL;
 }
-
-#ifdef CONFIG_SCSC_WLAN
-err_t wlan_init(struct netif *netif);
-
-struct netif *wlan_netif;
-void wlan_initup(struct netif *dev)
-{
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
-
-	/* Start LWIP network thread */
-	ipaddr.addr = inet_addr("0.0.0.0");
-	netmask.addr = inet_addr("255.255.255.255");
-	gw.addr = inet_addr("0.0.0.0");
-
-	netif_set_default(dev);
-
-	wlan_netif = netif_add(dev, &ipaddr, &netmask, &gw,
-					NULL, wlan_init, tcpip_input);
-	wlan_netif->flags |= NETIF_FLAG_IGMP;
-}
-#endif
 
 /****************************************************************************
  * Name: s5j_board_initialize
