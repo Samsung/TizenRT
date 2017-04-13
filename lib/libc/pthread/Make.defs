@@ -69,7 +69,7 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 CSRCS += pthread_condattrsetclock.c
 endif
 
-ifeq ($(CONFIG_MUTEX_TYPES),y)
+ifeq ($(CONFIG_PTHREAD_MUTEX_TYPES),y)
 CSRCS += pthread_mutexattrsettype.c pthread_mutexattrgettype.c
 endif
 

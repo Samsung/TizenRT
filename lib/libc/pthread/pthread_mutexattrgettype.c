@@ -58,7 +58,7 @@
 #include <pthread.h>
 #include <errno.h>
 
-#ifdef CONFIG_MUTEX_TYPES
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 
 /****************************************************************************
  * Definitions
@@ -111,4 +111,4 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
 	return EINVAL;
 }
 
-#endif							/* CONFIG_MUTEX_TYPES */
+#endif							/* CONFIG_PTHREAD_MUTEX_TYPES */

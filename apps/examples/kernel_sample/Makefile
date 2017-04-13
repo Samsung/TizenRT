@@ -82,9 +82,9 @@ endif
 ifneq ($(CONFIG_RR_INTERVAL),0)
 CSRCS += roundrobin.c
 endif # CONFIG_RR_INTERVAL
-ifeq ($(CONFIG_MUTEX_TYPES),y)
+ifeq ($(CONFIG_PTHREAD_MUTEX_TYPES),y)
 CSRCS += rmutex.c
-endif # CONFIG_MUTEX_TYPES
+endif # CONFIG_PTHREAD_MUTEX_TYPES
 endif # CONFIG_DISABLE_PTHREAD
 
 ifneq ($(CONFIG_DISABLE_SIGNALS),y)

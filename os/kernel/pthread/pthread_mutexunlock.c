@@ -127,7 +127,7 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 	 */
 	sched_lock();
 	if (mutex != NULL) {
-#if !defined(CONFIG_PTHREAD_MUTEX_UNSAFE) || defined(CONFIG_MUTEX_TYPES)
+#if !defined(CONFIG_PTHREAD_MUTEX_UNSAFE) || defined(CONFIG_PTHREAD_MUTEX_TYPES)
 		/* Does the calling thread own the semaphore?  If no, should we return
 		 * an error?
 		 *
@@ -146,7 +146,7 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 		 */
 
 		if (mutex->pid != (int)getpid())
-#elif defined(CONFIG_PTHREAD_MUTEX_UNSAFE) && defined(CONFIG_MUTEX_TYPES)
+#elif defined(CONFIG_PTHREAD_MUTEX_UNSAFE) && defined(CONFIG_PTHREAD_MUTEX_TYPES)
 		/* If mutex types are not supported, then all mutexes are NORMAL (or
 		 * DEFAULT).  Error checking should never be performed for the
 		 * non-robust NORMAL mutex type.
@@ -156,7 +156,7 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 		/* Skip the error check if this is a non-robust NORMAL mutex */
 
 		bool errcheck = ((mutex->flags & _PTHREAD_MFLAGS_ROBUST) != 0);
-#ifdef CONFIG_MUTEX_TYPES
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 		errcheck |= (mutex->type != PTHREAD_MUTEX_NORMAL);
 #endif
 
@@ -172,9 +172,9 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 			sdbg("Holder=%d returning EPERM\n", mutex->pid);
 			ret = EPERM;
 		} else
-#endif							/* !CONFIG_PTHREAD_MUTEX_UNSAFE || CONFIG_MUTEX_TYPES */
+#endif							/* !CONFIG_PTHREAD_MUTEX_UNSAFE || CONFIG_PTHREAD_MUTEX_TYPES */
 
-#ifdef CONFIG_MUTEX_TYPES
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 			/* Yes, the caller owns the semaphore.. Is this a recursive mutex? */
 
 			if (mutex->type == PTHREAD_MUTEX_RECURSIVE && mutex->nlocks > 1) {
@@ -185,7 +185,7 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 				mutex->nlocks--;
 				ret = OK;
 			} else
-#endif							/* CONFIG_MUTEX_TYPES */
+#endif							/* CONFIG_PTHREAD_MUTEX_TYPES */
 
 				/* This is either a non-recursive mutex or is the outermost unlock of
 				 * a recursive mutex.
@@ -200,7 +200,7 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 				/* Nullify the pid and lock count then post the semaphore */
 
 				mutex->pid = -1;
-#ifdef CONFIG_MUTEX_TYPES
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 				mutex->nlocks = 0;
 #endif
 				ret = pthread_mutex_give(mutex);

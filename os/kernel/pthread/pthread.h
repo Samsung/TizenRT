@@ -133,7 +133,7 @@ void pthread_mutex_inconsistent(FAR struct pthread_tcb_s *tcb);
 #define pthread_mutex_give(m)   pthread_givesemaphore(&(m)->sem)
 #endif
 
-#ifdef CONFIG_MUTEX_TYPES
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 int pthread_mutexattr_verifytype(int type);
 #endif
 

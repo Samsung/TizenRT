@@ -120,7 +120,7 @@
  *  An implementation is allowed to map this mutex to one of the other mutex types.
  */
 
-#ifdef CONFIG_MUTEX_TYPES
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 #define PTHREAD_MUTEX_NORMAL        0
 #define PTHREAD_MUTEX_ERRORCHECK    1
 #define PTHREAD_MUTEX_RECURSIVE     2
@@ -294,7 +294,7 @@ struct pthread_mutexattr_s {
 #ifdef CONFIG_PRIORITY_INHERITANCE
 	uint8_t proto;			/* See PTHREAD_PRIO_* definitions */
 #endif
-#ifdef CONFIG_MUTEX_TYPES
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 	uint8_t type;			/* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
 #endif
 };
@@ -318,7 +318,7 @@ struct pthread_mutex_s {
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
 	uint8_t flags;			/* See _PTHREAD_MFLAGS_* */
 #endif
-#ifdef CONFIG_MUTEX_TYPES
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 	uint8_t type;			/* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
 	int nlocks;				/* The number of recursive locks held */
 #endif
@@ -335,11 +335,11 @@ typedef struct pthread_mutex_s pthread_mutex_t;
 #endif
 #endif
 
-#if defined(CONFIG_MUTEX_TYPES) && !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
+#if defined(CONFIG_PTHREAD_MUTEX_TYPES) && !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
 #define PTHREAD_MUTEX_INITIALIZER {NULL, SEM_INITIALIZER(1), -1, \
                                      __PTHREAD_MUTEX_DEFAULT_FLAGS, \
                                      PTHREAD_MUTEX_DEFAULT, 0}
-#elif defined(CONFIG_MUTEX_TYPES)
+#elif defined(CONFIG_PTHREAD_MUTEX_TYPES)
 #define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1, \
                                      PTHREAD_MUTEX_DEFAULT, 0}
 #elif !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
@@ -779,7 +779,7 @@ int pthread_mutexattr_getpshared(FAR const pthread_mutexattr_t *attr, FAR int *p
  * @since Tizen RT v1.0
  */
 int pthread_mutexattr_setpshared(FAR pthread_mutexattr_t *attr, int pshared);
-#ifdef CONFIG_MUTEX_TYPES
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
