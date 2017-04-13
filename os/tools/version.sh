@@ -135,12 +135,13 @@ if [ -z "${BUILD}" ]; then
 	GITINFO=`git log 2>/dev/null | head -1`
 	if [ -z "${GITINFO}" ]; then
 		echo "GIT version information is not available"
-		exit 3
-	fi
-	BUILD=`echo ${GITINFO} | cut -d' ' -f2`
-	if [ -z "${BUILD}" ]; then
-		echo "GIT build information not found"
-		exit 4
+		BUILD=NA
+	else
+		BUILD=`echo ${GITINFO} | cut -d' ' -f2`
+		if [ -z "${BUILD}" ]; then
+			echo "GIT build information not found"
+			BUILD=NA
+		fi
 	fi
 fi
 
