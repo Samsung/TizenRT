@@ -6,6 +6,7 @@
 config EXAMPLES_HELLO_TASH
 	bool "\"Hello, World!\" example in tash"
 	default n
+	depends on TASH
 	---help---
 		Enable the \"Hello, World!\" example in tash
 

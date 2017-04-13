@@ -49,7 +49,7 @@ char g_proc_iobuffer[PROC_BUFFER_LEN];
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
+
 int proc_read_entry(direntry_handler_t handler)
 {
 	DIR *dirp;
@@ -340,7 +340,7 @@ int proc_version_test()
 	return OK;
 }
 #endif
-#endif
+
 static int my_task(int argc, char *argv[])
 {
 	while (1) {
@@ -378,7 +378,6 @@ int proc_test_main(int argc, char *argv[])
 	}
 
 	while (1) {
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_PROCESS
 		proc_read_entry(proc_pid);
 #ifdef CONFIG_SCHED_CPULOAD
@@ -393,7 +392,6 @@ int proc_test_main(int argc, char *argv[])
 #endif
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_VERSION
 		proc_version_test();
-#endif
 #endif
 		sleep(INTERVAL_UPDATE_SEC);
 	}
