@@ -185,12 +185,10 @@ static void pthread_condtimedout(int argc, uint32_t pid, uint32_t signo)
  *   abstime - wait until this absolute time
  *
  * Return Value:
- *   OK (0) on success; ERROR (-1) on failure with errno
- *   set appropriately.
+ * OK (0) on success; A non-zero errno value is returned on failure.
  *
  * Assumptions:
- *   Timing is of resolution 1 msec, with +/-1 millisecond
- *   accuracy.
+ *   Timing is of resolution 1 msec, with +/-1 millisecond accuracy.
  *
  ****************************************************************************/
 
@@ -255,7 +253,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 			ret = clock_abstime2ticks(CLOCK_REALTIME, abstime, &ticks);
 			if (ret) {
 				/* Restore interrupts  (pre-emption will be enabled when
-				 * we fall through the if/then/else
+				 * we fall through the if/then/else)
 				 */
 
 				irqrestore(int_state);
@@ -277,7 +275,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 
 					mutex->pid = -1;
 					ret = pthread_givesemaphore((sem_t *)&mutex->sem);
-					if (ret) {
+					if (ret != 0) {
 						/* Restore interrupts  (pre-emption will be enabled when
 						 * we fall through the if/then/else)
 						 */
@@ -324,10 +322,10 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 					/* Reacquire the mutex (retaining the ret). */
 
 					svdbg("Re-locking...\n");
-					status = pthread_takesemaphore((sem_t *)&mutex->sem);
-					if (!status) {
+					status = pthread_takesemaphore((FAR sem_t *)&mutex->sem, false);
+					if (status == OK) {
 						mutex->pid = mypid;
-					} else if (!ret) {
+					} else if (ret == 0) {
 						ret = status;
 					}
 				}

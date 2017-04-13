@@ -198,7 +198,7 @@ int pthread_mutex_lock(FAR pthread_mutex_t *mutex)
 		} else {
 			/* Take the underlying semaphore, waiting if necessary */
 
-			ret = pthread_takesemaphore((sem_t *)&mutex->sem);
+			ret = pthread_takesemaphore((FAR sem_t *)&mutex->sem, true);
 
 			/* If we succussfully obtained the semaphore, then indicate
 			 * that we own it.
@@ -209,6 +209,13 @@ int pthread_mutex_lock(FAR pthread_mutex_t *mutex)
 #ifdef CONFIG_MUTEX_TYPES
 				mutex->nlocks = 1;
 #endif
+			}
+
+			/* Check if we were awakened by a signal.  This might happen if the
+			 * tasking holding the mutex just exitted.
+			 */
+
+         		else if (ret == EINTR) {
 			}
 		}
 

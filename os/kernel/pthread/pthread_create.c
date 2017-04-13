@@ -188,7 +188,7 @@ static void pthread_start(void)
 
 	/* Sucessfully spawned, add the pjoin to our data set. */
 
-	(void)pthread_takesemaphore(&group->tg_joinsem);
+	(void)pthread_takesemaphore(&group->tg_joinsem, false);
 	pthread_addjoininfo(group, pjoin);
 	(void)pthread_givesemaphore(&group->tg_joinsem);
 
@@ -426,7 +426,7 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		 * its join structure.
 		 */
 
-		(void)pthread_takesemaphore(&pjoin->data_sem);
+		(void)pthread_takesemaphore(&pjoin->data_sem, false);
 
 		/* Return the thread information to the caller */
 
