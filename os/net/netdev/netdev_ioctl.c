@@ -75,6 +75,7 @@
 #include <netinet/in.h>
 
 #include <net/lwip/netif.h>
+#include <net/lwip/netifapi.h>
 #include <net/lwip/ipv4/igmp.h>
 
 #ifdef CONFIG_NET_IGMP
@@ -395,13 +396,16 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		dev = netdev_ifrdev(req);
 		if (dev) {
 #ifdef CONFIG_NET_LWIP
-			netif_set_down(dev);
-#endif
-			ioctl_setipv4addr(&dev->ip_addr.addr, &req->ifr_addr);
-#ifdef CONFIG_NET_LWIP
-			netif_set_up(dev);
-#endif
+			netifapi_netif_set_down(dev);
+			ip_addr_t ipaddr, netmask, gw;
+			ioctl_setipv4addr(&ipaddr.addr, &req->ifr_addr);
+			netmask = dev->netmask;
+			gw = dev->gw;
+			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
+			netifapi_netif_set_up(dev);
+
 			ret = OK;
+#endif
 		}
 	}
 	break;
@@ -422,8 +426,17 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	case SIOCSIFDSTADDR: {		/* Set P-to-P address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			ioctl_setipv4addr(&dev->gw.addr, &req->ifr_dstaddr);
+#ifdef CONFIG_NET_LWIP
+			netifapi_netif_set_down(dev);
+			ip_addr_t ipaddr, netmask, gw;
+			ioctl_setipv4addr(&gw.addr, &req->ifr_dstaddr);
+			ipaddr = dev->ip_addr;
+			netmask = dev->netmask;
+			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
+			netifapi_netif_set_up(dev);
+
 			ret = OK;
+#endif
 		}
 	}
 	break;
@@ -452,8 +465,17 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	case SIOCSIFNETMASK: {		/* Set network mask */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			ioctl_setipv4addr(&dev->netmask.addr, &req->ifr_addr);
+#ifdef CONFIG_NET_LWIP
+			netifapi_netif_set_down(dev);
+			ip_addr_t ipaddr, netmask, gw;
+			ioctl_setipv4addr(&netmask.addr, &req->ifr_addr);
+			ipaddr = dev->ip_addr;
+			gw = dev->gw;
+			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
+			netifapi_netif_set_up(dev);
+			
 			ret = OK;
+#endif
 		}
 	}
 	break;

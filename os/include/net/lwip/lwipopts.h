@@ -852,4 +852,6 @@
 
 
 #define LWIP_COMPAT_MUTEX               1
+
+#define LWIP_NETIF_API                  1
 #endif							/* __LWIP_LWIPOPTS_H__ */
