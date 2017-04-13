@@ -224,8 +224,9 @@ int pthread_mutex_lock(FAR pthread_mutex_t *mutex)
 
 			mutex->flags |= _PTHREAD_MFLAGS_INCONSISTENT;
 			ret = EOWNERDEAD;
-		} else {
+		} else 
 #endif /* !CONFIG_PTHREAD_MUTEX_UNSAFE */
+		{
 
 			/* Take the underlying semaphore, waiting if necessary.  NOTE that
 			 * is required to deadlock for the case of the non-robust NORMAL or
