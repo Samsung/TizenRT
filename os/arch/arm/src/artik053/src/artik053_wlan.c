@@ -17,11 +17,12 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 
+#include <stdio.h>
+
 #include <net/if.h>
 #include <net/lwip/opt.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/tcpip.h>
-#include <stdio.h>
 
 struct netif *wlan_netif;
 
