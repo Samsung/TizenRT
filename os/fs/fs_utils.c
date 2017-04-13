@@ -161,7 +161,7 @@ int fs_clean(char *dev_name)
 	if (ret != OK) {
 		fdbg("smart_clean failed : %d\n", ret);
 		ret = -ret;
-		goto error_out;
+		goto error_with_inode;
 	}
 	mtd = NULL;
 #endif
@@ -169,6 +169,10 @@ int fs_clean(char *dev_name)
 	inode_release(inode);
 	inode = NULL;
 
+#if defined(CONFIG_MTD) && defined(CONFIG_MTD_SMART)
+error_with_inode:
+	inode_release(inode);
+#endif
 error_out:
 	return ret > 0 ? -ret : ret;
 }
