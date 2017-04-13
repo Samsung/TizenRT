@@ -109,6 +109,9 @@ const char srv_key_rsa[] =
 	"TWzL6lt5AoGBAN86+SVeJDcmQJcv4Eq6UhtRr4QGMiQMz0Sod6ettYxYzMgxtw28\r\n"
 	"CIrgpozCc+UaZJLo7UxvC6an85r1b2nKPCLQFaggJ0H4Q0J/sZOhBIXaoBzWxveK\r\n" "nupceKdVxGsFi8CDy86DBfiyFivfBj+47BbaQzPBj7C4rK7UlLjab2rDAoGBAN2u\r\n" "AM2gchoFiu4v1HFL8D7lweEpi6ZnMJjnEu/dEgGQJFjwdpLnPbsj4c75odQ4Gz8g\r\n" "sw9lao9VVzbusoRE/JGI4aTdO0pATXyG7eG1Qu+5Yc1YGXcCrliA2xM9xx+d7f+s\r\n" "mPzN+WIEg5GJDYZDjAzHG5BNvi/FfM1C9dOtjv2dAoGAF0t5KmwbjWHBhcVqO4Ic\r\n" "BVvN3BIlc1ue2YRXEDlxY5b0r8N4XceMgKmW18OHApZxfl8uPDauWZLXOgl4uepv\r\n" "whZC3EuWrSyyICNhLY21Ah7hbIEBPF3L3ZsOwC+UErL+dXWLdB56Jgy3gZaBeW7b\r\n" "vDrEnocJbqCm7IukhXHOBK8CgYEAwqdHB0hqyNSzIOGY7v9abzB6pUdA3BZiQvEs\r\n" "3LjHVd4HPJ2x0N8CgrBIWOE0q8+0hSMmeE96WW/7jD3fPWwCR5zlXknxBQsfv0gP\r\n" "3BC5PR0Qdypz+d+9zfMf625kyit4T/hzwhDveZUzHnk1Cf+IG7Q+TOEnLnWAWBED\r\n" "ISOWmrUCgYAFEmRxgwAc/u+D6t0syCwAYh6POtscq9Y0i9GyWk89NzgC4NdwwbBH\r\n" "4AgahOxIxXx2gxJnq3yfkJfIjwf0s2DyP0kY2y6Ua1OeomPeY9mrIS4tCuDQ6LrE\r\n" "TB6l9VGoxJL4fyHnZb8L5gGvnB1bbD8cL6YPaDiOhcRseC9vBiEuVg==\r\n" "-----END RSA PRIVATE KEY-----\r\n";
 
+static const char *root_url = "/";
+static const char *devid_url = "/device/:id";
+
 static const char g_httpcontype[] = "Content-type";
 static const char g_httpconhtml[] = "text/html";
 static const char g_httpcontsize[] = "Content-Length";
@@ -118,7 +121,8 @@ static const char g_httpcnlost[] = "close";
 struct http_server_t *http_server = NULL;
 struct http_server_t *https_server = NULL;
 
-void get_root(struct http_client_t *client, struct http_req_message *req)
+/* GET callbacks */
+void http_get_root(struct http_client_t *client, struct http_req_message *req)
 {
 	struct http_keyvalue_list_t response_headers;
 	const char *msg = "This is a root page";
@@ -138,7 +142,7 @@ void get_root(struct http_client_t *client, struct http_req_message *req)
 	http_keyvalue_list_release(&response_headers);
 }
 
-void get_device_id(struct http_client_t *client, struct http_req_message *req)
+void http_get_device_id(struct http_client_t *client, struct http_req_message *req)
 {
 	char buf[128] = { 0, };
 
@@ -152,16 +156,30 @@ void get_device_id(struct http_client_t *client, struct http_req_message *req)
 	}
 }
 
-void get_callback(struct http_client_t *client, struct http_req_message *req)
+void http_get_callback(struct http_client_t *client, struct http_req_message *req)
 {
-	printf("=====GET CALLBACK %s=====\n", req->url);
-	if (http_send_response(client, 200, NULL, NULL) < 0) {
+	printf("===== GET CALLBACK url : %s=====\n", req->url);
+
+	if (http_send_response(client, 200, "GET SUCCESS\n", NULL) < 0) {
 		printf("Error: Fail to send response\n");
 	}
 }
 
-void post_callback(struct http_client_t *client, struct http_req_message *req)
+/* PUT callback */
+void http_put_callback(struct http_client_t *client,  struct http_req_message *req)
 {
+	printf("===== PUT CALLBACK url : %s=====\n", req->url);
+
+	if (http_send_response(client, 200, "PUT SUCCESS\n", NULL) < 0) {
+		printf("Error: Fail to send response\n");
+	}
+}
+
+/* POST callback */
+void http_post_callback(struct http_client_t *client, struct http_req_message *req)
+{
+	printf("===== POST CALLBACK url : %s=====\n", req->url);
+
 	/*
 	 * in callback for POST and PUT request,
 	 * entity must be checked it is null when received chunked entity.
@@ -172,7 +190,17 @@ void post_callback(struct http_client_t *client, struct http_req_message *req)
 		return;
 	}
 
-	if (http_send_response(client, 200, NULL, NULL) < 0) {
+	if (http_send_response(client, 200, "POST SUCCESS\n", NULL) < 0) {
+		printf("Error: Fail to send response\n");
+	}
+}
+
+/* DELETE callback */
+void http_delete_callback(struct http_client_t *client,  struct http_req_message *req)
+{
+	printf("===== DELETE CALLBACK url : %s=====\n", req->url);
+
+	if (http_send_response(client, 200, "DELETE SUCCESS\n", NULL) < 0) {
 		printf("Error: Fail to send response\n");
 	}
 }
@@ -282,11 +310,37 @@ void print_webserver_usage(void)
 	printf("operation is one of \"start\"/\"stop\"\n");
 }
 
+void register_callbacks(struct http_server_t *server)
+{
+	http_server_register_cb(server, HTTP_METHOD_GET, NULL, http_get_callback);
+	http_server_register_cb(server, HTTP_METHOD_GET, root_url, http_get_root);
+	http_server_register_cb(server, HTTP_METHOD_GET, devid_url, http_get_device_id);
+
+	http_server_register_cb(server, HTTP_METHOD_PUT, NULL, http_put_callback);
+	http_server_register_cb(server, HTTP_METHOD_POST, NULL, http_post_callback);
+	http_server_register_cb(server, HTTP_METHOD_DELETE, NULL, http_delete_callback);
+
+#ifdef CONFIG_NETUTILS_WEBSOCKET
+	server->ws_cb.recv_callback = ws_recv_cb;
+	server->ws_cb.send_callback = ws_send_cb;
+	server->ws_cb.on_msg_recv_callback = ws_server_on_msg_cb;
+#endif
+}
+
+void deregister_callbacks(struct http_server_t *server)
+{
+	http_server_deregister_cb(server, HTTP_METHOD_GET, NULL);
+	http_server_deregister_cb(server, HTTP_METHOD_GET, root_url);
+	http_server_deregister_cb(server, HTTP_METHOD_GET, devid_url);
+
+	http_server_deregister_cb(server, HTTP_METHOD_PUT, NULL);
+	http_server_deregister_cb(server, HTTP_METHOD_POST, NULL);
+	http_server_deregister_cb(server, HTTP_METHOD_DELETE, NULL);
+}
+
 pthread_addr_t httptest_cb(void *arg)
 {
 	int http_port = 80;
-	const char *root_url = "/";
-	const char *devid_url = "/device/:id";
 #ifdef CONFIG_NET_SECURITY_TLS
 	int https_port = 443;
 	struct ssl_config_t ssl_config;
@@ -342,27 +396,11 @@ start:
 		printf("Error: Cannot allocate server structure!!\n");
 		return NULL;
 	}
-#ifdef CONFIG_NET_SECURITY_TLS
-	http_server_register_cb(https_server, HTTP_METHOD_GET, NULL, get_callback);
-	http_server_register_cb(https_server, HTTP_METHOD_GET, root_url, get_root);
-	http_server_register_cb(https_server, HTTP_METHOD_POST, NULL, post_callback);
-	http_server_register_cb(https_server, HTTP_METHOD_GET, devid_url, get_device_id);
-#ifdef CONFIG_NETUTILS_WEBSOCKET
-	https_server->ws_cb.recv_callback = ws_recv_cb;
-	https_server->ws_cb.send_callback = ws_send_cb;
-	https_server->ws_cb.on_msg_recv_callback = ws_server_on_msg_cb;
-#endif
-#endif
-	http_server_register_cb(http_server, HTTP_METHOD_GET, NULL, get_callback);
-	http_server_register_cb(http_server, HTTP_METHOD_GET, root_url, get_root);
-	http_server_register_cb(http_server, HTTP_METHOD_POST, NULL, post_callback);
-	http_server_register_cb(http_server, HTTP_METHOD_GET, devid_url, get_device_id);
-#ifdef CONFIG_NETUTILS_WEBSOCKET
-	http_server->ws_cb.recv_callback = ws_recv_cb;
-	http_server->ws_cb.send_callback = ws_send_cb;
-	http_server->ws_cb.on_msg_recv_callback = ws_server_on_msg_cb;
-#endif
 
+	register_callbacks(http_server);
+#ifdef CONFIG_NET_SECURITY_TLS
+	register_callbacks(https_server);
+#endif
 	printf("Start Web server...\n");
 
 #ifdef CONFIG_NET_SECURITY_TLS
@@ -378,17 +416,11 @@ start:
 stop:
 	printf("Exit Web server...\n");
 	http_server_stop(http_server);
-
-	http_server_deregister_cb(http_server, HTTP_METHOD_GET, NULL);
-	http_server_deregister_cb(http_server, HTTP_METHOD_GET, root_url);
-	http_server_deregister_cb(http_server, HTTP_METHOD_GET, devid_url);
+	deregister_callbacks(http_server);
 	http_server_release(&http_server);
 #ifdef CONFIG_NET_SECURITY_TLS
 	http_server_stop(https_server);
-
-	http_server_deregister_cb(https_server, HTTP_METHOD_GET, NULL);
-	http_server_deregister_cb(https_server, HTTP_METHOD_GET, root_url);
-	http_server_deregister_cb(https_server, HTTP_METHOD_GET, devid_url);
+	deregister_callbacks(https_server);
 	http_server_release(&https_server);
 #endif
 
