@@ -64,8 +64,7 @@ CSRCS += artik053_progmem.c
 endif
 
 ifeq ($(CONFIG_SCSC_WLAN),y)
-CSRCS += artik053_nvram.c \
-	 artik053_wlan.c
+CSRCS += artik053_wlan.c
 endif
 
 COBJS = $(CSRCS:.c=$(OBJEXT))

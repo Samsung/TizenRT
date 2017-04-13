@@ -18,11 +18,18 @@
 #include <tinyara/config.h>
 
 #include <stdio.h>
+#include <fcntl.h>
+#include <stdbool.h>
+#include <debug.h>
 
 #include <net/if.h>
 #include <net/lwip/opt.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/tcpip.h>
+
+#include <tinyara/configdata.h>
+
+#include "artik053.h"
 
 struct netif *wlan_netif;
 
@@ -49,6 +56,69 @@ static err_t wlan_init(struct netif *netif)
 	return ERR_OK;
 }
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+unsigned int up_wlan_write_config(void *buf, unsigned int bufsize)
+{
+#if defined(CONFIG_MTD_CONFIG)
+	int fd;
+	struct config_data_s config;
+
+	fd = open("/dev/config", O_RDOK);
+	if (fd < 0) {
+		lldbg("Failed to open /dev/config\n");
+		return false;
+	}
+
+	config.id = ARTIK053_CONFIGDATA_WIFI_NVRAM;
+	config.instance = 0;
+	config.configdata = (unsigned char *)buf;
+	config.len = bufsize;
+
+	ioctl(fd, CFGDIOC_SETCONFIG, &config);
+	close(fd);
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+unsigned int up_wlan_read_config(void *buf, unsigned int bufsize)
+{
+#if defined(CONFIG_MTD_CONFIG)
+	int fd;
+	struct config_data_s config;
+
+	fd = open("/dev/config", O_RDOK);
+	if (fd < 0) {
+		lldbg("Failed to open /dev/config\n");
+		return false;
+	}
+
+	config.id = ARTIK053_CONFIGDATA_WIFI_NVRAM;
+	config.instance = 0;
+	config.configdata = (unsigned char *)buf;
+	config.len = bufsize;
+
+	ioctl(fd, CFGDIOC_GETCONFIG, &config);
+	close(fd);
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+unsigned int up_wlan_erase_config(void)
+{
+#if defined(CONFIG_MTD_CONFIG)
+	return true;
+#else
+	return false;
+#endif
+}
 void up_wlan_init(struct netif *dev)
 {
 	struct ip_addr ipaddr;
