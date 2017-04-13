@@ -2001,7 +2001,8 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 				 * restored yet */
 				ret = process_transaction(fs);
 				if (ret != OK) {
-					goto err_out;
+					fdbg("process_transaction failed, but clean journal area\n");
+					break;
 				}
 			} else {
 				/* If a valid transaction does not exist here, stop checking further */
@@ -2013,7 +2014,7 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 			/* Now restore write transactions from the list */
 			ret = restore_write_transactions(fs);
 			if (ret != OK) {
-				goto err_out;
+				fdbg("restore_write_transactions failed, but clean journal area\n");
 			}
 		}
 	}
