@@ -155,7 +155,7 @@ int pthread_mutex_trylock(FAR pthread_mutex_t *mutex)
 		/* sem_trywait failed */
 
 		else {
-			/* Did it fail because the semaphore was not avaialabl? */
+			/* Did it fail because the semaphore was not available? */
 			int errcode = get_errno();
 			if (errcode == EAGAIN) {
 #ifdef CONFIG_MUTEX_TYPES
@@ -164,10 +164,16 @@ int pthread_mutex_trylock(FAR pthread_mutex_t *mutex)
 				if (mutex->type == PTHREAD_MUTEX_RECURSIVE && mutex->pid == mypid) {
 					/* Increment the number of locks held and return successfully. */
 
-					mutex->nlocks++;
-					ret = OK;
+					if (mutex->nlocks < INT16_MAX) {
+						mutex->nlocks++;
+						ret = OK;
+					} else {
+						ret = EOVERFLOW;
+					}
 				} else
 #endif
+
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
 					/* The calling thread does not hold the semaphore.  The correct
 					 * behavior for the 'robust' mutex is to verify that the holder of
 					 * the mutex is still valid.  This is protection from the case
@@ -176,6 +182,7 @@ int pthread_mutex_trylock(FAR pthread_mutex_t *mutex)
 
 					if (mutex->pid > 0 && sched_gettcb(mutex->pid) == NULL) {
 						DEBUGASSERT(mutex->pid != 0);	/* < 0: available, >0 owned, ==0 error */
+						DEBUGASSERT((mutex->flags & _PTHREAD_MFLAGS_INCONSISTENT) != 0);
 
 						/* A thread holds the mutex, but there is no such thread.
 						 * POSIX requires that the 'robust' mutex return EOWNERDEAD
@@ -183,12 +190,15 @@ int pthread_mutex_trylock(FAR pthread_mutex_t *mutex)
 						 * call pthread_mutx_consistent() fo fix the mutex.
 						 */
 
+						mutex->flags |= _PTHREAD_MFLAGS_INCONSISTENT;
 						ret = EOWNERDEAD;
 					}
 
 				/* The mutex is locked by another, active thread */
 
-					else {
+					else 
+#endif /* CONFIG_PTHREAD_MUTEX_UNSAFE */
+					{
 						ret = EBUSY;
 					}
 

@@ -95,7 +95,7 @@
 
 int pthread_cancel(pthread_t thread)
 {
-	struct pthread_tcb_s *tcb;
+	FAR struct pthread_tcb_s *tcb;
 
 	/* First, make sure that the handle references a valid thread */
 
@@ -108,11 +108,14 @@ int pthread_cancel(pthread_t thread)
 
 	tcb = (FAR struct pthread_tcb_s *)sched_gettcb((pid_t)thread);
 	if (!tcb) {
+	
 		/* The pid does not correspond to any known thread.  The thread
 		 * has probably already exited.
 		 */
 		return ESRCH;
 	}
+
+	DEBUGASSERT((tcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD);
 
 	/* Check to see if this thread has the non-cancelable bit set in its
 	 * flags. Suppress context changes for a bit so that the flags are stable.
@@ -166,7 +169,7 @@ int pthread_cancel(pthread_t thread)
 	 * same as pthread_exit(PTHREAD_CANCELED).
 	 */
 
-	if (tcb == (struct pthread_tcb_s *)g_readytorun.head) {
+	if (tcb == (FAR struct pthread_tcb_s *)g_readytorun.head) {
 		pthread_exit(PTHREAD_CANCELED);
 	}
 
@@ -186,6 +189,11 @@ int pthread_cancel(pthread_t thread)
 	/* Complete pending join operations */
 
 	(void)pthread_completejoin((pid_t)thread, PTHREAD_CANCELED);
+
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+	/* Recover any mutexes still held by the canceled thread */
+	pthread_mutex_inconsistent(tcb);
+#endif
 
 	/* Then let task_terminate do the real work */
 

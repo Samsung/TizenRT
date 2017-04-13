@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/pthread/pthread.h
+ * kernel/pthread/pthread_mutexinconsistent.c
  *
- *   Copyright (C) 2007-2009, 2011, 2013-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,96 +50,69 @@
  *
  ****************************************************************************/
 
-#ifndef __SCHED_PTHREAD_PTHREAD_H
-#define __SCHED_PTHREAD_PTHREAD_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
 
-#include <sys/types.h>
-#include <stdint.h>
-#include <stdbool.h>
 #include <pthread.h>
 #include <sched.h>
+#include <assert.h>
+#include <errno.h>
 
-#include <tinyara/compiler.h>
+#include <tinyara/sched.h>
+#include <tinyara/semaphore.h>
+
+#include "pthread/pthread.h"
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Public Type Declarations
+ * Name: pthread_mutex_inconsistent
+ *
+ * Description:
+ *   This function is called when a pthread is terminated via either
+ *   pthread_exit() or pthread_cancel().  It will check for any mutexes
+ *   held by exitting thread.  It will mark them as inconsistent and
+ *   then wake up the highest priority waiter for the mutex.  That
+ *   instance of pthread_mutex_lock() will then return EOWNERDEAD.
+ *
+ * Input Parameters:
+ *   tcb -- a reference to the TCB of the exitting pthread.
+ *
+ * Returned Value:
+ *   None.
+ *
  ****************************************************************************/
 
-/* The following defines an entry in the pthread logic's local data set.
- * Note that this structure is used to implemented a singly linked list.
- * This structure is used (instead of, say, a binary search tree) because
- * the data set will be searched using the pid as a key -- a process IDs will
- * always be created in a montonically increasing fashion.
- */
+void pthread_mutex_inconsistent(FAR struct pthread_tcb_s *tcb)
+{
+	FAR struct pthread_mutex_s *mutex;
+	irqstate_t flags;
 
-struct join_s {
-	FAR struct join_s *next;	/* Implements link list */
-	uint8_t crefs;				/* Reference count */
-	bool started;				/* true: pthread started. */
-	bool detached;				/* true: pthread_detached'ed */
-	bool terminated;			/* true: detach'ed+exit'ed */
-	pthread_t thread;			/* Includes pid */
-	sem_t exit_sem;				/* Implements join */
-	sem_t data_sem;				/* Implements join */
-	pthread_addr_t exit_value;	/* Returned data */
-};
+	DEBUGASSERT(tcb != NULL);
 
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
+	sched_lock();
 
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
+	/* Remove and process each mutex from the list of mutexes held by this task */
 
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
+	while (tcb->mhead != NULL) {
+		/* Remove the mutex from the TCB list */
 
-struct pthread_tcb_s;			/* Forward reference */
-struct task_group_s;			/* Forward reference */
+		flags = irqsave();
+		mutex = tcb->mhead;
+		tcb->mhead = mutex->flink;
+		mutex->flink = NULL;
+		irqrestore(flags);
 
-void weak_function pthread_initialize(void);
-int pthread_schedsetup(FAR struct pthread_tcb_s *tcb, int priority, start_t start, pthread_startroutine_t entry);
-#ifdef CONFIG_PTHREAD_CLEANUP
-void pthread_cleanup_popall(FAR struct pthread_tcb_s *tcb);
-#endif
-int pthread_completejoin(pid_t pid, FAR void *exit_value);
-void pthread_destroyjoin(FAR struct task_group_s *group, FAR struct join_s *pjoin);
-FAR struct join_s *pthread_findjoininfo(FAR struct task_group_s *group, pid_t pid);
-void pthread_release(FAR struct task_group_s *group);
-int pthread_takesemaphore(sem_t *sem, bool intr);
-int pthread_givesemaphore(sem_t *sem);
+		/* Mark the mutex as INCONSISTENT and wake up any waiting thread */
 
-#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
-int pthread_mutex_take(FAR struct pthread_mutex_s *mutex, bool intr);
-int pthread_mutex_give(FAR struct pthread_mutex_s *mutex);
-void pthread_mutex_inconsistent(FAR struct pthread_tcb_s *tcb);
-#else
-#define pthread_mutex_take(m,i) pthread_takesemaphore(&(m)->sem,(i))
-#define pthread_mutex_give(m)   pthread_givesemaphore(&(m)->sem)
-#endif
+		mutex->flags |= _PTHREAD_MFLAGS_INCONSISTENT;
+		(void)pthread_givesemaphore(&mutex->sem);
+	}
 
-#ifdef CONFIG_MUTEX_TYPES
-int pthread_mutexattr_verifytype(int type);
-#endif
-
-#undef EXTERN
-#ifdef __cplusplus
+	sched_unlock();
 }
-#endif
-
-#endif							/* __SCHED_PTHREAD_PTHREAD_H */

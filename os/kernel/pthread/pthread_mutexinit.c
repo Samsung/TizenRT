@@ -155,9 +155,16 @@ int pthread_mutex_init(FAR pthread_mutex_t *mutex,
 		}
 #endif
 
-		/* Set up attributes unique to the mutex type */
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+		/* Initial internal fields of the mutex */
+		
+		mutex->flink  = NULL;
+		mutex->flags  = 0;
+#endif
 
 #ifdef CONFIG_MUTEX_TYPES
+		/* Set up attributes unique to the mutex type */
+
 		mutex->type = type;
 		mutex->nlocks = 0;
 #endif

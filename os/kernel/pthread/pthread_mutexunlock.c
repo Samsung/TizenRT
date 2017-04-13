@@ -129,19 +129,32 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 
 		sched_lock();
 
-		/* Does the calling thread own the semaphore? */
 
-		if (mutex->pid != (int)getpid()) {
+#if !defined(CONFIG_PTHREAD_MUTEX_UNSAFE) || !defined(CONFIG_MUTEX_TYPES)
+		/* Does the calling thread own the semaphore?  Should we report the
+		 * EPERM error?  This applies to robust NORMAL (and DEFAULT) mutexes
+		 * as well as ERRORCHECK and RECURSIVE mutexes.
+		 */
+
+		if (mutex->pid != (int)getpid()) 
+#else
+		/* Does the calling thread own the semaphore?  Should we report the
+		 * EPERM error?  This applies to ERRORCHECK and RECURSIVE mutexes.
+		 */
+		if (mutex->type != PTHREAD_MUTEX_NORMAL && mutex->pid != (int)getpid())
+#endif
+		{
 			/* No... return an error (default behavior is like PTHREAD_MUTEX_ERRORCHECK) */
 
 			sdbg("Holder=%d returning EPERM\n", mutex->pid);
 			ret = EPERM;
-		}
+		} else
 
-		/* Yes, the caller owns the semaphore.. Is this a recursive mutex? */
 
 #ifdef CONFIG_MUTEX_TYPES
-		else if (mutex->type == PTHREAD_MUTEX_RECURSIVE && mutex->nlocks > 1) {
+		/* Yes, the caller owns the semaphore.. Is this a recursive mutex? */
+
+		if (mutex->type == PTHREAD_MUTEX_RECURSIVE && mutex->nlocks > 1) {
 			/* This is a recursive mutex and we there are multiple locks held. Retain
 			 * the mutex lock, just decrement the count of locks held, and return
 			 * success.
@@ -149,20 +162,28 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 			mutex->nlocks--;
 			ret = OK;
 		}
-#endif
+		else
+
+#endif /* CONFIG_MUTEX_TYPES */
 
 		/* This is either a non-recursive mutex or is the outermost unlock of
 		 * a recursive mutex.
+		 *
+		 * In the case where the calling thread is NOT the holder of the thread,
+		 * the behavior is undefined per POSIX.  Here we do the same as GLIBC:
+		 * We allow the other thread to release the mutex even though it does
+		 * not own it.
 		 */
+		 
 
-		else {
+		{
 			/* Nullify the pid and lock count then post the semaphore */
 
 			mutex->pid = -1;
 #ifdef CONFIG_MUTEX_TYPES
 			mutex->nlocks = 0;
 #endif
-			ret = pthread_givesemaphore((sem_t *)&mutex->sem);
+			ret = pthread_mutex_give(mutex);
 		}
 		sched_unlock();
 	}
