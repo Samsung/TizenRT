@@ -153,6 +153,11 @@ int up_wlan_get_mac_addr(char *macaddr)
 	return 0;
 }
 
+void *up_wlan_get_firmware(void)
+{
+	return (void *)0x04048000;
+}
+
 struct netif *wlan_netif;
 
 void up_wlan_init(struct netif *dev)

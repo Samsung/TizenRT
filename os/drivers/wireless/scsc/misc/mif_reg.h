@@ -133,9 +133,6 @@ struct peterson_mutex {
 #define WIFI2AP_PMU_SPARE0      ((void *)(PMU_ALIVE_BASE + 0x0900))       /* Control PMU_SPARE0 */
 
 /* Wi-Fi Firmware load address */
-#define WLAN_FW_LOAD_ADDR               0x04048000
-
-#define WIFI_FW_LOAD_BASE               (WLAN_FW_LOAD_ADDR >> 12) /* Base address where the Wi-Fi firmware is loaded */
 #define WIFI_IRAM_MEM_BASE              0x2020                    /* Base address for iRAM mappings */
 #define WIFI_IMEM_SIZE                  0x800                     /* Mapped flash region up to the top of the iram_shared block (8 MB) */
 

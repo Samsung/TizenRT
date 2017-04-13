@@ -448,7 +448,7 @@ static int fw_init(struct mxman *mxman, bool *fwhdr_parsed_ok)
 	int          r;
 	char         *build_id;
 	struct fwhdr *fwhdr = &mxman->fwhdr;
-	char         *fw = (void *)WLAN_FW_LOAD_ADDR;
+	char         *fw = (void *)up_wlan_get_firmware();
 
 	r = fwhdr_init(fw, fwhdr, fwhdr_parsed_ok, &mxman->check_crc);
 	if (r) {
