@@ -3,6 +3,7 @@ config EXAMPLES_SENSORBOARD
 	select GPIO
 	select S5J_GPIO
 	select SPI
+	select SPI_EXCHANGE
 	select S5J_SPI
 	select SERIAL
 	select S5J_UART0

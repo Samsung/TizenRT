@@ -57,19 +57,28 @@
 #define K6DS3_REG_CTRL1_XL		0x10
 #define K6DS3_REG_CTRL2_G		0x11
 
-#define K6DS3_REG_OUTX_G		(0x22 | 0x80)		/* length: 2-bytes */
-#define K6DS3_REG_OUTY_G		(0x24 | 0x80)		/* length: 2-bytes */
-#define K6DS3_REG_OUTZ_G		(0x26 | 0x80)		/* length: 2-bytes */
-#define K6DS3_REG_OUTX_XL		(0x28 | 0x80)		/* length: 2-bytes */
-#define K6DS3_REG_OUTY_XL		(0x2A | 0x80)		/* length: 2-bytes */
-#define K6DS3_REG_OUTZ_XL		(0x2C | 0x80)		/* length: 2-bytes */
+/* Gyro */
+#define K6DS3_REG_OUTX_L_G		0x22
+#define K6DS3_REG_OUTX_H_G		0x23
+#define K6DS3_REG_OUTY_L_G		0x24
+#define K6DS3_REG_OUTY_H_G		0x25
+#define K6DS3_REG_OUTZ_L_G		0x26
+#define K6DS3_REG_OUTZ_H_G		0x27
+
+/* Accel */
+#define K6DS3_REG_OUTX_L_XL		0x28
+#define K6DS3_REG_OUTX_H_XL		0x29
+#define K6DS3_REG_OUTY_L_XL		0x2A
+#define K6DS3_REG_OUTY_H_XL		0x2B
+#define K6DS3_REG_OUTZ_L_XL		0x2C
+#define K6DS3_REG_OUTZ_H_XL		0x2D
 
 static struct spi_dev_s *spi_dev;
 
 static char spi_read(int port, int addr, int frequency, int bits, int conf)
 {
 	unsigned char buf[2];
-	buf[0] = addr;
+	buf[0] = addr | 0x80;
 
 	SPI_LOCK(spi_dev, true);
 
@@ -119,27 +128,44 @@ void k6ds3_main(int argc, char *argv[])
 		return;
 	}
 
-	uint16_t x_speed, y_speed, z_speed, p_gyro, r_gyro, y_gyro;
-	uint32_t x = 0, y = 0, z = 0;
+	/* initialize */
+
+	spi_write(port, K6DS3_REG_CTRL1_XL, freq, bits, conf, 0x80);
+	spi_write(port, K6DS3_REG_CTRL2_G, freq, bits, conf, 0x80);
+
+	/* read */
+	uint16_t axl, axh, ayl, ayh, azl, azh, gxl, gxh, gyl, gyh, gzl, gzh;
+	uint32_t ax = 0, ay = 0, az = 0, gx = 0, gy = 0, gz = 0;
 
 	int i;
 	for (i = 0; i < 30; i++) {
-		spi_write(port, K6DS3_REG_CTRL1_XL, freq, bits, conf, 0x80);
-		x_speed = spi_read(port, K6DS3_REG_OUTX_XL, freq, bits, conf);
-		y_speed = spi_read(port, K6DS3_REG_OUTY_XL, freq, bits, conf);
-		z_speed = spi_read(port, K6DS3_REG_OUTZ_XL, freq, bits, conf);
+		/* accel */
+		axl = spi_read(port, K6DS3_REG_OUTX_L_XL, freq, bits, conf);
+		axh = spi_read(port, K6DS3_REG_OUTX_H_XL, freq, bits, conf);
+		ayl = spi_read(port, K6DS3_REG_OUTY_L_XL, freq, bits, conf);
+		ayh = spi_read(port, K6DS3_REG_OUTY_H_XL, freq, bits, conf);
+		azl = spi_read(port, K6DS3_REG_OUTZ_L_XL, freq, bits, conf);
+		azh = spi_read(port, K6DS3_REG_OUTZ_H_XL, freq, bits, conf);
 
-		spi_write(port, K6DS3_REG_CTRL2_G, freq, bits, conf, 0x80);
-		p_gyro = spi_read(port, K6DS3_REG_OUTX_G, freq, bits, conf);
-		r_gyro = spi_read(port, K6DS3_REG_OUTY_G, freq, bits, conf);
-		y_gyro = spi_read(port, K6DS3_REG_OUTZ_G, freq, bits, conf);
+		ax = (axl | (axh << 8));
+		ay = (ayl | (ayh << 8));
+		az = (azl | (azh << 8));
 
-		x = (x_speed | (p_gyro << 8));
-		y = (y_speed | (r_gyro << 8));
-		z = (z_speed | (y_gyro << 8));
+		/* gyro */
+		gxl = spi_read(port, K6DS3_REG_OUTX_L_G, freq, bits, conf);
+		gxh = spi_read(port, K6DS3_REG_OUTX_H_G, freq, bits, conf);
+		gyl = spi_read(port, K6DS3_REG_OUTY_L_G, freq, bits, conf);
+		gyh = spi_read(port, K6DS3_REG_OUTY_H_G, freq, bits, conf);
+		gzl = spi_read(port, K6DS3_REG_OUTZ_L_G, freq, bits, conf);
+		gzh = spi_read(port, K6DS3_REG_OUTZ_H_G, freq, bits, conf);
 
-		printf("x(0x%08x), y(0x%08x), z(0x%08x)\n", x, y, z);
+		gx = (gxl | (gxh << 8));
+		gy = (gyl | (gyh << 8));
+		gy = (gyl | (gyh << 8));
 
-		up_mdelay(1000);
+		printf("ACCEL:x(0x%04X) y(0x%04X) z(0x%04X) GYRO:x(0x%04X) y(0x%04X) z(0x%04X)\n",
+			ax, ay, az, gx, gy, gz);
+
+		up_mdelay(500);
 	}
 }

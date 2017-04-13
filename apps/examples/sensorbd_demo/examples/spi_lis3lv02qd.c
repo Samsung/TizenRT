@@ -55,19 +55,19 @@
 #define LIS3LV02DQ_CONF_REG_1	0x20
 #define LIS3LV02DQ_WHO_AM_I		0x8F
 
-#define LIS3LV02DQ_OUTX_L		(0x28 | 0x80)
-#define LIS3LV02DQ_OUTX_H		(0x29 | 0x80)
-#define LIS3LV02DQ_OUTY_L		(0x2a | 0x80)
-#define LIS3LV02DQ_OUTY_H		(0x2b | 0x80)
-#define LIS3LV02DQ_OUTZ_L		(0x2c | 0x80)
-#define LIS3LV02DQ_OUTZ_H		(0x2d | 0x80)
+#define LIS3LV02DQ_OUTX_L		0x28
+#define LIS3LV02DQ_OUTX_H		0x29
+#define LIS3LV02DQ_OUTY_L		0x2a
+#define LIS3LV02DQ_OUTY_H		0x2b
+#define LIS3LV02DQ_OUTZ_L		0x2c
+#define LIS3LV02DQ_OUTZ_H		0x2d
 
 static struct spi_dev_s *spi_dev;
 
 static char spi_read(int port, int addr, int frequency, int bits, int conf)
 {
 	unsigned char buf[2];
-	buf[0] = addr;
+	buf[0] = addr | 0x80;
 
 	SPI_LOCK(spi_dev, true);
 
@@ -135,8 +135,8 @@ void lis3lv02qd_main(int argc, char *argv[])
 		y = (y_low | (y_high << 8));
 		z = (z_low | (z_high << 8));
 
-		printf("x(0x%08x), y(0x%08x), z(0x%08x)\n", x, y, z);
+		printf("x(0x%04x), y(0x%04x), z(0x%04x)\n", x, y, z);
 
-		up_mdelay(1000);
+		up_mdelay(500);
 	}
 }

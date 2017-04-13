@@ -13,7 +13,7 @@ static void show_usage(FAR const char *program)
 	printf(" %s pwm        : pwm buzzer test\n", program);
 	printf(" %s tcs34725   : i2c rgb sensor(tcs34725) test\n", program);
 	printf(" %s mpu9250    : i2c 9-axis motion tracking sensor(MPU9250) test\n", program);
-	printf(" %s k6ds       : spi 6-axis acceler sensor(K6DS) test\n", program);
+	printf(" %s k6ds3      : spi 6-axis acceler sensor(K6DS3) test\n", program);
 	printf(" %s lis3lv02qd : spi 3-axis acceler sensor(LIS3LV02QD) test\n", program);
 }
 
@@ -45,7 +45,7 @@ int sensorbd_main(int argc, FAR char *argv[])
 				tcs34725_main(argc, argv);
 			} else if (strcmp(argv[1], "mpu9250") == 0) {
 				mpu9250_main(argc, argv);
-			} else if (strcmp(argv[1], "k6ds") == 0) {
+			} else if (strcmp(argv[1], "k6ds3") == 0) {
 				k6ds3_main(argc, argv);
 			} else if (strcmp(argv[1], "lis3lv02qd") == 0) {
 				lis3lv02qd_main(argc, argv);
