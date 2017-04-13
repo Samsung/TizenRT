@@ -146,12 +146,6 @@ ifeq ($(CONFIG_S5J_I2C),y)
 CHIP_CSRCS += s5j_i2c.c
 endif
 
-ifeq ($(CONFIG_S5J_EFUSE),y)
-CHIP_CSRCS += s5j_efuse.c
-else
-CHIP_CSRCS += s5j_efuse.c
-endif
-
 ifeq ($(CONFIG_S5J_LEDCTRLBLK),y)
 CHIP_CSRCS += s5j_ledctrlblk.c
 endif

@@ -29,6 +29,7 @@
 
 #include <tinyara/configdata.h>
 
+#include "up_arch.h"
 #include "artik053.h"
 
 struct netif *wlan_netif;
@@ -119,6 +120,35 @@ unsigned int up_wlan_erase_config(void)
 	return false;
 #endif
 }
+
+int up_wlan_get_mac_addr(char *macaddr)
+{
+	int i;
+	union {
+		unsigned long long raw;
+		struct {
+			unsigned int low;
+			unsigned int high;
+		};
+		unsigned char bytes[8];
+	} addr;
+
+	putreg32(0x003c0180, 0x8000032c);
+	putreg32(0x00000001, 0x80000328);
+
+	while ((getreg32(0x80000400) & 0x1) == 0);
+
+	addr.low  = getreg32(0x80000320);
+	addr.high = getreg32(0x80000324);
+
+	addr.raw  = addr.raw >> 6;
+
+	for (i = 5; i >= 0; i--)
+		*macaddr++ = addr.bytes[i];
+
+	return 0;
+}
+
 void up_wlan_init(struct netif *dev)
 {
 	struct ip_addr ipaddr;
