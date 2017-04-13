@@ -89,7 +89,7 @@
 #endif
 
 
-#ifdef CONFIG_NET_ARP_TRUST_IP_MAC
+#ifdef CONFIG_NET_ETHARP_TRUST_IP_MAC
 #define ETHARP_TRUST_IP_MAC             1
 #else
 #define ETHARP_TRUST_IP_MAC             0
