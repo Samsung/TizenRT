@@ -117,13 +117,12 @@
 
 int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 {
-	int ret = OK;
+	int ret = EINVAL;
 
 	svdbg("mutex=0x%p\n", mutex);
+	DEBUGASSERT(mutex != NULL);
 
-	if (!mutex) {
-		ret = EINVAL;
-	} else {
+	if (mutex != NULL) {
 		/* Make sure the semaphore is stable while we make the following
 		 * checks.  This all needs to be one atomic action.
 		 */
@@ -148,6 +147,7 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 			 * success.
 			 */
 			mutex->nlocks--;
+			ret = OK;
 		}
 #endif
 

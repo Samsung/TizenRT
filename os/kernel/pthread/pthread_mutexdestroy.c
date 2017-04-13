@@ -63,6 +63,8 @@
 #include <errno.h>
 #include <debug.h>
 
+#include <tinyara/semaphore.h>
+
 #include "pthread/pthread.h"
 
 /****************************************************************************
@@ -107,52 +109,76 @@
 
 int pthread_mutex_destroy(FAR pthread_mutex_t *mutex)
 {
-	int ret = OK;
+	int ret = EINVAL;
 	int status;
 
 	svdbg("mutex=0x%p\n", mutex);
+	DEBUGASSERT(mutex != NULL);
 
-	if (!mutex) {
-		ret = EINVAL;
-	} else {
-		/* Make sure the semaphore is stable while we make the following
-		 * checks
-		 */
+	if (mutex != NULL) {
+
+		/* Make sure the semaphore is stable while we make the following checks */
 
 		sched_lock();
 
 		/* Is the semaphore available? */
 
-		if (mutex->pid != -1) {
-#ifndef CONFIG_DISABLE_SIGNALS
-			/* Verify that the PID still exists.  We may be destroying the
-			 * mutex after cancelling a pthread and the mutex may have been
-			 * in a bad state owned by the dead pthread.
-			 */
+		if (mutex->pid >= 0) {
+			DEBUGASSERT(mutex->pid != 0);	/* < 0: available, >0 owned, ==0 error */
+		
 
-			ret = kill(mutex->pid, 0);
-			if (ret < 0) {
-				/* That thread associated with the PID no longer exists */
+			/* No.. Verify that the PID still exists.  We may be destroying
+		 	 * the mutex after cancelling a pthread and the mutex may have
+		 	 * been in a bad state owned by the dead pthread.  NOTE: The
+		 	 * following behavior is unspecified for pthread_mutex_destroy()
+		 	 * (see pthread_mutex_consistent()).
+		 	 *
+		 	 * If the holding thread is still valid, then we should be able to
+		 	 * map its PID to the underlying TCB. That is what sched_gettcb()
+		 	 * does.
+		 	 */
+
+			if (sched_gettcb(mutex->pid) == NULL) {
+				/* The thread associated with the PID no longer exists */
 
 				mutex->pid = -1;
 
-				/* Destroy the semaphore */
+				/* Reset the semaphore.  If threads are were on this
+			 	 * semaphore, then this will awakened them and make
+			 	 * destruction of the semaphore impossible here.
+			 	 */
 
-				status = sem_destroy((FAR sem_t *)&mutex->sem);
-				ret = (status != OK) ? get_errno() : OK;
-			} else
-#endif
-			{
+				status = sem_reset((FAR sem_t *)&mutex->sem, 1);
+				if (status < 0) {
+					ret = -status;
+				}
+
+				/* Check if the reset caused some other thread to lock the
+			 	 * mutex.
+			 	 */
+				else if (mutex->pid != -1) {
+					/* Yes.. then we cannot destroy the mutex now. */
+					ret = EBUSY;
+				}
+
+				/* Destroy the underlying semaphore */
+
+				else {
+					status = sem_destroy((FAR sem_t *)&mutex->sem);
+					ret = (status != OK) ? get_errno() : OK;
+				}
+			} else {
 				ret = EBUSY;
 			}
-
 		} else {
-			/* Destroy the semaphore */
+			/* Destroy the semaphore
+		 	 *
+		 	 * REVISIT:  What if there are threads waiting on the semaphore?
+		 	 * Perhaps this logic should all sem_reset() first?
+		 	 */
 
 			status = sem_destroy((sem_t *)&mutex->sem);
-			if (status != OK) {
-				ret = get_errno();
-			}
+			ret = ((status != OK) ? get_errno() : OK);
 		}
 
 		sched_unlock();

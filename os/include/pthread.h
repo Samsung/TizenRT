@@ -248,6 +248,10 @@ struct pthread_cond_s {
 typedef struct pthread_cond_s pthread_cond_t;
 #define PTHREAD_COND_INITIALIZER { {0, 0xffff} }
 
+#define _PTHREAD_MFLAGS_ROBUST        (1 << 0) /* Robust (NORMAL) mutex */
+#define _PTHREAD_MFLAGS_INCONSISTENT  (1 << 1) /* Mutex is in an inconsistent state */
+#define _PTHREAD_MFLAGS_NOTRECOVRABLE (1 << 2) /* Inconsistent mutex has been unlocked */
+
 /**
  * @ingroup PTHREAD_KERNEL
  * @brief Structure of pthread mutex attr configuration
@@ -268,8 +272,19 @@ typedef struct pthread_mutexattr_s pthread_mutexattr_t;
  * @brief Structure of pthread mutex configuration
  */
 struct pthread_mutex_s {
+
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+  /* Supports a singly linked list */
+
+  FAR struct pthread_mutex_s *flink;
+#endif
+	/* Payload */
+
+	sem_t sem;        /* Semaphore underlying the implementation of the mutex */
 	int pid;	/* ID of the holder of the mutex */
-	sem_t sem;	/* Semaphore underlying the implementation of the mutex */
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+	uint8_t flags;    /* See _PTHREAD_MFLAGS_* */
+#endif
 #ifdef CONFIG_MUTEX_TYPES
 	uint8_t type;	/* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
 	int nlocks;	/* The number of recursive locks held */
@@ -277,10 +292,28 @@ struct pthread_mutex_s {
 };
 typedef struct pthread_mutex_s pthread_mutex_t;
 
-#ifdef CONFIG_MUTEX_TYPES
-#define PTHREAD_MUTEX_INITIALIZER {-1, SEM_INITIALIZER(1), PTHREAD_MUTEX_DEFAULT, 0}
+#define __PTHREAD_MUTEX_T_DEFINED 1
+
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+#  ifdef CONFIG_PTHREAD_MUTEX_DEFAULT_UNSAFE
+#    define __PTHREAD_MUTEX_DEFAULT_FLAGS 0
+#  else
+#    define __PTHREAD_MUTEX_DEFAULT_FLAGS _PTHREAD_MFLAGS_ROBUST
+#  endif
+#endif
+
+#if defined(CONFIG_MUTEX_TYPES) && !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
+#  define PTHREAD_MUTEX_INITIALIZER {NULL, SEM_INITIALIZER(1), -1, \
+                                     __PTHREAD_MUTEX_DEFAULT_FLAGS, \
+                                     PTHREAD_MUTEX_DEFAULT, 0}
+#elif defined(CONFIG_MUTEX_TYPES)
+#  define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1, \
+                                     PTHREAD_MUTEX_DEFAULT, 0}
+#elif !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
+#  define PTHREAD_MUTEX_INITIALIZER {NULL, SEM_INITIALIZER(1), -1,\
+                                     __PTHREAD_MUTEX_DEFAULT_FLAGS}
 #else
-#define PTHREAD_MUTEX_INITIALIZER {-1, SEM_INITIALIZER(1)}
+#  define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1}
 #endif
 
 /**

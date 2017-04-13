@@ -59,8 +59,11 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sched.h>
+#include <assert.h>
 #include <errno.h>
 #include <debug.h>
+
+#include <tinyara/sched.h>
 
 #include "pthread/pthread.h"
 
@@ -141,20 +144,19 @@
 int pthread_mutex_lock(FAR pthread_mutex_t *mutex)
 {
 	int mypid = (int)getpid();
-	int ret = OK;
+	int ret = EINVAL;
 
 	svdbg("mutex=0x%p\n", mutex);
+	DEBUGASSERT(mutex != NULL);
 
-	if (!mutex) {
-		ret = EINVAL;
-	} else {
+	if (mutex != NULL) {
 		/* Make sure the semaphore is stable while we make the following
 		 * checks.  This all needs to be one atomic action.
 		 */
 
 		sched_lock();
 
-		/* Does this task already hold the semaphore? */
+		/* Does this thread already hold the semaphore? */
 
 		if (mutex->pid == mypid) {
 			/* Yes.. Is this a recursive mutex? */
@@ -164,6 +166,7 @@ int pthread_mutex_lock(FAR pthread_mutex_t *mutex)
 				/* Yes... just increment the number of locks held and return success */
 
 				mutex->nlocks++;
+				ret = OK;
 			} else
 #endif
 			{
@@ -174,8 +177,26 @@ int pthread_mutex_lock(FAR pthread_mutex_t *mutex)
 				sdbg("Returning EDEADLK\n");
 				ret = EDEADLK;
 			}
+		}
+
+		/* The calling thread does not hold the semaphore.  The correct
+		 * behavior for the 'robust' mutex is to verify that the holder of the
+		 * mutex is still valid.  This is protection from the case
+		 * where the holder of the mutex has exitted without unlocking it.
+		 */
+
+		else if (mutex->pid > 0 && sched_gettcb(mutex->pid) == NULL) {
+			DEBUGASSERT(mutex->pid != 0);	/* < 0: available, >0 owned, ==0 error */
+
+			/* A thread holds the mutex, but there is no such thread.  POSIX
+			 * requires that the 'robust' mutex return EOWNERDEAD in this case.
+			 * It is then the caller's responsibility to call pthread_mutx_consistent()
+			 * fo fix the mutex.
+			 */
+
+			ret = EOWNERDEAD;
 		} else {
-			/* Take the semaphore */
+			/* Take the underlying semaphore, waiting if necessary */
 
 			ret = pthread_takesemaphore((sem_t *)&mutex->sem);
 
@@ -183,7 +204,7 @@ int pthread_mutex_lock(FAR pthread_mutex_t *mutex)
 			 * that we own it.
 			 */
 
-			if (!ret) {
+			if (ret == OK) {
 				mutex->pid = mypid;
 #ifdef CONFIG_MUTEX_TYPES
 				mutex->nlocks = 1;

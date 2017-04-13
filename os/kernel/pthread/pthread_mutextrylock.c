@@ -60,6 +60,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <sched.h>
+#include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
@@ -120,13 +121,13 @@
 
 int pthread_mutex_trylock(FAR pthread_mutex_t *mutex)
 {
-	int ret = OK;
+	int status;
+	int ret = EINVAL;
 
 	svdbg("mutex=0x%p\n", mutex);
+	DEBUGASSERT(mutex != NULL);
 
-	if (!mutex) {
-		ret = EINVAL;
-	} else {
+	if (mutex != NULL) {
 		int mypid = (int)getpid();
 
 		/* Make sure the semaphore is stable while we make the following
@@ -137,37 +138,66 @@ int pthread_mutex_trylock(FAR pthread_mutex_t *mutex)
 
 		/* Try to get the semaphore. */
 
-		if (sem_trywait((sem_t *)&mutex->sem) == OK) {
+		status = sem_trywait((FAR sem_t *)&mutex->sem);
+		if (status == OK) {
 			/* If we successfully obtained the semaphore, then indicate
 			 * that we own it.
 			 */
 			mutex->pid = mypid;
 #ifdef CONFIG_MUTEX_TYPES
-				if (mutex->type == PTHREAD_MUTEX_RECURSIVE) {
-					mutex->nlocks = 1;
-				}
+			if (mutex->type == PTHREAD_MUTEX_RECURSIVE) {
+				mutex->nlocks = 1;
+			}
 #endif
+			ret = OK;
 		}
 
-		/* Was it not available? */
+		/* sem_trywait failed */
 
-		else if (get_errno() == EAGAIN) {
+		else {
+			/* Did it fail because the semaphore was not avaialabl? */
+			int errcode = get_errno();
+			if (errcode == EAGAIN) {
 #ifdef CONFIG_MUTEX_TYPES
+				/* Check if recursive mutex was locked by the calling thread. */
 
-			/* Check if recursive mutex was locked by ourself. */
+				if (mutex->type == PTHREAD_MUTEX_RECURSIVE && mutex->pid == mypid) {
+					/* Increment the number of locks held and return successfully. */
 
-			if (mutex->type == PTHREAD_MUTEX_RECURSIVE && mutex->pid == mypid) {
-				/* Increment the number of locks held and return successfully. */
-
-				mutex->nlocks++;
-			} else {
-				ret = EBUSY;
-			}
-#else
-			ret = EBUSY;
+					mutex->nlocks++;
+					ret = OK;
+				} else
 #endif
-		} else {
-			ret = EINVAL;
+					/* The calling thread does not hold the semaphore.  The correct
+					 * behavior for the 'robust' mutex is to verify that the holder of
+					 * the mutex is still valid.  This is protection from the case
+					 * where the holder of the mutex has exitted without unlocking it.
+					 */
+
+					if (mutex->pid > 0 && sched_gettcb(mutex->pid) == NULL) {
+						DEBUGASSERT(mutex->pid != 0);	/* < 0: available, >0 owned, ==0 error */
+
+						/* A thread holds the mutex, but there is no such thread.
+						 * POSIX requires that the 'robust' mutex return EOWNERDEAD
+						 * in this case. It is then the caller's responsibility to
+						 * call pthread_mutx_consistent() fo fix the mutex.
+						 */
+
+						ret = EOWNERDEAD;
+					}
+
+				/* The mutex is locked by another, active thread */
+
+					else {
+						ret = EBUSY;
+					}
+
+			}
+
+			/* Some other, unhandled error occurred */
+			else {
+				ret = errcode;
+			}
 		}
 
 		sched_unlock();
