@@ -49,7 +49,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -104,71 +103,66 @@
 
 int pthread_mutex_consistent(FAR pthread_mutex_t *mutex)
 {
-  int ret = EINVAL;
-  int status;
+	int ret = EINVAL;
+	int status;
 
-  svdbg("mutex=0x%p\n", mutex);
-  DEBUGASSERT(mutex != NULL);
+	svdbg("mutex=0x%p\n", mutex);
+	DEBUGASSERT(mutex != NULL);
 
-  if (mutex != NULL)
-    {
-      /* Make sure the mutex is stable while we make the following checks. */
+	if (mutex != NULL) {
+		/* Make sure the mutex is stable while we make the following checks. */
 
-      sched_lock();
+		sched_lock();
 
-      /* Is the mutex available? */
+		/* Is the mutex available? */
 
-      DEBUGASSERT(mutex->pid != 0); /* < 0: available, >0 owned, ==0 error */
-      if (mutex->pid >= 0)
-        {
-          /* No.. Verify that the thread associated with the PID still
-           * exists.  We may be destroying the mutex after cancelling a
-           * pthread and the mutex may have been in a bad state owned by
-           * the dead pthread.  NOTE: The following is unspecified behavior
-           * (see pthread_mutex_consistent()).
-           *
-           * If the holding thread is still valid, then we should be able to
-           * map its PID to the underlying TCB.  That is what sched_gettcb()
-           * does.
-           */
+		DEBUGASSERT(mutex->pid != 0);	/* < 0: available, >0 owned, ==0 error */
+		if (mutex->pid >= 0) {
+			/* No.. Verify that the thread associated with the PID still
+			 * exists.  We may be destroying the mutex after cancelling a
+			 * pthread and the mutex may have been in a bad state owned by
+			 * the dead pthread.  NOTE: The following is unspecified behavior
+			 * (see pthread_mutex_consistent()).
+			 *
+			 * If the holding thread is still valid, then we should be able to
+			 * map its PID to the underlying TCB.  That is what sched_gettcb()
+			 * does.
+			 */
 
-          if (sched_gettcb(mutex->pid) == NULL)
-            {
-              /* The thread associated with the PID no longer exists */
+			if (sched_gettcb(mutex->pid) == NULL) {
+				/* The thread associated with the PID no longer exists */
 
-              mutex->pid    = -1;
-		mutex->flags = 0;
+				mutex->pid    = -1;
+				mutex->flags &= _PTHREAD_MFLAGS_ROBUST;
 #ifdef CONFIG_MUTEX_TYPES
-              mutex->nlocks = 0;
+				mutex->nlocks = 0;
 #endif
-              /* Reset the semaphore.  This has the same affect as if the
-               * dead task had called pthread_mutex_unlock().
-               */
+				/* Reset the semaphore.  This has the same affect as if the
+				 * dead task had called pthread_mutex_unlock().
+				 */
 
-              status = sem_reset((FAR sem_t *)&mutex->sem, 1);
-              ret = (status != OK) ? get_errno() : OK;
-            }
+				status = sem_reset((FAR sem_t *)&mutex->sem, 1);
+				ret = (status != OK) ? get_errno() : OK;
+			}
 
-          /* Otherwise the mutex is held by some active thread.  Let's not
-           * touch anything!
-           */
-        }
-      else
-        {
-          /* There is no holder of the mutex.  Just make sure the
-           * inconsistent flag is cleared and the number of locks is zero.
-           */
+			/* Otherwise the mutex is held by some active thread.  Let's not
+			 * touch anything!
+			 */
+		} else {
+			/* There is no holder of the mutex.  Just make sure the
+			 * inconsistent flag is cleared and the number of locks is zero.
+			 */
 
-          mutex->flags &= _PTHREAD_MFLAGS_ROBUST;
+			mutex->flags &= _PTHREAD_MFLAGS_ROBUST;
 #ifdef CONFIG_MUTEX_TYPES
-          mutex->nlocks = 0;
+			mutex->nlocks = 0;
 #endif
-        }
+		}
 
-      sched_unlock();
-      ret = OK;
-    }
+		sched_unlock();
+		ret = OK;
+	}
 
-  svdbg("Returning %d\n", ret);
-  return ret;
+	svdbg("Returning %d\n", ret);
+	return ret;
 }
