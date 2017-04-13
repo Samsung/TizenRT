@@ -58,6 +58,7 @@
 
 #include <pthread.h>
 #include <semaphore.h>
+#include <signal.h>
 #include <sched.h>
 #include <errno.h>
 #include <debug.h>
@@ -123,13 +124,34 @@ int pthread_mutex_destroy(FAR pthread_mutex_t *mutex)
 		/* Is the semaphore available? */
 
 		if (mutex->pid != -1) {
-			ret = EBUSY;
+#ifndef CONFIG_DISABLE_SIGNALS
+			/* Verify that the PID still exists.  We may be destroying the
+			 * mutex after cancelling a pthread and the mutex may have been
+			 * in a bad state owned by the dead pthread.
+			 */
+
+			ret = kill(mutex->pid, 0);
+			if (ret < 0) {
+				/* That thread associated with the PID no longer exists */
+
+				mutex->pid = -1;
+
+				/* Destroy the semaphore */
+
+				status = sem_destroy((FAR sem_t *)&mutex->sem);
+				ret = (status != OK) ? get_errno() : OK;
+			} else
+#endif
+			{
+				ret = EBUSY;
+			}
+
 		} else {
 			/* Destroy the semaphore */
 
 			status = sem_destroy((sem_t *)&mutex->sem);
 			if (status != OK) {
-				ret = EINVAL;
+				ret = get_errno();
 			}
 		}
 
