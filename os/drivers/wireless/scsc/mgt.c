@@ -48,7 +48,7 @@ bool is_multicast_ether_addr(const u8 *addr)
 
 void slsi_get_hw_mac_address(struct slsi_dev *sdev, u8 *addr)
 {
-	s5j_efuse_get_mac_addr(addr, ETH_ALEN);
+	up_wlan_get_mac_addr(addr, ETH_ALEN);
 
 	if ((addr[0] == 0) && (addr[1] == 0) && (addr[2] == 0) && (addr[3] == 0) && (addr[4] == 0) && (addr[5] == 0))
 	{

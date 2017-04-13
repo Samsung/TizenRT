@@ -58,7 +58,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-int s5j_efuse_get_mac_addr(char *macaddr)
+int up_wlan_get_mac_addr(char *macaddr)
 {
 	int i;
 	union {
