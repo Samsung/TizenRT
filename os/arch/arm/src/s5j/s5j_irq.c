@@ -105,5 +105,7 @@ void up_irqinitialize(void)
 	arm_gic0_initialize();
 	arm_gic_initialize();
 
+	s5j_gpio_irqinitialize();
+
 	(void)irqenable();
 }

@@ -130,14 +130,32 @@ static struct gpio_bank s5jt200_gpio_bank[] = {
 		.name = "GPG1",
 		.base = (void *)(GPIO_CON_BASE + 0xa0),
 		.nr_port = 8,
-		.isr_num = { IRQ_GPIO_GIC_0, },
+		.isr_num = {
+			IRQ_WEINT_GPG10,
+			IRQ_WEINT_GPG11,
+			IRQ_WEINT_GPG12,
+			IRQ_WEINT_GPG13,
+			IRQ_WEINT_GPG14,
+			IRQ_WEINT_GPG15,
+			IRQ_WEINT_GPG16,
+			IRQ_WEINT_GPG17,
+		},
 		.group_type = GPIO_GROUP_COMMON,
 	},
 	[GPG2] = {
 		.name = "GPG2",
 		.base = (void *)(GPIO_CON_BASE + 0xc0),
 		.nr_port = 8,
-		.isr_num = { IRQ_GPIO_GIC_1, },
+		.isr_num = {
+			IRQ_WEINT_GPG20,
+			IRQ_WEINT_GPG21,
+			IRQ_WEINT_GPG22,
+			IRQ_WEINT_GPG23,
+			IRQ_WEINT_GPG24,
+			IRQ_WEINT_GPG25,
+			IRQ_WEINT_GPG26,
+			IRQ_WEINT_GPG27,
+		},
 		.group_type = GPIO_GROUP_COMMON,
 	},
 	[GPG3] = {
@@ -151,7 +169,11 @@ static struct gpio_bank s5jt200_gpio_bank[] = {
 		.name = "GPA0",
 		.base = (void *)(GPIO_CON_BASE + 0x100),
 		.nr_port = 3,
-		.isr_num = { IRQ_EINT0, IRQ_EINT1, IRQ_EINT2 },
+		.isr_num = {
+			IRQ_EINT0,
+			IRQ_EINT1,
+			IRQ_EINT2,
+		},
 		.group_type = GPIO_GROUP_COMMON,
 	},
 	[GPA1] = {
@@ -1200,4 +1222,38 @@ struct gpio_bank *gpio_to_bank(int gpio)
 	}
 
 	return s5jt200_gpio_bank + bank;
+}
+
+static int gic_interrupt(int irq, FAR void *context, FAR void *arg)
+{
+	int gpio_irq;
+	uint32_t intpnd;
+
+	if (irq == IRQ_GPIO_GIC_0) {
+		irq = IRQ_WEINT_GPG10;
+		intpnd = getreg32(0x80040900);
+	} else {
+		irq = IRQ_WEINT_GPG20;
+		intpnd = getreg32(0x80040904);
+	}
+
+	/* Dispatch each GPIO interrupt */
+	for (gpio_irq = 0; intpnd; gpio_irq++) {
+		if (intpnd & (1 << gpio_irq)) {
+			irq_dispatch(irq + gpio_irq, context);
+			intpnd &= ~(1 << gpio_irq);
+		}
+	}
+
+	return OK;
+}
+
+void s5j_gpio_irqinitialize(void)
+{
+	/* Attach the GPIO interrupt handler for second-level irq decoding */
+	DEBUGVERIFY(irq_attach(IRQ_GPIO_GIC_0, gic_interrupt, NULL));
+	DEBUGVERIFY(irq_attach(IRQ_GPIO_GIC_1, gic_interrupt, NULL));
+
+	up_enable_irq(IRQ_GPIO_GIC_0);
+	up_enable_irq(IRQ_GPIO_GIC_1);
 }

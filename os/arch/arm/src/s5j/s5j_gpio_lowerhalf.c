@@ -224,24 +224,12 @@ static u32 gpio_get_irq_id(int gpio)
  *  -1, if Error
  *
  ****************************************************************************/
-static int s5j_gpio_irq_handler(int irq, void *context, void *arg)
+static int s5j_gpio_irq_handler(int irq, FAR void *context, FAR void *arg)
 {
-	int i;
-	struct gpio_dev_s *dev;
+	struct gpio_dev_s *dev = (struct gpio_dev_s *)arg;
+	struct s5j_gpio_priv *priv = (struct s5j_gpio_priv *)dev->priv;
 
-	for (i = 0; i < NUM_GPIO; i++) {
-		if (s5j_gpio_all[i] && ((((struct s5j_gpio_priv *)(s5j_gpio_all[i]->priv))->isr_num) & 0x3ff) == irq) {
-				break;
-		}
-	}
-
-	if (i == NUM_GPIO) {
-		return -1;
-	}
-
-	gpio_eint_clear_pending(((struct s5j_gpio_priv *)(s5j_gpio_all[i]->priv))->gpio);
-
-	dev = s5j_gpio_all[i];
+	gpio_eint_clear_pending(priv->gpio);
 
 	if (dev->callback) {
 		s5j_gpio_poll_expiry(1, (uint32_t)dev);
@@ -249,7 +237,7 @@ static int s5j_gpio_irq_handler(int irq, void *context, void *arg)
 
 #ifdef CONFIG_GPIO
 #ifndef CONFIG_DISABLE_POLL
-	gpio_notify(s5j_gpio_all[i]);
+	gpio_notify(dev);
 #endif
 #endif
 
@@ -273,6 +261,7 @@ static void s5j_gpio_enable_irq(struct gpio_dev_s *dev)
 {
 	int gpio;
 	int irq;
+	int pin;
 
 	gpio = ((struct s5j_gpio_priv *)(dev->priv))->gpio;
 
@@ -280,9 +269,10 @@ static void s5j_gpio_enable_irq(struct gpio_dev_s *dev)
 	gpio_eint_clear_pending(gpio);
 	gpio_eint_unmask(gpio);
 
-	irq = gpio_to_bank(gpio)->isr_num[s5j_gpio_port(gpio)];
-	(void)irq_attach(irq, (xcpt_t)s5j_gpio_irq_handler, NULL);
-	up_enable_irq(irq);
+	pin = s5j_gpio_port(gpio);
+	irq = gpio_to_bank(gpio)->isr_num[pin];
+
+	irq_attach(irq, s5j_gpio_irq_handler, dev);
 }
 
 /****************************************************************************
@@ -307,7 +297,8 @@ static void s5j_gpio_disable_irq(struct gpio_dev_s *dev)
 	gpio_eint_clear_pending(gpio);
 	gpio_eint_unmask(gpio);
 	irq = gpio_to_bank(gpio)->isr_num[s5j_gpio_port(gpio)];
-	up_disable_irq(irq);
+
+	irq_detach(irq);
 }
 
 /****************************************************************************
