@@ -5,129 +5,9 @@
 
 menu "LwIP options"
 
-menu "LwIP memory options"
-
-config NET_LWIP_MEM_ALIGNMENT
-	int "Memory alignment size"
-	default 4
-	---help---
-		should be set to the alignment of the CPU
-
-config NET_LWIP_MEM_SIZE
-	int "Size of LwIP memory pool"
-	default 1600
-	---help---
-		the size of the heap memory. If the application will send
-		a lot of data that needs to be copied, this should be set high.
-
-config NET_LWIP_MEMP_OVERFLOW_CHECK
-	int "Memory pool overflow protection"
-	default 0
-	---help---
-		memp overflow protection reserves a configurable amount of bytes
-		before and after each memp element in every pool and fills
-		it with a prominent default value.
-		if 0, no checking
-		if 1, checks each element when it is freed
-		if 2, checks each element in every pool every time memp_malloc()
-		or memp_free() is called (useful but slow!)
-
-config NET_LWIP_MEMP_SANITY_CHECK
-	bool "Memory pool sanity check"
-	default n
-	---help---
-		run a sanity check after each memp_free() to make sure that
-		there are no cycles in the linked lists.
-
-config NET_LWIP_MEMP_NUM_PBUF
-	int "Number of Pbufs"
-	default 16
-	---help---
-		The number of memp struct pbufs (used for PBUF_ROM and PBUF_REF).
-		If the application sends a lot of data out of ROM (or other static memory),
-		this should be set high.
-
-config NET_LWIP_MEMP_NUM_RAW_PCB
-	int "Number of raw connection PCBs"
-	default 4
-	depends on NET_RAW
-	---help---
-		Number of raw connection PCBs
-
-config NET_LWIP_MEMP_NUM_UDP_PCB
-	int "Number of udp connection PCBs"
-	default 4
-	depends on NET_LWIP_UDP
-	---help---
-		Number of udp connection PCBs
-
-config NET_LWIP_MEMP_NUM_TCP_PCB
-	int "Number of tcp connection PCBs"
-	default 5
-	depends on NET_TCP
-	---help---
-		Number of tcp connection PCBs
-
-config NET_LWIP_MEMP_NUM_TCP_PCB_LISTEN
-	int "Number of listening tcp connections"
-	default 5
-	depends on NET_TCP
-	---help---
-		Number of simultaneously queued TCP segments
-
-config NET_LWIP_MEMP_NUM_TCP_SEG
-	int "Number of simultaneously queued TCP segments"
-	default 16
-	depends on NET_TCP
-	---help---
-		Number of simultaneously queued TCP segments
-
-config NET_LWIP_MEMP_NUM_REASSDATA
-	int "Number of IP reassemble packets"
-	default 5
-	---help---
-		Number of IP fragments simultaneously sent
-		for reassembly (whole packets, not fragments!)
-
-config NET_LWIP_MEMP_NUM_FRAG_PBUF
-	int "Number of IP fragments packets"
-	default 15
-	---help---
-		Number of IP fragments simultaneously sent
-		(fragments, not whole packets!).
-
-config NET_LWIP_MEMP_NUM_ARP_QUEUE
-	int "Maximum number of waiting arp request packet"
-	default 30
-	---help---
-		Number of simultaneously queued outgoing packets (pbufs)
-		that are waiting for an ARP request (to resolve their
-		destination address) to finish.
-
-endmenu #LwIP memory options
-
+source "net/lwip/configs/mem/Kconfig"
 source "net/lwip/configs/socket/Kconfig"
-
-menuconfig NET_LWIP_ICMP
-	bool "ICMP support"
-	default y
-
-if NET_LWIP_ICMP
-
-config NET_LWIP_ICMP_BROADCAST_PING
-	bool "Enable respond to broadcast pings"
-	default n
-	---help---
-		respond to broadcast pings (default is unicast only)
-
-config NET_LWIP_ICMP_MULTICAST_PING
-	bool "Enable respond to multicast pings"
-	default n
-	---help---
-		respond to multicast pings (default is unicast only)
-
-endif #NET_LWIP_ICMP
-
+source "net/lwip/configs/icmp/Kconfig"
 
 menuconfig NET_LWIP_IGMP
 	bool "IGMP support"
@@ -144,19 +24,8 @@ config NET_LWIP_MEMP_NUM_IGMP_GROUP
 endif #NET_LWIP_IGMP
 
 
-menuconfig NET_LWIP_UDP
-	bool "UDP support"
-	default y
-
-if NET_LWIP_UDP
-
-config NET_LWIP_UDPLITE
-	bool "UDP-Lite support"
-	default n
-
-endif #NET_LWIP_UDP
-
 source "net/lwip/configs/tcp/Kconfig"
+source "net/lwip/configs/udp/Kconfig"
 source "net/lwip/configs/arp/Kconfig"
 
 menu "IP options"
@@ -339,7 +208,7 @@ endif #NET_LWIP_PPP_SUPPORT
 menuconfig NET_LWIP_SNMP
 	bool "Enable SNMP"
 	default n
-	depends on NET_LWIP_UDP
+	depends on NET_UDP
 
 if NET_LWIP_SNMP
 

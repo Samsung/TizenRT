@@ -158,19 +158,19 @@
 
 
 /* ---------- ICMP options ---------- */
-#ifdef CONFIG_NET_LWIP_ICMP
+#ifdef CONFIG_NET_ICMP
 #define LWIP_ICMP                       1
 #else
 #define LWIP_ICMP                       0
 #endif
 
-#ifdef CONFIG_NET_LWIP_ICMP_BROADCAST_PING
+#ifdef CONFIG_NET_BROADCAST_PING
 #define LWIP_BROADCAST_PING             1
 #else
 #define LWIP_BROADCAST_PING             0
 #endif
 
-#ifdef CONFIG_NET_LWIP_ICMP_MULTICAST_PING
+#ifdef CONFIG_NET_MULTICAST_PING
 #define LWIP_MULTICAST_PING             1
 #else
 #define LWIP_MULTICAST_PING             0
@@ -251,13 +251,13 @@
 
 
 /* ---------- UDP options ---------- */
-#ifdef CONFIG_NET_LWIP_UDP
+#ifdef CONFIG_NET_UDP
 #define LWIP_UDP                        1
 #else
 #define LWIP_UDP                        0
 #endif
 
-#ifdef CONFIG_NET_LWIP_UDPLITE
+#ifdef CONFIG_NET_UDPLITE
 #define LWIP_UDPLITE                    1
 #else
 #define LWIP_UDPLITE                    0
@@ -326,25 +326,25 @@
 #define MEMP_NUM_TCPIP_INPKT            16
 
 /* ---------- Memory options ---------- */
-#if !defined(CONFIG_NET_LWIP_MEM_ALIGNMENT)
-#error "CONFIG_NET_LWIP_MEM_ALIGNMENT is undefined"
+#if !defined(CONFIG_NET_MEM_ALIGNMENT)
+#error "CONFIG_NET_MEM_ALIGNMENT is undefined"
 #else
-#define MEM_ALIGNMENT                   CONFIG_NET_LWIP_MEM_ALIGNMENT
+#define MEM_ALIGNMENT                   CONFIG_NET_MEM_ALIGNMENT
 #endif
 
-#if !defined(CONFIG_NET_LWIP_MEM_SIZE)
-#error "CONFIG_NET_LWIP_MEM_SIZE is undefined"
+#if !defined(CONFIG_NET_MEM_SIZE)
+#error "CONFIG_NET_MEM_SIZE is undefined"
 #else
-#define MEM_SIZE                	CONFIG_NET_LWIP_MEM_SIZE
+#define MEM_SIZE                	CONFIG_NET_MEM_SIZE
 #endif
 
-#ifdef CONFIG_NET_LWIP_MEMP_OVERFLOW_CHECK
-#define MEMP_OVERFLOW_CHECK		CONFIG_NET_LWIP_MEMP_OVERFLOW_CHECK
+#ifdef CONFIG_NET_MEMP_OVERFLOW_CHECK
+#define MEMP_OVERFLOW_CHECK		CONFIG_NET_MEMP_OVERFLOW_CHECK
 #else
 #define MEMP_OVERFLOW_CHECK		0
 #endif
 
-#ifdef CONFIG_NET_LWIP_MEMP_SANITY_CHECK
+#ifdef CONFIG_NET_MEMP_SANITY_CHECK
 #define MEMP_SANITY_CHECK               1
 #else
 #define MEMP_SANITY_CHECK               0
@@ -352,41 +352,41 @@
 
 #define MEMP_MEM_MALLOC                 1
 
-#ifdef CONFIG_NET_LWIP_MEMP_NUM_PBUF
-#define MEMP_NUM_PBUF                   CONFIG_NET_LWIP_MEMP_NUM_PBUF
+#ifdef CONFIG_NET_MEMP_NUM_PBUF
+#define MEMP_NUM_PBUF                   CONFIG_NET_MEMP_NUM_PBUF
 #endif
 
-#ifdef CONFIG_NET_LWIP_MEMP_NUM_RAW_PCB
-#define MEMP_NUM_RAW_PCB                CONFIG_NET_LWIP_MEMP_NUM_RAW_PCB
+#ifdef CONFIG_NET_MEMP_NUM_RAW_PCB
+#define MEMP_NUM_RAW_PCB                CONFIG_NET_MEMP_NUM_RAW_PCB
 #endif
 
-#ifdef CONFIG_NET_LWIP_MEMP_NUM_UDP_PCB
-#define MEMP_NUM_UDP_PCB		CONFIG_NET_LWIP_MEMP_NUM_UDP_PCB
+#ifdef CONFIG_NET_MEMP_NUM_UDP_PCB
+#define MEMP_NUM_UDP_PCB		CONFIG_NET_MEMP_NUM_UDP_PCB
 #endif
 
 
-#ifdef CONFIG_NET_LWIP_MEMP_NUM_TCP_PCB
-#define MEMP_NUM_TCP_PCB		CONFIG_NET_LWIP_MEMP_NUM_TCP_PCB
+#ifdef CONFIG_NET_MEMP_NUM_TCP_PCB
+#define MEMP_NUM_TCP_PCB		CONFIG_NET_MEMP_NUM_TCP_PCB
 #endif
 
-#ifdef CONFIG_NET_LWIP_MEMP_NUM_TCP_PCB_LISTEN
-#define MEMP_NUM_TCP_PCB_LISTEN         CONFIG_NET_LWIP_MEMP_NUM_TCP_PCB_LISTEN
+#ifdef CONFIG_NET_MEMP_NUM_TCP_PCB_LISTEN
+#define MEMP_NUM_TCP_PCB_LISTEN         CONFIG_NET_MEMP_NUM_TCP_PCB_LISTEN
 #endif
 
-#ifdef CONFIG_NET_LWIP_MEMP_NUM_TCP_SEG
-#define MEMP_NUM_TCP_SEG                CONFIG_NET_LWIP_MEMP_NUM_TCP_SEG
+#ifdef CONFIG_NET_MEMP_NUM_TCP_SEG
+#define MEMP_NUM_TCP_SEG                CONFIG_NET_MEMP_NUM_TCP_SEG
 #endif
 
-#ifdef CONFIG_NET_LWIP_MEMP_NUM_REASSDATA
-#define MEMP_NUM_REASSDATA              CONFIG_NET_LWIP_MEMP_NUM_REASSDATA
+#ifdef CONFIG_NET_MEMP_NUM_REASSDATA
+#define MEMP_NUM_REASSDATA              CONFIG_NET_MEMP_NUM_REASSDATA
 #endif
 
-#ifdef CONFIG_NET_LWIP_MEMP_NUM_FRAG_PBUF
-#define MEMP_NUM_FRAG_PBUF              CONFIG_NET_LWIP_MEMP_NUM_FRAG_PBUF
+#ifdef CONFIG_NET_MEMP_NUM_FRAG_PBUF
+#define MEMP_NUM_FRAG_PBUF              CONFIG_NET_MEMP_NUM_FRAG_PBUF
 #endif
 
-#ifdef CONFIG_NET_LWIP_MEMP_NUM_ARP_QUEUE
-#define MEMP_NUM_ARP_QUEUE		CONFIG_NET_LWIP_MEMP_NUM_ARP_QUEUE
+#ifdef CONFIG_NET_MEMP_NUM_ARP_QUEUE
+#define MEMP_NUM_ARP_QUEUE		CONFIG_NET_MEMP_NUM_ARP_QUEUE
 #endif
 /* ---------- Memory options ---------- */
 

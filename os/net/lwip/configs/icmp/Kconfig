@@ -1,0 +1,38 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if NET_IPv4
+menu "ICMP Networking Support"
+
+config NET_ICMP
+	bool "Enable ICMP networking"
+	default n
+	---help---
+		Enable minimal ICMP support. Includes built-in support
+		for sending replies to received ECHO (ping) requests.
+
+if NET_ICMP
+
+config NET_ICMP_TTL
+	int "ICMP TTL"
+	default 255
+	---help---
+		Default value for Time-To-Live used by ICMP packets.
+
+config NET_BROADCAST_PING
+	bool "ICMP respond broadcast pings"
+	default n
+	---help---
+		Respond to broadcast pings (default is unicast only)
+
+config NET_MULTICAST_PING
+	bool "ICMP respond multicast pings"
+	default n
+	---help---
+		Respond to multicast pings (default is unicast only)
+
+endif # NET_ICMP
+endmenu # ICMP Networking Support
+endif # NET_IPv4
