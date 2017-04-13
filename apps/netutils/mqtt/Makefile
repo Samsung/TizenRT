@@ -62,23 +62,24 @@ CSRCS =
 CSRCS += mqtt_api.c
 
 # lib directory
-CSRCS += lib/tls_mosq.c
-CSRCS += lib/net_mosq.c
-CSRCS += lib/send_client_mosq.c
-CSRCS += lib/messages_mosq.c
-CSRCS += lib/util_mosq.c
-CSRCS += lib/socks_mosq.c
-CSRCS += lib/will_mosq.c
-CSRCS += lib/mosquitto.c
-CSRCS += lib/logging_mosq.c
-CSRCS += lib/send_mosq.c
-CSRCS += lib/read_handle_shared.c
-CSRCS += lib/srv_mosq.c
-CSRCS += lib/thread_mosq.c
-CSRCS += lib/read_handle_client.c
-CSRCS += lib/read_handle.c
-CSRCS += lib/time_mosq.c
-CSRCS += lib/memory_mosq.c
+MQTT_LIB_DIR=lib
+CSRCS += tls_mosq.c
+CSRCS += net_mosq.c
+CSRCS += send_client_mosq.c
+CSRCS += messages_mosq.c
+CSRCS += util_mosq.c
+CSRCS += socks_mosq.c
+CSRCS += will_mosq.c
+CSRCS += mosquitto.c
+CSRCS += logging_mosq.c
+CSRCS += send_mosq.c
+CSRCS += read_handle_shared.c
+CSRCS += srv_mosq.c
+CSRCS += thread_mosq.c
+CSRCS += read_handle_client.c
+CSRCS += read_handle.c
+CSRCS += time_mosq.c
+CSRCS += memory_mosq.c
 
 # include directory
 CFLAGS += $(MQTT_LIB_CFLAGS)
@@ -103,7 +104,7 @@ ROOTDEPPATH = --dep-path .
 
 # Common build
 
-VPATH =
+VPATH = $(MQTT_LIB_DIR)
 
 all: .built
 .PHONY: context depend clean distclean
@@ -123,7 +124,8 @@ install:
 context:
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(ROOTDEPPATH) $(patsubst %,--dep-path %,$(subst :, ,$(VPATH))) \
+	  "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend

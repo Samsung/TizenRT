@@ -208,7 +208,10 @@ endif
 CHIP_CSRCS += s5j_watchdog.c
 
 ifeq ($(CONFIG_S5J_SSS),y)
-CHIP_CSRCS += chip/sss/sss_driver_io.c
+VPATH += chip/sss
+CHIP_CSRCS += sss_driver_io.c
+
+# built-in static library
 EXTRA_LIBS += chip/sss/libispdriver.a
 endif
 
