@@ -262,7 +262,7 @@ int dm_lwm2m_display_client_resource(char *buffer)
 
 int dm_lwm2m_change_client_resource(char *buffer)
 {
-	int ret;
+	int ret = DM_ERROR_INVALID_PARAMETER;
 	if (buffer != NULL)
 		ret = client_change_resource(buffer, NULL);
 

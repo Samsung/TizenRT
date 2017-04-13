@@ -1351,7 +1351,7 @@ int lwm2m_client_main(int argc, char *argv[])
                 else if (0 < numBytes)
                 {
                     char s[INET6_ADDRSTRLEN];
-                    in_port_t port;
+                    in_port_t port = 0;
 
 #ifdef WITH_TINYDTLS
                     dtls_connection_t * connP;

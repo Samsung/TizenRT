@@ -108,8 +108,8 @@ connection_t * connection_create(connection_t * connList,
     struct addrinfo *servinfo = NULL;
     struct addrinfo *p;
     int s;
-    struct sockaddr *sa;
-    socklen_t sl;
+    struct sockaddr *sa = NULL;
+    socklen_t sl = 0;
     connection_t * connP = NULL;
 
     memset(&hints, 0, sizeof(hints));
