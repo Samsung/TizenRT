@@ -483,7 +483,7 @@ struct smartfs_logging_entry_s {
 */
 struct journal_transaction_manager_s {
 	bool enabled;               /* State value to check journaling enabled or not */
-	uint8_t jarea;				/* 0 or 1. Specifies which journal area is usable */
+	int8_t jarea;				/* 0 or 1. Specifies which journal area is usable */
 	uint16_t sector;			/* Sector number where next logging entry has to be written */
 	uint16_t offset;			/* Offset in the sector above */
 	uint16_t availbytes;		/* Total space in a logging sector to write entries */

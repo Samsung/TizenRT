@@ -970,7 +970,23 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 				readwrite.offset = offsetof(struct smartfs_chain_header_s, nextsector);
 				readwrite.buffer = (uint8_t *)header->nextsector;
 				readwrite.count = sizeof(uint16_t);
-				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+#ifdef CONFIG_SMARTFS_JOURNALING
+				ret = smartfs_create_journalentry(fs, T_WRITE, readwrite.logsector,
+					readwrite.offset, readwrite.count, 0, 0, readwrite.buffer, &t_sector, &t_offset);
+				if (ret != OK) {
+					fdbg("Journal entry creation failed.\n");
+					goto errout_with_semaphore;
+				}
+#endif
+				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long ) &readwrite);
+#ifdef CONFIG_SMARTFS_JOURNALING
+				retj = smartfs_finish_journalentry(fs, 0, t_sector, t_offset, T_WRITE);
+				if (retj != OK) {
+					fdbg("Error finishing transaction\n");
+					ret = retj;
+					goto errout_with_semaphore;
+				}
+#endif
 				if (ret < 0) {
 					fdbg("Error %d writing next sector\n", ret);
 					goto errout_with_semaphore;
