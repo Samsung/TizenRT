@@ -52,29 +52,26 @@
 
 # Add the pthread C files to the build
 
-CSRCS += pthread_attrinit.c pthread_attrdestroy.c \
-		  pthread_attrsetschedpolicy.c pthread_attrgetschedpolicy.c \
-		  pthread_attrsetinheritsched.c pthread_attrgetinheritsched.c \
-		  pthread_attrsetstacksize.c pthread_attrgetstacksize.c \
-		  pthread_attrsetschedparam.c pthread_attrgetschedparam.c \
-		  pthread_barrierattrinit.c pthread_barrierattrdestroy.c \
-		  pthread_barrierattrgetpshared.c pthread_barrierattrsetpshared.c \
-		  pthread_condattrinit.c pthread_condattrdestroy.c \
-		  pthread_mutexattrinit.c pthread_mutexattrdestroy.c \
-		  pthread_mutexattrgetpshared.c pthread_mutexattrsetpshared.c \
-		  pthread_setcancelstate.c pthread_setcanceltype.c  \
-		  pthread_testcancel.c
+CSRCS += pthread_attrinit.c pthread_attrdestroy.c
+CSRCS += pthread_attrsetschedpolicy.c pthread_attrgetschedpolicy.c
+CSRCS += pthread_attrsetinheritsched.c pthread_attrgetinheritsched.c
+CSRCS += pthread_attrsetstacksize.c pthread_attrgetstacksize.c
+CSRCS += pthread_attrsetschedparam.c pthread_attrgetschedparam.c
+CSRCS += pthread_barrierattrinit.c pthread_barrierattrdestroy.c
+CSRCS += pthread_barrierattrgetpshared.c pthread_barrierattrsetpshared.c
+CSRCS += pthread_condattrinit.c pthread_condattrdestroy.c
+CSRCS += pthread_mutexattrinit.c pthread_mutexattrdestroy.c
+CSRCS += pthread_mutexattrgetpshared.c pthread_mutexattrsetpshared.c
+CSRCS += pthread_mutexattr_setprotocol.c pthread_mutexattr_getprotocol.c
+CSRCS += pthread_mutexattrsettype.c pthread_mutexattrgettype.c
+CSRCS += pthread_setcancelstate.c pthread_setcanceltype.c
+CSRCS += pthread_testcancel.c
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 CSRCS += pthread_condattrsetclock.c
 endif
 
 ifeq ($(CONFIG_PTHREAD_MUTEX_TYPES),y)
-CSRCS += pthread_mutexattrsettype.c pthread_mutexattrgettype.c
-endif
-
-ifeq ($(CONFIG_PRIORITY_INHERITANCE),y)
-CSRCS += pthread_mutexattr_setprotocol.c pthread_mutexattr_getprotocol.c
 endif
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)

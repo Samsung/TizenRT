@@ -88,16 +88,23 @@ int pthread_cond_init(FAR pthread_cond_t *cond, FAR const pthread_condattr_t *at
 
 	svdbg("cond=0x%p attr=0x%p\n", cond, attr);
 
-	if (!cond) {
+	if (cond == NULL) {
 		ret = EINVAL;
 	}
 
-	/* Initialize the semaphore contained in the condition structure
+	/*
+	 * Initialize the semaphore contained in the condition structure
 	 * with initial count = 0
 	 */
 
 	else if (sem_init((sem_t *)&cond->sem, 0, 0) != OK) {
 		ret = EINVAL;
+	} else {
+		/*
+		 * The contained semaphore is used for signaling and, hence,
+		 * should not have priority inheritance enabled.
+		 */
+		sem_setprotocol(&cond->sem, SEM_PRIO_NONE);
 	}
 
 	svdbg("Returning %d\n", ret);

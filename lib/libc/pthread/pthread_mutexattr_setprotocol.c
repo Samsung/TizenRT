@@ -86,6 +86,7 @@ int pthread_mutexattr_setprotocol(FAR pthread_mutexattr_t *attr,
 	linfo("attr=0x%p protocol=%d\n", attr, protocol);
 	DEBUGASSERT(attr != NULL);
 
+#ifdef CONFIG_PRIORITY_INHERITANCE
 	if (protocol >= PTHREAD_PRIO_NONE &&
 				protocol <= PTHREAD_PRIO_PROTECT) {
 		attr->proto = protocol;
@@ -93,4 +94,11 @@ int pthread_mutexattr_setprotocol(FAR pthread_mutexattr_t *attr,
 	}
 
 	return EINVAL;
+#else
+	if (protocol == PTHREAD_PRIO_NONE) {
+		return OK;
+	}
+
+	return ENOSYS;
+#endif
 }
