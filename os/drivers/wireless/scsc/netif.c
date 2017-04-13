@@ -678,7 +678,7 @@ int slsi_netif_init(struct slsi_dev *sdev)
 	return 0;
 }
 
-void wlan_initup(struct netif *dev);
+void up_wlan_init(struct netif *dev);
 
 static int slsi_netif_register_locked(struct slsi_dev *sdev, struct netif *dev)
 {
@@ -692,7 +692,7 @@ static int slsi_netif_register_locked(struct slsi_dev *sdev, struct netif *dev)
 		return 0;
 	}
 
-	wlan_initup(dev);
+	up_wlan_init(dev);
 
 	return err;
 }

@@ -49,7 +49,7 @@ static err_t wlan_init(struct netif *netif)
 	return ERR_OK;
 }
 
-void wlan_initup(struct netif *dev)
+void up_wlan_init(struct netif *dev)
 {
 	struct ip_addr ipaddr;
 	struct ip_addr netmask;
