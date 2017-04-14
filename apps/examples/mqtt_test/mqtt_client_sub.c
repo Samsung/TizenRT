@@ -64,9 +64,19 @@ struct mqtt_sub_input {
 };
 
 /****************************************************************************
+ * Enumeration
+ ****************************************************************************/
+typedef enum {
+	CHECK_OPTION_RESULT_CHECKED_OK,
+	CHECK_OPTION_RESULT_CHECKED_ERROR,
+	CHECK_OPTION_RESULT_NOTHING_TODO,
+} check_option_result_e;
+
+/****************************************************************************
  * Function Prototype
  ****************************************************************************/
 void mqtt_set_srand(void);
+char *mqtt_generate_client_id(const char *id_base);
 const unsigned char *mqtt_get_ca_certificate(void);
 const unsigned char *mqtt_get_client_certificate(void);
 const unsigned char *mqtt_get_client_key(void);
@@ -361,7 +371,83 @@ static void deinit_variables(void)
 
 }
 
-static void destroy_config(void)
+static int make_client_config(void)
+{
+	if (g_host_addr == NULL) {
+		fprintf(stderr, "Error: broker address is NULL. You can set host address with -h option.\n");
+		goto errout;
+	}
+
+	if (g_topic == NULL) {
+		fprintf(stderr, "Error: topic is NULL. You can set host address with -t option.\n");
+		goto errout;
+	}
+
+	if (g_id == NULL) {
+		if (g_clean_session == false) {
+			fprintf(stderr, "Error: You must provide a client id using -i option if you are using the -c option.\n");
+			goto errout;
+		}
+
+		g_id = mqtt_generate_client_id(MQTT_CLIENT_SUB_COMMAND_NAME);
+		if (g_id == NULL) {
+			fprintf(stderr, "Error: fail to set a client id.\n");
+			goto errout;
+		}
+	}
+
+	/* set information to subscribe */
+	memset(&g_subscribe_msg, 0, sizeof(g_subscribe_msg));
+	g_subscribe_msg.topic = strdup(g_topic);
+	g_subscribe_msg.qos = g_qos;
+
+#if defined(CONFIG_NETUTILS_MQTT_SECURITY)
+	/* set tls parameters */
+
+	/* set ca_cert */
+	g_tls.ca_cert = mqtt_get_ca_certificate();	/* the pointer of ca_cert buffer */
+	g_tls.ca_cert_len = mqtt_get_ca_certificate_size();	/* the length of ca_cert buffer  */
+
+	/* set cert */
+	g_tls.cert = mqtt_get_client_certificate();	/* the pointer of cert buffer */
+	g_tls.cert_len = mqtt_get_client_certificate_size();	/* the length of cert buffer */
+
+	/* set key */
+	g_tls.key = mqtt_get_client_key();	/* the pointer of key buffer */
+	g_tls.key_len = mqtt_get_client_key_size();	/* the length of key buffer */
+#endif
+
+	/* set mqtt config */
+	memset(&g_mqtt_client_config, 0, sizeof(g_mqtt_client_config));
+	g_mqtt_client_config.client_id = strdup(g_id);
+	g_mqtt_client_config.user_name = strdup(g_username);
+	g_mqtt_client_config.password = strdup(g_password);
+	g_mqtt_client_config.clean_session = g_clean_session;
+	g_mqtt_client_config.debug = g_debug;
+	g_mqtt_client_config.on_connect = my_connect_callback;
+	g_mqtt_client_config.on_disconnect = my_disconnect_callback;
+	g_mqtt_client_config.on_message = my_message_callback;
+	g_mqtt_client_config.on_subscribe = my_subscribe_callback;
+	g_mqtt_client_config.on_unsubscribe = my_unsubscribe_callback;
+	g_mqtt_client_config.user_data = &g_subscribe_msg;
+
+#if defined(CONFIG_NETUTILS_MQTT_SECURITY)
+	if (g_port == MQTT_SECURITY_BROKER_PORT) {
+		g_mqtt_client_config.tls = &g_tls;
+	} else {
+		g_mqtt_client_config.tls = NULL;
+	}
+#else
+	g_mqtt_client_config.tls = NULL;
+#endif
+
+	return 0;
+
+errout:
+	return -1;
+}
+
+static void clean_client_config(void)
 {
 	/* g_subscribe_msg */
 	if (g_subscribe_msg.topic) {
@@ -508,24 +594,70 @@ unknown_option:
 	return 1;
 }
 
-static char *client_id_generate(const char *id_base)
+static int check_option_on_client_running(void)
 {
-	int len;
-	char *client_id = NULL;
+	int result = CHECK_OPTION_RESULT_CHECKED_ERROR;
 
-	len = strlen(id_base) + strlen("/") + 5 + 1;
-	client_id = malloc(len);
-	if (!client_id) {
-		fprintf(stderr, "Error: Out of memory.\n");
-		return NULL;
-	}
-	snprintf(client_id, len, "%s/%05d", id_base, rand() % 100000);
-	if (strlen(client_id) > MQTT_ID_MAX_LENGTH) {
-		/* Enforce maximum client id length of 23 characters */
-		client_id[MQTT_ID_MAX_LENGTH] = '\0';
+	if (!g_mqtt_client_handle) {
+		if (g_stop || g_sub_topic || g_unsub_topic) {
+			printf("Error: MQTT client is not running.\n");
+			goto done;
+		}
+
+		result = CHECK_OPTION_RESULT_NOTHING_TODO;
+		goto done;
 	}
 
-	return client_id;
+	if (g_mqtt_client_handle && !(g_stop || g_sub_topic || g_unsub_topic)) {
+		printf("Error: MQTT client is running. You have to stop the mqtt subscriber with --stop\n");
+		printf("      in order to start new mqtt subscriber.\n");
+		goto done;
+	}
+
+	if (g_stop) {
+		int disconnect_try_count = 20;
+
+		MQTT_SUB_DEBUG_PRINT(g_mqtt_client_handle, "disconnect from a MQTT broker before stopping MQTT client.\n");
+		while ((mqtt_disconnect(g_mqtt_client_handle) != 0) && disconnect_try_count) {
+			disconnect_try_count--;
+			usleep(500 * 1000);
+		}
+		if (disconnect_try_count == 0) {
+			fprintf(stderr, "Error: mqtt_disconnect() failed.\n");
+			goto done;
+		}
+
+		MQTT_SUB_DEBUG_PRINT(g_mqtt_client_handle, "deinitialize MQTT client context.\n");
+		if (mqtt_deinit_client(g_mqtt_client_handle) != 0) {
+			fprintf(stderr, "Error: mqtt_deinit_client() failed.\n");
+			goto done;
+		}
+
+		g_mqtt_client_handle = NULL;
+		clean_client_config();
+	} else {
+		if (g_sub_topic) {
+			MQTT_SUB_DEBUG_PRINT(g_mqtt_client_handle, "subscribe the specified topic.\n");
+			if (mqtt_subscribe(g_mqtt_client_handle, g_sub_topic, g_qos) != 0) {
+				fprintf(stderr, "Error: mqtt_subscribe() failed.\n");
+				goto done;
+			}
+		}
+
+		if (g_unsub_topic) {
+			MQTT_SUB_DEBUG_PRINT(g_mqtt_client_handle, "unsubscribe the specified topic.\n");
+			if (mqtt_unsubscribe(g_mqtt_client_handle, g_unsub_topic) != 0) {
+				fprintf(stderr, "Error: mqtt_unsubscribe() failed.\n");
+				goto done;
+			}
+		}
+	}
+
+	/* result is success */
+	result = CHECK_OPTION_RESULT_CHECKED_OK;
+
+done:
+	return result;
 }
 
 /****************************************************************************
@@ -540,15 +672,15 @@ int mqtt_client_sub_task(void *arg)
 
 	argc = ((struct mqtt_sub_input *)arg)->argc;
 	argv = ((struct mqtt_sub_input *)arg)->argv;
-
 	if (argc == 1) {
 		print_usage();
-		result = 0;
-		goto done;
+		return 0;
 	}
 
+	/* set  the seed of a new sequence of random values */
 	mqtt_set_srand();
 
+	/* check options and set variables */
 	init_variables();
 	ret = process_options(argc, argv);
 	if (ret != 0) {
@@ -559,161 +691,44 @@ int mqtt_client_sub_task(void *arg)
 		goto done;
 	}
 
-	if (g_stop) {
-		if (g_mqtt_client_handle) {
-			int disconnect_try_count = 20;
-
-			MQTT_SUB_DEBUG_PRINT(g_mqtt_client_handle, "disconnect from a MQTT broker before stopping MQTT client.\n");
-			while ((mqtt_disconnect(g_mqtt_client_handle) != 0) && disconnect_try_count) {
-				disconnect_try_count--;
-				usleep(500 * 1000);
-			}
-			if (disconnect_try_count == 0) {
-				fprintf(stderr, "Error: mqtt_disconnect() failed.\n");
-				goto done;
-			}
-
-			MQTT_SUB_DEBUG_PRINT(g_mqtt_client_handle, "deinitialize MQTT client context.\n");
-			if (mqtt_deinit_client(g_mqtt_client_handle) != 0) {
-				fprintf(stderr, "Error: mqtt_deinit_client() failed.\n");
-				goto done;
-			}
-			g_mqtt_client_handle = NULL;
-			destroy_config();
-			result = 0;
-			goto done;
-		} else {
-			printf("MQTT client is not running.\n");
-			result = 0;
-			goto done;
-		}
-	}
-
-	if (g_sub_topic) {
-		if (g_mqtt_client_handle) {
-			MQTT_SUB_DEBUG_PRINT(g_mqtt_client_handle, "subscribe the specified topic.\n");
-			if (mqtt_subscribe(g_mqtt_client_handle, g_sub_topic, g_qos) != 0) {
-				fprintf(stderr, "Error: mqtt_subscribe() failed.\n");
-			}
-			result = 0;
-			goto done;
-		} else {
-			printf("MQTT client is not running.\n");
-			result = 0;
-			goto done;
-		}
-	}
-
-	if (g_unsub_topic) {
-		if (g_mqtt_client_handle) {
-			MQTT_SUB_DEBUG_PRINT(g_mqtt_client_handle, "unsubscribe the specified topic.\n");
-			if (mqtt_unsubscribe(g_mqtt_client_handle, g_unsub_topic) != 0) {
-				fprintf(stderr, "Error: mqtt_unsubscribe() failed.\n");
-			}
-			result = 0;
-			goto done;
-		} else {
-			printf("MQTT client is not running.\n");
-			result = 0;
-			goto done;
-		}
-	}
-
-	if (g_mqtt_client_handle) {
-		printf("MQTT client is running. You have to stop the mqtt subscriber with --stop\n" "in order to start new mqtt subscriber.\n");
+	/* check and do options when a client is running */
+	ret = check_option_on_client_running();
+	if (ret == CHECK_OPTION_RESULT_CHECKED_OK) {
 		result = 0;
 		goto done;
-	}
-
-	if (g_host_addr == NULL) {
-		fprintf(stderr, "Error: broker address is NULL. You can set host address with -h option.\n");
+	} else if (ret == CHECK_OPTION_RESULT_CHECKED_ERROR) {
 		goto done;
 	}
 
-	if (g_topic == NULL) {
-		fprintf(stderr, "Error: topic is NULL. You can set host address with -t option.\n");
+	/* make mqtt subscriber client config */
+	if (make_client_config() != 0) {
 		goto done;
 	}
 
-	if (g_id == NULL) {
-		if (g_clean_session == false) {
-			fprintf(stderr, "Error: You must provide a client id using -i option if you are using the -c option.\n");
-			goto done;
-		}
-
-		g_id = client_id_generate(MQTT_CLIENT_SUB_COMMAND_NAME);
-		if (g_id == NULL) {
-			fprintf(stderr, "Error: fail to set a client id.\n");
-			goto done;
-		}
-	}
-
-	/* set information to subscribe */
-	memset(&g_subscribe_msg, 0, sizeof(g_subscribe_msg));
-	g_subscribe_msg.topic = strdup(g_topic);
-	g_subscribe_msg.qos = g_qos;
-
-#if defined(CONFIG_NETUTILS_MQTT_SECURITY)
-	/* set tls parameters */
-
-	/* set ca_cert */
-	g_tls.ca_cert = mqtt_get_ca_certificate();	/* the pointer of ca_cert buffer */
-	g_tls.ca_cert_len = mqtt_get_ca_certificate_size();	/* the length of ca_cert buffer  */
-
-	/* set cert */
-	g_tls.cert = mqtt_get_client_certificate();	/* the pointer of cert buffer */
-	g_tls.cert_len = mqtt_get_client_certificate_size();	/* the length of cert buffer */
-
-	/* set key */
-	g_tls.key = mqtt_get_client_key();	/* the pointer of key buffer */
-	g_tls.key_len = mqtt_get_client_key_size();	/* the length of key buffer */
-
-#endif
-
-	/* set mqtt config */
-	memset(&g_mqtt_client_config, 0, sizeof(g_mqtt_client_config));
-	g_mqtt_client_config.client_id = strdup(g_id);
-	g_mqtt_client_config.user_name = strdup(g_username);
-	g_mqtt_client_config.password = strdup(g_password);
-	g_mqtt_client_config.clean_session = g_clean_session;
-	g_mqtt_client_config.debug = g_debug;
-	g_mqtt_client_config.on_connect = my_connect_callback;
-	g_mqtt_client_config.on_disconnect = my_disconnect_callback;
-	g_mqtt_client_config.on_message = my_message_callback;
-	g_mqtt_client_config.on_subscribe = my_subscribe_callback;
-	g_mqtt_client_config.on_unsubscribe = my_unsubscribe_callback;
-	g_mqtt_client_config.user_data = &g_subscribe_msg;
-
-#if defined(CONFIG_NETUTILS_MQTT_SECURITY)
-	if (g_port == MQTT_SECURITY_BROKER_PORT) {
-		g_mqtt_client_config.tls = &g_tls;
-	} else {
-		g_mqtt_client_config.tls = NULL;
-	}
-#else
-	g_mqtt_client_config.tls = NULL;
-#endif
-
+	/* create mqtt subscriber client */
 	if (g_debug) {
 		printf("initialize MQTT client context.\n");
 	}
 	g_mqtt_client_handle = mqtt_init_client(&g_mqtt_client_config);
 	if (g_mqtt_client_handle == NULL) {
 		fprintf(stderr, "Error: mqtt_init_client() failed.\n");
-		destroy_config();
+		clean_client_config();
 		goto done;
 	}
 
+	/* connect to a mqtt broker */
 	if (g_debug) {
 		printf("connect to a MQTT broker (%s : %d).\n", g_host_addr, g_port);
 	}
 	if (mqtt_connect(g_mqtt_client_handle, g_host_addr, g_port, g_keepalive) != 0) {
+		fprintf(stderr, "Error: mqtt_connect() failed.\n");
+
 		if (mqtt_deinit_client(g_mqtt_client_handle) != 0) {
 			fprintf(stderr, "Error: mqtt_deinit_client() failed.\n");
 		} else {
 			g_mqtt_client_handle = NULL;
 		}
-		destroy_config();
+		clean_client_config();
 		goto done;
 	}
 
@@ -803,6 +818,26 @@ void mqtt_set_srand(void)
 		srand(time(NULL));
 		initialzed = 1;
 	}
+}
+
+char *mqtt_generate_client_id(const char *id_base)
+{
+	int len;
+	char *client_id = NULL;
+
+	len = strlen(id_base) + strlen("/") + 5 + 1;
+	client_id = malloc(len);
+	if (!client_id) {
+		fprintf(stderr, "Error: Out of memory.\n");
+		return NULL;
+	}
+	snprintf(client_id, len, "%s/%05d", id_base, rand() % 100000);
+	if (strlen(client_id) > MQTT_ID_MAX_LENGTH) {
+		/* Enforce maximum client id length of 23 characters */
+		client_id[MQTT_ID_MAX_LENGTH] = '\0';
+	}
+
+	return client_id;
 }
 
 const unsigned char *mqtt_get_ca_certificate(void)

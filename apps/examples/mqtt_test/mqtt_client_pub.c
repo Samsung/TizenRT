@@ -69,6 +69,7 @@ struct mqtt_pub_input {
  * External Function Prototype
  ****************************************************************************/
 extern void mqtt_set_srand(void);
+extern char *mqtt_generate_client_id(const char *id_base);
 extern const unsigned char *mqtt_get_ca_certificate(void);
 extern const unsigned char *mqtt_get_client_certificate(void);
 extern const unsigned char *mqtt_get_client_key(void);
@@ -255,7 +256,88 @@ static void deinit_variables(void)
 	}
 }
 
-static void destroy_config(void)
+static int make_client_config(void)
+{
+	if (g_host_addr == NULL) {
+		fprintf(stderr, "Error: broker address is NULL. You can set host address with -h option.\n");
+		goto errout;
+	}
+
+	if (g_topic == NULL) {
+		fprintf(stderr, "Error: topic is NULL. You can set host address with -t option.\n");
+		goto errout;
+	}
+
+	if ((g_message == NULL) && (g_nullmsg == false)) {
+		fprintf(stderr, "Error: message is NULL. You can set host address with -m option.\n");
+		goto errout;
+	}
+
+	if (g_id == NULL) {
+		g_id = mqtt_generate_client_id(MQTT_CLIENT_PUB_COMMAND_NAME);
+		if (g_id == NULL) {
+			fprintf(stderr, "Error: fail to set a client id.\n");
+			goto errout;
+		}
+	}
+
+	/* set information to publish */
+	memset(&g_publish_msg, 0, sizeof(g_publish_msg));
+	g_publish_msg.topic = strdup(g_topic);
+	if (g_nullmsg) {
+		g_publish_msg.payload = NULL;
+		g_publish_msg.payload_len = 0;
+	} else {
+		g_publish_msg.payload = strdup(g_message);
+		g_publish_msg.payload_len = strlen(g_message);
+	}
+	g_publish_msg.qos = g_qos;
+	g_publish_msg.retain = g_retain;
+
+#if defined(CONFIG_NETUTILS_MQTT_SECURITY)
+	/* set tls parameters */
+
+	/* set ca_cert */
+	g_tls.ca_cert = mqtt_get_ca_certificate();	/* the pointer of ca_cert buffer */
+	g_tls.ca_cert_len = mqtt_get_ca_certificate_size();	/* the length of ca_cert buffer  */
+
+	/* set cert */
+	g_tls.cert = mqtt_get_client_certificate();	/* the pointer of cert buffer */
+	g_tls.cert_len = mqtt_get_client_certificate_size();	/* the length of cert buffer */
+
+	/* set key */
+	g_tls.key = mqtt_get_client_key();	/* the pointer of key buffer */
+	g_tls.key_len = mqtt_get_client_key_size();	/* the length of key buffer */
+
+#endif
+	/* set mqtt config */
+	memset(&g_mqtt_client_config, 0, sizeof(g_mqtt_client_config));
+	g_mqtt_client_config.client_id = strdup(g_id);
+	g_mqtt_client_config.user_name = strdup(g_username);
+	g_mqtt_client_config.password = strdup(g_password);
+	g_mqtt_client_config.debug = g_debug;
+	g_mqtt_client_config.on_connect = my_connect_callback;
+	g_mqtt_client_config.on_disconnect = my_disconnect_callback;
+	g_mqtt_client_config.on_publish = my_publish_callback;
+	g_mqtt_client_config.user_data = &g_publish_msg;
+
+#if defined(CONFIG_NETUTILS_MQTT_SECURITY)
+	if (g_port == MQTT_SECURITY_BROKER_PORT) {
+		g_mqtt_client_config.tls = &g_tls;
+	} else {
+		g_mqtt_client_config.tls = NULL;
+	}
+#else
+	g_mqtt_client_config.tls = NULL;
+#endif
+
+	return 0;
+
+errout:
+	return -1;
+}
+
+static void clean_client_config(void)
 {
 	/* g_publish_msg */
 	if (g_publish_msg.topic) {
@@ -394,26 +476,6 @@ unknown_option:
 	return 1;
 }
 
-static char *client_id_generate(const char *id_base)
-{
-	int len;
-	char *client_id = NULL;
-
-	len = strlen(id_base) + strlen("/") + 5 + 1;
-	client_id = malloc(len);
-	if (!client_id) {
-		fprintf(stderr, "Error: Out of memory.\n");
-		return NULL;
-	}
-	snprintf(client_id, len, "%s/%05d", id_base, rand() % 100000);
-	if (strlen(client_id) > MQTT_ID_MAX_LENGTH) {
-		/* Enforce maximum client id length of 23 characters */
-		client_id[MQTT_ID_MAX_LENGTH] = '\0';
-	}
-
-	return client_id;
-}
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -430,17 +492,19 @@ int mqtt_client_pub_task(void *arg)
 
 	argc = ((struct mqtt_pub_input *)arg)->argc;
 	argv = ((struct mqtt_pub_input *)arg)->argv;
-
-	sem_init(&g_mqtt_pub_sem, 0, 0);
-
 	if (argc == 1) {
 		print_usage();
-		result = 0;
-		goto done;
+		return 0;
 	}
 
+	/* initialize a semaphore for signaling */
+	sem_init(&g_mqtt_pub_sem, 0, 0);
+	sem_setprotocol(&g_mqtt_pub_sem, SEM_PRIO_NONE);
+
+	/* set the seed of a new sequence of random values */
 	mqtt_set_srand();
 
+	/* check options and set variables */
 	init_variables();
 	ret = process_options(argc, argv);
 	if (ret != 0) {
@@ -451,79 +515,12 @@ int mqtt_client_pub_task(void *arg)
 		goto done;
 	}
 
-	if (g_host_addr == NULL) {
-		fprintf(stderr, "Error: broker address is NULL. You can set host address with -h option.\n");
+	/* make mqtt publisher client config */
+	if (make_client_config() != 0) {
 		goto done;
 	}
 
-	if (g_topic == NULL) {
-		fprintf(stderr, "Error: topic is NULL. You can set host address with -t option.\n");
-		goto done;
-	}
-
-	if ((g_message == NULL) && (g_nullmsg == false)) {
-		fprintf(stderr, "Error: message is NULL. You can set host address with -m option.\n");
-		goto done;
-	}
-
-	if (g_id == NULL) {
-		g_id = client_id_generate(MQTT_CLIENT_PUB_COMMAND_NAME);
-		if (g_id == NULL) {
-			fprintf(stderr, "Error: fail to set a client id.\n");
-			goto done;
-		}
-	}
-
-	/* set information to publish */
-	memset(&g_publish_msg, 0, sizeof(g_publish_msg));
-	g_publish_msg.topic = strdup(g_topic);
-	if (g_nullmsg) {
-		g_publish_msg.payload = NULL;
-		g_publish_msg.payload_len = 0;
-	} else {
-		g_publish_msg.payload = strdup(g_message);
-		g_publish_msg.payload_len = strlen(g_message);
-	}
-	g_publish_msg.qos = g_qos;
-	g_publish_msg.retain = g_retain;
-
-#if defined(CONFIG_NETUTILS_MQTT_SECURITY)
-	/* set tls parameters */
-
-	/* set ca_cert */
-	g_tls.ca_cert = mqtt_get_ca_certificate();	/* the pointer of ca_cert buffer */
-	g_tls.ca_cert_len = mqtt_get_ca_certificate_size();	/* the length of ca_cert buffer  */
-
-	/* set cert */
-	g_tls.cert = mqtt_get_client_certificate();	/* the pointer of cert buffer */
-	g_tls.cert_len = mqtt_get_client_certificate_size();	/* the length of cert buffer */
-
-	/* set key */
-	g_tls.key = mqtt_get_client_key();	/* the pointer of key buffer */
-	g_tls.key_len = mqtt_get_client_key_size();	/* the length of key buffer */
-
-#endif
-	/* set mqtt config */
-	memset(&g_mqtt_client_config, 0, sizeof(g_mqtt_client_config));
-	g_mqtt_client_config.client_id = strdup(g_id);
-	g_mqtt_client_config.user_name = strdup(g_username);
-	g_mqtt_client_config.password = strdup(g_password);
-	g_mqtt_client_config.debug = g_debug;
-	g_mqtt_client_config.on_connect = my_connect_callback;
-	g_mqtt_client_config.on_disconnect = my_disconnect_callback;
-	g_mqtt_client_config.on_publish = my_publish_callback;
-	g_mqtt_client_config.user_data = &g_publish_msg;
-
-#if defined(CONFIG_NETUTILS_MQTT_SECURITY)
-	if (g_port == MQTT_SECURITY_BROKER_PORT) {
-		g_mqtt_client_config.tls = &g_tls;
-	} else {
-		g_mqtt_client_config.tls = NULL;
-	}
-#else
-	g_mqtt_client_config.tls = NULL;
-#endif
-
+	/* create mqtt publisher client */
 	if (g_debug) {
 		printf("initialize MQTT client context.\n");
 	}
@@ -533,6 +530,7 @@ int mqtt_client_pub_task(void *arg)
 		goto done;
 	}
 
+	/* connect to a mqtt broker */
 	if (g_debug) {
 		printf("connect to a MQTT broker (%s).\n", g_host_addr);
 	}
@@ -559,7 +557,7 @@ int mqtt_client_pub_task(void *arg)
 		}
 	}
 	if (timeout) {
-		fprintf(stderr, "Error: mqtt_pub timeout!!!\n");
+		fprintf(stderr, "Error: mqtt_pub timeout!\n");
 		goto done;
 	}
 
@@ -577,7 +575,7 @@ done:
 	}
 
 	deinit_variables();
-	destroy_config();
+	clean_client_config();
 	sem_destroy(&g_mqtt_pub_sem);
 
 	return result;
