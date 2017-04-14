@@ -266,11 +266,11 @@ static struct up_dev_s g_uart_priv[] = {
 #ifdef CONFIG_S5J_UART1
 	[UART1] = {
 		.uartbase = UART1_BASE,
-		.baud = CONFIG_UART0_BAUD,
+		.baud = CONFIG_UART1_BAUD,
 		.irq = S5J_IRQ_UART1,
-		.parity = CONFIG_UART0_PARITY,
-		.bits = CONFIG_UART0_BITS,
-		.stopbits2 = CONFIG_UART0_2STOP,
+		.parity = CONFIG_UART1_PARITY,
+		.bits = CONFIG_UART1_BITS,
+		.stopbits2 = CONFIG_UART1_2STOP,
 		.eCh = UART1,
 	},
 #endif
@@ -278,11 +278,11 @@ static struct up_dev_s g_uart_priv[] = {
 #ifdef CONFIG_S5J_UART2
 	[UART2] = {
 		.uartbase = UART2_BASE,
-		.baud = CONFIG_UART0_BAUD,
+		.baud = CONFIG_UART2_BAUD,
 		.irq = S5J_IRQ_UART2,
-		.parity = CONFIG_UART0_PARITY,
-		.bits = CONFIG_UART0_BITS,
-		.stopbits2 = CONFIG_UART0_2STOP,
+		.parity = CONFIG_UART2_PARITY,
+		.bits = CONFIG_UART2_BITS,
+		.stopbits2 = CONFIG_UART2_2STOP,
 		.eCh = UART2,
 	},
 #endif
@@ -290,11 +290,11 @@ static struct up_dev_s g_uart_priv[] = {
 #ifdef CONFIG_S5J_UART3
 	[UART3] = {
 		.uartbase = UART3_BASE,
-		.baud = CONFIG_UART0_BAUD,
+		.baud = CONFIG_UART3_BAUD,
 		.irq = S5J_IRQ_UART3,
-		.parity = CONFIG_UART0_PARITY,
-		.bits = CONFIG_UART0_BITS,
-		.stopbits2 = CONFIG_UART0_2STOP,
+		.parity = CONFIG_UART3_PARITY,
+		.bits = CONFIG_UART3_BITS,
+		.stopbits2 = CONFIG_UART3_2STOP,
 		.eCh = UART3,
 	},
 #endif
@@ -347,11 +347,11 @@ static uart_dev_t g_uart_port[] = {
 #ifdef CONFIG_S5J_UART1
 	[UART1] = {
 		.recv = {
-			.size = CONFIG_UART0_RXBUFSIZE,
+			.size = CONFIG_UART1_RXBUFSIZE,
 			.buffer = g_uart1rxbuffer,
 		},
 		.xmit = {
-			.size = CONFIG_UART0_TXBUFSIZE,
+			.size = CONFIG_UART1_TXBUFSIZE,
 			.buffer = g_uart1txbuffer,
 		},
 		.ops = &g_uart_ops,
@@ -362,11 +362,11 @@ static uart_dev_t g_uart_port[] = {
 #ifdef CONFIG_S5J_UART2
 	[UART2] = {
 		.recv = {
-			.size = CONFIG_UART0_RXBUFSIZE,
+			.size = CONFIG_UART2_RXBUFSIZE,
 			.buffer = g_uart2rxbuffer,
 		},
 		.xmit = {
-			.size = CONFIG_UART0_TXBUFSIZE,
+			.size = CONFIG_UART2_TXBUFSIZE,
 			.buffer = g_uart2txbuffer,
 		},
 		.ops = &g_uart_ops,
@@ -377,11 +377,11 @@ static uart_dev_t g_uart_port[] = {
 #ifdef CONFIG_S5J_UART3
 	[UART3] = {
 		.recv = {
-			.size = CONFIG_UART0_RXBUFSIZE,
+			.size = CONFIG_UART3_RXBUFSIZE,
 			.buffer = g_uart3rxbuffer,
 		},
 		.xmit = {
-			.size = CONFIG_UART0_TXBUFSIZE,
+			.size = CONFIG_UART3_TXBUFSIZE,
 			.buffer = g_uart3txbuffer,
 		},
 		.ops = &g_uart_ops,
