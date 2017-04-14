@@ -167,7 +167,7 @@ extern int slsi_wifi_main(int argc, char *argv[]);
 extern int mqtt_client_sub_main(int argc, char *argv[]);
 extern int mqtt_client_pub_main(int argc, char *argv[]);
 #endif
-#ifdef CONFIG_DM
+#ifdef CONFIG_LWM2M_CLIENT_MODE
 extern int lwm2m_client_main(int argc, char *argv[]);
 #endif
 #ifdef CONFIG_EXAMPLES_DNSCLIENT_TEST
@@ -782,7 +782,7 @@ const static tash_cmdlist_t net_appcmds[] = {
 	{"mqtt_sub", mqtt_client_sub_main, TASH_EXECMD_SYNC},
 	{"mqtt_pub", mqtt_client_pub_main, TASH_EXECMD_SYNC},
 #endif
-#ifdef CONFIG_DM
+#ifdef CONFIG_LWM2M_CLIENT_MODE
 	{"lwm2mclient", lwm2m_client_main, TASH_EXECMD_SYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_DNSCLIENT_TEST

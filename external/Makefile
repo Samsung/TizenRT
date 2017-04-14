@@ -50,16 +50,22 @@ include WICED$(DELIM)Make.defs
 endif
 
 ifeq ($(CONFIG_DM),y)
+ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
 include wakaama/core/Make.defs
 include wakaama/core/er-coap-13/Make.defs
 include wakaama/examples/shared/Make.defs
+endif
+ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
 include wakaama/examples/client/Make.defs
+endif
 endif
 
 ifeq ($(CONFIG_ARCH_CHIP_BCM4390X),y)
 CFLAGS+=-I$(TOPDIR)/../external/WICED/bcm4390x/include
 endif
+ifeq ($(CONFIG_DM),y)
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
+endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

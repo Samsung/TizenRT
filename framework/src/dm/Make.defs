@@ -15,7 +15,10 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
+
+ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
 CSRCS += dm_lwm2m.c
+endif
 CSRCS += dm_common_interface.c
 ifeq ($(CONFIG_ARCH_CHIP_S5JT200),y)
 CSRCS += arch/sidk_s5jt200/dm_connectivity.c
@@ -23,9 +26,13 @@ else
 CSRCS += dm_connectivity.c
 endif
 
+ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
-CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/client
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/shared
+endif
+ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
+CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/client
+endif
 
 DEPPATH += --dep-path src/dm
 VPATH += :src/dm
