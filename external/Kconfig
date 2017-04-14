@@ -34,6 +34,13 @@ config LWM2M_LITTLE_ENDIAN
 		according to server configuration, LWM2M client should match it.
 		default value is LITTLE_ENDIAN and if you do not select as LITTLE_ENDIAN,
 		BIG_ENDIAN will be used instead of it
+
+config LWM2M_SECURITY
+	bool "USE_SECURITY"
+	default n
+	depends on NET_SECURITY_TLS
+	---help---
+		This definition is for enabling COAP over TLS and DTLS.
 endif
 endif
 
