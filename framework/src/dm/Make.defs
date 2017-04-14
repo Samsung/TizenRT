@@ -21,7 +21,7 @@ CSRCS += dm_lwm2m.c
 endif
 CSRCS += dm_common_interface.c
 ifeq ($(CONFIG_ARCH_CHIP_S5JT200),y)
-CSRCS += arch/sidk_s5jt200/dm_connectivity.c
+CSRCS += s5j_dm_connectivity.c
 else
 CSRCS += dm_connectivity.c
 endif
@@ -36,3 +36,8 @@ endif
 
 DEPPATH += --dep-path src/dm
 VPATH += :src/dm
+
+ifeq ($(CONFIG_ARCH_CHIP_S5JT200),y)
+DEPPATH += --dep-path src/dm/arch/sidk_s5jt200
+VPATH += src/dm/arch/sidk_s5jt200
+endif

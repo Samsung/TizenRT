@@ -41,13 +41,13 @@ BIN = liblogm$(LIBEXT)
 all: $(BIN)
 
 $(AOBJS): %$(OBJEXT): %.S
-	$(call ASSEMBLE, $<, $(notdir $@))
+	$(call ASSEMBLE, $<, $@)
 
 $(COBJS): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $(notdir $@))
+	$(call COMPILE, $<, $@)
 
 $(BIN):	$(OBJS)
-	$(call ARCHIVE, $@, $(notdir $(OBJS)))
+	$(call ARCHIVE, $@, $(OBJS))
 
 .depend: Makefile $(SRCS)
 	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep

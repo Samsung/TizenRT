@@ -46,7 +46,7 @@ CONFIG_OS=tinyara
 DEPPATH = --dep-path .
 
 ASRCS =
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	wpa_supplicant/main.c \
 	wpa_supplicant/config.c \
 	wpa_supplicant/scan.c \
@@ -64,30 +64,30 @@ CSRCS += \
 	wpa_supplicant/ctrl_iface_fifo.c \
 	wpa_supplicant/ap.c
 
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	src/common/wpa_ctrl.c \
 	src/common/ieee802_11_common.c \
 	src/common/hw_features_common.c \
 	src/common/wpa_common.c
 
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	src/drivers/drivers.c \
 	src/drivers/driver_common.c \
 	src/drivers/driver_t20.c
 
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	src/utils/common.c \
 	src/utils/edit.c \
 	src/utils/os_tinyara.c \
 	src/utils/ip_addr.c
 
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	src/utils/eloop.c \
 	src/utils/wpa_debug.c \
 	src/utils/wpabuf.c \
 	src/utils/base64.c
 
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	src/ap/hostapd.c \
 	src/ap/beacon.c \
 	src/ap/ap_drv_ops.c \
@@ -115,28 +115,28 @@ CSRCS += \
 	src/ap/wmm.c \
 	src/ap/ieee802_11_ht.c
 
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	 src/eapol_auth/eapol_auth_sm.c
 
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	src/eap_server/eap_server.c \
 	src/eap_server/eap_server_identity.c \
 	src/eap_server/eap_server_methods.c
 
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	src/eap_common/eap_common.c
 
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	src/rsn_supp/wpa.c \
 	src/rsn_supp/peerkey.c \
 	src/rsn_supp/pmksa_cache.c \
 	src/rsn_supp/preauth.c \
 	src/rsn_supp/wpa_ie.c \
 
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	src/l2_packet/l2_packet_tinyara.c
 
-CSRCS += \
+CSRCS_WPA_SUPPLICANT += \
 	src/crypto/aes-wrap.c \
 	src/crypto/aes-unwrap.c \
 	src/crypto/aes-internal-enc.c \
@@ -151,6 +151,8 @@ CSRCS += \
 	src/crypto/sha1-prf.c \
 	src/crypto/sha1-internal.c \
 	src/crypto/crypto_internal.c
+
+CSRCS += $(notdir $(CSRCS_WPA_SUPPLICANT))
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -186,20 +188,19 @@ CONFIG_WPA_SUPPLICANT_PROGNAME ?= wpa_supplicant$(EXEEXT)
 PROGNAME = $(CONFIG_WPA_SUPPLICANT_PROGNAME)
 
 # Common build
-
-VPATH =
+VPATH = $(sort $(dir $(CSRCS_WPA_SUPPLICANT)))
 
 all: .built
 .PHONY: context depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
-	$(call ASSEMBLE, $<, $(notdir $@))
+	$(call ASSEMBLE, $<, $@)
 
 $(COBJS): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $(notdir $@))
+	$(call COMPILE, $<, $@)
 
 .built: $(OBJS)
-	$(call ARCHIVE, $(BIN), $(notdir $(OBJS)))
+	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) @touch .built
 
 install:
@@ -211,7 +212,8 @@ context:
 # Create dependencies
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) $(patsubst %,--dep-path %,$(subst :, ,$(VPATH))) \
+	  "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend

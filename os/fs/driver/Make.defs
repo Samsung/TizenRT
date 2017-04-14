@@ -54,65 +54,67 @@
 
 ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
 
-CSRCS += block/fs_registerdriver.c block/fs_unregisterdriver.c
+CSRCS_DRIVER += block/fs_registerdriver.c block/fs_unregisterdriver.c
 
 # Don't build-in block driver support if there are no mountpoints
 
 
 ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
-CSRCS += block/fs_registerblockdriver.c block/fs_unregisterblockdriver.c
-CSRCS += block/fs_findblockdriver.c block/fs_openblockdriver.c block/fs_closeblockdriver.c block/ramdisk.c 
+CSRCS_DRIVER += block/fs_registerblockdriver.c block/fs_unregisterblockdriver.c
+CSRCS_DRIVER += block/fs_findblockdriver.c block/fs_openblockdriver.c block/fs_closeblockdriver.c block/ramdisk.c 
 endif
 
 # System logging to a character device (or file)
 
 ifeq ($(CONFIG_SYSLOG),y)
 ifeq ($(CONFIG_SYSLOG_CHAR),y)
-CSRCS += block/fs_devsyslog.c
+CSRCS_DRIVER += block/fs_devsyslog.c
 endif
 endif
 
 # Include MTD drivers
 
 ifeq ($(CONFIG_MTD),y)
-CSRCS += mtd/mtd_config.c
+CSRCS_DRIVER += mtd/mtd_config.c
 
 ifeq ($(CONFIG_MTD_FTL),y)
-CSRCS += mtd/ftl.c
+CSRCS_DRIVER += mtd/ftl.c
 endif
 
 ifeq ($(CONFIG_MTD_SMART),y)
 ifeq ($(CONFIG_FS_SMARTFS),y)
-CSRCS += mtd/smart.c
+CSRCS_DRIVER += mtd/smart.c
 endif
 endif
 
 ifeq ($(CONFIG_FS_PROCFS),y)
 ifneq ($(CONFIG_FS_PROCFS_EXCLUDE_MTD),y)
-CSRCS += mtd/mtd_procfs.c
+CSRCS_DRIVER += mtd/mtd_procfs.c
 endif
 endif
 
 ifeq ($(CONFIG_MTD_PARTITION),y)
-CSRCS += mtd/mtd_partition.c
+CSRCS_DRIVER += mtd/mtd_partition.c
 endif
 
 ifeq ($(CONFIG_RAMMTD),y)
-CSRCS += mtd/rammtd/rammtd.c
+CSRCS_DRIVER += mtd/rammtd/rammtd.c
 endif
 
 ifeq ($(CONFIG_MTD_PROGMEM),y)
-CSRCS += mtd/mtd_progmem.c
+CSRCS_DRIVER += mtd/mtd_progmem.c
 endif
 
 ifeq ($(CONFIG_MTD_M25P),y)
-CSRCS += mtd/m25px/m25px.c
+CSRCS_DRIVER += mtd/m25px/m25px.c
 endif
 
 endif
+
+CSRCS += $(notdir $(CSRCS_DRIVER))
 
 # Include driver build support
-
-DEPPATH += --dep-path driver
-VPATH += :driver
+VPATH_DRIVER = driver $(patsubst %,driver/%,$(sort $(dir $(CSRCS_DRIVER))))
+DEPPATH += $(patsubst %,--dep-path %,$(subst :, ,$(VPATH_DRIVER)))
+VPATH += $(VPATH_DRIVER)
 endif
