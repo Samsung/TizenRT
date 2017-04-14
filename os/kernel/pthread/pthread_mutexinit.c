@@ -167,7 +167,6 @@ int pthread_mutex_init(FAR pthread_mutex_t *mutex,
 
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
 		/* Initial internal fields of the mutex */
-		
 		mutex->flink  = NULL;
 		mutex->flags  = (robust == PTHREAD_MUTEX_ROBUST ? _PTHREAD_MFLAGS_ROBUST : 0);
 #endif

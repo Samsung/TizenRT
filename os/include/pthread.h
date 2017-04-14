@@ -166,7 +166,8 @@
 #define PTHREAD_PRIO_INHERIT	SEM_PRIO_INHERIT
 #define PTHREAD_PRIO_PROTECT	SEM_PRIO_PROTECT
 
-/* Values for robust argument of pthread_mutexattr_get/setrobust
+/*
+ * Values for robust argument of pthread_mutexattr_get/setrobust
  *
  * PTHREAD_MUTEX_STALLED - No special actions are taken if the owner of the
  * mutex is terminated while holding the mutex lock. This can lead to
@@ -191,14 +192,13 @@
  * ENOTRECOVERABLE. The only permissible operation on such a mutex is
  * pthread_mutex_destroy().
  */
-
 #define PTHREAD_MUTEX_STALLED         0
 #define PTHREAD_MUTEX_ROBUST          1
 
-/* Values for struct pthread_mutex_s flags.  These are non-standard and
+/*
+ * Values for struct pthread_mutex_s flags.  These are non-standard and
  * intended only for internal use within the OS.
  */
-
 #define _PTHREAD_MFLAGS_ROBUST        (1 << 0)	/* Robust (NORMAL) mutex */
 #define _PTHREAD_MFLAGS_INCONSISTENT  (1 << 1)	/* Mutex is in an inconsistent state */
 #define _PTHREAD_MFLAGS_NRECOVERABLE  (1 << 2)	/* Inconsistent mutex has been unlocked */
@@ -288,12 +288,15 @@ typedef struct pthread_cond_s pthread_cond_t;
  * @brief Structure of pthread mutex attr configuration
  */
 struct pthread_mutexattr_s {
-	uint8_t pshared;		/* PTHREAD_PROCESS_PRIVATE or PTHREAD_PROCESS_SHARED */
+	uint8_t pshared : 1; /* PTHREAD_PROCESS_PRIVATE or PTHREAD_PROCESS_SHARED */
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	uint8_t proto;			/* See PTHREAD_PRIO_* definitions */
+	uint8_t proto   : 2; /* See PTHREAD_PRIO_* definitions */
 #endif
 #ifdef CONFIG_PTHREAD_MUTEX_TYPES
-	uint8_t type;			/* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
+	uint8_t type    : 2; /* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
+#endif
+#ifdef CONFIG_PTHREAD_MUTEX_BOTH
+	uint8_t robust  : 1; /* PTHREAD_MUTEX_STALLED or PTHREAD_MUTEX_ROBUST */
 #endif
 };
 typedef struct pthread_mutexattr_s pthread_mutexattr_t;
@@ -786,6 +789,10 @@ int pthread_mutexattr_getprotocol(FAR const pthread_mutexattr_t *attr,
 				  FAR int *protocol);
 int pthread_mutexattr_setprotocol(FAR pthread_mutexattr_t *attr,
 				  int protocol);
+int pthread_mutexattr_getrobust(FAR const pthread_mutexattr_t *attr,
+				FAR int *robust);
+int pthread_mutexattr_setrobust(FAR pthread_mutexattr_t *attr,
+				int robust);
 
 /* Operations on condition variables */
 /**

@@ -50,6 +50,8 @@
 #
 ############################################################################
 
+ifneq ($(CONFIG_DISABLE_PTHREAD),y)
+
 # Add the pthread C files to the build
 
 CSRCS += pthread_attrinit.c pthread_attrdestroy.c
@@ -64,14 +66,12 @@ CSRCS += pthread_mutexattrinit.c pthread_mutexattrdestroy.c
 CSRCS += pthread_mutexattrgetpshared.c pthread_mutexattrsetpshared.c
 CSRCS += pthread_mutexattr_setprotocol.c pthread_mutexattr_getprotocol.c
 CSRCS += pthread_mutexattrsettype.c pthread_mutexattrgettype.c
+CSRCS += pthread_mutexattr_setrobust.c pthread_mutexattr_getrobust.c
 CSRCS += pthread_setcancelstate.c pthread_setcanceltype.c
 CSRCS += pthread_testcancel.c
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 CSRCS += pthread_condattrsetclock.c
-endif
-
-ifeq ($(CONFIG_PTHREAD_MUTEX_TYPES),y)
 endif
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
@@ -82,3 +82,5 @@ endif
 
 DEPPATH += --dep-path pthread
 VPATH += :pthread
+
+endif

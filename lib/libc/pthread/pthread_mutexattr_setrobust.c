@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/pthread/pthread_mutexattrinit.c
+ * lib/libc/pthread/pthread_mutexattr_setrobust.c
  *
  *   Copyright (C) 2007-2009, 2011 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -55,79 +55,51 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
 #include <pthread.h>
 #include <errno.h>
-#include <debug.h>
-
-/****************************************************************************
- * Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Function:  pthread_mutexattr_init
+ * Function: pthread_mutexattr_setrobust
  *
  * Description:
- *    Create mutex attributes.
+ *   Set the mutex robustness in the mutex attributes.
  *
  * Parameters:
- *    attr
+ *   attr   - The mutex attributes in which to set the mutex type.
+ *   robust - The mutex type value to set.
  *
  * Return Value:
- *   0 if successful.  Otherwise, an error code.
+ *   0, if the mutex robustness was successfully set in 'attr', or
+ *   EINVAL, if 'attr' is NULL or 'robust' unrecognized.
  *
  * Assumptions:
  *
  ****************************************************************************/
-
-int pthread_mutexattr_init(FAR pthread_mutexattr_t *attr)
+int pthread_mutexattr_setrobust(pthread_mutexattr_t *attr, int robust)
 {
-	int ret = OK;
-
-	sdbg("attr=0x%p\n", attr);
-
-	if (!attr) {
-		ret = EINVAL;
-	} else {
-		attr->pshared = 0;
-
-#ifdef CONFIG_PRIORITY_INHERITANCE
-		attr->proto   = SEM_PRIO_INHERIT;
-#endif
-
-#ifdef CONFIG_PTHREAD_MUTEX_TYPES
-		attr->type = PTHREAD_MUTEX_DEFAULT;
-#endif
-
-#ifdef CONFIG_PTHREAD_MUTEX_BOTH
-#ifdef CONFIG_PTHREAD_MUTEX_DEFAULT_UNSAFE
-	attr->robust  = PTHREAD_MUTEX_STALLED;
-#else
-	attr->robust  = PTHREAD_MUTEX_ROBUST;
-#endif
-#endif
+#if defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
+	if (attr != NULL && robust == PTHREAD_MUTEX_STALLED) {
+		return OK;
 	}
 
-	sdbg("Returning %d\n", ret);
-	return ret;
+	return EINVAL;
+#elif defined(CONFIG_PTHREAD_MUTEX_BOTH)
+	if (attr != NULL && (robust == PTHREAD_MUTEX_STALLED ||
+					robust == _PTHREAD_MFLAGS_ROBUST)) {
+		attr->robust = robust;
+		return OK;
+	}
+
+	return EINVAL;
+#else /* Default: CONFIG_PTHREAD_MUTEX_ROBUST */
+	if (attr != NULL && robust == _PTHREAD_MFLAGS_ROBUST) {
+		return OK;
+	}
+
+	return EINVAL;
+#endif
 }
