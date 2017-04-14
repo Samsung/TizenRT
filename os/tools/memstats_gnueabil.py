@@ -57,10 +57,8 @@ Required = {
 ".bss":[]
 }
 
-library_to_object_map = {}
-dotO_to_section_to_size_map = {}
+allmap = {}
 
-library_sizeof_each_segment = {}
 def transform(k):
 	i = 0
 	while(i < len(k)):
@@ -125,47 +123,45 @@ def PLO(size , libObj, currSym, subSym):
         else:
                 objectSize[dotO] = size
 
-	if library in library_to_object_map.keys():
-		library_to_object_map[library].add(dotO)
-	else:
-		library_to_object_map[library] = Set([dotO])
 	currSymParent = findParent(subSym)
-	if dotO in dotO_to_section_to_size_map.keys():
-		if currSymParent in dotO_to_section_to_size_map[dotO].keys():
-			dotO_to_section_to_size_map[dotO][currSymParent] += size
+	if library in allmap.keys():
+		if dotO in allmap[library].keys():
+			if currSymParent in allmap[library][dotO].keys():
+				allmap[library][dotO][currSymParent] += size
+			else:
+				allmap[library][dotO][currSymParent] = size
 		else:
-			dotO_to_section_to_size_map[dotO][currSymParent] = size
+			allmap[library][dotO] = {currSymParent:size}
 	else:
-		dotO_to_section_to_size_map[dotO] = {currSymParent:size}
+		allmap[library] = {dotO:{currSymParent:size}}
 
 def printLibrarySizes():
 	nfields = len(Required.keys())
 	for r in Required.keys():
                 print "\t"+r,
         print "\t Total"
-	for l in library_to_object_map.keys():
+	for l in allmap.keys():
 		sizearr = [0] * nfields
-		for o in library_to_object_map[l]:
-			if o in dotO_to_section_to_size_map.keys():
-				for s in dotO_to_section_to_size_map[o].keys():
-					sizearr[Required.keys().index(s)] += dotO_to_section_to_size_map[o][s]
+		for o in allmap[l]:
+			for s in allmap[l][o].keys():
+				sizearr[Required.keys().index(s)] += allmap[l][o][s]
+
 		for r in Required.keys():
 			print "\t"+str(sizearr[Required.keys().index(r)]),
 		print "\t" + str(librarySize[l]) + "\t" + l
 
 def printall():
 	nfields = len(Required.keys())
-	for l in library_to_object_map.keys():
+	for l in allmap.keys():
 		print l + "\t" + str(librarySize[l])
 		for r in Required.keys():
 			print "\t"+r,
                 print "\t Total"
-		sortedobjects = sorted(library_to_object_map[l])
-		for o in sortedobjects:
+		for o in allmap[l].keys():
 			sizearr = [0] * nfields
 			for s in Required.keys():
-				if s in dotO_to_section_to_size_map[o].keys():
-					sizearr[Required.keys().index(s)] = dotO_to_section_to_size_map[o][s]
+				if s in allmap[l][o].keys():
+					sizearr[Required.keys().index(s)] = allmap[l][o][s]
 
 			for r in Required.keys():
 	                        print "\t"+str(sizearr[Required.keys().index(r)]),
@@ -243,7 +239,7 @@ for line in infile:
                                                         libObject = lsplit[len(lsplit)-1]
                                                         PLO(int(lsplit[1],16), libObject,currentSymbol,subSymbol)
                                 elif re.search('\*fill\*',lsplit[0]) != None:
-                                        if int(lsplit[1],16) != 0:
+                                        if int(lsplit[1],16) != 0 and subSymbol != 0:
                                                 level1[currentSymbol][subSymbol] += int(lsplit[2],16)
                                                 PLO(int(lsplit[2],16), libObject,currentSymbol,subSymbol)
 
