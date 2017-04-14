@@ -34,6 +34,13 @@ output_path=${build_path}/output
 bin_path=${output_path}/bin
 openocd_path=${tinyara_path}/build/configs/${BOARD_NAME}/openocd
 
+SYSTEM_TYPE=`getconf LONG_BIT`
+if [ "$SYSTEM_TYPE" = "64" ]; then
+	COMMAND=openocd_linux64
+else
+	COMMAND=openocd_linux32
+fi
+
 # Prepare resouces, pack into romfs.img
 prepare_resource()
 {
@@ -64,6 +71,8 @@ prepare_resource()
 # MAIN
 main()
 {
+	echo "System is $SYSTEM_TYPE bits so that $COMMAND will be used to program"
+
 	# Process arguments
 	for arg in $@
 	do
@@ -72,7 +81,7 @@ main()
 			echo "ALL :"
 			# download all binaries using openocd script
 			pushd ${openocd_path}
-			./openocd_linux64 -f s5jt200_silicon_evt0_fusing_flash_all.cfg
+			./$COMMAND -f s5jt200_silicon_evt0_fusing_flash_all.cfg
 			popd
 			prepare_resource
 			;;
@@ -86,7 +95,7 @@ main()
 			echo "FOTA_ALL :"
 			if [ "${CONFIG_BOARD_FOTA_SUPPORT}" = "y" ]; then
 				pushd ${openocd_path}
-				./openocd_linux64 -f s5jt200_evt0_flash_all_fota.cfg
+				./$COMMAND -f s5jt200_evt0_flash_all_fota.cfg
 				popd
 				prepare_resource
 			else
@@ -97,7 +106,7 @@ main()
 			echo "TINYARA_OTA0 :"
 			if [ "${CONFIG_BOARD_FOTA_SUPPORT}" = "y" ]; then
 				pushd ${openocd_path}
-				./openocd_linux64 -f s5jt200_evt0_flash_tinyara_ota0.cfg
+				./$COMMAND -f s5jt200_evt0_flash_tinyara_ota0.cfg
 				popd
 			else
 				echo "FOTA is not supported, skip download ..."
@@ -107,7 +116,7 @@ main()
 			echo "TINYARA_OTA1 :"
 			if [ "${CONFIG_BOARD_FOTA_SUPPORT}" = "y" ]; then
 				pushd ${openocd_path}
-				./openocd_linux64 -f s5jt200_evt0_flash_tinyara_ota1.cfg
+				./$COMMAND -f s5jt200_evt0_flash_tinyara_ota1.cfg
 				popd
 			else
 				echo "FOTA is not supported, skip download ..."
