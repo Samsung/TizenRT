@@ -118,42 +118,35 @@
 
 
 /* ---------- IP options ---------- */
-#ifdef CONFIG_NET_LWIP_IP_FORWARD
-#define IP_FORWARD                      1
-#else
-#define IP_FORWARD                      0
+
+#ifdef CONFIG_NET_IP_FORWARD
+#define IP_FORWARD                      CONFIG_NET_IP_FORWARD
 #endif
 
-#ifdef CONFIG_NET_LWIP_IP_OPTIONS_ALLOWED
-#define IP_OPTIONS_ALLOWED              1
-#else
-#define IP_OPTIONS_ALLOWED              0
+#ifdef CONFIG_NET_IP_OPTIONS_ALLOWED
+#define IP_OPTIONS_ALLOWED              CONFIG_NET_IP_OPTIONS_ALLOWED
 #endif
 
-
-#ifdef CONFIG_NET_LWIP_IP_REASSEMBLY
-#define IP_REASSEMBLY                   1
-#else
-#define IP_REASSEMBLY                   0
+#ifdef CONFIG_NET_IP_FRAG
+#define IP_FRAG	CONFIG_NET_IP_FRAG
 #endif
 
-#ifdef CONFIG_NET_LWIP_IP_FRAG
-#define IP_FRAG                         1
-#else
-#define IP_FRAG                         0
+#ifdef CONFIG_NET_IP_REASSEMBLY
+#define IP_REASSEMBLY                  CONFIG_NET_IP_REASSEMBLY
 #endif
 
-#ifdef CONFIG_NET_LWIP_IP_REASSEMBLY_MAXAGE
-#define IP_REASS_MAXAGE                 CONFIG_NET_LWIP_IP_REASSEMBLY_MAXAGE
+#ifdef CONFIG_NET_IPV4_REASS_MAX_PBUFS
+#define IP_REASS_MAX_PBUFS	           CONFIG_NET_IPV4_REASS_MAX_PBUFS
 #endif
 
-#ifdef CONFIG_NET_LWIP_IP_REASS_MAX_PBUFS
-#define IP_REASS_MAX_PBUFS              CONFIG_NET_LWIP_IP_REASS_MAX_PBUFS
+#ifdef CONFIG_NET_IPV4_REASS_MAXAGE
+#define IP_REASS_MAXAGE	               CONFIG_NET_IPV4_REASS_MAXAGE
 #endif
 
-#ifdef CONFIG_NET_LWIP_IP_DEFAULT_TTL
-#define IP_DEFAULT_TTL                  CONFIG_NET_LWIP_IP_DEFAULT_TTL
+#ifdef CONFIG_NET_IP_DEFAULT_TTL
+#define IP_DEFAULT_TTL                 CONFIG_NET_IP_DEFAULT_TTL
 #endif
+
 /* ---------- IP options ---------- */
 
 
@@ -556,10 +549,6 @@
 #define TCPIP_THREAD_PRIO               CONFIG_NET_LWIP_TCPIP_THREAD_PRIO
 #endif
 
-#ifdef CONFIG_NET_LWIP_TCPIP_MBOX_SIZE
-#define TCPIP_MBOX_SIZE                 CONFIG_NET_LWIP_TCPIP_MBOX_SIZE
-#endif
-
 #ifdef CONFIG_NET_LWIP_DEFAULT_THREAD_NAME
 #define DEFAULT_THREAD_NAME             CONFIG_NET_LWIP_DEFAULT_THREAD_NAME
 #endif
@@ -572,284 +561,207 @@
 #define DEFAULT_THREAD_PRIO             CONFIG_NET_LWIP_DEFAULT_THREAD_PRIO
 #endif
 
-#define DEFAULT_RAW_RECVMBOX_SIZE       64
-#define DEFAULT_UDP_RECVMBOX_SIZE       64
-#define DEFAULT_TCP_RECVMBOX_SIZE       54
-#define DEFAULT_ACCEPTMBOX_SIZE         64
 /* Thread options */
+
+/* ---------- Mailbox options ---------- */
+#ifdef CONFIG_NET_DEFAULT_ACCEPTMBOX_SIZE
+#define DEFAULT_ACCEPTMBOX_SIZE	CONFIG_NET_DEFAULT_ACCEPTMBOX_SIZE
+#endif
+
+#ifdef CONFIG_NET_DEFAULT_RAW_RECVMBOX_SIZE
+#define DEFAULT_RAW_RECVMBOX_SIZE	CONFIG_NET_DEFAULT_RAW_RECVMBOX_SIZE
+#endif
+
+#ifdef CONFIG_NET_DEFAULT_TCP_RECVMBOX_SIZE
+#define DEFAULT_TCP_RECVMBOX_SIZE	CONFIG_NET_DEFAULT_TCP_RECVMBOX_SIZE
+#endif
+
+#ifdef CONFIG_NET_DEFAULT_UDP_RECVMBOX_SIZE
+#define DEFAULT_UDP_RECVMBOX_SIZE	CONFIG_NET_DEFAULT_UDP_RECVMBOX_SIZE
+#endif
+
+#ifdef CONFIG_NET_TCPIP_MBOX_SIZE
+#define TCPIP_MBOX_SIZE	CONFIG_NET_TCPIP_MBOX_SIZE
+#endif
+
+/* ---------- Mailbox options ---------- */
 
 /* ---------- Debug options ---------- */
 #ifdef CONFIG_NET_LWIP_DEBUG
-#define LWIP_DEBUG                      1
-
-
-#ifdef CONFIG_NET_LWIP_DEBUG_LEVEL
-#define LWIP_DBG_MIN_LEVEL              CONFIG_NET_LWIP_DEBUG_LEVEL
+#define LWIP_DEBUG CONFIG_LWIP_DEBUG
+#define LWIP_DEBUG_TIMERNAMES 0
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_ETHARP
-#define ETHARP_DEBUG                    LWIP_DBG_ON
-#else
-#define ETHARP_DEBUG                    LWIP_DBG_OFF
+#ifdef CONFIG_NET_ETHARP_DEBUG
+#define ETHARP_DEBUG	CONFIG_NET_ETHARP_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_NETIF
-#define NETIF_DEBUG                     LWIP_DBG_ON
-#else
-#define NETIF_DEBUG                     LWIP_DBG_OFF
+#ifdef CONFIG_NET_NETIF_DEBUG
+#define NETIF_DEBUG	CONFIG_NET_NETIF_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_PBUF
-#define PBUF_DEBUG                      LWIP_DBG_ON
-#else
-#define PBUF_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_NET_PBUF_DEBUG
+#define PBUF_DEBUG	CONFIG_NET_PBUF_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_API_LIB
-#define API_LIB_DEBUG                   LWIP_DBG_ON
-#else
-#define API_LIB_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_NET_API_LIB_DEBUG
+#define API_LIB_DEBUG	CONFIG_NET_API_LIB_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_API_MSG
-#define API_MSG_DEBUG                   LWIP_DBG_ON
-#else
-#define API_MSG_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_NET_API_MSG_DEBUG
+#define API_MSG_DEBUG	CONFIG_NET_API_MSG_DEBUG
 #endif
 
-
-#ifdef CONFIG_NET_LWIP_DEBUG_SOCKETS
-#define SOCKETS_DEBUG                   LWIP_DBG_ON
-#else
-#define SOCKETS_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_NET_SOCKETS_DEBUG
+#define SOCKETS_DEBUG	CONFIG_NET_SOCKETS_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_ICMP
-#define ICMP_DEBUG                      LWIP_DBG_ON
-#else
-#define ICMP_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_NET_ICMP_DEBUG
+#define ICMP_DEBUG	CONFIG_NET_ICMP_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_IGMP
-#define IGMP_DEBUG                      LWIP_DBG_ON
-#else
-#define IGMP_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_NET_IGMP_DEBUG
+#define IGMP_DEBUG	CONFIG_NET_IGMP_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_INET
-#define INET_DEBUG                      LWIP_DBG_ON
-#else
-#define INET_DEBUG                      LWIP_DBG_OFF
+#ifdef CONFIG_NET_IP_DEBUG
+#define IP_DEBUG	CONFIG_NET_IP_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_IP
-#define IP_DEBUG                        LWIP_DBG_ON
-#else
-#define IP_DEBUG                        LWIP_DBG_OFF
+#ifdef CONFIG_NET_IP_REASS_DEBUG
+#define IP_REASS_DEBUG	CONFIG_NET_IP_REASS_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_IP_REASS
-#define IP_REASS_DEBUG                  LWIP_DBG_ON
-#else
-#define IP_REASS_DEBUG                  LWIP_DBG_OFF
+#ifdef CONFIG_NET_RAW_DEBUG
+#define RAW_DEBUG	CONFIG_NET_RAW_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_RAW
-#define RAW_DEBUG                       LWIP_DBG_ON
-#else
-#define RAW_DEBUG                       LWIP_DBG_OFF
+#ifdef CONFIG_NET_MEM_DEBUG
+#define MEM_DEBUG	CONFIG_NET_MEM_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_MEM
-#define MEM_DEBUG                       LWIP_DBG_ON
-#else
-#define MEM_DEBUG                       LWIP_DBG_OFF
+#ifdef CONFIG_NET_MEMP_DEBUG
+#define MEMP_DEBUG	CONFIG_NET_MEMP_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_SYS
-#define SYS_DEBUG                       LWIP_DBG_ON
-#else
-#define SYS_DEBUG                       LWIP_DBG_OFF
+#ifdef CONFIG_NET_SYS_DEBUG
+#define SYS_DEBUG	CONFIG_NET_SYS_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_TIMER
-#define TIMER_DEBUG                     LWIP_DBG_ON
-#else
-#define TIMER_DEBUG                     LWIP_DBG_OFF
+#ifdef CONFIG_NET_TIMERS_DEBUG
+#define TIMERS_DEBUG	CONFIG_NET_TIMERS_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_TCP
-#define TCP_DEBUG                       LWIP_DBG_ON
-#else
-#define TCP_DEBUG                       LWIP_DBG_OFF
+#ifdef CONFIG_NET_TCP_DEBUG
+#define TCP_DEBUG	CONFIG_NET_TCP_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_TCP_INPUT
-#define TCP_INPUT_DEBUG                 LWIP_DBG_ON
-#else
-#define TCP_INPUT_DEBUG                 LWIP_DBG_OFF
+#ifdef CONFIG_NET_TCP_INPUT_DEBUG
+#define TCP_INPUT_DEBUG	CONFIG_NET_TCP_INPUT_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_TCP_FR
-#define TCP_FR_DEBUG                    LWIP_DBG_ON
-#else
-#define TCP_FR_DEBUG                    LWIP_DBG_OFF
+#ifdef CONFIG_NET_TCP_FR_DEBUG
+#define TCP_FR_DEBUG	CONFIG_NET_TCP_FR_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_TCP_RTO
-#define TCP_RTO_DEBUG                   LWIP_DBG_ON
-#else
-#define TCP_RTO_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_NET_TCP_RTO_DEBUG
+#define TCP_RTO_DEBUG	CONFIG_NET_TCP_RTO_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_TCP_CWND
-#define TCP_CWND_DEBUG                  LWIP_DBG_ON
-#else
-#define TCP_CWND_DEBUG                  LWIP_DBG_OFF
+#ifdef CONFIG_NET_TCP_CWND_DEBUG
+#define TCP_CWND_DEBUG	CONFIG_NET_TCP_CWND_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_TCP_WND
-#define TCP_WND_DEBUG                   LWIP_DBG_ON
-#else
-#define TCP_WND_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_NET_TCP_WND_DEBUG
+#define TCP_WND_DEBUG	CONFIG_NET_TCP_WND_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_TCP_OUTPUT
-#define TCP_OUTPUT_DEBUG                LWIP_DBG_ON
-#else
-#define TCP_OUTPUT_DEBUG                LWIP_DBG_OFF
+#ifdef CONFIG_NET_TCP_OUTPUT_DEBUG
+#define TCP_OUTPUT_DEBUG	CONFIG_NET_TCP_OUTPUT_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_TCP_RST
-#define TCP_RST_DEBUG                   LWIP_DBG_ON
-#else
-#define TCP_RST_DEBUG                   LWIP_DBG_OFF
+#ifdef CONFIG_NET_TCP_RST_DEBUG
+#define TCP_RST_DEBUG	CONFIG_NET_TCP_RST_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_TCP_QLEN
-#define TCP_QLEN_DEBUG                  LWIP_DBG_ON
-#else
-#define TCP_QLEN_DEBUG                  LWIP_DBG_OFF
+#ifdef CONFIG_NET_TCP_QLEN_DEBUG
+#define TCP_QLEN_DEBUG	CONFIG_NET_TCP_QLEN_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_UDP
-#define UDP_DEBUG                       LWIP_DBG_ON
-#else
-#define UDP_DEBUG                       LWIP_DBG_OFF
+#ifdef CONFIG_NET_UDP_DEBUG
+#define UDP_DEBUG	CONFIG_NET_UDP_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_TCPIP
-#define TCPIP_DEBUG                     LWIP_DBG_ON
-#else
-#define TCPIP_DEBUG                     LWIP_DBG_OFF
+#ifdef CONFIG_NET_TCPIP_DEBUG
+#define TCPIP_DEBUG	CONFIG_NET_TCPIP_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_PPP
-#define PPP_DEBUG                       LWIP_DBG_ON
-#else
-#define PPP_DEBUG                       LWIP_DBG_OFF
+#ifdef CONFIG_NET_AUTOIP_DEBUG
+#define AUTOIP_DEBUG	CONFIG_NET_AUTOIP_DEBUG
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEBUG_SLIP
-#define SLIP_DEBUG                      LWIP_DBG_ON
-#else
-#define SLIP_DEBUG                      LWIP_DBG_OFF
-#endif
-
-#ifdef CONFIG_NET_LWIP_DEBUG_SNMP_MSG
-#define SNMP_MSG_DEBUG                  LWIP_DBG_ON
-#else
-#define SNMP_MSG_DEBUG                  LWIP_DBG_OFF
-#endif
-
-#ifdef CONFIG_NET_LWIP_DEBUG_SNMP_MIB
-#define SNMP_MIB_DEBUG                  LWIP_DBG_ON
-#else
-#define SNMP_MIB_DEBUG                  LWIP_DBG_OFF
-#endif
-
+#ifdef CONFIG_NET_POLL_DEBUG
+#define POLL_DEBUG	CONFIG_NET_POLL_DEBUG
 #endif
 
 /* ---------- Debug options ---------- */
 
 
 /* ---------- Stat options ---------- */
-#ifdef CONFIG_NET_LWIP_STATS
-#define LWIP_STATS                      1
 
-#ifdef CONFIG_NET_LWIP_STATS_DISPLAY
-#define  LWIP_STATS_DISPLAY             1
-#else
-#define  LWIP_STATS_DISPLAY             0
+#ifdef CONFIG_NET_STATS
+#define LWIP_STATS	CONFIG_NET_STATS
 #endif
 
-#ifdef CONFIG_NET_LWIP_STATS_LINK
-#define  LINK_STATS                     1
-#else
-#define  LINK_STATS                     0
+#ifdef CONFIG_NET_STATS_DISPLAY
+#define LWIP_STATS_DISPLAY	CONFIG_NET_STATS_DISPLAY
 #endif
 
-#ifdef CONFIG_NET_LWIP_STATS_ARP
-#define  ETHARP_STATS                   1
-#else
-#define  ETHARP_STATS                   0
+#ifdef CONFIG_NET_LINK_STATS
+#define LINK_STATS	CONFIG_NET_LINK_STATS
 #endif
 
-#ifdef CONFIG_NET_LWIP_STATS_IP
-#define  IP_STATS                       1
-#else
-#define  IP_STATS                       0
+#ifdef CONFIG_NET_ETHARP_STATS
+#define ETHARP_STATS	CONFIG_NET_ETHARP_STATS
 #endif
 
-#ifdef CONFIG_NET_LWIP_STATS_IPFRAG
-#define  IPFRAG_STATS                   1
-#else
-#define  IPFRAG_STATS                   0
+#ifdef CONFIG_NET_IP_STATS
+#define IP_STATS	CONFIG_NET_IP_STATS
 #endif
 
-#ifdef CONFIG_NET_LWIP_STATS_ICMP
-#define  ICMP_STATS                     1
-#else
-#define  ICMP_STATS                     0
+#ifdef CONFIG_NET_IPFRAG_STATS
+#define IPFRAG_STATS	CONFIG_NET_IPFRAG_STATS
 #endif
 
-
-#ifdef CONFIG_NET_LWIP_STATS_IGMP
-#define  IGMP_STATS                     1
-#else
-#define  IGMP_STATS                     0
+#ifdef CONFIG_NET_ICMP_STATS
+#define ICMP_STATS	CONFIG_NET_ICMP_STATS
 #endif
 
-#ifdef CONFIG_NET_LWIP_STATS_UDP
-#define  UDP_STATS                      1
-#else
-#define  UDP_STATS                      0
+#ifdef CONFIG_NET_IGMP_STATS
+#define IGMP_STATS	CONFIG_NET_IGMP_STATS
 #endif
 
-#ifdef CONFIG_NET_LWIP_STATS_TCP
-#define  TCP_STATS                      1
-#else
-#define  TCP_STATS                      0
+#ifdef CONFIG_NET_UDP_STATS
+#define UDP_STATS	CONFIG_NET_UDP_STATS
 #endif
 
-#ifdef CONFIG_NET_LWIP_STATS_MEM
-#define  MEM_STATS                      1
-#else
-#define  MEM_STATS                      0
+#ifdef CONFIG_NET_TCP_STATS
+#define TCP_STATS	CONFIG_NET_TCP_STATS
 #endif
 
-
-#ifdef CONFIG_NET_LWIP_STATS_SYS
-#define  SYS_STATS                      1
-#else
-#define  SYS_STATS                      0
+#ifdef CONFIG_NET_MEM_STATS
+#define MEM_STATS	CONFIG_NET_MEM_STATS
 #endif
 
-#else
-#define LWIP_STATS                      0
+#ifdef CONFIG_NET_MEMP_STATS
+#define MEMP_STATS	CONFIG_NET_MEMP_STATS
 #endif
+
+#ifdef CONFIG_NET_SYS_STATS
+#define SYS_STATS	CONFIG_NET_SYS_STATS
+#endif
+
 /* ---------- Stat options ---------- */
-
 
 #define LWIP_COMPAT_MUTEX               1
 

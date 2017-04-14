@@ -5,9 +5,22 @@
 
 menu "LwIP options"
 
+menuconfig NET_IPv4
+	bool "IPv4"
+	default y
+	---help---
+		Build in support for IPv4.
+
+if NET_IPv4
+
+source "net/lwip/configs/ipv4/Kconfig"
+
+endif #NET_IPv4
+
 source "net/lwip/configs/mem/Kconfig"
 source "net/lwip/configs/socket/Kconfig"
 source "net/lwip/configs/icmp/Kconfig"
+source "net/lwip/configs/mbox/Kconfig"
 
 menuconfig NET_LWIP_IGMP
 	bool "IGMP support"
@@ -28,62 +41,6 @@ source "net/lwip/configs/tcp/Kconfig"
 source "net/lwip/configs/udp/Kconfig"
 source "net/lwip/configs/arp/Kconfig"
 
-menu "IP options"
-
-config NET_LWIP_IP_FORWARD
-	bool "Support IP packet forwarding"
-	default n
-	---help---
-		Enables the ability to forward IP packets across network
-		interfaces. If you are going to run lwIP on a device with only one network
-		interface, define this to 0.
-
-config NET_LWIP_IP_OPTIONS_ALLOWED
-	bool "Support IP options"
-	default y
-	---help---
-		If disabled, all packets with IP options are dropped.
-		If enabled, IP options are allowed (but not parsed).
-
-config NET_LWIP_IP_REASSEMBLY
-	bool "Support IP packet reassembly"
-	default y
-	---help---
-		Enable reassembling incoming fragmented IP packets.
-
-config NET_LWIP_IP_REASSEMBLY_MAXAGE
-	int "Maximum wait time in seconds for packet reassembly"
-	default 3
-	depends on NET_LWIP_IP_REASSEMBLY
-	---help---
-		Maximum time in seconds a fragmented IP packet waits
-		for all fragments to arrive. If not all fragments arrived
-		in this time, the whole packet is discarded.
-
-config NET_LWIP_IP_REASS_MAX_PBUFS
-	int "Maximum number of pbufs waiting to be reassembled"
-	default 10
-	depends on NET_LWIP_IP_REASSEMBLY
-	---help---
-		Total maximum amount of pbufs waiting to be reassembled.
-		Since the received pbufs are enqueued, be sure to configure
-		PBUF_POOL_SIZE > IP_REASS_MAX_PBUFS so that the stack is still
-		able to receive packets even if the maximum amount of fragments
-		is enqueued for reassembly!
-
-config NET_LWIP_IP_FRAG
-	bool "Support IP packet fragmentation"
-	default y
-	---help---
-		Enable fragmentation of  outgoing IP packets if their size exceeds MTU.
-
-config NET_LWIP_IP_DEFAULT_TTL
-	int "Default value for Time-To-Live"
-	default 255
-	---help---
-		Default value for Time-To-Live used by transport layers.
-
-endmenu #IP options
 
 config NET_LWIP_VLAN
 	bool "Support VLAN"
@@ -116,10 +73,6 @@ config NET_LWIP_TCPIP_THREAD_STACKSIZE
 config NET_LWIP_TCPIP_THREAD_PRIO
 	int "The priority assigned to the main tcpip thread"
 	default 100
-
-config NET_LWIP_TCPIP_MBOX_SIZE
-	int "The mailbox size for the tcpip thread messages"
-	default 0
 
 config NET_LWIP_DEFAULT_THREAD_NAME
 	string "The name assigned to any other lwIP thread"
@@ -244,203 +197,7 @@ config NET_LWIP_SNMP_MAX_TREE_DEPTH
 
 endif #NET_LWIP_SNMP
 
-menuconfig NET_LWIP_DEBUG
-	bool "LwIP debugging options"
-	default n
-	---help---
-		This feature enables LwIP debugging options.
-
-if NET_LWIP_DEBUG
-
-config NET_LWIP_DEBUG_LEVEL
-	int "LWIP debug level"
-	default 0
-	range 0 3
-	---help---
-		Configure LwIP log level.
-		0 : debug all
-		1 : warning (bad checksums, dropped packets, ...)
-		2 : serious (memory allocation failures, ... )
-		3 : severe
-
-config NET_LWIP_DEBUG_ETHARP
-	bool "Enable Ethernet ARP debugging"
-	default n
-
-config NET_LWIP_DEBUG_NETIF
-	bool "Enable netif debugging"
-	default n
-
-config NET_LWIP_DEBUG_PBUF
-	bool "Enable pbuf debugging"
-	default n
-
-config NET_LWIP_DEBUG_API_LIB
-	bool "Enable debugging in api_lib.c"
-	default n
-
-config NET_LWIP_DEBUG_API_MSG
-	bool "Enable debugging in api_msg.c"
-	default n
-
-config NET_LWIP_DEBUG_SOCKETS
-	bool "Enable debugging in sockets.c"
-	default n
-
-config NET_LWIP_DEBUG_ICMP
-	bool "Enable debugging in icmp.c"
-	default n
-
-config NET_LWIP_DEBUG_IGMP
-	bool "Enable debugging in igmp.c"
-	default n
-
-config NET_LWIP_DEBUG_INET
-	bool "Enable debugging in inet.c"
-	default n
-
-config NET_LWIP_DEBUG_IP
-	bool "Enable debugging for IP"
-	default n
-
-config NET_LWIP_DEBUG_IP_REASS
-	bool "Enable debugging in ip_frag.c"
-	default n
-	---help---
-		Enable debugging in ip_frag.c for both frag & reass.
-
-config NET_LWIP_DEBUG_RAW
-	bool "Enable debugging in raw.c"
-	default n
-
-config NET_LWIP_DEBUG_MEM
-	bool "Enable debugging in mem.c"
-	default n
-
-config NET_LWIP_DEBUG_SYS
-	bool "Enable debugging in sys.c"
-	default n
-
-config NET_LWIP_DEBUG_TIMER
-	bool "Enable debugging in timers.c"
-	default n
-
-config NET_LWIP_DEBUG_TCP
-	bool "Enable debugging for TCP"
-	default n
-
-config NET_LWIP_DEBUG_TCP_INPUT
-	bool "Enable debugging in tcp_in.c"
-	default n
-	---help---
-		Enable debugging in tcp_in.c for incoming debug.
-
-config NET_LWIP_DEBUG_TCP_FR
-	bool "Enable debugging in tcp_in.c for fast retransmit"
-	default n
-	---help---
-		Enable debugging in tcp_in.c for fast retransmit.
-
-config NET_LWIP_DEBUG_TCP_RTO
-	bool "Enable debugging in TCP for retransmit"
-	default n
-
-config NET_LWIP_DEBUG_TCP_CWND
-	bool "Enable debugging for TCP congestion window"
-	default n
-
-config NET_LWIP_DEBUG_TCP_WND
-	bool "Enable debugging in tcp_in.c for window updating"
-	default n
-
-config NET_LWIP_DEBUG_TCP_OUTPUT
-	bool "Enable debugging in tcp_out.c"
-	default n
-
-config NET_LWIP_DEBUG_TCP_RST
-	bool "Enable debugging for TCP with the RST message"
-	default n
-
-config NET_LWIP_DEBUG_TCP_QLEN
-	bool "Enable debugging for TCP queue lengths"
-	default n
-
-config NET_LWIP_DEBUG_UDP
-	bool "Enable debugging in UDP"
-	default n
-
-config NET_LWIP_DEBUG_TCPIP
-	bool "Enable debugging in tcpip.c"
-	default n
-
-config NET_LWIP_DEBUG_PPP
-	bool "Enable debugging for PPP"
-	default n
-
-config NET_LWIP_DEBUG_SLIP
-	bool "Enable debugging in slipif.c"
-	default n
-
-config NET_LWIP_DEBUG_SNMP_MSG
-	bool "Enable debugging for SNMP messages"
-	default n
-
-config NET_LWIP_DEBUG_SNMP_MIB
-	bool "Enable debugging for SNMP MIBs"
-	default n
-
-endif #NET_LWIP_DEBUG
-
-menuconfig NET_LWIP_STATS
-	bool "LwIP stats options"
-	default y
-
-if NET_LWIP_STATS
-
-config NET_LWIP_STATS_DISPLAY
-	bool "Compile in the statistics output functions"
-	default n
-
-config NET_LWIP_STATS_LINK
-	bool "Enable link stats"
-	default y
-
-config NET_LWIP_STATS_ARP
-	bool "Enable ARP stats"
-	default y
-
-config NET_LWIP_STATS_IP
-	bool "Enable IP stats"
-	default y
-
-config NET_LWIP_STATS_IPFRAG
-	bool "Enable IP fragmentation stats"
-	default y
-
-config NET_LWIP_STATS_ICMP
-	bool "Enable ICMP stats"
-	default n
-
-config NET_LWIP_STATS_IGMP
-	bool "Enable IGMP stats"
-	default n
-
-config NET_LWIP_STATS_UDP
-	bool "Enable UDP stats"
-	default y
-
-config NET_LWIP_STATS_TCP
-	bool "Enable TCP stats"
-	default y
-
-config NET_LWIP_STATS_MEM
-	bool "Enable MEM stats"
-	default y
-
-config NET_LWIP_STATS_SYS
-	bool "Enable Sys stats"
-	default y
-
-endif #NET_LWIP_STATS
+source "net/lwip/configs/debug/Kconfig"
+source "net/lwip/configs/stats/Kconfig"
 
 endmenu #LwIP options
