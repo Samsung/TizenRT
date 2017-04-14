@@ -85,166 +85,174 @@
  * Definitions
  *****************************************************************************/
 
-#define CH_CFG_TX_CH_ON 	(1 << 0)
-#define CH_CFG_TX_CH_OFF 	(0 << 0)
-#define CH_CFG_RX_CH_ON 	(1 << 1)
-#define CH_CFG_RX_CH_OFF 	(0 << 1)
-#define CH_CFG_MODE_MASK	(3 << 2)
-#define CH_CFG_MODE(x) 		((x & 3) << 2)
-#define CH_CFG_SLAVE 		(1 << 4)
-#define CH_CFG_MASTER 		(0 << 4)
-#define CH_CFG_FIFO_FLUSH 	(1 << 5)
-#define CH_CFG_FIFO_FLUSH_OFF 	(0 << 5)
-#define CH_CFG_HIGH_SPEED_EN 	(1 << 6)
-#define CH_CFG_HIGH_SPEED_DIS 	(0 << 6)
+#define CH_CFG_TX_CH_ON			(1 << 0)
+#define CH_CFG_TX_CH_OFF		(0 << 0)
+#define CH_CFG_RX_CH_ON			(1 << 1)
+#define CH_CFG_RX_CH_OFF		(0 << 1)
+#define CH_CFG_MODE_MASK		(3 << 2)
+#define CH_CFG_MODE(x)			((x & 3) << 2)
+#define CH_CFG_SLAVE			(1 << 4)
+#define CH_CFG_MASTER			(0 << 4)
+#define CH_CFG_FIFO_FLUSH		(1 << 5)
+#define CH_CFG_FIFO_FLUSH_OFF		(0 << 5)
+#define CH_CFG_HIGH_SPEED_EN		(1 << 6)
+#define CH_CFG_HIGH_SPEED_DIS		(0 << 6)
 
-#define MODE_CFG_DMA_SINGLE 	(0 << 0)
-#define MODE_CFG_DMA_4BURST 	(1 << 0)
-#define MODE_CFG_DMA_TX_ON 	(1 << 1)
-#define MODE_CFG_DMA_TX_OFF 	(0 << 1)
-#define MODE_CFG_DMA_RX_ON 	(1 << 2)
-#define MODE_CFG_DMA_RX_OFF 	(0 << 2)
-#define MODE_CFG_TX_RDY_LVL(x) 	((x & 0x3F) << 5)
-#define MODE_CFG_RX_RDY_LVL(x) 	((x & 0x3F) << 11)
-#define MODE_CFG_BUS_WDT_MASK 	(3 << 17)
-#define MODE_CFG_BUS_WIDTH_8 	(0 << 17)
-#define MODE_CFG_BUS_WIDTH_16	(1 << 17)
-#define MODE_CFG_BUS_WIDTH_32	(2 << 17)
-#define MODE_CFG_TRLNG_CNT(x) 	((x & 0x3FF) << 19)
-#define MODE_CFG_CH_WDT_MASK 	(3 << 29)
-#define MODE_CFG_CH_WIDTH_8 	(0 << 29)
-#define MODE_CFG_CH_WIDTH_16	(1 << 29)
-#define MODE_CFG_CH_WIDTH_32	(2 << 29)
+#define MODE_CFG_DMA_SINGLE		(0 << 0)
+#define MODE_CFG_DMA_4BURST		(1 << 0)
+#define MODE_CFG_DMA_TX_ON		(1 << 1)
+#define MODE_CFG_DMA_TX_OFF		(0 << 1)
+#define MODE_CFG_DMA_RX_ON		(1 << 2)
+#define MODE_CFG_DMA_RX_OFF		(0 << 2)
+#define MODE_CFG_TX_RDY_LVL(x)		((x & 0x3F) << 5)
+#define MODE_CFG_RX_RDY_LVL(x)		((x & 0x3F) << 11)
+#define MODE_CFG_BUS_WDT_MASK		(3 << 17)
+#define MODE_CFG_BUS_WIDTH_8		(0 << 17)
+#define MODE_CFG_BUS_WIDTH_16		(1 << 17)
+#define MODE_CFG_BUS_WIDTH_32		(2 << 17)
+#define MODE_CFG_TRLNG_CNT(x)		((x & 0x3FF) << 19)
+#define MODE_CFG_CH_WDT_MASK		(3 << 29)
+#define MODE_CFG_CH_WIDTH_8		(0 << 29)
+#define MODE_CFG_CH_WIDTH_16		(1 << 29)
+#define MODE_CFG_CH_WIDTH_32		(2 << 29)
 
-#define CS_REG_nSS_ACTIVE 	(0 << 0)
-#define CS_REG_nSS_INACTIVE 	(1 << 0)
-#define CS_REG_nSS_AUTO		(1 << 1)
-#define CS_REG_nSS_MANUAL	(0 << 1)
-#define CS_REG_nSS_TIME_CNT(x)	((x & 0x3F)  << 1)
+#define CS_REG_nSS_ACTIVE		(0 << 0)
+#define CS_REG_nSS_INACTIVE		(1 << 0)
+#define CS_REG_nSS_AUTO			(1 << 1)
+#define CS_REG_nSS_MANUAL		(0 << 1)
+#define CS_REG_nSS_TIME_CNT(x)		((x & 0x3F) << 1)
 
-#define INT_MASK_TRAILING 	(1 << 6)
-#define INT_MASK_RX_OVERRUN	(1 << 5)
-#define INT_MASK_RX_UNDERRUN	(1 << 4)
-#define INT_MASK_TX_OVERRUN	(1 << 3)
-#define INT_MASK_TX_UNDERRUN	(1 << 2)
-#define INT_MASK_RX_FIFO_RDY	(1 << 1)
-#define INT_MASK_TX_FIFO_RDY 	(1 << 0)
+#define INT_MASK_TRAILING		(1 << 6)
+#define INT_MASK_RX_OVERRUN		(1 << 5)
+#define INT_MASK_RX_UNDERRUN		(1 << 4)
+#define INT_MASK_TX_OVERRUN		(1 << 3)
+#define INT_MASK_TX_UNDERRUN		(1 << 2)
+#define INT_MASK_RX_FIFO_RDY		(1 << 1)
+#define INT_MASK_TX_FIFO_RDY		(1 << 0)
 
-#define SPI_STAT_TX_FIFO_RDY(x) ((x >> 0) & 1)
-#define SPI_STAT_RX_FIFO_RDY(x) ((x >> 1) & 1)
-#define SPI_STAT_TX_UNDERRUN(x) ((x >> 2) & 1)
-#define SPI_STAT_TX_OVERRUN(x) ((x >> 3) & 1)
-#define SPI_STAT_RX_UNDERRUN(x) ((x >> 4) & 1)
-#define SPI_STAT_RX_OVERRUN(x) ((x >> 5) & 1)
-#define SPI_STAT_TX_FIFO_LVL(x) ((x >> 6) & 0x1FF)
-#define SPI_STAT_RX_FIFO_LVL(x) ((x >> 15) & 0x1FF)
-#define SPI_STAT_TRAILING_BYTE(x) ((x >> 24) & 1)
-#define SPI_STAT_TX_DONE(x) ((x >> 25) & 1)
+#define SPI_STAT_TX_FIFO_RDY(x)		((x >> 0) & 1)
+#define SPI_STAT_RX_FIFO_RDY(x)		((x >> 1) & 1)
+#define SPI_STAT_TX_UNDERRUN(x)		((x >> 2) & 1)
+#define SPI_STAT_TX_OVERRUN(x)		((x >> 3) & 1)
+#define SPI_STAT_RX_UNDERRUN(x)		((x >> 4) & 1)
+#define SPI_STAT_RX_OVERRUN(x)		((x >> 5) & 1)
+#define SPI_STAT_TX_FIFO_LVL(x)		((x >> 6) & 0x1FF)
+#define SPI_STAT_RX_FIFO_LVL(x)		((x >> 15) & 0x1FF)
+#define SPI_STAT_TRAILING_BYTE(x)	((x >> 24) & 1)
+#define SPI_STAT_TX_DONE(x)		((x >> 25) & 1)
 
 /*****************************************************************************
  * Private Types
  *****************************************************************************/
-struct s5jt200_spidev_s {
+
+struct s5j_spidev_s {
 	struct spi_dev_s spidev;
+	uint32_t base;
+	uint8_t port;
+	unsigned int freqid;
+	s32 gpio_clk;
+	s32 gpio_nss;
+	s32 gpio_miso;
+	s32 gpio_mosi;
 
 #ifndef CONFIG_SPI_POLLWAIT
 	sem_t xfrsem;				/* Wait for transfer to complete */
 #endif
-	void *txbuffer;				/* Source buffer */
-	void *rxbuffer;				/* Destination buffer */
-
-	uint32_t base;
-	uint8_t spiirq;				/* SPI IRQ number */
-
-#ifdef CONFIG_SPI_DMA
-	/* Put some here if we will decide to use DMA some day */
-#endif
 
 #ifndef CONFIG_SPI_OWNBUS
 	sem_t exclsem;
-	uint32_t frequency;
-	uint32_t actual;
-	uint8_t nbits;
-	uint8_t mode;
 #endif
-	uint8_t port;
-
 };
 
 /*****************************************************************************
  * Private Function Prototypes
  *****************************************************************************/
-static int spi_lock(struct spi_dev_s *dev, bool lock);
-static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
-static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency);
-static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode);
-static void spi_setbits(struct spi_dev_s *dev, int nbits);
-static uint8_t spi_status(struct spi_dev_s *dev, enum spi_dev_e devid);
-static uint16_t spi_send(struct spi_dev_s *dev, uint16_t word);
-static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords);
+
+/* SPI Driver Methods */
+
+static int spi_lock(FAR struct spi_dev_s *dev, bool lock);
+static void spi_select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
+static uint32_t spi_setfrequency(FAR struct spi_dev_s *dev, uint32_t frequency);
+static void spi_setmode(FAR struct spi_dev_s *dev, enum spi_mode_e mode);
+static void spi_setbits(FAR struct spi_dev_s *dev, int nbits);
+static uint16_t spi_send(FAR struct spi_dev_s *dev, uint16_t wd);
+static void spi_exchange(FAR struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords);
 
 #ifndef CONFIG_SPI_EXCHANGE
-static void spi_sndblock(struct spi_dev_s *dev, const void *txbuffer, size_t nwords);
-static void spi_recvblock(struct spi_dev_s *dev, void *rxbuffer, size_t nwords);
+static void spi_sndblock(FAR struct spi_dev_s *dev, const void *txbuffer, size_t nwords);
+static void spi_recvblock(FAR struct spi_dev_s *dev, void *rxbuffer, size_t nwords);
 #endif
 
 /*****************************************************************************
  * Private Data
  *****************************************************************************/
-static const struct spi_ops_s g_spiops = {
+
+static const struct spi_ops_s g_spiops =
+{
 #ifndef CONFIG_SPI_OWNBUS
-	.lock = spi_lock,
+	.lock				= spi_lock,
 #endif
-	.select = spi_select,
-	.setfrequency = spi_setfrequency,
-	.setmode = (void *)spi_setmode,
-	.setbits = (void *)spi_setbits,
-	.status = spi_status,
+	.select				= spi_select,
+	.setfrequency		= spi_setfrequency,
+	.setmode			= (void *)spi_setmode,
+	.setbits			= (void *)spi_setbits,
+	.status				= 0,
 #ifdef CONFIG_SPI_CMDDATA
-	.cmddata = MISSING FUNCTION;
+	.cmddata			= 0,
 #endif
-	.send = spi_send,
+	.send				= spi_send,
 #ifdef CONFIG_SPI_EXCHANGE
-	.exchange = spi_exchange,
+	.exchange			= spi_exchange,
 #else
-	.sndblock = spi_sndblock, .recvblock = spi_recvblock,
+	.sndblock			= spi_sndblock,
+	.recvblock			= spi_recvblock,
 #endif
-	.registercallback = 0,
+	.registercallback	= 0,
 };
 
-static struct s5jt200_spidev_s g_spidev[] = {
-	/*Port 0 */
-	{
-		.spidev = {
-			.ops = &g_spiops,
-		},
-		.base = S5J_SPI0_BASE,
-		.port = SPI_PORT0,
-	},
-	/*Port 1 */
-	{
-		.spidev = {
-			.ops = &g_spiops,
-		},
-		.base = S5J_SPI1_BASE,
-		.port = SPI_PORT1,
-	},
-	/*Port 2 */
-	{
-		.spidev = {
-			.ops = &g_spiops,
-		},
-		.base = S5J_SPI2_BASE,
-		.port = SPI_PORT2,
-	},
-	/*Port 3 */
-	{
-		.spidev = {
-			.ops = &g_spiops,
-		},
-		.base = S5J_SPI3_BASE,
-		.port = SPI_PORT3,
-	},
+static struct s5j_spidev_s g_spi0dev =
+{
+	.spidev		= { .ops = &g_spiops },
+	.base		= S5J_SPI0_BASE,
+	.port		= SPI_PORT0,
+	.freqid		= d1_spi0,
+	.gpio_clk	= s5j_gpio(GPP0, 0),
+	.gpio_nss	= s5j_gpio(GPP0, 1),
+	.gpio_miso	= s5j_gpio(GPP0, 2),
+	.gpio_mosi	= s5j_gpio(GPP0, 3),
+};
+static struct s5j_spidev_s g_spi1dev =
+{
+	.spidev		= { .ops = &g_spiops },
+	.base		= S5J_SPI1_BASE,
+	.port		= SPI_PORT1,
+	.freqid		= d1_spi1,
+	.gpio_clk	= s5j_gpio(GPP4, 0),
+	.gpio_nss	= s5j_gpio(GPP4, 1),
+	.gpio_miso	= s5j_gpio(GPP4, 2),
+	.gpio_mosi	= s5j_gpio(GPP4, 3),
+};
+static struct s5j_spidev_s g_spi2dev =
+{
+	.spidev		= { .ops = &g_spiops },
+	.base		= S5J_SPI2_BASE,
+	.port		= SPI_PORT2,
+	.freqid		= d1_spi2,
+	.gpio_clk	= s5j_gpio(GPG0, 4),
+	.gpio_nss	= s5j_gpio(GPG0, 5),
+	.gpio_miso	= s5j_gpio(GPG0, 6),
+	.gpio_mosi	= s5j_gpio(GPG0, 7),
+};
+static struct s5j_spidev_s g_spi3dev =
+{
+	.spidev		= { .ops = &g_spiops },
+	.base		= S5J_SPI3_BASE,
+	.port		= SPI_PORT3,
+	.freqid		= d1_spi3,
+	.gpio_clk	= s5j_gpio(GPG1, 0),
+	.gpio_nss	= s5j_gpio(GPG1, 1),
+	.gpio_miso	= s5j_gpio(GPG1, 2),
+	.gpio_mosi	= s5j_gpio(GPG1, 3),
 };
 
 /*****************************************************************************
@@ -254,70 +262,6 @@ static struct s5jt200_spidev_s g_spidev[] = {
 /*****************************************************************************
  * Private Functions
  *****************************************************************************/
-
-static void spi_set_gpio(SPI_PORT ePort, u32 DrvStrength)
-{
-	s32 gpio_clk, gpio_nss, gpio_miso, gpio_mosi;
-	if (ePort == SPI_PORT0) {
-		gpio_clk = s5j_gpio(GPP0, 0);
-		gpio_nss = s5j_gpio(GPP0, 1);
-		gpio_miso = s5j_gpio(GPP0, 2);
-		gpio_mosi = s5j_gpio(GPP0, 3);
-
-		gpio_cfg_pin(gpio_clk, GPIO_FUNC(2));
-		gpio_set_pull(gpio_clk, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_nss, GPIO_FUNC(2));
-		gpio_set_pull(gpio_nss, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_miso, GPIO_FUNC(2));
-		gpio_set_pull(gpio_miso, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_mosi, GPIO_FUNC(2));
-		gpio_set_pull(gpio_mosi, GPIO_PULL_NONE);
-	} else if (ePort == SPI_PORT1) {
-		gpio_clk = s5j_gpio(GPP4, 0);
-		gpio_nss = s5j_gpio(GPP4, 1);
-		gpio_miso = s5j_gpio(GPP4, 2);
-		gpio_mosi = s5j_gpio(GPP4, 3);
-
-		gpio_cfg_pin(gpio_clk, GPIO_FUNC(2));
-		gpio_set_pull(gpio_clk, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_nss, GPIO_FUNC(2));
-		gpio_set_pull(gpio_nss, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_miso, GPIO_FUNC(2));
-		gpio_set_pull(gpio_miso, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_mosi, GPIO_FUNC(2));
-		gpio_set_pull(gpio_mosi, GPIO_PULL_NONE);
-	} else if (ePort == SPI_PORT2) {
-		gpio_clk = s5j_gpio(GPG0, 4);
-		gpio_nss = s5j_gpio(GPG0, 5);
-		gpio_miso = s5j_gpio(GPG0, 6);
-		gpio_mosi = s5j_gpio(GPG0, 7);
-
-		gpio_cfg_pin(gpio_clk, GPIO_FUNC(2));
-		gpio_set_pull(gpio_clk, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_nss, GPIO_FUNC(2));
-		gpio_set_pull(gpio_nss, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_miso, GPIO_FUNC(2));
-		gpio_set_pull(gpio_miso, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_mosi, GPIO_FUNC(2));
-		gpio_set_pull(gpio_mosi, GPIO_PULL_NONE);
-	} else if (ePort == SPI_PORT3) {
-		gpio_clk = s5j_gpio(GPG1, 0);
-		gpio_nss = s5j_gpio(GPG1, 1);
-		gpio_miso = s5j_gpio(GPG1, 2);
-		gpio_mosi = s5j_gpio(GPG1, 3);
-
-		gpio_cfg_pin(gpio_clk, GPIO_FUNC(2));
-		gpio_set_pull(gpio_clk, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_nss, GPIO_FUNC(2));
-		gpio_set_pull(gpio_nss, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_miso, GPIO_FUNC(2));
-		gpio_set_pull(gpio_miso, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_mosi, GPIO_FUNC(2));
-		gpio_set_pull(gpio_mosi, GPIO_PULL_NONE);
-	} else {
-		return;
-	}
-}
 
 /****************************************************************************
  * Name: spi_lock
@@ -334,21 +278,17 @@ static void spi_set_gpio(SPI_PORT ePort, u32 DrvStrength)
  ****************************************************************************/
 static int spi_lock(struct spi_dev_s *dev, bool lock)
 {
-	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
-	int result;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
 	if (lock) {
 		while (sem_wait(&priv->exclsem) != 0) {
 			DEBUGASSERT(errno == EINTR);
 		}
-		result = OK;
 	} else {
-		result = sem_post(&priv->exclsem);
-		DEBUGASSERT(result == OK);
+		(void)sem_post(&priv->exclsem);
 	}
-	return result;
 
-	return 0;
+	return OK;
 }
 
 /****************************************************************************
@@ -360,22 +300,9 @@ static int spi_lock(struct spi_dev_s *dev, bool lock)
  ****************************************************************************/
 static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 {
-	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
-	switch (priv->port) {
-	case 0:
-		cal_clk_setrate(d1_spi0, (unsigned long)frequency);
-		break;
-	case 1:
-		cal_clk_setrate(d1_spi1, (unsigned long)frequency);
-		break;
-	case 2:
-		cal_clk_setrate(d1_spi2, (unsigned long)frequency);
-		break;
-	case 3:
-		cal_clk_setrate(d1_spi3, (unsigned long)frequency);
-		break;
-	}
+	cal_clk_setrate(priv->freqid, (unsigned long)frequency);
 
 	return OK;
 }
@@ -391,11 +318,12 @@ static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
  ****************************************************************************/
 static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
 {
-	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
+
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *) priv->base;
-	unsigned int cs_reg;
 
+	unsigned int cs_reg;
 	cs_reg = getreg32(&pSPIRegs->CS_REG);
 	cs_reg |= CS_REG_nSS_INACTIVE;
 
@@ -404,28 +332,6 @@ static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selecte
 	}
 
 	putreg32(cs_reg, &pSPIRegs->CS_REG);
-}
-
-/****************************************************************************
- * Name: spi_set_initial
- *
- * Description:
- *   Set initial/default settings for the selected device.
- *
- ****************************************************************************/
-void spi_set_initial(struct spi_dev_s *dev)
-{
-	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
-	SPI_SFR *pSPIRegs;
-	pSPIRegs = (SPI_SFR *) priv->base;
-
-	putreg32(CH_CFG_HIGH_SPEED_DIS | CH_CFG_FIFO_FLUSH_OFF | CH_CFG_MASTER | CH_CFG_MODE(SPIDEV_MODE0) | CH_CFG_RX_CH_ON | CH_CFG_TX_CH_ON, &pSPIRegs->CH_CFG);	/* TX/RX enable. Master.CPHA 00. */
-
-	putreg32(MODE_CFG_CH_WIDTH_8 | MODE_CFG_TRLNG_CNT(0) | MODE_CFG_BUS_WIDTH_8 | MODE_CFG_RX_RDY_LVL(0) | MODE_CFG_TX_RDY_LVL(0) | MODE_CFG_DMA_RX_OFF | MODE_CFG_DMA_TX_OFF | MODE_CFG_DMA_SINGLE, &pSPIRegs->MODE_CFG);	/*  No FIFO. N0 DMA. 8 bits */
-
-	putreg32(CS_REG_nSS_TIME_CNT(0) | CS_REG_nSS_MANUAL | CS_REG_nSS_INACTIVE, &pSPIRegs->CS_REG);	/* CS Manual Passive */
-
-	putreg32(0, &pSPIRegs->SPI_INT_EN);	/* Disable Interrupts */
 }
 
 /*****************************************************************************
@@ -437,29 +343,14 @@ void spi_set_initial(struct spi_dev_s *dev)
  *****************************************************************************/
 static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 {
-	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
+
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *) priv->base;
-	unsigned int ch_cfg;
 
+	unsigned int ch_cfg;
 	ch_cfg = getreg32(&pSPIRegs->CH_CFG);
 	ch_cfg = (ch_cfg & (~CH_CFG_MODE_MASK)) | CH_CFG_MODE(mode);
-	putreg32(ch_cfg, &pSPIRegs->CH_CFG);
-}
-
-/*****************************************************************************
- * Name: spi_fifo_flush
- *
- * Description:
- *   Flush fifo before operation to make sure it is empty.
- *
- *****************************************************************************/
-inline void spi_fifo_flush(SPI_SFR *pSPIRegs)
-{
-	unsigned int ch_cfg;
-
-	ch_cfg = getreg32(&pSPIRegs->CH_CFG);
-	putreg32(CH_CFG_FIFO_FLUSH, &pSPIRegs->CH_CFG);
 	putreg32(ch_cfg, &pSPIRegs->CH_CFG);
 }
 
@@ -472,50 +363,34 @@ inline void spi_fifo_flush(SPI_SFR *pSPIRegs)
  ****************************************************************************/
 static void spi_setbits(struct spi_dev_s *dev, int nbits)
 {
-	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
+
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *) priv->base;
-	unsigned int mode_cfg;
 
+	unsigned int mode_cfg;
 	mode_cfg = getreg32(&pSPIRegs->MODE_CFG);
 	mode_cfg = mode_cfg & (~(MODE_CFG_BUS_WDT_MASK | MODE_CFG_CH_WDT_MASK));
 
 	switch (nbits) {
+		case 8:
+			mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_8 | MODE_CFG_CH_WIDTH_8;
+			break;
 
-	case 8:
-		mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_8 | MODE_CFG_CH_WIDTH_8;
-		break;
-	case 16:
-		mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_16 | MODE_CFG_CH_WIDTH_16;
-		break;
+		case 16:
+			mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_16 | MODE_CFG_CH_WIDTH_16;
+			break;
 
-	case 32:
-		mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_32 | MODE_CFG_CH_WIDTH_32;
-		break;
+		case 32:
+			mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_32 | MODE_CFG_CH_WIDTH_32;
+			break;
 
-	case -8:
-	case -16:
-	case -32:
-
-	default:
-		DEBUGASSERT(0 == 1);
+		default:
+			DEBUGASSERT(0 == 1);
+			break;
 	}
 
 	putreg32(mode_cfg, &pSPIRegs->MODE_CFG);
-}
-
-/****************************************************************************
- * Name: spi_status
- *
- * Description:
- *   Get SPI status
- *
- ****************************************************************************/
-static uint8_t spi_status(struct spi_dev_s *dev, enum spi_dev_e devid)
-{
-	/* STATUS? What status? */
-
-	return 0;
 }
 
 /****************************************************************************
@@ -525,12 +400,12 @@ static uint8_t spi_status(struct spi_dev_s *dev, enum spi_dev_e devid)
  *   Exchange one word on SPI. Currently support only byte transfers.
  *
  ****************************************************************************/
-static uint16_t spi_send(struct spi_dev_s *dev, uint16_t word)
+static uint16_t spi_send(struct spi_dev_s *dev, uint16_t wd)
 {
 	uint8_t txbyte;
 	uint8_t rxbyte;
 
-	txbyte = (uint8_t) word;
+	txbyte = (uint8_t) wd;
 	rxbyte = (uint8_t) 0;
 	spi_exchange(dev, &txbyte, &rxbyte, 1);
 
@@ -546,14 +421,22 @@ static uint16_t spi_send(struct spi_dev_s *dev, uint16_t word)
  ****************************************************************************/
 static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
 {
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
+
 	size_t sent = 0;
 	size_t received = 0;
 	unsigned int dummy_rx;
-	struct s5jt200_spidev_s *priv = (struct s5jt200_spidev_s *)dev;
+
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *) priv->base;
 
-	spi_fifo_flush(pSPIRegs);
+	/* SPI FIFO FLUSH */
+
+	int ch_cfg = getreg32(&pSPIRegs->CH_CFG);
+	putreg32(CH_CFG_FIFO_FLUSH, &pSPIRegs->CH_CFG);
+	putreg32(ch_cfg, &pSPIRegs->CH_CFG);
+
+	/* TX/RX */
 
 	if ((rxbuffer == NULL) && (txbuffer == NULL)) {
 		while (received < nwords) {
@@ -651,19 +534,38 @@ static void spi_recvblock(struct spi_dev_s *dev, void *rxbuffer, size_t nwords)
  ****************************************************************************/
 struct spi_dev_s *up_spiinitialize(int port)
 {
-	struct s5jt200_spidev_s *priv = NULL;
+	FAR struct s5j_spidev_s *priv = NULL;
 
 	if (port >= SPI_PORT_MAX) {
 		return NULL;
 	}
 
-	priv = &g_spidev[port];
-	lldbg("Prepare SPI0 for Master operation\n");
+	switch (port) {
+		case 0:
+			priv = &g_spi0dev;
+			break;
+		case 1:
+			priv = &g_spi1dev;
+			break;
+		case 2:
+			priv = &g_spi2dev;
+			break;
+		case 3:
+			priv = &g_spi3dev;
+			break;
+	}
+	lldbg("Prepare SPI%d for Master operation\n", priv->port);
 
 	/* SET GPIO for the port */
-	spi_set_gpio(port, 0xFFFF);
 
-	priv->port = port;
+	gpio_cfg_pin(priv->gpio_clk, GPIO_FUNC(2));
+	gpio_set_pull(priv->gpio_clk, GPIO_PULL_NONE);
+	gpio_cfg_pin(priv->gpio_nss, GPIO_FUNC(2));
+	gpio_set_pull(priv->gpio_nss, GPIO_PULL_NONE);
+	gpio_cfg_pin(priv->gpio_miso, GPIO_FUNC(2));
+	gpio_set_pull(priv->gpio_miso, GPIO_PULL_NONE);
+	gpio_cfg_pin(priv->gpio_mosi, GPIO_FUNC(2));
+	gpio_set_pull(priv->gpio_mosi, GPIO_PULL_NONE);
 
 #ifndef CONFIG_SPI_POLLWAIT
 	sem_init(&priv->xfrsem, 0, 0);
@@ -672,7 +574,27 @@ struct spi_dev_s *up_spiinitialize(int port)
 #ifndef CONFIG_SPI_OWNBUS
 	sem_init(&priv->exclsem, 0, 1);
 #endif
-	spi_set_initial((struct spi_dev_s *)priv);
+
+	/* SET SPI INITIAL */
+
+	SPI_SFR *pSPIRegs;
+	pSPIRegs = (SPI_SFR *) priv->base;
+
+	/* TX/RX enable. Master.CPHA 00. */
+
+	putreg32(CH_CFG_HIGH_SPEED_DIS | CH_CFG_FIFO_FLUSH_OFF | CH_CFG_MASTER | CH_CFG_MODE(SPIDEV_MODE0) | CH_CFG_RX_CH_ON | CH_CFG_TX_CH_ON, &pSPIRegs->CH_CFG);
+
+	/*  No FIFO. N0 DMA. 8 bits */
+
+	putreg32(MODE_CFG_CH_WIDTH_8 | MODE_CFG_TRLNG_CNT(0) | MODE_CFG_BUS_WIDTH_8 | MODE_CFG_RX_RDY_LVL(0) | MODE_CFG_TX_RDY_LVL(0) | MODE_CFG_DMA_RX_OFF | MODE_CFG_DMA_TX_OFF | MODE_CFG_DMA_SINGLE, &pSPIRegs->MODE_CFG);
+
+	/* CS Manual Passive */
+
+	putreg32(CS_REG_nSS_TIME_CNT(0) | CS_REG_nSS_MANUAL | CS_REG_nSS_INACTIVE, &pSPIRegs->CS_REG);
+
+	/* Disable Interrupts */
+
+	putreg32(0, &pSPIRegs->SPI_INT_EN);
 
 	return (struct spi_dev_s *)priv;
 }
