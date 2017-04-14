@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,9 +111,9 @@ static int stkmon_chk_idx;
 static void stkmon_title_print(void)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	printf("%-5s %s %8s %5s %7s %7s ", "PID", "STATUS", "SIZE", "PEAK_STACK", "PEAK_HEAP", "TIME");
+	printf("%-5s %5s %5s %7s %7s ", "PID", "SIZE", "PEAK_STACK", "PEAK_HEAP", "TIME");
 #else
-	printf("%-5s %s %8s %5s %7s\n", "PID", "STATUS", "SIZE", "PEAK_STACK", "TIME");
+	printf("%-5s %5s %5s %7s\n", "PID", "SIZE", "PEAK_STACK", "TIME");
 #endif
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	printf("THREAD NAME\n");
@@ -128,12 +128,12 @@ static void stkmon_inactive_check(void)
 	for (inactive_idx = 0; inactive_idx < CONFIG_MAX_TASKS * 2; inactive_idx++) {
 		if (stkmon_arr[inactive_idx].timestamp != 0) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-			printf("%5d %s %6d %9d %10d %7lld ", stkmon_arr[inactive_idx].chk_pid, "INACTIVE", stkmon_arr[inactive_idx].chk_stksize, stkmon_arr[inactive_idx].chk_peaksize, stkmon_arr[inactive_idx].chk_peakheap, (uint64_t)((systime_t)stkmon_arr[inactive_idx].timestamp));
+			printf("%4d %6d %8d %10d %7lld ", stkmon_arr[inactive_idx].chk_pid, stkmon_arr[inactive_idx].chk_stksize, stkmon_arr[inactive_idx].chk_peaksize, stkmon_arr[inactive_idx].chk_peakheap, (uint64_t)((systime_t)stkmon_arr[inactive_idx].timestamp));
 #else
-			printf("%5d %s %6d %9d %7lld ", stkmon_arr[inactive_idx].chk_pid, "INACTIVE", stkmon_arr[inactive_idx].chk_stksize, stkmon_arr[inactive_idx].chk_peaksize, (uint64_t)((systime_t)stkmon_arr[inactive_idx].timestamp));
+			printf("%4d %6d %8d %7lld ", stkmon_arr[inactive_idx].chk_pid, stkmon_arr[inactive_idx].chk_stksize, stkmon_arr[inactive_idx].chk_peaksize, (uint64_t)((systime_t)stkmon_arr[inactive_idx].timestamp));
 #endif
 #if (CONFIG_TASK_NAME_SIZE > 0)
-			printf("%s\n", stkmon_arr[inactive_idx].chk_name);
+			printf(" %s\n", stkmon_arr[inactive_idx].chk_name);
 #else
 			printf("\n");
 #endif
@@ -144,16 +144,13 @@ static void stkmon_inactive_check(void)
 
 static void stkmon_active_check(struct tcb_s *tcb, void *arg)
 {
-	if (tcb->pid == 0) {
-		tcb->adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
-	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	printf("%5d %s %9d %8d %10d %7lld ", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), tcb->peak_alloc_size, (uint64_t)((systime_t)clock_systimer()));
+	printf("%4d %6d %8d %10d %7lld ", tcb->pid, tcb->adj_stack_size, up_check_tcbstack(tcb), tcb->peak_alloc_size, (uint64_t)((systime_t)clock_systimer()));
 #else
-	printf("%5d %s %9d %8d %7lld", tcb->pid, "ACTIVE", tcb->adj_stack_size, up_check_tcbstack(tcb), (uint64_t)((systime_t)clock_systimer()));
+	printf("%4d %6d %8d %7lld", tcb->pid, tcb->adj_stack_size, up_check_tcbstack(tcb), (uint64_t)((systime_t)clock_systimer()));
 #endif
 #if (CONFIG_TASK_NAME_SIZE > 0)
-	printf("%s\n", tcb->name);
+	printf(" %s\n", tcb->name);
 #else
 	printf("\n");
 #endif
@@ -167,9 +164,9 @@ static void *stackmonitor_daemon(void *arg)
 	while (stkmon_started) {
 		printf("===============================================================\n");
 		stkmon_title_print();
-		printf("---------------------------------------------------------------\n");
+		printf("[INACTIVE THREADS]\n");
 		stkmon_inactive_check();
-		printf("---------------------------------------------------------------\n");
+		printf("[ACTIVE THREADS]\n");
 		sched_foreach(stkmon_active_check, NULL);
 		sleep(CONFIG_STACKMONITOR_INTERVAL);
 	}
@@ -247,7 +244,7 @@ int kdbg_stackmonitor(int argc, char **args)
 
 		ret = pthread_create(&stkmon, &stkmon_attr, stackmonitor_daemon, NULL);
 		if (ret != OK) {
-			printf(STKMON_PREFIX "ERROR: Failed to start the stack monitor: %d\n", errno);
+			printf(STKMON_PREFIX "ERROR: Failed to start: %d\n", errno);
 			stkmon_started = FALSE;
 			return ERROR;
 		}
@@ -255,7 +252,7 @@ int kdbg_stackmonitor(int argc, char **args)
 
 		ret = pthread_detach(stkmon);
 		if (ret != OK) {
-			printf(STKMON_PREFIX "ERROR: Failed to detach the stack monitor: %d\n", errno);
+			printf(STKMON_PREFIX "ERROR: Failed to detach: %d\n", errno);
 			pthread_cancel(stkmon);
 		}
 	} else {
