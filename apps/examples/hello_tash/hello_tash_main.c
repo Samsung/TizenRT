@@ -141,8 +141,7 @@ int main(int argc, FAR char *argv[])
 int hello_tash_main(int argc, char **args)
 #endif
 {
-#ifdef CONFIG_TASH
 	tash_cmd_install("hello_tash", hello_tash_cb, TASH_EXECMD_ASYNC);
-#endif
+
 	return 0;
 }

@@ -6,6 +6,7 @@
 config EXAMPLES_PROC_TEST
 	bool "\"Procfs\" example"
 	default n
+	depends on !DISABLE_MOUNTPOINT && FS_PROCFS
 	---help---
 		Enable the \"Procfs\" example
 
