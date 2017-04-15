@@ -155,4 +155,5 @@ distclean: clean
 	$(Q) $(DIRUNLINK) $(PLATFORMDIR)
 
 -include Make.dep
-
+.PHONY: preconfig
+preconfig:

@@ -50,4 +50,6 @@
 #
 ############################################################################
 
+MENUDESC = "System Libraries and Add-Ons"
+
 include $(APPDIR)/Directory.mk

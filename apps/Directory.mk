@@ -52,6 +52,7 @@
 
 -include $(TOPDIR)/.config # Current configuration
 include $(APPDIR)/Make.defs
+include $(APPDIR)/import/Make.defs
 
 # Sub-directories
 
@@ -66,6 +67,7 @@ $(1)_$(2):
 	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)"
 endef
 
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),preconfig)))
 $(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),context)))
 $(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),depend)))
 $(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),clean)))
@@ -75,6 +77,10 @@ nothing:
 
 install:
 
+preconfig: $(foreach SDIR, $(SUBDIRS), $(SDIR)_preconfig)
+	$(Q) $(MKKCONFIG) -m $(MENUDESC)
+	$(Q) $(MKKCONFIG) -o Kconfig_ENTRY
+
 context: $(foreach SDIR, $(SUBDIRS), $(SDIR)_context)
 
 depend: $(foreach SDIR, $(SUBDIRS), $(SDIR)_depend)
@@ -82,5 +88,6 @@ depend: $(foreach SDIR, $(SUBDIRS), $(SDIR)_depend)
 clean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_clean)
 
 distclean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_distclean)
+	$(call DELFILE, Kconfig*)
 
 -include Make.dep

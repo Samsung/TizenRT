@@ -50,8 +50,8 @@
 #
 ############################################################################
 
-include $(TOPDIR)/.config
-include $(TOPDIR)/build/Make.defs
+-include $(TOPDIR)/.config
+-include $(TOPDIR)/build/Make.defs
 
 # Control build verbosity
 #
