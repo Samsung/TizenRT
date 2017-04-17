@@ -70,21 +70,19 @@
 #include <tinyara/serial/serial.h>
 #include <tinyara/pm/pm.h>
 
-#include <arch/serial.h>
-#include <arch/board/board.h>
-
-#include "chip.h"
-#include "up_arch.h"
-#include "up_internal.h"
-#include "s5j_serial.h"
-#include "s5j_gpio.h"
-#include "s5j_vclk.h"
-
 #ifdef CONFIG_SERIAL_TERMIOS
 #include <termios.h>
 #endif
 
-#include <chip.h>
+#include <arch/serial.h>
+#include <arch/board/board.h>
+
+#include "chip.h"
+#include "s5j_serial.h"
+#include "s5j_gpio.h"
+#include "s5j_vclk.h"
+#include "up_arch.h"
+#include "up_internal.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -104,53 +102,46 @@
 
 /* First pick the console and ttys0.  This could be any of UART0-3,dev */
 
-#if defined(CONFIG_S5J_HAVE_UARTDBG)
-#define TTYDBG_DEV          g_uart_port[UARTDBG]
-#endif
-#if defined(CONFIG_S5J_HAVE_UART0)
-#define TTYS0_DEV           g_uart_port[UART0]
-#endif
-#if defined(CONFIG_S5J_HAVE_UART1)
-#define TTYS1_DEV           g_uart_port[UART1]
-#endif
-#if defined(CONFIG_S5J_HAVE_UART2)
-#define TTYS2_DEV           g_uart_port[UART2]
-#endif
-#if defined(CONFIG_S5J_HAVE_UART3)
-#define TTYS3_DEV           g_uart_port[UART3]
-#endif
-
 #ifdef HAVE_SERIAL_CONSOLE
 #if defined(CONFIG_UART0_SERIAL_CONSOLE)
-#define CONSOLE_DEV         g_uart_port[UART0]
-#define CONSOLE_PORT UART0
+#define CONSOLE_PORT		UART0
+#define CONSOLE_DEV			g_uart0priv.dev
+#define CONSOLE_BASE		UART0_BASE
 #elif defined(CONFIG_UART1_SERIAL_CONSOLE)
-#define CONSOLE_DEV         g_uart_port[UART1]
-#define CONSOLE_PORT UART1
+#define CONSOLE_PORT		UART1
+#define CONSOLE_DEV			g_uart1priv.dev
+#define CONSOLE_BASE		UART1_BASE
 #elif defined(CONFIG_UART2_SERIAL_CONSOLE)
-#define CONSOLE_DEV         g_uart_port[UART2]
-#define CONSOLE_PORT UART2
+#define CONSOLE_PORT		UART2
+#define CONSOLE_DEV			g_uart2priv.dev
+#define CONSOLE_BASE		UART2_BASE
 #elif defined(CONFIG_UART3_SERIAL_CONSOLE)
-#define CONSOLE_DEV         g_uart_port[UART3]
-#define CONSOLE_PORT UART3
+#define CONSOLE_PORT		UART3
+#define CONSOLE_DEV			g_uart3priv.dev
+#define CONSOLE_BASE		UART3_BASE
 #elif defined(CONFIG_OTHER_SERIAL_CONSOLE)
-#define CONSOLE_DEV         g_uart_port[UARTDBG]
-#define CONSOLE_PORT UARTDBG
+#define CONSOLE_PORT		UARTDBG
+#define CONSOLE_DEV			g_uartdbgpriv.dev
+#define CONSOLE_BASE		UARTDBG_BASE
 #else
-#define CONSOLE_DEV         g_uart_port[UARTDBG]
-#define CONSOLE_PORT UARTDBG
+#define CONSOLE_PORT		UARTDBG
+#define CONSOLE_DEV			g_uartdbgpriv.dev
+#define CONSOLE_BASE		UARTDBG_BASE
 #endif
 #endif
 
 #ifndef CONSOLE_PORT
-#define CONSOLE_PORT UARTDBG
+#define CONSOLE_PORT		UARTDBG
 #endif
+
+#define S5J_NUART	5
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
 
 struct up_dev_s {
+	struct uart_dev_s dev;		/* Generic UART device */
 	uint32_t uartbase;			/* Base address of UART registers */
 	uint32_t baud;				/* Configured baud */
 	UART_INTERRUPT im;			/* Saved IM value */
@@ -159,6 +150,8 @@ struct up_dev_s {
 	uint8_t bits;				/* Number of bits (5, 6, 7 or 8) */
 	bool stopbits2;				/* true: Configure with 2 stop bits instead of 1 */
 	UART_CHANNEL eCh;			/*  Number of Uart Channel  */
+	s32 rx_gpio;
+	s32 tx_gpio;
 };
 
 /****************************************************************************
@@ -178,32 +171,33 @@ static void up_send(struct uart_dev_s *dev, int ch);
 static void up_txint(struct uart_dev_s *dev, bool enable);
 static bool up_txready(struct uart_dev_s *dev);
 static bool up_txempty(struct uart_dev_s *dev);
-static void uart_init(UART_CHANNEL uart);
 
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
 
 /* UART operations structure */
+
 static const struct uart_ops_s g_uart_ops = {
-	.setup = up_setup,
-	.shutdown = up_shutdown,
-	.attach = up_attach,
-	.detach = up_detach,
-	.ioctl = up_ioctl,
-	.receive = up_receive,
-	.rxint = up_rxint,
+	.setup		= up_setup,
+	.shutdown	= up_shutdown,
+	.attach		= up_attach,
+	.detach		= up_detach,
+	.ioctl		= up_ioctl,
+	.receive	= up_receive,
+	.rxint		= up_rxint,
 	.rxavailable = up_rxavailable,
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
 	.rxflowcontrol = NULL,
 #endif
-	.send = up_send,
-	.txint = up_txint,
-	.txready = up_txready,
-	.txempty = up_txempty,
+	.send		= up_send,
+	.txint		= up_txint,
+	.txready	= up_txready,
+	.txempty	= up_txempty,
 };
 
 /* I/O buffers */
+
 static char g_uartdbgrxbuffer[CONFIG_UARTDBG_RXBUFSIZE];
 static char g_uartdbgtxbuffer[CONFIG_UARTDBG_TXBUFSIZE];
 
@@ -228,233 +222,183 @@ static char g_uart3txbuffer[CONFIG_UART3_TXBUFSIZE];
 #endif
 
 /* This array contains private resource structures of each port */
-static struct up_dev_s g_uart_priv[] = {
+
 #ifdef CONFIG_S5J_UARTDBG
-	[UARTDBG] = {
-		.uartbase = UARTDBG_BASE,
-		.baud = CONFIG_UARTDBG_BAUD,
-		.irq = S5J_IRQ_UARTDBG,
-		.parity = CONFIG_UARTDBG_PARITY,
-		.bits = CONFIG_UARTDBG_BITS,
-		.stopbits2 = CONFIG_UARTDBG_2STOP,
-		.eCh = UARTDBG,
+static struct up_dev_s g_uartdbgpriv = {
+	.dev		= {
+		.recv = {
+			.size	= CONFIG_UARTDBG_RXBUFSIZE,
+			.buffer	= g_uartdbgrxbuffer,
+		},
+		.xmit = {
+			.size	= CONFIG_UARTDBG_TXBUFSIZE,
+			.buffer	= g_uartdbgtxbuffer,
+		},
+		.ops		= &g_uart_ops,
+		.priv		= &g_uartdbgpriv,
 	},
-#else
-	[UARTDBG] = {
-		.uartbase = 0,
-		.baud = 0,
-		.irq = 0,
-		.parity = 0,
-		.bits = 0,
-		.stopbits2 = 0,
-		.eCh = -1,
-	},
-#endif
-
-#ifdef CONFIG_S5J_UART0
-	[UART0] = {
-		.uartbase = UART0_BASE,
-		.baud = CONFIG_UART0_BAUD,
-		.irq = S5J_IRQ_UART0,
-		.parity = CONFIG_UART0_PARITY,
-		.bits = CONFIG_UART0_BITS,
-		.stopbits2 = CONFIG_UART0_2STOP,
-		.eCh = UART0,
-	},
-#endif
-
-#ifdef CONFIG_S5J_UART1
-	[UART1] = {
-		.uartbase = UART1_BASE,
-		.baud = CONFIG_UART1_BAUD,
-		.irq = S5J_IRQ_UART1,
-		.parity = CONFIG_UART1_PARITY,
-		.bits = CONFIG_UART1_BITS,
-		.stopbits2 = CONFIG_UART1_2STOP,
-		.eCh = UART1,
-	},
-#endif
-
-#ifdef CONFIG_S5J_UART2
-	[UART2] = {
-		.uartbase = UART2_BASE,
-		.baud = CONFIG_UART2_BAUD,
-		.irq = S5J_IRQ_UART2,
-		.parity = CONFIG_UART2_PARITY,
-		.bits = CONFIG_UART2_BITS,
-		.stopbits2 = CONFIG_UART2_2STOP,
-		.eCh = UART2,
-	},
-#endif
-
-#ifdef CONFIG_S5J_UART3
-	[UART3] = {
-		.uartbase = UART3_BASE,
-		.baud = CONFIG_UART3_BAUD,
-		.irq = S5J_IRQ_UART3,
-		.parity = CONFIG_UART3_PARITY,
-		.bits = CONFIG_UART3_BITS,
-		.stopbits2 = CONFIG_UART3_2STOP,
-		.eCh = UART3,
-	},
-#endif
-
+	.uartbase	= UARTDBG_BASE,
+	.baud		= CONFIG_UARTDBG_BAUD,
+	.irq		= S5J_IRQ_UARTDBG,
+	.parity		= CONFIG_UARTDBG_PARITY,
+	.bits		= CONFIG_UARTDBG_BITS,
+	.stopbits2	= CONFIG_UARTDBG_2STOP,
+	.eCh		= UARTDBG,
+	.rx_gpio	= s5j_gpio(GPA3, 0),
+	.tx_gpio	= s5j_gpio(GPA3, 1),
 };
-
-/* This array contains UART ports dev resources description */
-static uart_dev_t g_uart_port[] = {
-#ifdef CONFIG_S5J_UARTDBG
-	[UARTDBG] = {
-		.recv = {
-			.size = CONFIG_UARTDBG_RXBUFSIZE,
-			.buffer = g_uartdbgrxbuffer,
-		},
-		.xmit = {
-			.size = CONFIG_UARTDBG_TXBUFSIZE,
-			.buffer = g_uartdbgtxbuffer,
-		},
-		.ops = &g_uart_ops,
-		.priv = &g_uart_priv[UARTDBG],
-	},
 #else
-	[UARTDBG] = {
+static struct up_dev_s g_uartdbgpriv = {
+	.dev		= {
 		.recv = {
-			.size = 0,
-			.buffer = NULL,
+			.size	= 0,
+			.buffer	= NULL,
 		},
 		.xmit = {
-			.size = 0,
-			.buffer = NULL,
+			.size	= 0,
+			.buffer	= NULL,
 		},
-		.ops = NULL,
-		.priv = NULL,
+		.ops		= NULL,
+		.priv		= NULL,
 	},
+	.uartbase	= 0,
+	.baud		= 0,
+	.irq		= 0,
+	.parity		= 0,
+	.bits		= 0,
+	.stopbits2	= 0,
+	.eCh		= -1,
+	.rx_gpio	= 0,
+	.tx_gpio	= 0,
+};
 #endif
+
 #ifdef CONFIG_S5J_UART0
-	[UART0] = {
+static struct up_dev_s g_uart0priv = {
+	.dev		= {
 		.recv = {
-			.size = CONFIG_UART0_RXBUFSIZE,
-			.buffer = g_uart0rxbuffer,
+			.size	= CONFIG_UART0_RXBUFSIZE,
+			.buffer	= g_uart0rxbuffer,
 		},
 		.xmit = {
-			.size = CONFIG_UART0_TXBUFSIZE,
-			.buffer = g_uart0txbuffer,
+			.size	= CONFIG_UART0_TXBUFSIZE,
+			.buffer	= g_uart0txbuffer,
 		},
-		.ops = &g_uart_ops,
-		.priv = &g_uart_priv[UART0],
+		.ops		= &g_uart_ops,
+		.priv		= &g_uart0priv,
 	},
+	.uartbase	= UART0_BASE,
+	.baud		= CONFIG_UART0_BAUD,
+	.irq		= S5J_IRQ_UART0,
+	.parity		= CONFIG_UART0_PARITY,
+	.bits		= CONFIG_UART0_BITS,
+	.stopbits2	= CONFIG_UART0_2STOP,
+	.eCh		= UART0,
+	.rx_gpio	= s5j_gpio(GPA2, 0),
+	.tx_gpio	= s5j_gpio(GPA2, 1),
+};
 #endif
+
 #ifdef CONFIG_S5J_UART1
-	[UART1] = {
+static struct up_dev_s g_uart1priv = {
+	.dev		= {
 		.recv = {
-			.size = CONFIG_UART1_RXBUFSIZE,
-			.buffer = g_uart1rxbuffer,
+			.size	= CONFIG_UART1_RXBUFSIZE,
+			.buffer	= g_uart1rxbuffer,
 		},
 		.xmit = {
-			.size = CONFIG_UART1_TXBUFSIZE,
-			.buffer = g_uart1txbuffer,
+			.size	= CONFIG_UART1_TXBUFSIZE,
+			.buffer	= g_uart1txbuffer,
 		},
-		.ops = &g_uart_ops,
-		.priv = &g_uart_priv[UART1],
+		.ops		= &g_uart_ops,
+		.priv		= &g_uart1priv,
 	},
+	.uartbase	= UART1_BASE,
+	.baud		= CONFIG_UART1_BAUD,
+	.irq		= S5J_IRQ_UART1,
+	.parity		= CONFIG_UART1_PARITY,
+	.bits		= CONFIG_UART1_BITS,
+	.stopbits2	= CONFIG_UART1_2STOP,
+	.eCh		= UART1,
+	.rx_gpio	= s5j_gpio(GPP0, 4),
+	.tx_gpio	= s5j_gpio(GPP0, 5),
+};
 #endif
 
 #ifdef CONFIG_S5J_UART2
-	[UART2] = {
+static struct up_dev_s g_uart2priv = {
+	.dev		= {
 		.recv = {
-			.size = CONFIG_UART2_RXBUFSIZE,
-			.buffer = g_uart2rxbuffer,
+			.size	= CONFIG_UART2_RXBUFSIZE,
+			.buffer	= g_uart2rxbuffer,
 		},
 		.xmit = {
-			.size = CONFIG_UART2_TXBUFSIZE,
-			.buffer = g_uart2txbuffer,
+			.size	= CONFIG_UART2_TXBUFSIZE,
+			.buffer	= g_uart2txbuffer,
 		},
-		.ops = &g_uart_ops,
-		.priv = &g_uart_priv[UART2],
+		.ops		= &g_uart_ops,
+		.priv		= &g_uart2priv,
 	},
+	.uartbase	= UART2_BASE,
+	.baud		= CONFIG_UART2_BAUD,
+	.irq		= S5J_IRQ_UART2,
+	.parity		= CONFIG_UART2_PARITY,
+	.bits		= CONFIG_UART2_BITS,
+	.stopbits2	= CONFIG_UART2_2STOP,
+	.eCh		= UART2,
+	.rx_gpio	= s5j_gpio(GPP0, 6),
+	.tx_gpio	= s5j_gpio(GPP0, 7),
+};
 #endif
 
 #ifdef CONFIG_S5J_UART3
-	[UART3] = {
+static struct up_dev_s g_uart3priv = {
+	.dev		= {
 		.recv = {
-			.size = CONFIG_UART3_RXBUFSIZE,
-			.buffer = g_uart3rxbuffer,
+			.size	= CONFIG_UART3_RXBUFSIZE,
+			.buffer	= g_uart3rxbuffer,
 		},
 		.xmit = {
-			.size = CONFIG_UART3_TXBUFSIZE,
-			.buffer = g_uart3txbuffer,
+			.size	= CONFIG_UART3_TXBUFSIZE,
+			.buffer	= g_uart3txbuffer,
 		},
-		.ops = &g_uart_ops,
-		.priv = &g_uart_priv[UART3],
+		.ops		= &g_uart_ops,
+		.priv		= &g_uart3priv,
 	},
+	.uartbase	= UART3_BASE,
+	.baud		= CONFIG_UART3_BAUD,
+	.irq		= S5J_IRQ_UART3,
+	.parity		= CONFIG_UART3_PARITY,
+	.bits		= CONFIG_UART3_BITS,
+	.stopbits2 	= CONFIG_UART3_2STOP,
+	.eCh		= UART3,
+	.rx_gpio	= s5j_gpio(GPP1, 6),
+	.tx_gpio	= s5j_gpio(GPP1, 7),
+};
+#endif
+
+static struct up_dev_s * const uart_devs[S5J_NUART] =
+{
+#ifdef CONFIG_S5J_UART0
+	[0] = &g_uart0priv,
+#endif
+#ifdef CONFIG_S5J_UART1
+	[1] = &g_uart1priv,
+#endif
+#ifdef CONFIG_S5J_UART2
+	[2] = &g_uart2priv,
+#endif
+#ifdef CONFIG_S5J_UART3
+	[3] = &g_uart3priv,
+#endif
+#ifdef CONFIG_S5J_UARTDBG
+	[S5J_NUART - 1] = &g_uartdbgpriv,
 #endif
 };
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: up_uart_set_gpio
- *
- * Description:
- *   Configure GPIO ports to operate with UART
- *
- * input parameters:
- *   eCh - UART channel
- *
- * Returned value:
- *   None
- ****************************************************************************/
-void up_uart_set_gpio(UART_CHANNEL eCh)
-{
-	s32 gpio_rxd, gpio_txd;
-
-	if (eCh == UARTDBG) {
-		gpio_rxd = s5j_gpio(GPA3, 0);
-		gpio_txd = s5j_gpio(GPA3, 1);
-
-		gpio_cfg_pin(gpio_rxd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_rxd, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_txd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_txd, GPIO_PULL_NONE);
-
-	} else if (eCh == UART0) {
-		gpio_rxd = s5j_gpio(GPA2, 0);
-		gpio_txd = s5j_gpio(GPA2, 1);
-
-		gpio_cfg_pin(gpio_rxd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_rxd, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_txd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_txd, GPIO_PULL_NONE);
-	} else if (eCh == UART1) {
-		gpio_rxd = s5j_gpio(GPP0, 4);
-		gpio_txd = s5j_gpio(GPP0, 5);
-
-		gpio_cfg_pin(gpio_rxd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_rxd, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_txd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_txd, GPIO_PULL_NONE);
-	} else if (eCh == UART2) {
-		gpio_rxd = s5j_gpio(GPP0, 6);
-		gpio_txd = s5j_gpio(GPP0, 7);
-
-		gpio_cfg_pin(gpio_rxd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_rxd, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_txd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_txd, GPIO_PULL_NONE);
-	} else if (eCh == UART3) {
-		gpio_rxd = s5j_gpio(GPP1, 6);
-		gpio_txd = s5j_gpio(GPP1, 7);
-
-		gpio_cfg_pin(gpio_rxd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_rxd, GPIO_PULL_NONE);
-		gpio_cfg_pin(gpio_txd, GPIO_FUNC(2));
-		gpio_set_pull(gpio_txd, GPIO_PULL_NONE);
-	} else {
-		return;
-	}
-}
 
 /****************************************************************************
  * Name: up_uart_enable_interrupt
@@ -1012,14 +956,16 @@ static inline void up_restoreuartint(struct up_dev_s *priv, uint32_t im)
  *   int value, lower byte contains read value
  ****************************************************************************/
 
-void up_uart_initialize(struct up_dev_s *priv, UART_BAUDRATE nBaudrate, u32 nClock)
+void up_uart_initialize(struct up_dev_s *priv, u32 nClock)
 {
-	UART_CHANNEL eCh;
 	uint32_t uBase = priv->uartbase;
 
-	eCh = priv->eCh;
+	/* Configure pins for USART use */
 
-	up_uart_set_gpio(eCh);
+	gpio_cfg_pin(priv->rx_gpio, GPIO_FUNC(2));
+	gpio_set_pull(priv->rx_gpio, GPIO_PULL_NONE);
+	gpio_cfg_pin(priv->tx_gpio, GPIO_FUNC(2));
+	gpio_set_pull(priv->tx_gpio, GPIO_PULL_NONE);
 
 	up_uart_set_rx_mode(uBase, INT_MODE);
 	up_uart_set_tx_mode(uBase, INT_MODE);
@@ -1027,7 +973,7 @@ void up_uart_initialize(struct up_dev_s *priv, UART_BAUDRATE nBaudrate, u32 nClo
 	up_uart_disable_interrupt(uBase, ALL_INT);
 	up_uart_clear_interrupt_status(uBase, ALL_INT);
 
-	up_uart_set_baudrate(uBase, nBaudrate, nClock);
+	up_uart_set_baudrate(uBase, priv->baud, nClock);
 
 	up_uart_set_loopback(uBase, FALSE);
 	up_uart_set_infrared_mode(uBase, FALSE);
@@ -1066,9 +1012,33 @@ static int up_setup(struct uart_dev_s *dev)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 
-	uart_init(priv->eCh);
+	/* Initialize UART */
+
+	switch (priv->eCh) {
+		case UART0:
+			priv = &g_uart0priv;
+			break;
+		case UART1:
+			priv = &g_uart1priv;
+			break;
+		case UART2:
+			priv = &g_uart2priv;
+			break;
+		case UART3:
+			priv = &g_uart3priv;
+			break;
+		case UARTDBG:
+		default:
+			priv = &g_uartdbgpriv;
+			break;
+	}
+
+	int clk = cal_clk_getrate(m1_clkcmu_uart);	/* 26Mhz */
+	up_uart_initialize(priv, clk);
+	up_uart_disable_interrupt(priv->uartbase, ALL_INT);
 
 	priv->im = getreg32(priv->uartbase + UART_INTM);
+
 	return OK;
 }
 
@@ -1109,7 +1079,7 @@ static int up_attach(struct uart_dev_s *dev)
 
 	/* Attach and enable the IRQ */
 
-	ret = irq_attach(priv->irq, up_interrupt, NULL);
+	ret = irq_attach(priv->irq, up_interrupt, dev);
 	if (ret == OK) {
 		/* Enable the interrupt (RX and TX interrupts are still disabled
 		 * in the UART
@@ -1152,42 +1122,10 @@ static void up_detach(struct uart_dev_s *dev)
 
 static int up_interrupt(int irq, void *context, void *arg)
 {
-	struct uart_dev_s *dev = NULL;
-	struct up_dev_s *priv;
-	UART_INTERRUPT mis;
+	struct uart_dev_s *dev = (struct uart_dev_s *)arg;
+	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 	int passes;
 	bool handled;
-#ifdef CONFIG_S5J_UARTDBG
-	if (g_uart_priv[UARTDBG].irq == irq) {
-		dev = &g_uart_port[UARTDBG];
-	} else
-#endif
-
-#ifdef CONFIG_S5J_UART0
-		if (g_uart_priv[UART0].irq == irq) {
-			dev = &g_uart_port[UART0];
-		} else
-#endif
-#ifdef CONFIG_S5J_UART1
-			if (g_uart_priv[UART1].irq == irq) {
-				dev = &g_uart_port[UART1];
-			} else
-#endif
-#ifdef CONFIG_S5J_UART2
-				if (g_uart_priv[UART2].irq == irq) {
-					dev = &g_uart_port[UART2];
-				} else
-#endif
-#ifdef CONFIG_S5J_UART3
-					if (g_uart_priv[UART3].irq == irq) {
-						dev = &g_uart_port[UART3];
-					} else
-#endif
-					{
-						PANIC();
-					}
-
-	priv = (struct up_dev_s *)dev->priv;
 
 	/* Loop until there are no characters to be transferred or,
 	 * until we have been looping for a long time.
@@ -1199,7 +1137,7 @@ static int up_interrupt(int irq, void *context, void *arg)
 
 		/* Get the masked UART status and clear the pending interrupts. */
 
-		mis = getreg32(priv->uartbase + UART_INTP) & UART_INTP_MASK;
+		UART_INTERRUPT mis = getreg32(priv->uartbase + UART_INTP) & UART_INTP_MASK;
 		putreg32(mis, priv->uartbase + UART_INTP);
 
 		/* Handle incoming, receive bytes (with or without timeout) */
@@ -1457,7 +1395,6 @@ static bool up_txready(struct uart_dev_s *dev)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 	return ((getreg32(priv->uartbase + UART_FSTAT) & UART_FSTAT_TX_MASK) == 0);
-
 }
 
 /****************************************************************************
@@ -1476,57 +1413,6 @@ static bool up_txempty(struct uart_dev_s *dev)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 	return ((getreg32(priv->uartbase + UART_FSTAT) & UART_FSTAT_TX_MASK) == 0);
-}
-
-/****************************************************************************
- * Name: uart_send_data
- *
- * Description:
- *   Send sigle byte through selected channel.
- *
- * Input Parameters:
- *   eCh - channel number
- *   cData - byte to send
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-static void uart_send_data(UART_CHANNEL eCh, char cData)
-{
-	struct up_dev_s *priv;
-	priv = g_uart_port[CONSOLE_PORT].priv;
-	while (!up_txempty(&g_uart_port[CONSOLE_PORT])) ;
-	putreg32(cData, priv->uartbase + UART_TXH);
-}
-
-/****************************************************************************
- * Name: uart_init
- *
- * Description:
- *   Initializes seleced uart channel.
- *   Set CLK source, init baudrate, disable interrupt.
- *
- * Input Parameters:
- *   uart - channel number
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-static void uart_init(UART_CHANNEL uart)
-{
-	/* Initialize UART */
-	int clk;
-	struct up_dev_s *priv = g_uart_port[uart].priv;
-	int baud_rate = priv->baud;
-
-	cal_clk_enable(m1_clkcmu_uart);
-	cal_clk_setrate(m1_clkcmu_uart, 0);	/* 26Mhz */
-	clk = cal_clk_getrate(m1_clkcmu_uart);
-
-	up_uart_initialize(priv, baud_rate, clk);
-	up_uart_disable_interrupt(priv->uartbase, ALL_INT);
 }
 
 /****************************************************************************
@@ -1553,30 +1439,19 @@ void up_earlyserialinit(void)
 	/* NOTE:  All GPIO configuration for the UARTs was performed in
 	 * up_lowsetup
 	 */
+
 	/* Disable all UARTS */
-#ifdef TTYS0_DEV
-	up_disableuartint(TTYS0_DEV.priv, NULL);
-#endif
 
-#ifdef TTYS1_DEV
-	up_disableuartint(TTYS1_DEV.priv, NULL);
-#endif
-
-#ifdef TTYS2_DEV
-	up_disableuartint(TTYS2_DEV.priv, NULL);
-#endif
-
-#ifdef TTYS3_DEV
-	up_disableuartint(TTYS3_DEV.priv, NULL);
-#endif
-
-#ifdef TTYDBG_DEV
-	up_disableuartint(TTYDBG_DEV.priv, NULL);
-#endif
+	unsigned int i;
+	for (i = 0; i < S5J_NUART; i++) {
+		if (uart_devs[i]) {
+			up_disableuartint(uart_devs[i], NULL);
+		}
+	}
 
 	/* Configure whichever one is the console */
 
-#ifdef HAVE_SERIAL_CONSOLE
+#ifdef CONSOLE_DEV
 	CONSOLE_DEV.isconsole = true;
 	up_setup(&CONSOLE_DEV);
 #endif
@@ -1597,37 +1472,31 @@ void up_earlyserialinit(void)
  *   None
  ****************************************************************************/
 #if defined(USE_SERIALDRIVER)
-void up_serialinit()
+void up_serialinit(void)
 {
 	/* Register the console */
 
-#ifdef CONFIG_S5J_UART0
-	(void)uart_register("/dev/ttyS0", &TTYS0_DEV);
-#endif
-#ifdef CONFIG_S5J_UART1
-	(void)uart_register("/dev/ttyS1", &TTYS1_DEV);
-#endif
-#ifdef CONFIG_S5J_UART2
-	(void)uart_register("/dev/ttyS2", &TTYS2_DEV);
-#endif
-#ifdef CONFIG_S5J_UART3
-	(void)uart_register("/dev/ttyS3", &TTYS3_DEV);
-#endif
+	unsigned int i;
+	char devname[16];
+	for (i = 0; i < (S5J_NUART - 1); i++) {
+		if (uart_devs[i]) {
+			strcpy(devname, "/dev/ttySx");
+			devname[9] = '0' + i;
+			(void)uart_register(devname, &uart_devs[i]->dev);
+		}
+	}
 
 #ifdef CONFIG_S5J_UARTDBG
-	(void)uart_register("/dev/ttyDBG", &TTYDBG_DEV);
+	(void)uart_register("/dev/ttyDBG", &uart_devs[S5J_NUART - 1]->dev);
 #endif
 
 #ifdef HAVE_SERIAL_CONSOLE
-
 #if !defined(USE_EARLYSERIALINIT)
 	CONSOLE_DEV.isconsole = true;
 	up_setup(&CONSOLE_DEV);
 #endif
-
 	(void)uart_register("/dev/console", &CONSOLE_DEV);
 #endif
-
 }
 #endif
 
@@ -1670,14 +1539,12 @@ int up_putc(int ch)
  *   int value, -1 if error, 0~255 if byte successfully read
  *
  ****************************************************************************/
-int up_getc()
+int up_getc(void)
 {
 #ifdef HAVE_SERIAL_CONSOLE
-	struct uart_dev_s *dev = &g_uart_port[CONSOLE_PORT];
 	uint32_t state;
-
-	if (up_rxavailable(dev)) {
-		return up_receive(dev, &state);
+	if (up_rxavailable(&CONSOLE_DEV)) {
+		return up_receive(&CONSOLE_DEV, &state);
 	} else {
 		return -1;
 	}
@@ -1701,5 +1568,6 @@ int up_getc()
  ****************************************************************************/
 void up_lowputc(char ch)
 {
-	uart_send_data(CONSOLE_PORT, ch);
+	while (!up_txempty(&CONSOLE_DEV));
+	putreg32(ch, CONSOLE_BASE + UART_TXH);
 }
