@@ -54,9 +54,15 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
+
 #define mbedtls_printf     printf
 #define mbedtls_fprintf    fprintf
 #define mbedtls_snprintf   snprintf
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "tls/config.h"
 #include "tls/net.h"
@@ -69,9 +75,9 @@
 #include "tls/debug.h"
 #include "tls/timing.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifdef CONFIG_EXAMPLES_TLS_ARTIK_KEY
+#include "tls/see_api.h"
+#endif
 
 /*
  * Definition for handling pthread
@@ -893,6 +899,72 @@ usage:
 
 	mbedtls_printf("ok\n");
 
+#ifdef CONFIG_EXAMPLES_TLS_ARTIK_KEY
+	unsigned int cert_buflen = SEE_MAX_BUF_SIZE;
+	char *cert_buf = NULL;
+	const char cert_start[2] = {0x30, 0x82};
+
+	cert_buf = (char *)malloc(SEE_MAX_BUF_SIZE);
+
+	/*
+	 * 1. Load own certificate from secure storage.
+	 *    ARTIK certificates chain stored in secure storage. (CA - SubCA - Device)
+	 */
+
+	if ((ret = see_get_certificate((unsigned char *)cert_buf, &cert_buflen, FACTORYKEY_ARTIK_CERT, 0)) != 0) {
+		mbedtls_printf(" failed\n  ! see_get_certificate -0x%x\n", -ret);
+		free(cert_buf);
+		goto exit;
+	}
+
+	char *cert_offset[3] = {NULL, NULL, NULL};
+
+	cert_offset[0] = cert_buf + 4;
+	cert_offset[1] = strstr(cert_offset[0] + 4, cert_start);
+	cert_offset[2] = strstr(cert_offset[1] + 4, cert_start);
+
+	/* Parse CA Cert */
+	if ((ret = mbedtls_x509_crt_parse_der(&cacert, (const unsigned char *)cert_offset[0], cert_offset[1] - cert_offset[0])) < 0) {
+		mbedtls_printf(" failed\n  ! mbedtls_x509_crt_parse -0x%x\n", -ret);
+		free(cert_buf);
+		goto exit;
+	}
+
+	/* Parse Device Cert */
+	if ((ret = mbedtls_x509_crt_parse_der(&clicert, (const unsigned char *)cert_offset[2], cert_buflen - (cert_offset[2] - cert_buf))) < 0) {
+		mbedtls_printf(" failed\n  ! mbedtls_x509_crt_parse -0x%x\n", -ret);
+		free(cert_buf);
+		goto exit;
+	}
+	free(cert_buf);
+
+	/*
+	 * 2. Set the key index
+	 */
+	const mbedtls_pk_info_t *pk_info;
+
+	if((pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY))== NULL) {
+		mbedtls_printf(" failed\n  ! mbedtls_pk_info_from_type -0x%x\n", -ret);
+		goto exit;
+	}
+
+	if((ret = mbedtls_pk_setup(&pkey, pk_info)) != 0) {
+		mbedtls_printf(" failed\n  ! mbedtls_pk_setup -0x%x\n", -ret);
+		goto exit;
+	}
+
+	((mbedtls_ecdsa_context *)(pkey.pk_ctx))->grp.id = MBEDTLS_ECP_DP_SECP256R1;
+	((mbedtls_ecdsa_context *)(pkey.pk_ctx))->key_index = FACTORYKEY_ARTIK_DEVICE;
+
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
+	if ((ret = mbedtls_ssl_conf_own_cert(&conf, &clicert, &pkey)) != 0) {
+		mbedtls_printf(" failed\n  ! mbedtls_ssl_conf_own_cert returned %d\n\n", ret);
+		goto exit;
+	}
+#endif
+	mbedtls_printf(" ok (%d skipped)\n", ret);
+#else
 	/*
 	 * 1. Load the trusted CA
 	 */
@@ -925,13 +997,20 @@ usage:
 		mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
 		goto exit;
 	}
-
 	/*
 	 * 2. Start the connection
 	 */
 	if (opt.server_addr == NULL) {
 		opt.server_addr = opt.server_name;
 	}
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
+	if ((ret = mbedtls_ssl_conf_own_cert(&conf, &clicert, &pkey)) != 0) {
+		mbedtls_printf(" failed\n  ! mbedtls_ssl_conf_own_cert returned %d\n\n", ret);
+		goto exit;
+	}
+#endif
+#endif /* EXAMPLES_ARTIK_KEY */
 
 	mbedtls_printf("  . Connecting to %s/%s/%s...", opt.transport == MBEDTLS_SSL_TRANSPORT_STREAM ? "tcp" : "udp", opt.server_addr, opt.server_port);
 	fflush(stdout);
@@ -1046,14 +1125,6 @@ usage:
 	}
 #if defined(MBEDTLS_SSL_RENEGOTIATION)
 	mbedtls_ssl_conf_renegotiation(&conf, opt.renegotiation);
-#endif
-
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-	mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
-	if ((ret = mbedtls_ssl_conf_own_cert(&conf, &clicert, &pkey)) != 0) {
-		mbedtls_printf(" failed\n  ! mbedtls_ssl_conf_own_cert returned %d\n\n", ret);
-		goto exit;
-	}
 #endif
 
 	if (opt.min_version != DFL_MIN_VERSION) {

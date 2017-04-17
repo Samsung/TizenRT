@@ -14,6 +14,13 @@ config EXAMPLES_TLS_CLIENT_PROGNAME
 	default "tls_client"
 	depends on BUILD_KERNEL
 
+menu option
+config EXAMPLES_TLS_ARTIK_KEY
+	bool "use artik cloud key"
+	default n
+	depends on TLS_WITH_SSS
+endmenu
+
 endif # EXAMPLE_TLS_CLIENT
 
 config USER_ENTRYPOINT
