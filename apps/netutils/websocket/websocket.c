@@ -22,6 +22,8 @@
  *  Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
+
 #include <fcntl.h>
 #include <errno.h>
 #include <netdb.h>
@@ -348,7 +350,7 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 	socklen_t addrlen;
 	struct sockaddr_in serveraddr;
 
-#ifdef CONFIG_NET_LOOPBACK
+#ifdef CONFIG_LIBC_NETDB
 	struct hostent *he = NULL;
 	char ip_str[INET6_ADDRSTRLEN];
 
@@ -358,9 +360,11 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 		WEBSOCKET_DEBUG("failed to resolve hostname\n");
 		return WEBSOCKET_CONNECT_ERROR;
 	}
-	inet_ntop(he->h_addrtype, he->h_addr, ip_str, he->h_length);
+	if (inet_ntop(he->h_addrtype, he->h_addr, ip_str, sizeof(ip_str)) == NULL) {
+		WEBSOCKET_DEBUG("inet_ntop failed (errno=%d)\n", errno);
+		return WEBSOCKET_CONNECT_ERROR;
+	}
 #endif
-
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (fd == -1) {
 		WEBSOCKET_DEBUG("fail to open socket\n");
@@ -369,7 +373,7 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_port = htons(atoi(port));
-#ifdef CONFIG_NET_LOOPBACK
+#ifdef CONFIG_LIBC_NETDB
 	serveraddr.sin_addr.s_addr = inet_addr(ip_str);
 #else
 	serveraddr.sin_addr.s_addr = inet_addr(host);
