@@ -223,7 +223,7 @@ int mbedtls_ecdh_get_params(mbedtls_ecdh_context *ctx, const mbedtls_ecp_keypair
 		return (ret);
 	}
 
-#if defined(CONFIG_HW_ECDSA_SIGN)
+#if defined(CONFIG_TLS_WITH_SSS)
 	ctx->grp.key_index = key->key_index;
 #endif
 
@@ -423,7 +423,7 @@ int hw_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mbedtls
 		goto cleanup;
 	}
 
-#if defined(CONFIG_HW_ECDSA_SIGN)
+#if defined(CONFIG_TLS_WITH_SSS)
 	/* Compute P  = d * Q */
 	if (grp->key_buf == NULL) {
 		/* compute ECC shared secret with stored key (permanent) */

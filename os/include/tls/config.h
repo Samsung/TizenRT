@@ -42,6 +42,8 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
+#include <tinyara/config.h>
+
 #ifndef MBEDTLS_CONFIG_H
 #define MBEDTLS_CONFIG_H
 

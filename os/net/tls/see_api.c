@@ -58,36 +58,6 @@ int see_free(void)
 	return SEE_OK;
 }
 
-int see_set_certificate(unsigned char *cert, unsigned int cert_len, unsigned int cert_index, unsigned int cert_type)
-{
-	int r;
-
-	(void)cert_type;
-
-	SEE_DEBUG("%s called\n", __func__);
-
-	if (cert == NULL || cert_len == 0) {
-		return SEE_INVALID_INPUT_PARAMS;
-	}
-
-	if (see_check_certindex(cert_index)) {
-		SEE_DEBUG("wrong index %d\n", cert_index);
-		return SEE_INVALID_CERT_INDEX;
-	}
-
-	_SEE_MUTEX_LOCK
-	ISP_CHECKBUSY();
-	if ((r = isp_write_cert(cert, cert_len, cert_index)) != 0) {
-		isp_clear(0);
-		_SEE_MUTEX_UNLOCK
-		SEE_DEBUG("isp_write_cert fail %x\n", r);
-		return SEE_WRITE_CERT_ERROR;
-	}
-	_SEE_MUTEX_UNLOCK
-
-	return SEE_OK;
-}
-
 int see_get_certificate(unsigned char *cert, unsigned int *cert_len, unsigned int cert_index, unsigned int cert_type)
 {
 	int r;
@@ -149,25 +119,6 @@ get_cert_exit:
 	return r;
 }
 
-int see_get_hash(struct sHASH_MSG *h_param, unsigned char *hash, unsigned int mode)
-{
-	int r;
-
-	if (hash == NULL || h_param == NULL) {
-		return SEE_INVALID_INPUT_PARAMS;
-	}
-
-        SEE_DEBUG("%s called %d %x\n",__func__, h_param->msg_byte_len, mode);
-
-	_SEE_MUTEX_LOCK ISP_CHECKBUSY();
-	if ((r = isp_hash(hash, h_param, mode)) != 0) {
-		SEE_DEBUG("isp_hash fail %x\n", r);
-		isp_clear(0);
-		_SEE_MUTEX_UNLOCK return SEE_GET_HASH_ERROR;
-	}
-	_SEE_MUTEX_UNLOCK return SEE_OK;
-}
-
 int see_generate_random(unsigned int *data, unsigned int len)
 {
 	int r;
@@ -215,29 +166,6 @@ int see_get_ecdsa_signature(struct sECC_SIGN *ecc_sign, unsigned char *hash, uns
 		SEE_DEBUG("isp_ecdsa_sign fail %x\n", r);
 		isp_clear(0);
 		_SEE_MUTEX_UNLOCK return SEE_ECDSA_SIGN_ERROR;
-	}
-	_SEE_MUTEX_UNLOCK return SEE_OK;
-}
-
-int see_verify_ecdsa_signature(struct sECC_SIGN *ecc_sign, unsigned char *hash, unsigned int hash_len, unsigned int key_index)
-{
-	int r;
-
-	SEE_DEBUG("%s called %d\n", __func__, key_index);
-
-	if (ecc_sign == NULL || hash == NULL || hash_len == 0) {
-		return SEE_INVALID_INPUT_PARAMS;
-	}
-
-	if (see_check_keyindex(key_index)) {
-		return SEE_INVALID_KEY_INDEX;
-	}
-
-	_SEE_MUTEX_LOCK ISP_CHECKBUSY();
-	if ((r = isp_ecdsa_verify_securekey(ecc_sign, hash, hash_len, key_index)) != 0) {
-		SEE_DEBUG("isp_ecdsa_verify fail %x\n", r);
-		isp_clear(0);
-		_SEE_MUTEX_UNLOCK return SEE_ECDSA_VERIFY_ERROR;
 	}
 	_SEE_MUTEX_UNLOCK return SEE_OK;
 }
@@ -339,8 +267,6 @@ int see_check_certindex(unsigned int index)
 #endif
 	switch (index) {
 	case FACTORYKEY_ARTIK_CERT:
-	case FACTORYKEY_IOTIVITY_ECC_CERT:
-	case FACTORYKEY_IOTIVITY_SUB_CA_CERT:
 		return SEE_OK;
 	default:
 		return SEE_INVALID_KEY_INDEX;
@@ -359,10 +285,6 @@ int see_check_keyindex(unsigned int index)
 	switch (index) {
 	case FACTORYKEY_ARTIK_PSK:
 	case FACTORYKEY_ARTIK_DEVICE:
-	case FACTORYKEY_DA_CA:
-	case FACTORYKEY_DA_DEVICE:
-	case FACTORYKEY_DA_PBKEY:
-	case FACTORYKEY_IOTIVITY_ECC:
 		return SEE_OK;
 	default:
 		return SEE_INVALID_KEY_INDEX;

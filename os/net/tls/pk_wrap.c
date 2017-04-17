@@ -62,7 +62,7 @@
 #define mbedtls_free       free
 #endif
 
-#if defined(CONFIG_HW_ECDSA_SIGN) || defined(CONFIG_HW_ECDSA_VERIFICATION)
+#if defined(CONFIG_TLS_WITH_SSS)
 #include "tls/see_api.h"
 #include "tls/see_internal.h"
 
@@ -231,11 +231,16 @@ static int eckey_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned c
 
 	mbedtls_ecdsa_init(&ecdsa);
 
-#if defined(CONFIG_HW_ECDSA_SIGN)
-	ecdsa.key_index = ((mbedtls_ecp_keypair *)ctx)->key_index;
-#endif
 	if ((ret = mbedtls_ecdsa_from_keypair(&ecdsa, ctx)) == 0) {
-		ret = ecdsa_sign_wrap(&ecdsa, md_alg, hash, hash_len, sig, sig_len, f_rng, p_rng);
+#if defined(CONFIG_TLS_WITH_SSS)
+		if (!see_check_keyindex(((mbedtls_ecp_keypair *)ctx)->key_index)) {
+			unsigned int key_index = ((mbedtls_ecp_keypair *)ctx)->key_index;
+			ret = hw_ecdsa_sign_wrap(&ecdsa, md_alg, hash, hash_len, sig, sig_len, key_index);
+		} else
+#endif
+		{
+			ret = ecdsa_sign_wrap(&ecdsa, md_alg, hash, hash_len, sig, sig_len, f_rng, p_rng);
+		}
 	}
 
 	mbedtls_ecdsa_free(&ecdsa);
@@ -369,12 +374,8 @@ const mbedtls_pk_info_t mbedtls_ecdsa_info = {
 	hw_ecdsa_verify_wrap,
 #else
 	ecdsa_verify_wrap,
-#endif							/* CONFIG_HW_ECDSA_VERIFICATION */
-#if defined(CONFIG_HW_ECDSA_SIGN)
-	hw_ecdsa_sign_wrap,
-#else
+#endif /* CONFIG_HW_ECDSA_VERIFICATION */
 	ecdsa_sign_wrap,
-#endif							/* CONFIG_HW_ECDSA_SIGN */
 	NULL,
 	NULL,
 	eckey_check_pair,			/* Compatible key structures */
@@ -488,25 +489,17 @@ const mbedtls_pk_info_t mbedtls_rsa_alt_info = {
 
 #endif							/* MBEDTLS_PK_RSA_ALT_SUPPORT */
 
-#if defined(CONFIG_HW_ECDSA_SIGN)
-int hw_ecdsa_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, unsigned char *sig, size_t *sig_len, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
+#if defined(CONFIG_TLS_WITH_SSS)
+int hw_ecdsa_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, unsigned char *sig, size_t *sig_len, unsigned int key_index)
 {
 	int ret;
 	unsigned int curve = ((mbedtls_ecdsa_context *)ctx)->grp.id;
-	unsigned int key_index = ((mbedtls_ecdsa_context *)ctx)->key_index;
 	unsigned char s_buf[SEE_MAX_ECP_KEY_SIZE];
 	unsigned char r_buf[SEE_MAX_ECP_KEY_SIZE];
 	unsigned char *t_hash = (unsigned char *)hash;
 
 	/*
-	 * 1. Check key existance
-	 */
-	if (see_check_keyindex(key_index)) {
-		return MBEDTLS_ERR_ECP_INVALID_KEY;
-	}
-
-	/*
-	 * 2. Check hash algorithm and sign curve
+	 * 1. Check hash algorithm and sign curve
 	 */
 	mbedtls_mpi r, s;
 	struct sECC_SIGN ecc_sign;
@@ -560,7 +553,7 @@ int hw_ecdsa_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char 
 	mbedtls_mpi_init(&s);
 
 	/*
-	 * 3. Sign
+	 * 2. Sign
 	 */
 	if ((ret = see_get_ecdsa_signature(&ecc_sign, t_hash, hash_len, key_index)) != 0) {
 		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
@@ -578,7 +571,7 @@ cleanup:
 
 	return ret;
 }
-#endif							/* CONFIG_HW_ECDSA_SIGN */
+#endif /* CONFIG_TLS_WITH_SSS */
 
 #if defined(CONFIG_HW_ECDSA_VERIFICATION)
 int hw_ecdsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char *hash, size_t hash_len, const unsigned char *sig, size_t sig_len)
