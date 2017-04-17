@@ -106,9 +106,6 @@ config NET_ETHERNET
 
 endmenu # Data link support
 
-config NET_IPv4
-	bool
-
 source net/netdev/Kconfig
 source net/route/Kconfig
 
