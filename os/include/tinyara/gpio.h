@@ -190,30 +190,6 @@ void gpio_notify(FAR struct gpio_dev_s *dev);
 int gpio_register(FAR const char *path, FAR struct gpio_dev_s *dev);
 
 /****************************************************************************
- * Name: gpio_export_init
- *
- * Description:
- *   register export-file in filesystem
- *
- ****************************************************************************/
-
-#ifdef CONFIG_GPIO_EXPORT
-int gpio_export_init();
-#endif
-
-/****************************************************************************
- * Name: gpio_unexport_init
- *
- * Description:
- *   register unexport-file in filesystem
- *
- ****************************************************************************/
-
-#ifdef CONFIG_GPIO_EXPORT
-int gpio_unexport_init();
-#endif
-
-/****************************************************************************
  * Name: up_destroy_gpio
  *
  * Description:

@@ -151,16 +151,12 @@ if SPI
 source drivers/spi/Kconfig
 endif
 
-menuconfig GPIO
+config GPIO
         bool "GPIO Driver Support"
         default n
         ---help---
                 This selection enables building of the "upper-half" GPIO driver.
                 See include/tinyara/gpio.h for further GPIO driver information.
-
-if GPIO
-source drivers/gpio/Kconfig
-endif
 
 menuconfig I2S
 	bool "I2S Driver Support"
