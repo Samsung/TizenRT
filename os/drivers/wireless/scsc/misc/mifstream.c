@@ -17,16 +17,16 @@ void mif_stream_config_serialise(struct mif_stream *stream, struct mxstreamconf 
 	cpacketbuffer_config_serialise(&stream->buffer, &stream_conf->buf_conf);
 }
 
-int mif_stream_init(struct mif_stream *stream, enum MIF_STREAM_DIRECTION direction, uint32_t num_packets, uint32_t packet_size,
-		    struct scsc_mx *mx, mifintrbit_handler tohost_irq_handler, void *data)
+int mif_stream_init(struct mif_stream *stream, enum MIF_STREAM_DIRECTION direction, uint32_t num_packets, uint32_t packet_size, struct scsc_mx *mx, mifintrbit_handler tohost_irq_handler, void *data)
 {
 	struct mifintrbit *intr;
-	int               r, r1, r2;
+	int r, r1, r2;
 
 	stream->mx = mx;
 	r = cpacketbuffer_init(&stream->buffer, num_packets, packet_size, mx);
-	if (r)
+	if (r) {
 		return r;
+	}
 
 	intr = scsc_mx_get_intrbit(mx);
 	r1 = mifintrbit_alloc_tohost(intr, tohost_irq_handler, data);
@@ -79,11 +79,13 @@ uint32_t mif_stream_read(struct mif_stream *stream, void *buf, uint32_t num_byte
 {
 	struct scsc_mif_abs *mif_abs = scsc_mx_get_mif_abs(stream->mx);
 
-	uint32_t            num_bytes_read = cpacketbuffer_read(&stream->buffer, buf, num_bytes);
+	uint32_t num_bytes_read = cpacketbuffer_read(&stream->buffer, buf, num_bytes);
 
 	if (num_bytes_read > 0)
 		/* Signal that the read is finished to anyone interested */
+	{
 		mif_abs->irq_bit_set(mif_abs, stream->read_bit_idx, SCSC_MIF_ABS_TARGET_R4);
+	}
 
 	return num_bytes_read;
 }
@@ -107,8 +109,9 @@ bool mif_stream_write(struct mif_stream *stream, const void *buf, uint32_t num_b
 {
 	struct scsc_mif_abs *mif_abs = scsc_mx_get_mif_abs(stream->mx);
 
-	if (!cpacketbuffer_write(&stream->buffer, buf, num_bytes))
+	if (!cpacketbuffer_write(&stream->buffer, buf, num_bytes)) {
 		return false;
+	}
 
 	/* Kick the assigned interrupt to let others know new data is available */
 	mif_abs->irq_bit_set(mif_abs, stream->read_bit_idx, SCSC_MIF_ABS_TARGET_R4);
@@ -120,8 +123,9 @@ bool mif_stream_write_gather(struct mif_stream *stream, const void **bufs, uint3
 {
 	struct scsc_mif_abs *mif_abs = scsc_mx_get_mif_abs(stream->mx);
 
-	if (!cpacketbuffer_write_gather(&stream->buffer, bufs, lengths, num_bufs))
+	if (!cpacketbuffer_write_gather(&stream->buffer, bufs, lengths, num_bufs)) {
 		return false;
+	}
 
 	/* Kick the assigned interrupt to let others know new data is available */
 	mif_abs->irq_bit_set(mif_abs, stream->write_bit_idx, SCSC_MIF_ABS_TARGET_R4);

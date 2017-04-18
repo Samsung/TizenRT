@@ -83,18 +83,18 @@
  */
 struct slsi_sig_send {
 	/* a std spinlock */
-	pthread_mutex_t   send_signal_lock;
-	pthread_mutex_t   mutex;
+	pthread_mutex_t send_signal_lock;
+	pthread_mutex_t mutex;
 
 	struct completion completion;
 
-	u16               process_id;
-	u16               req_id;
-	u16               cfm_id;
-	u16               ind_id;
-	struct max_buff   *cfm;
-	struct max_buff   *ind;
-	struct max_buff   *mib_error;
+	u16 process_id;
+	u16 req_id;
+	u16 cfm_id;
+	u16 ind_id;
+	struct max_buff *cfm;
+	struct max_buff *ind;
+	struct max_buff *mib_error;
 };
 
 struct slsi_cm_ctx {
@@ -117,39 +117,39 @@ static inline void slsi_sig_send_init(struct slsi_sig_send *sig_send)
 }
 
 struct slsi_ba_frame_desc {
-	bool            active;
+	bool active;
 	struct max_buff *signal;
-	u16             sn;
+	u16 sn;
 };
 
 struct slsi_ba_session_rx {
-	bool                      active;
-	bool                      used;
-	void                      *vif;
+	bool active;
+	bool used;
+	void *vif;
 	struct slsi_ba_frame_desc buffer[MAX_BA_BUFFER_SIZE];
-	u16                       buffer_size;
-	u16                       occupied_slots;
-	u16                       expected_sn;
-	u16                       start_sn;
-	bool                      trigger_ba_after_ssn;
-	u8                        tid;
+	u16 buffer_size;
+	u16 occupied_slots;
+	u16 expected_sn;
+	u16 start_sn;
+	bool trigger_ba_after_ssn;
+	u8 tid;
 
 	/* Aging timer parameters */
-	bool                      timer_on;
-	pthread_mutex_t           ba_lock;
-	struct netif              *dev;
-	struct work_s             work;
+	bool timer_on;
+	pthread_mutex_t ba_lock;
+	struct netif *dev;
+	struct work_s work;
 };
 
 #ifdef CONFIG_SLSI_RX_PERFORMANCE_TEST
 struct slsi_rx_perf_test {
-	bool            rx_perf_test_started;
-	u32             num_bits_received;
-	systime_t       last_timestamp;
+	bool rx_perf_test_started;
+	u32 num_bits_received;
+	systime_t last_timestamp;
 	pthread_mutex_t rx_perf_lock;
 };
 
-#define SLSI_RX_PERFORMANCE_REPORT_INTERVAL      (5) /* In seconds */
+#define SLSI_RX_PERFORMANCE_REPORT_INTERVAL      (5)	/* In seconds */
 
 /* If packet size is less than threshold then forward the packet to LWIP */
 #define SLSI_RX_PERFORMANCE_PKT_LEN_THRESHOLD    (1400)
@@ -161,7 +161,7 @@ struct slsi_rx_perf_test {
 
 /* Per Interface Scan Data */
 struct slsi_scan {
-	bool                 scan_req;          /* When a scan is running this is set */
+	bool scan_req;				/* When a scan is running this is set */
 	struct max_buff_head scan_results;
 };
 
@@ -169,42 +169,42 @@ struct slsi_peer {
 	/* Flag MUST be set last when creating a record and immediately when removing.
 	 * Otherwise another process could test the flag and start using the data.
 	 */
-	bool                           valid;
-	u8                             address[ETH_ALEN];
-	u8                             ssid[SSID_MAX_LEN];
-	size_t                         ssid_len;
+	bool valid;
+	u8 address[ETH_ALEN];
+	u8 ssid[SSID_MAX_LEN];
+	size_t ssid_len;
 
-	/* Presently connected_state is used only for AP/GO mode*/
-	u8                             connected_state;
-	u16                            aid;
-	u16                            capabilities;
-	bool                           qos_enabled;
-	u8                             queueset;
+	/* Presently connected_state is used only for AP/GO mode */
+	u8 connected_state;
+	u16 aid;
+	u16 capabilities;
+	bool qos_enabled;
+	u8 queueset;
 	struct scsc_wifi_fcq_data_qset data_qs;
-	struct scsc_wifi_fcq_ctrl_q    ctrl_q;
+	struct scsc_wifi_fcq_ctrl_q ctrl_q;
 
-	bool                           authorized;
-	bool                           pairwise_key_set;
+	bool authorized;
+	bool pairwise_key_set;
 
 	/* Needed for STA/AP VIF */
-	struct max_buff                *assoc_ie;
-	struct max_buff_head           buffered_frames;
+	struct max_buff *assoc_ie;
+	struct max_buff_head buffered_frames;
 	/* Needed for STA VIF */
-	struct max_buff                *assoc_resp_ie;
+	struct max_buff *assoc_resp_ie;
 
 	/* bitmask that keeps the status of acm bit for each AC
 	 * bit 7  6  5  4  3  2  1  0
 	 *     |  |  |  |  |  |  |  |
 	 *     vo vo vi vi be bk bk be
 	 */
-	u8                        wmm_acm;
+	u8 wmm_acm;
 	/* bitmask that keeps the status of tspec establishment for each priority
 	 * bit 7  6  5  4  3  2  1  0
 	 *     |  |  |  |  |  |  |  |
 	 *     p7 p6 p5 p4 p3 p2 p1 p0
 	 */
-	u8                        tspec_established;
-	u8                        uapsd;
+	u8 tspec_established;
+	u8 uapsd;
 
 	struct slsi_ba_session_rx *ba_session_rx[NUM_BA_SESSIONS_PER_PEER];
 };
@@ -214,19 +214,19 @@ struct slsi_peer {
 
 #ifdef CONFIG_SCSC_ENABLE_P2P
 struct slsi_vif_mgmt_tx {
-	u64      cookie;    /* Cookie assigned by Host for the tx mgmt frame */
-	u16      host_tag;  /* Host tag for the tx mgmt frame */
-	const u8 *buf;      /* Buffer - Mgmt frame requested for tx */
-	size_t   buf_len;   /* Buffer length */
-	u8       exp_frame; /* Next expected Public action frame subtype from peer */
+	u64 cookie;					/* Cookie assigned by Host for the tx mgmt frame */
+	u16 host_tag;				/* Host tag for the tx mgmt frame */
+	const u8 *buf;				/* Buffer - Mgmt frame requested for tx */
+	size_t buf_len;				/* Buffer length */
+	u8 exp_frame;				/* Next expected Public action frame subtype from peer */
 };
 #endif
 
 struct slsi_wmm_ac {
-	u8  aci_aifsn;
-	u8  ecw;
+	u8 aci_aifsn;
+	u8 ecw;
 	u16 txop_limit;
-}  STRUCT_PACKED;
+} STRUCT_PACKED;
 
 /* struct slsi_wmm_parameter_element
  *
@@ -241,19 +241,18 @@ struct slsi_wmm_ac {
  * ac - BE,BK,VI,VO
  */
 struct slsi_wmm_parameter_element {
-	u8                 eid;
-	u8                 len;
-	u8                 oui[3];
-	u8                 oui_type;
-	u8                 oui_subtype;
-	u8                 version;
-	u8                 qos_info;
-	u8                 reserved;
+	u8 eid;
+	u8 len;
+	u8 oui[3];
+	u8 oui_type;
+	u8 oui_subtype;
+	u8 version;
+	u8 qos_info;
+	u8 reserved;
 	struct slsi_wmm_ac ac[4];
 } STRUCT_PACKED;
 
-
-#define SLSI_MIN_FILTER_ID  0x80 /* Start of filter range reserved for host*/
+#define SLSI_MIN_FILTER_ID  0x80	/* Start of filter range reserved for host */
 
 /*for AP*/
 #define SLSI_AP_ALL_IPv6_PKTS_FILTER_ID  0x80
@@ -262,34 +261,34 @@ struct slsi_wmm_parameter_element {
 #ifdef CONFIG_SCSC_WLAN_BLOCK_IPV6
 
 enum slsi_filter_id {
-	SLSI_LOCAL_ARP_FILTER_ID = SLSI_MIN_FILTER_ID, /*0x80*/
-	SLSI_DNS_FILTER_ID,                            /*0x81*/
-	SLSI_ALL_BC_FILTER_ID,                         /*0x82*/
-	SLSI_ALL_IPv4_MC_FILTER_ID,                    /*0x83*/
-	SLSI_PROXY_ARP_FILTER_ID,                      /*0x84*/
-	SLSI_ALL_IPv6_PKTS_FILTER_ID,                  /*0x85*/
+	SLSI_LOCAL_ARP_FILTER_ID = SLSI_MIN_FILTER_ID,	/*0x80 */
+	SLSI_DNS_FILTER_ID,			/*0x81 */
+	SLSI_ALL_BC_FILTER_ID,		/*0x82 */
+	SLSI_ALL_IPv4_MC_FILTER_ID,	/*0x83 */
+	SLSI_PROXY_ARP_FILTER_ID,	/*0x84 */
+	SLSI_ALL_IPv6_PKTS_FILTER_ID,	/*0x85 */
 #ifndef CONFIG_SCSC_WLAN_DISABLE_NAT_KA
-	SLSI_NAT_IPSEC_FILTER_ID,                      /*0x86*/
+	SLSI_NAT_IPSEC_FILTER_ID,	/*0x86 */
 #endif
-	SLSI_REGD_MC_FILTER_ID = 0x87,                 /*0x87*/
+	SLSI_REGD_MC_FILTER_ID = 0x87,	/*0x87 */
 };
 #else
 
 /*for STA*/
 enum slsi_filter_id {
-	SLSI_LOCAL_ARP_FILTER_ID = SLSI_MIN_FILTER_ID, /*0x80*/
-	SLSI_DNS_FILTER_ID,                            /*0x81*/
-	SLSI_ALL_BC_FILTER_ID,                         /*0x82*/
-	SLSI_ALL_IPv4_MC_FILTER_ID,                    /*0x83*/
-	SLSI_PROXY_ARP_FILTER_ID,                      /*0x84*/
-	SLSI_LOCAL_NS_FILTER_ID,                       /*0x85*/
-	SLSI_DNS6_FILTER_ID,                           /*0x86*/
-	SLSI_ALL_IPv6_MC_FILTER_ID,                    /*0x87*/
-	SLSI_PROXY_ARP_NA_FILTER_ID,                   /*0x88*/
+	SLSI_LOCAL_ARP_FILTER_ID = SLSI_MIN_FILTER_ID,	/*0x80 */
+	SLSI_DNS_FILTER_ID,			/*0x81 */
+	SLSI_ALL_BC_FILTER_ID,		/*0x82 */
+	SLSI_ALL_IPv4_MC_FILTER_ID,	/*0x83 */
+	SLSI_PROXY_ARP_FILTER_ID,	/*0x84 */
+	SLSI_LOCAL_NS_FILTER_ID,	/*0x85 */
+	SLSI_DNS6_FILTER_ID,		/*0x86 */
+	SLSI_ALL_IPv6_MC_FILTER_ID,	/*0x87 */
+	SLSI_PROXY_ARP_NA_FILTER_ID,	/*0x88 */
 #ifndef CONFIG_SCSC_WLAN_DISABLE_NAT_KA
-	SLSI_NAT_IPSEC_FILTER_ID,                      /*0x89*/
+	SLSI_NAT_IPSEC_FILTER_ID,	/*0x89 */
 #endif
-	SLSI_REGD_MC_FILTER_ID = 0x8a,                 /*0x8a*/
+	SLSI_REGD_MC_FILTER_ID = 0x8a,	/*0x8a */
 };
 
 #endif
@@ -317,114 +316,113 @@ enum slsi_filter_id {
 
 struct slsi_vif_sta {
 	/* Only valid when the VIF is activated */
-	u8                     vif_status;
-	bool                   is_wps;
-	u16                    eap_hosttag;
-	u16                    m4_host_tag;
-	u8                     mac_addr[ETH_ALEN];
+	u8 vif_status;
+	bool is_wps;
+	u16 eap_hosttag;
+	u16 m4_host_tag;
+	u8 mac_addr[ETH_ALEN];
 	/* This id is used to find out which response  (connect resp/reassoc resp)
 	 * is to be sent once M4 is transmitted successfully
 	 */
-	u16                    resp_id;
-	bool                   gratuitous_arp_needed;
-	bool                   group_key_set;
+	u16 resp_id;
+	bool gratuitous_arp_needed;
+	bool group_key_set;
 };
 
 #ifdef CONFIG_SCSC_ENABLE_P2P
 struct slsi_vif_unsync {
 	//struct delayed_work roc_expiry_work;   /* Work on ROC duration expiry */
 	//struct delayed_work del_vif_work;      /* Work on unsync vif retention timeout */
-	u64    roc_cookie;                     /* Cookie id for ROC */
-	u8     *probe_rsp_ies;                 /* Probe response IEs to be configured in firmware */
-	size_t probe_rsp_ies_len;              /* Probe response IE length */
-	bool   ies_changed;                    /* To indicate if Probe Response IEs have changed from that previously stored */
-	bool   listen_offload;                 /* To indicate if Listen Offload is started */
+	u64 roc_cookie;				/* Cookie id for ROC */
+	u8 *probe_rsp_ies;			/* Probe response IEs to be configured in firmware */
+	size_t probe_rsp_ies_len;	/* Probe response IE length */
+	bool ies_changed;			/* To indicate if Probe Response IEs have changed from that previously stored */
+	bool listen_offload;		/* To indicate if Listen Offload is started */
 };
 #endif
 
 struct slsi_vif_ap {
 	struct slsi_wmm_parameter_element wmm_ie;
-	u8                                *cache_wmm_ie;
-	u8                                *cache_wpa_ie;
-	u8                                *add_info_ies;
-	size_t                            wmm_ie_len;
-	size_t                            wpa_ie_len;
-	size_t                            add_info_ies_len;
+	u8 *cache_wmm_ie;
+	u8 *cache_wpa_ie;
+	u8 *add_info_ies;
+	size_t wmm_ie_len;
+	size_t wpa_ie_len;
+	size_t add_info_ies_len;
 #ifdef CONFIG_SCSC_ENABLE_P2P
-	bool                              p2p_gc_keys_set;       /* Used in GO mode to identify that a CLI has connected after WPA2 handshake */
+	bool p2p_gc_keys_set;		/* Used in GO mode to identify that a CLI has connected after WPA2 handshake */
 #endif
-	bool                              privacy;               /* Used for port enabling based on the open/secured AP configuration */
-	int                               beacon_interval;       /* Beacon interval in AP/GO mode */
+	bool privacy;				/* Used for port enabling based on the open/secured AP configuration */
+	int beacon_interval;		/* Beacon interval in AP/GO mode */
 #ifdef CONFIG_SCSC_ADV_FEATURE
-	bool                              non_ht_bss_present;    /* Non HT BSS observed in HT20 OBSS scan */
+	bool non_ht_bss_present;	/* Non HT BSS observed in HT20 OBSS scan */
 #endif
-	struct scsc_wifi_fcq_data_qset    group_data_qs;
-	u32                               cipher;
+	struct scsc_wifi_fcq_data_qset group_data_qs;
+	u32 cipher;
 };
 
 struct netdev_vif {
 	struct slsi_dev *sdev;
-	bool            is_registered;                     /* Has the net dev been registered */
-	bool            is_available;                      /* Has the net dev been opened AND is usable */
-	bool            is_fw_test;                        /* Is the device in use as a test device via UDI */
+	bool is_registered;			/* Has the net dev been registered */
+	bool is_available;			/* Has the net dev been opened AND is usable */
+	bool is_fw_test;			/* Is the device in use as a test device via UDI */
 
 	/* Structure can be accessed in supplicant and driver work context.
 	 * The vif mutex is for synchronisation in such cases.
 	 */
-	pthread_mutex_t              vif_mutex;
+	pthread_mutex_t vif_mutex;
 
-	struct slsi_sig_send         sig_wait;
-	struct slsi_mbuf_work        rx_data;
-	struct slsi_mbuf_work        rx_mlme;
-	u16                          ifnum;
-	enum slsi_80211_iftype       iftype;
+	struct slsi_sig_send sig_wait;
+	struct slsi_mbuf_work rx_data;
+	struct slsi_mbuf_work rx_mlme;
+	u16 ifnum;
+	enum slsi_80211_iftype iftype;
 	enum slsi_80211_channel_type channel_type;
-	int                          center_freq;
+	int center_freq;
 
-	struct hostapd_freq_params   *chandef;
-
+	struct hostapd_freq_params *chandef;
 
 	/* NOTE: The Address is a __be32
 	 * It needs converting to pass to the FW
 	 * But not for the Arp or trace %pI4
 	 */
-	__be32                  ipaddress;
+	__be32 ipaddress;
 
 #ifndef CONFIG_SCSC_WLAN_BLOCK_IPV6
-	struct in6_addr         ipv6address;
-	pthread_mutex_t         ipv6addr_lock;
+	struct in6_addr ipv6address;
+	pthread_mutex_t ipv6addr_lock;
 #endif
-	pthread_mutex_t         scan_mutex;
-	struct slsi_scan        scan[SLSI_SCAN_MAX];
+	pthread_mutex_t scan_mutex;
+	struct slsi_scan scan[SLSI_SCAN_MAX];
 
 #ifdef CONFIG_SCSC_WLAN_POWER_SAVE
 	/* Used while updating the power management state */
-	pthread_mutex_t              powermgt_lock;
-	u16                     power_mode;
+	pthread_mutex_t powermgt_lock;
+	u16 power_mode;
 #endif
-	bool                    activated;          /* VIF is created in firmware and ready to use */
-	u16                     vif_type;
-	pthread_mutex_t         peer_lock;
-	int                     peer_sta_records;
-	struct slsi_peer        *peer_sta_record[SLSI_AP_PEER_CONNECTIONS_MAX];
+	bool activated;				/* VIF is created in firmware and ready to use */
+	u16 vif_type;
+	pthread_mutex_t peer_lock;
+	int peer_sta_records;
+	struct slsi_peer *peer_sta_record[SLSI_AP_PEER_CONNECTIONS_MAX];
 
 	/* Block Ack MPDU Re-order */
-	struct max_buff_head    ba_complete;
-	int                     ba_flush;
+	struct max_buff_head ba_complete;
+	int ba_flush;
 
-	struct work_s           scan_timeout_work;  /* Work on scan timeout */
+	struct work_s scan_timeout_work;	/* Work on scan timeout */
 #ifdef CONFIG_SCSC_ENABLE_P2P
-	u64                     mgmt_tx_cookie;     /* Cookie id for mgmt tx */
+	u64 mgmt_tx_cookie;			/* Cookie id for mgmt tx */
 	struct slsi_vif_mgmt_tx mgmt_tx_data;
-	struct slsi_vif_unsync  unsync;
+	struct slsi_vif_unsync unsync;
 #endif
-	struct slsi_vif_sta     sta;
-	struct slsi_vif_ap      ap;
+	struct slsi_vif_sta sta;
+	struct slsi_vif_ap ap;
 };
 
 struct slsi_802_11d_reg_domain {
-	u8  alpha2[3];
-	u8  *countrylist;
+	u8 alpha2[3];
+	u8 *countrylist;
 	//struct ieee80211_regdomain *regdomain;
 	int country_len;
 };
@@ -439,7 +437,7 @@ struct slsi_dev_config {
 #define SLSI_FREQ_BAND_AUTO 0
 #define SLSI_FREQ_BAND_5GHZ 1
 #define SLSI_FREQ_BAND_2GHZ 2
-	int                              supported_band;
+	int supported_band;
 
 	struct slsi_80211_supported_band *band_5G;
 	struct slsi_80211_supported_band *band_2G;
@@ -449,31 +447,31 @@ struct slsi_dev_config {
 	 * 0 : not suspended
 	 * 1 : suspended
 	 */
-	int                            user_suspend_mode;
+	int user_suspend_mode;
 
 	/* Rx filtering rule
 	 * Set via the rx_filter_num procfs
 	 * 0: Unicast, 1: Broadcast, 2:Multicast IPv4, 3: Multicast IPv6
 	 */
-	int                            rx_filter_num;
+	int rx_filter_num;
 
 	/* Rx filter rule enabled
 	 * Set  via the rx_filter_start & rx_filter_stop procfs
 	 */
-	bool                           rx_filter_rule_started;
+	bool rx_filter_rule_started;
 
 	/* Read from FW mib at startup */
-	unsigned int                   fast_power_save_timeout;
+	unsigned int fast_power_save_timeout;
 
 	/* AP Auto channel Selection */
 #define SLSI_NO_OF_SCAN_CHANLS_FOR_AUTO_CHAN_MAX 14
-	int                            ap_auto_chan;
+	int ap_auto_chan;
 
-	/*QoS capability for a non-AP Station*/
-	int                            qos_info;
+	/*QoS capability for a non-AP Station */
+	int qos_info;
 	struct slsi_802_11d_reg_domain domain_info;
 
-	int                            ap_disconnect_ind_timeout;
+	int ap_disconnect_ind_timeout;
 };
 
 #define SLSI_DEVICE_STATE_ATTACHING 0
@@ -498,13 +496,13 @@ struct slsi_chip_info_mib {
 #ifdef CONFIG_SCSC_ENABLE_P2P
 /* States used during P2P operations */
 enum slsi_p2p_states {
-	P2P_IDLE_NO_VIF,        /* Initial state - Unsync vif is not present */
-	P2P_IDLE_VIF_ACTIVE,    /* Unsync vif is present but no P2P procedure in progress */
-	P2P_SCANNING,           /* P2P SOCIAL channel (1,6,11) scan in progress. Not used for P2P full scan */
-	P2P_LISTENING,          /* P2P Listen (ROC) in progress */
-	P2P_ACTION_FRAME_TX_RX, /* P2P Action frame Tx in progress or waiting for a peer action frame Rx (i.e. in response to the Tx frame) */
-	P2P_GROUP_FORMED_CLI,   /* P2P Group Formed - CLI role */
-	P2P_GROUP_FORMED_GO,    /* P2P Group Formed - GO role */
+	P2P_IDLE_NO_VIF,			/* Initial state - Unsync vif is not present */
+	P2P_IDLE_VIF_ACTIVE,		/* Unsync vif is present but no P2P procedure in progress */
+	P2P_SCANNING,				/* P2P SOCIAL channel (1,6,11) scan in progress. Not used for P2P full scan */
+	P2P_LISTENING,				/* P2P Listen (ROC) in progress */
+	P2P_ACTION_FRAME_TX_RX,		/* P2P Action frame Tx in progress or waiting for a peer action frame Rx (i.e. in response to the Tx frame) */
+	P2P_GROUP_FORMED_CLI,		/* P2P Group Formed - CLI role */
+	P2P_GROUP_FORMED_GO,		/* P2P Group Formed - GO role */
 	/* NOTE: In P2P_LISTENING state if frame transmission is requested to driver then a peer response is ideally NOT expected.
 	 * This is an assumption based on the fact that FIND would be stopped prior to group formation/connection.
 	 * If driver were to receive a peer frame in P2P_LISTENING state then it would most probably be a REQUEST frame and the supplicant would respond to it.
@@ -537,113 +535,113 @@ static inline char *slsi_p2p_state_text(u8 state)
 #endif
 
 struct hydra_service_info {
-	char     ver_str[128];
+	char ver_str[128];
 	uint16_t hw_ver;
 	uint32_t fw_rom_ver;
 	uint32_t fw_patch_ver;
-	bool     populated;
+	bool populated;
 };
 
 struct slsi_dev {
-	struct slsi_t20_drv        *drv;
-	struct slsi_hip            hip;       /* HIP bookkeeping block */
-	struct slsi_hip4           hip4_inst; /* The handler to parse to HIP */
-	struct scsc_wifi_cm_if     cm_if;     /* cm_if bookkeeping block */
-	struct scsc_mx             *maxwell_core;
+	struct slsi_t20_drv *drv;
+	struct slsi_hip hip;		/* HIP bookkeeping block */
+	struct slsi_hip4 hip4_inst;	/* The handler to parse to HIP */
+	struct scsc_wifi_cm_if cm_if;	/* cm_if bookkeeping block */
+	struct scsc_mx *maxwell_core;
 	struct scsc_service_client mx_wlan_client;
-	struct scsc_service        *service;
-	struct hydra_service_info  chip_info;
-	struct slsi_chip_info_mib  chip_info_mib;
-	pthread_mutex_t            netdev_add_remove_mutex;
-	int                        netdev_up_count;
-	struct netif               *netdev[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];                    /* 0 is reserved */
-	u8                         netdev_addresses[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1][ETH_ALEN]; /* 0 is reserved */
-	int                        device_state;
+	struct scsc_service *service;
+	struct hydra_service_info chip_info;
+	struct slsi_chip_info_mib chip_info_mib;
+	pthread_mutex_t netdev_add_remove_mutex;
+	int netdev_up_count;
+	struct netif *netdev[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];	/* 0 is reserved */
+	u8 netdev_addresses[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1][ETH_ALEN];	/* 0 is reserved */
+	int device_state;
 
 	/* Locking used to control Starting and stopping the chip */
-	pthread_mutex_t            start_stop_mutex;
+	pthread_mutex_t start_stop_mutex;
 
 	/* UDI Logging */
-	struct slsi_log_clients    log_clients;
-	void                       *uf_cdev;
+	struct slsi_log_clients log_clients;
+	void *uf_cdev;
 
 	/* ProcFS */
-	int                        procfs_instance;
-	struct proc_dir_entry      *procfs_dir;
+	int procfs_instance;
+	struct proc_dir_entry *procfs_dir;
 
 	/* Configuration */
-	u8                         hw_addr[ETH_ALEN];
-	char                       *mib_file_name;
-	char                       *local_mib_file_name;
-	char                       *maddr_file_name;
-	struct max_buff            *tx_mbuf;          /* On TinyARA allocating the mbuf during runtime fails */
+	u8 hw_addr[ETH_ALEN];
+	char *mib_file_name;
+	char *local_mib_file_name;
+	char *maddr_file_name;
+	struct max_buff *tx_mbuf;	/* On TinyARA allocating the mbuf during runtime fails */
 #ifdef CONFIG_SLSI_WLAN_STATS
-	struct data_path_stats     dp_stats;
+	struct data_path_stats dp_stats;
 #endif
 #ifdef CONFIG_SLSI_RX_PERFORMANCE_TEST
-	struct slsi_rx_perf_test   rx_perf;
+	struct slsi_rx_perf_test rx_perf;
 #endif
-	pthread_mutex_t            rx_data_mutex;
+	pthread_mutex_t rx_data_mutex;
 
-	struct slsi_sig_send       sig_wait;
-	struct slsi_mbuf_work      rx_dbg_sap;
-	int                        tx_host_tag;
-	pthread_mutex_t            device_config_mutex;
-	struct slsi_dev_config     device_config;
+	struct slsi_sig_send sig_wait;
+	struct slsi_mbuf_work rx_dbg_sap;
+	int tx_host_tag;
+	pthread_mutex_t device_config_mutex;
+	struct slsi_dev_config device_config;
 
 #ifdef CONFIG_SCSC_ENABLE_P2P
-	enum slsi_p2p_states      p2p_state;                /* Store current P2P operation */
-	bool                      delete_gc_probe_req_ies;  /* Delete probe request stored at  gc_probe_req_ies, if connected for WAP2 at mlme_del_vif */
-	u8                        *gc_probe_req_ies;
-	size_t                    gc_probe_req_ie_len;
-	u8                        p2p_group_exp_frame;         /* Next expected Public action frame subtype from peer */
+	enum slsi_p2p_states p2p_state;	/* Store current P2P operation */
+	bool delete_gc_probe_req_ies;	/* Delete probe request stored at  gc_probe_req_ies, if connected for WAP2 at mlme_del_vif */
+	u8 *gc_probe_req_ies;
+	size_t gc_probe_req_ie_len;
+	u8 p2p_group_exp_frame;		/* Next expected Public action frame subtype from peer */
 #endif
-	int                       current_tspec_id;
-	int                       tspec_error_code;
-	bool                      scan_init_24g;
+	int current_tspec_id;
+	int tspec_error_code;
+	bool scan_init_24g;
 
 	struct slsi_ba_session_rx rx_ba_buffer_pool[SLSI_MAX_RX_BA_SESSIONS];
-	pthread_mutex_t           rx_ba_buffer_pool_lock;
+	pthread_mutex_t rx_ba_buffer_pool_lock;
 
-	bool                      fail_reported;
-	u64                       flags;
-	u16                       software_iftypes;
-	unsigned int              probe_resp_offloads;
+	bool fail_reported;
+	u64 flags;
+	u16 software_iftypes;
+	unsigned int probe_resp_offloads;
 
 	/* Supported interface modes, OR together BIT(SLSI_80211_IFTYPE_...) */
-	u16                       interface_modes;
+	u16 interface_modes;
 
-	u16                       max_acl_mac_addrs;
+	u16 max_acl_mac_addrs;
 
-	u32                       ap_sme_capa;
+	u32 ap_sme_capa;
 	/** Maximum number of supported active probe SSIDs */
-	int                       max_scan_ssids;
+	int max_scan_ssids;
 
 	/** Maximum number of supported active probe SSIDs for sched_scan */
-	int                       max_sched_scan_ssids;
+	int max_sched_scan_ssids;
 
 	/** Whether sched_scan (offloaded scanning) is supported */
-	int                       sched_scan_supported;
+	int sched_scan_supported;
 
 	/** Maximum number of supported match sets for sched_scan */
-	int                       max_match_sets;
+	int max_match_sets;
 
 	/**
 	 * max_remain_on_chan - Maximum remain-on-channel duration in msec
 	 */
-	unsigned int              max_remain_on_chan;
+	unsigned int max_remain_on_chan;
 
 	/**
 	 * max_stations - Maximum number of associated stations the driver
 	 * supports in AP mode
 	 */
-	unsigned int              max_stations;
-	bool                      is_supplicant_deinit;
-	int                        recovery_next_state;
-	struct completion          recovery_remove_completion;
-	struct completion          recovery_stop_completion;
-	int                        recovery_status;
-	bool                       mlme_blocked; /* When true do not send mlme signals to FW */
+	unsigned int max_stations;
+	bool is_supplicant_deinit;
+	int recovery_next_state;
+	struct completion recovery_remove_completion;
+	struct completion recovery_stop_completion;
+	int recovery_status;
+	bool mlme_blocked;			/* When true do not send mlme signals to FW */
 };
 
 #define LLC_SNAP_HDR_LEN 8

@@ -55,8 +55,9 @@ static inline unsigned int dl_list_len(struct dl_list *list)
 {
 	struct dl_list *item;
 	int count = 0;
-	for (item = list->next; item != list; item = item->next)
+	for (item = list->next; item != list; item = item->next) {
 		count++;
+	}
 	return count;
 }
 
@@ -94,4 +95,4 @@ static inline unsigned int dl_list_len(struct dl_list *list)
 #define DEFINE_DL_LIST(name) \
 	struct dl_list name = { &(name), &(name) }
 
-#endif /* LIST_H */
+#endif							/* LIST_H */

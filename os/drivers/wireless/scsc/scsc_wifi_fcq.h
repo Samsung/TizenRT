@@ -30,9 +30,9 @@
 
 /* Initial value of unicast qmod - peer normal */
 #ifdef ENABLE_DYNAMIC_QMOD_ADAPTATION
-  #define SCSC_WIFI_FCQ_QMOD            (2)
+#define SCSC_WIFI_FCQ_QMOD            (2)
 #else
-  #define SCSC_WIFI_FCQ_QMOD            (14)
+#define SCSC_WIFI_FCQ_QMOD            (14)
 #endif
 
 /* Remaining slots for qmod */
@@ -41,7 +41,7 @@
 /* Initial value of multicast qmod - peer normal */
 #define SCSC_WIFI_FCQ_MCAST_QMOD        (3)
 
-#define SCSC_FCQ_REDISTRIBUTE_TIME      (5000) /* 5 seconds */
+#define SCSC_FCQ_REDISTRIBUTE_TIME      (5000)	/* 5 seconds */
 
 enum scsc_wifi_fcq_8021x_state {
 	SCSC_WIFI_FCQ_8021x_STATE_BLOCKED = 0,
@@ -59,15 +59,15 @@ struct scsc_wifi_fcq_q_stat {
 };
 
 struct scsc_wifi_fcq_q_header {
-	int                         qmod;
-	int                         qcod;
-	u16                         netif_queue_id;
-	int                         active;
+	int qmod;
+	int qcod;
+	u16 netif_queue_id;
+	int active;
 	struct scsc_wifi_fcq_q_stat stats;
 };
 
 struct scsc_wifi_fcq_data_q {
-	struct scsc_wifi_fcq_q_header  head;
+	struct scsc_wifi_fcq_q_header head;
 	struct scsc_wifi_fcq_data_qset *qs;
 };
 
@@ -82,17 +82,17 @@ enum scsc_wifi_fcq_queue_set_type {
 
 struct scsc_wifi_fcq_data_qset {
 	enum scsc_wifi_fcq_8021x_state controlled_port_state;
-	pthread_mutex_t                cp_lock;
-	struct scsc_wifi_fcq_data_q    ac_q[SLSI_NETIF_Q_PER_PEER];
-	int                            smod;
-	int                            scod;
+	pthread_mutex_t cp_lock;
+	struct scsc_wifi_fcq_data_q ac_q[SLSI_NETIF_Q_PER_PEER];
+	int smod;
+	int scod;
 	/* Control AC usage (BE,BK,VI,VO) bitmap */
-	u8                             ac_inuse;
-	u8                             ac_active; /* Current active ACs */
-	struct scsc_wifi_fcq_q_stat    stats; /* Stats for smod */
-	enum scsc_wifi_fcq_ps_state    peer_ps_state;
-	u32                            peer_ps_state_transitions;
-	struct work_s                  fcq_work;
+	u8 ac_inuse;
+	u8 ac_active;				/* Current active ACs */
+	struct scsc_wifi_fcq_q_stat stats;	/* Stats for smod */
+	enum scsc_wifi_fcq_ps_state peer_ps_state;
+	u32 peer_ps_state_transitions;
+	struct work_s fcq_work;
 };
 
 bool slsi_is_port_blocked(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs);
@@ -102,7 +102,7 @@ void scsc_wifi_fcq_ctrl_q_deinit(struct scsc_wifi_fcq_ctrl_q *queue);
 
 int scsc_wifi_fcq_unicast_qset_init(struct scsc_wifi_fcq_data_qset *qs, u8 qs_num);
 int scsc_wifi_fcq_multicast_qset_init(struct scsc_wifi_fcq_data_qset *qs);
-void scsc_wifi_fcq_qset_deinit(struct scsc_wifi_fcq_data_qset *qs); /* Used for deinit both uni and multicast queue sets */
+void scsc_wifi_fcq_qset_deinit(struct scsc_wifi_fcq_data_qset *qs);	/* Used for deinit both uni and multicast queue sets */
 
 /* Transmit/receive bookkeeping and smod power save changes / 802.1x handling */
 int scsc_wifi_fcq_transmit_data(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs, u16 priority, bool multicast);
@@ -110,18 +110,12 @@ int scsc_wifi_fcq_receive_data(struct netif *dev, struct scsc_wifi_fcq_data_qset
 
 int scsc_wifi_fcq_receive_ctrl(struct netif *dev, struct scsc_wifi_fcq_ctrl_q *queue);
 
-int scsc_wifi_fcq_update_smod(struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi_fcq_ps_state peer_ps_state,
-			      enum scsc_wifi_fcq_queue_set_type type);
+int scsc_wifi_fcq_update_smod(struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi_fcq_ps_state peer_ps_state, enum scsc_wifi_fcq_queue_set_type type);
 int scsc_wifi_fcq_8021x_port_state(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi_fcq_8021x_state state);
 
 /* Statistics */
-int scsc_wifi_fcq_stat_queue(struct scsc_wifi_fcq_q_header *queue,
-			     struct scsc_wifi_fcq_q_stat *queue_stat,
-			     int *qmod, int *qcod);
+int scsc_wifi_fcq_stat_queue(struct scsc_wifi_fcq_q_header *queue, struct scsc_wifi_fcq_q_stat *queue_stat, int *qmod, int *qcod);
 
-int scsc_wifi_fcq_stat_queueset(struct scsc_wifi_fcq_data_qset *queue_set,
-				struct scsc_wifi_fcq_q_stat *queue_stat,
-				int *smod, int *scod, enum scsc_wifi_fcq_8021x_state *cp_state,
-				u32 *peer_ps_state_transitions);
+int scsc_wifi_fcq_stat_queueset(struct scsc_wifi_fcq_data_qset *queue_set, struct scsc_wifi_fcq_q_stat *queue_stat, int *smod, int *scod, enum scsc_wifi_fcq_8021x_state *cp_state, u32 *peer_ps_state_transitions);
 
-#endif /* #ifndef __SCSC_WIFI_FCQ_H */
+#endif							/* #ifndef __SCSC_WIFI_FCQ_H */

@@ -26,4 +26,4 @@ enum http_reply_code {
 	UPNP_OUT_OF_MEMORY = 603
 };
 
-#endif /* HTTP_H */
+#endif							/* HTTP_H */

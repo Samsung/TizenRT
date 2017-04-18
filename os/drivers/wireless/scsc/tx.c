@@ -26,24 +26,27 @@ void slsi_init_dath_path_stats(struct slsi_dev *sdev)
 
 void slsi_update_queue_stats(struct slsi_dev *sdev)
 {
-	struct netif      *dev;
+	struct netif *dev;
 	struct netdev_vif *ndev_vif;
-	struct slsi_peer  *peer;
-	int               i;
+	struct slsi_peer *peer;
+	int i;
 
 	sdev->dp_stats.ac_q_update_status = SLSI_PEER_INVALID;
 
 	dev = slsi_get_netdev(sdev, SLSI_NET_INDEX_WLAN);
-	if (!dev)
+	if (!dev) {
 		return;
+	}
 
 	ndev_vif = netdev_priv(dev);
-	if (!ndev_vif)
+	if (!ndev_vif) {
 		return;
+	}
 
 	peer = ndev_vif->peer_sta_record[0];
-	if (!peer)
+	if (!peer) {
 		return;
+	}
 
 	if (peer->valid == true) {
 		sdev->dp_stats.ac_q_update_status = SLSI_PEER_VALID;
@@ -90,11 +93,11 @@ void slsi_reset_data_path_stats(void)
 static int slsi_tx_eapol(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct slsi_peer  *peer;
-	u8                *eapol;
-	u16               msg_type = 0;
-	u16               proto = ntohs(mbuf->protocol);
-	int               ret = 0;
+	struct slsi_peer *peer;
+	u8 *eapol;
+	u16 msg_type = 0;
+	u16 proto = ntohs(mbuf->protocol);
+	int ret = 0;
 
 	SLSI_MUTEX_LOCK(ndev_vif->peer_lock);
 	peer = slsi_get_peer_from_mac(sdev, dev, eth_hdr(mbuf)->h_dest);
@@ -120,11 +123,7 @@ static int slsi_tx_eapol(struct slsi_dev *sdev, struct netif *dev, struct max_bu
 		} else if (eapol[SLSI_EAPOL_IEEE8021X_TYPE_POS] == SLSI_IEEE8021X_TYPE_EAPOL_KEY) {
 			msg_type = FAPI_MESSAGETYPE_EAPOL_KEY_M123;
 
-			if ((eapol[SLSI_EAPOL_TYPE_POS] == SLSI_EAPOL_TYPE_RSN_KEY || eapol[SLSI_EAPOL_TYPE_POS] == SLSI_EAPOL_TYPE_WPA_KEY) &&
-			    (eapol[SLSI_EAPOL_KEY_INFO_LOWER_BYTE_POS] & SLSI_EAPOL_KEY_INFO_KEY_TYPE_BIT_IN_LOWER_BYTE) &&
-			    (eapol[SLSI_EAPOL_KEY_INFO_HIGHER_BYTE_POS] & SLSI_EAPOL_KEY_INFO_MIC_BIT_IN_HIGHER_BYTE) &&
-			    (eapol[SLSI_EAPOL_KEY_DATA_LENGTH_HIGHER_BYTE_POS] == 0) &&
-			    (eapol[SLSI_EAPOL_KEY_DATA_LENGTH_LOWER_BYTE_POS] == 0)) {
+			if ((eapol[SLSI_EAPOL_TYPE_POS] == SLSI_EAPOL_TYPE_RSN_KEY || eapol[SLSI_EAPOL_TYPE_POS] == SLSI_EAPOL_TYPE_WPA_KEY) && (eapol[SLSI_EAPOL_KEY_INFO_LOWER_BYTE_POS] & SLSI_EAPOL_KEY_INFO_KEY_TYPE_BIT_IN_LOWER_BYTE) && (eapol[SLSI_EAPOL_KEY_INFO_HIGHER_BYTE_POS] & SLSI_EAPOL_KEY_INFO_MIC_BIT_IN_HIGHER_BYTE) && (eapol[SLSI_EAPOL_KEY_DATA_LENGTH_HIGHER_BYTE_POS] == 0) && (eapol[SLSI_EAPOL_KEY_DATA_LENGTH_LOWER_BYTE_POS] == 0)) {
 				SLSI_NET_DBG1(dev, SLSI_MLME, "message M4\n");
 				msg_type = FAPI_MESSAGETYPE_EAPOL_KEY_M4;
 			}
@@ -150,20 +149,22 @@ static int slsi_tx_eapol(struct slsi_dev *sdev, struct netif *dev, struct max_bu
 void slsi_alloc_tx_mbuf(struct slsi_dev *sdev)
 {
 	sdev->tx_mbuf = alloc_mbuf(SLSI_TX_MBUF_SIZE);
-	if (!sdev->tx_mbuf)
+	if (!sdev->tx_mbuf) {
 		SLSI_ERR(sdev, "Failed to allocate TX mbuf\n");
+	}
 }
 
 void slsi_free_tx_mbuf(struct slsi_dev *sdev)
 {
-	if (sdev->tx_mbuf)
+	if (sdev->tx_mbuf) {
 		slsi_kfree_mbuf(sdev->tx_mbuf);
+	}
 
 	sdev->tx_mbuf = NULL;
 }
 
-#define ETH_P_IP        0x0800          /* Internet Protocol packet     */
-#define ETH_P_ARP       0x0806          /* Address Resolution packet    */
+#define ETH_P_IP        0x0800	/* Internet Protocol packet     */
+#define ETH_P_ARP       0x0806	/* Address Resolution packet    */
 
 /**
  * This function deals with TX of data frames.
@@ -178,10 +179,10 @@ void slsi_free_tx_mbuf(struct slsi_dev *sdev)
 int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
 {
 	struct slsi_mbuf_cb *cb;
-	struct netdev_vif   *ndev_vif = netdev_priv(dev);
-	struct slsi_peer    *peer;
-	u16                 len = mbuf->len;
-	int                 ret = 0;
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+	struct slsi_peer *peer;
+	u16 len = mbuf->len;
+	int ret = 0;
 
 #ifdef CONFIG_SCSC_TX_FLOW_CONTROL
 	enum slsi_traffic_q traffic_q;
@@ -229,23 +230,26 @@ int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 		case ETH_P_WAI:
 			SLSI_NET_DBG3(dev, SLSI_TX, "transmit EAP packet from SLSI_NETIF_Q_PRIORITY\n");
 			ret = slsi_tx_eapol(sdev, dev, mbuf);
-			if (ret < 0)
+			if (ret < 0) {
 				SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_drop_eapol);
+			}
 			return ret;
 		case ETH_P_ARP:
 			SLSI_NET_DBG3(dev, SLSI_TX, "transmit ARP frame from SLSI_NETIF_Q_PRIORITY\n");
 			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_arp_dhcp_mlme);
 			ret = slsi_mlme_send_frame_data(sdev, dev, mbuf, FAPI_MESSAGETYPE_ARP);
-			if (ret < 0)
+			if (ret < 0) {
 				SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_drop_arp);
+			}
 			return ret;
 		case ETH_P_IP:
 			if (slsi_is_dhcp_packet(mbuf->data) != SLSI_TX_IS_NOT_DHCP) {
 				SLSI_NET_DBG2(dev, SLSI_MLME, "transmit DHCP packet from SLSI_NETIF_Q_PRIORITY\n");
 				SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_arp_dhcp_mlme);
 				ret = slsi_mlme_send_frame_data(sdev, dev, mbuf, FAPI_MESSAGETYPE_DHCP);
-				if (ret < 0)
+				if (ret < 0) {
 					SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_drop_dhcp);
+				}
 				return ret;
 			}
 			/* IP frame can have only DHCP packet in SLSI_NETIF_Q_PRIORITY */
@@ -262,27 +266,27 @@ int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 	}
 
 	/* Align mac_header with mbuf->data */
-	if (mbuf_headroom(mbuf) != mbuf->mac_header)
+	if (mbuf_headroom(mbuf) != mbuf->mac_header) {
 		mbuf_pull(mbuf, mbuf->mac_header - mbuf_headroom(mbuf));
+	}
 
 	len = mbuf->len;
 
 	(void)mbuf_push(mbuf, fapi_sig_size(ma_unitdata_req));
-	fapi_set_u16(mbuf, id,           MA_UNITDATA_REQ);
+	fapi_set_u16(mbuf, id, MA_UNITDATA_REQ);
 	fapi_set_u16(mbuf, receiver_pid, 0);
-	fapi_set_u16(mbuf, sender_pid,   SLSI_TX_PROCESS_ID_MIN);
+	fapi_set_u16(mbuf, sender_pid, SLSI_TX_PROCESS_ID_MIN);
 	fapi_set_u32(mbuf, fw_reference, 0);
 	fapi_set_u16(mbuf, u.ma_unitdata_req.vif, ndev_vif->ifnum);
 	fapi_set_u16(mbuf, u.ma_unitdata_req.host_tag, slsi_tx_host_tag(sdev));
-	fapi_set_u16(mbuf, u.ma_unitdata_req.peer_index,   MAP_QS_TO_AID(slsi_netif_get_qs_from_queue
-										 (mbuf->queue_mapping, slsi_frame_priority_to_ac_queue(mbuf->priority))));
+	fapi_set_u16(mbuf, u.ma_unitdata_req.peer_index, MAP_QS_TO_AID(slsi_netif_get_qs_from_queue(mbuf->queue_mapping, slsi_frame_priority_to_ac_queue(mbuf->priority))));
 
 	/* by default the priority is set to contention. It is overridden and set appropriate
 	 * priority if peer supports QoS. The broadcast/multicast frames are sent in non-QoS except Oxygen.
 	 * The broadcast/multicast frames are sent in QoS in case of Oxygen.
 	 */
-	fapi_set_u16(mbuf, u.ma_unitdata_req.priority,                FAPI_PRIORITY_CONTENTION);
-	fapi_set_u16(mbuf, u.ma_unitdata_req.data_unit_descriptor,    FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME);
+	fapi_set_u16(mbuf, u.ma_unitdata_req.priority, FAPI_PRIORITY_CONTENTION);
+	fapi_set_u16(mbuf, u.ma_unitdata_req.data_unit_descriptor, FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME);
 
 	cb = slsi_mbuf_cb_init(mbuf);
 	cb->sig_length = fapi_sig_size(ma_unitdata_req);
@@ -295,8 +299,7 @@ int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 	 * [7:3]  - peer_index
 	 * [10:8] - ac queue
 	 */
-	cb->colour = (slsi_frame_priority_to_ac_queue(mbuf->priority) << 8) |
-		     (fapi_get_u16(mbuf, u.ma_unitdata_req.peer_index) << 3) | ndev_vif->ifnum << 1;
+	cb->colour = (slsi_frame_priority_to_ac_queue(mbuf->priority) << 8) | (fapi_get_u16(mbuf, u.ma_unitdata_req.peer_index) << 3) | ndev_vif->ifnum << 1;
 
 	/* ACCESS POINT MODE */
 	if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
@@ -304,10 +307,7 @@ int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 
 		if (is_multicast_ether_addr(ehdr->h_dest)) {
 #ifdef CONFIG_SCSC_TX_FLOW_CONTROL
-			ret = scsc_wifi_fcq_transmit_data(dev,
-							  &ndev_vif->ap.group_data_qs,
-							  slsi_frame_priority_to_ac_queue(mbuf->priority),
-							  true);
+			ret = scsc_wifi_fcq_transmit_data(dev, &ndev_vif->ap.group_data_qs, slsi_frame_priority_to_ac_queue(mbuf->priority), true);
 			if (ret < 0) {
 				SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_drop_flow_control_mcast);
 				SLSI_NET_DBG3(dev, SLSI_TX, "no fcq for groupcast, dropping TX frame\n");
@@ -319,9 +319,7 @@ int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 #ifdef CONFIG_SCSC_TX_FLOW_CONTROL
 			if (ret != ERR_OK) {
 				/* scsc_wifi_transmit_frame failed, decrement BoT counters */
-				scsc_wifi_fcq_receive_data(dev,
-							   &ndev_vif->ap.group_data_qs,
-							   slsi_frame_priority_to_ac_queue(mbuf->priority));
+				scsc_wifi_fcq_receive_data(dev, &ndev_vif->ap.group_data_qs, slsi_frame_priority_to_ac_queue(mbuf->priority));
 			}
 #endif
 			return ret;
@@ -347,7 +345,6 @@ int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 	if (peer->qos_enabled) {
 		fapi_set_u16(mbuf, u.ma_unitdata_req.priority, mbuf->priority);
 	}
-
 #ifdef CONFIG_SCSC_TX_FLOW_CONTROL
 	traffic_q = slsi_frame_priority_to_ac_queue(mbuf->priority);
 	if (scsc_wifi_fcq_transmit_data(dev, &peer->data_qs, traffic_q, false) < 0) {
@@ -387,19 +384,20 @@ int slsi_tx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 
 int slsi_tx_data_lower(struct slsi_dev *sdev, struct max_buff *mbuf)
 {
-	struct netif      *dev;
+	struct netif *dev;
 	struct netdev_vif *ndev_vif;
-	struct slsi_peer  *peer;
-	u16               vif;
-	u8                *dest;
-	int               ret;
+	struct slsi_peer *peer;
+	u16 vif;
+	u8 *dest;
+	int ret;
 
 	vif = fapi_get_vif(mbuf);
 
 	switch (fapi_get_u16(mbuf, u.ma_unitdata_req.data_unit_descriptor)) {
 	case FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME:
-		if (ntohs(eth_hdr(mbuf)->h_proto) == ETH_P_PAE || ntohs(eth_hdr(mbuf)->h_proto) == ETH_P_WAI)
+		if (ntohs(eth_hdr(mbuf)->h_proto) == ETH_P_PAE || ntohs(eth_hdr(mbuf)->h_proto) == ETH_P_WAI) {
 			return slsi_tx_control(sdev, NULL, mbuf, true);
+		}
 		dest = eth_hdr(mbuf)->h_dest;
 		break;
 
@@ -416,8 +414,7 @@ int slsi_tx_data_lower(struct slsi_dev *sdev, struct max_buff *mbuf)
 		dest = slsi_80211_get_DA((struct slsi_80211_hdr *)fapi_get_data(mbuf));
 		break;
 	default:
-		SLSI_ERR(sdev, "data_unit_descriptor incorrectly set (0x%02x), dropping TX frame\n",
-			 fapi_get_u16(mbuf, u.ma_unitdata_req.data_unit_descriptor));
+		SLSI_ERR(sdev, "data_unit_descriptor incorrectly set (0x%02x), dropping TX frame\n", fapi_get_u16(mbuf, u.ma_unitdata_req.data_unit_descriptor));
 		return -EINVAL;
 	}
 
@@ -429,8 +426,7 @@ int slsi_tx_data_lower(struct slsi_dev *sdev, struct max_buff *mbuf)
 
 	ndev_vif = netdev_priv(dev);
 
-	if (is_multicast_ether_addr(dest) &&
-	    (ndev_vif->vif_type == FAPI_VIFTYPE_AP)) {
+	if (is_multicast_ether_addr(dest) && (ndev_vif->vif_type == FAPI_VIFTYPE_AP)) {
 #ifdef CONFIG_SCSC_TX_FLOW_CONTROL
 		if (scsc_wifi_fcq_transmit_data(dev, &ndev_vif->ap.group_data_qs, slsi_frame_priority_to_ac_queue(mbuf->priority), true) < 0) {
 			SLSI_NET_DBG3(dev, SLSI_TX, "no fcq for groupcast, dropping TX frame\n");
@@ -438,45 +434,45 @@ int slsi_tx_data_lower(struct slsi_dev *sdev, struct max_buff *mbuf)
 		}
 #endif
 		ret = scsc_wifi_transmit_frame(&sdev->hip4_inst, false, mbuf);
-		if (ret == 0)
+		if (ret == 0) {
 			return ret;
+		}
 		/**
 		 * This should be NEVER RETRIED/REQUEUED and its' handled
 		 * by the caller in UDI cdev_write
 		 */
-		if (ret == -ENOSPC)
+		if (ret == -ENOSPC) {
 			SLSI_NET_DBG1(dev, SLSI_TX, "TX_LOWER...Queue Full... BUT Dropping packet\n");
-		else
+		} else {
 			SLSI_NET_DBG1(dev, SLSI_TX, "TX_LOWER...Generic Error...Dropping packet\n");
+		}
 
 		/* scsc_wifi_transmit_frame failed, decrement BoT counters */
-		scsc_wifi_fcq_receive_data(dev, &ndev_vif->ap.group_data_qs,
-					   slsi_frame_priority_to_ac_queue(mbuf->priority));
+		scsc_wifi_fcq_receive_data(dev, &ndev_vif->ap.group_data_qs, slsi_frame_priority_to_ac_queue(mbuf->priority));
 		return ret;
 	}
 
 	SLSI_MUTEX_LOCK(ndev_vif->peer_lock);
 	peer = slsi_get_peer_from_mac(sdev, dev, dest);
 	if (!peer) {
-		SLSI_ERR(sdev, "no peer record for %02x:%02x:%02x:%02x:%02x:%02x, dropping TX frame\n",
-			 dest[0], dest[1], dest[2], dest[3], dest[4], dest[5]);
+		SLSI_ERR(sdev, "no peer record for %02x:%02x:%02x:%02x:%02x:%02x, dropping TX frame\n", dest[0], dest[1], dest[2], dest[3], dest[4], dest[5]);
 		SLSI_MUTEX_UNLOCK(ndev_vif->peer_lock);
 		return -EINVAL;
 	}
 
-	if (fapi_get_u16(mbuf, u.ma_unitdata_req.priority) == FAPI_PRIORITY_CONTENTION)
+	if (fapi_get_u16(mbuf, u.ma_unitdata_req.priority) == FAPI_PRIORITY_CONTENTION) {
 		mbuf->priority = FAPI_PRIORITY_QOS_UP0;
-	else
+	} else {
 		mbuf->priority = fapi_get_u16(mbuf, u.ma_unitdata_req.priority);
+	}
 
 	ret = scsc_wifi_transmit_frame(&sdev->hip4_inst, false, mbuf);
 	if (ret < 0) {
-		if (ret == -ENOSPC)
-			SLSI_NET_DBG1(dev, SLSI_TX,
-				      "TX_LOWER...Queue Full...BUT Dropping packet\n");
-		else
-			SLSI_NET_DBG1(dev, SLSI_TX,
-				      "TX_LOWER...Generic Error...Dropping packet\n");
+		if (ret == -ENOSPC) {
+			SLSI_NET_DBG1(dev, SLSI_TX, "TX_LOWER...Queue Full...BUT Dropping packet\n");
+		} else {
+			SLSI_NET_DBG1(dev, SLSI_TX, "TX_LOWER...Generic Error...Dropping packet\n");
+		}
 		SLSI_MUTEX_UNLOCK(ndev_vif->peer_lock);
 		return ret;
 	}
@@ -493,8 +489,8 @@ int slsi_tx_data_lower(struct slsi_dev *sdev, struct max_buff *mbuf)
  */
 int slsi_tx_control(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, bool free_buf)
 {
-	struct slsi_mbuf_cb       *cb;
-	int                       res = 0;
+	struct slsi_mbuf_cb *cb;
+	int res = 0;
 	struct fapi_signal_header *hdr;
 
 	if (WARN_ON(!mbuf)) {
@@ -526,8 +522,9 @@ int slsi_tx_control(struct slsi_dev *sdev, struct netif *dev, struct max_buff *m
 	if (res == 0) {
 		/* Free the mbuf after successful transmit if asked for.
 		 * All the control path mbufs are normally freed here except DHCP/ARP called from data path. */
-		if (free_buf)
+		if (free_buf) {
 			slsi_kfree_mbuf(mbuf);
+		}
 	}
 exit:
 	return res;

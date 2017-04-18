@@ -14,9 +14,7 @@
 #include "eap_tls_common.h"
 #include "eap_config.h"
 
-
 static void eap_tls_deinit(struct eap_sm *sm, void *priv);
-
 
 struct eap_tls_data {
 	struct eap_ssl_data ssl;
@@ -27,38 +25,32 @@ struct eap_tls_data {
 	u8 eap_type;
 };
 
-
-static void * eap_tls_init(struct eap_sm *sm)
+static void *eap_tls_init(struct eap_sm *sm)
 {
 	struct eap_tls_data *data;
 	struct eap_peer_config *config = eap_get_config(sm);
-	if (config == NULL ||
-	    ((sm->init_phase2 ? config->private_key2 : config->private_key)
-	     == NULL &&
-	     (sm->init_phase2 ? config->engine2 : config->engine) == 0)) {
+	if (config == NULL || ((sm->init_phase2 ? config->private_key2 : config->private_key)
+						   == NULL && (sm->init_phase2 ? config->engine2 : config->engine) == 0)) {
 		wpa_printf(MSG_INFO, "EAP-TLS: Private key not configured");
 		return NULL;
 	}
 
 	data = os_zalloc(sizeof(*data));
-	if (data == NULL)
+	if (data == NULL) {
 		return NULL;
+	}
 
-	data->ssl_ctx = sm->init_phase2 && sm->ssl_ctx2 ? sm->ssl_ctx2 :
-		sm->ssl_ctx;
+	data->ssl_ctx = sm->init_phase2 && sm->ssl_ctx2 ? sm->ssl_ctx2 : sm->ssl_ctx;
 
 	if (eap_peer_tls_ssl_init(sm, &data->ssl, config, EAP_TYPE_TLS)) {
 		wpa_printf(MSG_INFO, "EAP-TLS: Failed to initialize SSL.");
 		eap_tls_deinit(sm, data);
 		if (config->engine) {
-			wpa_printf(MSG_DEBUG, "EAP-TLS: Requesting Smartcard "
-				   "PIN");
+			wpa_printf(MSG_DEBUG, "EAP-TLS: Requesting Smartcard " "PIN");
 			eap_sm_request_pin(sm);
 			sm->ignore = TRUE;
-		} else if (config->private_key && !config->private_key_passwd)
-		{
-			wpa_printf(MSG_DEBUG, "EAP-TLS: Requesting private "
-				   "key passphrase");
+		} else if (config->private_key && !config->private_key_passwd) {
+			wpa_printf(MSG_DEBUG, "EAP-TLS: Requesting private " "key passphrase");
 			eap_sm_request_passphrase(sm);
 			sm->ignore = TRUE;
 		}
@@ -70,22 +62,20 @@ static void * eap_tls_init(struct eap_sm *sm)
 	return data;
 }
 
-
 #ifdef EAP_UNAUTH_TLS
-static void * eap_unauth_tls_init(struct eap_sm *sm)
+static void *eap_unauth_tls_init(struct eap_sm *sm)
 {
 	struct eap_tls_data *data;
 	struct eap_peer_config *config = eap_get_config(sm);
 
 	data = os_zalloc(sizeof(*data));
-	if (data == NULL)
+	if (data == NULL) {
 		return NULL;
+	}
 
-	data->ssl_ctx = sm->init_phase2 && sm->ssl_ctx2 ? sm->ssl_ctx2 :
-		sm->ssl_ctx;
+	data->ssl_ctx = sm->init_phase2 && sm->ssl_ctx2 ? sm->ssl_ctx2 : sm->ssl_ctx;
 
-	if (eap_peer_tls_ssl_init(sm, &data->ssl, config,
-				  EAP_UNAUTH_TLS_TYPE)) {
+	if (eap_peer_tls_ssl_init(sm, &data->ssl, config, EAP_UNAUTH_TLS_TYPE)) {
 		wpa_printf(MSG_INFO, "EAP-TLS: Failed to initialize SSL.");
 		eap_tls_deinit(sm, data);
 		return NULL;
@@ -95,24 +85,22 @@ static void * eap_unauth_tls_init(struct eap_sm *sm)
 
 	return data;
 }
-#endif /* EAP_UNAUTH_TLS */
-
+#endif							/* EAP_UNAUTH_TLS */
 
 #ifdef CONFIG_HS20
-static void * eap_wfa_unauth_tls_init(struct eap_sm *sm)
+static void *eap_wfa_unauth_tls_init(struct eap_sm *sm)
 {
 	struct eap_tls_data *data;
 	struct eap_peer_config *config = eap_get_config(sm);
 
 	data = os_zalloc(sizeof(*data));
-	if (data == NULL)
+	if (data == NULL) {
 		return NULL;
+	}
 
-	data->ssl_ctx = sm->init_phase2 && sm->ssl_ctx2 ? sm->ssl_ctx2 :
-		sm->ssl_ctx;
+	data->ssl_ctx = sm->init_phase2 && sm->ssl_ctx2 ? sm->ssl_ctx2 : sm->ssl_ctx;
 
-	if (eap_peer_tls_ssl_init(sm, &data->ssl, config,
-				  EAP_WFA_UNAUTH_TLS_TYPE)) {
+	if (eap_peer_tls_ssl_init(sm, &data->ssl, config, EAP_WFA_UNAUTH_TLS_TYPE)) {
 		wpa_printf(MSG_INFO, "EAP-TLS: Failed to initialize SSL.");
 		eap_tls_deinit(sm, data);
 		return NULL;
@@ -122,8 +110,7 @@ static void * eap_wfa_unauth_tls_init(struct eap_sm *sm)
 
 	return data;
 }
-#endif /* CONFIG_HS20 */
-
+#endif							/* CONFIG_HS20 */
 
 static void eap_tls_free_key(struct eap_tls_data *data)
 {
@@ -133,23 +120,19 @@ static void eap_tls_free_key(struct eap_tls_data *data)
 	}
 }
 
-
 static void eap_tls_deinit(struct eap_sm *sm, void *priv)
 {
 	struct eap_tls_data *data = priv;
-	if (data == NULL)
+	if (data == NULL) {
 		return;
+	}
 	eap_peer_tls_ssl_deinit(sm, &data->ssl);
 	eap_tls_free_key(data);
 	os_free(data->session_id);
 	os_free(data);
 }
 
-
-static struct wpabuf * eap_tls_failure(struct eap_sm *sm,
-				       struct eap_tls_data *data,
-				       struct eap_method_ret *ret, int res,
-				       struct wpabuf *resp, u8 id)
+static struct wpabuf *eap_tls_failure(struct eap_sm *sm, struct eap_tls_data *data, struct eap_method_ret *ret, int res, struct wpabuf *resp, u8 id)
 {
 	wpa_printf(MSG_DEBUG, "EAP-TLS: TLS processing failed");
 
@@ -181,9 +164,7 @@ static struct wpabuf * eap_tls_failure(struct eap_sm *sm,
 	return eap_peer_tls_build_ack(id, data->eap_type, 0);
 }
 
-
-static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
-			    struct eap_method_ret *ret)
+static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data, struct eap_method_ret *ret)
 {
 	wpa_printf(MSG_DEBUG, "EAP-TLS: Done");
 
@@ -191,36 +172,24 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 	ret->decision = DECISION_UNCOND_SUCC;
 
 	eap_tls_free_key(data);
-	data->key_data = eap_peer_tls_derive_key(sm, &data->ssl,
-						 "client EAP encryption",
-						 EAP_TLS_KEY_LEN +
-						 EAP_EMSK_LEN);
+	data->key_data = eap_peer_tls_derive_key(sm, &data->ssl, "client EAP encryption", EAP_TLS_KEY_LEN + EAP_EMSK_LEN);
 	if (data->key_data) {
-		wpa_hexdump_key(MSG_DEBUG, "EAP-TLS: Derived key",
-				data->key_data, EAP_TLS_KEY_LEN);
-		wpa_hexdump_key(MSG_DEBUG, "EAP-TLS: Derived EMSK",
-				data->key_data + EAP_TLS_KEY_LEN,
-				EAP_EMSK_LEN);
+		wpa_hexdump_key(MSG_DEBUG, "EAP-TLS: Derived key", data->key_data, EAP_TLS_KEY_LEN);
+		wpa_hexdump_key(MSG_DEBUG, "EAP-TLS: Derived EMSK", data->key_data + EAP_TLS_KEY_LEN, EAP_EMSK_LEN);
 	} else {
 		wpa_printf(MSG_INFO, "EAP-TLS: Failed to derive key");
 	}
 
 	os_free(data->session_id);
-	data->session_id = eap_peer_tls_derive_session_id(sm, &data->ssl,
-							  EAP_TYPE_TLS,
-			                                  &data->id_len);
+	data->session_id = eap_peer_tls_derive_session_id(sm, &data->ssl, EAP_TYPE_TLS, &data->id_len);
 	if (data->session_id) {
-		wpa_hexdump(MSG_DEBUG, "EAP-TLS: Derived Session-Id",
-			    data->session_id, data->id_len);
+		wpa_hexdump(MSG_DEBUG, "EAP-TLS: Derived Session-Id", data->session_id, data->id_len);
 	} else {
 		wpa_printf(MSG_ERROR, "EAP-TLS: Failed to derive Session-Id");
 	}
 }
 
-
-static struct wpabuf * eap_tls_process(struct eap_sm *sm, void *priv,
-				       struct eap_method_ret *ret,
-				       const struct wpabuf *reqData)
+static struct wpabuf *eap_tls_process(struct eap_sm *sm, void *priv, struct eap_method_ret *ret, const struct wpabuf *reqData)
 {
 	size_t left;
 	int res;
@@ -230,29 +199,29 @@ static struct wpabuf * eap_tls_process(struct eap_sm *sm, void *priv,
 	struct eap_tls_data *data = priv;
 	struct wpabuf msg;
 
-	pos = eap_peer_tls_process_init(sm, &data->ssl, data->eap_type, ret,
-					reqData, &left, &flags);
-	if (pos == NULL)
+	pos = eap_peer_tls_process_init(sm, &data->ssl, data->eap_type, ret, reqData, &left, &flags);
+	if (pos == NULL) {
 		return NULL;
+	}
 	id = eap_get_id(reqData);
 
 	if (flags & EAP_TLS_FLAGS_START) {
 		wpa_printf(MSG_DEBUG, "EAP-TLS: Start");
-		left = 0; /* make sure that this frame is empty, even though it
-			   * should always be, anyway */
+		left = 0;				/* make sure that this frame is empty, even though it
+								 * should always be, anyway */
 	}
 
 	resp = NULL;
 	wpabuf_set(&msg, pos, left);
-	res = eap_peer_tls_process_helper(sm, &data->ssl, data->eap_type, 0,
-					  id, &msg, &resp);
+	res = eap_peer_tls_process_helper(sm, &data->ssl, data->eap_type, 0, id, &msg, &resp);
 
 	if (res < 0) {
 		return eap_tls_failure(sm, data, ret, res, resp, id);
 	}
 
-	if (tls_connection_established(data->ssl_ctx, data->ssl.conn))
+	if (tls_connection_established(data->ssl_ctx, data->ssl.conn)) {
 		eap_tls_success(sm, data, ret);
+	}
 
 	if (res == 1) {
 		wpabuf_free(resp);
@@ -262,20 +231,17 @@ static struct wpabuf * eap_tls_process(struct eap_sm *sm, void *priv,
 	return resp;
 }
 
-
 static Boolean eap_tls_has_reauth_data(struct eap_sm *sm, void *priv)
 {
 	struct eap_tls_data *data = priv;
 	return tls_connection_established(data->ssl_ctx, data->ssl.conn);
 }
 
-
 static void eap_tls_deinit_for_reauth(struct eap_sm *sm, void *priv)
 {
 }
 
-
-static void * eap_tls_init_for_reauth(struct eap_sm *sm, void *priv)
+static void *eap_tls_init_for_reauth(struct eap_sm *sm, void *priv)
 {
 	struct eap_tls_data *data = priv;
 	eap_tls_free_key(data);
@@ -288,14 +254,11 @@ static void * eap_tls_init_for_reauth(struct eap_sm *sm, void *priv)
 	return priv;
 }
 
-
-static int eap_tls_get_status(struct eap_sm *sm, void *priv, char *buf,
-			      size_t buflen, int verbose)
+static int eap_tls_get_status(struct eap_sm *sm, void *priv, char *buf, size_t buflen, int verbose)
 {
 	struct eap_tls_data *data = priv;
 	return eap_peer_tls_status(sm, &data->ssl, buf, buflen, verbose);
 }
-
 
 static Boolean eap_tls_isKeyAvailable(struct eap_sm *sm, void *priv)
 {
@@ -303,18 +266,19 @@ static Boolean eap_tls_isKeyAvailable(struct eap_sm *sm, void *priv)
 	return data->key_data != NULL;
 }
 
-
-static u8 * eap_tls_getKey(struct eap_sm *sm, void *priv, size_t *len)
+static u8 *eap_tls_getKey(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_tls_data *data = priv;
 	u8 *key;
 
-	if (data->key_data == NULL)
+	if (data->key_data == NULL) {
 		return NULL;
+	}
 
 	key = os_malloc(EAP_TLS_KEY_LEN);
-	if (key == NULL)
+	if (key == NULL) {
 		return NULL;
+	}
 
 	*len = EAP_TLS_KEY_LEN;
 	os_memcpy(key, data->key_data, EAP_TLS_KEY_LEN);
@@ -322,18 +286,19 @@ static u8 * eap_tls_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	return key;
 }
 
-
-static u8 * eap_tls_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
+static u8 *eap_tls_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_tls_data *data = priv;
 	u8 *key;
 
-	if (data->key_data == NULL)
+	if (data->key_data == NULL) {
 		return NULL;
+	}
 
 	key = os_malloc(EAP_EMSK_LEN);
-	if (key == NULL)
+	if (key == NULL) {
 		return NULL;
+	}
 
 	*len = EAP_EMSK_LEN;
 	os_memcpy(key, data->key_data + EAP_TLS_KEY_LEN, EAP_EMSK_LEN);
@@ -341,18 +306,19 @@ static u8 * eap_tls_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
 	return key;
 }
 
-
-static u8 * eap_tls_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
+static u8 *eap_tls_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_tls_data *data = priv;
 	u8 *id;
 
-	if (data->session_id == NULL)
+	if (data->session_id == NULL) {
 		return NULL;
+	}
 
 	id = os_malloc(data->id_len);
-	if (id == NULL)
+	if (id == NULL) {
 		return NULL;
+	}
 
 	*len = data->id_len;
 	os_memcpy(id, data->session_id, data->id_len);
@@ -360,16 +326,15 @@ static u8 * eap_tls_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
 	return id;
 }
 
-
 int eap_peer_tls_register(void)
 {
 	struct eap_method *eap;
 	int ret;
 
-	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION,
-				    EAP_VENDOR_IETF, EAP_TYPE_TLS, "TLS");
-	if (eap == NULL)
+	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION, EAP_VENDOR_IETF, EAP_TYPE_TLS, "TLS");
+	if (eap == NULL) {
 		return -1;
+	}
 
 	eap->init = eap_tls_init;
 	eap->deinit = eap_tls_deinit;
@@ -384,11 +349,11 @@ int eap_peer_tls_register(void)
 	eap->get_emsk = eap_tls_get_emsk;
 
 	ret = eap_peer_method_register(eap);
-	if (ret)
+	if (ret) {
 		eap_peer_method_free(eap);
+	}
 	return ret;
 }
-
 
 #ifdef EAP_UNAUTH_TLS
 int eap_peer_unauth_tls_register(void)
@@ -396,11 +361,10 @@ int eap_peer_unauth_tls_register(void)
 	struct eap_method *eap;
 	int ret;
 
-	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION,
-				    EAP_VENDOR_UNAUTH_TLS,
-				    EAP_VENDOR_TYPE_UNAUTH_TLS, "UNAUTH-TLS");
-	if (eap == NULL)
+	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION, EAP_VENDOR_UNAUTH_TLS, EAP_VENDOR_TYPE_UNAUTH_TLS, "UNAUTH-TLS");
+	if (eap == NULL) {
 		return -1;
+	}
 
 	eap->init = eap_unauth_tls_init;
 	eap->deinit = eap_tls_deinit;
@@ -414,12 +378,12 @@ int eap_peer_unauth_tls_register(void)
 	eap->get_emsk = eap_tls_get_emsk;
 
 	ret = eap_peer_method_register(eap);
-	if (ret)
+	if (ret) {
 		eap_peer_method_free(eap);
+	}
 	return ret;
 }
-#endif /* EAP_UNAUTH_TLS */
-
+#endif							/* EAP_UNAUTH_TLS */
 
 #ifdef CONFIG_HS20
 int eap_peer_wfa_unauth_tls_register(void)
@@ -427,12 +391,10 @@ int eap_peer_wfa_unauth_tls_register(void)
 	struct eap_method *eap;
 	int ret;
 
-	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION,
-				    EAP_VENDOR_WFA_NEW,
-				    EAP_VENDOR_WFA_UNAUTH_TLS,
-				    "WFA-UNAUTH-TLS");
-	if (eap == NULL)
+	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION, EAP_VENDOR_WFA_NEW, EAP_VENDOR_WFA_UNAUTH_TLS, "WFA-UNAUTH-TLS");
+	if (eap == NULL) {
 		return -1;
+	}
 
 	eap->init = eap_wfa_unauth_tls_init;
 	eap->deinit = eap_tls_deinit;
@@ -446,8 +408,9 @@ int eap_peer_wfa_unauth_tls_register(void)
 	eap->get_emsk = eap_tls_get_emsk;
 
 	ret = eap_peer_method_register(eap);
-	if (ret)
+	if (ret) {
 		eap_peer_method_free(eap);
+	}
 	return ret;
 }
-#endif /* CONFIG_HS20 */
+#endif							/* CONFIG_HS20 */

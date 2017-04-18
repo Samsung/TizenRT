@@ -8,16 +8,15 @@
 #ifndef MB_CMD_SECURE_STORAGE_CERT_H_
 #define MB_CMD_SECURE_STORAGE_CERT_H_
 
-
 #define SSTORAGE_CERT_SLOT_INDEX_MAX		(8)
-#define SSTORAGE_CERT_DATA_MAX				(0x1000) // 4096
-#define SSTORAGE_CERT_SLOT_MAX				(0x1100) // 4096+256
+#define SSTORAGE_CERT_DATA_MAX				(0x1000)	// 4096
+#define SSTORAGE_CERT_SLOT_MAX				(0x1100)	// 4096+256
 
 // ======================================
 // Function
 // ======================================
 // Secure Storage for Cert
-int mb_storage_set_cert_init(unsigned char * iv, unsigned int msg_byte_len, unsigned int index);
+int mb_storage_set_cert_init(unsigned char *iv, unsigned int msg_byte_len, unsigned int index);
 int mb_storage_set_cert_update(unsigned char *out_block, unsigned char *in_block);
 int mb_storage_set_cert_final(unsigned char *out_block, unsigned char *in_block, unsigned int in_block_byte_len);
 
@@ -36,5 +35,4 @@ int mb_storage_get_cert_final(unsigned char *out_block, unsigned char *in_block,
 #define FUNC_SSTORAGE_CERT_DEC_UPDATE		(0x0012A102)
 #define FUNC_SSTORAGE_CERT_DEC_FINAL		(0x0013A102)
 
-
-#endif /* MB_CMD_SECURE_STORAGE_CERT_H_ */
+#endif							/* MB_CMD_SECURE_STORAGE_CERT_H_ */

@@ -109,7 +109,7 @@ int artik053_adc_setup(void)
 	if (ret < 0) {
 		return ret;
 	}
-#endif /* CONFIG_S5J_ADC */
+#endif							/* CONFIG_S5J_ADC */
 
 	return OK;
 }
@@ -157,48 +157,58 @@ static void artik053_configure_partitions(void)
 			return;
 		}
 
-		mtd_part = mtd_partition(mtd, partoffset,
-				partsize / geo.erasesize, partno);
+		mtd_part = mtd_partition(mtd, partoffset, partsize / geo.erasesize, partno);
 		partoffset += partsize / geo.erasesize;
 
 		if (!mtd_part) {
 			lldbg("ERROR: failed to create partition.\n");
 			return;
 		}
-
 #if defined(CONFIG_MTD_CONFIG)
 		if (!strncmp(types, "config,", 7)) {
 			mtdconfig_register(mtd_part);
 		} else
 #endif
 #if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
-		if (!strncmp(types, "smartfs,", 8)) {
-			char partref[4];
-			sprintf(partref, "p%d", partno);
-			smart_initialize(CONFIG_ARTIK053_FLASH_MINOR,
-					mtd_part, partref);
-		} else
+			if (!strncmp(types, "smartfs,", 8)) {
+				char partref[4];
+				sprintf(partref, "p%d", partno);
+				smart_initialize(CONFIG_ARTIK053_FLASH_MINOR, mtd_part, partref);
+			} else
 #endif
-		{
-		}
+			{
+			}
 
 #if defined(CONFIG_MTD_PARTITION_NAMES)
-		if (strcmp(names, ""))
+		if (strcmp(names, "")) {
 			mtd_setpartitionname(mtd_part, names);
+		}
 
-		while (*names != ',' && *names) names++;
-		if (*names == ',') names++;
+		while (*names != ',' && *names) {
+			names++;
+		}
+		if (*names == ',') {
+			names++;
+		}
 #endif
 
-		while (*parts != ',' && *parts) parts++;
-		if (*parts == ',') parts++;
+		while (*parts != ',' && *parts) {
+			parts++;
+		}
+		if (*parts == ',') {
+			parts++;
+		}
 
-		while (*types != ',' && *types) types++;
-		if (*types == ',') types++;
+		while (*types != ',' && *types) {
+			types++;
+		}
+		if (*types == ',') {
+			types++;
+		}
 
 		partno++;
 	}
-#endif /* CONFIG_ARTIK053_FLASH_PART */
+#endif							/* CONFIG_ARTIK053_FLASH_PART */
 }
 
 #ifdef CONFIG_TASH
@@ -208,9 +218,9 @@ int slsi_wifi_main(int argc, char *argv[]);
 
 const static tash_cmdlist_t tash_s5j_cmds[] = {
 #ifdef CONFIG_EXAMPLES_SLSIWIFI
-	{ "artikwifi",		slsi_wifi_main,		TASH_EXECMD_SYNC },
+	{"artikwifi", slsi_wifi_main, TASH_EXECMD_SYNC},
 #endif
-	{ NULL,			NULL,			0 }
+	{NULL, NULL, 0}
 };
 #endif
 
@@ -260,24 +270,20 @@ int board_app_initialize(void)
 	/* Initialize and mount user partition (if we have) */
 	ret = mksmartfs(CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME, false);
 	if (ret != OK) {
-		lldbg("ERROR: mksmartfs on %s failed",
-				CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME);
+		lldbg("ERROR: mksmartfs on %s failed", CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME);
 	} else {
-		ret = mount(CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME,
-				CONFIG_ARTIK053_AUTOMOUNT_USERFS_MOUNTPOINT,
-				"smartfs", 0, NULL);
-		if (ret != OK)
-			lldbg("ERROR: mounting '%s' failed\n",
-				CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME);
+		ret = mount(CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME, CONFIG_ARTIK053_AUTOMOUNT_USERFS_MOUNTPOINT, "smartfs", 0, NULL);
+		if (ret != OK) {
+			lldbg("ERROR: mounting '%s' failed\n", CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME);
+		}
 	}
-#endif /* CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME */
+#endif							/* CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME */
 
 #ifdef CONFIG_FS_PROCFS
 	/* Mount the procfs file system */
 	ret = mount(NULL, ARTIK053_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
 	if (ret < 0) {
-		lldbg("Failed to mount procfs at %s: %d\n",
-				ARTIK053_PROCFS_MOUNTPOINT, ret);
+		lldbg("Failed to mount procfs at %s: %d\n", ARTIK053_PROCFS_MOUNTPOINT, ret);
 	}
 #endif
 
@@ -289,12 +295,11 @@ int board_app_initialize(void)
 		if (rtclower) {
 			ret = rtc_initialize(0, rtclower);
 			if (ret < 0) {
-				lldbg("Failed to register the RTC driver: %d\n",
-						ret);
+				lldbg("Failed to register the RTC driver: %d\n", ret);
 			}
 		}
 	}
-#endif /* CONFIG_RTC_DRIVER */
+#endif							/* CONFIG_RTC_DRIVER */
 
 	artik053_adc_setup();
 

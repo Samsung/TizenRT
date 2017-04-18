@@ -9,4 +9,4 @@
 
 #define DRV_NAME "scsc_wlbt"
 
-#endif /* __PLATFORM_MIF_MODULE_H */
+#endif							/* __PLATFORM_MIF_MODULE_H */

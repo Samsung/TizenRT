@@ -13,33 +13,29 @@
 #include "bignum.h"
 #include "rsa.h"
 
-
 struct crypto_rsa_key {
-	int private_key; /* whether private key is set */
-	struct bignum *n; /* modulus (p * q) */
-	struct bignum *e; /* public exponent */
+	int private_key;			/* whether private key is set */
+	struct bignum *n;			/* modulus (p * q) */
+	struct bignum *e;			/* public exponent */
 	/* The following parameters are available only if private_key is set */
-	struct bignum *d; /* private exponent */
-	struct bignum *p; /* prime p (factor of n) */
-	struct bignum *q; /* prime q (factor of n) */
-	struct bignum *dmp1; /* d mod (p - 1); CRT exponent */
-	struct bignum *dmq1; /* d mod (q - 1); CRT exponent */
-	struct bignum *iqmp; /* 1 / q mod p; CRT coefficient */
+	struct bignum *d;			/* private exponent */
+	struct bignum *p;			/* prime p (factor of n) */
+	struct bignum *q;			/* prime q (factor of n) */
+	struct bignum *dmp1;		/* d mod (p - 1); CRT exponent */
+	struct bignum *dmq1;		/* d mod (q - 1); CRT exponent */
+	struct bignum *iqmp;		/* 1 / q mod p; CRT coefficient */
 };
 
-
-static const u8 * crypto_rsa_parse_integer(const u8 *pos, const u8 *end,
-					   struct bignum *num)
+static const u8 *crypto_rsa_parse_integer(const u8 *pos, const u8 *end, struct bignum *num)
 {
 	struct asn1_hdr hdr;
 
-	if (pos == NULL)
+	if (pos == NULL) {
 		return NULL;
+	}
 
-	if (asn1_get_next(pos, end - pos, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL || hdr.tag != ASN1_TAG_INTEGER) {
-		wpa_printf(MSG_DEBUG, "RSA: Expected INTEGER - found class %d "
-			   "tag 0x%x", hdr.class, hdr.tag);
+	if (asn1_get_next(pos, end - pos, &hdr) < 0 || hdr.class != ASN1_CLASS_UNIVERSAL || hdr.tag != ASN1_TAG_INTEGER) {
+		wpa_printf(MSG_DEBUG, "RSA: Expected INTEGER - found class %d " "tag 0x%x", hdr.class, hdr.tag);
 		return NULL;
 	}
 
@@ -51,23 +47,22 @@ static const u8 * crypto_rsa_parse_integer(const u8 *pos, const u8 *end,
 	return hdr.payload + hdr.length;
 }
 
-
 /**
  * crypto_rsa_import_public_key - Import an RSA public key
  * @buf: Key buffer (DER encoded RSA public key)
  * @len: Key buffer length in bytes
  * Returns: Pointer to the public key or %NULL on failure
  */
-struct crypto_rsa_key *
-crypto_rsa_import_public_key(const u8 *buf, size_t len)
+struct crypto_rsa_key *crypto_rsa_import_public_key(const u8 *buf, size_t len)
 {
 	struct crypto_rsa_key *key;
 	struct asn1_hdr hdr;
 	const u8 *pos, *end;
 
 	key = os_zalloc(sizeof(*key));
-	if (key == NULL)
+	if (key == NULL) {
 		return NULL;
+	}
 
 	key->n = bignum_init();
 	key->e = bignum_init();
@@ -84,12 +79,8 @@ crypto_rsa_import_public_key(const u8 *buf, size_t len)
 	 * }
 	 */
 
-	if (asn1_get_next(buf, len, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL ||
-	    hdr.tag != ASN1_TAG_SEQUENCE) {
-		wpa_printf(MSG_DEBUG, "RSA: Expected SEQUENCE "
-			   "(public key) - found class %d tag 0x%x",
-			   hdr.class, hdr.tag);
+	if (asn1_get_next(buf, len, &hdr) < 0 || hdr.class != ASN1_CLASS_UNIVERSAL || hdr.tag != ASN1_TAG_SEQUENCE) {
+		wpa_printf(MSG_DEBUG, "RSA: Expected SEQUENCE " "(public key) - found class %d tag 0x%x", hdr.class, hdr.tag);
 		goto error;
 	}
 	pos = hdr.payload;
@@ -98,13 +89,12 @@ crypto_rsa_import_public_key(const u8 *buf, size_t len)
 	pos = crypto_rsa_parse_integer(pos, end, key->n);
 	pos = crypto_rsa_parse_integer(pos, end, key->e);
 
-	if (pos == NULL)
+	if (pos == NULL) {
 		goto error;
+	}
 
 	if (pos != end) {
-		wpa_hexdump(MSG_DEBUG,
-			    "RSA: Extra data in public key SEQUENCE",
-			    pos, end - pos);
+		wpa_hexdump(MSG_DEBUG, "RSA: Extra data in public key SEQUENCE", pos, end - pos);
 		goto error;
 	}
 
@@ -115,22 +105,18 @@ error:
 	return NULL;
 }
 
-
-struct crypto_rsa_key *
-crypto_rsa_import_public_key_parts(const u8 *n, size_t n_len,
-				   const u8 *e, size_t e_len)
+struct crypto_rsa_key *crypto_rsa_import_public_key_parts(const u8 *n, size_t n_len, const u8 *e, size_t e_len)
 {
 	struct crypto_rsa_key *key;
 
 	key = os_zalloc(sizeof(*key));
-	if (key == NULL)
+	if (key == NULL) {
 		return NULL;
+	}
 
 	key->n = bignum_init();
 	key->e = bignum_init();
-	if (key->n == NULL || key->e == NULL ||
-	    bignum_set_unsigned_bin(key->n, n, n_len) < 0 ||
-	    bignum_set_unsigned_bin(key->e, e, e_len) < 0) {
+	if (key->n == NULL || key->e == NULL || bignum_set_unsigned_bin(key->n, n, n_len) < 0 || bignum_set_unsigned_bin(key->e, e, e_len) < 0) {
 		crypto_rsa_free(key);
 		return NULL;
 	}
@@ -138,15 +124,13 @@ crypto_rsa_import_public_key_parts(const u8 *n, size_t n_len,
 	return key;
 }
 
-
 /**
  * crypto_rsa_import_private_key - Import an RSA private key
  * @buf: Key buffer (DER encoded RSA private key)
  * @len: Key buffer length in bytes
  * Returns: Pointer to the private key or %NULL on failure
  */
-struct crypto_rsa_key *
-crypto_rsa_import_private_key(const u8 *buf, size_t len)
+struct crypto_rsa_key *crypto_rsa_import_private_key(const u8 *buf, size_t len)
 {
 	struct crypto_rsa_key *key;
 	struct bignum *zero;
@@ -154,8 +138,9 @@ crypto_rsa_import_private_key(const u8 *buf, size_t len)
 	const u8 *pos, *end;
 
 	key = os_zalloc(sizeof(*key));
-	if (key == NULL)
+	if (key == NULL) {
 		return NULL;
+	}
 
 	key->private_key = 1;
 
@@ -168,9 +153,7 @@ crypto_rsa_import_private_key(const u8 *buf, size_t len)
 	key->dmq1 = bignum_init();
 	key->iqmp = bignum_init();
 
-	if (key->n == NULL || key->e == NULL || key->d == NULL ||
-	    key->p == NULL || key->q == NULL || key->dmp1 == NULL ||
-	    key->dmq1 == NULL || key->iqmp == NULL) {
+	if (key->n == NULL || key->e == NULL || key->d == NULL || key->p == NULL || key->q == NULL || key->dmp1 == NULL || key->dmq1 == NULL || key->iqmp == NULL) {
 		crypto_rsa_free(key);
 		return NULL;
 	}
@@ -191,24 +174,20 @@ crypto_rsa_import_private_key(const u8 *buf, size_t len)
 	 *
 	 * Version ::= INTEGER -- shall be 0 for this version of the standard
 	 */
-	if (asn1_get_next(buf, len, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL ||
-	    hdr.tag != ASN1_TAG_SEQUENCE) {
-		wpa_printf(MSG_DEBUG, "RSA: Expected SEQUENCE "
-			   "(public key) - found class %d tag 0x%x",
-			   hdr.class, hdr.tag);
+	if (asn1_get_next(buf, len, &hdr) < 0 || hdr.class != ASN1_CLASS_UNIVERSAL || hdr.tag != ASN1_TAG_SEQUENCE) {
+		wpa_printf(MSG_DEBUG, "RSA: Expected SEQUENCE " "(public key) - found class %d tag 0x%x", hdr.class, hdr.tag);
 		goto error;
 	}
 	pos = hdr.payload;
 	end = pos + hdr.length;
 
 	zero = bignum_init();
-	if (zero == NULL)
+	if (zero == NULL) {
 		goto error;
+	}
 	pos = crypto_rsa_parse_integer(pos, end, zero);
 	if (pos == NULL || bignum_cmp_d(zero, 0) != 0) {
-		wpa_printf(MSG_DEBUG, "RSA: Expected zero INTEGER in the "
-			   "beginning of private key; not found");
+		wpa_printf(MSG_DEBUG, "RSA: Expected zero INTEGER in the " "beginning of private key; not found");
 		bignum_deinit(zero);
 		goto error;
 	}
@@ -223,13 +202,12 @@ crypto_rsa_import_private_key(const u8 *buf, size_t len)
 	pos = crypto_rsa_parse_integer(pos, end, key->dmq1);
 	pos = crypto_rsa_parse_integer(pos, end, key->iqmp);
 
-	if (pos == NULL)
+	if (pos == NULL) {
 		goto error;
+	}
 
 	if (pos != end) {
-		wpa_hexdump(MSG_DEBUG,
-			    "RSA: Extra data in public key SEQUENCE",
-			    pos, end - pos);
+		wpa_hexdump(MSG_DEBUG, "RSA: Extra data in public key SEQUENCE", pos, end - pos);
 		goto error;
 	}
 
@@ -239,7 +217,6 @@ error:
 	crypto_rsa_free(key);
 	return NULL;
 }
-
 
 /**
  * crypto_rsa_get_modulus_len - Get the modulus length of the RSA key
@@ -251,7 +228,6 @@ size_t crypto_rsa_get_modulus_len(struct crypto_rsa_key *key)
 	return bignum_get_unsigned_bin_len(key->n);
 }
 
-
 /**
  * crypto_rsa_exptmod - RSA modular exponentiation
  * @in: Input data
@@ -262,22 +238,24 @@ size_t crypto_rsa_get_modulus_len(struct crypto_rsa_key *key)
  * @use_private: 1 = Use RSA private key, 0 = Use RSA public key
  * Returns: 0 on success, -1 on failure
  */
-int crypto_rsa_exptmod(const u8 *in, size_t inlen, u8 *out, size_t *outlen,
-		       struct crypto_rsa_key *key, int use_private)
+int crypto_rsa_exptmod(const u8 *in, size_t inlen, u8 *out, size_t *outlen, struct crypto_rsa_key *key, int use_private)
 {
 	struct bignum *tmp, *a = NULL, *b = NULL;
 	int ret = -1;
 	size_t modlen;
 
-	if (use_private && !key->private_key)
+	if (use_private && !key->private_key) {
 		return -1;
+	}
 
 	tmp = bignum_init();
-	if (tmp == NULL)
+	if (tmp == NULL) {
 		return -1;
+	}
 
-	if (bignum_set_unsigned_bin(tmp, in, inlen) < 0)
+	if (bignum_set_unsigned_bin(tmp, in, inlen) < 0) {
 		goto error;
+	}
 	if (bignum_cmp(key->n, tmp) < 0) {
 		/* Too large input value for the RSA key modulus */
 		goto error;
@@ -299,31 +277,35 @@ int crypto_rsa_exptmod(const u8 *in, size_t inlen, u8 *out, size_t *outlen,
 		 */
 		a = bignum_init();
 		b = bignum_init();
-		if (a == NULL || b == NULL)
+		if (a == NULL || b == NULL) {
 			goto error;
+		}
 
 		/* a = tmp^dmp1 mod p */
-		if (bignum_exptmod(tmp, key->dmp1, key->p, a) < 0)
+		if (bignum_exptmod(tmp, key->dmp1, key->p, a) < 0) {
 			goto error;
+		}
 
 		/* b = tmp^dmq1 mod q */
-		if (bignum_exptmod(tmp, key->dmq1, key->q, b) < 0)
+		if (bignum_exptmod(tmp, key->dmq1, key->q, b) < 0) {
 			goto error;
+		}
 
 		/* tmp = (a - b) * (1/q mod p) (mod p) */
-		if (bignum_sub(a, b, tmp) < 0 ||
-		    bignum_mulmod(tmp, key->iqmp, key->p, tmp) < 0)
+		if (bignum_sub(a, b, tmp) < 0 || bignum_mulmod(tmp, key->iqmp, key->p, tmp) < 0) {
 			goto error;
+		}
 
 		/* tmp = b + q * tmp */
-		if (bignum_mul(tmp, key->q, tmp) < 0 ||
-		    bignum_add(tmp, b, tmp) < 0)
+		if (bignum_mul(tmp, key->q, tmp) < 0 || bignum_add(tmp, b, tmp) < 0) {
 			goto error;
+		}
 	} else {
 		/* Encrypt (or verify signature) */
 		/* tmp = tmp^e mod N */
-		if (bignum_exptmod(tmp, key->e, key->n, tmp) < 0)
+		if (bignum_exptmod(tmp, key->e, key->n, tmp) < 0) {
 			goto error;
+		}
 	}
 
 	modlen = crypto_rsa_get_modulus_len(key);
@@ -332,15 +314,15 @@ int crypto_rsa_exptmod(const u8 *in, size_t inlen, u8 *out, size_t *outlen,
 		goto error;
 	}
 
-	if (bignum_get_unsigned_bin_len(tmp) > modlen)
-		goto error; /* should never happen */
+	if (bignum_get_unsigned_bin_len(tmp) > modlen) {
+		goto error;    /* should never happen */
+	}
 
 	*outlen = modlen;
 	os_memset(out, 0, modlen);
-	if (bignum_get_unsigned_bin(
-		    tmp, out +
-		    (modlen - bignum_get_unsigned_bin_len(tmp)), NULL) < 0)
+	if (bignum_get_unsigned_bin(tmp, out + (modlen - bignum_get_unsigned_bin_len(tmp)), NULL) < 0) {
 		goto error;
+	}
 
 	ret = 0;
 
@@ -350,7 +332,6 @@ error:
 	bignum_deinit(b);
 	return ret;
 }
-
 
 /**
  * crypto_rsa_free - Free RSA key

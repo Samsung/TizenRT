@@ -35,29 +35,18 @@ struct http_cert {
 	unsigned int num_logo;
 };
 
-int soap_init_client(struct http_ctx *ctx, const char *address,
-		     const char *ca_fname, const char *username,
-		     const char *password, const char *client_cert,
-		     const char *client_key);
+int soap_init_client(struct http_ctx *ctx, const char *address, const char *ca_fname, const char *username, const char *password, const char *client_cert, const char *client_key);
 int soap_reinit_client(struct http_ctx *ctx);
-xml_node_t * soap_send_receive(struct http_ctx *ctx, xml_node_t *node);
+xml_node_t *soap_send_receive(struct http_ctx *ctx, xml_node_t *node);
 
-struct http_ctx * http_init_ctx(void *upper_ctx, struct xml_node_ctx *xml_ctx);
+struct http_ctx *http_init_ctx(void *upper_ctx, struct xml_node_ctx *xml_ctx);
 void http_ocsp_set(struct http_ctx *ctx, int val);
 void http_deinit_ctx(struct http_ctx *ctx);
 
-int http_download_file(struct http_ctx *ctx, const char *url,
-		       const char *fname, const char *ca_fname);
-char * http_post(struct http_ctx *ctx, const char *url, const char *data,
-		 const char *content_type, const char *ext_hdr,
-		 const char *ca_fname,
-		 const char *username, const char *password,
-		 const char *client_cert, const char *client_key,
-		 size_t *resp_len);
-void http_set_cert_cb(struct http_ctx *ctx,
-		      int (*cb)(void *ctx, struct http_cert *cert),
-		      void *cb_ctx);
-const char * http_get_err(struct http_ctx *ctx);
+int http_download_file(struct http_ctx *ctx, const char *url, const char *fname, const char *ca_fname);
+char *http_post(struct http_ctx *ctx, const char *url, const char *data, const char *content_type, const char *ext_hdr, const char *ca_fname, const char *username, const char *password, const char *client_cert, const char *client_key, size_t *resp_len);
+void http_set_cert_cb(struct http_ctx *ctx, int (*cb)(void *ctx, struct http_cert *cert), void *cb_ctx);
+const char *http_get_err(struct http_ctx *ctx);
 void http_parse_x509_certificate(struct http_ctx *ctx, const char *fname);
 
-#endif /* HTTP_UTILS_H */
+#endif							/* HTTP_UTILS_H */

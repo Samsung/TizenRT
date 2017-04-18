@@ -9,9 +9,8 @@
 #ifndef ISP_OID_H_
 #define ISP_OID_H_
 
-
 /*
- *		OID LIST 
+ *		OID LIST
  */
 #define OIDMAX_HMAC (4)
 #define	OID_HMAC_SHA1_160		(0x00011100)
@@ -72,4 +71,4 @@
 #define OID_ECDSA_P521_SHA2_384	( OID_ECC_P521|OID_SHA2_384 )
 #define OID_ECDSA_P521_SHA2_512	( OID_ECC_P521|OID_SHA2_512 )
 
-#endif /*ISP_OID_H_*/
+#endif							/*ISP_OID_H_ */

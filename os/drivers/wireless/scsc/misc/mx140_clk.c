@@ -16,16 +16,14 @@ int clk_request = 0;
 /* Register a callback function to indicate to the (USB) client the status of
  * the clock request
  */
-int mx140_clk20mhz_register(int (*client_cb)(void *data, enum mx140_clk20mhz_status event),
-			    void *data)
+int mx140_clk20mhz_register(int (*client_cb)(void *data, enum mx140_clk20mhz_status event), void *data)
 {
 	SLSI_INFO_NODEV("cb %p, %p\n", client_cb, data);
 	return 0;
 }
 
 /* Unregister callback function */
-void mx140_clk20mhz_unregister(int (*client_cb)(void *data, enum mx140_clk20mhz_status event),
-			       void *data)
+void mx140_clk20mhz_unregister(int (*client_cb)(void *data, enum mx140_clk20mhz_status event), void *data)
 {
 	SLSI_INFO_NODEV("cb %p, %p\n", client_cb, data);
 }

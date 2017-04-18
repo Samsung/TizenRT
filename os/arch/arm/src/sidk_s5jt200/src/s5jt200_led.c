@@ -76,12 +76,12 @@ int s5jt200_rgbled_state_task(void)
 
 	info.duty = 30;
 
-	while(1) {
+	while (1) {
 		/* pwm pulse frequency will be set from 0KHz to 50Khz */
 		for (freq = 0; freq < 50; freq++) {
 			info.frequency = freq * 1000;
 
-			switch(freq % 3) {
+			switch (freq % 3) {
 			case 0:
 				ledb->ops->start(ledr, &info);
 				break;

@@ -13,7 +13,6 @@
 #include "utils/list.h"
 #include "eap_peer/eap_config.h"
 
-
 #define DEFAULT_EAP_WORKAROUND ((unsigned int) -1)
 #define DEFAULT_EAPOL_FLAGS (EAPOL_FLAG_REQUIRE_KEY_UNICAST | \
 			     EAPOL_FLAG_REQUIRE_KEY_BROADCAST)
@@ -32,9 +31,9 @@
 #define DEFAULT_DISABLE_HT40 0
 #define DEFAULT_DISABLE_SGI 0
 #define DEFAULT_DISABLE_LDPC 0
-#define DEFAULT_DISABLE_MAX_AMSDU -1 /* no change */
-#define DEFAULT_AMPDU_FACTOR -1 /* no change */
-#define DEFAULT_AMPDU_DENSITY -1 /* no change */
+#define DEFAULT_DISABLE_MAX_AMSDU -1	/* no change */
+#define DEFAULT_AMPDU_FACTOR -1	/* no change */
+#define DEFAULT_AMPDU_DENSITY -1	/* no change */
 #define DEFAULT_USER_SELECTED_SIM 1
 
 struct psk_list_entry {
@@ -241,7 +240,7 @@ struct wpa_ssid {
 	 * eap - EAP peer configuration for this network
 	 */
 	struct eap_peer_config eap;
-#endif /* IEEE8021X_EAPOL */
+#endif							/* IEEE8021X_EAPOL */
 
 #define NUM_WEP_KEYS 4
 #define MAX_WEP_KEY_LEN 16
@@ -322,7 +321,7 @@ struct wpa_ssid {
 	 */
 	unsigned int eap_workaround;
 
-#endif /* IEEE8021X_EAPOL */
+#endif							/* IEEE8021X_EAPOL */
 
 	/**
 	 * mode - IEEE 802.11 operation mode (Infrastucture/IBSS)
@@ -410,7 +409,7 @@ struct wpa_ssid {
 	 * followed).
 	 */
 	enum mfp_options ieee80211w;
-#endif /* CONFIG_IEEE80211W */
+#endif							/* CONFIG_IEEE80211W */
 
 	/**
 	 * frequency - Channel frequency in megahertz (MHz) for IBSS
@@ -439,9 +438,9 @@ struct wpa_ssid {
 	 * Mesh network plink parameters
 	 */
 	int dot11MeshMaxRetries;
-	int dot11MeshRetryTimeout; /* msec */
-	int dot11MeshConfirmTimeout; /* msec */
-	int dot11MeshHoldingTimeout; /* msec */
+	int dot11MeshRetryTimeout;	/* msec */
+	int dot11MeshConfirmTimeout;	/* msec */
+	int dot11MeshHoldingTimeout;	/* msec */
 
 	int ht40;
 
@@ -514,7 +513,7 @@ struct wpa_ssid {
 
 #ifndef P2P_MAX_STORED_CLIENTS
 #define P2P_MAX_STORED_CLIENTS 100
-#endif /* P2P_MAX_STORED_CLIENTS */
+#endif							/* P2P_MAX_STORED_CLIENTS */
 
 	/**
 	 * psk_list - Per-client PSKs (struct psk_list_entry)
@@ -611,7 +610,7 @@ struct wpa_ssid {
 	 * By default (empty string): Use whatever the OS has configured.
 	 */
 	char *ht_mcs;
-#endif /* CONFIG_HT_OVERRIDES */
+#endif							/* CONFIG_HT_OVERRIDES */
 
 #ifdef CONFIG_VHT_OVERRIDES
 	/**
@@ -632,15 +631,9 @@ struct wpa_ssid {
 	 */
 	unsigned int vht_capa_mask;
 
-	int vht_rx_mcs_nss_1, vht_rx_mcs_nss_2,
-	    vht_rx_mcs_nss_3, vht_rx_mcs_nss_4,
-	    vht_rx_mcs_nss_5, vht_rx_mcs_nss_6,
-	    vht_rx_mcs_nss_7, vht_rx_mcs_nss_8;
-	int vht_tx_mcs_nss_1, vht_tx_mcs_nss_2,
-	    vht_tx_mcs_nss_3, vht_tx_mcs_nss_4,
-	    vht_tx_mcs_nss_5, vht_tx_mcs_nss_6,
-	    vht_tx_mcs_nss_7, vht_tx_mcs_nss_8;
-#endif /* CONFIG_VHT_OVERRIDES */
+	int vht_rx_mcs_nss_1, vht_rx_mcs_nss_2, vht_rx_mcs_nss_3, vht_rx_mcs_nss_4, vht_rx_mcs_nss_5, vht_rx_mcs_nss_6, vht_rx_mcs_nss_7, vht_rx_mcs_nss_8;
+	int vht_tx_mcs_nss_1, vht_tx_mcs_nss_2, vht_tx_mcs_nss_3, vht_tx_mcs_nss_4, vht_tx_mcs_nss_5, vht_tx_mcs_nss_6, vht_tx_mcs_nss_7, vht_tx_mcs_nss_8;
+#endif							/* CONFIG_VHT_OVERRIDES */
 
 	/**
 	 * ap_max_inactivity - Timeout in seconds to detect STA's inactivity
@@ -689,11 +682,11 @@ struct wpa_ssid {
 	 *    determine whether to use a secure session or not.
 	 */
 	int macsec_policy;
-#endif /* CONFIG_MACSEC */
+#endif							/* CONFIG_MACSEC */
 
 #ifdef CONFIG_HS20
 	int update_identifier;
-#endif /* CONFIG_HS20 */
+#endif							/* CONFIG_HS20 */
 
 	unsigned int wps_run;
 
@@ -719,4 +712,4 @@ struct wpa_ssid {
 	int no_auto_peer;
 };
 
-#endif /* CONFIG_SSID_H */
+#endif							/* CONFIG_SSID_H */

@@ -13,13 +13,11 @@
 
 int rsn_preauth_iface_init(struct hostapd_data *hapd);
 void rsn_preauth_iface_deinit(struct hostapd_data *hapd);
-void rsn_preauth_finished(struct hostapd_data *hapd, struct sta_info *sta,
-			  int success);
-void rsn_preauth_send(struct hostapd_data *hapd, struct sta_info *sta,
-		      u8 *buf, size_t len);
+void rsn_preauth_finished(struct hostapd_data *hapd, struct sta_info *sta, int success);
+void rsn_preauth_send(struct hostapd_data *hapd, struct sta_info *sta, u8 *buf, size_t len);
 void rsn_preauth_free_station(struct hostapd_data *hapd, struct sta_info *sta);
 
-#else /* CONFIG_RSN_PREAUTH */
+#else							/* CONFIG_RSN_PREAUTH */
 
 static inline int rsn_preauth_iface_init(struct hostapd_data *hapd)
 {
@@ -30,23 +28,18 @@ static inline void rsn_preauth_iface_deinit(struct hostapd_data *hapd)
 {
 }
 
-static inline void rsn_preauth_finished(struct hostapd_data *hapd,
-					struct sta_info *sta,
-					int success)
+static inline void rsn_preauth_finished(struct hostapd_data *hapd, struct sta_info *sta, int success)
 {
 }
 
-static inline void rsn_preauth_send(struct hostapd_data *hapd,
-				    struct sta_info *sta,
-				    u8 *buf, size_t len)
+static inline void rsn_preauth_send(struct hostapd_data *hapd, struct sta_info *sta, u8 *buf, size_t len)
 {
 }
 
-static inline void rsn_preauth_free_station(struct hostapd_data *hapd,
-					    struct sta_info *sta)
+static inline void rsn_preauth_free_station(struct hostapd_data *hapd, struct sta_info *sta)
 {
 }
 
-#endif /* CONFIG_RSN_PREAUTH */
+#endif							/* CONFIG_RSN_PREAUTH */
 
-#endif /* PREAUTH_H */
+#endif							/* PREAUTH_H */

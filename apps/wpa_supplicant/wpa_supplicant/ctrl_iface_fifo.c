@@ -21,7 +21,6 @@
 
 #ifdef CONFIG_CTRL_IFACE_FIFO
 
-
 #define COOKIE_LEN 8
 
 /* Per-interface ctrl_iface */
@@ -41,7 +40,6 @@ struct wpa_ctrl_dst {
 	int errors;
 };
 
-
 struct ctrl_iface_priv {
 	struct wpa_supplicant *wpa_s;
 	int ctrl_fd_req;
@@ -50,19 +48,16 @@ struct ctrl_iface_priv {
 	u8 cookie[COOKIE_LEN];
 };
 
-
-static void wpa_supplicant_monitor_iface_send(struct ctrl_iface_priv *priv,
-					   int level, const char *buf, size_t len);
-
+static void wpa_supplicant_monitor_iface_send(struct ctrl_iface_priv *priv, int level, const char *buf, size_t len);
 
 static int wpa_supplicant_ctrl_iface_attach(struct ctrl_iface_priv *priv)
 {
-	if(priv->ctrl_dst.monitor_fd >= 0)
+	if (priv->ctrl_dst.monitor_fd >= 0) {
 		return -1;
-	priv->ctrl_dst.monitor_fd =  open(WPA_MONITOR_FIFO_DEV, O_WRONLY);
-	if(priv->ctrl_dst.monitor_fd < 0)
-	{
-	    wpa_printf(MSG_DEBUG, "fifo open error for %s: %s", WPA_MONITOR_FIFO_DEV, strerror(errno));
+	}
+	priv->ctrl_dst.monitor_fd = open(WPA_MONITOR_FIFO_DEV, O_WRONLY);
+	if (priv->ctrl_dst.monitor_fd < 0) {
+		wpa_printf(MSG_DEBUG, "fifo open error for %s: %s", WPA_MONITOR_FIFO_DEV, strerror(errno));
 		return -1;
 	}
 
@@ -72,20 +67,18 @@ static int wpa_supplicant_ctrl_iface_attach(struct ctrl_iface_priv *priv)
 	return 0;
 }
 
-
 static int wpa_supplicant_ctrl_iface_detach(struct ctrl_iface_priv *priv)
 {
-	if((priv->ctrl_dst.monitor_fd >= 0) && (close(priv->ctrl_dst.monitor_fd) < 0))
+	if ((priv->ctrl_dst.monitor_fd >= 0) && (close(priv->ctrl_dst.monitor_fd) < 0)) {
 		wpa_printf(MSG_ERROR, "close(monitor_fd): %s", strerror(errno));
+	}
 	priv->ctrl_dst.monitor_fd = -1;
 	return 0;
 }
 
-
 static int wpa_supplicant_ctrl_iface_level(struct ctrl_iface_priv *priv, char *level)
 {
-	if(priv->ctrl_dst.monitor_fd < 0)
-	{
+	if (priv->ctrl_dst.monitor_fd < 0) {
 		wpa_printf(MSG_ERROR, "CTRL_IFACE LEVEL No monitor attached...");
 		return -1;
 	}
@@ -93,7 +86,6 @@ static int wpa_supplicant_ctrl_iface_level(struct ctrl_iface_priv *priv, char *l
 	priv->ctrl_dst.debug_level = atoi(level);
 	return 0;
 }
-
 
 static char *wpa_supplicant_ctrl_iface_get_cookie(struct ctrl_iface_priv *priv, size_t *reply_len)
 {
@@ -105,8 +97,7 @@ static char *wpa_supplicant_ctrl_iface_get_cookie(struct ctrl_iface_priv *priv, 
 	}
 
 	os_memcpy(reply, "COOKIE=", 7);
-	wpa_snprintf_hex(reply + 7, 2 * COOKIE_LEN + 1,
-			 priv->cookie, COOKIE_LEN);
+	wpa_snprintf_hex(reply + 7, 2 * COOKIE_LEN + 1, priv->cookie, COOKIE_LEN);
 
 	*reply_len = 7 + 2 * COOKIE_LEN;
 	return reply;
@@ -144,49 +135,49 @@ void wpa_supplicant_ctrl_iface_receive(int fd, void *eloop_ctx, void *sock_ctx)
 	 * not block such frames from remote destinations.
 	 */
 	if (os_strncmp(buf, "COOKIE=", 7) != 0) {
-		wpa_printf(MSG_DEBUG, "CTLR: No cookie in the request - "
-			   "drop request");
+		wpa_printf(MSG_DEBUG, "CTLR: No cookie in the request - " "drop request");
 		return;
 	}
 
 	if (hexstr2bin(buf + 7, cookie, COOKIE_LEN) < 0) {
-		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie format in the "
-			   "request - drop request");
+		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie format in the " "request - drop request");
 		return;
 	}
 
 	if (os_memcmp(cookie, priv->cookie, COOKIE_LEN) != 0) {
-		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie in the request - "
-			   "drop request");
+		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie in the request - " "drop request");
 		return;
 	}
 
 	pos = buf + 7 + 2 * COOKIE_LEN;
-	while (*pos == ' ')
+	while (*pos == ' ') {
 		pos++;
+	}
 
 	if (os_strcmp(pos, "ATTACH") == 0) {
-		if (wpa_supplicant_ctrl_iface_attach(priv))
+		if (wpa_supplicant_ctrl_iface_attach(priv)) {
 			reply_len = 1;
-		else {
+		} else {
 			new_attached = 1;
 			reply_len = 2;
 		}
 	} else if (os_strcmp(pos, "DETACH") == 0) {
-		if (wpa_supplicant_ctrl_iface_detach(priv))
+		if (wpa_supplicant_ctrl_iface_detach(priv)) {
 			reply_len = 1;
-		else
+		} else {
 			reply_len = 2;
+		}
 	} else if (os_strncmp(pos, "LEVEL ", 6) == 0) {
-		if (wpa_supplicant_ctrl_iface_level(priv, pos + 6))
+		if (wpa_supplicant_ctrl_iface_level(priv, pos + 6)) {
 			reply_len = 1;
-		else
+		} else {
 			reply_len = 2;
+		}
 	} else {
 		reply = wpa_supplicant_ctrl_iface_process(wpa_s, pos, &reply_len);
 	}
 
- done:
+done:
 	if (reply) {
 		wpa_ctrl_sendto(priv->ctrl_fd_cfm, reply, reply_len);
 		os_free(reply);
@@ -196,18 +187,17 @@ void wpa_supplicant_ctrl_iface_receive(int fd, void *eloop_ctx, void *sock_ctx)
 		wpa_ctrl_sendto(priv->ctrl_fd_cfm, "OK\n", 3);
 	}
 
-	if (new_attached)
+	if (new_attached) {
 		eapol_sm_notify_ctrl_attached(wpa_s->eapol);
+	}
 }
 
-
-static void wpa_supplicant_monitor_iface_msg_cb(void *ctx, int level,
-					     enum wpa_msg_type type,
-					     const char *txt, size_t len)
+static void wpa_supplicant_monitor_iface_msg_cb(void *ctx, int level, enum wpa_msg_type type, const char *txt, size_t len)
 {
 	struct wpa_supplicant *wpa_s = ctx;
-	if (wpa_s == NULL || wpa_s->ctrl_iface == NULL)
+	if (wpa_s == NULL || wpa_s->ctrl_iface == NULL) {
 		return;
+	}
 	wpa_supplicant_monitor_iface_send(wpa_s->ctrl_iface, level, txt, len);
 }
 
@@ -216,41 +206,39 @@ struct ctrl_iface_priv *wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wp
 	struct ctrl_iface_priv *priv;
 
 	priv = os_zalloc(sizeof(*priv));
-	if (priv == NULL)
+	if (priv == NULL) {
 		return NULL;
+	}
 	priv->wpa_s = wpa_s;
 
 	os_get_random(priv->cookie, COOKIE_LEN);
 
-	if (wpa_s->conf->ctrl_interface == NULL)
+	if (wpa_s->conf->ctrl_interface == NULL) {
 		return priv;
+	}
 
 	priv->ctrl_fd_cfm = open(WPA_CTRL_FIFO_DEV_CFM, O_WRONLY);
-	if(priv->ctrl_fd_cfm < 0)
-	{
-	    wpa_printf(MSG_DEBUG, "fifo open error for %s: %s", WPA_CTRL_FIFO_DEV_CFM, strerror(errno));
+	if (priv->ctrl_fd_cfm < 0) {
+		wpa_printf(MSG_DEBUG, "fifo open error for %s: %s", WPA_CTRL_FIFO_DEV_CFM, strerror(errno));
 		os_free(priv);
 		return NULL;
 	}
 
 	priv->ctrl_fd_req = open(WPA_CTRL_FIFO_DEV_REQ, O_RDONLY);
-	if(priv->ctrl_fd_req < 0)
-	{
-	    wpa_printf(MSG_DEBUG, "fifo open error for %s: %s", WPA_CTRL_FIFO_DEV_REQ, strerror(errno));
+	if (priv->ctrl_fd_req < 0) {
+		wpa_printf(MSG_DEBUG, "fifo open error for %s: %s", WPA_CTRL_FIFO_DEV_REQ, strerror(errno));
 		os_free(priv);
 		return NULL;
 	}
 
 	priv->ctrl_dst.monitor_fd = -1;
 
-	eloop_register_read_sock(priv->ctrl_fd_req, wpa_supplicant_ctrl_iface_receive,
-				 wpa_s, priv);
-	sem_init(&priv->ctrl_dst.sem_write, 1, 0); // Shared between processes (tasks in case of tinyara)
+	eloop_register_read_sock(priv->ctrl_fd_req, wpa_supplicant_ctrl_iface_receive, wpa_s, priv);
+	sem_init(&priv->ctrl_dst.sem_write, 1, 0);	// Shared between processes (tasks in case of tinyara)
 	wpa_msg_register_cb(wpa_supplicant_monitor_iface_msg_cb);
 
 	return priv;
 }
-
 
 void wpa_supplicant_ctrl_iface_deinit(struct ctrl_iface_priv *priv)
 {
@@ -262,8 +250,7 @@ void wpa_supplicant_ctrl_iface_deinit(struct ctrl_iface_priv *priv)
 			 * there are any attached monitors in order to allow
 			 * them to receive any pending messages.
 			 */
-			wpa_printf(MSG_DEBUG, "CTRL_IFACE wait for attached "
-				   "monitors to receive messages");
+			wpa_printf(MSG_DEBUG, "CTRL_IFACE wait for attached " "monitors to receive messages");
 			os_sleep(0, 100000);
 			close(priv->ctrl_dst.monitor_fd);
 		}
@@ -277,37 +264,38 @@ void wpa_supplicant_ctrl_iface_deinit(struct ctrl_iface_priv *priv)
 /**
  * Write a message to the monitor interface from any context, will do context switch if needed.
  */
-static void wpa_supplicant_monitor_iface_write(struct ctrl_iface_priv *priv,
-                       int level, const char *buf, size_t len)
+static void wpa_supplicant_monitor_iface_write(struct ctrl_iface_priv *priv, int level, const char *buf, size_t len)
 {
-    char levelstr[10];
-    int idx;
-    char *sbuf;
-    int llen;
+	char levelstr[10];
+	int idx;
+	char *sbuf;
+	int llen;
 
-    os_snprintf(levelstr, sizeof(levelstr), "<%d>", level);
+	os_snprintf(levelstr, sizeof(levelstr), "<%d>", level);
 
-    llen = os_strlen(levelstr);
-    sbuf = os_malloc(llen + len);
-    if (sbuf == NULL)
-        return;
+	llen = os_strlen(levelstr);
+	sbuf = os_malloc(llen + len);
+	if (sbuf == NULL) {
+		return;
+	}
 
-    os_memcpy(sbuf, levelstr, llen);
-    os_memcpy(sbuf + llen, buf, len);
+	os_memcpy(sbuf, levelstr, llen);
+	os_memcpy(sbuf + llen, buf, len);
 
-    idx = 0;
-    if (level >= priv->ctrl_dst.debug_level) {
-        wpa_printf(MSG_DEBUG, "CTRL_IFACE monitor send");
-        if (wpa_ctrl_sendto(priv->ctrl_dst.monitor_fd, sbuf, llen + len) < 0) {
-            wpa_printf(MSG_ERROR, "sendto(CTRL_IFACE monitor): %s", strerror(errno));
-            priv->ctrl_dst.errors++;
-            if (priv->ctrl_dst.errors > 10) {
-                wpa_supplicant_ctrl_iface_detach(priv);
-            }
-        } else
-            priv->ctrl_dst.errors = 0;
-    }
-    os_free(sbuf);
+	idx = 0;
+	if (level >= priv->ctrl_dst.debug_level) {
+		wpa_printf(MSG_DEBUG, "CTRL_IFACE monitor send");
+		if (wpa_ctrl_sendto(priv->ctrl_dst.monitor_fd, sbuf, llen + len) < 0) {
+			wpa_printf(MSG_ERROR, "sendto(CTRL_IFACE monitor): %s", strerror(errno));
+			priv->ctrl_dst.errors++;
+			if (priv->ctrl_dst.errors > 10) {
+				wpa_supplicant_ctrl_iface_detach(priv);
+			}
+		} else {
+			priv->ctrl_dst.errors = 0;
+		}
+	}
+	os_free(sbuf);
 }
 
 /**
@@ -315,71 +303,66 @@ static void wpa_supplicant_monitor_iface_write(struct ctrl_iface_priv *priv,
  * parameters to the offload function.
  */
 typedef struct iface_write_params_t {
-    struct ctrl_iface_priv *priv;
-    int level;
-    const char *buf;
-    size_t len;
-}iface_write_params_t;
+	struct ctrl_iface_priv *priv;
+	int level;
+	const char *buf;
+	size_t len;
+} iface_write_params_t;
 
 /**
  * Wrapper function to provide eloop offload of function call with synchronization.
  * To be called from elooper, post on semaphore when done.
  */
-static void wpa_supplicant_ctrl_iface_write_offload(void* arg1, void* arg2)
+static void wpa_supplicant_ctrl_iface_write_offload(void *arg1, void *arg2)
 {
-    iface_write_params_t* params = (iface_write_params_t*) arg1;
-    wpa_supplicant_monitor_iface_write(params->priv, params->level, params->buf, params->len);
-    sem_post(&params->priv->ctrl_dst.sem_write);
+	iface_write_params_t *params = (iface_write_params_t *)arg1;
+	wpa_supplicant_monitor_iface_write(params->priv, params->level, params->buf, params->len);
+	sem_post(&params->priv->ctrl_dst.sem_write);
 }
 
 /**
  * Send a message to the monitor iface. This shall be called only from the
  * context that created the interface.
  */
-static void wpa_supplicant_monitor_iface_send(struct ctrl_iface_priv *priv,
-					   int level, const char *buf, size_t len)
+static void wpa_supplicant_monitor_iface_send(struct ctrl_iface_priv *priv, int level, const char *buf, size_t len)
 {
-    int current_pid = getpid();
+	int current_pid = getpid();
 
-	if (priv->ctrl_dst.monitor_fd < 0)
+	if (priv->ctrl_dst.monitor_fd < 0) {
 		return;
+	}
 
-    wpa_printf(MSG_EXCESSIVE, "<ctrl_iface_fifo> Current pid %d other pid %d",
-            current_pid, eloop_get_pid());
+	wpa_printf(MSG_EXCESSIVE, "<ctrl_iface_fifo> Current pid %d other pid %d", current_pid, eloop_get_pid());
 
-	if(eloop_get_pid() == current_pid)
-	{
-	    // Safe to call iface_write directly
-	    wpa_supplicant_monitor_iface_write(priv, level, buf, len);
-	} else
-	{   // We need to offload the write to the e-looper to ensure synchronization
-	    bool keep_going = true;
-	    iface_write_params_t params;
-	    params.priv = priv;
-	    params.level = level;
-	    params.buf = buf;
-	    params.len = len;
+	if (eloop_get_pid() == current_pid) {
+		// Safe to call iface_write directly
+		wpa_supplicant_monitor_iface_write(priv, level, buf, len);
+	} else {					// We need to offload the write to the e-looper to ensure synchronization
+		bool keep_going = true;
+		iface_write_params_t params;
+		params.priv = priv;
+		params.level = level;
+		params.buf = buf;
+		params.len = len;
 
-	    eloop_register_timeout(0,0,(eloop_timeout_handler)wpa_supplicant_ctrl_iface_write_offload, &params, NULL);
-	    // We need a loop here to handle signal interrupts
-	    while(keep_going)
-	    {
-	        int res = sem_wait(&priv->ctrl_dst.sem_write);
-	        if(res) {
-	            int err = errno;
-	            wpa_printf(MSG_ERROR, "CTRL_IFACE - sem_wait error %d - %s",
-	                    err, strerror(err));
-	            if(err != EINTR)
-	                keep_going = false; // Keep going only if we get interrupted by a signal
-	            else {
-	                if(eloop_terminated())
-	                    keep_going = false; // Unless we are actually terminated
-	            }
-	        } else
-	        {   // Succesfull wait, continue
-	            keep_going = false;
-	        }
-	    }
+		eloop_register_timeout(0, 0, (eloop_timeout_handler) wpa_supplicant_ctrl_iface_write_offload, &params, NULL);
+		// We need a loop here to handle signal interrupts
+		while (keep_going) {
+			int res = sem_wait(&priv->ctrl_dst.sem_write);
+			if (res) {
+				int err = errno;
+				wpa_printf(MSG_ERROR, "CTRL_IFACE - sem_wait error %d - %s", err, strerror(err));
+				if (err != EINTR) {
+					keep_going = false;    // Keep going only if we get interrupted by a signal
+				} else {
+					if (eloop_terminated()) {
+						keep_going = false;    // Unless we are actually terminated
+					}
+				}
+			} else {			// Succesfull wait, continue
+				keep_going = false;
+			}
+		}
 	}
 }
 
@@ -388,11 +371,9 @@ static void wpa_supplicant_monitor_iface_send(struct ctrl_iface_priv *priv,
  *       does not wait for a monitor to connect - it only waits for the first req. */
 void wpa_supplicant_ctrl_iface_wait(struct ctrl_iface_priv *priv)
 {
-	wpa_printf(MSG_DEBUG, "CTRL_IFACE - %s - wait for monitor",
-		   priv->wpa_s->ifname);
+	wpa_printf(MSG_DEBUG, "CTRL_IFACE - %s - wait for monitor", priv->wpa_s->ifname);
 	eloop_wait_for_read_sock(priv->ctrl_fd_req);
 }
-
 
 /* Global ctrl_iface */
 
@@ -402,9 +383,7 @@ struct ctrl_iface_global_priv {
 	u8 cookie[COOKIE_LEN];
 };
 
-
-static char *wpa_supplicant_global_get_cookie(struct ctrl_iface_global_priv *priv,
-				 size_t *reply_len)
+static char *wpa_supplicant_global_get_cookie(struct ctrl_iface_global_priv *priv, size_t *reply_len)
 {
 	char *reply;
 	reply = os_malloc(7 + 2 * COOKIE_LEN + 1);
@@ -414,13 +393,11 @@ static char *wpa_supplicant_global_get_cookie(struct ctrl_iface_global_priv *pri
 	}
 
 	os_memcpy(reply, "COOKIE=", 7);
-	wpa_snprintf_hex(reply + 7, 2 * COOKIE_LEN + 1,
-			 priv->cookie, COOKIE_LEN);
+	wpa_snprintf_hex(reply + 7, 2 * COOKIE_LEN + 1, priv->cookie, COOKIE_LEN);
 
 	*reply_len = 7 + 2 * COOKIE_LEN;
 	return reply;
 }
-
 
 static void wpa_supplicant_global_ctrl_iface_receive(int fd, void *eloop_ctx, void *sock_ctx)
 {
@@ -434,8 +411,7 @@ static void wpa_supplicant_global_ctrl_iface_receive(int fd, void *eloop_ctx, vo
 
 	res = wpa_ctrl_recvfrom(fd, buf, sizeof(buf) - 1);
 	if (res < 0) {
-		wpa_printf(MSG_ERROR, "recvfrom(ctrl_iface): %s",
-			   strerror(errno));
+		wpa_printf(MSG_ERROR, "recvfrom(ctrl_iface): %s", strerror(errno));
 		return;
 	}
 
@@ -447,30 +423,28 @@ static void wpa_supplicant_global_ctrl_iface_receive(int fd, void *eloop_ctx, vo
 	}
 
 	if (os_strncmp(buf, "COOKIE=", 7) != 0) {
-		wpa_printf(MSG_DEBUG, "CTLR: No cookie in the request - "
-			   "drop request");
+		wpa_printf(MSG_DEBUG, "CTLR: No cookie in the request - " "drop request");
 		return;
 	}
 
 	if (hexstr2bin(buf + 7, cookie, COOKIE_LEN) < 0) {
-		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie format in the "
-			   "request - drop request");
+		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie format in the " "request - drop request");
 		return;
 	}
 
 	if (os_memcmp(cookie, priv->cookie, COOKIE_LEN) != 0) {
-		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie in the request - "
-			   "drop request");
+		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie in the request - " "drop request");
 		return;
 	}
 
 	pos = buf + 7 + 2 * COOKIE_LEN;
-	while (*pos == ' ')
+	while (*pos == ' ') {
 		pos++;
+	}
 
 	reply = wpa_supplicant_global_ctrl_iface_process(global, pos, &reply_len);
 
- done:
+done:
 	if (reply) {
 		wpa_ctrl_sendto(fd, reply, reply_len);
 		os_free(reply);
@@ -479,57 +453,50 @@ static void wpa_supplicant_global_ctrl_iface_receive(int fd, void *eloop_ctx, vo
 	}
 }
 
-
 struct ctrl_iface_global_priv *wpa_supplicant_global_ctrl_iface_init(struct wpa_global *global)
 {
 	struct ctrl_iface_global_priv *priv;
 
 	priv = os_zalloc(sizeof(*priv));
-	if (priv == NULL)
+	if (priv == NULL) {
 		return NULL;
+	}
 	priv->ctrl_fd_req = -1;
 	priv->ctrl_fd_cfm = -1;
 	os_get_random(priv->cookie, COOKIE_LEN);
 
-	if (global->params.ctrl_interface == NULL)
+	if (global->params.ctrl_interface == NULL) {
 		return priv;
+	}
 
-	wpa_printf(MSG_DEBUG, "Global control interface '%s'",
-		   global->params.ctrl_interface);
+	wpa_printf(MSG_DEBUG, "Global control interface '%s'", global->params.ctrl_interface);
 
-	if(mkfifo(WPA_CTRL_FIFO_DEV_GLOBAL_REQ, WPA_CTRL_FIFO_MK_MODE) != 0)
-	{
+	if (mkfifo(WPA_CTRL_FIFO_DEV_GLOBAL_REQ, WPA_CTRL_FIFO_MK_MODE) != 0) {
 		os_free(priv);
 		return NULL;
 	}
 
-	if(mkfifo(WPA_CTRL_FIFO_DEV_GLOBAL_CFM, WPA_CTRL_FIFO_MK_MODE) != 0)
-	{
+	if (mkfifo(WPA_CTRL_FIFO_DEV_GLOBAL_CFM, WPA_CTRL_FIFO_MK_MODE) != 0) {
 		os_free(priv);
 		return NULL;
 	}
 
 	priv->ctrl_fd_req = open(WPA_CTRL_FIFO_DEV_GLOBAL_REQ, O_RDONLY);
-	if(priv->ctrl_fd_req < 0)
-	{
+	if (priv->ctrl_fd_req < 0) {
 		os_free(priv);
 		return NULL;
 	}
 
 	priv->ctrl_fd_cfm = open(WPA_CTRL_FIFO_DEV_GLOBAL_CFM, O_WRONLY);
-	if(priv->ctrl_fd_cfm < 0)
-	{
+	if (priv->ctrl_fd_cfm < 0) {
 		os_free(priv);
 		return NULL;
 	}
 
-	eloop_register_read_sock(priv->ctrl_fd_req,
-				 wpa_supplicant_global_ctrl_iface_receive,
-				 global, priv);
+	eloop_register_read_sock(priv->ctrl_fd_req, wpa_supplicant_global_ctrl_iface_receive, global, priv);
 
 	return priv;
 }
-
 
 void wpa_supplicant_global_ctrl_iface_deinit(struct ctrl_iface_global_priv *priv)
 {

@@ -26,37 +26,37 @@ int sensorbd_main(int argc, FAR char *argv[])
 	int ret = 0;
 
 	switch (argc) {
-		case 2:
-			if (strcmp(argv[1], "led") == 0) {
-				ledonoff_main(argc, argv);
-			} else if (strcmp(argv[1], "ledpwm") == 0) {
-				ledpwm_main(argc, argv);
-			} else if (strcmp(argv[1], "ledst") == 0) {
-				starterled_main(argc, argv);
-			} else if (strcmp(argv[1], "uart") == 0) {
-				uartloopback_main(argc, argv);
-			} else if (strcmp(argv[1], "gpio") == 0) {
-				gpioloopback_main(argc, argv);
-			} else if (strcmp(argv[1], "button") == 0) {
-				switch_main(argc, argv);
-			} else if (strcmp(argv[1], "pwm") == 0) {
-				pwmbuzzer_main(argc, argv);
-			} else if (strcmp(argv[1], "tcs34725") == 0) {
-				tcs34725_main(argc, argv);
-			} else if (strcmp(argv[1], "mpu9250") == 0) {
-				mpu9250_main(argc, argv);
-			} else if (strcmp(argv[1], "k6ds3") == 0) {
-				k6ds3_main(argc, argv);
-			} else if (strcmp(argv[1], "lis3lv02qd") == 0) {
-				lis3lv02qd_main(argc, argv);
-			} else {
-				show_usage(argv[0]);
-			}
-			break;
-
-		default:
+	case 2:
+		if (strcmp(argv[1], "led") == 0) {
+			ledonoff_main(argc, argv);
+		} else if (strcmp(argv[1], "ledpwm") == 0) {
+			ledpwm_main(argc, argv);
+		} else if (strcmp(argv[1], "ledst") == 0) {
+			starterled_main(argc, argv);
+		} else if (strcmp(argv[1], "uart") == 0) {
+			uartloopback_main(argc, argv);
+		} else if (strcmp(argv[1], "gpio") == 0) {
+			gpioloopback_main(argc, argv);
+		} else if (strcmp(argv[1], "button") == 0) {
+			switch_main(argc, argv);
+		} else if (strcmp(argv[1], "pwm") == 0) {
+			pwmbuzzer_main(argc, argv);
+		} else if (strcmp(argv[1], "tcs34725") == 0) {
+			tcs34725_main(argc, argv);
+		} else if (strcmp(argv[1], "mpu9250") == 0) {
+			mpu9250_main(argc, argv);
+		} else if (strcmp(argv[1], "k6ds3") == 0) {
+			k6ds3_main(argc, argv);
+		} else if (strcmp(argv[1], "lis3lv02qd") == 0) {
+			lis3lv02qd_main(argc, argv);
+		} else {
 			show_usage(argv[0]);
-			break;
+		}
+		break;
+
+	default:
+		show_usage(argv[0]);
+		break;
 	}
 
 	return ret;

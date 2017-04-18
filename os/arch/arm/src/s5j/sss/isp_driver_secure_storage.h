@@ -23,7 +23,7 @@ struct SECURE_STORAGE_MAP {
 };
 
 #define KEY_PATH_BASE								"/mnt"
-//#define KEY_PATH_BASE								"/mnt/sss"
+//#define KEY_PATH_BASE                             "/mnt/sss"
 
 #define SECURE_STORAGE_TYPE_FACTORYKEY_KEY			(0x00)
 #define SECURE_STORAGE_TYPE_FACTORYKEY_DATA			(0x01)
@@ -53,4 +53,4 @@ int read_secure_storage(unsigned int type, unsigned int index, unsigned int data
 int write_secure_storage(unsigned int type, unsigned int index, unsigned int data_offset, unsigned int src_addr, unsigned int byte_len);
 int secure_storage_map(unsigned int type, struct SECURE_STORAGE_MAP *map);
 
-#endif /* ISP_DRIVER_SECURE_STORAGE_H_ */
+#endif							/* ISP_DRIVER_SECURE_STORAGE_H_ */

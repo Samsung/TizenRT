@@ -76,7 +76,7 @@
 
 
 #define DO_TLS_TEST(func, v) 		\
-if((ret = func(v)) != 0) {		\
+if ((ret = func(v)) != 0) {		\
 	printf("fail %d\n", ret);	\
 	fail_cnt++;			\
 }
@@ -196,10 +196,9 @@ pthread_addr_t tls_selftest_cb(void *args)
 	DO_TLS_TEST(mbedtls_memory_buffer_alloc_self_test, v);
 #endif
 	if (v != 0) {
-		if(fail_cnt) {
+		if (fail_cnt) {
 			printf("  [ Failed ]\n\n");
-		}
-		else {
+		} else {
 			printf("  [ All tests passed ]\n\n");
 		}
 	}

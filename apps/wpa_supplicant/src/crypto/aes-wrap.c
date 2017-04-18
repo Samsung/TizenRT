@@ -38,8 +38,9 @@ int aes_wrap(const u8 *kek, size_t kek_len, int n, const u8 *plain, u8 *cipher)
 	os_memcpy(r, plain, 8 * n);
 
 	ctx = aes_encrypt_init(kek, kek_len);
-	if (ctx == NULL)
+	if (ctx == NULL) {
 		return -1;
+	}
 
 	/* 2) Calculate intermediate values.
 	 * For j = 0 to 5

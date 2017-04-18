@@ -67,7 +67,7 @@ int mx140_file_request_conf(struct scsc_mx *mx, const struct firmware **conf, co
 #ifndef MX140_USE_OWN_LOAD_FILE
 	struct device *dev;
 #endif
-	char          config_path[MX140_FW_PATH_MAX_LENGTH];
+	char config_path[MX140_FW_PATH_MAX_LENGTH];
 
 	//dev = scsc_mx_get_device(mx);
 
@@ -88,7 +88,7 @@ int mx140_file_request_device_conf(struct scsc_mx *mx, const struct firmware **c
 #ifndef MX140_USE_OWN_LOAD_FILE
 	struct device *dev;
 #endif
-	char          config_path[MX140_FW_PATH_MAX_LENGTH];
+	char config_path[MX140_FW_PATH_MAX_LENGTH];
 
 	//dev = scsc_mx_get_device(mx);
 
@@ -111,8 +111,9 @@ void mx140_file_release_conf(struct scsc_mx *mx, const struct firmware *conf)
 #ifdef MX140_USE_OWN_LOAD_FILE
 	mx140_release_file(mx, conf);
 #else
-	if (conf)
+	if (conf) {
 		release_firmware(conf);
+	}
 #endif
 }
 
@@ -120,9 +121,9 @@ void mx140_file_release_conf(struct scsc_mx *mx, const struct firmware *conf)
 int mx140_file_download_fw(struct scsc_mx *mx, void *dest, size_t dest_size, u32 *fw_image_size)
 {
 	const struct firmware *firm = NULL;
-//	struct device         *dev;
-	int                   r = 0;
-	char                  img_path_name[MX140_FW_PATH_MAX_LENGTH];
+//  struct device         *dev;
+	int r = 0;
+	char img_path_name[MX140_FW_PATH_MAX_LENGTH];
 
 #ifdef CONFIG_SCSC_T20_WLAN_DEBUG
 	pr_info("firmware_variant=%s\n", firmware_variant);
@@ -131,10 +132,11 @@ int mx140_file_download_fw(struct scsc_mx *mx, void *dest, size_t dest_size, u32
 
 	/* e.g. /vendor/firmware/mx140/fw/full-service/mx140.bin */
 
-	if (use_new_fw_structure)
+	if (use_new_fw_structure) {
 		snprintf(img_path_name, sizeof(img_path_name), "%s/%s.bin", base_dir, firmware_variant);
-	else
-		snprintf(img_path_name, sizeof(img_path_name), "%s/%s/"MX140_FW_BIN, base_dir, firmware_variant);
+	} else {
+		snprintf(img_path_name, sizeof(img_path_name), "%s/%s/" MX140_FW_BIN, base_dir, firmware_variant);
+	}
 
 #ifdef MX140_USE_OWN_LOAD_FILE
 	r = mx140_request_file(mx, img_path_name, &firm);
@@ -162,7 +164,6 @@ int mx140_file_download_fw(struct scsc_mx *mx, void *dest, size_t dest_size, u32
 	return r;
 }
 
-
 int mx140_request_file(struct scsc_mx *mx, char *path, const struct firmware **firmp)
 {
 	struct firmware *firm;
@@ -188,8 +189,9 @@ int mx140_release_file(struct scsc_mx *mx, const struct firmware *firmp)
 		pr_err("%s: firmp=%p\n", __func__, firmp);
 		return -EINVAL;
 	}
-	if (firmp->priv != NULL)
+	if (firmp->priv != NULL) {
 		kmm_free(firmp->priv);
+	}
 
 	kmm_free((void *)firmp);
 	return 0;

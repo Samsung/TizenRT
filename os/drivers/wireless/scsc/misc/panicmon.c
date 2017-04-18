@@ -27,7 +27,6 @@ static void panicmon_isr(int irq, void *data)
 	mxman_fail(scsc_mx_get_mxman(panicmon->mx));
 }
 
-
 void panicmon_init(struct panicmon *panicmon, struct scsc_mx *mx)
 {
 	struct scsc_mif_abs *mif;

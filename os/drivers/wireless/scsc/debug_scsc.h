@@ -78,8 +78,7 @@
 #define SLSI_NET_WARN(ndev, fmt, arg ...)                   do {} while (0)
 #define SLSI_WARN_NODEV(fmt, arg ...)                       do {} while (0)
 
-#endif /* CONFIG_DEBUG_WLAN_DRIVER_ERROR */
-
+#endif							/* CONFIG_DEBUG_WLAN_DRIVER_ERROR */
 
 #ifdef CONFIG_DEBUG_WLAN_DRIVER_VERBOSE
 
@@ -164,6 +163,6 @@
 #define SLSI_DBG2_NODEV(filter, fmt, arg ...)           do {} while (0)
 #define SLSI_DBG3_NODEV(filter, fmt, arg ...)           do {} while (0)
 #define SLSI_DBG4_NODEV(filter, fmt, arg ...)           do {} while (0)
-#endif /* CONFIG_SCSC_DEFAULT_T20_WLAN_DEBUG */
+#endif							/* CONFIG_SCSC_DEFAULT_T20_WLAN_DEBUG */
 
 #endif

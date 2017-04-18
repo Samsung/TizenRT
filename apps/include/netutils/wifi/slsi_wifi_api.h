@@ -24,18 +24,17 @@ extern "C" {
 #define BIT(x) (1 << (x))
 #endif
 
-
 typedef enum {
-    SLSI_SEC_MODE_OPEN        = 0,                // 00000000
-    SLSI_SEC_MODE_WEP         = BIT(1),           // 00000001
-    SLSI_SEC_MODE_WEP_SHARED  = BIT(2),           // 00000010
-    SLSI_SEC_MODE_WPA_TKIP    = BIT(3),           // 00000100
-    SLSI_SEC_MODE_WPA_CCMP    = BIT(4),           // 00001000
-    SLSI_SEC_MODE_WPA_MIXED   = (BIT(3)|BIT(4)),  // 00001100
-    SLSI_SEC_MODE_WPA2_TKIP   = BIT(5),           // 00010000
-    SLSI_SEC_MODE_WPA2_CCMP   = BIT(6),           // 00100000
-    SLSI_SEC_MODE_WPA2_MIXED  = (BIT(5)|BIT(6)),  // 00110000
-    SLSI_SEC_MODE_EAP         = BIT(7)            // 01000000
+	SLSI_SEC_MODE_OPEN			= 0,				// 00000000
+	SLSI_SEC_MODE_WEP			= BIT(1),			// 00000001
+	SLSI_SEC_MODE_WEP_SHARED	= BIT(2),			// 00000010
+	SLSI_SEC_MODE_WPA_TKIP		= BIT(3),			// 00000100
+	SLSI_SEC_MODE_WPA_CCMP		= BIT(4),			// 00001000
+	SLSI_SEC_MODE_WPA_MIXED		= (BIT(3) | BIT(4)),// 00001100
+	SLSI_SEC_MODE_WPA2_TKIP		= BIT(5),			// 00010000
+	SLSI_SEC_MODE_WPA2_CCMP		= BIT(6),			// 00100000
+	SLSI_SEC_MODE_WPA2_MIXED	= (BIT(5) | BIT(6)),// 00110000
+	SLSI_SEC_MODE_EAP			= BIT(7)			// 01000000
 } slsi_security_mode_t;
 
 /* Length defines */
@@ -45,19 +44,19 @@ typedef enum {
 #define SLSI_PASSPHRASE_LEN     64
 
 /* SLSI return values */
-#define SLSI_STATUS_SUCCESS                             0   // Successfully completed
-#define SLSI_STATUS_ERROR                               1   // Error  - unspecified
-#define SLSI_STATUS_COMMAND_FAILED                      2   // Failed - command failed
-#define SLSI_STATUS_COMMAND_UNKNOWN                     3   // Failed - command unknown
-#define SLSI_STATUS_NOT_STARTED                         4   // Failed - mode never initiated
-#define SLSI_STATUS_ALREADY_STARTED                     5   // Failed - mode already started
-#define SLSI_STATUS_SUPPLICANT_START_FAILED             6   // Failed - start up of wpa_supplicant failed
-#define SLSI_STATUS_PARAM_FAILED                        7   // Failed - parameter specified not valid
-#define SLSI_STATUS_ALREADY_CONNECTED                   8   // Failed - WiFi already connected
-#define SLSI_STATUS_NOT_CONNECTED                       9   // Failed - WiFi not connected
-#define SLSI_STATUS_SECURITY_FAILED                     10  // Failed - security setup failed
-#define SLSI_STATUS_NOT_ALLOWED                         11  // Failed - not allowed
-#define SLSI_STATUS_NOT_SUPPORTED                       12  // Failed - function not supported (maybe due to missing dependencies to filesystem)
+#define SLSI_STATUS_SUCCESS                             0	// Successfully completed
+#define SLSI_STATUS_ERROR                               1	// Error  - unspecified
+#define SLSI_STATUS_COMMAND_FAILED                      2	// Failed - command failed
+#define SLSI_STATUS_COMMAND_UNKNOWN                     3	// Failed - command unknown
+#define SLSI_STATUS_NOT_STARTED                         4	// Failed - mode never initiated
+#define SLSI_STATUS_ALREADY_STARTED                     5	// Failed - mode already started
+#define SLSI_STATUS_SUPPLICANT_START_FAILED             6	// Failed - start up of wpa_supplicant failed
+#define SLSI_STATUS_PARAM_FAILED                        7	// Failed - parameter specified not valid
+#define SLSI_STATUS_ALREADY_CONNECTED                   8	// Failed - WiFi already connected
+#define SLSI_STATUS_NOT_CONNECTED                       9	// Failed - WiFi not connected
+#define SLSI_STATUS_SECURITY_FAILED                     10	// Failed - security setup failed
+#define SLSI_STATUS_NOT_ALLOWED                         11	// Failed - not allowed
+#define SLSI_STATUS_NOT_SUPPORTED                       12	// Failed - function not supported (maybe due to missing dependencies to filesystem)
 
 /* SLSI reason codes */
 /* Return values used from ieee802_11_defs.h
@@ -88,7 +87,6 @@ typedef enum {
  */
 #define SLSI_SAVE_CONFIG            1
 
-
 /**
  * Specify whether API layers should wait for multiple scan for network
  * attempts if device not found first time in station mode. Raising the
@@ -99,15 +97,15 @@ typedef enum {
 
 /* slsi wifi network interface - api parameter defines */
 typedef enum WiFi_InterFace_ID {
-    SLSI_WIFI_NONE,
-    SLSI_WIFI_STATION_IF, // Station mode (turns on wpa_supplicant)
-    SLSI_WIFI_SOFT_AP_IF, // Soft AP mode (turns on hostapd)
-    SLSI_WIFI_P2P_IF      // P2P mode (turns on wpa_supplicant)
+	SLSI_WIFI_NONE,
+	SLSI_WIFI_STATION_IF,	// Station mode (turns on wpa_supplicant)
+	SLSI_WIFI_SOFT_AP_IF,	// Soft AP mode (turns on hostapd)
+	SLSI_WIFI_P2P_IF		// P2P mode (turns on wpa_supplicant)
 } WiFi_InterFace_ID_t;
 
 /* Capabilities bit mask
  * Return values defined in ieee802_11_defs.h
- #define HT_CAP_INFO_LDPC_CODING_CAP         ((u16) BIT(0))
+ #define HT_CAP_INFO_LDPC_CODING_CAP        ((u16) BIT(0))
  #define HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET ((u16) BIT(1))
  #define HT_CAP_INFO_SMPS_MASK              ((u16) (BIT(2) | BIT(3)))
  #define HT_CAP_INFO_SMPS_STATIC            ((u16) 0)
@@ -129,62 +127,59 @@ typedef enum WiFi_InterFace_ID {
  #define HT_CAP_INFO_LSIG_TXOP_PROTECT_SUPPORT    ((u16) BIT(15))*/
 
 typedef struct slsi_ht_config {
-    uint16_t ht_capab_info;        // Supported fields: HT_CAP_INFO_GREEN_FIELD, HT_CAP_INFO_SHORT_GI20MHZ
-    uint8_t mcs_index[10];         // 0 uses default, supported HT-MCS rates - in ASCII hex: 0xffff0000000000000000
+	uint16_t ht_capab_info;		// Supported fields: HT_CAP_INFO_GREEN_FIELD, HT_CAP_INFO_SHORT_GI20MHZ
+	uint8_t mcs_index[10];		// 0 uses default, supported HT-MCS rates - in ASCII hex: 0xffff0000000000000000
 } slsi_ht_config_t;
 
 typedef struct slsi_security_config {
-    uint32_t secmode;
-    char passphrase[SLSI_PASSPHRASE_LEN];
+	uint32_t secmode;
+	char passphrase[SLSI_PASSPHRASE_LEN];
 } slsi_security_config_t;
 
-
 typedef struct slsi_vendor_ie {
-    uint8_t oui[3];                 // Organizational Unique ID
-    uint8_t *content;               // the ponter to the data allocated for the Vendor IE block
-    uint8_t content_length;         // total size of the allocated buffer
+	uint8_t oui[3];				// Organizational Unique ID
+	uint8_t *content;			// the ponter to the data allocated for the Vendor IE block
+	uint8_t content_length;		// total size of the allocated buffer
 } slsi_vendor_ie_t;
 
 typedef struct slsi_ap_config {
-    uint8_t ssid[SLSI_SSID_LEN+1];  // 802.11 spec defined unspecified or uint8
-    int8_t ssid_len;                // length of ssid - # of valid octets
-    uint32_t beacon_period;         // beacon period, default 100 TU
-    uint32_t DTIM;                  // Delivery Traffic Information Message (range 1..255), default 2
-    uint8_t channel;                // channel/frequency
-    uint8_t phy_mode;               // 0:legacy 1: 11N HT
-    slsi_ht_config_t ht_mode;       // requires CONFIG_HT_OVERRIDES enabled, see slsi_ht_config_t
-    slsi_security_config_t *security; // use NULL if security mode is open
-    slsi_vendor_ie_t *vsie;         // Vender specific IE block
+	uint8_t ssid[SLSI_SSID_LEN + 1];	// 802.11 spec defined unspecified or uint8
+	int8_t ssid_len;					// length of ssid - # of valid octets
+	uint32_t beacon_period;				// beacon period, default 100 TU
+	uint32_t DTIM;						// Delivery Traffic Information Message (range 1..255), default 2
+	uint8_t channel;					// channel/frequency
+	uint8_t phy_mode;					// 0:legacy 1: 11N HT
+	slsi_ht_config_t ht_mode;			// requires CONFIG_HT_OVERRIDES enabled, see slsi_ht_config_t
+	slsi_security_config_t *security;	// use NULL if security mode is open
+	slsi_vendor_ie_t *vsie;				// Vender specific IE block
 } slsi_ap_config_t;
 
-
 typedef struct slsi_scan_info {
-    uint8_t ssid[SLSI_SSID_LEN+1];  // 802.11 spec defined unspecified or uint8
-    char bssid[18];                 // char string e.g. xx:xx:xx:xx:xx:xx
-    int8_t ssid_len;                // length of ssid - # of valid octets
-    int8_t rssi;                    // rssi level of scanned device
-    uint32_t beacon_period;         // beacon period used (default 100)
-    uint8_t channel;                // channel/frequency
-    uint8_t phy_mode;               // 0:legacy 1: 11N HT
-    uint8_t bss_type;               // 0:infrastructure, 1:independent
-    uint8_t wps_support;            // boolean 1 supported, 0 not supported
-    uint8_t num_sec_modes;          // number of elements of security modes in sec_mode
-    slsi_ht_config_t ht_mode;       // See slsi_ht_config_t
-    slsi_security_config_t *sec_modes;  // list of security modes
-    struct slsi_scan_info* next;
+	uint8_t ssid[SLSI_SSID_LEN + 1];	// 802.11 spec defined unspecified or uint8
+	char bssid[18];						// char string e.g. xx:xx:xx:xx:xx:xx
+	int8_t ssid_len;					// length of ssid - # of valid octets
+	int8_t rssi;						// rssi level of scanned device
+	uint32_t beacon_period;				// beacon period used (default 100)
+	uint8_t channel;					// channel/frequency
+	uint8_t phy_mode;					// 0:legacy 1: 11N HT
+	uint8_t bss_type;					// 0:infrastructure, 1:independent
+	uint8_t wps_support;				// boolean 1 supported, 0 not supported
+	uint8_t num_sec_modes;				// number of elements of security modes in sec_mode
+	slsi_ht_config_t ht_mode;			// See slsi_ht_config_t
+	slsi_security_config_t *sec_modes;	// list of security modes
+	struct slsi_scan_info *next;
 } slsi_scan_info_t;
 
-
 typedef struct slsi_reason {
-    uint32_t reason_code;           // Reason codes - 0 for success - error code see 'SLSI reason codes' above
-    uint8_t locally_generated;      // Which side cause link down, 1 = locally, 0 = remotely - valid for STA mode only
-    int8_t ssid_len;                // length of ssid - # of valid octets
-    uint8_t ssid[SLSI_SSID_LEN+1];  // 802.11 spec defined up to 32 octets of data
-    char bssid[18];                 // BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
+	uint32_t reason_code;				// Reason codes - 0 for success - error code see 'SLSI reason codes' above
+	uint8_t locally_generated;			// Which side cause link down, 1 = locally, 0 = remotely - valid for STA mode only
+	int8_t ssid_len;					// length of ssid - # of valid octets
+	uint8_t ssid[SLSI_SSID_LEN + 1];	// 802.11 spec defined up to 32 octets of data
+	char bssid[18];						// BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
 } slsi_reason_t;
 
-typedef int8_t (*network_scan_result_handler_t)(slsi_reason_t* reason);
-typedef void (*slsi_network_link_callback_t)(slsi_reason_t* reason);
+typedef int8_t (*network_scan_result_handler_t)(slsi_reason_t *reason);
+typedef void (*slsi_network_link_callback_t)(slsi_reason_t *reason);
 
 /**
  * Set the network configuration and start Wi-Fi interface
@@ -215,12 +210,11 @@ typedef void (*slsi_network_link_callback_t)(slsi_reason_t* reason);
  * -    If channel=[36-161] the channel will be set as selected and hardware
  *         mode will be set to 11A (unless HT_mode specified then 11N)
  */
-int8_t WiFiStart(WiFi_InterFace_ID_t interface_id,
-        const slsi_ap_config_t *ap_config);
+int8_t WiFiStart(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t *ap_config);
 
 /**
  * Stop the Wi-Fi interface
-  * Return: Completed successfully or failed
+ * Return: Completed successfully or failed
  *
  * Stop the interface that currently associated AP, or abort the current
  * connection process. A WiFiStop implies a stop of the Wi-Fi stack,
@@ -238,8 +232,7 @@ int8_t WiFiStop(void);
  * Register callback functions that gets called when a change in network link
  * status occurs, these carry a slsi_reason_t to tell why link is up or down
  */
-int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up,
-        slsi_network_link_callback_t link_down);
+int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_network_link_callback_t link_down);
 
 /**
  * Register callback functions for WiFi scan
@@ -249,8 +242,7 @@ int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up,
  * Register callback functions that gets called when a scan trigger gets
  * response for its request has done.
  */
-int8_t WiFiRegisterScanCallback(
-        network_scan_result_handler_t scan_result_handler);
+int8_t WiFiRegisterScanCallback(network_scan_result_handler_t scan_result_handler);
 
 /**
  * Scan for Wi-Fi network
@@ -306,8 +298,7 @@ int8_t WiFiFreeScanResults(slsi_scan_info_t **scan_results);
  * type needed will automatically be resolved by the Wi-Fi stack.
  * The function will return after the connection is tried.
  */
-int8_t WiFiNetworkJoin(uint8_t* ssid, uint8_t ssid_len, uint8_t* bssid,
-        const slsi_security_config_t *security_config);
+int8_t WiFiNetworkJoin(uint8_t *ssid, uint8_t ssid_len, uint8_t *bssid, const slsi_security_config_t *security_config);
 
 /**
  * Leave a connected AP
@@ -379,7 +370,7 @@ int8_t WiFiIsConnected(uint8_t *count, slsi_reason_t *details);
  *               SLSI_WIFI_SOFT_AP_IF
  * Return: success or failure
  */
-int8_t WiFiGetOpMode(WiFi_InterFace_ID_t* mode);
+int8_t WiFiGetOpMode(WiFi_InterFace_ID_t *mode);
 
 /**
  * Request to set country code
@@ -401,7 +392,5 @@ int8_t WiFiSaveConfig(void);
 #ifdef  __cplusplus
 }
 #endif
-
-#endif /* SLSI_WIFI_API_H_ */
-
-/**@} */ //end of doxygen defgroup
+#endif							/* SLSI_WIFI_API_H_ */
+		 /**@} *///end of doxygen defgroup

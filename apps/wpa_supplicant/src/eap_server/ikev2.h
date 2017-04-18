@@ -19,7 +19,6 @@ struct ikev2_proposal_data {
 	int dh;
 };
 
-
 struct ikev2_initiator_data {
 	enum { SA_INIT, SA_AUTH, CHILD_SA, IKEV2_DONE } state;
 	u8 i_spi[IKEV2_SPI_LEN];
@@ -46,16 +45,13 @@ struct ikev2_initiator_data {
 	u8 *key_pad;
 	size_t key_pad_len;
 
-	const u8 * (*get_shared_secret)(void *ctx, const u8 *IDr,
-					size_t IDr_len, size_t *secret_len);
+	const u8 *(*get_shared_secret)(void *ctx, const u8 *IDr, size_t IDr_len, size_t *secret_len);
 	void *cb_ctx;
 	int unknown_user;
 };
 
-
 void ikev2_initiator_deinit(struct ikev2_initiator_data *data);
-int ikev2_initiator_process(struct ikev2_initiator_data *data,
-			    const struct wpabuf *buf);
-struct wpabuf * ikev2_initiator_build(struct ikev2_initiator_data *data);
+int ikev2_initiator_process(struct ikev2_initiator_data *data, const struct wpabuf *buf);
+struct wpabuf *ikev2_initiator_build(struct ikev2_initiator_data *data);
 
-#endif /* IKEV2_H */
+#endif							/* IKEV2_H */

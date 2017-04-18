@@ -27,7 +27,6 @@ enum macsec_policy {
 	DO_NOT_SECURE,
 };
 
-
 /* IEEE Std 802.1X-2010 - Table 11-6 - MACsec Capability */
 enum macsec_cap {
 	/**
@@ -62,8 +61,8 @@ enum validate_frames {
 
 /* IEEE Std 802.1X-2010 - Table 11-6 - Confidentiality Offset */
 enum confidentiality_offset {
-	CONFIDENTIALITY_NONE      = 0,
-	CONFIDENTIALITY_OFFSET_0  = 1,
+	CONFIDENTIALITY_NONE = 0,
+	CONFIDENTIALITY_OFFSET_0 = 1,
 	CONFIDENTIALITY_OFFSET_30 = 2,
 	CONFIDENTIALITY_OFFSET_50 = 3,
 };
@@ -75,4 +74,4 @@ enum confidentiality_offset {
 #define DEFAULT_PRIO_GROUP_CA_MEMBER   0x70
 #define DEFAULT_PRIO_NOT_KEY_SERVER    0xFF
 
-#endif /* IEEE802_1X_DEFS_H */
+#endif							/* IEEE802_1X_DEFS_H */

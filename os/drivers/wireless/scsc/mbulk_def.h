@@ -47,16 +47,16 @@
  */
 typedef u16 mbulk_len_t;
 struct mbulk {
-	struct mbulk     *next;             /** next mbulk */
-	u8               flag;              /** mbulk flags */
-	enum mbulk_class clas;              /** bulk buffer classification */
-	u8               pid;               /** mbulk pool id */
-	u8               refcnt;            /** reference counter of bulk buffer */
-	mbulk_len_t      dat_bufsz;         /** data buffer size in byte */
-	mbulk_len_t      sig_bufsz;         /** signal buffer size in byte */
-	mbulk_len_t      len;               /** valid data length */
-	mbulk_len_t      head;              /** start offset of data after mbulk structure */
-	ptrdiff_t        chain_next_offset; /** chain next mbulk offset */
+	struct mbulk *next;					/** next mbulk */
+	u8 flag;							/** mbulk flags */
+	enum mbulk_class clas;				/** bulk buffer classification */
+	u8 pid;								/** mbulk pool id */
+	u8 refcnt;							/** reference counter of bulk buffer */
+	mbulk_len_t dat_bufsz;				/** data buffer size in byte */
+	mbulk_len_t sig_bufsz;				/** signal buffer size in byte */
+	mbulk_len_t len;					/** valid data length */
+	mbulk_len_t head;					/** start offset of data after mbulk structure */
+	ptrdiff_t chain_next_offset;		/** chain next mbulk offset */
 } STRUCT_PACKED;
 
 /* mbulk flags */
@@ -101,45 +101,44 @@ struct mbulk {
 static inline bool mbulk_seg_reserve_head(struct mbulk *m, size_t headroom)
 {
 	//BUG_ON(!(m->len == 0 && m->dat_bufsz >= headroom));
-	m->head += (mbulk_len_t)headroom;
+	m->head += (mbulk_len_t) headroom;
 	return true;
 }
 
-static inline bool mbulk_seg_adjust_range(struct mbulk *m, size_t headroom,
-					  size_t len)
+static inline bool mbulk_seg_adjust_range(struct mbulk *m, size_t headroom, size_t len)
 {
 	//BUG_ON(!(m->dat_bufsz >= (headroom + len)));
-	m->head = m->sig_bufsz + (mbulk_len_t)headroom;
-	m->len = (mbulk_len_t)len;
+	m->head = m->sig_bufsz + (mbulk_len_t) headroom;
+	m->len = (mbulk_len_t) len;
 	return true;
 }
 
 static inline bool mbulk_seg_prepend_head(struct mbulk *m, size_t more)
 {
 	//BUG_ON(!(MBULK_SEG_HEADROOM(m) >= more));
-	m->head -= (mbulk_len_t)more;
-	m->len += (mbulk_len_t)more;
+	m->head -= (mbulk_len_t) more;
+	m->len += (mbulk_len_t) more;
 	return true;
 }
 
 static inline bool mbulk_seg_append_tail(struct mbulk *m, size_t more)
 {
 	//BUG_ON(!(MBULK_SEG_TAILROOM(m) >= more));
-	m->len += (mbulk_len_t)more;
+	m->len += (mbulk_len_t) more;
 	return true;
 }
 
 static inline bool mbulk_seg_trim_head(struct mbulk *m, size_t less)
 {
-	m->head += (mbulk_len_t)less;
-	m->len = (m->len <= (mbulk_len_t)less) ? 0 : (m->len - (mbulk_len_t)less);
+	m->head += (mbulk_len_t) less;
+	m->len = (m->len <= (mbulk_len_t) less) ? 0 : (m->len - (mbulk_len_t) less);
 	return true;
 }
 
 static inline bool mbulk_seg_trim_tail(struct mbulk *m, size_t less)
 {
 	//BUG_ON(!(m->len >= (mbulk_len_t)less));
-	m->len -= (mbulk_len_t)less;
+	m->len -= (mbulk_len_t) less;
 	return true;
 }
 

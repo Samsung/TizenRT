@@ -30,11 +30,11 @@ struct wpa_eapol_ie_parse {
 	size_t lifetime_len;
 	const u8 *error;
 	size_t error_len;
-#endif /* CONFIG_PEERKEY */
+#endif							/* CONFIG_PEERKEY */
 #ifdef CONFIG_IEEE80211W
 	const u8 *igtk;
 	size_t igtk_len;
-#endif /* CONFIG_IEEE80211W */
+#endif							/* CONFIG_IEEE80211W */
 	const u8 *mdie;
 	size_t mdie_len;
 	const u8 *ftie;
@@ -62,11 +62,10 @@ struct wpa_eapol_ie_parse {
 #ifdef CONFIG_P2P
 	const u8 *ip_addr_req;
 	const u8 *ip_addr_alloc;
-#endif /* CONFIG_P2P */
+#endif							/* CONFIG_P2P */
 };
 
-int wpa_supplicant_parse_ies(const u8 *buf, size_t len,
-			     struct wpa_eapol_ie_parse *ie);
+int wpa_supplicant_parse_ies(const u8 *buf, size_t len, struct wpa_eapol_ie_parse *ie);
 int wpa_gen_wpa_ie(struct wpa_sm *sm, u8 *wpa_ie, size_t wpa_ie_len);
 
-#endif /* WPA_IE_H */
+#endif							/* WPA_IE_H */

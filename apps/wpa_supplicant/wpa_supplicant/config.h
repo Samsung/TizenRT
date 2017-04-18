@@ -12,9 +12,9 @@
 #define DEFAULT_EAPOL_VERSION 1
 #ifdef CONFIG_NO_SCAN_PROCESSING
 #define DEFAULT_AP_SCAN 2
-#else /* CONFIG_NO_SCAN_PROCESSING */
+#else							/* CONFIG_NO_SCAN_PROCESSING */
 #define DEFAULT_AP_SCAN 1
-#endif /* CONFIG_NO_SCAN_PROCESSING */
+#endif							/* CONFIG_NO_SCAN_PROCESSING */
 #define DEFAULT_USER_MPM 1
 #define DEFAULT_MAX_PEER_LINKS 99
 #define DEFAULT_MESH_MAX_INACTIVITY 300
@@ -39,7 +39,6 @@
 #include "wps/wps.h"
 #include "common/ieee802_11_defs.h"
 #include "common/ieee802_11_common.h"
-
 
 struct wpa_cred {
 	/**
@@ -308,7 +307,6 @@ struct wpa_cred {
 	int sim_num;
 };
 
-
 #define CFG_CHANGED_DEVICE_NAME BIT(0)
 #define CFG_CHANGED_CONFIG_METHODS BIT(1)
 #define CFG_CHANGED_DEVICE_TYPE BIT(2)
@@ -414,7 +412,7 @@ struct wpa_config {
 	 * The variable defines default bgscan behavior for all BSS station
 	 * networks except for those which have their own bgscan configuration.
 	 */
-	 char *bgscan;
+	char *bgscan;
 
 	/**
 	 * disable_scan_offload - Disable automatic offloading of scan requests
@@ -1186,62 +1184,48 @@ struct wpa_config {
 	int wps_priority;
 };
 
-
 /* Prototypes for common functions from config.c */
 
 void wpa_config_free(struct wpa_config *ssid);
 void wpa_config_free_ssid(struct wpa_ssid *ssid);
-void wpa_config_foreach_network(struct wpa_config *config,
-				void (*func)(void *, struct wpa_ssid *),
-				void *arg);
-struct wpa_ssid * wpa_config_get_network(struct wpa_config *config, int id);
-struct wpa_ssid * wpa_config_add_network(struct wpa_config *config);
+void wpa_config_foreach_network(struct wpa_config *config, void (*func)(void *, struct wpa_ssid *), void *arg);
+struct wpa_ssid *wpa_config_get_network(struct wpa_config *config, int id);
+struct wpa_ssid *wpa_config_add_network(struct wpa_config *config);
 int wpa_config_remove_network(struct wpa_config *config, int id);
 void wpa_config_set_network_defaults(struct wpa_ssid *ssid);
-int wpa_config_set(struct wpa_ssid *ssid, const char *var, const char *value,
-		   int line);
-int wpa_config_set_quoted(struct wpa_ssid *ssid, const char *var,
-			  const char *value);
-int wpa_config_dump_values(struct wpa_config *config, char *buf,
-			   size_t buflen);
-int wpa_config_get_value(const char *name, struct wpa_config *config,
-			 char *buf, size_t buflen);
+int wpa_config_set(struct wpa_ssid *ssid, const char *var, const char *value, int line);
+int wpa_config_set_quoted(struct wpa_ssid *ssid, const char *var, const char *value);
+int wpa_config_dump_values(struct wpa_config *config, char *buf, size_t buflen);
+int wpa_config_get_value(const char *name, struct wpa_config *config, char *buf, size_t buflen);
 
-char ** wpa_config_get_all(struct wpa_ssid *ssid, int get_keys);
-char * wpa_config_get(struct wpa_ssid *ssid, const char *var);
-char * wpa_config_get_no_key(struct wpa_ssid *ssid, const char *var);
+char **wpa_config_get_all(struct wpa_ssid *ssid, int get_keys);
+char *wpa_config_get(struct wpa_ssid *ssid, const char *var);
+char *wpa_config_get_no_key(struct wpa_ssid *ssid, const char *var);
 void wpa_config_update_psk(struct wpa_ssid *ssid);
-int wpa_config_add_prio_network(struct wpa_config *config,
-				struct wpa_ssid *ssid);
+int wpa_config_add_prio_network(struct wpa_config *config, struct wpa_ssid *ssid);
 int wpa_config_update_prio_list(struct wpa_config *config);
-const struct wpa_config_blob * wpa_config_get_blob(struct wpa_config *config,
-						   const char *name);
-void wpa_config_set_blob(struct wpa_config *config,
-			 struct wpa_config_blob *blob);
+const struct wpa_config_blob *wpa_config_get_blob(struct wpa_config *config, const char *name);
+void wpa_config_set_blob(struct wpa_config *config, struct wpa_config_blob *blob);
 void wpa_config_free_blob(struct wpa_config_blob *blob);
 int wpa_config_remove_blob(struct wpa_config *config, const char *name);
 void wpa_config_flush_blobs(struct wpa_config *config);
 
-struct wpa_cred * wpa_config_get_cred(struct wpa_config *config, int id);
-struct wpa_cred * wpa_config_add_cred(struct wpa_config *config);
+struct wpa_cred *wpa_config_get_cred(struct wpa_config *config, int id);
+struct wpa_cred *wpa_config_add_cred(struct wpa_config *config);
 int wpa_config_remove_cred(struct wpa_config *config, int id);
 void wpa_config_free_cred(struct wpa_cred *cred);
-int wpa_config_set_cred(struct wpa_cred *cred, const char *var,
-			const char *value, int line);
-char * wpa_config_get_cred_no_key(struct wpa_cred *cred, const char *var);
+int wpa_config_set_cred(struct wpa_cred *cred, const char *var, const char *value, int line);
+char *wpa_config_get_cred_no_key(struct wpa_cred *cred, const char *var);
 
-struct wpa_config * wpa_config_alloc_empty(const char *ctrl_interface,
-					   const char *driver_param);
+struct wpa_config *wpa_config_alloc_empty(const char *ctrl_interface, const char *driver_param);
 #ifndef CONFIG_NO_STDOUT_DEBUG
 void wpa_config_debug_dump_networks(struct wpa_config *config);
-#else /* CONFIG_NO_STDOUT_DEBUG */
+#else							/* CONFIG_NO_STDOUT_DEBUG */
 #define wpa_config_debug_dump_networks(c) do { } while (0)
-#endif /* CONFIG_NO_STDOUT_DEBUG */
-
+#endif							/* CONFIG_NO_STDOUT_DEBUG */
 
 /* Prototypes for common functions from config.c */
 int wpa_config_process_global(struct wpa_config *config, char *pos, int line);
-
 
 /* Prototypes for backend specific functions from the selected config_*.c */
 
@@ -1258,7 +1242,7 @@ int wpa_config_process_global(struct wpa_config *config, char *pos, int line);
  *
  * Each configuration backend needs to implement this function.
  */
-struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp);
+struct wpa_config *wpa_config_read(const char *name, struct wpa_config *cfgp);
 
 /**
  * wpa_config_write - Write or update configuration data
@@ -1276,4 +1260,4 @@ struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp);
  */
 int wpa_config_write(const char *name, struct wpa_config *config);
 
-#endif /* CONFIG_H */
+#endif							/* CONFIG_H */

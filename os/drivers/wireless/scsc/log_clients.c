@@ -23,7 +23,7 @@ void slsi_log_clients_log_signal_safe(struct slsi_dev *sdev, struct max_buff *mb
 {
 	struct slsi_dlist_head *pos, *n;
 	struct slsi_log_client *log_client;
-	int                    dir = (direction == SLSI_LOG_DIRECTION_FROM_HOST) ? UDI_FROM_HOST : UDI_TO_HOST;
+	int dir = (direction == SLSI_LOG_DIRECTION_FROM_HOST) ? UDI_FROM_HOST : UDI_TO_HOST;
 
 	SLSI_MUTEX_LOCK(sdev->log_clients.log_client_lock);
 	slsi_dlist_for_each_safe(pos, n, &sdev->log_clients.log_client_list) {
@@ -42,17 +42,16 @@ void slsi_log_clients_init(struct slsi_dev *sdev)
 /* The arg called "filter" will eventually be passed to kmm_free().
  * - so pass a NULL if you are not doing any filtering
  */
-int slsi_log_client_register(struct slsi_dev *sdev, void *log_client_ctx,
-			     int (*log_client_cb)(struct slsi_log_client *, struct max_buff *, int),
-			     char *filter, int min_signal_id, int max_signal_id)
+int slsi_log_client_register(struct slsi_dev *sdev, void *log_client_ctx, int (*log_client_cb)(struct slsi_log_client *, struct max_buff *, int), char *filter, int min_signal_id, int max_signal_id)
 {
 	struct slsi_log_client *log_client;
-	int                    first_in_list = 0;
+	int first_in_list = 0;
 
 	first_in_list = slsi_dlist_empty(&sdev->log_clients.log_client_list);
 	log_client = kmm_malloc(sizeof(*log_client));
-	if (log_client == NULL)
+	if (log_client == NULL) {
 		return -ENOMEM;
+	}
 
 	log_client->min_signal_id = min_signal_id;
 	log_client->max_signal_id = max_signal_id;
@@ -74,8 +73,9 @@ void slsi_log_clients_terminate(struct slsi_dev *sdev)
 	/* If the driver is configured to try and terminate UDI user space
 	 * applications, the following will try to do so.
 	 */
-	if (SCSC_TERM_UDI_USERS)
+	if (SCSC_TERM_UDI_USERS) {
 		slsi_log_client_msg(sdev, UDI_DRV_UNLOAD_IND, 0, NULL);
+	}
 }
 
 void slsi_log_client_msg(struct slsi_dev *sdev, u16 event, u32 event_data_length, const u8 *event_data)
@@ -86,8 +86,9 @@ void slsi_log_client_msg(struct slsi_dev *sdev, u16 event, u32 event_data_length
 	SLSI_MUTEX_LOCK(sdev->log_clients.log_client_lock);
 	slsi_dlist_for_each_safe(pos, n, &sdev->log_clients.log_client_list) {
 		log_client = slsi_dlist_entry(pos, struct slsi_log_client, q);
-		if (slsi_kernel_to_user_space_event(log_client, event, event_data_length, event_data))
+		if (slsi_kernel_to_user_space_event(log_client, event, event_data_length, event_data)) {
 			SLSI_WARN(sdev, "Failed to send event(0x%.4X) to UDI client 0x%p\n", event, log_client);
+		}
 	}
 	SLSI_MUTEX_UNLOCK(sdev->log_clients.log_client_lock);
 }

@@ -19,10 +19,8 @@ struct ikev2_proposal_data {
 	int dh;
 };
 
-
 struct ikev2_responder_data {
-	enum { SA_INIT, SA_AUTH, CHILD_SA, NOTIFY, IKEV2_DONE, IKEV2_FAILED }
-		state;
+	enum { SA_INIT, SA_AUTH, CHILD_SA, NOTIFY, IKEV2_DONE, IKEV2_FAILED } state;
 	u8 i_spi[IKEV2_SPI_LEN];
 	u8 r_spi[IKEV2_SPI_LEN];
 	u8 i_nonce[IKEV2_NONCE_MAX_LEN];
@@ -50,10 +48,8 @@ struct ikev2_responder_data {
 	enum { LAST_MSG_SA_INIT, LAST_MSG_SA_AUTH } last_msg;
 };
 
-
 void ikev2_responder_deinit(struct ikev2_responder_data *data);
-int ikev2_responder_process(struct ikev2_responder_data *data,
-			    const struct wpabuf *buf);
-struct wpabuf * ikev2_responder_build(struct ikev2_responder_data *data);
+int ikev2_responder_process(struct ikev2_responder_data *data, const struct wpabuf *buf);
+struct wpabuf *ikev2_responder_build(struct ikev2_responder_data *data);
 
-#endif /* IKEV2_H */
+#endif							/* IKEV2_H */

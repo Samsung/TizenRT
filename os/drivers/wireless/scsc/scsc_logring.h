@@ -26,7 +26,7 @@ enum scsc_logring_tags {
 	MX_FW,
 	KIC_COMMON,
 	TEST_ME,
-	MAX_TAG = TEST_ME /* keep it last */
+	MAX_TAG = TEST_ME			/* keep it last */
 };
 
 #ifdef CONFIG_SCSC_PRINTK
@@ -433,4 +433,4 @@ int scsc_printk_bin(int force, int dlev, const void *start, size_t len);
 
 #endif
 
-#endif /* _SCSC_LOGRING_H_ */
+#endif							/* _SCSC_LOGRING_H_ */

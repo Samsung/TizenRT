@@ -40,7 +40,7 @@ struct tlsv1_record_layer {
 
 	size_t hash_size;
 	size_t key_material_len;
-	size_t iv_size; /* also block_size */
+	size_t iv_size;				/* also block_size */
 
 	enum crypto_hash_alg hash_alg;
 	enum crypto_cipher_alg cipher_alg;
@@ -56,16 +56,10 @@ struct tlsv1_record_layer {
 	struct crypto_cipher *read_cbc;
 };
 
-
-int tlsv1_record_set_cipher_suite(struct tlsv1_record_layer *rl,
-				  u16 cipher_suite);
+int tlsv1_record_set_cipher_suite(struct tlsv1_record_layer *rl, u16 cipher_suite);
 int tlsv1_record_change_write_cipher(struct tlsv1_record_layer *rl);
 int tlsv1_record_change_read_cipher(struct tlsv1_record_layer *rl);
-int tlsv1_record_send(struct tlsv1_record_layer *rl, u8 content_type, u8 *buf,
-		      size_t buf_size, const u8 *payload, size_t payload_len,
-		      size_t *out_len);
-int tlsv1_record_receive(struct tlsv1_record_layer *rl,
-			 const u8 *in_data, size_t in_len,
-			 u8 *out_data, size_t *out_len, u8 *alert);
+int tlsv1_record_send(struct tlsv1_record_layer *rl, u8 content_type, u8 *buf, size_t buf_size, const u8 *payload, size_t payload_len, size_t *out_len);
+int tlsv1_record_receive(struct tlsv1_record_layer *rl, const u8 *in_data, size_t in_len, u8 *out_data, size_t *out_len, u8 *alert);
 
-#endif /* TLSV1_RECORD_H */
+#endif							/* TLSV1_RECORD_H */

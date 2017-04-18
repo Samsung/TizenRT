@@ -18,7 +18,7 @@
 static void mifintrbit_default_handler(int irq, void *data)
 {
 	struct mifintrbit *intr = (struct mifintrbit *)data;
-	unsigned long     flags;
+	unsigned long flags;
 
 	spin_lock_irqsave(&intr->spinlock, flags);
 	intr->mif->irq_bit_clear(intr->mif, irq);
@@ -28,21 +28,22 @@ static void mifintrbit_default_handler(int irq, void *data)
 static void mifiintrman_isr(int irq, void *data)
 {
 	struct mifintrbit *intr = (struct mifintrbit *)data;
-	unsigned long     flags;
-	int               irq_reg [1] = {0};;
-	int               bit;
+	unsigned long flags;
+	int irq_reg[1] = { 0 };;
+	int bit;
 
 	/* Avoid unused parameter error */
 	(void)irq;
 
-#define MITIGATE_INTERRUPT_ISSUE        /* Temporary fix to mitigate an issue of interrupt not being serviced */
+#define MITIGATE_INTERRUPT_ISSUE	/* Temporary fix to mitigate an issue of interrupt not being serviced */
 #ifdef MITIGATE_INTERRUPT_ISSUE
 	do {
 		spin_lock_irqsave(&intr->spinlock, flags);
-		while((irq_reg[0] = intr->mif->irq_get(intr->mif)) != 0) {
+		while ((irq_reg[0] = intr->mif->irq_get(intr->mif)) != 0) {
 			for_each_set_bit(bit, (unsigned long int *)irq_reg, MIFINTRBIT_NUM_INT) {
-				if (intr->mifintrbit_irq_handler[bit] != mifintrbit_default_handler)
+				if (intr->mifintrbit_irq_handler[bit] != mifintrbit_default_handler) {
 					intr->mifintrbit_irq_handler[bit](bit, intr->irq_data[bit]);
+				}
 			}
 		}
 		spin_unlock_irqrestore(&intr->spinlock, flags);
@@ -51,8 +52,9 @@ static void mifiintrman_isr(int irq, void *data)
 	spin_lock_irqsave(&intr->spinlock, flags);
 	irq_reg[0] = intr->mif->irq_get(intr->mif);
 	for_each_set_bit(bit, (unsigned long int *)irq_reg, MIFINTRBIT_NUM_INT) {
-		if (intr->mifintrbit_irq_handler[bit] != mifintrbit_default_handler)
+		if (intr->mifintrbit_irq_handler[bit] != mifintrbit_default_handler) {
 			intr->mifintrbit_irq_handler[bit](bit, intr->irq_data[bit]);
+		}
 	}
 	spin_unlock_irqrestore(&intr->spinlock, flags);
 #endif
@@ -62,15 +64,16 @@ static void mifiintrman_isr(int irq, void *data)
 int mifintrbit_alloc_tohost(struct mifintrbit *intr, mifintrbit_handler handler, void *data)
 {
 	unsigned long flags;
-	int           which_bit = 0;
+	int which_bit = 0;
 
 	spin_lock_irqsave(&intr->spinlock, flags);
 
 	/* Search for free slots */
 	which_bit = find_first_zero_bit(intr->bitmap_tohost, MIFINTRBIT_NUM_INT);
 
-	if (which_bit == MIFINTRBIT_NUM_INT)
+	if (which_bit == MIFINTRBIT_NUM_INT) {
 		goto error;
+	}
 
 	if (intr->mifintrbit_irq_handler[which_bit] != mifintrbit_default_handler) {
 		spin_unlock_irqrestore(&intr->spinlock, flags);
@@ -97,8 +100,9 @@ int mifintrbit_free_tohost(struct mifintrbit *intr, int which_bit)
 {
 	unsigned long flags;
 
-	if (which_bit >= MIFINTRBIT_NUM_INT)
+	if (which_bit >= MIFINTRBIT_NUM_INT) {
 		goto error;
+	}
 
 	spin_lock_irqsave(&intr->spinlock, flags);
 	intr->mifintrbit_irq_handler[which_bit] = mifintrbit_default_handler;
@@ -117,24 +121,25 @@ error:
 int mifintrbit_alloc_fromhost(struct mifintrbit *intr, enum scsc_mif_abs_target target)
 {
 	unsigned long flags;
-	int           which_bit = 0;
+	int which_bit = 0;
 	unsigned long *p;
-
 
 	spin_lock_irqsave(&intr->spinlock, flags);
 
-	if (target == SCSC_MIF_ABS_TARGET_R4)
+	if (target == SCSC_MIF_ABS_TARGET_R4) {
 		p = intr->bitmap_fromhost_r4;
-	else if (target == SCSC_MIF_ABS_TARGET_M4)
+	} else if (target == SCSC_MIF_ABS_TARGET_M4) {
 		p = intr->bitmap_fromhost_m4;
-	else
+	} else {
 		goto error;
+	}
 
 	/* Search for free slots */
 	which_bit = find_first_zero_bit(p, MIFINTRBIT_NUM_INT);
 
-	if (which_bit == MIFINTRBIT_NUM_INT)
+	if (which_bit == MIFINTRBIT_NUM_INT) {
 		goto error;
+	}
 
 	/* Update bit mask */
 	set_bit(which_bit, p);
@@ -155,15 +160,17 @@ int mifintrbit_free_fromhost(struct mifintrbit *intr, int which_bit, enum scsc_m
 
 	spin_lock_irqsave(&intr->spinlock, flags);
 
-	if (which_bit >= MIFINTRBIT_NUM_INT)
+	if (which_bit >= MIFINTRBIT_NUM_INT) {
 		goto error;
+	}
 
-	if (target == SCSC_MIF_ABS_TARGET_R4)
+	if (target == SCSC_MIF_ABS_TARGET_R4) {
 		p = intr->bitmap_fromhost_r4;
-	else if (target == SCSC_MIF_ABS_TARGET_M4)
+	} else if (target == SCSC_MIF_ABS_TARGET_M4) {
 		p = intr->bitmap_fromhost_m4;
-	else
+	} else {
 		goto error;
+	}
 
 	/* Clear bit mask */
 	clear_bit(which_bit, p);
@@ -182,8 +189,9 @@ void mifintrbit_deinit(struct mifintrbit *intr)
 	int i;
 
 	/* Set all handlers to default before unregistering the handler */
-	for (i = 0; i < MIFINTRBIT_NUM_INT; i++)
+	for (i = 0; i < MIFINTRBIT_NUM_INT; i++) {
 		intr->mifintrbit_irq_handler[i] = mifintrbit_default_handler;
+	}
 	intr->mif->irq_unreg_handler(intr->mif);
 }
 
@@ -193,8 +201,9 @@ void mifintrbit_init(struct mifintrbit *intr, struct scsc_mif_abs *mif)
 
 	spin_lock_init(&intr->spinlock);
 	/* Set all handlersd to default before hooking the hardware interrupt */
-	for (i = 0; i < MIFINTRBIT_NUM_INT; i++)
+	for (i = 0; i < MIFINTRBIT_NUM_INT; i++) {
 		intr->mifintrbit_irq_handler[i] = mifintrbit_default_handler;
+	}
 
 	/* reset bitmaps */
 	bitmap_zero(intr->bitmap_tohost, MIFINTRBIT_NUM_INT);

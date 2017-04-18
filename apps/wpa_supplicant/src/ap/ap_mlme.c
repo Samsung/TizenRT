@@ -18,9 +18,8 @@
 #include "ap_mlme.h"
 #include "hostapd.h"
 
-
 #ifndef CONFIG_NO_HOSTAPD_LOGGER
-static const char * mlme_auth_alg_str(int alg)
+static const char *mlme_auth_alg_str(int alg)
 {
 	switch (alg) {
 	case WLAN_AUTH_OPEN:
@@ -33,8 +32,7 @@ static const char * mlme_auth_alg_str(int alg)
 
 	return "unknown";
 }
-#endif /* CONFIG_NO_HOSTAPD_LOGGER */
-
+#endif							/* CONFIG_NO_HOSTAPD_LOGGER */
 
 /**
  * mlme_authenticate_indication - Report the establishment of an authentication
@@ -50,17 +48,13 @@ static const char * mlme_auth_alg_str(int alg)
  * PeerSTAAddress = sta->addr
  * AuthenticationType = sta->auth_alg (WLAN_AUTH_OPEN / WLAN_AUTH_SHARED_KEY)
  */
-void mlme_authenticate_indication(struct hostapd_data *hapd,
-				  struct sta_info *sta)
+void mlme_authenticate_indication(struct hostapd_data *hapd, struct sta_info *sta)
 {
-	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME,
-		       HOSTAPD_LEVEL_DEBUG,
-		       "MLME-AUTHENTICATE.indication(" MACSTR ", %s)",
-		       MAC2STR(sta->addr), mlme_auth_alg_str(sta->auth_alg));
-	if (sta->auth_alg != WLAN_AUTH_FT && !(sta->flags & WLAN_STA_MFP))
+	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_DEBUG, "MLME-AUTHENTICATE.indication(" MACSTR ", %s)", MAC2STR(sta->addr), mlme_auth_alg_str(sta->auth_alg));
+	if (sta->auth_alg != WLAN_AUTH_FT && !(sta->flags & WLAN_STA_MFP)) {
 		mlme_deletekeys_request(hapd, sta);
+	}
 }
-
 
 /**
  * mlme_deauthenticate_indication - Report the invalidation of an
@@ -74,17 +68,13 @@ void mlme_authenticate_indication(struct hostapd_data *hapd,
  *
  * PeerSTAAddress = sta->addr
  */
-void mlme_deauthenticate_indication(struct hostapd_data *hapd,
-				    struct sta_info *sta, u16 reason_code)
+void mlme_deauthenticate_indication(struct hostapd_data *hapd, struct sta_info *sta, u16 reason_code)
 {
-	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME,
-		       HOSTAPD_LEVEL_DEBUG,
-		       "MLME-DEAUTHENTICATE.indication(" MACSTR ", %d)",
-		       MAC2STR(sta->addr), reason_code);
-	if (!hapd->iface->driver_ap_teardown)
+	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_DEBUG, "MLME-DEAUTHENTICATE.indication(" MACSTR ", %d)", MAC2STR(sta->addr), reason_code);
+	if (!hapd->iface->driver_ap_teardown) {
 		mlme_deletekeys_request(hapd, sta);
+	}
 }
-
 
 /**
  * mlme_associate_indication - Report the establishment of an association with
@@ -100,14 +90,11 @@ void mlme_deauthenticate_indication(struct hostapd_data *hapd,
  */
 void mlme_associate_indication(struct hostapd_data *hapd, struct sta_info *sta)
 {
-	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME,
-		       HOSTAPD_LEVEL_DEBUG,
-		       "MLME-ASSOCIATE.indication(" MACSTR ")",
-		       MAC2STR(sta->addr));
-	if (sta->auth_alg != WLAN_AUTH_FT)
+	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_DEBUG, "MLME-ASSOCIATE.indication(" MACSTR ")", MAC2STR(sta->addr));
+	if (sta->auth_alg != WLAN_AUTH_FT) {
 		mlme_deletekeys_request(hapd, sta);
+	}
 }
-
 
 /**
  * mlme_reassociate_indication - Report the establishment of an reassociation
@@ -121,17 +108,13 @@ void mlme_associate_indication(struct hostapd_data *hapd, struct sta_info *sta)
  *
  * PeerSTAAddress = sta->addr
  */
-void mlme_reassociate_indication(struct hostapd_data *hapd,
-				 struct sta_info *sta)
+void mlme_reassociate_indication(struct hostapd_data *hapd, struct sta_info *sta)
 {
-	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME,
-		       HOSTAPD_LEVEL_DEBUG,
-		       "MLME-REASSOCIATE.indication(" MACSTR ")",
-		       MAC2STR(sta->addr));
-	if (sta->auth_alg != WLAN_AUTH_FT)
+	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_DEBUG, "MLME-REASSOCIATE.indication(" MACSTR ")", MAC2STR(sta->addr));
+	if (sta->auth_alg != WLAN_AUTH_FT) {
 		mlme_deletekeys_request(hapd, sta);
+	}
 }
-
 
 /**
  * mlme_disassociate_indication - Report disassociation with a specific peer
@@ -145,34 +128,22 @@ void mlme_reassociate_indication(struct hostapd_data *hapd,
  *
  * PeerSTAAddress = sta->addr
  */
-void mlme_disassociate_indication(struct hostapd_data *hapd,
-				  struct sta_info *sta, u16 reason_code)
+void mlme_disassociate_indication(struct hostapd_data *hapd, struct sta_info *sta, u16 reason_code)
 {
-	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME,
-		       HOSTAPD_LEVEL_DEBUG,
-		       "MLME-DISASSOCIATE.indication(" MACSTR ", %d)",
-		       MAC2STR(sta->addr), reason_code);
+	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_DEBUG, "MLME-DISASSOCIATE.indication(" MACSTR ", %d)", MAC2STR(sta->addr), reason_code);
 	mlme_deletekeys_request(hapd, sta);
 }
 
-
-void mlme_michaelmicfailure_indication(struct hostapd_data *hapd,
-				       const u8 *addr)
+void mlme_michaelmicfailure_indication(struct hostapd_data *hapd, const u8 *addr)
 {
-	hostapd_logger(hapd, addr, HOSTAPD_MODULE_MLME,
-		       HOSTAPD_LEVEL_DEBUG,
-		       "MLME-MichaelMICFailure.indication(" MACSTR ")",
-		       MAC2STR(addr));
+	hostapd_logger(hapd, addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_DEBUG, "MLME-MichaelMICFailure.indication(" MACSTR ")", MAC2STR(addr));
 }
-
 
 void mlme_deletekeys_request(struct hostapd_data *hapd, struct sta_info *sta)
 {
-	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME,
-		       HOSTAPD_LEVEL_DEBUG,
-		       "MLME-DELETEKEYS.request(" MACSTR ")",
-		       MAC2STR(sta->addr));
+	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_DEBUG, "MLME-DELETEKEYS.request(" MACSTR ")", MAC2STR(sta->addr));
 
-	if (sta->wpa_sm)
+	if (sta->wpa_sm) {
 		wpa_remove_ptk(sta->wpa_sm);
+	}
 }

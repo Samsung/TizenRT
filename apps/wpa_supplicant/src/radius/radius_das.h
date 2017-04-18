@@ -45,13 +45,11 @@ struct radius_das_conf {
 	unsigned int time_window;
 	int require_event_timestamp;
 	void *ctx;
-	enum radius_das_res (*disconnect)(void *ctx,
-					  struct radius_das_attrs *attr);
+	enum radius_das_res(*disconnect)(void *ctx, struct radius_das_attrs *attr);
 };
 
-struct radius_das_data *
-radius_das_init(struct radius_das_conf *conf);
+struct radius_das_data *radius_das_init(struct radius_das_conf *conf);
 
 void radius_das_deinit(struct radius_das_data *data);
 
-#endif /* RADIUS_DAS_H */
+#endif							/* RADIUS_DAS_H */

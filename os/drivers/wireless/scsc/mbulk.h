@@ -53,7 +53,7 @@ struct mbulk;
  * mbulk pool ID
  */
 #define MBULK_POOL_ID_MIN        (0)
-#define MBULK_POOL_ID_MAX_FW     (4) /* 0 ~ 3 used for firmware pools */
+#define MBULK_POOL_ID_MAX_FW     (4)	/* 0 ~ 3 used for firmware pools */
 #define MBULK_POOL_ID_MAX        (MBULK_POOL_ID_MAX_FW)
 
 /* Max number of mbulk to be freed by the Host */
@@ -66,12 +66,12 @@ struct mbulk;
  * compiler assigns the smallest integral type (u8).
  */
 enum mbulk_class {
-	MBULK_CLASS_FROM_HOST_DAT    = 0,
-	MBULK_CLASS_FROM_HOST_CTL    = 1,
-	MBULK_CLASS_FROM_RADIO       = 2,
-	MBULK_CLASS_CONTRL           = 3,
-	MBULK_CLASS_DEBUG            = 4,
-	MBULK_CLASS_OTHERS           = 5,
+	MBULK_CLASS_FROM_HOST_DAT = 0,
+	MBULK_CLASS_FROM_HOST_CTL = 1,
+	MBULK_CLASS_FROM_RADIO = 2,
+	MBULK_CLASS_CONTRL = 3,
+	MBULK_CLASS_DEBUG = 4,
+	MBULK_CLASS_OTHERS = 5,
 	MBULK_CLASS_MAX
 } STRUCT_PACKED;
 
@@ -162,8 +162,7 @@ static inline bool mbulk_is_chained(const struct mbulk *m)
  * a chained buffer.
  *
  */
-struct mbulk *mbulk_with_signal_alloc(enum mbulk_class clas, size_t sig_bufsz,
-				      size_t dat_bufsz);
+struct mbulk *mbulk_with_signal_alloc(enum mbulk_class clas, size_t sig_bufsz, size_t dat_bufsz);
 /**
  * Allocate a bulk buffer with an in-lined signal buffer
  *
@@ -171,8 +170,7 @@ struct mbulk *mbulk_with_signal_alloc(enum mbulk_class clas, size_t sig_bufsz,
  * meeting the requested size.
  *
  */
-struct mbulk *mbulk_with_signal_alloc_by_pool(u8 pool_id, u16 colour,
-					      enum mbulk_class clas, size_t sig_bufsz, size_t dat_bufsz);
+struct mbulk *mbulk_with_signal_alloc_by_pool(u8 pool_id, u16 colour, enum mbulk_class clas, size_t sig_bufsz, size_t dat_bufsz);
 /**
  * Get a signal buffer address
  *
@@ -271,7 +269,7 @@ static inline void *mbulk_dat_at_rw(const struct mbulk *m, size_t off)
  * get bulk buffer address at the offset for read access
  *
  */
-static inline /*const*/ void *mbulk_dat_at_r(const struct mbulk *m, size_t off)
+static inline /*const */ void *mbulk_dat_at_r(const struct mbulk *m, size_t off)
 {
 	return (/*const */ void *)MBULK_SEG_DAT_AT(m, off);
 }
@@ -388,8 +386,7 @@ static inline struct mbulk *mbulk_duplicate(struct mbulk *m)
  * only when \copy_sig is TRUE.
  *
  */
-static inline struct mbulk *mbulk_clone(const struct mbulk *m, enum mbulk_class clas,
-					bool copy_sig)
+static inline struct mbulk *mbulk_clone(const struct mbulk *m, enum mbulk_class clas, bool copy_sig)
 {
 	return mbulk_seg_clone(m, clas, copy_sig);
 }
@@ -430,8 +427,7 @@ void init_mbulk(void *mem, size_t pool_size);
  * add a memory zone to a mbulk pool list
  *
  */
-int mbulk_pool_add(u8 pool_id, char *base, char *end,
-		    size_t buf_size, u8 guard);
+int mbulk_pool_add(u8 pool_id, char *base, char *end, size_t buf_size, u8 guard);
 /**
  * check sanity of a mbulk pool
  */

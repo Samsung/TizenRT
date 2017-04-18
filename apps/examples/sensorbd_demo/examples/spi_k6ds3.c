@@ -163,8 +163,7 @@ void k6ds3_main(int argc, char *argv[])
 		gy = (gyl | (gyh << 8));
 		gz = (gzl | (gzh << 8));
 
-		printf("ACCEL:x(0x%04X) y(0x%04X) z(0x%04X) GYRO:x(0x%04X) y(0x%04X) z(0x%04X)\n",
-			ax, ay, az, gx, gy, gz);
+		printf("ACCEL:x(0x%04X) y(0x%04X) z(0x%04X) GYRO:x(0x%04X) y(0x%04X) z(0x%04X)\n", ax, ay, az, gx, gy, gz);
 
 		up_mdelay(500);
 	}

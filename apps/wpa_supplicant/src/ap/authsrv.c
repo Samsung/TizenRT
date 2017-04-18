@@ -19,21 +19,18 @@
 #include "sta_info.h"
 #include "authsrv.h"
 
-
 #if defined(EAP_SERVER_SIM) || defined(EAP_SERVER_AKA)
 #define EAP_SIM_DB
-#endif /* EAP_SERVER_SIM || EAP_SERVER_AKA */
-
+#endif							/* EAP_SERVER_SIM || EAP_SERVER_AKA */
 
 #ifdef EAP_SIM_DB
-static int hostapd_sim_db_cb_sta(struct hostapd_data *hapd,
-				 struct sta_info *sta, void *ctx)
+static int hostapd_sim_db_cb_sta(struct hostapd_data *hapd, struct sta_info *sta, void *ctx)
 {
-	if (eapol_auth_eap_pending_cb(sta->eapol_sm, ctx) == 0)
+	if (eapol_auth_eap_pending_cb(sta->eapol_sm, ctx) == 0) {
 		return 1;
+	}
 	return 0;
 }
-
 
 static void hostapd_sim_db_cb(void *ctx, void *session_ctx)
 {
@@ -41,28 +38,27 @@ static void hostapd_sim_db_cb(void *ctx, void *session_ctx)
 	if (ap_for_each_sta(hapd, hostapd_sim_db_cb_sta, session_ctx) == 0) {
 #ifdef RADIUS_SERVER
 		radius_server_eap_pending_cb(hapd->radius_srv, session_ctx);
-#endif /* RADIUS_SERVER */
+#endif							/* RADIUS_SERVER */
 	}
 }
-#endif /* EAP_SIM_DB */
-
+#endif							/* EAP_SIM_DB */
 
 #ifdef RADIUS_SERVER
 
-static int hostapd_radius_get_eap_user(void *ctx, const u8 *identity,
-				       size_t identity_len, int phase2,
-				       struct eap_user *user)
+static int hostapd_radius_get_eap_user(void *ctx, const u8 *identity, size_t identity_len, int phase2, struct eap_user *user)
 {
 	const struct hostapd_eap_user *eap_user;
 	int i;
 	int rv = -1;
 
 	eap_user = hostapd_get_eap_user(ctx, identity, identity_len, phase2);
-	if (eap_user == NULL)
+	if (eap_user == NULL) {
 		goto out;
+	}
 
-	if (user == NULL)
+	if (user == NULL) {
 		return 0;
+	}
 
 	os_memset(user, 0, sizeof(*user));
 	for (i = 0; i < EAP_MAX_METHODS; i++) {
@@ -72,10 +68,10 @@ static int hostapd_radius_get_eap_user(void *ctx, const u8 *identity,
 
 	if (eap_user->password) {
 		user->password = os_malloc(eap_user->password_len);
-		if (user->password == NULL)
+		if (user->password == NULL) {
 			goto out;
-		os_memcpy(user->password, eap_user->password,
-			  eap_user->password_len);
+		}
+		os_memcpy(user->password, eap_user->password, eap_user->password_len);
 		user->password_len = eap_user->password_len;
 		user->password_hash = eap_user->password_hash;
 	}
@@ -87,12 +83,12 @@ static int hostapd_radius_get_eap_user(void *ctx, const u8 *identity,
 	rv = 0;
 
 out:
-	if (rv)
+	if (rv) {
 		wpa_printf(MSG_DEBUG, "%s: Failed to find user", __func__);
+	}
 
 	return rv;
 }
-
 
 static int hostapd_setup_radius_srv(struct hostapd_data *hapd)
 {
@@ -125,11 +121,11 @@ static int hostapd_setup_radius_srv(struct hostapd_data *hapd)
 	srv.sqlite_file = conf->eap_user_sqlite;
 #ifdef CONFIG_RADIUS_TEST
 	srv.dump_msk_file = conf->dump_msk_file;
-#endif /* CONFIG_RADIUS_TEST */
+#endif							/* CONFIG_RADIUS_TEST */
 #ifdef CONFIG_HS20
 	srv.subscr_remediation_url = conf->subscr_remediation_url;
 	srv.subscr_remediation_method = conf->subscr_remediation_method;
-#endif /* CONFIG_HS20 */
+#endif							/* CONFIG_HS20 */
 	srv.erp = conf->eap_server_erp;
 	srv.erp_domain = conf->erp_domain;
 
@@ -142,15 +138,12 @@ static int hostapd_setup_radius_srv(struct hostapd_data *hapd)
 	return 0;
 }
 
-#endif /* RADIUS_SERVER */
-
+#endif							/* RADIUS_SERVER */
 
 int authsrv_init(struct hostapd_data *hapd)
 {
 #ifdef EAP_TLS_FUNCS
-	if (hapd->conf->eap_server &&
-	    (hapd->conf->ca_cert || hapd->conf->server_cert ||
-	     hapd->conf->private_key || hapd->conf->dh_file)) {
+	if (hapd->conf->eap_server && (hapd->conf->ca_cert || hapd->conf->server_cert || hapd->conf->private_key || hapd->conf->dh_file)) {
 		struct tls_connection_params params;
 
 		hapd->ssl_ctx = tls_init(NULL);
@@ -167,8 +160,7 @@ int authsrv_init(struct hostapd_data *hapd)
 		params.private_key_passwd = hapd->conf->private_key_passwd;
 		params.dh_file = hapd->conf->dh_file;
 		params.openssl_ciphers = hapd->conf->openssl_ciphers;
-		params.ocsp_stapling_response =
-			hapd->conf->ocsp_stapling_response;
+		params.ocsp_stapling_response = hapd->conf->ocsp_stapling_response;
 
 		if (tls_global_set_params(hapd->ssl_ctx, &params)) {
 			wpa_printf(MSG_ERROR, "Failed to set TLS parameters");
@@ -176,57 +168,52 @@ int authsrv_init(struct hostapd_data *hapd)
 			return -1;
 		}
 
-		if (tls_global_set_verify(hapd->ssl_ctx,
-					  hapd->conf->check_crl)) {
+		if (tls_global_set_verify(hapd->ssl_ctx, hapd->conf->check_crl)) {
 			wpa_printf(MSG_ERROR, "Failed to enable check_crl");
 			authsrv_deinit(hapd);
 			return -1;
 		}
 	}
-#endif /* EAP_TLS_FUNCS */
+#endif							/* EAP_TLS_FUNCS */
 
 #ifdef EAP_SIM_DB
 	if (hapd->conf->eap_sim_db) {
-		hapd->eap_sim_db_priv =
-			eap_sim_db_init(hapd->conf->eap_sim_db,
-					hostapd_sim_db_cb, hapd);
+		hapd->eap_sim_db_priv = eap_sim_db_init(hapd->conf->eap_sim_db, hostapd_sim_db_cb, hapd);
 		if (hapd->eap_sim_db_priv == NULL) {
-			wpa_printf(MSG_ERROR, "Failed to initialize EAP-SIM "
-				   "database interface");
+			wpa_printf(MSG_ERROR, "Failed to initialize EAP-SIM " "database interface");
 			authsrv_deinit(hapd);
 			return -1;
 		}
 	}
-#endif /* EAP_SIM_DB */
+#endif							/* EAP_SIM_DB */
 
 #ifdef RADIUS_SERVER
-	if (hapd->conf->radius_server_clients &&
-	    hostapd_setup_radius_srv(hapd))
+	if (hapd->conf->radius_server_clients && hostapd_setup_radius_srv(hapd)) {
 		return -1;
-#endif /* RADIUS_SERVER */
+	}
+#endif							/* RADIUS_SERVER */
 
 	return 0;
 }
-
 
 void authsrv_deinit(struct hostapd_data *hapd)
 {
 #ifdef RADIUS_SERVER
 	radius_server_deinit(hapd->radius_srv);
 	hapd->radius_srv = NULL;
-#endif /* RADIUS_SERVER */
+#endif							/* RADIUS_SERVER */
 
 #ifdef EAP_TLS_FUNCS
 	if (hapd->ssl_ctx) {
 		tls_deinit(hapd->ssl_ctx);
 		hapd->ssl_ctx = NULL;
 	}
-#endif /* EAP_TLS_FUNCS */
+#endif							/* EAP_TLS_FUNCS */
 
 #ifdef EAP_SIM_DB
 	if (hapd->eap_sim_db_priv) {
 		eap_sim_db_deinit(hapd->eap_sim_db_priv);
 		hapd->eap_sim_db_priv = NULL;
 	}
-#endif /* EAP_SIM_DB */
+#endif							/* EAP_SIM_DB */
 }

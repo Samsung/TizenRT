@@ -9,15 +9,13 @@
 #include "includes.h"
 #ifdef CONFIG_DYNAMIC_EAP_METHODS
 #include <dlfcn.h>
-#endif /* CONFIG_DYNAMIC_EAP_METHODS */
+#endif							/* CONFIG_DYNAMIC_EAP_METHODS */
 
 #include "common.h"
 #include "eap_i.h"
 #include "eap_methods.h"
 
-
 static struct eap_method *eap_methods = NULL;
-
 
 /**
  * eap_peer_get_eap_method - Get EAP method based on type number
@@ -25,16 +23,16 @@ static struct eap_method *eap_methods = NULL;
  * @method: EAP type number
  * Returns: Pointer to EAP method or %NULL if not found
  */
-const struct eap_method * eap_peer_get_eap_method(int vendor, EapType method)
+const struct eap_method *eap_peer_get_eap_method(int vendor, EapType method)
 {
 	struct eap_method *m;
 	for (m = eap_methods; m; m = m->next) {
-		if (m->vendor == vendor && m->method == method)
+		if (m->vendor == vendor && m->method == method) {
 			return m;
+		}
 	}
 	return NULL;
 }
-
 
 /**
  * eap_peer_get_type - Get EAP type for the given EAP method name
@@ -58,7 +56,6 @@ EapType eap_peer_get_type(const char *name, int *vendor)
 	return EAP_TYPE_NONE;
 }
 
-
 /**
  * eap_get_name - Get EAP method name for the given EAP type
  * @vendor: EAP Vendor-Id (0 = IETF)
@@ -68,18 +65,19 @@ EapType eap_peer_get_type(const char *name, int *vendor)
  * This function maps EAP type numbers into EAP type names based on the list of
  * EAP methods included in the build.
  */
-const char * eap_get_name(int vendor, EapType type)
+const char *eap_get_name(int vendor, EapType type)
 {
 	struct eap_method *m;
-	if (vendor == EAP_VENDOR_IETF && type == EAP_TYPE_EXPANDED)
+	if (vendor == EAP_VENDOR_IETF && type == EAP_TYPE_EXPANDED) {
 		return "expanded";
+	}
 	for (m = eap_methods; m; m = m->next) {
-		if (m->vendor == vendor && m->method == type)
+		if (m->vendor == vendor && m->method == type) {
 			return m->name;
+		}
 	}
 	return NULL;
 }
-
 
 /**
  * eap_get_names - Get space separated list of names for supported EAP methods
@@ -94,24 +92,24 @@ size_t eap_get_names(char *buf, size_t buflen)
 	struct eap_method *m;
 	int ret;
 
-	if (buflen == 0)
+	if (buflen == 0) {
 		return 0;
+	}
 
 	pos = buf;
 	end = pos + buflen;
 
 	for (m = eap_methods; m; m = m->next) {
-		ret = os_snprintf(pos, end - pos, "%s%s",
-				  m == eap_methods ? "" : " ", m->name);
-		if (os_snprintf_error(end - pos, ret))
+		ret = os_snprintf(pos, end - pos, "%s%s", m == eap_methods ? "" : " ", m->name);
+		if (os_snprintf_error(end - pos, ret)) {
 			break;
+		}
 		pos += ret;
 	}
 	buf[buflen - 1] = '\0';
 
 	return pos - buf;
 }
-
 
 /**
  * eap_get_names_as_string_array - Get supported EAP methods as string array
@@ -123,55 +121,58 @@ size_t eap_get_names(char *buf, size_t buflen)
  * array of strings. The caller must free the returned array items and the
  * array.
  */
-char ** eap_get_names_as_string_array(size_t *num)
+char **eap_get_names_as_string_array(size_t *num)
 {
 	struct eap_method *m;
 	size_t array_len = 0;
 	char **array;
 	int i = 0, j;
 
-	for (m = eap_methods; m; m = m->next)
+	for (m = eap_methods; m; m = m->next) {
 		array_len++;
+	}
 
 	array = os_calloc(array_len + 1, sizeof(char *));
-	if (array == NULL)
+	if (array == NULL) {
 		return NULL;
+	}
 
 	for (m = eap_methods; m; m = m->next) {
 		array[i++] = os_strdup(m->name);
 		if (array[i - 1] == NULL) {
-			for (j = 0; j < i; j++)
+			for (j = 0; j < i; j++) {
 				os_free(array[j]);
+			}
 			os_free(array);
 			return NULL;
 		}
 	}
 	array[i] = NULL;
 
-	if (num)
+	if (num) {
 		*num = array_len;
+	}
 
 	return array;
 }
-
 
 /**
  * eap_peer_get_methods - Get a list of enabled EAP peer methods
  * @count: Set to number of available methods
  * Returns: List of enabled EAP peer methods
  */
-const struct eap_method * eap_peer_get_methods(size_t *count)
+const struct eap_method *eap_peer_get_methods(size_t *count)
 {
 	int c = 0;
 	struct eap_method *m;
 
-	for (m = eap_methods; m; m = m->next)
+	for (m = eap_methods; m; m = m->next) {
 		c++;
+	}
 
 	*count = c;
 	return eap_methods;
 }
-
 
 #ifdef CONFIG_DYNAMIC_EAP_METHODS
 /**
@@ -187,24 +188,21 @@ int eap_peer_method_load(const char *so)
 
 	handle = dlopen(so, RTLD_LAZY);
 	if (handle == NULL) {
-		wpa_printf(MSG_ERROR, "EAP: Failed to open dynamic EAP method "
-			   "'%s': %s", so, dlerror());
+		wpa_printf(MSG_ERROR, "EAP: Failed to open dynamic EAP method " "'%s': %s", so, dlerror());
 		return -1;
 	}
 
 	dyn_init = dlsym(handle, "eap_peer_method_dynamic_init");
 	if (dyn_init == NULL) {
 		dlclose(handle);
-		wpa_printf(MSG_ERROR, "EAP: Invalid EAP method '%s' - no "
-			   "eap_peer_method_dynamic_init()", so);
+		wpa_printf(MSG_ERROR, "EAP: Invalid EAP method '%s' - no " "eap_peer_method_dynamic_init()", so);
 		return -1;
 	}
 
 	ret = dyn_init();
 	if (ret) {
 		dlclose(handle);
-		wpa_printf(MSG_ERROR, "EAP: Failed to add EAP method '%s' - "
-			   "ret %d", so, ret);
+		wpa_printf(MSG_ERROR, "EAP: Failed to add EAP method '%s' - " "ret %d", so, ret);
 		return ret;
 	}
 
@@ -216,7 +214,6 @@ int eap_peer_method_load(const char *so)
 
 	return 0;
 }
-
 
 /**
  * eap_peer_method_unload - Unload a dynamic EAP method library (shared object)
@@ -236,33 +233,36 @@ int eap_peer_method_unload(struct eap_method *method)
 	m = eap_methods;
 	prev = NULL;
 	while (m) {
-		if (m == method)
+		if (m == method) {
 			break;
+		}
 		prev = m;
 		m = m->next;
 	}
 
-	if (m == NULL || m->dl_handle == NULL)
+	if (m == NULL || m->dl_handle == NULL) {
 		return -1;
+	}
 
-	if (prev)
+	if (prev) {
 		prev->next = m->next;
-	else
+	} else {
 		eap_methods = m->next;
+	}
 
 	handle = m->dl_handle;
 
-	if (m->free)
+	if (m->free) {
 		m->free(m);
-	else
+	} else {
 		eap_peer_method_free(m);
+	}
 
 	dlclose(handle);
 
 	return 0;
 }
-#endif /* CONFIG_DYNAMIC_EAP_METHODS */
-
+#endif							/* CONFIG_DYNAMIC_EAP_METHODS */
 
 /**
  * eap_peer_method_alloc - Allocate EAP peer method structure
@@ -276,20 +276,19 @@ int eap_peer_method_unload(struct eap_method *method)
  * The returned structure should be freed with eap_peer_method_free() when it
  * is not needed anymore.
  */
-struct eap_method * eap_peer_method_alloc(int version, int vendor,
-					  EapType method, const char *name)
+struct eap_method *eap_peer_method_alloc(int version, int vendor, EapType method, const char *name)
 {
 	struct eap_method *eap;
 	eap = os_zalloc(sizeof(*eap));
-	if (eap == NULL)
+	if (eap == NULL) {
 		return NULL;
+	}
 	eap->version = version;
 	eap->vendor = vendor;
 	eap->method = method;
 	eap->name = name;
 	return eap;
 }
-
 
 /**
  * eap_peer_method_free - Free EAP peer method structure
@@ -299,7 +298,6 @@ void eap_peer_method_free(struct eap_method *method)
 {
 	os_free(method);
 }
-
 
 /**
  * eap_peer_method_register - Register an EAP peer method
@@ -314,26 +312,25 @@ int eap_peer_method_register(struct eap_method *method)
 {
 	struct eap_method *m, *last = NULL;
 
-	if (method == NULL || method->name == NULL ||
-	    method->version != EAP_PEER_METHOD_INTERFACE_VERSION)
+	if (method == NULL || method->name == NULL || method->version != EAP_PEER_METHOD_INTERFACE_VERSION) {
 		return -1;
+	}
 
 	for (m = eap_methods; m; m = m->next) {
-		if ((m->vendor == method->vendor &&
-		     m->method == method->method) ||
-		    os_strcmp(m->name, method->name) == 0)
+		if ((m->vendor == method->vendor && m->method == method->method) || os_strcmp(m->name, method->name) == 0) {
 			return -2;
+		}
 		last = m;
 	}
 
-	if (last)
+	if (last) {
 		last->next = method;
-	else
+	} else {
 		eap_methods = method;
+	}
 
 	return 0;
 }
-
 
 /**
  * eap_peer_unregister_methods - Unregister EAP peer methods
@@ -346,7 +343,7 @@ void eap_peer_unregister_methods(void)
 	struct eap_method *m;
 #ifdef CONFIG_DYNAMIC_EAP_METHODS
 	void *handle;
-#endif /* CONFIG_DYNAMIC_EAP_METHODS */
+#endif							/* CONFIG_DYNAMIC_EAP_METHODS */
 
 	while (eap_methods) {
 		m = eap_methods;
@@ -354,16 +351,18 @@ void eap_peer_unregister_methods(void)
 
 #ifdef CONFIG_DYNAMIC_EAP_METHODS
 		handle = m->dl_handle;
-#endif /* CONFIG_DYNAMIC_EAP_METHODS */
+#endif							/* CONFIG_DYNAMIC_EAP_METHODS */
 
-		if (m->free)
+		if (m->free) {
 			m->free(m);
-		else
+		} else {
 			eap_peer_method_free(m);
+		}
 
 #ifdef CONFIG_DYNAMIC_EAP_METHODS
-		if (handle)
+		if (handle) {
 			dlclose(handle);
-#endif /* CONFIG_DYNAMIC_EAP_METHODS */
+		}
+#endif							/* CONFIG_DYNAMIC_EAP_METHODS */
 	}
 }

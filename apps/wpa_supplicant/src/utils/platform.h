@@ -18,4 +18,4 @@
 #define get_unaligned_le16(p)	le16_to_cpu(get_unaligned((uint16_t *)(p)))
 #define get_unaligned_le32(p)	le32_to_cpu(get_unaligned((uint32_t *)(p)))
 
-#endif /* PLATFORM_H */
+#endif							/* PLATFORM_H */

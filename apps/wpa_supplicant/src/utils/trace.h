@@ -42,7 +42,7 @@ void wpa_trace_add_ref_func(struct wpa_trace_ref *ref, const void *addr);
 void wpa_trace_check_ref(const void *addr);
 size_t wpa_trace_calling_func(const char *buf[], size_t len);
 
-#else /* WPA_TRACE */
+#else							/* WPA_TRACE */
 
 #define WPA_TRACE_INFO
 #define WPA_TRACE_REF(n)
@@ -53,17 +53,16 @@ size_t wpa_trace_calling_func(const char *buf[], size_t len);
 #define wpa_trace_remove_ref(ptr, name, addr) do { } while (0)
 #define wpa_trace_check_ref(addr) do { } while (0)
 
-#endif /* WPA_TRACE */
-
+#endif							/* WPA_TRACE */
 
 #ifdef WPA_TRACE_BFD
 
 void wpa_trace_dump_funcname(const char *title, void *pc);
 
-#else /* WPA_TRACE_BFD */
+#else							/* WPA_TRACE_BFD */
 
 #define wpa_trace_dump_funcname(title, pc) do { } while (0)
 
-#endif /* WPA_TRACE_BFD */
+#endif							/* WPA_TRACE_BFD */
 
-#endif /* TRACE_H */
+#endif							/* TRACE_H */

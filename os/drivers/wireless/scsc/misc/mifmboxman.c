@@ -13,8 +13,9 @@
 
 int mifmboxman_init(struct mifmboxman *mbox)
 {
-	if (mbox->in_use)
+	if (mbox->in_use) {
 		return -EBUSY;
+	}
 
 	pthread_mutex_init(&mbox->lock, NULL);
 	mbox->mbox_free = MIFMBOX_NUM;
@@ -28,28 +29,31 @@ bool mifmboxman_alloc_mboxes(struct mifmboxman *mbox, int n, int *first_mbox_ind
 {
 	unsigned int index = 0;
 	unsigned int available;
-	u8           i;
+	u8 i;
 
 	pthread_mutex_lock(&mbox->lock);
 
-	if ((n > MIFMBOX_NUM) || (n == 0) || !mbox->in_use)
+	if ((n > MIFMBOX_NUM) || (n == 0) || !mbox->in_use) {
 		goto error;
+	}
 
 	while (index <= (MIFMBOX_NUM - n)) {
 		available = 0;
 
 		/* Search consecutive blocks */
 		for (i = 0; i < n; i++) {
-			if (test_bit((i + index), mbox->bitmap))
+			if (test_bit((i + index), mbox->bitmap)) {
 				break;
+			}
 			available++;
 		}
 
 		if (available == n) {
 			*first_mbox_index = index;
 
-			for (i = 0; i < n; i++)
+			for (i = 0; i < n; i++) {
 				set_bit(index++, mbox->bitmap);
+			}
 
 			mbox->mbox_free -= n;
 			goto exit;
@@ -71,11 +75,9 @@ void mifmboxman_free_mboxes(struct mifmboxman *mbox, int first_mbox_index, int n
 	int index = 0;
 	int total_free = 0;
 
-	if ((n > MIFMBOX_NUM) ||
-	    ((n + first_mbox_index) > MIFMBOX_NUM) ||
-	    (n == 0) ||
-	    !mbox->in_use)
+	if ((n > MIFMBOX_NUM) || ((n + first_mbox_index) > MIFMBOX_NUM) || (n == 0) || !mbox->in_use) {
 		goto error;
+	}
 
 	pthread_mutex_lock(&mbox->lock);
 	for (index = first_mbox_index; index < (first_mbox_index + n); index++)
@@ -92,7 +94,7 @@ error:
 	pr_err("%s: Error freeing mbox\n", __func__);
 }
 
-u32 *mifmboxman_get_mbox_ptr(struct mifmboxman *mbox,  struct scsc_mif_abs *mif_abs, int mbox_index)
+u32 *mifmboxman_get_mbox_ptr(struct mifmboxman *mbox, struct scsc_mif_abs *mif_abs, int mbox_index)
 {
 	/* Avoid unused parameter error */
 	(void)mbox;
@@ -100,11 +102,11 @@ u32 *mifmboxman_get_mbox_ptr(struct mifmboxman *mbox,  struct scsc_mif_abs *mif_
 	return mif_abs->get_mbox_ptr(mif_abs, mbox_index);
 }
 
-
 int mifmboxman_deinit(struct mifmboxman *mbox)
 {
-	if (!mbox->in_use)
+	if (!mbox->in_use) {
 		return -ENODEV;
+	}
 	mbox->in_use = false;
 	return 0;
 }

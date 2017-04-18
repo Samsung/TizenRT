@@ -11,7 +11,6 @@
 #include "common.h"
 #include "sha256.h"
 
-
 /**
  * tls_prf_sha256 - Pseudo-Random Function for TLS v1.2 (P_SHA256, RFC 5246)
  * @secret: Key for PRF
@@ -26,8 +25,7 @@
  * This function is used to derive new, cryptographically separate keys from a
  * given key in TLS. This PRF is defined in RFC 2246, Chapter 5.
  */
-void tls_prf_sha256(const u8 *secret, size_t secret_len, const char *label,
-		    const u8 *seed, size_t seed_len, u8 *out, size_t outlen)
+void tls_prf_sha256(const u8 *secret, size_t secret_len, const char *label, const u8 *seed, size_t seed_len, u8 *out, size_t outlen)
 {
 	size_t clen;
 	u8 A[SHA256_MAC_LEN];
@@ -38,7 +36,7 @@ void tls_prf_sha256(const u8 *secret, size_t secret_len, const char *label,
 
 	addr[0] = A;
 	len[0] = SHA256_MAC_LEN;
-	addr[1] = (unsigned char *) label;
+	addr[1] = (unsigned char *)label;
 	len[1] = os_strlen(label);
 	addr[2] = seed;
 	len[2] = seed_len;
@@ -58,8 +56,9 @@ void tls_prf_sha256(const u8 *secret, size_t secret_len, const char *label,
 		hmac_sha256(secret, secret_len, A, SHA256_MAC_LEN, A);
 
 		clen = outlen - pos;
-		if (clen > SHA256_MAC_LEN)
+		if (clen > SHA256_MAC_LEN) {
 			clen = SHA256_MAC_LEN;
+		}
 		os_memcpy(out + pos, P, clen);
 		pos += clen;
 	}

@@ -5,7 +5,6 @@
  *  @version    v0.50 : 2016.8.13 Init. release version
  */
 
-
 #ifndef MB_CMD_HMAC_H_
 #define MB_CMD_HMAC_H_
 
@@ -13,8 +12,7 @@
 
 //! @struct sHMAC_MSG
 //! @brief struct of message for HMAC
-struct sHMAC_MSG
-{
+struct sHMAC_MSG {
 	unsigned int addr_low;
 	unsigned int addr_high;
 	unsigned int descriptor_byte_len;
@@ -22,6 +20,4 @@ struct sHMAC_MSG
 	unsigned int msg_type;
 };
 
-
-#endif /* MB_CMD_HMAC_H_ */
-
+#endif							/* MB_CMD_HMAC_H_ */

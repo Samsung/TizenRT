@@ -53,33 +53,31 @@
 #include <fcntl.h>
 #include <tinyara/pwm.h>
 
-#define c3   3822 	/* PWM: 130.82 Hz, note freq: 130.81 Hz, error 0.01% */
-#define e3   3034 	/* PWM: 164.80 Hz, note freq: 164.81 Hz, error 0.01% */
-#define g3x  2408 	/* PWM: 207.64 Hz, note freq: 207.65 Hz, error 0.01% */
-#define a3   2273 	/* PWM: 219.97 Hz, note freq: 220.00 Hz, error 0.01% */
-#define b3   2025 	/* PWM: 246.91 Hz, note freq: 246.94 Hz, error 0.01% */
-#define c4   1911 	/* PWM: 261.64 Hz, note freq: 261.63 Hz, error 0.01% */
-#define d4   1703 	/* PWM: 293.60 Hz, note freq: 293.66 Hz, error 0.02% */
-#define d4x  1607 	/* PWM: 311.14 Hz, note freq: 311.13 Hz, error 0.00% */
-#define e4   1517 	/* PWM: 329.60 Hz, note freq: 329.63 Hz, error 0.01% */
-#define f4   1432 	/* PWM: 349.16 Hz, note freq: 349.23 Hz, error 0.02% */
-#define g4   1276 	/* PWM: 391.85 Hz, note freq: 392.00 Hz, error 0.04% */
-#define a4   1136 	/* PWM: 440.14 Hz, note freq: 440.00 Hz, error 0.03% */
-#define h4   1012 	/* PWM: 494.07 Hz, note freq: 493.88 Hz, error 0.04% */
-#define c5   956  	/* PWM: 523.01 Hz, note freq: 523.25 Hz, error 0.05% */
+#define c3   3822				/* PWM: 130.82 Hz, note freq: 130.81 Hz, error 0.01% */
+#define e3   3034				/* PWM: 164.80 Hz, note freq: 164.81 Hz, error 0.01% */
+#define g3x  2408				/* PWM: 207.64 Hz, note freq: 207.65 Hz, error 0.01% */
+#define a3   2273				/* PWM: 219.97 Hz, note freq: 220.00 Hz, error 0.01% */
+#define b3   2025				/* PWM: 246.91 Hz, note freq: 246.94 Hz, error 0.01% */
+#define c4   1911				/* PWM: 261.64 Hz, note freq: 261.63 Hz, error 0.01% */
+#define d4   1703				/* PWM: 293.60 Hz, note freq: 293.66 Hz, error 0.02% */
+#define d4x  1607				/* PWM: 311.14 Hz, note freq: 311.13 Hz, error 0.00% */
+#define e4   1517				/* PWM: 329.60 Hz, note freq: 329.63 Hz, error 0.01% */
+#define f4   1432				/* PWM: 349.16 Hz, note freq: 349.23 Hz, error 0.02% */
+#define g4   1276				/* PWM: 391.85 Hz, note freq: 392.00 Hz, error 0.04% */
+#define a4   1136				/* PWM: 440.14 Hz, note freq: 440.00 Hz, error 0.03% */
+#define h4   1012				/* PWM: 494.07 Hz, note freq: 493.88 Hz, error 0.04% */
+#define c5   956				/* PWM: 523.01 Hz, note freq: 523.25 Hz, error 0.05% */
 #define p    1
 
-int octavef[] = {c4, d4, e4, f4, g4, a4, h4, c5};
-int octaved[] = {8, 8, 8, 8, 8, 8, 8, 8};
+int octavef[] = { c4, d4, e4, f4, g4, a4, h4, c5 };
+int octaved[] = { 8, 8, 8, 8, 8, 8, 8, 8 };
 
-int furelisef[] =
-{
+int furelisef[] = {
 	e4, d4x, e4, d4x, e4, b3, d4, c4, a3, p, c3, e3, a3, b3, p, e3, g3x, b3, c4, p, e3,
 	e3, d4x, e4, d4x, e4, b3, d4, c4, a3, p, c3, e3, a3, b3, p, e3, c4, b3, a3
 };
 
-int furelised[] =
-{
+int furelised[] = {
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
 	8, 8, 8, 4, 8, 8, 8, 8, 4, 8, 8,
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,

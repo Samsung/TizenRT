@@ -406,7 +406,7 @@
 #define MPU9250_MAG_ZOUT_H              0x08
 #define MPU9250_MAG_ST2                 0x09
 #define MPU9250_MAG_CNTL                0x0A
-#define MPU9250_MAG_RSV                 0x0B /* reserved mystery meat */
+#define MPU9250_MAG_RSV                 0x0B	/* reserved mystery meat */
 #define MPU9250_MAG_ASTC                0x0C
 #define MPU9250_MAG_TS1                 0x0D
 #define MPU9250_MAG_TS2                 0x0E
@@ -431,4 +431,4 @@
  ****************************************************************************/
 int mpu9250_main(int argc, char *argv[]);
 
-#endif /* __APPS_EXAMPLES_SENSORBD_EXAMPLES_I2C_MPU9250_H */
+#endif							/* __APPS_EXAMPLES_SENSORBD_EXAMPLES_I2C_MPU9250_H */

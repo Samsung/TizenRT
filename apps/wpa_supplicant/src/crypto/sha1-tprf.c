@@ -26,8 +26,7 @@
  * This function is used to derive new, cryptographically separate keys from a
  * given key for EAP-FAST. T-PRF is defined in RFC 4851, Section 5.5.
  */
-int sha1_t_prf(const u8 *key, size_t key_len, const char *label,
-	       const u8 *seed, size_t seed_len, u8 *buf, size_t buf_len)
+int sha1_t_prf(const u8 *key, size_t key_len, const char *label, const u8 *seed, size_t seed_len, u8 *buf, size_t buf_len)
 {
 	unsigned char counter = 0;
 	size_t pos, plen;
@@ -39,7 +38,7 @@ int sha1_t_prf(const u8 *key, size_t key_len, const char *label,
 
 	addr[0] = hash;
 	len[0] = 0;
-	addr[1] = (unsigned char *) label;
+	addr[1] = (unsigned char *)label;
 	len[1] = label_len + 1;
 	addr[2] = seed;
 	len[2] = seed_len;
@@ -54,8 +53,9 @@ int sha1_t_prf(const u8 *key, size_t key_len, const char *label,
 	while (pos < buf_len) {
 		counter++;
 		plen = buf_len - pos;
-		if (hmac_sha1_vector(key, key_len, 5, addr, len, hash))
+		if (hmac_sha1_vector(key, key_len, 5, addr, len, hash)) {
 			return -1;
+		}
 		if (plen >= SHA1_MAC_LEN) {
 			os_memcpy(&buf[pos], hash, SHA1_MAC_LEN);
 			pos += SHA1_MAC_LEN;

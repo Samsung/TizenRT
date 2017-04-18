@@ -19,4 +19,4 @@ int linux_br_add_if(int sock, const char *brname, const char *ifname);
 int linux_br_del_if(int sock, const char *brname, const char *ifname);
 int linux_br_get(char *brname, const char *ifname);
 
-#endif /* LINUX_IOCTL_H */
+#endif							/* LINUX_IOCTL_H */

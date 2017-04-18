@@ -59,24 +59,24 @@
  * All data in the header is little endian on all platforms.
  */
 struct ieee80211_radiotap_header {
-	uint8_t it_version;	/* Version 0. Only increases
-				 * for drastic changes,
-				 * introduction of compatible
-				 * new fields does not count.
-				 */
+	uint8_t it_version;			/* Version 0. Only increases
+								 * for drastic changes,
+								 * introduction of compatible
+								 * new fields does not count.
+								 */
 	uint8_t it_pad;
-	uint16_t it_len;	/* length of the whole
-				 * header in bytes, including
-				 * it_version, it_pad,
-				 * it_len, and data fields.
-				 */
-	uint32_t it_present;	/* A bitmap telling which
-				 * fields are present. Set bit 31
-				 * (0x80000000) to extend the
-				 * bitmap by another 32 bits.
-				 * Additional extensions are made
-				 * by setting bit 31.
-				 */
+	uint16_t it_len;			/* length of the whole
+								 * header in bytes, including
+								 * it_version, it_pad,
+								 * it_len, and data fields.
+								 */
+	uint32_t it_present;		/* A bitmap telling which
+								 * fields are present. Set bit 31
+								 * (0x80000000) to extend the
+								 * bitmap by another 32 bits.
+								 * Additional extensions are made
+								 * by setting bit 31.
+								 */
 };
 
 /* Name                                 Data type    Units
@@ -225,31 +225,31 @@ enum ieee80211_radiotap_type {
 
 /* For IEEE80211_RADIOTAP_FLAGS */
 #define	IEEE80211_RADIOTAP_F_CFP	0x01	/* sent/received
-						 * during CFP
-						 */
+											 * during CFP
+											 */
 #define	IEEE80211_RADIOTAP_F_SHORTPRE	0x02	/* sent/received
-						 * with short
-						 * preamble
-						 */
+												 * with short
+												 * preamble
+												 */
 #define	IEEE80211_RADIOTAP_F_WEP	0x04	/* sent/received
-						 * with WEP encryption
-						 */
+											 * with WEP encryption
+											 */
 #define	IEEE80211_RADIOTAP_F_FRAG	0x08	/* sent/received
-						 * with fragmentation
-						 */
+											 * with fragmentation
+											 */
 #define	IEEE80211_RADIOTAP_F_FCS	0x10	/* frame includes FCS */
 #define	IEEE80211_RADIOTAP_F_DATAPAD	0x20	/* frame has padding between
-						 * 802.11 header and payload
-						 * (to 32-bit boundary)
-						 */
+												 * 802.11 header and payload
+												 * (to 32-bit boundary)
+												 */
 #define IEEE80211_RADIOTAP_F_BADFCS	0x40	/* frame failed FCS check */
 
 /* For IEEE80211_RADIOTAP_RX_FLAGS */
-#define IEEE80211_RADIOTAP_F_RX_BADPLCP	0x0002 /* bad PLCP */
+#define IEEE80211_RADIOTAP_F_RX_BADPLCP	0x0002	/* bad PLCP */
 
 /* For IEEE80211_RADIOTAP_TX_FLAGS */
 #define IEEE80211_RADIOTAP_F_TX_FAIL	0x0001	/* failed due to excessive
-						 * retries */
+												 * retries */
 #define IEEE80211_RADIOTAP_F_TX_CTS	0x0002	/* used cts 'protection' */
 #define IEEE80211_RADIOTAP_F_TX_RTS	0x0004	/* used rts/cts handshake */
 #define IEEE80211_RADIOTAP_F_TX_NOACK	0x0008	/* don't expect an ACK */
@@ -272,7 +272,6 @@ enum ieee80211_radiotap_type {
 #define IEEE80211_RADIOTAP_MCS_HAVE_NESS	0x40
 #define IEEE80211_RADIOTAP_MCS_NESS_BIT1	0x80
 
-
 #define IEEE80211_RADIOTAP_MCS_BW_MASK		0x03
 #define		IEEE80211_RADIOTAP_MCS_BW_20	0
 #define		IEEE80211_RADIOTAP_MCS_BW_40	1
@@ -288,4 +287,4 @@ enum ieee80211_radiotap_type {
 #define		IEEE80211_RADIOTAP_MCS_STBC_3	3
 #define IEEE80211_RADIOTAP_MCS_NESS_BIT0	0x80
 
-#endif				/* IEEE80211_RADIOTAP_H */
+#endif							/* IEEE80211_RADIOTAP_H */

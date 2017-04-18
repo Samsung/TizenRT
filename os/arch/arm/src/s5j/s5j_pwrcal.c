@@ -100,37 +100,41 @@ int cal_clk_setrate(unsigned int id, unsigned long rate)
 {
 	unsigned long parents;
 	unsigned int div;
-	switch(id) {
+	switch (id) {
 	case d1_spi0:
 		/* CLK_CON_DIV_DIV_CLK_SPI */
 		parents = SPI_CLK;
 		div = parents / rate;
-		if (div == 0)
+		if (div == 0) {
 			div = 1;
+		}
 		modifyreg32(S5J_CON_DIV_CLK_SPI0, 0x7ff, (div - 1));
 		break;
 	case d1_spi1:
 		/* CLK_CON_DIV_DIV_CLK_SPI1 */
 		parents = SPI_CLK;
 		div = parents / rate;
-		if (div == 0)
+		if (div == 0) {
 			div = 1;
+		}
 		modifyreg32(S5J_CON_DIV_CLK_SPI1, 0x7FF, (div - 1));
 		break;
 	case d1_spi2:
 		/* CLK_CON_DIV_DIV_CLK_SPI2 */
 		parents = SPI_CLK;
 		div = parents / rate;
-		if (div == 0)
+		if (div == 0) {
 			div = 1;
+		}
 		modifyreg32(S5J_CON_DIV_CLK_SPI2, 0x7ff, (div - 1));
 		break;
 	case d1_spi3:
 		/* CLK_CON_DIV_DIV_CLK_SPI3 */
 		parents = SPI_CLK;
 		div = parents / rate;
-		if (div == 0)
+		if (div == 0) {
 			div = 1;
+		}
 		modifyreg32(S5J_CON_DIV_CLK_SPI3, 0x7ff, (div - 1));
 		break;
 	case gate_hsi2c0:
@@ -155,8 +159,7 @@ unsigned long cal_clk_getrate(unsigned int id)
 {
 	unsigned long rate=0;
 
-	switch(id)
-	{
+	switch (id) {
 	case d1_spi0:
 		break;
 	case d1_spi1:

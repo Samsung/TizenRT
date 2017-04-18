@@ -19,7 +19,7 @@ struct ieee802_11_elems {
 	const u8 *ext_supp_rates;
 	const u8 *wpa_ie;
 	const u8 *rsn_ie;
-	const u8 *wmm; /* WMM Information or Parameter Element */
+	const u8 *wmm;				/* WMM Information or Parameter Element */
 	const u8 *wmm_tspec;
 	const u8 *wps_ie;
 	const u8 *supp_channels;
@@ -55,7 +55,7 @@ struct ieee802_11_elems {
 	u8 ext_supp_rates_len;
 	u8 wpa_ie_len;
 	u8 rsn_ie_len;
-	u8 wmm_len; /* 7 = WMM Information; 24 = WMM Parameter */
+	u8 wmm_len;					/* 7 = WMM Information; 24 = WMM Parameter */
 	u8 wmm_tspec_len;
 	u8 wps_ie_len;
 	u8 supp_channels_len;
@@ -80,30 +80,26 @@ struct ieee802_11_elems {
 
 typedef enum { ParseOK = 0, ParseUnknown = 1, ParseFailed = -1 } ParseRes;
 
-ParseRes ieee802_11_parse_elems(const u8 *start, size_t len,
-				struct ieee802_11_elems *elems,
-				int show_errors);
+ParseRes ieee802_11_parse_elems(const u8 *start, size_t len, struct ieee802_11_elems *elems, int show_errors);
 int ieee802_11_ie_count(const u8 *ies, size_t ies_len);
-struct wpabuf * ieee802_11_vendor_ie_concat(const u8 *ies, size_t ies_len,
-					    u32 oui_type);
+struct wpabuf *ieee802_11_vendor_ie_concat(const u8 *ies, size_t ies_len, u32 oui_type);
 struct ieee80211_hdr;
-const u8 * get_hdr_bssid(const struct ieee80211_hdr *hdr, size_t len);
+const u8 *get_hdr_bssid(const struct ieee80211_hdr *hdr, size_t len);
 
 struct hostapd_wmm_ac_params {
 	int cwmin;
 	int cwmax;
 	int aifs;
-	int txop_limit; /* in units of 32us */
+	int txop_limit;				/* in units of 32us */
 	int admission_control_mandatory;
 };
 
-int hostapd_config_wmm_ac(struct hostapd_wmm_ac_params wmm_ac_params[],
-			  const char *name, const char *val);
+int hostapd_config_wmm_ac(struct hostapd_wmm_ac_params wmm_ac_params[], const char *name, const char *val);
 enum hostapd_hw_mode ieee80211_freq_to_chan(int freq, u8 *channel);
 int ieee80211_chan_to_freq(const char *country, u8 op_class, u8 chan);
 int ieee80211_is_dfs(int freq);
 
 int supp_rates_11b_only(struct ieee802_11_elems *elems);
 
-const char * fc2str(u16 fc);
-#endif /* IEEE802_11_COMMON_H */
+const char *fc2str(u16 fc);
+#endif							/* IEEE802_11_COMMON_H */

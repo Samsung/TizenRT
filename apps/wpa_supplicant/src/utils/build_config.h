@@ -44,7 +44,7 @@
 #define CONFIG_TLS_INTERNAL_CLIENT
 #define CONFIG_INTERNAL_LIBTOMMATH
 #define CONFIG_CRYPTO_INTERNAL
-#endif /* USE_INTERNAL_CRYPTO */
-#endif /* CONFIG_WIN32_DEFAULTS */
+#endif							/* USE_INTERNAL_CRYPTO */
+#endif							/* CONFIG_WIN32_DEFAULTS */
 
-#endif /* BUILD_CONFIG_H */
+#endif							/* BUILD_CONFIG_H */

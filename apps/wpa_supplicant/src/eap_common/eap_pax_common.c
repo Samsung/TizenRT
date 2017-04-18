@@ -12,7 +12,6 @@
 #include "crypto/sha1.h"
 #include "eap_pax_common.h"
 
-
 /**
  * eap_pax_kdf - PAX Key Derivation Function
  * @mac_id: MAC ID (EAP_PAX_MAC_*) / currently, only HMAC_SHA1_128 is supported
@@ -27,10 +26,7 @@
  *
  * RFC 4746, Section 2.6: PAX-KDF-W(X, Y, Z)
  */
-int eap_pax_kdf(u8 mac_id, const u8 *key, size_t key_len,
-		const char *identifier,
-		const u8 *entropy, size_t entropy_len,
-		size_t output_len, u8 *output)
+int eap_pax_kdf(u8 mac_id, const u8 *key, size_t key_len, const char *identifier, const u8 *entropy, size_t entropy_len, size_t output_len, u8 *output)
 {
 	u8 mac[SHA1_MAC_LEN];
 	u8 counter, *pos;
@@ -39,14 +35,16 @@ int eap_pax_kdf(u8 mac_id, const u8 *key, size_t key_len,
 	size_t num_blocks, left;
 
 	num_blocks = (output_len + EAP_PAX_MAC_LEN - 1) / EAP_PAX_MAC_LEN;
-	if (identifier == NULL || num_blocks >= 255)
+	if (identifier == NULL || num_blocks >= 255) {
 		return -1;
+	}
 
 	/* TODO: add support for EAP_PAX_HMAC_SHA256_128 */
-	if (mac_id != EAP_PAX_MAC_HMAC_SHA1_128)
+	if (mac_id != EAP_PAX_MAC_HMAC_SHA1_128) {
 		return -1;
+	}
 
-	addr[0] = (const u8 *) identifier;
+	addr[0] = (const u8 *)identifier;
 	len[0] = os_strlen(identifier);
 	addr[1] = entropy;
 	len[1] = entropy_len;
@@ -66,7 +64,6 @@ int eap_pax_kdf(u8 mac_id, const u8 *key, size_t key_len,
 	return 0;
 }
 
-
 /**
  * eap_pax_mac - EAP-PAX MAC
  * @mac_id: MAC ID (EAP_PAX_MAC_*) / currently, only HMAC_SHA1_128 is supported
@@ -83,11 +80,7 @@ int eap_pax_kdf(u8 mac_id, const u8 *key, size_t key_len,
  *
  * Wrapper function to calculate EAP-PAX MAC.
  */
-int eap_pax_mac(u8 mac_id, const u8 *key, size_t key_len,
-		const u8 *data1, size_t data1_len,
-		const u8 *data2, size_t data2_len,
-		const u8 *data3, size_t data3_len,
-		u8 *mac)
+int eap_pax_mac(u8 mac_id, const u8 *key, size_t key_len, const u8 *data1, size_t data1_len, const u8 *data2, size_t data2_len, const u8 *data3, size_t data3_len, u8 *mac)
 {
 	u8 hash[SHA1_MAC_LEN];
 	const u8 *addr[3];
@@ -95,8 +88,9 @@ int eap_pax_mac(u8 mac_id, const u8 *key, size_t key_len,
 	size_t count;
 
 	/* TODO: add support for EAP_PAX_HMAC_SHA256_128 */
-	if (mac_id != EAP_PAX_MAC_HMAC_SHA1_128)
+	if (mac_id != EAP_PAX_MAC_HMAC_SHA1_128) {
 		return -1;
+	}
 
 	addr[0] = data1;
 	len[0] = data1_len;
@@ -112,7 +106,6 @@ int eap_pax_mac(u8 mac_id, const u8 *key, size_t key_len,
 	return 0;
 }
 
-
 /**
  * eap_pax_initial_key_derivation - EAP-PAX initial key derivation
  * @mac_id: MAC ID (EAP_PAX_MAC_*) / currently, only HMAC_SHA1_128 is supported
@@ -124,19 +117,12 @@ int eap_pax_mac(u8 mac_id, const u8 *key, size_t key_len,
  * @mid: Buffer for the derived Method ID
  * Returns: 0 on success, -1 on failure
  */
-int eap_pax_initial_key_derivation(u8 mac_id, const u8 *ak, const u8 *e,
-				   u8 *mk, u8 *ck, u8 *ick, u8 *mid)
+int eap_pax_initial_key_derivation(u8 mac_id, const u8 *ak, const u8 *e, u8 *mk, u8 *ck, u8 *ick, u8 *mid)
 {
 	wpa_printf(MSG_DEBUG, "EAP-PAX: initial key derivation");
-	if (eap_pax_kdf(mac_id, ak, EAP_PAX_AK_LEN, "Master Key",
-			e, 2 * EAP_PAX_RAND_LEN, EAP_PAX_MK_LEN, mk) ||
-	    eap_pax_kdf(mac_id, mk, EAP_PAX_MK_LEN, "Confirmation Key",
-			e, 2 * EAP_PAX_RAND_LEN, EAP_PAX_CK_LEN, ck) ||
-	    eap_pax_kdf(mac_id, mk, EAP_PAX_MK_LEN, "Integrity Check Key",
-			e, 2 * EAP_PAX_RAND_LEN, EAP_PAX_ICK_LEN, ick) ||
-	    eap_pax_kdf(mac_id, mk, EAP_PAX_MK_LEN, "Method ID",
-			e, 2 * EAP_PAX_RAND_LEN, EAP_PAX_MID_LEN, mid))
+	if (eap_pax_kdf(mac_id, ak, EAP_PAX_AK_LEN, "Master Key", e, 2 * EAP_PAX_RAND_LEN, EAP_PAX_MK_LEN, mk) || eap_pax_kdf(mac_id, mk, EAP_PAX_MK_LEN, "Confirmation Key", e, 2 * EAP_PAX_RAND_LEN, EAP_PAX_CK_LEN, ck) || eap_pax_kdf(mac_id, mk, EAP_PAX_MK_LEN, "Integrity Check Key", e, 2 * EAP_PAX_RAND_LEN, EAP_PAX_ICK_LEN, ick) || eap_pax_kdf(mac_id, mk, EAP_PAX_MK_LEN, "Method ID", e, 2 * EAP_PAX_RAND_LEN, EAP_PAX_MID_LEN, mid)) {
 		return -1;
+	}
 
 	wpa_hexdump_key(MSG_MSGDUMP, "EAP-PAX: AK", ak, EAP_PAX_AK_LEN);
 	wpa_hexdump_key(MSG_MSGDUMP, "EAP-PAX: MK", mk, EAP_PAX_MK_LEN);

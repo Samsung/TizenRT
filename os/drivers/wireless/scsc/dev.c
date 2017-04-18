@@ -47,8 +47,7 @@ static void slsi_regd_init(struct slsi_dev *sdev)
 		/* Channel 1 - 11, allow channel 12 and 13 as well (NO_IR restriction removed) */
 		SLSI_REG_RULE(2412 - 10, 2472 + 10, 20, 0, 20, 0),
 		/* Channel 14 */
-		SLSI_REG_RULE(2484 - 10, 2484 + 10, 20, 0, 20, (SLSI_80211_RRF_PASSIVE_SCAN |
-								SLSI_80211_RRF_NO_OFDM)),
+		SLSI_REG_RULE(2484 - 10, 2484 + 10, 20, 0, 20, (SLSI_80211_RRF_PASSIVE_SCAN | SLSI_80211_RRF_NO_OFDM)),
 		/* Channel 36 - 48 */
 		SLSI_REG_RULE(5180 - 10, 5240 + 10, 80, 0, 20, 0),
 		/* Channel 149 - 165 */
@@ -58,7 +57,7 @@ static void slsi_regd_init(struct slsi_dev *sdev)
 		/* Channel 100 - 140 */
 		SLSI_REG_RULE(5500 - 10, 5700 + 10, 80, 0, 20, SLSI_80211_RRF_DFS),
 	};
-	int                        i;
+	int i;
 #endif
 
 	SLSI_DBG1_NODEV(SLSI_INIT_DEINIT, "regulatory init\n");
@@ -66,8 +65,9 @@ static void slsi_regd_init(struct slsi_dev *sdev)
 	SLSI_DBG1(sdev, SLSI_INIT_DEINIT, "chip ver=Maxwell, chan supp=2.4 GHz");
 #ifdef CONFIG_SCSC_ADV_FEATURE
 	slsi_world_regdom_custom->n_reg_rules = 6;
-	for (i = 0; i < slsi_world_regdom_custom->n_reg_rules; i++)
+	for (i = 0; i < slsi_world_regdom_custom->n_reg_rules; i++) {
 		slsi_world_regdom_custom->reg_rules[i] = reg_rules[i];
+	}
 
 	/* Country code '00' indicates world regulatory domain */
 	slsi_world_regdom_custom->alpha2[0] = '0';
@@ -115,8 +115,9 @@ struct slsi_dev *slsi_dev_attach(struct scsc_mx *core, struct scsc_service_clien
 	slsi_sig_send_init(&sdev->sig_wait);
 	sdev->tx_host_tag = 1;
 
-	if (slsi_mbuf_work_init(sdev, NULL, &sdev->rx_dbg_sap, "slsi_wlan_rx_dbg_sap", slsi_rx_dbg_sap_work) != 0)
+	if (slsi_mbuf_work_init(sdev, NULL, &sdev->rx_dbg_sap, "slsi_wlan_rx_dbg_sap", slsi_rx_dbg_sap_work) != 0) {
 		goto err_if;
+	}
 	SLSI_INFO_NODEV("Call slsi_netif_init()\n");
 	if (slsi_netif_init(sdev) != 0) {
 		SLSI_ERR(sdev, "Can not create the network interface\n");
@@ -132,7 +133,6 @@ struct slsi_dev *slsi_dev_attach(struct scsc_mx *core, struct scsc_service_clien
 		SLSI_ERR(sdev, "failed to init UDI\n");
 		goto err_hip_init;
 	}
-
 #ifdef CONFIG_SCSC_ADV_FEATURE
 	/* update regulatory domain */
 	slsi_regd_init(sdev);
@@ -202,8 +202,9 @@ void slsi_dev_detach(struct slsi_dev *sdev)
 
 #ifdef CONFIG_SCSC_ENABLE_P2P
 	WARN_ON(sdev->device_wq == NULL);
-	if (sdev->device_wq)
+	if (sdev->device_wq) {
 		flush_workqueue(sdev->device_wq);
+	}
 #endif
 	sdev->scan_init_24g = false;
 
@@ -240,13 +241,16 @@ int slsi_dev_load(void)
 	SLSI_INFO_NODEV("--- WLANLITE mode ---\n");
 #endif
 
-	if (slsi_udi_init())
+	if (slsi_udi_init()) {
 		SLSI_INFO_NODEV("Failed to init udi - continuing\n");
-	if (mx_mmap_init())
+	}
+	if (mx_mmap_init()) {
 		SLSI_INFO_NODEV("Failed to init gdb_transport - continuing\n");
+	}
 
-	if (slsi_sm_service_driver_register())
+	if (slsi_sm_service_driver_register()) {
 		SLSI_INFO_NODEV("slsi_sm_service_driver_register failed - continuing\n");
+	}
 
 	/* Register SAPs */
 	sap_mlme_init();
@@ -262,7 +266,7 @@ int slsi_dev_load(void)
 	return 0;
 }
 
-void  slsi_dev_unload(void)
+void slsi_dev_unload(void)
 {
 	SLSI_INFO_NODEV("Unloading Maxwell Wi-Fi driver\n");
 

@@ -719,7 +719,7 @@ static ssize_t ee_fwrite(FAR struct file *filep, FAR const char *buffer, size_t 
 	if (eedev->org_size == 1) {
 		if (filep->f_pos & 1) {
 			ee_read(eedev, filep->f_pos & ~1, (char *)&buff_2, 2);
-			buff_2 = (buff_2 & 0x00FF) | ((((uint16_t) *buffer) << 8) & 0xFF00);
+			buff_2 = (buff_2 & 0x00FF) | ((((uint16_t)*buffer) << 8) & 0xFF00);
 			ee_write(eedev, filep->f_pos & ~1, (char *)&buff_2, 2);
 
 			len--;
@@ -737,7 +737,7 @@ static ssize_t ee_fwrite(FAR struct file *filep, FAR const char *buffer, size_t 
 
 		if (len == 1) {
 			ee_read(eedev, filep->f_pos, (char *)&buff_2, 2);
-			buff_2 = (buff_2 & 0xFF00) | (((uint16_t) *buffer) & 0x00FF);
+			buff_2 = (buff_2 & 0xFF00) | (((uint16_t)*buffer) & 0x00FF);
 			ee_write(eedev, filep->f_pos, (char *)&buff_2, 2);
 
 			len--;

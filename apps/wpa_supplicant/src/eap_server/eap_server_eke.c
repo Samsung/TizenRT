@@ -13,7 +13,6 @@
 #include "eap_server/eap_i.h"
 #include "eap_common/eap_eke_common.h"
 
-
 struct eap_eke_data {
 	enum {
 		IDENTITY, COMMIT, CONFIRM, FAILURE_REPORT, SUCCESS, FAILURE
@@ -34,8 +33,7 @@ struct eap_eke_data {
 	u32 failure_code;
 };
 
-
-static const char * eap_eke_state_txt(int state)
+static const char *eap_eke_state_txt(int state)
 {
 	switch (state) {
 	case IDENTITY:
@@ -55,15 +53,11 @@ static const char * eap_eke_state_txt(int state)
 	}
 }
 
-
 static void eap_eke_state(struct eap_eke_data *data, int state)
 {
-	wpa_printf(MSG_DEBUG, "EAP-EKE: %s -> %s",
-		   eap_eke_state_txt(data->state),
-		   eap_eke_state_txt(state));
+	wpa_printf(MSG_DEBUG, "EAP-EKE: %s -> %s", eap_eke_state_txt(data->state), eap_eke_state_txt(state));
 	data->state = state;
 }
-
 
 static void eap_eke_fail(struct eap_eke_data *data, u32 code)
 {
@@ -72,31 +66,31 @@ static void eap_eke_fail(struct eap_eke_data *data, u32 code)
 	eap_eke_state(data, FAILURE_REPORT);
 }
 
-
-static void * eap_eke_init(struct eap_sm *sm)
+static void *eap_eke_init(struct eap_sm *sm)
 {
 	struct eap_eke_data *data;
 	size_t i;
 
 	data = os_zalloc(sizeof(*data));
-	if (data == NULL)
+	if (data == NULL) {
 		return NULL;
+	}
 	eap_eke_state(data, IDENTITY);
 
 	data->serverid_type = EAP_EKE_ID_OPAQUE;
 	for (i = 0; i < sm->server_id_len; i++) {
-		if (sm->server_id[i] == '.' &&
-		    data->serverid_type == EAP_EKE_ID_OPAQUE)
+		if (sm->server_id[i] == '.' && data->serverid_type == EAP_EKE_ID_OPAQUE) {
 			data->serverid_type = EAP_EKE_ID_FQDN;
-		if (sm->server_id[i] == '@')
+		}
+		if (sm->server_id[i] == '@') {
 			data->serverid_type = EAP_EKE_ID_NAI;
+		}
 	}
 
 	data->phase2 = sm->init_phase2;
 
 	return data;
 }
-
 
 static void eap_eke_reset(struct eap_sm *sm, void *priv)
 {
@@ -107,17 +101,14 @@ static void eap_eke_reset(struct eap_sm *sm, void *priv)
 	bin_clear_free(data, sizeof(*data));
 }
 
-
-static struct wpabuf * eap_eke_build_msg(struct eap_eke_data *data,
-					 u8 id, size_t length, u8 eke_exch)
+static struct wpabuf *eap_eke_build_msg(struct eap_eke_data *data, u8 id, size_t length, u8 eke_exch)
 {
 	struct wpabuf *msg;
 	size_t plen;
 
 	plen = 1 + length;
 
-	msg = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_EKE, plen,
-			    EAP_CODE_REQUEST, id);
+	msg = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_EKE, plen, EAP_CODE_REQUEST, id);
 	if (msg == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-EKE: Failed to allocate memory");
 		return NULL;
@@ -128,43 +119,32 @@ static struct wpabuf * eap_eke_build_msg(struct eap_eke_data *data,
 	return msg;
 }
 
-
 static int supported_proposal(const u8 *pos)
 {
-	if (pos[0] == EAP_EKE_DHGROUP_EKE_16 &&
-	    pos[1] == EAP_EKE_ENCR_AES128_CBC &&
-	    pos[2] == EAP_EKE_PRF_HMAC_SHA2_256 &&
-	    pos[3] == EAP_EKE_MAC_HMAC_SHA2_256)
+	if (pos[0] == EAP_EKE_DHGROUP_EKE_16 && pos[1] == EAP_EKE_ENCR_AES128_CBC && pos[2] == EAP_EKE_PRF_HMAC_SHA2_256 && pos[3] == EAP_EKE_MAC_HMAC_SHA2_256) {
 		return 1;
+	}
 
-	if (pos[0] == EAP_EKE_DHGROUP_EKE_15 &&
-	    pos[1] == EAP_EKE_ENCR_AES128_CBC &&
-	    pos[2] == EAP_EKE_PRF_HMAC_SHA2_256 &&
-	    pos[3] == EAP_EKE_MAC_HMAC_SHA2_256)
+	if (pos[0] == EAP_EKE_DHGROUP_EKE_15 && pos[1] == EAP_EKE_ENCR_AES128_CBC && pos[2] == EAP_EKE_PRF_HMAC_SHA2_256 && pos[3] == EAP_EKE_MAC_HMAC_SHA2_256) {
 		return 1;
+	}
 
-	if (pos[0] == EAP_EKE_DHGROUP_EKE_14 &&
-	    pos[1] == EAP_EKE_ENCR_AES128_CBC &&
-	    pos[2] == EAP_EKE_PRF_HMAC_SHA2_256 &&
-	    pos[3] == EAP_EKE_MAC_HMAC_SHA2_256)
+	if (pos[0] == EAP_EKE_DHGROUP_EKE_14 && pos[1] == EAP_EKE_ENCR_AES128_CBC && pos[2] == EAP_EKE_PRF_HMAC_SHA2_256 && pos[3] == EAP_EKE_MAC_HMAC_SHA2_256) {
 		return 1;
+	}
 
-	if (pos[0] == EAP_EKE_DHGROUP_EKE_14 &&
-	    pos[1] == EAP_EKE_ENCR_AES128_CBC &&
-	    pos[2] == EAP_EKE_PRF_HMAC_SHA1 &&
-	    pos[3] == EAP_EKE_MAC_HMAC_SHA1)
+	if (pos[0] == EAP_EKE_DHGROUP_EKE_14 && pos[1] == EAP_EKE_ENCR_AES128_CBC && pos[2] == EAP_EKE_PRF_HMAC_SHA1 && pos[3] == EAP_EKE_MAC_HMAC_SHA1) {
 		return 1;
+	}
 
 	return 0;
 }
 
-
-static struct wpabuf * eap_eke_build_failure(struct eap_eke_data *data, u8 id)
+static struct wpabuf *eap_eke_build_failure(struct eap_eke_data *data, u8 id)
 {
 	struct wpabuf *msg;
 
-	wpa_printf(MSG_DEBUG, "EAP-EKE: Request/Failure: Failure-Code=0x%x",
-		   data->failure_code);
+	wpa_printf(MSG_DEBUG, "EAP-EKE: Request/Failure: Failure-Code=0x%x", data->failure_code);
 
 	msg = eap_eke_build_msg(data, id, 4, EAP_EKE_FAILURE);
 	if (msg == NULL) {
@@ -176,10 +156,7 @@ static struct wpabuf * eap_eke_build_failure(struct eap_eke_data *data, u8 id)
 	return msg;
 }
 
-
-static struct wpabuf * eap_eke_build_identity(struct eap_sm *sm,
-					      struct eap_eke_data *data,
-					      u8 id)
+static struct wpabuf *eap_eke_build_identity(struct eap_sm *sm, struct eap_eke_data *data, u8 id)
 {
 	struct wpabuf *msg;
 	size_t plen;
@@ -188,38 +165,39 @@ static struct wpabuf * eap_eke_build_identity(struct eap_sm *sm,
 
 	plen = 2 + 4 * 4 + 1 + sm->server_id_len;
 	msg = eap_eke_build_msg(data, id, plen, EAP_EKE_ID);
-	if (msg == NULL)
+	if (msg == NULL) {
 		return NULL;
+	}
 
-	wpabuf_put_u8(msg, 4); /* NumProposals */
-	wpabuf_put_u8(msg, 0); /* Reserved */
+	wpabuf_put_u8(msg, 4);		/* NumProposals */
+	wpabuf_put_u8(msg, 0);		/* Reserved */
 
 	/* Proposal - DH Group 16 with AES128-CBC and SHA256 */
-	wpabuf_put_u8(msg, EAP_EKE_DHGROUP_EKE_16); /* Group Description */
-	wpabuf_put_u8(msg, EAP_EKE_ENCR_AES128_CBC); /* Encryption */
-	wpabuf_put_u8(msg, EAP_EKE_PRF_HMAC_SHA2_256); /* PRF */
-	wpabuf_put_u8(msg, EAP_EKE_MAC_HMAC_SHA2_256); /* MAC */
+	wpabuf_put_u8(msg, EAP_EKE_DHGROUP_EKE_16);	/* Group Description */
+	wpabuf_put_u8(msg, EAP_EKE_ENCR_AES128_CBC);	/* Encryption */
+	wpabuf_put_u8(msg, EAP_EKE_PRF_HMAC_SHA2_256);	/* PRF */
+	wpabuf_put_u8(msg, EAP_EKE_MAC_HMAC_SHA2_256);	/* MAC */
 
 	/* Proposal - DH Group 15 with AES128-CBC and SHA256 */
-	wpabuf_put_u8(msg, EAP_EKE_DHGROUP_EKE_15); /* Group Description */
-	wpabuf_put_u8(msg, EAP_EKE_ENCR_AES128_CBC); /* Encryption */
-	wpabuf_put_u8(msg, EAP_EKE_PRF_HMAC_SHA2_256); /* PRF */
-	wpabuf_put_u8(msg, EAP_EKE_MAC_HMAC_SHA2_256); /* MAC */
+	wpabuf_put_u8(msg, EAP_EKE_DHGROUP_EKE_15);	/* Group Description */
+	wpabuf_put_u8(msg, EAP_EKE_ENCR_AES128_CBC);	/* Encryption */
+	wpabuf_put_u8(msg, EAP_EKE_PRF_HMAC_SHA2_256);	/* PRF */
+	wpabuf_put_u8(msg, EAP_EKE_MAC_HMAC_SHA2_256);	/* MAC */
 
 	/* Proposal - DH Group 14 with AES128-CBC and SHA256 */
-	wpabuf_put_u8(msg, EAP_EKE_DHGROUP_EKE_14); /* Group Description */
-	wpabuf_put_u8(msg, EAP_EKE_ENCR_AES128_CBC); /* Encryption */
-	wpabuf_put_u8(msg, EAP_EKE_PRF_HMAC_SHA2_256); /* PRF */
-	wpabuf_put_u8(msg, EAP_EKE_MAC_HMAC_SHA2_256); /* MAC */
+	wpabuf_put_u8(msg, EAP_EKE_DHGROUP_EKE_14);	/* Group Description */
+	wpabuf_put_u8(msg, EAP_EKE_ENCR_AES128_CBC);	/* Encryption */
+	wpabuf_put_u8(msg, EAP_EKE_PRF_HMAC_SHA2_256);	/* PRF */
+	wpabuf_put_u8(msg, EAP_EKE_MAC_HMAC_SHA2_256);	/* MAC */
 
 	/*
 	 * Proposal - DH Group 14 with AES128-CBC and SHA1
 	 * (mandatory to implement algorithms)
 	 */
-	wpabuf_put_u8(msg, EAP_EKE_DHGROUP_EKE_14); /* Group Description */
-	wpabuf_put_u8(msg, EAP_EKE_ENCR_AES128_CBC); /* Encryption */
-	wpabuf_put_u8(msg, EAP_EKE_PRF_HMAC_SHA1); /* PRF */
-	wpabuf_put_u8(msg, EAP_EKE_MAC_HMAC_SHA1); /* MAC */
+	wpabuf_put_u8(msg, EAP_EKE_DHGROUP_EKE_14);	/* Group Description */
+	wpabuf_put_u8(msg, EAP_EKE_ENCR_AES128_CBC);	/* Encryption */
+	wpabuf_put_u8(msg, EAP_EKE_PRF_HMAC_SHA1);	/* PRF */
+	wpabuf_put_u8(msg, EAP_EKE_MAC_HMAC_SHA1);	/* MAC */
 
 	/* Server IDType + Identity */
 	wpabuf_put_u8(msg, data->serverid_type);
@@ -235,9 +213,7 @@ static struct wpabuf * eap_eke_build_identity(struct eap_sm *sm,
 	return msg;
 }
 
-
-static struct wpabuf * eap_eke_build_commit(struct eap_sm *sm,
-					    struct eap_eke_data *data, u8 id)
+static struct wpabuf *eap_eke_build_commit(struct eap_sm *sm, struct eap_eke_data *data, u8 id)
 {
 	struct wpabuf *msg;
 	u8 pub[EAP_EKE_MAX_DH_LEN];
@@ -250,17 +226,13 @@ static struct wpabuf * eap_eke_build_commit(struct eap_sm *sm,
 		return eap_eke_build_failure(data, id);
 	}
 
-	if (eap_eke_derive_key(&data->sess, sm->user->password,
-			       sm->user->password_len,
-			       sm->server_id, sm->server_id_len,
-			       data->peerid, data->peerid_len, data->key) < 0) {
+	if (eap_eke_derive_key(&data->sess, sm->user->password, sm->user->password_len, sm->server_id, sm->server_id_len, data->peerid, data->peerid_len, data->key) < 0) {
 		wpa_printf(MSG_INFO, "EAP-EKE: Failed to derive key");
 		eap_eke_fail(data, EAP_EKE_FAIL_PRIVATE_INTERNAL_ERROR);
 		return eap_eke_build_failure(data, id);
 	}
 
-	msg = eap_eke_build_msg(data, id, data->sess.dhcomp_len,
-				EAP_EKE_COMMIT);
+	msg = eap_eke_build_msg(data, id, data->sess.dhcomp_len, EAP_EKE_COMMIT);
 	if (msg == NULL) {
 		eap_eke_fail(data, EAP_EKE_FAIL_PRIVATE_INTERNAL_ERROR);
 		return eap_eke_build_failure(data, id);
@@ -280,9 +252,8 @@ static struct wpabuf * eap_eke_build_commit(struct eap_sm *sm,
 		return eap_eke_build_failure(data, id);
 	}
 
-	if (eap_eke_dhcomp(&data->sess, data->key, pub,
-			   wpabuf_put(msg, data->sess.dhcomp_len))
-	    < 0) {
+	if (eap_eke_dhcomp(&data->sess, data->key, pub, wpabuf_put(msg, data->sess.dhcomp_len))
+		< 0) {
 		wpa_printf(MSG_INFO, "EAP-EKE: Failed to build DHComponent_S");
 		wpabuf_free(msg);
 		eap_eke_fail(data, EAP_EKE_FAIL_PRIVATE_INTERNAL_ERROR);
@@ -299,9 +270,7 @@ static struct wpabuf * eap_eke_build_commit(struct eap_sm *sm,
 	return msg;
 }
 
-
-static struct wpabuf * eap_eke_build_confirm(struct eap_sm *sm,
-					     struct eap_eke_data *data, u8 id)
+static struct wpabuf *eap_eke_build_confirm(struct eap_sm *sm, struct eap_eke_data *data, u8 id)
 {
 	struct wpabuf *msg;
 	size_t plen, prot_len;
@@ -322,25 +291,19 @@ static struct wpabuf * eap_eke_build_confirm(struct eap_sm *sm,
 		eap_eke_fail(data, EAP_EKE_FAIL_PRIVATE_INTERNAL_ERROR);
 		return eap_eke_build_failure(data, id);
 	}
-	wpa_hexdump_key(MSG_DEBUG, "EAP-EKE: Nonce_S",
-			data->nonce_s, data->sess.nonce_len);
+	wpa_hexdump_key(MSG_DEBUG, "EAP-EKE: Nonce_S", data->nonce_s, data->sess.nonce_len);
 
 	os_memcpy(nonces, data->nonce_p, data->sess.nonce_len);
-	os_memcpy(nonces + data->sess.nonce_len, data->nonce_s,
-		  data->sess.nonce_len);
+	os_memcpy(nonces + data->sess.nonce_len, data->nonce_s, data->sess.nonce_len);
 	prot_len = wpabuf_tailroom(msg);
-	if (eap_eke_prot(&data->sess, nonces, 2 * data->sess.nonce_len,
-			 wpabuf_put(msg, 0), &prot_len) < 0) {
+	if (eap_eke_prot(&data->sess, nonces, 2 * data->sess.nonce_len, wpabuf_put(msg, 0), &prot_len) < 0) {
 		wpabuf_free(msg);
 		eap_eke_fail(data, EAP_EKE_FAIL_PRIVATE_INTERNAL_ERROR);
 		return eap_eke_build_failure(data, id);
 	}
 	wpabuf_put(msg, prot_len);
 
-	if (eap_eke_derive_ka(&data->sess,
-			      sm->server_id, sm->server_id_len,
-			      data->peerid, data->peerid_len,
-			      data->nonce_p, data->nonce_s) < 0) {
+	if (eap_eke_derive_ka(&data->sess, sm->server_id, sm->server_id_len, data->peerid, data->peerid_len, data->nonce_p, data->nonce_s) < 0) {
 		wpabuf_free(msg);
 		eap_eke_fail(data, EAP_EKE_FAIL_PRIVATE_INTERNAL_ERROR);
 		return eap_eke_build_failure(data, id);
@@ -357,8 +320,7 @@ static struct wpabuf * eap_eke_build_confirm(struct eap_sm *sm,
 	return msg;
 }
 
-
-static struct wpabuf * eap_eke_buildReq(struct eap_sm *sm, void *priv, u8 id)
+static struct wpabuf *eap_eke_buildReq(struct eap_sm *sm, void *priv, u8 id)
 {
 	struct eap_eke_data *data = priv;
 
@@ -372,16 +334,13 @@ static struct wpabuf * eap_eke_buildReq(struct eap_sm *sm, void *priv, u8 id)
 	case FAILURE_REPORT:
 		return eap_eke_build_failure(data, id);
 	default:
-		wpa_printf(MSG_DEBUG, "EAP-EKE: Unknown state %d in buildReq",
-			   data->state);
+		wpa_printf(MSG_DEBUG, "EAP-EKE: Unknown state %d in buildReq", data->state);
 		break;
 	}
 	return NULL;
 }
 
-
-static Boolean eap_eke_check(struct eap_sm *sm, void *priv,
-			     struct wpabuf *respData)
+static Boolean eap_eke_check(struct eap_sm *sm, void *priv, struct wpabuf *respData)
 {
 	struct eap_eke_data *data = priv;
 	size_t len;
@@ -397,29 +356,28 @@ static Boolean eap_eke_check(struct eap_sm *sm, void *priv,
 	eke_exch = *pos;
 	wpa_printf(MSG_DEBUG, "EAP-EKE: Received frame: EKE-Exch=%d", eke_exch);
 
-	if (data->state == IDENTITY && eke_exch == EAP_EKE_ID)
+	if (data->state == IDENTITY && eke_exch == EAP_EKE_ID) {
 		return FALSE;
+	}
 
-	if (data->state == COMMIT && eke_exch == EAP_EKE_COMMIT)
+	if (data->state == COMMIT && eke_exch == EAP_EKE_COMMIT) {
 		return FALSE;
+	}
 
-	if (data->state == CONFIRM && eke_exch == EAP_EKE_CONFIRM)
+	if (data->state == CONFIRM && eke_exch == EAP_EKE_CONFIRM) {
 		return FALSE;
+	}
 
-	if (eke_exch == EAP_EKE_FAILURE)
+	if (eke_exch == EAP_EKE_FAILURE) {
 		return FALSE;
+	}
 
-	wpa_printf(MSG_INFO, "EAP-EKE: Unexpected EKE-Exch=%d in state=%d",
-		   eke_exch, data->state);
+	wpa_printf(MSG_INFO, "EAP-EKE: Unexpected EKE-Exch=%d in state=%d", eke_exch, data->state);
 
 	return TRUE;
 }
 
-
-static void eap_eke_process_identity(struct eap_sm *sm,
-				     struct eap_eke_data *data,
-				     const struct wpabuf *respData,
-				     const u8 *payload, size_t payloadlen)
+static void eap_eke_process_identity(struct eap_sm *sm, struct eap_eke_data *data, const struct wpabuf *respData, const u8 *payload, size_t payloadlen)
 {
 	const u8 *pos, *end;
 	int i;
@@ -441,8 +399,7 @@ static void eap_eke_process_identity(struct eap_sm *sm,
 	}
 
 	if (*pos != 1) {
-		wpa_printf(MSG_INFO, "EAP-EKE: Unexpected NumProposals %d (expected 1)",
-			   *pos);
+		wpa_printf(MSG_INFO, "EAP-EKE: Unexpected NumProposals %d (expected 1)", *pos);
 		eap_eke_fail(data, EAP_EKE_FAIL_PROTO_ERROR);
 		return;
 	}
@@ -450,16 +407,13 @@ static void eap_eke_process_identity(struct eap_sm *sm,
 	pos += 2;
 
 	if (!supported_proposal(pos)) {
-		wpa_printf(MSG_INFO, "EAP-EKE: Unexpected Proposal (%u:%u:%u:%u)",
-			   pos[0], pos[1], pos[2], pos[3]);
+		wpa_printf(MSG_INFO, "EAP-EKE: Unexpected Proposal (%u:%u:%u:%u)", pos[0], pos[1], pos[2], pos[3]);
 		eap_eke_fail(data, EAP_EKE_FAIL_PROTO_ERROR);
 		return;
 	}
 
-	wpa_printf(MSG_DEBUG, "EAP-EKE: Selected Proposal (%u:%u:%u:%u)",
-		   pos[0], pos[1], pos[2], pos[3]);
-	if (eap_eke_session_init(&data->sess, pos[0], pos[1], pos[2], pos[3]) <
-	    0) {
+	wpa_printf(MSG_DEBUG, "EAP-EKE: Selected Proposal (%u:%u:%u:%u)", pos[0], pos[1], pos[2], pos[3]);
+	if (eap_eke_session_init(&data->sess, pos[0], pos[1], pos[2], pos[3]) < 0) {
 		eap_eke_fail(data, EAP_EKE_FAIL_PRIVATE_INTERNAL_ERROR);
 		return;
 	}
@@ -476,8 +430,7 @@ static void eap_eke_process_identity(struct eap_sm *sm,
 	os_memcpy(data->peerid, pos, end - pos);
 	data->peerid_len = end - pos;
 	wpa_printf(MSG_DEBUG, "EAP-EKE: Peer IDType %u", data->peerid_type);
-	wpa_hexdump_ascii(MSG_DEBUG, "EAP-EKE: Peer Identity",
-			  data->peerid, data->peerid_len);
+	wpa_hexdump_ascii(MSG_DEBUG, "EAP-EKE: Peer Identity", data->peerid, data->peerid_len);
 
 	if (eap_user_get(sm, data->peerid, data->peerid_len, data->phase2)) {
 		wpa_printf(MSG_INFO, "EAP-EKE: Peer Identity not found from user database");
@@ -486,9 +439,9 @@ static void eap_eke_process_identity(struct eap_sm *sm,
 	}
 
 	for (i = 0; i < EAP_MAX_METHODS; i++) {
-		if (sm->user->methods[i].vendor == EAP_VENDOR_IETF &&
-		    sm->user->methods[i].method == EAP_TYPE_EKE)
+		if (sm->user->methods[i].vendor == EAP_VENDOR_IETF && sm->user->methods[i].method == EAP_TYPE_EKE) {
 			break;
+		}
 	}
 	if (i == EAP_MAX_METHODS) {
 		wpa_printf(MSG_INFO, "EAP-EKE: Matching user entry does not allow EAP-EKE");
@@ -511,11 +464,7 @@ static void eap_eke_process_identity(struct eap_sm *sm,
 	eap_eke_state(data, COMMIT);
 }
 
-
-static void eap_eke_process_commit(struct eap_sm *sm,
-				   struct eap_eke_data *data,
-				   const struct wpabuf *respData,
-				   const u8 *payload, size_t payloadlen)
+static void eap_eke_process_commit(struct eap_sm *sm, struct eap_eke_data *data, const struct wpabuf *respData, const u8 *payload, size_t payloadlen)
 {
 	const u8 *pos, *end, *dhcomp, *pnonce;
 	size_t decrypt_len;
@@ -536,8 +485,7 @@ static void eap_eke_process_commit(struct eap_sm *sm,
 		return;
 	}
 
-	wpa_hexdump(MSG_DEBUG, "EAP-EKE: DHComponent_P",
-		    pos, data->sess.dhcomp_len);
+	wpa_hexdump(MSG_DEBUG, "EAP-EKE: DHComponent_P", pos, data->sess.dhcomp_len);
 	dhcomp = pos;
 	pos += data->sess.dhcomp_len;
 	wpa_hexdump(MSG_DEBUG, "EAP-EKE: PNonce_P", pos, data->sess.pnonce_len);
@@ -546,34 +494,30 @@ static void eap_eke_process_commit(struct eap_sm *sm,
 	wpa_hexdump(MSG_DEBUG, "EAP-EKE: CBValue", pos, end - pos);
 
 	if (eap_eke_shared_secret(&data->sess, data->key, data->dh_priv, dhcomp)
-	    < 0) {
+		< 0) {
 		wpa_printf(MSG_INFO, "EAP-EKE: Failed to derive shared secret");
 		eap_eke_fail(data, EAP_EKE_FAIL_PRIVATE_INTERNAL_ERROR);
 		return;
 	}
 
-	if (eap_eke_derive_ke_ki(&data->sess,
-				 sm->server_id, sm->server_id_len,
-				 data->peerid, data->peerid_len) < 0) {
+	if (eap_eke_derive_ke_ki(&data->sess, sm->server_id, sm->server_id_len, data->peerid, data->peerid_len) < 0) {
 		wpa_printf(MSG_INFO, "EAP-EKE: Failed to derive Ke/Ki");
 		eap_eke_fail(data, EAP_EKE_FAIL_PRIVATE_INTERNAL_ERROR);
 		return;
 	}
 
 	decrypt_len = sizeof(data->nonce_p);
-	if (eap_eke_decrypt_prot(&data->sess, pnonce, data->sess.pnonce_len,
-				 data->nonce_p, &decrypt_len) < 0) {
+	if (eap_eke_decrypt_prot(&data->sess, pnonce, data->sess.pnonce_len, data->nonce_p, &decrypt_len) < 0) {
 		wpa_printf(MSG_INFO, "EAP-EKE: Failed to decrypt PNonce_P");
 		eap_eke_fail(data, EAP_EKE_FAIL_AUTHENTICATION_FAIL);
 		return;
 	}
-	if (decrypt_len < (size_t) data->sess.nonce_len) {
+	if (decrypt_len < (size_t)data->sess.nonce_len) {
 		wpa_printf(MSG_INFO, "EAP-EKE: PNonce_P protected data too short to include Nonce_P");
 		eap_eke_fail(data, EAP_EKE_FAIL_AUTHENTICATION_FAIL);
 		return;
 	}
-	wpa_hexdump_key(MSG_DEBUG, "EAP-EKE: Nonce_P",
-			data->nonce_p, data->sess.nonce_len);
+	wpa_hexdump_key(MSG_DEBUG, "EAP-EKE: Nonce_P", data->nonce_p, data->sess.nonce_len);
 
 	if (wpabuf_resize(&data->msgs, wpabuf_len(respData)) < 0) {
 		eap_eke_fail(data, EAP_EKE_FAIL_PRIVATE_INTERNAL_ERROR);
@@ -584,11 +528,7 @@ static void eap_eke_process_commit(struct eap_sm *sm,
 	eap_eke_state(data, CONFIRM);
 }
 
-
-static void eap_eke_process_confirm(struct eap_sm *sm,
-				    struct eap_eke_data *data,
-				    const struct wpabuf *respData,
-				    const u8 *payload, size_t payloadlen)
+static void eap_eke_process_confirm(struct eap_sm *sm, struct eap_eke_data *data, const struct wpabuf *respData, const u8 *payload, size_t payloadlen)
 {
 	size_t decrypt_len;
 	u8 nonce[EAP_EKE_MAX_NONCE_LEN];
@@ -603,26 +543,24 @@ static void eap_eke_process_confirm(struct eap_sm *sm,
 
 	wpa_printf(MSG_DEBUG, "EAP-EKE: Received Response/Confirm");
 
-	if (payloadlen < (size_t) data->sess.pnonce_len + data->sess.prf_len) {
+	if (payloadlen < (size_t)data->sess.pnonce_len + data->sess.prf_len) {
 		wpa_printf(MSG_DEBUG, "EAP-EKE: Too short EAP-EKE-Confirm");
 		eap_eke_fail(data, EAP_EKE_FAIL_PROTO_ERROR);
 		return;
 	}
 
 	decrypt_len = sizeof(nonce);
-	if (eap_eke_decrypt_prot(&data->sess, payload, data->sess.pnonce_len,
-				 nonce, &decrypt_len) < 0) {
+	if (eap_eke_decrypt_prot(&data->sess, payload, data->sess.pnonce_len, nonce, &decrypt_len) < 0) {
 		wpa_printf(MSG_INFO, "EAP-EKE: Failed to decrypt PNonce_S");
 		eap_eke_fail(data, EAP_EKE_FAIL_AUTHENTICATION_FAIL);
 		return;
 	}
-	if (decrypt_len < (size_t) data->sess.nonce_len) {
+	if (decrypt_len < (size_t)data->sess.nonce_len) {
 		wpa_printf(MSG_INFO, "EAP-EKE: PNonce_S protected data too short to include Nonce_S");
 		eap_eke_fail(data, EAP_EKE_FAIL_AUTHENTICATION_FAIL);
 		return;
 	}
-	wpa_hexdump_key(MSG_DEBUG, "EAP-EKE: Received Nonce_S",
-			nonce, data->sess.nonce_len);
+	wpa_hexdump_key(MSG_DEBUG, "EAP-EKE: Received Nonce_S", nonce, data->sess.nonce_len);
 	if (os_memcmp(nonce, data->nonce_s, data->sess.nonce_len) != 0) {
 		wpa_printf(MSG_INFO, "EAP-EKE: Received Nonce_S does not match previously sent Nonce_S");
 		eap_eke_fail(data, EAP_EKE_FAIL_AUTHENTICATION_FAIL);
@@ -635,17 +573,13 @@ static void eap_eke_process_confirm(struct eap_sm *sm,
 		return;
 	}
 	wpa_hexdump(MSG_DEBUG, "EAP-EKE: Auth_P", auth_p, data->sess.prf_len);
-	if (os_memcmp_const(auth_p, payload + data->sess.pnonce_len,
-			    data->sess.prf_len) != 0) {
+	if (os_memcmp_const(auth_p, payload + data->sess.pnonce_len, data->sess.prf_len) != 0) {
 		wpa_printf(MSG_INFO, "EAP-EKE: Auth_P does not match");
 		eap_eke_fail(data, EAP_EKE_FAIL_AUTHENTICATION_FAIL);
 		return;
 	}
 
-	if (eap_eke_derive_msk(&data->sess, sm->server_id, sm->server_id_len,
-			       data->peerid, data->peerid_len,
-			       data->nonce_s, data->nonce_p,
-			       data->msk, data->emsk) < 0) {
+	if (eap_eke_derive_msk(&data->sess, sm->server_id, sm->server_id_len, data->peerid, data->peerid_len, data->nonce_s, data->nonce_p, data->msk, data->emsk) < 0) {
 		wpa_printf(MSG_INFO, "EAP-EKE: Failed to derive MSK/EMSK");
 		eap_eke_fail(data, EAP_EKE_FAIL_PRIVATE_INTERNAL_ERROR);
 		return;
@@ -658,11 +592,7 @@ static void eap_eke_process_confirm(struct eap_sm *sm,
 	eap_eke_state(data, SUCCESS);
 }
 
-
-static void eap_eke_process_failure(struct eap_sm *sm,
-				    struct eap_eke_data *data,
-				    const struct wpabuf *respData,
-				    const u8 *payload, size_t payloadlen)
+static void eap_eke_process_failure(struct eap_sm *sm, struct eap_eke_data *data, const struct wpabuf *respData, const u8 *payload, size_t payloadlen)
 {
 	u32 code;
 
@@ -680,9 +610,7 @@ static void eap_eke_process_failure(struct eap_sm *sm,
 	eap_eke_state(data, FAILURE);
 }
 
-
-static void eap_eke_process(struct eap_sm *sm, void *priv,
-			     struct wpabuf *respData)
+static void eap_eke_process(struct eap_sm *sm, void *priv, struct wpabuf *respData)
 {
 	struct eap_eke_data *data = priv;
 	u8 eke_exch;
@@ -690,8 +618,9 @@ static void eap_eke_process(struct eap_sm *sm, void *priv,
 	const u8 *pos, *end;
 
 	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_EKE, respData, &len);
-	if (pos == NULL || len < 1)
+	if (pos == NULL || len < 1) {
 		return;
+	}
 
 	eke_exch = *pos;
 	end = pos + len;
@@ -715,49 +644,49 @@ static void eap_eke_process(struct eap_sm *sm, void *priv,
 	}
 }
 
-
 static Boolean eap_eke_isDone(struct eap_sm *sm, void *priv)
 {
 	struct eap_eke_data *data = priv;
 	return data->state == SUCCESS || data->state == FAILURE;
 }
 
-
-static u8 * eap_eke_getKey(struct eap_sm *sm, void *priv, size_t *len)
+static u8 *eap_eke_getKey(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_eke_data *data = priv;
 	u8 *key;
 
-	if (data->state != SUCCESS)
+	if (data->state != SUCCESS) {
 		return NULL;
+	}
 
 	key = os_malloc(EAP_MSK_LEN);
-	if (key == NULL)
+	if (key == NULL) {
 		return NULL;
+	}
 	os_memcpy(key, data->msk, EAP_MSK_LEN);
 	*len = EAP_MSK_LEN;
 
 	return key;
 }
 
-
-static u8 * eap_eke_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
+static u8 *eap_eke_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_eke_data *data = priv;
 	u8 *key;
 
-	if (data->state != SUCCESS)
+	if (data->state != SUCCESS) {
 		return NULL;
+	}
 
 	key = os_malloc(EAP_EMSK_LEN);
-	if (key == NULL)
+	if (key == NULL) {
 		return NULL;
+	}
 	os_memcpy(key, data->emsk, EAP_EMSK_LEN);
 	*len = EAP_EMSK_LEN;
 
 	return key;
 }
-
 
 static Boolean eap_eke_isSuccess(struct eap_sm *sm, void *priv)
 {
@@ -765,39 +694,38 @@ static Boolean eap_eke_isSuccess(struct eap_sm *sm, void *priv)
 	return data->state == SUCCESS;
 }
 
-
-static u8 * eap_eke_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
+static u8 *eap_eke_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_eke_data *data = priv;
 	u8 *sid;
 	size_t sid_len;
 
-	if (data->state != SUCCESS)
+	if (data->state != SUCCESS) {
 		return NULL;
+	}
 
 	sid_len = 1 + 2 * data->sess.nonce_len;
 	sid = os_malloc(sid_len);
-	if (sid == NULL)
+	if (sid == NULL) {
 		return NULL;
+	}
 	sid[0] = EAP_TYPE_EKE;
 	os_memcpy(sid + 1, data->nonce_p, data->sess.nonce_len);
-	os_memcpy(sid + 1 + data->sess.nonce_len, data->nonce_s,
-		  data->sess.nonce_len);
+	os_memcpy(sid + 1 + data->sess.nonce_len, data->nonce_s, data->sess.nonce_len);
 	*len = sid_len;
 
 	return sid;
 }
-
 
 int eap_server_eke_register(void)
 {
 	struct eap_method *eap;
 	int ret;
 
-	eap = eap_server_method_alloc(EAP_SERVER_METHOD_INTERFACE_VERSION,
-				      EAP_VENDOR_IETF, EAP_TYPE_EKE, "EKE");
-	if (eap == NULL)
+	eap = eap_server_method_alloc(EAP_SERVER_METHOD_INTERFACE_VERSION, EAP_VENDOR_IETF, EAP_TYPE_EKE, "EKE");
+	if (eap == NULL) {
 		return -1;
+	}
 
 	eap->init = eap_eke_init;
 	eap->reset = eap_eke_reset;
@@ -811,7 +739,8 @@ int eap_server_eke_register(void)
 	eap->getSessionId = eap_eke_get_session_id;
 
 	ret = eap_server_method_register(eap);
-	if (ret)
+	if (ret) {
 		eap_server_method_free(eap);
+	}
 	return ret;
 }

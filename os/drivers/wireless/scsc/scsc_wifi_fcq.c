@@ -11,8 +11,9 @@
 #ifdef CONFIG_SCSC_ENABLE_PORT_CONTROL
 bool slsi_is_port_blocked(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs)
 {
-	if (qs->controlled_port_state == SCSC_WIFI_FCQ_8021x_STATE_BLOCKED)
+	if (qs->controlled_port_state == SCSC_WIFI_FCQ_8021x_STATE_BLOCKED) {
 		return true;
+	}
 
 	return false;
 }
@@ -36,8 +37,9 @@ static void scsc_wifi_fcq_redistribute_qmod(struct scsc_wifi_fcq_data_qset *qs)
 
 	/* Get the number of active access categories */
 	for (i = 0; i < SLSI_NETIF_Q_PER_PEER; i++) {
-		if (qs->ac_inuse & (1 << i))
+		if (qs->ac_inuse & (1 << i)) {
 			num_active_ac++;
+		}
 	}
 
 	if (num_active_ac == 0) {
@@ -49,8 +51,9 @@ static void scsc_wifi_fcq_redistribute_qmod(struct scsc_wifi_fcq_data_qset *qs)
 	for (i = 0; i < SLSI_NETIF_Q_PER_PEER; i++) {
 		qs->ac_q[i].head.qmod = SCSC_WIFI_FCQ_QMOD;
 
-		if (qs->ac_inuse & (1 << i))
+		if (qs->ac_inuse & (1 << i)) {
 			qs->ac_q[i].head.qmod += (SCSC_WIFI_FCQ_REMAINING_SLOTS / num_active_ac);
+		}
 	}
 }
 
@@ -72,14 +75,17 @@ static void scsc_wifi_fcq_redistribute_qmod_timer(void *data)
 
 int scsc_wifi_fcq_transmit_data(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs, u16 priority, bool multicast)
 {
-	if (WARN_ON(!dev))
+	if (WARN_ON(!dev)) {
 		return ERR_ARG;
+	}
 
-	if (WARN_ON(!qs))
+	if (WARN_ON(!qs)) {
 		return ERR_ARG;
+	}
 
-	if (WARN_ON(priority >= ARRAY_SIZE(qs->ac_q)))
+	if (WARN_ON(priority >= ARRAY_SIZE(qs->ac_q))) {
 		return ERR_ARG;
+	}
 
 	SLSI_MUTEX_LOCK(qs->cp_lock);
 
@@ -87,7 +93,7 @@ int scsc_wifi_fcq_transmit_data(struct netif *dev, struct scsc_wifi_fcq_data_qse
 	if (qs->controlled_port_state == SCSC_WIFI_FCQ_8021x_STATE_BLOCKED) {
 #ifdef CONFIG_SLSI_WLAN_STATS
 		struct netdev_vif *ndev_vif = netdev_priv(dev);
-		struct slsi_dev   *sdev = ndev_vif->sdev;
+		struct slsi_dev *sdev = ndev_vif->sdev;
 
 		SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_drop_port_blocked);
 #endif
@@ -105,8 +111,7 @@ int scsc_wifi_fcq_transmit_data(struct netif *dev, struct scsc_wifi_fcq_data_qse
 		}
 		if (qs->ac_active == 0) {
 			/* Schedule the work to redistribute traffic based on active traffic */
-			work_queue(SCSC_WORK, &qs->fcq_work,
-				   scsc_wifi_fcq_redistribute_qmod_timer, qs, MSEC2TICK(SCSC_FCQ_REDISTRIBUTE_TIME));
+			work_queue(SCSC_WORK, &qs->fcq_work, scsc_wifi_fcq_redistribute_qmod_timer, qs, MSEC2TICK(SCSC_FCQ_REDISTRIBUTE_TIME));
 		}
 		qs->ac_active |= (1 << priority);
 	}
@@ -154,11 +159,13 @@ static int fcq_receive(struct netif *dev, struct scsc_wifi_fcq_q_header *queue)
 
 int scsc_wifi_fcq_receive_ctrl(struct netif *dev, struct scsc_wifi_fcq_ctrl_q *queue)
 {
-	if (WARN_ON(!dev))
+	if (WARN_ON(!dev)) {
 		return -EINVAL;
+	}
 
-	if (WARN_ON(!queue))
+	if (WARN_ON(!queue)) {
 		return -EINVAL;
+	}
 
 	return fcq_receive(dev, &queue->head);
 }
@@ -167,14 +174,17 @@ int scsc_wifi_fcq_receive_data(struct netif *dev, struct scsc_wifi_fcq_data_qset
 {
 	int rc = 0;
 
-	if (WARN_ON(!dev))
+	if (WARN_ON(!dev)) {
 		return -EINVAL;
+	}
 
-	if (WARN_ON(!qs))
+	if (WARN_ON(!qs)) {
 		return -EINVAL;
+	}
 
-	if (WARN_ON(priority >= ARRAY_SIZE(qs->ac_q)))
+	if (WARN_ON(priority >= ARRAY_SIZE(qs->ac_q))) {
 		return -EINVAL;
+	}
 
 	/* The read/modify/write of the scod here needs synchronisation. */
 	SLSI_MUTEX_LOCK(qs->cp_lock);
@@ -192,58 +202,60 @@ int scsc_wifi_fcq_receive_data(struct netif *dev, struct scsc_wifi_fcq_data_qset
 	return rc;
 }
 
-int scsc_wifi_fcq_update_smod(struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi_fcq_ps_state peer_ps_state,
-			      enum scsc_wifi_fcq_queue_set_type type)
+int scsc_wifi_fcq_update_smod(struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi_fcq_ps_state peer_ps_state, enum scsc_wifi_fcq_queue_set_type type)
 {
-	if (WARN_ON(!qs))
+	if (WARN_ON(!qs)) {
 		return -EINVAL;
+	}
 
 	if (peer_ps_state == SCSC_WIFI_FCQ_PS_STATE_POWERSAVE) {
-		if (type == SCSC_WIFI_FCQ_QUEUE_SET_TYPE_UNICAST)
+		if (type == SCSC_WIFI_FCQ_QUEUE_SET_TYPE_UNICAST) {
 			qs->smod = SCSC_WIFI_FCQ_SMOD_POWER;
-		else
+		} else {
 			qs->smod = SCSC_WIFI_FCQ_MCAST_SMOD_POWER;
+		}
 		qs->peer_ps_state = peer_ps_state;
 		qs->peer_ps_state_transitions++;
 	} else if (peer_ps_state == SCSC_WIFI_FCQ_PS_STATE_ACTIVE) {
-		if (type == SCSC_WIFI_FCQ_QUEUE_SET_TYPE_UNICAST)
+		if (type == SCSC_WIFI_FCQ_QUEUE_SET_TYPE_UNICAST) {
 			qs->smod = SCSC_WIFI_FCQ_SMOD;
-		else
+		} else {
 			qs->smod = SCSC_WIFI_FCQ_MCAST_SMOD;
+		}
 		qs->peer_ps_state = peer_ps_state;
 		qs->peer_ps_state_transitions++;
-	} else
-		SLSI_NET_DBG3(dev, SLSI_TX, "Unknown sta_state %d\n",
-				peer_ps_state);
+	} else {
+		SLSI_NET_DBG3(dev, SLSI_TX, "Unknown sta_state %d\n", peer_ps_state);
+	}
 
 	return 0;
 }
 
 int scsc_wifi_fcq_8021x_port_state(struct netif *dev, struct scsc_wifi_fcq_data_qset *qs, enum scsc_wifi_fcq_8021x_state state)
 {
-	if (WARN_ON(!dev))
+	if (WARN_ON(!dev)) {
 		return -EINTR;
+	}
 
-	if (WARN_ON(!qs))
+	if (WARN_ON(!qs)) {
 		return -EINVAL;
+	}
 
 	SLSI_MUTEX_LOCK(qs->cp_lock);
 	qs->controlled_port_state = state;
 	SLSI_MUTEX_UNLOCK(qs->cp_lock);
-	SLSI_NET_DBG3(dev, SLSI_TX, "802.1x: Queue set 0x%p is %s\n", qs,
-		      state == SCSC_WIFI_FCQ_8021x_STATE_OPEN ? "Open" : "Blocked");
+	SLSI_NET_DBG3(dev, SLSI_TX, "802.1x: Queue set 0x%p is %s\n", qs, state == SCSC_WIFI_FCQ_8021x_STATE_OPEN ? "Open" : "Blocked");
 	return 0;
 }
 
 /**
  * Statistics
  */
-int scsc_wifi_fcq_stat_queue(struct scsc_wifi_fcq_q_header *queue,
-			     struct scsc_wifi_fcq_q_stat *queue_stat,
-			     int *qmod, int *qcod)
+int scsc_wifi_fcq_stat_queue(struct scsc_wifi_fcq_q_header *queue, struct scsc_wifi_fcq_q_stat *queue_stat, int *qmod, int *qcod)
 {
-	if (WARN_ON(!queue) || WARN_ON(!queue_stat) || WARN_ON(!qmod) || WARN_ON(!qmod))
+	if (WARN_ON(!queue) || WARN_ON(!queue_stat) || WARN_ON(!qmod) || WARN_ON(!qmod)) {
 		return -EINTR;
+	}
 
 	memcpy(queue_stat, &queue->stats, sizeof(struct scsc_wifi_fcq_q_stat));
 	*qmod = queue->qmod;
@@ -251,14 +263,11 @@ int scsc_wifi_fcq_stat_queue(struct scsc_wifi_fcq_q_header *queue,
 	return 0;
 }
 
-int scsc_wifi_fcq_stat_queueset(struct scsc_wifi_fcq_data_qset *queue_set,
-				struct scsc_wifi_fcq_q_stat *queue_stat,
-				int *smod, int *scod, enum scsc_wifi_fcq_8021x_state *cp_state,
-				u32 *peer_ps_state_transitions)
+int scsc_wifi_fcq_stat_queueset(struct scsc_wifi_fcq_data_qset *queue_set, struct scsc_wifi_fcq_q_stat *queue_stat, int *smod, int *scod, enum scsc_wifi_fcq_8021x_state *cp_state, u32 *peer_ps_state_transitions)
 {
-	if (WARN_ON(!queue_set) || WARN_ON(!queue_stat) || WARN_ON(!smod) || WARN_ON(!scod) ||
-	    WARN_ON(!cp_state) || WARN_ON(!peer_ps_state_transitions))
+	if (WARN_ON(!queue_set) || WARN_ON(!queue_stat) || WARN_ON(!smod) || WARN_ON(!scod) || WARN_ON(!cp_state) || WARN_ON(!peer_ps_state_transitions)) {
 		return -EINTR;
+	}
 
 	memcpy(queue_stat, &queue_set->stats, sizeof(struct scsc_wifi_fcq_q_stat));
 	*peer_ps_state_transitions = queue_set->peer_ps_state_transitions;
@@ -273,12 +282,14 @@ int scsc_wifi_fcq_stat_queueset(struct scsc_wifi_fcq_data_qset *queue_set,
  */
 int scsc_wifi_fcq_ctrl_q_init(struct scsc_wifi_fcq_ctrl_q *queue)
 {
-	if (WARN_ON(!queue))
+	if (WARN_ON(!queue)) {
 		return -EINVAL;
+	}
 
 	/* Ensure that default qmod doesn't exceed 24 bit */
-	if (WARN_ON(SCSC_WIFI_FCQ_QMOD >= 0x1000000))
+	if (WARN_ON(SCSC_WIFI_FCQ_QMOD >= 0x1000000)) {
 		return -EINVAL;
+	}
 
 	queue->head.qmod = SCSC_WIFI_FCQ_QMOD;
 	queue->head.qcod = 0;
@@ -294,33 +305,35 @@ void scsc_wifi_fcq_ctrl_q_deinit(struct scsc_wifi_fcq_ctrl_q *queue)
 {
 	WARN_ON(!queue);
 
-	if (queue->head.qcod != 0)
-		SLSI_DBG1_NODEV(SLSI_WIFI_FCQ, "Ctrl queue (0x%p) deinit: qcod is %d, netif queue %d\n",
-				queue, queue->head.qcod, queue->head.netif_queue_id);
+	if (queue->head.qcod != 0) {
+		SLSI_DBG1_NODEV(SLSI_WIFI_FCQ, "Ctrl queue (0x%p) deinit: qcod is %d, netif queue %d\n", queue, queue->head.qcod, queue->head.netif_queue_id);
+	}
 }
 
-static int fcq_data_q_init(enum scsc_wifi_fcq_queue_set_type type, struct scsc_wifi_fcq_data_q *queue,
-			   struct scsc_wifi_fcq_data_qset *qs, u8 qs_num, s16 ac)
+static int fcq_data_q_init(enum scsc_wifi_fcq_queue_set_type type, struct scsc_wifi_fcq_data_q *queue, struct scsc_wifi_fcq_data_qset *qs, u8 qs_num, s16 ac)
 {
-	if (WARN_ON(!queue))
+	if (WARN_ON(!queue)) {
 		return -EINVAL;
+	}
 
-	if (WARN_ON(!qs))
+	if (WARN_ON(!qs)) {
 		return -EINVAL;
+	}
 
 	/* Ensure that default qmods don't exceed 24 bit */
-	if (WARN_ON(SCSC_WIFI_FCQ_QMOD >= 0x1000000) || WARN_ON(SCSC_WIFI_FCQ_MCAST_QMOD >= 0x1000000))
+	if (WARN_ON(SCSC_WIFI_FCQ_QMOD >= 0x1000000) || WARN_ON(SCSC_WIFI_FCQ_MCAST_QMOD >= 0x1000000)) {
 		return -EINVAL;
+	}
 
-	if (type == SCSC_WIFI_FCQ_QUEUE_SET_TYPE_UNICAST)
+	if (type == SCSC_WIFI_FCQ_QUEUE_SET_TYPE_UNICAST) {
 		queue->head.qmod = SCSC_WIFI_FCQ_QMOD;
-	else
+	} else {
 		queue->head.qmod = SCSC_WIFI_FCQ_MCAST_QMOD;
+	}
 
 	queue->head.qcod = 0;
 	queue->qs = qs;
-	queue->head.netif_queue_id = type == SCSC_WIFI_FCQ_QUEUE_SET_TYPE_UNICAST ?
-				     slsi_netif_get_peer_queue(qs_num, ac) : slsi_netif_get_multicast_queue(ac);
+	queue->head.netif_queue_id = type == SCSC_WIFI_FCQ_QUEUE_SET_TYPE_UNICAST ? slsi_netif_get_peer_queue(qs_num, ac) : slsi_netif_get_multicast_queue(ac);
 	queue->head.stats.netq_stops = 0;
 	queue->head.stats.netq_resumes = 0;
 	queue->head.active = 1;
@@ -332,23 +345,24 @@ static void fcq_data_q_deinit(struct scsc_wifi_fcq_data_q *queue)
 {
 	WARN_ON(!queue);
 
-	if (queue->head.qcod != 0)
-		SLSI_DBG1_NODEV(SLSI_WIFI_FCQ, "Data queue (0x%p) deinit: qcod is %d, netif queue %d\n",
-				queue, queue->head.qcod, queue->head.netif_queue_id);
+	if (queue->head.qcod != 0) {
+		SLSI_DBG1_NODEV(SLSI_WIFI_FCQ, "Data queue (0x%p) deinit: qcod is %d, netif queue %d\n", queue, queue->head.qcod, queue->head.netif_queue_id);
+	}
 }
 
 static void fcq_qset_init(enum scsc_wifi_fcq_queue_set_type type, struct scsc_wifi_fcq_data_qset *qs, u8 qs_num)
 {
-	int                         i;
+	int i;
 	struct scsc_wifi_fcq_data_q *queue;
 
 	memset(qs, 0, sizeof(struct scsc_wifi_fcq_data_qset));
 
 	pthread_mutex_init(&qs->cp_lock, NULL);
-	if (type == SCSC_WIFI_FCQ_QUEUE_SET_TYPE_UNICAST)
+	if (type == SCSC_WIFI_FCQ_QUEUE_SET_TYPE_UNICAST) {
 		qs->smod = SCSC_WIFI_FCQ_SMOD;
-	else
+	} else {
 		qs->smod = SCSC_WIFI_FCQ_MCAST_SMOD;
+	}
 	qs->scod = 0;
 
 	qs->peer_ps_state = SCSC_WIFI_FCQ_PS_STATE_ACTIVE;
@@ -369,12 +383,14 @@ static void fcq_qset_init(enum scsc_wifi_fcq_queue_set_type type, struct scsc_wi
 
 int scsc_wifi_fcq_unicast_qset_init(struct scsc_wifi_fcq_data_qset *qs, u8 qs_num)
 {
-	if (WARN_ON(!qs))
+	if (WARN_ON(!qs)) {
 		return -EINVAL;
+	}
 
 	/* Ensure that default smod doesn't exceed 24 bit */
-	if (WARN_ON(SCSC_WIFI_FCQ_SMOD >= 0x1000000))
+	if (WARN_ON(SCSC_WIFI_FCQ_SMOD >= 0x1000000)) {
 		return -EINVAL;
+	}
 
 	SLSI_DBG1_NODEV(SLSI_WIFI_FCQ, "Init unicast queue set 0x%p\n", qs);
 	fcq_qset_init(SCSC_WIFI_FCQ_QUEUE_SET_TYPE_UNICAST, qs, qs_num);
@@ -384,12 +400,14 @@ int scsc_wifi_fcq_unicast_qset_init(struct scsc_wifi_fcq_data_qset *qs, u8 qs_nu
 
 int scsc_wifi_fcq_multicast_qset_init(struct scsc_wifi_fcq_data_qset *qs)
 {
-	if (WARN_ON(!qs))
+	if (WARN_ON(!qs)) {
 		return -EINVAL;
+	}
 
 	/* Ensure that default smod doesn't exceed 24 bit */
-	if (WARN_ON(SCSC_WIFI_FCQ_MCAST_SMOD >= 0x1000000))
+	if (WARN_ON(SCSC_WIFI_FCQ_MCAST_SMOD >= 0x1000000)) {
 		return -EINVAL;
+	}
 
 	SLSI_DBG1_NODEV(SLSI_WIFI_FCQ, "Init multicast queue set 0x%p\n", qs);
 	fcq_qset_init(SCSC_WIFI_FCQ_QUEUE_SET_TYPE_MULTICAST, qs, 0);
@@ -403,12 +421,13 @@ void scsc_wifi_fcq_qset_deinit(struct scsc_wifi_fcq_data_qset *qs)
 
 	WARN_ON(!qs);
 
-	if (qs->scod != 0)
-		SLSI_DBG1_NODEV(SLSI_WIFI_FCQ, "Data set (0x%p) deinit: scod is %d\n",
-				qs, qs->scod);
+	if (qs->scod != 0) {
+		SLSI_DBG1_NODEV(SLSI_WIFI_FCQ, "Data set (0x%p) deinit: scod is %d\n", qs, qs->scod);
+	}
 
-	for (i = 0; i < SLSI_NETIF_Q_PER_PEER; i++)
+	for (i = 0; i < SLSI_NETIF_Q_PER_PEER; i++) {
 		fcq_data_q_deinit(&qs->ac_q[i]);
+	}
 
 	work_cancel(SCSC_WORK, &qs->fcq_work);
 }

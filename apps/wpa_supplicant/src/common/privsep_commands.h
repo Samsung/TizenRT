@@ -28,8 +28,7 @@ enum privsep_cmd {
 	PRIVSEP_CMD_SET_COUNTRY,
 };
 
-struct privsep_cmd_associate
-{
+struct privsep_cmd_associate {
 	u8 bssid[ETH_ALEN];
 	u8 ssid[SSID_MAX_LEN];
 	size_t ssid_len;
@@ -45,8 +44,7 @@ struct privsep_cmd_associate
 	/* followed by wpa_ie_len bytes of wpa_ie */
 };
 
-struct privsep_cmd_set_key
-{
+struct privsep_cmd_set_key {
 	int alg;
 	u8 addr[ETH_ALEN];
 	int key_idx;
@@ -70,4 +68,4 @@ enum privsep_event {
 	PRIVSEP_EVENT_RX_EAPOL,
 };
 
-#endif /* PRIVSEP_COMMANDS_H */
+#endif							/* PRIVSEP_COMMANDS_H */

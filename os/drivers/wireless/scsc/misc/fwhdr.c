@@ -74,8 +74,9 @@ static bool fwhdr_parse_v02(char *fw, struct fwhdr *fwhdr)
 
 static char *fwhdr_get_build_id_v02(char *fw, struct fwhdr *fwhdr)
 {
-	if (!memcmp(fw + FWHDR_02_MAGIC_OFFSET, FWHDR_MAGIC_STRING, sizeof(FWHDR_MAGIC_STRING) - 1))
+	if (!memcmp(fw + FWHDR_02_MAGIC_OFFSET, FWHDR_MAGIC_STRING, sizeof(FWHDR_MAGIC_STRING) - 1)) {
 		return fw + FWHDR_02_BUILD_ID_OFFSET;
+	}
 	return NULL;
 }
 

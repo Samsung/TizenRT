@@ -23,7 +23,7 @@ struct max_buff_head {
 	struct max_buff *next;
 	struct max_buff *prev;
 
-	__u32           qlen;
+	__u32 qlen;
 	pthread_mutex_t lock;
 };
 
@@ -58,26 +58,26 @@ struct max_buff;
  */
 
 struct max_buff {
-	struct max_buff     *next;
-	struct max_buff     *prev;
+	struct max_buff *next;
+	struct max_buff *prev;
 	struct slsi_mbuf_cb cb;
-	unsigned int        len, data_len;
-	__u16               queue_mapping;
-	__u16               priority;
-	__be16              protocol;
-	__u16               mac_header;
-	unsigned char       *head;
-	unsigned char       *data;
-	unsigned char       *tail;
-	unsigned char       *end;
+	unsigned int len, data_len;
+	__u16 queue_mapping;
+	__u16 priority;
+	__be16 protocol;
+	__u16 mac_header;
+	unsigned char *head;
+	unsigned char *data;
+	unsigned char *tail;
+	unsigned char *end;
 };
 
 struct slsi_mbuf_work {
-	struct slsi_dev      *sdev;
-	struct netif         *dev; /* This can be NULL */
-	struct work_s        work;
+	struct slsi_dev *sdev;
+	struct netif *dev;			/* This can be NULL */
+	struct work_s work;
 	struct max_buff_head queue;
-	void                 *sync_ptr;
+	void *sync_ptr;
 };
 
 struct max_buff *mbuf_copy(const struct max_buff *mbuf);
@@ -108,13 +108,11 @@ static inline struct slsi_mbuf_cb *slsi_mbuf_cb_init(struct max_buff *mbuf)
  *	Insert an max_buff on a list.
  *
  */
-static inline void __mbuf_insert(struct max_buff *newsk,
-				 struct max_buff *prev, struct max_buff *next,
-				 struct max_buff_head *list)
+static inline void __mbuf_insert(struct max_buff *newsk, struct max_buff *prev, struct max_buff *next, struct max_buff_head *list)
 {
 	newsk->next = next;
 	newsk->prev = prev;
-	next->prev  = prev->next = newsk;
+	next->prev = prev->next = newsk;
 	list->qlen++;
 }
 
@@ -229,9 +227,9 @@ static inline void __mbuf_unlink(struct max_buff *mbuf, struct max_buff_head *li
 	struct max_buff *next, *prev;
 
 	list->qlen--;
-	next       = mbuf->next;
-	prev       = mbuf->prev;
-	mbuf->next  = mbuf->prev = NULL;
+	next = mbuf->next;
+	prev = mbuf->prev;
+	mbuf->next = mbuf->prev = NULL;
 	next->prev = prev;
 	prev->next = next;
 }
@@ -253,8 +251,9 @@ static inline struct max_buff *mbuf_peek(const struct max_buff_head *list_)
 {
 	struct max_buff *mbuf = list_->next;
 
-	if (mbuf == (struct max_buff *)list_)
+	if (mbuf == (struct max_buff *)list_) {
 		mbuf = NULL;
+	}
 	return mbuf;
 }
 
@@ -275,8 +274,9 @@ static inline struct max_buff *mbuf_peek_tail(const struct max_buff_head *list_)
 {
 	struct max_buff *mbuf = list_->prev;
 
-	if (mbuf == (struct max_buff *)list_)
+	if (mbuf == (struct max_buff *)list_) {
 		mbuf = NULL;
+	}
 	return mbuf;
 }
 
@@ -308,8 +308,9 @@ static inline struct max_buff *slsi_dev_alloc_mbuf_f(unsigned int length, const 
 	SLSI_UNUSED_PARAMETER(file);
 	SLSI_UNUSED_PARAMETER(line);
 
-	if (mbuf)
+	if (mbuf) {
 		mbuf_reserve(mbuf, SLSI_NETIF_MBUF_HEADROOM - SLSI_MBUF_GET_ALIGNMENT_OFFSET(mbuf));
+	}
 	return mbuf;
 }
 
@@ -320,8 +321,9 @@ static inline struct max_buff *slsi_alloc_mbuf_f(unsigned int size, const char *
 	SLSI_UNUSED_PARAMETER(file);
 	SLSI_UNUSED_PARAMETER(line);
 
-	if (mbuf)
+	if (mbuf) {
 		mbuf_reserve(mbuf, SLSI_NETIF_MBUF_HEADROOM - SLSI_MBUF_GET_ALIGNMENT_OFFSET(mbuf));
+	}
 	return mbuf;
 }
 
@@ -376,8 +378,9 @@ static inline struct max_buff *slsi_mbuf_work_dequeue_l(struct slsi_mbuf_work *w
 
 static inline void slsi_mbuf_work_deinit(struct slsi_mbuf_work *work)
 {
-	if (WARN_ON(!work->sync_ptr))
+	if (WARN_ON(!work->sync_ptr)) {
 		return;
+	}
 
 	work->sync_ptr = NULL;
 
@@ -388,4 +391,4 @@ static inline void slsi_mbuf_work_deinit(struct slsi_mbuf_work *work)
 #define slsi_mbuf_work_enqueue(work_, mbuf_, func_) slsi_mbuf_work_enqueue_l(work_, mbuf_, func_)
 #define slsi_mbuf_work_dequeue(work_) slsi_mbuf_work_dequeue_l(work_)
 
-#endif /* SLSI_MAX_BUF_H__ */
+#endif							/* SLSI_MAX_BUF_H__ */

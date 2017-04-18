@@ -26,7 +26,7 @@
 
 struct http_server_t *http_server_init(int port)
 {
-	struct http_server_t *p = (struct http_server_t *) HTTP_MALLOC(sizeof(struct http_server_t));
+	struct http_server_t *p = (struct http_server_t *)HTTP_MALLOC(sizeof(struct http_server_t));
 	if (p == NULL) {
 		HTTP_LOGE("Error: Failed to malloc server\n");
 		return NULL;

@@ -14,16 +14,16 @@
 
 /* Timeout Service Manager start/stop (ms) - default 1000. 0 = infinite */
 static ulong sm_completion_timeout_ms = 1000;
-#define SCSC_MX_SERVICE_RECOVERY_TIMEOUT 20000 /* 20 seconds */
+#define SCSC_MX_SERVICE_RECOVERY_TIMEOUT 20000	/* 20 seconds */
 
 struct scsc_service {
-	struct slsi_dlist_head     list;
-	struct scsc_mx             *mx;
-	enum scsc_service_id       id;
+	struct slsi_dlist_head list;
+	struct scsc_mx *mx;
+	enum scsc_service_id id;
 	struct scsc_service_client *client;
-	struct completion          sm_msg_start_completion;
-	struct completion          sm_msg_stop_completion;
-	struct work_s              sm_msg_start_cfm_work;
+	struct completion sm_msg_start_completion;
+	struct completion sm_msg_stop_completion;
+	struct work_s sm_msg_start_cfm_work;
 };
 
 void srvman_init(struct srvman *srvman, struct scsc_mx *mx)
@@ -120,44 +120,50 @@ static int wait_for_sm_msg_stop_cfm(struct scsc_service *service)
 
 static int send_sm_msg_start_blocking(struct scsc_service *service, scsc_mifram_ref ref)
 {
-	struct scsc_mx          *mx = service->mx;
+	struct scsc_mx *mx = service->mx;
 	struct mxmgmt_transport *mxmgmt_transport = scsc_mx_get_mxmgmt_transport(mx);
-	int                     r;
-	struct sm_msg_packet    message = { .service_id = service->id,
-					    .msg = SM_MSG_START_REQ,
-					    .optional_data = ref };
+	int r;
+	struct sm_msg_packet message = {.service_id = service->id,
+		.msg = SM_MSG_START_REQ,
+		 .optional_data = ref
+	};
 
 	reinit_completion(&service->sm_msg_start_completion);
 
 	/* Send to FW in MM stream */
 	mxmgmt_transport_send(mxmgmt_transport, MMTRANS_CHAN_ID_SERVICE_MANAGEMENT, &message, sizeof(message));
 	r = wait_for_sm_msg_start_cfm(service);
-	if (r)
+	if (r) {
 		SLSI_ERR_NODEV("wait_for_sm_msg_start_cfm() failed: r=%d\n", r);
+	}
 	return r;
 }
 
 static int send_sm_msg_stop_blocking(struct scsc_service *service)
 {
-	struct scsc_mx          *mx = service->mx;
-	struct mxman            *mxman = scsc_mx_get_mxman(mx);
+	struct scsc_mx *mx = service->mx;
+	struct mxman *mxman = scsc_mx_get_mxman(mx);
 	struct mxmgmt_transport *mxmgmt_transport = scsc_mx_get_mxmgmt_transport(mx);
-	int                     r;
-	struct sm_msg_packet    message = { .service_id = service->id,
-					    .msg = SM_MSG_STOP_REQ,
-					    .optional_data = 0 };
-	if (mxman->mxman_state == MXMAN_STATE_FAILED)
+	int r;
+	struct sm_msg_packet message = {.service_id = service->id,
+		.msg = SM_MSG_STOP_REQ,
+		 .optional_data = 0
+	};
+	if (mxman->mxman_state == MXMAN_STATE_FAILED) {
 		return 0;
+	}
 
 	reinit_completion(&service->sm_msg_stop_completion);
 
 	/* Send to FW in MM stream */
 	mxmgmt_transport_send(mxmgmt_transport, MMTRANS_CHAN_ID_SERVICE_MANAGEMENT, &message, sizeof(message));
 	r = wait_for_sm_msg_stop_cfm(service);
-	if (r)
+	if (r) {
 		SLSI_ERR_NODEV("wait_for_sm_msg_stop_cfm() for service=%p service->id=%d failed: r=%d\n", service, service->id, r);
+	}
 	return r;
 }
+
 void sm_start_cfm_complete(struct scsc_service *service)
 {
 	complete(&service->sm_msg_start_completion);
@@ -168,10 +174,10 @@ void sm_start_cfm_complete(struct scsc_service *service)
  */
 static void srv_message_handler(const void *message, void *data)
 {
-	struct srvman              *srvman = (struct srvman *)data;
-	struct scsc_service        *service;
+	struct srvman *srvman = (struct srvman *)data;
+	struct scsc_service *service;
 	const struct sm_msg_packet *msg = message;
-	bool                       found = false;
+	bool found = false;
 
 	pthread_mutex_lock(&srvman->service_list_mutex);
 	slsi_dlist_for_each_entry(service, &srvman->service_list, list) {
@@ -188,20 +194,17 @@ static void srv_message_handler(const void *message, void *data)
 	/* Forward the message to the applicable service to deal with */
 	switch (msg->msg) {
 	case SM_MSG_START_CFM:
-		SLSI_INFO_NODEV("Received SM_MSG_START_CFM message service=%p with service_id=%d from the firmware\n",
-				service, msg->service_id);
+		SLSI_INFO_NODEV("Received SM_MSG_START_CFM message service=%p with service_id=%d from the firmware\n", service, msg->service_id);
 
-		work_queue(LPWORK, &service->sm_msg_start_cfm_work, (worker_t)sm_start_cfm_complete, service, 0);
+		work_queue(LPWORK, &service->sm_msg_start_cfm_work, (worker_t) sm_start_cfm_complete, service, 0);
 		break;
 	case SM_MSG_STOP_CFM:
-		SLSI_INFO_NODEV("Received SM_MSG_STOP_CFM message for service=%p with service_id=%d from the firmware\n",
-				service, msg->service_id);
+		SLSI_INFO_NODEV("Received SM_MSG_STOP_CFM message for service=%p with service_id=%d from the firmware\n", service, msg->service_id);
 		complete(&service->sm_msg_stop_completion);
 		break;
 	default:
 		/* HERE: Unknown message, raise fault */
-		pr_warn("%s: Received unknown message for service=%p with service_id=%d from the firmware: msg->msg=%d\n",
-			__func__, service, msg->msg, msg->service_id);
+		pr_warn("%s: Received unknown message for service=%p with service_id=%d from the firmware: msg->msg=%d\n", __func__, service, msg->msg, msg->service_id);
 		break;
 	}
 }
@@ -209,8 +212,8 @@ static void srv_message_handler(const void *message, void *data)
 int scsc_mx_service_start(struct scsc_service *service, scsc_mifram_ref ref)
 {
 	struct scsc_mx *mx = service->mx;
-	struct srvman  *srvman = scsc_mx_get_srvman(mx);
-	int            r;
+	struct srvman *srvman = scsc_mx_get_srvman(mx);
+	int r;
 
 	pthread_mutex_lock(&srvman->api_access_mutex);
 	if (srvman->error) {
@@ -232,8 +235,8 @@ int scsc_mx_service_start(struct scsc_service *service, scsc_mifram_ref ref)
 int scsc_mx_service_stop(struct scsc_service *service)
 {
 	struct scsc_mx *mx = service->mx;
-	struct srvman  *srvman = scsc_mx_get_srvman(mx);
-	int            r;
+	struct srvman *srvman = scsc_mx_get_srvman(mx);
+	int r;
 
 	SLSI_INFO_NODEV("\n");
 	pthread_mutex_lock(&srvman->api_access_mutex);
@@ -256,7 +259,7 @@ int scsc_mx_service_stop(struct scsc_service *service)
 void srvman_freeze_services(struct srvman *srvman)
 {
 	struct scsc_service *service;
-	struct mxman        *mxman = scsc_mx_get_mxman(srvman->mx);
+	struct mxman *mxman = scsc_mx_get_mxman(srvman->mx);
 
 	SLSI_INFO_NODEV("\n");
 	pthread_mutex_lock(&srvman->service_list_mutex);
@@ -267,11 +270,13 @@ void srvman_freeze_services(struct srvman *srvman)
 	pthread_mutex_unlock(&srvman->service_list_mutex);
 	SLSI_INFO_NODEV("OK\n");
 }
+
 void srvman_clear_error(struct srvman *srvman)
 {
 	SLSI_INFO_NODEV("\n");
 	srvman->error = false;
 }
+
 void srvman_unfreeze_services(struct srvman *srvman, u16 scsc_panic_code)
 {
 	struct scsc_service *service;
@@ -284,6 +289,7 @@ void srvman_unfreeze_services(struct srvman *srvman, u16 scsc_panic_code)
 	pthread_mutex_unlock(&srvman->service_list_mutex);
 	SLSI_INFO_NODEV("OK\n");
 }
+
 /** Signal a failure detected by the Client. This will trigger the systemwide
  * failure handling procedure: _All_ Clients will be called back via
  * their stop_on_failure() handler as a side-effect.
@@ -291,7 +297,7 @@ void srvman_unfreeze_services(struct srvman *srvman, u16 scsc_panic_code)
 void scsc_mx_service_service_failed(struct scsc_service *service)
 {
 	struct scsc_mx *mx = service->mx;
-	struct srvman  *srvman = scsc_mx_get_srvman(mx);
+	struct srvman *srvman = scsc_mx_get_srvman(mx);
 
 	SLSI_INFO_NODEV("\n");
 	srvman_set_error(srvman);
@@ -300,10 +306,10 @@ void scsc_mx_service_service_failed(struct scsc_service *service)
 
 void scsc_mx_service_close(struct scsc_service *service)
 {
-	struct mxman   *mxman = scsc_mx_get_mxman(service->mx);
+	struct mxman *mxman = scsc_mx_get_mxman(service->mx);
 	struct scsc_mx *mx = service->mx;
-	struct srvman  *srvman = scsc_mx_get_srvman(mx);
-	bool           empty;
+	struct srvman *srvman = scsc_mx_get_srvman(mx);
+	bool empty;
 
 	SLSI_INFO_NODEV("\n");
 	pthread_mutex_lock(&srvman->api_access_mutex);
@@ -319,8 +325,9 @@ void scsc_mx_service_close(struct scsc_service *service)
 	pthread_mutex_unlock(&srvman->service_list_mutex);
 	if (empty)
 		/* unregister channel handler */
-		mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mx), MMTRANS_CHAN_ID_SERVICE_MANAGEMENT,
-							  NULL, NULL);
+	{
+		mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mx), MMTRANS_CHAN_ID_SERVICE_MANAGEMENT, NULL, NULL);
+	}
 
 	kmm_free(service);
 	mxman_close(mxman);
@@ -330,11 +337,11 @@ void scsc_mx_service_close(struct scsc_service *service)
 /* Consider move to a public scsc_mx interface */
 struct scsc_service *scsc_mx_service_open(struct scsc_mx *mx, enum scsc_service_id id, struct scsc_service_client *client)
 {
-	int                 ret;
+	int ret;
 	struct scsc_service *service;
-	struct srvman       *srvman = scsc_mx_get_srvman(mx);
-	struct mxman        *mxman = scsc_mx_get_mxman(mx);
-	bool                empty;
+	struct srvman *srvman = scsc_mx_get_srvman(mx);
+	struct mxman *mxman = scsc_mx_get_mxman(mx);
+	bool empty;
 
 	pthread_mutex_lock(&srvman->api_access_mutex);
 
@@ -348,8 +355,7 @@ struct scsc_service *scsc_mx_service_open(struct scsc_mx *mx, enum scsc_service_
 		int r;
 
 		pthread_mutex_unlock(&srvman->api_access_mutex);
-		r = wait_for_completion_timeout(&mxman->recovery_completion,
-						SCSC_MX_SERVICE_RECOVERY_TIMEOUT);
+		r = wait_for_completion_timeout(&mxman->recovery_completion, SCSC_MX_SERVICE_RECOVERY_TIMEOUT);
 		if (r == 0) {
 			SLSI_ERR_NODEV("Recovery timeout\n");
 			return NULL;
@@ -378,9 +384,9 @@ struct scsc_service *scsc_mx_service_open(struct scsc_mx *mx, enum scsc_service_
 		pthread_mutex_lock(&srvman->service_list_mutex);
 		empty = slsi_dlist_empty(&srvman->service_list);
 		pthread_mutex_unlock(&srvman->service_list_mutex);
-		if (empty)
-			mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mx), MMTRANS_CHAN_ID_SERVICE_MANAGEMENT,
-								  &srv_message_handler, srvman);
+		if (empty) {
+			mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mx), MMTRANS_CHAN_ID_SERVICE_MANAGEMENT, &srv_message_handler, srvman);
+		}
 
 		pthread_mutex_lock(&srvman->service_list_mutex);
 		slsi_dlist_add_tail(&service->list, &srvman->service_list);
@@ -395,10 +401,10 @@ struct scsc_service *scsc_mx_service_open(struct scsc_mx *mx, enum scsc_service_
 /** Allocate a contiguous block of SDRAM accessible to Client Driver */
 int scsc_mx_service_mifram_alloc(struct scsc_service *service, size_t nbytes, scsc_mifram_ref *ref, u32 align)
 {
-	struct scsc_mx      *mx = service->mx;
+	struct scsc_mx *mx = service->mx;
 	struct scsc_mif_abs *mif_abs;
-	void                *mem;
-	int                 ret;
+	void *mem;
+	int ret;
 
 	mif_abs = scsc_mx_get_mif_abs(mx);
 
@@ -423,7 +429,7 @@ int scsc_mx_service_mifram_alloc(struct scsc_service *service, size_t nbytes, sc
 void scsc_mx_service_mifram_free(struct scsc_service *service, scsc_mifram_ref ref)
 {
 	struct scsc_mx *mx = service->mx;
-	void           *mem;
+	void *mem;
 
 	mem = scsc_mx_service_mif_addr_to_ptr(service, ref);
 
@@ -447,7 +453,7 @@ void scsc_service_free_mboxes(struct scsc_service *service, int n, int first_mbo
 
 u32 *scsc_mx_service_get_mbox_ptr(struct scsc_service *service, int mbox_index)
 {
-	struct scsc_mx      *mx = service->mx;
+	struct scsc_mx *mx = service->mx;
 	struct scsc_mif_abs *mif_abs;
 
 	mif_abs = scsc_mx_get_mif_abs(mx);
@@ -457,7 +463,7 @@ u32 *scsc_mx_service_get_mbox_ptr(struct scsc_service *service, int mbox_index)
 
 int scsc_service_mifintrbit_bit_mask_status_get(struct scsc_service *service)
 {
-	struct scsc_mx      *mx = service->mx;
+	struct scsc_mx *mx = service->mx;
 	struct scsc_mif_abs *mif_abs;
 
 	mif_abs = scsc_mx_get_mif_abs(mx);
@@ -467,7 +473,7 @@ int scsc_service_mifintrbit_bit_mask_status_get(struct scsc_service *service)
 
 int scsc_service_mifintrbit_get(struct scsc_service *service)
 {
-	struct scsc_mx      *mx = service->mx;
+	struct scsc_mx *mx = service->mx;
 	struct scsc_mif_abs *mif_abs;
 
 	mif_abs = scsc_mx_get_mif_abs(mx);
@@ -477,7 +483,7 @@ int scsc_service_mifintrbit_get(struct scsc_service *service)
 
 void scsc_service_mifintrbit_bit_set(struct scsc_service *service, int which_bit, enum scsc_mifintr_target dir)
 {
-	struct scsc_mx      *mx = service->mx;
+	struct scsc_mx *mx = service->mx;
 	struct scsc_mif_abs *mif_abs;
 
 	mif_abs = scsc_mx_get_mif_abs(mx);
@@ -487,7 +493,7 @@ void scsc_service_mifintrbit_bit_set(struct scsc_service *service, int which_bit
 
 void scsc_service_mifintrbit_bit_clear(struct scsc_service *service, int which_bit)
 {
-	struct scsc_mx      *mx = service->mx;
+	struct scsc_mx *mx = service->mx;
 	struct scsc_mif_abs *mif_abs;
 
 	mif_abs = scsc_mx_get_mif_abs(mx);
@@ -497,7 +503,7 @@ void scsc_service_mifintrbit_bit_clear(struct scsc_service *service, int which_b
 
 void scsc_service_mifintrbit_bit_mask(struct scsc_service *service, int which_bit)
 {
-	struct scsc_mx      *mx = service->mx;
+	struct scsc_mx *mx = service->mx;
 	struct scsc_mif_abs *mif_abs;
 
 	mif_abs = scsc_mx_get_mif_abs(mx);
@@ -507,7 +513,7 @@ void scsc_service_mifintrbit_bit_mask(struct scsc_service *service, int which_bi
 
 void scsc_service_mifintrbit_bit_unmask(struct scsc_service *service, int which_bit)
 {
-	struct scsc_mx      *mx = service->mx;
+	struct scsc_mx *mx = service->mx;
 	struct scsc_mif_abs *mif_abs;
 
 	mif_abs = scsc_mx_get_mif_abs(mx);
@@ -545,7 +551,7 @@ int scsc_service_mifintrbit_unregister_tohost(struct scsc_service *service, int 
 
 void *scsc_mx_service_mif_addr_to_ptr(struct scsc_service *service, scsc_mifram_ref ref)
 {
-	struct scsc_mx      *mx = service->mx;
+	struct scsc_mx *mx = service->mx;
 
 	struct scsc_mif_abs *mif_abs;
 
@@ -556,7 +562,7 @@ void *scsc_mx_service_mif_addr_to_ptr(struct scsc_service *service, scsc_mifram_
 
 int scsc_mx_service_mif_ptr_to_addr(struct scsc_service *service, void *mem_ptr, scsc_mifram_ref *ref)
 {
-	struct scsc_mx      *mx = service->mx;
+	struct scsc_mx *mx = service->mx;
 	struct scsc_mif_abs *mif_abs;
 
 	mif_abs = scsc_mx_get_mif_abs(mx);
@@ -569,7 +575,6 @@ int scsc_mx_service_mif_ptr_to_addr(struct scsc_service *service, void *mem_ptr,
 
 	return 0;
 }
-
 
 int scsc_service_force_panic(struct scsc_service *service)
 {

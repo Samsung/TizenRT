@@ -198,8 +198,7 @@ struct radius_server_conf {
 	 * password. The password field will be an allocated copy of the
 	 * password data and RADIUS server will free it after use.
 	 */
-	int (*get_eap_user)(void *ctx, const u8 *identity, size_t identity_len,
-			    int phase2, struct eap_user *user);
+	int (*get_eap_user)(void *ctx, const u8 *identity, size_t identity_len, int phase2, struct eap_user *user);
 
 	/**
 	 * eap_req_id_text - Optional data for EAP-Request/Identity
@@ -225,22 +224,19 @@ struct radius_server_conf {
 
 #ifdef CONFIG_RADIUS_TEST
 	const char *dump_msk_file;
-#endif /* CONFIG_RADIUS_TEST */
+#endif							/* CONFIG_RADIUS_TEST */
 
 	char *subscr_remediation_url;
 	u8 subscr_remediation_method;
 };
 
-
-struct radius_server_data *
-radius_server_init(struct radius_server_conf *conf);
+struct radius_server_data *radius_server_init(struct radius_server_conf *conf);
 
 void radius_server_erp_flush(struct radius_server_data *data);
 void radius_server_deinit(struct radius_server_data *data);
 
-int radius_server_get_mib(struct radius_server_data *data, char *buf,
-			  size_t buflen);
+int radius_server_get_mib(struct radius_server_data *data, char *buf, size_t buflen);
 
 void radius_server_eap_pending_cb(struct radius_server_data *data, void *ctx);
 
-#endif /* RADIUS_SERVER_H */
+#endif							/* RADIUS_SERVER_H */

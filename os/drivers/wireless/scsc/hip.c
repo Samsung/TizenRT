@@ -43,8 +43,9 @@ int slsi_hip_sap_register(struct sap_api *sap_api)
 {
 	u8 class = sap_api->sap_class;
 
-	if (class >= SAP_TOTAL)
+	if (class >= SAP_TOTAL) {
 		return -ENODEV;
+	}
 
 	hip_sap_cont.sap[class] = sap_api;
 
@@ -56,8 +57,9 @@ int slsi_hip_sap_unregister(struct sap_api *sap_api)
 {
 	u8 class = sap_api->sap_class;
 
-	if (class >= SAP_TOTAL)
+	if (class >= SAP_TOTAL) {
 		return -ENODEV;
+	}
 
 	hip_sap_cont.sap[class] = NULL;
 
@@ -72,50 +74,62 @@ int slsi_hip_sap_setup(struct slsi_dev *sdev)
 
 	conf_hip4_ver = scsc_wifi_get_hip_config_version(&sdev->hip4_inst.hip_control->init);
 	/* We enforce that all the SAPs are registered at this point */
-	if ((!hip_sap_cont.sap[SAP_MLME]) || (!hip_sap_cont.sap[SAP_MA]) ||
-	    (!hip_sap_cont.sap[SAP_DBG]) || (!hip_sap_cont.sap[SAP_TST]))
+	if ((!hip_sap_cont.sap[SAP_MLME]) || (!hip_sap_cont.sap[SAP_MA]) || (!hip_sap_cont.sap[SAP_DBG]) || (!hip_sap_cont.sap[SAP_TST])) {
 		return -ENODEV;
+	}
 
 	if (hip_sap_cont.sap[SAP_MLME]->sap_version_supported) {
-		if (conf_hip4_ver == 4)
+		if (conf_hip4_ver == 4) {
 			version = scsc_wifi_get_hip_config_version_4_u16(&sdev->hip4_inst.hip_control->config_v4, sap_mlme_ver);
-		if (conf_hip4_ver == 3)
+		}
+		if (conf_hip4_ver == 3) {
 			version = scsc_wifi_get_hip_config_version_3_u16(&sdev->hip4_inst.hip_control->config_v3, sap_mlme_ver);
-		if (hip_sap_cont.sap[SAP_MLME]->sap_version_supported(version))
+		}
+		if (hip_sap_cont.sap[SAP_MLME]->sap_version_supported(version)) {
 			return -ENODEV;
+		}
 	} else {
 		return -ENODEV;
 	}
 
 	if (hip_sap_cont.sap[SAP_MA]->sap_version_supported) {
-		if (conf_hip4_ver == 4)
+		if (conf_hip4_ver == 4) {
 			version = scsc_wifi_get_hip_config_version_4_u16(&sdev->hip4_inst.hip_control->config_v4, sap_ma_ver);
-		if (conf_hip4_ver == 3)
+		}
+		if (conf_hip4_ver == 3) {
 			version = scsc_wifi_get_hip_config_version_3_u16(&sdev->hip4_inst.hip_control->config_v3, sap_ma_ver);
-		if (hip_sap_cont.sap[SAP_MA]->sap_version_supported(version))
+		}
+		if (hip_sap_cont.sap[SAP_MA]->sap_version_supported(version)) {
 			return -ENODEV;
+		}
 	} else {
 		return -ENODEV;
 	}
 
 	if (hip_sap_cont.sap[SAP_DBG]->sap_version_supported) {
-		if (conf_hip4_ver == 4)
+		if (conf_hip4_ver == 4) {
 			version = scsc_wifi_get_hip_config_version_4_u16(&sdev->hip4_inst.hip_control->config_v4, sap_debug_ver);
-		if (conf_hip4_ver == 3)
+		}
+		if (conf_hip4_ver == 3) {
 			version = scsc_wifi_get_hip_config_version_3_u16(&sdev->hip4_inst.hip_control->config_v3, sap_debug_ver);
-		if (hip_sap_cont.sap[SAP_DBG]->sap_version_supported(version))
+		}
+		if (hip_sap_cont.sap[SAP_DBG]->sap_version_supported(version)) {
 			return -ENODEV;
+		}
 	} else {
 		return -ENODEV;
 	}
 
 	if (hip_sap_cont.sap[SAP_TST]->sap_version_supported) {
-		if (conf_hip4_ver == 4)
+		if (conf_hip4_ver == 4) {
 			version = scsc_wifi_get_hip_config_version_4_u16(&sdev->hip4_inst.hip_control->config_v4, sap_test_ver);
-		if (conf_hip4_ver == 3)
+		}
+		if (conf_hip4_ver == 3) {
 			version = scsc_wifi_get_hip_config_version_3_u16(&sdev->hip4_inst.hip_control->config_v3, sap_test_ver);
-		if (hip_sap_cont.sap[SAP_TST]->sap_version_supported(version))
+		}
+		if (hip_sap_cont.sap[SAP_TST]->sap_version_supported(version)) {
 			return -ENODEV;
+		}
 	} else {
 		return -ENODEV;
 	}
@@ -193,9 +207,9 @@ int slsi_hip_rx(struct slsi_dev *sdev, struct max_buff *mbuf)
 	u16 pid;
 
 	/* We enforce that all the SAPs are registered at this point */
-	if ((!hip_sap_cont.sap[SAP_MLME]) || (!hip_sap_cont.sap[SAP_MA]) ||
-	    (!hip_sap_cont.sap[SAP_DBG]) || (!hip_sap_cont.sap[SAP_TST]))
+	if ((!hip_sap_cont.sap[SAP_MLME]) || (!hip_sap_cont.sap[SAP_MA]) || (!hip_sap_cont.sap[SAP_DBG]) || (!hip_sap_cont.sap[SAP_TST])) {
 		return -ENODEV;
+	}
 	/* Udi test : If pid in UDI range then pass to UDI and ignore */
 	slsi_log_clients_log_signal_fast(sdev, &sdev->log_clients, mbuf, SLSI_LOG_DIRECTION_TO_HOST);
 	pid = fapi_get_u16(mbuf, receiver_pid);
@@ -204,17 +218,21 @@ int slsi_hip_rx(struct slsi_dev *sdev, struct max_buff *mbuf)
 		return 0;
 	}
 
-	if (fapi_is_ma(mbuf))
+	if (fapi_is_ma(mbuf)) {
 		return hip_sap_cont.sap[SAP_MA]->sap_handler(sdev, mbuf);
+	}
 
-	if (fapi_is_mlme(mbuf))
+	if (fapi_is_mlme(mbuf)) {
 		return hip_sap_cont.sap[SAP_MLME]->sap_handler(sdev, mbuf);
+	}
 
-	if (fapi_is_debug(mbuf))
+	if (fapi_is_debug(mbuf)) {
 		return hip_sap_cont.sap[SAP_DBG]->sap_handler(sdev, mbuf);
+	}
 
-	if (fapi_is_test(mbuf))
+	if (fapi_is_test(mbuf)) {
 		return hip_sap_cont.sap[SAP_TST]->sap_handler(sdev, mbuf);
+	}
 
 	return -EIO;
 }

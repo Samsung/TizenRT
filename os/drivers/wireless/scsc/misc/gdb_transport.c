@@ -16,38 +16,36 @@
 #include "debug_scsc.h"
 
 struct clients_node {
-	struct slsi_dlist_head      list;
+	struct slsi_dlist_head list;
 	struct gdb_transport_client *gdb_client;
 };
 
 struct gdb_transport_node {
 	struct slsi_dlist_head list;
-	struct gdb_transport   *gdb_transport;
+	struct gdb_transport *gdb_transport;
 };
 
 static struct gdb_transport_module {
 	struct slsi_dlist_head clients_list;
 	struct slsi_dlist_head gdb_transport_list;
 } gdb_transport_module = {
-	.clients_list = SLSI_DLIST_HEAD_INIT(gdb_transport_module.clients_list),
-	.gdb_transport_list = SLSI_DLIST_HEAD_INIT(gdb_transport_module.gdb_transport_list)
+	.clients_list = SLSI_DLIST_HEAD_INIT(gdb_transport_module.clients_list), .gdb_transport_list = SLSI_DLIST_HEAD_INIT(gdb_transport_module.gdb_transport_list)
 };
 
 static void input_irq_handler(int irq, void *data)
 {
 	struct gdb_transport *gdb_transport = (struct gdb_transport *)data;
-	struct scsc_mif_abs  *mif_abs;
-	u32                  num_bytes;
-	u32                  alloc_bytes;
-	char                 *buf;
+	struct scsc_mif_abs *mif_abs;
+	u32 num_bytes;
+	u32 alloc_bytes;
+	char *buf;
 
 	/* 1st length */
 	/* Clear the interrupt first to ensure we can't possibly miss one */
 	mif_abs = scsc_mx_get_mif_abs(gdb_transport->mx);
 	mif_abs->irq_bit_clear(mif_abs, irq);
 	while (mif_stream_read(&gdb_transport->mif_istream, &num_bytes, sizeof(uint32_t))) {
-		if (num_bytes > 0 && num_bytes
-		    < (GDB_TRANSPORT_BUF_LENGTH - sizeof(uint32_t))) {
+		if (num_bytes > 0 && num_bytes < (GDB_TRANSPORT_BUF_LENGTH - sizeof(uint32_t))) {
 			alloc_bytes = sizeof(char) * num_bytes;
 			buf = kmm_malloc(alloc_bytes);
 			/* 2nd payload (msg) */
@@ -60,11 +58,10 @@ static void input_irq_handler(int irq, void *data)
 	}
 }
 
-
 /** MIF Interrupt handler for acknowledging reads made by the AP */
 static void output_irq_handler(int irq, void *data)
 {
-	struct scsc_mif_abs  *mif_abs;
+	struct scsc_mif_abs *mif_abs;
 	struct gdb_transport *gdb_transport = (struct gdb_transport *)data;
 
 	/* Clear the interrupt first to ensure we can't possibly miss one */
@@ -76,10 +73,10 @@ static void output_irq_handler(int irq, void *data)
 
 static void gdb_transport_probe_registered_clients(struct gdb_transport *gdb_transport)
 {
-	bool                client_registered = false;
+	bool client_registered = false;
 	struct clients_node *gdb_client_node, *gdb_client_next;
 	struct scsc_mif_abs *mif_abs;
-	char                *dev_uid;
+	char *dev_uid;
 
 	/* Traverse Linked List for each mif_driver node */
 	slsi_dlist_for_each_entry_safe(gdb_client_node, gdb_client_next, &gdb_transport_module.clients_list, list) {
@@ -96,9 +93,9 @@ static void gdb_transport_probe_registered_clients(struct gdb_transport *gdb_tra
 
 void gdb_transport_release(struct gdb_transport *gdb_transport)
 {
-	struct clients_node       *gdb_client_node, *gdb_client_next;
+	struct clients_node *gdb_client_node, *gdb_client_next;
 	struct gdb_transport_node *gdb_transport_node, *gdb_transport_node_next;
-	bool                      match = false;
+	bool match = false;
 
 	slsi_dlist_for_each_entry_safe(gdb_transport_node, gdb_transport_node_next, &gdb_transport_module.gdb_transport_list, list) {
 		if (gdb_transport_node->gdb_transport == gdb_transport) {
@@ -119,26 +116,25 @@ void gdb_transport_release(struct gdb_transport *gdb_transport)
 	mif_stream_release(&gdb_transport->mif_ostream);
 }
 
-void gdb_transport_config_serialise(struct gdb_transport *gdb_transport,
-				    struct mxtransconf   *trans_conf)
+void gdb_transport_config_serialise(struct gdb_transport *gdb_transport, struct mxtransconf *trans_conf)
 {
 	mif_stream_config_serialise(&gdb_transport->mif_istream, &trans_conf->to_ap_stream_conf);
 	mif_stream_config_serialise(&gdb_transport->mif_ostream, &trans_conf->from_ap_stream_conf);
 }
 
-
 /** Public functions */
 int gdb_transport_init(struct gdb_transport *gdb_transport, struct scsc_mx *mx, enum gdb_transport_enum type)
 {
-	int                       r;
-	uint32_t                  mem_length = GDB_TRANSPORT_BUF_LENGTH;
-	uint32_t                  packet_size = 4;
-	uint32_t                  num_packets;
+	int r;
+	uint32_t mem_length = GDB_TRANSPORT_BUF_LENGTH;
+	uint32_t packet_size = 4;
+	uint32_t num_packets;
 	struct gdb_transport_node *gdb_transport_node;
 
 	gdb_transport_node = kmm_zalloc(sizeof(*gdb_transport_node));
-	if (!gdb_transport_node)
+	if (!gdb_transport_node) {
 		return -EIO;
+	}
 
 	memset(gdb_transport, 0, sizeof(struct gdb_transport));
 	num_packets = mem_length / packet_size;
@@ -170,7 +166,7 @@ int gdb_transport_init(struct gdb_transport *gdb_transport, struct scsc_mx *mx, 
 
 void gdb_transport_send(struct gdb_transport *gdb_transport, void *message, uint32_t message_length)
 {
-	/*int i;*/
+	/*int i; */
 	char msg[300];
 
 	memcpy(msg, message, message_length);
@@ -183,8 +179,7 @@ void gdb_transport_send(struct gdb_transport *gdb_transport, void *message, uint
 	pthread_mutex_unlock(&gdb_transport->channel_handler_mutex);
 }
 
-void gdb_transport_register_channel_handler(struct gdb_transport *gdb_transport,
-					    gdb_channel_handler handler, void *data)
+void gdb_transport_register_channel_handler(struct gdb_transport *gdb_transport, gdb_channel_handler handler, void *data)
 {
 	pthread_mutex_lock(&gdb_transport->channel_handler_mutex);
 	gdb_transport->channel_handler_fn = handler;
@@ -194,19 +189,19 @@ void gdb_transport_register_channel_handler(struct gdb_transport *gdb_transport,
 
 int gdb_transport_register_client(struct gdb_transport_client *gdb_client)
 {
-	struct clients_node       *gdb_client_node;
+	struct clients_node *gdb_client_node;
 	struct gdb_transport_node *gdb_transport_node;
-	struct scsc_mif_abs       *mif_abs;
-	char                      *dev_uid;
+	struct scsc_mif_abs *mif_abs;
+	char *dev_uid;
 
 	/* Add node in modules linked list */
 	gdb_client_node = kmm_zalloc(sizeof(*gdb_client_node));
-	if (!gdb_client_node)
+	if (!gdb_client_node) {
 		return -ENOMEM;
+	}
 
 	gdb_client_node->gdb_client = gdb_client;
 	slsi_dlist_add_tail(&gdb_client_node->list, &gdb_transport_module.clients_list);
-
 
 	/* Traverse Linked List for transport registered */
 	slsi_dlist_for_each_entry(gdb_transport_node, &gdb_transport_module.gdb_transport_list, list) {

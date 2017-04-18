@@ -27,4 +27,4 @@ int isp_aes_xts_securekey(struct sAES_PARAM *aes_param, unsigned int enc, unsign
 int isp_aes_ccm_securekey(struct sAES_PARAM *aes_param, unsigned int enc, unsigned int key_index);
 int isp_aes_gcm_securekey(struct sAES_PARAM *aes_param, unsigned int enc, unsigned int key_index);
 
-#endif /* ISP_DRIVER_AES_SECUREKEY_H_ */
+#endif							/* ISP_DRIVER_AES_SECUREKEY_H_ */

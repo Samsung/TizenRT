@@ -50,18 +50,17 @@
 
 #define SLSI_NETIF_Q_PER_PEER   4
 
-
-
-
 #define SLSI_IS_MULTICAST_QUEUE_MAPPING(queue) (queue >= SLSI_NETIF_Q_MULTICAST_START && queue < (SLSI_NETIF_Q_MULTICAST_START + SLSI_NETIF_Q_PER_PEER) ? 1 : 0)
 
 static inline void *netdev_priv(const struct netif *dev)
 {
-	if(dev)
+	if (dev) {
 		return (FAR struct netdev_vif *)dev->d_private;
-	else
+	} else {
 		return NULL;
+	}
 }
+
 static inline u16 slsi_netif_get_peer_queue(s16 queueset, s16 ac)
 {
 	WARN_ON(ac > SLSI_NETIF_Q_PER_PEER);

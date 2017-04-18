@@ -15,9 +15,8 @@ void mxlog_release(struct mxlog *mxlog);
 
 struct mxlog {
 	struct scsc_mx *mx;
-	u8             buffer[MXLOG_BUFFER_SIZE];
-	u16            index;
+	u8 buffer[MXLOG_BUFFER_SIZE];
+	u16 index;
 };
-
 
 #endif

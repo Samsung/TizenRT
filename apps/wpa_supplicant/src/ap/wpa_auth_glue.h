@@ -13,4 +13,4 @@ int hostapd_setup_wpa(struct hostapd_data *hapd);
 void hostapd_reconfig_wpa(struct hostapd_data *hapd);
 void hostapd_deinit_wpa(struct hostapd_data *hapd);
 
-#endif /* WPA_AUTH_GLUE_H */
+#endif							/* WPA_AUTH_GLUE_H */

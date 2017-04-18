@@ -47,123 +47,123 @@ enum hip4_hip_q_conf {
 
 struct hip4_hip_config_version_4 {
 	u32 magic_number;
-	u16 hip_config_ver;     /* Version of this configuration structure = 2*/
-	u16 config_len;         /* Size of this configuration structure */
+	u16 hip_config_ver;			/* Version of this configuration structure = 2 */
+	u16 config_len;				/* Size of this configuration structure */
 
 	/* FW owned */
-	u32 compat_flag;         /* flag of the expected driver's behaviours */
+	u32 compat_flag;			/* flag of the expected driver's behaviours */
 
-	u16 sap_mlme_ver;        /* Fapi SAP_MLME version*/
-	u16 sap_ma_ver;          /* Fapi SAP_MA version */
-	u16 sap_debug_ver;       /* Fapi SAP_DEBUG version */
-	u16 sap_test_ver;        /* Fapi SAP_TEST version */
+	u16 sap_mlme_ver;			/* Fapi SAP_MLME version */
+	u16 sap_ma_ver;				/* Fapi SAP_MA version */
+	u16 sap_debug_ver;			/* Fapi SAP_DEBUG version */
+	u16 sap_test_ver;			/* Fapi SAP_TEST version */
 
-	u32 fw_build_id;         /* Firmware Build Id */
-	u32 fw_patch_id;         /* Firmware Patch Id */
+	u32 fw_build_id;			/* Firmware Build Id */
+	u32 fw_patch_id;			/* Firmware Patch Id */
 
-	u8  unidat_req_headroom;
-	u8  unidat_req_tailroom;
-	u8  bulk_buffer_align;
-	u8  host_cache_line;
+	u8 unidat_req_headroom;
+	u8 unidat_req_tailroom;
+	u8 bulk_buffer_align;
+	u8 host_cache_line;
 
-	u32 host_buf_loc;   /* location of the host buffer */
-	u32 host_buf_sz;    /* in byte, size of the host buffer */
-	u32 fw_buf_loc;     /* location of the firmware buffer */
-	u32 fw_buf_sz;      /* in byte, size of the firmware buffer */
-	u32 mib_loc;        /* MIB location in MIF_ADDR */
-	u32 mib_sz;         /* MIB size */
-	u32 log_config_loc; /* Logging Configuration Location in MIF_ADDR */
-	u32 log_config_sz;  /* Logging Configuration Size in MIF_ADDR */
+	u32 host_buf_loc;			/* location of the host buffer */
+	u32 host_buf_sz;			/* in byte, size of the host buffer */
+	u32 fw_buf_loc;				/* location of the firmware buffer */
+	u32 fw_buf_sz;				/* in byte, size of the firmware buffer */
+	u32 mib_loc;				/* MIB location in MIF_ADDR */
+	u32 mib_sz;					/* MIB size */
+	u32 log_config_loc;			/* Logging Configuration Location in MIF_ADDR */
+	u32 log_config_sz;			/* Logging Configuration Size in MIF_ADDR */
 
-	u8  mif_fh_int_n;   /* MIF from-host interrupt bit position */
-	u8  mif_th_int_n;   /* MIF to-host interrpt bit position */
-	u8  reserved[2];
+	u8 mif_fh_int_n;			/* MIF from-host interrupt bit position */
+	u8 mif_th_int_n;			/* MIF to-host interrpt bit position */
+	u8 reserved[2];
 
 	u32 scbrd_loc;
 
 	u16 q_num;
 	u16 q_len;
 	u16 q_idx_sz;
-	u8  reserved2[2];
+	u8 reserved2[2];
 
 	u32 q_loc[MIF_HIP_CFG_Q_NUM];
 
-	u8  reserved3[16];
+	u8 reserved3[16];
 } STRUCT_PACKED;
 
 struct hip4_hip_config_version_3 {
 	/* Host owned */
-	u32 magic_number;       /* 0xcaba0401 */
-	u16 hip_config_ver;     /* Version of this configuration structure = 2*/
-	u16 config_len;         /* Size of this configuration structure */
+	u32 magic_number;			/* 0xcaba0401 */
+	u16 hip_config_ver;			/* Version of this configuration structure = 2 */
+	u16 config_len;				/* Size of this configuration structure */
 
 	/* FW owned */
-	u32 compat_flag;         /* flag of the expected driver's behaviours */
+	u32 compat_flag;			/* flag of the expected driver's behaviours */
 
-	u16 sap_mlme_ver;        /* Fapi SAP_MLME version*/
-	u16 sap_ma_ver;          /* Fapi SAP_MA version */
-	u16 sap_debug_ver;       /* Fapi SAP_DEBUG version */
-	u16 sap_test_ver;        /* Fapi SAP_TEST version */
+	u16 sap_mlme_ver;			/* Fapi SAP_MLME version */
+	u16 sap_ma_ver;				/* Fapi SAP_MA version */
+	u16 sap_debug_ver;			/* Fapi SAP_DEBUG version */
+	u16 sap_test_ver;			/* Fapi SAP_TEST version */
 
-	u32 fw_build_id;         /* Firmware Build Id */
-	u32 fw_patch_id;         /* Firmware Patch Id */
+	u32 fw_build_id;			/* Firmware Build Id */
+	u32 fw_patch_id;			/* Firmware Patch Id */
 
-	u8  unidat_req_headroom; /* Headroom the host shall reserve in mbulk for MA-UNITDATA.REQ signal */
-	u8  unidat_req_tailroom; /* Tailroom the host shall reserve in mbulk for MA-UNITDATA.REQ signal */
-	u8  bulk_buffer_align;   /* 4 */
+	u8 unidat_req_headroom;		/* Headroom the host shall reserve in mbulk for MA-UNITDATA.REQ signal */
+	u8 unidat_req_tailroom;		/* Tailroom the host shall reserve in mbulk for MA-UNITDATA.REQ signal */
+	u8 bulk_buffer_align;		/* 4 */
 
 	/* Host owned */
-	u8  host_cache_line;    /* 64 */
+	u8 host_cache_line;			/* 64 */
 
-	u32 host_buf_loc;       /* location of the host buffer in MIF_ADDR */
-	u32 host_buf_sz;        /* in byte, size of the host buffer */
-	u32 fw_buf_loc;         /* location of the firmware buffer in MIF_ADDR */
-	u32 fw_buf_sz;          /* in byte, size of the firmware buffer */
-	u32 mib_loc;            /* MIB location in MIF_ADDR */
-	u32 mib_sz;             /* MIB size */
-	u32 log_config_loc;     /* Logging Configuration Location in MIF_ADDR */
-	u32 log_config_sz;      /* Logging Configuration Size in MIF_ADDR */
+	u32 host_buf_loc;			/* location of the host buffer in MIF_ADDR */
+	u32 host_buf_sz;			/* in byte, size of the host buffer */
+	u32 fw_buf_loc;				/* location of the firmware buffer in MIF_ADDR */
+	u32 fw_buf_sz;				/* in byte, size of the firmware buffer */
+	u32 mib_loc;				/* MIB location in MIF_ADDR */
+	u32 mib_sz;					/* MIB size */
+	u32 log_config_loc;			/* Logging Configuration Location in MIF_ADDR */
+	u32 log_config_sz;			/* Logging Configuration Size in MIF_ADDR */
 
-	u8  mif_fh_int_n;       /* MIF from-host interrupt bit position */
-	u8  mif_th_int_n;       /* MIF to-host interrpt bit position */
-	u8  reserved[2];
+	u8 mif_fh_int_n;			/* MIF from-host interrupt bit position */
+	u8 mif_th_int_n;			/* MIF to-host interrpt bit position */
+	u8 reserved[2];
 
-	u32 scbrd_loc;          /* Scoreboard locatin in MIF_ADDR */
+	u32 scbrd_loc;				/* Scoreboard locatin in MIF_ADDR */
 
-	u16 q_num;              /* 6 */
-	u16 q_len;              /* 256 */
-	u16 q_idx_sz;           /* 1 */
-	u8  reserved2[2];
+	u16 q_num;					/* 6 */
+	u16 q_len;					/* 256 */
+	u16 q_idx_sz;				/* 1 */
+	u8 reserved2[2];
 
 	u32 q_loc[MIF_HIP_CFG_Q_NUM];
 
-	u8  reserved3[16];
+	u8 reserved3[16];
 } STRUCT_PACKED;
 
 struct hip4_hip_init {
 	/* Host owned */
-	u32 magic_number;       /* 0xcaaa0400 */
+	u32 magic_number;			/* 0xcaaa0400 */
 	/* FW owned */
 	u32 conf_hip4_ver;
 	/* Host owned */
-	u32 version_a_ref;      /* Location of Config structure A (old) */
-	u32 version_b_ref;      /* Location of Config structure B (new) */
+	u32 version_a_ref;			/* Location of Config structure A (old) */
+	u32 version_b_ref;			/* Location of Config structure B (new) */
 } STRUCT_PACKED;
 
 #define MAX_NUM 256
 struct hip4_hip_q {
 	u32 array[MAX_NUM];
-	u8  idx_read;      /* To keep track */
-	u8  idx_write;     /* To keep track */
-	u8  total;
+	u8 idx_read;				/* To keep track */
+	u8 idx_write;				/* To keep track */
+	u8 total;
 } __aligned(64);
 
 struct hip4_hip_control {
-	struct hip4_hip_init             init;
+	struct hip4_hip_init init;
 	struct hip4_hip_config_version_3 config_v3 __aligned(32);
 	struct hip4_hip_config_version_4 config_v4 __aligned(32);
-	u32                              scoreboard[256] __aligned(64);
-	struct hip4_hip_q                q[MIF_HIP_CFG_Q_NUM] __aligned(64);
+	u32 scoreboard[256] __aligned(64);
+	struct hip4_hip_q q[MIF_HIP_CFG_Q_NUM] __aligned(64);
 } __aligned(4096);
 
 struct hip_q_index {
@@ -180,47 +180,47 @@ struct slsi_hip4;
 /* This struct is private to the HIP implementation */
 struct hip4_priv {
 	volatile struct hip_q_indice *q_indice;
-	struct work_s                intr_wq;
+	struct work_s intr_wq;
 	/* Interrupts cache */
 	/* TOHOST */
-	u32                          rx_intr_tohost;
+	u32 rx_intr_tohost;
 	/* FROMHOST */
-	u32                          rx_intr_fromhost;
+	u32 rx_intr_fromhost;
 
 	/* For workqueue */
-	struct slsi_hip4             *hip;
+	struct slsi_hip4 *hip;
 
-	/* Pool for data frames*/
-	u8                           host_pool_id_dat;
-	/* Pool for ctl frames*/
-	u8                           host_pool_id_ctl;
+	/* Pool for data frames */
+	u8 host_pool_id_dat;
+	/* Pool for ctl frames */
+	u8 host_pool_id_ctl;
 
 	/* Device lock */
-	pthread_mutex_t              rx_lock;
+	pthread_mutex_t rx_lock;
 
 	/* Scoreboard update mutex lock */
-	pthread_mutex_t              rw_scoreboard;
+	pthread_mutex_t rw_scoreboard;
 
 	/* Control the hip4 deinit */
-	int                          closing;
+	int closing;
 
-	u8                           unidat_req_headroom; /* Headroom the host shall reserve in mbulk for MA-UNITDATA.REQ signal */
-	u8                           unidat_req_tailroom; /* Tailroom the host shall reserve in mbulk for MA-UNITDATA.REQ signal */
-	u32                          version;             /* Version of the running FW */
-	void                         *scbrd_base;         /* Scbrd_base pointer */
+	u8 unidat_req_headroom;		/* Headroom the host shall reserve in mbulk for MA-UNITDATA.REQ signal */
+	u8 unidat_req_tailroom;		/* Tailroom the host shall reserve in mbulk for MA-UNITDATA.REQ signal */
+	u32 version;				/* Version of the running FW */
+	void *scbrd_base;			/* Scbrd_base pointer */
 
 #ifdef CONFIG_ARCH_CHIP_S5JT200
 	/* Allocated memory */
-	scsc_mifram_ref              hip_control;
-	scsc_mifram_ref              from_host_pool;
-	scsc_mifram_ref              to_host_pool;
+	scsc_mifram_ref hip_control;
+	scsc_mifram_ref from_host_pool;
+	scsc_mifram_ref to_host_pool;
 #endif
 };
 
 struct scsc_service;
 
 struct slsi_hip4 {
-	struct hip4_priv        *hip_priv;
+	struct hip4_priv *hip_priv;
 	struct hip4_hip_control *hip_control;
 };
 

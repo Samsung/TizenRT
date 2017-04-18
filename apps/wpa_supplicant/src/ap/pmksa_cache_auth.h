@@ -20,7 +20,7 @@ struct rsn_pmksa_cache_entry {
 	u8 pmk[PMK_LEN];
 	size_t pmk_len;
 	os_time_t expiration;
-	int akmp; /* WPA_KEY_MGMT_* */
+	int akmp;					/* WPA_KEY_MGMT_* */
 	u8 spa[ETH_ALEN];
 
 	u8 *identity;
@@ -37,31 +37,14 @@ struct rsn_pmksa_cache_entry {
 
 struct rsn_pmksa_cache;
 
-struct rsn_pmksa_cache *
-pmksa_cache_auth_init(void (*free_cb)(struct rsn_pmksa_cache_entry *entry,
-				      void *ctx), void *ctx);
+struct rsn_pmksa_cache *pmksa_cache_auth_init(void (*free_cb)(struct rsn_pmksa_cache_entry *entry, void *ctx), void *ctx);
 void pmksa_cache_auth_deinit(struct rsn_pmksa_cache *pmksa);
-struct rsn_pmksa_cache_entry *
-pmksa_cache_auth_get(struct rsn_pmksa_cache *pmksa,
-		     const u8 *spa, const u8 *pmkid);
-struct rsn_pmksa_cache_entry * pmksa_cache_get_okc(
-	struct rsn_pmksa_cache *pmksa, const u8 *spa, const u8 *aa,
-	const u8 *pmkid);
-struct rsn_pmksa_cache_entry *
-pmksa_cache_auth_add(struct rsn_pmksa_cache *pmksa,
-		     const u8 *pmk, size_t pmk_len,
-		     const u8 *kck, size_t kck_len,
-		     const u8 *aa, const u8 *spa, int session_timeout,
-		     struct eapol_state_machine *eapol, int akmp);
-struct rsn_pmksa_cache_entry *
-pmksa_cache_add_okc(struct rsn_pmksa_cache *pmksa,
-		    const struct rsn_pmksa_cache_entry *old_entry,
-		    const u8 *aa, const u8 *pmkid);
-void pmksa_cache_to_eapol_data(struct rsn_pmksa_cache_entry *entry,
-			       struct eapol_state_machine *eapol);
-void pmksa_cache_free_entry(struct rsn_pmksa_cache *pmksa,
-			    struct rsn_pmksa_cache_entry *entry);
-int pmksa_cache_auth_radius_das_disconnect(struct rsn_pmksa_cache *pmksa,
-					   struct radius_das_attrs *attr);
+struct rsn_pmksa_cache_entry *pmksa_cache_auth_get(struct rsn_pmksa_cache *pmksa, const u8 *spa, const u8 *pmkid);
+struct rsn_pmksa_cache_entry *pmksa_cache_get_okc(struct rsn_pmksa_cache *pmksa, const u8 *spa, const u8 *aa, const u8 *pmkid);
+struct rsn_pmksa_cache_entry *pmksa_cache_auth_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len, const u8 *kck, size_t kck_len, const u8 *aa, const u8 *spa, int session_timeout, struct eapol_state_machine *eapol, int akmp);
+struct rsn_pmksa_cache_entry *pmksa_cache_add_okc(struct rsn_pmksa_cache *pmksa, const struct rsn_pmksa_cache_entry *old_entry, const u8 *aa, const u8 *pmkid);
+void pmksa_cache_to_eapol_data(struct rsn_pmksa_cache_entry *entry, struct eapol_state_machine *eapol);
+void pmksa_cache_free_entry(struct rsn_pmksa_cache *pmksa, struct rsn_pmksa_cache_entry *entry);
+int pmksa_cache_auth_radius_das_disconnect(struct rsn_pmksa_cache *pmksa, struct radius_das_attrs *attr);
 
-#endif /* PMKSA_CACHE_H */
+#endif							/* PMKSA_CACHE_H */

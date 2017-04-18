@@ -13,10 +13,10 @@
 // ======================================
 // Function
 // ======================================
-int mb_ecdsa_sign_securekey_step1(unsigned int object_id, unsigned char* hash);
+int mb_ecdsa_sign_securekey_step1(unsigned int object_id, unsigned char *hash);
 int mb_ecdsa_sign_securekey_step2(struct sECC_SIGN *signature, unsigned int object_id);
 
-int mb_ecdsa_verify_securekey_step1(unsigned int object_id, unsigned char* hash);
+int mb_ecdsa_verify_securekey_step1(unsigned int object_id, unsigned char *hash);
 int mb_ecdsa_verify_securekey_step2(unsigned int object_id, struct sECC_SIGN *signature);
 int mb_ecdsa_verify_securekey_step3(unsigned int object_id);
 
@@ -38,6 +38,4 @@ int mb_ecdsa_generate_publickey_securekey_step2(struct sECC_KEY *ecc_publickey, 
 #define FUNC_ECDSA_GEN_PUBLICKEY_SECUREKEY1		(0x01011302)
 #define FUNC_ECDSA_GEN_PUBLICKEY_SECUREKEY2		(0x01021302)
 
-
-#endif /* MB_CMD_ECDSA_SECUREKEY_H_ */
-
+#endif							/* MB_CMD_ECDSA_SECUREKEY_H_ */

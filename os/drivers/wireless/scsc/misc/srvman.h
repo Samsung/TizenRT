@@ -15,12 +15,11 @@ void srvman_set_error(struct srvman *srvman);
 void srvman_deinit(struct srvman *srvman);
 
 struct srvman {
-	struct scsc_mx         *mx;
+	struct scsc_mx *mx;
 	struct slsi_dlist_head service_list;
-	pthread_mutex_t        service_list_mutex;
-	pthread_mutex_t        api_access_mutex;
-	bool                   error;
+	pthread_mutex_t service_list_mutex;
+	pthread_mutex_t api_access_mutex;
+	bool error;
 };
-
 
 #endif

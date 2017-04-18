@@ -147,7 +147,7 @@ Timer *tmr_create(struct timeval *nowP, TimerProc *timer_proc, TimerClientData c
 		t = free_timers;
 		free_timers = t->next;
 	} else {
-		t = (Timer *) malloc(sizeof(Timer));
+		t = (Timer *)malloc(sizeof(Timer));
 		if (t == NULL) {
 			return NULL;
 		}

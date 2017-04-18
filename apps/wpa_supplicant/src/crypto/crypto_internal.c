@@ -21,15 +21,13 @@ struct crypto_hash {
 		struct SHA1Context sha1;
 #ifdef CONFIG_SHA256
 		struct sha256_state sha256;
-#endif /* CONFIG_SHA256 */
+#endif							/* CONFIG_SHA256 */
 	} u;
 	u8 key[64];
 	size_t key_len;
 };
 
-
-struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
-				      size_t key_len)
+struct crypto_hash *crypto_hash_init(enum crypto_hash_alg alg, const u8 *key, size_t key_len)
 {
 	struct crypto_hash *ctx;
 	u8 k_pad[64];
@@ -37,8 +35,9 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 	size_t i;
 
 	ctx = os_zalloc(sizeof(*ctx));
-	if (ctx == NULL)
+	if (ctx == NULL) {
 		return NULL;
+	}
 
 	ctx->alg = alg;
 
@@ -53,7 +52,7 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 	case CRYPTO_HASH_ALG_SHA256:
 		sha256_init(&ctx->u.sha256);
 		break;
-#endif /* CONFIG_SHA256 */
+#endif							/* CONFIG_SHA256 */
 	case CRYPTO_HASH_ALG_HMAC_MD5:
 		if (key_len > sizeof(k_pad)) {
 			MD5Init(&ctx->u.md5);
@@ -66,10 +65,12 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 		ctx->key_len = key_len;
 
 		os_memcpy(k_pad, key, key_len);
-		if (key_len < sizeof(k_pad))
+		if (key_len < sizeof(k_pad)) {
 			os_memset(k_pad + key_len, 0, sizeof(k_pad) - key_len);
-		for (i = 0; i < sizeof(k_pad); i++)
+		}
+		for (i = 0; i < sizeof(k_pad); i++) {
 			k_pad[i] ^= 0x36;
+		}
 		MD5Init(&ctx->u.md5);
 		MD5Update(&ctx->u.md5, k_pad, sizeof(k_pad));
 		break;
@@ -85,10 +86,12 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 		ctx->key_len = key_len;
 
 		os_memcpy(k_pad, key, key_len);
-		if (key_len < sizeof(k_pad))
+		if (key_len < sizeof(k_pad)) {
 			os_memset(k_pad + key_len, 0, sizeof(k_pad) - key_len);
-		for (i = 0; i < sizeof(k_pad); i++)
+		}
+		for (i = 0; i < sizeof(k_pad); i++) {
 			k_pad[i] ^= 0x36;
+		}
 		SHA1Init(&ctx->u.sha1);
 		SHA1Update(&ctx->u.sha1, k_pad, sizeof(k_pad));
 		break;
@@ -105,14 +108,16 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 		ctx->key_len = key_len;
 
 		os_memcpy(k_pad, key, key_len);
-		if (key_len < sizeof(k_pad))
+		if (key_len < sizeof(k_pad)) {
 			os_memset(k_pad + key_len, 0, sizeof(k_pad) - key_len);
-		for (i = 0; i < sizeof(k_pad); i++)
+		}
+		for (i = 0; i < sizeof(k_pad); i++) {
 			k_pad[i] ^= 0x36;
+		}
 		sha256_init(&ctx->u.sha256);
 		sha256_process(&ctx->u.sha256, k_pad, sizeof(k_pad));
 		break;
-#endif /* CONFIG_SHA256 */
+#endif							/* CONFIG_SHA256 */
 	default:
 		os_free(ctx);
 		return NULL;
@@ -121,11 +126,11 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 	return ctx;
 }
 
-
 void crypto_hash_update(struct crypto_hash *ctx, const u8 *data, size_t len)
 {
-	if (ctx == NULL)
+	if (ctx == NULL) {
 		return;
+	}
 
 	switch (ctx->alg) {
 	case CRYPTO_HASH_ALG_MD5:
@@ -141,20 +146,20 @@ void crypto_hash_update(struct crypto_hash *ctx, const u8 *data, size_t len)
 	case CRYPTO_HASH_ALG_HMAC_SHA256:
 		sha256_process(&ctx->u.sha256, data, len);
 		break;
-#endif /* CONFIG_SHA256 */
+#endif							/* CONFIG_SHA256 */
 	default:
 		break;
 	}
 }
-
 
 int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 {
 	u8 k_pad[64];
 	size_t i;
 
-	if (ctx == NULL)
+	if (ctx == NULL) {
 		return -2;
+	}
 
 	if (mac == NULL || len == NULL) {
 		os_free(ctx);
@@ -190,7 +195,7 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 		*len = 32;
 		sha256_done(&ctx->u.sha256, mac);
 		break;
-#endif /* CONFIG_SHA256 */
+#endif							/* CONFIG_SHA256 */
 	case CRYPTO_HASH_ALG_HMAC_MD5:
 		if (*len < 16) {
 			*len = 16;
@@ -202,10 +207,10 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 		MD5Final(mac, &ctx->u.md5);
 
 		os_memcpy(k_pad, ctx->key, ctx->key_len);
-		os_memset(k_pad + ctx->key_len, 0,
-			  sizeof(k_pad) - ctx->key_len);
-		for (i = 0; i < sizeof(k_pad); i++)
+		os_memset(k_pad + ctx->key_len, 0, sizeof(k_pad) - ctx->key_len);
+		for (i = 0; i < sizeof(k_pad); i++) {
 			k_pad[i] ^= 0x5c;
+		}
 		MD5Init(&ctx->u.md5);
 		MD5Update(&ctx->u.md5, k_pad, sizeof(k_pad));
 		MD5Update(&ctx->u.md5, mac, 16);
@@ -222,10 +227,10 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 		SHA1Final(mac, &ctx->u.sha1);
 
 		os_memcpy(k_pad, ctx->key, ctx->key_len);
-		os_memset(k_pad + ctx->key_len, 0,
-			  sizeof(k_pad) - ctx->key_len);
-		for (i = 0; i < sizeof(k_pad); i++)
+		os_memset(k_pad + ctx->key_len, 0, sizeof(k_pad) - ctx->key_len);
+		for (i = 0; i < sizeof(k_pad); i++) {
 			k_pad[i] ^= 0x5c;
+		}
 		SHA1Init(&ctx->u.sha1);
 		SHA1Update(&ctx->u.sha1, k_pad, sizeof(k_pad));
 		SHA1Update(&ctx->u.sha1, mac, 20);
@@ -243,16 +248,16 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 		sha256_done(&ctx->u.sha256, mac);
 
 		os_memcpy(k_pad, ctx->key, ctx->key_len);
-		os_memset(k_pad + ctx->key_len, 0,
-			  sizeof(k_pad) - ctx->key_len);
-		for (i = 0; i < sizeof(k_pad); i++)
+		os_memset(k_pad + ctx->key_len, 0, sizeof(k_pad) - ctx->key_len);
+		for (i = 0; i < sizeof(k_pad); i++) {
 			k_pad[i] ^= 0x5c;
+		}
 		sha256_init(&ctx->u.sha256);
 		sha256_process(&ctx->u.sha256, k_pad, sizeof(k_pad));
 		sha256_process(&ctx->u.sha256, mac, 32);
 		sha256_done(&ctx->u.sha256, mac);
 		break;
-#endif /* CONFIG_SHA256 */
+#endif							/* CONFIG_SHA256 */
 	default:
 		os_free(ctx);
 		return -1;
@@ -263,12 +268,10 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 	return 0;
 }
 
-
 int crypto_global_init(void)
 {
 	return 0;
 }
-
 
 void crypto_global_deinit(void)
 {

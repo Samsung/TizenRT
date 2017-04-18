@@ -37,18 +37,15 @@ int vlan_add(const char *if_name, int vid, const char *vlan_if_name)
 	struct rtnl_link *rlink = NULL;
 	int if_idx = 0;
 
-	wpa_printf(MSG_DEBUG, "VLAN: vlan_add(if_name=%s, vid=%d, "
-		   "vlan_if_name=%s)", if_name, vid, vlan_if_name);
+	wpa_printf(MSG_DEBUG, "VLAN: vlan_add(if_name=%s, vid=%d, " "vlan_if_name=%s)", if_name, vid, vlan_if_name);
 
 	if ((os_strlen(if_name) + 1) > IFNAMSIZ) {
-		wpa_printf(MSG_ERROR, "VLAN: Interface name too long: '%s'",
-			   if_name);
+		wpa_printf(MSG_ERROR, "VLAN: Interface name too long: '%s'", if_name);
 		return -1;
 	}
 
 	if ((os_strlen(vlan_if_name) + 1) > IFNAMSIZ) {
-		wpa_printf(MSG_ERROR, "VLAN: Interface name too long: '%s'",
-			   vlan_if_name);
+		wpa_printf(MSG_ERROR, "VLAN: Interface name too long: '%s'", vlan_if_name);
 		return -1;
 	}
 
@@ -60,23 +57,20 @@ int vlan_add(const char *if_name, int vid, const char *vlan_if_name)
 
 	err = nl_connect(handle, NETLINK_ROUTE);
 	if (err < 0) {
-		wpa_printf(MSG_ERROR, "VLAN: failed to connect to netlink: %s",
-			   nl_geterror(err));
+		wpa_printf(MSG_ERROR, "VLAN: failed to connect to netlink: %s", nl_geterror(err));
 		goto vlan_add_error;
 	}
 
 	err = rtnl_link_alloc_cache(handle, AF_UNSPEC, &cache);
 	if (err < 0) {
 		cache = NULL;
-		wpa_printf(MSG_ERROR, "VLAN: failed to alloc cache: %s",
-			   nl_geterror(err));
+		wpa_printf(MSG_ERROR, "VLAN: failed to alloc cache: %s", nl_geterror(err));
 		goto vlan_add_error;
 	}
 
 	if (!(if_idx = rtnl_link_name2i(cache, if_name))) {
 		/* link does not exist */
-		wpa_printf(MSG_ERROR, "VLAN: interface %s does not exist",
-			   if_name);
+		wpa_printf(MSG_ERROR, "VLAN: interface %s does not exist", if_name);
 		goto vlan_add_error;
 	}
 
@@ -84,8 +78,7 @@ int vlan_add(const char *if_name, int vid, const char *vlan_if_name)
 		/* link does exist */
 		rtnl_link_put(rlink);
 		rlink = NULL;
-		wpa_printf(MSG_ERROR, "VLAN: interface %s already exists",
-			   vlan_if_name);
+		wpa_printf(MSG_ERROR, "VLAN: interface %s already exists", vlan_if_name);
 		ret = 1;
 		goto vlan_add_error;
 	}
@@ -98,8 +91,7 @@ int vlan_add(const char *if_name, int vid, const char *vlan_if_name)
 
 	err = rtnl_link_set_type(rlink, "vlan");
 	if (err < 0) {
-		wpa_printf(MSG_ERROR, "VLAN: failed to set link type: %s",
-			   nl_geterror(err));
+		wpa_printf(MSG_ERROR, "VLAN: failed to set link type: %s", nl_geterror(err));
 		goto vlan_add_error;
 	}
 
@@ -108,32 +100,30 @@ int vlan_add(const char *if_name, int vid, const char *vlan_if_name)
 
 	err = rtnl_link_vlan_set_id(rlink, vid);
 	if (err < 0) {
-		wpa_printf(MSG_ERROR, "VLAN: failed to set link vlan id: %s",
-			   nl_geterror(err));
+		wpa_printf(MSG_ERROR, "VLAN: failed to set link vlan id: %s", nl_geterror(err));
 		goto vlan_add_error;
 	}
 
 	err = rtnl_link_add(handle, rlink, NLM_F_CREATE);
 	if (err < 0) {
-		wpa_printf(MSG_ERROR, "VLAN: failed to create link %s for "
-			   "vlan %d on %s (%d): %s",
-			   vlan_if_name, vid, if_name, if_idx,
-			   nl_geterror(err));
+		wpa_printf(MSG_ERROR, "VLAN: failed to create link %s for " "vlan %d on %s (%d): %s", vlan_if_name, vid, if_name, if_idx, nl_geterror(err));
 		goto vlan_add_error;
 	}
 
 	ret = 0;
 
 vlan_add_error:
-	if (rlink)
+	if (rlink) {
 		rtnl_link_put(rlink);
-	if (cache)
+	}
+	if (cache) {
 		nl_cache_free(cache);
-	if (handle)
+	}
+	if (handle) {
 		nl_socket_free(handle);
+	}
 	return ret;
 }
-
 
 int vlan_rem(const char *if_name)
 {
@@ -152,41 +142,40 @@ int vlan_rem(const char *if_name)
 
 	err = nl_connect(handle, NETLINK_ROUTE);
 	if (err < 0) {
-		wpa_printf(MSG_ERROR, "VLAN: failed to connect to netlink: %s",
-			   nl_geterror(err));
+		wpa_printf(MSG_ERROR, "VLAN: failed to connect to netlink: %s", nl_geterror(err));
 		goto vlan_rem_error;
 	}
 
 	err = rtnl_link_alloc_cache(handle, AF_UNSPEC, &cache);
 	if (err < 0) {
 		cache = NULL;
-		wpa_printf(MSG_ERROR, "VLAN: failed to alloc cache: %s",
-			   nl_geterror(err));
+		wpa_printf(MSG_ERROR, "VLAN: failed to alloc cache: %s", nl_geterror(err));
 		goto vlan_rem_error;
 	}
 
 	if (!(rlink = rtnl_link_get_by_name(cache, if_name))) {
 		/* link does not exist */
-		wpa_printf(MSG_ERROR, "VLAN: interface %s does not exists",
-			   if_name);
+		wpa_printf(MSG_ERROR, "VLAN: interface %s does not exists", if_name);
 		goto vlan_rem_error;
 	}
 
 	err = rtnl_link_delete(handle, rlink);
 	if (err < 0) {
-		wpa_printf(MSG_ERROR, "VLAN: failed to remove link %s: %s",
-			   if_name, nl_geterror(err));
+		wpa_printf(MSG_ERROR, "VLAN: failed to remove link %s: %s", if_name, nl_geterror(err));
 		goto vlan_rem_error;
 	}
 
 	ret = 0;
 
 vlan_rem_error:
-	if (rlink)
+	if (rlink) {
 		rtnl_link_put(rlink);
-	if (cache)
+	}
+	if (cache) {
 		nl_cache_free(cache);
-	if (handle)
+	}
+	if (handle) {
 		nl_socket_free(handle);
+	}
 	return ret;
 }

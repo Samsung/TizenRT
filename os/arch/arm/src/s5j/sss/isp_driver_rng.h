@@ -15,4 +15,4 @@
 // ======================================
 int isp_generate_random(unsigned int *random, unsigned int word_len);
 
-#endif /* ISP_DRIVER_RNG_H_ */
+#endif							/* ISP_DRIVER_RNG_H_ */

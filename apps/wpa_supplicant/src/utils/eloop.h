@@ -87,8 +87,7 @@ int eloop_init(void);
  * having processed it in order to avoid eloop from calling the handler again
  * for the same event.
  */
-int eloop_register_read_sock(int sock, eloop_sock_handler handler,
-			     void *eloop_data, void *user_data);
+int eloop_register_read_sock(int sock, eloop_sock_handler handler, void *eloop_data, void *user_data);
 
 /**
  * eloop_unregister_read_sock - Unregister handler for read events
@@ -114,9 +113,7 @@ void eloop_unregister_read_sock(int sock);
  * having processed it in order to avoid eloop from calling the handler again
  * for the same event.
  */
-int eloop_register_sock(int sock, eloop_event_type type,
-			eloop_sock_handler handler,
-			void *eloop_data, void *user_data);
+int eloop_register_sock(int sock, eloop_event_type type, eloop_sock_handler handler, void *eloop_data, void *user_data);
 
 /**
  * eloop_unregister_sock - Unregister handler for socket events
@@ -150,9 +147,7 @@ void eloop_unregister_sock(int sock, eloop_event_type type);
  * and they would call this function with eloop_register_event(h, sizeof(h),
  * ...).
  */
-int eloop_register_event(void *event, size_t event_size,
-			 eloop_event_handler handler,
-			 void *eloop_data, void *user_data);
+int eloop_register_event(void *event, size_t event_size, eloop_event_handler handler, void *eloop_data, void *user_data);
 
 /**
  * eloop_unregister_event - Unregister handler for a generic event
@@ -176,9 +171,7 @@ void eloop_unregister_event(void *event, size_t event_size);
  * Register a timeout that will cause the handler function to be called after
  * given time.
  */
-int eloop_register_timeout(unsigned int secs, unsigned int usecs,
-			   eloop_timeout_handler handler,
-			   void *eloop_data, void *user_data);
+int eloop_register_timeout(unsigned int secs, unsigned int usecs, eloop_timeout_handler handler, void *eloop_data, void *user_data);
 
 /**
  * eloop_cancel_timeout - Cancel timeouts
@@ -191,8 +184,7 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
  * eloop_register_timeout(). ELOOP_ALL_CTX can be used as a wildcard for
  * cancelling all timeouts regardless of eloop_data/user_data.
  */
-int eloop_cancel_timeout(eloop_timeout_handler handler,
-			 void *eloop_data, void *user_data);
+int eloop_cancel_timeout(eloop_timeout_handler handler, void *eloop_data, void *user_data);
 
 /**
  * eloop_cancel_timeout_one - Cancel a single timeout
@@ -205,9 +197,7 @@ int eloop_cancel_timeout(eloop_timeout_handler handler,
  * Cancel matching <handler,eloop_data,user_data> timeout registered with
  * eloop_register_timeout() and return the remaining time left.
  */
-int eloop_cancel_timeout_one(eloop_timeout_handler handler,
-			     void *eloop_data, void *user_data,
-			     struct os_reltime *remaining);
+int eloop_cancel_timeout_one(eloop_timeout_handler handler, void *eloop_data, void *user_data, struct os_reltime *remaining);
 
 /**
  * eloop_is_timeout_registered - Check if a timeout is already registered
@@ -219,8 +209,7 @@ int eloop_cancel_timeout_one(eloop_timeout_handler handler,
  * Determine if a matching <handler,eloop_data,user_data> timeout is registered
  * with eloop_register_timeout().
  */
-int eloop_is_timeout_registered(eloop_timeout_handler handler,
-				void *eloop_data, void *user_data);
+int eloop_is_timeout_registered(eloop_timeout_handler handler, void *eloop_data, void *user_data);
 
 /**
  * eloop_deplete_timeout - Deplete a timeout that is already registered
@@ -235,9 +224,7 @@ int eloop_is_timeout_registered(eloop_timeout_handler handler,
  * Find a registered matching <handler,eloop_data,user_data> timeout. If found,
  * deplete the timeout if remaining time is more than the requested time.
  */
-int eloop_deplete_timeout(unsigned int req_secs, unsigned int req_usecs,
-			  eloop_timeout_handler handler, void *eloop_data,
-			  void *user_data);
+int eloop_deplete_timeout(unsigned int req_secs, unsigned int req_usecs, eloop_timeout_handler handler, void *eloop_data, void *user_data);
 
 /**
  * eloop_replenish_timeout - Replenish a timeout that is already registered
@@ -252,9 +239,7 @@ int eloop_deplete_timeout(unsigned int req_secs, unsigned int req_usecs,
  * Find a registered matching <handler,eloop_data,user_data> timeout. If found,
  * replenish the timeout if remaining time is less than the requested time.
  */
-int eloop_replenish_timeout(unsigned int req_secs, unsigned int req_usecs,
-			    eloop_timeout_handler handler, void *eloop_data,
-			    void *user_data);
+int eloop_replenish_timeout(unsigned int req_secs, unsigned int req_usecs, eloop_timeout_handler handler, void *eloop_data, void *user_data);
 
 /**
  * eloop_register_signal - Register handler for signals
@@ -269,8 +254,7 @@ int eloop_replenish_timeout(unsigned int req_secs, unsigned int req_usecs,
  * (i.e., only "safe functions" allowed) do not apply for the registered
  * callback.
  */
-int eloop_register_signal(int sig, eloop_signal_handler handler,
-			  void *user_data);
+int eloop_register_signal(int sig, eloop_signal_handler handler, void *user_data);
 
 /**
  * eloop_register_signal_terminate - Register handler for terminate signals
@@ -289,8 +273,7 @@ int eloop_register_signal(int sig, eloop_signal_handler handler,
  * implementation. In case of operating systems using signal(), this function
  * registers handlers for SIGINT and SIGTERM.
  */
-int eloop_register_signal_terminate(eloop_signal_handler handler,
-				    void *user_data);
+int eloop_register_signal_terminate(eloop_signal_handler handler, void *user_data);
 
 /**
  * eloop_register_signal_reconfig - Register handler for reconfig signals
@@ -309,8 +292,7 @@ int eloop_register_signal_terminate(eloop_signal_handler handler,
  * implementation. In case of operating systems using signal(), this function
  * registers a handler for SIGHUP.
  */
-int eloop_register_signal_reconfig(eloop_signal_handler handler,
-				   void *user_data);
+int eloop_register_signal_reconfig(eloop_signal_handler handler, void *user_data);
 
 /**
  * eloop_run - Start the event loop
@@ -363,4 +345,4 @@ int eloop_terminated(void);
 void eloop_wait_for_read_sock(int sock);
 
 eloop_timeout_handler fn_destroy;
-#endif /* ELOOP_H */
+#endif							/* ELOOP_H */

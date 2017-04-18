@@ -41,7 +41,6 @@ extern "C" {
 #define DECLARE_BITMAP(name, bits) \
 	unsigned long name[BITS_TO_LONGS(bits)]
 
-
 #define wmb() __asm__ __volatile__ ("" : : : "memory")
 /* MAC Address Length */
 #define ETH_ALEN        6
@@ -54,34 +53,31 @@ extern "C" {
 #define SSID_MAX_LEN 32
 
 struct firmware {
-	size_t   size;
+	size_t size;
 	const u8 *data;
 	//struct page **pages;
 
 	/* firmware loader private fields */
-	void     *priv;
+	void *priv;
 };
 
 static inline void *ERR_PTR(long error)
 {
 	return (void *)error;
 }
-
-
 /****************************************************************************
  * Private Functions
- ****************************************************************************/
-static inline void set_bit(int nr, const long unsigned int *addr)
+ ****************************************************************************/ static inline void set_bit(int nr, const long unsigned int *addr)
 {
 	uint8_t mask = BIT_MASK(nr);
-	uint8_t *p = ((uint8_t *)addr) + BIT_BYTE(nr);
+	uint8_t *p = ((uint8_t *) addr) + BIT_BYTE(nr);
 
 	*p |= mask;
 }
 static inline void clear_bit(int nr, const long unsigned int *addr)
 {
 	uint8_t mask = BIT_MASK(nr);
-	uint8_t *p = ((uint8_t *)addr) + BIT_BYTE(nr);
+	uint8_t *p = ((uint8_t *) addr) + BIT_BYTE(nr);
 
 	*p &= ~mask;
 }
@@ -134,7 +130,7 @@ static inline int test_bit(int nr, const long unsigned int *addr)
 	UNUSED(a); \
 	 irqrestore((irqstate_t)b);
 #define spin_lock_init(a) UNUSED(a);
-#endif //CONFIG_SPINLOCK
+#endif							//CONFIG_SPINLOCK
 #define small_const_nbits(nbits) \
 	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG)
 
@@ -165,10 +161,11 @@ static inline void bitmap_zero(unsigned long *dst, int nbits)
 static inline void bitmap_copy_le(void *dst, const unsigned long *src, int nbits)
 {
 	unsigned long *d = dst;
-	int           i;
+	int i;
 
-	for (i = 0; i < nbits / BITS_PER_LONG; i++)
+	for (i = 0; i < nbits / BITS_PER_LONG; i++) {
 		d[i] = cpu_to_le32(src[i]);
+	}
 }
 #define __round_mask(x, y) ((__typeof__(x))((y) - 1))
 #define round_up(x, y) ((((x) - 1) | __round_mask(x, y)) + 1)
@@ -205,12 +202,12 @@ static inline unsigned long get_first_bit(unsigned long elem)
 		elem >>= 2;
 		num += 2;
 	}
-	if ((elem & 0x1) == 0)
+	if ((elem & 0x1) == 0) {
 		num += 1;
+	}
 
 	return num;
 }
-
 
 #define min(x,y) ({ \
         typeof(x) _x = (x);     \
@@ -228,9 +225,10 @@ static unsigned long find_first_bit(const unsigned long *addr, unsigned long siz
 {
 	unsigned long idx;
 
-	for (idx = 0; idx *BITS_PER_LONG < size; idx++) {
-		if (addr[idx])
+	for (idx = 0; idx * BITS_PER_LONG < size; idx++) {
+		if (addr[idx]) {
 			return min(idx * BITS_PER_LONG + get_first_bit(addr[idx]), size);
+		}
 	}
 
 	return size;
@@ -241,13 +239,13 @@ static unsigned long find_first_bit(const unsigned long *addr, unsigned long siz
  * find_next_zero_bit.  The difference is the "invert" argument, which
  * is XORed with each fetched word before searching it for one bits.
  */
-static unsigned long _find_next_bit(const unsigned long *addr,
-				    unsigned long nbits, unsigned long start, unsigned long invert)
+static unsigned long _find_next_bit(const unsigned long *addr, unsigned long nbits, unsigned long start, unsigned long invert)
 {
 	unsigned long tmp;
 
-	if (!nbits || start >= nbits)
+	if (!nbits || start >= nbits) {
 		return nbits;
+	}
 
 	tmp = addr[start / BITS_PER_LONG] ^ invert;
 
@@ -257,8 +255,9 @@ static unsigned long _find_next_bit(const unsigned long *addr,
 
 	while (!tmp) {
 		start += BITS_PER_LONG;
-		if (start >= nbits)
+		if (start >= nbits) {
 			return nbits;
+		}
 
 		tmp = addr[start / BITS_PER_LONG] ^ invert;
 	}
@@ -269,8 +268,7 @@ static unsigned long _find_next_bit(const unsigned long *addr,
 /*
  * Find the next set bit in a memory region.
  */
-static unsigned long find_next_bit(const unsigned long *addr, unsigned long size,
-				   unsigned long offset)
+static unsigned long find_next_bit(const unsigned long *addr, unsigned long size, unsigned long offset)
 {
 	return _find_next_bit(addr, size, offset, 0UL);
 }
@@ -284,9 +282,10 @@ static inline unsigned long find_first_zero_bit(const unsigned long *addr, unsig
 {
 	unsigned long idx;
 
-	for (idx = 0; idx *BITS_PER_LONG < size; idx++) {
-		if (addr[idx] != ~0UL)
+	for (idx = 0; idx * BITS_PER_LONG < size; idx++) {
+		if (addr[idx] != ~0UL) {
 			return min(idx * BITS_PER_LONG + ffz(addr[idx]), size);
+		}
 	}
 
 	return size;
@@ -304,12 +303,10 @@ struct slsi_dlist_head {
 	struct slsi_dlist_head *lnext, *lprev;
 };
 
-
 /*__slsi_dlist_add -
  * Insert a new entry between two known consecutive entries.
  */
-static inline void __slsi_dlist_add(struct slsi_dlist_head *new_node,
-				    struct slsi_dlist_head *lprev, struct slsi_dlist_head *lnext)
+static inline void __slsi_dlist_add(struct slsi_dlist_head *new_node, struct slsi_dlist_head *lprev, struct slsi_dlist_head *lnext)
 {
 	new_node->lprev = lprev;
 	lprev->lnext = new_node;
@@ -340,7 +337,6 @@ static inline void __slsi_dlist_del(struct slsi_dlist_head *lprev, struct slsi_d
 	lprev->lnext = lnext;
 }
 
-
 /**
  * slsi_dlist_del - deletes entry from llist.
  * @entry: the element to delete from the llist.
@@ -366,8 +362,6 @@ static inline void slsi_dlist_add_tail(struct slsi_dlist_head *new_node, struct 
 	__slsi_dlist_add(new_node, list_head->lprev, list_head);
 }
 
-
-
 /**
  * slsi_dlist_empty - returns whether a llist is empty
  * @head: Head of the dlist.
@@ -377,7 +371,11 @@ static inline int slsi_dlist_empty(const struct slsi_dlist_head *head)
 	return head->lnext == head;
 }
 
-static inline void prefetch(__attribute__((unused)) const void *x) {;}
+static inline void prefetch(__attribute__((unused))
+							const void *x)
+{
+	;
+}
 
 #define container_of(ptr, type, member) ({				\
 		const typeof(((type*)0)->member) *__mptr = (ptr);	\
@@ -392,8 +390,6 @@ static inline void prefetch(__attribute__((unused)) const void *x) {;}
 #define slsi_dlist_entry(ptr, type, member) \
 	container_of(ptr, type, member)
 
-
-
 /**
  * slsi_dlist_for_each_entry    -   iterate over dlist of given type
  * @pos:    the type * to use as a loop counter.
@@ -406,8 +402,6 @@ static inline void prefetch(__attribute__((unused)) const void *x) {;}
 	     &pos->member != (head);                     \
 	     pos = slsi_dlist_entry(pos->member.lnext, typeof(*pos), member),    \
 	     prefetch(pos->member.lnext))
-
-
 
 /**
  * slsi_dlist_for_each_safe -   iterate over a llist safe against removal of llist entry
@@ -432,13 +426,10 @@ static inline void prefetch(__attribute__((unused)) const void *x) {;}
 	     &pos->member != (head);                     \
 	     pos = n, n = slsi_dlist_entry(n->member.lnext, typeof(*n), member))
 
-
 #define SLSI_DLIST_HEAD_INIT(name) { &(name), &(name) }
-
 
 #define SLSI_INIT_DLIST_HEAD(ptr) do { \
 		(ptr)->lnext = (ptr); (ptr)->lprev = (ptr); \
 } while (0)
 
-
-#endif /* SLSI_UTILS_MISC_H__ */
+#endif							/* SLSI_UTILS_MISC_H__ */

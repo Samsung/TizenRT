@@ -12,9 +12,7 @@
 #include "crypto/sha1.h"
 #include "eap_peap_common.h"
 
-int peap_prfplus(int version, const u8 *key, size_t key_len,
-		 const char *label, const u8 *seed, size_t seed_len,
-		 u8 *buf, size_t buf_len)
+int peap_prfplus(int version, const u8 *key, size_t key_len, const char *label, const u8 *seed, size_t seed_len, u8 *buf, size_t buf_len)
 {
 	unsigned char counter = 0;
 	size_t pos, plen;
@@ -26,7 +24,7 @@ int peap_prfplus(int version, const u8 *key, size_t key_len,
 
 	addr[0] = hash;
 	len[0] = 0;
-	addr[1] = (unsigned char *) label;
+	addr[1] = (unsigned char *)label;
 	len[1] = label_len;
 	addr[2] = seed;
 	len[2] = seed_len;
@@ -69,8 +67,9 @@ int peap_prfplus(int version, const u8 *key, size_t key_len,
 	while (pos < buf_len) {
 		counter++;
 		plen = buf_len - pos;
-		if (hmac_sha1_vector(key, key_len, 5, addr, len, hash) < 0)
+		if (hmac_sha1_vector(key, key_len, 5, addr, len, hash) < 0) {
 			return -1;
+		}
 		if (plen >= SHA1_MAC_LEN) {
 			os_memcpy(&buf[pos], hash, SHA1_MAC_LEN);
 			pos += SHA1_MAC_LEN;

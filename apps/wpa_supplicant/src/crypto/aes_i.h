@@ -63,7 +63,7 @@ extern const u8 rcons[10];
 #define TD2_(i) Td2[(i) & 0xff]
 #define TD3_(i) Td3[(i) & 0xff]
 
-#else /* AES_SMALL_TABLES */
+#else							/* AES_SMALL_TABLES */
 
 #define RCON(i) (rcons[(i)] << 24)
 
@@ -103,7 +103,7 @@ static inline u32 rotr(u32 val, int bits)
 #define TD2_(i) rotr(Td0[(i) & 0xff], 16)
 #define TD3_(i) rotr(Td0[(i) & 0xff], 24)
 
-#endif /* AES_SMALL_TABLES */
+#endif							/* AES_SMALL_TABLES */
 
 #ifdef _MSC_VER
 #define SWAP(x) (_lrotl(x, 8) & 0x00ff00ff | _lrotr(x, 8) & 0xff00ff00)
@@ -122,4 +122,4 @@ static inline u32 rotr(u32 val, int bits)
 
 int rijndaelKeySetupEnc(u32 rk[], const u8 cipherKey[], int keyBits);
 
-#endif /* AES_I_H */
+#endif							/* AES_I_H */

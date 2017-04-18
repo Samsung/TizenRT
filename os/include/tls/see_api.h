@@ -81,7 +81,7 @@ typedef enum {
 	SEE_ECDSA_SIGN_ERROR,
 	SEE_ECDSA_VERIFY_ERROR,
 	SEE_ECDH_COMPUTE_ERROR,
-}see_error;
+} see_error;
 
 /*
  * Definitions
@@ -99,7 +99,7 @@ typedef enum {
 #endif
 
 #if defined(SSS_CHECK_SSS_BUSY)
-#define ISP_CHECKBUSY() while(isp_get_status()){}
+#define ISP_CHECKBUSY() while (isp_get_status()) {}
 #else
 #define ISP_CHECKBUSY()
 #endif

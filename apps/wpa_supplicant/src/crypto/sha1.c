@@ -12,7 +12,6 @@
 #include "sha1.h"
 #include "crypto.h"
 
-
 /**
  * hmac_sha1_vector - HMAC-SHA1 over data vector (RFC 2104)
  * @key: Key for HMAC operations
@@ -23,10 +22,9 @@
  * @mac: Buffer for the hash (20 bytes)
  * Returns: 0 on success, -1 on failure
  */
-int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
-		     const u8 *addr[], const size_t *len, u8 *mac)
+int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
-	unsigned char k_pad[64]; /* padding - key XORd with ipad/opad */
+	unsigned char k_pad[64];	/* padding - key XORd with ipad/opad */
 	unsigned char tk[20];
 	const u8 *_addr[6];
 	size_t _len[6], i;
@@ -40,13 +38,14 @@ int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
 		return -1;
 	}
 
-        /* if key is longer than 64 bytes reset it to key = SHA1(key) */
-        if (key_len > 64) {
-		if (sha1_vector(1, &key, &key_len, tk))
+	/* if key is longer than 64 bytes reset it to key = SHA1(key) */
+	if (key_len > 64) {
+		if (sha1_vector(1, &key, &key_len, tk)) {
 			return -1;
+		}
 		key = tk;
 		key_len = 20;
-        }
+	}
 
 	/* the HMAC_SHA1 transform looks like:
 	 *
@@ -61,8 +60,9 @@ int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
 	os_memset(k_pad, 0, sizeof(k_pad));
 	os_memcpy(k_pad, key, key_len);
 	/* XOR key with ipad values */
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < 64; i++) {
 		k_pad[i] ^= 0x36;
+	}
 
 	/* perform inner SHA1 */
 	_addr[0] = k_pad;
@@ -71,14 +71,16 @@ int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
 		_addr[i + 1] = addr[i];
 		_len[i + 1] = len[i];
 	}
-	if (sha1_vector(1 + num_elem, _addr, _len, mac))
+	if (sha1_vector(1 + num_elem, _addr, _len, mac)) {
 		return -1;
+	}
 
 	os_memset(k_pad, 0, sizeof(k_pad));
 	os_memcpy(k_pad, key, key_len);
 	/* XOR key with opad values */
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < 64; i++) {
 		k_pad[i] ^= 0x5c;
+	}
 
 	/* perform outer SHA1 */
 	_addr[0] = k_pad;
@@ -90,7 +92,6 @@ int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
 	return ret;
 }
 
-
 /**
  * hmac_sha1 - HMAC-SHA1 over data buffer (RFC 2104)
  * @key: Key for HMAC operations
@@ -100,8 +101,7 @@ int hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
  * @mac: Buffer for the hash (20 bytes)
  * Returns: 0 on success, -1 of failure
  */
-int hmac_sha1(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
-	       u8 *mac)
+int hmac_sha1(const u8 *key, size_t key_len, const u8 *data, size_t data_len, u8 *mac)
 {
 	return hmac_sha1_vector(key, key_len, 1, &data, &data_len, mac);
 }

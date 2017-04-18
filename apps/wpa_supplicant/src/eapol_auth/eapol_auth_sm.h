@@ -22,11 +22,11 @@ struct eapol_auth_config {
 	void *ssl_ctx;
 	void *msg_ctx;
 	void *eap_sim_db_priv;
-	char *eap_req_id_text; /* a copy of this will be allocated */
+	char *eap_req_id_text;		/* a copy of this will be allocated */
 	size_t eap_req_id_text_len;
 	int erp_send_reauth_start;
-	char *erp_domain; /* a copy of this will be allocated */
-	int erp; /* Whether ERP is enabled on authentication server */
+	char *erp_domain;			/* a copy of this will be allocated */
+	int erp;					/* Whether ERP is enabled on authentication server */
 	u8 *pac_opaque_encr_key;
 	u8 *eap_fast_a_id;
 	size_t eap_fast_a_id_len;
@@ -60,39 +60,26 @@ enum eapol_event {
 };
 
 struct eapol_auth_cb {
-	void (*eapol_send)(void *ctx, void *sta_ctx, u8 type, const u8 *data,
-			   size_t datalen);
-	void (*aaa_send)(void *ctx, void *sta_ctx, const u8 *data,
-			 size_t datalen);
-	void (*finished)(void *ctx, void *sta_ctx, int success, int preauth,
-			 int remediation);
-	int (*get_eap_user)(void *ctx, const u8 *identity, size_t identity_len,
-			    int phase2, struct eap_user *user);
+	void (*eapol_send)(void *ctx, void *sta_ctx, u8 type, const u8 *data, size_t datalen);
+	void (*aaa_send)(void *ctx, void *sta_ctx, const u8 *data, size_t datalen);
+	void (*finished)(void *ctx, void *sta_ctx, int success, int preauth, int remediation);
+	int (*get_eap_user)(void *ctx, const u8 *identity, size_t identity_len, int phase2, struct eap_user *user);
 	int (*sta_entry_alive)(void *ctx, const u8 *addr);
-	void (*logger)(void *ctx, const u8 *addr, eapol_logger_level level,
-		       const char *txt);
+	void (*logger)(void *ctx, const u8 *addr, eapol_logger_level level, const char *txt);
 	void (*set_port_authorized)(void *ctx, void *sta_ctx, int authorized);
 	void (*abort_auth)(void *ctx, void *sta_ctx);
 	void (*tx_key)(void *ctx, void *sta_ctx);
 	void (*eapol_event)(void *ctx, void *sta_ctx, enum eapol_event type);
-	struct eap_server_erp_key * (*erp_get_key)(void *ctx,
-						   const char *keyname);
+	struct eap_server_erp_key *(*erp_get_key)(void *ctx, const char *keyname);
 	int (*erp_add_key)(void *ctx, struct eap_server_erp_key *erp);
 };
 
-
-struct eapol_authenticator * eapol_auth_init(struct eapol_auth_config *conf,
-					     struct eapol_auth_cb *cb);
+struct eapol_authenticator *eapol_auth_init(struct eapol_auth_config *conf, struct eapol_auth_cb *cb);
 void eapol_auth_deinit(struct eapol_authenticator *eapol);
-struct eapol_state_machine *
-eapol_auth_alloc(struct eapol_authenticator *eapol, const u8 *addr,
-		 int flags, const struct wpabuf *assoc_wps_ie,
-		 const struct wpabuf *assoc_p2p_ie, void *sta_ctx,
-		 const char *identity, const char *radius_cui);
+struct eapol_state_machine *eapol_auth_alloc(struct eapol_authenticator *eapol, const u8 *addr, int flags, const struct wpabuf *assoc_wps_ie, const struct wpabuf *assoc_p2p_ie, void *sta_ctx, const char *identity, const char *radius_cui);
 void eapol_auth_free(struct eapol_state_machine *sm);
 void eapol_auth_step(struct eapol_state_machine *sm);
-int eapol_auth_dump_state(struct eapol_state_machine *sm, char *buf,
-			  size_t buflen);
+int eapol_auth_dump_state(struct eapol_state_machine *sm, char *buf, size_t buflen);
 int eapol_auth_eap_pending_cb(struct eapol_state_machine *sm, void *ctx);
 
-#endif /* EAPOL_AUTH_SM_H */
+#endif							/* EAPOL_AUTH_SM_H */

@@ -32,9 +32,8 @@ extern "C" {
 #define SLSI_WIFI_SECURITY_WPA2_TKIP     "wpa2_tkip"
 #define SLSI_WIFI_SECURITY_WPA2_AES      "wpa2_aes"
 
-
 #define MODE_STRING_MAX 100
-#define MAX_SSID_LEN (4*32+1)
+#define MAX_SSID_LEN    (4 * 32 + 1)
 
 /*return a security config struct depending on the mode, and the input security string (see above
  * defines.
@@ -48,5 +47,5 @@ void printScanResult(slsi_scan_info_t *list);
 #ifdef __cplusplus
 }
 #endif
-#endif /* __SLSI_WIFI_UTILS_H
-*/
+#endif							/* __SLSI_WIFI_UTILS_H */
+

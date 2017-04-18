@@ -28,4 +28,4 @@ char *sss_get_flash_device_name(void);
 int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte_size);
 int sss_ro_write(unsigned int start_offset, unsigned char *buf, unsigned int byte_size);
 
-#endif /* DRIVER_IO_H_ */
+#endif							/* DRIVER_IO_H_ */

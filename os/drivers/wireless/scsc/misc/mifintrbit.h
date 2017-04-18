@@ -12,7 +12,7 @@
 /** MIF Interrupt Bit Handler prototype. */
 typedef void (*mifintrbit_handler)(int which_bit, void *data);
 
-struct mifintrbit; /* fwd - opaque pointer */
+struct mifintrbit;				/* fwd - opaque pointer */
 
 #define MIFINTRBIT_NUM_INT      16
 /** Reserve MIF interrupt bits 0 in the to-r4 and to-m4 registers for purpose of forcing panics  */
@@ -36,17 +36,16 @@ int mifintrbit_free_fromhost(struct mifintrbit *intr, int which_bit, enum scsc_m
 typedef uint8_t spinlock_t;
 
 struct mifintrbit {
-	void(*mifintrbit_irq_handler[MIFINTRBIT_NUM_INT]) (int irq, void *data);
-	void                *irq_data[MIFINTRBIT_NUM_INT];
+	void (*mifintrbit_irq_handler[MIFINTRBIT_NUM_INT])(int irq, void *data);
+	void *irq_data[MIFINTRBIT_NUM_INT];
 	struct scsc_mif_abs *mif;
 	/* Use spinlock is it may be in IRQ context */
 
-	spinlock_t          spinlock;
+	spinlock_t spinlock;
 	/* Interrupt allocation bitmaps */
 	DECLARE_BITMAP(bitmap_tohost, MIFINTRBIT_NUM_INT);
 	DECLARE_BITMAP(bitmap_fromhost_r4, MIFINTRBIT_NUM_INT);
 	DECLARE_BITMAP(bitmap_fromhost_m4, MIFINTRBIT_NUM_INT);
 };
-
 
 #endif

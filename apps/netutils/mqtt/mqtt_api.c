@@ -59,7 +59,7 @@
 static mqtt_client_t *create_mqtt_client(void)
 {
 	mqtt_client_t *mqtt_client = NULL;
-	mqtt_client = (mqtt_client_t *) _mosquitto_malloc(sizeof(mqtt_client_t));
+	mqtt_client = (mqtt_client_t *)_mosquitto_malloc(sizeof(mqtt_client_t));
 	if (mqtt_client == NULL) {
 		ndbg("ERROR: mqtt_client is null.\n");
 	}
@@ -83,7 +83,7 @@ static void destroy_mqtt_client(mqtt_client_t *client)
 
 static void on_connect_callback(struct mosquitto *client, void *data, int result)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) data;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)data;
 
 	if (mqtt_client) {
 		mqtt_client->state = MQTT_CLIENT_STATE_CONNECTED;
@@ -95,7 +95,7 @@ static void on_connect_callback(struct mosquitto *client, void *data, int result
 
 static void on_disconnect_callback(struct mosquitto *client, void *data, int result)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) data;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)data;
 
 	if (mqtt_client) {
 		mqtt_client->state = MQTT_CLIENT_STATE_NOT_CONNECTED;
@@ -107,10 +107,10 @@ static void on_disconnect_callback(struct mosquitto *client, void *data, int res
 
 static void on_message_callback(struct mosquitto *client, void *data, const struct mosquitto_message *msg)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) data;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)data;
 	mqtt_msg_t *received_msg;
 
-	received_msg = (mqtt_msg_t *) _mosquitto_malloc(sizeof(mqtt_msg_t));
+	received_msg = (mqtt_msg_t *)_mosquitto_malloc(sizeof(mqtt_msg_t));
 	if (!received_msg) {
 		ndbg("ERROR: received_msg is null.");
 		return;
@@ -132,7 +132,7 @@ static void on_message_callback(struct mosquitto *client, void *data, const stru
 
 static void on_publish_callback(struct mosquitto *client, void *data, int msg_id)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) data;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)data;
 
 	if (mqtt_client) {
 		mqtt_client->state = MQTT_CLIENT_STATE_CONNECTED;
@@ -144,7 +144,7 @@ static void on_publish_callback(struct mosquitto *client, void *data, int msg_id
 
 static void on_subscribe_callback(struct mosquitto *client, void *data, int msg_id, int qos_count, const int *granted_qos)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) data;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)data;
 
 	if (mqtt_client) {
 		mqtt_client->state = MQTT_CLIENT_STATE_CONNECTED;
@@ -156,7 +156,7 @@ static void on_subscribe_callback(struct mosquitto *client, void *data, int msg_
 
 static void on_unsubscribe_callback(struct mosquitto *client, void *data, int msg_id)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) data;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)data;
 
 	if (mqtt_client) {
 		mqtt_client->state = MQTT_CLIENT_STATE_CONNECTED;

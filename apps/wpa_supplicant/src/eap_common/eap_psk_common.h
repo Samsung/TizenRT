@@ -9,7 +9,6 @@
 #ifndef EAP_PSK_COMMON_H
 #define EAP_PSK_COMMON_H
 
-
 #define EAP_PSK_RAND_LEN 16
 #define EAP_PSK_MAC_LEN 16
 #define EAP_PSK_TEK_LEN 16
@@ -27,7 +26,7 @@
 
 #ifdef _MSC_VER
 #pragma pack(push, 1)
-#endif /* _MSC_VER */
+#endif							/* _MSC_VER */
 
 /* EAP-PSK First Message (AS -> Supplicant) */
 struct eap_psk_hdr_1 {
@@ -62,11 +61,9 @@ struct eap_psk_hdr_4 {
 
 #ifdef _MSC_VER
 #pragma pack(pop)
-#endif /* _MSC_VER */
-
+#endif							/* _MSC_VER */
 
 int __must_check eap_psk_key_setup(const u8 *psk, u8 *ak, u8 *kdk);
-int __must_check eap_psk_derive_keys(const u8 *kdk, const u8 *rand_p, u8 *tek,
-				     u8 *msk, u8 *emsk);
+int __must_check eap_psk_derive_keys(const u8 *kdk, const u8 *rand_p, u8 *tek, u8 *msk, u8 *emsk);
 
-#endif /* EAP_PSK_COMMON_H */
+#endif							/* EAP_PSK_COMMON_H */

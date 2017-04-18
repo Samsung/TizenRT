@@ -117,8 +117,15 @@ void lis3lv02qd_main(int argc, char *argv[])
 		return;
 	}
 
- 	uint16_t x_low, x_high, y_low, y_high, z_low, z_high;
-	uint32_t x = 0, y = 0, z = 0;
+	uint16_t x_low;
+	uint16_t x_high;
+	uint16_t y_low;
+	uint16_t y_high;
+	uint16_t z_low;
+	uint16_t z_high;
+	uint32_t x = 0;
+	uint32_t y = 0;
+	uint32_t z = 0;
 
 	int i;
 	for (i = 0; i < 30; i++) {

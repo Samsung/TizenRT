@@ -31,4 +31,4 @@ struct fwhdr {
 bool fwhdr_parse(char *fw, struct fwhdr *fwhdr);
 char *fwhdr_get_build_id(char *fw, struct fwhdr *fwhdr);
 
-#endif /* FWHDR_H */
+#endif							/* FWHDR_H */

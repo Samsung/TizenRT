@@ -16,4 +16,4 @@
 int isp_read_storage(unsigned char *data, unsigned int *data_byte_len, unsigned int index);
 int isp_write_storage(unsigned char *data, unsigned int data_byte_len, unsigned int index);
 
-#endif /* ISP_DRIVER_SECURE_STORAGE_DATA_H_ */
+#endif							/* ISP_DRIVER_SECURE_STORAGE_DATA_H_ */

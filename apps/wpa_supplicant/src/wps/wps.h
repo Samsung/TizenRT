@@ -16,7 +16,7 @@
  * enum wsc_op_code - EAP-WSC OP-Code values
  */
 enum wsc_op_code {
-	WSC_UPnP = 0 /* No OP Code in UPnP transport */,
+	WSC_UPnP = 0 /* No OP Code in UPnP transport */ ,
 	WSC_Start = 0x01,
 	WSC_ACK = 0x02,
 	WSC_NACK = 0x03,
@@ -189,7 +189,7 @@ struct wps_config {
 	const u8 *peer_pubkey_hash;
 };
 
-struct wps_data * wps_init(const struct wps_config *cfg);
+struct wps_data *wps_init(const struct wps_config *cfg);
 
 void wps_deinit(struct wps_data *data);
 
@@ -218,29 +218,20 @@ enum wps_process_res {
 	 */
 	WPS_PENDING
 };
-enum wps_process_res wps_process_msg(struct wps_data *wps,
-				     enum wsc_op_code op_code,
-				     const struct wpabuf *msg);
+enum wps_process_res wps_process_msg(struct wps_data *wps, enum wsc_op_code op_code, const struct wpabuf *msg);
 
-struct wpabuf * wps_get_msg(struct wps_data *wps, enum wsc_op_code *op_code);
+struct wpabuf *wps_get_msg(struct wps_data *wps, enum wsc_op_code *op_code);
 
 int wps_is_selected_pbc_registrar(const struct wpabuf *msg);
 int wps_is_selected_pin_registrar(const struct wpabuf *msg);
-int wps_ap_priority_compar(const struct wpabuf *wps_a,
-			   const struct wpabuf *wps_b);
-int wps_is_addr_authorized(const struct wpabuf *msg, const u8 *addr,
-			   int ver1_compat);
-const u8 * wps_get_uuid_e(const struct wpabuf *msg);
+int wps_ap_priority_compar(const struct wpabuf *wps_a, const struct wpabuf *wps_b);
+int wps_is_addr_authorized(const struct wpabuf *msg, const u8 *addr, int ver1_compat);
+const u8 *wps_get_uuid_e(const struct wpabuf *msg);
 int wps_is_20(const struct wpabuf *msg);
 
-struct wpabuf * wps_build_assoc_req_ie(enum wps_request_type req_type);
-struct wpabuf * wps_build_assoc_resp_ie(void);
-struct wpabuf * wps_build_probe_req_ie(u16 pw_id, struct wps_device_data *dev,
-				       const u8 *uuid,
-				       enum wps_request_type req_type,
-				       unsigned int num_req_dev_types,
-				       const u8 *req_dev_types);
-
+struct wpabuf *wps_build_assoc_req_ie(enum wps_request_type req_type);
+struct wpabuf *wps_build_assoc_resp_ie(void);
+struct wpabuf *wps_build_probe_req_ie(u16 pw_id, struct wps_device_data *dev, const u8 *uuid, enum wps_request_type req_type, unsigned int num_req_dev_types, const u8 *req_dev_types);
 
 /**
  * struct wps_registrar_config - WPS Registrar configuration
@@ -257,8 +248,7 @@ struct wps_registrar_config {
 	 *
 	 * This callback is called when a new per-device PSK is provisioned.
 	 */
-	int (*new_psk_cb)(void *ctx, const u8 *mac_addr, const u8 *p2p_dev_addr,
-			  const u8 *psk, size_t psk_len);
+	int (*new_psk_cb)(void *ctx, const u8 *mac_addr, const u8 *p2p_dev_addr, const u8 *psk, size_t psk_len);
 
 	/**
 	 * set_ie_cb - Callback for WPS IE changes
@@ -271,8 +261,7 @@ struct wps_registrar_config {
 	 * Response frames needs to be changed (AP only). Callee is responsible
 	 * for freeing the buffers.
 	 */
-	int (*set_ie_cb)(void *ctx, struct wpabuf *beacon_ie,
-			 struct wpabuf *probe_resp_ie);
+	int (*set_ie_cb)(void *ctx, struct wpabuf *beacon_ie, struct wpabuf *probe_resp_ie);
 
 	/**
 	 * pin_needed_cb - Callback for requesting a PIN
@@ -284,8 +273,7 @@ struct wps_registrar_config {
 	 * PIN method and a matching PIN (Device Password) is not found in
 	 * Registrar data.
 	 */
-	void (*pin_needed_cb)(void *ctx, const u8 *uuid_e,
-			      const struct wps_device_data *dev);
+	void (*pin_needed_cb)(void *ctx, const u8 *uuid_e, const struct wps_device_data *dev);
 
 	/**
 	 * reg_success_cb - Callback for reporting successful registration
@@ -298,9 +286,7 @@ struct wps_registrar_config {
 	 * This callback is called whenever an Enrollee completes registration
 	 * successfully.
 	 */
-	void (*reg_success_cb)(void *ctx, const u8 *mac_addr,
-			       const u8 *uuid_e, const u8 *dev_pw,
-			       size_t dev_pw_len);
+	void (*reg_success_cb)(void *ctx, const u8 *mac_addr, const u8 *uuid_e, const u8 *dev_pw, size_t dev_pw_len);
 
 	/**
 	 * set_sel_reg_cb - Callback for reporting selected registrar changes
@@ -317,8 +303,7 @@ struct wps_registrar_config {
 	 * provides the full WPS IE data instead of just the minimal Registrar
 	 * state information.
 	 */
-	void (*set_sel_reg_cb)(void *ctx, int sel_reg, u16 dev_passwd_id,
-			       u16 sel_reg_config_methods);
+	void (*set_sel_reg_cb)(void *ctx, int sel_reg, u16 dev_passwd_id, u16 sel_reg_config_methods);
 
 	/**
 	 * enrollee_seen_cb - Callback for reporting Enrollee based on ProbeReq
@@ -331,10 +316,7 @@ struct wps_registrar_config {
 	 * @request_type: Request Type
 	 * @dev_name: Device Name (if available)
 	 */
-	void (*enrollee_seen_cb)(void *ctx, const u8 *addr, const u8 *uuid_e,
-				 const u8 *pri_dev_type, u16 config_methods,
-				 u16 dev_password_id, u8 request_type,
-				 const char *dev_name);
+	void (*enrollee_seen_cb)(void *ctx, const u8 *addr, const u8 *uuid_e, const u8 *pri_dev_type, u16 config_methods, u16 dev_password_id, u8 request_type, const char *dev_name);
 
 	/**
 	 * cb_ctx: Higher layer context data for Registrar callbacks
@@ -396,7 +378,6 @@ struct wps_registrar_config {
 	 */
 	int force_per_enrollee_psk;
 };
-
 
 /**
  * enum wps_event - WPS event types
@@ -497,7 +478,7 @@ union wps_event_data {
 		size_t serial_number_len;
 		const u8 *dev_name;
 		size_t dev_name_len;
-		const u8 *primary_dev_type; /* 8 octets */
+		const u8 *primary_dev_type;	/* 8 octets */
 		u16 config_error;
 		u16 dev_password_id;
 	} m2d;
@@ -765,8 +746,7 @@ struct wps_context {
 	 * @event: Event type
 	 * @data: Event data
 	 */
-	void (*event_cb)(void *ctx, enum wps_event event,
-			 union wps_event_data *data);
+	void (*event_cb)(void *ctx, enum wps_event event, union wps_event_data *data);
 
 	/**
 	 * rf_band_cb - Fetch currently used RF band
@@ -791,39 +771,23 @@ struct wps_context {
 	struct wpabuf *ap_nfc_dev_pw;
 };
 
-struct wps_registrar *
-wps_registrar_init(struct wps_context *wps,
-		   const struct wps_registrar_config *cfg);
+struct wps_registrar *wps_registrar_init(struct wps_context *wps, const struct wps_registrar_config *cfg);
 void wps_registrar_deinit(struct wps_registrar *reg);
-int wps_registrar_add_pin(struct wps_registrar *reg, const u8 *addr,
-			  const u8 *uuid, const u8 *pin, size_t pin_len,
-			  int timeout);
+int wps_registrar_add_pin(struct wps_registrar *reg, const u8 *addr, const u8 *uuid, const u8 *pin, size_t pin_len, int timeout);
 int wps_registrar_invalidate_pin(struct wps_registrar *reg, const u8 *uuid);
 int wps_registrar_wps_cancel(struct wps_registrar *reg);
 int wps_registrar_unlock_pin(struct wps_registrar *reg, const u8 *uuid);
-int wps_registrar_button_pushed(struct wps_registrar *reg,
-				const u8 *p2p_dev_addr);
-void wps_registrar_complete(struct wps_registrar *registrar, const u8 *uuid_e,
-			    const u8 *dev_pw, size_t dev_pw_len);
-void wps_registrar_probe_req_rx(struct wps_registrar *reg, const u8 *addr,
-				const struct wpabuf *wps_data,
-				int p2p_wildcard);
+int wps_registrar_button_pushed(struct wps_registrar *reg, const u8 *p2p_dev_addr);
+void wps_registrar_complete(struct wps_registrar *registrar, const u8 *uuid_e, const u8 *dev_pw, size_t dev_pw_len);
+void wps_registrar_probe_req_rx(struct wps_registrar *reg, const u8 *addr, const struct wpabuf *wps_data, int p2p_wildcard);
 int wps_registrar_update_ie(struct wps_registrar *reg);
-int wps_registrar_get_info(struct wps_registrar *reg, const u8 *addr,
-			   char *buf, size_t buflen);
-int wps_registrar_config_ap(struct wps_registrar *reg,
-			    struct wps_credential *cred);
-int wps_registrar_add_nfc_pw_token(struct wps_registrar *reg,
-				   const u8 *pubkey_hash, u16 pw_id,
-				   const u8 *dev_pw, size_t dev_pw_len,
-				   int pk_hash_provided_oob);
-int wps_registrar_add_nfc_password_token(struct wps_registrar *reg,
-					 const u8 *oob_dev_pw,
-					 size_t oob_dev_pw_len);
+int wps_registrar_get_info(struct wps_registrar *reg, const u8 *addr, char *buf, size_t buflen);
+int wps_registrar_config_ap(struct wps_registrar *reg, struct wps_credential *cred);
+int wps_registrar_add_nfc_pw_token(struct wps_registrar *reg, const u8 *pubkey_hash, u16 pw_id, const u8 *dev_pw, size_t dev_pw_len, int pk_hash_provided_oob);
+int wps_registrar_add_nfc_password_token(struct wps_registrar *reg, const u8 *oob_dev_pw, size_t oob_dev_pw_len);
 void wps_registrar_flush(struct wps_registrar *reg);
 
-int wps_build_credential_wrap(struct wpabuf *msg,
-			      const struct wps_credential *cred);
+int wps_build_credential_wrap(struct wpabuf *msg, const struct wps_credential *cred);
 
 unsigned int wps_pin_checksum(unsigned int pin);
 unsigned int wps_pin_valid(unsigned int pin);
@@ -831,71 +795,46 @@ unsigned int wps_generate_pin(void);
 int wps_pin_str_valid(const char *pin);
 void wps_free_pending_msgs(struct upnp_pending_message *msgs);
 
-struct wpabuf * wps_get_oob_cred(struct wps_context *wps, int rf_band,
-				 int channel);
+struct wpabuf *wps_get_oob_cred(struct wps_context *wps, int rf_band, int channel);
 int wps_oob_use_cred(struct wps_context *wps, struct wps_parse_attr *attr);
 int wps_attr_text(struct wpabuf *data, char *buf, char *end);
-const char * wps_ei_str(enum wps_error_indication ei);
+const char *wps_ei_str(enum wps_error_indication ei);
 
-struct wps_er * wps_er_init(struct wps_context *wps, const char *ifname,
-			    const char *filter);
+struct wps_er *wps_er_init(struct wps_context *wps, const char *ifname, const char *filter);
 void wps_er_refresh(struct wps_er *er);
 void wps_er_deinit(struct wps_er *er, void (*cb)(void *ctx), void *ctx);
-void wps_er_set_sel_reg(struct wps_er *er, int sel_reg, u16 dev_passwd_id,
-			u16 sel_reg_config_methods);
+void wps_er_set_sel_reg(struct wps_er *er, int sel_reg, u16 dev_passwd_id, u16 sel_reg_config_methods);
 int wps_er_pbc(struct wps_er *er, const u8 *uuid, const u8 *addr);
-const u8 * wps_er_get_sta_uuid(struct wps_er *er, const u8 *addr);
-int wps_er_learn(struct wps_er *er, const u8 *uuid, const u8 *addr,
-		 const u8 *pin, size_t pin_len);
-int wps_er_set_config(struct wps_er *er, const u8 *uuid, const u8 *addr,
-		      const struct wps_credential *cred);
-int wps_er_config(struct wps_er *er, const u8 *uuid, const u8 *addr,
-		  const u8 *pin, size_t pin_len,
-		  const struct wps_credential *cred);
-struct wpabuf * wps_er_config_token_from_cred(struct wps_context *wps,
-					      struct wps_credential *cred);
-struct wpabuf * wps_er_nfc_config_token(struct wps_er *er, const u8 *uuid,
-					const u8 *addr);
-struct wpabuf * wps_er_nfc_handover_sel(struct wps_er *er,
-					struct wps_context *wps, const u8 *uuid,
-					const u8 *addr, struct wpabuf *pubkey);
+const u8 *wps_er_get_sta_uuid(struct wps_er *er, const u8 *addr);
+int wps_er_learn(struct wps_er *er, const u8 *uuid, const u8 *addr, const u8 *pin, size_t pin_len);
+int wps_er_set_config(struct wps_er *er, const u8 *uuid, const u8 *addr, const struct wps_credential *cred);
+int wps_er_config(struct wps_er *er, const u8 *uuid, const u8 *addr, const u8 *pin, size_t pin_len, const struct wps_credential *cred);
+struct wpabuf *wps_er_config_token_from_cred(struct wps_context *wps, struct wps_credential *cred);
+struct wpabuf *wps_er_nfc_config_token(struct wps_er *er, const u8 *uuid, const u8 *addr);
+struct wpabuf *wps_er_nfc_handover_sel(struct wps_er *er, struct wps_context *wps, const u8 *uuid, const u8 *addr, struct wpabuf *pubkey);
 
 int wps_dev_type_str2bin(const char *str, u8 dev_type[WPS_DEV_TYPE_LEN]);
-char * wps_dev_type_bin2str(const u8 dev_type[WPS_DEV_TYPE_LEN], char *buf,
-			    size_t buf_len);
+char *wps_dev_type_bin2str(const u8 dev_type[WPS_DEV_TYPE_LEN], char *buf, size_t buf_len);
 void uuid_gen_mac_addr(const u8 *mac_addr, u8 *uuid);
 u16 wps_config_methods_str2bin(const char *str);
-struct wpabuf * wps_build_nfc_pw_token(u16 dev_pw_id,
-				       const struct wpabuf *pubkey,
-				       const struct wpabuf *dev_pw);
-struct wpabuf * wps_nfc_token_build(int ndef, int id, struct wpabuf *pubkey,
-				    struct wpabuf *dev_pw);
+struct wpabuf *wps_build_nfc_pw_token(u16 dev_pw_id, const struct wpabuf *pubkey, const struct wpabuf *dev_pw);
+struct wpabuf *wps_nfc_token_build(int ndef, int id, struct wpabuf *pubkey, struct wpabuf *dev_pw);
 int wps_nfc_gen_dh(struct wpabuf **pubkey, struct wpabuf **privkey);
-struct wpabuf * wps_nfc_token_gen(int ndef, int *id, struct wpabuf **pubkey,
-				  struct wpabuf **privkey,
-				  struct wpabuf **dev_pw);
-struct wpabuf * wps_build_nfc_handover_req(struct wps_context *ctx,
-					   struct wpabuf *nfc_dh_pubkey);
-struct wpabuf * wps_build_nfc_handover_sel(struct wps_context *ctx,
-					   struct wpabuf *nfc_dh_pubkey,
-					   const u8 *bssid, int freq);
-struct wpabuf * wps_build_nfc_handover_req_p2p(struct wps_context *ctx,
-					       struct wpabuf *nfc_dh_pubkey);
-struct wpabuf * wps_build_nfc_handover_sel_p2p(struct wps_context *ctx,
-					       int nfc_dev_pw_id,
-					       struct wpabuf *nfc_dh_pubkey,
-					       struct wpabuf *nfc_dev_pw);
+struct wpabuf *wps_nfc_token_gen(int ndef, int *id, struct wpabuf **pubkey, struct wpabuf **privkey, struct wpabuf **dev_pw);
+struct wpabuf *wps_build_nfc_handover_req(struct wps_context *ctx, struct wpabuf *nfc_dh_pubkey);
+struct wpabuf *wps_build_nfc_handover_sel(struct wps_context *ctx, struct wpabuf *nfc_dh_pubkey, const u8 *bssid, int freq);
+struct wpabuf *wps_build_nfc_handover_req_p2p(struct wps_context *ctx, struct wpabuf *nfc_dh_pubkey);
+struct wpabuf *wps_build_nfc_handover_sel_p2p(struct wps_context *ctx, int nfc_dev_pw_id, struct wpabuf *nfc_dh_pubkey, struct wpabuf *nfc_dev_pw);
 
 /* ndef.c */
-struct wpabuf * ndef_parse_wifi(const struct wpabuf *buf);
-struct wpabuf * ndef_build_wifi(const struct wpabuf *buf);
-struct wpabuf * ndef_parse_p2p(const struct wpabuf *buf);
-struct wpabuf * ndef_build_p2p(const struct wpabuf *buf);
+struct wpabuf *ndef_parse_wifi(const struct wpabuf *buf);
+struct wpabuf *ndef_build_wifi(const struct wpabuf *buf);
+struct wpabuf *ndef_parse_p2p(const struct wpabuf *buf);
+struct wpabuf *ndef_build_p2p(const struct wpabuf *buf);
 
 #ifdef CONFIG_WPS_STRICT
 int wps_validate_beacon(const struct wpabuf *wps_ie);
-int wps_validate_beacon_probe_resp(const struct wpabuf *wps_ie, int probe,
-				   const u8 *addr);
+int wps_validate_beacon_probe_resp(const struct wpabuf *wps_ie, int probe, const u8 *addr);
 int wps_validate_probe_req(const struct wpabuf *wps_ie, const u8 *addr);
 int wps_validate_assoc_req(const struct wpabuf *wps_ie);
 int wps_validate_assoc_resp(const struct wpabuf *wps_ie);
@@ -917,19 +856,18 @@ int wps_validate_wsc_ack(const struct wpabuf *tlvs);
 int wps_validate_wsc_nack(const struct wpabuf *tlvs);
 int wps_validate_wsc_done(const struct wpabuf *tlvs);
 int wps_validate_upnp_set_selected_registrar(const struct wpabuf *tlvs);
-#else /* CONFIG_WPS_STRICT */
-static inline int wps_validate_beacon(const struct wpabuf *wps_ie){
-	return 0;
-}
-
-static inline int wps_validate_beacon_probe_resp(const struct wpabuf *wps_ie,
-						 int probe, const u8 *addr)
+#else							/* CONFIG_WPS_STRICT */
+static inline int wps_validate_beacon(const struct wpabuf *wps_ie)
 {
 	return 0;
 }
 
-static inline int wps_validate_probe_req(const struct wpabuf *wps_ie,
-					 const u8 *addr)
+static inline int wps_validate_beacon_probe_resp(const struct wpabuf *wps_ie, int probe, const u8 *addr)
+{
+	return 0;
+}
+
+static inline int wps_validate_probe_req(const struct wpabuf *wps_ie, const u8 *addr)
 {
 	return 0;
 }
@@ -999,8 +937,7 @@ static inline int wps_validate_m7(const struct wpabuf *tlvs)
 	return 0;
 }
 
-static inline int wps_validate_m7_encr(const struct wpabuf *tlvs, int ap,
-				       int wps2)
+static inline int wps_validate_m7_encr(const struct wpabuf *tlvs, int ap, int wps2)
 {
 	return 0;
 }
@@ -1010,8 +947,7 @@ static inline int wps_validate_m8(const struct wpabuf *tlvs)
 	return 0;
 }
 
-static inline int wps_validate_m8_encr(const struct wpabuf *tlvs, int ap,
-				       int wps2)
+static inline int wps_validate_m8_encr(const struct wpabuf *tlvs, int ap, int wps2)
 {
 	return 0;
 }
@@ -1031,11 +967,10 @@ static inline int wps_validate_wsc_done(const struct wpabuf *tlvs)
 	return 0;
 }
 
-static inline int wps_validate_upnp_set_selected_registrar(
-	const struct wpabuf *tlvs)
+static inline int wps_validate_upnp_set_selected_registrar(const struct wpabuf *tlvs)
 {
 	return 0;
 }
-#endif /* CONFIG_WPS_STRICT */
+#endif							/* CONFIG_WPS_STRICT */
 
-#endif /* WPS_H */
+#endif							/* WPS_H */

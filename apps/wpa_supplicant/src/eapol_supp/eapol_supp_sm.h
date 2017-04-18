@@ -104,8 +104,7 @@ struct eapol_ctx {
 	 * EAPOL state machine to process the key and terminate the EAPOL state
 	 * machine. Currently, this is used only in RSN pre-authentication.
 	 */
-	void (*cb)(struct eapol_sm *eapol, enum eapol_supp_result result,
-		   void *ctx);
+	void (*cb)(struct eapol_sm *eapol, enum eapol_supp_result result, void *ctx);
 
 	/**
 	 * cb_ctx - Callback context for cb()
@@ -158,8 +157,7 @@ struct eapol_ctx {
 	 * @keylen: Length of the WEP key
 	 * Returns: 0 on success, -1 on failure
 	 */
-	int (*set_wep_key)(void *ctx, int unicast, int keyidx,
-			   const u8 *key, size_t keylen);
+	int (*set_wep_key)(void *ctx, int unicast, int keyidx, const u8 *key, size_t keylen);
 
 	/**
 	 * set_config_blob - Set or add a named configuration blob
@@ -177,8 +175,7 @@ struct eapol_ctx {
 	 * @name: Name of the blob
 	 * Returns: Pointer to blob data or %NULL if not found
 	 */
-	const struct wpa_config_blob * (*get_config_blob)(void *ctx,
-							  const char *name);
+	const struct wpa_config_blob *(*get_config_blob)(void *ctx, const char *name);
 
 	/**
 	 * aborted_cached - Notify that cached PMK attempt was aborted
@@ -233,8 +230,7 @@ struct eapol_ctx {
 	 * @field: Field indicator (e.g., WPA_CTRL_REQ_EAP_IDENTITY)
 	 * @txt: User readable text describing the required parameter
 	 */
-	void (*eap_param_needed)(void *ctx, enum wpa_ctrl_req_type field,
-				 const char *txt);
+	void (*eap_param_needed)(void *ctx, enum wpa_ctrl_req_type field, const char *txt);
 
 	/**
 	 * port_cb - Set port authorized/unauthorized callback (optional)
@@ -253,9 +249,7 @@ struct eapol_ctx {
 	 * @cert_hash: SHA-256 hash of the certificate
 	 * @cert: Peer certificate
 	 */
-	void (*cert_cb)(void *ctx, int depth, const char *subject,
-			const char *altsubject[], int num_altsubject,
-			const char *cert_hash, const struct wpabuf *cert);
+	void (*cert_cb)(void *ctx, int depth, const char *subject, const char *altsubject[], int num_altsubject, const char *cert_hash, const struct wpabuf *cert);
 
 	/**
 	 * cert_in_cb - Include server certificates in callback
@@ -268,8 +262,7 @@ struct eapol_ctx {
 	 * @status: Step in the process of EAP authentication
 	 * @parameter: Step-specific parameter, e.g., EAP method name
 	 */
-	void (*status_cb)(void *ctx, const char *status,
-			  const char *parameter);
+	void (*status_cb)(void *ctx, const char *status, const char *parameter);
 
 #ifdef CONFIG_EAP_PROXY
 	/**
@@ -277,7 +270,7 @@ struct eapol_ctx {
 	 * @ctx: eapol_ctx from eap_peer_sm_init() call
 	 */
 	void (*eap_proxy_cb)(void *ctx);
-#endif /* CONFIG_EAP_PROXY */
+#endif							/* CONFIG_EAP_PROXY */
 
 	/**
 	 * set_anon_id - Set or add anonymous identity
@@ -288,7 +281,6 @@ struct eapol_ctx {
 	void (*set_anon_id)(void *ctx, const u8 *id, size_t len);
 };
 
-
 struct eap_peer_config;
 struct ext_password_data;
 
@@ -296,23 +288,18 @@ struct ext_password_data;
 struct eapol_sm *eapol_sm_init(struct eapol_ctx *ctx);
 void eapol_sm_deinit(struct eapol_sm *sm);
 void eapol_sm_step(struct eapol_sm *sm);
-int eapol_sm_get_status(struct eapol_sm *sm, char *buf, size_t buflen,
-			int verbose);
+int eapol_sm_get_status(struct eapol_sm *sm, char *buf, size_t buflen, int verbose);
 int eapol_sm_get_mib(struct eapol_sm *sm, char *buf, size_t buflen);
-void eapol_sm_configure(struct eapol_sm *sm, int heldPeriod, int authPeriod,
-			int startPeriod, int maxStart);
-int eapol_sm_rx_eapol(struct eapol_sm *sm, const u8 *src, const u8 *buf,
-		      size_t len);
+void eapol_sm_configure(struct eapol_sm *sm, int heldPeriod, int authPeriod, int startPeriod, int maxStart);
+int eapol_sm_rx_eapol(struct eapol_sm *sm, const u8 *src, const u8 *buf, size_t len);
 void eapol_sm_notify_tx_eapol_key(struct eapol_sm *sm);
 void eapol_sm_notify_portEnabled(struct eapol_sm *sm, Boolean enabled);
 void eapol_sm_notify_portValid(struct eapol_sm *sm, Boolean valid);
 void eapol_sm_notify_eap_success(struct eapol_sm *sm, Boolean success);
 void eapol_sm_notify_eap_fail(struct eapol_sm *sm, Boolean fail);
-void eapol_sm_notify_config(struct eapol_sm *sm,
-			    struct eap_peer_config *config,
-			    const struct eapol_config *conf);
+void eapol_sm_notify_config(struct eapol_sm *sm, struct eap_peer_config *config, const struct eapol_config *conf);
 int eapol_sm_get_key(struct eapol_sm *sm, u8 *key, size_t len);
-const u8 * eapol_sm_get_session_id(struct eapol_sm *sm, size_t *len);
+const u8 *eapol_sm_get_session_id(struct eapol_sm *sm, size_t *len);
 void eapol_sm_notify_logoff(struct eapol_sm *sm, Boolean logoff);
 void eapol_sm_notify_cached(struct eapol_sm *sm);
 void eapol_sm_notify_pmkid_attempt(struct eapol_sm *sm);
@@ -323,121 +310,133 @@ void eapol_sm_notify_ctrl_response(struct eapol_sm *sm);
 void eapol_sm_request_reauth(struct eapol_sm *sm);
 void eapol_sm_notify_lower_layer_success(struct eapol_sm *sm, int in_eapol_sm);
 void eapol_sm_invalidate_cached_session(struct eapol_sm *sm);
-const char * eapol_sm_get_method_name(struct eapol_sm *sm);
-void eapol_sm_set_ext_pw_ctx(struct eapol_sm *sm,
-			     struct ext_password_data *ext);
+const char *eapol_sm_get_method_name(struct eapol_sm *sm);
+void eapol_sm_set_ext_pw_ctx(struct eapol_sm *sm, struct ext_password_data *ext);
 int eapol_sm_failed(struct eapol_sm *sm);
 void eapol_sm_erp_flush(struct eapol_sm *sm);
 int eapol_sm_get_eap_proxy_imsi(struct eapol_sm *sm, char *imsi, size_t *len);
-#else /* IEEE8021X_EAPOL */
+#else							/* IEEE8021X_EAPOL */
 static inline struct eapol_sm *eapol_sm_init(struct eapol_ctx *ctx)
 {
 	free(ctx);
-	return (struct eapol_sm *) 1;
+	return (struct eapol_sm *)1;
 }
+
 static inline void eapol_sm_deinit(struct eapol_sm *sm)
 {
 }
+
 static inline void eapol_sm_step(struct eapol_sm *sm)
 {
 }
-static inline int eapol_sm_get_status(struct eapol_sm *sm, char *buf,
-				      size_t buflen, int verbose)
+
+static inline int eapol_sm_get_status(struct eapol_sm *sm, char *buf, size_t buflen, int verbose)
 {
 	return 0;
 }
-static inline int eapol_sm_get_mib(struct eapol_sm *sm, char *buf,
-				   size_t buflen)
+
+static inline int eapol_sm_get_mib(struct eapol_sm *sm, char *buf, size_t buflen)
 {
 	return 0;
 }
-static inline void eapol_sm_configure(struct eapol_sm *sm, int heldPeriod,
-				      int authPeriod, int startPeriod,
-				      int maxStart)
+
+static inline void eapol_sm_configure(struct eapol_sm *sm, int heldPeriod, int authPeriod, int startPeriod, int maxStart)
 {
 }
-static inline int eapol_sm_rx_eapol(struct eapol_sm *sm, const u8 *src,
-				    const u8 *buf, size_t len)
+
+static inline int eapol_sm_rx_eapol(struct eapol_sm *sm, const u8 *src, const u8 *buf, size_t len)
 {
 	return 0;
 }
+
 static inline void eapol_sm_notify_tx_eapol_key(struct eapol_sm *sm)
 {
 }
-static inline void eapol_sm_notify_portEnabled(struct eapol_sm *sm,
-					       Boolean enabled)
+
+static inline void eapol_sm_notify_portEnabled(struct eapol_sm *sm, Boolean enabled)
 {
 }
-static inline void eapol_sm_notify_portValid(struct eapol_sm *sm,
-					     Boolean valid)
+
+static inline void eapol_sm_notify_portValid(struct eapol_sm *sm, Boolean valid)
 {
 }
-static inline void eapol_sm_notify_eap_success(struct eapol_sm *sm,
-					       Boolean success)
+
+static inline void eapol_sm_notify_eap_success(struct eapol_sm *sm, Boolean success)
 {
 }
+
 static inline void eapol_sm_notify_eap_fail(struct eapol_sm *sm, Boolean fail)
 {
 }
-static inline void eapol_sm_notify_config(struct eapol_sm *sm,
-					  struct eap_peer_config *config,
-					  struct eapol_config *conf)
+
+static inline void eapol_sm_notify_config(struct eapol_sm *sm, struct eap_peer_config *config, struct eapol_config *conf)
 {
 }
+
 static inline int eapol_sm_get_key(struct eapol_sm *sm, u8 *key, size_t len)
 {
 	return -1;
 }
-static inline const u8 *
-eapol_sm_get_session_id(struct eapol_sm *sm, size_t *len)
+
+static inline const u8 *eapol_sm_get_session_id(struct eapol_sm *sm, size_t *len)
 {
 	return NULL;
 }
+
 static inline void eapol_sm_notify_logoff(struct eapol_sm *sm, Boolean logoff)
 {
 }
+
 static inline void eapol_sm_notify_cached(struct eapol_sm *sm)
 {
 }
+
 static inline void eapol_sm_notify_pmkid_attempt(struct eapol_sm *sm)
 {
 }
+
 #define eapol_sm_register_scard_ctx(sm, ctx) do { } while (0)
-static inline void eapol_sm_notify_portControl(struct eapol_sm *sm,
-					       PortControl portControl)
+static inline void eapol_sm_notify_portControl(struct eapol_sm *sm, PortControl portControl)
 {
 }
+
 static inline void eapol_sm_notify_ctrl_attached(struct eapol_sm *sm)
 {
 }
+
 static inline void eapol_sm_notify_ctrl_response(struct eapol_sm *sm)
 {
 }
+
 static inline void eapol_sm_request_reauth(struct eapol_sm *sm)
 {
 }
-static inline void eapol_sm_notify_lower_layer_success(struct eapol_sm *sm,
-						       int in_eapol_sm)
+
+static inline void eapol_sm_notify_lower_layer_success(struct eapol_sm *sm, int in_eapol_sm)
 {
 }
+
 static inline void eapol_sm_invalidate_cached_session(struct eapol_sm *sm)
 {
 }
-static inline const char * eapol_sm_get_method_name(struct eapol_sm *sm)
+
+static inline const char *eapol_sm_get_method_name(struct eapol_sm *sm)
 {
 	return NULL;
 }
-static inline void eapol_sm_set_ext_pw_ctx(struct eapol_sm *sm,
-					   struct ext_password_data *ext)
+
+static inline void eapol_sm_set_ext_pw_ctx(struct eapol_sm *sm, struct ext_password_data *ext)
 {
 }
+
 static inline int eapol_sm_failed(struct eapol_sm *sm)
 {
 	return 0;
 }
+
 static inline void eapol_sm_erp_flush(struct eapol_sm *sm)
 {
 }
-#endif /* IEEE8021X_EAPOL */
+#endif							/* IEEE8021X_EAPOL */
 
-#endif /* EAPOL_SUPP_SM_H */
+#endif							/* EAPOL_SUPP_SM_H */

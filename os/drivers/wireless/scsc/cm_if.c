@@ -70,8 +70,8 @@ static void wlan_failure_reset(struct scsc_service_client *client, u16 scsc_pani
  */
 void slsi_wlan_service_probe(struct scsc_mx_module_client *module_client, struct scsc_mx *mx, enum scsc_module_client_reason reason)
 {
-	struct slsi_dev            *sdev;
-	int                        ret = 0;
+	struct slsi_dev *sdev;
+	int ret = 0;
 	struct scsc_service_client mx_wlan_client;
 
 	UNUSED(module_client);
@@ -79,8 +79,9 @@ void slsi_wlan_service_probe(struct scsc_mx_module_client *module_client, struct
 	SLSI_INFO_NODEV("WLAN service probe\n");
 
 	pthread_mutex_lock(&slsi_start_mutex);
-	if (reason == SCSC_MODULE_CLIENT_REASON_RECOVERY && !recovery_in_progress)
+	if (reason == SCSC_MODULE_CLIENT_REASON_RECOVERY && !recovery_in_progress) {
 		goto done;
+	}
 
 	if (reason == SCSC_MODULE_CLIENT_REASON_RECOVERY) {
 		SLSI_INFO_NODEV("Probe recovery\n");
@@ -89,8 +90,8 @@ void slsi_wlan_service_probe(struct scsc_mx_module_client *module_client, struct
 		sdev->fail_reported = false;
 	} else {
 		/* Register callbacks */
-		mx_wlan_client.stop_on_failure   = wlan_stop_on_failure;
-		mx_wlan_client.failure_reset     = wlan_failure_reset;
+		mx_wlan_client.stop_on_failure = wlan_stop_on_failure;
+		mx_wlan_client.failure_reset = wlan_failure_reset;
 
 		sdev = slsi_dev_attach(mx, &mx_wlan_client);
 		if (sdev == NULL) {
@@ -113,7 +114,7 @@ done:
 static void slsi_wlan_service_remove(struct scsc_mx_module_client *module_client, struct scsc_mx *mx, enum scsc_module_client_reason reason)
 {
 	struct slsi_dev *sdev;
-	int             state;
+	int state;
 
 	UNUSED(mx);
 	UNUSED(module_client);
@@ -147,10 +148,10 @@ static void slsi_wlan_service_remove(struct scsc_mx_module_client *module_client
 		if (sdev->recovery_next_state == SCSC_WIFI_CM_IF_STATE_STOPPING) {
 			SLSI_INFO_NODEV("Recovery - next state stopping\n");
 		} else {
-			SLSI_INFO_NODEV("Calling slsi_send_hanged_vendor_event with latest_scsc_panic_code=0x%x\n",
-					latest_scsc_panic_code);
-			if (slsi_send_hanged_vendor_event(sdev, latest_scsc_panic_code) < 0)
+			SLSI_INFO_NODEV("Calling slsi_send_hanged_vendor_event with latest_scsc_panic_code=0x%x\n", latest_scsc_panic_code);
+			if (slsi_send_hanged_vendor_event(sdev, latest_scsc_panic_code) < 0) {
 				SLSI_ERR(sdev, "Failed to send hang event\n");
+			}
 
 			/* Complete any pending ctrl signals, which will prevent
 			 * the hang event from being processed.
@@ -159,16 +160,14 @@ static void slsi_wlan_service_remove(struct scsc_mx_module_client *module_client
 		}
 
 		pthread_mutex_unlock(&slsi_start_mutex);
-		r = wait_for_completion_timeout(&sdev->recovery_stop_completion,
-						SLSI_SM_WLAN_SERVICE_STOP_RECOVERY_TIMEOUT);
-		if (r == 0)
+		r = wait_for_completion_timeout(&sdev->recovery_stop_completion, SLSI_SM_WLAN_SERVICE_STOP_RECOVERY_TIMEOUT);
+		if (r == 0) {
 			SLSI_INFO(sdev, "recovery_stop_completion timeout\n");
+		}
 	} else {
 		pthread_mutex_lock(&slsi_start_mutex);
 		state = sdev->cm_if.cm_if_state;
-		if (state != SCSC_WIFI_CM_IF_STATE_STARTED &&
-		    state != SCSC_WIFI_CM_IF_STATE_PROBED &&
-		    state != SCSC_WIFI_CM_IF_STATE_STOPPED) {
+		if (state != SCSC_WIFI_CM_IF_STATE_STARTED && state != SCSC_WIFI_CM_IF_STATE_PROBED && state != SCSC_WIFI_CM_IF_STATE_STOPPED) {
 			pthread_mutex_unlock(&slsi_start_mutex);
 			SLSI_INFO_NODEV("state-event error %d\n", state);
 			return;
@@ -265,8 +264,7 @@ int slsi_sm_wlan_service_open(struct slsi_dev *sdev)
 	pthread_mutex_lock(&slsi_open_mutex);
 
 	state = sdev->cm_if.cm_if_state;
-	if (state != SCSC_WIFI_CM_IF_STATE_PROBED &&
-	    state != SCSC_WIFI_CM_IF_STATE_STOPPED) {
+	if (state != SCSC_WIFI_CM_IF_STATE_PROBED && state != SCSC_WIFI_CM_IF_STATE_STOPPED) {
 		SLSI_INFO(sdev, "State-event error %d\n", state);
 		err = -EINVAL;
 		goto exit;
@@ -290,14 +288,13 @@ exit:
 int slsi_sm_wlan_service_start(struct slsi_dev *sdev)
 {
 	struct slsi_hip4 *hip = &sdev->hip4_inst;
-	scsc_mifram_ref  ref;
-	int              err = 0;
-	int              state;
+	scsc_mifram_ref ref;
+	int err = 0;
+	int state;
 
 	//pthread_mutex_lock(&slsi_start_mutex);
 	state = sdev->cm_if.cm_if_state;
-	if (state != SCSC_WIFI_CM_IF_STATE_PROBED &&
-	    state != SCSC_WIFI_CM_IF_STATE_STOPPED) {
+	if (state != SCSC_WIFI_CM_IF_STATE_PROBED && state != SCSC_WIFI_CM_IF_STATE_STOPPED) {
 		SLSI_INFO(sdev, "State-event error %d\n", state);
 		err = -EINVAL;
 		goto exit;
@@ -308,27 +305,32 @@ int slsi_sm_wlan_service_start(struct slsi_dev *sdev)
 	SLSI_MUTEX_LOCK(sdev->hip.hip_mutex);
 	err = slsi_hip_start(sdev, NULL);
 	SLSI_MUTEX_UNLOCK(sdev->hip.hip_mutex);
-	if (err)
+	if (err) {
 		goto exit;
+	}
 
 	err = scsc_mx_service_mif_ptr_to_addr(sdev->service, hip->hip_control, &ref);
-	if (err)
+	if (err) {
 		goto exit;
+	}
 
 	SLSI_INFO(sdev, "Starting WLAN service\n");
 	err = scsc_mx_service_start(sdev->service, ref);
-	if (err)
+	if (err) {
 		goto exit;
+	}
 
 	SLSI_INFO(sdev, "Starting HIP SETUP\n");
 	err = slsi_hip_setup(sdev);
-	if (err)
+	if (err) {
 		goto exit;
+	}
 	SLSI_INFO(sdev, "Starting HIP SAP SETUP\n");
 	/* Service has started, inform SAP versions to the registered SAPs */
 	err = slsi_hip_sap_setup(sdev);
-	if (err)
+	if (err) {
 		goto exit;
+	}
 	SLSI_INFO(sdev, "CM STARTED\n");
 
 	sdev->cm_if.cm_if_state = SCSC_WIFI_CM_IF_STATE_STARTED;
@@ -354,14 +356,11 @@ void slsi_sm_wlan_service_stop(struct slsi_dev *sdev)
 		 * try and do a service_stop regardless, since that's all we can
 		 * do in this situation; hence skip the state check.
 		 */
-		 goto skip_state_check;
+		goto skip_state_check;
 	}
 
-	if (cm_if_state != SCSC_WIFI_CM_IF_STATE_STARTED &&
-	    cm_if_state != SCSC_WIFI_CM_IF_STATE_REMOVED &&
-	    cm_if_state != SCSC_WIFI_CM_IF_STATE_PROBED) {
-		SLSI_INFO(sdev, "Service not started or incorrect state %d\n",
-			  cm_if_state);
+	if (cm_if_state != SCSC_WIFI_CM_IF_STATE_STARTED && cm_if_state != SCSC_WIFI_CM_IF_STATE_REMOVED && cm_if_state != SCSC_WIFI_CM_IF_STATE_PROBED) {
+		SLSI_INFO(sdev, "Service not started or incorrect state %d\n", cm_if_state);
 		goto exit;
 	}
 
@@ -369,13 +368,15 @@ skip_state_check:
 	sdev->cm_if.cm_if_state = SCSC_WIFI_CM_IF_STATE_STOPPING;
 	SLSI_INFO_NODEV("Stopping WLAN service\n");
 	err = scsc_mx_service_stop(sdev->service);
-	if (err)
+	if (err) {
 		SLSI_INFO(sdev, "scsc_mx_service_stop failed err: %d\n", err);
+	}
 
 	scsc_mx_service_close(sdev->service);
 	sdev->cm_if.cm_if_state = SCSC_WIFI_CM_IF_STATE_STOPPED;
-	if (recovery_in_progress)
+	if (recovery_in_progress) {
 		complete_all(&sdev->recovery_stop_completion);
+	}
 exit:
 	pthread_mutex_unlock(&slsi_start_mutex);
 }
@@ -393,14 +394,16 @@ void slsi_sm_wlan_service_close(struct slsi_dev *sdev)
 
 	SLSI_INFO_NODEV("Closing WLAN service\n");
 	scsc_mx_service_close(sdev->service);
-	if (recovery_in_progress)
+	if (recovery_in_progress) {
 		complete_all(&sdev->recovery_stop_completion);
+	}
 exit:
 	pthread_mutex_unlock(&slsi_start_mutex);
 }
 
 void slsi_hydra_get_chip_info(struct hydra_service_info *chip_info)
 {
-	if (chip_info)
+	if (chip_info) {
 		memset(chip_info, 0, sizeof(*chip_info));
+	}
 }

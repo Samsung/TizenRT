@@ -14,9 +14,9 @@
 /* mxlog phase 3 */
 static void mxlog_message_handler(const void *message, void *data)
 {
-	struct mxlog  *mxlog = (struct mxlog *)data;
+	struct mxlog *mxlog = (struct mxlog *)data;
 	unsigned char *payload = (unsigned char *)message;
-	int           m, i;
+	int m, i;
 
 	/*
 	 * Encoding of payload is:
@@ -38,8 +38,9 @@ static void mxlog_message_handler(const void *message, void *data)
 			SCSC_PRINTK_TAG(MX_FW, "%s\n", mxlog->buffer);
 			mxlog->index = 0;
 		}
-		if (mxlog->index >= MXLOG_BUFFER_SIZE - 1)
+		if (mxlog->index >= MXLOG_BUFFER_SIZE - 1) {
 			mxlog->index = 0;
+		}
 	}
 }
 
@@ -47,7 +48,7 @@ static void mxlog_message_handler(const void *message, void *data)
 /* mxlog phase 4 */
 static void mxlog_phase4_message_handler(const void *message, size_t length, u32 level, void *data)
 {
-	/*struct mxlog  *mxlog = (struct mxlog *)data;*/
+	/*struct mxlog  *mxlog = (struct mxlog *)data; */
 	unsigned char *buf = (unsigned char *)message;
 
 	SCSC_PRINTK_TAG(MX_FW, "%d: %s\n", (int)length, buf);
@@ -61,8 +62,7 @@ void mxlog_init(struct mxlog *mxlog, struct scsc_mx *mx)
 	/* register channel handler */
 	/* mxlog phase 3 */
 	mxlog->index = 0;
-	mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mx), MMTRANS_CHAN_ID_MAXWELL_LOGGING,
-						  &mxlog_message_handler, mxlog);
+	mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mx), MMTRANS_CHAN_ID_MAXWELL_LOGGING, &mxlog_message_handler, mxlog);
 #ifdef MX_LOG_PHASE_4
 	/* mxlog phase 4 */
 	mxlog_transport_register_channel_handler(scsc_mx_get_mxlog_transport(mx), &mxlog_phase4_message_handler, mxlog);
@@ -73,8 +73,7 @@ void mxlog_release(struct mxlog *mxlog)
 {
 	/* unregister channel handler */
 	/* mxlog phase 3 */
-	mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mxlog->mx), MMTRANS_CHAN_ID_MAXWELL_LOGGING,
-						  NULL, NULL);
+	mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mxlog->mx), MMTRANS_CHAN_ID_MAXWELL_LOGGING, NULL, NULL);
 #ifdef MX_LOG_PHASE_4
 	/* mxlog phase 4 */
 	mxlog_transport_register_channel_handler(scsc_mx_get_mxlog_transport(mxlog->mx), NULL, NULL);

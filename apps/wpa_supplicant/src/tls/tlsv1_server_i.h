@@ -62,23 +62,16 @@ struct tlsv1_server {
 #ifdef CONFIG_TESTING_OPTIONS
 	u32 test_flags;
 	int test_failure_reported;
-#endif /* CONFIG_TESTING_OPTIONS */
+#endif							/* CONFIG_TESTING_OPTIONS */
 };
 
-
-void tlsv1_server_log(struct tlsv1_server *conn, const char *fmt, ...)
-PRINTF_FORMAT(2, 3);
+void tlsv1_server_log(struct tlsv1_server *conn, const char *fmt, ...) PRINTF_FORMAT(2, 3);
 
 void tlsv1_server_alert(struct tlsv1_server *conn, u8 level, u8 description);
-int tlsv1_server_derive_keys(struct tlsv1_server *conn,
-			     const u8 *pre_master_secret,
-			     size_t pre_master_secret_len);
-u8 * tlsv1_server_handshake_write(struct tlsv1_server *conn, size_t *out_len);
-u8 * tlsv1_server_send_alert(struct tlsv1_server *conn, u8 level,
-			     u8 description, size_t *out_len);
-int tlsv1_server_process_handshake(struct tlsv1_server *conn, u8 ct,
-				   const u8 *buf, size_t *len);
-void tlsv1_server_get_dh_p(struct tlsv1_server *conn, const u8 **dh_p,
-			   size_t *dh_p_len);
+int tlsv1_server_derive_keys(struct tlsv1_server *conn, const u8 *pre_master_secret, size_t pre_master_secret_len);
+u8 *tlsv1_server_handshake_write(struct tlsv1_server *conn, size_t *out_len);
+u8 *tlsv1_server_send_alert(struct tlsv1_server *conn, u8 level, u8 description, size_t *out_len);
+int tlsv1_server_process_handshake(struct tlsv1_server *conn, u8 ct, const u8 *buf, size_t *len);
+void tlsv1_server_get_dh_p(struct tlsv1_server *conn, const u8 **dh_p, size_t *dh_p_len);
 
-#endif /* TLSV1_SERVER_I_H */
+#endif							/* TLSV1_SERVER_I_H */

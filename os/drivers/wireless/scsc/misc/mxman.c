@@ -46,31 +46,31 @@
 #define MBOX_INDEX_7 7
 
 /* Allow unidentified firmware */
-static bool  allow_unidentified_firmware;
+static bool allow_unidentified_firmware;
 
 /* Assuming unidentified firmware */
-static bool  skip_header;
+static bool skip_header;
 
 /* Allow skipping firmware CRC checks if CRC is not present */
-static bool  crc_check_allow_none = true;
+static bool crc_check_allow_none = true;
 
 /* Time period for checking the firmware CRCs */
-static int   crc_check_period_ms = 30000;
+static int crc_check_period_ms = 30000;
 
 /* Timeout wait_for_mm_msg_start_ind (ms) - default 1000. 0 = infinite */
 static ulong mm_completion_timeout_ms = 2000;
 
 /* Allow skipping firmware mbox0 signature check */
-static bool  skip_mbox0_check;
+static bool skip_mbox0_check;
 
 /* Timeout send_mm_msg_stop_blocking (ms) - default 100 */
-static uint  mif_access_max_time_ms = 100;
+static uint mif_access_max_time_ms = 100;
 
 /* 0 = Proceed as normal (default); Bit 0 = 1 - spin at start of CRT0; Other bits reserved = 0 */
-static uint  firmware_startup_flags;
+static uint firmware_startup_flags;
 
 /* Disable error handling */
-static bool  disable_error_handling;
+static bool disable_error_handling;
 
 /* Delay in ms before accessing the panic record */
 static uint panic_record_delay = 1;
@@ -90,13 +90,12 @@ enum {
 	MM_HOST_RESUME = 4
 } ma_msg;
 
-
 /**
  * Format of the Maxwell agent messages
  * on the Maxwell management transport stream.
  */
 struct ma_msg_packet {
-	uint8_t ma_msg; /* Message from ma_msg enum */
+	uint8_t ma_msg;				/* Message from ma_msg enum */
 } __packed;
 
 static void mxman_stop(struct mxman *mxman);
@@ -124,13 +123,14 @@ static int wait_for_mm_msg_start_ind(struct mxman *mxman)
 
 static int send_mm_msg_stop_blocking(struct mxman *mxman)
 {
-	struct ma_msg_packet message = { .ma_msg = MM_HALT_REQ };
+	struct ma_msg_packet message = {.ma_msg = MM_HALT_REQ };
 
 	mxmgmt_transport_send(scsc_mx_get_mxmgmt_transport(mxman->mx), MMTRANS_CHAN_ID_MAXWELL_MANAGEMENT, &message, sizeof(message));
 	sys_msleep(mif_access_max_time_ms);
 
 	return 0;
 }
+
 void mm_start_ind_complete(struct mxman *mxman)
 {
 	complete(&mxman->mm_msg_start_ind_completion);
@@ -139,7 +139,7 @@ void mm_start_ind_complete(struct mxman *mxman)
 /** Receive handler for messages from the FW along the maxwell management transport */
 static void mxman_message_handler(const void *message, void *data)
 {
-	struct mxman               *mxman = (struct mxman *)data;
+	struct mxman *mxman = (struct mxman *)data;
 
 	/* Forward the message to the applicable service to deal with */
 	const struct ma_msg_packet *msg = message;
@@ -149,8 +149,7 @@ static void mxman_message_handler(const void *message, void *data)
 #ifdef CONFIG_SCSC_WLAN_LOGLVL_ALL
 		SLSI_INFO_NODEV("Received MM_START_IND message from the firmware\n");
 #endif
-		work_queue(LPWORK, &mxman->mm_msg_start_ind_work, (worker_t)mm_start_ind_complete,
-			   mxman, 0);
+		work_queue(LPWORK, &mxman->mm_msg_start_ind_work, (worker_t)mm_start_ind_complete, mxman, 0);
 		break;
 	default:
 		/* HERE: Unknown message, raise fault */
@@ -172,14 +171,12 @@ static int do_fw_crc32_checks(char *fw, u32 fw_image_size, struct fwhdr *fwhdr, 
 
 	SLSI_ERR_NODEV(" \n");
 	if ((fwhdr->fw_crc32 == 0 || fwhdr->header_crc32 == 0 || fwhdr->const_crc32 == 0) && crc_check_allow_none == 0) {
-		SLSI_ERR_NODEV("error: CRC is missing fw_crc32=%d header_crc32=%d crc_check_allow_none=%d\n",
-			       fwhdr->fw_crc32, fwhdr->header_crc32, crc_check_allow_none);
+		SLSI_ERR_NODEV("error: CRC is missing fw_crc32=%d header_crc32=%d crc_check_allow_none=%d\n", fwhdr->fw_crc32, fwhdr->header_crc32, crc_check_allow_none);
 		return -ENOENT;
 	}
 
 	if (fwhdr->header_crc32 == 0 && crc_check_allow_none == 1) {
-		SLSI_INFO_NODEV("Skipping CRC check header_crc32=%d crc_check_allow_none=%d\n",
-				fwhdr->header_crc32, crc_check_allow_none);
+		SLSI_INFO_NODEV("Skipping CRC check header_crc32=%d crc_check_allow_none=%d\n", fwhdr->header_crc32, crc_check_allow_none);
 	} else {
 		/*
 		 * CRC-32-IEEE of all preceding header fields (including other CRCs).
@@ -193,8 +190,7 @@ static int do_fw_crc32_checks(char *fw, u32 fw_image_size, struct fwhdr *fwhdr, 
 	}
 
 	if (fwhdr->const_crc32 == 0 && crc_check_allow_none == 1) {
-		SLSI_INFO_NODEV("Skipping CRC check const_crc32=%d crc_check_allow_none=%d\n",
-				fwhdr->const_crc32, crc_check_allow_none);
+		SLSI_INFO_NODEV("Skipping CRC check const_crc32=%d crc_check_allow_none=%d\n", fwhdr->const_crc32, crc_check_allow_none);
 	} else {
 		/*
 		 * CRC-32-IEEE over the constant sections grouped together at start of firmware binary.
@@ -210,8 +206,7 @@ static int do_fw_crc32_checks(char *fw, u32 fw_image_size, struct fwhdr *fwhdr, 
 
 	if (crc32_over_binary) {
 		if (fwhdr->fw_crc32 == 0 && crc_check_allow_none == 1) {
-			SLSI_INFO_NODEV("Skipping CRC check fw_crc32=%d crc_check_allow_none=%d\n",
-					fwhdr->fw_crc32, crc_check_allow_none);
+			SLSI_INFO_NODEV("Skipping CRC check fw_crc32=%d crc_check_allow_none=%d\n", fwhdr->fw_crc32, crc_check_allow_none);
 		} else {
 			/*
 			 * CRC-32-IEEE over the firmware binary (i.e. everything
@@ -236,10 +231,9 @@ static void fw_crc_wq_start(struct mxman *mxman)
 	work_queue(HPWORK, &mxman->fw_crc_work, fw_crc_work_func, mxman, (crc_check_period_ms));
 }
 
-
 static void fw_crc_work_func(FAR void *arg)
 {
-	int          r;
+	int r;
 	struct mxman *mxman = container_of(arg, struct mxman, fw_crc_work);
 
 	r = do_fw_crc32_checks(mxman->fw, mxman->fw_image_size, &mxman->fwhdr, false);
@@ -250,7 +244,6 @@ static void fw_crc_work_func(FAR void *arg)
 	}
 	fw_crc_wq_start(mxman);
 }
-
 
 static void fw_crc_wq_init(struct mxman *mxman)
 {
@@ -271,8 +264,8 @@ static void fw_crc_wq_deinit(struct mxman *mxman)
 
 static int transports_init(struct mxman *mxman)
 {
-	struct mxconf  *mxconf;
-	int            r;
+	struct mxconf *mxconf;
+	int r;
 	struct scsc_mx *mx = mxman->mx;
 
 	/* Initialise mx management stack */
@@ -290,7 +283,6 @@ static int transports_init(struct mxman *mxman)
 		mxmgmt_transport_release(scsc_mx_get_mxmgmt_transport(mx));
 		return r;
 	}
-
 #ifdef MX_LOG_PHASE_4
 	/* Initialise mxlog transport */
 	r = mxlog_transport_init(scsc_mx_get_mxlog_transport(mx), mx);
@@ -341,13 +333,13 @@ static void transports_release(struct mxman *mxman)
 
 static void mbox_init(struct mxman *mxman, u32 firmware_entry_point)
 {
-	u32                 *mbox0;
-	u32                 *mbox1;
-	u32                 *mbox2;
-	u32                 *mbox3;
-	u32                 *mbox4;
-	scsc_mifram_ref     mifram_ref;
-	struct scsc_mx      *mx = mxman->mx;
+	u32 *mbox0;
+	u32 *mbox1;
+	u32 *mbox2;
+	u32 *mbox3;
+	u32 *mbox4;
+	scsc_mifram_ref mifram_ref;
+	struct scsc_mx *mx = mxman->mx;
 	struct scsc_mif_abs *mif = scsc_mx_get_mif_abs(mxman->mx);
 
 	/* Place firmware entry address in MIF MBOX 0 so R4 ROM knows where to jump to! */
@@ -357,7 +349,7 @@ static void mbox_init(struct mxman *mxman, u32 firmware_entry_point)
 	/* Write (and flush) entry point to MailBox 0, config address to MBOX 1 */
 	*mbox0 = firmware_entry_point;
 	mif->get_mifram_ref(mif, mxman->mxconf, &mifram_ref);
-	*mbox1 = mifram_ref; /* must be R4-relative address here */
+	*mbox1 = mifram_ref;		/* must be R4-relative address here */
 	/* CPU memory barrier */
 	wmb();
 	/*
@@ -384,10 +376,11 @@ static int fwhdr_init(char *fw, struct fwhdr *fwhdr, bool *fwhdr_parsed_ok, bool
 	 *
 	 * PORT: assumes little endian
 	 */
-	if (skip_header)
-		*fwhdr_parsed_ok = false; /* Allows the forced start address to be used */
-	else
+	if (skip_header) {
+		*fwhdr_parsed_ok = false;    /* Allows the forced start address to be used */
+	} else {
 		*fwhdr_parsed_ok = fwhdr_parse(fw, fwhdr);
+	}
 	*check_crc = false;
 	if (*fwhdr_parsed_ok) {
 		SLSI_INFO_NODEV("FW HEADER version: hdr_major: %d hdr_minor: %d\n", fwhdr->hdr_major, fwhdr->hdr_minor);
@@ -398,8 +391,7 @@ static int fwhdr_init(char *fw, struct fwhdr *fwhdr, bool *fwhdr_parsed_ok, bool
 				*check_crc = true;
 				break;
 			default:
-				SLSI_ERR_NODEV("Unsupported FW HEADER version: hdr_major: %d hdr_minor: %d\n",
-					       fwhdr->hdr_major, fwhdr->hdr_minor);
+				SLSI_ERR_NODEV("Unsupported FW HEADER version: hdr_major: %d hdr_minor: %d\n", fwhdr->hdr_major, fwhdr->hdr_minor);
 				return -ENOENT;
 			}
 			break;
@@ -407,26 +399,22 @@ static int fwhdr_init(char *fw, struct fwhdr *fwhdr, bool *fwhdr_parsed_ok, bool
 			*check_crc = true;
 			break;
 		default:
-			SLSI_ERR_NODEV("Unsupported FW HEADER version: hdr_major: %d hdr_minor: %d\n",
-				       fwhdr->hdr_major, fwhdr->hdr_minor);
+			SLSI_ERR_NODEV("Unsupported FW HEADER version: hdr_major: %d hdr_minor: %d\n", fwhdr->hdr_major, fwhdr->hdr_minor);
 			return -ENOENT;
 		}
 		switch (fwhdr->fwapi_major) {
 		case 0:
 			switch (fwhdr->fwapi_minor) {
 			case 2:
-				SLSI_INFO_NODEV("FWAPI version: fwapi_major: %d fwapi_minor: %d\n",
-						fwhdr->fwapi_major, fwhdr->fwapi_minor);
+				SLSI_INFO_NODEV("FWAPI version: fwapi_major: %d fwapi_minor: %d\n", fwhdr->fwapi_major, fwhdr->fwapi_minor);
 				break;
 			default:
-				SLSI_ERR_NODEV("Unsupported FWAPI version: fwapi_major: %d fwapi_minor: %d\n",
-					       fwhdr->fwapi_major, fwhdr->fwapi_minor);
+				SLSI_ERR_NODEV("Unsupported FWAPI version: fwapi_major: %d fwapi_minor: %d\n", fwhdr->fwapi_major, fwhdr->fwapi_minor);
 				return -ENOENT;
 			}
 			break;
 		default:
-			SLSI_ERR_NODEV("Unsupported FWAPI version: fwapi_major: %d fwapi_minor: %d\n",
-				       fwhdr->fwapi_major, fwhdr->fwapi_minor);
+			SLSI_ERR_NODEV("Unsupported FWAPI version: fwapi_major: %d fwapi_minor: %d\n", fwhdr->fwapi_major, fwhdr->fwapi_minor);
 			return -ENOENT;
 		}
 	} else {
@@ -445,10 +433,10 @@ static int fwhdr_init(char *fw, struct fwhdr *fwhdr, bool *fwhdr_parsed_ok, bool
 
 static int fw_init(struct mxman *mxman, bool *fwhdr_parsed_ok)
 {
-	int          r;
-	char         *build_id;
+	int r;
+	char *build_id;
 	struct fwhdr *fwhdr = &mxman->fwhdr;
-	char         *fw = (void *)up_wlan_get_firmware();
+	char *fw = (void *)up_wlan_get_firmware();
 
 	r = fwhdr_init(fw, fwhdr, fwhdr_parsed_ok, &mxman->check_crc);
 	if (r) {
@@ -471,17 +459,17 @@ static int fw_init(struct mxman *mxman, bool *fwhdr_parsed_ok)
 #endif
 	return 0;
 }
+
 static int mxman_start(struct mxman *mxman)
 {
-	void                *start_sram;
-	size_t              size_sram = MX_SRAM_SIZE;
+	void *start_sram;
+	size_t size_sram = MX_SRAM_SIZE;
 	struct scsc_mif_abs *mif;
-	struct fwhdr        *fwhdr = &mxman->fwhdr;
-	bool                fwhdr_parsed_ok = false;
-	void                *start_mifram_heap;
-	u32                 length_mifram_heap;
-	int                 r;
-
+	struct fwhdr *fwhdr = &mxman->fwhdr;
+	bool fwhdr_parsed_ok = false;
+	void *start_mifram_heap;
+	u32 length_mifram_heap;
+	int r;
 
 	(void)snprintf(mxman->fw_build_id, sizeof(mxman->fw_build_id), "unknown");
 
@@ -497,7 +485,6 @@ static int mxman_start(struct mxman *mxman)
 		SLSI_ERR_NODEV("Error allocating dram\n");
 		return -ENOMEM;
 	}
-
 
 	//pr_debug("%s: Allocated %zu bytes start_dram %p\n", __func__, size_dram, start_dram);
 
@@ -534,8 +521,7 @@ static int mxman_start(struct mxman *mxman)
 	}
 	mbox_init(mxman, fwhdr->firmware_entry_point);
 	init_completion(&mxman->mm_msg_start_ind_completion);
-	mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mxman->mx), MMTRANS_CHAN_ID_MAXWELL_MANAGEMENT,
-						  &mxman_message_handler, mxman);
+	mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mxman->mx), MMTRANS_CHAN_ID_MAXWELL_MANAGEMENT, &mxman_message_handler, mxman);
 	mxlog_init(scsc_mx_get_mxlog(mxman->mx), mxman->mx);
 
 	mif->reset(mif, 0);
@@ -563,8 +549,8 @@ static int mxman_start(struct mxman *mxman)
  */
 static void mxman_failure_work(FAR void *arg)
 {
-	struct mxman   *mxman = (struct mxman *)arg;
-	struct srvman  *srvman;
+	struct mxman *mxman = (struct mxman *)arg;
+	struct srvman *srvman;
 	struct scsc_mif_abs *mif = scsc_mx_get_mif_abs(mxman->mx);
 	struct scsc_mx *mx = mxman->mx;
 	u16 scsc_panic_code;
@@ -583,18 +569,15 @@ static void mxman_failure_work(FAR void *arg)
 	scsc_panic_code = mxman->scsc_panic_code;
 	mxlog_release(scsc_mx_get_mxlog(mx));
 	/* unregister channel handler */
-	mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mx), MMTRANS_CHAN_ID_MAXWELL_MANAGEMENT,
-						  NULL, NULL);
+	mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mx), MMTRANS_CHAN_ID_MAXWELL_MANAGEMENT, NULL, NULL);
 	mxmgmt_transport_set_error(scsc_mx_get_mxmgmt_transport(mx));
 	srvman_set_error(srvman);
 	fw_crc_wq_stop(mxman);
 
 	mxman->mxman_state = mxman->mxman_next_state;
 
-	if (mxman->mxman_state != MXMAN_STATE_FAILED
-	    && mxman->mxman_state != MXMAN_STATE_FREEZED) {
-		WARN_ON(mxman->mxman_state != MXMAN_STATE_FAILED
-			&& mxman->mxman_state != MXMAN_STATE_FREEZED);
+	if (mxman->mxman_state != MXMAN_STATE_FAILED && mxman->mxman_state != MXMAN_STATE_FREEZED) {
+		WARN_ON(mxman->mxman_state != MXMAN_STATE_FAILED && mxman->mxman_state != MXMAN_STATE_FREEZED);
 		SLSI_ERR_NODEV("Bad state=%d\n", mxman->mxman_state);
 		pthread_mutex_unlock(&mxman->mxman_mutex);
 		return;
@@ -616,29 +599,33 @@ static void mxman_failure_work(FAR void *arg)
 		 * set the subcode if so.
 		 */
 		if ((scsc_panic_code & 0x8000) == 0) {
-			if (r4_panic_record_ok)
+			if (r4_panic_record_ok) {
 				scsc_panic_code |= 0xFFF & r4_panic_record[2];
+			}
 		}
 		/* Set unspecified technilogy for now */
 		scsc_panic_code |= 0x03 << 13;
 		SLSI_INFO_NODEV("scsc_panic_code=0x%x\n", scsc_panic_code);
 	}
-	if (!disable_recovery_handling)
+	if (!disable_recovery_handling) {
 		srvman_clear_error(srvman);
+	}
 	pthread_mutex_unlock(&mxman->mxman_mutex);
 	if (!disable_recovery_handling) {
 		SLSI_INFO_NODEV("Calling srvman_unfreeze_services with scsc_panic_code=0x%x\n", scsc_panic_code);
 		srvman_unfreeze_services(srvman, scsc_panic_code);
-		if (scsc_mx_module_reset() < 0)
+		if (scsc_mx_module_reset() < 0) {
 			SLSI_INFO_NODEV("failed to call scsc_mx_module_reset\n");
+		}
 	}
 
 	/**
 	 * If recovery is disabled and an scsc_mx_service_open has been hold up,
 	 * release it, rather than wait for the recovery_completion to timeout.
 	 */
-	if (disable_recovery_handling)
+	if (disable_recovery_handling) {
 		complete(&mxman->recovery_completion);
+	}
 
 }
 
@@ -654,24 +641,26 @@ static void failure_wq_deinit(struct mxman *mxman)
 
 static void failure_wq_start(struct mxman *mxman)
 {
-	if (disable_error_handling)
+	if (disable_error_handling) {
 		SLSI_INFO_NODEV("%s: error handling disabled\n", __func__);
-	else
+	} else {
 		work_queue(HPWORK, &mxman->failure_work, mxman_failure_work, mxman, 0);
+	}
 }
 
 static void print_mailboxes(struct mxman *mxman)
 {
 	struct scsc_mif_abs *mif;
-	struct mifmboxman   *mboxman;
-	int                 i;
+	struct mifmboxman *mboxman;
+	int i;
 
 	mif = scsc_mx_get_mif_abs(mxman->mx);
 	mboxman = scsc_mx_get_mboxman(mxman->mx);
 
 	SLSI_INFO_NODEV("Printing mailbox values:\n");
-	for (i = 0; i < MIFMBOX_NUM; i++)
+	for (i = 0; i < MIFMBOX_NUM; i++) {
 		SLSI_INFO_NODEV("MBOX_%d: 0x%x\n", i, *mifmboxman_get_mbox_ptr(mboxman, mif, i));
+	}
 }
 
 int mxman_open(struct mxman *mxman)
@@ -708,7 +697,6 @@ int mxman_open(struct mxman *mxman)
 	return -EPERM;
 }
 
-
 static void mxman_stop(struct mxman *mxman)
 {
 	struct scsc_mif_abs *mif;
@@ -724,8 +712,7 @@ static void mxman_stop(struct mxman *mxman)
 
 	mxlog_release(scsc_mx_get_mxlog(mxman->mx));
 	/* unregister channel handler */
-	mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mxman->mx), MMTRANS_CHAN_ID_MAXWELL_MANAGEMENT,
-						  NULL, NULL);
+	mxmgmt_transport_register_channel_handler(scsc_mx_get_mxmgmt_transport(mxman->mx), MMTRANS_CHAN_ID_MAXWELL_MANAGEMENT, NULL, NULL);
 	fw_crc_wq_stop(mxman);
 
 	/* Unitialise components (they may perform some checks - e.g. all memory freed) */
@@ -762,15 +749,17 @@ void mxman_close(struct mxman *mxman)
 		 * for response (MM_STOP_RSP).
 		 */
 		r = send_mm_msg_stop_blocking(mxman);
-		if (r)
+		if (r) {
 			SLSI_ERR_NODEV("send_mm_msg_stop_blocking failed: r=%d\n", r);
+		}
 
 		mxman_stop(mxman);
 		mxman->mxman_state = MXMAN_STATE_STOPPED;
 		pthread_mutex_unlock(&mxman->mxman_mutex);
 	} else if (mxman->mxman_state == MXMAN_STATE_FAILED) {
-		if (WARN_ON(!mxman->users))
+		if (WARN_ON(!mxman->users)) {
 			SLSI_ERR_NODEV("ERROR users=%d\n", mxman->users);
+		}
 
 		mxman->users--;
 		if (mxman->users) {
@@ -828,7 +817,7 @@ void mxman_deinit(struct mxman *mxman)
 
 int mxman_force_panic(struct mxman *mxman)
 {
-	struct ma_msg_packet message = { .ma_msg = MM_FORCE_PANIC };
+	struct ma_msg_packet message = {.ma_msg = MM_FORCE_PANIC };
 
 	pthread_mutex_lock(&mxman->mxman_mutex);
 	if (mxman->mxman_state == MXMAN_STATE_STARTED) {
@@ -842,7 +831,7 @@ int mxman_force_panic(struct mxman *mxman)
 
 int mxman_suspend(struct mxman *mxman)
 {
-	struct ma_msg_packet message = { .ma_msg = MM_HOST_SUSPEND };
+	struct ma_msg_packet message = {.ma_msg = MM_HOST_SUSPEND };
 
 	SLSI_INFO_NODEV("\n");
 
@@ -858,7 +847,7 @@ int mxman_suspend(struct mxman *mxman)
 
 void mxman_resume(struct mxman *mxman)
 {
-	struct ma_msg_packet message = { .ma_msg = MM_HOST_RESUME };
+	struct ma_msg_packet message = {.ma_msg = MM_HOST_RESUME };
 
 	SLSI_INFO_NODEV("\n");
 

@@ -36,9 +36,9 @@
 #include <sys/ioctl.h>
 #ifdef USE_KERNEL_HEADERS
 #include <linux/if_packet.h>
-#else /* USE_KERNEL_HEADERS */
+#else							/* USE_KERNEL_HEADERS */
 #include <netpacket/packet.h>
-#endif /* USE_KERNEL_HEADERS */
+#endif							/* USE_KERNEL_HEADERS */
 
 #include "utils/common.h"
 #include "utils/eloop.h"
@@ -48,7 +48,6 @@
 #include "ieee802_11.h"
 #include "sta_info.h"
 #include "iapp.h"
-
 
 #define IAPP_MULTICAST "224.0.1.178"
 #define IAPP_UDP_PORT 3517
@@ -60,7 +59,7 @@ struct iapp_hdr {
 	be16 identifier;
 	be16 length;
 	/* followed by length-6 octets of data */
-} __attribute__ ((packed));
+} __attribute__((packed));
 
 #define IAPP_VERSION 0
 
@@ -74,48 +73,44 @@ enum IAPP_COMMAND {
 	IAPP_CMD_CACHE_response = 6,
 };
 
-
 /* ADD-notify - multicast UDP on the local LAN */
 struct iapp_add_notify {
-	u8 addr_len; /* ETH_ALEN */
+	u8 addr_len;				/* ETH_ALEN */
 	u8 reserved;
 	u8 mac_addr[ETH_ALEN];
 	be16 seq_num;
-} __attribute__ ((packed));
-
+} __attribute__((packed));
 
 /* Layer 2 Update frame (802.2 Type 1 LLC XID Update response) */
 struct iapp_layer2_update {
-	u8 da[ETH_ALEN]; /* broadcast */
-	u8 sa[ETH_ALEN]; /* STA addr */
-	be16 len; /* 6 */
-	u8 dsap; /* null DSAP address */
-	u8 ssap; /* null SSAP address, CR=Response */
+	u8 da[ETH_ALEN];			/* broadcast */
+	u8 sa[ETH_ALEN];			/* STA addr */
+	be16 len;					/* 6 */
+	u8 dsap;					/* null DSAP address */
+	u8 ssap;					/* null SSAP address, CR=Response */
 	u8 control;
 	u8 xid_info[3];
-} __attribute__ ((packed));
-
+} __attribute__((packed));
 
 /* MOVE-notify - unicast TCP */
 struct iapp_move_notify {
-	u8 addr_len; /* ETH_ALEN */
+	u8 addr_len;				/* ETH_ALEN */
 	u8 reserved;
 	u8 mac_addr[ETH_ALEN];
 	u16 seq_num;
 	u16 ctx_block_len;
 	/* followed by ctx_block_len bytes */
-} __attribute__ ((packed));
-
+} __attribute__((packed));
 
 /* MOVE-response - unicast TCP */
 struct iapp_move_response {
-	u8 addr_len; /* ETH_ALEN */
+	u8 addr_len;				/* ETH_ALEN */
 	u8 status;
 	u8 mac_addr[ETH_ALEN];
 	u16 seq_num;
 	u16 ctx_block_len;
 	/* followed by ctx_block_len bytes */
-} __attribute__ ((packed));
+} __attribute__((packed));
 
 enum {
 	IAPP_MOVE_SUCCESSFUL = 0,
@@ -123,10 +118,9 @@ enum {
 	IAPP_MOVE_STALE_MOVE = 2,
 };
 
-
 /* CACHE-notify */
 struct iapp_cache_notify {
-	u8 addr_len; /* ETH_ALEN */
+	u8 addr_len;				/* ETH_ALEN */
 	u8 reserved;
 	u8 mac_addr[ETH_ALEN];
 	u16 seq_num;
@@ -134,46 +128,41 @@ struct iapp_cache_notify {
 	u16 ctx_block_len;
 	/* ctx_block_len bytes of context block followed by 16-bit context
 	 * timeout */
-} __attribute__ ((packed));
-
+} __attribute__((packed));
 
 /* CACHE-response - unicast TCP */
 struct iapp_cache_response {
-	u8 addr_len; /* ETH_ALEN */
+	u8 addr_len;				/* ETH_ALEN */
 	u8 status;
 	u8 mac_addr[ETH_ALEN];
 	u16 seq_num;
-} __attribute__ ((packed));
+} __attribute__((packed));
 
 enum {
 	IAPP_CACHE_SUCCESSFUL = 0,
 	IAPP_CACHE_STALE_CACHE = 1,
 };
 
-
 /* Send-Security-Block - unicast TCP */
 struct iapp_send_security_block {
 	u8 iv[8];
 	u16 sec_block_len;
 	/* followed by sec_block_len bytes of security block */
-} __attribute__ ((packed));
-
+} __attribute__((packed));
 
 /* ACK-Security-Block - unicast TCP */
 struct iapp_ack_security_block {
 	u8 iv[8];
 	u8 new_ap_ack_authenticator[48];
-} __attribute__ ((packed));
-
+} __attribute__((packed));
 
 struct iapp_data {
 	struct hostapd_data *hapd;
-	u16 identifier; /* next IAPP identifier */
+	u16 identifier;				/* next IAPP identifier */
 	struct in_addr own, multicast;
 	int udp_sock;
 	int packet_sock;
 };
-
 
 static void iapp_send_add(struct iapp_data *iapp, u8 *mac_addr, u16 seq_num)
 {
@@ -185,13 +174,13 @@ static void iapp_send_add(struct iapp_data *iapp, u8 *mac_addr, u16 seq_num)
 	/* Send IAPP ADD-notify to remove possible association from other APs
 	 */
 
-	hdr = (struct iapp_hdr *) buf;
+	hdr = (struct iapp_hdr *)buf;
 	hdr->version = IAPP_VERSION;
 	hdr->command = IAPP_CMD_ADD_notify;
 	hdr->identifier = host_to_be16(iapp->identifier++);
 	hdr->length = host_to_be16(sizeof(*hdr) + sizeof(*add));
 
-	add = (struct iapp_add_notify *) (hdr + 1);
+	add = (struct iapp_add_notify *)(hdr + 1);
 	add->addr_len = ETH_ALEN;
 	add->reserved = 0;
 	os_memcpy(add->mac_addr, mac_addr, ETH_ALEN);
@@ -202,11 +191,10 @@ static void iapp_send_add(struct iapp_data *iapp, u8 *mac_addr, u16 seq_num)
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = iapp->multicast.s_addr;
 	addr.sin_port = htons(IAPP_UDP_PORT);
-	if (sendto(iapp->udp_sock, buf, (char *) (add + 1) - buf, 0,
-		   (struct sockaddr *) &addr, sizeof(addr)) < 0)
+	if (sendto(iapp->udp_sock, buf, (char *)(add + 1) - buf, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		wpa_printf(MSG_INFO, "sendto[IAPP-ADD]: %s", strerror(errno));
+	}
 }
-
 
 static void iapp_send_layer2_update(struct iapp_data *iapp, u8 *addr)
 {
@@ -221,19 +209,19 @@ static void iapp_send_layer2_update(struct iapp_data *iapp, u8 *addr)
 	os_memset(msg.da, 0xff, ETH_ALEN);
 	os_memcpy(msg.sa, addr, ETH_ALEN);
 	msg.len = host_to_be16(6);
-	msg.dsap = 0; /* NULL DSAP address */
-	msg.ssap = 0x01; /* NULL SSAP address, CR Bit: Response */
-	msg.control = 0xaf; /* XID response lsb.1111F101.
-			     * F=0 (no poll command; unsolicited frame) */
-	msg.xid_info[0] = 0x81; /* XID format identifier */
-	msg.xid_info[1] = 1; /* LLC types/classes: Type 1 LLC */
-	msg.xid_info[2] = 1 << 1; /* XID sender's receive window size (RW)
-				   * FIX: what is correct RW with 802.11? */
+	msg.dsap = 0;				/* NULL DSAP address */
+	msg.ssap = 0x01;			/* NULL SSAP address, CR Bit: Response */
+	msg.control = 0xaf;			/* XID response lsb.1111F101.
+								 * F=0 (no poll command; unsolicited frame) */
+	msg.xid_info[0] = 0x81;		/* XID format identifier */
+	msg.xid_info[1] = 1;		/* LLC types/classes: Type 1 LLC */
+	msg.xid_info[2] = 1 << 1;	/* XID sender's receive window size (RW)
+								 * FIX: what is correct RW with 802.11? */
 
-	if (send(iapp->packet_sock, &msg, sizeof(msg), 0) < 0)
+	if (send(iapp->packet_sock, &msg, sizeof(msg), 0) < 0) {
 		wpa_printf(MSG_INFO, "send[L2 Update]: %s", strerror(errno));
+	}
 }
-
 
 /**
  * iapp_new_station - IAPP processing for a new STA
@@ -242,14 +230,14 @@ static void iapp_send_layer2_update(struct iapp_data *iapp, u8 *addr)
  */
 void iapp_new_station(struct iapp_data *iapp, struct sta_info *sta)
 {
-	u16 seq = 0; /* TODO */
+	u16 seq = 0;				/* TODO */
 
-	if (iapp == NULL)
+	if (iapp == NULL) {
 		return;
+	}
 
 	/* IAPP-ADD.request(MAC Address, Sequence Number, Timeout) */
-	hostapd_logger(iapp->hapd, sta->addr, HOSTAPD_MODULE_IAPP,
-		       HOSTAPD_LEVEL_DEBUG, "IAPP-ADD.request(seq=%d)", seq);
+	hostapd_logger(iapp->hapd, sta->addr, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_DEBUG, "IAPP-ADD.request(seq=%d)", seq);
 	iapp_send_layer2_update(iapp, sta->addr);
 	iapp_send_add(iapp, sta->addr, seq);
 
@@ -260,43 +248,32 @@ void iapp_new_station(struct iapp_data *iapp, struct sta_info *sta)
 	 * IP address */
 }
 
-
-static void iapp_process_add_notify(struct iapp_data *iapp,
-				    struct sockaddr_in *from,
-				    struct iapp_hdr *hdr, int len)
+static void iapp_process_add_notify(struct iapp_data *iapp, struct sockaddr_in *from, struct iapp_hdr *hdr, int len)
 {
-	struct iapp_add_notify *add = (struct iapp_add_notify *) (hdr + 1);
+	struct iapp_add_notify *add = (struct iapp_add_notify *)(hdr + 1);
 	struct sta_info *sta;
 
 	if (len != sizeof(*add)) {
-		wpa_printf(MSG_INFO, "Invalid IAPP-ADD packet length %d (expected %lu)",
-			   len, (unsigned long) sizeof(*add));
+		wpa_printf(MSG_INFO, "Invalid IAPP-ADD packet length %d (expected %lu)", len, (unsigned long)sizeof(*add));
 		return;
 	}
 
 	sta = ap_get_sta(iapp->hapd, add->mac_addr);
 
 	/* IAPP-ADD.indication(MAC Address, Sequence Number) */
-	hostapd_logger(iapp->hapd, add->mac_addr, HOSTAPD_MODULE_IAPP,
-		       HOSTAPD_LEVEL_INFO,
-		       "Received IAPP ADD-notify (seq# %d) from %s:%d%s",
-		       be_to_host16(add->seq_num),
-		       inet_ntoa(from->sin_addr), ntohs(from->sin_port),
-		       sta ? "" : " (STA not found)");
+	hostapd_logger(iapp->hapd, add->mac_addr, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_INFO, "Received IAPP ADD-notify (seq# %d) from %s:%d%s", be_to_host16(add->seq_num), inet_ntoa(from->sin_addr), ntohs(from->sin_port), sta ? "" : " (STA not found)");
 
-	if (!sta)
+	if (!sta) {
 		return;
+	}
 
 	/* TODO: could use seq_num to try to determine whether last association
 	 * to this AP is newer than the one advertised in IAPP-ADD. Although,
 	 * this is not really a reliable verification. */
 
-	hostapd_logger(iapp->hapd, add->mac_addr, HOSTAPD_MODULE_IAPP,
-		       HOSTAPD_LEVEL_DEBUG,
-		       "Removing STA due to IAPP ADD-notify");
+	hostapd_logger(iapp->hapd, add->mac_addr, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_DEBUG, "Removing STA due to IAPP ADD-notify");
 	ap_sta_disconnect(iapp->hapd, sta, NULL, 0);
 }
-
 
 /**
  * iapp_receive_udp - Process IAPP UDP frames
@@ -316,46 +293,35 @@ static void iapp_receive_udp(int sock, void *eloop_ctx, void *sock_ctx)
 	/* Handle incoming IAPP frames (over UDP/IP) */
 
 	fromlen = sizeof(from);
-	len = recvfrom(iapp->udp_sock, buf, sizeof(buf), 0,
-		       (struct sockaddr *) &from, &fromlen);
+	len = recvfrom(iapp->udp_sock, buf, sizeof(buf), 0, (struct sockaddr *)&from, &fromlen);
 	if (len < 0) {
-		wpa_printf(MSG_INFO, "iapp_receive_udp - recvfrom: %s",
-			   strerror(errno));
+		wpa_printf(MSG_INFO, "iapp_receive_udp - recvfrom: %s", strerror(errno));
 		return;
 	}
 
-	if (from.sin_addr.s_addr == iapp->own.s_addr)
-		return; /* ignore own IAPP messages */
+	if (from.sin_addr.s_addr == iapp->own.s_addr) {
+		return;    /* ignore own IAPP messages */
+	}
 
-	hostapd_logger(iapp->hapd, NULL, HOSTAPD_MODULE_IAPP,
-		       HOSTAPD_LEVEL_DEBUG,
-		       "Received %d byte IAPP frame from %s%s\n",
-		       len, inet_ntoa(from.sin_addr),
-		       len < (int) sizeof(*hdr) ? " (too short)" : "");
+	hostapd_logger(iapp->hapd, NULL, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_DEBUG, "Received %d byte IAPP frame from %s%s\n", len, inet_ntoa(from.sin_addr), len < (int)sizeof(*hdr) ? " (too short)" : "");
 
-	if (len < (int) sizeof(*hdr))
+	if (len < (int)sizeof(*hdr)) {
 		return;
+	}
 
-	hdr = (struct iapp_hdr *) buf;
+	hdr = (struct iapp_hdr *)buf;
 	hlen = be_to_host16(hdr->length);
-	hostapd_logger(iapp->hapd, NULL, HOSTAPD_MODULE_IAPP,
-		       HOSTAPD_LEVEL_DEBUG,
-		       "RX: version=%d command=%d id=%d len=%d\n",
-		       hdr->version, hdr->command,
-		       be_to_host16(hdr->identifier), hlen);
+	hostapd_logger(iapp->hapd, NULL, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_DEBUG, "RX: version=%d command=%d id=%d len=%d\n", hdr->version, hdr->command, be_to_host16(hdr->identifier), hlen);
 	if (hdr->version != IAPP_VERSION) {
-		wpa_printf(MSG_INFO, "Dropping IAPP frame with unknown version %d",
-			   hdr->version);
+		wpa_printf(MSG_INFO, "Dropping IAPP frame with unknown version %d", hdr->version);
 		return;
 	}
 	if (hlen > len) {
-		wpa_printf(MSG_INFO, "Underflow IAPP frame (hlen=%d len=%d)",
-			   hlen, len);
+		wpa_printf(MSG_INFO, "Underflow IAPP frame (hlen=%d len=%d)", hlen, len);
 		return;
 	}
 	if (hlen < len) {
-		wpa_printf(MSG_INFO, "Ignoring %d extra bytes from IAPP frame",
-			   len - hlen);
+		wpa_printf(MSG_INFO, "Ignoring %d extra bytes from IAPP frame", len - hlen);
 		len = hlen;
 	}
 
@@ -376,8 +342,7 @@ static void iapp_receive_udp(int sock, void *eloop_ctx, void *sock_ctx)
 	}
 }
 
-
-struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
+struct iapp_data *iapp_init(struct hostapd_data *hapd, const char *iface)
 {
 	struct ifreq ifr;
 	struct sockaddr_ll addr;
@@ -387,8 +352,9 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 	struct ip_mreqn mreq;
 
 	iapp = os_zalloc(sizeof(*iapp));
-	if (iapp == NULL)
+	if (iapp == NULL) {
 		return NULL;
+	}
 	iapp->hapd = hapd;
 	iapp->udp_sock = iapp->packet_sock = -1;
 
@@ -398,8 +364,7 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 
 	iapp->udp_sock = socket(PF_INET, SOCK_DGRAM, 0);
 	if (iapp->udp_sock < 0) {
-		wpa_printf(MSG_INFO, "iapp_init - socket[PF_INET,SOCK_DGRAM]: %s",
-			   strerror(errno));
+		wpa_printf(MSG_INFO, "iapp_init - socket[PF_INET,SOCK_DGRAM]: %s", strerror(errno));
 		iapp_deinit(iapp);
 		return NULL;
 	}
@@ -407,38 +372,33 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 	os_memset(&ifr, 0, sizeof(ifr));
 	os_strlcpy(ifr.ifr_name, iface, sizeof(ifr.ifr_name));
 	if (ioctl(iapp->udp_sock, SIOCGIFINDEX, &ifr) != 0) {
-		wpa_printf(MSG_INFO, "iapp_init - ioctl(SIOCGIFINDEX): %s",
-			   strerror(errno));
+		wpa_printf(MSG_INFO, "iapp_init - ioctl(SIOCGIFINDEX): %s", strerror(errno));
 		iapp_deinit(iapp);
 		return NULL;
 	}
 	ifindex = ifr.ifr_ifindex;
 
 	if (ioctl(iapp->udp_sock, SIOCGIFADDR, &ifr) != 0) {
-		wpa_printf(MSG_INFO, "iapp_init - ioctl(SIOCGIFADDR): %s",
-			   strerror(errno));
+		wpa_printf(MSG_INFO, "iapp_init - ioctl(SIOCGIFADDR): %s", strerror(errno));
 		iapp_deinit(iapp);
 		return NULL;
 	}
-	paddr = (struct sockaddr_in *) &ifr.ifr_addr;
+	paddr = (struct sockaddr_in *)&ifr.ifr_addr;
 	if (paddr->sin_family != AF_INET) {
-		wpa_printf(MSG_INFO, "IAPP: Invalid address family %i (SIOCGIFADDR)",
-			   paddr->sin_family);
+		wpa_printf(MSG_INFO, "IAPP: Invalid address family %i (SIOCGIFADDR)", paddr->sin_family);
 		iapp_deinit(iapp);
 		return NULL;
 	}
 	iapp->own.s_addr = paddr->sin_addr.s_addr;
 
 	if (ioctl(iapp->udp_sock, SIOCGIFBRDADDR, &ifr) != 0) {
-		wpa_printf(MSG_INFO, "iapp_init - ioctl(SIOCGIFBRDADDR): %s",
-			   strerror(errno));
+		wpa_printf(MSG_INFO, "iapp_init - ioctl(SIOCGIFBRDADDR): %s", strerror(errno));
 		iapp_deinit(iapp);
 		return NULL;
 	}
-	paddr = (struct sockaddr_in *) &ifr.ifr_addr;
+	paddr = (struct sockaddr_in *)&ifr.ifr_addr;
 	if (paddr->sin_family != AF_INET) {
-		wpa_printf(MSG_INFO, "Invalid address family %i (SIOCGIFBRDADDR)",
-			   paddr->sin_family);
+		wpa_printf(MSG_INFO, "Invalid address family %i (SIOCGIFBRDADDR)", paddr->sin_family);
 		iapp_deinit(iapp);
 		return NULL;
 	}
@@ -447,10 +407,8 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 	os_memset(&uaddr, 0, sizeof(uaddr));
 	uaddr.sin_family = AF_INET;
 	uaddr.sin_port = htons(IAPP_UDP_PORT);
-	if (bind(iapp->udp_sock, (struct sockaddr *) &uaddr,
-		 sizeof(uaddr)) < 0) {
-		wpa_printf(MSG_INFO, "iapp_init - bind[UDP]: %s",
-			   strerror(errno));
+	if (bind(iapp->udp_sock, (struct sockaddr *)&uaddr, sizeof(uaddr)) < 0) {
+		wpa_printf(MSG_INFO, "iapp_init - bind[UDP]: %s", strerror(errno));
 		iapp_deinit(iapp);
 		return NULL;
 	}
@@ -459,18 +417,15 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 	mreq.imr_multiaddr = iapp->multicast;
 	mreq.imr_address.s_addr = INADDR_ANY;
 	mreq.imr_ifindex = 0;
-	if (setsockopt(iapp->udp_sock, SOL_IP, IP_ADD_MEMBERSHIP, &mreq,
-		       sizeof(mreq)) < 0) {
-		wpa_printf(MSG_INFO, "iapp_init - setsockopt[UDP,IP_ADD_MEMBERSHIP]: %s",
-			   strerror(errno));
+	if (setsockopt(iapp->udp_sock, SOL_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
+		wpa_printf(MSG_INFO, "iapp_init - setsockopt[UDP,IP_ADD_MEMBERSHIP]: %s", strerror(errno));
 		iapp_deinit(iapp);
 		return NULL;
 	}
 
 	iapp->packet_sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (iapp->packet_sock < 0) {
-		wpa_printf(MSG_INFO, "iapp_init - socket[PF_PACKET,SOCK_RAW]: %s",
-			   strerror(errno));
+		wpa_printf(MSG_INFO, "iapp_init - socket[PF_PACKET,SOCK_RAW]: %s", strerror(errno));
 		iapp_deinit(iapp);
 		return NULL;
 	}
@@ -478,16 +433,13 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 	os_memset(&addr, 0, sizeof(addr));
 	addr.sll_family = AF_PACKET;
 	addr.sll_ifindex = ifindex;
-	if (bind(iapp->packet_sock, (struct sockaddr *) &addr,
-		 sizeof(addr)) < 0) {
-		wpa_printf(MSG_INFO, "iapp_init - bind[PACKET]: %s",
-			   strerror(errno));
+	if (bind(iapp->packet_sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+		wpa_printf(MSG_INFO, "iapp_init - bind[PACKET]: %s", strerror(errno));
 		iapp_deinit(iapp);
 		return NULL;
 	}
 
-	if (eloop_register_read_sock(iapp->udp_sock, iapp_receive_udp,
-				     iapp, NULL)) {
+	if (eloop_register_read_sock(iapp->udp_sock, iapp_receive_udp, iapp, NULL)) {
 		wpa_printf(MSG_INFO, "Could not register read socket for IAPP");
 		iapp_deinit(iapp);
 		return NULL;
@@ -503,23 +455,21 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 	return iapp;
 }
 
-
 void iapp_deinit(struct iapp_data *iapp)
 {
 	struct ip_mreqn mreq;
 
-	if (iapp == NULL)
+	if (iapp == NULL) {
 		return;
+	}
 
 	if (iapp->udp_sock >= 0) {
 		os_memset(&mreq, 0, sizeof(mreq));
 		mreq.imr_multiaddr = iapp->multicast;
 		mreq.imr_address.s_addr = INADDR_ANY;
 		mreq.imr_ifindex = 0;
-		if (setsockopt(iapp->udp_sock, SOL_IP, IP_DROP_MEMBERSHIP,
-			       &mreq, sizeof(mreq)) < 0) {
-			wpa_printf(MSG_INFO, "iapp_deinit - setsockopt[UDP,IP_DEL_MEMBERSHIP]: %s",
-				   strerror(errno));
+		if (setsockopt(iapp->udp_sock, SOL_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
+			wpa_printf(MSG_INFO, "iapp_deinit - setsockopt[UDP,IP_DEL_MEMBERSHIP]: %s", strerror(errno));
 		}
 
 		eloop_unregister_read_sock(iapp->udp_sock);

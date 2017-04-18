@@ -16,13 +16,13 @@
 #define random_get_bytes(b, l) os_get_random((b), (l))
 #define random_pool_ready() 1
 #define random_mark_pool_ready() do { } while (0)
-#else /* CONFIG_NO_RANDOM_POOL */
+#else							/* CONFIG_NO_RANDOM_POOL */
 void random_init(const char *entropy_file);
 void random_deinit(void);
 void random_add_randomness(const void *buf, size_t len);
 int random_get_bytes(void *buf, size_t len);
 int random_pool_ready(void);
 void random_mark_pool_ready(void);
-#endif /* CONFIG_NO_RANDOM_POOL */
+#endif							/* CONFIG_NO_RANDOM_POOL */
 
-#endif /* RANDOM_H */
+#endif							/* RANDOM_H */

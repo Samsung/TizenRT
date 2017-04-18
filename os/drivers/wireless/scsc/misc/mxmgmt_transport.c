@@ -30,8 +30,8 @@ void mxmgmt_transport_set_error(struct mxmgmt_transport *mxmgmt_transport)
 static void input_irq_handler(int irq, void *data)
 {
 	struct mxmgmt_transport *mxmgmt_transport = (struct mxmgmt_transport *)data;
-	struct mxmgmt_thread    *th = &mxmgmt_transport->mxmgmt_thread;
-	struct scsc_mif_abs     *mif_abs;
+	struct mxmgmt_thread *th = &mxmgmt_transport->mxmgmt_thread;
+	struct scsc_mif_abs *mif_abs;
 
 	/* Clear the interrupt first to ensure we can't possibly miss one */
 	mif_abs = scsc_mx_get_mif_abs(mxmgmt_transport->mx);
@@ -42,7 +42,7 @@ static void input_irq_handler(int irq, void *data)
 /** MIF Interrupt handler for acknowledging writes made by the AP */
 static void output_irq_handler(int irq, void *data)
 {
-	struct scsc_mif_abs     *mif_abs;
+	struct scsc_mif_abs *mif_abs;
 	struct mxmgmt_transport *mxmgmt_transport = (struct mxmgmt_transport *)data;
 
 	/* Clear the interrupt first to ensure we can't possibly miss one */
@@ -77,10 +77,10 @@ static void thread_wait_until_stopped(struct mxmgmt_transport *mxmgmt_transport)
  */
 static pthread_addr_t mxmgmt_thread_function(pthread_addr_t arg)
 {
-	struct mxmgmt_transport    *mxmgmt_transport = (struct mxmgmt_transport *)arg;
-	struct mxmgmt_thread       *th = &mxmgmt_transport->mxmgmt_thread;
+	struct mxmgmt_transport *mxmgmt_transport = (struct mxmgmt_transport *)arg;
+	struct mxmgmt_thread *th = &mxmgmt_transport->mxmgmt_thread;
 	const struct mxmgr_message *current_message;
-	int                        ret   = OK;
+	int ret = OK;
 
 	while (th->wakeup_flag) {
 		ret = sem_wait(&th->selectsem);
@@ -93,13 +93,11 @@ static pthread_addr_t mxmgmt_thread_function(pthread_addr_t arg)
 		current_message = mif_stream_peek(&mxmgmt_transport->mif_istream, NULL);
 		while (current_message != NULL) {
 			pthread_mutex_lock(&mxmgmt_transport->channel_handler_mutex);
-			if (current_message->channel_id < MMTRANS_NUM_CHANNELS &&
-			    mxmgmt_transport->channel_handler_fns[current_message->channel_id]) {
+			if (current_message->channel_id < MMTRANS_NUM_CHANNELS && mxmgmt_transport->channel_handler_fns[current_message->channel_id]) {
 #ifdef CONFIG_SCSC_WLAN_LOGLVL_ALL
 				pr_debug("%s: Calling handler for channel_id: %d\n", __func__, current_message->channel_id);
 #endif
-				(*mxmgmt_transport->channel_handler_fns[current_message->channel_id])(current_message->payload,
-												      mxmgmt_transport->channel_handler_data[current_message->channel_id]);
+				(*mxmgmt_transport->channel_handler_fns[current_message->channel_id])(current_message->payload, mxmgmt_transport->channel_handler_data[current_message->channel_id]);
 			} else {
 				/* HERE: Invalid channel or no handler, raise fault or log message */
 				pr_warn("%s: Invalid channel or no handler channel_id: %d\n", __func__, current_message->channel_id);
@@ -117,7 +115,6 @@ static pthread_addr_t mxmgmt_thread_function(pthread_addr_t arg)
 	return 0;
 }
 
-
 static int mxmgmt_thread_start(struct mxmgmt_transport *mxmgmt_transport)
 {
 	struct mxmgmt_thread *th = &mxmgmt_transport->mxmgmt_thread;
@@ -133,10 +130,10 @@ static int mxmgmt_thread_start(struct mxmgmt_transport *mxmgmt_transport)
 	snprintf(th->name, MXMGMT_THREAD_NAME_MAX_LENGTH, "mxmgmt_thread");
 
 	sem_init(&th->selectsem, 0, 0);
-	th->task = pthread_create(&th->selecttid, NULL, (pthread_startroutine_t)mxmgmt_thread_function,
-				  (pthread_addr_t)mxmgmt_transport);
-	if (th->task != 0)
+	th->task = pthread_create(&th->selecttid, NULL, (pthread_startroutine_t)mxmgmt_thread_function, (pthread_addr_t)mxmgmt_transport);
+	if (th->task != 0) {
 		return -th->task;
+	}
 
 	pthread_setname_np(th->selecttid, "WLAN Driver mxmgmt");
 
@@ -145,7 +142,7 @@ static int mxmgmt_thread_start(struct mxmgmt_transport *mxmgmt_transport)
 
 static void mgmt_thread_stop(struct mxmgmt_transport *mxmgmt_transport)
 {
-	struct  mxmgmt_thread *th = &mxmgmt_transport->mxmgmt_thread;
+	struct mxmgmt_thread *th = &mxmgmt_transport->mxmgmt_thread;
 
 	SLSI_INFO_NODEV("Stopping %s mgmt_thread\n", th->name);
 	th->wakeup_flag = 0;
@@ -155,7 +152,6 @@ static void mgmt_thread_stop(struct mxmgmt_transport *mxmgmt_transport)
 	pthread_detach(th->selecttid);
 }
 
-
 void mxmgmt_transport_release(struct mxmgmt_transport *mxmgmt_transport)
 {
 	mgmt_thread_stop(mxmgmt_transport);
@@ -163,24 +159,22 @@ void mxmgmt_transport_release(struct mxmgmt_transport *mxmgmt_transport)
 	mif_stream_release(&mxmgmt_transport->mif_ostream);
 }
 
-void mxmgmt_transport_config_serialise(struct mxmgmt_transport *mxmgmt_transport,
-				       struct mxtransconf      *trans_conf)
+void mxmgmt_transport_config_serialise(struct mxmgmt_transport *mxmgmt_transport, struct mxtransconf *trans_conf)
 {
 	mif_stream_config_serialise(&mxmgmt_transport->mif_istream, &trans_conf->to_ap_stream_conf);
 	mif_stream_config_serialise(&mxmgmt_transport->mif_ostream, &trans_conf->from_ap_stream_conf);
 }
 
-
 /** Public functions */
 int mxmgmt_transport_init(struct mxmgmt_transport *mxmgmt_transport, struct scsc_mx *mx)
 {
-/*
- * Initialising a buffer of 1 byte is never legitimate, do not allow it.
- * The memory buffer length must be a multiple of the packet size.
- */
+	/*
+	 * Initialising a buffer of 1 byte is never legitimate, do not allow it.
+	 * The memory buffer length must be a multiple of the packet size.
+	 */
 #define MEM_LENGTH 32
 
-	int      r;
+	int r;
 	uint32_t mem_length = MEM_LENGTH;
 	uint32_t packet_size = sizeof(struct mxmgr_message);
 	uint32_t num_packets;
@@ -192,15 +186,16 @@ int mxmgmt_transport_init(struct mxmgmt_transport *mxmgmt_transport, struct scsc
 	pthread_mutex_init(&mxmgmt_transport->channel_handler_mutex, NULL);
 	mxmgmt_transport->mx = mx;
 	r = mif_stream_init(&mxmgmt_transport->mif_istream, MIF_STREAM_DIRECTION_IN, num_packets, packet_size, mx, input_irq_handler, mxmgmt_transport);
-	if (r)
+	if (r) {
 		return r;
+	}
 	r = mif_stream_init(&mxmgmt_transport->mif_ostream, MIF_STREAM_DIRECTION_OUT, num_packets, packet_size, mx, output_irq_handler, mxmgmt_transport);
 	if (r) {
 		mif_stream_release(&mxmgmt_transport->mif_istream);
 		return r;
 	}
 	th = &mxmgmt_transport->mxmgmt_thread;
-	th->task = -1; // make sure initial value is set correctly
+	th->task = -1;				// make sure initial value is set correctly
 
 	r = mxmgmt_thread_start(mxmgmt_transport);
 	if (r) {
@@ -211,8 +206,7 @@ int mxmgmt_transport_init(struct mxmgmt_transport *mxmgmt_transport, struct scsc
 	return 0;
 }
 
-void mxmgmt_transport_register_channel_handler(struct mxmgmt_transport *mxmgmt_transport, enum mxmgr_channels channel_id,
-					       mxmgmt_channel_handler handler, void *data)
+void mxmgmt_transport_register_channel_handler(struct mxmgmt_transport *mxmgmt_transport, enum mxmgr_channels channel_id, mxmgmt_channel_handler handler, void *data)
 {
 	if (channel_id >= MMTRANS_NUM_CHANNELS) {
 		pr_err("%s: Invalid channel id: %d\n", __func__, channel_id);
@@ -224,13 +218,12 @@ void mxmgmt_transport_register_channel_handler(struct mxmgmt_transport *mxmgmt_t
 	pthread_mutex_unlock(&mxmgmt_transport->channel_handler_mutex);
 }
 
-void mxmgmt_transport_send(struct mxmgmt_transport *mxmgmt_transport, enum mxmgr_channels channel_id,
-			   void *message, uint32_t message_length)
+void mxmgmt_transport_send(struct mxmgmt_transport *mxmgmt_transport, enum mxmgr_channels channel_id, void *message, uint32_t message_length)
 {
-	struct mxmgr_message transport_msg = { .channel_id = channel_id };
+	struct mxmgr_message transport_msg = {.channel_id = channel_id };
 
-	const void           *bufs[2] = { &transport_msg.channel_id, message };
-	uint32_t             buf_lengths[2] = { sizeof(transport_msg.channel_id), message_length };
+	const void *bufs[2] = { &transport_msg.channel_id, message };
+	uint32_t buf_lengths[2] = { sizeof(transport_msg.channel_id), message_length };
 
 	mif_stream_write_gather(&mxmgmt_transport->mif_ostream, bufs, buf_lengths, 2);
 }

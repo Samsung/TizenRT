@@ -15,7 +15,6 @@
 #include "http.h"
 #include "upnp_xml.h"
 
-
 /*
  * XML parsing and formatting
  *
@@ -75,29 +74,34 @@
  * Note that angle brackets present in the original data must have been encoded
  * as &lt; and &gt; so they will not trouble us.
  */
-int xml_next_tag(const char *in, const char **out,
-		 const char **out_tagname, const char **end)
+int xml_next_tag(const char *in, const char **out, const char **out_tagname, const char **end)
 {
-	while (*in && *in != '<')
+	while (*in && *in != '<') {
 		in++;
-	if (*in != '<')
+	}
+	if (*in != '<') {
 		return 1;
+	}
 	*out = ++in;
-	if (*in == '/')
+	if (*in == '/') {
 		in++;
-	*out_tagname = in; /* maybe */
-	while (isalnum(*in) || *in == '-')
+	}
+	*out_tagname = in;			/* maybe */
+	while (isalnum(*in) || *in == '-') {
 		in++;
-	if (*in == ':')
+	}
+	if (*in == ':') {
 		*out_tagname = ++in;
-	while (*in && *in != '>')
+	}
+	while (*in && *in != '>') {
 		in++;
-	if (*in != '>')
+	}
+	if (*in != '>') {
 		return 1;
+	}
 	*end = ++in;
 	return 0;
 }
-
 
 /* xml_data_encode -- format data for xml file, escaping special characters.
  *
@@ -122,7 +126,7 @@ void xml_data_encode(struct wpabuf *buf, const char *data, int len)
 {
 	int i;
 	for (i = 0; i < len; i++) {
-		u8 c = ((u8 *) data)[i];
+		u8 c = ((u8 *)data)[i];
 		if (c == '<') {
 			wpabuf_put_str(buf, "&lt;");
 			continue;
@@ -152,7 +156,6 @@ void xml_data_encode(struct wpabuf *buf, const char *data, int len)
 	}
 }
 
-
 /* xml_add_tagged_data -- format tagged data as a new xml line.
  *
  * tag must not have any special chars.
@@ -164,7 +167,6 @@ void xml_add_tagged_data(struct wpabuf *buf, const char *tag, const char *data)
 	xml_data_encode(buf, data, os_strlen(data));
 	wpabuf_printf(buf, "</%s>\n", tag);
 }
-
 
 /* A POST body looks something like (per upnp spec):
  * <?xml version="1.0"?>
@@ -187,7 +189,7 @@ void xml_add_tagged_data(struct wpabuf *buf, const char *tag, const char *data)
  *      argumentName will be actual argument name
  *      (in arg value) will be actual argument value
  */
-char * xml_get_first_item(const char *doc, const char *item)
+char *xml_get_first_item(const char *doc, const char *item)
 {
 	const char *match = item;
 	int match_len = os_strlen(item);
@@ -200,29 +202,27 @@ char * xml_get_first_item(const char *doc, const char *item)
 	 * domain of UPnP messages.
 	 */
 	for (;;) {
-		if (xml_next_tag(doc, &tag, &tagname, &end))
+		if (xml_next_tag(doc, &tag, &tagname, &end)) {
 			return NULL;
+		}
 		doc = end;
-		if (!os_strncasecmp(tagname, match, match_len) &&
-		    *tag != '/' &&
-		    (tagname[match_len] == '>' ||
-		     !isgraph(tagname[match_len]))) {
+		if (!os_strncasecmp(tagname, match, match_len) && *tag != '/' && (tagname[match_len] == '>' || !isgraph(tagname[match_len]))) {
 			break;
 		}
 	}
 	end = doc;
-	while (*end && *end != '<')
+	while (*end && *end != '<') {
 		end++;
+	}
 	value = os_zalloc(1 + (end - doc));
-	if (value == NULL)
+	if (value == NULL) {
 		return NULL;
+	}
 	os_memcpy(value, doc, end - doc);
 	return value;
 }
 
-
-struct wpabuf * xml_get_base64_item(const char *data, const char *name,
-				    enum http_reply_code *ret)
+struct wpabuf *xml_get_base64_item(const char *data, const char *name, enum http_reply_code *ret)
 {
 	char *msg;
 	struct wpabuf *buf;
@@ -235,7 +235,7 @@ struct wpabuf * xml_get_base64_item(const char *data, const char *name,
 		return NULL;
 	}
 
-	decoded = base64_decode((unsigned char *) msg, os_strlen(msg), &len);
+	decoded = base64_decode((unsigned char *)msg, os_strlen(msg), &len);
 	os_free(msg);
 	if (decoded == NULL) {
 		*ret = UPNP_OUT_OF_MEMORY;

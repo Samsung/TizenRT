@@ -43,4 +43,4 @@
  *******************************************************************************/
 bool CsrWifiMibConvertText(const char *mibText, struct slsi_mib_data *mibDataSet, struct slsi_mib_data *mibDataGet);
 
-#endif /* MIB_TEXT_CONVERT_H__ */
+#endif							/* MIB_TEXT_CONVERT_H__ */

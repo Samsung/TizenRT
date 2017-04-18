@@ -7,7 +7,6 @@
  *  @version    v0.50 : 2016.8.13 Init. release version
  *  @version    v1.00 : 2016.9.27 release version v1.0
  */
- 
 
 #ifndef ISP_DRIVER_ERROR_H_
 #define ISP_DRIVER_ERROR_H_
@@ -23,26 +22,25 @@
 #define ERROR_AES_INVALID_INDEX 							(0x000833D1)
 #define ERROR_AES_INVALID_TAG_LEN							(0x000933D1)
 
-// Hash				
+// Hash
 #define	ERROR_HASH_INVALID_MODE								(0x000131D1)
 #define ERROR_HASH_INVALID_BLOCK_LEN						(0x000231D1)
 #define ERROR_HASH_INVALID_MSG_LEN							(0x000331D1)
 
-// HMAC				
+// HMAC
 #define	ERROR_HMAC_INVALID_MODE								(0x000132D1)
 #define ERROR_HMAC_INVALID_KEY_LEN							(0x000232D1)
 #define ERROR_HMAC_INVALID_BLOCK_LEN						(0x000332D1)
 #define ERROR_HMAC_INVALID_INDEX							(0x000432D1)
 #define ERROR_HMAC_INVALID_RSP_BLOCK_LEN					(0x000532D1)
 
-// DH				
+// DH
 #define ERROR_DH_INVALID_PRIME_LEN							(0x000125D1)
 #define ERROR_DH_INVALID_PUBKEY_LEN							(0x000225D1)
 #define ERROR_DH_INVALID_GENERATOR_LEN						(0x000325D1)
 #define ERROR_DH_INVALID_PRIME								(0x000425D1)
 #define ERROR_DH_INVALID_PUBKEY								(0x000525D1)
 #define ERROR_DH_INVALID_GENERATOR							(0x000625D1)
-
 
 // ECDSA
 #define ERROR_ECDSA_INVALID_MSG_LEN							(0x000111D1)
@@ -56,7 +54,6 @@
 #define ERROR_RSA_INVALID_SIGN_LEN							(0x000351D1)
 #define ERROR_RSA_INVALID_PUKEY								(0x000551D1)
 #define ERROR_RSA_INVALID_PAD_SELECTION						(0x000451D1)
-
 
 // RNG
 #define ERROR_RNG_INVALID_RANDOM_REQUEST 					(0x000161D1)
@@ -83,8 +80,6 @@
 // System Function
 #define ERROR_SYSTEM_INVALID_DATA_LEN 						(0x000201D1)
 #define ERROR_SYSTEM_MAILBOX_BUSY							(0x000100D1)
-
-
 
 // Error from FW
 #define FW_ERROR_ISP_INVALID_FUNCID00              			(0x801000F1)
@@ -156,5 +151,4 @@
 #define FW_ERROR_HASH_IP_BUSY								(0x80B200F1)
 #define FW_ERROR_PRNG_IP_BUSY								(0x80B300F1)
 
-
-#endif /* ISP_DRIVER_ERROR_H_ */
+#endif							/* ISP_DRIVER_ERROR_H_ */

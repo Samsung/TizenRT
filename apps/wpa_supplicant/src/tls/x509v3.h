@@ -34,15 +34,15 @@ struct x509_name_attr {
 struct x509_name {
 	struct x509_name_attr attr[X509_MAX_NAME_ATTRIBUTES];
 	size_t num_attr;
-	char *email; /* emailAddress */
+	char *email;				/* emailAddress */
 
 	/* from alternative name extension */
-	char *alt_email; /* rfc822Name */
-	char *dns; /* dNSName */
-	char *uri; /* uniformResourceIdentifier */
-	u8 *ip; /* iPAddress */
-	size_t ip_len; /* IPv4: 4, IPv6: 16 */
-	struct asn1_oid rid; /* registeredID */
+	char *alt_email;			/* rfc822Name */
+	char *dns;					/* dNSName */
+	char *uri;					/* uniformResourceIdentifier */
+	u8 *ip;						/* iPAddress */
+	size_t ip_len;				/* IPv4: 4, IPv6: 16 */
+	struct asn1_oid rid;		/* registeredID */
 };
 
 struct x509_certificate {
@@ -70,8 +70,8 @@ struct x509_certificate {
 #define X509_EXT_ISSUER_ALT_NAME		(1 << 4)
 
 	/* BasicConstraints */
-	int ca; /* cA */
-	unsigned long path_len_constraint; /* pathLenConstraint */
+	int ca;						/* cA */
+	unsigned long path_len_constraint;	/* pathLenConstraint */
 
 	/* KeyUsage */
 	unsigned long key_usage;
@@ -106,18 +106,13 @@ enum {
 };
 
 void x509_certificate_free(struct x509_certificate *cert);
-struct x509_certificate * x509_certificate_parse(const u8 *buf, size_t len);
+struct x509_certificate *x509_certificate_parse(const u8 *buf, size_t len);
 void x509_name_string(struct x509_name *name, char *buf, size_t len);
 int x509_name_compare(struct x509_name *a, struct x509_name *b);
 void x509_certificate_chain_free(struct x509_certificate *cert);
-int x509_certificate_check_signature(struct x509_certificate *issuer,
-				     struct x509_certificate *cert);
-int x509_certificate_chain_validate(struct x509_certificate *trusted,
-				    struct x509_certificate *chain,
-				    int *reason, int disable_time_checks);
-struct x509_certificate *
-x509_certificate_get_subject(struct x509_certificate *chain,
-			     struct x509_name *name);
+int x509_certificate_check_signature(struct x509_certificate *issuer, struct x509_certificate *cert);
+int x509_certificate_chain_validate(struct x509_certificate *trusted, struct x509_certificate *chain, int *reason, int disable_time_checks);
+struct x509_certificate *x509_certificate_get_subject(struct x509_certificate *chain, struct x509_name *name);
 int x509_certificate_self_signed(struct x509_certificate *cert);
 
-#endif /* X509V3_H */
+#endif							/* X509V3_H */

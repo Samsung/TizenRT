@@ -20,4 +20,4 @@ struct suspendmon {
 	struct scsc_mx *mx;
 };
 
-#endif /* _SUSPENDMON_H */
+#endif							/* _SUSPENDMON_H */

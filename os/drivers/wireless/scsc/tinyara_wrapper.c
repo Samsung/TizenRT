@@ -25,11 +25,11 @@ unsigned long wait_for_completion_timeout(struct completion *x, unsigned long ti
 {
 	struct timespec timeout;
 	struct timespec current;
-	int             ret = 0;
+	int ret = 0;
 
 	if (timeout_ms) {
 		clock_gettime(CLOCK_REALTIME, &current);
-		timeout.tv_sec  = timeout_ms / 1000;
+		timeout.tv_sec = timeout_ms / 1000;
 		timeout.tv_nsec = (timeout_ms % 1000) * 1000 * 1000;
 
 		timeout.tv_sec = timeout.tv_sec + current.tv_sec;
@@ -46,13 +46,14 @@ unsigned long wait_for_completion_timeout(struct completion *x, unsigned long ti
 			}
 		}
 	} else {
-		while(sem_wait(&x->sem) != 0) {
+		while (sem_wait(&x->sem) != 0) {
 			sem_post(&x->sem);
 		}
 	}
 
-	if (ret)
+	if (ret) {
 		return 0;
+	}
 
 	return 1;
 }

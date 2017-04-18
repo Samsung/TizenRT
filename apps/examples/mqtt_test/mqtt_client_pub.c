@@ -53,9 +53,9 @@
 
 #define MQTT_PUB_DEBUG_PRINT(client_handle,...) \
 		do { \
-			if(client_handle && (client_handle)->config && (client_handle)->config->debug) \
+			if (client_handle && (client_handle)->config && (client_handle)->config->debug) \
 				printf(__VA_ARGS__); \
-		} while(0);
+		} while (0);
 
 /****************************************************************************
  * Structure
@@ -106,7 +106,7 @@ static bool g_debug;
  ****************************************************************************/
 static void my_connect_callback(void *client, int result)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) client;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)client;
 	mqtt_msg_t *mqtt_msg = NULL;
 
 	if (mqtt_client == NULL || mqtt_client->config == NULL) {
@@ -118,7 +118,7 @@ static void my_connect_callback(void *client, int result)
 		MQTT_PUB_DEBUG_PRINT(mqtt_client, ">>> connect callback: client_id=%s, connect success!\n", mqtt_client->config->client_id);
 
 		if (mqtt_client->config->user_data) {
-			mqtt_msg = (mqtt_msg_t *) mqtt_client->config->user_data;
+			mqtt_msg = (mqtt_msg_t *)mqtt_client->config->user_data;
 			if (mqtt_publish(mqtt_client, mqtt_msg->topic, mqtt_msg->payload, mqtt_msg->payload_len, mqtt_msg->qos, mqtt_msg->retain) != 0) {
 				fprintf(stderr, "Error: mqtt_publish() failed.\n");
 			}
@@ -151,7 +151,7 @@ static void my_connect_callback(void *client, int result)
 
 static void my_disconnect_callback(void *client, int result)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) client;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)client;
 
 	if (mqtt_client == NULL || mqtt_client->config == NULL) {
 		fprintf(stderr, "Error: >>> disconnect callback: %s is NULL.\n", mqtt_client == NULL ? "mqtt_client" : "mqtt_client->config");
@@ -169,7 +169,7 @@ static void my_disconnect_callback(void *client, int result)
 
 static void my_publish_callback(void *client, int msg_id)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) client;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)client;
 
 	if (mqtt_client == NULL || mqtt_client->config == NULL) {
 		fprintf(stderr, "Error: >>> publish callback: %s is NULL.\n", mqtt_client == NULL ? "mqtt_client" : "mqtt_client->config");

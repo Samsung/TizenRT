@@ -23,8 +23,7 @@
  * @plain: Plaintext key, n * 64 bits
  * Returns: 0 on success, -1 on failure (e.g., integrity verification failed)
  */
-int aes_unwrap(const u8 *kek, size_t kek_len, int n, const u8 *cipher,
-	       u8 *plain)
+int aes_unwrap(const u8 *kek, size_t kek_len, int n, const u8 *cipher, u8 *plain)
 {
 	u8 a[8], *r, b[AES_BLOCK_SIZE];
 	int i, j;
@@ -37,8 +36,9 @@ int aes_unwrap(const u8 *kek, size_t kek_len, int n, const u8 *cipher,
 	os_memcpy(r, cipher + 8, 8 * n);
 
 	ctx = aes_decrypt_init(kek, kek_len);
-	if (ctx == NULL)
+	if (ctx == NULL) {
 		return -1;
+	}
 
 	/* 2) Compute intermediate values.
 	 * For j = 5 to 0
@@ -72,8 +72,9 @@ int aes_unwrap(const u8 *kek, size_t kek_len, int n, const u8 *cipher,
 	 * variables. Just verify that the IV matches with the expected value.
 	 */
 	for (i = 0; i < 8; i++) {
-		if (a[i] != 0xa6)
+		if (a[i] != 0xa6) {
 			return -1;
+		}
 	}
 
 	return 0;

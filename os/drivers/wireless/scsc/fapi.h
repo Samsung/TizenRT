@@ -681,28 +681,28 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_unitdata_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_1_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_2_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_3_req;
 		struct {
 			__le16 vif;
@@ -713,7 +713,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_unitdata_cfm;
 		struct {
 			__le16 vif;
@@ -721,7 +721,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_1_cfm;
 		struct {
 			__le16 vif;
@@ -729,7 +729,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_2_cfm;
 		struct {
 			__le16 vif;
@@ -737,28 +737,28 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_3_cfm;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_1_res;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_2_res;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_3_res;
 		struct {
 			__le16 vif;
@@ -770,11 +770,11 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_unitdata_ind;
 		struct {
 			__le16 vif;
-			u8     peer_qsta_address[ETH_ALEN];
+			u8 peer_qsta_address[ETH_ALEN];
 			__le16 sequence_number;
 			__le16 reason_code;
 			__le16 blockack_parameter_set;
@@ -782,50 +782,50 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_blockack_ind;
 		struct {
 			__le16 vif;
-			u8     peer_sta_address[ETH_ALEN];
+			u8 peer_sta_address[ETH_ALEN];
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_tx_failure_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_1_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_2_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED ma_spare_signal_3_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_get_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_req;
 		struct {
 			__le16 vif;
@@ -833,7 +833,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_powermgt_req;
 		struct {
 			__le16 vif;
@@ -841,18 +841,18 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_add_info_elements_req;
 		struct {
 			__le16 vif;
 			__le16 scan_id;
 			__le16 scan_type;
-			u8     device_address[ETH_ALEN];
+			u8 device_address[ETH_ALEN];
 			__le16 report_mode_bitmap;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_add_scan_req;
 		struct {
 			__le16 vif;
@@ -860,28 +860,28 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_del_scan_req;
 		struct {
 			__le16 vif;
-			u8     interface_address[ETH_ALEN];
+			u8 interface_address[ETH_ALEN];
 			__le16 virtual_interface_type;
-			u8     device_address[ETH_ALEN];
+			u8 device_address[ETH_ALEN];
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_add_vif_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_del_vif_req;
 		struct {
 			__le16 vif;
-			u8     bssid[ETH_ALEN];
+			u8 bssid[ETH_ALEN];
 			__le16 beacon_period;
 			__le16 dtim_period;
 			__le16 capability_information;
@@ -892,7 +892,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_start_req;
 		struct {
 			__le16 vif;
@@ -903,43 +903,43 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_channel_req;
 		struct {
 			__le16 vif;
-			u8     bssid[ETH_ALEN];
+			u8 bssid[ETH_ALEN];
 			__le16 authentication_type;
 			__le16 channel_frequency;
 			__le16 pmf_control;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_connect_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_reassociate_req;
 		struct {
 			__le16 vif;
-			u8     bssid[ETH_ALEN];
+			u8 bssid[ETH_ALEN];
 			__le16 channel_frequency;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_roam_req;
 		struct {
 			__le16 vif;
-			u8     peer_sta_address[ETH_ALEN];
+			u8 peer_sta_address[ETH_ALEN];
 			__le16 reason_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_disconnect_req;
 		struct {
 			__le16 vif;
@@ -948,7 +948,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_register_action_frame_req;
 		struct {
 			__le16 vif;
@@ -961,25 +961,25 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_send_frame_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_reset_dwell_time_req;
 		struct {
 			__le16 vif;
 			__le16 user_priority;
 			__le16 medium_time;
 			__le16 minimun_data_rate;
-			u8     peer_address[ETH_ALEN];
+			u8 peer_address[ETH_ALEN];
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_traffic_parameters_req;
 		struct {
 			__le16 vif;
@@ -987,23 +987,23 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_del_traffic_parameters_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_packet_filter_req;
 		struct {
 			__le16 vif;
 			__le16 ip_version;
-			u8     multicast_address[ETH_ALEN];
+			u8 multicast_address[ETH_ALEN];
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_ip_address_req;
 		struct {
 			__le16 vif;
@@ -1012,27 +1012,27 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_acl_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_roaming_parameters_req;
 		struct {
 			__le16 vif;
 			__le16 length;
 			__le16 key_id;
 			__le16 key_type;
-			u8     address[ETH_ALEN];
+			u8 address[ETH_ALEN];
 			__le16 sequence_number[8];
 			__le32 cipher_suite_selector;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_setkeys_req;
 		struct {
 			__le16 vif;
@@ -1041,64 +1041,64 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_get_key_sequence_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_cckm_keys_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_pmk_req;
 		struct {
 			__le16 vif;
-			u8     multicast_address[ETH_ALEN];
+			u8 multicast_address[ETH_ALEN];
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_start_txrmc_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_stop_txrmc_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_cached_channels_req;
 		struct {
 			__le16 vif;
 			__le16 blockack_control_bitmap;
 			__le16 direction;
-			u8     peer_sta_address[ETH_ALEN];
+			u8 peer_sta_address[ETH_ALEN];
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_blockack_control_req;
 		struct {
 			__le16 vif;
-			u8     peer_sta_address[ETH_ALEN];
+			u8 peer_sta_address[ETH_ALEN];
 			__le16 tdls_action;
 			__le16 channel_frequency;
 			__le16 channel_information;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_tdls_action_req;
 		struct {
 			__le16 vif;
@@ -1107,7 +1107,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_channel_switch_req;
 		struct {
 			__le16 vif;
@@ -1117,7 +1117,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_monitor_rssi_req;
 		struct {
 			__le16 vif;
@@ -1126,7 +1126,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_start_link_statistics_req;
 		struct {
 			__le16 vif;
@@ -1134,56 +1134,56 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_stop_link_statistics_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_bssid_hotlist_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_pno_list_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_1_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_2_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_3_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_get_cfm;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_cfm;
 		struct {
 			__le16 vif;
@@ -1191,7 +1191,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_powermgt_cfm;
 		struct {
 			__le16 vif;
@@ -1199,7 +1199,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_add_info_elements_cfm;
 		struct {
 			__le16 vif;
@@ -1208,7 +1208,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_add_scan_cfm;
 		struct {
 			__le16 vif;
@@ -1217,7 +1217,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_del_scan_cfm;
 		struct {
 			__le16 vif;
@@ -1225,7 +1225,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_add_vif_cfm;
 		struct {
 			__le16 vif;
@@ -1233,7 +1233,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_del_vif_cfm;
 		struct {
 			__le16 vif;
@@ -1241,7 +1241,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_start_cfm;
 		struct {
 			__le16 vif;
@@ -1249,7 +1249,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_channel_cfm;
 		struct {
 			__le16 vif;
@@ -1257,7 +1257,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_connect_cfm;
 		struct {
 			__le16 vif;
@@ -1265,7 +1265,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_reassociate_cfm;
 		struct {
 			__le16 vif;
@@ -1273,16 +1273,16 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_roam_cfm;
 		struct {
 			__le16 vif;
-			u8     peer_sta_address[ETH_ALEN];
+			u8 peer_sta_address[ETH_ALEN];
 			__le16 result_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_disconnect_cfm;
 		struct {
 			__le16 vif;
@@ -1290,7 +1290,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_register_action_frame_cfm;
 		struct {
 			__le16 vif;
@@ -1299,7 +1299,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_send_frame_cfm;
 		struct {
 			__le16 vif;
@@ -1307,7 +1307,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_reset_dwell_time_cfm;
 		struct {
 			__le16 vif;
@@ -1315,7 +1315,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_traffic_parameters_cfm;
 		struct {
 			__le16 vif;
@@ -1323,7 +1323,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_del_traffic_parameters_cfm;
 		struct {
 			__le16 vif;
@@ -1331,7 +1331,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_packet_filter_cfm;
 		struct {
 			__le16 vif;
@@ -1339,7 +1339,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_ip_address_cfm;
 		struct {
 			__le16 vif;
@@ -1347,7 +1347,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_acl_cfm;
 		struct {
 			__le16 vif;
@@ -1355,7 +1355,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_roaming_parameters_cfm;
 		struct {
 			__le16 vif;
@@ -1363,7 +1363,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_setkeys_cfm;
 		struct {
 			__le16 vif;
@@ -1372,7 +1372,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_get_key_sequence_cfm;
 		struct {
 			__le16 vif;
@@ -1380,7 +1380,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_cckm_keys_cfm;
 		struct {
 			__le16 vif;
@@ -1388,7 +1388,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_pmk_cfm;
 		struct {
 			__le16 vif;
@@ -1396,7 +1396,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_start_txrmc_cfm;
 		struct {
 			__le16 vif;
@@ -1404,7 +1404,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_stop_txrmc_cfm;
 		struct {
 			__le16 vif;
@@ -1412,7 +1412,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_cached_channels_cfm;
 		struct {
 			__le16 vif;
@@ -1420,7 +1420,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_blockack_control_cfm;
 		struct {
 			__le16 vif;
@@ -1428,7 +1428,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_tdls_action_cfm;
 		struct {
 			__le16 vif;
@@ -1436,7 +1436,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_channel_switch_cfm;
 		struct {
 			__le16 vif;
@@ -1444,7 +1444,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_monitor_rssi_cfm;
 		struct {
 			__le16 vif;
@@ -1452,7 +1452,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_start_link_statistics_cfm;
 		struct {
 			__le16 vif;
@@ -1460,7 +1460,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_stop_link_statistics_cfm;
 		struct {
 			__le16 vif;
@@ -1468,7 +1468,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_bssid_hotlist_cfm;
 		struct {
 			__le16 vif;
@@ -1476,7 +1476,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_set_pno_list_cfm;
 		struct {
 			__le16 vif;
@@ -1484,7 +1484,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_1_cfm;
 		struct {
 			__le16 vif;
@@ -1492,7 +1492,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_2_cfm;
 		struct {
 			__le16 vif;
@@ -1500,14 +1500,14 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_3_cfm;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_connect_res;
 		struct {
 			__le16 vif;
@@ -1515,21 +1515,21 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_connected_res;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_reassociate_res;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_roamed_res;
 		struct {
 			__le16 vif;
@@ -1538,28 +1538,28 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_tdls_peer_res;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_1_res;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_2_res;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_3_res;
 		struct {
 			__le16 vif;
@@ -1572,7 +1572,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_scan_ind;
 		struct {
 			__le16 vif;
@@ -1580,14 +1580,14 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_scan_done_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_listen_end_ind;
 		struct {
 			__le16 vif;
@@ -1595,7 +1595,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_connect_ind;
 		struct {
 			__le16 vif;
@@ -1603,7 +1603,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_connected_ind;
 		struct {
 			__le16 vif;
@@ -1611,7 +1611,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_reassociate_ind;
 		struct {
 			__le16 vif;
@@ -1619,7 +1619,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_roam_ind;
 		struct {
 			__le16 vif;
@@ -1627,25 +1627,25 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_roamed_ind;
 		struct {
 			__le16 vif;
-			u8     peer_sta_address[ETH_ALEN];
+			u8 peer_sta_address[ETH_ALEN];
 			__le16 transmission_status;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_disconnect_ind;
 		struct {
 			__le16 vif;
-			u8     peer_sta_address[ETH_ALEN];
+			u8 peer_sta_address[ETH_ALEN];
 			__le16 reason_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_disconnected_ind;
 		struct {
 			__le16 vif;
@@ -1654,18 +1654,18 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_procedure_started_ind;
 		struct {
 			__le16 vif;
-			u8     peer_sta_address[ETH_ALEN];
+			u8 peer_sta_address[ETH_ALEN];
 			__le16 key_type;
 			__le16 key_id;
 			__le16 key_sequence_number[8];
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_mic_failure_ind;
 		struct {
 			__le16 vif;
@@ -1674,7 +1674,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_frame_transmission_ind;
 		struct {
 			__le16 vif;
@@ -1683,26 +1683,26 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_received_frame_ind;
 		struct {
 			__le16 vif;
-			u8     multicast_address[ETH_ALEN];
+			u8 multicast_address[ETH_ALEN];
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_rmc_leader_selected_ind;
 		struct {
 			__le16 vif;
-			u8     peer_sta_address[ETH_ALEN];
+			u8 peer_sta_address[ETH_ALEN];
 			__le16 peer_index;
 			__le16 tdls_event;
 			__le16 reason_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_tdls_peer_ind;
 		struct {
 			__le16 vif;
@@ -1710,7 +1710,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_ap_loss_ind;
 		struct {
 			__le16 vif;
@@ -1719,16 +1719,16 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_significant_change_ind;
 		struct {
 			__le16 vif;
-			u8     bssid[ETH_ALEN];
+			u8 bssid[ETH_ALEN];
 			__le16 low_rssi_threshold;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_rssi_report_ind;
 		struct {
 			__le16 vif;
@@ -1736,28 +1736,28 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_ac_priority_update_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_1_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_2_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED mlme_spare_signal_3_ind;
 		struct {
 			__le16 vif;
@@ -1765,7 +1765,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_generic_req;
 		struct {
 			__le16 vif;
@@ -1777,7 +1777,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_pkt_sink_start_req;
 		struct {
 			__le16 vif;
@@ -1786,7 +1786,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_pkt_sink_stop_req;
 		struct {
 			__le16 vif;
@@ -1796,7 +1796,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_pkt_sink_report_req;
 		struct {
 			__le16 vif;
@@ -1808,11 +1808,11 @@ struct fapi_signal {
 			__le32 ipv4destination_address;
 			__le16 packets_per_interrupt;
 			__le16 use_streaming;
-			u8     reserved_padding;
+			u8 reserved_padding;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_pkt_gen_start_req;
 		struct {
 			__le16 vif;
@@ -1821,7 +1821,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_pkt_gen_stop_req;
 		struct {
 			__le16 vif;
@@ -1831,28 +1831,28 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_pkt_gen_report_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_1_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_2_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_3_req;
 		struct {
 			__le16 vif;
@@ -1860,7 +1860,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_generic_cfm;
 		struct {
 			__le16 vif;
@@ -1868,7 +1868,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_1_cfm;
 		struct {
 			__le16 vif;
@@ -1876,7 +1876,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_2_cfm;
 		struct {
 			__le16 vif;
@@ -1884,28 +1884,28 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_3_cfm;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_1_res;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_2_res;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_3_res;
 		struct {
 			__le16 vif;
@@ -1916,7 +1916,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_word12_ind;
 		struct {
 			__le16 vif;
@@ -1929,7 +1929,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_fault_ind;
 		struct {
 			__le16 vif;
@@ -1937,7 +1937,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_generic_ind;
 		struct {
 			__le16 vif;
@@ -1954,7 +1954,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_pkt_sink_report_ind;
 		struct {
 			__le16 vif;
@@ -1972,56 +1972,56 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_pkt_gen_report_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_1_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_2_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED debug_spare_signal_3_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_block_requests_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_panic_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_suspend_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_resume_req;
 		struct {
 			__le32 logging_source;
@@ -2032,7 +2032,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED radio_logging_req;
 		struct {
 			__le16 freq;
@@ -2046,13 +2046,13 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_cw_start_req;
 		struct {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_cw_stop_req;
 		struct {
 			__le16 freq;
@@ -2069,119 +2069,119 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_tx_set_params_req;
 		struct {
 			__le32 num_frames_to_send;
 			__le16 data_type;
 			__le16 data_param;
-			u8     dest_addr[ETH_ALEN];
-			u8     src_addr[ETH_ALEN];
-			u8     bssid[ETH_ALEN];
+			u8 dest_addr[ETH_ALEN];
+			u8 src_addr[ETH_ALEN];
+			u8 bssid[ETH_ALEN];
 			__le16 num_mpdus_per_ampdu;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_tx_start_req;
 		struct {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_tx_read_req;
 		struct {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_tx_stop_req;
 		struct {
 			__le16 freq;
 			__le16 channel_information;
 			__le16 flags;
-			u8     mac_addr[ETH_ALEN];
+			u8 mac_addr[ETH_ALEN];
 			__le32 on_duration;
 			__le32 off_duration;
 			__le16 num_mpdus_per_ampdu;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_rx_start_req;
 		struct {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_rx_read_req;
 		struct {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_rx_stop_req;
 		struct {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_status_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_1_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_2_req;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_3_req;
 		struct {
 			__le16 result_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED radio_logging_cfm;
 		struct {
 			__le16 result_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_cw_start_cfm;
 		struct {
 			__le16 result_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_tx_set_params_cfm;
 		struct {
 			__le16 result_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_cw_stop_cfm;
 		struct {
 			__le16 result_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_tx_start_cfm;
 		struct {
 			__le16 result_code;
@@ -2200,21 +2200,21 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_tx_read_cfm;
 		struct {
 			__le16 result_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_tx_stop_cfm;
 		struct {
 			__le16 result_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_rx_start_cfm;
 		struct {
 			__le16 result_code;
@@ -2228,14 +2228,14 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_rx_read_cfm;
 		struct {
 			__le16 result_code;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_rx_stop_cfm;
 		struct {
 			__le16 result_code;
@@ -2243,7 +2243,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED wlanlite_status_cfm;
 		struct {
 			__le16 vif;
@@ -2251,7 +2251,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_1_cfm;
 		struct {
 			__le16 vif;
@@ -2259,7 +2259,7 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_2_cfm;
 		struct {
 			__le16 vif;
@@ -2267,28 +2267,28 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_3_cfm;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_1_res;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_2_res;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_3_res;
 		struct {
 			__le32 sequence_number;
@@ -2296,40 +2296,41 @@ struct fapi_signal {
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED radio_logging_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_1_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_2_ind;
 		struct {
 			__le16 vif;
 			__le32 spare_1;
 			__le32 spare_2;
 			__le32 spare_3;
-			u8     dr[0];
+			u8 dr[0];
 		} STRUCT_PACKED test_spare_signal_3_ind;
 	} u;
 } STRUCT_PACKED;
 
 static inline struct max_buff *fapi_alloc_f(size_t sig_size, size_t data_size, u16 id, u16 vif, const char *file, int line)
 {
-	struct max_buff               *mbuf = slsi_alloc_mbuf_f(sig_size + data_size, file, line);
+	struct max_buff *mbuf = slsi_alloc_mbuf_f(sig_size + data_size, file, line);
 	struct fapi_vif_signal_header *header;
 
 	WARN_ON(sig_size < sizeof(struct fapi_signal_header));
-	if (WARN_ON(!mbuf))
+	if (WARN_ON(!mbuf)) {
 		return NULL;
+	}
 
 	slsi_mbuf_cb_init(mbuf)->sig_length = sig_size;
 	slsi_mbuf_cb_get(mbuf)->data_length = sig_size;
@@ -2342,7 +2343,6 @@ static inline struct max_buff *fapi_alloc_f(size_t sig_size, size_t data_size, u
 	header->vif = vif;
 	return mbuf;
 }
-
 #define fapi_sig_size(mp_name)                  ((u16)offsetof(struct fapi_signal, u.mp_name.dr))
 #define fapi_alloc(mp_name, mp_id, mp_vif, mp_datalen) fapi_alloc_f(fapi_sig_size(mp_name), mp_datalen, mp_id, mp_vif, __FILE__, __LINE__)
 #define fapi_get_buff(mp_mbuf, mp_name) (((struct fapi_signal *)(mp_mbuf)->data)->mp_name)
@@ -2356,35 +2356,33 @@ static inline struct max_buff *fapi_alloc_f(size_t sig_size, size_t data_size, u
 #define fapi_set_s32(mp_mbuf, mp_name, mp_value) (((struct fapi_signal *)(mp_mbuf)->data)->mp_name = cpu_to_le32((u32)mp_value))
 #define fapi_set_memcpy(mp_mbuf, mp_name, mp_value) memcpy(((struct fapi_signal *)(mp_mbuf)->data)->mp_name, mp_value, sizeof(((struct fapi_signal *)(mp_mbuf)->data)->mp_name))
 #define fapi_set_memset(mp_mbuf, mp_name, mp_value) memset(((struct fapi_signal *)(mp_mbuf)->data)->mp_name, mp_value, sizeof(((struct fapi_signal *)(mp_mbuf)->data)->mp_name))
-
 /* Helper to get and set high/low 16 bits from u32 signals */
 #define fapi_get_high16_u32(mp_mbuf, mp_name) ((fapi_get_u32((mp_mbuf), mp_name) & 0xffff0000) >> 16)
 #define fapi_set_high16_u32(mp_mbuf, mp_name, mp_value) fapi_set_u32((mp_mbuf), mp_name, (fapi_get_u32((mp_mbuf), mp_name) & 0xffff) | ((mp_value) << 16))
 #define fapi_get_low16_u32(mp_mbuf, mp_name) (fapi_get_u32((mp_mbuf), mp_name) & 0xffff)
 #define fapi_set_low16_u32(mp_mbuf, mp_name, mp_value) fapi_set_u32((mp_mbuf), mp_name, (fapi_get_u32((mp_mbuf), mp_name) & 0xffff0000) | (mp_value))
-
 /* Helper to get signal and data */
 #define fapi_get_sigid(mp_mbuf) le16_to_cpu(((struct fapi_signal *)(mp_mbuf)->data)->id)
 #define fapi_get_siglen(mp_mbuf) (slsi_mbuf_cb_get(mp_mbuf)->sig_length)
 #define fapi_get_datalen(mp_mbuf) (slsi_mbuf_cb_get(mp_mbuf)->data_length - slsi_mbuf_cb_get(mp_mbuf)->sig_length)
 #define fapi_get_data(mp_mbuf) (mp_mbuf->data + fapi_get_siglen(mp_mbuf))
 #define fapi_get_vif(mp_mbuf) le16_to_cpu(((struct fapi_vif_signal_header *)(mp_mbuf)->data)->vif)
-
 /* Helper to get the struct slsi_80211_mgmt from the data */
 #define fapi_get_mgmt(mp_mbuf) ((struct slsi_80211_mgmt *)fapi_get_data(mp_mbuf))
 #define fapi_get_mgmtlen(mp_mbuf) fapi_get_datalen(mp_mbuf)
-
 static inline u8 *fapi_append_data(struct max_buff *mbuf, const u8 *data, size_t data_len)
 {
 	u8 *p;
 
-	if (WARN_ON(mbuf_tailroom(mbuf) < data_len))
+	if (WARN_ON(mbuf_tailroom(mbuf) < data_len)) {
 		return NULL;
+	}
 
 	p = mbuf_put(mbuf, data_len);
 	slsi_mbuf_cb_get(mbuf)->data_length += data_len;
-	if (data)
+	if (data) {
 		memcpy(p, data, data_len);
+	}
 	return p;
 }
 
@@ -2432,11 +2430,13 @@ static inline u16 fapi_get_expected_size_table(struct max_buff *mbuf, const u16 
 {
 	u16 id = fapi_get_sigid(mbuf);
 
-	if (id < start_id)
+	if (id < start_id) {
 		return 0;
+	}
 
-	if (id - start_id >= table_size)
+	if (id - start_id >= table_size) {
 		return 0;
+	}
 
 	return fapi_size_table[id - start_id];
 }
@@ -2687,38 +2687,39 @@ static inline u16 fapi_get_expected_size(struct max_buff *mbuf)
 		fapi_sig_size(test_spare_signal_3_res),
 	};
 
-	if (fapi_is_mlme(mbuf) && fapi_is_req(mbuf))
-		return fapi_get_expected_size_table(mbuf, fapi_mlme_req_size_table,  ARRAY_SIZE(fapi_mlme_req_size_table),  MLME_GET_REQ);
-	else if (fapi_is_mlme(mbuf) && fapi_is_cfm(mbuf))
-		return fapi_get_expected_size_table(mbuf, fapi_mlme_cfm_size_table,  ARRAY_SIZE(fapi_mlme_cfm_size_table),  MLME_GET_CFM);
-	else if (fapi_is_mlme(mbuf) && fapi_is_res(mbuf))
-		return fapi_get_expected_size_table(mbuf, fapi_mlme_res_size_table,  ARRAY_SIZE(fapi_mlme_res_size_table),  MLME_CONNECT_RES);
-	else if (fapi_is_mlme(mbuf) && fapi_is_ind(mbuf))
-		return fapi_get_expected_size_table(mbuf, fapi_mlme_ind_size_table,  ARRAY_SIZE(fapi_mlme_ind_size_table),  MLME_SCAN_IND);
-	else if (fapi_is_ma(mbuf) && fapi_is_req(mbuf))
-		return fapi_get_expected_size_table(mbuf, fapi_ma_req_size_table,    ARRAY_SIZE(fapi_ma_req_size_table),    MA_UNITDATA_REQ);
-	else if (fapi_is_ma(mbuf) && fapi_is_cfm(mbuf))
-		return fapi_get_expected_size_table(mbuf, fapi_ma_cfm_size_table,    ARRAY_SIZE(fapi_ma_cfm_size_table),    MA_UNITDATA_CFM);
-	else if (fapi_is_ma(mbuf) && fapi_is_ind(mbuf))
-		return fapi_get_expected_size_table(mbuf, fapi_ma_ind_size_table,    ARRAY_SIZE(fapi_ma_ind_size_table),    MA_UNITDATA_IND);
-	else if (fapi_is_debug(mbuf) && fapi_is_req(mbuf))
+	if (fapi_is_mlme(mbuf) && fapi_is_req(mbuf)) {
+		return fapi_get_expected_size_table(mbuf, fapi_mlme_req_size_table, ARRAY_SIZE(fapi_mlme_req_size_table), MLME_GET_REQ);
+	} else if (fapi_is_mlme(mbuf) && fapi_is_cfm(mbuf)) {
+		return fapi_get_expected_size_table(mbuf, fapi_mlme_cfm_size_table, ARRAY_SIZE(fapi_mlme_cfm_size_table), MLME_GET_CFM);
+	} else if (fapi_is_mlme(mbuf) && fapi_is_res(mbuf)) {
+		return fapi_get_expected_size_table(mbuf, fapi_mlme_res_size_table, ARRAY_SIZE(fapi_mlme_res_size_table), MLME_CONNECT_RES);
+	} else if (fapi_is_mlme(mbuf) && fapi_is_ind(mbuf)) {
+		return fapi_get_expected_size_table(mbuf, fapi_mlme_ind_size_table, ARRAY_SIZE(fapi_mlme_ind_size_table), MLME_SCAN_IND);
+	} else if (fapi_is_ma(mbuf) && fapi_is_req(mbuf)) {
+		return fapi_get_expected_size_table(mbuf, fapi_ma_req_size_table, ARRAY_SIZE(fapi_ma_req_size_table), MA_UNITDATA_REQ);
+	} else if (fapi_is_ma(mbuf) && fapi_is_cfm(mbuf)) {
+		return fapi_get_expected_size_table(mbuf, fapi_ma_cfm_size_table, ARRAY_SIZE(fapi_ma_cfm_size_table), MA_UNITDATA_CFM);
+	} else if (fapi_is_ma(mbuf) && fapi_is_ind(mbuf)) {
+		return fapi_get_expected_size_table(mbuf, fapi_ma_ind_size_table, ARRAY_SIZE(fapi_ma_ind_size_table), MA_UNITDATA_IND);
+	} else if (fapi_is_debug(mbuf) && fapi_is_req(mbuf)) {
 		return fapi_get_expected_size_table(mbuf, fapi_debug_req_size_table, ARRAY_SIZE(fapi_debug_req_size_table), DEBUG_GENERIC_REQ);
-	else if (fapi_is_debug(mbuf) && fapi_is_cfm(mbuf))
+	} else if (fapi_is_debug(mbuf) && fapi_is_cfm(mbuf)) {
 		return fapi_get_expected_size_table(mbuf, fapi_debug_cfm_size_table, ARRAY_SIZE(fapi_debug_cfm_size_table), DEBUG_GENERIC_CFM);
-	else if (fapi_is_debug(mbuf) && fapi_is_ind(mbuf))
+	} else if (fapi_is_debug(mbuf) && fapi_is_ind(mbuf)) {
 		return fapi_get_expected_size_table(mbuf, fapi_debug_ind_size_table, ARRAY_SIZE(fapi_debug_ind_size_table), DEBUG_WORD12IND);
-	else if (fapi_is_test(mbuf) && fapi_is_req(mbuf))
+	} else if (fapi_is_test(mbuf) && fapi_is_req(mbuf)) {
 		return fapi_get_expected_size_table(mbuf, fapi_test_req_size_table, ARRAY_SIZE(fapi_test_req_size_table), TEST_BLOCK_REQUESTS_REQ);
-	else if (fapi_is_test(mbuf) && fapi_is_cfm(mbuf))
+	} else if (fapi_is_test(mbuf) && fapi_is_cfm(mbuf)) {
 		return fapi_get_expected_size_table(mbuf, fapi_test_cfm_size_table, ARRAY_SIZE(fapi_test_cfm_size_table), RADIO_LOGGING_CFM);
-	else if (fapi_is_test(mbuf) && fapi_is_ind(mbuf))
+	} else if (fapi_is_test(mbuf) && fapi_is_ind(mbuf)) {
 		return fapi_get_expected_size_table(mbuf, fapi_test_ind_size_table, ARRAY_SIZE(fapi_test_ind_size_table), RADIO_LOGGING_IND);
-	else if (fapi_is_mlme(mbuf) && fapi_is_res(mbuf))
-		return fapi_get_expected_size_table(mbuf, fapi_ma_res_size_table,  ARRAY_SIZE(fapi_ma_res_size_table),  MA_SPARE_SIGNAL_1_RES);
-	else if (fapi_is_mlme(mbuf) && fapi_is_res(mbuf))
-		return fapi_get_expected_size_table(mbuf, fapi_debug_res_size_table,  ARRAY_SIZE(fapi_debug_res_size_table),  DEBUG_SPARE_SIGNAL_1_RES);
-	else if (fapi_is_mlme(mbuf) && fapi_is_res(mbuf))
-		return fapi_get_expected_size_table(mbuf, fapi_test_res_size_table,  ARRAY_SIZE(fapi_test_res_size_table),  TEST_SPARE_SIGNAL_1_RES);
+	} else if (fapi_is_mlme(mbuf) && fapi_is_res(mbuf)) {
+		return fapi_get_expected_size_table(mbuf, fapi_ma_res_size_table, ARRAY_SIZE(fapi_ma_res_size_table), MA_SPARE_SIGNAL_1_RES);
+	} else if (fapi_is_mlme(mbuf) && fapi_is_res(mbuf)) {
+		return fapi_get_expected_size_table(mbuf, fapi_debug_res_size_table, ARRAY_SIZE(fapi_debug_res_size_table), DEBUG_SPARE_SIGNAL_1_RES);
+	} else if (fapi_is_mlme(mbuf) && fapi_is_res(mbuf)) {
+		return fapi_get_expected_size_table(mbuf, fapi_test_res_size_table, ARRAY_SIZE(fapi_test_res_size_table), TEST_SPARE_SIGNAL_1_RES);
+	}
 
 	return 0;
 }
@@ -2726,4 +2727,4 @@ static inline u16 fapi_get_expected_size(struct max_buff *mbuf)
 #ifdef __cplusplus
 }
 #endif
-#endif /* _FAPI_H__ */
+#endif							/* _FAPI_H__ */

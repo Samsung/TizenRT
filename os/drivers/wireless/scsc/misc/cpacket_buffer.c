@@ -35,7 +35,7 @@ static inline void cpacketbuffer_advance_index(uint32_t *idx, uint32_t amount, u
  */
 static inline uint32_t cpacketbuffer_address_to_index(struct cpacketbuffer *buffer, const uint8_t *address)
 {
-	ptrdiff_t offset = address - (uint8_t *)buffer->buffer;
+	ptrdiff_t offset = address - (uint8_t *) buffer->buffer;
 
 	return (offset / buffer->packet_size) % buffer->num_packets;
 }
@@ -45,7 +45,7 @@ static inline uint32_t cpacketbuffer_address_to_index(struct cpacketbuffer *buff
  */
 static inline uint8_t *cpacketbuffer_index_to_address(struct cpacketbuffer *buffer, uint32_t *idx)
 {
-	return (uint8_t *)buffer->buffer + (*idx % buffer->num_packets) * buffer->packet_size;
+	return (uint8_t *) buffer->buffer + (*idx % buffer->num_packets) * buffer->packet_size;
 }
 
 /** Returns the current read index of the buffer */
@@ -63,14 +63,16 @@ static inline uint32_t cpacketbuffer_write_index(const struct cpacketbuffer *buf
 /** Writes a set of whole packets to the buffer */
 static bool cpacketbuffer_write_block(struct cpacketbuffer *buffer, const void *buf, uint32_t num_bytes)
 {
-	uint32_t      num_packets = (num_bytes + buffer->packet_size - 1) / buffer->packet_size;
+	uint32_t num_packets = (num_bytes + buffer->packet_size - 1) / buffer->packet_size;
 	const uint8_t *source_data;
-	uint32_t      start_write_index;
-	uint32_t      end_write_index;
+	uint32_t start_write_index;
+	uint32_t end_write_index;
 
 	if (num_packets > cpacketbuffer_free_space(buffer))
 		/* Not enough free packets to write this block */
+	{
 		return false;
+	}
 
 	source_data = (const uint8_t *)buf;
 	start_write_index = cpacketbuffer_write_index(buffer);
@@ -92,22 +94,22 @@ static bool cpacketbuffer_write_block(struct cpacketbuffer *buffer, const void *
 	return true;
 }
 
-
 /** Externally visible functions */
 
 int cpacketbuffer_init(struct cpacketbuffer *buffer, uint32_t num_packets, uint32_t packet_size, struct scsc_mx *mx)
 {
 	struct miframman *miframman;
-	uint32_t         *ridx;
-	uint32_t         *widx;
-	void             *mem;
+	uint32_t *ridx;
+	uint32_t *widx;
+	void *mem;
 
 	buffer->mx = mx;
 
 	miframman = scsc_mx_get_ramman(mx);
 	mem = miframman_alloc(miframman, num_packets * packet_size, 4);
-	if (!mem)
+	if (!mem) {
 		return -ENOMEM;
+	}
 
 	ridx = miframman_alloc(miframman, sizeof(uint32_t), 4);
 	if (!ridx) {
@@ -148,12 +150,14 @@ bool cpacketbuffer_write(struct cpacketbuffer *buffer, const void *buf, uint32_t
 {
 	uint32_t start_write_index;
 
-	if (buf == NULL || num_bytes == 0)
+	if (buf == NULL || num_bytes == 0) {
 		return false;
+	}
 
 	start_write_index = cpacketbuffer_write_index(buffer);
-	if (!cpacketbuffer_write_block(buffer, buf, num_bytes))
+	if (!cpacketbuffer_write_block(buffer, buf, num_bytes)) {
 		return false;
+	}
 
 	/* CPU memory barrier */
 	/*Wmb means write memory barrier. It insert hardware memory barriers in the compiled instruction flow.
@@ -168,8 +172,9 @@ bool cpacketbuffer_write_gather(struct cpacketbuffer *buffer, const void **bufs,
 	uint32_t start_write_index;
 	uint32_t i;
 
-	if (bufs == NULL || num_bytes == 0 || num_bufs == 0)
+	if (bufs == NULL || num_bytes == 0 || num_bufs == 0) {
 		return false;
+	}
 
 	start_write_index = cpacketbuffer_write_index(buffer);
 	for (i = 0; i < num_bufs; ++i) {
@@ -177,15 +182,15 @@ bool cpacketbuffer_write_gather(struct cpacketbuffer *buffer, const void **bufs,
 		uint32_t partial_packet_len = num_bytes[i] % buffer->packet_size;
 		uint32_t whole_packet_len = num_bytes[i] - partial_packet_len;
 
-		if (whole_packet_len > 0 &&
-		    !cpacketbuffer_write_block(buffer, bufs[i], whole_packet_len))
+		if (whole_packet_len > 0 && !cpacketbuffer_write_block(buffer, bufs[i], whole_packet_len)) {
 			return false;
+		}
 
 		if (partial_packet_len != 0) {
 			/* Partial packet present - write this and enough from the next data block(s) to fill this packet
 			 * before continuing */
 			uint32_t needed_bytes;
-			uint8_t  *write_ptr = cpacketbuffer_index_to_address(buffer, buffer->write_index);
+			uint8_t *write_ptr = cpacketbuffer_index_to_address(buffer, buffer->write_index);
 
 			memcpy(write_ptr, (const uint8_t *)bufs[i] + whole_packet_len, partial_packet_len);
 			write_ptr += partial_packet_len;
@@ -201,7 +206,9 @@ bool cpacketbuffer_write_gather(struct cpacketbuffer *buffer, const void **bufs,
 
 				if (num_bytes[i + 1] == 0)
 					/* This buffer has been consumed entirely, move to the next */
+				{
 					++i;
+				}
 			}
 
 			cpacketbuffer_advance_index(buffer->write_index, 1, buffer->num_packets);
@@ -216,19 +223,22 @@ bool cpacketbuffer_write_gather(struct cpacketbuffer *buffer, const void **bufs,
 
 uint32_t cpacketbuffer_read(struct cpacketbuffer *buffer, void *buf, uint32_t num_bytes)
 {
-	uint8_t  *read_start;
+	uint8_t *read_start;
 	uint32_t num_packets;
 	uint32_t num_available_packets;
 
-	if (buf == NULL || cpacketbuffer_is_empty(buffer))
+	if (buf == NULL || cpacketbuffer_is_empty(buffer)) {
 		return 0;
+	}
 
 	/* Work out where we're reading from */
 	read_start = cpacketbuffer_index_to_address(buffer, buffer->read_index);
 	num_packets = num_bytes / buffer->packet_size;
 	if (num_bytes % buffer->packet_size != 0)
 		/* Partial data packet read requested, this means we remove the whole thing */
+	{
 		++num_packets;
+	}
 
 	/* Ensure we have enough actual data to satisfy the read request, otherwise
 	 * truncate the read request to the amount of data available. */
@@ -243,7 +253,7 @@ uint32_t cpacketbuffer_read(struct cpacketbuffer *buffer, void *buf, uint32_t nu
 		uint32_t initial_read_size = (buffer->num_packets - cpacketbuffer_read_index(buffer)) * buffer->packet_size;
 
 		memcpy(buf, read_start, initial_read_size);
-		memcpy((uint8_t *)buf + initial_read_size, buffer->buffer, num_bytes - initial_read_size);
+		memcpy((uint8_t *) buf + initial_read_size, buffer->buffer, num_bytes - initial_read_size);
 	} else {
 		memcpy(buf, read_start, num_bytes);
 	}
@@ -261,27 +271,31 @@ const void *cpacketbuffer_peek(struct cpacketbuffer *buffer, const void *current
 
 	if (current_packet == NULL)
 		/* Reading the first available packet */
+	{
 		next_packet_index = cpacketbuffer_read_index(buffer);
-	else
+	} else
 		/* Reading the next available packet past the current value of current_packet */
-		next_packet_index = cpacketbuffer_address_to_index(buffer,
-								   (const uint8_t *)current_packet + buffer->packet_size);
+	{
+		next_packet_index = cpacketbuffer_address_to_index(buffer, (const uint8_t *)current_packet + buffer->packet_size);
+	}
 
 	if (next_packet_index == cpacketbuffer_write_index(buffer))
 		/* No more packets available */
+	{
 		return NULL;
+	}
 
 	return cpacketbuffer_index_to_address(buffer, &next_packet_index);
 }
 
 void cpacketbuffer_peek_complete(struct cpacketbuffer *buffer, const void *current_packet)
 {
-	if (current_packet == NULL)
+	if (current_packet == NULL) {
 		return;
+	}
 
 	/* The address we're given is the last packet read, so the new read index is for the next one */
-	*buffer->read_index = cpacketbuffer_address_to_index(buffer,
-							     (const uint8_t *)current_packet + buffer->packet_size);
+	*buffer->read_index = cpacketbuffer_address_to_index(buffer, (const uint8_t *)current_packet + buffer->packet_size);
 	/* CPU memory barrier */
 	wmb();
 }
@@ -298,9 +312,7 @@ bool cpacketbuffer_is_full(const struct cpacketbuffer *buffer)
 
 uint32_t cpacketbuffer_free_space(const struct cpacketbuffer *buffer)
 {
-	uint32_t base_free_space = cpacketbuffer_write_index(buffer) >= cpacketbuffer_read_index(buffer) ?
-				   cpacketbuffer_read_index(buffer) + buffer->num_packets - cpacketbuffer_write_index(buffer) :
-				   cpacketbuffer_read_index(buffer) - cpacketbuffer_write_index(buffer);
+	uint32_t base_free_space = cpacketbuffer_write_index(buffer) >= cpacketbuffer_read_index(buffer) ? cpacketbuffer_read_index(buffer) + buffer->num_packets - cpacketbuffer_write_index(buffer) : cpacketbuffer_read_index(buffer) - cpacketbuffer_write_index(buffer);
 
 	/* Subtract the full/empty identification reserved slot from the free space */
 	return base_free_space - 1;
@@ -313,7 +325,7 @@ uint32_t cpacketbuffer_packet_size(const struct cpacketbuffer *buffer)
 
 void cpacketbuffer_config_serialise(const struct cpacketbuffer *buffer, struct mxcbufconf *buf_conf)
 {
-	scsc_mifram_ref     mifram_ref;
+	scsc_mifram_ref mifram_ref;
 	struct scsc_mif_abs *mif;
 
 	mif = scsc_mx_get_mif_abs(buffer->mx);

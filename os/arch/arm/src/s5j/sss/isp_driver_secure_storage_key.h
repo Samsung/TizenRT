@@ -18,4 +18,4 @@ int isp_get_securekey(unsigned int *object_id, unsigned int key_type, unsigned i
 int isp_remove_key(unsigned int key_type, unsigned int key_index);
 int isp_set_genkey_securekey(unsigned int key_type, unsigned int index);
 
-#endif /* ISP_DRIVER_SECURE_STORAGE_KEY_H_ */
+#endif							/* ISP_DRIVER_SECURE_STORAGE_KEY_H_ */

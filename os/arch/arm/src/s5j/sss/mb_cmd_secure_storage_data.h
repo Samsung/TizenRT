@@ -8,23 +8,21 @@
 #ifndef MB_CMD_SECURE_STORAGE_DATA_H_
 #define MB_CMD_SECURE_STORAGE_DATA_H_
 
-
 #define SSTORAGE_DATA_SLOT_INDEX_MAX		(32)
 #define SSTORAGE_DATA_DATA_MAX				(208)
 #define SSTORAGE_DATA_SLOT_MAX				(256)
-
 
 // ======================================
 // Function
 // ======================================
 // Secure Storage for Data
-int mb_storage_set_data_init(unsigned char * iv, unsigned int msg_byte_len, unsigned int index);
-int mb_storage_set_data_update(unsigned char * out_block, unsigned char *in_block);
-int mb_storage_set_data_final(unsigned char * out_block, unsigned char *in_block, unsigned int in_block_byte_len);
+int mb_storage_set_data_init(unsigned char *iv, unsigned int msg_byte_len, unsigned int index);
+int mb_storage_set_data_update(unsigned char *out_block, unsigned char *in_block);
+int mb_storage_set_data_final(unsigned char *out_block, unsigned char *in_block, unsigned int in_block_byte_len);
 
 int mb_storage_get_data_init(unsigned char *iv, unsigned int msg_byte_len, unsigned int index);
-int mb_storage_get_data_update(unsigned char * out_block, unsigned char *in_block);
-int mb_storage_get_data_final(unsigned char * out_block, unsigned char *in_block, unsigned int block_byte_len);
+int mb_storage_get_data_update(unsigned char *out_block, unsigned char *in_block);
+int mb_storage_get_data_final(unsigned char *out_block, unsigned char *in_block, unsigned int block_byte_len);
 
 // ======================================
 // Mailbox Command
@@ -37,5 +35,4 @@ int mb_storage_get_data_final(unsigned char * out_block, unsigned char *in_block
 #define FUNC_SSTORAGE_DATA_DEC_UPDATE		(0x0012A202)
 #define FUNC_SSTORAGE_DATA_DEC_FINAL		(0x0013A202)
 
-
-#endif /* MB_CMD_SECURE_STORAGE_DATA_H_ */
+#endif							/* MB_CMD_SECURE_STORAGE_DATA_H_ */

@@ -134,4 +134,4 @@ int s5jt200_fota_update_notify(void);
 #endif
 #endif
 
-#endif /* __ARCH_ARM_SRC_ARTIK053_INCLUDE_FOTA_H__ */
+#endif							/* __ARCH_ARM_SRC_ARTIK053_INCLUDE_FOTA_H__ */

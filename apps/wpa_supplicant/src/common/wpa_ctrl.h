@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_CTRL_IFACE_FIFO
-#define WPA_CTRL_FIFO_MK_MODE CONFIG_WPA_CTRL_FIFO_MK_MODE /* currently not implemented in fifo implementation? */
+#define WPA_CTRL_FIFO_MK_MODE CONFIG_WPA_CTRL_FIFO_MK_MODE	/* currently not implemented in fifo implementation? */
 /* We need one fifo for each direction, hence one for REQs from app layer to WPA supplicant
  * and another for confirms from the WPA supplicant to the app layer. */
 #define WPA_CTRL_FIFO_DEV_REQ CONFIG_WPA_CTRL_FIFO_DEV_REQ
@@ -295,7 +295,6 @@ extern "C" {
 #define WPA_BSS_MASK_SNR		BIT(19)
 #define WPA_BSS_MASK_EST_THROUGHPUT	BIT(20)
 
-
 /* VENDOR_ELEM_* frame id values */
 enum wpa_vendor_elem_frame {
 	VENDOR_ELEM_PROBE_REQ_P2P = 0,
@@ -315,7 +314,6 @@ enum wpa_vendor_elem_frame {
 	NUM_VENDOR_ELEM_FRAMES
 };
 
-
 /* wpa_supplicant/hostapd control interface access */
 
 /**
@@ -328,8 +326,7 @@ enum wpa_vendor_elem_frame {
  * is configured in wpa_supplicant/hostapd and other programs using the control
  * interface need to use matching path configuration.
  */
-struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path);
-
+struct wpa_ctrl *wpa_ctrl_open(const char *ctrl_path);
 
 /**
  * wpa_ctrl_close - Close a control interface to wpa_supplicant/hostapd
@@ -338,7 +335,6 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path);
  * This function is used to close a control interface.
  */
 void wpa_ctrl_close(struct wpa_ctrl *ctrl);
-
 
 /**
  * wpa_ctrl_request - Send a command to wpa_supplicant/hostapd
@@ -366,10 +362,7 @@ void wpa_ctrl_close(struct wpa_ctrl *ctrl);
  * receiving event messages, in other words, call wpa_ctrl_attach() only for
  * the control interface connection that will be used for event messages.
  */
-int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len,
-		     char *reply, size_t *reply_len,
-		     void (*msg_cb)(char *msg, size_t len));
-
+int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len, char *reply, size_t *reply_len, void (*msg_cb)(char *msg, size_t len));
 
 /**
  * wpa_ctrl_attach - Register as an event monitor for the control interface
@@ -383,7 +376,6 @@ int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len,
  */
 int wpa_ctrl_attach(struct wpa_ctrl *ctrl);
 
-
 /**
  * wpa_ctrl_detach - Unregister event monitor from the control interface
  * @ctrl: Control interface data from wpa_ctrl_open()
@@ -394,7 +386,6 @@ int wpa_ctrl_attach(struct wpa_ctrl *ctrl);
  * wpa_ctrl_attach().
  */
 int wpa_ctrl_detach(struct wpa_ctrl *ctrl);
-
 
 /**
  * wpa_ctrl_recv - Receive a pending control interface message
@@ -412,7 +403,6 @@ int wpa_ctrl_detach(struct wpa_ctrl *ctrl);
  */
 int wpa_ctrl_recv(struct wpa_ctrl *ctrl, char *reply, size_t *reply_len);
 
-
 /**
  * wpa_ctrl_pending - Check whether there are pending event messages
  * @ctrl: Control interface data from wpa_ctrl_open()
@@ -424,7 +414,6 @@ int wpa_ctrl_recv(struct wpa_ctrl *ctrl, char *reply, size_t *reply_len);
  * register the control interface as an event monitor.
  */
 int wpa_ctrl_pending(struct wpa_ctrl *ctrl);
-
 
 /**
  * wpa_ctrl_get_fd - Get file descriptor used by the control interface
@@ -450,34 +439,32 @@ int wpa_ctrl_get_fd(struct wpa_ctrl *ctrl);
  * of the normal orderly shutdown.
  */
 void wpa_ctrl_cleanup(void);
-#endif /* ANDROID */
+#endif							/* ANDROID */
 
 #if defined(CONFIG_CTRL_IFACE_UDP) || defined(CONFIG_CTRL_IFACE_FIFO)
 /* Port range for multiple wpa_supplicant instances and multiple VIFs */
 #define WPA_CTRL_IFACE_PORT 9877
-#define WPA_CTRL_IFACE_PORT_LIMIT 50 /* decremented from start */
+#define WPA_CTRL_IFACE_PORT_LIMIT 50	/* decremented from start */
 #define WPA_GLOBAL_CTRL_IFACE_PORT 9878
-#define WPA_GLOBAL_CTRL_IFACE_PORT_LIMIT 20 /* incremented from start */
-#define CTRL_HEADER_SIZE 4 /* 4 hex digit - I know using text is not efficient, but let's stick to doing things one way */
+#define WPA_GLOBAL_CTRL_IFACE_PORT_LIMIT 20	/* incremented from start */
+#define CTRL_HEADER_SIZE 4		/* 4 hex digit - I know using text is not efficient, but let's stick to doing things one way */
 
-char * wpa_ctrl_get_remote_ifname(struct wpa_ctrl *ctrl);
-int wpa_ctrl_get_header(char * buf);
-char* wpa_ctrl_set_header(char * buf, unsigned short msg_len);
+char *wpa_ctrl_get_remote_ifname(struct wpa_ctrl *ctrl);
+int wpa_ctrl_get_header(char *buf);
+char *wpa_ctrl_set_header(char *buf, unsigned short msg_len);
 #ifdef CONFIG_CTRL_IFACE_UDP
 /* The CONFIG_CTRL_IFACE_UDP configuration have not been validated, it should work, but
  * it have neither been compiled not tested. */
 #error "WRONG COMPILER DEFS"
-int wpa_ctrl_recvfrom(int sock, char* buf, size_t len, int flags, struct sockaddr* from, size_t *fromlen);
-int wpa_ctrl_sendto(int sock, const char* buf, size_t len, int flags, struct sockaddr* to, size_t tolen);
+int wpa_ctrl_recvfrom(int sock, char *buf, size_t len, int flags, struct sockaddr *from, size_t *fromlen);
+int wpa_ctrl_sendto(int sock, const char *buf, size_t len, int flags, struct sockaddr *to, size_t tolen);
 #else
-int wpa_ctrl_recvfrom(int sock, char* buf, size_t len);
-int wpa_ctrl_sendto(int sock, const char* buf, size_t len);
+int wpa_ctrl_recvfrom(int sock, char *buf, size_t len);
+int wpa_ctrl_sendto(int sock, const char *buf, size_t len);
 #endif
-#endif /* CONFIG_CTRL_IFACE_UDP */
-
+#endif							/* CONFIG_CTRL_IFACE_UDP */
 
 #ifdef  __cplusplus
 }
 #endif
-
-#endif /* WPA_CTRL_H */
+#endif							/* WPA_CTRL_H */

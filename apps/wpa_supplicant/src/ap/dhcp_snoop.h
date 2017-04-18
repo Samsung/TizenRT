@@ -14,7 +14,7 @@
 int dhcp_snoop_init(struct hostapd_data *hapd);
 void dhcp_snoop_deinit(struct hostapd_data *hapd);
 
-#else /* CONFIG_PROXYARP */
+#else							/* CONFIG_PROXYARP */
 
 static inline int dhcp_snoop_init(struct hostapd_data *hapd)
 {
@@ -25,6 +25,6 @@ static inline void dhcp_snoop_deinit(struct hostapd_data *hapd)
 {
 }
 
-#endif /* CONFIG_PROXYARP */
+#endif							/* CONFIG_PROXYARP */
 
-#endif /* DHCP_SNOOP_H */
+#endif							/* DHCP_SNOOP_H */

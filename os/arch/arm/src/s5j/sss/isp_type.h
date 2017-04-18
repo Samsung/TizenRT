@@ -17,17 +17,16 @@
 
 /********** types **********/
 
-typedef unsigned int	u32;
-typedef signed int		s32;
-typedef unsigned char	u8;
-typedef signed char		s8;
-
+typedef unsigned int u32;
+typedef signed int s32;
+typedef unsigned char u8;
+typedef signed char s8;
 
 /********** Macro Function for SFR access **********/
 #define BIT(nbit)					(0x1u << (nbit))
 
-#define SFR_BIT_CLR(val, bit)			((val) &= (~(bit)))			///<bit clear by bit value
-#define SFR_BIT_SET(val, bit)			((val) |= (bit))			///<bit set by bit value
+#define SFR_BIT_CLR(val, bit)			((val) &= (~(bit)))	///<bit clear by bit value
+#define SFR_BIT_SET(val, bit)			((val) |= (bit))	///<bit set by bit value
 
 #define SFR_SET(sfr, val)			((sfr) = (val))
 #define	SFR_GET(sfr, val)			((val) = (sfr))
@@ -66,5 +65,4 @@ typedef signed char		s8;
 #define NULL   ((void *) 0)
 #endif
 
-
-#endif /* ISP_TYPE_H_ */
+#endif							/* ISP_TYPE_H_ */

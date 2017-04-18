@@ -17,4 +17,4 @@ struct panicmon {
 	struct scsc_mx *mx;
 };
 
-#endif /* _PANICMON_H */
+#endif							/* _PANICMON_H */

@@ -20,4 +20,4 @@ void SHA1Update(struct SHA1Context *context, const void *data, u32 len);
 void SHA1Final(unsigned char digest[20], struct SHA1Context *context);
 void SHA1Transform(u32 state[5], const unsigned char buffer[64]);
 
-#endif /* SHA1_I_H */
+#endif							/* SHA1_I_H */

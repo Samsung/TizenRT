@@ -14,7 +14,7 @@
 #include <syslog.h>
 
 static int wpa_debug_syslog = 0;
-#endif /* CONFIG_DEBUG_SYSLOG */
+#endif							/* CONFIG_DEBUG_SYSLOG */
 
 #include <sys/stat.h>
 
@@ -26,9 +26,8 @@ static int wpa_debug_syslog = 0;
 
 static FILE *wpa_debug_tracing_file = NULL;
 
-
 #define WPAS_TRACE_PFX "wpas <%d>: "
-#endif /* CONFIG_DEBUG_LINUX_TRACING */
+#endif							/* CONFIG_DEBUG_LINUX_TRACING */
 
 #ifndef CONFIG_DEBUG_WLAN_SUPPLICANT_ERROR
 #ifndef CONFIG_DEBUG_FILE
@@ -40,63 +39,63 @@ int wpa_debug_level = MSG_INFO;
 int wpa_debug_show_keys = 0;
 int wpa_debug_timestamp = 0;
 
-
 #ifdef CONFIG_ANDROID_LOG
 
 #include <android/log.h>
 
 #ifndef ANDROID_LOG_NAME
 #define ANDROID_LOG_NAME	"wpa_supplicant"
-#endif /* ANDROID_LOG_NAME */
+#endif							/* ANDROID_LOG_NAME */
 
 static int wpa_to_android_level(int level)
 {
-	if (level == MSG_ERROR)
+	if (level == MSG_ERROR) {
 		return ANDROID_LOG_ERROR;
-	if (level == MSG_WARNING)
+	}
+	if (level == MSG_WARNING) {
 		return ANDROID_LOG_WARN;
-	if (level == MSG_INFO)
+	}
+	if (level == MSG_INFO) {
 		return ANDROID_LOG_INFO;
+	}
 	return ANDROID_LOG_DEBUG;
 }
 
-#endif /* CONFIG_ANDROID_LOG */
+#endif							/* CONFIG_ANDROID_LOG */
 
 #ifndef CONFIG_NO_STDOUT_DEBUG
 
 #ifdef CONFIG_DEBUG_FILE
 static FILE *out_file = NULL;
-bool  alreadyFulled = FALSE;
+bool alreadyFulled = FALSE;
 int noOfLinesInLogFile = 0;
-int presentLineInLogFile =0;
-int curPosBeforeClosingLen=0;
-#endif /* CONFIG_DEBUG_FILE */
-
+int presentLineInLogFile = 0;
+int curPosBeforeClosingLen = 0;
+#endif							/* CONFIG_DEBUG_FILE */
 
 void wpa_debug_print_timestamp(void)
 {
 #ifndef CONFIG_ANDROID_LOG
 	struct os_time tv;
 
-	if (!wpa_debug_timestamp)
+	if (!wpa_debug_timestamp) {
 		return;
+	}
 
 	os_get_time(&tv);
 #ifdef CONFIG_DEBUG_FILE
 	if (out_file) {
-		fprintf(out_file, "%ld.%06u: ", (long) tv.sec,
-			(unsigned int) tv.usec);
+		fprintf(out_file, "%ld.%06u: ", (long)tv.sec, (unsigned int)tv.usec);
 	} else
-#endif /* CONFIG_DEBUG_FILE */
-	printf("%ld.%06u: ", (long) tv.sec, (unsigned int) tv.usec);
-#endif /* CONFIG_ANDROID_LOG */
+#endif							/* CONFIG_DEBUG_FILE */
+		printf("%ld.%06u: ", (long)tv.sec, (unsigned int)tv.usec);
+#endif							/* CONFIG_ANDROID_LOG */
 }
-
 
 #ifdef CONFIG_DEBUG_SYSLOG
 #ifndef LOG_HOSTAPD
 #define LOG_HOSTAPD LOG_DAEMON
-#endif /* LOG_HOSTAPD */
+#endif							/* LOG_HOSTAPD */
 
 void wpa_debug_open_syslog(void)
 {
@@ -104,13 +103,12 @@ void wpa_debug_open_syslog(void)
 	wpa_debug_syslog++;
 }
 
-
 void wpa_debug_close_syslog(void)
 {
-	if (wpa_debug_syslog)
+	if (wpa_debug_syslog) {
 		closelog();
+	}
 }
-
 
 static int syslog_priority(int level)
 {
@@ -127,15 +125,14 @@ static int syslog_priority(int level)
 	}
 	return LOG_INFO;
 }
-#endif /* CONFIG_DEBUG_SYSLOG */
-
+#endif							/* CONFIG_DEBUG_SYSLOG */
 
 #ifdef CONFIG_DEBUG_LINUX_TRACING
 
 int wpa_debug_open_linux_tracing(void)
 {
 	int mounts, trace_fd;
-	char buf[4096] = {};
+	char buf[4096] = { };
 	ssize_t buflen;
 	char *line, *tmp1, *path = NULL;
 
@@ -189,17 +186,16 @@ int wpa_debug_open_linux_tracing(void)
 	return 0;
 }
 
-
 void wpa_debug_close_linux_tracing(void)
 {
-	if (wpa_debug_tracing_file == NULL)
+	if (wpa_debug_tracing_file == NULL) {
 		return;
+	}
 	fclose(wpa_debug_tracing_file);
 	wpa_debug_tracing_file = NULL;
 }
 
-#endif /* CONFIG_DEBUG_LINUX_TRACING */
-
+#endif							/* CONFIG_DEBUG_LINUX_TRACING */
 
 /**
  * wpa_printf - conditional printf
@@ -219,49 +215,48 @@ void wpa_printf(int level, const char *fmt, ...)
 	va_start(ap, fmt);
 	if (level >= wpa_debug_level) {
 #ifdef CONFIG_ANDROID_LOG
-		__android_log_vprint(wpa_to_android_level(level),
-				     ANDROID_LOG_NAME, fmt, ap);
-#else /* CONFIG_ANDROID_LOG */
+		__android_log_vprint(wpa_to_android_level(level), ANDROID_LOG_NAME, fmt, ap);
+#else							/* CONFIG_ANDROID_LOG */
 #ifdef CONFIG_DEBUG_SYSLOG
 		if (wpa_debug_syslog) {
 			vsyslog(syslog_priority(level), fmt, ap);
 		} else {
-#endif /* CONFIG_DEBUG_SYSLOG */
-		wpa_debug_print_timestamp();
+#endif							/* CONFIG_DEBUG_SYSLOG */
+			wpa_debug_print_timestamp();
 #ifdef CONFIG_DEBUG_FILE
-		char *fullpath = "/mnt/wifi/wpa_supplicant_log.txt";
-		struct stat statBuffer;
-		int ret =0;
+			char *fullpath = "/mnt/wifi/wpa_supplicant_log.txt";
+			struct stat statBuffer;
+			int ret = 0;
 
-		ret = stat(fullpath, &statBuffer);
-		if((statBuffer.st_size >=2*1024 && alreadyFulled == FALSE) ||
-			( presentLineInLogFile > noOfLinesInLogFile)){
-			// if log file size is more than restrict the size (2KB)
-			// re-create the file
-			fclose(out_file);
-			out_file = fopen(fullpath, "r+");
-			alreadyFulled = TRUE;
-			presentLineInLogFile = 0;
-		}
-		if (out_file) {
-			vfprintf(out_file, fmt, ap);
-			fprintf(out_file, "\n");
-			if(alreadyFulled == FALSE)
-				noOfLinesInLogFile++;
-			else
-				presentLineInLogFile++;
-		} else {
-#endif /* CONFIG_DEBUG_FILE */
-		vprintf(fmt, ap);
-		printf("\n");
-        fflush(stdout);
+			ret = stat(fullpath, &statBuffer);
+			if ((statBuffer.st_size >= 2 * 1024 && alreadyFulled == FALSE) || (presentLineInLogFile > noOfLinesInLogFile)) {
+				// if log file size is more than restrict the size (2KB)
+				// re-create the file
+				fclose(out_file);
+				out_file = fopen(fullpath, "r+");
+				alreadyFulled = TRUE;
+				presentLineInLogFile = 0;
+			}
+			if (out_file) {
+				vfprintf(out_file, fmt, ap);
+				fprintf(out_file, "\n");
+				if (alreadyFulled == FALSE) {
+					noOfLinesInLogFile++;
+				} else {
+					presentLineInLogFile++;
+				}
+			} else {
+#endif							/* CONFIG_DEBUG_FILE */
+				vprintf(fmt, ap);
+				printf("\n");
+				fflush(stdout);
 #ifdef CONFIG_DEBUG_FILE
-		}
-#endif /* CONFIG_DEBUG_FILE */
+			}
+#endif							/* CONFIG_DEBUG_FILE */
 #ifdef CONFIG_DEBUG_SYSLOG
 		}
-#endif /* CONFIG_DEBUG_SYSLOG */
-#endif /* CONFIG_ANDROID_LOG */
+#endif							/* CONFIG_DEBUG_SYSLOG */
+#endif							/* CONFIG_ANDROID_LOG */
 	}
 	va_end(ap);
 
@@ -274,35 +269,32 @@ void wpa_printf(int level, const char *fmt, ...)
 		fflush(wpa_debug_tracing_file);
 		va_end(ap);
 	}
-#endif /* CONFIG_DEBUG_LINUX_TRACING */
+#endif							/* CONFIG_DEBUG_LINUX_TRACING */
 }
 
-
-static void _wpa_hexdump(int level, const char *title, const u8 *buf,
-			 size_t len, int show)
+static void _wpa_hexdump(int level, const char *title, const u8 *buf, size_t len, int show)
 {
 	size_t i;
 
 #ifdef CONFIG_DEBUG_LINUX_TRACING
 	if (wpa_debug_tracing_file != NULL) {
-		fprintf(wpa_debug_tracing_file,
-			WPAS_TRACE_PFX "%s - hexdump(len=%lu):",
-			level, title, (unsigned long) len);
+		fprintf(wpa_debug_tracing_file, WPAS_TRACE_PFX "%s - hexdump(len=%lu):", level, title, (unsigned long)len);
 		if (buf == NULL) {
 			fprintf(wpa_debug_tracing_file, " [NULL]\n");
 		} else if (!show) {
 			fprintf(wpa_debug_tracing_file, " [REMOVED]\n");
 		} else {
-			for (i = 0; i < len; i++)
-				fprintf(wpa_debug_tracing_file,
-					" %02x", buf[i]);
+			for (i = 0; i < len; i++) {
+				fprintf(wpa_debug_tracing_file, " %02x", buf[i]);
+			}
 		}
 		fflush(wpa_debug_tracing_file);
 	}
-#endif /* CONFIG_DEBUG_LINUX_TRACING */
+#endif							/* CONFIG_DEBUG_LINUX_TRACING */
 
-	if (level < wpa_debug_level)
+	if (level < wpa_debug_level) {
 		return;
+	}
 #ifdef CONFIG_ANDROID_LOG
 	{
 		const char *display;
@@ -314,33 +306,29 @@ static void _wpa_hexdump(int level, const char *title, const u8 *buf,
 			display = "";
 		} else if (show && len) {
 			/* Limit debug message length for Android log */
-			if (slen > 32)
+			if (slen > 32) {
 				slen = 32;
+			}
 			strbuf = os_malloc(1 + 3 * slen);
 			if (strbuf == NULL) {
-				wpa_printf(MSG_ERROR, "wpa_hexdump: Failed to "
-					   "allocate message buffer");
+				wpa_printf(MSG_ERROR, "wpa_hexdump: Failed to " "allocate message buffer");
 				return;
 			}
 
-			for (i = 0; i < slen; i++)
-				os_snprintf(&strbuf[i * 3], 4, " %02x",
-					    buf[i]);
+			for (i = 0; i < slen; i++) {
+				os_snprintf(&strbuf[i * 3], 4, " %02x", buf[i]);
+			}
 
 			display = strbuf;
 		} else {
 			display = " [REMOVED]";
 		}
 
-		__android_log_print(wpa_to_android_level(level),
-				    ANDROID_LOG_NAME,
-				    "%s - hexdump(len=%lu):%s%s",
-				    title, (long unsigned int) len, display,
-				    len > slen ? " ..." : "");
+		__android_log_print(wpa_to_android_level(level), ANDROID_LOG_NAME, "%s - hexdump(len=%lu):%s%s", title, (long unsigned int)len, display, len > slen ? " ..." : "");
 		bin_clear_free(strbuf, 1 + 3 * slen);
 		return;
 	}
-#else /* CONFIG_ANDROID_LOG */
+#else							/* CONFIG_ANDROID_LOG */
 #ifdef CONFIG_DEBUG_SYSLOG
 	if (wpa_debug_syslog) {
 		const char *display;
@@ -353,56 +341,55 @@ static void _wpa_hexdump(int level, const char *title, const u8 *buf,
 		} else if (show && len) {
 			strbuf = os_malloc(1 + 3 * len);
 			if (strbuf == NULL) {
-				wpa_printf(MSG_ERROR, "wpa_hexdump: Failed to "
-					   "allocate message buffer");
+				wpa_printf(MSG_ERROR, "wpa_hexdump: Failed to " "allocate message buffer");
 				return;
 			}
 
-			for (i = 0; i < len; i++)
-				os_snprintf(&strbuf[i * 3], 4, " %02x",
-					    buf[i]);
+			for (i = 0; i < len; i++) {
+				os_snprintf(&strbuf[i * 3], 4, " %02x", buf[i]);
+			}
 
 			display = strbuf;
 		} else {
 			display = " [REMOVED]";
 		}
 
-		syslog(syslog_priority(level), "%s - hexdump(len=%lu):%s",
-		       title, (unsigned long) len, display);
+		syslog(syslog_priority(level), "%s - hexdump(len=%lu):%s", title, (unsigned long)len, display);
 		bin_clear_free(strbuf, 1 + 3 * len);
 		return;
 	}
-#endif /* CONFIG_DEBUG_SYSLOG */
+#endif							/* CONFIG_DEBUG_SYSLOG */
 	wpa_debug_print_timestamp();
 #ifdef CONFIG_DEBUG_FILE
 	if (out_file) {
-		fprintf(out_file, "%s - hexdump(len=%lu):",
-			title, (unsigned long) len);
+		fprintf(out_file, "%s - hexdump(len=%lu):", title, (unsigned long)len);
 		if (buf == NULL) {
 			fprintf(out_file, " [NULL]");
 		} else if (show) {
-			for (i = 0; i < len; i++)
+			for (i = 0; i < len; i++) {
 				fprintf(out_file, " %02x", buf[i]);
+			}
 		} else {
 			fprintf(out_file, " [REMOVED]");
 		}
 		fprintf(out_file, "\n");
 	} else {
-#endif /* CONFIG_DEBUG_FILE */
-	printf("%s - hexdump(len=%lu):", title, (unsigned long) len);
-	if (buf == NULL) {
-		printf(" [NULL]");
-	} else if (show) {
-		for (i = 0; i < len; i++)
-			printf(" %02x", buf[i]);
-	} else {
-		printf(" [REMOVED]");
-	}
-	printf("\n");
+#endif							/* CONFIG_DEBUG_FILE */
+		printf("%s - hexdump(len=%lu):", title, (unsigned long)len);
+		if (buf == NULL) {
+			printf(" [NULL]");
+		} else if (show) {
+			for (i = 0; i < len; i++) {
+				printf(" %02x", buf[i]);
+			}
+		} else {
+			printf(" [REMOVED]");
+		}
+		printf("\n");
 #ifdef CONFIG_DEBUG_FILE
 	}
-#endif /* CONFIG_DEBUG_FILE */
-#endif /* CONFIG_ANDROID_LOG */
+#endif							/* CONFIG_DEBUG_FILE */
+#endif							/* CONFIG_ANDROID_LOG */
 }
 
 #ifdef CONFIG_SUPPLICANT_EXCESS_LOG
@@ -411,15 +398,12 @@ void wpa_hexdump(int level, const char *title, const void *buf, size_t len)
 	_wpa_hexdump(level, title, buf, len, 1);
 }
 
-
 void wpa_hexdump_key(int level, const char *title, const void *buf, size_t len)
 {
 	_wpa_hexdump(level, title, buf, len, wpa_debug_show_keys);
 }
 
-
-static void _wpa_hexdump_ascii(int level, const char *title, const void *buf,
-			       size_t len, int show)
+static void _wpa_hexdump_ascii(int level, const char *title, const void *buf, size_t len, int show)
 {
 	size_t i, llen;
 	const u8 *pos = buf;
@@ -427,114 +411,110 @@ static void _wpa_hexdump_ascii(int level, const char *title, const void *buf,
 
 #ifdef CONFIG_DEBUG_LINUX_TRACING
 	if (wpa_debug_tracing_file != NULL) {
-		fprintf(wpa_debug_tracing_file,
-			WPAS_TRACE_PFX "%s - hexdump_ascii(len=%lu):",
-			level, title, (unsigned long) len);
+		fprintf(wpa_debug_tracing_file, WPAS_TRACE_PFX "%s - hexdump_ascii(len=%lu):", level, title, (unsigned long)len);
 		if (buf == NULL) {
 			fprintf(wpa_debug_tracing_file, " [NULL]\n");
 		} else if (!show) {
 			fprintf(wpa_debug_tracing_file, " [REMOVED]\n");
 		} else {
 			/* can do ascii processing in userspace */
-			for (i = 0; i < len; i++)
-				fprintf(wpa_debug_tracing_file,
-					" %02x", pos[i]);
+			for (i = 0; i < len; i++) {
+				fprintf(wpa_debug_tracing_file, " %02x", pos[i]);
+			}
 		}
 		fflush(wpa_debug_tracing_file);
 	}
-#endif /* CONFIG_DEBUG_LINUX_TRACING */
+#endif							/* CONFIG_DEBUG_LINUX_TRACING */
 
-	if (level < wpa_debug_level)
+	if (level < wpa_debug_level) {
 		return;
+	}
 #ifdef CONFIG_ANDROID_LOG
 	_wpa_hexdump(level, title, buf, len, show);
-#else /* CONFIG_ANDROID_LOG */
+#else							/* CONFIG_ANDROID_LOG */
 	wpa_debug_print_timestamp();
 #ifdef CONFIG_DEBUG_FILE
 	if (out_file) {
 		if (!show) {
-			fprintf(out_file,
-				"%s - hexdump_ascii(len=%lu): [REMOVED]\n",
-				title, (unsigned long) len);
+			fprintf(out_file, "%s - hexdump_ascii(len=%lu): [REMOVED]\n", title, (unsigned long)len);
 			return;
 		}
 		if (buf == NULL) {
-			fprintf(out_file,
-				"%s - hexdump_ascii(len=%lu): [NULL]\n",
-				title, (unsigned long) len);
+			fprintf(out_file, "%s - hexdump_ascii(len=%lu): [NULL]\n", title, (unsigned long)len);
 			return;
 		}
-		fprintf(out_file, "%s - hexdump_ascii(len=%lu):\n",
-			title, (unsigned long) len);
+		fprintf(out_file, "%s - hexdump_ascii(len=%lu):\n", title, (unsigned long)len);
 		while (len) {
 			llen = len > line_len ? line_len : len;
 			fprintf(out_file, "    ");
-			for (i = 0; i < llen; i++)
+			for (i = 0; i < llen; i++) {
 				fprintf(out_file, " %02x", pos[i]);
-			for (i = llen; i < line_len; i++)
+			}
+			for (i = llen; i < line_len; i++) {
 				fprintf(out_file, "   ");
+			}
 			fprintf(out_file, "   ");
 			for (i = 0; i < llen; i++) {
-				if (isprint(pos[i]))
+				if (isprint(pos[i])) {
 					fprintf(out_file, "%c", pos[i]);
-				else
+				} else {
 					fprintf(out_file, "_");
+				}
 			}
-			for (i = llen; i < line_len; i++)
+			for (i = llen; i < line_len; i++) {
 				fprintf(out_file, " ");
+			}
 			fprintf(out_file, "\n");
 			pos += llen;
 			len -= llen;
 		}
 	} else {
-#endif /* CONFIG_DEBUG_FILE */
-	if (!show) {
-		printf("%s - hexdump_ascii(len=%lu): [REMOVED]\n",
-		       title, (unsigned long) len);
-		return;
-	}
-	if (buf == NULL) {
-		printf("%s - hexdump_ascii(len=%lu): [NULL]\n",
-		       title, (unsigned long) len);
-		return;
-	}
-	printf("%s - hexdump_ascii(len=%lu):\n", title, (unsigned long) len);
-	while (len) {
-		llen = len > line_len ? line_len : len;
-		printf("    ");
-		for (i = 0; i < llen; i++)
-			printf(" %02x", pos[i]);
-		for (i = llen; i < line_len; i++)
-			printf("   ");
-		printf("   ");
-		for (i = 0; i < llen; i++) {
-			if (isprint(pos[i]))
-				printf("%c", pos[i]);
-			else
-				printf("_");
+#endif							/* CONFIG_DEBUG_FILE */
+		if (!show) {
+			printf("%s - hexdump_ascii(len=%lu): [REMOVED]\n", title, (unsigned long)len);
+			return;
 		}
-		for (i = llen; i < line_len; i++)
-			printf(" ");
-		printf("\n");
-		pos += llen;
-		len -= llen;
-	}
+		if (buf == NULL) {
+			printf("%s - hexdump_ascii(len=%lu): [NULL]\n", title, (unsigned long)len);
+			return;
+		}
+		printf("%s - hexdump_ascii(len=%lu):\n", title, (unsigned long)len);
+		while (len) {
+			llen = len > line_len ? line_len : len;
+			printf("    ");
+			for (i = 0; i < llen; i++) {
+				printf(" %02x", pos[i]);
+			}
+			for (i = llen; i < line_len; i++) {
+				printf("   ");
+			}
+			printf("   ");
+			for (i = 0; i < llen; i++) {
+				if (isprint(pos[i])) {
+					printf("%c", pos[i]);
+				} else {
+					printf("_");
+				}
+			}
+			for (i = llen; i < line_len; i++) {
+				printf(" ");
+			}
+			printf("\n");
+			pos += llen;
+			len -= llen;
+		}
 #ifdef CONFIG_DEBUG_FILE
 	}
-#endif /* CONFIG_DEBUG_FILE */
-#endif /* CONFIG_ANDROID_LOG */
+#endif							/* CONFIG_DEBUG_FILE */
+#endif							/* CONFIG_ANDROID_LOG */
 }
 
-
-void wpa_hexdump_ascii(int level, const char *title, const void *buf,
-		       size_t len)
+void wpa_hexdump_ascii(int level, const char *title, const void *buf, size_t len)
 {
 	_wpa_hexdump_ascii(level, title, buf, len, 1);
 }
 
-
-void wpa_hexdump_ascii_key(int level, const char *title, const void *buf,
-			   size_t len)
+void wpa_hexdump_ascii_key(int level, const char *title, const void *buf, size_t len)
 {
 	_wpa_hexdump_ascii(level, title, buf, len, wpa_debug_show_keys);
 }
@@ -542,7 +522,7 @@ void wpa_hexdump_ascii_key(int level, const char *title, const void *buf,
 
 #ifdef CONFIG_DEBUG_FILE
 static char *last_path = NULL;
-#endif /* CONFIG_DEBUG_FILE */
+#endif							/* CONFIG_DEBUG_FILE */
 
 int wpa_debug_reopen_file(void)
 {
@@ -554,22 +534,21 @@ int wpa_debug_reopen_file(void)
 		rv = wpa_debug_open_file(tmp);
 		os_free(tmp);
 	} else {
-		wpa_printf(MSG_ERROR, "Last-path was not set, cannot "
-			   "re-open log file.");
+		wpa_printf(MSG_ERROR, "Last-path was not set, cannot " "re-open log file.");
 		rv = -1;
 	}
 	return rv;
-#else /* CONFIG_DEBUG_FILE */
+#else							/* CONFIG_DEBUG_FILE */
 	return 0;
-#endif /* CONFIG_DEBUG_FILE */
+#endif							/* CONFIG_DEBUG_FILE */
 }
-
 
 int wpa_debug_open_file(const char *path)
 {
 #ifdef CONFIG_DEBUG_FILE
-	if (!path)
+	if (!path) {
 		return 0;
+	}
 
 	if (last_path == NULL || os_strcmp(last_path, path) != 0) {
 		/* Save our path to enable re-open */
@@ -579,46 +558,43 @@ int wpa_debug_open_file(const char *path)
 
 	out_file = fopen(path, "w");
 	if (out_file == NULL) {
-		wpa_printf(MSG_ERROR, "wpa_debug_open_file: Failed to open "
-			   "output file, using standard output");
+		wpa_printf(MSG_ERROR, "wpa_debug_open_file: Failed to open " "output file, using standard output");
 		return -1;
 	}
 #ifndef _WIN32
 #ifndef CONFIG_ARCH_CHIP_S5JT200
 	setvbuf(out_file, NULL, _IOLBF, 0);
-#endif /* CONFIG_ARCH_CHIP_S5JT200 */
-#endif /* _WIN32 */
-#else /* CONFIG_DEBUG_FILE */
+#endif							/* CONFIG_ARCH_CHIP_S5JT200 */
+#endif							/* _WIN32 */
+#else							/* CONFIG_DEBUG_FILE */
 	(void)path;
-#endif /* CONFIG_DEBUG_FILE */
+#endif							/* CONFIG_DEBUG_FILE */
 	return 0;
 }
-
 
 void wpa_debug_close_file(void)
 {
 #ifdef CONFIG_DEBUG_FILE
-	if (!out_file)
+	if (!out_file) {
 		return;
+	}
 	fclose(out_file);
 	out_file = NULL;
 	os_free(last_path);
 	last_path = NULL;
-#endif /* CONFIG_DEBUG_FILE */
+#endif							/* CONFIG_DEBUG_FILE */
 }
-
 
 void wpa_debug_setup_stdout(void)
 {
 #ifndef _WIN32
 #ifndef CONFIG_ARCH_CHIP_S5JT200
 	setvbuf(stdout, NULL, _IOLBF, 0);
-#endif /* CONFIG_ARCH_CHIP_S5JT200 */
-#endif /* _WIN32 */
+#endif							/* CONFIG_ARCH_CHIP_S5JT200 */
+#endif							/* _WIN32 */
 }
 
-#endif /* CONFIG_NO_STDOUT_DEBUG */
-
+#endif							/* CONFIG_NO_STDOUT_DEBUG */
 
 #ifndef CONFIG_NO_WPA_MSG
 static wpa_msg_cb_func wpa_msg_cb = NULL;
@@ -628,14 +604,12 @@ void wpa_msg_register_cb(wpa_msg_cb_func func)
 	wpa_msg_cb = func;
 }
 
-
 static wpa_msg_get_ifname_func wpa_msg_ifname_cb = NULL;
 
 void wpa_msg_register_ifname_cb(wpa_msg_get_ifname_func func)
 {
 	wpa_msg_ifname_cb = func;
 }
-
 
 void wpa_msg(void *ctx, int level, const char *fmt, ...)
 {
@@ -651,8 +625,7 @@ void wpa_msg(void *ctx, int level, const char *fmt, ...)
 
 	buf = os_malloc(buflen);
 	if (buf == NULL) {
-		wpa_printf(MSG_ERROR, "wpa_msg: Failed to allocate message "
-			   "buffer");
+		wpa_printf(MSG_ERROR, "wpa_msg: Failed to allocate message " "buffer");
 		return;
 	}
 	va_start(ap, fmt);
@@ -661,19 +634,20 @@ void wpa_msg(void *ctx, int level, const char *fmt, ...)
 		const char *ifname = wpa_msg_ifname_cb(ctx);
 		if (ifname) {
 			int res = os_snprintf(prefix, sizeof(prefix), "%s: ",
-					      ifname);
-			if (os_snprintf_error(sizeof(prefix), res))
+								  ifname);
+			if (os_snprintf_error(sizeof(prefix), res)) {
 				prefix[0] = '\0';
+			}
 		}
 	}
 	len = vsnprintf(buf, buflen, fmt, ap);
 	va_end(ap);
 	wpa_printf(level, "%s%s", prefix, buf);
-	if (wpa_msg_cb)
+	if (wpa_msg_cb) {
 		wpa_msg_cb(ctx, level, WPA_MSG_PER_INTERFACE, buf, len);
+	}
 	bin_clear_free(buf, buflen);
 }
-
 
 void wpa_msg_ctrl(void *ctx, int level, const char *fmt, ...)
 {
@@ -682,8 +656,9 @@ void wpa_msg_ctrl(void *ctx, int level, const char *fmt, ...)
 	int buflen;
 	int len;
 
-	if (!wpa_msg_cb)
+	if (!wpa_msg_cb) {
 		return;
+	}
 
 	va_start(ap, fmt);
 	buflen = vsnprintf(NULL, 0, fmt, ap) + 1;
@@ -691,8 +666,7 @@ void wpa_msg_ctrl(void *ctx, int level, const char *fmt, ...)
 
 	buf = os_malloc(buflen);
 	if (buf == NULL) {
-		wpa_printf(MSG_ERROR, "wpa_msg_ctrl: Failed to allocate "
-			   "message buffer");
+		wpa_printf(MSG_ERROR, "wpa_msg_ctrl: Failed to allocate " "message buffer");
 		return;
 	}
 	va_start(ap, fmt);
@@ -701,7 +675,6 @@ void wpa_msg_ctrl(void *ctx, int level, const char *fmt, ...)
 	wpa_msg_cb(ctx, level, WPA_MSG_PER_INTERFACE, buf, len);
 	bin_clear_free(buf, buflen);
 }
-
 
 void wpa_msg_global(void *ctx, int level, const char *fmt, ...)
 {
@@ -716,19 +689,18 @@ void wpa_msg_global(void *ctx, int level, const char *fmt, ...)
 
 	buf = os_malloc(buflen);
 	if (buf == NULL) {
-		wpa_printf(MSG_ERROR, "wpa_msg_global: Failed to allocate "
-			   "message buffer");
+		wpa_printf(MSG_ERROR, "wpa_msg_global: Failed to allocate " "message buffer");
 		return;
 	}
 	va_start(ap, fmt);
 	len = vsnprintf(buf, buflen, fmt, ap);
 	va_end(ap);
 	wpa_printf(level, "%s", buf);
-	if (wpa_msg_cb)
+	if (wpa_msg_cb) {
 		wpa_msg_cb(ctx, level, WPA_MSG_GLOBAL, buf, len);
+	}
 	bin_clear_free(buf, buflen);
 }
-
 
 void wpa_msg_global_ctrl(void *ctx, int level, const char *fmt, ...)
 {
@@ -737,8 +709,9 @@ void wpa_msg_global_ctrl(void *ctx, int level, const char *fmt, ...)
 	int buflen;
 	int len;
 
-	if (!wpa_msg_cb)
+	if (!wpa_msg_cb) {
 		return;
+	}
 
 	va_start(ap, fmt);
 	buflen = vsnprintf(NULL, 0, fmt, ap) + 1;
@@ -746,8 +719,7 @@ void wpa_msg_global_ctrl(void *ctx, int level, const char *fmt, ...)
 
 	buf = os_malloc(buflen);
 	if (buf == NULL) {
-		wpa_printf(MSG_ERROR,
-			   "wpa_msg_global_ctrl: Failed to allocate message buffer");
+		wpa_printf(MSG_ERROR, "wpa_msg_global_ctrl: Failed to allocate message buffer");
 		return;
 	}
 	va_start(ap, fmt);
@@ -756,7 +728,6 @@ void wpa_msg_global_ctrl(void *ctx, int level, const char *fmt, ...)
 	wpa_msg_cb(ctx, level, WPA_MSG_GLOBAL, buf, len);
 	bin_clear_free(buf, buflen);
 }
-
 
 void wpa_msg_no_global(void *ctx, int level, const char *fmt, ...)
 {
@@ -771,19 +742,18 @@ void wpa_msg_no_global(void *ctx, int level, const char *fmt, ...)
 
 	buf = os_malloc(buflen);
 	if (buf == NULL) {
-		wpa_printf(MSG_ERROR, "wpa_msg_no_global: Failed to allocate "
-			   "message buffer");
+		wpa_printf(MSG_ERROR, "wpa_msg_no_global: Failed to allocate " "message buffer");
 		return;
 	}
 	va_start(ap, fmt);
 	len = vsnprintf(buf, buflen, fmt, ap);
 	va_end(ap);
 	wpa_printf(level, "%s", buf);
-	if (wpa_msg_cb)
+	if (wpa_msg_cb) {
 		wpa_msg_cb(ctx, level, WPA_MSG_NO_GLOBAL, buf, len);
+	}
 	bin_clear_free(buf, buflen);
 }
-
 
 void wpa_msg_global_only(void *ctx, int level, const char *fmt, ...)
 {
@@ -798,21 +768,20 @@ void wpa_msg_global_only(void *ctx, int level, const char *fmt, ...)
 
 	buf = os_malloc(buflen);
 	if (buf == NULL) {
-		wpa_printf(MSG_ERROR, "%s: Failed to allocate message buffer",
-			   __func__);
+		wpa_printf(MSG_ERROR, "%s: Failed to allocate message buffer", __func__);
 		return;
 	}
 	va_start(ap, fmt);
 	len = vsnprintf(buf, buflen, fmt, ap);
 	va_end(ap);
 	wpa_printf(level, "%s", buf);
-	if (wpa_msg_cb)
+	if (wpa_msg_cb) {
 		wpa_msg_cb(ctx, level, WPA_MSG_ONLY_GLOBAL, buf, len);
+	}
 	os_free(buf);
 }
 
-#endif /* CONFIG_NO_WPA_MSG */
-
+#endif							/* CONFIG_NO_WPA_MSG */
 
 #ifndef CONFIG_NO_HOSTAPD_LOGGER
 static hostapd_logger_cb_func hostapd_logger_cb = NULL;
@@ -822,9 +791,7 @@ void hostapd_logger_register_cb(hostapd_logger_cb_func func)
 	hostapd_logger_cb = func;
 }
 
-
-void hostapd_logger(void *ctx, const u8 *addr, unsigned int module, int level,
-		    const char *fmt, ...)
+void hostapd_logger(void *ctx, const u8 *addr, unsigned int module, int level, const char *fmt, ...)
 {
 	va_list ap;
 	char *buf;
@@ -837,20 +804,19 @@ void hostapd_logger(void *ctx, const u8 *addr, unsigned int module, int level,
 
 	buf = os_malloc(buflen);
 	if (buf == NULL) {
-		wpa_printf(MSG_ERROR, "hostapd_logger: Failed to allocate "
-			   "message buffer");
+		wpa_printf(MSG_ERROR, "hostapd_logger: Failed to allocate " "message buffer");
 		return;
 	}
 	va_start(ap, fmt);
 	len = vsnprintf(buf, buflen, fmt, ap);
 	va_end(ap);
-	if (hostapd_logger_cb)
+	if (hostapd_logger_cb) {
 		hostapd_logger_cb(ctx, addr, module, level, buf, len);
-	else if (addr)
-		wpa_printf(MSG_DEBUG, "hostapd_logger: STA " MACSTR " - %s",
-			   MAC2STR(addr), buf);
-	else
+	} else if (addr) {
+		wpa_printf(MSG_DEBUG, "hostapd_logger: STA " MACSTR " - %s", MAC2STR(addr), buf);
+	} else {
 		wpa_printf(MSG_DEBUG, "hostapd_logger: %s", buf);
+	}
 	bin_clear_free(buf, buflen);
 }
-#endif /* CONFIG_NO_HOSTAPD_LOGGER */
+#endif							/* CONFIG_NO_HOSTAPD_LOGGER */

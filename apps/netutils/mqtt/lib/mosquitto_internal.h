@@ -21,12 +21,12 @@ Copyright (c) 2010-2014 Roger Light <roger@atchoo.org>
 All rights reserved. This program and the accompanying materials
 are made available under the terms of the Eclipse Public License v1.0
 and Eclipse Distribution License v1.0 which accompany this distribution.
- 
+
 The Eclipse Public License is available at
    http://www.eclipse.org/legal/epl-v10.html
 and the Eclipse Distribution License is available at
   http://www.eclipse.org/org/documents/edl-v10.php.
- 
+
 Contributors:
    Roger Light - initial implementation and documentation.
 */
@@ -37,36 +37,36 @@ Contributors:
 #include <config.h>
 
 #ifdef WIN32
-#  include <winsock2.h>
+#	include <winsock2.h>
 #endif
 
 #ifdef WITH_TLS
-#  include <openssl/ssl.h>
+#	include <openssl/ssl.h>
 #else
-#ifdef WITH_MBEDTLS
-#  include <tls/ssl.h>
-#else
-#  include <time.h>
-#endif
+#	ifdef WITH_MBEDTLS
+#		include <tls/ssl.h>
+#	else
+#		include <time.h>
+#	endif
 #endif
 #include <stdlib.h>
 
 #if defined(WITH_THREADING) && !defined(WITH_BROKER)
-#  include <pthread.h>
+#	include <pthread.h>
 #else
-#  include <dummypthread.h>
+#	include <dummypthread.h>
 #endif
 
 #ifdef WITH_SRV
-#  include <ares.h>
+#	include <ares.h>
 #endif
 
 #ifdef WIN32
 #	if _MSC_VER < 1600
-		typedef unsigned char uint8_t;
-		typedef unsigned short uint16_t;
-		typedef unsigned int uint32_t;
-		typedef unsigned long long uint64_t;
+typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned int uint32_t;
+typedef unsigned long long uint64_t;
 #	else
 #		include <stdint.h>
 #	endif
@@ -74,13 +74,13 @@ Contributors:
 #	include <stdint.h>
 #endif
 #if defined(__TINYARA__)
-#include <netdb.h>
+#	include <netdb.h>
 #endif
 
 #include "mosquitto.h"
 #include "time_mosq.h"
 #ifdef WITH_BROKER
-#  include "uthash.h"
+#	include "uthash.h"
 struct mosquitto_client_msg;
 #endif
 
@@ -137,9 +137,9 @@ enum _mosquitto_protocol {
 };
 
 enum mosquitto__threaded_state {
-	mosq_ts_none,		/* No threads in use */
-	mosq_ts_self,		/* Threads started by libmosquitto */
-	mosq_ts_external	/* Threads started by external code */
+	mosq_ts_none,				/* No threads in use */
+	mosq_ts_self,				/* Threads started by libmosquitto */
+	mosq_ts_external			/* Threads started by external code */
 };
 
 enum _mosquitto_transport {
@@ -156,7 +156,7 @@ enum _mosquitto_mbedtls_state {
 };
 #endif
 
-struct _mosquitto_packet{
+struct _mosquitto_packet {
 	uint8_t *payload;
 	struct _mosquitto_packet *next;
 	uint32_t remaining_mult;
@@ -169,7 +169,7 @@ struct _mosquitto_packet{
 	int8_t remaining_count;
 };
 
-struct mosquitto_message_all{
+struct mosquitto_message_all {
 	struct mosquitto_message_all *next;
 	time_t timestamp;
 	//enum mosquitto_msg_direction direction;
@@ -202,10 +202,10 @@ struct mosquitto {
 	int mbedtls_state;
 	mbedtls_ssl_config *ssl;
 	mbedtls_ssl_context *ssl_ctx;
-        void *cert;
-        void *pkey;
-        void *entropy;
-        void *ctr_drbg;
+	void *cert;
+	void *pkey;
+	void *entropy;
+	void *ctr_drbg;
 	void *net;
 	void *cache;
 	char *tls_ca_cert;
@@ -265,21 +265,21 @@ struct mosquitto {
 	struct _mosquitto_subhier **subs;
 	int sub_count;
 	int pollfd_index;
-#  ifdef WITH_WEBSOCKETS
-#    if defined(LWS_LIBRARY_VERSION_NUMBER)
+#	ifdef WITH_WEBSOCKETS
+#		if defined(LWS_LIBRARY_VERSION_NUMBER)
 	struct lws *wsi;
-#    else
+#		else
 	struct libwebsocket_context *ws_context;
 	struct libwebsocket *wsi;
-#    endif
-#  endif
+#		endif
+#	endif
 #else
-#  ifdef WITH_SOCKS
+#	ifdef WITH_SOCKS
 	char *socks5_host;
 	int socks5_port;
 	char *socks5_username;
 	char *socks5_password;
-#  endif
+#	endif
 	void *userdata;
 	bool in_callback;
 	unsigned int message_retry;
@@ -308,9 +308,9 @@ struct mosquitto {
 	struct _mosquitto_packet *out_packet_last;
 	int inflight_messages;
 	int max_inflight_messages;
-#  ifdef WITH_SRV
+#	ifdef WITH_SRV
 	ares_channel achan;
-#  endif
+#	endif
 #endif
 
 #ifdef WITH_BROKER

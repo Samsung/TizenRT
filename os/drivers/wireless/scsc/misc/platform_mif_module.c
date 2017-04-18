@@ -16,16 +16,16 @@
 /* Variables */
 struct mif_abs_node {
 	struct slsi_dlist_head list;
-	struct scsc_mif_abs    *mif_abs;
+	struct scsc_mif_abs *mif_abs;
 };
 
 struct mif_driver_node {
-	struct slsi_dlist_head     list;
+	struct slsi_dlist_head list;
 	struct scsc_mif_abs_driver *driver;
 };
 
 struct mif_mmap_node {
-	struct slsi_dlist_head      list;
+	struct slsi_dlist_head list;
 	struct scsc_mif_mmap_driver *driver;
 };
 
@@ -34,9 +34,7 @@ static struct platform_mif_module {
 	struct slsi_dlist_head mif_driver_list;
 	struct slsi_dlist_head mif_mmap_list;
 } mif_module = {
-	.mif_abs_list = SLSI_DLIST_HEAD_INIT(mif_module.mif_abs_list),
-	.mif_driver_list = SLSI_DLIST_HEAD_INIT(mif_module.mif_driver_list),
-	.mif_mmap_list = SLSI_DLIST_HEAD_INIT(mif_module.mif_mmap_list),
+	.mif_abs_list = SLSI_DLIST_HEAD_INIT(mif_module.mif_abs_list), .mif_driver_list = SLSI_DLIST_HEAD_INIT(mif_module.mif_driver_list), .mif_mmap_list = SLSI_DLIST_HEAD_INIT(mif_module.mif_mmap_list),
 };
 
 /* Private Functions */
@@ -44,7 +42,7 @@ static struct platform_mif_module {
 static void platform_mif_module_probe_registered_clients(struct scsc_mif_abs *mif_abs)
 {
 	struct mif_driver_node *mif_driver_node, *next;
-	bool                   driver_registered = false;
+	bool driver_registered = false;
 
 	/* Traverse Linked List for each mif_driver node */
 	slsi_dlist_for_each_entry_safe(mif_driver_node, next, &mif_module.mif_driver_list, list) {
@@ -63,8 +61,9 @@ int platform_mif_module_probe(void)
 	/* platform_mif_init(); */
 
 	mif_node = kmm_zalloc(sizeof(*mif_node));
-	if (!mif_node)
+	if (!mif_node) {
 		return -ENODEV;
+	}
 
 	mif_abs = platform_mif_create();
 	if (!mif_abs) {
@@ -90,12 +89,13 @@ static int platform_mif_module_remove(/*struct platform_device *pdev */ void)
 void scsc_mif_abs_register(struct scsc_mif_abs_driver *driver)
 {
 	struct mif_driver_node *mif_driver_node;
-	struct mif_abs_node    *mif_node;
+	struct mif_abs_node *mif_node;
 
 	/* Add node in driver linked list */
 	mif_driver_node = kmm_zalloc(sizeof(*mif_driver_node));
-	if (!mif_driver_node)
+	if (!mif_driver_node) {
 		return;
+	}
 
 	mif_driver_node->driver = driver;
 	slsi_dlist_add_tail(&mif_driver_node->list, &mif_module.mif_driver_list);
@@ -123,12 +123,13 @@ void scsc_mif_abs_unregister(struct scsc_mif_abs_driver *driver)
 void scsc_mif_mmap_register(struct scsc_mif_mmap_driver *mmap_driver)
 {
 	struct mif_mmap_node *mif_mmap_node;
-	struct mif_abs_node  *mif_node;
+	struct mif_abs_node *mif_node;
 
 	/* Add node in driver linked list */
 	mif_mmap_node = kmm_zalloc(sizeof(*mif_mmap_node));
-	if (!mif_mmap_node)
+	if (!mif_mmap_node) {
 		return;
+	}
 
 	mif_mmap_node->driver = mmap_driver;
 	slsi_dlist_add_tail(&mif_mmap_node->list, &mif_module.mif_mmap_list);

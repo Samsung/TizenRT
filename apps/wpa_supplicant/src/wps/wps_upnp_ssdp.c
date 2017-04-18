@@ -15,7 +15,7 @@
 #include <net/route.h>
 #ifdef __linux__
 #include <net/if.h>
-#endif /* __linux__ */
+#endif							/* __linux__ */
 
 #include "common.h"
 #include "uuid.h"
@@ -24,13 +24,12 @@
 #include "wps_upnp.h"
 #include "wps_upnp_i.h"
 
-#define UPNP_CACHE_SEC (UPNP_CACHE_SEC_MIN + 1) /* cache time we use */
-#define UPNP_CACHE_SEC_MIN 1800 /* min cachable time per UPnP standard */
-#define UPNP_ADVERTISE_REPEAT 2 /* no more than 3 */
-#define MAX_MSEARCH 20          /* max simultaneous M-SEARCH replies ongoing */
+#define UPNP_CACHE_SEC (UPNP_CACHE_SEC_MIN + 1)	/* cache time we use */
+#define UPNP_CACHE_SEC_MIN 1800	/* min cachable time per UPnP standard */
+#define UPNP_ADVERTISE_REPEAT 2	/* no more than 3 */
+#define MAX_MSEARCH 20			/* max simultaneous M-SEARCH replies ongoing */
 #define SSDP_TARGET  "239.0.0.0"
 #define SSDP_NETMASK "255.0.0.0"
-
 
 /* Check tokens for equality, where tokens consist of letters, digits,
  * underscore and hyphen, and are matched case insensitive.
@@ -44,18 +43,20 @@ static int token_eq(const char *s1, const char *s2)
 	for (;;) {
 		c1 = *s1++;
 		c2 = *s2++;
-		if (isalpha(c1) && isupper(c1))
+		if (isalpha(c1) && isupper(c1)) {
 			c1 = tolower(c1);
-		if (isalpha(c2) && isupper(c2))
+		}
+		if (isalpha(c2) && isupper(c2)) {
 			c2 = tolower(c2);
+		}
 		end1 = !(isalnum(c1) || c1 == '_' || c1 == '-');
 		end2 = !(isalnum(c2) || c2 == '_' || c2 == '-');
-		if (end1 || end2 || c1 != c2)
+		if (end1 || end2 || c1 != c2) {
 			break;
+		}
 	}
-	return end1 && end2; /* reached end of both words? */
+	return end1 && end2;		/* reached end of both words? */
 }
-
 
 /* Return length of token (see above for definition of token) */
 static int token_length(const char *s)
@@ -64,12 +65,12 @@ static int token_length(const char *s)
 	for (;; s++) {
 		int c = *s;
 		int end = !(isalnum(c) || c == '_' || c == '-');
-		if (end)
+		if (end) {
 			break;
+		}
 	}
 	return s - begin;
 }
-
 
 /* return length of interword separation.
  * This accepts only spaces/tabs and thus will not traverse a line
@@ -80,31 +81,31 @@ static int word_separation_length(const char *s)
 	const char *begin = s;
 	for (;; s++) {
 		int c = *s;
-		if (c == ' ' || c == '\t')
+		if (c == ' ' || c == '\t') {
 			continue;
+		}
 		break;
 	}
 	return s - begin;
 }
 
-
 /* No. of chars through (including) end of line */
 static int line_length(const char *l)
 {
 	const char *lp = l;
-	while (*lp && *lp != '\n')
+	while (*lp && *lp != '\n') {
 		lp++;
-	if (*lp == '\n')
+	}
+	if (*lp == '\n') {
 		lp++;
+	}
 	return lp - l;
 }
-
 
 static int str_starts(const char *str, const char *start)
 {
 	return os_strncmp(str, start, os_strlen(start)) == 0;
 }
-
 
 /***************************************************************************
  * Advertisements.
@@ -122,9 +123,7 @@ static int str_starts(const char *str, const char *start)
  *
  * Note: next_advertisement is shared code with msearchreply_* functions
  */
-static struct wpabuf *
-next_advertisement(struct upnp_wps_device_sm *sm,
-		   struct advertisement_state_machine *a, int *islast)
+static struct wpabuf *next_advertisement(struct upnp_wps_device_sm *sm, struct advertisement_state_machine *a, int *islast)
 {
 	struct wpabuf *msg;
 	char *NTString = "";
@@ -132,32 +131,28 @@ next_advertisement(struct upnp_wps_device_sm *sm,
 	struct upnp_wps_device_interface *iface;
 
 	*islast = 0;
-	iface = dl_list_first(&sm->interfaces,
-			      struct upnp_wps_device_interface, list);
-	if (!iface)
+	iface = dl_list_first(&sm->interfaces, struct upnp_wps_device_interface, list);
+	if (!iface) {
 		return NULL;
+	}
 	uuid_bin2str(iface->wps->uuid, uuid_string, sizeof(uuid_string));
-	msg = wpabuf_alloc(800); /* more than big enough */
-	if (msg == NULL)
+	msg = wpabuf_alloc(800);	/* more than big enough */
+	if (msg == NULL) {
 		goto fail;
+	}
 	switch (a->type) {
 	case ADVERTISE_UP:
 	case ADVERTISE_DOWN:
 		NTString = "NT";
 		wpabuf_put_str(msg, "NOTIFY * HTTP/1.1\r\n");
-		wpabuf_printf(msg, "HOST: %s:%d\r\n",
-			      UPNP_MULTICAST_ADDRESS, UPNP_MULTICAST_PORT);
-		wpabuf_printf(msg, "CACHE-CONTROL: max-age=%d\r\n",
-			      UPNP_CACHE_SEC);
-		wpabuf_printf(msg, "NTS: %s\r\n",
-			      (a->type == ADVERTISE_UP ?
-			       "ssdp:alive" : "ssdp:byebye"));
+		wpabuf_printf(msg, "HOST: %s:%d\r\n", UPNP_MULTICAST_ADDRESS, UPNP_MULTICAST_PORT);
+		wpabuf_printf(msg, "CACHE-CONTROL: max-age=%d\r\n", UPNP_CACHE_SEC);
+		wpabuf_printf(msg, "NTS: %s\r\n", (a->type == ADVERTISE_UP ? "ssdp:alive" : "ssdp:byebye"));
 		break;
 	case MSEARCH_REPLY:
 		NTString = "ST";
 		wpabuf_put_str(msg, "HTTP/1.1 200 OK\r\n");
-		wpabuf_printf(msg, "CACHE-CONTROL: max-age=%d\r\n",
-			      UPNP_CACHE_SEC);
+		wpabuf_printf(msg, "CACHE-CONTROL: max-age=%d\r\n", UPNP_CACHE_SEC);
 
 		wpabuf_put_str(msg, "DATE: ");
 		format_date(msg);
@@ -169,9 +164,7 @@ next_advertisement(struct upnp_wps_device_sm *sm,
 
 	if (a->type != ADVERTISE_DOWN) {
 		/* Where others may get our XML files from */
-		wpabuf_printf(msg, "LOCATION: http://%s:%d/%s\r\n",
-			      sm->ip_addr_text, sm->web_port,
-			      UPNP_WPS_DEVICE_XML_FILE);
+		wpabuf_printf(msg, "LOCATION: http://%s:%d/%s\r\n", sm->ip_addr_text, sm->web_port, UPNP_WPS_DEVICE_XML_FILE);
 	}
 
 	/* The SERVER line has three comma-separated fields:
@@ -187,30 +180,26 @@ next_advertisement(struct upnp_wps_device_sm *sm,
 	switch (a->state / UPNP_ADVERTISE_REPEAT) {
 	case 0:
 		wpabuf_printf(msg, "%s: upnp:rootdevice\r\n", NTString);
-		wpabuf_printf(msg, "USN: uuid:%s::upnp:rootdevice\r\n",
-			      uuid_string);
+		wpabuf_printf(msg, "USN: uuid:%s::upnp:rootdevice\r\n", uuid_string);
 		break;
 	case 1:
 		wpabuf_printf(msg, "%s: uuid:%s\r\n", NTString, uuid_string);
 		wpabuf_printf(msg, "USN: uuid:%s\r\n", uuid_string);
 		break;
 	case 2:
-		wpabuf_printf(msg, "%s: urn:schemas-wifialliance-org:device:"
-			      "WFADevice:1\r\n", NTString);
-		wpabuf_printf(msg, "USN: uuid:%s::urn:schemas-wifialliance-"
-			      "org:device:WFADevice:1\r\n", uuid_string);
+		wpabuf_printf(msg, "%s: urn:schemas-wifialliance-org:device:" "WFADevice:1\r\n", NTString);
+		wpabuf_printf(msg, "USN: uuid:%s::urn:schemas-wifialliance-" "org:device:WFADevice:1\r\n", uuid_string);
 		break;
 	case 3:
-		wpabuf_printf(msg, "%s: urn:schemas-wifialliance-org:service:"
-			      "WFAWLANConfig:1\r\n", NTString);
-		wpabuf_printf(msg, "USN: uuid:%s::urn:schemas-wifialliance-"
-			      "org:service:WFAWLANConfig:1\r\n", uuid_string);
+		wpabuf_printf(msg, "%s: urn:schemas-wifialliance-org:service:" "WFAWLANConfig:1\r\n", NTString);
+		wpabuf_printf(msg, "USN: uuid:%s::urn:schemas-wifialliance-" "org:service:WFAWLANConfig:1\r\n", uuid_string);
 		break;
 	}
 	wpabuf_put_str(msg, "\r\n");
 
-	if (a->state + 1 >= 4 * UPNP_ADVERTISE_REPEAT)
+	if (a->state + 1 >= 4 * UPNP_ADVERTISE_REPEAT) {
 		*islast = 1;
+	}
 
 	return msg;
 
@@ -219,18 +208,14 @@ fail:
 	return NULL;
 }
 
-
-static void advertisement_state_machine_handler(void *eloop_data,
-						void *user_ctx);
-
+static void advertisement_state_machine_handler(void *eloop_data, void *user_ctx);
 
 /**
  * advertisement_state_machine_stop - Stop SSDP advertisements
  * @sm: WPS UPnP state machine from upnp_wps_device_init()
  * @send_byebye: Send byebye advertisement messages immediately
  */
-void advertisement_state_machine_stop(struct upnp_wps_device_sm *sm,
-				      int send_byebye)
+void advertisement_state_machine_stop(struct upnp_wps_device_sm *sm, int send_byebye)
 {
 	struct advertisement_state_machine *a = &sm->advertisement;
 	int islast = 0;
@@ -238,8 +223,9 @@ void advertisement_state_machine_stop(struct upnp_wps_device_sm *sm,
 	struct sockaddr_in dest;
 
 	eloop_cancel_timeout(advertisement_state_machine_handler, NULL, sm);
-	if (!send_byebye || sm->multicast_sd < 0)
+	if (!send_byebye || sm->multicast_sd < 0) {
 		return;
+	}
 
 	a->type = ADVERTISE_DOWN;
 	a->state = 0;
@@ -251,21 +237,18 @@ void advertisement_state_machine_stop(struct upnp_wps_device_sm *sm,
 
 	while (!islast) {
 		msg = next_advertisement(sm, a, &islast);
-		if (msg == NULL)
+		if (msg == NULL) {
 			break;
-		if (sendto(sm->multicast_sd, wpabuf_head(msg), wpabuf_len(msg),
-			   0, (struct sockaddr *) &dest, sizeof(dest)) < 0) {
-			wpa_printf(MSG_INFO, "WPS UPnP: Advertisement sendto "
-				   "failed: %d (%s)", errno, strerror(errno));
+		}
+		if (sendto(sm->multicast_sd, wpabuf_head(msg), wpabuf_len(msg), 0, (struct sockaddr *)&dest, sizeof(dest)) < 0) {
+			wpa_printf(MSG_INFO, "WPS UPnP: Advertisement sendto " "failed: %d (%s)", errno, strerror(errno));
 		}
 		wpabuf_free(msg);
 		a->state++;
 	}
 }
 
-
-static void advertisement_state_machine_handler(void *eloop_data,
-						void *user_ctx)
+static void advertisement_state_machine_handler(void *eloop_data, void *user_ctx)
 {
 	struct upnp_wps_device_sm *sm = user_ctx;
 	struct advertisement_state_machine *a = &sm->advertisement;
@@ -290,22 +273,21 @@ static void advertisement_state_machine_handler(void *eloop_data,
 
 	wpa_printf(MSG_MSGDUMP, "WPS UPnP: Advertisement state=%d", a->state);
 	msg = next_advertisement(sm, a, &islast);
-	if (msg == NULL)
+	if (msg == NULL) {
 		return;
+	}
 
 	os_memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_INET;
 	dest.sin_addr.s_addr = inet_addr(UPNP_MULTICAST_ADDRESS);
 	dest.sin_port = htons(UPNP_MULTICAST_PORT);
 
-	if (sendto(sm->multicast_sd, wpabuf_head(msg), wpabuf_len(msg), 0,
-		   (struct sockaddr *) &dest, sizeof(dest)) == -1) {
-		wpa_printf(MSG_ERROR, "WPS UPnP: Advertisement sendto failed:"
-			   "%d (%s)", errno, strerror(errno));
+	if (sendto(sm->multicast_sd, wpabuf_head(msg), wpabuf_len(msg), 0, (struct sockaddr *)&dest, sizeof(dest)) == -1) {
+		wpa_printf(MSG_ERROR, "WPS UPnP: Advertisement sendto failed:" "%d (%s)", errno, strerror(errno));
 		next_timeout_msec = 0;
-		next_timeout_sec = 10; /* ... later */
+		next_timeout_sec = 10;	/* ... later */
 	} else if (islast) {
-		a->state = 0; /* wrap around */
+		a->state = 0;			/* wrap around */
 		if (a->type == ADVERTISE_DOWN) {
 			wpa_printf(MSG_DEBUG, "WPS UPnP: ADVERTISE_DOWN->UP");
 			a->type = ADVERTISE_UP;
@@ -317,14 +299,12 @@ static void advertisement_state_machine_handler(void *eloop_data,
 			 * (see notes above)
 			 */
 			next_timeout_msec = 0;
-			if (os_get_random((void *) &r, sizeof(r)) < 0)
+			if (os_get_random((void *)&r, sizeof(r)) < 0) {
 				r = 32768;
-			next_timeout_sec = UPNP_CACHE_SEC / 4 +
-				(((UPNP_CACHE_SEC / 4) * r) >> 16);
+			}
+			next_timeout_sec = UPNP_CACHE_SEC / 4 + (((UPNP_CACHE_SEC / 4) * r) >> 16);
 			sm->advertise_count++;
-			wpa_printf(MSG_DEBUG, "WPS UPnP: ADVERTISE_UP (#%u); "
-				   "next in %d sec",
-				   sm->advertise_count, next_timeout_sec);
+			wpa_printf(MSG_DEBUG, "WPS UPnP: ADVERTISE_UP (#%u); " "next in %d sec", sm->advertise_count, next_timeout_sec);
 		}
 	} else {
 		a->state++;
@@ -332,10 +312,8 @@ static void advertisement_state_machine_handler(void *eloop_data,
 
 	wpabuf_free(msg);
 
-	eloop_register_timeout(next_timeout_sec, next_timeout_msec,
-			       advertisement_state_machine_handler, NULL, sm);
+	eloop_register_timeout(next_timeout_sec, next_timeout_msec, advertisement_state_machine_handler, NULL, sm);
 }
-
 
 /**
  * advertisement_state_machine_start - Start SSDP advertisements
@@ -359,11 +337,8 @@ int advertisement_state_machine_start(struct upnp_wps_device_sm *sm)
 
 	/* First timeout should be random interval < 100 msec */
 	next_timeout_msec = (100 * (os_random() & 0xFF)) >> 8;
-	return eloop_register_timeout(0, next_timeout_msec,
-				      advertisement_state_machine_handler,
-				      NULL, sm);
+	return eloop_register_timeout(0, next_timeout_msec, advertisement_state_machine_handler, NULL, sm);
 }
-
 
 /***************************************************************************
  * M-SEARCH replies
@@ -384,9 +359,7 @@ void msearchreply_state_machine_stop(struct advertisement_state_machine *a)
 	os_free(a);
 }
 
-
-static void msearchreply_state_machine_handler(void *eloop_data,
-					       void *user_ctx)
+static void msearchreply_state_machine_handler(void *eloop_data, void *user_ctx)
 {
 	struct advertisement_state_machine *a = user_ctx;
 	struct upnp_wps_device_sm *sm = eloop_data;
@@ -404,24 +377,18 @@ static void msearchreply_state_machine_handler(void *eloop_data,
 
 	/* TODO: should only send the requested response types */
 
-	wpa_printf(MSG_MSGDUMP, "WPS UPnP: M-SEARCH reply state=%d (%s:%d)",
-		   a->state, inet_ntoa(a->client.sin_addr),
-		   ntohs(a->client.sin_port));
+	wpa_printf(MSG_MSGDUMP, "WPS UPnP: M-SEARCH reply state=%d (%s:%d)", a->state, inet_ntoa(a->client.sin_addr), ntohs(a->client.sin_port));
 	msg = next_advertisement(sm, a, &islast);
-	if (msg == NULL)
+	if (msg == NULL) {
 		return;
+	}
 
 	/*
 	 * Send it on the multicast socket to avoid having to set up another
 	 * socket.
 	 */
-	if (sendto(sm->multicast_sd, wpabuf_head(msg), wpabuf_len(msg), 0,
-		   (struct sockaddr *) &a->client, sizeof(a->client)) < 0) {
-		wpa_printf(MSG_DEBUG, "WPS UPnP: M-SEARCH reply sendto "
-			   "errno %d (%s) for %s:%d",
-			   errno, strerror(errno),
-			   inet_ntoa(a->client.sin_addr),
-			   ntohs(a->client.sin_port));
+	if (sendto(sm->multicast_sd, wpabuf_head(msg), wpabuf_len(msg), 0, (struct sockaddr *)&a->client, sizeof(a->client)) < 0) {
+		wpa_printf(MSG_DEBUG, "WPS UPnP: M-SEARCH reply sendto " "errno %d (%s) for %s:%d", errno, strerror(errno), inet_ntoa(a->client.sin_addr), ntohs(a->client.sin_port));
 		/* Ignore error and hope for the best */
 	}
 	wpabuf_free(msg);
@@ -432,12 +399,9 @@ static void msearchreply_state_machine_handler(void *eloop_data,
 	}
 	a->state++;
 
-	wpa_printf(MSG_MSGDUMP, "WPS UPnP: M-SEARCH reply in %d.%03d sec",
-		   next_timeout_sec, next_timeout_msec);
-	eloop_register_timeout(next_timeout_sec, next_timeout_msec,
-			       msearchreply_state_machine_handler, sm, a);
+	wpa_printf(MSG_MSGDUMP, "WPS UPnP: M-SEARCH reply in %d.%03d sec", next_timeout_sec, next_timeout_msec);
+	eloop_register_timeout(next_timeout_sec, next_timeout_msec, msearchreply_state_machine_handler, sm, a);
 }
-
 
 /**
  * msearchreply_state_machine_start - Reply to M-SEARCH discovery request
@@ -454,9 +418,7 @@ static void msearchreply_state_machine_handler(void *eloop_data,
  * ST header of the M-SEARCH request is "ssdp:all", "upnp:rootdevice", "uuid:"
  * followed by a UUID that exactly matches one advertised by the device.
  */
-static void msearchreply_state_machine_start(struct upnp_wps_device_sm *sm,
-					     struct sockaddr_in *client,
-					     int mx)
+static void msearchreply_state_machine_start(struct upnp_wps_device_sm *sm, struct sockaddr_in *client, int mx)
 {
 	struct advertisement_state_machine *a;
 	int next_timeout_sec;
@@ -464,17 +426,16 @@ static void msearchreply_state_machine_start(struct upnp_wps_device_sm *sm,
 	int replies;
 
 	replies = dl_list_len(&sm->msearch_replies);
-	wpa_printf(MSG_DEBUG, "WPS UPnP: M-SEARCH reply start (%d "
-		   "outstanding)", replies);
+	wpa_printf(MSG_DEBUG, "WPS UPnP: M-SEARCH reply start (%d " "outstanding)", replies);
 	if (replies >= MAX_MSEARCH) {
-		wpa_printf(MSG_INFO, "WPS UPnP: Too many outstanding "
-			   "M-SEARCH replies");
+		wpa_printf(MSG_INFO, "WPS UPnP: Too many outstanding " "M-SEARCH replies");
 		return;
 	}
 
 	a = os_zalloc(sizeof(*a));
-	if (a == NULL)
+	if (a == NULL) {
 		return;
+	}
 	a->type = MSEARCH_REPLY;
 	a->state = 0;
 	os_memcpy(&a->client, client, sizeof(*client));
@@ -482,9 +443,7 @@ static void msearchreply_state_machine_start(struct upnp_wps_device_sm *sm,
 	next_timeout_msec = (1000 * mx * (os_random() & 0xFF)) >> 8;
 	next_timeout_sec = next_timeout_msec / 1000;
 	next_timeout_msec = next_timeout_msec % 1000;
-	if (eloop_register_timeout(next_timeout_sec, next_timeout_msec,
-				   msearchreply_state_machine_handler, sm,
-				   a)) {
+	if (eloop_register_timeout(next_timeout_sec, next_timeout_msec, msearchreply_state_machine_handler, sm, a)) {
 		/* No way to recover (from malloc failure) */
 		goto fail;
 	}
@@ -497,7 +456,6 @@ fail:
 	eloop_cancel_timeout(msearchreply_state_machine_handler, sm, a);
 	os_free(a);
 }
-
 
 /**
  * ssdp_parse_msearch - Process a received M-SEARCH
@@ -520,12 +478,11 @@ fail:
  * It should be noted that when Microsoft Vista is still learning its IP
  * address, it sends out host lines like: HOST:[FF02::C]:1900
  */
-static void ssdp_parse_msearch(struct upnp_wps_device_sm *sm,
-			       struct sockaddr_in *client, const char *data)
+static void ssdp_parse_msearch(struct upnp_wps_device_sm *sm, struct sockaddr_in *client, const char *data)
 {
 #ifndef CONFIG_NO_STDOUT_DEBUG
 	const char *start = data;
-#endif /* CONFIG_NO_STDOUT_DEBUG */
+#endif							/* CONFIG_NO_STDOUT_DEBUG */
 	int got_host = 0;
 	int got_st = 0, st_match = 0;
 	int got_man = 0;
@@ -546,22 +503,25 @@ static void ssdp_parse_msearch(struct upnp_wps_device_sm *sm,
 			 * Note that Microsoft sometimes does funny
 			 * stuff with the HOST: line.
 			 */
-#if 0   /* could be */
+#if 0							/* could be */
 			data += token_length(data);
 			data += word_separation_length(data);
-			if (*data != ':')
+			if (*data != ':') {
 				goto bad;
+			}
 			data++;
 			data += word_separation_length(data);
 			/* UPNP_MULTICAST_ADDRESS */
-			if (!str_starts(data, "239.255.255.250"))
+			if (!str_starts(data, "239.255.255.250")) {
 				goto bad;
+			}
 			data += os_strlen("239.255.255.250");
 			if (*data == ':') {
-				if (!str_starts(data, ":1900"))
+				if (!str_starts(data, ":1900")) {
 					goto bad;
+				}
 			}
-#endif  /* could be */
+#endif							/* could be */
 			got_host = 1;
 			continue;
 		} else if (token_eq(data, "st")) {
@@ -571,8 +531,9 @@ static void ssdp_parse_msearch(struct upnp_wps_device_sm *sm,
 			got_st = 1;
 			data += token_length(data);
 			data += word_separation_length(data);
-			if (*data != ':')
+			if (*data != ':') {
 				continue;
+			}
 			data++;
 			data += word_separation_length(data);
 			if (str_starts(data, "ssdp:all")) {
@@ -586,34 +547,29 @@ static void ssdp_parse_msearch(struct upnp_wps_device_sm *sm,
 			if (str_starts(data, "uuid:")) {
 				char uuid_string[80];
 				struct upnp_wps_device_interface *iface;
-				iface = dl_list_first(
-					&sm->interfaces,
-					struct upnp_wps_device_interface,
-					list);
-				if (!iface)
+				iface = dl_list_first(&sm->interfaces, struct upnp_wps_device_interface, list);
+				if (!iface) {
 					continue;
+				}
 				data += os_strlen("uuid:");
-				uuid_bin2str(iface->wps->uuid, uuid_string,
-					     sizeof(uuid_string));
-				if (str_starts(data, uuid_string))
+				uuid_bin2str(iface->wps->uuid, uuid_string, sizeof(uuid_string));
+				if (str_starts(data, uuid_string)) {
 					st_match = 1;
+				}
 				continue;
 			}
 #if 0
 			/* FIX: should we really reply to IGD string? */
-			if (str_starts(data, "urn:schemas-upnp-org:device:"
-				       "InternetGatewayDevice:1")) {
+			if (str_starts(data, "urn:schemas-upnp-org:device:" "InternetGatewayDevice:1")) {
 				st_match = 1;
 				continue;
 			}
 #endif
-			if (str_starts(data, "urn:schemas-wifialliance-org:"
-				       "service:WFAWLANConfig:1")) {
+			if (str_starts(data, "urn:schemas-wifialliance-org:" "service:WFAWLANConfig:1")) {
 				st_match = 1;
 				continue;
 			}
-			if (str_starts(data, "urn:schemas-wifialliance-org:"
-				       "device:WFADevice:1")) {
+			if (str_starts(data, "urn:schemas-wifialliance-org:" "device:WFADevice:1")) {
 				st_match = 1;
 				continue;
 			}
@@ -621,13 +577,13 @@ static void ssdp_parse_msearch(struct upnp_wps_device_sm *sm,
 		} else if (token_eq(data, "man")) {
 			data += token_length(data);
 			data += word_separation_length(data);
-			if (*data != ':')
+			if (*data != ':') {
 				continue;
+			}
 			data++;
 			data += word_separation_length(data);
 			if (!str_starts(data, "\"ssdp:discover\"")) {
-				wpa_printf(MSG_DEBUG, "WPS UPnP: Unexpected "
-					   "M-SEARCH man-field");
+				wpa_printf(MSG_DEBUG, "WPS UPnP: Unexpected " "M-SEARCH man-field");
 				goto bad;
 			}
 			got_man = 1;
@@ -635,8 +591,9 @@ static void ssdp_parse_msearch(struct upnp_wps_device_sm *sm,
 		} else if (token_eq(data, "mx")) {
 			data += token_length(data);
 			data += word_separation_length(data);
-			if (*data != ':')
+			if (*data != ':') {
 				continue;
+			}
 			data++;
 			data += word_separation_length(data);
 			mx = atol(data);
@@ -646,17 +603,16 @@ static void ssdp_parse_msearch(struct upnp_wps_device_sm *sm,
 		/* ignore anything else */
 	}
 	if (!got_host || !got_st || !got_man || !got_mx || mx < 0) {
-		wpa_printf(MSG_DEBUG, "WPS UPnP: Invalid M-SEARCH: %d %d %d "
-			   "%d mx=%d", got_host, got_st, got_man, got_mx, mx);
+		wpa_printf(MSG_DEBUG, "WPS UPnP: Invalid M-SEARCH: %d %d %d " "%d mx=%d", got_host, got_st, got_man, got_mx, mx);
 		goto bad;
 	}
 	if (!st_match) {
-		wpa_printf(MSG_DEBUG, "WPS UPnP: Ignored M-SEARCH (no ST "
-			   "match)");
+		wpa_printf(MSG_DEBUG, "WPS UPnP: Ignored M-SEARCH (no ST " "match)");
 		return;
 	}
-	if (mx > 120)
-		mx = 120; /* UPnP-arch-DeviceArchitecture, 1.2.3 */
+	if (mx > 120) {
+		mx = 120;    /* UPnP-arch-DeviceArchitecture, 1.2.3 */
+	}
 	msearchreply_state_machine_start(sm, client, mx);
 	return;
 
@@ -664,7 +620,6 @@ bad:
 	wpa_printf(MSG_INFO, "WPS UPnP: Failed to parse M-SEARCH");
 	wpa_printf(MSG_MSGDUMP, "WPS UPnP: M-SEARCH data:\n%s", start);
 }
-
 
 /* Listening for (UDP) discovery (M-SEARCH) packets */
 
@@ -687,25 +642,23 @@ void ssdp_listener_stop(struct upnp_wps_device_sm *sm)
 		sm->ssdp_sd = -1;
 	}
 
-	eloop_cancel_timeout(msearchreply_state_machine_handler, sm,
-			     ELOOP_ALL_CTX);
+	eloop_cancel_timeout(msearchreply_state_machine_handler, sm, ELOOP_ALL_CTX);
 }
-
 
 static void ssdp_listener_handler(int sd, void *eloop_ctx, void *sock_ctx)
 {
 	struct upnp_wps_device_sm *sm = sock_ctx;
-	struct sockaddr_in addr; /* client address */
+	struct sockaddr_in addr;	/* client address */
 	socklen_t addr_len;
 	int nread;
 	char buf[MULTICAST_MAX_READ], *pos;
 
 	addr_len = sizeof(addr);
-	nread = recvfrom(sm->ssdp_sd, buf, sizeof(buf) - 1, 0,
-			 (struct sockaddr *) &addr, &addr_len);
-	if (nread <= 0)
+	nread = recvfrom(sm->ssdp_sd, buf, sizeof(buf) - 1, 0, (struct sockaddr *)&addr, &addr_len);
+	if (nread <= 0) {
 		return;
-	buf[nread] = '\0'; /* need null termination for algorithm */
+	}
+	buf[nread] = '\0';			/* need null termination for algorithm */
 
 	if (str_starts(buf, "NOTIFY ")) {
 		/*
@@ -716,23 +669,22 @@ static void ssdp_listener_handler(int sd, void *eloop_ctx, void *sock_ctx)
 	}
 
 	pos = os_strchr(buf, '\n');
-	if (pos)
+	if (pos) {
 		*pos = '\0';
-	wpa_printf(MSG_MSGDUMP, "WPS UPnP: Received SSDP packet from %s:%d: "
-		   "%s", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), buf);
-	if (pos)
+	}
+	wpa_printf(MSG_MSGDUMP, "WPS UPnP: Received SSDP packet from %s:%d: " "%s", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), buf);
+	if (pos) {
 		*pos = '\n';
+	}
 
 	/* Parse first line */
-	if (os_strncasecmp(buf, "M-SEARCH", os_strlen("M-SEARCH")) == 0 &&
-	    !isgraph(buf[strlen("M-SEARCH")])) {
+	if (os_strncasecmp(buf, "M-SEARCH", os_strlen("M-SEARCH")) == 0 && !isgraph(buf[strlen("M-SEARCH")])) {
 		ssdp_parse_msearch(sm, &addr, buf);
 		return;
 	}
 
 	/* Ignore anything else */
 }
-
 
 int ssdp_listener_open(void)
 {
@@ -744,36 +696,40 @@ int ssdp_listener_open(void)
 	int sd;
 
 	sd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sd < 0)
+	if (sd < 0) {
 		goto fail;
-	if (fcntl(sd, F_SETFL, O_NONBLOCK) != 0)
+	}
+	if (fcntl(sd, F_SETFL, O_NONBLOCK) != 0) {
 		goto fail;
-	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)))
+	}
+	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) {
 		goto fail;
+	}
 	os_memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	addr.sin_port = htons(UPNP_MULTICAST_PORT);
-	if (bind(sd, (struct sockaddr *) &addr, sizeof(addr)))
+	if (bind(sd, (struct sockaddr *)&addr, sizeof(addr))) {
 		goto fail;
+	}
 	os_memset(&mcast_addr, 0, sizeof(mcast_addr));
 	mcast_addr.imr_interface.s_addr = htonl(INADDR_ANY);
 	mcast_addr.imr_multiaddr.s_addr = inet_addr(UPNP_MULTICAST_ADDRESS);
-	if (setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
-		       (char *) &mcast_addr, sizeof(mcast_addr)))
+	if (setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mcast_addr, sizeof(mcast_addr))) {
 		goto fail;
-	if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL,
-		       &ttl, sizeof(ttl)))
+	}
+	if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl))) {
 		goto fail;
+	}
 
 	return sd;
 
 fail:
-	if (sd >= 0)
+	if (sd >= 0) {
 		close(sd);
+	}
 	return -1;
 }
-
 
 /**
  * ssdp_listener_start - Set up for receiving discovery (UDP) packets
@@ -786,9 +742,9 @@ int ssdp_listener_start(struct upnp_wps_device_sm *sm)
 {
 	sm->ssdp_sd = ssdp_listener_open();
 
-	if (eloop_register_sock(sm->ssdp_sd, EVENT_TYPE_READ,
-				ssdp_listener_handler, NULL, sm))
+	if (eloop_register_sock(sm->ssdp_sd, EVENT_TYPE_READ, ssdp_listener_handler, NULL, sm)) {
 		goto fail;
+	}
 	sm->ssdp_sd_registered = 1;
 	return 0;
 
@@ -798,7 +754,6 @@ fail:
 	ssdp_listener_stop(sm);
 	return -1;
 }
-
 
 /**
  * add_ssdp_network - Add routing entry for SSDP
@@ -819,15 +774,17 @@ int add_ssdp_network(const char *net_if)
 	struct rtentry rt;
 	struct sockaddr_in *sin;
 
-	if (!net_if)
+	if (!net_if) {
 		goto fail;
+	}
 
 	os_memset(&rt, 0, sizeof(rt));
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0)
+	if (sock < 0) {
 		goto fail;
+	}
 
-	rt.rt_dev = (char *) net_if;
+	rt.rt_dev = (char *)net_if;
 	sin = aliasing_hide_typecast(&rt.rt_dst, struct sockaddr_in);
 	sin->sin_family = AF_INET;
 	sin->sin_port = 0;
@@ -839,12 +796,10 @@ int add_ssdp_network(const char *net_if)
 	rt.rt_flags = RTF_UP;
 	if (ioctl(sock, SIOCADDRT, &rt) < 0) {
 		if (errno == EPERM) {
-			wpa_printf(MSG_DEBUG, "add_ssdp_network: No "
-				   "permissions to add routing table entry");
+			wpa_printf(MSG_DEBUG, "add_ssdp_network: No " "permissions to add routing table entry");
 			/* Continue to allow testing as non-root */
 		} else if (errno != EEXIST) {
-			wpa_printf(MSG_INFO, "add_ssdp_network() ioctl errno "
-				   "%d (%s)", errno, strerror(errno));
+			wpa_printf(MSG_INFO, "add_ssdp_network() ioctl errno " "%d (%s)", errno, strerror(errno));
 			goto fail;
 		}
 	}
@@ -852,85 +807,70 @@ int add_ssdp_network(const char *net_if)
 	ret = 0;
 
 fail:
-	if (sock >= 0)
+	if (sock >= 0) {
 		close(sock);
+	}
 
 	return ret;
-#else /* __linux__ */
+#else							/* __linux__ */
 	return 0;
-#endif /* __linux__ */
+#endif							/* __linux__ */
 }
-
 
 int ssdp_open_multicast_sock(u32 ip_addr, const char *forced_ifname)
 {
 	int sd;
-	 /* per UPnP-arch-DeviceArchitecture, 1. Discovery, keep IP packet
-	  * time to live (TTL) small */
+	/* per UPnP-arch-DeviceArchitecture, 1. Discovery, keep IP packet
+	 * time to live (TTL) small */
 	unsigned char ttl = 4;
 
 	sd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sd < 0)
+	if (sd < 0) {
 		return -1;
+	}
 
 	if (forced_ifname) {
 #ifdef __linux__
 		struct ifreq req;
 		os_memset(&req, 0, sizeof(req));
 		os_strlcpy(req.ifr_name, forced_ifname, sizeof(req.ifr_name));
-		if (setsockopt(sd, SOL_SOCKET, SO_BINDTODEVICE, &req,
-			       sizeof(req)) < 0) {
-			wpa_printf(MSG_INFO, "WPS UPnP: Failed to bind "
-				   "multicast socket to ifname %s: %s",
-				   forced_ifname, strerror(errno));
+		if (setsockopt(sd, SOL_SOCKET, SO_BINDTODEVICE, &req, sizeof(req)) < 0) {
+			wpa_printf(MSG_INFO, "WPS UPnP: Failed to bind " "multicast socket to ifname %s: %s", forced_ifname, strerror(errno));
 			close(sd);
 			return -1;
 		}
-#endif /* __linux__ */
+#endif							/* __linux__ */
 	}
-
-#if 0   /* maybe ok if we sometimes block on writes */
+#if 0							/* maybe ok if we sometimes block on writes */
 	if (fcntl(sd, F_SETFL, O_NONBLOCK) != 0) {
 		close(sd);
 		return -1;
 	}
 #endif
 
-	if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF,
-		       &ip_addr, sizeof(ip_addr))) {
-		wpa_printf(MSG_DEBUG, "WPS: setsockopt(IP_MULTICAST_IF) %x: "
-			   "%d (%s)", ip_addr, errno, strerror(errno));
+	if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF, &ip_addr, sizeof(ip_addr))) {
+		wpa_printf(MSG_DEBUG, "WPS: setsockopt(IP_MULTICAST_IF) %x: " "%d (%s)", ip_addr, errno, strerror(errno));
 		close(sd);
 		return -1;
 	}
-	if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL,
-		       &ttl, sizeof(ttl))) {
-		wpa_printf(MSG_DEBUG, "WPS: setsockopt(IP_MULTICAST_TTL): "
-			   "%d (%s)", errno, strerror(errno));
+	if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl))) {
+		wpa_printf(MSG_DEBUG, "WPS: setsockopt(IP_MULTICAST_TTL): " "%d (%s)", errno, strerror(errno));
 		close(sd);
 		return -1;
 	}
-
-#if 0   /* not needed, because we don't receive using multicast_sd */
+#if 0							/* not needed, because we don't receive using multicast_sd */
 	{
 		struct ip_mreq mreq;
 		mreq.imr_multiaddr.s_addr = inet_addr(UPNP_MULTICAST_ADDRESS);
 		mreq.imr_interface.s_addr = ip_addr;
-		wpa_printf(MSG_DEBUG, "WPS UPnP: Multicast addr 0x%x if addr "
-			   "0x%x",
-			   mreq.imr_multiaddr.s_addr,
-			   mreq.imr_interface.s_addr);
-		if (setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,
-				sizeof(mreq))) {
-			wpa_printf(MSG_ERROR,
-				   "WPS UPnP: setsockopt "
-				   "IP_ADD_MEMBERSHIP errno %d (%s)",
-				   errno, strerror(errno));
+		wpa_printf(MSG_DEBUG, "WPS UPnP: Multicast addr 0x%x if addr " "0x%x", mreq.imr_multiaddr.s_addr, mreq.imr_interface.s_addr);
+		if (setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq))) {
+			wpa_printf(MSG_ERROR, "WPS UPnP: setsockopt " "IP_ADD_MEMBERSHIP errno %d (%s)", errno, strerror(errno));
 			close(sd);
 			return -1;
 		}
 	}
-#endif  /* not needed */
+#endif							/* not needed */
 
 	/*
 	 * TODO: What about IP_MULTICAST_LOOP? It seems to be on by default?
@@ -940,7 +880,6 @@ int ssdp_open_multicast_sock(u32 ip_addr, const char *forced_ifname)
 	return sd;
 }
 
-
 /**
  * ssdp_open_multicast - Open socket for sending multicast SSDP messages
  * @sm: WPS UPnP state machine from upnp_wps_device_init()
@@ -949,7 +888,8 @@ int ssdp_open_multicast_sock(u32 ip_addr, const char *forced_ifname)
 int ssdp_open_multicast(struct upnp_wps_device_sm *sm)
 {
 	sm->multicast_sd = ssdp_open_multicast_sock(sm->ip_addr, NULL);
-	if (sm->multicast_sd < 0)
+	if (sm->multicast_sd < 0) {
 		return -1;
+	}
 	return 0;
 }

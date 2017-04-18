@@ -57,7 +57,9 @@
 void uartloopback_main(int argc, char *argv[])
 {
 	static char buf[16];
-	int port, ret = 0;
+	int port;
+	int ret = 0;
+
 	for (port = 0; port < 4; port++) {
 		snprintf(buf, 16, "/dev/ttyS%d", port);
 		int fd = open(buf, O_RDWR | O_NOCTTY);

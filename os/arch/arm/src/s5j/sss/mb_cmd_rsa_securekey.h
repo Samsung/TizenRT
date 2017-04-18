@@ -5,7 +5,6 @@
  *  @version    v0.50 : 2016.8.13 Init. release version
  */
 
-
 #ifndef MB_CMD_RSA_SECUREKEY_H_
 #define MB_CMD_RSA_SECUREKEY_H_
 
@@ -68,5 +67,4 @@ int mb_load_prime(void);
 #define FUNC_RSA_GET_PUBKEY_SECUREKEY1  (0x01021702)
 #define FUNC_RSA_GET_PUBKEY_SECUREKEY2  (0x01031702)
 
-#endif /* MB_CMD_RSA_SECUREKEY_H_ */
-
+#endif							/* MB_CMD_RSA_SECUREKEY_H_ */

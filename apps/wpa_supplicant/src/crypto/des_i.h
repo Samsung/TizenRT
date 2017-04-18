@@ -22,4 +22,4 @@ void des3_key_setup(const u8 *key, struct des3_key_s *dkey);
 void des3_encrypt(const u8 *plain, const struct des3_key_s *key, u8 *crypt);
 void des3_decrypt(const u8 *crypt, const struct des3_key_s *key, u8 *plain);
 
-#endif /* DES_I_H */
+#endif							/* DES_I_H */

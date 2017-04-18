@@ -50,15 +50,12 @@ struct ibss_rsn {
 	u8 psk[PMK_LEN];
 };
 
-
-struct ibss_rsn * ibss_rsn_init(struct wpa_supplicant *wpa_s);
+struct ibss_rsn *ibss_rsn_init(struct wpa_supplicant *wpa_s);
 void ibss_rsn_deinit(struct ibss_rsn *ibss_rsn);
 int ibss_rsn_start(struct ibss_rsn *ibss_rsn, const u8 *addr);
 void ibss_rsn_stop(struct ibss_rsn *ibss_rsn, const u8 *peermac);
-int ibss_rsn_rx_eapol(struct ibss_rsn *ibss_rsn, const u8 *src_addr,
-		      const u8 *buf, size_t len);
+int ibss_rsn_rx_eapol(struct ibss_rsn *ibss_rsn, const u8 *src_addr, const u8 *buf, size_t len);
 void ibss_rsn_set_psk(struct ibss_rsn *ibss_rsn, const u8 *psk);
-void ibss_rsn_handle_auth(struct ibss_rsn *ibss_rsn, const u8 *auth_frame,
-			  size_t len);
+void ibss_rsn_handle_auth(struct ibss_rsn *ibss_rsn, const u8 *auth_frame, size_t len);
 
-#endif /* IBSS_RSN_H */
+#endif							/* IBSS_RSN_H */

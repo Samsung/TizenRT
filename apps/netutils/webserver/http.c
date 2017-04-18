@@ -118,7 +118,7 @@ pthread_addr_t http_server_handler(pthread_addr_t arg)
 	while (server->state == HTTP_SERVER_RUN) {
 		addrlen = sizeof(struct sockaddr_in);
 		sock_fd = accept(*(volatile int *)&server->listen_fd,
-						 (struct sockaddr *) &client_addr,
+						 (struct sockaddr *)&client_addr,
 						 &addrlen);
 		if (sock_fd < 0 && errno != EWOULDBLOCK) {
 			HTTP_LOGE("Error: Accept client error!!\n");

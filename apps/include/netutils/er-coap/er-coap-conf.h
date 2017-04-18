@@ -55,7 +55,7 @@
 /* The number of concurrent messages that can be stored for retransmission in the transaction layer. */
 #ifndef COAP_MAX_OPEN_TRANSACTIONS
 #define COAP_MAX_OPEN_TRANSACTIONS     4
-#endif	/* COAP_MAX_OPEN_TRANSACTIONS */
+#endif							/* COAP_MAX_OPEN_TRANSACTIONS */
 
 /**
  * @brief This definition describes maximum number of failed request attempts before action
@@ -64,7 +64,7 @@
 #define COAP_MAX_ATTEMPTS              CONFIG_NETUTILS_ERCOAP_MAX_ATTEMPTS
 #else
 #define COAP_MAX_ATTEMPTS              4
-#endif	/* CONFIG_NETUTILS_ERCOAP_MAX_ATTEMPTS */
+#endif							/* CONFIG_NETUTILS_ERCOAP_MAX_ATTEMPTS */
 
 /**
  * @brief This definition describes that conservative size limit, as not all options have to be set at the same time. Check when Proxy-Uri option is used
@@ -72,16 +72,16 @@
 #ifdef CONFIG_NETUILTS_ERCOAP_MAX_HEADER_SIZE
 #define COAP_MAX_HEADER_SIZE           CONFIG_NETUTIlS_ERCOAP_MAX_HEADER_SIZE
 #else
-                                      /*    Hdr            CoF If-Match            Obs Blo strings */
+									  /*    Hdr            CoF If-Match            Obs Blo strings */
 #define COAP_MAX_HEADER_SIZE           (4 + COAP_TOKEN_LEN + 3 + 1 + COAP_ETAG_LEN + 4 + 4 + 30)	/* 65 */
-#endif	/* CONFIG_NETUTILS_ERCOAP_MAX_HEADER_SIZE */
+#endif							/* CONFIG_NETUTILS_ERCOAP_MAX_HEADER_SIZE */
 
 /* Number of observer slots (each takes abot xxx bytes) */
 #ifndef COAP_MAX_OBSERVERS
 #define COAP_MAX_OBSERVERS    COAP_MAX_OPEN_TRANSACTIONS - 1
-#endif	/* COAP_MAX_OBSERVERS */
+#endif							/* COAP_MAX_OBSERVERS */
 
 /* Interval in notifies in which NON notifies are changed to CON notifies to check client. */
 #define COAP_OBSERVE_REFRESH_INTERVAL  20
 
-#endif	/* ER_COAP_CONF_H_ */
+#endif							/* ER_COAP_CONF_H_ */

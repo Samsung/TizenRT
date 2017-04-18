@@ -17,8 +17,8 @@ struct macsec_init_params;
 struct ieee802_1x_cp_conf;
 
 #define MI_LEN			12
-#define MAX_KEY_LEN		32  /* 32 bytes, 256 bits */
-#define MAX_CKN_LEN		32  /* 32 bytes, 256 bits */
+#define MAX_KEY_LEN		32		/* 32 bytes, 256 bits */
+#define MAX_CKN_LEN		32		/* 32 bytes, 256 bits */
 
 /* MKA timer, unit: millisecond */
 #define MKA_HELLO_TIME		2000
@@ -63,28 +63,19 @@ struct ieee802_1x_kay_ctx {
 	int (*set_replay_protect)(void *ctx, Boolean enabled, u32 window);
 	int (*set_current_cipher_suite)(void *ctx, const u8 *cs, size_t cs_len);
 	int (*enable_controlled_port)(void *ctx, Boolean enabled);
-	int (*get_receive_lowest_pn)(void *ctx, u32 channel, u8 an,
-				     u32 *lowest_pn);
-	int (*get_transmit_next_pn)(void *ctx, u32 channel, u8 an,
-				    u32 *next_pn);
+	int (*get_receive_lowest_pn)(void *ctx, u32 channel, u8 an, u32 *lowest_pn);
+	int (*get_transmit_next_pn)(void *ctx, u32 channel, u8 an, u32 *next_pn);
 	int (*set_transmit_next_pn)(void *ctx, u32 channel, u8 an, u32 next_pn);
 	int (*get_available_receive_sc)(void *ctx, u32 *channel);
-	int (*create_receive_sc)(void *ctx, u32 channel,
-				 struct ieee802_1x_mka_sci *sci,
-				 enum validate_frames vf,
-				 enum confidentiality_offset co);
+	int (*create_receive_sc)(void *ctx, u32 channel, struct ieee802_1x_mka_sci *sci, enum validate_frames vf, enum confidentiality_offset co);
 	int (*delete_receive_sc)(void *ctx, u32 channel);
-	int (*create_receive_sa)(void *ctx, u32 channel, u8 an, u32 lowest_pn,
-				 const u8 *sak);
+	int (*create_receive_sa)(void *ctx, u32 channel, u8 an, u32 lowest_pn, const u8 *sak);
 	int (*enable_receive_sa)(void *ctx, u32 channel, u8 an);
 	int (*disable_receive_sa)(void *ctx, u32 channel, u8 an);
 	int (*get_available_transmit_sc)(void *ctx, u32 *channel);
-	int (*create_transmit_sc)(void *ctx, u32 channel,
-				  const struct ieee802_1x_mka_sci *sci,
-				  enum confidentiality_offset co);
+	int (*create_transmit_sc)(void *ctx, u32 channel, const struct ieee802_1x_mka_sci *sci, enum confidentiality_offset co);
 	int (*delete_transmit_sc)(void *ctx, u32 channel);
-	int (*create_transmit_sa)(void *ctx, u32 channel, u8 an, u32 next_pn,
-				  Boolean confidentiality, const u8 *sak);
+	int (*create_transmit_sa)(void *ctx, u32 channel, u8 an, u32 next_pn, Boolean confidentiality, const u8 *sak);
 	int (*enable_transmit_sa)(void *ctx, u32 channel, u8 an);
 	int (*disable_transmit_sa)(void *ctx, u32 channel, u8 an);
 };
@@ -126,8 +117,8 @@ struct ieee802_1x_kay {
 	Boolean is_obliged_key_server;
 	char if_name[IFNAMSIZ];
 
-	int macsec_csindex;  /*  MACsec cipher suite table index */
-	int mka_algindex;  /* MKA alg table index */
+	int macsec_csindex;			/*  MACsec cipher suite table index */
+	int mka_algindex;			/* MKA alg table index */
 
 	u32 dist_kn;
 	u8 dist_an;
@@ -153,42 +144,22 @@ struct ieee802_1x_kay {
 	enum confidentiality_offset co;
 };
 
-
-struct ieee802_1x_kay *
-ieee802_1x_kay_init(struct ieee802_1x_kay_ctx *ctx, enum macsec_policy policy,
-		    const char *ifname, const u8 *addr);
+struct ieee802_1x_kay *ieee802_1x_kay_init(struct ieee802_1x_kay_ctx *ctx, enum macsec_policy policy, const char *ifname, const u8 *addr);
 void ieee802_1x_kay_deinit(struct ieee802_1x_kay *kay);
 
-struct ieee802_1x_mka_participant *
-ieee802_1x_kay_create_mka(struct ieee802_1x_kay *kay,
-			  struct mka_key_name *ckn, struct mka_key *cak,
-			  u32 life, enum mka_created_mode mode,
-			  Boolean is_authenticator);
-void ieee802_1x_kay_delete_mka(struct ieee802_1x_kay *kay,
-			       struct mka_key_name *ckn);
-void ieee802_1x_kay_mka_participate(struct ieee802_1x_kay *kay,
-				    struct mka_key_name *ckn,
-				    Boolean status);
+struct ieee802_1x_mka_participant *ieee802_1x_kay_create_mka(struct ieee802_1x_kay *kay, struct mka_key_name *ckn, struct mka_key *cak, u32 life, enum mka_created_mode mode, Boolean is_authenticator);
+void ieee802_1x_kay_delete_mka(struct ieee802_1x_kay *kay, struct mka_key_name *ckn);
+void ieee802_1x_kay_mka_participate(struct ieee802_1x_kay *kay, struct mka_key_name *ckn, Boolean status);
 int ieee802_1x_kay_new_sak(struct ieee802_1x_kay *kay);
-int ieee802_1x_kay_change_cipher_suite(struct ieee802_1x_kay *kay,
-				       int cs_index);
+int ieee802_1x_kay_change_cipher_suite(struct ieee802_1x_kay *kay, int cs_index);
 
-int ieee802_1x_kay_set_latest_sa_attr(struct ieee802_1x_kay *kay,
-				      struct ieee802_1x_mka_ki *lki, u8 lan,
-				      Boolean ltx, Boolean lrx);
-int ieee802_1x_kay_set_old_sa_attr(struct ieee802_1x_kay *kay,
-				   struct ieee802_1x_mka_ki *oki,
-				   u8 oan, Boolean otx, Boolean orx);
-int ieee802_1x_kay_create_sas(struct ieee802_1x_kay *kay,
-			      struct ieee802_1x_mka_ki *lki);
-int ieee802_1x_kay_delete_sas(struct ieee802_1x_kay *kay,
-			      struct ieee802_1x_mka_ki *ki);
-int ieee802_1x_kay_enable_tx_sas(struct ieee802_1x_kay *kay,
-				 struct ieee802_1x_mka_ki *lki);
-int ieee802_1x_kay_enable_rx_sas(struct ieee802_1x_kay *kay,
-				 struct ieee802_1x_mka_ki *lki);
+int ieee802_1x_kay_set_latest_sa_attr(struct ieee802_1x_kay *kay, struct ieee802_1x_mka_ki *lki, u8 lan, Boolean ltx, Boolean lrx);
+int ieee802_1x_kay_set_old_sa_attr(struct ieee802_1x_kay *kay, struct ieee802_1x_mka_ki *oki, u8 oan, Boolean otx, Boolean orx);
+int ieee802_1x_kay_create_sas(struct ieee802_1x_kay *kay, struct ieee802_1x_mka_ki *lki);
+int ieee802_1x_kay_delete_sas(struct ieee802_1x_kay *kay, struct ieee802_1x_mka_ki *ki);
+int ieee802_1x_kay_enable_tx_sas(struct ieee802_1x_kay *kay, struct ieee802_1x_mka_ki *lki);
+int ieee802_1x_kay_enable_rx_sas(struct ieee802_1x_kay *kay, struct ieee802_1x_mka_ki *lki);
 int ieee802_1x_kay_enable_new_info(struct ieee802_1x_kay *kay);
-int ieee802_1x_kay_cp_conf(struct ieee802_1x_kay *kay,
-			   struct ieee802_1x_cp_conf *pconf);
+int ieee802_1x_kay_cp_conf(struct ieee802_1x_kay *kay, struct ieee802_1x_cp_conf *pconf);
 
-#endif /* IEEE802_1X_KAY_H */
+#endif							/* IEEE802_1X_KAY_H */

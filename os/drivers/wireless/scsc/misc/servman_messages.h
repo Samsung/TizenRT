@@ -22,10 +22,9 @@ enum {
  * Maxwell management transport.
  */
 struct sm_msg_packet {
-	uint8_t         service_id;
-	uint8_t         msg;
+	uint8_t service_id;
+	uint8_t msg;
 	scsc_mifram_ref optional_data;
 } __packed;
 
-
-#endif /* SERVMAN_MESSAGES_H__ */
+#endif							/* SERVMAN_MESSAGES_H__ */

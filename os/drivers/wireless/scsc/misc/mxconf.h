@@ -23,7 +23,6 @@
 
 /* Uses */
 
-
 /* Definitions */
 
 /**
@@ -45,17 +44,16 @@
 /* Macros */
 #define GCC_PACKED __attribute__((packed))
 
-
 /* Types */
 
 /**
  * Maxwell Circular Packet Buffer Configuration.
  */
 GCC_PACKED struct mxcbufconf {
-	scsc_mifram_ref buffer_loc;      /**< Location of allocated buffer in DRAM */
-	uint32_t        num_packets;     /**< Total number of packets that can be stored in the buffer */
-	uint32_t        packet_size;     /**< Size of each individual packet within the buffer */
-	scsc_mifram_ref read_index_loc;  /**< Location of 32bit read index in DRAM or Mailbox */
+	scsc_mifram_ref buffer_loc;		 /**< Location of allocated buffer in DRAM */
+	uint32_t num_packets;			 /**< Total number of packets that can be stored in the buffer */
+	uint32_t packet_size;			 /**< Size of each individual packet within the buffer */
+	scsc_mifram_ref read_index_loc;	 /**< Location of 32bit read index in DRAM or Mailbox */
 	scsc_mifram_ref write_index_loc; /**< Location of 32bit write index */
 };
 
@@ -69,10 +67,10 @@ GCC_PACKED struct mxstreamconf {
 	struct mxcbufconf buf_conf;
 
 	/** Allocated MIF Interrupt Read Bit Index */
-	uint8_t           read_bit_idx;
+	uint8_t read_bit_idx;
 
 	/** Allocated MIF Interrupt Write Bit Index */
-	uint8_t           write_bit_idx;
+	uint8_t write_bit_idx;
 };
 
 /**
@@ -123,22 +121,22 @@ GCC_PACKED struct mxconf {
 	/**
 	 * MX Management Message Transport Configuration.
 	 */
-	struct mxtransconf   mx_trans_conf;
+	struct mxtransconf mx_trans_conf;
 
 	/**
 	 * MX Management GDB Message Transport Configuration.
 	 */
 	/* Cortex-R4 channel */
-	struct mxtransconf   mx_trans_conf_gdb_r4;
+	struct mxtransconf mx_trans_conf_gdb_r4;
 	/* Cortex-M4 channel */
-	struct mxtransconf   mx_trans_conf_gdb_m4;
+	struct mxtransconf mx_trans_conf_gdb_m4;
 
 #ifdef MX_LOG_PHASE_4
 	/**
 	 * Mxlog Event Buffer Configuration.
 	 */
-	struct mxlogconf     mxlogconf;
+	struct mxlogconf mxlogconf;
 #endif
 };
 
-#endif /* MXCONF_H__ */
+#endif							/* MXCONF_H__ */

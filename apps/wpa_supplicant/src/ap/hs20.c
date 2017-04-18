@@ -16,21 +16,22 @@
 #include "ap_drv_ops.h"
 #include "hs20.h"
 
-
-u8 * hostapd_eid_hs20_indication(struct hostapd_data *hapd, u8 *eid)
+u8 *hostapd_eid_hs20_indication(struct hostapd_data *hapd, u8 *eid)
 {
 	u8 conf;
-	if (!hapd->conf->hs20)
+	if (!hapd->conf->hs20) {
 		return eid;
+	}
 	*eid++ = WLAN_EID_VENDOR_SPECIFIC;
 	*eid++ = 7;
 	WPA_PUT_BE24(eid, OUI_WFA);
 	eid += 3;
 	*eid++ = HS20_INDICATION_OUI_TYPE;
-	conf = HS20_VERSION; /* Release Number */
+	conf = HS20_VERSION;		/* Release Number */
 	conf |= HS20_ANQP_DOMAIN_ID_PRESENT;
-	if (hapd->conf->disable_dgaf)
+	if (hapd->conf->disable_dgaf) {
 		conf |= HS20_DGAF_DISABLED;
+	}
 	*eid++ = conf;
 	WPA_PUT_LE16(eid, hapd->conf->anqp_domain_id);
 	eid += 2;
@@ -38,17 +39,17 @@ u8 * hostapd_eid_hs20_indication(struct hostapd_data *hapd, u8 *eid)
 	return eid;
 }
 
-
-u8 * hostapd_eid_osen(struct hostapd_data *hapd, u8 *eid)
+u8 *hostapd_eid_osen(struct hostapd_data *hapd, u8 *eid)
 {
 	u8 *len;
 	u16 capab;
 
-	if (!hapd->conf->osen)
+	if (!hapd->conf->osen) {
 		return eid;
+	}
 
 	*eid++ = WLAN_EID_VENDOR_SPECIFIC;
-	len = eid++; /* to be filled */
+	len = eid++;				/* to be filled */
 	WPA_PUT_BE24(eid, OUI_WFA);
 	eid += 3;
 	*eid++ = HS20_OSEN_OUI_TYPE;
@@ -78,10 +79,11 @@ u8 * hostapd_eid_osen(struct hostapd_data *hapd, u8 *eid)
 #ifdef CONFIG_IEEE80211W
 	if (hapd->conf->ieee80211w != NO_MGMT_FRAME_PROTECTION) {
 		capab |= WPA_CAPABILITY_MFPC;
-		if (hapd->conf->ieee80211w == MGMT_FRAME_PROTECTION_REQUIRED)
+		if (hapd->conf->ieee80211w == MGMT_FRAME_PROTECTION_REQUIRED) {
 			capab |= WPA_CAPABILITY_MFPR;
+		}
 	}
-#endif /* CONFIG_IEEE80211W */
+#endif							/* CONFIG_IEEE80211W */
 	WPA_PUT_LE16(eid, capab);
 	eid += 2;
 
@@ -90,9 +92,7 @@ u8 * hostapd_eid_osen(struct hostapd_data *hapd, u8 *eid)
 	return eid;
 }
 
-
-int hs20_send_wnm_notification(struct hostapd_data *hapd, const u8 *addr,
-			       u8 osu_method, const char *url)
+int hs20_send_wnm_notification(struct hostapd_data *hapd, const u8 *addr, u8 osu_method, const char *url)
 {
 	struct wpabuf *buf;
 	size_t len = 0;
@@ -104,20 +104,20 @@ int hs20_send_wnm_notification(struct hostapd_data *hapd, const u8 *addr,
 	if (url) {
 		len = 1 + os_strlen(url);
 		if (5 + len > 255) {
-			wpa_printf(MSG_INFO, "HS 2.0: Too long URL for "
-				   "WNM-Notification: '%s'", url);
+			wpa_printf(MSG_INFO, "HS 2.0: Too long URL for " "WNM-Notification: '%s'", url);
 			return -1;
 		}
 	}
 
 	buf = wpabuf_alloc(4 + 7 + len);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return -1;
+	}
 
 	wpabuf_put_u8(buf, WLAN_ACTION_WNM);
 	wpabuf_put_u8(buf, WNM_NOTIFICATION_REQ);
-	wpabuf_put_u8(buf, 1); /* Dialog token */
-	wpabuf_put_u8(buf, 1); /* Type - 1 reserved for WFA */
+	wpabuf_put_u8(buf, 1);		/* Dialog token */
+	wpabuf_put_u8(buf, 1);		/* Type - 1 reserved for WFA */
 
 	/* Subscription Remediation subelement */
 	wpabuf_put_u8(buf, WLAN_EID_VENDOR_SPECIFIC);
@@ -133,18 +133,14 @@ int hs20_send_wnm_notification(struct hostapd_data *hapd, const u8 *addr,
 		wpabuf_put_u8(buf, 0);
 	}
 
-	ret = hostapd_drv_send_action(hapd, hapd->iface->freq, 0, addr,
-				      wpabuf_head(buf), wpabuf_len(buf));
+	ret = hostapd_drv_send_action(hapd, hapd->iface->freq, 0, addr, wpabuf_head(buf), wpabuf_len(buf));
 
 	wpabuf_free(buf);
 
 	return ret;
 }
 
-
-int hs20_send_wnm_notification_deauth_req(struct hostapd_data *hapd,
-					  const u8 *addr,
-					  const struct wpabuf *payload)
+int hs20_send_wnm_notification_deauth_req(struct hostapd_data *hapd, const u8 *addr, const struct wpabuf *payload)
 {
 	struct wpabuf *buf;
 	int ret;
@@ -153,13 +149,14 @@ int hs20_send_wnm_notification_deauth_req(struct hostapd_data *hapd,
 	 * or if the STA did not indicate support for WNM-Notification */
 
 	buf = wpabuf_alloc(4 + 6 + wpabuf_len(payload));
-	if (buf == NULL)
+	if (buf == NULL) {
 		return -1;
+	}
 
 	wpabuf_put_u8(buf, WLAN_ACTION_WNM);
 	wpabuf_put_u8(buf, WNM_NOTIFICATION_REQ);
-	wpabuf_put_u8(buf, 1); /* Dialog token */
-	wpabuf_put_u8(buf, 1); /* Type - 1 reserved for WFA */
+	wpabuf_put_u8(buf, 1);		/* Dialog token */
+	wpabuf_put_u8(buf, 1);		/* Type - 1 reserved for WFA */
 
 	/* Deauthentication Imminent Notice subelement */
 	wpabuf_put_u8(buf, WLAN_EID_VENDOR_SPECIFIC);
@@ -168,8 +165,7 @@ int hs20_send_wnm_notification_deauth_req(struct hostapd_data *hapd,
 	wpabuf_put_u8(buf, HS20_WNM_DEAUTH_IMMINENT_NOTICE);
 	wpabuf_put_buf(buf, payload);
 
-	ret = hostapd_drv_send_action(hapd, hapd->iface->freq, 0, addr,
-				      wpabuf_head(buf), wpabuf_len(buf));
+	ret = hostapd_drv_send_action(hapd, hapd->iface->freq, 0, addr, wpabuf_head(buf), wpabuf_len(buf));
 
 	wpabuf_free(buf);
 

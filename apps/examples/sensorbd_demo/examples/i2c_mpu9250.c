@@ -56,8 +56,7 @@
 
 #include "i2c_mpu9250.h"
 
-enum mpu9250_axis_e
-{
+enum mpu9250_axis_e {
 	MPU9250_AXIS_X = 0,
 	MPU9250_AXIS_Y = 1,
 	MPU9250_AXIS_Z = 2,
@@ -68,15 +67,13 @@ static int mpu9250_initialize(void);
 static struct i2c_dev_s *i2c_dev;
 static struct i2c_config_s configs;
 
-uint8_t mpu9250_disable_mask[3] =
-{
+uint8_t mpu9250_disable_mask[3] = {
 	MPU9250_DISABLE_XA_MASK,
 	MPU9250_DISABLE_YA_MASK,
 	MPU9250_DISABLE_ZA_MASK,
 };
 
-uint8_t mpu9250_accel_out[3] =
-{
+uint8_t mpu9250_accel_out[3] = {
 	MPU9250_ACCEL_XOUT_H,
 	MPU9250_ACCEL_YOUT_H,
 	MPU9250_ACCEL_ZOUT_H,
@@ -181,7 +178,7 @@ int mpu9250_main(int argc, char *argv[])
 
 	printf("ACC:      %-10s%-10s%-10s\n", "X", "Y", "Z");
 
-	for (i = 0; i < 30; i++ ) {
+	for (i = 0; i < 30; i++) {
 		data[0] = mpu9250_get_axis(MPU9250_AXIS_X);
 		if (data[0] < 0) {
 			break;

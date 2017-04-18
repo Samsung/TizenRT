@@ -18,13 +18,14 @@ static void gf_mulx(u8 *pad)
 	int i, carry;
 
 	carry = pad[0] & 0x80;
-	for (i = 0; i < AES_BLOCK_SIZE - 1; i++)
+	for (i = 0; i < AES_BLOCK_SIZE - 1; i++) {
 		pad[i] = (pad[i] << 1) | (pad[i + 1] >> 7);
+	}
 	pad[AES_BLOCK_SIZE - 1] <<= 1;
-	if (carry)
+	if (carry) {
 		pad[AES_BLOCK_SIZE - 1] ^= 0x87;
+	}
 }
-
 
 /**
  * omac1_aes_vector - One-Key CBC MAC (OMAC1) hash with AES
@@ -40,8 +41,7 @@ static void gf_mulx(u8 *pad)
  * OMAC1 was standardized with the name CMAC by NIST in a Special Publication
  * (SP) 800-38B.
  */
-int omac1_aes_vector(const u8 *key, size_t key_len, size_t num_elem,
-		     const u8 *addr[], const size_t *len, u8 *mac)
+int omac1_aes_vector(const u8 *key, size_t key_len, size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
 	void *ctx;
 	u8 cbc[AES_BLOCK_SIZE], pad[AES_BLOCK_SIZE];
@@ -49,13 +49,15 @@ int omac1_aes_vector(const u8 *key, size_t key_len, size_t num_elem,
 	size_t i, e, left, total_len;
 
 	ctx = aes_encrypt_init(key, key_len);
-	if (ctx == NULL)
+	if (ctx == NULL) {
 		return -1;
+	}
 	os_memset(cbc, 0, AES_BLOCK_SIZE);
 
 	total_len = 0;
-	for (e = 0; e < num_elem; e++)
+	for (e = 0; e < num_elem; e++) {
 		total_len += len[e];
+	}
 	left = total_len;
 
 	e = 0;
@@ -70,16 +72,17 @@ int omac1_aes_vector(const u8 *key, size_t key_len, size_t num_elem,
 				 * Stop if there are no more bytes to process
 				 * since there are no more entries in the array.
 				 */
-				if (i + 1 == AES_BLOCK_SIZE &&
-				    left == AES_BLOCK_SIZE)
+				if (i + 1 == AES_BLOCK_SIZE && left == AES_BLOCK_SIZE) {
 					break;
+				}
 				e++;
 				pos = addr[e];
 				end = pos + len[e];
 			}
 		}
-		if (left > AES_BLOCK_SIZE)
+		if (left > AES_BLOCK_SIZE) {
 			aes_encrypt(ctx, cbc, cbc);
+		}
 		left -= AES_BLOCK_SIZE;
 	}
 
@@ -95,8 +98,9 @@ int omac1_aes_vector(const u8 *key, size_t key_len, size_t num_elem,
 				 * Stop if there are no more bytes to process
 				 * since there are no more entries in the array.
 				 */
-				if (i + 1 == left)
+				if (i + 1 == left) {
 					break;
+				}
 				e++;
 				pos = addr[e];
 				end = pos + len[e];
@@ -106,13 +110,13 @@ int omac1_aes_vector(const u8 *key, size_t key_len, size_t num_elem,
 		gf_mulx(pad);
 	}
 
-	for (i = 0; i < AES_BLOCK_SIZE; i++)
+	for (i = 0; i < AES_BLOCK_SIZE; i++) {
 		pad[i] ^= cbc[i];
+	}
 	aes_encrypt(ctx, pad, mac);
 	aes_encrypt_deinit(ctx);
 	return 0;
 }
-
 
 /**
  * omac1_aes_128_vector - One-Key CBC MAC (OMAC1) hash with AES-128
@@ -127,12 +131,10 @@ int omac1_aes_vector(const u8 *key, size_t key_len, size_t num_elem,
  * OMAC1 was standardized with the name CMAC by NIST in a Special Publication
  * (SP) 800-38B.
  */
-int omac1_aes_128_vector(const u8 *key, size_t num_elem,
-			 const u8 *addr[], const size_t *len, u8 *mac)
+int omac1_aes_128_vector(const u8 *key, size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
 	return omac1_aes_vector(key, 16, num_elem, addr, len, mac);
 }
-
 
 /**
  * omac1_aes_128 - One-Key CBC MAC (OMAC1) hash with AES-128 (aka AES-CMAC)
@@ -150,7 +152,6 @@ int omac1_aes_128(const u8 *key, const u8 *data, size_t data_len, u8 *mac)
 {
 	return omac1_aes_128_vector(key, 1, &data, &data_len, mac);
 }
-
 
 /**
  * omac1_aes_256 - One-Key CBC MAC (OMAC1) hash with AES-256 (aka AES-CMAC)

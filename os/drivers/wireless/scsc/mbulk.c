@@ -25,11 +25,11 @@ pthread_mutex_t mbulk_pool_lock;
 
 static inline void mbulk_debug(struct mbulk *m)
 {
-	(void)m; /* may be unused */
+	(void)m;					/* may be unused */
 
 	pr_debug("m->next %p: %d\n", &m->next, m->next);
 	pr_debug("m->flag %p: %d\n", &m->flag, m->flag);
-	pr_debug("m->clas %p: %d\n",  &m->clas, m->clas);
+	pr_debug("m->clas %p: %d\n", &m->clas, m->clas);
 	pr_debug("m->pid  %p: %d\n", &m->pid, m->pid);
 	pr_debug("m->refcnt %p: %d\n", &m->refcnt, m->refcnt);
 	pr_debug("m->dat_bufsz %p: %d\n", &m->dat_bufsz, m->dat_bufsz);
@@ -41,17 +41,17 @@ static inline void mbulk_debug(struct mbulk *m)
 
 /* mbulk pool */
 struct mbulk_pool {
-	bool         valid;                   /** is valid */
-	u8           pid;                     /** pool id */
-	struct mbulk *free_list;              /** head of free segment list */
-	int          free_cnt;                /** current number of free segments */
-	int          usage[MBULK_CLASS_MAX];  /** statistics of usage per mbulk clas*/
-	char         *base_addr;              /** base address of the pool */
-	char         *end_addr;               /** exclusive end address of the pool */
-	mbulk_len_t  seg_size;                /** segment size in bytes "excluding" struct mbulk */
-	u8           guard;                   /** pool guard **/
+	bool valid;							  /** is valid */
+	u8 pid;								  /** pool id */
+	struct mbulk *free_list;			  /** head of free segment list */
+	int free_cnt;						  /** current number of free segments */
+	int usage[MBULK_CLASS_MAX];			  /** statistics of usage per mbulk clas*/
+	char *base_addr;					  /** base address of the pool */
+	char *end_addr;						  /** exclusive end address of the pool */
+	mbulk_len_t seg_size;				  /** segment size in bytes "excluding" struct mbulk */
+	u8 guard;							  /** pool guard **/
 #ifdef MBULK_DEBUG
-	int          tot_seg_num;             /** total number of segments in this pool */
+	int tot_seg_num;					  /** total number of segments in this pool */
 #endif
 };
 
@@ -59,17 +59,18 @@ struct mbulk_pool {
 static inline struct mbulk *mbulk_pool_get(struct mbulk_pool *pool, enum mbulk_class clas)
 {
 	struct mbulk *m;
-	u8           guard;
+	u8 guard;
 
-	if (pool == NULL)
+	if (pool == NULL) {
 		return NULL;
+	}
 
 	pthread_mutex_lock(&mbulk_pool_lock);
 
 	guard = pool->guard;
 	m = pool->free_list;
 
-	if (m == NULL || pool->free_cnt <= guard) { /* guard */
+	if (m == NULL || pool->free_cnt <= guard) {	/* guard */
 		pthread_mutex_unlock(&mbulk_pool_lock);
 		return NULL;
 	}
@@ -90,8 +91,9 @@ static inline struct mbulk *mbulk_pool_get(struct mbulk_pool *pool, enum mbulk_c
 /* put a segment to a pool */
 static inline void mbulk_pool_put(struct mbulk_pool *pool, struct mbulk *m)
 {
-	if (m->flag == MBULK_F_FREE)
+	if (m->flag == MBULK_F_FREE) {
 		return;
+	}
 
 	pthread_mutex_lock(&mbulk_pool_lock);
 	pool->usage[m->clas]--;
@@ -105,8 +107,8 @@ static inline void mbulk_pool_put(struct mbulk_pool *pool, struct mbulk *m)
 
 /** mbulk pool configuration */
 struct mbulk_pool_config {
-	mbulk_len_t seg_sz;     /** segment size "excluding" struct mbulk */
-	int         seg_num;    /** number of segments. If -1, all remaining space is used */
+	mbulk_len_t seg_sz;		/** segment size "excluding" struct mbulk */
+	int seg_num;			/** number of segments. If -1, all remaining space is used */
 };
 
 /** mbulk pools */
@@ -129,23 +131,25 @@ void mbulk_pool_stats(struct slsi_dev *sdev)
  * allocates all remaining buffer space to the bulk buffer.
  *
  */
-static struct mbulk *mbulk_seg_generic_alloc(struct mbulk_pool *pool,
-					     enum mbulk_class clas, size_t sig_bufsz, size_t dat_bufsz)
+static struct mbulk *mbulk_seg_generic_alloc(struct mbulk_pool *pool, enum mbulk_class clas, size_t sig_bufsz, size_t dat_bufsz)
 {
 	struct mbulk *m;
 
-	if (pool == NULL)
+	if (pool == NULL) {
 		return NULL;
+	}
 
 	/* get a segment from the pool */
 	m = mbulk_pool_get(pool, clas);
-	if (m == NULL)
+	if (m == NULL) {
 		return NULL;
+	}
 
 	/* signal buffer */
 	m->sig_bufsz = (mbulk_len_t)sig_bufsz;
-	if (sig_bufsz)
+	if (sig_bufsz) {
 		m->flag = MBULK_F_SIG;
+	}
 
 	/* data buffer.
 	 * Note that data buffer size can be larger than the requested.
@@ -172,13 +176,12 @@ static struct mbulk *mbulk_seg_generic_alloc(struct mbulk_pool *pool,
  * meeting the requested size.
  *
  */
-struct mbulk *mbulk_with_signal_alloc_by_pool(u8 pool_id, u16 colour,
-					      enum mbulk_class clas, size_t sig_bufsz_req, size_t dat_bufsz)
+struct mbulk *mbulk_with_signal_alloc_by_pool(u8 pool_id, u16 colour, enum mbulk_class clas, size_t sig_bufsz_req, size_t dat_bufsz)
 {
 	struct mbulk_pool *pool;
-	size_t            sig_bufsz;
-	size_t            tot_bufsz;
-	struct mbulk      *m_ret;
+	size_t sig_bufsz;
+	size_t tot_bufsz;
+	struct mbulk *m_ret;
 
 	/* data buffer should be aligned */
 	sig_bufsz = MBULK_SIG_BUFSZ_ROUNDUP(sizeof(struct mbulk) + sig_bufsz_req) - sizeof(struct mbulk);
@@ -196,9 +199,9 @@ struct mbulk *mbulk_with_signal_alloc_by_pool(u8 pool_id, u16 colour,
 
 	/* check if this pool meets the size */
 	tot_bufsz = sig_bufsz + dat_bufsz;
-	if (dat_bufsz != MBULK_DAT_BUFSZ_REQ_BEST_MAGIC &&
-	    pool->seg_size < tot_bufsz)
+	if (dat_bufsz != MBULK_DAT_BUFSZ_REQ_BEST_MAGIC && pool->seg_size < tot_bufsz) {
 		return NULL;
+	}
 
 	m_ret = mbulk_seg_generic_alloc(pool, clas, sig_bufsz, dat_bufsz);
 	/* Colour the mbulk */
@@ -211,7 +214,7 @@ struct mbulk *mbulk_with_signal_alloc_by_pool(u8 pool_id, u16 colour,
 	return m_ret;
 }
 
-struct mbulk_pool * mbulk_get_pool(u8 pool_id)
+struct mbulk_pool *mbulk_get_pool(u8 pool_id)
 {
 	if (pool_id >= MBULK_POOL_ID_MAX) {
 		pr_err("Invalid pool ID: %d\n", pool_id);
@@ -225,13 +228,12 @@ struct mbulk_pool * mbulk_get_pool(u8 pool_id)
  * add a memory zone to a mbulk pool list
  *
  */
-int mbulk_pool_add(u8 pool_id, char *base, char *end,
-		    size_t seg_size, u8 guard)
+int mbulk_pool_add(u8 pool_id, char *base, char *end, size_t seg_size, u8 guard)
 {
 	struct mbulk_pool *pool;
-	struct mbulk      *next;
-	char                 *tmpNext = NULL;
-	size_t            byte_per_block;
+	struct mbulk *next;
+	char *tmpNext = NULL;
+	size_t byte_per_block;
 
 	pool = mbulk_get_pool(pool_id);
 	if (pool == NULL) {
@@ -284,13 +286,14 @@ int mbulk_pool_add(u8 pool_id, char *base, char *end,
 void mbulk_pool_dump(u8 pool_id, int max_cnt)
 {
 	struct mbulk_pool *pool;
-	struct mbulk      *m;
-	int               cnt = max_cnt;
+	struct mbulk *m;
+	int cnt = max_cnt;
 
 	pool = &mbulk_pools[pool_id];
 	m = pool->free_list;
-	while (m != NULL && cnt--)
+	while (m != NULL && cnt--) {
 		m = m->next;
+	}
 }
 
 /**
@@ -298,11 +301,12 @@ void mbulk_pool_dump(u8 pool_id, int max_cnt)
  */
 void mbulk_free_virt_host(struct mbulk *m)
 {
-	u8                pool_id;
+	u8 pool_id;
 	struct mbulk_pool *pool;
 
-	if (m == NULL)
+	if (m == NULL) {
 		return;
+	}
 
 	/* Remove colour */
 	pool_id = m->pid & 0x1;

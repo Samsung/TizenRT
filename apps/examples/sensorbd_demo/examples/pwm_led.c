@@ -55,7 +55,11 @@
 
 void ledpwm_main(int argc, char *argv[])
 {
-	int i, fd1, fd2, fd3, fd4;
+	int i;
+	int fd1;
+	int fd2;
+	int fd3;
+	int fd4;
 	struct pwm_info_s pwm_info;
 
 	fd1 = open("/dev/pwm0", O_RDWR);

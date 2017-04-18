@@ -39,18 +39,19 @@ void *__miframman_alloc(struct miframman *ram, size_t nbytes)
 	unsigned int index = 0;
 	unsigned int available;
 	unsigned int i;
-	size_t       num_blocks;
-	void         *free_mem = NULL;
+	size_t num_blocks;
+	void *free_mem = NULL;
 
-	if (!nbytes || nbytes > ram->free_mem)
+	if (!nbytes || nbytes > ram->free_mem) {
 		goto end;
+	}
 
 	/* Number of blocks required (rounding up) */
-	num_blocks = nbytes / MIFRAMMAN_BLOCK_SIZE +
-		     ((nbytes % MIFRAMMAN_BLOCK_SIZE) > 0 ? 1 : 0);
+	num_blocks = nbytes / MIFRAMMAN_BLOCK_SIZE + ((nbytes % MIFRAMMAN_BLOCK_SIZE) > 0 ? 1 : 0);
 
-	if (num_blocks > ram->num_blocks)
+	if (num_blocks > ram->num_blocks) {
 		goto end;
+	}
 
 	pthread_mutex_lock(&ram->lock);
 	while (index <= (ram->num_blocks - num_blocks)) {
@@ -58,18 +59,19 @@ void *__miframman_alloc(struct miframman *ram, size_t nbytes)
 
 		/* Search consecutive blocks */
 		for (i = 0; i < num_blocks; i++) {
-			if (ram->bitmap[i + index] != BLOCK_FREE)
+			if (ram->bitmap[i + index] != BLOCK_FREE) {
 				break;
+			}
 			available++;
 		}
 		if (available == num_blocks) {
-			free_mem = ram->start_dram +
-				   MIFRAMMAN_BLOCK_SIZE * index;
+			free_mem = ram->start_dram + MIFRAMMAN_BLOCK_SIZE * index;
 
 			/* Mark the blocks as used */
 			ram->bitmap[index++] = BLOCK_BOUND;
-			for (i = 1; i < num_blocks; i++)
+			for (i = 1; i < num_blocks; i++) {
 				ram->bitmap[index++] = BLOCK_INUSE;
+			}
 
 			ram->free_mem -= num_blocks * MIFRAMMAN_BLOCK_SIZE;
 			pthread_mutex_unlock(&ram->lock);
@@ -86,32 +88,35 @@ exit:
 	return free_mem;
 }
 
-
 #define MIFRAMMAN_ALIGN(mem, align) \
 	((void *)((((uintptr_t)(mem) + (align + sizeof(void *))) \
 		   & (~(uintptr_t)(align - 1)))))
 
 #define MIFRAMMAN_PTR(mem) \
 	(*(((void **)((uintptr_t)(mem) & \
-		      (~(uintptr_t)(sizeof(void *) - 1)))) - 1))
+		      (~(uintptr_t)(sizeof(void *)-1)))) - 1))
 
 bool is_power_of_2(unsigned long n)
 {
-        return (n != 0 && ((n & (n - 1)) == 0));
+	return (n != 0 && ((n & (n - 1)) == 0));
 }
+
 void *miframman_alloc(struct miframman *ram, size_t nbytes, size_t align)
 {
 	void *mem, *align_mem;
 
-	if (!is_power_of_2(align) || nbytes == 0)
+	if (!is_power_of_2(align) || nbytes == 0) {
 		return NULL;
+	}
 
-	if (align < sizeof(void *))
+	if (align < sizeof(void *)) {
 		align = sizeof(void *);
+	}
 
 	mem = __miframman_alloc(ram, nbytes + align + sizeof(void *));
-	if (!mem)
+	if (!mem) {
 		return NULL;
+	}
 
 	align_mem = MIFRAMMAN_ALIGN(mem, align);
 
@@ -128,13 +133,13 @@ void __miframman_free(struct miframman *ram, void *mem)
 	pthread_mutex_lock(&ram->lock);
 	if (ram->start_dram == NULL || !mem) {
 		SLSI_ERR_NODEV("Mem is NULL\n");
-		pthread_mutex_unlock(&ram->lock); // unlock before returning.
+		pthread_mutex_unlock(&ram->lock);	// unlock before returning.
 		return;
 	}
 
 	/* Get block index */
 	index = (unsigned int)((mem - ram->start_dram)
-			       / MIFRAMMAN_BLOCK_SIZE);
+						   / MIFRAMMAN_BLOCK_SIZE);
 
 	/* Check */
 	if (index >= ram->num_blocks) {
@@ -163,8 +168,9 @@ end:
 void miframman_free(struct miframman *ram, void *mem)
 {
 	/* Restore allocated pointer */
-	if (mem)
+	if (mem) {
 		__miframman_free(ram, MIFRAMMAN_PTR(mem));
+	}
 }
 
 void miframman_deinit(struct miframman *ram)

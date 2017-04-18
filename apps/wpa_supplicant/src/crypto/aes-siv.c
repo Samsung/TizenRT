@@ -13,56 +13,55 @@
 #include "aes_wrap.h"
 #include "aes_siv.h"
 
-
 static const u8 zero[AES_BLOCK_SIZE];
-
 
 static void dbl(u8 *pad)
 {
 	int i, carry;
 
 	carry = pad[0] & 0x80;
-	for (i = 0; i < AES_BLOCK_SIZE - 1; i++)
+	for (i = 0; i < AES_BLOCK_SIZE - 1; i++) {
 		pad[i] = (pad[i] << 1) | (pad[i + 1] >> 7);
+	}
 	pad[AES_BLOCK_SIZE - 1] <<= 1;
-	if (carry)
+	if (carry) {
 		pad[AES_BLOCK_SIZE - 1] ^= 0x87;
+	}
 }
-
 
 static void xor(u8 *a, const u8 *b)
 {
 	int i;
 
-	for (i = 0; i < AES_BLOCK_SIZE; i++)
+	for (i = 0; i < AES_BLOCK_SIZE; i++) {
 		*a++ ^= *b++;
+	}
 }
-
 
 static void xorend(u8 *a, int alen, const u8 *b, int blen)
 {
 	int i;
 
-	if (alen < blen)
+	if (alen < blen) {
 		return;
+	}
 
-	for (i = 0; i < blen; i++)
+	for (i = 0; i < blen; i++) {
 		a[alen - blen + i] ^= b[i];
+	}
 }
-
 
 static void pad_block(u8 *pad, const u8 *addr, size_t len)
 {
 	os_memset(pad, 0, AES_BLOCK_SIZE);
 	os_memcpy(pad, addr, len);
 
-	if (len < AES_BLOCK_SIZE)
+	if (len < AES_BLOCK_SIZE) {
 		pad[len] = 0x80;
+	}
 }
 
-
-static int aes_s2v(const u8 *key, size_t num_elem, const u8 *addr[],
-		   size_t *len, u8 *mac)
+static int aes_s2v(const u8 *key, size_t num_elem, const u8 *addr[], size_t *len, u8 *mac)
 {
 	u8 tmp[AES_BLOCK_SIZE], tmp2[AES_BLOCK_SIZE];
 	u8 *buf = NULL;
@@ -76,21 +75,24 @@ static int aes_s2v(const u8 *key, size_t num_elem, const u8 *addr[],
 	}
 
 	ret = omac1_aes_128(key, zero, sizeof(zero), tmp);
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 
 	for (i = 0; i < num_elem - 1; i++) {
 		ret = omac1_aes_128(key, addr[i], len[i], tmp2);
-		if (ret)
+		if (ret) {
 			return ret;
+		}
 
 		dbl(tmp);
 		xor(tmp, tmp2);
 	}
 	if (len[i] >= AES_BLOCK_SIZE) {
 		buf = os_malloc(len[i]);
-		if (!buf)
+		if (!buf) {
 			return -ENOMEM;
+		}
 
 		os_memcpy(buf, addr[i], len[i]);
 		xorend(buf, len[i], tmp, AES_BLOCK_SIZE);
@@ -106,10 +108,7 @@ static int aes_s2v(const u8 *key, size_t num_elem, const u8 *addr[],
 	return omac1_aes_128(key, tmp, sizeof(tmp), mac);
 }
 
-
-int aes_siv_encrypt(const u8 *key, const u8 *pw,
-		    size_t pwlen, size_t num_elem,
-		    const u8 *addr[], const size_t *len, u8 *out)
+int aes_siv_encrypt(const u8 *key, const u8 *pw, size_t pwlen, size_t num_elem, const u8 *addr[], const size_t *len, u8 *out)
 {
 	const u8 *_addr[6];
 	size_t _len[6];
@@ -118,8 +117,9 @@ int aes_siv_encrypt(const u8 *key, const u8 *pw,
 	size_t i;
 	u8 *iv, *crypt_pw;
 
-	if (num_elem > ARRAY_SIZE(_addr) - 1)
+	if (num_elem > ARRAY_SIZE(_addr) - 1) {
 		return -1;
+	}
 
 	for (i = 0; i < num_elem; i++) {
 		_addr[i] = addr[i];
@@ -128,8 +128,9 @@ int aes_siv_encrypt(const u8 *key, const u8 *pw,
 	_addr[num_elem] = pw;
 	_len[num_elem] = pwlen;
 
-	if (aes_s2v(k1, num_elem + 1, _addr, _len, v))
+	if (aes_s2v(k1, num_elem + 1, _addr, _len, v)) {
 		return -1;
+	}
 
 	iv = out;
 	crypt_pw = out + AES_BLOCK_SIZE;
@@ -143,10 +144,7 @@ int aes_siv_encrypt(const u8 *key, const u8 *pw,
 	return aes_128_ctr_encrypt(k2, v, crypt_pw, pwlen);
 }
 
-
-int aes_siv_decrypt(const u8 *key, const u8 *iv_crypt, size_t iv_c_len,
-		    size_t num_elem, const u8 *addr[], const size_t *len,
-		    u8 *out)
+int aes_siv_decrypt(const u8 *key, const u8 *iv_crypt, size_t iv_c_len, size_t num_elem, const u8 *addr[], const size_t *len, u8 *out)
 {
 	const u8 *_addr[6];
 	size_t _len[6];
@@ -157,8 +155,9 @@ int aes_siv_decrypt(const u8 *key, const u8 *iv_crypt, size_t iv_c_len,
 	u8 iv[AES_BLOCK_SIZE];
 	u8 check[AES_BLOCK_SIZE];
 
-	if (iv_c_len < AES_BLOCK_SIZE || num_elem > ARRAY_SIZE(_addr) - 1)
+	if (iv_c_len < AES_BLOCK_SIZE || num_elem > ARRAY_SIZE(_addr) - 1) {
 		return -1;
+	}
 	crypt_len = iv_c_len - AES_BLOCK_SIZE;
 
 	for (i = 0; i < num_elem; i++) {
@@ -175,14 +174,17 @@ int aes_siv_decrypt(const u8 *key, const u8 *iv_crypt, size_t iv_c_len,
 	iv[12] &= 0x7f;
 
 	ret = aes_128_ctr_encrypt(k2, iv, out, crypt_len);
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 
 	ret = aes_s2v(k1, num_elem + 1, _addr, _len, check);
-	if (ret)
+	if (ret) {
 		return ret;
-	if (os_memcmp(check, iv_crypt, AES_BLOCK_SIZE) == 0)
+	}
+	if (os_memcmp(check, iv_crypt, AES_BLOCK_SIZE) == 0) {
 		return 0;
+	}
 
 	return -1;
 }

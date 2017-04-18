@@ -18,7 +18,7 @@ extern "C" {
 
 struct slsi_mib_data {
 	u32 dataLength;
-	u8  *data;
+	u8 *data;
 };
 
 #define SLSI_MIB_MAX_INDEXES 2
@@ -32,22 +32,22 @@ struct slsi_mib_data {
 struct slsi_mib_value {
 	u8 type;
 	union {
-		bool                 boolValue;
-		s32                  intValue;
-		u32                  uintValue;
+		bool boolValue;
+		s32 intValue;
+		u32 uintValue;
 		struct slsi_mib_data octetValue;
 	} u;
 };
 
 struct slsi_mib_entry {
-	u16                   psid;
-	u16                   index[SLSI_MIB_MAX_INDEXES]; /* 0 = no Index */
+	u16 psid;
+	u16 index[SLSI_MIB_MAX_INDEXES];	/* 0 = no Index */
 	struct slsi_mib_value value;
 };
 
 struct slsi_mib_get_entry {
 	u16 psid;
-	u16 index[SLSI_MIB_MAX_INDEXES]; /* 0 = no Index */
+	u16 index[SLSI_MIB_MAX_INDEXES];	/* 0 = no Index */
 };
 
 #define SLSI_MIB_STATUS_SUCCESS                     0x0000
@@ -4499,4 +4499,4 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
 #ifdef __cplusplus
 }
 #endif
-#endif /* SLSI_MIB_H__ */
+#endif							/* SLSI_MIB_H__ */

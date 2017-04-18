@@ -14,15 +14,12 @@ struct ifinfomsg;
 
 struct netlink_config {
 	void *ctx;
-	void (*newlink_cb)(void *ctx, struct ifinfomsg *ifi, u8 *buf,
-			   size_t len);
-	void (*dellink_cb)(void *ctx, struct ifinfomsg *ifi, u8 *buf,
-			   size_t len);
+	void (*newlink_cb)(void *ctx, struct ifinfomsg *ifi, u8 *buf, size_t len);
+	void (*dellink_cb)(void *ctx, struct ifinfomsg *ifi, u8 *buf, size_t len);
 };
 
-struct netlink_data * netlink_init(struct netlink_config *cfg);
+struct netlink_data *netlink_init(struct netlink_config *cfg);
 void netlink_deinit(struct netlink_data *netlink);
-int netlink_send_oper_ifla(struct netlink_data *netlink, int ifindex,
-			   int linkmode, int operstate);
+int netlink_send_oper_ifla(struct netlink_data *netlink, int ifindex, int linkmode, int operstate);
 
-#endif /* NETLINK_H */
+#endif							/* NETLINK_H */

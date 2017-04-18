@@ -39,12 +39,10 @@
 #define SHA3_384			(((SHA3<<4)|(HASH384))<<8)	//0x00003400
 #define SHA3_512			(((SHA3<<4)|(HASH512))<<8)	//0x00003500
 
-
 #define HMAC_SHA1_160		((((SHA1<<4)|(HASH160))<<8) | (HMAC)<<16)	//0x00011100
 #define HMAC_SHA2_256		((((SHA2<<4)|(HASH256))<<8) | (HMAC)<<16)	//0x00012300
 #define HMAC_SHA2_384		((((SHA2<<4)|(HASH384))<<8) | (HMAC)<<16)	//0x00012400
 #define HMAC_SHA2_512		((((SHA2<<4)|(HASH512))<<8) | (HMAC)<<16)	//0x00012500
-
 
 // ECC Algorithm ID
 #define ECDSA				(0x1)
@@ -70,7 +68,6 @@
 #define ECDH_384			((ECDH<<4)|(ECC384))	//0x24
 #define ECDH_521			((ECDH<<4)|(ECC521))	//0x25
 
-
 #define GET_ECC_CURVE(OID)			((OID    )&0x07)
 #define GET_ECC_ALG(OID)			((OID>> 4)&0x0F)
 
@@ -84,6 +81,4 @@
 #define RSP_FAIL						(0xF1)
 #define RSP_SUCCESS						(0xA1)
 
-
-#endif /*ISP_DEFINE_H_*/
-
+#endif							/*ISP_DEFINE_H_ */

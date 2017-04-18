@@ -52,7 +52,7 @@ struct scsc_wifi_cm_if {
 	pthread_mutex_t cm_if_mutex;
 
 	/* refer to enum scsc_wifi_cm_if_state */
-	int             cm_if_state;
+	int cm_if_state;
 };
 
 /*********************************** API ************************************/

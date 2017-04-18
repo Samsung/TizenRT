@@ -23,7 +23,6 @@ int mxman_force_panic(struct mxman *mxman);
 int mxman_suspend(struct mxman *mxman);
 void mxman_resume(struct mxman *mxman);
 
-
 enum mxman_state {
 	MXMAN_STATE_STOPPED,
 	MXMAN_STATE_STARTED,
@@ -33,7 +32,7 @@ enum mxman_state {
 
 // simple list structure for timer-list
 struct hlist_node {
-	struct hlist_node *next, **pprev;
+	struct hlist_node *next, * *pprev;
 };
 struct timer_list {
 	/*
@@ -41,41 +40,41 @@ struct timer_list {
 	 * same cacheline
 	 */
 	struct hlist_node entry;
-	unsigned long     expires;
-	void              (*function)(unsigned long);
-	unsigned long     data;
-	unsigned int      flags;
-	signed int        slack;
+	unsigned long expires;
+	void (*function)(unsigned long);
+	unsigned long data;
+	unsigned int flags;
+	signed int slack;
 };
 struct delayed_work {
-	struct work_s           work;
-	struct timer_list       timer;
+	struct work_s work;
+	struct timer_list timer;
 
 	/* target workqueue and CPU ->timer uses to queue ->work */
 	struct workqueue_struct *wq;
-	int                     cpu;
+	int cpu;
 };
 
 struct mxman {
-	struct scsc_mx    *mx;
-	int               users;
-	void              *start_sram;
-	struct work_s     fw_crc_work;
-	struct work_s     failure_work;
-	struct work_s     mm_msg_start_ind_work;
-	char              *fw;
-	u32               fw_image_size;
+	struct scsc_mx *mx;
+	int users;
+	void *start_sram;
+	struct work_s fw_crc_work;
+	struct work_s failure_work;
+	struct work_s mm_msg_start_ind_work;
+	char *fw;
+	u32 fw_image_size;
 	struct completion mm_msg_start_ind_completion;
-	struct fwhdr      fwhdr;
-	struct mxconf     *mxconf;
-	enum mxman_state  mxman_state;
-	enum mxman_state  mxman_next_state;
-	pthread_mutex_t   mxman_mutex;
-	struct completion       recovery_completion;
-	int               suspended;
-	bool              check_crc;
-	u16			scsc_panic_code;
-	char              fw_build_id[64];
+	struct fwhdr fwhdr;
+	struct mxconf *mxconf;
+	enum mxman_state mxman_state;
+	enum mxman_state mxman_next_state;
+	pthread_mutex_t mxman_mutex;
+	struct completion recovery_completion;
+	int suspended;
+	bool check_crc;
+	u16 scsc_panic_code;
+	char fw_build_id[64];
 };
 
 void mxman_register_gdb_channel(struct scsc_mx *mx, mxmgmt_channel_handler handler, void *data);

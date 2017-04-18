@@ -13,5 +13,5 @@
 // ======================================
 // Function
 // ======================================
-int isp_compute_ecdh_encryptedkey(unsigned char* shared_secret, unsigned int *shared_secret_byte_len, struct sECC_KEY ecc_publickey, unsigned char *encryptedkey);
-#endif /* _ISP_DRIVER_ECDH_ENCRYPTEDKEY_H_ */
+int isp_compute_ecdh_encryptedkey(unsigned char *shared_secret, unsigned int *shared_secret_byte_len, struct sECC_KEY ecc_publickey, unsigned char *encryptedkey);
+#endif							/* _ISP_DRIVER_ECDH_ENCRYPTEDKEY_H_ */

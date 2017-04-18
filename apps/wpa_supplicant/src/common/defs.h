@@ -17,7 +17,6 @@
 #endif
 typedef enum { FALSE = 0, TRUE = 1 } Boolean;
 
-
 #define WPA_CIPHER_NONE BIT(0)
 #define WPA_CIPHER_WEP40 BIT(1)
 #define WPA_CIPHER_WEP104 BIT(2)
@@ -54,61 +53,42 @@ typedef enum { FALSE = 0, TRUE = 1 } Boolean;
 
 static inline int wpa_key_mgmt_wpa_ieee8021x(int akm)
 {
-	return !!(akm & (WPA_KEY_MGMT_IEEE8021X |
-			 WPA_KEY_MGMT_FT_IEEE8021X |
-			 WPA_KEY_MGMT_CCKM |
-			 WPA_KEY_MGMT_OSEN |
-			 WPA_KEY_MGMT_IEEE8021X_SHA256 |
-			 WPA_KEY_MGMT_IEEE8021X_SUITE_B |
-			 WPA_KEY_MGMT_IEEE8021X_SUITE_B_192));
+	return ! !(akm & (WPA_KEY_MGMT_IEEE8021X | WPA_KEY_MGMT_FT_IEEE8021X | WPA_KEY_MGMT_CCKM | WPA_KEY_MGMT_OSEN | WPA_KEY_MGMT_IEEE8021X_SHA256 | WPA_KEY_MGMT_IEEE8021X_SUITE_B | WPA_KEY_MGMT_IEEE8021X_SUITE_B_192));
 }
 
 static inline int wpa_key_mgmt_wpa_psk(int akm)
 {
-	return !!(akm & (WPA_KEY_MGMT_PSK |
-			 WPA_KEY_MGMT_FT_PSK |
-			 WPA_KEY_MGMT_PSK_SHA256 |
-			 WPA_KEY_MGMT_SAE |
-			 WPA_KEY_MGMT_FT_SAE));
+	return ! !(akm & (WPA_KEY_MGMT_PSK | WPA_KEY_MGMT_FT_PSK | WPA_KEY_MGMT_PSK_SHA256 | WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_FT_SAE));
 }
 
 static inline int wpa_key_mgmt_ft(int akm)
 {
-	return !!(akm & (WPA_KEY_MGMT_FT_PSK |
-			 WPA_KEY_MGMT_FT_IEEE8021X |
-			 WPA_KEY_MGMT_FT_SAE));
+	return ! !(akm & (WPA_KEY_MGMT_FT_PSK | WPA_KEY_MGMT_FT_IEEE8021X | WPA_KEY_MGMT_FT_SAE));
 }
 
 static inline int wpa_key_mgmt_sae(int akm)
 {
-	return !!(akm & (WPA_KEY_MGMT_SAE |
-			 WPA_KEY_MGMT_FT_SAE));
+	return ! !(akm & (WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_FT_SAE));
 }
 
 static inline int wpa_key_mgmt_sha256(int akm)
 {
-	return !!(akm & (WPA_KEY_MGMT_PSK_SHA256 |
-			 WPA_KEY_MGMT_IEEE8021X_SHA256 |
-			 WPA_KEY_MGMT_OSEN |
-			 WPA_KEY_MGMT_IEEE8021X_SUITE_B));
+	return ! !(akm & (WPA_KEY_MGMT_PSK_SHA256 | WPA_KEY_MGMT_IEEE8021X_SHA256 | WPA_KEY_MGMT_OSEN | WPA_KEY_MGMT_IEEE8021X_SUITE_B));
 }
 
 static inline int wpa_key_mgmt_sha384(int akm)
 {
-	return !!(akm & WPA_KEY_MGMT_IEEE8021X_SUITE_B_192);
+	return ! !(akm & WPA_KEY_MGMT_IEEE8021X_SUITE_B_192);
 }
 
 static inline int wpa_key_mgmt_suite_b(int akm)
 {
-	return !!(akm & (WPA_KEY_MGMT_IEEE8021X_SUITE_B |
-			 WPA_KEY_MGMT_IEEE8021X_SUITE_B_192));
+	return ! !(akm & (WPA_KEY_MGMT_IEEE8021X_SUITE_B | WPA_KEY_MGMT_IEEE8021X_SUITE_B_192));
 }
 
 static inline int wpa_key_mgmt_wpa(int akm)
 {
-	return wpa_key_mgmt_wpa_ieee8021x(akm) ||
-		wpa_key_mgmt_wpa_psk(akm) ||
-		wpa_key_mgmt_sae(akm);
+	return wpa_key_mgmt_wpa_ieee8021x(akm) || wpa_key_mgmt_wpa_psk(akm) || wpa_key_mgmt_sae(akm);
 }
 
 static inline int wpa_key_mgmt_wpa_any(int akm)
@@ -121,7 +101,6 @@ static inline int wpa_key_mgmt_cckm(int akm)
 	return akm == WPA_KEY_MGMT_CCKM;
 }
 
-
 #define WPA_PROTO_WPA BIT(0)
 #define WPA_PROTO_RSN BIT(1)
 #define WPA_PROTO_WAPI BIT(2)
@@ -132,7 +111,6 @@ static inline int wpa_key_mgmt_cckm(int akm)
 #define WPA_AUTH_ALG_LEAP BIT(2)
 #define WPA_AUTH_ALG_FT BIT(3)
 #define WPA_AUTH_ALG_SAE BIT(4)
-
 
 enum wpa_alg {
 	WPA_ALG_NONE,
@@ -276,7 +254,6 @@ enum wpa_states {
 #define MLME_SETPROTECTION_KEY_TYPE_GROUP 0
 #define MLME_SETPROTECTION_KEY_TYPE_PAIRWISE 1
 
-
 /**
  * enum mfp_options - Management frame protection (IEEE 802.11w) options
  */
@@ -334,4 +311,4 @@ enum set_band {
 	WPA_SETBAND_2G
 };
 
-#endif /* DEFS_H */
+#endif							/* DEFS_H */

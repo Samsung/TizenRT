@@ -19,32 +19,31 @@
 
 #include <tinyara/kmalloc.h>
 
-
 struct scsc_mx {
-	struct scsc_mif_abs     *mif_abs;
-	struct mifintrbit       intr;
-	struct miframman        ram;
-	struct mifmboxman       mbox;
-	struct mxman            mxman;
-	struct srvman           srvman;
+	struct scsc_mif_abs *mif_abs;
+	struct mifintrbit intr;
+	struct miframman ram;
+	struct mifmboxman mbox;
+	struct mxman mxman;
+	struct srvman srvman;
 	struct mxmgmt_transport mxmgmt_transport;
-	struct gdb_transport    gdb_transport_r4;
-	struct gdb_transport    gdb_transport_m4;
-	int                     users;
-	struct mxlog            mxlog;
-	struct panicmon         panicmon;
-	struct mxlog_transport  mxlog_transport;
-	struct suspendmon       suspendmon;
+	struct gdb_transport gdb_transport_r4;
+	struct gdb_transport gdb_transport_m4;
+	int users;
+	struct mxlog mxlog;
+	struct panicmon panicmon;
+	struct mxlog_transport mxlog_transport;
+	struct suspendmon suspendmon;
 };
-
 
 struct scsc_mx *scsc_mx_create(struct scsc_mif_abs *mif)
 {
 	struct scsc_mx *mx;
 
 	mx = kmm_zalloc(sizeof(*mx));
-	if (!mx)
+	if (!mx) {
 		return NULL;
+	}
 
 	mx->mif_abs = mif;
 

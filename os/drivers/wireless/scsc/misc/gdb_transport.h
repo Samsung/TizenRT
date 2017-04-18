@@ -43,8 +43,7 @@ typedef void (*gdb_channel_handler)(const void *message, size_t length, void *da
  *
  * This function is safe to call from any RTOS thread.
  */
-void gdb_transport_send(struct gdb_transport *gdb_transport,
-			void *message, uint32_t message_length);
+void gdb_transport_send(struct gdb_transport *gdb_transport, void *message, uint32_t message_length);
 
 /**
  * Initialises the maxwell management transport and configures the necessary
@@ -61,13 +60,13 @@ void gdb_transport_config_serialise(struct gdb_transport *gdb_transport, struct 
 void gdb_transport_set_error(struct gdb_transport *gdb_transport);
 
 struct gdb_transport {
-	struct scsc_mx          *mx;
-	struct mif_stream       mif_istream;
-	struct mif_stream       mif_ostream;
+	struct scsc_mx *mx;
+	struct mif_stream mif_istream;
+	struct mif_stream mif_ostream;
 	/** Registered channel handlers for messages coming from the AP for each channel */
-	gdb_channel_handler     channel_handler_fn;
-	void                    *channel_handler_data;
-	pthread_mutex_t         channel_handler_mutex;
+	gdb_channel_handler channel_handler_fn;
+	void *channel_handler_data;
+	pthread_mutex_t channel_handler_mutex;
 	/* Transport processor type  */
 	enum gdb_transport_enum type;
 };
@@ -82,4 +81,4 @@ int gdb_transport_register_client(struct gdb_transport_client *gdb_client);
 void gdb_transport_unregister_client(struct gdb_transport_client *gdb_client);
 void gdb_transport_register_channel_handler(struct gdb_transport *gdb_transport, gdb_channel_handler handler, void *data);
 void gdb_transport_register_char_device(struct scsc_mx *mx, struct gdb_transport **gdb_transport_handler);
-#endif /* GDB_TRANSPORT_H__ */
+#endif							/* GDB_TRANSPORT_H__ */

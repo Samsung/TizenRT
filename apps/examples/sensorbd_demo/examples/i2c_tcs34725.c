@@ -59,27 +59,27 @@
 #define TCS34725_COMMAND_BIT      (0x80)
 
 #define TCS34725_ENABLE           (0x00)
-#define TCS34725_ENABLE_AEN       (0x02)   /* RGBC Enable - Writing 1 actives the ADC, 0 disables it */
-#define TCS34725_ENABLE_PON       (0x01)   /* Power on - Writing 1 activates the internal oscillator, 0 disables it */
-#define TCS34725_ATIME            (0x01)   /* Integration time */
-#define TCS34725_CONTROL          (0x0F)   /* Set the gain level for the sensor */
-#define TCS34725_ID               (0x12)   /* 0x44 = TCS34721/TCS34725, 0x4D = TCS34723/TCS34727 */
-#define TCS34725_CDATAL           (0x14)   /* Clear channel data */
-#define TCS34725_RDATAL           (0x16)   /* Red channel data */
-#define TCS34725_GDATAL           (0x18)   /* Green channel data */
-#define TCS34725_BDATAL           (0x1A)   /* Blue channel data */
+#define TCS34725_ENABLE_AEN       (0x02)	/* RGBC Enable - Writing 1 actives the ADC, 0 disables it */
+#define TCS34725_ENABLE_PON       (0x01)	/* Power on - Writing 1 activates the internal oscillator, 0 disables it */
+#define TCS34725_ATIME            (0x01)	/* Integration time */
+#define TCS34725_CONTROL          (0x0F)	/* Set the gain level for the sensor */
+#define TCS34725_ID               (0x12)	/* 0x44 = TCS34721/TCS34725, 0x4D = TCS34723/TCS34727 */
+#define TCS34725_CDATAL           (0x14)	/* Clear channel data */
+#define TCS34725_RDATAL           (0x16)	/* Red channel data */
+#define TCS34725_GDATAL           (0x18)	/* Green channel data */
+#define TCS34725_BDATAL           (0x1A)	/* Blue channel data */
 
-#define TCS34725_INTEGRATIONTIME_2_4MS  (0xFF)  /*  2.4ms - 1 cycle    */
-#define TCS34725_INTEGRATIONTIME_24MS   (0xF6)  /*  24ms  - 10 cycles  */
-#define TCS34725_INTEGRATIONTIME_50MS   (0xEB)  /*  50ms  - 20 cycles  */
-#define TCS34725_INTEGRATIONTIME_101MS  (0xD5)  /*  101ms - 42 cycles  */
-#define TCS34725_INTEGRATIONTIME_154MS  (0xC0)  /*  154ms - 64 cycles  */
-#define TCS34725_INTEGRATIONTIME_700MS  (0x00)  /*  700ms - 256 cycles */
+#define TCS34725_INTEGRATIONTIME_2_4MS  (0xFF)	/*  2.4ms - 1 cycle    */
+#define TCS34725_INTEGRATIONTIME_24MS   (0xF6)	/*  24ms  - 10 cycles  */
+#define TCS34725_INTEGRATIONTIME_50MS   (0xEB)	/*  50ms  - 20 cycles  */
+#define TCS34725_INTEGRATIONTIME_101MS  (0xD5)	/*  101ms - 42 cycles  */
+#define TCS34725_INTEGRATIONTIME_154MS  (0xC0)	/*  154ms - 64 cycles  */
+#define TCS34725_INTEGRATIONTIME_700MS  (0x00)	/*  700ms - 256 cycles */
 
-#define TCS34725_GAIN_1X      (0x00)  /*  No gain  */
-#define TCS34725_GAIN_4X      (0x01)  /*  4x gain  */
-#define TCS34725_GAIN_16X     (0x02)  /*  16x gain */
-#define TCS34725_GAIN_60X     (0x03)  /*  60x gain */
+#define TCS34725_GAIN_1X      (0x00)	/*  No gain  */
+#define TCS34725_GAIN_4X      (0x01)	/*  4x gain  */
+#define TCS34725_GAIN_16X     (0x02)	/*  16x gain */
+#define TCS34725_GAIN_60X     (0x03)	/*  60x gain */
 
 static struct i2c_dev_s *i2c_dev;
 static struct i2c_config_s configs;
@@ -111,24 +111,24 @@ static void tcs34725_getdata(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c)
 	tcs34725_read(TCS34725_BDATAL, (uint8_t *)b, 2);
 
 	switch (tcs34725IntegrationTime) {
-		case TCS34725_INTEGRATIONTIME_2_4MS:
-			up_mdelay(3);
-			break;
-		case TCS34725_INTEGRATIONTIME_24MS:
-			up_mdelay(24);
-			break;
-		case TCS34725_INTEGRATIONTIME_50MS:
-			up_mdelay(50);
-			break;
-		case TCS34725_INTEGRATIONTIME_101MS:
-			up_mdelay(101);
-			break;
-		case TCS34725_INTEGRATIONTIME_154MS:
-			up_mdelay(154);
-			break;
-		case TCS34725_INTEGRATIONTIME_700MS:
-			up_mdelay(700);
-			break;
+	case TCS34725_INTEGRATIONTIME_2_4MS:
+		up_mdelay(3);
+		break;
+	case TCS34725_INTEGRATIONTIME_24MS:
+		up_mdelay(24);
+		break;
+	case TCS34725_INTEGRATIONTIME_50MS:
+		up_mdelay(50);
+		break;
+	case TCS34725_INTEGRATIONTIME_101MS:
+		up_mdelay(101);
+		break;
+	case TCS34725_INTEGRATIONTIME_154MS:
+		up_mdelay(154);
+		break;
+	case TCS34725_INTEGRATIONTIME_700MS:
+		up_mdelay(700);
+		break;
 	}
 }
 

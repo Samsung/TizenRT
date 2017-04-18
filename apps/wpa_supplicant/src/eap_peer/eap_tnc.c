@@ -12,7 +12,6 @@
 #include "eap_i.h"
 #include "tncc.h"
 
-
 struct eap_tnc_data {
 	enum { WAIT_START, PROC_MSG, WAIT_FRAG_ACK, DONE, FAIL } state;
 	struct tncc_data *tncc;
@@ -22,7 +21,6 @@ struct eap_tnc_data {
 	size_t fragment_size;
 };
 
-
 /* EAP-TNC Flags */
 #define EAP_TNC_FLAGS_LENGTH_INCLUDED 0x80
 #define EAP_TNC_FLAGS_MORE_FRAGMENTS 0x40
@@ -31,14 +29,14 @@ struct eap_tnc_data {
 
 #define EAP_TNC_VERSION 1
 
-
-static void * eap_tnc_init(struct eap_sm *sm)
+static void *eap_tnc_init(struct eap_sm *sm)
 {
 	struct eap_tnc_data *data;
 
 	data = os_zalloc(sizeof(*data));
-	if (data == NULL)
+	if (data == NULL) {
 		return NULL;
+	}
 	data->state = WAIT_START;
 	data->fragment_size = 1300;
 	data->tncc = tncc_init();
@@ -50,7 +48,6 @@ static void * eap_tnc_init(struct eap_sm *sm)
 	return data;
 }
 
-
 static void eap_tnc_deinit(struct eap_sm *sm, void *priv)
 {
 	struct eap_tnc_data *data = priv;
@@ -61,27 +58,23 @@ static void eap_tnc_deinit(struct eap_sm *sm, void *priv)
 	os_free(data);
 }
 
-
-static struct wpabuf * eap_tnc_build_frag_ack(u8 id, u8 code)
+static struct wpabuf *eap_tnc_build_frag_ack(u8 id, u8 code)
 {
 	struct wpabuf *msg;
 
 	msg = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TNC, 1, code, id);
 	if (msg == NULL) {
-		wpa_printf(MSG_ERROR, "EAP-TNC: Failed to allocate memory "
-			   "for fragment ack");
+		wpa_printf(MSG_ERROR, "EAP-TNC: Failed to allocate memory " "for fragment ack");
 		return NULL;
 	}
-	wpabuf_put_u8(msg, EAP_TNC_VERSION); /* Flags */
+	wpabuf_put_u8(msg, EAP_TNC_VERSION);	/* Flags */
 
 	wpa_printf(MSG_DEBUG, "EAP-TNC: Send fragment ack");
 
 	return msg;
 }
 
-
-static struct wpabuf * eap_tnc_build_msg(struct eap_tnc_data *data,
-					 struct eap_method_ret *ret, u8 id)
+static struct wpabuf *eap_tnc_build_msg(struct eap_tnc_data *data, struct eap_method_ret *ret, u8 id)
 {
 	struct wpabuf *resp;
 	u8 flags;
@@ -103,45 +96,39 @@ static struct wpabuf * eap_tnc_build_msg(struct eap_tnc_data *data,
 	}
 
 	plen = 1 + send_len;
-	if (flags & EAP_TNC_FLAGS_LENGTH_INCLUDED)
+	if (flags & EAP_TNC_FLAGS_LENGTH_INCLUDED) {
 		plen += 4;
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TNC, plen,
-			     EAP_CODE_RESPONSE, id);
-	if (resp == NULL)
+	}
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TNC, plen, EAP_CODE_RESPONSE, id);
+	if (resp == NULL) {
 		return NULL;
+	}
 
-	wpabuf_put_u8(resp, flags); /* Flags */
-	if (flags & EAP_TNC_FLAGS_LENGTH_INCLUDED)
+	wpabuf_put_u8(resp, flags);	/* Flags */
+	if (flags & EAP_TNC_FLAGS_LENGTH_INCLUDED) {
 		wpabuf_put_be32(resp, wpabuf_len(data->out_buf));
+	}
 
-	wpabuf_put_data(resp, wpabuf_head_u8(data->out_buf) + data->out_used,
-			send_len);
+	wpabuf_put_data(resp, wpabuf_head_u8(data->out_buf) + data->out_used, send_len);
 	data->out_used += send_len;
 
 	ret->methodState = METHOD_MAY_CONT;
 	ret->decision = DECISION_FAIL;
 
 	if (data->out_used == wpabuf_len(data->out_buf)) {
-		wpa_printf(MSG_DEBUG, "EAP-TNC: Sending out %lu bytes "
-			   "(message sent completely)",
-			   (unsigned long) send_len);
+		wpa_printf(MSG_DEBUG, "EAP-TNC: Sending out %lu bytes " "(message sent completely)", (unsigned long)send_len);
 		wpabuf_free(data->out_buf);
 		data->out_buf = NULL;
 		data->out_used = 0;
 	} else {
-		wpa_printf(MSG_DEBUG, "EAP-TNC: Sending out %lu bytes "
-			   "(%lu more to send)", (unsigned long) send_len,
-			   (unsigned long) wpabuf_len(data->out_buf) -
-			   data->out_used);
+		wpa_printf(MSG_DEBUG, "EAP-TNC: Sending out %lu bytes " "(%lu more to send)", (unsigned long)send_len, (unsigned long)wpabuf_len(data->out_buf) - data->out_used);
 		data->state = WAIT_FRAG_ACK;
 	}
 
 	return resp;
 }
 
-
-static int eap_tnc_process_cont(struct eap_tnc_data *data,
-				const u8 *buf, size_t len)
+static int eap_tnc_process_cont(struct eap_tnc_data *data, const u8 *buf, size_t len)
 {
 	/* Process continuation of a pending message */
 	if (len > wpabuf_tailroom(data->in_buf)) {
@@ -151,24 +138,16 @@ static int eap_tnc_process_cont(struct eap_tnc_data *data,
 	}
 
 	wpabuf_put_data(data->in_buf, buf, len);
-	wpa_printf(MSG_DEBUG, "EAP-TNC: Received %lu bytes, waiting for "
-		   "%lu bytes more", (unsigned long) len,
-		   (unsigned long) wpabuf_tailroom(data->in_buf));
+	wpa_printf(MSG_DEBUG, "EAP-TNC: Received %lu bytes, waiting for " "%lu bytes more", (unsigned long)len, (unsigned long)wpabuf_tailroom(data->in_buf));
 
 	return 0;
 }
 
-
-static struct wpabuf * eap_tnc_process_fragment(struct eap_tnc_data *data,
-						struct eap_method_ret *ret,
-						u8 id, u8 flags,
-						u32 message_length,
-						const u8 *buf, size_t len)
+static struct wpabuf *eap_tnc_process_fragment(struct eap_tnc_data *data, struct eap_method_ret *ret, u8 id, u8 flags, u32 message_length, const u8 *buf, size_t len)
 {
 	/* Process a fragment that is not the last one of the message */
 	if (data->in_buf == NULL && !(flags & EAP_TNC_FLAGS_LENGTH_INCLUDED)) {
-		wpa_printf(MSG_DEBUG, "EAP-TNC: No Message Length field in a "
-			   "fragmented packet");
+		wpa_printf(MSG_DEBUG, "EAP-TNC: No Message Length field in a " "fragmented packet");
 		ret->ignore = TRUE;
 		return NULL;
 	}
@@ -177,25 +156,18 @@ static struct wpabuf * eap_tnc_process_fragment(struct eap_tnc_data *data,
 		/* First fragment of the message */
 		data->in_buf = wpabuf_alloc(message_length);
 		if (data->in_buf == NULL) {
-			wpa_printf(MSG_DEBUG, "EAP-TNC: No memory for "
-				   "message");
+			wpa_printf(MSG_DEBUG, "EAP-TNC: No memory for " "message");
 			ret->ignore = TRUE;
 			return NULL;
 		}
 		wpabuf_put_data(data->in_buf, buf, len);
-		wpa_printf(MSG_DEBUG, "EAP-TNC: Received %lu bytes in first "
-			   "fragment, waiting for %lu bytes more",
-			   (unsigned long) len,
-			   (unsigned long) wpabuf_tailroom(data->in_buf));
+		wpa_printf(MSG_DEBUG, "EAP-TNC: Received %lu bytes in first " "fragment, waiting for %lu bytes more", (unsigned long)len, (unsigned long)wpabuf_tailroom(data->in_buf));
 	}
 
 	return eap_tnc_build_frag_ack(id, EAP_CODE_RESPONSE);
 }
 
-
-static struct wpabuf * eap_tnc_process(struct eap_sm *sm, void *priv,
-				       struct eap_method_ret *ret,
-				       const struct wpabuf *reqData)
+static struct wpabuf *eap_tnc_process(struct eap_sm *sm, void *priv, struct eap_method_ret *ret, const struct wpabuf *reqData)
 {
 	struct eap_tnc_data *data = priv;
 	struct wpabuf *resp;
@@ -212,8 +184,7 @@ static struct wpabuf * eap_tnc_process(struct eap_sm *sm, void *priv,
 
 	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_TNC, reqData, &len);
 	if (pos == NULL) {
-		wpa_printf(MSG_INFO, "EAP-TNC: Invalid frame (pos=%p len=%lu)",
-			   pos, (unsigned long) len);
+		wpa_printf(MSG_INFO, "EAP-TNC: Invalid frame (pos=%p len=%lu)", pos, (unsigned long)len);
 		ret->ignore = TRUE;
 		return NULL;
 	}
@@ -222,14 +193,14 @@ static struct wpabuf * eap_tnc_process(struct eap_sm *sm, void *priv,
 
 	end = pos + len;
 
-	if (len == 0)
-		flags = 0; /* fragment ack */
-	else
+	if (len == 0) {
+		flags = 0;    /* fragment ack */
+	} else {
 		flags = *pos++;
+	}
 
 	if (len > 0 && (flags & EAP_TNC_VERSION_MASK) != EAP_TNC_VERSION) {
-		wpa_printf(MSG_DEBUG, "EAP-TNC: Unsupported version %d",
-			   flags & EAP_TNC_VERSION_MASK);
+		wpa_printf(MSG_DEBUG, "EAP-TNC: Unsupported version %d", flags & EAP_TNC_VERSION_MASK);
 		ret->ignore = TRUE;
 		return NULL;
 	}
@@ -243,23 +214,18 @@ static struct wpabuf * eap_tnc_process(struct eap_sm *sm, void *priv,
 		message_length = WPA_GET_BE32(pos);
 		pos += 4;
 
-		if (message_length < (u32) (end - pos) ||
-		    message_length > 75000) {
-			wpa_printf(MSG_DEBUG, "EAP-TNC: Invalid Message "
-				   "Length (%d; %ld remaining in this msg)",
-				   message_length, (long) (end - pos));
+		if (message_length < (u32)(end - pos) || message_length > 75000) {
+			wpa_printf(MSG_DEBUG, "EAP-TNC: Invalid Message " "Length (%d; %ld remaining in this msg)", message_length, (long)(end - pos));
 			ret->ignore = TRUE;
 			return NULL;
 		}
 	}
 
-	wpa_printf(MSG_DEBUG, "EAP-TNC: Received packet: Flags 0x%x "
-		   "Message Length %u", flags, message_length);
+	wpa_printf(MSG_DEBUG, "EAP-TNC: Received packet: Flags 0x%x " "Message Length %u", flags, message_length);
 
 	if (data->state == WAIT_FRAG_ACK) {
 		if (len > 1) {
-			wpa_printf(MSG_DEBUG, "EAP-TNC: Unexpected payload in "
-				   "WAIT_FRAG_ACK state");
+			wpa_printf(MSG_DEBUG, "EAP-TNC: Unexpected payload in " "WAIT_FRAG_ACK state");
 			ret->ignore = TRUE;
 			return NULL;
 		}
@@ -274,9 +240,7 @@ static struct wpabuf * eap_tnc_process(struct eap_sm *sm, void *priv,
 	}
 
 	if (flags & EAP_TNC_FLAGS_MORE_FRAGMENTS) {
-		return eap_tnc_process_fragment(data, ret, id, flags,
-						message_length, pos,
-						end - pos);
+		return eap_tnc_process_fragment(data, ret, id, flags, message_length, pos, end - pos);
 	}
 
 	if (data->in_buf == NULL) {
@@ -287,8 +251,7 @@ static struct wpabuf * eap_tnc_process(struct eap_sm *sm, void *priv,
 
 	if (data->state == WAIT_START) {
 		if (!(flags & EAP_TNC_FLAGS_START)) {
-			wpa_printf(MSG_DEBUG, "EAP-TNC: Server did not use "
-				   "start flag in the first message");
+			wpa_printf(MSG_DEBUG, "EAP-TNC: Server did not use " "start flag in the first message");
 			ret->ignore = TRUE;
 			goto fail;
 		}
@@ -300,44 +263,38 @@ static struct wpabuf * eap_tnc_process(struct eap_sm *sm, void *priv,
 		enum tncc_process_res res;
 
 		if (flags & EAP_TNC_FLAGS_START) {
-			wpa_printf(MSG_DEBUG, "EAP-TNC: Server used start "
-				   "flag again");
+			wpa_printf(MSG_DEBUG, "EAP-TNC: Server used start " "flag again");
 			ret->ignore = TRUE;
 			goto fail;
 		}
 
-		res = tncc_process_if_tnccs(data->tncc,
-					    wpabuf_head(data->in_buf),
-					    wpabuf_len(data->in_buf));
+		res = tncc_process_if_tnccs(data->tncc, wpabuf_head(data->in_buf), wpabuf_len(data->in_buf));
 		switch (res) {
 		case TNCCS_PROCESS_ERROR:
 			ret->ignore = TRUE;
 			goto fail;
 		case TNCCS_PROCESS_OK_NO_RECOMMENDATION:
 		case TNCCS_RECOMMENDATION_ERROR:
-			wpa_printf(MSG_DEBUG, "EAP-TNC: No "
-				   "TNCCS-Recommendation received");
+			wpa_printf(MSG_DEBUG, "EAP-TNC: No " "TNCCS-Recommendation received");
 			break;
 		case TNCCS_RECOMMENDATION_ALLOW:
-			wpa_msg(sm->msg_ctx, MSG_INFO,
-				"TNC: Recommendation = allow");
+			wpa_msg(sm->msg_ctx, MSG_INFO, "TNC: Recommendation = allow");
 			tncs_done = 1;
 			break;
 		case TNCCS_RECOMMENDATION_NONE:
-			wpa_msg(sm->msg_ctx, MSG_INFO,
-				"TNC: Recommendation = none");
+			wpa_msg(sm->msg_ctx, MSG_INFO, "TNC: Recommendation = none");
 			tncs_done = 1;
 			break;
 		case TNCCS_RECOMMENDATION_ISOLATE:
-			wpa_msg(sm->msg_ctx, MSG_INFO,
-				"TNC: Recommendation = isolate");
+			wpa_msg(sm->msg_ctx, MSG_INFO, "TNC: Recommendation = isolate");
 			tncs_done = 1;
 			break;
 		}
 	}
 
-	if (data->in_buf != &tmpbuf)
+	if (data->in_buf != &tmpbuf) {
 		wpabuf_free(data->in_buf);
+	}
 	data->in_buf = NULL;
 
 	ret->ignore = FALSE;
@@ -351,22 +308,22 @@ static struct wpabuf * eap_tnc_process(struct eap_sm *sm, void *priv,
 	}
 
 	if (tncs_done) {
-		resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TNC, 1,
-				     EAP_CODE_RESPONSE, eap_get_id(reqData));
-		if (resp == NULL)
+		resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TNC, 1, EAP_CODE_RESPONSE, eap_get_id(reqData));
+		if (resp == NULL) {
 			return NULL;
+		}
 
 		wpabuf_put_u8(resp, EAP_TNC_VERSION);
-		wpa_printf(MSG_DEBUG, "EAP-TNC: TNCS done - reply with an "
-			   "empty ACK message");
+		wpa_printf(MSG_DEBUG, "EAP-TNC: TNCS done - reply with an " "empty ACK message");
 		return resp;
 	}
 
 	imc_len = tncc_total_send_len(data->tncc);
 
 	start_buf = tncc_if_tnccs_start(data->tncc);
-	if (start_buf == NULL)
+	if (start_buf == NULL) {
 		return NULL;
+	}
 	start_len = os_strlen(start_buf);
 	end_buf = tncc_if_tnccs_end();
 	if (end_buf == NULL) {
@@ -393,36 +350,36 @@ static struct wpabuf * eap_tnc_process(struct eap_sm *sm, void *priv,
 	wpabuf_put_data(resp, end_buf, end_len);
 	os_free(end_buf);
 
-	wpa_hexdump_ascii(MSG_MSGDUMP, "EAP-TNC: Response",
-			  wpabuf_head(resp), wpabuf_len(resp));
+	wpa_hexdump_ascii(MSG_MSGDUMP, "EAP-TNC: Response", wpabuf_head(resp), wpabuf_len(resp));
 
 	data->out_buf = resp;
 	data->state = PROC_MSG;
 	return eap_tnc_build_msg(data, ret, id);
 
 fail:
-	if (data->in_buf == &tmpbuf)
+	if (data->in_buf == &tmpbuf) {
 		data->in_buf = NULL;
+	}
 	return NULL;
 }
-
 
 int eap_peer_tnc_register(void)
 {
 	struct eap_method *eap;
 	int ret;
 
-	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION,
-				    EAP_VENDOR_IETF, EAP_TYPE_TNC, "TNC");
-	if (eap == NULL)
+	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION, EAP_VENDOR_IETF, EAP_TYPE_TNC, "TNC");
+	if (eap == NULL) {
 		return -1;
+	}
 
 	eap->init = eap_tnc_init;
 	eap->deinit = eap_tnc_deinit;
 	eap->process = eap_tnc_process;
 
 	ret = eap_peer_method_register(eap);
-	if (ret)
+	if (ret) {
 		eap_peer_method_free(eap);
+	}
 	return ret;
 }

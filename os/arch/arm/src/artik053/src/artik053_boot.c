@@ -88,31 +88,31 @@ static void board_gpio_initialize(void)
 	/* List of available GPIO IDs */
 
 	int artik053_gpio_list[] = {
-		30,	/* ARTIK_A053_XGPIO1 */
-		31,	/* ARTIK_A053_XGPIO2 */
-		32,	/* ARTIK_A053_XGPIO3 */
-		37,	/* ARTIK_A053_XGPIO8 */
-		38,	/* ARTIK_A053_XGPIO9 */
-		39,	/* ARTIK_A053_XGPIO10 */
-		40,	/* ARTIK_A053_XGPIO11 */
-		41,	/* ARTIK_A053_XGPIO12 */
-		42,	/* ARTIK_A053_XGPIO13 */
-		43,	/* ARTIK_A053_XGPIO14 */
-		44,	/* ARTIK_A053_XGPIO15 */
-		45,	/* ARTIK_A053_XGPIO16 */
-		46,	/* ARTIK_A053_XGPIO17 */
-		47,	/* ARTIK_A053_XGPIO18 */
-		48,	/* ARTIK_A053_XGPIO19 */
-		49,	/* ARTIK_A053_XGPIO20 */
-		50,	/* ARTIK_A053_XGPIO21 */
-		51,	/* ARTIK_A053_XGPIO22 */
-		52,	/* ARTIK_A053_XGPIO23 */
-		53,	/* ARTIK_A053_XGPIO24 */
-		54,	/* ARTIK_A053_XGPIO25 */
-		55,	/* ARTIK_A053_XGPIO26 */
-		57,	/* ARTIK_A053_XEINT0 */
-		58,	/* ARTIK_A053_XEINT1 */
-		59	/* ARTIK_A053_XEINT2 */
+		30,						/* ARTIK_A053_XGPIO1 */
+		31,						/* ARTIK_A053_XGPIO2 */
+		32,						/* ARTIK_A053_XGPIO3 */
+		37,						/* ARTIK_A053_XGPIO8 */
+		38,						/* ARTIK_A053_XGPIO9 */
+		39,						/* ARTIK_A053_XGPIO10 */
+		40,						/* ARTIK_A053_XGPIO11 */
+		41,						/* ARTIK_A053_XGPIO12 */
+		42,						/* ARTIK_A053_XGPIO13 */
+		43,						/* ARTIK_A053_XGPIO14 */
+		44,						/* ARTIK_A053_XGPIO15 */
+		45,						/* ARTIK_A053_XGPIO16 */
+		46,						/* ARTIK_A053_XGPIO17 */
+		47,						/* ARTIK_A053_XGPIO18 */
+		48,						/* ARTIK_A053_XGPIO19 */
+		49,						/* ARTIK_A053_XGPIO20 */
+		50,						/* ARTIK_A053_XGPIO21 */
+		51,						/* ARTIK_A053_XGPIO22 */
+		52,						/* ARTIK_A053_XGPIO23 */
+		53,						/* ARTIK_A053_XGPIO24 */
+		54,						/* ARTIK_A053_XGPIO25 */
+		55,						/* ARTIK_A053_XGPIO26 */
+		57,						/* ARTIK_A053_XEINT0 */
+		58,						/* ARTIK_A053_XEINT1 */
+		59						/* ARTIK_A053_XEINT2 */
 	};
 
 	int i;
@@ -205,4 +205,4 @@ void board_initialize(void)
 
 	board_gpio_initialize();
 }
-#endif /* CONFIG_BOARD_INITIALIZE */
+#endif							/* CONFIG_BOARD_INITIALIZE */

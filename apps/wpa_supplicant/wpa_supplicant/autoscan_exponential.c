@@ -19,21 +19,20 @@ struct autoscan_exponential_data {
 	int interval;
 };
 
-
-static int
-autoscan_exponential_get_params(struct autoscan_exponential_data *data,
-				const char *params)
+static int autoscan_exponential_get_params(struct autoscan_exponential_data *data, const char *params)
 {
 	const char *pos;
 
-	if (params == NULL)
+	if (params == NULL) {
 		return -1;
+	}
 
 	data->base = atoi(params);
 
 	pos = os_strchr(params, ':');
-	if (pos == NULL)
+	if (pos == NULL) {
 		return -1;
+	}
 
 	pos++;
 	data->limit = atoi(pos);
@@ -41,29 +40,26 @@ autoscan_exponential_get_params(struct autoscan_exponential_data *data,
 	return 0;
 }
 
-
-static void * autoscan_exponential_init(struct wpa_supplicant *wpa_s,
-					const char *params)
+static void *autoscan_exponential_init(struct wpa_supplicant *wpa_s, const char *params)
 {
 	struct autoscan_exponential_data *data;
 
 	data = os_zalloc(sizeof(struct autoscan_exponential_data));
-	if (data == NULL)
+	if (data == NULL) {
 		return NULL;
+	}
 
 	if (autoscan_exponential_get_params(data, params) < 0) {
 		os_free(data);
 		return NULL;
 	}
 
-	wpa_printf(MSG_DEBUG, "autoscan exponential: base exponential is %d "
-		   "and limit is %d", data->base, data->limit);
+	wpa_printf(MSG_DEBUG, "autoscan exponential: base exponential is %d " "and limit is %d", data->base, data->limit);
 
 	data->wpa_s = wpa_s;
 
 	return data;
 }
-
 
 static void autoscan_exponential_deinit(void *priv)
 {
@@ -72,29 +68,27 @@ static void autoscan_exponential_deinit(void *priv)
 	os_free(data);
 }
 
-
-static int autoscan_exponential_notify_scan(void *priv,
-					    struct wpa_scan_results *scan_res)
+static int autoscan_exponential_notify_scan(void *priv, struct wpa_scan_results *scan_res)
 {
 	struct autoscan_exponential_data *data = priv;
 
-	wpa_printf(MSG_DEBUG, "autoscan exponential: scan result "
-		   "notification");
+	wpa_printf(MSG_DEBUG, "autoscan exponential: scan result " "notification");
 
-	if (data->interval >= data->limit)
+	if (data->interval >= data->limit) {
 		return data->limit;
+	}
 
-	if (data->interval <= 0)
+	if (data->interval <= 0) {
 		data->interval = data->base;
-	else {
+	} else {
 		data->interval = data->interval * data->base;
-		if (data->interval > data->limit)
+		if (data->interval > data->limit) {
 			return data->limit;
+		}
 	}
 
 	return data->interval;
 }
-
 
 const struct autoscan_ops autoscan_exponential_ops = {
 	.name = "exponential",

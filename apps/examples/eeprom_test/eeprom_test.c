@@ -89,12 +89,14 @@ static int eeprom_test(int argc, char **args)
 
 	/* Allocate the memory */
 	array1 = (char *)malloc(524);
-	if (!array1)
+	if (!array1) {
 		goto err_1;
+	}
 
 	array2 = (char *)malloc(524);
-	if (!array2)
+	if (!array2) {
 		goto err_2;
+	}
 
 	rd_fd = open("/dev/eeprom", O_RDONLY);
 	if (rd_fd < 0) {
@@ -106,54 +108,67 @@ static int eeprom_test(int argc, char **args)
 		goto err_4;
 	}
 
-	if (read(rd_fd, array1, 512) != 512)
+	if (read(rd_fd, array1, 512) != 512) {
 		goto err_6;
+	}
 	lseek(rd_fd, 0, SEEK_SET);
 
-	for (i = 0; i < 512; i ++)
+	for (i = 0; i < 512; i++) {
 		array1[i] += i;
+	}
 
-	if (write(wr_fd, array1, 512) != 512)
+	if (write(wr_fd, array1, 512) != 512) {
 		goto err_5;
+	}
 
-	if (read(rd_fd, array2, 512) != 512)
+	if (read(rd_fd, array2, 512) != 512) {
 		goto err_6;
+	}
 
-	if (memcmp(array1, array2, 512) == 0)
+	if (memcmp(array1, array2, 512) == 0) {
 		printf("\nTEST1 PASS\n");
+	}
 
-	for (i = 0; i < 512; i ++)
+	for (i = 0; i < 512; i++) {
 		array1[i] += i + 1;
+	}
 
 	lseek(wr_fd, 0, SEEK_SET);
 	lseek(rd_fd, 0, SEEK_SET);
 
-	if (write(wr_fd, array1, 1) != 1)
+	if (write(wr_fd, array1, 1) != 1) {
 		goto err_5;
+	}
 
-	if (write(wr_fd, array1 + 1, 510) != 510)
+	if (write(wr_fd, array1 + 1, 510) != 510) {
 		goto err_5;
+	}
 
-	if (write(wr_fd, array1 + 511, 1) != 1)
+	if (write(wr_fd, array1 + 511, 1) != 1) {
 		goto err_5;
+	}
 
-	if (read(rd_fd, array2, 1) != 1)
+	if (read(rd_fd, array2, 1) != 1) {
 		goto err_6;
+	}
 
-	if (read(rd_fd, array2 + 1, 510) != 510)
+	if (read(rd_fd, array2 + 1, 510) != 510) {
 		goto err_6;
+	}
 
-	if (read(rd_fd, array2 + 511, 1) != 1)
+	if (read(rd_fd, array2 + 511, 1) != 1) {
 		goto err_6;
+	}
 
-	if (memcmp(array1, array2, 512) == 0)
+	if (memcmp(array1, array2, 512) == 0) {
 		printf("\nTEST2 PASS\n");
-	else
+	} else {
 		printf("\nTEST2 FAIL\n");
+	}
 
 	close(rd_fd);
 	close(wr_fd);
-        free(array2);
+	free(array2);
 	free(array1);
 
 	return 0;

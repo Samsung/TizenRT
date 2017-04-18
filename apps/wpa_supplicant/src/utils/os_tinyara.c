@@ -29,17 +29,17 @@ struct os_alloc_trace {
 	WPA_TRACE_INFO
 };
 
-#endif /* WPA_TRACE */
-
+#endif							/* WPA_TRACE */
 
 void os_sleep(os_time_t sec, os_time_t usec)
 {
-	if (sec)
+	if (sec) {
 		sleep(sec);
-	if (usec)
+	}
+	if (usec) {
 		usleep(usec);
+	}
 }
-
 
 int os_get_time(struct os_time *t)
 {
@@ -50,7 +50,6 @@ int os_get_time(struct os_time *t)
 	t->usec = tv.tv_usec;
 	return res;
 }
-
 
 int os_get_reltime(struct os_reltime *t)
 {
@@ -88,18 +87,15 @@ int os_get_reltime(struct os_reltime *t)
 	}
 }
 
-
-int os_mktime(int year, int month, int day, int hour, int min, int sec,
-	      os_time_t *t)
+int os_mktime(int year, int month, int day, int hour, int min, int sec, os_time_t *t)
 {
 	struct tm tm, *tm1;
 	time_t t_local, t1, t2;
 	os_time_t tz_offset;
 
-	if (year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 ||
-	    hour < 0 || hour > 23 || min < 0 || min > 59 || sec < 0 ||
-	    sec > 60)
+	if (year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 || hour < 0 || hour > 23 || min < 0 || min > 59 || sec < 0 || sec > 60) {
 		return -1;
+	}
 
 	memset(&tm, 0, sizeof(tm));
 	tm.tm_year = year - 1900;
@@ -118,15 +114,16 @@ int os_mktime(int year, int month, int day, int hour, int min, int sec,
 		if (tm1) {
 			t2 = mktime(tm1);
 			tz_offset = t2 - t1;
-		} else
+		} else {
 			tz_offset = 0;
-	} else
+		}
+	} else {
 		tz_offset = 0;
+	}
 
-	*t = (os_time_t) t_local - tz_offset;
+	*t = (os_time_t)t_local - tz_offset;
 	return 0;
 }
-
 
 int os_gmtime(os_time_t t, struct os_tm *tm)
 {
@@ -134,8 +131,9 @@ int os_gmtime(os_time_t t, struct os_tm *tm)
 	time_t t2 = t;
 
 	tm2 = gmtime(&t2);
-	if (tm2 == NULL)
+	if (tm2 == NULL) {
 		return -1;
+	}
 	tm->sec = tm2->tm_sec;
 	tm->min = tm2->tm_min;
 	tm->hour = tm2->tm_hour;
@@ -153,17 +151,16 @@ static int os_daemon(int nochdir, int noclose)
 	if (pid < 0) {
 		perror("os_daemon:vfork");
 		return -1;
-	}
-	else if (pid > 0) { /* Parent process - exit */
-		exit (EXIT_SUCCESS);
+	} else if (pid > 0) {		/* Parent process - exit */
+		exit(EXIT_SUCCESS);
 	}
 
 	if (((nochdir == 0) && (chdir("/"))) < 0) {
-	        exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	if (noclose == 0) {
-		open ("/dev/null", O_RDWR);
+		open("/dev/null", O_RDWR);
 	}
 
 	return 0;
@@ -187,13 +184,12 @@ int os_daemonize(const char *pid_file)
 	return -0;
 }
 
-
 void os_daemonize_terminate(const char *pid_file)
 {
-	if (pid_file)
+	if (pid_file) {
 		unlink(pid_file);
+	}
 }
-
 
 int os_get_random(unsigned char *buf, size_t len)
 {
@@ -202,56 +198,58 @@ int os_get_random(unsigned char *buf, size_t len)
 	int i;
 
 	/*f = fopen("/dev/urandom", "rb");
-	if (f == NULL) {
-		printf("Could not open /dev/urandom.\n");
-		return -1;
-	}
+	   if (f == NULL) {
+	   printf("Could not open /dev/urandom.\n");
+	   return -1;
+	   }
 
-	rc = fread(buf, 1, len, f);
-	fclose(f);
+	   rc = fread(buf, 1, len, f);
+	   fclose(f);
 
-	return rc != len ? -1 : 0;
-	*/
-	for ( i = 0 ; i < len ; i=i+4)
-	{
+	   return rc != len ? -1 : 0;
+	 */
+	for (i = 0; i < len; i = i + 4) {
 		*(int *)&buf[i] = rand();
 	}
 	//printf (" Rand number = %ll\n", buf);
 	return 0;
 }
 
-
 unsigned long os_random(void)
 {
 	return rand();
 }
 
-
-char * os_rel2abs_path(const char *rel_path)
+char *os_rel2abs_path(const char *rel_path)
 {
 	char *buf = NULL, *cwd, *ret;
 	size_t len = 128, cwd_len, rel_len, ret_len;
 	int last_errno;
 
-	if (!rel_path)
+	if (!rel_path) {
 		return NULL;
+	}
 
-	if (rel_path[0] == '/')
+	if (rel_path[0] == '/') {
 		return os_strdup(rel_path);
+	}
 
 	for (;;) {
 		buf = os_malloc(len);
-		if (buf == NULL)
+		if (buf == NULL) {
 			return NULL;
+		}
 		cwd = getcwd(buf, len);
 		if (cwd == NULL) {
 			last_errno = errno;
 			os_free(buf);
-			if (last_errno != ERANGE)
+			if (last_errno != ERANGE) {
 				return NULL;
+			}
 			len *= 2;
-			if (len > 2000)
+			if (len > 2000) {
 				return NULL;
+			}
 		} else {
 			buf[len - 1] = '\0';
 			break;
@@ -272,12 +270,10 @@ char * os_rel2abs_path(const char *rel_path)
 	return ret;
 }
 
-
 int os_program_init(void)
 {
 	return 0;
 }
-
 
 void os_program_deinit(void)
 {
@@ -287,43 +283,38 @@ void os_program_deinit(void)
 	dl_list_for_each(a, &alloc_list, struct os_alloc_trace, list) {
 		total += a->len;
 		if (a->magic != ALLOC_MAGIC) {
-			wpa_printf(MSG_INFO, "MEMLEAK[%p]: invalid magic 0x%x "
-				   "len %lu",
-				   a, a->magic, (unsigned long) a->len);
+			wpa_printf(MSG_INFO, "MEMLEAK[%p]: invalid magic 0x%x " "len %lu", a, a->magic, (unsigned long)a->len);
 			continue;
 		}
-		wpa_printf(MSG_INFO, "MEMLEAK[%p]: len %lu",
-			   a, (unsigned long) a->len);
+		wpa_printf(MSG_INFO, "MEMLEAK[%p]: len %lu", a, (unsigned long)a->len);
 		wpa_trace_dump("memleak", a);
 	}
-	if (total)
-		wpa_printf(MSG_INFO, "MEMLEAK: total %lu bytes",
-			   (unsigned long) total);
-#endif /* WPA_TRACE */
+	if (total) {
+		wpa_printf(MSG_INFO, "MEMLEAK: total %lu bytes", (unsigned long)total);
+	}
+#endif							/* WPA_TRACE */
 }
-
 
 int os_setenv(const char *name, const char *value, int overwrite)
 {
 	return setenv(name, value, overwrite);
 }
 
-
 int os_unsetenv(const char *name)
 {
 	return unsetenv(name);
 }
 
-
-char * os_readfile(const char *name, size_t *len)
+char *os_readfile(const char *name, size_t *len)
 {
 	FILE *f;
 	char *buf;
 	long pos;
 
 	f = fopen(name, "rb");
-	if (f == NULL)
+	if (f == NULL) {
 		return NULL;
+	}
 
 	if (fseek(f, 0, SEEK_END) < 0 || (pos = ftell(f)) < 0) {
 		fclose(f);
@@ -352,24 +343,23 @@ char * os_readfile(const char *name, size_t *len)
 	return buf;
 }
 
-
 int os_file_exists(const char *fname)
 {
 	FILE *f = fopen(fname, "rb");
-	if (f == NULL)
+	if (f == NULL) {
 		return 0;
+	}
 	fclose(f);
 	return 1;
 }
 
-
 int os_fsync(FILE *stream)
 {
-	if (!fflush(stream))
+	if (!fflush(stream)) {
 		return fsync(fileno(stream));
+	}
 	return -1;
 }
-
 
 size_t os_strlcpy(char *dest, const char *src, size_t siz)
 {
@@ -379,22 +369,22 @@ size_t os_strlcpy(char *dest, const char *src, size_t siz)
 	if (left) {
 		/* Copy string up to the maximum size of the dest buffer */
 		while (--left != 0) {
-			if ((*dest++ = *s++) == '\0')
+			if ((*dest++ = *s++) == '\0') {
 				break;
+			}
 		}
 	}
 
 	if (left == 0) {
 		/* Not enough room for the string; force NUL-termination */
-		if (siz != 0)
+		if (siz != 0) {
 			*dest = '\0';
-		while (*s++)
-			; /* determine total src string length */
+		}
+		while (*s++) ;			/* determine total src string length */
 	}
 
 	return s - src - 1;
 }
-
 
 int os_memcmp_const(const void *a, const void *b, size_t len)
 {
@@ -403,17 +393,18 @@ int os_memcmp_const(const void *a, const void *b, size_t len)
 	size_t i;
 	u8 res;
 
-	for (res = 0, i = 0; i < len; i++)
+	for (res = 0, i = 0; i < len; i++) {
 		res |= aa[i] ^ bb[i];
+	}
 
 	return res;
 }
-
 
 #ifdef WPA_TRACE
 
 #if defined(WPA_TRACE_BFD) && defined(CONFIG_TESTING_OPTIONS)
 char wpa_trace_fail_func[256] = { 0 };
+
 unsigned int wpa_trace_fail_after;
 
 static int testing_fail_alloc(void)
@@ -423,25 +414,33 @@ static int testing_fail_alloc(void)
 	char *pos, *next;
 	int match;
 
-	if (!wpa_trace_fail_after)
+	if (!wpa_trace_fail_after) {
 		return 0;
+	}
 
 	res = wpa_trace_calling_func(func, WPA_TRACE_LEN);
 	i = 0;
-	if (i < res && os_strcmp(func[i], __func__) == 0)
+	if (i < res && os_strcmp(func[i], __func__) == 0) {
 		i++;
-	if (i < res && os_strcmp(func[i], "os_malloc") == 0)
+	}
+	if (i < res && os_strcmp(func[i], "os_malloc") == 0) {
 		i++;
-	if (i < res && os_strcmp(func[i], "os_zalloc") == 0)
+	}
+	if (i < res && os_strcmp(func[i], "os_zalloc") == 0) {
 		i++;
-	if (i < res && os_strcmp(func[i], "os_calloc") == 0)
+	}
+	if (i < res && os_strcmp(func[i], "os_calloc") == 0) {
 		i++;
-	if (i < res && os_strcmp(func[i], "os_realloc") == 0)
+	}
+	if (i < res && os_strcmp(func[i], "os_realloc") == 0) {
 		i++;
-	if (i < res && os_strcmp(func[i], "os_realloc_array") == 0)
+	}
+	if (i < res && os_strcmp(func[i], "os_realloc_array") == 0) {
 		i++;
-	if (i < res && os_strcmp(func[i], "os_strdup") == 0)
+	}
+	if (i < res && os_strcmp(func[i], "os_strdup") == 0) {
 		i++;
+	}
 
 	pos = wpa_trace_fail_func;
 
@@ -458,10 +457,11 @@ static int testing_fail_alloc(void)
 			pos++;
 		}
 		next = os_strchr(pos, ';');
-		if (next)
+		if (next) {
 			len = next - pos;
-		else
+		} else {
 			len = os_strlen(pos);
+		}
 		if (os_memcmp(pos, func[i], len) != 0) {
 			if (maybe && next) {
 				pos = next + 1;
@@ -480,16 +480,16 @@ static int testing_fail_alloc(void)
 		pos = next + 1;
 		i++;
 	}
-	if (!match)
+	if (!match) {
 		return 0;
+	}
 
 	wpa_trace_fail_after--;
 	if (wpa_trace_fail_after == 0) {
-		wpa_printf(MSG_INFO, "TESTING: fail allocation at %s",
-			   wpa_trace_fail_func);
-		for (i = 0; i < res; i++)
-			wpa_printf(MSG_INFO, "backtrace[%d] = %s",
-				   (int) i, func[i]);
+		wpa_printf(MSG_INFO, "TESTING: fail allocation at %s", wpa_trace_fail_func);
+		for (i = 0; i < res; i++) {
+			wpa_printf(MSG_INFO, "backtrace[%d] = %s", (int)i, func[i]);
+		}
 		return 1;
 	}
 
@@ -504,16 +504,18 @@ static inline int testing_fail_alloc(void)
 }
 #endif
 
-void * os_malloc(size_t size)
+void *os_malloc(size_t size)
 {
 	struct os_alloc_trace *a;
 
-	if (testing_fail_alloc())
+	if (testing_fail_alloc()) {
 		return NULL;
+	}
 
 	a = malloc(sizeof(*a) + size);
-	if (a == NULL)
+	if (a == NULL) {
 		return NULL;
+	}
 	a->magic = ALLOC_MAGIC;
 	dl_list_add(&alloc_list, &a->list);
 	a->len = size;
@@ -521,47 +523,45 @@ void * os_malloc(size_t size)
 	return a + 1;
 }
 
-
-void * os_realloc(void *ptr, size_t size)
+void *os_realloc(void *ptr, size_t size)
 {
 	struct os_alloc_trace *a;
 	size_t copy_len;
 	void *n;
 
-	if (ptr == NULL)
+	if (ptr == NULL) {
 		return os_malloc(size);
+	}
 
-	a = (struct os_alloc_trace *) ptr - 1;
+	a = (struct os_alloc_trace *)ptr - 1;
 	if (a->magic != ALLOC_MAGIC) {
-		wpa_printf(MSG_INFO, "REALLOC[%p]: invalid magic 0x%x%s",
-			   a, a->magic,
-			   a->magic == FREED_MAGIC ? " (already freed)" : "");
+		wpa_printf(MSG_INFO, "REALLOC[%p]: invalid magic 0x%x%s", a, a->magic, a->magic == FREED_MAGIC ? " (already freed)" : "");
 		wpa_trace_show("Invalid os_realloc() call");
 		abort();
 	}
 	n = os_malloc(size);
-	if (n == NULL)
+	if (n == NULL) {
 		return NULL;
+	}
 	copy_len = a->len;
-	if (copy_len > size)
+	if (copy_len > size) {
 		copy_len = size;
+	}
 	os_memcpy(n, a + 1, copy_len);
 	os_free(ptr);
 	return n;
 }
 
-
 void os_free(void *ptr)
 {
 	struct os_alloc_trace *a;
 
-	if (ptr == NULL)
+	if (ptr == NULL) {
 		return;
-	a = (struct os_alloc_trace *) ptr - 1;
+	}
+	a = (struct os_alloc_trace *)ptr - 1;
 	if (a->magic != ALLOC_MAGIC) {
-		wpa_printf(MSG_INFO, "FREE[%p]: invalid magic 0x%x%s",
-			   a, a->magic,
-			   a->magic == FREED_MAGIC ? " (already freed)" : "");
+		wpa_printf(MSG_INFO, "FREE[%p]: invalid magic 0x%x%s", a, a->magic, a->magic == FREED_MAGIC ? " (already freed)" : "");
 		wpa_trace_show("Invalid os_free() call");
 		abort();
 	}
@@ -572,38 +572,37 @@ void os_free(void *ptr)
 	free(a);
 }
 
-
-void * os_zalloc(size_t size)
+void *os_zalloc(size_t size)
 {
 	void *ptr = os_malloc(size);
-	if (ptr)
+	if (ptr) {
 		os_memset(ptr, 0, size);
+	}
 	return ptr;
 }
 
-
-char * os_strdup(const char *s)
+char *os_strdup(const char *s)
 {
 	size_t len;
 	char *d;
 	len = os_strlen(s);
 	d = os_malloc(len + 1);
-	if (d == NULL)
+	if (d == NULL) {
 		return NULL;
+	}
 	os_memcpy(d, s, len);
 	d[len] = '\0';
 	return d;
 }
 
-#else /* WPA_TRACE */
+#else							/* WPA_TRACE */
 
-void * os_zalloc(size_t size)
+void *os_zalloc(size_t size)
 {
 	return calloc(1, size);
 }
 
-#endif /* WPA_TRACE */
-
+#endif							/* WPA_TRACE */
 
 int os_exec(const char *program, const char *arg, int wait_completion)
 {
@@ -631,14 +630,17 @@ int os_exec(const char *program, const char *arg, int wait_completion)
 		i = 1;
 		pos = _arg;
 		while (i < MAX_ARG && pos && *pos) {
-			while (*pos == ' ')
+			while (*pos == ' ') {
 				pos++;
-			if (*pos == '\0')
+			}
+			if (*pos == '\0') {
 				break;
+			}
 			argv[i++] = pos;
 			pos = os_strchr(pos, ' ');
-			if (pos)
+			if (pos) {
 				*pos++ = '\0';
+			}
 		}
 		argv[i] = NULL;
 

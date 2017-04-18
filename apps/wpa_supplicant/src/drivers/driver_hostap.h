@@ -34,15 +34,14 @@
 #define PRISM2_IOCTL_DOWNLOAD (SIOCDEVPRIVATE + 13)
 #define PRISM2_IOCTL_HOSTAPD (SIOCDEVPRIVATE + 14)
 
-
 /* PRISM2_IOCTL_PRISM2_PARAM ioctl() subtypes: */
 enum {
-	/* PRISM2_PARAM_PTYPE = 1, */ /* REMOVED 2003-10-22 */
+	/* PRISM2_PARAM_PTYPE = 1, *//* REMOVED 2003-10-22 */
 	PRISM2_PARAM_TXRATECTRL = 2,
 	PRISM2_PARAM_BEACON_INT = 3,
 	PRISM2_PARAM_PSEUDO_IBSS = 4,
 	PRISM2_PARAM_ALC = 5,
-	/* PRISM2_PARAM_TXPOWER = 6, */ /* REMOVED 2003-10-22 */
+	/* PRISM2_PARAM_TXPOWER = 6, *//* REMOVED 2003-10-22 */
 	PRISM2_PARAM_DUMP = 7,
 	PRISM2_PARAM_OTHER_AP_POLICY = 8,
 	PRISM2_PARAM_AP_MAX_INACTIVITY = 9,
@@ -80,25 +79,25 @@ enum {
 };
 
 enum { HOSTAP_ANTSEL_DO_NOT_TOUCH = 0, HOSTAP_ANTSEL_DIVERSITY = 1,
-       HOSTAP_ANTSEL_LOW = 2, HOSTAP_ANTSEL_HIGH = 3 };
-
+	   HOSTAP_ANTSEL_LOW = 2, HOSTAP_ANTSEL_HIGH = 3
+	 };
 
 /* PRISM2_IOCTL_MACCMD ioctl() subcommands: */
 enum { AP_MAC_CMD_POLICY_OPEN = 0, AP_MAC_CMD_POLICY_ALLOW = 1,
-       AP_MAC_CMD_POLICY_DENY = 2, AP_MAC_CMD_FLUSH = 3,
-       AP_MAC_CMD_KICKALL = 4 };
-
+	   AP_MAC_CMD_POLICY_DENY = 2, AP_MAC_CMD_FLUSH = 3,
+	   AP_MAC_CMD_KICKALL = 4
+	 };
 
 /* PRISM2_IOCTL_DOWNLOAD ioctl() dl_cmd: */
 enum {
-	PRISM2_DOWNLOAD_VOLATILE = 1 /* RAM */,
+	PRISM2_DOWNLOAD_VOLATILE = 1 /* RAM */ ,
 	/* Note! Old versions of prism2_srec have a fatal error in CRC-16
 	 * calculation, which will corrupt all non-volatile downloads.
 	 * PRISM2_DOWNLOAD_NON_VOLATILE used to be 2, but it is now 3 to
 	 * prevent use of old versions of prism2_srec for non-volatile
 	 * download. */
-	PRISM2_DOWNLOAD_NON_VOLATILE = 3 /* FLASH */,
-	PRISM2_DOWNLOAD_VOLATILE_GENESIS = 4 /* RAM in Genesis mode */,
+	PRISM2_DOWNLOAD_NON_VOLATILE = 3 /* FLASH */ ,
+	PRISM2_DOWNLOAD_VOLATILE_GENESIS = 4 /* RAM in Genesis mode */ ,
 	/* Persistent versions of volatile download commands (keep firmware
 	 * data in memory and automatically re-download after hw_reset */
 	PRISM2_DOWNLOAD_VOLATILE_PERSISTENT = 5,
@@ -110,15 +109,14 @@ struct prism2_download_param {
 	u32 start_addr;
 	u32 num_areas;
 	struct prism2_download_area {
-		u32 addr; /* wlan card address */
+		u32 addr;				/* wlan card address */
 		u32 len;
-		caddr_t ptr; /* pointer to data in user space */
+		caddr_t ptr;			/* pointer to data in user space */
 	} data[0];
 };
 
 #define PRISM2_MAX_DOWNLOAD_AREA_LEN 131072
 #define PRISM2_MAX_DOWNLOAD_LEN 262144
-
 
 /* PRISM2_IOCTL_HOSTAPD ioctl() cmd: */
 enum {
@@ -149,7 +147,6 @@ enum {
  */
 #define HOSTAP_CRYPT_ALG_NAME_LEN 16
 
-
 struct prism2_hostapd_param {
 	u32 cmd;
 	u8 sta_addr[ETH_ALEN];
@@ -167,7 +164,7 @@ struct prism2_hostapd_param {
 			u32 flags;
 			u32 err;
 			u8 idx;
-			u8 seq[8]; /* sequence counter (set: RX, get: TX) */
+			u8 seq[8];			/* sequence counter (set: RX, get: TX) */
 			u16 key_len;
 			u8 key[0];
 		} crypt;
@@ -207,4 +204,4 @@ struct prism2_hostapd_param {
 #define HOSTAP_CRYPT_ERR_TX_KEY_SET_FAILED 6
 #define HOSTAP_CRYPT_ERR_CARD_CONF_FAILED 7
 
-#endif /* HOSTAP_DRIVER_H */
+#endif							/* HOSTAP_DRIVER_H */

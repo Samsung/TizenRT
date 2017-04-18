@@ -17,21 +17,17 @@ int mb_aes_ecb_init_securekey(struct sAES_PARAM *aes_param, unsigned int enc);
 int mb_aes_ecb_update_securekey(struct sAES_PARAM *aes_param);
 int mb_aes_ecb_final_securekey(struct sAES_PARAM *aes_param);
 
-
 int mb_aes_cbc_init_securekey(struct sAES_PARAM *aes_param, unsigned int enc);
 int mb_aes_cbc_update_securekey(struct sAES_PARAM *aes_param);
 int mb_aes_cbc_final_securekey(struct sAES_PARAM *aes_param);
-
 
 int mb_aes_ctr_init_securekey(struct sAES_PARAM *aes_param, unsigned int enc);
 int mb_aes_ctr_update_securekey(struct sAES_PARAM *aes_param);
 int mb_aes_ctr_final_securekey(struct sAES_PARAM *aes_param);
 
-
 int mb_aes_xts_init_securekey(struct sAES_PARAM *aes_param, unsigned int enc);
 int mb_aes_xts_update_securekey(struct sAES_PARAM *aes_param);
 int mb_aes_xts_final_securekey(struct sAES_PARAM *aes_param);
-
 
 int mb_aes_ccm_init_securekey(struct sAES_PARAM *aes_param, unsigned int enc);
 int mb_aes_ccm_update_securekey(struct sAES_PARAM *aes_param);
@@ -42,7 +38,6 @@ int mb_aes_gcm_update_securekey(struct sAES_PARAM *aes_param);
 int mb_aes_gcm_final_securekey(struct sAES_PARAM *aes_param, unsigned int enc);
 
 int mb_aes_generate_key_securekey(unsigned int key_byte_len, unsigned int key_index);
-
 
 // ======================================
 // Mailbox Command
@@ -73,5 +68,4 @@ int mb_aes_generate_key_securekey(unsigned int key_byte_len, unsigned int key_in
 
 #define FUNC_AES_KEYGEN_SECUREKEY		(0x00A13302)
 
-
-#endif /* MB_CMD_AES_SECUREKEY_H_ */
+#endif							/* MB_CMD_AES_SECUREKEY_H_ */

@@ -117,7 +117,7 @@
 #define PACKET_SIZE             1536	/* maximum packet size :  */
 
 #define SERVICES_DNS_SD_NLABEL \
-                ((uint8_t *) "\x09_services\x07_dns-sd\x04_udp\x05local")
+                ((uint8_t *)"\x09_services\x07_dns-sd\x04_udp\x05local")
 
 #define TIME_GET(time)                                          gettimeofday(&time, NULL)
 #define TIME_DIFF_USEC(old_time, cur_time) \
@@ -400,7 +400,7 @@ static int lookup_service(struct mdnsd *svr, char *type, struct mdns_service_inf
 
 	pthread_mutex_lock(&svr->data_lock);
 
-	struct rr_group *ptr_grp = rr_group_find(svr->cache, (uint8_t *) type_nlabel);
+	struct rr_group *ptr_grp = rr_group_find(svr->cache, (uint8_t *)type_nlabel);
 
 	MDNS_FREE(type_nlabel);
 	if (ptr_grp) {
@@ -411,7 +411,7 @@ static int lookup_service(struct mdnsd *svr, char *type, struct mdns_service_inf
 			if (entry && (entry->type == RR_PTR)) {
 				if (entry->data.PTR.name) {	/* SRV's name */
 					struct rr_group *srv_grp = rr_group_find(svr->cache,
-											   (uint8_t *) entry->data.PTR.name);
+											   (uint8_t *)entry->data.PTR.name);
 					if (srv_grp) {
 						/* find service */
 						struct rr_entry *srv_e = rr_entry_find(srv_grp->rr, entry->data.PTR.name,
@@ -444,7 +444,7 @@ static int lookup_service(struct mdnsd *svr, char *type, struct mdns_service_inf
 								MDNS_FREE(name);
 
 								/* ip address */
-								a_grp = rr_group_find(svr->cache, (uint8_t *) srv_e->data.SRV.target);
+								a_grp = rr_group_find(svr->cache, (uint8_t *)srv_e->data.SRV.target);
 								if (a_grp) {
 									struct rr_entry *a_e = rr_entry_find(a_grp->rr, srv_e->data.SRV.target, RR_A);
 									if (a_e) {

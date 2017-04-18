@@ -19,33 +19,33 @@
 /* IKE Header - RFC 4306, Sect. 3.1 */
 #ifdef _MSC_VER
 #pragma pack(push, 1)
-#endif /* _MSC_VER */
+#endif							/* _MSC_VER */
 
 #define IKEV2_SPI_LEN 8
 
 struct ikev2_hdr {
-	u8 i_spi[IKEV2_SPI_LEN]; /* IKE_SA Initiator's SPI */
-	u8 r_spi[IKEV2_SPI_LEN]; /* IKE_SA Responder's SPI */
+	u8 i_spi[IKEV2_SPI_LEN];	/* IKE_SA Initiator's SPI */
+	u8 r_spi[IKEV2_SPI_LEN];	/* IKE_SA Responder's SPI */
 	u8 next_payload;
-	u8 version; /* MjVer | MnVer */
+	u8 version;					/* MjVer | MnVer */
 	u8 exchange_type;
 	u8 flags;
 	u8 message_id[4];
-	u8 length[4]; /* total length of HDR + payloads */
+	u8 length[4];				/* total length of HDR + payloads */
 } STRUCT_PACKED;
 
 struct ikev2_payload_hdr {
 	u8 next_payload;
 	u8 flags;
-	u8 payload_length[2]; /* this payload, including the payload header */
+	u8 payload_length[2];		/* this payload, including the payload header */
 } STRUCT_PACKED;
 
 struct ikev2_proposal {
-	u8 type; /* 0 (last) or 2 (more) */
+	u8 type;					/* 0 (last) or 2 (more) */
 	u8 reserved;
-	u8 proposal_length[2]; /* including all transform and attributes */
+	u8 proposal_length[2];		/* including all transform and attributes */
 	u8 proposal_num;
-	u8 protocol_id; /* IKEV2_PROTOCOL_* */
+	u8 protocol_id;				/* IKEV2_PROTOCOL_* */
 	u8 spi_size;
 	u8 num_transforms;
 	/* SPI of spi_size octets */
@@ -53,9 +53,9 @@ struct ikev2_proposal {
 } STRUCT_PACKED;
 
 struct ikev2_transform {
-	u8 type; /* 0 (last) or 3 (more) */
+	u8 type;					/* 0 (last) or 3 (more) */
 	u8 reserved;
-	u8 transform_length[2]; /* including Header and Attributes */
+	u8 transform_length[2];		/* including Header and Attributes */
 	u8 transform_type;
 	u8 reserved2;
 	u8 transform_id[2];
@@ -64,8 +64,7 @@ struct ikev2_transform {
 
 #ifdef _MSC_VER
 #pragma pack(pop)
-#endif /* _MSC_VER */
-
+#endif							/* _MSC_VER */
 
 /* Current IKEv2 version from RFC 4306 */
 #define IKEV2_MjVer 2
@@ -79,8 +78,8 @@ enum {
 	IKE_SA_AUTH = 35,
 	CREATE_CHILD_SA = 36,
 	INFORMATION = 37
-	/* 38-239 RESERVED TO IANA */
-	/* 240-255 Reserved for private use */
+				  /* 38-239 RESERVED TO IANA */
+				  /* 240-255 Reserved for private use */
 };
 
 /* IKEv2 Flags */
@@ -90,7 +89,6 @@ enum {
 
 /* Payload Header Flags */
 #define IKEV2_PAYLOAD_FLAGS_CRITICAL 0x01
-
 
 /* EAP-IKEv2 Payload Types (in Next Payload Type field)
  * http://www.iana.org/assignments/eap-ikev2-payloads */
@@ -110,15 +108,13 @@ enum {
 	IKEV2_PAYLOAD_NEXT_FAST_ID = 121
 };
 
-
 /* IKEv2 Proposal - Protocol ID */
 enum {
 	IKEV2_PROTOCOL_RESERVED = 0,
-	IKEV2_PROTOCOL_IKE = 1, /* IKE is the only one allowed for EAP-IKEv2 */
+	IKEV2_PROTOCOL_IKE = 1,		/* IKE is the only one allowed for EAP-IKEv2 */
 	IKEV2_PROTOCOL_AH = 2,
 	IKEV2_PROTOCOL_ESP = 3
 };
-
 
 /* IKEv2 Transform Types */
 enum {
@@ -164,16 +160,15 @@ enum {
 
 /* IKEv2 Transform Type 4 (Diffie-Hellman Group) */
 enum {
-	DH_GROUP1_768BIT_MODP = 1, /* RFC 4306 */
-	DH_GROUP2_1024BIT_MODP = 2, /* RFC 4306 */
-	DH_GROUP5_1536BIT_MODP = 5, /* RFC 3526 */
-	DH_GROUP5_2048BIT_MODP = 14, /* RFC 3526 */
-	DH_GROUP5_3072BIT_MODP = 15, /* RFC 3526 */
-	DH_GROUP5_4096BIT_MODP = 16, /* RFC 3526 */
-	DH_GROUP5_6144BIT_MODP = 17, /* RFC 3526 */
-	DH_GROUP5_8192BIT_MODP = 18 /* RFC 3526 */
+	DH_GROUP1_768BIT_MODP = 1,	/* RFC 4306 */
+	DH_GROUP2_1024BIT_MODP = 2,	/* RFC 4306 */
+	DH_GROUP5_1536BIT_MODP = 5,	/* RFC 3526 */
+	DH_GROUP5_2048BIT_MODP = 14,	/* RFC 3526 */
+	DH_GROUP5_3072BIT_MODP = 15,	/* RFC 3526 */
+	DH_GROUP5_4096BIT_MODP = 16,	/* RFC 3526 */
+	DH_GROUP5_6144BIT_MODP = 17,	/* RFC 3526 */
+	DH_GROUP5_8192BIT_MODP = 18	/* RFC 3526 */
 };
-
 
 /* Identification Data Types (RFC 4306, Sect. 3.5) */
 enum {
@@ -182,10 +177,9 @@ enum {
 	ID_RFC822_ADDR = 3,
 	ID_IPV6_ADDR = 5,
 	ID_DER_ASN1_DN = 9,
-	ID_DER_ASN1_GN= 10,
+	ID_DER_ASN1_GN = 10,
 	ID_KEY_ID = 11
 };
-
 
 /* Certificate Encoding (RFC 4306, Sect. 3.6) */
 enum {
@@ -207,14 +201,12 @@ enum {
 	CERT_ENCODING_HASH_AND_URL_X509_BUNDLE = 13
 };
 
-
 /* Authentication Method (RFC 4306, Sect. 3.8) */
 enum {
 	AUTH_RSA_SIGN = 1,
 	AUTH_SHARED_KEY_MIC = 2,
 	AUTH_DSS_SIGN = 3
 };
-
 
 /* Notify Message Types (RFC 4306, Sect. 3.10.1) */
 enum {
@@ -235,16 +227,13 @@ enum {
 	INVALID_SELECTORS = 39
 };
 
-
 struct ikev2_keys {
 	u8 *SK_d, *SK_ai, *SK_ar, *SK_ei, *SK_er, *SK_pi, *SK_pr;
 	size_t SK_d_len, SK_integ_len, SK_encr_len, SK_prf_len;
 };
 
-
 int ikev2_keys_set(struct ikev2_keys *keys);
 void ikev2_free_keys(struct ikev2_keys *keys);
-
 
 /* Maximum hash length for supported hash algorithms */
 #define IKEV2_MAX_HASH_LEN 20
@@ -267,30 +256,16 @@ struct ikev2_encr_alg {
 	size_t block_size;
 };
 
-const struct ikev2_integ_alg * ikev2_get_integ(int id);
-int ikev2_integ_hash(int alg, const u8 *key, size_t key_len, const u8 *data,
-		     size_t data_len, u8 *hash);
-const struct ikev2_prf_alg * ikev2_get_prf(int id);
-int ikev2_prf_hash(int alg, const u8 *key, size_t key_len,
-		   size_t num_elem, const u8 *addr[], const size_t *len,
-		   u8 *hash);
-int ikev2_prf_plus(int alg, const u8 *key, size_t key_len,
-		   const u8 *data, size_t data_len,
-		   u8 *out, size_t out_len);
-const struct ikev2_encr_alg * ikev2_get_encr(int id);
-int ikev2_encr_encrypt(int alg, const u8 *key, size_t key_len, const u8 *iv,
-		       const u8 *plain, u8 *crypt, size_t len);
-int ikev2_encr_decrypt(int alg, const u8 *key, size_t key_len, const u8 *iv,
-		       const u8 *crypt, u8 *plain, size_t len);
+const struct ikev2_integ_alg *ikev2_get_integ(int id);
+int ikev2_integ_hash(int alg, const u8 *key, size_t key_len, const u8 *data, size_t data_len, u8 *hash);
+const struct ikev2_prf_alg *ikev2_get_prf(int id);
+int ikev2_prf_hash(int alg, const u8 *key, size_t key_len, size_t num_elem, const u8 *addr[], const size_t *len, u8 *hash);
+int ikev2_prf_plus(int alg, const u8 *key, size_t key_len, const u8 *data, size_t data_len, u8 *out, size_t out_len);
+const struct ikev2_encr_alg *ikev2_get_encr(int id);
+int ikev2_encr_encrypt(int alg, const u8 *key, size_t key_len, const u8 *iv, const u8 *plain, u8 *crypt, size_t len);
+int ikev2_encr_decrypt(int alg, const u8 *key, size_t key_len, const u8 *iv, const u8 *crypt, u8 *plain, size_t len);
 
-int ikev2_derive_auth_data(int prf_alg, const struct wpabuf *sign_msg,
-			   const u8 *ID, size_t ID_len, u8 ID_type,
-			   struct ikev2_keys *keys, int initiator,
-			   const u8 *shared_secret, size_t shared_secret_len,
-			   const u8 *nonce, size_t nonce_len,
-			   const u8 *key_pad, size_t key_pad_len,
-			   u8 *auth_data);
-
+int ikev2_derive_auth_data(int prf_alg, const struct wpabuf *sign_msg, const u8 *ID, size_t ID_len, u8 ID_type, struct ikev2_keys *keys, int initiator, const u8 *shared_secret, size_t shared_secret_len, const u8 *nonce, size_t nonce_len, const u8 *key_pad, size_t key_pad_len, u8 *auth_data);
 
 struct ikev2_payloads {
 	const u8 *sa;
@@ -314,21 +289,11 @@ struct ikev2_payloads {
 	size_t notification_len;
 };
 
-int ikev2_parse_payloads(struct ikev2_payloads *payloads,
-			 u8 next_payload, const u8 *pos, const u8 *end);
+int ikev2_parse_payloads(struct ikev2_payloads *payloads, u8 next_payload, const u8 *pos, const u8 *end);
 
-u8 * ikev2_decrypt_payload(int encr_id, int integ_id, struct ikev2_keys *keys,
-			   int initiator, const struct ikev2_hdr *hdr,
-			   const u8 *encrypted, size_t encrypted_len,
-			   size_t *res_len);
+u8 *ikev2_decrypt_payload(int encr_id, int integ_id, struct ikev2_keys *keys, int initiator, const struct ikev2_hdr *hdr, const u8 *encrypted, size_t encrypted_len, size_t *res_len);
 void ikev2_update_hdr(struct wpabuf *msg);
-int ikev2_build_encrypted(int encr_id, int integ_id, struct ikev2_keys *keys,
-			  int initiator, struct wpabuf *msg,
-			  struct wpabuf *plain, u8 next_payload);
-int ikev2_derive_sk_keys(const struct ikev2_prf_alg *prf,
-			 const struct ikev2_integ_alg *integ,
-			 const struct ikev2_encr_alg *encr,
-			 const u8 *skeyseed, const u8 *data, size_t data_len,
-			 struct ikev2_keys *keys);
+int ikev2_build_encrypted(int encr_id, int integ_id, struct ikev2_keys *keys, int initiator, struct wpabuf *msg, struct wpabuf *plain, u8 next_payload);
+int ikev2_derive_sk_keys(const struct ikev2_prf_alg *prf, const struct ikev2_integ_alg *integ, const struct ikev2_encr_alg *encr, const u8 *skeyseed, const u8 *data, size_t data_len, struct ikev2_keys *keys);
 
-#endif /* IKEV2_COMMON_H */
+#endif							/* IKEV2_COMMON_H */

@@ -10,7 +10,7 @@
 #define EAP_TLV_COMMON_H
 
 /* EAP-TLV TLVs (draft-josefsson-ppext-eap-tls-eap-10.txt) */
-#define EAP_TLV_RESULT_TLV 3 /* Acknowledged Result */
+#define EAP_TLV_RESULT_TLV 3	/* Acknowledged Result */
 #define EAP_TLV_NAK_TLV 4
 #define EAP_TLV_ERROR_CODE_TLV 5
 #define EAP_TLV_CONNECTION_BINDING_TLV 6
@@ -18,7 +18,7 @@
 #define EAP_TLV_URI_TLV 8
 #define EAP_TLV_EAP_PAYLOAD_TLV 9
 #define EAP_TLV_INTERMEDIATE_RESULT_TLV 10
-#define EAP_TLV_PAC_TLV 11 /* RFC 5422, Section 4.2 */
+#define EAP_TLV_PAC_TLV 11		/* RFC 5422, Section 4.2 */
 #define EAP_TLV_CRYPTO_BINDING_TLV 12
 #define EAP_TLV_CALLING_STATION_ID_TLV 13
 #define EAP_TLV_CALLED_STATION_ID_TLV 14
@@ -37,7 +37,7 @@
 
 #ifdef _MSC_VER
 #pragma pack(push, 1)
-#endif /* _MSC_VER */
+#endif							/* _MSC_VER */
 
 struct eap_tlv_hdr {
 	be16 tlv_type;
@@ -94,14 +94,14 @@ struct eap_tlv_request_action_tlv {
 
 /* RFC 5422, Section 4.2.6 - PAC-Type TLV */
 struct eap_tlv_pac_type_tlv {
-	be16 tlv_type; /* PAC_TYPE_PAC_TYPE */
+	be16 tlv_type;				/* PAC_TYPE_PAC_TYPE */
 	be16 length;
 	be16 pac_type;
 } STRUCT_PACKED;
 
 #ifdef _MSC_VER
 #pragma pack(pop)
-#endif /* _MSC_VER */
+#endif							/* _MSC_VER */
 
 #define EAP_TLV_CRYPTO_BINDING_SUBTYPE_REQUEST 0
 #define EAP_TLV_CRYPTO_BINDING_SUBTYPE_RESPONSE 1
@@ -109,4 +109,4 @@ struct eap_tlv_pac_type_tlv {
 #define EAP_TLV_ACTION_PROCESS_TLV 1
 #define EAP_TLV_ACTION_NEGOTIATE_EAP 2
 
-#endif /* EAP_TLV_COMMON_H */
+#endif							/* EAP_TLV_COMMON_H */

@@ -15,7 +15,7 @@ int ndisc_snoop_init(struct hostapd_data *hapd);
 void ndisc_snoop_deinit(struct hostapd_data *hapd);
 void sta_ip6addr_del(struct hostapd_data *hapd, struct sta_info *sta);
 
-#else /* CONFIG_PROXYARP && CONFIG_IPV6 */
+#else							/* CONFIG_PROXYARP && CONFIG_IPV6 */
 
 static inline int ndisc_snoop_init(struct hostapd_data *hapd)
 {
@@ -26,11 +26,10 @@ static inline void ndisc_snoop_deinit(struct hostapd_data *hapd)
 {
 }
 
-static inline void sta_ip6addr_del(struct hostapd_data *hapd,
-				   struct sta_info *sta)
+static inline void sta_ip6addr_del(struct hostapd_data *hapd, struct sta_info *sta)
 {
 }
 
-#endif /* CONFIG_PROXYARP && CONFIG_IPV6 */
+#endif							/* CONFIG_PROXYARP && CONFIG_IPV6 */
 
-#endif /* NDISC_SNOOP_H */
+#endif							/* NDISC_SNOOP_H */

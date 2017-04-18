@@ -27,8 +27,9 @@ int eap_hdr_len_valid(const struct wpabuf *msg, size_t min_payload)
 	const struct eap_hdr *hdr;
 	size_t len;
 
-	if (msg == NULL)
+	if (msg == NULL) {
 		return 0;
+	}
 
 	hdr = wpabuf_head(msg);
 
@@ -46,7 +47,6 @@ int eap_hdr_len_valid(const struct wpabuf *msg, size_t min_payload)
 	return 1;
 }
 
-
 /**
  * eap_hdr_validate - Validate EAP header
  * @vendor: Expected EAP Vendor-Id (0 = IETF)
@@ -63,26 +63,25 @@ int eap_hdr_len_valid(const struct wpabuf *msg, size_t min_payload)
  * the payload regardless of whether the packet used the expanded EAP header or
  * not.
  */
-const u8 * eap_hdr_validate(int vendor, EapType eap_type,
-			    const struct wpabuf *msg, size_t *plen)
+const u8 *eap_hdr_validate(int vendor, EapType eap_type, const struct wpabuf *msg, size_t *plen)
 {
 	const struct eap_hdr *hdr;
 	const u8 *pos;
 	size_t len;
 
-	if (!eap_hdr_len_valid(msg, 1))
+	if (!eap_hdr_len_valid(msg, 1)) {
 		return NULL;
+	}
 
 	hdr = wpabuf_head(msg);
 	len = be_to_host16(hdr->length);
-	pos = (const u8 *) (hdr + 1);
+	pos = (const u8 *)(hdr + 1);
 
 	if (*pos == EAP_TYPE_EXPANDED) {
 		int exp_vendor;
 		u32 exp_type;
 		if (len < sizeof(*hdr) + 8) {
-			wpa_printf(MSG_INFO, "EAP: Invalid expanded EAP "
-				   "length");
+			wpa_printf(MSG_INFO, "EAP: Invalid expanded EAP " "length");
 			return NULL;
 		}
 		pos++;
@@ -91,8 +90,7 @@ const u8 * eap_hdr_validate(int vendor, EapType eap_type,
 		exp_type = WPA_GET_BE32(pos);
 		pos += 4;
 		if (exp_vendor != vendor || exp_type != (u32) eap_type) {
-			wpa_printf(MSG_INFO, "EAP: Invalid expanded frame "
-				   "type");
+			wpa_printf(MSG_INFO, "EAP: Invalid expanded frame " "type");
 			return NULL;
 		}
 
@@ -107,7 +105,6 @@ const u8 * eap_hdr_validate(int vendor, EapType eap_type,
 		return pos + 1;
 	}
 }
-
 
 /**
  * eap_msg_alloc - Allocate a buffer for an EAP message
@@ -125,18 +122,17 @@ const u8 * eap_hdr_validate(int vendor, EapType eap_type,
  * function to allocate the message buffers. The returned buffer has room for
  * payload_len bytes and has the EAP header and Type field already filled in.
  */
-struct wpabuf * eap_msg_alloc(int vendor, EapType type, size_t payload_len,
-			      u8 code, u8 identifier)
+struct wpabuf *eap_msg_alloc(int vendor, EapType type, size_t payload_len, u8 code, u8 identifier)
 {
 	struct wpabuf *buf;
 	struct eap_hdr *hdr;
 	size_t len;
 
-	len = sizeof(struct eap_hdr) + (vendor == EAP_VENDOR_IETF ? 1 : 8) +
-		payload_len;
+	len = sizeof(struct eap_hdr) + (vendor == EAP_VENDOR_IETF ? 1 : 8) + payload_len;
 	buf = wpabuf_alloc(len);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return NULL;
+	}
 
 	hdr = wpabuf_put(buf, sizeof(*hdr));
 	hdr->code = code;
@@ -154,7 +150,6 @@ struct wpabuf * eap_msg_alloc(int vendor, EapType type, size_t payload_len,
 	return buf;
 }
 
-
 /**
  * eap_update_len - Update EAP header length
  * @msg: EAP message from eap_msg_alloc
@@ -168,11 +163,11 @@ void eap_update_len(struct wpabuf *msg)
 {
 	struct eap_hdr *hdr;
 	hdr = wpabuf_mhead(msg);
-	if (wpabuf_len(msg) < sizeof(*hdr))
+	if (wpabuf_len(msg) < sizeof(*hdr)) {
 		return;
+	}
 	hdr->length = host_to_be16(wpabuf_len(msg));
 }
-
 
 /**
  * eap_get_id - Get EAP Identifier from wpabuf
@@ -183,13 +178,13 @@ u8 eap_get_id(const struct wpabuf *msg)
 {
 	const struct eap_hdr *eap;
 
-	if (wpabuf_len(msg) < sizeof(*eap))
+	if (wpabuf_len(msg) < sizeof(*eap)) {
 		return 0;
+	}
 
 	eap = wpabuf_head(msg);
 	return eap->identifier;
 }
-
 
 /**
  * eap_get_type - Get EAP Type from wpabuf
@@ -198,16 +193,15 @@ u8 eap_get_id(const struct wpabuf *msg)
  */
 EapType eap_get_type(const struct wpabuf *msg)
 {
-	if (wpabuf_len(msg) < sizeof(struct eap_hdr) + 1)
+	if (wpabuf_len(msg) < sizeof(struct eap_hdr) + 1) {
 		return EAP_TYPE_NONE;
+	}
 
-	return ((const u8 *) wpabuf_head(msg))[sizeof(struct eap_hdr)];
+	return ((const u8 *)wpabuf_head(msg))[sizeof(struct eap_hdr)];
 }
 
-
 #ifdef CONFIG_ERP
-int erp_parse_tlvs(const u8 *pos, const u8 *end, struct erp_tlvs *tlvs,
-		   int stop_at_keyname)
+int erp_parse_tlvs(const u8 *pos, const u8 *end, struct erp_tlvs *tlvs, int stop_at_keyname)
 {
 	os_memset(tlvs, 0, sizeof(*tlvs));
 
@@ -239,20 +233,20 @@ int erp_parse_tlvs(const u8 *pos, const u8 *end, struct erp_tlvs *tlvs,
 				return -1;
 			}
 			tlv_len = *pos++;
-			if (tlv_len > (unsigned) (end - pos)) {
+			if (tlv_len > (unsigned)(end - pos)) {
 				wpa_printf(MSG_DEBUG, "EAP: Truncated TLV");
 				return -1;
 			}
 			if (tlv_type == EAP_ERP_TLV_KEYNAME_NAI) {
 				if (tlvs->keyname) {
-					wpa_printf(MSG_DEBUG,
-						   "EAP: More than one keyName-NAI");
+					wpa_printf(MSG_DEBUG, "EAP: More than one keyName-NAI");
 					return -1;
 				}
 				tlvs->keyname = pos;
 				tlvs->keyname_len = tlv_len;
-				if (stop_at_keyname)
+				if (stop_at_keyname) {
 					return 0;
+				}
 			} else if (tlv_type == EAP_ERP_TLV_DOMAIN_NAME) {
 				tlvs->domain = pos;
 				tlvs->domain_len = tlv_len;
@@ -263,21 +257,18 @@ int erp_parse_tlvs(const u8 *pos, const u8 *end, struct erp_tlvs *tlvs,
 			if (tlv_type >= 128 && tlv_type <= 191) {
 				/* Undefined TLV */
 				if (pos >= end) {
-					wpa_printf(MSG_DEBUG,
-						   "EAP: Too short TLV");
+					wpa_printf(MSG_DEBUG, "EAP: Too short TLV");
 					return -1;
 				}
 				tlv_len = *pos++;
-				if (tlv_len > (unsigned) (end - pos)) {
-					wpa_printf(MSG_DEBUG,
-						   "EAP: Truncated TLV");
+				if (tlv_len > (unsigned)(end - pos)) {
+					wpa_printf(MSG_DEBUG, "EAP: Truncated TLV");
 					return -1;
 				}
 				pos += tlv_len;
 				break;
 			}
-			wpa_printf(MSG_DEBUG, "EAP: Unknown TV/TLV type %u",
-				   tlv_type);
+			wpa_printf(MSG_DEBUG, "EAP: Unknown TV/TLV type %u", tlv_type);
 			pos = end;
 			break;
 		}
@@ -285,4 +276,4 @@ int erp_parse_tlvs(const u8 *pos, const u8 *end, struct erp_tlvs *tlvs,
 
 	return 0;
 }
-#endif /* CONFIG_ERP */
+#endif							/* CONFIG_ERP */

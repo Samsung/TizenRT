@@ -27,7 +27,7 @@
 #define SLSI_IEEE8021X_TYPE_EAPOL_KEY    (3)
 #define SLSI_IEEE8021X_TYPE_EAP_PACKET   (0)
 
-#define SLSI_EAPOL_KEY_INFO_KEY_TYPE_BIT_IN_LOWER_BYTE     (1 << 3) /* Group = 0, Pairwise = 1 */
+#define SLSI_EAPOL_KEY_INFO_KEY_TYPE_BIT_IN_LOWER_BYTE     (1 << 3)	/* Group = 0, Pairwise = 1 */
 #define SLSI_EAPOL_KEY_INFO_MIC_BIT_IN_HIGHER_BYTE         (1 << 0)
 /* pkt_data would start from 802.1X Authentication field (pkt_data[0] = Version).
  * For M4 packet, it will be something as below... member(size, position)
@@ -137,10 +137,10 @@ enum slsi_dhcp_tx {
 
 enum slsi_fw_regulatory_rule_flags {
 	SLSI_REGULATORY_NO_IR = 1 << 0,
-		SLSI_REGULATORY_DFS = 1 << 1,
-		SLSI_REGULATORY_NO_OFDM = 1 << 2,
-		SLSI_REGULATORY_NO_INDOOR = 1 << 3,
-		SLSI_REGULATORY_NO_OUTDOOR = 1 << 4
+	SLSI_REGULATORY_DFS = 1 << 1,
+	SLSI_REGULATORY_NO_OFDM = 1 << 2,
+	SLSI_REGULATORY_NO_INDOOR = 1 << 3,
+	SLSI_REGULATORY_NO_OUTDOOR = 1 << 4
 };
 
 enum slsi_sta_conn_state {
@@ -186,7 +186,7 @@ static inline struct slsi_peer *slsi_get_peer_from_mac(struct slsi_dev *sdev, st
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
-	(void)sdev; /* unused */
+	(void)sdev;					/* unused */
 
 	/* Accesses the peer records but doesn't block as called from the data path.
 	 * MUST check the valid flag on the record before accessing any other data in the record.
@@ -194,15 +194,16 @@ static inline struct slsi_peer *slsi_get_peer_from_mac(struct slsi_dev *sdev, st
 	 * it just maybe the data that it points to gets set to ZERO.
 	 */
 	if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
-		if (ndev_vif->peer_sta_record[SLSI_STA_PEER_QUEUESET] && ndev_vif->peer_sta_record[SLSI_STA_PEER_QUEUESET]->valid)
+		if (ndev_vif->peer_sta_record[SLSI_STA_PEER_QUEUESET] && ndev_vif->peer_sta_record[SLSI_STA_PEER_QUEUESET]->valid) {
 			return ndev_vif->peer_sta_record[SLSI_STA_PEER_QUEUESET];
+		}
 	} else if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 		int i = 0;
 
 		for (i = 0; i < SLSI_PEER_INDEX_MAX; i++)
-			if (ndev_vif->peer_sta_record[i] && ndev_vif->peer_sta_record[i]->valid &&
-			    compare_ether_addr(ndev_vif->peer_sta_record[i]->address, mac) == 0)
+			if (ndev_vif->peer_sta_record[i] && ndev_vif->peer_sta_record[i]->valid && compare_ether_addr(ndev_vif->peer_sta_record[i]->address, mac) == 0) {
 				return ndev_vif->peer_sta_record[i];
+			}
 	}
 	return NULL;
 }
@@ -211,10 +212,11 @@ static inline struct slsi_peer *slsi_get_peer_from_qs(struct slsi_dev *sdev, str
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
-	(void)sdev; /* unused */
+	(void)sdev;					/* unused */
 
-	if (!ndev_vif->peer_sta_record[queueset] || !ndev_vif->peer_sta_record[queueset]->valid)
+	if (!ndev_vif->peer_sta_record[queueset] || !ndev_vif->peer_sta_record[queueset]->valid) {
 		return NULL;
+	}
 
 	return ndev_vif->peer_sta_record[queueset];
 }
@@ -223,8 +225,9 @@ static inline bool slsi_is_proxy_arp_supported_on_ap(struct max_buff *assoc_resp
 {
 	const u8 *ie = slsi_80211_find_ie(SLSI_WLAN_EID_EXT_CAPABILITY, assoc_resp_ie->data, assoc_resp_ie->len);
 
-	if ((ie) && (ie[1] > 1))
-		return ie[3] & 0x10;     /*0: eid, 1: len; 3: proxy arp is 12th bit*/
+	if ((ie) && (ie[1] > 1)) {
+		return ie[3] & 0x10;    /*0: eid, 1: len; 3: proxy arp is 12th bit */
+	}
 
 	return 0;
 }
@@ -232,8 +235,9 @@ static inline bool slsi_is_proxy_arp_supported_on_ap(struct max_buff *assoc_resp
 static inline int slsi_cache_ies(const u8 *src_ie, size_t src_ie_len, u8 **dest_ie, size_t *dest_ie_len)
 {
 	*dest_ie = kmm_malloc(src_ie_len);
-	if (*dest_ie == NULL)
+	if (*dest_ie == NULL) {
 		return -ENOMEM;
+	}
 
 	memcpy(*dest_ie, src_ie, src_ie_len);
 	*dest_ie_len = src_ie_len;
@@ -243,8 +247,9 @@ static inline int slsi_cache_ies(const u8 *src_ie, size_t src_ie_len, u8 **dest_
 
 static inline void slsi_clear_cached_ies(u8 **ie, size_t *ie_len)
 {
-	if (*ie_len != 0)
+	if (*ie_len != 0) {
 		kmm_free(*ie);
+	}
 	*ie = NULL;
 	*ie_len = 0;
 }
@@ -291,15 +296,17 @@ static inline char *slsi_p2p_pa_subtype_text(int subtype)
 static inline void slsi_assign_cookie_id(u64 *cookie, u64 *counter)
 {
 	(*cookie) = ++(*counter);
-	if ((*cookie) == 0)
+	if ((*cookie) == 0) {
 		(*cookie) = ++(*counter);
+	}
 }
 
 /* Update P2P Probe Response IEs in driver */
 static inline void slsi_unsync_vif_set_probe_rsp_ie(struct netdev_vif *ndev_vif, u8 *ies, size_t ies_len)
 {
-	if (ndev_vif->unsync.probe_rsp_ies_len)
+	if (ndev_vif->unsync.probe_rsp_ies_len) {
 		kmm_free(ndev_vif->unsync.probe_rsp_ies);
+	}
 	ndev_vif->unsync.probe_rsp_ies = ies;
 	ndev_vif->unsync.probe_rsp_ies_len = ies_len;
 }
@@ -329,7 +336,9 @@ static inline int slsi_set_mgmt_tx_data(struct netdev_vif *ndev_vif, u64 cookie,
 		tx_frame = kmm_malloc(buf_len);
 		if (!tx_frame)
 			//SLSI_NET_ERR(ndev_vif->sdev->netdev, "FAILED to allocate memory for Tx frame\n");
+		{
 			return -ENOMEM;
+		}
 		SLSI_NET_DBG3(ndev_vif->sdev->netdev, SLSI_T20_80211, "Copy buffer for tx_status\n");
 		memcpy(tx_frame, buf, buf_len);
 	} else if (ndev_vif->mgmt_tx_data.buf) {
@@ -344,7 +353,7 @@ static inline int slsi_set_mgmt_tx_data(struct netdev_vif *ndev_vif, u64 cookie,
 
 	return 0;
 }
-#endif /* CONFIG_SCSC_ENABLE_P2P */
+#endif							/* CONFIG_SCSC_ENABLE_P2P */
 
 bool is_multicast_ether_addr(const u8 *addr);
 void slsi_get_hw_mac_address(struct slsi_dev *sdev, u8 *addr);
@@ -393,10 +402,7 @@ int slsi_read_max_transmit_msdu_lifetime(struct slsi_dev *dev, struct netif *nde
 int slsi_read_unifi_countrylist(struct slsi_dev *sdev, u16 psid);
 int slsi_read_default_country(struct slsi_dev *sdev, u8 *alpha2, u16 psid);
 int slsi_read_disconnect_ind_timeout(struct slsi_dev *sdev, u16 psid);
-void slsi_connect_indication(struct netdev_vif *ndev_vif,
-			     const u8 *req_ie, size_t req_ie_len,
-			     const u8 *resp_ie, size_t resp_ie_len,
-			     u16 status, u16 vif_type, const u8 *addr);
+void slsi_connect_indication(struct netdev_vif *ndev_vif, const u8 *req_ie, size_t req_ie_len, const u8 *resp_ie, size_t resp_ie_len, u16 status, u16 vif_type, const u8 *addr);
 
 u16 slsi_country_to_index(struct slsi_802_11d_reg_domain regd_info, const char *alpha2);
 int slsi_read_regulatory_rules(struct slsi_dev *sdev, u16 psid, u16 index);

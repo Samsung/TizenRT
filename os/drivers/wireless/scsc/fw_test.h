@@ -10,14 +10,14 @@
 #include "dev.h"
 
 struct slsi_fw_test {
-	struct slsi_dev       *sdev;
-	bool                  fw_test_enabled;
+	struct slsi_dev *sdev;
+	bool fw_test_enabled;
 	struct slsi_mbuf_work fw_test_work;
-	pthread_mutex_t       fw_test_lock;
-	struct max_buff       *mlme_add_vif_req[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];
-	struct max_buff       *mlme_connect_req[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];
-	struct max_buff       *mlme_connect_cfm[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];
-	struct max_buff       *mlme_procedure_started_ind[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];
+	pthread_mutex_t fw_test_lock;
+	struct max_buff *mlme_add_vif_req[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];
+	struct max_buff *mlme_connect_req[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];
+	struct max_buff *mlme_connect_cfm[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];
+	struct max_buff *mlme_procedure_started_ind[CONFIG_SCSC_WLAN_MAX_INTERFACES + 1];
 };
 
 void slsi_fw_test_init(struct slsi_dev *sdev, struct slsi_fw_test *fwtest);

@@ -8,7 +8,6 @@
 #ifndef _ISP_DRIVER_ENCRYPTEDKEY_H_
 #define _ISP_DRIVER_ENCRYPTEDKEY_H_
 
-
 // ======================================
 // Function
 // ======================================
@@ -17,4 +16,4 @@ int isp_set_encryptedkey(unsigned char *key, unsigned int key_byte_len, unsigned
 int isp_get_encryptedkey(unsigned int *object_id, unsigned int key_type, unsigned char *encryptedkey);
 int isp_set_genkey_encryptedkey(unsigned int key_type, unsigned char *encryptedkey);
 
-#endif /* _ISP_DRIVER_ENCRYPTEDKEY_H_ */
+#endif							/* _ISP_DRIVER_ENCRYPTEDKEY_H_ */

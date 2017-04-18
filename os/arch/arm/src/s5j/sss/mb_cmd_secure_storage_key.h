@@ -8,7 +8,6 @@
 #ifndef MB_CMD_SECURE_STORAGE_KEY_H_
 #define MB_CMD_SECURE_STORAGE_KEY_H_
 
-
 // Storage Map
 #define MB_SSTORAGE_BLOCK_BYTELEN_MAX (240)
 
@@ -16,16 +15,16 @@
 // Function
 // ======================================
 // Secure Storage for Key
-int mb_storage_set_securekey_init(unsigned char * iv, unsigned int msg_byte_len, unsigned int type, unsigned int index);
-int mb_storage_set_securekey_update(unsigned char * out_block, unsigned char *in_block, unsigned int type);
+int mb_storage_set_securekey_init(unsigned char *iv, unsigned int msg_byte_len, unsigned int type, unsigned int index);
+int mb_storage_set_securekey_update(unsigned char *out_block, unsigned char *in_block, unsigned int type);
 int mb_storage_set_securekey_final(unsigned char *out_block, unsigned char *in_block, unsigned int block_byte_len, unsigned int type);
 
 int mb_storage_get_securekey_init(unsigned char *iv, unsigned int msg_byte_len, unsigned int type, unsigned int index);
 int mb_storage_get_securekey_update(unsigned char *in_block);
 int mb_storage_get_securekey_final(unsigned int *object_id, unsigned char *in_block, unsigned int block_byte_len);
 
-int mb_storage_set_genkey_securekey_init(unsigned char * iv, unsigned int *msg_byte_len, unsigned int type, unsigned int index);
-int mb_storage_set_genkey_securekey_update(unsigned char * out_block, unsigned int type);
+int mb_storage_set_genkey_securekey_init(unsigned char *iv, unsigned int *msg_byte_len, unsigned int type, unsigned int index);
+int mb_storage_set_genkey_securekey_update(unsigned char *out_block, unsigned int type);
 int mb_storage_set_genkey_securekey_final(unsigned char *out_block, unsigned int type);
 
 // ======================================
@@ -43,4 +42,4 @@ int mb_storage_set_genkey_securekey_final(unsigned char *out_block, unsigned int
 #define FUNC_SSTORAGE_KEY_ENC_KEYGEN_UPDATE		(0x0022A302)
 #define FUNC_SSTORAGE_KEY_ENC_KEYGEN_FINAL		(0x0023A302)
 
-#endif /* MB_CMD_SECURE_STORAGE_KEY_H_ */
+#endif							/* MB_CMD_SECURE_STORAGE_KEY_H_ */

@@ -96,10 +96,20 @@ void gpioloopback_main(int argc, char *argv[])
 	for (tc = 0; tc < 3; tc++) {
 		int nA = 0, nB = 0;
 		switch (tc) {
-			case 0:		nA = XGPIO9;	nB = XGPIO11;	break;
-			case 1:		nA = XGPIO8;	nB = XGPIO2;	break;
-			case 2:		nA = XGPIO1;	nB = XGPIO3;	break;
-			default:									break;
+		case 0:
+			nA = XGPIO9;
+			nB = XGPIO11;
+			break;
+		case 1:
+			nA = XGPIO8;
+			nB = XGPIO2;
+			break;
+		case 2:
+			nA = XGPIO1;
+			nB = XGPIO3;
+			break;
+		default:
+			break;
 		}
 
 		int readA, readB;

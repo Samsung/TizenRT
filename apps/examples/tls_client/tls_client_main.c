@@ -352,8 +352,8 @@ static void my_debug(void *ctx, int level, const char *file, int line, const cha
 			basename = p + 1;
 		}
 
-	mbedtls_fprintf((FILE *) ctx, "%s:%04d: |%d| %s", basename, line, level, str);
-	fflush((FILE *) ctx);
+	mbedtls_fprintf((FILE *)ctx, "%s:%04d: |%d| %s", basename, line, level, str);
+	fflush((FILE *)ctx);
 }
 
 /*

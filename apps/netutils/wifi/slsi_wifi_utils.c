@@ -26,119 +26,103 @@
 #define SLSI_WIFI_SECURITY_WPA2_TKIP     "wpa2_tkip"
 #define SLSI_WIFI_SECURITY_WPA2_AES      "wpa2_aes"
 
-
 #define MODE_STRING_MAX 100
 #define MAX_SSID_LEN (4*32+1)
 
 /* function is used from multiple places so dont rely on local static vars in this file */
 
-slsi_security_config_t *getSecurityConfig(char *sec_type, char *psk, WiFi_InterFace_ID_t mode){
+slsi_security_config_t *getSecurityConfig(char *sec_type, char *psk, WiFi_InterFace_ID_t mode)
+{
 
-    slsi_security_config_t *ret = NULL;
-    if (strncmp(SLSI_WIFI_SECURITY_OPEN,
-                sec_type, sizeof(SLSI_WIFI_SECURITY_OPEN)) != 0 ) {
-        ret = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
-        if (ret) {
-            if (strncmp(SLSI_WIFI_SECURITY_WEP_OPEN,
-                        sec_type, sizeof(SLSI_WIFI_SECURITY_WEP_OPEN)) == 0) {
-                ret->secmode = SLSI_SEC_MODE_WEP;
-            } else if (strncmp(SLSI_WIFI_SECURITY_WEP_SHARED,
-                        sec_type, sizeof(SLSI_WIFI_SECURITY_WEP_SHARED)) == 0) {
-                ret->secmode = SLSI_SEC_MODE_WEP_SHARED;
-            } else if (strncmp(SLSI_WIFI_SECURITY_WPA_MIXED,
-                        sec_type,sizeof(SLSI_WIFI_SECURITY_WPA_MIXED)) == 0) {
-                ret->secmode = SLSI_SEC_MODE_WPA_MIXED;
-            } else if (strncmp(SLSI_WIFI_SECURITY_WPA_TKIP,
-                        sec_type,sizeof(SLSI_WIFI_SECURITY_WPA_TKIP)) == 0) {
-                ret->secmode = SLSI_SEC_MODE_WPA_TKIP;
-            } else if (strncmp(SLSI_WIFI_SECURITY_WPA_AES,
-                        sec_type,sizeof(SLSI_WIFI_SECURITY_WPA_AES)) == 0) {
-                ret->secmode = SLSI_SEC_MODE_WPA_CCMP;
-            } else if (strncmp(SLSI_WIFI_SECURITY_WPA2_MIXED,
-                        sec_type,sizeof(SLSI_WIFI_SECURITY_WPA2_MIXED)) == 0) {
-                ret->secmode = SLSI_SEC_MODE_WPA2_MIXED;
-            } else if (strncmp(SLSI_WIFI_SECURITY_WPA2_TKIP,
-                        sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_TKIP)) == 0) {
-                ret->secmode = SLSI_SEC_MODE_WPA2_TKIP;
-            } else if (strncmp(SLSI_WIFI_SECURITY_WPA2_AES,
-                        sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_AES)) == 0) {
-                ret->secmode = SLSI_SEC_MODE_WPA2_CCMP;
-            }
-        }
-        /* store the passphrase */
-        if(psk && ret != NULL) {
-            memcpy(ret->passphrase, psk, strlen(psk));
-        } else {
-            if(ret) {
-                free(ret);
-                ret = NULL;
-            }
-        }
-    }
-    return ret;
+	slsi_security_config_t *ret = NULL;
+	if (strncmp(SLSI_WIFI_SECURITY_OPEN, sec_type, sizeof(SLSI_WIFI_SECURITY_OPEN)) != 0) {
+		ret = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
+		if (ret) {
+			if (strncmp(SLSI_WIFI_SECURITY_WEP_OPEN, sec_type, sizeof(SLSI_WIFI_SECURITY_WEP_OPEN)) == 0) {
+				ret->secmode = SLSI_SEC_MODE_WEP;
+			} else if (strncmp(SLSI_WIFI_SECURITY_WEP_SHARED, sec_type, sizeof(SLSI_WIFI_SECURITY_WEP_SHARED)) == 0) {
+				ret->secmode = SLSI_SEC_MODE_WEP_SHARED;
+			} else if (strncmp(SLSI_WIFI_SECURITY_WPA_MIXED, sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_MIXED)) == 0) {
+				ret->secmode = SLSI_SEC_MODE_WPA_MIXED;
+			} else if (strncmp(SLSI_WIFI_SECURITY_WPA_TKIP, sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_TKIP)) == 0) {
+				ret->secmode = SLSI_SEC_MODE_WPA_TKIP;
+			} else if (strncmp(SLSI_WIFI_SECURITY_WPA_AES, sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_AES)) == 0) {
+				ret->secmode = SLSI_SEC_MODE_WPA_CCMP;
+			} else if (strncmp(SLSI_WIFI_SECURITY_WPA2_MIXED, sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_MIXED)) == 0) {
+				ret->secmode = SLSI_SEC_MODE_WPA2_MIXED;
+			} else if (strncmp(SLSI_WIFI_SECURITY_WPA2_TKIP, sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_TKIP)) == 0) {
+				ret->secmode = SLSI_SEC_MODE_WPA2_TKIP;
+			} else if (strncmp(SLSI_WIFI_SECURITY_WPA2_AES, sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_AES)) == 0) {
+				ret->secmode = SLSI_SEC_MODE_WPA2_CCMP;
+			}
+		}
+		/* store the passphrase */
+		if (psk && ret != NULL) {
+			memcpy(ret->passphrase, psk, strlen(psk));
+		} else {
+			if (ret) {
+				free(ret);
+				ret = NULL;
+			}
+		}
+	}
+	return ret;
 }
+
 /*
  * Get the string representing the security mode in in a can result
  */
 
-static void getSecurityModeString(slsi_security_config_t *sec, uint8_t count, char* modestring) {
-    memset(modestring, 0, MODE_STRING_MAX);
-    char *pos = modestring;
-    int x = 0;
-    if (count == 0) {
-        strncat(pos, "[NONE]", 6);
-    } else {
-        for (x = 0; x < count; x++) {
-            strncat(pos, "[", 1);
-            pos += 1;
-            if (sec->secmode == SLSI_SEC_MODE_WEP) {
-                strncat(pos, "WEP", 3);
-                pos += 3;
-            }
-            else if (sec->secmode == SLSI_SEC_MODE_WEP_SHARED) {
-                strncat(pos, "WEP_SHARED", 10);
-                pos += 10;
-            }
-            else if (sec->secmode == (SLSI_SEC_MODE_WEP | SLSI_SEC_MODE_WEP_SHARED)) {
-                strncat(pos, "WEP", 3); // we dont really know if this is open or shared
-                                        // let's just yse "WEP"
-                pos += 3;
-            }
-            else if (sec->secmode == SLSI_SEC_MODE_WPA_TKIP) {
-                strncat(pos, "WPA-PSK+TKIP", 12);
-                pos += 12;
-            }
-            else if (sec->secmode == SLSI_SEC_MODE_WPA_CCMP) {
-                strncat(pos, "WPA-PSK+AES", 11);
-                pos += 11;
-            }
-            else if (sec->secmode == SLSI_SEC_MODE_WPA_MIXED) {
-                strncat(pos, "WPA-PSK+AES+TKIP", 16);
-                pos += 16;
-            }
-            else if (sec->secmode == SLSI_SEC_MODE_WPA2_TKIP) {
-                strncat(pos, "WPA2-PSK+TKIP", 13);
-                pos += 13;
-            }
-            else if (sec->secmode == SLSI_SEC_MODE_WPA2_CCMP) {
-                strncat(pos, "WPA2-PSK+AES", 12);
-                pos += 12;
-            }
-            else if (sec->secmode == SLSI_SEC_MODE_WPA2_MIXED) {
-                strncat(pos, "WPA2-PSK+AES+TKIP", 17);
-                pos += 17;
-            }
-            else if (sec->secmode == SLSI_SEC_MODE_EAP) {
-                strncat(pos, "WPA-EAP", 7);
-                pos += 7;
-            }
+static void getSecurityModeString(slsi_security_config_t *sec, uint8_t count, char *modestring)
+{
+	memset(modestring, 0, MODE_STRING_MAX);
+	char *pos = modestring;
+	int x = 0;
+	if (count == 0) {
+		strncat(pos, "[NONE]", 6);
+	} else {
+		for (x = 0; x < count; x++) {
+			strncat(pos, "[", 1);
+			pos += 1;
+			if (sec->secmode == SLSI_SEC_MODE_WEP) {
+				strncat(pos, "WEP", 3);
+				pos += 3;
+			} else if (sec->secmode == SLSI_SEC_MODE_WEP_SHARED) {
+				strncat(pos, "WEP_SHARED", 10);
+				pos += 10;
+			} else if (sec->secmode == (SLSI_SEC_MODE_WEP | SLSI_SEC_MODE_WEP_SHARED)) {
+				strncat(pos, "WEP", 3);	// we dont really know if this is open or shared
+				// let's just yse "WEP"
+				pos += 3;
+			} else if (sec->secmode == SLSI_SEC_MODE_WPA_TKIP) {
+				strncat(pos, "WPA-PSK+TKIP", 12);
+				pos += 12;
+			} else if (sec->secmode == SLSI_SEC_MODE_WPA_CCMP) {
+				strncat(pos, "WPA-PSK+AES", 11);
+				pos += 11;
+			} else if (sec->secmode == SLSI_SEC_MODE_WPA_MIXED) {
+				strncat(pos, "WPA-PSK+AES+TKIP", 16);
+				pos += 16;
+			} else if (sec->secmode == SLSI_SEC_MODE_WPA2_TKIP) {
+				strncat(pos, "WPA2-PSK+TKIP", 13);
+				pos += 13;
+			} else if (sec->secmode == SLSI_SEC_MODE_WPA2_CCMP) {
+				strncat(pos, "WPA2-PSK+AES", 12);
+				pos += 12;
+			} else if (sec->secmode == SLSI_SEC_MODE_WPA2_MIXED) {
+				strncat(pos, "WPA2-PSK+AES+TKIP", 17);
+				pos += 17;
+			} else if (sec->secmode == SLSI_SEC_MODE_EAP) {
+				strncat(pos, "WPA-EAP", 7);
+				pos += 7;
+			}
 
-            strncat(pos, "]", 1);
-            pos += 1;
-            sec++; //go to next structure
-        }
-    }
-    return;
+			strncat(pos, "]", 1);
+			pos += 1;
+			sec++;				//go to next structure
+		}
+	}
+	return;
 }
 
 static void resultStringEncode(char *txt, size_t maxlen, const u8 *data, size_t len)
@@ -147,8 +131,9 @@ static void resultStringEncode(char *txt, size_t maxlen, const u8 *data, size_t 
 	size_t i;
 
 	for (i = 0; i < len; i++) {
-		if (txt + 4 >= end)
+		if (txt + 4 >= end) {
 			break;
+		}
 
 		switch (data[i]) {
 		case '\"':
@@ -179,8 +164,7 @@ static void resultStringEncode(char *txt, size_t maxlen, const u8 *data, size_t 
 			if (data[i] >= 32 && data[i] <= 127) {
 				*txt++ = data[i];
 			} else {
-				txt += snprintf(txt, end - txt, "\\x%02x",
-						   data[i]);
+				txt += snprintf(txt, end - txt, "\\x%02x", data[i]);
 			}
 			break;
 		}
@@ -189,24 +173,21 @@ static void resultStringEncode(char *txt, size_t maxlen, const u8 *data, size_t 
 	*txt = '\0';
 }
 
-void printScanResult(slsi_scan_info_t *list) {
-    // if NULL scan finished
-    int count = 0;
-    char ssid[MAX_SSID_LEN];
-    slsi_scan_info_t *current_element = list;
-    printf("Scan Result - networks:\n");
-    printf("          %-20.20s %-8.8s %-40.40s %-6.6s %s\n", "BSSID", "RSSI", "SECURITY", "CH", "SSID");
-    while (current_element) {
-        char modestring[MODE_STRING_MAX];
-        count++;
-        getSecurityModeString(current_element->sec_modes, current_element->num_sec_modes, modestring);
+void printScanResult(slsi_scan_info_t *list)
+{
+	// if NULL scan finished
+	int count = 0;
+	char ssid[MAX_SSID_LEN];
+	slsi_scan_info_t *current_element = list;
+	printf("Scan Result - networks:\n");
+	printf("          %-20.20s %-8.8s %-40.40s %-6.6s %s\n", "BSSID", "RSSI", "SECURITY", "CH", "SSID");
+	while (current_element) {
+		char modestring[MODE_STRING_MAX];
+		count++;
+		getSecurityModeString(current_element->sec_modes, current_element->num_sec_modes, modestring);
 
-        resultStringEncode(ssid, MAX_SSID_LEN, current_element->ssid, current_element->ssid_len);
-        printf("     %3.3d) %-20.20s %-8.8d %-40.40s %-6.6d %.32s \n",
-                count, current_element->bssid, current_element->rssi, modestring,
-                current_element->channel, ssid);
-        current_element = current_element->next;
-    }
+		resultStringEncode(ssid, MAX_SSID_LEN, current_element->ssid, current_element->ssid_len);
+		printf("     %3.3d) %-20.20s %-8.8d %-40.40s %-6.6d %.32s \n", count, current_element->bssid, current_element->rssi, modestring, current_element->channel, ssid);
+		current_element = current_element->next;
+	}
 }
-
-

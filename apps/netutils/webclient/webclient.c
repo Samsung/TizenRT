@@ -517,7 +517,7 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 		ndbg("  . Loading the client cert. and key...");
 
 		if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
-											 (const unsigned char *) ssl_config->dev_cert,
+											 (const unsigned char *)ssl_config->dev_cert,
 											 ssl_config->dev_cert_len)) != 0) {
 			ndbg("Error: cli_cert parse fail, return %d\n", result);
 			goto TLS_INIT_EXIT;
@@ -547,7 +547,7 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 		ndbg("  . Loading the CA cert...");
 
 		if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
-											 (const unsigned char *) ssl_config->root_ca,
+											 (const unsigned char *)ssl_config->root_ca,
 											 ssl_config->root_ca_len)) != 0) {
 			ndbg("Error: CA_cert parse fail, return %d\n", result);
 			goto TLS_INIT_EXIT;
@@ -729,7 +729,7 @@ static int wget_msg_construct(char *buf, struct http_client_request_t *param, st
 			if (dest == NULL) {
 				return WGET_MSG_CONSTRUCT_ERR;
 			}
-			post_len = strlen((char *) param->entity);
+			post_len = strlen((char *)param->entity);
 			sprintf(post_size, "%d", post_len);
 			dest = wget_strcpy(dest, post_size, param);
 			if (dest == NULL) {
@@ -787,7 +787,7 @@ static int wget_msg_construct(char *buf, struct http_client_request_t *param, st
 		/* content length */
 
 		if (!param->encoding) {
-			dest = wget_strcpy(dest, (char *) param->entity, param);
+			dest = wget_strcpy(dest, (char *)param->entity, param);
 			if (dest == NULL) {
 				return WGET_MSG_CONSTRUCT_ERR;
 			}
@@ -806,7 +806,7 @@ static int wget_msg_construct(char *buf, struct http_client_request_t *param, st
 				if (dest == NULL) {
 					return WGET_MSG_CONSTRUCT_ERR;
 				}
-				dest = wget_strlencpy(dest, (char *) param->entity, param->buflen, param);
+				dest = wget_strlencpy(dest, (char *)param->entity, param->buflen, param);
 				if (dest == NULL) {
 					return WGET_MSG_CONSTRUCT_ERR;
 				}
@@ -823,7 +823,7 @@ static int wget_msg_construct(char *buf, struct http_client_request_t *param, st
 				if (dest == NULL) {
 					return WGET_MSG_CONSTRUCT_ERR;
 				}
-				dest = wget_strcpy(dest, (char *) param->entity, param);
+				dest = wget_strcpy(dest, (char *)param->entity, param);
 				if (dest == NULL) {
 					return WGET_MSG_CONSTRUCT_ERR;
 				}
@@ -979,7 +979,7 @@ static pthread_addr_t wget_base(void *arg)
 	ws.datend = 0;
 	ws.ndx = 0;
 
-	if((sndlen = wget_msg_construct(ws.buffer, param, &ws)) <= 0) {
+	if ((sndlen = wget_msg_construct(ws.buffer, param, &ws)) <= 0) {
 		ndbg("ERROR: construction message failed\n");
 		goto errout_before_tlsinit;
 	}
@@ -987,7 +987,7 @@ static pthread_addr_t wget_base(void *arg)
 #ifdef CONFIG_NET_SECURITY_TLS
 retry:
 #endif
-	if((sockfd = wget_socket_connect(&ws)) < 0) {
+	if ((sockfd = wget_socket_connect(&ws)) < 0) {
 		ndbg("ERROR: socket failed: %d\n", errno);
 		goto errout_before_tlsinit;
 	}
@@ -1048,7 +1048,7 @@ retry:
 #ifdef CONFIG_NET_SECURITY_TLS
 		if (param->tls) {
 			len = mbedtls_ssl_read(&(client_tls->tls_ssl),
-								   (unsigned char *) param->response->message + buf_len,
+								   (unsigned char *)param->response->message + buf_len,
 								   WEBCLIENT_CONF_MAX_MESSAGE_SIZE - buf_len);
 		} else
 #endif

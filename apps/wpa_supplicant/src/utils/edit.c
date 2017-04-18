@@ -39,23 +39,20 @@ static struct edit_history *history_curr;
 static void *edit_cb_ctx;
 static void (*edit_cmd_cb)(void *ctx, char *cmd);
 static void (*edit_eof_cb)(void *ctx);
-static char ** (*edit_completion_cb)(void *ctx, const char *cmd, int pos) =
-	NULL;
+static char **(*edit_completion_cb)(void *ctx, const char *cmd, int pos) = NULL;
 
 static struct termios prevt, newt;
 
-
 #define CLEAR_END_LINE "\e[K"
-
 
 void edit_clear_line(void)
 {
 	int i;
 	putchar('\r');
-	for (i = 0; i < cmdbuf_len + 2 + (ps2 ? (int) os_strlen(ps2) : 0); i++)
+	for (i = 0; i < cmdbuf_len + 2 + (ps2 ? (int)os_strlen(ps2) : 0); i++) {
 		putchar(' ');
+	}
 }
-
 
 static void move_start(void)
 {
@@ -63,13 +60,11 @@ static void move_start(void)
 	edit_redraw();
 }
 
-
 static void move_end(void)
 {
 	cmdbuf_pos = cmdbuf_len;
 	edit_redraw();
 }
-
 
 static void move_left(void)
 {
@@ -79,7 +74,6 @@ static void move_left(void)
 	}
 }
 
-
 static void move_right(void)
 {
 	if (cmdbuf_pos < cmdbuf_len) {
@@ -88,53 +82,52 @@ static void move_right(void)
 	}
 }
 
-
 static void move_word_left(void)
 {
-	while (cmdbuf_pos > 0 && cmdbuf[cmdbuf_pos - 1] == ' ')
+	while (cmdbuf_pos > 0 && cmdbuf[cmdbuf_pos - 1] == ' ') {
 		cmdbuf_pos--;
-	while (cmdbuf_pos > 0 && cmdbuf[cmdbuf_pos - 1] != ' ')
+	}
+	while (cmdbuf_pos > 0 && cmdbuf[cmdbuf_pos - 1] != ' ') {
 		cmdbuf_pos--;
+	}
 	edit_redraw();
 }
-
 
 static void move_word_right(void)
 {
-	while (cmdbuf_pos < cmdbuf_len && cmdbuf[cmdbuf_pos] == ' ')
+	while (cmdbuf_pos < cmdbuf_len && cmdbuf[cmdbuf_pos] == ' ') {
 		cmdbuf_pos++;
-	while (cmdbuf_pos < cmdbuf_len && cmdbuf[cmdbuf_pos] != ' ')
+	}
+	while (cmdbuf_pos < cmdbuf_len && cmdbuf[cmdbuf_pos] != ' ') {
 		cmdbuf_pos++;
+	}
 	edit_redraw();
 }
 
-
 static void delete_left(void)
 {
-	if (cmdbuf_pos == 0)
+	if (cmdbuf_pos == 0) {
 		return;
+	}
 
 	edit_clear_line();
-	os_memmove(cmdbuf + cmdbuf_pos - 1, cmdbuf + cmdbuf_pos,
-		   cmdbuf_len - cmdbuf_pos);
+	os_memmove(cmdbuf + cmdbuf_pos - 1, cmdbuf + cmdbuf_pos, cmdbuf_len - cmdbuf_pos);
 	cmdbuf_pos--;
 	cmdbuf_len--;
 	edit_redraw();
 }
 
-
 static void delete_current(void)
 {
-	if (cmdbuf_pos == cmdbuf_len)
+	if (cmdbuf_pos == cmdbuf_len) {
 		return;
+	}
 
 	edit_clear_line();
-	os_memmove(cmdbuf + cmdbuf_pos, cmdbuf + cmdbuf_pos + 1,
-		   cmdbuf_len - cmdbuf_pos);
+	os_memmove(cmdbuf + cmdbuf_pos, cmdbuf + cmdbuf_pos + 1, cmdbuf_len - cmdbuf_pos);
 	cmdbuf_len--;
 	edit_redraw();
 }
-
 
 static void delete_word(void)
 {
@@ -142,21 +135,23 @@ static void delete_word(void)
 
 	edit_clear_line();
 	pos = cmdbuf_pos;
-	while (pos > 0 && cmdbuf[pos - 1] == ' ')
+	while (pos > 0 && cmdbuf[pos - 1] == ' ') {
 		pos--;
-	while (pos > 0 && cmdbuf[pos - 1] != ' ')
+	}
+	while (pos > 0 && cmdbuf[pos - 1] != ' ') {
 		pos--;
+	}
 	os_memmove(cmdbuf + pos, cmdbuf + cmdbuf_pos, cmdbuf_len - cmdbuf_pos);
 	cmdbuf_len -= cmdbuf_pos - pos;
 	cmdbuf_pos = pos;
 	edit_redraw();
 }
 
-
 static void clear_left(void)
 {
-	if (cmdbuf_pos == 0)
+	if (cmdbuf_pos == 0) {
 		return;
+	}
 
 	edit_clear_line();
 	os_memmove(cmdbuf, cmdbuf + cmdbuf_pos, cmdbuf_len - cmdbuf_pos);
@@ -165,25 +160,25 @@ static void clear_left(void)
 	edit_redraw();
 }
 
-
 static void clear_right(void)
 {
-	if (cmdbuf_pos == cmdbuf_len)
+	if (cmdbuf_pos == cmdbuf_len) {
 		return;
+	}
 
 	edit_clear_line();
 	cmdbuf_len = cmdbuf_pos;
 	edit_redraw();
 }
 
-
 static void history_add(const char *str)
 {
 	struct edit_history *h, *match = NULL, *last = NULL;
 	size_t len, count = 0;
 
-	if (str[0] == '\0')
+	if (str[0] == '\0') {
 		return;
+	}
 
 	dl_list_for_each(h, &history_list, struct edit_history, list) {
 		if (os_strcmp(str, h->str) == 0) {
@@ -208,13 +203,13 @@ static void history_add(const char *str)
 
 	len = os_strlen(str);
 	h = os_zalloc(sizeof(*h) + len);
-	if (h == NULL)
+	if (h == NULL) {
 		return;
+	}
 	dl_list_add(&history_list, &h->list);
 	os_strlcpy(h->str, str, len + 1);
 	history_curr = h;
 }
-
 
 static void history_use(void)
 {
@@ -224,14 +219,13 @@ static void history_use(void)
 	edit_redraw();
 }
 
-
 static void history_prev(void)
 {
-	if (history_curr == NULL)
+	if (history_curr == NULL) {
 		return;
+	}
 
-	if (history_curr ==
-	    dl_list_first(&history_list, struct edit_history, list)) {
+	if (history_curr == dl_list_first(&history_list, struct edit_history, list)) {
 		if (!currbuf_valid) {
 			cmdbuf[cmdbuf_len] = '\0';
 			os_memcpy(currbuf, cmdbuf, cmdbuf_len + 1);
@@ -241,21 +235,17 @@ static void history_prev(void)
 		}
 	}
 
-	if (history_curr ==
-	    dl_list_last(&history_list, struct edit_history, list))
+	if (history_curr == dl_list_last(&history_list, struct edit_history, list)) {
 		return;
+	}
 
-	history_curr = dl_list_entry(history_curr->list.next,
-				     struct edit_history, list);
+	history_curr = dl_list_entry(history_curr->list.next, struct edit_history, list);
 	history_use();
 }
 
-
 static void history_next(void)
 {
-	if (history_curr == NULL ||
-	    history_curr ==
-	    dl_list_first(&history_list, struct edit_history, list)) {
+	if (history_curr == NULL || history_curr == dl_list_first(&history_list, struct edit_history, list)) {
 		if (currbuf_valid) {
 			currbuf_valid = 0;
 			edit_clear_line();
@@ -266,11 +256,9 @@ static void history_next(void)
 		return;
 	}
 
-	history_curr = dl_list_entry(history_curr->list.prev,
-				     struct edit_history, list);
+	history_curr = dl_list_entry(history_curr->list.prev, struct edit_history, list);
 	history_use();
 }
-
 
 static void history_read(const char *fname)
 {
@@ -278,8 +266,9 @@ static void history_read(const char *fname)
 	char buf[CMD_BUF_LEN], *pos;
 
 	f = fopen(fname, "r");
-	if (f == NULL)
+	if (f == NULL) {
 		return;
+	}
 
 	while (fgets(buf, CMD_BUF_LEN, f)) {
 		for (pos = buf; *pos; pos++) {
@@ -294,58 +283,55 @@ static void history_read(const char *fname)
 	fclose(f);
 }
 
-
-static void history_write(const char *fname,
-			  int (*filter_cb)(void *ctx, const char *cmd))
+static void history_write(const char *fname, int (*filter_cb)(void *ctx, const char *cmd))
 {
 	FILE *f;
 	struct edit_history *h;
 
 	f = fopen(fname, "w");
-	if (f == NULL)
+	if (f == NULL) {
 		return;
+	}
 
 	dl_list_for_each_reverse(h, &history_list, struct edit_history, list) {
-		if (filter_cb && filter_cb(edit_cb_ctx, h->str))
+		if (filter_cb && filter_cb(edit_cb_ctx, h->str)) {
 			continue;
+		}
 		fprintf(f, "%s\n", h->str);
 	}
 
 	fclose(f);
 }
 
-
 static void history_debug_dump(void)
 {
 	struct edit_history *h;
 	edit_clear_line();
 	printf("\r");
-	dl_list_for_each_reverse(h, &history_list, struct edit_history, list)
-		printf("%s%s\n", h == history_curr ? "[C]" : "", h->str);
-	if (currbuf_valid)
+	dl_list_for_each_reverse(h, &history_list, struct edit_history, list) printf("%s%s\n", h == history_curr ? "[C]" : "", h->str);
+	if (currbuf_valid) {
 		printf("{%s}\n", currbuf);
+	}
 	edit_redraw();
 }
 
-
 static void insert_char(int c)
 {
-	if (cmdbuf_len >= (int) sizeof(cmdbuf) - 1)
+	if (cmdbuf_len >= (int)sizeof(cmdbuf) - 1) {
 		return;
+	}
 	if (cmdbuf_len == cmdbuf_pos) {
 		cmdbuf[cmdbuf_pos++] = c;
 		cmdbuf_len++;
 		putchar(c);
 		fflush(stdout);
 	} else {
-		os_memmove(cmdbuf + cmdbuf_pos + 1, cmdbuf + cmdbuf_pos,
-			   cmdbuf_len - cmdbuf_pos);
+		os_memmove(cmdbuf + cmdbuf_pos + 1, cmdbuf + cmdbuf_pos, cmdbuf_len - cmdbuf_pos);
 		cmdbuf[cmdbuf_pos++] = c;
 		cmdbuf_len++;
 		edit_redraw();
 	}
 }
-
 
 static void process_cmd(void)
 {
@@ -365,17 +351,17 @@ static void process_cmd(void)
 	fflush(stdout);
 }
 
-
 static void free_completions(char **c)
 {
 	int i;
-	if (c == NULL)
+	if (c == NULL) {
 		return;
-	for (i = 0; c[i]; i++)
+	}
+	for (i = 0; c[i]; i++) {
 		os_free(c[i]);
+	}
 	os_free(c);
 }
-
 
 static int filter_strings(char **c, char *str, size_t len)
 {
@@ -397,15 +383,14 @@ static int filter_strings(char **c, char *str, size_t len)
 	return i;
 }
 
-
 static int common_len(const char *a, const char *b)
 {
 	int len = 0;
-	while (a[len] && a[len] == b[len])
+	while (a[len] && a[len] == b[len]) {
 		len++;
+	}
 	return len;
 }
-
 
 static int max_common_length(char **c)
 {
@@ -414,17 +399,17 @@ static int max_common_length(char **c)
 	len = os_strlen(c[0]);
 	for (i = 1; c[i]; i++) {
 		int same = common_len(c[0], c[i]);
-		if (same < len)
+		if (same < len) {
 			len = same;
+		}
 	}
 
 	return len;
 }
 
-
 static int cmp_str(const void *a, const void *b)
 {
-	return os_strcmp(* (const char **) a, * (const char **) b);
+	return os_strcmp(*(const char **)a, *(const char **)b);
 }
 
 static void complete(int list)
@@ -434,18 +419,21 @@ static void complete(int list)
 	int start, end;
 	int room, plen, add_space;
 
-	if (edit_completion_cb == NULL)
+	if (edit_completion_cb == NULL) {
 		return;
+	}
 
 	cmdbuf[cmdbuf_len] = '\0';
 	c = edit_completion_cb(edit_cb_ctx, cmdbuf, cmdbuf_pos);
-	if (c == NULL)
+	if (c == NULL) {
 		return;
+	}
 
 	end = cmdbuf_pos;
 	start = end;
-	while (start > 0 && cmdbuf[start - 1] != ' ')
+	while (start > 0 && cmdbuf[start - 1] != ' ') {
 		start--;
+	}
 	plen = end - start;
 
 	count = filter_strings(c, &cmdbuf[start], plen);
@@ -460,8 +448,9 @@ static void complete(int list)
 			qsort(c, count, sizeof(char *), cmp_str);
 			edit_clear_line();
 			printf("\r");
-			for (i = 0; c[i]; i++)
+			for (i = 0; c[i]; i++) {
 				printf("%s%s", i > 0 ? " " : "", c[i]);
+			}
 			printf("\n");
 			edit_redraw();
 		}
@@ -471,15 +460,16 @@ static void complete(int list)
 	len -= plen;
 
 	room = sizeof(cmdbuf) - 1 - cmdbuf_len;
-	if (room < len)
+	if (room < len) {
 		len = room;
+	}
 	add_space = count == 1 && len < room;
 
-	os_memmove(cmdbuf + cmdbuf_pos + len + add_space, cmdbuf + cmdbuf_pos,
-		   cmdbuf_len - cmdbuf_pos);
+	os_memmove(cmdbuf + cmdbuf_pos + len + add_space, cmdbuf + cmdbuf_pos, cmdbuf_len - cmdbuf_pos);
 	os_memcpy(&cmdbuf[cmdbuf_pos - plen], c[0], plen + len);
-	if (add_space)
+	if (add_space) {
 		cmdbuf[cmdbuf_pos + len] = ' ';
+	}
 
 	cmdbuf_pos += len + add_space;
 	cmdbuf_len += len + add_space;
@@ -488,7 +478,6 @@ static void complete(int list)
 
 	free_completions(c);
 }
-
 
 enum edit_key_code {
 	EDIT_KEY_NONE = 256,
@@ -561,12 +550,11 @@ static void show_esc_buf(const char *esc_buf, char c, int i)
 	edit_redraw();
 }
 
-
 static enum edit_key_code esc_seq_to_key1_no(char last)
 {
 	switch (last) {
 	case 'A':
-		return EDIT_KEY_UP;
+			return EDIT_KEY_UP;
 	case 'B':
 		return EDIT_KEY_DOWN;
 	case 'C':
@@ -578,12 +566,11 @@ static enum edit_key_code esc_seq_to_key1_no(char last)
 	}
 }
 
-
 static enum edit_key_code esc_seq_to_key1_shift(char last)
 {
 	switch (last) {
 	case 'A':
-		return EDIT_KEY_SHIFT_UP;
+			return EDIT_KEY_SHIFT_UP;
 	case 'B':
 		return EDIT_KEY_SHIFT_DOWN;
 	case 'C':
@@ -595,12 +582,11 @@ static enum edit_key_code esc_seq_to_key1_shift(char last)
 	}
 }
 
-
 static enum edit_key_code esc_seq_to_key1_alt(char last)
 {
 	switch (last) {
 	case 'A':
-		return EDIT_KEY_ALT_UP;
+			return EDIT_KEY_ALT_UP;
 	case 'B':
 		return EDIT_KEY_ALT_DOWN;
 	case 'C':
@@ -612,12 +598,11 @@ static enum edit_key_code esc_seq_to_key1_alt(char last)
 	}
 }
 
-
 static enum edit_key_code esc_seq_to_key1_alt_shift(char last)
 {
 	switch (last) {
 	case 'A':
-		return EDIT_KEY_ALT_SHIFT_UP;
+			return EDIT_KEY_ALT_SHIFT_UP;
 	case 'B':
 		return EDIT_KEY_ALT_SHIFT_DOWN;
 	case 'C':
@@ -629,12 +614,11 @@ static enum edit_key_code esc_seq_to_key1_alt_shift(char last)
 	}
 }
 
-
 static enum edit_key_code esc_seq_to_key1_ctrl(char last)
 {
 	switch (last) {
 	case 'A':
-		return EDIT_KEY_CTRL_UP;
+			return EDIT_KEY_CTRL_UP;
 	case 'B':
 		return EDIT_KEY_CTRL_DOWN;
 	case 'C':
@@ -646,29 +630,34 @@ static enum edit_key_code esc_seq_to_key1_ctrl(char last)
 	}
 }
 
-
 static enum edit_key_code esc_seq_to_key1(int param1, int param2, char last)
 {
 	/* ESC-[<param1>;<param2><last> */
 
-	if (param1 < 0 && param2 < 0)
+	if (param1 < 0 && param2 < 0) {
 		return esc_seq_to_key1_no(last);
+	}
 
-	if (param1 == 1 && param2 == 2)
+	if (param1 == 1 && param2 == 2) {
 		return esc_seq_to_key1_shift(last);
+	}
 
-	if (param1 == 1 && param2 == 3)
+	if (param1 == 1 && param2 == 3) {
 		return esc_seq_to_key1_alt(last);
+	}
 
-	if (param1 == 1 && param2 == 4)
+	if (param1 == 1 && param2 == 4) {
 		return esc_seq_to_key1_alt_shift(last);
+	}
 
-	if (param1 == 1 && param2 == 5)
+	if (param1 == 1 && param2 == 5) {
 		return esc_seq_to_key1_ctrl(last);
+	}
 
 	if (param2 < 0) {
-		if (last != '~')
+		if (last != '~') {
 			return EDIT_KEY_NONE;
+		}
 		switch (param1) {
 		case 2:
 			return EDIT_KEY_INSERT;
@@ -700,13 +689,13 @@ static enum edit_key_code esc_seq_to_key1(int param1, int param2, char last)
 	return EDIT_KEY_NONE;
 }
 
-
 static enum edit_key_code esc_seq_to_key2(int param1, int param2, char last)
 {
 	/* ESC-O<param1>;<param2><last> */
 
-	if (param1 >= 0 || param2 >= 0)
+	if (param1 >= 0 || param2 >= 0) {
 		return EDIT_KEY_NONE;
+	}
 
 	switch (last) {
 	case 'F':
@@ -726,7 +715,6 @@ static enum edit_key_code esc_seq_to_key2(int param1, int param2, char last)
 	}
 }
 
-
 static enum edit_key_code esc_seq_to_key(char *seq)
 {
 	char last, *pos;
@@ -734,30 +722,33 @@ static enum edit_key_code esc_seq_to_key(char *seq)
 	enum edit_key_code ret = EDIT_KEY_NONE;
 
 	last = '\0';
-	for (pos = seq; *pos; pos++)
+	for (pos = seq; *pos; pos++) {
 		last = *pos;
+	}
 
 	if (seq[1] >= '0' && seq[1] <= '9') {
 		param1 = atoi(&seq[1]);
 		pos = os_strchr(seq, ';');
-		if (pos)
+		if (pos) {
 			param2 = atoi(pos + 1);
+		}
 	}
 
-	if (seq[0] == '[')
+	if (seq[0] == '[') {
 		ret = esc_seq_to_key1(param1, param2, last);
-	else if (seq[0] == 'O')
+	} else if (seq[0] == 'O') {
 		ret = esc_seq_to_key2(param1, param2, last);
+	}
 
-	if (ret != EDIT_KEY_NONE)
+	if (ret != EDIT_KEY_NONE) {
 		return ret;
+	}
 
 	edit_clear_line();
 	printf("\rUnknown escape sequence '%s'\n", seq);
 	edit_redraw();
 	return EDIT_KEY_NONE;
 }
-
 
 static enum edit_key_code edit_read_key(int sock)
 {
@@ -768,10 +759,12 @@ static enum edit_key_code edit_read_key(int sock)
 	static char esc_buf[7];
 
 	res = read(sock, buf, 1);
-	if (res < 0)
+	if (res < 0) {
 		perror("read");
-	if (res <= 0)
+	}
+	if (res <= 0) {
 		return EDIT_KEY_EOF;
+	}
 
 	c = buf[0];
 
@@ -795,13 +788,15 @@ static enum edit_key_code edit_read_key(int sock)
 			show_esc_buf(esc_buf, c, 1);
 			esc = -1;
 			return EDIT_KEY_NONE;
-		} else
-			return EDIT_KEY_NONE; /* Escape sequence continues */
+		} else {
+			return EDIT_KEY_NONE;    /* Escape sequence continues */
+		}
 	}
 
 	if (esc > 1) {
-		if ((c >= '0' && c <= '9') || c == ';')
-			return EDIT_KEY_NONE; /* Escape sequence continues */
+		if ((c >= '0' && c <= '9') || c == ';') {
+			return EDIT_KEY_NONE;    /* Escape sequence continues */
+		}
 
 		if (c == '~' || (c >= 'A' && c <= 'Z')) {
 			esc = -1;
@@ -832,7 +827,7 @@ static enum edit_key_code edit_read_key(int sock)
 		return EDIT_KEY_TAB;
 	case 10:
 		return EDIT_KEY_CTRL_J;
-	case 13: /* CR */
+	case 13:					/* CR */
 		return EDIT_KEY_ENTER;
 	case 11:
 		return EDIT_KEY_CTRL_K;
@@ -854,7 +849,7 @@ static enum edit_key_code edit_read_key(int sock)
 		return EDIT_KEY_CTRL_V;
 	case 23:
 		return EDIT_KEY_CTRL_W;
-	case 27: /* ESC */
+	case 27:					/* ESC */
 		esc = 0;
 		return EDIT_KEY_NONE;
 	case 127:
@@ -864,23 +859,24 @@ static enum edit_key_code edit_read_key(int sock)
 	}
 }
 
-
 static char search_buf[21];
 static int search_skip;
 
-static char * search_find(void)
+static char *search_find(void)
 {
 	struct edit_history *h;
 	size_t len = os_strlen(search_buf);
 	int skip = search_skip;
 
-	if (len == 0)
+	if (len == 0) {
 		return NULL;
+	}
 
 	dl_list_for_each(h, &history_list, struct edit_history, list) {
 		if (os_strstr(h->str, search_buf)) {
-			if (skip == 0)
+			if (skip == 0) {
 				return h->str;
+			}
 			skip--;
 		}
 	}
@@ -889,16 +885,13 @@ static char * search_find(void)
 	return NULL;
 }
 
-
 static void search_redraw(void)
 {
 	char *match = search_find();
-	printf("\rsearch '%s': %s" CLEAR_END_LINE,
-	       search_buf, match ? match : "");
+	printf("\rsearch '%s': %s" CLEAR_END_LINE, search_buf, match ? match : "");
 	printf("\rsearch '%s", search_buf);
 	fflush(stdout);
 }
-
 
 static void search_start(void)
 {
@@ -908,13 +901,11 @@ static void search_start(void)
 	search_redraw();
 }
 
-
 static void search_clear(void)
 {
 	search_redraw();
 	printf("\r" CLEAR_END_LINE);
 }
-
 
 static void search_stop(void)
 {
@@ -929,7 +920,6 @@ static void search_stop(void)
 	edit_redraw();
 }
 
-
 static void search_cancel(void)
 {
 	search_buf[0] = '\0';
@@ -937,18 +927,17 @@ static void search_cancel(void)
 	edit_redraw();
 }
 
-
 static void search_backspace(void)
 {
 	size_t len;
 	len = os_strlen(search_buf);
-	if (len == 0)
+	if (len == 0) {
 		return;
+	}
 	search_buf[len - 1] = '\0';
 	search_skip = 0;
 	search_redraw();
 }
-
 
 static void search_next(void)
 {
@@ -957,32 +946,31 @@ static void search_next(void)
 	search_redraw();
 }
 
-
 static void search_char(char c)
 {
 	size_t len;
 	len = os_strlen(search_buf);
-	if (len == sizeof(search_buf) - 1)
+	if (len == sizeof(search_buf) - 1) {
 		return;
+	}
 	search_buf[len] = c;
 	search_buf[len + 1] = '\0';
 	search_skip = 0;
 	search_redraw();
 }
 
-
 static enum edit_key_code search_key(enum edit_key_code c)
 {
 	switch (c) {
 	case EDIT_KEY_ENTER:
-	case EDIT_KEY_CTRL_J:
-	case EDIT_KEY_LEFT:
-	case EDIT_KEY_RIGHT:
-	case EDIT_KEY_HOME:
-	case EDIT_KEY_END:
-	case EDIT_KEY_CTRL_A:
-	case EDIT_KEY_CTRL_E:
-		search_stop();
+		case EDIT_KEY_CTRL_J:
+			case EDIT_KEY_LEFT:
+				case EDIT_KEY_RIGHT:
+					case EDIT_KEY_HOME:
+						case EDIT_KEY_END:
+							case EDIT_KEY_CTRL_A:
+								case EDIT_KEY_CTRL_E:
+										search_stop();
 		return c;
 	case EDIT_KEY_DOWN:
 	case EDIT_KEY_UP:
@@ -996,14 +984,14 @@ static enum edit_key_code search_key(enum edit_key_code c)
 		search_next();
 		break;
 	default:
-		if (c >= 32 && c <= 255)
+		if (c >= 32 && c <= 255) {
 			search_char(c);
+		}
 		break;
 	}
 
 	return EDIT_KEY_NONE;
 }
-
 
 static void edit_read_char(int sock, void *eloop_ctx, void *sock_ctx)
 {
@@ -1015,15 +1003,18 @@ static void edit_read_char(int sock, void *eloop_ctx, void *sock_ctx)
 
 	if (search) {
 		c = search_key(c);
-		if (c == EDIT_KEY_NONE)
+		if (c == EDIT_KEY_NONE) {
 			return;
+		}
 		search = 0;
-		if (c == EDIT_KEY_EOF)
+		if (c == EDIT_KEY_EOF) {
 			return;
+		}
 	}
 
-	if (c != EDIT_KEY_TAB && c != EDIT_KEY_NONE)
+	if (c != EDIT_KEY_TAB && c != EDIT_KEY_NONE) {
 		last_tab = 0;
+	}
 
 	switch (c) {
 	case EDIT_KEY_NONE:
@@ -1107,23 +1098,21 @@ static void edit_read_char(int sock, void *eloop_ctx, void *sock_ctx)
 		delete_word();
 		break;
 	default:
-		if (c >= 32 && c <= 255)
+		if (c >= 32 && c <= 255) {
 			insert_char(c);
+		}
 		break;
 	}
 }
 
-
-int edit_init(void (*cmd_cb)(void *ctx, char *cmd),
-	      void (*eof_cb)(void *ctx),
-	      char ** (*completion_cb)(void *ctx, const char *cmd, int pos),
-	      void *ctx, const char *history_file, const char *ps)
+int edit_init(void (*cmd_cb)(void *ctx, char *cmd), void (*eof_cb)(void *ctx), char **(*completion_cb)(void *ctx, const char *cmd, int pos), void *ctx, const char *history_file, const char *ps)
 {
 	currbuf[0] = '\0';
 	dl_list_init(&history_list);
 	history_curr = NULL;
-	if (history_file)
+	if (history_file) {
 		history_read(history_file);
+	}
 
 	edit_cb_ctx = ctx;
 	edit_cmd_cb = cmd_cb;
@@ -1144,13 +1133,12 @@ int edit_init(void (*cmd_cb)(void *ctx, char *cmd),
 	return 0;
 }
 
-
-void edit_deinit(const char *history_file,
-		 int (*filter_cb)(void *ctx, const char *cmd))
+void edit_deinit(const char *history_file, int (*filter_cb)(void *ctx, const char *cmd))
 {
 	struct edit_history *h;
-	if (history_file)
+	if (history_file) {
 		history_write(history_file, filter_cb);
+	}
 	while ((h = dl_list_first(&history_list, struct edit_history, list))) {
 		dl_list_del(&h->list);
 		os_free(h);
@@ -1161,7 +1149,6 @@ void edit_deinit(const char *history_file,
 	eloop_unregister_read_sock(STDIN_FILENO);
 	tcsetattr(STDIN_FILENO, TCSANOW, &prevt);
 }
-
 
 void edit_redraw(void)
 {

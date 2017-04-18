@@ -36,12 +36,10 @@
 
 #define SLSI_80211_MAX_SSID_LEN 32
 
-
 #define SLSI_MHZ_TO_KHZ(freq)        ((freq) * 1000)
 #define SLSI_KHZ_TO_MHZ(freq)        ((freq) * 1000)
 #define SLSI_DBI_TO_MBI(gain)        ((gain) * 100)
 #define SLSI_DBM_TO_MBM(gain)       ((gain) * 100)
-
 
 #define WLAN_OUI_MICROSOFT              0x0050f2
 #define WLAN_OUI_TYPE_MICROSOFT_WPA     1
@@ -81,7 +79,7 @@
 enum slsi_80211_eid {
 	WLAN_EID_SSID = 0,
 	WLAN_EID_SUPP_RATES = 1,
-	WLAN_EID_FH_PARAMS = 2, /* reserved now */
+	WLAN_EID_FH_PARAMS = 2,		/* reserved now */
 	WLAN_EID_DS_PARAMS = 3,
 	WLAN_EID_CF_PARAMS = 4,
 	WLAN_EID_TIM = 5,
@@ -91,7 +89,6 @@ enum slsi_80211_eid {
 	WLAN_EID_HT_CAPABILITY = 45,
 };
 
-
 enum slsi_80211_band {
 	SLSI_80211_BAND_2GHZ,
 	SLSI_80211_BAND_5GHZ,
@@ -100,8 +97,8 @@ enum slsi_80211_band {
 
 enum slsi_80211_channel_flags {
 	SLSI_80211_CHAN_DISABLED = 1 << 0,
-	SLSI_80211_CHAN_NO_IR      = 1 << 1,
-	SLSI_80211_CHAN_RADAR      = 1 << 2,
+	SLSI_80211_CHAN_NO_IR = 1 << 1,
+	SLSI_80211_CHAN_RADAR = 1 << 2,
 };
 
 enum slsi_80211_iftype {
@@ -197,21 +194,21 @@ enum slsi_80211_key_type {
  * @SLSI_80211_RRF_NO_160MHZ: 160MHz operation not allowed
  */
 enum slsi_80211_reg_rule_flags {
-    SLSI_80211_RRF_NO_OFDM      = 1<<0,
-    SLSI_80211_RRF_NO_CCK       = 1<<1,
-    SLSI_80211_RRF_NO_INDOOR        = 1<<2,
-    SLSI_80211_RRF_NO_OUTDOOR       = 1<<3,
-    SLSI_80211_RRF_DFS          = 1<<4,
-    SLSI_80211_RRF_PTP_ONLY     = 1<<5,
-    SLSI_80211_RRF_PTMP_ONLY        = 1<<6,
-    SLSI_80211_RRF_NO_IR        = 1<<7,
-    __SLSI_80211_RRF_NO_IBSS        = 1<<8,
-    SLSI_80211_RRF_AUTO_BW      = 1<<11,
-    SLSI_80211_RRF_GO_CONCURRENT    = 1<<12,
-    SLSI_80211_RRF_NO_HT40MINUS = 1<<13,
-    SLSI_80211_RRF_NO_HT40PLUS      = 1<<14,
-    SLSI_80211_RRF_NO_80MHZ     = 1<<15,
-    SLSI_80211_RRF_NO_160MHZ        = 1<<16,
+	SLSI_80211_RRF_NO_OFDM = 1 << 0,
+	SLSI_80211_RRF_NO_CCK = 1 << 1,
+	SLSI_80211_RRF_NO_INDOOR = 1 << 2,
+	SLSI_80211_RRF_NO_OUTDOOR = 1 << 3,
+	SLSI_80211_RRF_DFS = 1 << 4,
+	SLSI_80211_RRF_PTP_ONLY = 1 << 5,
+	SLSI_80211_RRF_PTMP_ONLY = 1 << 6,
+	SLSI_80211_RRF_NO_IR = 1 << 7,
+	__SLSI_80211_RRF_NO_IBSS = 1 << 8,
+	SLSI_80211_RRF_AUTO_BW = 1 << 11,
+	SLSI_80211_RRF_GO_CONCURRENT = 1 << 12,
+	SLSI_80211_RRF_NO_HT40MINUS = 1 << 13,
+	SLSI_80211_RRF_NO_HT40PLUS = 1 << 14,
+	SLSI_80211_RRF_NO_80MHZ = 1 << 15,
+	SLSI_80211_RRF_NO_160MHZ = 1 << 16,
 };
 
 #define SLSI_80211_RRF_PASSIVE_SCAN SLSI_80211_RRF_NO_IR
@@ -257,18 +254,15 @@ enum slsi_80211_max_ampdu_length_exp {
 
 /* Minimum MPDU start spacing */
 enum slsi_80211_min_mpdu_spacing {
-	SLSI_80211_HT_MPDU_DENSITY_NONE = 0, /* No restriction */
-	SLSI_80211_HT_MPDU_DENSITY_0_25 = 1, /* 1/4 usec */
-	SLSI_80211_HT_MPDU_DENSITY_0_5 = 2,  /* 1/2 usec */
-	SLSI_80211_HT_MPDU_DENSITY_1 = 3,    /* 1 usec */
-	SLSI_80211_HT_MPDU_DENSITY_2 = 4,    /* 2 usec */
-	SLSI_80211_HT_MPDU_DENSITY_4 = 5,    /* 4 usec */
-	SLSI_80211_HT_MPDU_DENSITY_8 = 6,    /* 8 usec */
-	SLSI_80211_HT_MPDU_DENSITY_16 = 7    /* 16 usec */
+	SLSI_80211_HT_MPDU_DENSITY_NONE = 0,	/* No restriction */
+	SLSI_80211_HT_MPDU_DENSITY_0_25 = 1,	/* 1/4 usec */
+	SLSI_80211_HT_MPDU_DENSITY_0_5 = 2,	/* 1/2 usec */
+	SLSI_80211_HT_MPDU_DENSITY_1 = 3,	/* 1 usec */
+	SLSI_80211_HT_MPDU_DENSITY_2 = 4,	/* 2 usec */
+	SLSI_80211_HT_MPDU_DENSITY_4 = 5,	/* 4 usec */
+	SLSI_80211_HT_MPDU_DENSITY_8 = 6,	/* 8 usec */
+	SLSI_80211_HT_MPDU_DENSITY_16 = 7	/* 16 usec */
 };
-
-
-
 
 /* cipher suite selectors */
 #define SLSI_WLAN_CIPHER_SUITE_USE_GROUP    0x000FAC00
@@ -288,9 +282,6 @@ enum slsi_80211_min_mpdu_spacing {
 
 #define SLSI_WLAN_CIPHER_SUITE_SMS4     0x00147201
 
-
-
-
 struct slsi_80211_reg_rule {
 	u32 start_freq_khz;
 	u32 end_freq_khz;
@@ -302,9 +293,9 @@ struct slsi_80211_reg_rule {
 
 struct slsi_80211_channel {
 	enum slsi_80211_band band;
-	u16                  center_freq;
-	u16                  hw_value;
-	u32                  flags;
+	u16 center_freq;
+	u16 hw_value;
+	u32 flags;
 } STRUCT_PACKED;
 
 /**
@@ -316,10 +307,10 @@ struct slsi_80211_channel {
  *	(only with 80+80 MHz)
  */
 struct slsi_80211_chan_def {
-	struct slsi_80211_channel  *chan;
+	struct slsi_80211_channel *chan;
 	enum slsi_80211_chan_width width;
-	u32                        center_freq1;
-	u32                        center_freq2;
+	u32 center_freq1;
+	u32 center_freq2;
 };
 
 struct slsi_80211_rate {
@@ -330,36 +321,35 @@ struct slsi_80211_rate {
 } STRUCT_PACKED;
 
 struct slsi_80211_mcs_info {
-	u8     rx_mask[SLSI_80211_HT_MCS_MASK_LEN];
+	u8 rx_mask[SLSI_80211_HT_MCS_MASK_LEN];
 	__le16 rx_highest;
-	u8     tx_params;
+	u8 tx_params;
 } STRUCT_PACKED;
 
 struct slsi_80211_sta_ht_cap {
-	u16                        cap;
-	bool                       ht_supported;
-	u8                         ampdu_factor;
-	u8                         ampdu_density;
+	u16 cap;
+	bool ht_supported;
+	u8 ampdu_factor;
+	u8 ampdu_density;
 	struct slsi_80211_mcs_info mcs;
 } STRUCT_PACKED;
 
 struct slsi_80211_supported_band {
-	struct slsi_80211_channel    *channels;
-	struct slsi_80211_rate       *bitrates;
-	enum slsi_80211_band         band;
-	int                          n_channels;
-	int                          n_bitrates;
+	struct slsi_80211_channel *channels;
+	struct slsi_80211_rate *bitrates;
+	enum slsi_80211_band band;
+	int n_channels;
+	int n_bitrates;
 	struct slsi_80211_sta_ht_cap ht_cap;
 } STRUCT_PACKED;
 
 struct slsi_key_params {
 	const u8 *key;
 	const u8 *seq;
-	int      key_len;
-	int      seq_len;
-	u32      cipher;
+	int key_len;
+	int seq_len;
+	u32 cipher;
 };
-
 
 struct slsi_80211_vendor_ie {
 	u8 element_id;
@@ -371,26 +361,26 @@ struct slsi_80211_vendor_ie {
 struct slsi_80211_hdr {
 	__le16 frame_control;
 	__le16 duration_id;
-	u8     addr1[ETH_ALEN];
-	u8     addr2[ETH_ALEN];
-	u8     addr3[ETH_ALEN];
+	u8 addr1[ETH_ALEN];
+	u8 addr2[ETH_ALEN];
+	u8 addr3[ETH_ALEN];
 	__le16 seq_ctrl;
-	u8     addr4[ETH_ALEN];
+	u8 addr4[ETH_ALEN];
 } STRUCT_PACKED __aligned(2);
 
 struct slsi_80211_mgmt {
 	__le16 frame_control;
 	__le16 duration;
-	u8     da[ETH_ALEN];
-	u8     sa[ETH_ALEN];
-	u8     bssid[ETH_ALEN];
+	u8 da[ETH_ALEN];
+	u8 sa[ETH_ALEN];
+	u8 bssid[ETH_ALEN];
 	__le16 seq_ctrl;
 	union {
 		struct {
 			__le64 timestamp;
 			__le16 beacon_int;
 			__le16 capab_info;
-			u8     variable[0];
+			u8 variable[0];
 		} STRUCT_PACKED beacon;
 		struct {
 			u8 variable[0];
@@ -399,13 +389,13 @@ struct slsi_80211_mgmt {
 			__le64 timestamp;
 			__le16 beacon_int;
 			__le16 capab_info;
-			u8     variable[0];
+			u8 variable[0];
 		} STRUCT_PACKED probe_resp;
 		struct {
 			__le16 auth_alg;
 			__le16 auth_transaction;
 			__le16 status_code;
-			u8     variable[0];
+			u8 variable[0];
 		} STRUCT_PACKED auth;
 		struct {
 			__le16 reason_code;
@@ -413,19 +403,19 @@ struct slsi_80211_mgmt {
 		struct {
 			__le16 capab_info;
 			__le16 listen_interval;
-			u8     variable[0];
+			u8 variable[0];
 		} STRUCT_PACKED assoc_req;
 		struct {
 			__le16 capab_info;
 			__le16 status_code;
 			__le16 aid;
-			u8     variable[0];
+			u8 variable[0];
 		} STRUCT_PACKED assoc_resp, reassoc_resp;
 		struct {
 			__le16 capab_info;
 			__le16 listen_interval;
-			u8     current_ap[ETH_ALEN];
-			u8     variable[0];
+			u8 current_ap[ETH_ALEN];
+			u8 variable[0];
 		} STRUCT_PACKED reassoc_req;
 		struct {
 			__le16 reason_code;
@@ -439,20 +429,17 @@ struct slsi_80211_mgmt {
  */
 static inline bool slsi_80211_is_mgmt(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT));
 }
 
 static inline bool slsi_80211_is_ctrl(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_CTRL));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE)) == cpu_to_le16(SLSI_80211_TYPE_CTRL));
 }
 
 static inline bool slsi_80211_is_data(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_DATA));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE)) == cpu_to_le16(SLSI_80211_TYPE_DATA));
 }
 
 /**
@@ -461,68 +448,57 @@ static inline bool slsi_80211_is_data(__le16 frame_ctrl)
  */
 static inline bool slsi_80211_is_assoc_req(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_ASSOC_REQ));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_ASSOC_REQ));
 }
 
 static inline bool slsi_80211_is_assoc_resp(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_ASSOC_RESP));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_ASSOC_RESP));
 }
 
 static inline bool slsi_80211_is_reassoc_req(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_REASSOC_REQ));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_REASSOC_REQ));
 }
 
 static inline bool slsi_80211_is_reassoc_resp(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_REASSOC_RESP));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_REASSOC_RESP));
 }
 
 static inline bool slsi_80211_is_probe_req(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_PROBE_REQ));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_PROBE_REQ));
 }
 
 static inline bool slsi_80211_is_probe_resp(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_PROBE_RESP));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_PROBE_RESP));
 }
 
 static inline bool slsi_80211_is_beacon(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_BEACON));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_BEACON));
 }
 
 static inline bool slsi_80211_is_disassoc(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_DISASSOC));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_DISASSOC));
 }
 
 static inline bool slsi_80211_is_auth(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_AUTH));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_AUTH));
 }
 
 static inline bool slsi_80211_is_deauth(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_DEAUTH));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_DEAUTH));
 }
 
 static inline bool slsi_80211_is_action(__le16 frame_ctrl)
 {
-	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) ==
-		cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_ACTION));
+	return ((frame_ctrl & cpu_to_le16(SLSI_80211_FCTRL_TYPE | SLSI_80211_FCTRL_SUBTYPE)) == cpu_to_le16(SLSI_80211_TYPE_MGMT | SLSI_80211_SUBTYPE_ACTION));
 }
 
 /**
@@ -538,9 +514,10 @@ static inline bool slsi_80211_has_tods(__le16 fc)
  */
 static inline u8 *slsi_80211_get_DA(struct slsi_80211_hdr *hdr)
 {
-	if (slsi_80211_has_tods(hdr->frame_control))
+	if (slsi_80211_has_tods(hdr->frame_control)) {
 		return hdr->addr3;
-	else
+	} else {
 		return hdr->addr1;
+	}
 }
-#endif /* __WLAN_80211_UTILS_H__ */
+#endif							/* __WLAN_80211_UTILS_H__ */

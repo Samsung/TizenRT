@@ -12,8 +12,7 @@
 #include "crypto/crypto.h"
 #include "chap.h"
 
-int chap_md5(u8 id, const u8 *secret, size_t secret_len, const u8 *challenge,
-	      size_t challenge_len, u8 *response)
+int chap_md5(u8 id, const u8 *secret, size_t secret_len, const u8 *challenge, size_t challenge_len, u8 *response)
 {
 	const u8 *addr[3];
 	size_t len[3];

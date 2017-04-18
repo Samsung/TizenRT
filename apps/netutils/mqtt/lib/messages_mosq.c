@@ -21,12 +21,12 @@ Copyright (c) 2010-2014 Roger Light <roger@atchoo.org>
 All rights reserved. This program and the accompanying materials
 are made available under the terms of the Eclipse Public License v1.0
 and Eclipse Distribution License v1.0 which accompany this distribution.
- 
+
 The Eclipse Public License is available at
    http://www.eclipse.org/legal/epl-v10.html
 and the Eclipse Distribution License is available at
   http://www.eclipse.org/org/documents/edl-v10.php.
- 
+
 Contributors:
    Roger Light - initial implementation and documentation.
 */
@@ -46,12 +46,18 @@ void _mosquitto_message_cleanup(struct mosquitto_message_all **message)
 {
 	struct mosquitto_message_all *msg;
 
-	if(!message || !*message) return;
+	if (!message || !*message) {
+		return;
+	}
 
 	msg = *message;
 
-	if(msg->msg.topic) _mosquitto_free(msg->msg.topic);
-	if(msg->msg.payload) _mosquitto_free(msg->msg.payload);
+	if (msg->msg.topic) {
+		_mosquitto_free(msg->msg.topic);
+	}
+	if (msg->msg.payload) {
+		_mosquitto_free(msg->msg.payload);
+	}
 	_mosquitto_free(msg);
 }
 
@@ -61,12 +67,12 @@ void _mosquitto_message_cleanup_all(struct mosquitto *mosq)
 
 	assert(mosq);
 
-	while(mosq->in_messages){
+	while (mosq->in_messages) {
 		tmp = mosq->in_messages->next;
 		_mosquitto_message_cleanup(&mosq->in_messages);
 		mosq->in_messages = tmp;
 	}
-	while(mosq->out_messages){
+	while (mosq->out_messages) {
 		tmp = mosq->out_messages->next;
 		_mosquitto_message_cleanup(&mosq->out_messages);
 		mosq->out_messages = tmp;
@@ -75,22 +81,26 @@ void _mosquitto_message_cleanup_all(struct mosquitto *mosq)
 
 int mosquitto_message_copy(struct mosquitto_message *dst, const struct mosquitto_message *src)
 {
-	if(!dst || !src) return MOSQ_ERR_INVAL;
+	if (!dst || !src) {
+		return MOSQ_ERR_INVAL;
+	}
 
 	dst->mid = src->mid;
 	dst->topic = _mosquitto_strdup(src->topic);
-	if(!dst->topic) return MOSQ_ERR_NOMEM;
+	if (!dst->topic) {
+		return MOSQ_ERR_NOMEM;
+	}
 	dst->qos = src->qos;
 	dst->retain = src->retain;
-	if(src->payloadlen){
+	if (src->payloadlen) {
 		dst->payload = _mosquitto_malloc(src->payloadlen);
-		if(!dst->payload){
+		if (!dst->payload) {
 			_mosquitto_free(dst->topic);
 			return MOSQ_ERR_NOMEM;
 		}
 		memcpy(dst->payload, src->payload, src->payloadlen);
 		dst->payloadlen = src->payloadlen;
-	}else{
+	} else {
 		dst->payloadlen = 0;
 		dst->payload = NULL;
 	}
@@ -104,7 +114,7 @@ int _mosquitto_message_delete(struct mosquitto *mosq, uint16_t mid, enum mosquit
 	assert(mosq);
 
 	rc = _mosquitto_message_remove(mosq, mid, dir, &message);
-	if(rc == MOSQ_ERR_SUCCESS){
+	if (rc == MOSQ_ERR_SUCCESS) {
 		_mosquitto_message_cleanup(&message);
 	}
 	return rc;
@@ -114,15 +124,20 @@ void mosquitto_message_free(struct mosquitto_message **message)
 {
 	struct mosquitto_message *msg;
 
-	if(!message || !*message) return;
+	if (!message || !*message) {
+		return;
+	}
 
 	msg = *message;
 
-	if(msg->topic) _mosquitto_free(msg->topic);
-	if(msg->payload) _mosquitto_free(msg->payload);
+	if (msg->topic) {
+		_mosquitto_free(msg->topic);
+	}
+	if (msg->payload) {
+		_mosquitto_free(msg->payload);
+	}
 	_mosquitto_free(msg);
 }
-
 
 /*
  * Function: _mosquitto_message_queue
@@ -139,28 +154,28 @@ int _mosquitto_message_queue(struct mosquitto *mosq, struct mosquitto_message_al
 	assert(mosq);
 	assert(message);
 
-	if(dir == mosq_md_out){
+	if (dir == mosq_md_out) {
 		mosq->out_queue_len++;
 		message->next = NULL;
-		if(mosq->out_messages_last){
+		if (mosq->out_messages_last) {
 			mosq->out_messages_last->next = message;
-		}else{
+		} else {
 			mosq->out_messages = message;
 		}
 		mosq->out_messages_last = message;
-		if(message->msg.qos > 0){
-			if(mosq->max_inflight_messages == 0 || mosq->inflight_messages < mosq->max_inflight_messages){
+		if (message->msg.qos > 0) {
+			if (mosq->max_inflight_messages == 0 || mosq->inflight_messages < mosq->max_inflight_messages) {
 				mosq->inflight_messages++;
-			}else{
+			} else {
 				rc = 1;
 			}
 		}
-	}else{
+	} else {
 		mosq->in_queue_len++;
 		message->next = NULL;
-		if(mosq->in_messages_last){
+		if (mosq->in_messages_last) {
 			mosq->in_messages_last->next = message;
-		}else{
+		} else {
 			mosq->in_messages = message;
 		}
 		mosq->in_messages_last = message;
@@ -177,22 +192,22 @@ void _mosquitto_messages_reconnect_reset(struct mosquitto *mosq)
 	pthread_mutex_lock(&mosq->in_message_mutex);
 	message = mosq->in_messages;
 	mosq->in_queue_len = 0;
-	while(message){
+	while (message) {
 		mosq->in_queue_len++;
 		message->timestamp = 0;
-		if(message->msg.qos != 2){
-			if(prev){
+		if (message->msg.qos != 2) {
+			if (prev) {
 				prev->next = message->next;
 				_mosquitto_message_cleanup(&message);
 				message = prev;
-			}else{
+			} else {
 				mosq->in_messages = message->next;
 				_mosquitto_message_cleanup(&message);
 				message = mosq->in_messages;
 			}
-		}else{
+		} else {
 			/* Message state can be preserved here because it should match
-			* whatever the client has got. */
+			 * whatever the client has got. */
 		}
 		prev = message;
 		message = message->next;
@@ -200,25 +215,24 @@ void _mosquitto_messages_reconnect_reset(struct mosquitto *mosq)
 	mosq->in_messages_last = prev;
 	pthread_mutex_unlock(&mosq->in_message_mutex);
 
-
 	pthread_mutex_lock(&mosq->out_message_mutex);
 	mosq->inflight_messages = 0;
 	message = mosq->out_messages;
 	mosq->out_queue_len = 0;
-	while(message){
+	while (message) {
 		mosq->out_queue_len++;
 		message->timestamp = 0;
 
-		if(mosq->max_inflight_messages == 0 || mosq->inflight_messages < mosq->max_inflight_messages){
-			if(message->msg.qos > 0){
+		if (mosq->max_inflight_messages == 0 || mosq->inflight_messages < mosq->max_inflight_messages) {
+			if (message->msg.qos > 0) {
 				mosq->inflight_messages++;
 			}
-			if(message->msg.qos == 1){
+			if (message->msg.qos == 1) {
 				message->state = mosq_ms_wait_for_puback;
-			}else if(message->msg.qos == 2){
+			} else if (message->msg.qos == 2) {
 				/* Should be able to preserve state. */
 			}
-		}else{
+		} else {
 			message->state = mosq_ms_invalid;
 		}
 		prev = message;
@@ -236,24 +250,24 @@ int _mosquitto_message_remove(struct mosquitto *mosq, uint16_t mid, enum mosquit
 	assert(mosq);
 	assert(message);
 
-	if(dir == mosq_md_out){
+	if (dir == mosq_md_out) {
 		pthread_mutex_lock(&mosq->out_message_mutex);
 		cur = mosq->out_messages;
-		while(cur){
-			if(cur->msg.mid == mid){
-				if(prev){
+		while (cur) {
+			if (cur->msg.mid == mid) {
+				if (prev) {
 					prev->next = cur->next;
-				}else{
+				} else {
 					mosq->out_messages = cur->next;
 				}
 				*message = cur;
 				mosq->out_queue_len--;
-				if(cur->next == NULL){
+				if (cur->next == NULL) {
 					mosq->out_messages_last = prev;
-				}else if(!mosq->out_messages){
+				} else if (!mosq->out_messages) {
 					mosq->out_messages_last = NULL;
 				}
-				if(cur->msg.qos > 0){
+				if (cur->msg.qos > 0) {
 					mosq->inflight_messages--;
 				}
 				found = true;
@@ -263,24 +277,24 @@ int _mosquitto_message_remove(struct mosquitto *mosq, uint16_t mid, enum mosquit
 			cur = cur->next;
 		}
 
-		if(found){
+		if (found) {
 			cur = mosq->out_messages;
-			while(cur){
-				if(mosq->max_inflight_messages == 0 || mosq->inflight_messages < mosq->max_inflight_messages){
-					if(cur->msg.qos > 0 && cur->state == mosq_ms_invalid){
+			while (cur) {
+				if (mosq->max_inflight_messages == 0 || mosq->inflight_messages < mosq->max_inflight_messages) {
+					if (cur->msg.qos > 0 && cur->state == mosq_ms_invalid) {
 						mosq->inflight_messages++;
-						if(cur->msg.qos == 1){
+						if (cur->msg.qos == 1) {
 							cur->state = mosq_ms_wait_for_puback;
-						}else if(cur->msg.qos == 2){
+						} else if (cur->msg.qos == 2) {
 							cur->state = mosq_ms_wait_for_pubrec;
 						}
 						rc = _mosquitto_send_publish(mosq, cur->msg.mid, cur->msg.topic, cur->msg.payloadlen, cur->msg.payload, cur->msg.qos, cur->msg.retain, cur->dup);
-						if(rc){
+						if (rc) {
 							pthread_mutex_unlock(&mosq->out_message_mutex);
 							return rc;
 						}
 					}
-				}else{
+				} else {
 					pthread_mutex_unlock(&mosq->out_message_mutex);
 					return MOSQ_ERR_SUCCESS;
 				}
@@ -288,25 +302,25 @@ int _mosquitto_message_remove(struct mosquitto *mosq, uint16_t mid, enum mosquit
 			}
 			pthread_mutex_unlock(&mosq->out_message_mutex);
 			return MOSQ_ERR_SUCCESS;
-		}else{
+		} else {
 			pthread_mutex_unlock(&mosq->out_message_mutex);
 			return MOSQ_ERR_NOT_FOUND;
 		}
-	}else{
+	} else {
 		pthread_mutex_lock(&mosq->in_message_mutex);
 		cur = mosq->in_messages;
-		while(cur){
-			if(cur->msg.mid == mid){
-				if(prev){
+		while (cur) {
+			if (cur->msg.mid == mid) {
+				if (prev) {
 					prev->next = cur->next;
-				}else{
+				} else {
 					mosq->in_messages = cur->next;
 				}
 				*message = cur;
 				mosq->in_queue_len--;
-				if(cur->next == NULL){
+				if (cur->next == NULL) {
 					mosq->in_messages_last = prev;
-				}else if(!mosq->in_messages){
+				} else if (!mosq->in_messages) {
 					mosq->in_messages_last = NULL;
 				}
 				found = true;
@@ -317,9 +331,9 @@ int _mosquitto_message_remove(struct mosquitto *mosq, uint16_t mid, enum mosquit
 		}
 
 		pthread_mutex_unlock(&mosq->in_message_mutex);
-		if(found){
+		if (found) {
 			return MOSQ_ERR_SUCCESS;
-		}else{
+		} else {
 			return MOSQ_ERR_NOT_FOUND;
 		}
 	}
@@ -338,27 +352,27 @@ void _mosquitto_message_retry_check_actual(struct mosquitto *mosq, struct mosqui
 	pthread_mutex_lock(mutex);
 #endif
 
-	while(messages){
-		if(messages->timestamp + mosq->message_retry < now){
-			switch(messages->state){
-				case mosq_ms_wait_for_puback:
-				case mosq_ms_wait_for_pubrec:
-					messages->timestamp = now;
-					messages->dup = true;
-					_mosquitto_send_publish(mosq, messages->msg.mid, messages->msg.topic, messages->msg.payloadlen, messages->msg.payload, messages->msg.qos, messages->msg.retain, messages->dup);
-					break;
-				case mosq_ms_wait_for_pubrel:
-					messages->timestamp = now;
-					messages->dup = true;
-					_mosquitto_send_pubrec(mosq, messages->msg.mid);
-					break;
-				case mosq_ms_wait_for_pubcomp:
-					messages->timestamp = now;
-					messages->dup = true;
-					_mosquitto_send_pubrel(mosq, messages->msg.mid);
-					break;
-				default:
-					break;
+	while (messages) {
+		if (messages->timestamp + mosq->message_retry < now) {
+			switch (messages->state) {
+			case mosq_ms_wait_for_puback:
+			case mosq_ms_wait_for_pubrec:
+				messages->timestamp = now;
+				messages->dup = true;
+				_mosquitto_send_publish(mosq, messages->msg.mid, messages->msg.topic, messages->msg.payloadlen, messages->msg.payload, messages->msg.qos, messages->msg.retain, messages->dup);
+				break;
+			case mosq_ms_wait_for_pubrel:
+				messages->timestamp = now;
+				messages->dup = true;
+				_mosquitto_send_pubrec(mosq, messages->msg.mid);
+				break;
+			case mosq_ms_wait_for_pubcomp:
+				messages->timestamp = now;
+				messages->dup = true;
+				_mosquitto_send_pubrel(mosq, messages->msg.mid);
+				break;
+			default:
+				break;
 			}
 		}
 		messages = messages->next;
@@ -382,7 +396,9 @@ void _mosquitto_message_retry_check(struct mosquitto *mosq)
 void mosquitto_message_retry_set(struct mosquitto *mosq, unsigned int message_retry)
 {
 	assert(mosq);
-	if(mosq) mosq->message_retry = message_retry;
+	if (mosq) {
+		mosq->message_retry = message_retry;
+	}
 }
 
 int _mosquitto_message_out_update(struct mosquitto *mosq, uint16_t mid, enum mosquitto_msg_state state)
@@ -392,8 +408,8 @@ int _mosquitto_message_out_update(struct mosquitto *mosq, uint16_t mid, enum mos
 
 	pthread_mutex_lock(&mosq->out_message_mutex);
 	message = mosq->out_messages;
-	while(message){
-		if(message->msg.mid == mid){
+	while (message) {
+		if (message->msg.mid == mid) {
 			message->state = state;
 			message->timestamp = mosquitto_time();
 			pthread_mutex_unlock(&mosq->out_message_mutex);
@@ -407,10 +423,11 @@ int _mosquitto_message_out_update(struct mosquitto *mosq, uint16_t mid, enum mos
 
 int mosquitto_max_inflight_messages_set(struct mosquitto *mosq, unsigned int max_inflight_messages)
 {
-	if(!mosq) return MOSQ_ERR_INVAL;
+	if (!mosq) {
+		return MOSQ_ERR_INVAL;
+	}
 
 	mosq->max_inflight_messages = max_inflight_messages;
 
 	return MOSQ_ERR_SUCCESS;
 }
-

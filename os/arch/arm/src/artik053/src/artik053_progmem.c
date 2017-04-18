@@ -51,9 +51,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
 #include <stdbool.h>
-
 #include <tinyara/progmem.h>
 
 /****************************************************************************
@@ -61,8 +59,7 @@
  ****************************************************************************/
 size_t up_progmem_npages(void)
 {
-	return CONFIG_ARTIK053_FLASH_CAPACITY /
-				CONFIG_ARTIK053_FLASH_PAGE_SIZE;
+	return CONFIG_ARTIK053_FLASH_CAPACITY / CONFIG_ARTIK053_FLASH_PAGE_SIZE;
 }
 
 bool up_progmem_isuniform(void)

@@ -410,7 +410,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 		}
 #ifdef CONFIG_NET_SECURITY_TLS
 		if (client->server->tls_init) {
-			len = mbedtls_ssl_read(&(client->tls_ssl), (unsigned char *) buf + buf_len, HTTP_CONF_MAX_REQUEST_LENGTH - buf_len);
+			len = mbedtls_ssl_read(&(client->tls_ssl), (unsigned char *)buf + buf_len, HTTP_CONF_MAX_REQUEST_LENGTH - buf_len);
 		} else
 #endif
 		{
@@ -621,7 +621,7 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
 	while (sndlen > 0) {
 #ifdef CONFIG_NET_SECURITY_TLS
 		if (client->server->tls_init) {
-			ret = mbedtls_ssl_write(&(client->tls_ssl), (unsigned char *) buf + buflen, sndlen);
+			ret = mbedtls_ssl_write(&(client->tls_ssl), (unsigned char *)buf + buflen, sndlen);
 		} else
 #endif
 		{

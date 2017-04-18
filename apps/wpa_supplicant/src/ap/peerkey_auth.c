@@ -29,12 +29,10 @@ static void wpa_stsl_step(void *eloop_ctx, void *timeout_ctx)
 	/* TODO: ? */
 }
 
-
 struct wpa_stsl_search {
 	const u8 *addr;
 	struct wpa_state_machine *sm;
 };
-
 
 static int wpa_stsl_select_sta(struct wpa_state_machine *sm, void *ctx)
 {
@@ -46,41 +44,28 @@ static int wpa_stsl_select_sta(struct wpa_state_machine *sm, void *ctx)
 	return 0;
 }
 
-
-static void wpa_smk_send_error(struct wpa_authenticator *wpa_auth,
-			       struct wpa_state_machine *sm, const u8 *peer,
-			       u16 mui, u16 error_type)
+static void wpa_smk_send_error(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *sm, const u8 *peer, u16 mui, u16 error_type)
 {
-	u8 kde[2 + RSN_SELECTOR_LEN + ETH_ALEN +
-	       2 + RSN_SELECTOR_LEN + sizeof(struct rsn_error_kde)];
+	u8 kde[2 + RSN_SELECTOR_LEN + ETH_ALEN + 2 + RSN_SELECTOR_LEN + sizeof(struct rsn_error_kde)];
 	u8 *pos;
 	struct rsn_error_kde error;
 
-	wpa_auth_logger(wpa_auth, sm->addr, LOGGER_DEBUG,
-			"Sending SMK Error");
+	wpa_auth_logger(wpa_auth, sm->addr, LOGGER_DEBUG, "Sending SMK Error");
 
 	pos = kde;
 
 	if (peer) {
-		pos = wpa_add_kde(pos, RSN_KEY_DATA_MAC_ADDR, peer, ETH_ALEN,
-				  NULL, 0);
+		pos = wpa_add_kde(pos, RSN_KEY_DATA_MAC_ADDR, peer, ETH_ALEN, NULL, 0);
 	}
 
 	error.mui = host_to_be16(mui);
 	error.error_type = host_to_be16(error_type);
-	pos = wpa_add_kde(pos, RSN_KEY_DATA_ERROR,
-			  (u8 *) &error, sizeof(error), NULL, 0);
+	pos = wpa_add_kde(pos, RSN_KEY_DATA_ERROR, (u8 *)&error, sizeof(error), NULL, 0);
 
-	__wpa_send_eapol(wpa_auth, sm,
-			 WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC |
-			 WPA_KEY_INFO_SMK_MESSAGE | WPA_KEY_INFO_ERROR,
-			 NULL, NULL, kde, pos - kde, 0, 0, 0);
+	__wpa_send_eapol(wpa_auth, sm, WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC | WPA_KEY_INFO_SMK_MESSAGE | WPA_KEY_INFO_ERROR, NULL, NULL, kde, pos - kde, 0, 0, 0);
 }
 
-
-void wpa_smk_m1(struct wpa_authenticator *wpa_auth,
-		struct wpa_state_machine *sm, struct wpa_eapol_key *key,
-		const u8 *key_data, size_t key_data_len)
+void wpa_smk_m1(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *sm, struct wpa_eapol_key *key, const u8 *key_data, size_t key_data_len)
 {
 	struct wpa_eapol_ie_parse kde;
 	struct wpa_stsl_search search;
@@ -92,10 +77,8 @@ void wpa_smk_m1(struct wpa_authenticator *wpa_auth,
 		return;
 	}
 
-	if (kde.rsn_ie == NULL || kde.mac_addr == NULL ||
-	    kde.mac_addr_len < ETH_ALEN) {
-		wpa_printf(MSG_INFO, "RSN: No RSN IE or MAC address KDE in "
-			   "SMK M1");
+	if (kde.rsn_ie == NULL || kde.mac_addr == NULL || kde.mac_addr_len < ETH_ALEN) {
+		wpa_printf(MSG_INFO, "RSN: No RSN IE or MAC address KDE in " "SMK M1");
 		return;
 	}
 
@@ -103,50 +86,37 @@ void wpa_smk_m1(struct wpa_authenticator *wpa_auth,
 
 	search.addr = kde.mac_addr;
 	search.sm = NULL;
-	if (wpa_auth_for_each_sta(wpa_auth, wpa_stsl_select_sta, &search) ==
-	    0 || search.sm == NULL) {
-		wpa_printf(MSG_DEBUG, "RSN: SMK handshake with " MACSTR
-			   " aborted - STA not associated anymore",
-			   MAC2STR(kde.mac_addr));
-		wpa_smk_send_error(wpa_auth, sm, kde.mac_addr, STK_MUI_SMK,
-				   STK_ERR_STA_NR);
+	if (wpa_auth_for_each_sta(wpa_auth, wpa_stsl_select_sta, &search) == 0 || search.sm == NULL) {
+		wpa_printf(MSG_DEBUG, "RSN: SMK handshake with " MACSTR " aborted - STA not associated anymore", MAC2STR(kde.mac_addr));
+		wpa_smk_send_error(wpa_auth, sm, kde.mac_addr, STK_MUI_SMK, STK_ERR_STA_NR);
 		/* FIX: wpa_stsl_remove(wpa_auth, neg); */
 		return;
 	}
 
 	buf_len = kde.rsn_ie_len + 2 + RSN_SELECTOR_LEN + ETH_ALEN;
 	buf = os_malloc(buf_len);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return;
+	}
 	/* Initiator RSN IE */
 	os_memcpy(buf, kde.rsn_ie, kde.rsn_ie_len);
 	pos = buf + kde.rsn_ie_len;
 	/* Initiator MAC Address */
-	pos = wpa_add_kde(pos, RSN_KEY_DATA_MAC_ADDR, sm->addr, ETH_ALEN,
-			  NULL, 0);
+	pos = wpa_add_kde(pos, RSN_KEY_DATA_MAC_ADDR, sm->addr, ETH_ALEN, NULL, 0);
 
 	/* SMK M2:
 	 * EAPOL-Key(S=1, M=1, A=1, I=0, K=0, SM=1, KeyRSC=0, Nonce=INonce,
 	 *           MIC=MIC, DataKDs=(RSNIE_I, MAC_I KDE)
 	 */
 
-	wpa_auth_logger(wpa_auth, search.sm->addr, LOGGER_DEBUG,
-			"Sending SMK M2");
+	wpa_auth_logger(wpa_auth, search.sm->addr, LOGGER_DEBUG, "Sending SMK M2");
 
-	__wpa_send_eapol(wpa_auth, search.sm,
-			 WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC |
-			 WPA_KEY_INFO_ACK | WPA_KEY_INFO_SMK_MESSAGE,
-			 NULL, key->key_nonce, buf, pos - buf, 0, 0, 0);
+	__wpa_send_eapol(wpa_auth, search.sm, WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC | WPA_KEY_INFO_ACK | WPA_KEY_INFO_SMK_MESSAGE, NULL, key->key_nonce, buf, pos - buf, 0, 0, 0);
 
 	os_free(buf);
 }
 
-
-static void wpa_send_smk_m4(struct wpa_authenticator *wpa_auth,
-			    struct wpa_state_machine *sm,
-			    struct wpa_eapol_key *key,
-			    struct wpa_eapol_ie_parse *kde,
-			    const u8 *smk)
+static void wpa_send_smk_m4(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *sm, struct wpa_eapol_key *key, struct wpa_eapol_ie_parse *kde, const u8 *smk)
 {
 	u8 *buf, *pos;
 	size_t buf_len;
@@ -158,48 +128,33 @@ static void wpa_send_smk_m4(struct wpa_authenticator *wpa_auth,
 	 *           Lifetime KDE)
 	 */
 
-	buf_len = 2 + RSN_SELECTOR_LEN + ETH_ALEN +
-		2 + RSN_SELECTOR_LEN + WPA_NONCE_LEN +
-		2 + RSN_SELECTOR_LEN + PMK_LEN + WPA_NONCE_LEN +
-		2 + RSN_SELECTOR_LEN + sizeof(lifetime);
+	buf_len = 2 + RSN_SELECTOR_LEN + ETH_ALEN + 2 + RSN_SELECTOR_LEN + WPA_NONCE_LEN + 2 + RSN_SELECTOR_LEN + PMK_LEN + WPA_NONCE_LEN + 2 + RSN_SELECTOR_LEN + sizeof(lifetime);
 	pos = buf = os_malloc(buf_len);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return;
+	}
 
 	/* Initiator MAC Address */
-	pos = wpa_add_kde(pos, RSN_KEY_DATA_MAC_ADDR, kde->mac_addr, ETH_ALEN,
-			  NULL, 0);
+	pos = wpa_add_kde(pos, RSN_KEY_DATA_MAC_ADDR, kde->mac_addr, ETH_ALEN, NULL, 0);
 
 	/* Initiator Nonce */
-	pos = wpa_add_kde(pos, RSN_KEY_DATA_NONCE, kde->nonce, WPA_NONCE_LEN,
-			  NULL, 0);
+	pos = wpa_add_kde(pos, RSN_KEY_DATA_NONCE, kde->nonce, WPA_NONCE_LEN, NULL, 0);
 
 	/* SMK with PNonce */
-	pos = wpa_add_kde(pos, RSN_KEY_DATA_SMK, smk, PMK_LEN,
-			  key->key_nonce, WPA_NONCE_LEN);
+	pos = wpa_add_kde(pos, RSN_KEY_DATA_SMK, smk, PMK_LEN, key->key_nonce, WPA_NONCE_LEN);
 
 	/* Lifetime */
-	lifetime = htonl(43200); /* dot11RSNAConfigSMKLifetime */
-	pos = wpa_add_kde(pos, RSN_KEY_DATA_LIFETIME,
-			  (u8 *) &lifetime, sizeof(lifetime), NULL, 0);
+	lifetime = htonl(43200);	/* dot11RSNAConfigSMKLifetime */
+	pos = wpa_add_kde(pos, RSN_KEY_DATA_LIFETIME, (u8 *)&lifetime, sizeof(lifetime), NULL, 0);
 
-	wpa_auth_logger(sm->wpa_auth, sm->addr, LOGGER_DEBUG,
-			"Sending SMK M4");
+	wpa_auth_logger(sm->wpa_auth, sm->addr, LOGGER_DEBUG, "Sending SMK M4");
 
-	__wpa_send_eapol(wpa_auth, sm,
-			 WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC |
-			 WPA_KEY_INFO_INSTALL | WPA_KEY_INFO_SMK_MESSAGE,
-			 NULL, key->key_nonce, buf, pos - buf, 0, 1, 0);
+	__wpa_send_eapol(wpa_auth, sm, WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC | WPA_KEY_INFO_INSTALL | WPA_KEY_INFO_SMK_MESSAGE, NULL, key->key_nonce, buf, pos - buf, 0, 1, 0);
 
 	os_free(buf);
 }
 
-
-static void wpa_send_smk_m5(struct wpa_authenticator *wpa_auth,
-			    struct wpa_state_machine *sm,
-			    struct wpa_eapol_key *key,
-			    struct wpa_eapol_ie_parse *kde,
-			    const u8 *smk, const u8 *peer)
+static void wpa_send_smk_m5(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *sm, struct wpa_eapol_key *key, struct wpa_eapol_ie_parse *kde, const u8 *smk, const u8 *peer)
 {
 	u8 *buf, *pos;
 	size_t buf_len;
@@ -211,14 +166,11 @@ static void wpa_send_smk_m5(struct wpa_authenticator *wpa_auth,
 	 *                             Lifetime KDE))
 	 */
 
-	buf_len = kde->rsn_ie_len +
-		2 + RSN_SELECTOR_LEN + ETH_ALEN +
-		2 + RSN_SELECTOR_LEN + WPA_NONCE_LEN +
-		2 + RSN_SELECTOR_LEN + PMK_LEN + WPA_NONCE_LEN +
-		2 + RSN_SELECTOR_LEN + sizeof(lifetime);
+	buf_len = kde->rsn_ie_len + 2 + RSN_SELECTOR_LEN + ETH_ALEN + 2 + RSN_SELECTOR_LEN + WPA_NONCE_LEN + 2 + RSN_SELECTOR_LEN + PMK_LEN + WPA_NONCE_LEN + 2 + RSN_SELECTOR_LEN + sizeof(lifetime);
 	pos = buf = os_malloc(buf_len);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return;
+	}
 
 	/* Peer RSN IE */
 	os_memcpy(pos, kde->rsn_ie, kde->rsn_ie_len);
@@ -228,33 +180,23 @@ static void wpa_send_smk_m5(struct wpa_authenticator *wpa_auth,
 	pos = wpa_add_kde(pos, RSN_KEY_DATA_MAC_ADDR, peer, ETH_ALEN, NULL, 0);
 
 	/* PNonce */
-	pos = wpa_add_kde(pos, RSN_KEY_DATA_NONCE, key->key_nonce,
-			  WPA_NONCE_LEN, NULL, 0);
+	pos = wpa_add_kde(pos, RSN_KEY_DATA_NONCE, key->key_nonce, WPA_NONCE_LEN, NULL, 0);
 
 	/* SMK and INonce */
-	pos = wpa_add_kde(pos, RSN_KEY_DATA_SMK, smk, PMK_LEN,
-			  kde->nonce, WPA_NONCE_LEN);
+	pos = wpa_add_kde(pos, RSN_KEY_DATA_SMK, smk, PMK_LEN, kde->nonce, WPA_NONCE_LEN);
 
 	/* Lifetime */
-	lifetime = htonl(43200); /* dot11RSNAConfigSMKLifetime */
-	pos = wpa_add_kde(pos, RSN_KEY_DATA_LIFETIME,
-			  (u8 *) &lifetime, sizeof(lifetime), NULL, 0);
+	lifetime = htonl(43200);	/* dot11RSNAConfigSMKLifetime */
+	pos = wpa_add_kde(pos, RSN_KEY_DATA_LIFETIME, (u8 *)&lifetime, sizeof(lifetime), NULL, 0);
 
-	wpa_auth_logger(sm->wpa_auth, sm->addr, LOGGER_DEBUG,
-			"Sending SMK M5");
+	wpa_auth_logger(sm->wpa_auth, sm->addr, LOGGER_DEBUG, "Sending SMK M5");
 
-	__wpa_send_eapol(wpa_auth, sm,
-			 WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC |
-			 WPA_KEY_INFO_SMK_MESSAGE,
-			 NULL, kde->nonce, buf, pos - buf, 0, 1, 0);
+	__wpa_send_eapol(wpa_auth, sm, WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC | WPA_KEY_INFO_SMK_MESSAGE, NULL, kde->nonce, buf, pos - buf, 0, 1, 0);
 
 	os_free(buf);
 }
 
-
-void wpa_smk_m3(struct wpa_authenticator *wpa_auth,
-		struct wpa_state_machine *sm, struct wpa_eapol_key *key,
-		const u8 *key_data, size_t key_data_len)
+void wpa_smk_m3(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *sm, struct wpa_eapol_key *key, const u8 *key_data, size_t key_data_len)
 {
 	struct wpa_eapol_ie_parse kde;
 	struct wpa_stsl_search search;
@@ -265,11 +207,8 @@ void wpa_smk_m3(struct wpa_authenticator *wpa_auth,
 		return;
 	}
 
-	if (kde.rsn_ie == NULL ||
-	    kde.mac_addr == NULL || kde.mac_addr_len < ETH_ALEN ||
-	    kde.nonce == NULL || kde.nonce_len < WPA_NONCE_LEN) {
-		wpa_printf(MSG_INFO, "RSN: No RSN IE, MAC address KDE, or "
-			   "Nonce KDE in SMK M3");
+	if (kde.rsn_ie == NULL || kde.mac_addr == NULL || kde.mac_addr_len < ETH_ALEN || kde.nonce == NULL || kde.nonce_len < WPA_NONCE_LEN) {
+		wpa_printf(MSG_INFO, "RSN: No RSN IE, MAC address KDE, or " "Nonce KDE in SMK M3");
 		return;
 	}
 
@@ -278,13 +217,9 @@ void wpa_smk_m3(struct wpa_authenticator *wpa_auth,
 
 	search.addr = kde.mac_addr;
 	search.sm = NULL;
-	if (wpa_auth_for_each_sta(wpa_auth, wpa_stsl_select_sta, &search) ==
-	    0 || search.sm == NULL) {
-		wpa_printf(MSG_DEBUG, "RSN: SMK handshake with " MACSTR
-			   " aborted - STA not associated anymore",
-			   MAC2STR(kde.mac_addr));
-		wpa_smk_send_error(wpa_auth, sm, kde.mac_addr, STK_MUI_SMK,
-				   STK_ERR_STA_NR);
+	if (wpa_auth_for_each_sta(wpa_auth, wpa_stsl_select_sta, &search) == 0 || search.sm == NULL) {
+		wpa_printf(MSG_DEBUG, "RSN: SMK handshake with " MACSTR " aborted - STA not associated anymore", MAC2STR(kde.mac_addr));
+		wpa_smk_send_error(wpa_auth, sm, kde.mac_addr, STK_MUI_SMK, STK_ERR_STA_NR);
 		/* FIX: wpa_stsl_remove(wpa_auth, neg); */
 		return;
 	}
@@ -305,12 +240,10 @@ void wpa_smk_m3(struct wpa_authenticator *wpa_auth,
 	pos += WPA_NONCE_LEN;
 	os_memcpy(pos, key->key_nonce, WPA_NONCE_LEN);
 #ifdef CONFIG_IEEE80211W
-	sha256_prf(smk, PMK_LEN, "SMK Derivation", buf, sizeof(buf),
-		   smk, PMK_LEN);
-#else /* CONFIG_IEEE80211W */
-	sha1_prf(smk, PMK_LEN, "SMK Derivation", buf, sizeof(buf),
-		 smk, PMK_LEN);
-#endif /* CONFIG_IEEE80211W */
+	sha256_prf(smk, PMK_LEN, "SMK Derivation", buf, sizeof(buf), smk, PMK_LEN);
+#else							/* CONFIG_IEEE80211W */
+	sha1_prf(smk, PMK_LEN, "SMK Derivation", buf, sizeof(buf), smk, PMK_LEN);
+#endif							/* CONFIG_IEEE80211W */
 
 	wpa_hexdump_key(MSG_DEBUG, "RSN: SMK", smk, PMK_LEN);
 
@@ -322,10 +255,7 @@ void wpa_smk_m3(struct wpa_authenticator *wpa_auth,
 	os_memset(smk, 0, sizeof(*smk));
 }
 
-
-void wpa_smk_error(struct wpa_authenticator *wpa_auth,
-		   struct wpa_state_machine *sm,
-		   const u8 *key_data, size_t key_data_len)
+void wpa_smk_error(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *sm, const u8 *key_data, size_t key_data_len)
 {
 	struct wpa_eapol_ie_parse kde;
 	struct wpa_stsl_search search;
@@ -337,50 +267,42 @@ void wpa_smk_error(struct wpa_authenticator *wpa_auth,
 		return;
 	}
 
-	if (kde.mac_addr == NULL || kde.mac_addr_len < ETH_ALEN ||
-	    kde.error == NULL || kde.error_len < sizeof(error)) {
-		wpa_printf(MSG_INFO, "RSN: No MAC address or Error KDE in "
-			   "SMK Error");
+	if (kde.mac_addr == NULL || kde.mac_addr_len < ETH_ALEN || kde.error == NULL || kde.error_len < sizeof(error)) {
+		wpa_printf(MSG_INFO, "RSN: No MAC address or Error KDE in " "SMK Error");
 		return;
 	}
 
 	search.addr = kde.mac_addr;
 	search.sm = NULL;
-	if (wpa_auth_for_each_sta(wpa_auth, wpa_stsl_select_sta, &search) ==
-	    0 || search.sm == NULL) {
-		wpa_printf(MSG_DEBUG, "RSN: Peer STA " MACSTR " not "
-			   "associated for SMK Error message from " MACSTR,
-			   MAC2STR(kde.mac_addr), MAC2STR(sm->addr));
+	if (wpa_auth_for_each_sta(wpa_auth, wpa_stsl_select_sta, &search) == 0 || search.sm == NULL) {
+		wpa_printf(MSG_DEBUG, "RSN: Peer STA " MACSTR " not " "associated for SMK Error message from " MACSTR, MAC2STR(kde.mac_addr), MAC2STR(sm->addr));
 		return;
 	}
 
 	os_memcpy(&error, kde.error, sizeof(error));
 	mui = be_to_host16(error.mui);
 	error_type = be_to_host16(error.error_type);
-	wpa_auth_vlogger(wpa_auth, sm->addr, LOGGER_INFO,
-			 "STA reported SMK Error: Peer " MACSTR
-			 " MUI %d Error Type %d",
-			 MAC2STR(kde.mac_addr), mui, error_type);
+	wpa_auth_vlogger(wpa_auth, sm->addr, LOGGER_INFO, "STA reported SMK Error: Peer " MACSTR " MUI %d Error Type %d", MAC2STR(kde.mac_addr), mui, error_type);
 
 	wpa_smk_send_error(wpa_auth, search.sm, sm->addr, mui, error_type);
 }
 
-
-int wpa_stsl_remove(struct wpa_authenticator *wpa_auth,
-		    struct wpa_stsl_negotiation *neg)
+int wpa_stsl_remove(struct wpa_authenticator *wpa_auth, struct wpa_stsl_negotiation *neg)
 {
 	struct wpa_stsl_negotiation *pos, *prev;
 
-	if (wpa_auth == NULL)
+	if (wpa_auth == NULL) {
 		return -1;
+	}
 	pos = wpa_auth->stsl_negotiations;
 	prev = NULL;
 	while (pos) {
 		if (pos == neg) {
-			if (prev)
+			if (prev) {
 				prev->next = pos->next;
-			else
+			} else {
 				wpa_auth->stsl_negotiations = pos->next;
+			}
 
 			eloop_cancel_timeout(wpa_stsl_step, wpa_auth, pos);
 			os_free(pos);
@@ -393,4 +315,4 @@ int wpa_stsl_remove(struct wpa_authenticator *wpa_auth,
 	return -1;
 }
 
-#endif /* CONFIG_PEERKEY */
+#endif							/* CONFIG_PEERKEY */

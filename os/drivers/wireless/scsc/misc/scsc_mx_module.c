@@ -15,26 +15,25 @@
 #define SCSC_MX_CORE_MODDESC "mx140 Core Driver"
 
 struct clients_node {
-	struct slsi_dlist_head       list;
+	struct slsi_dlist_head list;
 	struct scsc_mx_module_client *module_client;
 };
 
 struct mx_node {
 	struct slsi_dlist_head list;
-	struct scsc_mx         *mx;
+	struct scsc_mx *mx;
 };
 
 static struct mx_module {
 	struct slsi_dlist_head clients_list;
 	struct slsi_dlist_head mx_list;
 } mx_module = {
-	.clients_list = SLSI_DLIST_HEAD_INIT(mx_module.clients_list),
-	.mx_list = SLSI_DLIST_HEAD_INIT(mx_module.mx_list)
+	.clients_list = SLSI_DLIST_HEAD_INIT(mx_module.clients_list), .mx_list = SLSI_DLIST_HEAD_INIT(mx_module.mx_list)
 };
 
 static void scsc_mx_module_probe_registered_clients(struct scsc_mx *new_mx)
 {
-	bool                client_registered = false;
+	bool client_registered = false;
 	struct clients_node *client_node, *client_next;
 
 	/* Traverse Linked List for each mif_driver node */
@@ -42,8 +41,9 @@ static void scsc_mx_module_probe_registered_clients(struct scsc_mx *new_mx)
 		client_node->module_client->probe(client_node->module_client, new_mx, SCSC_MODULE_CLIENT_REASON_HW_PROBE);
 		client_registered = true;
 	}
-	if (client_registered == false)
+	if (client_registered == false) {
 		SLSI_INFO_NODEV("No clients registered\n");
+	}
 }
 
 static void scsc_mx_module_probe(struct scsc_mif_abs_driver *abs_driver, struct scsc_mif_abs *mif_abs)
@@ -55,8 +55,9 @@ static void scsc_mx_module_probe(struct scsc_mif_abs_driver *abs_driver, struct 
 	(void)abs_driver;
 
 	mx_node = kmm_zalloc(sizeof(*mx_node));
-	if (!mx_node)
+	if (!mx_node) {
 		return;
+	}
 
 	/* Create new mx instance */
 	new_mx = scsc_mx_create(mif_abs);
@@ -75,7 +76,7 @@ static void scsc_mx_module_probe(struct scsc_mif_abs_driver *abs_driver, struct 
 
 static void scsc_mx_module_remove(struct scsc_mif_abs *abs)
 {
-	bool           match = false;
+	bool match = false;
 	struct mx_node *mx_node, *next;
 
 	/* Traverse Linked List for each mx node */
@@ -88,8 +89,9 @@ static void scsc_mx_module_remove(struct scsc_mif_abs *abs)
 			kmm_free(mx_node);
 		}
 	}
-	if (match == false)
+	if (match == false) {
 		pr_err("%s: FATAL, no match for given scsc_mif_abs\n", __func__);
+	}
 }
 
 static struct scsc_mif_abs_driver mx_module_mif_if = {
@@ -130,17 +132,17 @@ static void scsc_mx_module_exit(void)
 int scsc_mx_module_reset(void)
 {
 	struct clients_node *clients_node;
-	struct mx_node      *mx_node, *next_mx;
+	struct mx_node *mx_node, *next_mx;
 
 	/* Traverse Linked List and call registered removed callbacks */
 	slsi_dlist_for_each_entry_safe(mx_node, next_mx, &mx_module.mx_list, list)
-		slsi_dlist_for_each_entry(clients_node, &mx_module.clients_list, list)
-			clients_node->module_client->remove(clients_node->module_client, mx_node->mx, SCSC_MODULE_CLIENT_REASON_RECOVERY);
+	slsi_dlist_for_each_entry(clients_node, &mx_module.clients_list, list)
+	clients_node->module_client->remove(clients_node->module_client, mx_node->mx, SCSC_MODULE_CLIENT_REASON_RECOVERY);
 
 	/* Traverse Linked List and call registered probed callbacks */
 	slsi_dlist_for_each_entry_safe(mx_node, next_mx, &mx_module.mx_list, list)
-		slsi_dlist_for_each_entry(clients_node, &mx_module.clients_list, list)
-			clients_node->module_client->probe(clients_node->module_client, mx_node->mx, SCSC_MODULE_CLIENT_REASON_RECOVERY);
+	slsi_dlist_for_each_entry(clients_node, &mx_module.clients_list, list)
+	clients_node->module_client->probe(clients_node->module_client, mx_node->mx, SCSC_MODULE_CLIENT_REASON_RECOVERY);
 
 	return 0;
 }
@@ -148,12 +150,13 @@ int scsc_mx_module_reset(void)
 int scsc_mx_module_register_client_module(struct scsc_mx_module_client *module_client)
 {
 	struct clients_node *module_client_node;
-	struct mx_node      *mx_node;
+	struct mx_node *mx_node;
 
 	/* Add node in modules linked list */
 	module_client_node = kmm_zalloc(sizeof(*module_client_node));
-	if (!module_client_node)
+	if (!module_client_node) {
 		return -ENOMEM;
+	}
 
 	module_client_node->module_client = module_client;
 	slsi_dlist_add_tail(&module_client_node->list, &mx_module.clients_list);
@@ -168,7 +171,7 @@ int scsc_mx_module_register_client_module(struct scsc_mx_module_client *module_c
 void scsc_mx_module_unregister_client_module(struct scsc_mx_module_client *module_client)
 {
 	struct clients_node *client_node, *client_next;
-	struct mx_node      *mx_node, *next_mx;
+	struct mx_node *mx_node, *next_mx;
 
 	/* Traverse Linked List for each client_list  */
 	slsi_dlist_for_each_entry_safe(client_node, client_next, &mx_module.clients_list, list) {

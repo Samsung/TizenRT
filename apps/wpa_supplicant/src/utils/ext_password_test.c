@@ -11,26 +11,25 @@
 #include "common.h"
 #include "ext_password_i.h"
 
-
 struct ext_password_test_data {
 	char *params;
 };
 
-
-static void * ext_password_test_init(const char *params)
+static void *ext_password_test_init(const char *params)
 {
 	struct ext_password_test_data *data;
 
 	data = os_zalloc(sizeof(*data));
-	if (data == NULL)
+	if (data == NULL) {
 		return NULL;
+	}
 
-	if (params)
+	if (params) {
 		data->params = os_strdup(params);
+	}
 
 	return data;
 }
-
 
 static void ext_password_test_deinit(void *ctx)
 {
@@ -40,8 +39,7 @@ static void ext_password_test_deinit(void *ctx)
 	os_free(data);
 }
 
-
-static struct wpabuf * ext_password_test_get(void *ctx, const char *name)
+static struct wpabuf *ext_password_test_get(void *ctx, const char *name)
 {
 	struct ext_password_test_data *data = ctx;
 	char *pos, *pos2;
@@ -50,8 +48,9 @@ static struct wpabuf * ext_password_test_get(void *ctx, const char *name)
 	wpa_printf(MSG_DEBUG, "EXT PW TEST: get(%s)", name);
 
 	pos = data->params;
-	if (pos == NULL)
+	if (pos == NULL) {
 		return NULL;
+	}
 	nlen = os_strlen(name);
 
 	while (pos && *pos) {
@@ -59,28 +58,28 @@ static struct wpabuf * ext_password_test_get(void *ctx, const char *name)
 			struct wpabuf *buf;
 			pos += nlen + 1;
 			pos2 = pos;
-			while (*pos2 != '|' && *pos2 != '\0')
+			while (*pos2 != '|' && *pos2 != '\0') {
 				pos2++;
+			}
 			buf = ext_password_alloc(pos2 - pos);
-			if (buf == NULL)
+			if (buf == NULL) {
 				return NULL;
+			}
 			wpabuf_put_data(buf, pos, pos2 - pos);
-			wpa_hexdump_ascii_key(MSG_DEBUG, "EXT PW TEST: value",
-					      wpabuf_head(buf),
-					      wpabuf_len(buf));
+			wpa_hexdump_ascii_key(MSG_DEBUG, "EXT PW TEST: value", wpabuf_head(buf), wpabuf_len(buf));
 			return buf;
 		}
 
 		pos = os_strchr(pos + 1, '|');
-		if (pos)
+		if (pos) {
 			pos++;
+		}
 	}
 
 	wpa_printf(MSG_DEBUG, "EXT PW TEST: get(%s) - not found", name);
 
 	return NULL;
 }
-
 
 const struct ext_password_backend ext_password_test = {
 	.name = "test",

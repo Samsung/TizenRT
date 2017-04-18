@@ -33,7 +33,7 @@ struct wps_er_sta {
 struct wps_er_ap {
 	struct dl_list list;
 	struct wps_er *er;
-	struct dl_list sta; /* list of STAs/Enrollees using this AP */
+	struct dl_list sta;			/* list of STAs/Enrollees using this AP */
 	struct in_addr addr;
 	char *location;
 	struct http_client *http;
@@ -77,9 +77,9 @@ struct wps_er {
 	struct wps_context *wps;
 	char ifname[17];
 	int forced_ifname;
-	u8 mac_addr[ETH_ALEN]; /* mac addr of network i.f. we use */
-	char *ip_addr_text; /* IP address of network i.f. we use */
-	unsigned ip_addr; /* IP address of network i.f. we use (host order) */
+	u8 mac_addr[ETH_ALEN];		/* mac addr of network i.f. we use */
+	char *ip_addr_text;			/* IP address of network i.f. we use */
+	unsigned ip_addr;			/* IP address of network i.f. we use (host order) */
 	int multicast_sd;
 	int ssdp_sd;
 	struct dl_list ap;
@@ -97,10 +97,8 @@ struct wps_er {
 	const u8 *set_sel_reg_uuid_filter;
 };
 
-
 /* wps_er.c */
-void wps_er_ap_add(struct wps_er *er, const u8 *uuid, struct in_addr *addr,
-		   const char *location, int max_age);
+void wps_er_ap_add(struct wps_er *er, const u8 *uuid, struct in_addr *addr, const char *location, int max_age);
 void wps_er_ap_remove(struct wps_er *er, struct in_addr *addr);
 int wps_er_ap_cache_settings(struct wps_er *er, struct in_addr *addr);
 
@@ -109,4 +107,4 @@ int wps_er_ssdp_init(struct wps_er *er);
 void wps_er_ssdp_deinit(struct wps_er *er);
 void wps_er_send_ssdp_msearch(struct wps_er *er);
 
-#endif /* WPS_ER_H */
+#endif							/* WPS_ER_H */

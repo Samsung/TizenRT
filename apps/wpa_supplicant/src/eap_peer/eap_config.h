@@ -493,7 +493,6 @@ struct eap_peer_config {
 	 */
 	int engine2;
 
-
 	/**
 	 * pin2 - PIN for USIM, GSM SIM, and smartcards (Phase 2)
 	 *
@@ -521,7 +520,6 @@ struct eap_peer_config {
 	 * EAP-TTLS/PEAP/FAST tunnel) authentication.
 	 */
 	char *engine2_id;
-
 
 	/**
 	 * key_id - Key ID for OpenSSL engine
@@ -741,7 +739,6 @@ struct eap_peer_config {
 	int erp;
 };
 
-
 /**
  * struct wpa_config_blob - Named configuration blob
  *
@@ -771,4 +768,4 @@ struct wpa_config_blob {
 	struct wpa_config_blob *next;
 };
 
-#endif /* EAP_CONFIG_H */
+#endif							/* EAP_CONFIG_H */

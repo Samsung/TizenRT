@@ -13,19 +13,15 @@
 #include "wps/http_server.h"
 #include "browser.h"
 
-
 struct browser_data {
 	int success;
 };
 
-
 static void browser_timeout(void *eloop_data, void *user_ctx)
 {
-	wpa_printf(MSG_INFO, "Timeout on waiting browser interaction to "
-		   "complete");
+	wpa_printf(MSG_INFO, "Timeout on waiting browser interaction to " "complete");
 	eloop_terminate();
 }
-
 
 static void http_req(void *ctx, struct http_request *req)
 {
@@ -48,8 +44,9 @@ static void http_req(void *ctx, struct http_request *req)
 	resp = wpabuf_alloc(100);
 	if (resp == NULL) {
 		http_request_deinit(req);
-		if (done)
+		if (done) {
 			eloop_terminate();
+		}
 		return;
 	}
 	wpabuf_put_str(resp, "User input completed");
@@ -61,7 +58,6 @@ static void http_req(void *ctx, struct http_request *req)
 
 	http_request_send_and_deinit(req, resp);
 }
-
 
 int hs20_web_browser(const char *url)
 {
@@ -108,7 +104,7 @@ int hs20_web_browser(const char *url)
 		argv[7] = "w1.fi.wpadebug/.WpaWebViewActivity";
 		argv[8] = "-e";
 		argv[9] = "w1.fi.wpadebug.URL";
-		argv[10] = (void *) url;
+		argv[10] = (void *)url;
 		argv[11] = NULL;
 
 		execv("/system/bin/am", argv);
@@ -124,11 +120,7 @@ int hs20_web_browser(const char *url)
 	eloop_destroy();
 
 	wpa_printf(MSG_INFO, "Closing Android browser");
-	if (os_exec("/system/bin/am",
-		    "start -a android.action.MAIN "
-		    "-c android.intent.category.LAUNCHER "
-		    "-n w1.fi.wpadebug/.WpaWebViewActivity "
-		    "-e w1.fi.wpadebug.URL FINISH", 1) != 0) {
+	if (os_exec("/system/bin/am", "start -a android.action.MAIN " "-c android.intent.category.LAUNCHER " "-n w1.fi.wpadebug/.WpaWebViewActivity " "-e w1.fi.wpadebug.URL FINISH", 1) != 0) {
 		wpa_printf(MSG_INFO, "Failed to close wpadebug browser");
 	}
 

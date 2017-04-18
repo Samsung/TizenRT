@@ -18,17 +18,19 @@ int md4_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 	unsigned char *p;
 	size_t i;
 
-	if (gcry_md_open(&hd, GCRY_MD_MD4, 0) != GPG_ERR_NO_ERROR)
+	if (gcry_md_open(&hd, GCRY_MD_MD4, 0) != GPG_ERR_NO_ERROR) {
 		return -1;
-	for (i = 0; i < num_elem; i++)
+	}
+	for (i = 0; i < num_elem; i++) {
 		gcry_md_write(hd, addr[i], len[i]);
+	}
 	p = gcry_md_read(hd, GCRY_MD_MD4);
-	if (p)
+	if (p) {
 		memcpy(mac, p, gcry_md_get_algo_dlen(GCRY_MD_MD4));
+	}
 	gcry_md_close(hd);
 	return 0;
 }
-
 
 void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 {
@@ -51,24 +53,25 @@ void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 	gcry_cipher_close(hd);
 }
 
-
 int md5_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
 	gcry_md_hd_t hd;
 	unsigned char *p;
 	size_t i;
 
-	if (gcry_md_open(&hd, GCRY_MD_MD5, 0) != GPG_ERR_NO_ERROR)
+	if (gcry_md_open(&hd, GCRY_MD_MD5, 0) != GPG_ERR_NO_ERROR) {
 		return -1;
-	for (i = 0; i < num_elem; i++)
+	}
+	for (i = 0; i < num_elem; i++) {
 		gcry_md_write(hd, addr[i], len[i]);
+	}
 	p = gcry_md_read(hd, GCRY_MD_MD5);
-	if (p)
+	if (p) {
 		memcpy(mac, p, gcry_md_get_algo_dlen(GCRY_MD_MD5));
+	}
 	gcry_md_close(hd);
 	return 0;
 }
-
 
 int sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
@@ -76,24 +79,25 @@ int sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 	unsigned char *p;
 	size_t i;
 
-	if (gcry_md_open(&hd, GCRY_MD_SHA1, 0) != GPG_ERR_NO_ERROR)
+	if (gcry_md_open(&hd, GCRY_MD_SHA1, 0) != GPG_ERR_NO_ERROR) {
 		return -1;
-	for (i = 0; i < num_elem; i++)
+	}
+	for (i = 0; i < num_elem; i++) {
 		gcry_md_write(hd, addr[i], len[i]);
+	}
 	p = gcry_md_read(hd, GCRY_MD_SHA1);
-	if (p)
+	if (p) {
 		memcpy(mac, p, gcry_md_get_algo_dlen(GCRY_MD_SHA1));
+	}
 	gcry_md_close(hd);
 	return 0;
 }
 
-
-void * aes_encrypt_init(const u8 *key, size_t len)
+void *aes_encrypt_init(const u8 *key, size_t len)
 {
 	gcry_cipher_hd_t hd;
 
-	if (gcry_cipher_open(&hd, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_ECB, 0) !=
-	    GPG_ERR_NO_ERROR) {
+	if (gcry_cipher_open(&hd, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_ECB, 0) != GPG_ERR_NO_ERROR) {
 		printf("cipher open failed\n");
 		return NULL;
 	}
@@ -106,13 +110,11 @@ void * aes_encrypt_init(const u8 *key, size_t len)
 	return hd;
 }
 
-
 void aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
 {
 	gcry_cipher_hd_t hd = ctx;
 	gcry_cipher_encrypt(hd, crypt, 16, plain, 16);
 }
-
 
 void aes_encrypt_deinit(void *ctx)
 {
@@ -120,14 +122,13 @@ void aes_encrypt_deinit(void *ctx)
 	gcry_cipher_close(hd);
 }
 
-
-void * aes_decrypt_init(const u8 *key, size_t len)
+void *aes_decrypt_init(const u8 *key, size_t len)
 {
 	gcry_cipher_hd_t hd;
 
-	if (gcry_cipher_open(&hd, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_ECB, 0) !=
-	    GPG_ERR_NO_ERROR)
+	if (gcry_cipher_open(&hd, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_ECB, 0) != GPG_ERR_NO_ERROR) {
 		return NULL;
+	}
 	if (gcry_cipher_setkey(hd, key, len) != GPG_ERR_NO_ERROR) {
 		gcry_cipher_close(hd);
 		return NULL;
@@ -136,13 +137,11 @@ void * aes_decrypt_init(const u8 *key, size_t len)
 	return hd;
 }
 
-
 void aes_decrypt(void *ctx, const u8 *crypt, u8 *plain)
 {
 	gcry_cipher_hd_t hd = ctx;
 	gcry_cipher_decrypt(hd, plain, 16, crypt, 16);
 }
-
 
 void aes_decrypt_deinit(void *ctx)
 {
@@ -150,30 +149,21 @@ void aes_decrypt_deinit(void *ctx)
 	gcry_cipher_close(hd);
 }
 
-
-int crypto_mod_exp(const u8 *base, size_t base_len,
-		   const u8 *power, size_t power_len,
-		   const u8 *modulus, size_t modulus_len,
-		   u8 *result, size_t *result_len)
+int crypto_mod_exp(const u8 *base, size_t base_len, const u8 *power, size_t power_len, const u8 *modulus, size_t modulus_len, u8 *result, size_t *result_len)
 {
-	gcry_mpi_t bn_base = NULL, bn_exp = NULL, bn_modulus = NULL,
-		bn_result = NULL;
+	gcry_mpi_t bn_base = NULL, bn_exp = NULL, bn_modulus = NULL, bn_result = NULL;
 	int ret = -1;
 
-	if (gcry_mpi_scan(&bn_base, GCRYMPI_FMT_USG, base, base_len, NULL) !=
-	    GPG_ERR_NO_ERROR ||
-	    gcry_mpi_scan(&bn_exp, GCRYMPI_FMT_USG, power, power_len, NULL) !=
-	    GPG_ERR_NO_ERROR ||
-	    gcry_mpi_scan(&bn_modulus, GCRYMPI_FMT_USG, modulus, modulus_len,
-			  NULL) != GPG_ERR_NO_ERROR)
+	if (gcry_mpi_scan(&bn_base, GCRYMPI_FMT_USG, base, base_len, NULL) != GPG_ERR_NO_ERROR || gcry_mpi_scan(&bn_exp, GCRYMPI_FMT_USG, power, power_len, NULL) != GPG_ERR_NO_ERROR || gcry_mpi_scan(&bn_modulus, GCRYMPI_FMT_USG, modulus, modulus_len, NULL) != GPG_ERR_NO_ERROR) {
 		goto error;
+	}
 	bn_result = gcry_mpi_new(modulus_len * 8);
 
 	gcry_mpi_powm(bn_result, bn_base, bn_exp, bn_modulus);
 
-	if (gcry_mpi_print(GCRYMPI_FMT_USG, result, *result_len, result_len,
-			   bn_result) != GPG_ERR_NO_ERROR)
+	if (gcry_mpi_print(GCRYMPI_FMT_USG, result, *result_len, result_len, bn_result) != GPG_ERR_NO_ERROR) {
 		goto error;
+	}
 
 	ret = 0;
 
@@ -185,16 +175,12 @@ error:
 	return ret;
 }
 
-
 struct crypto_cipher {
 	gcry_cipher_hd_t enc;
 	gcry_cipher_hd_t dec;
 };
 
-
-struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
-					  const u8 *iv, const u8 *key,
-					  size_t key_len)
+struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg, const u8 *iv, const u8 *key, size_t key_len)
 {
 	struct crypto_cipher *ctx;
 	gcry_error_t res;
@@ -202,23 +188,24 @@ struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
 	int ivlen;
 
 	ctx = os_zalloc(sizeof(*ctx));
-	if (ctx == NULL)
+	if (ctx == NULL) {
 		return NULL;
+	}
 
 	switch (alg) {
 	case CRYPTO_CIPHER_ALG_RC4:
 		a = GCRY_CIPHER_ARCFOUR;
-		res = gcry_cipher_open(&ctx->enc, a, GCRY_CIPHER_MODE_STREAM,
-				       0);
+		res = gcry_cipher_open(&ctx->enc, a, GCRY_CIPHER_MODE_STREAM, 0);
 		gcry_cipher_open(&ctx->dec, a, GCRY_CIPHER_MODE_STREAM, 0);
 		break;
 	case CRYPTO_CIPHER_ALG_AES:
-		if (key_len == 24)
+		if (key_len == 24) {
 			a = GCRY_CIPHER_AES192;
-		else if (key_len == 32)
+		} else if (key_len == 32) {
 			a = GCRY_CIPHER_AES256;
-		else
+		} else {
 			a = GCRY_CIPHER_AES;
+		}
 		res = gcry_cipher_open(&ctx->enc, a, GCRY_CIPHER_MODE_CBC, 0);
 		gcry_cipher_open(&ctx->dec, a, GCRY_CIPHER_MODE_CBC, 0);
 		break;
@@ -233,10 +220,11 @@ struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
 		gcry_cipher_open(&ctx->dec, a, GCRY_CIPHER_MODE_CBC, 0);
 		break;
 	case CRYPTO_CIPHER_ALG_RC2:
-		if (key_len == 5)
+		if (key_len == 5) {
 			a = GCRY_CIPHER_RFC2268_40;
-		else
+		} else {
 			a = GCRY_CIPHER_RFC2268_128;
+		}
 		res = gcry_cipher_open(&ctx->enc, a, GCRY_CIPHER_MODE_CBC, 0);
 		gcry_cipher_open(&ctx->dec, a, GCRY_CIPHER_MODE_CBC, 0);
 		break;
@@ -250,8 +238,7 @@ struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
 		return NULL;
 	}
 
-	if (gcry_cipher_setkey(ctx->enc, key, key_len) != GPG_ERR_NO_ERROR ||
-	    gcry_cipher_setkey(ctx->dec, key, key_len) != GPG_ERR_NO_ERROR) {
+	if (gcry_cipher_setkey(ctx->enc, key, key_len) != GPG_ERR_NO_ERROR || gcry_cipher_setkey(ctx->dec, key, key_len) != GPG_ERR_NO_ERROR) {
 		gcry_cipher_close(ctx->enc);
 		gcry_cipher_close(ctx->dec);
 		os_free(ctx);
@@ -259,8 +246,7 @@ struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
 	}
 
 	ivlen = gcry_cipher_get_algo_blklen(a);
-	if (gcry_cipher_setiv(ctx->enc, iv, ivlen) != GPG_ERR_NO_ERROR ||
-	    gcry_cipher_setiv(ctx->dec, iv, ivlen) != GPG_ERR_NO_ERROR) {
+	if (gcry_cipher_setiv(ctx->enc, iv, ivlen) != GPG_ERR_NO_ERROR || gcry_cipher_setiv(ctx->dec, iv, ivlen) != GPG_ERR_NO_ERROR) {
 		gcry_cipher_close(ctx->enc);
 		gcry_cipher_close(ctx->dec);
 		os_free(ctx);
@@ -270,26 +256,21 @@ struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
 	return ctx;
 }
 
-
-int crypto_cipher_encrypt(struct crypto_cipher *ctx, const u8 *plain,
-			  u8 *crypt, size_t len)
+int crypto_cipher_encrypt(struct crypto_cipher *ctx, const u8 *plain, u8 *crypt, size_t len)
 {
-	if (gcry_cipher_encrypt(ctx->enc, crypt, len, plain, len) !=
-	    GPG_ERR_NO_ERROR)
+	if (gcry_cipher_encrypt(ctx->enc, crypt, len, plain, len) != GPG_ERR_NO_ERROR) {
 		return -1;
+	}
 	return 0;
 }
 
-
-int crypto_cipher_decrypt(struct crypto_cipher *ctx, const u8 *crypt,
-			  u8 *plain, size_t len)
+int crypto_cipher_decrypt(struct crypto_cipher *ctx, const u8 *crypt, u8 *plain, size_t len)
 {
-	if (gcry_cipher_decrypt(ctx->dec, plain, len, crypt, len) !=
-	    GPG_ERR_NO_ERROR)
+	if (gcry_cipher_decrypt(ctx->dec, plain, len, crypt, len) != GPG_ERR_NO_ERROR) {
 		return -1;
+	}
 	return 0;
 }
-
 
 void crypto_cipher_deinit(struct crypto_cipher *ctx)
 {

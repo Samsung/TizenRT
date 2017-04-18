@@ -42,13 +42,11 @@ enum rfkill_type {
 	NUM_RFKILL_TYPES,
 };
 
-
 struct rfkill_data {
 	struct rfkill_config *cfg;
 	int fd;
 	int blocked;
 };
-
 
 static void rfkill_receive(int sock, void *eloop_ctx, void *sock_ctx)
 {
@@ -59,22 +57,17 @@ static void rfkill_receive(int sock, void *eloop_ctx, void *sock_ctx)
 
 	len = read(rfkill->fd, &event, sizeof(event));
 	if (len < 0) {
-		wpa_printf(MSG_ERROR, "rfkill: Event read failed: %s",
-			   strerror(errno));
+		wpa_printf(MSG_ERROR, "rfkill: Event read failed: %s", strerror(errno));
 		return;
 	}
 	if (len != RFKILL_EVENT_SIZE_V1) {
-		wpa_printf(MSG_DEBUG, "rfkill: Unexpected event size "
-			   "%d (expected %d)",
-			   (int) len, RFKILL_EVENT_SIZE_V1);
+		wpa_printf(MSG_DEBUG, "rfkill: Unexpected event size " "%d (expected %d)", (int)len, RFKILL_EVENT_SIZE_V1);
 		return;
 	}
-	wpa_printf(MSG_DEBUG, "rfkill: event: idx=%u type=%d "
-		   "op=%u soft=%u hard=%u",
-		   event.idx, event.type, event.op, event.soft,
-		   event.hard);
-	if (event.op != RFKILL_OP_CHANGE || event.type != RFKILL_TYPE_WLAN)
+	wpa_printf(MSG_DEBUG, "rfkill: event: idx=%u type=%d " "op=%u soft=%u hard=%u", event.idx, event.type, event.op, event.soft, event.hard);
+	if (event.op != RFKILL_OP_CHANGE || event.type != RFKILL_TYPE_WLAN) {
 		return;
+	}
 
 	if (event.hard) {
 		wpa_printf(MSG_INFO, "rfkill: WLAN hard blocked");
@@ -89,60 +82,54 @@ static void rfkill_receive(int sock, void *eloop_ctx, void *sock_ctx)
 
 	if (new_blocked != rfkill->blocked) {
 		rfkill->blocked = new_blocked;
-		if (new_blocked)
+		if (new_blocked) {
 			rfkill->cfg->blocked_cb(rfkill->cfg->ctx);
-		else
+		} else {
 			rfkill->cfg->unblocked_cb(rfkill->cfg->ctx);
+		}
 	}
 }
 
-
-struct rfkill_data * rfkill_init(struct rfkill_config *cfg)
+struct rfkill_data *rfkill_init(struct rfkill_config *cfg)
 {
 	struct rfkill_data *rfkill;
 	struct rfkill_event event;
 	ssize_t len;
 
 	rfkill = os_zalloc(sizeof(*rfkill));
-	if (rfkill == NULL)
+	if (rfkill == NULL) {
 		return NULL;
+	}
 
 	rfkill->cfg = cfg;
 	rfkill->fd = open("/dev/rfkill", O_RDONLY);
 	if (rfkill->fd < 0) {
-		wpa_printf(MSG_INFO, "rfkill: Cannot open RFKILL control "
-			   "device");
+		wpa_printf(MSG_INFO, "rfkill: Cannot open RFKILL control " "device");
 		goto fail;
 	}
 
 	if (fcntl(rfkill->fd, F_SETFL, O_NONBLOCK) < 0) {
-		wpa_printf(MSG_ERROR, "rfkill: Cannot set non-blocking mode: "
-			   "%s", strerror(errno));
+		wpa_printf(MSG_ERROR, "rfkill: Cannot set non-blocking mode: " "%s", strerror(errno));
 		goto fail2;
 	}
 
 	for (;;) {
 		len = read(rfkill->fd, &event, sizeof(event));
 		if (len < 0) {
-			if (errno == EAGAIN)
-				break; /* No more entries */
-			wpa_printf(MSG_ERROR, "rfkill: Event read failed: %s",
-				   strerror(errno));
+			if (errno == EAGAIN) {
+				break;    /* No more entries */
+			}
+			wpa_printf(MSG_ERROR, "rfkill: Event read failed: %s", strerror(errno));
 			break;
 		}
 		if (len != RFKILL_EVENT_SIZE_V1) {
-			wpa_printf(MSG_DEBUG, "rfkill: Unexpected event size "
-				   "%d (expected %d)",
-				   (int) len, RFKILL_EVENT_SIZE_V1);
+			wpa_printf(MSG_DEBUG, "rfkill: Unexpected event size " "%d (expected %d)", (int)len, RFKILL_EVENT_SIZE_V1);
 			continue;
 		}
-		wpa_printf(MSG_DEBUG, "rfkill: initial event: idx=%u type=%d "
-			   "op=%u soft=%u hard=%u",
-			   event.idx, event.type, event.op, event.soft,
-			   event.hard);
-		if (event.op != RFKILL_OP_ADD ||
-		    event.type != RFKILL_TYPE_WLAN)
+		wpa_printf(MSG_DEBUG, "rfkill: initial event: idx=%u type=%d " "op=%u soft=%u hard=%u", event.idx, event.type, event.op, event.soft, event.hard);
+		if (event.op != RFKILL_OP_ADD || event.type != RFKILL_TYPE_WLAN) {
 			continue;
+		}
 		if (event.hard) {
 			wpa_printf(MSG_INFO, "rfkill: WLAN hard blocked");
 			rfkill->blocked = 1;
@@ -163,11 +150,11 @@ fail:
 	return NULL;
 }
 
-
 void rfkill_deinit(struct rfkill_data *rfkill)
 {
-	if (rfkill == NULL)
+	if (rfkill == NULL) {
 		return;
+	}
 
 	if (rfkill->fd >= 0) {
 		eloop_unregister_read_sock(rfkill->fd);
@@ -178,11 +165,11 @@ void rfkill_deinit(struct rfkill_data *rfkill)
 	os_free(rfkill);
 }
 
-
 int rfkill_is_blocked(struct rfkill_data *rfkill)
 {
-	if (rfkill == NULL)
+	if (rfkill == NULL) {
 		return 0;
+	}
 
 	return rfkill->blocked;
 }

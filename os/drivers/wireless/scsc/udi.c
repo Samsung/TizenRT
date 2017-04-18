@@ -44,34 +44,34 @@
  * Control character device for debug
  * ==================================
  */
-#define NUM_CHAR_CLIENTS 12                  /* Number of client programmes on one node. */
+#define NUM_CHAR_CLIENTS 12		/* Number of client programmes on one node. */
 
-#define MAX_MINOR (SLSI_UDI_MINOR_NODES - 1) /* Maximum node number. */
+#define MAX_MINOR (SLSI_UDI_MINOR_NODES - 1)	/* Maximum node number. */
 
 struct slsi_cdev_client;
 
 struct slsi_cdev {
-	int                     minor;
+	int minor;
 	struct slsi_cdev_client *client[NUM_CHAR_CLIENTS];
 
-	struct slsi_dev         *sdev;
-	struct device           *parent;
+	struct slsi_dev *sdev;
+	struct device *parent;
 };
 
 struct slsi_cdev_client {
-	struct slsi_cdev     *ufcdev;
-	int                  log_enabled;
-	int                  log_allow_driver_signals;
+	struct slsi_cdev *ufcdev;
+	int log_enabled;
+	int log_allow_driver_signals;
 
-	u16                  tx_sender_id;
-	struct slsi_fw_test  fw_test;
+	u16 tx_sender_id;
+	struct slsi_fw_test fw_test;
 
 	/* Flags set for special filtering of ma_packet data */
-	u16                  ma_unitdata_filter_config;
+	u16 ma_unitdata_filter_config;
 
 	struct max_buff_head log_list;
-	sem_t                log_mutex;
-	struct completion    log_wq;
+	sem_t log_mutex;
+	struct completion log_wq;
 
 	/* Drop Frames and report the number dropped */
 #define UDI_MAX_QUEUED_FRAMES 10000
@@ -85,9 +85,9 @@ struct slsi_cdev_client {
 	 * Enable MA_PACKET filters at     queue_len == UDI_MAX_QUEUED_DATA_FRAMES
 	 * Disable MA_PACKET filters at    queue_len == UDI_RESTART_QUEUED_DATA_FRAMES
 	 */
-	u32           log_dropped;
-	u32           log_dropped_data;
-	bool          log_drop_data_packets;
+	u32 log_dropped;
+	u32 log_dropped_data;
+	bool log_drop_data_packets;
 	struct pollfd *fds;
 };
 
@@ -107,19 +107,21 @@ static int send_signal_to_inverse_log_filter(struct slsi_log_client *log_client,
 
 int slsi_check_cdev_refs(void)
 {
-	int              client_num;
-	int              cdev_num;
+	int client_num;
+	int cdev_num;
 	struct slsi_cdev *cdev = NULL;
 
 	for (cdev_num = 0; cdev_num < SLSI_UDI_MINOR_NODES; cdev_num++) {
 		cdev = uf_cdevs[cdev_num];
 
-		if (cdev == NULL)
+		if (cdev == NULL) {
 			continue;
+		}
 
 		for (client_num = 0; client_num < NUM_CHAR_CLIENTS; client_num++)
-			if (cdev->client[client_num] != NULL)
+			if (cdev->client[client_num] != NULL) {
 				return 1;
+			}
 	}
 
 	return 0;
@@ -129,25 +131,30 @@ int slsi_kernel_to_user_space_event(struct slsi_log_client *log_client, u16 even
 {
 #ifdef CONFIG_SCSC_WLANLITE
 	struct slsi_cdev_client *client = log_client->log_client_ctx;
-	struct max_buff         *mbuf;
-	int                     ret;
+	struct max_buff *mbuf;
+	int ret;
 
-	if (WARN_ON(client == NULL))
+	if (WARN_ON(client == NULL)) {
 		return -EINVAL;
+	}
 
-	if (!client->log_allow_driver_signals)
+	if (!client->log_allow_driver_signals) {
 		return 0;
+	}
 
 	mbuf = fapi_alloc_f(sizeof(struct fapi_signal_header), data_length, event, 0, __FILE__, __LINE__);
-	if (WARN_ON(!mbuf))
+	if (WARN_ON(!mbuf)) {
 		return -ENOMEM;
+	}
 
-	if (data_length)
+	if (data_length) {
 		fapi_append_data(mbuf, data, data_length);
+	}
 
 	ret = udi_log_event(log_client, mbuf, UDI_CONFIG_IND);
-	if (ret)
+	if (ret) {
 		SLSI_WARN_NODEV("Udi log event not registered\n");
+	}
 
 	/* udi_log_event takes a copy, so ensure that the mbuf allocated in this
 	 * function is freed again.
@@ -161,10 +168,10 @@ int slsi_kernel_to_user_space_event(struct slsi_log_client *log_client, u16 even
 
 static int slsi_cdev_open(FAR struct file *filep)
 {
-	struct slsi_cdev        *uf_cdev;
+	struct slsi_cdev *uf_cdev;
 	struct slsi_cdev_client *client;
-	int                     indx;
-	int                     minor;
+	int indx;
+	int minor;
 
 	if (filep->f_inode == NULL) {
 		SLSI_ERR_NODEV("inode is NULL\n");
@@ -188,16 +195,18 @@ static int slsi_cdev_open(FAR struct file *filep)
 	}
 
 	for (indx = 0; indx < NUM_CHAR_CLIENTS; indx++)
-		if (uf_cdev->client[indx] == NULL)
+		if (uf_cdev->client[indx] == NULL) {
 			break;
+		}
 	if (indx >= NUM_CHAR_CLIENTS) {
 		SLSI_ERR_NODEV("already opened\n");
 		return -EOPNOTSUPP;
 	}
 
 	client = kmm_malloc(sizeof(*client));
-	if (client == NULL)
+	if (client == NULL) {
 		return -ENOMEM;
+	}
 	memset(client, 0, sizeof(struct slsi_cdev_client));
 
 	/* init other resource */
@@ -220,9 +229,9 @@ static int slsi_cdev_open(FAR struct file *filep)
 static int slsi_cdev_close(FAR struct file *filep)
 {
 	struct slsi_cdev_client *client = (void *)filep->f_priv;
-	struct slsi_cdev        *uf_cdev;
-	int                     indx;
-	int                     minor;
+	struct slsi_cdev *uf_cdev;
+	int indx;
+	int minor;
 
 	SLSI_INFO_NODEV("node name: %s\n", filep->f_inode->i_name);
 	if (strcmp(filep->f_inode->i_name, UDI_CHAR_DEVICE_NAME0) == 0) {
@@ -240,12 +249,14 @@ static int slsi_cdev_close(FAR struct file *filep)
 		return -EINVAL;
 	}
 
-	if (client == NULL)
+	if (client == NULL) {
 		return -EINVAL;
+	}
 
 	for (indx = 0; indx < NUM_CHAR_CLIENTS; indx++)
-		if (uf_cdev->client[indx] == client)
+		if (uf_cdev->client[indx] == client) {
 			break;
+		}
 	if (indx >= NUM_CHAR_CLIENTS) {
 		SLSI_ERR_NODEV("client not found in list\n");
 		return -EINVAL;
@@ -253,8 +264,9 @@ static int slsi_cdev_close(FAR struct file *filep)
 
 	complete(&client->log_wq);
 
-	if (client->log_enabled)
+	if (client->log_enabled) {
 		slsi_log_client_unregister(client->ufcdev->sdev, client);
+	}
 
 	slsi_mbuf_queue_purge(&client->log_list);
 
@@ -273,13 +285,14 @@ static int slsi_cdev_close(FAR struct file *filep)
 static ssize_t slsi_cdev_read(FAR struct file *filp, FAR char *p, size_t len)
 {
 	struct slsi_cdev_client *client = (void *)filp->f_priv;
-	struct slsi_dev         *sdev;
-	int                     msglen;
-	struct max_buff         *mbuf;
+	struct slsi_dev *sdev;
+	int msglen;
+	struct max_buff *mbuf;
 
 	SLSI_INFO_NODEV("\n");
-	if (client == NULL)
+	if (client == NULL) {
 		return -EINVAL;
+	}
 
 	if (!mbuf_queue_len(&client->log_list)) {
 		/* wait until getting a signal */
@@ -301,7 +314,7 @@ static ssize_t slsi_cdev_read(FAR struct file *filp, FAR char *p, size_t len)
 	slsi_fw_test_signal_with_udi_header(sdev, &client->fw_test, mbuf);
 
 	msglen = mbuf->len;
-	if (msglen > (s32)len) {
+	if (msglen > (s32) len) {
 		SLSI_WARN(sdev, "truncated read to %d actual msg len is %lu\n", msglen, (unsigned long int)len);
 		msglen = len;
 	}
@@ -319,10 +332,10 @@ static ssize_t slsi_cdev_read(FAR struct file *filp, FAR char *p, size_t len)
 static ssize_t slsi_cdev_write(FAR struct file *filep, FAR const char *p, size_t len)
 {
 	struct slsi_cdev_client *client;
-	struct slsi_dev         *sdev;
-	struct max_buff         *mbuf;
-	u8                      *data;
-	struct slsi_mbuf_cb     *cb;
+	struct slsi_dev *sdev;
+	struct max_buff *mbuf;
+	u8 *data;
+	struct slsi_mbuf_cb *cb;
 
 	SLSI_INFO_NODEV("\n");
 
@@ -356,30 +369,29 @@ static ssize_t slsi_cdev_write(FAR struct file *filep, FAR const char *p, size_t
 	 * [7:3]  - peer_index
 	 * [10:8] - ac queue
 	 */
-	if (fapi_is_ma(mbuf))
-		cb->colour = (slsi_frame_priority_to_ac_queue(mbuf->priority) << 8) |
-			     (fapi_get_u16(mbuf, u.ma_unitdata_req.peer_index) << 3) | (fapi_get_u16(mbuf, u.ma_unitdata_req.vif) << 1);
+	if (fapi_is_ma(mbuf)) {
+		cb->colour = (slsi_frame_priority_to_ac_queue(mbuf->priority) << 8) | (fapi_get_u16(mbuf, u.ma_unitdata_req.peer_index) << 3) | (fapi_get_u16(mbuf, u.ma_unitdata_req.vif) << 1);
+	}
 
 	/* F/w will panic if fw_reference is not zero. */
 	fapi_set_u32(mbuf, fw_reference, 0);
 	/* set mac header uses values from above initialized cb */
 	mbuf_set_mac_header(mbuf, fapi_get_data(mbuf) - mbuf->data);
 
-	SLSI_DBG3_NODEV(SLSI_UDI,
-			"UDI Signal:%.4X  SigLEN:%d  DataLen:%d  MBUF Headroom:%d  bytes:%d\n",
-			fapi_get_sigid(mbuf), fapi_get_siglen(mbuf),
-			fapi_get_datalen(mbuf), mbuf_headroom(mbuf), (int)len);
+	SLSI_DBG3_NODEV(SLSI_UDI, "UDI Signal:%.4X  SigLEN:%d  DataLen:%d  MBUF Headroom:%d  bytes:%d\n", fapi_get_sigid(mbuf), fapi_get_siglen(mbuf), fapi_get_datalen(mbuf), mbuf_headroom(mbuf), (int)len);
 
 	/* In WlanLite test mode req signals IDs are 0x1000, 0x1002, 0x1004 */
 	if (slsi_is_test_mode_enabled() || fapi_is_req(mbuf) || fapi_is_res(mbuf)) {
 		/* Use the range of PIDs allocated to the udi clients */
 		client->tx_sender_id++;
-		if (client->tx_sender_id > SLSI_TX_PROCESS_ID_UDI_MAX)
+		if (client->tx_sender_id > SLSI_TX_PROCESS_ID_UDI_MAX) {
 			client->tx_sender_id = SLSI_TX_PROCESS_ID_UDI_MIN;
+		}
 
 		fapi_set_u16(mbuf, sender_pid, client->tx_sender_id);
-		if (!slsi_is_test_mode_enabled())
+		if (!slsi_is_test_mode_enabled()) {
 			slsi_fw_test_signal(sdev, &client->fw_test, mbuf);
+		}
 		if (fapi_is_ma(mbuf)) {
 			if (slsi_tx_data_lower(sdev, mbuf)) {
 				slsi_kfree_mbuf(mbuf);
@@ -400,16 +412,17 @@ static ssize_t slsi_cdev_write(FAR struct file *filep, FAR const char *p, size_t
 static int slsi_cdev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	struct slsi_cdev_client *client = (void *)filep->f_priv;
-	struct slsi_dev         *sdev;
-	long                    r = 0;
-	int                     int_param;
-	int                     mib_data_length; /* Length of valid Mib data in the buffer */
-	int                     mib_data_size;   /* Size of the mib buffer  */
-	unsigned char           *mib_data;       /* Mib Input/Output Buffer */
-	u16                     mib_vif;
+	struct slsi_dev *sdev;
+	long r = 0;
+	int int_param;
+	int mib_data_length;		/* Length of valid Mib data in the buffer */
+	int mib_data_size;			/* Size of the mib buffer  */
+	unsigned char *mib_data;	/* Mib Input/Output Buffer */
+	u16 mib_vif;
 
-	if (client == NULL || client->ufcdev == NULL)
+	if (client == NULL || client->ufcdev == NULL) {
 		return -EINVAL;
+	}
 	sdev = client->ufcdev->sdev;
 
 	switch (cmd) {
@@ -423,8 +436,9 @@ static int slsi_cdev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		if (int_param) {
 			slsi_log_client_register(sdev, client, udi_log_event, NULL, 0, 0);
 			client->log_enabled = 1;
-			if (int_param > 1)
+			if (int_param > 1) {
 				client->log_allow_driver_signals = 1;
+			}
 		} else {
 			slsi_log_client_unregister(sdev, client);
 			client->log_enabled = 0;
@@ -432,10 +446,9 @@ static int slsi_cdev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 		break;
 
-	case UNIFI_SET_UDI_LOG_MASK:
-	{
+	case UNIFI_SET_UDI_LOG_MASK: {
 		struct unifiio_filter_t filter;
-		int                     i;
+		int i;
 
 		/* to minimise load on data path, list is converted here to array indexed by signal number */
 		if (copy_from_user(&filter, (void *)arg, sizeof(filter))) {
@@ -445,8 +458,8 @@ static int slsi_cdev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		if (filter.signal_ids_n) {
 			char *signal_filter_index;
-			int  max;
-			int  min;
+			int max;
+			int min;
 
 			max = filter.signal_ids[0];
 			min = filter.signal_ids[0];
@@ -457,32 +470,31 @@ static int slsi_cdev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 					client->ma_unitdata_filter_config |= filter.signal_ids[i];
 					continue;
 				}
-				if (filter.signal_ids[i] > max)
+				if (filter.signal_ids[i] > max) {
 					max = filter.signal_ids[i];
-				else if (filter.signal_ids[i] < min)
+				} else if (filter.signal_ids[i] < min) {
 					min = filter.signal_ids[i];
+				}
 			}
 			/* and create array only big enough to index the range of signal id specified */
 			signal_filter_index = kmm_malloc(max - min + 1);
 			if (signal_filter_index) {
 				memset(signal_filter_index, 0, max - min + 1);
 				for (i = 0; i < filter.signal_ids_n; i++) {
-					if (filter.signal_ids[i] & UDI_MA_UNITDATA_FILTER_ALLOW_MASK)
+					if (filter.signal_ids[i] & UDI_MA_UNITDATA_FILTER_ALLOW_MASK) {
 						continue;
+					}
 					signal_filter_index[filter.signal_ids[i] - min] = 1;
 				}
 				slsi_log_client_unregister(sdev, client);
-				slsi_log_client_register(sdev, client,
-							 filter.log_listed_flag ? send_signal_to_inverse_log_filter :
-							 send_signal_to_log_filter, signal_filter_index, min, max);
+				slsi_log_client_register(sdev, client, filter.log_listed_flag ? send_signal_to_inverse_log_filter : send_signal_to_log_filter, signal_filter_index, min, max);
 			} else {
 				r = -ENOMEM;
 			}
 		}
 		break;
 	}
-	case UNIFI_SET_MIB:
-	{
+	case UNIFI_SET_MIB: {
 		struct netif *dev = NULL;
 
 		if (sdev->device_state != SLSI_DEVICE_STATE_STARTED) {
@@ -537,8 +549,7 @@ static int slsi_cdev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		kmm_free(mib_data);
 		break;
 	}
-	case UNIFI_GET_MIB:
-	{
+	case UNIFI_GET_MIB: {
 		struct netif *dev = NULL;
 
 		if (sdev->device_state != SLSI_DEVICE_STATE_STARTED) {
@@ -632,10 +643,9 @@ static int slsi_cdev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		//r = slsi_src_sink_cdev_ioctl_cfg(sdev, arg);
 		break;
 
-	case UNIFI_SOFTMAC_CFG:
-	{
+	case UNIFI_SOFTMAC_CFG: {
 		u32 softmac_cmd;
-		u8  cmd_param_size;
+		u8 cmd_param_size;
 
 		SLSI_ERR(sdev, "UNIFI_SOFTMAC_CFG\n");
 
@@ -646,7 +656,7 @@ static int slsi_cdev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		SLSI_DBG4_NODEV(SLSI_UDI, "softmac_cmd -> %u\n", softmac_cmd);
 
-		arg += sizeof(softmac_cmd); /* Advance past the command bit */
+		arg += sizeof(softmac_cmd);	/* Advance past the command bit */
 		if (copy_from_user((void *)&cmd_param_size, (void *)(arg + 4), 1)) {
 			SLSI_ERR(sdev, "Failed to get the command size\n");
 			r = -EFAULT;
@@ -654,10 +664,11 @@ static int slsi_cdev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		SLSI_DBG4_NODEV(SLSI_UDI, "cmd_param_size -> %u\n", cmd_param_size);
 
-		if (cmd_param_size)
+		if (cmd_param_size) {
 			client->ma_unitdata_filter_config = UDI_MA_UNITDATA_FILTER_ALLOW_EAPOL_ID;
-		else
+		} else {
 			client->ma_unitdata_filter_config = 0;
+		}
 		break;
 	}
 	default:
@@ -673,14 +684,14 @@ static int slsi_cdev_poll(FAR struct file *filp, struct pollfd *fds, bool setup)
 {
 	struct slsi_cdev_client *client = (void *)filp->f_priv;
 
-	SLSI_DBG4_NODEV(SLSI_UDI, "Poll(%d), events: %x, revents: %x, setup: %d\n",
-			mbuf_queue_len(&client->log_list), fds->events, fds->revents, setup);
+	SLSI_DBG4_NODEV(SLSI_UDI, "Poll(%d), events: %x, revents: %x, setup: %d\n", mbuf_queue_len(&client->log_list), fds->events, fds->revents, setup);
 
 	if (setup == true) {
 		if (mbuf_queue_len(&client->log_list)) {
 			fds->revents |= (fds->events & (POLLIN | POLLOUT));
-			if (fds->revents != 0)
+			if (fds->revents != 0) {
 				sem_post(fds->sem);
+			}
 		} else {
 			client->fds = fds;
 		}
@@ -699,10 +710,11 @@ static int slsi_cdev_poll(FAR struct file *filp, struct pollfd *fds, bool setup)
 static int send_signal_to_log_filter(struct slsi_log_client *log_client, struct max_buff *mbuf, int dir)
 {
 	int ret = 0;
-	u16 signal_id =  fapi_get_sigid(mbuf);
+	u16 signal_id = fapi_get_sigid(mbuf);
 
-	if (signal_id > log_client->max_signal_id || signal_id < log_client->min_signal_id || !log_client->signal_filter[signal_id - log_client->min_signal_id])
+	if (signal_id > log_client->max_signal_id || signal_id < log_client->min_signal_id || !log_client->signal_filter[signal_id - log_client->min_signal_id]) {
 		ret = udi_log_event(log_client, mbuf, dir);
+	}
 
 	return ret;
 }
@@ -710,48 +722,48 @@ static int send_signal_to_log_filter(struct slsi_log_client *log_client, struct 
 static int send_signal_to_inverse_log_filter(struct slsi_log_client *log_client, struct max_buff *mbuf, int dir)
 {
 	int ret = 0;
-	u16 signal_id =  fapi_get_sigid(mbuf);
+	u16 signal_id = fapi_get_sigid(mbuf);
 
-	if (signal_id <= log_client->max_signal_id && signal_id >= log_client->min_signal_id && log_client->signal_filter[signal_id - log_client->min_signal_id])
+	if (signal_id <= log_client->max_signal_id && signal_id >= log_client->min_signal_id && log_client->signal_filter[signal_id - log_client->min_signal_id]) {
 		ret = udi_log_event(log_client, mbuf, dir);
+	}
 
 	return ret;
 }
 
 static bool is_allowed_ip_frame(struct ethhdr *ehdr, u16 signal_id)
 {
-	u8  *ip_frame = ((u8 *)ehdr) + sizeof(struct ethhdr);
-	u8  *ip_data;
+	u8 *ip_frame = ((u8 *) ehdr) + sizeof(struct ethhdr);
+	u8 *ip_data;
 	u16 ip_data_offset = 20;
 	/*u8  version         = ip_frame[0] >> 4; */
-	u8  hlen           = ip_frame[0] & 0x0F;
+	u8 hlen = ip_frame[0] & 0x0F;
 	/*u8  tos             = ip_frame[1]; */
 	/*u16 len             = ip_frame[2] << 8 | frame[3]; */
 	/*u16 id              = ip_frame[4] << 8 | frame[5]; */
 	/*u16 flags_foff      = ip_frame[6] << 8 | frame[7]; */
 	/*u8  ttl             = ip_frame[8]; */
-	u8 ip_proto           = ip_frame[9];
+	u8 ip_proto = ip_frame[9];
 
 	/*u16 cksum           = ip_frame[10] << 8 | frame[11]; */
-	/*u8 *src_ip            = &ip_frame[12];*/
-	/*u8 *dest_ip           = &ip_frame[16];*/
+	/*u8 *src_ip            = &ip_frame[12]; */
+	/*u8 *dest_ip           = &ip_frame[16]; */
 
 	SLSI_UNUSED_PARAMETER(signal_id);
 
-	if (hlen > 5)
+	if (hlen > 5) {
 		ip_data_offset += (hlen - 5) * 4;
+	}
 
 	ip_data = ip_frame + ip_data_offset;
 
 	switch (ip_proto) {
-	case SLSI_IP_TYPE_UDP:
-	{
+	case SLSI_IP_TYPE_UDP: {
 		u16 srcport = ip_data[0] << 8 | ip_data[1];
 		u16 dstport = ip_data[2] << 8 | ip_data[3];
 
 		SLSI_DBG4_NODEV(SLSI_UDI, "FILTER(0x%.4X) Key -> Proto(0x%.4X) -> IpProto(%d) ->UDP(s:%d, d:%d)\n", signal_id, ntohs(ehdr->h_proto), ip_proto, srcport, dstport);
-		if (srcport == SLSI_DHCP_CLIENT_PORT || srcport == SLSI_DHCP_SERVER_PORT ||
-		    dstport == SLSI_DHCP_CLIENT_PORT || dstport == SLSI_DHCP_SERVER_PORT) {
+		if (srcport == SLSI_DHCP_CLIENT_PORT || srcport == SLSI_DHCP_SERVER_PORT || dstport == SLSI_DHCP_CLIENT_PORT || dstport == SLSI_DHCP_SERVER_PORT) {
 			SLSI_DBG4_NODEV(SLSI_UDI, "FILTER(0x%.4X) Key -> Proto(0x%.4X) -> IpProto(%d) ->UDP(s:%d, d:%d) ALLOW\n", signal_id, ntohs(ehdr->h_proto), ip_proto, srcport, dstport);
 			return true;
 		}
@@ -766,38 +778,41 @@ static bool is_allowed_ip_frame(struct ethhdr *ehdr, u16 signal_id)
 static int udi_log_event(struct slsi_log_client *log_client, struct max_buff *mbuf, int dir)
 {
 	struct slsi_cdev_client *client = log_client->log_client_ctx;
-	struct udi_msg_t        msg;
-	u16                     signal_id = fapi_get_sigid(mbuf);
-	struct timespec         ts;
-	struct max_buff         *mbuf_new;
+	struct udi_msg_t msg;
+	u16 signal_id = fapi_get_sigid(mbuf);
+	struct timespec ts;
+	struct max_buff *mbuf_new;
 
-	if (WARN_ON(client == NULL))
+	if (WARN_ON(client == NULL)) {
 		return -EINVAL;
-	if (WARN_ON(mbuf == NULL))
+	}
+	if (WARN_ON(mbuf == NULL)) {
 		return -EINVAL;
-	if (WARN_ON(mbuf->len == 0))
+	}
+	if (WARN_ON(mbuf->len == 0)) {
 		return -EINVAL;
+	}
 
 	/* Special Filtering of MaPacket frames */
-	if (slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_MASK) &&
-	    (signal_id == MA_UNITDATA_REQ || signal_id == MA_UNITDATA_IND)) {
+	if (slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_MASK) && (signal_id == MA_UNITDATA_REQ || signal_id == MA_UNITDATA_IND)) {
 		u16 frametype;
 
 		SLSI_DBG4_NODEV(SLSI_UDI, "FILTER(0x%.4X)\n", signal_id);
-		if (signal_id == MA_UNITDATA_REQ)
+		if (signal_id == MA_UNITDATA_REQ) {
 			frametype = fapi_get_u16(mbuf, u.ma_unitdata_req.data_unit_descriptor);
-		else
+		} else {
 			frametype = fapi_get_u16(mbuf, u.ma_unitdata_ind.data_unit_descriptor);
+		}
 		SLSI_DBG4_NODEV(SLSI_UDI, "FILTER(0x%.4X) frametype:%d\n", signal_id, frametype);
 
 		if (frametype == FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME) {
 			struct ethhdr *ehdr = (struct ethhdr *)fapi_get_data(mbuf);
 
-			if (signal_id == MA_UNITDATA_REQ)
+			if (signal_id == MA_UNITDATA_REQ) {
 				ehdr = (struct ethhdr *)fapi_get_data(mbuf);
+			}
 
-			if (slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_EAPOL_ID) ||
-			    slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_KEY_ID)) {
+			if (slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_EAPOL_ID) || slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_KEY_ID)) {
 				SLSI_DBG4_NODEV(SLSI_UDI, "FILTER(0x%.4X) Eap -> Proto(0x%.4X)\n", signal_id, ntohs(ehdr->h_proto));
 				switch (ntohs(ehdr->h_proto)) {
 				case ETH_P_PAE:
@@ -816,8 +831,9 @@ static int udi_log_event(struct slsi_log_client *log_client, struct max_buff *mb
 					SLSI_DBG4_NODEV(SLSI_UDI, "FILTER(0x%.4X) Key -> Proto(0x%.4X) -> Arp ALLOW\n", signal_id, ntohs(ehdr->h_proto));
 					goto allow_frame;
 				case ETH_P_IP:
-					if (is_allowed_ip_frame(ehdr, signal_id))
+					if (is_allowed_ip_frame(ehdr, signal_id)) {
 						goto allow_frame;
+					}
 				default:
 					break;
 				}
@@ -825,8 +841,9 @@ static int udi_log_event(struct slsi_log_client *log_client, struct max_buff *mb
 		}
 		if (frametype == FAPI_DATAUNITDESCRIPTOR_IEEE802_11_FRAME)
 			if (slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_MGT_ID))
-				if (slsi_80211_is_mgmt(fapi_get_mgmt(mbuf)->frame_control))
+				if (slsi_80211_is_mgmt(fapi_get_mgmt(mbuf)->frame_control)) {
 					goto allow_frame;
+				}
 
 		SLSI_DBG4_NODEV(SLSI_UDI, "FILTER(0x%.4X) DROP\n", signal_id);
 
@@ -835,8 +852,9 @@ static int udi_log_event(struct slsi_log_client *log_client, struct max_buff *mb
 			sem_post(&client->log_mutex);
 			return -ERESTARTSYS;
 		}
-		if (client->log_drop_data_packets)
+		if (client->log_drop_data_packets) {
 			client->log_dropped_data++;
+		}
 		sem_post(&client->log_mutex);
 		return -ECANCELED;
 	}
@@ -845,20 +863,22 @@ static int udi_log_event(struct slsi_log_client *log_client, struct max_buff *mb
 	 * Only log ma_packet_cfm if the tx status != Success
 	 */
 	if (signal_id == MA_UNITDATA_CFM && slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_CFM_ERROR_ID))
-		if (fapi_get_u16(mbuf, u.ma_unitdata_cfm.transmission_status) == FAPI_TRANSMISSIONSTATUS_SUCCESSFUL)
+		if (fapi_get_u16(mbuf, u.ma_unitdata_cfm.transmission_status) == FAPI_TRANSMISSIONSTATUS_SUCCESSFUL) {
 			return -ECANCELED;
+		}
 
 	/* Exception for driver configuration frames.
 	 * these frames must be sent irrespective of number of frames
 	 * in queue.
 	 */
-	if (dir == UDI_CONFIG_IND)
+	if (dir == UDI_CONFIG_IND) {
 		goto allow_config_frame;
+	}
 
 allow_frame:
 	if (sem_wait(&client->log_mutex)) {
 		SLSI_WARN_NODEV("Failed to get udi sem\n");
-		sem_post(&client->log_mutex); // release before returning.
+		sem_post(&client->log_mutex);	// release before returning.
 		return -ERESTARTSYS;
 	}
 
@@ -901,18 +921,16 @@ allow_frame:
 	} else if (!client->log_drop_data_packets && mbuf_queue_len(&client->log_list) >= UDI_MAX_QUEUED_DATA_FRAMES && !slsi_cdev_unitdata_filter_allow(client, UDI_MA_UNITDATA_FILTER_ALLOW_MASK)) {
 		SLSI_WARN_NODEV("Start Dropping UDI Basic Data Frames\n");
 		client->log_drop_data_packets = true;
-		client->ma_unitdata_filter_config = UDI_MA_UNITDATA_FILTER_ALLOW_MGT_ID |
-						    UDI_MA_UNITDATA_FILTER_ALLOW_KEY_ID |
-						    UDI_MA_UNITDATA_FILTER_ALLOW_CFM_ERROR_ID |
-						    UDI_MA_UNITDATA_FILTER_ALLOW_EAPOL_ID;
+		client->ma_unitdata_filter_config = UDI_MA_UNITDATA_FILTER_ALLOW_MGT_ID | UDI_MA_UNITDATA_FILTER_ALLOW_KEY_ID | UDI_MA_UNITDATA_FILTER_ALLOW_CFM_ERROR_ID | UDI_MA_UNITDATA_FILTER_ALLOW_EAPOL_ID;
 	}
 	sem_post(&client->log_mutex);
 
 allow_config_frame:
 
 	mbuf_new = alloc_mbuf(mbuf->len + sizeof(msg));
-	if (mbuf_new == NULL)
+	if (mbuf_new == NULL) {
 		return -ENOMEM;
+	}
 
 	msg.length = sizeof(msg) + mbuf->len;
 	clock_gettime(CLOCK_REALTIME, &ts);
@@ -928,8 +946,9 @@ allow_config_frame:
 
 	if (client->fds != NULL) {
 		client->fds->revents |= (client->fds->events & (POLLIN | POLLOUT));
-		if (client->fds->revents != 0)
+		if (client->fds->revents != 0) {
 			sem_post(client->fds->sem);
+		}
 	}
 
 	/* Wake any waiting user process */
@@ -954,8 +973,9 @@ static int slsi_get_minor(void)
 	int minor;
 
 	for (minor = 0; minor < SLSI_UDI_MINOR_NODES; minor++)
-		if (uf_cdevs[minor] == NULL)
+		if (uf_cdevs[minor] == NULL) {
 			return minor;
+		}
 	return -1;
 }
 
@@ -971,8 +991,9 @@ static int slsi_cdev_create(struct slsi_dev *sdev, int minor)
 	}
 
 	pdev = kmm_malloc(sizeof(*pdev));
-	if (pdev == NULL)
+	if (pdev == NULL) {
 		return -ENOMEM;
+	}
 	memset(pdev, 0, sizeof(*pdev));
 
 	pdev->minor = minor;
@@ -988,8 +1009,9 @@ static void slsi_cdev_destroy(struct slsi_dev *sdev, int minor)
 {
 	struct slsi_cdev *pdev = (struct slsi_cdev *)uf_cdevs[minor];
 
-	if (!pdev)
+	if (!pdev) {
 		return;
+	}
 
 	SLSI_DBG1(sdev, SLSI_UDI, "\n");
 	while (slsi_check_cdev_refs()) {
@@ -1028,16 +1050,16 @@ int slsi_udi_init(void)
 	memset(uf_cdevs, 0, sizeof(uf_cdevs));
 
 	SLSI_DBG1_NODEV(SLSI_UDI, "Registering /dev/%s\n", UDI_CHAR_DEVICE_NAME0);
-	ret = register_driver("/dev/"UDI_CHAR_DEVICE_NAME0, &slsi_cdev_fops, 0666, NULL);
+	ret = register_driver("/dev/" UDI_CHAR_DEVICE_NAME0, &slsi_cdev_fops, 0666, NULL);
 	if (ret) {
 		SLSI_ERR_NODEV("Failed to register /dev/%s (ret: %d)\n", UDI_CHAR_DEVICE_NAME0, ret);
 		return ret;
 	}
 
 	SLSI_DBG1_NODEV(SLSI_UDI, "Registering /dev/%s\n", UDI_CHAR_DEVICE_NAME1);
-	ret = register_driver("/dev/"UDI_CHAR_DEVICE_NAME1, &slsi_cdev_fops, 0666, NULL);
+	ret = register_driver("/dev/" UDI_CHAR_DEVICE_NAME1, &slsi_cdev_fops, 0666, NULL);
 	if (ret) {
-		unregister_driver("/dev/"UDI_CHAR_DEVICE_NAME0);
+		unregister_driver("/dev/" UDI_CHAR_DEVICE_NAME0);
 		SLSI_ERR_NODEV("Failed to register /dev/%s (ret: %d)\n", UDI_CHAR_DEVICE_NAME1, ret);
 		return ret;
 	}
@@ -1049,14 +1071,15 @@ int slsi_udi_init(void)
 
 int slsi_udi_deinit(void)
 {
-	if (!udi_initialised)
+	if (!udi_initialised) {
 		return -1;
+	}
 
 	SLSI_DBG1_NODEV(SLSI_UDI, "Unregiser /dev/%s\n", UDI_CHAR_DEVICE_NAME0);
-	unregister_driver("/dev/"UDI_CHAR_DEVICE_NAME0);
+	unregister_driver("/dev/" UDI_CHAR_DEVICE_NAME0);
 
 	SLSI_DBG1_NODEV(SLSI_UDI, "Unregiser /dev/%s\n", UDI_CHAR_DEVICE_NAME1);
-	unregister_driver("/dev/"UDI_CHAR_DEVICE_NAME1);
+	unregister_driver("/dev/" UDI_CHAR_DEVICE_NAME1);
 
 	udi_initialised = 0;
 	return 0;

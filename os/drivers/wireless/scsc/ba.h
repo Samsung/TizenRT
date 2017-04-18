@@ -9,12 +9,9 @@
 
 #include "dev.h"
 
-void slsi_handle_blockack(struct netif *dev, struct slsi_peer *peer,
-			  u16 vif, u8 *peer_qsta_address, u16 parameter_set, u16 sequence_number,
-			  u16 reason_code, u16 direction);
+void slsi_handle_blockack(struct netif *dev, struct slsi_peer *peer, u16 vif, u8 *peer_qsta_address, u16 parameter_set, u16 sequence_number, u16 reason_code, u16 direction);
 
-int slsi_ba_process_frame(struct netif *dev, struct slsi_peer *peer,
-			  struct max_buff *mbuf, u16 sequence_number, u16 tid);
+int slsi_ba_process_frame(struct netif *dev, struct slsi_peer *peer, struct max_buff *mbuf, u16 sequence_number, u16 tid);
 
 void slsi_ba_process_complete(struct netif *dev);
 

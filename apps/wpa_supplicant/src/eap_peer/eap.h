@@ -139,14 +139,14 @@ struct eapol_callbacks {
 	 * get_config - Get pointer to the current network configuration
 	 * @ctx: eapol_ctx from eap_peer_sm_init() call
 	 */
-	struct eap_peer_config * (*get_config)(void *ctx);
+	struct eap_peer_config *(*get_config)(void *ctx);
 
 	/**
 	 * get_bool - Get a boolean EAPOL state variable
 	 * @variable: EAPOL boolean variable to get
 	 * Returns: Value of the EAPOL variable
 	 */
-	Boolean (*get_bool)(void *ctx, enum eapol_bool_var variable);
+	Boolean(*get_bool)(void *ctx, enum eapol_bool_var variable);
 
 	/**
 	 * set_bool - Set a boolean EAPOL state variable
@@ -154,8 +154,7 @@ struct eapol_callbacks {
 	 * @variable: EAPOL boolean variable to set
 	 * @value: Value for the EAPOL variable
 	 */
-	void (*set_bool)(void *ctx, enum eapol_bool_var variable,
-			 Boolean value);
+	void (*set_bool)(void *ctx, enum eapol_bool_var variable, Boolean value);
 
 	/**
 	 * get_int - Get an integer EAPOL state variable
@@ -171,8 +170,7 @@ struct eapol_callbacks {
 	 * @variable: EAPOL integer variable to set
 	 * @value: Value for the EAPOL variable
 	 */
-	void (*set_int)(void *ctx, enum eapol_int_var variable,
-			unsigned int value);
+	void (*set_int)(void *ctx, enum eapol_int_var variable, unsigned int value);
 
 	/**
 	 * get_eapReqData - Get EAP-Request data
@@ -181,7 +179,7 @@ struct eapol_callbacks {
 	 * Returns: Reference to eapReqData (EAP state machine will not free
 	 * this) or %NULL if eapReqData not available.
 	 */
-	struct wpabuf * (*get_eapReqData)(void *ctx);
+	struct wpabuf *(*get_eapReqData)(void *ctx);
 
 	/**
 	 * set_config_blob - Set named configuration blob
@@ -199,8 +197,7 @@ struct eapol_callbacks {
 	 * @name: Name of the blob
 	 * Returns: Pointer to blob data or %NULL if not found
 	 */
-	const struct wpa_config_blob * (*get_config_blob)(void *ctx,
-							  const char *name);
+	const struct wpa_config_blob *(*get_config_blob)(void *ctx, const char *name);
 
 	/**
 	 * notify_pending - Notify that a pending request can be retried
@@ -220,8 +217,7 @@ struct eapol_callbacks {
 	 * @field: Field indicator (e.g., WPA_CTRL_REQ_EAP_IDENTITY)
 	 * @txt: User readable text describing the required parameter
 	 */
-	void (*eap_param_needed)(void *ctx, enum wpa_ctrl_req_type field,
-				 const char *txt);
+	void (*eap_param_needed)(void *ctx, enum wpa_ctrl_req_type field, const char *txt);
 
 	/**
 	 * notify_cert - Notification of a peer certificate
@@ -233,9 +229,7 @@ struct eapol_callbacks {
 	 * @cert_hash: SHA-256 hash of the certificate
 	 * @cert: Peer certificate
 	 */
-	void (*notify_cert)(void *ctx, int depth, const char *subject,
-			    const char *altsubject[], int num_altsubject,
-			    const char *cert_hash, const struct wpabuf *cert);
+	void (*notify_cert)(void *ctx, int depth, const char *subject, const char *altsubject[], int num_altsubject, const char *cert_hash, const struct wpabuf *cert);
 
 	/**
 	 * notify_status - Notification of the current EAP state
@@ -243,8 +237,7 @@ struct eapol_callbacks {
 	 * @status: Step in the process of EAP authentication
 	 * @parameter: Step-specific parameter, e.g., EAP method name
 	 */
-	void (*notify_status)(void *ctx, const char *status,
-			      const char *parameter);
+	void (*notify_status)(void *ctx, const char *status, const char *parameter);
 
 #ifdef CONFIG_EAP_PROXY
 	/**
@@ -252,7 +245,7 @@ struct eapol_callbacks {
 	 * @ctx: eapol_ctx from eap_peer_sm_init() call
 	 */
 	void (*eap_proxy_cb)(void *ctx);
-#endif /* CONFIG_EAP_PROXY */
+#endif							/* CONFIG_EAP_PROXY */
 
 	/**
 	 * set_anon_id - Set or add anonymous identity
@@ -306,16 +299,13 @@ struct eap_config {
 	int cert_in_cb;
 };
 
-struct eap_sm * eap_peer_sm_init(void *eapol_ctx,
-				 const struct eapol_callbacks *eapol_cb,
-				 void *msg_ctx, struct eap_config *conf);
+struct eap_sm *eap_peer_sm_init(void *eapol_ctx, const struct eapol_callbacks *eapol_cb, void *msg_ctx, struct eap_config *conf);
 void eap_peer_sm_deinit(struct eap_sm *sm);
 int eap_peer_sm_step(struct eap_sm *sm);
 void eap_sm_abort(struct eap_sm *sm);
-int eap_sm_get_status(struct eap_sm *sm, char *buf, size_t buflen,
-		      int verbose);
-const char * eap_sm_get_method_name(struct eap_sm *sm);
-struct wpabuf * eap_sm_buildIdentity(struct eap_sm *sm, int id, int encrypted);
+int eap_sm_get_status(struct eap_sm *sm, char *buf, size_t buflen, int verbose);
+const char *eap_sm_get_method_name(struct eap_sm *sm);
+struct wpabuf *eap_sm_buildIdentity(struct eap_sm *sm, int id, int encrypted);
 void eap_sm_request_identity(struct eap_sm *sm);
 void eap_sm_request_password(struct eap_sm *sm);
 void eap_sm_request_new_password(struct eap_sm *sm);
@@ -325,8 +315,7 @@ void eap_sm_request_passphrase(struct eap_sm *sm);
 void eap_sm_request_sim(struct eap_sm *sm, const char *req);
 void eap_sm_notify_ctrl_attached(struct eap_sm *sm);
 u32 eap_get_phase2_type(const char *name, int *vendor);
-struct eap_method_type * eap_get_phase2_types(struct eap_peer_config *config,
-					      size_t *count);
+struct eap_method_type *eap_get_phase2_types(struct eap_peer_config *config, size_t *count);
 void eap_set_fast_reauth(struct eap_sm *sm, int enabled);
 void eap_set_workaround(struct eap_sm *sm, unsigned int workaround);
 void eap_set_force_disabled(struct eap_sm *sm, int disabled);
@@ -334,9 +323,9 @@ void eap_set_external_sim(struct eap_sm *sm, int external_sim);
 int eap_key_available(struct eap_sm *sm);
 void eap_notify_success(struct eap_sm *sm);
 void eap_notify_lower_layer_success(struct eap_sm *sm);
-const u8 * eap_get_eapSessionId(struct eap_sm *sm, size_t *len);
-const u8 * eap_get_eapKeyData(struct eap_sm *sm, size_t *len);
-struct wpabuf * eap_get_eapRespData(struct eap_sm *sm);
+const u8 *eap_get_eapSessionId(struct eap_sm *sm, size_t *len);
+const u8 *eap_get_eapKeyData(struct eap_sm *sm, size_t *len);
+struct wpabuf *eap_get_eapRespData(struct eap_sm *sm);
 void eap_register_scard_ctx(struct eap_sm *sm, void *ctx);
 void eap_invalidate_cached_session(struct eap_sm *sm);
 
@@ -349,6 +338,6 @@ void eap_set_anon_id(struct eap_sm *sm, const u8 *id, size_t len);
 int eap_peer_was_failure_expected(struct eap_sm *sm);
 void eap_peer_erp_free_keys(struct eap_sm *sm);
 
-#endif /* IEEE8021X_EAPOL */
+#endif							/* IEEE8021X_EAPOL */
 
-#endif /* EAP_H */
+#endif							/* EAP_H */

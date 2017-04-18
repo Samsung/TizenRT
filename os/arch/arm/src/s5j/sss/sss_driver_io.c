@@ -41,7 +41,8 @@ int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte
 	FAR struct inode *pnode = NULL;
 	char *devname = sss_get_flash_device_name();
 	unsigned char *read_buf = NULL;
-	unsigned int start_sector, end_sector;
+	unsigned int start_sector;
+	unsigned int end_sector;
 	unsigned int nsector;
 	unsigned int end_offset = start_offset + byte_size;
 

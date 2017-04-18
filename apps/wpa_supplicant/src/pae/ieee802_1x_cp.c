@@ -41,12 +41,12 @@ struct ieee802_1x_cp_sm {
 	u8 *authorization_data;
 
 	/* KaY -> CP */
-	Boolean chgd_server; /* clear by CP */
+	Boolean chgd_server;		/* clear by CP */
 	Boolean elected_self;
 	u8 *authorization_data1;
 	enum confidentiality_offset cipher_offset;
 	u8 *cipher_suite;
-	Boolean new_sak; /* clear by CP */
+	Boolean new_sak;			/* clear by CP */
 	struct ieee802_1x_mka_ki distributed_ki;
 	u8 distributed_an;
 	Boolean using_receive_sas;
@@ -76,7 +76,7 @@ struct ieee802_1x_cp_sm {
 	Boolean controlled_port_enabled;
 
 	/* SecY -> CP */
-	Boolean port_enabled; /* SecY->CP */
+	Boolean port_enabled;		/* SecY->CP */
 
 	/* private */
 	u32 transmit_when;
@@ -88,25 +88,18 @@ struct ieee802_1x_cp_sm {
 	struct ieee802_1x_kay *kay;
 };
 
-static void ieee802_1x_cp_retire_when_timeout(void *eloop_ctx,
-					      void *timeout_ctx);
-static void ieee802_1x_cp_transmit_when_timeout(void *eloop_ctx,
-						void *timeout_ctx);
-
+static void ieee802_1x_cp_retire_when_timeout(void *eloop_ctx, void *timeout_ctx);
+static void ieee802_1x_cp_transmit_when_timeout(void *eloop_ctx, void *timeout_ctx);
 
 static int changed_cipher(struct ieee802_1x_cp_sm *sm)
 {
-	return sm->confidentiality_offset != sm->cipher_offset ||
-		os_memcmp(sm->current_cipher_suite, sm->cipher_suite,
-			  CS_ID_LEN) != 0;
+	return sm->confidentiality_offset != sm->cipher_offset || os_memcmp(sm->current_cipher_suite, sm->cipher_suite, CS_ID_LEN) != 0;
 }
-
 
 static int changed_connect(struct ieee802_1x_cp_sm *sm)
 {
 	return sm->connect != SECURE || sm->chgd_server || changed_cipher(sm);
 }
-
 
 SM_STATE(CP, INIT)
 {
@@ -131,7 +124,6 @@ SM_STATE(CP, INIT)
 	sm->chgd_server = FALSE;
 }
 
-
 SM_STATE(CP, CHANGE)
 {
 	SM_ENTRY(CP, CHANGE);
@@ -140,12 +132,13 @@ SM_STATE(CP, CHANGE)
 	sm->controlled_port_enabled = FALSE;
 	secy_cp_control_enable_port(sm->kay, sm->controlled_port_enabled);
 
-	if (sm->lki)
+	if (sm->lki) {
 		ieee802_1x_kay_delete_sas(sm->kay, sm->lki);
-	if (sm->oki)
+	}
+	if (sm->oki) {
 		ieee802_1x_kay_delete_sas(sm->kay, sm->oki);
+	}
 }
-
 
 SM_STATE(CP, ALLOWED)
 {
@@ -164,7 +157,6 @@ SM_STATE(CP, ALLOWED)
 	secy_cp_control_replay(sm->kay, sm->replay_protect, sm->replay_window);
 }
 
-
 SM_STATE(CP, AUTHENTICATED)
 {
 	SM_ENTRY(CP, AUTHENTICATED);
@@ -182,7 +174,6 @@ SM_STATE(CP, AUTHENTICATED)
 	secy_cp_control_replay(sm->kay, sm->replay_protect, sm->replay_window);
 }
 
-
 SM_STATE(CP, SECURED)
 {
 	struct ieee802_1x_cp_conf conf;
@@ -198,20 +189,17 @@ SM_STATE(CP, SECURED)
 
 	/* NOTE: now no other than default cipher suiter(AES-GCM-128) */
 	os_memcpy(sm->current_cipher_suite, sm->cipher_suite, CS_ID_LEN);
-	secy_cp_control_current_cipher_suite(sm->kay, sm->current_cipher_suite,
-					     CS_ID_LEN);
+	secy_cp_control_current_cipher_suite(sm->kay, sm->current_cipher_suite, CS_ID_LEN);
 
 	sm->confidentiality_offset = sm->cipher_offset;
 
 	sm->port_valid = TRUE;
 
-	secy_cp_control_confidentiality_offset(sm->kay,
-					       sm->confidentiality_offset);
+	secy_cp_control_confidentiality_offset(sm->kay, sm->confidentiality_offset);
 	secy_cp_control_protect_frames(sm->kay, sm->protect_frames);
 	secy_cp_control_validate_frames(sm->kay, sm->validate_frames);
 	secy_cp_control_replay(sm->kay, sm->replay_protect, sm->replay_window);
 }
-
 
 SM_STATE(CP, RECEIVE)
 {
@@ -222,8 +210,7 @@ SM_STATE(CP, RECEIVE)
 	sm->oan = sm->lan;
 	sm->otx = sm->ltx;
 	sm->orx = sm->lrx;
-	ieee802_1x_kay_set_old_sa_attr(sm->kay, sm->oki, sm->oan,
-				       sm->otx, sm->orx);
+	ieee802_1x_kay_set_old_sa_attr(sm->kay, sm->oki, sm->oan, sm->otx, sm->orx);
 
 	sm->lki = os_malloc(sizeof(*sm->lki));
 	if (!sm->lki) {
@@ -234,26 +221,22 @@ SM_STATE(CP, RECEIVE)
 	sm->lan = sm->distributed_an;
 	sm->ltx = FALSE;
 	sm->lrx = FALSE;
-	ieee802_1x_kay_set_latest_sa_attr(sm->kay, sm->lki, sm->lan,
-					  sm->ltx, sm->lrx);
+	ieee802_1x_kay_set_latest_sa_attr(sm->kay, sm->lki, sm->lan, sm->ltx, sm->lrx);
 	ieee802_1x_kay_create_sas(sm->kay, sm->lki);
 	ieee802_1x_kay_enable_rx_sas(sm->kay, sm->lki);
 	sm->new_sak = FALSE;
 	sm->all_receiving = FALSE;
 }
 
-
 SM_STATE(CP, RECEIVING)
 {
 	SM_ENTRY(CP, RECEIVING);
 
 	sm->lrx = TRUE;
-	ieee802_1x_kay_set_latest_sa_attr(sm->kay, sm->lki, sm->lan,
-					  sm->ltx, sm->lrx);
+	ieee802_1x_kay_set_latest_sa_attr(sm->kay, sm->lki, sm->lan, sm->ltx, sm->lrx);
 	sm->transmit_when = sm->transmit_delay;
 	eloop_cancel_timeout(ieee802_1x_cp_transmit_when_timeout, sm, NULL);
-	eloop_register_timeout(sm->transmit_when / 1000, 0,
-			       ieee802_1x_cp_transmit_when_timeout, sm, NULL);
+	eloop_register_timeout(sm->transmit_when / 1000, 0, ieee802_1x_cp_transmit_when_timeout, sm, NULL);
 	/* the electedSelf have been set before CP entering to RECEIVING
 	 * but the CP will transmit from RECEIVING to READY under
 	 * the !electedSelf when KaY is not key server */
@@ -262,14 +245,12 @@ SM_STATE(CP, RECEIVING)
 	sm->server_transmitting = FALSE;
 }
 
-
 SM_STATE(CP, READY)
 {
 	SM_ENTRY(CP, READY);
 
 	ieee802_1x_kay_enable_new_info(sm->kay);
 }
-
 
 SM_STATE(CP, TRANSMIT)
 {
@@ -278,44 +259,36 @@ SM_STATE(CP, TRANSMIT)
 	sm->controlled_port_enabled = TRUE;
 	secy_cp_control_enable_port(sm->kay, sm->controlled_port_enabled);
 	sm->ltx = TRUE;
-	ieee802_1x_kay_set_latest_sa_attr(sm->kay, sm->lki, sm->lan,
-					  sm->ltx, sm->lrx);
-	ieee802_1x_kay_enable_tx_sas(sm->kay,  sm->lki);
+	ieee802_1x_kay_set_latest_sa_attr(sm->kay, sm->lki, sm->lan, sm->ltx, sm->lrx);
+	ieee802_1x_kay_enable_tx_sas(sm->kay, sm->lki);
 	sm->all_receiving = FALSE;
 	sm->server_transmitting = FALSE;
 }
-
 
 SM_STATE(CP, TRANSMITTING)
 {
 	SM_ENTRY(CP, TRANSMITTING);
 	sm->retire_when = sm->orx ? sm->retire_delay : 0;
 	sm->otx = FALSE;
-	ieee802_1x_kay_set_old_sa_attr(sm->kay, sm->oki, sm->oan,
-				       sm->otx, sm->orx);
+	ieee802_1x_kay_set_old_sa_attr(sm->kay, sm->oki, sm->oan, sm->otx, sm->orx);
 	ieee802_1x_kay_enable_new_info(sm->kay);
 	eloop_cancel_timeout(ieee802_1x_cp_retire_when_timeout, sm, NULL);
-	eloop_register_timeout(sm->retire_when / 1000, 0,
-			       ieee802_1x_cp_retire_when_timeout, sm, NULL);
+	eloop_register_timeout(sm->retire_when / 1000, 0, ieee802_1x_cp_retire_when_timeout, sm, NULL);
 	sm->using_transmit_sa = FALSE;
 }
-
 
 SM_STATE(CP, ABANDON)
 {
 	SM_ENTRY(CP, ABANDON);
 	sm->lrx = FALSE;
-	ieee802_1x_kay_set_latest_sa_attr(sm->kay, sm->lki, sm->lan,
-					  sm->ltx, sm->lrx);
+	ieee802_1x_kay_set_latest_sa_attr(sm->kay, sm->lki, sm->lan, sm->ltx, sm->lrx);
 	ieee802_1x_kay_delete_sas(sm->kay, sm->lki);
 
 	os_free(sm->lki);
 	sm->lki = NULL;
-	ieee802_1x_kay_set_latest_sa_attr(sm->kay, sm->lki, sm->lan,
-					  sm->ltx, sm->lrx);
+	ieee802_1x_kay_set_latest_sa_attr(sm->kay, sm->lki, sm->lan, sm->ltx, sm->lrx);
 	sm->new_sak = FALSE;
 }
-
 
 SM_STATE(CP, RETIRE)
 {
@@ -326,18 +299,17 @@ SM_STATE(CP, RETIRE)
 	sm->oki = NULL;
 	sm->orx = FALSE;
 	sm->otx = FALSE;
-	ieee802_1x_kay_set_old_sa_attr(sm->kay, sm->oki, sm->oan,
-				       sm->otx, sm->orx);
+	ieee802_1x_kay_set_old_sa_attr(sm->kay, sm->oki, sm->oan, sm->otx, sm->orx);
 }
-
 
 /**
  * CP state machine handler entry
  */
 SM_STEP(CP)
 {
-	if (!sm->port_enabled)
+	if (!sm->port_enabled) {
 		SM_ENTER(CP, INIT);
+	}
 
 	switch (sm->CP_state) {
 	case CP_BEGIN:
@@ -349,74 +321,87 @@ SM_STEP(CP)
 		break;
 
 	case CP_CHANGE:
-		if (sm->connect == UNAUTHENTICATED)
+		if (sm->connect == UNAUTHENTICATED) {
 			SM_ENTER(CP, ALLOWED);
-		else if (sm->connect == AUTHENTICATED)
+		} else if (sm->connect == AUTHENTICATED) {
 			SM_ENTER(CP, AUTHENTICATED);
-		else if (sm->connect == SECURE)
+		} else if (sm->connect == SECURE) {
 			SM_ENTER(CP, SECURED);
+		}
 		break;
 
 	case CP_ALLOWED:
-		if (sm->connect != UNAUTHENTICATED)
+		if (sm->connect != UNAUTHENTICATED) {
 			SM_ENTER(CP, CHANGE);
+		}
 		break;
 
 	case CP_AUTHENTICATED:
-		if (sm->connect != AUTHENTICATED)
+		if (sm->connect != AUTHENTICATED) {
 			SM_ENTER(CP, CHANGE);
+		}
 		break;
 
 	case CP_SECURED:
-		if (changed_connect(sm))
+		if (changed_connect(sm)) {
 			SM_ENTER(CP, CHANGE);
-		else if (sm->new_sak)
+		} else if (sm->new_sak) {
 			SM_ENTER(CP, RECEIVE);
+		}
 		break;
 
 	case CP_RECEIVE:
-		if (sm->using_receive_sas)
+		if (sm->using_receive_sas) {
 			SM_ENTER(CP, RECEIVING);
+		}
 		break;
 
 	case CP_RECEIVING:
-		if (sm->new_sak || changed_connect(sm))
+		if (sm->new_sak || changed_connect(sm)) {
 			SM_ENTER(CP, ABANDON);
-		if (!sm->elected_self)
+		}
+		if (!sm->elected_self) {
 			SM_ENTER(CP, READY);
-		if (sm->elected_self &&
-		    (sm->all_receiving || !sm->transmit_when))
+		}
+		if (sm->elected_self && (sm->all_receiving || !sm->transmit_when)) {
 			SM_ENTER(CP, TRANSMIT);
+		}
 		break;
 
 	case CP_TRANSMIT:
-		if (sm->using_transmit_sa)
+		if (sm->using_transmit_sa) {
 			SM_ENTER(CP, TRANSMITTING);
+		}
 		break;
 
 	case CP_TRANSMITTING:
-		if (!sm->retire_when || changed_connect(sm))
+		if (!sm->retire_when || changed_connect(sm)) {
 			SM_ENTER(CP, RETIRE);
+		}
 		break;
 
 	case CP_RETIRE:
-		if (changed_connect(sm))
+		if (changed_connect(sm)) {
 			SM_ENTER(CP, CHANGE);
-		else if (sm->new_sak)
+		} else if (sm->new_sak) {
 			SM_ENTER(CP, RECEIVE);
+		}
 		break;
 
 	case CP_READY:
-		if (sm->new_sak || changed_connect(sm))
+		if (sm->new_sak || changed_connect(sm)) {
 			SM_ENTER(CP, RECEIVE);
-		if (sm->server_transmitting)
+		}
+		if (sm->server_transmitting) {
 			SM_ENTER(CP, TRANSMIT);
+		}
 		break;
 	case CP_ABANDON:
-		if (changed_connect(sm))
+		if (changed_connect(sm)) {
 			SM_ENTER(CP, RETIRE);
-		else if (sm->new_sak)
+		} else if (sm->new_sak) {
 			SM_ENTER(CP, RECEIVE);
+		}
 		break;
 	default:
 		wpa_printf(MSG_ERROR, "CP: the state machine is not defined");
@@ -424,13 +409,10 @@ SM_STEP(CP)
 	}
 }
 
-
 /**
  * ieee802_1x_cp_sm_init -
  */
-struct ieee802_1x_cp_sm * ieee802_1x_cp_sm_init(
-	struct ieee802_1x_kay *kay,
-	struct ieee802_1x_cp_conf *pcp_conf)
+struct ieee802_1x_cp_sm *ieee802_1x_cp_sm_init(struct ieee802_1x_kay *kay, struct ieee802_1x_cp_conf *pcp_conf)
 {
 	struct ieee802_1x_cp_sm *sm;
 
@@ -485,15 +467,13 @@ struct ieee802_1x_cp_sm * ieee802_1x_cp_sm_init(
 	secy_cp_control_validate_frames(sm->kay, sm->validate_frames);
 	secy_cp_control_replay(sm->kay, sm->replay_protect, sm->replay_window);
 	secy_cp_control_enable_port(sm->kay, sm->controlled_port_enabled);
-	secy_cp_control_confidentiality_offset(sm->kay,
-					       sm->confidentiality_offset);
+	secy_cp_control_confidentiality_offset(sm->kay, sm->confidentiality_offset);
 
 	SM_ENTER(CP, INIT);
 	SM_STEP_RUN(CP);
 
 	return sm;
 }
-
 
 static void ieee802_1x_cp_step_run(struct ieee802_1x_cp_sm *sm)
 {
@@ -503,11 +483,11 @@ static void ieee802_1x_cp_step_run(struct ieee802_1x_cp_sm *sm)
 	for (i = 0; i < 100; i++) {
 		prev_state = sm->CP_state;
 		SM_STEP_RUN(CP);
-		if (prev_state == sm->CP_state)
+		if (prev_state == sm->CP_state) {
 			break;
+		}
 	}
 }
-
 
 static void ieee802_1x_cp_step_cb(void *eloop_ctx, void *timeout_ctx)
 {
@@ -515,15 +495,15 @@ static void ieee802_1x_cp_step_cb(void *eloop_ctx, void *timeout_ctx)
 	ieee802_1x_cp_step_run(sm);
 }
 
-
 /**
  * ieee802_1x_cp_sm_deinit -
  */
 void ieee802_1x_cp_sm_deinit(struct ieee802_1x_cp_sm *sm)
 {
 	wpa_printf(MSG_DEBUG, "CP: state machine removed");
-	if (!sm)
+	if (!sm) {
 		return;
+	}
 
 	eloop_cancel_timeout(ieee802_1x_cp_retire_when_timeout, sm, NULL);
 	eloop_cancel_timeout(ieee802_1x_cp_transmit_when_timeout, sm, NULL);
@@ -536,7 +516,6 @@ void ieee802_1x_cp_sm_deinit(struct ieee802_1x_cp_sm *sm)
 	os_free(sm);
 }
 
-
 /**
  * ieee802_1x_cp_connect_pending
  */
@@ -546,7 +525,6 @@ void ieee802_1x_cp_connect_pending(void *cp_ctx)
 
 	sm->connect = PENDING;
 }
-
 
 /**
  * ieee802_1x_cp_connect_unauthenticated
@@ -558,7 +536,6 @@ void ieee802_1x_cp_connect_unauthenticated(void *cp_ctx)
 	sm->connect = UNAUTHENTICATED;
 }
 
-
 /**
  * ieee802_1x_cp_connect_authenticated
  */
@@ -568,7 +545,6 @@ void ieee802_1x_cp_connect_authenticated(void *cp_ctx)
 
 	sm->connect = AUTHENTICATED;
 }
-
 
 /**
  * ieee802_1x_cp_connect_secure
@@ -580,7 +556,6 @@ void ieee802_1x_cp_connect_secure(void *cp_ctx)
 	sm->connect = SECURE;
 }
 
-
 /**
  * ieee802_1x_cp_set_chgdserver -
  */
@@ -591,7 +566,6 @@ void ieee802_1x_cp_signal_chgdserver(void *cp_ctx)
 	sm->chgd_server = TRUE;
 }
 
-
 /**
  * ieee802_1x_cp_set_electedself -
  */
@@ -601,7 +575,6 @@ void ieee802_1x_cp_set_electedself(void *cp_ctx, Boolean status)
 	sm->elected_self = status;
 }
 
-
 /**
  * ieee802_1x_cp_set_authorizationdata -
  */
@@ -610,10 +583,10 @@ void ieee802_1x_cp_set_authorizationdata(void *cp_ctx, u8 *pdata, int len)
 	struct ieee802_1x_cp_sm *sm = cp_ctx;
 	os_free(sm->authorization_data);
 	sm->authorization_data = os_zalloc(len);
-	if (sm->authorization_data)
+	if (sm->authorization_data) {
 		os_memcpy(sm->authorization_data, pdata, len);
+	}
 }
-
 
 /**
  * ieee802_1x_cp_set_ciphersuite -
@@ -624,7 +597,6 @@ void ieee802_1x_cp_set_ciphersuite(void *cp_ctx, void *pid)
 	os_memcpy(sm->cipher_suite, pid, CS_ID_LEN);
 }
 
-
 /**
  * ieee802_1x_cp_set_offset -
  */
@@ -633,7 +605,6 @@ void ieee802_1x_cp_set_offset(void *cp_ctx, enum confidentiality_offset offset)
 	struct ieee802_1x_cp_sm *sm = cp_ctx;
 	sm->cipher_offset = offset;
 }
-
 
 /**
  * ieee802_1x_cp_signal_newsak -
@@ -644,17 +615,14 @@ void ieee802_1x_cp_signal_newsak(void *cp_ctx)
 	sm->new_sak = TRUE;
 }
 
-
 /**
  * ieee802_1x_cp_set_distributedki -
  */
-void ieee802_1x_cp_set_distributedki(void *cp_ctx,
-				     const struct ieee802_1x_mka_ki *dki)
+void ieee802_1x_cp_set_distributedki(void *cp_ctx, const struct ieee802_1x_mka_ki *dki)
 {
 	struct ieee802_1x_cp_sm *sm = cp_ctx;
 	os_memcpy(&sm->distributed_ki, dki, sizeof(struct ieee802_1x_mka_ki));
 }
-
 
 /**
  * ieee802_1x_cp_set_distributedan -
@@ -665,7 +633,6 @@ void ieee802_1x_cp_set_distributedan(void *cp_ctx, u8 an)
 	sm->distributed_an = an;
 }
 
-
 /**
  * ieee802_1x_cp_set_usingreceivesas -
  */
@@ -674,7 +641,6 @@ void ieee802_1x_cp_set_usingreceivesas(void *cp_ctx, Boolean status)
 	struct ieee802_1x_cp_sm *sm = cp_ctx;
 	sm->using_receive_sas = status;
 }
-
 
 /**
  * ieee802_1x_cp_set_allreceiving -
@@ -685,7 +651,6 @@ void ieee802_1x_cp_set_allreceiving(void *cp_ctx, Boolean status)
 	sm->all_receiving = status;
 }
 
-
 /**
  * ieee802_1x_cp_set_servertransmitting -
  */
@@ -695,7 +660,6 @@ void ieee802_1x_cp_set_servertransmitting(void *cp_ctx, Boolean status)
 	sm->server_transmitting = status;
 }
 
-
 /**
  * ieee802_1x_cp_set_usingtransmitsas -
  */
@@ -704,7 +668,6 @@ void ieee802_1x_cp_set_usingtransmitas(void *cp_ctx, Boolean status)
 	struct ieee802_1x_cp_sm *sm = cp_ctx;
 	sm->using_transmit_sa = status;
 }
-
 
 /**
  * ieee802_1x_cp_sm_step - Advance EAPOL state machines
@@ -725,18 +688,14 @@ void ieee802_1x_cp_sm_step(void *cp_ctx)
 	eloop_register_timeout(0, 0, ieee802_1x_cp_step_cb, sm, NULL);
 }
 
-
-static void ieee802_1x_cp_retire_when_timeout(void *eloop_ctx,
-					      void *timeout_ctx)
+static void ieee802_1x_cp_retire_when_timeout(void *eloop_ctx, void *timeout_ctx)
 {
 	struct ieee802_1x_cp_sm *sm = eloop_ctx;
 	sm->retire_when = 0;
 	ieee802_1x_cp_step_run(sm);
 }
 
-
-static void
-ieee802_1x_cp_transmit_when_timeout(void *eloop_ctx, void *timeout_ctx)
+static void ieee802_1x_cp_transmit_when_timeout(void *eloop_ctx, void *timeout_ctx)
 {
 	struct ieee802_1x_cp_sm *sm = eloop_ctx;
 	sm->transmit_when = 0;

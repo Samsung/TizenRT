@@ -29,7 +29,7 @@ static struct sap_api sap_ma = {
 	.sap_class = SAP_MA,
 	.sap_version_supported = sap_ma_version_supported,
 	.sap_handler = sap_ma_rx_handler,
-	.sap_versions = { SUPPORTED_VERSION, SUPPORTED_OLD_VERSION },
+	.sap_versions = {SUPPORTED_VERSION, SUPPORTED_OLD_VERSION},
 	.sap_txdone = sap_ma_txdone,
 	.sap_notifier = sap_ma_notifier,
 };
@@ -37,8 +37,9 @@ static struct sap_api sap_ma = {
 int sap_ma_notifier(struct slsi_dev *sdev, unsigned long event)
 {
 	SLSI_INFO_NODEV("Notifier event received %s\n", event);
-	if ((event != SCSC_WIFI_FAILURE_RESET) && (event != SCSC_WIFI_STOP))
+	if ((event != SCSC_WIFI_FAILURE_RESET) && (event != SCSC_WIFI_STOP)) {
 		return -EIO;
+	}
 	switch (event) {
 	case SCSC_WIFI_STOP:
 		break;
@@ -52,13 +53,14 @@ int sap_ma_notifier(struct slsi_dev *sdev, unsigned long event)
 static int sap_ma_version_supported(u16 version)
 {
 	unsigned int major = SAP_MAJOR(version);
-	u8           i = 0;
+	u8 i = 0;
 
 	SLSI_INFO_NODEV("Reported version: %d\n", major);
 
 	for (i = 0; i < SAP_MAX_VER; i++)
-		if (sap_ma.sap_versions[i] == major)
+		if (sap_ma.sap_versions[i] == major) {
 			return 0;
+		}
 
 	pr_err("%s: Version %d Not supported\n", __func__, major);
 
@@ -67,13 +69,13 @@ static int sap_ma_version_supported(u16 version)
 
 static int slsi_rx_amsdu_deaggregate(struct netif *dev, struct max_buff *mbuf)
 {
-	unsigned int      msdu_len;
-	unsigned int      subframe_len;
-	int               padding;
+	unsigned int msdu_len;
+	unsigned int subframe_len;
+	int padding;
 
 #ifdef CONFIG_SLSI_WLAN_STATS
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct slsi_dev   *sdev = ndev_vif->sdev;
+	struct slsi_dev *sdev = ndev_vif->sdev;
 #endif
 
 	SLSI_NET_DBG3(dev, SLSI_RX, "A-MSDU received, length = %d\n", mbuf->len);
@@ -83,9 +85,7 @@ static int slsi_rx_amsdu_deaggregate(struct netif *dev, struct max_buff *mbuf)
 	while (mbuf->len > 0) {
 		msdu_len = (mbuf->data[ETH_ALEN * 2] << 8) | mbuf->data[(ETH_ALEN * 2) + 1];
 
-		if ((msdu_len > (ETH_DATA_LEN + LLC_SNAP_HDR_LEN)) || (msdu_len > mbuf->len) ||
-		    (msdu_len < (ETH_ZLEN - (ETH_HLEN - LLC_SNAP_HDR_LEN))) ||
-		    (mbuf->len < (ETH_ZLEN + LLC_SNAP_HDR_LEN))) {
+		if ((msdu_len > (ETH_DATA_LEN + LLC_SNAP_HDR_LEN)) || (msdu_len > mbuf->len) || (msdu_len < (ETH_ZLEN - (ETH_HLEN - LLC_SNAP_HDR_LEN))) || (mbuf->len < (ETH_ZLEN + LLC_SNAP_HDR_LEN))) {
 			SLSI_NET_ERR(dev, "Wrong MSDU length %d, mbuf length = %d\n", msdu_len, mbuf->len);
 			slsi_kfree_mbuf(mbuf);
 			return -EINVAL;
@@ -101,18 +101,15 @@ static int slsi_rx_amsdu_deaggregate(struct netif *dev, struct max_buff *mbuf)
 			padding = (4 - (subframe_len % 4)) & 0x3;
 		}
 
-
 		/* Overwrite LLC+SNAP header with src & dest addr */
 		SLSI_ETHER_COPY(&mbuf->data[14], &mbuf->data[6]);
 		SLSI_ETHER_COPY(&mbuf->data[8], &mbuf->data[0]);
-
 
 		/* Remove 8 bytes of LLC+SNAP header */
 		mbuf_pull(mbuf, LLC_SNAP_HDR_LEN);
 		subframe_len -= LLC_SNAP_HDR_LEN;
 
-		SLSI_NET_DBG3(dev, SLSI_RX, "msdu_len = %d, subframe_len = %d, padding = %d\n",
-			      msdu_len, subframe_len, padding);
+		SLSI_NET_DBG3(dev, SLSI_RX, "msdu_len = %d, subframe_len = %d, padding = %d\n", msdu_len, subframe_len, padding);
 
 		SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_msdu_in_amsdu);
 		slsi_ethernetif_input(dev, mbuf->data, subframe_len);
@@ -130,13 +127,12 @@ static int slsi_rx_amsdu_deaggregate(struct netif *dev, struct max_buff *mbuf)
 static int slsi_rx_data_process_mbuf(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, bool fromBA)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct slsi_peer  *peer = NULL;
-	struct ethhdr     *ehdr = (struct ethhdr *)fapi_get_data(mbuf);
-	u16               seq_num;
-	bool              skip_ba = fromBA;
+	struct slsi_peer *peer = NULL;
+	struct ethhdr *ehdr = (struct ethhdr *)fapi_get_data(mbuf);
+	u16 seq_num;
+	bool skip_ba = fromBA;
 
-	if (!((fapi_get_u16(mbuf, u.ma_unitdata_ind.data_unit_descriptor) == FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME) ||
-	      (fapi_get_u16(mbuf, u.ma_unitdata_ind.data_unit_descriptor) == FAPI_DATAUNITDESCRIPTOR_AMSDU))) {
+	if (!((fapi_get_u16(mbuf, u.ma_unitdata_ind.data_unit_descriptor) == FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME) || (fapi_get_u16(mbuf, u.ma_unitdata_ind.data_unit_descriptor) == FAPI_DATAUNITDESCRIPTOR_AMSDU))) {
 		SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_drop_unsupported_frame);
 		slsi_kfree_mbuf(mbuf);
 		return -EOPNOTSUPP;
@@ -161,9 +157,9 @@ static int slsi_rx_data_process_mbuf(struct slsi_dev *sdev, struct netif *dev, s
 	}
 
 	if (!skip_ba && (slsi_ba_check(peer, fapi_get_u16(mbuf, u.ma_unitdata_ind.priority))))
-		if (!slsi_ba_process_frame(dev, peer, mbuf, (seq_num & SLSI_RX_SEQ_NUM_MASK),
-					   fapi_get_u16(mbuf, u.ma_unitdata_ind.priority)))
+		if (!slsi_ba_process_frame(dev, peer, mbuf, (seq_num & SLSI_RX_SEQ_NUM_MASK), fapi_get_u16(mbuf, u.ma_unitdata_ind.priority))) {
 			return 1;
+		}
 
 	/* A-MSDU deaggregation */
 	if (fapi_get_u16(mbuf, u.ma_unitdata_ind.data_unit_descriptor) == FAPI_DATAUNITDESCRIPTOR_AMSDU) {
@@ -188,8 +184,7 @@ static int slsi_rx_data_process_mbuf(struct slsi_dev *sdev, struct netif *dev, s
 	if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
 		ehdr = (struct ethhdr *)(mbuf->data);
 
-		if (is_multicast_ether_addr(ehdr->h_dest) &&
-		    !compare_ether_addr(ehdr->h_source, dev->d_mac.ether_addr_octet)) {
+		if (is_multicast_ether_addr(ehdr->h_dest) && !compare_ether_addr(ehdr->h_source, dev->d_mac.ether_addr_octet)) {
 			SLSI_NET_DBG2(dev, SLSI_RX, "drop locally generated multicast frame relayed back by AP\n");
 			slsi_kfree_mbuf(mbuf);
 			return -EINVAL;
@@ -203,12 +198,12 @@ static int slsi_rx_data_process_mbuf(struct slsi_dev *sdev, struct netif *dev, s
 static void slsi_rx_performance_test_timer(void *data)
 {
 	struct slsi_dev *sdev = (struct slsi_dev *)data;
-	static int      interval;
-	int             actual_interval;
-	systime_t       current_timestamp;
+	static int interval;
+	int actual_interval;
+	systime_t current_timestamp;
 
 	current_timestamp = clock_systimer();
-	actual_interval = TICK2MSEC(current_timestamp - sdev->rx_perf.last_timestamp); /* Miliseconds */
+	actual_interval = TICK2MSEC(current_timestamp - sdev->rx_perf.last_timestamp);	/* Miliseconds */
 
 	/* Number of bits received per milisecond */
 	sdev->rx_perf.num_bits_received /= actual_interval;
@@ -227,14 +222,11 @@ static void slsi_rx_performance_test_timer(void *data)
 		 * So 100 is multiplied to get 2 decimal points.
 		 */
 		bandwidth = (bandwidth * 100) / 1024;
-		lldbg("Interval: %d-%d Throughput: %d.%d Mbps\n",
-		      interval, interval + SLSI_RX_PERFORMANCE_REPORT_INTERVAL, bandwidth / 100, bandwidth % 100);
+		lldbg("Interval: %d-%d Throughput: %d.%d Mbps\n", interval, interval + SLSI_RX_PERFORMANCE_REPORT_INTERVAL, bandwidth / 100, bandwidth % 100);
 	} else if (sdev->rx_perf.num_bits_received > 1024) {
-		lldbg("Interval: %d-%d Throughput: %d Kbps\n",
-		      interval, interval + SLSI_RX_PERFORMANCE_REPORT_INTERVAL, sdev->rx_perf.num_bits_received / 1024);
+		lldbg("Interval: %d-%d Throughput: %d Kbps\n", interval, interval + SLSI_RX_PERFORMANCE_REPORT_INTERVAL, sdev->rx_perf.num_bits_received / 1024);
 	} else {
-		lldbg("Interval: %d-%d Throughput: %d bps\n",
-		      interval, interval + SLSI_RX_PERFORMANCE_REPORT_INTERVAL, sdev->rx_perf.num_bits_received);
+		lldbg("Interval: %d-%d Throughput: %d bps\n", interval, interval + SLSI_RX_PERFORMANCE_REPORT_INTERVAL, sdev->rx_perf.num_bits_received);
 	}
 
 	interval += SLSI_RX_PERFORMANCE_REPORT_INTERVAL;
@@ -245,8 +237,9 @@ static void slsi_rx_performance_test_timer(void *data)
 	sdev->rx_perf.last_timestamp = clock_systimer();
 
 	sys_untimeout(slsi_rx_performance_test_timer, sdev);
-	if (sdev->rx_perf.rx_perf_test_started == true)
+	if (sdev->rx_perf.rx_perf_test_started == true) {
 		sys_timeout(SLSI_RX_PERFORMANCE_REPORT_INTERVAL * 1000, slsi_rx_performance_test_timer, sdev);
+	}
 }
 
 void slsi_rx_stop_performance_test_timer(struct slsi_dev *sdev)
@@ -270,11 +263,13 @@ static void slsi_rx_performance_test(struct slsi_dev *sdev, struct netif *dev, s
 		init_done = true;
 	}
 
-	if (sdev->rx_perf.rx_perf_test_started == false)
+	if (sdev->rx_perf.rx_perf_test_started == false) {
 		slsi_rx_start_performance_test_timer(sdev);
+	}
 
-	if (mbuf->len < SLSI_RX_PERFORMANCE_PKT_LEN_THRESHOLD)
+	if (mbuf->len < SLSI_RX_PERFORMANCE_PKT_LEN_THRESHOLD) {
 		slsi_ethernetif_input(dev, mbuf->data, mbuf->len);
+	}
 
 	pthread_mutex_lock(&sdev->rx_perf.rx_perf_lock);
 	/* Update number of bits received */
@@ -298,10 +293,7 @@ int slsi_rx_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf
 
 static int slsi_rx_data_cfm(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf)
 {
-	SLSI_NET_DBG3(dev, SLSI_TX, "ma_unitdata_cfm(vif:%d, host_tag:0x%x, status:%d)\n",
-		      fapi_get_vif(mbuf),
-		      fapi_get_u16(mbuf, u.ma_unitdata_cfm.host_tag),
-		      fapi_get_u16(mbuf, u.ma_unitdata_cfm.transmission_status));
+	SLSI_NET_DBG3(dev, SLSI_TX, "ma_unitdata_cfm(vif:%d, host_tag:0x%x, status:%d)\n", fapi_get_vif(mbuf), fapi_get_u16(mbuf, u.ma_unitdata_cfm.host_tag), fapi_get_u16(mbuf, u.ma_unitdata_cfm.transmission_status));
 
 #ifdef CONFIG_SLSI_WLAN_STATS
 	switch (fapi_get_u16(mbuf, u.ma_unitdata_cfm.transmission_status)) {
@@ -329,19 +321,21 @@ static int slsi_rx_data_cfm(struct slsi_dev *sdev, struct netif *dev, struct max
 void slsi_rx_netdev_data_work(FAR void *arg)
 {
 	FAR struct slsi_mbuf_work *w = (FAR struct slsi_mbuf_work *)arg;
-	struct slsi_dev           *sdev = w->sdev;
-	struct netif              *dev = w->dev;
-	struct netdev_vif         *ndev_vif = netdev_priv(dev);
-	struct max_buff           *mbuf;
+	struct slsi_dev *sdev = w->sdev;
+	struct netif *dev = w->dev;
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+	struct max_buff *mbuf;
 
-	if (WARN_ON(!dev))
+	if (WARN_ON(!dev)) {
 		return;
+	}
 
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 
 #ifdef CONFIG_SLSI_WLAN_STATS
-	if (mbuf_queue_len(&w->queue) > sdev->dp_stats.rx_mbuf_q_max_len)
+	if (mbuf_queue_len(&w->queue) > sdev->dp_stats.rx_mbuf_q_max_len) {
 		sdev->dp_stats.rx_mbuf_q_max_len = mbuf_queue_len(&w->queue);
+	}
 #endif
 
 	while (1) {
@@ -351,8 +345,9 @@ void slsi_rx_netdev_data_work(FAR void *arg)
 		}
 
 		mbuf = slsi_mbuf_work_dequeue(w);
-		if (!mbuf)
+		if (!mbuf) {
 			break;
+		}
 		switch (fapi_get_u16(mbuf, id)) {
 		case MA_UNITDATA_IND:
 			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_unit_data_ind);
@@ -373,9 +368,9 @@ void slsi_rx_netdev_data_work(FAR void *arg)
 
 static int slsi_rx_queue_data(struct slsi_dev *sdev, struct max_buff *mbuf)
 {
-	struct netif      *dev;
+	struct netif *dev;
 	struct netdev_vif *ndev_vif;
-	int               vif;
+	int vif;
 
 	vif = fapi_get_vif(mbuf);
 
@@ -422,12 +417,12 @@ static int sap_ma_rx_handler(struct slsi_dev *sdev, struct max_buff *mbuf)
 /* Adjust the scod value and flow control appropriately. */
 static int sap_ma_txdone(struct slsi_dev *sdev, u16 colour)
 {
-	int              ret = 0;
+	int ret = 0;
 
 #ifdef CONFIG_SCSC_TX_FLOW_CONTROL
-	struct netif     *dev;
+	struct netif *dev;
 	struct slsi_peer *peer;
-	u16              vif, peer_index, ac;
+	u16 vif, peer_index, ac;
 
 	SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_done);
 

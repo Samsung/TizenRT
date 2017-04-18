@@ -44,21 +44,19 @@
 
 struct gas_dialog_info {
 	u8 valid;
-	struct wpabuf *sd_resp; /* Fragmented response */
+	struct wpabuf *sd_resp;		/* Fragmented response */
 	u8 dialog_token;
-	size_t sd_resp_pos; /* Offset in sd_resp */
+	size_t sd_resp_pos;			/* Offset in sd_resp */
 	u8 sd_frag_id;
-	int prot; /* whether Protected Dual of Public Action frame is used */
+	int prot;					/* whether Protected Dual of Public Action frame is used */
 };
 
 struct hostapd_data;
 
-struct gas_dialog_info *
-gas_serv_dialog_find(struct hostapd_data *hapd, const u8 *addr,
-		     u8 dialog_token);
+struct gas_dialog_info *gas_serv_dialog_find(struct hostapd_data *hapd, const u8 *addr, u8 dialog_token);
 void gas_serv_dialog_clear(struct gas_dialog_info *dialog);
 
 int gas_serv_init(struct hostapd_data *hapd);
 void gas_serv_deinit(struct hostapd_data *hapd);
 
-#endif /* GAS_SERV_H */
+#endif							/* GAS_SERV_H */

@@ -37,13 +37,13 @@ enum slsi_hip_state {
 };
 
 struct slsi_hip {
-	struct slsi_dev       *sdev;
+	struct slsi_dev *sdev;
 	struct slsi_card_info card_info;
 	/* a std mutex */
-	pthread_mutex_t       hip_mutex;
+	pthread_mutex_t hip_mutex;
 
 	/* refer to enum slsi_hip_state */
-	int                   hip_state;
+	int hip_state;
 };
 
 #define SLSI_PS_MAX_TID_PRI 8
@@ -104,12 +104,12 @@ struct slsi_hip_fh_buf_configs {
 
 /* Driver's HIP parameters */
 struct slsi_hip_drv_configs {
-	u8                             fh_buf_i;
+	u8 fh_buf_i;
 	struct slsi_hip_fh_buf_configs fh_c[SLSI_HIP_FH_BUF_MAX];
 };
 
 struct slsi_proc_hip_configs {
-	struct slsi_hip_drv_configs    drv_c;
+	struct slsi_hip_drv_configs drv_c;
 	struct slsi_hip_shared_configs shared_c;
 };
 

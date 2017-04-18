@@ -25,7 +25,7 @@ struct slsi_dev;
 struct max_buff;
 
 struct sap_api {
-	u8  sap_class;
+	u8 sap_class;
 	u16 sap_versions[SAP_MAX_VER];
 	int (*sap_version_supported)(u16 version);
 	int (*sap_handler)(struct slsi_dev *sdev, struct max_buff *mbuf);

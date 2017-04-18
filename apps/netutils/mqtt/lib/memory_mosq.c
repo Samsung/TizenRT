@@ -21,12 +21,12 @@ Copyright (c) 2009-2014 Roger Light <roger@atchoo.org>
 All rights reserved. This program and the accompanying materials
 are made available under the terms of the Eclipse Public License v1.0
 and Eclipse Distribution License v1.0 which accompany this distribution.
- 
+
 The Eclipse Public License is available at
    http://www.eclipse.org/legal/epl-v10.html
 and the Eclipse Distribution License is available at
   http://www.eclipse.org/org/documents/edl-v10.php.
- 
+
 Contributors:
    Roger Light - initial implementation and documentation.
 */
@@ -39,14 +39,14 @@ Contributors:
 #include <memory_mosq.h>
 
 #ifdef REAL_WITH_MEMORY_TRACKING
-#  if defined(__APPLE__)
-#    include <malloc/malloc.h>
-#    define malloc_usable_size malloc_size
-#  elif defined(__FreeBSD__)
-#    include <malloc_np.h>
-#  else
-#    include <malloc.h>
-#  endif
+#	if defined(__APPLE__)
+#		include <malloc/malloc.h>
+#		define malloc_usable_size malloc_size
+#	elif defined(__FreeBSD__)
+#		include <malloc_np.h>
+#	else
+#		include <malloc.h>
+#	endif
 #endif
 
 #ifdef REAL_WITH_MEMORY_TRACKING
@@ -60,7 +60,7 @@ void *_mosquitto_calloc(size_t nmemb, size_t size)
 
 #ifdef REAL_WITH_MEMORY_TRACKING
 	memcount += malloc_usable_size(mem);
-	if(memcount > max_memcount){
+	if (memcount > max_memcount) {
 		max_memcount = memcount;
 	}
 #endif
@@ -71,7 +71,7 @@ void *_mosquitto_calloc(size_t nmemb, size_t size)
 void _mosquitto_free(void *mem)
 {
 #ifdef REAL_WITH_MEMORY_TRACKING
-	if(!mem){
+	if (!mem) {
 		return;
 	}
 	memcount -= malloc_usable_size(mem);
@@ -85,7 +85,7 @@ void *_mosquitto_malloc(size_t size)
 
 #ifdef REAL_WITH_MEMORY_TRACKING
 	memcount += malloc_usable_size(mem);
-	if(memcount > max_memcount){
+	if (memcount > max_memcount) {
 		max_memcount = memcount;
 	}
 #endif
@@ -109,7 +109,7 @@ void *_mosquitto_realloc(void *ptr, size_t size)
 {
 	void *mem;
 #ifdef REAL_WITH_MEMORY_TRACKING
-	if(ptr){
+	if (ptr) {
 		memcount -= malloc_usable_size(ptr);
 	}
 #endif
@@ -117,7 +117,7 @@ void *_mosquitto_realloc(void *ptr, size_t size)
 
 #ifdef REAL_WITH_MEMORY_TRACKING
 	memcount += malloc_usable_size(mem);
-	if(memcount > max_memcount){
+	if (memcount > max_memcount) {
 		max_memcount = memcount;
 	}
 #endif
@@ -131,11 +131,10 @@ char *_mosquitto_strdup(const char *s)
 
 #ifdef REAL_WITH_MEMORY_TRACKING
 	memcount += malloc_usable_size(str);
-	if(memcount > max_memcount){
+	if (memcount > max_memcount) {
 		max_memcount = memcount;
 	}
 #endif
 
 	return str;
 }
-

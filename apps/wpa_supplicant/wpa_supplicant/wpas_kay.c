@@ -20,75 +20,59 @@
 #include "driver_i.h"
 #include "wpas_kay.h"
 
-
 #define DEFAULT_KEY_LEN		16
 /* secure Connectivity Association Key Name (CKN) */
 #define DEFAULT_CKN_LEN		16
-
 
 static int wpas_macsec_init(void *priv, struct macsec_init_params *params)
 {
 	return wpa_drv_macsec_init(priv, params);
 }
 
-
 static int wpas_macsec_deinit(void *priv)
 {
 	return wpa_drv_macsec_deinit(priv);
 }
-
 
 static int wpas_enable_protect_frames(void *wpa_s, Boolean enabled)
 {
 	return wpa_drv_enable_protect_frames(wpa_s, enabled);
 }
 
-
 static int wpas_set_replay_protect(void *wpa_s, Boolean enabled, u32 window)
 {
 	return wpa_drv_set_replay_protect(wpa_s, enabled, window);
 }
 
-
-static int wpas_set_current_cipher_suite(void *wpa_s, const u8 *cs,
-					 size_t cs_len)
+static int wpas_set_current_cipher_suite(void *wpa_s, const u8 *cs, size_t cs_len)
 {
 	return wpa_drv_set_current_cipher_suite(wpa_s, cs, cs_len);
 }
-
 
 static int wpas_enable_controlled_port(void *wpa_s, Boolean enabled)
 {
 	return wpa_drv_enable_controlled_port(wpa_s, enabled);
 }
 
-
-static int wpas_get_receive_lowest_pn(void *wpa_s, u32 channel,
-				      u8 an, u32 *lowest_pn)
+static int wpas_get_receive_lowest_pn(void *wpa_s, u32 channel, u8 an, u32 *lowest_pn)
 {
 	return wpa_drv_get_receive_lowest_pn(wpa_s, channel, an, lowest_pn);
 }
 
-
-static int wpas_get_transmit_next_pn(void *wpa_s, u32 channel,
-				      u8 an, u32 *next_pn)
+static int wpas_get_transmit_next_pn(void *wpa_s, u32 channel, u8 an, u32 *next_pn)
 {
 	return wpa_drv_get_transmit_next_pn(wpa_s, channel, an, next_pn);
 }
 
-
-static int wpas_set_transmit_next_pn(void *wpa_s, u32 channel,
-				      u8 an, u32 next_pn)
+static int wpas_set_transmit_next_pn(void *wpa_s, u32 channel, u8 an, u32 next_pn)
 {
 	return wpa_drv_set_transmit_next_pn(wpa_s, channel, an, next_pn);
 }
-
 
 static int wpas_get_available_receive_sc(void *wpa_s, u32 *channel)
 {
 	return wpa_drv_get_available_receive_sc(wpa_s, channel);
 }
-
 
 static unsigned int conf_offset_val(enum confidentiality_offset co)
 {
@@ -103,84 +87,60 @@ static unsigned int conf_offset_val(enum confidentiality_offset co)
 	}
 }
 
-
-static int wpas_create_receive_sc(void *wpa_s, u32 channel,
-				  struct ieee802_1x_mka_sci *sci,
-				  enum validate_frames vf,
-				  enum confidentiality_offset co)
+static int wpas_create_receive_sc(void *wpa_s, u32 channel, struct ieee802_1x_mka_sci *sci, enum validate_frames vf, enum confidentiality_offset co)
 {
-	return wpa_drv_create_receive_sc(wpa_s, channel, sci->addr, sci->port,
-					 conf_offset_val(co), vf);
+	return wpa_drv_create_receive_sc(wpa_s, channel, sci->addr, sci->port, conf_offset_val(co), vf);
 }
-
 
 static int wpas_delete_receive_sc(void *wpa_s, u32 channel)
 {
 	return wpa_drv_delete_receive_sc(wpa_s, channel);
 }
 
-
-static int wpas_create_receive_sa(void *wpa_s, u32 channel, u8 an,
-				  u32 lowest_pn, const u8 *sak)
+static int wpas_create_receive_sa(void *wpa_s, u32 channel, u8 an, u32 lowest_pn, const u8 *sak)
 {
 	return wpa_drv_create_receive_sa(wpa_s, channel, an, lowest_pn, sak);
 }
-
 
 static int wpas_enable_receive_sa(void *wpa_s, u32 channel, u8 an)
 {
 	return wpa_drv_enable_receive_sa(wpa_s, channel, an);
 }
 
-
 static int wpas_disable_receive_sa(void *wpa_s, u32 channel, u8 an)
 {
 	return wpa_drv_disable_receive_sa(wpa_s, channel, an);
 }
-
 
 static int wpas_get_available_transmit_sc(void *wpa_s, u32 *channel)
 {
 	return wpa_drv_get_available_transmit_sc(wpa_s, channel);
 }
 
-
-static int
-wpas_create_transmit_sc(void *wpa_s, u32 channel,
-			const struct ieee802_1x_mka_sci *sci,
-			enum confidentiality_offset co)
+static int wpas_create_transmit_sc(void *wpa_s, u32 channel, const struct ieee802_1x_mka_sci *sci, enum confidentiality_offset co)
 {
-	return wpa_drv_create_transmit_sc(wpa_s, channel, sci->addr, sci->port,
-					  conf_offset_val(co));
+	return wpa_drv_create_transmit_sc(wpa_s, channel, sci->addr, sci->port, conf_offset_val(co));
 }
-
 
 static int wpas_delete_transmit_sc(void *wpa_s, u32 channel)
 {
 	return wpa_drv_delete_transmit_sc(wpa_s, channel);
 }
 
-
-static int wpas_create_transmit_sa(void *wpa_s, u32 channel, u8 an,
-				   u32 next_pn, Boolean confidentiality,
-				   const u8 *sak)
+static int wpas_create_transmit_sa(void *wpa_s, u32 channel, u8 an, u32 next_pn, Boolean confidentiality, const u8 *sak)
 {
-	return wpa_drv_create_transmit_sa(wpa_s, channel, an, next_pn,
-					  confidentiality, sak);
+	return wpa_drv_create_transmit_sa(wpa_s, channel, an, next_pn, confidentiality, sak);
 }
-
 
 static int wpas_enable_transmit_sa(void *wpa_s, u32 channel, u8 an)
 {
 	return wpa_drv_enable_transmit_sa(wpa_s, channel, an);
 }
 
-
 static int wpas_disable_transmit_sa(void *wpa_s, u32 channel, u8 an)
 {
 	return wpa_drv_disable_transmit_sa(wpa_s, channel, an);
 }
-
 
 int ieee802_1x_alloc_kay_sm(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 {
@@ -190,14 +150,16 @@ int ieee802_1x_alloc_kay_sm(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 
 	ieee802_1x_dealloc_kay_sm(wpa_s);
 
-	if (!ssid || ssid->macsec_policy == 0)
+	if (!ssid || ssid->macsec_policy == 0) {
 		return 0;
+	}
 
 	policy = ssid->macsec_policy == 1 ? SHOULD_SECURE : DO_NOT_SECURE;
 
 	kay_ctx = os_zalloc(sizeof(*kay_ctx));
-	if (!kay_ctx)
+	if (!kay_ctx) {
 		return -1;
+	}
 
 	kay_ctx->ctx = wpa_s;
 
@@ -223,8 +185,7 @@ int ieee802_1x_alloc_kay_sm(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 	kay_ctx->enable_transmit_sa = wpas_enable_transmit_sa;
 	kay_ctx->disable_transmit_sa = wpas_disable_transmit_sa;
 
-	res = ieee802_1x_kay_init(kay_ctx, policy, wpa_s->ifname,
-				  wpa_s->own_addr);
+	res = ieee802_1x_kay_init(kay_ctx, policy, wpa_s->ifname, wpa_s->own_addr);
 	if (res == NULL) {
 		os_free(kay_ctx);
 		return -1;
@@ -235,27 +196,24 @@ int ieee802_1x_alloc_kay_sm(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 	return 0;
 }
 
-
 void ieee802_1x_dealloc_kay_sm(struct wpa_supplicant *wpa_s)
 {
-	if (!wpa_s->kay)
+	if (!wpa_s->kay) {
 		return;
+	}
 
 	ieee802_1x_kay_deinit(wpa_s->kay);
 	wpa_s->kay = NULL;
 }
 
-
-static int ieee802_1x_auth_get_session_id(struct wpa_supplicant *wpa_s,
-					  const u8 *addr, u8 *sid, size_t *len)
+static int ieee802_1x_auth_get_session_id(struct wpa_supplicant *wpa_s, const u8 *addr, u8 *sid, size_t *len)
 {
 	const u8 *session_id;
 	size_t id_len, need_len;
 
 	session_id = eapol_sm_get_session_id(wpa_s->eapol, &id_len);
 	if (session_id == NULL) {
-		wpa_printf(MSG_DEBUG,
-			   "Failed to get SessionID from EAPOL state machines");
+		wpa_printf(MSG_DEBUG, "Failed to get SessionID from EAPOL state machines");
 		return -1;
 	}
 
@@ -271,9 +229,7 @@ static int ieee802_1x_auth_get_session_id(struct wpa_supplicant *wpa_s,
 	return 0;
 }
 
-
-static int ieee802_1x_auth_get_msk(struct wpa_supplicant *wpa_s, const u8 *addr,
-				   u8 *msk, size_t *len)
+static int ieee802_1x_auth_get_msk(struct wpa_supplicant *wpa_s, const u8 *addr, u8 *msk, size_t *len)
 {
 	u8 key[EAP_MSK_LEN];
 	size_t keylen;
@@ -281,28 +237,27 @@ static int ieee802_1x_auth_get_msk(struct wpa_supplicant *wpa_s, const u8 *addr,
 	int res;
 
 	sm = wpa_s->eapol;
-	if (sm == NULL)
+	if (sm == NULL) {
 		return -1;
+	}
 
 	keylen = EAP_MSK_LEN;
 	res = eapol_sm_get_key(sm, key, keylen);
 	if (res) {
-		wpa_printf(MSG_DEBUG,
-			   "Failed to get MSK from EAPOL state machines");
+		wpa_printf(MSG_DEBUG, "Failed to get MSK from EAPOL state machines");
 		return -1;
 	}
 
-	if (keylen > *len)
+	if (keylen > *len) {
 		keylen = *len;
+	}
 	os_memcpy(msk, key, keylen);
 	*len = keylen;
 
 	return 0;
 }
 
-
-void * ieee802_1x_notify_create_actor(struct wpa_supplicant *wpa_s,
-				      const u8 *peer_addr)
+void *ieee802_1x_notify_create_actor(struct wpa_supplicant *wpa_s, const u8 *peer_addr)
 {
 	u8 *sid;
 	size_t sid_len = 128;
@@ -311,19 +266,19 @@ void * ieee802_1x_notify_create_actor(struct wpa_supplicant *wpa_s,
 	struct mka_key *msk;
 	void *res = NULL;
 
-	if (!wpa_s->kay || wpa_s->kay->policy == DO_NOT_SECURE)
+	if (!wpa_s->kay || wpa_s->kay->policy == DO_NOT_SECURE) {
 		return NULL;
+	}
 
-	wpa_printf(MSG_DEBUG,
-		   "IEEE 802.1X: External notification - Create MKA for "
-		   MACSTR, MAC2STR(peer_addr));
+	wpa_printf(MSG_DEBUG, "IEEE 802.1X: External notification - Create MKA for " MACSTR, MAC2STR(peer_addr));
 
 	msk = os_zalloc(sizeof(*msk));
 	sid = os_zalloc(sid_len);
 	ckn = os_zalloc(sizeof(*ckn));
 	cak = os_zalloc(sizeof(*cak));
-	if (!msk || !sid || !ckn || !cak)
+	if (!msk || !sid || !ckn || !cak) {
 		goto fail;
+	}
 
 	msk->len = DEFAULT_KEY_LEN;
 	if (ieee802_1x_auth_get_msk(wpa_s, wpa_s->bssid, msk->key, &msk->len)) {
@@ -331,36 +286,28 @@ void * ieee802_1x_notify_create_actor(struct wpa_supplicant *wpa_s,
 		goto fail;
 	}
 
-	if (ieee802_1x_auth_get_session_id(wpa_s, wpa_s->bssid, sid, &sid_len))
-	{
-		wpa_printf(MSG_ERROR,
-			   "IEEE 802.1X: Could not get EAP Session Id");
+	if (ieee802_1x_auth_get_session_id(wpa_s, wpa_s->bssid, sid, &sid_len)) {
+		wpa_printf(MSG_ERROR, "IEEE 802.1X: Could not get EAP Session Id");
 		goto fail;
 	}
 
 	/* Derive CAK from MSK */
 	cak->len = DEFAULT_KEY_LEN;
-	if (ieee802_1x_cak_128bits_aes_cmac(msk->key, wpa_s->own_addr,
-					    peer_addr, cak->key)) {
-		wpa_printf(MSG_ERROR,
-			   "IEEE 802.1X: Deriving CAK failed");
+	if (ieee802_1x_cak_128bits_aes_cmac(msk->key, wpa_s->own_addr, peer_addr, cak->key)) {
+		wpa_printf(MSG_ERROR, "IEEE 802.1X: Deriving CAK failed");
 		goto fail;
 	}
 	wpa_hexdump_key(MSG_DEBUG, "Derived CAK", cak->key, cak->len);
 
 	/* Derive CKN from MSK */
 	ckn->len = DEFAULT_CKN_LEN;
-	if (ieee802_1x_ckn_128bits_aes_cmac(msk->key, wpa_s->own_addr,
-					    peer_addr, sid, sid_len,
-					    ckn->name)) {
-		wpa_printf(MSG_ERROR,
-			   "IEEE 802.1X: Deriving CKN failed");
+	if (ieee802_1x_ckn_128bits_aes_cmac(msk->key, wpa_s->own_addr, peer_addr, sid, sid_len, ckn->name)) {
+		wpa_printf(MSG_ERROR, "IEEE 802.1X: Deriving CKN failed");
 		goto fail;
 	}
 	wpa_hexdump(MSG_DEBUG, "Derived CKN", ckn->name, ckn->len);
 
-	res = ieee802_1x_kay_create_mka(wpa_s->kay, ckn, cak, 0,
-					EAP_EXCHANGE, FALSE);
+	res = ieee802_1x_kay_create_mka(wpa_s->kay, ckn, cak, 0, EAP_EXCHANGE, FALSE);
 
 fail:
 	if (msk) {

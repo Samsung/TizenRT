@@ -19,83 +19,73 @@ struct wpabuf_trace {
 	unsigned int magic;
 };
 
-static struct wpabuf_trace * wpabuf_get_trace(const struct wpabuf *buf)
+static struct wpabuf_trace *wpabuf_get_trace(const struct wpabuf *buf)
 {
 	return (struct wpabuf_trace *)
-		((const u8 *) buf - sizeof(struct wpabuf_trace));
+		   ((const u8 *)buf - sizeof(struct wpabuf_trace));
 }
-#endif /* WPA_TRACE */
-
+#endif							/* WPA_TRACE */
 
 static void wpabuf_overflow(const struct wpabuf *buf, size_t len)
 {
 #ifdef WPA_TRACE
 	struct wpabuf_trace *trace = wpabuf_get_trace(buf);
 	if (trace->magic != WPABUF_MAGIC) {
-		wpa_printf(MSG_ERROR, "wpabuf: invalid magic %x",
-			   trace->magic);
+		wpa_printf(MSG_ERROR, "wpabuf: invalid magic %x", trace->magic);
 	}
-#endif /* WPA_TRACE */
-	wpa_printf(MSG_ERROR, "wpabuf %p (size=%lu used=%lu) overflow len=%lu",
-		   buf, (unsigned long) buf->size, (unsigned long) buf->used,
-		   (unsigned long) len);
+#endif							/* WPA_TRACE */
+	wpa_printf(MSG_ERROR, "wpabuf %p (size=%lu used=%lu) overflow len=%lu", buf, (unsigned long)buf->size, (unsigned long)buf->used, (unsigned long)len);
 	wpa_trace_show("wpabuf overflow");
 	abort();
 }
-
 
 int wpabuf_resize(struct wpabuf **_buf, size_t add_len)
 {
 	struct wpabuf *buf = *_buf;
 #ifdef WPA_TRACE
 	struct wpabuf_trace *trace;
-#endif /* WPA_TRACE */
+#endif							/* WPA_TRACE */
 
 	if (buf == NULL) {
 		*_buf = wpabuf_alloc(add_len);
 		return *_buf == NULL ? -1 : 0;
 	}
-
 #ifdef WPA_TRACE
 	trace = wpabuf_get_trace(buf);
 	if (trace->magic != WPABUF_MAGIC) {
-		wpa_printf(MSG_ERROR, "wpabuf: invalid magic %x",
-			   trace->magic);
+		wpa_printf(MSG_ERROR, "wpabuf: invalid magic %x", trace->magic);
 		wpa_trace_show("wpabuf_resize invalid magic");
 		abort();
 	}
-#endif /* WPA_TRACE */
+#endif							/* WPA_TRACE */
 
 	if (buf->used + add_len > buf->size) {
 		unsigned char *nbuf;
 		if (buf->flags & WPABUF_FLAG_EXT_DATA) {
 			nbuf = os_realloc(buf->buf, buf->used + add_len);
-			if (nbuf == NULL)
+			if (nbuf == NULL) {
 				return -1;
+			}
 			os_memset(nbuf + buf->used, 0, add_len);
 			buf->buf = nbuf;
 		} else {
 #ifdef WPA_TRACE
-			nbuf = os_realloc(trace, sizeof(struct wpabuf_trace) +
-					  sizeof(struct wpabuf) +
-					  buf->used + add_len);
-			if (nbuf == NULL)
+			nbuf = os_realloc(trace, sizeof(struct wpabuf_trace) + sizeof(struct wpabuf) + buf->used + add_len);
+			if (nbuf == NULL) {
 				return -1;
-			trace = (struct wpabuf_trace *) nbuf;
-			buf = (struct wpabuf *) (trace + 1);
-			os_memset(nbuf + sizeof(struct wpabuf_trace) +
-				  sizeof(struct wpabuf) + buf->used, 0,
-				  add_len);
-#else /* WPA_TRACE */
-			nbuf = os_realloc(buf, sizeof(struct wpabuf) +
-					  buf->used + add_len);
-			if (nbuf == NULL)
+			}
+			trace = (struct wpabuf_trace *)nbuf;
+			buf = (struct wpabuf *)(trace + 1);
+			os_memset(nbuf + sizeof(struct wpabuf_trace) + sizeof(struct wpabuf) + buf->used, 0, add_len);
+#else							/* WPA_TRACE */
+			nbuf = os_realloc(buf, sizeof(struct wpabuf) + buf->used + add_len);
+			if (nbuf == NULL) {
 				return -1;
-			buf = (struct wpabuf *) nbuf;
-			os_memset(nbuf + sizeof(struct wpabuf) + buf->used, 0,
-				  add_len);
-#endif /* WPA_TRACE */
-			buf->buf = (u8 *) (buf + 1);
+			}
+			buf = (struct wpabuf *)nbuf;
+			os_memset(nbuf + sizeof(struct wpabuf) + buf->used, 0, add_len);
+#endif							/* WPA_TRACE */
+			buf->buf = (u8 *)(buf + 1);
 			*_buf = buf;
 		}
 		buf->size = buf->used + add_len;
@@ -104,49 +94,49 @@ int wpabuf_resize(struct wpabuf **_buf, size_t add_len)
 	return 0;
 }
 
-
 /**
  * wpabuf_alloc - Allocate a wpabuf of the given size
  * @len: Length for the allocated buffer
  * Returns: Buffer to the allocated wpabuf or %NULL on failure
  */
-struct wpabuf * wpabuf_alloc(size_t len)
+struct wpabuf *wpabuf_alloc(size_t len)
 {
 #ifdef WPA_TRACE
-	struct wpabuf_trace *trace = os_zalloc(sizeof(struct wpabuf_trace) +
-					       sizeof(struct wpabuf) + len);
+	struct wpabuf_trace *trace = os_zalloc(sizeof(struct wpabuf_trace) + sizeof(struct wpabuf) + len);
 	struct wpabuf *buf;
-	if (trace == NULL)
+	if (trace == NULL) {
 		return NULL;
+	}
 	trace->magic = WPABUF_MAGIC;
-	buf = (struct wpabuf *) (trace + 1);
-#else /* WPA_TRACE */
+	buf = (struct wpabuf *)(trace + 1);
+#else							/* WPA_TRACE */
 	struct wpabuf *buf = os_zalloc(sizeof(struct wpabuf) + len);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return NULL;
-#endif /* WPA_TRACE */
+	}
+#endif							/* WPA_TRACE */
 
 	buf->size = len;
-	buf->buf = (u8 *) (buf + 1);
+	buf->buf = (u8 *)(buf + 1);
 	return buf;
 }
 
-
-struct wpabuf * wpabuf_alloc_ext_data(u8 *data, size_t len)
+struct wpabuf *wpabuf_alloc_ext_data(u8 *data, size_t len)
 {
 #ifdef WPA_TRACE
-	struct wpabuf_trace *trace = os_zalloc(sizeof(struct wpabuf_trace) +
-					       sizeof(struct wpabuf));
+	struct wpabuf_trace *trace = os_zalloc(sizeof(struct wpabuf_trace) + sizeof(struct wpabuf));
 	struct wpabuf *buf;
-	if (trace == NULL)
+	if (trace == NULL) {
 		return NULL;
+	}
 	trace->magic = WPABUF_MAGIC;
-	buf = (struct wpabuf *) (trace + 1);
-#else /* WPA_TRACE */
+	buf = (struct wpabuf *)(trace + 1);
+#else							/* WPA_TRACE */
 	struct wpabuf *buf = os_zalloc(sizeof(struct wpabuf));
-	if (buf == NULL)
+	if (buf == NULL) {
 		return NULL;
-#endif /* WPA_TRACE */
+	}
+#endif							/* WPA_TRACE */
 
 	buf->size = len;
 	buf->used = len;
@@ -156,24 +146,23 @@ struct wpabuf * wpabuf_alloc_ext_data(u8 *data, size_t len)
 	return buf;
 }
 
-
-struct wpabuf * wpabuf_alloc_copy(const void *data, size_t len)
+struct wpabuf *wpabuf_alloc_copy(const void *data, size_t len)
 {
 	struct wpabuf *buf = wpabuf_alloc(len);
-	if (buf)
+	if (buf) {
 		wpabuf_put_data(buf, data, len);
+	}
 	return buf;
 }
 
-
-struct wpabuf * wpabuf_dup(const struct wpabuf *src)
+struct wpabuf *wpabuf_dup(const struct wpabuf *src)
 {
 	struct wpabuf *buf = wpabuf_alloc(wpabuf_len(src));
-	if (buf)
+	if (buf) {
 		wpabuf_put_data(buf, wpabuf_head(src), wpabuf_len(src));
+	}
 	return buf;
 }
-
 
 /**
  * wpabuf_free - Free a wpabuf
@@ -183,27 +172,29 @@ void wpabuf_free(struct wpabuf *buf)
 {
 #ifdef WPA_TRACE
 	struct wpabuf_trace *trace;
-	if (buf == NULL)
+	if (buf == NULL) {
 		return;
+	}
 	trace = wpabuf_get_trace(buf);
 	if (trace->magic != WPABUF_MAGIC) {
-		wpa_printf(MSG_ERROR, "wpabuf_free: invalid magic %x",
-			   trace->magic);
+		wpa_printf(MSG_ERROR, "wpabuf_free: invalid magic %x", trace->magic);
 		wpa_trace_show("wpabuf_free magic mismatch");
 		abort();
 	}
-	if (buf->flags & WPABUF_FLAG_EXT_DATA)
+	if (buf->flags & WPABUF_FLAG_EXT_DATA) {
 		os_free(buf->buf);
+	}
 	os_free(trace);
-#else /* WPA_TRACE */
-	if (buf == NULL)
+#else							/* WPA_TRACE */
+	if (buf == NULL) {
 		return;
-	if (buf->flags & WPABUF_FLAG_EXT_DATA)
+	}
+	if (buf->flags & WPABUF_FLAG_EXT_DATA) {
 		os_free(buf->buf);
+	}
 	os_free(buf);
-#endif /* WPA_TRACE */
+#endif							/* WPA_TRACE */
 }
-
 
 void wpabuf_clear_free(struct wpabuf *buf)
 {
@@ -213,8 +204,7 @@ void wpabuf_clear_free(struct wpabuf *buf)
 	}
 }
 
-
-void * wpabuf_put(struct wpabuf *buf, size_t len)
+void *wpabuf_put(struct wpabuf *buf, size_t len)
 {
 	void *tmp = wpabuf_mhead_u8(buf) + wpabuf_len(buf);
 	buf->used += len;
@@ -223,7 +213,6 @@ void * wpabuf_put(struct wpabuf *buf, size_t len)
 	}
 	return tmp;
 }
-
 
 /**
  * wpabuf_concat - Concatenate two buffers into a newly allocated one
@@ -234,25 +223,30 @@ void * wpabuf_put(struct wpabuf *buf, size_t len)
  * Both buffers a and b will be freed regardless of the return value. Input
  * buffers can be %NULL which is interpreted as an empty buffer.
  */
-struct wpabuf * wpabuf_concat(struct wpabuf *a, struct wpabuf *b)
+struct wpabuf *wpabuf_concat(struct wpabuf *a, struct wpabuf *b)
 {
 	struct wpabuf *n = NULL;
 	size_t len = 0;
 
-	if (b == NULL)
+	if (b == NULL) {
 		return a;
+	}
 
-	if (a)
+	if (a) {
 		len += wpabuf_len(a);
-	if (b)
+	}
+	if (b) {
 		len += wpabuf_len(b);
+	}
 
 	n = wpabuf_alloc(len);
 	if (n) {
-		if (a)
+		if (a) {
 			wpabuf_put_buf(n, a);
-		if (b)
+		}
+		if (b) {
 			wpabuf_put_buf(n, b);
+		}
 	}
 
 	wpabuf_free(a);
@@ -260,7 +254,6 @@ struct wpabuf * wpabuf_concat(struct wpabuf *a, struct wpabuf *b)
 
 	return n;
 }
-
 
 /**
  * wpabuf_zeropad - Pad buffer with 0x00 octets (prefix) to specified length
@@ -274,17 +267,19 @@ struct wpabuf * wpabuf_concat(struct wpabuf *a, struct wpabuf *b)
  * will only be responsible on freeing the returned buffer. If buf is %NULL,
  * %NULL will be returned.
  */
-struct wpabuf * wpabuf_zeropad(struct wpabuf *buf, size_t len)
+struct wpabuf *wpabuf_zeropad(struct wpabuf *buf, size_t len)
 {
 	struct wpabuf *ret;
 	size_t blen;
 
-	if (buf == NULL)
+	if (buf == NULL) {
 		return NULL;
+	}
 
 	blen = wpabuf_len(buf);
-	if (blen >= len)
+	if (blen >= len) {
 		return buf;
+	}
 
 	ret = wpabuf_alloc(len);
 	if (ret) {
@@ -296,7 +291,6 @@ struct wpabuf * wpabuf_zeropad(struct wpabuf *buf, size_t len)
 	return ret;
 }
 
-
 void wpabuf_printf(struct wpabuf *buf, char *fmt, ...)
 {
 	va_list ap;
@@ -306,7 +300,8 @@ void wpabuf_printf(struct wpabuf *buf, char *fmt, ...)
 	va_start(ap, fmt);
 	res = vsnprintf(tmp, buf->size - buf->used, fmt, ap);
 	va_end(ap);
-	if (res < 0 || (size_t) res >= buf->size - buf->used)
+	if (res < 0 || (size_t)res >= buf->size - buf->used) {
 		wpabuf_overflow(buf, res);
+	}
 	buf->used += res;
 }

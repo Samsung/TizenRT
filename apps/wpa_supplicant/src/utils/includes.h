@@ -24,16 +24,16 @@
 #ifndef CONFIG_TI_COMPILER
 #include <signal.h>
 #include <sys/types.h>
-#endif /* CONFIG_TI_COMPILER */
+#endif							/* CONFIG_TI_COMPILER */
 #include <errno.h>
-#endif /* _WIN32_WCE */
+#endif							/* _WIN32_WCE */
 #include <ctype.h>
 
 #ifndef CONFIG_TI_COMPILER
 #ifndef _MSC_VER
 #include <unistd.h>
-#endif /* _MSC_VER */
-#endif /* CONFIG_TI_COMPILER */
+#endif							/* _MSC_VER */
+#endif							/* CONFIG_TI_COMPILER */
 
 #ifndef CONFIG_NATIVE_WINDOWS
 #ifndef CONFIG_TI_COMPILER
@@ -45,9 +45,9 @@
 #include <sys/uio.h>
 #endif
 #include <sys/time.h>
-#endif /* __vxworks */
-#endif /* CONFIG_TI_COMPILER */
-#endif /* CONFIG_NATIVE_WINDOWS */
+#endif							/* __vxworks */
+#endif							/* CONFIG_TI_COMPILER */
+#endif							/* CONFIG_NATIVE_WINDOWS */
 
 #include <sys/select.h>
 
@@ -55,10 +55,11 @@
 
 static inline int isblank(char c)
 {
-	if (c == ' ' || c == '\t')
+	if (c == ' ' || c == '\t') {
 		return 1;
-	else
+	} else {
 		return 0;
+	}
 }
 
-#endif /* INCLUDES_H */
+#endif							/* INCLUDES_H */

@@ -8,7 +8,6 @@
  *  @version    v0.50 : 2016.8.13 Init. release version
  */
 
-
 #ifndef ISP_DRIVER_HASH_H_
 #define ISP_DRIVER_HASH_H_
 
@@ -17,6 +16,6 @@
 // ======================================
 // Function
 // ======================================
-int isp_hash(unsigned char * hash, struct sHASH_MSG * hash_msg, unsigned int object_id);
+int isp_hash(unsigned char *hash, struct sHASH_MSG *hash_msg, unsigned int object_id);
 
-#endif /* ISP_DRIVER_HASH_H_ */
+#endif							/* ISP_DRIVER_HASH_H_ */

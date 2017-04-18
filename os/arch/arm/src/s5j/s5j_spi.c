@@ -94,9 +94,9 @@
 #define CH_CFG_SLAVE			(1 << 4)
 #define CH_CFG_MASTER			(0 << 4)
 #define CH_CFG_FIFO_FLUSH		(1 << 5)
-#define CH_CFG_FIFO_FLUSH_OFF		(0 << 5)
-#define CH_CFG_HIGH_SPEED_EN		(1 << 6)
-#define CH_CFG_HIGH_SPEED_DIS		(0 << 6)
+#define CH_CFG_FIFO_FLUSH_OFF	(0 << 5)
+#define CH_CFG_HIGH_SPEED_EN	(1 << 6)
+#define CH_CFG_HIGH_SPEED_DIS	(0 << 6)
 
 #define MODE_CFG_DMA_SINGLE		(0 << 0)
 #define MODE_CFG_DMA_4BURST		(1 << 0)
@@ -104,31 +104,31 @@
 #define MODE_CFG_DMA_TX_OFF		(0 << 1)
 #define MODE_CFG_DMA_RX_ON		(1 << 2)
 #define MODE_CFG_DMA_RX_OFF		(0 << 2)
-#define MODE_CFG_TX_RDY_LVL(x)		((x & 0x3F) << 5)
-#define MODE_CFG_RX_RDY_LVL(x)		((x & 0x3F) << 11)
-#define MODE_CFG_BUS_WDT_MASK		(3 << 17)
-#define MODE_CFG_BUS_WIDTH_8		(0 << 17)
-#define MODE_CFG_BUS_WIDTH_16		(1 << 17)
-#define MODE_CFG_BUS_WIDTH_32		(2 << 17)
-#define MODE_CFG_TRLNG_CNT(x)		((x & 0x3FF) << 19)
-#define MODE_CFG_CH_WDT_MASK		(3 << 29)
+#define MODE_CFG_TX_RDY_LVL(x)	((x & 0x3F) << 5)
+#define MODE_CFG_RX_RDY_LVL(x)	((x & 0x3F) << 11)
+#define MODE_CFG_BUS_WDT_MASK	(3 << 17)
+#define MODE_CFG_BUS_WIDTH_8	(0 << 17)
+#define MODE_CFG_BUS_WIDTH_16	(1 << 17)
+#define MODE_CFG_BUS_WIDTH_32	(2 << 17)
+#define MODE_CFG_TRLNG_CNT(x)	((x & 0x3FF) << 19)
+#define MODE_CFG_CH_WDT_MASK	(3 << 29)
 #define MODE_CFG_CH_WIDTH_8		(0 << 29)
-#define MODE_CFG_CH_WIDTH_16		(1 << 29)
-#define MODE_CFG_CH_WIDTH_32		(2 << 29)
+#define MODE_CFG_CH_WIDTH_16	(1 << 29)
+#define MODE_CFG_CH_WIDTH_32	(2 << 29)
 
 #define CS_REG_nSS_ACTIVE		(0 << 0)
 #define CS_REG_nSS_INACTIVE		(1 << 0)
 #define CS_REG_nSS_AUTO			(1 << 1)
 #define CS_REG_nSS_MANUAL		(0 << 1)
-#define CS_REG_nSS_TIME_CNT(x)		((x & 0x3F) << 1)
+#define CS_REG_nSS_TIME_CNT(x)	((x & 0x3F) << 1)
 
 #define INT_MASK_TRAILING		(1 << 6)
 #define INT_MASK_RX_OVERRUN		(1 << 5)
-#define INT_MASK_RX_UNDERRUN		(1 << 4)
+#define INT_MASK_RX_UNDERRUN	(1 << 4)
 #define INT_MASK_TX_OVERRUN		(1 << 3)
-#define INT_MASK_TX_UNDERRUN		(1 << 2)
-#define INT_MASK_RX_FIFO_RDY		(1 << 1)
-#define INT_MASK_TX_FIFO_RDY		(1 << 0)
+#define INT_MASK_TX_UNDERRUN	(1 << 2)
+#define INT_MASK_RX_FIFO_RDY	(1 << 1)
+#define INT_MASK_TX_FIFO_RDY	(1 << 0)
 
 #define SPI_STAT_TX_FIFO_RDY(x)		((x >> 0) & 1)
 #define SPI_STAT_RX_FIFO_RDY(x)		((x >> 1) & 1)
@@ -139,7 +139,7 @@
 #define SPI_STAT_TX_FIFO_LVL(x)		((x >> 6) & 0x1FF)
 #define SPI_STAT_RX_FIFO_LVL(x)		((x >> 15) & 0x1FF)
 #define SPI_STAT_TRAILING_BYTE(x)	((x >> 24) & 1)
-#define SPI_STAT_TX_DONE(x)		((x >> 25) & 1)
+#define SPI_STAT_TX_DONE(x)			((x >> 25) & 1)
 
 /*****************************************************************************
  * Private Types
@@ -321,7 +321,7 @@ static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selecte
 	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
 	SPI_SFR *pSPIRegs;
-	pSPIRegs = (SPI_SFR *) priv->base;
+	pSPIRegs = (SPI_SFR *)priv->base;
 
 	unsigned int cs_reg;
 	cs_reg = getreg32(&pSPIRegs->CS_REG);
@@ -346,7 +346,7 @@ static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
 	SPI_SFR *pSPIRegs;
-	pSPIRegs = (SPI_SFR *) priv->base;
+	pSPIRegs = (SPI_SFR *)priv->base;
 
 	unsigned int ch_cfg;
 	ch_cfg = getreg32(&pSPIRegs->CH_CFG);
@@ -366,7 +366,7 @@ static void spi_setbits(struct spi_dev_s *dev, int nbits)
 	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
 	SPI_SFR *pSPIRegs;
-	pSPIRegs = (SPI_SFR *) priv->base;
+	pSPIRegs = (SPI_SFR *)priv->base;
 
 	unsigned int mode_cfg;
 	mode_cfg = getreg32(&pSPIRegs->MODE_CFG);
@@ -405,11 +405,11 @@ static uint16_t spi_send(struct spi_dev_s *dev, uint16_t wd)
 	uint8_t txbyte;
 	uint8_t rxbyte;
 
-	txbyte = (uint8_t) wd;
-	rxbyte = (uint8_t) 0;
+	txbyte = (uint8_t)wd;
+	rxbyte = (uint8_t)0;
 	spi_exchange(dev, &txbyte, &rxbyte, 1);
 
-	return (uint16_t) rxbyte;
+	return (uint16_t)rxbyte;
 }
 
 /****************************************************************************
@@ -428,7 +428,7 @@ static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbu
 	unsigned int dummy_rx;
 
 	SPI_SFR *pSPIRegs;
-	pSPIRegs = (SPI_SFR *) priv->base;
+	pSPIRegs = (SPI_SFR *)priv->base;
 
 	/* SPI FIFO FLUSH */
 
@@ -578,7 +578,7 @@ struct spi_dev_s *up_spiinitialize(int port)
 	/* SET SPI INITIAL */
 
 	SPI_SFR *pSPIRegs;
-	pSPIRegs = (SPI_SFR *) priv->base;
+	pSPIRegs = (SPI_SFR *)priv->base;
 
 	/* TX/RX enable. Master.CPHA 00. */
 

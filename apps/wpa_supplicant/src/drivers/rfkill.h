@@ -18,8 +18,8 @@ struct rfkill_config {
 	void (*unblocked_cb)(void *ctx);
 };
 
-struct rfkill_data * rfkill_init(struct rfkill_config *cfg);
+struct rfkill_data *rfkill_init(struct rfkill_config *cfg);
 void rfkill_deinit(struct rfkill_data *rfkill);
 int rfkill_is_blocked(struct rfkill_data *rfkill);
 
-#endif /* RFKILL_H */
+#endif							/* RFKILL_H */

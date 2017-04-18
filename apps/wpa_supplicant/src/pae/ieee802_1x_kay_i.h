@@ -28,7 +28,7 @@ enum mka_packet_type {
 	MKA_ICV_INDICATOR = 255
 };
 
-#define ICV_LEN                         16  /* 16 bytes */
+#define ICV_LEN                         16	/* 16 bytes */
 #define SAK_WRAPPED_LEN                 24
 /* KN + Wrapper SAK */
 #define DEFAULT_DIS_SAK_BODY_LENGTH     (SAK_WRAPPED_LEN + 4)
@@ -61,7 +61,7 @@ struct key_conf {
 	u8 an;
 	Boolean tx;
 	Boolean rx;
-	int key_len; /* unit: byte */
+	int key_len;				/* unit: byte */
 };
 
 struct data_key {
@@ -79,20 +79,20 @@ struct data_key {
 	Boolean rx_latest;
 	Boolean tx_latest;
 
-	int user;  /* FIXME: to indicate if it can be delete safely */
+	int user;					/* FIXME: to indicate if it can be delete safely */
 
 	struct dl_list list;
 };
 
 /* TransmitSC in IEEE Std 802.1AE-2006, Figure 10-6 */
 struct transmit_sc {
-	struct ieee802_1x_mka_sci sci; /* const SCI sci */
-	Boolean transmitting; /* bool transmitting (read only) */
+	struct ieee802_1x_mka_sci sci;	/* const SCI sci */
+	Boolean transmitting;		/* bool transmitting (read only) */
 
-	struct os_time created_time; /* Time createdTime */
+	struct os_time created_time;	/* Time createdTime */
 
-	u8 encoding_sa; /* AN encodingSA (read only) */
-	u8 enciphering_sa; /* AN encipheringSA (read only) */
+	u8 encoding_sa;				/* AN encodingSA (read only) */
+	u8 enciphering_sa;			/* AN encipheringSA (read only) */
 
 	/* not defined data */
 	unsigned int channel;
@@ -103,26 +103,26 @@ struct transmit_sc {
 
 /* TransmitSA in IEEE Std 802.1AE-2006, Figure 10-6 */
 struct transmit_sa {
-	Boolean in_use; /* bool inUse (read only) */
-	u32 next_pn; /* PN nextPN (read only) */
-	struct os_time created_time; /* Time createdTime */
+	Boolean in_use;				/* bool inUse (read only) */
+	u32 next_pn;				/* PN nextPN (read only) */
+	struct os_time created_time;	/* Time createdTime */
 
-	Boolean enable_transmit; /* bool EnableTransmit */
+	Boolean enable_transmit;	/* bool EnableTransmit */
 
 	u8 an;
 	Boolean confidentiality;
 	struct data_key *pkey;
 
 	struct transmit_sc *sc;
-	struct dl_list list; /* list entry in struct transmit_sc::sa_list */
+	struct dl_list list;		/* list entry in struct transmit_sc::sa_list */
 };
 
 /* ReceiveSC in IEEE Std 802.1AE-2006, Figure 10-6 */
 struct receive_sc {
-	struct ieee802_1x_mka_sci sci; /* const SCI sci */
-	Boolean receiving; /* bool receiving (read only) */
+	struct ieee802_1x_mka_sci sci;	/* const SCI sci */
+	Boolean receiving;			/* bool receiving (read only) */
 
-	struct os_time created_time; /* Time createdTime */
+	struct os_time created_time;	/* Time createdTime */
 
 	unsigned int channel;
 
@@ -132,16 +132,16 @@ struct receive_sc {
 
 /* ReceiveSA in IEEE Std 802.1AE-2006, Figure 10-6 */
 struct receive_sa {
-	Boolean enable_receive; /* bool enableReceive */
-	Boolean in_use; /* bool inUse (read only) */
+	Boolean enable_receive;		/* bool enableReceive */
+	Boolean in_use;				/* bool inUse (read only) */
 
-	u32 next_pn; /* PN nextPN (read only) */
-	u32 lowest_pn; /* PN lowestPN (read only) */
+	u32 next_pn;				/* PN nextPN (read only) */
+	u32 lowest_pn;				/* PN lowestPN (read only) */
 	u8 an;
 	struct os_time created_time;
 
 	struct data_key *pkey;
-	struct receive_sc *sc; /* list entry in struct receive_sc::sa_list */
+	struct receive_sc *sc;		/* list entry in struct receive_sc::sa_list */
 
 	struct dl_list list;
 };
@@ -150,7 +150,7 @@ struct macsec_ciphersuite {
 	u8 id[CS_ID_LEN];
 	char name[32];
 	enum macsec_cap capable;
-	int sak_len; /* unit: byte */
+	int sak_len;				/* unit: byte */
 
 	u32 index;
 };
@@ -163,13 +163,12 @@ struct mka_alg {
 	size_t icv_len;
 
 	int (*cak_trfm)(const u8 *msk, const u8 *mac1, const u8 *mac2, u8 *cak);
-	int (*ckn_trfm)(const u8 *msk, const u8 *mac1, const u8 *mac2,
-			const u8 *sid, size_t sid_len, u8 *ckn);
+	int (*ckn_trfm)(const u8 *msk, const u8 *mac1, const u8 *mac2, const u8 *sid, size_t sid_len, u8 *ckn);
 	int (*kek_trfm)(const u8 *cak, const u8 *ckn, size_t ckn_len, u8 *kek);
 	int (*ick_trfm)(const u8 *cak, const u8 *ckn, size_t ckn_len, u8 *ick);
 	int (*icv_hash)(const u8 *ick, const u8 *msg, size_t msg_len, u8 *icv);
 
-	int index; /* index for configuring */
+	int index;					/* index for configuring */
 };
 
 #define DEFAULT_MKA_ALG_INDEX 0
@@ -241,69 +240,69 @@ struct ieee802_1x_mka_participant {
 
 struct ieee802_1x_mka_hdr {
 	/* octet 1 */
-	u32 type:8;
+	u32 type: 8;
 	/* octet 2 */
-	u32 reserve:8;
+	u32 reserve: 8;
 	/* octet 3 */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	u32 length:4;
-	u32 reserve1:4;
+	u32 length: 4;
+	u32 reserve1: 4;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-	u32 reserve1:4;
-	u32 length:4;
+	u32 reserve1: 4;
+	u32 length: 4;
 #else
 #error "Please fix <bits/endian.h>"
 #endif
 	/* octet 4 */
-	u32 length1:8;
+	u32 length1: 8;
 };
 
 #define MKA_HDR_LEN sizeof(struct ieee802_1x_mka_hdr)
 
 struct ieee802_1x_mka_basic_body {
 	/* octet 1 */
-	u32 version:8;
+	u32 version: 8;
 	/* octet 2 */
-	u32 priority:8;
+	u32 priority: 8;
 	/* octet 3 */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	u32 length:4;
-	u32 macsec_capbility:2;
-	u32 macsec_desired:1;
-	u32 key_server:1;
+	u32 length: 4;
+	u32 macsec_capbility: 2;
+	u32 macsec_desired: 1;
+	u32 key_server: 1;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-	u32 key_server:1;
-	u32 macsec_desired:1;
-	u32 macsec_capbility:2;
-	u32 length:4;
+	u32 key_server: 1;
+	u32 macsec_desired: 1;
+	u32 macsec_capbility: 2;
+	u32 length: 4;
 #endif
 	/* octet 4 */
-	u32 length1:8;
+	u32 length1: 8;
 
 	struct ieee802_1x_mka_sci actor_sci;
 	u8 actor_mi[MI_LEN];
 	u32 actor_mn;
 	u8 algo_agility[4];
 
-	/* followed by CAK Name*/
+	/* followed by CAK Name */
 	u8 ckn[0];
 };
 
 struct ieee802_1x_mka_peer_body {
 	/* octet 1 */
-	u32 type:8;
+	u32 type: 8;
 	/* octet 2 */
-	u32 reserve:8;
+	u32 reserve: 8;
 	/* octet 3 */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	u32 length:4;
-	u32 reserve1:4;
+	u32 length: 4;
+	u32 reserve1: 4;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-	u32 reserve1:4;
-	u32 length:4;
+	u32 reserve1: 4;
+	u32 length: 4;
 #endif
 	/* octet 4 */
-	u32 length1:8;
+	u32 length1: 8;
 
 	u8 peer[0];
 	/* followed by Peers */
@@ -311,41 +310,41 @@ struct ieee802_1x_mka_peer_body {
 
 struct ieee802_1x_mka_sak_use_body {
 	/* octet 1 */
-	u32 type:8;
+	u32 type: 8;
 	/* octet 2 */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	u32 orx:1;
-	u32 otx:1;
-	u32 oan:2;
-	u32 lrx:1;
-	u32 ltx:1;
-	u32 lan:2;
+	u32 orx: 1;
+	u32 otx: 1;
+	u32 oan: 2;
+	u32 lrx: 1;
+	u32 ltx: 1;
+	u32 lan: 2;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-	u32 lan:2;
-	u32 ltx:1;
-	u32 lrx:1;
-	u32 oan:2;
-	u32 otx:1;
-	u32 orx:1;
+	u32 lan: 2;
+	u32 ltx: 1;
+	u32 lrx: 1;
+	u32 oan: 2;
+	u32 otx: 1;
+	u32 orx: 1;
 #endif
 
 	/* octet 3 */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	u32 length:4;
-	u32 delay_protect:1;
-	u32 reserve:1;
-	u32 prx:1;
-	u32 ptx:1;
+	u32 length: 4;
+	u32 delay_protect: 1;
+	u32 reserve: 1;
+	u32 prx: 1;
+	u32 ptx: 1;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-	u32 ptx:1;
-	u32 prx:1;
-	u32 reserve:1;
-	u32 delay_protect:1;
-	u32 length:4;
+	u32 ptx: 1;
+	u32 prx: 1;
+	u32 reserve: 1;
+	u32 delay_protect: 1;
+	u32 length: 4;
 #endif
 
 	/* octet 4 */
-	u32 length1:8;
+	u32 length1: 8;
 
 	/* octet 5 - 16 */
 	u8 lsrv_mi[MI_LEN];
@@ -362,30 +361,29 @@ struct ieee802_1x_mka_sak_use_body {
 	u32 olpn;
 };
 
-
 struct ieee802_1x_mka_dist_sak_body {
 	/* octet 1 */
-	u32 type:8;
+	u32 type: 8;
 	/* octet 2 */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	u32 reserve:4;
-	u32 confid_offset:2;
-	u32 dan:2;
+	u32 reserve: 4;
+	u32 confid_offset: 2;
+	u32 dan: 2;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-	u32 dan:2;
-	u32 confid_offset:2;
-	u32 reserve:4;
+	u32 dan: 2;
+	u32 confid_offset: 2;
+	u32 reserve: 4;
 #endif
 	/* octet 3 */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	u32 length:4;
-	u32 reserve1:4;
+	u32 length: 4;
+	u32 reserve1: 4;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-	u32 reserve1:4;
-	u32 length:4;
+	u32 reserve1: 4;
+	u32 length: 4;
 #endif
 	/* octet 4 */
-	u32 length1:8;
+	u32 length1: 8;
 	/* octet 5 - 8 */
 	u32 kn;
 
@@ -395,25 +393,24 @@ struct ieee802_1x_mka_dist_sak_body {
 	u8 sak[0];
 };
 
-
 struct ieee802_1x_mka_icv_body {
 	/* octet 1 */
-	u32 type:8;
+	u32 type: 8;
 	/* octet 2 */
-	u32 reserve:8;
+	u32 reserve: 8;
 	/* octet 3 */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	u32 length:4;
-	u32 reserve1:4;
+	u32 length: 4;
+	u32 reserve1: 4;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-	u32 reserve1:4;
-	u32 length:4;
+	u32 reserve1: 4;
+	u32 length: 4;
 #endif
 	/* octet 4 */
-	u32 length1:8;
+	u32 length1: 8;
 
 	/* octet 5 - */
 	u8 icv[0];
 };
 
-#endif /* IEEE802_1X_KAY_I_H */
+#endif							/* IEEE802_1X_KAY_I_H */

@@ -135,4 +135,4 @@ static void sm_ ## machine ## _Step(STATE_MACHINE_DATA *sm)
  */
 #define SM_STEP_RUN(machine) sm_ ## machine ## _Step(sm)
 
-#endif /* STATE_MACHINE_H */
+#endif							/* STATE_MACHINE_H */

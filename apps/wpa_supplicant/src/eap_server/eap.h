@@ -29,30 +29,30 @@ struct eap_user {
 	} methods[EAP_MAX_METHODS];
 	u8 *password;
 	size_t password_len;
-	int password_hash; /* whether password is hashed with
-			    * nt_password_hash() */
+	int password_hash;			/* whether password is hashed with
+								 * nt_password_hash() */
 	int phase2;
 	int force_version;
-	unsigned int remediation:1;
-	unsigned int macacl:1;
-	int ttls_auth; /* bitfield of
-			* EAP_TTLS_AUTH_{PAP,CHAP,MSCHAP,MSCHAPV2} */
+	unsigned int remediation: 1;
+	unsigned int macacl: 1;
+	int ttls_auth;				/* bitfield of
+								 * EAP_TTLS_AUTH_{PAP,CHAP,MSCHAP,MSCHAPV2} */
 	struct hostapd_radius_attr *accept_attr;
 };
 
 struct eap_eapol_interface {
 	/* Lower layer to full authenticator variables */
-	Boolean eapResp; /* shared with EAPOL Backend Authentication */
+	Boolean eapResp;			/* shared with EAPOL Backend Authentication */
 	struct wpabuf *eapRespData;
 	Boolean portEnabled;
 	int retransWhile;
-	Boolean eapRestart; /* shared with EAPOL Authenticator PAE */
+	Boolean eapRestart;			/* shared with EAPOL Authenticator PAE */
 	int eapSRTT;
 	int eapRTTVAR;
 
 	/* Full authenticator to lower layer variables */
-	Boolean eapReq; /* shared with EAPOL Backend Authentication */
-	Boolean eapNoReq; /* shared with EAPOL Backend Authentication */
+	Boolean eapReq;				/* shared with EAPOL Backend Authentication */
+	Boolean eapNoReq;			/* shared with EAPOL Backend Authentication */
 	Boolean eapSuccess;
 	Boolean eapFail;
 	Boolean eapTimeout;
@@ -61,7 +61,7 @@ struct eap_eapol_interface {
 	size_t eapKeyDataLen;
 	u8 *eapSessionId;
 	size_t eapSessionIdLen;
-	Boolean eapKeyAvailable; /* called keyAvailable in IEEE 802.1X-2004 */
+	Boolean eapKeyAvailable;	/* called keyAvailable in IEEE 802.1X-2004 */
 
 	/* AAA interface to full authenticator variables */
 	Boolean aaaEapReq;
@@ -93,14 +93,12 @@ struct eap_server_erp_key {
 };
 
 struct eapol_callbacks {
-	int (*get_eap_user)(void *ctx, const u8 *identity, size_t identity_len,
-			    int phase2, struct eap_user *user);
-	const char * (*get_eap_req_id_text)(void *ctx, size_t *len);
+	int (*get_eap_user)(void *ctx, const u8 *identity, size_t identity_len, int phase2, struct eap_user *user);
+	const char *(*get_eap_req_id_text)(void *ctx, size_t *len);
 	void (*log_msg)(void *ctx, const char *msg);
 	int (*get_erp_send_reauth_start)(void *ctx);
-	const char * (*get_erp_domain)(void *ctx);
-	struct eap_server_erp_key * (*erp_get_key)(void *ctx,
-						   const char *keyname);
+	const char *(*get_erp_domain)(void *ctx);
+	struct eap_server_erp_key *(*erp_get_key)(void *ctx, const char *keyname);
 	int (*erp_add_key)(void *ctx, struct eap_server_erp_key *erp);
 };
 
@@ -134,23 +132,18 @@ struct eap_config {
 
 #ifdef CONFIG_TESTING_OPTIONS
 	u32 tls_test_flags;
-#endif /* CONFIG_TESTING_OPTIONS */
+#endif							/* CONFIG_TESTING_OPTIONS */
 };
 
-
-struct eap_sm * eap_server_sm_init(void *eapol_ctx,
-				   const struct eapol_callbacks *eapol_cb,
-				   struct eap_config *eap_conf);
+struct eap_sm *eap_server_sm_init(void *eapol_ctx, const struct eapol_callbacks *eapol_cb, struct eap_config *eap_conf);
 void eap_server_sm_deinit(struct eap_sm *sm);
 int eap_server_sm_step(struct eap_sm *sm);
 void eap_sm_notify_cached(struct eap_sm *sm);
 void eap_sm_pending_cb(struct eap_sm *sm);
 int eap_sm_method_pending(struct eap_sm *sm);
-const u8 * eap_get_identity(struct eap_sm *sm, size_t *len);
-struct eap_eapol_interface * eap_get_interface(struct eap_sm *sm);
+const u8 *eap_get_identity(struct eap_sm *sm, size_t *len);
+struct eap_eapol_interface *eap_get_interface(struct eap_sm *sm);
 void eap_server_clear_identity(struct eap_sm *sm);
-void eap_server_mschap_rx_callback(struct eap_sm *sm, const char *source,
-				   const u8 *username, size_t username_len,
-				   const u8 *challenge, const u8 *response);
+void eap_server_mschap_rx_callback(struct eap_sm *sm, const char *source, const u8 *username, size_t username_len, const u8 *challenge, const u8 *response);
 
-#endif /* EAP_H */
+#endif							/* EAP_H */

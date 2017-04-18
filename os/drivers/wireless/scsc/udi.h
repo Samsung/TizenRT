@@ -9,7 +9,7 @@
 
 #include "dev.h"
 
-#define SLSI_UDI_MINOR_NODES 2                 /* Maximum number of nodes supported. */
+#define SLSI_UDI_MINOR_NODES 2	/* Maximum number of nodes supported. */
 
 int slsi_udi_node_init(struct slsi_dev *sdev);
 int slsi_udi_node_deinit(struct slsi_dev *sdev);

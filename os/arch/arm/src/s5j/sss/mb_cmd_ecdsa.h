@@ -5,7 +5,6 @@
  *  @version    v0.50 : 2016.8.13 Init. release version
  */
 
-
 #ifndef MB_CMD_ECDSA_H_
 #define MB_CMD_ECDSA_H_
 
@@ -17,27 +16,23 @@
 // ======================================
 //! @struct sECC_KEY
 //! @brief struct of ECDSA Key parameter
-struct sECC_KEY
-{
+struct sECC_KEY {
 	unsigned int curve;
-	unsigned char * privatekey;
-	unsigned char * publickey_x;
+	unsigned char *privatekey;
+	unsigned char *publickey_x;
 	unsigned char x_byte_len;
-	unsigned char * publickey_y;
+	unsigned char *publickey_y;
 	unsigned char y_byte_len;
 };
 
 //! @struct sECC_SIGN
 //! @brief struct of ECDSA Signature
-struct sECC_SIGN
-{
+struct sECC_SIGN {
 	unsigned int sign_type;
-	unsigned char * r;
+	unsigned char *r;
 	unsigned char r_byte_len;
-	unsigned char * s;
+	unsigned char *s;
 	unsigned char s_byte_len;
 };
 
-
-#endif /* MB_CMD_ECDSA_H_ */
-
+#endif							/* MB_CMD_ECDSA_H_ */

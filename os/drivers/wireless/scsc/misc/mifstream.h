@@ -22,7 +22,6 @@
 #ifndef MIFSTREAM_H__
 #define MIFSTREAM_H__
 
-
 /** Uses */
 #include "cpacket_buffer.h"
 #include "mifintrbit.h"
@@ -38,8 +37,7 @@ struct mif_stream;
 /**
  * Initialises MIF Stream state.
  */
-int mif_stream_init(struct mif_stream *stream, enum MIF_STREAM_DIRECTION direction, uint32_t num_packets, uint32_t packet_size,
-		    struct scsc_mx *mx, mifintrbit_handler tohost_irq_handler, void *data);
+int mif_stream_init(struct mif_stream *stream, enum MIF_STREAM_DIRECTION direction, uint32_t num_packets, uint32_t packet_size, struct scsc_mx *mx, mifintrbit_handler tohost_irq_handler, void *data);
 /**
  * Initialises MIF Output Stream state.
  */
@@ -144,13 +142,13 @@ void mif_stream_config_serialise(struct mif_stream *stream, struct mxstreamconf 
  * MIF Packet Stream Descriptor.
  */
 struct mif_stream {
-	struct scsc_mx            *mx;
-	struct cpacketbuffer      buffer;
+	struct scsc_mx *mx;
+	struct cpacketbuffer buffer;
 
 	/** MIF interrupt bit index, one in each direction */
-	uint8_t                   read_bit_idx;
-	uint8_t                   write_bit_idx;
+	uint8_t read_bit_idx;
+	uint8_t write_bit_idx;
 	enum MIF_STREAM_DIRECTION direction;
 };
 
-#endif /* MIFSTREAM_H__ */
+#endif							/* MIFSTREAM_H__ */

@@ -209,7 +209,6 @@
 #define WLAN_REASON_MESH_INCONSISTENT_PARAMS 59
 #define WLAN_REASON_MESH_INVALID_SECURITY_CAP 60
 
-
 /* Information Element IDs */
 #define WLAN_EID_SSID 0
 #define WLAN_EID_SUPP_RATES 1
@@ -282,7 +281,6 @@
 #define WLAN_EID_VHT_OPERATING_MODE_NOTIFICATION 199
 #define WLAN_EID_VENDOR_SPECIFIC 221
 
-
 /* Action frame categories (IEEE 802.11-2007, 7.3.1.11, Table 7-24) */
 #define WLAN_ACTION_SPECTRUM_MGMT 0
 #define WLAN_ACTION_QOS 1
@@ -298,7 +296,7 @@
 #define WLAN_ACTION_UNPROTECTED_WNM 11
 #define WLAN_ACTION_TDLS 12
 #define WLAN_ACTION_SELF_PROTECTED 15
-#define WLAN_ACTION_WMM 17 /* WMM Specification 1.1 */
+#define WLAN_ACTION_WMM 17		/* WMM Specification 1.1 */
 #define WLAN_ACTION_VENDOR_SPECIFIC 127
 
 /* Public action codes */
@@ -438,7 +436,7 @@ enum nai_realm_eap_cred_type {
 
 #ifdef _MSC_VER
 #pragma pack(push, 1)
-#endif /* _MSC_VER */
+#endif							/* _MSC_VER */
 
 struct ieee80211_hdr {
 	le16 frame_control;
@@ -531,7 +529,7 @@ struct ieee80211_mgmt {
 					u8 status_code;
 					u8 variable[];
 				} STRUCT_PACKED wmm_action;
-				struct{
+				struct {
 					u8 action_code;
 					u8 element_id;
 					u8 length;
@@ -543,21 +541,21 @@ struct ieee80211_mgmt {
 					u8 action;
 					u8 sta_addr[ETH_ALEN];
 					u8 target_ap_addr[ETH_ALEN];
-					u8 variable[]; /* FT Request */
+					u8 variable[];	/* FT Request */
 				} STRUCT_PACKED ft_action_req;
 				struct {
 					u8 action;
 					u8 sta_addr[ETH_ALEN];
 					u8 target_ap_addr[ETH_ALEN];
 					le16 status_code;
-					u8 variable[]; /* FT Request */
+					u8 variable[];	/* FT Request */
 				} STRUCT_PACKED ft_action_resp;
 				struct {
 					u8 action;
 					u8 trans_id[WLAN_SA_QUERY_TR_ID_LEN];
 				} STRUCT_PACKED sa_query_req;
 				struct {
-					u8 action; /* */
+					u8 action;	/* */
 					u8 trans_id[WLAN_SA_QUERY_TR_ID_LEN];
 				} STRUCT_PACKED sa_query_resp;
 				struct {
@@ -576,13 +574,13 @@ struct ieee80211_mgmt {
 					u8 variable[];
 				} STRUCT_PACKED public_action;
 				struct {
-					u8 action; /* 9 */
+					u8 action;	/* 9 */
 					u8 oui[3];
 					/* Vendor-specific content */
 					u8 variable[];
 				} STRUCT_PACKED vs_public_action;
 				struct {
-					u8 action; /* 7 */
+					u8 action;	/* 7 */
 					u8 dialog_token;
 					u8 req_mode;
 					le16 disassoc_timer;
@@ -594,7 +592,7 @@ struct ieee80211_mgmt {
 					u8 variable[];
 				} STRUCT_PACKED bss_tm_req;
 				struct {
-					u8 action; /* 8 */
+					u8 action;	/* 8 */
 					u8 dialog_token;
 					u8 status_code;
 					u8 bss_termination_delay;
@@ -604,7 +602,7 @@ struct ieee80211_mgmt {
 					u8 variable[];
 				} STRUCT_PACKED bss_tm_resp;
 				struct {
-					u8 action; /* 6 */
+					u8 action;	/* 6 */
 					u8 dialog_token;
 					u8 query_reason;
 					/* BSS Transition Candidate List
@@ -612,7 +610,7 @@ struct ieee80211_mgmt {
 					u8 variable[];
 				} STRUCT_PACKED bss_tm_query;
 				struct {
-					u8 action; /* 15 */
+					u8 action;	/* 15 */
 					u8 variable[];
 				} STRUCT_PACKED slf_prot_action;
 			} u;
@@ -620,33 +618,30 @@ struct ieee80211_mgmt {
 	} u;
 } STRUCT_PACKED;
 
-
 /* Rx MCS bitmask is in the first 77 bits of supported_mcs_set */
 #define IEEE80211_HT_MCS_MASK_LEN 10
 
 /* HT Capabilities element */
 struct ieee80211_ht_capabilities {
 	le16 ht_capabilities_info;
-	u8 a_mpdu_params; /* Maximum A-MPDU Length Exponent B0..B1
-			   * Minimum MPDU Start Spacing B2..B4
-			   * Reserved B5..B7 */
+	u8 a_mpdu_params;			/* Maximum A-MPDU Length Exponent B0..B1
+								 * Minimum MPDU Start Spacing B2..B4
+								 * Reserved B5..B7 */
 	u8 supported_mcs_set[16];
 	le16 ht_extended_capabilities;
 	le32 tx_bf_capability_info;
 	u8 asel_capabilities;
 } STRUCT_PACKED;
 
-
 /* HT Operation element */
 struct ieee80211_ht_operation {
 	u8 primary_chan;
 	/* Five octets of HT Operation Information */
-	u8 ht_param; /* B0..B7 */
-	le16 operation_mode; /* B8..B23 */
-	le16 param; /* B24..B39 */
+	u8 ht_param;				/* B0..B7 */
+	le16 operation_mode;		/* B8..B23 */
+	le16 param;					/* B24..B39 */
 	u8 basic_mcs_set[16];
 } STRUCT_PACKED;
-
 
 struct ieee80211_obss_scan_parameters {
 	le16 scan_passive_dwell;
@@ -657,7 +652,6 @@ struct ieee80211_obss_scan_parameters {
 	le16 channel_transition_delay_factor;
 	le16 scan_activity_threshold;
 } STRUCT_PACKED;
-
 
 struct ieee80211_vht_capabilities {
 	le32 vht_capabilities_info;
@@ -687,7 +681,7 @@ struct ieee80211_ampe_ie {
 
 #ifdef _MSC_VER
 #pragma pack(pop)
-#endif /* _MSC_VER */
+#endif							/* _MSC_VER */
 
 #define ERP_INFO_NON_ERP_PRESENT BIT(0)
 #define ERP_INFO_USE_PROTECTION BIT(1)
@@ -778,10 +772,10 @@ struct ieee80211_ampe_ie {
 #define HT_PROT_NON_HT_MIXED            3
 /* Bits within ieee80211_ht_operation::operation_mode (BIT(0) maps to B8 in
  * HT Operation Information) */
-#define HT_OPER_OP_MODE_HT_PROT_MASK ((u16) (BIT(0) | BIT(1))) /* B8..B9 */
-#define HT_OPER_OP_MODE_NON_GF_HT_STAS_PRESENT	((u16) BIT(2)) /* B10 */
+#define HT_OPER_OP_MODE_HT_PROT_MASK ((u16) (BIT(0) | BIT(1)))	/* B8..B9 */
+#define HT_OPER_OP_MODE_NON_GF_HT_STAS_PRESENT	((u16) BIT(2))	/* B10 */
 /* BIT(3), i.e., B11 in HT Operation Information field - Reserved */
-#define HT_OPER_OP_MODE_OBSS_NON_HT_STAS_PRESENT	((u16) BIT(4)) /* B12 */
+#define HT_OPER_OP_MODE_OBSS_NON_HT_STAS_PRESENT	((u16) BIT(4))	/* B12 */
 /* BIT(5)..BIT(15), i.e., B13..B23 - Reserved */
 
 /* Last two octets of HT Operation Information (BIT(0) = B24) */
@@ -858,8 +852,8 @@ struct ieee80211_ampe_ie {
 #define VHT_CHANWIDTH_160MHZ	2
 #define VHT_CHANWIDTH_80P80MHZ	3
 
-#define OUI_MICROSOFT 0x0050f2 /* Microsoft (also used in Wi-Fi specs)
-				* 00:50:F2 */
+#define OUI_MICROSOFT 0x0050f2	/* Microsoft (also used in Wi-Fi specs)
+								 * 00:50:F2 */
 #define WPA_IE_VENDOR_TYPE 0x0050f201
 #define WMM_IE_VENDOR_TYPE 0x0050f202
 #define WPS_IE_VENDOR_TYPE 0x0050f204
@@ -899,11 +893,11 @@ struct ieee80211_ampe_ie {
 struct wmm_information_element {
 	/* Element ID: 221 (0xdd); Length: 7 */
 	/* required fields for WMM version 1 */
-	u8 oui[3]; /* 00:50:f2 */
-	u8 oui_type; /* 2 */
-	u8 oui_subtype; /* 0 */
-	u8 version; /* 1 for WMM version 1.0 */
-	u8 qos_info; /* AP/STA specific QoS info */
+	u8 oui[3];					/* 00:50:f2 */
+	u8 oui_type;				/* 2 */
+	u8 oui_subtype;				/* 0 */
+	u8 version;					/* 1 for WMM version 1.0 */
+	u8 qos_info;				/* AP/STA specific QoS info */
 
 } STRUCT_PACKED;
 
@@ -925,10 +919,10 @@ struct wmm_information_element {
 #define WMM_AC_ECWMAX_SHIFT 4
 
 struct wmm_ac_parameter {
-	u8 aci_aifsn; /* AIFSN, ACM, ACI */
-	u8 cw; /* ECWmin, ECWmax (CW = 2^ECW - 1) */
+	u8 aci_aifsn;				/* AIFSN, ACM, ACI */
+	u8 cw;						/* ECWmin, ECWmax (CW = 2^ECW - 1) */
 	le16 txop_limit;
-}  STRUCT_PACKED;
+} STRUCT_PACKED;
 
 /*
  * WMM Parameter Element (used in Beacon, Probe Response, and (Re)Association
@@ -937,24 +931,24 @@ struct wmm_ac_parameter {
 struct wmm_parameter_element {
 	/* Element ID: 221 (0xdd); Length: 24 */
 	/* required fields for WMM version 1 */
-	u8 oui[3]; /* 00:50:f2 */
-	u8 oui_type; /* 2 */
-	u8 oui_subtype; /* 1 */
-	u8 version; /* 1 for WMM version 1.0 */
-	u8 qos_info; /* AP/STA specific QoS info */
-	u8 reserved; /* 0 */
-	struct wmm_ac_parameter ac[4]; /* AC_BE, AC_BK, AC_VI, AC_VO */
+	u8 oui[3];					/* 00:50:f2 */
+	u8 oui_type;				/* 2 */
+	u8 oui_subtype;				/* 1 */
+	u8 version;					/* 1 for WMM version 1.0 */
+	u8 qos_info;				/* AP/STA specific QoS info */
+	u8 reserved;				/* 0 */
+	struct wmm_ac_parameter ac[4];	/* AC_BE, AC_BK, AC_VI, AC_VO */
 
 } STRUCT_PACKED;
 
 /* WMM TSPEC Element */
 struct wmm_tspec_element {
-	u8 eid; /* 221 = 0xdd */
-	u8 length; /* 6 + 55 = 61 */
-	u8 oui[3]; /* 00:50:f2 */
-	u8 oui_type; /* 2 */
-	u8 oui_subtype; /* 2 */
-	u8 version; /* 1 */
+	u8 eid;						/* 221 = 0xdd */
+	u8 length;					/* 6 + 55 = 61 */
+	u8 oui[3];					/* 00:50:f2 */
+	u8 oui_type;				/* 2 */
+	u8 oui_subtype;				/* 2 */
+	u8 version;					/* 1 */
 	/* WMM TSPEC body (55 octets): */
 	u8 ts_info[3];
 	le16 nominal_msdu_size;
@@ -974,16 +968,14 @@ struct wmm_tspec_element {
 	le16 medium_time;
 } STRUCT_PACKED;
 
-
 /* Access Categories / ACI to AC coding */
 enum wmm_ac {
-	WMM_AC_BE = 0 /* Best Effort */,
-	WMM_AC_BK = 1 /* Background */,
-	WMM_AC_VI = 2 /* Video */,
-	WMM_AC_VO = 3 /* Voice */,
+	WMM_AC_BE = 0 /* Best Effort */ ,
+	WMM_AC_BK = 1 /* Background */ ,
+	WMM_AC_VI = 2 /* Video */ ,
+	WMM_AC_VO = 3 /* Voice */ ,
 	WMM_AC_NUM = 4
 };
-
 
 #define HS20_INDICATION_OUI_TYPE 16
 #define HS20_ANQP_OUI_TYPE 17
@@ -1002,7 +994,7 @@ enum wmm_ac {
 #define HS20_DGAF_DISABLED 0x01
 #define HS20_PPS_MO_ID_PRESENT 0x02
 #define HS20_ANQP_DOMAIN_ID_PRESENT 0x04
-#define HS20_VERSION 0x10 /* Release 2 */
+#define HS20_VERSION 0x10		/* Release 2 */
 
 /* WNM-Notification WFA vendors specific subtypes */
 #define HS20_WNM_SUB_REM_NEEDED 0
@@ -1138,7 +1130,6 @@ enum p2p_sd_status {
 	P2P_SD_BAD_REQUEST = 3
 };
 
-
 enum wifi_display_subelem {
 	WFD_SUBELEM_DEVICE_INFO = 0,
 	WFD_SUBELEM_ASSOCIATED_BSSID = 1,
@@ -1166,12 +1157,12 @@ enum plink_action_field {
 	PLINK_CLOSE
 };
 
-#define OUI_BROADCOM 0x00904c /* Broadcom (Epigram) */
+#define OUI_BROADCOM 0x00904c	/* Broadcom (Epigram) */
 #define VENDOR_VHT_TYPE		0x04
 #define VENDOR_VHT_SUBTYPE	0x08
 #define VENDOR_VHT_SUBTYPE2	0x00
 
-#define VENDOR_HT_CAPAB_OUI_TYPE 0x33 /* 00-90-4c:0x33 */
+#define VENDOR_HT_CAPAB_OUI_TYPE 0x33	/* 00-90-4c:0x33 */
 
 /* cipher suite selectors */
 #define WLAN_CIPHER_SUITE_USE_GROUP	0x000FAC00
@@ -1194,7 +1185,7 @@ enum plink_action_field {
 #define WLAN_CIPHER_SUITE_CKIP		0x00409600
 #define WLAN_CIPHER_SUITE_CKIP_CMIC	0x00409601
 #define WLAN_CIPHER_SUITE_CMIC		0x00409602
-#define WLAN_CIPHER_SUITE_KRK		0x004096FF /* for nl80211 use only */
+#define WLAN_CIPHER_SUITE_KRK		0x004096FF	/* for nl80211 use only */
 
 /* AKM suite selectors */
 #define WLAN_AKM_SUITE_8021X		0x000FAC01
@@ -1207,7 +1198,6 @@ enum plink_action_field {
 #define WLAN_AKM_SUITE_8021X_SUITE_B_192	0x000FAC12
 #define WLAN_AKM_SUITE_CCKM		0x00409600
 #define WLAN_AKM_SUITE_OSEN		0x506f9a01
-
 
 /* IEEE 802.11v - WNM Action field values */
 enum wnm_action {
@@ -1296,14 +1286,14 @@ struct ieee80211_2040_intol_chan_report {
 	u8 element_id;
 	u8 length;
 	u8 op_class;
-	u8 variable[0];	/* Channel List */
+	u8 variable[0];				/* Channel List */
 } STRUCT_PACKED;
 
 /* IEEE 802.11v - WNM-Sleep Mode element */
 struct wnm_sleep_element {
-	u8 eid;     /* WLAN_EID_WNMSLEEP */
+	u8 eid;						/* WLAN_EID_WNMSLEEP */
 	u8 len;
-	u8 action_type; /* WNM_SLEEP_ENTER/WNM_SLEEP_MODE_EXIT */
+	u8 action_type;				/* WNM_SLEEP_ENTER/WNM_SLEEP_MODE_EXIT */
 	u8 status;
 	le16 intval;
 } STRUCT_PACKED;
@@ -1358,4 +1348,4 @@ struct rrm_link_measurement_report {
 
 #define SSID_MAX_LEN 32
 
-#endif /* IEEE802_11_DEFS_H */
+#endif							/* IEEE802_11_DEFS_H */

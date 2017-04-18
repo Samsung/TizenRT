@@ -51,9 +51,9 @@
 
 #define MQTT_SUB_DEBUG_PRINT(client_handle,...) \
 		do { \
-			if(client_handle && (client_handle)->config && (client_handle)->config->debug) \
+			if (client_handle && (client_handle)->config && (client_handle)->config->debug) \
 				printf(__VA_ARGS__); \
-		} while(0);
+		} while (0);
 
 /****************************************************************************
  * Structure

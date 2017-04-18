@@ -10,15 +10,15 @@
 #define LINUX_DEFINES_H
 
 #ifndef SO_WIFI_STATUS
-# if defined(__sparc__)
-#  define SO_WIFI_STATUS	0x0025
-# elif defined(__parisc__)
-#  define SO_WIFI_STATUS	0x4022
-# else
-#  define SO_WIFI_STATUS	41
-# endif
+#if defined(__sparc__)
+#define SO_WIFI_STATUS	0x0025
+#elif defined(__parisc__)
+#define SO_WIFI_STATUS	0x4022
+#else
+#define SO_WIFI_STATUS	41
+#endif
 
-# define SCM_WIFI_STATUS	SO_WIFI_STATUS
+#define SCM_WIFI_STATUS	SO_WIFI_STATUS
 #endif
 
 #ifndef SO_EE_ORIGIN_TXSTATUS
@@ -30,10 +30,10 @@
 #endif
 
 #ifndef IFF_LOWER_UP
-#define IFF_LOWER_UP   0x10000         /* driver signals L1 up         */
+#define IFF_LOWER_UP   0x10000	/* driver signals L1 up         */
 #endif
 #ifndef IFF_DORMANT
-#define IFF_DORMANT    0x20000         /* driver signals dormant       */
+#define IFF_DORMANT    0x20000	/* driver signals dormant       */
 #endif
 
 #ifndef IF_OPER_DORMANT
@@ -43,4 +43,4 @@
 #define IF_OPER_UP 6
 #endif
 
-#endif /* LINUX_DEFINES_H */
+#endif							/* LINUX_DEFINES_H */

@@ -11,7 +11,7 @@
 
 #ifdef _MSC_VER
 #pragma pack(push, 1)
-#endif /* _MSC_VER */
+#endif							/* _MSC_VER */
 
 struct eap_pax_hdr {
 	u8 op_code;
@@ -24,8 +24,7 @@ struct eap_pax_hdr {
 
 #ifdef _MSC_VER
 #pragma pack(pop)
-#endif /* _MSC_VER */
-
+#endif							/* _MSC_VER */
 
 /* op_code: */
 enum {
@@ -66,7 +65,6 @@ enum {
 #define EAP_PAX_ADE_CLIENT_CHANNEL_BINDING	0x02
 #define EAP_PAX_ADE_SERVER_CHANNEL_BINDING	0x03
 
-
 #define EAP_PAX_RAND_LEN 32
 #define EAP_PAX_MAC_LEN 16
 #define EAP_PAX_ICV_LEN 16
@@ -76,17 +74,8 @@ enum {
 #define EAP_PAX_ICK_LEN 16
 #define EAP_PAX_MID_LEN 16
 
+int eap_pax_kdf(u8 mac_id, const u8 *key, size_t key_len, const char *identifier, const u8 *entropy, size_t entropy_len, size_t output_len, u8 *output);
+int eap_pax_mac(u8 mac_id, const u8 *key, size_t key_len, const u8 *data1, size_t data1_len, const u8 *data2, size_t data2_len, const u8 *data3, size_t data3_len, u8 *mac);
+int eap_pax_initial_key_derivation(u8 mac_id, const u8 *ak, const u8 *e, u8 *mk, u8 *ck, u8 *ick, u8 *mid);
 
-int eap_pax_kdf(u8 mac_id, const u8 *key, size_t key_len,
-		const char *identifier,
-		const u8 *entropy, size_t entropy_len,
-		size_t output_len, u8 *output);
-int eap_pax_mac(u8 mac_id, const u8 *key, size_t key_len,
-		const u8 *data1, size_t data1_len,
-		const u8 *data2, size_t data2_len,
-		const u8 *data3, size_t data3_len,
-		u8 *mac);
-int eap_pax_initial_key_derivation(u8 mac_id, const u8 *ak, const u8 *e,
-				   u8 *mk, u8 *ck, u8 *ick, u8 *mid);
-
-#endif /* EAP_PAX_COMMON_H */
+#endif							/* EAP_PAX_COMMON_H */

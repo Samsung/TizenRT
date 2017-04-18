@@ -13,20 +13,14 @@
 #include "sta_info.h"
 #include "hostapd.h"
 
-
-int hostapd_register_probereq_cb(struct hostapd_data *hapd,
-				 int (*cb)(void *ctx, const u8 *sa,
-					   const u8 *da, const u8 *bssid,
-					   const u8 *ie, size_t ie_len,
-					   int ssi_signal),
-				 void *ctx)
+int hostapd_register_probereq_cb(struct hostapd_data *hapd, int (*cb)(void *ctx, const u8 *sa, const u8 *da, const u8 *bssid, const u8 *ie, size_t ie_len, int ssi_signal), void *ctx)
 {
 	struct hostapd_probereq_cb *n;
 
-	n = os_realloc_array(hapd->probereq_cb, hapd->num_probereq_cb + 1,
-			     sizeof(struct hostapd_probereq_cb));
-	if (n == NULL)
+	n = os_realloc_array(hapd->probereq_cb, hapd->num_probereq_cb + 1, sizeof(struct hostapd_probereq_cb));
+	if (n == NULL) {
 		return -1;
+	}
 
 	hapd->probereq_cb = n;
 	n = &hapd->probereq_cb[hapd->num_probereq_cb];
@@ -37,7 +31,6 @@ int hostapd_register_probereq_cb(struct hostapd_data *hapd,
 
 	return 0;
 }
-
 
 struct prune_data {
 	struct hostapd_data *hapd;
@@ -53,14 +46,15 @@ static int prune_associations(struct hostapd_iface *iface, void *ctx)
 
 	for (j = 0; j < iface->num_bss; j++) {
 		ohapd = iface->bss[j];
-		if (ohapd == data->hapd)
+		if (ohapd == data->hapd) {
 			continue;
+		}
 		osta = ap_get_sta(ohapd, data->addr);
-		if (!osta)
+		if (!osta) {
 			continue;
+		}
 
-		wpa_printf(MSG_INFO, "%s: Prune association for " MACSTR,
-			   ohapd->conf->iface, MAC2STR(osta->addr));
+		wpa_printf(MSG_INFO, "%s: Prune association for " MACSTR, ohapd->conf->iface, MAC2STR(osta->addr));
 		ap_sta_disassociate(ohapd, osta, WLAN_REASON_UNSPECIFIED);
 	}
 
@@ -80,8 +74,7 @@ void hostapd_prune_associations(struct hostapd_data *hapd, const u8 *addr)
 	struct prune_data data;
 	data.hapd = hapd;
 	data.addr = addr;
-	if (hapd->iface->interfaces &&
-	    hapd->iface->interfaces->for_each_interface)
-		hapd->iface->interfaces->for_each_interface(
-			hapd->iface->interfaces, prune_associations, &data);
+	if (hapd->iface->interfaces && hapd->iface->interfaces->for_each_interface) {
+		hapd->iface->interfaces->for_each_interface(hapd->iface->interfaces, prune_associations, &data);
+	}
 }

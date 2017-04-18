@@ -20,7 +20,6 @@ int SFS_Secure_Read_POR(const char *file_name, unsigned char *dst_addr, unsigned
 int SFS_Secure_Read(const char *file_name, unsigned int dst_addr, unsigned int *byte_len);
 int SFS_Secure_Write(const char *file_name, unsigned int dst_addr, unsigned int byte_len);
 
-#endif /* SSS_POR */
+#endif							/* SSS_POR */
 
-#endif /* DRIVER_FLASH_H_ */
-
+#endif							/* DRIVER_FLASH_H_ */

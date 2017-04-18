@@ -16,11 +16,11 @@
 static void input_irq_handler(int irq, void *data)
 {
 	struct mxlog_transport *mxlog_transport = (struct mxlog_transport *)data;
-	struct scsc_mif_abs    *mif_abs;
-	u32                    header;
-	char                   *buf;
-	u32                    num_bytes;
-	u32                    level;
+	struct scsc_mif_abs *mif_abs;
+	u32 header;
+	char *buf;
+	u32 num_bytes;
+	u32 level;
 
 	if (!mxlog_transport->channel_handler_fn) {
 		/* HERE: Invalid handler, raise fault or log message */
@@ -38,8 +38,7 @@ static void input_irq_handler(int irq, void *data)
 			return;
 		}
 		num_bytes = header & 0x000000FF;
-		if (num_bytes > 0 && num_bytes
-		    < (MXLOG_TRANSPORT_BUF_LENGTH - sizeof(uint32_t))) {
+		if (num_bytes > 0 && num_bytes < (MXLOG_TRANSPORT_BUF_LENGTH - sizeof(uint32_t))) {
 			buf = kmm_malloc(num_bytes);
 			/* 2nd read - payload (msg) */
 			mif_stream_read(&mxlog_transport->mif_stream, buf, num_bytes);
@@ -57,8 +56,7 @@ void mxlog_transport_release(struct mxlog_transport *mxlog_transport)
 	mif_stream_release(&mxlog_transport->mif_stream);
 }
 
-void mxlog_transport_config_serialise(struct mxlog_transport *mxlog_transport,
-				      struct mxlogconf       *mxlogconf)
+void mxlog_transport_config_serialise(struct mxlog_transport *mxlog_transport, struct mxlogconf *mxlogconf)
 {
 	mif_stream_config_serialise(&mxlog_transport->mif_stream, &mxlogconf->stream_conf);
 }
@@ -66,7 +64,7 @@ void mxlog_transport_config_serialise(struct mxlog_transport *mxlog_transport,
 /** Public functions */
 int mxlog_transport_init(struct mxlog_transport *mxlog_transport, struct scsc_mx *mx)
 {
-	int      r;
+	int r;
 	uint32_t mem_length = MXLOG_TRANSPORT_BUF_LENGTH;
 	uint32_t packet_size = MXLOG_TRANSPORT_PACKET_SIZE;
 	uint32_t num_packets;
@@ -75,14 +73,14 @@ int mxlog_transport_init(struct mxlog_transport *mxlog_transport, struct scsc_mx
 	num_packets = mem_length / packet_size;
 	mxlog_transport->mx = mx;
 	r = mif_stream_init(&mxlog_transport->mif_stream, MIF_STREAM_DIRECTION_IN, num_packets, packet_size, mx, input_irq_handler, mxlog_transport);
-	if (r)
+	if (r) {
 		return r;
+	}
 
 	return 0;
 }
 
-void mxlog_transport_register_channel_handler(struct mxlog_transport *mxlog_transport,
-					      mxlog_channel_handler handler, void *data)
+void mxlog_transport_register_channel_handler(struct mxlog_transport *mxlog_transport, mxlog_channel_handler handler, void *data)
 {
 	mxlog_transport->channel_handler_fn = handler;
 	mxlog_transport->channel_handler_data = (void *)data;

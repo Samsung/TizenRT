@@ -104,17 +104,15 @@ static bool hex2uint8(const char *str, u8 *ret)
 	if ((str[idx] == '0') && (TOUPPER(str[idx + 1]) == 'X')) {
 		str += 2;
 	}
-	if (((str[idx] >= '0') && (str[idx] <= '9')) || ((TOUPPER(str[idx]) >= 'A') &&
-			(TOUPPER(str[idx]) <= 'F'))) {
-			while (((str[idx] >= '0') && (str[idx] <= '9')) || ((TOUPPER(str[idx]) >= 'A') &&
-				(TOUPPER(str[idx]) <= 'F'))) {
-					*ret = (u8)(*ret * 16 + (((str[idx] >= '0') && (str[idx] <= '9')) ? str[idx] - '0' : TOUPPER(str[idx]) - 'A' + 10));
-					idx++;
-					if (idx >= 2) {
-						break;
-					}
+	if (((str[idx] >= '0') && (str[idx] <= '9')) || ((TOUPPER(str[idx]) >= 'A') && (TOUPPER(str[idx]) <= 'F'))) {
+		while (((str[idx] >= '0') && (str[idx] <= '9')) || ((TOUPPER(str[idx]) >= 'A') && (TOUPPER(str[idx]) <= 'F'))) {
+			*ret = (u8)(*ret * 16 + (((str[idx] >= '0') && (str[idx] <= '9')) ? str[idx] - '0' : TOUPPER(str[idx]) - 'A' + 10));
+			idx++;
+			if (idx >= 2) {
+				break;
 			}
-			return true;
+		}
+		return true;
 	}
 	return false;
 }
@@ -482,7 +480,7 @@ int8_t parseCmdLine(int argc, char *argv[])
 			sw_printJoinHelp();
 			printf("Security mode not supported: %s\n", secmode);
 		} else {
-			(void)doJoin((uint8_t *) argv[1], ssid_len, NULL /*bssid */ , secmode, passphrase);
+			(void)doJoin((uint8_t *)argv[1], ssid_len, NULL /*bssid */ , secmode, passphrase);
 		}
 	} else if (strncmp("startsta", argv[0], MAXLEN(8, strlen(argv[0]))) == 0) {
 		/*no more arguments - just start sta mode */
@@ -514,7 +512,7 @@ int8_t parseCmdLine(int argc, char *argv[])
 		if (!argv[1] || strlen(argv[1]) != 2) {
 			sw_printHelp();
 		} else {
-			uint8_t tx_power = (uint8_t) atoi(argv[1]);
+			uint8_t tx_power = (uint8_t)atoi(argv[1]);
 			if (tx_power >= 12 && tx_power <= 30) {
 				printf("Setting tx power to %ddBm\n", tx_power);
 				WiFiSetTxPower(&tx_power);
@@ -572,8 +570,7 @@ int8_t parseCmdLine(int argc, char *argv[])
 				} else {
 					printf("%s does not look like a channel number\n", argv[3]);
 				}
-			} else if (strncmp("wep", argv[3], MAXLEN(3, strlen(argv[3]))) == 0 ||
-					strncmp("wep_shared", argv[3], MAXLEN(10, strlen(argv[3]))) == 0) {
+			} else if (strncmp("wep", argv[3], MAXLEN(3, strlen(argv[3]))) == 0 || strncmp("wep_shared", argv[3], MAXLEN(10, strlen(argv[3]))) == 0) {
 				printf("wep security is not allowed for Soft AP\n");
 				sw_printStartapHelp();
 				return result;
@@ -597,18 +594,18 @@ int8_t parseCmdLine(int argc, char *argv[])
 		result = doStartAP(argv[1], sec, passphrase, channel);
 	} else if (strncmp("status", argv[0], MAXLEN(6, strlen(argv[0]))) == 0) {
 		(void)doIsConnected();
-		    }else if (strncmp(argv[0], "tcpserver", MAXLEN(9, strlen(argv[0]))) == 0) {
-		        if(slsi_tcp_server() != 0){
-		            printf("TCP server failed\n");
-		        }
-		    }else if (strncmp(argv[0], "tcpclient", MAXLEN(9, strlen(argv[0]))) == 0) {
-		        if(slsi_tcp_client() != 0){
-		            printf("TCP Client failed\n");
-		        }
-		    }else if (strncmp(argv[0], "udpserver", MAXLEN(9,strlen(argv[0]))) == 0) {
-		        if(slsi_udp_server() != 0){
-		            printf("UDP Server failed\n");
-		        }
+	} else if (strncmp(argv[0], "tcpserver", MAXLEN(9, strlen(argv[0]))) == 0) {
+		if (slsi_tcp_server() != 0) {
+			printf("TCP server failed\n");
+		}
+	} else if (strncmp(argv[0], "tcpclient", MAXLEN(9, strlen(argv[0]))) == 0) {
+		if (slsi_tcp_client() != 0) {
+			printf("TCP Client failed\n");
+		}
+	} else if (strncmp(argv[0], "udpserver", MAXLEN(9, strlen(argv[0]))) == 0) {
+		if (slsi_udp_server() != 0) {
+			printf("UDP Server failed\n");
+		}
 	} else if (strncmp(argv[0], "ie", MAXLEN(2, strlen(argv[0]))) == 0) {
 		if (argv[1] != NULL && argv[2] != NULL && strlen(argv[1]) == 6 && strlen(argv[2]) <= 253) {
 			printf("Storing new OUI=%s IE=%s\n", argv[1], argv[2]);
@@ -620,11 +617,9 @@ int8_t parseCmdLine(int argc, char *argv[])
 				}
 			}
 			char *poui = argv[1];
-			if (hex2uint8(poui, &g_vsie->oui[0]) != TRUE ||
-				hex2uint8(poui + 2, &g_vsie->oui[1]) != TRUE ||
-				hex2uint8(poui + 4, &g_vsie->oui[2]) != TRUE) {
-					printf("OUI hex representation not valid\n");
-					return result;
+			if (hex2uint8(poui, &g_vsie->oui[0]) != TRUE || hex2uint8(poui + 2, &g_vsie->oui[1]) != TRUE || hex2uint8(poui + 4, &g_vsie->oui[2]) != TRUE) {
+				printf("OUI hex representation not valid\n");
+				return result;
 			}
 			if (g_vsie->content != NULL) {
 				free(g_vsie->content);
@@ -638,74 +633,84 @@ int8_t parseCmdLine(int argc, char *argv[])
 			memcpy(g_vsie->content, argv[2], strlen(argv[2]));
 
 		}
-	} else if (strncmp(argv[0], "udpclient", MAXLEN(9,strlen(argv[0]))) == 0) {
-		        if(slsi_udp_client() != 0){
-		            printf("UDP Client failed\n");
-		        }
-	} else if (strncmp(argv[0], "auto", MAXLEN(4, strlen(argv[0]))) == 0 && inAuto == false){
-		        sem_init(&ap_conn_sem, 0, 0);
-		        if(argc > 1)
-		            result = doAutoTest(argv[1]); //filename if not null
-		        else
-		            result = doAutoTest(NULL);
-		        sem_destroy(&ap_conn_sem);
-		        if(result == SLSI_STATUS_SUCCESS) return 0;
-		        else return 1;
+	} else if (strncmp(argv[0], "udpclient", MAXLEN(9, strlen(argv[0]))) == 0) {
+		if (slsi_udp_client() != 0) {
+			printf("UDP Client failed\n");
+		}
+	} else if (strncmp(argv[0], "auto", MAXLEN(4, strlen(argv[0]))) == 0 && inAuto == false) {
+		sem_init(&ap_conn_sem, 0, 0);
+		if (argc > 1) {
+			result = doAutoTest(argv[1]);    //filename if not null
+		} else {
+			result = doAutoTest(NULL);
+		}
+		sem_destroy(&ap_conn_sem);
+		if (result == SLSI_STATUS_SUCCESS) {
+			return 0;
+		} else {
+			return 1;
+		}
 #ifdef CONFIG_SLSI_WIFI_SANITY
-	} else if (strncmp(argv[0], "sanity", MAXLEN(6,strlen(argv[0]))) == 0 && inAuto == false){
-		        int iterations = 0;
-		        sem_init(&ap_conn_sem, 0, 0);
-		        if(argc > 1){
-		            iterations = atoi(argv[1]);
-		        }
-		        result = doSanityTest(iterations);
-		        sem_destroy(&ap_conn_sem);
-		        if(result != SLSI_STATUS_SUCCESS) {
-		            //we need to do some cleanup and make sure the supplicant is stopped
-		            (void)doStop();
-		            printf("STATUS:\n\ttests passed: %d\n",result);
-		        }
-		#ifdef CONFIG_EXAMPLES_SLSIDEMO_MEM_CHECK
-		        int leakresult = getMemLeaks();
-		        if(leakresult != SLSI_STATUS_SUCCESS || result != SLSI_STATUS_SUCCESS){
-		#else
-		        if (result != SLSI_STATUS_SUCCESS){
-		#endif
-		            //needed for CI systems to parse for SUCCESS/FAILED
-		            printf("\n\tWiFi Sanity Test result: FAILED\n\n");
-		        }else {
-		            printf("\n\tWiFi Sanity Test Result : SUCCESS\n\n");
-		        }
+	} else if (strncmp(argv[0], "sanity", MAXLEN(6, strlen(argv[0]))) == 0 && inAuto == false) {
+		int iterations = 0;
+		sem_init(&ap_conn_sem, 0, 0);
+		if (argc > 1) {
+			iterations = atoi(argv[1]);
+		}
+		result = doSanityTest(iterations);
+		sem_destroy(&ap_conn_sem);
+		if (result != SLSI_STATUS_SUCCESS) {
+			//we need to do some cleanup and make sure the supplicant is stopped
+			(void)doStop();
+			printf("STATUS:\n\ttests passed: %d\n", result);
+		}
+#ifdef CONFIG_EXAMPLES_SLSIDEMO_MEM_CHECK
+		int leakresult = getMemLeaks();
+		if (leakresult != SLSI_STATUS_SUCCESS || result != SLSI_STATUS_SUCCESS) {
+#else
+		if (result != SLSI_STATUS_SUCCESS) {
+#endif
+			//needed for CI systems to parse for SUCCESS/FAILED
+			printf("\n\tWiFi Sanity Test result: FAILED\n\n");
+		} else {
+			printf("\n\tWiFi Sanity Test Result : SUCCESS\n\n");
+		}
 
-		        if(result == SLSI_STATUS_SUCCESS) return 0;
-		        else return 1;
-	} else if (strncmp(argv[0], "nightly", MAXLEN(7,strlen(argv[0]))) == 0 && inAuto == false){
-		        int iterations = 0;
-		        sem_init(&ap_conn_sem, 0, 0);
-		        if(argc > 1){
-		            iterations = atoi(argv[1]);
-		        }
-		        result = doNightlyTest(iterations);
-		        sem_destroy(&ap_conn_sem);
-		        if(result != SLSI_STATUS_SUCCESS) {
-		            //we need to do some cleanup and make sure the supplicant is stopped
-		            (void)doStop();
-		            printf("STATUS:\n\ttests passed: %d\n",result);
-		        }
-		#ifdef CONFIG_EXAMPLES_SLSIDEMO_MEM_CHECK
-		        int leakresult = getMemLeaks();
-		        if(leakresult != SLSI_STATUS_SUCCESS || result != SLSI_STATUS_SUCCESS){
-		#else
-		        if (result != SLSI_STATUS_SUCCESS){
-		#endif
-		            //needed for CI systems to parse for SUCCESS/FAILED
-		            printf("\n\tWiFi Nightly Test result: FAILED\n\n");
-		        }else {
-		            printf("\n\tWiFi Nightly Test Result : SUCCESS\n\n");
-		        }
+		if (result == SLSI_STATUS_SUCCESS) {
+			return 0;
+		} else {
+			return 1;
+		}
+	} else if (strncmp(argv[0], "nightly", MAXLEN(7, strlen(argv[0]))) == 0 && inAuto == false) {
+		int iterations = 0;
+		sem_init(&ap_conn_sem, 0, 0);
+		if (argc > 1) {
+			iterations = atoi(argv[1]);
+		}
+		result = doNightlyTest(iterations);
+		sem_destroy(&ap_conn_sem);
+		if (result != SLSI_STATUS_SUCCESS) {
+			//we need to do some cleanup and make sure the supplicant is stopped
+			(void)doStop();
+			printf("STATUS:\n\ttests passed: %d\n", result);
+		}
+#ifdef CONFIG_EXAMPLES_SLSIDEMO_MEM_CHECK
+		int leakresult = getMemLeaks();
+		if (leakresult != SLSI_STATUS_SUCCESS || result != SLSI_STATUS_SUCCESS) {
+#else
+		if (result != SLSI_STATUS_SUCCESS) {
+#endif
+			//needed for CI systems to parse for SUCCESS/FAILED
+			printf("\n\tWiFi Nightly Test result: FAILED\n\n");
+		} else {
+			printf("\n\tWiFi Nightly Test Result : SUCCESS\n\n");
+		}
 
-		        if(result == SLSI_STATUS_SUCCESS) return 0;
-		        else return 1;
+		if (result == SLSI_STATUS_SUCCESS) {
+			return 0;
+		} else {
+			return 1;
+		}
 #endif
 	} else if (strncmp(argv[0], "help", MAXLEN(4, strlen(argv[0]))) == 0) {
 		sw_printFullHelp();

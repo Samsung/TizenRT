@@ -38,17 +38,17 @@ struct wmm_ac_assoc_data {
 		 * In case an access category is ACM, the traffic will have
 		 * to be admitted by WMM-AC's admission mechanism before use.
 		 */
-		unsigned int acm:1;
+		unsigned int acm: 1;
 
 		/*
 		 * uapsd_queues - Unscheduled Automatic Power Save Delivery
-		 *		  queues.
+		 *        queues.
 		 * Indicates whether ACs are configured for U-APSD (or legacy
 		 * PS). Storing this value is necessary in order to set the
 		 * Power Save Bit (PSB) in ADDTS request Action frames (if not
 		 * given).
 		 */
-		unsigned int uapsd:1;
+		unsigned int uapsd: 1;
 	} ac_params[WMM_AC_NUM];
 };
 
@@ -108,7 +108,6 @@ struct wmm_ac_addts_request {
 	struct wmm_tspec_element tspec;
 };
 
-
 /**
  * struct wmm_ac_ts_setup_params - TS setup parameters
  *
@@ -160,17 +159,14 @@ struct wmm_ac_ts_setup_params {
 	int surplus_bandwidth_allowance;
 };
 
-void wmm_ac_notify_assoc(struct wpa_supplicant *wpa_s, const u8 *ies,
-			 size_t ies_len, const struct wmm_params *wmm_params);
+void wmm_ac_notify_assoc(struct wpa_supplicant *wpa_s, const u8 *ies, size_t ies_len, const struct wmm_params *wmm_params);
 void wmm_ac_notify_disassoc(struct wpa_supplicant *wpa_s);
-int wpas_wmm_ac_addts(struct wpa_supplicant *wpa_s,
-		      struct wmm_ac_ts_setup_params *params);
+int wpas_wmm_ac_addts(struct wpa_supplicant *wpa_s, struct wmm_ac_ts_setup_params *params);
 int wpas_wmm_ac_delts(struct wpa_supplicant *wpa_s, u8 tsid);
-void wmm_ac_rx_action(struct wpa_supplicant *wpa_s, const u8 *da,
-			const u8 *sa, const u8 *data, size_t len);
+void wmm_ac_rx_action(struct wpa_supplicant *wpa_s, const u8 *da, const u8 *sa, const u8 *data, size_t len);
 int wpas_wmm_ac_status(struct wpa_supplicant *wpa_s, char *buf, size_t buflen);
 void wmm_ac_save_tspecs(struct wpa_supplicant *wpa_s);
 void wmm_ac_clear_saved_tspecs(struct wpa_supplicant *wpa_s);
 int wmm_ac_restore_tspecs(struct wpa_supplicant *wpa_s);
 
-#endif /* WMM_AC_H */
+#endif							/* WMM_AC_H */

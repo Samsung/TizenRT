@@ -34,23 +34,23 @@ static inline char *CsrStrDup(const char *string)
 	return NULL;
 }
 
-static int CsrStrNICmp(const char *string1,
-		       const char *string2,
-		       size_t     count)
+static int CsrStrNICmp(const char *string1, const char *string2, size_t count)
 {
 	u32 index;
 	int returnValue = 0;
 
 	for (index = 0; index < count; index++) {
 		if (CSR_TOUPPER(string1[index]) != CSR_TOUPPER(string2[index])) {
-			if (CSR_TOUPPER(string1[index]) > CSR_TOUPPER(string2[index]))
+			if (CSR_TOUPPER(string1[index]) > CSR_TOUPPER(string2[index])) {
 				returnValue = 1;
-			else
+			} else {
 				returnValue = -1;
+			}
 			break;
 		}
-		if (string1[index] == '\0')
+		if (string1[index] == '\0') {
 			break;
+		}
 	}
 	return returnValue;
 }
@@ -60,14 +60,16 @@ static bool CsrHexStrToUint8(const char *string, u8 *returnValue)
 	u16 currentIndex = 0;
 
 	*returnValue = 0;
-	if ((string[currentIndex] == '0') && (CSR_TOUPPER(string[currentIndex + 1]) == 'X'))
+	if ((string[currentIndex] == '0') && (CSR_TOUPPER(string[currentIndex + 1]) == 'X')) {
 		string += 2;
+	}
 	if (((string[currentIndex] >= '0') && (string[currentIndex] <= '9')) || ((CSR_TOUPPER(string[currentIndex]) >= 'A') && (CSR_TOUPPER(string[currentIndex]) <= 'F'))) {
 		while (((string[currentIndex] >= '0') && (string[currentIndex] <= '9')) || ((CSR_TOUPPER(string[currentIndex]) >= 'A') && (CSR_TOUPPER(string[currentIndex]) <= 'F'))) {
 			*returnValue = (u8)(*returnValue * 16 + (((string[currentIndex] >= '0') && (string[currentIndex] <= '9')) ? string[currentIndex] - '0' : CSR_TOUPPER(string[currentIndex]) - 'A' + 10));
 			currentIndex++;
-			if (currentIndex >= 2)
+			if (currentIndex >= 2) {
 				break;
+			}
 		}
 		return true;
 	}
@@ -79,14 +81,16 @@ static bool CsrHexStrToUint16(const char *string, u16 *returnValue)
 	u16 currentIndex = 0;
 
 	*returnValue = 0;
-	if ((string[currentIndex] == '0') && (CSR_TOUPPER(string[currentIndex + 1]) == 'X'))
+	if ((string[currentIndex] == '0') && (CSR_TOUPPER(string[currentIndex + 1]) == 'X')) {
 		string += 2;
+	}
 	if (((string[currentIndex] >= '0') && (string[currentIndex] <= '9')) || ((CSR_TOUPPER(string[currentIndex]) >= 'A') && (CSR_TOUPPER(string[currentIndex]) <= 'F'))) {
 		while (((string[currentIndex] >= '0') && (string[currentIndex] <= '9')) || ((CSR_TOUPPER(string[currentIndex]) >= 'A') && (CSR_TOUPPER(string[currentIndex]) <= 'F'))) {
 			*returnValue = (u16)(*returnValue * 16 + (((string[currentIndex] >= '0') && (string[currentIndex] <= '9')) ? string[currentIndex] - '0' : CSR_TOUPPER(string[currentIndex]) - 'A' + 10));
 			currentIndex++;
-			if (currentIndex >= 4)
+			if (currentIndex >= 4) {
 				break;
+			}
 		}
 		return true;
 	}
@@ -98,14 +102,16 @@ static bool CsrHexStrToUint32(const char *string, u32 *returnValue)
 	u16 currentIndex = 0;
 
 	*returnValue = 0;
-	if ((string[currentIndex] == '0') && (CSR_TOUPPER(string[currentIndex + 1]) == 'X'))
+	if ((string[currentIndex] == '0') && (CSR_TOUPPER(string[currentIndex + 1]) == 'X')) {
 		string += 2;
+	}
 	if (((string[currentIndex] >= '0') && (string[currentIndex] <= '9')) || ((CSR_TOUPPER(string[currentIndex]) >= 'A') && (CSR_TOUPPER(string[currentIndex]) <= 'F'))) {
 		while (((string[currentIndex] >= '0') && (string[currentIndex] <= '9')) || ((CSR_TOUPPER(string[currentIndex]) >= 'A') && (CSR_TOUPPER(string[currentIndex]) <= 'F'))) {
 			*returnValue = *returnValue * 16 + (((string[currentIndex] >= '0') && (string[currentIndex] <= '9')) ? string[currentIndex] - '0' : CSR_TOUPPER(string[currentIndex]) - 'A' + 10);
 			currentIndex++;
-			if (currentIndex >= 8)
+			if (currentIndex >= 8) {
 				break;
+			}
 		}
 		return true;
 	}
@@ -116,14 +122,15 @@ static bool CsrWifiMibConvertStrToUint16(const char *str, u16 *returnValue)
 {
 	u16 currentIndex = 0;
 
-	if (str[1] == 'x')
+	if (str[1] == 'x') {
 		return CsrHexStrToUint16(str, returnValue);
+	}
 
 	*returnValue = 0;
 	if ((str[currentIndex] >= '0') && (str[currentIndex] <= '9')) {
 		while (str[currentIndex] >= '0' && str[currentIndex] <= '9') {
 			*returnValue *= 10;
-			*returnValue += (u8)str[currentIndex++] - '0';
+			*returnValue += (u8) str[currentIndex++] - '0';
 		}
 		return true;
 	}
@@ -134,14 +141,15 @@ static bool CsrWifiMibConvertStrToUint32(const char *str, u32 *returnValue)
 {
 	u16 currentIndex = 0;
 
-	if (str[1] == 'x')
+	if (str[1] == 'x') {
 		return CsrHexStrToUint32(str, returnValue);
+	}
 
 	*returnValue = 0;
 	if ((str[currentIndex] >= '0') && (str[currentIndex] <= '9')) {
 		while (str[currentIndex] >= '0' && str[currentIndex] <= '9') {
 			*returnValue *= 10;
-			*returnValue += (u8)str[currentIndex++] - '0';
+			*returnValue += (u8) str[currentIndex++] - '0';
 		}
 		return true;
 	}
@@ -151,23 +159,25 @@ static bool CsrWifiMibConvertStrToUint32(const char *str, u32 *returnValue)
 static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_data *mibDataSet, struct slsi_mib_data *mibDataGet)
 {
 	struct slsi_mib_entry entry;
-	bool                  result = true;
-	size_t                equals = 0;
-	size_t                dot1 = 0;
-	size_t                dot2 = 0;
-	size_t                trimmedIndex = 0;
-	char                  *trimmed = kmm_malloc(strlen(linestr) + 1);
-	const char            *current_char = linestr;
-	bool                  processingStr = false;
+	bool result = true;
+	size_t equals = 0;
+	size_t dot1 = 0;
+	size_t dot2 = 0;
+	size_t trimmedIndex = 0;
+	char *trimmed = kmm_malloc(strlen(linestr) + 1);
+	const char *current_char = linestr;
+	bool processingStr = false;
 
 	memset(&entry, 0x00, sizeof(entry));
 	while (current_char[0] != '\0') {
-		if (current_char[0] == '"')
+		if (current_char[0] == '"') {
 			processingStr = !processingStr;
+		}
 		if (!processingStr) {
-			if (current_char[0] == '#')
+			if (current_char[0] == '#') {
 				break;
-			if (CsrIsSpace((u8)current_char[0])) {
+			}
+			if (CsrIsSpace((u8) current_char[0])) {
 				current_char++;
 				continue;
 			}
@@ -181,8 +191,9 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 					result = false;
 				}
 			}
-			if (!equals && (current_char[0] == '='))
+			if (!equals && (current_char[0] == '=')) {
 				equals = trimmedIndex;
+			}
 		}
 		trimmed[trimmedIndex++] = current_char[0];
 
@@ -198,8 +209,9 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 	if (result) {
 		char sep = trimmed[dot1 ? dot1 : equals];
 
-		if (dot1 || equals)
+		if (dot1 || equals) {
 			trimmed[dot1 ? dot1 : equals] = '\0';
+		}
 		trimmed[dot1 ? dot1 : equals] = sep;
 
 		if (!CsrWifiMibConvertStrToUint16(trimmed, &entry.psid)) {
@@ -232,13 +244,13 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 			} else if (data[0] == '"') {
 				/* Null Terminated String */
 				entry.value.type = SLSI_MIB_TYPE_OCTET;
-				entry.value.u.octetValue.dataLength = (u32)strlen(&data[1]);
-				entry.value.u.octetValue.data = (u8 *)CsrStrDup(&data[1]);
+				entry.value.u.octetValue.dataLength = (u32) strlen(&data[1]);
+				entry.value.u.octetValue.data = (u8 *) CsrStrDup(&data[1]);
 				entry.value.u.octetValue.data[entry.value.u.octetValue.dataLength - 1] = '\0';
 			} else if (data[0] == '[') {
 				/* Octet String */
 				size_t i;
-				u16    octetLen = ((u16)strlen(&data[1]) - 1) / 2;
+				u16 octetLen = ((u16) strlen(&data[1]) - 1) / 2;
 
 				entry.value.type = SLSI_MIB_TYPE_OCTET;
 				entry.value.u.octetValue.dataLength = octetLen;
@@ -249,7 +261,7 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 						result = false;
 						break;
 					}
-				entry.value.u.octetValue.data[octetLen] = '\0'; /* Make sure the Octet Stream is NULL terminated in case it is interpreted as a String */
+				entry.value.u.octetValue.data[octetLen] = '\0';	/* Make sure the Octet Stream is NULL terminated in case it is interpreted as a String */
 			} else if (data[0] == '-') {
 				/* Negative Integer Value */
 				entry.value.type = SLSI_MIB_TYPE_INT;
@@ -257,7 +269,7 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 					SLSI_ERR_NODEV("CsrWifiMibConvertTextParseLine('%s') Convert Integer <data> failed", trimmed);
 					result = false;
 				} else {
-					entry.value.u.intValue = (s32)(0 - (u32)entry.value.u.uintValue);
+					entry.value.u.intValue = (s32)(0 - (u32) entry.value.u.uintValue);
 				}
 			} else if (!CsrWifiMibConvertStrToUint32(data, &entry.value.u.uintValue)) {
 				SLSI_ERR_NODEV("CsrWifiMibConvertTextParseLine('%s') Convert Unsigned Integer <data> failed", trimmed);
@@ -265,10 +277,12 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 			} else {
 				entry.value.type = SLSI_MIB_TYPE_UINT;
 			}
-			if (result)
+			if (result) {
 				(void)slsi_mib_encode(mibDataSet, &entry);
-			if (entry.value.type == SLSI_MIB_TYPE_OCTET)
+			}
+			if (entry.value.type == SLSI_MIB_TYPE_OCTET) {
 				kmm_free(entry.value.u.octetValue.data);
+			}
 		}
 	}
 
@@ -279,19 +293,21 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 
 static bool CsrWifiMibConvertTextAppend(const char *mibText, struct slsi_mib_data *mibDataSet, struct slsi_mib_data *mibDataGet)
 {
-	bool       result = true;
+	bool result = true;
 	const char *lineStart = mibText;
 	const char *lineEnd = mibText;
 
-	if (mibText == NULL)
+	if (mibText == NULL) {
 		return false;
+	}
 
 	while (lineEnd[0] != '\0') {
 		if ((lineEnd[0] == '\n') || (lineEnd[0] == '\r') || (lineEnd[1] == '\0')) {
 			size_t strSize = (size_t)(lineEnd - lineStart);
 
-			if ((lineEnd[1] == '\0'))
+			if ((lineEnd[1] == '\0')) {
 				strSize++;
+			}
 			if (strSize > 2) {
 				char *line = kmm_malloc(strSize + 1);
 				(void)strncpy(line, lineStart, strSize);

@@ -15,9 +15,9 @@
 // ======================================
 // Function
 // ======================================
-int isp_set_factorykey(unsigned char * factorykey);
+int isp_set_factorykey(unsigned char *factorykey);
 
 int isp_set_factorykey_data(unsigned char *data, unsigned int data_byte_len, unsigned int key_id);
 int isp_get_factorykey_data(unsigned char *data, unsigned int *data_byte_len, unsigned int key_id);
 
-#endif /* ISP_DRIVER_SECURE_STORAGE_FACTORYKEY_H_ */
+#endif							/* ISP_DRIVER_SECURE_STORAGE_FACTORYKEY_H_ */

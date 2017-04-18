@@ -91,13 +91,27 @@ void ledonoff_main(int argc, char *argv[])
 			printf("%d ", result[j]);
 
 			switch (j) {
-				case 0:		gpio_write(51, result[j]);	break;
-				case 1:		gpio_write(52, result[j]);	break;
-				case 2:		gpio_write(53, result[j]);	break;
-				case 3:		gpio_write(54, result[j]);	break;
-				case 4:		gpio_write(55, result[j]);	break;
-				case 5:		gpio_write(39, result[j]);	break;
-				case 6:		gpio_write(41, result[j]);	break;
+			case 0:
+				gpio_write(51, result[j]);
+				break;
+			case 1:
+				gpio_write(52, result[j]);
+				break;
+			case 2:
+				gpio_write(53, result[j]);
+				break;
+			case 3:
+				gpio_write(54, result[j]);
+				break;
+			case 4:
+				gpio_write(55, result[j]);
+				break;
+			case 5:
+				gpio_write(39, result[j]);
+				break;
+			case 6:
+				gpio_write(41, result[j]);
+				break;
 			}
 		}
 		printf("\n");

@@ -45,10 +45,10 @@ void mxlog_transport_register_channel_handler(struct mxlog_transport *mxlog_tran
 void mxlog_transport_set_error(struct mxlog_transport *mxlog_transport);
 
 struct mxlog_transport {
-	struct scsc_mx        *mx;
-	struct mif_stream     mif_stream;
+	struct scsc_mx *mx;
+	struct mif_stream mif_stream;
 	mxlog_channel_handler channel_handler_fn;
-	void                  *channel_handler_data;
+	void *channel_handler_data;
 };
 
-#endif /* MXLOG_TRANSPORT_H__ */
+#endif							/* MXLOG_TRANSPORT_H__ */

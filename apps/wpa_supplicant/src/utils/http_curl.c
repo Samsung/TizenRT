@@ -19,14 +19,13 @@
 #define HAVE_OCSP
 #include <openssl/err.h>
 #include <openssl/ocsp.h>
-#endif /* OPENSSL_NO_TLSEXT */
-#endif /* SSL_set_tlsext_status_type */
-#endif /* EAP_TLS_OPENSSL */
+#endif							/* OPENSSL_NO_TLSEXT */
+#endif							/* SSL_set_tlsext_status_type */
+#endif							/* EAP_TLS_OPENSSL */
 
 #include "common.h"
 #include "xml-utils.h"
 #include "http-utils.h"
-
 
 struct http_ctx {
 	void *ctx;
@@ -55,7 +54,6 @@ struct http_ctx {
 	const char *last_err;
 };
 
-
 static void clear_curl(struct http_ctx *ctx)
 {
 	if (ctx->curl) {
@@ -68,50 +66,47 @@ static void clear_curl(struct http_ctx *ctx)
 	}
 }
 
-
 static void clone_str(char **dst, const char *src)
 {
 	os_free(*dst);
-	if (src)
+	if (src) {
 		*dst = os_strdup(src);
-	else
+	} else {
 		*dst = NULL;
+	}
 }
 
-
-static void debug_dump(struct http_ctx *ctx, const char *title,
-		       const char *buf, size_t len)
+static void debug_dump(struct http_ctx *ctx, const char *title, const char *buf, size_t len)
 {
 	char *txt;
 	size_t i;
 
 	for (i = 0; i < len; i++) {
-		if (buf[i] < 32 && buf[i] != '\t' && buf[i] != '\n' &&
-		    buf[i] != '\r') {
+		if (buf[i] < 32 && buf[i] != '\t' && buf[i] != '\n' && buf[i] != '\r') {
 			wpa_hexdump_ascii(MSG_MSGDUMP, title, buf, len);
 			return;
 		}
 	}
 
 	txt = os_malloc(len + 1);
-	if (txt == NULL)
+	if (txt == NULL) {
 		return;
+	}
 	os_memcpy(txt, buf, len);
 	txt[len] = '\0';
 	while (len > 0) {
 		len--;
-		if (txt[len] == '\n' || txt[len] == '\r')
+		if (txt[len] == '\n' || txt[len] == '\r') {
 			txt[len] = '\0';
-		else
+		} else {
 			break;
+		}
 	}
 	wpa_printf(MSG_MSGDUMP, "%s[%s]", title, txt);
 	os_free(txt);
 }
 
-
-static int curl_cb_debug(CURL *curl, curl_infotype info, char *buf, size_t len,
-			 void *userdata)
+static int curl_cb_debug(CURL *curl, curl_infotype info, char *buf, size_t len, void *userdata)
 {
 	struct http_ctx *ctx = userdata;
 	switch (info) {
@@ -131,37 +126,32 @@ static int curl_cb_debug(CURL *curl, curl_infotype info, char *buf, size_t len,
 		debug_dump(ctx, "CURLINFO_DATA_OUT", buf, len);
 		break;
 	case CURLINFO_SSL_DATA_IN:
-		wpa_printf(MSG_DEBUG, "debug - CURLINFO_SSL_DATA_IN - %d",
-			   (int) len);
+		wpa_printf(MSG_DEBUG, "debug - CURLINFO_SSL_DATA_IN - %d", (int)len);
 		break;
 	case CURLINFO_SSL_DATA_OUT:
-		wpa_printf(MSG_DEBUG, "debug - CURLINFO_SSL_DATA_OUT - %d",
-			   (int) len);
+		wpa_printf(MSG_DEBUG, "debug - CURLINFO_SSL_DATA_OUT - %d", (int)len);
 		break;
 	case CURLINFO_END:
-		wpa_printf(MSG_DEBUG, "debug - CURLINFO_END - %d",
-			   (int) len);
+		wpa_printf(MSG_DEBUG, "debug - CURLINFO_END - %d", (int)len);
 		break;
 	}
 	return 0;
 }
 
-
-static size_t curl_cb_write(void *ptr, size_t size, size_t nmemb,
-			    void *userdata)
+static size_t curl_cb_write(void *ptr, size_t size, size_t nmemb, void *userdata)
 {
 	struct http_ctx *ctx = userdata;
 	char *n;
 	n = os_realloc(ctx->curl_buf, ctx->curl_buf_len + size * nmemb + 1);
-	if (n == NULL)
+	if (n == NULL) {
 		return 0;
+	}
 	ctx->curl_buf = n;
 	os_memcpy(n + ctx->curl_buf_len, ptr, size * nmemb);
 	n[ctx->curl_buf_len + size * nmemb] = '\0';
 	ctx->curl_buf_len += size * nmemb;
 	return size * nmemb;
 }
-
 
 #ifdef EAP_TLS_OPENSSL
 
@@ -172,8 +162,9 @@ static void debug_dump_cert(const char *title, X509 *cert)
 	size_t rlen;
 
 	out = BIO_new(BIO_s_mem());
-	if (!out)
+	if (!out) {
 		return;
+	}
 
 	X509_print_ex(out, cert, XN_FLAG_COMPAT, X509_FLAG_COMPAT);
 	rlen = BIO_ctrl_pending(out);
@@ -189,30 +180,30 @@ static void debug_dump_cert(const char *title, X509 *cert)
 	BIO_free(out);
 }
 
-
-static void add_alt_name_othername(struct http_ctx *ctx, struct http_cert *cert,
-				   OTHERNAME *o)
+static void add_alt_name_othername(struct http_ctx *ctx, struct http_cert *cert, OTHERNAME *o)
 {
 	char txt[100];
 	int res;
 	struct http_othername *on;
 	ASN1_TYPE *val;
 
-	on = os_realloc_array(cert->othername, cert->num_othername + 1,
-			      sizeof(struct http_othername));
-	if (on == NULL)
+	on = os_realloc_array(cert->othername, cert->num_othername + 1, sizeof(struct http_othername));
+	if (on == NULL) {
 		return;
+	}
 	cert->othername = on;
 	on = &on[cert->num_othername];
 	os_memset(on, 0, sizeof(*on));
 
 	res = OBJ_obj2txt(txt, sizeof(txt), o->type_id, 1);
-	if (res < 0 || res >= (int) sizeof(txt))
+	if (res < 0 || res >= (int)sizeof(txt)) {
 		return;
+	}
 
 	on->oid = os_strdup(txt);
-	if (on->oid == NULL)
+	if (on->oid == NULL) {
 		return;
+	}
 
 	val = o->value;
 	on->data = val->value.octet_string->data;
@@ -221,30 +212,27 @@ static void add_alt_name_othername(struct http_ctx *ctx, struct http_cert *cert,
 	cert->num_othername++;
 }
 
-
-static void add_alt_name_dns(struct http_ctx *ctx, struct http_cert *cert,
-			     ASN1_STRING *name)
+static void add_alt_name_dns(struct http_ctx *ctx, struct http_cert *cert, ASN1_STRING *name)
 {
 	char *buf;
 	char **n;
 
 	buf = NULL;
-	if (ASN1_STRING_to_UTF8((unsigned char **) &buf, name) < 0)
+	if (ASN1_STRING_to_UTF8((unsigned char **)&buf, name) < 0) {
 		return;
+	}
 
-	n = os_realloc_array(cert->dnsname, cert->num_dnsname + 1,
-			     sizeof(char *));
-	if (n == NULL)
+	n = os_realloc_array(cert->dnsname, cert->num_dnsname + 1, sizeof(char *));
+	if (n == NULL) {
 		return;
+	}
 
 	cert->dnsname = n;
 	n[cert->num_dnsname] = buf;
 	cert->num_dnsname++;
 }
 
-
-static void add_alt_name(struct http_ctx *ctx, struct http_cert *cert,
-			 const GENERAL_NAME *name)
+static void add_alt_name(struct http_ctx *ctx, struct http_cert *cert, const GENERAL_NAME *name)
 {
 	switch (name->type) {
 	case GEN_OTHERNAME:
@@ -256,9 +244,7 @@ static void add_alt_name(struct http_ctx *ctx, struct http_cert *cert,
 	}
 }
 
-
-static void add_alt_names(struct http_ctx *ctx, struct http_cert *cert,
-			  GENERAL_NAMES *names)
+static void add_alt_names(struct http_ctx *ctx, struct http_cert *cert, GENERAL_NAMES *names)
 {
 	int num, i;
 
@@ -269,7 +255,6 @@ static void add_alt_names(struct http_ctx *ctx, struct http_cert *cert,
 		add_alt_name(ctx, cert, name);
 	}
 }
-
 
 /* RFC 3709 */
 
@@ -298,7 +283,7 @@ typedef struct {
 } LogotypeImageResolution;
 
 typedef struct {
-	ASN1_INTEGER *type; /* LogotypeImageType ::= INTEGER */
+	ASN1_INTEGER *type;			/* LogotypeImageType ::= INTEGER */
 	ASN1_INTEGER *fileSize;
 	ASN1_INTEGER *xSize;
 	ASN1_INTEGER *ySize;
@@ -350,73 +335,51 @@ typedef struct {
 } LogotypeExtn;
 
 ASN1_SEQUENCE(HashAlgAndValue) = {
-	ASN1_SIMPLE(HashAlgAndValue, hashAlg, X509_ALGOR),
-	ASN1_SIMPLE(HashAlgAndValue, hashValue, ASN1_OCTET_STRING)
+	ASN1_SIMPLE(HashAlgAndValue, hashAlg, X509_ALGOR), ASN1_SIMPLE(HashAlgAndValue, hashValue, ASN1_OCTET_STRING)
 } ASN1_SEQUENCE_END(HashAlgAndValue);
 
 ASN1_SEQUENCE(LogotypeReference) = {
-	ASN1_SEQUENCE_OF(LogotypeReference, refStructHash, HashAlgAndValue),
-	ASN1_SEQUENCE_OF(LogotypeReference, refStructURI, ASN1_IA5STRING)
+	ASN1_SEQUENCE_OF(LogotypeReference, refStructHash, HashAlgAndValue), ASN1_SEQUENCE_OF(LogotypeReference, refStructURI, ASN1_IA5STRING)
 } ASN1_SEQUENCE_END(LogotypeReference);
 
 ASN1_SEQUENCE(LogotypeDetails) = {
-	ASN1_SIMPLE(LogotypeDetails, mediaType, ASN1_IA5STRING),
-	ASN1_SEQUENCE_OF(LogotypeDetails, logotypeHash, HashAlgAndValue),
-	ASN1_SEQUENCE_OF(LogotypeDetails, logotypeURI, ASN1_IA5STRING)
+	ASN1_SIMPLE(LogotypeDetails, mediaType, ASN1_IA5STRING), ASN1_SEQUENCE_OF(LogotypeDetails, logotypeHash, HashAlgAndValue), ASN1_SEQUENCE_OF(LogotypeDetails, logotypeURI, ASN1_IA5STRING)
 } ASN1_SEQUENCE_END(LogotypeDetails);
 
 ASN1_CHOICE(LogotypeImageResolution) = {
-	ASN1_IMP(LogotypeImageResolution, d.numBits, ASN1_INTEGER, 1),
-	ASN1_IMP(LogotypeImageResolution, d.tableSize, ASN1_INTEGER, 2)
+	ASN1_IMP(LogotypeImageResolution, d.numBits, ASN1_INTEGER, 1), ASN1_IMP(LogotypeImageResolution, d.tableSize, ASN1_INTEGER, 2)
 } ASN1_CHOICE_END(LogotypeImageResolution);
 
 ASN1_SEQUENCE(LogotypeImageInfo) = {
-	ASN1_IMP_OPT(LogotypeImageInfo, type, ASN1_INTEGER, 0),
-	ASN1_SIMPLE(LogotypeImageInfo, fileSize, ASN1_INTEGER),
-	ASN1_SIMPLE(LogotypeImageInfo, xSize, ASN1_INTEGER),
-	ASN1_SIMPLE(LogotypeImageInfo, ySize, ASN1_INTEGER),
-	ASN1_OPT(LogotypeImageInfo, resolution, LogotypeImageResolution),
-	ASN1_IMP_OPT(LogotypeImageInfo, language, ASN1_IA5STRING, 4),
+	ASN1_IMP_OPT(LogotypeImageInfo, type, ASN1_INTEGER, 0), ASN1_SIMPLE(LogotypeImageInfo, fileSize, ASN1_INTEGER), ASN1_SIMPLE(LogotypeImageInfo, xSize, ASN1_INTEGER), ASN1_SIMPLE(LogotypeImageInfo, ySize, ASN1_INTEGER), ASN1_OPT(LogotypeImageInfo, resolution, LogotypeImageResolution), ASN1_IMP_OPT(LogotypeImageInfo, language, ASN1_IA5STRING, 4),
 } ASN1_SEQUENCE_END(LogotypeImageInfo);
 
 ASN1_SEQUENCE(LogotypeImage) = {
-	ASN1_SIMPLE(LogotypeImage, imageDetails, LogotypeDetails),
-	ASN1_OPT(LogotypeImage, imageInfo, LogotypeImageInfo)
+	ASN1_SIMPLE(LogotypeImage, imageDetails, LogotypeDetails), ASN1_OPT(LogotypeImage, imageInfo, LogotypeImageInfo)
 } ASN1_SEQUENCE_END(LogotypeImage);
 
 ASN1_SEQUENCE(LogotypeAudioInfo) = {
-	ASN1_SIMPLE(LogotypeAudioInfo, fileSize, ASN1_INTEGER),
-	ASN1_SIMPLE(LogotypeAudioInfo, playTime, ASN1_INTEGER),
-	ASN1_SIMPLE(LogotypeAudioInfo, channels, ASN1_INTEGER),
-	ASN1_IMP_OPT(LogotypeAudioInfo, sampleRate, ASN1_INTEGER, 3),
-	ASN1_IMP_OPT(LogotypeAudioInfo, language, ASN1_IA5STRING, 4)
+	ASN1_SIMPLE(LogotypeAudioInfo, fileSize, ASN1_INTEGER), ASN1_SIMPLE(LogotypeAudioInfo, playTime, ASN1_INTEGER), ASN1_SIMPLE(LogotypeAudioInfo, channels, ASN1_INTEGER), ASN1_IMP_OPT(LogotypeAudioInfo, sampleRate, ASN1_INTEGER, 3), ASN1_IMP_OPT(LogotypeAudioInfo, language, ASN1_IA5STRING, 4)
 } ASN1_SEQUENCE_END(LogotypeAudioInfo);
 
 ASN1_SEQUENCE(LogotypeAudio) = {
-	ASN1_SIMPLE(LogotypeAudio, audioDetails, LogotypeDetails),
-	ASN1_OPT(LogotypeAudio, audioInfo, LogotypeAudioInfo)
+	ASN1_SIMPLE(LogotypeAudio, audioDetails, LogotypeDetails), ASN1_OPT(LogotypeAudio, audioInfo, LogotypeAudioInfo)
 } ASN1_SEQUENCE_END(LogotypeAudio);
 
 ASN1_SEQUENCE(LogotypeData) = {
-	ASN1_SEQUENCE_OF_OPT(LogotypeData, image, LogotypeImage),
-	ASN1_IMP_SEQUENCE_OF_OPT(LogotypeData, audio, LogotypeAudio, 1)
+	ASN1_SEQUENCE_OF_OPT(LogotypeData, image, LogotypeImage), ASN1_IMP_SEQUENCE_OF_OPT(LogotypeData, audio, LogotypeAudio, 1)
 } ASN1_SEQUENCE_END(LogotypeData);
 
 ASN1_CHOICE(LogotypeInfo) = {
-	ASN1_IMP(LogotypeInfo, d.direct, LogotypeData, 0),
-	ASN1_IMP(LogotypeInfo, d.indirect, LogotypeReference, 1)
+	ASN1_IMP(LogotypeInfo, d.direct, LogotypeData, 0), ASN1_IMP(LogotypeInfo, d.indirect, LogotypeReference, 1)
 } ASN1_CHOICE_END(LogotypeInfo);
 
 ASN1_SEQUENCE(OtherLogotypeInfo) = {
-	ASN1_SIMPLE(OtherLogotypeInfo, logotypeType, ASN1_OBJECT),
-	ASN1_SIMPLE(OtherLogotypeInfo, info, LogotypeInfo)
+	ASN1_SIMPLE(OtherLogotypeInfo, logotypeType, ASN1_OBJECT), ASN1_SIMPLE(OtherLogotypeInfo, info, LogotypeInfo)
 } ASN1_SEQUENCE_END(OtherLogotypeInfo);
 
 ASN1_SEQUENCE(LogotypeExtn) = {
-	ASN1_EXP_SEQUENCE_OF_OPT(LogotypeExtn, communityLogos, LogotypeInfo, 0),
-	ASN1_EXP_OPT(LogotypeExtn, issuerLogo, LogotypeInfo, 1),
-	ASN1_EXP_OPT(LogotypeExtn, issuerLogo, LogotypeInfo, 2),
-	ASN1_EXP_SEQUENCE_OF_OPT(LogotypeExtn, otherLogos, OtherLogotypeInfo, 3)
+	ASN1_EXP_SEQUENCE_OF_OPT(LogotypeExtn, communityLogos, LogotypeInfo, 0), ASN1_EXP_OPT(LogotypeExtn, issuerLogo, LogotypeInfo, 1), ASN1_EXP_OPT(LogotypeExtn, issuerLogo, LogotypeInfo, 2), ASN1_EXP_SEQUENCE_OF_OPT(LogotypeExtn, otherLogos, OtherLogotypeInfo, 3)
 } ASN1_SEQUENCE_END(LogotypeExtn);
 
 IMPLEMENT_ASN1_FUNCTIONS(LogotypeExtn);
@@ -432,32 +395,33 @@ IMPLEMENT_ASN1_FUNCTIONS(LogotypeExtn);
 #define sk_ASN1_IA5STRING_num(st) SKM_sk_num(ASN1_IA5STRING, (st))
 #define sk_ASN1_IA5STRING_value(st, i) SKM_sk_value(ASN1_IA5STRING, (st), (i))
 
-
-static void add_logo(struct http_ctx *ctx, struct http_cert *hcert,
-		     HashAlgAndValue *hash, ASN1_IA5STRING *uri)
+static void add_logo(struct http_ctx *ctx, struct http_cert *hcert, HashAlgAndValue *hash, ASN1_IA5STRING *uri)
 {
 	char txt[100];
 	int res, len;
 	struct http_logo *n;
 
-	if (hash == NULL || uri == NULL)
+	if (hash == NULL || uri == NULL) {
 		return;
+	}
 
 	res = OBJ_obj2txt(txt, sizeof(txt), hash->hashAlg->algorithm, 1);
-	if (res < 0 || res >= (int) sizeof(txt))
+	if (res < 0 || res >= (int)sizeof(txt)) {
 		return;
+	}
 
-	n = os_realloc_array(hcert->logo, hcert->num_logo + 1,
-			     sizeof(struct http_logo));
-	if (n == NULL)
+	n = os_realloc_array(hcert->logo, hcert->num_logo + 1, sizeof(struct http_logo));
+	if (n == NULL) {
 		return;
+	}
 	hcert->logo = n;
 	n = &hcert->logo[hcert->num_logo];
 	os_memset(n, 0, sizeof(*n));
 
 	n->alg_oid = os_strdup(txt);
-	if (n->alg_oid == NULL)
+	if (n->alg_oid == NULL) {
 		return;
+	}
 
 	n->hash_len = ASN1_STRING_length(hash->hashValue);
 	n->hash = os_malloc(n->hash_len);
@@ -480,14 +444,13 @@ static void add_logo(struct http_ctx *ctx, struct http_cert *hcert,
 	hcert->num_logo++;
 }
 
-
-static void add_logo_direct(struct http_ctx *ctx, struct http_cert *hcert,
-			    LogotypeData *data)
+static void add_logo_direct(struct http_ctx *ctx, struct http_cert *hcert, LogotypeData *data)
 {
 	int i, num;
 
-	if (data->image == NULL)
+	if (data->image == NULL) {
 		return;
+	}
 
 	num = sk_LogotypeImage_num(data->image);
 	for (i = 0; i < num; i++) {
@@ -497,26 +460,28 @@ static void add_logo_direct(struct http_ctx *ctx, struct http_cert *hcert,
 		HashAlgAndValue *found_hash = NULL;
 
 		image = sk_LogotypeImage_value(data->image, i);
-		if (image == NULL)
+		if (image == NULL) {
 			continue;
+		}
 
 		details = image->imageDetails;
-		if (details == NULL)
+		if (details == NULL) {
 			continue;
+		}
 
 		hash_num = sk_HashAlgAndValue_num(details->logotypeHash);
 		for (j = 0; j < hash_num; j++) {
 			HashAlgAndValue *hash;
 			char txt[100];
 			int res;
-			hash = sk_HashAlgAndValue_value(details->logotypeHash,
-							j);
-			if (hash == NULL)
+			hash = sk_HashAlgAndValue_value(details->logotypeHash, j);
+			if (hash == NULL) {
 				continue;
-			res = OBJ_obj2txt(txt, sizeof(txt),
-					  hash->hashAlg->algorithm, 1);
-			if (res < 0 || res >= (int) sizeof(txt))
+			}
+			res = OBJ_obj2txt(txt, sizeof(txt), hash->hashAlg->algorithm, 1);
+			if (res < 0 || res >= (int)sizeof(txt)) {
 				continue;
+			}
 			if (os_strcmp(txt, "2.16.840.1.101.3.4.2.1") == 0) {
 				found_hash = hash;
 				break;
@@ -537,17 +502,14 @@ static void add_logo_direct(struct http_ctx *ctx, struct http_cert *hcert,
 	}
 }
 
-
-static void add_logo_indirect(struct http_ctx *ctx, struct http_cert *hcert,
-			      LogotypeReference *ref)
+static void add_logo_indirect(struct http_ctx *ctx, struct http_cert *hcert, LogotypeReference *ref)
 {
 	int j, hash_num, uri_num;
 
 	hash_num = sk_HashAlgAndValue_num(ref->refStructHash);
 	uri_num = sk_ASN1_IA5STRING_num(ref->refStructURI);
 	if (hash_num != uri_num) {
-		wpa_printf(MSG_INFO, "Unexpected LogotypeReference array size difference %d != %d",
-			   hash_num, uri_num);
+		wpa_printf(MSG_INFO, "Unexpected LogotypeReference array size difference %d != %d", hash_num, uri_num);
 		return;
 	}
 
@@ -560,7 +522,6 @@ static void add_logo_indirect(struct http_ctx *ctx, struct http_cert *hcert,
 	}
 }
 
-
 static void i2r_HashAlgAndValue(HashAlgAndValue *hash, BIO *out, int indent)
 {
 	int i;
@@ -572,8 +533,9 @@ static void i2r_HashAlgAndValue(HashAlgAndValue *hash, BIO *out, int indent)
 
 	BIO_printf(out, "%*shashValue: ", indent, "");
 	data = hash->hashValue->data;
-	for (i = 0; i < hash->hashValue->length; i++)
+	for (i = 0; i < hash->hashValue->length; i++) {
 		BIO_printf(out, "%s%02x", i > 0 ? ":" : "", data[i]);
+	}
 	BIO_printf(out, "\n");
 }
 
@@ -588,16 +550,14 @@ static void i2r_LogotypeDetails(LogotypeDetails *details, BIO *out, int indent)
 		BIO_printf(out, "\n");
 	}
 
-	num = details->logotypeHash ?
-		sk_HashAlgAndValue_num(details->logotypeHash) : 0;
+	num = details->logotypeHash ? sk_HashAlgAndValue_num(details->logotypeHash) : 0;
 	for (i = 0; i < num; i++) {
 		HashAlgAndValue *hash;
 		hash = sk_HashAlgAndValue_value(details->logotypeHash, i);
 		i2r_HashAlgAndValue(hash, out, indent);
 	}
 
-	num = details->logotypeURI ?
-		sk_ASN1_IA5STRING_num(details->logotypeURI) : 0;
+	num = details->logotypeURI ? sk_ASN1_IA5STRING_num(details->logotypeURI) : 0;
 	for (i = 0; i < num; i++) {
 		ASN1_IA5STRING *uri;
 		uri = sk_ASN1_IA5STRING_value(details->logotypeURI, i);
@@ -644,8 +604,7 @@ static void i2r_LogotypeImage(LogotypeImage *image, BIO *out, int indent)
 	}
 }
 
-static void i2r_LogotypeData(LogotypeData *data, const char *title, BIO *out,
-			     int indent)
+static void i2r_LogotypeData(LogotypeData *data, const char *title, BIO *out, int indent)
 {
 	int i, num;
 
@@ -663,20 +622,16 @@ static void i2r_LogotypeData(LogotypeData *data, const char *title, BIO *out,
 	}
 }
 
-static void i2r_LogotypeReference(LogotypeReference *ref, const char *title,
-				  BIO *out, int indent)
+static void i2r_LogotypeReference(LogotypeReference *ref, const char *title, BIO *out, int indent)
 {
 	int i, hash_num, uri_num;
 
 	BIO_printf(out, "%*s%s - LogotypeReference\n", indent, "", title);
 
-	hash_num = ref->refStructHash ?
-		sk_HashAlgAndValue_num(ref->refStructHash) : 0;
-	uri_num = ref->refStructURI ?
-		sk_ASN1_IA5STRING_num(ref->refStructURI) : 0;
+	hash_num = ref->refStructHash ? sk_HashAlgAndValue_num(ref->refStructHash) : 0;
+	uri_num = ref->refStructURI ? sk_ASN1_IA5STRING_num(ref->refStructURI) : 0;
 	if (hash_num != uri_num) {
-		BIO_printf(out, "%*sUnexpected LogotypeReference array size difference %d != %d\n",
-			   indent, "", hash_num, uri_num);
+		BIO_printf(out, "%*sUnexpected LogotypeReference array size difference %d != %d\n", indent, "", hash_num, uri_num);
 		return;
 	}
 
@@ -694,8 +649,7 @@ static void i2r_LogotypeReference(LogotypeReference *ref, const char *title,
 	}
 }
 
-static void i2r_LogotypeInfo(LogotypeInfo *info, const char *title, BIO *out,
-			     int indent)
+static void i2r_LogotypeInfo(LogotypeInfo *info, const char *title, BIO *out, int indent)
 {
 	switch (info->type) {
 	case 0:
@@ -714,8 +668,9 @@ static void debug_print_logotypeext(LogotypeExtn *logo)
 	int indent = 0;
 
 	out = BIO_new_fp(stdout, BIO_NOCLOSE);
-	if (out == NULL)
+	if (out == NULL) {
 		return;
+	}
 
 	if (logo->communityLogos) {
 		num = sk_LogotypeInfo_num(logo->communityLogos);
@@ -727,7 +682,7 @@ static void debug_print_logotypeext(LogotypeExtn *logo)
 	}
 
 	if (logo->issuerLogo) {
-		i2r_LogotypeInfo(logo->issuerLogo, "issuerLogo", out, indent );
+		i2r_LogotypeInfo(logo->issuerLogo, "issuerLogo", out, indent);
 	}
 
 	if (logo->subjectLogo) {
@@ -741,9 +696,7 @@ static void debug_print_logotypeext(LogotypeExtn *logo)
 	BIO_free(out);
 }
 
-
-static void add_logotype_ext(struct http_ctx *ctx, struct http_cert *hcert,
-			     X509 *cert)
+static void add_logotype_ext(struct http_ctx *ctx, struct http_cert *hcert, X509 *cert)
 {
 	ASN1_OBJECT *obj;
 	int pos;
@@ -754,8 +707,9 @@ static void add_logotype_ext(struct http_ctx *ctx, struct http_cert *hcert,
 	int i, num;
 
 	obj = OBJ_txt2obj("1.3.6.1.5.5.7.1.12", 0);
-	if (obj == NULL)
+	if (obj == NULL) {
 		return;
+	}
 
 	pos = X509_get_ext_by_OBJ(cert, obj, -1);
 	if (pos < 0) {
@@ -776,8 +730,7 @@ static void add_logotype_ext(struct http_ctx *ctx, struct http_cert *hcert,
 		return;
 	}
 
-	wpa_hexdump(MSG_DEBUG, "logotypeExtn",
-		    ASN1_STRING_data(os), ASN1_STRING_length(os));
+	wpa_hexdump(MSG_DEBUG, "logotypeExtn", ASN1_STRING_data(os), ASN1_STRING_length(os));
 
 	data = ASN1_STRING_data(os);
 	logo = d2i_LogotypeExtn(NULL, &data, ASN1_STRING_length(os));
@@ -786,8 +739,9 @@ static void add_logotype_ext(struct http_ctx *ctx, struct http_cert *hcert,
 		return;
 	}
 
-	if (wpa_debug_level < MSG_INFO)
+	if (wpa_debug_level < MSG_INFO) {
 		debug_print_logotypeext(logo);
+	}
 
 	if (!logo->communityLogos) {
 		wpa_printf(MSG_INFO, "No communityLogos included");
@@ -812,30 +766,30 @@ static void add_logotype_ext(struct http_ctx *ctx, struct http_cert *hcert,
 	LogotypeExtn_free(logo);
 }
 
-
-static void parse_cert(struct http_ctx *ctx, struct http_cert *hcert,
-		       X509 *cert, GENERAL_NAMES **names)
+static void parse_cert(struct http_ctx *ctx, struct http_cert *hcert, X509 *cert, GENERAL_NAMES **names)
 {
 	os_memset(hcert, 0, sizeof(*hcert));
 
 	*names = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
-	if (*names)
+	if (*names) {
 		add_alt_names(ctx, hcert, *names);
+	}
 
 	add_logotype_ext(ctx, hcert, cert);
 }
-
 
 static void parse_cert_free(struct http_cert *hcert, GENERAL_NAMES *names)
 {
 	unsigned int i;
 
-	for (i = 0; i < hcert->num_dnsname; i++)
+	for (i = 0; i < hcert->num_dnsname; i++) {
 		OPENSSL_free(hcert->dnsname[i]);
+	}
 	os_free(hcert->dnsname);
 
-	for (i = 0; i < hcert->num_othername; i++)
+	for (i = 0; i < hcert->num_othername; i++) {
 		os_free(hcert->othername[i].oid);
+	}
 	os_free(hcert->othername);
 
 	for (i = 0; i < hcert->num_logo; i++) {
@@ -847,7 +801,6 @@ static void parse_cert_free(struct http_cert *hcert, GENERAL_NAMES *names)
 
 	sk_GENERAL_NAME_pop_free(names, GENERAL_NAME_free);
 }
-
 
 static int validate_server_cert(struct http_ctx *ctx, X509 *cert)
 {
@@ -874,7 +827,6 @@ static int validate_server_cert(struct http_ctx *ctx, X509 *cert)
 	return ret;
 }
 
-
 void http_parse_x509_certificate(struct http_ctx *ctx, const char *fname)
 {
 	BIO *in, *out;
@@ -899,42 +851,30 @@ void http_parse_x509_certificate(struct http_ctx *ctx, const char *fname)
 
 	out = BIO_new_fp(stdout, BIO_NOCLOSE);
 	if (out) {
-		X509_print_ex(out, cert, XN_FLAG_COMPAT,
-			      X509_FLAG_COMPAT);
+		X509_print_ex(out, cert, XN_FLAG_COMPAT, X509_FLAG_COMPAT);
 		BIO_free(out);
 	}
 
 	wpa_printf(MSG_INFO, "Additional parsing information:");
 	parse_cert(ctx, &hcert, cert, &names);
 	for (i = 0; i < hcert.num_othername; i++) {
-		if (os_strcmp(hcert.othername[i].oid,
-			      "1.3.6.1.4.1.40808.1.1.1") == 0) {
+		if (os_strcmp(hcert.othername[i].oid, "1.3.6.1.4.1.40808.1.1.1") == 0) {
 			char *name = os_zalloc(hcert.othername[i].len + 1);
 			if (name) {
-				os_memcpy(name, hcert.othername[i].data,
-					  hcert.othername[i].len);
-				wpa_printf(MSG_INFO,
-					   "id-wfa-hotspot-friendlyName: %s",
-					   name);
+				os_memcpy(name, hcert.othername[i].data, hcert.othername[i].len);
+				wpa_printf(MSG_INFO, "id-wfa-hotspot-friendlyName: %s", name);
 				os_free(name);
 			}
-			wpa_hexdump_ascii(MSG_INFO,
-					  "id-wfa-hotspot-friendlyName",
-					  hcert.othername[i].data,
-					  hcert.othername[i].len);
+			wpa_hexdump_ascii(MSG_INFO, "id-wfa-hotspot-friendlyName", hcert.othername[i].data, hcert.othername[i].len);
 		} else {
-			wpa_printf(MSG_INFO, "subjAltName[othername]: oid=%s",
-				   hcert.othername[i].oid);
-			wpa_hexdump_ascii(MSG_INFO, "unknown othername",
-					  hcert.othername[i].data,
-					  hcert.othername[i].len);
+			wpa_printf(MSG_INFO, "subjAltName[othername]: oid=%s", hcert.othername[i].oid);
+			wpa_hexdump_ascii(MSG_INFO, "unknown othername", hcert.othername[i].data, hcert.othername[i].len);
 		}
 	}
 	parse_cert_free(&hcert, names);
 
 	X509_free(cert);
 }
-
 
 static int curl_cb_ssl_verify(int preverify_ok, X509_STORE_CTX *x509_ctx)
 {
@@ -947,13 +887,11 @@ static int curl_cb_ssl_verify(int preverify_ok, X509_STORE_CTX *x509_ctx)
 	SSL *ssl;
 	SSL_CTX *ssl_ctx;
 
-	ssl = X509_STORE_CTX_get_ex_data(x509_ctx,
-					 SSL_get_ex_data_X509_STORE_CTX_idx());
+	ssl = X509_STORE_CTX_get_ex_data(x509_ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
 	ssl_ctx = ssl->ctx;
 	ctx = SSL_CTX_get_app_data(ssl_ctx);
 
-	wpa_printf(MSG_DEBUG, "curl_cb_ssl_verify, preverify_ok: %d",
-		   preverify_ok);
+	wpa_printf(MSG_DEBUG, "curl_cb_ssl_verify, preverify_ok: %d", preverify_ok);
 
 	err = X509_STORE_CTX_get_error(x509_ctx);
 	err_str = X509_verify_cert_error_string(err);
@@ -965,28 +903,29 @@ static int curl_cb_ssl_verify(int preverify_ok, X509_STORE_CTX *x509_ctx)
 		return 0;
 	}
 
-	if (depth == 0)
+	if (depth == 0) {
 		ctx->peer_cert = cert;
-	else if (depth == 1)
+	} else if (depth == 1) {
 		ctx->peer_issuer = cert;
-	else if (depth == 2)
+	} else if (depth == 2) {
 		ctx->peer_issuer_issuer = cert;
+	}
 
 	name = X509_get_subject_name(cert);
 	X509_NAME_oneline(name, buf, sizeof(buf));
-	wpa_printf(MSG_INFO, "Server certificate chain - depth=%d err=%d (%s) subject=%s",
-		   depth, err, err_str, buf);
+	wpa_printf(MSG_INFO, "Server certificate chain - depth=%d err=%d (%s) subject=%s", depth, err, err_str, buf);
 	debug_dump_cert("Server certificate chain - certificate", cert);
 
-	if (depth == 0 && preverify_ok && validate_server_cert(ctx, cert) < 0)
+	if (depth == 0 && preverify_ok && validate_server_cert(ctx, cert) < 0) {
 		return 0;
+	}
 
-	if (!preverify_ok)
+	if (!preverify_ok) {
 		ctx->last_err = "TLS validation failed";
+	}
 
 	return preverify_ok;
 }
-
 
 #ifdef HAVE_OCSP
 
@@ -998,8 +937,9 @@ static void ocsp_debug_print_resp(OCSP_RESPONSE *rsp)
 	int res;
 
 	out = BIO_new(BIO_s_mem());
-	if (!out)
+	if (!out) {
 		return;
+	}
 
 	OCSP_RESPONSE_print(out, rsp, 0);
 	rlen = BIO_ctrl_pending(out);
@@ -1018,20 +958,16 @@ static void ocsp_debug_print_resp(OCSP_RESPONSE *rsp)
 	BIO_free(out);
 }
 
-
 static void tls_show_errors(const char *func, const char *txt)
 {
 	unsigned long err;
 
-	wpa_printf(MSG_DEBUG, "OpenSSL: %s - %s %s",
-		   func, txt, ERR_error_string(ERR_get_error(), NULL));
+	wpa_printf(MSG_DEBUG, "OpenSSL: %s - %s %s", func, txt, ERR_error_string(ERR_get_error(), NULL));
 
 	while ((err = ERR_get_error())) {
-		wpa_printf(MSG_DEBUG, "OpenSSL: pending error: %s",
-			   ERR_error_string(err, NULL));
+		wpa_printf(MSG_DEBUG, "OpenSSL: pending error: %s", ERR_error_string(err, NULL));
 	}
 }
-
 
 static int ocsp_resp_cb(SSL *s, void *arg)
 {
@@ -1043,13 +979,14 @@ static int ocsp_resp_cb(SSL *s, void *arg)
 	OCSP_CERTID *id;
 	ASN1_GENERALIZEDTIME *produced_at, *this_update, *next_update;
 	X509_STORE *store;
-	STACK_OF(X509) *certs = NULL;
+	STACK_OF(X509) * certs = NULL;
 
 	len = SSL_get_tlsext_status_ocsp_resp(s, &p);
 	if (!p) {
 		wpa_printf(MSG_DEBUG, "OpenSSL: No OCSP response received");
-		if (ctx->ocsp == MANDATORY_OCSP)
+		if (ctx->ocsp == MANDATORY_OCSP) {
 			ctx->last_err = "No OCSP response received";
+		}
 		return (ctx->ocsp == MANDATORY_OCSP) ? 0 : 1;
 	}
 
@@ -1066,8 +1003,7 @@ static int ocsp_resp_cb(SSL *s, void *arg)
 
 	status = OCSP_response_status(rsp);
 	if (status != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
-		wpa_printf(MSG_INFO, "OpenSSL: OCSP responder error %d (%s)",
-			   status, OCSP_response_status_str(status));
+		wpa_printf(MSG_INFO, "OpenSSL: OCSP responder error %d (%s)", status, OCSP_response_status_str(status));
 		ctx->last_err = "OCSP responder error";
 		return 0;
 	}
@@ -1082,21 +1018,17 @@ static int ocsp_resp_cb(SSL *s, void *arg)
 	store = SSL_CTX_get_cert_store(s->ctx);
 	if (ctx->peer_issuer) {
 		wpa_printf(MSG_DEBUG, "OpenSSL: Add issuer");
-		debug_dump_cert("OpenSSL: Issuer certificate",
-				ctx->peer_issuer);
+		debug_dump_cert("OpenSSL: Issuer certificate", ctx->peer_issuer);
 
 		if (X509_STORE_add_cert(store, ctx->peer_issuer) != 1) {
-			tls_show_errors(__func__,
-					"OpenSSL: Could not add issuer to certificate store");
+			tls_show_errors(__func__, "OpenSSL: Could not add issuer to certificate store");
 		}
 		certs = sk_X509_new_null();
 		if (certs) {
 			X509 *cert;
 			cert = X509_dup(ctx->peer_issuer);
 			if (cert && !sk_X509_push(certs, cert)) {
-				tls_show_errors(
-					__func__,
-					"OpenSSL: Could not add issuer to OCSP responder trust store");
+				tls_show_errors(__func__, "OpenSSL: Could not add issuer to OCSP responder trust store");
 				X509_free(cert);
 				sk_X509_free(certs);
 				certs = NULL;
@@ -1104,9 +1036,7 @@ static int ocsp_resp_cb(SSL *s, void *arg)
 			if (certs && ctx->peer_issuer_issuer) {
 				cert = X509_dup(ctx->peer_issuer_issuer);
 				if (cert && !sk_X509_push(certs, cert)) {
-					tls_show_errors(
-						__func__,
-						"OpenSSL: Could not add issuer's issuer to OCSP responder trust store");
+					tls_show_errors(__func__, "OpenSSL: Could not add issuer's issuer to OCSP responder trust store");
 					X509_free(cert);
 				}
 			}
@@ -1116,8 +1046,7 @@ static int ocsp_resp_cb(SSL *s, void *arg)
 	status = OCSP_basic_verify(basic, certs, store, OCSP_TRUSTOTHER);
 	sk_X509_pop_free(certs, X509_free);
 	if (status <= 0) {
-		tls_show_errors(__func__,
-				"OpenSSL: OCSP response failed verification");
+		tls_show_errors(__func__, "OpenSSL: OCSP response failed verification");
 		OCSP_BASICRESP_free(basic);
 		OCSP_RESPONSE_free(rsp);
 		ctx->last_err = "OCSP response failed verification";
@@ -1151,16 +1080,15 @@ static int ocsp_resp_cb(SSL *s, void *arg)
 		return 0;
 	}
 
-	if (!OCSP_resp_find_status(basic, id, &status, &reason, &produced_at,
-				   &this_update, &next_update)) {
-		wpa_printf(MSG_INFO, "OpenSSL: Could not find current server certificate from OCSP response%s",
-			   (ctx->ocsp == MANDATORY_OCSP) ? "" :
-			   " (OCSP not required)");
+	if (!OCSP_resp_find_status(basic, id, &status, &reason, &produced_at, &this_update, &next_update)) {
+		wpa_printf(MSG_INFO, "OpenSSL: Could not find current server certificate from OCSP response%s", (ctx->ocsp == MANDATORY_OCSP) ? "" : " (OCSP not required)");
 		OCSP_BASICRESP_free(basic);
 		OCSP_RESPONSE_free(rsp);
 		if (ctx->ocsp == MANDATORY_OCSP)
 
+		{
 			ctx->last_err = "Could not find current server certificate from OCSP response";
+		}
 		return (ctx->ocsp == MANDATORY_OCSP) ? 0 : 1;
 	}
 
@@ -1175,11 +1103,11 @@ static int ocsp_resp_cb(SSL *s, void *arg)
 	OCSP_BASICRESP_free(basic);
 	OCSP_RESPONSE_free(rsp);
 
-	wpa_printf(MSG_DEBUG, "OpenSSL: OCSP status for server certificate: %s",
-		   OCSP_cert_status_str(status));
+	wpa_printf(MSG_DEBUG, "OpenSSL: OCSP status for server certificate: %s", OCSP_cert_status_str(status));
 
-	if (status == V_OCSP_CERTSTATUS_GOOD)
+	if (status == V_OCSP_CERTSTATUS_GOOD) {
 		return 1;
+	}
 	if (status == V_OCSP_CERTSTATUS_REVOKED) {
 		ctx->last_err = "Server certificate has been revoked";
 		return 0;
@@ -1192,7 +1120,6 @@ static int ocsp_resp_cb(SSL *s, void *arg)
 	wpa_printf(MSG_DEBUG, "OpenSSL: OCSP status unknown, but OCSP was not required, so allow connection to continue");
 	return 1;
 }
-
 
 static SSL_METHOD patch_ssl_method;
 static const SSL_METHOD *real_ssl_method;
@@ -1211,8 +1138,7 @@ static int curl_patch_ssl_new(SSL *s)
 	return ret;
 }
 
-#endif /* HAVE_OCSP */
-
+#endif							/* HAVE_OCSP */
 
 static CURLcode curl_cb_ssl(CURL *curl, void *sslctx, void *parm)
 {
@@ -1238,32 +1164,28 @@ static CURLcode curl_cb_ssl(CURL *curl, void *sslctx, void *parm)
 		real_ssl_method = ssl->method;
 		ssl->method = &patch_ssl_method;
 	}
-#endif /* HAVE_OCSP */
+#endif							/* HAVE_OCSP */
 
 	return CURLE_OK;
 }
 
-#endif /* EAP_TLS_OPENSSL */
+#endif							/* EAP_TLS_OPENSSL */
 
-
-static CURL * setup_curl_post(struct http_ctx *ctx, const char *address,
-			      const char *ca_fname, const char *username,
-			      const char *password, const char *client_cert,
-			      const char *client_key)
+static CURL *setup_curl_post(struct http_ctx *ctx, const char *address, const char *ca_fname, const char *username, const char *password, const char *client_cert, const char *client_key)
 {
 	CURL *curl;
 #ifdef EAP_TLS_OPENSSL
 	const char *extra = " tls=openssl";
-#else /* EAP_TLS_OPENSSL */
+#else							/* EAP_TLS_OPENSSL */
 	const char *extra = "";
-#endif /* EAP_TLS_OPENSSL */
+#endif							/* EAP_TLS_OPENSSL */
 
-	wpa_printf(MSG_DEBUG, "Start HTTP client: address=%s ca_fname=%s "
-		   "username=%s%s", address, ca_fname, username, extra);
+	wpa_printf(MSG_DEBUG, "Start HTTP client: address=%s ca_fname=%s " "username=%s%s", address, ca_fname, username, extra);
 
 	curl = curl_easy_init();
-	if (curl == NULL)
+	if (curl == NULL) {
 		return NULL;
+	}
 
 	curl_easy_setopt(curl, CURLOPT_URL, address);
 	curl_easy_setopt(curl, CURLOPT_POST, 1L);
@@ -1273,7 +1195,7 @@ static CURL * setup_curl_post(struct http_ctx *ctx, const char *address,
 #ifdef EAP_TLS_OPENSSL
 		curl_easy_setopt(curl, CURLOPT_SSL_CTX_FUNCTION, curl_cb_ssl);
 		curl_easy_setopt(curl, CURLOPT_SSL_CTX_DATA, ctx);
-#endif /* EAP_TLS_OPENSSL */
+#endif							/* EAP_TLS_OPENSSL */
 	} else {
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	}
@@ -1298,11 +1220,7 @@ static CURL * setup_curl_post(struct http_ctx *ctx, const char *address,
 	return curl;
 }
 
-
-static int post_init_client(struct http_ctx *ctx, const char *address,
-			    const char *ca_fname, const char *username,
-			    const char *password, const char *client_cert,
-			    const char *client_key)
+static int post_init_client(struct http_ctx *ctx, const char *address, const char *ca_fname, const char *username, const char *password, const char *client_cert, const char *client_key)
 {
 	char *pos;
 	int count;
@@ -1318,40 +1236,34 @@ static int post_init_client(struct http_ctx *ctx, const char *address,
 	 * Workaround for Apache "Hostname 'FOO' provided via SNI and hostname
 	 * 'foo' provided via HTTP are different.
 	 */
-	for (count = 0, pos = ctx->svc_address; count < 3 && pos && *pos;
-	     pos++) {
-		if (*pos == '/')
+	for (count = 0, pos = ctx->svc_address; count < 3 && pos && *pos; pos++) {
+		if (*pos == '/') {
 			count++;
+		}
 		*pos = tolower(*pos);
 	}
 
-	ctx->curl = setup_curl_post(ctx, ctx->svc_address, ca_fname, username,
-				    password, client_cert, client_key);
-	if (ctx->curl == NULL)
+	ctx->curl = setup_curl_post(ctx, ctx->svc_address, ca_fname, username, password, client_cert, client_key);
+	if (ctx->curl == NULL) {
 		return -1;
+	}
 
 	return 0;
 }
 
-
-int soap_init_client(struct http_ctx *ctx, const char *address,
-		     const char *ca_fname, const char *username,
-		     const char *password, const char *client_cert,
-		     const char *client_key)
+int soap_init_client(struct http_ctx *ctx, const char *address, const char *ca_fname, const char *username, const char *password, const char *client_cert, const char *client_key)
 {
-	if (post_init_client(ctx, address, ca_fname, username, password,
-			     client_cert, client_key) < 0)
+	if (post_init_client(ctx, address, ca_fname, username, password, client_cert, client_key) < 0) {
 		return -1;
+	}
 
-	ctx->curl_hdr = curl_slist_append(ctx->curl_hdr,
-					  "Content-Type: application/soap+xml");
+	ctx->curl_hdr = curl_slist_append(ctx->curl_hdr, "Content-Type: application/soap+xml");
 	ctx->curl_hdr = curl_slist_append(ctx->curl_hdr, "SOAPAction: ");
 	ctx->curl_hdr = curl_slist_append(ctx->curl_hdr, "Expect:");
 	curl_easy_setopt(ctx->curl, CURLOPT_HTTPHEADER, ctx->curl_hdr);
 
 	return 0;
 }
-
 
 int soap_reinit_client(struct http_ctx *ctx)
 {
@@ -1372,8 +1284,7 @@ int soap_reinit_client(struct http_ctx *ctx)
 	clone_str(&client_cert, ctx->svc_client_cert);
 	clone_str(&client_key, ctx->svc_client_key);
 
-	ret = soap_init_client(ctx, address, ca_fname, username, password,
-			       client_cert, client_key);
+	ret = soap_init_client(ctx, address, ca_fname, username, password, client_cert, client_key);
 	os_free(address);
 	os_free(ca_fname);
 	str_clear_free(username);
@@ -1383,7 +1294,6 @@ int soap_reinit_client(struct http_ctx *ctx)
 	return ret;
 }
 
-
 static void free_curl_buf(struct http_ctx *ctx)
 {
 	os_free(ctx->curl_buf);
@@ -1391,8 +1301,7 @@ static void free_curl_buf(struct http_ctx *ctx)
 	ctx->curl_buf_len = 0;
 }
 
-
-xml_node_t * soap_send_receive(struct http_ctx *ctx, xml_node_t *node)
+xml_node_t *soap_send_receive(struct http_ctx *ctx, xml_node_t *node)
 {
 	char *str;
 	xml_node_t *envelope, *ret, *resp, *n;
@@ -1412,10 +1321,10 @@ xml_node_t * soap_send_receive(struct http_ctx *ctx, xml_node_t *node)
 
 	res = curl_easy_perform(ctx->curl);
 	if (res != CURLE_OK) {
-		if (!ctx->last_err)
+		if (!ctx->last_err) {
 			ctx->last_err = curl_easy_strerror(res);
-		wpa_printf(MSG_ERROR, "curl_easy_perform() failed: %s",
-			   ctx->last_err);
+		}
+		wpa_printf(MSG_ERROR, "curl_easy_perform() failed: %s", ctx->last_err);
 		os_free(str);
 		free_curl_buf(ctx);
 		return NULL;
@@ -1431,8 +1340,9 @@ xml_node_t * soap_send_receive(struct http_ctx *ctx, xml_node_t *node)
 		return NULL;
 	}
 
-	if (ctx->curl_buf == NULL)
+	if (ctx->curl_buf == NULL) {
 		return NULL;
+	}
 
 	wpa_printf(MSG_MSGDUMP, "Server response:\n%s", ctx->curl_buf);
 	resp = xml_node_from_buf(ctx->xml, ctx->curl_buf);
@@ -1450,22 +1360,21 @@ xml_node_t * soap_send_receive(struct http_ctx *ctx, xml_node_t *node)
 		return NULL;
 	}
 
-	wpa_printf(MSG_DEBUG, "SOAP body localname: '%s'",
-		   xml_node_get_localname(ctx->xml, ret));
+	wpa_printf(MSG_DEBUG, "SOAP body localname: '%s'", xml_node_get_localname(ctx->xml, ret));
 	n = xml_node_copy(ctx->xml, ret);
 	xml_node_free(ctx->xml, resp);
 
 	return n;
 }
 
-
-struct http_ctx * http_init_ctx(void *upper_ctx, struct xml_node_ctx *xml_ctx)
+struct http_ctx *http_init_ctx(void *upper_ctx, struct xml_node_ctx *xml_ctx)
 {
 	struct http_ctx *ctx;
 
 	ctx = os_zalloc(sizeof(*ctx));
-	if (ctx == NULL)
+	if (ctx == NULL) {
 		return NULL;
+	}
 	ctx->ctx = upper_ctx;
 	ctx->xml = xml_ctx;
 	ctx->ocsp = OPTIONAL_OCSP;
@@ -1475,17 +1384,17 @@ struct http_ctx * http_init_ctx(void *upper_ctx, struct xml_node_ctx *xml_ctx)
 	return ctx;
 }
 
-
 void http_ocsp_set(struct http_ctx *ctx, int val)
 {
-	if (val == 0)
+	if (val == 0) {
 		ctx->ocsp = NO_OCSP;
-	else if (val == 1)
+	} else if (val == 1) {
 		ctx->ocsp = OPTIONAL_OCSP;
-	if (val == 2)
+	}
+	if (val == 2) {
 		ctx->ocsp = MANDATORY_OCSP;
+	}
 }
-
 
 void http_deinit_ctx(struct http_ctx *ctx)
 {
@@ -1503,9 +1412,7 @@ void http_deinit_ctx(struct http_ctx *ctx)
 	os_free(ctx);
 }
 
-
-int http_download_file(struct http_ctx *ctx, const char *url,
-		       const char *fname, const char *ca_fname)
+int http_download_file(struct http_ctx *ctx, const char *url, const char *fname, const char *ca_fname)
 {
 	CURL *curl;
 	FILE *f;
@@ -1514,11 +1421,11 @@ int http_download_file(struct http_ctx *ctx, const char *url,
 
 	ctx->last_err = NULL;
 
-	wpa_printf(MSG_DEBUG, "curl: Download file from %s to %s (ca=%s)",
-		   url, fname, ca_fname);
+	wpa_printf(MSG_DEBUG, "curl: Download file from %s to %s (ca=%s)", url, fname, ca_fname);
 	curl = curl_easy_init();
-	if (curl == NULL)
+	if (curl == NULL) {
 		return -1;
+	}
 
 	f = fopen(fname, "wb");
 	if (f == NULL) {
@@ -1542,10 +1449,10 @@ int http_download_file(struct http_ctx *ctx, const char *url,
 
 	res = curl_easy_perform(curl);
 	if (res != CURLE_OK) {
-		if (!ctx->last_err)
+		if (!ctx->last_err) {
 			ctx->last_err = curl_easy_strerror(res);
-		wpa_printf(MSG_ERROR, "curl_easy_perform() failed: %s",
-			   ctx->last_err);
+		}
+		wpa_printf(MSG_ERROR, "curl_easy_perform() failed: %s", ctx->last_err);
 		curl_easy_cleanup(curl);
 		fclose(f);
 		return -1;
@@ -1567,13 +1474,7 @@ int http_download_file(struct http_ctx *ctx, const char *url,
 	return 0;
 }
 
-
-char * http_post(struct http_ctx *ctx, const char *url, const char *data,
-		 const char *content_type, const char *ext_hdr,
-		 const char *ca_fname,
-		 const char *username, const char *password,
-		 const char *client_cert, const char *client_key,
-		 size_t *resp_len)
+char *http_post(struct http_ctx *ctx, const char *url, const char *data, const char *content_type, const char *ext_hdr, const char *ca_fname, const char *username, const char *password, const char *client_cert, const char *client_key, size_t *resp_len)
 {
 	long http = 0;
 	CURLcode res;
@@ -1583,18 +1484,19 @@ char * http_post(struct http_ctx *ctx, const char *url, const char *data,
 
 	ctx->last_err = NULL;
 	wpa_printf(MSG_DEBUG, "curl: HTTP POST to %s", url);
-	curl = setup_curl_post(ctx, url, ca_fname, username, password,
-			       client_cert, client_key);
-	if (curl == NULL)
+	curl = setup_curl_post(ctx, url, ca_fname, username, password, client_cert, client_key);
+	if (curl == NULL) {
 		return NULL;
+	}
 
 	if (content_type) {
 		char ct[200];
 		snprintf(ct, sizeof(ct), "Content-Type: %s", content_type);
 		curl_hdr = curl_slist_append(curl_hdr, ct);
 	}
-	if (ext_hdr)
+	if (ext_hdr) {
 		curl_hdr = curl_slist_append(curl_hdr, ext_hdr);
+	}
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_hdr);
 
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
@@ -1602,10 +1504,10 @@ char * http_post(struct http_ctx *ctx, const char *url, const char *data,
 
 	res = curl_easy_perform(curl);
 	if (res != CURLE_OK) {
-		if (!ctx->last_err)
+		if (!ctx->last_err) {
 			ctx->last_err = curl_easy_strerror(res);
-		wpa_printf(MSG_ERROR, "curl_easy_perform() failed: %s",
-			   ctx->last_err);
+		}
+		wpa_printf(MSG_ERROR, "curl_easy_perform() failed: %s", ctx->last_err);
 		free_curl_buf(ctx);
 		return NULL;
 	}
@@ -1619,12 +1521,14 @@ char * http_post(struct http_ctx *ctx, const char *url, const char *data,
 		return NULL;
 	}
 
-	if (ctx->curl_buf == NULL)
+	if (ctx->curl_buf == NULL) {
 		return NULL;
+	}
 
 	ret = ctx->curl_buf;
-	if (resp_len)
+	if (resp_len) {
 		*resp_len = ctx->curl_buf_len;
+	}
 	ctx->curl_buf = NULL;
 	ctx->curl_buf_len = 0;
 
@@ -1633,17 +1537,13 @@ char * http_post(struct http_ctx *ctx, const char *url, const char *data,
 	return ret;
 }
 
-
-void http_set_cert_cb(struct http_ctx *ctx,
-		      int (*cb)(void *ctx, struct http_cert *cert),
-		      void *cb_ctx)
+void http_set_cert_cb(struct http_ctx *ctx, int (*cb)(void *ctx, struct http_cert *cert), void *cb_ctx)
 {
 	ctx->cert_cb = cb;
 	ctx->cert_cb_ctx = cb_ctx;
 }
 
-
-const char * http_get_err(struct http_ctx *ctx)
+const char *http_get_err(struct http_ctx *ctx)
 {
 	return ctx->last_err;
 }

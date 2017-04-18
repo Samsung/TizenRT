@@ -11,13 +11,13 @@
 
 struct tncc_data;
 
-struct tncc_data * tncc_init(void);
+struct tncc_data *tncc_init(void);
 void tncc_deinit(struct tncc_data *tncc);
 void tncc_init_connection(struct tncc_data *tncc);
 size_t tncc_total_send_len(struct tncc_data *tncc);
-u8 * tncc_copy_send_buf(struct tncc_data *tncc, u8 *pos);
-char * tncc_if_tnccs_start(struct tncc_data *tncc);
-char * tncc_if_tnccs_end(void);
+u8 *tncc_copy_send_buf(struct tncc_data *tncc, u8 *pos);
+char *tncc_if_tnccs_start(struct tncc_data *tncc);
+char *tncc_if_tnccs_end(void);
 
 enum tncc_process_res {
 	TNCCS_PROCESS_ERROR = -1,
@@ -28,9 +28,8 @@ enum tncc_process_res {
 	TNCCS_RECOMMENDATION_ISOLATE
 };
 
-enum tncc_process_res tncc_process_if_tnccs(struct tncc_data *tncc,
-					    const u8 *msg, size_t len);
+enum tncc_process_res tncc_process_if_tnccs(struct tncc_data *tncc, const u8 *msg, size_t len);
 
-struct wpabuf * tncc_process_soh_request(int ver, const u8 *data, size_t len);
+struct wpabuf *tncc_process_soh_request(int ver, const u8 *data, size_t len);
 
-#endif /* TNCC_H */
+#endif							/* TNCC_H */

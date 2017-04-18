@@ -10,11 +10,11 @@
 
 struct radiotap_override {
 	uint8_t field;
-	uint8_t align:4, size:4;
+	uint8_t align: 4, size: 4;
 };
 
 struct radiotap_align_size {
-	uint8_t align:4, size:4;
+	uint8_t align: 4, size: 4;
 };
 
 struct ieee80211_radiotap_namespace {
@@ -85,12 +85,8 @@ struct ieee80211_radiotap_iterator {
 	int _reset_on_ext;
 };
 
-extern int ieee80211_radiotap_iterator_init(
-	struct ieee80211_radiotap_iterator *iterator,
-	struct ieee80211_radiotap_header *radiotap_header,
-	int max_length, const struct ieee80211_radiotap_vendor_namespaces *vns);
+extern int ieee80211_radiotap_iterator_init(struct ieee80211_radiotap_iterator *iterator, struct ieee80211_radiotap_header *radiotap_header, int max_length, const struct ieee80211_radiotap_vendor_namespaces *vns);
 
-extern int ieee80211_radiotap_iterator_next(
-	struct ieee80211_radiotap_iterator *iterator);
+extern int ieee80211_radiotap_iterator_next(struct ieee80211_radiotap_iterator *iterator);
 
-#endif /* __RADIOTAP_ITER_H */
+#endif							/* __RADIOTAP_ITER_H */

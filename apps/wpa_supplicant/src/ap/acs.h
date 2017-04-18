@@ -14,7 +14,7 @@
 
 enum hostapd_chan_status acs_init(struct hostapd_iface *iface);
 
-#else /* CONFIG_ACS */
+#else							/* CONFIG_ACS */
 
 static inline enum hostapd_chan_status acs_init(struct hostapd_iface *iface)
 {
@@ -22,6 +22,6 @@ static inline enum hostapd_chan_status acs_init(struct hostapd_iface *iface)
 	return HOSTAPD_CHAN_INVALID;
 }
 
-#endif /* CONFIG_ACS */
+#endif							/* CONFIG_ACS */
 
-#endif /* ACS_H */
+#endif							/* ACS_H */

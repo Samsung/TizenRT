@@ -15,6 +15,6 @@
 // ======================================
 int isp_hmac_generate_key_securekey(unsigned int key_byte_len, unsigned int key_index);
 
-int isp_hmac_securekey(unsigned char * mac, struct sHMAC_MSG * hmac_msg, unsigned int object_id, unsigned int key_index);
+int isp_hmac_securekey(unsigned char *mac, struct sHMAC_MSG *hmac_msg, unsigned int object_id, unsigned int key_index);
 
-#endif /* ISP_DRIVER_HMAC_SECUREKEY_H_ */
+#endif							/* ISP_DRIVER_HMAC_SECUREKEY_H_ */

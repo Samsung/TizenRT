@@ -59,7 +59,6 @@ static inline u16 bswap_16(u16 x)
 {
 	return ((x & 0xff) << 8) | (x >> 8);
 }
-
 static inline u32 bswap_32(u32 x)
 {
 	return ((x & 0xff) << 24) | ((x & 0xff00) << 8) | ((x & 0xff0000) >> 8) | (x >> 24);
@@ -78,9 +77,9 @@ static inline u32 bswap_32(u32 x)
 /* MAC Address Length */
 #define ETH_ALEN        6
 #define ETH_HLEN 14
-#define ETH_ZLEN        60              /* Min. octets in frame sans FCS */
-#define ETH_DATA_LEN    1500            /* Max. octets in payload        */
-#define ETH_P_802_3     0x0001          /* Dummy type for 802.3 frames  */
+#define ETH_ZLEN        60		/* Min. octets in frame sans FCS */
+#define ETH_DATA_LEN    1500	/* Max. octets in payload        */
+#define ETH_P_802_3     0x0001	/* Dummy type for 802.3 frames  */
 
 #define SLSI_MUTEX_INIT(mutex__)                                                 \
 	do {                                                                     \
@@ -102,7 +101,7 @@ static inline u32 bswap_32(u32 x)
 	} while (0)
 #define SLSI_MUTEX_IS_LOCKED(mutex__)      (!(mutex__.sem.semcount == 1))
 
-#define SLSI_NETIF_MBUF_HEADROOM (68 + 160) /* sizeof ma_unitdata_req [36] + pad [30] + pad_words [2]  */
+#define SLSI_NETIF_MBUF_HEADROOM (68 + 160)	/* sizeof ma_unitdata_req [36] + pad [30] + pad_words [2]  */
 #define SLSI_NETIF_MBUF_TAILROOM 0
 
 #define WLAN_REASON_DEAUTH_LEAVING 3
@@ -119,7 +118,7 @@ static inline int is_broadcast_ether_addr(const u8 *a)
 
 static inline void ether_addr_copy(u8 *dst, const u8 *src)
 {
-	u16       *a = (u16 *)dst;
+	u16 *a = (u16 *) dst;
 	const u16 *b = (const u16 *)src;
 
 	a[0] = b[0];
@@ -136,9 +135,9 @@ static inline void ether_addr_copy(u8 *dst, const u8 *src)
  */
 
 struct ethhdr {
-	unsigned char h_dest[ETH_ALEN];          /* destination eth addr */
-	unsigned char h_source[ETH_ALEN];        /* source ether addr    */
-	__be16        h_proto;                   /* packet type ID field */
+	unsigned char h_dest[ETH_ALEN];	/* destination eth addr */
+	unsigned char h_source[ETH_ALEN];	/* source ether addr    */
+	__be16 h_proto;			/* packet type ID field */
 } __attribute__((packed));
 
 struct max_buff;
@@ -236,8 +235,9 @@ static inline int slsi_str_to_int(char *str, int *result)
 
 	*result = 0;
 	if ((str[i] == '-') || ((str[i] >= '0') && (str[i] <= '9'))) {
-		if (str[0] == '-')
+		if (str[0] == '-') {
 			i++;
+		}
 		while (str[i] >= '0' && str[i] <= '9') {
 			*result *= 10;
 			*result += (int)str[i++] - '0';
@@ -292,13 +292,11 @@ extern void slsi_wlan_fapi_log_init(void);
 extern void slsi_wlan_fapi_log_add_record(u16 signal_id, struct timespec ts);
 #endif
 
-
 /* instead of normal spinlock type*/
 typedef uint8_t spinlock_t;
-
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* SLSI_UTILS_SCSC_H__ */
+#endif							/* SLSI_UTILS_SCSC_H__ */

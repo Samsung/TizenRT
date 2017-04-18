@@ -18,12 +18,9 @@
  *	Out-of-line support for mbuf_put() and mbuf_push().
  *	Called via the wrapper mbuf_over_panic() or mbuf_under_panic().
  */
-static void mbuf_panic(struct max_buff *mbuf, unsigned int sz, void *addr,
-		       const char msg[])
+static void mbuf_panic(struct max_buff *mbuf, unsigned int sz, void *addr, const char msg[])
 {
-	SLSI_WARN_NODEV("%s: text:%p len:%d put:%d head:%p data:%p tail:%#lx end:%#lx \n",
-			msg, addr, mbuf->len, sz, mbuf->head, mbuf->data,
-			(unsigned long)mbuf->tail, (unsigned long)mbuf->end);
+	SLSI_WARN_NODEV("%s: text:%p len:%d put:%d head:%p data:%p tail:%#lx end:%#lx \n", msg, addr, mbuf->len, sz, mbuf->head, mbuf->data, (unsigned long)mbuf->tail, (unsigned long)mbuf->end);
 }
 
 static void mbuf_over_panic(struct max_buff *mbuf, unsigned int sz, void *addr)
@@ -41,8 +38,9 @@ void mbuf_reset(struct max_buff *mbuf)
 	unsigned char *head;
 	unsigned char *end;
 
-	if (mbuf == NULL)
+	if (mbuf == NULL) {
 		return;
+	}
 
 	head = mbuf->head;
 	end = mbuf->end;
@@ -50,7 +48,7 @@ void mbuf_reset(struct max_buff *mbuf)
 	memset(mbuf, 0, sizeof(struct max_buff));
 	mbuf->head = mbuf->data = mbuf->tail = head;
 	mbuf->end = end;
-	mbuf->mac_header = (typeof(mbuf->mac_header))~0U;
+	mbuf->mac_header = (typeof(mbuf->mac_header)) ~ 0U;
 }
 
 /**
@@ -64,17 +62,19 @@ void mbuf_reset(struct max_buff *mbuf)
 struct max_buff *__alloc_mbuf(unsigned int size)
 {
 	struct max_buff *mbuf = NULL;
-	u8              *data;
+	u8 *data;
 
 	/* Get the HEAD */
 	mbuf = kmm_malloc(sizeof(struct max_buff));
-	if (!mbuf)
-		goto  out;
+	if (!mbuf) {
+		goto out;
+	}
 
 	data = kmm_malloc(size);
 
-	if (!data)
-		goto  nodata;
+	if (!data) {
+		goto nodata;
+	}
 
 	memset(mbuf, 0, sizeof(struct max_buff));
 
@@ -82,7 +82,7 @@ struct max_buff *__alloc_mbuf(unsigned int size)
 	mbuf->data = data;
 	mbuf->tail = mbuf->data;
 	mbuf->end = mbuf->tail + size;
-	mbuf->mac_header = (typeof(mbuf->mac_header))~0U;
+	mbuf->mac_header = (typeof(mbuf->mac_header)) ~ 0U;
 
 out:
 	return mbuf;
@@ -101,12 +101,14 @@ nodata:
  */
 void kfree_mbuf(struct max_buff *mbuf)
 {
-	if (!mbuf)
+	if (!mbuf) {
 		return;
+	}
 
 	/* Free the data: mbuf->head and mbuf->data are same */
-	if (mbuf->head)
+	if (mbuf->head) {
 		kmm_free(mbuf->head);
+	}
 
 	kmm_free(mbuf);
 }
@@ -125,9 +127,10 @@ unsigned char *mbuf_put(struct max_buff *mbuf, unsigned int len)
 	unsigned char *tmp = mbuf->tail;
 
 	mbuf->tail += len;
-	mbuf->len  += len;
-	if (mbuf->tail > mbuf->end)
+	mbuf->len += len;
+	if (mbuf->tail > mbuf->end) {
 		mbuf_over_panic(mbuf, len, __builtin_return_address(0));
+	}
 	return tmp;
 }
 
@@ -143,9 +146,10 @@ unsigned char *mbuf_put(struct max_buff *mbuf, unsigned int len)
 unsigned char *mbuf_push(struct max_buff *mbuf, unsigned int len)
 {
 	mbuf->data -= len;
-	mbuf->len  += len;
-	if (mbuf->data < mbuf->head)
+	mbuf->len += len;
+	if (mbuf->data < mbuf->head) {
 		mbuf_under_panic(mbuf, len, __builtin_return_address(0));
+	}
 	return mbuf->data;
 }
 
@@ -182,12 +186,13 @@ unsigned char *mbuf_pull(struct max_buff *mbuf, unsigned int len)
  */
 struct max_buff *mbuf_copy(const struct max_buff *mbuf)
 {
-	int             headerlen = mbuf_headroom(mbuf);
-	unsigned int    size = mbuf_end_offset(mbuf) + mbuf->data_len;
+	int headerlen = mbuf_headroom(mbuf);
+	unsigned int size = mbuf_end_offset(mbuf) + mbuf->data_len;
 	struct max_buff *n = __alloc_mbuf(size);
 
-	if (!n)
+	if (!n) {
 		return NULL;
+	}
 
 	/* Set the data pointer */
 	mbuf_reserve(n, headerlen);
@@ -208,16 +213,12 @@ struct max_buff *mbuf_copy(const struct max_buff *mbuf)
  *
  *	A buffer cannot be placed on two lists at the same time.
  */
-static inline void __mbuf_queue_after(struct max_buff_head *list,
-				      struct max_buff      *prev,
-				      struct max_buff      *newsk)
+static inline void __mbuf_queue_after(struct max_buff_head *list, struct max_buff *prev, struct max_buff *newsk)
 {
 	__mbuf_insert(newsk, prev, prev->next, list);
 }
 
-static inline void __mbuf_queue_before(struct max_buff_head *list,
-				       struct max_buff      *next,
-				       struct max_buff      *newsk)
+static inline void __mbuf_queue_before(struct max_buff_head *list, struct max_buff *next, struct max_buff *newsk)
 {
 	__mbuf_insert(newsk, next->prev, next, list);
 }
@@ -226,8 +227,9 @@ static inline struct max_buff *__mbuf_dequeue(struct max_buff_head *list)
 {
 	struct max_buff *mbuf = mbuf_peek(list);
 
-	if (mbuf)
+	if (mbuf) {
 		__mbuf_unlink(mbuf, list);
+	}
 	return mbuf;
 }
 
@@ -261,8 +263,9 @@ static inline struct max_buff *__mbuf_dequeue_tail(struct max_buff_head *list)
 {
 	struct max_buff *mbuf = mbuf_peek_tail(list);
 
-	if (mbuf)
+	if (mbuf) {
 		__mbuf_unlink(mbuf, list);
+	}
 	return mbuf;
 }
 
@@ -296,8 +299,9 @@ void mbuf_queue_purge(struct max_buff_head *list)
 {
 	struct max_buff *mbuf;
 
-	while ((mbuf = mbuf_dequeue(list)) != NULL)
+	while ((mbuf = mbuf_dequeue(list)) != NULL) {
 		kfree_mbuf(mbuf);
+	}
 }
 
 /**
@@ -335,4 +339,3 @@ void mbuf_queue_tail(struct max_buff_head *list, struct max_buff *newsk)
 	__mbuf_queue_before(list, (struct max_buff *)list, newsk);
 	SLSI_MUTEX_UNLOCK(list->lock);
 }
-

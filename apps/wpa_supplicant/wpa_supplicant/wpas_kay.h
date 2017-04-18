@@ -11,23 +11,18 @@
 
 #ifdef CONFIG_MACSEC
 
-int ieee802_1x_alloc_kay_sm(struct wpa_supplicant *wpa_s,
-			    struct wpa_ssid *ssid);
-void * ieee802_1x_notify_create_actor(struct wpa_supplicant *wpa_s,
-				      const u8 *peer_addr);
+int ieee802_1x_alloc_kay_sm(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid);
+void *ieee802_1x_notify_create_actor(struct wpa_supplicant *wpa_s, const u8 *peer_addr);
 void ieee802_1x_dealloc_kay_sm(struct wpa_supplicant *wpa_s);
 
-#else /* CONFIG_MACSEC */
+#else							/* CONFIG_MACSEC */
 
-static inline int ieee802_1x_alloc_kay_sm(struct wpa_supplicant *wpa_s,
-					  struct wpa_ssid *ssid)
+static inline int ieee802_1x_alloc_kay_sm(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 {
 	return 0;
 }
 
-static inline void *
-ieee802_1x_notify_create_actor(struct wpa_supplicant *wpa_s,
-			       const u8 *peer_addr)
+static inline void *ieee802_1x_notify_create_actor(struct wpa_supplicant *wpa_s, const u8 *peer_addr)
 {
 	return NULL;
 }
@@ -36,6 +31,6 @@ static inline void ieee802_1x_dealloc_kay_sm(struct wpa_supplicant *wpa_s)
 {
 }
 
-#endif /* CONFIG_MACSEC */
+#endif							/* CONFIG_MACSEC */
 
-#endif /* WPAS_KAY_H */
+#endif							/* WPAS_KAY_H */

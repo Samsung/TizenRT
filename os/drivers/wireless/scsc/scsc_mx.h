@@ -89,7 +89,6 @@ void scsc_mx_service_close(struct scsc_service *service);
  * their stop_on_failure() handler as a side-effect. */
 void scsc_mx_service_service_failed(struct scsc_service *service);
 
-
 /* MEMORY Interface*/
 /** Allocate a contiguous block of SDRAM accessible to Client Driver */
 int scsc_mx_service_mifram_alloc(struct scsc_service *service, size_t nbytes, scsc_mifram_ref *ref, u32 align);
@@ -156,11 +155,11 @@ int scsc_service_force_panic(struct scsc_service *service);
  */
 
 enum mx140_clk20mhz_status {
-	MX140_CLK_SUCCESS = 0,  /* Returned successfully */
-	MX140_CLK_STARTED,      /* mx140 has started the clock */
-	MX140_CLK_STOPPED,      /* mx140 has stopped the clock */
-	MX140_CLK_NOT_STARTED,  /* failed to start the clock */
-	MX140_CLK_NOT_STOPPED,  /* failed to stop the clock */
+	MX140_CLK_SUCCESS = 0,		/* Returned successfully */
+	MX140_CLK_STARTED,			/* mx140 has started the clock */
+	MX140_CLK_STOPPED,			/* mx140 has stopped the clock */
+	MX140_CLK_NOT_STARTED,		/* failed to start the clock */
+	MX140_CLK_NOT_STOPPED,		/* failed to stop the clock */
 };
 
 /* Register for 20 MHz clock API callbacks

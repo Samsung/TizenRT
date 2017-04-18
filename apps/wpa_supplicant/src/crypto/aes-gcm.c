@@ -21,17 +21,15 @@ static void inc32(u8 *block)
 	WPA_PUT_BE32(block + AES_BLOCK_SIZE - 4, val);
 }
 
-
 static void xor_block(u8 *dst, const u8 *src)
 {
-	u32 *d = (u32 *) dst;
-	u32 *s = (u32 *) src;
+	u32 *d = (u32 *)dst;
+	u32 *s = (u32 *)src;
 	*d++ ^= *s++;
 	*d++ ^= *s++;
 	*d++ ^= *s++;
 	*d++ ^= *s++;
 }
-
 
 static void shift_right_block(u8 *v)
 {
@@ -39,20 +37,23 @@ static void shift_right_block(u8 *v)
 
 	val = WPA_GET_BE32(v + 12);
 	val >>= 1;
-	if (v[11] & 0x01)
+	if (v[11] & 0x01) {
 		val |= 0x80000000;
+	}
 	WPA_PUT_BE32(v + 12, val);
 
 	val = WPA_GET_BE32(v + 8);
 	val >>= 1;
-	if (v[7] & 0x01)
+	if (v[7] & 0x01) {
 		val |= 0x80000000;
+	}
 	WPA_PUT_BE32(v + 8, val);
 
 	val = WPA_GET_BE32(v + 4);
 	val >>= 1;
-	if (v[3] & 0x01)
+	if (v[3] & 0x01) {
 		val |= 0x80000000;
+	}
 	WPA_PUT_BE32(v + 4, val);
 
 	val = WPA_GET_BE32(v);
@@ -60,15 +61,14 @@ static void shift_right_block(u8 *v)
 	WPA_PUT_BE32(v, val);
 }
 
-
 /* Multiplication in GF(2^128) */
 static void gf_mult(const u8 *x, const u8 *y, u8 *z)
 {
 	u8 v[16];
 	int i, j;
 
-	os_memset(z, 0, 16); /* Z_0 = 0^128 */
-	os_memcpy(v, y, 16); /* V_0 = Y */
+	os_memset(z, 0, 16);		/* Z_0 = 0^128 */
+	os_memcpy(v, y, 16);		/* V_0 = Y */
 
 	for (i = 0; i < 16; i++) {
 		for (j = 0; j < 8; j++) {
@@ -92,13 +92,11 @@ static void gf_mult(const u8 *x, const u8 *y, u8 *z)
 	}
 }
 
-
 static void ghash_start(u8 *y)
 {
 	/* Y_0 = 0^128 */
 	os_memset(y, 0, 16);
 }
-
 
 static void ghash(const u8 *h, const u8 *x, size_t xlen, u8 *y)
 {
@@ -139,7 +137,6 @@ static void ghash(const u8 *h, const u8 *x, size_t xlen, u8 *y)
 	/* Return Y_m */
 }
 
-
 static void aes_gctr(void *aes, const u8 *icb, const u8 *x, size_t xlen, u8 *y)
 {
 	size_t i, n, last;
@@ -147,8 +144,9 @@ static void aes_gctr(void *aes, const u8 *icb, const u8 *x, size_t xlen, u8 *y)
 	const u8 *xpos = x;
 	u8 *ypos = y;
 
-	if (xlen == 0)
+	if (xlen == 0) {
 		return;
+	}
 
 	n = xlen / 16;
 
@@ -166,28 +164,27 @@ static void aes_gctr(void *aes, const u8 *icb, const u8 *x, size_t xlen, u8 *y)
 	if (last) {
 		/* Last, partial block */
 		aes_encrypt(aes, cb, tmp);
-		for (i = 0; i < last; i++)
+		for (i = 0; i < last; i++) {
 			*ypos++ = *xpos++ ^ tmp[i];
+		}
 	}
 }
 
-
-static void * aes_gcm_init_hash_subkey(const u8 *key, size_t key_len, u8 *H)
+static void *aes_gcm_init_hash_subkey(const u8 *key, size_t key_len, u8 *H)
 {
 	void *aes;
 
 	aes = aes_encrypt_init(key, key_len);
-	if (aes == NULL)
+	if (aes == NULL) {
 		return NULL;
+	}
 
 	/* Generate hash subkey H = AES_K(0^128) */
 	os_memset(H, 0, AES_BLOCK_SIZE);
 	aes_encrypt(aes, H, H);
-	wpa_hexdump_key(MSG_EXCESSIVE, "Hash subkey H for GHASH",
-			H, AES_BLOCK_SIZE);
+	wpa_hexdump_key(MSG_EXCESSIVE, "Hash subkey H for GHASH", H, AES_BLOCK_SIZE);
 	return aes;
 }
-
 
 static void aes_gcm_prepare_j0(const u8 *iv, size_t iv_len, const u8 *H, u8 *J0)
 {
@@ -211,23 +208,20 @@ static void aes_gcm_prepare_j0(const u8 *iv, size_t iv_len, const u8 *H, u8 *J0)
 	}
 }
 
-
-static void aes_gcm_gctr(void *aes, const u8 *J0, const u8 *in, size_t len,
-			 u8 *out)
+static void aes_gcm_gctr(void *aes, const u8 *J0, const u8 *in, size_t len, u8 *out)
 {
 	u8 J0inc[AES_BLOCK_SIZE];
 
-	if (len == 0)
+	if (len == 0) {
 		return;
+	}
 
 	os_memcpy(J0inc, J0, AES_BLOCK_SIZE);
 	inc32(J0inc);
 	aes_gctr(aes, J0inc, in, len, out);
 }
 
-
-static void aes_gcm_ghash(const u8 *H, const u8 *aad, size_t aad_len,
-			  const u8 *crypt, size_t crypt_len, u8 *S)
+static void aes_gcm_ghash(const u8 *H, const u8 *aad, size_t aad_len, const u8 *crypt, size_t crypt_len, u8 *S)
 {
 	u8 len_buf[16];
 
@@ -247,13 +241,10 @@ static void aes_gcm_ghash(const u8 *H, const u8 *aad, size_t aad_len,
 	wpa_hexdump_key(MSG_EXCESSIVE, "S = GHASH_H(...)", S, 16);
 }
 
-
 /**
  * aes_gcm_ae - GCM-AE_K(IV, P, A)
  */
-int aes_gcm_ae(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
-	       const u8 *plain, size_t plain_len,
-	       const u8 *aad, size_t aad_len, u8 *crypt, u8 *tag)
+int aes_gcm_ae(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len, const u8 *plain, size_t plain_len, const u8 *aad, size_t aad_len, u8 *crypt, u8 *tag)
 {
 	u8 H[AES_BLOCK_SIZE];
 	u8 J0[AES_BLOCK_SIZE];
@@ -261,8 +252,9 @@ int aes_gcm_ae(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
 	void *aes;
 
 	aes = aes_gcm_init_hash_subkey(key, key_len, H);
-	if (aes == NULL)
+	if (aes == NULL) {
 		return -1;
+	}
 
 	aes_gcm_prepare_j0(iv, iv_len, H, J0);
 
@@ -281,13 +273,10 @@ int aes_gcm_ae(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
 	return 0;
 }
 
-
 /**
  * aes_gcm_ad - GCM-AD_K(IV, C, A, T)
  */
-int aes_gcm_ad(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
-	       const u8 *crypt, size_t crypt_len,
-	       const u8 *aad, size_t aad_len, const u8 *tag, u8 *plain)
+int aes_gcm_ad(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len, const u8 *crypt, size_t crypt_len, const u8 *aad, size_t aad_len, const u8 *tag, u8 *plain)
 {
 	u8 H[AES_BLOCK_SIZE];
 	u8 J0[AES_BLOCK_SIZE];
@@ -295,8 +284,9 @@ int aes_gcm_ad(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
 	void *aes;
 
 	aes = aes_gcm_init_hash_subkey(key, key_len, H);
-	if (aes == NULL)
+	if (aes == NULL) {
 		return -1;
+	}
 
 	aes_gcm_prepare_j0(iv, iv_len, H, J0);
 
@@ -318,10 +308,7 @@ int aes_gcm_ad(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
 	return 0;
 }
 
-
-int aes_gmac(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
-	     const u8 *aad, size_t aad_len, u8 *tag)
+int aes_gmac(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len, const u8 *aad, size_t aad_len, u8 *tag)
 {
-	return aes_gcm_ae(key, key_len, iv, iv_len, NULL, 0, aad, aad_len, NULL,
-			  tag);
+	return aes_gcm_ae(key, key_len, iv, iv_len, NULL, 0, aad, aad_len, NULL, tag);
 }

@@ -23,10 +23,7 @@ struct ieee802_1x_cp_conf {
 	u32 replay_window;
 };
 
-
-struct ieee802_1x_cp_sm *
-ieee802_1x_cp_sm_init(struct ieee802_1x_kay *kay,
-		      struct ieee802_1x_cp_conf *pcp_conf);
+struct ieee802_1x_cp_sm *ieee802_1x_cp_sm_init(struct ieee802_1x_kay *kay, struct ieee802_1x_cp_conf *pcp_conf);
 void ieee802_1x_cp_sm_deinit(struct ieee802_1x_cp_sm *sm);
 void ieee802_1x_cp_sm_step(void *cp_ctx);
 void ieee802_1x_cp_connect_pending(void *cp_ctx);
@@ -39,12 +36,11 @@ void ieee802_1x_cp_set_authorizationdata(void *cp_ctx, u8 *pdata, int len);
 void ieee802_1x_cp_set_ciphersuite(void *cp_ctx, void *pid);
 void ieee802_1x_cp_set_offset(void *cp_ctx, enum confidentiality_offset offset);
 void ieee802_1x_cp_signal_newsak(void *cp_ctx);
-void ieee802_1x_cp_set_distributedki(void *cp_ctx,
-				     const struct ieee802_1x_mka_ki *dki);
+void ieee802_1x_cp_set_distributedki(void *cp_ctx, const struct ieee802_1x_mka_ki *dki);
 void ieee802_1x_cp_set_distributedan(void *cp_ctx, u8 an);
 void ieee802_1x_cp_set_usingreceivesas(void *cp_ctx, Boolean status);
 void ieee802_1x_cp_set_allreceiving(void *cp_ctx, Boolean status);
 void ieee802_1x_cp_set_servertransmitting(void *cp_ctx, Boolean status);
 void ieee802_1x_cp_set_usingtransmitas(void *cp_ctx, Boolean status);
 
-#endif /* IEEE802_1X_CP_H */
+#endif							/* IEEE802_1X_CP_H */

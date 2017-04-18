@@ -12,7 +12,6 @@
 #include "md5.h"
 #include "crypto.h"
 
-
 /**
  * hmac_md5_vector - HMAC-MD5 over data vector (RFC 2104)
  * @key: Key for HMAC operations
@@ -23,10 +22,9 @@
  * @mac: Buffer for the hash (16 bytes)
  * Returns: 0 on success, -1 on failure
  */
-int hmac_md5_vector(const u8 *key, size_t key_len, size_t num_elem,
-		    const u8 *addr[], const size_t *len, u8 *mac)
+int hmac_md5_vector(const u8 *key, size_t key_len, size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
-	u8 k_pad[64]; /* padding - key XORd with ipad/opad */
+	u8 k_pad[64];				/* padding - key XORd with ipad/opad */
 	u8 tk[16];
 	const u8 *_addr[6];
 	size_t i, _len[6];
@@ -40,13 +38,14 @@ int hmac_md5_vector(const u8 *key, size_t key_len, size_t num_elem,
 		return -1;
 	}
 
-        /* if key is longer than 64 bytes reset it to key = MD5(key) */
-        if (key_len > 64) {
-		if (md5_vector(1, &key, &key_len, tk))
+	/* if key is longer than 64 bytes reset it to key = MD5(key) */
+	if (key_len > 64) {
+		if (md5_vector(1, &key, &key_len, tk)) {
 			return -1;
+		}
 		key = tk;
 		key_len = 16;
-        }
+	}
 
 	/* the HMAC_MD5 transform looks like:
 	 *
@@ -62,8 +61,9 @@ int hmac_md5_vector(const u8 *key, size_t key_len, size_t num_elem,
 	os_memcpy(k_pad, key, key_len);
 
 	/* XOR key with ipad values */
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < 64; i++) {
 		k_pad[i] ^= 0x36;
+	}
 
 	/* perform inner MD5 */
 	_addr[0] = k_pad;
@@ -72,14 +72,16 @@ int hmac_md5_vector(const u8 *key, size_t key_len, size_t num_elem,
 		_addr[i + 1] = addr[i];
 		_len[i + 1] = len[i];
 	}
-	if (md5_vector(1 + num_elem, _addr, _len, mac))
+	if (md5_vector(1 + num_elem, _addr, _len, mac)) {
 		return -1;
+	}
 
 	os_memset(k_pad, 0, sizeof(k_pad));
 	os_memcpy(k_pad, key, key_len);
 	/* XOR key with opad values */
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < 64; i++) {
 		k_pad[i] ^= 0x5c;
+	}
 
 	/* perform outer MD5 */
 	_addr[0] = k_pad;
@@ -92,7 +94,6 @@ int hmac_md5_vector(const u8 *key, size_t key_len, size_t num_elem,
 	return res;
 }
 
-
 /**
  * hmac_md5 - HMAC-MD5 over data buffer (RFC 2104)
  * @key: Key for HMAC operations
@@ -102,8 +103,7 @@ int hmac_md5_vector(const u8 *key, size_t key_len, size_t num_elem,
  * @mac: Buffer for the hash (16 bytes)
  * Returns: 0 on success, -1 on failure
  */
-int hmac_md5(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
-	      u8 *mac)
+int hmac_md5(const u8 *key, size_t key_len, const u8 *data, size_t data_len, u8 *mac)
 {
 	return hmac_md5_vector(key, key_len, 1, &data, &data_len, mac);
 }

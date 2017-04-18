@@ -415,8 +415,8 @@ static void my_debug(void *ctx, int level, const char *file, int line, const cha
 			basename = p + 1;
 		}
 
-	mbedtls_fprintf((FILE *) ctx, "%s:%04d: |%d| %s", basename, line, level, str);
-	fflush((FILE *) ctx);
+	mbedtls_fprintf((FILE *)ctx, "%s:%04d: |%d| %s", basename, line, level, str);
+	fflush((FILE *)ctx);
 }
 
 /*
@@ -755,7 +755,7 @@ error:
  */
 int psk_callback(void *p_info, mbedtls_ssl_context *ssl, const unsigned char *name, size_t name_len)
 {
-	psk_entry *cur = (psk_entry *) p_info;
+	psk_entry *cur = (psk_entry *)p_info;
 
 	while (cur != NULL) {
 		if (name_len == strlen(cur->name) && memcmp(name, cur->name, name_len) == 0) {

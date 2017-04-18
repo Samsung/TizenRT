@@ -126,15 +126,15 @@ void cpacketbuffer_config_serialise(const struct cpacketbuffer *buffer, struct m
  */
 struct cpacketbuffer {
 	struct scsc_mx *mx;
-	void           *buffer;     /* Buffer location */
-	uint32_t       num_packets; /* Total number of packets that can be stored in the buffer */
-	uint32_t       packet_size; /* Size of each individual packet within the buffer */
+	void *buffer;				/* Buffer location */
+	uint32_t num_packets;		/* Total number of packets that can be stored in the buffer */
+	uint32_t packet_size;		/* Size of each individual packet within the buffer */
 
 	/** Pointers to 32bit R/W indexes - these should point to uint32_ts */
-	uint32_t       *read_index;  /* Pointer to the location of the read index, which
-	                              *     contains the index of the next packet to read. */
-	uint32_t       *write_index; /* Pointer to the location of the write index, which
-	                              *     contains the index after the last packet written. */
+	uint32_t *read_index;		/* Pointer to the location of the read index, which
+								 *     contains the index of the next packet to read. */
+	uint32_t *write_index;		/* Pointer to the location of the write index, which
+								 *     contains the index after the last packet written. */
 };
 
-#endif /* CPACKET_BUFFER_H__ */
+#endif							/* CPACKET_BUFFER_H__ */

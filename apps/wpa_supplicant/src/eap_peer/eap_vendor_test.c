@@ -16,10 +16,8 @@
 #include "eap_i.h"
 #include "eloop.h"
 
-
 #define EAP_VENDOR_ID EAP_VENDOR_HOSTAP
 #define EAP_VENDOR_TYPE 0xfcfbfaf9
-
 
 struct eap_vendor_test_data {
 	enum { INIT, CONFIRM, SUCCESS } state;
@@ -27,26 +25,24 @@ struct eap_vendor_test_data {
 	int test_pending_req;
 };
 
-
-static void * eap_vendor_test_init(struct eap_sm *sm)
+static void *eap_vendor_test_init(struct eap_sm *sm)
 {
 	struct eap_vendor_test_data *data;
 	const u8 *password;
 	size_t password_len;
 
 	data = os_zalloc(sizeof(*data));
-	if (data == NULL)
+	if (data == NULL) {
 		return NULL;
+	}
 	data->state = INIT;
 	data->first_try = 1;
 
 	password = eap_get_config_password(sm, &password_len);
-	data->test_pending_req = password && password_len == 7 &&
-		os_memcmp(password, "pending", 7) == 0;
+	data->test_pending_req = password && password_len == 7 && os_memcmp(password, "pending", 7) == 0;
 
 	return data;
 }
-
 
 static void eap_vendor_test_deinit(struct eap_sm *sm, void *priv)
 {
@@ -54,19 +50,14 @@ static void eap_vendor_test_deinit(struct eap_sm *sm, void *priv)
 	os_free(data);
 }
 
-
 static void eap_vendor_ready(void *eloop_ctx, void *timeout_ctx)
 {
 	struct eap_sm *sm = eloop_ctx;
-	wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Ready to re-process pending "
-		   "request");
+	wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Ready to re-process pending " "request");
 	eap_notify_pending(sm);
 }
 
-
-static struct wpabuf * eap_vendor_test_process(struct eap_sm *sm, void *priv,
-					       struct eap_method_ret *ret,
-					       const struct wpabuf *reqData)
+static struct wpabuf *eap_vendor_test_process(struct eap_sm *sm, void *priv, struct eap_method_ret *ret, const struct wpabuf *reqData)
 {
 	struct eap_vendor_test_data *data = priv;
 	struct wpabuf *resp;
@@ -80,22 +71,19 @@ static struct wpabuf * eap_vendor_test_process(struct eap_sm *sm, void *priv,
 	}
 
 	if (data->state == INIT && *pos != 1) {
-		wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Unexpected message "
-			   "%d in INIT state", *pos);
+		wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Unexpected message " "%d in INIT state", *pos);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
 	if (data->state == CONFIRM && *pos != 3) {
-		wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Unexpected message "
-			   "%d in CONFIRM state", *pos);
+		wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Unexpected message " "%d in CONFIRM state", *pos);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
 	if (data->state == SUCCESS) {
-		wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Unexpected message "
-			   "in SUCCESS state");
+		wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Unexpected message " "in SUCCESS state");
 		ret->ignore = TRUE;
 		return NULL;
 	}
@@ -103,11 +91,9 @@ static struct wpabuf * eap_vendor_test_process(struct eap_sm *sm, void *priv,
 	if (data->state == CONFIRM) {
 		if (data->test_pending_req && data->first_try) {
 			data->first_try = 0;
-			wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Testing "
-				   "pending request");
+			wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Testing " "pending request");
 			ret->ignore = TRUE;
-			eloop_register_timeout(1, 0, eap_vendor_ready, sm,
-					       NULL);
+			eloop_register_timeout(1, 0, eap_vendor_ready, sm, NULL);
 			return NULL;
 		}
 	}
@@ -117,10 +103,10 @@ static struct wpabuf * eap_vendor_test_process(struct eap_sm *sm, void *priv,
 	wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Generating Response");
 	ret->allowNotifications = TRUE;
 
-	resp = eap_msg_alloc(EAP_VENDOR_ID, EAP_VENDOR_TYPE, 1,
-			     EAP_CODE_RESPONSE, eap_get_id(reqData));
-	if (resp == NULL)
+	resp = eap_msg_alloc(EAP_VENDOR_ID, EAP_VENDOR_TYPE, 1, EAP_CODE_RESPONSE, eap_get_id(reqData));
+	if (resp == NULL) {
 		return NULL;
+	}
 
 	if (data->state == INIT) {
 		wpabuf_put_u8(resp, 2);
@@ -137,26 +123,26 @@ static struct wpabuf * eap_vendor_test_process(struct eap_sm *sm, void *priv,
 	return resp;
 }
 
-
 static Boolean eap_vendor_test_isKeyAvailable(struct eap_sm *sm, void *priv)
 {
 	struct eap_vendor_test_data *data = priv;
 	return data->state == SUCCESS;
 }
 
-
-static u8 * eap_vendor_test_getKey(struct eap_sm *sm, void *priv, size_t *len)
+static u8 *eap_vendor_test_getKey(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_vendor_test_data *data = priv;
 	u8 *key;
 	const int key_len = 64;
 
-	if (data->state != SUCCESS)
+	if (data->state != SUCCESS) {
 		return NULL;
+	}
 
 	key = os_malloc(key_len);
-	if (key == NULL)
+	if (key == NULL) {
 		return NULL;
+	}
 
 	os_memset(key, 0x11, key_len / 2);
 	os_memset(key + key_len / 2, 0x22, key_len / 2);
@@ -165,17 +151,15 @@ static u8 * eap_vendor_test_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	return key;
 }
 
-
 int eap_peer_vendor_test_register(void)
 {
 	struct eap_method *eap;
 	int ret;
 
-	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION,
-				    EAP_VENDOR_ID, EAP_VENDOR_TYPE,
-				    "VENDOR-TEST");
-	if (eap == NULL)
+	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION, EAP_VENDOR_ID, EAP_VENDOR_TYPE, "VENDOR-TEST");
+	if (eap == NULL) {
 		return -1;
+	}
 
 	eap->init = eap_vendor_test_init;
 	eap->deinit = eap_vendor_test_deinit;
@@ -184,7 +168,8 @@ int eap_peer_vendor_test_register(void)
 	eap->getKey = eap_vendor_test_getKey;
 
 	ret = eap_peer_method_register(eap);
-	if (ret)
+	if (ret) {
 		eap_peer_method_free(eap);
+	}
 	return ret;
 }

@@ -83,7 +83,6 @@ extern "C" {
 
 #define SLSI_IOC_TYPECHECK(t) (sizeof(t))
 
-
 /* Private configuration commands */
 #define UNIFI_CFG               _IOWR('u',  5, unsigned char[4])
 /**
@@ -109,12 +108,10 @@ extern "C" {
  * structures is obtained by struct uf_cfg_bcast_packet_filter::tclas_ies_length.
  */
 
-
 /* MIB set/get. Arg is a pointer to a varbind */
 #define UNIFI_GET_MIB           _IOWR('u',  3, unsigned char)
 #define UNIFI_SET_MIB           _IOW('u',  4, unsigned char)
 #define MAX_MIB_DATA_LENGTH 2048
-
 
 #define UNIFI_BUILD_TYPE _IOWR('u', 7, unsigned char)
 
@@ -124,8 +121,7 @@ extern "C" {
 
 #define UNIFI_GET_UDI_ENABLE    _IOR('u',  1, int)
 #define UNIFI_SET_UDI_ENABLE    _IOW('u',  2, int)
-#define IFNAMSIZ           6   /* Older naming standard */
-
+#define IFNAMSIZ           6	/* Older naming standard */
 
 /* debugging */
 #define UNIFI_SET_DEBUG         _IO('u',  0x11)
@@ -171,7 +167,7 @@ extern "C" {
 #define SRC_SINK_ENDPOINT_MACRAME         ((src_sink_endpoint)0x0001)
 
 struct unifiio_src_sink_report {
-	/* total reporting time requested by the user in seconds*/
+	/* total reporting time requested by the user in seconds */
 	uint32_t time;
 	/* requested report interval in microseconds */
 	uint32_t interval;
@@ -214,10 +210,10 @@ struct unifiio_src_sink_config {
 /* fields common to <ALL> SRC/SINK IOCTLs */
 struct unifiio_src_sink_common {
 	/* one of SRC_SINK_ACTION_* for driver IOCTL */
-	src_sink_action    action;
-	uint16_t           vif;
+	src_sink_action action;
+	uint16_t vif;
 	src_sink_direction direction;
-	src_sink_endpoint  endpoint;
+	src_sink_endpoint endpoint;
 };
 
 struct unifiio_src_sink_arg_t {
@@ -252,11 +248,11 @@ struct udi_msg_t {
 /* Add these to the filter signal_ids to enable partial filtering of the MA_UNITDATA Data
  * the top bit is set to indicate this is not a HIP Signal ID but a special Filter
  */
-#define UDI_MA_UNITDATA_FILTER_ALLOW_MASK         0x8000  /* Filter MA_UNITDATA_REQ and MA_UNITDATA_IND */
-#define UDI_MA_UNITDATA_FILTER_ALLOW_MGT_ID       0x8001  /* Filter MA_UNITDATA_REQ and MA_UNITDATA_IND but Log management Frames */
-#define UDI_MA_UNITDATA_FILTER_ALLOW_KEY_ID       0x8002  /* Filter MA_UNITDATA_REQ and MA_UNITDATA_IND but Log Key Data Frames  (Arp, Eapol, Dhcp etc) */
-#define UDI_MA_UNITDATA_FILTER_ALLOW_CFM_ERROR_ID 0x8004  /* Filter MA_UNITDATA_CFM but MA_UNITDATA_CFM(error) */
-#define UDI_MA_UNITDATA_FILTER_ALLOW_EAPOL_ID     0x8008  /* Filter MA_UNITDATA_REQ and MA_UNITDATA_IND but Log Eapol data */
+#define UDI_MA_UNITDATA_FILTER_ALLOW_MASK         0x8000	/* Filter MA_UNITDATA_REQ and MA_UNITDATA_IND */
+#define UDI_MA_UNITDATA_FILTER_ALLOW_MGT_ID       0x8001	/* Filter MA_UNITDATA_REQ and MA_UNITDATA_IND but Log management Frames */
+#define UDI_MA_UNITDATA_FILTER_ALLOW_KEY_ID       0x8002	/* Filter MA_UNITDATA_REQ and MA_UNITDATA_IND but Log Key Data Frames  (Arp, Eapol, Dhcp etc) */
+#define UDI_MA_UNITDATA_FILTER_ALLOW_CFM_ERROR_ID 0x8004	/* Filter MA_UNITDATA_CFM but MA_UNITDATA_CFM(error) */
+#define UDI_MA_UNITDATA_FILTER_ALLOW_EAPOL_ID     0x8008	/* Filter MA_UNITDATA_REQ and MA_UNITDATA_IND but Log Eapol data */
 
 /**
  * Signals used to indicate to user space that the kernel module has been
@@ -270,9 +266,9 @@ struct udi_msg_t {
 #define UDI_DRV_RESUME_IND           0x8014
 
 struct unifiio_filter_t {
-	uint16_t log_listed_flag;       /* if non-zero, log listed sigs and ignore others (otherwise vice versa) */
-	uint16_t signal_ids_n;          /* Number of elements in signal_ids[] */
-	uint16_t signal_ids[5];         /* list of the signals to log */
+	uint16_t log_listed_flag;	/* if non-zero, log listed sigs and ignore others (otherwise vice versa) */
+	uint16_t signal_ids_n;	/* Number of elements in signal_ids[] */
+	uint16_t signal_ids[5];	/* list of the signals to log */
 };
 
 #define unifi_cfg_command uint32_t
@@ -327,64 +323,64 @@ struct unifiio_filter_t {
 #define UNIFI_CFG_FILTER_TYPE_SUSPENDED_HOST   ((uf_cfg_packet_filter_type)2)
 
 struct uf_cfg_bcast_packet_filter {
-	unsigned long             filter_mode;      /* as defined by HIP protocol */
+	unsigned long filter_mode;	/* as defined by HIP protocol */
 	uf_cfg_packet_filter_type packet_filter_type;
-	unsigned char             arp_filter;
-	unsigned char             dhcp_filter;
-	unsigned long             tclas_ies_length;      /* length of tclas_ies in bytes */
-	unsigned char             tclas_ies[1];          /* variable length depending on above field */
+	unsigned char arp_filter;
+	unsigned char dhcp_filter;
+	unsigned long tclas_ies_length;	/* length of tclas_ies in bytes */
+	unsigned char tclas_ies[1];	/* variable length depending on above field */
 };
 
 struct uf_cfg_ap_config {
-	uint8_t  phySupportedBitmap;
-	uint8_t  channel;
+	uint8_t phySupportedBitmap;
+	uint8_t channel;
 	uint16_t beaconInterval;
-	uint8_t  dtimPeriod;
-	bool     wmmEnabled;
-	uint8_t  shortSlotTimeEnabled;
+	uint8_t dtimPeriod;
+	bool wmmEnabled;
+	uint8_t shortSlotTimeEnabled;
 	uint16_t groupkeyTimeout;
-	bool     strictGtkRekeyEnabled;
+	bool strictGtkRekeyEnabled;
 	uint16_t gmkTimeout;
 	uint16_t responseTimeout;
-	uint8_t  retransLimit;
-	uint8_t  rxStbc;
-	bool     rifsModeAllowed;
-	uint8_t  dualCtsProtection;
-	uint8_t  ctsProtectionType;
+	uint8_t retransLimit;
+	uint8_t rxStbc;
+	bool rifsModeAllowed;
+	uint8_t dualCtsProtection;
+	uint8_t ctsProtectionType;
 	uint16_t maxListenInterval;
 };
 
 struct csr_wifi_cfg_coex_info {
-	bool     hasTrafficData;
-	uint8_t  currentTrafficType;
+	bool hasTrafficData;
+	uint8_t currentTrafficType;
 	uint16_t currentPeriodMs;
-	uint8_t  currentPowerSave;
+	uint8_t currentPowerSave;
 	uint16_t currentCoexPeriodMs;
 	uint16_t currentCoexLatencyMs;
-	bool     hasBtDevice;
+	bool hasBtDevice;
 	uint32_t currentBlackOutDurationUs;
 	uint32_t currentBlackOutPeriodUs;
-	uint8_t  currentCoexScheme;
+	uint8_t currentCoexScheme;
 };
 
 struct tcpip_clsfr {
-	__u8  cls_fr_type;
-	__u8  cls_fr_mask;
-	__u8  version;
-	__u8  source_ip_addr[4];
-	__u8  dest_ip_addr[4];
+	__u8 cls_fr_type;
+	__u8 cls_fr_mask;
+	__u8 version;
+	__u8 source_ip_addr[4];
+	__u8 dest_ip_addr[4];
 	__u16 source_port;
 	__u16 dest_port;
-	__u8  dscp;
-	__u8  protocol;
-	__u8  reserved;
+	__u8 dscp;
+	__u8 protocol;
+	__u8 reserved;
 } STRUCT_PACKED;
 #define tcpip_clsfr_t struct tcpip_clsfr
 
 struct tclas {
-	__u8          element_id;
-	__u8          length;
-	__u8          user_priority;
+	__u8 element_id;
+	__u8 length;
+	__u8 user_priority;
 	tcpip_clsfr_t tcp_ip_cls_fr;
 } STRUCT_PACKED;
 
@@ -422,15 +418,15 @@ struct tclas {
  * macaddr          (valid if not broadcast)
  */
 struct unifiio_netdev_cfg_t {
-	uint8_t       operation;       /* 0 = configure, 1 = query */
+	uint8_t operation;		/* 0 = configure, 1 = query */
 	/* All other fields potentially bidirectional */
-	int           interfaceTag;    /* <0 => create new, >=0 => reconfigure existing */
-	uint8_t       vif_index;       /* VIF index to use (0 => remove netdev) */
-	uint8_t       interfaceMode;   /* Values defined in csr_wifi_router_ctrl_prim.h */
-	unsigned char macaddr[6];      /* MAC address */
-	char          name[IFNAMSIZ];  /* Interface name */
-	unsigned char peer_macaddr[6]; /* peer MAC address */
-	uint16_t      association_id;  /* Associate ID used for the peer */
+	int interfaceTag;		/* <0 => create new, >=0 => reconfigure existing */
+	uint8_t vif_index;		/* VIF index to use (0 => remove netdev) */
+	uint8_t interfaceMode;	/* Values defined in csr_wifi_router_ctrl_prim.h */
+	unsigned char macaddr[6];	/* MAC address */
+	char name[IFNAMSIZ];	/* Interface name */
+	unsigned char peer_macaddr[6];	/* peer MAC address */
+	uint16_t association_id;	/* Associate ID used for the peer */
 };
 
 #define unifiio_stream_cfg_operation_type uint32_t
@@ -441,11 +437,11 @@ struct unifiio_netdev_cfg_t {
 
 struct unifiio_stream_cfg_t {
 	unifiio_stream_cfg_operation_type operation;
-	int                               interfaceTag;         /* A valid interface tag */
-	unsigned char                     peer_macaddr[6];      /* Peer STA MAC address */
-	uint16_t                          tId;                  /* Traffic identifier user priority */
-	uint16_t                          handle;               /* Handle as indicated in MA-stream.indication */
-	uint16_t                          size;                 /* Size as indicated in MA-stream.indication */
+	int interfaceTag;		/* A valid interface tag */
+	unsigned char peer_macaddr[6];	/* Peer STA MAC address */
+	uint16_t tId;			/* Traffic identifier user priority */
+	uint16_t handle;		/* Handle as indicated in MA-stream.indication */
+	uint16_t size;			/* Size as indicated in MA-stream.indication */
 };
 
 #define unifiio_amsdu_cfg_operation_type uint32_t
@@ -453,9 +449,9 @@ struct unifiio_stream_cfg_t {
 
 struct unifiio_amsdu_cfg_t {
 	unifiio_amsdu_cfg_operation_type operation;
-	int                              interfaceTag;         /* A valid interface tag */
-	unsigned char                    peer_macaddr[6];      /* Peer STA MAC address */
-	uint16_t                         size;                 /* Maximum A-MSDU length for peer obtained from HT element */
+	int interfaceTag;		/* A valid interface tag */
+	unsigned char peer_macaddr[6];	/* Peer STA MAC address */
+	uint16_t size;			/* Maximum A-MSDU length for peer obtained from HT element */
 };
 
 #define unifiio_ba_cfg_operation_type uint32_t
@@ -464,12 +460,12 @@ struct unifiio_amsdu_cfg_t {
 
 struct unifiio_ba_cfg_t {
 	unifiio_ba_cfg_operation_type operation;
-	int                           interfaceTag;            /* A valid interface tag */
-	unsigned char                 peer_macaddr[6];         /* Peer STA MAC address */
-	uint16_t                      tId;                     /* Traffic identifier */
-	uint8_t                       role;                    /* Role - 0: originator, 1 - recipient */
-	uint16_t                      window_size;             /* Window size as negotiated in BA establish */
-	uint16_t                      ssn;                     /* Starting sequence number as negotiated in BA establish */
+	int interfaceTag;		/* A valid interface tag */
+	unsigned char peer_macaddr[6];	/* Peer STA MAC address */
+	uint16_t tId;			/* Traffic identifier */
+	uint8_t role;			/* Role - 0: originator, 1 - recipient */
+	uint16_t window_size;	/* Window size as negotiated in BA establish */
+	uint16_t ssn;			/* Starting sequence number as negotiated in BA establish */
 };
 
 #define unifiio_suspend_resume_cfg_operation_type uint32_t
@@ -479,10 +475,10 @@ struct unifiio_ba_cfg_t {
 
 struct unifiio_suspend_resume_cfg_t {
 	unifiio_suspend_resume_cfg_operation_type operation;
-	unsigned                                  timeout_ms; /* used with UNIFI_CFG_WAIT_FOR_RESUME only */
+	unsigned timeout_ms;	/* used with UNIFI_CFG_WAIT_FOR_RESUME only */
 };
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* __UNIFIIO_H__ */
+#endif							/* __UNIFIIO_H__ */

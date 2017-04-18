@@ -16,11 +16,11 @@ extern int wps_testing_dummy_cred;
 extern int wps_corrupt_pkhash;
 #define WPS_VERSION wps_version_number
 
-#else /* CONFIG_WPS_TESTING */
+#else							/* CONFIG_WPS_TESTING */
 
 #define WPS_VERSION 0x20
 
-#endif /* CONFIG_WPS_TESTING */
+#endif							/* CONFIG_WPS_TESTING */
 
 /* Diffie-Hellman 1536-bit MODP Group; RFC 3526, Group 5 */
 #define WPS_DH_GROUP 5
@@ -136,7 +136,7 @@ enum wps_attribute {
 	ATTR_APPSESSIONKEY = 0x1063,
 	ATTR_WEPTRANSMITKEY = 0x1064,
 	ATTR_REQUESTED_DEV_TYPE = 0x106a,
-	ATTR_EXTENSIBILITY_TEST = 0x10fa /* _NOT_ defined in the spec */
+	ATTR_EXTENSIBILITY_TEST = 0x10fa	/* _NOT_ defined in the spec */
 };
 
 #define WPS_VENDOR_ID_WFA 14122
@@ -185,7 +185,7 @@ enum wps_msg_type {
 /* Authentication Type Flags */
 #define WPS_AUTH_OPEN 0x0001
 #define WPS_AUTH_WPAPSK 0x0002
-#define WPS_AUTH_SHARED 0x0004 /* deprecated */
+#define WPS_AUTH_SHARED 0x0004	/* deprecated */
 #define WPS_AUTH_WPA 0x0008
 #define WPS_AUTH_WPA2 0x0010
 #define WPS_AUTH_WPA2PSK 0x0020
@@ -194,7 +194,7 @@ enum wps_msg_type {
 
 /* Encryption Type Flags */
 #define WPS_ENCR_NONE 0x0001
-#define WPS_ENCR_WEP 0x0002 /* deprecated */
+#define WPS_ENCR_WEP 0x0002		/* deprecated */
 #define WPS_ENCR_TKIP 0x0004
 #define WPS_ENCR_AES 0x0008
 #define WPS_ENCR_TYPES (WPS_ENCR_NONE | WPS_ENCR_WEP | WPS_ENCR_TKIP | \
@@ -273,7 +273,6 @@ enum wps_assoc_state {
 	WPS_ASSOC_FAILURE = 3,
 	WPS_ASSOC_IP_FAILURE = 4
 };
-
 
 #define WPS_DEV_OUI_WFA 0x0050f204
 
@@ -354,7 +353,6 @@ enum wps_dev_subcateg {
 	WPS_DEV_AUDIO_HOME_THEATRE = 7,
 };
 
-
 /* Request Type */
 enum wps_request_type {
 	WPS_REQ_ENROLLEE_INFO = 0,
@@ -376,4 +374,4 @@ enum wps_response_type {
 
 #define WPS_MAX_AUTHORIZED_MACS 5
 
-#endif /* WPS_DEFS_H */
+#endif							/* WPS_DEFS_H */

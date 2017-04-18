@@ -19,7 +19,7 @@
 #include <tinyara/kmalloc.h>
 
 /* Age value for frames in MPDU reorder buffer */
-#define BA_MPDU_FRAME_AGE_TIMEOUT  30 /* 30 milliseconds */
+#define BA_MPDU_FRAME_AGE_TIMEOUT  30	/* 30 milliseconds */
 #define BA_WINDOW_BOUNDARY 2048
 #define SN_TO_INDEX(__ba_session_rx, __sn) (((__sn - __ba_session_rx->start_sn) & 0xFFF) % __ba_session_rx->buffer_size)
 
@@ -39,23 +39,21 @@ void slsi_rx_ba_init(struct slsi_dev *sdev)
 {
 	int i;
 
-	for (i = 0; i < SLSI_MAX_RX_BA_SESSIONS; i++)
+	for (i = 0; i < SLSI_MAX_RX_BA_SESSIONS; i++) {
 		SLSI_MUTEX_INIT(sdev->rx_ba_buffer_pool[i].ba_lock);
+	}
 
 	SLSI_MUTEX_INIT(sdev->rx_ba_buffer_pool_lock);
 }
 
 static struct slsi_ba_session_rx *slsi_rx_ba_alloc_buffer(struct netif *dev)
 {
-	struct netdev_vif         *ndev_vif = netdev_priv(dev);
-	struct slsi_dev           *sdev = ndev_vif->sdev;
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+	struct slsi_dev *sdev = ndev_vif->sdev;
 	struct slsi_ba_session_rx *buffer = NULL;
-	int                       i;
+	int i;
 
-	SLSI_NET_DBG3(dev, SLSI_RX_BA, "RX BA buffer pool status: %d,%d,%d,%d,%d,%d,%d,%d\n",
-		      sdev->rx_ba_buffer_pool[0].used, sdev->rx_ba_buffer_pool[1].used, sdev->rx_ba_buffer_pool[2].used,
-		      sdev->rx_ba_buffer_pool[3].used, sdev->rx_ba_buffer_pool[4].used, sdev->rx_ba_buffer_pool[5].used,
-		      sdev->rx_ba_buffer_pool[6].used, sdev->rx_ba_buffer_pool[7].used);
+	SLSI_NET_DBG3(dev, SLSI_RX_BA, "RX BA buffer pool status: %d,%d,%d,%d,%d,%d,%d,%d\n", sdev->rx_ba_buffer_pool[0].used, sdev->rx_ba_buffer_pool[1].used, sdev->rx_ba_buffer_pool[2].used, sdev->rx_ba_buffer_pool[3].used, sdev->rx_ba_buffer_pool[4].used, sdev->rx_ba_buffer_pool[5].used, sdev->rx_ba_buffer_pool[6].used, sdev->rx_ba_buffer_pool[7].used);
 
 	SLSI_MUTEX_LOCK(sdev->rx_ba_buffer_pool_lock);
 	for (i = 0; i < SLSI_MAX_RX_BA_SESSIONS; i++) {
@@ -67,8 +65,9 @@ static struct slsi_ba_session_rx *slsi_rx_ba_alloc_buffer(struct netif *dev)
 	}
 	SLSI_MUTEX_UNLOCK(sdev->rx_ba_buffer_pool_lock);
 
-	if (buffer == NULL)
+	if (buffer == NULL) {
 		SLSI_NET_ERR(dev, "No free RX BA buffer\n");
+	}
 
 	return buffer;
 }
@@ -76,7 +75,7 @@ static struct slsi_ba_session_rx *slsi_rx_ba_alloc_buffer(struct netif *dev)
 static void slsi_rx_ba_free_buffer(struct netif *dev, struct slsi_peer *peer, int tid)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct slsi_dev   *sdev = ndev_vif->sdev;
+	struct slsi_dev *sdev = ndev_vif->sdev;
 
 	SLSI_MUTEX_LOCK(sdev->rx_ba_buffer_pool_lock);
 	if (peer && peer->ba_session_rx[tid]) {
@@ -85,10 +84,7 @@ static void slsi_rx_ba_free_buffer(struct netif *dev, struct slsi_peer *peer, in
 	}
 	SLSI_MUTEX_UNLOCK(sdev->rx_ba_buffer_pool_lock);
 
-	SLSI_NET_DBG3(dev, SLSI_RX_BA, "RX BA buffer pool status: %d,%d,%d,%d,%d,%d,%d,%d\n",
-		      sdev->rx_ba_buffer_pool[0].used, sdev->rx_ba_buffer_pool[1].used, sdev->rx_ba_buffer_pool[2].used,
-		      sdev->rx_ba_buffer_pool[3].used, sdev->rx_ba_buffer_pool[4].used, sdev->rx_ba_buffer_pool[5].used,
-		      sdev->rx_ba_buffer_pool[6].used, sdev->rx_ba_buffer_pool[7].used);
+	SLSI_NET_DBG3(dev, SLSI_RX_BA, "RX BA buffer pool status: %d,%d,%d,%d,%d,%d,%d,%d\n", sdev->rx_ba_buffer_pool[0].used, sdev->rx_ba_buffer_pool[1].used, sdev->rx_ba_buffer_pool[2].used, sdev->rx_ba_buffer_pool[3].used, sdev->rx_ba_buffer_pool[4].used, sdev->rx_ba_buffer_pool[5].used, sdev->rx_ba_buffer_pool[6].used, sdev->rx_ba_buffer_pool[7].used);
 }
 
 /* This code - slsi_ba_process_complete()
@@ -98,7 +94,7 @@ static void slsi_rx_ba_free_buffer(struct netif *dev, struct slsi_peer *peer, in
 void slsi_ba_process_complete(struct netif *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct max_buff   *mbuf;
+	struct max_buff *mbuf;
 
 	while ((mbuf = slsi_mbuf_dequeue(&ndev_vif->ba_complete)) != NULL) {
 		slsi_rx_data(ndev_vif->sdev, dev, mbuf, true);
@@ -120,8 +116,7 @@ static void ba_add_frame_to_ba_complete(struct netif *dev, struct slsi_ba_frame_
 	slsi_mbuf_queue_tail(&ndev_vif->ba_complete, frame_desc->signal);
 }
 
-static void ba_update_expected_sn(struct netif *dev,
-				  struct slsi_ba_session_rx *ba_session_rx, u16 sn)
+static void ba_update_expected_sn(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx, u16 sn)
 {
 	u32 i, j;
 	u16 gap;
@@ -144,24 +139,21 @@ static void ba_update_expected_sn(struct netif *dev,
 	ba_session_rx->expected_sn = sn;
 }
 
-static void ba_complete_ready_sequence(struct netif              *dev,
-				       struct slsi_ba_session_rx *ba_session_rx)
+static void ba_complete_ready_sequence(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx)
 {
 	int i;
 
 	i = SN_TO_INDEX(ba_session_rx, ba_session_rx->expected_sn);
 	while (ba_session_rx->buffer[i].active) {
 		ba_add_frame_to_ba_complete(dev, &ba_session_rx->buffer[i]);
-		SLSI_NET_DBG3(dev, SLSI_RX_BA, "Completed stored frame (expected_sn=%d) at i = %d\n",
-			      ba_session_rx->expected_sn, i);
+		SLSI_NET_DBG3(dev, SLSI_RX_BA, "Completed stored frame (expected_sn=%d) at i = %d\n", ba_session_rx->expected_sn, i);
 		FREE_BUFFER_SLOT(ba_session_rx, i);
 		ADVANCE_EXPECTED_SN(ba_session_rx);
 		i = SN_TO_INDEX(ba_session_rx, ba_session_rx->expected_sn);
 	}
 }
 
-static void ba_scroll_window(struct netif *dev,
-			     struct slsi_ba_session_rx *ba_session_rx, u16 sn)
+static void ba_scroll_window(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx, u16 sn)
 {
 	if (((sn - ba_session_rx->expected_sn) & 0xFFF) <= BA_WINDOW_BOUNDARY) {
 		ba_update_expected_sn(dev, ba_session_rx, sn);
@@ -169,22 +161,22 @@ static void ba_scroll_window(struct netif *dev,
 	}
 }
 
-static int ba_consume_frame_or_get_buffer_index(struct netif *dev, struct slsi_peer *peer,
-						struct slsi_ba_session_rx *ba_session_rx, u16 sn, struct slsi_ba_frame_desc *frame_desc, bool *stop_timer)
+static int ba_consume_frame_or_get_buffer_index(struct netif *dev, struct slsi_peer *peer, struct slsi_ba_session_rx *ba_session_rx, u16 sn, struct slsi_ba_frame_desc *frame_desc, bool *stop_timer)
 {
 #ifdef CONFIG_SLSI_WLAN_STATS
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct slsi_dev   *sdev = ndev_vif->sdev;
+	struct slsi_dev *sdev = ndev_vif->sdev;
 #endif
-	int               i;
-	u16               sn_temp;
+	int i;
+	u16 sn_temp;
 
 	*stop_timer = false;
 
 	if (((sn - ba_session_rx->expected_sn) & 0xFFF) <= BA_WINDOW_BOUNDARY) {
 		/* Once we are in BA window, set the flag for BA trigger */
-		if (!ba_session_rx->trigger_ba_after_ssn)
+		if (!ba_session_rx->trigger_ba_after_ssn) {
 			ba_session_rx->trigger_ba_after_ssn = true;
+		}
 
 		sn_temp = ba_session_rx->expected_sn + ba_session_rx->buffer_size;
 		SLSI_NET_DBG3(dev, SLSI_RX_BA, "New frame: sn=%d\n", sn);
@@ -194,8 +186,9 @@ static int ba_consume_frame_or_get_buffer_index(struct netif *dev, struct slsi_p
 
 			SLSI_NET_DBG3(dev, SLSI_RX_BA, "Frame is out of window\n");
 			sn_temp = (sn - ba_session_rx->buffer_size) & 0xFFF;
-			if (ba_session_rx->timer_on)
+			if (ba_session_rx->timer_on) {
 				*stop_timer = true;
+			}
 			new_expected_sn = (sn_temp + 1) & 0xFFF;
 			ba_update_expected_sn(dev, ba_session_rx, new_expected_sn);
 		}
@@ -203,8 +196,9 @@ static int ba_consume_frame_or_get_buffer_index(struct netif *dev, struct slsi_p
 		i = -1;
 		if (sn == ba_session_rx->expected_sn) {
 			SLSI_NET_DBG3(dev, SLSI_RX_BA, "sn = ba_session_rx->expected_sn = %d\n", sn);
-			if (ba_session_rx->timer_on)
+			if (ba_session_rx->timer_on) {
 				*stop_timer = true;
+			}
 			ADVANCE_EXPECTED_SN(ba_session_rx);
 			ba_add_frame_to_ba_complete(dev, frame_desc);
 		} else {
@@ -234,10 +228,10 @@ static int ba_consume_frame_or_get_buffer_index(struct netif *dev, struct slsi_p
 static void slsi_ba_aging_timeout_handler(void *data)
 {
 	struct slsi_ba_session_rx *ba_session_rx = (struct slsi_ba_session_rx *)data;
-	u8                        i, j;
-	u8                        gap = 1;
-	u16                       temp_sn;
-	struct netif              *dev = ba_session_rx->dev;
+	u8 i, j;
+	u8 gap = 1;
+	u16 temp_sn;
+	struct netif *dev = ba_session_rx->dev;
 
 	SLSI_NET_DBG3(dev, SLSI_RX_BA, "enter\n");
 
@@ -256,8 +250,9 @@ static void slsi_ba_aging_timeout_handler(void *data)
 			i = SN_TO_INDEX(ba_session_rx, temp_sn);
 
 			if (ba_session_rx->buffer[i].active) {
-				while (gap--)
+				while (gap--) {
 					ADVANCE_EXPECTED_SN(ba_session_rx);
+				}
 
 				SLSI_NET_DBG3(dev, SLSI_RX_BA, "Completed stored frame (expected_sn=%d) at i = %d\n", ba_session_rx->expected_sn, i);
 				ba_add_frame_to_ba_complete(dev, &ba_session_rx->buffer[i]);
@@ -286,13 +281,12 @@ static void slsi_ba_aging_timeout_handler(void *data)
 	}
 }
 
-int slsi_ba_process_frame(struct netif *dev, struct slsi_peer *peer,
-			  struct max_buff *mbuf, u16 sequence_number, u16 tid)
+int slsi_ba_process_frame(struct netif *dev, struct slsi_peer *peer, struct max_buff *mbuf, u16 sequence_number, u16 tid)
 {
-	int                       i;
+	int i;
 	struct slsi_ba_session_rx *ba_session_rx = peer->ba_session_rx[tid];
 	struct slsi_ba_frame_desc frame_desc;
-	bool                      stop_timer = false;
+	bool stop_timer = false;
 
 	SLSI_NET_DBG3(dev, SLSI_RX_BA, "Got frame(sn=%d)\n", sequence_number);
 
@@ -301,8 +295,9 @@ int slsi_ba_process_frame(struct netif *dev, struct slsi_peer *peer,
 		return -EINVAL;
 	}
 
-	if (ba_session_rx == NULL)
+	if (ba_session_rx == NULL) {
 		return -EINVAL;
+	}
 
 	SLSI_MUTEX_LOCK(ba_session_rx->ba_lock);
 
@@ -360,8 +355,7 @@ int slsi_ba_process_frame(struct netif *dev, struct slsi_peer *peer,
 		work_queue(SCSC_WORK, &ba_session_rx->work, slsi_ba_aging_timeout_handler, ba_session_rx, MSEC2TICK(BA_MPDU_FRAME_AGE_TIMEOUT));
 		ba_session_rx->timer_on = true;
 	} else {
-		SLSI_NET_DBG3(dev, SLSI_RX_BA, "timer_on: %d, occupied_slots: %d, stop_timer: %d\n",
-			      ba_session_rx->timer_on, ba_session_rx->occupied_slots, stop_timer);
+		SLSI_NET_DBG3(dev, SLSI_RX_BA, "timer_on: %d, occupied_slots: %d, stop_timer: %d\n", ba_session_rx->timer_on, ba_session_rx->occupied_slots, stop_timer);
 	}
 
 	if (stop_timer) {
@@ -377,10 +371,12 @@ int slsi_ba_process_frame(struct netif *dev, struct slsi_peer *peer,
 
 bool slsi_ba_check(struct slsi_peer *peer, u16 tid)
 {
-	if (tid > FAPI_PRIORITY_QOS_UP7)
+	if (tid > FAPI_PRIORITY_QOS_UP7) {
 		return false;
-	if (peer->ba_session_rx[tid] == NULL)
+	}
+	if (peer->ba_session_rx[tid] == NULL) {
 		return false;
+	}
 
 	return peer->ba_session_rx[tid]->active;
 }
@@ -389,7 +385,7 @@ static void __slsi_rx_ba_stop(struct netif *dev, struct slsi_ba_session_rx *ba_s
 {
 #ifdef CONFIG_SLSI_WLAN_STATS
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct slsi_dev   *sdev = ndev_vif->sdev;
+	struct slsi_dev *sdev = ndev_vif->sdev;
 #endif
 	u8 i, j;
 
@@ -400,8 +396,7 @@ static void __slsi_rx_ba_stop(struct netif *dev, struct slsi_ba_session_rx *ba_s
 		return;
 	}
 
-	for (i = SN_TO_INDEX(ba_session_rx, ba_session_rx->expected_sn), j = 0;
-	     j < ba_session_rx->buffer_size; i++, j++) {
+	for (i = SN_TO_INDEX(ba_session_rx, ba_session_rx->expected_sn), j = 0; j < ba_session_rx->buffer_size; i++, j++) {
 		i %= ba_session_rx->buffer_size;
 		if (ba_session_rx->buffer[i].active) {
 			if (flush) {
@@ -418,8 +413,9 @@ static void __slsi_rx_ba_stop(struct netif *dev, struct slsi_ba_session_rx *ba_s
 		}
 	}
 
-	if (!flush)
+	if (!flush) {
 		slsi_ba_signal_process_complete(dev);
+	}
 
 	ba_session_rx->active = false;
 }
@@ -455,12 +451,9 @@ void slsi_rx_ba_stop_all(struct netif *dev, struct slsi_peer *peer)
 		}
 }
 
-static int slsi_rx_ba_start(struct netif *dev,
-			    struct slsi_ba_session_rx *ba_session_rx,
-			    u16 tid, u16 buffer_size, u16 start_sn)
+static int slsi_rx_ba_start(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx, u16 tid, u16 buffer_size, u16 start_sn)
 {
-	SLSI_NET_DBG1(dev, SLSI_RX_BA, "Request to start a new BA session tid=%d buffer_size=%d start_sn=%d\n",
-		      tid, buffer_size, start_sn);
+	SLSI_NET_DBG1(dev, SLSI_RX_BA, "Request to start a new BA session tid=%d buffer_size=%d start_sn=%d\n", tid, buffer_size, start_sn);
 
 	if (WARN_ON((0 == buffer_size) || (buffer_size > SLSI_BA_BUFFER_SIZE_MAX))) {
 		SLSI_NET_ERR(dev, "Invalid window size: buffer_size=%d\n", buffer_size);
@@ -472,11 +465,8 @@ static int slsi_rx_ba_start(struct netif *dev,
 	if (ba_session_rx->active) {
 		SLSI_NET_DBG1(dev, SLSI_RX_BA, "BA session already exists\n");
 
-		if ((ba_session_rx->buffer_size == buffer_size) &&
-		    (ba_session_rx->expected_sn == start_sn)) {
-			SLSI_NET_DBG1(dev, SLSI_RX_BA,
-				      "BA session tid=%d already exists. The parameters match so keep the existing session\n",
-				      tid);
+		if ((ba_session_rx->buffer_size == buffer_size) && (ba_session_rx->expected_sn == start_sn)) {
+			SLSI_NET_DBG1(dev, SLSI_RX_BA, "BA session tid=%d already exists. The parameters match so keep the existing session\n", tid);
 
 			SLSI_MUTEX_UNLOCK(ba_session_rx->ba_lock);
 
@@ -496,8 +486,7 @@ static int slsi_rx_ba_start(struct netif *dev,
 	ba_session_rx->timer_on = false;
 	ba_session_rx->occupied_slots = 0;
 
-	SLSI_NET_DBG1(dev, SLSI_RX_BA, "Started a new BA session tid=%d buffer_size=%d start_sn=%d\n",
-		      tid, buffer_size, start_sn);
+	SLSI_NET_DBG1(dev, SLSI_RX_BA, "Started a new BA session tid=%d buffer_size=%d start_sn=%d\n", tid, buffer_size, start_sn);
 
 	SLSI_MUTEX_UNLOCK(ba_session_rx->ba_lock);
 	slsi_ba_signal_process_complete(dev);
@@ -505,8 +494,7 @@ static int slsi_rx_ba_start(struct netif *dev,
 	return 0;
 }
 
-static void slsi_ba_process_error(struct netif *dev,
-				  struct slsi_ba_session_rx *ba_session_rx, u16 sequence_number)
+static void slsi_ba_process_error(struct netif *dev, struct slsi_ba_session_rx *ba_session_rx, u16 sequence_number)
 {
 	SLSI_MUTEX_LOCK(ba_session_rx->ba_lock);
 
@@ -523,16 +511,14 @@ static void slsi_ba_process_error(struct netif *dev,
 	slsi_ba_signal_process_complete(dev);
 }
 
-void slsi_handle_blockack(struct netif *dev, struct slsi_peer *peer,
-			  u16 vif, u8 *peer_qsta_address, u16 parameter_set, u16 sequence_number,
-			  u16 reason_code, u16 direction)
+void slsi_handle_blockack(struct netif *dev, struct slsi_peer *peer, u16 vif, u8 *peer_qsta_address, u16 parameter_set, u16 sequence_number, u16 reason_code, u16 direction)
 {
 	struct slsi_ba_session_rx *ba_session_rx;
-	u16                       user_priority = (parameter_set >> 2) & 0x000F;
-	u16                       buffer_size   = (parameter_set >> 6) & 0x03FF;
+	u16 user_priority = (parameter_set >> 2) & 0x000F;
+	u16 buffer_size = (parameter_set >> 6) & 0x03FF;
 #ifdef CONFIG_SLSI_WLAN_STATS
-	struct netdev_vif         *ndev_vif = netdev_priv(dev);
-	struct slsi_dev           *sdev = ndev_vif->sdev;
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+	struct slsi_dev *sdev = ndev_vif->sdev;
 #endif
 
 	SLSI_UNUSED_PARAMETER(vif);
@@ -562,12 +548,14 @@ void slsi_handle_blockack(struct netif *dev, struct slsi_peer *peer,
 		switch (reason_code) {
 		case FAPI_REASONCODE_START:
 			SLSI_INCR_DATA_PATH_STATS_SET_VAL(sdev->dp_stats.rx_ba, 1);
-			if (peer->ba_session_rx[user_priority] == NULL)
+			if (peer->ba_session_rx[user_priority] == NULL) {
 				peer->ba_session_rx[user_priority] = slsi_rx_ba_alloc_buffer(dev);
+			}
 
 			if (peer->ba_session_rx[user_priority])
-				if (slsi_rx_ba_start(dev, peer->ba_session_rx[user_priority], user_priority, buffer_size, sequence_number) != 0)
+				if (slsi_rx_ba_start(dev, peer->ba_session_rx[user_priority], user_priority, buffer_size, sequence_number) != 0) {
 					slsi_rx_ba_free_buffer(dev, peer, user_priority);
+				}
 			break;
 		case FAPI_REASONCODE_END:
 			SLSI_INCR_DATA_PATH_STATS_SET_VAL(sdev->dp_stats.rx_ba, 0);
@@ -578,8 +566,9 @@ void slsi_handle_blockack(struct netif *dev, struct slsi_peer *peer,
 			break;
 		case FAPI_REASONCODE_UNSPECIFIED_REASON:
 			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_ba_scroll_window);
-			if (ba_session_rx)
+			if (ba_session_rx) {
 				slsi_ba_process_error(dev, ba_session_rx, sequence_number);
+			}
 			break;
 		default:
 			SLSI_NET_ERR(dev, "Invalid value: reason_code=%d\n", reason_code);

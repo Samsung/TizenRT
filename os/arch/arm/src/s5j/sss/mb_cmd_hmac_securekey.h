@@ -16,8 +16,8 @@
 int mb_hmac_generate_key_securekey(unsigned int key_byte_len, unsigned int key_index);
 
 int mb_hmac_init_securekey(unsigned int object_id, unsigned int msg_byte_len);
-int mb_hmac_update_securekey(unsigned int block_byte_len, unsigned char * msg_block);
-int mb_hmac_final_securekey(unsigned char *mac, unsigned int block_byte_len, unsigned char * msg_block);
+int mb_hmac_update_securekey(unsigned int block_byte_len, unsigned char *msg_block);
+int mb_hmac_final_securekey(unsigned char *mac, unsigned int block_byte_len, unsigned char *msg_block);
 
 // ======================================
 // Mailbox Command
@@ -28,5 +28,4 @@ int mb_hmac_final_securekey(unsigned char *mac, unsigned int block_byte_len, uns
 #define FUNC_HMAC_UPDATE_SECUREKEY		(0x00213202)
 #define FUNC_HMAC_FINAL_SECUREKEY		(0x00313202)
 
-#endif /* MB_CMD_HMAC_SECUREKEY_H_ */
-
+#endif							/* MB_CMD_HMAC_SECUREKEY_H_ */

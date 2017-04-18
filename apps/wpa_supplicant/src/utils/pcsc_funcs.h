@@ -10,22 +10,18 @@
 #define PCSC_FUNCS_H
 
 #ifdef PCSC_FUNCS
-struct scard_data * scard_init(const char *reader);
+struct scard_data *scard_init(const char *reader);
 void scard_deinit(struct scard_data *scard);
 
 int scard_set_pin(struct scard_data *scard, const char *pin);
 int scard_get_imsi(struct scard_data *scard, char *imsi, size_t *len);
 int scard_get_mnc_len(struct scard_data *scard);
-int scard_gsm_auth(struct scard_data *scard, const unsigned char *_rand,
-		   unsigned char *sres, unsigned char *kc);
-int scard_umts_auth(struct scard_data *scard, const unsigned char *_rand,
-		    const unsigned char *autn,
-		    unsigned char *res, size_t *res_len,
-		    unsigned char *ik, unsigned char *ck, unsigned char *auts);
+int scard_gsm_auth(struct scard_data *scard, const unsigned char *_rand, unsigned char *sres, unsigned char *kc);
+int scard_umts_auth(struct scard_data *scard, const unsigned char *_rand, const unsigned char *autn, unsigned char *res, size_t *res_len, unsigned char *ik, unsigned char *ck, unsigned char *auts);
 int scard_get_pin_retry_counter(struct scard_data *scard);
 int scard_supports_umts(struct scard_data *scard);
 
-#else /* PCSC_FUNCS */
+#else							/* PCSC_FUNCS */
 
 #define scard_init(r) NULL
 #define scard_deinit(s) do { } while (0)
@@ -37,6 +33,6 @@ int scard_supports_umts(struct scard_data *scard);
 #define scard_get_pin_retry_counter(s) -1
 #define scard_supports_umts(s) 0
 
-#endif /* PCSC_FUNCS */
+#endif							/* PCSC_FUNCS */
 
-#endif /* PCSC_FUNCS_H */
+#endif							/* PCSC_FUNCS_H */

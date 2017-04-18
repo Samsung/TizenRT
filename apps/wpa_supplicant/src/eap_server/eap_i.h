@@ -26,21 +26,19 @@ struct eap_method {
 	EapType method;
 	const char *name;
 
-	void * (*init)(struct eap_sm *sm);
-	void * (*initPickUp)(struct eap_sm *sm);
+	void *(*init)(struct eap_sm *sm);
+	void *(*initPickUp)(struct eap_sm *sm);
 	void (*reset)(struct eap_sm *sm, void *priv);
 
-	struct wpabuf * (*buildReq)(struct eap_sm *sm, void *priv, u8 id);
+	struct wpabuf *(*buildReq)(struct eap_sm *sm, void *priv, u8 id);
 	int (*getTimeout)(struct eap_sm *sm, void *priv);
-	Boolean (*check)(struct eap_sm *sm, void *priv,
-			 struct wpabuf *respData);
-	void (*process)(struct eap_sm *sm, void *priv,
-			struct wpabuf *respData);
-	Boolean (*isDone)(struct eap_sm *sm, void *priv);
-	u8 * (*getKey)(struct eap_sm *sm, void *priv, size_t *len);
+	Boolean(*check)(struct eap_sm *sm, void *priv, struct wpabuf *respData);
+	void (*process)(struct eap_sm *sm, void *priv, struct wpabuf *respData);
+	Boolean(*isDone)(struct eap_sm *sm, void *priv);
+	u8 *(*getKey)(struct eap_sm *sm, void *priv, size_t *len);
 	/* isSuccess is not specified in draft-ietf-eap-statemachine-05.txt,
 	 * but it is useful in implementing Policy.getDecision() */
-	Boolean (*isSuccess)(struct eap_sm *sm, void *priv);
+	Boolean(*isSuccess)(struct eap_sm *sm, void *priv);
 
 	/**
 	 * free - Free EAP method data
@@ -87,7 +85,7 @@ struct eap_method {
 	 * the EAP method. The key may already be stored in the method-specific
 	 * private data or this function may derive the key.
 	 */
-	u8 * (*get_emsk)(struct eap_sm *sm, void *priv, size_t *len);
+	u8 *(*get_emsk)(struct eap_sm *sm, void *priv, size_t *len);
 
 	/**
 	 * getSessionId - Get EAP method specific Session-Id
@@ -100,7 +98,7 @@ struct eap_method {
 	 * The Session-Id may already be stored in the method-specific private
 	 * data or this function may derive the Session-Id.
 	 */
-	u8 * (*getSessionId)(struct eap_sm *sm, void *priv, size_t *len);
+	u8 *(*getSessionId)(struct eap_sm *sm, void *priv, size_t *len);
 };
 
 /**
@@ -151,7 +149,7 @@ struct eap_sm {
 	} decision;
 
 	/* Miscellaneous variables */
-	const struct eap_method *m; /* selected EAP method */
+	const struct eap_method *m;	/* selected EAP method */
 	/* not defined in RFC 4137 */
 	Boolean changed;
 	void *eapol_ctx, *msg_ctx;
@@ -161,7 +159,7 @@ struct eap_sm {
 	size_t identity_len;
 	/* Whether Phase 2 method should validate identity match */
 	int require_identity_match;
-	int lastId; /* Identifier used in the last EAP-Packet */
+	int lastId;					/* Identifier used in the last EAP-Packet */
 	struct eap_user *user;
 	int user_eap_method_index;
 	int init_phase2;
@@ -213,13 +211,11 @@ struct eap_sm {
 
 #ifdef CONFIG_TESTING_OPTIONS
 	u32 tls_test_flags;
-#endif /* CONFIG_TESTING_OPTIONS */
+#endif							/* CONFIG_TESTING_OPTIONS */
 };
 
-int eap_user_get(struct eap_sm *sm, const u8 *identity, size_t identity_len,
-		 int phase2);
-void eap_log_msg(struct eap_sm *sm, const char *fmt, ...)
-PRINTF_FORMAT(2, 3);
+int eap_user_get(struct eap_sm *sm, const u8 *identity, size_t identity_len, int phase2);
+void eap_log_msg(struct eap_sm *sm, const char *fmt, ...) PRINTF_FORMAT(2, 3);
 void eap_sm_process_nak(struct eap_sm *sm, const u8 *nak_list, size_t len);
 
-#endif /* EAP_I_H */
+#endif							/* EAP_I_H */

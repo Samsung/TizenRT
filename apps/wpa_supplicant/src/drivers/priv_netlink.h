@@ -15,10 +15,10 @@
  */
 
 #ifndef IFF_LOWER_UP
-#define IFF_LOWER_UP   0x10000         /* driver signals L1 up         */
+#define IFF_LOWER_UP   0x10000	/* driver signals L1 up         */
 #endif
 #ifndef IFF_DORMANT
-#define IFF_DORMANT    0x20000         /* driver signals dormant       */
+#define IFF_DORMANT    0x20000	/* driver signals dormant       */
 #endif
 
 #ifndef IFLA_IFNAME
@@ -73,17 +73,14 @@
 #define RTA_DATA(rta) ((void *) (((char *) (rta)) + RTA_LENGTH(0)))
 #define RTA_PAYLOAD(rta) ((int) ((rta)->rta_len) - RTA_LENGTH(0))
 
-
-struct sockaddr_nl
-{
+struct sockaddr_nl {
 	sa_family_t nl_family;
 	unsigned short nl_pad;
 	u32 nl_pid;
 	u32 nl_groups;
 };
 
-struct nlmsghdr
-{
+struct nlmsghdr {
 	u32 nlmsg_len;
 	u16 nlmsg_type;
 	u16 nlmsg_flags;
@@ -91,8 +88,7 @@ struct nlmsghdr
 	u32 nlmsg_pid;
 };
 #ifndef CONFIG_ENABLE_IOTIVITY
-struct ifinfomsg
-{
+struct ifinfomsg {
 	unsigned char ifi_family;
 	unsigned char __ifi_pad;
 	unsigned short ifi_type;
@@ -101,10 +97,9 @@ struct ifinfomsg
 	unsigned ifi_change;
 };
 #endif
-struct rtattr
-{
+struct rtattr {
 	unsigned short rta_len;
 	unsigned short rta_type;
 };
 
-#endif /* PRIV_NETLINK_H */
+#endif							/* PRIV_NETLINK_H */

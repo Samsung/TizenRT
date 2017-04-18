@@ -12,4 +12,4 @@
 int authsrv_init(struct hostapd_data *hapd);
 void authsrv_deinit(struct hostapd_data *hapd);
 
-#endif /* AUTHSRV_H */
+#endif							/* AUTHSRV_H */

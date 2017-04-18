@@ -176,7 +176,6 @@ struct hostapd_radius_servers {
 	int force_client_addr;
 };
 
-
 /**
  * RadiusType - RADIUS server type for RADIUS client
  */
@@ -234,26 +233,15 @@ typedef enum {
 
 struct radius_client_data;
 
-int radius_client_register(struct radius_client_data *radius,
-			   RadiusType msg_type,
-			   RadiusRxResult (*handler)
-			   (struct radius_msg *msg, struct radius_msg *req,
-			    const u8 *shared_secret, size_t shared_secret_len,
-			    void *data),
-			   void *data);
-int radius_client_send(struct radius_client_data *radius,
-		       struct radius_msg *msg,
-		       RadiusType msg_type, const u8 *addr);
+int radius_client_register(struct radius_client_data *radius, RadiusType msg_type, RadiusRxResult(*handler)
+						   (struct radius_msg *msg, struct radius_msg *req, const u8 *shared_secret, size_t shared_secret_len, void *data), void *data);
+int radius_client_send(struct radius_client_data *radius, struct radius_msg *msg, RadiusType msg_type, const u8 *addr);
 u8 radius_client_get_id(struct radius_client_data *radius);
 void radius_client_flush(struct radius_client_data *radius, int only_auth);
-struct radius_client_data *
-radius_client_init(void *ctx, struct hostapd_radius_servers *conf);
+struct radius_client_data *radius_client_init(void *ctx, struct hostapd_radius_servers *conf);
 void radius_client_deinit(struct radius_client_data *radius);
-void radius_client_flush_auth(struct radius_client_data *radius,
-			      const u8 *addr);
-int radius_client_get_mib(struct radius_client_data *radius, char *buf,
-			  size_t buflen);
-void radius_client_reconfig(struct radius_client_data *radius,
-			    struct hostapd_radius_servers *conf);
+void radius_client_flush_auth(struct radius_client_data *radius, const u8 *addr);
+int radius_client_get_mib(struct radius_client_data *radius, char *buf, size_t buflen);
+void radius_client_reconfig(struct radius_client_data *radius, struct hostapd_radius_servers *conf);
 
-#endif /* RADIUS_CLIENT_H */
+#endif							/* RADIUS_CLIENT_H */

@@ -12,23 +12,18 @@
 #include "eap_i.h"
 #include "eap_common/chap.h"
 
-
-static void * eap_md5_init(struct eap_sm *sm)
+static void *eap_md5_init(struct eap_sm *sm)
 {
 	/* No need for private data. However, must return non-NULL to indicate
 	 * success. */
-	return (void *) 1;
+	return (void *)1;
 }
-
 
 static void eap_md5_deinit(struct eap_sm *sm, void *priv)
 {
 }
 
-
-static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
-				       struct eap_method_ret *ret,
-				       const struct wpabuf *reqData)
+static struct wpabuf *eap_md5_process(struct eap_sm *sm, void *priv, struct eap_method_ret *ret, const struct wpabuf *reqData)
 {
 	struct wpabuf *resp;
 	const u8 *pos, *challenge, *password;
@@ -45,8 +40,7 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 
 	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MD5, reqData, &len);
 	if (pos == NULL || len == 0) {
-		wpa_printf(MSG_INFO, "EAP-MD5: Invalid frame (pos=%p len=%lu)",
-			   pos, (unsigned long) len);
+		wpa_printf(MSG_INFO, "EAP-MD5: Invalid frame (pos=%p len=%lu)", pos, (unsigned long)len);
 		ret->ignore = TRUE;
 		return NULL;
 	}
@@ -57,26 +51,23 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 	 */
 	challenge_len = *pos++;
 	if (challenge_len == 0 || challenge_len > len - 1) {
-		wpa_printf(MSG_INFO, "EAP-MD5: Invalid challenge "
-			   "(challenge_len=%lu len=%lu)",
-			   (unsigned long) challenge_len, (unsigned long) len);
+		wpa_printf(MSG_INFO, "EAP-MD5: Invalid challenge " "(challenge_len=%lu len=%lu)", (unsigned long)challenge_len, (unsigned long)len);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 	ret->ignore = FALSE;
 	challenge = pos;
-	wpa_hexdump(MSG_MSGDUMP, "EAP-MD5: Challenge",
-		    challenge, challenge_len);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-MD5: Challenge", challenge, challenge_len);
 
 	wpa_printf(MSG_DEBUG, "EAP-MD5: Generating Challenge Response");
 	ret->methodState = METHOD_DONE;
 	ret->decision = DECISION_COND_SUCC;
 	ret->allowNotifications = TRUE;
 
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MD5, 1 + CHAP_MD5_LEN,
-			     EAP_CODE_RESPONSE, eap_get_id(reqData));
-	if (resp == NULL)
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MD5, 1 + CHAP_MD5_LEN, EAP_CODE_RESPONSE, eap_get_id(reqData));
+	if (resp == NULL) {
 		return NULL;
+	}
 
 	/*
 	 * CHAP Response:
@@ -86,8 +77,7 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 
 	id = eap_get_id(resp);
 	rpos = wpabuf_put(resp, CHAP_MD5_LEN);
-	if (chap_md5(id, password, password_len, challenge, challenge_len,
-		     rpos)) {
+	if (chap_md5(id, password, password_len, challenge, challenge_len, rpos)) {
 		wpa_printf(MSG_INFO, "EAP-MD5: CHAP MD5 operation failed");
 		ret->ignore = TRUE;
 		wpabuf_free(resp);
@@ -98,23 +88,23 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 	return resp;
 }
 
-
 int eap_peer_md5_register(void)
 {
 	struct eap_method *eap;
 	int ret;
 
-	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION,
-				    EAP_VENDOR_IETF, EAP_TYPE_MD5, "MD5");
-	if (eap == NULL)
+	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION, EAP_VENDOR_IETF, EAP_TYPE_MD5, "MD5");
+	if (eap == NULL) {
 		return -1;
+	}
 
 	eap->init = eap_md5_init;
 	eap->deinit = eap_md5_deinit;
 	eap->process = eap_md5_process;
 
 	ret = eap_peer_method_register(eap);
-	if (ret)
+	if (ret) {
 		eap_peer_method_free(eap);
+	}
 	return ret;
 }

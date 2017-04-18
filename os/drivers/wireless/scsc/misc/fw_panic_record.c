@@ -7,7 +7,6 @@
 #include "utils_misc.h"
 #include "debug_scsc.h"
 
-
 #define PANIC_RECORD_CKSUM_SEED 0xa5a5a5a5
 /*
  * version 2 r4 panic record defs
@@ -46,8 +45,9 @@ static u32 xor32(uint32_t seed, const u32 data[], size_t len)
 
 	u32 xor = seed;
 
-	for (i = data; i != data + len; ++i)
+	for (i = data; i != data + len; ++i) {
 		xor ^= *i;
+	}
 	return xor;
 }
 
@@ -59,10 +59,9 @@ static void panic_record_dump(u32 *panic_record, u32 panic_record_length, bool r
 	for (i = 0; i < panic_record_length; i++) {
 		SLSI_INFO_NODEV("%s_panic_record[%d] = %08x\n", r4 ? "r4" : "m4", i, panic_record[i]);
 	}
-	if (panic_record_length > R4_PANIC_RECORD_PANIC_ARG_INDEX_V2)
-		SLSI_WARN_NODEV("FW PANIC: |cpu r4|id 0x%04X|arg 0x%08X|\n",
-				panic_record[R4_PANIC_RECORD_PANIC_CODE_INDEX_V2],
-				panic_record[R4_PANIC_RECORD_PANIC_ARG_INDEX_V2]);
+	if (panic_record_length > R4_PANIC_RECORD_PANIC_ARG_INDEX_V2) {
+		SLSI_WARN_NODEV("FW PANIC: |cpu r4|id 0x%04X|arg 0x%08X|\n", panic_record[R4_PANIC_RECORD_PANIC_CODE_INDEX_V2], panic_record[R4_PANIC_RECORD_PANIC_ARG_INDEX_V2]);
+	}
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 	/* Store the initial SCSC_NUM_PANIC_RECORD number of panic records (ID and argument) */
 	if (__r4_panic_record_offset < SCSC_NUM_PANIC_RECORD) {
@@ -94,24 +93,20 @@ static bool fw_parse_r4_panic_record_v2(u32 *r4_panic_record)
 	u32 calculated_cksum;
 	u32 panic_record_length = *(r4_panic_record + R4_PANIC_RECORD_LENGTH_INDEX_V2) / 4;
 
-	SLSI_INFO_NODEV("panic_record_length: %d\n",
-		      panic_record_length);
+	SLSI_INFO_NODEV("panic_record_length: %d\n", panic_record_length);
 
 	if (panic_record_length < R4_PANIC_RECORD_MAX_LENGTH_V2) {
 		panic_record_cksum = *(r4_panic_record + panic_record_length - 1);
 		calculated_cksum = xor32(PANIC_RECORD_CKSUM_SEED, r4_panic_record, panic_record_length - 1);
 		if (calculated_cksum == panic_record_cksum) {
-			SLSI_INFO_NODEV("panic_record_cksum OK: %08x\n",
-				      calculated_cksum);
+			SLSI_INFO_NODEV("panic_record_cksum OK: %08x\n", calculated_cksum);
 			panic_record_dump(r4_panic_record, panic_record_length, true);
 			return true;
 		} else {
-			SLSI_ERR_NODEV("BAD panic_record_cksum: 0x%x calculated_cksum: 0x%x\n",
-				     panic_record_cksum, calculated_cksum);
+			SLSI_ERR_NODEV("BAD panic_record_cksum: 0x%x calculated_cksum: 0x%x\n", panic_record_cksum, calculated_cksum);
 		}
 	} else {
-		SLSI_ERR_NODEV("BAD panic_record_length: %d\n",
-			     panic_record_length);
+		SLSI_ERR_NODEV("BAD panic_record_length: %d\n", panic_record_length);
 	}
 	return false;
 }
@@ -141,12 +136,10 @@ bool fw_parse_r4_panic_record(u32 *r4_panic_record)
 {
 	u32 panic_record_version = *(r4_panic_record + PANIC_RECORD_R4_VERSION_INDEX);
 
-	SLSI_INFO_NODEV("panic_record_version: %d\n",
-		      panic_record_version);
+	SLSI_INFO_NODEV("panic_record_version: %d\n", panic_record_version);
 	switch (panic_record_version) {
 	default:
-		SLSI_ERR_NODEV("BAD panic_record_version: %d\n",
-			     panic_record_version);
+		SLSI_ERR_NODEV("BAD panic_record_version: %d\n", panic_record_version);
 		break;
 	case R4_PANIC_RECORD_VERSION_2:
 		return fw_parse_r4_panic_record_v2(r4_panic_record);

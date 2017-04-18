@@ -21,10 +21,10 @@
 #define SLSI_VENDOR_OUI_AND_TYPE_LEN            4
 
 struct slsi_t20_drv {
-	void                   *global;
-	void                   *ctx;
-	struct slsi_dev        *sdev;
-	char                   ifname[IFNAMSIZ + 1];
+	void *global;
+	void *ctx;
+	struct slsi_dev *sdev;
+	char ifname[IFNAMSIZ + 1];
 	struct wpa_driver_capa capa;
 };
 

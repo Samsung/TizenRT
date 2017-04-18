@@ -16,13 +16,13 @@
 #include "p2p_i.h"
 #include "p2p.h"
 
-
 static int p2p_go_det(u8 own_intent, u8 peer_value)
 {
 	u8 peer_intent = peer_value >> 1;
 	if (own_intent == peer_intent) {
-		if (own_intent == P2P_MAX_GO_INTENT)
-			return -1; /* both devices want to become GO */
+		if (own_intent == P2P_MAX_GO_INTENT) {
+			return -1;    /* both devices want to become GO */
+		}
 
 		/* Use tie breaker bit to determine GO */
 		return (peer_value & 0x01) ? 0 : 1;
@@ -31,10 +31,7 @@ static int p2p_go_det(u8 own_intent, u8 peer_value)
 	return own_intent > peer_intent;
 }
 
-
-int p2p_peer_channels_check(struct p2p_data *p2p, struct p2p_channels *own,
-			    struct p2p_device *dev,
-			    const u8 *channel_list, size_t channel_list_len)
+int p2p_peer_channels_check(struct p2p_data *p2p, struct p2p_channels *own, struct p2p_device *dev, const u8 *channel_list, size_t channel_list_len)
 {
 	const u8 *pos, *end;
 	struct p2p_channels *ch;
@@ -46,14 +43,13 @@ int p2p_peer_channels_check(struct p2p_data *p2p, struct p2p_channels *own,
 	pos = channel_list;
 	end = channel_list + channel_list_len;
 
-	if (end - pos < 3)
+	if (end - pos < 3) {
 		return -1;
+	}
 	os_memcpy(dev->country, pos, 3);
 	wpa_hexdump_ascii(MSG_DEBUG, "P2P: Peer country", pos, 3);
 	if (pos[2] != 0x04 && os_memcmp(pos, p2p->cfg->country, 2) != 0) {
-		p2p_info(p2p, "Mismatching country (ours=%c%c peer's=%c%c)",
-			p2p->cfg->country[0], p2p->cfg->country[1],
-			pos[0], pos[1]);
+		p2p_info(p2p, "Mismatching country (ours=%c%c peer's=%c%c)", p2p->cfg->country[0], p2p->cfg->country[1], pos[0], pos[1]);
 		return -1;
 	}
 	pos += 3;
@@ -66,20 +62,17 @@ int p2p_peer_channels_check(struct p2p_data *p2p, struct p2p_channels *own,
 			return -1;
 		}
 		channels = *pos++;
-		cl->channels = channels > P2P_MAX_REG_CLASS_CHANNELS ?
-			P2P_MAX_REG_CLASS_CHANNELS : channels;
+		cl->channels = channels > P2P_MAX_REG_CLASS_CHANNELS ? P2P_MAX_REG_CLASS_CHANNELS : channels;
 		os_memcpy(cl->channel, pos, cl->channels);
 		pos += channels;
 		ch->reg_classes++;
-		if (ch->reg_classes == P2P_MAX_REG_CLASSES)
+		if (ch->reg_classes == P2P_MAX_REG_CLASSES) {
 			break;
+		}
 	}
 
 	p2p_channels_intersect(own, &dev->channels, &intersection);
-	p2p_dbg(p2p, "Own reg_classes %d peer reg_classes %d intersection reg_classes %d",
-		(int) own->reg_classes,
-		(int) dev->channels.reg_classes,
-		(int) intersection.reg_classes);
+	p2p_dbg(p2p, "Own reg_classes %d peer reg_classes %d intersection reg_classes %d", (int)own->reg_classes, (int)dev->channels.reg_classes, (int)intersection.reg_classes);
 	if (intersection.reg_classes == 0) {
 		p2p_info(p2p, "No common channels found");
 		return -1;
@@ -87,14 +80,10 @@ int p2p_peer_channels_check(struct p2p_data *p2p, struct p2p_channels *own,
 	return 0;
 }
 
-
-static int p2p_peer_channels(struct p2p_data *p2p, struct p2p_device *dev,
-			     const u8 *channel_list, size_t channel_list_len)
+static int p2p_peer_channels(struct p2p_data *p2p, struct p2p_device *dev, const u8 *channel_list, size_t channel_list_len)
 {
-	return p2p_peer_channels_check(p2p, &p2p->channels, dev,
-				       channel_list, channel_list_len);
+	return p2p_peer_channels_check(p2p, &p2p->channels, dev, channel_list, channel_list_len);
 }
-
 
 u16 p2p_wps_method_pw_id(enum p2p_wps_method wps_method)
 {
@@ -114,8 +103,7 @@ u16 p2p_wps_method_pw_id(enum p2p_wps_method wps_method)
 	}
 }
 
-
-static const char * p2p_wps_method_str(enum p2p_wps_method wps_method)
+static const char *p2p_wps_method_str(enum p2p_wps_method wps_method)
 {
 	switch (wps_method) {
 	case WPS_PIN_DISPLAY:
@@ -133,9 +121,7 @@ static const char * p2p_wps_method_str(enum p2p_wps_method wps_method)
 	}
 }
 
-
-static struct wpabuf * p2p_build_go_neg_req(struct p2p_data *p2p,
-					    struct p2p_device *peer)
+static struct wpabuf *p2p_build_go_neg_req(struct p2p_data *p2p, struct p2p_device *peer)
 {
 	struct wpabuf *buf;
 	u8 *len;
@@ -144,16 +130,19 @@ static struct wpabuf * p2p_build_go_neg_req(struct p2p_data *p2p,
 	u16 pw_id;
 
 #ifdef CONFIG_WIFI_DISPLAY
-	if (p2p->wfd_ie_go_neg)
+	if (p2p->wfd_ie_go_neg) {
 		extra = wpabuf_len(p2p->wfd_ie_go_neg);
-#endif /* CONFIG_WIFI_DISPLAY */
+	}
+#endif							/* CONFIG_WIFI_DISPLAY */
 
-	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_REQ])
+	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_REQ]) {
 		extra += wpabuf_len(p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_REQ]);
+	}
 
 	buf = wpabuf_alloc(1000 + extra);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return NULL;
+	}
 
 	p2p_buf_add_public_action_hdr(buf, P2P_GO_NEG_REQ, peer->dialog_token);
 
@@ -161,51 +150,51 @@ static struct wpabuf * p2p_build_go_neg_req(struct p2p_data *p2p,
 	group_capab = 0;
 	if (peer->flags & P2P_DEV_PREFER_PERSISTENT_GROUP) {
 		group_capab |= P2P_GROUP_CAPAB_PERSISTENT_GROUP;
-		if (peer->flags & P2P_DEV_PREFER_PERSISTENT_RECONN)
+		if (peer->flags & P2P_DEV_PREFER_PERSISTENT_RECONN) {
 			group_capab |= P2P_GROUP_CAPAB_PERSISTENT_RECONN;
+		}
 	}
-	if (p2p->cross_connect)
+	if (p2p->cross_connect) {
 		group_capab |= P2P_GROUP_CAPAB_CROSS_CONN;
-	if (p2p->cfg->p2p_intra_bss)
+	}
+	if (p2p->cfg->p2p_intra_bss) {
 		group_capab |= P2P_GROUP_CAPAB_INTRA_BSS_DIST;
-	p2p_buf_add_capability(buf, p2p->dev_capab &
-			       ~P2P_DEV_CAPAB_CLIENT_DISCOVERABILITY,
-			       group_capab);
+	}
+	p2p_buf_add_capability(buf, p2p->dev_capab & ~P2P_DEV_CAPAB_CLIENT_DISCOVERABILITY, group_capab);
 	p2p_buf_add_go_intent(buf, (p2p->go_intent << 1) | peer->tie_breaker);
 	p2p_buf_add_config_timeout(buf, p2p->go_timeout, p2p->client_timeout);
-	p2p_buf_add_listen_channel(buf, p2p->cfg->country, p2p->cfg->reg_class,
-				   p2p->cfg->channel);
-	if (p2p->ext_listen_interval)
-		p2p_buf_add_ext_listen_timing(buf, p2p->ext_listen_period,
-					      p2p->ext_listen_interval);
+	p2p_buf_add_listen_channel(buf, p2p->cfg->country, p2p->cfg->reg_class, p2p->cfg->channel);
+	if (p2p->ext_listen_interval) {
+		p2p_buf_add_ext_listen_timing(buf, p2p->ext_listen_period, p2p->ext_listen_interval);
+	}
 	p2p_buf_add_intended_addr(buf, p2p->intended_addr);
 	p2p_buf_add_channel_list(buf, p2p->cfg->country, &p2p->channels);
 	p2p_buf_add_device_info(buf, p2p, peer);
-	p2p_buf_add_operating_channel(buf, p2p->cfg->country,
-				      p2p->op_reg_class, p2p->op_channel);
+	p2p_buf_add_operating_channel(buf, p2p->cfg->country, p2p->op_reg_class, p2p->op_channel);
 	p2p_buf_update_ie_hdr(buf, len);
 
 	/* WPS IE with Device Password ID attribute */
 	pw_id = p2p_wps_method_pw_id(peer->wps_method);
-	if (peer->oob_pw_id)
+	if (peer->oob_pw_id) {
 		pw_id = peer->oob_pw_id;
+	}
 	if (p2p_build_wps_ie(p2p, buf, pw_id, 0) < 0) {
 		p2p_dbg(p2p, "Failed to build WPS IE for GO Negotiation Request");
 		wpabuf_free(buf);
 		return NULL;
 	}
-
 #ifdef CONFIG_WIFI_DISPLAY
-	if (p2p->wfd_ie_go_neg)
+	if (p2p->wfd_ie_go_neg) {
 		wpabuf_put_buf(buf, p2p->wfd_ie_go_neg);
-#endif /* CONFIG_WIFI_DISPLAY */
+	}
+#endif							/* CONFIG_WIFI_DISPLAY */
 
-	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_REQ])
+	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_REQ]) {
 		wpabuf_put_buf(buf, p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_REQ]);
+	}
 
 	return buf;
 }
-
 
 int p2p_connect_send(struct p2p_data *p2p, struct p2p_device *dev)
 {
@@ -214,35 +203,34 @@ int p2p_connect_send(struct p2p_data *p2p, struct p2p_device *dev)
 
 	if (dev->flags & P2P_DEV_PD_BEFORE_GO_NEG) {
 		u16 config_method;
-		p2p_dbg(p2p, "Use PD-before-GO-Neg workaround for " MACSTR,
-			MAC2STR(dev->info.p2p_device_addr));
-		if (dev->wps_method == WPS_PIN_DISPLAY)
+		p2p_dbg(p2p, "Use PD-before-GO-Neg workaround for " MACSTR, MAC2STR(dev->info.p2p_device_addr));
+		if (dev->wps_method == WPS_PIN_DISPLAY) {
 			config_method = WPS_CONFIG_KEYPAD;
-		else if (dev->wps_method == WPS_PIN_KEYPAD)
+		} else if (dev->wps_method == WPS_PIN_KEYPAD) {
 			config_method = WPS_CONFIG_DISPLAY;
-		else if (dev->wps_method == WPS_PBC)
+		} else if (dev->wps_method == WPS_PBC) {
 			config_method = WPS_CONFIG_PUSHBUTTON;
-		else if (dev->wps_method == WPS_P2PS)
+		} else if (dev->wps_method == WPS_P2PS) {
 			config_method = WPS_CONFIG_P2PS;
-		else
+		} else {
 			return -1;
-		return p2p_prov_disc_req(p2p, dev->info.p2p_device_addr,
-					 NULL, config_method, 0, 0, 1);
+		}
+		return p2p_prov_disc_req(p2p, dev->info.p2p_device_addr, NULL, config_method, 0, 0, 1);
 	}
 
 	freq = dev->listen_freq > 0 ? dev->listen_freq : dev->oper_freq;
-	if (dev->oob_go_neg_freq > 0)
+	if (dev->oob_go_neg_freq > 0) {
 		freq = dev->oob_go_neg_freq;
+	}
 	if (freq <= 0) {
-		p2p_dbg(p2p, "No Listen/Operating frequency known for the peer "
-			MACSTR " to send GO Negotiation Request",
-			MAC2STR(dev->info.p2p_device_addr));
+		p2p_dbg(p2p, "No Listen/Operating frequency known for the peer " MACSTR " to send GO Negotiation Request", MAC2STR(dev->info.p2p_device_addr));
 		return -1;
 	}
 
 	req = p2p_build_go_neg_req(p2p, dev);
-	if (req == NULL)
+	if (req == NULL) {
 		return -1;
+	}
 	p2p_dbg(p2p, "Sending GO Negotiation Request");
 	p2p_set_state(p2p, P2P_CONNECT);
 	p2p->pending_action_state = P2P_PENDING_GO_NEG_REQUEST;
@@ -250,25 +238,20 @@ int p2p_connect_send(struct p2p_data *p2p, struct p2p_device *dev)
 	eloop_cancel_timeout(p2p_go_neg_wait_timeout, p2p, NULL);
 	dev->flags |= P2P_DEV_WAIT_GO_NEG_RESPONSE;
 	dev->connect_reqs++;
-	if (p2p_send_action(p2p, freq, dev->info.p2p_device_addr,
-			    p2p->cfg->dev_addr, dev->info.p2p_device_addr,
-			    wpabuf_head(req), wpabuf_len(req), 500) < 0) {
+	if (p2p_send_action(p2p, freq, dev->info.p2p_device_addr, p2p->cfg->dev_addr, dev->info.p2p_device_addr, wpabuf_head(req), wpabuf_len(req), 500) < 0) {
 		p2p_dbg(p2p, "Failed to send Action frame");
 		/* Use P2P find to recover and retry */
 		p2p_set_timeout(p2p, 0, 0);
-	} else
+	} else {
 		dev->go_neg_req_sent++;
+	}
 
 	wpabuf_free(req);
 
 	return 0;
 }
 
-
-static struct wpabuf * p2p_build_go_neg_resp(struct p2p_data *p2p,
-					     struct p2p_device *peer,
-					     u8 dialog_token, u8 status,
-					     u8 tie_breaker)
+static struct wpabuf *p2p_build_go_neg_resp(struct p2p_data *p2p, struct p2p_device *peer, u8 dialog_token, u8 status, u8 tie_breaker)
 {
 	struct wpabuf *buf;
 	u8 *len;
@@ -279,16 +262,19 @@ static struct wpabuf * p2p_build_go_neg_resp(struct p2p_data *p2p,
 	p2p_dbg(p2p, "Building GO Negotiation Response");
 
 #ifdef CONFIG_WIFI_DISPLAY
-	if (p2p->wfd_ie_go_neg)
+	if (p2p->wfd_ie_go_neg) {
 		extra = wpabuf_len(p2p->wfd_ie_go_neg);
-#endif /* CONFIG_WIFI_DISPLAY */
+	}
+#endif							/* CONFIG_WIFI_DISPLAY */
 
-	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_RESP])
+	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_RESP]) {
 		extra += wpabuf_len(p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_RESP]);
+	}
 
 	buf = wpabuf_alloc(1000 + extra);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return NULL;
+	}
 
 	p2p_buf_add_public_action_hdr(buf, P2P_GO_NEG_RESP, dialog_token);
 
@@ -298,68 +284,63 @@ static struct wpabuf * p2p_build_go_neg_resp(struct p2p_data *p2p,
 	if (peer && peer->go_state == LOCAL_GO) {
 		if (peer->flags & P2P_DEV_PREFER_PERSISTENT_GROUP) {
 			group_capab |= P2P_GROUP_CAPAB_PERSISTENT_GROUP;
-			if (peer->flags & P2P_DEV_PREFER_PERSISTENT_RECONN)
-				group_capab |=
-					P2P_GROUP_CAPAB_PERSISTENT_RECONN;
+			if (peer->flags & P2P_DEV_PREFER_PERSISTENT_RECONN) {
+				group_capab |= P2P_GROUP_CAPAB_PERSISTENT_RECONN;
+			}
 		}
-		if (p2p->cross_connect)
+		if (p2p->cross_connect) {
 			group_capab |= P2P_GROUP_CAPAB_CROSS_CONN;
-		if (p2p->cfg->p2p_intra_bss)
+		}
+		if (p2p->cfg->p2p_intra_bss) {
 			group_capab |= P2P_GROUP_CAPAB_INTRA_BSS_DIST;
+		}
 	}
-	p2p_buf_add_capability(buf, p2p->dev_capab &
-			       ~P2P_DEV_CAPAB_CLIENT_DISCOVERABILITY,
-			       group_capab);
+	p2p_buf_add_capability(buf, p2p->dev_capab & ~P2P_DEV_CAPAB_CLIENT_DISCOVERABILITY, group_capab);
 	p2p_buf_add_go_intent(buf, (p2p->go_intent << 1) | tie_breaker);
 	p2p_buf_add_config_timeout(buf, p2p->go_timeout, p2p->client_timeout);
 	if (peer && peer->go_state == REMOTE_GO) {
 		p2p_dbg(p2p, "Omit Operating Channel attribute");
 	} else {
-		p2p_buf_add_operating_channel(buf, p2p->cfg->country,
-					      p2p->op_reg_class,
-					      p2p->op_channel);
+		p2p_buf_add_operating_channel(buf, p2p->cfg->country, p2p->op_reg_class, p2p->op_channel);
 	}
 	p2p_buf_add_intended_addr(buf, p2p->intended_addr);
 	if (status || peer == NULL) {
-		p2p_buf_add_channel_list(buf, p2p->cfg->country,
-					 &p2p->channels);
+		p2p_buf_add_channel_list(buf, p2p->cfg->country, &p2p->channels);
 	} else if (peer->go_state == REMOTE_GO) {
-		p2p_buf_add_channel_list(buf, p2p->cfg->country,
-					 &p2p->channels);
+		p2p_buf_add_channel_list(buf, p2p->cfg->country, &p2p->channels);
 	} else {
 		struct p2p_channels res;
-		p2p_channels_intersect(&p2p->channels, &peer->channels,
-				       &res);
+		p2p_channels_intersect(&p2p->channels, &peer->channels, &res);
 		p2p_buf_add_channel_list(buf, p2p->cfg->country, &res);
 	}
 	p2p_buf_add_device_info(buf, p2p, peer);
 	if (peer && peer->go_state == LOCAL_GO) {
-		p2p_buf_add_group_id(buf, p2p->cfg->dev_addr, p2p->ssid,
-				     p2p->ssid_len);
+		p2p_buf_add_group_id(buf, p2p->cfg->dev_addr, p2p->ssid, p2p->ssid_len);
 	}
 	p2p_buf_update_ie_hdr(buf, len);
 
 	/* WPS IE with Device Password ID attribute */
 	pw_id = p2p_wps_method_pw_id(peer ? peer->wps_method : WPS_NOT_READY);
-	if (peer && peer->oob_pw_id)
+	if (peer && peer->oob_pw_id) {
 		pw_id = peer->oob_pw_id;
+	}
 	if (p2p_build_wps_ie(p2p, buf, pw_id, 0) < 0) {
 		p2p_dbg(p2p, "Failed to build WPS IE for GO Negotiation Response");
 		wpabuf_free(buf);
 		return NULL;
 	}
-
 #ifdef CONFIG_WIFI_DISPLAY
-	if (p2p->wfd_ie_go_neg)
+	if (p2p->wfd_ie_go_neg) {
 		wpabuf_put_buf(buf, p2p->wfd_ie_go_neg);
-#endif /* CONFIG_WIFI_DISPLAY */
+	}
+#endif							/* CONFIG_WIFI_DISPLAY */
 
-	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_RESP])
+	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_RESP]) {
 		wpabuf_put_buf(buf, p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_RESP]);
+	}
 
 	return buf;
 }
-
 
 /**
  * p2p_reselect_channel - Re-select operating channel based on peer information
@@ -372,8 +353,7 @@ static struct wpabuf * p2p_build_go_neg_resp(struct p2p_data *p2p,
  * p2p_prepare_channel() prior to the start of GO Negotiation. In addition, this
  * can be used for Invitation case.
  */
-void p2p_reselect_channel(struct p2p_data *p2p,
-			  struct p2p_channels *intersection)
+void p2p_reselect_channel(struct p2p_data *p2p, struct p2p_channels *intersection)
 {
 	struct p2p_reg_class *cl;
 	int freq;
@@ -383,23 +363,15 @@ void p2p_reselect_channel(struct p2p_data *p2p,
 	const int op_classes_ht40[] = { 126, 127, 116, 117, 0 };
 	const int op_classes_vht[] = { 128, 0 };
 
-	if (p2p->own_freq_preference > 0 &&
-	    p2p_freq_to_channel(p2p->own_freq_preference,
-				&op_reg_class, &op_channel) == 0 &&
-	    p2p_channels_includes(intersection, op_reg_class, op_channel)) {
-		p2p_dbg(p2p, "Pick own channel preference (reg_class %u channel %u) from intersection",
-			op_reg_class, op_channel);
+	if (p2p->own_freq_preference > 0 && p2p_freq_to_channel(p2p->own_freq_preference, &op_reg_class, &op_channel) == 0 && p2p_channels_includes(intersection, op_reg_class, op_channel)) {
+		p2p_dbg(p2p, "Pick own channel preference (reg_class %u channel %u) from intersection", op_reg_class, op_channel);
 		p2p->op_reg_class = op_reg_class;
 		p2p->op_channel = op_channel;
 		return;
 	}
 
-	if (p2p->best_freq_overall > 0 &&
-	    p2p_freq_to_channel(p2p->best_freq_overall,
-				&op_reg_class, &op_channel) == 0 &&
-	    p2p_channels_includes(intersection, op_reg_class, op_channel)) {
-		p2p_dbg(p2p, "Pick best overall channel (reg_class %u channel %u) from intersection",
-			op_reg_class, op_channel);
+	if (p2p->best_freq_overall > 0 && p2p_freq_to_channel(p2p->best_freq_overall, &op_reg_class, &op_channel) == 0 && p2p_channels_includes(intersection, op_reg_class, op_channel)) {
+		p2p_dbg(p2p, "Pick best overall channel (reg_class %u channel %u) from intersection", op_reg_class, op_channel);
 		p2p->op_reg_class = op_reg_class;
 		p2p->op_channel = op_channel;
 		return;
@@ -407,27 +379,15 @@ void p2p_reselect_channel(struct p2p_data *p2p,
 
 	/* First, try to pick the best channel from another band */
 	freq = p2p_channel_to_freq(p2p->op_reg_class, p2p->op_channel);
-	if (freq >= 2400 && freq < 2500 && p2p->best_freq_5 > 0 &&
-	    !p2p_channels_includes(intersection, p2p->op_reg_class,
-				   p2p->op_channel) &&
-	    p2p_freq_to_channel(p2p->best_freq_5,
-				&op_reg_class, &op_channel) == 0 &&
-	    p2p_channels_includes(intersection, op_reg_class, op_channel)) {
-		p2p_dbg(p2p, "Pick best 5 GHz channel (reg_class %u channel %u) from intersection",
-			op_reg_class, op_channel);
+	if (freq >= 2400 && freq < 2500 && p2p->best_freq_5 > 0 && !p2p_channels_includes(intersection, p2p->op_reg_class, p2p->op_channel) && p2p_freq_to_channel(p2p->best_freq_5, &op_reg_class, &op_channel) == 0 && p2p_channels_includes(intersection, op_reg_class, op_channel)) {
+		p2p_dbg(p2p, "Pick best 5 GHz channel (reg_class %u channel %u) from intersection", op_reg_class, op_channel);
 		p2p->op_reg_class = op_reg_class;
 		p2p->op_channel = op_channel;
 		return;
 	}
 
-	if (freq >= 4900 && freq < 6000 && p2p->best_freq_24 > 0 &&
-	    !p2p_channels_includes(intersection, p2p->op_reg_class,
-				   p2p->op_channel) &&
-	    p2p_freq_to_channel(p2p->best_freq_24,
-				&op_reg_class, &op_channel) == 0 &&
-	    p2p_channels_includes(intersection, op_reg_class, op_channel)) {
-		p2p_dbg(p2p, "Pick best 2.4 GHz channel (reg_class %u channel %u) from intersection",
-			op_reg_class, op_channel);
+	if (freq >= 4900 && freq < 6000 && p2p->best_freq_24 > 0 && !p2p_channels_includes(intersection, p2p->op_reg_class, p2p->op_channel) && p2p_freq_to_channel(p2p->best_freq_24, &op_reg_class, &op_channel) == 0 && p2p_channels_includes(intersection, op_reg_class, op_channel)) {
+		p2p_dbg(p2p, "Pick best 2.4 GHz channel (reg_class %u channel %u) from intersection", op_reg_class, op_channel);
 		p2p->op_reg_class = op_reg_class;
 		p2p->op_channel = op_channel;
 		return;
@@ -435,38 +395,29 @@ void p2p_reselect_channel(struct p2p_data *p2p,
 
 	/* Select channel with highest preference if the peer supports it */
 	for (i = 0; p2p->cfg->pref_chan && i < p2p->cfg->num_pref_chan; i++) {
-		if (p2p_channels_includes(intersection,
-					  p2p->cfg->pref_chan[i].op_class,
-					  p2p->cfg->pref_chan[i].chan)) {
+		if (p2p_channels_includes(intersection, p2p->cfg->pref_chan[i].op_class, p2p->cfg->pref_chan[i].chan)) {
 			p2p->op_reg_class = p2p->cfg->pref_chan[i].op_class;
 			p2p->op_channel = p2p->cfg->pref_chan[i].chan;
-			p2p_dbg(p2p, "Pick highest preferred channel (op_class %u channel %u) from intersection",
-				p2p->op_reg_class, p2p->op_channel);
+			p2p_dbg(p2p, "Pick highest preferred channel (op_class %u channel %u) from intersection", p2p->op_reg_class, p2p->op_channel);
 			return;
 		}
 	}
 
 	/* Try a channel where we might be able to use VHT */
-	if (p2p_channel_select(intersection, op_classes_vht,
-			       &p2p->op_reg_class, &p2p->op_channel) == 0) {
-		p2p_dbg(p2p, "Pick possible VHT channel (op_class %u channel %u) from intersection",
-			p2p->op_reg_class, p2p->op_channel);
+	if (p2p_channel_select(intersection, op_classes_vht, &p2p->op_reg_class, &p2p->op_channel) == 0) {
+		p2p_dbg(p2p, "Pick possible VHT channel (op_class %u channel %u) from intersection", p2p->op_reg_class, p2p->op_channel);
 		return;
 	}
 
 	/* Try a channel where we might be able to use HT40 */
-	if (p2p_channel_select(intersection, op_classes_ht40,
-			       &p2p->op_reg_class, &p2p->op_channel) == 0) {
-		p2p_dbg(p2p, "Pick possible HT40 channel (op_class %u channel %u) from intersection",
-			p2p->op_reg_class, p2p->op_channel);
+	if (p2p_channel_select(intersection, op_classes_ht40, &p2p->op_reg_class, &p2p->op_channel) == 0) {
+		p2p_dbg(p2p, "Pick possible HT40 channel (op_class %u channel %u) from intersection", p2p->op_reg_class, p2p->op_channel);
 		return;
 	}
 
 	/* Prefer a 5 GHz channel */
-	if (p2p_channel_select(intersection, op_classes_5ghz,
-			       &p2p->op_reg_class, &p2p->op_channel) == 0) {
-		p2p_dbg(p2p, "Pick possible 5 GHz channel (op_class %u channel %u) from intersection",
-			p2p->op_reg_class, p2p->op_channel);
+	if (p2p_channel_select(intersection, op_classes_5ghz, &p2p->op_reg_class, &p2p->op_channel) == 0) {
+		p2p_dbg(p2p, "Pick possible 5 GHz channel (op_class %u channel %u) from intersection", p2p->op_reg_class, p2p->op_channel);
 		return;
 	}
 
@@ -475,10 +426,8 @@ void p2p_reselect_channel(struct p2p_data *p2p,
 	 * so, no need to change anything, as it already contains some
 	 * randomness.
 	 */
-	if (p2p_channels_includes(intersection, p2p->op_reg_class,
-				  p2p->op_channel)) {
-		p2p_dbg(p2p, "Using original operating class and channel (op_class %u channel %u) from intersection",
-			p2p->op_reg_class, p2p->op_channel);
+	if (p2p_channels_includes(intersection, p2p->op_reg_class, p2p->op_channel)) {
+		p2p_dbg(p2p, "Using original operating class and channel (op_class %u channel %u) from intersection", p2p->op_reg_class, p2p->op_channel);
 		return;
 	}
 
@@ -487,15 +436,12 @@ void p2p_reselect_channel(struct p2p_data *p2p,
 	 * no better options seems to be available.
 	 */
 	cl = &intersection->reg_class[0];
-	p2p_dbg(p2p, "Pick another channel (reg_class %u channel %u) from intersection",
-		cl->reg_class, cl->channel[0]);
+	p2p_dbg(p2p, "Pick another channel (reg_class %u channel %u) from intersection", cl->reg_class, cl->channel[0]);
 	p2p->op_reg_class = cl->reg_class;
 	p2p->op_channel = cl->channel[0];
 }
 
-
-int p2p_go_select_channel(struct p2p_data *p2p, struct p2p_device *dev,
-			  u8 *status)
+int p2p_go_select_channel(struct p2p_data *p2p, struct p2p_device *dev, u8 *status)
 {
 	struct p2p_channels tmp, intersection;
 
@@ -506,30 +452,24 @@ int p2p_go_select_channel(struct p2p_data *p2p, struct p2p_device *dev,
 	p2p_channels_remove_freqs(&tmp, &p2p->no_go_freq);
 	p2p_channels_dump(p2p, "intersection after no-GO removal", &tmp);
 	p2p_channels_intersect(&tmp, &p2p->cfg->channels, &intersection);
-	p2p_channels_dump(p2p, "intersection with local channel list",
-			  &intersection);
-	if (intersection.reg_classes == 0 ||
-	    intersection.reg_class[0].channels == 0) {
+	p2p_channels_dump(p2p, "intersection with local channel list", &intersection);
+	if (intersection.reg_classes == 0 || intersection.reg_class[0].channels == 0) {
 		*status = P2P_SC_FAIL_NO_COMMON_CHANNELS;
 		p2p_dbg(p2p, "No common channels found");
 		return -1;
 	}
 
-	if (!p2p_channels_includes(&intersection, p2p->op_reg_class,
-				   p2p->op_channel)) {
+	if (!p2p_channels_includes(&intersection, p2p->op_reg_class, p2p->op_channel)) {
 		if (dev->flags & P2P_DEV_FORCE_FREQ) {
 			*status = P2P_SC_FAIL_NO_COMMON_CHANNELS;
 			p2p_dbg(p2p, "Peer does not support the forced channel");
 			return -1;
 		}
 
-		p2p_dbg(p2p, "Selected operating channel (op_class %u channel %u) not acceptable to the peer",
-			p2p->op_reg_class, p2p->op_channel);
+		p2p_dbg(p2p, "Selected operating channel (op_class %u channel %u) not acceptable to the peer", p2p->op_reg_class, p2p->op_channel);
 		p2p_reselect_channel(p2p, &intersection);
-	} else if (!(dev->flags & P2P_DEV_FORCE_FREQ) &&
-		   !p2p->cfg->cfg_op_channel) {
-		p2p_dbg(p2p, "Try to optimize channel selection with peer information received; previously selected op_class %u channel %u",
-			p2p->op_reg_class, p2p->op_channel);
+	} else if (!(dev->flags & P2P_DEV_FORCE_FREQ) && !p2p->cfg->cfg_op_channel) {
+		p2p_dbg(p2p, "Try to optimize channel selection with peer information received; previously selected op_class %u channel %u", p2p->op_reg_class, p2p->op_channel);
 		p2p_reselect_channel(p2p, &intersection);
 	}
 
@@ -541,9 +481,7 @@ int p2p_go_select_channel(struct p2p_data *p2p, struct p2p_device *dev,
 	return 0;
 }
 
-
-void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
-			    const u8 *data, size_t len, int rx_freq)
+void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa, const u8 *data, size_t len, int rx_freq)
 {
 	struct p2p_device *dev = NULL;
 	struct wpabuf *resp;
@@ -552,33 +490,33 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 	int tie_breaker = 0;
 	int freq;
 
-	p2p_dbg(p2p, "Received GO Negotiation Request from " MACSTR "(freq=%d)",
-		MAC2STR(sa), rx_freq);
+	p2p_dbg(p2p, "Received GO Negotiation Request from " MACSTR "(freq=%d)", MAC2STR(sa), rx_freq);
 
-	if (p2p_parse(data, len, &msg))
+	if (p2p_parse(data, len, &msg)) {
 		return;
+	}
 
 	if (!msg.capability) {
 		p2p_dbg(p2p, "Mandatory Capability attribute missing from GO Negotiation Request");
 #ifdef CONFIG_P2P_STRICT
 		goto fail;
-#endif /* CONFIG_P2P_STRICT */
+#endif							/* CONFIG_P2P_STRICT */
 	}
 
-	if (msg.go_intent)
+	if (msg.go_intent) {
 		tie_breaker = *msg.go_intent & 0x01;
-	else {
+	} else {
 		p2p_dbg(p2p, "Mandatory GO Intent attribute missing from GO Negotiation Request");
 #ifdef CONFIG_P2P_STRICT
 		goto fail;
-#endif /* CONFIG_P2P_STRICT */
+#endif							/* CONFIG_P2P_STRICT */
 	}
 
 	if (!msg.config_timeout) {
 		p2p_dbg(p2p, "Mandatory Configuration Timeout attribute missing from GO Negotiation Request");
 #ifdef CONFIG_P2P_STRICT
 		goto fail;
-#endif /* CONFIG_P2P_STRICT */
+#endif							/* CONFIG_P2P_STRICT */
 	}
 
 	if (!msg.listen_channel) {
@@ -603,19 +541,15 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 	}
 
 	if (os_memcmp(msg.p2p_device_addr, sa, ETH_ALEN) != 0) {
-		p2p_dbg(p2p, "Unexpected GO Negotiation Request SA=" MACSTR
-			" != dev_addr=" MACSTR,
-			MAC2STR(sa), MAC2STR(msg.p2p_device_addr));
+		p2p_dbg(p2p, "Unexpected GO Negotiation Request SA=" MACSTR " != dev_addr=" MACSTR, MAC2STR(sa), MAC2STR(msg.p2p_device_addr));
 		goto fail;
 	}
 
 	dev = p2p_get_device(p2p, sa);
 
 	if (msg.status && *msg.status) {
-		p2p_dbg(p2p, "Unexpected Status attribute (%d) in GO Negotiation Request",
-			*msg.status);
-		if (dev && p2p->go_neg_peer == dev &&
-		    *msg.status == P2P_SC_FAIL_REJECTED_BY_USER) {
+		p2p_dbg(p2p, "Unexpected Status attribute (%d) in GO Negotiation Request", *msg.status);
+		if (dev && p2p->go_neg_peer == dev && *msg.status == P2P_SC_FAIL_REJECTED_BY_USER) {
 			/*
 			 * This mechanism for using Status attribute in GO
 			 * Negotiation Request is not compliant with the P2P
@@ -636,41 +570,31 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 		goto fail;
 	}
 
-	if (dev == NULL)
+	if (dev == NULL) {
 		dev = p2p_add_dev_from_go_neg_req(p2p, sa, &msg);
-	else if ((dev->flags & P2P_DEV_PROBE_REQ_ONLY) ||
-		  !(dev->flags & P2P_DEV_REPORTED))
+	} else if ((dev->flags & P2P_DEV_PROBE_REQ_ONLY) || !(dev->flags & P2P_DEV_REPORTED)) {
 		p2p_add_dev_info(p2p, sa, dev, &msg);
-	else if (!dev->listen_freq && !dev->oper_freq) {
+	} else if (!dev->listen_freq && !dev->oper_freq) {
 		/*
 		 * This may happen if the peer entry was added based on PD
 		 * Request and no Probe Request/Response frame has been received
 		 * from this peer (or that information has timed out).
 		 */
-		p2p_dbg(p2p, "Update peer " MACSTR
-			" based on GO Neg Req since listen/oper freq not known",
-			MAC2STR(dev->info.p2p_device_addr));
+		p2p_dbg(p2p, "Update peer " MACSTR " based on GO Neg Req since listen/oper freq not known", MAC2STR(dev->info.p2p_device_addr));
 		p2p_add_dev_info(p2p, sa, dev, &msg);
 	}
 
-	if (p2p->go_neg_peer && p2p->go_neg_peer == dev)
+	if (p2p->go_neg_peer && p2p->go_neg_peer == dev) {
 		eloop_cancel_timeout(p2p_go_neg_wait_timeout, p2p, NULL);
+	}
 
 	if (dev && dev->flags & P2P_DEV_USER_REJECTED) {
 		p2p_dbg(p2p, "User has rejected this peer");
 		status = P2P_SC_FAIL_REJECTED_BY_USER;
-	} else if (dev == NULL ||
-		   (dev->wps_method == WPS_NOT_READY &&
-		    (p2p->authorized_oob_dev_pw_id == 0 ||
-		     p2p->authorized_oob_dev_pw_id !=
-		     msg.dev_password_id))) {
-		p2p_dbg(p2p, "Not ready for GO negotiation with " MACSTR,
-			MAC2STR(sa));
+	} else if (dev == NULL || (dev->wps_method == WPS_NOT_READY && (p2p->authorized_oob_dev_pw_id == 0 || p2p->authorized_oob_dev_pw_id != msg.dev_password_id))) {
+		p2p_dbg(p2p, "Not ready for GO negotiation with " MACSTR, MAC2STR(sa));
 		status = P2P_SC_FAIL_INFO_CURRENTLY_UNAVAILABLE;
-		p2p->cfg->go_neg_req_rx(p2p->cfg->cb_ctx, sa,
-					msg.dev_password_id,
-					msg.go_intent ? (*msg.go_intent >> 1) :
-					0);
+		p2p->cfg->go_neg_req_rx(p2p->cfg->cb_ctx, sa, msg.dev_password_id, msg.go_intent ? (*msg.go_intent >> 1) : 0);
 	} else if (p2p->go_neg_peer && p2p->go_neg_peer != dev) {
 		p2p_dbg(p2p, "Already in Group Formation with another peer");
 		status = P2P_SC_FAIL_UNABLE_TO_ACCOMMODATE;
@@ -683,8 +607,7 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 				p2p_dbg(p2p, "Use default channel settings");
 				p2p->op_reg_class = p2p->cfg->op_reg_class;
 				p2p->op_channel = p2p->cfg->op_channel;
-				os_memcpy(&p2p->channels, &p2p->cfg->channels,
-					  sizeof(struct p2p_channels));
+				os_memcpy(&p2p->channels, &p2p->cfg->channels, sizeof(struct p2p_channels));
 			} else {
 				p2p_dbg(p2p, "Use previously configured forced channel settings");
 			}
@@ -697,13 +620,11 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 			goto fail;
 		}
 		if ((*msg.go_intent >> 1) > P2P_MAX_GO_INTENT) {
-			p2p_dbg(p2p, "Invalid GO Intent value (%u) received",
-				*msg.go_intent >> 1);
+			p2p_dbg(p2p, "Invalid GO Intent value (%u) received", *msg.go_intent >> 1);
 			goto fail;
 		}
 
-		if (dev->go_neg_req_sent &&
-		    os_memcmp(sa, p2p->cfg->dev_addr, ETH_ALEN) > 0) {
+		if (dev->go_neg_req_sent && os_memcmp(sa, p2p->cfg->dev_addr, ETH_ALEN) > 0) {
 			p2p_dbg(p2p, "Do not reply since peer has higher address and GO Neg Request already sent");
 			p2p_parse_free(&msg);
 			return;
@@ -716,8 +637,7 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 			goto fail;
 		}
 
-		if (p2p_peer_channels(p2p, dev, msg.channel_list,
-				      msg.channel_list_len) < 0) {
+		if (p2p_peer_channels(p2p, dev, msg.channel_list, msg.channel_list_len) < 0) {
 			p2p_dbg(p2p, "No common channels found");
 			status = P2P_SC_FAIL_NO_COMMON_CHANNELS;
 			goto fail;
@@ -727,8 +647,7 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 		case DEV_PW_REGISTRAR_SPECIFIED:
 			p2p_dbg(p2p, "PIN from peer Display");
 			if (dev->wps_method != WPS_PIN_KEYPAD) {
-				p2p_dbg(p2p, "We have wps_method=%s -> incompatible",
-					p2p_wps_method_str(dev->wps_method));
+				p2p_dbg(p2p, "We have wps_method=%s -> incompatible", p2p_wps_method_str(dev->wps_method));
 				status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 				goto fail;
 			}
@@ -736,8 +655,7 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 		case DEV_PW_USER_SPECIFIED:
 			p2p_dbg(p2p, "Peer entered PIN on Keypad");
 			if (dev->wps_method != WPS_PIN_DISPLAY) {
-				p2p_dbg(p2p, "We have wps_method=%s -> incompatible",
-					p2p_wps_method_str(dev->wps_method));
+				p2p_dbg(p2p, "We have wps_method=%s -> incompatible", p2p_wps_method_str(dev->wps_method));
 				status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 				goto fail;
 			}
@@ -745,8 +663,7 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 		case DEV_PW_PUSHBUTTON:
 			p2p_dbg(p2p, "Peer using pushbutton");
 			if (dev->wps_method != WPS_PBC) {
-				p2p_dbg(p2p, "We have wps_method=%s -> incompatible",
-					p2p_wps_method_str(dev->wps_method));
+				p2p_dbg(p2p, "We have wps_method=%s -> incompatible", p2p_wps_method_str(dev->wps_method));
 				status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 				goto fail;
 			}
@@ -754,50 +671,41 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 		case DEV_PW_P2PS_DEFAULT:
 			p2p_dbg(p2p, "Peer using P2PS pin");
 			if (dev->wps_method != WPS_P2PS) {
-				p2p_dbg(p2p,
-					"We have wps_method=%s -> incompatible",
-					p2p_wps_method_str(dev->wps_method));
+				p2p_dbg(p2p, "We have wps_method=%s -> incompatible", p2p_wps_method_str(dev->wps_method));
 				status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 				goto fail;
 			}
 			break;
 		default:
-			if (msg.dev_password_id &&
-			    msg.dev_password_id == dev->oob_pw_id) {
+			if (msg.dev_password_id && msg.dev_password_id == dev->oob_pw_id) {
 				p2p_dbg(p2p, "Peer using NFC");
 				if (dev->wps_method != WPS_NFC) {
-					p2p_dbg(p2p, "We have wps_method=%s -> incompatible",
-						p2p_wps_method_str(
-							dev->wps_method));
+					p2p_dbg(p2p, "We have wps_method=%s -> incompatible", p2p_wps_method_str(dev->wps_method));
 					status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 					goto fail;
 				}
 				break;
 			}
 #ifdef CONFIG_WPS_NFC
-			if (p2p->authorized_oob_dev_pw_id &&
-			    msg.dev_password_id ==
-			    p2p->authorized_oob_dev_pw_id) {
+			if (p2p->authorized_oob_dev_pw_id && msg.dev_password_id == p2p->authorized_oob_dev_pw_id) {
 				p2p_dbg(p2p, "Using static handover with our device password from NFC Tag");
 				dev->wps_method = WPS_NFC;
 				dev->oob_pw_id = p2p->authorized_oob_dev_pw_id;
 				break;
 			}
-#endif /* CONFIG_WPS_NFC */
-			p2p_dbg(p2p, "Unsupported Device Password ID %d",
-				msg.dev_password_id);
+#endif							/* CONFIG_WPS_NFC */
+			p2p_dbg(p2p, "Unsupported Device Password ID %d", msg.dev_password_id);
 			status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 			goto fail;
 		}
 
-		if (go && p2p_go_select_channel(p2p, dev, &status) < 0)
+		if (go && p2p_go_select_channel(p2p, dev, &status) < 0) {
 			goto fail;
+		}
 
 		dev->go_state = go ? LOCAL_GO : REMOTE_GO;
-		dev->oper_freq = p2p_channel_to_freq(msg.operating_channel[3],
-						     msg.operating_channel[4]);
-		p2p_dbg(p2p, "Peer operating channel preference: %d MHz",
-			dev->oper_freq);
+		dev->oper_freq = p2p_channel_to_freq(msg.operating_channel[3], msg.operating_channel[4]);
+		p2p_dbg(p2p, "Peer operating channel preference: %d MHz", dev->oper_freq);
 
 		if (msg.config_timeout) {
 			dev->go_timeout = msg.config_timeout[0];
@@ -805,8 +713,9 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 		}
 
 		p2p_dbg(p2p, "GO Negotiation with " MACSTR, MAC2STR(sa));
-		if (p2p->state != P2P_IDLE)
+		if (p2p->state != P2P_IDLE) {
 			p2p_stop_find_for_freq(p2p, rx_freq);
+		}
 		p2p_set_state(p2p, P2P_GO_NEG);
 		p2p_clear_timeout(p2p);
 		dev->dialog_token = msg.dialog_token;
@@ -817,19 +726,20 @@ void p2p_process_go_neg_req(struct p2p_data *p2p, const u8 *sa,
 	}
 
 fail:
-	if (dev)
+	if (dev) {
 		dev->status = status;
-	resp = p2p_build_go_neg_resp(p2p, dev, msg.dialog_token, status,
-				     !tie_breaker);
+	}
+	resp = p2p_build_go_neg_resp(p2p, dev, msg.dialog_token, status, !tie_breaker);
 	p2p_parse_free(&msg);
-	if (resp == NULL)
+	if (resp == NULL) {
 		return;
+	}
 	p2p_dbg(p2p, "Sending GO Negotiation Response");
-	if (rx_freq > 0)
+	if (rx_freq > 0) {
 		freq = rx_freq;
-	else
-		freq = p2p_channel_to_freq(p2p->cfg->reg_class,
-					   p2p->cfg->channel);
+	} else {
+		freq = p2p_channel_to_freq(p2p->cfg->reg_class, p2p->cfg->channel);
+	}
 	if (freq < 0) {
 		p2p_dbg(p2p, "Unknown regulatory class/channel");
 		wpabuf_free(resp);
@@ -849,23 +759,17 @@ fail:
 			 */
 			dev->flags &= ~P2P_DEV_WAIT_GO_NEG_RESPONSE;
 		}
-	} else
-		p2p->pending_action_state =
-			P2P_PENDING_GO_NEG_RESPONSE_FAILURE;
-	if (p2p_send_action(p2p, freq, sa, p2p->cfg->dev_addr,
-			    p2p->cfg->dev_addr,
-			    wpabuf_head(resp), wpabuf_len(resp), 500) < 0) {
+	} else {
+		p2p->pending_action_state = P2P_PENDING_GO_NEG_RESPONSE_FAILURE;
+	}
+	if (p2p_send_action(p2p, freq, sa, p2p->cfg->dev_addr, p2p->cfg->dev_addr, wpabuf_head(resp), wpabuf_len(resp), 500) < 0) {
 		p2p_dbg(p2p, "Failed to send Action frame");
 	}
 
 	wpabuf_free(resp);
 }
 
-
-static struct wpabuf * p2p_build_go_neg_conf(struct p2p_data *p2p,
-					     struct p2p_device *peer,
-					     u8 dialog_token, u8 status,
-					     const u8 *resp_chan, int go)
+static struct wpabuf *p2p_build_go_neg_conf(struct p2p_data *p2p, struct p2p_device *peer, u8 dialog_token, u8 status, const u8 *resp_chan, int go)
 {
 	struct wpabuf *buf;
 	u8 *len;
@@ -876,16 +780,19 @@ static struct wpabuf * p2p_build_go_neg_conf(struct p2p_data *p2p,
 	p2p_dbg(p2p, "Building GO Negotiation Confirm");
 
 #ifdef CONFIG_WIFI_DISPLAY
-	if (p2p->wfd_ie_go_neg)
+	if (p2p->wfd_ie_go_neg) {
 		extra = wpabuf_len(p2p->wfd_ie_go_neg);
-#endif /* CONFIG_WIFI_DISPLAY */
+	}
+#endif							/* CONFIG_WIFI_DISPLAY */
 
-	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_CONF])
+	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_CONF]) {
 		extra += wpabuf_len(p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_CONF]);
+	}
 
 	buf = wpabuf_alloc(1000 + extra);
-	if (buf == NULL)
+	if (buf == NULL) {
 		return NULL;
+	}
 
 	p2p_buf_add_public_action_hdr(buf, P2P_GO_NEG_CONF, dialog_token);
 
@@ -895,47 +802,44 @@ static struct wpabuf * p2p_build_go_neg_conf(struct p2p_data *p2p,
 	if (peer->go_state == LOCAL_GO) {
 		if (peer->flags & P2P_DEV_PREFER_PERSISTENT_GROUP) {
 			group_capab |= P2P_GROUP_CAPAB_PERSISTENT_GROUP;
-			if (peer->flags & P2P_DEV_PREFER_PERSISTENT_RECONN)
-				group_capab |=
-					P2P_GROUP_CAPAB_PERSISTENT_RECONN;
+			if (peer->flags & P2P_DEV_PREFER_PERSISTENT_RECONN) {
+				group_capab |= P2P_GROUP_CAPAB_PERSISTENT_RECONN;
+			}
 		}
-		if (p2p->cross_connect)
+		if (p2p->cross_connect) {
 			group_capab |= P2P_GROUP_CAPAB_CROSS_CONN;
-		if (p2p->cfg->p2p_intra_bss)
+		}
+		if (p2p->cfg->p2p_intra_bss) {
 			group_capab |= P2P_GROUP_CAPAB_INTRA_BSS_DIST;
+		}
 	}
-	p2p_buf_add_capability(buf, p2p->dev_capab &
-			       ~P2P_DEV_CAPAB_CLIENT_DISCOVERABILITY,
-			       group_capab);
-	if (go || resp_chan == NULL)
-		p2p_buf_add_operating_channel(buf, p2p->cfg->country,
-					      p2p->op_reg_class,
-					      p2p->op_channel);
-	else
-		p2p_buf_add_operating_channel(buf, (const char *) resp_chan,
-					      resp_chan[3], resp_chan[4]);
+	p2p_buf_add_capability(buf, p2p->dev_capab & ~P2P_DEV_CAPAB_CLIENT_DISCOVERABILITY, group_capab);
+	if (go || resp_chan == NULL) {
+		p2p_buf_add_operating_channel(buf, p2p->cfg->country, p2p->op_reg_class, p2p->op_channel);
+	} else {
+		p2p_buf_add_operating_channel(buf, (const char *)resp_chan, resp_chan[3], resp_chan[4]);
+	}
 	p2p_channels_intersect(&p2p->channels, &peer->channels, &res);
 	p2p_buf_add_channel_list(buf, p2p->cfg->country, &res);
 	if (go) {
-		p2p_buf_add_group_id(buf, p2p->cfg->dev_addr, p2p->ssid,
-				     p2p->ssid_len);
+		p2p_buf_add_group_id(buf, p2p->cfg->dev_addr, p2p->ssid, p2p->ssid_len);
 	}
 	p2p_buf_update_ie_hdr(buf, len);
 
 #ifdef CONFIG_WIFI_DISPLAY
-	if (p2p->wfd_ie_go_neg)
+	if (p2p->wfd_ie_go_neg) {
 		wpabuf_put_buf(buf, p2p->wfd_ie_go_neg);
-#endif /* CONFIG_WIFI_DISPLAY */
+	}
+#endif							/* CONFIG_WIFI_DISPLAY */
 
-	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_CONF])
+	if (p2p->vendor_elem && p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_CONF]) {
 		wpabuf_put_buf(buf, p2p->vendor_elem[VENDOR_ELEM_P2P_GO_NEG_CONF]);
+	}
 
 	return buf;
 }
 
-
-void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
-			     const u8 *data, size_t len, int rx_freq)
+void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa, const u8 *data, size_t len, int rx_freq)
 {
 	struct p2p_device *dev;
 	int go = -1;
@@ -943,18 +847,16 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 	u8 status = P2P_SC_SUCCESS;
 	int freq;
 
-	p2p_dbg(p2p, "Received GO Negotiation Response from " MACSTR
-		" (freq=%d)", MAC2STR(sa), rx_freq);
+	p2p_dbg(p2p, "Received GO Negotiation Response from " MACSTR " (freq=%d)", MAC2STR(sa), rx_freq);
 	dev = p2p_get_device(p2p, sa);
-	if (dev == NULL || dev->wps_method == WPS_NOT_READY ||
-	    dev != p2p->go_neg_peer) {
-		p2p_dbg(p2p, "Not ready for GO negotiation with " MACSTR,
-			MAC2STR(sa));
+	if (dev == NULL || dev->wps_method == WPS_NOT_READY || dev != p2p->go_neg_peer) {
+		p2p_dbg(p2p, "Not ready for GO negotiation with " MACSTR, MAC2STR(sa));
 		return;
 	}
 
-	if (p2p_parse(data, len, &msg))
+	if (p2p_parse(data, len, &msg)) {
 		return;
+	}
 
 	if (!(dev->flags & P2P_DEV_WAIT_GO_NEG_RESPONSE)) {
 		p2p_dbg(p2p, "Was not expecting GO Negotiation Response - ignore");
@@ -964,8 +866,7 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 	dev->flags &= ~P2P_DEV_WAIT_GO_NEG_RESPONSE;
 
 	if (msg.dialog_token != dev->dialog_token) {
-		p2p_dbg(p2p, "Unexpected Dialog Token %u (expected %u)",
-			msg.dialog_token, dev->dialog_token);
+		p2p_dbg(p2p, "Unexpected Dialog Token %u (expected %u)", msg.dialog_token, dev->dialog_token);
 		p2p_parse_free(&msg);
 		return;
 	}
@@ -981,14 +882,13 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 		if (*msg.status == P2P_SC_FAIL_INFO_CURRENTLY_UNAVAILABLE) {
 			p2p_dbg(p2p, "Wait for the peer to become ready for GO Negotiation");
 			dev->flags |= P2P_DEV_NOT_YET_READY;
-			eloop_cancel_timeout(p2p_go_neg_wait_timeout, p2p,
-					     NULL);
-			eloop_register_timeout(120, 0, p2p_go_neg_wait_timeout,
-					       p2p, NULL);
-			if (p2p->state == P2P_CONNECT_LISTEN)
+			eloop_cancel_timeout(p2p_go_neg_wait_timeout, p2p, NULL);
+			eloop_register_timeout(120, 0, p2p_go_neg_wait_timeout, p2p, NULL);
+			if (p2p->state == P2P_CONNECT_LISTEN) {
 				p2p_set_state(p2p, P2P_WAIT_PEER_CONNECT);
-			else
+			} else {
 				p2p_set_state(p2p, P2P_WAIT_PEER_IDLE);
+			}
 			p2p_set_timeout(p2p, 0, 0);
 		} else {
 			p2p_dbg(p2p, "Stop GO Negotiation attempt");
@@ -1004,7 +904,7 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 #ifdef CONFIG_P2P_STRICT
 		status = P2P_SC_FAIL_INVALID_PARAMS;
 		goto fail;
-#endif /* CONFIG_P2P_STRICT */
+#endif							/* CONFIG_P2P_STRICT */
 	}
 
 	if (!msg.p2p_device_info) {
@@ -1012,7 +912,7 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 #ifdef CONFIG_P2P_STRICT
 		status = P2P_SC_FAIL_INVALID_PARAMS;
 		goto fail;
-#endif /* CONFIG_P2P_STRICT */
+#endif							/* CONFIG_P2P_STRICT */
 	}
 
 	if (!msg.intended_addr) {
@@ -1027,8 +927,7 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 		goto fail;
 	}
 	if ((*msg.go_intent >> 1) > P2P_MAX_GO_INTENT) {
-		p2p_dbg(p2p, "Invalid GO Intent value (%u) received",
-			*msg.go_intent >> 1);
+		p2p_dbg(p2p, "Invalid GO Intent value (%u) received", *msg.go_intent >> 1);
 		status = P2P_SC_FAIL_INVALID_PARAMS;
 		goto fail;
 	}
@@ -1056,7 +955,7 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 #ifdef CONFIG_P2P_STRICT
 		status = P2P_SC_FAIL_INVALID_PARAMS;
 		goto fail;
-#endif /* CONFIG_P2P_STRICT */
+#endif							/* CONFIG_P2P_STRICT */
 	} else {
 		dev->go_timeout = msg.config_timeout[0];
 		dev->client_timeout = msg.config_timeout[1];
@@ -1077,27 +976,24 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 		goto fail;
 	}
 
-	if (p2p_peer_channels(p2p, dev, msg.channel_list,
-			      msg.channel_list_len) < 0) {
+	if (p2p_peer_channels(p2p, dev, msg.channel_list, msg.channel_list_len) < 0) {
 		p2p_dbg(p2p, "No common channels found");
 		status = P2P_SC_FAIL_NO_COMMON_CHANNELS;
 		goto fail;
 	}
 
 	if (msg.operating_channel) {
-		dev->oper_freq = p2p_channel_to_freq(msg.operating_channel[3],
-						     msg.operating_channel[4]);
-		p2p_dbg(p2p, "Peer operating channel preference: %d MHz",
-			dev->oper_freq);
-	} else
+		dev->oper_freq = p2p_channel_to_freq(msg.operating_channel[3], msg.operating_channel[4]);
+		p2p_dbg(p2p, "Peer operating channel preference: %d MHz", dev->oper_freq);
+	} else {
 		dev->oper_freq = 0;
+	}
 
 	switch (msg.dev_password_id) {
 	case DEV_PW_REGISTRAR_SPECIFIED:
 		p2p_dbg(p2p, "PIN from peer Display");
 		if (dev->wps_method != WPS_PIN_KEYPAD) {
-			p2p_dbg(p2p, "We have wps_method=%s -> incompatible",
-				p2p_wps_method_str(dev->wps_method));
+			p2p_dbg(p2p, "We have wps_method=%s -> incompatible", p2p_wps_method_str(dev->wps_method));
 			status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 			goto fail;
 		}
@@ -1105,8 +1001,7 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 	case DEV_PW_USER_SPECIFIED:
 		p2p_dbg(p2p, "Peer entered PIN on Keypad");
 		if (dev->wps_method != WPS_PIN_DISPLAY) {
-			p2p_dbg(p2p, "We have wps_method=%s -> incompatible",
-				p2p_wps_method_str(dev->wps_method));
+			p2p_dbg(p2p, "We have wps_method=%s -> incompatible", p2p_wps_method_str(dev->wps_method));
 			status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 			goto fail;
 		}
@@ -1114,8 +1009,7 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 	case DEV_PW_PUSHBUTTON:
 		p2p_dbg(p2p, "Peer using pushbutton");
 		if (dev->wps_method != WPS_PBC) {
-			p2p_dbg(p2p, "We have wps_method=%s -> incompatible",
-				p2p_wps_method_str(dev->wps_method));
+			p2p_dbg(p2p, "We have wps_method=%s -> incompatible", p2p_wps_method_str(dev->wps_method));
 			status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 			goto fail;
 		}
@@ -1123,32 +1017,29 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 	case DEV_PW_P2PS_DEFAULT:
 		p2p_dbg(p2p, "P2P: Peer using P2PS default pin");
 		if (dev->wps_method != WPS_P2PS) {
-			p2p_dbg(p2p, "We have wps_method=%s -> incompatible",
-				p2p_wps_method_str(dev->wps_method));
+			p2p_dbg(p2p, "We have wps_method=%s -> incompatible", p2p_wps_method_str(dev->wps_method));
 			status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 			goto fail;
 		}
 		break;
 	default:
-		if (msg.dev_password_id &&
-		    msg.dev_password_id == dev->oob_pw_id) {
+		if (msg.dev_password_id && msg.dev_password_id == dev->oob_pw_id) {
 			p2p_dbg(p2p, "Peer using NFC");
 			if (dev->wps_method != WPS_NFC) {
-				p2p_dbg(p2p, "We have wps_method=%s -> incompatible",
-					p2p_wps_method_str(dev->wps_method));
+				p2p_dbg(p2p, "We have wps_method=%s -> incompatible", p2p_wps_method_str(dev->wps_method));
 				status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 				goto fail;
 			}
 			break;
 		}
-		p2p_dbg(p2p, "Unsupported Device Password ID %d",
-			msg.dev_password_id);
+		p2p_dbg(p2p, "Unsupported Device Password ID %d", msg.dev_password_id);
 		status = P2P_SC_FAIL_INCOMPATIBLE_PROV_METHOD;
 		goto fail;
 	}
 
-	if (go && p2p_go_select_channel(p2p, dev, &status) < 0)
+	if (go && p2p_go_select_channel(p2p, dev, &status) < 0) {
 		goto fail;
+	}
 
 	p2p_set_state(p2p, P2P_GO_NEG);
 	p2p_clear_timeout(p2p);
@@ -1159,54 +1050,49 @@ void p2p_process_go_neg_resp(struct p2p_data *p2p, const u8 *sa,
 fail:
 	/* Store GO Negotiation Confirmation to allow retransmission */
 	wpabuf_free(dev->go_neg_conf);
-	dev->go_neg_conf = p2p_build_go_neg_conf(p2p, dev, msg.dialog_token,
-						 status, msg.operating_channel,
-						 go);
+	dev->go_neg_conf = p2p_build_go_neg_conf(p2p, dev, msg.dialog_token, status, msg.operating_channel, go);
 	p2p_parse_free(&msg);
-	if (dev->go_neg_conf == NULL)
+	if (dev->go_neg_conf == NULL) {
 		return;
+	}
 	p2p_dbg(p2p, "Sending GO Negotiation Confirm");
 	if (status == P2P_SC_SUCCESS) {
 		p2p->pending_action_state = P2P_PENDING_GO_NEG_CONFIRM;
 		dev->go_state = go ? LOCAL_GO : REMOTE_GO;
-	} else
+	} else {
 		p2p->pending_action_state = P2P_NO_PENDING_ACTION;
-	if (rx_freq > 0)
+	}
+	if (rx_freq > 0) {
 		freq = rx_freq;
-	else
+	} else {
 		freq = dev->listen_freq;
+	}
 
 	dev->go_neg_conf_freq = freq;
 	dev->go_neg_conf_sent = 0;
 
-	if (p2p_send_action(p2p, freq, sa, p2p->cfg->dev_addr, sa,
-			    wpabuf_head(dev->go_neg_conf),
-			    wpabuf_len(dev->go_neg_conf), 200) < 0) {
+	if (p2p_send_action(p2p, freq, sa, p2p->cfg->dev_addr, sa, wpabuf_head(dev->go_neg_conf), wpabuf_len(dev->go_neg_conf), 200) < 0) {
 		p2p_dbg(p2p, "Failed to send Action frame");
 		p2p_go_neg_failed(p2p, -1);
 		p2p->cfg->send_action_done(p2p->cfg->cb_ctx);
-	} else
+	} else {
 		dev->go_neg_conf_sent++;
+	}
 	if (status != P2P_SC_SUCCESS) {
 		p2p_dbg(p2p, "GO Negotiation failed");
 		p2p_go_neg_failed(p2p, status);
 	}
 }
 
-
-void p2p_process_go_neg_conf(struct p2p_data *p2p, const u8 *sa,
-			     const u8 *data, size_t len)
+void p2p_process_go_neg_conf(struct p2p_data *p2p, const u8 *sa, const u8 *data, size_t len)
 {
 	struct p2p_device *dev;
 	struct p2p_message msg;
 
-	p2p_dbg(p2p, "Received GO Negotiation Confirm from " MACSTR,
-		MAC2STR(sa));
+	p2p_dbg(p2p, "Received GO Negotiation Confirm from " MACSTR, MAC2STR(sa));
 	dev = p2p_get_device(p2p, sa);
-	if (dev == NULL || dev->wps_method == WPS_NOT_READY ||
-	    dev != p2p->go_neg_peer) {
-		p2p_dbg(p2p, "Not ready for GO negotiation with " MACSTR,
-			MAC2STR(sa));
+	if (dev == NULL || dev->wps_method == WPS_NOT_READY || dev != p2p->go_neg_peer) {
+		p2p_dbg(p2p, "Not ready for GO negotiation with " MACSTR, MAC2STR(sa));
 		return;
 	}
 
@@ -1215,8 +1101,9 @@ void p2p_process_go_neg_conf(struct p2p_data *p2p, const u8 *sa,
 		p2p->pending_action_state = P2P_NO_PENDING_ACTION;
 	}
 
-	if (p2p_parse(data, len, &msg))
+	if (p2p_parse(data, len, &msg)) {
 		return;
+	}
 
 	if (!(dev->flags & P2P_DEV_WAIT_GO_NEG_CONFIRM)) {
 		p2p_dbg(p2p, "Was not expecting GO Negotiation Confirm - ignore");
@@ -1227,8 +1114,7 @@ void p2p_process_go_neg_conf(struct p2p_data *p2p, const u8 *sa,
 	p2p->cfg->send_action_done(p2p->cfg->cb_ctx);
 
 	if (msg.dialog_token != dev->dialog_token) {
-		p2p_dbg(p2p, "Unexpected Dialog Token %u (expected %u)",
-			msg.dialog_token, dev->dialog_token);
+		p2p_dbg(p2p, "Unexpected Dialog Token %u (expected %u)", msg.dialog_token, dev->dialog_token);
 		p2p_parse_free(&msg);
 		return;
 	}
@@ -1262,13 +1148,12 @@ void p2p_process_go_neg_conf(struct p2p_data *p2p, const u8 *sa,
 #ifdef CONFIG_P2P_STRICT
 		p2p_parse_free(&msg);
 		return;
-#endif /* CONFIG_P2P_STRICT */
+#endif							/* CONFIG_P2P_STRICT */
 	} else if (dev->go_state == REMOTE_GO) {
 		int oper_freq = p2p_channel_to_freq(msg.operating_channel[3],
-						    msg.operating_channel[4]);
+											msg.operating_channel[4]);
 		if (oper_freq != dev->oper_freq) {
-			p2p_dbg(p2p, "Updated peer (GO) operating channel preference from %d MHz to %d MHz",
-				dev->oper_freq, oper_freq);
+			p2p_dbg(p2p, "Updated peer (GO) operating channel preference from %d MHz to %d MHz", dev->oper_freq, oper_freq);
 			dev->oper_freq = oper_freq;
 		}
 	}
@@ -1278,7 +1163,7 @@ void p2p_process_go_neg_conf(struct p2p_data *p2p, const u8 *sa,
 #ifdef CONFIG_P2P_STRICT
 		p2p_parse_free(&msg);
 		return;
-#endif /* CONFIG_P2P_STRICT */
+#endif							/* CONFIG_P2P_STRICT */
 	}
 
 	p2p_parse_free(&msg);

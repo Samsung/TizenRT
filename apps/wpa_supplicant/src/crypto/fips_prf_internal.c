@@ -13,7 +13,6 @@
 #include "sha1_i.h"
 #include "crypto.h"
 
-
 int fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x, size_t xlen)
 {
 	u8 xkey[64];
@@ -22,10 +21,11 @@ int fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x, size_t xlen)
 	u8 *xpos = x;
 	u32 carry;
 
-	if (seed_len < sizeof(xkey))
+	if (seed_len < sizeof(xkey)) {
 		os_memset(xkey + seed_len, 0, sizeof(xkey) - seed_len);
-	else
+	} else {
 		seed_len = sizeof(xkey);
+	}
 
 	/* FIPS 186-2 + change notice 1 */
 

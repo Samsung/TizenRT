@@ -28,8 +28,8 @@ struct eap_pax_data {
 	union {
 		u8 e[2 * EAP_PAX_RAND_LEN];
 		struct {
-			u8 x[EAP_PAX_RAND_LEN]; /* server rand */
-			u8 y[EAP_PAX_RAND_LEN]; /* client rand */
+			u8 x[EAP_PAX_RAND_LEN];	/* server rand */
+			u8 y[EAP_PAX_RAND_LEN];	/* client rand */
 		} r;
 	} rand;
 	char *cid;
@@ -41,11 +41,9 @@ struct eap_pax_data {
 	u8 mid[EAP_PAX_MID_LEN];
 };
 
-
 static void eap_pax_deinit(struct eap_sm *sm, void *priv);
 
-
-static void * eap_pax_init(struct eap_sm *sm)
+static void *eap_pax_init(struct eap_sm *sm)
 {
 	struct eap_pax_data *data;
 	const u8 *identity, *password;
@@ -54,8 +52,7 @@ static void * eap_pax_init(struct eap_sm *sm)
 	identity = eap_get_config_identity(sm, &identity_len);
 	password = eap_get_config_password(sm, &password_len);
 	if (!identity || !password) {
-		wpa_printf(MSG_INFO, "EAP-PAX: CID (nai) or key (password) "
-			   "not configured");
+		wpa_printf(MSG_INFO, "EAP-PAX: CID (nai) or key (password) " "not configured");
 		return NULL;
 	}
 
@@ -65,8 +62,9 @@ static void * eap_pax_init(struct eap_sm *sm)
 	}
 
 	data = os_zalloc(sizeof(*data));
-	if (data == NULL)
+	if (data == NULL) {
 		return NULL;
+	}
 	data->state = PAX_INIT;
 
 	data->cid = os_malloc(identity_len);
@@ -82,7 +80,6 @@ static void * eap_pax_init(struct eap_sm *sm)
 	return data;
 }
 
-
 static void eap_pax_deinit(struct eap_sm *sm, void *priv)
 {
 	struct eap_pax_data *data = priv;
@@ -90,17 +87,15 @@ static void eap_pax_deinit(struct eap_sm *sm, void *priv)
 	bin_clear_free(data, sizeof(*data));
 }
 
-
-static struct wpabuf * eap_pax_alloc_resp(const struct eap_pax_hdr *req,
-					  u8 id, u8 op_code, size_t plen)
+static struct wpabuf *eap_pax_alloc_resp(const struct eap_pax_hdr *req, u8 id, u8 op_code, size_t plen)
 {
 	struct wpabuf *resp;
 	struct eap_pax_hdr *pax;
 
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_PAX,
-			     sizeof(*pax) + plen, EAP_CODE_RESPONSE, id);
-	if (resp == NULL)
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_PAX, sizeof(*pax) + plen, EAP_CODE_RESPONSE, id);
+	if (resp == NULL) {
 		return NULL;
+	}
 
 	pax = wpabuf_put(resp, sizeof(*pax));
 	pax->op_code = op_code;
@@ -112,11 +107,7 @@ static struct wpabuf * eap_pax_alloc_resp(const struct eap_pax_hdr *req,
 	return resp;
 }
 
-
-static struct wpabuf * eap_pax_process_std_1(struct eap_pax_data *data,
-					     struct eap_method_ret *ret, u8 id,
-					     const struct eap_pax_hdr *req,
-					     size_t req_plen)
+static struct wpabuf *eap_pax_process_std_1(struct eap_pax_data *data, struct eap_method_ret *ret, u8 id, const struct eap_pax_hdr *req, size_t req_plen)
 {
 	struct wpabuf *resp;
 	const u8 *pos;
@@ -126,15 +117,13 @@ static struct wpabuf * eap_pax_process_std_1(struct eap_pax_data *data,
 	wpa_printf(MSG_DEBUG, "EAP-PAX: PAX_STD-1 (received)");
 
 	if (data->state != PAX_INIT) {
-		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-1 received in "
-			   "unexpected state (%d) - ignored", data->state);
+		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-1 received in " "unexpected state (%d) - ignored", data->state);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
 	if (req->flags & EAP_PAX_FLAGS_CE) {
-		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-1 with CE flag set - "
-			   "ignored");
+		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-1 with CE flag set - " "ignored");
 		ret->ignore = TRUE;
 		return NULL;
 	}
@@ -142,17 +131,14 @@ static struct wpabuf * eap_pax_process_std_1(struct eap_pax_data *data,
 	left = req_plen - sizeof(*req);
 
 	if (left < 2 + EAP_PAX_RAND_LEN) {
-		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-1 with too short "
-			   "payload");
+		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-1 with too short " "payload");
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
-	pos = (const u8 *) (req + 1);
+	pos = (const u8 *)(req + 1);
 	if (WPA_GET_BE16(pos) != EAP_PAX_RAND_LEN) {
-		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-1 with incorrect A "
-			   "length %d (expected %d)",
-			   WPA_GET_BE16(pos), EAP_PAX_RAND_LEN);
+		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-1 with incorrect A " "length %d (expected %d)", WPA_GET_BE16(pos), EAP_PAX_RAND_LEN);
 		ret->ignore = TRUE;
 		return NULL;
 	}
@@ -160,14 +146,12 @@ static struct wpabuf * eap_pax_process_std_1(struct eap_pax_data *data,
 	pos += 2;
 	left -= 2;
 	os_memcpy(data->rand.r.x, pos, EAP_PAX_RAND_LEN);
-	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: X (server rand)",
-		    data->rand.r.x, EAP_PAX_RAND_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: X (server rand)", data->rand.r.x, EAP_PAX_RAND_LEN);
 	pos += EAP_PAX_RAND_LEN;
 	left -= EAP_PAX_RAND_LEN;
 
 	if (left > 0) {
-		wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: ignored extra payload",
-			    pos, left);
+		wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: ignored extra payload", pos, left);
 	}
 
 	if (random_get_bytes(data->rand.r.y, EAP_PAX_RAND_LEN)) {
@@ -175,49 +159,38 @@ static struct wpabuf * eap_pax_process_std_1(struct eap_pax_data *data,
 		ret->ignore = TRUE;
 		return NULL;
 	}
-	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: Y (client rand)",
-		    data->rand.r.y, EAP_PAX_RAND_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: Y (client rand)", data->rand.r.y, EAP_PAX_RAND_LEN);
 
-	if (eap_pax_initial_key_derivation(req->mac_id, data->ak, data->rand.e,
-					   data->mk, data->ck, data->ick,
-					   data->mid) < 0) {
+	if (eap_pax_initial_key_derivation(req->mac_id, data->ak, data->rand.e, data->mk, data->ck, data->ick, data->mid) < 0) {
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
 	wpa_printf(MSG_DEBUG, "EAP-PAX: PAX_STD-2 (sending)");
 
-	plen = 2 + EAP_PAX_RAND_LEN + 2 + data->cid_len + 2 + EAP_PAX_MAC_LEN +
-		EAP_PAX_ICV_LEN;
+	plen = 2 + EAP_PAX_RAND_LEN + 2 + data->cid_len + 2 + EAP_PAX_MAC_LEN + EAP_PAX_ICV_LEN;
 	resp = eap_pax_alloc_resp(req, id, EAP_PAX_OP_STD_2, plen);
-	if (resp == NULL)
+	if (resp == NULL) {
 		return NULL;
+	}
 
 	wpabuf_put_be16(resp, EAP_PAX_RAND_LEN);
 	wpabuf_put_data(resp, data->rand.r.y, EAP_PAX_RAND_LEN);
-	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: B = Y (client rand)",
-		    data->rand.r.y, EAP_PAX_RAND_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: B = Y (client rand)", data->rand.r.y, EAP_PAX_RAND_LEN);
 
 	wpabuf_put_be16(resp, data->cid_len);
 	wpabuf_put_data(resp, data->cid, data->cid_len);
-	wpa_hexdump_ascii(MSG_MSGDUMP, "EAP-PAX: CID",
-			  (u8 *) data->cid, data->cid_len);
+	wpa_hexdump_ascii(MSG_MSGDUMP, "EAP-PAX: CID", (u8 *)data->cid, data->cid_len);
 
 	wpabuf_put_be16(resp, EAP_PAX_MAC_LEN);
 	rpos = wpabuf_put(resp, EAP_PAX_MAC_LEN);
-	eap_pax_mac(req->mac_id, data->ck, EAP_PAX_CK_LEN,
-		    data->rand.r.x, EAP_PAX_RAND_LEN,
-		    data->rand.r.y, EAP_PAX_RAND_LEN,
-		    (u8 *) data->cid, data->cid_len, rpos);
-	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: MAC_CK(A, B, CID)",
-		    rpos, EAP_PAX_MAC_LEN);
+	eap_pax_mac(req->mac_id, data->ck, EAP_PAX_CK_LEN, data->rand.r.x, EAP_PAX_RAND_LEN, data->rand.r.y, EAP_PAX_RAND_LEN, (u8 *)data->cid, data->cid_len, rpos);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: MAC_CK(A, B, CID)", rpos, EAP_PAX_MAC_LEN);
 
 	/* Optional ADE could be added here, if needed */
 
 	rpos = wpabuf_put(resp, EAP_PAX_ICV_LEN);
-	eap_pax_mac(req->mac_id, data->ick, EAP_PAX_ICK_LEN,
-		    wpabuf_head(resp), wpabuf_len(resp) - EAP_PAX_ICV_LEN,
-		    NULL, 0, NULL, 0, rpos);
+	eap_pax_mac(req->mac_id, data->ick, EAP_PAX_ICK_LEN, wpabuf_head(resp), wpabuf_len(resp) - EAP_PAX_ICV_LEN, NULL, 0, NULL, 0, rpos);
 	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: ICV", rpos, EAP_PAX_ICV_LEN);
 
 	data->state = PAX_STD_2_SENT;
@@ -228,11 +201,7 @@ static struct wpabuf * eap_pax_process_std_1(struct eap_pax_data *data,
 	return resp;
 }
 
-
-static struct wpabuf * eap_pax_process_std_3(struct eap_pax_data *data,
-					     struct eap_method_ret *ret, u8 id,
-					     const struct eap_pax_hdr *req,
-					     size_t req_plen)
+static struct wpabuf *eap_pax_process_std_3(struct eap_pax_data *data, struct eap_method_ret *ret, u8 id, const struct eap_pax_hdr *req, size_t req_plen)
 {
 	struct wpabuf *resp;
 	u8 *rpos, mac[EAP_PAX_MAC_LEN];
@@ -242,15 +211,13 @@ static struct wpabuf * eap_pax_process_std_3(struct eap_pax_data *data,
 	wpa_printf(MSG_DEBUG, "EAP-PAX: PAX_STD-3 (received)");
 
 	if (data->state != PAX_STD_2_SENT) {
-		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-3 received in "
-			   "unexpected state (%d) - ignored", data->state);
+		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-3 received in " "unexpected state (%d) - ignored", data->state);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
 	if (req->flags & EAP_PAX_FLAGS_CE) {
-		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-3 with CE flag set - "
-			   "ignored");
+		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-3 with CE flag set - " "ignored");
 		ret->ignore = TRUE;
 		return NULL;
 	}
@@ -258,32 +225,24 @@ static struct wpabuf * eap_pax_process_std_3(struct eap_pax_data *data,
 	left = req_plen - sizeof(*req);
 
 	if (left < 2 + EAP_PAX_MAC_LEN) {
-		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-3 with too short "
-			   "payload");
+		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-3 with too short " "payload");
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
-	pos = (const u8 *) (req + 1);
+	pos = (const u8 *)(req + 1);
 	if (WPA_GET_BE16(pos) != EAP_PAX_MAC_LEN) {
-		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-3 with incorrect "
-			   "MAC_CK length %d (expected %d)",
-			   WPA_GET_BE16(pos), EAP_PAX_MAC_LEN);
+		wpa_printf(MSG_INFO, "EAP-PAX: PAX_STD-3 with incorrect " "MAC_CK length %d (expected %d)", WPA_GET_BE16(pos), EAP_PAX_MAC_LEN);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 	pos += 2;
 	left -= 2;
-	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: MAC_CK(B, CID)",
-		    pos, EAP_PAX_MAC_LEN);
-	eap_pax_mac(data->mac_id, data->ck, EAP_PAX_CK_LEN,
-		    data->rand.r.y, EAP_PAX_RAND_LEN,
-		    (u8 *) data->cid, data->cid_len, NULL, 0, mac);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: MAC_CK(B, CID)", pos, EAP_PAX_MAC_LEN);
+	eap_pax_mac(data->mac_id, data->ck, EAP_PAX_CK_LEN, data->rand.r.y, EAP_PAX_RAND_LEN, (u8 *)data->cid, data->cid_len, NULL, 0, mac);
 	if (os_memcmp_const(pos, mac, EAP_PAX_MAC_LEN) != 0) {
-		wpa_printf(MSG_INFO, "EAP-PAX: Invalid MAC_CK(B, CID) "
-			   "received");
-		wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: expected MAC_CK(B, CID)",
-			    mac, EAP_PAX_MAC_LEN);
+		wpa_printf(MSG_INFO, "EAP-PAX: Invalid MAC_CK(B, CID) " "received");
+		wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: expected MAC_CK(B, CID)", mac, EAP_PAX_MAC_LEN);
 		ret->methodState = METHOD_DONE;
 		ret->decision = DECISION_FAIL;
 		return NULL;
@@ -293,22 +252,20 @@ static struct wpabuf * eap_pax_process_std_3(struct eap_pax_data *data,
 	left -= EAP_PAX_MAC_LEN;
 
 	if (left > 0) {
-		wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: ignored extra payload",
-			    pos, left);
+		wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: ignored extra payload", pos, left);
 	}
 
 	wpa_printf(MSG_DEBUG, "EAP-PAX: PAX-ACK (sending)");
 
 	resp = eap_pax_alloc_resp(req, id, EAP_PAX_OP_ACK, EAP_PAX_ICV_LEN);
-	if (resp == NULL)
+	if (resp == NULL) {
 		return NULL;
+	}
 
 	/* Optional ADE could be added here, if needed */
 
 	rpos = wpabuf_put(resp, EAP_PAX_ICV_LEN);
-	eap_pax_mac(data->mac_id, data->ick, EAP_PAX_ICK_LEN,
-		    wpabuf_head(resp), wpabuf_len(resp) - EAP_PAX_ICV_LEN,
-		    NULL, 0, NULL, 0, rpos);
+	eap_pax_mac(data->mac_id, data->ick, EAP_PAX_ICK_LEN, wpabuf_head(resp), wpabuf_len(resp) - EAP_PAX_ICV_LEN, NULL, 0, NULL, 0, rpos);
 	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: ICV", rpos, EAP_PAX_ICV_LEN);
 
 	data->state = PAX_DONE;
@@ -319,10 +276,7 @@ static struct wpabuf * eap_pax_process_std_3(struct eap_pax_data *data,
 	return resp;
 }
 
-
-static struct wpabuf * eap_pax_process(struct eap_sm *sm, void *priv,
-				       struct eap_method_ret *ret,
-				       const struct wpabuf *reqData)
+static struct wpabuf *eap_pax_process(struct eap_sm *sm, void *priv, struct eap_method_ret *ret, const struct wpabuf *reqData)
 {
 	struct eap_pax_data *data = priv;
 	const struct eap_pax_hdr *req;
@@ -338,69 +292,53 @@ static struct wpabuf * eap_pax_process(struct eap_sm *sm, void *priv,
 		return NULL;
 	}
 	id = eap_get_id(reqData);
-	req = (const struct eap_pax_hdr *) pos;
+	req = (const struct eap_pax_hdr *)pos;
 	flen = len - EAP_PAX_ICV_LEN;
 	mlen = wpabuf_len(reqData) - EAP_PAX_ICV_LEN;
 
-	wpa_printf(MSG_DEBUG, "EAP-PAX: received frame: op_code 0x%x "
-		   "flags 0x%x mac_id 0x%x dh_group_id 0x%x "
-		   "public_key_id 0x%x",
-		   req->op_code, req->flags, req->mac_id, req->dh_group_id,
-		   req->public_key_id);
-	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: received payload",
-		    pos, len - EAP_PAX_ICV_LEN);
+	wpa_printf(MSG_DEBUG, "EAP-PAX: received frame: op_code 0x%x " "flags 0x%x mac_id 0x%x dh_group_id 0x%x " "public_key_id 0x%x", req->op_code, req->flags, req->mac_id, req->dh_group_id, req->public_key_id);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: received payload", pos, len - EAP_PAX_ICV_LEN);
 
 	if (data->state != PAX_INIT && data->mac_id != req->mac_id) {
-		wpa_printf(MSG_INFO, "EAP-PAX: MAC ID changed during "
-			   "authentication (was 0x%d, is 0x%d)",
-			   data->mac_id, req->mac_id);
+		wpa_printf(MSG_INFO, "EAP-PAX: MAC ID changed during " "authentication (was 0x%d, is 0x%d)", data->mac_id, req->mac_id);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
 	if (data->state != PAX_INIT && data->dh_group_id != req->dh_group_id) {
-		wpa_printf(MSG_INFO, "EAP-PAX: DH Group ID changed during "
-			   "authentication (was 0x%d, is 0x%d)",
-			   data->dh_group_id, req->dh_group_id);
+		wpa_printf(MSG_INFO, "EAP-PAX: DH Group ID changed during " "authentication (was 0x%d, is 0x%d)", data->dh_group_id, req->dh_group_id);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
-	if (data->state != PAX_INIT &&
-	    data->public_key_id != req->public_key_id) {
-		wpa_printf(MSG_INFO, "EAP-PAX: Public Key ID changed during "
-			   "authentication (was 0x%d, is 0x%d)",
-			   data->public_key_id, req->public_key_id);
+	if (data->state != PAX_INIT && data->public_key_id != req->public_key_id) {
+		wpa_printf(MSG_INFO, "EAP-PAX: Public Key ID changed during " "authentication (was 0x%d, is 0x%d)", data->public_key_id, req->public_key_id);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
 	/* TODO: add support EAP_PAX_HMAC_SHA256_128 */
 	if (req->mac_id != EAP_PAX_MAC_HMAC_SHA1_128) {
-		wpa_printf(MSG_INFO, "EAP-PAX: Unsupported MAC ID 0x%x",
-			   req->mac_id);
+		wpa_printf(MSG_INFO, "EAP-PAX: Unsupported MAC ID 0x%x", req->mac_id);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
 	if (req->dh_group_id != EAP_PAX_DH_GROUP_NONE) {
-		wpa_printf(MSG_INFO, "EAP-PAX: Unsupported DH Group ID 0x%x",
-			   req->dh_group_id);
+		wpa_printf(MSG_INFO, "EAP-PAX: Unsupported DH Group ID 0x%x", req->dh_group_id);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
 	if (req->public_key_id != EAP_PAX_PUBLIC_KEY_NONE) {
-		wpa_printf(MSG_INFO, "EAP-PAX: Unsupported Public Key ID 0x%x",
-			   req->public_key_id);
+		wpa_printf(MSG_INFO, "EAP-PAX: Unsupported Public Key ID 0x%x", req->public_key_id);
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
 	if (req->flags & EAP_PAX_FLAGS_MF) {
 		/* TODO: add support for reassembling fragments */
-		wpa_printf(MSG_INFO, "EAP-PAX: fragmentation not supported - "
-			   "ignored packet");
+		wpa_printf(MSG_INFO, "EAP-PAX: fragmentation not supported - " "ignored packet");
 		ret->ignore = TRUE;
 		return NULL;
 	}
@@ -408,19 +346,13 @@ static struct wpabuf * eap_pax_process(struct eap_sm *sm, void *priv,
 	icv = pos + len - EAP_PAX_ICV_LEN;
 	wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: ICV", icv, EAP_PAX_ICV_LEN);
 	if (req->op_code == EAP_PAX_OP_STD_1) {
-		eap_pax_mac(req->mac_id, (u8 *) "", 0,
-			    wpabuf_head(reqData), mlen, NULL, 0, NULL, 0,
-			    icvbuf);
+		eap_pax_mac(req->mac_id, (u8 *)"", 0, wpabuf_head(reqData), mlen, NULL, 0, NULL, 0, icvbuf);
 	} else {
-		eap_pax_mac(req->mac_id, data->ick, EAP_PAX_ICK_LEN,
-			    wpabuf_head(reqData), mlen, NULL, 0, NULL, 0,
-			    icvbuf);
+		eap_pax_mac(req->mac_id, data->ick, EAP_PAX_ICK_LEN, wpabuf_head(reqData), mlen, NULL, 0, NULL, 0, icvbuf);
 	}
 	if (os_memcmp_const(icv, icvbuf, EAP_PAX_ICV_LEN) != 0) {
-		wpa_printf(MSG_DEBUG, "EAP-PAX: invalid ICV - ignoring the "
-			   "message");
-		wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: expected ICV",
-			    icvbuf, EAP_PAX_ICV_LEN);
+		wpa_printf(MSG_DEBUG, "EAP-PAX: invalid ICV - ignoring the " "message");
+		wpa_hexdump(MSG_MSGDUMP, "EAP-PAX: expected ICV", icvbuf, EAP_PAX_ICV_LEN);
 		ret->ignore = TRUE;
 		return NULL;
 	}
@@ -438,8 +370,7 @@ static struct wpabuf * eap_pax_process(struct eap_sm *sm, void *priv,
 		resp = eap_pax_process_std_3(data, ret, id, req, flen);
 		break;
 	default:
-		wpa_printf(MSG_DEBUG, "EAP-PAX: ignoring message with unknown "
-			   "op_code %d", req->op_code);
+		wpa_printf(MSG_DEBUG, "EAP-PAX: ignoring message with unknown " "op_code %d", req->op_code);
 		ret->ignore = TRUE;
 		return NULL;
 	}
@@ -451,68 +382,65 @@ static struct wpabuf * eap_pax_process(struct eap_sm *sm, void *priv,
 	return resp;
 }
 
-
 static Boolean eap_pax_isKeyAvailable(struct eap_sm *sm, void *priv)
 {
 	struct eap_pax_data *data = priv;
 	return data->state == PAX_DONE;
 }
 
-
-static u8 * eap_pax_getKey(struct eap_sm *sm, void *priv, size_t *len)
+static u8 *eap_pax_getKey(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_pax_data *data = priv;
 	u8 *key;
 
-	if (data->state != PAX_DONE)
+	if (data->state != PAX_DONE) {
 		return NULL;
+	}
 
 	key = os_malloc(EAP_MSK_LEN);
-	if (key == NULL)
+	if (key == NULL) {
 		return NULL;
+	}
 
 	*len = EAP_MSK_LEN;
-	eap_pax_kdf(data->mac_id, data->mk, EAP_PAX_MK_LEN,
-		    "Master Session Key", data->rand.e, 2 * EAP_PAX_RAND_LEN,
-		    EAP_MSK_LEN, key);
+	eap_pax_kdf(data->mac_id, data->mk, EAP_PAX_MK_LEN, "Master Session Key", data->rand.e, 2 * EAP_PAX_RAND_LEN, EAP_MSK_LEN, key);
 
 	return key;
 }
 
-
-static u8 * eap_pax_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
+static u8 *eap_pax_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_pax_data *data = priv;
 	u8 *key;
 
-	if (data->state != PAX_DONE)
+	if (data->state != PAX_DONE) {
 		return NULL;
+	}
 
 	key = os_malloc(EAP_EMSK_LEN);
-	if (key == NULL)
+	if (key == NULL) {
 		return NULL;
+	}
 
 	*len = EAP_EMSK_LEN;
-	eap_pax_kdf(data->mac_id, data->mk, EAP_PAX_MK_LEN,
-		    "Extended Master Session Key",
-		    data->rand.e, 2 * EAP_PAX_RAND_LEN,
-		    EAP_EMSK_LEN, key);
+	eap_pax_kdf(data->mac_id, data->mk, EAP_PAX_MK_LEN, "Extended Master Session Key", data->rand.e, 2 * EAP_PAX_RAND_LEN, EAP_EMSK_LEN, key);
 
 	return key;
 }
 
-
-static u8 * eap_pax_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
+static u8 *eap_pax_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_pax_data *data = priv;
 	u8 *sid;
 
-	if (data->state != PAX_DONE)
+	if (data->state != PAX_DONE) {
 		return NULL;
+	}
 
 	sid = os_malloc(1 + EAP_PAX_MID_LEN);
-	if (sid == NULL)
+	if (sid == NULL) {
 		return NULL;
+	}
 
 	*len = 1 + EAP_PAX_MID_LEN;
 	sid[0] = EAP_TYPE_PAX;
@@ -521,16 +449,15 @@ static u8 * eap_pax_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
 	return sid;
 }
 
-
 int eap_peer_pax_register(void)
 {
 	struct eap_method *eap;
 	int ret;
 
-	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION,
-				    EAP_VENDOR_IETF, EAP_TYPE_PAX, "PAX");
-	if (eap == NULL)
+	eap = eap_peer_method_alloc(EAP_PEER_METHOD_INTERFACE_VERSION, EAP_VENDOR_IETF, EAP_TYPE_PAX, "PAX");
+	if (eap == NULL) {
 		return -1;
+	}
 
 	eap->init = eap_pax_init;
 	eap->deinit = eap_pax_deinit;
@@ -541,7 +468,8 @@ int eap_peer_pax_register(void)
 	eap->getSessionId = eap_pax_get_session_id;
 
 	ret = eap_peer_method_register(eap);
-	if (ret)
+	if (ret) {
 		eap_peer_method_free(eap);
+	}
 	return ret;
 }

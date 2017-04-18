@@ -49,9 +49,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-/****************************************************************************
- * Included Files
- ****************************************************************************/
 #ifndef __ARCH_ARM_SRC_S5J_S5J_VCLK_H__
 #define __ARCH_ARM_SRC_S5J_S5J_VCLK_H__
 
@@ -100,8 +97,8 @@ enum {
 	num_of_dfs = vclk_group_dfs_end - 0x0A070000,
 };
 
-#define S5J_DEFAULT_I2C_CLOCK	160*1000*1000
-#define S5J_DEFAULT_UART_CLOCK	26*1000*1000
+#define S5J_DEFAULT_I2C_CLOCK	(160 * 1000 * 1000)
+#define S5J_DEFAULT_UART_CLOCK	(26 * 1000 * 1000)
 
 #endif /* __ARCH_ARM_SRC_S5J_S5J_VCLK_H__ */
 

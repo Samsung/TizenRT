@@ -19,7 +19,7 @@ static struct sap_api sap_mlme = {
 	.sap_class = SAP_MLME,
 	.sap_version_supported = sap_mlme_version_supported,
 	.sap_handler = sap_mlme_rx_handler,
-	.sap_versions = { SUPPORTED_VERSION, SUPPORTED_OLD_VERSION },
+	.sap_versions = {SUPPORTED_VERSION, SUPPORTED_OLD_VERSION},
 };
 
 int sap_mlme_notifier(struct slsi_dev *sdev, unsigned long event)
@@ -28,12 +28,13 @@ int sap_mlme_notifier(struct slsi_dev *sdev, unsigned long event)
 	struct netdev_vif *ndev_vif;
 
 	SLSI_INFO_NODEV("Notifier event received %s\n", event ? "SCSC_WIFI_FAILURE_RESET" : "SCSC_WIFI_STOP");
-	if ((event != SCSC_WIFI_FAILURE_RESET) && (event != SCSC_WIFI_STOP))
+	if ((event != SCSC_WIFI_FAILURE_RESET) && (event != SCSC_WIFI_STOP)) {
 		return -EIO;
+	}
 
 	switch (event) {
 	case SCSC_WIFI_STOP:
-		/* Stop sending signals down*/
+		/* Stop sending signals down */
 		sdev->mlme_blocked = true;
 		SLSI_INFO_NODEV("MLME BLOCKED\n");
 
@@ -66,11 +67,12 @@ static int sap_mlme_version_supported(u16 version)
 #ifdef CONFIG_DEBUG
 	unsigned int minor = SAP_MINOR(version);
 #endif
-	u8           i = 0;
+	u8 i = 0;
 
 	for (i = 0; i < SAP_MAX_VER; i++)
-		if (sap_mlme.sap_versions[i] == major)
+		if (sap_mlme.sap_versions[i] == major) {
 			return 0;
+		}
 
 	pr_err("%s: Version %d.%d Not supported\n", __func__, major, minor);
 
@@ -133,12 +135,13 @@ static int slsi_rx_netdev_mlme(struct slsi_dev *sdev, struct netif *dev, struct 
 void slsi_rx_netdev_mlme_work(FAR void *arg)
 {
 	FAR struct slsi_mbuf_work *w = (FAR struct slsi_mbuf_work *)arg;
-	struct slsi_dev           *sdev = w->sdev;
-	struct netif              *dev = w->dev;
-	struct max_buff           *mbuf = slsi_mbuf_work_dequeue(w);
+	struct slsi_dev *sdev = w->sdev;
+	struct netif *dev = w->dev;
+	struct max_buff *mbuf = slsi_mbuf_work_dequeue(w);
 
-	if (WARN_ON(!dev))
+	if (WARN_ON(!dev)) {
 		return;
+	}
 
 	while (mbuf) {
 		slsi_rx_netdev_mlme(sdev, dev, mbuf);
@@ -148,7 +151,7 @@ void slsi_rx_netdev_mlme_work(FAR void *arg)
 
 int slsi_rx_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_buff *mbuf, u16 vif)
 {
-	struct netif      *dev;
+	struct netif *dev;
 	struct netdev_vif *ndev_vif;
 
 	dev = slsi_get_netdev(sdev, vif);
@@ -159,8 +162,7 @@ int slsi_rx_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_buff *mbuf, u1
 
 	ndev_vif = netdev_priv(dev);
 
-	if ((ndev_vif->is_fw_test) &&
-	    (fapi_get_sigid(mbuf) != MA_BLOCKACK_IND)) {
+	if ((ndev_vif->is_fw_test) && (fapi_get_sigid(mbuf) != MA_BLOCKACK_IND)) {
 		slsi_kfree_mbuf(mbuf);
 		return 0;
 	}
@@ -171,7 +173,7 @@ int slsi_rx_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_buff *mbuf, u1
 
 static int slsi_rx_action_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_buff *mbuf, u16 vif)
 {
-	struct netif      *dev;
+	struct netif *dev;
 	struct netdev_vif *ndev_vif;
 
 	dev = slsi_get_netdev(sdev, vif);
@@ -191,7 +193,7 @@ static int slsi_rx_action_enqueue_netdev_mlme(struct slsi_dev *sdev, struct max_
 		struct slsi_80211_mgmt *mgmt = fapi_get_mgmt(mbuf);
 		/*  Check the DA of received action frame with the GO interface address */
 		if (memcmp(mgmt->da, dev->dev_addr, ETH_ALEN) != 0) {
-			/* If not equal, compare DA of received action frame with the P2P DEV address*/
+			/* If not equal, compare DA of received action frame with the P2P DEV address */
 			struct netif *p2pdev = slsi_get_netdev(sdev, SLSI_NET_INDEX_P2P);
 
 			if (WARN_ON(!p2pdev)) {
@@ -232,8 +234,9 @@ static int sap_mlme_rx_handler(struct slsi_dev *sdev, struct max_buff *mbuf)
 	}
 #endif
 
-	if (slsi_rx_blocking_signals(sdev, mbuf) == 0)
+	if (slsi_rx_blocking_signals(sdev, mbuf) == 0) {
 		return 0;
+	}
 
 	if (fapi_is_ind(mbuf)) {
 		switch (fapi_get_sigid(mbuf)) {
@@ -241,10 +244,11 @@ static int sap_mlme_rx_handler(struct slsi_dev *sdev, struct max_buff *mbuf)
 			scan_id = fapi_get_u16(mbuf, u.mlme_scan_done_ind.scan_id);
 			return slsi_rx_enqueue_netdev_mlme(sdev, mbuf, (scan_id >> 8));
 		case MLME_SCAN_IND:
-			if (vif)
+			if (vif) {
 				return slsi_rx_enqueue_netdev_mlme(sdev, mbuf, vif);
+			}
 			scan_id = fapi_get_u16(mbuf, u.mlme_scan_ind.scan_id);
-			return slsi_rx_enqueue_netdev_mlme(sdev, mbuf,  (scan_id >> 8));
+			return slsi_rx_enqueue_netdev_mlme(sdev, mbuf, (scan_id >> 8));
 		case MLME_RECEIVED_FRAME_IND:
 			if (vif == 0) {
 				SLSI_WARN(sdev, "Received MLME_RECEIVED_FRAME_IND on VIF 0\n");
@@ -260,8 +264,9 @@ static int sap_mlme_rx_handler(struct slsi_dev *sdev, struct max_buff *mbuf)
 			}
 		}
 	}
-	if (WARN_ON(fapi_is_req(mbuf)))
+	if (WARN_ON(fapi_is_req(mbuf))) {
 		goto err;
+	}
 
 	if (slsi_is_test_mode_enabled()) {
 		slsi_kfree_mbuf(mbuf);

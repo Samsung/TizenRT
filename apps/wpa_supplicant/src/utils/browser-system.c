@@ -13,19 +13,15 @@
 #include "wps/http_server.h"
 #include "browser.h"
 
-
 struct browser_data {
 	int success;
 };
 
-
 static void browser_timeout(void *eloop_data, void *user_ctx)
 {
-	wpa_printf(MSG_INFO, "Timeout on waiting browser interaction to "
-		   "complete");
+	wpa_printf(MSG_INFO, "Timeout on waiting browser interaction to " "complete");
 	eloop_terminate();
 }
-
 
 static void http_req(void *ctx, struct http_request *req)
 {
@@ -48,8 +44,9 @@ static void http_req(void *ctx, struct http_request *req)
 	resp = wpabuf_alloc(1);
 	if (resp == NULL) {
 		http_request_deinit(req);
-		if (done)
+		if (done) {
 			eloop_terminate();
+		}
 		return;
 	}
 
@@ -60,7 +57,6 @@ static void http_req(void *ctx, struct http_request *req)
 
 	http_request_send_and_deinit(req, resp);
 }
-
 
 int hs20_web_browser(const char *url)
 {
@@ -98,7 +94,7 @@ int hs20_web_browser(const char *url)
 		char *argv[3];
 
 		argv[0] = "browser-system";
-		argv[1] = (void *) url;
+		argv[1] = (void *)url;
 		argv[2] = NULL;
 
 		execv("/usr/bin/x-www-browser", argv);

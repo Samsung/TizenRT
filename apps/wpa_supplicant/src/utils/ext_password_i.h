@@ -13,11 +13,11 @@
 
 struct ext_password_backend {
 	const char *name;
-	void * (*init)(const char *params);
+	void *(*init)(const char *params);
 	void (*deinit)(void *ctx);
-	struct wpabuf * (*get)(void *ctx, const char *name);
+	struct wpabuf *(*get)(void *ctx, const char *name);
 };
 
-struct wpabuf * ext_password_alloc(size_t len);
+struct wpabuf *ext_password_alloc(size_t len);
 
-#endif /* EXT_PASSWORD_I_H */
+#endif							/* EXT_PASSWORD_I_H */

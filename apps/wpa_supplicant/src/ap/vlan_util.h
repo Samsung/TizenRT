@@ -12,4 +12,4 @@
 int vlan_add(const char *if_name, int vid, const char *vlan_if_name);
 int vlan_rem(const char *if_name);
 
-#endif /* VLAN_UTIL_H */
+#endif							/* VLAN_UTIL_H */
