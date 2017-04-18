@@ -108,7 +108,22 @@ int mdnsd_stop(void);
  */
 int mdnsd_get_hostname(char *hostname_result);
 
-#endif							/* CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT */
+/**
+ * @brief mdnsd_register_service() register a service to expose through mDNS-SD.
+ *
+ * @param[in] instance instance name to expose
+ * @param[in] type type of service. e.g. _http._tcp.local
+ * @param[in] port port to which the service is reachable
+ * @param[in] hostname if NULL, use the hostname configured when starting the daemon,
+ *                     or use this parameter otherwise
+ * @param[in] txt text records to add to the service announcement. Can be NULL.
+ * @return On success, 0 is returned. On failure, a negative errno value is returned.
+ *
+ */
+int mdnsd_register_service(const char *instance, const char *type,
+				uint16_t port, const char *hostname, const char *txt[]);
+
+#endif /* CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT */
 
 /**
  * @brief mdnsd_resolve_hostname() gets ip address with the given hostname.
