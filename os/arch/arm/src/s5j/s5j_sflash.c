@@ -92,32 +92,6 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void s5j_sflash_set_gpio(void)
-{
-	int gpio_sf_clk;
-	int gpio_sf_cs, gpio_sf_si, gpio_sf_so, gpio_sf_wp, gpio_sf_hld;
-
-	gpio_sf_clk = s5j_gpio(GPP1, 0);
-	gpio_sf_cs  = s5j_gpio(GPP1, 1);
-	gpio_sf_si  = s5j_gpio(GPP1, 2);
-	gpio_sf_so  = s5j_gpio(GPP1, 3);
-	gpio_sf_wp  = s5j_gpio(GPP1, 4);
-	gpio_sf_hld = s5j_gpio(GPP1, 5);
-
-	gpio_cfg_pin(gpio_sf_clk, GPIO_FUNC(2));
-	gpio_cfg_pin(gpio_sf_cs, GPIO_FUNC(2));
-	gpio_cfg_pin(gpio_sf_si, GPIO_FUNC(2));
-	gpio_cfg_pin(gpio_sf_so, GPIO_FUNC(2));
-	gpio_cfg_pin(gpio_sf_wp, GPIO_FUNC(2));
-	gpio_cfg_pin(gpio_sf_hld, GPIO_FUNC(2));
-
-	gpio_set_pull(gpio_sf_clk, GPIO_PULL_UP);
-	gpio_set_pull(gpio_sf_cs, GPIO_PULL_UP);
-	gpio_set_pull(gpio_sf_si, GPIO_PULL_UP);
-	gpio_set_pull(gpio_sf_so, GPIO_PULL_UP);
-	gpio_set_pull(gpio_sf_wp, GPIO_PULL_UP);
-	gpio_set_pull(gpio_sf_hld, GPIO_PULL_UP);
-}
 
 /****************************************************************************
  * Public Functions
@@ -264,9 +238,6 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
  */
 void s5j_sflash_init(void)
 {
-	/* Set mix i/o to be FLASH signal, CLK/CS/SI/SO/WP/HOLD */
-	s5j_sflash_set_gpio();
-
 	putreg32(0x8010001A, rSF_CON);			/* disable WP */
 	putreg32(0x8, rFLASH_PERF_MODE);		/* FLASH_PERF_MODE */
 	putreg32(0x4, rFLASH_IO_MODE);			/* QUAD */
