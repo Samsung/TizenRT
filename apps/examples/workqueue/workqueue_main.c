@@ -35,44 +35,36 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static int wq_test1(FAR void *arg)
+static void wq_test1(FAR void *arg)
 {
 	systime_t cur_time = 0;
 	cur_time = clock_systimer();
 
 	printf("test1 is excuted at (%d) ticks\n", cur_time);
-
-	return 0;
 }
 
-static int wq_test2(FAR void *arg)
+static void wq_test2(FAR void *arg)
 {
 	systime_t cur_time = 0;
 	cur_time = clock_systimer();
 
 	printf("test2 is excuted at (%d) ticks\n", cur_time);
-
-	return 0;
 }
 
-static int wq_test3(FAR void *arg)
+static void wq_test3(FAR void *arg)
 {
 	systime_t cur_time = 0;
 	cur_time = clock_systimer();
 
 	printf("test3 is excuted at (%d) ticks\n", cur_time);
-
-	return 0;
 }
 
-static int wq_test4(FAR void *arg)
+static void wq_test4(FAR void *arg)
 {
 	systime_t cur_time = 0;
 	cur_time = clock_systimer();
 
 	printf("test4 is excuted at (%d) ticks\n", cur_time);
-
-	return 0;
 }
 
 /****************************************************************************
