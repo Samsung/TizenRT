@@ -146,9 +146,7 @@ static void fscmd_free(FAR char *path)
  ****************************************************************************/
 static int tash_cat(int argc, char **args)
 {
-	const char *srcpath;
 	char *src_fullpath = NULL;
-	const char *dest_path = NULL;
 	char *dest_fullpath = NULL;
 	char fscmd_buffer[FSCMD_BUFFER_LEN];
 	redirection_t direction;
@@ -183,9 +181,11 @@ static int tash_cat(int argc, char **args)
 			FSCMD_OUTPUT(INVALID_ARGS, " : [> or >>] [file] [contents]\n", args[0]);
 			return 0;
 		}
-		srcpath = args[1];
-		if (srcpath) {
-			src_fullpath = get_fullpath(srcpath);
+
+		src_fullpath = get_fullpath(args[1]);
+		if (!src_fullpath) {
+			FSCMD_OUTPUT(OUT_OF_MEMORY, args[1]);
+			return 0;
 		}
 
 		fd = open(src_fullpath, O_RDONLY);
@@ -205,29 +205,7 @@ static int tash_cat(int argc, char **args)
 		FSCMD_OUTPUT("\n");
 		close(fd);
 	} else if (argc == 4) {
-		/* below is redirection case */
-		if (direction.index == 2) {
-			srcpath = args[1];
-			dest_path = args[3];
-			if (strcmp(srcpath, dest_path) == 0) {
-				FSCMD_OUTPUT(INVALID_ARGS, "Same File name", args[1]);
-
-				return 0;
-			}
-		} else if (direction.index == 1) {
-			srcpath = args[2];
-		} else {
-			FSCMD_OUTPUT(INVALID_ARGS, " : [> or >>] [file] [contents]\n", args[0]);
-
-			return 0;
-		}
-		if (srcpath) {
-			src_fullpath = get_fullpath(srcpath);
-		}
-
-		if (dest_path) {
-			dest_fullpath = get_fullpath(dest_path);
-		}
+		/* Below is redirection case */
 		flags = O_WRONLY | O_CREAT;
 		if (direction.mode == FSCMD_TRUNCATE) {
 			flags |= O_TRUNC;
@@ -236,7 +214,14 @@ static int tash_cat(int argc, char **args)
 		}
 
 		if (direction.index == 1) {
-			/* cat <redirection> <filepath> <contents> */
+			/* copy input contents to target file
+			 * cat <redirection> <filepath> <contents> */
+			src_fullpath = get_fullpath(args[2]);
+			if (!src_fullpath) {
+				FSCMD_OUTPUT(OUT_OF_MEMORY, args[2]);
+				return 0;
+			}
+
 			fd = open(src_fullpath, flags);
 			if (fd < 0) {
 				FSCMD_OUTPUT(CMD_FAILED, "open", src_fullpath);
@@ -250,20 +235,36 @@ static int tash_cat(int argc, char **args)
 				goto error;
 			}
 			close(fd);
-		} else {
-			/*
-			 * copy contents from source file to target file
-			 * cat <filepath> <redirection> <filepath>
-			 */
+		} else if (direction.index == 2) {
+			/* copy contents from source file to target file
+			 * cat <source filepath> <redirection> <target filepath> */
+			if (strcmp(args[1], args[3]) == 0) {
+				FSCMD_OUTPUT(INVALID_ARGS, "Same File name", args[1]);
+				return 0;
+			}
+
+			src_fullpath = get_fullpath(args[1]);
+			if (!src_fullpath) {
+				FSCMD_OUTPUT(OUT_OF_MEMORY, args[1]);
+				return 0;
+			}
+
 			fd = open(src_fullpath, O_RDONLY);
 			if (fd < 0) {
 				FSCMD_OUTPUT(CMD_FAILED, "open", src_fullpath);
 				goto error;
 			}
 
+			dest_fullpath = get_fullpath(args[3]);
+			if (!dest_fullpath) {
+				FSCMD_OUTPUT(OUT_OF_MEMORY, args[3]);
+				close(fd);
+				goto error;
+			}
+
 			destfd = open(dest_fullpath, flags);
 			if (destfd < 0) {
-				FSCMD_OUTPUT(CMD_FAILED, "open", src_fullpath);
+				FSCMD_OUTPUT(CMD_FAILED, "open", dest_fullpath);
 				close(fd);
 				goto error;
 			}
@@ -277,6 +278,9 @@ static int tash_cat(int argc, char **args)
 
 			close(fd);
 			close(destfd);
+		} else {
+			FSCMD_OUTPUT(INVALID_ARGS, " : [> or >>] [file] [contents]\n", args[0]);
+			return 0;
 		}
 	} else {
 		/* Wrong case */
