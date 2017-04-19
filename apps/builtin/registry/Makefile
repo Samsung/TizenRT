@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016-2017 Samsung Electronics All Rights Reserved.
+# Copyright 2016 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# apps/Make.defs
-# Common make definitions provided to all applications
+# apps/builtin/registry/Makefile
 #
-#   Copyright (C) 2011, 2014, 2016 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,32 +50,31 @@
 #
 ############################################################################
 
-# Builtin Registration
+-include $(TOPDIR)/Make.defs
+include $(APPDIR)/Make.defs
 
-BUILTIN_REGISTRY = $(APPDIR)$(DELIM)builtin$(DELIM)registry
+# NSH Library
 
-DEPCONFIG = $(TOPDIR)$(DELIM).config
+all:
+.PHONY: context depend clean distclean
 
-ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-define REGISTER
-	$(Q) echo Register: $1
-	$(Q) echo { "$1", $2, $3 }, > "$(BUILTIN_REGISTRY)$(DELIM)$2.bdat"
-	$(Q) echo int $2(int argc, char *argv[]); > "$(BUILTIN_REGISTRY)$(DELIM)$2.pdat"
-	$(Q) touch $(BUILTIN_REGISTRY)$(DELIM).updated"
-endef
-else
-define REGISTER
-	$(Q) echo "Register: $1"
-	$(Q) echo "{ \"$1\", $2, $3 }," > "$(BUILTIN_REGISTRY)$(DELIM)$2.bdat"
-	$(Q) echo "int $2(int argc, char *argv[]);" > "$(BUILTIN_REGISTRY)$(DELIM)$2.pdat"
-	$(Q) touch "$(BUILTIN_REGISTRY)$(DELIM).updated"
-endef
-endif
+.updated: $(DEPCONFIG)
+	$(call DELFILE, *.bdat)
+	$(call DELFILE, *.pdat)
+	$(Q) touch .updated
 
-# Tools
+# This must run before any other context target
 
-ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  MKKCONFIG = $(APPDIR)\tools\mkkconfig.bat
-else
-  MKKCONFIG = $(APPDIR)/tools/mkkconfig.sh
-endif
+install:
+
+context: .updated
+
+depend:
+
+clean:
+	$(call CLEAN)
+
+distclean: clean
+	$(call DELFILE, *.bdat)
+	$(call DELFILE, *.pdat)
+	$(call DELFILE, .updated)
