@@ -437,6 +437,7 @@ void observe_step(lwm2m_context_t * contextP,
                   time_t * timeoutP)
 {
     lwm2m_observed_t * targetP;
+    coap_protocol_t proto = contextP->protocol;
 
     LOG("Entering");
     for (targetP = contextP->observedList ; targetP != NULL ; targetP = targetP->next)
@@ -652,7 +653,7 @@ void observe_step(lwm2m_context_t * contextP,
                                 break;
                             }
                         }
-                        coap_init_message(message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
+                        coap_init_message(message, proto, COAP_TYPE_NON, COAP_205_CONTENT, 0);
                         coap_set_header_content_type(message, format);
                         coap_set_payload(message, buffer, length);
                     }
@@ -864,7 +865,7 @@ int lwm2m_observe(lwm2m_context_t * contextP,
     token[2] = observationP->id >> 8;
     token[3] = observationP->id & 0xFF;
 
-    transactionP = transaction_new(clientP->sessionH, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, token);
+    transactionP = transaction_new(clientP->sessionH, contextP->protocol, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, token);
     if (transactionP == NULL)
     {
         lwm2m_free(observationP);
@@ -909,7 +910,7 @@ int lwm2m_observe_cancel(lwm2m_context_t * contextP,
         lwm2m_transaction_t * transactionP;
         cancellation_data_t * cancelP;
 
-        transactionP = transaction_new(clientP->sessionH, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 0, NULL);
+        transactionP = transaction_new(clientP->sessionH, contextP->protocol, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 0, NULL);
         if (transactionP == NULL)
         {
             return COAP_500_INTERNAL_SERVER_ERROR;
@@ -960,6 +961,8 @@ bool observe_handleNotify(lwm2m_context_t * contextP,
     lwm2m_observation_t * observationP;
     uint32_t count;
 
+    coap_protocol_t proto = contextP->protocol;
+
     LOG("Entering");
     token_len = coap_get_header_token(message, (const uint8_t **)&tokenP);
     if (token_len != sizeof(uint32_t)) return false;
@@ -975,13 +978,13 @@ bool observe_handleNotify(lwm2m_context_t * contextP,
     observationP = (lwm2m_observation_t *)lwm2m_list_find((lwm2m_list_t *)clientP->observationList, obsID);
     if (observationP == NULL)
     {
-        coap_init_message(response, COAP_TYPE_RST, 0, message->mid);
+        coap_init_message(response, proto, COAP_TYPE_RST, 0, message->mid);
         message_send(contextP, response, fromSessionH);
     }
     else
     {
         if (message->type == COAP_TYPE_CON ) {
-            coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
+            coap_init_message(response, proto, COAP_TYPE_ACK, 0, message->mid);
             message_send(contextP, response, fromSessionH);
         }
         observationP->callback(clientID,

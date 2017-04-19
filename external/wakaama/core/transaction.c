@@ -142,6 +142,7 @@ static int prv_checkFinished(lwm2m_transaction_t * transacP,
 }
 
 lwm2m_transaction_t * transaction_new(void * sessionH,
+                                      coap_protocol_t proto,
                                       coap_method_t method,
                                       char * altPath,
                                       lwm2m_uri_t * uriP,
@@ -167,7 +168,7 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
     transacP->message = lwm2m_malloc(sizeof(coap_packet_t));
     if (NULL == transacP->message) goto error;
 
-    coap_init_message(transacP->message, COAP_TYPE_CON, method, mID);
+    coap_init_message(transacP->message, proto, COAP_TYPE_CON, method, mID);
 
     transacP->peerH = sessionH;
 
@@ -262,6 +263,8 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
     bool reset = false;
     lwm2m_transaction_t * transacP;
 
+    coap_protocol_t proto = contextP->protocol;
+
     LOG("Entering");
     transacP = contextP->transactionList;
 
@@ -291,7 +294,7 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
                 {
                     if (COAP_TYPE_CON == message->type && NULL != response)
                     {
-                        coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
+                        coap_init_message(response, proto, COAP_TYPE_ACK, 0, message->mid);
                         message_send(contextP, response, fromSessionH);
                     }
                 
@@ -383,7 +386,7 @@ int transaction_send(lwm2m_context_t * contextP,
 
         if (COAP_MAX_RETRANSMIT + 1 >= transacP->retrans_counter)
         {
-            (void)lwm2m_buffer_send(transacP->peerH, transacP->buffer, transacP->buffer_len, contextP->userData);
+            (void)lwm2m_buffer_send(transacP->peerH, transacP->buffer, transacP->buffer_len, contextP->userData, contextP->protocol);
 
             transacP->retrans_time += timeout;
             transacP->retrans_counter += 1;

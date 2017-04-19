@@ -542,7 +542,8 @@ void connection_free(dtls_connection_t * connList)
     dtlsContext = NULL;
 }
 
-int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
+int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length, coap_protocol_t proto)
+{
     if (connP->dtlsSession == NULL) {
         // no security
         if ( 0 != send_data(connP, buffer, length)) {
@@ -612,7 +613,8 @@ int connection_rehandshake(dtls_connection_t *connP, bool sendCloseNotify) {
 uint8_t lwm2m_buffer_send(void * sessionH,
                           uint8_t * buffer,
                           size_t length,
-                          void * userdata)
+                          void * userdata,
+                          coap_protocol_t proto)
 {
     dtls_connection_t * connP = (dtls_connection_t*) sessionH;
 
@@ -622,7 +624,7 @@ uint8_t lwm2m_buffer_send(void * sessionH,
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 
-    if (-1 == connection_send(connP, buffer, length))
+    if (-1 == connection_send(connP, buffer, length, proto))
     {
         fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;

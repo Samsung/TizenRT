@@ -62,6 +62,8 @@ extern "C" {
 #include <stdbool.h>
 #include <time.h>
 
+#include "er-coap-13/er-coap-13.h"
+
 #ifdef LWM2M_SERVER_MODE
 #ifndef LWM2M_SUPPORT_JSON
 #define LWM2M_SUPPORT_JSON
@@ -124,7 +126,8 @@ void lwm2m_close_connection(void * sessionH, void * userData);
 // sessionH: session handle identifying the peer (opaque to the core)
 // buffer, length: data to send
 // userData: parameter to lwm2m_init()
-uint8_t lwm2m_buffer_send(void * sessionH, uint8_t * buffer, size_t length, void * userData);
+// proto : parameter from lwm2m_init2(), to identifying type of protocol in er-coap
+uint8_t lwm2m_buffer_send(void * sessionH, uint8_t * buffer, size_t length, void * userData, coap_protocol_t proto);
 // Compare two session handles
 // Returns true if the two sessions identify the same peer. false otherwise.
 // userData: parameter to lwm2m_init()
@@ -667,11 +670,14 @@ typedef struct
     uint16_t                nextMID;
     lwm2m_transaction_t *   transactionList;
     void *                  userData;
+    coap_protocol_t         protocol; /**/
 } lwm2m_context_t;
 
 
 // initialize a liblwm2m context.
 lwm2m_context_t * lwm2m_init(void * userData);
+// initialize a liblwm2m context with protocol
+lwm2m_context_t * lwm2m_init2(void * userData, coap_protocol_t proto);
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
 

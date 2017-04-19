@@ -229,7 +229,8 @@ void connection_free(connection_t * connList)
 
 int connection_send(connection_t *connP,
                     uint8_t * buffer,
-                    size_t length)
+                    size_t length,
+                    coap_protocol_t proto)
 {
     int nbSent;
     size_t offset;
@@ -300,7 +301,8 @@ int connection_send(connection_t *connP,
 uint8_t lwm2m_buffer_send(void * sessionH,
                           uint8_t * buffer,
                           size_t length,
-                          void * userdata)
+                          void * userdata,
+                          coap_protocol_t proto)
 {
     connection_t * connP = (connection_t*) sessionH;
 
@@ -310,7 +312,7 @@ uint8_t lwm2m_buffer_send(void * sessionH,
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 
-    if (-1 == connection_send(connP, buffer, length))
+    if (-1 == connection_send(connP, buffer, length, proto))
     {
         fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;

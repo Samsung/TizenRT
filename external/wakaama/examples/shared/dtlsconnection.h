@@ -65,7 +65,7 @@ dtls_connection_t * connection_create(dtls_connection_t * connList, int sock, lw
 
 void connection_free(dtls_connection_t * connList);
 
-int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length);
+int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length, coap_protocol_t proto);
 int connection_handle_packet(dtls_connection_t *connP, uint8_t * buffer, size_t length);
 
 // rehandshake a connection, useful when your NAT timed out and your client has a new IP/PORT

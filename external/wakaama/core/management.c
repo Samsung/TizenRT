@@ -425,7 +425,7 @@ static int prv_makeOperation(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-    transaction = transaction_new(clientP->sessionH, method, clientP->altPath, uriP, contextP->nextMID++, 4, NULL);
+    transaction = transaction_new(clientP->sessionH, contextP->protocol, method, clientP->altPath, uriP, contextP->nextMID++, 4, NULL);
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     if (method == COAP_GET)
@@ -617,7 +617,7 @@ int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-    transaction = transaction_new(clientP->sessionH, COAP_PUT, clientP->altPath, uriP, contextP->nextMID++, 4, NULL);
+    transaction = transaction_new(clientP->sessionH, contextP->protocol, COAP_PUT, clientP->altPath, uriP, contextP->nextMID++, 4, NULL);
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     if (callback != NULL)
@@ -747,7 +747,7 @@ int lwm2m_dm_discover(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-    transaction = transaction_new(clientP->sessionH, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, NULL);
+    transaction = transaction_new(clientP->sessionH, contextP->protocol, COAP_GET, clientP->altPath, uriP, contextP->nextMID++, 4, NULL);
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_accept(transaction->message, LWM2M_CONTENT_LINK);
