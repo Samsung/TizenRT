@@ -120,7 +120,7 @@ int sem_wait(FAR sem_t *sem)
 
 	/* This API should not be called from interrupt handlers */
 
-	DEBUGASSERT(up_interrupt_context() == false);
+	DEBUGASSERT(sem != NULL && up_interrupt_context() == false);
 
 	/* Assume any errors reported are due to invalid arguments. */
 	set_errno(EINVAL);
@@ -143,7 +143,7 @@ int sem_wait(FAR sem_t *sem)
 	}
 
 	/* Make sure we were supplied with a valid semaphore */
-	if (sem) {
+  	if (sem != NULL) {
 
 		/* Check if the lock is available */
 
