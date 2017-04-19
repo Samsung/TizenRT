@@ -289,9 +289,7 @@ static void ntpc_settime(FAR uint8_t *timestamp)
 	tp.tv_nsec = nsec;
 	clock_settime(CLOCK_REALTIME, &tp);
 
-	if (g_debug) {
-		ndbg("Set time to %lu seconds\n", (unsigned long)tp.tv_sec);
-	}
+	ndbg("Set time to %lu seconds\n", (unsigned long)tp.tv_sec);
 }
 
 /****************************************************************************
@@ -392,9 +390,7 @@ static int ntpc_daemon(int argc, char **argv)
 
 			int errval = errno;
 			if (errval != EINTR) {
-				if (g_debug) {
-					ndbg("ERROR: sendto() failed (errno: %d)\n", errval);
-				}
+				ndbg("ERROR: sendto() failed (errno: %d)\n", errval);
 			}
 
 			/* Go back to the top of the loop if we were interrupted
@@ -448,6 +444,7 @@ static int ntpc_daemon(int argc, char **argv)
 
 			int errval = errno;
 			if (errval != EINTR) {
+				ndbg("ERROR: recvfrom() failed (errno: %d)\n", errval);
 				if (g_debug) {
 					ndbg("ntp client cannot receive time information from ntp server.\n");
 					ndbg("maybe, ntp server is not connected.\n");
