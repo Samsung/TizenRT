@@ -3425,17 +3425,18 @@ int8_t WiFiFreeScanResults(slsi_scan_info_t **scan_results)
 
 int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_network_link_callback_t link_down)
 {
-	ENTER_CRITICAL;
 	int8_t result = SLSI_STATUS_ERROR;
 	slsi_reason_t reason;
 	memset(&reason, 0, sizeof(slsi_reason_t));
 	//
+	ENTER_CRITICAL;
 	g_link_up = link_up;
 	g_link_down = link_down;
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 	g_recovery_data.link_up = link_up;
 	g_recovery_data.link_down = link_down;
 #endif
+	LEAVE_CRITICAL;
 	if (g_running) {
 		result = slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
 		if (result == SLSI_STATUS_SUCCESS) {
@@ -3448,7 +3449,6 @@ int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_netwo
 	} else {
 		result = SLSI_STATUS_SUCCESS;
 	}
-	LEAVE_CRITICAL;
 	return result;
 }
 
