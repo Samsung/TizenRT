@@ -87,7 +87,7 @@
 
 #define COAP_MAX_PACKET_SIZE  (COAP_MAX_HEADER_SIZE + REST_MAX_CHUNK_SIZE)
 /*                                        0/14          48 for IPv6 (28 for IPv4) */
-
+#define COAP_MAX_URI_PREFIX_SIZE 16
 
 /* Bitmap for set options */
 enum { OPTION_MAP_SIZE = sizeof(uint8_t) * 8 };
@@ -97,6 +97,15 @@ enum { OPTION_MAP_SIZE = sizeof(uint8_t) * 8 };
 #ifndef MIN
 #define MIN(a, b) ((a) < (b)? (a) : (b))
 #endif /* MIN */
+
+/* CoAP protocols */
+typedef enum {
+  COAP_UDP = 0,
+  COAP_UDP_DTLS,
+  COAP_TCP,
+  COAP_TCP_TLS,
+  COAP_PROTOCOL_MAX
+} coap_protocol_t;
 
 /* CoAP message types */
 typedef enum {

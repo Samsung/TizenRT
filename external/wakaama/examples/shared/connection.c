@@ -11,6 +11,7 @@
  *    http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
+ *    Gregory Lemercier, Samsung Semiconductor - support for TCP/TLS
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Pascal Rieux - Please refer to git log
  *    
@@ -24,7 +25,7 @@
 // from commandline.c
 void output_buffer(FILE * stream, uint8_t * buffer, int length, int indent);
 
-int create_socket(const char * portStr, int addressFamily)
+int create_socket(coap_protocol_t protocol, const char * portStr, int addressFamily)
 {
     int s = -1;
     struct addrinfo hints;
@@ -33,7 +34,20 @@ int create_socket(const char * portStr, int addressFamily)
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = addressFamily;
-    hints.ai_socktype = SOCK_DGRAM;
+    switch(protocol)
+    {
+    case COAP_TCP:
+    case COAP_TCP_TLS:
+        hints.ai_socktype = SOCK_STREAM;
+        break;
+    case COAP_UDP:
+    case COAP_UDP_DTLS:
+        hints.ai_socktype = SOCK_DGRAM;
+        break;
+    default:
+        break;
+    }
+
     hints.ai_flags = AI_PASSIVE;
 
     if (0 != getaddrinfo(NULL, portStr, &hints, &res))
@@ -98,7 +112,8 @@ connection_t * connection_new_incoming(connection_t * connList,
     return connP;
 }
 
-connection_t * connection_create(connection_t * connList,
+connection_t * connection_create(coap_protocol_t protocol,
+                                 connection_t * connList,
                                  int sock,
                                  char * host,
                                  char * port,
@@ -114,7 +129,20 @@ connection_t * connection_create(connection_t * connList,
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = addressFamily;
-    hints.ai_socktype = SOCK_DGRAM;
+
+    switch(protocol)
+    {
+    case COAP_TCP:
+    case COAP_TCP_TLS:
+        hints.ai_socktype = SOCK_STREAM;
+        break;
+    case COAP_UDP:
+    case COAP_UDP_DTLS:
+        hints.ai_socktype = SOCK_DGRAM;
+        break;
+    default:
+        break;
+    }
 
     if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return NULL;
 
@@ -139,7 +167,25 @@ connection_t * connection_create(connection_t * connList,
     }
     if (s >= 0)
     {
+        if (protocol != COAP_UDP)
+        {
+            if (connect(sock, sa, sl) < 0)
+            {
+                fprintf(stderr, "Failed to connect to socket: %s\n", strerror(errno));
+                close(sock);
+                return NULL;
+            }
+        }
         connP = connection_new_incoming(connList, sock, sa, sl);
+        if ((protocol == COAP_TCP_TLS) ||
+            (protocol == COAP_UDP_DTLS))
+        {
+            /* ToDo : add TLS init routine : if (!ssl_init(connP)) */
+            {
+                fprintf(stderr, "Failed to initialize TLS session\n");
+                goto error;
+            }
+        }
         close(s);
     }
     if (NULL != servinfo) {
@@ -155,6 +201,21 @@ connection_t * connection_create(connection_t * connList,
     }
 
     return connP;
+error:
+    if (NULL != servinfo)
+#ifdef CONFIG_NET_LWIP
+        freeaddrinfo(servinfo);
+#else
+        free(servinfo);
+#endif
+
+    if (connP)
+    {
+        free(connP);
+        connP = NULL;
+    }
+
+    return NULL;
 }
 
 void connection_free(connection_t * connList)
@@ -204,8 +265,37 @@ int connection_send(connection_t *connP,
     offset = 0;
     while (offset != length)
     {
-        nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
-        if (nbSent == -1) return -1;
+        nbSent = 0;
+        switch(proto)
+        {
+        case COAP_UDP_DTLS:
+        case COAP_TCP_TLS:
+            /* ToDo : need to use mbed TLS Send API
+			nbSent = SSL_write(connP->ssl, buffer + offset, length - offset); 
+            if (nbSent < 1) {
+                fprintf(stderr, "mbed TLS Send error: %s\n", ERR_error_string(SSL_get_error(connP->ssl, nbSent), NULL));
+                return -1;
+            }
+            */
+            break;
+        case COAP_TCP:
+            nbSent = send(connP->sock, buffer + offset, length - offset, 0);
+            if (nbSent == -1) {
+                fprintf(stderr, "Send error: %s\n", strerror(errno));
+                return -1;
+            }
+            break;
+        case COAP_UDP:
+            nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
+            if (nbSent == -1) {
+                fprintf(stderr, "Send error: %s\n", strerror(errno));
+                return -1;
+            }
+            break;
+        default:
+            break;
+        }
+
         offset += nbSent;
     }
     return 0;
@@ -238,4 +328,31 @@ bool lwm2m_session_is_equal(void * session1,
                             void * userData)
 {
     return (session1 == session2);
+}
+
+int connection_read(coap_protocol_t protocol,
+                    int sock,
+                    uint8_t *buffer,
+                    size_t len,
+                    struct sockaddr_storage *from,
+                    socklen_t *fromLen)
+{
+    int numBytes = -1;
+
+    switch(protocol) {
+        case COAP_UDP:
+            numBytes = recvfrom(sock, buffer, len, 0, (struct sockaddr *)from, fromLen);
+            break;
+        case COAP_TCP:
+            numBytes = recv(sock, buffer, len, 0);
+            break;
+        case COAP_TCP_TLS:
+        case COAP_UDP_DTLS:
+            /* TODO : mbed TLS API should be needed */
+            break;
+        default:
+            fprintf(stderr, "connection_read : unsupported protocol type : %d\n", protocol);
+            break;
+    }
+    return numBytes;
 }

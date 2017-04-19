@@ -86,7 +86,7 @@
 
 #define MAX_PACKET_SIZE 1024
 #define DEFAULT_SERVER_IPV6 "[::1]"
-#define DEFAULT_SERVER_IPV4 "127.0.0.1"
+#define DEFAULT_SERVER_IPV4 "coap://127.0.0.1"
 
 /****************************************************************************
  * TINYARA
@@ -128,6 +128,13 @@ bool g_bootstrapRequested = false;
 
 int g_reboot = 0;
 static int g_quit = 0;
+
+static char coap_uri_prefix [COAP_PROTOCOL_MAX][COAP_MAX_URI_PREFIX_SIZE] = {
+  "coap://",
+  "coaps://",
+  "coap+tcp://",
+  "coaps+tcp://"
+};
 
 lwm2m_context_t * lwm2mH;
 
@@ -233,6 +240,17 @@ void handle_value_changed(lwm2m_context_t * lwm2mP,
     }
 }
 
+static coap_protocol_t coap_get_protocol_from_uri(const char *uri)
+{
+  coap_protocol_t type;
+  for (type = COAP_UDP; type < COAP_PROTOCOL_MAX; type++) {
+    if (!strncmp(uri, coap_uri_prefix[type], strlen(coap_uri_prefix[type]))) {
+		return type;
+	}
+  }
+  return type;
+}
+
 #ifdef WITH_TINYDTLS
 void * lwm2m_connect_server(uint16_t secObjInstID,
                             void * userData)
@@ -266,6 +284,7 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     char * host;
     char * port;
     connection_t * newConnP = NULL;
+    coap_protocol_t proto = COAP_UDP;
 
     dataP = (client_data_t *)userData;
 
@@ -274,15 +293,16 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     if (uri == NULL) return NULL;
 
     // parse uri in the form "coaps://[host]:[port]"
-    if (0==strncmp(uri, "coaps://", strlen("coaps://"))) {
-        host = uri+strlen("coaps://");
-    }
-    else if (0==strncmp(uri, "coap://",  strlen("coap://"))) {
-        host = uri+strlen("coap://");
-    }
-    else {
+
+    proto = coap_get_protocol_from_uri(uri);
+    if (proto >= COAP_PROTOCOL_MAX) {
+        fprintf(stderr, "Not supported protocol : %d\n", proto);
         goto exit;
+    } else {
+        /* move pointer to address field */
+        host = uri + strlen(coap_uri_prefix[proto]);
     }
+
     port = strrchr(host, ':');
     if (port == NULL) goto exit;
     // remove brackets
@@ -300,7 +320,8 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     port++;
 
     fprintf(stderr, "Opening connection to server at %s:%s\r\n", host, port);
-    newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
+    fprintf(stderr, "Connection protocol type : %d\r\n", proto);
+    newConnP = connection_create(proto, dataP->connList, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
     }
@@ -850,6 +871,8 @@ void print_usage(void)
     fprintf(stdout, "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
     fprintf(stdout, "  -s HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode\r\n");    
 #endif
+    fprintf(stdout, "Examples:\r\n");
+    fprintf(stdout, "  lwm2mclient -h coap://127.0.0.1 -4\r\n");
     fprintf(stdout, "\r\n");
 }
 
@@ -877,6 +900,8 @@ int lwm2m_client_main(int argc, char *argv[])
     char * pskId = NULL;
     uint16_t pskLen = -1;
     char * pskBuffer = NULL;
+
+    coap_protocol_t proto = COAP_UDP;
 
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
@@ -1029,16 +1054,30 @@ int lwm2m_client_main(int argc, char *argv[])
         }
     }
 #endif /* __TINYARA__ */
+
     if (!server)
     {
+        proto = COAP_UDP;
         server = (AF_INET == data.addressFamily ? DEFAULT_SERVER_IPV4 : DEFAULT_SERVER_IPV6);
-    }
+    } else {
+        /*
+         * Parse server URI to distinguish protocol and server address
+         */
+        proto = coap_get_protocol_from_uri(server);
+        if (proto >= COAP_PROTOCOL_MAX) {
+            fprintf(stderr, "Not supported protocol : %d\n", proto);
+            return -1;
+        } else {
+            /* move pointer to address field */
+            server += strlen(coap_uri_prefix[proto]);
+        }
+	}
 
     /*
-     *This call an internal function that create an IPV6 socket on the port 5683.
+     * This call an internal function that create an IPV6 socket on the port 5683.
      */
     fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
-    data.sock = create_socket(localPort, data.addressFamily);
+    data.sock = create_socket(proto, localPort, data.addressFamily);
     if (data.sock < 0)
     {
         fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
@@ -1083,7 +1122,7 @@ int lwm2m_client_main(int argc, char *argv[])
 
     char serverUri[50];
     int serverId = 123;
-    sprintf (serverUri, "coap://%s:%s", server, serverPort);
+    sprintf (serverUri, "%s%s:%s", coap_uri_prefix[proto], server, serverPort);
 #ifdef LWM2M_BOOTSTRAP
     objArray[0] = get_security_object(serverId, serverUri, pskId, pskBuffer, pskLen, bootstrapRequested);
 #else
@@ -1095,8 +1134,24 @@ int lwm2m_client_main(int argc, char *argv[])
         return -1;
     }
     data.securityObjP = objArray[0];
+    /*
+     * Bind Accordingly Protocol (e.g., TCP, UDP)
+     * get_server_object(serverId, "T", lifetime, false);
+     */
+    switch(proto) {
+        case COAP_TCP:
+        case COAP_TCP_TLS:
+            objArray[1] = get_server_object(serverId, "T", lifetime, false);
+            break;
+        case COAP_UDP:
+        case COAP_UDP_DTLS:
+            objArray[1] = get_server_object(serverId, "U", lifetime, false);
+            break;
+        default:
+            fprintf(stderr, "Cannot get_server_object with protocol %d\n", proto);
+            break;
+    }
 
-    objArray[1] = get_server_object(serverId, "U", lifetime, false);
     if (NULL == objArray[1])
     {
         fprintf(stderr, "Failed to create server object\r\n");
@@ -1171,10 +1226,11 @@ int lwm2m_client_main(int argc, char *argv[])
      * The liblwm2m library is now initialized with the functions that will be in
      * charge of communication
      */
-    lwm2mH = lwm2m_init(&data);
+    /* Use new API to set protocol type */
+    lwm2mH = lwm2m_init2(&data, proto);
     if (NULL == lwm2mH)
     {
-        fprintf(stderr, "lwm2m_init() failed\r\n");
+        fprintf(stderr, "lwm2m_init2() failed\r\n");
         return -1;
     }
 	
@@ -1342,7 +1398,7 @@ int lwm2m_client_main(int argc, char *argv[])
                 /*
                  * We retrieve the data received
                  */
-                numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes = connection_read(proto, data.sock, buffer, MAX_PACKET_SIZE, &addr, &addrLen);
 
                 if (0 > numBytes)
                 {

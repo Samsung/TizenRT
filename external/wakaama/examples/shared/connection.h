@@ -42,14 +42,14 @@ typedef struct _connection_t
     size_t                  addrLen;
 } connection_t;
 
-int create_socket(const char * portStr, int ai_family);
+int create_socket(coap_protocol_t protocol, const char * portStr, int ai_family);
 
 connection_t * connection_find(connection_t * connList, struct sockaddr_storage * addr, size_t addrLen);
 connection_t * connection_new_incoming(connection_t * connList, int sock, struct sockaddr * addr, size_t addrLen);
-connection_t * connection_create(connection_t * connList, int sock, char * host, char * port, int addressFamily);
+connection_t * connection_create(coap_protocol_t protocol, connection_t * connList, int sock, char * host, char * port, int addressFamily);
 
 void connection_free(connection_t * connList);
 
-int connection_send(connection_t *connP, uint8_t * buffer, size_t length);
-
+int connection_send(connection_t *connP, uint8_t * buffer, size_t length, coap_protocol_t proto);
+int connection_read(coap_protocol_t protocol, int sock, uint8_t *buffer, size_t len, struct sockaddr_storage *from, socklen_t *fromLen);
 #endif
