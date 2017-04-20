@@ -32,8 +32,8 @@ TIZENRT_BASEDIR was set at 'Getting the sources' tab of [[Quick Start]](../../..
 
 ## How to program a binary
 
-At first, the complete set of binaries are needed to program.
-After buiding a Tizen RT, execute below at os folder.
+At first, programming the complete set of binaries are needed.
+After buiding a Tizen RT, execute as follows at os folder.
 ```bash
 openocd -f artik053.cfg -c ' \
     flash_write bl1    ../build/configs/artik053/bin/bl1.bin;      \
