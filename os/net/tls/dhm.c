@@ -388,15 +388,15 @@ int mbedtls_dhm_calc_secret(mbedtls_dhm_context *ctx, unsigned char *output, siz
 	int ret;
 	mbedtls_mpi GYb;
 
+	if (ctx == NULL || output_size < ctx->len) {
+		return (MBEDTLS_ERR_DHM_BAD_INPUT_DATA);
+	}
+
 #if defined(CONFIG_HW_DH_PARAM)
 	if (see_supported_dhm_size(ctx->len)) {
 		return hw_calculate_dhm_secret(ctx, output, output_size, olen);
 	}
 #endif
-
-	if (ctx == NULL || output_size < ctx->len) {
-		return (MBEDTLS_ERR_DHM_BAD_INPUT_DATA);
-	}
 
 	if ((ret = dhm_check_range(&ctx->GY, &ctx->P)) != 0) {
 		return (ret);
