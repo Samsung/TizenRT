@@ -90,7 +90,7 @@
 
 #define PWM_PREVENT_MULTIPLE_OPEN   0
 
-#ifdef CONFIG_DEBUG_PWM
+#ifdef CONFIG_DEBUG_PWM_INFO
 #define pwmdbg    dbg
 #define pwmvdbg   vdbg
 #define pwmlldbg  lldbg
@@ -153,13 +153,13 @@ static const struct file_operations g_pwmops = {
  * Private Functions
  ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: pwm_open
  *
  * Description:
  *   This function is called whenever the PWM device is opened.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 static int pwm_open(FAR struct file *filep)
 {
@@ -225,13 +225,13 @@ errout:
 	return ret;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: pwm_close
  *
  * Description:
  *   This function is called when the PWM device is closed.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 static int pwm_close(FAR struct file *filep)
 {
@@ -278,13 +278,13 @@ errout:
 	return ret;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: pwm_read
  *
  * Description:
  *   A dummy read method.  This is provided only to satisfy the VFS layer.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 static ssize_t pwm_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
@@ -293,26 +293,26 @@ static ssize_t pwm_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 	return 0;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: pwm_write
  *
  * Description:
  *   A dummy write method.  This is provided only to satisfy the VFS layer.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 static ssize_t pwm_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	return 0;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: pwm_start
  *
  * Description:
  *   Handle the PWMIOC_START ioctl command
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_PWM_PULSECOUNT
 static int pwm_start(FAR struct pwm_upperhalf_s *upper, unsigned int oflags)
@@ -406,13 +406,13 @@ static int pwm_start(FAR struct pwm_upperhalf_s *upper, unsigned int oflags)
 }
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Name: pwm_ioctl
  *
  * Description:
  *   The standard ioctl method.  This is where ALL of the PWM work is done.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 static int pwm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
@@ -670,4 +670,4 @@ void pwm_expired(FAR void *handle)
 }
 #endif
 
-#endif							/* CONFIG_PWM */
+#endif /* CONFIG_PWM */
