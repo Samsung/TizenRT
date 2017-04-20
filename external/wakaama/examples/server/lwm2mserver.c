@@ -51,7 +51,6 @@
 
 */
 
-
 #include "liblwm2m.h"
 
 #include <string.h>
@@ -73,9 +72,37 @@
 #include "commandline.h"
 #include "connection.h"
 
+#if defined (__TINYARA__)
+#include <tinyara/ascii.h>
+#endif
+
 #define MAX_PACKET_SIZE 1024
 
+#if defined(__TINYARA__)
+
+/* Definitions*/
+#ifndef FD_SETSIZE
+#define FD_SETSIZE  (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)
+#endif
+
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#endif
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO 1
+#endif
+#ifndef STDERR_FILENO
+#define STDERR_FILENO 2
+#endif
+
+#endif /* __TINYARA__ */
+
 static int g_quit = 0;
+
+#if defined (__TINYARA__)
+/* Private Functions */
+static int read_input_command_line(char *buf);
+#endif /*__TINYARA__*/
 
 static void prv_print_error(uint8_t status)
 {
@@ -802,7 +829,7 @@ void print_usage(void)
 }
 
 
-int main(int argc, char *argv[])
+int lwm2m_server_main(int argc, char *argv[])
 {
     int sock;
     fd_set readfds;
@@ -920,7 +947,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    signal(SIGINT, handle_sigint);
+    //signal(SIGINT, handle_sigint);
 
     for (i = 0 ; commands[i].name != NULL ; i++)
     {
@@ -1012,7 +1039,11 @@ int main(int argc, char *argv[])
             }
             else if (FD_ISSET(STDIN_FILENO, &readfds))
             {
+#if defined (__TINYARA__)
+                numBytes = read_input_command_line((char *)buffer);
+#else
                 numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE - 1);
+#endif
 
                 if (numBytes > 1)
                 {
@@ -1046,3 +1077,68 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
+#if defined (__TINYARA__)
+/* Private APIs */
+
+static int read_input_command_line(char *buf)
+{
+	char buffer[MAX_PACKET_SIZE] = {0,};
+
+	int nbytes = 0;
+	int pos = 0;
+	int char_idx = 0;
+	int bufsize = MAX_PACKET_SIZE;
+
+	do {
+		nbytes = read(STDIN_FILENO, &buffer[pos], (bufsize - pos));
+		if (nbytes <= 0) {
+			fprintf(stderr, "cannot read command\n");
+			return 0;
+		}
+
+		for (char_idx = 0; char_idx < nbytes; char_idx++) {
+			if ((buffer[pos] == ASCII_BS) || (buffer[pos] == ASCII_DEL)) {
+				int valid_char_pos = pos + 1;
+
+				if (pos > 0) {
+					pos--;
+					/* update screen */
+					if (write(STDOUT_FILENO, "\b \b",3) <= 0) {
+						fprintf(stderr, "write failed (errno = %d)\n", get_errno());
+					}
+				}
+
+				if (buffer[valid_char_pos] != 0x0 && (valid_char_pos < MAX_PACKET_SIZE)) {
+					memcpy(&buffer[pos], &buffer[valid_char_pos], (bufsize - valid_char_pos));
+				}
+			} else {
+				if (buffer[pos] == ASCII_CR) {
+					buffer[pos] = ASCII_LF;
+				}
+
+				/* echo */
+				if (write(STDOUT_FILENO, &buffer[pos], 1) <= 0) {
+					fprintf(stderr, "failed to write (errno = %d)\n", get_errno());
+				}
+
+				if (buffer[pos] == ASCII_LF) {
+					pos++;
+					break;
+				}
+
+				pos++;
+				if (pos >= MAX_PACKET_SIZE) {
+					fprintf(stderr, "out of range : command is too long, maximum length %d\n", MAX_PACKET_SIZE);
+					memset(buf, 0x0, MAX_PACKET_SIZE);
+					return 0;
+				}
+			}
+		}
+	} while(buffer[pos - 1] != ASCII_LF);
+
+	memcpy(buf, buffer, pos);
+
+	return pos;
+}
+#endif /* __TINYARA__ */

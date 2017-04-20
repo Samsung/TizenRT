@@ -20,11 +20,22 @@ config LWM2M_WAKAAMA
 		enable LWM2M WAKAAMA external feature
 
 if LWM2M_WAKAAMA
+choice
+	prompt "LWM2M WAKAAMA example"
+	default LWM2M_CLIENT_MODE
+
 config LWM2M_CLIENT_MODE
 	bool "CLIENT_MODE"
 	default y
 	---help---
 		enable LWM2M WAKAAMA client example
+
+config LWM2M_SERVER_MODE
+	bool "SERVER_MODE"
+	default y
+	---help---
+		enable LWM2M WAKAAMA server example
+endchoice
 
 config LWM2M_LITTLE_ENDIAN
 	bool "LITTLE_ENDIAN"

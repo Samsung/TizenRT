@@ -703,27 +703,27 @@ int lwm2m_dm_write_attributes(lwm2m_context_t * contextP,
     }
     if (attrP->toClear & LWM2M_ATTR_FLAG_MIN_PERIOD)
     {
-        coap_add_multi_option(&(coap_pkt->uri_query), ATTR_MIN_PERIOD_STR, ATTR_MIN_PERIOD_LEN -1, 0);
+        coap_add_multi_option(&(coap_pkt->uri_query), (uint8_t *)ATTR_MIN_PERIOD_STR, ATTR_MIN_PERIOD_LEN -1, 0);
         SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
     }
     if (attrP->toClear & LWM2M_ATTR_FLAG_MAX_PERIOD)
     {
-        coap_add_multi_option(&(coap_pkt->uri_query), ATTR_MAX_PERIOD_STR, ATTR_MAX_PERIOD_LEN - 1, 0);
+        coap_add_multi_option(&(coap_pkt->uri_query), (uint8_t *)ATTR_MAX_PERIOD_STR, ATTR_MAX_PERIOD_LEN - 1, 0);
         SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
     }
     if (attrP->toClear & LWM2M_ATTR_FLAG_GREATER_THAN)
     {
-        coap_add_multi_option(&(coap_pkt->uri_query), ATTR_GREATER_THAN_STR, ATTR_GREATER_THAN_LEN - 1, 0);
+        coap_add_multi_option(&(coap_pkt->uri_query), (uint8_t *)ATTR_GREATER_THAN_STR, ATTR_GREATER_THAN_LEN - 1, 0);
         SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
     }
     if (attrP->toClear & LWM2M_ATTR_FLAG_LESS_THAN)
     {
-        coap_add_multi_option(&(coap_pkt->uri_query), ATTR_LESS_THAN_STR, ATTR_LESS_THAN_LEN - 1, 0);
+        coap_add_multi_option(&(coap_pkt->uri_query), (uint8_t *)ATTR_LESS_THAN_STR, ATTR_LESS_THAN_LEN - 1, 0);
         SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
     }
     if (attrP->toClear & LWM2M_ATTR_FLAG_STEP)
     {
-        coap_add_multi_option(&(coap_pkt->uri_query), ATTR_STEP_STR, ATTR_STEP_LEN - 1, 0);
+        coap_add_multi_option(&(coap_pkt->uri_query), (uint8_t *)ATTR_STEP_STR, ATTR_STEP_LEN - 1, 0);
         SET_OPTION(coap_pkt, COAP_OPTION_URI_QUERY);
     }
 

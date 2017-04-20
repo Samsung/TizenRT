@@ -58,6 +58,9 @@ endif
 ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
 include wakaama/examples/client/Make.defs
 endif
+ifeq ($(CONFIG_LWM2M_SERVER_MODE),y)
+include wakaama/examples/server/Make.defs
+endif
 endif
 
 ifeq ($(CONFIG_ARCH_CHIP_BCM4390X),y)
