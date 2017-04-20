@@ -45,7 +45,7 @@ pthread_addr_t http_handle_client(pthread_addr_t arg)
 	mqd_t msg_q;
 	struct mq_attr mqattr;
 
-	if ((msg_q = http_server_mq_open(server->port)) < 0) {
+	if ((msg_q = http_server_mq_open(server->port)) == NULL) {
 		HTTP_LOGE("msg queue open fail in http_handle_client\n");
 		return NULL;
 	}
