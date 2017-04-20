@@ -1542,8 +1542,12 @@ static int mdnsd_set_host_info(struct mdnsd *svr, const char *hostname, uint32_t
 			/* when name conflict occurs */
 			snprintf(hname, sizeof(hname), hostname);
 			str = strstr(hname, mdns_suffix);
-			snprintf(str, sizeof(hname), "(%d)%s", no++, mdns_suffix);
-			alternative_hostname = 1;
+			if (str) {
+				snprintf(str, sizeof(hname), "(%d)%s", no++, mdns_suffix);
+				alternative_hostname = 1;
+			} else {
+				ndbg("ERROR: cannot set an alternative hostname.\n");
+			}
 		}
 
 		// if there is previous hostname information, delete it

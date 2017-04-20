@@ -411,7 +411,7 @@ int rr_list_append(struct rr_list **rr_head, struct rr_entry *rr)
 	if (*rr_head == NULL) {
 		*rr_head = node;
 	} else {
-		struct rr_list *e = *rr_head, *taile;
+		struct rr_list *e = *rr_head, *taile = NULL;
 		for (; e; e = e->next) {
 			// already in list - don't add
 			if (e->e == rr) {
@@ -422,7 +422,9 @@ int rr_list_append(struct rr_list **rr_head, struct rr_entry *rr)
 				taile = e;
 			}
 		}
-		taile->next = node;
+		if (taile) {
+			taile->next = node;
+		}
 	}
 	return 1;
 }
@@ -1073,8 +1075,9 @@ static size_t mdns_encode_name(uint8_t *pkt_buf, size_t pkt_len, size_t off, con
 
 			new_c->label = (uint8_t *) name;
 			new_c->pos = p - pkt_buf;
-			c_tail->next = new_c;
-
+			if (c_tail) {
+				c_tail->next = new_c;
+			}
 			// advance to next name segment
 			p += segment_len;
 			len += segment_len;
