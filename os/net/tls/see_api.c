@@ -83,27 +83,39 @@ int see_get_certificate(unsigned char *cert, unsigned int *cert_len, unsigned in
 		return SEE_ALLOC_ERROR;
 	}
 
-	_SEE_MUTEX_LOCK
+	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		r = SEE_MUTEX_LOCK_ERROR;
+		goto get_cert_exit;
+	}
+
 	ISP_CHECKBUSY();
 #if defined(SEE_SUPPORT_USERCERT)
 	if (cert_index < SEE_MAX_CERT_INDEX) {
 		if ((r = isp_read_cert(buf, &buf_len, cert_index)) != 0) {
 			isp_clear(0);
-			_SEE_MUTEX_UNLOCK
-			SEE_DEBUG("isp_read_cert fail %x\n", r);
 			r = SEE_READ_CERT_ERROR;
+			if (see_mutex_unlock(&m_handler) != SEE_OK) {
+				r = SEE_MUTEX_UNLOCK_ERROR;
+			}
+			SEE_DEBUG("isp_read_cert fail %x\n", r);
 			goto get_cert_exit;
 		}
 	} else
 #endif
 	if ((r = isp_get_factorykey_data(buf, &buf_len, cert_index)) != 0) {
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK
-		SEE_DEBUG("isp_read_cert fail %x\n", r);
 		r = SEE_READ_CERT_ERROR;
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			r = SEE_MUTEX_UNLOCK_ERROR;
+		}
+		SEE_DEBUG("isp_read_cert fail %x\n", r);
 		goto get_cert_exit;
 	}
-	_SEE_MUTEX_UNLOCK
+
+	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		r = SEE_MUTEX_UNLOCK_ERROR;
+		goto get_cert_exit;
+	}
 
 	if (*cert_len < buf_len) {
 		SEE_DEBUG("input buffer is too small\n");
@@ -134,15 +146,23 @@ int see_generate_random(unsigned int *data, unsigned int len)
 		len = len + 4 - (len & 0x3);
 	}
 
-	_SEE_MUTEX_LOCK
+	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_LOCK_ERROR;
+	}
+
 	ISP_CHECKBUSY();
 	if ((r = isp_generate_random(data, len / 4)) != 0) {
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
 		SEE_DEBUG("isp_generate_random fail %x\n", r);
 		return SEE_GET_RANDOM_ERROR;
 	}
-	_SEE_MUTEX_UNLOCK
+
+	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_UNLOCK_ERROR;
+	}
 
 	return SEE_OK;
 }
@@ -161,13 +181,23 @@ int see_get_ecdsa_signature(struct sECC_SIGN *ecc_sign, unsigned char *hash, uns
 		return SEE_INVALID_KEY_INDEX;
 	}
 
-	_SEE_MUTEX_LOCK ISP_CHECKBUSY();
+	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_LOCK_ERROR;
+	}
+
+	ISP_CHECKBUSY();
 	if ((r = isp_ecdsa_sign_securekey(ecc_sign, hash, hash_len, key_index)) != 0) {
 		SEE_DEBUG("isp_ecdsa_sign fail %x\n", r);
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK return SEE_ECDSA_SIGN_ERROR;
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
+		return SEE_ECDSA_SIGN_ERROR;
 	}
-	_SEE_MUTEX_UNLOCK return SEE_OK;
+	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_UNLOCK_ERROR;
+	}
+	return SEE_OK;
 }
 
 int see_compute_ecdh_param(struct sECC_KEY *ecc_pub, unsigned int key_index, unsigned char *output, unsigned int *olen)
@@ -184,15 +214,22 @@ int see_compute_ecdh_param(struct sECC_KEY *ecc_pub, unsigned int key_index, uns
 
 	SEE_DEBUG("%s : key_index : %d \n", __func__, key_index);
 
-	_SEE_MUTEX_LOCK
+	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_LOCK_ERROR;
+	}
+
 	ISP_CHECKBUSY();
 	if ((r = isp_compute_ecdh_securekey(output, olen, *ecc_pub, key_index)) != 0) {
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
 		SEE_DEBUG("isp_compute_ecdh_param fail %x\n", r);
 		return SEE_ECDH_COMPUTE_ERROR;
 	}
-	_SEE_MUTEX_UNLOCK
+	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_UNLOCK_ERROR;
+	}
 
 	return SEE_OK;
 }
