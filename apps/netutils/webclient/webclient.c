@@ -944,13 +944,11 @@ static pthread_addr_t wget_base(void *arg)
 #endif
 
 	/* Initialize the state structure */
-
 	memset(&ws, 0, sizeof(struct wget_s));
 	ws.buffer = param->buffer;
 	ws.buflen = param->buflen;
 
 	/* Parse the hostname (with optional port number) and filename from the URL */
-
 	ret = netlib_parsehttpurl(param->url, &ws.port, ws.hostname, CONFIG_WEBCLIENT_MAXHOSTNAME, ws.filename, CONFIG_WEBCLIENT_MAXFILENAME);
 	if (ret != 0) {
 		ndbg("ERROR: Malformed HTTP URL: %s\n", param->url);
@@ -992,6 +990,14 @@ retry:
 		goto errout_before_tlsinit;
 	}
 
+	if (param->callback) {
+		param->response = &response;
+		if (http_client_response_init(param->response) < 0) {
+			ndbg("ERROR: response init failed: %d\n", ret);
+			goto errout_before_tlsinit;
+		}
+	}
+
 #ifdef CONFIG_NET_SECURITY_TLS
 	client_tls->client_fd = sockfd;
 	if (param->tls && (ret = wget_tls_handshake(client_tls, ws.hostname))) {
@@ -1031,19 +1037,11 @@ retry:
 		}
 	}
 
-	if (param->callback) {
-		param->response = &response;
-		if (http_client_response_init(param->response) < 0) {
-			ndbg("ERROR: response init failed: %d\n", ret);
-			goto errout;
-		}
-	}
-
 	buf_len = 0;
 	while (!read_finish) {
 		if (remain <= 0) {
 			ndbg("Error: Response Size is too large\n");
-			goto errout_after_rsp_init;
+			goto errout;
 		}
 #ifdef CONFIG_NET_SECURITY_TLS
 		if (param->tls) {
@@ -1059,10 +1057,10 @@ retry:
 
 		if (len < 0) {
 			ndbg("Error: Receive Fail\n");
-			goto errout_after_rsp_init;
+			goto errout;
 		} else if (len == 0) {
 			ndbg("Finish read\n");
-			goto errout_after_rsp_init;
+			goto errout;
 		}
 
 		buf_len += len;
@@ -1078,7 +1076,10 @@ retry:
 
 	param->response->method = param->method;
 	param->response->url = param->url;
-	param->response->entity_len = strlen(param->response->entity);
+	if (param->response->entity) {
+		param->response->entity_len = strlen(param->response->entity);
+	}
+
 	if (param->callback) {
 		param->callback(param->response);
 		http_client_response_release(param->response);
@@ -1097,11 +1098,10 @@ retry:
 	param->async_flag = WGET_OK;
 	return (pthread_addr_t)WGET_OK;
 
-errout_after_rsp_init:
+errout:
 	if (param->callback) {
 		http_client_response_release(param->response);
 	}
-errout:
 #ifdef CONFIG_NET_SECURITY_TLS
 	if (param->tls) {
 		wget_tls_ssl_release(client_tls);
