@@ -140,8 +140,12 @@ docs/TinyAra_Config_Variables.html.
 Supported Boards
 ^^^^^^^^^^^^^^^^
 
+configs/artik053
+  ARTIK-053 Starter Kit which is an evaluation board based on SAMSUNG S5JT200 WiFi SoC
+
 configs/sidk_s5jt200
   Samsung IoT Development Kit for S5JT200
+
 
 Configuring TinyAra
 ^^^^^^^^^^^^^^^^^^^
