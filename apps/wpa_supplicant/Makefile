@@ -33,7 +33,7 @@
 #
 ############################################################################
 
-include $(TOPDIR)/Make.defs
+-include $(TOPDIR)/Make.defs
 
 CONFIG_WPA_SUPPLICANT_PRIORITY ?= SCHED_PRIORITY_DEFAULT
 CONFIG_WPA_SUPPLICANT_STACKSIZE ?= 16384
