@@ -6,7 +6,7 @@
 config NETUTILS_DHCPD
 	bool "DHCP server"
 	default n
-	depends on NET_UDP && NET_IPv4
+	depends on NET_IPv4
 	---help---
 		Enable support for the DHCP server.
 
@@ -34,7 +34,7 @@ config NETUTILS_DHCPD_IGNOREBROADCAST
 
 config NETUTILS_DHCPD_INTERFACE
 	string "DHCPD network interface"
-	default "eth0"
+	default "wl1"
 
 config NETUTILS_DHCPD_LEASETIME
 	int "Lease time (seconds)"
@@ -60,11 +60,11 @@ config NETUTILS_DHCPD_MAXLEASES
 
 config NETUTILS_DHCPD_STARTIP
 	hex "First IP address"
-	default 0x0a000002
+	default 0xc0a82f02
 
 config NETUTILS_DHCPD_ROUTERIP
 	hex "Router IP (0 to disable)"
-	default 0x0a000001
+	default 0xc0a82f01
 
 config NETUTILS_DHCPD_NETMASK
 	hex "Netmask (0 to disable)"

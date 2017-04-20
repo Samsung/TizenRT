@@ -629,6 +629,14 @@ struct pthread_tcb_s {
 	pthread_addr_t arg;			/* Startup argument                    */
 	FAR void *joininfo;			/* Detach-able info to support join    */
 
+	/* Robust mutex support *********************************************/
+
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+  	FAR struct pthread_mutex_s *mhead;	/* List of mutexes held by thread      */
+#endif
+
+	/* Clean-up stack ***************************************************/
+
 #ifdef CONFIG_PTHREAD_CLEANUP
 	/* tos   - The index to the next avaiable entry at the top of the stack.
 	 * stack - The pre-allocated clean-up stack memory.

@@ -1,0 +1,3 @@
+config ENTRY_DNSCLIENT_TEST
+	bool "\"DNS Client Test\" example"
+	depends on EXAMPLES_DNSCLIENT_TEST

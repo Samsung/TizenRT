@@ -70,11 +70,13 @@
 #include <assert.h>
 #include <debug.h>
 
-#include <tinyara/kmalloc.h>
-#include <tinyara/fs/fs.h>
 #ifdef CONFIG_DEBUG
 #include <tinyara/arch.h>
 #endif
+#include <tinyara/kmalloc.h>
+#include <tinyara/semaphore.h>
+#include <tinyara/fs/fs.h>
+#include <tinyara/fs/ioctl.h>
 
 #include "pipe_common.h"
 
@@ -173,6 +175,13 @@ FAR struct pipe_dev_s *pipecommon_allocdev(void)
 		sem_init(&dev->d_bfsem, 0, 1);
 		sem_init(&dev->d_rdsem, 0, 0);
 		sem_init(&dev->d_wrsem, 0, 0);
+
+		/*
+		 * The read/write wait semaphores are used for signaling and,
+		 * hence, should not have priority inheritance enabled.
+		 */
+		sem_setprotocol(&dev->d_rdsem, SEM_PRIO_NONE);
+		sem_setprotocol(&dev->d_wrsem, SEM_PRIO_NONE);
 	}
 
 	return dev;

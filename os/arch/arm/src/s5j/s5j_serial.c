@@ -76,32 +76,33 @@
 #include "chip.h"
 #include "up_arch.h"
 #include "up_internal.h"
+#include "s5j_serial.h"
+#include "s5j_gpio.h"
+#include "s5j_vclk.h"
 
 #ifdef CONFIG_SERIAL_TERMIOS
 #include <termios.h>
 #endif
 
-#include <arch/chip/chip_types.h>
 #include <chip.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 /* If we are not using the serial driver for the console, then we
  * still must provide some minimal implementation of up_putc.
  */
-
-//#ifdef USE_SERIALDRIVER
 
 #ifndef CONFIG_NO_SERIAL_CONSOLE
 #define HAVE_SERIAL_CONSOLE
 #endif
 
-/* Which UART with be tty0/console and which tty1-7?  The console will always
+/* Which UART with be tty0/console and which tty1-3?  The console will always
  * be ttyS0.  If there is no console then will use the lowest numbered UART.
  */
 
-/* First pick the console and ttys0.  This could be any of UART0-5 */
+/* First pick the console and ttys0.  This could be any of UART0-3,dev */
 
 #if defined(CONFIG_S5J_HAVE_UARTDBG)
 #define TTYDBG_DEV          g_uart_port[UARTDBG]
@@ -136,17 +137,13 @@
 #define CONSOLE_DEV         g_uart_port[UARTDBG]
 #define CONSOLE_PORT UARTDBG
 #else
-#define CONSOLE_DEV         g_uart_port[UART0]	/* default setting - might be wrong TODO */
-#define CONSOLE_PORT UART0
+#define CONSOLE_DEV         g_uart_port[UARTDBG]
+#define CONSOLE_PORT UARTDBG
 #endif
 #endif
 
 #ifndef CONSOLE_PORT
 #define CONSOLE_PORT UARTDBG
-#endif
-
-#if defined(CONFIG_PM) && !defined(CONFIG_PM_SERIAL_ACTIVITY)
-#define CONFIG_PM_SERIAL_ACTIVITY 10
 #endif
 
 /****************************************************************************
@@ -168,15 +165,11 @@ struct up_dev_s {
  * Private Function Prototypes
  ****************************************************************************/
 
-#ifdef CONFIG_PM
-static void up_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
-static int up_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
-#endif
 static int up_setup(struct uart_dev_s *dev);
 static void up_shutdown(struct uart_dev_s *dev);
 static int up_attach(struct uart_dev_s *dev);
 static void up_detach(struct uart_dev_s *dev);
-static int up_interrupt(int irq, void *context);
+static int up_interrupt(int irq, void *context, void *arg);
 static int up_ioctl(struct file *filep, int cmd, unsigned long arg);
 static int up_receive(struct uart_dev_s *dev, uint32_t *status);
 static void up_rxint(struct uart_dev_s *dev, bool enable);
@@ -185,11 +178,13 @@ static void up_send(struct uart_dev_s *dev, int ch);
 static void up_txint(struct uart_dev_s *dev, bool enable);
 static bool up_txready(struct uart_dev_s *dev);
 static bool up_txempty(struct uart_dev_s *dev);
+static void uart_init(UART_CHANNEL uart);
 
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
 
+/* UART operations structure */
 static const struct uart_ops_s g_uart_ops = {
 	.setup = up_setup,
 	.shutdown = up_shutdown,
@@ -218,22 +213,21 @@ static char g_uart0txbuffer[CONFIG_UART0_TXBUFSIZE];
 #endif
 
 #ifdef CONFIG_S5J_UART1
-static char g_uart1rxbuffer[CONFIG_UART0_RXBUFSIZE];
-static char g_uart1txbuffer[CONFIG_UART0_TXBUFSIZE];
+static char g_uart1rxbuffer[CONFIG_UART1_RXBUFSIZE];
+static char g_uart1txbuffer[CONFIG_UART1_TXBUFSIZE];
 #endif
 
 #ifdef CONFIG_S5J_UART2
-static char g_uart2rxbuffer[CONFIG_UART0_RXBUFSIZE];
-static char g_uart2txbuffer[CONFIG_UART0_TXBUFSIZE];
+static char g_uart2rxbuffer[CONFIG_UART2_RXBUFSIZE];
+static char g_uart2txbuffer[CONFIG_UART2_TXBUFSIZE];
 #endif
 
 #ifdef CONFIG_S5J_UART3
-static char g_uart3rxbuffer[CONFIG_UART0_RXBUFSIZE];
-static char g_uart3txbuffer[CONFIG_UART0_TXBUFSIZE];
+static char g_uart3rxbuffer[CONFIG_UART3_RXBUFSIZE];
+static char g_uart3txbuffer[CONFIG_UART3_TXBUFSIZE];
 #endif
 
-/* This describes the state of the Stellaris uart0 port. */
-
+/* This array contains private resource structures of each port */
 static struct up_dev_s g_uart_priv[] = {
 #ifdef CONFIG_S5J_UARTDBG
 	[UARTDBG] = {
@@ -272,11 +266,11 @@ static struct up_dev_s g_uart_priv[] = {
 #ifdef CONFIG_S5J_UART1
 	[UART1] = {
 		.uartbase = UART1_BASE,
-		.baud = CONFIG_UART0_BAUD,
+		.baud = CONFIG_UART1_BAUD,
 		.irq = S5J_IRQ_UART1,
-		.parity = CONFIG_UART0_PARITY,
-		.bits = CONFIG_UART0_BITS,
-		.stopbits2 = CONFIG_UART0_2STOP,
+		.parity = CONFIG_UART1_PARITY,
+		.bits = CONFIG_UART1_BITS,
+		.stopbits2 = CONFIG_UART1_2STOP,
 		.eCh = UART1,
 	},
 #endif
@@ -284,11 +278,11 @@ static struct up_dev_s g_uart_priv[] = {
 #ifdef CONFIG_S5J_UART2
 	[UART2] = {
 		.uartbase = UART2_BASE,
-		.baud = CONFIG_UART0_BAUD,
+		.baud = CONFIG_UART2_BAUD,
 		.irq = S5J_IRQ_UART2,
-		.parity = CONFIG_UART0_PARITY,
-		.bits = CONFIG_UART0_BITS,
-		.stopbits2 = CONFIG_UART0_2STOP,
+		.parity = CONFIG_UART2_PARITY,
+		.bits = CONFIG_UART2_BITS,
+		.stopbits2 = CONFIG_UART2_2STOP,
 		.eCh = UART2,
 	},
 #endif
@@ -296,17 +290,18 @@ static struct up_dev_s g_uart_priv[] = {
 #ifdef CONFIG_S5J_UART3
 	[UART3] = {
 		.uartbase = UART3_BASE,
-		.baud = CONFIG_UART0_BAUD,
+		.baud = CONFIG_UART3_BAUD,
 		.irq = S5J_IRQ_UART3,
-		.parity = CONFIG_UART0_PARITY,
-		.bits = CONFIG_UART0_BITS,
-		.stopbits2 = CONFIG_UART0_2STOP,
+		.parity = CONFIG_UART3_PARITY,
+		.bits = CONFIG_UART3_BITS,
+		.stopbits2 = CONFIG_UART3_2STOP,
 		.eCh = UART3,
 	},
 #endif
 
 };
 
+/* This array contains UART ports dev resources description */
 static uart_dev_t g_uart_port[] = {
 #ifdef CONFIG_S5J_UARTDBG
 	[UARTDBG] = {
@@ -352,11 +347,11 @@ static uart_dev_t g_uart_port[] = {
 #ifdef CONFIG_S5J_UART1
 	[UART1] = {
 		.recv = {
-			.size = CONFIG_UART0_RXBUFSIZE,
+			.size = CONFIG_UART1_RXBUFSIZE,
 			.buffer = g_uart1rxbuffer,
 		},
 		.xmit = {
-			.size = CONFIG_UART0_TXBUFSIZE,
+			.size = CONFIG_UART1_TXBUFSIZE,
 			.buffer = g_uart1txbuffer,
 		},
 		.ops = &g_uart_ops,
@@ -367,11 +362,11 @@ static uart_dev_t g_uart_port[] = {
 #ifdef CONFIG_S5J_UART2
 	[UART2] = {
 		.recv = {
-			.size = CONFIG_UART0_RXBUFSIZE,
+			.size = CONFIG_UART2_RXBUFSIZE,
 			.buffer = g_uart2rxbuffer,
 		},
 		.xmit = {
-			.size = CONFIG_UART0_TXBUFSIZE,
+			.size = CONFIG_UART2_TXBUFSIZE,
 			.buffer = g_uart2txbuffer,
 		},
 		.ops = &g_uart_ops,
@@ -382,11 +377,11 @@ static uart_dev_t g_uart_port[] = {
 #ifdef CONFIG_S5J_UART3
 	[UART3] = {
 		.recv = {
-			.size = CONFIG_UART0_RXBUFSIZE,
+			.size = CONFIG_UART3_RXBUFSIZE,
 			.buffer = g_uart3rxbuffer,
 		},
 		.xmit = {
-			.size = CONFIG_UART0_TXBUFSIZE,
+			.size = CONFIG_UART3_TXBUFSIZE,
 			.buffer = g_uart3txbuffer,
 		},
 		.ops = &g_uart_ops,
@@ -395,142 +390,27 @@ static uart_dev_t g_uart_port[] = {
 #endif
 };
 
-/* This describes the state of the Stellaris uart1 port. */
-static const int baudrate[] = {
-	[BAUD_9600] = 9600,
-	[BAUD_14400] = 14400,
-	[BAUD_38400] = 38400,
-	[BAUD_57600] = 57600,
-	[BAUD_115200] = 115200,
-	[BAUD_230400] = 230400,
-};
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_pm_notify
+ * Name: up_uart_set_gpio
  *
  * Description:
- *   Notify the driver of new power state. This callback is  called after
- *   all drivers have had the opportunity to prepare for the new power state.
+ *   Configure GPIO ports to operate with UART
  *
- * Input Parameters:
+ * input parameters:
+ *   eCh - UART channel
  *
- *    cb - Returned to the driver. The driver version of the callback
- *         structure may include additional, driver-specific state data at
- *         the end of the structure.
- *
- *    pmstate - Identifies the new PM state
- *
- * Returned Value:
- *   None - The driver already agreed to transition to the low power
- *   consumption state when when it returned OK to the prepare() call.
- *
- *
+ * Returned value:
+ *   None
  ****************************************************************************/
-
-#ifdef CONFIG_PM
-static void up_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate)
-{
-	/* printf("up_pm_notify %d\n", pmstate); */
-	switch (pmstate) {
-	case (PM_NORMAL): {
-		/* Logic for PM_NORMAL goes here */
-
-	}
-	break;
-
-	case (PM_IDLE): {
-		/* Logic for PM_IDLE goes here */
-
-	}
-	break;
-
-	case (PM_STANDBY): {
-		/* Logic for PM_STANDBY goes here */
-
-	}
-	break;
-
-	case (PM_SLEEP): {
-		/* Logic for PM_SLEEP goes here */
-
-	}
-	break;
-
-	default:
-		/* Should not get here */
-		break;
-	}
-}
-#endif
-
-/****************************************************************************
- * Name: up_pm_prepare
- *
- * Description:
- *   Request the driver to prepare for a new power state. This is a warning
- *   that the system is about to enter into a new power state. The driver
- *   should begin whatever operations that may be required to enter power
- *   state. The driver may abort the state change mode by returning a
- *   non-zero value from the callback function.
- *
- * Input Parameters:
- *
- *    cb - Returned to the driver. The driver version of the callback
- *         structure may include additional, driver-specific state data at
- *         the end of the structure.
- *
- *    pmstate - Identifies the new PM state
- *
- * Returned Value:
- *   Zero - (OK) means the event was successfully processed and that the
- *          driver is prepared for the PM state change.
- *
- *   Non-zero - means that the driver is not prepared to perform the tasks
- *              needed achieve this power setting and will cause the state
- *              change to be aborted. NOTE: The prepare() method will also
- *              be called when reverting from lower back to higher power
- *              consumption modes (say because another driver refused a
- *              lower power state change). Drivers are not permitted to
- *              return non-zero values when reverting back to higher power
- *              consumption modes!
- *
- ****************************************************************************/
-
-#ifdef CONFIG_PM
-static int up_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate)
-{
-	/* Logic to prepare for a reduced power state goes here. */
-
-	/* printf("up_pm_prepare %d\n", pmstate); */
-
-	return OK;
-}
-#endif
-
-static void up_uart_set_initial_configure(uint32_t uBase)
-{
-	HW_REG32(uBase, UART_LCON) = 0x3;
-	HW_REG32(uBase, UART_CON) = 0x3045;
-	HW_REG32(uBase, UART_FCON) = 0x1;
-
-	HW_REG32(uBase, UART_BRDIV) = 0x2;
-	HW_REG32(uBase, UART_FRACVAL) = 0x8;
-}
-
-/*  UART0/1 supported  */
-void up_uart_set_gpio(UART_CHANNEL eCh, bool bEnable)
+void up_uart_set_gpio(UART_CHANNEL eCh)
 {
 	s32 gpio_rxd, gpio_txd;
 
 	if (eCh == UARTDBG) {
-#ifdef CONFIG_BOOT_RUNFROMFLASH
-		HW_REG32(0x80040000, 0x160) = 0x22;	//GPA3_CON Xdebug_TXD, Xdebug_RXD
-		HW_REG32(0x80040000, 0x168) = 0x00;	// PULLUP/DOWN disabled
-#else
 		gpio_rxd = s5j_gpio(GPA3, 0);
 		gpio_txd = s5j_gpio(GPA3, 1);
 
@@ -538,7 +418,7 @@ void up_uart_set_gpio(UART_CHANNEL eCh, bool bEnable)
 		gpio_set_pull(gpio_rxd, GPIO_PULL_NONE);
 		gpio_cfg_pin(gpio_txd, GPIO_FUNC(2));
 		gpio_set_pull(gpio_txd, GPIO_PULL_NONE);
-#endif
+
 	} else if (eCh == UART0) {
 		gpio_rxd = s5j_gpio(GPA2, 0);
 		gpio_txd = s5j_gpio(GPA2, 1);
@@ -576,51 +456,90 @@ void up_uart_set_gpio(UART_CHANNEL eCh, bool bEnable)
 	}
 }
 
+/****************************************************************************
+ * Name: up_uart_enable_interrupt
+ *
+ * Description:
+ *   Enable interrupts defined by Interrupt mask.
+ *
+ * input parameters:
+ *   uBase - base address of uart channel
+ *   eInt - Interrupt mask
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_enable_interrupt(uint32_t uBase, UART_INTERRUPT eInt)
 {
 	if (eInt & ERROR_INT) {
-		HW_REG32(uBase, UART_CON) |= (0x1 << 6);
+		modifyreg32(uBase + UART_CON, 0, (0x1 << 6));
 	}
 
 	if (eInt & MODEM_INT) {
-		HW_REG32(uBase, UART_MCON) |= (0x1 << 3);
+		modifyreg32(uBase + UART_MCON, 0, (0x1 << 3));
 	}
 
-	HW_REG32(uBase, UART_INTM) &= ~(eInt);
+	modifyreg32(uBase + UART_INTM, eInt, 0);
 }
 
+/****************************************************************************
+ * Name: up_uart_disable_interrupt
+ *
+ * Description:
+ *   Disable interrupts defined by Interrupt mask.
+ *
+ * input parameters:
+ *   uBase - base address of uart channel
+ *   eInt - Interrupt mask
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_disable_interrupt(uint32_t uBase, UART_INTERRUPT eInt)
 {
-	HW_REG32(uBase, UART_INTM) |= eInt;
+	modifyreg32(uBase + UART_INTM, 0, eInt);
 
 	if (eInt & ERROR_INT) {
-		HW_REG32(uBase, UART_CON) &= ~(0x1 << 6);
+		modifyreg32(uBase + UART_CON, 0x1 << 6, 0);
 	}
 
 	if (eInt & MODEM_INT) {
-		HW_REG32(uBase, UART_MCON) &= ~(0x1 << 3);
+		modifyreg32(uBase + UART_MCON, 0x1 << 3, 0);
 	}
 }
 
+/****************************************************************************
+ * Name: up_uart_set_tx_mode
+ *
+ * Description:
+ *   Set UART TX operation mode POLL_MODE, INT_MODE, or DMA_MODE.
+ *
+ * input parameters:
+ *   uBase - base address of uart channel
+ *   eMode - Operation mode.
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_tx_mode(uint32_t uBase, UART_MODE eMode)
 {
-	HW_REG32(uBase, UART_CON) &= ~(0x3 << 2);
-	HW_REG32(uBase, UART_CON) &= ~(0x1 << 9);
+	modifyreg32(uBase + UART_CON, 0x3 << 2, 0);
+	modifyreg32(uBase + UART_CON, 0x1 << 9, 0);
 	up_uart_disable_interrupt(uBase, TX_INT);	/*  Disable TX Interrupt */
 
 	switch (eMode) {
 	case POLL_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x1 << 2);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 2);
 		break;
 
 	case INT_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x1 << 2);
-		HW_REG32(uBase, UART_CON) |= (0x1 << 9);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 2);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 9);
 		up_uart_enable_interrupt(uBase, TX_INT);	/*  Enable TX Interrupt */
 		break;
 
 	case DMA_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x2 << 2);
+		modifyreg32(uBase + UART_CON, 0, 0x2 << 2);
 		break;
 
 	case DISABLE_MODE:
@@ -629,27 +548,40 @@ static void up_uart_set_tx_mode(uint32_t uBase, UART_MODE eMode)
 	}
 }
 
+/****************************************************************************
+ * Name: up_uart_set_rx_mode
+ *
+ * Description:
+ *   Set UART RX operation mode POLL_MODE, INT_MODE, or DMA_MODE.
+ *
+ * input parameters:
+ *   uBase - base address of uart channel
+ *   eMode - Operation mode.
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_rx_mode(uint32_t uBase, UART_MODE eMode)
 {
-	HW_REG32(uBase, UART_CON) &= ~(0x3 << 0);
-	HW_REG32(uBase, UART_CON) &= ~(0x1 << 8);
+	modifyreg32(uBase + UART_CON, 0x3 << 0, 0);
+	modifyreg32(uBase + UART_CON, 0x1 << 8, 0);
 	up_uart_disable_interrupt(uBase, (UART_INTERRUPT)(RX_INT | ERROR_INT));
 
 	switch (eMode) {
 	case POLL_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x1 << 0);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 0);
 		up_uart_enable_interrupt(uBase, ERROR_INT);
 		break;
 
 	case INT_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x1 << 0);
-		HW_REG32(uBase, UART_CON) |= (0x1 << 8);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 0);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 8);
 		up_uart_enable_interrupt(uBase, (UART_INTERRUPT)(RX_INT | ERROR_INT));
 		break;
 
 	case DMA_MODE:
-		HW_REG32(uBase, UART_CON) |= (0x2 << 0);
-		HW_REG32(uBase, UART_CON) |= (0x1 << 8);
+		modifyreg32(uBase + UART_CON, 0, 0x2 << 0);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 8);
 		up_uart_enable_interrupt(uBase, (UART_INTERRUPT)(RX_INT | ERROR_INT));
 		break;
 
@@ -659,154 +591,358 @@ static void up_uart_set_rx_mode(uint32_t uBase, UART_MODE eMode)
 	}
 }
 
-static void up_uart_set_baudrate(uint32_t uBase, u32 nBaudrate, u32 nClock)
+/****************************************************************************
+ * Name: up_uart_set_baudrate
+ *
+ * Description:
+ *   Set Baud Rate
+ *
+ * input parameters:
+ *   uBase - base addres of uart channel
+ *   bBaudrate - BaudRate bps
+ *   nClock - Frequency, Hz
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
+static void up_uart_set_baudrate(uint32_t uBase, UART_BAUDRATE nBaudrate, u32 nClock)
 {
 	float fDiv;
 	float fFrac;
 
 	fDiv = ((float)nClock / (float)(nBaudrate * 16)) - 1.0;
-	fFrac = (u32)(((fDiv - (s32)fDiv) * 16));
+	fFrac = (u32)(((fDiv - (s32) fDiv) * 16));
 
-	HW_REG32(uBase, UART_BRDIV) = (u32)fDiv;
-	HW_REG32(uBase, UART_FRACVAL) = (u32)fFrac;
+	putreg32(fDiv, uBase + UART_BRDIV);
+	putreg32(fFrac, uBase + UART_FRACVAL);
 }
 
+/****************************************************************************
+ * Name: up_uart_set_infrared_mode
+ *
+ * Description:
+ *   Set Infrared operation mode
+ *
+ * input parameters:
+ *   uBase - base addres of uart channel
+ *   bEnable - TRUE enable, FALSE disable
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_infrared_mode(uint32_t uBase, bool bEnable)
 {
 	if (bEnable) {
-		HW_REG32(uBase, UART_LCON) |= (0x1 << 6);
+		modifyreg32(uBase + UART_LCON, 0, 0x1 << 6);
 	} else {
-		HW_REG32(uBase, UART_LCON) &= ~(0x1 << 6);
+		modifyreg32(uBase + UART_LCON, 0x1 << 6, 0);
 	}
 }
 
+/****************************************************************************
+ * Name: up_uart_set_parity_mode
+ *
+ * Description:
+ *   Set parity mode
+ *
+ * Input parameters:
+ *   uBase - base addres of uart channel
+ *   eParityMode - Parity Mode
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_parity_mode(uint32_t uBase, UART_PARITY_MODE eParityMode)
 {
-	HW_REG32(uBase, UART_LCON) &= ~(0x7 << 3);
-	HW_REG32(uBase, UART_LCON) |= (eParityMode << 3);
+	modifyreg32(uBase + UART_LCON, 0x7 << 3, eParityMode << 3);
 }
 
+/****************************************************************************
+ * Name: up_uart_set_stop_bit
+ *
+ * Description:
+ *   Det number of stop bits
+ *
+ * Input parameters:
+ *   uBase - base addres of uart channel
+ *   eStopbit - number of stop bits
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_stop_bit(uint32_t uBase, UART_STOP_BIT eStopBit)
 {
-	HW_REG32(uBase, UART_LCON) &= ~(0x1 << 2);
-	HW_REG32(uBase, UART_LCON) |= (eStopBit << 2);
+	modifyreg32(uBase + UART_LCON, 0x1 << 2, eStopBit << 2);
 }
 
+/****************************************************************************
+ * Name: up_uart_set_word_length
+ *
+ * Description:
+ *   Set transferred word length
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   eWordLen - word length
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_word_length(uint32_t uBase, UART_WORD_LENGTH eWordLen)
 {
-	HW_REG32(uBase, UART_LCON) &= ~(0x3 << 0);
-	HW_REG32(uBase, UART_LCON) |= (eWordLen << 0);
+	modifyreg32(uBase + UART_LCON, 0x3 << 0, eWordLen << 0);
 }
 
+/****************************************************************************
+ * Name: up_uart_set_loopback
+ *
+ * Description:
+ *   Set loopback mode
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   bEnable - TRUE enable, FALSE disable
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_loopback(uint32_t uBase, bool bEnable)
 {
 	if (bEnable) {
-		HW_REG32(uBase, UART_CON) |= (0x1 << 5);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 5);
 	} else {
-		HW_REG32(uBase, UART_CON) &= ~(0x1 << 5);
+		modifyreg32(uBase + UART_CON, 0x1 << 5, 0);
 	}
 }
 
+/****************************************************************************
+ * Name: up_uart_set_rx_timeout_interval
+ *
+ * Description:
+ *   Set RX timeout value when FIFO is empty
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   nTime - set timeout, number of frames = 8 * (nTime + 1)
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_rx_timeout_interval(uint32_t uBase, u32 nTime)
 {
-	HW_REG32(uBase, UART_CON) &= ~(0xF << 12);
-	HW_REG32(uBase, UART_CON) |= ((nTime & 0xF) << 12);
+	modifyreg32(uBase + UART_CON, 0xf << 12, (nTime & 0xf) << 12);
 }
 
+/****************************************************************************
+ * Name: up_uart_set_rx_timeout
+ *
+ * Description:
+ *   Enable RX timeout feature when FIFO is empty
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   bEnable - TRUE enable, FALSE disable
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_rx_timeout(uint32_t uBase, bool bEnable)
 {
 	if (bEnable) {
-		HW_REG32(uBase, UART_CON) |= (0x1 << 7);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 7);
 	} else {
-		HW_REG32(uBase, UART_CON) &= ~(0x1 << 7);
+		modifyreg32(uBase + UART_CON, 0x1 << 7, 0);
 	}
 }
 
+/****************************************************************************
+ * Name: up_uart_set_rx_timeout_with_empty_rx_fifo
+ *
+ * Description:
+ *   Enable RX timeout feature when FIFO is empty
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   bEnable - TRUE enable, FALSE disable
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_rx_timeout_with_empty_rx_fifo(uint32_t uBase, bool bEnable)
 {
 	if (bEnable) {
-		HW_REG32(uBase, UART_CON) |= (0x1 << 11);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 11);
 	} else {
-		HW_REG32(uBase, UART_CON) &= ~(0x1 << 11);
+		modifyreg32(uBase + UART_CON, 0x1 << 11, 0);
 	}
 }
 
+/****************************************************************************
+ * Name: up_uart_set_rx_timeout_suspend_dma
+ *
+ * Description:
+ *   Enable suspend DMA in case of RX timeout
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   bEnable - TRUE enable, FALSE disable
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_rx_timeout_suspend_dma(uint32_t uBase, bool bEnable)
 {
 	if (bEnable) {
-		HW_REG32(uBase, UART_CON) |= (0x1 << 10);
+		modifyreg32(uBase + UART_CON, 0, 0x1 << 10);
 	} else {
-		HW_REG32(uBase, UART_CON) &= ~(0x1 << 10);
+		modifyreg32(uBase + UART_CON, 0x1 << 10, 0);
 	}
 }
 
+/****************************************************************************
+ * Name: up_uart_set_fifo_mode
+ *
+ * Description:
+ *   Enable use of FIFO
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   bEnable - TRUE enable, FALSE disable
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_fifo_mode(uint32_t uBase, bool bEnable)
 {
-	HW_REG32(uBase, UART_FCON) |= (0x3 << 1);
+	modifyreg32(uBase + UART_FCON, 0, 0x3 << 1);
 
 	if (bEnable) {
-		HW_REG32(uBase, UART_FCON) |= (0x1 << 0);
+		modifyreg32(uBase + UART_FCON, 0, 0x1 << 0);
 	} else {
-		HW_REG32(uBase, UART_FCON) &= ~(0x1 << 0);
+		modifyreg32(uBase + UART_FCON, 0x1 << 0, 0);
 	}
 }
 
+/****************************************************************************
+ * Name: up_uart_set_tx_trigger_level
+ *
+ * Description:
+ *   Set TX FIFO interrupt trigger level
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   eTriggerLevel - trigger level
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_tx_trigger_level(uint32_t uBase, UART_TRIGGER_LEVEL eTriggerLevel)
 {
-	HW_REG32(uBase, UART_FCON) &= ~(0x7 << 8);
-	HW_REG32(uBase, UART_FCON) |= (eTriggerLevel << 8);
+	modifyreg32(uBase + UART_FCON, 0x7 << 8, eTriggerLevel << 8);
 }
 
+/****************************************************************************
+ * Name: up_uart_set_rx_trigger_level
+ *
+ * Description:
+ *   Set RX FIFO interrupt trigger level
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   eTriggerLevel - trigger level
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_rx_trigger_level(uint32_t uBase, UART_TRIGGER_LEVEL eTriggerLevel)
 {
-	HW_REG32(uBase, UART_FCON) &= ~(0x7 << 4);
-	HW_REG32(uBase, UART_FCON) |= (eTriggerLevel << 4);
+	modifyreg32(uBase + UART_FCON, 0x7 << 4, eTriggerLevel << 4);
 }
 
+/****************************************************************************
+ * Name: up_uart_set_rts_trigger_level
+ *
+ * Description:
+ *   Set RTS line trigger fifo level
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   eRTSTriggerLevel - trigger level
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_rts_trigger_level(uint32_t uBase, UART_RTS_TRIGGER_LEVEL eRTSTriggerLevel)
 {
-	HW_REG32(uBase, UART_MCON) &= ~(0x7 << 5);
-	HW_REG32(uBase, UART_MCON) |= (eRTSTriggerLevel << 5);
+	modifyreg32(uBase + UART_MCON, 0x7 << 5, eRTSTriggerLevel << 5);
 }
 
+/****************************************************************************
+ * Name: up_uart_set_tx_dma_burst_size
+ *
+ * Description:
+ *   Set DMA transfer burst size for TX channel
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   eBurstLength - Burst Length
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_tx_dma_burst_size(uint32_t uBase, UART_BURST_LENGTH eBurstLength)
 {
-	HW_REG32(uBase, UART_CON) &= ~(0x7 << 20);
-	HW_REG32(uBase, UART_CON) |= (eBurstLength << 20);
+	modifyreg32(uBase + UART_CON, 0x7 << 20, eBurstLength << 20);
 }
 
+/****************************************************************************
+ * Name: up_uart_set_rx_dma_burst_size
+ *
+ * Description:
+ *   Set DMA transfer burst size for RX channel
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   eBurstLength - Burst Length
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_set_rx_dma_burst_size(uint32_t uBase, UART_BURST_LENGTH eBurstLength)
 {
-	HW_REG32(uBase, UART_CON) &= ~(0x7 << 16);
-	HW_REG32(uBase, UART_CON) |= (eBurstLength << 16);
+	modifyreg32(uBase + UART_CON, 0x7 << 16, eBurstLength << 16);
 }
 
+/****************************************************************************
+ * Name: up_uart_clear_interrupt_status
+ *
+ * Description:
+ *   clear interrupt flags
+ *
+ * Input Parameters:
+ *   uBase - base addres of UART channel
+ *   eInt - Mask to clear interrupt flags
+ *
+ * Returned value:
+ *   None
+ ****************************************************************************/
 static void up_uart_clear_interrupt_status(uint32_t uBase, UART_INTERRUPT eInt)
 {
-	HW_REG32(uBase, UART_INTP) |= eInt;
-}
-
-/****************************************************************************
- * Name: up_serialin
- ****************************************************************************/
-
-static inline uint32_t up_serialin(struct up_dev_s *priv, int offset)
-{
-	return HW_REG32(priv->uartbase, offset);
-}
-
-/****************************************************************************
- * Name: up_serialout
- ****************************************************************************/
-
-static inline void up_serialout(struct up_dev_s *priv, int offset, uint32_t value)
-{
-	HW_REG32(priv->uartbase, offset) = value;
-	/*  WHY is it here???  up_lowputc((char)value); */
+	putreg32(eInt, uBase + UART_INTP);
 }
 
 /****************************************************************************
  * Name: up_disableuartint
+ *
+ * Description:
+ *   disable interrupt
+ *
+ * Input Parameters:
+ *   priv - pointer to uart dev private sitructure
+ *   im - pointer to store interrupt mask for restore later
+ *
+ * Returned value:
+ *   None
  ****************************************************************************/
 
 static inline void up_disableuartint(struct up_dev_s *priv, uint32_t *im)
@@ -821,19 +957,29 @@ static inline void up_disableuartint(struct up_dev_s *priv, uint32_t *im)
 
 	priv->im = ALL_INT;
 
-	HW_REG32(priv->uartbase, UART_INTM) = priv->im;
+	putreg32(priv->im, priv->uartbase + UART_INTM);
 
 	if (priv->im & ERROR_INT) {
-		HW_REG32(priv->uartbase, UART_CON) &= ~(0x1 << 6);
+		modifyreg32(priv->uartbase + UART_CON, 0x1 << 6, 0);
 	}
 
 	if (priv->im & MODEM_INT) {
-		HW_REG32(priv->uartbase, UART_MCON) &= ~(0x1 << 3);
+		modifyreg32(priv->uartbase + UART_MCON, 0x1 << 3, 0);
 	}
 }
 
 /****************************************************************************
  * Name: up_restoreuartint
+ *
+ * Description:
+ *   restore interrupt mask
+ *
+ * Input Parameters:
+ *   priv - pointer to uart dev private sitructure
+ *   im - interrupt mask to restore
+ *
+ * Returned value:
+ *   None
  ****************************************************************************/
 
 static inline void up_restoreuartint(struct up_dev_s *priv, uint32_t im)
@@ -841,46 +987,14 @@ static inline void up_restoreuartint(struct up_dev_s *priv, uint32_t im)
 	priv->im = im;
 
 	if (priv->im & ERROR_INT) {
-		HW_REG32(priv->uartbase, UART_CON) |= (0x1 << 6);
+		modifyreg32(priv->uartbase + UART_CON, 0, 0x1 << 6);
 	}
 
 	if (priv->im & MODEM_INT) {
-		HW_REG32(priv->uartbase, UART_MCON) |= (0x1 << 3);
+		modifyreg32(priv->uartbase + UART_MCON, 0, 0x1 << 3);
 	}
 
-	HW_REG32(priv->uartbase, UART_INTM) = priv->im;
-}
-
-/****************************************************************************
- * Name: up_waittxnotfull
- ****************************************************************************/
-
-#ifdef HAVE_SERIAL_CONSOLE
-/*  STRANGE FUNCTION ... Ivan  */
-static inline void up_waittxnotfull(struct up_dev_s *priv)
-{
-	volatile int tmp;
-
-	/* Limit how long we will wait for the TX available condition */
-
-	for (tmp = 1000; tmp > 0; tmp--) {
-		/* Check Tx FIFO is full */
-
-		if (!(HW_REG32(priv->uartbase, UART_FSTAT) & (0x1 << 24))) {
-			break;    /* The Tx FIFO is not full... return */
-		}
-
-	}
-
-	/* If we get here, then the wait has timed out and the Tx FIFO remains
-	 * full.
-	 */
-}
-#endif
-
-static inline void up_uart_set_filt(struct up_dev_s *priv, int enable, int cycle)
-{
-	//UART_CHANNEL ech = priv->eCh;
+	putreg32(priv->im, priv->uartbase + UART_INTM);
 }
 
 /****************************************************************************
@@ -889,17 +1003,23 @@ static inline void up_uart_set_filt(struct up_dev_s *priv, int enable, int cycle
  * Description:
  *   Initialize uart port.
  *
+ * Input Parameters:
+ *   priv - pointer to uart dev private sitructure
+ *   nBaudrate - baudrate, bps
+ *   nClock - clock source, HZ
+ *
+ * Returned Value:
+ *   int value, lower byte contains read value
  ****************************************************************************/
 
-void up_uart_initialize(struct up_dev_s *priv, u32 nBaudrate, u32 nClock)
+void up_uart_initialize(struct up_dev_s *priv, UART_BAUDRATE nBaudrate, u32 nClock)
 {
 	UART_CHANNEL eCh;
 	uint32_t uBase = priv->uartbase;
 
 	eCh = priv->eCh;
 
-	up_uart_set_gpio(eCh, TRUE);
-	up_uart_set_initial_configure(uBase);
+	up_uart_set_gpio(eCh);
 
 	up_uart_set_rx_mode(uBase, INT_MODE);
 	up_uart_set_tx_mode(uBase, INT_MODE);
@@ -946,12 +1066,9 @@ static int up_setup(struct uart_dev_s *dev)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 
-	uart_init((uint8_t)priv->eCh, 1);
+	uart_init(priv->eCh);
 
-#ifdef CONFIG_SUPPRESS_UART_CONFIG
-	/*  Do it here - Ivan  */
-#endif
-	priv->im = HW_REG32(priv->uartbase, UART_INTM);
+	priv->im = getreg32(priv->uartbase + UART_INTM);
 	return OK;
 }
 
@@ -992,12 +1109,11 @@ static int up_attach(struct uart_dev_s *dev)
 
 	/* Attach and enable the IRQ */
 
-	ret = irq_attach(priv->irq, up_interrupt);
+	ret = irq_attach(priv->irq, up_interrupt, NULL);
 	if (ret == OK) {
 		/* Enable the interrupt (RX and TX interrupts are still disabled
 		 * in the UART
 		 */
-
 		up_enable_irq(priv->irq);
 	}
 
@@ -1009,7 +1125,7 @@ static int up_attach(struct uart_dev_s *dev)
  *
  * Description:
  *   Detach UART interrupts.  This method is called when the serial port is
- *   closed normally just before the shutdown method is called.  The exception is
+ *   closed normally before the shutdown method is called.The exception is
  *   the serial console which is never shutdown.
  *
  ****************************************************************************/
@@ -1034,7 +1150,7 @@ static void up_detach(struct uart_dev_s *dev)
  *
  ****************************************************************************/
 
-static int up_interrupt(int irq, void *context)
+static int up_interrupt(int irq, void *context, void *arg)
 {
 	struct uart_dev_s *dev = NULL;
 	struct up_dev_s *priv;
@@ -1048,28 +1164,28 @@ static int up_interrupt(int irq, void *context)
 #endif
 
 #ifdef CONFIG_S5J_UART0
-	if (g_uart_priv[UART0].irq == irq) {
-		dev = &g_uart_port[UART0];
-	} else
+		if (g_uart_priv[UART0].irq == irq) {
+			dev = &g_uart_port[UART0];
+		} else
 #endif
 #ifdef CONFIG_S5J_UART1
-	if (g_uart_priv[UART1].irq == irq) {
-		dev = &g_uart_port[UART1];
-	} else
+			if (g_uart_priv[UART1].irq == irq) {
+				dev = &g_uart_port[UART1];
+			} else
 #endif
 #ifdef CONFIG_S5J_UART2
-	if (g_uart_priv[UART2].irq == irq) {
-		dev = &g_uart_port[UART2];
-	} else
+				if (g_uart_priv[UART2].irq == irq) {
+					dev = &g_uart_port[UART2];
+				} else
 #endif
 #ifdef CONFIG_S5J_UART3
-	if (g_uart_priv[UART3].irq == irq) {
-		dev = &g_uart_port[UART3];
-	} else
+					if (g_uart_priv[UART3].irq == irq) {
+						dev = &g_uart_port[UART3];
+					} else
 #endif
-	{
-		PANIC();
-	}
+					{
+						PANIC();
+					}
 
 	priv = (struct up_dev_s *)dev->priv;
 
@@ -1083,16 +1199,12 @@ static int up_interrupt(int irq, void *context)
 
 		/* Get the masked UART status and clear the pending interrupts. */
 
-		mis = (HW_REG32(priv->uartbase, UART_INTP) & 0xF);
-		HW_REG32(priv->uartbase, UART_INTP) = mis;
+		mis = getreg32(priv->uartbase + UART_INTP) & UART_INTP_MASK;
+		putreg32(mis, priv->uartbase + UART_INTP);
 
 		/* Handle incoming, receive bytes (with or without timeout) */
 
 		if ((mis & RX_INT) != 0) {
-
-#if defined(CONFIG_PM) && CONFIG_PM_SERIAL_ACTIVITY > 0
-			/*          pm_activity(CONFIG_PM_SERIAL_ACTIVITY); */
-#endif
 
 			/* Rx buffer not empty ... process incoming bytes */
 
@@ -1126,7 +1238,14 @@ static int up_interrupt(int irq, void *context)
  *
  * Description:
  *   All ioctl calls will be routed through this method
- *   Do we haev IOCTLs ??? Ivan
+ *
+ * Input Parameters:
+ *   filep - pointer to file structure
+ *   cmd - command
+ *   arg - argument
+ *
+ * Returned Value:
+ *   error value
  ****************************************************************************/
 
 static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
@@ -1148,7 +1267,7 @@ static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
 		}
 		cfsetispeed(termiosp, priv->baud);
 		termiosp->c_cflag = ((priv->parity != 0) ? PARENB : 0) | ((priv->parity == PM_ODD) ? PARODD : 0) | ((priv->stopbits2) ? CSTOPB : 0) | CS8;
-		/* T20 does not support flowcontrol. */
+		/* We do not support flowcontrol. */
 		break;
 	}
 
@@ -1191,17 +1310,24 @@ static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
  *   character from the UART.  Error bits associated with the
  *   receipt are provided in the return 'status'.
  *
+ * Input Parameters:
+ *   dev - pointer to uart dev structure
+ *   status - error bits
+ *
+ * Returned Value:
+ *   int value, lower byte contains read value
  ****************************************************************************/
 
 static int up_receive(struct uart_dev_s *dev, uint32_t *status)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-	*status = 0;				/*  WHAT KIND OF STATUS DO YOU NEED???  */
+	*status = 0;
 	int empty;
 	do {
-		empty = !(__raw_readl(priv->uartbase + UART_FSTAT) & 0x1FF);
+		empty = !(getreg32(priv->uartbase + UART_FSTAT) & UART_FSTAT_RX_MASK);
 	} while (empty);
-	return (HW_REG32(priv->uartbase, UART_RXH) & 0xFF);
+
+	return getreg32(priv->uartbase + UART_RXH) & UART_RX_MASK;
 }
 
 /****************************************************************************
@@ -1210,16 +1336,17 @@ static int up_receive(struct uart_dev_s *dev, uint32_t *status)
  * Description:
  *   Call to enable or disable RX interrupts
  *
+ * Input Parameters:
+ *   dev - pointer to uart dev structure
+ *   enable - true enable, falde disable
+ *
+ * Returned Value:
+ *   None
  ****************************************************************************/
-
 static void up_rxint(struct uart_dev_s *dev, bool enable)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 	if (enable) {
-		/* Receive an interrupt when their is anything in the Rx FIFO (or an Rx
-		 * timeout occurs.
-		 */
-
 #ifndef CONFIG_SUPPRESS_SERIAL_INTS
 		priv->im &= ~(RX_INT);
 #endif
@@ -1236,13 +1363,17 @@ static void up_rxint(struct uart_dev_s *dev, bool enable)
  * Description:
  *   Return true if the receive fifo is not empty
  *
+ * Input Parameters:
+ *   dev - pointer to uart dev structure
+ *
+ * Returned Value:
+ *   true is fifo is not empty
  ****************************************************************************/
-
 static bool up_rxavailable(struct uart_dev_s *dev)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 
-	return ((HW_REG32(priv->uartbase, UART_FSTAT) & 0x1FF) != 0);
+	return ((getreg32(priv->uartbase + UART_FSTAT) & UART_FSTAT_RX_MASK) != 0);
 }
 
 /****************************************************************************
@@ -1251,13 +1382,17 @@ static bool up_rxavailable(struct uart_dev_s *dev)
  * Description:
  *   This method will send one byte on the UART
  *
+ * Input Parameters:
+ *   dev - pointer to uart dev structure
+ *   ch - int value, lower byte will be sent through the uart
+ *
+ * Returned Value:
+ *   None
  ****************************************************************************/
-
 static void up_send(struct uart_dev_s *dev, int ch)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-	HW_REG32(priv->uartbase, UART_TXH) = ch;
-
+	putreg32(ch, priv->uartbase + UART_TXH);
 }
 
 /****************************************************************************
@@ -1266,8 +1401,14 @@ static void up_send(struct uart_dev_s *dev, int ch)
  * Description:
  *   Call to enable or disable TX interrupts
  *
+ * Input Parameters:
+ *   dev - pointer to uart dev structure
+ *   enable - true enable, falde disable
+ *
+ * Returned Value:
+ *   None
+ *
  ****************************************************************************/
-
 static void up_txint(struct uart_dev_s *dev, bool enable)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
@@ -1304,15 +1445,18 @@ static void up_txint(struct uart_dev_s *dev, bool enable)
  * Name: up_txready
  *
  * Description:
- *   Return true if the tranmsit fifo is not full
+ *   Check if the tranmsit fifo is not full
  *
+ * Input Parameters:
+ *   dev - pointer to uart dev structure
+ *
+ * Returned Value:
+ *   TRUE if fifo is not full
  ****************************************************************************/
-
 static bool up_txready(struct uart_dev_s *dev)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-	/*   return ((HW_REG32(priv->uartbase, UART_FSTAT) & (0x1 << 24)) == 0); */
-	return ((HW_REG32(priv->uartbase, UART_FSTAT) & (0x1FF << 16)) == 0);
+	return ((getreg32(priv->uartbase + UART_FSTAT) & UART_FSTAT_TX_MASK) == 0);
 
 }
 
@@ -1320,40 +1464,69 @@ static bool up_txready(struct uart_dev_s *dev)
  * Name: up_txempty
  *
  * Description:
- *   Return true if the transmit fifo is empty
+ *   Check if the transmit fifo is empty
  *
+ * Input Parameters:
+ *   dev - pointer to uart dev structure
+ *
+ * Returned Value:
+ *   TRUE if fifo is empty
  ****************************************************************************/
-
 static bool up_txempty(struct uart_dev_s *dev)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-	return ((HW_REG32(priv->uartbase, UART_FSTAT) & (0x1FF << 16)) == 0);
+	return ((getreg32(priv->uartbase + UART_FSTAT) & UART_FSTAT_TX_MASK) == 0);
 }
 
-/**
+/****************************************************************************
+ * Name: uart_send_data
  *
- * @brief send data to uart
- * @param UART_CHANNEL eCh : Uart Channel
- * @param char cData : one charactor ASCII code
+ * Description:
+ *   Send sigle byte through selected channel.
  *
- * @note  put the data to UART TXFIFO.
- *      data in TXFIFO will be send shortly.
+ * Input Parameters:
+ *   eCh - channel number
+ *   cData - byte to send
  *
- */
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
 static void uart_send_data(UART_CHANNEL eCh, char cData)
 {
 	struct up_dev_s *priv;
 	priv = g_uart_port[CONSOLE_PORT].priv;
 	while (!up_txempty(&g_uart_port[CONSOLE_PORT])) ;
-	HW_REG32(priv->uartbase, UART_TXH) = cData;
-#if 0
-	if (eCh != UART0) {
-		return;
-	}
-	priv = g_uart_port[UART0].priv;
-	while (!up_txempty(&g_uart_port[UART0])) ;
-	HW_REG32(priv->uartbase, UART_TXH) = cData;
-#endif
+	putreg32(cData, priv->uartbase + UART_TXH);
+}
+
+/****************************************************************************
+ * Name: uart_init
+ *
+ * Description:
+ *   Initializes seleced uart channel.
+ *   Set CLK source, init baudrate, disable interrupt.
+ *
+ * Input Parameters:
+ *   uart - channel number
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+static void uart_init(UART_CHANNEL uart)
+{
+	/* Initialize UART */
+	int clk;
+	struct up_dev_s *priv = g_uart_port[uart].priv;
+	int baud_rate = priv->baud;
+
+	cal_clk_enable(m1_clkcmu_uart);
+	cal_clk_setrate(m1_clkcmu_uart, 0);	/* 26Mhz */
+	clk = cal_clk_getrate(m1_clkcmu_uart);
+
+	up_uart_initialize(priv, baud_rate, clk);
+	up_uart_disable_interrupt(priv->uartbase, ALL_INT);
 }
 
 /****************************************************************************
@@ -1368,14 +1541,12 @@ static void uart_send_data(UART_CHANNEL eCh, char cData)
  *   debug so that the serial console will be available
  *   during bootup.  This must be called before up_serialinit.
  *
- ****************************************************************************/
-/**
+ * Input Parameters:
+ *   None
  *
- * @brief Low level UART initialization
- * @note  Performs the low level UART initialization early in
- *      debug so that the serial console will be available
- *      during bootup.  This must be called before up_serialinit.
- */
+ * Returned Value:
+ *   None
+ ****************************************************************************/
 #if defined(USE_EARLYSERIALINIT)
 void up_earlyserialinit(void)
 {
@@ -1419,16 +1590,12 @@ void up_earlyserialinit(void)
  *   Register serial console and serial ports.  This assumes
  *   that up_earlyserialinit was called previously.
  *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
  ****************************************************************************/
-
-/**
- *
- * @brief Register serial UART ports
- * @note  Register serial console and serial ports.
- *      This assumes that up_earlyserialinit was called previously.'
- *
- */
-
 #if defined(USE_SERIALDRIVER)
 void up_serialinit()
 {
@@ -1464,60 +1631,21 @@ void up_serialinit()
 }
 #endif
 
-/**
- *
- * @brief Register serial UART1 ports
- * @note  Register serial UART1 ports.
- *      This assumes that up_earlyserialinit was called previously.
- *      This function for only UART1 port register
- */
-/* NEVER USED
-void uartdrv_register(void)
-{
-#ifdef CONFIG_S5J_UART0
-  lldbg("uart0 driver register\n");
-  (void)uart_register("/dev/ttyS0", &g_uart_port[UART0]);
-#endif
-#ifdef CONFIG_S5J_UART1
-  lldbg("uart1 driver register\n");
-  (void)uart_register("/dev/ttyS1", &g_uart_port[UART1]);
-#endif
-
-#ifdef CONFIG_S5J_UART2
-  lldbg("uart2 driver register\n");
-  (void)uart_register("/dev/ttyS2", &g_uart_port[UART2]);
-#endif
-
-#ifdef CONFIG_S5J_UART3
-  lldbg("uart3 driver register\n");
-  (void)uart_register("/dev/ttyS3", &g_uart_port[UART3]);
-#endif
-
-#ifdef CONFIG_S5J_UARTDBG
-  lldbg("uart_dbg driver register\n");
-  (void)uart_register("/dev/ttyDBG", &g_uart_port[UARTDBG]);
-#endif
-}
-*/
-
 /****************************************************************************
  * Name: up_putc
  *
  * Description:
- *   Provide priority, low-level access to support OS debug  writes
+ *   Output one byte on the serial console
+ *
+ * Input Parameters:
+ *   ch - chatacter to output
+ *
+ * Returned Value:
+ *  sent character
  *
  ****************************************************************************/
-/**
- *
- * @brief   OS debug write charactor
- * @param    int ch: one charactor ASCII code
- * @return     inputed charactor ASCII code
- * @note     Provide priority, low-level access to support OS debug writes
- */
-
 int up_putc(int ch)
 {
-	//__asm__ __volatile__ ("b .");
 #ifdef HAVE_SERIAL_CONSOLE
 	/* Check for LF */
 	if (ch == '\n') {
@@ -1529,12 +1657,27 @@ int up_putc(int ch)
 	return ch;
 }
 
+/****************************************************************************
+ * Name: up_getc
+ *
+ * Description:
+ *   Read one byte from the serial console
+ *
+ * Input Parameters:
+ *   none
+ *
+ * Returned Value:
+ *   int value, -1 if error, 0~255 if byte successfully read
+ *
+ ****************************************************************************/
 int up_getc()
 {
 #ifdef HAVE_SERIAL_CONSOLE
-	uint8_t ch;
-	if (uart_getchar_nb(CONSOLE_PORT, &ch)) {
-		return ch;
+	struct uart_dev_s *dev = &g_uart_port[CONSOLE_PORT];
+	uint32_t state;
+
+	if (up_rxavailable(dev)) {
+		return up_receive(dev, &state);
 	} else {
 		return -1;
 	}
@@ -1543,196 +1686,20 @@ int up_getc()
 #endif
 }
 
-/**
+/****************************************************************************
+ * Name: up_lowputc
  *
- * @brief   low level uart send one charactor function
- * @param   char ch: one charactor ASCII code
- * @note    send data to UART0.
- */
-
+ * Description:
+ *   Output one byte on the serial console
+ *
+ * Input Parameters:
+ *   ch - chatacter to output
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
 void up_lowputc(char ch)
 {
-	/* Report serial activity to the power management logic */
-
 	uart_send_data(CONSOLE_PORT, ch);
-}
-
-/**
- *
- * @brief   initialize UART channel
- * @param   uint8_t uart: uart channel
- * @param   uint8_t interrupts: enable interrupts bit (1 : enable, 0 : disable)
- * @note    UART initialization function. at now, only UART0 and UART1 is able to be initialized
- */
-
-void uart_init(uint8_t uart, uint8_t interrupts)
-{
-	/* Initialize UART */
-	int clk;
-	struct up_dev_s *priv = g_uart_port[uart].priv;
-	int baud_rate = priv->baud;
-
-#ifdef CONFIG_S5J_UART_CLOCK_FROM_WPLL
-	cal_clk_enable(m1_clkcmu_uart);
-	cal_clk_setrate(m1_clkcmu_uart, 1);	/* 80Mhz */
-#else
-	cal_clk_enable(m1_clkcmu_uart);
-	cal_clk_setrate(m1_clkcmu_uart, 0);	/* 26Mhz */
-#endif
-	clk = cal_clk_getrate(m1_clkcmu_uart);
-
-	up_uart_initialize(priv, baud_rate, clk);
-	if (!interrupts) {
-		up_uart_disable_interrupt(priv->uartbase, ALL_INT);
-	}
-}
-
-void up_lowconsole_init(void)
-{
-	uart_init(CONSOLE_PORT, 1);
-}
-
-/**
- *
- * @brief   Put charactor to UART (busy waiting)
- * @param   uint8_t uart: uart channel
- * @param   int c: One ASCII charactor
- * @note    put charactor to UART.
- *        if tx fifo is full state, wait a moment until fifo is empty.
- *        And then, write one charactor
- */
-
-void uart_putchar_wait(uint8_t uart, int c)
-{
-	/* if tx fifo is full state, wait, and write one char */
-	while (!up_txempty(&g_uart_port[uart])) ;
-
-	up_send(&g_uart_port[uart], c);
-}
-
-/**
- *
- * @brief   Put charactor to UART
- * @param   uint8_t uart: uart channel
- * @param   int c: One ASCII charactor
- * @return    == 1: put one charactor to FIFO
- *        == 0: FIFO is not empty.
- * @note    put charactor to UART.
- *        if tx fifo is empty, write one charactor.
- *        this function does not wait for fifo.
- */
-
-int uart_putchar_nb(uint8_t uart, int c)
-{
-	struct uart_dev_s *dev = &g_uart_port[uart];
-	if (up_txempty(dev)) {
-		up_send(dev, c);
-		return TRUE;
-	} else {
-		return FALSE;
-	}
-}
-
-/**
- *
- * @brief   get charactor from UART
- * @param   uint8_t uart: uart channel
- * @param   uint8_t *ch: one ASCII charactor container
- * @return    == 1: Get one charactor from RXFIFO
- *        == 0: FIFO is empty.
- * @note    get charactor from UART.
- *        if rx fifo is not empty, get one charactor into *ch.
- *        this function does not wait for fifo.
- */
-
-int uart_getchar_nb(uint8_t uart, uint8_t *ch)
-{
-	struct uart_dev_s *dev = &g_uart_port[uart];
-	uint32_t state;
-	if (up_rxavailable(dev)) {
-		*ch = up_receive(dev, &state);
-		return TRUE;
-	} else {
-		return FALSE;
-	}
-}
-
-/**
- *
- * @brief   check the UART is transmitting
- * @param   uint8_t uart: uart channel
- * @return    == 1: UART is transmitting now. TX FIFO has some data.
- *        == 0: UART is idle. FIFO is empty
- * @note    check the UART is transmitting.
- */
-
-int uart_tx_busy(uint8_t uart)
-{
-	if (!up_txready(&g_uart_port[uart])) {
-		return TRUE;
-	} else {
-		return FALSE;
-	}
-}
-
-/**
- *
- * @brief   Set UART's Baudrate
- * @param   uint8_t uart: uart channel
- * @param   enum uart_boadrate bdrt: selected baudrate
- * @return    == -1: wrong baudrate.
- *        == 0: set baudrate to UART
- * @note    Set UART baudrate.
- */
-
-int uart_baudrate(uint8_t uart, enum uart_baudrate bdrt)
-{
-	u32 nBaudrate;
-	u32 uBase = ((struct up_dev_s *)g_uart_port[uart].priv)->uartbase;
-	if (bdrt < 0 || bdrt >= ARRAY_SIZE(baudrate)) {
-		return -1;
-	}
-
-	nBaudrate = baudrate[bdrt];
-	up_uart_set_baudrate(uBase, nBaudrate, 133000000);
-	return 0;
-
-}
-
-/**
- *
- * @brief   Set UART's interrupt
- * @param   uint8_t uart: uart channel
- * @param   UART_INTERRUPT irq: kinds of irq type
- * @param   int on: enable bit (1 : enable)
- * @note    Set UART's interrupt
- */
-
-void uart_irq_enable(uint8_t uart, UART_INTERRUPT irq, int on)
-{
-	/* UART_INTERRUPT is same as enum uart_irq */
-	struct up_dev_s *priv = (struct up_dev_s *)g_uart_port[uart].priv;
-	if (on) {
-		up_uart_enable_interrupt(priv->uartbase, irq);
-	} else {
-		up_uart_disable_interrupt(priv->uartbase, irq);
-	}
-}
-
-/**
- *
- * @brief   polling UART rxfifo (busy waiting)
- * @param   uint8_t uart: uart channel
- * @note    polling UART rxfifo.
- *        if rx fifo is empty, wait a moment until rxfifo is available.
- */
-
-void uart_poll(uint8_t uart)
-{
-	/* What does that mean "POLL"? rx poll? */
-	struct uart_dev_s *dev = &g_uart_port[uart];
-	while (!up_rxavailable(dev)) ;
-
-	return;
-
 }

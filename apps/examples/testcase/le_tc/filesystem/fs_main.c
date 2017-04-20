@@ -331,77 +331,6 @@ static int make_long_file(void)
 	return ret;
 }
 
-#ifdef CONFIG_FS_SMARTFS
-static int fs_util_fs_erase_tc(void)
-{
-	int ret;
-	printf("%d. fs_erase Test started. Please wait...\n", g_tc_count++);
-
-	/* Erase entire flash */
-	ret = fs_erase(MOUNT_DEV_DIR);
-	if (ret != OK) {
-		printf("fs_erase Failed : %d\n", ret);
-		g_tc_fail_count++;
-		return ret;
-	}
-	printf("PASS!\n");
-	return ret;
-}
-
-static int fs_util_fs_clean_tc(void)
-{
-	int ret;
-	printf("%d. fs_clean Test started. Please wait...\n", g_tc_count++);
-
-	/* Erase entire flash */
-	ret = fs_clean(MOUNT_DEV_DIR);
-	if (ret != OK) {
-		printf("fs_clean Failed : %d\n", ret);
-		g_tc_fail_count++;
-		return ret;
-	}
-	printf("PASS!\n");
-
-	return ret;
-
-}
-
-static int fs_util_fs_initiate_tc(void)
-{
-	int ret;
-
-	printf("%d. fs_initiate Test started. Please wait...\n", g_tc_count++);
-
-	/* Initiate file system */
-	ret = fs_initiate(MOUNT_DEV_DIR, TARGET_FS_NAME);
-	if (ret != OK) {
-		printf("fs_initiate Failed : %d\n", ret);
-		g_tc_fail_count++;
-		return ret;
-	}
-	printf("PASS!\n");
-
-	return ret;
-}
-
-#ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
-static int fs_util_fs_recover_tc(void)
-{
-	int ret;
-
-	printf("%d. fs_recover Test started. Please wait...\n", g_tc_count++);
-	ret = fs_recover();
-	if (ret != OK) {
-		printf("fs_recover Failed : %d\n", ret);
-		g_tc_fail_count++;
-		return ret;
-	}
-	printf("PASS!\n");
-
-	return ret;
-}
-#endif
-#endif /* END OF CONFIG_FS_SMARTFS */
 
 static int fs_vfs_mount_tc(void)
 {
@@ -2076,12 +2005,7 @@ static int fs_sample_launcher(int argc, char **args)
 {
 	g_tc_count = 1;
 	g_tc_fail_count = 0;
-#ifdef CONFIG_FS_SMARTFS
-	fs_util_fs_initiate_tc();
-#ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
-	fs_util_fs_recover_tc();
-#endif
-#endif
+
 	fs_vfs_umount_tc();
 	fs_vfs_mount_tc();
 	fs_vfs_open_tc();
@@ -2138,10 +2062,6 @@ static int fs_sample_launcher(int argc, char **args)
 	libc_stdio_gets_s_tc();
 	libc_stdio_fileno_tc();
 	libc_stdio_ungetc_tc();
-#ifdef CONFIG_FS_SMARTFS
-	fs_util_fs_clean_tc();
-	fs_util_fs_erase_tc();
-#endif
 	printf("#########################################\n");
 	printf("           FS TC Result               \n");
 	printf("           Total TC : %d              \n", --g_tc_count);

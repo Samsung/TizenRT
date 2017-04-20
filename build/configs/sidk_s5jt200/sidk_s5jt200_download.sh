@@ -91,40 +91,9 @@ main()
 			prepare_resource
 			;;
 
-		FOTA_ALL)
-			echo "FOTA_ALL :"
-			if [ "${CONFIG_BOARD_FOTA_SUPPORT}" = "y" ]; then
-				pushd ${openocd_path}
-				./$COMMAND -f s5jt200_evt0_flash_all_fota.cfg
-				popd
-				prepare_resource
-			else
-				echo "FOTA is not supported, skip download ..."
-			fi
-			;;
-		TINYARA_OTA0)
-			echo "TINYARA_OTA0 :"
-			if [ "${CONFIG_BOARD_FOTA_SUPPORT}" = "y" ]; then
-				pushd ${openocd_path}
-				./$COMMAND -f s5jt200_evt0_flash_tinyara_ota0.cfg
-				popd
-			else
-				echo "FOTA is not supported, skip download ..."
-			fi
-			;;
-		TINYARA_OTA1)
-			echo "TINYARA_OTA1 :"
-			if [ "${CONFIG_BOARD_FOTA_SUPPORT}" = "y" ]; then
-				pushd ${openocd_path}
-				./$COMMAND -f s5jt200_evt0_flash_tinyara_ota1.cfg
-				popd
-			else
-				echo "FOTA is not supported, skip download ..."
-			fi
-			;;
 		*)
 			echo "${arg} is not suppported in ${BOARD_NAME}"
-			echo "Usage : make download [ ALL | RESOURCE | FOTA_ALL | TINYARA_OTA0 | TINYARA_OTA1 ]"
+			echo "Usage : make download [ ALL | RESOURCE ]"
 			exit 1
 			;;
 		esac

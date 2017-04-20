@@ -1,0 +1,81 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+menu "wpa_supplicant"
+
+config WPA_SUPPLICANT
+	bool "wpa_supplicant"
+	default n
+	---help---
+		Start the wpa_supplicant
+
+if WPA_SUPPLICANT
+
+config WPA_SUPPLICANT_PROGNAME
+	string "Program name"
+	default "wpa_supplicant"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+config WPA_SUPPLICANT_PRIORITY
+	int "wpa_supplicant task priority"
+	default 100
+
+config WPA_SUPPLICANT_STACKSIZE
+	int "wpa_supplicant stack size"
+	default 16384
+
+config WPA_SUPPLICANT_ENTRYPOINT
+	string "wpa_supplicant entry point"
+	default "wpa_supplicant_main"
+
+config CTRL_IFACE
+	bool "wpa_supplicant ctrl_iface flag"
+	default y
+
+config CTRL_IFACE_FIFO
+    bool "wpa_supplicant ctrl_iface type - fifo"
+    default y
+
+if CTRL_IFACE_FIFO
+config WPA_CTRL_FIFO_DEV_REQ
+    string "Path to WPA Control FIFO device for requests"
+    default "/dev/wpa_ctrl_req"
+
+config WPA_CTRL_FIFO_DEV_CFM
+    string "Path to WPA Control FIFO device for confirm"
+    default "/dev/wpa_ctrl_cfm"
+
+config WPA_CTRL_FIFO_DEV_GLOBAL_REQ
+    string "Path to WPA Control global FIFO device for requests"
+    default "/dev/wpa_ctrl_global_req"
+
+config WPA_CTRL_FIFO_DEV_GLOBAL_CFM
+    string "Path to WPA Control global FIFO device for confirm"
+    default "/dev/wpa_ctrl_global_cfm"
+
+config WPA_MONITOR_FIFO_DEV
+    string "Path to WPA Control monitor FIFO device"
+    default "/dev/wpa_monitor"
+
+config WPA_CTRL_FIFO_MK_MODE
+    int "File access mode for WPA control FIFOs"
+    default 666
+
+endif
+
+config ELOOP_POLL
+	bool "wpa_supplicant eloop poll mechanism - poll"
+	default y
+
+config WPA_SUPPLICANT_CMD
+	bool "wpa_supplicant command line interface"
+	default n
+
+endif
+
+endmenu # wpa_supplicant

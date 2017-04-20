@@ -49,8 +49,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-/// @file ntpclient_main.c
-/// @brief the program for testing ntpclient
+/**
+ * @file ntpclient_main.c
+ * @brief the program for testing ntpclient
+ */
 
 /****************************************************************************
  * Included Files
@@ -69,7 +71,7 @@
  ****************************************************************************/
 #define TIME_STRING_LEN         16
 #define DATE_STRING_LEN         16
-#define NTP_SERVER_PORT 123
+#define NTP_SERVER_PORT         123
 
 /****************************************************************************
  * Enumeration
@@ -136,7 +138,7 @@ static int ntpclient_show_date(unsigned int timezone)
 	struct tm *ptm;
 
 	if (timezone >= TIMEZONE_END) {
-		fprintf(stderr, "ERROR: |%s| invalid timezone: %d \n", __FUNCTION__, timezone);
+		fprintf(stderr, "ERROR: invalid timezone: %d\n", timezone);
 		goto done;
 	}
 
@@ -146,7 +148,7 @@ static int ntpclient_show_date(unsigned int timezone)
 	(void)strftime(g_time_str, TIME_STRING_LEN, "%H:%M:%S", ptm);
 	(void)strftime(g_date_str, DATE_STRING_LEN, "%b %d, %Y", ptm);
 
-	printf("\n[ntpclient] current time: %s %s %s \n", g_date_str, g_time_str, g_timezone[timezone].str);
+	printf("current time: %s %s %s\n", g_date_str, g_time_str, g_timezone[timezone].str);
 
 	/* result is success */
 	result = 0;
@@ -177,17 +179,80 @@ static void ntpclient_show_daemon_status(unsigned int status)
 		snprintf(status_str, status_str_len, "STOPPED");
 		break;
 	default:
-		fprintf(stderr, "ERROR: |%s| invalid daemon status : %d \n", __FUNCTION__, status);
+		fprintf(stderr, "ERROR: invalid daemon status : %d\n", status);
 		return;
 	}
 
-	printf("\n[ntpclient] current daemon status : %s \n", status_str);
+	printf("ntpclient daemon status : %s\n", status_str);
 }
 
 static void ntp_link_error(void)
 {
-	printf("All server list can not be connected\n");
-	ntpc_stop();
+	printf("ntp_link_error() callback is called.\n");
+}
+
+static int test_ntpclient_start(struct ntpc_server_conn_s *server_conn, int interval_secs, int num_of_servers)
+{
+	if (ntpc_start(server_conn, num_of_servers, interval_secs, ntp_link_error) < 0) {
+		fprintf(stderr, "ERROR: ntpc_start() failed.\n");
+		return -1;
+	}
+	printf("ntpc_start() OK.\n");
+
+	return 0;
+}
+
+static int test_ntpclient_stop(void)
+{
+	if (ntpc_stop() < 0) {
+		fprintf(stderr, "ERROR: ntpc_stop() failed.\n");
+		return -1;
+	}
+	printf("ntpc_stop() OK.\n");
+
+	return 0;
+}
+
+static int test_ntpclient_get_status(void)
+{
+	int status = ntpc_get_status();
+
+	switch (status) {
+	case NTP_NOT_RUNNING:
+	case NTP_STARTED:
+	case NTP_RUNNING:
+	case NTP_STOP_REQUESTED:
+	case NTP_STOPPED:
+		ntpclient_show_daemon_status(status);
+		break;
+	default:
+		fprintf(stderr, "ERROR: ntpc_get_status() failed.\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static int test_ntpclient_get_link(void)
+{
+	int link = ntpc_get_link_status();
+	printf("ntpclient link status : ");
+	switch (link) {
+	case NTP_LINK_NOT_SET:
+		printf("Searching NTP Server\n");
+		break;
+	case NTP_LINK_UP:
+		printf("Link UP\n");
+		break;
+	case NTP_LINK_DOWN:
+		printf("Link Down\n");
+		break;
+	default:
+		printf("Unknown\n");
+		return -1;
+	}
+
+	return 0;
 }
 
 /****************************************************************************
@@ -200,120 +265,39 @@ int main(int argc, FAR char *argv[])
 int ntpclient_main(int argc, char *argv[])
 #endif
 {
-	int result = -1;
-	int cmdtype = 0;			/* 1: start, 2: stop, 3: status, 4: date */
-	int ret = 0;
-	int interval_secs;
-	int num_of_servers;
-	int i;
-
-	if ((argc >= 4) && (argc <= (3 + MAX_NTP_SERVER_NUM))) {
-		if (strcmp(argv[1], "start") == 0) {
-			cmdtype = 1;
-			memset(&g_server_conn, 0x0, sizeof(g_server_conn));
-			interval_secs = atoi(argv[2]);
-			num_of_servers = argc - 3;
-			for (i = 0; i < num_of_servers; i++) {
-				g_server_conn[i].hostname = argv[3 + i];
-				g_server_conn[i].port = NTP_SERVER_PORT;
-			}
-		} else {
-			fprintf(stderr, "ERROR: |%s| invalid <command> : %s \n", __FUNCTION__, argv[1]);
-			show_usage(argv[0]);
-			goto done;
+	if ((argc >= (3 + 1)) && (argc <= (3 + MAX_NTP_SERVER_NUM)) && !strcmp(argv[1], "start")) {
+		int i;
+		int interval_secs = atoi(argv[2]);
+		int num_of_servers = argc - 3;
+		memset(&g_server_conn, 0x0, sizeof(g_server_conn));
+		for (i = 0; i < num_of_servers; i++) {
+			g_server_conn[i].hostname = argv[3 + i];
+			g_server_conn[i].port = NTP_SERVER_PORT;
 		}
-
-	}
-
-	else if (argc == 2) {
-		if (strcmp(argv[1], "stop") == 0) {
-			cmdtype = 2;
-		} else if (strcmp(argv[1], "status") == 0) {
-			cmdtype = 3;
-		} else if (strcmp(argv[1], "date") == 0) {
-			cmdtype = 4;
-		} else if (strcmp(argv[1], "link") == 0) {
-			cmdtype = 5;
-		} else {
-			fprintf(stderr, "ERROR: |%s| invalid <command> : %s \n", __FUNCTION__, argv[1]);
-			show_usage(argv[0]);
-			goto done;
+		if (test_ntpclient_start(g_server_conn, interval_secs, num_of_servers) != 0) {
+			goto errout;
 		}
-
-	} else {
-		fprintf(stderr, "ERROR: |%s| no parameter \n", __FUNCTION__);
-		show_usage(argv[0]);
-		goto done;
-	}
-
-	/* execute npclient api */
-	switch (cmdtype) {
-	case 1:					/* start */
-		ret = ntpc_start(g_server_conn, num_of_servers, interval_secs, ntp_link_error);
-		if (ret > 0) {
-			printf("[ntpclient] ntpc_start() API OK.\n");
-			printf("[ntpclient] Please check if ntpc daemon's status is RUNNING. \n");
-			printf("[ntpclient] Please check if current time is synchronized to ntp server. \n");
-		} else {
-			printf("[ntpclient] ntpc_start() API FAIL \n");
-			goto done;
+	} else if ((argc == 2) && !strcmp(argv[1], "stop")) {
+		if (test_ntpclient_stop() != 0) {
+			goto errout;
 		}
-		break;
-
-	case 2:					/* stop */
-		ret = ntpc_stop();
-		if (ret == 0) {
-			printf("[ntpclient] ntpc_stop() API OK.\n");
-			printf("[ntpclient] Please check if ntpc daemon's status is STOPPED. \n");
-		} else {
-			printf("[ntpclient] ntpc_stop() API FAIL \n");
-			goto done;
+	} else if ((argc == 2) && !strcmp(argv[1], "status")) {
+		if (test_ntpclient_get_status() != 0) {
+			goto errout;
 		}
-		break;
-
-	case 3:					/* status */
-		ret = ntpc_get_status();
-		switch (ret) {
-		case NTP_NOT_RUNNING:
-		case NTP_STARTED:
-		case NTP_RUNNING:
-		case NTP_STOP_REQUESTED:
-		case NTP_STOPPED:
-			ntpclient_show_daemon_status(ret);
-			printf("[ntpclient] ntpc_get_status() API OK \n");
-			break;
-		default:
-			printf("[ntpclient] ntpc_get_status() API FAIL \n");
-			goto done;
-		}
-		break;
-
-	case 4:					/* date */
+	} else if ((argc == 2) && !strcmp(argv[1], "date")) {
 		ntpclient_show_date(TIMEZONE_KST);
-		break;
-
-	case 5:					/* link */
-		ret = ntpc_get_link_status();
-		switch (ret) {
-		case NTP_LINK_NOT_SET:
-			printf("\n[ntpclient] link status : Searching NTP Server... \n");
-			break;
-		case NTP_LINK_UP:
-			printf("\n[ntpclient] link status : Link UP \n");
-			break;
-		case NTP_LINK_DOWN:
-			printf("\n[ntpclient] link status : Link Down \n");
-			break;
-		default:
-			printf("\n[ntpclient] link status : Unknown \n");
-			goto done;
+	} else if ((argc == 2) && !strcmp(argv[1], "link")) {
+		if (test_ntpclient_get_link() != 0) {
+			goto errout;
 		}
-		break;
+	} else {
+		show_usage(argv[0]);
+		goto errout;
 	}
 
-	/* result is success */
-	result = 0;
+	return 0;
 
-done:
-	return result;
+errout:
+	return -1;
 }

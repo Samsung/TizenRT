@@ -39,7 +39,8 @@ int http_client_tls_init(struct http_client_t *client)
 		return HTTP_ERROR;
 	}
 
-	mbedtls_ssl_set_bio(&(client->tls_ssl), &(client->tls_client_fd), mbedtls_net_send, mbedtls_net_recv, NULL);
+	mbedtls_ssl_set_bio(&(client->tls_ssl), &(client->tls_client_fd),
+						mbedtls_net_send, mbedtls_net_recv, NULL);
 
 	/* Handshake */
 	HTTP_LOGD("  . Performing the SSL/TLS handshake...");

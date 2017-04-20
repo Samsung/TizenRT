@@ -48,35 +48,35 @@
  * @ingroup NETWORK
  * @{
  */
-
-/// @file mdnsd.h
-/// @brief APIs for Multicast DNS
-
+/**
+ * @file mdnsd.h
+ * @brief APIs for Multicast DNS
+ */
 
 #ifndef __MDNSD_H__
 #define __MDNSD_H__
 
 #include <stdint.h>
 
-#define MAX_NUMBER_OF_SERVICE_DISCOVERY_RESULT	10
-#define MAX_SERVICE_DISCOVERY_TIME_MS			(60 * 1000)
+#define MAX_NUMBER_OF_SERVICE_DISCOVERY_RESULT          10
+#define MAX_SERVICE_DISCOVERY_TIME_MS          (60 * 1000)
 
-#define MDNS_HOSTNAME_RESOLVER_TIMEOUT_MSEC		(3 * 1000)
-#define MDNS_HOSTNAME_RESOLVER_MAX_TRY_COUNT	5
-#define MDNS_HOSTNAME_RESOLVER_WAIT_TIME_MSEC	250
+#define MDNS_HOSTNAME_RESOLVER_TIMEOUT_MSEC       (3 * 1000)
+#define MDNS_HOSTNAME_RESOLVER_MAX_TRY_COUNT    5
+#define MDNS_HOSTNAME_RESOLVER_WAIT_TIME_MSEC   250
 
-#define MDNS_SERVICE_DISCOVERY_MAX_TRY_COUNT	5
-#define MDNS_SERVICE_DISCOVERY_WAIT_TIME_MSEC	250
+#define MDNS_SERVICE_DISCOVERY_MAX_TRY_COUNT    5
+#define MDNS_SERVICE_DISCOVERY_WAIT_TIME_MSEC  250
 
 /**
  * @brief Structure of MDNS service information
  */
 struct mdns_service_info {
-	char         *type;
-	char         *instance_name;
-	char         *hostname;
-	unsigned int  ipaddr;		/* ipv4 */
-	unsigned int  port;
+	char *type;
+	char *instance_name;
+	char *hostname;
+	unsigned int ipaddr;		/* ipv4 */
+	unsigned int port;
 };
 
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
@@ -86,7 +86,7 @@ struct mdns_service_info {
  *
  * @param[in] desired_hostname the desired host name as string type. if same name is in the network, an alternative name will be set as hostname.
  * @param[in] netif_name network interface name as string type
- * @return On success, 0 is returned. On failure, a negative errno value is returned.
+ * @return On success, 0 is returned. On failure, a negative value is returned.
  *
  */
 int mdnsd_start(const char *desired_hostname, const char *netif_name);
@@ -94,7 +94,7 @@ int mdnsd_start(const char *desired_hostname, const char *netif_name);
 /**
  * @brief mdnsd_stop() stops the MDNS daemon.
  *
- * @return On success, 0 is returned. On failure, a negative errno value is returned.
+ * @return On success, 0 is returned. On failure, a negative value is returned.
  *
  */
 int mdnsd_stop(void);
@@ -103,7 +103,7 @@ int mdnsd_stop(void);
  * @brief mdnsd_get_hostname() gets the current host name as MDNS type.
  *
  * @param[out] hostname_result 32-bytes string buffer for the host name result
- * @return On success, 0 is returned. On failure, a negative errno value is returned.
+ * @return On success, 0 is returned. On failure, a negative value is returned.
  *
  */
 int mdnsd_get_hostname(char *hostname_result);
@@ -114,8 +114,8 @@ int mdnsd_get_hostname(char *hostname_result);
  * @brief mdnsd_resolve_hostname() gets ip address with the given hostname.
  *
  * @param[in] hostname host name as string type
-  * @param[out] ipaddr the pointer of ip address result
- * @return On success, 0 is returned. On failure, a negative errno value is returned.
+ * @param[out] ipaddr the pointer of ip address result
+ * @return On success, 0 is returned. On failure, a negative value is returned.
  *
  */
 int mdnsd_resolve_hostname(char *hostname, int *ipaddr);
@@ -127,7 +127,7 @@ int mdnsd_resolve_hostname(char *hostname, int *ipaddr);
  * @param[in] discover_time_msec time in milliseconds for discovering service
  * @param[out] service_list the array of service list
  * @param[out] num_of_services number of services
- * @return On success, 0 is returned. On failure, a negative errno value is returned.
+ * @return On success, 0 is returned. On failure, a negative value is returned.
  *
  */
 int mdnsd_discover_service(char *service_type, int discover_time_msec, struct mdns_service_info **service_list, int *num_of_services);

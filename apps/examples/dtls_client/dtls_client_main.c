@@ -59,7 +59,7 @@
 
 #define SERVER_PORT "4433"
 #define SERVER_NAME "localhost"
-#define SERVER_ADDR "127.0.0.1" /* forces IPv4 */
+#define SERVER_ADDR "127.0.0.1"	/* forces IPv4 */
 #define MESSAGE     "TinyARA test echo packet"
 
 #define READ_TIMEOUT_MS 1000
@@ -81,12 +81,11 @@ struct pthread_arg {
 
 static void my_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
-	((void) level);
+	((void)level);
 
-	mbedtls_fprintf((FILE *) ctx, "%s:%04d: %s", file, line, str);
-	fflush((FILE *) ctx);
+	mbedtls_fprintf((FILE *)ctx, "%s:%04d: %s", file, line, str);
+	fflush((FILE *)ctx);
 }
-
 
 /****************************************************************************
  * dtls_client_main
@@ -113,7 +112,6 @@ int dtls_client_cb(void *args)
 	mbedtls_debug_set_threshold(DEBUG_LEVEL);
 #endif
 
-
 	/*
 	 * 0. Initialize the RNG and the session data
 	 */
@@ -127,8 +125,7 @@ int dtls_client_cb(void *args)
 	fflush(stdout);
 
 	mbedtls_entropy_init(&entropy);
-	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-									 (const unsigned char *)pers, strlen(pers))) != 0) {
+	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers))) != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret);
 		goto exit;
 	}
@@ -141,27 +138,14 @@ int dtls_client_cb(void *args)
 	mbedtls_printf("  . Loading the CA root certificate ...");
 	fflush(stdout);
 
-	ret = mbedtls_x509_crt_parse(&cacert,
-								 (const unsigned char *) mbedtls_test_ca_crt_rsa,
-								 mbedtls_test_ca_crt_rsa_len);
+	ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)mbedtls_test_ca_crt_rsa, mbedtls_test_ca_crt_rsa_len);
 	if (ret < 0) {
-		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n",
-					   -ret);
+		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
 		goto exit;
 	}
 
 	mbedtls_printf(" ok (%d skipped)\n", ret);
-	/*
-		ret = mbedtls_x509_crt_parse(&cacert,
-									 (const unsigned char *) mbedtls_test_ca_crt,
-									 mbedtls_test_ca_crt_len);
-		if (ret < 0) {
-			mbedtls_printf("failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
-			goto exit;
-		}
 
-		mbedtls_printf( " ok (%d skipped)\n", ret );
-	*/
 	/*
 	 * 1. Start the connection
 	 */
@@ -181,15 +165,16 @@ int dtls_client_cb(void *args)
 	mbedtls_printf("  . Setting up the DTLS structure...");
 	fflush(stdout);
 
-	if ((ret = mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_DATAGRAM,
-										   MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
+	if ((ret = mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_DATAGRAM, MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_ssl_config_defaults returned %d\n\n", ret);
 		goto exit;
 	}
 
-	/* OPTIONAL is usually a bad choice for security, but makes interop easier
+	/*
+	 * OPTIONAL is usually a bad choice for security, but makes interop easier
 	 * in this simplified example, in which the ca chain is hardcoded.
-	 * Production code should set a proper ca chain and use REQUIRED. */
+	 * Production code should set a proper ca chain and use REQUIRED.
+	 */
 	mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
 	mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
 	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
@@ -205,9 +190,7 @@ int dtls_client_cb(void *args)
 		goto exit;
 	}
 
-	mbedtls_ssl_set_bio(&ssl, &server_fd,
-						mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
-
+	mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
 	mbedtls_ssl_set_timer_cb(&ssl, &timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
 
 	mbedtls_printf(" ok\n");
@@ -382,8 +365,7 @@ int dtls_client_main(int argc, char **argv)
 	}
 
 	/* 3. create pthread with entry function */
-	if ((r = pthread_create(&tid, &attr,
-							(pthread_startroutine_t)dtls_client_cb, (void *)&args)) != 0) {
+	if ((r = pthread_create(&tid, &attr, (pthread_startroutine_t) dtls_client_cb, (void *)&args)) != 0) {
 		printf("%s: pthread_create failed, status=%d\n", __func__, r);
 	}
 
@@ -392,4 +374,3 @@ int dtls_client_main(int argc, char **argv)
 
 	return 0;
 }
-

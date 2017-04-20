@@ -71,6 +71,8 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define CONFIG_MAX_GPIO_PORT 8
+
 /* Pin configurations */
 #define GPIO_INPUT    0x0
 #define GPIO_OUTPUT   0x1
@@ -159,11 +161,33 @@ struct gpio_bank {
 	int filter_offset_addr;
 };
 
-#define GPIO_BANK(name)         \
-	static struct gpio_bank name##_gpio_bank[] __attribute__((used, aligned(4), section(".gpio_bank."#name)))
-
 #define irq_id_to_gpio(irq_id) (GPIO_MAGIC | (irq_id >> 16))
 #define gpio_irq_id(gpio, isr_num) ((gpio & 0xFFFF) << 16 | isr_num)
+
+enum {
+	GPP0,
+	GPP1,
+	GPP2,
+	GPP3,
+	GPG0,
+	GPG1,
+	GPG2,
+	GPG3,
+	GPA0,
+	GPA1,
+	GPA2,
+	GPA3,
+	GPP4,
+	ETC0,
+
+	GPEND,
+};
+
+enum {
+	GPIO_GROUP_ALIVE_EACH,
+	GPIO_GROUP_ALIVE,
+	GPIO_GROUP_COMMON,
+};
 
 /****************************************************************************
  * Public Types
@@ -183,35 +207,22 @@ extern "C" {
 #endif
 
 /****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
-int gpio_cfg_pin(int gpio, int cfg);
-int gpio_set_pull(int gpio, int mode);
-
-int gpio_direction_output(int gpio, int value);
-int gpio_direction_input(int gpio);
-int gpio_set_value(int gpio, int value);
-int gpio_get_value(int gpio);
-
 int gpio_valid(int gpio);
-const char *gpio_bank_name(int gpio);
-int name_to_gpio(const char *name);
-int periph_to_gpio(const char *name, char *port);
-
+int gpio_cfg_pin(int gpio, int cfg);
 int gpio_cfg_get_pin(int gpio);
+int gpio_direction_output(int gpio, int high);
+int gpio_direction_input(int gpio);
+int gpio_set_value(int gpio, int high);
+int gpio_get_value(int gpio);
+int gpio_set_pull(int gpio, int mode);
+int gpio_get_pull(int gpio);
 int gpio_set_drv(int gpio, int mode);
+int gpio_get_drv(int gpio);
 int gpio_set_rate(int gpio, int mode);
-
 int gpio_cfg_pin_pdn(int gpio, int cfg);
 int gpio_set_pull_pdn(int gpio, int mode);
-
-void gpio_dump(int gpio);
-void gpio_status(void);
-
 int gpio_eint_mask(int gpio);
 int gpio_eint_unmask(int gpio);
 bool gpio_eint_ispending(int gpio);
@@ -220,6 +231,8 @@ int gpio_eint_enable_filter(int gpio);
 int gpio_eint_disable_filter(int gpio);
 int gpio_eint_set_filter(int gpio, unsigned type, unsigned width);
 int gpio_eint_set_type(int gpio, unsigned type);
+int gpio_eint_get_type(int gpio);
+struct gpio_bank *gpio_to_bank(int gpio);
 
 #if defined(__cplusplus)
 }

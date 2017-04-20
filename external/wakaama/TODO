@@ -20,8 +20,8 @@ LWM2M Features
  --------
  
  
- Implementation Improvments
- --------------------------
+ Implementation Improvements
+ ---------------------------
  
   - Store lwm2m_transaction_t per peer
   
@@ -42,5 +42,5 @@ LWM2M Features
   
   - Utility functions to easily implements objects
   The utility will just use read and write individual resources. Either statically or
-  throught callbacks. See [https://github.com/01org/libdmclient]/tests/mgtobj/utils/static_mo_util.h
+  through callbacks. See [https://github.com/01org/libdmclient]/tests/mgtobj/utils/static_mo_util.h
   

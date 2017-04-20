@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+if DRIVERS_WIRELESS
+
+source drivers/wireless/scsc/Kconfig
+
+endif # DRIVERS_WIRELESS

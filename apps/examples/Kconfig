@@ -12,6 +12,7 @@ config ENTRY_MANUAL
 	bool "manual entry"
 
 source "$APPSDIR/examples/artik_demo/Kconfig_ENTRY"
+source "$APPSDIR/examples/dnsclient_test/Kconfig_ENTRY"
 source "$APPSDIR/examples/dtls_client/Kconfig_ENTRY"
 source "$APPSDIR/examples/dtls_server/Kconfig_ENTRY"
 source "$APPSDIR/examples/fota_sample/Kconfig_ENTRY"
@@ -47,6 +48,7 @@ config USER_ENTRYPOINT
 
 endif # INIT_ENTRYPOINT
 
+source "$APPSDIR/examples/dnsclient_test/Kconfig"
 source "$APPSDIR/examples/dtls_client/Kconfig"
 source "$APPSDIR/examples/dtls_server/Kconfig"
 source "$APPSDIR/examples/fota_sample/Kconfig"
@@ -59,6 +61,7 @@ source "$APPSDIR/examples/mdns_test/Kconfig"
 source "$APPSDIR/examples/mpu/Kconfig"
 source "$APPSDIR/examples/nettest/Kconfig"
 source "$APPSDIR/examples/ntpclient_test/Kconfig"
+source "$APPSDIR/examples/slsiwifi/Kconfig"
 source "$APPSDIR/examples/proc_test/Kconfig"
 source "$APPSDIR/examples/select_test/Kconfig"
 source "$APPSDIR/examples/sysio_test/Kconfig"
@@ -73,4 +76,8 @@ source "$APPSDIR/examples/webserver/Kconfig"
 source "$APPSDIR/examples/websocket/Kconfig"
 source "$APPSDIR/examples/workqueue/Kconfig"
 source "$APPSDIR/examples/artik_demo/Kconfig"
+source "$APPSDIR/examples/slsiwifi/Kconfig"
+source "$APPSDIR/examples/mqtt_test/Kconfig"
+source "$APPSDIR/examples/eeprom_test/Kconfig"
+source "$APPSDIR/examples/sensorbd_demo/Kconfig"
 endmenu

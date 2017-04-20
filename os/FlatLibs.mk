@@ -140,7 +140,6 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)li
 endif
 
 # Add library for Framework
-
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT)
 
 # Export all libraries

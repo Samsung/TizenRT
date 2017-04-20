@@ -35,4 +35,8 @@ config I2C_RESET
 	default n
 	depends on ARCH_HAVE_I2CRESET
 
+config I2C_WRITEREAD
+	bool "Support the I2C writeread() method"
+	default n
+
 endif # I2C

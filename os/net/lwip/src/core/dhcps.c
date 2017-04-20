@@ -783,12 +783,6 @@ err_t dhcps_start(struct netif *netif)
 	/* no DHCP server attached yet? */
 	if (dhcps == NULL) {
 		LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start() : starting new DHCP server\n"));
-		dhcps = udp_new();
-		if (dhcps == NULL) {
-			LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start() : could not allocate DHCP server\n"));
-			return ERR_MEM;
-		}
-		netif->dhcps_pcb = dhcps;
 	} else {
 		LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start() : re-starting DHCP server configuration\n"));
 		if (netif->dhcps_pcb != NULL) {
@@ -796,20 +790,28 @@ err_t dhcps_start(struct netif *netif)
 		}
 	}
 
+	dhcps = udp_new();
+	if (dhcps == NULL) {
+		LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start() : could not allocate DHCP server\n"));
+		return ERR_MEM;
+	}
+
+	netif->dhcps_pcb = dhcps;
+
 	pcb_dhcps = dhcps;
 
 	if (netif->ip_addr.addr == 0) {
-		netif->ip_addr.addr = inet_addr("LWIP_DHCPS_SERVER_IP");
+		netif->ip_addr.addr = inet_addr(LWIP_DHCPS_SERVER_IP);
 	}
 
 	if (netif->gw.addr == 0) {
-		netif->gw.addr = inet_addr("LWIP_DHCPS_SERVER_IP");
+		netif->gw.addr = inet_addr(LWIP_DHCPS_SERVER_IP);
 	}
 
 	server_address = netif->ip_addr;
 
 	if (netif->netmask.addr == 0) {
-		netif->netmask.addr = inet_addr("LWIP_DHCPS_SERVER_NETMASK");
+		netif->netmask.addr = inet_addr(LWIP_DHCPS_SERVER_NETMASK);
 	}
 
 	ipaddr_tmp = htonl(netif->ip_addr.addr);

@@ -56,42 +56,66 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <tinyara/config.h>
 
-#ifdef __cplusplus
-extern "C" {
+#if defined(CONFIG_S5J_S5JT200)
+#include "chip/s5jt200_rtc.h"
 #endif
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Register definition for RTC */
-#define INTP        0x0030
-#define RTCCON      0x0040
-#define TICCNT      0x0044
-#define RTCALM      0x0050
-#define ALMSEC      0x0054
-#define ALMMIN      0x0058
-#define ALMHOUR     0x005C
-#define ALMDAY      0x0060
-#define ALMMON      0x0064
-#define ALMYEAR     0x0068
-#define BCDSEC      0x0070
-#define BCDMIN      0x0074
-#define BCDHOUR     0x0078
-#define BCDDAY      0x007C
-#define BCDDAYWEEK  0x0080
-#define BCDMON      0x0084
-#define BCDYEAR     0x0088
-#define CURTICCNT   0x0090
+#ifndef __ASSEMBLY__
+
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+/* The form of an alarm callback */
+typedef void (*alarmcb_t)(void);
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+/****************************************************************************
+ * Name: s5j_rtc_lowerhalf
+ *
+ * Description:
+ *   Instantiate the RTC lower half driver for the S5J.
+ *   General usage:
+ *
+ *     #include <tinyara/rtc.h>
+ *     #include "s5j_rtc.h"
+ *
+ *     struct rtc_lowerhalf_s *lower;
+ *     lower = s5j_rtc_lowerhalf();
+ *     rtc_initialize(0, lower);
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   On success, a non-NULL RTC lower interface is returned. NULL is
+ *   returned on any failure.
+ *
+ ****************************************************************************/
+#ifdef CONFIG_RTC_DRIVER
+FAR struct rtc_lowerhalf_s *s5j_rtc_lowerhalf(void);
+#endif /* CONFIG_RTC_DRIVER */
 
-int s5j_rtc_initialize(uintptr_t base, int irqno);
-
-#ifdef __cplusplus
+#undef EXTERN
+#if defined(__cplusplus)
 }
 #endif
-#endif							/* __ARCH_ARM_SRC_S5J_S5J_RTC_H */
+
+#endif /* __ASSEMBLY__ */
+#endif /* __ARCH_ARM_SRC_S5J_S5J_RTC_H */

@@ -300,6 +300,9 @@ void print_state(lwm2m_context_t * lwm2mH)
             case STATE_REG_UPDATE_PENDING:
                 fprintf(stderr, "REGISTRATION UPDATE PENDING\r\n");
                 break;
+            case STATE_REG_UPDATE_NEEDED:
+                fprintf(stderr, "REGISTRATION UPDATE REQUIRED\r\n");
+                break;
             case STATE_DEREG_PENDING:
                 fprintf(stderr, "DEREGISTRATION PENDING\r\n");
                 break;
@@ -316,10 +319,8 @@ void print_state(lwm2m_context_t * lwm2mH)
 
 #define OBJ_COUNT 4
 
-int lightclient_main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-	app_main_dhcp();
-
     client_data_t data;
     lwm2m_context_t * lwm2mH = NULL;
     lwm2m_object_t * objArray[OBJ_COUNT];
@@ -332,7 +333,7 @@ int lightclient_main(int argc, char *argv[])
 
     memset(&data, 0, sizeof(client_data_t));
 
-    data.addressFamily = AF_INET;
+    data.addressFamily = AF_INET6;
 
     opt = 1;
     while (opt < argc)

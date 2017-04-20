@@ -7,7 +7,7 @@ Samsung IoT Development Kit for S5JT200 chipset.
 will be updated
 
 ## Environment Set-up
-### For OpenOCD
+### On Chip Debugger installation
 
 on Ubuntu 13.10 ~ 14.xx version
 ```bash
@@ -21,7 +21,7 @@ sudo apt-get update
 sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386 lib32z1
 ```
 
-### For FTDI
+### FTDI installation
 
 Install the package for usb
 ```bash
@@ -53,7 +53,7 @@ sudo ln -s /usr/local/lib/libftdi.so.1.19.0 libftdi.so
 sudo ln -s /usr/local/lib/libftdi.so.1.19.0 libftdi.so.1
 ```
 
-### For FT2232 interface driver for OpenOCD
+### FT2232 interface driver installation
 
 Get the package, [libftd2xxx1.0.4](https://github.com/psi46/HDItest/tree/master/FTDI-1.0.4/libftd2xx1.0.4)
 
@@ -79,8 +79,14 @@ sudo ln -s /usr/local/lib/libftd2xx.so.1.0.4 libftd2xx.so
 
 ## Configuration Sets
 
-There are three configuration sets for sidk_s5jt200, including 'tc', 'kernel_sample', and 'hello_with_tash'.
-'tc' is a configuration set for runnig unit test cases, 'kernel_sample' for running kernel functions, and 'hello_with_tash' for running a hello example.
-You can modify the configuration by using the menuconfig tool on the 'os' folder, but all configuration combinations are not fully tested yet.
-The IPv4 network stack based on LWIP is included, but Wi-Fi related codes such as wpa_supplicant are not included.
-Wi-Fi will be added in 2017.
+There are three configuration sets for sidk_s5jt200, including 'hello_with_tash', 'kernel_sample', and 'tc'.
+
+#### hello_with_tash
+ for running a hello example with shell enabled
+
+#### kernel_sample
+ for running kernel functions
+
+#### tc
+ for runnig unit test cases
+

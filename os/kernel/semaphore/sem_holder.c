@@ -756,8 +756,8 @@ void sem_initholders(void)
  * Name: sem_destroyholder
  *
  * Description:
- *   Called from sem_destroy() to handle any holders of a semaphore when
- *   it is destroyed.
+ *   Called from sem_destroyholder() to handle any holders of a semaphore
+ *   when it is destroyed.
  *
  * Parameters:
  *   sem - A reference to the semaphore being destroyed
@@ -818,16 +818,23 @@ void sem_addholder_tcb(FAR struct tcb_s *htcb, FAR sem_t *sem)
 {
 	FAR struct semholder_s *pholder;
 
-	/* Find or allocate a container for this new holder */
+	/*
+	 * If priority inheritance is disabled for this thread, then do not
+	 * add the holder. If there are never holders of the semaphore,
+	 * the priority inheritance is effectively disabled.
+	 */
 
-	pholder = sem_findorallocateholder(sem, htcb);
-	if (pholder != NULL) {
-		/* Then set the holder and increment the number of counts held by this
-		 * holder
-		 */
-
-		pholder->htcb = htcb;
-		pholder->counts++;
+	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
+		/* Find or allocate a container for this new holder */
+		pholder = sem_findorallocateholder(sem, htcb);
+		if (pholder != NULL) {
+			/*
+			 * Then set the holder and increment the number of
+			 * counts held by this holder
+			 */
+			pholder->htcb = htcb;
+			pholder->counts++;
+		}
 	}
 }
 

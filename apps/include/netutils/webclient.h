@@ -15,9 +15,12 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+
 /**
  * @defgroup HTTP_CLIENT HTTP Client
  * @ingroup HTTP
+ *   The client side of Hypertext Transfer Protocol
+ *
  * @{
  */
 
@@ -71,6 +74,8 @@
 #define WEBCLIENT_CONF_TIMEOUT_MSEC       5000
 #define WEBCLIENT_CONF_MIN_TLS_MEMORY     100000
 
+#define WEBCLIENT_CONF_HANDSHAKE_RETRY    3
+#define WEBCLIENT_CONF_CHECK_TLS_HOSTNAME 0
 /****************************************************************************
  * Public types
  ****************************************************************************/
@@ -84,35 +89,29 @@ typedef void (*wget_callback_t)(httprsp);
  */
 struct http_client_tls_t {
 	int client_fd;
-	mbedtls_ssl_context tls_ssl;
-	mbedtls_net_context tls_client_fd;
+	mbedtls_ssl_context       tls_ssl;
+	mbedtls_net_context       tls_client_fd;
 
-	int tls_init;
-	mbedtls_ssl_config tls_conf;
-	mbedtls_entropy_context tls_entropy;
-	mbedtls_ctr_drbg_context tls_ctr_drbg;
-	mbedtls_x509_crt tls_clicert;
-	mbedtls_pk_context tls_pkey;
-	mbedtls_ssl_session tls_session;
+	int                       tls_init;
+	mbedtls_ssl_config        tls_conf;
+	mbedtls_entropy_context   tls_entropy;
+	mbedtls_ctr_drbg_context  tls_ctr_drbg;
+	mbedtls_x509_crt          tls_clicert;
+	mbedtls_pk_context        tls_pkey;
+	mbedtls_ssl_session       tls_session;
 };
 
 /**
  * @brief SSL configure structure.
  */
 struct http_client_ssl_config_t {
-#ifdef CONFIG_HW_RSA_SIGN
-	unsigned int ca_key_index;
-	unsigned int dev_key_index;
-	unsigned int ca_cert_index;
-	unsigned int dev_cert_index;
-#else
 	char *root_ca;
 	char *dev_cert;
 	char *private_key;
 	unsigned int root_ca_len;
 	unsigned int dev_cert_len;
 	unsigned int private_key_len;
-#endif							/* CONFIG_HW_RSA_SIGN */
+	int auth_mode;
 };
 
 #endif
@@ -123,14 +122,18 @@ struct http_client_ssl_config_t {
 struct http_client_request_t {
 	int method;
 	char *url;
+	char *buffer;
 	int buflen;
 	int encoding;
+	int tls;
 	char *entity;
 	wget_callback_t callback;
 	struct http_keyvalue_list_t *headers;
+	struct http_client_response_t *response;
 #ifdef CONFIG_NET_SECURITY_TLS
 	struct http_client_ssl_config_t ssl_config;
 #endif
+	int async_flag;
 };
 
 /**
@@ -170,7 +173,7 @@ extern "C" {
  * @since Tizen RT v1.0
  */
 
-int http_client_send_request(struct http_client_request_t *request, struct http_client_ssl_config_t *ssl_config, struct http_client_response_t *response);
+int http_client_send_request(struct http_client_request_t *request, void *ssl_config, struct http_client_response_t *response);
 
 /**
  * @brief http_client_send_request_async() sends the HTTP request to HTTP server
@@ -184,7 +187,7 @@ int http_client_send_request(struct http_client_request_t *request, struct http_
  * @since Tizen RT v1.0
  */
 
-int http_client_send_request_async(struct http_client_request_t *request, struct http_client_ssl_config_t *ssl_config, wget_callback_t cb);
+int http_client_send_request_async(struct http_client_request_t *request, void *ssl_config, wget_callback_t cb);
 
 /**
  * @brief http_client_response_init() initializes the response structure.
@@ -212,5 +215,5 @@ void http_client_response_release(struct http_client_response_t *response);
 }
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_WEBCLIENT_H */
+#endif /* __APPS_INCLUDE_NETUTILS_WEBCLIENT_H */
 /**@} */

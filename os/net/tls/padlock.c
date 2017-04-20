@@ -115,8 +115,9 @@ int mbedtls_padlock_xcryptcbc(mbedtls_aes_context *ctx, int mode, size_t length,
 	uint32_t *ctrl;
 	unsigned char buf[256];
 
-	if (((long)input & 15) != 0 || ((long)output & 15) != 0)
+	if (((long)input & 15) != 0 || ((long)output & 15) != 0) {
 		return (MBEDTLS_ERR_PADLOCK_DATA_MISALIGNED);
+	}
 
 	rk = ctx->rk;
 	iw = MBEDTLS_PADLOCK_ALIGN16(buf);

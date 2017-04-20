@@ -73,7 +73,7 @@
 
 #include "tftpc_internal.h"
 
-#if defined(CONFIG_NET) && defined(CONFIG_NET_UDP) && CONFIG_NFILE_DESCRIPTORS > 0
+#if defined(CONFIG_NET) && CONFIG_NFILE_DESCRIPTORS > 0
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -331,4 +331,4 @@ ssize_t tftp_sendto(int sd, const void *buf, size_t len, struct sockaddr_in *to)
 	}
 }
 
-#endif							/* CONFIG_NET && CONFIG_NET_UDP && CONFIG_NFILE_DESCRIPTORS */
+#endif							/* CONFIG_NET && CONFIG_NFILE_DESCRIPTORS */

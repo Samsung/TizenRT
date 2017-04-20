@@ -900,16 +900,6 @@ static int ftpd_dataopen(FAR struct ftpd_session_s *session)
 			(void)ftpd_dataclose(session);
 			return -errval;
 		}
-#ifdef CONFIG_NET_SOLINGER
-		{
-			struct linger ling;
-
-			(void)memset(&ling, 0, sizeof(ling));
-			ling.l_onoff = 1;
-			ling.l_linger = 4;
-			(void)setsockopt(session->data.sd, SOL_SOCKET, SO_LINGER, &ling, sizeof(ling));
-		}
-#endif
 
 		return OK;
 	}
@@ -927,17 +917,6 @@ static int ftpd_dataopen(FAR struct ftpd_session_s *session)
 
 	close(session->data.sd);
 	session->data.sd = sd;
-
-#ifdef CONFIG_NET_SOLINGER
-	{
-		struct linger ling;
-
-		(void)memset(&ling, 0, sizeof(ling));
-		ling.l_onoff = 1;
-		ling.l_linger = 4;
-		(void)setsockopt(session->data.sd, SOL_SOCKET, SO_LINGER, &ling, sizeof(ling));
-	}
-#endif
 
 	return OK;
 }
@@ -3321,9 +3300,6 @@ static void ftpd_workersetup(FAR struct ftpd_session_s *session)
 #if defined(CONFIG_NET_HAVE_IPTOS) || defined(CONFIG_NET_HAVE_OOBINLINE)
 	int temp;
 #endif
-#ifdef CONFIG_NET_SOLINGER
-	struct linger ling;
-#endif
 
 #ifdef CONFIG_NET_HAVE_IPTOS
 	temp = IPTOS_LOWDELAY;
@@ -3335,12 +3311,6 @@ static void ftpd_workersetup(FAR struct ftpd_session_s *session)
 	(void)setsockopt(session->cmd.sd, SOL_SOCKET, SO_OOBINLINE, &temp, sizeof(temp));
 #endif
 
-#ifdef CONFIG_NET_SOLINGER
-	(void)memset(&ling, 0, sizeof(ling));
-	ling.l_onoff = 1;
-	ling.l_linger = 4;
-	(void)setsockopt(session->cmd.sd, SOL_SOCKET, SO_LINGER, &ling, sizeof(ling));
-#endif
 }
 
 /****************************************************************************

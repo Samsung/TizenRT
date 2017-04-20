@@ -78,7 +78,7 @@ err_t sys_mbox_new(sys_mbox_t *mbox, int queue_sz)
 	SYS_STATS_INC_USED(mbox);
 #endif							/* SYS_STATS */
 
-	LWIP_DEBUGF(SYSARCH_DEBUG, ("Succesfully Created MBOX with id %d", mbox->id));
+	LWIP_DEBUGF(SYS_DEBUG, ("Succesfully Created MBOX with id %d", mbox->id));
 	return err;
 }
 
@@ -96,7 +96,7 @@ void sys_mbox_free(sys_mbox_t *mbox)
 {
 	if (mbox != SYS_MBOX_NULL) {
 
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("Deleting MBOX with id %d", mbox->id));
+		LWIP_DEBUGF(SYS_DEBUG, ("Deleting MBOX with id %d", mbox->id));
 
 		mbox->is_valid = 0;
 		mbox->id = 0;
@@ -106,7 +106,7 @@ void sys_mbox_free(sys_mbox_t *mbox)
 		sys_sem_free(&(mbox->mail));
 		sys_sem_free(&(mbox->mutex));
 
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("Succesfully deleted MBOX with id %d", mbox->id));
+		LWIP_DEBUGF(SYS_DEBUG, ("Succesfully deleted MBOX with id %d", mbox->id));
 #if SYS_STATS
 		SYS_STATS_DEC(mbox.used);
 #endif							/* SYS_STATS */
@@ -130,11 +130,11 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 	u32_t tmp = 0;
 	sys_arch_sem_wait(&(mbox->mutex), 0);
 
-	LWIP_DEBUGF(SYSARCH_DEBUG, ("mbox %p msg %p\n", (void *)mbox, (void *)msg));
+	LWIP_DEBUGF(SYS_DEBUG, ("mbox %p msg %p\n", (void *)mbox, (void *)msg));
 	/* Wait while the queue is full */
 	tmp = (mbox->rear + 1) % mbox->queue_size;
 	if (tmp == mbox->front) {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("Queue Full, Wait until gets free\n"));
+		LWIP_DEBUGF(SYS_DEBUG, ("Queue Full, Wait until gets free\n"));
 	}
 	while (tmp == mbox->front) {
 		mbox->wait_send++;
@@ -145,7 +145,7 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 	}
 
 	mbox->msgs[mbox->rear] = msg;
-	LWIP_DEBUGF(SYSARCH_DEBUG, ("Post SUCCESS\n"));
+	LWIP_DEBUGF(SYS_DEBUG, ("Post SUCCESS\n"));
 	if (mbox->rear == mbox->front) {
 		first_msg = 1;
 	} else {
@@ -184,17 +184,17 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 	u32_t tmp = 0;
 	sys_arch_sem_wait(&(mbox->mutex), 0);
 
-	LWIP_DEBUGF(SYSARCH_DEBUG, ("mbox %p msg %p\n", (void *)mbox, (void *)msg));
+	LWIP_DEBUGF(SYS_DEBUG, ("mbox %p msg %p\n", (void *)mbox, (void *)msg));
 	/* Check if the queue is full */
 	tmp = (mbox->rear + 1) % mbox->queue_size;
 	if (tmp == mbox->front) {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("Queue Full, returning error\n"));
+		LWIP_DEBUGF(SYS_DEBUG, ("Queue Full, returning error\n"));
 		err = ERR_MEM;
 		goto errout_with_mutex;
 	}
 
 	mbox->msgs[mbox->rear] = msg;
-	LWIP_DEBUGF(SYSARCH_DEBUG, ("Post SUCCESS\n"));
+	LWIP_DEBUGF(SYS_DEBUG, ("Post SUCCESS\n"));
 	if (mbox->rear == mbox->front) {
 		first_msg = 1;
 	} else {
@@ -274,9 +274,9 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
 	if (msg != NULL) {
 		*msg = mbox->msgs[mbox->front];
-		LWIP_DEBUGF(SYSARCH_DEBUG, (" mbox %p msg %p\n", (void *)mbox, *msg));
+		LWIP_DEBUGF(SYS_DEBUG, (" mbox %p msg %p\n", (void *)mbox, *msg));
 	} else {
-		LWIP_DEBUGF(SYSARCH_DEBUG, (" mbox %p, null msg\n", (void *)mbox));
+		LWIP_DEBUGF(SYS_DEBUG, (" mbox %p, null msg\n", (void *)mbox));
 	}
 
 	mbox->front = (mbox->front + 1) % mbox->queue_size;
@@ -315,16 +315,16 @@ u32_t sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
 
 	/* check if the queue is empty */
 	if (mbox->front == mbox->rear) {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("SYS_MBOX_EMPTY , returning\n"));
+		LWIP_DEBUGF(SYS_DEBUG, ("SYS_MBOX_EMPTY , returning\n"));
 		err = SYS_MBOX_EMPTY;
 		goto errout_with_mutex;
 	}
 
 	if (msg != NULL) {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("mbox %p msg %p\n", (void *)mbox, *msg));
+		LWIP_DEBUGF(SYS_DEBUG, ("mbox %p msg %p\n", (void *)mbox, *msg));
 		*msg = mbox->msgs[mbox->front];
 	} else {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("mbox %p, null msg\n", (void *)mbox));
+		LWIP_DEBUGF(SYS_DEBUG, ("mbox %p, null msg\n", (void *)mbox));
 	}
 
 	mbox->front = (mbox->front + 1) % mbox->queue_size;
@@ -353,12 +353,12 @@ errout_with_mutex:
  *---------------------------------------------------------------------------*/
 int sys_mbox_valid(sys_mbox_t *mbox)
 {
-	LWIP_DEBUGF(SYSARCH_DEBUG, ("mbox->id = %d ", mbox->id));
+	LWIP_DEBUGF(SYS_DEBUG, ("mbox->id = %d ", mbox->id));
 	if (mbox->is_valid == 1) {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("Mbox (%d) Valid", mbox->id));
+		LWIP_DEBUGF(SYS_DEBUG, ("Mbox (%d) Valid", mbox->id));
 		return 1;
 	} else {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("Mbox (%d) Invalid", mbox->id));
+		LWIP_DEBUGF(SYS_DEBUG, ("Mbox (%d) Invalid", mbox->id));
 		return 0;
 	}
 }
@@ -394,6 +394,7 @@ void sys_mbox_set_invalid(sys_mbox_t *mbox)
 err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 {
 	int status = -1;
+
 	status = sem_init(sem, 0, count);
 	if (status != OK) {
 #if SYS_STATS
@@ -404,6 +405,8 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 #if SYS_STATS
 	SYS_STATS_INC_USED(sem);
 #endif							/* SYS_STATS */
+	if (count == 0)
+		sem_setprotocol(sem, SEM_PRIO_NONE);
 
 	return ERR_OK;
 }
@@ -492,7 +495,7 @@ void sys_sem_signal(sys_sem_t *sem)
 	int status = -1;
 	status = sem_post(sem);
 	if (status) {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("sem_post error"));
+		LWIP_DEBUGF(SYS_DEBUG, ("sem_post error"));
 	}
 	return;
 }
@@ -510,7 +513,7 @@ void sys_sem_free(sys_sem_t *sem)
 	int status = -1;
 	status = sem_destroy(sem);
 	if (status) {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("sem_destroy error --> Could not destroy the semaphore"));
+		LWIP_DEBUGF(SYS_DEBUG, ("sem_destroy error --> Could not destroy the semaphore"));
 	} else {
 #if SYS_STATS
 		SYS_STATS_DEC(sem.used);
@@ -583,7 +586,7 @@ void sys_mutex_free(sys_mutex_t *mutex)
 	int status = 0;
 	status = pthread_mutex_destroy(mutex);
 	if (status) {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("pthread_mutex_destroy error --> Could not free the mutex"));
+		LWIP_DEBUGF(SYS_DEBUG, ("pthread_mutex_destroy error --> Could not free the mutex"));
 	} else {
 #if SYS_STATS
 		SYS_STATS_DEC(mutex.used);
@@ -599,7 +602,7 @@ void sys_mutex_lock(sys_mutex_t *mutex)
 	int status = 0;
 	status = pthread_mutex_lock(mutex);
 	if (status) {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("\n pthread_mutex_lock error --> Could not lock the mutex \n"));
+		LWIP_DEBUGF(SYS_DEBUG, ("\n pthread_mutex_lock error --> Could not lock the mutex \n"));
 	}
 	return;
 }
@@ -611,7 +614,7 @@ void sys_mutex_unlock(sys_mutex_t *mutex)
 	int status = 0;
 	status = pthread_mutex_unlock(mutex);
 	if (status) {
-		LWIP_DEBUGF(SYSARCH_DEBUG, ("sys_mutex_unlock: Could not unlock the mutex"));
+		LWIP_DEBUGF(SYS_DEBUG, ("sys_mutex_unlock: Could not unlock the mutex"));
 	}
 }
 #endif							/*LWIP_COMPAT_MUTEX */
@@ -648,10 +651,10 @@ sys_thread_t sys_thread_new(const char *name, lwip_thread_fn entry_function, voi
 		new_thread = task_create(name, priority, stacksize, (main_t) entry_function, (char * const *)NULL);
 		if (new_thread < 0) {
 			int errval = errno;
-			LWIP_DEBUGF(SYSARCH_DEBUG, ("Failed to create new_thread: %d", errval));
+			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
 			return -errval;
 		} else {
-			LWIP_DEBUGF(SYSARCH_DEBUG, ("Created New Thread with pid %d", new_thread));
+			LWIP_DEBUGF(SYS_DEBUG, ("Created New Thread with pid %d", new_thread));
 			s_nextthread++;
 			return new_thread;
 		}
@@ -685,10 +688,10 @@ sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_functi
 		new_thread = kernel_thread(name, priority, stacksize, (main_t) entry_function, (char * const *)NULL);
 		if (new_thread < 0) {
 			int errval = errno;
-			LWIP_DEBUGF(SYSARCH_DEBUG, ("Failed to create new_thread: %d", errval));
+			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
 			return -errval;
 		} else {
-			LWIP_DEBUGF(SYSARCH_DEBUG, ("Created New Thread with pid %d", new_thread));
+			LWIP_DEBUGF(SYS_DEBUG, ("Created New Thread with pid %d", new_thread));
 			s_nextthread++;
 			return new_thread;
 		}

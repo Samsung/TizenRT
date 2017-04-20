@@ -67,7 +67,7 @@ lwm2m_context_t * lwm2m_init(void * userData)
     {
         memset(contextP, 0, sizeof(lwm2m_context_t));
         contextP->userData = userData;
-        srand(time(NULL));
+        srand((int)lwm2m_gettime());
         contextP->nextMID = rand();
     }
 
@@ -94,6 +94,7 @@ static void prv_deleteServer(lwm2m_server_t * serverP)
     {
         lwm2m_free(serverP->location);
     }
+    free_block1_buffer(serverP->block1Data);
     lwm2m_free(serverP);
 }
 
@@ -108,10 +109,23 @@ static void prv_deleteServerList(lwm2m_context_t * context)
     }
 }
 
-static void prv_deleteBootstrapServerList(lwm2m_context_t * contextP)
+static void prv_deleteBootstrapServer(lwm2m_server_t * serverP)
 {
-    LWM2M_LIST_FREE(contextP->bootstrapServerList);
-    contextP->bootstrapServerList = NULL;
+    // TODO should we free location as in prv_deleteServer ?
+    // TODO should we parse transaction and observation to remove the ones related to this server ?
+    free_block1_buffer(serverP->block1Data);
+    lwm2m_free(serverP);
+}
+
+static void prv_deleteBootstrapServerList(lwm2m_context_t * context)
+{
+    while (NULL != context->bootstrapServerList)
+    {
+        lwm2m_server_t * server;
+        server = context->bootstrapServerList;
+        context->bootstrapServerList = server->next;
+        prv_deleteBootstrapServer(server);
+    }
 }
 
 static void prv_deleteObservedList(lwm2m_context_t * contextP)
@@ -217,7 +231,7 @@ static int prv_refreshServerList(lwm2m_context_t * contextP)
         if (!targetP->dirty)
         {
             // TODO: Should we revert the status to STATE_DEREGISTERED ?
-            contextP->serverList = (lwm2m_server_t *)LWM2M_LIST_ADD(contextP->serverList, targetP);;
+            contextP->serverList = (lwm2m_server_t *)LWM2M_LIST_ADD(contextP->serverList, targetP);
         }
         else
         {
@@ -321,7 +335,6 @@ int lwm2m_add_object(lwm2m_context_t * contextP,
 int lwm2m_remove_object(lwm2m_context_t * contextP,
                         uint16_t id)
 {
-    uint16_t i;
     lwm2m_object_t * targetP;
 
     LOG_ARG("ID: %d", id);
@@ -344,7 +357,9 @@ int lwm2m_step(lwm2m_context_t * contextP,
                time_t * timeoutP)
 {
     time_t tv_sec;
+#ifdef LWM2M_CLIENT_MODE
     int result;
+#endif
 
     LOG_ARG("timeoutP: %" PRId64, *timeoutP);
     tv_sec = lwm2m_gettime();

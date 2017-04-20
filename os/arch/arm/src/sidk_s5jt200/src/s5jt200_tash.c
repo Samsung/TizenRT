@@ -61,83 +61,264 @@
 #include <errno.h>
 
 #include <tinyara/board.h>
-#include <tinyara/spi/spi.h>
-#include <tinyara/mmcsd.h>
 #include <tinyara/rtc.h>
 #include <time.h>
 #include <chip.h>
-#include <tinyara/kmalloc.h>
 
 #include "s5j_rtc.h"
+#include "s5j_adc.h"
 #include "up_internal.h"
+
+#include <apps/shell/tash.h>
+
+#include <tinyara/fs/mtd.h>
+
+#include "sidk_s5jt200.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Configuration ************************************************************/
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: board_app_initialize
- *
- * Description:
- *   Perform architecture specific initialization
- *
- ****************************************************************************/
-extern void qspi_register(void);
-extern void qspi_get_base(void);
-extern void sdio_drv_register(void);
-//extern void uartdrv_register(void);
-extern void pwmdrv_register(void);
-extern void chipid_register(void);
 extern void s5j_i2c_register(int bus);
-extern void clk_print_info_all(unsigned int filter);
-extern uint32_t _vector_start;
-extern void wlbt_if_booting(void);
-extern void pdma_init(void);
 
 char *s5j_get_binary_version(uint32_t baddr)
 {
 	static char version[13];
 	version[12] = '\0';
 	strncpy(version, (char *)baddr, sizeof(version) - 1);
-	return version;
 
+	return version;
 }
+
+#ifdef CONFIG_TASH
+#ifdef CONFIG_EXAMPLES_SLSIWIFI
+int slsi_wifi_main(int argc, char *argv[]);
+#endif
+
+const static tash_cmdlist_t tash_s5j_cmds[] = {
+#ifdef CONFIG_EXAMPLES_SLSIWIFI
+	{ "artikwifi",		slsi_wifi_main,		TASH_EXECMD_SYNC },
+#endif
+	{ NULL,			NULL,			0 }
+};
+#endif
+
+static void scsc_wpa_ctrl_iface_init(void)
+{
+#ifdef CONFIG_SCSC_WLAN
+	int ret;
+
+	ret = mkfifo("/dev/wpa_ctrl_req", 666);
+	if (ret != 0 && ret != -EEXIST) {
+		lldbg("mkfifo error ret:%d\n", ret);
+		return;
+	}
+
+	ret = mkfifo("/dev/wpa_ctrl_cfm", 666);
+	if (ret != 0 && ret != -EEXIST) {
+		lldbg("mkfifo error ret:%d\n", ret);
+		return;
+	}
+
+	ret = mkfifo("/dev/wpa_monitor", 666);
+	if (ret != 0 && ret != -EEXIST) {
+		lldbg("mkfifo error ret:%d\n", ret);
+		return;
+	}
+#endif
+}
+
+static void sidk_s5jt200_configure_partitions(void)
+{
+#if defined(CONFIG_SIDK_S5JT200_FLASH_PART)
+	int partno;
+	int partoffset;
+	const char *parts = CONFIG_SIDK_S5JT200_FLASH_PART_LIST;
+	const char *types = CONFIG_SIDK_S5JT200_FLASH_PART_TYPE;
+#if defined(CONFIG_MTD_PARTITION_NAMES)
+	const char *names = CONFIG_SIDK_S5JT200_FLASH_PART_NAME;
+#endif
+	FAR struct mtd_dev_s *mtd;
+	FAR struct mtd_geometry_s geo;
+
+	mtd = progmem_initialize();
+	if (!mtd) {
+		lldbg("ERROR: progmem_initialize failed\n");
+		return;
+	}
+
+	if (mtd->ioctl(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo) < 0) {
+		lldbg("ERROR: mtd->ioctl failed\n");
+		return;
+	}
+
+	partno = 0;
+	partoffset = 0;
+
+	while (*parts) {
+		FAR struct mtd_dev_s *mtd_part;
+		int partsize;
+
+		partsize = strtoul(parts, NULL, 0) << 10;
+
+		if (partsize < geo.erasesize) {
+			lldbg("ERROR: Partition size is lesser than erasesize\n");
+			return;
+		}
+
+		if (partsize % geo.erasesize != 0) {
+			lldbg("ERROR: Partition size is not multiple of erasesize\n");
+			return;
+		}
+
+		mtd_part = mtd_partition(mtd, partoffset,
+					partsize / geo.erasesize, partno);
+		partoffset += partsize / geo.erasesize;
+
+		if (!mtd_part) {
+			lldbg("ERROR: failed to create partition.\n");
+			return;
+		}
+
+#if defined(CONFIG_MTD_FTL)
+		if (!strncmp(types, "ftl,", 4)) {
+			if (ftl_initialize(partno, mtd_part)) {
+				lldbg("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+			}
+		} else
+#endif
+#if defined(CONFIG_MTD_CONFIG)
+		if (!strncmp(types, "config,", 7)) {
+			mtdconfig_register(mtd_part);
+		} else
+#endif
+#if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
+		if (!strncmp(types, "smartfs,", 8)) {
+			char partref[4];
+			sprintf(partref, "p%d", partno);
+			smart_initialize(CONFIG_SIDK_S5JT200_FLASH_MINOR,
+					mtd_part, partref);
+		} else
+#endif
+		{
+		}
+
+#if defined(CONFIG_MTD_PARTITION_NAMES)
+		if (strcmp(names, ""))
+			mtd_setpartitionname(mtd_part, names);
+
+		while (*names != ',' && *names) names++;
+		if (*names == ',') names++;
+#endif
+
+		while (*parts != ',' && *parts) parts++;
+		if (*parts == ',') parts++;
+
+		while (*types != ',' && *types) types++;
+		if (*types == ',') types++;
+
+		partno++;
+	}
+#endif /* CONFIG_SIDK_S5JT200_FLASH_PART */
+}
+
+/****************************************************************************
+ * Name: sidk_s5jt200_adc_setup
+ *
+ * Description:
+ *   Initialize ADC and register the ADC driver.
+ *
+ ****************************************************************************/
+int sidk_s5jt200_adc_setup(void)
+{
+#ifdef CONFIG_S5J_ADC
+	int ret;
+	struct adc_dev_s *adc;
+	uint8_t chanlist[] = {
+		adc_channel_0,
+		adc_channel_1,
+		adc_channel_2,
+		adc_channel_3,
+	};
+
+	/* Get an instance of the ADC interface */
+	adc = s5j_adc_initialize(chanlist, sizeof(chanlist));
+	if (adc == NULL) {
+		return -ENODEV;
+	}
+
+	/* Register the ADC driver at "/dev/adc0" */
+	ret = adc_register("/dev/adc0", adc);
+	if (ret < 0) {
+		return ret;
+	}
+#endif /* CONFIG_S5J_ADC */
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: board_app_initialize
+ *
+ * Description:
+ *   Perform application specific initialization. THis function is never
+ *   called directly from application code, but only indirectly via the
+ *   (non-standard) boardctl() interface using the command BOARDIOC_INIT.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_EXAMPLES_EEPROM_TEST
+int ee_test_main(int argc, char **args);
+#endif
 
 int board_app_initialize(void)
 {
-#ifdef S5J_DISPLAY_MAC_ADDR
-	char mac_buf[6];
-#endif
-#ifdef S5J_PERFORMANCE_TEST
-	uint32_t src;
-	uint32_t dst;
-	uint32_t t1;
-	uint32_t t2;
-#endif
-#if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
-	/* FAR struct rtc_lowerhalf_s *lower; */
-	FAR struct tm tp;
-#endif
+	int ret;
 
-#ifdef CONFIG_S5J_ADC
-	adcdrv_register();
-#endif
+	sidk_s5jt200_configure_partitions();
 
-	qspi_get_base();
-	qspi_register();
+#ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
+	/* Initialize and mount user partition (if we have) */
+	ret = mksmartfs(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, false);
+	if (ret != OK) {
+		lldbg("ERROR: mksmartfs on %s failed",
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
+	} else {
+		ret = mount(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME,
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_MOUNTPOINT,
+				"smartfs", 0, NULL);
+		if (ret != OK)
+			lldbg("ERROR: mounting '%s' failed\n",
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
+	}
+#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME */
 
-#ifdef CONFIG_S5J_EFUSE
-	efusedrv_register();
-#endif
+#ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME
+	/* Initialize and mount sssrw partition (if we have) */
+	ret = mksmartfs(CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME, false);
+	if (ret != OK) {
+		lldbg("ERROR: mksmartfs on %s failed",
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME);
+	} else {
+		ret = mount(CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME,
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_MOUNTPOINT,
+				"smartfs", 0, NULL);
+		if (ret != OK)
+			lldbg("ERROR: mounting '%s' failed\n",
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME);
+	}
+#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME */
 
-#ifdef CONFIG_S5J_CHIPID
-	chipid_register();
+#ifdef CONFIG_FS_PROCFS
+	/* Mount the procfs file system */
+	ret = mount(NULL, SIDK_S5JT200_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
+	if (ret < 0) {
+		lldbg("Failed to mount procfs at %s: %d\n",
+				SIDK_S5JT200_PROCFS_MOUNTPOINT, ret);
+	}
 #endif
 
 #ifdef CONFIG_S5J_I2C
@@ -145,59 +326,47 @@ int board_app_initialize(void)
 	s5j_i2c_register(1);
 #endif
 
-	up_timer_initialize();		//for MCT Test
+#if defined(CONFIG_RTC)
+	{
+		struct tm tp;
 
-	clk_print_info_all(-1);
+		up_rtc_getdatetime(&tp);
+		lldbg("RTC getdatetime %d/%d/%d/%d/%d/%d\n",
+				tp.tm_year + 1900, tp.tm_mon + 1,
+				tp.tm_mday, tp.tm_hour, tp.tm_min, tp.tm_sec);
+		lldbg("Version Info :\n");
+		lldbg("tinyARA %s\n", __TIMESTAMP__);
+	}
+#if defined(CONFIG_RTC_DRIVER)
+	{
+		struct rtc_lowerhalf_s *rtclower;
 
-#ifdef CONFIG_S5J_PWM
-	pwmdrv_register();
+		rtclower = s5j_rtc_lowerhalf();
+		if (rtclower) {
+			ret = rtc_initialize(0, rtclower);
+			if (ret < 0) {
+				lldbg("Failed to register the RTC driver: %d\n",
+						ret);
+			}
+		}
+	}
+#endif /* CONFIG_RTC_DRIVER */
+#endif /* CONFIG_RTC */
+
+	sidk_s5jt200_adc_setup();
+
+	scsc_wpa_ctrl_iface_init();
+
+#ifdef CONFIG_TASH
+	tash_cmdlist_install(tash_s5j_cmds);
 #endif
 
-#ifdef CONFIG_S5J_SDIO_SLAVE
-	sdio_drv_register();
+#ifdef CONFIG_EXAMPLES_EEPROM_TEST
+        ee_test_main(0, NULL);
 #endif
 
-#ifdef CONFIG_S5J_LEDCTRLBLK
-	ledctrlblk_drv_init();
-#endif
+	/* to suppress a compiler warning */
+	UNUSED(ret);
 
-#ifdef CONFIG_S5J_WATCHDOG
-	up_wdginitialize();
-#ifdef CONFIG_S5J_WATCHDOG_RESET
-	s5j_wdg_set_reset(WDT_CPUCL_BASE, 1);
-#endif
-#endif
-
-#if defined(CONFIG_RTC) && defined(CONFIG_RTC_DRIVER) && defined(CONFIG_S5J_RTC)
-	up_rtc_getdatetime(&tp);
-	lldbg("RTC getdatetime %d/%d/%d/%d/%d/%d\n", tp.tm_year + CONFIG_RTC_BASE_YEAR, tp.tm_mon + 1, tp.tm_mday, tp.tm_hour, tp.tm_min, tp.tm_sec);
-	lldbg("Version Info :\n");
-	lldbg("tinyARA %s\n", __TIMESTAMP__);
-#endif
-
-#ifdef CONFIG_S5J_WLBTBLK
-	wlbt_if_booting();
-#endif
-
-#ifdef CONFIG_EXAMPLES_LDO_TEST
-	register_ldo_drver();
-#endif
-
-#ifdef CONFIG_S5J_TICK_COUNTER
-	s5j_tickcnt_initialize();
-#endif
-
-#ifdef CONFIG_S5J_DMA
-	pdma_init();
-#endif
-
-	QSPI_print_mode();
-#ifndef CONFIG_BOARD_FOTA_SUPPORT
-	/* Featuring the below code which was trying to modify flash area,
-	 * which is reserved for OTA1 now */
-	HW_REG32(0x04400000, 0x1000) = 0x1234;
-#endif
-
-	lldbg("SIDK S5JT200 boot from 0x%x\n", &_vector_start);
 	return OK;
 }

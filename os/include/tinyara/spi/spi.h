@@ -398,8 +398,8 @@ struct spi_ops_s {
 #endif
 	void (*select)(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
 	uint32_t (*setfrequency)(FAR struct spi_dev_s *dev, uint32_t frequency);
-	int (*setmode)(FAR struct spi_dev_s *dev, enum spi_mode_e mode);
-	int (*setbits)(FAR struct spi_dev_s *dev, int nbits);
+	void (*setmode)(FAR struct spi_dev_s *dev, enum spi_mode_e mode);
+	void (*setbits)(FAR struct spi_dev_s *dev, int nbits);
 	uint8_t (*status)(FAR struct spi_dev_s *dev, enum spi_dev_e devid);
 #ifdef CONFIG_SPI_CMDDATA
 	int (*cmddata)(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool cmd);

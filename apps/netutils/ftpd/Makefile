@@ -59,12 +59,8 @@ include $(APPDIR)/Make.defs
 ASRCS		=
 CSRCS		=
 
-ifeq ($(CONFIG_NET_TCP),y)
-CSRCS		+= ftpd.c
-else
 ifeq ($(CONFIG_NET_LWIP),y)
 CSRCS		+= ftpd.c
-endif
 endif
 
 

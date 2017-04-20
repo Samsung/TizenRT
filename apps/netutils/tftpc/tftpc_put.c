@@ -70,7 +70,7 @@
 
 #include "tftpc_internal.h"
 
-#if defined(CONFIG_NET) && defined(CONFIG_NET_UDP) && CONFIG_NFILE_DESCRIPTORS > 0
+#if defined(CONFIG_NET) && CONFIG_NFILE_DESCRIPTORS > 0
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -458,4 +458,4 @@ errout:
 	return result;
 }
 
-#endif							/* CONFIG_NET && CONFIG_NET_UDP && CONFIG_NFILE_DESCRIPTORS > 0 */
+#endif							/* CONFIG_NET && CONFIG_NFILE_DESCRIPTORS > 0 */

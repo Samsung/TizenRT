@@ -107,7 +107,18 @@
 #endif							/* LWIP_DHCP && defined(LWIP_IP_ACCEPT_UDP_PORT) */
 
 #else							/* LWIP_DHCP */
+/*
+ * To handle DHCP packets on netutils applications,
+ * enable IP_ACCEPT_LINK_LAYER_ADDRESSING configurations for either NETUTILS DHCPC or NETUTILS DHCPD
+ */
+#if defined (CONFIG_NETUTILS_DHCPC) || defined (CONFIG_NETUTILS_DHCPD)
+#define IP_ACCEPT_LINK_LAYER_ADDRESSING 1
+#define DHCP_CLIENT_PORT                68
+#define IP_ACCEPT_LINK_LAYER_ADDRESSED_PORT(port) ((port) == PP_NTOHS(DHCP_CLIENT_PORT))
+#else
 #define IP_ACCEPT_LINK_LAYER_ADDRESSING 0
+#endif /* defined (CONFIG_NETUTILS_DHCPC) || defined (CONFIG_NETUTILS_DHCPS) */
+
 #endif							/* LWIP_DHCP */
 
 /**

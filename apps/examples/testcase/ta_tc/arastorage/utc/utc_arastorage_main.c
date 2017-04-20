@@ -1422,18 +1422,6 @@ void utc_arastorage_cursor_get_string_value_tc_n(void)
 int arastorage_sample_launcher(int argc, FAR char *argv[])
 {
 
-#ifdef CONFIG_FS_SMARTFS
-	if (fs_erase("/dev/smart1") != OK) {
-		printf("Error erasing file system, STOP TEST!!\n");
-		return ERROR;
-	}
-
-	if (fs_initiate("/dev/smart1", "smartfs") != OK) {
-		printf("Error initiating file system, STOP TEST!!\n");
-		return ERROR;
-	}
-	printf("File system initiated!! START TEST!!\n");
-#endif
 	g_arastorage_tc_count = 1;
 	g_arastorage_tc_fail_count = 0;
 

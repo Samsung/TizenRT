@@ -64,7 +64,9 @@ INCDIROPT = -w
 endif
 
 ASRCS =
+ifeq ($(CONFIG_FS_CMDS),y)
 CSRCS = fs_getpath.c
+endif
 MAINSRC =
 
 ifeq ($(CONFIG_TASH),y)
@@ -76,6 +78,10 @@ endif
 
 ifeq ($(CONFIG_NET_CMDS),y)
 CSRCS += netcmd.c netcmd_ping.c
+endif
+
+ifeq ($(CONFIG_NETUTILS_DHCPD),y)
+CSRCS += netcmd_dhcpd.c
 endif
 
 endif #CONFIG_TASH

@@ -1008,7 +1008,7 @@ static inline void sub32(uint32_t *dst, uint32_t src, signed char *carry)
 		sub32(&cur, -cc, &c); \
 	else						\
 		add32(&cur, cc, &c);	\
-
+ 
 #define LAST									\
 	STORE32; i++;								\
 	cur = c > 0 ? c : 0; STORE32;				\

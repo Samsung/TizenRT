@@ -13,17 +13,35 @@ config DM
 	---help---
 		enable the DM functionality
 if DM
-config LWM2M_BOOTSTRAP
-	bool "BOOTSTRAP_MODE"
+config LWM2M_WAKAAMA
+	bool "LWM2M_WAKAAMA"
 	default n
+	---help---
+		enable LWM2M WAKAAMA external feature
 
+if LWM2M_WAKAAMA
 config LWM2M_CLIENT_MODE
 	bool "CLIENT_MODE"
-	default n
+	default y
+	---help---
+		enable LWM2M WAKAAMA client example
 
 config LWM2M_LITTLE_ENDIAN
 	bool "LITTLE_ENDIAN"
+	default y
+	---help---
+		LWM2M supports LITTLE_ENDIAN and BIG_ENDIAN mode.
+		according to server configuration, LWM2M client should match it.
+		default value is LITTLE_ENDIAN and if you do not select as LITTLE_ENDIAN,
+		BIG_ENDIAN will be used instead of it
+
+config LWM2M_SECURITY
+	bool "USE_SECURITY"
 	default n
+	depends on NET_SECURITY_TLS
+	---help---
+		This definition is for enabling COAP over TLS and DTLS.
+endif
 endif
 
 config ENABLE_IOTIVITY

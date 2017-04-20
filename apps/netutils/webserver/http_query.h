@@ -37,11 +37,11 @@ struct http_server_t;
 struct http_client_t;
 struct http_keyvalue_list_t;
 
-int http_divide_query_params(const char *url, char *query, char *params);
-int http_parse_query(const char *query, struct http_divided_query_t *dq);
-int http_parse_params(const char *params, struct http_keyvalue_list_t *params_list);
+int  http_divide_query_params(const char *url, char *query, char *params);
+int  http_parse_query(const char *query, struct http_divided_query_t *dq);
+int  http_parse_params(const char *params, struct http_keyvalue_list_t *params_list);
 void http_release_query(struct http_divided_query_t *dq);
 
-int http_dispatch_url(struct http_client_t *client, struct http_req_message *req);
+int  http_dispatch_url(struct http_client_t *client, struct http_req_message *req);
 
 #endif

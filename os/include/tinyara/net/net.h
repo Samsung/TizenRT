@@ -142,23 +142,12 @@ struct socketlist {
 struct netif;					/* Forward reference. Defined in tinyara/net/lwip/src/include/lwip/netif.h */
 typedef int (*netdev_callback_t)(FAR struct netif *dev, void *arg);
 
-#ifdef CONFIG_NET_NOINTS
 /* Semaphore based locking for non-interrupt based logic.
  *
  * net_lock_t -- Not used.  Only for compatibility
  */
 
 typedef uint8_t net_lock_t;		/* Not really used */
-
-#else
-
-/* Enable/disable locking for interrupt based logic:
- *
- * net_lock_t -- The processor specific representation of interrupt state.
- */
-
-#define net_lock_t        irqstate_t
-#endif
 
 /****************************************************************************
  * Public Data
@@ -212,25 +201,12 @@ extern "C" {
  ****************************************************************************/
 
 /****************************************************************************
- * Critical section management.  The TinyAra configuration setting
- * CONFIG_NET_NOINT indicates that uIP not called from the interrupt level.
- * If CONFIG_NET_NOINTS is defined, then these will map to semaphore
- * controls.  Otherwise, it assumed that uIP will be called from interrupt
- * level handling and these will map to interrupt enable/disable controls.
- *
- *
- * If CONFIG_NET_NOINTS is defined, then semaphore based locking is used:
+ * Critical section management.
  *
  *   net_lock()          - Takes the semaphore().  Implements a re-entrant mutex.
  *   net_unlock()        - Gives the semaphore().
  *   net_lockedwait()    - Like pthread_cond_wait(); releases the semaphore
  *                         momentarily to wait on another semaphore()
- *
- * Otherwise, interrupt based locking is used:
- *
- *   net_lock()          - Disables interrupts.
- *   net_unlock()        - Conditionally restores interrupts.
- *   net_lockedwait()    - Just wait for the semaphore.
  *
  ****************************************************************************/
 
@@ -242,11 +218,7 @@ extern "C" {
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NET_NOINTS
 net_lock_t net_lock(void);
-#else
-#define net_lock() irqsave()
-#endif
 
 /****************************************************************************
  * Function: net_unlock
@@ -256,11 +228,7 @@ net_lock_t net_lock(void);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NET_NOINTS
 void net_unlock(net_lock_t flags);
-#else
-#define net_unlock(f) irqrestore(f)
-#endif
 
 /****************************************************************************
  * Function: net_timedwait
@@ -280,12 +248,8 @@ void net_unlock(net_lock_t flags);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NET_NOINTS
 struct timespec;
 int net_timedwait(sem_t *sem, FAR const struct timespec *abstime);
-#else
-#define net_timedwait(s, t) sem_timedwait(s, t)
-#endif
 
 /****************************************************************************
  * Function: net_lockedwait
@@ -303,11 +267,7 @@ int net_timedwait(sem_t *sem, FAR const struct timespec *abstime);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NET_NOINTS
 int net_lockedwait(sem_t *sem);
-#else
-#define net_lockedwait(s) sem_wait(s)
-#endif
 
 /****************************************************************************
  * Function: net_setipid
@@ -495,75 +455,6 @@ int net_dupsd2(int sockfd1, int sockfd2);
  ****************************************************************************/
 
 int net_clone(FAR struct socket *psock1, FAR struct socket *psock2);
-
-/****************************************************************************
- * Function: net_sendfile
- *
- * Description:
- *   The send() call may be used only when the socket is in a connected state
- *   (so that the intended recipient is known). The only difference between
- *   send() and write() is the presence of flags. With zero flags parameter,
- *   send() is equivalent to write(). Also, send(sockfd,buf,len,flags) is
- *   equivalent to sendto(sockfd,buf,len,flags,NULL,0).
- *
- * Parameters:
- *   psock    An instance of the internal socket structure.
- *   buf      Data to send
- *   len      Length of data to send
- *   flags    Send flags
- *
- * Returned Value:
- *   On success, returns the number of characters sent.  On  error,
- *   -1 is returned, and errno is set appropriately:
- *
- *   EAGAIN or EWOULDBLOCK
- *     The socket is marked non-blocking and the requested operation
- *     would block.
- *   EBADF
- *     An invalid descriptor was specified.
- *   ECONNRESET
- *     Connection reset by peer.
- *   EDESTADDRREQ
- *     The socket is not connection-mode, and no peer address is set.
- *   EFAULT
- *      An invalid user space address was specified for a parameter.
- *   EINTR
- *      A signal occurred before any data was transmitted.
- *   EINVAL
- *      Invalid argument passed.
- *   EISCONN
- *     The connection-mode socket was connected already but a recipient
- *     was specified. (Now either this error is returned, or the recipient
- *     specification is ignored.)
- *   EMSGSIZE
- *     The socket type requires that message be sent atomically, and the
- *     size of the message to be sent made this impossible.
- *   ENOBUFS
- *     The output queue for a network interface was full. This generally
- *     indicates that the interface has stopped sending, but may be
- *     caused by transient congestion.
- *   ENOMEM
- *     No memory available.
- *   ENOTCONN
- *     The socket is not connected, and no target has been given.
- *   ENOTSOCK
- *     The argument s is not a socket.
- *   EOPNOTSUPP
- *     Some bit in the flags argument is inappropriate for the socket
- *     type.
- *   EPIPE
- *     The local end has been shut down on a connection oriented socket.
- *     In this case the process will also receive a SIGPIPE unless
- *     MSG_NOSIGNAL is set.
- *
- * Assumptions:
- *
- ****************************************************************************/
-
-#ifdef CONFIG_NET_SENDFILE
-struct file;
-ssize_t net_sendfile(int outfd, struct file *infile, off_t *offset, size_t count);
-#endif
 
 /****************************************************************************
  * Name: net_vfcntl

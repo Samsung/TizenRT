@@ -45,7 +45,7 @@ int total_fail;
 
 #define TC_ASSERT_EQ_CLEANUP(api_name, var, ref, error, freeResource) \
 {\
-	if (var != ref) {\
+	if ((var) != (ref)) {\
 		printf("\n[%s][Line : %d] FAIL, %s : API error returned = %s [%d] ", __func__, __LINE__, api_name, error, #var); \
 		total_fail++; \
 		freeResource; \
@@ -55,16 +55,15 @@ int total_fail;
 
 #define TC_ASSERT_EQ(api_name, var, ref) \
 {\
-	if (var != ref) {\
-		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) and (%s == 0x%x) are not equal\n", __func__, __LINE__, api_name, #var, (int)var, #ref, (int)ref); \
+	if ((var) != (ref)) {\
+		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) and (%s == 0x%x) are not equal\n", __func__, __LINE__, api_name, #var, (int)(var), #ref, (int)(ref)); \
 		total_fail++; \
-		return; \
 	} \
 }
 
 #define TC_ASSERT_NEQ_CLEANUP(api_name, var, ref, error, freeResource) \
 {\
-	if (var == ref) {\
+	if ((var) == (ref)) {\
 		printf("\n[%s][Line : %d] FAIL, %s : API error returned = %s [%d] ", __func__, __LINE__, api_name, error, #var); \
 		total_fail++; \
 		freeResource; \
@@ -74,8 +73,8 @@ int total_fail;
 
 #define TC_ASSERT_NEQ(api_name, var, ref) \
 {\
-	if (var == ref) {\
-		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) and (%s == 0x%x) are equal\n", __func__, __LINE__, api_name, #var, (int)var, #ref, (int)ref); \
+	if ((var) == (ref)) {\
+		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) and (%s == 0x%x) are equal\n", __func__, __LINE__, api_name, #var, (int)(var), #ref, (int)(ref)); \
 		total_fail++; \
 		return; \
 	} \
@@ -83,7 +82,7 @@ int total_fail;
 
 #define TC_ASSERT_GT_CLEANUP(api_name, var, ref, error, freeResource) \
 {\
-	if (var <= ref) {\
+	if ((var) <= (ref)) {\
 		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) is not greater than (%s == 0x%x)\n", __func__, __LINE__, api_name, error, #var); \
 		total_fail++; \
 		freeResource; \
@@ -93,8 +92,8 @@ int total_fail;
 
 #define TC_ASSERT_GT(api_name, var, ref) \
 {\
-	if (var <= ref)    {\
-		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) is not greater than (%s == 0x%x)\n", __func__, __LINE__, api_name, #var, (int)var, #ref, (int)ref); \
+	if ((var) <= (ref))    {\
+		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) is not greater than (%s == 0x%x)\n", __func__, __LINE__, api_name, #var, (int)(var), #ref, (int)(ref)); \
 		total_fail++; \
 		return; \
 	} \
@@ -102,7 +101,7 @@ int total_fail;
 
 #define TC_ASSERT_GEQ_CLEANUP(api_name, var, ref, error, freeResource) \
 {\
-	if (var < ref) {\
+	if ((var) < (ref)) {\
 		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) is not greater than or euqal to (%s == 0x%x)\n", __func__, __LINE__, api_name, error, #var); \
 		total_fail++; \
 		freeResource; \
@@ -112,8 +111,8 @@ int total_fail;
 
 #define TC_ASSERT_GEQ(api_name, var, ref) \
 {\
-	if (var < ref) {\
-		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) is not greater than or equal to (%s == 0x%x)\n", __func__, __LINE__, api_name, #var, (int)var, #ref, (int)ref); \
+	if ((var) < (ref)) {\
+		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) is not greater than or equal to (%s == 0x%x)\n", __func__, __LINE__, api_name, #var, (int)(var), #ref, (int)(ref)); \
 		total_fail++; \
 		return; \
 	} \
@@ -121,8 +120,8 @@ int total_fail;
 
 #define TC_ASSERT_LT(api_name, var, ref) \
 {\
-	if (var >= ref) {\
-		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) is not lower than (%s == 0x%x)\n", __func__, __LINE__, api_name, #var, (int)var, #ref, (int)ref); \
+	if ((var) >= (ref)) {\
+		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) is not lower than (%s == 0x%x)\n", __func__, __LINE__, api_name, #var, (int)(var), #ref, (int)(ref)); \
 		total_fail++; \
 		return; \
 	} \
@@ -130,8 +129,8 @@ int total_fail;
 
 #define TC_ASSERT_LEQ(api_name, var, ref) \
 {\
-	if (var > ref) {\
-		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) is not lower than or equal to (%s == 0x%x)\n", __func__, __LINE__, api_name, #var, (int)var, #ref, (int)ref); \
+	if ((var) > (ref)) {\
+		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) is not lower than or equal to (%s == 0x%x)\n", __func__, __LINE__, api_name, #var, (int)(var), #ref, (int)(ref)); \
 		total_fail++; \
 		return; \
 	} \
@@ -139,7 +138,7 @@ int total_fail;
 
 #define TC_ASSERT_NOT_NULL(api_name, handle) \
 {\
-	if (handle == NULL) {\
+	if ((handle) == NULL) {\
 		printf("\n[%s][Line : %d] FAIL , %s : API returned NULL ", __func__, __LINE__, api_name); \
 		total_fail++; \
 		return; \
@@ -154,7 +153,7 @@ int total_fail;
 
 #define TC_FREE_MEMORY(buffer) \
 {\
-	if (buffer != NULL) {\
+	if ((buffer) != NULL) {\
 		free(buffer); \
 		buffer = NULL; \
 	} \

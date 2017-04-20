@@ -18,7 +18,7 @@
 /****************************************************************************
  * drivers/syslog/ramlog.c
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2012, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,10 +70,10 @@
 #include <assert.h>
 #include <debug.h>
 
-#include <tinyara/fs/fs.h>
-#include <tinyara/kmalloc.h>
-#include <tinyara/fs/fs.h>
 #include <tinyara/arch.h>
+#include <tinyara/kmalloc.h>
+#include <tinyara/semaphore.h>
+#include <tinyara/fs/fs.h>
 #include <tinyara/syslog/ramlog.h>
 
 #include <arch/irq.h>
@@ -643,6 +643,12 @@ int ramlog_register(FAR const char *devpath, FAR char *buffer, size_t buflen)
 		sem_init(&priv->rl_exclsem, 0, 1);
 #ifndef CONFIG_RAMLOG_NONBLOCKING
 		sem_init(&priv->rl_waitsem, 0, 0);
+
+		/*
+		 * The rl_waitsem semaphore is used for signaling and, hence,
+		 * should not have priority inheritance enabled.
+		 */
+		sem_setprotocol(&priv->rl_waitsem, SEM_PRIO_NONE);
 #endif
 		priv->rl_bufsize = buflen;
 		priv->rl_buffer = buffer;

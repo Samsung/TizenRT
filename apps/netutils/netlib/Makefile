@@ -71,18 +71,8 @@ ifeq ($(CONFIG_NET_IPv6),y)
 CSRCS += netlib_setipv6addr.c netlib_getipv6addr.c netlib_getdripv6addr.c
 CSRCS += netlib_setdripv6addr.c netlib_setipv6netmask.c
 CSRCS += netlib_prefix2ipv6netmask.c netlib_ipv6netmask2prefix.c
-ifeq ($(CONFIG_NET_ICMPv6_AUTOCONF),y)
-CSRCS += netlib_autoconfig.c
-endif
 endif
 
-# These require TCP support
-
-ifeq ($(CONFIG_NET_TCP),y)
-ifeq ($(CONFIG_NET_IPv4),y) # Not yet available for IPv6
-CSRCS += netlib_server.c netlib_listenon.c
-endif
-endif
 
 # No MAC address support for SLIP (Ethernet only)
 

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
  *
  ****************************************************************************/
 /****************************************************************************
+ * os/include/tinyara/rtc.h
  *
  *   Copyright(C) 2011 Uros Platise. All rights reserved.
  *   Author: Uros Platise <uros.platise@isotel.eu>
  *
  * With extensions, modifications by:
  *
- *   Copyright (C) 2011-2012 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011-2012, 2015-2016 Gregory Nutt. All rights reserved.
  *   Author: Gregroy Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,19 +55,20 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_RTC_H
-#define __INCLUDE_RTC_H
+#ifndef __INCLUDE_TINYARA_RTC_H
+#define __INCLUDE_TINYARA_RTC_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/compiler.h>
 
-#include <stdint.h>
 #include <stdbool.h>
-
+#include <signal.h>
 #include <time.h>
+
 #include <tinyara/fs/ioctl.h>
 
 #ifdef CONFIG_RTC
@@ -83,7 +85,7 @@
  *   A full date / time RTC the provides the date and time information, often
  *   in BCD format.  If CONFIG_RTC_DATETIME is selected, it specifies this
  *   second kind of RTC. In this case, the RTC is used to "seed" the normal
- *   TinyAra timer and the TinyAra system timer provides for higher resoution
+ *   TinyARA timer and the TinyARA system timer provides for higher resolution
  *   time.
  *
  * CONFIG_RTC_HIRES - If CONFIG_RTC_DATETIME not selected, then the simple,
@@ -91,10 +93,10 @@
  *   of such simple counters based on the time resolution of the counter:
  *   The typical RTC keeps time to resolution of 1 second, usually
  *   supporting a 32-bit time_t value.  In this case, the RTC is used to
- *   "seed" the normal TinyAra timer and the TinyAra timer provides for higher
+ *   "seed" the normal TinyARA timer and the TinyARA timer provides for higher
  *   resolution time.
  *
- *   If CONFIG_RTC_HIRES is enabled in the TinyAra configuration, then the
+ *   If CONFIG_RTC_HIRES is enabled in the TinyARA configuration, then the
  *   RTC provides higher resolution time and completely replaces the system
  *   timer for purpose of date and time.
  *
@@ -109,19 +111,28 @@
  */
 
 #ifdef CONFIG_RTC_HIRES
-#ifdef CONFIG_RTC_DATETIME
-#error "CONFIG_RTC_HIRES and CONFIG_RTC_DATETIME are both defined"
-#endif
-#ifndef CONFIG_RTC_FREQUENCY
-#error "CONFIG_RTC_FREQUENCY is required for CONFIG_RTC_HIRES"
-#endif
+#  ifdef CONFIG_RTC_DATETIME
+#    error "CONFIG_RTC_HIRES and CONFIG_RTC_DATETIME are both defined"
+#  endif
+#  ifndef CONFIG_RTC_FREQUENCY
+#    error "CONFIG_RTC_FREQUENCY is required for CONFIG_RTC_HIRES"
+#  endif
 #else
-#ifndef CONFIG_RTC_FREQUENCY
-#define CONFIG_RTC_FREQUENCY 1
+#  ifndef CONFIG_RTC_FREQUENCY
+#    define CONFIG_RTC_FREQUENCY 1
+#  endif
+#  if CONFIG_RTC_FREQUENCY != 1
+#    error "The low resolution RTC must have frequency 1Hz"
+#  endif
 #endif
-#if CONFIG_RTC_FREQUENCY != 1
-#error "The low resolution RTC must have frequency 1Hz"
-#endif
+
+#ifdef CONFIG_RTC_ALARM
+#  ifdef CONFIG_DISABLE_SIGNALS
+#    error RTC driver alarm support depends on signals
+#  endif
+#  ifndef CONFIG_RTC_NALARMS
+#    define CONFIG_RTC_NALARMS 1
+#  endif
 #endif
 
 /* The remainder of the contain of this header file is only valid if the
@@ -151,132 +162,28 @@
 
 #define RTC_SET_TIME       _RTCIOC(0x0002)
 
-/* RTC_ALM_READ reads the alarm time (for RTCs that support alarms)
+/* RTC_SET_ALARM sets the alarm time (for RTCs that support alarms).
  *
- * Argument: A writeable reference to a struct rtc_time to receive the RTC's
- *           alarm time.
- */
-
-#define RTC_ALM_READ       _RTCIOC(0x0003)
-
-/* RTC_ALM_SET sets the alarm time (for RTCs that support alarms).
- *
- * Argument: A read-only reference to a struct rtc_time containing the
+ * Argument: A read-only reference to a struct rtc_setalarm_s containing the
  *           new alarm time to be set.
  */
 
-#define RTC_ALM_SET        _RTCIOC(0x0004)
+#define RTC_SET_ALARM      _RTCIOC(0x0003)
 
-/* RTC_IRQP_READ read the frequency for periodic interrupts (for RTCs that
- * support periodic interrupts)
+/* RTC_SET_RELATIVE sets the alarm time relative to the current time.
  *
- * Argument: A pointer to a writeable unsigned long value in which to
- *           receive the frequency value.
+ * Argument: A read-only reference to a struct rtc_setrelative_s containing
+ *           the new relative alarm time to be set.
  */
 
-#define RTC_IRQP_READ      _RTCIOC(0x0005)
+#define RTC_SET_RELATIVE   _RTCIOC(0x0004)
 
-/* RTC_IRQP_SET set the frequency for periodic interrupts (for RTCs that
- * support periodic interrupts)
+/* RTC_SET_RELATIVE cancel the alarm.
  *
- * Argument: An unsigned long value providing the new periodic frequency
+ * Argument: An ALARM ID value that indicates which alarm should be canceled.
  */
 
-#define RTC_IRQP_SET       _RTCIOC(0x0006)
-
-/* RTC_AIE_ON enable alarm interrupts (for RTCs that support alarms)
- *
- * Argument: None
- */
-
-#define RTC_AIE_ON         _RTCIOC(0x0007)
-
-/* RTC_AIE_OFF disable the alarm interrupt (for RTCs that support alarms)
- *
- * Argument: None
- */
-
-#define RTC_AIE_OFF        _RTCIOC(0x0008)
-
-/* RTC_UIE_ON enable the interrupt on every clock update (for RTCs that
- * support this once-per-second interrupt).
- *
- * Argument: None
- */
-
-#define RTC_UIE_ON         _RTCIOC(0x0009)
-
-/* RTC_UIE_OFF disable the interrupt on every clock update (for RTCs that
- * support this once-per-second interrupt).
- *
- * Argument: None
- */
-
-#define RTC_UIE_OFF        _RTCIOC(0x000a)
-
-/* RTC_PIE_ON enable the periodic interrupt (for RTCs that support these
- * periodic interrupts).
- *
- * Argument: None
- */
-
-#define RTC_PIE_ON         _RTCIOC(0x000b)
-
-/* RTC_PIE_OFF disable the periodic interrupt (for RTCs that support these
- * periodic interrupts).
- *
- * Argument: None
- */
-
-#define RTC_PIE_OFF        _RTCIOC(0x000c)
-
-/* RTC_EPOCH_READ and RTC_EPOCH_SET.
- *
- * Many RTCs encode the year in an 8-bit register which is either interpreted
- * as an 8-bit binary number or as a BCD number. In both cases, the number is
- * interpreted relative to this RTC's Epoch. The RTC's Epoch is initialized to
- * 1900 on most systems but on Alpha and MIPS it might also be initialized to
- * 1952, 1980, or 2000, depending on the value of an RTC register for the year.
- * With some RTCs, these operations can be used to read or to set the RTC's
- * Epoch, respectively.
- */
-
-/* RTC_EPOCH_READ read the Epoch.
- *
- * Argument: A reference to a writeable unsigned low variable that will
- *           receive the Epoch value.
- */
-
-#define RTC_EPOCH_READ     _RTCIOC(0x000d)
-
-/* RTC_EPOCH_SET set the Epoch
- *
- * Argument: An unsigned long value containing the new Epoch value to be set.
- */
-
-#define RTC_EPOCH_SET      _RTCIOC(0x000e)
-
-/* RTC_WKALM_RD and RTC_WKALM_SET.
- *
- * Some RTCs support a more powerful alarm interface, using these ioctls to
- * read or write the RTC's alarm time (respectively) with the rtc_wkalrm.
- */
-
-/* RTC_WKALM_RD read the current alarm
- *
- * Argument: A writeable reference to struct rtc_wkalrm to receive the
- *           current alarm settings.
- */
-
-#define RTC_WKALM_RD       _RTCIOC(0x000f)
-
-/* RTC_WKALM_SET set the alarm.
- *
- * Argument: A read-only reference to struct rtc_wkalrm containing the
- *           new alarm settings.
- */
-
-#define RTC_WKALM_SET      _RTCIOC(0x0010)
+#define RTC_CANCEL_ALARM   _RTCIOC(0x0005)
 
 /* Architecture-specific RTC IOCTLS should begin at RTC_USER_IOCBASE.  For
  * example:
@@ -286,7 +193,7 @@
  *   etc.
  */
 
-#define RTC_USER_IOCBASE   0x0011
+#define RTC_USER_IOCBASE   0x0006
 
 /****************************************************************************
  * Public Types
@@ -300,39 +207,85 @@
  * structure be cast compatible with struct tm!  They must be interchangeable.
  */
 
-struct rtc_time {
-	int tm_sec;					/* Seconds (0-61, allows for leap seconds) */
-	int tm_min;					/* Minutes (0-59) */
-	int tm_hour;				/* Hours (0-23) */
-	int tm_mday;				/* Day of the month (1-31) */
-	int tm_mon;					/* Month (0-11) */
-	int tm_year;				/* Years since 1900 */
+struct rtc_time
+{
+	int tm_sec;   /* Seconds (0-61, allows for leap seconds) */
+	int tm_min;   /* Minutes (0-59) */
+	int tm_hour;  /* Hours (0-23) */
+	int tm_mday;  /* Day of the month (1-31) */
+	int tm_mon;   /* Month (0-11) */
+	int tm_year;  /* Years since 1900 */
 #if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
-	int tm_wday;				/* Day of the week (0-6) (unused) */
-	int tm_yday;				/* Day of the year (0-365) (unused) */
-	int tm_isdst;				/* Non-0 if daylight savings time is in effect (unused) */
+	int tm_wday;  /* Day of the week (0-6) (unused) */
+	int tm_yday;  /* Day of the year (0-365) (unused) */
+	int tm_isdst; /* Non-0 if daylight savings time is in effect (unused) */
 #endif
 };
 
 #ifdef CONFIG_RTC_ALARM
-/* Structure used with the RTC_WKALM_RD and RTC_WKALM_SET IOCTL commands.
- *
- * The enabled flag is used to enable or disable the alarm interrupt, or to
- * read its current status; when using these calls, RTC_AIE_ON and
- * RTC_AIE_OFF are not used. The pending flag is used by RTC_WKALM_RD to
- * report a pending interrupt . The time field is as used with RTC_ALM_READ
- * and RTC_ALM_SET except that the tm_mday, tm_mon, and tm_year fields are
- * also valid.
+/* Structure used with the RTC_RD_ALARM IOCTL command and with
+ * rdalarm() method.
  */
 
-struct rtc_wkalrm {
-	unsigned char enabled;
-	unsigned char pending;
-	struct rtc_time time;
+struct rtc_rdalarm_s
+{
+	uint8_t id;		/* Indicates the alarm being queried */
+	bool active;		/* Alarm actively timing or disabled */
+	struct rtc_time time;	/* Current RTC time (if enabled) */
+};
+
+/* Structure used with the RTC_SET_ALARM IOCTL command. */
+
+struct rtc_setalarm_s
+{
+	uint8_t id;		/* Indicates the alarm to be set */
+	uint8_t signo;		/* Signal number for alarm notification */
+	pid_t pid;		/* Identifies task to be notified (0=caller) */
+	union sigval sigvalue;	/* Data passed with notification */
+	struct rtc_time time;	/* Alarm time */
+};
+
+/* Structure used with the RTC_SET_RELATIVE IOCTL command. */
+
+struct rtc_setrelative_s
+{
+	uint8_t id;		/* Indicates the alarm to be set */
+	uint8_t signo;		/* Signal number for alarm notification */
+	pid_t pid;		/* Identifies task to be notified (0=caller) */
+	union sigval sigvalue;	/* Data passed with notification */
+	time_t reltime;		/* Relative time in seconds */
+};
+
+/*
+ * Callback type used by the RTC harware to notify the RTC driver when the
+ * alarm expires.
+ */
+
+typedef CODE void (*rtc_alarm_callback_t)(FAR void *priv, int alarmid);
+
+/* Structure used with the setalarm method */
+
+struct lower_setalarm_s
+{
+	uint8_t id;		 /* Indicates the alarm to be set */
+	rtc_alarm_callback_t cb; /* Callback when the alarm expires */
+	FAR void *priv;		 /* Private argurment to accompany callback */
+	struct rtc_time time;	 /* Alarm time */
+};
+
+/* Structure used with the setrelative method */
+
+struct lower_setrelative_s
+{
+	uint8_t id;		 /* Indicates the alarm to be set */
+	rtc_alarm_callback_t cb; /* Callback when the alarm expires */
+	FAR void *priv;		 /* Private argurment to accompany callback */
+	time_t reltime;		 /* Relative time in seconds */
 };
 #endif
 
-/* The RTC driver is implemented as a common, upper-half character driver
+/*
+ * The RTC driver is implemented as a common, upper-half character driver
  * that provides the RTC driver structure and a lower-level, hardware
  * specific implementation that performs the actual RTC operations.
  *
@@ -345,97 +298,53 @@ struct rtc_wkalrm {
  */
 
 struct rtc_lowerhalf_s;
-struct rtc_ops_s {
+struct rtc_ops_s
+{
 	/* rdtime() returns the current RTC time. */
 
-	CODE int (*rdtime)(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_time *rtctime);
+	CODE int (*rdtime)(FAR struct rtc_lowerhalf_s *lower,
+			   FAR struct rtc_time *rtctime);
 
 	/* settime sets the RTC's time */
 
-	CODE int (*settime)(FAR struct rtc_lowerhalf_s *lower, FAR const struct rtc_time *rtctime);
+	CODE int (*settime)(FAR struct rtc_lowerhalf_s *lower,
+			    FAR const struct rtc_time *rtctime);
 
 #ifdef CONFIG_RTC_ALARM
-	/* almread reads the alarm time (for RTCs that support alarms) */
+	/* setalarm sets up a new alarm. */
 
-	CODE int (*almread)(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_time *almtime);
+	CODE int (*setalarm)(FAR struct rtc_lowerhalf_s *lower,
+			     FAR const struct lower_setalarm_s *alarminfo);
 
-	/* almset sets the alarm time (for RTCs that support alarms). */
+	/* setalarm sets up a new alarm relative to the current time. */
 
-	CODE int (*almset)(FAR struct rtc_lowerhalf_s *lower, FAR const struct rtc_time *almtime);
-#endif
+	CODE int (*setrelative)(FAR struct rtc_lowerhalf_s *lower,
+			FAR const struct lower_setrelative_s *alarminfo);
 
-#ifdef CONFIG_RTC_PERIODIC
-	/* irqpread the frequency for periodic interrupts (for RTCs that support
-	 * periodic interrupts)
-	 */
+	/* cancelalarm cancels the current alarm. */
 
-	CODE int (*irqpread)(FAR struct rtc_lowerhalf_s *lower, FAR unsigned long *irqpfreq);
-
-	/* irqpset set the frequency for periodic interrupts (for RTCs that
-	 * support periodic interrupts)
-	 */
-
-	CODE int (*irqpset)(FAR struct rtc_lowerhalf_s *lower, unsigned long irqpfreq);
-#endif
-
-#ifdef CONFIG_RTC_ALARM
-	/* aie enable/disable alarm interrupts (for RTCs that support alarms) */
-
-	CODE int (*aie)(FAR struct rtc_lowerhalf_s *lower, bool enable);
-#endif
-
-#ifdef CONFIG_RTC_ONESEC
-	/* uie enable/disable the interrupt on every clock update (for RTCs that
-	 * support this once-per-second interrupt).
-	 */
-
-	CODE int (*uie)(FAR struct rtc_lowerhalf_s *lower, bool enable);
-#endif
-
-#ifdef CONFIG_RTC_PERIODIC
-	/* pie enable the periodic interrupt (for RTCs that support these periodic
-	 * interrupts).
-	 */
-
-	CODE int (*pie)(FAR struct rtc_lowerhalf_s *lower, bool enable);
-#endif
-
-#ifdef CONFIG_RTC_EPOCHYEAR
-	/* rdepoch read the Epoch. */
-
-	CODE int (*rdepoch)(FAR struct rtc_lowerhalf_s *lower, FAR unsigned long *epoch);
-
-	/* setepoch set the Epoch */
-
-	CODE int (*setepoch)(FAR struct rtc_lowerhalf_s *lower, unsigned long epoch);
-#endif
-
-#ifdef CONFIG_RTC_ALARM
-	/* rdwkalm read the current alarm */
-
-	CODE int (*rdwkalm)(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_wkalrm *wkalrm);
-
-	/* setwkalm set the alarm. */
-
-	CODE int (*setwkalm)(FAR struct rtc_lowerhalf_s *lower, FAR const struct rtc_wkalrm *wkalrm);
+	CODE int (*cancelalarm)(FAR struct rtc_lowerhalf_s *lower, int alarmid);
 #endif
 
 #ifdef CONFIG_RTC_IOCTL
 	/* Support for architecture-specific RTC operations */
 
-	CODE int (*ioctl)(FAR struct rtc_lowerhalf_s *lower, int cmd, unsigned long arg);
+	CODE int (*ioctl)(FAR struct rtc_lowerhalf_s *lower, int cmd,
+			  unsigned long arg);
 #endif
 
 #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
-	/* The driver has been unlinked and there are no further open references
-	 * to the driver.
+	/*
+	 * The driver has been unlinked and there are no further open
+	 * references to the driver.
 	 */
 
 	CODE int (*destroy)(FAR struct rtc_lowerhalf_s *lower);
 #endif
 };
 
-/* When the RTC driver is instantiated, a reference to struct
+/*
+ * When the RTC driver is instantiated, a reference to struct
  * rtc_lowerhalf_s is passed to the initialization function and bound to
  * the driver.  The actual content of the state structure used by different
  * lower half drivers will vary from implementation to implementation.  But
@@ -443,8 +352,10 @@ struct rtc_ops_s {
  * struct rtc_lowerhalf_s that is understood by the upper half driver.
  */
 
-struct rtc_lowerhalf_s {
-	/* This is the contained reference to the read-only, lower-half
+struct rtc_lowerhalf_s
+{
+	/*
+	 * This is the contained reference to the read-only, lower-half
 	 * operations vtable (which may lie in FLASH or ROM)
 	 */
 
@@ -453,174 +364,22 @@ struct rtc_lowerhalf_s {
 	/* Data following this can vary from RTC driver-to-driver */
 };
 
-/* The form of an alarm callback */
-
-typedef CODE void (*alarmcb_t)(void);
-
 /****************************************************************************
  * Public Data
- ****************************************************************************/
-
-/* Variable determines the state of the RTC module.
- *
- * After initialization value is set to 'true' if RTC starts successfully.
- * The value can be changed to false also during operation if RTC for
- * some reason fails.
- */
-
-extern volatile bool g_rtc_enabled;
-
-/****************************************************************************
- * Public Functions
  ****************************************************************************/
 
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
 
-/************************************************************************************
- * Name: up_rtcinitialize
- *
- * Description:
- *   Initialize the hardware RTC per the selected configuration.  This function is
- *   called once during the OS initialization sequence
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno on failure
- *
- ************************************************************************************/
-
-EXTERN int up_rtcinitialize(void);
-
-/************************************************************************************
- * Name: up_rtc_time
- *
- * Description:
- *   Get the current time in seconds.  This is similar to the standard time()
- *   function.  This interface is only required if the low-resolution RTC/counter
- *   hardware implementation selected.  It is only used by the RTOS during
- *   initializeation to set up the system time when CONFIG_RTC is set but neither
- *   CONFIG_RTC_HIRES nor CONFIG_RTC_DATETIME are set.
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   The current time in seconds
- *
- ************************************************************************************/
-
-#ifndef CONFIG_RTC_HIRES
-EXTERN time_t up_rtc_time(void);
-#endif
-
-/************************************************************************************
- * Name: up_rtc_gettime
- *
- * Description:
- *   Get the current time from the high resolution RTC clock/counter.  This interface
- *   is only supported by the high-resolution RTC/counter hardware implementation.
- *   It is used to replace the system timer.
- *
- * Input Parameters:
- *   tp - The location to return the high resolution time value.
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno on failure
- *
- ************************************************************************************/
-
-#ifdef CONFIG_RTC_HIRES
-EXTERN int up_rtc_gettime(FAR struct timespec *tp);
-#endif
-
-/************************************************************************************
- * Name: up_rtc_getdatetime
- *
- * Description:
- *   Get the current date and time from the date/time RTC.  This interface
- *   is only supported by the date/time RTC hardware implementation.
- *   It is used to replace the system timer.  It is only used by the RTOS during
- *   initializeation to set up the system time when CONFIG_RTC and CONFIG_RTC_DATETIME
- *   are selected (and CONFIG_RTC_HIRES is not).
- *
- *   NOTE: Some date/time RTC hardware is capability of sub-second accuracy.  That
- *   sub-second accuracy is lost in this interface.  However, since the system time
- *   is reinitialized on each power-up/reset, there will be no timing inaccuracy in
- *   the long run.
- *
- * Input Parameters:
- *   tp - The location to return the high resolution time value.
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno on failure
- *
- ************************************************************************************/
-
-#ifdef CONFIG_RTC_DATETIME
-EXTERN int up_rtc_getdatetime(FAR struct tm *tp);
-#endif
-
-/************************************************************************************
- * Name: up_rtc_settime
- *
- * Description:
- *   Set the RTC to the provided time.  All RTC implementations must be able to
- *   set their time based on a standard timespec.
- *
- * Input Parameters:
- *   tp - the time to use
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno on failure
- *
- ************************************************************************************/
-
-EXTERN int up_rtc_settime(FAR const struct timespec *tp);
-
-/************************************************************************************
- * Name: up_rtc_setalarm
- *
- * Description:
- *   Set up an alarm.
- *
- * Input Parameters:
- *   tp - the time to set the alarm
- *   callback - the function to call when the alarm expires.
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno on failure
- *
- ************************************************************************************/
-
-#ifdef CONFIG_RTC_ALARM
-EXTERN int up_rtc_setalarm(FAR const struct timespec *tp, alarmcb_t callback);
-#endif
-
-/************************************************************************************
- * Name: up_rtc_cancelalarm
- *
- * Description:
- *   Cancel a pending alarm alarm
- *
- * Input Parameters:
- *   none
- *
- * Returned Value:
- *   Zero (OK) on success; a negated errno on failure
- *
- ************************************************************************************/
-
-#ifdef CONFIG_RTC_ALARM
-EXTERN int up_rtc_cancelalarm(void);
-#endif
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
 /****************************************************************************
  * Name: rtc_initialize
@@ -632,12 +391,15 @@ EXTERN int up_rtc_cancelalarm(void);
  *
  ****************************************************************************/
 
-EXTERN int rtc_initialize(int minor, FAR struct rtc_lowerhalf_s *lower);
+#ifdef __KERNEL__
+int rtc_initialize(int minor, FAR struct rtc_lowerhalf_s *lower);
+#endif
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
-#endif							/* CONFIG_RTC_DRIVER */
-#endif							/* CONFIG_RTC */
-#endif							/* __INCLUDE_RTC_H */
+
+#endif /* CONFIG_RTC_DRIVER */
+#endif /* CONFIG_RTC */
+#endif /* __INCLUDE_TINYARA_RTC_H */

@@ -353,7 +353,7 @@ static int user_main(int argc, char *argv[])
 		check_test_memory_usage();
 #endif
 
-#if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_MUTEX_TYPES)
+#if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_PTHREAD_MUTEX_TYPES)
 		/* Verify recursive mutexes */
 
 		printf("\nuser_main: recursive mutex test\n");

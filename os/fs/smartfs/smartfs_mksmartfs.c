@@ -106,29 +106,19 @@
  ****************************************************************************/
 
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-int mksmartfs(FAR const char *pathname, uint8_t nrootdirs, bool format)
+int mksmartfs(FAR const char *pathname, uint8_t nrootdirs, bool force)
 #else
-int mksmartfs(FAR const char *pathname, bool format)
+int mksmartfs(FAR const char *pathname, bool force)
 #endif
 {
 	struct inode *inode;
 	struct smart_format_s fmt;
 	int ret;
 	int x;
-	bool is_smart;
 	uint8_t type;
 	struct smart_read_write_s request;
-#if (CONFIG_MTD && CONFIG_MTD_SMART)
-	if (format) {
-		is_smart = false;
-	} else {
-		is_smart = smart_get_format_status();
-	}
-#else
-	is_smart = false;
-#endif
-	/* Find the inode of the block driver indentified by 'source' */
 
+	/* Find the inode of the block driver indentified by 'source' */
 	ret = open_blockdriver(pathname, 0, &inode);
 	if (ret < 0) {
 		fdbg("Failed to open %s\n", pathname);
@@ -136,76 +126,79 @@ int mksmartfs(FAR const char *pathname, bool format)
 	}
 
 	/* Make sure that the inode supports the write and geometry methods at a minimum */
-
 	if (!inode->u.i_bops->write || !inode->u.i_bops->geometry) {
 		fdbg("%s does not support write or geometry methods\n", pathname);
 		ret = -EACCES;
 		goto errout_with_driver;
 	}
 
+	/* check if it is already formatted */
+	if (!force) {
+		ret = inode->u.i_bops->ioctl(inode, BIOC_GETFORMAT,
+							(unsigned long)&fmt);
+		if (ret == OK && (fmt.flags & SMART_FMT_ISFORMATTED) != 0) {
+			close_blockdriver(inode);
+			return OK;
+		}
+	}
+
 	/* Validate the block device is a SMART device */
 	/* Perform a low-level SMART format */
-	if (!is_smart) {
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-		ret = inode->u.i_bops->ioctl(inode, BIOC_LLFORMAT, nrootdirs);
+	ret = inode->u.i_bops->ioctl(inode, BIOC_LLFORMAT, nrootdirs);
 #else
-		ret = inode->u.i_bops->ioctl(inode, BIOC_LLFORMAT, 0);
+	ret = inode->u.i_bops->ioctl(inode, BIOC_LLFORMAT, 0);
 #endif
-		if (ret != OK) {
-			fdbg("Error creating low-level format: %d\n", ret);
-			goto errout_with_driver;
-		}
-	} else {
-		fdbg("already smart\n");
+	if (ret != OK) {
+		fdbg("Error creating low-level format: %d\n", ret);
+		goto errout_with_driver;
 	}
-	/* Get the format information so we know how big the sectors are */
 
+	/* Get the format information so we know how big the sectors are */
 	ret = inode->u.i_bops->ioctl(inode, BIOC_GETFORMAT, (unsigned long)&fmt);
 	if (ret != OK) {
 		fdbg("Error getting device low level format: %d\n", ret);
 		goto errout_with_driver;
 	}
+
 	/* Now Write the filesystem to media.  Loop for each root dir entry and
 	 * allocate the reserved Root Dir Enty, then write a blank root dir for it.
 	 */
-
 	type = SMARTFS_SECTOR_TYPE_DIR;
 	request.offset = 0;
 	request.count = 1;
 	request.buffer = &type;
 	x = 0;
 
-	if (!is_smart) {
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-		for (; x < nrootdirs; x++)
+	for (; x < nrootdirs; x++)
 #endif
-		{
+	{
 #ifdef CONFIG_SMARTFS_BAD_SECTOR
-			int allocated_sector = inode->u.i_bops->ioctl(inode, BIOC_ALLOCSECT,
-								   SMARTFS_BSM_LOG_SECTOR_NUMBER);
-			if (allocated_sector != SMARTFS_BSM_LOG_SECTOR_NUMBER) {
-				allocated_sector = -EIO;
-				goto errout_with_driver;
-			}
+		int allocated_sector = inode->u.i_bops->ioctl(inode, BIOC_ALLOCSECT,
+							   SMARTFS_BSM_LOG_SECTOR_NUMBER);
+		if (allocated_sector != SMARTFS_BSM_LOG_SECTOR_NUMBER) {
+			allocated_sector = -EIO;
+			goto errout_with_driver;
+		}
 #endif							// CONFIG_SMARTFS_BAD_SECTOR
 
-			ret = inode->u.i_bops->ioctl(inode, BIOC_ALLOCSECT, SMARTFS_ROOT_DIR_SECTOR + x);
-			if (ret != SMARTFS_ROOT_DIR_SECTOR + x) {
-				ret = -EIO;
-				goto errout_with_driver;
-			}
+		ret = inode->u.i_bops->ioctl(inode, BIOC_ALLOCSECT, SMARTFS_ROOT_DIR_SECTOR + x);
+		if (ret != SMARTFS_ROOT_DIR_SECTOR + x) {
+			ret = -EIO;
+			goto errout_with_driver;
+		}
 
-			/* Mark this block as a directory entry */
+		/* Mark this block as a directory entry */
 
-			request.logsector = SMARTFS_ROOT_DIR_SECTOR + x;
+		request.logsector = SMARTFS_ROOT_DIR_SECTOR + x;
 
-			/* Issue a write to the sector, single byte */
+		/* Issue a write to the sector, single byte */
 
-			ret = inode->u.i_bops->ioctl(inode, BIOC_WRITESECT, (unsigned long)&request);
-			if (ret != 0) {
-				ret = -EIO;
-				goto errout_with_driver;
-			}
+		ret = inode->u.i_bops->ioctl(inode, BIOC_WRITESECT, (unsigned long)&request);
+		if (ret != 0) {
+			ret = -EIO;
+			goto errout_with_driver;
 		}
 	}
 

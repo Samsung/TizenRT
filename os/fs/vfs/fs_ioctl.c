@@ -152,6 +152,9 @@ int ioctl(int fd, int req, unsigned long arg)
 			err = -ret;
 			goto errout;
 		}
+	} else {
+		err = ENOTTY;
+		goto errout;
 	}
 
 	return ret;

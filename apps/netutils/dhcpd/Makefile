@@ -59,7 +59,7 @@ include $(APPDIR)/Make.defs
 ASRCS		=
 CSRCS		=
 
-ifeq ($(CONFIG_NET_UDP),y)
+ifeq ($(CONFIG_NETUTILS_DHCPD),y)
 CSRCS		+= dhcpd.c
 endif
 

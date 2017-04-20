@@ -1211,6 +1211,12 @@ void dhcp_stop(struct netif *netif)
 		}
 #endif							/* LWIP_DHCP_AUTOIP_COOP */
 
+		ip_addr_t ipaddr;
+		netif_set_ipaddr(netif, IP_ADDR_ANY);
+		netif_set_gw(netif, IP_ADDR_ANY);
+		ipaddr.addr = IPADDR_NONE;
+		netif_set_netmask(netif, &ipaddr);
+
 		if (dhcp->pcb != NULL) {
 			udp_remove(dhcp->pcb);
 			dhcp->pcb = NULL;

@@ -138,16 +138,6 @@ IOTIVITY_LIBS_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/out/tinyara/$(
 IOTIVITY_CONFIG_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/resource/c_common
 endif
 
-ifeq ($(CONFIG_ARCH_CHIP_S5JT200),y)
-LBITS := $(shell getconf LONG_BIT)
-GEN_BINHEADER_PATH = tools/genbin
-ifeq ($(LBITS),64)
-GEN_BINHEADER = $(GEN_BINHEADER_PATH)/AttachHeaderNS2
-else
-GEN_BINHEADER = $(GEN_BINHEADER_PATH)/AttachHeaderNS2_for_32bit
-endif
-endif
-
 # Add-on directories.  These may or may not be in place in the
 # TinyAra source tree (they must be specifically installed)
 #
@@ -239,7 +229,7 @@ BIN_EXE = tinyara$(EXEEXT)
 BIN = $(BIN_DIR)/$(BIN_EXE)
 
 all: $(BIN) memstat
-.PHONY: context clean_context check_context export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean
+.PHONY: context clean_context check_context export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build
 
 # Target used to copy include/tinyara/math.h.  If CONFIG_ARCH_MATH_H is
 # defined, then there is an architecture specific math.h header file
@@ -301,15 +291,15 @@ endif
 # part of the overall TinyAra configuration sequence. Notice that the
 # tools/mkversion tool is built and used to create include/tinyara/version.h
 
+force_build:
+
 tools/mkversion$(HOSTEXEEXT):
 	$(Q) $(MAKE) -C tools -f Makefile.host TOPDIR="$(TOPDIR)"  mkversion$(HOSTEXEEXT)
 
-$(TOPDIR)/.version:
-	$(Q) if [ ! -f .version ]; then \
-		echo "No .version file found, creating one"; \
-		tools/version.sh -v 1.0 .version; \
-		chmod 755 .version; \
-	fi
+$(TOPDIR)/.version: force_build
+	echo "create .version file"; \
+	tools/version.sh -v 1.0 .version; \
+	chmod 755 .version
 
 include/tinyara/version.h: $(TOPDIR)/.version tools/mkversion$(HOSTEXEEXT)
 	$(Q) tools/mkversion $(TOPDIR) > include/tinyara/version.h
@@ -492,9 +482,10 @@ endif
 ifeq ($(CONFIG_RAW_BINARY),y)
 	@echo "CP: $(BIN_EXE).bin"
 	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary $(BIN) $(BIN).bin
-ifeq ($(CONFIG_BOARD_FOTA_SUPPORT),y)
-	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary $(BIN)_ota1 $(BIN)_ota1.bin
 endif
+ifeq ($(CONFIG_SAMSUNG_NS2),y)
+	@echo "ATTACHNS2: $(BIN).bin --> $(BIN)_head.bin"
+	$(Q) tools/s5jchksum.py $(BIN).bin $(BIN)_head.bin
 endif
 ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 	@echo "MKIMAGE: uImage"
@@ -504,33 +495,6 @@ ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 		cp -f uImage /tftpboot/uImage; \
 	fi
 endif
-
-ifeq ($(CONFIG_RAW_BINARY),y)
-ifeq ($(CONFIG_ARCH_CHIP_S5JT200),y)
-
-ifeq ($(CONFIG_BOOT_RUNFROMFLASH),y)
-	@echo "Make image for FLASH BOOTUP"
-else
-	@echo "Make image for SRAM BOOTUP"
-endif # RUNFROMFLASH
-
-ifeq ($(CONFIG_DISABLE_MAKING_BINARY_HEADER),y)
-	@echo "Make dummy for CRC header"
-	dd if=/dev/zero of=$(BIN)_dummy bs=1 count=32
-
-	cat $(BIN)_dummy $(BIN).bin > $(BIN)_head.bin
-ifeq ($(CONFIG_BOARD_FOTA_SUPPORT),y)
-	cat $(BIN)_dummy $(BIN)_ota1.bin > $(BIN)_ota1_head.bin
-endif
-else
-	$(GEN_BINHEADER) $(BIN).bin $(BIN)_head.bin -embd
-ifeq ($(CONFIG_BOARD_FOTA_SUPPORT),y)
-	$(GEN_BINHEADER) $(BIN)_ota1.bin $(BIN)_ota1_head.bin -embd
-endif
-endif # DISABLE_MAKING_BINARY_HEADER
-
-endif # S5JT200
-endif # RAW_BINARY
 
 # $(BIN)
 #

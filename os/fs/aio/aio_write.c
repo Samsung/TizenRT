@@ -147,9 +147,6 @@ static void aio_write_worker(FAR void *arg)
 #endif
 	aiocbp = aioc_decant(aioc);
 
-#if defined(AIO_HAVE_FILEP) && defined(AIO_HAVE_PSOCK)
-	if (aiocbp->aio_fildes < CONFIG_NFILE_DESCRIPTORS)
-#endif
 #ifdef AIO_HAVE_FILEP
 	{
 		/* Call fcntl(F_GETFL) to get the file open mode. */
@@ -179,21 +176,6 @@ static void aio_write_worker(FAR void *arg)
 		} else {
 			nwritten = file_pwrite(aioc->u.aioc_filep, (FAR const void *)aiocbp->aio_buf, aiocbp->aio_nbytes, aiocbp->aio_offset);
 		}
-	}
-#endif
-#if defined(AIO_HAVE_FILEP) && defined(AIO_HAVE_PSOCK)
-	else
-#endif
-#ifdef AIO_HAVE_PSOCK
-	{
-		/* Perform the send using:
-		 *
-		 *   u.aioc_psock - Socket structure pointer
-		 *   aio_buf      - Location of buffer
-		 *   aio_nbytes   - Length of transfer
-		 */
-
-		nwritten = psock_send(aioc->u.aioc_psock, (FAR const void *)aiocbp->aio_buf, aiocbp->aio_nbytes, 0);
 	}
 #endif
 

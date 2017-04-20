@@ -105,11 +105,6 @@ extern "C" {
 #define EXTERN extern
 #endif
 
-#if defined(CONFIG_NET_ICMPv6_AUTOCONF) || defined(CONFIG_NET_ICMPv6_ROUTER)
-EXTERN const struct ether_addr g_ipv6_ethallnodes;	/* All link local nodes */
-EXTERN const struct ether_addr g_ipv6_ethallrouters;	/* All link local routers */
-#endif
-
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/

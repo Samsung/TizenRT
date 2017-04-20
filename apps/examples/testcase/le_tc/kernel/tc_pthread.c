@@ -895,7 +895,7 @@ static void tc_pthread_pthread_take_give_semaphore(void)
 	sem_t sem;
 	sem_init(&sem, 0, VAL_THREE);
 
-	ret_chk = pthread_takesemaphore(&sem);
+	ret_chk = pthread_takesemaphore(&sem, false);
 	TC_ASSERT_EQ("pthread_takesemaphore", ret_chk, OK);
 
 	sem_getvalue(&sem, &get_value);

@@ -49,8 +49,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-/// @file ntpclient.c
-/// @brief ntpclient core and API
+/**
+ * @file ntpclient.c
+ * @brief ntpclient core and API
+ */
 
 /****************************************************************************
  * Included Files
@@ -82,7 +84,8 @@
  */
 #define NTP2UNIX_TRANLSLATION 2208988800u
 #define NTP_VERSION           3
-#define DEBUG_OPTION          1
+
+#define DEBUG_OPTION          0
 
 /****************************************************************************
  * Private Types
@@ -287,7 +290,7 @@ static void ntpc_settime(FAR uint8_t *timestamp)
 	clock_settime(CLOCK_REALTIME, &tp);
 
 	if (g_debug) {
-		printf("[ntpclient] Set time to %lu seconds \n", (unsigned long)tp.tv_sec);
+		ndbg("Set time to %lu seconds\n", (unsigned long)tp.tv_sec);
 	}
 }
 
@@ -369,10 +372,7 @@ static int ntpc_daemon(int argc, char **argv)
 		svdbg("Sending a NTP packet\n");
 
 		if (g_debug) {
-			printf("[ntpclient] server : %s (%d.%d.%d.%d:%d) \n", g_ntps.server[srv_index].conn.hostname,
-					(g_ntps.server[srv_index].ipaddr >> 0) & 0xFF, (g_ntps.server[srv_index].ipaddr >> 8) & 0xFF,
-					(g_ntps.server[srv_index].ipaddr >> 16) & 0xFF, (g_ntps.server[srv_index].ipaddr >> 24) & 0xFF,
-					g_ntps.server[srv_index].conn.port);
+			ndbg("server : %s (%d.%d.%d.%d:%d)\n", g_ntps.server[srv_index].conn.hostname, (g_ntps.server[srv_index].ipaddr >> 0) & 0xFF, (g_ntps.server[srv_index].ipaddr >> 8) & 0xFF, (g_ntps.server[srv_index].ipaddr >> 16) & 0xFF, (g_ntps.server[srv_index].ipaddr >> 24) & 0xFF, g_ntps.server[srv_index].conn.port);
 		}
 
 		/* Setup or sockaddr_in struct with information about the server we are
@@ -393,7 +393,7 @@ static int ntpc_daemon(int argc, char **argv)
 			int errval = errno;
 			if (errval != EINTR) {
 				if (g_debug) {
-					printf("ERROR: sendto() failed: %d\n", errval);
+					ndbg("ERROR: sendto() failed (errno: %d)\n", errval);
 				}
 			}
 
@@ -449,8 +449,8 @@ static int ntpc_daemon(int argc, char **argv)
 			int errval = errno;
 			if (errval != EINTR) {
 				if (g_debug) {
-					printf("[ntpclient] ntp client cannot receive time information from ntp server. \n");
-					printf("[ntpclient] maybe, ntp server is not connected. \n");
+					ndbg("ntp client cannot receive time information from ntp server.\n");
+					ndbg("maybe, ntp server is not connected.\n");
 				}
 			}
 
@@ -473,9 +473,7 @@ static int ntpc_daemon(int argc, char **argv)
 		if (g_ntpc_daemon.state == NTP_RUNNING) {
 
 			if (g_debug) {
-				printf("[ntpclient] Waiting for %d seconds\n", g_ntps.interval_secs);
-			} else {
-				svdbg("Waiting for %d seconds\n", g_ntps.interval_secs);
+				ndbg("Waiting for %d seconds\n", g_ntps.interval_secs);
 			}
 
 			(void)sleep(g_ntps.interval_secs);
@@ -485,7 +483,7 @@ static int ntpc_daemon(int argc, char **argv)
 	/* The NTP client is terminating */
 
 	if (g_debug) {
-		printf("[ntpclient] daemon stop\n");
+		ndbg("daemon stop\n");
 	}
 
 	close(sd);
@@ -647,7 +645,7 @@ int ntpc_start(struct ntpc_server_conn_s *server_list, uint32_t num_of_servers, 
 			(void)sem_wait(&g_ntpc_daemon.interlock);
 		} while (g_ntpc_daemon.state == NTP_STARTED);
 	} else {
-		fprintf(stderr, "[ntpclient] ntpclient is already running.\n");
+		ndbg("ntpclient is already running.\n");
 		goto done;
 	}
 
@@ -703,7 +701,7 @@ int ntpc_stop(void)
 			} while (g_ntpc_daemon.state == NTP_STOP_REQUESTED);
 		}
 	} else {
-		fprintf(stderr, "[ntpclient] ntpclient has already been stopped.\n");
+		ndbg("ntpclient has already been stopped.\n");
 		goto done;
 	}
 

@@ -42,10 +42,8 @@ static int g_callback;
 #ifndef CONFIG_BUILD_PROTECTED
 static volatile int vfork_val;
 static volatile int task_cnt;
-pid_t existed_pid[CONFIG_MAX_TASKS];
 static volatile int vfork_cnt;
 static volatile pid_t ppid;
-static volatile int existed_pid_idx;
 #endif
 
 /**
@@ -173,7 +171,6 @@ static int getpid_task(int argc, char *argv[])
 */
 static void task_cnt_func(struct tcb_s *tcb, void *arg)
 {
-	existed_pid[task_cnt] = tcb->pid;
 	task_cnt++;
 }
 
@@ -185,31 +182,17 @@ static void task_cnt_func(struct tcb_s *tcb, void *arg)
 static int vfork_task(int argc, char *argv[])
 {
 	pid_t pid;
-	int repeat_criteria;
-	int repeat_iter;
 
-	/* initialize the task_cnt and existed_pid arr */
 	task_cnt = vfork_val = 0;
-	for (existed_pid_idx = 0; existed_pid_idx < CONFIG_MAX_TASKS; existed_pid_idx++) {
-		existed_pid[existed_pid_idx] = -1;
-	}
-
 	ppid = getpid();
 
 	sched_foreach(task_cnt_func, NULL);
-	existed_pid_idx = task_cnt;
 
 	for (vfork_cnt = 0; vfork_cnt < (CONFIG_MAX_TASKS - task_cnt + 1); vfork_cnt++) {
 		pid = vfork();
 		if (pid == 0) {
 			vfork_val++;
-			/* check that created pid is repeated or not */
-			if (existed_pid[existed_pid_idx] != -1) {
-				g_callback = ERROR;
-				exit(OK);
-			} else {
-				existed_pid[existed_pid_idx++] = getpid();
-			}
+			exit(OK);
 		} else if (pid < 0) {
 			if (vfork_val >= (CONFIG_MAX_TASKS - task_cnt) && errno == EPERM) {
 				/* the num of tasks is full, and the errno is set to EPERM */
@@ -221,23 +204,6 @@ static int vfork_task(int argc, char *argv[])
 
 	while (vfork_val != CONFIG_MAX_TASKS - task_cnt) {
 		usleep(USEC_10);
-	}
-
-	if (getpid() != ppid) {
-		exit(OK);
-	}
-
-	/* check all pids in existed_pid arr whether repeated or not */
-	for (repeat_criteria = 0; repeat_criteria < CONFIG_MAX_TASKS; repeat_criteria++) {
-		for (repeat_iter = repeat_criteria + 1; repeat_iter < CONFIG_MAX_TASKS; repeat_iter++) {
-			if (existed_pid[repeat_criteria] == existed_pid[repeat_iter]) {
-				g_callback = ERROR;
-				break;
-			}
-		}
-		if (g_callback == ERROR) {
-			break;
-		}
 	}
 
 	return OK;

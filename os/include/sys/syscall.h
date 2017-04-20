@@ -107,15 +107,22 @@
 #define SYS_sem_trywait                (CONFIG_SYS_RESERVED+17)
 #define SYS_sem_wait                   (CONFIG_SYS_RESERVED+18)
 
+#ifdef CONFIG_PRIORITY_INHERITANCE
+#define SYS_sem_setprotocol            (CONFIG_SYS_RESERVED+19)
+#define __SYS_named_sem                (CONFIG_SYS_RESERVED+20)
+#else
+#define __SYS_named_sem                (CONFIG_SYS_RESERVED+19)
+#endif
+
 /* Named semaphores */
 
 #ifdef CONFIG_FS_NAMED_SEMAPHORES
-#define SYS_sem_open                   (CONFIG_SYS_RESERVED+19)
-#define SYS_sem_close                  (CONFIG_SYS_RESERVED+20)
-#define SYS_sem_unlink                 (CONFIG_SYS_RESERVED+21)
-#define __SYS_task_create              (CONFIG_SYS_RESERVED+22)
+#define SYS_sem_open                   __SYS_named_sem
+#define SYS_sem_close                  (__SYS_named_sem+1)
+#define SYS_sem_unlink                 (__SYS_named_sem+2)
+#define __SYS_task_create              (__SYS_named_sem+3)
 #else
-#define __SYS_task_create              (CONFIG_SYS_RESERVED+19)
+#define __SYS_task_create              (__SYS_named_sem)
 #endif
 
 /* Task creation APIs based on global entry points cannot be use with
@@ -284,16 +291,9 @@
 #if CONFIG_NFILE_STREAMS > 0
 #define SYS_fs_fdopen                  (__SYS_filedesc+16)
 #define SYS_sched_getstreams           (__SYS_filedesc+17)
-#define __SYS_sendfile                 (__SYS_filedesc+18)
+#define __SYS_mountpoint               (__SYS_filedesc+18)
 #else
-#define __SYS_sendfile                 (__SYS_filedesc+16)
-#endif
-
-#if defined(CONFIG_NET_SENDFILE)
-#define SYS_sendfile,                  __SYS_sendfile
-#define __SYS_mountpoint               (__SYS_sendfile+1)
-#else
-#define __SYS_mountpoint               __SYS_sendfile
+#define __SYS_mountpoint               (__SYS_filedesc+16)
 #endif
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT)

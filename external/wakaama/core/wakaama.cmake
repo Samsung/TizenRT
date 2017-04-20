@@ -13,7 +13,7 @@ set(CORE_HEADERS
 
 set(WAKAAMA_SOURCES
     ${WAKAAMA_SOURCES_DIR}/liblwm2m.c
-    ${WAKAAMA_SOURCES_DIR}/uri_lwm2m.c
+    ${WAKAAMA_SOURCES_DIR}/uri.c
     ${WAKAAMA_SOURCES_DIR}/utils.c
     ${WAKAAMA_SOURCES_DIR}/objects.c
     ${WAKAAMA_SOURCES_DIR}/tlv.c
@@ -27,7 +27,7 @@ set(WAKAAMA_SOURCES
     ${WAKAAMA_SOURCES_DIR}/observe.c
     ${WAKAAMA_SOURCES_DIR}/json.c
     ${WAKAAMA_SOURCES_DIR}/discover.c
-    ${CORE_HEADERS}
+    ${WAKAAMA_SOURCES_DIR}/block1.c
     ${EXT_SOURCES})
 
 # This will not work for multi project cmake generators like the Visual Studio Generator

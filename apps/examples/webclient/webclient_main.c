@@ -51,14 +51,14 @@
  ****************************************************************************/
 
 /**
-* @testcase		lwip_http_01 (client)
-* @brief		To send HTTP request messages and receive response messages.
-*			supported methods: GET, POST, PUT, DELETE
-*			Entity and encoding are needed only for POST and PUT methods. If an encoding is not for "C", it always uses the content-length.
-* @scenario		1. Start webserver at TASH using the command "webserver start". Refer to webserver_main.c to run HTTP server.
-*			2. Start webclient at TASH using the command "webclient GET http://[serverip]/".
+* @testcase            lwip_http_01 (client)
+* @brief               To send HTTP request messages and receive response messages.
+*                      supported methods: GET, POST, PUT, DELETE
+*                      Entity and encoding are needed only for POST and PUT methods. If an encoding is not for "C", it always uses the content-length.
+* @scenario            1. Start webserver at TASH using the command "webserver start". Refer to webserver_main.c to run HTTP server.
+*                      2. Start webclient at TASH using the command "webclient GET http://[serverip]/".
 * @apicovered
-* @precondition		Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
+* @precondition                Connect to Wi-Fi. Both ARTIK051 server and ARTIK051 client should be in the same network.
 * @postcondition
 */
 
@@ -77,11 +77,7 @@
  * Preprocessor Definitions
  ****************************************************************************/
 
-#ifdef CONFIG_TLS_WITH_SSS
-#define WEBCLIENT_STACK_SIZE   32768
-#else
-#define WEBCLIENT_STACK_SIZE   8192
-#endif
+#define WEBCLIENT_STACK_SIZE   (1024 * 8)
 #define WEBCLIENT_SCHED_PRI    100
 #define WEBCLIENT_SCHED_POLICY SCHED_RR
 
@@ -96,16 +92,6 @@ struct webclient_input {
 	char **argv;
 };
 
-#ifdef CONFIG_HW_RSA_SIGN
-#include "sss_certnkey_client.h"
-#include "tls/see_api.h"
-
-#define WEBCLIENT_CA_KEY_INDEX    3
-#define WEBCLIENT_DEV_KEY_INDEX   4
-#define WEBCLIENT_CA_CERT_INDEX   3
-#define WEBCLIENT_DEV_CERT_INDEX  4
-
-#else
 const char c_ca_crt_rsa[] =
 	"-----BEGIN CERTIFICATE-----\r\n"
 	"MIIDhzCCAm+gAwIBAgIBADANBgkqhkiG9w0BAQUFADA7MQswCQYDVQQGEwJOTDER\r\n"
@@ -114,20 +100,7 @@ const char c_ca_crt_rsa[] =
 	"A1UEChMIUG9sYXJTU0wxGTAXBgNVBAMTEFBvbGFyU1NMIFRlc3QgQ0EwggEiMA0G\r\n"
 	"CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDA3zf8F7vglp0/ht6WMn1EpRagzSHx\r\n"
 	"mdTs6st8GFgIlKXsm8WL3xoemTiZhx57wI053zhdcHgH057Zk+i5clHFzqMwUqny\r\n"
-	"50BwFMtEonILwuVA+T7lpg6z+exKY8C4KQB0nFc7qKUEkHHxvYPZP9al4jwqj+8n\r\n"
-	"YMPGn8u67GB9t+aEMr5P+1gmIgNb1LTV+/Xjli5wwOQuvfwu7uJBVcA0Ln0kcmnL\r\n"
-	"R7EUQIN9Z/SG9jGr8XmksrUuEvmEF/Bibyc+E1ixVA0hmnM3oTDPb5Lc9un8rNsu\r\n"
-	"KNF+AksjoBXyOGVkCeoMbo4bF6BxyLObyavpw/LPh5aPgAIynplYb6LVAgMBAAGj\r\n"
-	"gZUwgZIwDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQUtFrkpbPe0lL2udWmlQ/rPrzH\r\n"
-	"/f8wYwYDVR0jBFwwWoAUtFrkpbPe0lL2udWmlQ/rPrzH/f+hP6Q9MDsxCzAJBgNV\r\n"
-	"BAYTAk5MMREwDwYDVQQKEwhQb2xhclNTTDEZMBcGA1UEAxMQUG9sYXJTU0wgVGVz\r\n"
-	"dCBDQYIBADANBgkqhkiG9w0BAQUFAAOCAQEAuP1U2ABUkIslsCfdlc2i94QHHYeJ\r\n"
-	"SsR4EdgHtdciUI5I62J6Mom+Y0dT/7a+8S6MVMCZP6C5NyNyXw1GWY/YR82XTJ8H\r\n"
-	"DBJiCTok5DbZ6SzaONBzdWHXwWwmi5vg1dxn7YxrM9d0IjxM27WNKs4sDQhZBQkF\r\n"
-	"pjmfs2cb4oPl4Y9T9meTx/lvdkRYEug61Jfn6cA+qHpyPYdTH+UshITnmp5/Ztkf\r\n"
-	"m/UTSLBNFNHesiTZeH31NcxYGdHSme9Nc/gfidRa0FLOCfWxRlFqAI47zG9jAQCZ\r\n"
-	"7Z2mCGDNMhjQc+BYcdnl0lPXjdDK6V0qCg1dVewhUBcW5gZKzV7e9+DpVA==\r\n"
-	"-----END CERTIFICATE-----\r\n";
+	"50BwFMtEonILwuVA+T7lpg6z+exKY8C4KQB0nFc7qKUEkHHxvYPZP9al4jwqj+8n\r\n" "YMPGn8u67GB9t+aEMr5P+1gmIgNb1LTV+/Xjli5wwOQuvfwu7uJBVcA0Ln0kcmnL\r\n" "R7EUQIN9Z/SG9jGr8XmksrUuEvmEF/Bibyc+E1ixVA0hmnM3oTDPb5Lc9un8rNsu\r\n" "KNF+AksjoBXyOGVkCeoMbo4bF6BxyLObyavpw/LPh5aPgAIynplYb6LVAgMBAAGj\r\n" "gZUwgZIwDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQUtFrkpbPe0lL2udWmlQ/rPrzH\r\n" "/f8wYwYDVR0jBFwwWoAUtFrkpbPe0lL2udWmlQ/rPrzH/f+hP6Q9MDsxCzAJBgNV\r\n" "BAYTAk5MMREwDwYDVQQKEwhQb2xhclNTTDEZMBcGA1UEAxMQUG9sYXJTU0wgVGVz\r\n" "dCBDQYIBADANBgkqhkiG9w0BAQUFAAOCAQEAuP1U2ABUkIslsCfdlc2i94QHHYeJ\r\n" "SsR4EdgHtdciUI5I62J6Mom+Y0dT/7a+8S6MVMCZP6C5NyNyXw1GWY/YR82XTJ8H\r\n" "DBJiCTok5DbZ6SzaONBzdWHXwWwmi5vg1dxn7YxrM9d0IjxM27WNKs4sDQhZBQkF\r\n" "pjmfs2cb4oPl4Y9T9meTx/lvdkRYEug61Jfn6cA+qHpyPYdTH+UshITnmp5/Ztkf\r\n" "m/UTSLBNFNHesiTZeH31NcxYGdHSme9Nc/gfidRa0FLOCfWxRlFqAI47zG9jAQCZ\r\n" "7Z2mCGDNMhjQc+BYcdnl0lPXjdDK6V0qCg1dVewhUBcW5gZKzV7e9+DpVA==\r\n" "-----END CERTIFICATE-----\r\n";
 
 const char c_cli_crt_rsa[] =
 	"-----BEGIN CERTIFICATE-----\r\n"
@@ -135,21 +108,7 @@ const char c_cli_crt_rsa[] =
 	"MA8GA1UEChMIUG9sYXJTU0wxGTAXBgNVBAMTEFBvbGFyU1NMIFRlc3QgQ0EwHhcN\r\n"
 	"MTEwMjEyMTQ0NDA3WhcNMjEwMjEyMTQ0NDA3WjA8MQswCQYDVQQGEwJOTDERMA8G\r\n"
 	"A1UEChMIUG9sYXJTU0wxGjAYBgNVBAMTEVBvbGFyU1NMIENsaWVudCAyMIIBIjAN\r\n"
-	"BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyHTEzLn5tXnpRdkUYLB9u5Pyax6f\r\n"
-	"M60Nj4o8VmXl3ETZzGaFB9X4J7BKNdBjngpuG7fa8H6r7gwQk4ZJGDTzqCrSV/Uu\r\n"
-	"1C93KYRhTYJQj6eVSHD1bk2y1RPD0hrt5kPqQhTrdOrA7R/UV06p86jt0uDBMHEw\r\n"
-	"MjDV0/YI0FZPRo7yX/k9Z5GIMC5Cst99++UMd//sMcB4j7/Cf8qtbCHWjdmLao5v\r\n"
-	"4Jv4EFbMs44TFeY0BGbH7vk2DmqV9gmaBmf0ZXH4yqSxJeD+PIs1BGe64E92hfx/\r\n"
-	"/DZrtenNLQNiTrM9AM+vdqBpVoNq0qjU51Bx5rU2BXcFbXvI5MT9TNUhXwIDAQAB\r\n"
-	"o00wSzAJBgNVHRMEAjAAMB0GA1UdDgQWBBRxoQBzckAvVHZeM/xSj7zx3WtGITAf\r\n"
-	"BgNVHSMEGDAWgBS0WuSls97SUva51aaVD+s+vMf9/zANBgkqhkiG9w0BAQUFAAOC\r\n"
-	"AQEAAn86isAM8X+mVwJqeItt6E9slhEQbAofyk+diH1Lh8Y9iLlWQSKbw/UXYjx5\r\n"
-	"LLPZcniovxIcARC/BjyZR9g3UwTHNGNm+rwrqa15viuNOFBchykX/Orsk02EH7NR\r\n"
-	"Alw5WLPorYjED6cdVQgBl9ot93HdJogRiXCxErM7NC8/eP511mjq+uLDjLKH8ZPQ\r\n"
-	"8I4ekHJnroLsDkIwXKGIsvIBHQy2ac/NwHLCQOK6mfum1pRx52V4Utu5dLLjD5bM\r\n"
-	"xOBC7KU4xZKuMXXZM6/93Yb51K/J4ahf1TxJlTWXtnzDr9saEYdNy2SKY/6ZiDNH\r\n"
-	"D+stpAKiQLAWaAusIWKYEyw9MQ==\r\n"
-	"-----END CERTIFICATE-----\r\n";
+	"BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyHTEzLn5tXnpRdkUYLB9u5Pyax6f\r\n" "M60Nj4o8VmXl3ETZzGaFB9X4J7BKNdBjngpuG7fa8H6r7gwQk4ZJGDTzqCrSV/Uu\r\n" "1C93KYRhTYJQj6eVSHD1bk2y1RPD0hrt5kPqQhTrdOrA7R/UV06p86jt0uDBMHEw\r\n" "MjDV0/YI0FZPRo7yX/k9Z5GIMC5Cst99++UMd//sMcB4j7/Cf8qtbCHWjdmLao5v\r\n" "4Jv4EFbMs44TFeY0BGbH7vk2DmqV9gmaBmf0ZXH4yqSxJeD+PIs1BGe64E92hfx/\r\n" "/DZrtenNLQNiTrM9AM+vdqBpVoNq0qjU51Bx5rU2BXcFbXvI5MT9TNUhXwIDAQAB\r\n" "o00wSzAJBgNVHRMEAjAAMB0GA1UdDgQWBBRxoQBzckAvVHZeM/xSj7zx3WtGITAf\r\n" "BgNVHSMEGDAWgBS0WuSls97SUva51aaVD+s+vMf9/zANBgkqhkiG9w0BAQUFAAOC\r\n" "AQEAAn86isAM8X+mVwJqeItt6E9slhEQbAofyk+diH1Lh8Y9iLlWQSKbw/UXYjx5\r\n" "LLPZcniovxIcARC/BjyZR9g3UwTHNGNm+rwrqa15viuNOFBchykX/Orsk02EH7NR\r\n" "Alw5WLPorYjED6cdVQgBl9ot93HdJogRiXCxErM7NC8/eP511mjq+uLDjLKH8ZPQ\r\n" "8I4ekHJnroLsDkIwXKGIsvIBHQy2ac/NwHLCQOK6mfum1pRx52V4Utu5dLLjD5bM\r\n" "xOBC7KU4xZKuMXXZM6/93Yb51K/J4ahf1TxJlTWXtnzDr9saEYdNy2SKY/6ZiDNH\r\n" "D+stpAKiQLAWaAusIWKYEyw9MQ==\r\n" "-----END CERTIFICATE-----\r\n";
 
 const char c_cli_key_rsa[] =
 	"-----BEGIN RSA PRIVATE KEY-----\r\n"
@@ -165,26 +124,12 @@ const char c_cli_key_rsa[] =
 	"zCZupdDjZYjOJqlA4eEA4H8/w7F83r5CugeBE8LgEREjLPiyejrU5H1fubEY+h0d\r\n"
 	"l5HZBJ68ybTXfQ5U9o/QKA3dd0toBEhhdRUDGzWtjvwkEQfqF1reGWj/tod/gCpf\r\n"
 	"DFi6X0ECgYEA4wOv/pjSC3ty6TuOvKX2rOUiBrLXXv2JSxZnMoMiWI5ipLQt+RYT\r\n"
-	"VPafL/m7Dn6MbwjayOkcZhBwk5CNz5A6Q4lJ64Mq/lqHznRCQQ2Mc1G8eyDF/fYL\r\n"
-	"Ze2pLvwP9VD5jTc2miDfw+MnvJhywRRLcemDFP8k4hQVtm8PMp3ZmNECgYEA4gz7\r\n"
-	"wzObR4gn8ibe617uQPZjWzUj9dUHYd+in1gwBCIrtNnaRn9I9U/Q6tegRYpii4ys\r\n"
-	"c176NmU+umy6XmuSKV5qD9bSpZWG2nLFnslrN15Lm3fhZxoeMNhBaEDTnLT26yoi\r\n"
-	"33gp0mSSWy94ZEqipms+ULF6sY1ZtFW6tpGFoy8CgYAQHhnnvJflIs2ky4q10B60\r\n"
-	"ZcxFp3rtDpkp0JxhFLhiizFrujMtZSjYNm5U7KkgPVHhLELEUvCmOnKTt4ap/vZ0\r\n"
-	"BxJNe1GZH3pW6SAvGDQpl9sG7uu/vTFP+lCxukmzxB0DrrDcvorEkKMom7ZCCRvW\r\n"
-	"KZsZ6YeH2Z81BauRj218kQKBgQCUV/DgKP2985xDTT79N08jUo3hTP5MVYCCuj/+\r\n"
-	"UeEw1TvZcx3LJby7P6Xad6a1/BqveaGyFKIfEFIaBUBItk801sDDpDaYc4gL00Xc\r\n"
-	"7lFuBHOZkxJYlss5QrGpuOEl9ZwUt5IrFLBdYaKqNHzNVC1pCPfb/JyH6Dr2HUxq\r\n"
-	"gxUwAQKBgQCcU6G2L8AG9d9c0UpOyL1tMvFe5Ttw0KjlQVdsh1MP6yigYo9DYuwu\r\n"
-	"bHFVW2r0dBTqegP2/KTOxKzaHfC1qf0RGDsUoJCNJrd1cwoCLG8P2EF4w3OBrKqv\r\n"
-	"8u4ytY0F+Vlanj5lm3TaoHSVF1+NWPyOTiwevIECGKwSxvlki4fDAA==\r\n"
-	"-----END RSA PRIVATE KEY-----\r\n";
-#endif							/* CONFIG_HW_RSA_SIGN */
+	"VPafL/m7Dn6MbwjayOkcZhBwk5CNz5A6Q4lJ64Mq/lqHznRCQQ2Mc1G8eyDF/fYL\r\n" "Ze2pLvwP9VD5jTc2miDfw+MnvJhywRRLcemDFP8k4hQVtm8PMp3ZmNECgYEA4gz7\r\n" "wzObR4gn8ibe617uQPZjWzUj9dUHYd+in1gwBCIrtNnaRn9I9U/Q6tegRYpii4ys\r\n" "c176NmU+umy6XmuSKV5qD9bSpZWG2nLFnslrN15Lm3fhZxoeMNhBaEDTnLT26yoi\r\n" "33gp0mSSWy94ZEqipms+ULF6sY1ZtFW6tpGFoy8CgYAQHhnnvJflIs2ky4q10B60\r\n" "ZcxFp3rtDpkp0JxhFLhiizFrujMtZSjYNm5U7KkgPVHhLELEUvCmOnKTt4ap/vZ0\r\n" "BxJNe1GZH3pW6SAvGDQpl9sG7uu/vTFP+lCxukmzxB0DrrDcvorEkKMom7ZCCRvW\r\n" "KZsZ6YeH2Z81BauRj218kQKBgQCUV/DgKP2985xDTT79N08jUo3hTP5MVYCCuj/+\r\n" "UeEw1TvZcx3LJby7P6Xad6a1/BqveaGyFKIfEFIaBUBItk801sDDpDaYc4gL00Xc\r\n" "7lFuBHOZkxJYlss5QrGpuOEl9ZwUt5IrFLBdYaKqNHzNVC1pCPfb/JyH6Dr2HUxq\r\n" "gxUwAQKBgQCcU6G2L8AG9d9c0UpOyL1tMvFe5Ttw0KjlQVdsh1MP6yigYo9DYuwu\r\n" "bHFVW2r0dBTqegP2/KTOxKzaHfC1qf0RGDsUoJCNJrd1cwoCLG8P2EF4w3OBrKqv\r\n" "8u4ytY0F+Vlanj5lm3TaoHSVF1+NWPyOTiwevIECGKwSxvlki4fDAA==\r\n" "-----END RSA PRIVATE KEY-----\r\n";
 
-static const char headerfield_connect[]   = "Connect";
-static const char headerfield_close[]     = "close";
+static const char headerfield_connect[] = "Connect";
+static const char headerfield_close[] = "close";
 static const char headerfield_useragent[] = "User-Agent";
-static const char headerfield_tinyara[]   = "TinyARA";
+static const char headerfield_tinyara[] = "TinyARA";
 
 /****************************************************************************
  * Private Functions
@@ -227,8 +172,10 @@ pthread_addr_t webclient_cb(void *arg)
 	struct webclient_input *input;
 	struct http_client_request_t request;
 	struct http_keyvalue_list_t headers;
-	struct http_client_ssl_config_t ssl_config;
 	struct http_client_response_t response;
+#ifdef CONFIG_NET_SECURITY_TLS
+	struct http_client_ssl_config_t ssl_config;
+#endif
 
 	input = arg;
 	argc = input->argc;
@@ -288,42 +235,12 @@ pthread_addr_t webclient_cb(void *arg)
 #ifdef CONFIG_NET_SECURITY_TLS
 	/* send HTTPS request */
 	if (!strncmp(request.url, "https", 5)) {
-#ifdef CONFIG_HW_RSA_SIGN
-		int ret;
-		see_init();
-
-		/* Setup post key */
-		if ((ret = see_setup_key(webclient_da_rsa_ca, sizeof(webclient_da_rsa_ca), SECURE_STORAGE_TYPE_KEY_RSA, WEBCLIENT_CA_KEY_INDEX)) != 0) {
-			printf(" failed\n  !  see_setup_key ca 0x%x\n\n", ret);
-			goto release_out_tls;
-		}
-		if ((ret = see_setup_key(webclient_da_rsa_dev, sizeof(webclient_da_rsa_dev), SECURE_STORAGE_TYPE_KEY_RSA, WEBCLIENT_DEV_KEY_INDEX)) != 0) {
-			printf(" failed\n  !  see_setup_key dev 0x%x\n\n", ret);
-			goto release_out_tls;
-		}
-
-		if ((ret = see_set_certificate(webclient_ca_crt, sizeof(webclient_ca_crt), WEBCLIENT_CA_CERT_INDEX, CERT_PEM)) != 0) {
-			printf("Error: set_cert fail %d\n", ret);
-			goto release_out_tls;
-		}
-
-		if ((ret = see_set_certificate(webclient_dev_crt, sizeof(webclient_dev_crt), WEBCLIENT_DEV_CERT_INDEX, CERT_PEM)) != 0) {
-			printf("Error: set_cert fail %d\n", ret);
-			goto release_out_tls;
-		}
-
-		ssl_config.ca_key_index = WEBCLIENT_CA_KEY_INDEX;
-		ssl_config.dev_key_index = WEBCLIENT_DEV_KEY_INDEX;
-		ssl_config.ca_cert_index = WEBCLIENT_CA_CERT_INDEX;
-		ssl_config.dev_cert_index = WEBCLIENT_DEV_CERT_INDEX;
-#else
 		ssl_config.root_ca = (char *)c_ca_crt_rsa;
 		ssl_config.root_ca_len = sizeof(c_ca_crt_rsa);
 		ssl_config.dev_cert = (char *)c_cli_crt_rsa;
 		ssl_config.dev_cert_len = sizeof(c_cli_crt_rsa);
 		ssl_config.private_key = (char *)c_cli_key_rsa;
 		ssl_config.private_key_len = sizeof(c_cli_key_rsa);
-#endif							/* CONFIG_HW_RSA_SIGN */
 		/* before sending request by sync function,
 		 * must initialize response structure
 		 */
@@ -333,7 +250,7 @@ pthread_addr_t webclient_cb(void *arg)
 			if (http_client_send_request(&request, &ssl_config, &response)) {
 				printf("fail to send request\n");
 				http_client_response_release(&response);
-				goto release_out_tls;
+				goto release_out;
 			} else {
 				printf("----------sync response----------\n");
 				printf("status %d %s\n", response.status, response.phrase);
@@ -346,10 +263,9 @@ pthread_addr_t webclient_cb(void *arg)
 			http_client_response_release(&response);
 		}
 
-		if (http_client_send_request_async(&request, &ssl_config, (wget_callback_t)callback)) {
+		if (http_client_send_request_async(&request, &ssl_config, (wget_callback_t) callback)) {
 			printf("fail to send request\n");
-			goto release_out_tls;
-			return NULL;
+			goto release_out;
 		}
 	} else
 #endif
@@ -371,21 +287,23 @@ pthread_addr_t webclient_cb(void *arg)
 			http_client_response_release(&response);
 		}
 
-		if (http_client_send_request_async(&request, NULL, (wget_callback_t)callback)) {
+		if (http_client_send_request_async(&request, NULL, (wget_callback_t) callback)) {
 			printf("fail to send request\n");
 			goto release_out;
 		}
 	}
 	/* sleep for end request */
-	sleep(5);
+	while (request.async_flag > 0) {
+		usleep(100000);
+	}
+	if (request.async_flag < 0) {
+		printf("fail to send request\n");
+	}
+
+release_out:
 	/* before finish of app,
 	 * must release keyvalue list for request headers
 	 */
- release_out_tls:
-#ifdef CONFIG_HW_RSA_SIGN
-	see_free();
-#endif
- release_out:
 	http_keyvalue_list_release(&headers);
 	printf("end request\n");
 

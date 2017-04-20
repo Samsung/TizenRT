@@ -59,8 +59,8 @@
 
 MEMORY
 {
-    flash (rx) : ORIGIN = 0x0400C020, LENGTH = 3M
-    sram (rwx) : ORIGIN = 0x02021000, LENGTH = 732K	/* skip 4K from 0x0202_0000 for vector table */
+    flash   (rx)    : ORIGIN = 0x040C8000, LENGTH = 2400K
+    sram    (rwx)   : ORIGIN = 0x02023800, LENGTH = 722K
 }
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
@@ -68,6 +68,14 @@ OUTPUT_ARCH(arm)
 ENTRY(_stext)
 SECTIONS
 {
+	.header : {
+		_start = .;
+		LONG((_end - _start) / 512);
+		LONG(0);
+		LONG(0x656d6264);
+		. = ALIGN(0x20);
+	} > flash =0x0
+
 	.text : {
 		_stext = ABSOLUTE(.);
 		*(.vectors)
@@ -81,13 +89,6 @@ SECTIONS
 		*(.got)
 		*(.gcc_except_table)
 		*(.gnu.linkonce.r.*)
-
-		. = ALIGN(4);
-		PROVIDE_HIDDEN (gpio_bank_start = .);
-		KEEP(*(SORT(.gpio_bank.*)))
-		KEEP(*(.gpio_bank))
-		PROVIDE_HIDDEN (gpio_bank_end = .);
-
 		_etext = ABSOLUTE(.);
 	} > flash
 
@@ -107,37 +108,16 @@ SECTIONS
 	} > flash
 	__exidx_end = ABSOLUTE(.);
 
-	/* WLBT F/W binary */
-	.wlbt.fw 0x04200000 : {
-	  *(.wlbt.fw*)
-	} > flash
-
 	_eronly = ABSOLUTE(.);
 
 	.data : {
 		_sdata = ABSOLUTE(.);
 		*(.data .data.*)
 		*(.gnu.linkonce.d.*)
-			    . = ALIGN(8);clk_dbg_node_start = .; KEEP(*(.clk_dbg_node .clk_dbg_node.*))clk_dbg_node_end = .;
-                . = ALIGN(8);blkpwr_start = .; KEEP(*(.blkpwr .blkpwr.*))blkpwr_end = .;
-                . = ALIGN(8);vclk_grpgate_start = .; KEEP(*(.vclk_grpgate .vclk_grpgate.*))vclk_grpgate_end = .;
-                . = ALIGN(8);vclk_pxmxdx_start = .; KEEP(*(.vclk_pxmxdx .vclk_pxmxdx.*))vclk_pxmxdx_end = .;
-                . = ALIGN(8);vclk_umux_start = .; KEEP(*(.vclk_umux .vclk_umux.*))vclk_umux_end = .;
-                . = ALIGN(8);vclk_m1d1g1_start = .; KEEP(*(.vclk_m1d1g1 .vclk_m1d1g1.*))vclk_m1d1g1_end = .;
-                . = ALIGN(8);vclk_p1_start = .; KEEP(*(.vclk_p1 .vclk_p1.*))vclk_p1_end = .;
-                . = ALIGN(8);vclk_m1_start = .; KEEP(*(.vclk_m1 .vclk_m1.*))vclk_m1_end = .;
-                . = ALIGN(8);vclk_d1_start = .; KEEP(*(.vclk_d1 .vclk_d1.*))vclk_d1_end = .;
-                . = ALIGN(8);vclk_dfs_start = .; KEEP(*(.vclk_dfs .vclk_dfs.*))vclk_dfs_end = .;
-                . = ALIGN(8);clk_fixed_rate_start = .; KEEP(*(.clk_fixed_rate .clk_fixed_rate.*))clk_fixed_rate_end = .;
-                . = ALIGN(8);clk_fixed_factor_start = .; KEEP(*(.clk_fixed_factor .clk_fixed_factor.*))clk_fixed_factor_end = .;
-                . = ALIGN(8);clk_pll_start = .; KEEP(*(.clk_pll .clk_pll.*))clk_pll_end = .;
-                . = ALIGN(8);clk_mux_start = .; KEEP(*(.clk_mux .clk_mux.*))clk_mux_end = .;
-                . = ALIGN(8);clk_div_start = .; KEEP(*(.clk_div .clk_div.*))clk_div_end = .;
-                . = ALIGN(8);clk_gate_start = .; KEEP(*(.clk_gate .clk_gate.*))clk_gate_end = .;
-
-	     CONSTRUCTORS
+		CONSTRUCTORS
 		_edata = ABSOLUTE(.);
-	} > sram AT > flash 
+	} > sram AT > flash
+
 	.bss : {
 		_sbss = ABSOLUTE(.);
 		*(.bss .bss.*)
@@ -160,4 +140,11 @@ SECTIONS
 	.debug_line 0 : { *(.debug_line) }
 	.debug_pubnames 0 : { *(.debug_pubnames) }
 	.debug_aranges 0 : { *(.debug_aranges) }
+
+	.padding : {
+		. = ALIGN(512);
+		. = . + 1020;
+		LONG(0);
+		_end = .;
+	} > flash
 }

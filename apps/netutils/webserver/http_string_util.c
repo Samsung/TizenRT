@@ -46,7 +46,7 @@ int http_find_first_crlf(const char *src, int len, int start)
 int http_separate_header(const char *src, int *method, char *url, int *httpver)
 {
 	int i = 0;
-	int divide[3] = { 0, };
+	int divide[3] = {0, };
 	int divide_pos = 0;
 
 	int line_length = 0;
@@ -106,11 +106,11 @@ int http_separate_header(const char *src, int *method, char *url, int *httpver)
 int http_separate_status_line(const char *src, int *httpver, int *status, char *phrase)
 {
 	int i = 0;
-	int divide[3] = { 0, };
+	int divide[6] = {0, };
 	int divide_pos = 0;
 
 	int line_length = 0;
-	char status_code[4] = { 0, };
+	char status_code[4] = {0, };
 	int status_start = 0;
 	int phrase_start = 0;
 	int phrase_length = 0;
@@ -125,7 +125,7 @@ int http_separate_status_line(const char *src, int *httpver, int *status, char *
 		if (src[i] == ' ') {
 			divide[divide_pos++] = i;
 
-			if (divide_pos >= 3) {
+			if (divide_pos >= (sizeof(divide) / sizeof(divide[0]))) {
 				HTTP_LOGE("Error: Not HTTP status line!!\n");
 				return HTTP_ERROR;
 			}
@@ -165,7 +165,7 @@ int http_separate_keyvalue(const char *src, char *key, char *value)
 		if (src[i] != ':') {
 			key[i] = src[i];
 		} else {
-			value_position = i + 2;	/* 2 because at the front of value, there is a space */
+			value_position = i + 2; /* 2 because at the front of value, there is a space */
 			key[i] = '\0';
 			break;
 		}

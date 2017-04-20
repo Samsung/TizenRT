@@ -40,7 +40,6 @@
  * Included Files
  ****************************************************************************/
 
-
 #include "tls/config.h"
 
 #include <stdio.h>
@@ -65,7 +64,7 @@
 #include "tls/ssl_cache.h"
 #endif
 
-#define READ_TIMEOUT_MS 10000   /* 5 seconds */
+#define READ_TIMEOUT_MS 10000	/* 5 seconds */
 #define DEBUG_LEVEL 0
 
 /*
@@ -82,10 +81,10 @@ struct pthread_arg {
 
 static void my_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
-	((void) level);
+	((void)level);
 
-	mbedtls_fprintf((FILE *) ctx, "%s:%04d: %s", file, line, str);
-	fflush((FILE *) ctx);
+	mbedtls_fprintf((FILE *)ctx, "%s:%04d: %s", file, line, str);
+	fflush((FILE *)ctx);
 }
 
 /****************************************************************************
@@ -152,22 +151,19 @@ int dtls_server_cb(void *args)
 	 * Instead, you may want to use mbedtls_x509_crt_parse_file() to read the
 	 * server and CA certificates, as well as mbedtls_pk_parse_keyfile().
 	 */
-	ret = mbedtls_x509_crt_parse(&srvcert, (const unsigned char *)mbedtls_test_srv_crt_rsa,
-								 mbedtls_test_srv_crt_rsa_len);
+	ret = mbedtls_x509_crt_parse(&srvcert, (const unsigned char *)mbedtls_test_srv_crt_rsa, mbedtls_test_srv_crt_rsa_len);
 	if (ret != 0) {
 		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret);
 		goto exit;
 	}
 
-	ret = mbedtls_x509_crt_parse(&srvcert, (const unsigned char *)mbedtls_test_ca_crt_rsa,
-								 mbedtls_test_ca_crt_rsa_len);
+	ret = mbedtls_x509_crt_parse(&srvcert, (const unsigned char *)mbedtls_test_ca_crt_rsa, mbedtls_test_ca_crt_rsa_len);
 	if (ret != 0) {
 		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret);
 		goto exit;
 	}
 
-	ret =  mbedtls_pk_parse_key(&pkey, (const unsigned char *)mbedtls_test_srv_key_rsa,
-								mbedtls_test_srv_key_rsa_len, NULL, 0);
+	ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *)mbedtls_test_srv_key_rsa, mbedtls_test_srv_key_rsa_len, NULL, 0);
 	if (ret != 0) {
 		mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
 		goto exit;
@@ -194,8 +190,7 @@ int dtls_server_cb(void *args)
 	mbedtls_printf("  . Seeding the random number generator...");
 	fflush(stdout);
 
-	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-									 (const unsigned char *)pers, strlen(pers))) != 0) {
+	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers))) != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret);
 		goto exit;
 	}
@@ -208,8 +203,7 @@ int dtls_server_cb(void *args)
 	mbedtls_printf("  . Setting up the DTLS data...");
 	fflush(stdout);
 
-	if ((ret = mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_SERVER, MBEDTLS_SSL_TRANSPORT_DATAGRAM,
-										   MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
+	if ((ret = mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_SERVER, MBEDTLS_SSL_TRANSPORT_DATAGRAM, MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_ssl_config_defaults returned %d\n\n", ret);
 		goto exit;
 	}
@@ -272,8 +266,7 @@ reset:
 
 	/* For HelloVerifyRequest cookies */
 	if ((ret = mbedtls_ssl_set_client_transport_id(&ssl, client_ip, cliip_len)) != 0) {
-		mbedtls_printf(" failed\n  ! "
-					   "mbedtls_ssl_set_client_transport_id() returned -0x%x\n\n", -ret);
+		mbedtls_printf(" failed\n  ! " "mbedtls_ssl_set_client_transport_id() returned -0x%x\n\n", -ret);
 		goto exit;
 	}
 
@@ -289,8 +282,7 @@ reset:
 
 	do {
 		ret = mbedtls_ssl_handshake(&ssl);
-	} while (ret == MBEDTLS_ERR_SSL_WANT_READ ||
-			 ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+	} while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
 
 	if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
 		mbedtls_printf(" hello verification requested\n");
@@ -438,8 +430,7 @@ int dtls_server_main(int argc, char **argv)
 	}
 
 	/* 3. create pthread with entry function */
-	if ((r = pthread_create(&tid, &attr,
-							(pthread_startroutine_t)dtls_server_cb, (void *)&args)) != 0) {
+	if ((r = pthread_create(&tid, &attr, (pthread_startroutine_t) dtls_server_cb, (void *)&args)) != 0) {
 		mbedtls_printf("%s: pthread_create failed, status=%d\n", __func__, r);
 	}
 
@@ -448,4 +439,3 @@ int dtls_server_main(int argc, char **argv)
 
 	return 0;
 }
-

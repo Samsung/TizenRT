@@ -15,7 +15,7 @@ add_definitions(${SHARED_DEFINITIONS} ${WAKAAMA_DEFINITIONS})
 include_directories (${WAKAAMA_SOURCES_DIR} ${SHARED_INCLUDE_DIRS})
 
 SET(SOURCES
-    lwm2mserver.c
+    ${CMAKE_CURRENT_LIST_DIR}/lwm2mserver.c
     )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${SHARED_SOURCES})

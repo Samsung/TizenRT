@@ -57,30 +57,34 @@ CFLAGS += -I$(TOPDIR)/sched
 ASRCS =
 CSRCS = s5jt200_boot.c s5jt200_tash.c
 
+ifeq ($(CONFIG_SIDK_S5JT200_TLC59116),y)
+CSRCS += s5jt200_tlc59116.c
+endif
+
+CSRCS += s5jt200_pwm.c
+
+ifeq ($(CONFIG_SIDK_S5JT200_S8300),y)
+CSRCS += s5jt200_led.c
+endif
+
 ifeq ($(CONFIG_ARCH_BUTTONS),y)
-CSRCS += s5j_buttons.c
+CSRCS += s5jt200_buttons.c
 endif
 
 ifeq ($(CONFIG_SCSC_WLAN),y)
-CSRCS += wlan.c
+CSRCS += s5jt200_wlan.c
 endif
 
 ifeq ($(CONFIG_NET), y)
 CSRCS += slip_if.c
 endif
 
-ifeq ($(CONFIG_WATCHDOG),y)
-ifeq ($(CONFIG_S5J_WATCHDOG),y)
-CSRCS += s5jt200_watchdog.c
-endif
+ifeq ($(CONFIG_MTD_PROGMEM),y)
+CSRCS += s5jt200_progmem.c
 endif
 
-ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
-CSRCS += s5jt200_crashdump.c
-endif
-
-ifeq ($(CONFIG_BOARD_FOTA_SUPPORT),y)
-CSRCS += s5jt200_fota.c
+ifeq ($(CONFIG_SIDK_S5JT200_EEPROM), y)
+CSRCS += s5jt200_eeprom.c
 endif
 
 COBJS = $(CSRCS:.c=$(OBJEXT))

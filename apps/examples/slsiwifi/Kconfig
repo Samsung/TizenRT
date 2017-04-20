@@ -1,0 +1,31 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config EXAMPLES_SLSIWIFI
+	bool "S.LSI WIFI Control application"
+	default n
+	depends on NETUTILS_WIFI
+	---help---
+		Enable the Samsung LSI WiFi Control Application
+
+if EXAMPLES_SLSIWIFI
+
+config EXAMPLES_SLSIWIFI_PROGNAME
+	string "Program name"
+	default "slsiwifi"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+config EXAMPLES_SLSIWIFI_PRIORITY
+	int "wifi app task priority"
+	default 50
+
+config EXAMPLES_SLSIWIFI_STACKSIZE
+	int "wifi app stack size"
+	default 2048
+
+endif

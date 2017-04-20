@@ -87,9 +87,7 @@
 #define CONFIG_NETUTILS_HTTPDFILESTATS
 #endif
 
-#ifndef  CONFIG_NET_STATISTICS
 #undef CONFIG_NETUTILS_HTTPDNETSTATS
-#endif
 
 /* For efficiency reasons, the size of the IO buffer should be a multiple
  * of the TCP MSS value.  Also, the current design requires that the IO

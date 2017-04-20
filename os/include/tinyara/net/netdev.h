@@ -116,9 +116,6 @@ struct net_driver_s {
 	uint8_t d_lltype;			/* See enum net_lltype_e */
 	uint8_t d_llhdrlen;			/* Link layer header size */
 	uint16_t d_mtu;				/* Maximum packet size */
-#ifdef CONFIG_NET_TCP
-	uint16_t d_recvwndo;		/* TCP receive window size */
-#endif
 #endif
 
 #ifdef CONFIG_NET_ETHERNET
@@ -164,18 +161,6 @@ struct net_driver_s {
 	 */
 
 	uint8_t *d_appdata;
-
-#ifdef CONFIG_NET_TCPURGDATA
-	/* This pointer points to any urgent TCP data that has been received. Only
-	 * present if compiled with support for urgent data (CONFIG_NET_TCPURGDATA).
-	 */
-
-	uint8_t *d_urgdata;
-
-	/* Length of the (received) urgent data */
-
-	uint16_t d_urglen;
-#endif
 
 	/* The length of the packet in the d_buf buffer.
 	 *
@@ -408,75 +393,6 @@ void neighbor_out(FAR struct net_driver_s *dev);
 
 int netdev_carrier_on(FAR struct net_driver_s *dev);
 int netdev_carrier_off(FAR struct net_driver_s *dev);
-
-/****************************************************************************
- * Name: net_chksum
- *
- * Description:
- *   Calculate the Internet checksum over a buffer.
- *
- *   The Internet checksum is the one's complement of the one's complement
- *   sum of all 16-bit words in the buffer.
- *
- *   See RFC1071.
- *
- *   If CONFIG_NET_ARCH_CHKSUM is defined, then this function must be
- *   provided by architecture-specific logic.
- *
- * Input Parameters:
- *
- *   buf - A pointer to the buffer over which the checksum is to be computed.
- *
- *   len - The length of the buffer over which the checksum is to be computed.
- *
- * Returned Value:
- *   The Internet checksum of the buffer.
- *
- ****************************************************************************/
-
-uint16_t net_chksum(FAR uint16_t *data, uint16_t len);
-
-/****************************************************************************
- * Name: net_incr32
- *
- * Description:
- *
- *   Carry out a 32-bit addition.
- *
- *   By defining CONFIG_NET_ARCH_INCR32, the architecture can replace
- *   net_incr32 with hardware assisted solutions.
- *
- * Input Parameters:
- *   op32 - A pointer to a 4-byte array representing a 32-bit integer in
- *          network byte order (big endian).  This value may not be word
- *          aligned. The value pointed to by op32 is modified in place
- *
- *   op16 - A 16-bit integer in host byte order.
- *
- ****************************************************************************/
-
-void net_incr32(FAR uint8_t *op32, uint16_t op16);
-
-/****************************************************************************
- * Name: ipv4_chksum
- *
- * Description:
- *   Calculate the IPv4 header checksum of the packet header in d_buf.
- *
- *   The IPv4 header checksum is the Internet checksum of the 20 bytes of
- *   the IPv4 header.
- *
- *   If CONFIG_NET_ARCH_CHKSUM is defined, then this function must be
- *   provided by architecture-specific logic.
- *
- * Returned Value:
- *   The IPv4 header checksum of the IPv4 header in the d_buf buffer.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_NET_IPv4
-uint16_t ipv4_chksum(FAR struct net_driver_s *dev);
-#endif
 
 /****************************************************************************
  * Name: ipv6_chksum

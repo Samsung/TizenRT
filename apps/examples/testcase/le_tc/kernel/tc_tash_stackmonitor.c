@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <sched.h>
 #include <apps/shell/tash.h>
+#include "tc_internal.h"
 
 #define DEFAULT_STKSIZE 1024
 #define TC_STACKMONITOR_TASKNAME "tc_stackmonitor"

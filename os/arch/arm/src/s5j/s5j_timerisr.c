@@ -58,22 +58,19 @@
 
 #include <stdint.h>
 #include <time.h>
-#include <debug.h>
 #include <tinyara/arch.h>
 #include <arch/board/board.h>
-
-#include "gic.h"
-#include "clock/clock.h"
-#include "up_internal.h"
 #include "up_arch.h"
 
 #include "chip.h"
+#include "s5j_rtc.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* The desired timer interrupt frequency is provided by the definition
+/*
+ * The desired timer interrupt frequency is provided by the definition
  * CLK_TCK (see include/time.h).  CLK_TCK defines the desired number of
  * system clock ticks per second.  That value is a user configurable setting
  * that defaults to 100 (100 ticks per second = 10 MS interval).
@@ -81,16 +78,7 @@
  * The timer counts at the rate SYSCLK_FREQUENCY as defined in the board.h
  * header file.
  */
-
 #define SYSTICK_RELOAD ((SYSCLK_FREQUENCY / CLK_TCK) - 1)
-
-/* The size of the reload field is 24 bits.  Verify taht the reload value
- * will fit in the reload register.
- */
-
-#if SYSTICK_RELOAD > 0x00ffffff
-#error SYSTICK_RELOAD exceeds the range of the RELOAD register
-#endif
 
 /****************************************************************************
  * Private Types
@@ -112,23 +100,14 @@
  *   of the systems.
  *
  ****************************************************************************/
-
-int up_timerisr(int irq, uint32_t *regs)
+int up_timerisr(int irq, FAR void *context, FAR void *arg)
 {
+	/* Clear interrupt pending */
+	putreg32(RTC_INTP_TIMETIC0, S5J_RTC_INTP);
+
 	/* Process timer interrupt */
-#ifdef CONFIG_S5J_WATCHDOG_RESET
-	if (((g_system_timer * CONFIG_USEC_PER_TICK) % (5 * 100 * 1000)) == 0) {	//check every 500 msec */
-		s5j_wdg_keepreset(WDT_CPUCL_BASE, CONFIG_S5J_WDT_DEFTIMEOUT);
-	}
-#endif
-
 	sched_process_timer();
-	mct_isr_lt0_handler();
-	/* for interrupt debug */
-	//lldbg("%s, %llu\n", __func__, g_system_timer);
-#ifdef CONFIG_S5J_WATCHDOG_RESET
 
-#endif
 	return 0;
 }
 
@@ -140,15 +119,16 @@ int up_timerisr(int irq, uint32_t *regs)
  *   the timer interrupt.
  *
  ****************************************************************************/
-
 void up_timer_initialize(void)
 {
-	mct_init();
+	/* Configure the RTC timetick to generate periodic interrupts */
+	modifyreg32(S5J_RTC_RTCCON, RTC_RTCCON_TICKEN0_ENABLE, 0);
+	putreg32(SYSTICK_RELOAD, S5J_RTC_TICCNT0);
+	modifyreg32(S5J_RTC_RTCCON, 0, RTC_RTCCON_TICKEN0_ENABLE);
 
-	//enable local0 for tick count
-	mct_local_start_timer0();
-	irq_attach(IRQ_MCT_L0, (xcpt_t)up_timerisr);
+	/* Attach the timer interrupt vector */
+	irq_attach(IRQ_TOP_RTC_TIC, up_timerisr, NULL);
 
-	/* Enable SysTick interrupts */
-	up_enable_irq(IRQ_MCT_L0);
+	/* Enable the timer interrupt */
+	up_enable_irq(IRQ_TOP_RTC_TIC);
 }

@@ -93,7 +93,7 @@
  *
  ****************************************************************************/
 
-int irq_attach(int irq, xcpt_t isr)
+int irq_attach(int irq, xcpt_t isr, FAR void *arg)
 {
 #if NR_IRQS > 0
 	int ret = ERROR;
@@ -126,11 +126,13 @@ int irq_attach(int irq, xcpt_t isr)
 			 */
 
 			isr = irq_unexpected_isr;
+			arg = NULL;
 		}
 
 		/* Save the new ISR in the table. */
 
-		g_irqvector[irq] = isr;
+		g_irqvector[irq].handler = isr;
+		g_irqvector[irq].arg     = arg;
 		irqrestore(state);
 		ret = OK;
 	}

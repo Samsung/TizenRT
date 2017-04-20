@@ -42,8 +42,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/// @file mdnsd.c
-/// @brief mdns core and API
+/**
+ * @file mdnsd.c
+ * @brief mdns core and API
+ */
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -73,9 +75,11 @@
 #include <sys/time.h>
 #include <semaphore.h>
 #include <tinyara/clock.h>
+#include <errno.h>
 
-/* lwip */
+#ifdef CONFIG_NET_LWIP
 #include "net/lwip/netif.h"
+#endif
 
 /*
  * Define a proper IP socket level if not already done.
@@ -88,34 +92,52 @@
 #include "mdns.h"
 #include <apps/netutils/mdnsd.h>
 
-#if MDNS_RR_DEBUG == 1
-#define MDNSD_DEBUG
+#if MDNS_DEBUG_PRINTF==1 && MDNS_RR_DEBUG==1
+#define MDNSD_RR_DEBUG
+#endif
+
+#if MDNS_DEBUG_PRINTF==1 && MDNS_MEMORY_DEBUG==1
+#define MDNSD_MEMORY_DEBUG
 #endif
 
 #define THREAD_MAINLOOP_NAME                                   "MDNS"
-#define THREAD_MAINLOOP_STACKSIZE                       1024
+#define THREAD_MAINLOOP_STACKSIZE                       4096
 
-#define PIPE_SOCKET_TYPE                                        1
+#define PIPE_SOCKET_TYPE                                        0
 #define PIPE_SOCKET_PORT0                                       65353
 #define PIPE_SOCKET_PORT1                                       65354
 
 #define MDNS_ADDR "224.0.0.251"
 #define MDNS_PORT 5353
 
+#define MDNS_SUFFIX_LOCAL		".local"
+#define MDNS_SUFFIX_SITE		".site"
+#define MDNS_CHECK_SUBTYPE_STR	"._sub."
+
 #define PACKET_SIZE             1536	/* maximum packet size :  */
 
 #define SERVICES_DNS_SD_NLABEL \
-	((uint8_t *)"\x09_services\x07_dns-sd\x04_udp\x05local")
+                ((uint8_t *)"\x09_services\x07_dns-sd\x04_udp\x05local")
 
 #define TIME_GET(time)                                          gettimeofday(&time, NULL)
 #define TIME_DIFF_USEC(old_time, cur_time) \
-	((cur_time.tv_sec * 1000000 + cur_time.tv_usec) - (old_time.tv_sec * 1000000 + old_time.tv_usec))
+        ((cur_time.tv_sec * 1000000 + cur_time.tv_usec) - (old_time.tv_sec * 1000000 + old_time.tv_usec))
+
+#define MAX_ECONNRESET_COUNT	5
 
 enum mdns_cache_status {
 	CACHE_SLEEP = 0,
 	CACHE_NORMAL = 1,
 	CACHE_RESOLVE_HOSTNAME = 2,
 	CACHE_SERVICE_DISCOVERY = 3,
+};
+
+enum mdns_domain {
+	MDNS_DOMAIN_UNKNOWN = 0,
+	MDNS_DOMAIN_LOCAL = 1,
+#if defined(CONFIG_NETUTILS_MDNS_XMDNS)
+	MDNS_DOMAIN_SITE = 2,
+#endif
 };
 
 struct mdnsd {
@@ -125,6 +147,7 @@ struct mdnsd {
 	int notify_pipe[2];
 	int stop_flag;
 	int sendmsg_requested;
+	int domain;
 
 	enum mdns_cache_status c_status;
 	char *c_filter;
@@ -142,6 +165,7 @@ struct mdnsd {
 static void update_cache(struct mdnsd *svr);
 static void clear_service_discovery_result(struct mdns_service_info
 		*service_list, int num_of_services);
+static void release_mdns_context_resource(void);
 
 static struct mdnsd *g_svr = NULL;
 static struct mdns_service_info *g_service_list = NULL;
@@ -149,13 +173,13 @@ static pthread_mutex_t g_cmd_lock;
 static int g_cmd_lock_initialized = 0;
 
 /////////////////////////////////
-#ifdef MDNSD_DEBUG
+#ifdef MDNSD_RR_DEBUG
 static void print_rr_entry(struct rr_entry *rr_e)
 {
 	char *str1, *str2;
 
 	if (!rr_e) {
-		fprintf(stderr, "ERROR: No RR Entry \n");
+		DEBUG_PRINTF("ERROR: No RR Entry\n");
 		return;
 	}
 
@@ -173,12 +197,12 @@ static void print_rr_entry(struct rr_entry *rr_e)
 		str2 = NULL;
 	}
 
-	printf("type:%s, ttl=%d, time=%d, ca_fl=%d, rr_class=%d, name=[%s]", rr_get_type_name(rr_e->type), rr_e->ttl, (unsigned int)(time(NULL) - rr_e->update_time), (int)rr_e->cache_flush, rr_e->rr_class, str1 ? str1 : "NULL");
+	DEBUG_PRINTF("type:%s, ttl=%d, time=%d, ca_fl=%d, rr_class=%d, name=[%s]", rr_get_type_name(rr_e->type), rr_e->ttl, (unsigned int)(time(NULL) - rr_e->update_time), (int)rr_e->cache_flush, rr_e->rr_class, str1 ? str1 : "NULL");
 
 	if (rr_e->type == RR_SRV || rr_e->type == RR_PTR) {
-		printf(", target=[%s] \n", str2 ? str2 : "NULL");
+		DEBUG_PRINTF(", target=[%s]\n", str2 ? str2 : "NULL");
 	} else {
-		printf("\n");
+		DEBUG_PRINTF("\n");
 	}
 
 	if (str1) {
@@ -196,8 +220,8 @@ static void print_cache(struct mdnsd *svr)
 	struct rr_entry *entry = NULL;
 	char *pname = NULL;
 
-	printf("\n");
-	printf(" Multicast DNS Cache \n");
+	DEBUG_PRINTF("\n");
+	DEBUG_PRINTF(" Multicast DNS Cache\n");
 
 	for (; group; group = group->next) {
 		if (group->name) {
@@ -206,9 +230,9 @@ static void print_cache(struct mdnsd *svr)
 			pname = NULL;
 		}
 
-		printf("================================================== \n");
-		printf(" Group: %s \n", pname ? pname : "Unknown");
-		printf("================================================== \n");
+		DEBUG_PRINTF("==================================================\n");
+		DEBUG_PRINTF(" Group: %s\n", pname ? pname : "Unknown");
+		DEBUG_PRINTF("==================================================\n");
 		if (pname) {
 			MDNS_FREE(pname);
 		}
@@ -221,23 +245,51 @@ static void print_cache(struct mdnsd *svr)
 			}
 		}
 	}
-	printf("================================================== \n");
-	printf("\n");
+	DEBUG_PRINTF("==================================================\n");
+	DEBUG_PRINTF("\n");
 }
-#endif							/* MDNSD_DEBUG */
+#endif							/* MDNSD_RR_DEBUG */
 
-static int is_valid_mdns_name_type(const char *name)
+static int check_mdns_domain(const char *name)
 {
+	char *str = NULL;
+	int domain = MDNS_DOMAIN_UNKNOWN;
+
 	if (name == NULL) {
-		return 0;
+		goto done;
+	}
+#if defined(CONFIG_NETUTILS_MDNS_XMDNS)
+	str = strstr(name, MDNS_SUFFIX_SITE);
+	if (str && strcmp(str, MDNS_SUFFIX_SITE) == 0) {
+		domain = MDNS_DOMAIN_SITE;
+		goto done;
+	}
+#endif
+
+	str = strstr(name, MDNS_SUFFIX_LOCAL);
+	if (str && strcmp(str, MDNS_SUFFIX_LOCAL) == 0) {
+		domain = MDNS_DOMAIN_LOCAL;
+		goto done;
 	}
 
-	char *str = strstr(name, ".local");
-	if (str == NULL) {
-		return 0;
+	domain = MDNS_DOMAIN_UNKNOWN;
+
+done:
+	return domain;
+}
+
+static char *get_service_type_without_subtype(char *name)
+{
+	char *str = NULL;
+
+	str = strstr(name, MDNS_CHECK_SUBTYPE_STR);
+	if (str) {
+		str += strlen(MDNS_CHECK_SUBTYPE_STR);
+	} else {
+		str = name;
 	}
 
-	return (strcmp(str, ".local") == 0) ? 1 : 0;
+	return str;
 }
 
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
@@ -340,6 +392,7 @@ static int lookup_service(struct mdnsd *svr, char *type, struct mdns_service_inf
 	int result = -1;
 	int result_cnt = 0;
 	uint8_t *type_nlabel = create_nlabel(type);
+	char *type_without_subtype = get_service_type_without_subtype(type);
 
 	clear_service_discovery_result(service_list, MAX_NUMBER_OF_SERVICE_DISCOVERY_RESULT);
 
@@ -366,7 +419,7 @@ static int lookup_service(struct mdnsd *svr, char *type, struct mdns_service_inf
 						if (srv_e && srv_e->name) {
 							char *name = nlabel_to_str(srv_e->name);	/* full service name */
 							char *ptr = strstr(name,
-											   type);	/* separate instance name and service type */
+											   type_without_subtype);	/* separate instance name and service type */
 
 							if (ptr && (ptr > name)) {
 								*(ptr - 1) = '\0';
@@ -430,11 +483,28 @@ static int lookup_service(struct mdnsd *svr, char *type, struct mdns_service_inf
 	return result;
 }
 
-static int create_recv_sock(void)
+static int create_recv_sock(int domain)
 {
+	char *addr;
+	int port;
+
+	switch (domain) {
+#if defined(CONFIG_NETUTILS_MDNS_XMDNS)
+	case MDNS_DOMAIN_SITE:
+		addr = CONFIG_NETUTILS_MDNS_XMDNS_MULTICAST_ADDR;
+		port = CONFIG_NETUTILS_MDNS_XMDNS_PORT_NUM;
+		break;
+#endif
+	case MDNS_DOMAIN_LOCAL:
+	default:
+		addr = MDNS_ADDR;
+		port = MDNS_PORT;
+		break;
+	}
+
 	int sd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sd < 0) {
-		fprintf(stderr, "ERROR: recv socket() \n");
+		ndbg("ERROR: recv socket()\n");
 		return sd;
 	}
 
@@ -443,7 +513,7 @@ static int create_recv_sock(void)
 	int on = 1;
 	if ((r = setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on))) < 0) {
 		close(sd);
-		fprintf(stderr, "ERROR: recv setsockopt(SO_REUSEADDR) \n");
+		ndbg("ERROR: recv setsockopt(SO_REUSEADDR)\n");
 		return r;
 	}
 
@@ -451,33 +521,32 @@ static int create_recv_sock(void)
 	struct sockaddr_in serveraddr;
 	memset(&serveraddr, 0, sizeof(serveraddr));
 	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_port = htons(MDNS_PORT);
+	serveraddr.sin_port = htons(port);
 	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);	/* receive multicast */
-	if ((r = bind(sd, (struct sockaddr *)&serveraddr, sizeof(serveraddr))) < 0) {
-		fprintf(stderr, "ERROR: recv bind() \n");
+	if (bind(sd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0) {
+		ndbg("ERROR: recv bind()\n");
 	}
 	// add membership to receiving socket
 	struct ip_mreq mreq;
 	memset(&mreq, 0, sizeof(struct ip_mreq));
 	mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-	mreq.imr_multiaddr.s_addr = inet_addr(MDNS_ADDR);
+	mreq.imr_multiaddr.s_addr = inet_addr(addr);
 	if ((r = setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mreq, sizeof(mreq))) < 0) {
 		close(sd);
-		fprintf(stderr, "ERROR: recv setsockopt(IP_ADD_MEMBERSHIP) \n");
+		ndbg("ERROR: recv setsockopt(IP_ADD_MEMBERSHIP)\n");
 		return r;
 	}
 	// disable loopback
 	int flag = 0;
 	if ((r = setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&flag, sizeof(flag))) < 0) {
 		close(sd);
-		fprintf(stderr, "ERROR: recv setsockopt(IP_MULTICAST_LOOP) \n");
+		ndbg("ERROR: recv setsockopt(IP_MULTICAST_LOOP)\n");
 		return r;
 	}
-
 #ifdef IP_PKTINFO
 	if ((r = setsockopt(sd, SOL_IP, IP_PKTINFO, (char *)&on, sizeof(on))) < 0) {
 		close(sd);
-		fprintf(stderr, "ERROR: setsockopt(IP_PKTINFO) \n");
+		ndbg("ERROR: setsockopt(IP_PKTINFO)\n");
 		return r;
 	}
 #endif
@@ -485,15 +554,29 @@ static int create_recv_sock(void)
 	return sd;
 }
 
-static ssize_t send_packet(int fd, const void *data, size_t len)
+static ssize_t send_packet(int fd, const void *data, size_t len, int domain)
 {
 	static struct sockaddr_in toaddr;
-	if (toaddr.sin_family != AF_INET) {
-		memset(&toaddr, 0, sizeof(struct sockaddr_in));
-		toaddr.sin_family = AF_INET;
-		toaddr.sin_port = htons(MDNS_PORT);
-		toaddr.sin_addr.s_addr = inet_addr(MDNS_ADDR);
+	char *addr;
+	int port;
+	switch (domain) {
+#if defined(CONFIG_NETUTILS_MDNS_XMDNS)
+	case MDNS_DOMAIN_SITE:
+		addr = CONFIG_NETUTILS_MDNS_XMDNS_MULTICAST_ADDR;
+		port = CONFIG_NETUTILS_MDNS_XMDNS_PORT_NUM;
+		break;
+#endif
+	case MDNS_DOMAIN_LOCAL:
+	default:
+		addr = MDNS_ADDR;
+		port = MDNS_PORT;
+		break;
 	}
+
+	memset(&toaddr, 0, sizeof(struct sockaddr_in));
+	toaddr.sin_family = AF_INET;
+	toaddr.sin_port = htons(port);
+	toaddr.sin_addr.s_addr = inet_addr(addr);
 
 	return sendto(fd, data, len, 0, (struct sockaddr *)&toaddr, sizeof(struct sockaddr_in));
 }
@@ -546,7 +629,7 @@ static int populate_probe(struct mdnsd *svr, struct rr_list **rr_head)
 
 // populate the specified list which matches the RR name and type
 // type can be RR_ANY, which populates all entries EXCEPT RR_NSEC
-static int populate_answers(struct mdnsd *svr, struct rr_list **rr_head, uint8_t *name, enum rr_type type) 
+static int populate_answers(struct mdnsd *svr, struct rr_list **rr_head, uint8_t *name, enum rr_type type)
 {
 	int num_ans = 0;
 
@@ -910,10 +993,10 @@ static int process_mdns_pkt(struct mdnsd *svr, struct mdns_pkt *pkt, struct mdns
 		update_cache(svr);
 		add_rr_to_cache(svr, pkt);
 	}
-#ifdef MDNSD_DEBUG
+#ifdef MDNSD_RR_DEBUG
 	print_cache(svr);
 #endif
-#if MDNS_MEMORY_DEBUG == 1
+#ifdef MDNSD_MEMORY_DEBUG
 	mdns_show_meminfo();
 #endif
 
@@ -922,7 +1005,7 @@ static int process_mdns_pkt(struct mdnsd *svr, struct mdns_pkt *pkt, struct mdns
 
 int create_pipe(int handles[2])
 {
-#if PIPE_SOCKET_TYPE == 1
+#if PIPE_SOCKET_TYPE    ==1
 	int result = -1;
 	struct sockaddr_in serv_addr;
 
@@ -980,17 +1063,11 @@ errout:
 
 int read_pipe(int s, char *buf, int len)
 {
-#if PIPE_SOCKET_TYPE == 1
+#if PIPE_SOCKET_TYPE    ==1
 	int ret;
 	struct sockaddr_in fromaddr;
 	socklen_t sockaddr_size = sizeof(struct sockaddr_in);
-	ret = recvfrom(s, buf, len, 0, (struct sockaddr *)&fromaddr, &sockaddr_size);
-	if (ret < 0) {
-		fprintf(stderr, "ERROR: recv() \n");
-		ret = 0;
-	}
-
-	return ret;
+	return recvfrom(s, buf, len, 0, (struct sockaddr *)&fromaddr, &sockaddr_size);
 #else
 	return read(s, buf, len);
 #endif
@@ -998,7 +1075,7 @@ int read_pipe(int s, char *buf, int len)
 
 int write_pipe(int s, char *buf, int len, int port)
 {
-#if PIPE_SOCKET_TYPE == 1
+#if PIPE_SOCKET_TYPE    ==1
 	static struct sockaddr_in toaddr;
 
 	memset(&toaddr, 0, sizeof(struct sockaddr_in));
@@ -1026,11 +1103,12 @@ static int request_sendmsg(struct mdnsd *svr)
 	const int wait_nsec = 0;
 	const int max_try_count = 3;
 	int try_count = 0;
+	int timeout = 0;
 
 	do {
 		ret = write_pipe(svr->notify_pipe[1], ".", 1, PIPE_SOCKET_PORT0);
 		if (ret == -1) {
-			DEBUG_PRINTF("ERROR: %s | write_pipe \n", __FUNCTION__);
+			ndbg("ERROR: write_pipe() failed. (ret=%d)\n", ret);
 			continue;
 		}
 
@@ -1042,14 +1120,18 @@ static int request_sendmsg(struct mdnsd *svr)
 			abstime.tv_nsec -= NSEC_PER_SEC;
 		}
 
-		ret = sem_timedwait(&svr->sendmsg_sem, &abstime);
-		if (ret < 0) {
+		timeout = 0;
+		while (sem_timedwait(&svr->sendmsg_sem, &abstime) != 0) {
 			int err = get_errno();
+			ASSERT(err == EINTR || err == ETIMEDOUT);
+
 			if (err == ETIMEDOUT) {
-				DEBUG_PRINTF("ERROR: %s | sem_timedwait : Timeout\n", __FUNCTION__);
-			} else {
-				DEBUG_PRINTF("ERROR: %s | sem_timedwait : errno=%d\n", __FUNCTION__, err);
+				timeout = 1;
+				break;
 			}
+		}
+		if (timeout) {
+			ndbg("ERROR: sem_timedwait() timeout.\n");
 			continue;
 		}
 
@@ -1057,7 +1139,7 @@ static int request_sendmsg(struct mdnsd *svr)
 	} while (++try_count < max_try_count);
 
 	if (try_count == max_try_count) {
-		fprintf(stderr, "ERROR: request_sendmsg() is failed.\n");
+		ndbg("ERROR: request_sendmsg() failed.\n");
 		return -1;
 	}
 
@@ -1074,16 +1156,17 @@ static void main_loop(struct mdnsd *svr)
 	int ret;
 	void *pkt_buffer = NULL;
 	struct mdns_pkt *mdns_packet = NULL;
+	int econnreset_count = 0;
 
 	pkt_buffer = MDNS_MALLOC(PACKET_SIZE);
 	if (pkt_buffer == NULL) {
-		fprintf(stderr, "ERROR: memory allocation : pkt_buffer \n");
+		ndbg("ERROR: memory allocation : pkt_buffer\n");
 		goto out;
 	}
 
 	mdns_packet = MDNS_MALLOC(sizeof(struct mdns_pkt));
 	if (mdns_packet == NULL) {
-		fprintf(stderr, "ERROR: memory allocation : mdns_reply \n");
+		ndbg("ERROR: memory allocation : mdns_packet\n");
 		goto out;
 	}
 	memset(mdns_packet, 0, sizeof(struct mdns_pkt));
@@ -1106,14 +1189,48 @@ static void main_loop(struct mdnsd *svr)
 				svr->sendmsg_requested = 1;
 
 				// flush the notify_pipe
-				read_pipe(svr->notify_pipe[0], (char *)&notify_buf, 1);
+				if (read_pipe(svr->notify_pipe[0], (char *)&notify_buf, 1) == -1) {
+					ndbg("ERROR: read_pipe() failed. (errno: %d)\n", errno);
+				}
 			} else if (FD_ISSET(svr->sockfd, &sockfd_set)) {
 				struct sockaddr_in fromaddr;
 				socklen_t sockaddr_size = sizeof(struct sockaddr_in);
 				ssize_t recvsize = recvfrom(svr->sockfd, pkt_buffer, PACKET_SIZE, 0,
 											(struct sockaddr *)&fromaddr, &sockaddr_size);
 				if (recvsize < 0) {
-					fprintf(stderr, "ERROR: recv() \n");
+					int errval = errno;
+					ndbg("ERROR: recv() failed. (recvsize: %d, errno: %d)\n", recvsize, errval);
+					if (errval == ECONNRESET) {
+						econnreset_count++;
+						if (econnreset_count >= MAX_ECONNRESET_COUNT) {
+							int remaining_cnt;
+							ndbg("ERROR: ECONNRESET occurred %d times. recv socket will be recreated.\n", econnreset_count);
+
+							/* clsoe and recreate recv socket */
+							close(svr->sockfd);
+							remaining_cnt = 3;
+							while (remaining_cnt) {
+								svr->sockfd = create_recv_sock(svr->domain);
+								if (svr->sockfd != -1) {
+									/* succeed to create recv socket */
+									break;
+								}
+
+								remaining_cnt--;
+							}
+							if (svr->sockfd == -1) {
+								ndbg("ERROR: fail to recreate recv socket. mdnsd main_loop will be terminiated.\n");
+								break;	/* exit loop */
+							}
+
+							if (svr->sockfd > max_fd) {
+								max_fd = svr->sockfd;
+							}
+							econnreset_count = 0;
+						}
+					}
+
+					continue;
 				}
 
 				DEBUG_PRINTF("data from=%s size=%ld\n", inet_ntoa(fromaddr.sin_addr), (long)recvsize);
@@ -1122,7 +1239,9 @@ static void main_loop(struct mdnsd *svr)
 					if (process_mdns_pkt(svr, mdns, mdns_packet)) {
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 						size_t replylen = mdns_encode_pkt(mdns_packet, pkt_buffer, PACKET_SIZE);
-						send_packet(svr->sockfd, pkt_buffer, replylen);
+						if (send_packet(svr->sockfd, pkt_buffer, replylen, svr->domain) == -1) {
+							ndbg("ERROR: send_packet() failed. (errno: %d)\n", errno);
+						}
 #endif
 					} else if (mdns->num_qn == 0) {
 						DEBUG_PRINTF("(no questions in packet)\n\n");
@@ -1132,7 +1251,7 @@ static void main_loop(struct mdnsd *svr)
 				}
 			}
 		} else {
-			fprintf(stderr, "ERROR: select() , ret= %d \n", ret);
+			ndbg("ERROR: select() failed (ret: %d)\n", ret);
 			continue;
 		}
 
@@ -1145,10 +1264,12 @@ static void main_loop(struct mdnsd *svr)
 			process_for_query(svr, mdns_packet);
 			if (mdns_packet->num_qn > 0) {
 
-				DEBUG_PRINTF("sending query : (num of qn = %d) \n", mdns_packet->num_qn);
+				DEBUG_PRINTF("sending query : (num of qn = %d)\n", mdns_packet->num_qn);
 
 				size_t replylen = mdns_encode_pkt(mdns_packet, pkt_buffer, PACKET_SIZE);
-				send_packet(svr->sockfd, pkt_buffer, replylen);
+				if (send_packet(svr->sockfd, pkt_buffer, replylen, svr->domain) == -1) {
+					ndbg("ERROR: send_packet() failed. (errno: %d)\n", errno);
+				}
 
 				if (mdns_packet->rr_qn) {
 					rr_list_destroy(mdns_packet->rr_qn, 1);
@@ -1166,9 +1287,11 @@ static void main_loop(struct mdnsd *svr)
 
 			process_for_probe(svr, mdns_packet);
 			if (mdns_packet->num_qn > 0) {
-				DEBUG_PRINTF("sending query for probe : (num of qn = %d) \n", mdns_packet->num_qn);
+				DEBUG_PRINTF("sending query for probe : (num of qn = %d)\n", mdns_packet->num_qn);
 				size_t replylen = mdns_encode_pkt(mdns_packet, pkt_buffer, PACKET_SIZE);
-				send_packet(svr->sockfd, pkt_buffer, replylen);
+				if (send_packet(svr->sockfd, pkt_buffer, replylen, svr->domain) == -1) {
+					ndbg("ERROR: send_packet() failed. (errno: %d)\n", errno);
+				}
 
 				if (mdns_packet->rr_qn) {
 					rr_list_destroy(mdns_packet->rr_qn, 1);
@@ -1200,26 +1323,37 @@ static void main_loop(struct mdnsd *svr)
 
 			if (mdns_packet->num_ans_rr > 0) {
 				size_t replylen = mdns_encode_pkt(mdns_packet, pkt_buffer, PACKET_SIZE);
-				send_packet(svr->sockfd, pkt_buffer, replylen);
+				if (send_packet(svr->sockfd, pkt_buffer, replylen, svr->domain) == -1) {
+					ndbg("ERROR: send_packet() failed. (errno: %d)\n", errno);
+				}
 			}
 		}
 #endif							/* CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT */
 
 		if (svr->sendmsg_requested) {
-			sem_post(&svr->sendmsg_sem);
 			if (svr->stop_flag) {
 				break;			/* exit main_loop */
 			}
+			sem_post(&svr->sendmsg_sem);
 		}
 	}
 
+	if (svr->sendmsg_requested && svr->stop_flag) {
+		// sem_post() should be executed in order to awaken mdnsd_stop(),
+		// because main_loop is terminated before executing sem_post()
+		sem_post(&svr->sendmsg_sem);
+	}
 	// main thread terminating. send out "goodbye packets" for services
 	mdns_init_reply(mdns_packet, 0);
 
 	// send out packet
 	if (mdns_packet->num_ans_rr > 0) {
-		size_t replylen = mdns_encode_pkt(mdns_packet, pkt_buffer, PACKET_SIZE);
-		send_packet(svr->sockfd, pkt_buffer, replylen);
+		if (svr->sockfd != -1) {
+			size_t replylen = mdns_encode_pkt(mdns_packet, pkt_buffer, PACKET_SIZE);
+			if (send_packet(svr->sockfd, pkt_buffer, replylen, svr->domain) == -1) {
+				ndbg("ERROR: send_packet() failed. (errno: %d)\n", errno);
+			}
+		}
 	}
 
 out:
@@ -1299,7 +1433,7 @@ static void init_service_discovery_result(struct mdns_service_info
 	int i;
 
 	if (service_list == NULL) {
-		fprintf(stderr, "ERROR: NULL Pointer Error \n");
+		ndbg("ERROR: mdns_service_info is null.\n");
 		return;
 	}
 
@@ -1318,7 +1452,7 @@ static void clear_service_discovery_result(struct mdns_service_info
 	int i;
 
 	if (service_list == NULL) {
-		fprintf(stderr, "ERROR: NULL Pointer Error \n");
+		ndbg("ERROR: service_list is null.\n");
 		return;
 	}
 
@@ -1347,7 +1481,7 @@ static void destroy_service_discovery_result(struct mdns_service_info
 		*service_list, int num_of_services)
 {
 	if (service_list == NULL) {
-		fprintf(stderr, "ERROR: NULL Pointer Error \n");
+		ndbg("ERROR: service_list is null.\n");
 		return;
 	}
 
@@ -1361,19 +1495,30 @@ static int mdnsd_set_host_info(struct mdnsd *svr, const char *hostname, uint32_t
 {
 	int result = -1;
 	struct rr_entry *a_e = NULL, *nsec_e = NULL;
+	int domain;
+	char mdns_suffix[16];
 
 	if (svr == NULL) {
-		fprintf(stderr, "ERROR: |%s| mdnsd instance handle is NULL \n", __FUNCTION__);
+		ndbg("ERROR: mdnsd instance handle is null.\n");
 		goto done;
 	}
 
-	if (!is_valid_mdns_name_type(hostname)) {
-		fprintf(stderr, "ERROR: |%s| mdnsd hostname is invalid. \n", __FUNCTION__);
+	domain = check_mdns_domain(hostname);
+	if (domain == MDNS_DOMAIN_LOCAL) {
+		snprintf(mdns_suffix, sizeof(mdns_suffix), MDNS_SUFFIX_LOCAL);
+	}
+#if defined(CONFIG_NETUTILS_MDNS_XMDNS)
+	else if (domain == MDNS_DOMAIN_SITE) {
+		snprintf(mdns_suffix, sizeof(mdns_suffix), MDNS_SUFFIX_SITE);
+	}
+#endif
+	else {
+		ndbg("ERROR: mdnsd hostname is invalid.\n");
 		goto done;
 	}
 
 	if (ipaddr == 0) {
-		fprintf(stderr, "ERROR: |%s| mdnsd ip address is not set\n", __FUNCTION__);
+		ndbg("ERROR: mdnsd ip address is not set.\n");
 		goto done;
 	}
 
@@ -1396,8 +1541,8 @@ static int mdnsd_set_host_info(struct mdnsd *svr, const char *hostname, uint32_t
 		while (probe_hostname(svr, hname) == 0) {
 			/* when name conflict occurs */
 			snprintf(hname, sizeof(hname), hostname);
-			str = strstr(hname, ".local");
-			sprintf(str, "(%d).local", no++);
+			str = strstr(hname, mdns_suffix);
+			snprintf(str, sizeof(hname), "(%d)%s", no++, mdns_suffix);
 			alternative_hostname = 1;
 		}
 
@@ -1455,27 +1600,34 @@ done:
 static int mdnsd_set_host_info_by_netif(struct mdnsd *svr, const char *hostname, const char *netif_name)
 {
 	int result = -1;
-	struct netif *netif;
 	uint32_t ipaddr = 0;;
+#ifdef CONFIG_NET_LWIP
+	struct netif *netif;
+#endif
 
 	if (svr == NULL) {
-		fprintf(stderr, "ERROR: |%s| mdnsd instance handle is NULL \n", __FUNCTION__);
+		ndbg("ERROR: mdnsd instance handle is null.\n");
 		goto done;
 	}
-	// find ip address
+#ifdef CONFIG_NET_LWIP
+	// find ip address with lwip netif_find() function
 	netif = netif_find(netif_name);
 	if (netif) {
 		ipaddr = netif->ip_addr.addr;
 	} else {
-
-		fprintf(stderr, "ERROR: |%s| mdnsd cannot find netif (%s) \n", __FUNCTION__, netif_name);
+		ndbg("ERROR: mdnsd cannot find netif.(%s)\n", netif_name);
 		goto done;
 	}
 
 	if (ipaddr == 0) {
-		fprintf(stderr, "ERROR: |%s| mdnsd cannot set ip address\n", __FUNCTION__);
+		ndbg("ERROR: mdnsd cannot set ip address.\n");
 		goto done;
 	}
+#else
+	/* if CONFIG_NET_LWIP is not set, it should be implemented to resolve ip address with netif_name */
+	ndbg("ERROR: cannot resolve ip address with netif_name.\n");
+	goto done;
+#endif
 
 	result = mdnsd_set_host_info(svr, hostname, ipaddr);
 
@@ -1484,37 +1636,51 @@ done:
 }
 #endif							/* CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT */
 
-static int init_mdns_context(void)
+static int init_mdns_context(int domain)
 {
 	int result = -1;
 	pthread_t tid;
 	pthread_attr_t attr;
 
 	if (g_svr) {
-		fprintf(stderr, "ERROR: |%s| mdnsd is running. \n", __FUNCTION__);
+		ndbg("ERROR: mdnsd is running.\n");
 		goto out;
 	}
 
 	g_svr = MDNS_MALLOC(sizeof(struct mdnsd));
 	if (g_svr == NULL) {
-		fprintf(stderr, "ERROR: |%s| memory allocation. \n", __FUNCTION__);
+		ndbg("ERROR: memory allocation failed.\n");
 		goto errout;
 	}
 
 	/* initialize struct mdnsd instance */
 	memset(g_svr, 0, sizeof(struct mdnsd));
+	g_svr->stop_flag = 0;
 	g_svr->sockfd = -1;
 	g_svr->notify_pipe[0] = -1;
 	g_svr->notify_pipe[1] = -1;
 
-	if (create_pipe(g_svr->notify_pipe) != 0) {
-		fprintf(stderr, "ERROR: pipe() \n");
+	switch (domain) {
+#if defined(CONFIG_NETUTILS_MDNS_XMDNS)
+	case MDNS_DOMAIN_SITE:
+#endif
+	case MDNS_DOMAIN_LOCAL:
+		g_svr->domain = domain;
+		break;
+	case MDNS_DOMAIN_UNKNOWN:
+	default:
+		ndbg("ERROR: invalid domain type.\n");
 		goto errout;
 	}
 
-	g_svr->sockfd = create_recv_sock();
+	if (create_pipe(g_svr->notify_pipe) != 0) {
+		ndbg("ERROR: create_pipe() failed.\n");
+		goto errout;
+	}
+
+	g_svr->sockfd = create_recv_sock(domain);
 	if (g_svr->sockfd < 0) {
-		fprintf(stderr, "ERROR: unable to create recv socket \n");
+		ndbg("ERROR: create_recv_sock() failed.\n");
 		goto errout;
 	}
 
@@ -1538,19 +1704,19 @@ static int init_mdns_context(void)
 #endif
 
 	if (pthread_attr_setstacksize(&attr, THREAD_MAINLOOP_STACKSIZE) != 0) {
-		fprintf(stderr, "ERROR: |%s| pthread_attr_setstacksize() \n", __FUNCTION__);
+		ndbg("ERROR: pthread_attr_setstacksize() failed.\n");
 		goto errout_with_mutex;
 	}
 
 	/* create main_loop thread */
-	if ((pthread_create(&tid, &attr, (void *(*)(void *))main_loop, (void *)g_svr) != 0)) {
-		fprintf(stderr, "ERROR: |%s| pthread_create() \n", __FUNCTION__);
+	if ((pthread_create(&tid, &attr, (void * ( *)(void *))main_loop, (void *)g_svr) != 0)) {
+		ndbg("ERROR: pthread_create() failed.\n");
 		goto errout_with_mutex;
 	}
 
 	pthread_setname_np(tid, THREAD_MAINLOOP_NAME);
 	if (pthread_detach(tid) != 0) {
-		fprintf(stderr, "ERROR: |%s| pthread_detach() \n", __FUNCTION__);
+		ndbg("ERROR: pthread_detach() failed.\n");
 	}
 
 	/* wait until main_loop starts */
@@ -1609,23 +1775,8 @@ errout:
 	return result;
 }
 
-static int destroy_mdns_context(void)
+static void release_mdns_context_resource(void)
 {
-	int result = -1;
-
-	if (g_svr == NULL) {
-		fprintf(stderr, "ERROR: |%s| mdnsd is not running. \n", __FUNCTION__);
-		goto done;
-	}
-
-	g_svr->stop_flag = 1;
-
-	request_sendmsg(g_svr);
-
-	while (g_svr->stop_flag != 2) {
-		usleep(500 * 1000);
-	}
-
 	if (g_svr->notify_pipe[0] != -1) {
 		close_pipe(g_svr->notify_pipe[0]);
 		g_svr->notify_pipe[0] = -1;
@@ -1644,6 +1795,10 @@ static int destroy_mdns_context(void)
 	rr_list_destroy(g_svr->query, 0);
 	g_svr->query = NULL;
 
+	if (g_svr->c_filter) {
+		MDNS_FREE(g_svr->c_filter);
+		g_svr->c_filter = NULL;
+	}
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 	rr_group_destroy(g_svr->group);
 	g_svr->group = NULL;
@@ -1678,15 +1833,36 @@ static int destroy_mdns_context(void)
 	}
 #endif							/* CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT */
 
+	g_svr->domain = MDNS_DOMAIN_UNKNOWN;
+
 	MDNS_FREE(g_svr);
 	g_svr = NULL;
+}
+
+static int destroy_mdns_context(void)
+{
+	int result = -1;
+
+	if (g_svr == NULL) {
+		ndbg("ERROR: mdnsd is not running.\n");
+		goto done;
+	}
+
+	g_svr->stop_flag = 1;
+
+	request_sendmsg(g_svr);
+
+	while (g_svr->stop_flag != 2) {
+		usleep(500 * 1000);
+	}
+
+	release_mdns_context_resource();
 
 	/* success */
 	result = 0;
 
 done:
-
-#if MDNS_MEMORY_DEBUG == 1
+#ifdef MDNSD_MEMORY_DEBUG
 	mdns_show_meminfo();
 #endif
 
@@ -1697,7 +1873,7 @@ static void mdns_cmd_mutex_lock(void)
 {
 	if (!g_cmd_lock_initialized) {
 		if (pthread_mutex_init(&g_cmd_lock, NULL) != 0) {
-			fprintf(stderr, "ERROR: |%s| pthread_mutex_init() fail \n", __FUNCTION__);
+			ndbg("ERROR: pthread_mutex_init() failed.\n");
 			return;
 		}
 		g_cmd_lock_initialized = 1;
@@ -1721,20 +1897,37 @@ static void mdns_cmd_mutex_unlock(void)
 
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 
+/****************************************************************************
+ * Name: mdnsd_start
+ *
+ * Description:
+ *       Starts the MDNS daemon.
+ *
+ * Parameters:
+ *       desired_hostname : the desired host name as string type. if same name is in the network,
+ *                         an alternative name will be set as hostname.
+ *       netif_name : network interface name as string type
+ *
+ * Returned Value:
+ *       On success, 0 is returned. On failure, a negative value is returned.
+ *
+ ****************************************************************************/
 int mdnsd_start(const char *desired_hostname, const char *netif_name)
 {
 	int result = -1;
+	int domain;
 
 	mdns_cmd_mutex_lock();
 
-	if (init_mdns_context() != 0) {
+	domain = check_mdns_domain(desired_hostname);
+	if (init_mdns_context(domain) != 0) {
 		goto out_with_mutex;
 	}
 
 	/* set hostname and ip address */
 	if (mdnsd_set_host_info_by_netif(g_svr, desired_hostname, netif_name) != 0) {
 		if (destroy_mdns_context() != 0) {
-			fprintf(stderr, "ERROR: |%s| mdnsd_stop() \n", __FUNCTION__);
+			ndbg("ERROR: mdnsd_set_host_info_by_netif() and destroy_mdns_context() failed.\n");
 		}
 
 		goto out_with_mutex;
@@ -1748,6 +1941,16 @@ out_with_mutex:
 	return result;
 }
 
+/****************************************************************************
+ * Name: mdnsd_stop
+ *
+ * Description:
+ *       Stops the MDNS daemon.
+ *
+ * Returned Value:
+ *       On success, 0 is returned. On failure, a negative value is returned.
+ *
+ ****************************************************************************/
 int mdnsd_stop(void)
 {
 	int result = -1;
@@ -1766,11 +1969,24 @@ out_with_mutex:
 	return result;
 }
 
+/****************************************************************************
+ * Name: mdnsd_get_hostname
+ *
+ * Description:
+ *       Gets the current host name as MDNS type.
+ *
+ * Parameters:
+ *       hostname_result : 32-bytes string buffer for the host name result
+ *
+ * Returned Value:
+ *       On success, 0 is returned. On failure, a negative value is returned.
+ *
+ ****************************************************************************/
 int mdnsd_get_hostname(char *hostname_result)
 {
 	int result = -1;
 	if (g_svr == NULL) {
-		fprintf(stderr, "ERROR: |%s| mdnsd is not running. \n", __FUNCTION__);
+		ndbg("ERROR: mdnsd is not running.\n");
 		goto out;
 	}
 
@@ -1794,29 +2010,55 @@ out:
 
 #endif							/*CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT */
 
+/****************************************************************************
+ * Name: mdnsd_resolve_hostname
+ *
+ * Description:
+ *       Gets ip address with the given hostname.
+ *
+ * Parameters:
+ *       hostname : host name as string type
+ *       ipaddr : the pointer of ip address result
+ *
+ * Returned Value:
+ *       On success, 0 is returned. On failure, a negative value is returned.
+ *
+ ****************************************************************************/
 int mdnsd_resolve_hostname(char *hostname, int *ipaddr)
 {
 	int result = -1;
 	struct timeval old_time, cur_time;
 	unsigned int time_diff;
 	int try_count;
+	int domain;
 
-	if (!is_valid_mdns_name_type(hostname)) {
-		fprintf(stderr, "ERROR: |%s| hostname is invalid. \n", __FUNCTION__);
-		goto out;
-	}
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 	if (g_svr == NULL) {
-		fprintf(stderr, "ERROR: |%s| mdnsd is not running. \n", __FUNCTION__);
+		ndbg("ERROR: mdnsd is not running.\n");
 		goto out;
 	}
 #endif
 
+	domain = check_mdns_domain(hostname);
+	if (domain == MDNS_DOMAIN_UNKNOWN) {
+		ndbg("ERROR: hostname is invalid. hostname should be %s or %s domain.\n", MDNS_SUFFIX_LOCAL, MDNS_SUFFIX_SITE);
+		goto out;
+	}
+
 	mdns_cmd_mutex_lock();
 
+#if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
+	if (g_svr->stop_flag == 2) {
+		/* mdnsd main_loop has terminated by itself */
+		ndbg("ERROR: main_loop has been terminated. mdnsd will stop.\n");
+		release_mdns_context_resource();
+		goto out_with_mutex;
+	}
+#endif
+
 #if ! defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
-	if (init_mdns_context() != 0) {
-		fprintf(stderr, "ERROR: |%s| fail to execute init_mdns_context() \n", __FUNCTION__);
+	if (init_mdns_context(domain) != 0) {
+		ndbg("ERROR: init_mdns_context() failed.\n");
 		goto out_with_mutex;
 	}
 
@@ -1886,7 +2128,7 @@ out_with_context:
 	pthread_mutex_unlock(&g_svr->data_lock);
 
 	if (destroy_mdns_context() != 0) {
-		fprintf(stderr, "ERROR: |%s| fail to execute destroy_mdns_context() \n", __FUNCTION__);
+		ndbg("ERROR: destroy_mdns_context() failed.\n");
 	}
 #endif
 
@@ -1897,29 +2139,87 @@ out:
 	return result;
 }
 
+/****************************************************************************
+ * Name: mdnsd_discover_service
+ *
+ * Description:
+ *       Discovers services with the given service type string
+ *
+ * Parameters:
+ *       service_type : mdns service type string
+ *       discover_time_msec : time in milliseconds for discovering service
+ *       service_list : the array of service list
+ *       num_of_services : number of services
+ *
+ * Returned Value:
+ *       On success, 0 is returned. On failure, a negative value is returned.
+ *
+ ****************************************************************************/
 int mdnsd_discover_service(char *service_type, int discover_time_msec, struct mdns_service_info **service_list, int *num_of_services)
 {
 	int result = -1;
 	struct timeval old_time, cur_time;
 	unsigned int time_diff;
 	int try_count;
+	int domain;
+	char service_type_str[128];
 
 	if (discover_time_msec <= 0 || discover_time_msec > MAX_SERVICE_DISCOVERY_TIME_MS) {
-		fprintf(stderr, "ERROR: |%s| discover_time_msec (%d) is invalid. (valid range : 0 < x <= %d) \n", __FUNCTION__, discover_time_msec, MAX_SERVICE_DISCOVERY_TIME_MS);
+		ndbg("ERROR: discover_time_msec (%d) is invalid. (valid range : 0 < x <= %d)\n", discover_time_msec, MAX_SERVICE_DISCOVERY_TIME_MS);
 		goto out;
 	}
+
+	domain = check_mdns_domain(service_type);
+
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 	if (g_svr == NULL) {
-		fprintf(stderr, "ERROR: |%s| mdnsd is not running. \n", __FUNCTION__);
+		ndbg("ERROR: mdnsd is not running.\n");
 		goto out;
+	}
+
+	if (domain == MDNS_DOMAIN_UNKNOWN) {
+		switch (g_svr->domain) {
+		case MDNS_DOMAIN_LOCAL:
+			domain = MDNS_DOMAIN_LOCAL;
+			snprintf(service_type_str, sizeof(service_type_str), "%s%s", service_type, MDNS_SUFFIX_LOCAL);
+			break;
+#if defined(CONFIG_NETUTILS_MDNS_XMDNS)
+		case MDNS_DOMAIN_SITE:
+			domain = MDNS_DOMAIN_SITE;
+			snprintf(service_type_str, sizeof(service_type_str), "%s%s", service_type, MDNS_SUFFIX_SITE);
+			break;
+#endif
+		default:
+			ndbg("ERROR: current mdns domain is invalid.\n");
+			goto out;
+		}
+	} else {
+		snprintf(service_type_str, sizeof(service_type_str), "%s", service_type);
+	}
+
+#else
+	if (domain == MDNS_DOMAIN_UNKNOWN) {
+		domain = MDNS_DOMAIN_LOCAL;
+		snprintf(service_type_str, sizeof(service_type_str), "%s%s", service_type, MDNS_SUFFIX_LOCAL);
+	} else {
+		snprintf(service_type_str, sizeof(service_type_str), "%s", service_type);
 	}
 #endif
 
 	mdns_cmd_mutex_lock();
 
+#if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
+	if (g_svr->stop_flag == 2) {
+		/* mdnsd main_loop has terminated by itself */
+		ndbg("ERROR: main_loop has been terminated. mdnsd will stop.\n");
+		release_mdns_context_resource();
+		goto out_with_mutex;
+	}
+#endif
+
 #if ! defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
-	if (init_mdns_context() != 0) {
-		fprintf(stderr, "ERROR: |%s| fail to execute init_mdns_context() \n", __FUNCTION__);
+	if (init_mdns_context(domain) != 0) {
+		ndbg("ERROR: init_mdns_context() failed.\n");
 		goto out_with_mutex;
 	}
 #endif
@@ -1930,18 +2230,11 @@ int mdnsd_discover_service(char *service_type, int discover_time_msec, struct md
 		MDNS_FREE(g_svr->c_filter);
 		g_svr->c_filter = NULL;
 	}
-	g_svr->c_filter = MDNS_STRDUP(service_type);
+	g_svr->c_filter = MDNS_STRDUP(service_type_str);
 	pthread_mutex_unlock(&g_svr->data_lock);
 
 	/* query PTR for service discovery */
 	struct rr_entry *ptr_e = NULL;
-	char service_type_str[32];
-
-	if (is_valid_mdns_name_type(service_type)) {	/* if *.local type */
-		snprintf(service_type_str, sizeof(service_type_str), "%s", service_type);
-	} else {
-		snprintf(service_type_str, sizeof(service_type_str), "%s.local", service_type);
-	}
 
 	try_count = 0;
 	TIME_GET(old_time);
@@ -1989,10 +2282,11 @@ int mdnsd_discover_service(char *service_type, int discover_time_msec, struct md
 
 #if ! defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 	if (destroy_mdns_context() != 0) {
-		fprintf(stderr, "ERROR: |%s| fail to execute destroy_mdns_context() \n", __FUNCTION__);
+		ndbg("ERROR: destroy_mdns_context() failed.\n");
 	}
-out_with_mutex:
 #endif
+
+out_with_mutex:
 	mdns_cmd_mutex_unlock();
 
 out:

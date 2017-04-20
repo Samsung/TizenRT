@@ -78,7 +78,9 @@
 #include <errno.h>
 #include <fcntl.h>
 
+#ifdef CONFIG_LIBC_NETDB
 #include <netdb.h>
+#endif
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
@@ -89,22 +91,16 @@
 #include "../webserver/http_client.h"
 #include <apps/netutils/webclient.h>
 #if defined(CONFIG_NETUTILS_CODECS)
-#if defined(CONFIG_CODECS_URLCODE)
-#define WGET_USE_URLENCODE 1
-#include <apps/netutils/urldecode.h>
-#endif
-#if defined(CONFIG_CODECS_BASE64)
-#include <apps/netutils/base64.h>
-#endif
+#  if defined(CONFIG_CODECS_URLCODE)
+#    define WGET_USE_URLENCODE 1
+#    include <apps/netutils/urldecode.h>
+#  endif
+#  if defined(CONFIG_CODECS_BASE64)
+#    include <apps/netutils/base64.h>
+#  endif
 #else
-#undef CONFIG_CODECS_URLCODE
-#undef CONFIG_CODECS_BASE64
-#endif
-
-#if defined(CONFIG_HW_RSA_SIGN)
-#include "tls/see_api.h"
-#include "tls/pk.h"
-#include "tls/pk_internal.h"
+#  undef CONFIG_CODECS_URLCODE
+#  undef CONFIG_CODECS_BASE64
 #endif
 
 #define CONFIG_WEBCLIENT_MAXHTTPLINE 200
@@ -113,27 +109,19 @@
 #define CONFIG_WEBCLIENT_MAXFILENAME 100
 
 #ifndef CONFIG_WGET_USERAGENT
-#define CONFIG_WGET_USERAGENT "TinyARA"
-#endif
-
-#ifdef CONFIG_HW_RSA_SIGN
-#define HTTPS_SERVERNAME "ARTIK051_dev"
-#else
-#define HTTPS_SERVERNAME "localhost"
+# define CONFIG_WGET_USERAGENT "TinyARA"
 #endif
 
 /****************************************************************************
  * Definitions
  ****************************************************************************/
 
-#ifdef CONFIG_TLS_WITH_SSS
-#define CLIENT_REQ_THREAD_STACK    24576
-#else
-#define CLIENT_REQ_THREAD_STACK    8192
-#endif
+#define CLIENT_REQ_THREAD_STACK    (1024 * 8)
 
 #define WGET_OK                    0
 #define WGET_ERR                   -1
+#define WGET_MSG_CONSTRUCT_ERR     -2
+#define WGET_SOCKET_CONNECT_ERR    -3
 
 #define WEBCLIENT_STATE_STATUSLINE 0
 #define WEBCLIENT_STATE_HEADERS    1
@@ -149,7 +137,7 @@
 #define ISO_cr                     0x0d
 #define ISO_space                  0x20
 
-#define MBED_DEBUG_LEVEL 3
+#define MBED_DEBUG_LEVEL 0
 
 /****************************************************************************
  * Private Types
@@ -161,14 +149,15 @@ struct wget_s {
 	uint8_t state;
 	uint8_t httpstatus;
 
-	uint16_t port;				/* The port number to use in the connection */
+	uint16_t port; /* The port number to use in the connection */
 
 	/* These describe the just-received buffer of data */
 
-	FAR char *buffer;			/* user-provided buffer */
-	int buflen;					/* Length of the user provided buffer */
-	int offset;					/* Offset to the beginning of interesting data */
-	int datend;					/* Offset+1 to the last valid byte of data in the buffer */
+	FAR
+	char *buffer; /* user-provided buffer */
+	int buflen; /* Length of the user provided buffer */
+	int offset; /* Offset to the beginning of interesting data */
+	int datend; /* Offset+1 to the last valid byte of data in the buffer */
 
 	/* Buffer HTTP header data and parse line at a time */
 
@@ -180,23 +169,6 @@ struct wget_s {
 #endif
 	char hostname[CONFIG_WEBCLIENT_MAXHOSTNAME];
 	char filename[CONFIG_WEBCLIENT_MAXFILENAME];
-};
-
-struct wget_param {
-	FAR char *url;
-	FAR char *buffer;
-	int buflen;
-	wget_callback_t callback;
-	FAR void *arg;
-	FAR char *entity;
-	int method;
-	int encoding;
-	int tls;
-	struct http_keyvalue_list_t *headers;
-	struct http_client_response_t *response;
-#ifdef CONFIG_NET_SECURITY_TLS
-	struct http_client_ssl_config_t ssl_config;
-#endif
 };
 
 /****************************************************************************
@@ -215,7 +187,10 @@ static const char g_httppost[] = "POST ";
 static const char g_httpput[] = "PUT ";
 static const char g_httpdelete[] = "DELETE ";
 
-static const char g_httpuseragentfields[] = "Connection: close\r\n" "User-Agent: " CONFIG_WGET_USERAGENT "\r\n\r\n";
+static const char g_httpuseragentfields[] = "Connection: close\r\n"
+		"User-Agent: "
+		CONFIG_WGET_USERAGENT
+		"\r\n\r\n";
 
 static const char g_http200[] = "200 ";
 static const char g_http301[] = "301 ";
@@ -225,7 +200,8 @@ static const char g_http500[] = "500 ";
 
 static const char g_httpcrnl[] = "\r\n";
 
-static const char g_httpform[] = "Content-Type: application/x-www-form-urlencoded";
+static const char g_httpform[] =
+	"Content-Type: application/x-www-form-urlencoded";
 static const char g_httpcontsize[] = "Content-Length: ";
 static const char g_httpchunked[] = "Transfer-Encoding: chunked";
 const char *tlsname = "araweb_tls_client";
@@ -234,7 +210,9 @@ const char *tlsname = "araweb_tls_client";
  * Private Functions
  ****************************************************************************/
 
+#ifdef CONFIG_NET_SECURITY_TLS
 static void wget_tls_release(struct http_client_tls_t *client);
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -244,7 +222,7 @@ static void wget_tls_release(struct http_client_tls_t *client);
  * Name: wget_strcpy
  ****************************************************************************/
 
-static char *wget_strcpy(char *dest, const char *src, struct wget_param *ws)
+static char *wget_strcpy(char *dest, const char *src, struct http_client_request_t *ws)
 {
 	int len = strlen(src);
 
@@ -258,7 +236,7 @@ static char *wget_strcpy(char *dest, const char *src, struct wget_param *ws)
 	return dest + len;
 }
 
-static char *wget_strlencpy(char *dest, const char *src, int len, struct wget_param *ws)
+static char *wget_strlencpy(char *dest, const char *src, int len, struct http_client_request_t *ws)
 {
 	if (dest + len - ws->buffer >= ws->buflen) {
 		printf("Error: buffer is too small\n");
@@ -270,9 +248,13 @@ static char *wget_strlencpy(char *dest, const char *src, int len, struct wget_pa
 	return dest + len;
 }
 
-static char *wget_chunksize(char *dest, int len, struct wget_param *ws)
+static char *wget_chunksize(char *dest, int len, struct http_client_request_t *ws)
 {
-	char size[10] = { 0, };
+	char size[10] = {0,};
+
+	if (!dest) {
+		return NULL;
+	}
 
 	snprintf(size, sizeof(size), "%x", len);
 	len = strlen(size);
@@ -332,7 +314,10 @@ static inline int wget_parsestatus(struct wget_s *ws)
 				 * will contain the new location.
 				 */
 
-				else if (strncmp(dest, g_http301, strlen(g_http301)) == 0 || strncmp(dest, g_http302, strlen(g_http302)) == 0 || strncmp(dest, g_http404, strlen(g_http404)) == 0 || strncmp(dest, g_http500, strlen(g_http500)) == 0) {
+				else if (strncmp(dest, g_http301, strlen(g_http301)) == 0
+						 || strncmp(dest, g_http302, strlen(g_http302)) == 0
+						 || strncmp(dest, g_http404, strlen(g_http404)) == 0
+						 || strncmp(dest, g_http500, strlen(g_http500)) == 0) {
 
 					ws->state = WEBCLIENT_STATE_DATA;
 					break;
@@ -375,7 +360,7 @@ static inline int wget_parseheaders(struct wget_s *ws)
 			 * we parse it.
 			 */
 
-			if (ndx > 0) {		/* Should always be true */
+			if (ndx > 0) { /* Should always be true */
 				if (ws->line[0] == ISO_cr) {
 					/* This was the last header line (i.e., and empty "\r\n"), so
 					 * we are done with the headers and proceed with the actual
@@ -401,18 +386,24 @@ static inline int wget_parseheaders(struct wget_s *ws)
 						*dest = 0;
 					}
 
-					strncpy(ws->mimetype, ws->line + strlen(g_httpcontenttype), sizeof(ws->mimetype));
+					strncpy(ws->mimetype, ws->line + strlen(g_httpcontenttype),
+							sizeof(ws->mimetype));
 				} else
 #endif
-				if (strncasecmp(ws->line, g_httplocation, strlen(g_httplocation)) == 0) {
-					/* Parse the new HTTP host and filename from the URL.  Note that
-					 * the return value is ignored.  In the event of failure, we
-					 * retain the current location.
-					 */
+					if (strncasecmp(ws->line, g_httplocation,
+									strlen(g_httplocation)) == 0) {
+						/* Parse the new HTTP host and filename from the URL.  Note that
+						 * the return value is ignored.  In the event of failure, we
+						 * retain the current location.
+						 */
 
-					(void)netlib_parsehttpurl(ws->line + strlen(g_httplocation), &ws->port, ws->hostname, CONFIG_WEBCLIENT_MAXHOSTNAME, ws->filename, CONFIG_WEBCLIENT_MAXFILENAME);
-					nvdbg("New hostname='%s' filename='%s'\n", ws->hostname, ws->filename);
-				}
+						(void) netlib_parsehttpurl(
+							ws->line + strlen(g_httplocation), &ws->port,
+							ws->hostname, CONFIG_WEBCLIENT_MAXHOSTNAME,
+							ws->filename, CONFIG_WEBCLIENT_MAXFILENAME);
+						nvdbg("New hostname='%s' filename='%s'\n", ws->hostname,
+							  ws->filename);
+					}
 			}
 
 			/* We're done parsing this line, so we reset the index to the start
@@ -427,7 +418,7 @@ static inline int wget_parseheaders(struct wget_s *ws)
 		offset++;
 	}
 
- exit:
+exit:
 	ws->offset = ++offset;
 	ws->ndx = ndx;
 	return OK;
@@ -448,10 +439,10 @@ static inline int wget_parseheaders(struct wget_s *ws)
  *
  ****************************************************************************/
 
-static int wget_gethostip(FAR char *hostname, in_addr_t * ipv4addr)
+static int wget_gethostip(FAR char *hostname, in_addr_t *ipv4addr)
 {
+#ifdef CONFIG_LIBC_NETDB
 	FAR struct hostent *he;
-
 	he = gethostbyname(hostname);
 	if (he == NULL) {
 		ndbg("gethostbyname failed\n");
@@ -463,6 +454,10 @@ static int wget_gethostip(FAR char *hostname, in_addr_t * ipv4addr)
 
 	memcpy(ipv4addr, he->h_addr, sizeof(in_addr_t));
 	return OK;
+#else
+	ndbg("LIBC NETDB is not supported\n");
+	return ERROR;
+#endif
 }
 
 #ifdef CONFIG_NET_SECURITY_TLS
@@ -475,6 +470,10 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 {
 	int result = 0;
 
+	if (!client || !ssl_config) {
+		return -1;
+	}
+
 	mbedtls_ssl_config_init(&(client->tls_conf));
 	mbedtls_x509_crt_init(&(client->tls_clicert));
 	mbedtls_pk_init(&(client->tls_pkey));
@@ -486,7 +485,6 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 #endif
 
 	/* 0. Initialize the RNG */
-
 	ndbg("  . Seeding the random number generator...");
 
 	if ((result = mbedtls_ctr_drbg_seed(&(client->tls_ctr_drbg), mbedtls_entropy_func, &(client->tls_entropy), (const unsigned char *)tlsname, strlen(tlsname))) != 0) {
@@ -496,163 +494,74 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 
 	ndbg("Ok\n");
 
-#ifdef CONFIG_HW_RSA_SIGN
-	/* 1. Load the certificates and private key */
-	ndbg("  . [SSS] Loading the cert. and key...");
-
-	if (ssl_config == NULL) {
-		result = -1;
-		ndbg("Error: ssl_config is Null %d\n", result);
-		goto TLS_INIT_EXIT;
-	}
-#if 1
-	unsigned char rsa_public[292] = { 0x30, 0x82, 0x01, 0x20, 0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01,
-		0x01, 0x05, 0x00, 0x03, 0x82, 0x01, 0x0d, 0x00, 0x30, 0x82, 0x01, 0x08, 0x02, 0x82, 0x01, 0x01,
-		0x00, 0xa2, 0x64, 0x21, 0xcf, 0x1c, 0xdb, 0x49, 0x6c, 0x44, 0x01, 0xf8, 0xd5, 0x8b, 0x8d, 0x20,
-		0xfe, 0x2a, 0x46, 0x4d, 0x29, 0xf4, 0x82, 0x3c, 0xa4, 0x29, 0x7d, 0x6b, 0xdc, 0xc4, 0x04, 0xd6,
-		0x0f, 0xf3, 0x6b, 0xa8, 0xb1, 0xad, 0x2b, 0xa1, 0xa5, 0xad, 0xfb, 0x9a, 0xba, 0x72, 0x6e, 0x4e,
-		0x71, 0x93, 0x54, 0x8d, 0x90, 0x02, 0x34, 0x80, 0x1d, 0x8c, 0x83, 0xc9, 0x84, 0xa3, 0xcf, 0x9f,
-		0x80, 0xe9, 0x4f, 0x5b, 0xf6, 0x29, 0x17, 0xf6, 0x7f, 0x5a, 0x79, 0x47, 0x0c, 0x2c, 0xcf, 0x98,
-		0x88, 0x6a, 0x31, 0x4e, 0x0a, 0x2c, 0x8e, 0x8c, 0xe5, 0xa5, 0x9f, 0xd7, 0x8f, 0xd0, 0xc1, 0x04,
-		0x1a, 0xe9, 0x54, 0xa1, 0x36, 0x4e, 0x92, 0x5e, 0x41, 0x9c, 0x07, 0xc8, 0x48, 0xac, 0x9c, 0x7c,
-		0xcb, 0xa0, 0x8a, 0x51, 0x52, 0x4f, 0x47, 0xa2, 0xc8, 0x48, 0xbc, 0xcd, 0x55, 0x85, 0x24, 0xff,
-		0xfa, 0x58, 0xe6, 0x75, 0x61, 0x14, 0x1a, 0x82, 0x4e, 0x6b, 0x40, 0x63, 0x9e, 0xef, 0xbd, 0x70,
-		0x88, 0x9e, 0xc8, 0x59, 0x89, 0x16, 0x0c, 0x4e, 0x71, 0xec, 0x2d, 0xa4, 0x0b, 0xb3, 0x20, 0xca,
-		0x04, 0x5b, 0x37, 0xf6, 0x5c, 0x80, 0x8d, 0x6a, 0xe4, 0x26, 0x95, 0xe4, 0xd5, 0x35, 0xcd, 0xd3,
-		0x90, 0x67, 0x48, 0xef, 0x14, 0x8e, 0xc6, 0xcc, 0x16, 0xdb, 0x7a, 0x96, 0xd6, 0xbf, 0x01, 0xef,
-		0x5f, 0x8d, 0xee, 0x35, 0xd1, 0x66, 0xa3, 0x26, 0x96, 0x5e, 0x73, 0x3b, 0x1e, 0xf6, 0x72, 0xc9,
-		0x78, 0xc8, 0xdd, 0x81, 0x21, 0x0f, 0x0d, 0xdc, 0x3f, 0x63, 0x7a, 0x92, 0xf1, 0x31, 0x53, 0xe6,
-		0x34, 0xd7, 0x70, 0xb0, 0x1d, 0x2f, 0x97, 0xab, 0x44, 0xf1, 0x70, 0x58, 0x0e, 0xca, 0xab, 0x26,
-		0x23, 0x39, 0x6e, 0xdb, 0xf5, 0x5a, 0x15, 0x4a, 0x09, 0x00, 0x7c, 0xe5, 0x82, 0x78, 0xb8, 0xf0,
-		0xd1, 0x02, 0x01, 0x03
-	};
-
-	if ((result = mbedtls_pk_parse_public_key(&client->tls_pkey, rsa_public, 292)) != 0) {
-		ndbg("Error: parse public_key fail, return %d\n", result);
-		goto TLS_INIT_EXIT;
-	}
-#else
-	unsigned char *pubkey_buf = NULL;
-	unsigned int pubkey_len = 292;
-
-	pubkey_buf = malloc(pubkey_len);
-
-	if (pubkey_buf == NULL) {
-		goto TLS_INIT_EXIT;
-	}
-
-	if ((result = see_get_publickey(pubkey_buf, &pubkey_len)) != 0) {
-		ndbg("Error: get_publickey fail, return %d\n", result);
-		free(pubkey_buf);
-		goto TLS_INIT_EXIT;
-	}
-	if ((result = mbedtls_pk_parse_public_key(&client->tls_pkey, pubkey_buf, pubkey_len)) != 0) {
-		ndbg("Error: parse public_key fail, return %d\n", result);
-		free(pubkey_buf);
-		goto TLS_INIT_EXIT;
-	}
-#endif
-	unsigned char *cert_buf = NULL;
-	unsigned int cert_len = 1500;
-
-	cert_buf = malloc(cert_len);
-
-	if (cert_buf == NULL) {
-		goto TLS_INIT_EXIT;
-	}
-
-	result = see_get_certificate(cert_buf, &cert_len, ssl_config->dev_cert_index, CERT_PEM);
-	if (result) {
-		ndbg("Error: dev_cert get fail, return %d\n", result);
-		free(cert_buf);
-		goto TLS_INIT_EXIT;
-	}
-
-	result = mbedtls_x509_crt_parse(&(client->tls_clicert), (const unsigned char *)cert_buf, cert_len);
-	if (result) {
-		ndbg("Error: dev_cert parse fail, return %d\n", result);
-		free(cert_buf);
-		goto TLS_INIT_EXIT;
-	}
-
-	cert_len = 1500;
-
-	result = see_get_certificate(cert_buf, &cert_len, ssl_config->ca_cert_index, CERT_PEM);
-	if (result) {
-		ndbg("Error: ca_cert get fail, return %d\n", result);
-		free(cert_buf);
-		goto TLS_INIT_EXIT;
-	}
-
-	result = mbedtls_x509_crt_parse(&(client->tls_clicert), (const unsigned char *)cert_buf, cert_len);
-
-	if (result) {
-		ndbg("Error: ca_cert parse fail, return %d\n", result);
-		free(cert_buf);
-		goto TLS_INIT_EXIT;
-	}
-
-	free(cert_buf);
-	if (client->tls_pkey.pk_info->type == MBEDTLS_PK_RSA) {
-		((mbedtls_rsa_context *)(client->tls_pkey.pk_ctx))->key_index = ssl_config->dev_key_index;
-	}
-	ndbg("Ok\n");
-#else
-
-	/* 1. Load the certificates and private key */
-
-	ndbg("  . Loading the client cert. and key...");
-
-	result = mbedtls_x509_crt_parse(&(client->tls_clicert), (const unsigned char *)ssl_config->dev_cert, ssl_config->dev_cert_len);
-	if (result) {
-		ndbg("Error: cli_cert parse fail, return %d\n", result);
-		goto TLS_INIT_EXIT;
-	}
-
-	result = mbedtls_pk_parse_key(&(client->tls_pkey), (const unsigned char *)ssl_config->private_key, ssl_config->private_key_len, NULL, 0);
-	if (result) {
-		ndbg("Error: cli_key parse fail, return %d\n", result);
-		goto TLS_INIT_EXIT;
-	}
-
-	ndbg("Ok\n");
-
-	/* 2. Load the CA certificate */
-
-	ndbg("  . Loading the CA cert...");
-
-	result = mbedtls_x509_crt_parse(&(client->tls_clicert), (const unsigned char *)ssl_config->root_ca, ssl_config->root_ca_len);
-	if (result) {
-		ndbg("Error: CA_cert parse fail, return %d\n", result);
-		goto TLS_INIT_EXIT;
-	}
-
-	ndbg("Ok\n");
-
-#endif							/* CONFIG_HW_RSA_SIGN */
-
-	/* 3. Setup ssl stuff */
-
+	/* 1. Setup ssl stuff */
 	ndbg("  . Setting up the SSL data...");
 
-	if ((result = mbedtls_ssl_config_defaults(&(client->tls_conf), MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
+	if ((result = mbedtls_ssl_config_defaults(&(client->tls_conf),
+				  MBEDTLS_SSL_IS_CLIENT,
+				  MBEDTLS_SSL_TRANSPORT_STREAM,
+				  MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
 		ndbg("Error: mbedtls_ssl_config_defaults returned %d\n", result);
 		goto TLS_INIT_EXIT;
 	}
 
-	mbedtls_ssl_conf_rng(&(client->tls_conf), mbedtls_ctr_drbg_random, &(client->tls_ctr_drbg));
+	mbedtls_ssl_conf_rng(&(client->tls_conf), mbedtls_ctr_drbg_random,
+						 &(client->tls_ctr_drbg));
 	mbedtls_ssl_conf_dbg(&(client->tls_conf), wget_tls_debug, stdout);
-	mbedtls_ssl_conf_ca_chain(&(client->tls_conf), client->tls_clicert.next, NULL);
 
-	if ((result = mbedtls_ssl_conf_own_cert(&(client->tls_conf), &(client->tls_clicert), &(client->tls_pkey))) != 0) {
-		ndbg("Error: mbedtls_ssl_conf_own_cert returned %d\n", result);
-		goto TLS_INIT_EXIT;
-	}
 	ndbg("Ok\n");
 
-	return 0;
+	if (ssl_config->dev_cert && ssl_config->private_key) {
+		/* 2. Load the certificates and private key */
 
- TLS_INIT_EXIT:
+		ndbg("  . Loading the client cert. and key...");
+
+		if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
+											 (const unsigned char *)ssl_config->dev_cert,
+											 ssl_config->dev_cert_len)) != 0) {
+			ndbg("Error: cli_cert parse fail, return %d\n", result);
+			goto TLS_INIT_EXIT;
+		}
+
+		if ((result = mbedtls_pk_parse_key(&(client->tls_pkey),
+										   (const unsigned char *)ssl_config->private_key,
+										   ssl_config->private_key_len, NULL, 0)) != 0) {
+			ndbg("Error: cli_key parse fail, return %d\n", result);
+			goto TLS_INIT_EXIT;
+		}
+
+		if ((result = mbedtls_ssl_conf_own_cert(&(client->tls_conf),
+												&(client->tls_clicert),
+												&(client->tls_pkey))) != 0) {
+			ndbg("Error: mbedtls_ssl_conf_own_cert returned %d\n", result);
+			goto TLS_INIT_EXIT;
+		}
+
+		ndbg("Ok\n");
+	}
+
+	if (ssl_config->root_ca) {
+		mbedtls_x509_crt *chain;
+
+		/* 3. Load the CA certificate */
+		ndbg("  . Loading the CA cert...");
+
+		if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
+											 (const unsigned char *)ssl_config->root_ca,
+											 ssl_config->root_ca_len)) != 0) {
+			ndbg("Error: CA_cert parse fail, return %d\n", result);
+			goto TLS_INIT_EXIT;
+		}
+
+		/* CA cert may be first or second in chain depending if client cert was loaded */
+		chain = client->tls_clicert.next ? client->tls_clicert.next : &client->tls_clicert;
+		mbedtls_ssl_conf_ca_chain(&(client->tls_conf), chain, NULL);
+
+		ndbg("Ok\n");
+	}
+
+	return 0;
+TLS_INIT_EXIT:
 	wget_tls_release(client);
 	return result;
 }
@@ -682,11 +591,9 @@ void wget_tls_ssl_release(struct http_client_tls_t *client)
 	mbedtls_ssl_free(&(client->tls_ssl));
 }
 
-int wget_tls_handshake(struct http_client_tls_t *client)
+int wget_tls_handshake(struct http_client_tls_t *client, const char *hostname)
 {
 	int result = 0;
-
-	ndbg("Client TLS Init start..");
 
 	mbedtls_ssl_conf_authmode(&(client->tls_conf), MBEDTLS_SSL_VERIFY_REQUIRED);
 
@@ -700,45 +607,287 @@ int wget_tls_handshake(struct http_client_tls_t *client)
 		goto HANDSHAKE_FAIL;
 	}
 
-	ndbg("Ok\n");
+	ndbg("TLS Init Success\n");
 
-	if ((result = mbedtls_ssl_setup(&(client->tls_ssl), &(client->tls_conf))) != 0) {
+	if ((result = mbedtls_ssl_setup(&(client->tls_ssl),
+									&(client->tls_conf))) != 0) {
 		ndbg("Error: mbedtls_ssl_setup returned %d\n", result);
 		goto HANDSHAKE_FAIL;
 	}
 
-	if ((result = mbedtls_ssl_set_hostname(&(client->tls_ssl), HTTPS_SERVERNAME)) != 0) {
+	/*
+	 * Server name intication is an extension to the TLS networking protocol
+	 * If server presents multiple certificates on the same IP address,
+	 * client could make multiple secure session depends on hostname.
+	 *
+	 * Note : Hostname in TLS is a subject's common name(CN) of certificates.
+	 */
+#if WEBCLIENT_CONF_CHECK_TLS_HOSTNAME
+	if ((result = mbedtls_ssl_set_hostname(&(client->tls_ssl), hostname)) != 0) {
 		ndbg("Error: mbedtls_hostname fail %d\n", result);
 		goto HANDSHAKE_FAIL;
 	}
-	mbedtls_ssl_set_bio(&(client->tls_ssl), &(client->tls_client_fd), mbedtls_net_send, mbedtls_net_recv, NULL);
+#endif
+
+	mbedtls_ssl_set_bio(&(client->tls_ssl), &(client->tls_client_fd),
+						mbedtls_net_send, mbedtls_net_recv, NULL);
 
 	/* Handshake */
-	ndbg("  . Performing the SSL/TLS handshake...");
-
 	while ((result = mbedtls_ssl_handshake(&(client->tls_ssl))) != 0) {
-		if (result != MBEDTLS_ERR_SSL_WANT_READ && result != MBEDTLS_ERR_SSL_WANT_WRITE) {
-			if (result == MBEDTLS_ERR_SSL_CONN_EOF) {
-				ndbg("Error: webserver MQ is FULL %d\n", result);
-			} else if ((result == MBEDTLS_ERR_NET_RECV_FAILED) || (result == MBEDTLS_ERR_NET_SEND_FAILED)) {
-				ndbg("Error: mbedtls socket send/recv fail %d\n", result);
-			} else {
-				ndbg("Error: mbedtls_ssl_handshake returned %d\n", result);
-			}
+		if (result != MBEDTLS_ERR_SSL_WANT_READ &&
+			result != MBEDTLS_ERR_SSL_WANT_WRITE) {
+			ndbg("Error: TLS Handshake fail returned %d\n", result);
 			goto HANDSHAKE_FAIL;
 		}
 	}
 
-	ndbg("Ok\n");
+	ndbg("TLS Handshake Success\n");
 
 	return 0;
-
- HANDSHAKE_FAIL:
-	wget_tls_release(client);
-	wget_tls_ssl_release(client);
+HANDSHAKE_FAIL:
 	return result;
 }
 #endif
+
+static int wget_msg_construct(char *buf, struct http_client_request_t *param, struct wget_s *ws)
+{
+	int post_len;
+	char *dest = buf;
+	char post_size[8];
+	struct http_keyvalue_t *cur = NULL;
+
+	/* Send method */
+	if (param->method == WGET_MODE_GET) {
+		dest = wget_strcpy(dest, g_httpget, param);
+	} else if (param->method == WGET_MODE_POST) {
+		dest = wget_strcpy(dest, g_httppost, param);
+	} else if (param->method == WGET_MODE_PUT) {
+		dest = wget_strcpy(dest, g_httpput, param);
+	} else if (param->method == WGET_MODE_DELETE) {
+		dest = wget_strcpy(dest, g_httpdelete, param);
+	}
+
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+
+	dest = wget_strcpy(dest, ws->filename, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+
+	*dest++ = ISO_space;
+	dest = wget_strcpy(dest, g_http11, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+	dest = wget_strcpy(dest, g_httpcrnl, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+	dest = wget_strcpy(dest, g_httphost, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+	dest = wget_strcpy(dest, ws->hostname, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+	dest = wget_strcpy(dest, g_httpcrnl, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+
+	/* header of entity */
+
+	if (param->method == WGET_MODE_POST || param->method == WGET_MODE_PUT) {
+		/* Look for Content-Type in the headers */
+		cur = param->headers->head->next;
+		while (cur != param->headers->tail) {
+			if (!strncmp(cur->key, "Content-Type", strlen("Content-Type"))) {
+				break;
+			}
+			cur = cur->next;
+		}
+
+		/* Add default Content-Type if not found in headers */
+		if (cur == param->headers->tail) {
+			dest = wget_strcpy(dest, g_httpform, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+			dest = wget_strcpy(dest, g_httpcrnl, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+		}
+
+		/* content length */
+
+		if (!param->encoding) {
+			dest = wget_strcpy(dest, g_httpcontsize, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+			post_len = strlen((char *)param->entity);
+			sprintf(post_size, "%d", post_len);
+			dest = wget_strcpy(dest, post_size, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+			dest = wget_strcpy(dest, g_httpcrnl, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+		}
+
+		/* chuncked param->encoding */
+
+		else {
+			dest = wget_strcpy(dest, g_httpchunked, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+			dest = wget_strcpy(dest, g_httpcrnl, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+		}
+	}
+
+	cur = param->headers->head->next;
+	while (cur != param->headers->tail) {
+		dest = wget_strcpy(dest, cur->key, param);
+		if (dest == NULL) {
+			return WGET_MSG_CONSTRUCT_ERR;
+		}
+		dest = wget_strcpy(dest, ": ", param);
+		if (dest == NULL) {
+			return WGET_MSG_CONSTRUCT_ERR;
+		}
+		dest = wget_strcpy(dest, cur->value, param);
+		if (dest == NULL) {
+			return WGET_MSG_CONSTRUCT_ERR;
+		}
+		dest = wget_strcpy(dest, g_httpcrnl, param);
+		if (dest == NULL) {
+			return WGET_MSG_CONSTRUCT_ERR;
+		}
+		cur = cur->next;
+	}
+	dest = wget_strcpy(dest, g_httpcrnl, param);
+	if (dest == NULL) {
+		return WGET_MSG_CONSTRUCT_ERR;
+	}
+
+	/* entity is needed POST or PUT method */
+
+	if (param->method == WGET_MODE_POST || param->method == WGET_MODE_PUT) {
+
+		/* content length */
+
+		if (!param->encoding) {
+			dest = wget_strcpy(dest, (char *)param->entity, param);
+			if (dest == NULL) {
+				return WGET_MSG_CONSTRUCT_ERR;
+			}
+		}
+
+		/* chunked param->encoding */
+
+		else {
+			post_len = strlen(param->entity);
+			if (post_len > param->buflen) {
+				dest = wget_chunksize(dest, param->buflen, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, g_httpcrnl, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strlencpy(dest, (char *)param->entity, param->buflen, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, g_httpcrnl, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+			} else {
+				dest = wget_chunksize(dest, post_len, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, g_httpcrnl, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, (char *)param->entity, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, g_httpcrnl, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strlencpy(dest, "0", 1, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+				dest = wget_strcpy(dest, g_httpcrnl, param);
+				if (dest == NULL) {
+					return WGET_MSG_CONSTRUCT_ERR;
+				}
+			}
+		}
+	}
+	return dest - param->buffer;
+}
+
+static int wget_socket_connect(struct wget_s *ws)
+{
+	int sockfd, ret;
+	struct timeval tv;
+	struct sockaddr_in server;
+
+	/* Create a socket */
+	sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sockfd < 0) {
+		return WGET_SOCKET_CONNECT_ERR;
+	}
+
+	/* Set send and receive timeout values */
+	tv.tv_sec = WEBCLIENT_CONF_TIMEOUT_MSEC / 1000;
+	tv.tv_usec = (WEBCLIENT_CONF_TIMEOUT_MSEC % 1000) * 1000;
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,
+				   (struct timeval *)&tv, sizeof(struct timeval)) < 0) {
+		ndbg("ERROR: setsockopt failed\n");
+	}
+
+	/* Get the server address from the host name */
+	server.sin_family = AF_INET;
+	server.sin_port = htons(ws->port);
+	ret = wget_gethostip(ws->hostname, &server.sin_addr.s_addr);
+	if (ret < 0) {
+		/* Could not resolve host (or malformed IP address) */
+		ndbg("ERROR: Failed to resolve hostname\n");
+		close(sockfd);
+		return WGET_SOCKET_CONNECT_ERR;
+	}
+
+	/* Connect to server.  First we have to set some fields in the
+	 * 'server' address structure.  The system will assign me an arbitrary
+	 * local port that is not in use.
+	 */
+	ret = connect(sockfd, (struct sockaddr *)&server, sizeof(struct sockaddr_in));
+	if (ret < 0) {
+		ndbg("ERROR: connect failed: %d errno: %d\n", ret, errno);
+		close(sockfd);
+		return WGET_SOCKET_CONNECT_ERR;
+	}
+	return sockfd;
+}
 
 /****************************************************************************
  * Name: wget_base
@@ -771,31 +920,25 @@ int wget_tls_handshake(struct http_client_tls_t *client)
 
 static pthread_addr_t wget_base(void *arg)
 {
-	int sockfd;
-	int len;
-	int post_len;
+	int sockfd = -1;
 	int ret;
-	int buf_len, sndlen;
+	int buf_len, sndlen, len;
 	int remain = WEBCLIENT_CONF_MAX_MESSAGE_SIZE;
 	int encoding = CONTENT_LENGTH;
 	int state = HTTP_REQUEST_HEADER;
-	struct http_message_len_t mlen = { 0, };
-	struct sockaddr_in server;
+	struct http_message_len_t mlen = {0,};
 	struct wget_s ws;
-	struct timeval tv;
-	struct wget_param *param = (struct wget_param *)arg;
-	struct http_keyvalue_t *cur = NULL;
+	struct http_client_request_t *param = (struct http_client_request_t *)arg;
 	struct http_client_response_t response;
-	bool redirected = false;
 	bool read_finish = false;
-	char *dest, post_size[8];
 
 #ifdef CONFIG_NET_SECURITY_TLS
-	struct http_client_tls_t *client_tls = (struct http_client_tls_t *)malloc(sizeof(struct http_client_tls_t));
+	struct http_client_tls_t *client_tls = (struct http_client_tls_t *)malloc(sizeof(
+			struct http_client_tls_t));
+	int handshake_retry = WEBCLIENT_CONF_HANDSHAKE_RETRY;
+
 	if (client_tls == NULL) {
 		free(param->buffer);
-		free(param);
-
 		return (pthread_addr_t)WGET_ERR;
 	}
 #endif
@@ -812,7 +955,6 @@ static pthread_addr_t wget_base(void *arg)
 	if (ret != 0) {
 		ndbg("ERROR: Malformed HTTP URL: %s\n", param->url);
 		free(param->buffer);
-		free(param);
 #ifdef CONFIG_NET_SECURITY_TLS
 		free(client_tls);
 #endif
@@ -824,314 +966,116 @@ static pthread_addr_t wget_base(void *arg)
 #ifdef CONFIG_NET_SECURITY_TLS
 	if (param->tls && webclient_tls_init(client_tls, &param->ssl_config)) {
 		ndbg("Fail to client tls init\n");
-		goto errout;
+		goto errout_before_tlsinit;
 	}
 #endif
 
-	/* The following sequence may repeat indefinitely if we are redirected */
+	/* Re-initialize portions of the state structure that could have
+	 * been left from the previous time through the loop and should not
+	 * persist with the new connection.
+	 */
+	ws.httpstatus = HTTPSTATUS_NONE;
+	ws.offset = 0;
+	ws.datend = 0;
+	ws.ndx = 0;
 
-	do {
+	if ((sndlen = wget_msg_construct(ws.buffer, param, &ws)) <= 0) {
+		ndbg("ERROR: construction message failed\n");
+		goto errout_before_tlsinit;
+	}
 
-		/* Re-initialize portions of the state structure that could have
-		 * been left from the previous time through the loop and should not
-		 * persist with the new connection.
-		 */
-		ws.httpstatus = HTTPSTATUS_NONE;
-		ws.offset = 0;
-		ws.datend = 0;
-		ws.ndx = 0;
-
-		/* Create a socket */
-		sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-		if (sockfd < 0) {
-
-			/* socket failed.  It will set the errno appropriately */
-			ndbg("ERROR: socket failed: %d\n", errno);
-			free(param->buffer);
-			free(param);
 #ifdef CONFIG_NET_SECURITY_TLS
-			free(client_tls);
+retry:
 #endif
-			return (pthread_addr_t)WGET_ERR;
-		}
+	if ((sockfd = wget_socket_connect(&ws)) < 0) {
+		ndbg("ERROR: socket failed: %d\n", errno);
+		goto errout_before_tlsinit;
+	}
 
-		/* Set send and receive timeout values */
-
-		tv.tv_sec = WEBCLIENT_CONF_TIMEOUT_MSEC / 1000;
-		tv.tv_usec = (WEBCLIENT_CONF_TIMEOUT_MSEC % 1000) * 1000;
-		if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval)) < 0) {
-			ndbg("ERROR: setsockopt failed\n");
-		}
-
-		/* Get the server address from the host name */
-
-		server.sin_family = AF_INET;
-		server.sin_port = htons(ws.port);
-		ret = wget_gethostip(ws.hostname, &server.sin_addr.s_addr);
-		if (ret < 0) {
-
-			/* Could not resolve host (or malformed IP address) */
-
-			ndbg("ERROR: Failed to resolve hostname\n");
-			ret = -EHOSTUNREACH;
-			goto errout;
-		}
-
-		/* Connect to server.  First we have to set some fields in the
-		 * 'server' address structure.  The system will assign me an arbitrary
-		 * local port that is not in use.
-		 */
-
-		ret = connect(sockfd, (struct sockaddr *)&server, sizeof(struct sockaddr_in));
-		if (ret < 0) {
-			ndbg("ERROR: connect failed: %d\n", ret);
-			goto errout;
-		}
-
-		/* Send method */
-
-		dest = ws.buffer;
-		if (param->method == WGET_MODE_GET) {
-			dest = wget_strcpy(dest, g_httpget, param);
-		} else if (param->method == WGET_MODE_POST) {
-			dest = wget_strcpy(dest, g_httppost, param);
-		} else if (param->method == WGET_MODE_PUT) {
-			dest = wget_strcpy(dest, g_httpput, param);
-		} else if (param->method == WGET_MODE_DELETE) {
-			dest = wget_strcpy(dest, g_httpdelete, param);
-		}
-
-		if (dest == NULL) {
-			goto errout;
-		}
-
-		dest = wget_strcpy(dest, ws.filename, param);
-		if (dest == NULL) {
-			goto errout;
-		}
-
-		*dest++ = ISO_space;
-		dest = wget_strcpy(dest, g_http10, param);
-		if (dest == NULL) {
-			goto errout;
-		}
-		dest = wget_strcpy(dest, g_httpcrnl, param);
-		if (dest == NULL) {
-			goto errout;
-		}
-		dest = wget_strcpy(dest, g_httphost, param);
-		if (dest == NULL) {
-			goto errout;
-		}
-		dest = wget_strcpy(dest, ws.hostname, param);
-		if (dest == NULL) {
-			goto errout;
-		}
-		dest = wget_strcpy(dest, g_httpcrnl, param);
-		if (dest == NULL) {
-			goto errout;
-		}
-
-		/* header of entity */
-
-		if (param->method == WGET_MODE_POST || param->method == WGET_MODE_PUT) {
-			dest = wget_strcpy(dest, g_httpform, param);
-			if (dest == NULL) {
-				goto errout;
-			}
-			dest = wget_strcpy(dest, g_httpcrnl, param);
-			if (dest == NULL) {
-				goto errout;
-			}
-
-			/* content length */
-
-			if (!param->encoding) {
-				dest = wget_strcpy(dest, g_httpcontsize, param);
-				if (dest == NULL) {
-					goto errout;
-				}
-				post_len = strlen((char *)param->entity);
-				sprintf(post_size, "%d", post_len);
-				dest = wget_strcpy(dest, post_size, param);
-				if (dest == NULL) {
-					goto errout;
-				}
-				dest = wget_strcpy(dest, g_httpcrnl, param);
-				if (dest == NULL) {
-					goto errout;
-				}
-			}
-
-			/* chuncked param->encoding */
-
-			else {
-				dest = wget_strcpy(dest, g_httpchunked, param);
-				if (dest == NULL) {
-					goto errout;
-				}
-				dest = wget_strcpy(dest, g_httpcrnl, param);
-				if (dest == NULL) {
-					goto errout;
-				}
-			}
-		}
-
-		cur = param->headers->head->next;
-		while (cur != param->headers->tail) {
-			dest = wget_strcpy(dest, cur->key, param);
-			if (dest == NULL) {
-				goto errout;
-			}
-			dest = wget_strcpy(dest, ": ", param);
-			if (dest == NULL) {
-				goto errout;
-			}
-			dest = wget_strcpy(dest, cur->value, param);
-			if (dest == NULL) {
-				goto errout;
-			}
-			dest = wget_strcpy(dest, g_httpcrnl, param);
-			if (dest == NULL) {
-				goto errout;
-			}
-			cur = cur->next;
-		}
-		dest = wget_strcpy(dest, g_httpcrnl, param);
-		if (dest == NULL) {
-			goto errout;
-		}
-
-		/* entity is needed POST or PUT method */
-
-		if (param->method == WGET_MODE_POST || param->method == WGET_MODE_PUT) {
-
-			/* content length */
-
-			if (!param->encoding) {
-				dest = wget_strcpy(dest, (char *)param->entity, param);
-				if (dest == NULL) {
-					goto errout;
-				}
-			}
-
-			/* chunked param->encoding */
-
-			else {
-				post_len = strlen(param->entity);
-				if (post_len > param->buflen) {
-					dest = wget_chunksize(dest, param->buflen, param);
-					if (dest == NULL) {
-						goto errout;
-					}
-					dest = wget_strcpy(dest, g_httpcrnl, param);
-					if (dest == NULL) {
-						goto errout;
-					}
-					dest = wget_strlencpy(dest, (char *)param->entity, param->buflen, param);
-					if (dest == NULL) {
-						goto errout;
-					}
-					dest = wget_strcpy(dest, g_httpcrnl, param);
-					if (dest == NULL) {
-						goto errout;
-					}
-					post_len -= param->buflen;
-				} else {
-					dest = wget_chunksize(dest, post_len, param);
-					if (dest == NULL) {
-						goto errout;
-					}
-					dest = wget_strcpy(dest, g_httpcrnl, param);
-					if (dest == NULL) {
-						goto errout;
-					}
-					dest = wget_strcpy(dest, (char *)param->entity, param);
-					if (dest == NULL) {
-						goto errout;
-					}
-					dest = wget_strcpy(dest, g_httpcrnl, param);
-					if (dest == NULL) {
-						goto errout;
-					}
-					dest = wget_strlencpy(dest, "\0", 1, param);
-					if (dest == NULL) {
-						goto errout;
-					}
-					dest = wget_strcpy(dest, g_httpcrnl, param);
-					if (dest == NULL) {
-						goto errout;
-					}
-				}
-			}
-		}
-
-		len = dest - param->buffer;
 #ifdef CONFIG_NET_SECURITY_TLS
-		client_tls->client_fd = sockfd;
-		if (param->tls && wget_tls_handshake(client_tls)) {
-			ndbg("Fail to client tls handshake\n");
+	client_tls->client_fd = sockfd;
+	if (param->tls && (ret = wget_tls_handshake(client_tls, ws.hostname))) {
+		if (handshake_retry-- > 0) {
+			if (ret == MBEDTLS_ERR_NET_SEND_FAILED ||
+				ret == MBEDTLS_ERR_NET_RECV_FAILED ||
+				ret == MBEDTLS_ERR_SSL_CONN_EOF) {
+				ndbg("Handshake again.... \n");
+				mbedtls_net_free(&(client_tls->tls_client_fd));
+				mbedtls_ssl_free(&(client_tls->tls_ssl));
+				goto retry;
+			}
+		}
+		goto errout;
+	}
+#endif
+	buf_len = 0;
+	while (sndlen > 0) {
+#ifdef CONFIG_NET_SECURITY_TLS
+		if (param->tls) {
+			ret = mbedtls_ssl_write(&(client_tls->tls_ssl),
+									(const unsigned char *)param->buffer + buf_len,
+									sndlen);
+		} else
+#endif
+		{
+			ret = send(sockfd, param->buffer + buf_len,
+					   sndlen, 0);
+		}
+		if (ret < 1) {
+			ndbg("ERROR: send failed: %d\n", ret);
+			goto errout;
+		} else {
+			sndlen -= ret;
+			buf_len += ret;
+			ndbg("SEND SUCCESS: send %d bytes\n", ret);
+		}
+	}
+
+	if (param->callback) {
+		param->response = &response;
+		if (http_client_response_init(param->response) < 0) {
+			ndbg("ERROR: response init failed: %d\n", ret);
 			goto errout;
 		}
-#endif
-		sndlen = len;
-		buf_len = 0;
-		while (sndlen > 0) {
+	}
+
+	buf_len = 0;
+	while (!read_finish) {
+		if (remain <= 0) {
+			ndbg("Error: Response Size is too large\n");
+			goto errout_after_rsp_init;
+		}
 #ifdef CONFIG_NET_SECURITY_TLS
-			if (param->tls) {
-				ret = mbedtls_ssl_write(&(client_tls->tls_ssl), (const unsigned char *)param->buffer + buf_len, sndlen);
-			} else
+		if (param->tls) {
+			len = mbedtls_ssl_read(&(client_tls->tls_ssl),
+								   (unsigned char *)param->response->message + buf_len,
+								   WEBCLIENT_CONF_MAX_MESSAGE_SIZE - buf_len);
+		} else
 #endif
-			{
-				ret = send(sockfd, param->buffer + buf_len, sndlen, 0);
-			}
-			if (ret < 1) {
-				ndbg("ERROR: send failed: %d\n", ret);
-				goto errout;
-			} else {
-				sndlen -= ret;
-				buf_len += ret;
-				ndbg("SEND SUCCESS: send %d bytes\n", ret);
-			}
+		{
+			len = recv(sockfd, param->response->message + buf_len,
+					   WEBCLIENT_CONF_MAX_MESSAGE_SIZE - buf_len, 0);
 		}
 
-		if (param->callback) {
-			param->response = &response;
-			if (http_client_response_init(param->response) < 0) {
-				ndbg("ERROR: response init failed: %d\n", ret);
-				goto errout;
-			}
+		if (len < 0) {
+			ndbg("Error: Receive Fail\n");
+			goto errout_after_rsp_init;
+		} else if (len == 0) {
+			ndbg("Finish read\n");
+			goto errout_after_rsp_init;
 		}
 
-		buf_len = 0;
-		while (!read_finish) {
-			if (remain <= 0) {
-				ndbg("Error: Response Size is too large\n");
-				goto errout;
-			}
-#ifdef CONFIG_NET_SECURITY_TLS
-			if (param->tls) {
-				len = mbedtls_ssl_read(&(client_tls->tls_ssl), (unsigned char *)param->response->message + buf_len, WEBCLIENT_CONF_MAX_MESSAGE_SIZE - buf_len);
-			} else
-#endif
-			{
-				len = recv(sockfd, param->response->message + buf_len, WEBCLIENT_CONF_MAX_MESSAGE_SIZE - buf_len, 0);
-			}
+		buf_len += len;
+		remain -= len;
+		usleep(1);
+		read_finish = http_parse_message(param->response->message,
+						 len, NULL, param->response->url,
+						 &param->response->entity,
+						 &encoding, &state, &mlen,
+						 param->response->headers,
+						 NULL, param->response, NULL);
+	}
 
-			if (len < 0) {
-				ndbg("Error: Receive Fail\n");
-				goto errout;
-			} else if (len == 0) {
-				ndbg("Finish read\n");
-				goto errout;
-			}
-
-			buf_len += len;
-			remain -= len;
-			usleep(1);
-			read_finish = http_parse_message(param->response->message, len, NULL, param->response->url, &param->response->entity, &encoding, &state, &mlen, param->response->headers, NULL, param->response);
-		}
-	} while (redirected);
 	param->response->method = param->method;
 	param->response->url = param->url;
 	param->response->entity_len = strlen(param->response->entity);
@@ -1150,21 +1094,33 @@ static pthread_addr_t wget_base(void *arg)
 		close(sockfd);
 	}
 	free(param->buffer);
-	free(param);
-
+	param->async_flag = WGET_OK;
 	return (pthread_addr_t)WGET_OK;
 
- errout:
-	if (!param->tls) {
-		close(sockfd);
+errout_after_rsp_init:
+	if (param->callback) {
+		http_client_response_release(param->response);
 	}
+errout:
 #ifdef CONFIG_NET_SECURITY_TLS
+	if (param->tls) {
+		wget_tls_ssl_release(client_tls);
+	}
+#endif
+errout_before_tlsinit:
+#ifdef CONFIG_NET_SECURITY_TLS
+	if (param->tls) {
+		wget_tls_release(client_tls);
+	}
 	if (client_tls) {
 		free(client_tls);
 	}
 #endif
+	if (!param->tls && sockfd > 0) {
+		close(sockfd);
+	}
 	free(param->buffer);
-	free(param);
+	param->async_flag = WGET_ERR;
 	return (pthread_addr_t)WGET_ERR;
 }
 
@@ -1172,129 +1128,114 @@ static pthread_addr_t wget_base(void *arg)
  * Public Functions
  ****************************************************************************/
 
-int client_send_request(struct wget_param *p)
+int client_send_request(struct http_client_request_t *request)
 {
 	pthread_attr_t attr;
 	pthread_t tid;
-	struct wget_param *param = (struct wget_param *)malloc(sizeof(struct wget_param));
 	pthread_addr_t ret = NULL;
 
-	if (param == NULL) {
-		printf("Error: Cannot alloc memory!!\n");
-		return -1;
-	}
-
-	if (p->method < WGET_MODE_GET || p->method > WGET_MODE_DELETE) {
+	if (request->method < WGET_MODE_GET || request->method > WGET_MODE_DELETE) {
 		printf("Error: Incorrect method value!!\n");
 		goto errret;
 	}
 
-	if (p->buffer == NULL) {
+	if (request->buffer == NULL) {
 		printf("Error: Buffer is NULL!!\n");
 		goto errret;
 	}
 
-	if (p->buflen <= 0) {
+	if (request->buflen <= 0) {
 		printf("Error: Buffer length must be bigger than 0!!\n");
 		goto errret;
 	}
 
-	if (p->encoding != CONTENT_LENGTH && p->encoding != CHUNKED_ENCODING) {
+	if (request->encoding != CONTENT_LENGTH && request->encoding != CHUNKED_ENCODING) {
 		printf("Error: Incorrect encoding value!!\n");
 		goto errret;
 	}
 
-	memcpy(param, p, sizeof(struct wget_param));
-
-	if (param->callback) {
+	if (request->callback) {
+		request->async_flag = 1;
 		pthread_attr_init(&attr);
 		pthread_attr_setstacksize(&attr, CLIENT_REQ_THREAD_STACK);
 
-		if (pthread_create(&tid, &attr, wget_base, (void *)param) != 0) {
+		if (pthread_create(&tid, &attr, wget_base, (void *)request) != 0) {
 			printf("Error: Cannot create thread!!\n");
 			goto errret;
 		}
 		pthread_setname_np(tid, "webclient request");
 		pthread_detach(tid);
 	} else {
-		ret = wget_base((void *)param);
+		ret = wget_base((void *)request);
 	}
 
 	return (int)ret;
- errret:
-	free(p->buffer);
-	free(param);
+errret:
+	free(request->buffer);
 	return -1;
 }
 
-int http_client_send_request(struct http_client_request_t *request, struct http_client_ssl_config_t *ssl_config, struct http_client_response_t *response)
+int http_client_send_request(struct http_client_request_t *request,
+							 void *ssl_config,
+							 struct http_client_response_t *response)
 {
-	char *buffer;
-	struct wget_param p;
 #ifdef CONFIG_NET_SECURITY_TLS
 	struct mallinfo data;
+	struct http_client_ssl_config_t *ssl_conf = ssl_config;
 #endif
 
 	if (request == NULL) {
 		printf("Error: Request is null\n");
 		return -1;
 	} else {
-		buffer = (char *)malloc(request->buflen);
-		if (buffer == NULL) {
+		request->buffer = (char *)malloc(request->buflen);
+		if (request->buffer == NULL) {
 			printf("Error: Fail to malloc buffer\n");
 			return -1;
 		}
 
-		p.buffer = buffer;
-		p.buflen = request->buflen;
-		p.method = request->method;
-		p.encoding = request->encoding;
-		p.headers = request->headers;
-		p.callback = NULL;
-		p.tls = false;
-		p.response = response;
+		request->callback = NULL;
+		request->tls = false;
+		request->response = response;
 	}
 	if (response == NULL) {
 		printf("Error: Response is null\n");
-		free(buffer);
-		return -1;
+		goto errout;
 	}
 	if (request->url == NULL) {
 		printf("Error: URL is NULL!!\n");
-		free(buffer);
-		return -1;
+		goto errout;
 	}
 	if (WEBCLIENT_CONF_MAX_ENTITY_SIZE < strlen(request->entity)) {
 		printf("Error: Too small buffer size\n");
-		free(buffer);
-		return -1;
+		goto errout;
 	}
-	p.url = request->url;
-	p.entity = request->entity;
-
 #ifdef CONFIG_NET_SECURITY_TLS
-	if (ssl_config) {
-		p.tls = true;
-		memcpy(&p.ssl_config, ssl_config, sizeof(struct http_client_ssl_config_t));
+	if (ssl_conf) {
+		request->tls = true;
+		memcpy(&request->ssl_config, ssl_conf, sizeof(struct http_client_ssl_config_t));
 
 		data = mallinfo();
 		if (data.fordblks < WEBCLIENT_CONF_MIN_TLS_MEMORY) {
 			printf("Error: Not enough memory!!\n");
-			free(buffer);
-			return -1;
+			goto errout;
 		}
 	}
 #endif
 
-	return client_send_request(&p);
+	return client_send_request(request);
+errout:
+	free(request->buffer);
+	return -1;
 }
 
-int http_client_send_request_async(struct http_client_request_t *request, struct http_client_ssl_config_t *ssl_config, wget_callback_t cb)
+int http_client_send_request_async(struct http_client_request_t *request,
+								   void *ssl_config,
+								   wget_callback_t cb)
 {
-	char *buffer;
-	struct wget_param p;
 #ifdef CONFIG_NET_SECURITY_TLS
 	struct mallinfo data;
+	struct http_client_ssl_config_t *ssl_conf = ssl_config;
 #endif
 
 	if (cb == NULL) {
@@ -1305,49 +1246,41 @@ int http_client_send_request_async(struct http_client_request_t *request, struct
 		printf("Error: Request is null\n");
 		return -1;
 	} else {
-		buffer = (char *)malloc(request->buflen);
-		if (buffer == NULL) {
+		request->buffer = (char *)malloc(request->buflen);
+		if (request->buffer == NULL) {
 			printf("Error: Fail to malloc buffer\n");
 			return -1;
 		}
 
-		p.buffer = buffer;
-		p.buflen = request->buflen;
-		p.method = request->method;
-		p.encoding = request->encoding;
-		p.headers = request->headers;
-		p.callback = cb;
-		p.tls = false;
-		p.response = NULL;
+		request->callback = cb;
+		request->tls = false;
+		request->response = NULL;
 	}
 	if (request->url == NULL) {
 		printf("Error: URL is NULL!!\n");
-		free(buffer);
-		return -1;
+		goto errout;
 	}
 	if (WEBCLIENT_CONF_MAX_ENTITY_SIZE < strlen(request->entity)) {
 		printf("Error: Too small buffer size\n");
-		free(buffer);
-		return -1;
+		goto errout;
 	}
-	p.url = request->url;
-	p.entity = request->entity;
-
 #ifdef CONFIG_NET_SECURITY_TLS
-	if (ssl_config) {
-		p.tls = true;
-		memcpy(&p.ssl_config, ssl_config, sizeof(struct http_client_ssl_config_t));
+	if (ssl_conf) {
+		request->tls = true;
+		memcpy(&request->ssl_config, ssl_conf, sizeof(struct http_client_ssl_config_t));
 
 		data = mallinfo();
 		if (data.fordblks < WEBCLIENT_CONF_MIN_TLS_MEMORY) {
 			printf("Error: Not enough memory!!\n");
-			free(buffer);
-			return -1;
+			goto errout;
 		}
 	}
 #endif
 
-	return client_send_request(&p);
+	return client_send_request(request);
+errout:
+	free(request->buffer);
+	return -1;
 }
 
 int http_client_response_init(struct http_client_response_t *response)

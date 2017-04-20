@@ -46,14 +46,9 @@ struct http_client_t {
 	int ws_state;
 	unsigned char ws_key[WEBSOCKET_CLIENT_KEY_LEN];
 
-#ifdef CONFIG_NETUTILS_WEBSERVER_MULTICLIENT
-	pthread_t thread_id;
-	pthread_attr_t thread_attr;
-#endif
-
 #ifdef CONFIG_NET_SECURITY_TLS
-	mbedtls_ssl_context tls_ssl;
-	mbedtls_net_context tls_client_fd;
+	mbedtls_ssl_context       tls_ssl;
+	mbedtls_net_context       tls_client_fd;
 #endif
 };
 
@@ -65,20 +60,26 @@ struct http_message_len_t {
 	int content_len;
 };
 
-int http_accept_client(struct http_server_t *server);
-void http_close_client(struct http_client_t *client);
-void *http_handle_client(void *arg); /* struct http_client_t *client */
+int   http_accept_client(struct http_server_t *server);
+void  http_close_client(struct http_client_t *client);
+void *http_handle_client(void *arg /* struct http_client_t *client */);
 
 struct http_client_t *http_client_init(struct http_server_t *server, int sock_fd);
-int http_client_release(struct http_client_t *client);
+int   http_client_release(struct http_client_t *client);
 
-int http_parse_message(char *buf, int buf_len, int *method, char *url, char **body, int *enc, int *state, struct http_message_len_t *len, struct http_keyvalue_list_t *params, struct http_client_t *client, struct http_client_response_t *response);
-int http_recv_and_handle_request(struct http_client_t *client, struct http_keyvalue_list_t *request_params);
+int http_parse_message(char *buf, int buf_len, int *method, char *url,
+					   char **body, int *enc, int *state,
+					   struct http_message_len_t *len,
+					   struct http_keyvalue_list_t *params,
+					   struct http_client_t *client,
+					   struct http_client_response_t *response,
+					   struct http_req_message *req);
+int   http_recv_and_handle_request(struct http_client_t *client, struct http_keyvalue_list_t *request_params);
 
 #ifdef CONFIG_NET_SECURITY_TLS
-int http_client_tls_init(struct http_client_t *client);
-int http_client_tls_release(struct http_client_t *client);
-int http_server_tls_release(struct http_server_t *server);
+int   http_client_tls_init(struct http_client_t *client);
+int   http_client_tls_release(struct http_client_t *client);
+int   http_server_tls_release(struct http_server_t *server);
 #endif
 
 #endif

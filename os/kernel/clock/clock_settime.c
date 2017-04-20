@@ -55,14 +55,15 @@
  ************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/rtc.h>
 
 #include <time.h>
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
+#include <tinyara/arch.h>
 #include <arch/irq.h>
+
 #include "clock/clock.h"
 
 /************************************************************************

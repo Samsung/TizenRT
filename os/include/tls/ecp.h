@@ -155,6 +155,12 @@ typedef struct {
 	void *t_data;			/*!< unused                         */
 	mbedtls_ecp_point *T;	/*!<  pre-computed points for ecp_mul_comb()        */
 	size_t T_size;			/*!<  number for pre-computed points                */
+#if defined(CONFIG_HW_ECDH_PARAM)
+	unsigned char *key_buf;
+#endif
+#if defined(CONFIG_HW_ECDSA_SIGN)
+	unsigned int key_index;
+#endif
 } mbedtls_ecp_group;
 
 /**
@@ -168,6 +174,9 @@ typedef struct {
 	mbedtls_ecp_group grp;	/*!<  Elliptic curve and base point     */
 	mbedtls_mpi d;			/*!<  our secret value                  */
 	mbedtls_ecp_point Q;	/*!<  our public value                  */
+#if defined(CONFIG_HW_ECDSA_SIGN)
+	unsigned int key_index;
+#endif
 } mbedtls_ecp_keypair;
 
 /**

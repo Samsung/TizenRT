@@ -812,8 +812,8 @@ errout_with_clone:
 
 #if 0
 errout_with_dev:
-	free(priv);
 #endif
+	free(priv);
 	return ret;
 }
 

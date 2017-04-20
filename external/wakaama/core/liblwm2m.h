@@ -141,12 +141,16 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define COAP_202_DELETED                (uint8_t)0x42
 #define COAP_204_CHANGED                (uint8_t)0x44
 #define COAP_205_CONTENT                (uint8_t)0x45
+#define COAP_231_CONTINUE               (uint8_t)0x5F
 #define COAP_400_BAD_REQUEST            (uint8_t)0x80
 #define COAP_401_UNAUTHORIZED           (uint8_t)0x81
 #define COAP_402_BAD_OPTION             (uint8_t)0x82
 #define COAP_404_NOT_FOUND              (uint8_t)0x84
 #define COAP_405_METHOD_NOT_ALLOWED     (uint8_t)0x85
 #define COAP_406_NOT_ACCEPTABLE         (uint8_t)0x86
+#define COAP_408_REQ_ENTITY_INCOMPLETE  (uint8_t)0x88
+#define COAP_412_PRECONDITION_FAILED    (uint8_t)0x8C
+#define COAP_413_ENTITY_TOO_LARGE       (uint8_t)0x8D
 #define COAP_500_INTERNAL_SERVER_ERROR  (uint8_t)0xA0
 #define COAP_501_NOT_IMPLEMENTED        (uint8_t)0xA1
 #define COAP_503_SERVICE_UNAVAILABLE    (uint8_t)0xA3
@@ -162,7 +166,6 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define LWM2M_FIRMWARE_UPDATE_OBJECT_ID     5
 #define LWM2M_LOCATION_OBJECT_ID            6
 #define LWM2M_CONN_STATS_OBJECT_ID          7
-#define LWM2M_POWER_MONITOR_OBJECT_ID       8
 
 /*
  * Ressource IDs for the LWM2M Security Object
@@ -179,6 +182,7 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define LWM2M_SECURITY_SMS_SERVER_NUMBER_ID   9
 #define LWM2M_SECURITY_SHORT_SERVER_ID        10
 #define LWM2M_SECURITY_HOLD_OFF_ID            11
+#define LWM2M_SECURITY_BOOTSTRAP_TIMEOUT_ID   12
 
 /*
  * Ressource IDs for the LWM2M Server Object
@@ -310,6 +314,11 @@ struct _lwm2m_data_t
             size_t         count;
             lwm2m_data_t * array;
         } asChildren;
+        struct
+        {
+            uint16_t objectId;
+            uint16_t objectInstanceId;
+        } asObjLink;
     } value;
 };
 
@@ -318,13 +327,15 @@ typedef enum
     LWM2M_CONTENT_TEXT      = 0,        // Also used as undefined
     LWM2M_CONTENT_LINK      = 40,
     LWM2M_CONTENT_OPAQUE    = 42,
-    LWM2M_CONTENT_TLV       = 1542,     // Temporary value
-    LWM2M_CONTENT_JSON      = 1543      // Temporary value
+    LWM2M_CONTENT_TLV_OLD   = 1542,     // Keep old value for backward-compatibility
+    LWM2M_CONTENT_TLV       = 11542,
+    LWM2M_CONTENT_JSON_OLD  = 1543,     // Keep old value for backward-compatibility
+    LWM2M_CONTENT_JSON      = 11543
 } lwm2m_media_type_t;
 
 lwm2m_data_t * lwm2m_data_new(int size);
 int lwm2m_data_parse(lwm2m_uri_t * uriP, uint8_t * buffer, size_t bufferLen, lwm2m_media_type_t format, lwm2m_data_t ** dataP);
-size_t lwm2m_data_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, lwm2m_media_type_t * formatP, uint8_t ** bufferP);
+int lwm2m_data_serialize(lwm2m_uri_t * uriP, int size, lwm2m_data_t * dataP, lwm2m_media_type_t * formatP, uint8_t ** bufferP);
 void lwm2m_data_free(int size, lwm2m_data_t * dataP);
 
 void lwm2m_data_encode_string(const char * string, lwm2m_data_t * dataP);
@@ -336,6 +347,7 @@ void lwm2m_data_encode_float(double value, lwm2m_data_t * dataP);
 int lwm2m_data_decode_float(const lwm2m_data_t * dataP, double * valueP);
 void lwm2m_data_encode_bool(bool value, lwm2m_data_t * dataP);
 int lwm2m_data_decode_bool(const lwm2m_data_t * dataP, bool * valueP);
+void lwm2m_data_encode_objlink(uint16_t objectId, uint16_t objectInstanceId, lwm2m_data_t * dataP);
 void lwm2m_data_encode_instances(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * dataP);
 void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * dataP);
 
@@ -401,17 +413,21 @@ struct _lwm2m_object_t
 
 typedef enum
 {
-    STATE_DEREGISTERED = 0,   // not registered or boostrap not started
-    STATE_REG_PENDING,        // registration pending
-    STATE_REGISTERED,         // successfully registered
-    STATE_REG_FAILED,         // last registration failed
-    STATE_REG_UPDATE_PENDING, // registration update pending
-    STATE_DEREG_PENDING,      // deregistration pending
-    STATE_BS_HOLD_OFF,        // bootstrap hold off time
-    STATE_BS_INITIATED,       // bootstrap request sent
-    STATE_BS_PENDING,         // boostrap on going
-    STATE_BS_FINISHED,        // bootstrap done
-    STATE_BS_FAILED,          // bootstrap failed
+    STATE_DEREGISTERED = 0,        // not registered or boostrap not started
+    STATE_REG_PENDING,             // registration pending
+    STATE_REGISTERED,              // successfully registered
+    STATE_REG_FAILED,              // last registration failed
+    STATE_REG_UPDATE_PENDING,      // registration update pending
+    STATE_REG_UPDATE_NEEDED,       // registration update required
+    STATE_REG_FULL_UPDATE_NEEDED,  // registration update with objects required
+    STATE_DEREG_PENDING,           // deregistration pending
+    STATE_BS_HOLD_OFF,             // bootstrap hold off time
+    STATE_BS_INITIATED,            // bootstrap request sent
+    STATE_BS_PENDING,              // boostrap ongoing
+    STATE_BS_FINISHING,            // boostrap finish received
+    STATE_BS_FINISHED,             // bootstrap done
+    STATE_BS_FAILING,              // bootstrap error occurred
+    STATE_BS_FAILED,               // bootstrap failed
 } lwm2m_status_t;
 
 typedef enum
@@ -425,18 +441,34 @@ typedef enum
     BINDING_UQS  // UDP queue mode plus SMS
 } lwm2m_binding_t;
 
+/*
+ * LWM2M block1 data
+ *
+ * Temporary data needed to handle block1 request.
+ * Currently support only one block1 request by server.
+ */
+typedef struct _lwm2m_block1_data_ lwm2m_block1_data_t;
+
+struct _lwm2m_block1_data_
+{
+    uint8_t *             block1buffer;     // data buffer
+    size_t                block1bufferSize; // buffer size
+    uint16_t              lastmid;          // mid of the last message received
+};
+
 typedef struct _lwm2m_server_
 {
-    struct _lwm2m_server_ * next;   // matches lwm2m_list_t::next
-    uint16_t          secObjInstID; // matches lwm2m_list_t::id
-    uint16_t          shortID;      // servers short ID, may be 0 for bootstrap server
-    time_t            lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for bootstrap servers
-    time_t            registration; // date of the last registration in sec or end of client hold off time for bootstrap servers
-    lwm2m_binding_t   binding;      // client connection mode with this server
-    void *            sessionH;
-    lwm2m_status_t    status;
-    char *            location;
-    bool              dirty;
+    struct _lwm2m_server_ * next;         // matches lwm2m_list_t::next
+    uint16_t                secObjInstID; // matches lwm2m_list_t::id
+    uint16_t                shortID;      // servers short ID, may be 0 for bootstrap server
+    time_t                  lifetime;     // lifetime of the registration in sec or 0 if default value (86400 sec), also used as hold off time for bootstrap servers
+    time_t                  registration; // date of the last registration in sec or end of client hold off time for bootstrap servers
+    lwm2m_binding_t         binding;      // client connection mode with this server
+    void *                  sessionH;
+    lwm2m_status_t          status;
+    char *                  location;
+    bool                    dirty;
+    lwm2m_block1_data_t *   block1Data;   // buffer to handle block1 data, should be replace by a list to support several block1 transfer by server.
 } lwm2m_server_t;
 
 
@@ -529,13 +561,6 @@ typedef struct _lwm2m_client_
  * Adaptation of Erbium's coap_transaction_t
  */
 
-typedef enum
-{
-    ENDPOINT_UNKNOWN = 0,
-    ENDPOINT_CLIENT,
-    ENDPOINT_SERVER
-} lwm2m_endpoint_type_t;
-
 typedef struct _lwm2m_transaction_ lwm2m_transaction_t;
 
 typedef void (*lwm2m_transaction_callback_t) (lwm2m_transaction_t * transacP, void * message);
@@ -544,8 +569,7 @@ struct _lwm2m_transaction_
 {
     lwm2m_transaction_t * next;  // matches lwm2m_list_t::next
     uint16_t              mID;   // matches lwm2m_list_t::id
-    lwm2m_endpoint_type_t peerType;
-    void *                peerP;
+    void *                peerH;
     uint8_t               ack_received; // indicates, that the ACK was received
     time_t                response_timeout; // timeout to wait for response, if token is used. When 0, use calculated acknowledge timeout.
     uint8_t  retrans_counter;

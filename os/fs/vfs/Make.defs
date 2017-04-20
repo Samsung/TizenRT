@@ -66,11 +66,6 @@ ifneq ($(CONFIG_NFILE_STREAMS),0)
 CSRCS += fs_fdopen.c
 endif
 
-# Support for sendfile()
-
-ifeq ($(CONFIG_NET_SENDFILE),y)
-CSRCS += fs_sendfile.c
-endif
 
 # Include vfs build support
 
@@ -101,12 +96,6 @@ CSRCS += fs_pread.c fs_pwrite.c
 
 ifneq ($(CONFIG_NFILE_STREAMS),0)
 CSRCS += fs_fdopen.c
-endif
-
-# Support for sendfile()
-
-ifeq ($(CONFIG_NET_SENDFILE),y)
-CSRCS += fs_sendfile.c
 endif
 
 # Include vfs build support

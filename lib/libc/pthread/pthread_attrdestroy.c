@@ -89,8 +89,7 @@
  * Function:  pthread_attr_destroy
  *
  * Description:
- *    An attributes object can be deleted when it is no longer
- *     needed.
+ *    An attributes object can be deleted when it is no longer needed.
  *
  * Parameters:
  *   attr

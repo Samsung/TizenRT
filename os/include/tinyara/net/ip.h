@@ -182,36 +182,6 @@ struct ipv6_hdr_s {
 };
 #endif							/* CONFIG_NET_IPv6 */
 
-#ifdef CONFIG_NET_STATISTICS
-#ifdef CONFIG_NET_IPv4
-struct ipv4_stats_s {
-	net_stats_t drop;			/* Number of dropped packets at the IP layer */
-	net_stats_t recv;			/* Number of received packets at the IP layer */
-	net_stats_t sent;			/* Number of sent packets at the IP layer */
-	net_stats_t vhlerr;			/* Number of packets dropped due to wrong
-								   IP version or header length */
-	net_stats_t fragerr;		/* Number of packets dropped since they
-								   were IP fragments */
-	net_stats_t chkerr;			/* Number of packets dropped due to IP
-								   checksum errors */
-	net_stats_t protoerr;		/* Number of packets dropped since they
-								   were neither ICMP, UDP nor TCP */
-};
-#endif							/* CONFIG_NET_IPv6 */
-
-#ifdef CONFIG_NET_IPv6
-struct ipv6_stats_s {
-	net_stats_t drop;			/* Number of dropped packets at the IP layer */
-	net_stats_t recv;			/* Number of received packets at the IP layer */
-	net_stats_t sent;			/* Number of sent packets at the IP layer */
-	net_stats_t vhlerr;			/* Number of packets dropped due to wrong
-								   IP version or header length */
-	net_stats_t protoerr;		/* Number of packets dropped since they
-								   were neither ICMP, UDP nor TCP */
-};
-#endif							/* CONFIG_NET_IPv6 */
-#endif							/* CONFIG_NET_STATISTICS */
-
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -232,13 +202,6 @@ EXTERN const in_addr_t g_ipv4_allzeroaddr;	/* An address of all zeroes */
 #ifdef CONFIG_NET_IPv6
 EXTERN const net_ipv6addr_t g_ipv6_alloneaddr;	/* An address of all ones */
 EXTERN const net_ipv6addr_t g_ipv6_allzeroaddr;	/* An address of all zeroes */
-#if defined(CONFIG_NET_ICMPv6_AUTOCONF) || defined(CONFIG_NET_ICMPv6_ROUTER)
-EXTERN const net_ipv6addr_t g_ipv6_allnodes;	/* All link local nodes */
-EXTERN const net_ipv6addr_t g_ipv6_allrouters;	/* All link local routers */
-#ifdef CONFIG_NET_ICMPv6_AUTOCONF
-EXTERN const net_ipv6addr_t g_ipv6_llnetmask;	/* Netmask for local link address */
-#endif
-#endif
 #endif
 
 /****************************************************************************

@@ -42,6 +42,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/**
+ * @file mdns.h
+ * @brief functions related to mdns resource record
+ */
 
 #ifndef __MDNS_H__
 #define __MDNS_H__
@@ -57,12 +61,14 @@
 #include <arpa/inet.h>
 #endif
 
-#define MDNS_DEBUG_PRINTF               0
+#define MDNS_DEBUG_PRINTF	0
 
-#define MDNS_RR_DEBUG                   0
-#define MDNS_MEMORY_DEBUG       0
+#if MDNS_DEBUG_PRINTF==1
+#define MDNS_RR_DEBUG		0
+#define MDNS_MEMORY_DEBUG	0
+#endif
 
-#if MDNS_MEMORY_DEBUG == 1
+#if MDNS_DEBUG_PRINTF==1 && MDNS_MEMORY_DEBUG==1
 void *mdns_malloc(const char *func_name, int line, unsigned int size);
 void mdns_free(const char *func_name, int line, void *ptr);
 char *mdns_strdup(const char *func_name, int line, const char *str);
@@ -79,14 +85,14 @@ void mdns_show_meminfo(void);
 #endif
 
 #define MALLOC_ZERO_STRUCT(x, type) \
-	x = MDNS_MALLOC(sizeof(struct type)); \
-	memset(x, 0, sizeof(struct type));
+        x = MDNS_MALLOC(sizeof(struct type)); \
+        memset(x, 0, sizeof(struct type));
 
 #define DECL_MALLOC_ZERO_STRUCT(x, type) \
-	struct type * MALLOC_ZERO_STRUCT(x, type)
+        struct type * MALLOC_ZERO_STRUCT(x, type)
 
-#if MDNS_DEBUG_PRINTF == 1
-#define DEBUG_PRINTF printf
+#if MDNS_DEBUG_PRINTF==1
+#define DEBUG_PRINTF(...) printf(__VA_ARGS__)
 #else
 #define DEBUG_PRINTF(...) ((void) 0)
 #endif

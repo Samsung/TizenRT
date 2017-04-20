@@ -96,7 +96,15 @@ extern "C" {
  * @param[in] intf the name of network interface to run DHCP server
  * @return On success, 0. On failure, returns error
 */
-int dhcpd_run(const char *intf);
+int dhcpd_run(void *arg);
+
+/**
+ * @brief Starts DHCP server as daemon which is attached given network interface.
+ *
+ * @param[in] intf the name of network interface to run DHCP server
+ * @return On success, 0. On failure, returns -1
+*/
+int dhcpd_start(char *intf);
 
 #undef EXTERN
 #ifdef __cplusplus

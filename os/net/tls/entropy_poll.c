@@ -83,11 +83,13 @@ int mbedtls_platform_entropy_poll(void *data, unsigned char *output, size_t len,
 	 * If len is larger than the maximum for ULONG, just fail.
 	 * It's unlikely anything ever will want to ask for this much randomness.
 	 */
-	if (len > 0xFFFFFFFFULL)
+	if (len > 0xFFFFFFFFULL) {
 		return (MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
+	}
 
-	if (!BCRYPT_SUCCESS(BCryptGenRandom(NULL, output, (ULONG) len, BCRYPT_USE_SYSTEM_PREFERRED_RNG)))
+	if (!BCRYPT_SUCCESS(BCryptGenRandom(NULL, output, (ULONG) len, BCRYPT_USE_SYSTEM_PREFERRED_RNG))) {
 		return (MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
+	}
 
 	*olen = len;
 
@@ -131,26 +133,31 @@ static int check_version_3_17_plus(void)
 	ver = un.release;
 
 	/* Check major version; assume a single digit */
-	if (ver[0] < '3' || ver[0] > '9' || ver[1] != '.')
+	if (ver[0] < '3' || ver[0] > '9' || ver[1] != '.') {
 		return (-1);
+	}
 
-	if (ver[0] - '0' > 3)
+	if (ver[0] - '0' > 3) {
 		return (0);
+	}
 
 	/* Ok, so now we know major == 3, check minor.
 	 * Assume 1 or 2 digits. */
-	if (ver[2] < '0' || ver[2] > '9')
+	if (ver[2] < '0' || ver[2] > '9') {
 		return (-1);
+	}
 
 	minor = ver[2] - '0';
 
-	if (ver[3] >= '0' && ver[3] <= '9')
+	if (ver[3] >= '0' && ver[3] <= '9') {
 		minor = 10 * minor + ver[3] - '0';
-	else if (ver[3] != '.')
+	} else if (ver[3] != '.') {
 		return (-1);
+	}
 
-	if (minor < 17)
+	if (minor < 17) {
 		return (-1);
+	}
 
 	return (0);
 }
@@ -168,14 +175,16 @@ int mbedtls_platform_entropy_poll(void *data, unsigned char *output, size_t len,
 	((void)data);
 
 #if defined(HAVE_GETRANDOM)
-	if (has_getrandom == -1)
+	if (has_getrandom == -1) {
 		has_getrandom = (check_version_3_17_plus() == 0);
+	}
 
 	if (has_getrandom) {
 		int ret;
 
-		if ((ret = getrandom_wrapper(output, len, 0)) < 0)
+		if ((ret = getrandom_wrapper(output, len, 0)) < 0) {
 			return (MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
+		}
 
 		*olen = ret;
 		return (0);
@@ -185,8 +194,9 @@ int mbedtls_platform_entropy_poll(void *data, unsigned char *output, size_t len,
 	*olen = 0;
 
 	file = fopen("/dev/urandom", "rb");
-	if (file == NULL)
+	if (file == NULL) {
 		return (MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
+	}
 
 	read_len = fread(output, 1, len, file);
 	if (read_len != len) {
@@ -209,8 +219,9 @@ int mbedtls_null_entropy_poll(void *data, unsigned char *output, size_t len, siz
 	((void)output);
 	*olen = 0;
 
-	if (len < sizeof(unsigned char))
+	if (len < sizeof(unsigned char)) {
 		return (0);
+	}
 
 	*olen = sizeof(unsigned char);
 
@@ -225,8 +236,9 @@ int mbedtls_hardclock_poll(void *data, unsigned char *output, size_t len, size_t
 	((void)data);
 	*olen = 0;
 
-	if (len < sizeof(unsigned long))
+	if (len < sizeof(unsigned long)) {
 		return (0);
+	}
 
 	memcpy(output, &timer, sizeof(unsigned long));
 	*olen = sizeof(unsigned long);
@@ -241,8 +253,9 @@ int mbedtls_havege_poll(void *data, unsigned char *output, size_t len, size_t *o
 	mbedtls_havege_state *hs = (mbedtls_havege_state *) data;
 	*olen = 0;
 
-	if (mbedtls_havege_random(hs, output, len) != 0)
+	if (mbedtls_havege_random(hs, output, len) != 0) {
 		return (MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
+	}
 
 	*olen = len;
 
@@ -259,11 +272,13 @@ int mbedtls_nv_seed_poll(void *data, unsigned char *output, size_t len, size_t *
 
 	memset(buf, 0, MBEDTLS_ENTROPY_BLOCK_SIZE);
 
-	if (mbedtls_nv_seed_read(buf, MBEDTLS_ENTROPY_BLOCK_SIZE) < 0)
+	if (mbedtls_nv_seed_read(buf, MBEDTLS_ENTROPY_BLOCK_SIZE) < 0) {
 		return (MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
+	}
 
-	if (len < use_len)
+	if (len < use_len) {
 		use_len = len;
+	}
 
 	memcpy(output, buf, use_len);
 	*olen = use_len;
@@ -273,6 +288,30 @@ int mbedtls_nv_seed_poll(void *data, unsigned char *output, size_t len, size_t *
 #endif							/* MBEDTLS_ENTROPY_NV_SEED */
 
 #if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
+#if defined(CONFIG_HW_RNG)
+#include "tls/see_api.h"
+
+int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
+{
+	unsigned int inlen = SEE_MAX_RANDOM_SIZE;
+	unsigned int inbuf[SEE_MAX_RANDOM_SIZE];
+
+	((void) data);
+
+	if (see_generate_random(inbuf, inlen) < 0) {
+		return (MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
+	}
+
+	if (len < inlen) {
+		inlen = len;
+	}
+
+	memcpy(output, inbuf, inlen);
+	*olen = inlen;
+
+	return 0;
+}
+#else
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
 	/* It should be changed to hardware random generator */
@@ -282,14 +321,16 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t 
 	((void)data);
 	*olen = 0;
 
-	if (len < sizeof(unsigned long))
+	if (len < sizeof(unsigned long)) {
 		return (0);
+	}
 
 	memcpy(output, &timer, sizeof(unsigned long));
 	*olen = sizeof(unsigned long);
 
 	return (0);
 }
-#endif
+#endif /* CONFIG_HW_RNG */
+#endif /* MBEDTLS_ENTROPY_HARDWARE_ALT */
 
-#endif							/* MBEDTLS_ENTROPY_C */
+#endif /* MBEDTLS_ENTROPY_C */

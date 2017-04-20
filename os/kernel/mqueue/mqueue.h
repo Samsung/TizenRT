@@ -70,7 +70,7 @@
 
 #include <tinyara/mqueue.h>
 
-#if CONFIG_MQ_MAXMSGSIZE > 0
+#if !defined(CONFIG_DISABLE_MQUEUE) && CONFIG_MQ_MAXMSGSIZE > 0
 
 /****************************************************************************
  * Pre-processor Definitions

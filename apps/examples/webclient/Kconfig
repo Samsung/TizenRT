@@ -5,6 +5,7 @@
 
 config EXAMPLES_WEBCLIENT
 	bool "TinyAra Webclient example"
+	depends on NETUTILS_WEBCLIENT
 	default n
 	---help---
 		Enable the TinyAra Webclient example

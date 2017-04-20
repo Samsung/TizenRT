@@ -53,7 +53,7 @@
 
 # Include socket source files
 
-ifeq ($(CONFIG_CUSTOM_SOCKETS),y)
+ifeq ($(CONFIG_NET_SOCKET),y)
 SOCK_CSRCS += net_sockets.c net_close.c net_dupsd.c net_dupsd2.c
 SOCK_CSRCS += net_clone.c net_vfcntl.c bsd_socket_api.c
 
@@ -69,12 +69,6 @@ endif
 
 ifneq ($(CONFIG_NFILE_STREAMS),0)
 SOCK_CSRCS += net_checksd.c
-endif
-
-# Support for sendfile()
-
-ifeq ($(CONFIG_NET_SENDFILE),y)
-SOCK_CSRCS += net_sendfile.c
 endif
 
 # Include socket build support

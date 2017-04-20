@@ -79,7 +79,6 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
 	if (!dev)
 		return NULL;
 
-	int ret;
 	struct _iotbus_spi_s *handle = (struct _iotbus_spi_s *)malloc(sizeof(struct _iotbus_spi_s));
 	handle->bpw = config->bits_per_word;
 	handle->lsb = config->lsb;
@@ -90,24 +89,13 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
 	handle->sdev = dev;
 
 	SPI_LOCK(dev, true);
-	ret = SPI_SETMODE(dev, handle->mode);
-	if (ret < 0) {
-		SPI_LOCK(dev, false);
-		free(handle);
-		return NULL;
-	}
+	SPI_SETMODE(dev, handle->mode);
 
 	if (handle->lsb == 0) // MSB
-		ret = SPI_SETBITS(dev, handle->bpw);
+		SPI_SETBITS(dev, handle->bpw);
 	else
 		// LSB
-		ret = SPI_SETBITS(dev, -handle->bpw);
-
-	if (ret < 0) {
-		SPI_LOCK(dev, false);
-		free(handle);
-		return NULL;
-	}
+		SPI_SETBITS(dev, -handle->bpw);
 
 	SPI_SETFREQUENCY(dev, handle->freq);
 	SPI_LOCK(dev, false);

@@ -68,7 +68,7 @@
 
 #include "utils/utils.h"
 
-#if defined(CONFIG_NET) && defined(CONFIG_NET_NOINTS)
+#ifdef CONFIG_NET
 
 /****************************************************************************
  * Pre-processor Definitions

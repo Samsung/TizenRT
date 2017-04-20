@@ -40,32 +40,6 @@ extern struct timespec g_basetime;
 #define SEC_10  10
 #define NSEC_20 20
 
-/**
-* @fn                   :tc_clock_clock_initialize
-* @brief                :Initialize the time value to match the RTC
-* @scenario             :Initialize the time value to match the RTC
-* API's covered         :clock_initialize
-* Preconditions         :none
-* Postconditions        :none
-* @return               :void
-*/
-static void tc_clock_clock_initialize(void)
-{
-	g_basetime.tv_nsec = NSEC_20;
-	time_t jdn = 0;
-
-	jdn = clock_calendar2utc(CONFIG_START_YEAR, CONFIG_START_MONTH, CONFIG_START_DAY);
-
-	clock_initialize();
-
-	/* g_basetime.tv_sec base time is getting as seconds into this julian day.
-	 * hence we need to compare it that same */
-
-	TC_ASSERT_EQ("clock_initialize", g_basetime.tv_nsec, 0);
-	TC_ASSERT_EQ("clock_initialize", g_basetime.tv_sec, jdn * SEC_PER_DAY);
-
-	TC_SUCCESS_RESULT();
-}
 
 /**
 * @fn                   :tc_clock_clock_getres
@@ -241,8 +215,7 @@ static void tc_clock_clock_abstime2ticks(void)
 	struct timespec comparison_time;
 
 	clock_gettime(CLOCK_REALTIME, &base_time);
-	base_time.tv_sec *= 2;
-	comparison_time.tv_sec = base_time.tv_sec * 2;
+	comparison_time.tv_sec = base_time.tv_sec + 1;
 
 	ret_chk = clock_abstime2ticks(CLOCK_REALTIME, &base_time, &base_tick);
 	TC_ASSERT_EQ("clock_abstime2ticks", ret_chk, OK);
@@ -263,7 +236,6 @@ static void tc_clock_clock_abstime2ticks(void)
 
 int clock_main(void)
 {
-	tc_clock_clock_initialize();
 	tc_clock_clock_timer();
 	tc_clock_clock_systimer();
 	tc_clock_clock_systimer64();

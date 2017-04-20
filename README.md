@@ -4,7 +4,7 @@
 
 lightweight RTOS-based platform to support low-end IoT devices.
 
-You can find project details on our [Tizen wiki](https://wiki.tizen.org/wiki/Tizen_RT).
+Please find project details on our [Tizen wiki](https://wiki.tizen.org/wiki/Tizen_RT).
 
 ## Quick Start
 ### Getting the toolchain
@@ -51,14 +51,22 @@ make
 Built binaries are in $TIZENRT_BASEDIR/build/output/bin.
 
 ## Supported Board
+
+ARTIK053 [[details]](build/configs/artik053/README.md)
+
 sidk_s5jt200 [[details]](build/configs/sidk_s5jt200/README.md)
 
-Tizen RT currently supports one board called sidk_s5jt200. However, this board is not available in public markets till now. sidk_s5jt200 or other boards for Tizen RT will be coming soon.
-  sidk_s5jt200 stands for Samsung IoT Development Kit for S5JT200 chipset.
+Tizen RT currently supports only two boards called artik053 and sidk_s5jt200.
+However, those are not available in public markets till now.
+sidk_s5jt200 or other boards for Tizen RT will be coming soon.
 
 ## Configuration Sets
-There are three configuration sets for sidk_s5jt200, including 'tc', 'kernel_sample', and 'hello_with_tash'.
-'tc' is a configuration set for runnig unit test cases, 'kernel_sample' for running kernel functions, and 'hello_with_tash' for running a hello example.
-You can modify the configuration by using the menuconfig tool on the 'os' folder, but all configuration combinations are not fully tested yet.
-The IPv4 network stack based on LWIP is included, but Wi-Fi related codes such as wpa_supplicant are not included.
-Wi-Fi will be added in 2017.
+
+To build a Tizen RT application, use the default configuration files named 'defconfig' under 'build/configs/<board>/' folder.
+
+To customize your application with specific configuration settings, using the menuconfig tool is recommended  at os folder as shown:
+```bash
+make menuconfig
+```
+Please keep in mind that we are actively working on board configurations, and will be posting our updates on the README files under each config
+

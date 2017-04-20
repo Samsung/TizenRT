@@ -46,7 +46,7 @@
 #undef CONFIG_LIB_USRWORK
 #endif
 
-#ifdef CONFIG_DM
+#ifdef CONFIG_LWM2M_WAKAAMA
 extern void dm_cb_register_init(void);
 #endif
 
@@ -110,7 +110,7 @@ int preapp_start(int argc, char *argv[])
 	}
 #endif
 
-#ifdef CONFIG_DM
+#ifdef CONFIG_LWM2M_WAKAAMA
 	dm_cb_register_init();
 #endif
 

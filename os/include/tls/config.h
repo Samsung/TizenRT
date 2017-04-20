@@ -2578,13 +2578,22 @@
 
 /* SSL Cache options */
 //#define MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT       86400 /**< 1 day  */
-//#define MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES      50 /**< Maximum entries in cache */
+#define MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES      2 /**< Maximum entries in cache */
 
 /* SSL options */
 //#define MBEDTLS_SSL_MAX_CONTENT_LEN             16384 /**< Maxium fragment length in bytes, determines the size of each of the two internal I/O buffers */
 //#define MBEDTLS_SSL_DEFAULT_TICKET_LIFETIME     86400 /**< Lifetime of session tickets (if enabled) */
 //#define MBEDTLS_PSK_MAX_LEN               32 /**< Max size of TLS pre-shared keys, in bytes (default 256 bits) */
 //#define MBEDTLS_SSL_COOKIE_TIMEOUT        60 /**< Default expiration delay of DTLS cookies, in seconds if HAVE_TIME, or in number of cookies issued */
+
+/**
+ * \def MBED_TIZENRT
+ *
+ * Indicate the platform specific patches.
+ */
+#ifndef MBED_TIZENRT
+#define MBED_TIZENRT
+#endif
 
 /**
  * \def MBEDTLS_LIGHT_DEVICE
@@ -2651,6 +2660,7 @@
 #undef MBEDTLS_XTEA_C
 
 #endif							/* MBEDTLS_LIGHT_DEVICE */
+
 
 //#undef MBEDTLS_ECDSA_DETERMINISTIC
 //#undef MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED

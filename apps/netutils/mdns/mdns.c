@@ -42,11 +42,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/// @file mdns.c
-/// @brief functions related to mdns resource record
+/**
+ * @file mdns.c
+ * @brief functions related to mdns resource record
+ */
 
 #include "mdns.h"
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -75,7 +76,7 @@ struct name_comp {
 inline uint8_t *dup_nlabel(const uint8_t *n)
 {
 	assert(n[0] <= 63);			// prevent mis-use
-	return (uint8_t *)MDNS_STRDUP((char *)n);
+	return (uint8_t *) MDNS_STRDUP((char *)n);
 }
 
 // duplicates a label
@@ -211,7 +212,7 @@ uint8_t *create_nlabel(const char *name)
 		lenpos = dot;
 	}
 
-	return (uint8_t *)label;
+	return (uint8_t *) label;
 }
 
 // copies a label from the buffer into a newly-allocated string
@@ -244,7 +245,6 @@ static uint8_t *uncompress_nlabel(uint8_t *pkt_buf, size_t pkt_len, size_t off)
 	if (off >= pkt_len) {
 		return NULL;
 	}
-
 	// calculate length of uncompressed label
 	for (p = pkt_buf + off; *p && p < e; p++) {
 		size_t llen = 0;
@@ -263,7 +263,6 @@ static uint8_t *uncompress_nlabel(uint8_t *pkt_buf, size_t pkt_len, size_t off)
 	if (str == NULL) {
 		return NULL;
 	}
-
 	// FIXME: must merge this with above code
 	for (p = pkt_buf + off; *p && p < e; p++) {
 		size_t llen = 0;
@@ -281,7 +280,7 @@ static uint8_t *uncompress_nlabel(uint8_t *pkt_buf, size_t pkt_len, size_t off)
 	}
 	*sp = '\0';
 
-	return (uint8_t *)str;
+	return (uint8_t *) str;
 }
 
 // ----- RR list & group functions -----
@@ -290,7 +289,7 @@ const char *rr_get_type_name(enum rr_type type)
 {
 	switch (type) {
 	case RR_A:
-		return "A";
+			return "A";
 	case RR_PTR:
 		return "PTR";
 	case RR_TXT:
@@ -328,7 +327,6 @@ void rr_entry_destroy(struct rr_entry *rr)
 			if (txt_rec->txt) {
 				MDNS_FREE(txt_rec->txt);
 			}
-
 			// only free() if it wasn't part of the struct
 			if (txt_rec != &rr->data.TXT) {
 				MDNS_FREE(txt_rec);
@@ -376,7 +374,7 @@ void rr_list_destroy(struct rr_list *rr, char destroy_items)
 int rr_list_count(struct rr_list *rr)
 {
 	int i = 0;
-	for (; rr; i++, rr = rr->next);
+	for (; rr; i++, rr = rr->next) ;
 	return i;
 }
 
@@ -430,17 +428,17 @@ int rr_list_append(struct rr_list **rr_head, struct rr_entry *rr)
 }
 
 #define FILL_QN_ENTRY(rr, _name, _type, _unicast_query) \
-	rr->name = _name;                       \
-	rr->type = _type;                       \
-	rr->unicast_query = _unicast_query; \
-	rr->rr_class  = 1;
+        rr->name = _name;                       \
+        rr->type = _type;                       \
+        rr->unicast_query = _unicast_query; \
+        rr->rr_class  = 1;
 
 #define FILL_RR_ENTRY(rr, _name, _type) \
-	rr->name = _name;                       \
-	rr->type = _type;                       \
-	rr->ttl  = DEFAULT_TTL;         \
-	rr->cache_flush = 1;            \
-	rr->rr_class  = 1;
+        rr->name = _name;                       \
+        rr->type = _type;                       \
+        rr->ttl  = DEFAULT_TTL;         \
+        rr->cache_flush = 1;            \
+        rr->rr_class  = 1;
 
 struct rr_entry *qn_create(uint8_t *name, enum rr_type type, int unicast_query)
 {
@@ -572,7 +570,7 @@ void rr_add_txt(struct rr_entry *rr_txt, const char *txt)
 		return;
 	}
 	// find the last node
-	for (; txt_rec->next; txt_rec = txt_rec->next);
+	for (; txt_rec->next; txt_rec = txt_rec->next) ;
 
 	// create a new empty node
 	txt_rec->next = MDNS_MALLOC(sizeof(struct rr_data_txt));
@@ -937,7 +935,6 @@ static size_t mdns_parse_rr(uint8_t *pkt_buf, size_t pkt_len, size_t off, struct
 			if (p >= e) {
 				break;
 			}
-
 			// allocate another record
 			txt_rec->next = MDNS_MALLOC(sizeof(struct rr_data_txt));
 			txt_rec = txt_rec->next;
@@ -1074,7 +1071,7 @@ static size_t mdns_encode_name(uint8_t *pkt_buf, size_t pkt_len, size_t off, con
 			// cache the name for subsequent compression
 			DECL_MALLOC_ZERO_STRUCT(new_c, name_comp);
 
-			new_c->label = (uint8_t *)name;
+			new_c->label = (uint8_t *) name;
 			new_c->pos = p - pkt_buf;
 			c_tail->next = new_c;
 
@@ -1212,6 +1209,7 @@ static size_t mdns_encode_rr(uint8_t *pkt_buf, size_t pkt_len, size_t off, struc
 // returns the size of the entire MDNS packet
 size_t mdns_encode_pkt(struct mdns_pkt *encoded_pkt, uint8_t *pkt_buf, size_t pkt_len)
 {
+	int result = -1;
 	struct name_comp *comp;
 	uint8_t *p = pkt_buf;
 	//uint8_t *e = pkt_buf + pkt_len;
@@ -1225,7 +1223,6 @@ size_t mdns_encode_pkt(struct mdns_pkt *encoded_pkt, uint8_t *pkt_buf, size_t pk
 	if (p == NULL) {
 		return -1;
 	}
-
 #if 0							/* disabled */
 	// this is an Answer - number of qns should be zero
 	assert(answer->num_qn == 0);
@@ -1248,7 +1245,7 @@ size_t mdns_encode_pkt(struct mdns_pkt *encoded_pkt, uint8_t *pkt_buf, size_t pk
 	memset(comp, 0, sizeof(struct name_comp));
 
 	// dummy entry
-	comp->label = (uint8_t *)"";
+	comp->label = (uint8_t *) "";
 	comp->pos = 0;
 
 	// encode of qn
@@ -1259,8 +1256,7 @@ size_t mdns_encode_pkt(struct mdns_pkt *encoded_pkt, uint8_t *pkt_buf, size_t pk
 
 		if (off >= pkt_len) {
 			DEBUG_PRINTF("packet buffer too small\n");
-			MDNS_FREE(comp);
-			return -1;
+			goto done;
 		}
 	}
 
@@ -1279,13 +1275,16 @@ size_t mdns_encode_pkt(struct mdns_pkt *encoded_pkt, uint8_t *pkt_buf, size_t pk
 
 			if (off >= pkt_len) {
 				DEBUG_PRINTF("packet buffer too small\n");
-				MDNS_FREE(comp);
-				return -1;
+				goto done;
 			}
 		}
 
 	}
 
+	/* result is success */
+	result = 0;
+
+done:
 	// free name compression list
 	while (comp) {
 		struct name_comp *c = comp->next;
@@ -1293,10 +1292,14 @@ size_t mdns_encode_pkt(struct mdns_pkt *encoded_pkt, uint8_t *pkt_buf, size_t pk
 		comp = c;
 	}
 
+	if (result != 0) {
+		return -1;
+	}
+
 	return off;
 }
 
-#if MDNS_MEMORY_DEBUG == 1
+#if MDNS_DEBUG_PRINTF==1 && MDNS_MEMORY_DEBUG==1
 struct mdns_meminfo_node {
 	char *func;
 	int line;
@@ -1311,7 +1314,7 @@ static void add_meminfo_node(const char *func, int line, void *addr, unsigned in
 {
 	struct mdns_meminfo_node *new_node = (struct mdns_meminfo_node *)malloc(sizeof(struct mdns_meminfo_node));
 	if (new_node == NULL) {
-		DEBUG_PRINTF("ERROR : cannot allocate memory for mdns_meminfo_node \n");
+		DEBUG_PRINTF("ERROR: cannot allocate memory for mdns_meminfo_node\n");
 		return;
 	}
 
@@ -1359,7 +1362,7 @@ static void remove_meminfo_node(const char *func, int line, void *addr)
 		free(cur_node->func);
 		free(cur_node);
 	} else {
-		DEBUG_PRINTF("Something Wrong!!! There is no address to remove. (address=%p, %s(%d)) \n", addr, func, line);
+		DEBUG_PRINTF("Something Wrong!!! There is no address to remove. (address=%p, %s(%d))\n", addr, func, line);
 	}
 }
 
@@ -1369,7 +1372,7 @@ void *mdns_malloc(const char *func_name, int line, unsigned int size)
 	if (ptr) {
 		add_meminfo_node(func_name, line, ptr, size);
 	} else {
-		DEBUG_PRINTF("ERROR : cannot allocate memory (size=%d,  %s(%d)) \n", size, func_name, line);
+		DEBUG_PRINTF("ERROR: cannot allocate memory (size=%d,  %s(%d))\n", size, func_name, line);
 	}
 
 	return ptr;
@@ -1381,7 +1384,7 @@ void mdns_free(const char *func_name, int line, void *ptr)
 		remove_meminfo_node(func_name, line, ptr);
 		free(ptr);
 	} else {
-		DEBUG_PRINTF("ERROR : cannot release memory (ptr=%p, %s(%d)) \n", ptr, func_name, line);
+		DEBUG_PRINTF("ERROR: cannot release memory (ptr=%p, %s(%d))\n", ptr, func_name, line);
 	}
 }
 
@@ -1392,7 +1395,7 @@ char *mdns_strdup(const char *func_name, int line, const char *str)
 	if (ptr) {
 		add_meminfo_node(func_name, line, ptr, size);
 	} else {
-		DEBUG_PRINTF("ERROR : cannot allocate string buffer memory (size=%d, %s(%d)) \n", size, func_name, line);
+		DEBUG_PRINTF("ERROR: cannot allocate string buffer memory (size=%d, %s(%d))\n", size, func_name, line);
 	}
 
 	return ptr;
@@ -1400,26 +1403,26 @@ char *mdns_strdup(const char *func_name, int line, const char *str)
 
 void mdns_show_meminfo(void)
 {
-	printf("===========================================================\n");
-	printf(" MDNS Memory Information \n");
-	printf("===========================================================\n");
+	DEBUG_PRINTF("===========================================================\n");
+	DEBUG_PRINTF(" MDNS Memory Information\n");
+	DEBUG_PRINTF("===========================================================\n");
 	if (g_mdns_meminfo_head) {
 		int total_size = 0;
 		struct mdns_meminfo_node *cur_node = g_mdns_meminfo_head;
 		while (cur_node) {
-			printf(" [address=0x%08X] [size=%d] %s(%d) \n", (int)cur_node->addr, cur_node->size, cur_node->func, cur_node->line);
+			DEBUG_PRINTF(" [address=0x%08X] [size=%d] %s(%d)\n", (int)cur_node->addr, cur_node->size, cur_node->func, cur_node->line);
 			total_size += cur_node->size;
 			cur_node = cur_node->next;
 		}
 
-		printf("\n");
-		printf(" TOTAL SIZE = %d \n", total_size);
+		DEBUG_PRINTF("\n");
+		DEBUG_PRINTF(" TOTAL SIZE = %d\n", total_size);
 	}
 
 	else {
-		printf(" There is Nothing... \n");
+		DEBUG_PRINTF(" There is Nothing...\n");
 	}
-	printf("===========================================================\n\n");
+	DEBUG_PRINTF("===========================================================\n\n");
 }
 
-#endif							/* #if MDNS_MEMORY_DEBUG==1 */
+#endif							/* MDNS_DEBUG_PRINTF==1 && MDNS_MEMORY_DEBUG==1 */

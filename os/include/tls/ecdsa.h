@@ -127,6 +127,21 @@ int mbedtls_ecdsa_sign_det(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *
 int mbedtls_ecdsa_verify(mbedtls_ecp_group *grp, const unsigned char *buf, size_t blen, const mbedtls_ecp_point *Q, const mbedtls_mpi *r, const mbedtls_mpi *s);
 
 /**
+ * \brief           Convert ecdsa signature to asn.1 type.
+ *
+ * \param r         First integer of the signature
+ * \param s         Second integer of the signature
+ * \param sig       Buffer that will hold the signature
+ * \param slen      Length of the signature written
+ *
+ * \return          0 if successful,
+ *                  or a MBEDTLS_ERR_ECP_XXX, MBEDTLS_ERR_MPI_XXX or
+ *                  MBEDTLS_ERR_ASN1_XXX error code
+ */
+int ecdsa_signature_to_asn1( const mbedtls_mpi *r, const mbedtls_mpi *s,
+                             unsigned char *sig, size_t *slen );
+
+/**
  * \brief           Compute ECDSA signature and write it to buffer,
  *                  serialized as defined in RFC 4492 page 20.
  *                  (Not thread-safe to use same context in multiple threads)

@@ -29,7 +29,7 @@ endif
 config NET_CMDS
 	bool "Network shell commands"
 	default y
-	depends on TASH && NETUTILS_DHCPC && NETUTILS_NETLIB
+	depends on TASH && NETUTILS_DHCPC && NETUTILS_NETLIB && NET_LWIP
 	---help---
 		Disable Network command in TASH.
 		Command including ifconfig, ifdown, ifup, and so on.

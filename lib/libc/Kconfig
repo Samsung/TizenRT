@@ -429,7 +429,7 @@ endif # NETDB_HOSTFILE
 menuconfig NETDB_DNSCLIENT
 	bool "DNS Name resolution"
 	default n
-	depends on NET_LWIP || (NET && NET_UDP)
+	depends on NET_LWIP
 	select LIBC_NETDB
 	---help---
 		Enable support for the name resolution; Enable network host
@@ -479,7 +479,7 @@ config NETDB_DNSCLIENT_LIFESEC
 
 config NETDB_DNSCLIENT_MAXRESPONSE
 	int "Max response size"
-	default 96
+	default 512
 	---help---
 		This setting determines the maximum size of response message that
 		can be received by the DNS resolver.  The default is 96 but may

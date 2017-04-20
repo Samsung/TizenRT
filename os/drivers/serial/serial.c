@@ -60,8 +60,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <semaphore.h>
-#include <tinyara/semaphore.h>
 #include <string.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -70,6 +68,7 @@
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/semaphore.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/serial/serial.h>
 #include <tinyara/fs/ioctl.h>
@@ -127,16 +126,6 @@ static const struct file_operations g_serialops = {
  ************************************************************************************/
 
 /************************************************************************************
- * Name: sem_reinit
- ************************************************************************************/
-
-static int sem_reinit(FAR sem_t *sem, int pshared, unsigned int value)
-{
-	sem_destroy(sem);
-	return sem_init(sem, pshared, value);
-}
-
-/************************************************************************************
  * Name: uart_takesem
  ************************************************************************************/
 
@@ -163,34 +152,6 @@ static int uart_takesem(FAR sem_t *sem, bool errout)
 	return OK;
 }
 
-/*
- *   This function attempts to lock the semaphore referenced by 'sem'
- *   which will be posted from interrupt handler.
- *   Because this function should have nothing to do with the priority
- *   inheritance, call sem_wait_for_isr() instead of sem_wait().
- */
-static int uart_takesem_wo_prio_inherit(FAR sem_t *sem, bool errout)
-{
-	/* Loop, ignoring interrupts, until we have successfully acquired the semaphore */
-
-	while (sem_wait_for_isr(sem) != OK) {
-		/* The only case that an error should occur here is if the wait was awakened
-		 * by a signal.
-		 */
-
-		ASSERT(get_errno() == EINTR);
-
-		/* When the signal is received, should we errout? Or should we just continue
-		 * waiting until we have the semaphore?
-		 */
-
-		if (errout) {
-			return -EINTR;
-		}
-	}
-
-	return OK;
-}
 
 /************************************************************************************
  * Name: uart_givesem
@@ -299,7 +260,7 @@ static int uart_putxmitchar(FAR uart_dev_t *dev, int ch, bool oktoblock)
 
 				dev->xmitwaiting = true;
 				uart_enabletxint(dev);
-				ret = uart_takesem_wo_prio_inherit(&dev->xmitsem, true);
+				ret = uart_takesem(&dev->xmitsem, true);
 				uart_disabletxint(dev);
 			}
 
@@ -1139,22 +1100,18 @@ static int uart_close(FAR struct file *filep)
 
 	irqrestore(flags);
 
-	/* We need to re-initialize the semaphores if this is the last close
+	/*
+	 * We need to re-initialize the semaphores if this is the last close
 	 * of the device, as the close might be caused by pthread_cancel() of
 	 * a thread currently blocking on any of them.
-	 *
-	 * REVISIT:  This logic *only* works in the case where the cancelled
-	 * thread had the only reference to the serial driver.  If there other
-	 * references, then the this logic will not be executed and the
-	 * semaphore count will still be incorrect.
 	 */
 
-	sem_reinit(&dev->xmitsem, 0, 0);
-	sem_reinit(&dev->recvsem, 0, 0);
-	sem_reinit(&dev->xmit.sem, 0, 1);
-	sem_reinit(&dev->recv.sem, 0, 1);
+	sem_reset(&dev->xmitsem, 0);
+	sem_reset(&dev->recvsem, 0);
+	sem_reset(&dev->xmit.sem, 1);
+	sem_reset(&dev->recv.sem, 1);
 #ifndef CONFIG_DISABLE_POLL
-	sem_reinit(&dev->pollsem, 0, 1);
+	sem_reset(&dev->pollsem, 1);
 #endif
 
 	uart_givesem(&dev->closesem);
@@ -1288,6 +1245,7 @@ errout_with_sem:
 
 int uart_register(FAR const char *path, FAR uart_dev_t *dev)
 {
+	/* Initialize semaphores */
 	sem_init(&dev->xmit.sem, 0, 1);
 	sem_init(&dev->recv.sem, 0, 1);
 	sem_init(&dev->closesem, 0, 1);
@@ -1297,6 +1255,14 @@ int uart_register(FAR const char *path, FAR uart_dev_t *dev)
 	sem_init(&dev->pollsem, 0, 1);
 #endif
 
+	/*
+	 * The recvsem and xmitsem are used for signaling and, hence, should
+	 * not have priority inheritance enabled.
+	 */
+	sem_setprotocol(&dev->xmitsem, SEM_PRIO_NONE);
+	sem_setprotocol(&dev->recvsem, SEM_PRIO_NONE);
+
+	/* Register the serial driver */
 	dbg("Registering %s\n", path);
 	return register_driver(path, &g_serialops, 0666, dev);
 }
@@ -1346,7 +1312,7 @@ void uart_datasent(FAR uart_dev_t *dev)
 		/* Yes... wake it up */
 
 		dev->xmitwaiting = false;
-		(void)sem_post_from_isr(&dev->xmitsem);
+		(void)sem_post(&dev->xmitsem);
 	}
 
 	/* Notify all poll/select waiters that they can write to xmit buffer */

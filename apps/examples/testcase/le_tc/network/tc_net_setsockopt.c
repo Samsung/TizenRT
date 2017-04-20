@@ -48,8 +48,7 @@ static void tc_net_setsockopt_multicast_ttl_p(int s)
   int ret = -1;
   u8_t optval = 1;
   ret = setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &optval, sizeof(optval));
-  if (ret < 0)
-  {
+  if (ret < 0) {
     printf("tc_net_setsockopt_multicast_ttl_p: SETSOCKOPT Multicast failure \n");
     nw_total_fail++;
     RETURN_ERR;
@@ -74,8 +73,7 @@ static void tc_net_setsockopt_multicast_ttl_loop_own_p(int s)
   int ret = -1;
   u8_t loop = 1;
   ret = setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-  if (ret < 0)
-  {
+  if (ret < 0) {
     printf("tc_net_setsockopt_multicast_ttl_loop_own_p: SETSOCKOPT Multicast failure \n");
     nw_total_fail++;
     RETURN_ERR;
@@ -100,8 +98,7 @@ static void tc_net_setsockopt_multicast_ttl_loop_p(int s)
   int ret = -1;
   u8_t loop = 250;
   ret = setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-  if (ret < 0)
-  {
+  if (ret < 0) {
     printf("tc_net_setsockopt_multicast_ttl_loop_p: SETSOCKOPT Multicast failure \n");
     nw_total_fail++;
     RETURN_ERR;
@@ -128,8 +125,7 @@ static void tc_net_setsockopt_multicast_if_p(int s, const char *my_ipv4addr)
   interface_addr.sin_addr.s_addr = inet_addr(my_ipv4addr);
 
   ret = setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, &interface_addr, sizeof(interface_addr));
-  if (ret < 0)
-  {
+  if (ret < 0) {
     printf("tc_net_setsockopt_multicast_if_p: SETSOCKOPT Multicast failure \n");
     nw_total_fail++;
     RETURN_ERR;
@@ -159,8 +155,7 @@ static void tc_net_setsockopt_multicast_add_group_p(int s,
   //mreq.imr_interface.s_addr=htonl(INADDR_ANY);
   ret = setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
 
-  if (ret < 0)
-  {
+  if (ret < 0) {
     printf("tc_net_setsockopt_multicast_add_group_p: SETSOCKOPT Multicast failure \n");
     nw_total_fail++;
     RETURN_ERR;
@@ -190,8 +185,7 @@ static void tc_net_setsockopt_multicast_drop_group_p(int s,
   mreq.imr_interface.s_addr = htonl(INADDR_ANY);
   ret = setsockopt(s, IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
 
-  if (ret < 0)
-  {
+  if (ret < 0) {
     printf("tc_net_setsockopt_multicast_add_group_p: SETSOCKOPT Multicast failure \n");
     nw_total_fail++;
     RETURN_ERR;
@@ -338,8 +332,7 @@ static void tc_net_setsockopt_ip_ttl_p(int s)
   int optval = 1;
 
   ret = setsockopt(s, IPPROTO_IP, IP_TTL, &optval, sizeof(optval));
-  if (ret < 0)
-  {
+  if (ret < 0) {
     printf("tc_net_setsockopt_ip_ttl_p FAIL: setopt SO_IP_TTL failure \n");
     nw_total_fail++;
     RETURN_ERR;
@@ -365,8 +358,7 @@ static void tc_net_setsockopt_no_check_p(int s)
   int optval = 1;
 
   ret = setsockopt(s, SOL_SOCKET, SO_NO_CHECK, &optval, sizeof(optval));
-  if (ret < 0)
-  {
+  if (ret < 0) {
     printf("tc_net_setsockopt_no_check_p FAIL: setopt SO_NO_CHECK failure \n");
     nw_total_fail++;
     RETURN_ERR;
@@ -415,8 +407,7 @@ static void tc_net_setsockopt_sndtimo_p(int s)
   timeout.tv_usec = 0;
 
   ret = setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout));
-  if (ret < 0)
-  {
+  if (ret < 0) {
     printf("tc_net_setsockopt_sndtimo_p FAIL: setopt SO_SNDTIMO failure \n");
     nw_total_fail++;
     RETURN_ERR;
@@ -505,8 +496,7 @@ static void tc_net_setsockopt_rcvbuf_p(int s)
   int size = 1000;
 
   ret = setsockopt(s, SOL_SOCKET, SO_RCVBUF, &size, size);
-  if (ret < 0)
-  {
+  if (ret < 0) {
     printf("tc_net_setsockopt_rcvbuf_p FAIL: setopt SO_RCVBUF failure \n");
     nw_total_fail++;
     RETURN_ERR;
@@ -552,10 +542,10 @@ static void tc_net_setsockopt_ipproto_ip_ip_pktinfo_p(int s)
     int optval=1;
 
     ret = setsockopt(s, IPPROTO_IP, IP_PKTINFO, &optval, sizeof(optval));;
-    if(ret < 0) {
-	printf("tc_net_setsockopt_ipproto_ip_ip_pktinfo_p FAIL: setopt KEEPALIVE failure\n");
-	nw_total_fail++;
-	RETURN_ERR;
+    if (ret < 0) {
+		printf("tc_net_setsockopt_ipproto_ip_ip_pktinfo_p FAIL: setopt KEEPALIVE failure\n");
+		nw_total_fail++;
+		RETURN_ERR;
     }
 
     printf("tc_net_setsockopt_ipproto_ip_ip_pktinfo_p PASS\n");
@@ -577,10 +567,10 @@ static void tc_net_setsockopt_sol_socket_timestamping_p(fd)
     int optval=1;
 
     ret = setsockopt(fd, SOL_SOCKET, SO_TIMESTAMPING, &optval, sizeof(optval));
-    if(ret < 0) {
-	printf("tc_net_setsockopt_sol_socket_timestamping_p FAIL: setopt KEEPALIVE failure\n");
-	nw_total_fail++;
-	RETURN_ERR;
+    if (ret < 0) {
+		printf("tc_net_setsockopt_sol_socket_timestamping_p FAIL: setopt KEEPALIVE failure\n");
+		nw_total_fail++;
+		RETURN_ERR;
     }
 
     printf("tc_net_setsockopt_sol_socket_timestamping_p PASS\n");
@@ -662,10 +652,10 @@ static void tc_net_setsockopt_invalid_opt_name_n(int s)
     //int optval=1;
 
     ret = setsockopt(s, SOL_SOCKET, SCTP_AUTOCLOSE, 0, 0);
-    if(ret != -1) {
-	printf("tc_net_setsockopt_invalid_opt_name_n FAIL: setopt KEEPALIVE failure\n");
-	nw_total_fail++;
-	RETURN_ERR;
+    if (ret != -1) {
+		printf("tc_net_setsockopt_invalid_opt_name_n FAIL: setopt KEEPALIVE failure\n");
+		nw_total_fail++;
+		RETURN_ERR;
     }
 
     printf("tc_net_setsockopt_invalid_opt_name_n PASS\n");

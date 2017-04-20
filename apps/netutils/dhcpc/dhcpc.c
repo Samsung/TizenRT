@@ -74,6 +74,9 @@
 #include <apps/netutils/dhcpc.h>
 #include <apps/netutils/netlib.h>
 
+#if defined (CONFIG_NETDB_DNSCLIENT) && defined (CONFIG_NETDB_DNSSERVER_BY_DHCP)
+#include <tinyara/net/dns.h>
+#endif
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -366,7 +369,11 @@ void *dhcpc_open(const char *intf)
 	uint8_t macaddr[IFHWADDRLEN];
 	int maclen = IFHWADDRLEN;
 
-	netlib_getmacaddr(intf, macaddr);
+	if (netlib_getmacaddr(intf, macaddr) != OK) {
+		/* Do not open dhcpc socket on wrong interface name */
+		ndbg("ERROR : failed to netlib_getmacaddr\n");
+		return NULL;
+	}
 
 	ndbg("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", ((uint8_t *)macaddr)[0], ((uint8_t *)macaddr)[1], ((uint8_t *)macaddr)[2], ((uint8_t *)macaddr)[3], ((uint8_t *)macaddr)[4], ((uint8_t *)macaddr)[5]);
 
@@ -446,8 +453,15 @@ int g_dhcpc_state;
 
 int dhcpc_request(void *handle, struct dhcpc_state *presult)
 {
-	if (!handle)
+	if (!handle) {
+		ndbg("ERROR : handle must not be null\n");
 		return -100;
+	}
+
+	if (!presult) {
+		ndbg("ERROR : presult must not be null\n");
+		return -100;
+	}
 
 	struct dhcpc_state_s *pdhcpc = (struct dhcpc_state_s *)handle;
 	g_pResult = presult;
@@ -599,6 +613,17 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 	ndbg("Got DNS server %d.%d.%d.%d\n", (presult->dnsaddr.s_addr) & 0xff, (presult->dnsaddr.s_addr >> 8) & 0xff, (presult->dnsaddr.s_addr >> 16) & 0xff, (presult->dnsaddr.s_addr >> 24) & 0xff);
 	ndbg("Got default router %d.%d.%d.%d\n", (presult->default_router.s_addr) & 0xff, (presult->default_router.s_addr >> 8) & 0xff, (presult->default_router.s_addr >> 16) & 0xff, (presult->default_router.s_addr >> 24) & 0xff);
 	ndbg("Lease expires in %d seconds\n", presult->lease_time);
+
+#if defined (CONFIG_NETDB_DNSCLIENT) && defined (CONFIG_NETDB_DNSSERVER_BY_DHCP)
+	struct sockaddr_in dns;
+	if (presult->dnsaddr.s_addr != 0) {
+		ndbg("Set DNS IP address via dns_add_nameserver\n");
+		dns.sin_addr.s_addr = presult->dnsaddr.s_addr;
+		dns.sin_family = AF_INET;
+		dns.sin_port  = htons(DNS_DEFAULT_PORT);
+		dns_add_nameserver((FAR struct sockaddr *)&dns, sizeof(struct sockaddr_in));
+	}
+#endif
 
 	return OK;
 }

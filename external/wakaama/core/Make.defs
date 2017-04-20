@@ -36,8 +36,9 @@
 ifeq ($(CONFIG_DM),y)
 
 # Routing table support
-
-CSRCS += management.c objects.c observe.c data.c discover.c packet.c registration.c  tlv_lwm2m.c transaction.c uri_lwm2m.c utils.c list.c liblwm2m.c json.c bootstrap.c
+CSRCS += block1.c
+CSRCS += management.c objects.c observe.c data.c discover.c packet.c registration.c transaction.c utils.c list.c liblwm2m.c json.c bootstrap.c
+CSRCS += tlv.c uri.c
 
 ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
 CFLAGS+=-DLWM2M_CLIENT_MODE
@@ -49,7 +50,12 @@ endif
 
 ifeq ($(CONFIG_LWM2M_LITTLE_ENDIAN),y)
 CFLAGS+=-DLWM2M_LITTLE_ENDIAN
+else
+CFLAGS+=-DLWM2M_BIG_ENDIAN
 endif
+
+CFLAGS+=-D__TINYARA__
+
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
 
 DEPPATH += --dep-path wakaama/core

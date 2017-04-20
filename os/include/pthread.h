@@ -73,9 +73,10 @@
 #include <stdint.h>				/* C99 fixed width integer types */
 #include <stdbool.h>			/* C99 boolean types */
 #include <unistd.h>				/* For getpid */
-#include <semaphore.h>			/* Needed for sem_t */
 #include <signal.h>				/* Needed for sigset_t */
 #include <time.h>				/* Needed for struct timespec */
+
+#include <tinyara/semaphore.h>	/* For sem_t and SEM_PRIO_* defines */
 
 /********************************************************************************
  * Pre-processor Definitions
@@ -119,12 +120,10 @@
  *  An implementation is allowed to map this mutex to one of the other mutex types.
  */
 
-#ifdef CONFIG_MUTEX_TYPES
 #define PTHREAD_MUTEX_NORMAL        0
 #define PTHREAD_MUTEX_ERRORCHECK    1
 #define PTHREAD_MUTEX_RECURSIVE     2
 #define PTHREAD_MUTEX_DEFAULT       PTHREAD_MUTEX_NORMAL
-#endif
 
 /* Valid ranges for the pthread stacksize attribute */
 
@@ -136,9 +135,7 @@
 #define PTHREAD_INHERIT_SCHED         0
 #define PTHREAD_EXPLICIT_SCHED        1
 
-#define PTHREAD_PRIO_NONE             0
-#define PTHREAD_PRIO_INHERIT          1
-#define PTHREAD_PRIO_PROTECT          2
+/* Default priority */
 
 #define PTHREAD_DEFAULT_PRIORITY      100
 
@@ -162,6 +159,49 @@
 /* This is returned by pthread_wait.  It must not match any errno in errno.h */
 
 #define PTHREAD_BARRIER_SERIAL_THREAD 0x1000
+
+/* Values for protocol mutex attribute */
+
+#define PTHREAD_PRIO_NONE	SEM_PRIO_NONE
+#define PTHREAD_PRIO_INHERIT	SEM_PRIO_INHERIT
+#define PTHREAD_PRIO_PROTECT	SEM_PRIO_PROTECT
+
+/*
+ * Values for robust argument of pthread_mutexattr_get/setrobust
+ *
+ * PTHREAD_MUTEX_STALLED - No special actions are taken if the owner of the
+ * mutex is terminated while holding the mutex lock. This can lead to
+ * deadlocks if no other thread can unlock the mutex.  This is the standard
+ * default value (NuttX permits you to override that default behavior
+ * with a configuration option).
+ *
+ * PTHREAD_MUTEX_ROBUST - If the process containing the owning thread of a
+ * robust mutex terminates while holding the mutex lock, the next thread
+ * that acquires the mutex will be notified about the termination by the
+ * return value EOWNERDEAD from the locking function. If the owning thread
+ * of a robust mutex terminates while holding the mutex lock, the next
+ * thread that attempts to acquire the mutex may be notified about the
+ * termination by the return value EOWNERDEAD. The notified thread can
+ * then attempt to make the state protected by the mutex consistent again,
+ * and if successful can mark the mutex state as consistent by calling
+ * pthread_mutex_consistent(). After a subsequent successful call to
+ * pthread_mutex_unlock(), the mutex lock will be released and can be used
+ * normally by other threads. If the mutex is unlocked without a call to
+ * pthread_mutex_consistent(), it will be in a permanently unusable state
+ * and all attempts to lock the mutex will fail with the error
+ * ENOTRECOVERABLE. The only permissible operation on such a mutex is
+ * pthread_mutex_destroy().
+ */
+#define PTHREAD_MUTEX_STALLED         0
+#define PTHREAD_MUTEX_ROBUST          1
+
+/*
+ * Values for struct pthread_mutex_s flags.  These are non-standard and
+ * intended only for internal use within the OS.
+ */
+#define _PTHREAD_MFLAGS_ROBUST        (1 << 0)	/* Robust (NORMAL) mutex */
+#define _PTHREAD_MFLAGS_INCONSISTENT  (1 << 1)	/* Mutex is in an inconsistent state */
+#define _PTHREAD_MFLAGS_NRECOVERABLE  (1 << 2)	/* Inconsistent mutex has been unlocked */
 
 /* Definitions to map some non-standard, BSD thread management interfaces to
  * the non-standard Linux-like prctl() interface.  Since these are simple
@@ -204,7 +244,7 @@ extern "C" {
 typedef int pthread_key_t;
 typedef FAR void *pthread_addr_t;
 
-typedef pthread_addr_t (*pthread_startroutine_t)(pthread_addr_t);
+typedef pthread_addr_t(*pthread_startroutine_t)(pthread_addr_t);
 typedef pthread_startroutine_t pthread_func_t;
 
 /**
@@ -248,9 +288,15 @@ typedef struct pthread_cond_s pthread_cond_t;
  * @brief Structure of pthread mutex attr configuration
  */
 struct pthread_mutexattr_s {
-	uint8_t pshared;		/* PTHREAD_PROCESS_PRIVATE or PTHREAD_PROCESS_SHARED */
-#ifdef CONFIG_MUTEX_TYPES
-	uint8_t type;			/* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
+	uint8_t pshared : 1; /* PTHREAD_PROCESS_PRIVATE or PTHREAD_PROCESS_SHARED */
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	uint8_t proto   : 2; /* See PTHREAD_PRIO_* definitions */
+#endif
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
+	uint8_t type    : 2; /* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
+#endif
+#ifdef CONFIG_PTHREAD_MUTEX_BOTH
+	uint8_t robust  : 1; /* PTHREAD_MUTEX_STALLED or PTHREAD_MUTEX_ROBUST */
 #endif
 };
 typedef struct pthread_mutexattr_s pthread_mutexattr_t;
@@ -260,19 +306,48 @@ typedef struct pthread_mutexattr_s pthread_mutexattr_t;
  * @brief Structure of pthread mutex configuration
  */
 struct pthread_mutex_s {
-	int pid;				/* ID of the holder of the mutex */
+
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+	/* Supports a singly linked list */
+
+	FAR struct pthread_mutex_s *flink;
+#endif
+	/* Payload */
+
 	sem_t sem;				/* Semaphore underlying the implementation of the mutex */
-#ifdef CONFIG_MUTEX_TYPES
+	int pid;				/* ID of the holder of the mutex */
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+	uint8_t flags;			/* See _PTHREAD_MFLAGS_* */
+#endif
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 	uint8_t type;			/* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
 	int nlocks;				/* The number of recursive locks held */
 #endif
 };
 typedef struct pthread_mutex_s pthread_mutex_t;
 
-#ifdef CONFIG_MUTEX_TYPES
-#define PTHREAD_MUTEX_INITIALIZER {-1, SEM_INITIALIZER(1), PTHREAD_MUTEX_DEFAULT, 0}
+#define __PTHREAD_MUTEX_T_DEFINED 1
+
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+#ifdef CONFIG_PTHREAD_MUTEX_DEFAULT_UNSAFE
+#define __PTHREAD_MUTEX_DEFAULT_FLAGS 0
 #else
-#define PTHREAD_MUTEX_INITIALIZER {-1, SEM_INITIALIZER(1)}
+#define __PTHREAD_MUTEX_DEFAULT_FLAGS _PTHREAD_MFLAGS_ROBUST
+#endif
+#endif
+
+#if defined(CONFIG_PTHREAD_MUTEX_TYPES) && !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
+#define PTHREAD_MUTEX_INITIALIZER {NULL, SEM_INITIALIZER(1), -1, \
+                                     __PTHREAD_MUTEX_DEFAULT_FLAGS, \
+                                     PTHREAD_MUTEX_DEFAULT, 0}
+#elif defined(CONFIG_PTHREAD_MUTEX_TYPES)
+#define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1, \
+                                     PTHREAD_MUTEX_DEFAULT, 0}
+#elif !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
+#define PTHREAD_MUTEX_INITIALIZER {NULL, SEM_INITIALIZER(1), -1,\
+                                     __PTHREAD_MUTEX_DEFAULT_FLAGS}
+#else
+#define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1}
 #endif
 
 /**
@@ -699,7 +774,6 @@ int pthread_mutexattr_getpshared(FAR const pthread_mutexattr_t *attr, FAR int *p
  * @since Tizen RT v1.0
  */
 int pthread_mutexattr_setpshared(FAR pthread_mutexattr_t *attr, int pshared);
-#ifdef CONFIG_MUTEX_TYPES
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
@@ -710,7 +784,15 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
  * @since Tizen RT v1.0
  */
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
-#endif
+
+int pthread_mutexattr_getprotocol(FAR const pthread_mutexattr_t *attr,
+				  FAR int *protocol);
+int pthread_mutexattr_setprotocol(FAR pthread_mutexattr_t *attr,
+				  int protocol);
+int pthread_mutexattr_getrobust(FAR const pthread_mutexattr_t *attr,
+				FAR int *robust);
+int pthread_mutexattr_setrobust(FAR pthread_mutexattr_t *attr,
+				int robust);
 
 /* Operations on condition variables */
 /**
@@ -746,7 +828,7 @@ int pthread_barrierattr_getpshared(FAR const pthread_barrierattr_t *attr, FAR in
  */
 int pthread_barrierattr_setpshared(FAR pthread_barrierattr_t *attr, int pshared);
 /**
- * @} */ //end for PTHREAD_KERNEL
+	 * @} *///end for PTHREAD_KERNEL
 
 #ifdef __cplusplus
 }

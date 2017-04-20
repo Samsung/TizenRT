@@ -109,7 +109,7 @@
  *
  ****************************************************************************/
 
-int up_hardfault(int irq, FAR void *context)
+int up_hardfault(int irq, FAR void *context, FAR void *arg)
 {
 #if defined(CONFIG_DEBUG_HARDFAULT) || !defined(CONFIG_ARMV7M_USEBASEPRI)
 	uint32_t *regs = (uint32_t *)context;
@@ -148,7 +148,7 @@ int up_hardfault(int irq, FAR void *context)
 
 		if (insn == INSN_SVC0) {
 			hfdbg("Forward SVCall\n");
-			return up_svcall(irq, context);
+			return up_svcall(irq, context, arg);
 		}
 	}
 #endif

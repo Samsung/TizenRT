@@ -71,10 +71,11 @@ static int http_compare_dq(struct http_divided_query_t *src, struct http_divided
 int http_dispatch_url(struct http_client_t *client, struct http_req_message *req)
 {
 	int i = 0;
-	char query[HTTP_CONF_MAX_URL_QUERY_LENGTH] = { 0, };
-	char params[HTTP_CONF_MAX_URL_PARAMS_LENGTH] = { 0, };
+	char query[HTTP_CONF_MAX_URL_QUERY_LENGTH] = {0, };
+	char params[HTTP_CONF_MAX_URL_PARAMS_LENGTH] = {0, };
 	struct http_divided_query_t dq;
 	struct http_keyvalue_list_t params_list;
+	char *origin_url = req->url;
 
 	http_divide_query_params(req->url, query, params);
 	req->url = query;
@@ -82,6 +83,8 @@ int http_dispatch_url(struct http_client_t *client, struct http_req_message *req
 
 	http_parse_query(query, &dq);
 	if (http_keyvalue_list_init(&params_list) == HTTP_ERROR) {
+		http_keyvalue_list_release(&params_list);
+		http_release_query(&dq);
 		return HTTP_ERROR;
 	}
 
@@ -96,6 +99,7 @@ int http_dispatch_url(struct http_client_t *client, struct http_req_message *req
 		if (cur) {
 			if (cur->method == req->method && http_compare_dq(&cur->dq, &dq, &params_list) == HTTP_OK) {
 				cur->func(client, req);
+				req->url = origin_url;
 				http_keyvalue_list_release(&params_list);
 				http_release_query(&dq);
 				return HTTP_OK;
@@ -107,6 +111,7 @@ int http_dispatch_url(struct http_client_t *client, struct http_req_message *req
 		client->server->cb[req->method](client, req);
 	}
 
+	req->url = origin_url;
 	http_keyvalue_list_release(&params_list);
 	http_release_query(&dq);
 	return HTTP_OK;
@@ -189,7 +194,8 @@ int http_server_deregister_cb(struct http_server_t *server, int method, const ch
 
 	for (i = 0; i < HTTP_CONF_MAX_QUERY_HANDLER_COUNT; i++) {
 		if (server->query_handlers[i] != NULL) {
-			if (server->query_handlers[i]->method == method && http_compare_dq(&server->query_handlers[i]->dq, &dq, NULL) == HTTP_OK) {
+			if (server->query_handlers[i]->method == method &&
+				http_compare_dq(&server->query_handlers[i]->dq, &dq, NULL) == HTTP_OK) {
 				http_release_query(&server->query_handlers[i]->dq);
 				HTTP_FREE(server->query_handlers[i]);
 				server->query_handlers[i] = NULL;
@@ -207,7 +213,7 @@ int http_parse_query(const char *query, struct http_divided_query_t *dq)
 {
 	int i = 0;
 	int query_len = (int)strlen(query);
-	int slash_position[HTTP_CONF_MAX_SLASH_COUNT + 1] = { 0, };
+	int slash_position[HTTP_CONF_MAX_SLASH_COUNT + 1] = {0, };
 
 	HTTP_MEMSET(dq, 0, sizeof(struct http_divided_query_t));
 
@@ -229,7 +235,8 @@ int http_parse_query(const char *query, struct http_divided_query_t *dq)
 	HTTP_MEMSET(dq->paths, 0, dq->slash_count * HTTP_CONF_MAX_DIVIDED_PATH_LENGTH);
 
 	for (i = 0; i < dq->slash_count; i++) {
-		HTTP_MEMCPY(dq->paths + (i * HTTP_CONF_MAX_DIVIDED_PATH_LENGTH), query + slash_position[i], slash_position[i + 1] - slash_position[i]);
+		HTTP_MEMCPY(dq->paths + (i * HTTP_CONF_MAX_DIVIDED_PATH_LENGTH),
+					query + slash_position[i], slash_position[i + 1] - slash_position[i]);
 	}
 
 	return HTTP_OK;
@@ -240,8 +247,8 @@ int http_parse_params(const char *params, struct http_keyvalue_list_t *params_li
 	int i = 0;
 	int params_len = strlen(params);
 
-	char key[HTTP_CONF_MAX_KEY_LENGTH] = { 0, };
-	char value[HTTP_CONF_MAX_VALUE_LENGTH] = { 0, };
+	char key[HTTP_CONF_MAX_KEY_LENGTH] = {0, };
+	char value[HTTP_CONF_MAX_VALUE_LENGTH] = {0, };
 
 	bool is_reading_key = false;
 	int reading_position = 0;
@@ -254,12 +261,13 @@ int http_parse_params(const char *params, struct http_keyvalue_list_t *params_li
 	is_reading_key = true;
 	reading_position = 0;
 
-	for (i = 0; i < params_len + 1; i++) {	/* Consider the last '\0' character */
+	for (i = 0; i < params_len + 1; i++) { /* Consider the last '\0' character */
 		if (is_reading_key && params[i] == '=') {
 			key[reading_position++] = '\0';
 			is_reading_key = false;
 			reading_position = 0;
-		} else if (!is_reading_key && (params[i] == '&' || params[i] == '#' || params[i] == '\0')) {
+		} else if (!is_reading_key && (params[i] == '&' || params[i] == '#' ||
+									   params[i] == '\0')) {
 			value[reading_position++] = '\0';
 			is_reading_key = true;
 			reading_position = 0;

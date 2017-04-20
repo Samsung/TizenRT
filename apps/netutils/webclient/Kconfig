@@ -6,13 +6,18 @@
 config NETUTILS_WEBCLIENT
 	bool "Webclient"
 	default n
+	depends on NET
 	---help---
-		Enable support for the webclient.
+		Enables the webclient.
+		This webclient supports to send request by sync/async mode.
+		Sync mode is excuted on same task with caller.
+		Async mode is excuted on new task.
 
 if NETUTILS_WEBCLIENT
-
-config WGET_USERAGENT
-	string "wget User Agent"
+	config WGET_USERAGENT
+	string "User Agent"
 	default "TinyARA"
+	---help---
+		Sets user agent. It apply to request message.
 
 endif

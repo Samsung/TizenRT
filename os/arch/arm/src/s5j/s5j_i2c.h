@@ -139,7 +139,7 @@
 #define I2C_MASTER      0
 #define I2C_SLAVE_MODE  1
 #define I2C_POLLING     0
-#define I2C_INTERRUPT   1
+/* #define I2C_INTERRUPT   1 */
 
 enum slave_status {
 	SLAVE_IDLE,
@@ -162,46 +162,116 @@ struct master_data {
 	/*  struct completion done; */
 };
 
+/* I2C Device hardware configuration */
+struct s5j_i2c_config_s {
+	uintptr_t base;				/* I2C base address */
+	unsigned int scl_pin;			/* GPIO configuration for SCL as SCL */
+	unsigned int sda_pin;			/* GPIO configuration for SDA as SDA */
+	int (*isr)(int, void *, void *);	/* Interrupt handler */
+	unsigned int irq;				/* IRQ number */
+	uint8_t devno;				/* I2Cn where n = devno */
+};
+
+/* I2C Device Private Data */
+struct s5j_i2c_priv_s {
+	const struct i2c_ops_s *ops;	/* Standard I2C operations */
+	const struct s5j_i2c_config_s *config;	/* Port configuration */
+	sem_t exclsem;				/* Mutual exclusion semaphore */
+#ifndef CONFIG_I2C_POLLED
+	sem_t waitsem;				/* Interrupt wait semaphore */
+#endif
+	uint8_t refs;				/* Reference count */
+	volatile uint8_t intstate;	/* Interrupt handshake (see enum s5j_intstate_e) */
+
+	int state;
+	int clock;
+	int xfer_speed;
+	unsigned int master;
+	unsigned int mode;
+	unsigned int slave_addr;
+	unsigned int addrlen;
+	unsigned int timeout;
+	char name[16];
+
+	unsigned int initialized;
+	unsigned int retries;
+	/*  master data  */
+	uint8_t msgc;				/* Message count */
+	struct i2c_msg_s *msgv;		/* Message list */
+	uint8_t *mptr;				/* Current message buffer */
+	int mcnt;					/* Current message length */
+	uint16_t mflags;			/* Current message flags */
+
+	struct i2c_msg_s *msg;
+
+	/* interrupt */
+	struct slave_data *slave_test_data;
+	struct master_data *master_test_data;
+
+};
+
+/************************************************************************************
+ * Private Function Prototypes
+ ************************************************************************************/
+static void hsi2c_set_hs_timing(unsigned int base, unsigned int nClkDiv, unsigned int tSTART_SU, unsigned int tSTART_HD, unsigned int tSTOP_SU, unsigned int tSDA_SU, unsigned int tDATA_SU, unsigned int tDATA_HD, unsigned int tSCL_L, unsigned int tSCL_H, unsigned int tSR_RELEASE);
+static void hsi2c_set_fs_timing(unsigned int base, unsigned int nClkDiv, unsigned int tSTART_SU, unsigned int tSTART_HD, unsigned int tSTOP_SU, unsigned int tDATA_SU, unsigned int tDATA_HD, unsigned int tSCL_L, unsigned int tSCL_H, unsigned int tSR_RELEASE);
+
+static void hsi2c_calculate_timing(unsigned int base, unsigned int nPclk, unsigned int nOpClk);
+static void hsi2c_conf(unsigned int base, unsigned int nOpClk);
+static void hsi2c_enable_int(unsigned int base, unsigned int bit);
+static void hsi2c_disable_int(unsigned int base, unsigned int bit);
+static void hsi2c_clear_int(unsigned int base, unsigned int bit);
+static unsigned int hsi2c_read_int_status(unsigned int base);
+static void hsi2c_set_slave_addr(unsigned int base, u16 addr, unsigned int is_master);
+static int hsi2c_manual_fast_init(struct s5j_i2c_priv_s *priv);
+static int hsi2c_wait_xfer_done(struct s5j_i2c_priv_s *priv);
+static int hsi2c_wait_xfer_noack(struct s5j_i2c_priv_s *priv);
+static void hsi2c_start(struct s5j_i2c_priv_s *priv);
+static void hsi2c_stop(struct s5j_i2c_priv_s *priv);
+static void hsi2c_repstart(struct s5j_i2c_priv_s *priv);
+static int hsi2c_outb(struct s5j_i2c_priv_s *priv, u8 data);
+static int hsi2c_inb(struct s5j_i2c_priv_s *priv, bool is_ack);
+static int sendbytes(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg);
+static int readbytes(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg);
+static int try_address(struct s5j_i2c_priv_s *priv, u8 addr, int retries);
+static int do_address(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg);
+static void hsi2c_run_auto_mode(unsigned int base, int on);
+static void hsi2c_tx_fifo_reset(unsigned int base, int resetb);
+static void hsi2c_set_auto_config(unsigned int base, unsigned int stop, unsigned int tx, unsigned int len);
+static void hsi2c_set_trans_mode(unsigned int base, unsigned int master, unsigned int tx);
+static void hsi2c_set_hwacg_mode(unsigned int base, unsigned int slave);
+static int hsi2c_master_handler(void *args);
+static int hsi2c_slave_handler(void *args);
+static void hsi2c_set_auto_mode(unsigned int base);
+static void hsi2c_set_fifo_level(unsigned int base);
+static void hsi2c_master_setup(struct s5j_i2c_priv_s *priv, unsigned int mode, unsigned int speed, unsigned int slave_addr);
+static void hsi2c_slave_setup(struct s5j_i2c_priv_s *priv, unsigned int mode, unsigned int speed, unsigned int slave_addr);
+static void hsi2c_master_cleanup(struct s5j_i2c_priv_s *priv);
+static void hsi2c_slave_cleanup(struct s5j_i2c_priv_s *priv);
+static int hsi2c_setup(struct s5j_i2c_priv_s *priv, unsigned int master, unsigned int mode, unsigned int speed, unsigned int slave_addr);
+static int hsi2c_cleanup(struct s5j_i2c_priv_s *priv);
+static inline void s5j_i2c_sem_wait(struct s5j_i2c_priv_s *priv);
+static inline void s5j_i2c_sem_post(struct s5j_i2c_priv_s *priv);
+static inline void s5j_i2c_sem_init(struct s5j_i2c_priv_s *priv);
+static inline void s5j_i2c_sem_destroy(struct s5j_i2c_priv_s *priv);
+static int s5j_i2c_interrupt(struct s5j_i2c_priv_s *priv, unsigned int status);
+static int s5j_i2c0_interrupt(int irq, void *context, void *arg);
+static int s5j_i2c1_interrupt(int irq, void *context, void *arg);
+static int s5j_i2c2_interrupt(int irq, void *context, void *arg);
+static int s5j_i2c3_interrupt(int irq, void *context, void *arg);
+static int s5j_i2c_initialize(struct s5j_i2c_priv_s *priv, unsigned int frequency);
+static int s5j_i2c_uninitialize(struct s5j_i2c_priv_s *priv);
+
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-
-/****************************************************************************
- * Name: s5j_i2cbus_initialize
- *
- * Description:
- *   Initialize the selected I2C port. And return a unique instance of struct
- *   struct i2c_master_s.  This function may be called to obtain multiple
- *   instances of the interface, each of which may be set up with a
- *   different frequency and slave address.
- *
- * Input Parameter:
- *   Port number (for hardware that has multiple I2C interfaces)
- *
- * Returned Value:
- *   Valid I2C device structure reference on succcess; a NULL on failure
- *
- ****************************************************************************/
-
+unsigned int s5j_i2c_setclock(struct i2c_dev_s *dev, unsigned int frequency);
+int s5j_i2c_setownaddress(FAR struct i2c_dev_s *dev, int addr, int nbits);
+int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc);
+int s5j_i2c_read(FAR struct i2c_dev_s *dev, FAR uint8_t *buffer, int buflen);
+int s5j_i2c_write(FAR struct i2c_dev_s *dev, FAR const uint8_t *buffer, int buflen);
 struct i2c_dev_s *up_i2cinitialize(int port);
-
-/****************************************************************************
- * Name: s5j_i2cbus_uninitialize
- *
- * Description:
- *   De-initialize the selected I2C port, and power down the device.
- *
- * Input Parameter:
- *   Device structure as returned by the tiva_i2cbus_initialize()
- *
- * Returned Value:
- *   OK on success, ERROR when internal reference count mismatch or dev
- *   points to invalid hardware device.
- *
- ****************************************************************************/
-
 int s5j_i2cbus_uninitialize(FAR struct i2c_dev_s *dev);
-
 void s5j_i2c_register(int bus);
-
-#endif							/* __ARCH_ARM_SRC_S5J_I2C_H */
+#endif /* __ARCH_ARM_SRC_S5J_I2C_H */

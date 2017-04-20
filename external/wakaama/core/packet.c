@@ -246,17 +246,61 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 new_offset = block_offset;
             }
 
-            coap_error_code = handle_request(contextP, fromSessionH, message, response);
+            /* handle block1 option */
+            if (IS_OPTION(message, COAP_OPTION_BLOCK1))
+            {
+#ifdef LWM2M_CLIENT_MODE
+                // get server
+                lwm2m_server_t * serverP;
+                serverP = utils_findServer(contextP, fromSessionH);
+#ifdef LWM2M_BOOTSTRAP
+                if (serverP == NULL)
+                {
+                    serverP = utils_findBootstrapServer(contextP, fromSessionH);
+                }
+#endif
+                if (serverP == NULL)
+                {
+                    coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
+                }
+                else
+                {
+                    uint32_t block1_num;
+                    uint8_t  block1_more;
+                    uint16_t block1_size;
+                    uint8_t * complete_buffer = NULL;
+                    size_t complete_buffer_size;
+
+                    // parse block1 header
+                    coap_get_header_block1(message, &block1_num, &block1_more, &block1_size, NULL);
+                    LOG_ARG("Blockwise: block1 request NUM %u (SZX %u/ SZX Max%u) MORE %u", block1_num, block1_size, REST_MAX_CHUNK_SIZE, block1_more);
+
+                    // handle block 1
+                    coap_error_code = coap_block1_handler(&serverP->block1Data, message->mid, message->payload, message->payload_len, block1_size, block1_num, block1_more, &complete_buffer, &complete_buffer_size);
+
+                    // if payload is complete, replace it in the coap message.
+                    if (coap_error_code == NO_ERROR)
+                    {
+                        message->payload = complete_buffer;
+                        message->payload_len = complete_buffer_size;
+                    }
+                    else if (coap_error_code == COAP_231_CONTINUE)
+                    {
+                        block1_size = MIN(block1_size, REST_MAX_CHUNK_SIZE);
+                        coap_set_header_block1(response,block1_num, block1_more,block1_size);
+                    }
+                }
+#else
+                coap_error_code = COAP_501_NOT_IMPLEMENTED;
+#endif
+            }
+            if (coap_error_code == NO_ERROR)
+            {
+                coap_error_code = handle_request(contextP, fromSessionH, message, response);
+            }
             if (coap_error_code==NO_ERROR)
             {
-                /* Apply blockwise transfers. */
-                if ( IS_OPTION(message, COAP_OPTION_BLOCK1) && response->code<COAP_400_BAD_REQUEST && !IS_OPTION(response, COAP_OPTION_BLOCK1) )
-                {
-                    LOG("Block1 NOT IMPLEMENTED");
-
-                    coap_error_code = COAP_501_NOT_IMPLEMENTED;
-                }
-                else if ( IS_OPTION(message, COAP_OPTION_BLOCK2) )
+                if ( IS_OPTION(message, COAP_OPTION_BLOCK2) )
                 {
                     /* unchanged new_offset indicates that resource is unaware of blockwise transfer */
                     if (new_offset==block_offset)

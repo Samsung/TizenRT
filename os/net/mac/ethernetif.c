@@ -137,7 +137,7 @@ static err_t ethernetif_output(struct netif *netif, struct pbuf *p)
 int ethernetif_input(struct netif *netif)
 {
 
-	LWIP_DEBUGF(ETHIF_DEBUG, ("passing to LWIP layer, packet len %d \n", netif->d_len));
+	LWIP_DEBUGF(NETIF_DEBUG, ("passing to LWIP layer, packet len %d \n", netif->d_len));
 	struct pbuf *p, *q;
 	u16_t len = 0;
 	u8_t *frame_ptr;
@@ -151,7 +151,7 @@ int ethernetif_input(struct netif *netif)
 	/* We allocate a pbuf chain of pbufs from the pool. */
 	p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
 
-	LWIP_DEBUGF(ETHIF_DEBUG, ("processing pbufs\n"));
+	LWIP_DEBUGF(NETIF_DEBUG, ("processing pbufs\n"));
 	/* We iterate over the pbuf chain until we have read the entire packet into the pbuf. */
 	if (p != NULL) {
 		for (q = p; q != NULL; q = q->next) {
@@ -160,7 +160,7 @@ int ethernetif_input(struct netif *netif)
 		}
 		/* full packet send to tcpip_thread to process */
 		if (netif->input(p, netif) != ERR_OK) {
-			LWIP_DEBUGF(ETHIF_DEBUG, ("input processing error\n"));
+			LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
 			LINK_STATS_INC(link.err);
 			pbuf_free(p);
 			/* Don't reference the packet any more! */
@@ -169,7 +169,7 @@ int ethernetif_input(struct netif *netif)
 			LINK_STATS_INC(link.recv);
 		}
 	} else {
-		LWIP_DEBUGF(ETHIF_DEBUG, ("mem error\n"));
+		LWIP_DEBUGF(NETIF_DEBUG, ("mem error\n"));
 		LINK_STATS_INC(link.memerr);
 		LINK_STATS_INC(link.drop);
 		return -1;

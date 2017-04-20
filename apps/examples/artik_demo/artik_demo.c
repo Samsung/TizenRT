@@ -233,7 +233,6 @@ static char NET_DEVNAME[10];
 
 static int app_dhcp_main(void)
 {
-	uint32_t timeleft = 15000;
 	struct dhcpc_state state;
 	void *dhcp_handle;
 	int ret;
@@ -295,8 +294,8 @@ static int wifiAutoConnectInit()
 	ret = WiFiStart(SLSI_WIFI_STATION_IF, NULL);
 	if (ret == SLSI_STATUS_SUCCESS) {
 		printf("[AutoConnect]STA mode started\n");
-		ret = WiFiNetworkJoin((uint8_t*) CONFIG_AP_SSID, strlen(CONFIG_AP_SSID), NULL,
-				(const slsi_security_config_t *) get_security_config(
+		ret = WiFiNetworkJoin((uint8_t*)CONFIG_AP_SSID, strlen(CONFIG_AP_SSID), NULL,
+				(const slsi_security_config_t *)get_security_config(
 						CONFIG_AP_SECURITY, CONFIG_AP_PASS));
 		sleep(1);
 		if (ret == SLSI_STATUS_SUCCESS) {
@@ -387,7 +386,7 @@ static int webclient_tls_init(struct http_client_tls_t *client,
 
 	if ((result = mbedtls_ctr_drbg_seed(&(client->tls_ctr_drbg),
 			mbedtls_entropy_func, &(client->tls_entropy),
-			(const unsigned char *) tlsname, strlen(tlsname))) != 0) {
+			(const unsigned char *)tlsname, strlen(tlsname))) != 0) {
 		/* Error : mbedtls_ctr_drbg_seed returned */
 		ndbg("Error: mbedtls_ctr_drbg_seed returned %d\n", result);
 		goto TLS_INIT_EXIT;
@@ -402,7 +401,7 @@ static int webclient_tls_init(struct http_client_tls_t *client,
 	ndbg("  . Loading the client cert, and key...");
 
 	result = mbedtls_x509_crt_parse(&(client->tls_clicert),
-			(const unsigned char *) ssl_config->dev_cert,
+			(const unsigned char *)ssl_config->dev_cert,
 			ssl_config->dev_cert_len);
 	if (result) {
 		/* Error : srv_cert parse fail */
@@ -411,7 +410,7 @@ static int webclient_tls_init(struct http_client_tls_t *client,
 	}
 
 	result = mbedtls_pk_parse_key(&(client->tls_pkey),
-			(const unsigned char *) ssl_config->private_key,
+			(const unsigned char *)ssl_config->private_key,
 			ssl_config->private_key_len, NULL, 0);
 	if (result) {
 		/* Error : srv_cert parse fail */
@@ -428,7 +427,7 @@ static int webclient_tls_init(struct http_client_tls_t *client,
 	ndbg("  . Loading the CA cert...");
 
 	result = mbedtls_x509_crt_parse(&(client->tls_clicert),
-			(const unsigned char *) ssl_config->root_ca,
+			(const unsigned char *)ssl_config->root_ca,
 			ssl_config->root_ca_len);
 	if (result) {
 		/* Error : CA_cert parse fail */
@@ -693,17 +692,17 @@ int send_data_to_artik(int *data)
 	bool redirected;
 	struct sockaddr_in server;
 	struct wget_s ws;
-	struct http_client_tls_t *client_tls = (struct http_client_tls_t *) malloc(sizeof(struct http_client_tls_t));
+	struct http_client_tls_t *client_tls = (struct http_client_tls_t *)malloc(sizeof(struct http_client_tls_t));
 	struct http_client_ssl_config_t ssl_config;
 
 	/*
 	 * Set Up ssl config
 	 */
-	ssl_config.root_ca = (char *) c_ca_crt_rsa;
+	ssl_config.root_ca = (char *)c_ca_crt_rsa;
 	ssl_config.root_ca_len = sizeof(c_ca_crt_rsa);
-	ssl_config.dev_cert = (char *) c_srv_crt_rsa;
+	ssl_config.dev_cert = (char *)c_srv_crt_rsa;
 	ssl_config.dev_cert_len = sizeof(c_srv_crt_rsa);
-	ssl_config.private_key = (char *) c_srv_key_rsa;
+	ssl_config.private_key = (char *)c_srv_key_rsa;
 	ssl_config.private_key_len = sizeof(c_srv_key_rsa);
 
 	char r_message[1024], w_message[1024];
@@ -743,7 +742,7 @@ int send_data_to_artik(int *data)
 		/*
 		 * Try to connect server
 		 */
-		ret = connect(sockfd, (struct sockaddr *) &server,
+		ret = connect(sockfd, (struct sockaddr *)&server,
 				sizeof(struct sockaddr_in));
 		if (ret < 0) {
 			/* ERROR: Connection Failed */
@@ -797,7 +796,7 @@ int send_data_to_artik(int *data)
 
 		ndbg("send_message : %s\n", w_message);
 
-		ret = mbedtls_ssl_write(&(client_tls->tls_ssl), (unsigned char*) w_message, strlen(w_message));
+		ret = mbedtls_ssl_write(&(client_tls->tls_ssl), (unsigned char*)w_message, strlen(w_message));
 
 		if (ret < 0) {
 			/* Error Occur */
@@ -812,7 +811,7 @@ int send_data_to_artik(int *data)
 		redirected = false;
 
 		for (;;) {
-			ws.datend = mbedtls_ssl_read(&(client_tls->tls_ssl), (unsigned char*) ws.buffer, ws.buflen);
+			ws.datend = mbedtls_ssl_read(&(client_tls->tls_ssl), (unsigned char*)ws.buffer, ws.buflen);
 
 			if (ws.datend == MBEDTLS_ERR_SSL_CONN_EOF || ws.datend == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
 				/* Disconnected */

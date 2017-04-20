@@ -75,6 +75,7 @@
 #include <netinet/in.h>
 
 #include <net/lwip/netif.h>
+#include <net/lwip/netifapi.h>
 #include <net/lwip/ipv4/igmp.h>
 
 #ifdef CONFIG_NET_IGMP
@@ -394,10 +395,17 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	case SIOCSIFADDR: {			/* Set IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			netdev_ifdown(dev);
-			ioctl_setipv4addr(&dev->ip_addr.addr, &req->ifr_addr);
-			netdev_ifup(dev);
+#ifdef CONFIG_NET_LWIP
+			netifapi_netif_set_down(dev);
+			ip_addr_t ipaddr, netmask, gw;
+			ioctl_setipv4addr(&ipaddr.addr, &req->ifr_addr);
+			netmask = dev->netmask;
+			gw = dev->gw;
+			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
+			netifapi_netif_set_up(dev);
+
 			ret = OK;
+#endif
 		}
 	}
 	break;
@@ -418,8 +426,17 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	case SIOCSIFDSTADDR: {		/* Set P-to-P address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			ioctl_setipv4addr(&dev->gw.addr, &req->ifr_dstaddr);
+#ifdef CONFIG_NET_LWIP
+			netifapi_netif_set_down(dev);
+			ip_addr_t ipaddr, netmask, gw;
+			ioctl_setipv4addr(&gw.addr, &req->ifr_dstaddr);
+			ipaddr = dev->ip_addr;
+			netmask = dev->netmask;
+			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
+			netifapi_netif_set_up(dev);
+
 			ret = OK;
+#endif
 		}
 	}
 	break;
@@ -448,8 +465,17 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	case SIOCSIFNETMASK: {		/* Set network mask */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			ioctl_setipv4addr(&dev->netmask.addr, &req->ifr_addr);
+#ifdef CONFIG_NET_LWIP
+			netifapi_netif_set_down(dev);
+			ip_addr_t ipaddr, netmask, gw;
+			ioctl_setipv4addr(&netmask.addr, &req->ifr_addr);
+			ipaddr = dev->ip_addr;
+			gw = dev->gw;
+			netifapi_netif_set_addr(dev, &ipaddr, &netmask, &gw);
+			netifapi_netif_set_up(dev);
+			
 			ret = OK;
+#endif
 		}
 	}
 	break;
@@ -539,7 +565,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	}
 	break;
 #endif
-
+#endif
 	case SIOCGLIFMTU:			/* Get MTU size */
 	case SIOCGIFMTU: {			/* Get MTU size */
 		dev = netdev_ifrdev(req);
@@ -550,17 +576,6 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	}
 	break;
 
-#ifdef CONFIG_NET_ICMPv6_AUTOCONF
-	case SIOCIFAUTOCONF: {		/* Perform ICMPv6 auto-configuration */
-		dev = netdev_ifrdev(req);
-		if (dev) {
-			ret = icmpv6_autoconfig(dev);
-		}
-	}
-	break;
-#endif
-
-#endif
 	case SIOCSIFFLAGS: {		/* Sets the interface flags */
 		/* Is this a request to bring the interface up? */
 
@@ -621,7 +636,9 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	case SIOCDIFADDR: {			/* Delete IP address */
 		dev = netdev_ifrdev(req);
 		if (dev) {
-			netdev_ifdown(dev);
+#ifdef CONFIG_NET_LWIP
+			netif_set_down(dev);
+#endif
 #ifdef CONFIG_NET_IPv4
 			dev->d_ipaddr = 0;
 #endif

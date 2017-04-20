@@ -133,6 +133,4 @@ else
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
 endif
 
-# Export only the user libraries
-
 EXPORTLIBS = $(USERLIBS)

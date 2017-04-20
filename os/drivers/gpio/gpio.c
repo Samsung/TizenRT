@@ -16,9 +16,10 @@
  *
  ****************************************************************************/
 
-/*******************************************************************************
+/****************************************************************************
  * Included Files
- ******************************************************************************/
+ ****************************************************************************/
+#include <tinyara/config.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -29,87 +30,91 @@
 
 #include <tinyara/gpio.h>
 
-/*******************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ******************************************************************************/
+ ****************************************************************************/
 #define GPIO_PREVENT_MULTIPLE_OPEN   0
 
-/******************************************************************************
+/****************************************************************************
  * Private Types
- ******************************************************************************/
+ ****************************************************************************/
 
-/******************************************************************************
+/****************************************************************************
  * Private Function Prototypes
- ******************************************************************************/
-
-static int gpio_fopen(FAR struct file *filep);
-static int gpio_fclose(FAR struct file *filep);
-static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
-static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+ ****************************************************************************/
+static int     gpio_open(FAR struct file *filep);
+static int     gpio_close(FAR struct file *filep);
+static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer,
+			 size_t buflen);
+static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
+			  size_t buflen);
+static int     gpio_ioctl(FAR struct file *filep, int cmd,
+			  unsigned long arg);
 #ifndef CONFIG_DISABLE_POLL
-static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
+static int     gpio_poll(FAR struct file *filep, FAR struct pollfd *fds,
+			 bool setup);
 #endif
 
-/******************************************************************************
+/****************************************************************************
  * Private Variables
- ******************************************************************************/
-
+ ****************************************************************************/
 static const struct file_operations g_gpioops = {
-	gpio_fopen,					/* open  */
-	gpio_fclose,				/* close */
-	gpio_read,					/* read  */
-	gpio_write,					/* write */
-	NULL,						/* seek  */
-	gpio_ioctl,					/* ioctl */
+	gpio_open,	/* open  */
+	gpio_close,	/* close */
+	gpio_read,	/* read  */
+	gpio_write,	/* write */
+	NULL,		/* seek  */
+	gpio_ioctl,	/* ioctl */
 #ifndef CONFIG_DISABLE_POLL
-	gpio_poll					/* poll  */
+	gpio_poll	/* poll  */
 #endif
 };
 
-/******************************************************************************
+/****************************************************************************
  * Private Functions
- ******************************************************************************/
+ ****************************************************************************/
 
-/******************************************************************************
+/****************************************************************************
  * Name: sem_reinit
  *
  * Description:
  *    Reinitialize semaphore
  *
- ******************************************************************************/
-
+ ****************************************************************************/
 #ifndef CONFIG_DISABLE_POLL
 static int sem_reinit(FAR sem_t *sem, int pshared, unsigned int value)
 {
 	sem_destroy(sem);
+
 	return sem_init(sem, pshared, value);
 }
 #endif
 
-/*******************************************************************************
+/****************************************************************************
  * Name: gpio_takesem
  *
  * Description:
  *    Take the lock, waiting as necessary
  *
- ******************************************************************************/
-
+ ****************************************************************************/
 static int gpio_takesem(FAR sem_t *sem, bool errout)
 {
-	/* Loop, ignoring interrupts, until we have successfully acquired the lock */
+	/*
+	 * Loop, ignoring interrupts, until we have successfully acquired
+	 * the lock
+	 */
 
 	while (sem_wait(sem) != OK) {
-		/* The only case that an error should occur here is if the wait
-		 * was awakened by a signal.
+		/*
+		 * The only case that an error should occur here is if the
+		 * wait was awakened by a signal.
 		 */
-
 		ASSERT(get_errno() == EINTR);
 
-		/* When the signal is received, should we errout? Or should we just
-		 * continue waiting until we have the semaphore?
+		/*
+		 * When the signal is received, should we errout? Or should
+		 * we just continue waiting until we have the semaphore?
 		 */
-
 		if (errout) {
 			return -EINTR;
 		}
@@ -118,31 +123,30 @@ static int gpio_takesem(FAR sem_t *sem, bool errout)
 	return OK;
 }
 
-/*******************************************************************************
+/****************************************************************************
  * Name: gpio_givesem
  *
  * Description:
  *    release the lock
  *
- ******************************************************************************/
-
+ ****************************************************************************/
 static inline void gpio_givesem(sem_t *sem)
 {
 	sem_post(sem);
 }
 
-/*******************************************************************************
+/****************************************************************************
  * Name: gpio_pollnotify
  *
  * Description:
  *    notify file descriptor. It is necessary to handle async I/O.
  *
- ******************************************************************************/
-
+ ****************************************************************************/
 #ifndef CONFIG_DISABLE_POLL
 static void gpio_pollnotify(FAR struct gpio_dev_s *dev, pollevent_t eventset)
 {
 	int i;
+
 	for (i = 0; i < CONFIG_GPIO_NPOLLWAITERS; i++) {
 		struct pollfd *fds = dev->fds[i];
 		if (fds) {
@@ -159,52 +163,50 @@ static void gpio_pollnotify(FAR struct gpio_dev_s *dev, pollevent_t eventset)
 #define gpio_pollnotify(dev, event)
 #endif
 
-/*******************************************************************************
+/****************************************************************************
  * Name: gpio_write
  *
  * Description:
  *    This function is called when you handle the write() API in
  *    File system.
  *
- ******************************************************************************/
-
-static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
+ ****************************************************************************/
+static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
+			  size_t buflen)
 {
 	int32_t value;
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_dev_s *dev = inode->i_private;
 
 	value = *(int32_t *) buffer;
-	gpio_set(dev, value);
+	GPIO_SET(dev, value);
 
 	return buflen;
-
 }
 
-/*******************************************************************************
+/****************************************************************************
  * Name: gpio_read
  *
  * Description:
  *    This function is automatically called when you handle the read() API in
  *    File system.
  *
- ******************************************************************************/
-
-static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
+ ****************************************************************************/
+static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer,
+			 size_t buflen)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_dev_s *dev = inode->i_private;
 	int ret;
 	int value;
 
-	/* if you read gpio with 'cat', you have to return 0,
-	 * Otherwise cat will be cleaned up properly.
-	 * So If it is the first time, then return size, and resize fpos.
-	 * next time return zero.
+	/*
+	 * if you read gpio with 'cat', you have to return 0, Otherwise cat
+	 * will be cleaned up properly. So If it is the first time, then
+	 * return size, and resize fpos. next time return zero.
 	 */
-
 	if (filep->f_pos == 0) {
-		value = gpio_get(dev);
+		value = GPIO_GET(dev);
 
 		memcpy(buffer, &value, sizeof(int));
 
@@ -219,36 +221,35 @@ static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer, size_t buflen
 
 }
 
-/*******************************************************************************
+/****************************************************************************
  * Name: gpio_ioctl
  *
  * Description:
  *    This function is allow you to control the event.
  *
- ******************************************************************************/
-
+ ****************************************************************************/
 static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	int ret;
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_dev_s *dev = inode->i_private;
 
-	ret = gpio_ctrl(dev, cmd, arg);
+	ret = GPIO_CTRL(dev, cmd, arg);
 
 	return ret;
 }
 
-/******************************************************************************
+/****************************************************************************
  * Name: gpio_poll
  *
  * Description:
  *    This function is called when you want to wait for events.
  *    You don't know when the event will be occured.
  *
- ******************************************************************************/
-
+ ****************************************************************************/
 #ifndef CONFIG_DISABLE_POLL
-static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
+static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds,
+		     bool setup)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_dev_s *dev = inode->i_private;
@@ -256,33 +257,29 @@ static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 	int i;
 
 	/* Some sanity checking */
-
 	if (!dev || !fds) {
 		return -ENODEV;
 	}
 
 	/* Are we setting up the poll?  Or tearing it down? */
-
 	ret = gpio_takesem(&dev->pollsem, true);
 	if (ret < 0) {
-		/* A signal received while waiting for access to the poll data
+		/*
+		 * A signal received while waiting for access to the poll data
 		 * will abort the operation.
 		 */
-
 		return ret;
 	}
 
 	if (setup) {
-		/* This is a request to set up the poll.  Find an available
+		/*
+		 * This is a request to set up the poll.  Find an available
 		 * slot for the poll structure reference
 		 */
-
 		for (i = 0; i < CONFIG_GPIO_NPOLLWAITERS; i++) {
 			/* Find an available slot */
-
 			if (!dev->fds[i]) {
 				/* Bind the poll structure and this slot */
-
 				dev->fds[i] = fds;
 				fds->priv = &dev->fds[i];
 				break;
@@ -296,7 +293,6 @@ static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 		}
 	} else if (fds->priv) {
 		/* This is a request to tear down the poll. */
-
 		struct pollfd **slot = (struct pollfd **)fds->priv;
 
 		if (!slot) {
@@ -305,7 +301,6 @@ static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 		}
 
 		/* Remove all memory of the poll setup */
-
 		*slot = NULL;
 		fds->priv = NULL;
 	}
@@ -314,17 +309,16 @@ errout:
 	gpio_givesem(&dev->pollsem);
 	return ret;
 }
-#endif							/* CONFIG_DISABLE_POLL */
+#endif /* CONFIG_DISABLE_POLL */
 
-/*******************************************************************************
- * Name: gpio_fclose
+/****************************************************************************
+ * Name: gpio_close
  *
  * Description:
  *   This routine is called when the gpio gets closed.
  *
- ******************************************************************************/
-
-static int gpio_fclose(FAR struct file *filep)
+ ****************************************************************************/
+static int gpio_close(FAR struct file *filep)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_dev_s *dev = inode->i_private;
@@ -339,7 +333,7 @@ static int gpio_fclose(FAR struct file *filep)
 	/* There are no more references to the port */
 	dev->open_count = 0;
 
-	gpio_close(dev);
+	GPIO_CLOSE(dev);
 
 #ifndef CONFIG_DISABLE_POLL
 	sem_reinit(&dev->pollsem, 0, 1);
@@ -349,27 +343,31 @@ static int gpio_fclose(FAR struct file *filep)
 	return OK;
 }
 
-/*******************************************************************************
- * Name: gpio_fopen
+/*****************************************************************************
+ * Name: gpio_open
  *
  * Description:
  *   This routine is called whenever gpio is opened.
  *
- ******************************************************************************/
-
-static int gpio_fopen(FAR struct file *filep)
+ ****************************************************************************/
+static int gpio_open(FAR struct file *filep)
 {
 	int ret;
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct gpio_dev_s *dev = inode->i_private;
 	uint8_t tmp;
 
-	/* If the port is the middle of closing, wait until the close is finished.
-	 * If a signal is received while we are waiting, then return EINTR.
+	/*
+	 * If the port is the middle of closing, wait until the close is
+	 * finished. If a signal is received while we are waiting, then
+	 * return EINTR.
 	 */
 	ret = gpio_takesem(&dev->closesem, true);
 	if (ret < 0) {
-		/* A signal received while waiting for the last close operation. */
+		/*
+		 * A signal received while waiting for the last close
+		 * operation.
+		 */
 		return ret;
 	}
 
@@ -382,7 +380,7 @@ static int gpio_fopen(FAR struct file *filep)
 
 	/* Check if this is the first time that the driver has been opened. */
 	if (tmp == 1) {
-		ret = gpio_open(dev);
+		ret = GPIO_OPEN(dev);
 		if (ret != OK) {
 			goto errout_with_sem;
 		}
@@ -402,15 +400,14 @@ errout_with_sem:
 	return ret;
 }
 
-/*******************************************************************************
+/*****************************************************************************
  * Name: gpio_notify
  *
  * Description:
  *   This routine is called from irq handler. If you want to handle with
  *   async call or event, you have to register your fd with poll().
  *
- ******************************************************************************/
-
+ ****************************************************************************/
 void gpio_notify(FAR struct gpio_dev_s *dev)
 {
 	gpio_pollnotify(dev, POLLIN);
@@ -418,18 +415,17 @@ void gpio_notify(FAR struct gpio_dev_s *dev)
 	return;
 }
 
-/******************************************************************************
+/****************************************************************************
  * Public Functions
- ******************************************************************************/
+ ****************************************************************************/
 
-/******************************************************************************
+/****************************************************************************
  * Name: gpio_register
  *
  * Description:
  *   Register GPIO device.
  *
- ******************************************************************************/
-
+ ****************************************************************************/
 int gpio_register(FAR const char *path, FAR struct gpio_dev_s *dev)
 {
 	sem_init(&dev->closesem, 0, 1);
@@ -441,14 +437,13 @@ int gpio_register(FAR const char *path, FAR struct gpio_dev_s *dev)
 	return register_driver(path, &g_gpioops, 0666, dev);
 }
 
-/******************************************************************************
+/****************************************************************************
  * Name: gpio_unregister
  *
  * Description:
  *   unregister GPIO device.
  *
- ******************************************************************************/
-
+ ****************************************************************************/
 int gpio_unregister(FAR const char *path)
 {
 	return unregister_driver(path);
