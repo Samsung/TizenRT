@@ -60,6 +60,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <apps/netutils/mdnsd.h>
 
