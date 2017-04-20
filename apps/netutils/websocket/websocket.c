@@ -338,7 +338,11 @@ EXIT_WEBSOCKET_HANDSHAKE_ERROR:
 
 void websocket_socket_free(websocket_t *ctx)
 {
-	if (ctx != NULL || ctx->fd >= 0) {
+	if (ctx == NULL) {
+		return;
+	}
+
+	if (ctx->fd >= 0) {
 		close(ctx->fd);
 		ctx->fd = -1;
 	}
@@ -773,7 +777,6 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 
 	if (websocket_client_handshake(client, host, port, path) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to http handshake\n");
-		close(fd);
 		r = WEBSOCKET_HANDSHAKE_ERROR;
 		goto EXIT_CLIENT_OPEN;
 	}
@@ -781,7 +784,6 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	socket_data = malloc(sizeof(struct websocket_info_t));
 	if (socket_data == NULL) {
 		WEBSOCKET_DEBUG("fail to allocate memory\n");
-		close(fd);
 		r = WEBSOCKET_ALLOCATION_ERROR;
 		goto EXIT_CLIENT_OPEN;
 	}
@@ -791,7 +793,6 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	if (wslay_event_context_client_init(&client->ctx, client->cb, socket_data) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to init websocket client context\n");
 		free(socket_data);
-		close(fd);
 		r = WEBSOCKET_INIT_ERROR;
 		goto EXIT_CLIENT_OPEN;
 	}
