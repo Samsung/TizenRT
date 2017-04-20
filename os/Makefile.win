@@ -385,6 +385,7 @@ context: check_context include\tinyara\config.h include\tinyara\version.h includ
 		$(call DELFILE, $(BIN_DIR)\*.*)
 	)
 	$(Q) for %%G in ($(CONTEXTDIRS)) do ( $(MAKE) -C %%G TOPDIR="$(TOPDIR)" context )
+	$(call DELFILE, $(APPDIR)\builtin\registry\*.?dat)
 
 # clean_context
 #

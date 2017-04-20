@@ -397,6 +397,7 @@ context: check_context iotivity_context include/tinyara/config.h include/tinyara
 	$(Q) for dir in $(CONTEXTDIRS) ; do \
 		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" context; \
 	done
+	$(call DELFILE, $(APPDIR)/builtin/registry/*.?dat)
 
 # clean_context
 #
