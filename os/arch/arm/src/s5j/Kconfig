@@ -26,7 +26,12 @@ config S5J_S5JT200
 	select S5J_HAVE_ADC
 	select S5J_HAVE_DMA
 	select S5J_HAVE_I2C
-	select S5J_HAVE_PWM
+	select S5J_HAVE_PWM0
+	select S5J_HAVE_PWM1
+	select S5J_HAVE_PWM2
+	select S5J_HAVE_PWM3
+	select S5J_HAVE_PWM4
+	select S5J_HAVE_PWM5
 	select S5J_HAVE_PWR
 	select S5J_HAVE_RTC
 	select S5J_HAVE_SFLASH
@@ -56,7 +61,27 @@ config S5J_HAVE_I2C
 	bool
 	default n
 
-config S5J_HAVE_PWM
+config S5J_HAVE_PWM0
+	bool
+	default n
+
+config S5J_HAVE_PWM1
+	bool
+	default n
+
+config S5J_HAVE_PWM2
+	bool
+	default n
+
+config S5J_HAVE_PWM3
+	bool
+	default n
+
+config S5J_HAVE_PWM4
+	bool
+	default n
+
+config S5J_HAVE_PWM5
 	bool
 	default n
 
@@ -171,8 +196,43 @@ config S5J_UARTDBG
 	select ARCH_HAVE_SERIAL_TERMIOS
 
 config S5J_PWM
-	bool "PWM"
-	depends on S5J_HAVE_PWM
+	bool
+	default n
+
+config S5J_PWM0
+	bool "PWM0"
+	depends on S5J_HAVE_PWM0
+	select S5J_PWM
+	default n
+
+config S5J_PWM1
+	bool "PWM1"
+	depends on S5J_HAVE_PWM1
+	select S5J_PWM
+	default n
+
+config S5J_PWM2
+	bool "PWM2"
+	depends on S5J_HAVE_PWM2
+	select S5J_PWM
+	default n
+
+config S5J_PWM3
+	bool "PWM3"
+	depends on S5J_HAVE_PWM3
+	select S5J_PWM
+	default n
+
+config S5J_PWM4
+	bool "PWM4"
+	depends on S5J_HAVE_PWM4
+	select S5J_PWM
+	default n
+
+config S5J_PWM5
+	bool "PWM5"
+	depends on S5J_HAVE_PWM5
+	select S5J_PWM
 	default n
 
 config S5J_SSS

@@ -71,13 +71,13 @@ void ledpwm_main(int argc, char *argv[])
 	for (i = 0; i < 100; i = i + 3) {
 		printf("brightness %d, %d\n", i, 99 - i);
 
-		pwm_info.duty = i;
+		pwm_info.duty = i * 65536 / 100;
 		ioctl(fd1, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
 		ioctl(fd2, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
 		ioctl(fd1, PWMIOC_START);
 		ioctl(fd2, PWMIOC_START);
 
-		pwm_info.duty = 99 - i;
+		pwm_info.duty = (99 - i) * 65536 / 100;
 		ioctl(fd3, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
 		ioctl(fd4, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)&pwm_info));
 		ioctl(fd3, PWMIOC_START);
