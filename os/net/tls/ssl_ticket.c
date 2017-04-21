@@ -88,7 +88,7 @@ static int ssl_ticket_gen_key(mbedtls_ssl_ticket_context *ctx, unsigned char ind
 	mbedtls_ssl_ticket_key *key = ctx->keys + index;
 
 #if defined(MBEDTLS_HAVE_TIME)
-	key->generation_time = (uint32_t) mbedtls_time(NULL);
+	key->generation_time = (uint32_t)mbedtls_time(NULL);
 #endif
 
 	if ((ret = ctx->f_rng(ctx->p_rng, key->name, sizeof(key->name))) != 0) {
@@ -116,7 +116,7 @@ static int ssl_ticket_update_keys(mbedtls_ssl_ticket_context *ctx)
 	((void)ctx);
 #else
 	if (ctx->ticket_lifetime != 0) {
-		uint32_t current_time = (uint32_t) mbedtls_time(NULL);
+		uint32_t current_time = (uint32_t)mbedtls_time(NULL);
 		uint32_t key_time = ctx->keys[ctx->active].generation_time;
 
 		if (current_time > key_time && current_time - key_time < ctx->ticket_lifetime) {

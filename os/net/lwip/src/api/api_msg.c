@@ -1180,7 +1180,7 @@ void do_recv(struct api_msg_msg *msg)
 			{
 				u32_t remaining = msg->msg.r.len;
 				do {
-					u16_t recved = (remaining > 0xffff) ? 0xffff : (u16_t) remaining;
+					u16_t recved = (remaining > 0xffff) ? 0xffff : (u16_t)remaining;
 					tcp_recved(msg->conn->pcb.tcp, recved);
 					remaining -= recved;
 				} while (remaining != 0);
@@ -1232,7 +1232,7 @@ static err_t do_writemore(struct netconn *conn)
 	} else
 #endif							/* LWIP_SO_SNDTIMEO */
 	{
-		dataptr = (u8_t *) conn->current_msg->msg.w.dataptr + conn->write_offset;
+		dataptr = (u8_t *)conn->current_msg->msg.w.dataptr + conn->write_offset;
 		diff = conn->current_msg->msg.w.len - conn->write_offset;
 		if (diff > 0xffffUL) {	/* max_u16_t */
 			len = 0xffff;
@@ -1241,7 +1241,7 @@ static err_t do_writemore(struct netconn *conn)
 #endif
 			apiflags |= TCP_WRITE_FLAG_MORE;
 		} else {
-			len = (u16_t) diff;
+			len = (u16_t)diff;
 		}
 		available = tcp_sndbuf(conn->pcb.tcp);
 		if (available < len) {

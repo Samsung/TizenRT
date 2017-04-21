@@ -447,7 +447,7 @@ db_result_t db_indexing(relation_t *rel)
 	}
 
 	row = NULL;
-	row = (storage_row_t) malloc(sizeof(char) * rel->row_length + 1);
+	row = (storage_row_t)malloc(sizeof(char) * rel->row_length + 1);
 	if (row == NULL) {
 		DB_LOG_E("DB: Failed to allocate row\n");
 		return DB_ALLOCATION_ERROR;

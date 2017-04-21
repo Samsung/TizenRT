@@ -126,7 +126,7 @@ void tcp_input(struct pbuf *p, struct netif *inp)
 	snmp_inc_tcpinsegs();
 
 	iphdr = (struct ip_hdr *)p->payload;
-	tcphdr = (struct tcp_hdr *)((u8_t *) p->payload + IPH_HL(iphdr) * 4);
+	tcphdr = (struct tcp_hdr *)((u8_t *)p->payload + IPH_HL(iphdr) * 4);
 
 #if TCP_INPUT_DEBUG
 	tcp_debug_print(tcphdr);
@@ -643,7 +643,7 @@ static err_t tcp_process(struct tcp_pcb *pcb)
 			pcb->cwnd = ((pcb->cwnd == 1) ? (pcb->mss * 2) : pcb->mss);
 			LWIP_ASSERT("pcb->snd_queuelen > 0", (pcb->snd_queuelen > 0));
 			--pcb->snd_queuelen;
-			LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_process: SYN-SENT --queuelen %" U16_F "\n", (u16_t) pcb->snd_queuelen));
+			LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_process: SYN-SENT --queuelen %" U16_F "\n", (u16_t)pcb->snd_queuelen));
 			rseg = pcb->unacked;
 			pcb->unacked = rseg->next;
 			tcp_seg_free(rseg);
@@ -984,7 +984,7 @@ static void tcp_receive(struct tcp_pcb *pcb)
 				next = pcb->unacked;
 				pcb->unacked = pcb->unacked->next;
 
-				LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_receive: queuelen %" U16_F " ... ", (u16_t) pcb->snd_queuelen));
+				LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_receive: queuelen %" U16_F " ... ", (u16_t)pcb->snd_queuelen));
 				LWIP_ASSERT("pcb->snd_queuelen >= pbuf_clen(next->p)", (pcb->snd_queuelen >= pbuf_clen(next->p)));
 				/* Prevent ACK for FIN to generate a sent event */
 				if ((pcb->acked != 0) && ((TCPH_FLAGS(next->tcphdr) & TCP_FIN) != 0)) {
@@ -994,7 +994,7 @@ static void tcp_receive(struct tcp_pcb *pcb)
 				pcb->snd_queuelen -= pbuf_clen(next->p);
 				tcp_seg_free(next);
 
-				LWIP_DEBUGF(TCP_QLEN_DEBUG, ("%" U16_F " (after freeing unacked)\n", (u16_t) pcb->snd_queuelen));
+				LWIP_DEBUGF(TCP_QLEN_DEBUG, ("%" U16_F " (after freeing unacked)\n", (u16_t)pcb->snd_queuelen));
 				if (pcb->snd_queuelen != 0) {
 					LWIP_ASSERT("tcp_receive: valid queue length", pcb->unacked != NULL || pcb->unsent != NULL);
 				}
@@ -1030,7 +1030,7 @@ static void tcp_receive(struct tcp_pcb *pcb)
 				pcb->unsent_oversize = 0;
 			}
 #endif							/* TCP_OVERSIZE */
-			LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_receive: queuelen %" U16_F " ... ", (u16_t) pcb->snd_queuelen));
+			LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_receive: queuelen %" U16_F " ... ", (u16_t)pcb->snd_queuelen));
 			LWIP_ASSERT("pcb->snd_queuelen >= pbuf_clen(next->p)", (pcb->snd_queuelen >= pbuf_clen(next->p)));
 			/* Prevent ACK for FIN to generate a sent event */
 			if ((pcb->acked != 0) && ((TCPH_FLAGS(next->tcphdr) & TCP_FIN) != 0)) {
@@ -1038,7 +1038,7 @@ static void tcp_receive(struct tcp_pcb *pcb)
 			}
 			pcb->snd_queuelen -= pbuf_clen(next->p);
 			tcp_seg_free(next);
-			LWIP_DEBUGF(TCP_QLEN_DEBUG, ("%" U16_F " (after freeing unsent)\n", (u16_t) pcb->snd_queuelen));
+			LWIP_DEBUGF(TCP_QLEN_DEBUG, ("%" U16_F " (after freeing unsent)\n", (u16_t)pcb->snd_queuelen));
 			if (pcb->snd_queuelen != 0) {
 				LWIP_ASSERT("tcp_receive: valid queue length", pcb->unacked != NULL || pcb->unsent != NULL);
 			}
@@ -1134,7 +1134,7 @@ static void tcp_receive(struct tcp_pcb *pcb)
 			LWIP_ASSERT("inseg.p != NULL", inseg.p);
 			LWIP_ASSERT("insane offset!", (off < 0x7fff));
 			if (inseg.p->len < off) {
-				LWIP_ASSERT("pbuf too short!", (((s32_t) inseg.p->tot_len) >= off));
+				LWIP_ASSERT("pbuf too short!", (((s32_t)inseg.p->tot_len) >= off));
 				new_tot_len = (u16_t)(inseg.p->tot_len - off);
 				while (p->len < off) {
 					off -= p->len;
@@ -1145,12 +1145,12 @@ static void tcp_receive(struct tcp_pcb *pcb)
 					p->len = 0;
 					p = p->next;
 				}
-				if (pbuf_header(p, (s16_t) - off)) {
+				if (pbuf_header(p, (s16_t)-off)) {
 					/* Do we need to cope with this failing?  Assert for now */
 					LWIP_ASSERT("pbuf_header failed", 0);
 				}
 			} else {
-				if (pbuf_header(inseg.p, (s16_t) - off)) {
+				if (pbuf_header(inseg.p, (s16_t)-off)) {
 					/* Do we need to cope with this failing?  Assert for now */
 					LWIP_ASSERT("pbuf_header failed", 0);
 				}
@@ -1406,7 +1406,7 @@ static void tcp_receive(struct tcp_pcb *pcb)
 										pbuf_realloc(next->p, next->len);
 									}
 									/* check if the remote side overruns our receive window */
-									if ((u32_t) tcplen + seqno > pcb->rcv_nxt + (u32_t) pcb->rcv_wnd) {
+									if ((u32_t)tcplen + seqno > pcb->rcv_nxt + (u32_t)pcb->rcv_wnd) {
 										LWIP_DEBUGF(TCP_INPUT_DEBUG, ("tcp_receive: other end overran receive window" "seqno %" U32_F " len %" U16_F " right edge %" U32_F "\n", seqno, tcplen, pcb->rcv_nxt + pcb->rcv_wnd));
 										if (TCPH_FLAGS(next->next->tcphdr) & TCP_FIN) {
 											/* Must remove the FIN from the header as we're trimming
@@ -1484,7 +1484,7 @@ static void tcp_parseopt(struct tcp_pcb *pcb)
 	u32_t tsval;
 #endif
 
-	opts = (u8_t *) tcphdr + TCP_HLEN;
+	opts = (u8_t *)tcphdr + TCP_HLEN;
 
 	/* Parse the TCP MSS option, if present. */
 	if (TCPH_HDRLEN(tcphdr) > 0x5) {

@@ -639,7 +639,7 @@ err_t udp_sendto_if_chksum(struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *dst_i
 						 (have_chksum ? UDP_HLEN : chklen));
 		if (have_chksum) {
 			u32_t acc;
-			acc = udphdr->chksum + (u16_t) ~(chksum);
+			acc = udphdr->chksum + (u16_t)~(chksum);
 			udphdr->chksum = FOLD_U32T(acc);
 		}
 #endif							/* !LWIP_CHECKSUM_ON_COPY */
@@ -668,7 +668,7 @@ err_t udp_sendto_if_chksum(struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *dst_i
 			if (have_chksum) {
 				u32_t acc;
 				udpchksum = inet_chksum_pseudo_partial(q, src_ip, dst_ip, IP_PROTO_UDP, q->tot_len, UDP_HLEN);
-				acc = udpchksum + (u16_t) ~(chksum);
+				acc = udpchksum + (u16_t)~(chksum);
 				udpchksum = FOLD_U32T(acc);
 			} else
 #endif							/* LWIP_CHECKSUM_ON_COPY */

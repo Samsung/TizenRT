@@ -99,7 +99,7 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 	if (sem && value <= SEM_VALUE_MAX) {
 		/* Initialize the seamphore count */
 
-		sem->semcount = (int16_t) value;
+		sem->semcount = (int16_t)value;
 
 		/* Initialize to support priority inheritance */
 

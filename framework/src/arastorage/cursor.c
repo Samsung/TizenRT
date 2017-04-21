@@ -416,7 +416,7 @@ db_result_t cursor_init(db_cursor_t **cursor, relation_t *rel)
 		return DB_CURSOR_ERROR;
 	}
 
-	(*cursor)->row_arr = (uint32_t *) malloc(sizeof(uint32_t) * arr_size);
+	(*cursor)->row_arr = (uint32_t *)malloc(sizeof(uint32_t) * arr_size);
 	if ((*cursor)->row_arr == NULL) {
 		return DB_CURSOR_ERROR;
 	}

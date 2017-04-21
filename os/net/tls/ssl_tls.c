@@ -2778,7 +2778,7 @@ static void ssl_dtls_replay_reset(mbedtls_ssl_context *ssl)
 
 static inline uint64_t ssl_load_six_bytes(unsigned char *buf)
 {
-	return (((uint64_t) buf[0] << 40) | ((uint64_t) buf[1] << 32) | ((uint64_t) buf[2] << 24) | ((uint64_t) buf[3] << 16) | ((uint64_t) buf[4] << 8) | ((uint64_t) buf[5]));
+	return (((uint64_t)buf[0] << 40) | ((uint64_t)buf[1] << 32) | ((uint64_t)buf[2] << 24) | ((uint64_t)buf[3] << 16) | ((uint64_t)buf[4] << 8) | ((uint64_t)buf[5]));
 }
 
 /*
@@ -2803,7 +2803,7 @@ int mbedtls_ssl_dtls_replay_check(mbedtls_ssl_context *ssl)
 		return (-1);
 	}
 
-	if ((ssl->in_window & ((uint64_t) 1 << bit)) != 0) {
+	if ((ssl->in_window & ((uint64_t)1 << bit)) != 0) {
 		return (-1);
 	}
 
@@ -2838,7 +2838,7 @@ void mbedtls_ssl_dtls_replay_update(mbedtls_ssl_context *ssl)
 		uint64_t bit = ssl->in_window_top - rec_seqnum;
 
 		if (bit < 64) {			/* Always true, but be extra sure */
-			ssl->in_window |= (uint64_t) 1 << bit;
+			ssl->in_window |= (uint64_t)1 << bit;
 		}
 	}
 }

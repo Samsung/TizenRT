@@ -1580,7 +1580,7 @@ static int ftpd_stream(FAR struct ftpd_session_s *session, int cmdtype)
 			goto errout_with_session;
 		}
 
-		pos += (off_t) seekoffs;
+		pos += (off_t)seekoffs;
 	}
 
 	/* Send success message */

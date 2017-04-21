@@ -705,7 +705,7 @@ static void nPut(PPPControl *pc, struct pbuf *nb)
 
 	for (b = nb; b != NULL; b = b->next) {
 		if ((c = sio_write(pc->fd, b->payload, b->len)) != b->len) {
-			PPPDEBUG(LOG_WARNING, ("PPP nPut: incomplete sio_write(fd:%" SZT_F ", len:%d, c: 0x%" X8_F ") c = %d\n", (size_t) pc->fd, b->len, c, c));
+			PPPDEBUG(LOG_WARNING, ("PPP nPut: incomplete sio_write(fd:%" SZT_F ", len:%d, c: 0x%" X8_F ") c = %d\n", (size_t)pc->fd, b->len, c, c));
 			LINK_STATS_INC(link.err);
 			pc->lastXMit = 0;	/* prepend PPP_FLAG to next packet */
 			snmp_inc_ifoutdiscards(&pc->netif);
@@ -746,10 +746,10 @@ static struct pbuf *pppAppend(u_char c, struct pbuf *nb, ext_accm *outACCM)
 
 	if (nb) {
 		if (outACCM && ESCAPE_P(*outACCM, c)) {
-			*((u_char *) nb->payload + nb->len++) = PPP_ESCAPE;
-			*((u_char *) nb->payload + nb->len++) = c ^ PPP_TRANS;
+			*((u_char *)nb->payload + nb->len++) = PPP_ESCAPE;
+			*((u_char *)nb->payload + nb->len++) = c ^ PPP_TRANS;
 		} else {
-			*((u_char *) nb->payload + nb->len++) = c;
+			*((u_char *)nb->payload + nb->len++) = c;
 		}
 	}
 
@@ -775,14 +775,14 @@ static err_t pppifOutputOverEthernet(int pd, struct pbuf *p)
 		return ERR_MEM;
 	}
 
-	pbuf_header(pb, -(s16_t) PPPOE_HDRLEN);
+	pbuf_header(pb, -(s16_t)PPPOE_HDRLEN);
 
 	pc->lastXMit = sys_jiffies();
 
 	if (!pc->pcomp || protocol > 0xFF) {
-		*((u_char *) pb->payload + i++) = (protocol >> 8) & 0xFF;
+		*((u_char *)pb->payload + i++) = (protocol >> 8) & 0xFF;
 	}
-	*((u_char *) pb->payload + i) = protocol & 0xFF;
+	*((u_char *)pb->payload + i) = protocol & 0xFF;
 
 	pbuf_chain(pb, p);
 	tot_len = pb->tot_len;
@@ -803,7 +803,7 @@ static err_t pppifOutputOverEthernet(int pd, struct pbuf *p)
 /* Send a packet on the given connection. */
 static err_t pppifOutput(struct netif *netif, struct pbuf *pb, ip_addr_t *ipaddr)
 {
-	int pd = (int)(size_t) netif->state;
+	int pd = (int)(size_t)netif->state;
 	PPPControl *pc = &pppControl[pd];
 #if PPPOS_SUPPORT
 	u_short protocol = PPP_IP;
@@ -905,7 +905,7 @@ static err_t pppifOutput(struct netif *netif, struct pbuf *pb, ip_addr_t *ipaddr
 		int n;
 		u_char *sPtr;
 
-		sPtr = (u_char *) p->payload;
+		sPtr = (u_char *)p->payload;
 		n = p->len;
 		while (n-- > 0) {
 			c = *sPtr++;
@@ -979,7 +979,7 @@ int pppIOCtl(int pd, int cmd, void *arg)
 #if PPPOS_SUPPORT
 		case PPPCTLG_FD:		/* Get the fd associated with the ppp */
 			if (arg) {
-				*(sio_fd_t *) arg = pc->fd;
+				*(sio_fd_t *)arg = pc->fd;
 			} else {
 				st = PPPERR_PARAM;
 			}
@@ -1031,7 +1031,7 @@ int pppWriteOverEthernet(int pd, const u_char *s, int n)
 		return PPPERR_ALLOC;
 	}
 
-	pbuf_header(pb, -(s16_t) PPPOE_HDRLEN);
+	pbuf_header(pb, -(s16_t)PPPOE_HDRLEN);
 
 	pc->lastXMit = sys_jiffies();
 
@@ -1043,7 +1043,7 @@ int pppWriteOverEthernet(int pd, const u_char *s, int n)
 		return PPPERR_DEVICE;
 	}
 
-	snmp_add_ifoutoctets(&pc->netif, (u16_t) n);
+	snmp_add_ifoutoctets(&pc->netif, (u16_t)n);
 	snmp_inc_ifoutucastpkts(&pc->netif);
 	LINK_STATS_INC(link.xmit);
 	return PPPERR_NONE;
@@ -1286,7 +1286,7 @@ static err_t pppifNetifInit(struct netif *netif)
 	netif->name[0] = 'p';
 	netif->name[1] = 'p';
 	netif->output = pppifOutput;
-	netif->mtu = pppMTU((int)(size_t) netif->state);
+	netif->mtu = pppMTU((int)(size_t)netif->state);
 	netif->flags = NETIF_FLAG_POINTTOPOINT | NETIF_FLAG_LINK_UP;
 #if LWIP_NETIF_HOSTNAME
 	/* @todo: Initialize interface hostname */
@@ -1308,7 +1308,7 @@ int sifup(int pd)
 		PPPDEBUG(LOG_WARNING, ("sifup[%d]: bad parms\n", pd));
 	} else {
 		netif_remove(&pc->netif);
-		if (netif_add(&pc->netif, &pc->addrs.our_ipaddr, &pc->addrs.netmask, &pc->addrs.his_ipaddr, (void *)(size_t) pd, pppifNetifInit, ip_input)) {
+		if (netif_add(&pc->netif, &pc->addrs.our_ipaddr, &pc->addrs.netmask, &pc->addrs.his_ipaddr, (void *)(size_t)pd, pppifNetifInit, ip_input)) {
 			netif_set_up(&pc->netif);
 			pc->if_up = 1;
 			pc->errCode = PPPERR_NONE;
@@ -1895,7 +1895,7 @@ static void pppInProc(PPPControlRx *pcrx, u_char *s, int l)
 					pcrx->inTail = nextNBuf;
 				}
 				/* Load character into buffer. */
-				((u_char *) pcrx->inTail->payload)[pcrx->inTail->len++] = curChar;
+				((u_char *)pcrx->inTail->payload)[pcrx->inTail->len++] = curChar;
 				break;
 			}
 
@@ -1919,7 +1919,7 @@ void pppInProcOverEthernet(int pd, struct pbuf *pb)
 		goto drop;
 	}
 
-	inProtocol = (((u8_t *) pb->payload)[0] << 8) | ((u8_t *) pb->payload)[1];
+	inProtocol = (((u8_t *)pb->payload)[0] << 8) | ((u8_t *)pb->payload)[1];
 
 	/* make room for pppInputHeader - should not fail */
 	if (pbuf_header(pb, sizeof(*pih) - sizeof(inProtocol)) != 0) {

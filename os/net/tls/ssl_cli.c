@@ -1371,10 +1371,10 @@ static int ssl_parse_server_hello(mbedtls_ssl_context *ssl)
 		return (MBEDTLS_ERR_SSL_BAD_HS_PROTOCOL_VERSION);
 	}
 #if defined(MBEDTLS_DEBUG_C)
-	t = ((uint32_t) buf[2] << 24)
-		| ((uint32_t) buf[3] << 16)
-		| ((uint32_t) buf[4] << 8)
-		| ((uint32_t) buf[5]);
+	t = ((uint32_t)buf[2] << 24)
+		| ((uint32_t)buf[3] << 16)
+		| ((uint32_t)buf[4] << 8)
+		| ((uint32_t)buf[5]);
 	MBEDTLS_SSL_DEBUG_MSG(3, ("server hello, current time: %lu", t));
 #endif
 

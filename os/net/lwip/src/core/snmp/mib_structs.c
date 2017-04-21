@@ -518,7 +518,7 @@ struct mib_node *snmp_search_tree(struct mib_node *node, u8_t ident_len, s32_t *
 		} else if (node_type == MIB_NODE_SC) {
 			mib_scalar_node *sn;
 
-			sn = (mib_scalar_node *) node;
+			sn = (mib_scalar_node *)node;
 			if ((ident_len == 1) && (*ident == 0)) {
 				np->ident_len = ident_len;
 				np->ident = ident;
@@ -530,7 +530,7 @@ struct mib_node *snmp_search_tree(struct mib_node *node, u8_t ident_len, s32_t *
 			}
 		} else {
 			/* unknown node_type */
-			LWIP_DEBUGF(SNMP_MIB_DEBUG, ("search failed node_type %" U16_F " unkown\n", (u16_t) node_type));
+			LWIP_DEBUGF(SNMP_MIB_DEBUG, ("search failed node_type %" U16_F " unkown\n", (u16_t)node_type));
 			return NULL;
 		}
 	}
@@ -625,7 +625,7 @@ struct mib_node *snmp_expand_tree(struct mib_node *node, u8_t ident_len, s32_t *
 						LWIP_DEBUGF(SNMP_MIB_DEBUG, ("non-leaf node\n"));
 						/* non-leaf, store right child ptr and id */
 						LWIP_ASSERT("i < 0xff", i < 0xff);
-						j = (u8_t) i + 1;
+						j = (u8_t)i + 1;
 						while ((j < an->maxlength) && (empty_table(an->nptr[j]))) {
 							j++;
 						}
@@ -806,7 +806,7 @@ struct mib_node *snmp_expand_tree(struct mib_node *node, u8_t ident_len, s32_t *
 						LWIP_DEBUGF(SNMP_MIB_DEBUG, ("non-leaf node\n"));
 						/* non-leaf, store right child ptr and id */
 						LWIP_ASSERT("i < 0xff", i < 0xff);
-						j = (u8_t) i + 1;
+						j = (u8_t)i + 1;
 						if (j < len) {
 							/* right node is the current external node */
 							cur_node.r_ptr = node;
@@ -849,7 +849,7 @@ struct mib_node *snmp_expand_tree(struct mib_node *node, u8_t ident_len, s32_t *
 			mib_scalar_node *sn;
 
 			/* scalar node  */
-			sn = (mib_scalar_node *) node;
+			sn = (mib_scalar_node *)node;
 			if (ident_len > 0) {
 				/* at .0 */
 				climb_tree = 1;
@@ -863,7 +863,7 @@ struct mib_node *snmp_expand_tree(struct mib_node *node, u8_t ident_len, s32_t *
 			}
 		} else {
 			/* unknown/unhandled node_type */
-			LWIP_DEBUGF(SNMP_MIB_DEBUG, ("expand failed node_type %" U16_F " unkown\n", (u16_t) node_type));
+			LWIP_DEBUGF(SNMP_MIB_DEBUG, ("expand failed node_type %" U16_F " unkown\n", (u16_t)node_type));
 			return NULL;
 		}
 

@@ -308,7 +308,7 @@ static err_t tcp_write_checks(struct tcp_pcb *pcb, u16_t len)
 		return ERR_MEM;
 	}
 
-	LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_write: queuelen: %" U16_F "\n", (u16_t) pcb->snd_queuelen));
+	LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_write: queuelen: %" U16_F "\n", (u16_t)pcb->snd_queuelen));
 
 	/* If total number of pbufs on the unsent/unacked queues exceeds the
 	 * configured maximum, return an error */
@@ -369,7 +369,7 @@ err_t tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
 	apiflags |= TCP_WRITE_FLAG_COPY;
 #endif							/* LWIP_NETIF_TX_SINGLE_PBUF */
 
-	LWIP_DEBUGF(TCP_OUTPUT_DEBUG, ("tcp_write(pcb=%p, data=%p, len=%" U16_F ", apiflags=%" U16_F ")\n", (void *)pcb, arg, len, (u16_t) apiflags));
+	LWIP_DEBUGF(TCP_OUTPUT_DEBUG, ("tcp_write(pcb=%p, data=%p, len=%" U16_F ", apiflags=%" U16_F ")\n", (void *)pcb, arg, len, (u16_t)apiflags));
 	LWIP_ERROR("tcp_write: arg == NULL (programmer violates API)", arg != NULL, return ERR_ARG;);
 
 	err = tcp_write_checks(pcb, len);
@@ -467,7 +467,7 @@ err_t tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
 #if TCP_OVERSIZE_DBGCHECK
 				last_unsent->oversize_left += oversize;
 #endif							/* TCP_OVERSIZE_DBGCHECK */
-				TCP_DATA_COPY2(concat_p->payload, (u8_t *) arg + pos, seglen, &concat_chksum, &concat_chksum_swapped);
+				TCP_DATA_COPY2(concat_p->payload, (u8_t *)arg + pos, seglen, &concat_chksum, &concat_chksum_swapped);
 #if TCP_CHECKSUM_ON_COPY
 				concat_chksummed += seglen;
 #endif							/* TCP_CHECKSUM_ON_COPY */
@@ -479,11 +479,11 @@ err_t tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
 				}
 #if TCP_CHECKSUM_ON_COPY
 				/* calculate the checksum of nocopy-data */
-				tcp_seg_add_chksum(~inet_chksum((u8_t *) arg + pos, seglen), seglen, &concat_chksum, &concat_chksum_swapped);
+				tcp_seg_add_chksum(~inet_chksum((u8_t *)arg + pos, seglen), seglen, &concat_chksum, &concat_chksum_swapped);
 				concat_chksummed += seglen;
 #endif							/* TCP_CHECKSUM_ON_COPY */
 				/* reference the non-volatile payload data */
-				concat_p->payload = (u8_t *) arg + pos;
+				concat_p->payload = (u8_t *)arg + pos;
 			}
 
 			pos += seglen;
@@ -519,7 +519,7 @@ err_t tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
 				goto memerr;
 			}
 			LWIP_ASSERT("tcp_write: check that first pbuf can hold the complete seglen", (p->len >= seglen));
-			TCP_DATA_COPY2((char *)p->payload + optlen, (u8_t *) arg + pos, seglen, &chksum, &chksum_swapped);
+			TCP_DATA_COPY2((char *)p->payload + optlen, (u8_t *)arg + pos, seglen, &chksum, &chksum_swapped);
 		} else {
 			/* Copy is not set: First allocate a pbuf for holding the data.
 			 * Since the referenced data is available at least until it is
@@ -536,10 +536,10 @@ err_t tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
 			}
 #if TCP_CHECKSUM_ON_COPY
 			/* calculate the checksum of nocopy-data */
-			chksum = ~inet_chksum((u8_t *) arg + pos, seglen);
+			chksum = ~inet_chksum((u8_t *)arg + pos, seglen);
 #endif							/* TCP_CHECKSUM_ON_COPY */
 			/* reference the non-volatile payload data */
-			p2->payload = (u8_t *) arg + pos;
+			p2->payload = (u8_t *)arg + pos;
 
 			/* Second, allocate a pbuf for the headers. */
 			if ((p = pbuf_alloc(PBUF_TRANSPORT, optlen, PBUF_RAM)) == NULL) {
@@ -698,7 +698,7 @@ err_t tcp_enqueue_flags(struct tcp_pcb *pcb, u8_t flags)
 	u8_t optflags = 0;
 	u8_t optlen = 0;
 
-	LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_enqueue_flags: queuelen: %" U16_F "\n", (u16_t) pcb->snd_queuelen));
+	LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_enqueue_flags: queuelen: %" U16_F "\n", (u16_t)pcb->snd_queuelen));
 
 	LWIP_ASSERT("tcp_enqueue_flags: need either TCP_SYN or TCP_FIN in flags (programmer violates API)", (flags & (TCP_SYN | TCP_FIN)) != 0);
 
@@ -744,10 +744,10 @@ err_t tcp_enqueue_flags(struct tcp_pcb *pcb, u8_t flags)
 		TCP_STATS_INC(tcp.memerr);
 		return ERR_MEM;
 	}
-	LWIP_ASSERT("seg->tcphdr not aligned", ((mem_ptr_t) seg->tcphdr % MEM_ALIGNMENT) == 0);
+	LWIP_ASSERT("seg->tcphdr not aligned", ((mem_ptr_t)seg->tcphdr % MEM_ALIGNMENT) == 0);
 	LWIP_ASSERT("tcp_enqueue_flags: invalid segment length", seg->len == 0);
 
-	LWIP_DEBUGF(TCP_OUTPUT_DEBUG | LWIP_DBG_TRACE, ("tcp_enqueue_flags: queueing %" U32_F ":%" U32_F " (0x%" X16_F ")\n", ntohl(seg->tcphdr->seqno), ntohl(seg->tcphdr->seqno) + TCP_TCPLEN(seg), (u16_t) flags));
+	LWIP_DEBUGF(TCP_OUTPUT_DEBUG | LWIP_DBG_TRACE, ("tcp_enqueue_flags: queueing %" U32_F ":%" U32_F " (0x%" X16_F ")\n", ntohl(seg->tcphdr->seqno), ntohl(seg->tcphdr->seqno) + TCP_TCPLEN(seg), (u16_t)flags));
 
 	/* Now append seg to pcb->unsent queue */
 	if (pcb->unsent == NULL) {
@@ -1045,7 +1045,7 @@ static void tcp_output_segment(struct tcp_seg *seg, struct tcp_pcb *pcb)
 	}
 	LWIP_DEBUGF(TCP_OUTPUT_DEBUG, ("tcp_output_segment: %" U32_F ":%" U32_F "\n", htonl(seg->tcphdr->seqno), htonl(seg->tcphdr->seqno) + seg->len));
 
-	len = (u16_t)((u8_t *) seg->tcphdr - (u8_t *) seg->p->payload);
+	len = (u16_t)((u8_t *)seg->tcphdr - (u8_t *)seg->p->payload);
 
 	seg->p->len -= len;
 	seg->p->tot_len -= len;
@@ -1073,7 +1073,7 @@ static void tcp_output_segment(struct tcp_seg *seg, struct tcp_pcb *pcb)
 			seg->chksum = SWAP_BYTES_IN_WORD(seg->chksum);
 			seg->chksum_swapped = 0;
 		}
-		acc += (u16_t) ~(seg->chksum);
+		acc += (u16_t)~(seg->chksum);
 		seg->tcphdr->chksum = FOLD_U32T(acc);
 #if TCP_CHECKSUM_ON_COPY_SANITY_CHECK
 		if (chksum_slow != seg->tcphdr->chksum) {
@@ -1236,7 +1236,7 @@ void tcp_rexmit_fast(struct tcp_pcb *pcb)
 {
 	if (pcb->unacked != NULL && !(pcb->flags & TF_INFR)) {
 		/* This is fast retransmit. Retransmit the first unacked segment. */
-		LWIP_DEBUGF(TCP_FR_DEBUG, ("tcp_receive: dupacks %" U16_F " (%" U32_F "), fast retransmit %" U32_F "\n", (u16_t) pcb->dupacks, pcb->lastack, ntohl(pcb->unacked->tcphdr->seqno)));
+		LWIP_DEBUGF(TCP_FR_DEBUG, ("tcp_receive: dupacks %" U16_F " (%" U32_F "), fast retransmit %" U32_F "\n", (u16_t)pcb->dupacks, pcb->lastack, ntohl(pcb->unacked->tcphdr->seqno)));
 		tcp_rexmit(pcb);
 
 		/* Set ssthresh to half of the minimum of the current

@@ -560,7 +560,7 @@ err_t sys_mutex_new(sys_mutex_t *mutex)
 	int status = 0;
 
 	if (NULL == mutex) {
-		mutex = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
+		mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
 	}
 	if (mutex == NULL) {
 #if SYS_STATS
@@ -648,7 +648,7 @@ sys_thread_t sys_thread_new(const char *name, lwip_thread_fn entry_function, voi
 
 	if (s_nextthread < SYS_THREAD_MAX) {
 		sys_thread_t new_thread;
-		new_thread = task_create(name, priority, stacksize, (main_t) entry_function, (char * const *)NULL);
+		new_thread = task_create(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
 		if (new_thread < 0) {
 			int errval = errno;
 			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
@@ -685,7 +685,7 @@ sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_functi
 
 	if (s_nextthread < SYS_THREAD_MAX) {
 		sys_thread_t new_thread;
-		new_thread = kernel_thread(name, priority, stacksize, (main_t) entry_function, (char * const *)NULL);
+		new_thread = kernel_thread(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
 		if (new_thread < 0) {
 			int errval = errno;
 			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
@@ -702,7 +702,7 @@ sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_functi
 sys_prot_t sys_arch_protect(void)
 {
 	sched_lock();
-	return (sys_prot_t) 1;
+	return (sys_prot_t)1;
 }
 
 void sys_arch_unprotect(sys_prot_t p)

@@ -430,7 +430,7 @@ int dtls_server_main(int argc, char **argv)
 	}
 
 	/* 3. create pthread with entry function */
-	if ((r = pthread_create(&tid, &attr, (pthread_startroutine_t) dtls_server_cb, (void *)&args)) != 0) {
+	if ((r = pthread_create(&tid, &attr, (pthread_startroutine_t)dtls_server_cb, (void *)&args)) != 0) {
 		mbedtls_printf("%s: pthread_create failed, status=%d\n", __func__, r);
 	}
 
