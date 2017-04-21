@@ -1,5 +1,8 @@
 config EXAMPLES_SENSORBOARD
 	bool "Sensor Board Example"
+	select ANALOG
+	select ADC
+	select S5J_ADC
 	select GPIO
 	select S5J_GPIO
 	select SPI
