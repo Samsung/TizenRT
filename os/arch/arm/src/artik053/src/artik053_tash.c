@@ -64,6 +64,7 @@
 #include <tinyara/fs/ioctl.h>
 #include <chip.h>
 
+#include "s5j_adc.h"
 #include "s5j_rtc.h"
 #include "up_internal.h"
 
