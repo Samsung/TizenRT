@@ -75,7 +75,7 @@
 db_result_t aql_init_handle(db_handle_t **handle)
 {
 	*handle = NULL;
-	*handle = (db_handle_t *) malloc(sizeof(db_handle_t));
+	*handle = (db_handle_t *)malloc(sizeof(db_handle_t));
 	if (*handle == NULL) {
 		return DB_ALLOCATION_ERROR;
 	}

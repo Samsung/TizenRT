@@ -67,7 +67,7 @@ static void platform_free_uninit(void *ptr)
 void *(*mbedtls_calloc)(size_t, size_t) = MBEDTLS_PLATFORM_STD_CALLOC;
 void (*mbedtls_free)(void *) = MBEDTLS_PLATFORM_STD_FREE;
 
-int mbedtls_platform_set_calloc_free(void * (*calloc_func)(size_t, size_t), void (*free_func)(void *))
+int mbedtls_platform_set_calloc_free(void *(*calloc_func)(size_t, size_t), void (*free_func)(void *))
 {
 	mbedtls_calloc = calloc_func;
 	mbedtls_free = free_func;
@@ -92,7 +92,7 @@ int mbedtls_platform_win32_snprintf(char *s, size_t n, const char *fmt, ...)
 	ret = _vsnprintf_s(s, n, _TRUNCATE, fmt, argp);
 #else
 	ret = _vsnprintf(s, n, fmt, argp);
-	if (ret < 0 || (size_t) ret == n) {
+	if (ret < 0 || (size_t)ret == n) {
 		s[n - 1] = '\0';
 		ret = -1;
 	}

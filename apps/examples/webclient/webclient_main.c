@@ -263,7 +263,7 @@ pthread_addr_t webclient_cb(void *arg)
 			http_client_response_release(&response);
 		}
 
-		if (http_client_send_request_async(&request, &ssl_config, (wget_callback_t) callback)) {
+		if (http_client_send_request_async(&request, &ssl_config, (wget_callback_t)callback)) {
 			printf("fail to send request\n");
 			goto release_out;
 		}
@@ -287,7 +287,7 @@ pthread_addr_t webclient_cb(void *arg)
 			http_client_response_release(&response);
 		}
 
-		if (http_client_send_request_async(&request, NULL, (wget_callback_t) callback)) {
+		if (http_client_send_request_async(&request, NULL, (wget_callback_t)callback)) {
 			printf("fail to send request\n");
 			goto release_out;
 		}

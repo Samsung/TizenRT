@@ -83,7 +83,7 @@ static struct pbuf *tcp_create_segment_wnd(ip_addr_t *src_ip, ip_addr_t *dst_ip,
 	IPH_CHKSUM_SET(iphdr, inet_chksum(iphdr, IP_HLEN));
 
 	/* let p point to TCP header */
-	pbuf_header(p, -(s16_t) sizeof(struct ip_hdr));
+	pbuf_header(p, -(s16_t)sizeof(struct ip_hdr));
 
 	tcphdr = p->payload;
 	tcphdr->src = htons(src_port);
@@ -96,7 +96,7 @@ static struct pbuf *tcp_create_segment_wnd(ip_addr_t *src_ip, ip_addr_t *dst_ip,
 
 	if (data_len > 0) {
 		/* let p point to TCP data */
-		pbuf_header(p, -(s16_t) sizeof(struct tcp_hdr));
+		pbuf_header(p, -(s16_t)sizeof(struct tcp_hdr));
 		/* copy data */
 		pbuf_take(p, data, data_len);
 		/* let p point to TCP header again */

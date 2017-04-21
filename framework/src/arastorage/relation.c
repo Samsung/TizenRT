@@ -658,7 +658,7 @@ static void relation_index_clear(relation_t *rel)
 	int len;
 
 	len = strlen(rel->name) + strlen(INDEX_NAME_SUFFIX) + 1;
-	filename = (char *) malloc(sizeof(char) * len);
+	filename = (char *)malloc(sizeof(char) * len);
 	if (filename == NULL) {
 		return;
 	}
@@ -696,7 +696,7 @@ static db_result_t generate_selection_result(db_handle_t **handle, relation_t *r
 	attribute_count = result_rel->attribute_count;
 
 	/* Allocate attribute map and tuple row which is used in select operation */
-	(*handle)->attr_map = (source_dest_map_t *) malloc(sizeof(source_dest_map_t) * attribute_count);
+	(*handle)->attr_map = (source_dest_map_t *)malloc(sizeof(source_dest_map_t) * attribute_count);
 	if ((*handle)->attr_map == NULL) {
 		DB_LOG_E("DB: Failed to malloc attr_map\n");
 		return DB_ALLOCATION_ERROR;
@@ -714,7 +714,7 @@ static db_result_t generate_selection_result(db_handle_t **handle, relation_t *r
 		}
 	}
 
-	(*handle)->tuple = (tuple_t) malloc(sizeof(char) * result_rel->row_length + 1);
+	(*handle)->tuple = (tuple_t)malloc(sizeof(char) * result_rel->row_length + 1);
 	if ((*handle)->tuple == NULL) {
 		DB_LOG_E("DB: Failed to malloc tuple row\n");
 		free((*handle)->attr_map);
@@ -794,7 +794,7 @@ db_result_t relation_process_select(db_handle_t **handle, db_cursor_t *cursor)
 		(*handle)->tuple_id++;
 	}
 
-	row = (storage_row_t) malloc(sizeof(char) * (*handle)->rel->row_length + 1);
+	row = (storage_row_t)malloc(sizeof(char) * (*handle)->rel->row_length + 1);
 	if (row == NULL) {
 		DB_LOG_E("DB: Failed to allocate row\n");
 		return DB_ALLOCATION_ERROR;
@@ -926,7 +926,7 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 	/* Search all tuples sequentially without index. */
 	(*handle)->tuple_id++;
 
-	row = (storage_row_t) malloc(sizeof(char) * (*handle)->rel->row_length + 1);
+	row = (storage_row_t)malloc(sizeof(char) * (*handle)->rel->row_length + 1);
 	if (row == NULL) {
 		DB_LOG_E("DB: Failed to allocate row\n");
 		return DB_ALLOCATION_ERROR;
@@ -1044,7 +1044,7 @@ db_cursor_t *relation_process_result(db_handle_t *handler)
 	db_result_t res;
 	db_cursor_t *cursor;
 
-	cursor = (db_cursor_t *) malloc(sizeof(db_cursor_t));
+	cursor = (db_cursor_t *)malloc(sizeof(db_cursor_t));
 	if (cursor == NULL) {
 		DB_LOG_E("DB: Failed to malloc cursor\n");
 		return NULL;
@@ -1094,12 +1094,12 @@ db_result_t relation_select(db_handle_t **handle, relation_t *rel, void *adt_ptr
 	attribute_t *attr, *attr_ptr;
 	int i;
 	int normal_attributes = 0;
-	adt = (aql_adt_t *) adt_ptr;
+	adt = (aql_adt_t *)adt_ptr;
 	(*handle)->rel = rel;
 	(*handle)->optype = AQL_GET_TYPE(adt);
 	DB_LOG_D("relation_select... optype = %d\n", (*handle)->optype);
 	(*handle)->adt_flags = AQL_GET_FLAGS(adt);
-	(*handle)->lvm_instance = (lvm_instance_t *) adt->lvm_instance;
+	(*handle)->lvm_instance = (lvm_instance_t *)adt->lvm_instance;
 
 	if (AQL_GET_FLAGS(adt) & AQL_FLAG_ASSIGN) {
 		name = adt->relations[0];

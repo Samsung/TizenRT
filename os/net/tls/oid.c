@@ -72,7 +72,7 @@
 static const TYPE_T * oid_ ## NAME ## _from_asn1(const mbedtls_asn1_buf *oid)     \
 {                                                                           \
 const TYPE_T *p = LIST;                                                 \
-const mbedtls_oid_descriptor_t *cur = (const mbedtls_oid_descriptor_t *) p;             \
+const mbedtls_oid_descriptor_t *cur = (const mbedtls_oid_descriptor_t *)p;             \
 if (p == NULL || oid == NULL) return (NULL);                          \
 while (cur->asn1 != NULL) {                                            \
 if (cur->asn1_len == oid->len &&                                    \
@@ -80,7 +80,7 @@ memcmp(cur->asn1, oid->p, oid->len) == 0) {                  \
 return (p);                                                    \
 }                                                                   \
 p++;                                                                \
-cur = (const mbedtls_oid_descriptor_t *) p;                                 \
+cur = (const mbedtls_oid_descriptor_t *)p;                                 \
 }                                                                       \
 return (NULL);                                                         \
 }
@@ -655,10 +655,10 @@ FN_OID_GET_ATTR2(mbedtls_oid_get_pkcs12_pbe_alg, oid_pkcs12_pbe_alg_t, pkcs12_pb
 #endif							/* MBEDTLS_PKCS12_C */
 #define OID_SAFE_SNPRINTF                               \
 do {                                                \
-if (ret < 0 || (size_t) ret >= n)              \
+if (ret < 0 || (size_t)ret >= n)              \
 return (MBEDTLS_ERR_OID_BUF_TOO_SMALL);    \
-n -= (size_t) ret;                              \
-p += (size_t) ret;                              \
+n -= (size_t)ret;                              \
+p += (size_t)ret;                              \
 } while (0)
 /* Return the x.y.z.... style numeric string for the given OID */
 int mbedtls_oid_get_numeric_string(char *buf, size_t size, const mbedtls_asn1_buf *oid)

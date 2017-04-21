@@ -97,7 +97,7 @@ off_t telldir(FAR DIR *dirp)
 
 	if (!idir || !idir->fd_root) {
 		set_errno(EBADF);
-		return (off_t) - 1;
+		return (off_t)-1;
 	}
 
 	/* Just return the current position */

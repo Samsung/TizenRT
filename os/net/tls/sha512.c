@@ -85,28 +85,28 @@ static void mbedtls_zeroize(void *v, size_t n)
 #ifndef GET_UINT64_BE
 #define GET_UINT64_BE(n, b, i)                            \
 {                                                       \
-	(n) = ((uint64_t) (b)[(i)] << 56)       \
-		| ((uint64_t) (b)[(i) + 1] << 48)       \
-		| ((uint64_t) (b)[(i) + 2] << 40)       \
-		| ((uint64_t) (b)[(i) + 3] << 32)       \
-		| ((uint64_t) (b)[(i) + 4] << 24)       \
-		| ((uint64_t) (b)[(i) + 5] << 16)       \
-		| ((uint64_t) (b)[(i) + 6] <<  8)       \
-		| ((uint64_t) (b)[(i) + 7]);      \
+	(n) = ((uint64_t)(b)[(i)] << 56)       \
+		| ((uint64_t)(b)[(i) + 1] << 48)       \
+		| ((uint64_t)(b)[(i) + 2] << 40)       \
+		| ((uint64_t)(b)[(i) + 3] << 32)       \
+		| ((uint64_t)(b)[(i) + 4] << 24)       \
+		| ((uint64_t)(b)[(i) + 5] << 16)       \
+		| ((uint64_t)(b)[(i) + 6] <<  8)       \
+		| ((uint64_t)(b)[(i) + 7]);      \
 }
 #endif							/* GET_UINT64_BE */
 
 #ifndef PUT_UINT64_BE
 #define PUT_UINT64_BE(n, b, i)                            \
 {                                                       \
-	(b)[(i)] = (unsigned char) ((n) >> 56);       \
-	(b)[(i) + 1] = (unsigned char) ((n) >> 48);       \
-	(b)[(i) + 2] = (unsigned char) ((n) >> 40);       \
-	(b)[(i) + 3] = (unsigned char) ((n) >> 32);       \
-	(b)[(i) + 4] = (unsigned char) ((n) >> 24);       \
-	(b)[(i) + 5] = (unsigned char) ((n) >> 16);       \
-	(b)[(i) + 6] = (unsigned char) ((n) >>  8);       \
-	(b)[(i) + 7] = (unsigned char) ((n));       \
+	(b)[(i)] = (unsigned char)((n) >> 56);       \
+	(b)[(i) + 1] = (unsigned char)((n) >> 48);       \
+	(b)[(i) + 2] = (unsigned char)((n) >> 40);       \
+	(b)[(i) + 3] = (unsigned char)((n) >> 32);       \
+	(b)[(i) + 4] = (unsigned char)((n) >> 24);       \
+	(b)[(i) + 5] = (unsigned char)((n) >> 16);       \
+	(b)[(i) + 6] = (unsigned char)((n) >>  8);       \
+	(b)[(i) + 7] = (unsigned char)((n));       \
 }
 #endif							/* PUT_UINT64_BE */
 
@@ -298,9 +298,9 @@ void mbedtls_sha512_update(mbedtls_sha512_context *ctx, const unsigned char *inp
 	left = (unsigned int)(ctx->total[0] & 0x7F);
 	fill = 128 - left;
 
-	ctx->total[0] += (uint64_t) ilen;
+	ctx->total[0] += (uint64_t)ilen;
 
-	if (ctx->total[0] < (uint64_t) ilen) {
+	if (ctx->total[0] < (uint64_t)ilen) {
 		ctx->total[1]++;
 	}
 

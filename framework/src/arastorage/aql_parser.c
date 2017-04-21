@@ -493,7 +493,7 @@ PARSER(select)
 
 	NEXT;
 	if (TOKEN == WHERE) {
-		lvm = (lvm_instance_t *) malloc(sizeof(lvm_instance_t));
+		lvm = (lvm_instance_t *)malloc(sizeof(lvm_instance_t));
 		if (lvm == NULL) {
 			DB_LOG_V("DB: Failed to malloc lvm instance\n");
 			return DB_ALLOCATION_ERROR;
@@ -535,7 +535,7 @@ PARSER(remain)
 
 	NEXT;
 	if (TOKEN == WHERE) {
-		lvm = (lvm_instance_t *) malloc(sizeof(lvm_instance_t));
+		lvm = (lvm_instance_t *)malloc(sizeof(lvm_instance_t));
 		if (lvm == NULL) {
 			DB_LOG_V("Failed to malloc lvm instance\n");
 			return DB_ALLOCATION_ERROR;
@@ -610,7 +610,7 @@ PARSER(remove_from)
 
 	CONSUME(WHERE);
 
-	lvm = (lvm_instance_t *) malloc(sizeof(lvm_instance_t));
+	lvm = (lvm_instance_t *)malloc(sizeof(lvm_instance_t));
 	if (lvm == NULL) {
 		DB_LOG_V("Failed to malloc lvm instance\n");
 		return DB_ALLOCATION_ERROR;

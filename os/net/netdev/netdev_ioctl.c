@@ -127,16 +127,16 @@ static int ioctl_addipv4route(FAR struct rtentry *rtentry)
 	in_addr_t router;
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_target;
-	target = (in_addr_t) addr->sin_addr.s_addr;
+	target = (in_addr_t)addr->sin_addr.s_addr;
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_netmask;
-	netmask = (in_addr_t) addr->sin_addr.s_addr;
+	netmask = (in_addr_t)addr->sin_addr.s_addr;
 
 	/* The router is an optional argument */
 
 	if (rtentry->rt_router) {
 		addr = (FAR struct sockaddr_in *)rtentry->rt_router;
-		router = (in_addr_t) addr->sin_addr.s_addr;
+		router = (in_addr_t)addr->sin_addr.s_addr;
 	} else {
 		router = 0;
 	}
@@ -165,16 +165,16 @@ static int ioctl_addipv6route(FAR struct rtentry *rtentry)
 	net_ipv6addr_t router;
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_target;
-	target = (net_ipv6addr_t) addr->sin6_addr.u6_addr16;
+	target = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_netmask;
-	netmask = (net_ipv6addr_t) addr->sin6_addr.u6_addr16;
+	netmask = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
 
 	/* The router is an optional argument */
 
 	if (rtentry->rt_router) {
 		addr = (FAR struct sockaddr_in6 *)rtentry->rt_router;
-		router = (net_ipv6addr_t) addr->sin6_addr.u6_addr16;
+		router = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
 	} else {
 		router = NULL;
 	}
@@ -202,10 +202,10 @@ static int ioctl_delipv4route(FAR struct rtentry *rtentry)
 	in_addr_t netmask;
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_target;
-	target = (in_addr_t) addr->sin_addr.s_addr;
+	target = (in_addr_t)addr->sin_addr.s_addr;
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_netmask;
-	netmask = (in_addr_t) addr->sin_addr.s_addr;
+	netmask = (in_addr_t)addr->sin_addr.s_addr;
 
 	return net_delroute(target, netmask);
 }
@@ -230,10 +230,10 @@ static int ioctl_delipv6route(FAR struct rtentry *rtentry)
 	net_ipv6addr_t netmask;
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_target;
-	target = (net_ipv6addr_t) addr->sin6_addr.u6_addr16;
+	target = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_netmask;
-	netmask = (net_ipv6addr_t) addr->sin6_addr.u6_addr16;
+	netmask = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
 
 	return net_delroute(target, netmask);
 }
@@ -669,7 +669,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		dev = netdev_ifrdev(req);
 		if (dev && dev->d_ioctl) {
 			struct mii_iotcl_notify_s *notify = &req->ifr_ifru.ifru_mii_notify;
-			ret = dev->d_ioctl(dev, cmd, ((long)(uintptr_t) notify));
+			ret = dev->d_ioctl(dev, cmd, ((long)(uintptr_t)notify));
 		}
 	}
 	break;
@@ -681,7 +681,7 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 		dev = netdev_ifrdev(req);
 		if (dev && dev->d_ioctl) {
 			struct mii_ioctl_data_s *mii_data = &req->ifr_ifru.ifru_mii_data;
-			ret = dev->d_ioctl(dev, cmd, ((long)(uintptr_t) mii_data));
+			ret = dev->d_ioctl(dev, cmd, ((long)(uintptr_t)mii_data));
 		}
 	}
 	break;
@@ -928,15 +928,15 @@ int netdev_ioctl(int sockfd, int cmd, unsigned long arg)
 
 	/* Execute the command */
 
-	ret = netdev_ifrioctl(sock, cmd, (FAR struct ifreq *)((uintptr_t) arg));
+	ret = netdev_ifrioctl(sock, cmd, (FAR struct ifreq *)((uintptr_t)arg));
 #ifdef CONFIG_NET_IGMP
 	if (ret == -ENOTTY) {
-		ret = netdev_imsfioctl(sock, cmd, (FAR struct ip_msfilter *)((uintptr_t) arg));
+		ret = netdev_imsfioctl(sock, cmd, (FAR struct ip_msfilter *)((uintptr_t)arg));
 	}
 #endif
 #ifdef CONFIG_NET_ROUTE
 	if (ret == -ENOTTY) {
-		ret = netdev_rtioctl(sock, cmd, (FAR struct rtentry *)((uintptr_t) arg));
+		ret = netdev_rtioctl(sock, cmd, (FAR struct rtentry *)((uintptr_t)arg));
 	}
 #endif
 

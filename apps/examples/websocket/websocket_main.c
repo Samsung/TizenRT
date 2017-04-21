@@ -680,7 +680,7 @@ int websocket_main(int argc, char *argv[])
 		}
 		pthread_attr_setstacksize(&attr, WEBSOCKET_EXAMPLE_STACKSIZE);
 		pthread_attr_setschedpolicy(&attr, WEBSOCKET_SCHED_POLICY);
-		status = pthread_create(&tid, &attr, (pthread_startroutine_t) websocket_client, (void *)(argv + 2));
+		status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_client, (void *)(argv + 2));
 		if (status != 0) {
 			printf("fail to create thread\n");
 			return -1;
@@ -700,7 +700,7 @@ int websocket_main(int argc, char *argv[])
 		}
 		pthread_attr_setstacksize(&attr, WEBSOCKET_EXAMPLE_STACKSIZE);
 		pthread_attr_setschedpolicy(&attr, WEBSOCKET_SCHED_POLICY);
-		status = pthread_create(&tid, &attr, (pthread_startroutine_t) websocket_server, (void *)(argv + 2));
+		status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_server, (void *)(argv + 2));
 		if (status != 0) {
 			printf("fail to create thread\n");
 			return -1;

@@ -212,7 +212,7 @@ int mbedtls_pkcs5_pbes2(const mbedtls_asn1_buf *pbe_params, int mode, const unsi
 		goto exit;
 	}
 
-	if ((ret = mbedtls_cipher_setkey(&cipher_ctx, key, 8 * keylen, (mbedtls_operation_t) mode)) != 0) {
+	if ((ret = mbedtls_cipher_setkey(&cipher_ctx, key, 8 * keylen, (mbedtls_operation_t)mode)) != 0) {
 		goto exit;
 	}
 
@@ -290,7 +290,7 @@ int mbedtls_pkcs5_pbkdf2_hmac(mbedtls_md_context_t *ctx, const unsigned char *pa
 		use_len = (key_length < md_size) ? key_length : md_size;
 		memcpy(out_p, work, use_len);
 
-		key_length -= (uint32_t) use_len;
+		key_length -= (uint32_t)use_len;
 		out_p += use_len;
 
 		for (i = 4; i > 0; i--)

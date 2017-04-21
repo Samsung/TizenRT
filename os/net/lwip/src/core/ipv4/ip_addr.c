@@ -305,8 +305,8 @@ char *ipaddr_ntoa_r(const ip_addr_t *addr, char *buf, int buflen)
 	for (n = 0; n < 4; n++) {
 		i = 0;
 		do {
-			rem = *ap % (u8_t) 10;
-			*ap /= (u8_t) 10;
+			rem = *ap % (u8_t)10;
+			*ap /= (u8_t)10;
 			inv[i++] = '0' + rem;
 		} while (*ap);
 		while (i--) {

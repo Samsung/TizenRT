@@ -134,13 +134,13 @@ static unsigned char PADDING[64] = {
  */
 void MD5Init(MD5_CTX *mdContext)
 {
-	mdContext->i[0] = mdContext->i[1] = (u32_t) 0;
+	mdContext->i[0] = mdContext->i[1] = (u32_t)0;
 
 	/* Load magic initialization constants. */
-	mdContext->buf[0] = (u32_t) 0x67452301UL;
-	mdContext->buf[1] = (u32_t) 0xefcdab89UL;
-	mdContext->buf[2] = (u32_t) 0x98badcfeUL;
-	mdContext->buf[3] = (u32_t) 0x10325476UL;
+	mdContext->buf[0] = (u32_t)0x67452301UL;
+	mdContext->buf[1] = (u32_t)0xefcdab89UL;
+	mdContext->buf[2] = (u32_t)0x98badcfeUL;
+	mdContext->buf[3] = (u32_t)0x10325476UL;
 }
 
 /* The routine MD5Update updates the message-digest context to
@@ -162,11 +162,11 @@ void MD5Update(MD5_CTX *mdContext, unsigned char *inBuf, unsigned int inLen)
 	mdi = (int)((mdContext->i[0] >> 3) & 0x3F);
 
 	/* update number of bits */
-	if ((mdContext->i[0] + ((u32_t) inLen << 3)) < mdContext->i[0]) {
+	if ((mdContext->i[0] + ((u32_t)inLen << 3)) < mdContext->i[0]) {
 		mdContext->i[1]++;
 	}
-	mdContext->i[0] += ((u32_t) inLen << 3);
-	mdContext->i[1] += ((u32_t) inLen >> 29);
+	mdContext->i[0] += ((u32_t)inLen << 3);
+	mdContext->i[1] += ((u32_t)inLen >> 29);
 
 	while (inLen--) {
 		/* add new character to buffer, increment mdi */
@@ -175,7 +175,7 @@ void MD5Update(MD5_CTX *mdContext, unsigned char *inBuf, unsigned int inLen)
 		/* transform if necessary */
 		if (mdi == 0x40) {
 			for (i = 0, ii = 0; i < 16; i++, ii += 4) {
-				in[i] = (((u32_t) mdContext->in[ii + 3]) << 24) | (((u32_t) mdContext->in[ii + 2]) << 16) | (((u32_t) mdContext->in[ii + 1]) << 8) | ((u32_t) mdContext->in[ii]);
+				in[i] = (((u32_t)mdContext->in[ii + 3]) << 24) | (((u32_t)mdContext->in[ii + 2]) << 16) | (((u32_t)mdContext->in[ii + 1]) << 8) | ((u32_t)mdContext->in[ii]);
 			}
 			Transform(mdContext->buf, in);
 			mdi = 0;
@@ -206,7 +206,7 @@ void MD5Final(unsigned char hash[], MD5_CTX *mdContext)
 
 	/* append length in bits and transform */
 	for (i = 0, ii = 0; i < 14; i++, ii += 4) {
-		in[i] = (((u32_t) mdContext->in[ii + 3]) << 24) | (((u32_t) mdContext->in[ii + 2]) << 16) | (((u32_t) mdContext->in[ii + 1]) << 8) | ((u32_t) mdContext->in[ii]);
+		in[i] = (((u32_t)mdContext->in[ii + 3]) << 24) | (((u32_t)mdContext->in[ii + 2]) << 16) | (((u32_t)mdContext->in[ii + 1]) << 8) | ((u32_t)mdContext->in[ii]);
 	}
 	Transform(mdContext->buf, in);
 

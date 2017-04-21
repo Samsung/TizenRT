@@ -107,7 +107,7 @@ void icmp_input(struct pbuf *p, struct netif *inp)
 		goto lenerr;
 	}
 
-	type = *((u8_t *) p->payload);
+	type = *((u8_t *)p->payload);
 
 	switch (type) {
 	case ICMP_ER:
@@ -235,7 +235,7 @@ void icmp_input(struct pbuf *p, struct netif *inp)
 	}
 	break;
 	default:
-		LWIP_DEBUGF(ICMP_DEBUG, ("icmp_input: ICMP type %" S16_F " code %" S16_F " not supported.\n", (s16_t) type, (s16_t)(*(((u8_t *) p->payload) + 1))));
+		LWIP_DEBUGF(ICMP_DEBUG, ("icmp_input: ICMP type %" S16_F " code %" S16_F " not supported.\n", (s16_t)type, (s16_t)(*(((u8_t *)p->payload) + 1))));
 		ICMP_STATS_INC(icmp.proterr);
 		ICMP_STATS_INC(icmp.drop);
 	}
@@ -322,7 +322,7 @@ static void icmp_send_response(struct pbuf *p, u8_t type, u8_t code)
 	icmphdr->seqno = 0;
 
 	/* copy fields from original packet */
-	SMEMCPY((u8_t *) q->payload + sizeof(struct icmp_echo_hdr), (u8_t *) p->payload, IP_HLEN + ICMP_DEST_UNREACH_DATASIZE);
+	SMEMCPY((u8_t *)q->payload + sizeof(struct icmp_echo_hdr), (u8_t *)p->payload, IP_HLEN + ICMP_DEST_UNREACH_DATASIZE);
 
 	/* calculate checksum */
 	icmphdr->chksum = 0;

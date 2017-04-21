@@ -147,5 +147,5 @@ int fseek(FAR FILE *stream, long int offset, int whence)
 
 	/* Perform the fseek on the underlying file descriptor */
 
-	return lseek(stream->fs_fd, offset, whence) == (off_t) - 1 ? ERROR : OK;
+	return lseek(stream->fs_fd, offset, whence) == (off_t)-1 ? ERROR : OK;
 }

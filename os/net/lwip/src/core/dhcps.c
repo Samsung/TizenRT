@@ -394,9 +394,9 @@ static void dhcps_send_msg(struct dhcps_msg *m, u8_t msg_type)
 
 		q = p;
 		while (q != NULL) {
-			data = (u8_t *) q->payload;
+			data = (u8_t *)q->payload;
 			for (i = 0; i < (q->len); i++) {
-				data[i] = ((u8_t *) m)[cnt++];
+				data[i] = ((u8_t *)m)[cnt++];
 			}
 			q = q->next;
 		}
@@ -437,7 +437,7 @@ static uint8_t dhcps_parse_options(uint8_t *optptr, int16_t len)
 
 	while (optptr < end) {
 		LWIP_DEBUGF(DHCP_DEBUG, ("parse_options(): *optptr = %d\n", *optptr));
-		switch ((int16_t) * optptr) {
+		switch ((int16_t)*optptr) {
 		case DHCP_OPTION_MESSAGE_TYPE:
 			type = *(optptr + 2);
 			break;
@@ -658,7 +658,7 @@ static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t
 		goto free_pbuf_and_return;
 	}
 
-	p_dhcps_msg = (u8_t *) pmsg_dhcps;
+	p_dhcps_msg = (u8_t *)pmsg_dhcps;
 	tlen = p->tot_len;
 	data = p->payload;
 
@@ -766,7 +766,7 @@ err_t dhcps_start(struct netif *netif)
 	}
 
 	dhcps = netif->dhcps_pcb;
-	LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start (netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t) netif->num));
+	LWIP_DEBUGF(DHCP_DEBUG, ("dhcps_start (netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t)netif->num));
 
 	/* check hwtype of the netif */
 	if ((netif->flags & NETIF_FLAG_ETHARP) == 0) {

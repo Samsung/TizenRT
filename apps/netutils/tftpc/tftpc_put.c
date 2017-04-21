@@ -165,7 +165,7 @@ int tftp_mkdatapacket(int fd, off_t offset, uint8_t *packet, uint16_t blockno)
 	/* Seek to the correct offset in the file */
 
 	tmp = lseek(fd, offset, SEEK_SET);
-	if (tmp == (off_t) - 1) {
+	if (tmp == (off_t)-1) {
 		ndbg("lseek failed: %d\n", errno);
 		return ERROR;
 	}

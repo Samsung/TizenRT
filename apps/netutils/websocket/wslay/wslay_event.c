@@ -846,7 +846,7 @@ int wslay_event_send(wslay_event_context_ptr ctx)
 				if (eof) {
 					ctx->omsg->fin = 1;
 				}
-				ctx->opayloadlen = (uint64_t) r;
+				ctx->opayloadlen = (uint64_t)r;
 				ctx->opayloadoff = 0;
 			}
 			memset(&iocb, 0, sizeof(iocb));

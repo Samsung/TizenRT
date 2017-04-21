@@ -82,20 +82,20 @@ static void mbedtls_zeroize(void *v, size_t n)
 #ifndef GET_UINT32_LE
 #define GET_UINT32_LE(n, b, i)                            \
 {                                                       \
-	(n) = ((uint32_t) (b)[(i)])             \
-	| ((uint32_t) (b)[(i) + 1] <<  8)             \
-	| ((uint32_t) (b)[(i) + 2] << 16)             \
-	| ((uint32_t) (b)[(i) + 3] << 24);            \
+	(n) = ((uint32_t)(b)[(i)])             \
+	| ((uint32_t)(b)[(i) + 1] <<  8)             \
+	| ((uint32_t)(b)[(i) + 2] << 16)             \
+	| ((uint32_t)(b)[(i) + 3] << 24);            \
 }
 #endif
 
 #ifndef PUT_UINT32_LE
 #define PUT_UINT32_LE(n, b, i)                                    \
 {                                                               \
-	(b)[(i)] = (unsigned char) (((n)) & 0xFF);    \
-	(b)[(i) + 1] = (unsigned char) (((n) >>  8) & 0xFF);    \
-	(b)[(i) + 2] = (unsigned char) (((n) >> 16) & 0xFF);    \
-	(b)[(i) + 3] = (unsigned char) (((n) >> 24) & 0xFF);    \
+	(b)[(i)] = (unsigned char)(((n)) & 0xFF);    \
+	(b)[(i) + 1] = (unsigned char)(((n) >>  8) & 0xFF);    \
+	(b)[(i) + 2] = (unsigned char)(((n) >> 16) & 0xFF);    \
+	(b)[(i) + 3] = (unsigned char)(((n) >> 24) & 0xFF);    \
 }
 #endif
 
@@ -427,7 +427,7 @@ static void aes_gen_tables(void)
 	 * calculate the round constants
 	 */
 	for (i = 0, x = 1; i < 10; i++) {
-		RCON[i] = (uint32_t) x;
+		RCON[i] = (uint32_t)x;
 		x = XTIME(x) & 0xFF;
 	}
 
@@ -462,7 +462,7 @@ static void aes_gen_tables(void)
 		y = XTIME(x) & 0xFF;
 		z = (y ^ x) & 0xFF;
 
-		FT0[i] = ((uint32_t) y) ^ ((uint32_t) x << 8) ^ ((uint32_t) x << 16) ^ ((uint32_t) z << 24);
+		FT0[i] = ((uint32_t)y) ^ ((uint32_t)x << 8) ^ ((uint32_t)x << 16) ^ ((uint32_t)z << 24);
 
 		FT1[i] = ROTL8(FT0[i]);
 		FT2[i] = ROTL8(FT1[i]);
@@ -470,7 +470,7 @@ static void aes_gen_tables(void)
 
 		x = RSb[i];
 
-		RT0[i] = ((uint32_t) MUL(0x0E, x)) ^ ((uint32_t) MUL(0x09, x) << 8) ^ ((uint32_t) MUL(0x0D, x) << 16) ^ ((uint32_t) MUL(0x0B, x) << 24);
+		RT0[i] = ((uint32_t)MUL(0x0E, x)) ^ ((uint32_t)MUL(0x09, x) << 8) ^ ((uint32_t)MUL(0x0D, x) << 16) ^ ((uint32_t)MUL(0x0B, x) << 24);
 
 		RT1[i] = ROTL8(RT0[i]);
 		RT2[i] = ROTL8(RT1[i]);
@@ -550,7 +550,7 @@ int mbedtls_aes_setkey_enc(mbedtls_aes_context *ctx, const unsigned char *key, u
 	case 10:
 
 		for (i = 0; i < 10; i++, RK += 4) {
-			RK[4] = RK[0] ^ RCON[i] ^ ((uint32_t) FSb[(RK[3] >> 8) & 0xFF]) ^ ((uint32_t) FSb[(RK[3] >> 16) & 0xFF] << 8) ^ ((uint32_t) FSb[(RK[3] >> 24) & 0xFF] << 16) ^ ((uint32_t) FSb[(RK[3]) & 0xFF] << 24);
+			RK[4] = RK[0] ^ RCON[i] ^ ((uint32_t)FSb[(RK[3] >> 8) & 0xFF]) ^ ((uint32_t)FSb[(RK[3] >> 16) & 0xFF] << 8) ^ ((uint32_t)FSb[(RK[3] >> 24) & 0xFF] << 16) ^ ((uint32_t)FSb[(RK[3]) & 0xFF] << 24);
 
 			RK[5] = RK[1] ^ RK[4];
 			RK[6] = RK[2] ^ RK[5];
@@ -561,7 +561,7 @@ int mbedtls_aes_setkey_enc(mbedtls_aes_context *ctx, const unsigned char *key, u
 	case 12:
 
 		for (i = 0; i < 8; i++, RK += 6) {
-			RK[6] = RK[0] ^ RCON[i] ^ ((uint32_t) FSb[(RK[5] >> 8) & 0xFF]) ^ ((uint32_t) FSb[(RK[5] >> 16) & 0xFF] << 8) ^ ((uint32_t) FSb[(RK[5] >> 24) & 0xFF] << 16) ^ ((uint32_t) FSb[(RK[5]) & 0xFF] << 24);
+			RK[6] = RK[0] ^ RCON[i] ^ ((uint32_t)FSb[(RK[5] >> 8) & 0xFF]) ^ ((uint32_t)FSb[(RK[5] >> 16) & 0xFF] << 8) ^ ((uint32_t)FSb[(RK[5] >> 24) & 0xFF] << 16) ^ ((uint32_t)FSb[(RK[5]) & 0xFF] << 24);
 
 			RK[7] = RK[1] ^ RK[6];
 			RK[8] = RK[2] ^ RK[7];
@@ -574,13 +574,13 @@ int mbedtls_aes_setkey_enc(mbedtls_aes_context *ctx, const unsigned char *key, u
 	case 14:
 
 		for (i = 0; i < 7; i++, RK += 8) {
-			RK[8] = RK[0] ^ RCON[i] ^ ((uint32_t) FSb[(RK[7] >> 8) & 0xFF]) ^ ((uint32_t) FSb[(RK[7] >> 16) & 0xFF] << 8) ^ ((uint32_t) FSb[(RK[7] >> 24) & 0xFF] << 16) ^ ((uint32_t) FSb[(RK[7]) & 0xFF] << 24);
+			RK[8] = RK[0] ^ RCON[i] ^ ((uint32_t)FSb[(RK[7] >> 8) & 0xFF]) ^ ((uint32_t)FSb[(RK[7] >> 16) & 0xFF] << 8) ^ ((uint32_t)FSb[(RK[7] >> 24) & 0xFF] << 16) ^ ((uint32_t)FSb[(RK[7]) & 0xFF] << 24);
 
 			RK[9] = RK[1] ^ RK[8];
 			RK[10] = RK[2] ^ RK[9];
 			RK[11] = RK[3] ^ RK[10];
 
-			RK[12] = RK[4] ^ ((uint32_t) FSb[(RK[11]) & 0xFF]) ^ ((uint32_t) FSb[(RK[11] >> 8) & 0xFF] << 8) ^ ((uint32_t) FSb[(RK[11] >> 16) & 0xFF] << 16) ^ ((uint32_t) FSb[(RK[11] >> 24) & 0xFF] << 24);
+			RK[12] = RK[4] ^ ((uint32_t)FSb[(RK[11]) & 0xFF]) ^ ((uint32_t)FSb[(RK[11] >> 8) & 0xFF] << 8) ^ ((uint32_t)FSb[(RK[11] >> 16) & 0xFF] << 16) ^ ((uint32_t)FSb[(RK[11] >> 24) & 0xFF] << 24);
 
 			RK[13] = RK[5] ^ RK[12];
 			RK[14] = RK[6] ^ RK[13];
@@ -729,13 +729,13 @@ void mbedtls_aes_encrypt(mbedtls_aes_context *ctx, const unsigned char input[16]
 
 	AES_FROUND(Y0, Y1, Y2, Y3, X0, X1, X2, X3);
 
-	X0 = *RK++ ^ ((uint32_t) FSb[(Y0) & 0xFF]) ^ ((uint32_t) FSb[(Y1 >> 8) & 0xFF] << 8) ^ ((uint32_t) FSb[(Y2 >> 16) & 0xFF] << 16) ^ ((uint32_t) FSb[(Y3 >> 24) & 0xFF] << 24);
+	X0 = *RK++ ^ ((uint32_t)FSb[(Y0) & 0xFF]) ^ ((uint32_t)FSb[(Y1 >> 8) & 0xFF] << 8) ^ ((uint32_t)FSb[(Y2 >> 16) & 0xFF] << 16) ^ ((uint32_t)FSb[(Y3 >> 24) & 0xFF] << 24);
 
-	X1 = *RK++ ^ ((uint32_t) FSb[(Y1) & 0xFF]) ^ ((uint32_t) FSb[(Y2 >> 8) & 0xFF] << 8) ^ ((uint32_t) FSb[(Y3 >> 16) & 0xFF] << 16) ^ ((uint32_t) FSb[(Y0 >> 24) & 0xFF] << 24);
+	X1 = *RK++ ^ ((uint32_t)FSb[(Y1) & 0xFF]) ^ ((uint32_t)FSb[(Y2 >> 8) & 0xFF] << 8) ^ ((uint32_t)FSb[(Y3 >> 16) & 0xFF] << 16) ^ ((uint32_t)FSb[(Y0 >> 24) & 0xFF] << 24);
 
-	X2 = *RK++ ^ ((uint32_t) FSb[(Y2) & 0xFF]) ^ ((uint32_t) FSb[(Y3 >> 8) & 0xFF] << 8) ^ ((uint32_t) FSb[(Y0 >> 16) & 0xFF] << 16) ^ ((uint32_t) FSb[(Y1 >> 24) & 0xFF] << 24);
+	X2 = *RK++ ^ ((uint32_t)FSb[(Y2) & 0xFF]) ^ ((uint32_t)FSb[(Y3 >> 8) & 0xFF] << 8) ^ ((uint32_t)FSb[(Y0 >> 16) & 0xFF] << 16) ^ ((uint32_t)FSb[(Y1 >> 24) & 0xFF] << 24);
 
-	X3 = *RK++ ^ ((uint32_t) FSb[(Y3) & 0xFF]) ^ ((uint32_t) FSb[(Y0 >> 8) & 0xFF] << 8) ^ ((uint32_t) FSb[(Y1 >> 16) & 0xFF] << 16) ^ ((uint32_t) FSb[(Y2 >> 24) & 0xFF] << 24);
+	X3 = *RK++ ^ ((uint32_t)FSb[(Y3) & 0xFF]) ^ ((uint32_t)FSb[(Y0 >> 8) & 0xFF] << 8) ^ ((uint32_t)FSb[(Y1 >> 16) & 0xFF] << 16) ^ ((uint32_t)FSb[(Y2 >> 24) & 0xFF] << 24);
 
 	PUT_UINT32_LE(X0, output, 0);
 	PUT_UINT32_LE(X1, output, 4);
@@ -771,13 +771,13 @@ void mbedtls_aes_decrypt(mbedtls_aes_context *ctx, const unsigned char input[16]
 
 	AES_RROUND(Y0, Y1, Y2, Y3, X0, X1, X2, X3);
 
-	X0 = *RK++ ^ ((uint32_t) RSb[(Y0) & 0xFF]) ^ ((uint32_t) RSb[(Y3 >> 8) & 0xFF] << 8) ^ ((uint32_t) RSb[(Y2 >> 16) & 0xFF] << 16) ^ ((uint32_t) RSb[(Y1 >> 24) & 0xFF] << 24);
+	X0 = *RK++ ^ ((uint32_t)RSb[(Y0) & 0xFF]) ^ ((uint32_t)RSb[(Y3 >> 8) & 0xFF] << 8) ^ ((uint32_t)RSb[(Y2 >> 16) & 0xFF] << 16) ^ ((uint32_t)RSb[(Y1 >> 24) & 0xFF] << 24);
 
-	X1 = *RK++ ^ ((uint32_t) RSb[(Y1) & 0xFF]) ^ ((uint32_t) RSb[(Y0 >> 8) & 0xFF] << 8) ^ ((uint32_t) RSb[(Y3 >> 16) & 0xFF] << 16) ^ ((uint32_t) RSb[(Y2 >> 24) & 0xFF] << 24);
+	X1 = *RK++ ^ ((uint32_t)RSb[(Y1) & 0xFF]) ^ ((uint32_t)RSb[(Y0 >> 8) & 0xFF] << 8) ^ ((uint32_t)RSb[(Y3 >> 16) & 0xFF] << 16) ^ ((uint32_t)RSb[(Y2 >> 24) & 0xFF] << 24);
 
-	X2 = *RK++ ^ ((uint32_t) RSb[(Y2) & 0xFF]) ^ ((uint32_t) RSb[(Y1 >> 8) & 0xFF] << 8) ^ ((uint32_t) RSb[(Y0 >> 16) & 0xFF] << 16) ^ ((uint32_t) RSb[(Y3 >> 24) & 0xFF] << 24);
+	X2 = *RK++ ^ ((uint32_t)RSb[(Y2) & 0xFF]) ^ ((uint32_t)RSb[(Y1 >> 8) & 0xFF] << 8) ^ ((uint32_t)RSb[(Y0 >> 16) & 0xFF] << 16) ^ ((uint32_t)RSb[(Y3 >> 24) & 0xFF] << 24);
 
-	X3 = *RK++ ^ ((uint32_t) RSb[(Y3) & 0xFF]) ^ ((uint32_t) RSb[(Y2 >> 8) & 0xFF] << 8) ^ ((uint32_t) RSb[(Y1 >> 16) & 0xFF] << 16) ^ ((uint32_t) RSb[(Y0 >> 24) & 0xFF] << 24);
+	X3 = *RK++ ^ ((uint32_t)RSb[(Y3) & 0xFF]) ^ ((uint32_t)RSb[(Y2 >> 8) & 0xFF] << 8) ^ ((uint32_t)RSb[(Y1 >> 16) & 0xFF] << 16) ^ ((uint32_t)RSb[(Y0 >> 24) & 0xFF] << 24);
 
 	PUT_UINT32_LE(X0, output, 0);
 	PUT_UINT32_LE(X1, output, 4);

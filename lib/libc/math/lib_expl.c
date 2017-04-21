@@ -105,7 +105,7 @@ long double expl(long double x)
 
 	/* Extract integer component */
 
-	int_part = (size_t) x;
+	int_part = (size_t)x;
 
 	/* Set x to fractional component */
 

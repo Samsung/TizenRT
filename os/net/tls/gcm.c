@@ -132,11 +132,11 @@ static int gcm_gen_table(mbedtls_gcm_context *ctx)
 	/* pack h as two 64-bits ints, big-endian */
 	GET_UINT32_BE(hi, h, 0);
 	GET_UINT32_BE(lo, h, 4);
-	vh = (uint64_t) hi << 32 | lo;
+	vh = (uint64_t)hi << 32 | lo;
 
 	GET_UINT32_BE(hi, h, 8);
 	GET_UINT32_BE(lo, h, 12);
-	vl = (uint64_t) hi << 32 | lo;
+	vl = (uint64_t)hi << 32 | lo;
 
 	/* 8 = 1000 corresponds to 1 in GF(2^128) */
 	ctx->HL[8] = vl;
@@ -156,7 +156,7 @@ static int gcm_gen_table(mbedtls_gcm_context *ctx)
 	for (i = 4; i > 0; i >>= 1) {
 		uint32_t T = (vl & 1) * 0xe1000000U;
 		vl = (vh << 63) | (vl >> 1);
-		vh = (vh >> 1) ^ ((uint64_t) T << 32);
+		vh = (vh >> 1) ^ ((uint64_t)T << 32);
 
 		ctx->HL[i] = vl;
 		ctx->HH[i] = vh;
@@ -255,7 +255,7 @@ static void gcm_mult(mbedtls_gcm_context *ctx, const unsigned char x[16], unsign
 			rem = (unsigned char)zl & 0xf;
 			zl = (zh << 60) | (zl >> 4);
 			zh = (zh >> 4);
-			zh ^= (uint64_t) last4[rem] << 48;
+			zh ^= (uint64_t)last4[rem] << 48;
 			zh ^= ctx->HH[lo];
 			zl ^= ctx->HL[lo];
 
@@ -264,7 +264,7 @@ static void gcm_mult(mbedtls_gcm_context *ctx, const unsigned char x[16], unsign
 		rem = (unsigned char)zl & 0xf;
 		zl = (zh << 60) | (zl >> 4);
 		zh = (zh >> 4);
-		zh ^= (uint64_t) last4[rem] << 48;
+		zh ^= (uint64_t)last4[rem] << 48;
 		zh ^= ctx->HH[hi];
 		zl ^= ctx->HL[hi];
 	}
@@ -284,7 +284,7 @@ int mbedtls_gcm_starts(mbedtls_gcm_context *ctx, int mode, const unsigned char *
 	size_t use_len, olen = 0;
 
 	/* IV and AD are limited to 2^64 bits, so 2^61 bytes */
-	if (((uint64_t) iv_len) >> 61 != 0 || ((uint64_t) add_len) >> 61 != 0) {
+	if (((uint64_t)iv_len) >> 61 != 0 || ((uint64_t)add_len) >> 61 != 0) {
 		return (MBEDTLS_ERR_GCM_BAD_INPUT);
 	}
 
@@ -360,7 +360,7 @@ int mbedtls_gcm_update(mbedtls_gcm_context *ctx, size_t length, const unsigned c
 
 	/* Total length is restricted to 2^39 - 256 bits, ie 2^36 - 2^5 bytes
 	 * Also check for possible overflow */
-	if (ctx->len + length < ctx->len || (uint64_t) ctx->len + length > 0xFFFFFFFE0ull) {
+	if (ctx->len + length < ctx->len || (uint64_t)ctx->len + length > 0xFFFFFFFE0ull) {
 		return (MBEDTLS_ERR_GCM_BAD_INPUT);
 	}
 

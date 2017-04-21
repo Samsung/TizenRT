@@ -501,7 +501,7 @@ db_result_t storage_get_row(relation_t *rel, tuple_id_t *tuple_id, storage_row_t
 		return DB_FINISHED;
 	}
 
-	if (storage_seek(rel->tuple_storage, *tuple_id * rel->row_length, SEEK_SET) == (off_t) - 1) {
+	if (storage_seek(rel->tuple_storage, *tuple_id * rel->row_length, SEEK_SET) == (off_t)-1) {
 		return DB_STORAGE_ERROR;
 	}
 
@@ -595,7 +595,7 @@ db_result_t storage_get_row_amount(relation_t *rel, tuple_id_t *amount)
 		*amount = 0;
 	} else {
 		offset = storage_seek(rel->tuple_storage, 0, SEEK_END);
-		if (offset == (off_t) - 1) {
+		if (offset == (off_t)-1) {
 			return DB_STORAGE_ERROR;
 		}
 		*amount = (tuple_id_t)(offset / rel->row_length);
@@ -607,7 +607,7 @@ db_result_t storage_read_from(db_storage_id_t fd, void *buffer, unsigned long of
 {
 	ssize_t r;
 
-	if (storage_seek(fd, offset, SEEK_SET) == (off_t) - 1) {
+	if (storage_seek(fd, offset, SEEK_SET) == (off_t)-1) {
 		return DB_STORAGE_ERROR;
 	}
 
@@ -622,7 +622,7 @@ db_result_t storage_write_to(db_storage_id_t fd, void *buffer, unsigned long off
 {
 	ssize_t r;
 
-	if (storage_seek(fd, offset, SEEK_SET) == (off_t) - 1) {
+	if (storage_seek(fd, offset, SEEK_SET) == (off_t)-1) {
 		return DB_STORAGE_ERROR;
 	}
 

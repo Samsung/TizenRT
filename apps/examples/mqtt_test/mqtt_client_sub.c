@@ -186,7 +186,7 @@ static const char mqtt_cli_key_rsa[] =
  ****************************************************************************/
 static void my_connect_callback(void *client, int result)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) client;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)client;
 	mqtt_msg_t *mqtt_msg = NULL;
 
 	if (mqtt_client == NULL || mqtt_client->config == NULL) {
@@ -199,7 +199,7 @@ static void my_connect_callback(void *client, int result)
 		MQTT_SUB_DEBUG_PRINT(mqtt_client, ">>> connect callback: client_id=%s, connect success!\n", mqtt_client->config->client_id);
 
 		if (mqtt_client->config->user_data) {
-			mqtt_msg = (mqtt_msg_t *) mqtt_client->config->user_data;
+			mqtt_msg = (mqtt_msg_t *)mqtt_client->config->user_data;
 			if (mqtt_subscribe(mqtt_client, mqtt_msg->topic, mqtt_msg->qos) != 0) {
 				fprintf(stderr, "Error: mqtt_subscribe() failed.\n");
 			}
@@ -232,7 +232,7 @@ static void my_connect_callback(void *client, int result)
 
 static void my_disconnect_callback(void *client, int result)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) client;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)client;
 
 	if (mqtt_client == NULL || mqtt_client->config == NULL) {
 		fprintf(stderr, "Error: >>> disconnect callback: %s is NULL.\n", mqtt_client == NULL ? "mqtt_client" : "mqtt_client->config");
@@ -248,7 +248,7 @@ static void my_disconnect_callback(void *client, int result)
 
 static void my_message_callback(void *client, mqtt_msg_t *msg)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) client;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)client;
 
 	if (mqtt_client == NULL || mqtt_client->config == NULL) {
 		fprintf(stderr, "Error: >>> message callback: %s is NULL.\n", mqtt_client == NULL ? "mqtt_client" : "mqtt_client->config");
@@ -265,7 +265,7 @@ static void my_message_callback(void *client, mqtt_msg_t *msg)
 
 static void my_subscribe_callback(void *client, int msg_id, int qos_count, const int *granted_qos)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) client;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)client;
 
 	if (mqtt_client == NULL || mqtt_client->config == NULL) {
 		fprintf(stderr, "Error: >>> subscribe callback: %s is NULL.\n", mqtt_client == NULL ? "mqtt_client" : "mqtt_client->config");
@@ -277,7 +277,7 @@ static void my_subscribe_callback(void *client, int msg_id, int qos_count, const
 
 static void my_unsubscribe_callback(void *client, int msg_id)
 {
-	mqtt_client_t *mqtt_client = (mqtt_client_t *) client;
+	mqtt_client_t *mqtt_client = (mqtt_client_t *)client;
 
 	if (mqtt_client == NULL || mqtt_client->config == NULL) {
 		fprintf(stderr, "Error: >>> unsubscribe callback: %s is NULL.\n", mqtt_client == NULL ? "mqtt_client" : "mqtt_client->config");
@@ -785,7 +785,7 @@ int mqtt_client_sub_main(int argc, char *argv[])
 
 	arg.argc = argc;
 	arg.argv = argv;
-	ret = pthread_create(&tid, &attr, (pthread_startroutine_t) mqtt_client_sub_task, &arg);
+	ret = pthread_create(&tid, &attr, (pthread_startroutine_t)mqtt_client_sub_task, &arg);
 	if (ret != 0) {
 		fprintf(stderr, "Error: pthread_create() failed. (ret=%d)\n");
 		goto done;

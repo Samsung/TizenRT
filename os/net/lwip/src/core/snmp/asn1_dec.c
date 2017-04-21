@@ -75,7 +75,7 @@ err_t snmp_asn1_dec_type(struct pbuf *p, u16_t ofs, u8_t *type)
 		base = plen;
 		plen += p->len;
 		if (ofs < plen) {
-			msg_ptr = (u8_t *) p->payload;
+			msg_ptr = (u8_t *)p->payload;
 			msg_ptr += ofs - base;
 			*type = *msg_ptr;
 			return ERR_OK;
@@ -105,7 +105,7 @@ err_t snmp_asn1_dec_length(struct pbuf *p, u16_t ofs, u8_t *octets_used, u16_t *
 		base = plen;
 		plen += p->len;
 		if (ofs < plen) {
-			msg_ptr = (u8_t *) p->payload;
+			msg_ptr = (u8_t *)p->payload;
 			msg_ptr += ofs - base;
 
 			if (*msg_ptr < 0x80) {
@@ -132,7 +132,7 @@ err_t snmp_asn1_dec_length(struct pbuf *p, u16_t ofs, u8_t *octets_used, u16_t *
 							if (p == NULL) {
 								return ERR_ARG;
 							}
-							msg_ptr = (u8_t *) p->payload;
+							msg_ptr = (u8_t *)p->payload;
 							plen += p->len;
 						} else {
 							/* next octet in same pbuf */
@@ -160,7 +160,7 @@ err_t snmp_asn1_dec_length(struct pbuf *p, u16_t ofs, u8_t *octets_used, u16_t *
 					if (p == NULL) {
 						return ERR_ARG;
 					}
-					msg_ptr = (u8_t *) p->payload;
+					msg_ptr = (u8_t *)p->payload;
 				} else {
 					/* next octet in same pbuf */
 					msg_ptr++;
@@ -182,7 +182,7 @@ err_t snmp_asn1_dec_length(struct pbuf *p, u16_t ofs, u8_t *octets_used, u16_t *
 						if (p == NULL) {
 							return ERR_ARG;
 						}
-						msg_ptr = (u8_t *) p->payload;
+						msg_ptr = (u8_t *)p->payload;
 						plen += p->len;
 					} else {
 						/* next octet in same pbuf */
@@ -235,7 +235,7 @@ err_t snmp_asn1_dec_u32t(struct pbuf *p, u16_t ofs, u16_t len, u32_t *value)
 		base = plen;
 		plen += p->len;
 		if (ofs < plen) {
-			msg_ptr = (u8_t *) p->payload;
+			msg_ptr = (u8_t *)p->payload;
 			msg_ptr += ofs - base;
 			if ((len > 0) && (len < 6)) {
 				/* start from zero */
@@ -255,7 +255,7 @@ err_t snmp_asn1_dec_u32t(struct pbuf *p, u16_t ofs, u16_t len, u32_t *value)
 							if (p == NULL) {
 								return ERR_ARG;
 							}
-							msg_ptr = (u8_t *) p->payload;
+							msg_ptr = (u8_t *)p->payload;
 							plen += p->len;
 						} else {
 							/* next octet in same pbuf */
@@ -275,7 +275,7 @@ err_t snmp_asn1_dec_u32t(struct pbuf *p, u16_t ofs, u16_t len, u32_t *value)
 						if (p == NULL) {
 							return ERR_ARG;
 						}
-						msg_ptr = (u8_t *) p->payload;
+						msg_ptr = (u8_t *)p->payload;
 						plen += p->len;
 					} else {
 						/* next octet in same pbuf */
@@ -310,10 +310,10 @@ err_t snmp_asn1_dec_s32t(struct pbuf *p, u16_t ofs, u16_t len, s32_t *value)
 	u16_t plen, base;
 	u8_t *msg_ptr;
 #if BYTE_ORDER == LITTLE_ENDIAN
-	u8_t *lsb_ptr = (u8_t *) value;
+	u8_t *lsb_ptr = (u8_t *)value;
 #endif
 #if BYTE_ORDER == BIG_ENDIAN
-	u8_t *lsb_ptr = (u8_t *) value + sizeof(s32_t) - 1;
+	u8_t *lsb_ptr = (u8_t *)value + sizeof(s32_t) - 1;
 #endif
 	u8_t sign;
 
@@ -322,7 +322,7 @@ err_t snmp_asn1_dec_s32t(struct pbuf *p, u16_t ofs, u16_t len, s32_t *value)
 		base = plen;
 		plen += p->len;
 		if (ofs < plen) {
-			msg_ptr = (u8_t *) p->payload;
+			msg_ptr = (u8_t *)p->payload;
 			msg_ptr += ofs - base;
 			if ((len > 0) && (len < 5)) {
 				if (*msg_ptr & 0x80) {
@@ -352,7 +352,7 @@ err_t snmp_asn1_dec_s32t(struct pbuf *p, u16_t ofs, u16_t len, s32_t *value)
 						if (p == NULL) {
 							return ERR_ARG;
 						}
-						msg_ptr = (u8_t *) p->payload;
+						msg_ptr = (u8_t *)p->payload;
 						plen += p->len;
 					} else {
 						/* next octet in same pbuf */
@@ -395,7 +395,7 @@ err_t snmp_asn1_dec_oid(struct pbuf *p, u16_t ofs, u16_t len, struct snmp_obj_id
 		base = plen;
 		plen += p->len;
 		if (ofs < plen) {
-			msg_ptr = (u8_t *) p->payload;
+			msg_ptr = (u8_t *)p->payload;
 			msg_ptr += ofs - base;
 
 			oid->len = 0;
@@ -439,7 +439,7 @@ err_t snmp_asn1_dec_oid(struct pbuf *p, u16_t ofs, u16_t len, struct snmp_obj_id
 					if (p == NULL) {
 						return ERR_ARG;
 					}
-					msg_ptr = (u8_t *) p->payload;
+					msg_ptr = (u8_t *)p->payload;
 					plen += p->len;
 				} else {
 					/* next octet in same pbuf */
@@ -461,7 +461,7 @@ err_t snmp_asn1_dec_oid(struct pbuf *p, u16_t ofs, u16_t len, struct snmp_obj_id
 							if (p == NULL) {
 								return ERR_ARG;
 							}
-							msg_ptr = (u8_t *) p->payload;
+							msg_ptr = (u8_t *)p->payload;
 							plen += p->len;
 						} else {
 							/* next octet in same pbuf */
@@ -488,7 +488,7 @@ err_t snmp_asn1_dec_oid(struct pbuf *p, u16_t ofs, u16_t len, struct snmp_obj_id
 						if (p == NULL) {
 							return ERR_ARG;
 						}
-						msg_ptr = (u8_t *) p->payload;
+						msg_ptr = (u8_t *)p->payload;
 						plen += p->len;
 					} else {
 						/* next octet in same pbuf */
@@ -535,7 +535,7 @@ err_t snmp_asn1_dec_raw(struct pbuf *p, u16_t ofs, u16_t len, u16_t raw_len, u8_
 			base = plen;
 			plen += p->len;
 			if (ofs < plen) {
-				msg_ptr = (u8_t *) p->payload;
+				msg_ptr = (u8_t *)p->payload;
 				msg_ptr += ofs - base;
 				if (raw_len >= len) {
 					while (len > 1) {
@@ -550,7 +550,7 @@ err_t snmp_asn1_dec_raw(struct pbuf *p, u16_t ofs, u16_t len, u16_t raw_len, u8_
 							if (p == NULL) {
 								return ERR_ARG;
 							}
-							msg_ptr = (u8_t *) p->payload;
+							msg_ptr = (u8_t *)p->payload;
 							plen += p->len;
 						} else {
 							/* next octet in same pbuf */

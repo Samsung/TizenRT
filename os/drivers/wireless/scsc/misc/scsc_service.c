@@ -196,7 +196,7 @@ static void srv_message_handler(const void *message, void *data)
 	case SM_MSG_START_CFM:
 		SLSI_INFO_NODEV("Received SM_MSG_START_CFM message service=%p with service_id=%d from the firmware\n", service, msg->service_id);
 
-		work_queue(LPWORK, &service->sm_msg_start_cfm_work, (worker_t) sm_start_cfm_complete, service, 0);
+		work_queue(LPWORK, &service->sm_msg_start_cfm_work, (worker_t)sm_start_cfm_complete, service, 0);
 		break;
 	case SM_MSG_STOP_CFM:
 		SLSI_INFO_NODEV("Received SM_MSG_STOP_CFM message for service=%p with service_id=%d from the firmware\n", service, msg->service_id);

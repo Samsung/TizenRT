@@ -198,7 +198,7 @@ static void etharp_free_entry(int i)
 	/* and empty packet queue */
 	if (arp_table[i].q != NULL) {
 		/* remove all queued packets */
-		LWIP_DEBUGF(ETHARP_DEBUG, ("etharp_free_entry: freeing entry %" U16_F ", packet queue %p.\n", (u16_t) i, (void *)(arp_table[i].q)));
+		LWIP_DEBUGF(ETHARP_DEBUG, ("etharp_free_entry: freeing entry %" U16_F ", packet queue %p.\n", (u16_t)i, (void *)(arp_table[i].q)));
 		free_etharp_q(arp_table[i].q);
 		arp_table[i].q = NULL;
 	}
@@ -235,7 +235,7 @@ void etharp_tmr(void)
 			arp_table[i].ctime++;
 			if ((arp_table[i].ctime >= ARP_MAXAGE) || ((arp_table[i].state == ETHARP_STATE_PENDING) && (arp_table[i].ctime >= ARP_MAXPENDING))) {
 				/* pending or stable entry has become old! */
-				LWIP_DEBUGF(ETHARP_DEBUG, ("etharp_timer: expired %s entry %" U16_F ".\n", arp_table[i].state >= ETHARP_STATE_STABLE ? "stable" : "pending", (u16_t) i));
+				LWIP_DEBUGF(ETHARP_DEBUG, ("etharp_timer: expired %s entry %" U16_F ".\n", arp_table[i].state >= ETHARP_STATE_STABLE ? "stable" : "pending", (u16_t)i));
 				/* clean up entries that have just been expired */
 				etharp_free_entry(i);
 			} else if (arp_table[i].state == ETHARP_STATE_STABLE_REREQUESTING_1) {
@@ -303,14 +303,14 @@ static s8_t etharp_find_entry(ip_addr_t *ipaddr, u8_t flags)
 		u8_t state = arp_table[i].state;
 		/* no empty entry found yet and now we do find one? */
 		if ((empty == ARP_TABLE_SIZE) && (state == ETHARP_STATE_EMPTY)) {
-			LWIP_DEBUGF(ETHARP_DEBUG, ("etharp_find_entry: found empty entry %" U16_F "\n", (u16_t) i));
+			LWIP_DEBUGF(ETHARP_DEBUG, ("etharp_find_entry: found empty entry %" U16_F "\n", (u16_t)i));
 			/* remember first empty entry */
 			empty = i;
 		} else if (state != ETHARP_STATE_EMPTY) {
 			LWIP_ASSERT("state == ETHARP_STATE_PENDING || state >= ETHARP_STATE_STABLE", state == ETHARP_STATE_PENDING || state >= ETHARP_STATE_STABLE);
 			/* if given, does IP address match IP address in ARP entry? */
 			if (ipaddr && ip_addr_cmp(ipaddr, &arp_table[i].ipaddr)) {
-				LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: found matching entry %" U16_F "\n", (u16_t) i));
+				LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: found matching entry %" U16_F "\n", (u16_t)i));
 				/* found exact IP address match, simply bail out */
 				return i;
 			}
@@ -353,7 +353,7 @@ static s8_t etharp_find_entry(ip_addr_t *ipaddr, u8_t flags)
 		/* or no empty entry found and not allowed to recycle? */
 		((empty == ARP_TABLE_SIZE) && ((flags & ETHARP_FLAG_TRY_HARD) == 0))) {
 		LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: no empty entry found and not allowed to recycle\n"));
-		return (s8_t) ERR_MEM;
+		return (s8_t)ERR_MEM;
 	}
 
 	/* b) choose the least destructive entry to recycle:
@@ -368,29 +368,29 @@ static s8_t etharp_find_entry(ip_addr_t *ipaddr, u8_t flags)
 	/* 1) empty entry available? */
 	if (empty < ARP_TABLE_SIZE) {
 		i = empty;
-		LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: selecting empty entry %" U16_F "\n", (u16_t) i));
+		LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: selecting empty entry %" U16_F "\n", (u16_t)i));
 	} else {
 		/* 2) found recyclable stable entry? */
 		if (old_stable < ARP_TABLE_SIZE) {
 			/* recycle oldest stable */
 			i = old_stable;
-			LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: selecting oldest stable entry %" U16_F "\n", (u16_t) i));
+			LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: selecting oldest stable entry %" U16_F "\n", (u16_t)i));
 			/* no queued packets should exist on stable entries */
 			LWIP_ASSERT("arp_table[i].q == NULL", arp_table[i].q == NULL);
 			/* 3) found recyclable pending entry without queued packets? */
 		} else if (old_pending < ARP_TABLE_SIZE) {
 			/* recycle oldest pending */
 			i = old_pending;
-			LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: selecting oldest pending entry %" U16_F " (without queue)\n", (u16_t) i));
+			LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: selecting oldest pending entry %" U16_F " (without queue)\n", (u16_t)i));
 			/* 4) found recyclable pending entry with queued packets? */
 		} else if (old_queue < ARP_TABLE_SIZE) {
 			/* recycle oldest pending (queued packets are free in etharp_free_entry) */
 			i = old_queue;
-			LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: selecting oldest pending entry %" U16_F ", freeing packet queue %p\n", (u16_t) i, (void *)(arp_table[i].q)));
+			LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: selecting oldest pending entry %" U16_F ", freeing packet queue %p\n", (u16_t)i, (void *)(arp_table[i].q)));
 			/* no empty or recyclable entries found */
 		} else {
 			LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_find_entry: no empty or recyclable entries found\n"));
-			return (s8_t) ERR_MEM;
+			return (s8_t)ERR_MEM;
 		}
 
 		/* { empty or recyclable entry found } */
@@ -407,7 +407,7 @@ static s8_t etharp_find_entry(ip_addr_t *ipaddr, u8_t flags)
 		ip_addr_copy(arp_table[i].ipaddr, *ipaddr);
 	}
 	arp_table[i].ctime = 0;
-	return (err_t) i;
+	return (err_t)i;
 }
 
 /**
@@ -465,7 +465,7 @@ static err_t etharp_update_arp_entry(struct netif *netif, ip_addr_t *ipaddr, str
 	i = etharp_find_entry(ipaddr, flags);
 	/* bail out if no entry could be found */
 	if (i < 0) {
-		return (err_t) i;
+		return (err_t)i;
 	}
 #if ETHARP_SUPPORT_STATIC_ENTRIES
 	if (flags & ETHARP_FLAG_STATIC_ENTRY) {
@@ -486,7 +486,7 @@ static err_t etharp_update_arp_entry(struct netif *netif, ip_addr_t *ipaddr, str
 	/* insert in SNMP ARP index tree */
 	snmp_insert_arpidx_tree(netif, &arp_table[i].ipaddr);
 
-	LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_update_arp_entry: updating stable entry %" S16_F "\n", (s16_t) i));
+	LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_update_arp_entry: updating stable entry %" S16_F "\n", (s16_t)i));
 	/* update address */
 	ETHADDR32_COPY(&arp_table[i].ethaddr, ethaddr);
 	/* reset time stamp */
@@ -555,7 +555,7 @@ err_t etharp_remove_static_entry(ip_addr_t *ipaddr)
 	i = etharp_find_entry(ipaddr, ETHARP_FLAG_FIND_ONLY);
 	/* bail out if no entry could be found */
 	if (i < 0) {
-		return (err_t) i;
+		return (err_t)i;
 	}
 
 	if (arp_table[i].state != ETHARP_STATE_STATIC) {
@@ -639,14 +639,14 @@ static void etharp_ip_input(struct netif *netif, struct pbuf *p)
 	/* Only insert an entry if the source IP address of the
 	   incoming IP packet comes from a host on the local network. */
 	ethhdr = (struct eth_hdr *)p->payload;
-	iphdr = (struct ip_hdr *)((u8_t *) ethhdr + SIZEOF_ETH_HDR);
+	iphdr = (struct ip_hdr *)((u8_t *)ethhdr + SIZEOF_ETH_HDR);
 	LWIP_DEBUGF(ETHARP_DEBUG, (" src address "));
 	ip_addr_debug_print(ETHARP_DEBUG, &iphdr->src);
 	LWIP_DEBUGF(ETHARP_DEBUG, (" dest address "));
 	ip_addr_debug_print(ETHARP_DEBUG, &iphdr->dest);
 #if ETHARP_SUPPORT_VLAN
 	if (ethhdr->type == PP_HTONS(ETHTYPE_VLAN)) {
-		iphdr = (struct ip_hdr *)((u8_t *) ethhdr + SIZEOF_ETH_HDR + SIZEOF_VLAN_HDR);
+		iphdr = (struct ip_hdr *)((u8_t *)ethhdr + SIZEOF_ETH_HDR + SIZEOF_VLAN_HDR);
 	}
 #endif							/* ETHARP_SUPPORT_VLAN */
 
@@ -697,7 +697,7 @@ static void etharp_arp_input(struct netif *netif, struct eth_addr *ethaddr, stru
 	/* drop short ARP packets: we have to check for p->len instead of p->tot_len here
 	   since a struct etharp_hdr is pointed to p->payload, so it musn't be chained! */
 	if (p->len < SIZEOF_ETHARP_PACKET) {
-		LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_LEVEL_WARNING, ("etharp_arp_input: packet dropped, too short (%" S16_F "/%" S16_F ")\n", p->tot_len, (s16_t) SIZEOF_ETHARP_PACKET));
+		LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_LEVEL_WARNING, ("etharp_arp_input: packet dropped, too short (%" S16_F "/%" S16_F ")\n", p->tot_len, (s16_t)SIZEOF_ETHARP_PACKET));
 		ETHARP_STATS_INC(etharp.lenerr);
 		ETHARP_STATS_INC(etharp.drop);
 		pbuf_free(p);
@@ -705,10 +705,10 @@ static void etharp_arp_input(struct netif *netif, struct eth_addr *ethaddr, stru
 	}
 
 	ethhdr = (struct eth_hdr *)p->payload;
-	hdr = (struct etharp_hdr *)((u8_t *) ethhdr + SIZEOF_ETH_HDR);
+	hdr = (struct etharp_hdr *)((u8_t *)ethhdr + SIZEOF_ETH_HDR);
 #if ETHARP_SUPPORT_VLAN
 	if (ethhdr->type == PP_HTONS(ETHTYPE_VLAN)) {
-		hdr = (struct etharp_hdr *)(((u8_t *) ethhdr) + SIZEOF_ETH_HDR + SIZEOF_VLAN_HDR);
+		hdr = (struct etharp_hdr *)(((u8_t *)ethhdr) + SIZEOF_ETH_HDR + SIZEOF_VLAN_HDR);
 	}
 #endif							/* ETHARP_SUPPORT_VLAN */
 
@@ -739,7 +739,7 @@ static void etharp_arp_input(struct netif *netif, struct eth_addr *ethaddr, stru
 		for_us = 0;
 	} else {
 		/* ARP packet directed to us? */
-		for_us = (u8_t) ip_addr_cmp(&dipaddr, &(netif->ip_addr));
+		for_us = (u8_t)ip_addr_cmp(&dipaddr, &(netif->ip_addr));
 	}
 
 	/* ARP message directed to us?
@@ -911,7 +911,7 @@ err_t etharp_output(struct netif *netif, struct pbuf *q, ip_addr_t *ipaddr)
 		   a subnet broadcast. */
 		if (!ip_addr_netcmp(ipaddr, &(netif->ip_addr), &(netif->netmask)) && !ip_addr_islinklocal(ipaddr)) {
 #if LWIP_AUTOIP
-			struct ip_hdr *iphdr = (struct ip_hdr *)((u8_t *) q->payload + sizeof(struct eth_hdr));
+			struct ip_hdr *iphdr = (struct ip_hdr *)((u8_t *)q->payload + sizeof(struct eth_hdr));
 			/* According to RFC 3297, chapter 2.6.2 (Forwarding Rules), a packet with
 			   a link-local source address must always be "directly to its destination
 			   on the same physical link. The host MUST NOT send the packet to any
@@ -1022,7 +1022,7 @@ err_t etharp_query(struct netif *netif, ip_addr_t *ipaddr, struct pbuf *q)
 			LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_query: packet dropped\n"));
 			ETHARP_STATS_INC(etharp.memerr);
 		}
-		return (err_t) i;
+		return (err_t)i;
 	}
 
 	/* mark a fresh entry as pending (we just sent a request) */
@@ -1112,7 +1112,7 @@ err_t etharp_query(struct netif *netif, ip_addr_t *ipaddr, struct pbuf *q)
 					/* queue did not exist, first item in queue */
 					arp_table[i].q = new_entry;
 				}
-				LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_query: queued packet %p on ARP entry %" S16_F "\n", (void *)q, (s16_t) i));
+				LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_query: queued packet %p on ARP entry %" S16_F "\n", (void *)q, (s16_t)i));
 				result = ERR_OK;
 			} else {
 				/* the pool MEMP_ARP_QUEUE is empty */
@@ -1123,12 +1123,12 @@ err_t etharp_query(struct netif *netif, ip_addr_t *ipaddr, struct pbuf *q)
 #else							/* ARP_QUEUEING */
 			/* always queue one packet per ARP request only, freeing a previously queued packet */
 			if (arp_table[i].q != NULL) {
-				LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_query: dropped previously queued packet %p for ARP entry %" S16_F "\n", (void *)q, (s16_t) i));
+				LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_query: dropped previously queued packet %p for ARP entry %" S16_F "\n", (void *)q, (s16_t)i));
 				pbuf_free(arp_table[i].q);
 			}
 			arp_table[i].q = p;
 			result = ERR_OK;
-			LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_query: queued packet %p on ARP entry %" S16_F "\n", (void *)q, (s16_t) i));
+			LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_query: queued packet %p on ARP entry %" S16_F "\n", (void *)q, (s16_t)i));
 #endif							/* ARP_QUEUEING */
 		} else {
 			ETHARP_STATS_INC(etharp.memerr);
@@ -1180,7 +1180,7 @@ err_t etharp_raw(struct netif *netif, const struct eth_addr *ethsrc_addr, const 
 	LWIP_ASSERT("check that first pbuf can hold struct etharp_hdr", (p->len >= SIZEOF_ETHARP_PACKET));
 
 	ethhdr = (struct eth_hdr *)p->payload;
-	hdr = (struct etharp_hdr *)((u8_t *) ethhdr + SIZEOF_ETH_HDR);
+	hdr = (struct etharp_hdr *)((u8_t *)ethhdr + SIZEOF_ETH_HDR);
 	LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_raw: sending raw ARP packet.\n"));
 	hdr->opcode = htons(opcode);
 
