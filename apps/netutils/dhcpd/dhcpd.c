@@ -1658,7 +1658,9 @@ int dhcpd_run(void *arg)
 		}
 	}
 
-	close(sockfd);
+	if (sockfd != -1) {
+		close(sockfd);
+	}
 	g_dhcpd_running = 0;
 
 	/* de-initialize netif address (ip address, netmask, default gateway) */
