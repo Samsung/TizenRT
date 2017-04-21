@@ -142,7 +142,7 @@ void ip_reass_tmr(void)
 		 * clean up the incomplete fragment assembly */
 		if (r->timer > 0) {
 			r->timer--;
-			LWIP_DEBUGF(IP_REASS_DEBUG, ("ip_reass_tmr: timer dec %" U16_F "\n", (u16_t) r->timer));
+			LWIP_DEBUGF(IP_REASS_DEBUG, ("ip_reass_tmr: timer dec %" U16_F "\n", (u16_t)r->timer));
 			prev = r;
 			r = r->next;
 		} else {
@@ -735,7 +735,7 @@ err_t ip_frag(struct pbuf *p, struct netif *netif, ip_addr_t *dest)
 		cop = last ? left : nfb * 8;
 
 #if IP_FRAG_USES_STATIC_BUF
-		poff += pbuf_copy_partial(p, (u8_t *) iphdr + IP_HLEN, cop, poff);
+		poff += pbuf_copy_partial(p, (u8_t *)iphdr + IP_HLEN, cop, poff);
 #else							/* IP_FRAG_USES_STATIC_BUF */
 #if LWIP_NETIF_TX_SINGLE_PBUF
 		rambuf = pbuf_alloc(PBUF_IP, cop, PBUF_RAM);
@@ -767,7 +767,7 @@ err_t ip_frag(struct pbuf *p, struct netif *netif, ip_addr_t *dest)
 		iphdr = (struct ip_hdr *)rambuf->payload;
 
 		/* Can just adjust p directly for needed offset. */
-		p->payload = (u8_t *) p->payload + poff;
+		p->payload = (u8_t *)p->payload + poff;
 		p->len -= poff;
 
 		left_to_copy = cop;

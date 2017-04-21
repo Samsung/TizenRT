@@ -79,7 +79,7 @@ static u32_t chksum(void *dataptr, u16_t len)
 
 	/* add up any odd byte */
 	if (len == 1) {
-		acc += htons((u16_t)(*(u8_t *) dataptr) << 8);
+		acc += htons((u16_t)(*(u8_t *)dataptr) << 8);
 	}
 
 	return acc;
@@ -115,13 +115,13 @@ u16_t inet_chksum_pseudo(struct pbuf *p, struct ip_addr *src, struct ip_addr *de
 	}
 
 	for (i = 0; i < 8; i++) {
-		acc += ((u16_t *) src->addr)[i] & 0xffff;
-		acc += ((u16_t *) dest->addr)[i] & 0xffff;
+		acc += ((u16_t *)src->addr)[i] & 0xffff;
+		acc += ((u16_t *)dest->addr)[i] & 0xffff;
 		while (acc >> 16) {
 			acc = (acc & 0xffff) + (acc >> 16);
 		}
 	}
-	acc += (u16_t) htons((u16_t) proto);
+	acc += (u16_t)htons((u16_t)proto);
 	acc += ((u16_t *)&proto_len)[0] & 0xffff;
 	acc += ((u16_t *)&proto_len)[1] & 0xffff;
 

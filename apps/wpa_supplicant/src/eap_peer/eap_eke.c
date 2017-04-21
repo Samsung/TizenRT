@@ -454,7 +454,7 @@ static struct wpabuf *eap_eke_process_confirm(struct eap_eke_data *data, struct 
 		wpa_printf(MSG_INFO, "EAP-EKE: Failed to decrypt PNonce_PS");
 		return eap_eke_build_fail(data, ret, id, EAP_EKE_FAIL_AUTHENTICATION_FAIL);
 	}
-	if (decrypt_len != (size_t) 2 * data->sess.nonce_len) {
+	if (decrypt_len != (size_t)2 * data->sess.nonce_len) {
 		wpa_printf(MSG_INFO, "EAP-EKE: PNonce_PS protected data length does not match length of Nonce_P and Nonce_S");
 		return eap_eke_build_fail(data, ret, id, EAP_EKE_FAIL_AUTHENTICATION_FAIL);
 	}

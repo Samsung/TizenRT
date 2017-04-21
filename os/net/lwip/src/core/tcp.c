@@ -597,7 +597,7 @@ u32_t tcp_update_rcv_ann_wnd(struct tcp_pcb *pcb)
 			/* keep the right edge of window constant */
 			u32_t new_rcv_ann_wnd = pcb->rcv_ann_right_edge - pcb->rcv_nxt;
 			LWIP_ASSERT("new_rcv_ann_wnd <= 0xffff", new_rcv_ann_wnd <= 0xffff);
-			pcb->rcv_ann_wnd = (u16_t) new_rcv_ann_wnd;
+			pcb->rcv_ann_wnd = (u16_t)new_rcv_ann_wnd;
 		}
 		return 0;
 	}
@@ -896,7 +896,7 @@ tcp_slowtmr_start:
 		   inactive for too long, will drop the data (it will eventually
 		   be retransmitted). */
 #if TCP_QUEUE_OOSEQ
-		if (pcb->ooseq != NULL && (u32_t) tcp_ticks - pcb->tmr >= pcb->rto * TCP_OOSEQ_TIMEOUT) {
+		if (pcb->ooseq != NULL && (u32_t)tcp_ticks - pcb->tmr >= pcb->rto * TCP_OOSEQ_TIMEOUT) {
 			tcp_segs_free(pcb->ooseq);
 			pcb->ooseq = NULL;
 			LWIP_DEBUGF(TCP_CWND_DEBUG, ("tcp_slowtmr: dropping OOSEQ queued data\n"));
@@ -1148,7 +1148,7 @@ struct tcp_seg *tcp_seg_copy(struct tcp_seg *seg)
 	if (cseg == NULL) {
 		return NULL;
 	}
-	SMEMCPY((u8_t *) cseg, (const u8_t *)seg, sizeof(struct tcp_seg));
+	SMEMCPY((u8_t *)cseg, (const u8_t *)seg, sizeof(struct tcp_seg));
 	pbuf_ref(cseg->p);
 	return cseg;
 }

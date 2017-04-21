@@ -89,7 +89,7 @@ static void mbedtls_mpi_zeroize(mbedtls_mpi_uint *v, size_t n)
 #define biL    (ciL << 3)		/* bits  in limb  */
 #define biH    (ciL << 2)		/* half limb size */
 
-#define MPI_SIZE_T_MAX  ((size_t) -1)	/* SIZE_T_MAX is not standard */
+#define MPI_SIZE_T_MAX  ((size_t)-1)	/* SIZE_T_MAX is not standard */
 
 /*
  * Convert between bits/chars and number of limbs

@@ -81,7 +81,7 @@ static const unsigned char base64_dec_map[128] = {
 	49, 50, 51, 127, 127, 127, 127, 127
 };
 
-#define BASE64_SIZE_T_MAX   ((size_t) -1)	/* SIZE_T_MAX is not standard */
+#define BASE64_SIZE_T_MAX   ((size_t)-1)	/* SIZE_T_MAX is not standard */
 
 /*
  * Encode a buffer into base64 format

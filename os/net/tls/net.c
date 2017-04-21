@@ -322,8 +322,8 @@ int mbedtls_net_accept(mbedtls_net_context *bind_ctx, mbedtls_net_context *clien
 	defined(_SOCKLEN_T_DECLARED) || defined(__DEFINED_socklen_t) || \
 	defined(CONFIG_NET_LWIP)
 
-	socklen_t n = (socklen_t) sizeof(client_addr);
-	socklen_t type_len = (socklen_t) sizeof(type);
+	socklen_t n = (socklen_t)sizeof(client_addr);
+	socklen_t type_len = (socklen_t)sizeof(type);
 #else
 	int n = (int)sizeof(client_addr);
 	int type_len = (int)sizeof(type);
@@ -444,7 +444,7 @@ void mbedtls_net_usleep(unsigned long usec)
 	tv.tv_sec = usec / 1000000;
 #if defined(__unix__) || defined(__unix) || \
 	(defined(__APPLE__) && defined(__MACH__))
-	tv.tv_usec = (suseconds_t) usec % 1000000;
+	tv.tv_usec = (suseconds_t)usec % 1000000;
 #else
 	tv.tv_usec = usec % 1000000;
 #endif
@@ -458,7 +458,7 @@ void mbedtls_net_usleep(unsigned long usec)
 int mbedtls_net_recv(void *ctx, unsigned char *buf, size_t len)
 {
 	int ret;
-	int fd = ((mbedtls_net_context *) ctx)->fd;
+	int fd = ((mbedtls_net_context *)ctx)->fd;
 
 	if (fd < 0) {
 		return (MBEDTLS_ERR_NET_INVALID_CONTEXT);
@@ -499,7 +499,7 @@ int mbedtls_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t
 	int ret;
 	struct timeval tv;
 	fd_set read_fds;
-	int fd = ((mbedtls_net_context *) ctx)->fd;
+	int fd = ((mbedtls_net_context *)ctx)->fd;
 
 	if (fd < 0) {
 		return (MBEDTLS_ERR_NET_INVALID_CONTEXT);
@@ -543,7 +543,7 @@ int mbedtls_net_recv_timeout(void *ctx, unsigned char *buf, size_t len, uint32_t
 int mbedtls_net_send(void *ctx, const unsigned char *buf, size_t len)
 {
 	int ret;
-	int fd = ((mbedtls_net_context *) ctx)->fd;
+	int fd = ((mbedtls_net_context *)ctx)->fd;
 
 	if (fd < 0) {
 		return (MBEDTLS_ERR_NET_INVALID_CONTEXT);

@@ -113,8 +113,8 @@ static void debug_header(memory_header *hdr)
 	size_t i;
 #endif
 
-	mbedtls_fprintf(stderr, "HDR:  PTR(%10zu), PREV(%10zu), NEXT(%10zu), " "ALLOC(%zu), SIZE(%10zu)\n", (size_t) hdr, (size_t) hdr->prev, (size_t) hdr->next, hdr->alloc, hdr->size);
-	mbedtls_fprintf(stderr, "      FPREV(%10zu), FNEXT(%10zu)\n", (size_t) hdr->prev_free, (size_t) hdr->next_free);
+	mbedtls_fprintf(stderr, "HDR:  PTR(%10zu), PREV(%10zu), NEXT(%10zu), " "ALLOC(%zu), SIZE(%10zu)\n", (size_t)hdr, (size_t)hdr->prev, (size_t)hdr->next, hdr->alloc, hdr->size);
+	mbedtls_fprintf(stderr, "      FPREV(%10zu), FNEXT(%10zu)\n", (size_t)hdr->prev_free, (size_t)hdr->next_free);
 
 #if defined(MBEDTLS_MEMORY_BACKTRACE)
 	mbedtls_fprintf(stderr, "TRACE: \n");
@@ -317,7 +317,7 @@ static void *buffer_alloc_calloc(size_t n, size_t size)
 	}
 
 	p = ((unsigned char *)cur) + sizeof(memory_header) + len;
-	new = (memory_header *) p;
+	new = (memory_header *)p;
 
 	new->size = cur->size - len - sizeof(memory_header);
 	new->alloc = 0;
@@ -396,7 +396,7 @@ static void buffer_alloc_free(void *ptr)
 	}
 
 	p -= sizeof(memory_header);
-	hdr = (memory_header *) p;
+	hdr = (memory_header *)p;
 
 	if (verify_header(hdr) != 0) {
 		mbedtls_exit(1);
@@ -577,16 +577,16 @@ void mbedtls_memory_buffer_alloc_init(unsigned char *buf, size_t len)
 	mbedtls_platform_set_calloc_free(buffer_alloc_calloc, buffer_alloc_free);
 #endif
 
-	if ((size_t) buf % MBEDTLS_MEMORY_ALIGN_MULTIPLE) {
+	if ((size_t)buf % MBEDTLS_MEMORY_ALIGN_MULTIPLE) {
 		/* Adjust len first since buf is used in the computation */
-		len -= MBEDTLS_MEMORY_ALIGN_MULTIPLE - (size_t) buf % MBEDTLS_MEMORY_ALIGN_MULTIPLE;
-		buf += MBEDTLS_MEMORY_ALIGN_MULTIPLE - (size_t) buf % MBEDTLS_MEMORY_ALIGN_MULTIPLE;
+		len -= MBEDTLS_MEMORY_ALIGN_MULTIPLE - (size_t)buf % MBEDTLS_MEMORY_ALIGN_MULTIPLE;
+		buf += MBEDTLS_MEMORY_ALIGN_MULTIPLE - (size_t)buf % MBEDTLS_MEMORY_ALIGN_MULTIPLE;
 	}
 
 	heap.buf = buf;
 	heap.len = len;
 
-	heap.first = (memory_header *) buf;
+	heap.first = (memory_header *)buf;
 	heap.first->size = len - sizeof(memory_header);
 	heap.first->magic1 = MAGIC1;
 	heap.first->magic2 = MAGIC2;
@@ -608,7 +608,7 @@ static int check_pointer(void *p)
 		return (-1);
 	}
 
-	if ((size_t) p % MBEDTLS_MEMORY_ALIGN_MULTIPLE != 0) {
+	if ((size_t)p % MBEDTLS_MEMORY_ALIGN_MULTIPLE != 0) {
 		return (-1);
 	}
 

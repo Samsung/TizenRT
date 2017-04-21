@@ -292,7 +292,7 @@ int mbedtls_entropy_gather(mbedtls_entropy_context *ctx)
 int mbedtls_entropy_func(void *data, unsigned char *output, size_t len)
 {
 	int ret, count = 0, i, done;
-	mbedtls_entropy_context *ctx = (mbedtls_entropy_context *) data;
+	mbedtls_entropy_context *ctx = (mbedtls_entropy_context *)data;
 	unsigned char buf[MBEDTLS_ENTROPY_BLOCK_SIZE];
 
 	if (len > MBEDTLS_ENTROPY_BLOCK_SIZE) {
@@ -447,7 +447,7 @@ int mbedtls_entropy_update_seed_file(mbedtls_entropy_context *ctx, const char *p
 	}
 
 	fseek(f, 0, SEEK_END);
-	n = (size_t) ftell(f);
+	n = (size_t)ftell(f);
 	fseek(f, 0, SEEK_SET);
 
 	if (n > MBEDTLS_ENTROPY_MAX_SEED_SIZE) {

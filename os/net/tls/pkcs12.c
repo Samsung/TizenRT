@@ -207,7 +207,7 @@ int mbedtls_pkcs12_pbe(mbedtls_asn1_buf *pbe_params, int mode, mbedtls_cipher_ty
 		goto exit;
 	}
 
-	if ((ret = mbedtls_cipher_setkey(&cipher_ctx, key, 8 * keylen, (mbedtls_operation_t) mode)) != 0) {
+	if ((ret = mbedtls_cipher_setkey(&cipher_ctx, key, 8 * keylen, (mbedtls_operation_t)mode)) != 0) {
 		goto exit;
 	}
 
@@ -315,7 +315,7 @@ int mbedtls_pkcs12_derivation(unsigned char *data, size_t datalen, const unsigne
 			goto exit;
 		}
 		// Perform remaining ( iterations - 1 ) recursive hash calculations
-		for (i = 1; i < (size_t) iterations; i++) {
+		for (i = 1; i < (size_t)iterations; i++) {
 			if ((ret = mbedtls_md(md_info, hash_output, hlen, hash_output)) != 0) {
 				goto exit;
 			}

@@ -232,7 +232,7 @@ static void memp_overflow_check_element_overflow(struct memp *p, u16_t memp_type
 	u16_t k;
 	u8_t *m;
 #if MEMP_SANITY_REGION_AFTER_ALIGNED > 0
-	m = (u8_t *) p + MEMP_SIZE + memp_sizes[memp_type];
+	m = (u8_t *)p + MEMP_SIZE + memp_sizes[memp_type];
 	for (k = 0; k < MEMP_SANITY_REGION_AFTER_ALIGNED; k++) {
 		if (m[k] != 0xcd) {
 			char errstr[128] = "detected memp overflow in pool ";
@@ -264,7 +264,7 @@ static void memp_overflow_check_element_underflow(struct memp *p, u16_t memp_typ
 	u16_t k;
 	u8_t *m;
 #if MEMP_SANITY_REGION_BEFORE_ALIGNED > 0
-	m = (u8_t *) p + MEMP_SIZE - MEMP_SANITY_REGION_BEFORE_ALIGNED;
+	m = (u8_t *)p + MEMP_SIZE - MEMP_SANITY_REGION_BEFORE_ALIGNED;
 	for (k = 0; k < MEMP_SANITY_REGION_BEFORE_ALIGNED; k++) {
 		if (m[k] != 0xcd) {
 			char errstr[128] = "detected memp underflow in pool ";
@@ -299,7 +299,7 @@ static void memp_overflow_check_all(void)
 		p = p;
 		for (j = 0; j < memp_num[i]; ++j) {
 			memp_overflow_check_element_overflow(p, i);
-			p = (struct memp *)((u8_t *) p + MEMP_SIZE + memp_sizes[i] + MEMP_SANITY_REGION_AFTER_ALIGNED);
+			p = (struct memp *)((u8_t *)p + MEMP_SIZE + memp_sizes[i] + MEMP_SANITY_REGION_AFTER_ALIGNED);
 		}
 	}
 	p = (struct memp *)LWIP_MEM_ALIGN(memp_memory);
@@ -307,7 +307,7 @@ static void memp_overflow_check_all(void)
 		p = p;
 		for (j = 0; j < memp_num[i]; ++j) {
 			memp_overflow_check_element_underflow(p, i);
-			p = (struct memp *)((u8_t *) p + MEMP_SIZE + memp_sizes[i] + MEMP_SANITY_REGION_AFTER_ALIGNED);
+			p = (struct memp *)((u8_t *)p + MEMP_SIZE + memp_sizes[i] + MEMP_SANITY_REGION_AFTER_ALIGNED);
 		}
 	}
 }
@@ -326,14 +326,14 @@ static void memp_overflow_init(void)
 		p = p;
 		for (j = 0; j < memp_num[i]; ++j) {
 #if MEMP_SANITY_REGION_BEFORE_ALIGNED > 0
-			m = (u8_t *) p + MEMP_SIZE - MEMP_SANITY_REGION_BEFORE_ALIGNED;
+			m = (u8_t *)p + MEMP_SIZE - MEMP_SANITY_REGION_BEFORE_ALIGNED;
 			memset(m, 0xcd, MEMP_SANITY_REGION_BEFORE_ALIGNED);
 #endif
 #if MEMP_SANITY_REGION_AFTER_ALIGNED > 0
-			m = (u8_t *) p + MEMP_SIZE + memp_sizes[i];
+			m = (u8_t *)p + MEMP_SIZE + memp_sizes[i];
 			memset(m, 0xcd, MEMP_SANITY_REGION_AFTER_ALIGNED);
 #endif
-			p = (struct memp *)((u8_t *) p + MEMP_SIZE + memp_sizes[i] + MEMP_SANITY_REGION_AFTER_ALIGNED);
+			p = (struct memp *)((u8_t *)p + MEMP_SIZE + memp_sizes[i] + MEMP_SANITY_REGION_AFTER_ALIGNED);
 		}
 	}
 }
@@ -369,7 +369,7 @@ void memp_init(void)
 		for (j = 0; j < memp_num[i]; ++j) {
 			memp->next = memp_tab[i];
 			memp_tab[i] = memp;
-			memp = (struct memp *)(void *)((u8_t *) memp + MEMP_SIZE + memp_sizes[i]
+			memp = (struct memp *)(void *)((u8_t *)memp + MEMP_SIZE + memp_sizes[i]
 #if MEMP_OVERFLOW_CHECK
 										   + MEMP_SANITY_REGION_AFTER_ALIGNED
 #endif
@@ -421,8 +421,8 @@ memp_malloc_fn(memp_t type, const char *file, const int line)
 		memp->line = line;
 #endif							/* MEMP_OVERFLOW_CHECK */
 		MEMP_STATS_INC_USED(used, type);
-		LWIP_ASSERT("memp_malloc: memp properly aligned", ((mem_ptr_t) memp % MEM_ALIGNMENT) == 0);
-		memp = (struct memp *)(void *)((u8_t *) memp + MEMP_SIZE);
+		LWIP_ASSERT("memp_malloc: memp properly aligned", ((mem_ptr_t)memp % MEM_ALIGNMENT) == 0);
+		memp = (struct memp *)(void *)((u8_t *)memp + MEMP_SIZE);
 	} else {
 		LWIP_DEBUGF(MEMP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("memp_malloc: out of memory in pool %s\n", memp_desc[type]));
 		MEMP_STATS_INC(err, type);
@@ -447,9 +447,9 @@ void memp_free(memp_t type, void *mem)
 	if (mem == NULL) {
 		return;
 	}
-	LWIP_ASSERT("memp_free: mem properly aligned", ((mem_ptr_t) mem % MEM_ALIGNMENT) == 0);
+	LWIP_ASSERT("memp_free: mem properly aligned", ((mem_ptr_t)mem % MEM_ALIGNMENT) == 0);
 
-	memp = (struct memp *)(void *)((u8_t *) mem - MEMP_SIZE);
+	memp = (struct memp *)(void *)((u8_t *)mem - MEMP_SIZE);
 
 	SYS_ARCH_PROTECT(old_level);
 #if MEMP_OVERFLOW_CHECK

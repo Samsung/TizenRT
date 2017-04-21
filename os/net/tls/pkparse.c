@@ -107,7 +107,7 @@ int mbedtls_pk_load_file(const char *path, unsigned char **buf, size_t *n)
 	}
 	fseek(f, 0, SEEK_SET);
 
-	*n = (size_t) size;
+	*n = (size_t)size;
 
 	if (*n + 1 == 0 || (*buf = mbedtls_calloc(1, *n + 1)) == NULL) {
 		fclose(f);

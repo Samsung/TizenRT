@@ -1123,7 +1123,7 @@ int mbedtls_x509_crt_parse_path(mbedtls_x509_crt *chain, const char *path)
 	while ((entry = readdir(dir)) != NULL) {
 		snp_ret = mbedtls_snprintf(entry_name, sizeof entry_name, "%s/%s", path, entry->d_name);
 
-		if (snp_ret < 0 || (size_t) snp_ret >= sizeof entry_name) {
+		if (snp_ret < 0 || (size_t)snp_ret >= sizeof entry_name) {
 			ret = MBEDTLS_ERR_X509_BUFFER_TOO_SMALL;
 			goto cleanup;
 		} else if (stat(entry_name, &sb) == -1) {

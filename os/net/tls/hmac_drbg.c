@@ -258,7 +258,7 @@ void mbedtls_hmac_drbg_set_reseed_interval(mbedtls_hmac_drbg_context *ctx, int i
 int mbedtls_hmac_drbg_random_with_add(void *p_rng, unsigned char *output, size_t out_len, const unsigned char *additional, size_t add_len)
 {
 	int ret;
-	mbedtls_hmac_drbg_context *ctx = (mbedtls_hmac_drbg_context *) p_rng;
+	mbedtls_hmac_drbg_context *ctx = (mbedtls_hmac_drbg_context *)p_rng;
 	size_t md_len = mbedtls_md_get_size(ctx->md_ctx.md_info);
 	size_t left = out_len;
 	unsigned char *out = output;
@@ -317,7 +317,7 @@ int mbedtls_hmac_drbg_random_with_add(void *p_rng, unsigned char *output, size_t
 int mbedtls_hmac_drbg_random(void *p_rng, unsigned char *output, size_t out_len)
 {
 	int ret;
-	mbedtls_hmac_drbg_context *ctx = (mbedtls_hmac_drbg_context *) p_rng;
+	mbedtls_hmac_drbg_context *ctx = (mbedtls_hmac_drbg_context *)p_rng;
 
 #if defined(MBEDTLS_THREADING_C)
 	if ((ret = mbedtls_mutex_lock(&ctx->mutex)) != 0) {
@@ -389,7 +389,7 @@ int mbedtls_hmac_drbg_update_seed_file(mbedtls_hmac_drbg_context *ctx, const cha
 	}
 
 	fseek(f, 0, SEEK_END);
-	n = (size_t) ftell(f);
+	n = (size_t)ftell(f);
 	fseek(f, 0, SEEK_SET);
 
 	if (n > MBEDTLS_HMAC_DRBG_MAX_INPUT) {

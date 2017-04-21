@@ -544,7 +544,7 @@ int mbedtls_rsa_rsaes_oaep_encrypt(mbedtls_rsa_context *ctx, int (*f_rng)(void *
 		return (MBEDTLS_ERR_RSA_BAD_INPUT_DATA);
 	}
 
-	md_info = mbedtls_md_info_from_type((mbedtls_md_type_t) ctx->hash_id);
+	md_info = mbedtls_md_info_from_type((mbedtls_md_type_t)ctx->hash_id);
 	if (md_info == NULL) {
 		return (MBEDTLS_ERR_RSA_BAD_INPUT_DATA);
 	}
@@ -706,7 +706,7 @@ int mbedtls_rsa_rsaes_oaep_decrypt(mbedtls_rsa_context *ctx, int (*f_rng)(void *
 		return (MBEDTLS_ERR_RSA_BAD_INPUT_DATA);
 	}
 
-	md_info = mbedtls_md_info_from_type((mbedtls_md_type_t) ctx->hash_id);
+	md_info = mbedtls_md_info_from_type((mbedtls_md_type_t)ctx->hash_id);
 	if (md_info == NULL) {
 		return (MBEDTLS_ERR_RSA_BAD_INPUT_DATA);
 	}
@@ -934,7 +934,7 @@ int mbedtls_rsa_rsassa_pss_sign(mbedtls_rsa_context *ctx, int (*f_rng)(void *, u
 		hashlen = mbedtls_md_get_size(md_info);
 	}
 
-	md_info = mbedtls_md_info_from_type((mbedtls_md_type_t) ctx->hash_id);
+	md_info = mbedtls_md_info_from_type((mbedtls_md_type_t)ctx->hash_id);
 	if (md_info == NULL) {
 		return (MBEDTLS_ERR_RSA_BAD_INPUT_DATA);
 	}
@@ -1235,7 +1235,7 @@ int mbedtls_rsa_rsassa_pss_verify_ext(mbedtls_rsa_context *ctx, int (*f_rng)(voi
 	/* Actual salt len */
 	slen -= p - buf;
 
-	if (expected_salt_len != MBEDTLS_RSA_SALT_LEN_ANY && slen != (size_t) expected_salt_len) {
+	if (expected_salt_len != MBEDTLS_RSA_SALT_LEN_ANY && slen != (size_t)expected_salt_len) {
 		mbedtls_md_free(&md_ctx);
 		return (MBEDTLS_ERR_RSA_INVALID_PADDING);
 	}
@@ -1264,7 +1264,7 @@ int mbedtls_rsa_rsassa_pss_verify_ext(mbedtls_rsa_context *ctx, int (*f_rng)(voi
 int mbedtls_rsa_rsassa_pss_verify(mbedtls_rsa_context *ctx, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng, int mode, mbedtls_md_type_t md_alg, unsigned int hashlen, const unsigned char *hash, const unsigned char *sig)
 {
 	mbedtls_md_type_t mgf1_hash_id = (ctx->hash_id != MBEDTLS_MD_NONE)
-									 ? (mbedtls_md_type_t) ctx->hash_id : md_alg;
+									 ? (mbedtls_md_type_t)ctx->hash_id : md_alg;
 
 	return (mbedtls_rsa_rsassa_pss_verify_ext(ctx, f_rng, p_rng, mode, md_alg, hashlen, hash, mgf1_hash_id, MBEDTLS_RSA_SALT_LEN_ANY, sig));
 

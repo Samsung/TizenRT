@@ -128,10 +128,10 @@ void stats_display_igmp(struct stats_igmp *igmp)
 void stats_display_mem(struct stats_mem *mem, const char *name)
 {
 	LWIP_STATS_DIAG(("\nMEM %s\n\t", name));
-	LWIP_STATS_DIAG(("avail: %" U32_F "\n\t", (u32_t) mem->avail));
-	LWIP_STATS_DIAG(("used: %" U32_F "\n\t", (u32_t) mem->used));
-	LWIP_STATS_DIAG(("max: %" U32_F "\n\t", (u32_t) mem->max));
-	LWIP_STATS_DIAG(("err: %" U32_F "\n", (u32_t) mem->err));
+	LWIP_STATS_DIAG(("avail: %" U32_F "\n\t", (u32_t)mem->avail));
+	LWIP_STATS_DIAG(("used: %" U32_F "\n\t", (u32_t)mem->used));
+	LWIP_STATS_DIAG(("max: %" U32_F "\n\t", (u32_t)mem->max));
+	LWIP_STATS_DIAG(("err: %" U32_F "\n", (u32_t)mem->err));
 }
 
 #if MEMP_STATS
@@ -152,15 +152,15 @@ void stats_display_memp(struct stats_mem *mem, int index)
 void stats_display_sys(struct stats_sys *sys)
 {
 	LWIP_STATS_DIAG(("\nSYS\n\t"));
-	LWIP_STATS_DIAG(("sem.used:  %" U32_F "\n\t", (u32_t) sys->sem.used));
-	LWIP_STATS_DIAG(("sem.max:   %" U32_F "\n\t", (u32_t) sys->sem.max));
-	LWIP_STATS_DIAG(("sem.err:   %" U32_F "\n\t", (u32_t) sys->sem.err));
-	LWIP_STATS_DIAG(("mutex.used: %" U32_F "\n\t", (u32_t) sys->mutex.used));
-	LWIP_STATS_DIAG(("mutex.max:  %" U32_F "\n\t", (u32_t) sys->mutex.max));
-	LWIP_STATS_DIAG(("mutex.err:  %" U32_F "\n\t", (u32_t) sys->mutex.err));
-	LWIP_STATS_DIAG(("mbox.used:  %" U32_F "\n\t", (u32_t) sys->mbox.used));
-	LWIP_STATS_DIAG(("mbox.max:   %" U32_F "\n\t", (u32_t) sys->mbox.max));
-	LWIP_STATS_DIAG(("mbox.err:   %" U32_F "\n\t", (u32_t) sys->mbox.err));
+	LWIP_STATS_DIAG(("sem.used:  %" U32_F "\n\t", (u32_t)sys->sem.used));
+	LWIP_STATS_DIAG(("sem.max:   %" U32_F "\n\t", (u32_t)sys->sem.max));
+	LWIP_STATS_DIAG(("sem.err:   %" U32_F "\n\t", (u32_t)sys->sem.err));
+	LWIP_STATS_DIAG(("mutex.used: %" U32_F "\n\t", (u32_t)sys->mutex.used));
+	LWIP_STATS_DIAG(("mutex.max:  %" U32_F "\n\t", (u32_t)sys->mutex.max));
+	LWIP_STATS_DIAG(("mutex.err:  %" U32_F "\n\t", (u32_t)sys->mutex.err));
+	LWIP_STATS_DIAG(("mbox.used:  %" U32_F "\n\t", (u32_t)sys->mbox.used));
+	LWIP_STATS_DIAG(("mbox.max:   %" U32_F "\n\t", (u32_t)sys->mbox.max));
+	LWIP_STATS_DIAG(("mbox.err:   %" U32_F "\n\t", (u32_t)sys->mbox.err));
 }
 #endif							/* SYS_STATS */
 

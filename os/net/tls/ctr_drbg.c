@@ -334,7 +334,7 @@ int mbedtls_ctr_drbg_reseed(mbedtls_ctr_drbg_context *ctx, const unsigned char *
 int mbedtls_ctr_drbg_random_with_add(void *p_rng, unsigned char *output, size_t output_len, const unsigned char *additional, size_t add_len)
 {
 	int ret = 0;
-	mbedtls_ctr_drbg_context *ctx = (mbedtls_ctr_drbg_context *) p_rng;
+	mbedtls_ctr_drbg_context *ctx = (mbedtls_ctr_drbg_context *)p_rng;
 	unsigned char add_input[MBEDTLS_CTR_DRBG_SEEDLEN];
 	unsigned char *p = output;
 	unsigned char tmp[MBEDTLS_CTR_DRBG_BLOCKSIZE];
@@ -397,7 +397,7 @@ int mbedtls_ctr_drbg_random_with_add(void *p_rng, unsigned char *output, size_t 
 int mbedtls_ctr_drbg_random(void *p_rng, unsigned char *output, size_t output_len)
 {
 	int ret;
-	mbedtls_ctr_drbg_context *ctx = (mbedtls_ctr_drbg_context *) p_rng;
+	mbedtls_ctr_drbg_context *ctx = (mbedtls_ctr_drbg_context *)p_rng;
 
 #if defined(MBEDTLS_THREADING_C)
 	if ((ret = mbedtls_mutex_lock(&ctx->mutex)) != 0) {
@@ -454,7 +454,7 @@ int mbedtls_ctr_drbg_update_seed_file(mbedtls_ctr_drbg_context *ctx, const char 
 	}
 
 	fseek(f, 0, SEEK_END);
-	n = (size_t) ftell(f);
+	n = (size_t)ftell(f);
 	fseek(f, 0, SEEK_SET);
 
 	if (n > MBEDTLS_CTR_DRBG_MAX_INPUT) {

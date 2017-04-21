@@ -63,7 +63,7 @@ double modf(double x, double *iptr)
 		*iptr = 0.0;
 		return x;
 	} else {
-		*iptr = (double)(int64_t) x;
+		*iptr = (double)(int64_t)x;
 		return (x - *iptr);
 	}
 }

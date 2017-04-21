@@ -309,7 +309,7 @@ index_api_t index_bplustree = {
  ****************************************************************************/
 int compare(const void *p1, const void *p2)
 {
-	if (((pair_t *) p1)->key <= ((pair_t *) p2)->key) {
+	if (((pair_t *)p1)->key <= ((pair_t *)p2)->key) {
 		return -1;
 	}
 	return 1;
@@ -412,11 +412,11 @@ static db_result_t create(index_t *index)
 	tree->node_cache = malloc(sizeof(tree_cache_t));
 	if (tree->node_cache != NULL) {
 		success |= 1;
-		qnode_t *head = (qnode_t *) malloc(sizeof(qnode_t));
+		qnode_t *head = (qnode_t *)malloc(sizeof(qnode_t));
 		if (head != NULL) {
 			success |= 2;
 			tree->node_cache->in_cache.head = head;
-			qnode_t *end = (qnode_t *) malloc(sizeof(qnode_t));
+			qnode_t *end = (qnode_t *)malloc(sizeof(qnode_t));
 			if (end != NULL) {
 				success |= 4;
 				head->prev = NULL;
@@ -448,11 +448,11 @@ static db_result_t create(index_t *index)
 	success = 0;
 	if (tree->buck_cache != NULL) {
 		success |= 1;
-		qnode_t *head = (qnode_t *) malloc(sizeof(qnode_t));
+		qnode_t *head = (qnode_t *)malloc(sizeof(qnode_t));
 		if (head != NULL) {
 			success |= 2;
 			tree->buck_cache->in_cache.head = head;
-			qnode_t *end = (qnode_t *) malloc(sizeof(qnode_t));
+			qnode_t *end = (qnode_t *)malloc(sizeof(qnode_t));
 			if (end != NULL) {
 				success |= 4;
 				head->prev = NULL;
@@ -562,11 +562,11 @@ static db_result_t load(index_t *index)
 	tree->node_cache = malloc(sizeof(tree_cache_t));
 	if (tree->node_cache != NULL) {
 		success |= 1;
-		qnode_t *head = (qnode_t *) malloc(sizeof(qnode_t));
+		qnode_t *head = (qnode_t *)malloc(sizeof(qnode_t));
 		if (head != NULL) {
 			success |= 2;
 			tree->node_cache->in_cache.head = head;
-			qnode_t *end = (qnode_t *) malloc(sizeof(qnode_t));
+			qnode_t *end = (qnode_t *)malloc(sizeof(qnode_t));
 			if (end != NULL) {
 				success |= 4;
 				head->prev = NULL;
@@ -596,11 +596,11 @@ static db_result_t load(index_t *index)
 	success = 0;
 	if (tree->buck_cache != NULL) {
 		success |= 1;
-		qnode_t *head = (qnode_t *) malloc(sizeof(qnode_t));
+		qnode_t *head = (qnode_t *)malloc(sizeof(qnode_t));
 		if (head != NULL) {
 			success |= 2;
 			tree->buck_cache->in_cache.head = head;
-			qnode_t *end = (qnode_t *) malloc(sizeof(qnode_t));
+			qnode_t *end = (qnode_t *)malloc(sizeof(qnode_t));
 			if (end != NULL) {
 				success |= 4;
 				head->prev = NULL;
@@ -717,7 +717,7 @@ static db_result_t insert(index_t *index, attribute_value_t *key, tuple_id_t val
 	long long_key;
 	qnode_t *tmp_node;
 
-	tree = (tree_t *) index->opaque_data;
+	tree = (tree_t *)index->opaque_data;
 	long_key = db_value_to_long(key);
 
 #ifdef CONFIG_ARASTORAGE_ENABLE_FLUSHING
@@ -770,8 +770,8 @@ static uint16_t next_bucket(tree_t *tree, bucket_t *bucket)
 {
 	uint16_t next_bucket;
 	next_bucket = bucket->info[0];
-	if ((next_bucket == (uint16_t) - 1) || (next_bucket == CONFIG_BUCKETS_LIMIT - 1)) {
-		return (uint16_t) - 1;
+	if ((next_bucket == (uint16_t)-1) || (next_bucket == CONFIG_BUCKETS_LIMIT - 1)) {
+		return (uint16_t)-1;
 	}
 	return next_bucket;
 }
@@ -804,7 +804,7 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 	tree_t *tree;
 	key_min = *(int *)&iterator->min_value;
 	key_max = *(int *)&iterator->max_value;
-	tree = (tree_t *) iterator->index->opaque_data;
+	tree = (tree_t *)iterator->index->opaque_data;
 
 	/* To initialize the iterator_cache */
 	if (iterator->next_item_no == 0) {	/* removed the condition of iterator inequality */
@@ -876,7 +876,7 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 	pthread_mutex_lock(&(tree->bucket_lock));
 	tree->lock_buckets[cache.bucket_id] = 0;
 	cache.bucket_id = next_bucket(tree, cache.bucket);
-	if (cache.bucket_id == (uint16_t) - 1) {
+	if (cache.bucket_id == (uint16_t)-1) {
 		if (iterator->found_items == 0) {
 			iterator->next_item_no = 0;
 		} else {
@@ -1061,7 +1061,7 @@ static cache_result_t cache_write_node(tree_t *tree, int id, tree_node_t *node)
 {
 	pthread_mutex_lock(&(tree->node_cache_lock));
 
-	qnode_t *new_node = (qnode_t *) malloc(sizeof(qnode_t));
+	qnode_t *new_node = (qnode_t *)malloc(sizeof(qnode_t));
 	if (new_node == NULL) {
 		DB_LOG_E("Failed allocation of node\n");
 		pthread_mutex_unlock(&(tree->node_cache_lock));
@@ -1149,7 +1149,7 @@ static cache_result_t cache_write_bucket(tree_t *tree, int id, bucket_t *bucket)
 {
 	pthread_mutex_lock(&(tree->buck_cache_lock));
 
-	qnode_t *new_node = (qnode_t *) malloc(sizeof(qnode_t));
+	qnode_t *new_node = (qnode_t *)malloc(sizeof(qnode_t));
 	if (new_node == NULL) {
 		pthread_mutex_unlock(&(tree->buck_cache_lock));
 		return CACHE_ALLOCATION_ERROR;
@@ -1235,7 +1235,7 @@ static tree_node_t *tree_read(tree_t *tree, int bucket_id)
 		pthread_mutex_unlock(&(tree->node_cache_lock));
 		return &(tree->node_cache->cache_t[iter->pos].node);
 	} else {
-		qnode_t *new_node = (qnode_t *) malloc(sizeof(qnode_t));
+		qnode_t *new_node = (qnode_t *)malloc(sizeof(qnode_t));
 		if (new_node == NULL) {
 			pthread_mutex_unlock(&(tree->node_cache_lock));
 			return NULL;
@@ -1501,7 +1501,7 @@ static bucket_t *bucket_read(tree_t *tree, int bucket_id)
 		return &(tree->buck_cache->cache_t[iter->pos].bucket);
 	} else {
 		/* Bucket has to be read from flash into the cache */
-		qnode_t *new_node = (qnode_t *) malloc(sizeof(qnode_t));
+		qnode_t *new_node = (qnode_t *)malloc(sizeof(qnode_t));
 		if (new_node == NULL) {
 			pthread_mutex_unlock(&(tree->buck_cache_lock));
 			return NULL;

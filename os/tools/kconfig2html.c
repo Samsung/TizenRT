@@ -149,7 +149,7 @@ enum error_e {
 	ERROR_NESTING_UNDERFLOW
 };
 
-typedef void (*output_t) (const char *fmt, ...);
+typedef void (*output_t)(const char *fmt, ...);
 
 struct reserved_s {
 	enum token_type_e ttype;

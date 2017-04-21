@@ -367,7 +367,7 @@ int mbedtls_md_hmac_starts(mbedtls_md_context_t *ctx, const unsigned char *key, 
 		return (MBEDTLS_ERR_MD_BAD_INPUT_DATA);
 	}
 
-	if (keylen > (size_t) ctx->md_info->block_size) {
+	if (keylen > (size_t)ctx->md_info->block_size) {
 		ctx->md_info->starts_func(ctx->md_ctx);
 		ctx->md_info->update_func(ctx->md_ctx, key, keylen);
 		ctx->md_info->finish_func(ctx->md_ctx, sum);

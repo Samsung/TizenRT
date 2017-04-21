@@ -109,7 +109,7 @@
 #define DAYSPERNYEAR        365
 #define DAYSPERLYEAR        366
 #define SECSPERHOUR         (SECSPERMIN * MINSPERHOUR)
-#define SECSPERDAY          ((int_fast32_t) SECSPERHOUR * HOURSPERDAY)
+#define SECSPERDAY          ((int_fast32_t)SECSPERHOUR * HOURSPERDAY)
 #define MONSPERYEAR         12
 
 #define TM_SUNDAY           0
@@ -163,7 +163,7 @@
 /* The Gregorian year averages 365.2425 days, which is 31556952 seconds. */
 
 #define AVGSECSPERYEAR      31556952L
-#define SECSPERREPEAT       ((int_fast64_t) YEARSPERREPEAT * (int_fast64_t) AVGSECSPERYEAR)
+#define SECSPERREPEAT       ((int_fast64_t)YEARSPERREPEAT * (int_fast64_t)AVGSECSPERYEAR)
 #define SECSPERREPEAT_BITS  34	/* ceil(log2(SECSPERREPEAT)) */
 
 #define TZ_ABBR_MAX_LEN     16
@@ -895,7 +895,7 @@ static FAR const char *getsecs(FAR const char *strp, FAR int_fast32_t *const sec
 		return NULL;
 	}
 
-	*secsp = num * (int_fast32_t) SECSPERHOUR;
+	*secsp = num * (int_fast32_t)SECSPERHOUR;
 	if (*strp == ':') {
 		++strp;
 		strp = getnum(strp, &num, 0, MINSPERHOUR - 1);
@@ -1340,7 +1340,7 @@ static int tzparse(FAR const char *name, FAR struct state_s *const sp, const int
 		sp->charcnt += dstlen + 1;
 	}
 
-	if ((size_t) sp->charcnt > sizeof sp->chars) {
+	if ((size_t)sp->charcnt > sizeof sp->chars) {
 		return -1;
 	}
 
@@ -1617,7 +1617,7 @@ static struct tm *timesub(FAR const time_t *const timep, const int_fast32_t offs
 		}
 
 		leapdays = leaps_thru_end_of(newy - 1) - leaps_thru_end_of(y - 1);
-		tdays -= ((time_t) newy - y) * DAYSPERNYEAR;
+		tdays -= ((time_t)newy - y) * DAYSPERNYEAR;
 		tdays -= leapdays;
 		y = newy;
 	}

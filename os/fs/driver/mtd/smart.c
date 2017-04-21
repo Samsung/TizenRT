@@ -2678,7 +2678,7 @@ static int smart_write_bad_sector_info(FAR struct smart_struct_s *dev, int physi
 
 	bad_physical_sector_info = (uint16_t)(dev->sMap[SMART_BAD_SECTOR_NUMBER]);
 
-	if (bad_physical_sector_info == (uint16_t) - 1) {
+	if (bad_physical_sector_info == (uint16_t)-1) {
 		kmm_free(temp_rwbuffer);
 		return -1;				// bad management sector not allocated
 	}
@@ -4632,7 +4632,7 @@ static inline int smart_allocsector(FAR struct smart_struct_s *dev, unsigned lon
 		/* Validate the sector is not already allocated */
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-		if (dev->sMap[requested] == (uint16_t) - 1)
+		if (dev->sMap[requested] == (uint16_t)-1)
 #else
 		if (!(dev->sBitMap[requested >> 3] & (1 << (requested & 0x07))))
 #endif
@@ -4663,7 +4663,7 @@ static inline int smart_allocsector(FAR struct smart_struct_s *dev, unsigned lon
 		/* Loop through all sectors and find one to allocate */
 		for (x = dev->reservedsector; x < dev->totalsectors; x++) {
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-			if (dev->sMap[x] == (uint16_t) - 1)
+			if (dev->sMap[x] == (uint16_t)-1)
 #else
 			if (!(dev->sBitMap[x >> 3] & (1 << (x & 0x07))))
 #endif
@@ -4811,7 +4811,7 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 		/* Validate the sector is actually allocated */
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-		if (dev->sMap[logicalsector] == (uint16_t) - 1)
+		if (dev->sMap[logicalsector] == (uint16_t)-1)
 #else
 		if (!(dev->sBitMap[logicalsector >> 3] & (1 << (logicalsector & 0x07))))
 #endif
@@ -4875,7 +4875,7 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 	/* Unmap this logical sector */
 
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-	dev->sMap[logicalsector] = (uint16_t) - 1;
+	dev->sMap[logicalsector] = (uint16_t)-1;
 #else
 	dev->sBitMap[logicalsector >> 3] &= ~(1 << (logicalsector & 0x07));
 	smart_update_cache(dev, logicalsector, 0xFFFF);
@@ -5399,7 +5399,7 @@ int smart_recoversectors(FAR struct inode *inode, char *validsectors, int *nobso
 			/* if the mapping is sane, Unmap this logical->physicalsector map */
 			if (physsector == sector) {
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-				dev->sMap[logicalsector] = (uint16_t) - 1;
+				dev->sMap[logicalsector] = (uint16_t)-1;
 #else
 				dev->sBitMap[logicalsector >> 3] &= ~(1 << (logicalsector & 0x07));
 				smart_update_cache(dev, logicalsector, 0xFFFF);

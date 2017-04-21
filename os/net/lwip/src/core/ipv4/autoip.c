@@ -254,7 +254,7 @@ static err_t autoip_bind(struct netif *netif)
 	struct autoip *autoip = netif->autoip;
 	ip_addr_t sn_mask, gw_addr;
 
-	LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE, ("autoip_bind(netif=%p) %c%c%" U16_F " %" U16_F ".%" U16_F ".%" U16_F ".%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t) netif->num, ip4_addr1_16(&autoip->llipaddr), ip4_addr2_16(&autoip->llipaddr), ip4_addr3_16(&autoip->llipaddr), ip4_addr4_16(&autoip->llipaddr)));
+	LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE, ("autoip_bind(netif=%p) %c%c%" U16_F " %" U16_F ".%" U16_F ".%" U16_F ".%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t)netif->num, ip4_addr1_16(&autoip->llipaddr), ip4_addr2_16(&autoip->llipaddr), ip4_addr3_16(&autoip->llipaddr), ip4_addr4_16(&autoip->llipaddr)));
 
 	IP4_ADDR(&sn_mask, 255, 255, 0, 0);
 	IP4_ADDR(&gw_addr, 0, 0, 0, 0);
@@ -290,7 +290,7 @@ err_t autoip_start(struct netif *netif)
 	ip_addr_set_zero(&netif->netmask);
 	ip_addr_set_zero(&netif->gw);
 
-	LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("autoip_start(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t) netif->num));
+	LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("autoip_start(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0], netif->name[1], (u16_t)netif->num));
 	if (autoip == NULL) {
 		/* no AutoIP client attached yet? */
 		LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE, ("autoip_start(): starting new AUTOIP client\n"));
