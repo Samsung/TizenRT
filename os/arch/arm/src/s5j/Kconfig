@@ -196,10 +196,6 @@ config S5J_MAILBOX
 	default n
 	select MAILBOX
 
-config S5J_GPIO
-	bool "S5J GPIO support"
-	default n
-
 config S5J_CHIPID
 	bool "S5J CHIPID support"
 	default n
