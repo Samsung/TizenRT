@@ -244,8 +244,8 @@ static struct up_dev_s g_uartdbgpriv = {
 	.bits		= CONFIG_UARTDBG_BITS,
 	.stopbits2	= CONFIG_UARTDBG_2STOP,
 	.eCh		= UARTDBG,
-	.rx_gpio	= s5j_gpio(GPA3, 0),
-	.tx_gpio	= s5j_gpio(GPA3, 1),
+	.rx_gpio	= GPIO_UARTDBG_RXD,
+	.tx_gpio	= GPIO_UARTDBG_TXD,
 };
 #else
 static struct up_dev_s g_uartdbgpriv = {
@@ -294,8 +294,8 @@ static struct up_dev_s g_uart0priv = {
 	.bits		= CONFIG_UART0_BITS,
 	.stopbits2	= CONFIG_UART0_2STOP,
 	.eCh		= UART0,
-	.rx_gpio	= s5j_gpio(GPA2, 0),
-	.tx_gpio	= s5j_gpio(GPA2, 1),
+	.rx_gpio	= GPIO_UART0_RXD,
+	.tx_gpio	= GPIO_UART0_TXD,
 };
 #endif
 
@@ -320,8 +320,8 @@ static struct up_dev_s g_uart1priv = {
 	.bits		= CONFIG_UART1_BITS,
 	.stopbits2	= CONFIG_UART1_2STOP,
 	.eCh		= UART1,
-	.rx_gpio	= s5j_gpio(GPP0, 4),
-	.tx_gpio	= s5j_gpio(GPP0, 5),
+	.rx_gpio	= GPIO_UART1_RXD,
+	.tx_gpio	= GPIO_UART1_TXD,
 };
 #endif
 
@@ -346,8 +346,8 @@ static struct up_dev_s g_uart2priv = {
 	.bits		= CONFIG_UART2_BITS,
 	.stopbits2	= CONFIG_UART2_2STOP,
 	.eCh		= UART2,
-	.rx_gpio	= s5j_gpio(GPP0, 6),
-	.tx_gpio	= s5j_gpio(GPP0, 7),
+	.rx_gpio	= GPIO_UART2_RXD,
+	.tx_gpio	= GPIO_UART2_TXD,
 };
 #endif
 
@@ -372,8 +372,8 @@ static struct up_dev_s g_uart3priv = {
 	.bits		= CONFIG_UART3_BITS,
 	.stopbits2 	= CONFIG_UART3_2STOP,
 	.eCh		= UART3,
-	.rx_gpio	= s5j_gpio(GPP1, 6),
-	.tx_gpio	= s5j_gpio(GPP1, 7),
+	.rx_gpio	= GPIO_UART3_RXD,
+	.tx_gpio	= GPIO_UART3_TXD,
 };
 #endif
 
@@ -961,11 +961,8 @@ void up_uart_initialize(struct up_dev_s *priv, u32 nClock)
 	uint32_t uBase = priv->uartbase;
 
 	/* Configure pins for USART use */
-
-	gpio_cfg_pin(priv->rx_gpio, GPIO_FUNC(2));
-	gpio_set_pull(priv->rx_gpio, GPIO_PULL_NONE);
-	gpio_cfg_pin(priv->tx_gpio, GPIO_FUNC(2));
-	gpio_set_pull(priv->tx_gpio, GPIO_PULL_NONE);
+	s5j_configgpio(priv->rx_gpio);
+	s5j_configgpio(priv->tx_gpio);
 
 	up_uart_set_rx_mode(uBase, INT_MODE);
 	up_uart_set_tx_mode(uBase, INT_MODE);

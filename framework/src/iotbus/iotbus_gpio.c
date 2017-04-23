@@ -120,18 +120,13 @@ int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
 
 	dev->dir = dir;
 	switch (dev->dir) {
-	case IOTBUS_GPIO_DIRECTION_NONE:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_DIRECTION, (unsigned long)GPIO_DIRECTION_NONE);
-			break;
-		}
-	case IOTBUS_GPIO_DIRECTION_IN:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_DIRECTION, (unsigned long)GPIO_DIRECTION_IN);
-			break;
-		}
-	case IOTBUS_GPIO_DIRECTION_OUT:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_DIRECTION, (unsigned long)GPIO_DIRECTION_OUT);
-			break;
-		}
+	case IOTBUS_GPIO_DIRECTION_IN:
+		ret = ioctl(dev->fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_IN);
+		break;
+	case IOTBUS_GPIO_DIRECTION_OUT:
+		ret = ioctl(dev->fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_OUT);
+		break;
+	case IOTBUS_GPIO_DIRECTION_NONE:
 	default:
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
@@ -159,33 +154,33 @@ int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
 int iotbus_gpio_set_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge)
 {
 	int ret = -1;
+	struct gpio_pollevents_s pollevents;
 
 	if (!dev)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 
 	switch (edge) {
-	case IOTBUS_GPIO_EDGE_NONE:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_EDGE, (unsigned long)GPIO_EDGE_NONE);
-			break;
-		}
-	case IOTBUS_GPIO_EDGE_BOTH:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_EDGE, (unsigned long)GPIO_EDGE_BOTH);
-			break;
-		}
-	case IOTBUS_GPIO_EDGE_RISING:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_EDGE, (unsigned long)GPIO_EDGE_RISING);
-			break;
-		}
-	case IOTBUS_GPIO_EDGE_FALLING:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_EDGE, (unsigned long)GPIO_EDGE_FALLING);
-			break;
-		}
-	default:{
-			return IOTBUS_ERROR_INVALID_PARAMETER;
-
-		}
+	case IOTBUS_GPIO_EDGE_NONE:
+		pollevents.gp_rising  = false;
+		pollevents.gp_falling = false;
+		break;
+	case IOTBUS_GPIO_EDGE_BOTH:
+		pollevents.gp_rising  = true;
+		pollevents.gp_falling = true;
+		break;
+	case IOTBUS_GPIO_EDGE_RISING:
+		pollevents.gp_rising  = true;
+		pollevents.gp_falling = false;
+		break;
+	case IOTBUS_GPIO_EDGE_FALLING:
+		pollevents.gp_rising  = false;
+		pollevents.gp_falling = true;
+		break;
+	default:
+		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
+	ret = ioctl(dev->fd, GPIOIOC_POLLEVENTS, (unsigned long)&pollevents);
 	if (ret != 0) {
 		switch (errno) {
 		case EPERM:
@@ -219,23 +214,23 @@ int iotbus_gpio_set_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e dr
 
 	switch (dev->drive) {
 	case IOTBUS_GPIO_DRIVE_NONE:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_DRIVE, (unsigned long)GPIO_DRIVE_NONE);
+			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_NONE);
 			break;
 		}
 	case IOTBUS_GPIO_DRIVE_PULLUP:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_DRIVE, (unsigned long)GPIO_DRIVE_PULLUP);
+			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_PULLUP);
 			break;
 		}
 	case IOTBUS_GPIO_DRIVE_PULLDOWN:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_DRIVE, (unsigned long)GPIO_DRIVE_PULLDOWN);
+			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_PULLDOWN);
 			break;
 		}
 	case IOTBUS_GPIO_DRIVE_FLOAT:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_DRIVE, (unsigned long)GPIO_DRIVE_FLOAT);
+			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_FLOAT);
 			break;
 		}
 	case IOTBUS_GPIO_DRIVE_PUSHPULL:{
-			ret = ioctl(dev->fd, GPIO_CMD_SET_DRIVE, (unsigned long)GPIO_DRIVE_PUSHPULL);
+			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_PUSHPULL);
 			break;
 		}
 	}

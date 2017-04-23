@@ -228,21 +228,27 @@ static int s5j_pwm_setup(FAR struct pwm_lowerhalf_s *dev)
 {
 	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
 
-	int gpio_TOUT;
 	int channel;
 
 	channel = priv->id;
 
-	//skip channel4
+	/* skip channel4 */
 	if (channel >= 4) {
 		channel += 1;
 	}
-	// T20 has the output port(TOUT0~6).
-	if (channel < 7) {
-		gpio_TOUT = s5j_gpio(GPP2, (channel));
 
-		gpio_cfg_pin(gpio_TOUT, GPIO_FUNC(2));
-		gpio_set_pull(gpio_TOUT, GPIO_PULL_NONE);
+	if (channel == 0) {
+		s5j_configgpio(GPIO_PWM_TOUT0);
+	} else if (channel == 1) {
+		s5j_configgpio(GPIO_PWM_TOUT1);
+	} else if (channel == 2) {
+		s5j_configgpio(GPIO_PWM_TOUT2);
+	} else if (channel == 3) {
+		s5j_configgpio(GPIO_PWM_TOUT3);
+	} else if (channel == 5) {
+		s5j_configgpio(GPIO_PWM_TOUT5);
+	} else if (channel == 6) {
+		s5j_configgpio(GPIO_PWM_TOUT6);
 	}
 
 	return OK;
@@ -267,22 +273,27 @@ static int s5j_pwm_setup(FAR struct pwm_lowerhalf_s *dev)
 static int s5j_pwm_shutdown(FAR struct pwm_lowerhalf_s *dev)
 {
 	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
-
-	int gpio_TOUT;
 	int channel;
 
 	channel = priv->id;
 
-	//skip channel4
+	/* skip channel4 */
 	if (channel >= 4) {
 		channel += 1;
 	}
-	// GPIO input mode, pull-down
-	if (channel < 7) {
-		gpio_TOUT = s5j_gpio(GPP2, channel);
 
-		gpio_cfg_pin(gpio_TOUT, GPIO_FUNC(0));
-		gpio_set_pull(gpio_TOUT, GPIO_PULL_DOWN);
+	if (channel == 0) {
+		s5j_unconfiggpio(GPIO_PWM_TOUT0);
+	} else if (channel == 1) {
+		s5j_unconfiggpio(GPIO_PWM_TOUT1);
+	} else if (channel == 2) {
+		s5j_unconfiggpio(GPIO_PWM_TOUT2);
+	} else if (channel == 3) {
+		s5j_unconfiggpio(GPIO_PWM_TOUT3);
+	} else if (channel == 5) {
+		s5j_unconfiggpio(GPIO_PWM_TOUT5);
+	} else if (channel == 6) {
+		s5j_unconfiggpio(GPIO_PWM_TOUT6);
 	}
 
 	/* Make sure that the output has been stopped */

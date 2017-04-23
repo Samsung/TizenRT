@@ -28,16 +28,29 @@
 #include <errno.h>
 #include <debug.h>
 
+#include <tinyara/kmalloc.h>
 #include <tinyara/gpio.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define GPIO_PREVENT_MULTIPLE_OPEN   0
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+struct gpio_upperhalf_s {
+	/* Saved binding to the lower-half GPIO driver */
+	FAR struct gpio_lowerhalf_s *gu_lower; /* Arch-specific operations */
+
+	sem_t gu_exclsem;	/* Supports exclusive access to the device */
+	bool gu_sample;		/* Last sampled GPIO states */
+
+	/*
+	 * The following is a singly linked list of open references to the
+	 * GPIO device.
+	 */
+	struct gpio_open_s *gu_open;
+};
 
 /****************************************************************************
  * Private Function Prototypes
@@ -70,6 +83,30 @@ static const struct file_operations g_gpioops = {
 #endif
 };
 
+struct gpio_open_s {
+	FAR struct gpio_open_s *go_flink;
+
+	/* The following will be treu if we are closing */
+	volatile bool go_closing;
+
+#ifndef CONFIG_DISABLE_SIGNALS
+	/* GPIO event notification information */
+	pid_t go_pid;
+	struct gpio_notify_s go_notify;
+#endif
+
+#ifndef CONFIG_DISABLE_POLL
+	/* Poll event information */
+	struct gpio_pollevents_s go_pollevents;
+
+	/*
+	 * The following is a list if poll structures of threads waiting
+	 * for driver events
+	 */
+	FAR struct pollfd *go_fds[CONFIG_GPIO_NPOLLWAITERS];
+#endif
+};
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -97,27 +134,14 @@ static int sem_reinit(FAR sem_t *sem, int pshared, unsigned int value)
  *    Take the lock, waiting as necessary
  *
  ****************************************************************************/
-static int gpio_takesem(FAR sem_t *sem, bool errout)
+static inline int gpio_takesem(FAR sem_t *sem)
 {
-	/*
-	 * Loop, ignoring interrupts, until we have successfully acquired
-	 * the lock
-	 */
-
-	while (sem_wait(sem) != OK) {
-		/*
-		 * The only case that an error should occur here is if the
-		 * wait was awakened by a signal.
-		 */
-		ASSERT(get_errno() == EINTR);
-
-		/*
-		 * When the signal is received, should we errout? Or should
-		 * we just continue waiting until we have the semaphore?
-		 */
-		if (errout) {
-			return -EINTR;
-		}
+	/* Take a count from the semaphore, possibly waiting */
+	if (sem_wait(sem) < 0) {
+		/* EINTR is the only error that we expect */
+		int errcode = get_errno();
+		DEBUGASSERT(errcode == EINTR);
+		return errcode;
 	}
 
 	return OK;
@@ -135,32 +159,141 @@ static inline void gpio_givesem(sem_t *sem)
 	sem_post(sem);
 }
 
+static void gpio_sample(FAR struct gpio_upperhalf_s *priv)
+{
+	FAR struct gpio_lowerhalf_s *lower;
+	FAR struct gpio_open_s *opriv;
+#if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
+	bool sample, change, falling, rising;
+#endif
+	irqstate_t flags;
+#ifndef CONFIG_DISABLE_POLL
+	int i;
+#endif
+
+	DEBUGASSERT(priv && priv->gu_lower);
+	lower = priv->gu_lower;
+
+	/*
+	 * This routine is called both task level and interrupt level,
+	 * so interrupts must be disabled.
+	 */
+	flags = irqsave();
+
+	/* Sample the new GPIO state */
+	DEBUGASSERT(lower->ops && lower->ops->get);
+	sample = lower->ops->get(lower);
+
+#if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
+	change  = sample ^ priv->gu_sample;
+	rising  = (change && priv->gu_sample);
+	falling = (change && ~priv->gu_sample);
+
+	/* Visit each opened reference to the device */
+	for (opriv = priv->gu_open; opriv; opriv = opriv->go_flink) {
+#ifndef CONFIG_DISABLE_POLL
+		/* Have any poll events occurred? */
+		if ((rising  & opriv->go_pollevents.gp_rising) != 0 ||
+			(falling & opriv->go_pollevents.gp_falling) != 0) {
+			for (i = 0; i < CONFIG_GPIO_NPOLLWAITERS; i++) {
+				FAR struct pollfd *fds = opriv->go_fds[i];
+				if (fds) {
+					fds->revents |= (fds->events & POLLIN);
+					if (fds->revents != 0) {
+						sem_post(fds->sem);
+					}
+				}
+			}
+		}
+#endif
+
+#ifndef CONFIG_DISABLE_SIGNALS
+		/* Have any signal events occurred? */
+		if ((rising && opriv->go_notify.gn_rising) ||
+				(falling && opriv->go_notify.gn_falling)) {
+#ifdef CONFIG_CAN_PASS_STRUCTS
+			union sigval value;
+			value.sival_int = (int)sample;
+			sigqueue(opriv->go_pid, opriv->go_notify.gn_signo, value);
+#else
+			sigqueue(opriv->go_pid, opriv->go_notify.gn_signo, sample);
+#endif
+		}
+#endif
+	}
+#endif
+
+	priv->gu_sample = sample;
+	irqrestore(flags);
+}
+
+#if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
 /****************************************************************************
- * Name: gpio_pollnotify
+ * Name: gpio_interrupt
  *
  * Description:
  *    notify file descriptor. It is necessary to handle async I/O.
  *
  ****************************************************************************/
-#ifndef CONFIG_DISABLE_POLL
-static void gpio_pollnotify(FAR struct gpio_dev_s *dev, pollevent_t eventset)
+static void gpio_interrupt(FAR struct gpio_upperhalf_s *upper)
 {
+	DEBUGASSERT(upper);
+	gpio_sample(upper);
+}
+
+static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
+{
+	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
+	FAR struct gpio_open_s *opriv;
+	bool rising;
+	bool falling;
+	irqstate_t flags;
+#ifndef CONFIG_DISABLE_POLL
 	int i;
+#endif
 
-	for (i = 0; i < CONFIG_GPIO_NPOLLWAITERS; i++) {
-		struct pollfd *fds = dev->fds[i];
-		if (fds) {
-			fds->revents |= (fds->events & eventset);
+	DEBUGASSERT(priv && priv->gu_lower);
+	lower = priv->gu_lower;
 
-			if (fds->revents != 0) {
-				fvdbg("Report events: %02x\n", fds->revents);
-				sem_post(fds->sem);
+	/*
+	 * This routine is called both task level and interrupt level, so
+	 * interrupts must be disabled.
+	 */
+	flags = irqsave();
+
+	/* Visit each opened reference to the device */
+	rising  = 0;
+	falling = 0;
+
+	for (opriv = priv->gu_open; opriv; opriv = opriv->go_flink) {
+#ifndef CONFIG_DISABLE_POLL
+		for (i = 0; i < CONFIG_GPIO_NPOLLWAITERS; i++) {
+			if (opriv->go_fds[i]) {
+				rising  |= opriv->go_pollevents.gp_rising;
+				falling |= opriv->go_pollevents.gp_falling;
+				break;
 			}
 		}
+#endif
+
+#ifndef CONFIG_DISABLE_SIGNALS
+		/* OR in the signal events */
+		rising  |= opriv->go_notify.gn_rising;
+		falling |= opriv->go_notify.gn_falling;
+#endif
 	}
+
+	/* Enable/disable GPIO interrupts */
+	DEBUGASSERT(lower->ops->enable);
+	if (rising || falling) {
+		lower->ops->enable(lower, rising, falling, gpio_interrupt);
+	} else {
+		/* Disable further interrupts */
+		lower->ops->enable(lower, 0, 0, NULL);
+	}
+
+	irqrestore(flags);
 }
-#else
-#define gpio_pollnotify(dev, event)
 #endif
 
 /****************************************************************************
@@ -174,14 +307,18 @@ static void gpio_pollnotify(FAR struct gpio_dev_s *dev, pollevent_t eventset)
 static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
 			  size_t buflen)
 {
+	ssize_t ret;
 	int32_t value;
 	FAR struct inode *inode = filep->f_inode;
-	FAR struct gpio_dev_s *dev = inode->i_private;
+	FAR struct gpio_upperhalf_s *priv = inode->i_private;
+	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
 
-	value = *(int32_t *) buffer;
-	GPIO_SET(dev, value);
+	ret = sscanf(buffer, "%d", &value);
+	if (ret) {
+		lower->ops->set(lower, value != 0);
+	}
 
-	return buflen;
+	return ret;
 }
 
 /****************************************************************************
@@ -195,30 +332,19 @@ static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
 static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer,
 			 size_t buflen)
 {
+	int ret = 0;
 	FAR struct inode *inode = filep->f_inode;
-	FAR struct gpio_dev_s *dev = inode->i_private;
-	int ret;
-	int value;
+	FAR struct gpio_upperhalf_s *priv = inode->i_private;
+	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
 
-	/*
-	 * if you read gpio with 'cat', you have to return 0, Otherwise cat
-	 * will be cleaned up properly. So If it is the first time, then
-	 * return size, and resize fpos. next time return zero.
-	 */
 	if (filep->f_pos == 0) {
-		value = GPIO_GET(dev);
-
-		memcpy(buffer, &value, sizeof(int));
-
-		/* move file position */
-		filep->f_pos = 2;
-		ret = 2;
-	} else {
-		ret = 0;
+		int value = lower->ops->get(lower);
+		ret = snprintf(buffer, buflen, "%d", value);
 	}
 
-	return ret;
+	filep->f_pos += ret;
 
+	return ret;
 }
 
 /****************************************************************************
@@ -230,11 +356,69 @@ static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer,
  ****************************************************************************/
 static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
-	int ret;
+	int ret = OK;
 	FAR struct inode *inode = filep->f_inode;
-	FAR struct gpio_dev_s *dev = inode->i_private;
+	FAR struct gpio_upperhalf_s *priv = inode->i_private;
+	FAR struct gpio_open_s *opriv = filep->f_priv;
+	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
 
-	ret = GPIO_CTRL(dev, cmd, arg);
+	switch (cmd) {
+	case GPIOIOC_SET_DIRECTION:
+		ret = lower->ops->setdir(lower, arg);
+#ifndef CONFIG_DISABLE_POLL
+		opriv->go_pollevents.gp_rising  = false;
+		opriv->go_pollevents.gp_falling = false;
+#endif /* CONFIG_DISABLE_POLL */
+		break;
+
+	case GPIOIOC_SET_DRIVE:
+		ret = lower->ops->pull(lower, arg);
+		break;
+
+#ifndef CONFIG_DISABLE_POLL
+	case GPIOIOC_POLLEVENTS: {
+		FAR struct gpio_pollevents_s *pollevents =
+			(FAR struct gpio_pollevents_s *)((uintptr_t)arg);
+
+		if (pollevents) {
+			/* Save the poll events */
+			opriv->go_pollevents.gp_rising  = pollevents->gp_rising;
+			opriv->go_pollevents.gp_falling = pollevents->gp_falling;
+
+			/* Enable/disable interrupt handling */
+			gpio_enable(priv);
+			ret = OK;
+		}
+		break;
+	}
+#endif /* CONFIG_DISABLE_POLL */
+
+#ifndef CONFIG_DISABLE_SIGNALS
+	case GPIOIOC_REGISTER: {
+		FAR struct gpio_notify_s *notify =
+			(FAR struct gpio_notify_s *)((uintptr_t)arg);
+
+		if (notify) {
+			/* Save the notification events */
+			opriv->go_notify.gn_rising  = notify->gn_rising;
+			opriv->go_notify.gn_falling = notify->gn_falling;
+			opriv->go_notify.gn_signo   = notify->gn_signo;
+			opriv->go_pid               = getpid();
+
+			/* Enable/disable interrupt handling */
+			gpio_enable(priv);
+			ret = OK;
+		}
+		break;
+	}
+#endif /* CONFIG_DISABLE_SIGNALS */
+
+	default:
+		ret = -ENOTTY;
+		if (lower->ops->ioctl) {
+			ret = lower->ops->ioctl(lower, cmd, arg);
+		}
+	}
 
 	return ret;
 }
@@ -251,62 +435,60 @@ static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds,
 		     bool setup)
 {
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct gpio_dev_s *dev = inode->i_private;
+	FAR struct inode *inode;
+	FAR struct gpio_upperhalf_s *priv;
+	FAR struct gpio_open_s *opriv;
 	int ret;
 	int i;
 
-	/* Some sanity checking */
-	if (!dev || !fds) {
-		return -ENODEV;
-	}
+	DEBUGASSERT(filep && filep->f_priv && filep->f_inode);
+	opriv = filep->f_priv;
+	inode = filep->f_inode;
+	DEBUGASSERT(inode->i_private);
+	priv  = (FAR struct gpio_upperhalf_s *)inode->i_private;
 
-	/* Are we setting up the poll?  Or tearing it down? */
-	ret = gpio_takesem(&dev->pollsem, true);
+	/* Get exclusive access to the driver structure */
+	ret = gpio_takesem(&priv->gu_exclsem);
 	if (ret < 0) {
-		/*
-		 * A signal received while waiting for access to the poll data
-		 * will abort the operation.
-		 */
+		lldbg("ERROR: gpio_takesem failed: %d\n", ret);
 		return ret;
 	}
 
+	/* Are we setting up the poll? Or tearing it down? */
 	if (setup) {
 		/*
-		 * This is a request to set up the poll.  Find an available
+		 * This is a request to set up the poll. Find an available
 		 * slot for the poll structure reference
 		 */
 		for (i = 0; i < CONFIG_GPIO_NPOLLWAITERS; i++) {
 			/* Find an available slot */
-			if (!dev->fds[i]) {
+			if (!opriv->go_fds[i]) {
 				/* Bind the poll structure and this slot */
-				dev->fds[i] = fds;
-				fds->priv = &dev->fds[i];
+				opriv->go_fds[i] = fds;
+				fds->priv = &opriv->go_fds[i];
 				break;
 			}
 		}
 
 		if (i >= CONFIG_GPIO_NPOLLWAITERS) {
+			lldbg("ERROR: Too many poll waiters\n");
 			fds->priv = NULL;
-			ret = -EBUSY;
-			goto errout;
+			ret       = -EBUSY;
+			goto errout_with_dusem;
 		}
 	} else if (fds->priv) {
 		/* This is a request to tear down the poll. */
-		struct pollfd **slot = (struct pollfd **)fds->priv;
-
-		if (!slot) {
-			ret = -EIO;
-			goto errout;
-		}
+		FAR struct pollfd **slot = (FAR struct pollfd **)fds->priv;
 
 		/* Remove all memory of the poll setup */
 		*slot = NULL;
 		fds->priv = NULL;
 	}
 
-errout:
-	gpio_givesem(&dev->pollsem);
+	gpio_enable(priv);
+
+errout_with_dusem:
+	gpio_givesem(&priv->gu_exclsem);
 	return ret;
 }
 #endif /* CONFIG_DISABLE_POLL */
@@ -320,27 +502,64 @@ errout:
  ****************************************************************************/
 static int gpio_close(FAR struct file *filep)
 {
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct gpio_dev_s *dev = inode->i_private;
+	FAR struct inode *inode;
+	FAR struct gpio_upperhalf_s *priv;
+	FAR struct gpio_open_s *opriv;
+	FAR struct gpio_open_s *curr;
+	FAR struct gpio_open_s *prev;
+	irqstate_t flags;
+	bool closing;
+	int ret;
 
-	(void)gpio_takesem(&dev->closesem, false);
-	if (dev->open_count > 1) {
-		dev->open_count--;
-		gpio_givesem(&dev->closesem);
+	DEBUGASSERT(filep && filep->f_priv && filep->f_inode);
+	opriv = filep->f_priv;
+	inode = filep->f_inode;
+	DEBUGASSERT(inode->i_private);
+	priv = (FAR struct gpio_upperhalf_s *)inode->i_private;
+
+	flags = irqsave();
+	closing = opriv->go_closing;
+	opriv->go_closing = true;
+	irqrestore(flags);
+
+	if (closing) {
+		/* Another thread is doing the close */
 		return OK;
 	}
 
-	/* There are no more references to the port */
-	dev->open_count = 0;
+	/* Get exclusive access to the driver structure */
+	ret = gpio_takesem(&priv->gu_exclsem);
+	if (ret < 0) {
+		lldbg("ERROR: gpio_takesem failed: %d\n", ret);
+		return ret;
+	}
 
-	GPIO_CLOSE(dev);
+	/* Find the open structure in the list of open structures for the device */
+	for (prev = NULL, curr = priv->gu_open; curr && curr != opriv;
+			prev = curr, curr = curr->go_flink);
 
-#ifndef CONFIG_DISABLE_POLL
-	sem_reinit(&dev->pollsem, 0, 1);
-#endif
-	gpio_givesem(&dev->closesem);
+	DEBUGASSERT(curr);
+	if (!curr) {
+		lldbg("ERROR: Failed to find open entry\n");
+		ret = -ENOENT;
+		goto errout_with_exclsem;
+	}
 
-	return OK;
+	/* Remove the structure from the device */
+	if (prev) {
+		prev->go_flink = opriv->go_flink;
+	} else {
+		priv->gu_open = opriv->go_flink;
+	}
+
+	/* And free the open structure */
+	kmm_free(opriv);
+	ret = OK;
+
+errout_with_exclsem:
+	gpio_givesem(&priv->gu_exclsem);
+
+	return ret;
 }
 
 /*****************************************************************************
@@ -354,15 +573,15 @@ static int gpio_open(FAR struct file *filep)
 {
 	int ret;
 	FAR struct inode *inode = filep->f_inode;
-	FAR struct gpio_dev_s *dev = inode->i_private;
-	uint8_t tmp;
+	FAR struct gpio_upperhalf_s *priv = inode->i_private;
+	FAR struct gpio_open_s *opriv;
 
 	/*
 	 * If the port is the middle of closing, wait until the close is
 	 * finished. If a signal is received while we are waiting, then
 	 * return EINTR.
 	 */
-	ret = gpio_takesem(&dev->closesem, true);
+	ret = gpio_takesem(&priv->gu_exclsem);
 	if (ret < 0) {
 		/*
 		 * A signal received while waiting for the last close
@@ -371,48 +590,31 @@ static int gpio_open(FAR struct file *filep)
 		return ret;
 	}
 
-	tmp = dev->open_count + 1;
-	if (tmp == 0) {
-		/* More than 255 opens; uint8_t overflows to zero */
-		ret = -EMFILE;
+	/* Allocate a new open structure */
+	opriv = (FAR struct gpio_open_s *)kmm_zalloc(sizeof(struct gpio_open_s));
+	if (!opriv) {
+		lldbg("ERROR: Failed to allocate open structure\n");
+		ret = -ENOMEM;
 		goto errout_with_sem;
 	}
 
-	/* Check if this is the first time that the driver has been opened. */
-	if (tmp == 1) {
-		ret = GPIO_OPEN(dev);
-		if (ret != OK) {
-			goto errout_with_sem;
-		}
-	}
-#if GPIO_PREVENT_MULTIPLE_OPEN == 1
-	else if (tmp > 1) {
-		ret = -EBUSY;
-		goto errout_with_sem;
-	}
+	/* Initialize the open structure */
+#ifndef CONFIG_DISABLE_POLL
+	opriv->go_pollevents.gp_falling = true;
+	opriv->go_pollevents.gp_rising  = true;
 #endif
 
-	dev->open_count = tmp;
+	/* Attach the open structure to the device */
+	opriv->go_flink = priv->gu_open;
+	priv->gu_open = opriv;
+
+	/* Attach the open structure to the file structure */
+	filep->f_priv = (FAR void *)opriv;
+	ret = OK;
 
 errout_with_sem:
-	gpio_givesem(&dev->closesem);
-
+	gpio_givesem(&priv->gu_exclsem);
 	return ret;
-}
-
-/*****************************************************************************
- * Name: gpio_notify
- *
- * Description:
- *   This routine is called from irq handler. If you want to handle with
- *   async call or event, you have to register your fd with poll().
- *
- ****************************************************************************/
-void gpio_notify(FAR struct gpio_dev_s *dev)
-{
-	gpio_pollnotify(dev, POLLIN);
-
-	return;
 }
 
 /****************************************************************************
@@ -426,15 +628,49 @@ void gpio_notify(FAR struct gpio_dev_s *dev)
  *   Register GPIO device.
  *
  ****************************************************************************/
-int gpio_register(FAR const char *path, FAR struct gpio_dev_s *dev)
+int gpio_register(unsigned int minor, FAR struct gpio_lowerhalf_s *lower)
 {
-	sem_init(&dev->closesem, 0, 1);
-#ifndef CONFIG_DISABLE_POLL
-	sem_init(&dev->pollsem, 0, 1);
-#endif
+	int ret;
+	char devpath[16];
+	FAR struct gpio_upperhalf_s *priv;
 
-	dbg("Registering %s\n", path);
-	return register_driver(path, &g_gpioops, 0666, dev);
+	DEBUGASSERT(lower);
+
+	/* Allocate a new GPIO driver instance */
+	priv = (FAR struct gpio_upperhalf_s *)
+			kmm_zalloc(sizeof(struct gpio_upperhalf_s));
+	if (!priv) {
+		lldbg("ERROR: Failed to allocate device structure\n");
+		return -ENOMEM;
+	}
+
+	/* Make sure that all button interrupts are disabled */
+	DEBUGASSERT(lower->ops->enable);
+	lower->ops->enable(lower, 0, 0, NULL);
+
+	/* Initiailize the new GPIO driver instance */
+	priv->gu_lower = lower;
+	lower->parent = priv;
+	sem_init(&priv->gu_exclsem, 0, 1);
+
+	DEBUGASSERT(lower->ops && lower->ops->get);
+	priv->gu_sample = lower->ops->get(lower);
+
+	snprintf(devpath, 16, "/dev/gpio%d", minor);
+
+	/* And register the GPIO driver */
+	ret = register_driver(devpath, &g_gpioops, 0666, priv);
+	if (ret < 0) {
+		lldbg("ERROR: register driver failed: %d\n", ret);
+		goto errout_with_priv;
+	}
+
+	return OK;
+
+errout_with_priv:
+	sem_destroy(&priv->gu_exclsem);
+	kmm_free(priv);
+	return ret;
 }
 
 /****************************************************************************

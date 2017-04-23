@@ -92,6 +92,7 @@
 #define _PIPEBASE       (0x1700)	/* FIFO/pipe ioctl commands */
 #define _RTCBASE        (0x1800)	/* RTC ioctl commands */
 #define _FOTABASE       (0x1900)	/* FOTA ioctl commands */
+#define _GPIOBASE       (0x2000)	/* GPIO ioctl commands */
 
 /* Macros used to manage ioctl commands */
 
@@ -324,6 +325,11 @@
 #define FOTA_SET_PART      _FOTAIOC(0x0002)
 #define FOTA_SET_BIN       _FOTAIOC(0x0003)
 #define FOTA_SET_PARAM     _FOTAIOC(0x0004)
+
+/* GPIO driver ioctl definitions ********************************************/
+/* (see include/tinyara/gpio.h */
+#define _GPIOIOCVALID(c)   (_IOC_TYPE(c) == _GPIOBASE)
+#define _GPIOIOC(nr)       _IOC(_GPIOBASE, nr)
 
 /****************************************************************************
  * Public Type Definitions

@@ -216,10 +216,10 @@ static struct s5j_spidev_s g_spi0dev =
 	.base		= S5J_SPI0_BASE,
 	.port		= SPI_PORT0,
 	.freqid		= d1_spi0,
-	.gpio_clk	= s5j_gpio(GPP0, 0),
-	.gpio_nss	= s5j_gpio(GPP0, 1),
-	.gpio_miso	= s5j_gpio(GPP0, 2),
-	.gpio_mosi	= s5j_gpio(GPP0, 3),
+	.gpio_clk	= GPIO_SPI0_CLK,
+	.gpio_nss	= GPIO_SPI0_CS,
+	.gpio_miso	= GPIO_SPI0_MISO,
+	.gpio_mosi	= GPIO_SPI0_MOSI,
 };
 static struct s5j_spidev_s g_spi1dev =
 {
@@ -227,10 +227,10 @@ static struct s5j_spidev_s g_spi1dev =
 	.base		= S5J_SPI1_BASE,
 	.port		= SPI_PORT1,
 	.freqid		= d1_spi1,
-	.gpio_clk	= s5j_gpio(GPP4, 0),
-	.gpio_nss	= s5j_gpio(GPP4, 1),
-	.gpio_miso	= s5j_gpio(GPP4, 2),
-	.gpio_mosi	= s5j_gpio(GPP4, 3),
+	.gpio_clk	= GPIO_SPI1_CLK,
+	.gpio_nss	= GPIO_SPI1_CS,
+	.gpio_miso	= GPIO_SPI1_MISO,
+	.gpio_mosi	= GPIO_SPI1_MOSI,
 };
 static struct s5j_spidev_s g_spi2dev =
 {
@@ -238,10 +238,10 @@ static struct s5j_spidev_s g_spi2dev =
 	.base		= S5J_SPI2_BASE,
 	.port		= SPI_PORT2,
 	.freqid		= d1_spi2,
-	.gpio_clk	= s5j_gpio(GPG0, 4),
-	.gpio_nss	= s5j_gpio(GPG0, 5),
-	.gpio_miso	= s5j_gpio(GPG0, 6),
-	.gpio_mosi	= s5j_gpio(GPG0, 7),
+	.gpio_clk	= GPIO_SPI2_CLK,
+	.gpio_nss	= GPIO_SPI2_CS,
+	.gpio_miso	= GPIO_SPI2_MISO,
+	.gpio_mosi	= GPIO_SPI2_MOSI,
 };
 static struct s5j_spidev_s g_spi3dev =
 {
@@ -249,10 +249,10 @@ static struct s5j_spidev_s g_spi3dev =
 	.base		= S5J_SPI3_BASE,
 	.port		= SPI_PORT3,
 	.freqid		= d1_spi3,
-	.gpio_clk	= s5j_gpio(GPG1, 0),
-	.gpio_nss	= s5j_gpio(GPG1, 1),
-	.gpio_miso	= s5j_gpio(GPG1, 2),
-	.gpio_mosi	= s5j_gpio(GPG1, 3),
+	.gpio_clk	= GPIO_SPI3_CLK,
+	.gpio_nss	= GPIO_SPI3_CS,
+	.gpio_miso	= GPIO_SPI3_MISO,
+	.gpio_mosi	= GPIO_SPI3_MOSI,
 };
 
 /*****************************************************************************
@@ -558,14 +558,10 @@ struct spi_dev_s *up_spiinitialize(int port)
 
 	/* SET GPIO for the port */
 
-	gpio_cfg_pin(priv->gpio_clk, GPIO_FUNC(2));
-	gpio_set_pull(priv->gpio_clk, GPIO_PULL_NONE);
-	gpio_cfg_pin(priv->gpio_nss, GPIO_FUNC(2));
-	gpio_set_pull(priv->gpio_nss, GPIO_PULL_NONE);
-	gpio_cfg_pin(priv->gpio_miso, GPIO_FUNC(2));
-	gpio_set_pull(priv->gpio_miso, GPIO_PULL_NONE);
-	gpio_cfg_pin(priv->gpio_mosi, GPIO_FUNC(2));
-	gpio_set_pull(priv->gpio_mosi, GPIO_PULL_NONE);
+	s5j_configgpio(priv->gpio_clk);
+	s5j_configgpio(priv->gpio_nss);
+	s5j_configgpio(priv->gpio_miso);
+	s5j_configgpio(priv->gpio_mosi);
 
 #ifndef CONFIG_SPI_POLLWAIT
 	sem_init(&priv->xfrsem, 0, 0);

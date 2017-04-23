@@ -55,16 +55,16 @@
 
 static int gpio_read(int port)
 {
-	int value = -1;
+	char value[4];
 	static char buf[16];
 	snprintf(buf, 16, "/dev/gpio%d", port);
 	int fd = open(buf, O_RDWR);
 
-	ioctl(fd, GPIO_CMD_SET_DIRECTION, GPIO_DIRECTION_IN);
-	read(fd, (void *)&value, sizeof(int));
+	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_IN);
+	read(fd, &value, sizeof(value));
 
 	close(fd);
-	return value;
+	return value[0] == '1';
 }
 
 void switch_main(int argc, char *argv[])

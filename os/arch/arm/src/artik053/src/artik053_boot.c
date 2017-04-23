@@ -56,10 +56,14 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+
 #include <debug.h>
 #include <assert.h>
 
+#include <tinyara/gpio.h>
+
 #include "up_arch.h"
+#include "s5j_gpio.h"
 
 /*****************************************************************************
  * Pre-processor Definitions
@@ -85,42 +89,46 @@
  ****************************************************************************/
 static void board_gpio_initialize(void)
 {
-	/* List of available GPIO IDs */
+#ifdef CONFIG_GPIO
+	int i;
+	struct gpio_lowerhalf_s *lower;
 
-	int artik053_gpio_list[] = {
-		30,						/* ARTIK_A053_XGPIO1 */
-		31,						/* ARTIK_A053_XGPIO2 */
-		32,						/* ARTIK_A053_XGPIO3 */
-		37,						/* ARTIK_A053_XGPIO8 */
-		38,						/* ARTIK_A053_XGPIO9 */
-		39,						/* ARTIK_A053_XGPIO10 */
-		40,						/* ARTIK_A053_XGPIO11 */
-		41,						/* ARTIK_A053_XGPIO12 */
-		42,						/* ARTIK_A053_XGPIO13 */
-		43,						/* ARTIK_A053_XGPIO14 */
-		44,						/* ARTIK_A053_XGPIO15 */
-		45,						/* ARTIK_A053_XGPIO16 */
-		46,						/* ARTIK_A053_XGPIO17 */
-		47,						/* ARTIK_A053_XGPIO18 */
-		48,						/* ARTIK_A053_XGPIO19 */
-		49,						/* ARTIK_A053_XGPIO20 */
-		50,						/* ARTIK_A053_XGPIO21 */
-		51,						/* ARTIK_A053_XGPIO22 */
-		52,						/* ARTIK_A053_XGPIO23 */
-		53,						/* ARTIK_A053_XGPIO24 */
-		54,						/* ARTIK_A053_XGPIO25 */
-		55,						/* ARTIK_A053_XGPIO26 */
-		57,						/* ARTIK_A053_XEINT0 */
-		58,						/* ARTIK_A053_XEINT1 */
-		59						/* ARTIK_A053_XEINT2 */
+	struct {
+		uint8_t  minor;
+		uint16_t pincfg;
+	} pins[] = {
+		{ 30, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG0 | GPIO_PIN1 }, /* ARTIK_A053_XGPIO1 */
+		{ 31, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG0 | GPIO_PIN2 }, /* ARTIK_A053_XGPIO2 */
+		{ 32, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG0 | GPIO_PIN3 }, /* ARTIK_A053_XGPIO3 */
+		{ 37, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN0 }, /* ARTIK_A053_XGPIO8 */
+		{ 38, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN1 }, /* ARTIK_A053_XGPIO9 */
+		{ 39, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN2 }, /* ARTIK_A053_XGPIO10 */
+		{ 40, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN3 }, /* ARTIK_A053_XGPIO11 */
+		{ 41, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN4 }, /* ARTIK_A053_XGPIO12 */
+		{ 42, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN5 }, /* ARTIK_A053_XGPIO13 */
+		{ 43, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN6 }, /* ARTIK_A053_XGPIO14 */
+		{ 44, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN7 }, /* ARTIK_A053_XGPIO15 */
+		{ 45, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN0 }, /* ARTIK_A053_XGPIO16 */
+		{ 46, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN1 }, /* ARTIK_A053_XGPIO17 */
+		{ 47, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN2 }, /* ARTIK_A053_XGPIO18 */
+		{ 48, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN3 }, /* ARTIK_A053_XGPIO19 */
+		{ 49, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN4 }, /* ARTIK_A053_XGPIO20 */
+		{ 50, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN5 }, /* ARTIK_A053_XGPIO21 */
+		{ 51, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN6 }, /* ARTIK_A053_XGPIO22 */
+		{ 52, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN7 }, /* ARTIK_A053_XGPIO23 */
+		{ 53, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG3 | GPIO_PIN0 }, /* ARTIK_A053_XGPIO24 */
+		{ 54, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG3 | GPIO_PIN1 }, /* ARTIK_A053_XGPIO25 */
+		{ 55, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG3 | GPIO_PIN2 }, /* ARTIK_A053_XGPIO26 */
+		{ 57, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTA0 | GPIO_PIN0 }, /* ARTIK_A053_XEINT0 */
+		{ 58, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTA0 | GPIO_PIN1 }, /* ARTIK_A053_XEINT1 */
+		{ 59, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTA0 | GPIO_PIN2 }, /* ARTIK_A053_XEINT2 */
 	};
 
-	int i;
-	int count = sizeof(artik053_gpio_list) / sizeof(artik053_gpio_list[0]);
-
-	for (i = 0; i < count; i++) {
-		up_create_gpio(artik053_gpio_list[i]);
+	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
+		lower = s5j_gpio_lowerhalf(pins[i].pincfg);
+		gpio_register(pins[i].minor, lower);
 	}
+#endif /* CONFIG_GPIO */
 }
 
 /*****************************************************************************

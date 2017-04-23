@@ -16,8 +16,6 @@
 #
 ###########################################################################
 
-ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
-
 # Include gpio drivers
 ifeq ($(CONFIG_GPIO),y)
 	CSRCS += gpio.c
@@ -25,5 +23,3 @@ endif
 
 DEPPATH += --dep-path gpio
 VPATH += :gpio
-
-endif

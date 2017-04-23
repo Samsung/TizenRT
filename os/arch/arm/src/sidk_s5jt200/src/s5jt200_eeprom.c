@@ -103,13 +103,13 @@
  *   in the bit bang interface and calls spi_create_bitbang().
  */
 
-#define SPI_SETSCK  gpio_set_value(gpio_clk, 1)
-#define SPI_CLRSCK  gpio_set_value(gpio_clk, 0)
+#define SPI_SETSCK  s5j_gpiowrite(gpio_clk, 1)
+#define SPI_CLRSCK  s5j_gpiowrite(gpio_clk, 0)
 
-#define SPI_SETMOSI  gpio_set_value(gpio_mosi, 1)
-#define SPI_CLRMOSI  gpio_set_value(gpio_mosi, 0)
+#define SPI_SETMOSI  s5j_gpiowrite(gpio_mosi, 1)
+#define SPI_CLRMOSI  s5j_gpiowrite(gpio_mosi, 0)
 
-#define SPI_GETMISO  gpio_get_value(gpio_miso)
+#define SPI_GETMISO  s5j_gpioread(gpio_miso)
 
 #define SPI_PERBIT_NSEC 1000000
 
@@ -146,7 +146,10 @@ typedef enum {
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-static s32 gpio_clk, gpio_ss, gpio_miso, gpio_mosi;
+static const uint16_t gpio_clk  = (GPIO_OUTPUT|GPIO_FLOAT|GPIO_PORTP4|GPIO_PIN0);
+static const uint16_t gpio_ss   = (GPIO_OUTPUT|GPIO_FLOAT|GPIO_PORTP4|GPIO_PIN1);
+static const uint16_t gpio_miso = (GPIO_INPUT |GPIO_FLOAT|GPIO_PORTP4|GPIO_PIN2);
+static const uint16_t gpio_mosi = (GPIO_OUTPUT|GPIO_FLOAT|GPIO_PORTP4|GPIO_PIN3);
 
 /* Device geometry description, compact form (2 bytes per entry) */
 
@@ -207,7 +210,7 @@ struct ee_dev_s {
 ****************************************************************************/
 static void spi_select(FAR struct spi_bitbang_s *priv, enum spi_dev_e devid, bool selected)
 {
-	gpio_set_value(gpio_ss, selected);
+	s5j_gpiowrite(gpio_ss, selected);
 }
 
 /****************************************************************************
@@ -230,23 +233,23 @@ static void spi_select(FAR struct spi_bitbang_s *priv, enum spi_dev_e devid, boo
 ****************************************************************************/
 static uint8_t spi_status(FAR struct spi_bitbang_s *priv, enum spi_dev_e devid)
 {
-	gpio_set_value(gpio_ss, true);
+	s5j_gpiowrite(gpio_ss, true);
 
 	usleep(5000);
-	if (gpio_get_value(gpio_miso) != 0) {
+	if (s5j_gpioread(gpio_miso) != 0) {
 		goto OK_Exit;
 	}
 
 	usleep(5000);
-	if (gpio_get_value(gpio_miso) != 0) {
+	if (s5j_gpioread(gpio_miso) != 0) {
 		goto OK_Exit;
 	}
 
-	gpio_set_value(gpio_ss, false);
+	s5j_gpiowrite(gpio_ss, false);
 	return 0;
 
 OK_Exit:
-	gpio_set_value(gpio_ss, false);
+	s5j_gpiowrite(gpio_ss, false);
 	return 1;
 }
 
@@ -823,19 +826,10 @@ int ee_initialize(FAR struct spi_dev_s *dev, FAR char *devname, ee_dev_type devt
 
 void sidk_s5jt200_eeprom_init(void)
 {
-	gpio_clk = s5j_gpio(GPP4, 0);
-	gpio_ss = s5j_gpio(GPP4, 1);
-	gpio_miso = s5j_gpio(GPP4, 2);
-	gpio_mosi = s5j_gpio(GPP4, 3);
-
-	gpio_cfg_pin(gpio_clk, GPIO_FUNC(1));
-	gpio_set_pull(gpio_clk, GPIO_PULL_NONE);
-	gpio_cfg_pin(gpio_ss, GPIO_FUNC(1));
-	gpio_set_pull(gpio_ss, GPIO_PULL_NONE);
-	gpio_cfg_pin(gpio_miso, GPIO_FUNC(0));
-	gpio_set_pull(gpio_miso, GPIO_PULL_NONE);
-	gpio_cfg_pin(gpio_mosi, GPIO_FUNC(1));
-	gpio_set_pull(gpio_mosi, GPIO_PULL_NONE);
+	s5j_configgpio(GPIO_OUTPUT | GPIO_FLOAT | GPIO_PORTP4 | GPIO_PIN0); /* CLK  */
+	s5j_configgpio(GPIO_OUTPUT | GPIO_FLOAT | GPIO_PORTP4 | GPIO_PIN1); /* CS   */
+	s5j_configgpio(GPIO_INPUT  | GPIO_FLOAT | GPIO_PORTP4 | GPIO_PIN2); /* MISO */
+	s5j_configgpio(GPIO_OUTPUT | GPIO_FLOAT | GPIO_PORTP4 | GPIO_PIN3); /* MOSI */
 
 	eeprom_dev = spi_create_bitbang(&g_spiops);
 	ee_initialize(eeprom_dev, "/dev/eeprom", M93C66_2B, false);

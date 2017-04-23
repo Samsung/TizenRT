@@ -68,7 +68,7 @@ static int gpio_read(int port)
 	snprintf(buf, 16, "/dev/gpio%d", port);
 	int fd = open(buf, O_RDWR);
 
-	ioctl(fd, GPIO_CMD_SET_DIRECTION, GPIO_DIRECTION_IN);
+	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_IN);
 	read(fd, (void *)&value, sizeof(int));
 
 	close(fd);
@@ -82,9 +82,9 @@ static void gpio_write(int port, int value)
 	int fd = open(buf, O_RDWR);
 
 	int mode = value ? GPIO_DRIVE_PULLUP : GPIO_DRIVE_PULLDOWN;
-	ioctl(fd, GPIO_CMD_SET_DIRECTION, GPIO_DIRECTION_IN);
-	ioctl(fd, GPIO_CMD_SET_DRIVE, mode);
-	ioctl(fd, GPIO_CMD_SET_DIRECTION, GPIO_DIRECTION_OUT);
+	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_IN);
+	ioctl(fd, GPIOIOC_SET_DRIVE, mode);
+	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_OUT);
 	write(fd, (void *)&value, sizeof(int));
 
 	close(fd);
