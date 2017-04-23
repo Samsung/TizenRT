@@ -132,7 +132,7 @@ static void tcs34725_getdata(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c)
 	}
 }
 
-inline float powfl(const float x, const float y)
+static inline float powfl(const float x, const float y)
 {
 	return (float)(pow((double)x, (double)y));
 }
