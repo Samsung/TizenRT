@@ -40,13 +40,25 @@
 #include <dm/dm_error.h>
 #include <dm/dm_connectivity.h>
 
+#include <apps/netutils/dhcpc.h>
 #include <apps/netutils/wifi/slsi_wifi_api.h>
+#include <apps/netutils/wifi/slsi_wifi_utils.h>
 #include <arpa/inet.h>
 
 #define DM_GET_INTERFACE_INFO 0
 #define DM_GET_IP_ADDR_INFO 1
 
 #define DM_CALLBACK_BUFFER_SIZE 10
+#define DM_BSSID_LEN            18
+#define DM_NET_DEVNAME          "wl1"
+
+/* Static data structure to hold results of a WiFi scan.
+ */
+static slsi_scan_info_t *g_wifi_scan_result;
+static slsi_scan_info_t *g_wifi_scan_iter;
+
+/* WiFi connection status variable */
+static uint8_t g_dm_connected;
 
 static sem_t g_dm_link_evt;
 
@@ -383,5 +395,202 @@ int dm_conn_unregister_linkdown_cb(conn_cb cb)
 	sem_post(&g_dm_link_evt);
 
 	dmdbg("Link Down Callback UnRegistered Successfully\n");
+	return DM_ERROR_NONE;
+}
+
+static int8_t prv_dm_conn_scan_result(slsi_reason_t *reason)
+{
+	if (reason->reason_code != 0) {
+		dmdbg("Failed to scan : reason %d, locally generated : %d\n", \
+			  reason->reason_code, reason->locally_generated);
+		g_wifi_scan_result = NULL;
+	} else {
+		WiFiFreeScanResults(&g_wifi_scan_result);
+		WiFiGetScanResults(&g_wifi_scan_result);
+		WiFiNetworkJoin((uint8_t *) CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), \
+						NULL, (slsi_security_config_t *) getSecurityConfig(CONFIG_DM_AP_SECURITY, \
+								CONFIG_DM_AP_PASS, SLSI_WIFI_STATION_IF));
+	}
+	printf("scanned result\n");
+	return SLSI_STATUS_SUCCESS;
+}
+
+int dm_conn_get_scan_result(dm_scan_info_t **result)
+{
+	dm_scan_info_t *curr_record;
+	dm_scan_info_t *prev_record = NULL;
+	if (g_wifi_scan_result == NULL) {
+		return DM_ERROR_NO_DATA;
+	}
+	/* Initialize pointer */
+	g_wifi_scan_iter = g_wifi_scan_result;
+
+	do {
+		curr_record = (dm_scan_info_t *)malloc(sizeof(dm_scan_info_t));
+		if (curr_record == NULL) {
+			dm_conn_free_scan_result(result);
+			return DM_ERROR_UNKNOWN;
+		}
+		if (!prev_record) {
+			*result = curr_record;
+		} else {
+			prev_record->next = curr_record;
+		}
+
+		memset(curr_record->ssid, 0x00, SLSI_SSID_LEN + 1);
+		memset(curr_record->bssid, 0x00, DM_BSSID_LEN);
+		curr_record->rssi = g_wifi_scan_iter->rssi;
+		strncpy(curr_record->ssid, (char *) g_wifi_scan_iter->ssid, strlen((const  char*)g_wifi_scan_iter->ssid));
+		strncpy(curr_record->bssid, (char *)g_wifi_scan_iter->bssid, strlen((const  char*)g_wifi_scan_iter->bssid));
+		prev_record = curr_record;
+		g_wifi_scan_iter = g_wifi_scan_iter->next;
+	} while (g_wifi_scan_iter != NULL);
+
+	curr_record->next = NULL;
+
+	return DM_ERROR_NONE;
+}
+
+int dm_conn_free_scan_result(dm_scan_info_t **result)
+{
+	dm_scan_info_t *curr_record;
+	dm_scan_info_t *next_record;
+
+	curr_record = *result;
+	while (curr_record != NULL) {
+		next_record = curr_record->next;
+		free(curr_record);
+		curr_record = next_record;
+	}
+
+	*result = NULL;
+	return DM_ERROR_NONE;
+}
+
+
+int dm_conn_wifi_scan(void)
+{
+	if (WiFiScanNetwork() == SLSI_STATUS_SUCCESS) {
+		WiFiFreeScanResults(&g_wifi_scan_result);
+		WiFiGetScanResults(&g_wifi_scan_result);
+		WiFiNetworkJoin((uint8_t *) CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), \
+						NULL, (slsi_security_config_t *) getSecurityConfig(CONFIG_DM_AP_SECURITY, \
+								CONFIG_DM_AP_PASS, SLSI_WIFI_STATION_IF));
+		return DM_ERROR_NONE;
+	}
+	return DM_ERROR_UNKNOWN;
+}
+
+int dm_conn_wifi_connect(conn_cb linkUpEvent, conn_cb linkDownEvent)
+{
+	uint8_t ret;
+	uint8_t result;
+
+	if (g_dm_connected == 1) {
+		dmdbg("Already, Init!\n");
+		return DM_ERROR_NONE;
+	}
+
+	dm_conn_register_linkup_cb(linkUpEvent);
+	dm_conn_register_linkdown_cb(linkDownEvent);
+
+	g_dm_connected = 0;
+	ret = WiFiIsConnected(&result, NULL);
+	if (ret == SLSI_STATUS_SUCCESS) {
+		dmdbg("Wi-Fi status - Already Connected : %d\n", result);
+		g_dm_connected = 1;
+		return 1;
+	} else if (ret != SLSI_STATUS_NOT_STARTED)
+		return DM_ERROR_UNKNOWN;
+
+
+	ret = WiFiStart(SLSI_WIFI_STATION_IF, NULL);
+	if (ret == SLSI_STATUS_SUCCESS) {
+		dmdbg("STA mode started\n");
+		ret = WiFiNetworkJoin((uint8_t *)CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), \
+							  NULL, (slsi_security_config_t *) getSecurityConfig(CONFIG_DM_AP_SECURITY, CONFIG_DM_AP_PASS, SLSI_WIFI_STATION_IF));
+		sleep(1);
+		if (ret == SLSI_STATUS_SUCCESS) {
+			dmdbg("Start doJoin with SSID %s\n", CONFIG_DM_AP_SSID);
+			return DM_ERROR_NONE;
+		}
+		return DM_ERROR_UNKNOWN;
+	}
+	return DM_ERROR_UNKNOWN;
+}
+
+int dm_conn_wifi_disconnect(void)
+{
+	g_dm_connected = 0;
+	return DM_ERROR_NONE;
+}
+
+static int prv_dm_conn_dhcp(void)
+{
+	struct dhcpc_state state;
+	void *dhcp_handle;
+	int ret;
+
+	dhcp_handle = dhcpc_open(DM_NET_DEVNAME);
+	if (dhcp_handle == NULL) {
+		dmdbg("Invalid dhcp handle\n");
+		return -1;
+	}
+	ret = dhcpc_request(dhcp_handle, &state);
+	if (ret != OK) {
+		dhcpc_close(dhcp_handle);
+		return -1;
+	}
+
+	netlib_set_ipv4addr(DM_NET_DEVNAME, &state.ipaddr);
+	netlib_set_ipv4netmask(DM_NET_DEVNAME, &state.netmask);
+	netlib_set_dripv4addr(DM_NET_DEVNAME, &state.default_router);
+
+	dmdbg("IP address : %s ----\n", inet_ntoa(state.ipaddr));
+	return 1;
+}
+
+int dm_conn_dhcp_init(void)
+{
+	uint8_t wifi_status;
+	int8_t ret;
+
+	if (g_dm_connected == -1) {
+		dmdbg("First, Do Conn Init!\n");
+		return DM_ERROR_UNKNOWN;
+	}
+
+	if (g_dm_connected == 0) {
+		int waitTime = 10;
+		while (waitTime--) {
+			ret = WiFiIsConnected(&wifi_status, NULL);
+			dmdbg("retcode connect %d\n", ret);
+			if (ret != SLSI_STATUS_SUCCESS) {
+				dmdbg("Failed to WiFiIsConnected\n");
+				return DM_ERROR_UNKNOWN;
+			}
+
+			if (wifi_status > 0) {
+				g_dm_connected = 1;
+				dmdbg("WiFi Connected!\n");
+				int dhcp_ret = prv_dm_conn_dhcp();
+				if (dhcp_ret == -1) {
+					dmdbg("Timeout fail to get ip address\n");
+					return DM_ERROR_TIMED_OUT;
+				} else if (dhcp_ret == 0) {
+					dmdbg("No network interface\n");
+					return DM_ERROR_NOT_SUPPORTED;
+				}
+				dmdbg("DHCP done\n");
+				break;
+			}
+			sleep(1);
+		}
+		if (waitTime <= 0) {
+			dmdbg("WiFi is not working.\n");
+			return DM_ERROR_UNKNOWN;
+		}
+	}
+
 	return DM_ERROR_NONE;
 }

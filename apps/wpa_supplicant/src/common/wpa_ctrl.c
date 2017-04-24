@@ -594,7 +594,7 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len
 #ifdef CONFIG_CTRL_IFACE_UDP
 		amount = recvfrom(sock, pos, recv_len, 0, from, fromlen);
 #else
-		amount = read(sock, pos, recv_len);
+		amount += read(sock, pos, recv_len);
 #endif
 	}
 	if (msg_size > len) {
