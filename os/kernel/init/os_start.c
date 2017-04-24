@@ -70,9 +70,6 @@
 #include  <tinyara/mm/shm.h>
 #include  <tinyara/kmalloc.h>
 #include  <tinyara/init.h>
-#ifdef CONFIG_PM
-#include <tinyara/pm/pm.h>
-#endif
 
 #include  "sched/sched.h"
 #include  "signal/signal.h"
@@ -536,12 +533,6 @@ void os_start(void)
 
 	DEBUGVERIFY(group_initialize(&g_idletcb));
 	g_idletcb.cmn.group->tg_flags = GROUP_FLAG_NOCLDWAIT;
-#endif
-
-#ifdef CONFIG_PM
-	/* Initialize PM */
-
-	pm_initialize();
 #endif
 
 	/* Bring Up the System ****************************************************/
