@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * examples/examples/sensorbd/examples/gpio_switch.c
+ * examples/examples/sensorbd/examples/gpio_buttons.c
  *
  *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
