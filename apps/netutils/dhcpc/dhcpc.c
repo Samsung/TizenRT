@@ -481,7 +481,9 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 	/* Loop until we receive the lease (or an error occurs) */
 	/* Set the IP address to INADDR_ANY. */
 	newaddr.s_addr = INADDR_ANY;
-	(void)netlib_set_ipv4addr(intf, &newaddr);
+	if (netlib_set_ipv4addr(intf, &newaddr) == ERROR) {
+		ndbg("netlib_set_ipv4addr failed\n");
+	}
 
 	/* Loop sending DISCOVER until we receive an OFFER from a DHCP
 	 * server.  We will lock on to the first OFFER and decline any
@@ -591,7 +593,10 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 
 		else if (msgtype == DHCPOFFER) {
 			ndbg("Received another OFFER, send DECLINE\n");
-			(void)dhcpc_sendmsg(pdhcpc, presult, DHCPDECLINE);
+			result = dhcpc_sendmsg(pdhcpc, presult, DHCPDECLINE);
+			if (result <= 0) {
+				ndbg("recv request error(%d)(%d)\n", result, errno);
+			}
 		}
 
 		/* Otherwise, it is something that we do not recognize */
