@@ -158,6 +158,9 @@
 #define CONFIG_I2S_TXP_DMACH	0
 #define CONFIG_I2S_TXS_DMACH	1
 #define CONFIG_I2S_RX_DMACH	2
+#define CONFIG_I2S_TXP_DMACH 	0
+#define CONFIG_I2S_TXS_DMACH 	1
+#define CONFIG_I2S_RX_DMACH 	2
 #endif
 
 #if defined(I2S_HAVE_RX) || defined(I2S_HAVE_TX_P) || defined(I2S_HAVE_TX_S)
