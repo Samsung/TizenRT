@@ -1309,11 +1309,16 @@ static inline int dhcpd_request(void)
 #ifdef HAVE_LEASE_TIME
 		g_state.ds_leases[ipaddr - CONFIG_NETUTILS_DHCPD_STARTIP].expiry = dhcpd_time() + CONFIG_NETUTILS_DHCPD_OFFERTIME;
 #endif
-
-		dhcpd_sendack(ipaddr);
+		if (dhcpd_sendack(ipaddr) == ERROR) {
+			ndbg("Failed to send ACK\n");
+			return ERROR;
+		}
 	} else if (response == DHCPNAK) {
 		ndbg("NAK IP %08lx\n", (long)ipaddr);
-		dhcpd_sendnak();
+		if (dhcpd_sendnak() == ERROR) {
+			ndbg("Failed to send NAK\n");
+			return ERROR;
+		}
 	} else {
 		ndbg("Remaining silent IP %08lx\n", (long)ipaddr);
 	}
@@ -1665,7 +1670,9 @@ int dhcpd_run(void *arg)
 
 	/* de-initialize netif address (ip address, netmask, default gateway) */
 
-	dhcpd_netif_deinit(DHCPD_IFNAME);
+	if (dhcpd_netif_deinit(DHCPD_IFNAME) < 0) {
+		ndbg("Failed to deinit netif %s\n", DHCPD_IFNAME);
+	}
 
 	return ret;
 }
