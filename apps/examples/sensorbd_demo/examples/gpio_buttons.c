@@ -49,41 +49,70 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+#include <tinyara/config.h>
 
 #include <fcntl.h>
+#include <poll.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <tinyara/gpio.h>
-
-static int gpio_read(int port)
-{
-	char value[4];
-	static char buf[16];
-	snprintf(buf, 16, "/dev/gpio%d", port);
-	int fd = open(buf, O_RDWR);
-
-	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_IN);
-	read(fd, &value, sizeof(value));
-
-	close(fd);
-	return value[0] == '1';
-}
 
 void switch_main(int argc, char *argv[])
 {
-	// XEINT0 ~ XEINT2
-	// gpio57 ~ gpio59
+	int i, j, nbtns, prev;
+	struct pollfd *poll_list;
 
-	int i;
-	for (i = 0; i < 30; i++) {
-		if (gpio_read(57) == 0) {
-			printf("XEINT0 pressed\n");
-		}
-		if (gpio_read(58) == 0) {
-			printf("XEINT1 pressed\n");
-		}
-		if (gpio_read(59) == 0) {
-			printf("XEINT2 pressed\n");
-		}
+	struct {
+		char *name;
+		char *devpath;
+		int fd;
+	} buttons[] = {
+		{ "XEINT_0", "/dev/gpio57", },
+		{ "XEINT_1", "/dev/gpio58", },
+		{ "XEINT_2", "/dev/gpio59", },
+	};
 
-		up_mdelay(500);
+	nbtns = sizeof(buttons) / sizeof(*buttons);
+
+	poll_list = (struct pollfd *)malloc(sizeof(struct pollfd) * nbtns);
+
+	for (i = 0; i < nbtns; i++) {
+		printf("Opening %s(%s)...\n", buttons[i].devpath, buttons[i].name);
+		poll_list[i].fd = open(buttons[i].devpath, O_RDWR);
+		poll_list[i].events = POLLIN;
 	}
+
+	printf("Polling buttons...\n");
+	printf("(to terminate, press the same button twice in a row)\n");
+
+	prev = -1;
+	while (1) {
+		if (poll(poll_list, nbtns, 100)) {
+			for (j = 0; j < nbtns; j++) {
+				if (poll_list[j].revents & POLLIN) {
+					char buf[4];
+					lseek(poll_list[j].fd, 0, SEEK_SET);
+					read(poll_list[j].fd, buf, sizeof(buf));
+					printf("%s is %s\n", buttons[j].name,
+						buf[0] == '1' ? "rising" : "falling");
+
+					if (buf[0] == '1') {
+						if (prev == j) {
+							goto out;
+						}
+						prev = j;
+					}
+				}
+			}
+		}
+	}
+
+out:
+	for (i = 0; i < nbtns; i++) {
+		printf("Closing %s(%s)...\n", buttons[i].devpath, buttons[i].name);
+		close(poll_list[i].fd);
+	}
+
+	free(poll_list);
 }
