@@ -56,13 +56,10 @@
 static void gpio_write(int port, int value)
 {
 	char str[4];
-	static char buf[16];
-	snprintf(buf, 16, "/dev/gpio%d", port);
-	int fd = open(buf, O_RDWR);
+	static char devpath[16];
+	snprintf(devpath, 16, "/dev/gpio%d", port);
+	int fd = open(devpath, O_RDWR);
 
-	int mode = value ? GPIO_DRIVE_PULLUP : GPIO_DRIVE_PULLDOWN;
-	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_IN);
-	ioctl(fd, GPIOIOC_SET_DRIVE, mode);
 	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_OUT);
 	write(fd, str, snprintf(str, 4, "%d", value != 0) + 1);
 
