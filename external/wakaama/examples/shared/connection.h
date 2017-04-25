@@ -43,7 +43,7 @@ typedef struct _connection_t
 } connection_t;
 
 int create_socket(coap_protocol_t protocol, const char * portStr, int ai_family);
-
+int create_tcp_session(int sockfd, struct sockaddr_storage *caddr, socklen_t *caddrLen);
 connection_t * connection_find(connection_t * connList, struct sockaddr_storage * addr, size_t addrLen);
 connection_t * connection_new_incoming(connection_t * connList, int sock, struct sockaddr * addr, size_t addrLen);
 connection_t * connection_create(coap_protocol_t protocol, connection_t * connList, int sock, char * host, char * port, int addressFamily);

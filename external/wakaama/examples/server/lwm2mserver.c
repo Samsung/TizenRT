@@ -98,6 +98,12 @@
 #endif /* __TINYARA__ */
 
 static int g_quit = 0;
+static char g_coap_protocol[COAP_PROTOCOL_MAX][COAP_MAX_URI_PREFIX_SIZE] = {
+    "UDP",
+    "UDP+DTLS",
+    "TCP",
+    "TCP+TLS"
+};
 
 #if defined (__TINYARA__)
 /* Private Functions */
@@ -825,13 +831,16 @@ void print_usage(void)
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Server. Default: "LWM2M_STANDARD_PORT_STR"\r\n");
+    fprintf(stdout, "  -p protocol \tSet protocol type, (0: UDP, 1: UDP+DTLS, 2: TCP, 3: TCP+TLS)\r\n");
+    fprintf(stdout, "Examples:\r\n");
+    fprintf(stdout, "  lwm2mserver -4 -p 3\r\n");
     fprintf(stdout, "\r\n");
 }
 
-
 int lwm2m_server_main(int argc, char *argv[])
 {
-    int sock;
+    int sock, newsock;
+    int reuse;
     fd_set readfds;
     struct timeval tv;
     int result;
@@ -841,6 +850,11 @@ int lwm2m_server_main(int argc, char *argv[])
     int addressFamily = AF_INET6;
     int opt;
     const char * localPort = LWM2M_STANDARD_PORT_STR;
+
+    coap_protocol_t proto = COAP_UDP;
+
+    struct sockaddr_storage addr;
+    socklen_t addrLen = sizeof(addr);
 
     command_desc_t commands[] =
     {
@@ -926,6 +940,22 @@ int lwm2m_server_main(int argc, char *argv[])
             }
             localPort = argv[opt];
             break;
+        case 'p':
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            proto = (coap_protocol_t)atoi(argv[opt]);
+            if (proto >= COAP_PROTOCOL_MAX || proto < 0) {
+                fprintf(stderr, "Error : not supported protocol\n");
+                print_usage();
+                return 0;
+            } else {
+                fprintf(stdout, "INFO : selected protocol : %s\n", g_coap_protocol[proto]);
+            }
+            break;
         default:
             print_usage();
             return 0;
@@ -933,17 +963,40 @@ int lwm2m_server_main(int argc, char *argv[])
         opt += 1;
     }
 
-    sock = create_socket(localPort, addressFamily);
+    sock = create_socket(proto, localPort, addressFamily);
     if (sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);
         return -1;
     }
 
-    lwm2mH = lwm2m_init(NULL);
+    switch(proto) {
+        case COAP_TCP:
+        case COAP_TCP_TLS:
+            newsock = create_tcp_session(sock, &addr, &addrLen);
+            if (newsock < 0) {
+                fprintf(stderr, "Error create tcp session\r\n");
+                close(sock);
+                return -1;
+            } else {
+                fprintf(stderr, "TCP session has been created\r\n");
+                sock = newsock;
+            }
+            break;
+        default:
+            break;
+    }
+
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) < 0) {
+        fprintf(stderr, "Error : setsockopt failed %d\r\n", errno);
+        return -1;
+    }
+
+    /* Use new API to set protocol type */
+    lwm2mH = lwm2m_init2(NULL, proto);
     if (NULL == lwm2mH)
     {
-        fprintf(stderr, "lwm2m_init() failed\r\n");
+        fprintf(stderr, "lwm2m_init2() failed\r\n");
         return -1;
     }
 
@@ -989,11 +1042,7 @@ int lwm2m_server_main(int argc, char *argv[])
 
             if (FD_ISSET(sock, &readfds))
             {
-                struct sockaddr_storage addr;
-                socklen_t addrLen;
-
-                addrLen = sizeof(addr);
-                numBytes = recvfrom(sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                numBytes = connection_read(proto, sock, buffer, MAX_PACKET_SIZE, &addr, &addrLen);
 
                 if (numBytes == -1)
                 {

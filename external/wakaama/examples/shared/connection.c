@@ -73,6 +73,25 @@ int create_socket(coap_protocol_t protocol, const char * portStr, int addressFam
     return s;
 }
 
+int create_tcp_session(int sockfd, struct sockaddr_storage *caddr, socklen_t *caddrLen)
+{
+    int newsock = -1;
+
+    if ((newsock = listen(sockfd, 3)) < 0) {
+        fprintf(stderr, "create_tcp_session : Failed to listen, errno %d\r\n", errno);
+        return newsock;
+    }
+
+    newsock = accept(sockfd, (struct sockaddr *)caddr, caddrLen);
+
+    if (newsock < 0) {
+        fprintf(stderr, "crate_tcp_session : Failed to accept, errno %d\r\n", errno);
+        return newsock;
+    }
+
+    return newsock;
+}
+
 connection_t * connection_find(connection_t * connList,
                                struct sockaddr_storage * addr,
                                size_t addrLen)
@@ -130,18 +149,17 @@ connection_t * connection_create(coap_protocol_t protocol,
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = addressFamily;
 
-    switch(protocol)
-    {
-    case COAP_TCP:
-    case COAP_TCP_TLS:
-        hints.ai_socktype = SOCK_STREAM;
-        break;
-    case COAP_UDP:
-    case COAP_UDP_DTLS:
-        hints.ai_socktype = SOCK_DGRAM;
-        break;
-    default:
-        break;
+    switch(protocol) {
+        case COAP_UDP:
+        case COAP_UDP_DTLS:
+            hints.ai_socktype = SOCK_DGRAM;
+            break;
+        case COAP_TCP:
+        case COAP_TCP_TLS:
+            hints.ai_socktype = SOCK_STREAM;
+            break;
+        default:
+            break;
     }
 
     if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return NULL;
@@ -167,26 +185,19 @@ connection_t * connection_create(coap_protocol_t protocol,
     }
     if (s >= 0)
     {
-        if (protocol != COAP_UDP)
-        {
-            if (connect(sock, sa, sl) < 0)
-            {
-                fprintf(stderr, "Failed to connect to socket: %s\n", strerror(errno));
-                close(sock);
-                return NULL;
-            }
+        switch(protocol) {
+            case COAP_UDP:
+            case COAP_UDP_DTLS:
+                connP = connection_new_incoming(connList, sock, sa, sl);
+                close(s);
+                break;
+            case COAP_TCP:
+            case COAP_TCP_TLS:
+                connP = connection_new_incoming(connList, s, sa, sl);
+                break;
+            default:
+                break;
         }
-        connP = connection_new_incoming(connList, sock, sa, sl);
-        if ((protocol == COAP_TCP_TLS) ||
-            (protocol == COAP_UDP_DTLS))
-        {
-            /* ToDo : add TLS init routine : if (!ssl_init(connP)) */
-            {
-                fprintf(stderr, "Failed to initialize TLS session\n");
-                goto error;
-            }
-        }
-        close(s);
     }
     if (NULL != servinfo) {
 #ifdef CONFIG_NET_LWIP
@@ -201,21 +212,6 @@ connection_t * connection_create(coap_protocol_t protocol,
     }
 
     return connP;
-error:
-    if (NULL != servinfo)
-#ifdef CONFIG_NET_LWIP
-        freeaddrinfo(servinfo);
-#else
-        free(servinfo);
-#endif
-
-    if (connP)
-    {
-        free(connP);
-        connP = NULL;
-    }
-
-    return NULL;
 }
 
 void connection_free(connection_t * connList)
@@ -288,7 +284,7 @@ int connection_send(connection_t *connP,
         case COAP_UDP:
             nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
             if (nbSent == -1) {
-                fprintf(stderr, "Send error: %s\n", strerror(errno));
+                fprintf(stderr, "Sendto error: %s\n", strerror(errno));
                 return -1;
             }
             break;
