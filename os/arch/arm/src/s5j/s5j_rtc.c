@@ -424,6 +424,15 @@ int up_rtc_initialize(void)
 			RTC_RTCCON_CNTSEL_MERGE_BCDCNT |
 			RTC_RTCCON_CLKSEL_DIV32768);
 
+	/* Fix invalid reset value of BCDDAY and BCDMON which is based 1. */
+	if (getreg32(S5J_RTC_BCDDAY) == 0) {
+		putreg32(1, S5J_RTC_BCDDAY);
+	}
+
+	if (getreg32(S5J_RTC_BCDMON) == 0) {
+		putreg32(1, S5J_RTC_BCDMON);
+	}
+
 	rtc_wprlock();
 
 	g_rtc_enabled = true;
