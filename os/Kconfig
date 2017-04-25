@@ -782,22 +782,6 @@ config DEBUG_WLAN_API_VERBOSE
 	---help---
 		Enables VERBOSE level debug output for SLSI Wi-Fi API.
 
-comment "SLSI Wi-Fi Demo Application Debug Options"
-config DEBUG_WLAN_DEMO_DEBUG
-	bool "Enable DEBUG Output"
-	default y
-	depends on EXAMPLES_SLSIDEMO
-	---help---
-		Enables DEBUG level debug output for SLSI Wi-Fi Demo Application.
-
-config DEBUG_WLAN_DEMO_VERBOSE
-	bool "Enable VERBOSE Debug Output"
-	default n
-	depends on EXAMPLES_SLSIDEMO
-	select DEBUG_WLAN_DEMO_DEBUG
-	---help---
-		Enables VERBOSE level debug output for SLSI Wi-Fi Demo Application.
-
 endif # DEBUG_WLAN
 
 comment "OS Function Debug Options"
