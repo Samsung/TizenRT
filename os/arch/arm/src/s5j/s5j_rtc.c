@@ -433,6 +433,11 @@ int up_rtc_initialize(void)
 		putreg32(1, S5J_RTC_BCDMON);
 	}
 
+	/* OS supports to convert epoch only after 1970. Set year to 2010. */
+	if (getreg32(S5J_RTC_BCDYEAR) == 0) {
+		putreg32(0x110, S5J_RTC_BCDYEAR);
+	}
+
 	rtc_wprlock();
 
 	g_rtc_enabled = true;
