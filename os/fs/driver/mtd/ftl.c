@@ -149,7 +149,7 @@ static int ftl_close(FAR struct inode *inode)
 /****************************************************************************
  * Name: ftl_reload
  *
- * Description:  Read the specified numer of sectors
+ * Description:  Read the specified number of sectors
  *
  ****************************************************************************/
 
@@ -171,7 +171,7 @@ static ssize_t ftl_reload(FAR void *priv, FAR uint8_t *buffer, off_t startblock,
 /****************************************************************************
  * Name: ftl_read
  *
- * Description:  Read the specified numer of sectors
+ * Description:  Read the specified number of sectors
  *
  ****************************************************************************/
 

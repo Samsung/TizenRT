@@ -715,7 +715,7 @@ int smart_checkfree(FAR struct smart_struct_s *dev, int lineno)
 /****************************************************************************
  * Name: smart_reload
  *
- * Description:  Read the specified numer of sectors
+ * Description:  Read the specified number of sectors
  *
  ****************************************************************************/
 
@@ -747,7 +747,7 @@ static ssize_t smart_reload(struct smart_struct_s *dev, FAR uint8_t *buffer, off
 /****************************************************************************
  * Name: smart_read
  *
- * Description:  Read the specified numer of sectors
+ * Description:  Read the specified number of sectors
  *
  ****************************************************************************/
 

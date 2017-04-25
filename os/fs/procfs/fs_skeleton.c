@@ -278,7 +278,7 @@ static int skel_dup(FAR const struct file *oldp, FAR struct file *newp)
 		return -ENOMEM;
 	}
 
-	/* The copy the file attribtes from the old attributes to the new */
+	/* The copy the file attributes from the old attributes to the new */
 
 	memcpy(newpriv, oldpriv, sizeof(struct skel_file_s));
 
