@@ -767,7 +767,6 @@ static int ftpd_txpoll(int sd, int timeout)
 static int ftpd_accept(int sd, FAR void *addr, FAR socklen_t *addrlen, int timeout)
 {
 	int acceptsd;
-	int ret;
 
 	/* Accept the connection -- waiting if necessary */
 
@@ -788,7 +787,6 @@ static int ftpd_accept(int sd, FAR void *addr, FAR socklen_t *addrlen, int timeo
 static ssize_t ftpd_recv(int sd, FAR void *data, size_t size, int timeout)
 {
 	ssize_t ret;
-	int status;
 
 	/* Receive the data... waiting if necessary.  The client side will break the
 	 * connection after the file has been sent.  Zero (end-of-file) should be
@@ -2730,24 +2728,12 @@ static int ftpd_command_epsv(FAR struct ftpd_session_s *session)
 		(void)ftpd_dataclose(session);
 		return ret;
 	}
-#ifdef CONFIG_NET_IPv6
-	if (session->data.addr.ss.ss_family == AF_INET6) {
-		ret = ftpd_response(session->cmd.sd, session->txtimeout, "%03u%cEntering Extended Passive Mode (|||%u|).\r\n", 229, ' ', ntohs(session->data.addr.in6.sin6_port));
-		if (ret < 0) {
-			(void)ftpd_dataclose(session);
-			return ret;
-		}
-	} else
-#else	/* if (session->data.addr.ss.ss_family == AF_INET) */
-	{
-		ret = ftpd_response(session->cmd.sd, session->txtimeout, "%03u%cEntering Extended Passive Mode (|%u||%u|).\r\n", 229, ' ', 1, ntohs(session->data.addr.in4.sin_port));
-		if (ret < 0) {
-			(void)ftpd_dataclose(session);
-			return ret;
-		}
-	} else
-#endif
-	{
+
+	ret = ftpd_response(session->cmd.sd, session->txtimeout, "%03u%cEntering Extended Passive Mode (|%u||%u|).\r\n", 229, ' ', 1, ntohs(session->data.addr.in4.sin_port));
+	if (ret < 0) {
+		(void)ftpd_dataclose(session);
+		return ret;
+	} else {
 		ret = ftpd_response(session->cmd.sd, session->txtimeout, g_respfmt1, 502, ' ', "EPSV command not implemented !");
 	}
 
