@@ -221,7 +221,7 @@ int tftp_mkerrpacket(uint8_t *buffer, uint16_t errorcode, const char *errormsg)
  *
  ****************************************************************************/
 
-#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_NET)
+#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_NET_ERROR)
 int tftp_parseerrpacket(const uint8_t *buffer)
 {
 	uint16_t opcode = (uint16_t)buffer[0] << 8 | (uint16_t)buffer[1];
