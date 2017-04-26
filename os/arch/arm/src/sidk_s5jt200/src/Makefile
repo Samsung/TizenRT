@@ -61,7 +61,9 @@ ifeq ($(CONFIG_SIDK_S5JT200_TLC59116),y)
 CSRCS += s5jt200_tlc59116.c
 endif
 
+ifeq ($(CONFIG_S5J_PWM),y)
 CSRCS += s5jt200_pwm.c
+endif
 
 ifeq ($(CONFIG_SIDK_S5JT200_S8300),y)
 CSRCS += s5jt200_led.c
