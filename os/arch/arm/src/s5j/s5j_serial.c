@@ -1030,6 +1030,9 @@ static int up_setup(struct uart_dev_s *dev)
 			break;
 	}
 
+	/* wait until every characters from earlier stage bootloader get out */
+	while (priv->eCh == UARTDBG && !up_txempty(&priv->dev));
+
 	int clk = cal_clk_getrate(m1_clkcmu_uart);	/* 26Mhz */
 	up_uart_initialize(priv, clk);
 	up_uart_disable_interrupt(priv->uartbase, ALL_INT);
