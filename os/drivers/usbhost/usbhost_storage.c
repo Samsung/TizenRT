@@ -1866,7 +1866,7 @@ static int usbhost_close(FAR struct inode *inode)
  * Name: usbhost_read
  *
  * Description:
- *   Read the specified numer of sectors from the read-ahead buffer or from
+ *   Read the specified number of sectors from the read-ahead buffer or from
  *   the physical device.
  *
  ****************************************************************************/

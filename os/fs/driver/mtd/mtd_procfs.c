@@ -280,7 +280,7 @@ static int mtd_dup(FAR const struct file *oldp, FAR struct file *newp)
 		return -ENOMEM;
 	}
 
-	/* The copy the file attribtes from the old attributes to the new */
+	/* The copy the file attributes from the old attributes to the new */
 
 	memcpy(newattr, oldattr, sizeof(struct mtd_file_s));
 
