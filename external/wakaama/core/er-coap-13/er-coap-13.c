@@ -716,7 +716,7 @@ coap_status_t
 coap_parse_message(void *packet, coap_protocol_t protocol, uint8_t *data, uint16_t data_len)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
-  uint8_t *current_option;
+  uint8_t *current_option = NULL;
   unsigned int option_number = 0;
   unsigned int option_delta = 0;
   size_t option_length = 0;

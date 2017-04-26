@@ -102,14 +102,6 @@ enum { OPTION_MAP_SIZE = sizeof(uint8_t) * 8 };
 
 /* CoAP protocols */
 typedef enum {
-  COAP_UDP,
-  COAP_UDP_DTLS,
-  COAP_TCP,
-  COAP_TCP_TLS
-} coap_protocol_t;
-
-/* CoAP protocols */
-typedef enum {
   COAP_UDP = 0,
   COAP_UDP_DTLS,
   COAP_TCP,
