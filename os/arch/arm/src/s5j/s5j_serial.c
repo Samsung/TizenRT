@@ -198,8 +198,8 @@ static const struct uart_ops_s g_uart_ops = {
 
 /* I/O buffers */
 
-static char g_uartdbgrxbuffer[CONFIG_UARTDBG_RXBUFSIZE];
-static char g_uartdbgtxbuffer[CONFIG_UARTDBG_TXBUFSIZE];
+static char g_uartdbgrxbuffer[CONFIG_UART4_RXBUFSIZE];
+static char g_uartdbgtxbuffer[CONFIG_UART4_TXBUFSIZE];
 
 #ifdef CONFIG_S5J_UART0
 static char g_uart0rxbuffer[CONFIG_UART0_RXBUFSIZE];
@@ -227,22 +227,22 @@ static char g_uart3txbuffer[CONFIG_UART3_TXBUFSIZE];
 static struct up_dev_s g_uartdbgpriv = {
 	.dev		= {
 		.recv = {
-			.size	= CONFIG_UARTDBG_RXBUFSIZE,
+			.size	= CONFIG_UART4_RXBUFSIZE,
 			.buffer	= g_uartdbgrxbuffer,
 		},
 		.xmit = {
-			.size	= CONFIG_UARTDBG_TXBUFSIZE,
+			.size	= CONFIG_UART4_TXBUFSIZE,
 			.buffer	= g_uartdbgtxbuffer,
 		},
 		.ops		= &g_uart_ops,
 		.priv		= &g_uartdbgpriv,
 	},
 	.uartbase	= UARTDBG_BASE,
-	.baud		= CONFIG_UARTDBG_BAUD,
+	.baud		= CONFIG_UART4_BAUD,
 	.irq		= S5J_IRQ_UARTDBG,
-	.parity		= CONFIG_UARTDBG_PARITY,
-	.bits		= CONFIG_UARTDBG_BITS,
-	.stopbits2	= CONFIG_UARTDBG_2STOP,
+	.parity		= CONFIG_UART4_PARITY,
+	.bits		= CONFIG_UART4_BITS,
+	.stopbits2	= CONFIG_UART4_2STOP,
 	.eCh		= UARTDBG,
 	.rx_gpio	= GPIO_UARTDBG_RXD,
 	.tx_gpio	= GPIO_UARTDBG_TXD,
