@@ -740,7 +740,6 @@ CONFIG_LIB_SENDFILE_BUFSIZE=512
 #
 # External Functions
 #
-# CONFIG_WICED is not set
 # CONFIG_ENABLE_IOTIVITY is not set
 
 #

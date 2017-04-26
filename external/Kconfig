@@ -1,11 +1,4 @@
 
-config WICED
-	bool "WICED"
-	default n
-	---help---
-		enable the WICED function to use WiFi, but this is in external.
-		must check whether there are WICED codes in external or not.
-
 config DM
 	bool "DM"
 	default n

@@ -26,9 +26,7 @@
  
 void get_interface_name(char *mac)
 {
-#if defined(CONFIG_WICED)
-	strcpy(mac,"en1");
-#elif defined(CONFIG_NET_ETHERNET)
+#if defined(CONFIG_NET_ETHERNET)
 	strcpy(mac,"eth0");
 #elif defined(CONFIG_NET_802154)
 	strcpy(mac,"wlan0");

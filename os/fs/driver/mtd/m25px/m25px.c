@@ -160,19 +160,11 @@
  *  (32768 pages) * (256 bytes per page)
  */
 
-#ifndef CONFIG_BCM4390X_SFLASH
 #define M25P_M25P64_SECTOR_SHIFT   16	/* Sector size 1 << 16 = 65,536 */
 #define M25P_M25P64_NSECTORS       128
 #define M25P_M25P64_PAGE_SHIFT     8	/* Page size 1 << 8 = 256 */
 #define M25P_M25P64_NPAGES         32768
 #define M25P_M25P64_SUBSECT_SHIFT  12
-#else
-#define M25P_M25P64_SECTOR_SHIFT   15	/* Sector size 1 << 15 = 32,768 */
-#define M25P_M25P64_NSECTORS       256
-#define M25P_M25P64_PAGE_SHIFT     8	/* Page size 1 << 8 = 256 */
-#define M25P_M25P64_NPAGES         32768
-#define M25P_M25P64_SUBSECT_SHIFT  12	/* Sub-Sector size 1 << 12 = 4,096 */
-#endif
 
 /*  M25P128 capacity is 16,777,216 bytes:
  *  (64 sectors) * (262,144 bytes per sector)

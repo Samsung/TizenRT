@@ -164,15 +164,6 @@ typedef uint8_t net_lock_t;		/* Not really used */
 
 /* Connectivity Manager - WiFi*/
 
-#ifdef CONFIG_WL_WICED
-uint64_t wifi_tx_count;
-uint64_t wifi_rx_count;
-uint64_t wifi_max_message_size;
-uint64_t wifi_avg_message_size;
-uint64_t wifi_total_message_size;
-#endif
-/* Connectivity Manager - WiFi*/
-
 /* Connectivity Manager - Ethernet*/
 #ifdef CONFIG_ENC28J60
 #ifndef CONFIG_SYSTEM_IOTJS

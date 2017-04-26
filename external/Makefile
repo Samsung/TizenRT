@@ -45,10 +45,6 @@ CSRCS =
 VPATH = .
 
 
-ifeq ($(CONFIG_WICED),y)
-include WICED$(DELIM)Make.defs
-endif
-
 ifeq ($(CONFIG_DM),y)
 ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
 include wakaama/core/Make.defs
@@ -63,9 +59,6 @@ include wakaama/examples/server/Make.defs
 endif
 endif
 
-ifeq ($(CONFIG_ARCH_CHIP_BCM4390X),y)
-CFLAGS+=-I$(TOPDIR)/../external/WICED/bcm4390x/include
-endif
 ifeq ($(CONFIG_DM),y)
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif

@@ -47,9 +47,7 @@
 #include<arpa/inet.h>
 #include<sys/socket.h>
 
-#if defined(CONFIG_ARCH_CHIP_BCM4390X)
-#include "wwd_wifi.h"
-#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
+#if defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
 #include "slsi_wifi_api.h"
 #endif
 
@@ -210,9 +208,7 @@ static const struct cm_node_s *const g_cm_level0info[] = {
  ****************************************************************************/
 static void cm_get_interface(char *mac)
 {
-#if defined(CONFIG_WICED)
-	strcpy(mac, "en1");
-#elif defined(CONFIG_NET_ETHERNET)
+#if defined(CONFIG_NET_ETHERNET)
 	strcpy(mac, "eth0");
 #elif defined(CONFIG_NET_802154)
 	strcpy(mac, "wlan0");
@@ -227,9 +223,7 @@ static size_t cm_nwbearer_read(FAR struct cm_file_s *connectivityfile, FAR char 
 	size_t linesize;
 	size_t copysize;
 	int nwbearer;
-#if defined(CONFIG_WICED)
-	nwbearer = CM_NWBEARER_WLAN;
-#elif defined(CONFIG_NET_ETHERNET)
+#if defined(CONFIG_NET_ETHERNET)
 	nwbearer = CM_NWBEARER_ETHERNET;
 #elif defined(CONFIG_NET_802154)
 	nwbearer = CM_NWBEARER_WPAN;
@@ -247,9 +241,7 @@ static size_t cm_available_bearer_read(FAR struct cm_file_s *connectivityfile, F
 	size_t linesize;
 	size_t copysize;
 	int nwbearer;
-#if defined(CONFIG_WICED)
-	nwbearer = CM_NWBEARER_WLAN;
-#elif defined(CONFIG_NET_ETHERNET)
+#if defined(CONFIG_NET_ETHERNET)
 	nwbearer = CM_NWBEARER_ETHERNET;
 #elif defined(CONFIG_NET_802154)
 	nwbearer = CM_NWBEARER_WPAN;
@@ -267,9 +259,7 @@ static size_t cm_rssi_read(FAR struct cm_file_s *connectivityfile, FAR char *buf
 	size_t linesize;
 	size_t copysize;
 	int rssi_value;
-#if defined(CONFIG_WICED) && defined(CONFIG_ARCH_CHIP_BCM4390X)
-	wwd_wifi_get_rssi(&rssi_value);
-#elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
+#if defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
 	WiFiGetRssi(&rssi_value);
 	rssi_value -= 255;
 #else
@@ -318,11 +308,7 @@ static size_t cm_bitrate_read(FAR struct cm_file_s *connectivityfile, FAR char *
 	size_t linesize;
 	size_t copysize;
 	int bitrate;
-#if defined(CONFIG_WICED) && defined(CONFIG_ARCH_CHIP_BCM4390X)
-	wwd_wifi_get_rate(WWD_STA_INTERFACE, &bitrate);
-#else
 	bitrate = 0;
-#endif
 
 	linesize = snprintf(connectivityfile->line, CM_LINELEN, "%d", bitrate);
 	copysize = procfs_memcpy(connectivityfile->line, linesize, buffer, buflen, &offset);

@@ -150,9 +150,6 @@ extern int webclient_main(int argc, char *argv[]);
 #ifdef CONFIG_EXAMPLES_WEBSERVER
 extern int webserver_main(int argc, char *argv[]);
 #endif
-#ifdef CONFIG_EXAMPLES_WICEDWIFI
-extern int wicedwifi_main(int argc, char *argv[]);
-#endif
 #ifdef CONFIG_EXAMPLES_WEBSOCKET
 extern int websocket_main(int argc, char *argv[]);
 #endif
@@ -756,9 +753,6 @@ const static tash_cmdlist_t net_appcmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_WEBSERVER
 	{"webserver", webserver_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_WICEDWIFI
-	{"wicedwifi", wicedwifi_main, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_MQTT_TEST
 	{"mqtt_sub", mqtt_client_sub_main, TASH_EXECMD_SYNC},

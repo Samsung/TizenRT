@@ -985,7 +985,6 @@ CONFIG_NETDB_DNSSERVER_BY_DHCP=y
 #
 # External Functions
 #
-# CONFIG_WICED is not set
 # CONFIG_DM is not set
 # CONFIG_ENABLE_IOTIVITY is not set
 
