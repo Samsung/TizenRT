@@ -146,8 +146,10 @@ typedef struct
     lwm2m_object_t * securityObjP;
     lwm2m_object_t * serverObject;
     int sock;
-    connection_t * connList;
+    struct sockaddr_storage server_addr;
+    size_t server_addrLen;
     int addressFamily;
+    connection_t * connList;
 } client_data_t;
 
 #if defined (__TINYARA__)
@@ -290,8 +292,9 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
     newConnP = connection_create(proto, dataP->connList, dataP->sock, host, port, dataP->addressFamily);
     if (newConnP == NULL) {
         fprintf(stderr, "Connection creation failed.\r\n");
-    }
-    else {
+    } else {
+        memcpy(&dataP->server_addr, &newConnP->addr, newConnP->addrLen);
+        dataP->server_addrLen = newConnP->addrLen;
         dataP->connList = newConnP;
     }
 
@@ -849,6 +852,11 @@ int lwm2m_client_main(int argc, char *argv[])
     uint16_t pskLen = -1;
     char * pskBuffer = NULL;
 
+    struct timeval tv = {60, 0};
+
+    struct sockaddr_storage addr;
+    socklen_t addrLen;
+
     coap_protocol_t proto = COAP_UDP;
 
     /*
@@ -1004,8 +1012,8 @@ int lwm2m_client_main(int argc, char *argv[])
     /*
      * This call an internal function that create an IPV6 socket on the port 5683.
      */
-    fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
-    data.sock = create_socket(proto, localPort, data.addressFamily);
+    fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", serverPort);
+    data.sock = create_socket(proto, serverPort, data.addressFamily);
     if (data.sock < 0)
     {
         fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
@@ -1157,14 +1165,14 @@ int lwm2m_client_main(int argc, char *argv[])
     {
         commands[i].userData = (void *)lwm2mH;
     }
-    fprintf(stdout, "LWM2M Client \"%s\" started on port %s\r\n", name, localPort);
+    fprintf(stdout, "LWM2M Client \"%s\" started on port %s\r\n", name, serverPort);
     fprintf(stdout, "> "); fflush(stdout);
     /*
      * We now enter in a while loop that will handle the communications from the server
      */
+
     while (0 == g_quit)
     {
-        struct timeval tv;
         fd_set readfds;
 
         if (g_reboot)
@@ -1200,14 +1208,6 @@ int lwm2m_client_main(int argc, char *argv[])
             tv.tv_sec = 60;
         }
         tv.tv_usec = 0;
-
-        FD_ZERO(&readfds);
-        FD_SET(data.sock, &readfds);
-#if defined (__TINYARA__)
-        FD_SET(STDIN_FILENO, &readfds);
-#else
-        FD_SET(stdin, &readfds);
-#endif
 
         /*
          * This function does two things:
@@ -1260,6 +1260,14 @@ int lwm2m_client_main(int argc, char *argv[])
 #ifdef LWM2M_BOOTSTRAP
         update_bootstrap_info(&previousState, lwm2mH);
 #endif
+
+        FD_ZERO(&readfds);
+        FD_SET(data.sock, &readfds);
+#if defined (__TINYARA__)
+        FD_SET(STDIN_FILENO, &readfds);
+#else
+        FD_SET(stdin, &readfds);
+#endif
         /*
          * This part will set up an interruption until an event happen on SDTIN or the socket until "tv" timed out (set
          * with the precedent function)
@@ -1283,15 +1291,14 @@ int lwm2m_client_main(int argc, char *argv[])
              */
             if (FD_ISSET(data.sock, &readfds))
             {
-                struct sockaddr_storage addr;
-                socklen_t addrLen;
-
                 addrLen = sizeof(addr);
 
                 /*
                  * We retrieve the data received
                  */
                 numBytes = connection_read(proto, data.sock, buffer, MAX_PACKET_SIZE, &addr, &addrLen);
+                memcpy(&addr, &data.server_addr, data.server_addrLen);
+                addrLen = data.server_addrLen;
 
                 if (0 > numBytes)
                 {

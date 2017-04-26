@@ -1051,10 +1051,10 @@ int lwm2m_server_main(int argc, char *argv[])
                 else
                 {
                     char s[INET6_ADDRSTRLEN];
-                    in_port_t port;
+                    in_port_t port = 0;
                     connection_t * connP;
 
-					s[0] = 0;
+                    s[0] = 0;
                     if (AF_INET == addr.ss_family)
                     {
                         struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;

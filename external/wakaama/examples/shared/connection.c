@@ -153,52 +153,55 @@ connection_t * connection_create(coap_protocol_t protocol,
         case COAP_UDP:
         case COAP_UDP_DTLS:
             hints.ai_socktype = SOCK_DGRAM;
+
+            if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return NULL;
+            // we test the various addresses
+            s = -1;
+            for(p = servinfo; p != NULL && s == -1; p = p->ai_next)
+            {
+                s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+                if (s >= 0) {
+                    sa = p->ai_addr;
+#ifdef CONFIG_NET_LWIP
+                    sa->sa_len = p->ai_addrlen;
+#endif
+                    sl = p->ai_addrlen;
+                    if (-1 == connect(s, p->ai_addr, p->ai_addrlen)) {
+                        close(s);
+                        s = -1;
+                    }
+                }
+            }
+            if (s >= 0) {
+                connP = connection_new_incoming(connList, sock, sa, sl);
+                close(s);
+            }
             break;
         case COAP_TCP:
         case COAP_TCP_TLS:
             hints.ai_socktype = SOCK_STREAM;
+
+            if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return NULL;
+            // TODO : How to support various addresses
+            for(p = servinfo; p != NULL; p = p->ai_next)
+            {
+                sa = p->ai_addr;
+#ifdef CONFIG_NET_LWIP
+                sa->sa_len = p->ai_addrlen;
+#endif
+                sl = p->ai_addrlen;
+                if (-1 == connect(sock, sa, sl)) {
+                    fprintf(stderr, "connection_create : failed to connect, errno %d\r\n", errno);
+                } else {
+                    break;
+                }
+            }
+            connP = connection_new_incoming(connList, sock, sa, sl);
             break;
         default:
             break;
     }
 
-    if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return NULL;
-
-    // we test the various addresses
-    s = -1;
-    for(p = servinfo ; p != NULL && s == -1 ; p = p->ai_next)
-    {
-        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (s >= 0)
-        {
-            sa = p->ai_addr;
-#ifdef CONFIG_NET_LWIP
-            sa->sa_len = p->ai_addrlen;
-#endif
-            sl = p->ai_addrlen;
-            if (-1 == connect(s, p->ai_addr, p->ai_addrlen))
-            {
-                close(s);
-                s = -1;
-            }
-        }
-    }
-    if (s >= 0)
-    {
-        switch(protocol) {
-            case COAP_UDP:
-            case COAP_UDP_DTLS:
-                connP = connection_new_incoming(connList, sock, sa, sl);
-                close(s);
-                break;
-            case COAP_TCP:
-            case COAP_TCP_TLS:
-                connP = connection_new_incoming(connList, s, sa, sl);
-                break;
-            default:
-                break;
-        }
-    }
     if (NULL != servinfo) {
 #ifdef CONFIG_NET_LWIP
         freeaddrinfo(servinfo);
@@ -235,9 +238,8 @@ int connection_send(connection_t *connP,
     int nbSent;
     size_t offset;
 
-#ifdef WITH_LOGS
     char s[INET6_ADDRSTRLEN];
-    in_port_t port;
+    in_port_t port = 0;
 
     s[0] = 0;
 
@@ -257,7 +259,6 @@ int connection_send(connection_t *connP,
     fprintf(stderr, "Sending %d bytes to [%s]:%hu\r\n", length, s, ntohs(port));
 
     output_buffer(stderr, buffer, length, 0);
-#endif
 
     offset = 0;
     while (offset != length)
