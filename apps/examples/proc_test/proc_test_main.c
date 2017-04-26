@@ -298,7 +298,7 @@ int proc_cpuload_test()
 #endif
 
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_UPTIME
-int proc_uptime_test()
+int proc_uptime_test(void)
 {
 	char *filepath = NULL;
 	int ret;
@@ -320,7 +320,7 @@ int proc_uptime_test()
 #endif
 
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_VERSION
-int proc_version_test()
+int proc_version_test(void)
 {
 	char *filepath = NULL;
 	int ret;
@@ -358,7 +358,6 @@ int main(int argc, FAR char *argv[])
 int proc_test_main(int argc, char *argv[])
 #endif
 {
-	FAR const char *filesystem = NULL;
 	int ret;
 
 	printf("Proc Test START!!\n");
