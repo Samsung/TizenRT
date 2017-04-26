@@ -372,11 +372,6 @@ int cmd_get(int argc, char **argv)
 	int i = 0;
 	int fd;
 	int ret = -1;
-	char write_buffer[300];
-	char read_buffer[301];
-	char filename[30]
-	char newfilename[30];
-	char seek_wbuffer[100];
 	char seek_rbuffer[101];
 
 	/* Parse the input parameter list */
@@ -386,7 +381,7 @@ int cmd_get(int argc, char **argv)
 
 	/* Get the full path to the local file */
 
-	fullpath = get_fullpath(args.destpath);
+	fullpath = (char *)get_fullpath(args.destpath);
 
 	/* Then perform the TFTP get operation */
 
@@ -404,7 +399,7 @@ int cmd_get(int argc, char **argv)
 	ret = read(fd, seek_rbuffer, 100);
 	if (ret < 0) {
 		printf("Seek read failed %d\n", ret);
-		return;
+		return ERROR;
 	} else {
 		printf("Read done\n");
 	}
