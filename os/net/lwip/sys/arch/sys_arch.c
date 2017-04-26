@@ -438,8 +438,6 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
 	systime_t start = clock_systimer();
 	u32_t status = OK;
-	u32_t secs = 0;
-	struct timespec abstime;
 
 	if (timeout == 0) {
 
@@ -453,23 +451,18 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 		}
 		status = OK;
 	} else {
-		DEBUGVERIFY(clock_gettime(CLOCK_REALTIME, &abstime));
-		secs = (timeout / MSEC_PER_SEC);
-		abstime.tv_sec += secs;
-		abstime.tv_nsec += (timeout - (MSEC_PER_SEC * secs)) * NSEC_PER_MSEC;
-		if (abstime.tv_nsec >= 1000000000) {
-			abstime.tv_sec++;
-			abstime.tv_nsec -= 1000000000;
-		}
-		while (sem_timedwait(sem, &abstime) != OK) {
+		while (sem_tickwait(sem, clock_systimer(), MSEC2TICK(timeout)) != OK) {
 			/* Handle the special case where the semaphore wait was
 			 * awakened by the receipt of a signal.
 			 * Restart If signal is EINTR else break if ETIMEDOUT
 			 */
 			status = get_errno();
-			LWIP_ASSERT("status == EINTR || status == ETIMEDOUT", status == EINTR || status == ETIMEDOUT);
+
 			if (status == ETIMEDOUT) {
 				break;
+			} else {
+				/* calculate remaining timeout */
+				timeout -= TICK2MSEC(clock_systimer() - start);
 			}
 		}
 
