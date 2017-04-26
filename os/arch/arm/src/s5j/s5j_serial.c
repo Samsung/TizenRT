@@ -1012,22 +1012,32 @@ static int up_setup(struct uart_dev_s *dev)
 	/* Initialize UART */
 
 	switch (priv->eCh) {
+#ifdef CONFIG_S5J_UART0
 		case UART0:
 			priv = &g_uart0priv;
 			break;
+#endif
+#ifdef CONFIG_S5J_UART1
 		case UART1:
 			priv = &g_uart1priv;
 			break;
+#endif
+#ifdef CONFIG_S5J_UART2
 		case UART2:
 			priv = &g_uart2priv;
 			break;
+#endif
+#ifdef CONFIG_S5J_UART3
 		case UART3:
 			priv = &g_uart3priv;
 			break;
+#endif
+#ifdef CONFIG_S5J_UARTDBG
 		case UARTDBG:
 		default:
 			priv = &g_uartdbgpriv;
 			break;
+#endif
 	}
 
 	/* wait until every characters from earlier stage bootloader get out */
