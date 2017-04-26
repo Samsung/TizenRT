@@ -441,7 +441,9 @@ typedef enum
     BINDING_S,   // SMS
     BINDING_SQ,  // SMS queue mode
     BINDING_US,  // UDP plus SMS
-    BINDING_UQS  // UDP queue mode plus SMS
+    BINDING_UQS, // UDP queue mode plus SMS
+    BINDING_C,   // TCP
+    BINDING_T    // TCP with TLS
 } lwm2m_binding_t;
 
 /*

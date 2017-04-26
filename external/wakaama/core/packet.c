@@ -223,15 +223,23 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             int64_t new_offset = 0;
 
             /* prepare response */
-            if (message->type == COAP_TYPE_CON)
+            if ((message->protocol == COAP_TCP) ||
+                (message->protocol == COAP_TCP_TLS))
             {
-                /* Reliable CON requests are answered with an ACK. */
-                coap_init_message(response, proto, COAP_TYPE_ACK, COAP_205_CONTENT, message->mid);
+                coap_init_message(response, proto, COAP_TYPE_NON, COAP_205_CONTENT, message->mid);
             }
             else
             {
-                /* Unreliable NON requests are answered with a NON as well. */
-                coap_init_message(response, proto, COAP_TYPE_NON, COAP_205_CONTENT, contextP->nextMID++);
+                if (message->type == COAP_TYPE_CON)
+                {
+                    /* Reliable CON requests are answered with an ACK. */
+                    coap_init_message(response, proto, COAP_TYPE_ACK, COAP_205_CONTENT, message->mid);
+                }
+                else
+                {
+                    /* Unreliable NON requests are answered with a NON as well. */
+                    coap_init_message(response, proto, COAP_TYPE_NON, COAP_205_CONTENT, contextP->nextMID++);
+                }
             }
 
             /* mirror token */
@@ -368,7 +376,8 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         done = observe_handleNotify(contextP, fromSessionH, message, response);
                     }
 #endif
-                    if (!done && message->type == COAP_TYPE_CON )
+                    if (!done && message->type == COAP_TYPE_CON &&
+                       (proto != COAP_TCP) && (proto != COAP_TCP_TLS))
                     {
                         coap_init_message(response, proto, COAP_TYPE_ACK, 0, message->mid);
                         coap_error_code = message_send(contextP, response, fromSessionH);
