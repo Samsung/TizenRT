@@ -19,13 +19,11 @@ choice
 
 config LWM2M_CLIENT_MODE
 	bool "CLIENT_MODE"
-	default y
 	---help---
 		enable LWM2M WAKAAMA client example
 
 config LWM2M_SERVER_MODE
 	bool "SERVER_MODE"
-	default y
 	---help---
 		enable LWM2M WAKAAMA server example
 endchoice
