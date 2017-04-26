@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/semaphore/sem_timedwait.c
+ * kernel/semaphore/sem_tickwait.c
  *
  *   Copyright (C) 2011, 2013-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -65,7 +65,6 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/wdog.h>
-#include <tinyara/cancelpt.h>
 
 #include "sched/sched.h"
 #include "clock/clock.h"
@@ -92,116 +91,36 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: sem_timeout
+ * Name: sem_tickwait
  *
  * Description:
- *   This function is called if the timeout elapses before the message queue
- *   becomes non-empty.
+ *   This function is a lighter weight version of sem_timedwait().  It is
+ *   non-standard and intended only for use within the RTOS.
  *
  * Parameters:
- *   argc  - the number of arguments (should be 1)
- *   pid   - the task ID of the task to wakeup
+ *   sem     - Semaphore object
+ *   start   - The system time that the delay is relative to.  If the
+ *             current time is not the same as the start time, then the
+ *             delay will be adjust so that the end time will be the same
+ *             in any event.
+ *   delay   - Ticks to wait from the start time until the semaphore is
+ *             posted.  If ticks is zero, then this function is equivalent
+ *             to sem_trywait().
  *
  * Return Value:
- *   None
- *
- * Assumptions:
+ *   Zero (OK) is returned on success.  A negated errno value is returned on
+ *   failure.  -ETIMEDOUT is returned on the timeout condition.
  *
  ****************************************************************************/
 
-void sem_timeout(int argc, uint32_t pid)
-{
-	FAR struct tcb_s *wtcb;
-	irqstate_t flags;
-
-	/* Disable interrupts to avoid race conditions */
-
-	flags = irqsave();
-
-	/* Get the TCB associated with this pid.  It is possible that
-	 * task may no longer be active when this watchdog goes off.
-	 */
-
-	wtcb = sched_gettcb((pid_t)pid);
-
-	/* It is also possible that an interrupt/context switch beat us to the
-	 * punch and already changed the task's state.
-	 */
-
-	if (wtcb && wtcb->task_state == TSTATE_WAIT_SEM) {
-		/* Cancel the semaphore wait */
-
-		sem_waitirq(wtcb, ETIMEDOUT);
-	}
-
-	/* Interrupts may now be enabled. */
-
-	irqrestore(flags);
-}
-
-/****************************************************************************
- * Name: sem_timedwait
- *
- * Description:
- *   This function will lock the semaphore referenced by sem as in the
- *   sem_wait() function. However, if the semaphore cannot be locked without
- *   waiting for another process or thread to unlock the semaphore by
- *   performing a sem_post() function, this wait will be terminated when the
- *   specified timeout expires.
- *
- *   The timeout will expire when the absolute time specified by abstime
- *   passes, as measured by the clock on which timeouts are based (that is,
- *   when the value of that clock equals or exceeds abstime), or if the
- *   absolute time specified by abstime has already been passed at the
- *   time of the call.
- *
- * Parameters:
- *   sem - Semaphore object
- *   abstime - The absolute time to wait until a timeout is declared.
- *
- * Return Value:
- *   One success, the length of the selected message in bytes.is
- *   returned.  On failure, -1 (ERROR) is returned and the errno
- *   is set appropriately:
- *
- *   EINVAL    The sem argument does not refer to a valid semaphore.  Or the
- *             thread would have blocked, and the abstime parameter specified
- *             a nanoseconds field value less than zero or greater than or
- *             equal to 1000 million.
- *   ETIMEDOUT The semaphore could not be locked before the specified timeout
- *             expired.
- *   EDEADLK   A deadlock condition was detected.
- *   EINTR     A signal interrupted this function.
- *
- ****************************************************************************/
-
-int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
+int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 {
 	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
 	irqstate_t flags;
-	int ticks;
-	int errcode;
-	int ret = ERROR;
+	systime_t elapsed;
+	int ret;
 
-	DEBUGASSERT(up_interrupt_context() == false && rtcb->waitdog == NULL);
-
-	/* sem_timedwait() is a cancellation point */
-	(void)enter_cancellation_point();
-
-	/* Verify the input parameters and, in case of an error, set
-	 * errno appropriately.
-	 */
-
-#ifdef CONFIG_DEBUG
-	if (!abstime || !sem) {
-		errcode = EINVAL;
-		goto errout;
-	}
-#endif
+	DEBUGASSERT(sem != NULL && up_interrupt_context() == false && rtcb->waitdog == NULL);
 
 	/* Create a watchdog.  We will not actually need this watchdog
 	 * unless the semaphore is unavailable, but we will reserve it up
@@ -210,13 +129,12 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 
 	rtcb->waitdog = wd_create();
 	if (!rtcb->waitdog) {
-		errcode = ENOMEM;
-		goto errout;
+		return -ENOMEM;
 	}
 
 	/* We will disable interrupts until we have completed the semaphore
 	 * wait.  We need to do this (as opposed to just disabling pre-emption)
-	 * because there could be interrupt handlers that are asynchronoulsy
+	 * because there could be interrupt handlers that are asynchronously
 	 * posting semaphores and to prevent race conditions with watchdog
 	 * timeout.  This is not too bad because interrupts will be re-
 	 * enabled while we are blocked waiting for the semaphore.
@@ -230,53 +148,42 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	if (ret == OK) {
 		/* We got it! */
 
-		irqrestore(flags);
-		wd_delete(rtcb->waitdog);
-		rtcb->waitdog = NULL;
-		leave_cancellation_point();
-		return OK;
+		goto success_with_irqdisabled;
 	}
 
 	/* We will have to wait for the semaphore.  Make sure that we were provided
 	 * with a valid timeout.
 	 */
 
-	if (abstime->tv_nsec < 0 || abstime->tv_nsec >= 1000000000) {
-		errcode = EINVAL;
-		goto errout_disabled;
+	if (delay == 0) {
+		/* Return the errno from sem_trywait() */
+
+		ret = -get_errno();
+		goto errout_with_irqdisabled;
 	}
 
-	/* Convert the timespec to clock ticks.  We must have interrupts
-	 * disabled here so that this time stays valid until the wait begins.
-	 */
+	/* Adjust the delay for any time since the delay was calculated */
 
-	errcode = clock_abstime2ticks(CLOCK_REALTIME, abstime, &ticks);
-
-	/* If the time has already expired return immediately. */
-
-	if (errcode == OK && ticks <= 0) {
-		errcode = ETIMEDOUT;
-		goto errout_disabled;
+	elapsed = clock_systimer() - start;
+	if (/* elapsed >= (UINT32_MAX / 2) || */ elapsed >= delay) {
+		ret = -ETIMEDOUT;
+		goto errout_with_irqdisabled;
 	}
 
-	/* Handle any time-related errors */
+	delay -= elapsed;
 
-	if (errcode != OK) {
-		goto errout_disabled;
-	}
+	/* Start the watchdog with interrupts still disabled */
 
-	/* Start the watchdog */
-
-	errcode = OK;
-	wd_start(rtcb->waitdog, ticks, (wdentry_t)sem_timeout, 1, getpid());
+	(void)wd_start(rtcb->waitdog, delay, (wdentry_t) sem_timeout, 1, getpid());
 
 	/* Now perform the blocking wait */
 
 	ret = sem_wait(sem);
 	if (ret < 0) {
-		/* sem_wait() failed.  Save the errno value */
+		/* Return the errno from sem_wait() */
 
-		errcode = get_errno();
+		ret = -get_errno();
+		goto errout_with_irqdisabled;
 	}
 
 	/* Stop the watchdog timer */
@@ -285,34 +192,15 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 
 	/* We can now restore interrupts and delete the watchdog */
 
-	irqrestore(flags);
-	wd_delete(rtcb->waitdog);
-	rtcb->waitdog = NULL;
-	leave_cancellation_point();
+	/* Success exits */
 
-	/* We are either returning success or an error detected by sem_wait()
-	 * or the timeout detected by sem_timeout().  The 'errno' value has
-	 * been set appropriately by sem_wait() or sem_timeout() in those
-	 * cases.
-	 */
-
-	if (ret < 0) {
-		/* On failure, restore the errno value returned by sem_wait */
-
-		set_errno(errcode);
-	}
-
-	return ret;
+success_with_irqdisabled:
 
 	/* Error exits */
 
-errout_disabled:
+errout_with_irqdisabled:
 	irqrestore(flags);
 	wd_delete(rtcb->waitdog);
 	rtcb->waitdog = NULL;
-
-errout:
-	set_errno(errcode);
-	leave_cancellation_point();
-	return ERROR;
+	return ret;
 }

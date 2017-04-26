@@ -212,6 +212,8 @@ int sem_post(FAR sem_t *sem);
  */
 int sem_getvalue(FAR sem_t *sem, FAR int *sval);
 
+void sem_timeout(int argc, uint32_t pid);
+
 #ifdef CONFIG_FS_NAMED_SEMAPHORES
 /**
  * @cond
