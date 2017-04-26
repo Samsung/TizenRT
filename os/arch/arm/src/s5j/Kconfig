@@ -10,7 +10,7 @@ choice
 	default ARCH_CHIP_S5JT200
 
 config ARCH_CHIP_S5JT200
-	bool "S5JT200 "
+	bool "S5JT200"
 	depends on ARCH_CHIP_S5J
 	select S5J_S5JT200
 	select ARCH_CORTEXR4
@@ -30,18 +30,6 @@ config S5J_S5JT200
 	select S5J_UART3
 
 menu "S5J DEBUG UART Configuration"
-config S5J_UART_CLOCK_FROM_WPLL
-	bool "Set Uart Clock using WPLL"
-	default n
-
-config SERIAL_TERMIOS
-	bool
-	default y
-
-config ARCH_HAVE_SERIAL_TERMIOS
-	bool
-	default y
-
 config S5J_HAVE_UARTDBG
 	bool
 	default y
@@ -88,15 +76,11 @@ config UARTDBG_2STOP
 	default 0
 endif
 
-
 config S5J_UARTDBG
 	bool
 	default n
-	select ARCH_HAVE_UARTDBG
 	select S5J_HAVE_UARTDBG
 	select UART0_SERIAL_CONSOLE
-	select UARTDBG_SERIAL_CONSOLE
-
 
 config S5J_UART0
 	bool
@@ -125,11 +109,6 @@ config S5J_UART3
 	select S5J_HAVE_UART3
 	select UART2_SERIAL_CONSOLE
 
-config UARTDBG_SERIAL_CONSOLE
-	bool
-	default n
-
-
 endmenu #"S5J UART Configuration"
 
 config S5J_PWM
@@ -145,7 +124,6 @@ config S5J_SPI
 	bool "S5J SPI support"
 	default y
 endmenu
-
 
 menu "S5J WDT(Watch Dog Timer)"
 config S5J_WATCHDOG
@@ -171,7 +149,6 @@ config S5J_WDT_DEFTIMEOUT
 	int "S5J Watchdog Timeout(in msec)"
 	default 7000
 	depends on S5J_WATCHDOG
-
 endmenu
 
 config S5J_ADC
@@ -191,64 +168,14 @@ config S5J_I2C
 	default n
 endmenu
 
-config S5J_MAILBOX
-	bool "S5J MAILBOX support"
-	default n
-	select MAILBOX
-
-config S5J_CHIPID
-	bool "S5J CHIPID support"
-	default n
-
-config S5J_EFUSE
-	bool "S5J EFUSE support"
-	default n
-
-config S5J_SDIO_SLAVE
-	bool "S5J SDIO support"
-	default n
-
-config S5J_LEDCTRLBLK
-	bool "S5J LED BLK controller support"
-	default y
-
 config S5J_SFLASH
-  bool "S5J Serial Flash support"
+	bool "S5J Serial Flash support"
 	default y
-
-menu "S5J binary version"
-
-config S5J_BL2_VERSION_ADDR
-       hex "bl2 base address"
-       default 0x04003FF4
-       help
-
-config S5J_LEDFW_VERSION_ADDR
-       hex "LEDFW base address"
-       default 0x042FBFF4
-       help
-
-config S5J_SSSFW_VERSION_ADDR
-       hex "SSSFW base address"
-       default 0x04303FF4
-       help
-
-config S5J_WLANFW_VERSION_ADDR
-       hex "WLANFW base address"
-       default 0x043BDFF4
-       help
-
-endmenu
-
 
 config S5J_DEBUG_BREAK
 	bool "S5J debug break on boot process"
 	help
 		this enable break during booting, on s5j_boot.c before os_start()
-
-config S5J_PM
-	bool "S5J Power Management"
-	default n
 
 menu "S5J PMU Config"
 config S5J_PWR
@@ -262,9 +189,7 @@ config S5J_PWR_DSTOP
 config S5J_PWR_SLEEP
 	bool "S5J SLEEP Power Mode"
 	default n
-
 endmenu
-
 
 config S5J_DMA
 	bool "S5J DMA enable"

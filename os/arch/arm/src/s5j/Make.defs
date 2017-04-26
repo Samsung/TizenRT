@@ -95,15 +95,11 @@ CMN_CSRCS += arm_schedulesigaction.c arm_sigdeliver.c arm_syscall.c
 CMN_CSRCS += arm_unblocktask.c arm_undefinedinsn.c
 CMN_CSRCS += arm_copyarmstate.c
 CMN_CSRCS += up_checkstack.c
+CMN_CSRCS += up_idle.c
 
 # Configuration dependent C files
 ifeq ($(CONFIG_ARMV7M_MPU),y)
 CMN_CSRCS += arm_mpu.c
-endif
-
-ifeq ($(CONFIG_PAGING),y)
-CMN_CSRCS += arm_allocpage.c arm_checkmapping.c arm_pginitialize.c
-CMN_CSRCS += arm_va2pte.c
 endif
 
 ifeq ($(CONFIG_BUILD_KERNEL),y)
@@ -114,13 +110,10 @@ ifneq ($(CONFIG_SCHED_TICKLESS),y)
 CHIP_CSRCS += s5j_timerisr.c
 endif
 
-ifeq ($(CONFIG_SCHED_TICKLESS),y)
-CHIP_CSRCS += s5j_tickless.c
-endif
-
 CHIP_CSRCS += s5j_boot.c s5j_irq.c
 CHIP_CSRCS += s5j_serial.c
 CHIP_CSRCS += s5j_mac.c
+CHIP_CSRCS += s5j_watchdog.c
 
 CHIP_CSRCS += s5j_gpio.c
 ifeq ($(CONFIG_GPIO),y)
@@ -131,34 +124,16 @@ ifeq ($(CONFIG_S5J_SPI),y)
 CHIP_CSRCS += s5j_spi.c
 endif
 
-ifeq ($(CONFIG_S5J_CHIPID),y)
-CHIP_CSRCS += s5j_chipid.c
-endif
-
 ifeq ($(CONFIG_S5J_ADC),y)
 CHIP_CSRCS += s5j_adc.c
-endif
-
-ifeq ($(CONFIG_S5J_WATCHDOG),y)
-CHIP_CSRCS += s5j_watchdog.c
 endif
 
 ifeq ($(CONFIG_S5J_I2C),y)
 CHIP_CSRCS += s5j_i2c.c
 endif
 
-ifeq ($(CONFIG_S5J_LEDCTRLBLK),y)
-CHIP_CSRCS += s5j_ledctrlblk.c
-endif
-
 ifeq ($(CONFIG_S5J_SFLASH),y)
 CHIP_CSRCS += s5j_sflash.c
-endif
-
-ifeq ($(CONFIG_ARCH_IDLE_CUSTOM),y)
-CHIP_CSRCS += s5j_idle.c
-else
-CMN_CSRCS += up_idle.c
 endif
 
 ifeq ($(CONFIG_ARCH_CUSTOM_PMINIT),y)
@@ -169,14 +144,6 @@ endif
 ifeq ($(CONFIG_S5J_PWR),y)
 CHIP_CSRCS += s5j_pwr.c
 CHIP_CSRCS += s5j_pwrcal.c
-endif
-
-ifeq ($(CONFIG_S5J_SDIO_SLAVE),y)
-CHIP_CSRCS += s5j_sdio_slave.c
-endif
-
-ifeq ($(CONFIG_S5E_LEDCTRLBLK),y)
-CHIP_CSRCS += s5j_ledctrlblk.c
 endif
 
 ifeq ($(CONFIG_S5J_PWM),y)
@@ -190,23 +157,9 @@ CHIP_CSRCS += s5j_rtc_lowerhalf.c
 endif
 endif
 
-ifeq ($(CONFIG_S5J_MAILBOX),y)
-CHIP_CSRCS += s5j_mailbox.c
-endif
-
-ifeq ($(CONFIG_S5J_WLBTBLK),y)
-CHIP_CSRCS += s5j_wlbt.c
-endif
-
-ifeq ($(CONFIG_EXAMPLES_LDO_TEST),y)
-CHIP_CSRCS += s5j_ldo.c
-endif
-
 ifeq ($(CONFIG_S5J_DMA),y)
 CHIP_CSRCS += s5j_dma.c
 endif
-
-CHIP_CSRCS += s5j_watchdog.c
 
 ifeq ($(CONFIG_S5J_SSS),y)
 VPATH += chip/sss
@@ -215,4 +168,3 @@ CHIP_CSRCS += sss_driver_io.c
 # built-in static library
 EXTRA_LIBS += chip/sss/libispdriver.a
 endif
-
