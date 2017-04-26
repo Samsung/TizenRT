@@ -59,11 +59,7 @@
 #include "lwm2mclient.h"
 #include "liblwm2m.h"
 #include "commandline.h"
-#ifdef WITH_TINYDTLS
-#include "dtlsconnection.h"
-#else
 #include "connection.h"
-#endif
 
 #include <string.h>
 #include <stdlib.h>
@@ -150,12 +146,7 @@ typedef struct
     lwm2m_object_t * securityObjP;
     lwm2m_object_t * serverObject;
     int sock;
-#ifdef WITH_TINYDTLS
-    dtls_connection_t * connList;
-    lwm2m_context_t * lwm2mH;
-#else
     connection_t * connList;
-#endif
     int addressFamily;
 } client_data_t;
 
@@ -251,31 +242,6 @@ static coap_protocol_t coap_get_protocol_from_uri(const char *uri)
   return type;
 }
 
-#ifdef WITH_TINYDTLS
-void * lwm2m_connect_server(uint16_t secObjInstID,
-                            void * userData)
-{
-  client_data_t * dataP;
-  lwm2m_list_t * instance;
-  dtls_connection_t * newConnP = NULL;
-  dataP = (client_data_t *)userData;
-  lwm2m_object_t  * securityObj = dataP->securityObjP;
-  
-  instance = LWM2M_LIST_FIND(dataP->securityObjP->instanceList, secObjInstID);
-  if (instance == NULL) return NULL;
-  
-  
-  newConnP = connection_create(dataP->connList, dataP->sock, securityObj, instance->id, dataP->lwm2mH, dataP->addressFamily);
-  if (newConnP == NULL)
-  {
-      fprintf(stderr, "Connection creation failed.\n");
-      return NULL;
-  }
-  
-  dataP->connList = newConnP;
-  return (void *)newConnP;
-}
-#else
 void * lwm2m_connect_server(uint16_t secObjInstID,
                             void * userData)
 {
@@ -333,24 +299,14 @@ exit:
     lwm2m_free(uri);
     return (void *)newConnP;
 }
-#endif
 
 void lwm2m_close_connection(void * sessionH,
                             void * userData)
 {
     client_data_t * app_data;
-#ifdef WITH_TINYDTLS
-    dtls_connection_t * targetP;
-#else
     connection_t * targetP;
-#endif
-
     app_data = (client_data_t *)userData;
-#ifdef WITH_TINYDTLS
-    targetP = (dtls_connection_t *)sessionH;
-#else
     targetP = (connection_t *)sessionH;
-#endif
 
     if (targetP == app_data->connList)
     {
@@ -359,11 +315,7 @@ void lwm2m_close_connection(void * sessionH,
     }
     else
     {
-#ifdef WITH_TINYDTLS
-        dtls_connection_t * parentP;
-#else
         connection_t * parentP;
-#endif
 
         parentP = app_data->connList;
         while (parentP != NULL && parentP->next != targetP)
@@ -867,10 +819,6 @@ void print_usage(void)
     fprintf(stdout, "  -t TIME\tSet the lifetime of the Client. Default: 300\r\n");
     fprintf(stdout, "  -b\t\tBootstrap requested.\r\n");
     fprintf(stdout, "  -c\t\tChange battery level over time.\r\n");
-#ifdef WITH_TINYDTLS    
-    fprintf(stdout, "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
-    fprintf(stdout, "  -s HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode\r\n");    
-#endif
     fprintf(stdout, "Examples:\r\n");
     fprintf(stdout, "  lwm2mclient -h coap://127.0.0.1 -4\r\n");
     fprintf(stdout, "\r\n");
@@ -971,26 +919,6 @@ int lwm2m_client_main(int argc, char *argv[])
                 return 0;
             }
             break;
-#ifdef WITH_TINYDTLS
-        case 'i':
-            opt++;
-            if (opt >= argc)
-            {
-                print_usage();
-                return 0;
-            }
-            pskId = argv[opt];
-            break;
-        case 's':
-            opt++;
-            if (opt >= argc)
-            {
-                print_usage();
-                return 0;
-            }
-            psk = argv[opt];
-            break;
-#endif						
         case 'n':
             opt++;
             if (opt >= argc)
@@ -1088,37 +1016,6 @@ int lwm2m_client_main(int argc, char *argv[])
      * Now the main function fill an array with each object, this list will be later passed to liblwm2m.
      * Those functions are located in their respective object file.
      */
-#ifdef WITH_TINYDTLS
-    if (psk != NULL)
-    {
-        pskLen = strlen(psk) / 2;
-        pskBuffer = malloc(pskLen);
-
-        if (NULL == pskBuffer)
-        {
-            fprintf(stderr, "Failed to create PSK binary buffer\r\n");
-            return -1;
-        }
-        // Hex string to binary
-        char *h = psk;
-        char *b = pskBuffer;
-        char xlate[] = "0123456789ABCDEF";
-
-        for ( ; *h; h += 2, ++b)
-        {
-            char *l = strchr(xlate, toupper(*h));
-            char *r = strchr(xlate, toupper(*(h+1)));
-
-            if (!r || !l)
-            {
-                fprintf(stderr, "Failed to parse Pre-Shared-Key HEXSTRING\r\n");
-                return -1;
-            }
-
-            *b = ((l - xlate) << 4) + (r - xlate);
-        }
-    }
-#endif
 
     char serverUri[50];
     int serverId = 123;
@@ -1234,10 +1131,6 @@ int lwm2m_client_main(int argc, char *argv[])
         return -1;
     }
 	
-#ifdef WITH_TINYDTLS
-    data.lwm2mH = lwm2mH;
-#endif
-
     /*
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
@@ -1408,12 +1301,7 @@ int lwm2m_client_main(int argc, char *argv[])
                 {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t port = 0;
-
-#ifdef WITH_TINYDTLS
-                    dtls_connection_t * connP;
-#else
                     connection_t * connP;
-#endif
                     if (AF_INET == addr.ss_family)
                     {
                         struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
@@ -1439,15 +1327,7 @@ int lwm2m_client_main(int argc, char *argv[])
                         /*
                          * Let liblwm2m respond to the query depending on the context
                          */
-#ifdef WITH_TINYDTLS
-                        int result = connection_handle_packet(connP, buffer, numBytes);
-						if (0 != result)
-                        {
-                             printf("error handling message %d\n",result);
-                        }
-#else
                         lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
-#endif
                         conn_s_updateRxStatistic(objArray[7], numBytes, false);
                     }
                     else
@@ -1640,12 +1520,7 @@ static void process_udpconn(int sockfd, fd_set *readfds, client_data_t data)
 		} else if (0 < numBytes) {
 			char s[INET6_ADDRSTRLEN];
 			in_port_t port;
-
-#ifdef WITH_TINYDTLS
-			dtls_connection_t *connP;
-#else
 			connection_t *connP;
-#endif
 			if (AF_INET == addr.ss_family) {
 				struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
 				inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
@@ -1667,14 +1542,7 @@ static void process_udpconn(int sockfd, fd_set *readfds, client_data_t data)
 				/*
 				* Let liblwm2m respond to the query depending on the context
 				*/
-#ifdef WITH_TINYDTLS
-				int result = connection_handle_packet(connP, buffer, numBytes);
-				if (0 != result) {
-					printf("error handling message %d\n", result);
-				}
-#else
 				lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
-#endif
 				conn_s_updateRxStatistic(objArray[7], numBytes, false);
 			} else {
 				fprintf(stderr, "received bytes ignored!\r\n");
