@@ -148,10 +148,6 @@ int s5j_mpu_initialize(void)
 
 void arm_boot(void)
 {
-#ifdef CONFIG_S5J_DEBUG_BREAK
-	__asm__ __volatile__("b  .");
-#endif
-
 	up_copyvectorblock();
 
 	/* Disable the watchdog timer */
