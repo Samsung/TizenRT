@@ -170,35 +170,6 @@ config S5J_UARTDBG
 	select ARCH_HAVE_UART4
 	select ARCH_HAVE_SERIAL_TERMIOS
 
-menu "Debug UART Configuration"
-	depends on S5J_UARTDBG
-
-config UARTDBG_RXBUFSIZE
-	int "uartdbg rx buffer size"
-	default 256
-
-config UARTDBG_TXBUFSIZE
-	int "uartdbg tx buffer size"
-	default 256
-
-config UARTDBG_BAUD
-	int "baudrate"
-	default 115200
-
-config UARTDBG_BITS
-	int "uart bits"
-	default 8
-
-config UARTDBG_PARITY
-	int "party bit"
-	default 0
-
-config UARTDBG_2STOP
-	int "stop bit"
-	default 0
-
-endmenu
-
 config S5J_PWM
 	bool "PWM"
 	depends on S5J_HAVE_PWM
