@@ -93,11 +93,17 @@ BIN = libapps$(LIBEXT)
 # Build targets
 
 all: $(BIN)
-.PHONY: import install context context_serialize context_rest .depdirs depend clean distclean
+.PHONY: import install context context_serialize context_rest .depdirs preconfig depend clean distclean
+
+define MAKE_template
+	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" BIN_DIR="$(BIN_DIR)"
+
+endef
 
 define SDIR_template
 $(1)_$(2):
 	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" BIN_DIR="$(BIN_DIR)"
+
 endef
 
 $(foreach SDIR, $(CONFIGURED_APPS), $(eval $(call SDIR_template,$(SDIR),all)))
@@ -129,11 +135,10 @@ context_serialize:
 
 context: context_serialize
 
-Kconfig:
+preconfig:
 	$(foreach SDIR, $(BUILDIRS), $(call MAKE_template,$(SDIR),preconfig))
 	$(Q) $(MKKCONFIG)
-
-preconfig: Kconfig
+	$(Q) $(MKKCONFIG) -o Kconfig_ENTRY
 
 .depdirs: $(foreach SDIR, $(CONFIGURED_APPS), $(SDIR)_depend)
 
@@ -144,7 +149,6 @@ depend: .depend
 
 clean: $(foreach SDIR, $(CLEANDIRS), $(SDIR)_clean)
 	$(call DELFILE, $(BIN))
-	$(call DELFILE, Kconfig)
 	$(call DELDIR, $(BIN_DIR))
 	$(call CLEAN)
 
@@ -165,6 +169,6 @@ else
 endif
 	$(call DELFILE, .depend)
 	$(call DELFILE, $(BIN))
-	$(call DELFILE, Kconfig)
+	$(call DELFILE, Kconfig*)
 	$(call DELDIR, $(BIN_DIR))
 	$(call CLEAN)

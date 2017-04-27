@@ -108,3 +108,5 @@ distclean: clean
 context:
 
 -include Make.dep
+.PHONY: preconfig
+preconfig:
