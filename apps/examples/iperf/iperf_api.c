@@ -1686,11 +1686,10 @@ static cJSON *JSON_read(int fd)
 
 void add_to_interval_list(struct iperf_stream_result *rp, struct iperf_interval_results *new)
 {
-	struct iperf_interval_results *irp;
+	static struct iperf_interval_results irp;
 
-	irp = (struct iperf_interval_results *)malloc(sizeof(struct iperf_interval_results));
-	memcpy(irp, new, sizeof(struct iperf_interval_results));
-	TAILQ_INSERT_TAIL(&rp->interval_results, irp, irlistentries);
+	memcpy(&irp, new, sizeof(struct iperf_interval_results));
+	TAILQ_INSERT_HEAD(&rp->interval_results, &irp, irlistentries);
 }
 
 /************************************************************/
@@ -2639,8 +2638,6 @@ static void print_interval_results(struct iperf_test *test, struct iperf_stream 
 /**************************************************************************/
 void iperf_free_stream(struct iperf_stream *sp)
 {
-	struct iperf_interval_results *irp;
-	struct iperf_interval_results *nirp;
 
 #ifdef HAVE_FILESYSTEM
 	/* XXX: need to free interval list too! */
@@ -2652,10 +2649,6 @@ void iperf_free_stream(struct iperf_stream *sp)
 #else
 	free(sp->buffer);
 #endif
-	for (irp = TAILQ_FIRST(&sp->result->interval_results); irp != NULL; irp = nirp) {
-		nirp = TAILQ_NEXT(irp, irlistentries);
-		free(irp);
-	}
 	free(sp->result);
 	if (sp->send_timer != NULL) {
 		tmr_cancel(sp->send_timer);
