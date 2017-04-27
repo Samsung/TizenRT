@@ -130,6 +130,7 @@ int iperf_main(int argc, char **argv)
 	}
 
 	if (run(test) < 0) {
+		iperf_free_test(test);
 		iperf_errexit(test, "error - %s", iperf_strerror(i_errno));
 	}
 
@@ -162,6 +163,8 @@ static int run(struct iperf_test *test)
 		break;
 	case 'c':
 		if (iperf_run_client(test) < 0) {
+			close(test->ctrl_sck);
+			iperf_free_test(test);
 			iperf_errexit(test, "error - %s", iperf_strerror(i_errno));
 		}
 		break;

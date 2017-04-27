@@ -1945,6 +1945,8 @@ void iperf_free_test(struct iperf_test *test)
 		tmr_cancel(test->reporter_timer);
 	}
 
+	tmr_cleanup();
+
 	/* Free protocol list */
 	while (!SLIST_EMPTY(&test->protocols)) {
 		prot = SLIST_FIRST(&test->protocols);
