@@ -102,6 +102,7 @@ static const uint16_t g_daysbeforemonth[13] = {
  *
  * Description:
  *    Get the number of days that occurred before the beginning of the month.
+ *    Month starts from 0 to 11(Jan to Dec).
  *
  ****************************************************************************/
 
