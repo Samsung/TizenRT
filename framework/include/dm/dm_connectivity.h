@@ -35,11 +35,13 @@ extern "C"
 {
 #endif
 
-#ifdef DM_API_DEBUG
-#define dmdbg(format, ...) printf("DM_API (%s): " format, __FUNCTION__, ##__VA_ARGS__)
-#else
-#define dmdbg(a, ...) (void)0
-#endif
+struct dm_scan_info_s {
+	char ssid[33];               // 802.11 spec defined unspecified or uint8
+	char bssid[18];                 // char string e.g. xx:xx:xx:xx:xx:xx
+	int8_t rssi;                    // rssi level of scanned device
+	struct dm_scan_info_s *next;
+};
+typedef struct dm_scan_info_s dm_scan_info_t;
 
 typedef void (*conn_cb)(void);
 
@@ -132,6 +134,54 @@ int dm_conn_unregister_linkup_cb(conn_cb cb);
  * @since Tizen RT v1.0
  */
 int dm_conn_unregister_linkdown_cb(conn_cb cb);
+
+/**
+ * @brief Perform a WiFi scan over all channels
+ *
+ * @param[in] None.
+ * @return On success, 0 is returned. On failure, a negative value is returned.
+ */
+int dm_conn_wifi_scan(void);
+
+/**
+ * @brief Fetch WiFi scan result
+ *
+ * @param[out] pointer to WiFi scan structure to hold result.
+ * @return On success, 0 is returned. On failure, a negative value is returned.
+ */
+int dm_conn_get_scan_result(dm_scan_info_t **result);
+
+/**
+ * @brief Free WiFi scan result
+ *
+ * @param[out] pointer to WiFi scan structure that holds result.
+ * @return On completion, 0 is returned.
+ */
+int dm_conn_free_scan_result(dm_scan_info_t **result);
+
+/**
+ * @brief Start device as WiFi station and connect to designated Access Point
+ *
+ * @param[in] callback functions to handle WiFi link being up and down.
+ * @return On completion, 0 is returned. On failure, a negative value is returned.
+ */
+int dm_conn_wifi_connect(conn_cb linkUpEvent, conn_cb linkDownEvent);
+
+/**
+ * @brief Perform DHCP client routine to obtain IP address for WiFi interface
+ *
+ * @param None
+ * @return On completion, 0 is returned. On failure, a negative value is returned.
+ */
+int dm_conn_dhcp_init(void);
+
+/**
+ * @brief Mark WiFi state as disconnected
+ *
+ * @param None
+ * @return On completion, 0 is returned. On failure, a negative value is returned.
+ */
+int dm_conn_wifi_disconnect(void);
 
 #ifdef __cplusplus
 }
