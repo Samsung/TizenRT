@@ -2127,7 +2127,7 @@ void iperf_stats_callback(struct iperf_test *test)
 
 		irp = rp->interval_results;
 		/* result->end_time contains timestamp of previous interval */
-		if (irp != NULL) {	/* not the 1st interval */
+		if (irp->first == 0) { /* not the 1st interval */
 			memcpy(&temp.interval_start_time, &rp->end_time, sizeof(struct timeval));
 		} else {				/* or use timestamp from beginning */
 			memcpy(&temp.interval_start_time, &rp->start_time, sizeof(struct timeval));
@@ -2177,6 +2177,7 @@ void iperf_stats_callback(struct iperf_test *test)
 			temp.outoforder_packets = sp->outoforder_packets;
 			temp.cnt_error = sp->cnt_error;
 		}
+		temp.first = 0;
 		add_to_interval_list(rp, &temp);
 		rp->bytes_sent_this_interval = rp->bytes_received_this_interval = 0;
 	}
@@ -2722,6 +2723,9 @@ struct iperf_stream *iperf_new_stream(struct iperf_test *test, int s)
 		i_errno = IECREATESTREAM;
 		return NULL;
 	}
+
+	memset(sp->result->interval_results, 0, sizeof(struct iperf_interval_results));
+	sp->result->interval_results->first = 1;
 
 #ifdef HAVE_FILESYSTEM
 	/* Create and randomize the buffer */
