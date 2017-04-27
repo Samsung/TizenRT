@@ -77,6 +77,8 @@
 #include <sys/cpuset.h>
 #endif							/* HAVE_CPUSET_SETAFFINITY */
 
+#include <semaphore.h>
+
 #include "iperf_net.h"
 #include "iperf.h"
 #include "iperf_api.h"
@@ -106,6 +108,11 @@ static int diskfile_recv(struct iperf_stream *sp);
 static int JSON_write(int fd, cJSON *json);
 static void print_interval_results(struct iperf_test *test, struct iperf_stream *sp, cJSON *json_interval_streams);
 static cJSON *JSON_read(int fd);
+
+/************************** Iperf semaphore functions **************************/
+#define IPERF_UNLOCK(n)     sem_post(n)
+#define IPERF_LOCK(n)       sem_wait(n)
+/*******************************************************************************/
 
 /*************************** Print usage functions ****************************/
 
@@ -1755,6 +1762,10 @@ struct iperf_test *iperf_new_test(void)
 	/* By default all output goes to stdout */
 	test->outfile = stdout;
 
+	if (sem_init(&(test->sem_iperf_api),0 ,1) != OK) {
+		printf("iperf_new_test : failed on sem_init\n");
+	}
+
 	return test;
 }
 
@@ -1989,6 +2000,7 @@ void iperf_free_test(struct iperf_test *test)
 	// test->streams = NULL;
 	test->stats_callback = NULL;
 	test->reporter_callback = NULL;
+	sem_destroy(&test->sem_iperf_api);
 	free(test);
 }
 
@@ -2528,6 +2540,8 @@ static void iperf_print_results(struct iperf_test *test)
  */
 void iperf_reporter_callback(struct iperf_test *test)
 {
+	IPERF_LOCK(&test->sem_iperf_api);
+
 	switch (test->state) {
 	case TEST_RUNNING:
 	case STREAM_RUNNING:
@@ -2540,6 +2554,8 @@ void iperf_reporter_callback(struct iperf_test *test)
 		iperf_print_results(test);
 		break;
 	}
+
+	IPERF_UNLOCK(&test->sem_iperf_api);
 
 }
 

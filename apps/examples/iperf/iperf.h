@@ -59,6 +59,8 @@
 #include <sys/cpuset.h>
 #endif							/* HAVE_CPUSET_SETAFFINITY */
 
+#include <semaphore.h>
+
 #include "iperf_timer.h"
 #include "iperf_queue.h"
 #include "iperf_cjson.h"
@@ -284,6 +286,8 @@ struct iperf_test {
 	iperf_size_t blocks_sent;
 	char cookie[COOKIE_SIZE];
 //    struct iperf_stream *streams;               /* pointer to list of struct stream */
+
+	sem_t     sem_iperf_api;
 	SLIST_HEAD(slisthead, iperf_stream) streams;
 	struct iperf_settings *settings;
 
