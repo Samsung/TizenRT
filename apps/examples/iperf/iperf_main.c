@@ -123,17 +123,17 @@ int iperf_main(int argc, char **argv)
 	iperf_defaults(test);		/* sets defaults */
 
 	if (iperf_parse_arguments(test, argc, argv) < 0) {
-		iperf_err(test, "parameter error - %s", iperf_strerror(i_errno));
-		fprintf(stderr, "\n");
-		iperf_usage_long();
-		exit(1);
+		printf("\nparameter error - %s\n", iperf_strerror(i_errno));
+		goto main_exit;
 	}
 
 	if (run(test) < 0) {
 		iperf_free_test(test);
-		iperf_errexit(test, "error - %s", iperf_strerror(i_errno));
+		printf("error - %s\n", iperf_strerror(i_errno));
+		goto main_exit;
 	}
 
+main_exit:
 	iperf_free_test(test);
 
 	return 0;
@@ -165,13 +165,16 @@ static int run(struct iperf_test *test)
 		if (iperf_run_client(test) < 0) {
 			close(test->ctrl_sck);
 			iperf_free_test(test);
-			iperf_errexit(test, "error - %s", iperf_strerror(i_errno));
+			printf("error - %s\n", iperf_strerror(i_errno));
+			iperf_client_end(test);
+			goto run_exit;
 		}
 		break;
 	default:
-		iperf_usage();
+		iperf_usage_long();
 		break;
 	}
 
+run_exit:
 	return 0;
 }

@@ -143,7 +143,7 @@ retry:
 
 int iperf_accept(struct iperf_test *test)
 {
-	int s;
+	int s = -1;
 	signed char rbuf = ACCESS_DENIED;
 	socklen_t len;
 	struct sockaddr_storage addr;

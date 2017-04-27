@@ -875,7 +875,7 @@ int iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		case 'h':
 		default:
 			iperf_usage_long();
-			exit(1);
+			return -1;
 		}
 	}
 

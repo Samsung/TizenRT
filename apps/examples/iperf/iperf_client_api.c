@@ -61,7 +61,7 @@
 
 int iperf_create_streams(struct iperf_test *test)
 {
-	int i, s;
+	int i, s = -1;
 	struct iperf_stream *sp;
 
 	int orig_bind_port = test->bind_port;
