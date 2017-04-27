@@ -107,9 +107,6 @@ endif
 ifeq ($(CONFIG_TC_NET_DHCPC),y)
 CSRCS +=tc_net_dhcpc.c
 endif
-ifeq ($(CONFIG_TC_NET_DHCPS),y)
-CSRCS +=tc_net_dhcps.c
-endif
 ifeq ($(CONFIG_TC_NET_SELECT),y)
 CSRCS +=tc_net_select.c
 endif

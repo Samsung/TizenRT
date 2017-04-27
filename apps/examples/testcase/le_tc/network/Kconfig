@@ -32,7 +32,6 @@ config TC_NET_ALL
     select TC_NET_RECVFROM
     select TC_NET_SHUTDOWN
 	select TC_NET_DHCPC
-	select TC_NET_DHCPS
 	select TC_NET_SELECT
 	select TC_NET_INET
 	select TC_NET_ETHER
@@ -108,10 +107,6 @@ config TC_NET_SHUTDOWN
 
 config TC_NET_DHCPC
 	bool "dhcpc() api"
-	default n
-
-config TC_NET_DHCPS
-	bool "dhcps() api"
 	default n
 
 config TC_NET_INET
