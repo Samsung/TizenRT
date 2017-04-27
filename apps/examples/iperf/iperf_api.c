@@ -1693,10 +1693,7 @@ static cJSON *JSON_read(int fd)
 
 void add_to_interval_list(struct iperf_stream_result *rp, struct iperf_interval_results *new)
 {
-	static struct iperf_interval_results irp;
-
-	memcpy(&irp, new, sizeof(struct iperf_interval_results));
-	TAILQ_INSERT_HEAD(&rp->interval_results, &irp, irlistentries);
+	memcpy(rp->interval_results, new, sizeof(struct iperf_interval_results));
 }
 
 /************************************************************/
@@ -2128,7 +2125,7 @@ void iperf_stats_callback(struct iperf_test *test)
 
 		temp.bytes_transferred = test->sender ? rp->bytes_sent_this_interval : rp->bytes_received_this_interval;
 
-		irp = TAILQ_LAST(&rp->interval_results, irlisthead);
+		irp = rp->interval_results;
 		/* result->end_time contains timestamp of previous interval */
 		if (irp != NULL) {	/* not the 1st interval */
 			memcpy(&temp.interval_start_time, &rp->end_time, sizeof(struct timeval));
@@ -2228,7 +2225,7 @@ static void iperf_print_intermediate(struct iperf_test *test)
 	SLIST_FOREACH(sp, &test->streams, streams) {
 		print_interval_results(test, sp, json_interval_streams);
 		/* sum up all streams */
-		irp = TAILQ_LAST(&sp->result->interval_results, irlisthead);
+		irp = sp->result->interval_results;
 		if (irp == NULL) {
 			iperf_err(test, "iperf_print_intermediate error: interval_results is NULL");
 			return;
@@ -2250,7 +2247,7 @@ static void iperf_print_intermediate(struct iperf_test *test)
 		sp = SLIST_FIRST(&test->streams);	/* reset back to 1st stream */
 		/* Only do this of course if there was a first stream */
 		if (sp) {
-			irp = TAILQ_LAST(&sp->result->interval_results, irlisthead);	/* use 1st stream for timing info */
+			irp = sp->result->interval_results;
 
 			unit_snprintf(ubuf, UNIT_LEN, (double)bytes, 'A');
 			bandwidth = (double)bytes / (double)irp->interval_duration;
@@ -2575,7 +2572,7 @@ static void print_interval_results(struct iperf_test *test, struct iperf_stream 
 	double bandwidth;
 	double lost_percent;
 
-	irp = TAILQ_LAST(&sp->result->interval_results, irlisthead);	/* get last entry in linked list */
+	irp = sp->result->interval_results; /* get last entry in linked list */
 	if (irp == NULL) {
 		iperf_err(test, "print_interval_results error: interval_results is NULL");
 		return;
@@ -2672,6 +2669,7 @@ void iperf_free_stream(struct iperf_stream *sp)
 #else
 	free(sp->buffer);
 #endif
+	free(sp->result->interval_results);
 	free(sp->result);
 	if (sp->send_timer != NULL) {
 		tmr_cancel(sp->send_timer);
@@ -2715,25 +2713,36 @@ struct iperf_stream *iperf_new_stream(struct iperf_test *test, int s)
 	}
 
 	memset(sp->result, 0, sizeof(struct iperf_stream_result));
-	TAILQ_INIT(&sp->result->interval_results);
+
+	sp->result->interval_results = malloc(sizeof(struct iperf_interval_results));
+
+	if (!sp->result->interval_results) {
+		free(sp->result);
+		free(sp);
+		i_errno = IECREATESTREAM;
+		return NULL;
+	}
 
 #ifdef HAVE_FILESYSTEM
 	/* Create and randomize the buffer */
 	sp->buffer_fd = mkstemp(template);
 	if (sp->buffer_fd == -1) {
 		i_errno = IECREATESTREAM;
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		return NULL;
 	}
 	if (unlink(template) < 0) {
 		i_errno = IECREATESTREAM;
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		return NULL;
 	}
 	if (ftruncate(sp->buffer_fd, test->settings->blksize) < 0) {
 		i_errno = IECREATESTREAM;
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		return NULL;
@@ -2741,6 +2750,7 @@ struct iperf_stream *iperf_new_stream(struct iperf_test *test, int s)
 	sp->buffer = (char *)mmap(NULL, test->settings->blksize, PROT_READ | PROT_WRITE, MAP_PRIVATE, sp->buffer_fd, 0);
 	if (sp->buffer == MAP_FAILED) {
 		i_errno = IECREATESTREAM;
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		return NULL;
@@ -2749,6 +2759,7 @@ struct iperf_stream *iperf_new_stream(struct iperf_test *test, int s)
 	sp->buffer = (char *)malloc(test->settings->blksize);
 
 	if (sp->buffer == NULL) {
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		i_errno = IECREATESTREAM;
@@ -2796,6 +2807,7 @@ struct iperf_stream *iperf_new_stream(struct iperf_test *test, int s)
 #else
 		free(sp->buffer);
 #endif
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		return NULL;
