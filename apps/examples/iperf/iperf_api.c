@@ -1819,7 +1819,7 @@ int iperf_defaults(struct iperf_test *testp)
 	testp->settings->blocks = 0;
 	memset(testp->cookie, 0, COOKIE_SIZE);
 
-	testp->multisend = 1;		/* arbitrary */
+	testp->multisend = 10;		/* arbitrary */
 
 	/* Set up protocol list */
 	SLIST_INIT(&testp->streams);
