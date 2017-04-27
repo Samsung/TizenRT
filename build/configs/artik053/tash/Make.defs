@@ -155,3 +155,7 @@ HOSTCC = gcc
 HOSTINCLUDES = -I.
 HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
+
+define DOWNLOAD
+       @$(TOPDIR)/../build/configs/artik053/artik053_download.sh $(1)
+endef
