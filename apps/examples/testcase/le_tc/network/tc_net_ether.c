@@ -51,7 +51,6 @@ static void tc_net_ether_ntoa_p(void)
 	int numreqs = 3;
 	int fd = -1;
 	int ret;
-	FAR char *intf = "wl1";
 	FAR char *buffer = NULL;
 
 	ifcfg.ifc_buf = NULL;
@@ -70,7 +69,7 @@ static void tc_net_ether_ntoa_p(void)
 	TC_ASSERT_GEQ("ether_ntoa", ret, 0)
 
 	sa = &tmp.ifr_hwaddr;
-	buffer = ether_ntoa((struct ether_addr *)sa->sa_data);
+	buffer = (FAR char *)ether_ntoa((struct ether_addr *)sa->sa_data);
 	TC_ASSERT_NEQ("ether_ntoa", buffer, 0)
 
 	TC_SUCCESS_RESULT()
