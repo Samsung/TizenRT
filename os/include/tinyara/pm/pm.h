@@ -144,7 +144,7 @@
 #define CONFIG_PM_MEMORY 2
 #endif
 
-#ifndef CONFIG_PM_MEMORY < 1
+#if CONFIG_PM_MEMORY < 1
 #error "CONFIG_PM_MEMORY must be >= 1"
 #endif
 
