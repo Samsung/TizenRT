@@ -670,33 +670,11 @@ config DEBUG_SYSCALL_INFO
 endif #DEBUG_SYSCALL
 
 comment "SLSI WLAN Debug Options"
-config DEBUG_WLAN_DRIVER_ERROR
-	bool "Enable WLAN Driver ERROR Debug Output"
-	default y
-	---help---
-		Enable T20 logs with ERROR and WARNING debug output from the SCSC Wifi driver
-
-config DEBUG_WLAN_SUPPLICANT_ERROR
-	bool "Enable WLAN Supplicant ERROR Debug Output"
-	default y
-	depends on WPA_SUPPLICANT
-	---help---
-		Enables MSG_ERROR, MGS_WARNING, MSG_INFO debug output from the SLSI wpa supplicant.
-		If DEBUG is enabled and this is disable no logging is printed from supplicant.
-		Errors are significant system exceptions that require immediate attention.
-
-config DEBUG_WLAN_API_ERROR
-	bool "Enable WLAN API ERROR Debug Output"
-	default y
-	depends on NETUTILS_WIFI
-	---help---
-		Enables ERROR level debug output for SLSI Wi-Fi API.
-		Errors are significant system exceptions that require immediate attention.
 
 config DEBUG_WLAN
 	bool "WLAN Debug Output"
-	default n
-	depends on SCSC_WLAN && DEBUG
+	default y
+	depends on SCSC_WLAN
 	---help---
 		Enables debug output SLSI WLAN (assuming DEBUG features are enabled).
 		If you enable DEBUG_WLAN, all enabled debug messages for WLAN will be reported in the
@@ -706,6 +684,7 @@ config DEBUG_WLAN
 if DEBUG_WLAN
 
 comment "SLSI WLAN FW Debug Options"
+
 config SCSC_ENABLE_FWFAULT_LOG
 	bool "Enable Firmware Fault logging"
 	default n
@@ -717,9 +696,16 @@ config SCSC_ENABLE_FWFAULT_LOG
 #		futher logging can be enabled by below flags
 
 comment "SLSI WLAN Driver Debug Options"
+
+config DEBUG_WLAN_DRIVER_ERROR
+	bool "Enable WLAN Driver ERROR Debug Output"
+	default y
+	---help---
+		Enable T20 logs with ERROR and WARNING debug output from the SCSC Wifi driver
+
 config DEBUG_WLAN_DRIVER_DEBUG
 	bool "Enable DEBUG Debug Output"
-	default y
+	default n
 	select DEBUG_WLAN_DRIVER_ERROR
 	---help---
 		Enable T20 logs with INFO DEBUG output from the SCSC Wifi driver
@@ -740,9 +726,18 @@ config DEBUG_WLAN_DRIVER_VERBOSE
 
 comment "SLSI WPA Supplicant Debug Options"
 
+config DEBUG_WLAN_SUPPLICANT_ERROR
+	bool "Enable WLAN Supplicant ERROR Debug Output"
+	default y
+	depends on WPA_SUPPLICANT
+	---help---
+		Enables MSG_ERROR, MGS_WARNING, MSG_INFO debug output from the SLSI wpa supplicant.
+		If DEBUG is enabled and this is disable no logging is printed from supplicant.
+		Errors are significant system exceptions that require immediate attention.
+
 config DEBUG_WLAN_SUPPLICANT_DEBUG
 	bool "Enable DEBUG Debug Output"
-	default y
+	default n
 	depends on WPA_SUPPLICANT
 	select DEBUG_WLAN_SUPPLICANT_ERROR
 	---help---
@@ -766,9 +761,17 @@ config DEBUG_WLAN_SUPPLICANT_VERBOSE
 
 comment "SLSI Wi-Fi API Debug Options"
 
+config DEBUG_WLAN_API_ERROR
+	bool "Enable WLAN API ERROR Debug Output"
+	default y
+	depends on NETUTILS_WIFI
+	---help---
+		Enables ERROR level debug output for SLSI Wi-Fi API.
+		Errors are significant system exceptions that require immediate attention.
+
 config DEBUG_WLAN_API_DEBUG
 	bool "Enable DEBUG Output"
-	default y
+	default n
 	depends on NETUTILS_WIFI
 	select DEBUG_WLAN_API_ERROR
 	---help---
