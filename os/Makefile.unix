@@ -527,7 +527,7 @@ ifeq (download,$(firstword $(MAKECMDGOALS)))
   $(eval $(DOWNLOAD_ARGS):;@:)
 endif
 
-download: $(BIN)
+download:
 	$(call DOWNLOAD, $(DOWNLOAD_ARGS))
 
 # pass1dep: Create pass1 build dependencies
