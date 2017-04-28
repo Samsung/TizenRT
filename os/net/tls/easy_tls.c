@@ -71,6 +71,7 @@ static int tls_context_alloc(tls_ctx *ctx)
 	TLS_MALLOC(ctx->pkey, sizeof(mbedtls_pk_context));
 	TLS_MALLOC(ctx->entropy, sizeof(mbedtls_entropy_context));
 	TLS_MALLOC(ctx->ctr_drbg, sizeof(mbedtls_ctr_drbg_context));
+	TLS_MALLOC(ctx->timer, sizeof(mbedtls_timing_delay_context));
 #ifdef MBEDTLS_SSL_CACHE_C
 	TLS_MALLOC(ctx->cache, sizeof(mbedtls_ssl_cache_context));
 #endif
@@ -85,6 +86,7 @@ static void tls_context_free(tls_ctx *ctx)
 		TLS_FREE(ctx->pkey);
 		TLS_FREE(ctx->entropy);
 		TLS_FREE(ctx->ctr_drbg);
+		TLS_FREE(ctx->timer);
 #ifdef MBEDTLS_SSL_CACHE_C
 		TLS_FREE(ctx->cache);
 #endif
@@ -114,16 +116,26 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 {
 	int ret = TLS_PARSE_CRED_FAIL;
 
-	if (cred == NULL || !cred->ca_cert) {
+	if (cred == NULL) {
 		return TLS_INVALID_CRED;
 	}
 
-	/* Mandatory */
-	ret = mbedtls_x509_crt_parse(ctx->crt, cred->ca_cert, cred->ca_certlen);
-	if (ret) {
-		return TLS_INVALID_CACERT;
+	if (cred->psk && cred->psk_len) {
+		ret = mbedtls_ssl_conf_psk(ctx->conf, cred->psk, cred->psk_len, (const unsigned char *)cred->psk_identity, strlen(cred->psk_identity));
+
+		if (ret) {
+			return TLS_INVALID_PSK;
+		}
 	}
-	mbedtls_ssl_conf_ca_chain(ctx->conf, ctx->crt, NULL);
+
+	/* Mandatory */
+	if (cred->ca_cert) {
+		ret = mbedtls_x509_crt_parse(ctx->crt, cred->ca_cert, cred->ca_certlen);
+		if (ret) {
+			return TLS_INVALID_CACERT;
+		}
+		mbedtls_ssl_conf_ca_chain(ctx->conf, ctx->crt, NULL);
+	}
 
 	/* Optional */
 	if (cred->dev_cert && cred->dev_key) {
@@ -186,7 +198,17 @@ static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 			goto errout;
 		}
 	}
-	mbedtls_ssl_set_bio(session->ssl, &session->net, mbedtls_net_send, mbedtls_net_recv, NULL);
+
+	if (opt->transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
+		mbedtls_ssl_set_timer_cb(session->ssl, ctx->timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
+		mbedtls_ssl_set_bio(session->ssl, &session->net, mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
+	} else {
+		mbedtls_ssl_set_bio(session->ssl, &session->net, mbedtls_net_send, mbedtls_net_recv, NULL);
+	}
+
+	if (opt->force_ciphersuites[0] > 0) {
+		mbedtls_ssl_conf_ciphersuites(ctx->conf, opt->force_ciphersuites);
+	}
 
 	return TLS_SUCCESS;
 

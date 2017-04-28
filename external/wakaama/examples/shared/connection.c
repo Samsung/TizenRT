@@ -268,30 +268,22 @@ int connection_send(connection_t *connP,
         {
         case COAP_UDP_DTLS:
         case COAP_TCP_TLS:
-            /* ToDo : need to use mbed TLS Send API
-			nbSent = SSL_write(connP->ssl, buffer + offset, length - offset); 
-            if (nbSent < 1) {
-                fprintf(stderr, "mbed TLS Send error: %s\n", ERR_error_string(SSL_get_error(connP->ssl, nbSent), NULL));
-                return -1;
-            }
-            */
+#ifdef WITH_MBEDTLS
+            nbSent = mbedtls_ssl_write(connP->session->ssl, buffer + offset, length - offset);
+#endif
             break;
         case COAP_TCP:
             nbSent = send(connP->sock, buffer + offset, length - offset, 0);
-            if (nbSent == -1) {
-                fprintf(stderr, "Send error: %s\n", strerror(errno));
-                return -1;
-            }
             break;
         case COAP_UDP:
             nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
-            if (nbSent == -1) {
-                fprintf(stderr, "Sendto error: %s\n", strerror(errno));
-                return -1;
-            }
             break;
         default:
             break;
+        }
+        if (nbSent < 0) {
+            fprintf(stderr, "Send fail nbSent : %d , error: %s\n", nbSent, strerror(errno));
+            return -1;
         }
 
         offset += nbSent;
@@ -330,6 +322,7 @@ bool lwm2m_session_is_equal(void * session1,
 }
 
 int connection_read(coap_protocol_t protocol,
+                    connection_t *connP,
                     int sock,
                     uint8_t *buffer,
                     size_t len,
@@ -339,15 +332,17 @@ int connection_read(coap_protocol_t protocol,
     int numBytes = -1;
 
     switch(protocol) {
+        case COAP_TCP_TLS:
+        case COAP_UDP_DTLS:
+#ifdef WITH_MBEDTLS
+            numBytes = mbedtls_ssl_read(connP->session->ssl, buffer, len);
+#endif
+            break;
         case COAP_UDP:
             numBytes = recvfrom(sock, buffer, len, 0, (struct sockaddr *)from, fromLen);
             break;
         case COAP_TCP:
             numBytes = recv(sock, buffer, len, 0);
-            break;
-        case COAP_TCP_TLS:
-        case COAP_UDP_DTLS:
-            /* TODO : mbed TLS API should be needed */
             break;
         default:
             fprintf(stderr, "connection_read : unsupported protocol type : %d\n", protocol);

@@ -27,6 +27,7 @@
 #include <tls/entropy.h>
 #include <tls/ctr_drbg.h>
 #include <tls/x509_crt.h>
+#include <tls/timing.h>
 
 #ifdef MBEDTLS_SSL_CACHE_C
 #include <tls/ssl_cache.h>
@@ -46,6 +47,7 @@ enum easy_tls_error {
 	TLS_INVALID_CACERT,
 	TLS_INVALID_DEVCERT,
 	TLS_INVALID_DEVKEY,
+	TLS_INVALID_PSK,
 };
 
 typedef struct tls_cert_and_key {
@@ -55,6 +57,11 @@ typedef struct tls_cert_and_key {
 	unsigned int ca_certlen;
 	unsigned int dev_certlen;
 	unsigned int dev_keylen;
+#ifdef MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED
+	unsigned char *psk;
+	char *psk_identity;
+	size_t psk_len;
+#endif
 } tls_cred;
 
 typedef struct tls_context {
@@ -63,6 +70,7 @@ typedef struct tls_context {
 	mbedtls_pk_context *pkey;
 	mbedtls_entropy_context *entropy;
 	mbedtls_ctr_drbg_context *ctr_drbg;
+	mbedtls_timing_delay_context *timer;
 #ifdef MBEDTLS_SSL_CACHE_C
 	mbedtls_ssl_cache_context *cache;
 #endif
@@ -74,6 +82,7 @@ typedef struct tls_options {
 	int auth_mode;				///< select authentication level (0 ~ 2)
 	int debug_mode;				///< select debug level (0 ~ 5)
 	char *host_name;			///< set host_name (NULL or char *)
+	int force_ciphersuites[3];	///< set force ciphersuites
 } tls_opt;
 
 typedef struct tls_session_context {

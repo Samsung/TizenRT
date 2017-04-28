@@ -76,6 +76,11 @@
 #include <tinyara/ascii.h>
 #endif
 
+#ifdef WITH_MBEDTLS
+#include "tls/certs.h"
+#include "tls/easy_tls.h"
+#endif
+
 #define MAX_PACKET_SIZE 1024
 
 #if defined(__TINYARA__)
@@ -94,6 +99,18 @@
 #ifndef STDERR_FILENO
 #define STDERR_FILENO 2
 #endif
+
+/*
+ * Definition for handling pthread
+ */
+#define LWM2M_SERVER_PRIORITY     100
+#define LWM2M_SERVER_STACK_SIZE   16384
+#define LWM2M_SERVER_SCHED_POLICY SCHED_RR
+
+struct pthread_arg {
+    int argc;
+    char **argv;
+};
 
 #endif /* __TINYARA__ */
 
@@ -824,6 +841,43 @@ void handle_sigint(int signum)
     g_quit = 2;
 }
 
+#ifdef WITH_MBEDTLS
+
+#define HEX2NUM(c)                    \
+    if (c >= '0' && c <= '9')      \
+        c -= '0';                   \
+    else if (c >= 'a' && c <= 'f') \
+        c -= 'a' - 10;              \
+    else if (c >= 'A' && c <= 'F') \
+        c -= 'A' - 10;              \
+    else                            \
+        return(-1);
+
+int lwm2m_unhexify(unsigned char *output, const char *input, size_t *olen)
+{
+    unsigned char c;
+    size_t j;
+
+    *olen = strlen(input);
+    if (*olen % 2 != 0 || *olen / 2 > MBEDTLS_PSK_MAX_LEN) {
+        return (-1);
+    }
+    *olen /= 2;
+
+    for (j = 0; j < *olen * 2; j += 2) {
+        c = input[j];
+        HEX2NUM(c);
+        output[j / 2] = c << 4;
+
+        c = input[j + 1];
+        HEX2NUM(c);
+        output[j / 2] |= c;
+    }
+
+    return (0);
+}
+#endif
+
 void print_usage(void)
 {
     fprintf(stderr, "Usage: lwm2mserver [OPTION]\r\n");
@@ -832,13 +886,27 @@ void print_usage(void)
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Server. Default: "LWM2M_STANDARD_PORT_STR"\r\n");
     fprintf(stdout, "  -p protocol \tSet protocol type, (0: UDP, 1: UDP+DTLS, 2: TCP, 3: TCP+TLS)\r\n");
+#ifdef WITH_MBEDTLS
+    fprintf(stdout, "  -i STRING\t Set PSK identity. If not set use none secure mode\r\n");
+    fprintf(stdout, "  -s HEXSTRING\t Set Pre-Shared-Key. If not set use none secure mode\r\n");
+#endif
     fprintf(stdout, "Examples:\r\n");
     fprintf(stdout, "  lwm2mserver -4 -p 3\r\n");
     fprintf(stdout, "\r\n");
 }
 
+#ifdef __TINYARA__
+int lwm2m_server_cb(void *args)
+{
+    int argc;
+    char **argv;
+
+    argc = ((struct pthread_arg *)args)->argc;
+    argv = ((struct pthread_arg *)args)->argv;
+#else
 int lwm2m_server_main(int argc, char *argv[])
 {
+#endif /* __TINYARA__ */
     int sock, newsock;
     int reuse;
     fd_set readfds;
@@ -852,6 +920,24 @@ int lwm2m_server_main(int argc, char *argv[])
     const char * localPort = LWM2M_STANDARD_PORT_STR;
 
     coap_protocol_t proto = COAP_UDP;
+
+    char * pskId = NULL;
+    char * pskBuffer = NULL;
+
+#ifdef WITH_MBEDTLS
+    unsigned char psk[MBEDTLS_PSK_MAX_LEN];
+
+    /* set default tls option */
+    tls_opt tls_option;
+    memset(&tls_option, 0, sizeof(tls_opt));
+
+    tls_option.server = MBEDTLS_SSL_IS_SERVER;
+    tls_option.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
+    tls_option.auth_mode = 2;
+    tls_option.debug_mode = 5;
+
+    tls_ctx *tls_context = NULL;
+#endif
 
     struct sockaddr_storage addr;
     socklen_t addrLen = sizeof(addr);
@@ -940,6 +1026,26 @@ int lwm2m_server_main(int argc, char *argv[])
             }
             localPort = argv[opt];
             break;
+#ifdef WITH_MBEDTLS
+        case 'i':
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            pskId = argv[opt];
+            break;
+        case 's':
+            opt++;
+            if (opt >= argc)
+            {
+                print_usage();
+                return 0;
+            }
+            pskBuffer = argv[opt];
+            break;
+#endif
         case 'p':
             opt++;
             if (opt >= argc)
@@ -963,6 +1069,46 @@ int lwm2m_server_main(int argc, char *argv[])
         opt += 1;
     }
 
+#ifdef WITH_MBEDTLS
+    if (proto == COAP_TCP_TLS || proto == COAP_UDP_DTLS) {
+
+        /* Set Transport layer (TCP or UDP) */
+        switch(proto) {
+        case COAP_TCP_TLS:
+            tls_option.transport = MBEDTLS_SSL_TRANSPORT_STREAM;
+            break;
+        case COAP_UDP_DTLS:
+            tls_option.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
+            break;
+        default:
+            break;
+        }
+
+        /* Set credential information */
+        tls_cred cred;
+        memset(&cred, 0, sizeof(tls_cred));
+
+        if (pskBuffer) {
+            if (lwm2m_unhexify(psk, pskBuffer, &cred.psk_len) == 0) {
+                if (pskId) {
+                    cred.psk_identity = pskId;
+                    cred.psk = psk;
+                }
+            }
+            if (cred.psk_identity == NULL && cred.psk == NULL) {
+                fprintf(stdout, "failed to set psk info\r\n");
+                return -1;
+            }
+        }
+
+        tls_context = TLSCtx(&cred);
+        if (tls_context == NULL) {
+            fprintf(stdout, "TLS context initialize filaed\n");
+            return -1;
+        }
+        localPort = LWM2M_DTLS_PORT_STR;
+    }
+#endif
     sock = create_socket(proto, localPort, addressFamily);
     if (sock < 0)
     {
@@ -980,8 +1126,14 @@ int lwm2m_server_main(int argc, char *argv[])
                 return -1;
             } else {
                 fprintf(stderr, "TCP session has been created\r\n");
+                connList = connection_new_incoming(connList, newsock, (struct sockaddr *)&addr, addrLen);
                 sock = newsock;
             }
+#ifdef WITH_MBEDTLS
+            if (proto == COAP_TCP_TLS) {
+                connList->session = TLSSession(sock, tls_context, &tls_option);
+            }
+#endif
             break;
         default:
             break;
@@ -1038,11 +1190,11 @@ int lwm2m_server_main(int argc, char *argv[])
         else if (result > 0)
         {
             uint8_t buffer[MAX_PACKET_SIZE];
-            int numBytes;
+            int numBytes = 0;
 
             if (FD_ISSET(sock, &readfds))
             {
-                numBytes = connection_read(proto, sock, buffer, MAX_PACKET_SIZE, &addr, &addrLen);
+                numBytes = connection_read(proto, connList, sock, buffer, MAX_PACKET_SIZE, &addr, &addrLen);
 
                 if (numBytes == -1)
                 {
@@ -1189,5 +1341,52 @@ static int read_input_command_line(char *buf)
 	memcpy(buf, buffer, pos);
 
 	return pos;
+}
+
+int lwm2m_server_main(int argc, char *argv[])
+{
+    pthread_t tid;
+    pthread_attr_t attr;
+    struct sched_param sparam;
+    int r;
+
+    struct pthread_arg args;
+    args.argc = argc;
+    args.argv = argv;
+
+    /* Initialize the attribute variable */
+    if ((r = pthread_attr_init(&attr)) != 0) {
+        printf("%s: pthread_attr_init failed, status=%d\n", __func__, r);
+        return -1;
+    }
+
+    /* 1. set a priority */
+    sparam.sched_priority = LWM2M_SERVER_PRIORITY;
+    if ((r = pthread_attr_setschedparam(&attr, &sparam)) != 0) {
+        printf("%s: pthread_attr_setschedparam failed, status=%d\n", __func__, r);
+        return -1;
+    }
+
+    if ((r = pthread_attr_setschedpolicy(&attr, LWM2M_SERVER_SCHED_POLICY)) != 0) {
+        printf("%s: pthread_attr_setschedpolicy failed, status=%d\n", __func__, r);
+        return -1;
+    }
+
+    /* 2. set a stacksize */
+    if ((r = pthread_attr_setstacksize(&attr, LWM2M_SERVER_STACK_SIZE)) != 0) {
+        printf("%s: pthread_attr_setstacksize failed, status=%d\n", __func__, r);
+        return -1;
+    }
+
+    /* 3. create pthread with entry function */
+    if ((r = pthread_create(&tid, &attr, (pthread_startroutine_t)lwm2m_server_cb, (void *)&args)) != 0) {
+        printf("%s: pthread_create failed, status=%d\n", __func__, r);
+        return -1;
+    }
+
+    /* Wait for the threads to stop */
+    pthread_join(tid, NULL);
+
+    return 0;
 }
 #endif /* __TINYARA__ */
