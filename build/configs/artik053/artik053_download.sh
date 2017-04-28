@@ -27,6 +27,7 @@ BUILD_DIR_PATH=${OS_DIR_PATH}/../build
 OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
 BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/artik053
 OPENOCD_DIR_PATH=${BOARD_DIR_PATH}/tools/openocd
+FW_DIR_PATH=${BOARD_DIR_PATH}/bin
 
 SYSTEM_TYPE=`getconf LONG_BIT`
 if [ "$SYSTEM_TYPE" = "64" ]; then
@@ -47,14 +48,30 @@ main()
 		case ${arg} in
 		ALL)
 			echo "ALL :"
+
+			# check existence of os binary
+			if [ ! -f "${OUTPUT_BINARY_PATH}/tinyara_head.bin" ]; then
+				echo "TinyAra binary is not existed, build first"
+				exit 1
+			fi
+
+			# check existence of firmware binaries
+			if [ ! -f "${FW_DIR_PATH}/bl1.bin" ] ||\
+				[ ! -f "${FW_DIR_PATH}/bl2.bin" ] ||\
+				[ ! -f "${FW_DIR_PATH}/sssfw.bin"] ||\
+				[ ! -f "${FW_DIR_PATH}/wlanfw.bin" ]; then
+				echo "Firmware binaries for ARTIK 053 are not existed"
+				exit 1
+			fi
+
 			# Download all binaries using openocd script
 			pushd ${OPENOCD_DIR_PATH}
 			${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' 	\
-				flash_write bl1 ../../bin/bl1.bin; 		\
-				flash_write bl2 ../../bin/bl2.bin; 		\
-				flash_write sssfw ../../bin/sssfw.bin; 		\
-				flash_write wlanfw ../../bin/wlanfw.bin;	\
-				flash_write os ../../../../output/bin/tinyara_head.bin;	\
+				flash_write bl1 ${FW_DIR_PATH}/bl1.bin; 		\
+				flash_write bl2 ${FW_DIR_PATH}/bl2.bin; 		\
+				flash_write sssfw ${FW_DIR_PATH}/sssfw.bin; 		\
+				flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin;	\
+				flash_write os ${OUTPUT_BINARY_PATH}/tinyara_head.bin;	\
 			exit'
 			popd
 			;;

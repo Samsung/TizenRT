@@ -27,12 +27,13 @@ source .config
 BOARD_NAME=${CONFIG_ARCH_BOARD}
 
 # ENV : Set to proper path's
-topdir=$PWD
-tinyara_path=${topdir}/..
-build_path=${tinyara_path}/build
-output_path=${build_path}/output
-bin_path=${output_path}/bin
-openocd_path=${tinyara_path}/build/configs/${BOARD_NAME}/openocd
+OS_DIR_PATH=${PWD}
+BUILD_DIR_PATH=${OS_DIR_PATH}/../build
+OUTPUT_DIR_PATH=${BUILD_DIR_PATH}/output
+OUTPUT_BIN_PATH=${OUTPUT_DIR_PATH}/bin
+BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/${BOARD_NAME}
+OPENOCD_DIR_PATH=${BOARD_DIR_PATH}/openocd
+FW_DIR_PATH=${BOARD_DIR_PATH}/boot_bin
 
 SYSTEM_TYPE=`getconf LONG_BIT`
 if [ "$SYSTEM_TYPE" = "64" ]; then
@@ -47,19 +48,19 @@ prepare_resource()
 	echo "Prepare resouces and pack into romfs.img ..."
 	# Only if FS_ROMFS enabled.
 	if [ "${CONFIG_FS_ROMFS}" = "y" ]; then
-		# create resource directory in ${output_path}
-		mkdir -p ${output_path}/res
-		cp -rf ${tinyara_path}/external/contents/${BOARD_NAME}/base-files/* ${output_path}/res/
+		# create resource directory in ${OUTPUT_DIR_PATH}
+		mkdir -p ${OUTPUT_DIR_PATH}/res
+		cp -rf ${tinyara_path}/external/contents/${BOARD_NAME}/base-files/* ${OUTPUT_DIR_PATH}/res/
 
 		# create romfs.img
 		echo "Creating ROMFS Image ..."
 		sh ${tinyara_path}/apps/tools/mkromfsimg.sh
 
-		romfs_size=`stat -c%s ${bin_path}/romfs.img`
+		romfs_size=`stat -c%s ${OUTPUT_BIN_PATH}/romfs.img`
 		echo "ROMFS Image Size : ${romfs_size}"
 
 		# download romfs.img using openocd script
-		pushd ${openocd_path}
+		pushd ${OPENOCD_DIR_PATH}
 		./openocd_linux64 -f s5jt200_evt0_flash_romfs.cfg
 		popd
 
@@ -71,7 +72,7 @@ prepare_resource()
 # MAIN
 main()
 {
-	echo "System is $SYSTEM_TYPE bits so that $COMMAND will be used to program"
+	echo "System is ${SYSTEM_TYPE} bits so that ${COMMAND} will be used to program"
 
 	# Process arguments
 	for arg in $@
@@ -79,9 +80,25 @@ main()
 		case ${arg} in
 		ALL)
 			echo "ALL :"
+
+			# check existence of os binary
+			if [ ! -f "${OUTPUT_BIN_PATH}/tinyara_head.bin" ]; then
+				echo "TinyAra binary is not existed, build first"
+				exit 1
+			fi
+
+			# check existence of firmware binaries
+			if [ ! -f "${FW_DIR_PATH}/t20.nbl1.bin" ] ||\
+				[ ! -f "${FW_DIR_PATH}/t20.bl2.head.bin" ] ||\
+				[ ! -f "${FW_DIR_PATH}/t20.sss.fw.bin" ] ||\
+				[ ! -f "${FW_DIR_PATH}/t20.wlan.bin" ]; then
+				echo "Firmware binaries for sidk_s5jt200 are not existed"
+				exit 1
+			fi
+
 			# download all binaries using openocd script
-			pushd ${openocd_path}
-			./$COMMAND -f s5jt200_silicon_evt0_fusing_flash_all.cfg
+			pushd ${OPENOCD_DIR_PATH}
+			./${COMMAND} -f s5jt200_silicon_evt0_fusing_flash_all.cfg
 			popd
 			prepare_resource
 			;;
