@@ -864,6 +864,56 @@ usage:
 		}
 	}
 
+#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+    /*
+     * Unhexify the pre-shared key if any is given
+     */
+    if( strlen( opt.psk ) )
+    {
+        unsigned char c;
+        size_t j;
+
+        if( strlen( opt.psk ) % 2 != 0 )
+        {
+            mbedtls_printf("pre-shared key not valid hex\n");
+            goto exit;
+        }
+
+        psk_len = strlen( opt.psk ) / 2;
+
+        for( j = 0; j < strlen( opt.psk ); j += 2 )
+        {
+            c = opt.psk[j];
+            if( c >= '0' && c <= '9' )
+                c -= '0';
+            else if( c >= 'a' && c <= 'f' )
+                c -= 'a' - 10;
+            else if( c >= 'A' && c <= 'F' )
+                c -= 'A' - 10;
+            else
+            {
+                mbedtls_printf("pre-shared key not valid hex\n");
+                goto exit;
+            }
+            psk[ j / 2 ] = c << 4;
+
+            c = opt.psk[j + 1];
+            if( c >= '0' && c <= '9' )
+                c -= '0';
+            else if( c >= 'a' && c <= 'f' )
+                c -= 'a' - 10;
+            else if( c >= 'A' && c <= 'F' )
+                c -= 'A' - 10;
+            else
+            {
+                mbedtls_printf("pre-shared key not valid hex\n");
+                goto exit;
+            }
+            psk[ j / 2 ] |= c;
+        }
+    }
+#endif /* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED */
+
 #if defined(MBEDTLS_SSL_ALPN)
 	if (opt.alpn_string != NULL) {
 		p = (char *)opt.alpn_string;
@@ -1125,6 +1175,16 @@ usage:
 	}
 #if defined(MBEDTLS_SSL_RENEGOTIATION)
 	mbedtls_ssl_conf_renegotiation(&conf, opt.renegotiation);
+#endif
+
+#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+    if( ( ret = mbedtls_ssl_conf_psk( &conf, psk, psk_len,
+                             (const unsigned char *) opt.psk_identity,
+                             strlen( opt.psk_identity ) ) ) != 0 )
+    {
+        mbedtls_printf( " failed\n  ! mbedtls_ssl_conf_psk returned %d\n\n", ret );
+        goto exit;
+    }
 #endif
 
 	if (opt.min_version != DFL_MIN_VERSION) {
