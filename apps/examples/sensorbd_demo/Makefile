@@ -62,10 +62,10 @@ STACKSIZE = 2048
 THREADEXEC = TASH_EXECMD_SYNC
 
 # Example
-
+SUB_DIR = examples
 ASRCS =
 CSRCS =
-CSRCS += $(wildcard examples/*.c)
+CSRCS += $(wildcard $(SUB_DIR)/*.c)
 MAINSRC = sensorbd_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
@@ -149,6 +149,7 @@ depend: .depend
 
 clean:
 	$(call DELFILE, .built)
+	$(call DELFILE, $(wildcard $(SUB_DIR)/*.o))
 	$(call CLEAN)
 
 distclean: clean
