@@ -32,7 +32,9 @@ tinyara_path=${topdir}/..
 build_path=${tinyara_path}/build
 output_path=${build_path}/output
 bin_path=${output_path}/bin
-openocd_path=${tinyara_path}/build/configs/${BOARD_NAME}/openocd
+board_dir_path=${build_path}/configs/${BOARD_NAME}
+openocd_path=${board_dir_path}/openocd
+fw_dir_path=${board_dir_path}/boot_bin
 
 SYSTEM_TYPE=`getconf LONG_BIT`
 if [ "$SYSTEM_TYPE" = "64" ]; then
@@ -79,6 +81,22 @@ main()
 		case ${arg} in
 		ALL)
 			echo "ALL :"
+
+			# check existence of os binary
+			if [ ! -f "${bin_path}/tinyara_head.bin" ]; then
+				echo "TinyAra binary is not existed, build first"
+				exit 1
+			fi
+
+			# check existence of firmware binaries
+			if [ ! -f "${fw_dir_path}/t20.nbl1.bin" ] ||\
+				[ ! -f "${fw_dir_path}/t20.bl2.head.bin" ] ||\
+				[ ! -f "${fw_dir_path}/t20.sss.fw.bin" ] ||\
+				[ ! -f "${fw_dir_path}/t20.wlan.bin" ]; then
+				echo "Firmware binaries for sidk_s5jt200 are not existed"
+				exit 1
+			fi
+
 			# download all binaries using openocd script
 			pushd ${openocd_path}
 			./$COMMAND -f s5jt200_silicon_evt0_fusing_flash_all.cfg
