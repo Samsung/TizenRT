@@ -106,27 +106,27 @@
 #if defined(CONFIG_UART0_SERIAL_CONSOLE)
 #define CONSOLE_PORT		UART0
 #define CONSOLE_DEV			g_uart0priv.dev
-#define CONSOLE_BASE		UART0_BASE
+#define CONSOLE_BASE		S5J_UART0_BASE
 #elif defined(CONFIG_UART1_SERIAL_CONSOLE)
 #define CONSOLE_PORT		UART1
 #define CONSOLE_DEV			g_uart1priv.dev
-#define CONSOLE_BASE		UART1_BASE
+#define CONSOLE_BASE		S5J_UART1_BASE
 #elif defined(CONFIG_UART2_SERIAL_CONSOLE)
 #define CONSOLE_PORT		UART2
 #define CONSOLE_DEV			g_uart2priv.dev
-#define CONSOLE_BASE		UART2_BASE
+#define CONSOLE_BASE		S5J_UART2_BASE
 #elif defined(CONFIG_UART3_SERIAL_CONSOLE)
 #define CONSOLE_PORT		UART3
 #define CONSOLE_DEV			g_uart3priv.dev
-#define CONSOLE_BASE		UART3_BASE
+#define CONSOLE_BASE		S5J_UART3_BASE
 #elif defined(CONFIG_OTHER_SERIAL_CONSOLE)
 #define CONSOLE_PORT		UARTDBG
 #define CONSOLE_DEV			g_uartdbgpriv.dev
-#define CONSOLE_BASE		UARTDBG_BASE
+#define CONSOLE_BASE		S5J_UARTDBG_BASE
 #else
 #define CONSOLE_PORT		UARTDBG
 #define CONSOLE_DEV			g_uartdbgpriv.dev
-#define CONSOLE_BASE		UARTDBG_BASE
+#define CONSOLE_BASE		S5J_UARTDBG_BASE
 #endif
 #endif
 
@@ -237,7 +237,7 @@ static struct up_dev_s g_uartdbgpriv = {
 		.ops		= &g_uart_ops,
 		.priv		= &g_uartdbgpriv,
 	},
-	.uartbase	= UARTDBG_BASE,
+	.uartbase	= S5J_UARTDBG_BASE,
 	.baud		= CONFIG_UART4_BAUD,
 	.irq		= S5J_IRQ_UARTDBG,
 	.parity		= CONFIG_UART4_PARITY,
@@ -287,7 +287,7 @@ static struct up_dev_s g_uart0priv = {
 		.ops		= &g_uart_ops,
 		.priv		= &g_uart0priv,
 	},
-	.uartbase	= UART0_BASE,
+	.uartbase	= S5J_UART0_BASE,
 	.baud		= CONFIG_UART0_BAUD,
 	.irq		= S5J_IRQ_UART0,
 	.parity		= CONFIG_UART0_PARITY,
@@ -313,7 +313,7 @@ static struct up_dev_s g_uart1priv = {
 		.ops		= &g_uart_ops,
 		.priv		= &g_uart1priv,
 	},
-	.uartbase	= UART1_BASE,
+	.uartbase	= S5J_UART1_BASE,
 	.baud		= CONFIG_UART1_BAUD,
 	.irq		= S5J_IRQ_UART1,
 	.parity		= CONFIG_UART1_PARITY,
@@ -339,7 +339,7 @@ static struct up_dev_s g_uart2priv = {
 		.ops		= &g_uart_ops,
 		.priv		= &g_uart2priv,
 	},
-	.uartbase	= UART2_BASE,
+	.uartbase	= S5J_UART2_BASE,
 	.baud		= CONFIG_UART2_BAUD,
 	.irq		= S5J_IRQ_UART2,
 	.parity		= CONFIG_UART2_PARITY,
@@ -365,7 +365,7 @@ static struct up_dev_s g_uart3priv = {
 		.ops		= &g_uart_ops,
 		.priv		= &g_uart3priv,
 	},
-	.uartbase	= UART3_BASE,
+	.uartbase	= S5J_UART3_BASE,
 	.baud		= CONFIG_UART3_BAUD,
 	.irq		= S5J_IRQ_UART3,
 	.parity		= CONFIG_UART3_PARITY,
