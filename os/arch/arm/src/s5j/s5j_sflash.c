@@ -92,10 +92,6 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
 static void s5j_sflash_disable_wp(void)
 {
 	unsigned int sfcon;
@@ -122,6 +118,9 @@ static uint8_t s5j_sflash_read_status(void)
 	return getreg8(rRDSR);
 }
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 #ifdef CONFIG_MTD_PROGMEM
 size_t up_progmem_getaddress(size_t page)
 {
@@ -138,8 +137,9 @@ ssize_t up_progmem_erasepage(size_t page)
 	size_t addr;
 	irqstate_t irqs;
 
-	if (page >= up_progmem_npages())
+	if (page >= up_progmem_npages()) {
 		return -EFAULT;
+	}
 
 	addr = up_progmem_getaddress(page);
 
@@ -172,14 +172,16 @@ ssize_t up_progmem_ispageerased(size_t page)
 	size_t count;
 	size_t bwritten;
 
-	if (page >= up_progmem_npages())
+	if (page >= up_progmem_npages()) {
 		return -EFAULT;
+	}
 
 	bwritten = 0;
 	addr = up_progmem_getaddress(page);
 	for (count = up_progmem_pagesize(page); count; count--) {
-		if (getreg32(addr) != 0xffffff)
+		if (getreg32(addr) != 0xffffff) {
 			bwritten++;
+		}
 		addr += sizeof(int);
 	}
 
@@ -193,8 +195,9 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 	size_t remain = count;
 
 	page = up_progmem_getpage(addr + count);
-	if (page < 0)
+	if (page < 0) {
 		return -EINVAL;
+	}
 
 	pagesize = up_progmem_pagesize(page);
 
@@ -202,8 +205,9 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 		int tmp = remain;
 		irqstate_t irqs;
 
-		if (tmp > pagesize)
+		if (tmp > pagesize) {
 			tmp = pagesize;
+		}
 
 		/* Disable IRQs */
 		irqs = irqsave();
@@ -243,7 +247,7 @@ void s5j_sflash_init(void)
 	putreg32(0x4, rFLASH_IO_MODE);			/* QUAD */
 
 	/* Check FLASH has Quad Enabled */
-	while (!(s5j_sflash_read_status() & (0x1 << 6)));
+	while (!(s5j_sflash_read_status() & (0x1 << 6))) ;
 	lldbg("FLASH Quad Enabled\n");
 
 	putreg32(0x0010001A, rSF_CON);			/* Enable WP */
