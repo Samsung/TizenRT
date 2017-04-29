@@ -66,56 +66,29 @@
 
 #include "s5j_vclk.h"
 #include "s5j_gpio.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-#define rSF_CON			(SFI_BASE + 0x0004)
-#define rERASE_ADDRESS		(SFI_BASE + 0x0010)
-#define rCOMMAND1		(SFI_BASE + 0x001C)
-#define rCOMMAND2		(SFI_BASE + 0x0020)
-#define rCOMMAND3		(SFI_BASE + 0x0024)
-#define rCOMMAND4		(SFI_BASE + 0x0028)
-#define rCOMMAND5		(SFI_BASE + 0x002C)
-#define rADDR_CMD		(SFI_BASE + 0x0059)
-#define rSE			(SFI_BASE + 0x005E)
-#define rFLASH_IO_MODE		(SFI_BASE + 0x0074)
-#define rFLASH_PERF_MODE	(SFI_BASE + 0x0078)
-#define rRDID			(SFI_BASE + 0x00AC)
-#define rBE			(SFI_BASE + 0x00BE)
-#define rCE			(SFI_BASE + 0x00CE)
-#define rRDSR			(SFI_BASE + 0x00DC)
-#define rWRDI			(SFI_BASE + 0x00DD)
-#define rWRSR			(SFI_BASE + 0x00DE)
-#define rWREN			(SFI_BASE + 0x00EE)
+#include "chip/s5jt200_sflash.h"
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 static void s5j_sflash_disable_wp(void)
 {
-	unsigned int sfcon;
-
 	/* someone has been disabled wp, we should wait until it's released */
-	do {
-		sfcon = getreg32(rSF_CON);
-	} while (sfcon & (1 << 31));
+	while (getreg32(S5J_SFLASH_SFCON) & SFLASH_SFCON_WP_DISABLE) ;
 
-	sfcon = getreg32(rSF_CON) | (1 << 31);
-	putreg32(sfcon, rSF_CON);
+	modifyreg32(S5J_SFLASH_SFCON,
+				SFLASH_SFCON_WP_ENABLE, SFLASH_SFCON_WP_DISABLE);
 }
 
 static void s5j_sflash_enable_wp(void)
 {
-	unsigned int sfcon;
-
-	sfcon = getreg32(rSF_CON) & ~(1 << 31);
-	putreg32(sfcon, rSF_CON);
+	modifyreg32(S5J_SFLASH_SFCON,
+				SFLASH_SFCON_WP_DISABLE, SFLASH_SFCON_WP_ENABLE);
 }
 
 static uint8_t s5j_sflash_read_status(void)
 {
-	return getreg8(rRDSR);
+	return getreg8(S5J_SFLASH_RDSR);
 }
 
 /****************************************************************************
@@ -149,8 +122,8 @@ ssize_t up_progmem_erasepage(size_t page)
 	s5j_sflash_disable_wp();
 
 	/* Set sector address and then send erase command */
-	putreg32(addr - S5J_FLASH_PADDR, rERASE_ADDRESS);
-	putreg8(0xff, rSE);
+	putreg32(addr - S5J_FLASH_PADDR, S5J_SFLASH_ERASE_ADDRESS);
+	putreg8(0xff, S5J_SFLASH_SE);
 
 	/* Wait for the completion */
 	while (s5j_sflash_read_status() & 0x1);
@@ -242,15 +215,17 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
  */
 void s5j_sflash_init(void)
 {
-	putreg32(0x8010001A, rSF_CON);			/* disable WP */
-	putreg32(0x8, rFLASH_PERF_MODE);		/* FLASH_PERF_MODE */
-	putreg32(0x4, rFLASH_IO_MODE);			/* QUAD */
+	s5j_sflash_disable_wp();
+
+	modifyreg32(S5J_SFLASH_SFCON, 0, SFLASH_SFCON_ERASE_WAIT_ON);
+	putreg32(SFLASH_PERF_MODE_DUAL_QUAD, S5J_SFLASH_PERF_MODE);
+	putreg32(SFLASH_IO_MODE_QUAD_FAST_READ, S5J_SFLASH_IO_MODE);
 
 	/* Check FLASH has Quad Enabled */
 	while (!(s5j_sflash_read_status() & (0x1 << 6))) ;
 	lldbg("FLASH Quad Enabled\n");
 
-	putreg32(0x0010001A, rSF_CON);			/* Enable WP */
+	s5j_sflash_enable_wp();
 
 	/* Set FLASH clk 80Mhz for Max performance */
 	cal_clk_setrate(d1_serialflash, 80000000);
