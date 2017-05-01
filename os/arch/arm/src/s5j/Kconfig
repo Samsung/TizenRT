@@ -129,10 +129,6 @@ config S5J_HAVE_WATCHDOG
 	bool
 	default n
 
-config S5J_SERIALDRIVER
-	bool
-	default n
-
 config S5J_ADC
 	bool "ADC"
 	default n
@@ -155,11 +151,14 @@ config S5J_I2C
 	default n
 	depends on S5J_HAVE_I2C
 
+config S5J_UART_FLOWCONTROL
+	bool
+	default n
+
 config S5J_UART0
 	bool "UART0"
 	default n
 	depends on S5J_HAVE_UART0
-	select S5J_SERIALDRIVER
 	select ARCH_HAVE_UART0
 	select ARCH_HAVE_SERIAL_TERMIOS
 
@@ -167,7 +166,6 @@ config S5J_UART1
 	bool "UART1"
 	default n
 	depends on S5J_HAVE_UART1
-	select S5J_SERIALDRIVER
 	select ARCH_HAVE_UART1
 	select ARCH_HAVE_SERIAL_TERMIOS
 
@@ -175,23 +173,32 @@ config S5J_UART2
 	bool "UART2"
 	default n
 	depends on S5J_HAVE_UART2
-	select S5J_SERIALDRIVER
 	select ARCH_HAVE_UART2
 	select ARCH_HAVE_SERIAL_TERMIOS
+
+config S5J_UART2_FLOWCONTROL
+	bool "UART2 Flow Control"
+	default n
+	depends on S5J_UART2
+	select S5J_UART_FLOWCONTROL
 
 config S5J_UART3
 	bool "UART3"
 	default n
 	depends on S5J_HAVE_UART3
-	select S5J_SERIALDRIVER
 	select ARCH_HAVE_UART3
 	select ARCH_HAVE_SERIAL_TERMIOS
+
+config S5J_UART3_FLOWCONTROL
+	bool "UART3 Flow Control"
+	default n
+	depends on S5J_UART3
+	select S5J_UART_FLOWCONTROL
 
 config S5J_UART4
 	bool "UART4 (Debug UART)"
 	default y
 	depends on S5J_HAVE_UART4
-	select S5J_SERIALDRIVER
 	select ARCH_HAVE_UART4
 	select ARCH_HAVE_SERIAL_TERMIOS
 
