@@ -37,11 +37,11 @@ config S5J_S5JT200
 	select S5J_HAVE_SFLASH
 	select S5J_HAVE_SPI
 	select S5J_HAVE_SSS
-	select S5J_HAVE_UARTDBG
 	select S5J_HAVE_UART0
 	select S5J_HAVE_UART1
 	select S5J_HAVE_UART2
 	select S5J_HAVE_UART3
+	select S5J_HAVE_UART4
 	select S5J_HAVE_WATCHDOG
 
 menu "S5J Peripheral Support"
@@ -105,10 +105,6 @@ config S5J_HAVE_SSS
 	bool
 	default n
 
-config S5J_HAVE_UARTDBG
-	bool
-	default n
-
 config S5J_HAVE_UART0
 	bool
 	default n
@@ -122,6 +118,10 @@ config S5J_HAVE_UART2
 	default n
 
 config S5J_HAVE_UART3
+	bool
+	default n
+
+config S5J_HAVE_UART4
 	bool
 	default n
 
@@ -187,10 +187,10 @@ config S5J_UART3
 	select ARCH_HAVE_UART3
 	select ARCH_HAVE_SERIAL_TERMIOS
 
-config S5J_UARTDBG
-	bool "Debug UART"
+config S5J_UART4
+	bool "UART4 (Debug UART)"
 	default y
-	depends on S5J_HAVE_UARTDBG
+	depends on S5J_HAVE_UART4
 	select S5J_SERIALDRIVER
 	select ARCH_HAVE_UART4
 	select ARCH_HAVE_SERIAL_TERMIOS

@@ -118,7 +118,7 @@
 #define S5J_IRQ_UART1			IRQ_SPI(55)
 #define S5J_IRQ_UART2			IRQ_SPI(56)
 #define S5J_IRQ_UART3			IRQ_SPI(57)
-#define S5J_IRQ_UARTDBG			IRQ_SPI(58)
+#define S5J_IRQ_UART4			IRQ_SPI(58)
 
 #define S5J_IRQ_SPI_0			IRQ_SPI(60)
 #define S5J_IRQ_SPI_1			IRQ_SPI(61)

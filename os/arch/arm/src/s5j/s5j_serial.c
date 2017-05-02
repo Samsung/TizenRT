@@ -122,11 +122,11 @@
 #elif defined(CONFIG_OTHER_SERIAL_CONSOLE)
 #define CONSOLE_PORT		UARTDBG
 #define CONSOLE_DEV			g_uartdbgpriv.dev
-#define CONSOLE_BASE		S5J_UARTDBG_BASE
+#define CONSOLE_BASE		S5J_UART4_BASE
 #else
 #define CONSOLE_PORT		UARTDBG
 #define CONSOLE_DEV			g_uartdbgpriv.dev
-#define CONSOLE_BASE		S5J_UARTDBG_BASE
+#define CONSOLE_BASE		S5J_UART4_BASE
 #endif
 #endif
 
@@ -223,7 +223,7 @@ static char g_uart3txbuffer[CONFIG_UART3_TXBUFSIZE];
 
 /* This array contains private resource structures of each port */
 
-#ifdef CONFIG_S5J_UARTDBG
+#ifdef CONFIG_S5J_UART4
 static struct up_dev_s g_uartdbgpriv = {
 	.dev		= {
 		.recv = {
@@ -237,15 +237,15 @@ static struct up_dev_s g_uartdbgpriv = {
 		.ops		= &g_uart_ops,
 		.priv		= &g_uartdbgpriv,
 	},
-	.uartbase	= S5J_UARTDBG_BASE,
+	.uartbase	= S5J_UART4_BASE,
 	.baud		= CONFIG_UART4_BAUD,
-	.irq		= S5J_IRQ_UARTDBG,
+	.irq		= S5J_IRQ_UART4,
 	.parity		= CONFIG_UART4_PARITY,
 	.bits		= CONFIG_UART4_BITS,
 	.stopbits2	= CONFIG_UART4_2STOP,
 	.eCh		= UARTDBG,
-	.rx_gpio	= GPIO_UARTDBG_RXD,
-	.tx_gpio	= GPIO_UARTDBG_TXD,
+	.rx_gpio	= GPIO_UART4_RXD,
+	.tx_gpio	= GPIO_UART4_TXD,
 };
 #else
 static struct up_dev_s g_uartdbgpriv = {
@@ -391,7 +391,7 @@ static struct up_dev_s * const uart_devs[S5J_NUART] =
 #ifdef CONFIG_S5J_UART3
 	[3] = &g_uart3priv,
 #endif
-#ifdef CONFIG_S5J_UARTDBG
+#ifdef CONFIG_S5J_UART4
 	[S5J_NUART - 1] = &g_uartdbgpriv,
 #endif
 };
@@ -1032,7 +1032,7 @@ static int up_setup(struct uart_dev_s *dev)
 			priv = &g_uart3priv;
 			break;
 #endif
-#ifdef CONFIG_S5J_UARTDBG
+#ifdef CONFIG_S5J_UART4
 		case UARTDBG:
 		default:
 			priv = &g_uartdbgpriv;
@@ -1496,7 +1496,7 @@ void up_serialinit(void)
 		}
 	}
 
-#ifdef CONFIG_S5J_UARTDBG
+#ifdef CONFIG_S5J_UART4
 	(void)uart_register("/dev/ttyDBG", &uart_devs[S5J_NUART - 1]->dev);
 #endif
 
