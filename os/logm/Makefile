@@ -22,13 +22,10 @@ ASRCS =
 
 ifeq ($(CONFIG_LOGM),y)
 CSRCS += logm_init.c logm_process.c logm.c
-CSRCS += logm_get.c logm_set.c
-ifeq ($(CONFIG_TASH),y)
-CSRCS += logm_tashcmds.c
 endif
+
 ifeq ($(CONFIG_LOGM_TEST),y)
 CSRCS += logm_test.c
-endif
 endif
 
 DEPPATH = --dep-path .
@@ -44,13 +41,13 @@ BIN = liblogm$(LIBEXT)
 all: $(BIN)
 
 $(AOBJS): %$(OBJEXT): %.S
-	$(call ASSEMBLE, $<, $(notdir $@))
+	$(call ASSEMBLE, $<, $@)
 
 $(COBJS): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $(notdir $@))
+	$(call COMPILE, $<, $@)
 
 $(BIN):	$(OBJS)
-	$(call ARCHIVE, $@, $(notdir $(OBJS)))
+	$(call ARCHIVE, $@, $(OBJS))
 
 .depend: Makefile $(SRCS)
 	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep

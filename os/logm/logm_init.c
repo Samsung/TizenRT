@@ -36,8 +36,4 @@ void logm_start(void)
 	if (!g_logm_tid) {
 		LOGM_PRINTERR_AND_RETURN();
 	}
-
-	/* Need to add a cofig variable */
-	logm_register_tashcmds();
-
 }
