@@ -126,6 +126,8 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 	else if (mutex->pid != (int)getpid()) {
 		ret = EPERM;
 	} else {
+		uint16_t oldstate;
+
 		/* Give up the mutex */
 
 		svdbg("Give up mutex / take cond\n");
@@ -145,10 +147,18 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 
 		sched_unlock();
 
-		/* Reacquire the mutex */
+		/* Reacquire the mutex
+		 * When cancellation points are enabled, we need to
+		 * hold the mutex when the pthread is canceled and
+		 * cleanup handlers, if any, are entered.
+		 */
 
 		svdbg("Reacquire mutex...\n");
+
+		oldstate = pthread_disable_cancel();
 		status = pthread_takesemaphore((FAR sem_t *)&mutex->sem, false);
+		pthread_enable_cancel(oldstate);
+
 		if (ret == OK) {
 			/* Report the first failure that occurs */
 

@@ -198,6 +198,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 	int ticks;
 	int mypid = (int)getpid();
 	irqstate_t int_state;
+	uint16_t oldstate;
 	int ret = OK;
 	int status;
 
@@ -322,7 +323,11 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 					/* Reacquire the mutex (retaining the ret). */
 
 					svdbg("Re-locking...\n");
+
+					oldstate = pthread_disable_cancel();
 					status = pthread_mutex_take(mutex, false);
+					pthread_enable_cancel(oldstate);
+
 					if (status == OK) {
 						mutex->pid = mypid;
 					} else if (ret == 0) {
