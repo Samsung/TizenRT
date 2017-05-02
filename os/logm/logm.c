@@ -24,52 +24,86 @@
 #include <string.h>
 #include <sched.h>
 #include <tinyara/config.h>
+#include <tinyara/logm.h>
 #ifdef CONFIG_ARCH_LOWPUTC
 #include <tinyara/streams.h>
 #endif
-
+#ifdef CONFIG_LOGM_TIMESTAMP
+#include <tinyara/clock.h>
+#endif
 #include "logm.h"
 
-/* An additional line is for logm buffer overflow message */
-char g_logm_rsvbuf[LOGM_RSVBUF_COUNT + 1][LOGM_MAX_MSG_LEN];
-int g_logm_head;
-int g_logm_tail;
-int g_logm_count;
+volatile int g_logm_head;
+volatile int g_logm_tail;
+volatile int g_logm_available;
+volatile int g_logm_enqueued_count;
+volatile int g_logm_dropmsg_count;
+volatile int g_logm_overflow_offset;
+
+static void logm_putc(FAR struct lib_outstream_s *this, int ch)
+{
+	if (this->nput < g_logm_available - 1) {
+		g_logm_rsvbuf[(g_logm_tail + this->nput++) % logm_bufsize] = ch;
+	}
+}
+
+static void logm_initstream(FAR struct lib_outstream_s *outstream)
+{
+	outstream->put = logm_putc;
+#ifdef CONFIG_STDIO_LINEBUFFER
+	outstream->flush = lib_noflush;
+#endif
+	outstream->nput = 0;
+}
 
 /* logm_internal hook for syslog & printfs */
 int logm_internal(int priority, const char *fmt, va_list ap)
 {
 	irqstate_t flags;
 	int ret = 0;
+	struct lib_outstream_s strm;
+#ifdef CONFIG_LOGM_TIMESTAMP
+	struct timespec ts;
+#endif
 
-	if (g_logm_isready && !up_interrupt_context()) {
+	if (LOGM_STATUS(LOGM_READY) && !LOGM_STATUS(LOGM_BUFFER_RESIZE_REQ) && !up_interrupt_context()) {
 		flags = irqsave();
 
-		if (g_logm_count < LOGM_RSVBUF_COUNT) {
-			ret = vsnprintf((char *)&g_logm_rsvbuf[g_logm_tail], LOGM_MAX_MSG_LEN, fmt, ap);
-		} else if (g_logm_count == LOGM_RSVBUF_COUNT) {
-			ret = vsnprintf((char *)&g_logm_rsvbuf[g_logm_tail], LOGM_MAX_MSG_LEN, "LOGM: Buffer Overflow dropping messages\n", ap);
-		} else {
+		if (LOGM_STATUS(LOGM_BUFFER_OVERFLOW)) {
+			g_logm_dropmsg_count++;
 			irqrestore(flags);
 			return 0;
 		}
 
-		/* choose a available buffer */
+		if (g_logm_available <= 0) {
+			LOGM_STATUS_SET(LOGM_BUFFER_OVERFLOW);
+			g_logm_dropmsg_count = 1;
+			g_logm_overflow_offset = g_logm_tail;
+			irqrestore(flags);
+			return 0;
+		}
 
-		if (ret >= LOGM_MAX_MSG_LEN - 1) {
-			g_logm_rsvbuf[g_logm_tail][LOGM_MAX_MSG_LEN - 1] = '\n';
+		/*  Initializes a stream for use with logm buffer */
+		logm_initstream(&strm);
+
+#ifdef CONFIG_LOGM_TIMESTAMP
+		/* Get the current time and prepend timestamp to message */
+		if (clock_systimespec(&ts) == OK) {
+			(void)lib_sprintf((FAR struct lib_outstream_s *)&strm, "[%4d.%4d] ", ts.tv_sec, ts.tv_nsec / 100000);
 		}
-		g_logm_tail += 1;
-		if (g_logm_tail >= (LOGM_RSVBUF_COUNT + 1)) {
-			g_logm_tail -= (LOGM_RSVBUF_COUNT + 1) ;
-		}
-		g_logm_count++;
+#endif
+		ret = lib_vsprintf(&strm, fmt, ap);
+		g_logm_rsvbuf[(g_logm_tail + ret) % logm_bufsize] = '\0';
+
+		/* set g_logm_tail for next entered message */
+		g_logm_tail = (g_logm_tail + ret + 1) % logm_bufsize;
+		g_logm_available -= (ret + 1);
+		g_logm_enqueued_count++;
 
 		irqrestore(flags);
 	} else {
 		/* Low Output: Sytem is not yet completely ready or this is called from interrupt handler */
 #ifdef CONFIG_ARCH_LOWPUTC
-		struct lib_outstream_s strm;
 		lib_lowoutstream(&strm);
 		ret = lib_vsprintf(&strm, fmt, ap);
 #endif
