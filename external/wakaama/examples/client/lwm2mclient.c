@@ -966,8 +966,15 @@ int lwm2m_client_main(int argc, char *argv[])
     unsigned char psk[MBEDTLS_PSK_MAX_LEN];
 
     /* set default tls option */
-    tls_opt option = {MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_DATAGRAM, 2, 5, NULL, };
-    option.force_ciphersuites[0] = mbedtls_ssl_get_ciphersuite_id(LWM2M_CIPHERSUIT);
+
+    /*
+     * Note that, currently auth_mode is set to 0 (for connecting artikcloud)
+     * if you want to change auth_mode, please change 3rd parameter of tls_opt structure
+     * - auth_mode can be configured  among (2: always verify, 1: optional, 0: not verify)
+     */
+    tls_opt option = {MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_DATAGRAM, 0, 5, NULL, };
+    /* set cipher suite to all*/
+    option.force_ciphersuites[0] = 0;
     option.force_ciphersuites[1] = 0;
 #endif
 
@@ -1146,8 +1153,9 @@ int lwm2m_client_main(int argc, char *argv[])
             /* move pointer to address field */
             server += strlen(coap_uri_prefix[proto]);
         }
-        serverPort = coap_get_port_from_proto(proto);
-	}
+        if (!serverPortChanged)
+            serverPort = coap_get_port_from_proto(proto);
+    }
 
     /*
      * This call an internal function that create an IPV6 socket on the port 5683.
