@@ -36,6 +36,14 @@ enum logm_loglevels_e {
 	LOGM_OFF  /* Is this needed? */
 };
 
+enum logm_param_type_e {
+	LOGM_BUFSIZE,
+	LOGM_NEW_BUFSIZE,
+	LOGM_INTERVAL,
+	LOGM_PRIORITY
+	/* This would grow later */
+};
+
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
@@ -48,6 +56,8 @@ extern "C"
 void logm_start(void);
 int logm_internal(int priority, const char *fmt, va_list valst);
 int logm(int flag, int mod, int priority, const char *fmt, ...);
+int logm_set(enum logm_param_type_e type, int value);
+int logm_get(enum logm_param_type_e type, void* value);
 
 #undef EXTERN
 #if defined(__cplusplus)

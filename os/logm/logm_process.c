@@ -17,39 +17,96 @@
  ****************************************************************************/
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <arch/irq.h>
 #include <tinyara/logm.h>
+#include <tinyara/config.h>
 #include "logm.h"
 
-volatile int g_logm_isready;
-extern char g_logm_rsvbuf[][LOGM_MAX_MSG_LEN];
-extern int g_logm_head;
-extern int g_logm_tail;
-extern int g_logm_count;
+volatile int logm_bufsize = LOGM_BUFFER_SIZE;
+volatile int logm_print_interval = LOGM_PRINT_INTERVAL * 1000;
+char *volatile g_logm_rsvbuf = NULL;
+volatile uint8_t logm_status;
+
+static int logm_change_bufsize(void)
+{
+	int buflen;
+
+	/* Get new values */
+	logm_get(LOGM_NEW_BUFSIZE, &buflen);
+
+	/* Keep using old size because of invalid parameter */
+	if (buflen < 0) {
+		LOGM_STATUS_CLEAR(LOGM_BUFFER_RESIZE_REQ);
+		return 0;
+	}
+
+	/* Realloc new buffer with new length */
+	g_logm_rsvbuf = (char *)realloc(g_logm_rsvbuf, buflen);
+	if (!g_logm_rsvbuf) {
+		return -1;
+	}
+	memset(g_logm_rsvbuf, 0, buflen);
+	lmdbg("logm new malloced address is 0x%x\n", g_logm_rsvbuf);
+
+	/* Reinitialize all  */
+	g_logm_head = 0;
+	g_logm_tail = 0;
+	logm_bufsize = buflen;
+	g_logm_available = buflen;
+	g_logm_enqueued_count = 0;
+	g_logm_dropmsg_count = 0;
+	g_logm_overflow_offset = -1;
+
+	LOGM_STATUS_CLEAR(LOGM_BUFFER_RESIZE_REQ);	// finish
+
+	return 0;
+}
 
 int logm_task(int argc, char *argv[])
 {
-	(void)argc;
-	(void)argv;
-	g_logm_head = 0;
-	g_logm_tail = 0;
-	g_logm_count = 0;
+	int ret = 0;
+	irqstate_t flags;
+
+	g_logm_rsvbuf = (char *)malloc(logm_bufsize);
+	memset(g_logm_rsvbuf, 0, logm_bufsize);
+
 	/* Now logm is ready */
-	g_logm_isready = 1;
+	LOGM_STATUS_SET(LOGM_READY);
+	g_logm_available = logm_bufsize;
 
 #ifdef CONFIG_LOGM_TEST
 	logmtest_init();
 #endif
 
 	while (1) {
-		while (g_logm_count > 0) {
-			fputs(g_logm_rsvbuf[g_logm_head], stdout);
-			g_logm_head += 1;
-			if (g_logm_head >= (LOGM_RSVBUF_COUNT + 1)) {
-				g_logm_head -= (LOGM_RSVBUF_COUNT + 1);
+		while (g_logm_enqueued_count > 0) {
+			ret = 0;
+			while (*(g_logm_rsvbuf + (g_logm_head + ret) % logm_bufsize)) {
+				fputc(g_logm_rsvbuf[(g_logm_head + ret++) % logm_bufsize], stdout);
 			}
-			g_logm_count--;
+			g_logm_head = (g_logm_head + ret + 1) % logm_bufsize;
+			g_logm_available += (ret + 1);
+
+			g_logm_enqueued_count--;
+
+			if (LOGM_STATUS(LOGM_BUFFER_OVERFLOW)) {
+				LOGM_STATUS_CLEAR(LOGM_BUFFER_OVERFLOW);
+			}
+
+			if (g_logm_overflow_offset >= 0 && g_logm_overflow_offset == g_logm_head) {
+				fprintf(stdout, "\n[LOGM BUFFER OVERFLOW] %d messages are dropped\n", g_logm_dropmsg_count);
+				g_logm_overflow_offset = -1;
+			}
 		}
-		sleep(1);
+
+		if (LOGM_STATUS(LOGM_BUFFER_RESIZE_REQ)) {
+			flags = irqsave();
+			logm_change_bufsize();
+			irqrestore(flags);
+		}
+		usleep(logm_print_interval);
 	}
 	return 0;					// Just to make compiler happy
 }
