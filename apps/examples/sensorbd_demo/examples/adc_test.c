@@ -87,7 +87,7 @@ void adctest_main(int argc, char *argv[])
 				return;
 			}
 		} else if (nbytes == 0) {
-			printf("%s: No data read, Ignoring\n");
+			printf("%s: No data read, Ignoring\n", __func__);
 		} else {
 			int nsamples = nbytes / sizeof(struct adc_msg_s);
 			if (nsamples * sizeof(struct adc_msg_s) != nbytes) {
