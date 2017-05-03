@@ -787,7 +787,7 @@ int mqtt_client_sub_main(int argc, char *argv[])
 	arg.argv = argv;
 	ret = pthread_create(&tid, &attr, (pthread_startroutine_t)mqtt_client_sub_task, &arg);
 	if (ret != 0) {
-		fprintf(stderr, "Error: pthread_create() failed. (ret=%d)\n");
+		fprintf(stderr, "Error: pthread_create() failed. (ret=%d)\n", ret);
 		goto done;
 	}
 

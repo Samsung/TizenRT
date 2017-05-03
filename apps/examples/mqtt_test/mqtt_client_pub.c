@@ -624,7 +624,7 @@ int mqtt_client_pub_main(int argc, char *argv[])
 
 	ret = pthread_create(&tid, &attr, (pthread_startroutine_t)mqtt_client_pub_task, &arg);
 	if (ret != 0) {
-		fprintf(stderr, "Error: pthread_create() failed. (ret=%d)\n");
+		fprintf(stderr, "Error: pthread_create() failed. (ret=%d)\n", ret);
 		goto done;
 	}
 	pthread_setname_np(tid, MQTT_CLIENT_PUB_COMMAND_NAME);
