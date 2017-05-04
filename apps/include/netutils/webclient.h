@@ -112,7 +112,7 @@ struct http_client_ssl_config_t {
 	unsigned int root_ca_len;
 	unsigned int dev_cert_len;
 	unsigned int private_key_len;
-	int auth_mode;
+	mbedtls_ssl_config *tls_conf;
 };
 
 #endif

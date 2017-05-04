@@ -484,80 +484,96 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 	mbedtls_debug_set_threshold(MBED_DEBUG_LEVEL);
 #endif
 
-	/* 0. Initialize the RNG */
-	ndbg("  . Seeding the random number generator...");
+	/* If TLS conf is not provided by the caller fill it up*/
+	if (!ssl_config->tls_conf) {
+		/* 0. Initialize the RNG */
+		ndbg("  . Seeding the random number generator...");
 
-	if ((result = mbedtls_ctr_drbg_seed(&(client->tls_ctr_drbg), mbedtls_entropy_func, &(client->tls_entropy), (const unsigned char *)tlsname, strlen(tlsname))) != 0) {
-		ndbg("Error: mbedtls_ctr_drbg_seed returned %d\n", result);
-		goto TLS_INIT_EXIT;
-	}
-
-	ndbg("Ok\n");
-
-	/* 1. Setup ssl stuff */
-	ndbg("  . Setting up the SSL data...");
-
-	if ((result = mbedtls_ssl_config_defaults(&(client->tls_conf),
-				  MBEDTLS_SSL_IS_CLIENT,
-				  MBEDTLS_SSL_TRANSPORT_STREAM,
-				  MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
-		ndbg("Error: mbedtls_ssl_config_defaults returned %d\n", result);
-		goto TLS_INIT_EXIT;
-	}
-
-	mbedtls_ssl_conf_rng(&(client->tls_conf), mbedtls_ctr_drbg_random,
-						 &(client->tls_ctr_drbg));
-	mbedtls_ssl_conf_dbg(&(client->tls_conf), wget_tls_debug, stdout);
-
-	ndbg("Ok\n");
-
-	if (ssl_config->dev_cert && ssl_config->private_key) {
-		/* 2. Load the certificates and private key */
-
-		ndbg("  . Loading the client cert. and key...");
-
-		if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
-											 (const unsigned char *)ssl_config->dev_cert,
-											 ssl_config->dev_cert_len)) != 0) {
-			ndbg("Error: cli_cert parse fail, return %d\n", result);
-			goto TLS_INIT_EXIT;
-		}
-
-		if ((result = mbedtls_pk_parse_key(&(client->tls_pkey),
-										   (const unsigned char *)ssl_config->private_key,
-										   ssl_config->private_key_len, NULL, 0)) != 0) {
-			ndbg("Error: cli_key parse fail, return %d\n", result);
-			goto TLS_INIT_EXIT;
-		}
-
-		if ((result = mbedtls_ssl_conf_own_cert(&(client->tls_conf),
-												&(client->tls_clicert),
-												&(client->tls_pkey))) != 0) {
-			ndbg("Error: mbedtls_ssl_conf_own_cert returned %d\n", result);
+		result = mbedtls_ctr_drbg_seed(&(client->tls_ctr_drbg),
+									mbedtls_entropy_func,
+									&(client->tls_entropy),
+									(const unsigned char *)tlsname,
+									strlen(tlsname));
+		if (result != 0) {
+			ndbg("Error: mbedtls_ctr_drbg_seed returned %d\n", result);
 			goto TLS_INIT_EXIT;
 		}
 
 		ndbg("Ok\n");
-	}
 
-	if (ssl_config->root_ca) {
-		mbedtls_x509_crt *chain;
-
-		/* 3. Load the CA certificate */
-		ndbg("  . Loading the CA cert...");
-
-		if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
-											 (const unsigned char *)ssl_config->root_ca,
-											 ssl_config->root_ca_len)) != 0) {
-			ndbg("Error: CA_cert parse fail, return %d\n", result);
+		/* 1. Setup ssl stuff */
+		ndbg("  . Setting up the SSL data...");
+		result = mbedtls_ssl_config_defaults(&(client->tls_conf),
+							MBEDTLS_SSL_IS_CLIENT,
+							MBEDTLS_SSL_TRANSPORT_STREAM,
+							MBEDTLS_SSL_PRESET_DEFAULT);
+		if (result != 0) {
+			ndbg("Error: mbedtls_ssl_config_defaults returned %d\n", result);
 			goto TLS_INIT_EXIT;
 		}
 
-		/* CA cert may be first or second in chain depending if client cert was loaded */
-		chain = client->tls_clicert.next ? client->tls_clicert.next : &client->tls_clicert;
-		mbedtls_ssl_conf_ca_chain(&(client->tls_conf), chain, NULL);
+		mbedtls_ssl_conf_rng(&(client->tls_conf), mbedtls_ctr_drbg_random,
+							 &(client->tls_ctr_drbg));
+		mbedtls_ssl_conf_dbg(&(client->tls_conf), wget_tls_debug, stdout);
 
 		ndbg("Ok\n");
+
+		if (ssl_config->dev_cert && ssl_config->private_key) {
+			/* 2. Load the certificates and private key */
+
+			ndbg("  . Loading the client cert. and key...");
+
+			result = mbedtls_x509_crt_parse(&(client->tls_clicert),
+									(const unsigned char *)ssl_config->dev_cert,
+									ssl_config->dev_cert_len);
+			if (result != 0) {
+				ndbg("Error: cli_cert parse fail, return %d\n", result);
+				goto TLS_INIT_EXIT;
+			}
+
+			result = mbedtls_pk_parse_key(&(client->tls_pkey),
+									(const unsigned char *)ssl_config->private_key,
+									ssl_config->private_key_len, NULL, 0);
+			if (result != 0) {
+				ndbg("Error: cli_key parse fail, return %d\n", result);
+				goto TLS_INIT_EXIT;
+			}
+
+			result = mbedtls_ssl_conf_own_cert(&(client->tls_conf),
+									&(client->tls_clicert),
+									&(client->tls_pkey));
+			if (result != 0) {
+				ndbg("Error: mbedtls_ssl_conf_own_cert returned %d\n", result);
+				goto TLS_INIT_EXIT;
+			}
+
+			ndbg("Ok\n");
+		}
+
+		if (ssl_config->root_ca) {
+			mbedtls_x509_crt *chain;
+
+			/* 3. Load the CA certificate */
+			ndbg("  . Loading the CA cert...");
+			result = mbedtls_x509_crt_parse(&(client->tls_clicert),
+									(const unsigned char *)ssl_config->root_ca,
+									ssl_config->root_ca_len);
+			if (result != 0) {
+				ndbg("Error: CA_cert parse fail, return %d\n", result);
+				goto TLS_INIT_EXIT;
+			}
+
+			/* CA cert may be first or second in chain depending if client cert was loaded */
+			chain = client->tls_clicert.next ? client->tls_clicert.next : &client->tls_clicert;
+			mbedtls_ssl_conf_ca_chain(&(client->tls_conf), chain, NULL);
+
+			ndbg("Ok\n");
+		}
+
+		mbedtls_ssl_conf_authmode(&(client->tls_conf), MBEDTLS_SSL_VERIFY_REQUIRED);
+	} else {
+		/* Otherwise just copy the config passed by the caller application */
+		memcpy(&(client->tls_conf), ssl_config->tls_conf, sizeof(mbedtls_ssl_config));
 	}
 
 	return 0;
@@ -594,8 +610,6 @@ void wget_tls_ssl_release(struct http_client_tls_t *client)
 int wget_tls_handshake(struct http_client_tls_t *client, const char *hostname)
 {
 	int result = 0;
-
-	mbedtls_ssl_conf_authmode(&(client->tls_conf), MBEDTLS_SSL_VERIFY_REQUIRED);
 
 	mbedtls_net_init(&(client->tls_client_fd));
 	mbedtls_ssl_init(&(client->tls_ssl));
