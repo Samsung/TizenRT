@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * fs/driver/block/driver.h
+ * fs/driver/fs_blockproxy.c
  *
- *   Copyright (C) 2007, 2009, 2012, 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015-2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,66 +50,94 @@
  *
  ****************************************************************************/
 
-#ifndef __FS_DRIVER_BLOCK_DRIVER_H
-#define __FS_DRIVER_BLOCK_DRIVER_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
 #include <tinyara/config.h>
-#include <tinyara/compiler.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <semaphore.h>
+#include <string.h>
+#include <errno.h>
+#include <assert.h>
+#include <debug.h>
+
+#include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
+	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS)
+
 /****************************************************************************
- * Pre-processor Definitions
+ * Private Data
+ ****************************************************************************/
+
+static uint32_t g_devno;
+static sem_t g_devno_sem = SEM_INITIALIZER(1);
+
+/****************************************************************************
+ * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
-* Global Variables
-****************************************************************************/
-
-#undef EXTERN
-#if defined(__cplusplus)
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
-
-extern FAR struct inode *root_inode;
-
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-/* fs_findblockdriver.c *****************************************************/
-/****************************************************************************
- * Name: find_blockdriver
+ * Name: unique_chardev
  *
  * Description:
- *   Return the inode of the block driver specified by 'pathname'
+ *   Create a unique temporary device name in the /dev/ directory of the
+ *   psuedo-file system.  We cannot use mktemp for this because it will
+ *   attempt to open() the file.
  *
- * Inputs:
- *   pathname - the full path to the block driver to be located
- *   mountflags - if MS_RDONLY is not set, then driver must support write
- *     operations (see include/sys/mount.h)
- *   ppinode - address of the location to return the inode reference
+ * Input parameters:
+ *   None
  *
- * Return:
- *   Returns zero on success or a negated errno on failure:
- *
- *   EINVAL  - pathname or pinode is NULL
- *   ENOENT  - No block driver of this name is registered
- *   ENOTBLK - The inode associated with the pathname is not a block driver
- *   EACCESS - The MS_RDONLY option was not set but this driver does not
- *     support write access
+ * Returned Value:
+ *   The allocated path to the device.  This must be released by the caller
+ *   to prevent memory links.  NULL will be returned only the case where
+ *   we fail to allocate memory.
  *
  ****************************************************************************/
+static FAR char *unique_chardev(void)
+{
+	struct stat statbuf;
+	char devbuf[16];
+	uint32_t devno;
+	int ret;
 
-int find_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode **ppinode);
+	/* Loop until we get a unique device name */
+	for (; ; ) {
+		/* Get the semaphore protecting the path number */
+		while (sem_wait(&g_devno_sem) < 0) {
+			DEBUGASSERT(errno == EINTR);
+		}
 
-/* fs_blockproxy.c **********************************************************/
+		/* Get the next device number and release the semaphore */
+		devno = ++g_devno;
+		sem_post(&g_devno_sem);
+
+		/* Construct the full device number */
+		devno &= 0xffffff;
+		snprintf(devbuf, 16, "/dev/tmp%06lx", (unsigned long)devno);
+
+		/* Make sure that file name is not in use */
+		ret = stat(devbuf, &statbuf);
+		if (ret < 0) {
+			DEBUGASSERT(errno == ENOENT);
+			return strdup(devbuf);
+		}
+
+		/* It is in use, try again */
+	}
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 /****************************************************************************
  * Name: block_proxy
  *
@@ -122,13 +150,13 @@ int find_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode 
  *   oflags - Character driver open flags
  *
  * Returned Value:
- *   If positive, non-zero file descriptor is returned on success. This
+ *   If positive, non-zero file descriptor is returned on success.  This
  *   is the file descriptor of the nameless character driver that mediates
  *   accesses to the block driver.
  *
  *   Errors that may be returned:
  *
- *     ENOMEM - Failed to create a temporary path name.
+ *     ENOMEM - Failed to create a temporay path name.
  *
  *   Plus:
  *
@@ -136,14 +164,67 @@ int find_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode 
  *     - Errors reported from open() or unlink()
  *
  ****************************************************************************/
-#if !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && \
-    !defined(CONFIG_DISABLE_MOUNTPOINT)
-int block_proxy(FAR const char *blkdev, int oflags);
-#endif
+int block_proxy(FAR const char *blkdev, int oflags)
+{
+	FAR char *chardev;
+	bool readonly;
+	int ret;
+	int fd;
 
-#undef EXTERN
-#if defined(__cplusplus)
+	DEBUGASSERT(blkdev);
+	DEBUGASSERT((oflags & (O_CREAT | O_EXCL | O_APPEND | O_TRUNC)) == 0);
+
+	/* Create a unique temporary file name for the character device */
+	chardev = unique_chardev();
+	if (chardev == NULL) {
+		fdbg("ERROR: Failed to create temporary device name\n");
+		return -ENOMEM;
+	}
+
+	/* Should this character driver be read-only? */
+	readonly = ((oflags & O_WROK) == 0);
+
+	/* Wrap the block driver with an instance of the BCH driver */
+	ret = bchdev_register(blkdev, chardev, readonly);
+	if (ret < 0) {
+		fdbg("ERROR: bchdev_register(%s, %s) failed: %d\n",
+				blkdev, chardev, ret);
+
+		goto errout_with_chardev;
+	}
+
+	/* Open the newly created character driver */
+	oflags &= ~(O_CREAT | O_EXCL | O_APPEND | O_TRUNC);
+	fd = open(chardev, oflags);
+	if (fd < 0) {
+		ret = -errno;
+		fdbg("ERROR: Failed to open %s: %d\n", chardev, ret);
+		goto errout_with_bchdev;
+	}
+
+	/*
+	 * Unlink the character device name.  The driver instance will persist,
+	 * provided that CONFIG_DISABLE_PSEUDOFS_OPERATIONS=y (otherwise, we have
+	 * a problem here!)
+	 */
+	ret = unlink(chardev);
+	if (ret < 0) {
+		ret = -errno;
+		fdbg("ERROR: Failed to unlink %s: %d\n", chardev, ret);
+	}
+
+	/*
+	 * Free the allocate character driver name and return the open file
+	 * descriptor.
+	 */
+	kmm_free(chardev);
+	return fd;
+
+errout_with_bchdev:
+	(void)unlink(chardev);
+
+errout_with_chardev:
+	kmm_free(chardev);
+	return ret;
 }
-#endif
-
-#endif							/* __FS_DRIVER_BLOCK_DRIVER_H */
+#endif /* !CONFIG_DISABLE_MOUNTPOINT && !CONFIG_DISABLE_PSEUDOFS_OPERATIONS */
