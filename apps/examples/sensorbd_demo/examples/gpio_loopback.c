@@ -63,30 +63,26 @@
 
 static int gpio_read(int port)
 {
-	int value = -1;
-	static char buf[16];
-	snprintf(buf, 16, "/dev/gpio%d", port);
-	int fd = open(buf, O_RDWR);
+	char buf[4];
+	char devpath[16];
+	snprintf(devpath, 16, "/dev/gpio%d", port);
+	int fd = open(devpath, O_RDWR);
 
-	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_IN);
-	read(fd, (void *)&value, sizeof(int));
-
+	read(fd, buf, sizeof(buf));
 	close(fd);
-	return value;
+
+	return buf[0] == '1';
 }
 
 static void gpio_write(int port, int value)
 {
-	static char buf[16];
-	snprintf(buf, 16, "/dev/gpio%d", port);
-	int fd = open(buf, O_RDWR);
+	char buf[4];
+	char devpath[16];
+	snprintf(devpath, 16, "/dev/gpio%d", port);
+	int fd = open(devpath, O_RDWR);
 
-	int mode = value ? GPIO_DRIVE_PULLUP : GPIO_DRIVE_PULLDOWN;
-	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_IN);
-	ioctl(fd, GPIOIOC_SET_DRIVE, mode);
 	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_OUT);
-	write(fd, (void *)&value, sizeof(int));
-
+	write(fd, buf, snprintf(buf, sizeof(buf), "%d", !!value));
 	close(fd);
 }
 
@@ -123,7 +119,8 @@ void gpioloopback_main(int argc, char *argv[])
 
 			if (readA != readB) {
 				printf("gpio%d and gpio%d is not connect!\n", nA, nB);
-				gpio_write(nA, 0);
+			} else {
+				printf("gpio%d and gpio%d is connect!\n", nA, nB);
 			}
 		} else {
 			gpio_write(nA, 0);
@@ -133,11 +130,11 @@ void gpioloopback_main(int argc, char *argv[])
 
 			if (readA != readB) {
 				printf("gpio%d and gpio%d is not connect!\n", nA, nB);
-				gpio_write(nA, 0);
+			} else {
+				printf("gpio%d and gpio%d is connect!\n", nA, nB);
 			}
 		}
 
-		printf("gpio%d and gpio%d is connect!\n", nA, nB);
 		gpio_write(nA, 0);
 	}
 }
