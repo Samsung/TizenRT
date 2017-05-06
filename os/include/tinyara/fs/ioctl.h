@@ -94,6 +94,9 @@
 #define _FOTABASE       (0x1900)	/* FOTA ioctl commands */
 #define _GPIOBASE       (0x2000)	/* GPIO ioctl commands */
 
+/* boardctl() commands share the same number space */
+#define _BOARDBASE      (0xff00)	/* boardctl commands */
+
 /* Macros used to manage ioctl commands */
 
 #define _IOC_MASK       (0x00ff)
@@ -330,6 +333,10 @@
 /* (see include/tinyara/gpio.h */
 #define _GPIOIOCVALID(c)   (_IOC_TYPE(c) == _GPIOBASE)
 #define _GPIOIOC(nr)       _IOC(_GPIOBASE, nr)
+
+/* boardctl() command definitions *******************************************/
+#define _BOARDIOCVALID(c)  (_IOC_TYPE(c) == _BOARDBASE)
+#define _BOARDIOC(nr)      _IOC(_BOARDBASE, nr)
 
 /****************************************************************************
  * Public Type Definitions
