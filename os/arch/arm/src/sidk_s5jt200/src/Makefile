@@ -85,6 +85,11 @@ ifeq ($(CONFIG_SIDK_S5JT200_EEPROM), y)
 CSRCS += s5jt200_eeprom.c
 endif
 
+# boardctl support
+ifeq ($(CONFIG_LIB_BOARDCTL),y)
+CSRCS += $(TOPDIR)/arch/boardctl.c
+endif
+
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)
