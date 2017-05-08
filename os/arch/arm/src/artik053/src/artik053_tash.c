@@ -66,6 +66,7 @@
 
 #include "s5j_adc.h"
 #include "s5j_rtc.h"
+#include "s5j_mct.h"
 #include "up_internal.h"
 
 #include <apps/shell/tash.h>
@@ -295,6 +296,18 @@ int board_app_initialize(void)
 		}
 	}
 #endif							/* CONFIG_RTC_DRIVER */
+
+#ifdef CONFIG_TIMER
+	{
+		int  i;
+		char path[CONFIG_PATH_MAX];
+
+		for (i = 0; i < CONFIG_S5J_MCT_NUM; i++) {
+			sprintf(path, "/dev/timer%d", i);
+			s5j_timer_initialize(path, i);
+		}
+	}
+#endif
 
 	artik053_adc_setup();
 
