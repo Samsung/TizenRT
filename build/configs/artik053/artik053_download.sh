@@ -67,11 +67,11 @@ main()
 			# Download all binaries using openocd script
 			pushd ${OPENOCD_DIR_PATH}
 			${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' 	\
-				flash_write bl1 ${FW_DIR_PATH}/bl1.bin; 		\
-				flash_write bl2 ${FW_DIR_PATH}/bl2.bin; 		\
-				flash_write sssfw ${FW_DIR_PATH}/sssfw.bin; 		\
-				flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin;	\
-				flash_write os ${OUTPUT_BINARY_PATH}/tinyara_head.bin;	\
+				flash_write bl1 ../../bin/bl1.bin; 		\
+				flash_write bl2 ../../bin/bl2.bin; 		\
+				flash_write sssfw ../../bin/sssfw.bin; 		\
+				flash_write wlanfw ../../bin/wlanfw.bin;	\
+				flash_write os ../../../../output/bin/tinyara_head.bin;	\
 			exit'
 			popd
 			;;
