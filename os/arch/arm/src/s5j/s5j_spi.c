@@ -187,8 +187,7 @@ static void spi_recvblock(FAR struct spi_dev_s *dev, void *rxbuffer, size_t nwor
  * Private Data
  *****************************************************************************/
 
-static const struct spi_ops_s g_spiops =
-{
+static const struct spi_ops_s g_spiops = {
 #ifndef CONFIG_SPI_OWNBUS
 	.lock				= spi_lock,
 #endif
@@ -210,8 +209,7 @@ static const struct spi_ops_s g_spiops =
 	.registercallback	= 0,
 };
 
-static struct s5j_spidev_s g_spi0dev =
-{
+static struct s5j_spidev_s g_spi0dev = {
 	.spidev		= { .ops = &g_spiops },
 	.base		= S5J_SPI0_BASE,
 	.port		= SPI_PORT0,
@@ -221,8 +219,7 @@ static struct s5j_spidev_s g_spi0dev =
 	.gpio_miso	= GPIO_SPI0_MISO,
 	.gpio_mosi	= GPIO_SPI0_MOSI,
 };
-static struct s5j_spidev_s g_spi1dev =
-{
+static struct s5j_spidev_s g_spi1dev = {
 	.spidev		= { .ops = &g_spiops },
 	.base		= S5J_SPI1_BASE,
 	.port		= SPI_PORT1,
@@ -232,8 +229,7 @@ static struct s5j_spidev_s g_spi1dev =
 	.gpio_miso	= GPIO_SPI1_MISO,
 	.gpio_mosi	= GPIO_SPI1_MOSI,
 };
-static struct s5j_spidev_s g_spi2dev =
-{
+static struct s5j_spidev_s g_spi2dev = {
 	.spidev		= { .ops = &g_spiops },
 	.base		= S5J_SPI2_BASE,
 	.port		= SPI_PORT2,
@@ -243,8 +239,7 @@ static struct s5j_spidev_s g_spi2dev =
 	.gpio_miso	= GPIO_SPI2_MISO,
 	.gpio_mosi	= GPIO_SPI2_MOSI,
 };
-static struct s5j_spidev_s g_spi3dev =
-{
+static struct s5j_spidev_s g_spi3dev = {
 	.spidev		= { .ops = &g_spiops },
 	.base		= S5J_SPI3_BASE,
 	.port		= SPI_PORT3,
@@ -373,21 +368,21 @@ static void spi_setbits(struct spi_dev_s *dev, int nbits)
 	mode_cfg = mode_cfg & (~(MODE_CFG_BUS_WDT_MASK | MODE_CFG_CH_WDT_MASK));
 
 	switch (nbits) {
-		case 8:
-			mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_8 | MODE_CFG_CH_WIDTH_8;
-			break;
+	case 8:
+		mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_8 | MODE_CFG_CH_WIDTH_8;
+		break;
 
-		case 16:
-			mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_16 | MODE_CFG_CH_WIDTH_16;
-			break;
+	case 16:
+		mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_16 | MODE_CFG_CH_WIDTH_16;
+		break;
 
-		case 32:
-			mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_32 | MODE_CFG_CH_WIDTH_32;
-			break;
+	case 32:
+		mode_cfg = mode_cfg | MODE_CFG_BUS_WIDTH_32 | MODE_CFG_CH_WIDTH_32;
+		break;
 
-		default:
-			DEBUGASSERT(0 == 1);
-			break;
+	default:
+		DEBUGASSERT(0 == 1);
+		break;
 	}
 
 	putreg32(mode_cfg, &pSPIRegs->MODE_CFG);
@@ -541,18 +536,18 @@ struct spi_dev_s *up_spiinitialize(int port)
 	}
 
 	switch (port) {
-		case 0:
-			priv = &g_spi0dev;
-			break;
-		case 1:
-			priv = &g_spi1dev;
-			break;
-		case 2:
-			priv = &g_spi2dev;
-			break;
-		case 3:
-			priv = &g_spi3dev;
-			break;
+	case 0:
+		priv = &g_spi0dev;
+		break;
+	case 1:
+		priv = &g_spi1dev;
+		break;
+	case 2:
+		priv = &g_spi2dev;
+		break;
+	case 3:
+		priv = &g_spi3dev;
+		break;
 	}
 	lldbg("Prepare SPI%d for Master operation\n", priv->port);
 

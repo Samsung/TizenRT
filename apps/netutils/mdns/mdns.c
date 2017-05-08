@@ -430,17 +430,17 @@ int rr_list_append(struct rr_list **rr_head, struct rr_entry *rr)
 }
 
 #define FILL_QN_ENTRY(rr, _name, _type, _unicast_query) \
-        rr->name = _name;                       \
-        rr->type = _type;                       \
-        rr->unicast_query = _unicast_query; \
-        rr->rr_class  = 1;
+		rr->name = _name; \
+		rr->type = _type; \
+		rr->unicast_query = _unicast_query; \
+		rr->rr_class  = 1;
 
 #define FILL_RR_ENTRY(rr, _name, _type) \
-        rr->name = _name;                       \
-        rr->type = _type;                       \
-        rr->ttl  = DEFAULT_TTL;         \
-        rr->cache_flush = 1;            \
-        rr->rr_class  = 1;
+		rr->name = _name; \
+		rr->type = _type; \
+		rr->ttl  = DEFAULT_TTL; \
+		rr->cache_flush = 1; \
+		rr->rr_class  = 1;
 
 struct rr_entry *qn_create(uint8_t *name, enum rr_type type, int unicast_query)
 {
@@ -1302,7 +1302,7 @@ done:
 	return off;
 }
 
-#if MDNS_DEBUG_PRINTF==1 && MDNS_MEMORY_DEBUG==1
+#if (MDNS_DEBUG_PRINTF == 1) && (MDNS_MEMORY_DEBUG == 1)
 struct mdns_meminfo_node {
 	char *func;
 	int line;

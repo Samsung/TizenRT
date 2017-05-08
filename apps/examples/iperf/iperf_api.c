@@ -1759,7 +1759,7 @@ struct iperf_test *iperf_new_test(void)
 	/* By default all output goes to stdout */
 	test->outfile = stdout;
 
-	if (sem_init(&(test->sem_iperf_api),0 ,1) != OK) {
+	if (sem_init(&(test->sem_iperf_api), 0, 1) != OK) {
 		printf("iperf_new_test : failed on sem_init\n");
 	}
 

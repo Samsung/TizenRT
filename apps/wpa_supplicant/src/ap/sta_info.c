@@ -869,7 +869,7 @@ void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta, int 
 	u8 ip_addr_buf[4];
 #endif							/* CONFIG_P2P */
 
-	if (! !authorized == ! !(sta->flags & WLAN_STA_AUTHORIZED)) {
+	if (!!authorized == !!(sta->flags & WLAN_STA_AUTHORIZED)) {
 		return;
 	}
 

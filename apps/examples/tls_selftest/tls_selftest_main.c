@@ -75,10 +75,10 @@
 #define TLS_SELFTEST_SCHED_POLICY SCHED_RR
 
 
-#define DO_TLS_TEST(func, v) 		\
-if ((ret = func(v)) != 0) {		\
-	printf("fail %d\n", ret);	\
-	fail_cnt++;			\
+#define DO_TLS_TEST(func, v) \
+if ((ret = func(v)) != 0) { \
+	printf("fail %d\n", ret); \
+	fail_cnt++; \
 }
 
 pthread_addr_t tls_selftest_cb(void *args)

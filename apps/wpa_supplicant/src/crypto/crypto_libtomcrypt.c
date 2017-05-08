@@ -18,7 +18,7 @@
 #define mp_unsigned_bin_size(a)      ltc_mp.unsigned_size(a)
 #define mp_to_unsigned_bin(a, b)     ltc_mp.unsigned_write(a, b)
 #define mp_read_unsigned_bin(a, b, c) ltc_mp.unsigned_read(a, b, c)
-#define mp_exptmod(a,b,c,d)          ltc_mp.exptmod(a,b,c,d)
+#define mp_exptmod(a, b, c, d)       ltc_mp.exptmod(a, b, c, d)
 #endif
 
 int md4_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)

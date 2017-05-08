@@ -360,7 +360,7 @@ int s5j_configgpio(uint32_t cfgset)
 	/* Get the pin number */
 	pin = (cfgset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
-	switch(cfgset & GPIO_FUNC_MASK) {
+	switch (cfgset & GPIO_FUNC_MASK) {
 	case GPIO_INPUT:
 		ret = s5j_configinput(cfgset, port, pin);
 		break;

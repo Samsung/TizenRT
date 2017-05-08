@@ -812,7 +812,7 @@ static struct up_dev_s g_uart3priv = {
 	.irq		= S5J_IRQ_UART3,
 	.parity		= CONFIG_UART3_PARITY,
 	.bits		= CONFIG_UART3_BITS,
-	.stopbits2 	= CONFIG_UART3_2STOP,
+	.stopbits2	= CONFIG_UART3_2STOP,
 	.rxd		= GPIO_UART3_RXD,
 	.txd		= GPIO_UART3_TXD,
 #ifdef CONFIG_S5J_UART3_FLOWCONTROL

@@ -95,8 +95,7 @@ static int     bch_unlink(FAR struct inode *inode);
 /****************************************************************************
  * Public Data
  ****************************************************************************/
-const struct file_operations bch_fops =
-{
+const struct file_operations bch_fops = {
 	bch_open,	/* open */
 	bch_close,	/* close */
 	bch_read,	/* read */

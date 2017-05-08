@@ -74,10 +74,10 @@
 #if defined(CONFIG_HW_DH_PARAM)
 #include "tls/see_api.h"
 #include "tls/see_internal.h"
-#define DHM_MPI_EXPORT(X,n)                     \
-    MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( X, p + 2, n ) ); \
-    *p++ = (unsigned char)( n >> 8 );           \
-    *p++ = (unsigned char)( n      ); p += n;
+#define DHM_MPI_EXPORT(X, n)  \
+	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(X, p + 2, n)); \
+	*p++ = (unsigned char)(n >> 8); \
+	*p++ = (unsigned char)(n); p += n;
 #endif
 
 /* Implementation that should never be optimized out by the compiler */
@@ -221,10 +221,10 @@ int mbedtls_dhm_make_params(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 	/*
 	 * export P, G, GX
 	 */
-#define DHM_MPI_EXPORT(X,n)                     \
-    MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( X, p + 2, n ) ); \
-    *p++ = (unsigned char)( n >> 8 );           \
-    *p++ = (unsigned char)( n      ); p += n;
+#define DHM_MPI_EXPORT(X, n) \
+	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(X, p + 2, n)); \
+	*p++ = (unsigned char)(n >> 8); \
+	*p++ = (unsigned char)(n); p += n;
 	n1 = mbedtls_mpi_size(&ctx->P);
 	n2 = mbedtls_mpi_size(&ctx->G);
 	n3 = mbedtls_mpi_size(&ctx->GX);

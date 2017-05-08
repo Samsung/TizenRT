@@ -42,28 +42,28 @@ int wifi_securitymode_check(char *sec_type)
 				sec_type, sizeof(SLSI_WIFI_SECURITY_OPEN)) == 0) {
 		ret = 0;
 	} else if (strncmp(SLSI_WIFI_SECURITY_WEP_OPEN,
-				sec_type, sizeof(SLSI_WIFI_SECURITY_WEP_OPEN)) == 0 ) {
+				sec_type, sizeof(SLSI_WIFI_SECURITY_WEP_OPEN)) == 0) {
 		ret = 0;
 	} else if (strncmp(SLSI_WIFI_SECURITY_WEP_SHARED,
-				sec_type, sizeof(SLSI_WIFI_SECURITY_WEP_SHARED)) == 0 ) {
+				sec_type, sizeof(SLSI_WIFI_SECURITY_WEP_SHARED)) == 0) {
 		ret = 0;
 	} else if (strncmp(SLSI_WIFI_SECURITY_WPA_MIXED,
-				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_MIXED)) == 0 ) {
+				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_MIXED)) == 0) {
 		ret = 0;
 	} else if (strncmp(SLSI_WIFI_SECURITY_WPA_TKIP,
-				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_TKIP)) == 0 ) {
+				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_TKIP)) == 0) {
 		ret = 0;
 	} else if (strncmp(SLSI_WIFI_SECURITY_WPA_AES,
-				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_AES)) == 0 ) {
+				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_AES)) == 0) {
 		ret = 0;
 	} else if (strncmp(SLSI_WIFI_SECURITY_WPA2_MIXED,
-				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_MIXED)) == 0 ) {
+				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_MIXED)) == 0) {
 		ret = 0;
 	} else if (strncmp(SLSI_WIFI_SECURITY_WPA2_TKIP,
-				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_TKIP)) == 0 ) {
+				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_TKIP)) == 0) {
 		ret = 0;
 	} else if (strncmp(SLSI_WIFI_SECURITY_WPA2_AES,
-				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_AES)) == 0 ) {
+				sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_AES)) == 0) {
 		ret = 0;
 	}
 
@@ -75,7 +75,7 @@ static slsi_security_config_t *get_security_config_(char *sec_type, char *psk)
 {
 	slsi_security_config_t *ret = NULL;
 	if (strncmp(SLSI_WIFI_SECURITY_OPEN,
-				sec_type, sizeof(SLSI_WIFI_SECURITY_OPEN)) != 0 ) {
+				sec_type, sizeof(SLSI_WIFI_SECURITY_OPEN)) != 0) {
 		ret = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
 		if (ret) {
 			if (strncmp(SLSI_WIFI_SECURITY_WEP_OPEN,
@@ -85,16 +85,16 @@ static slsi_security_config_t *get_security_config_(char *sec_type, char *psk)
 						sec_type, sizeof(SLSI_WIFI_SECURITY_WEP_SHARED)) == 0) {
 				ret->secmode = SLSI_SEC_MODE_WEP_SHARED;
 			} else if (strncmp(SLSI_WIFI_SECURITY_WPA_MIXED,
-						sec_type,sizeof(SLSI_WIFI_SECURITY_WPA_MIXED)) == 0) {
+						sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_MIXED)) == 0) {
 				ret->secmode = SLSI_SEC_MODE_WPA_MIXED;
 			} else if (strncmp(SLSI_WIFI_SECURITY_WPA_TKIP,
-						sec_type,sizeof(SLSI_WIFI_SECURITY_WPA_TKIP)) == 0) {
+						sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_TKIP)) == 0) {
 				ret->secmode = SLSI_SEC_MODE_WPA_TKIP;
 			} else if (strncmp(SLSI_WIFI_SECURITY_WPA_AES,
-						sec_type,sizeof(SLSI_WIFI_SECURITY_WPA_AES)) == 0) {
+						sec_type, sizeof(SLSI_WIFI_SECURITY_WPA_AES)) == 0) {
 				ret->secmode = SLSI_SEC_MODE_WPA_CCMP;
 			} else if (strncmp(SLSI_WIFI_SECURITY_WPA2_MIXED,
-						sec_type,sizeof(SLSI_WIFI_SECURITY_WPA2_MIXED)) == 0) {
+						sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_MIXED)) == 0) {
 				ret->secmode = SLSI_SEC_MODE_WPA2_MIXED;
 			} else if (strncmp(SLSI_WIFI_SECURITY_WPA2_TKIP,
 						sec_type, sizeof(SLSI_WIFI_SECURITY_WPA2_TKIP)) == 0) {
@@ -127,7 +127,7 @@ static void linkDownHandler(slsi_reason_t* reason)
 {
 	if (reason) {
 		printf("Disconnected from network reason_code: %d %s\n", reason->reason_code,
-				reason->locally_generated ? "(locally_generated)": "");
+				reason->locally_generated ? "(locally_generated)" : "");
 	} else {
 		printf("Disconnected from network\n");
 	}
@@ -244,7 +244,7 @@ int dhcpc_start(void)
 		gnet_if->dhcp = NULL;
 	}
 
-	printf( "            netic hwaddr_len %d\n"
+	printf("            netic hwaddr_len %d\n"
 			"            netic hwaddr %x%x%x%x%x%x\n"
 			"            netic mtu %d\n"
 			"            netic flags %x\n",

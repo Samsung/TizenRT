@@ -197,8 +197,8 @@ enum slsi_traffic_q slsi_frame_priority_to_ac_queue(u16 priority)
 {
 	switch (priority) {
 	case FAPI_PRIORITY_QOS_UP0:
-		case FAPI_PRIORITY_QOS_UP3:
-				return SLSI_TRAFFIC_Q_BE;
+	case FAPI_PRIORITY_QOS_UP3:
+		return SLSI_TRAFFIC_Q_BE;
 	case FAPI_PRIORITY_QOS_UP1:
 	case FAPI_PRIORITY_QOS_UP2:
 		return SLSI_TRAFFIC_Q_BK;

@@ -74,7 +74,7 @@
 #include <apps/netutils/dhcpc.h>
 #include <apps/netutils/netlib.h>
 
-#if defined (CONFIG_NETDB_DNSCLIENT) && defined (CONFIG_NETDB_DNSSERVER_BY_DHCP)
+#if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
 #include <tinyara/net/dns.h>
 #endif
 /****************************************************************************
@@ -619,7 +619,7 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 	ndbg("Got default router %d.%d.%d.%d\n", (presult->default_router.s_addr) & 0xff, (presult->default_router.s_addr >> 8) & 0xff, (presult->default_router.s_addr >> 16) & 0xff, (presult->default_router.s_addr >> 24) & 0xff);
 	ndbg("Lease expires in %d seconds\n", presult->lease_time);
 
-#if defined (CONFIG_NETDB_DNSCLIENT) && defined (CONFIG_NETDB_DNSSERVER_BY_DHCP)
+#if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
 	struct sockaddr_in dns;
 	if (presult->dnsaddr.s_addr != 0) {
 		ndbg("Set DNS IP address via dns_add_nameserver\n");

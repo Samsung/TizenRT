@@ -605,7 +605,7 @@ int cmd_ifconfig(int argc, char **argv)
 		printf("IP address %s\n", inet_ntoa(ds.ipaddr));
 		printf("Netmask %s\n", inet_ntoa(ds.netmask));
 		printf("Gateway %s\n", inet_ntoa(ds.default_router));
-#if defined (CONFIG_NETDB_DNSCLIENT) && defined (CONFIG_NETDB_DNSSERVER_BY_DHCP)
+#if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
 		printf("Default DNS %s\n", inet_ntoa(ds.dnsaddr));
 #endif
 		dhcpc_close(handle);

@@ -113,7 +113,7 @@ static int ieee802_11_send_wnmsleep_resp(struct hostapd_data *hapd, const u8 *ad
 #endif							/* CONFIG_IEEE80211W */
 
 		WPA_PUT_LE16((u8 *)
-					 & mgmt->u.action.u.wnm_sleep_resp.keydata_len, gtk_elem_len + igtk_elem_len);
+					 &mgmt->u.action.u.wnm_sleep_resp.keydata_len, gtk_elem_len + igtk_elem_len);
 	}
 	os_memcpy(pos, &wnmsleep_ie, wnmsleep_ie_len);
 	/* copy TFS IE here */

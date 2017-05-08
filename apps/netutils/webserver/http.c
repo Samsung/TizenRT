@@ -205,7 +205,7 @@ pthread_addr_t http_server_handler(pthread_addr_t arg)
 			}
 		}
 	}
-stop :
+stop:
 	HTTP_LOGD("http_server_hander stop :%d\n", server->port);
 
 	if (msg_q >= 0) {

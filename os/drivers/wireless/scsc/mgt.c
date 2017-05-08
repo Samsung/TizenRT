@@ -444,10 +444,10 @@ static int slsi_mib_initial_get(struct slsi_dev *sdev)
 	struct slsi_mib_data mibrsp = { 0, NULL };
 	int rxLength = 0;
 	int r;
-	static const struct slsi_mib_get_entry getValues[] = { {SLSI_PSID_UNIFI_FAST_POWER_SAVE_TIMEOUT, {0, 0}},
-		{SLSI_PSID_UNIFI_CHIP_VERSION, {0, 0}},
-		{SLSI_PSID_UNIFI_FIRMWARE_BUILD_ID, {0, 0}},
-		{SLSI_PSID_UNIFI_FIRMWARE_PATCH_BUILD_ID, {0, 0}},
+	static const struct slsi_mib_get_entry getValues[] = { { SLSI_PSID_UNIFI_FAST_POWER_SAVE_TIMEOUT, { 0, 0 } },
+		{ SLSI_PSID_UNIFI_CHIP_VERSION, { 0, 0 } },
+		{ SLSI_PSID_UNIFI_FIRMWARE_BUILD_ID, { 0, 0 } },
+		{ SLSI_PSID_UNIFI_FIRMWARE_PATCH_BUILD_ID, { 0, 0 } },
 	};
 
 	r = slsi_mib_encode_get_list(&mibreq, sizeof(getValues) / sizeof(struct slsi_mib_get_entry), getValues);
@@ -2272,7 +2272,7 @@ int slsi_get_mib(struct slsi_dev *sdev, u16 psid, int *mib_value)
 	struct slsi_mib_data mibrsp = { 0, NULL };
 	int rxLength = 0;
 	int r;
-	struct slsi_mib_get_entry getValues[] = { {psid, {0, 0}} };
+	struct slsi_mib_get_entry getValues[] = { {psid, { 0, 0 } } };
 
 	r = slsi_mib_encode_get_list(&mibreq, sizeof(getValues) / sizeof(struct slsi_mib_get_entry), getValues);
 	if (r != SLSI_MIB_STATUS_SUCCESS) {

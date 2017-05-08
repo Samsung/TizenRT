@@ -476,7 +476,7 @@ db_result_t db_indexing(relation_t *rel)
 
 	cardinality = relation_cardinality(rel);
 
-	for(tuple_id = 0; tuple_id < cardinality; tuple_id++) {
+	for (tuple_id = 0; tuple_id < cardinality; tuple_id++) {
 		memset(row, 0, sizeof(row));
 		result = storage_get_row(rel, &tuple_id, row);
 		if (DB_ERROR(result)) {

@@ -92,11 +92,11 @@
 #include "mdns.h"
 #include <apps/netutils/mdnsd.h>
 
-#if MDNS_DEBUG_PRINTF==1 && MDNS_RR_DEBUG==1
+#if (MDNS_DEBUG_PRINTF == 1) && (MDNS_RR_DEBUG == 1)
 #define MDNSD_RR_DEBUG
 #endif
 
-#if MDNS_DEBUG_PRINTF==1 && MDNS_MEMORY_DEBUG==1
+#if (MDNS_DEBUG_PRINTF == 1) && (MDNS_MEMORY_DEBUG == 1)
 #define MDNSD_MEMORY_DEBUG
 #endif
 
@@ -117,11 +117,11 @@
 #define PACKET_SIZE             1536	/* maximum packet size :  */
 
 #define SERVICES_DNS_SD_NLABEL \
-                ((uint8_t *)"\x09_services\x07_dns-sd\x04_udp\x05local")
+		((uint8_t *)"\x09_services\x07_dns-sd\x04_udp\x05local")
 
 #define TIME_GET(time)                                          gettimeofday(&time, NULL)
 #define TIME_DIFF_USEC(old_time, cur_time) \
-        ((cur_time.tv_sec * 1000000 + cur_time.tv_usec) - (old_time.tv_sec * 1000000 + old_time.tv_usec))
+		((cur_time.tv_sec * 1000000 + cur_time.tv_usec) - (old_time.tv_sec * 1000000 + old_time.tv_usec))
 
 #define MAX_ECONNRESET_COUNT	5
 
@@ -1012,7 +1012,7 @@ static int process_mdns_pkt(struct mdnsd *svr, struct mdns_pkt *pkt, struct mdns
 
 int create_pipe(int handles[2])
 {
-#if PIPE_SOCKET_TYPE    ==1
+#if (PIPE_SOCKET_TYPE == 1)
 	int result = -1;
 	struct sockaddr_in serv_addr;
 
@@ -1070,7 +1070,7 @@ errout:
 
 int read_pipe(int s, char *buf, int len)
 {
-#if PIPE_SOCKET_TYPE    ==1
+#if (PIPE_SOCKET_TYPE == 1)
 	int ret;
 	struct sockaddr_in fromaddr;
 	socklen_t sockaddr_size = sizeof(struct sockaddr_in);
@@ -1082,7 +1082,7 @@ int read_pipe(int s, char *buf, int len)
 
 int write_pipe(int s, char *buf, int len, int port)
 {
-#if PIPE_SOCKET_TYPE    ==1
+#if (PIPE_SOCKET_TYPE == 1)
 	static struct sockaddr_in toaddr;
 
 	memset(&toaddr, 0, sizeof(struct sockaddr_in));
@@ -1729,7 +1729,7 @@ static int init_mdns_context(int domain)
 	}
 
 	/* create main_loop thread */
-	if ((pthread_create(&tid, &attr, (void * ( *)(void *))main_loop, (void *)g_svr) != 0)) {
+	if ((pthread_create(&tid, &attr, (void * (*)(void *))main_loop, (void *)g_svr) != 0)) {
 		ndbg("ERROR: pthread_create() failed.\n");
 		goto errout_with_mutex;
 	}

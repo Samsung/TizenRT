@@ -863,56 +863,50 @@ usage:
 			opt.arc4 = MBEDTLS_SSL_ARC4_ENABLED;
 		}
 	}
-
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-    /*
-     * Unhexify the pre-shared key if any is given
-     */
-    if( strlen( opt.psk ) )
-    {
-        unsigned char c;
-        size_t j;
+	/*
+	 * Unhexify the pre-shared key if any is given
+	 */
+	if (strlen(opt.psk)) {
+		unsigned char c;
+		size_t j;
 
-        if( strlen( opt.psk ) % 2 != 0 )
-        {
-            mbedtls_printf("pre-shared key not valid hex\n");
-            goto exit;
-        }
+		if (strlen(opt.psk) % 2 != 0) {
+			mbedtls_printf("pre-shared key not valid hex\n");
+			goto exit;
+		}
 
-        psk_len = strlen( opt.psk ) / 2;
+		psk_len = strlen(opt.psk) / 2;
 
-        for( j = 0; j < strlen( opt.psk ); j += 2 )
-        {
-            c = opt.psk[j];
-            if( c >= '0' && c <= '9' )
-                c -= '0';
-            else if( c >= 'a' && c <= 'f' )
-                c -= 'a' - 10;
-            else if( c >= 'A' && c <= 'F' )
-                c -= 'A' - 10;
-            else
-            {
-                mbedtls_printf("pre-shared key not valid hex\n");
-                goto exit;
-            }
-            psk[ j / 2 ] = c << 4;
+		for (j = 0; j < strlen(opt.psk); j += 2) {
+			c = opt.psk[j];
+			if (c >= '0' && c <= '9') {
+				c -= '0';
+			} else if (c >= 'a' && c <= 'f') {
+				c -= 'a' - 10;
+			} else if (c >= 'A' && c <= 'F') {
+				c -= 'A' - 10;
+			} else {
+				mbedtls_printf("pre-shared key not valid hex\n");
+				goto exit;
+			}
+			psk[j / 2] = c << 4;
 
-            c = opt.psk[j + 1];
-            if( c >= '0' && c <= '9' )
-                c -= '0';
-            else if( c >= 'a' && c <= 'f' )
-                c -= 'a' - 10;
-            else if( c >= 'A' && c <= 'F' )
-                c -= 'A' - 10;
-            else
-            {
-                mbedtls_printf("pre-shared key not valid hex\n");
-                goto exit;
-            }
-            psk[ j / 2 ] |= c;
-        }
-    }
-#endif /* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED */
+			c = opt.psk[j + 1];
+			if (c >= '0' && c <= '9') {
+				c -= '0';
+			} else if (c >= 'a' && c <= 'f') {
+				c -= 'a' - 10;
+			} else if (c >= 'A' && c <= 'F') {
+				c -= 'A' - 10;
+			} else {
+				mbedtls_printf("pre-shared key not valid hex\n");
+				goto exit;
+			}
+			psk[j / 2] |= c;
+		}
+	}
+#endif							/* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED */
 
 #if defined(MBEDTLS_SSL_ALPN)
 	if (opt.alpn_string != NULL) {
@@ -952,7 +946,7 @@ usage:
 #ifdef CONFIG_EXAMPLES_TLS_ARTIK_KEY
 	unsigned int cert_buflen = SEE_MAX_BUF_SIZE;
 	char *cert_buf = NULL;
-	const char cert_start[2] = {0x30, 0x82};
+	const char cert_start[2] = { 0x30, 0x82 };
 
 	cert_buf = (char *)malloc(SEE_MAX_BUF_SIZE);
 
@@ -967,7 +961,7 @@ usage:
 		goto exit;
 	}
 
-	char *cert_offset[3] = {NULL, NULL, NULL};
+	char *cert_offset[3] = { NULL, NULL, NULL };
 
 	cert_offset[0] = cert_buf + 4;
 	cert_offset[1] = strstr(cert_offset[0] + 4, cert_start);
@@ -993,12 +987,12 @@ usage:
 	 */
 	const mbedtls_pk_info_t *pk_info;
 
-	if((pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY))== NULL) {
+	if ((pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY)) == NULL) {
 		mbedtls_printf(" failed\n  ! mbedtls_pk_info_from_type -0x%x\n", -ret);
 		goto exit;
 	}
 
-	if((ret = mbedtls_pk_setup(&pkey, pk_info)) != 0) {
+	if ((ret = mbedtls_pk_setup(&pkey, pk_info)) != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_pk_setup -0x%x\n", -ret);
 		goto exit;
 	}
@@ -1060,7 +1054,7 @@ usage:
 		goto exit;
 	}
 #endif
-#endif /* EXAMPLES_ARTIK_KEY */
+#endif							/* EXAMPLES_ARTIK_KEY */
 
 	mbedtls_printf("  . Connecting to %s/%s/%s...", opt.transport == MBEDTLS_SSL_TRANSPORT_STREAM ? "tcp" : "udp", opt.server_addr, opt.server_port);
 	fflush(stdout);
@@ -1178,13 +1172,10 @@ usage:
 #endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-    if( ( ret = mbedtls_ssl_conf_psk( &conf, psk, psk_len,
-                             (const unsigned char *) opt.psk_identity,
-                             strlen( opt.psk_identity ) ) ) != 0 )
-    {
-        mbedtls_printf( " failed\n  ! mbedtls_ssl_conf_psk returned %d\n\n", ret );
-        goto exit;
-    }
+	if ((ret = mbedtls_ssl_conf_psk(&conf, psk, psk_len, (const unsigned char *)opt.psk_identity, strlen(opt.psk_identity))) != 0) {
+		mbedtls_printf(" failed\n  ! mbedtls_ssl_conf_psk returned %d\n\n", ret);
+		goto exit;
+	}
 #endif
 
 	if (opt.min_version != DFL_MIN_VERSION) {
@@ -1194,7 +1185,6 @@ usage:
 	if (opt.max_version != DFL_MAX_VERSION) {
 		mbedtls_ssl_conf_max_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, opt.max_version);
 	}
-
 #if defined(MBEDTLS_SSL_FALLBACK_SCSV)
 	if (opt.fallback != DFL_FALLBACK) {
 		mbedtls_ssl_conf_fallback(&conf, opt.fallback);

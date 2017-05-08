@@ -74,8 +74,7 @@
  ****************************************************************************/
 
 /* This structure describes the state of one ADC block */
-struct s5j_dev_s
-{
+struct s5j_dev_s {
 	FAR const struct adc_callback_s *cb;
 
 	struct adc_dev_s *dev;	/* A reference to the outer (parent) */

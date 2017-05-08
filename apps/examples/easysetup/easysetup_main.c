@@ -32,8 +32,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-struct ap_info_t
-{
+struct ap_info_t {
 	char ssid[32];
 	char security[32];
 	char pwd[64];
@@ -280,7 +279,7 @@ static int start_webserver(void)
 
 	https_server = http_server_init(https_port);
 	if (https_server == NULL) {
-		printf ("Error: Cannot allocate server structure!!\n");
+		printf("Error: Cannot allocate server structure!!\n");
 		return -1;
 	}
 
@@ -293,25 +292,25 @@ static int start_webserver(void)
 	/* THIS CODE SHOULD BE REMOVED AFTER USING SSS KEY AND CERT */
 	if ((ret = see_setup_key(sss_da_rsa_ca, sizeof(sss_da_rsa_ca),
 					SECURE_STORAGE_TYPE_KEY_RSA, EASY_CA_KEY_INDEX)) != 0) {
-		printf( "Error: see_setup_key ca 0x%x\n\n", ret);
+		printf("Error: see_setup_key ca 0x%x\n\n", ret);
 		return -1;
 	}
 
 	if ((ret = see_setup_key(sss_da_rsa_dev, sizeof(sss_da_rsa_dev),
 					SECURE_STORAGE_TYPE_KEY_RSA, EASY_DEV_KEY_INDEX)) != 0) {
-		printf( "Error: see_setup_key dev 0x%x\n\n", ret);
+		printf("Error: see_setup_key dev 0x%x\n\n", ret);
 		return -1;
 	}
 
 	if ((ret = see_set_certificate(sss_ca_crt, sizeof(sss_ca_crt),
 					EASY_CA_CERT_INDEX, CERT_PEM)) != 0) {
-		printf ("Error: set_cert fail %d\n", ret);
+		printf("Error: set_cert fail %d\n", ret);
 		return -1;
 	}
 
 	if ((ret = see_set_certificate(sss_dev_crt, sizeof(sss_dev_crt),
 					EASY_DEV_CERT_INDEX, CERT_PEM)) != 0) {
-		printf ("Error: set_cert fail %d\n", ret);
+		printf("Error: set_cert fail %d\n", ret);
 		return -1;
 	}
 
@@ -335,22 +334,22 @@ static int start_webserver(void)
 		return -1;
 	}
 
-	http_server_register_cb (https_server, HTTP_METHOD_GET, root_uri, http_get_cb);
+	http_server_register_cb(https_server, HTTP_METHOD_GET, root_uri, http_get_cb);
 	http_server_register_cb(https_server, HTTP_METHOD_POST, network_uri, http_post_cb);
 	http_server_register_cb(https_server, HTTP_METHOD_POST, control_uri, http_post_ctrl_cb);
 
-	http_server_start (https_server);
+	http_server_start(https_server);
 
 	return 0;
 }
 
 static int stop_webserver(void)
 {
-	http_server_deregister_cb (https_server, HTTP_METHOD_GET, root_uri);
+	http_server_deregister_cb(https_server, HTTP_METHOD_GET, root_uri);
 	http_server_deregister_cb(https_server, HTTP_METHOD_POST, network_uri);
 	http_server_deregister_cb(https_server, HTTP_METHOD_POST, control_uri);
 	http_server_stop(https_server);
-	http_server_release (&https_server);
+	http_server_release(&https_server);
 
 #if defined(CONFIG_HW_RSA)
 	see_free();
@@ -529,7 +528,7 @@ _START_:
 	printf("DHCP Client Start ::");
 	print_laptime();
 	g_stop_easysetup = 0;
-	if (start_webserver() !=0) {
+	if (start_webserver() != 0) {
 		printf("webserver start fail\n");
 		return -1;
 	}

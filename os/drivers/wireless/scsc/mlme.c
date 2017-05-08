@@ -2285,8 +2285,8 @@ int slsi_mlme_get_sinfo_mib(struct slsi_dev *sdev, struct netif *dev, struct wpa
 	int data_length = 0;
 	int r = 0;
 	static const struct slsi_mib_get_entry getValues[] = {
-		{SLSI_PSID_UNIFI_TX_DATA_RATE, {0, 0}},	/* to get STATION_INFO_TX_BITRATE */
-		{SLSI_PSID_UNIFI_RSSI, {0, 0}},	/* to get STATION_INFO_SIGNAL_AVG */
+		{ SLSI_PSID_UNIFI_TX_DATA_RATE, { 0, 0 } },	/* to get STATION_INFO_TX_BITRATE */
+		{ SLSI_PSID_UNIFI_RSSI, { 0, 0 } },			/* to get STATION_INFO_SIGNAL_AVG */
 	};
 
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));

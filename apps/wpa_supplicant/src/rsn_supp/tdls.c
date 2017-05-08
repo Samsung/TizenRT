@@ -90,7 +90,7 @@ static int wpa_tdls_send_teardown(struct wpa_sm *sm, const u8 *addr, u16 reason_
 
 struct wpa_tdls_peer {
 	struct wpa_tdls_peer *next;
-	unsigned int reconfig_key: 1;
+	unsigned int reconfig_key : 1;
 	int initiator;				/* whether this end was initiator for TDLS setup */
 	u8 addr[ETH_ALEN];			/* other end MAC address */
 	u8 inonce[WPA_NONCE_LEN];	/* Initiator Nonce */
@@ -876,10 +876,10 @@ skip_ftie:
 /**
  * wpa_tdls_send_error - To send suitable TDLS status response with
  *	appropriate status code mentioning reason for error/failure.
- * @dst 	- MAC addr of Peer station
+ * @dst - MAC addr of Peer station
  * @tdls_action - TDLS frame type for which error code is sent
- * @initiator   - was this end the initiator of the connection
- * @status 	- status code mentioning reason
+ * @initiator - was this end the initiator of the connection
+ * @status - status code mentioning reason
  */
 
 static int wpa_tdls_send_error(struct wpa_sm *sm, const u8 *dst, u8 tdls_action, u8 dialog_token, int initiator, u16 status)

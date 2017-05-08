@@ -374,8 +374,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	int read_finish = false;
 
 	int method = HTTP_METHOD_UNKNOWN;
-	char url[HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH] =
-	{ 0, };
+	char url[HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH] = { 0, };
 	int buf_len = 0;
 	int remain = HTTP_CONF_MAX_REQUEST_LENGTH;
 	int enc = HTTP_CONTENT_LENGTH;

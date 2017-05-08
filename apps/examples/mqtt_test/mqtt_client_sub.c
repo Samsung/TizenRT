@@ -45,11 +45,11 @@
 #define MQTT_CLIENT_SUB_COMMAND_NAME	"mqtt_sub"
 #define MQTT_ID_MAX_LENGTH				23
 
-#define MQTT_SUB_STACK_SIZE   			20480
-#define MQTT_SUB_SCHED_PRI    			100
-#define MQTT_SUB_SCHED_POLICY 			SCHED_RR
+#define MQTT_SUB_STACK_SIZE				20480
+#define MQTT_SUB_SCHED_PRI				100
+#define MQTT_SUB_SCHED_POLICY			SCHED_RR
 
-#define MQTT_SUB_DEBUG_PRINT(client_handle,...) \
+#define MQTT_SUB_DEBUG_PRINT(client_handle, ...) \
 		do { \
 			if (client_handle && (client_handle)->config && (client_handle)->config->debug) \
 				printf(__VA_ARGS__); \

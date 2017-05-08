@@ -1167,7 +1167,7 @@ static const u8 dh_group24_order[] = {
 
 #endif							/* ALL_DH_GROUPS */
 
-#define DH_GROUP(id,safe) \
+#define DH_GROUP(id, safe) \
 { id, dh_group ## id ## _generator, sizeof(dh_group ## id ## _generator), \
 dh_group ## id ## _prime, sizeof(dh_group ## id ## _prime), \
 dh_group ## id ## _order, sizeof(dh_group ## id ## _order), safe }
