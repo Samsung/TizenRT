@@ -38,6 +38,7 @@ source "$APPSDIR/examples/webclient/Kconfig_ENTRY"
 source "$APPSDIR/examples/webserver/Kconfig_ENTRY"
 source "$APPSDIR/examples/websocket/Kconfig_ENTRY"
 source "$APPSDIR/examples/workqueue/Kconfig_ENTRY"
+source "$APPSDIR/examples/wifi_test/Kconfig_ENTRY"
 
 endchoice
 
@@ -80,4 +81,5 @@ source "$APPSDIR/examples/slsiwifi/Kconfig"
 source "$APPSDIR/examples/mqtt_test/Kconfig"
 source "$APPSDIR/examples/eeprom_test/Kconfig"
 source "$APPSDIR/examples/sensorbd_demo/Kconfig"
+source "$APPSDIR/examples/wifi_test/Kconfig"
 endmenu
