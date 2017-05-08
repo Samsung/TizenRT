@@ -69,7 +69,8 @@ endif
 
 # boardctl support
 ifeq ($(CONFIG_LIB_BOARDCTL),y)
-CSRCS += $(TOPDIR)/arch/boardctl.c
+VPATH += :$(TOPDIR)/arch
+CSRCS += boardctl.c
 endif
 
 COBJS = $(CSRCS:.c=$(OBJEXT))
