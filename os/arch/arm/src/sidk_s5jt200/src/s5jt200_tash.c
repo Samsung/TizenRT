@@ -74,6 +74,7 @@
 #include <tinyara/fs/mtd.h>
 
 #include "sidk_s5jt200.h"
+#include "s5j_mct.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -343,6 +344,18 @@ int board_app_initialize(void)
 	sidk_s5jt200_adc_setup();
 
 	scsc_wpa_ctrl_iface_init();
+
+#ifdef CONFIG_TIMER
+	{
+		int  i;
+		char path[CONFIG_PATH_MAX];
+
+		for (i = 0; i < CONFIG_S5J_MCT_NUM; i++) {
+			sprintf(path, "/dev/timer%d", i);
+			s5j_timer_initialize(path, i);
+		}
+	}
+#endif
 
 #ifdef CONFIG_EXAMPLES_EEPROM_TEST
 	ee_test_main(0, NULL);
