@@ -157,13 +157,3 @@ open_error:
 	return ret;
 }
 
-/****************************************************************************
- * Name: fota_sample_app_install
- *
- * Description:
- *  Install fota_sample command to TASH
- ****************************************************************************/
-void fota_sample_app_install(void)
-{
-	tash_cmd_install("fota_update", fota_sample, TASH_EXECMD_ASYNC);
-}

@@ -40,13 +40,15 @@ include $(APPDIR)/Make.defs
 #MQTT_TOP=$(APPDIR)/netutils/mqtt
 #include $(MQTT_TOP)/config.mk
 
-# Hello, World! built-in application info
+# built-in application info
 
-APPNAME = mqtt
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 20480
+SUBAPPNAME = mqtt_sub
+PUBAPPNAME = mqtt_pub
+SUBFUNCNAME = mqtt_client_sub_main
+PUBFUNCNAME = mqtt_client_pub_main
+THREADEXEC = TASH_EXECMD_SYNC
 
-# Hello, World! Example
+# mqtt test example
 
 ASRCS =
 CSRCS =
@@ -117,13 +119,18 @@ install:
 
 endif
 
-ifeq ($(CONFIG_NSH_BUILTIN_APPS),y)
-$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(call REGISTER,$(APPNAME),$(PRIORITY),$(STACKSIZE),$(APPNAME)_main)
+ifeq ($(CONFIG_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(SUBAPPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(SUBAPPNAME),$(SUBFUNCNAME),$(THREADEXEC))
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+$(BUILTIN_REGISTRY)$(DELIM)$(PUBAPPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(PUBAPPNAME),$(PUBFUNCNAME),$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(SUBAPPNAME)_main.bdat $(BUILTIN_REGISTRY)$(DELIM)$(PUBAPPNAME)_main.bdat
+
 else
 context:
+
 endif
 
 .depend: Makefile $(SRCS)

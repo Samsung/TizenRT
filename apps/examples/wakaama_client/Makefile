@@ -54,18 +54,17 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# DHANUSH Wiced join test built-in application info
+# built-in application info
 
-APPNAME = wakaama_client
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 2048
+APPNAME = wakaamaclient
+THREADEXEC = TASH_EXECMD_ASYNC
 
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/shared
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/client
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 
-# DHANUSH Wiced join test
+# wakaama client test example
 
 ASRCS =
 CSRCS =
@@ -135,7 +134,16 @@ install:
 
 endif
 
+ifeq ($(CONFIG_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+
+else
 context:
+
+endif
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep

@@ -54,13 +54,12 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# Hello, World! built-in application info
+# built-in application info
 
 APPNAME = artik_demo
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 20480
+THREADEXEC = TASH_EXECMD_SYNC
 
-# Hello, World! Example
+# artik demo example
 
 ASRCS =
 
@@ -126,7 +125,16 @@ install:
 
 endif
 
+ifeq ($(CONFIG_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+
+else
 context:
+
+endif
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep

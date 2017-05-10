@@ -54,12 +54,12 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# Hello, World! built-in application info
+# built-in application info
 
 APPNAME = workqueue
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 2048
 THREADEXEC = TASH_EXECMD_SYNC
+
+# workqueue example
 
 ASRCS =
 CSRCS =
@@ -127,7 +127,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_EXAMPLES_WORKQUEUE),y)
+ifeq ($(CONFIG_BUILTIN_APPS),y)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
 

@@ -54,11 +54,12 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-APPNAME = webclient
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 16384
+# built-in application info
 
-# uIP very tiny web server example
+APPNAME = webclient
+THREADEXEC = TASH_EXECMD_ASYNC
+
+# webclient example
 
 ASRCS =
 CSRCS = 
@@ -126,7 +127,16 @@ install:
 
 endif
 
+ifeq ($(CONFIG_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+
+else
 context:
+
+endif
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep

@@ -53,13 +53,13 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
+# built-in application info
 
-CONFIG_EXAMPLES_SLSIWIFI_PRIORITY ?= SCHED_PRIORITY_DEFAULT
-CONFIG_EXAMPLES_SLSIWIFI_STACKSIZE ?= 2048
+APPNAME = wifi
+FUNCNAME = slsi_wifi_main
+THREADEXEC = TASH_EXECMD_ASYNC
 
-APPNAME = slsiwifi
-PRIORITY = $(CONFIG_EXAMPLES_SLSIWIFI_PRIORITY)
-STACKSIZE = $(CONFIG_EXAMPLES_SLSIWIFI_STACKSIZE)
+# wifi test example using slsi wifi api
 
 ASRCS =
 CSRCS += \
@@ -139,7 +139,16 @@ install:
 
 endif
 
+ifeq ($(CONFIG_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+
+else
 context:
+
+endif
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep

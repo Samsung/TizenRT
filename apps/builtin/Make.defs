@@ -51,7 +51,7 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_TASH),y)
+ifeq ($(CONFIG_BUILTIN_APPS),y)
 CONFIGURED_APPS += builtin
 endif
 

@@ -77,19 +77,6 @@
 #define DEFAULT_PING_DATALEN 56
 
 
-
-#ifdef CONFIG_EXAMPLES_WAKAAMA_CLIENT
-extern int wakaamaclient_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_DTLS_CLIENT
-extern int dtls_client_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_DTLS_SERVER
-extern int dtls_server_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_FTPD
-extern int ftpd_main(int argc, char *argv[]);
-#endif
 #ifdef CONFIG_EXAMPLES_IOTIVITY
 extern int iotivity_main(int argc, char *argv[]);
 #ifdef CONFIG_EXAMPLES_IOTIVITY_SECURED
@@ -99,78 +86,14 @@ extern int iotivity_sec_main(int argc, char *argv[]);
 extern int iotivity_cloud_main(int argc, char *argv[]);
 #endif
 #endif
-#ifdef CONFIG_EXAMPLES_IPERF
-extern int iperf_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_LWIPDHCPC
-extern int lwipdhcpc_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_LWIPDHCPS
-extern int lwipdhcps_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_LWIPDNS
-extern int lwipdns_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_MDNS_TEST
-extern int mdns_main(int argc, char *argv[]);
-#endif
 #ifdef CONFIG_SYSTEM_NETDB
 extern int netdb_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_NETSTRESSTEST
-extern int netstresstest_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_NETTEST
-extern int nettest_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_NTPCLIENT_TEST
-extern int ntpclient_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_SELECT_TEST
-extern int select_test_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_TELNETC
-extern int telnetc_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_TELNETD
-extern int telnetd_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_TLS_CLIENT
-extern int tls_client_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_TLS_SELFTEST
-extern int tls_selftest_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_TLS_SERVER
-extern int tls_server_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_WEBCLIENT
-extern int webclient_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_WEBSERVER
-extern int webserver_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_WEBSOCKET
-extern int websocket_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_ARTIK_DEMO
-extern int artik_demo_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_SLSIWIFI
-extern int slsi_wifi_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_MQTT_TEST
-extern int mqtt_client_sub_main(int argc, char *argv[]);
-extern int mqtt_client_pub_main(int argc, char *argv[]);
 #endif
 #ifdef CONFIG_LWM2M_CLIENT_MODE
 extern int lwm2m_client_main(int argc, char *argv[]);
 #endif
 #ifdef CONFIG_LWM2M_SERVER_MODE
 extern int lwm2m_server_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_DNSCLIENT_TEST
-extern int dnsclient_main(int argc, char *argv[]);
 #endif
 
 #if defined(CONFIG_NETUTILS_TFTPC)
@@ -671,30 +594,6 @@ const static tash_cmdlist_t net_utilcmds[] = {
 };
 
 const static tash_cmdlist_t net_appcmds[] = {
-#ifdef CONFIG_EXAMPLES_ARTIK_DEMO
-	{"artik_demo", artik_demo_main, TASH_EXECMD_SYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_SLSIWIFI
-	{"artikwifi", slsi_wifi_main, TASH_EXECMD_SYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_LWIPDHCPC
-	{"dhcpc", lwipdhcpc_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_LWIPDHCPS
-	{"dhcps", lwipdhcps_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_LWIPDNS
-	{"dns", lwipdns_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_DTLS_CLIENT
-	{"dtlsc", dtls_client_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_DTLS_SERVER
-	{"dtlss", dtls_server_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_FTPD
-	{"ftpd", ftpd_main, TASH_EXECMD_ASYNC},
-#endif
 #ifdef CONFIG_EXAMPLES_IOTIVITY
 	{"iotivity", iotivity_main, TASH_EXECMD_ASYNC},
 #ifdef CONFIG_EXAMPLES_IOTIVITY_CLOUD
@@ -704,68 +603,14 @@ const static tash_cmdlist_t net_appcmds[] = {
 	{"iotivity_sec", iotivity_sec_main, TASH_EXECMD_ASYNC},
 #endif
 #endif							/* CONFIG_EXAMPLES_IOTIVITY */
-#ifdef CONFIG_EXAMPLES_IPERF
-	{"iperf", iperf_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_MDNS_TEST
-	{"mdns", mdns_main, TASH_EXECMD_SYNC},
-#endif
 #ifdef CONFIG_SYSTEM_NETDB
 	{"netdb", netdb_main, TASH_EXECMD_SYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_NETSTRESSTEST
-	/* Sample App to stress test Transport Layer (TCP / UDP) / IP Multicast Functionality */
-	{"netstresstest", netstresstest_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_NETTEST
-	/* Sample App to test Transport Layer (TCP / UDP) / IP Multicast Functionality */
-	{"nettest", nettest_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_NTPCLIENT_TEST
-	{"ntpclient", ntpclient_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_SELECT_TEST
-	{"select_test", select_test_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_TELNETC
-	{"telnetc", telnetc_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_TELNETD
-	{"telnetd", telnetd_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_TLS_CLIENT
-	{"tlsc", tls_client_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_TLS_SERVER
-	{"tlss", tls_server_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_TLS_SELFTEST
-	{"tlsself", tls_selftest_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_WEBSOCKET
-	{"websocket", websocket_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_WAKAAMA_CLIENT
-	{"wakaamaclient", wakaamaclient_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_WEBCLIENT
-	{"webclient", webclient_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_WEBSERVER
-	{"webserver", webserver_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_MQTT_TEST
-	{"mqtt_sub", mqtt_client_sub_main, TASH_EXECMD_SYNC},
-	{"mqtt_pub", mqtt_client_pub_main, TASH_EXECMD_SYNC},
 #endif
 #ifdef CONFIG_LWM2M_CLIENT_MODE
 	{"lwm2mclient", lwm2m_client_main, TASH_EXECMD_SYNC},
 #endif
 #ifdef CONFIG_LWM2M_SERVER_MODE
 	{"lwm2mserver", lwm2m_server_main, TASH_EXECMD_SYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_DNSCLIENT_TEST
-	{"dnsclient", dnsclient_main, TASH_EXECMD_ASYNC},
 #endif
 	{NULL, NULL, 0}
 };

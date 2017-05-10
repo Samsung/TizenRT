@@ -54,10 +54,13 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
+# built-in application info
 
-APPNAME = fota_sample
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 1024
+APPNAME = fota_update
+FUNCNAME = fota_sample
+THREADEXEC = TASH_EXECMD_ASYNC
+
+# fota test example
 
 ASRCS =
 CSRCS =
@@ -127,7 +130,16 @@ endif
 
 # Register application
 
+ifeq ($(CONFIG_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+
+else
 context:
+
+endif
 
 # Create dependencies
 

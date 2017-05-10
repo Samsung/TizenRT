@@ -23,9 +23,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = iperf
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 4096
-
+THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 CSRCS =  iperf_api.c iperf_error.c iperf_server_api.c
@@ -96,7 +94,16 @@ install:
 
 endif
 
+ifeq ($(CONFIG_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+
+else
 context:
+
+endif
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
