@@ -27,6 +27,9 @@
 #include <apps/shell/tash.h>
 #include <apps/system/utils.h>
 #endif
+#ifdef CONFIG_BUILTIN_APPS
+#include <apps/builtin.h>
+#endif
 #ifdef CONFIG_SYSTEM_INFORMATION
 #include <apps/system/sysinfo.h>
 #endif
@@ -69,7 +72,9 @@ static void tash_register_cmds(void)
 	net_register_appcmds();
 #endif
 
+#ifdef CONFIG_BUILTIN_APPS
 	register_examples_cmds();
+#endif
 }
 #endif							/* CONFIG_TASH */
 
