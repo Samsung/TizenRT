@@ -54,7 +54,7 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# Proc_test Example
+# procfs test Example
 
 ASRCS =
 CSRCS =

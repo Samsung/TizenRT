@@ -54,13 +54,13 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# Hello, World! built-in application info
+# built-in application info
 
 APPNAME = telnetd 
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 1024
 
-# Hello, World! Example
+# telnet daemon example
 
 ASRCS =
 CSRCS =

@@ -54,12 +54,14 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# Hello, World! built-in application info
+# built-in application info
 
 APPNAME = workqueue
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
 THREADEXEC = TASH_EXECMD_SYNC
+
+# workqueue example
 
 ASRCS =
 CSRCS =

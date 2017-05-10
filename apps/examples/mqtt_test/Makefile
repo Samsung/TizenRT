@@ -40,13 +40,13 @@ include $(APPDIR)/Make.defs
 #MQTT_TOP=$(APPDIR)/netutils/mqtt
 #include $(MQTT_TOP)/config.mk
 
-# Hello, World! built-in application info
+# built-in application info
 
 APPNAME = mqtt
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 20480
 
-# Hello, World! Example
+# mqtt test example
 
 ASRCS =
 CSRCS =

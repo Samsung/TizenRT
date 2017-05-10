@@ -60,6 +60,7 @@ APPNAME = tls_server
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 10240
 
+# tls server example
 
 ASRCS =
 CSRCS =

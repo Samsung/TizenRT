@@ -61,6 +61,8 @@ PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
 THREADEXEC = TASH_EXECMD_SYNC
 
+# smart file sytem test example
+
 ASRCS =
 CSRCS = smart_main.c
 

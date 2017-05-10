@@ -54,7 +54,7 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# Hello, World! Example in tash
+# eeprom test example
 
 ASRCS =
 CSRCS =

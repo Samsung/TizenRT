@@ -37,14 +37,14 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# Hello, World! built-in application info
+# built-in application info
 
 APPNAME = easysetup
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
 THREADEXEC = TASH_EXECMD_ASYNC
 
-# Hello, World! Example
+# easysetup example
 
 ASRCS =
 CSRCS = wifi_api.c

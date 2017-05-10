@@ -54,11 +54,13 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
+# built-in application info
+
 APPNAME = webclient
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 16384
 
-# uIP very tiny web server example
+# webclient example
 
 ASRCS =
 CSRCS = 

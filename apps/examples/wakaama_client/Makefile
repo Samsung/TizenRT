@@ -54,7 +54,7 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# DHANUSH Wiced join test built-in application info
+# built-in application info
 
 APPNAME = wakaama_client
 PRIORITY = SCHED_PRIORITY_DEFAULT
@@ -65,7 +65,7 @@ CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/client
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 
-# DHANUSH Wiced join test
+# wakaama client test example
 
 ASRCS =
 CSRCS =

@@ -54,13 +54,13 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# Hello, World! built-in application info
+# built-in application info
 
 APPNAME = dnsclient
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
 
-# Hello, World! Example
+# dnsclient test example
 
 ASRCS =
 CSRCS =

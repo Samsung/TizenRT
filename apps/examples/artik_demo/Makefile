@@ -54,13 +54,13 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# Hello, World! built-in application info
+# built-in application info
 
 APPNAME = artik_demo
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 20480
 
-# Hello, World! Example
+# artik demo example
 
 ASRCS =
 
