@@ -186,3 +186,24 @@ config LIBTUV
 	default n
 	---help---
 		enable libtuv
+
+config ARTIK_SDK
+	bool "ARTIK SDK"
+	default n
+	select SPI
+	select ADC
+	select GPIO
+	select PWM
+	select S5J_I2C
+	select S5J_SPI
+	select S5J_ADC
+	select S5J_PWM
+	select NETUTILS_DHCPD
+	select NETUTILS_DHCPC
+	select NETUTILS_WEBSERVER
+	select NETUTILS_WEBSOCKET
+	select NETUTILS_WEBCLIENT
+	select TLS_WITH_SSS
+	depends on LWM2M_WAKAAMA_CLIENT
+	---help---
+		include the ARTIK SDK

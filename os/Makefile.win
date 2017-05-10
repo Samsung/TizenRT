@@ -100,6 +100,11 @@ APPDIR := ${shell if exist "$(CONFIG_APPS_DIR)\Makefile" echo $(CONFIG_APPS_DIR)
 CONFIG_EXTERNAL_DIR = ..\external
 EXTDIR := ${shell if exist "$(CONFIG_EXTERNAL_DIR)\Makefile" echo $(CONFIG_EXTERNAL_DIR)}
 
+ifeq ($(CONFIG_ARTIKSDK_DIR),)
+CONFIG_ARTIKSDK_DIR = ..\external\artik-sdk
+endif
+ARTIKSDKDIR := $(CONFIG_ARTIKSDK_DIR)
+
 BUILD_DIR = ..\build
 OUTPUT_DIR = $(BUILD_DIR)\output
 LIBRARIES_DIR = $(OUTPUT_DIR)\libraries

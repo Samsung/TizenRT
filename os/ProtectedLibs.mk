@@ -93,6 +93,12 @@ endif
 
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
 
+# Add library for ARTIK SDK
+
+ifeq ($(CONFIG_ARTIK_SDK),y)
+USERLIBS += $(LIBRARIES_DIR)$(DELIM)libartik-sdk$(LIBEXT)
+endif
+
 # Add libraries for iotivity support
 
 ifeq ($(CONFIG_IOTIVITY_SCONS_BUILD),y)

@@ -102,6 +102,12 @@ TINYARA_ADDONS += $(TOOLSDIR)
 endif
 endif
 
+# Add ARTIK SDK directory
+
+ifeq ($(CONFIG_ARTIK_SDK),y)
+USER_ADDONS += $(EXTDIR)/artik-sdk/api
+endif
+
 # Lists of build directories.
 #
 # FSDIRS depend on file descriptor support; NONFSDIRS do not (except for parts

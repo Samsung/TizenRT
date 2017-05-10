@@ -175,6 +175,14 @@ $(EXTDIR)$(DELIM)libexternal$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBEXT)
 	$(Q) install $(EXTDIR)$(DELIM)libexternal$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
 
+# ARTIK SDK lib
+
+$(ARTIKSDKDIR)$(DELIM)libartik-sdk$(LIBEXT): context
+	$(Q) $(MAKE) -C $(ARTIKSDKDIR) TOPDIR="$(TOPDIR)" libartik-sdk$(LIBEXT) KERNEL=n
+
+$(LIBRARIES_DIR)$(DELIM)libartik-sdk$(LIBEXT): $(ARTIKSDKDIR)$(DELIM)libartik-sdk$(LIBEXT)
+	$(Q) install $(ARTIKSDKDIR)$(DELIM)libartik-sdk$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libartik-sdk$(LIBEXT)
+
 #Iotivity Libs
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)

@@ -115,6 +115,11 @@ CONFIG_EXTERNAL_DIR = ../external
 endif
 EXTDIR := ${shell if [ -r $(CONFIG_EXTERNAL_DIR)/Makefile ]; then echo "$(CONFIG_EXTERNAL_DIR)"; fi}
 
+ifeq ($(CONFIG_ARTIKSDK_DIR),)
+CONFIG_ARTIKSDK_DIR = ../external/artik-sdk
+endif
+ARTIKSDKDIR := $(CONFIG_ARTIKSDK_DIR)
+
 ifeq ($(CONFIG_TOOLS_DIR),)
 CONFIG_TOOLS_DIR = ../tools
 endif
