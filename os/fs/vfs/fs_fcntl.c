@@ -281,8 +281,8 @@ int fcntl(int fd, int cmd, ...)
 #endif
 		{
 			/* No.. this descriptor number is out of range */
-
-			ret = EBADF;
+			set_errno(EBADF);
+			ret = ERROR;
 		}
 	}
 
