@@ -59,7 +59,6 @@ static void tash_register_cmds(void)
 #if defined(CONFIG_KERNEL_CMDS) && !defined(CONFIG_BUILD_PROTECTED)
 	kernel_register_utilcmds();
 #endif
-	kernel_register_appcmds();
 
 #ifdef CONFIG_FS_CMDS
 	fs_register_utilcmds();

@@ -54,6 +54,13 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
+# built-in application info
+
+APPNAME = nettest
+THREADEXEC = TASH_EXECMD_ASYNC
+
+# transport layer (TCP / UDP) / IP multicast functionality test example
+
 ASRCS =
 CSRCS =
 MAINSRC = nettest.c
@@ -122,7 +129,16 @@ endif
 
 # Register application
 
+ifeq ($(CONFIG_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+
+else
 context:
+
+endif
 
 # Create dependencies
 

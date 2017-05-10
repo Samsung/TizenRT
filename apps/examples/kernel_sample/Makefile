@@ -57,9 +57,7 @@ include $(APPDIR)/Make.defs
 # kernel_sample built-in application info
 
 APPNAME = kernel_sample
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 2048
-THREADEXEC = TASH_EXECMD_SYNC
+THREADEXEC = TASH_EXECMD_ASYNC
 
 # TinyAra OS Test
 
@@ -181,7 +179,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_EXAMPLES_KERNEL_SAMPLE),y)
+ifeq ($(CONFIG_BUILTIN_APPS),y)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
 

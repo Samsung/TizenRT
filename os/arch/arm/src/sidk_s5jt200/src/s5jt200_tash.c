@@ -93,19 +93,6 @@ char *s5j_get_binary_version(uint32_t baddr)
 	return version;
 }
 
-#ifdef CONFIG_TASH
-#ifdef CONFIG_EXAMPLES_SLSIWIFI
-int slsi_wifi_main(int argc, char *argv[]);
-#endif
-
-const static tash_cmdlist_t tash_s5j_cmds[] = {
-#ifdef CONFIG_EXAMPLES_SLSIWIFI
-	{ "artikwifi",		slsi_wifi_main,		TASH_EXECMD_SYNC },
-#endif
-	{ NULL,			NULL,			0 }
-};
-#endif
-
 static void scsc_wpa_ctrl_iface_init(void)
 {
 #ifdef CONFIG_SCSC_WLAN
@@ -356,10 +343,6 @@ int board_app_initialize(void)
 	sidk_s5jt200_adc_setup();
 
 	scsc_wpa_ctrl_iface_init();
-
-#ifdef CONFIG_TASH
-	tash_cmdlist_install(tash_s5j_cmds);
-#endif
 
 #ifdef CONFIG_EXAMPLES_EEPROM_TEST
 	ee_test_main(0, NULL);

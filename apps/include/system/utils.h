@@ -23,7 +23,6 @@
 #ifdef CONFIG_KERNEL_CMDS
 void kernel_register_utilcmds(void);
 #endif
-void kernel_register_appcmds(void);
 #ifdef CONFIG_FS_CMDS
 void fs_register_utilcmds(void);
 #endif

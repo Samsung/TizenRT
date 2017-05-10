@@ -57,9 +57,7 @@ include $(APPDIR)/Make.defs
 # Hello, World! built-in application info
 
 APPNAME = hello
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 2048
-THREADEXEC = TASH_EXECMD_SYNC
+THREADEXEC = TASH_EXECMD_ASYNC
 
 # Hello, World! Example
 
@@ -129,7 +127,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_EXAMPLES_HELLO),y)
+ifeq ($(CONFIG_BUILTIN_APPS),y)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
 

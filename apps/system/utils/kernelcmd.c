@@ -22,16 +22,6 @@
 #ifdef CONFIG_KERNEL_CMDS
 #include "kdbg_commands.h"
 #endif
-#if defined(CONFIG_EXAMPLES_FOTA_SAMPLE)
-extern void fota_sample_app_install(void);
-#endif
-
-#ifdef CONFIG_EXAMPLES_KERNEL_SAMPLE
-extern int kernel_sample_main(int argc, char **args);
-#endif
-#ifdef CONFIG_EXAMPLES_TESTCASE
-extern int tc_main(int argc, char **args);
-#endif
 
 #ifdef CONFIG_KERNEL_CMDS
 const static tash_cmdlist_t kdbg_cmds[] = {
@@ -77,20 +67,3 @@ void kernel_register_utilcmds(void)
 }
 #endif
 
-const static tash_cmdlist_t kernel_appcmds[] = {
-#if defined(CONFIG_EXAMPLES_KERNEL_SAMPLE)
-	{"kernel_sample", kernel_sample_main, TASH_EXECMD_SYNC},
-#endif
-#if defined(CONFIG_EXAMPLES_TESTCASE)
-	{"tc",            tc_main,            TASH_EXECMD_SYNC},
-#endif
-	{NULL,            NULL,               0}
-};
-
-void kernel_register_appcmds(void)
-{
-#if defined(CONFIG_EXAMPLES_FOTA_SAMPLE)
-	fota_sample_app_install();
-#endif
-	tash_cmdlist_install(kernel_appcmds);
-}

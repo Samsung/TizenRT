@@ -57,8 +57,6 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = smart
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 2048
 THREADEXEC = TASH_EXECMD_SYNC
 
 # smart file sytem test example
@@ -128,7 +126,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_EXAMPLES_SMART),y)
+ifeq ($(CONFIG_BUILTIN_APPS),y)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
 

@@ -22,8 +22,7 @@ include $(APPDIR)/Make.defs
 # WIFI APIs built-in application info
 
 APPNAME = wifi_test
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 16480
+THREADEXEC = TASH_EXECMD_ASYNC
 
 # WIFI APIs Example
 
@@ -93,7 +92,16 @@ install:
 
 endif
 
+ifeq ($(CONFIG_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+
+else
 context:
+
+endif
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
