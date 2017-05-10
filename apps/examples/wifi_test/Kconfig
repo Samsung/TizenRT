@@ -7,7 +7,9 @@ config EXAMPLES_WIFI_TEST
 	bool "WIFI APIs example"
 	default n
 	---help---
-		Enable the WIFI APIs example
+		Enable the WIFI APIs example. This application features a set
+		of DM API calls to start WiFi, connect to an Access Point,
+		perform DHCP, as well as channel scanning.
 
 if EXAMPLES_WIFI_TEST
 

@@ -19,12 +19,14 @@
  * Included Files
  ****************************************************************************/
 
+#include <stdlib.h>
 #include <tinyara/config.h>
 #include <sys/socket.h>
 
 #include <dm/dm_connectivity.h>
 #include <dm/dm_error.h>
 
+#include <apps/shell/tash.h>
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -238,7 +240,16 @@ error_out:
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+int wifi_init_task(int argc, char *argv[]) {
+	/* Create Task For async job */
+	if (task_create("wifi_test_proc", SCHED_PRIORITY_DEFAULT, 16840, wifi_test_proc, argv) < 0) {
+		/* Error : Can't Create task */
+		printf("WiFi APIs Test is not started\n");
+		return -1;
+	}
 
+	return 0;
+}
 /****************************************************************************
  * wifi_test_main
  ****************************************************************************/
@@ -248,15 +259,11 @@ int main(int argc, FAR char *argv[])
 int wifi_test_main(int argc, char *argv[])
 #endif
 {
-
-	int pid;
-
-	/* Create Task For async job */
-	pid = task_create("wifi_test_proc", SCHED_PRIORITY_DEFAULT, 16840, wifi_test_proc, argv);
-	if (pid < 0) {
-		/* Error : Can't Create task */
-		printf("WiFi APIs Test is not started, err = %d\n", pid);
-	}
+#ifdef CONFIG_TASH
+	tash_cmd_install("wifi_scan", wifi_init_task, TASH_EXECMD_SYNC);
+#else
+	wifi_init_task(argc, argv);
+#endif
 
 	return 0;
 }
