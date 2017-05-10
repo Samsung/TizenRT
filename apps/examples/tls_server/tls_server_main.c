@@ -866,6 +866,7 @@ int tls_server_cb(void *args)
 	 */
 	mbedtls_net_init(&client_fd);
 	mbedtls_net_init(&listen_fd);
+	mbedtls_entropy_init(&entropy);
 	mbedtls_ssl_init(&ssl);
 	mbedtls_ssl_config_init(&conf);
 	mbedtls_ctr_drbg_init(&ctr_drbg);
@@ -1343,7 +1344,6 @@ usage:
 	mbedtls_printf("\n  . Seeding the random number generator...");
 	fflush(stdout);
 
-	mbedtls_entropy_init(&entropy);
 	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers))) != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_ctr_drbg_seed returned -0x%x\n", -ret);
 		goto exit;

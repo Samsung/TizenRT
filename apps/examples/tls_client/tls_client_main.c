@@ -478,6 +478,7 @@ int tls_client_cb(void *args)
 	 */
 	mbedtls_net_init(&server_fd);
 	mbedtls_ssl_init(&ssl);
+	mbedtls_entropy_init(&entropy);
 	mbedtls_ssl_config_init(&conf);
 	memset(&saved_session, 0, sizeof(mbedtls_ssl_session));
 	mbedtls_ctr_drbg_init(&ctr_drbg);
@@ -935,7 +936,6 @@ usage:
 	mbedtls_printf("\n  . Seeding the random number generator...");
 	fflush(stdout);
 
-	mbedtls_entropy_init(&entropy);
 	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers))) != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_ctr_drbg_seed returned -0x%x\n", -ret);
 		goto exit;
@@ -1172,9 +1172,11 @@ usage:
 #endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-	if ((ret = mbedtls_ssl_conf_psk(&conf, psk, psk_len, (const unsigned char *)opt.psk_identity, strlen(opt.psk_identity))) != 0) {
-		mbedtls_printf(" failed\n  ! mbedtls_ssl_conf_psk returned %d\n\n", ret);
-		goto exit;
+	if (psk_len) {
+		if ((ret = mbedtls_ssl_conf_psk(&conf, psk, psk_len, (const unsigned char *)opt.psk_identity, strlen(opt.psk_identity))) != 0) {
+			mbedtls_printf(" failed\n  ! mbedtls_ssl_conf_psk returned %d\n\n", ret);
+			goto exit;
+		}
 	}
 #endif
 
