@@ -117,7 +117,7 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 
 	/* Make sure that non-NULL references were provided. */
 
-	if (!cond || !mutex) {
+	if (cond == NULL || mutex == NULL) {
 		ret = EINVAL;
 	}
 
@@ -138,7 +138,7 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 
 		/* Take the semaphore */
 
-		status = pthread_mutex_take(mutex, false);
+		status = pthread_takesemaphore((FAR sem_t *)&cond->sem, false);
 		if (ret == OK) {
 			/* Report the first failure that occurs */
 
@@ -156,7 +156,7 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 		svdbg("Reacquire mutex...\n");
 
 		oldstate = pthread_disable_cancel();
-		status = pthread_takesemaphore((FAR sem_t *)&mutex->sem, false);
+		status = pthread_mutex_take(mutex, false);
 		pthread_enable_cancel(oldstate);
 
 		if (ret == OK) {
