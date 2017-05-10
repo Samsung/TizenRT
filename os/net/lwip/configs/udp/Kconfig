@@ -1,13 +1,9 @@
-menu "UDP Networking"
-
-config NET_UDP
-	bool "Enable UDP"
-	depends on NET_IPv4
-	default y
-	---help---
-		UDP support on or off
-
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
 if NET_UDP
+
 config NET_NETBUF_RECVINFO
 	bool "Append Destination Infomation"
 	default n
@@ -26,5 +22,4 @@ config NET_UDPLITE
 	---help---
 		Turn on UDP-Lite. (Requires LWIP_UDP)
 
-endif #NET_UDP
-endmenu #"UDP Networking"
+endif

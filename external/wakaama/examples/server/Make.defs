@@ -35,10 +35,16 @@
 
 ifeq ($(CONFIG_DM),y)
 
-# Routing table support
+CSRCS += lwm2mserver.c
 
-CSRCS =
-MAINSRC = lwm2mserver.c
+CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
+CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/shared
+
+CFLAGS+=-D__TINYARA__
+
+ifeq ($(CONFIG_LWM2M_SECURITY),y)
+CFLAGS+=-DWITH_MBEDTLS
+endif
 
 DEPPATH += --dep-path wakaama/examples/server
 VPATH += :wakaama/examples/server

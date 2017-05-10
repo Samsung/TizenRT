@@ -173,13 +173,13 @@ static int ifconfig_down(const char *if_name)
  * underscore).
  */
 #define _GET_VLAN_REALDEV_NAME_CMD	8
-#define _GET_VLAN_VID_CMD		9
+#define _GET_VLAN_VID_CMD			9
 
 /* This value should be 256 ONLY. If it is something else, then hostapd
  * might crash!, as this value has been hard-coded in 2.4.x kernel
  * bridging code.
  */
-#define MAX_BR_PORTS      		256
+#define MAX_BR_PORTS				256
 
 static int br_delif(const char *br_name, const char *if_name)
 {

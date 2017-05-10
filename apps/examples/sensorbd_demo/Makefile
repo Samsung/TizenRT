@@ -59,12 +59,13 @@ include $(APPDIR)/Make.defs
 APPNAME = sensorbd
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
+THREADEXEC = TASH_EXECMD_SYNC
 
 # Example
-
+SUB_DIR = examples
 ASRCS =
 CSRCS =
-CSRCS += $(wildcard examples/*.c)
+CSRCS += $(wildcard $(SUB_DIR)/*.c)
 MAINSRC = sensorbd_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
@@ -129,7 +130,16 @@ install:
 
 endif
 
+ifeq ($(CONFIG_EXAMPLES_SENSORBOARD),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+
+else
 context:
+
+endif
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
@@ -139,6 +149,7 @@ depend: .depend
 
 clean:
 	$(call DELFILE, .built)
+	$(call DELFILE, $(wildcard $(SUB_DIR)/*.o))
 	$(call CLEAN)
 
 distclean: clean

@@ -60,11 +60,11 @@
 /* from tommath.h */
 
 #ifndef MIN
-#define MIN(x,y) ((x)<(y)?(x):(y))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
 #ifndef MAX
-#define MAX(x,y) ((x)>(y)?(x):(y))
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
 #define  OPT_CAST(x)

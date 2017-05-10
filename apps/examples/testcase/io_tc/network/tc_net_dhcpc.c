@@ -34,10 +34,6 @@
 
 #include "tc_internal.h"
 
-#ifdef CONFIG_EXAMPLES_WICEDWIFI
-#include "../../../../../external/WICED/bcm4390x/include/wwd_structures.h"
-#endif
-
 int net_dhcpc_main(void)
 {
 	return 0;

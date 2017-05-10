@@ -89,12 +89,12 @@ exit:
 }
 
 #define MIFRAMMAN_ALIGN(mem, align) \
-	((void *)((((uintptr_t)(mem) + (align + sizeof(void *))) \
-		   & (~(uintptr_t)(align - 1)))))
+	((void *)((((uintptr_t)(mem) + (align + sizeof(void *))) & \
+			(~(uintptr_t)(align - 1)))))
 
 #define MIFRAMMAN_PTR(mem) \
 	(*(((void **)((uintptr_t)(mem) & \
-		      (~(uintptr_t)(sizeof(void *)-1)))) - 1))
+			(~(uintptr_t)(sizeof(void *)-1)))) - 1))
 
 bool is_power_of_2(unsigned long n)
 {

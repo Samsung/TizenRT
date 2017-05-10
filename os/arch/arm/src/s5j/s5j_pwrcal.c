@@ -157,7 +157,7 @@ int cal_clk_setrate(unsigned int id, unsigned long rate)
 
 unsigned long cal_clk_getrate(unsigned int id)
 {
-	unsigned long rate=0;
+	unsigned long rate = 0;
 
 	switch (id) {
 	case d1_spi0:

@@ -203,11 +203,13 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         void * fromSessionH)
 {
     coap_status_t coap_error_code = NO_ERROR;
+    coap_protocol_t proto = contextP->protocol;
+
     static coap_packet_t message[1];
     static coap_packet_t response[1];
 
     LOG("Entering");
-    coap_error_code = coap_parse_message(message, buffer, (uint16_t)length);
+    coap_error_code = coap_parse_message(message, proto, buffer, (uint16_t)length);
     if (coap_error_code == NO_ERROR)
     {
         LOG_ARG("Parsed: ver %u, type %u, tkl %u, code %u.%.2u, mid %u, Content type: %d",
@@ -221,15 +223,23 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             int64_t new_offset = 0;
 
             /* prepare response */
-            if (message->type == COAP_TYPE_CON)
+            if ((message->protocol == COAP_TCP) ||
+                (message->protocol == COAP_TCP_TLS))
             {
-                /* Reliable CON requests are answered with an ACK. */
-                coap_init_message(response, COAP_TYPE_ACK, COAP_205_CONTENT, message->mid);
+                coap_init_message(response, proto, COAP_TYPE_NON, COAP_205_CONTENT, message->mid);
             }
             else
             {
-                /* Unreliable NON requests are answered with a NON as well. */
-                coap_init_message(response, COAP_TYPE_NON, COAP_205_CONTENT, contextP->nextMID++);
+                if (message->type == COAP_TYPE_CON)
+                {
+                    /* Reliable CON requests are answered with an ACK. */
+                    coap_init_message(response, proto, COAP_TYPE_ACK, COAP_205_CONTENT, message->mid);
+                }
+                else
+                {
+                    /* Unreliable NON requests are answered with a NON as well. */
+                    coap_init_message(response, proto, COAP_TYPE_NON, COAP_205_CONTENT, contextP->nextMID++);
+                }
             }
 
             /* mirror token */
@@ -366,9 +376,10 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         done = observe_handleNotify(contextP, fromSessionH, message, response);
                     }
 #endif
-                    if (!done && message->type == COAP_TYPE_CON )
+                    if (!done && message->type == COAP_TYPE_CON &&
+                       (proto != COAP_TCP) && (proto != COAP_TCP_TLS))
                     {
-                        coap_init_message(response, COAP_TYPE_ACK, 0, message->mid);
+                        coap_init_message(response, proto, COAP_TYPE_ACK, 0, message->mid);
                         coap_error_code = message_send(contextP, response, fromSessionH);
                     }
                 }
@@ -405,7 +416,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
             coap_error_code = COAP_500_INTERNAL_SERVER_ERROR;
         }
         /* Reuse input buffer for error message. */
-        coap_init_message(message, COAP_TYPE_ACK, coap_error_code, message->mid);
+        coap_init_message(message, proto, COAP_TYPE_ACK, coap_error_code, message->mid);
         coap_set_payload(message, coap_error_message, strlen(coap_error_message));
         message_send(contextP, message, fromSessionH);
     }
@@ -433,7 +444,7 @@ coap_status_t message_send(lwm2m_context_t * contextP,
         LOG_ARG("coap_serialize_message() returned %d", pktBufferLen);
         if (0 != pktBufferLen)
         {
-            result = lwm2m_buffer_send(sessionH, pktBuffer, pktBufferLen, contextP->userData);
+            result = lwm2m_buffer_send(sessionH, pktBuffer, pktBufferLen, contextP->userData, contextP->protocol);
         }
         lwm2m_free(pktBuffer);
     }

@@ -70,11 +70,11 @@
 #include <sys/mount.h>
 
 #include "sidk_s5jt200.h"
+#include "s5j_gpio.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define MAX_GPIO          67
 
 /****************************************************************************
  * Public Functions Prototypes
@@ -97,11 +97,40 @@
  ****************************************************************************/
 static void board_gpio_initialize(void)
 {
+#ifdef CONFIG_GPIO
 	int i;
+	struct gpio_lowerhalf_s *lower;
 
-	for (i = 0; i < MAX_GPIO; i++) {
-		up_create_gpio(i);
+	struct {
+		uint8_t  minor;
+		uint16_t pincfg;
+	} pins[] = {
+		{ 37, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN0 }, /* ARTIK_A053_XGPIO8 */
+		{ 38, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN1 }, /* ARTIK_A053_XGPIO9 */
+		{ 39, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN2 }, /* ARTIK_A053_XGPIO10 */
+		{ 40, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN3 }, /* ARTIK_A053_XGPIO11 */
+		{ 41, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN4 }, /* ARTIK_A053_XGPIO12 */
+		{ 42, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN5 }, /* ARTIK_A053_XGPIO13 */
+		{ 43, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN6 }, /* ARTIK_A053_XGPIO14 */
+		{ 44, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG1 | GPIO_PIN7 }, /* ARTIK_A053_XGPIO15 */
+		{ 45, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN0 }, /* ARTIK_A053_XGPIO16 */
+		{ 46, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN1 }, /* ARTIK_A053_XGPIO17 */
+		{ 47, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN2 }, /* ARTIK_A053_XGPIO18 */
+		{ 48, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN3 }, /* ARTIK_A053_XGPIO19 */
+		{ 49, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN4 }, /* ARTIK_A053_XGPIO20 */
+		{ 50, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN5 }, /* ARTIK_A053_XGPIO21 */
+		{ 51, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN6 }, /* ARTIK_A053_XGPIO22 */
+		{ 52, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTG2 | GPIO_PIN7 }, /* ARTIK_A053_XGPIO23 */
+		{ 57, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTA0 | GPIO_PIN0 }, /* ARTIK_A053_XEINT0 */
+		{ 58, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTA0 | GPIO_PIN1 }, /* ARTIK_A053_XEINT1 */
+		{ 59, GPIO_INPUT | GPIO_PULLDOWN | GPIO_PORTA0 | GPIO_PIN2 }, /* ARTIK_A053_XEINT2 */
+	};
+
+	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
+		lower = s5j_gpio_lowerhalf(pins[i].pincfg);
+		gpio_register(pins[i].minor, lower);
 	}
+#endif /* CONFIG_GPIO */
 }
 
 /****************************************************************************

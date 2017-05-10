@@ -74,7 +74,7 @@ time_t mosquitto_time(void)
 	} else {
 		return GetTickCount() / 1000;	/* FIXME - need to deal with overflow. */
 	}
-#elif _POSIX_TIMERS>0 && defined(_POSIX_MONOTONIC_CLOCK)
+#elif (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
 	struct timespec tp;
 
 	clock_gettime(CLOCK_MONOTONIC, &tp);

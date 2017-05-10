@@ -29,50 +29,24 @@ BOARD_NAME=${CONFIG_ARCH_BOARD}
 # ENV : Set to proper path's
 OS_DIR_PATH=${PWD}
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
-OUTPUT_DIR_PATH=${BUILD_DIR_PATH}/output
-OUTPUT_BIN_PATH=${OUTPUT_DIR_PATH}/bin
+OUTPUT_BIN_PATH=${BUILD_DIR_PATH}/output/bin
 BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/${BOARD_NAME}
-OPENOCD_DIR_PATH=${BOARD_DIR_PATH}/openocd
+OPENOCD_DIR_PATH=${BOARD_DIR_PATH}/tools/openocd
 FW_DIR_PATH=${BOARD_DIR_PATH}/boot_bin
 
 SYSTEM_TYPE=`getconf LONG_BIT`
 if [ "$SYSTEM_TYPE" = "64" ]; then
-	COMMAND=openocd_linux64
+	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux64
 else
-	COMMAND=openocd_linux32
+	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
 fi
-
-# Prepare resouces, pack into romfs.img
-prepare_resource()
-{
-	echo "Prepare resouces and pack into romfs.img ..."
-	# Only if FS_ROMFS enabled.
-	if [ "${CONFIG_FS_ROMFS}" = "y" ]; then
-		# create resource directory in ${OUTPUT_DIR_PATH}
-		mkdir -p ${OUTPUT_DIR_PATH}/res
-		cp -rf ${tinyara_path}/external/contents/${BOARD_NAME}/base-files/* ${OUTPUT_DIR_PATH}/res/
-
-		# create romfs.img
-		echo "Creating ROMFS Image ..."
-		sh ${tinyara_path}/apps/tools/mkromfsimg.sh
-
-		romfs_size=`stat -c%s ${OUTPUT_BIN_PATH}/romfs.img`
-		echo "ROMFS Image Size : ${romfs_size}"
-
-		# download romfs.img using openocd script
-		pushd ${OPENOCD_DIR_PATH}
-		./openocd_linux64 -f s5jt200_evt0_flash_romfs.cfg
-		popd
-
-	else
-		echo "CONFIG_FS_ROMFS is not enabled, skip download ..."
-	fi
-}
 
 # MAIN
 main()
 {
-	echo "System is ${SYSTEM_TYPE} bits so that ${COMMAND} will be used to program"
+	echo "openocd is picked from ${OPENOCD_BIN_PATH}"
+	echo "Binaries are picked from ${OUTPUT_BIN_PATH}"
+	echo "Board path is ${BOARD_DIR_PATH}"
 
 	# Process arguments
 	for arg in $@
@@ -98,19 +72,13 @@ main()
 
 			# download all binaries using openocd script
 			pushd ${OPENOCD_DIR_PATH}
-			./${COMMAND} -f s5jt200_silicon_evt0_fusing_flash_all.cfg
+			${OPENOCD_BIN_PATH}/openocd -f s5jt200_silicon_evt0_fusing_flash_all.cfg
 			popd
-			prepare_resource
-			;;
-
-		RESOURCE)
-			echo "RESOURCE :"
-			prepare_resource
 			;;
 
 		*)
 			echo "${arg} is not suppported in ${BOARD_NAME}"
-			echo "Usage : make download [ ALL | RESOURCE ]"
+			echo "Usage : make download [ ALL ]"
 			exit 1
 			;;
 		esac

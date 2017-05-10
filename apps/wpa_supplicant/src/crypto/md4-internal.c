@@ -181,7 +181,7 @@ static void MD4Final(unsigned char digest[MD4_DIGEST_LENGTH], MD4_CTX *ctx)
 
 /* This is the central step in the MD4 algorithm. */
 #define MD4STEP(f, w, x, y, z, data, s) \
-	( w += f(x, y, z) + data,  w = w<<s | w>>(32-s) )
+	(w += f(x, y, z) + data,  w = w << s | w >> (32 - s))
 
 /*
  * The core of the MD4 algorithm, this alters an existing MD4 hash to

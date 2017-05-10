@@ -87,9 +87,7 @@
 
 #define COND_NWAITERS_SHIFT 1
 
-int pthread_condattr_setclock(attr, clock_id)
-pthread_condattr_t *attr;
-clockid_t clock_id;
+int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id)
 {
 	/* Only a few clocks are allowed.  */
 	if (clock_id != CLOCK_MONOTONIC && clock_id != CLOCK_REALTIME)

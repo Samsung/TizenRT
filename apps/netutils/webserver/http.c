@@ -66,7 +66,9 @@ mqd_t http_server_mq_open(int port)
 	mqattr.mq_msgsize = sizeof(struct http_msg_t);
 	mqattr.mq_flags = 0;
 
-	msg_q = mq_open(msg_name, O_RDWR | O_CREAT, 0666, &mqattr);
+	if ((msg_q = mq_open(msg_name, O_RDWR | O_CREAT, 0666, &mqattr)) == (mqd_t)ERROR) {
+		msg_q = NULL;
+	}
 
 	return msg_q;
 }
@@ -94,7 +96,7 @@ pthread_addr_t http_server_handler(pthread_addr_t arg)
 	struct mq_attr mqattr;
 	struct http_server_t *server = (struct http_server_t *)arg;
 
-	if ((msg_q = http_server_mq_open(server->port)) < 0) {
+	if ((msg_q = http_server_mq_open(server->port)) == NULL) {
 		HTTP_LOGE("msg queue open fail in http_server_handler %d\n" , server->port);
 		goto stop;
 	}
@@ -203,7 +205,7 @@ pthread_addr_t http_server_handler(pthread_addr_t arg)
 			}
 		}
 	}
-stop :
+stop:
 	HTTP_LOGD("http_server_hander stop :%d\n", server->port);
 
 	if (msg_q >= 0) {

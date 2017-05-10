@@ -88,6 +88,7 @@ static void tc_net_getpeername_p1(void)
 	TC_ASSERT_NEQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
 
+	close(sock);
 }
 
 /**

@@ -81,15 +81,13 @@
  * Private Types
  ****************************************************************************/
 #ifdef CONFIG_RTC_ALARM
-struct s5j_cbinfo_s
-{
+struct s5j_cbinfo_s {
 	volatile rtc_alarm_callback_t cb; /* Callback when the alarm expires */
 	volatile FAR void *priv;          /* Private arg passed to callback */
 };
 #endif /* CONFIG_RTC_ALARM */
 
-struct s5j_lowerhalf_s
-{
+struct s5j_lowerhalf_s {
 	/*
 	 * This is the contained reference to the read-only, lower-half
 	 * operations vtable (which may lie in FLASH or ROM

@@ -22,6 +22,8 @@
  *  Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
+
 #include <fcntl.h>
 #include <errno.h>
 #include <netdb.h>
@@ -336,7 +338,11 @@ EXIT_WEBSOCKET_HANDSHAKE_ERROR:
 
 void websocket_socket_free(websocket_t *ctx)
 {
-	if (ctx != NULL || ctx->fd >= 0) {
+	if (ctx == NULL) {
+		return;
+	}
+
+	if (ctx->fd >= 0) {
 		close(ctx->fd);
 		ctx->fd = -1;
 	}
@@ -348,7 +354,7 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 	socklen_t addrlen;
 	struct sockaddr_in serveraddr;
 
-#ifdef CONFIG_NET_LOOPBACK
+#ifdef CONFIG_LIBC_NETDB
 	struct hostent *he = NULL;
 	char ip_str[INET6_ADDRSTRLEN];
 
@@ -358,9 +364,11 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 		WEBSOCKET_DEBUG("failed to resolve hostname\n");
 		return WEBSOCKET_CONNECT_ERROR;
 	}
-	inet_ntop(he->h_addrtype, he->h_addr, ip_str, he->h_length);
+	if (inet_ntop(he->h_addrtype, he->h_addr, ip_str, sizeof(ip_str)) == NULL) {
+		WEBSOCKET_DEBUG("inet_ntop failed (errno=%d)\n", errno);
+		return WEBSOCKET_CONNECT_ERROR;
+	}
 #endif
-
 	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (fd == -1) {
 		WEBSOCKET_DEBUG("fail to open socket\n");
@@ -369,7 +377,7 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_port = htons(atoi(port));
-#ifdef CONFIG_NET_LOOPBACK
+#ifdef CONFIG_LIBC_NETDB
 	serveraddr.sin_addr.s_addr = inet_addr(ip_str);
 #else
 	serveraddr.sin_addr.s_addr = inet_addr(host);
@@ -769,7 +777,6 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 
 	if (websocket_client_handshake(client, host, port, path) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to http handshake\n");
-		close(fd);
 		r = WEBSOCKET_HANDSHAKE_ERROR;
 		goto EXIT_CLIENT_OPEN;
 	}
@@ -777,7 +784,6 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	socket_data = malloc(sizeof(struct websocket_info_t));
 	if (socket_data == NULL) {
 		WEBSOCKET_DEBUG("fail to allocate memory\n");
-		close(fd);
 		r = WEBSOCKET_ALLOCATION_ERROR;
 		goto EXIT_CLIENT_OPEN;
 	}
@@ -787,7 +793,6 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	if (wslay_event_context_client_init(&client->ctx, client->cb, socket_data) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to init websocket client context\n");
 		free(socket_data);
-		close(fd);
 		r = WEBSOCKET_INIT_ERROR;
 		goto EXIT_CLIENT_OPEN;
 	}

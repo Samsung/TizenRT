@@ -35,17 +35,25 @@ int see_generate_key_internal(unsigned int key_type, unsigned char *key_buf,
 
 	SEE_DEBUG("%s IN\n", __func__);
 
-	_SEE_MUTEX_LOCK
+	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_LOCK_ERROR;
+	}
+
 	switch (key) {
 	case ECC_KEY:
 		ISP_CHECKBUSY();
 		r = isp_ecdsa_generate_key_encryptedkey(object_id, key_buf);
 		break;
 	default:
-		_SEE_MUTEX_UNLOCK
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
 		return SEE_INVALID_INPUT_PARAMS;
 	}
-	_SEE_MUTEX_UNLOCK
+
+	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_UNLOCK_ERROR;
+	}
 
 	if (r) {
 		SEE_DEBUG("isp_generate_key fail %x %x %x\n", r, key, object_id);
@@ -68,15 +76,23 @@ int see_get_ecc_publickey_internal(struct sECC_KEY *ecc_pub, unsigned char *key_
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	_SEE_MUTEX_LOCK
+	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_LOCK_ERROR;
+	}
+
 	ISP_CHECKBUSY();
 	if ((r = isp_ecdsa_get_publickey_encryptedkey(ecc_pub, object_id, key_buf)) != 0) {
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK
 		SEE_DEBUG("isp_get_ecdsa_pubkey fail %x\n", r);
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
 		return SEE_ERROR;
 	}
-	_SEE_MUTEX_UNLOCK
+
+	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_UNLOCK_ERROR;
+	}
 
 	SEE_DEBUG("%s OUT\n", __func__);
 	return SEE_OK;
@@ -93,15 +109,23 @@ int see_compute_ecdh_param_internal(struct sECC_KEY *ecc_pub, unsigned char *key
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	_SEE_MUTEX_LOCK
+	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_LOCK_ERROR;
+	}
+
 	ISP_CHECKBUSY();
 	if ((r = isp_compute_ecdh_encryptedkey(output, olen, *ecc_pub, key_buf)) != 0) {
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK
 		SEE_DEBUG("isp_compute_ecdh_param fail %x\n", r);
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
 		return SEE_ERROR;
 	}
-	_SEE_MUTEX_UNLOCK
+
+	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_UNLOCK_ERROR;
+	}
 
 	SEE_DEBUG("%s OUT\n", __func__);
 	return SEE_OK;
@@ -132,15 +156,23 @@ int see_generate_dhm_params_internal(struct sDH_PARAM *d_param, unsigned char *k
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	_SEE_MUTEX_LOCK
+	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_LOCK_ERROR;
+	}
+
 	ISP_CHECKBUSY();
 	if ((r = isp_dh_generate_keypair_userparam_encryptedkey(d_param, key_buf)) != 0) {
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK
 		SEE_DEBUG("isp_generate_dh_param fail %x\n", r);
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
 		return SEE_ERROR;
 	}
-	_SEE_MUTEX_UNLOCK
+
+	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_UNLOCK_ERROR;
+	}
 
 	SEE_DEBUG("%s OUT\n", __func__);
 	return SEE_OK;
@@ -158,15 +190,23 @@ int see_compute_dhm_param_internal(struct sDH_PARAM *d_param, unsigned char *key
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	_SEE_MUTEX_LOCK
+	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_LOCK_ERROR;
+	}
+
 	ISP_CHECKBUSY();
 	if ((r = isp_dh_compute_shared_secret_encryptedkey(output, olen, *d_param, key_buf)) != 0) {
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK
 		SEE_DEBUG("isp_compute_dh_param fail %x\n", r);
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
 		return SEE_ERROR;
 	}
-	_SEE_MUTEX_UNLOCK
+
+	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_UNLOCK_ERROR;
+	}
 
 	SEE_DEBUG("%s OUT\n", __func__);
 	return SEE_OK;
@@ -190,15 +230,23 @@ int see_setup_key_internal(unsigned char *key_der, unsigned int key_len,
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	_SEE_MUTEX_LOCK
+	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_LOCK_ERROR;
+	}
+
 	ISP_CHECKBUSY();
 	if ((r = isp_set_encryptedkey(key_der, key_len, key_type, key_buf)) != 0) {
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK
 		SEE_DEBUG("isp_set_userkey fail %x\n", r);
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
 		return SEE_ERROR;
 	}
-	_SEE_MUTEX_UNLOCK
+
+	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_UNLOCK_ERROR;
+	}
 
 	SEE_DEBUG("%s OUT\n", __func__);
 	return SEE_OK;
@@ -216,16 +264,24 @@ int see_verify_ecdsa_signature_internal(struct sECC_SIGN *ecc_sign,
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	_SEE_MUTEX_LOCK
+	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_LOCK_ERROR;
+	}
+
 	ISP_CHECKBUSY();
 	if ((r = isp_ecdsa_verify_md_encryptedkey(ecc_sign,
 			 hash, hash_len, key_buf)) != 0) {
 		isp_clear(0);
-		_SEE_MUTEX_UNLOCK
 		SEE_DEBUG("isp_ecdsa_verify fail %x\n", r);
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
 		return SEE_ERROR;
 	}
-	_SEE_MUTEX_UNLOCK
+
+	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		return SEE_MUTEX_UNLOCK_ERROR;
+	}
 
 	SEE_DEBUG("%s OUT\n", __func__);
 	return SEE_OK;

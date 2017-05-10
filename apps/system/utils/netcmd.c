@@ -150,9 +150,6 @@ extern int webclient_main(int argc, char *argv[]);
 #ifdef CONFIG_EXAMPLES_WEBSERVER
 extern int webserver_main(int argc, char *argv[]);
 #endif
-#ifdef CONFIG_EXAMPLES_WICEDWIFI
-extern int wicedwifi_main(int argc, char *argv[]);
-#endif
 #ifdef CONFIG_EXAMPLES_WEBSOCKET
 extern int websocket_main(int argc, char *argv[]);
 #endif
@@ -168,6 +165,9 @@ extern int mqtt_client_pub_main(int argc, char *argv[]);
 #endif
 #ifdef CONFIG_LWM2M_CLIENT_MODE
 extern int lwm2m_client_main(int argc, char *argv[]);
+#endif
+#ifdef CONFIG_LWM2M_SERVER_MODE
+extern int lwm2m_server_main(int argc, char *argv[]);
 #endif
 #ifdef CONFIG_EXAMPLES_DNSCLIENT_TEST
 extern int dnsclient_main(int argc, char *argv[]);
@@ -369,11 +369,6 @@ int cmd_get(int argc, char **argv)
 	int i = 0;
 	int fd;
 	int ret = -1;
-	char write_buffer[300];
-	char read_buffer[301];
-	char filename[30]
-	char newfilename[30];
-	char seek_wbuffer[100];
 	char seek_rbuffer[101];
 
 	/* Parse the input parameter list */
@@ -383,7 +378,7 @@ int cmd_get(int argc, char **argv)
 
 	/* Get the full path to the local file */
 
-	fullpath = get_fullpath(args.destpath);
+	fullpath = (char *)get_fullpath(args.destpath);
 
 	/* Then perform the TFTP get operation */
 
@@ -401,7 +396,7 @@ int cmd_get(int argc, char **argv)
 	ret = read(fd, seek_rbuffer, 100);
 	if (ret < 0) {
 		printf("Seek read failed %d\n", ret);
-		return;
+		return ERROR;
 	} else {
 		printf("Read done\n");
 	}
@@ -610,7 +605,7 @@ int cmd_ifconfig(int argc, char **argv)
 		printf("IP address %s\n", inet_ntoa(ds.ipaddr));
 		printf("Netmask %s\n", inet_ntoa(ds.netmask));
 		printf("Gateway %s\n", inet_ntoa(ds.default_router));
-#if defined (CONFIG_NETDB_DNSCLIENT) && defined (CONFIG_NETDB_DNSSERVER_BY_DHCP)
+#if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
 		printf("Default DNS %s\n", inet_ntoa(ds.dnsaddr));
 #endif
 		dhcpc_close(handle);
@@ -759,15 +754,15 @@ const static tash_cmdlist_t net_appcmds[] = {
 #ifdef CONFIG_EXAMPLES_WEBSERVER
 	{"webserver", webserver_main, TASH_EXECMD_ASYNC},
 #endif
-#ifdef CONFIG_EXAMPLES_WICEDWIFI
-	{"wicedwifi", wicedwifi_main, TASH_EXECMD_ASYNC},
-#endif
 #ifdef CONFIG_EXAMPLES_MQTT_TEST
 	{"mqtt_sub", mqtt_client_sub_main, TASH_EXECMD_SYNC},
 	{"mqtt_pub", mqtt_client_pub_main, TASH_EXECMD_SYNC},
 #endif
 #ifdef CONFIG_LWM2M_CLIENT_MODE
 	{"lwm2mclient", lwm2m_client_main, TASH_EXECMD_SYNC},
+#endif
+#ifdef CONFIG_LWM2M_SERVER_MODE
+	{"lwm2mserver", lwm2m_server_main, TASH_EXECMD_SYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_DNSCLIENT_TEST
 	{"dnsclient", dnsclient_main, TASH_EXECMD_ASYNC},

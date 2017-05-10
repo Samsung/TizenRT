@@ -129,7 +129,7 @@ static inline int tftp_parsedatapacket(const uint8_t *packet, uint16_t *opcode, 
 		*blockno = (uint16_t)packet[2] << 8 | (uint16_t)packet[3];
 		return OK;
 	}
-#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_NET)
+#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_NET_ERROR)
 	else if (*opcode == TFTP_ERR) {
 		(void)tftp_parseerrpacket(packet);
 	}

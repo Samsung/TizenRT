@@ -62,7 +62,7 @@
 #include <string.h>
 
 #include <tinyara/spi/spi.h>
-#include <tinyara/mtd/mtd.h>
+#include <tinyara/fs/mtd.h>
 
 FAR struct mtd_dev_s *ramtron_initialize(FAR struct spi_dev_s *dev);
 

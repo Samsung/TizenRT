@@ -58,184 +58,220 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/compiler.h>
-
-#include <stdint.h>
-#include <stdbool.h>
-#include <debug.h>
 
 #include <tinyara/irq.h>
+#include <tinyara/gpio.h>
 
-#include <chip.h>
+#include "chip.h"
+#include "chip/s5jt200_gpio.h"
+#include "chip/s5jt200_pinconfig.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define CONFIG_MAX_GPIO_PORT 8
+/* Bit-encoded input to s5j_configgpio() */
 
-/* Pin configurations */
-#define GPIO_INPUT    0x0
-#define GPIO_OUTPUT   0x1
-#define GPIO_IRQ      0xf
-#define GPIO_FUNC(x)  (x)
+/*
+ * 16-bits Encoding:
+ *
+ *                1111 1100 0000 0000
+ *                5432 1098 7654 3210
+ *                ---- ---- ---- ----
+ * Output mode    FFFU USSS VGGG GPPP
+ * Input mode     FFFU UEEE .GGG GPPP
+ */
 
-/* Pin PDN configurations */
-#define GPIO_PDN_OUTPUT0 0x0
-#define GPIO_PDN_OUTPUT1 0x1
-#define GPIO_PDN_INPUT   0x2
-#define GPIO_PDN_PREV    0x3
+/*
+ * Function mode:
+ *
+ * 1111 1100 0000 0000
+ * 5432 1098 7654 3210
+ * ---- ---- ---- ----
+ * FFF. .... .... ....
+ */
+#define GPIO_FUNC_SHIFT		13
+#define GPIO_FUNC_MASK		(0x7 << GPIO_FUNC_SHIFT)
+#define GPIO_INPUT			(0x0 << GPIO_FUNC_SHIFT)
+#define GPIO_OUTPUT			(0x1 << GPIO_FUNC_SHIFT)
+#define GPIO_ALT1			(0x2 << GPIO_FUNC_SHIFT)
+#define GPIO_ALT2			(0x3 << GPIO_FUNC_SHIFT)
+#define GPIO_ALT3			(0x4 << GPIO_FUNC_SHIFT)
+#define GPIO_ALT4			(0x5 << GPIO_FUNC_SHIFT)
+#define GPIO_ALT5			(0x6 << GPIO_FUNC_SHIFT)
+#define GPIO_EINT			(0x7 << GPIO_FUNC_SHIFT)
 
-/* Pull mode */
-#define GPIO_PULL_NONE  0x0
-#define GPIO_PULL_DOWN  0x1
-#define GPIO_PULL_UP    0x3
+/*
+ * pull-up/down:
+ *
+ * 1111 1100 0000 0000
+ * 5432 1098 7654 3210
+ * ---- ---- ---- ----
+ * ...U U... .... ....
+ */
+#define GPIO_PUPD_SHIFT		11
+#define GPIO_PUPD_MASK		(0x3 << GPIO_PUPD_SHIFT)
+#define GPIO_FLOAT			(0x0 << GPIO_PUPD_SHIFT)
+#define GPIO_PULLDOWN		(0x1 << GPIO_PUPD_SHIFT)
+#define GPIO_RESERVED		(0x2 << GPIO_PUPD_SHIFT)
+#define GPIO_PULLUP			(0x3 << GPIO_PUPD_SHIFT)
 
-/* Drive Strength level */
-#define GPIO_DRV_1X    0x0
-#define GPIO_DRV_3X    0x1
-#define GPIO_DRV_2X    0x2
-#define GPIO_DRV_4X    0x3
-#define GPIO_DRV_FAST  0x0
-#define GPIO_DRV_SLOW  0x1
+/*
+ * Initial value:
+ *
+ * 1111 1100 0000 0000
+ * 5432 1098 7654 3210
+ * ---- ---- ---- ----
+ * .... .... V... ....
+ */
+#define GPIO_VALUE_SHIFT	7
+#define GPIO_VALUE_MASK		(0x1 << GPIO_VALUE_SHIFT)
+#define GPIO_VALUE_ZERO		(0x0 << GPIO_VALUE_SHIFT)
+#define GPIO_VALUE_ONE		(0x1 << GPIO_VALUE_SHIFT)
 
-/* EINT type */
-#define EINT_TYPE_LEVEL_LOW     0x0
-#define EINT_TYPE_LEVEL_HIGH    0x1
-#define EINT_TYPE_EDGE_FALLING  0x2
-#define EINT_TYPE_EDGE_RISING   0x3
-#define EINT_TYPE_EDGE_BOTH     0x4
+/*
+ * Drive strength:
+ *
+ * 1111 1100 0000 0000
+ * 5432 1098 7654 3210
+ * ---- ---- ---- ----
+ * .... .SSS .... ....
+ */
+#define GPIO_DRVSTR_SHIFT	8
+#define GPIO_DRVSTR_MASK	(0x7 << GPIO_DRVSTR_SHIFT)
+#define GPIO_FAST1X			(0x0 << GPIO_DRVSTR_SHIFT)
+#define GPIO_FAST2X			(0x1 << GPIO_DRVSTR_SHIFT)
+#define GPIO_FAST3X			(0x2 << GPIO_DRVSTR_SHIFT)
+#define GPIO_FAST4X			(0x3 << GPIO_DRVSTR_SHIFT)
+#define GPIO_SLOW1X			(0x4 << GPIO_DRVSTR_SHIFT)
+#define GPIO_SLOW2X			(0x5 << GPIO_DRVSTR_SHIFT)
+#define GPIO_SLOW3X			(0x6 << GPIO_DRVSTR_SHIFT)
+#define GPIO_SLOW4X			(0x7 << GPIO_DRVSTR_SHIFT)
 
-/* EINT filter type */
-#define EINT_FILTER_DELAY      0x0
-#define EINT_FILTER_DIGITAL    0x1
+/*
+ * External interrupt edge mode (when EINT mode) :
+ *
+ * 1111 1100 0000 0000
+ * 5432 1098 7654 3210
+ * ---- ---- ---- ----
+ * .... .EEE .... ....
+ */
+#define GPIO_EINT_SHIFT			8
+#define GPIO_EINT_MASK			(0x7 << GPIO_EINT_SHIFT)
+#define GPIO_EINT_LOW			(0x0 << GPIO_EINT_SHIFT)
+#define GPIO_EINT_HIGH			(0x1 << GPIO_EINT_SHIFT)
+#define GPIO_EINT_FALLING_EDGE	(0x2 << GPIO_EINT_SHIFT)
+#define GPIO_EINT_RISING_EDGE	(0x3 << GPIO_EINT_SHIFT)
+#define GPIO_EINT_BOTH_EDGE		(0x4 << GPIO_EINT_SHIFT)
 
-/* Register offsets */
-#define GPIO_CON               0x0
-#define GPIO_DAT               0x4
-#define GPIO_PUD               0x8
-#define GPIO_DRVSR             0xc
-#define GPIO_CONPDN            0x10
-#define GPIO_PUDPDN            0x14
+/*
+ * This identifies the port group:
+ *
+ * 1111 1100 0000 0000
+ * 5432 1098 7654 3210
+ * ---- ---- ---- ----
+ * .... .... .GGG G...
+ */
+#define GPIO_PORT_SHIFT		3
+#define GPIO_PORT_MASK		(0xf << GPIO_PORT_SHIFT)
+#define GPIO_PORTP0			(0x0 << GPIO_PORT_SHIFT)
+#define GPIO_PORTP1			(0x1 << GPIO_PORT_SHIFT)
+#define GPIO_PORTP2			(0x2 << GPIO_PORT_SHIFT)
+#define GPIO_PORTP3			(0x3 << GPIO_PORT_SHIFT)
+#define GPIO_PORTG0			(0x4 << GPIO_PORT_SHIFT)
+#define GPIO_PORTG1			(0x5 << GPIO_PORT_SHIFT)
+#define GPIO_PORTG2			(0x6 << GPIO_PORT_SHIFT)
+#define GPIO_PORTG3			(0x7 << GPIO_PORT_SHIFT)
+#define GPIO_PORTA0			(0x8 << GPIO_PORT_SHIFT)
+#define GPIO_PORTA1			(0x9 << GPIO_PORT_SHIFT)
+#define GPIO_PORTA2			(0xa << GPIO_PORT_SHIFT)
+#define GPIO_PORTA3			(0xb << GPIO_PORT_SHIFT)
+#define GPIO_PORTP4			(0xc << GPIO_PORT_SHIFT)
 
-#define GPIO_EINT_CON          0x608
-#define GPIO_EINT_FLTCON       0x710
-#define GPIO_EINT_MASK         0x808
-#define GPIO_EINT_PEND         0x908
-#define GPIO_SVC               0xB08
-
-/* Bit field manipulation */
-#define CON_MASK(x)         (0xf << ((x) << 2))
-#define CON_SFR(x, v)       ((v) << ((x) << 2))
-#define CON_GET(x, v)       ((v) << ((x) << 2))
-
-#define PULL_MASK(x)        (0xf << ((x) << 2))
-#define PULL_MODE(x, v)     ((v) << ((x) << 2))
-
-#define DRV_MASK(x)         (0xf << ((x) << 2))
-#define DRV_SET(x, m)       ((m) << ((x) << 2))
-
-#define RATE_MASK(x)        (0x1 << (x + 16))
-#define RATE_SET(x)         (0x1 << (x + 16))
-
-#define CONPDN_MASK(x)      (0x3 << ((x) << 1))
-#define CONPDN_SFR(x, v)    ((v) << ((x) << 1))
-
-#define PUDPDN_MASK(x)      (0x3 << ((x) << 1))
-#define PUDPDN_MODE(x, v)   ((v) << ((x) << 1))
-
-#define GPIO_MAGIC          (0x4750 << 16)
-
-#define s5j_gpio(bank, port)   (GPIO_MAGIC | (((bank) << 8) | port))
-#define s5j_gpio_NC            (GPIO_MAGIC | 0xffff)
-
-#define s5j_gpio_bank(pin)     ((pin >> 8) & 0xff)
-#define s5j_gpio_port(pin)     ((pin) & 0xff)
-
-struct gpio_bank {
-	char *name;
-	void *base;
-	unsigned type;
-	unsigned nr_port;
-	unsigned isr_num[CONFIG_MAX_GPIO_PORT];
-	int group_type;
-	int filter_offset_addr;
-};
-
-#define irq_id_to_gpio(irq_id) (GPIO_MAGIC | (irq_id >> 16))
-#define gpio_irq_id(gpio, isr_num) ((gpio & 0xFFFF) << 16 | isr_num)
-
-enum {
-	GPP0,
-	GPP1,
-	GPP2,
-	GPP3,
-	GPG0,
-	GPG1,
-	GPG2,
-	GPG3,
-	GPA0,
-	GPA1,
-	GPA2,
-	GPA3,
-	GPP4,
-	ETC0,
-
-	GPEND,
-};
-
-enum {
-	GPIO_GROUP_ALIVE_EACH,
-	GPIO_GROUP_ALIVE,
-	GPIO_GROUP_COMMON,
-};
-
-/****************************************************************************
- * Public Types
- ****************************************************************************/
-
-/****************************************************************************
- * Inline Functions
- ****************************************************************************/
-#ifndef __ASSEMBLY__
+/*
+ * This identifies the bit in the port:
+ *
+ * 1111 1100 0000 0000
+ * 5432 1098 7654 3210
+ * ---- ---- ---- ----
+ * .... .... .... .PPP
+ */
+#define GPIO_PIN_SHIFT		0
+#define GPIO_PIN_MASK		(0x7 << GPIO_PIN_SHIFT)
+#define GPIO_PIN0			(0x0 << GPIO_PIN_SHIFT)
+#define GPIO_PIN1			(0x1 << GPIO_PIN_SHIFT)
+#define GPIO_PIN2			(0x2 << GPIO_PIN_SHIFT)
+#define GPIO_PIN3			(0x3 << GPIO_PIN_SHIFT)
+#define GPIO_PIN4			(0x4 << GPIO_PIN_SHIFT)
+#define GPIO_PIN5			(0x5 << GPIO_PIN_SHIFT)
+#define GPIO_PIN6			(0x6 << GPIO_PIN_SHIFT)
+#define GPIO_PIN7			(0x7 << GPIO_PIN_SHIFT)
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 
+#ifndef __ASSEMBLY__
+#undef EXTERN
 #if defined(__cplusplus)
-extern "C" {
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
 #endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-int gpio_valid(int gpio);
-int gpio_cfg_pin(int gpio, int cfg);
-int gpio_cfg_get_pin(int gpio);
-int gpio_direction_output(int gpio, int high);
-int gpio_direction_input(int gpio);
-int gpio_set_value(int gpio, int high);
-int gpio_get_value(int gpio);
-int gpio_set_pull(int gpio, int mode);
-int gpio_get_pull(int gpio);
-int gpio_set_drv(int gpio, int mode);
-int gpio_get_drv(int gpio);
-int gpio_set_rate(int gpio, int mode);
-int gpio_cfg_pin_pdn(int gpio, int cfg);
-int gpio_set_pull_pdn(int gpio, int mode);
-int gpio_eint_mask(int gpio);
-int gpio_eint_unmask(int gpio);
-bool gpio_eint_ispending(int gpio);
-int gpio_eint_clear_pending(int gpio);
-int gpio_eint_enable_filter(int gpio);
-int gpio_eint_disable_filter(int gpio);
-int gpio_eint_set_filter(int gpio, unsigned type, unsigned width);
-int gpio_eint_set_type(int gpio, unsigned type);
-int gpio_eint_get_type(int gpio);
-struct gpio_bank *gpio_to_bank(int gpio);
 
-#if defined(__cplusplus)
+/****************************************************************************
+ * Name: s5j_gpio_lowerhalf
+ *
+ * Description:
+ *
+ ****************************************************************************/
+struct gpio_lowerhalf_s *s5j_gpio_lowerhalf(uint16_t pincfg);
+
+/****************************************************************************
+ * Name: s5j_configgpio
+ *
+ * Description:
+ *   Configure a GPIO pin based on bit-encoded description of the pin.
+ *
+ ****************************************************************************/
+int s5j_configgpio(uint32_t cfgset);
+
+/****************************************************************************
+ * Name: s5j_configgpio
+ *
+ * Description:
+ *   Configure a GPIO pin based on bit-encoded description of the pin.
+ *
+ ****************************************************************************/
+int s5j_unconfiggpio(uint32_t cfgset);
+
+/****************************************************************************
+ * Name: s5j_gpiowrite
+ *
+ * Description:
+ *   Write one or zero to the selected GPIO pin
+ *
+ ****************************************************************************/
+void s5j_gpiowrite(uint32_t pinset, bool value);
+
+/****************************************************************************
+ * Name: s5j_gpioread
+ *
+ * Description:
+ *   Read one or zero to the selected GPIO pin
+ *
+ ****************************************************************************/
+bool s5j_gpioread(uint32_t pinset);
+
+#undef EXTERN
+#ifdef __cplusplus
 }
 #endif
-#endif							/* __ASSEMBLY__ */
-#endif							/* __ARCH_ARM_SRC_S5J_S5J_GPIO_H */
+#endif /* __ASSEMBLY__ */
+
+#endif /* __ARCH_ARM_SRC_S5J_S5J_GPIO_H */

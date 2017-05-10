@@ -17,7 +17,9 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+
 #include <stdio.h>
+#include <errno.h>
 
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/mtd.h>
@@ -88,9 +90,10 @@ int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte
 	if (ret < 0) {
 		fdbg("Fail to read start_sector = %d, nsector = %d, errno = %d\n", start_sector, nsector, errno);
 		ret = ERROR_SSTORAGE_SFS_FREAD;
-		goto read_out;
+	} else {
+		memcpy(buf, read_buf + (start_offset % geo.erasesize), byte_size);
+		ret = 0;
 	}
-	memcpy(buf, read_buf + (start_offset % geo.erasesize), byte_size);
 
 read_out:
 	if (close_blockdriver(pnode)) {

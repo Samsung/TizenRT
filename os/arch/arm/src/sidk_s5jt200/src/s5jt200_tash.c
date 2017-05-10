@@ -362,7 +362,7 @@ int board_app_initialize(void)
 #endif
 
 #ifdef CONFIG_EXAMPLES_EEPROM_TEST
-        ee_test_main(0, NULL);
+	ee_test_main(0, NULL);
 #endif
 
 	/* to suppress a compiler warning */

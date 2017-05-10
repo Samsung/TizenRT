@@ -56,22 +56,22 @@
 #define __LWIP_LWIPOPTS_H__
 
 #include <tinyara/config.h>
-#include <time.h>
-#include <debug.h>
-#include <stdlib.h>
-#include <net/lwip/debug.h>
 
-/* NO_SYS==1: Provides VERY minimal functionality. Otherwise,
-* use lwIP facilities.
-*/
-#define NO_SYS                          0
-#define SYS_LIGHTWEIGHT_PROT            1
+/* --------- PreDefined Configurations -------------*/
+/*
+ * Note
+ * In this platform, DHCP client and server are supported through netutils
+ * Instead of using lwIP DHCP, please use netutils dhcpc and dhcpd
+ */
+#define LWIP_DHCPS                      0
+#define LWIP_DHCP                       0
+#define LWIP_NETIF_API                  1
+/* --------- PreDefined Configurations -------------*/
+
 
 /* ---------- ARP options ---------- */
 #ifdef CONFIG_NET_ARP
-#define LWIP_ARP                        1
-#else
-#define LWIP_ARP                        0
+#define LWIP_ARP                        CONFIG_NET_ARP
 #endif
 
 #if defined(CONFIG_NET_ARP)
@@ -83,16 +83,12 @@
 #endif
 
 #ifdef CONFIG_NET_ARP_QUEUEING
-#define ARP_QUEUEING                    1
-#else
-#define ARP_QUEUEING                    0
+#define ARP_QUEUEING                    CONFIG_NET_ARP_QUEUEING
 #endif
 
 
 #ifdef CONFIG_NET_ETHARP_TRUST_IP_MAC
-#define ETHARP_TRUST_IP_MAC             1
-#else
-#define ETHARP_TRUST_IP_MAC             0
+#define ETHARP_TRUST_IP_MAC             CONFIG_NET_ETHARP_TRUST_IP_MAC
 #endif
 
 #ifdef CONFIG_NET_ETH_PAD_SIZE
@@ -100,8 +96,9 @@
 #endif
 
 #ifdef CONFIG_NET_ARP_STATIC_ENTRIES
-#define ETHARP_SUPPORT_STATIC_ENTRIES   1
+#define ETHARP_SUPPORT_STATIC_ENTRIES   CONFIG_NET_ARP_STATIC_ENTRIES
 #endif
+
 /* ---------- ARP options ---------- */
 
 
@@ -128,7 +125,7 @@
 #endif
 
 #ifdef CONFIG_NET_IP_FRAG
-#define IP_FRAG	CONFIG_NET_IP_FRAG
+#define IP_FRAG	                       CONFIG_NET_IP_FRAG
 #endif
 
 #ifdef CONFIG_NET_IP_REASSEMBLY
@@ -152,124 +149,129 @@
 
 /* ---------- ICMP options ---------- */
 #ifdef CONFIG_NET_ICMP
-#define LWIP_ICMP                       1
-#else
-#define LWIP_ICMP                       0
+#define LWIP_ICMP                       CONFIG_NET_ICMP
 #endif
 
 #ifdef CONFIG_NET_BROADCAST_PING
-#define LWIP_BROADCAST_PING             1
-#else
-#define LWIP_BROADCAST_PING             0
+#define LWIP_BROADCAST_PING             CONFIG_NET_BROADCAST_PING
 #endif
 
 #ifdef CONFIG_NET_MULTICAST_PING
-#define LWIP_MULTICAST_PING             1
-#else
-#define LWIP_MULTICAST_PING             0
+#define LWIP_MULTICAST_PING             CONFIG_NET_MULTICAST_PING
 #endif
 /* ---------- ICMP options ---------- */
 
 /* ---------- IGMP options ---------- */
 #ifdef CONFIG_NET_LWIP_IGMP
-#define LWIP_IGMP                       1
-#else
-#define LWIP_IGMP                       0
+#define LWIP_IGMP                       CONFIG_NET_LWIP_IGMP
 #endif
-
+// pknet
 #ifdef CONFIG_NET_LWIP_MEMP_NUM_IGMP_GROUP
 #define MEMP_NUM_IGMP_GROUP             CONFIG_NET_LWIP_MEMP_NUM_IGMP_GROUP
 #endif
 
 /* ---------- IGMP options ---------- */
 
-#define LWIP_RAND()                     rand()
-
 /* ---------- TCP options ---------- */
 #ifdef CONFIG_NET_TCP
-#define LWIP_TCP                1
+#define LWIP_TCP	CONFIG_NET_TCP
+#define LWIP_EVENT_API 0
+#define LWIP_CALLBACK_API 1
+#endif
+
+#ifdef CONFIG_NET_TCP_TTL
+#define TCP_TTL	CONFIG_NET_TCP_TTL
+#endif
 
 #ifdef CONFIG_NET_TCP_WND
-#define TCP_WND                 CONFIG_NET_TCP_WND
+#define TCP_WND	CONFIG_NET_TCP_WND
 #endif
 
 #ifdef CONFIG_NET_TCP_MAXRTX
-#define TCP_MAXRTX              CONFIG_NET_TCP_MAXRTX
+#define TCP_MAXRTX	CONFIG_NET_TCP_MAXRTX
 #endif
 
 #ifdef CONFIG_NET_TCP_SYNMAXRTX
-#define TCP_SYNMAXRTX           CONFIG_NET_TCP_SYNMAXRTX
+#define TCP_SYNMAXRTX	CONFIG_NET_TCP_SYNMAXRTX
 #endif
 
 #ifdef CONFIG_NET_TCP_QUEUE_OOSEQ
-#define TCP_QUEUE_OOSEQ         1
-#else
-#define TCP_QUEUE_OOSEQ         0
+#define TCP_QUEUE_OOSEQ	CONFIG_NET_TCP_QUEUE_OOSEQ
 #endif
 
 #ifdef CONFIG_NET_TCP_MSS
-#define TCP_MSS                 CONFIG_NET_TCP_MSS
+#define TCP_MSS	CONFIG_NET_TCP_MSS
+#endif
+
+#ifdef CONFIG_NET_TCP_CALCULATE_EFF_SEND_MSS
+#define TCP_CALCULATE_EFF_SEND_MSS	CONFIG_NET_TCP_CALCULATE_EFF_SEND_MSS
 #endif
 
 #ifdef CONFIG_NET_TCP_SND_BUF
-#define TCP_SND_BUF             CONFIG_NET_TCP_SND_BUF
+#define TCP_SND_BUF	CONFIG_NET_TCP_SND_BUF
 #endif
 
-#ifdef CONFIG_NET_TCP_TIMESTAMPS
-#define LWIP_TCP_TIMESTAMPS             1
-#else
-#define LWIP_TCP_TIMESTAMPS             0
+#ifdef CONFIG_NET_TCP_SND_QUEUELEN
+#define TCP_SND_QUEUELEN	CONFIG_NET_TCP_SND_QUEUELEN
 #endif
 
-#ifdef CONFIG_NET_TCP_KEEPALIVE
-#define LWIP_TCP_KEEPALIVE              1
-#else
-#define LWIP_TCP_KEEPALIVE              0
+#ifdef CONFIG_NET_TCP_OOSEQ_MAX_BYTES
+#define TCP_OOSEQ_MAX_BYTES	CONFIG_NET_TCP_OOSEQ_MAX_BYTES
+#endif
+
+#ifdef CONFIG_NET_TCP_OOSEQ_MAX_PBUFS
+#define TCP_OOSEQ_MAX_PBUFS	CONFIG_NET_TCP_OOSEQ_MAX_PBUFS
 #endif
 
 #ifdef CONFIG_NET_TCP_LISTEN_BACKLOG
-#define TCP_LISTEN_BACKLOG              1
-#else
-#define TCP_LISTEN_BACKLOG              0
+#define TCP_LISTEN_BACKLOG	CONFIG_NET_TCP_LISTEN_BACKLOG
 #endif
 
-#else
-#define LWIP_TCP                0
+#ifdef CONFIG_NET_TCP_DEFAULT_LISTEN_BACKLOG
+#define TCP_DEFAULT_LISTEN_BACKLOG	CONFIG_NET_TCP_DEFAULT_LISTEN_BACKLOG
 #endif
 
-#define TCP_TTL                         255
-#define LWIP_TCPIP_CORE_LOCKING_INPUT   0
-#define LWIP_TCPIP_CORE_LOCKING         0
+#ifdef CONFIG_NET_TCP_OVERSIZE
+#define TCP_OVERSIZE	CONFIG_NET_TCP_OVERSIZE
+#endif
+
+#ifdef CONFIG_NET_TCP_TIMESTAMPS
+#define TCP_TIMESTAMPS	CONFIG_NET_TCP_TIMESTAMPS
+#endif
+
+#ifdef CONFIG_NET_TCP_KEEPALIVE
+#define LWIP_TCP_KEEPALIVE              CONFIG_NET_TCP_KEEPALIVE
+#endif
+
+#ifdef CONFIG_NET_TCP_WND_UPDATE_THREASHOLD
+#define TCP_WND_UPDATE_THREASHOLD	CONFIG_NET_TCP_WND_UPDATE_THREASHOLD
+#endif
+
 /* ---------- TCP options ---------- */
 
 
 /* ---------- UDP options ---------- */
+
 #ifdef CONFIG_NET_UDP
-#define LWIP_UDP                        1
-#else
-#define LWIP_UDP                        0
+#define LWIP_UDP	CONFIG_NET_UDP
+#define LWIP_UDP_TODO 1
+#endif
+
+#ifdef CONFIG_NET_UDP_TTL
+#define UDP_TTL	CONFIG_NET_UDP_TTL
 #endif
 
 #ifdef CONFIG_NET_UDPLITE
-#define LWIP_UDPLITE                    1
-#else
-#define LWIP_UDPLITE                    0
+#define LWIP_UDPLITE	CONFIG_NET_UDPLITE
 #endif
 
-#define UDP_TTL                         255
-#define LWIP_UDP_TODO                   1
+#ifdef CONFIG_NET_NETBUF_RECVINFO
+#define LWIP_NETBUF_RECVINFO	CONFIG_NET_NETBUF_RECVINFO
+#endif
+
 /* ---------- UDP options ---------- */
 
-/* ---------- DHCP options ---------- */
 
-/*
- * Note
- * In this platform, DHCP client and server are supported through netutils
- * Instead of using lwIP DHCP, please use netutils dhcpc and dhcpd
- */
-#define LWIP_DHCPS                      0
-#define LWIP_DHCP                       0
-/* ---------- DHCP options ---------- */
 
 /* ---------- SNMP options ---------- */
 #ifdef CONFIG_NET_LWIP_SNMP
@@ -297,149 +299,153 @@
 #endif
 /* ---------- SNMP options ---------- */
 
-/*
-   ----------------------------------------------
-   ---------- Sequential layer options ----------
-   ----------------------------------------------
-*/
-/**
- * LWIP_NETCONN==1: Enable Netconn API (require to use api_lib.c)
- */
-
-#define LWIP_NETCONN                    1
-#define MEMP_NUM_NETCONN                CONFIG_NSOCKET_DESCRIPTORS
-#define MEMP_NUM_SYS_TIMEOUT            16
-/*
- * MEMP_NUM_NETBUF: the number of struct netbufs.
- * (only needed if you use the sequential API, like api_lib.c)
- */
-
-#define MEMP_NUM_NETBUF                 16
-#define MEMP_NUM_TCPIP_MSG_API          16
-#define MEMP_NUM_TCPIP_INPKT            16
 
 /* ---------- Memory options ---------- */
-#if !defined(CONFIG_NET_MEM_ALIGNMENT)
-#error "CONFIG_NET_MEM_ALIGNMENT is undefined"
-#else
-#define MEM_ALIGNMENT                   CONFIG_NET_MEM_ALIGNMENT
+
+#ifdef CONFIG_NET_MEM_ALIGNMENT
+#define MEM_ALIGNMENT	CONFIG_NET_MEM_ALIGNMENT
 #endif
 
-#if !defined(CONFIG_NET_MEM_SIZE)
-#error "CONFIG_NET_MEM_SIZE is undefined"
-#else
-#define MEM_SIZE                	CONFIG_NET_MEM_SIZE
+#ifdef CONFIG_NET_ALLOW_MEM_FREE_FROM_OTHER_CONTEXT
+#define LWIP_ALLOW_MEM_FREE_FROM_OTHER_CONTEXT	CONFIG_NET_ALLOW_MEM_FREE_FROM_OTHER_CONTEXT
+#endif
+
+#ifdef CONFIG_NET_MEM_LIBC_MALLOC
+#define MEM_LIBC_MALLOC	CONFIG_NET_MEM_LIBC_MALLOC
+#endif
+
+#ifdef CONFIG_NET_MEM_USE_POOLS
+#define MEM_USE_POOLS	CONFIG_NET_MEM_USE_POOLS
+#endif
+
+#ifdef CONFIG_NET_MEM_SIZE
+#define MEM_SIZE	CONFIG_NET_MEM_SIZE
+#endif
+
+#ifdef CONFIG_NET_MEMP_MEM_MALLOC
+#define MEMP_MEM_MALLOC	CONFIG_NET_MEMP_MEM_MALLOC
 #endif
 
 #ifdef CONFIG_NET_MEMP_OVERFLOW_CHECK
-#define MEMP_OVERFLOW_CHECK		CONFIG_NET_MEMP_OVERFLOW_CHECK
-#else
-#define MEMP_OVERFLOW_CHECK		0
+#define MEMP_OVERFLOW_CHECK	CONFIG_NET_MEMP_OVERFLOW_CHECK
 #endif
 
 #ifdef CONFIG_NET_MEMP_SANITY_CHECK
-#define MEMP_SANITY_CHECK               1
-#else
-#define MEMP_SANITY_CHECK               0
+#define MEMP_SANITY_CHECK	CONFIG_NET_MEMP_SANITY_CHECK
 #endif
 
-#define MEMP_MEM_MALLOC                 1
+#ifdef CONFIG_NET_MEMP_SEPARATE_POOLS
+#define MEMP_SEPARATE_POOLS	CONFIG_NET_MEMP_SEPARATE_POOLS
+#endif
+
+/* ---------- Memory options ---------- */
+
+/*---------- Interanl Memory Pool Sizes ----*/
 
 #ifdef CONFIG_NET_MEMP_NUM_PBUF
-#define MEMP_NUM_PBUF                   CONFIG_NET_MEMP_NUM_PBUF
+#define MEMP_NUM_PBUF	CONFIG_NET_MEMP_NUM_PBUF
 #endif
 
+#ifndef MEMP_NUM_RAW_PCB
 #ifdef CONFIG_NET_MEMP_NUM_RAW_PCB
-#define MEMP_NUM_RAW_PCB                CONFIG_NET_MEMP_NUM_RAW_PCB
+#define MEMP_NUM_RAW_PCB	CONFIG_NET_MEMP_NUM_RAW_PCB
+#endif
 #endif
 
 #ifdef CONFIG_NET_MEMP_NUM_UDP_PCB
-#define MEMP_NUM_UDP_PCB		CONFIG_NET_MEMP_NUM_UDP_PCB
+#define MEMP_NUM_UDP_PCB	CONFIG_NET_MEMP_NUM_UDP_PCB
 #endif
 
-
 #ifdef CONFIG_NET_MEMP_NUM_TCP_PCB
-#define MEMP_NUM_TCP_PCB		CONFIG_NET_MEMP_NUM_TCP_PCB
+#define MEMP_NUM_TCP_PCB	CONFIG_NET_MEMP_NUM_TCP_PCB
 #endif
 
 #ifdef CONFIG_NET_MEMP_NUM_TCP_PCB_LISTEN
-#define MEMP_NUM_TCP_PCB_LISTEN         CONFIG_NET_MEMP_NUM_TCP_PCB_LISTEN
+#define MEMP_NUM_TCP_PCB_LISTEN	CONFIG_NET_MEMP_NUM_TCP_PCB_LISTEN
 #endif
 
 #ifdef CONFIG_NET_MEMP_NUM_TCP_SEG
-#define MEMP_NUM_TCP_SEG                CONFIG_NET_MEMP_NUM_TCP_SEG
+#define MEMP_NUM_TCP_SEG	CONFIG_NET_MEMP_NUM_TCP_SEG
 #endif
 
 #ifdef CONFIG_NET_MEMP_NUM_REASSDATA
-#define MEMP_NUM_REASSDATA              CONFIG_NET_MEMP_NUM_REASSDATA
+#define MEMP_NUM_REASSDATA	CONFIG_NET_MEMP_NUM_REASSDATA
 #endif
 
 #ifdef CONFIG_NET_MEMP_NUM_FRAG_PBUF
-#define MEMP_NUM_FRAG_PBUF              CONFIG_NET_MEMP_NUM_FRAG_PBUF
+#define MEMP_NUM_FRAG_PBUF	CONFIG_NET_MEMP_NUM_FRAG_PBUF
 #endif
 
 #ifdef CONFIG_NET_MEMP_NUM_ARP_QUEUE
-#define MEMP_NUM_ARP_QUEUE		CONFIG_NET_MEMP_NUM_ARP_QUEUE
+#define MEMP_NUM_ARP_QUEUE	CONFIG_NET_MEMP_NUM_ARP_QUEUE
 #endif
-/* ---------- Memory options ---------- */
+
+#ifdef CONFIG_NET_MEMP_NUM_IGMP_GROUP
+#define MEMP_NUM_IGMP_GROUP	CONFIG_NET_MEMP_NUM_IGMP_GROUP
+#endif
+
+#ifdef CONFIG_NET_MEMP_NUM_SYS_TIMEOUT
+#define MEMP_NUM_SYS_TIMEOUT	CONFIG_NET_MEMP_NUM_SYS_TIMEOUT
+#endif
+
+#ifdef CONFIG_NET_MEMP_NUM_NETBUF
+#define MEMP_NUM_NETBUF	CONFIG_NET_MEMP_NUM_NETBUF
+#endif
+/*
+#ifdef CONFIG_NET_MEMP_NUM_NETCONN
+#define MEMP_NUM_NETCONN	CONFIG_NET_MEMP_NUM_NETCONN
+#endif
+*/
+#ifdef CONFIG_NET_MEMP_NUM_TCPIP_MSG_API 
+#define MEMP_NUM_TCPIP_MSG_API 	CONFIG_NET_MEMP_NUM_TCPIP_MSG_API 
+#endif
+
+#ifdef CONFIG_NET_MEMP_NUM_TCPIP_MSG_INPKT 
+#define MEMP_NUM_TCPIP_MSG_INPKT 	CONFIG_NET_MEMP_NUM_TCPIP_MSG_INPKT 
+#endif
+
+#ifdef CONFIG_NET_MEMP_NUM_SNMP_NODE
+#define MEMP_NUM_SNMP_NODE	CONFIG_NET_MEMP_NUM_SNMP_NODE
+#endif
+
+#ifdef CONFIG_NET_MEMP_NUM_SNMP_ROOTNODE
+#define MEMP_NUM_SNMP_ROOTNODE	CONFIG_NET_MEMP_NUM_SNMP_ROOTNODE
+#endif
+
+#ifdef CONFIG_NET_MEMP_NUM_SNMP_VARBIND
+#define MEMP_NUM_SNMP_VARBIND	CONFIG_NET_MEMP_NUM_SNMP_VARBIND
+#endif
+
+#ifdef CONFIG_NET_MEMP_NUM_SNMP_VALUE
+#define MEMP_NUM_SNMP_VALUE	CONFIG_NET_MEMP_NUM_SNMP_VALUE
+#endif
+
+#ifdef CONFIG_NET_MEMP_NUM_PPPOE_INTERFACES
+#define MEMP_NUM_PPPOE_INTERFACES	CONFIG_NET_MEMP_NUM_PPPOE_INTERFACES
+#endif
+
+#ifdef CONFIG_NET_PBUF_POOL_SIZE
+#define PBUF_POOL_SIZE	CONFIG_NET_PBUF_POOL_SIZE
+#endif
+
+/*---------- Interanl Memory Pool Sizes ----*/
 
 
-/* ---------- Pbuf options ---------- */
-/* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
-#define PBUF_POOL_SIZE          50
-
-
-/* ---------- Socket options ---------- */
-#ifdef CONFIG_NET_SOCKET
-#define LWIP_SOCKET                     1
-
+/* ---------- Raw Socket options ---------- */
 #ifdef CONFIG_NET_RAW
-#define LWIP_RAW                        1
-#else
-#define LWIP_RAW                        0
+#define LWIP_RAW	         CONFIG_NET_RAW
 #endif
 
-#ifdef CONFIG_NET_SOCKET_OPTION_BROADCAST
-#define IP_SOF_BROADCAST                1
-#else
-#define IP_SOF_BROADCAST                0
+#ifdef CONFIG_NET_RAW_TTL
+#define RAW_TTL	             CONFIG_NET_RAW_TTL
 #endif
 
 
-#ifdef CONFIG_NET_RANDOMIZE_INITIAL_LOCAL_PORTS
-#define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS      1
-#else
-#define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS      0
-#endif
-
-#ifdef CONFIG_NET_SO_SNDTIMEO
-#define LWIP_SO_SNDTIMEO                        1
-#else
-#define LWIP_SO_SNDTIMEO                        0
-#endif
-
-#ifdef CONFIG_NET_SO_RCVTIMEO
-#define LWIP_SO_RCVTIMEO                        1
-#else
-#define LWIP_SO_RCVTIMEO                        0
-#endif
-
-#ifdef CONFIG_NET_SO_RCVBUF
-#define LWIP_SO_RCVBUF                          1
-#else
-#define LWIP_SO_RCVBUF                          0
-#endif
-
-#ifdef CONFIG_NET_SO_REUSE
-#define SO_REUSE                                1
-#else
-#define SO_REUSE                                0
-#endif
-
-#else
-#define LWIP_SOCKET                     0
-#endif
 /* ---------- Socket options ---------- */
+
+#define SOCKLEN_T_DEFINED               1
+#define LWIP_TIMEVAL_PRIVATE            0
+#define LWIP_POSIX_SOCKETS_IO_NAMES     0
 
 #ifdef CONFIG_DISABLE_POLL
 #define LWIP_SELECT                     1
@@ -447,18 +453,53 @@
 #define LWIP_SELECT                     0
 #endif
 
-#define LWIP_POSIX_SOCKETS_IO_NAMES     0
-#define LWIP_SOCKET_OFFSET              CONFIG_NFILE_DESCRIPTORS
-
-#define SOCKLEN_T_DEFINED               1
-
-#define LWIP_TIMEVAL_PRIVATE            0
-
-#ifdef CONFIG_NET_LWIP_LOOPBACK_INTERFACE
-#define LWIP_HAVE_LOOPIF                1
-#else
-#define LWIP_HAVE_LOOPIF                0
+#ifdef CONFIG_NET_SOCKET
+#define LWIP_SOCKET	CONFIG_NET_SOCKET
 #endif
+
+#ifdef CONFIG_NET_SOCKET_OPTION_BROADCAST
+#define IP_SOF_BROADCAST                CONFIG_NET_SOCKET_OPTION_BROADCAST
+#endif
+
+#ifdef CONFIG_NET_RANDOMIZE_INITIAL_LOCAL_PORTS
+#define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS      CONFIG_NET_RANDOMIZE_INITIAL_LOCAL_PORTS
+#endif
+
+#ifdef CONFIG_NFILE_DESCRIPTORS
+#define LWIP_SOCKET_OFFSET CONFIG_NFILE_DESCRIPTORS
+#endif
+
+#ifdef CONFIG_NSOCKET_DESCRIPTORS
+#define MEMP_NUM_NETCONN CONFIG_NSOCKET_DESCRIPTORS
+#define MEMP_NUM_RAW_PCB CONFIG_NSOCKET_DESCRIPTORS 
+#endif
+
+#ifdef CONFIG_NET_TCP_KEEPALIVE
+#define LWIP_TCP_KEEPALIVE	CONFIG_NET_TCP_KEEPALIVE
+#endif
+
+#ifdef CONFIG_NET_SO_SNDTIMEO
+#define LWIP_SO_SNDTIMEO	CONFIG_NET_SO_SNDTIMEO
+#endif
+
+#ifdef CONFIG_NET_SO_RCVTIMEO
+#define LWIP_SO_RCVTIMEO	CONFIG_NET_SO_RCVTIMEO
+#endif
+
+#ifdef CONFIG_NET_SO_RCVBUF
+#define LWIP_SO_RCVBUF	CONFIG_NET_SO_RCVBUF
+#endif
+
+#ifdef CONFIG_NET_SO_REUSE
+#define SO_REUSE	CONFIG_NET_SO_REUSE
+#endif
+
+#ifdef CONFIG_NET_SO_REUSE_RXTOALL
+#define SO_REUSE_RXTOALL	CONFIG_NET_SO_REUSE_RXTOALL
+#endif
+
+/* ---------- Socket options ---------- */
+
 
 /* ---------- SLIP options ---------- */
 #ifdef CONFIG_NET_LWIP_SLIP_INTERFACE
@@ -535,35 +576,58 @@
 /* ---------- PPP options ---------- */
 
 
-/* Thread options */
+/* ---------- System options ---------- */
 
-#ifdef CONFIG_NET_LWIP_TCPIP_THREAD_NAME
-#define TCPIP_THREAD_NAME               CONFIG_NET_LWIP_TCPIP_THREAD_NAME
+/* NO_SYS==1: Provides VERY minimal functionality. Otherwise,
+ * use lwIP facilities.
+ * It should be set NO_SYS for TizenRT.
+ */
+#define NO_SYS 0
+#define LWIP_RAND() rand()
+
+#ifdef CONFIG_NET_TCPIP_CORE_LOCKING
+#define TCPIP_CORE_LOCKING	CONFIG_NET_TCPIP_CORE_LOCKING
 #endif
 
-#ifdef CONFIG_NET_LWIP_TCPIP_THREAD_STACKSIZE
-#define TCPIP_THREAD_STACKSIZE          CONFIG_NET_LWIP_TCPIP_THREAD_STACKSIZE
+#ifdef CONFIG_NET_TCPIP_CORE_LOCKING_INPUT
+#define TCPIP_CORE_LOCKING_INPUT	CONFIG_NET_TCPIP_CORE_LOCKING_INPUT
 #endif
 
-#ifdef CONFIG_NET_LWIP_TCPIP_THREAD_PRIO
-#define TCPIP_THREAD_PRIO               CONFIG_NET_LWIP_TCPIP_THREAD_PRIO
+#ifdef CONFIG_NET_TCPIP_THREAD_NAME
+#define TCPIP_THREAD_NAME	CONFIG_NET_TCPIP_THREAD_NAME
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEFAULT_THREAD_NAME
-#define DEFAULT_THREAD_NAME             CONFIG_NET_LWIP_DEFAULT_THREAD_NAME
+#ifdef CONFIG_NET_TCPIP_THREAD_PRIO
+#define TCPIP_THREAD_PRIO	CONFIG_NET_TCPIP_THREAD_PRIO
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEFAULT_THREAD_STACKSIZE
-#define DEFAULT_THREAD_STACKSIZE        CONFIG_NET_LWIP_DEFAULT_THREAD_STACKSIZE
+#ifdef CONFIG_NET_TCPIP_THREAD_STACKSIZE
+#define TCPIP_THREAD_STACKSIZE	CONFIG_NET_TCPIP_THREAD_STACKSIZE
 #endif
 
-#ifdef CONFIG_NET_LWIP_DEFAULT_THREAD_PRIO
-#define DEFAULT_THREAD_PRIO             CONFIG_NET_LWIP_DEFAULT_THREAD_PRIO
+#ifdef CONFIG_NET_COMPAT_MUTEX
+#define LWIP_COMPAT_MUTEX	CONFIG_NET_COMPAT_MUTEX
 #endif
 
-/* Thread options */
+#ifdef CONFIG_NET_SYS_LIGHTWEIGHT_PROT
+#define SYS_LIGHTWEIGHT_PROT	CONFIG_NET_SYS_LIGHTWEIGHT_PROT
+#endif
+
+#ifdef CONFIG_NET_DEFAULT_THREAD_NAME
+#define DEFAULT_THREAD_NAME	CONFIG_NET_DEFAULT_THREAD_NAME
+#endif
+
+#ifdef CONFIG_NET_DEFAULT_THREAD_PRIO
+#define DEFAULT_THREAD_PRIO	CONFIG_NET_DEFAULT_THREAD_PRIO
+#endif
+
+#ifdef CONFIG_NET_DEFAULT_THREAD_STACKSIZE
+#define DEFAULT_THREAD_STACKSIZE	CONFIG_NET_DEFAULT_THREAD_STACKSIZE
+#endif
+
 
 /* ---------- Mailbox options ---------- */
+
 #ifdef CONFIG_NET_DEFAULT_ACCEPTMBOX_SIZE
 #define DEFAULT_ACCEPTMBOX_SIZE	CONFIG_NET_DEFAULT_ACCEPTMBOX_SIZE
 #endif
@@ -585,6 +649,7 @@
 #endif
 
 /* ---------- Mailbox options ---------- */
+
 
 /* ---------- Debug options ---------- */
 #ifdef CONFIG_NET_LWIP_DEBUG
@@ -763,7 +828,11 @@
 
 /* ---------- Stat options ---------- */
 
-#define LWIP_COMPAT_MUTEX               1
 
-#define LWIP_NETIF_API                  1
+/* ----------Else ----------------*/
+#ifdef CONFIG_NET_LWIP_LOOPBACK_INTERFACE
+#define LWIP_HAVE_LOOPIF                CONFIG_NET_LWIP_LOOPBACK_INTERFACE
+#endif
+
+
 #endif							/* __LWIP_LWIPOPTS_H__ */

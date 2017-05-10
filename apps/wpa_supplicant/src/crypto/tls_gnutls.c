@@ -46,7 +46,7 @@ struct tls_connection {
 	size_t pre_shared_secret_len;
 	int established;
 	int verify_peer;
-	unsigned int disable_time_checks: 1;
+	unsigned int disable_time_checks : 1;
 
 	struct wpabuf *push_buf;
 	struct wpabuf *pull_buf;

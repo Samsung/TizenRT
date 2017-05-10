@@ -65,6 +65,12 @@
 #define READ_TIMEOUT_MS 1000
 #define MAX_RETRY       5
 
+#define USAGE_DTLS \
+"\n--------------------------USAGE----------------------------\n"	\
+"dtlsc\n"															\
+"dtlsc server_addr=xxx.xxx.xxx.xxx\n"								\
+"-----------------------------------------------------------\n"
+
 #define DEBUG_LEVEL 0
 
 /*
@@ -93,7 +99,12 @@ static void my_debug(void *ctx, int level, const char *file, int line, const cha
 
 int dtls_client_cb(void *args)
 {
-	int ret;
+	int argc;
+	char **argv;
+	char *p;
+	char *q;
+
+	int ret = 0;
 	int len;
 	mbedtls_net_context server_fd;
 	uint32_t flags;
@@ -111,6 +122,31 @@ int dtls_client_cb(void *args)
 #if defined(MBEDTLS_DEBUG_C)
 	mbedtls_debug_set_threshold(DEBUG_LEVEL);
 #endif
+
+	char *server_addr = SERVER_ADDR;
+
+	argc = ((struct pthread_arg *)args)->argc;
+	argv = ((struct pthread_arg *)args)->argv;
+
+	if (argc == 0) {
+usage:
+		printf(USAGE_DTLS);
+		goto exit;
+	} else {
+		int i;
+		for (i = 1; i < argc; i++) {
+			p = argv[i];
+			if ((q = strchr(p, '=')) == NULL) {
+				goto usage;
+			}
+			*q++ = '\0';
+			if (strcmp(p, "server_addr") == 0) {
+				server_addr = q;
+			} else {
+				goto usage;
+			}
+		}
+	}
 
 	/*
 	 * 0. Initialize the RNG and the session data
@@ -149,10 +185,10 @@ int dtls_client_cb(void *args)
 	/*
 	 * 1. Start the connection
 	 */
-	mbedtls_printf("  . Connecting to udp/%s/%s...", SERVER_NAME, SERVER_PORT);
+	mbedtls_printf("  . Connecting to udp/%s/%s...", server_addr, SERVER_PORT);
 	fflush(stdout);
 
-	if ((ret = mbedtls_net_connect(&server_fd, SERVER_ADDR, SERVER_PORT, MBEDTLS_NET_PROTO_UDP)) != 0) {
+	if ((ret = mbedtls_net_connect(&server_fd, server_addr, SERVER_PORT, MBEDTLS_NET_PROTO_UDP)) != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_net_connect returned %d\n\n", ret);
 		goto exit;
 	}

@@ -58,7 +58,7 @@ extern size_t printf_decode(u8 *buf, size_t maxlen, const char *str);
 extern void printf_encode(char *txt, size_t maxlen, const u8 *data, size_t len);
 
 #ifdef CONFIG_DEBUG_WLAN_API_VERBOSE
-#define VPRINT(format, ...) printf("SLSI API VERBOSE (%s): " format,__FUNCTION__, ##__VA_ARGS__)
+#define VPRINT(format, ...) printf("SLSI API VERBOSE (%s): " format, __FUNCTION__, ##__VA_ARGS__)
 #define SLSI_API_VERBOSE  (1)
 #ifndef CONFIG_DEBUG_WLAN_API_DEBUG
 #define CONFIG_DEBUG_WLAN_API_DEBUG
@@ -69,7 +69,7 @@ extern void printf_encode(char *txt, size_t maxlen, const u8 *data, size_t len);
 #endif							//CONFIG_DEBUG_WLAN_API_VERBOSE
 
 #ifdef CONFIG_DEBUG_WLAN_API_DEBUG
-#define DPRINT(format, ...) printf("SLSI API DEBUG (%s): " format,__FUNCTION__, ##__VA_ARGS__)
+#define DPRINT(format, ...) printf("SLSI API DEBUG (%s): " format, __FUNCTION__, ##__VA_ARGS__)
 #ifndef CONFIG_DEBUG_WLAN_API_ERROR
 #define CONFIG_DEBUG_WLAN_API_ERROR
 #endif
@@ -78,7 +78,7 @@ extern void printf_encode(char *txt, size_t maxlen, const u8 *data, size_t len);
 #endif							//CONFIG_DEBUG_WLAN_API_DEBUG
 
 #ifdef CONFIG_DEBUG_WLAN_API_ERROR
-#define EPRINT(format, ...) printf("SLSI API ERROR (%s): " format,__FUNCTION__, ##__VA_ARGS__)
+#define EPRINT(format, ...) printf("SLSI API ERROR (%s): " format, __FUNCTION__, ##__VA_ARGS__)
 #else
 #define EPRINT(a, ...) (void)0
 #endif							//CONFIG_DEBUG_WLAN_API_ERROR
@@ -317,38 +317,39 @@ static char *sup_argv[6];
 #endif
 
 #define LOCKUNLOCK_CRITICAL { \
-    EPRINT("LOCKUNLOCK_CRITICAL - %s\n", __func__); \
-    if (SLSI_API_VERBOSE) fflush(stdout); \
-    pthread_mutex_trylock(&mutex_state); \
-    pthread_mutex_unlock(&mutex_state); \
+	EPRINT("LOCKUNLOCK_CRITICAL - %s\n", __func__); \
+	if (SLSI_API_VERBOSE) fflush(stdout); \
+	pthread_mutex_trylock(&mutex_state); \
+	pthread_mutex_unlock(&mutex_state); \
 }
 
 #define ENTER_CRITICAL { \
-    VPRINT("ENTER_CRITICAL in API - %s\n", __func__); \
-    if (!g_mutex_initialized) { \
-        VPRINT("Initializing the mutex\n"); \
-        if (pthread_mutex_init(&mutex_state, NULL) != OK) { \
-            EPRINT("Could not initialize mutex\n"); \
-        } else { \
-            VPRINT("Mutex ready\n"); \
-            g_mutex_initialized = TRUE; \
-        } \
-    } \
-    if (SLSI_API_VERBOSE) fflush(stdout); \
-    int err = pthread_mutex_lock(&mutex_state); \
-    if (err != OK) { \
-        EPRINT("mutex lock failed with error %d",err); \
-    } \
-    if (g_state == SLSI_WIFIAPI_STATE_RECOVERING || g_recovering ) { \
-    VPRINT("sem_wait recovering - %s\n", __func__); \
-    if (SLSI_API_VERBOSE) fflush(stdout); \
-    sem_wait(&g_sem_api_block);} \
+	VPRINT("ENTER_CRITICAL in API - %s\n", __func__); \
+	if (!g_mutex_initialized) { \
+		VPRINT("Initializing the mutex\n"); \
+		if (pthread_mutex_init(&mutex_state, NULL) != OK) { \
+			EPRINT("Could not initialize mutex\n"); \
+		} else { \
+			VPRINT("Mutex ready\n"); \
+			g_mutex_initialized = TRUE; \
+		} \
+	} \
+	if (SLSI_API_VERBOSE) fflush(stdout); \
+	int err = pthread_mutex_lock(&mutex_state); \
+	if (err != OK) { \
+		EPRINT("mutex lock failed with error %d", err); \
+	} \
+	if (g_state == SLSI_WIFIAPI_STATE_RECOVERING || g_recovering) { \
+		VPRINT("sem_wait recovering - %s\n", __func__); \
+		if (SLSI_API_VERBOSE) fflush(stdout); \
+		sem_wait(&g_sem_api_block); \
+	} \
 }
 
 #define LEAVE_CRITICAL { \
-    VPRINT("LEAVE_CRITICAL in API - %s\n", __func__); \
-    if (SLSI_API_VERBOSE) fflush(stdout); \
-    pthread_mutex_unlock(&mutex_state); \
+	VPRINT("LEAVE_CRITICAL in API - %s\n", __func__); \
+	if (SLSI_API_VERBOSE) fflush(stdout); \
+	pthread_mutex_unlock(&mutex_state); \
 }
 
 /*
@@ -3425,17 +3426,18 @@ int8_t WiFiFreeScanResults(slsi_scan_info_t **scan_results)
 
 int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_network_link_callback_t link_down)
 {
-	ENTER_CRITICAL;
 	int8_t result = SLSI_STATUS_ERROR;
 	slsi_reason_t reason;
 	memset(&reason, 0, sizeof(slsi_reason_t));
 	//
+	ENTER_CRITICAL;
 	g_link_up = link_up;
 	g_link_down = link_down;
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 	g_recovery_data.link_up = link_up;
 	g_recovery_data.link_down = link_down;
 #endif
+	LEAVE_CRITICAL;
 	if (g_running) {
 		result = slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
 		if (result == SLSI_STATUS_SUCCESS) {
@@ -3448,7 +3450,6 @@ int8_t WiFiRegisterLinkCallback(slsi_network_link_callback_t link_up, slsi_netwo
 	} else {
 		result = SLSI_STATUS_SUCCESS;
 	}
-	LEAVE_CRITICAL;
 	return result;
 }
 

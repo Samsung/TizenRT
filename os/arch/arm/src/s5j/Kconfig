@@ -3,154 +3,263 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-comment "Samsung S5J Chip Configuration Options"
+comment "S5J Configuration Options"
 
 choice
-	prompt "Samsung Chip Selection"
+	prompt "S5J Chip Selection"
 	default ARCH_CHIP_S5JT200
+	depends on ARCH_CHIP_S5J
 
 config ARCH_CHIP_S5JT200
-	bool "S5JT200 "
-	depends on ARCH_CHIP_S5J
-	select S5J_S5JT200
+	bool "S5JT200"
 	select ARCH_CORTEXR4
 	select ARMV7A_HAVE_GICv2
 	select ARMV7R_ICACHE
 	select ARMV7R_DCACHE
+	select S5J_S5JT200
+	select ARCH_HAVE_RESET
 
 endchoice
 
 config S5J_S5JT200
 	bool
-	default y
-	select S5J_UARTDBG
-	select S5J_UART0
-	select S5J_UART1
-	select S5J_UART2
-	select S5J_UART3
+	default n
+	select S5J_HAVE_ADC
+	select S5J_HAVE_DMA
+	select S5J_HAVE_I2C
+	select S5J_HAVE_PWM0
+	select S5J_HAVE_PWM1
+	select S5J_HAVE_PWM2
+	select S5J_HAVE_PWM3
+	select S5J_HAVE_PWM4
+	select S5J_HAVE_PWM5
+	select S5J_HAVE_PWR
+	select S5J_HAVE_RTC
+	select S5J_HAVE_SFLASH
+	select S5J_HAVE_SPI
+	select S5J_HAVE_SSS
+	select S5J_HAVE_UART0
+	select S5J_HAVE_UART1
+	select S5J_HAVE_UART2
+	select S5J_HAVE_UART3
+	select S5J_HAVE_UART4
+	select S5J_HAVE_WATCHDOG
 
-menu "S5J DEBUG UART Configuration"
-config S5J_UART_CLOCK_FROM_WPLL
-	bool "Set Uart Clock using WPLL"
+menu "S5J Peripheral Support"
+
+# These "hidden" settings determine peripheral options that are available for
+# the selection MCU.
+
+config S5J_HAVE_ADC
+	bool
 	default n
 
-config SERIAL_TERMIOS
+config S5J_HAVE_DMA
 	bool
-	default y
+	default n
 
-config ARCH_HAVE_SERIAL_TERMIOS
+config S5J_HAVE_I2C
 	bool
-	default y
+	default n
 
-config S5J_HAVE_UARTDBG
+config S5J_HAVE_PWM0
 	bool
-	default y
+	default n
+
+config S5J_HAVE_PWM1
+	bool
+	default n
+
+config S5J_HAVE_PWM2
+	bool
+	default n
+
+config S5J_HAVE_PWM3
+	bool
+	default n
+
+config S5J_HAVE_PWM4
+	bool
+	default n
+
+config S5J_HAVE_PWM5
+	bool
+	default n
+
+config S5J_HAVE_PWR
+	bool
+	default n
+
+config S5J_HAVE_RTC
+	bool
+	default n
+
+config S5J_HAVE_SFLASH
+	bool
+	default n
+
+config S5J_HAVE_SPI
+	bool
+	default n
+
+config S5J_HAVE_SSS
+	bool
+	default n
 
 config S5J_HAVE_UART0
 	bool
-	default y
+	default n
 
 config S5J_HAVE_UART1
 	bool
-	default y
+	default n
 
 config S5J_HAVE_UART2
 	bool
-	default y
+	default n
 
 config S5J_HAVE_UART3
 	bool
-	default y
+	default n
 
-if S5J_HAVE_UARTDBG
-config UARTDBG_RXBUFSIZE
-	int "uartdbg rx buffer size"
-	default 256
-
-config UARTDBG_TXBUFSIZE
-	int "uartdbg tx buffer size"
-	default 256
-
-config UARTDBG_BAUD
-	int "baudrate"
-	default 115200
-
-config UARTDBG_BITS
-	int "uart bits"
-	default 8
-
-config UARTDBG_PARITY
-	int "party bit"
-	default 0
-
-config UARTDBG_2STOP
-	int "stop bit"
-	default 0
-endif
-
-
-config S5J_UARTDBG
+config S5J_HAVE_UART4
 	bool
 	default n
-	select ARCH_HAVE_UARTDBG
-	select S5J_HAVE_UARTDBG
-	select UART0_SERIAL_CONSOLE
-	select UARTDBG_SERIAL_CONSOLE
 
+config S5J_HAVE_WATCHDOG
+	bool
+	default n
+
+config S5J_ADC
+	bool "ADC"
+	default n
+	depends on S5J_HAVE_ADC
+	select ANALOG
+	select ADC
+	select SCHED_WORKQUEUE
+	select SCHED_LPWORK
+	---help---
+		S5J has 12-bits ADC with 4 channels. Say Y here, if you want
+		to use it.
+
+config S5J_DMA
+	bool "DMA"
+	default n
+	depends on S5J_HAVE_DMA
+
+config S5J_I2C
+	bool "I2C"
+	default n
+	depends on S5J_HAVE_I2C
+
+config S5J_UART_FLOWCONTROL
+	bool
+	default n
 
 config S5J_UART0
-	bool
+	bool "UART0"
 	default n
+	depends on S5J_HAVE_UART0
 	select ARCH_HAVE_UART0
-	select UART0_SERIAL_CONSOLE
+	select ARCH_HAVE_SERIAL_TERMIOS
 
 config S5J_UART1
-	bool
+	bool "UART1"
 	default n
+	depends on S5J_HAVE_UART1
 	select ARCH_HAVE_UART1
-	select S5J_HAVE_UART1
-	select UART1_SERIAL_CONSOLE
+	select ARCH_HAVE_SERIAL_TERMIOS
 
 config S5J_UART2
-	bool
+	bool "UART2"
 	default n
+	depends on S5J_HAVE_UART2
 	select ARCH_HAVE_UART2
-	select S5J_HAVE_UART2
-	select UART2_SERIAL_CONSOLE
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config S5J_UART2_FLOWCONTROL
+	bool "UART2 Flow Control"
+	default n
+	depends on S5J_UART2
+	select S5J_UART_FLOWCONTROL
 
 config S5J_UART3
-	bool
+	bool "UART3"
 	default n
+	depends on S5J_HAVE_UART3
 	select ARCH_HAVE_UART3
-	select S5J_HAVE_UART3
-	select UART2_SERIAL_CONSOLE
+	select ARCH_HAVE_SERIAL_TERMIOS
 
-config UARTDBG_SERIAL_CONSOLE
-	bool
+config S5J_UART3_FLOWCONTROL
+	bool "UART3 Flow Control"
 	default n
+	depends on S5J_UART3
+	select S5J_UART_FLOWCONTROL
 
-
-endmenu #"S5J UART Configuration"
+config S5J_UART4
+	bool "UART4 (Debug UART)"
+	default y
+	depends on S5J_HAVE_UART4
+	select ARCH_HAVE_UART4
+	select ARCH_HAVE_SERIAL_TERMIOS
 
 config S5J_PWM
-	bool "S5J PWM support"
+	bool
+	default n
+
+config S5J_PWM0
+	bool "PWM0"
+	depends on S5J_HAVE_PWM0
+	select S5J_PWM
+	default n
+
+config S5J_PWM1
+	bool "PWM1"
+	depends on S5J_HAVE_PWM1
+	select S5J_PWM
+	default n
+
+config S5J_PWM2
+	bool "PWM2"
+	depends on S5J_HAVE_PWM2
+	select S5J_PWM
+	default n
+
+config S5J_PWM3
+	bool "PWM3"
+	depends on S5J_HAVE_PWM3
+	select S5J_PWM
+	default n
+
+config S5J_PWM4
+	bool "PWM4"
+	depends on S5J_HAVE_PWM4
+	select S5J_PWM
+	default n
+
+config S5J_PWM5
+	bool "PWM5"
+	depends on S5J_HAVE_PWM5
+	select S5J_PWM
 	default n
 
 config S5J_SSS
-	bool "S5J SSS support"
+	bool "SSS"
+	depends on S5J_HAVE_SSS
 	default y
 
-menu "S5J SPI(Serial Peripheral Interface Bus)"
 config S5J_SPI
-	bool "S5J SPI support"
+	bool "SPI"
+	depends on S5J_HAVE_SPI
 	default y
-endmenu
 
-
-menu "S5J WDT(Watch Dog Timer)"
 config S5J_WATCHDOG
-	bool "S5J WDT support"
+	bool "Watchdog"
+	depends on S5J_HAVE_WATCHDOG
 	default n
+
+menu "Watchdog driver configuration"
+	depends on S5J_WATCHDOG
 
 config S5J_WATCHDOG_DEBUG
 	bool "S5J Watchdog debug"
@@ -174,90 +283,18 @@ config S5J_WDT_DEFTIMEOUT
 
 endmenu
 
-config S5J_ADC
-	bool "ADC"
-	default n
-	select ANALOG
-	select ADC
-	select SCHED_WORKQUEUE
-	select SCHED_LPWORK
-	---help---
-		S5J has 12-bits ADC with 4 channels. Say Y here, if you want
-		to use it.
-
-menu "S5J I2C"
-config S5J_I2C
-	bool "S5J I2C support"
-	default n
-endmenu
-
-config S5J_MAILBOX
-	bool "S5J MAILBOX support"
-	default n
-	select MAILBOX
-
-config S5J_GPIO
-	bool "S5J GPIO support"
-	default n
-
-config S5J_CHIPID
-	bool "S5J CHIPID support"
-	default n
-
-config S5J_EFUSE
-	bool "S5J EFUSE support"
-	default n
-
-config S5J_SDIO_SLAVE
-	bool "S5J SDIO support"
-	default n
-
-config S5J_LEDCTRLBLK
-	bool "S5J LED BLK controller support"
-	default y
-
 config S5J_SFLASH
-  bool "S5J Serial Flash support"
+	bool "SFLASH"
 	default y
+	depends on S5J_HAVE_SFLASH
 
-menu "S5J binary version"
-
-config S5J_BL2_VERSION_ADDR
-       hex "bl2 base address"
-       default 0x04003FF4
-       help
-
-config S5J_LEDFW_VERSION_ADDR
-       hex "LEDFW base address"
-       default 0x042FBFF4
-       help
-
-config S5J_SSSFW_VERSION_ADDR
-       hex "SSSFW base address"
-       default 0x04303FF4
-       help
-
-config S5J_WLANFW_VERSION_ADDR
-       hex "WLANFW base address"
-       default 0x043BDFF4
-       help
-
-endmenu
-
-
-config S5J_DEBUG_BREAK
-	bool "S5J debug break on boot process"
-	help
-		this enable break during booting, on s5j_boot.c before os_start()
-
-config S5J_PM
-	bool "S5J Power Management"
-	default n
-
-menu "S5J PMU Config"
 config S5J_PWR
-	bool "S5J PMU feature"
+	bool "PMU"
 	default n
+	depends on S5J_HAVE_PWR
+
+menu "PMU Configuration"
+	depends on S5J_PWR
 
 config S5J_PWR_DSTOP
 	bool "S5J DSTOP Power Mode"
@@ -269,7 +306,4 @@ config S5J_PWR_SLEEP
 
 endmenu
 
-
-config S5J_DMA
-	bool "S5J DMA enable"
-	default n
+endmenu

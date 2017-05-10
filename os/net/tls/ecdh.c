@@ -223,7 +223,7 @@ int mbedtls_ecdh_get_params(mbedtls_ecdh_context *ctx, const mbedtls_ecp_keypair
 		return (ret);
 	}
 
-#if defined(CONFIG_HW_ECDSA_SIGN)
+#if defined(CONFIG_TLS_WITH_SSS)
 	ctx->grp.key_index = key->key_index;
 #endif
 
@@ -301,6 +301,9 @@ int hw_ecp_gen_keypair(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point
 	unsigned int ret;
 	unsigned int key_type = ECC_KEY;
 	unsigned int curve;
+	struct sECC_KEY ecc_pub;
+
+	memset(&ecc_pub, 0, sizeof(struct sECC_KEY));
 
 	switch (grp->id) {
 	case MBEDTLS_ECP_DP_SECP192R1:
@@ -337,17 +340,12 @@ int hw_ecp_gen_keypair(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point
 		return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
 	}
 
-	struct sECC_KEY ecc_pub;
-
-	memset(&ecc_pub, 0, sizeof(struct sECC_KEY));
-
 	ecc_pub.publickey_x = (unsigned char *)malloc(SEE_MAX_ECP_KEY_SIZE);
-	ecc_pub.publickey_y = (unsigned char *)malloc(SEE_MAX_ECP_KEY_SIZE);
-
 	if (ecc_pub.publickey_x == NULL) {
 		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
 	}
 
+	ecc_pub.publickey_y = (unsigned char *)malloc(SEE_MAX_ECP_KEY_SIZE);
 	if (ecc_pub.publickey_y == NULL) {
 		free(ecc_pub.publickey_x);
 		return MBEDTLS_ERR_ECP_ALLOC_FAILED;
@@ -423,7 +421,7 @@ int hw_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mbedtls
 		goto cleanup;
 	}
 
-#if defined(CONFIG_HW_ECDSA_SIGN)
+#if defined(CONFIG_TLS_WITH_SSS)
 	/* Compute P  = d * Q */
 	if (grp->key_buf == NULL) {
 		/* compute ECC shared secret with stored key (permanent) */

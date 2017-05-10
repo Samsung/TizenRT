@@ -87,8 +87,56 @@ static int prv_getRegistrationQuery(lwm2m_context_t * contextP,
         index += res;
     }
 
+    if (contextP->protocol == COAP_TCP)
+    {
+        /*
+         * We need to append the token to the parameters list
+         * The token is stored in the security object.
+         */
+        lwm2m_object_t *obj = (lwm2m_object_t *)lwm2m_list_find(
+                (lwm2m_list_t *)contextP->objectList, LWM2M_SECURITY_OBJECT_ID);
+
+        if (obj && obj->readFunc)
+        {
+            int size = 1;
+            lwm2m_data_t * dataP = lwm2m_data_new(size);
+            dataP->id = LWM2M_SECURITY_SECRET_KEY_ID;
+
+            obj->readFunc(0, &size, &dataP, obj);
+            if (dataP != NULL && dataP->type == LWM2M_TYPE_OPAQUE)
+            {
+                int i;
+                int dlength = dataP->value.asBuffer.length * 2;
+                char *secret = lwm2m_malloc(dlength + 1);
+                if (!secret) return 0;
+
+                for (i=0; i<(dlength/2); i++)
+                {
+                    int low = dataP->value.asBuffer.buffer[i] % 16;
+                    int high = (dataP->value.asBuffer.buffer[i] / 16) % 16;
+
+                    secret[i*2] = (high > 9)? (high-10) + 'a' : high + '0';
+                    secret[i*2 + 1] = (low > 9)? (low-10) + 'a' : low + '0';
+                }
+
+                secret[dlength] = '\0';
+
+                res = utils_stringCopy(buffer + index, dlength - index, "&token=");
+                if (res < 0) return 0;
+                index += res;
+                res = utils_stringCopy(buffer + index, dlength - index, secret);
+                if (res < 0) return 0;
+                index += res;
+                lwm2m_free(secret);
+            }
+        }
+    }
+
     switch (server->binding)
     {
+    case BINDING_T:
+        res = utils_stringCopy(buffer + index, length - index, "&b=T");
+        break;
     case BINDING_U:
         res = utils_stringCopy(buffer + index, length - index, "&b=U");
         break;
@@ -185,7 +233,7 @@ static uint8_t prv_register(lwm2m_context_t * contextP,
 
     if (NULL == server->sessionH) return COAP_503_SERVICE_UNAVAILABLE;
 
-    transaction = transaction_new(server->sessionH, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL);
+    transaction = transaction_new(server->sessionH, contextP->protocol, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL);
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_uri_path(transaction->message, "/"URI_REGISTRATION_SEGMENT);
@@ -238,7 +286,7 @@ static int prv_updateRegistration(lwm2m_context_t * contextP,
     uint8_t payload[512];
     int payload_length;
 
-    transaction = transaction_new(server->sessionH, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL);
+    transaction = transaction_new(server->sessionH, contextP->protocol, COAP_POST, NULL, NULL, contextP->nextMID++, 4, NULL);
     if (transaction == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_uri_path(transaction->message, server->location);
@@ -455,7 +503,7 @@ void registration_deregister(lwm2m_context_t * contextP,
         return;
     }
 
-    transaction = transaction_new(serverP->sessionH, COAP_DELETE, NULL, NULL, contextP->nextMID++, 4, NULL);
+    transaction = transaction_new(serverP->sessionH, contextP->protocol, COAP_DELETE, NULL, NULL, contextP->nextMID++, 4, NULL);
     if (transaction == NULL) return;
 
     coap_set_header_uri_path(transaction->message, serverP->location);
@@ -677,23 +725,23 @@ static int prv_parseLinkAttributes(uint8_t * data,
         result = prv_splitLinkAttribute(data + index, length - index, &keyStart, &keyLength, &valueStart, &valueLength);
         if (result == 0) return 0;
 
-        if (keyLength == REG_ATTR_TYPE_KEY_LEN
-         && 0 == lwm2m_strncmp(REG_ATTR_TYPE_KEY, data + index + keyStart, keyLength))
+       if (keyLength == REG_ATTR_TYPE_KEY_LEN
+         && 0 == lwm2m_strncmp(REG_ATTR_TYPE_KEY, (char *)(data + index + keyStart), keyLength))
         {
             if (isValid == true) return 0; // declared twice
             if (valueLength != REG_ATTR_TYPE_VALUE_LEN
-             || 0 != lwm2m_strncmp(REG_ATTR_TYPE_VALUE, data + index + valueStart, valueLength))
+             || 0 != lwm2m_strncmp(REG_ATTR_TYPE_VALUE, (char *)(data + index + valueStart), valueLength))
             {
                 return 0;
             }
             isValid = true;
         }
         else if (keyLength == REG_ATTR_CONTENT_KEY_LEN
-              && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_KEY, data + index + keyStart, keyLength))
+              && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_KEY, (char *)(data + index + keyStart), keyLength))
         {
             if (*supportJSON == true) return 0; // declared twice
             if (valueLength == REG_ATTR_CONTENT_JSON_LEN
-             && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_JSON, data + index + valueStart, valueLength))
+             && 0 == lwm2m_strncmp(REG_ATTR_CONTENT_JSON, (char *)(data + index + valueStart), valueLength))
             {
                 *supportJSON = true;
             }
@@ -945,8 +993,8 @@ coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
         {
             return COAP_400_BAD_REQUEST;
         }
-        if (message->content_type != LWM2M_CONTENT_LINK
-         && message->content_type != LWM2M_CONTENT_TEXT)
+        if ((int)message->content_type != (int)LWM2M_CONTENT_LINK
+         && (int)message->content_type != (int)LWM2M_CONTENT_TEXT)
         {
             return COAP_400_BAD_REQUEST;
         }

@@ -16,16 +16,6 @@ config HW_RNG
 		Supports true random generator by hardware
 		Maximum random size is 256 bytes at one time.
 
-config HW_HASH
-	bool "HW Hash"
-	default n
-	---help---
-		Accelates hash caculation based on hardware
-		Supporting algorithm :
-		 . SHA1 : 160
-		 . SHA2 : 256, 384, 512
-		 . SHA3 : 224, 256, 384, 512
-
 config HW_DH_PARAM
 	bool "HW supports DH params"
 	default n
@@ -48,16 +38,6 @@ config HW_RSA_VERIFICATION
 	---help---
 		Verifing a RSA signature based on hardware.
 		Supporting key size : 1024, 2048
-
-config HW_ECDSA_SIGN
-	bool "HW ecdsa sign"
-	default n
-	---help---
-		Signing a ECDSA signature based on hardware.
-		CAUTION: For use this configuration, keys should be stored in secure storage.
-		Supporting curves :
-		 . SECP 192, 224, 256, 384, 512
-		 . Brainpool 256
 
 config HW_ECDSA_VERIFICATION
 	bool "HW ecdsa verification"

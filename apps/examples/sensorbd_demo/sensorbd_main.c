@@ -15,6 +15,7 @@ static void show_usage(FAR const char *program)
 	printf(" %s mpu9250    : i2c 9-axis motion tracking sensor(MPU9250) test\n", program);
 	printf(" %s k6ds3      : spi 6-axis acceler sensor(K6DS3) test\n", program);
 	printf(" %s lis3lv02qd : spi 3-axis acceler sensor(LIS3LV02QD) test\n", program);
+	printf(" %s adctest    : adc print all channel value\n", program);
 }
 
 #ifdef CONFIG_BUILD_KERNEL
@@ -49,6 +50,8 @@ int sensorbd_main(int argc, FAR char *argv[])
 			k6ds3_main(argc, argv);
 		} else if (strcmp(argv[1], "lis3lv02qd") == 0) {
 			lis3lv02qd_main(argc, argv);
+		} else if (strcmp(argv[1], "adctest") == 0) {
+			adctest_main(argc, argv);
 		} else {
 			show_usage(argv[0]);
 		}

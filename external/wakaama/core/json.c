@@ -896,7 +896,7 @@ int json_parse(lwm2m_uri_t * uriP,
         lwm2m_uri_t baseURI;
         lwm2m_uri_t * baseUriP;
         lwm2m_data_t * resultP;
-        int size;
+        int size = 0;
 
         memset(&baseURI, 0, sizeof(lwm2m_uri_t));
         if (bnFound == false)

@@ -92,6 +92,10 @@
  ****************************************************************************/
 
 /****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
  * Name: sem_timeout
  *
  * Description:
@@ -109,7 +113,7 @@
  *
  ****************************************************************************/
 
-static void sem_timeout(int argc, uint32_t pid)
+void sem_timeout(int argc, uint32_t pid)
 {
 	FAR struct tcb_s *wtcb;
 	irqstate_t flags;
@@ -138,10 +142,6 @@ static void sem_timeout(int argc, uint32_t pid)
 
 	irqrestore(flags);
 }
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Name: sem_timedwait
@@ -184,7 +184,7 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
 	irqstate_t flags;
 	int ticks;
-	int err;
+	int errcode;
 	int ret = ERROR;
 
 	DEBUGASSERT(up_interrupt_context() == false && rtcb->waitdog == NULL);
@@ -198,7 +198,7 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 
 #ifdef CONFIG_DEBUG
 	if (!abstime || !sem) {
-		err = EINVAL;
+		errcode = EINVAL;
 		goto errout;
 	}
 #endif
@@ -210,7 +210,7 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 
 	rtcb->waitdog = wd_create();
 	if (!rtcb->waitdog) {
-		err = ENOMEM;
+		errcode = ENOMEM;
 		goto errout;
 	}
 
@@ -242,7 +242,7 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	 */
 
 	if (abstime->tv_nsec < 0 || abstime->tv_nsec >= 1000000000) {
-		err = EINVAL;
+		errcode = EINVAL;
 		goto errout_disabled;
 	}
 
@@ -250,29 +250,34 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	 * disabled here so that this time stays valid until the wait begins.
 	 */
 
-	err = clock_abstime2ticks(CLOCK_REALTIME, abstime, &ticks);
+	errcode = clock_abstime2ticks(CLOCK_REALTIME, abstime, &ticks);
 
 	/* If the time has already expired return immediately. */
 
-	if (err == OK && ticks <= 0) {
-		err = ETIMEDOUT;
+	if (errcode == OK && ticks <= 0) {
+		errcode = ETIMEDOUT;
 		goto errout_disabled;
 	}
 
 	/* Handle any time-related errors */
 
-	if (err != OK) {
+	if (errcode != OK) {
 		goto errout_disabled;
 	}
 
 	/* Start the watchdog */
 
-	err = OK;
+	errcode = OK;
 	wd_start(rtcb->waitdog, ticks, (wdentry_t)sem_timeout, 1, getpid());
 
 	/* Now perform the blocking wait */
 
 	ret = sem_wait(sem);
+	if (ret < 0) {
+		/* sem_wait() failed.  Save the errno value */
+
+		errcode = get_errno();
+	}
 
 	/* Stop the watchdog timer */
 
@@ -291,6 +296,12 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	 * cases.
 	 */
 
+	if (ret < 0) {
+		/* On failure, restore the errno value returned by sem_wait */
+
+		set_errno(errcode);
+	}
+
 	return ret;
 
 	/* Error exits */
@@ -301,7 +312,7 @@ errout_disabled:
 	rtcb->waitdog = NULL;
 
 errout:
-	set_errno(err);
+	set_errno(errcode);
 	leave_cancellation_point();
 	return ERROR;
 }

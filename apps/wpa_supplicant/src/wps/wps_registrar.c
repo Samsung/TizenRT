@@ -31,7 +31,7 @@
 struct wps_nfc_pw_token {
 	struct dl_list list;
 	u8 pubkey_hash[WPS_OOB_PUBKEY_HASH_LEN];
-	unsigned int peer_pk_hash_known: 1;
+	unsigned int peer_pk_hash_known : 1;
 	u16 pw_id;
 	u8 dev_pw[WPS_OOB_DEVICE_PASSWORD_LEN * 2 + 1];
 	size_t dev_pw_len;

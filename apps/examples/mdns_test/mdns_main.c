@@ -60,6 +60,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <apps/netutils/mdnsd.h>
 
@@ -72,8 +73,6 @@
  ****************************************************************************/
 #if defined(CONFIG_ARCH_BOARD_SIDK_S5JT200) || defined(CONFIG_ARCH_BOARD_ARTIK053)
 #define MDNS_NETIF_NAME         "wl1"
-#elif defined(CONFIG_WICED)
-#define MDNS_NETIF_NAME         "en1"
 #else
 #error "cannot set MDNS_NETIF_NAME"
 #endif

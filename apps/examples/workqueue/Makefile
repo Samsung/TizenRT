@@ -59,6 +59,7 @@ include $(APPDIR)/Make.defs
 APPNAME = workqueue
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
+THREADEXEC = TASH_EXECMD_SYNC
 
 ASRCS =
 CSRCS =
@@ -126,7 +127,16 @@ install:
 
 endif
 
+ifeq ($(CONFIG_EXAMPLES_WORKQUEUE),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+
+else
 context:
+
+endif
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep

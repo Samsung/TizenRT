@@ -54,8 +54,6 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# wiced Example
-
 ASRCS =
 CSRCS =
 MAINSRC = nettest.c

@@ -60,7 +60,7 @@ void uartloopback_main(int argc, char *argv[])
 	int port;
 	int ret = 0;
 
-	for (port = 0; port < 4; port++) {
+	for (port = 1; port < 5; port++) {
 		snprintf(buf, 16, "/dev/ttyS%d", port);
 		int fd = open(buf, O_RDWR | O_NOCTTY);
 		if (fd < 0) {

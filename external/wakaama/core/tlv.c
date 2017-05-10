@@ -189,7 +189,6 @@ int lwm2m_decode_TLV(const uint8_t * buffer,
 {
 
     LOG_ARG("buffer_len: %d", buffer_len);
-        ;
     if (buffer_len < 2) return 0;
 
     *oDataIndex = 2;

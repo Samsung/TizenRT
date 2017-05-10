@@ -79,7 +79,7 @@ void *aes_decrypt_init(const u8 *key, size_t len)
 	return rk;
 }
 
-static void rijndaelDecrypt(const u32 rk[ /*44 */ ], int Nr, const u8 ct[16],
+static void rijndaelDecrypt(const u32 rk[/* 44 */], int Nr, const u8 ct[16],
 							u8 pt[16])
 {
 	u32 s0, s1, s2, s3, t0, t1, t2, t3;
@@ -96,7 +96,7 @@ static void rijndaelDecrypt(const u32 rk[ /*44 */ ], int Nr, const u8 ct[16],
 	s2 = GETU32(ct + 8) ^ rk[2];
 	s3 = GETU32(ct + 12) ^ rk[3];
 
-#define ROUND(i,d,s) \
+#define ROUND(i, d, s) \
 d##0 = TD0(s##0) ^ TD1(s##3) ^ TD2(s##2) ^ TD3(s##1) ^ rk[4 * i]; \
 d##1 = TD0(s##1) ^ TD1(s##0) ^ TD2(s##3) ^ TD3(s##2) ^ rk[4 * i + 1]; \
 d##2 = TD0(s##2) ^ TD1(s##1) ^ TD2(s##0) ^ TD3(s##3) ^ rk[4 * i + 2]; \

@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #endif
 #include <sys/types.h>
+#include <sys/boardctl.h>
 #include <apps/shell/tash.h>
 #include "tash_internal.h"
 
@@ -88,6 +89,7 @@ struct tash_cmd_info_s {
 
 static int tash_help(int argc, char **args);
 static int tash_exit(int argc, char **args);
+static int tash_reboot(int argc, char **argv);
 
 /****************************************************************************
  * Private Variables
@@ -102,6 +104,9 @@ const static tash_cmdlist_t tash_basic_cmds[] = {
 	{"sh",    tash_script, TASH_EXECMD_SYNC},
 #ifndef CONFIG_DISABLE_SIGNALS
 	{"sleep", tash_sleep,  TASH_EXECMD_SYNC},
+#endif
+#if defined(CONFIG_BOARDCTL_RESET)
+	{"reboot", tash_reboot, TASH_EXECMD_SYNC},
 #endif
 	{NULL,    NULL,        0}
 };
@@ -171,6 +176,24 @@ static int tash_exit(int argc, char **args)
 	tash_running = FALSE;
 	exit(0);
 }
+
+#if defined(CONFIG_BOARDCTL_RESET)
+static int tash_reboot(int argc, char **argv)
+{
+	/*
+	 * Invoke the BOARDIOC_RESET board control to reset the board. If
+	 * the board_reset() function returns, then it was not possible to
+	 * reset the board due to some constraints.
+	 */
+	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+
+	/*
+	 * boarctl() will not return in this case.  It if does, it means that
+	 * there was a problem with the reset operaion.
+	 */
+	return ERROR;
+}
+#endif /* CONFIG_BOARDCTL_RESET */
 
 /** @brief Launch a task to run tash cmd asynchronously
  *  @ingroup tash

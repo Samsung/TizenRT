@@ -109,6 +109,38 @@ extern FAR struct inode *root_inode;
 
 int find_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode **ppinode);
 
+/* fs_blockproxy.c **********************************************************/
+/****************************************************************************
+ * Name: block_proxy
+ *
+ * Description:
+ *   Create a temporary char driver using drivers/bch to mediate character
+ *   oriented accessed to the block driver.
+ *
+ * Input parameters:
+ *   blkdev - The path to the block driver
+ *   oflags - Character driver open flags
+ *
+ * Returned Value:
+ *   If positive, non-zero file descriptor is returned on success. This
+ *   is the file descriptor of the nameless character driver that mediates
+ *   accesses to the block driver.
+ *
+ *   Errors that may be returned:
+ *
+ *     ENOMEM - Failed to create a temporary path name.
+ *
+ *   Plus:
+ *
+ *     - Errors reported from bchdev_register()
+ *     - Errors reported from open() or unlink()
+ *
+ ****************************************************************************/
+#if !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && \
+    !defined(CONFIG_DISABLE_MOUNTPOINT)
+int block_proxy(FAR const char *blkdev, int oflags);
+#endif
+
 #undef EXTERN
 #if defined(__cplusplus)
 }

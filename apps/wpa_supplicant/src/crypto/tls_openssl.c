@@ -98,10 +98,10 @@ struct tls_connection {
 	u8 *session_ticket;
 	size_t session_ticket_len;
 
-	unsigned int ca_cert_verify: 1;
-	unsigned int cert_probe: 1;
-	unsigned int server_cert_only: 1;
-	unsigned int invalid_hb_used: 1;
+	unsigned int ca_cert_verify : 1;
+	unsigned int cert_probe : 1;
+	unsigned int server_cert_only : 1;
+	unsigned int invalid_hb_used : 1;
 
 	u8 srv_cert_hash[32];
 

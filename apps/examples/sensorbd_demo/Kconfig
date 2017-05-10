@@ -1,5 +1,8 @@
 config EXAMPLES_SENSORBOARD
 	bool "Sensor Board Example"
+	select ANALOG
+	select ADC
+	select S5J_ADC
 	select GPIO
 	select S5J_GPIO
 	select SPI
@@ -14,7 +17,12 @@ config EXAMPLES_SENSORBOARD
 	select I2C_USERIO
 	select S5J_I2C
 	select PWM
-	select S5J_PWM
+	select S5J_PWM0
+	select S5J_PWM1
+	select S5J_PWM2
+	select S5J_PWM3
+	select S5J_PWM4
+	select S5J_PWM5
 	default n
 	---help---
 		Enable the Sensor Board Example

@@ -718,8 +718,7 @@ void slsi_rx_received_frame_ind(struct slsi_dev *sdev, struct netif *dev, struct
 				   SLSI_P2P_UNSYNC_VIF_EXTRA_MSEC); */
 				SLSI_P2P_STATE_CHANGE(sdev, P2P_IDLE_VIF_ACTIVE);
 			}
-		}
-		else if ((sdev->p2p_group_exp_frame != SLSI_P2P_PA_INVALID) && (sdev->p2p_group_exp_frame == subtype)) {
+		} else if ((sdev->p2p_group_exp_frame != SLSI_P2P_PA_INVALID) && (sdev->p2p_group_exp_frame == subtype)) {
 			SLSI_NET_DBG2(dev, SLSI_MLME, "Expected action frame (%s) received on Group VIF\n", slsi_p2p_pa_subtype_text(subtype));
 			slsi_clear_offchannel_data(sdev, (ndev_vif->ifnum != SLSI_NET_INDEX_P2PX) ? true : false);
 		}
@@ -736,8 +735,7 @@ void slsi_rx_received_frame_ind(struct slsi_dev *sdev, struct netif *dev, struct
 else
 #endif
 
-	if (data_unit_descriptor == FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME)
-	{
+	if (data_unit_descriptor == FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME) {
 		struct slsi_peer *peer = NULL;
 		struct ethhdr *ehdr = (struct ethhdr *)fapi_get_data(mbuf);
 

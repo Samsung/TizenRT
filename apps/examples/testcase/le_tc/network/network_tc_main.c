@@ -98,9 +98,6 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_DHCPC
 	net_dhcpc_main();
 #endif
-#ifdef CONFIG_TC_NET_DHCPS
-	net_dhcps_main();
-#endif
 #ifdef CONFIG_TC_NET_SELECT
 	net_select_main();
 #endif

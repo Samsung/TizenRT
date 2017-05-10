@@ -2,8 +2,12 @@
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
-
 if NET_IPv4
+config NET_IP_DEFAULT_TTL
+	int "Default value for Time-To-Live"
+	default 255
+	---help---
+		Default value for Time-To-Live used by transport layers.
 
 config NET_IP_FORWARD
 	bool "Support IP packet forwarding"
@@ -29,12 +33,14 @@ config NET_IP_FRAG
 		controlled via IP_REASSEMBLY.
 
 
+
 config NET_IP_REASSEMBLY
 	bool "IP reassembly support"
 	default y
 	---help---
 		Reassemble incoming fragmented IP packets. Note that this option
 		does not affect outgoing packet sizes, which can be controlled via IP_FRAG.
+
 
 if NET_IP_REASSEMBLY
 
@@ -57,10 +63,4 @@ config NET_IPV4_REASS_MAXAGE
 
 endif #NET_IP_REASSEMBLY
 
-config NET_IP_DEFAULT_TTL
-	int "Default value for Time-To-Live"
-	default 255
-	---help---
-		Default value for Time-To-Live used by transport layers.
-		
 endif #NET_IPv4

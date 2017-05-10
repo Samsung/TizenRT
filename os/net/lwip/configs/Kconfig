@@ -6,24 +6,58 @@
 menu "LwIP options"
 
 menuconfig NET_IPv4
-	bool "IPv4"
+	bool "IPv4 support"
 	default y
 	---help---
 		Build in support for IPv4.
 
-if NET_IPv4
-
 source "net/lwip/configs/ipv4/Kconfig"
 
-endif #NET_IPv4
-
-source "net/lwip/configs/mem/Kconfig"
 source "net/lwip/configs/socket/Kconfig"
+
+menuconfig NET_ARP
+	bool "ARP Support"
+	default y
+	depends on NET_ETHERNET && NET_IPv4
+	---help---
+		This setting is currently overridden by logic in include/nuttx/net
+
+source "net/lwip/configs/arp/Kconfig"
+
+
+menuconfig NET_UDP
+	bool "UDP Support"
+	depends on NET_IPv4
+	default y
+	---help---
+		UDP support on or off
+
+source "net/lwip/configs/udp/Kconfig"
+
+
+menuconfig NET_TCP
+	bool "TCP Support"
+	depends on NET_IPv4
+	default y
+	---help---
+		TCP support on or off
+
+source "net/lwip/configs/tcp/Kconfig"
+
+
+menuconfig NET_ICMP
+	bool "ICMP Support"
+	default n
+	---help---
+		Enable minimal ICMP support. Includes built-in support
+		for sending replies to received ECHO (ping) requests.
+
 source "net/lwip/configs/icmp/Kconfig"
-source "net/lwip/configs/mbox/Kconfig"
+
 
 menuconfig NET_LWIP_IGMP
-	bool "IGMP support"
+	bool "IGMP Support"
+	depends on NET_IPv4	
 	default n
 
 if NET_LWIP_IGMP
@@ -37,10 +71,11 @@ config NET_LWIP_MEMP_NUM_IGMP_GROUP
 endif #NET_LWIP_IGMP
 
 
-source "net/lwip/configs/tcp/Kconfig"
-source "net/lwip/configs/udp/Kconfig"
-source "net/lwip/configs/arp/Kconfig"
-
+source "net/lwip/configs/mbox/Kconfig"
+source "net/lwip/configs/mem/Kconfig"
+source "net/lwip/configs/sys/Kconfig"
+source "net/lwip/configs/debug/Kconfig"
+source "net/lwip/configs/stats/Kconfig"
 
 config NET_LWIP_VLAN
 	bool "Support VLAN"
@@ -60,39 +95,14 @@ config NET_LWIP_VLAN_CHECK_ID
 	default 1
 	depends on NET_LWIP_VLAN_CHECK
 
-menu "Thread options"
-
-config NET_LWIP_TCPIP_THREAD_NAME
-	string "The name assigned to the main tcpip thread"
-	default "tcpip_thread"
-
-config NET_LWIP_TCPIP_THREAD_STACKSIZE
-	int "The stack size used by the main tcpip thread"
-	default 1024
-
-config NET_LWIP_TCPIP_THREAD_PRIO
-	int "The priority assigned to the main tcpip thread"
-	default 100
-
-config NET_LWIP_DEFAULT_THREAD_NAME
-	string "The name assigned to any other lwIP thread"
-	default "lwIP"
-
-config NET_LWIP_DEFAULT_THREAD_STACKSIZE
-	int "The stack size used by any other lwIP thread"
-	default 1024
-
-config NET_LWIP_DEFAULT_THREAD_PRIO
-	int "The priority assigned to any other lwIP thread"
-	default 100
-
-endmenu #Thread options
-
 config NET_LWIP_LOOPBACK_INTERFACE
 	bool "Support loopback interface"
 	default n
 	---help---
 		Support loop interface (127.0.0.1).
+
+
+################# SLIP #######################
 
 menuconfig NET_LWIP_SLIP_INTERFACE
 	bool "Support serial line IP interface"
@@ -113,6 +123,9 @@ config NET_LWIP_SLIPIF_THREAD_PRIO
 	default 100
 
 endif #NET_LWIP_SLIP_INTERFACE
+
+
+################# PPP #######################
 
 menuconfig NET_LWIP_PPP_SUPPORT
 	bool "Enable PPP"
@@ -158,6 +171,9 @@ config NET_LWIP_PPP_THREAD_PRIO
 
 endif #NET_LWIP_PPP_SUPPORT
 
+
+################# SNMP #######################
+
 menuconfig NET_LWIP_SNMP
 	bool "Enable SNMP"
 	default n
@@ -196,8 +212,5 @@ config NET_LWIP_SNMP_MAX_TREE_DEPTH
 		this depends on your MIB! This affects the size of MEMP_SNMP_VALUE elements.
 
 endif #NET_LWIP_SNMP
-
-source "net/lwip/configs/debug/Kconfig"
-source "net/lwip/configs/stats/Kconfig"
 
 endmenu #LwIP options

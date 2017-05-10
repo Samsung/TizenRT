@@ -58,6 +58,7 @@
 
 #include <limits.h>
 #include <semaphore.h>
+#include <errno.h>
 #include <sched.h>
 #include <tinyara/arch.h>
 
@@ -188,6 +189,8 @@ int sem_post(FAR sem_t *sem)
 		/* Interrupts may now be enabled. */
 
 		irqrestore(saved_state);
+	} else {
+		set_errno(EINVAL);
 	}
 
 	return ret;
@@ -271,6 +274,8 @@ int sem_post_from_isr(FAR sem_t *sem)
 		/* Interrupts may now be enabled. */
 
 		irqrestore(saved_state);
+	} else {
+		set_errno(EINVAL);
 	}
 
 	return ret;

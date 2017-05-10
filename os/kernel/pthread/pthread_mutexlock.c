@@ -157,9 +157,9 @@ int pthread_mutex_lock(FAR pthread_mutex_t *mutex)
 		sched_lock();
 
 #ifdef CONFIG_PTHREAD_MUTEX_TYPES
-	/* All mutex types except for NORMAL (and DEFAULT) will return
-       	 * and an error  error if the caller does not hold the mutex.
-       	 */
+		/* All mutex types except for NORMAL (and DEFAULT) will return
+		 * and an error  error if the caller does not hold the mutex.
+		 */
 
 		if (mutex->type != PTHREAD_MUTEX_NORMAL && mutex->pid == mypid) {
 			/* Yes.. Is this a recursive mutex? */
@@ -173,8 +173,7 @@ int pthread_mutex_lock(FAR pthread_mutex_t *mutex)
 				} else {
 					ret = EOVERFLOW;
 				}
-			} else
-			{
+			} else {
 				/* No, then we would deadlock... return an error (default behavior
 				 * is like PTHREAD_MUTEX_ERRORCHECK)
 				 */

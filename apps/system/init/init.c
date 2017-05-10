@@ -69,6 +69,8 @@ static void tash_register_cmds(void)
 	net_register_utilcmds();
 	net_register_appcmds();
 #endif
+
+	register_examples_cmds();
 }
 #endif							/* CONFIG_TASH */
 

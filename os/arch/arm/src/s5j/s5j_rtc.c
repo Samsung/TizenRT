@@ -91,8 +91,7 @@ volatile bool g_rtc_enabled = false;
 /****************************************************************************
  * Private Types
  ****************************************************************************/
-struct rtc_regvals_s
-{
+struct rtc_regvals_s {
 	uint8_t bcdsec;
 	uint8_t bcdmin;
 	uint8_t bcdhour;
@@ -109,7 +108,8 @@ struct rtc_regvals_s
  ****************************************************************************/
 static uint32_t rtc_bin2bcd(int value)
 {
-	uint32_t hundreds, tens;
+	uint32_t hundreds;
+	uint32_t tens;
 
 	hundreds = tens = 0;
 

@@ -92,11 +92,11 @@
 #include "mdns.h"
 #include <apps/netutils/mdnsd.h>
 
-#if MDNS_DEBUG_PRINTF==1 && MDNS_RR_DEBUG==1
+#if (MDNS_DEBUG_PRINTF == 1) && (MDNS_RR_DEBUG == 1)
 #define MDNSD_RR_DEBUG
 #endif
 
-#if MDNS_DEBUG_PRINTF==1 && MDNS_MEMORY_DEBUG==1
+#if (MDNS_DEBUG_PRINTF == 1) && (MDNS_MEMORY_DEBUG == 1)
 #define MDNSD_MEMORY_DEBUG
 #endif
 
@@ -117,11 +117,11 @@
 #define PACKET_SIZE             1536	/* maximum packet size :  */
 
 #define SERVICES_DNS_SD_NLABEL \
-                ((uint8_t *)"\x09_services\x07_dns-sd\x04_udp\x05local")
+		((uint8_t *)"\x09_services\x07_dns-sd\x04_udp\x05local")
 
 #define TIME_GET(time)                                          gettimeofday(&time, NULL)
 #define TIME_DIFF_USEC(old_time, cur_time) \
-        ((cur_time.tv_sec * 1000000 + cur_time.tv_usec) - (old_time.tv_sec * 1000000 + old_time.tv_usec))
+		((cur_time.tv_sec * 1000000 + cur_time.tv_usec) - (old_time.tv_sec * 1000000 + old_time.tv_usec))
 
 #define MAX_ECONNRESET_COUNT	5
 
@@ -156,11 +156,18 @@ struct mdnsd {
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 	struct rr_group *group;
 	struct rr_list *announce;
+	struct rr_list *services;
 	struct rr_list *probe;
 	uint8_t *hostname;			/* hostname can be changed if name collision occur */
 	uint8_t *hostname_org;
 #endif
 };
+
+#if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
+struct mdns_service {
+	struct rr_list *entries;
+};
+#endif
 
 static void update_cache(struct mdnsd *svr);
 static void clear_service_discovery_result(struct mdns_service_info
@@ -1005,7 +1012,7 @@ static int process_mdns_pkt(struct mdnsd *svr, struct mdns_pkt *pkt, struct mdns
 
 int create_pipe(int handles[2])
 {
-#if PIPE_SOCKET_TYPE    ==1
+#if (PIPE_SOCKET_TYPE == 1)
 	int result = -1;
 	struct sockaddr_in serv_addr;
 
@@ -1063,7 +1070,7 @@ errout:
 
 int read_pipe(int s, char *buf, int len)
 {
-#if PIPE_SOCKET_TYPE    ==1
+#if (PIPE_SOCKET_TYPE == 1)
 	int ret;
 	struct sockaddr_in fromaddr;
 	socklen_t sockaddr_size = sizeof(struct sockaddr_in);
@@ -1075,7 +1082,7 @@ int read_pipe(int s, char *buf, int len)
 
 int write_pipe(int s, char *buf, int len, int port)
 {
-#if PIPE_SOCKET_TYPE    ==1
+#if (PIPE_SOCKET_TYPE == 1)
 	static struct sockaddr_in toaddr;
 
 	memset(&toaddr, 0, sizeof(struct sockaddr_in));
@@ -1346,6 +1353,15 @@ static void main_loop(struct mdnsd *svr)
 	// main thread terminating. send out "goodbye packets" for services
 	mdns_init_reply(mdns_packet, 0);
 
+	pthread_mutex_lock(&svr->data_lock);
+	struct rr_list *svc_le = svr->services;
+	for (; svc_le; svc_le = svc_le->next) {
+		// set TTL to zero
+		svc_le->e->ttl = 0;
+		mdns_packet->num_ans_rr += rr_list_append(&mdns_packet->rr_ans, svc_le->e);
+	}
+	pthread_mutex_unlock(&svr->data_lock);
+
 	// send out packet
 	if (mdns_packet->num_ans_rr > 0) {
 		if (svr->sockfd != -1) {
@@ -1542,8 +1558,12 @@ static int mdnsd_set_host_info(struct mdnsd *svr, const char *hostname, uint32_t
 			/* when name conflict occurs */
 			snprintf(hname, sizeof(hname), hostname);
 			str = strstr(hname, mdns_suffix);
-			snprintf(str, sizeof(hname), "(%d)%s", no++, mdns_suffix);
-			alternative_hostname = 1;
+			if (str) {
+				snprintf(str, sizeof(hname), "(%d)%s", no++, mdns_suffix);
+				alternative_hostname = 1;
+			} else {
+				ndbg("ERROR: cannot set an alternative hostname.\n");
+			}
 		}
 
 		// if there is previous hostname information, delete it
@@ -1709,7 +1729,7 @@ static int init_mdns_context(int domain)
 	}
 
 	/* create main_loop thread */
-	if ((pthread_create(&tid, &attr, (void * ( *)(void *))main_loop, (void *)g_svr) != 0)) {
+	if ((pthread_create(&tid, &attr, (void * (*)(void *))main_loop, (void *)g_svr) != 0)) {
 		ndbg("ERROR: pthread_create() failed.\n");
 		goto errout_with_mutex;
 	}
@@ -1805,6 +1825,9 @@ static void release_mdns_context_resource(void)
 
 	rr_list_destroy(g_svr->announce, 0);
 	g_svr->announce = NULL;
+
+	rr_list_destroy(g_svr->services, 0);
+	g_svr->services = NULL;
 
 	rr_list_destroy(g_svr->probe, 0);
 	g_svr->probe = NULL;
@@ -2008,6 +2031,84 @@ out:
 	return result;
 }
 
+static void mdns_service_destroy(struct mdns_service *srv)
+{
+	assert(srv != NULL);
+	rr_list_destroy(srv->entries, 0);
+	free(srv);
+}
+
+int mdnsd_register_service(const char *instance_name, const char *type,
+				uint16_t port, const char *hostname, const char *txt[])
+{
+	struct rr_entry *txt_e = NULL,
+					*srv_e = NULL,
+					*ptr_e = NULL,
+					*bptr_e = NULL;
+	uint8_t *target;
+	uint8_t *inst_nlabel, *type_nlabel, *nlabel;
+	struct mdns_service *service = malloc(sizeof(struct mdns_service));
+	memset(service, 0, sizeof(struct mdns_service));
+
+	// combine service name
+	type_nlabel = create_nlabel(type);
+	inst_nlabel = create_nlabel(instance_name);
+	nlabel = join_nlabel(inst_nlabel, type_nlabel);
+
+	// create TXT record
+	if (txt && *txt) {
+		txt_e = rr_create(dup_nlabel(nlabel), RR_TXT);
+		rr_list_append(&service->entries, txt_e);
+
+		// add TXTs
+		for (; *txt; txt++) {
+			rr_add_txt(txt_e, *txt);
+		}
+	}
+
+	// create SRV record
+	assert(hostname || g_svr->hostname);  // either one as target
+	target = hostname ?
+	create_nlabel(hostname) :
+	dup_nlabel(g_svr->hostname);
+
+	srv_e = rr_create_srv(dup_nlabel(nlabel), port, target);
+	rr_list_append(&service->entries, srv_e);
+
+	// create PTR record for type
+	ptr_e = rr_create_ptr(type_nlabel, srv_e);
+
+	// create services PTR record for type
+	// this enables the type to show up as a "service"
+	bptr_e = rr_create_ptr(dup_nlabel(SERVICES_DNS_SD_NLABEL), ptr_e);
+
+	// modify lists here
+	pthread_mutex_lock(&g_svr->data_lock);
+
+	if (txt_e) {
+		rr_group_add(&g_svr->group, txt_e);
+	}
+	rr_group_add(&g_svr->group, srv_e);
+	rr_group_add(&g_svr->group, ptr_e);
+	rr_group_add(&g_svr->group, bptr_e);
+
+	// append PTR entry to announce list
+	rr_list_append(&g_svr->announce, ptr_e);
+	rr_list_append(&g_svr->services, ptr_e);
+
+	pthread_mutex_unlock(&g_svr->data_lock);
+
+	// don't free type_nlabel - it's with the PTR record
+	MDNS_FREE(nlabel);
+	MDNS_FREE(inst_nlabel);
+
+	// notify server
+	request_sendmsg(g_svr);
+
+	mdns_service_destroy(service);
+
+	return 0;
+}
 #endif							/*CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT */
 
 /****************************************************************************

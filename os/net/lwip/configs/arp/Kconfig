@@ -3,15 +3,6 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-menu "ARP Configuration"
-
-config NET_ARP
-	bool "ARP enable"
-	default y
-	depends on NET_ETHERNET && NET_IPv4
-	---help---
-		This setting is currently overridden by logic in include/nuttx/net
-
 if NET_ARP
 
 config NET_ARP_TABLESIZE
@@ -49,6 +40,4 @@ config NET_ARP_STATIC_ENTRIES
 		Enable code to support static ARP table
 		entries (using etharp_add_static_entry/etharp_remove_static_entry).
 
-endif # NET_ARP
-
-endmenu # ARP Configuration
+endif #NET_ARP

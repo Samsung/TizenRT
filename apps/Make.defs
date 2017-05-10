@@ -51,6 +51,28 @@
 #
 ############################################################################
 
+# Builtin Registration
+
+BUILTIN_REGISTRY = $(APPDIR)$(DELIM)builtin$(DELIM)registry
+
+DEPCONFIG = $(TOPDIR)$(DELIM).config
+
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+define REGISTER
+	$(Q) echo Register: $1
+	$(Q) echo { "$1", $2, $3 }, > "$(BUILTIN_REGISTRY)$(DELIM)$2.bdat"
+	$(Q) echo int $2(int argc, char *argv[]); > "$(BUILTIN_REGISTRY)$(DELIM)$2.pdat"
+	$(Q) touch $(BUILTIN_REGISTRY)$(DELIM).updated"
+endef
+else
+define REGISTER
+	$(Q) echo "Register: $1"
+	$(Q) echo "{ \"$1\", $2, $3 }," > "$(BUILTIN_REGISTRY)$(DELIM)$2.bdat"
+	$(Q) echo "int $2(int argc, char *argv[]);" > "$(BUILTIN_REGISTRY)$(DELIM)$2.pdat"
+	$(Q) touch "$(BUILTIN_REGISTRY)$(DELIM).updated"
+endef
+endif
+
 # Tools
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)

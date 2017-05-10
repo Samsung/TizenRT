@@ -26,8 +26,6 @@ POSTFIX=_smartfs.bin
 BINNAME=$BOARDNAME$POSTFIX
 
 blkcount=8192
-x=$CONFIG_BCM4390X_BOOTLOADER_REGION_SIZE
-(( blkcount -= x ))
 
 echo "============================================================="
 echo "mksmartfsimg.sh : $BINNAME, Target Board: $BOARDNAME"

@@ -36,7 +36,7 @@ static void rijndaelEncrypt(const u32 rk[], int Nr, const u8 pt[16], u8 ct[16])
 	s2 = GETU32(pt + 8) ^ rk[2];
 	s3 = GETU32(pt + 12) ^ rk[3];
 
-#define ROUND(i,d,s) \
+#define ROUND(i, d, s) \
 d##0 = TE0(s##0) ^ TE1(s##1) ^ TE2(s##2) ^ TE3(s##3) ^ rk[4 * i]; \
 d##1 = TE0(s##1) ^ TE1(s##2) ^ TE2(s##3) ^ TE3(s##0) ^ rk[4 * i + 1]; \
 d##2 = TE0(s##2) ^ TE1(s##3) ^ TE2(s##0) ^ TE3(s##1) ^ rk[4 * i + 2]; \

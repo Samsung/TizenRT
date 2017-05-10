@@ -11,6 +11,7 @@
  *    http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
+ *    Gregory Lemercier, Samsung Semiconductor - support for TCP/TLS
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Pascal Rieux - Please refer to git log
  *    
@@ -24,7 +25,7 @@
 // from commandline.c
 void output_buffer(FILE * stream, uint8_t * buffer, int length, int indent);
 
-int create_socket(const char * portStr, int addressFamily)
+int create_socket(coap_protocol_t protocol, const char * portStr, int addressFamily)
 {
     int s = -1;
     struct addrinfo hints;
@@ -33,7 +34,20 @@ int create_socket(const char * portStr, int addressFamily)
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = addressFamily;
-    hints.ai_socktype = SOCK_DGRAM;
+    switch(protocol)
+    {
+    case COAP_TCP:
+    case COAP_TCP_TLS:
+        hints.ai_socktype = SOCK_STREAM;
+        break;
+    case COAP_UDP:
+    case COAP_UDP_DTLS:
+        hints.ai_socktype = SOCK_DGRAM;
+        break;
+    default:
+        break;
+    }
+
     hints.ai_flags = AI_PASSIVE;
 
     if (0 != getaddrinfo(NULL, portStr, &hints, &res))
@@ -57,6 +71,25 @@ int create_socket(const char * portStr, int addressFamily)
     freeaddrinfo(res);
 
     return s;
+}
+
+int create_tcp_session(int sockfd, struct sockaddr_storage *caddr, socklen_t *caddrLen)
+{
+    int newsock = -1;
+
+    if ((newsock = listen(sockfd, 3)) < 0) {
+        fprintf(stderr, "create_tcp_session : Failed to listen, errno %d\r\n", errno);
+        return newsock;
+    }
+
+    newsock = accept(sockfd, (struct sockaddr *)caddr, caddrLen);
+
+    if (newsock < 0) {
+        fprintf(stderr, "crate_tcp_session : Failed to accept, errno %d\r\n", errno);
+        return newsock;
+    }
+
+    return newsock;
 }
 
 connection_t * connection_find(connection_t * connList,
@@ -98,7 +131,8 @@ connection_t * connection_new_incoming(connection_t * connList,
     return connP;
 }
 
-connection_t * connection_create(connection_t * connList,
+connection_t * connection_create(coap_protocol_t protocol,
+                                 connection_t * connList,
                                  int sock,
                                  char * host,
                                  char * port,
@@ -114,34 +148,60 @@ connection_t * connection_create(connection_t * connList,
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = addressFamily;
-    hints.ai_socktype = SOCK_DGRAM;
 
-    if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return NULL;
+    switch(protocol) {
+        case COAP_UDP:
+        case COAP_UDP_DTLS:
+            hints.ai_socktype = SOCK_DGRAM;
 
-    // we test the various addresses
-    s = -1;
-    for(p = servinfo ; p != NULL && s == -1 ; p = p->ai_next)
-    {
-        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (s >= 0)
-        {
-            sa = p->ai_addr;
-#ifdef CONFIG_NET_LWIP
-            sa->sa_len = p->ai_addrlen;
-#endif
-            sl = p->ai_addrlen;
-            if (-1 == connect(s, p->ai_addr, p->ai_addrlen))
+            if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return NULL;
+            // we test the various addresses
+            s = -1;
+            for(p = servinfo; p != NULL && s == -1; p = p->ai_next)
             {
-                close(s);
-                s = -1;
+                s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+                if (s >= 0) {
+                    sa = p->ai_addr;
+#ifdef CONFIG_NET_LWIP
+                    sa->sa_len = p->ai_addrlen;
+#endif
+                    sl = p->ai_addrlen;
+                    if (-1 == connect(s, p->ai_addr, p->ai_addrlen)) {
+                        close(s);
+                        s = -1;
+                    }
+                }
             }
-        }
+            if (s >= 0) {
+                connP = connection_new_incoming(connList, sock, sa, sl);
+                close(s);
+            }
+            break;
+        case COAP_TCP:
+        case COAP_TCP_TLS:
+            hints.ai_socktype = SOCK_STREAM;
+
+            if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return NULL;
+            // TODO : How to support various addresses
+            for(p = servinfo; p != NULL; p = p->ai_next)
+            {
+                sa = p->ai_addr;
+#ifdef CONFIG_NET_LWIP
+                sa->sa_len = p->ai_addrlen;
+#endif
+                sl = p->ai_addrlen;
+                if (-1 == connect(sock, sa, sl)) {
+                    fprintf(stderr, "connection_create : failed to connect, errno %d\r\n", errno);
+                } else {
+                    break;
+                }
+            }
+            connP = connection_new_incoming(connList, sock, sa, sl);
+            break;
+        default:
+            break;
     }
-    if (s >= 0)
-    {
-        connP = connection_new_incoming(connList, sock, sa, sl);
-        close(s);
-    }
+
     if (NULL != servinfo) {
 #ifdef CONFIG_NET_LWIP
         freeaddrinfo(servinfo);
@@ -172,14 +232,14 @@ void connection_free(connection_t * connList)
 
 int connection_send(connection_t *connP,
                     uint8_t * buffer,
-                    size_t length)
+                    size_t length,
+                    coap_protocol_t proto)
 {
     int nbSent;
     size_t offset;
 
-#ifdef WITH_LOGS
     char s[INET6_ADDRSTRLEN];
-    in_port_t port;
+    in_port_t port = 0;
 
     s[0] = 0;
 
@@ -199,13 +259,33 @@ int connection_send(connection_t *connP,
     fprintf(stderr, "Sending %d bytes to [%s]:%hu\r\n", length, s, ntohs(port));
 
     output_buffer(stderr, buffer, length, 0);
-#endif
 
     offset = 0;
     while (offset != length)
     {
-        nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
-        if (nbSent == -1) return -1;
+        nbSent = 0;
+        switch(proto)
+        {
+        case COAP_UDP_DTLS:
+        case COAP_TCP_TLS:
+#ifdef WITH_MBEDTLS
+            nbSent = mbedtls_ssl_write(connP->session->ssl, buffer + offset, length - offset);
+#endif
+            break;
+        case COAP_TCP:
+            nbSent = send(connP->sock, buffer + offset, length - offset, 0);
+            break;
+        case COAP_UDP:
+            nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
+            break;
+        default:
+            break;
+        }
+        if (nbSent < 0) {
+            fprintf(stderr, "Send fail nbSent : %d , error: %s\n", nbSent, strerror(errno));
+            return -1;
+        }
+
         offset += nbSent;
     }
     return 0;
@@ -214,7 +294,8 @@ int connection_send(connection_t *connP,
 uint8_t lwm2m_buffer_send(void * sessionH,
                           uint8_t * buffer,
                           size_t length,
-                          void * userdata)
+                          void * userdata,
+                          coap_protocol_t proto)
 {
     connection_t * connP = (connection_t*) sessionH;
 
@@ -224,7 +305,7 @@ uint8_t lwm2m_buffer_send(void * sessionH,
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 
-    if (-1 == connection_send(connP, buffer, length))
+    if (-1 == connection_send(connP, buffer, length, proto))
     {
         fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
@@ -238,4 +319,34 @@ bool lwm2m_session_is_equal(void * session1,
                             void * userData)
 {
     return (session1 == session2);
+}
+
+int connection_read(coap_protocol_t protocol,
+                    connection_t *connP,
+                    int sock,
+                    uint8_t *buffer,
+                    size_t len,
+                    struct sockaddr_storage *from,
+                    socklen_t *fromLen)
+{
+    int numBytes = -1;
+
+    switch(protocol) {
+        case COAP_TCP_TLS:
+        case COAP_UDP_DTLS:
+#ifdef WITH_MBEDTLS
+            numBytes = mbedtls_ssl_read(connP->session->ssl, buffer, len);
+#endif
+            break;
+        case COAP_UDP:
+            numBytes = recvfrom(sock, buffer, len, 0, (struct sockaddr *)from, fromLen);
+            break;
+        case COAP_TCP:
+            numBytes = recv(sock, buffer, len, 0);
+            break;
+        default:
+            fprintf(stderr, "connection_read : unsupported protocol type : %d\n", protocol);
+            break;
+    }
+    return numBytes;
 }

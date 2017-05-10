@@ -61,7 +61,7 @@
 
 int iperf_create_streams(struct iperf_test *test)
 {
-	int i, s;
+	int i, s = -1;
 	struct iperf_stream *sp;
 
 	int orig_bind_port = test->bind_port;
@@ -345,6 +345,7 @@ int iperf_client_end(struct iperf_test *test)
 	/* Close all stream sockets */
 	SLIST_FOREACH(sp, &test->streams, streams) {
 		close(sp->socket);
+		close(test->ctrl_sck);
 	}
 
 	/* show final summary */

@@ -45,7 +45,7 @@ pthread_addr_t http_handle_client(pthread_addr_t arg)
 	mqd_t msg_q;
 	struct mq_attr mqattr;
 
-	if ((msg_q = http_server_mq_open(server->port)) < 0) {
+	if ((msg_q = http_server_mq_open(server->port)) == NULL) {
 		HTTP_LOGE("msg queue open fail in http_handle_client\n");
 		return NULL;
 	}
@@ -374,8 +374,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	int read_finish = false;
 
 	int method = HTTP_METHOD_UNKNOWN;
-	char url[HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH] =
-	{ 0, };
+	char url[HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH] = { 0, };
 	int buf_len = 0;
 	int remain = HTTP_CONF_MAX_REQUEST_LENGTH;
 	int enc = HTTP_CONTENT_LENGTH;

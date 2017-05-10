@@ -85,8 +85,8 @@ struct radius_session {
 	struct radius_msg *last_reply;
 	u8 last_authenticator[16];
 
-	unsigned int remediation: 1;
-	unsigned int macacl: 1;
+	unsigned int remediation : 1;
+	unsigned int macacl : 1;
 
 	struct hostapd_radius_attr *accept_attr;
 };

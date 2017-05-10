@@ -77,6 +77,8 @@
 #include <sys/cpuset.h>
 #endif							/* HAVE_CPUSET_SETAFFINITY */
 
+#include <semaphore.h>
+
 #include "iperf_net.h"
 #include "iperf.h"
 #include "iperf_api.h"
@@ -106,6 +108,11 @@ static int diskfile_recv(struct iperf_stream *sp);
 static int JSON_write(int fd, cJSON *json);
 static void print_interval_results(struct iperf_test *test, struct iperf_stream *sp, cJSON *json_interval_streams);
 static cJSON *JSON_read(int fd);
+
+/************************** Iperf semaphore functions **************************/
+#define IPERF_UNLOCK(n)     sem_post(n)
+#define IPERF_LOCK(n)       sem_wait(n)
+/*******************************************************************************/
 
 /*************************** Print usage functions ****************************/
 
@@ -875,7 +882,7 @@ int iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		case 'h':
 		default:
 			iperf_usage_long();
-			exit(1);
+			return -1;
 		}
 	}
 
@@ -1686,11 +1693,7 @@ static cJSON *JSON_read(int fd)
 
 void add_to_interval_list(struct iperf_stream_result *rp, struct iperf_interval_results *new)
 {
-	struct iperf_interval_results *irp;
-
-	irp = (struct iperf_interval_results *)malloc(sizeof(struct iperf_interval_results));
-	memcpy(irp, new, sizeof(struct iperf_interval_results));
-	TAILQ_INSERT_TAIL(&rp->interval_results, irp, irlistentries);
+	memcpy(rp->interval_results, new, sizeof(struct iperf_interval_results));
 }
 
 /************************************************************/
@@ -1756,6 +1759,10 @@ struct iperf_test *iperf_new_test(void)
 	/* By default all output goes to stdout */
 	test->outfile = stdout;
 
+	if (sem_init(&(test->sem_iperf_api), 0, 1) != OK) {
+		printf("iperf_new_test : failed on sem_init\n");
+	}
+
 	return test;
 }
 
@@ -1820,7 +1827,7 @@ int iperf_defaults(struct iperf_test *testp)
 	testp->settings->blocks = 0;
 	memset(testp->cookie, 0, COOKIE_SIZE);
 
-	testp->multisend = 1;		/* arbitrary */
+	testp->multisend = 10;		/* arbitrary */
 
 	/* Set up protocol list */
 	SLIST_INIT(&testp->streams);
@@ -1946,6 +1953,8 @@ void iperf_free_test(struct iperf_test *test)
 		tmr_cancel(test->reporter_timer);
 	}
 
+	tmr_cleanup();
+
 	/* Free protocol list */
 	while (!SLIST_EMPTY(&test->protocols)) {
 		prot = SLIST_FIRST(&test->protocols);
@@ -1988,6 +1997,7 @@ void iperf_free_test(struct iperf_test *test)
 	// test->streams = NULL;
 	test->stats_callback = NULL;
 	test->reporter_callback = NULL;
+	sem_destroy(&test->sem_iperf_api);
 	free(test);
 }
 
@@ -2115,9 +2125,9 @@ void iperf_stats_callback(struct iperf_test *test)
 
 		temp.bytes_transferred = test->sender ? rp->bytes_sent_this_interval : rp->bytes_received_this_interval;
 
-		irp = TAILQ_LAST(&rp->interval_results, irlisthead);
+		irp = rp->interval_results;
 		/* result->end_time contains timestamp of previous interval */
-		if (irp != NULL) {	/* not the 1st interval */
+		if (irp->first == 0) { /* not the 1st interval */
 			memcpy(&temp.interval_start_time, &rp->end_time, sizeof(struct timeval));
 		} else {				/* or use timestamp from beginning */
 			memcpy(&temp.interval_start_time, &rp->start_time, sizeof(struct timeval));
@@ -2167,6 +2177,7 @@ void iperf_stats_callback(struct iperf_test *test)
 			temp.outoforder_packets = sp->outoforder_packets;
 			temp.cnt_error = sp->cnt_error;
 		}
+		temp.first = 0;
 		add_to_interval_list(rp, &temp);
 		rp->bytes_sent_this_interval = rp->bytes_received_this_interval = 0;
 	}
@@ -2215,7 +2226,7 @@ static void iperf_print_intermediate(struct iperf_test *test)
 	SLIST_FOREACH(sp, &test->streams, streams) {
 		print_interval_results(test, sp, json_interval_streams);
 		/* sum up all streams */
-		irp = TAILQ_LAST(&sp->result->interval_results, irlisthead);
+		irp = sp->result->interval_results;
 		if (irp == NULL) {
 			iperf_err(test, "iperf_print_intermediate error: interval_results is NULL");
 			return;
@@ -2237,7 +2248,7 @@ static void iperf_print_intermediate(struct iperf_test *test)
 		sp = SLIST_FIRST(&test->streams);	/* reset back to 1st stream */
 		/* Only do this of course if there was a first stream */
 		if (sp) {
-			irp = TAILQ_LAST(&sp->result->interval_results, irlisthead);	/* use 1st stream for timing info */
+			irp = sp->result->interval_results;
 
 			unit_snprintf(ubuf, UNIT_LEN, (double)bytes, 'A');
 			bandwidth = (double)bytes / (double)irp->interval_duration;
@@ -2431,6 +2442,11 @@ static void iperf_print_results(struct iperf_test *test)
 				} else {
 					iprintf(test, report_bw_format, sp->socket, start_time, end_time, ubuf, nbuf, report_receiver);
 				}
+			} else {
+				if (test->json_output)
+					cJSON_AddItemToObject(json_summary_stream, "receiver", iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f", (int64_t) sp->socket, (double) start_time, (double) end_time, (double) end_time, (int64_t) bytes_received, bandwidth * 8));
+				else
+					iprintf(test, report_bw_format, sp->socket, start_time, end_time, ubuf, nbuf, report_receiver);
 			}
 		}
 	}
@@ -2522,6 +2538,8 @@ static void iperf_print_results(struct iperf_test *test)
  */
 void iperf_reporter_callback(struct iperf_test *test)
 {
+	IPERF_LOCK(&test->sem_iperf_api);
+
 	switch (test->state) {
 	case TEST_RUNNING:
 	case STREAM_RUNNING:
@@ -2534,6 +2552,8 @@ void iperf_reporter_callback(struct iperf_test *test)
 		iperf_print_results(test);
 		break;
 	}
+
+	IPERF_UNLOCK(&test->sem_iperf_api);
 
 }
 
@@ -2553,7 +2573,7 @@ static void print_interval_results(struct iperf_test *test, struct iperf_stream 
 	double bandwidth;
 	double lost_percent;
 
-	irp = TAILQ_LAST(&sp->result->interval_results, irlisthead);	/* get last entry in linked list */
+	irp = sp->result->interval_results; /* get last entry in linked list */
 	if (irp == NULL) {
 		iperf_err(test, "print_interval_results error: interval_results is NULL");
 		return;
@@ -2639,8 +2659,6 @@ static void print_interval_results(struct iperf_test *test, struct iperf_stream 
 /**************************************************************************/
 void iperf_free_stream(struct iperf_stream *sp)
 {
-	struct iperf_interval_results *irp;
-	struct iperf_interval_results *nirp;
 
 #ifdef HAVE_FILESYSTEM
 	/* XXX: need to free interval list too! */
@@ -2652,10 +2670,7 @@ void iperf_free_stream(struct iperf_stream *sp)
 #else
 	free(sp->buffer);
 #endif
-	for (irp = TAILQ_FIRST(&sp->result->interval_results); irp != NULL; irp = nirp) {
-		nirp = TAILQ_NEXT(irp, irlistentries);
-		free(irp);
-	}
+	free(sp->result->interval_results);
 	free(sp->result);
 	if (sp->send_timer != NULL) {
 		tmr_cancel(sp->send_timer);
@@ -2699,25 +2714,39 @@ struct iperf_stream *iperf_new_stream(struct iperf_test *test, int s)
 	}
 
 	memset(sp->result, 0, sizeof(struct iperf_stream_result));
-	TAILQ_INIT(&sp->result->interval_results);
+
+	sp->result->interval_results = malloc(sizeof(struct iperf_interval_results));
+
+	if (!sp->result->interval_results) {
+		free(sp->result);
+		free(sp);
+		i_errno = IECREATESTREAM;
+		return NULL;
+	}
+
+	memset(sp->result->interval_results, 0, sizeof(struct iperf_interval_results));
+	sp->result->interval_results->first = 1;
 
 #ifdef HAVE_FILESYSTEM
 	/* Create and randomize the buffer */
 	sp->buffer_fd = mkstemp(template);
 	if (sp->buffer_fd == -1) {
 		i_errno = IECREATESTREAM;
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		return NULL;
 	}
 	if (unlink(template) < 0) {
 		i_errno = IECREATESTREAM;
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		return NULL;
 	}
 	if (ftruncate(sp->buffer_fd, test->settings->blksize) < 0) {
 		i_errno = IECREATESTREAM;
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		return NULL;
@@ -2725,6 +2754,7 @@ struct iperf_stream *iperf_new_stream(struct iperf_test *test, int s)
 	sp->buffer = (char *)mmap(NULL, test->settings->blksize, PROT_READ | PROT_WRITE, MAP_PRIVATE, sp->buffer_fd, 0);
 	if (sp->buffer == MAP_FAILED) {
 		i_errno = IECREATESTREAM;
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		return NULL;
@@ -2733,6 +2763,7 @@ struct iperf_stream *iperf_new_stream(struct iperf_test *test, int s)
 	sp->buffer = (char *)malloc(test->settings->blksize);
 
 	if (sp->buffer == NULL) {
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		i_errno = IECREATESTREAM;
@@ -2780,6 +2811,7 @@ struct iperf_stream *iperf_new_stream(struct iperf_test *test, int s)
 #else
 		free(sp->buffer);
 #endif
+		free(sp->result->interval_results);
 		free(sp->result);
 		free(sp);
 		return NULL;

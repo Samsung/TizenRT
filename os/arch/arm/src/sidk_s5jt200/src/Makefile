@@ -61,14 +61,12 @@ ifeq ($(CONFIG_SIDK_S5JT200_TLC59116),y)
 CSRCS += s5jt200_tlc59116.c
 endif
 
+ifeq ($(CONFIG_S5J_PWM),y)
 CSRCS += s5jt200_pwm.c
+endif
 
 ifeq ($(CONFIG_SIDK_S5JT200_S8300),y)
 CSRCS += s5jt200_led.c
-endif
-
-ifeq ($(CONFIG_ARCH_BUTTONS),y)
-CSRCS += s5jt200_buttons.c
 endif
 
 ifeq ($(CONFIG_SCSC_WLAN),y)
@@ -85,6 +83,11 @@ endif
 
 ifeq ($(CONFIG_SIDK_S5JT200_EEPROM), y)
 CSRCS += s5jt200_eeprom.c
+endif
+
+# boardctl support
+ifeq ($(CONFIG_LIB_BOARDCTL),y)
+CSRCS += $(TOPDIR)/arch/boardctl.c
 endif
 
 COBJS = $(CSRCS:.c=$(OBJEXT))

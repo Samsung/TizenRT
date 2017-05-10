@@ -963,14 +963,14 @@ static enum edit_key_code search_key(enum edit_key_code c)
 {
 	switch (c) {
 	case EDIT_KEY_ENTER:
-		case EDIT_KEY_CTRL_J:
-			case EDIT_KEY_LEFT:
-				case EDIT_KEY_RIGHT:
-					case EDIT_KEY_HOME:
-						case EDIT_KEY_END:
-							case EDIT_KEY_CTRL_A:
-								case EDIT_KEY_CTRL_E:
-										search_stop();
+	case EDIT_KEY_CTRL_J:
+	case EDIT_KEY_LEFT:
+	case EDIT_KEY_RIGHT:
+	case EDIT_KEY_HOME:
+	case EDIT_KEY_END:
+	case EDIT_KEY_CTRL_A:
+	case EDIT_KEY_CTRL_E:
+		search_stop();
 		return c;
 	case EDIT_KEY_DOWN:
 	case EDIT_KEY_UP:

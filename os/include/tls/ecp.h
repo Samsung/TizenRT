@@ -158,7 +158,7 @@ typedef struct {
 #if defined(CONFIG_HW_ECDH_PARAM)
 	unsigned char *key_buf;
 #endif
-#if defined(CONFIG_HW_ECDSA_SIGN)
+#if defined(CONFIG_TLS_WITH_SSS)
 	unsigned int key_index;
 #endif
 } mbedtls_ecp_group;
@@ -174,7 +174,7 @@ typedef struct {
 	mbedtls_ecp_group grp;	/*!<  Elliptic curve and base point     */
 	mbedtls_mpi d;			/*!<  our secret value                  */
 	mbedtls_ecp_point Q;	/*!<  our public value                  */
-#if defined(CONFIG_HW_ECDSA_SIGN)
+#if defined(CONFIG_TLS_WITH_SSS)
 	unsigned int key_index;
 #endif
 } mbedtls_ecp_keypair;

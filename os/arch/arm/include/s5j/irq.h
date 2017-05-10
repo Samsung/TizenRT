@@ -73,8 +73,6 @@
  * of memory in the IRQ to handle mapping tables.
  */
 
-#define NR_IRQS				128
-
 #define IRQ_INVALID			0x3FF
 #define IRQ_SPI(x)			(32 + (x))
 
@@ -120,7 +118,7 @@
 #define S5J_IRQ_UART1			IRQ_SPI(55)
 #define S5J_IRQ_UART2			IRQ_SPI(56)
 #define S5J_IRQ_UART3			IRQ_SPI(57)
-#define S5J_IRQ_UARTDBG			IRQ_SPI(58)
+#define S5J_IRQ_UART4			IRQ_SPI(58)
 
 #define S5J_IRQ_SPI_0			IRQ_SPI(60)
 #define S5J_IRQ_SPI_1			IRQ_SPI(61)
@@ -151,5 +149,27 @@
 #define IRQ_CR4_PMUIRQ			IRQ_SPI(90)
 #define IRQ_CR4_VALIRQ			IRQ_SPI(91)
 #define IRQ_CR4_VALFIQ			IRQ_SPI(92)
+
+#define NR_VECTORS			(IRQ_CR4_VALFIQ + 1)
+
+/* External Interrupts */
+#define IRQ_WEINT_GPG10		(NR_VECTORS + 0)
+#define IRQ_WEINT_GPG11		(NR_VECTORS + 1)
+#define IRQ_WEINT_GPG12		(NR_VECTORS + 2)
+#define IRQ_WEINT_GPG13		(NR_VECTORS + 3)
+#define IRQ_WEINT_GPG14		(NR_VECTORS + 4)
+#define IRQ_WEINT_GPG15		(NR_VECTORS + 5)
+#define IRQ_WEINT_GPG16		(NR_VECTORS + 6)
+#define IRQ_WEINT_GPG17		(NR_VECTORS + 7)
+#define IRQ_WEINT_GPG20		(NR_VECTORS + 8)
+#define IRQ_WEINT_GPG21		(NR_VECTORS + 9)
+#define IRQ_WEINT_GPG22		(NR_VECTORS + 10)
+#define IRQ_WEINT_GPG23		(NR_VECTORS + 11)
+#define IRQ_WEINT_GPG24		(NR_VECTORS + 12)
+#define IRQ_WEINT_GPG25		(NR_VECTORS + 13)
+#define IRQ_WEINT_GPG26		(NR_VECTORS + 14)
+#define IRQ_WEINT_GPG27		(NR_VECTORS + 15)
+
+#define NR_IRQS				(NR_VECTORS + 16)
 
 #endif /* __ARCH_ARM_INCLUDE_S5J_IRQ_H */

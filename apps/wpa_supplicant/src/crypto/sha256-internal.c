@@ -61,10 +61,10 @@ static const unsigned long K[64] = {
 
 /* Various logical functions */
 #define RORc(x, y) \
-( ((((unsigned long) (x) & 0xFFFFFFFFUL) >> (unsigned long) ((y) & 31)) | \
-   ((unsigned long) (x) << (unsigned long) (32 - ((y) & 31)))) & 0xFFFFFFFFUL)
-#define Ch(x,y,z)       (z ^ (x & (y ^ z)))
-#define Maj(x,y,z)      (((x | y) & z) | (x & y))
+	(((((unsigned long)(x) & 0xFFFFFFFFUL) >> (unsigned long)((y) & 31)) | \
+	((unsigned long)(x) << (unsigned long)(32 - ((y) & 31)))) & 0xFFFFFFFFUL)
+#define Ch(x, y, z)     (z ^ (x & (y ^ z)))
+#define Maj(x, y, z)    (((x | y) & z) | (x & y))
 #define S(x, n)         RORc((x), (n))
 #define R(x, n)         (((x)&0xFFFFFFFFUL)>>(n))
 #define Sigma0(x)       (S(x, 2) ^ S(x, 13) ^ S(x, 22))
@@ -98,7 +98,7 @@ static int sha256_compress(struct sha256_state *md, unsigned char *buf)
 	}
 
 	/* Compress */
-#define RND(a,b,c,d,e,f,g,h,i)                          \
+#define RND(a, b, c, d, e, f, g, h, i)                          \
 	t0 = h + Sigma1(e) + Ch(e, f, g) + K[i] + W[i];	\
 	t1 = Sigma0(a) + Maj(a, b, c);			\
 	d += t0;					\

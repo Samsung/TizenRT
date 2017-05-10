@@ -1257,7 +1257,7 @@ static int fs_vfs_select_tc(void)
 {
 	struct timeval tv;
 	fd_set readfds;
-	int ret, c, errcnt;
+	int ret, errcnt;
 
 	printf("%d. select Test started. \n", g_tc_count++);
 

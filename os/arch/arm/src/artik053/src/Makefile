@@ -67,6 +67,11 @@ ifeq ($(CONFIG_SCSC_WLAN),y)
 CSRCS += artik053_wlan.c
 endif
 
+# boardctl support
+ifeq ($(CONFIG_LIB_BOARDCTL),y)
+CSRCS += $(TOPDIR)/arch/boardctl.c
+endif
+
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)

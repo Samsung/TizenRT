@@ -59,6 +59,8 @@
 #include <sys/cpuset.h>
 #endif							/* HAVE_CPUSET_SETAFFINITY */
 
+#include <semaphore.h>
+
 #include "iperf_timer.h"
 #include "iperf_queue.h"
 #include "iperf_cjson.h"
@@ -94,6 +96,7 @@ struct iperf_interval_results {
 	TAILQ_ENTRY(iperf_interval_results) irlistentries;
 	void *custom_data;
 	int rtt;
+	int first;
 };
 
 struct iperf_stream_result {
@@ -114,7 +117,7 @@ struct iperf_stream_result {
 	struct timeval start_time;
 	struct timeval end_time;
 	struct timeval start_time_fixed;
-	TAILQ_HEAD(irlisthead, iperf_interval_results) interval_results;
+	struct iperf_interval_results * interval_results;
 	void *data;
 };
 
@@ -284,6 +287,8 @@ struct iperf_test {
 	iperf_size_t blocks_sent;
 	char cookie[COOKIE_SIZE];
 //    struct iperf_stream *streams;               /* pointer to list of struct stream */
+
+	sem_t     sem_iperf_api;
 	SLIST_HEAD(slisthead, iperf_stream) streams;
 	struct iperf_settings *settings;
 

@@ -71,17 +71,15 @@
  ****************************************************************************/
 
 #ifdef CONFIG_RTC_ALARM
-struct rtc_alarminfo_s
-{
-	bool active;		/* True: alarm is active */
-	uint8_t signo;		/* Signal number for alarm notification */
-	pid_t pid;		/* Identifies task to be notified */
+struct rtc_alarminfo_s {
+	bool active;			/* True: alarm is active */
+	uint8_t signo;			/* Signal number for alarm notification */
+	pid_t pid;				/* Identifies task to be notified */
 	union sigval sigvalue;	/* Data passed with notification */
 };
 #endif
 
-struct rtc_upperhalf_s
-{
+struct rtc_upperhalf_s {
 	FAR struct rtc_lowerhalf_s *lower;  /* Contained lower half driver */
 
 #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
@@ -134,21 +132,20 @@ static int     rtc_unlink(FAR struct inode *inode);
  * Private Data
  ****************************************************************************/
 
-static const struct file_operations rtc_fops =
-{
+static const struct file_operations rtc_fops = {
 #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 	rtc_open,	/* open */
 	rtc_close,	/* close */
 #else
-	0,		/* open */
-	0,		/* close */
+	0,			/* open */
+	0,			/* close */
 #endif
 	rtc_read,	/* read */
 	rtc_write,	/* write */
-	0,		/* seek */
+	0,			/* seek */
 	rtc_ioctl,	/* ioctl */
 #ifndef CONFIG_DISABLE_POLL
-	0,		/* poll */
+	0,			/* poll */
 #endif
 #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 	rtc_unlink	/* unlink */

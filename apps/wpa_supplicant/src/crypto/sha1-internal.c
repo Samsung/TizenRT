@@ -137,20 +137,20 @@ A million repetitions of "a"
 	block->l[(i + 8) & 15] ^ block->l[(i + 2) & 15] ^ block->l[i & 15], 1))
 
 /* (R0+R1), R2, R3, R4 are the different operations used in SHA1 */
-#define R0(v,w,x,y,z,i) \
+#define R0(v, w, x, y, z, i) \
 	z += ((w & (x ^ y)) ^ y) + blk0(i) + 0x5A827999 + rol(v, 5); \
 	w = rol(w, 30);
-#define R1(v,w,x,y,z,i) \
+#define R1(v, w, x, y, z, i) \
 	z += ((w & (x ^ y)) ^ y) + blk(i) + 0x5A827999 + rol(v, 5); \
 	w = rol(w, 30);
-#define R2(v,w,x,y,z,i) \
+#define R2(v, w, x, y, z, i) \
 	z += (w ^ x ^ y) + blk(i) + 0x6ED9EBA1 + rol(v, 5); w = rol(w, 30);
-#define R3(v,w,x,y,z,i) \
+#define R3(v, w, x, y, z, i) \
 	z += (((w | x) & y) | (w & x)) + blk(i) + 0x8F1BBCDC + rol(v, 5); \
 	w = rol(w, 30);
-#define R4(v,w,x,y,z,i) \
+#define R4(v, w, x, y, z, i) \
 	z += (w ^ x ^ y) + blk(i) + 0xCA62C1D6 + rol(v, 5); \
-	w=rol(w, 30);
+	w = rol(w, 30);
 
 #ifdef VERBOSE					/* SAK */
 void SHAPrintContext(SHA1_CTX *context, char *msg)

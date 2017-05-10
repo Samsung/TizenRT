@@ -173,6 +173,8 @@ void *sendto_udpserver(void *args)
 
 	recvfrom(SocketFD, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 
+	close(SocketFD);
+
 	return 0;
 
 }
@@ -194,6 +196,7 @@ void *sendto_udpclient(void *args)
 	tc_net_sendto_n();
 	tc_net_sendto_af_unix_n(mysocket);
 	tc_net_sendto_shutdown_n(mysocket);
+	close(mysocket);
 
 	return 0;
 

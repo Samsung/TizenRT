@@ -61,23 +61,23 @@ struct wiphy_info_data {
 
 	unsigned int num_multichan_concurrent;
 
-	unsigned int error: 1;
-	unsigned int device_ap_sme: 1;
-	unsigned int poll_command_supported: 1;
-	unsigned int data_tx_status: 1;
-	unsigned int monitor_supported: 1;
-	unsigned int auth_supported: 1;
-	unsigned int connect_supported: 1;
-	unsigned int p2p_go_supported: 1;
-	unsigned int p2p_client_supported: 1;
-	unsigned int p2p_go_ctwindow_supported: 1;
-	unsigned int p2p_concurrent: 1;
-	unsigned int channel_switch_supported: 1;
-	unsigned int set_qos_map_supported: 1;
-	unsigned int have_low_prio_scan: 1;
-	unsigned int wmm_ac_supported: 1;
-	unsigned int mac_addr_rand_scan_supported: 1;
-	unsigned int mac_addr_rand_sched_scan_supported: 1;
+	unsigned int error : 1;
+	unsigned int device_ap_sme : 1;
+	unsigned int poll_command_supported : 1;
+	unsigned int data_tx_status : 1;
+	unsigned int monitor_supported : 1;
+	unsigned int auth_supported : 1;
+	unsigned int connect_supported : 1;
+	unsigned int p2p_go_supported : 1;
+	unsigned int p2p_client_supported : 1;
+	unsigned int p2p_go_ctwindow_supported : 1;
+	unsigned int p2p_concurrent : 1;
+	unsigned int channel_switch_supported : 1;
+	unsigned int set_qos_map_supported : 1;
+	unsigned int have_low_prio_scan : 1;
+	unsigned int wmm_ac_supported : 1;
+	unsigned int mac_addr_rand_scan_supported : 1;
+	unsigned int mac_addr_rand_sched_scan_supported : 1;
 };
 
 static unsigned int probe_resp_offload_support(int supp_protocols)
@@ -150,11 +150,8 @@ static int wiphy_info_iface_comb_process(struct wiphy_info_data *info, struct nl
 		[NL80211_IFACE_COMB_NUM_CHANNELS] = {.type = NLA_U32},
 		[NL80211_IFACE_COMB_RADAR_DETECT_WIDTHS] = {.type = NLA_U32},
 	}, iface_limit_policy[NUM_NL80211_IFACE_LIMIT] = {
-		[NL80211_IFACE_LIMIT_TYPES] = {
-			.type = NLA_NESTED
-		}, [NL80211_IFACE_LIMIT_MAX] = {
-			.type = NLA_U32
-		},
+		[NL80211_IFACE_LIMIT_TYPES] = {.type = NLA_NESTED},
+		[NL80211_IFACE_LIMIT_MAX] = {.type = NLA_U32},
 	};
 
 	err = nla_parse_nested(tb_comb, MAX_NL80211_IFACE_COMB, nl_combi, iface_combination_policy);

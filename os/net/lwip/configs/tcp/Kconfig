@@ -3,15 +3,6 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-menu "TCP Networking"
-
-config NET_TCP
-	bool "Enable TCP"
-	depends on NET_IPv4
-	default y
-	---help---
-		TCP support on or off
-
 if NET_TCP
 
 config NET_TCP_TTL
@@ -153,5 +144,3 @@ config NET_TCP_WND_UPDATE_THREASHOLD
 		Difference in window to trigger an explicit window update
 
 endif #NET_TCP
-
-endmenu #TCP Networking

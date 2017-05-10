@@ -366,7 +366,24 @@ lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
                 break;
             }
             break;
-
+        case 'T':
+            switch (length)
+            {
+                case 1:
+                    return BINDING_T;
+                default:
+                    break;
+            }
+            break;
+        case 'C':
+            switch (length)
+            {
+                case 1:
+                    return BINDING_C;
+                default:
+                    break;
+            }
+            break;
         default:
             break;
     }

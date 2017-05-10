@@ -119,8 +119,8 @@ static const struct i2c_ops_s s5j_i2c_ops = {
 
 static const struct s5j_i2c_config_s s5j_i2c0_config = {
 	.base = S5J_HSI2C0_BASE,
-	.scl_pin = s5j_gpio(GPA1, 0),
-	.sda_pin = s5j_gpio(GPA1, 1),
+	.scl_pin = GPIO_I2C0_SCL,
+	.sda_pin = GPIO_I2C0_SDA,
 	.isr = s5j_i2c0_interrupt,
 	.irq = IRQ_HSI2C_0,
 	.devno = 0,
@@ -140,8 +140,8 @@ static struct s5j_i2c_priv_s s5j_i2c0_priv = {
 
 static const struct s5j_i2c_config_s s5j_i2c1_config = {
 	.base = S5J_HSI2C1_BASE,
-	.scl_pin = s5j_gpio(GPA1, 2),
-	.sda_pin = s5j_gpio(GPA1, 3),
+	.scl_pin = GPIO_I2C1_SCL,
+	.sda_pin = GPIO_I2C1_SDA,
 	.isr = s5j_i2c1_interrupt,
 	.irq = IRQ_HSI2C_1,
 	.devno = 1,
@@ -161,8 +161,8 @@ static struct s5j_i2c_priv_s s5j_i2c1_priv = {
 
 static const struct s5j_i2c_config_s s5j_i2c2_config = {
 	.base = S5J_HSI2C2_BASE,
-	.scl_pin = s5j_gpio(GPG0, 0),
-	.sda_pin = s5j_gpio(GPG0, 1),
+	.scl_pin = GPIO_I2C2_SCL,
+	.sda_pin = GPIO_I2C2_SDA,
 	.isr = s5j_i2c2_interrupt,
 	.irq = IRQ_HSI2C_2,
 	.devno = 2,
@@ -182,8 +182,8 @@ static struct s5j_i2c_priv_s s5j_i2c2_priv = {
 
 static const struct s5j_i2c_config_s s5j_i2c3_config = {
 	.base = S5J_HSI2C3_BASE,
-	.scl_pin = s5j_gpio(GPG0, 2),
-	.sda_pin = s5j_gpio(GPG0, 3),
+	.scl_pin = GPIO_I2C3_SCL,
+	.sda_pin = GPIO_I2C3_SDA,
 	.isr = s5j_i2c3_interrupt,
 	.irq = IRQ_HSI2C_3,
 	.devno = 3,
@@ -1001,15 +1001,13 @@ static int s5j_i2c_initialize(struct s5j_i2c_priv_s *priv, unsigned int frequenc
 	const struct s5j_i2c_config_s *config = priv->config;
 	int ret;
 
-	ret = gpio_cfg_pin(config->scl_pin, GPIO_FUNC(2));
-	gpio_set_pull(config->scl_pin, GPIO_PULL_NONE);
+	ret = s5j_configgpio(config->scl_pin);
 	if (ret < 0) {
 		lldbg("I2C%d: s5j_configgpio(%08x) failed: %d\n", config->scl_pin, ret);
 		return ret;
 	}
 
-	ret = gpio_cfg_pin(config->sda_pin, GPIO_FUNC(2));
-	gpio_set_pull(config->sda_pin, GPIO_PULL_NONE);
+	ret = s5j_configgpio(config->sda_pin);
 	if (ret < 0) {
 		lldbg("I2C%d: s5j_configgpio(%08x) failed: %d\n", config->sda_pin, ret);
 		return ret;
@@ -1043,8 +1041,8 @@ static int s5j_i2c_uninitialize(struct s5j_i2c_priv_s *priv)
 	hsi2c_cleanup(priv);
 
 	/* Unconfigure GPIO pins */
-	gpio_cfg_pin(priv->config->scl_pin, GPIO_FUNC(0));
-	gpio_cfg_pin(priv->config->sda_pin, GPIO_FUNC(0));
+	s5j_unconfiggpio(priv->config->scl_pin);
+	s5j_unconfiggpio(priv->config->sda_pin);
 
 	/* Disable and detach interrupts */
 #ifdef CONFIG_S5J_I2C_INTERRUPT_MODE

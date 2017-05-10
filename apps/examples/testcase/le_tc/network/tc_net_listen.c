@@ -84,6 +84,7 @@ static void tc_net_listen_fd_n(void)
 
 	TC_ASSERT_NEQ("listen", ret, 0);
 	TC_SUCCESS_RESULT();
+	close(fd);
 
 }
 
@@ -140,6 +141,7 @@ static void tc_net_listen_fd_backlog_n(void)
 	TC_ASSERT_NEQ("listen", ret, 0);
 	TC_SUCCESS_RESULT();
 
+	close(SocketFD);
 }
 
 /****************************************************************************

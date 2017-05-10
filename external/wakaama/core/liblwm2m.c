@@ -69,6 +69,24 @@ lwm2m_context_t * lwm2m_init(void * userData)
         contextP->userData = userData;
         srand((int)lwm2m_gettime());
         contextP->nextMID = rand();
+        contextP->protocol = COAP_UDP;
+    }
+
+    return contextP;
+}
+
+lwm2m_context_t * lwm2m_init2(void * userData, coap_protocol_t proto)
+{
+    lwm2m_context_t * contextP;
+
+    LOG("Entering");
+    contextP = (lwm2m_context_t *)lwm2m_malloc(sizeof(lwm2m_context_t));
+    if (NULL != contextP) {
+        memset(contextP, 0, sizeof(lwm2m_context_t));
+        contextP->userData = userData;
+        srand((int)lwm2m_gettime());
+        contextP->nextMID = rand();
+        contextP->protocol = proto;
     }
 
     return contextP;

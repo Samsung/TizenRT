@@ -60,46 +60,35 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <semaphore.h>
 
-#include <tinyara/wdog.h>
-#include <tinyara/wqueue.h>
-
-#ifndef CONFIG_DISABLE_POLL
-#include <tinyara/serial/serial.h>
-#endif
+#include <tinyara/fs/ioctl.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
 /* Maximum number of threads than can be waiting for POLL events */
-
 #ifndef CONFIG_GPIO_NPOLLWAITERS
 #define CONFIG_GPIO_NPOLLWAITERS 2
 #endif
 
-/* vtable access helpers */
-
-#define GPIO_OPEN(dev)		dev->ops->open(dev)
-#define GPIO_CLOSE(dev)		dev->ops->close(dev)
-#define GPIO_GET(dev)		dev->ops->get(dev)
-#define GPIO_SET(dev, s)	dev->ops->set(dev, s)
-#define GPIO_CTRL(dev, s, v)	dev->ops->ctrl(dev, s, v)
+/* ioctl commands */
+#define GPIOIOC_SET_DIRECTION	_GPIOIOC(0x0001)
+#define GPIOIOC_SET_DRIVE		_GPIOIOC(0x0002)
+#define GPIOIOC_POLLEVENTS		_GPIOIOC(0x0003)
+#define GPIOIOC_REGISTER		_GPIOIOC(0x0004)
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-typedef void (*GPIO_CB_FUNC)(void);
 
 typedef enum {
 	GPIO_EDGE_NONE,		/* No interrupt on GPIO */
 	GPIO_EDGE_BOTH,		/* Interrupt occures on rising and falling edge */
 	GPIO_EDGE_RISING,	/* Interrupt occurs on rising edge */
 	GPIO_EDGE_FALLING,	/* Interrupt occurs on falling edge */
-
-	GPIO_LEVEL_LOW,		/* Not support in SystemIO */
-	GPIO_LEVEL_HIGH,	/* Not support in SystemIO */
 } gpio_edge_t;
 
 typedef enum {
@@ -118,41 +107,39 @@ typedef enum {
 
 typedef enum {
 	GPIO_CMD_SET_DIRECTION,
-	GPIO_CMD_GET_DIRECTION,
-	GPIO_CMD_SET_EDGE,
-	GPIO_CMD_GET_EDGE,
 	GPIO_CMD_SET_DRIVE,
-	GPIO_CMD_GET_DRIVE,
-	GPIO_CMD_SET_CALLBACK
 } gpio_cmd_t;
 
-struct gpio_dev_s;
-struct gpio_ops_s {
-	CODE int (*open)(FAR struct gpio_dev_s *dev);
-	CODE int (*close)(FAR struct gpio_dev_s *dev);
-	CODE int (*get)(FAR struct gpio_dev_s *dev);
-	CODE void (*set)(FAR struct gpio_dev_s *dev, FAR unsigned int value);
-	CODE int (*ctrl)(FAR struct gpio_dev_s *dev, FAR int cmd, unsigned long args);
+struct gpio_pollevents_s {
+	bool gp_rising;
+	bool gp_falling;
 };
 
-struct gpio_dev_s {
-	uint8_t open_count;			/* Number of times the device has been opened */
-	FAR const struct gpio_ops_s *ops;	/* Arch-specific operations */
-	FAR void *priv;				/* Used by the arch-specific logic */
+struct gpio_notify_s {
+	bool gn_rising;
+	bool gn_falling;
+	uint8_t gn_signo;
+};
 
-#ifndef CONFIG_DISABLE_POLL
-	struct pollfd *fds[CONFIG_SERIAL_NPOLLWAITERS];
-	sem_t pollsem;				/* Manages exclusive access to fds[] */
-#endif
-	sem_t closesem;				/* Locks out new open while close is in progress */
+struct gpio_upperhalf_s;
+typedef CODE void (*gpio_handler_t)(FAR struct gpio_upperhalf_s *upper);
 
-#if defined(CONFIG_ARCH_CHIP_S5JT200)
-	CODE void (*callback)(void);
-	WDOG_ID wdog;
-#if defined(CONFIG_SCHED_WORKQUEUE)
-	struct work_s work;			/* Supports the interrupt handling "bottom half" */
-#endif
-#endif
+struct gpio_lowerhalf_s;
+struct gpio_ops_s {
+	CODE int  (*get)(FAR struct gpio_lowerhalf_s *lower);
+	CODE void (*set)(FAR struct gpio_lowerhalf_s *lower,
+					 FAR unsigned int value);
+	CODE int  (*pull)(FAR struct gpio_lowerhalf_s *lower, unsigned long arg);
+	CODE int  (*setdir)(FAR struct gpio_lowerhalf_s *lower, unsigned long arg);
+	CODE int  (*enable)(FAR struct gpio_lowerhalf_s *lower,
+						int falling, int rising, gpio_handler_t handler);
+	CODE int  (*ioctl)(FAR struct gpio_lowerhalf_s *lower, FAR int cmd,
+					   unsigned long args);
+};
+
+struct gpio_lowerhalf_s {
+	FAR const struct gpio_ops_s *ops;
+	struct gpio_upperhalf_s *parent;
 };
 
 /****************************************************************************
@@ -172,70 +159,13 @@ extern "C" {
  ****************************************************************************/
 
 /****************************************************************************
- * Name: gpio_notify
- *
- * Description:
- *   This routine is called from irq handler. If you want to handle with
- *   async call or event, you have to register your fd with poll().
- *
- ****************************************************************************/
-
-void gpio_notify(FAR struct gpio_dev_s *dev);
-
-/****************************************************************************
  * Name: gpio_register
  *
  * Description:
  *   Register GPIO device.
  *
  ****************************************************************************/
-
-int gpio_register(FAR const char *path, FAR struct gpio_dev_s *dev);
-
-/****************************************************************************
- * Name: gpio_export_init
- *
- * Description:
- *   register export-file in filesystem
- *
- ****************************************************************************/
-
-#ifdef CONFIG_GPIO_EXPORT
-int gpio_export_init();
-#endif
-
-/****************************************************************************
- * Name: gpio_unexport_init
- *
- * Description:
- *   register unexport-file in filesystem
- *
- ****************************************************************************/
-
-#ifdef CONFIG_GPIO_EXPORT
-int gpio_unexport_init();
-#endif
-
-/****************************************************************************
- * Name: up_destroy_gpio
- *
- * Description:
- *   Destroy device.
- *
- ****************************************************************************/
-
-int up_destroy_gpio(int32_t idx);
-
-/****************************************************************************
- * Name: up_create_gpio
- *
- * Description:
- *   Create device. Userspace may ask the kernel to export control of
- *   a GPIO to userspace by writing its number to file (gpio_export).
- *
- ****************************************************************************/
-
-int up_create_gpio(int32_t idx);
+int gpio_register(unsigned int minor, FAR struct gpio_lowerhalf_s *lower);
 
 #undef EXTERN
 #if defined(__cplusplus)

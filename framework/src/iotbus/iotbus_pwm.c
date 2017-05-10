@@ -117,7 +117,7 @@ int iotbus_pwm_set_duty_cycle(iotbus_pwm_context_h pwm, uint32_t duty_cycle)
 		return IOTBUS_ERROR_UNKNOWN;
 	}
 
-	info->duty = duty_cycle;
+	info->duty = (duty_cycle * 65536) / 100;
 	ret = ioctl(fd, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)info));
 	if (ret < 0) {
 		zdbg("ioctl(PWMIOC_SETCHARACTERISTICS) failed: %d\n", errno);

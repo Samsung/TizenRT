@@ -33,13 +33,13 @@
 
 #define NET_DEVNAME "wl1"
 
-#define WAKAAMA_CHECK_ARG() 	do {\
-	if (opt >= argc) { \
-		app_print_usage(); \
-		return 0; \
-	} \
-} \
-while (0);
+#define WAKAAMA_CHECK_ARG() \
+	do {\
+		if (opt >= argc) { \
+			app_print_usage(); \
+			return 0; \
+		} \
+	} while (0);
 
 
 #if defined(CONFIG_NET_LWIP_DHCPC) && !defined(CONFIG_NETUTILS_DHCPC)

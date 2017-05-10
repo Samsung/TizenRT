@@ -99,9 +99,6 @@ PROGNAME = $(CONFIG_EXAMPLES_WEBSOCKET_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
-
-CFLAGS+=-I$(TOPDIR)/../external/WICED/bcm4390x/include
-
 # Common build
 
 VPATH =

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /****************************************************************************
  * arch/arm/src/s5j/s5j_gpio.c
  *
- *   Copyright (C) 2009-2010, 2014-2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009, 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,1152 +52,431 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
 #include <tinyara/config.h>
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <string.h>
 #include <assert.h>
 #include <debug.h>
 #include <errno.h>
 
 #include <arch/irq.h>
-#include <tinyara/gpio.h>
-#include <tinyara/wdog.h>
-#include <tinyara/wqueue.h>
-#include <tinyara/kmalloc.h>
 
 #include "up_arch.h"
 #include "s5j_gpio.h"
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Pre-processor definitions
  ****************************************************************************/
-
-/****************************************************************************
- * Private Functions prototypes
- ****************************************************************************/
-static void *__gpio_to_eint_base(int gpio);
-static unsigned __gpio_to_eint_bank(int gpio);
-static void *__gpio_eint_filter_get_addr(int gpio);
-static void *__gpio_eint_get_addr(int gpio, unsigned offset);
+#define DEFAULT_INPUT (GPIO_INPUT | GPIO_PULLDOWN)
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+/* Base addresses for each GPIO block */
+static const uint32_t g_gpiobase[S5J_GPIO_NPORTS] = {
+	S5J_GPIO_GPP0_BASE,
+	S5J_GPIO_GPP1_BASE,
+	S5J_GPIO_GPP2_BASE,
+	S5J_GPIO_GPP3_BASE,
+	S5J_GPIO_GPG0_BASE,
+	S5J_GPIO_GPG1_BASE,
+	S5J_GPIO_GPG2_BASE,
+	S5J_GPIO_GPG3_BASE,
+	S5J_GPIO_GPA0_BASE,
+	S5J_GPIO_GPA1_BASE,
+	S5J_GPIO_GPA2_BASE,
+	S5J_GPIO_GPA3_BASE,
+	S5J_GPIO_GPP4_BASE,
+};
 
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-static struct gpio_bank s5jt200_gpio_bank[] = {
-	[GPP0] = {
-		.name = "GPP0",
-		.base = (void *)(GPIO_CON_BASE),
-		.nr_port = 8,
-		.isr_num = { IRQ_INVALID, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPP1] = {
-		.name = "GPP1",
-		.base = (void *)(GPIO_CON_BASE + 0x20),
-		.nr_port = 8,
-		.isr_num = { IRQ_INVALID, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPP2] = {
-		.name = "GPP2",
-		.base = (void *)(GPIO_CON_BASE + 0x40),
-		.nr_port = 7,
-		.isr_num = { IRQ_INVALID, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPP3] = {
-		.name = "GPP3",
-		.base = (void *)(GPIO_CON_BASE + 0x60),
-		.nr_port = 6,
-		.isr_num = { IRQ_INVALID, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPG0] = {
-		.name = "GPG0",
-		.base = (void *)(GPIO_CON_BASE + 0x80),
-		.nr_port = 8,
-		.isr_num = { IRQ_INVALID, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPG1] = {
-		.name = "GPG1",
-		.base = (void *)(GPIO_CON_BASE + 0xa0),
-		.nr_port = 8,
-		.isr_num = { IRQ_GPIO_GIC_0, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPG2] = {
-		.name = "GPG2",
-		.base = (void *)(GPIO_CON_BASE + 0xc0),
-		.nr_port = 8,
-		.isr_num = { IRQ_GPIO_GIC_1, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPG3] = {
-		.name = "GPG3",
-		.base = (void *)(GPIO_CON_BASE + 0xe0),
-		.nr_port = 8,
-		.isr_num = { IRQ_INVALID, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPA0] = {
-		.name = "GPA0",
-		.base = (void *)(GPIO_CON_BASE + 0x100),
-		.nr_port = 3,
-		.isr_num = { IRQ_EINT0, IRQ_EINT1, IRQ_EINT2 },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPA1] = {
-		.name = "GPA1",
-		.base = (void *)(GPIO_CON_BASE + 0x120),
-		.nr_port = 4,
-		.isr_num = { IRQ_INVALID, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPA2] = {
-		.name = "GPA2",
-		.base = (void *)(GPIO_CON_BASE + 0x140),
-		.nr_port = 3,
-		.isr_num = { IRQ_INVALID, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPA3] = {
-		.name = "GPA3",
-		.base = (void *)(GPIO_CON_BASE + 0x160),
-		.nr_port = 2,
-		.isr_num = { IRQ_INVALID, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[GPP4] = {
-		.name = "GPP4",
-		.base = (void *)(GPIO_CON_BASE + 0x180),
-		.nr_port = 4,
-		.isr_num = { IRQ_INVALID, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
-	[ETC0] = {
-		.name = "ETC0",
-		.base = (void *)(GPIO_CON_BASE + 0x1A0),
-		.nr_port = 3,
-		.isr_num = { IRQ_INVALID, },
-		.group_type = GPIO_GROUP_COMMON,
-	},
+/* GPG1, GPG2 and GPA0 provides interrupt. */
+static const uint32_t g_intbase[S5J_GPIO_NPORTS] = {
+	0,
+	0,
+	0,
+	0,
+	0,
+	S5J_GPIOINT_CON_GPG1,
+	S5J_GPIOINT_CON_GPG2,
+	0,
+	S5J_GPIOINT_CON_GPA0,
+	0,
+	0,
+	0,
+	0,
 };
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
 /****************************************************************************
- * Name: __gpio_to_eint_base
+ * Name: s5j_pullup
  *
  * Description:
- *  Converts gpio port index into eint base address
+ *   Set pull-up/down on a GPIO pin.
  *
- * Input Parameters:
- *  gpio - port id
- *
- * Returned Value:
- *  eint base address
  ****************************************************************************/
-static void *__gpio_to_eint_base(int gpio)
+static void s5j_pullup(uint32_t cfgset, unsigned port, unsigned int pin)
 {
-	struct gpio_bank *gb;
-	gb = gpio_to_bank(gpio);
+	uint32_t cfg;
+	uint32_t base = g_gpiobase[port];
 
-	if (!gb) {
-		return NULL;
-	}
-	return gb->base;
+	/* CAVEAT: GPIO_PUPD_XXX is compatible with GPIO_PUD_XXX */
+	cfg = (cfgset & GPIO_PUPD_MASK) >> GPIO_PUPD_SHIFT;
+
+	modifyreg32(base + S5J_GPIO_PUD_OFFSET, GPIO_PUD_PIN_MASK(pin),
+				cfg << GPIO_PUD_PIN_SHIFT(pin));
 }
 
 /****************************************************************************
- * Name: __gpio_to_eint_bank
+ * Name: s5j_setintedge
  *
  * Description:
- *  Converts gpio port index into eint bank
  *
- * Input Parameters:
- *  gpio - port id
- *
- * Returned Value:
- *  eint bank
  ****************************************************************************/
-static unsigned __gpio_to_eint_bank(int gpio)
+static inline void s5j_setintedge(unsigned int port, unsigned int pin, int edge)
 {
-	int bank;
+	DEBUGASSERT(g_intbase[port] != 0);
 
-	bank = s5j_gpio_bank(gpio);
+	modifyreg32(g_intbase[port], GPIOINT_CON_MASK(pin),
+				edge << GPIOINT_CON_SHIFT(pin));
+}
 
-	if (bank >= 1 && bank <= 8) {
-		return (unsigned)bank;
+/****************************************************************************
+ * Name: s5j_setintmask
+ *
+ * Description:
+ *   Mask or unmask interrupts from GPIO pins.
+ *
+ ****************************************************************************/
+static inline void s5j_setintmask(unsigned int port, unsigned int pin,
+								  int mask)
+{
+	uint32_t regbase;
+
+	/* Only GPG1, GPG2 and GPA0 can be configured as EINT */
+	if (g_gpiobase[port] == S5J_GPIO_GPG1_BASE) {
+		regbase = S5J_GPIOINT_MASK_GPG1;
+	} else if (g_gpiobase[port] == S5J_GPIO_GPG2_BASE) {
+		regbase = S5J_GPIOINT_MASK_GPG2;
+	} else if (g_gpiobase[port] == S5J_GPIO_GPA0_BASE) {
+		regbase = S5J_GPIOINT_MASK_GPA0;
 	} else {
-		return (unsigned)0;
+		return;
 	}
+
+	modifyreg32(regbase, GPIOINT_MASK_MASK(pin),
+				mask << GPIOINT_CON_SHIFT(pin));
 }
 
 /****************************************************************************
- * Name: __gpio_eint_filter_get_addr
+ * Name: s5j_configinput
  *
  * Description:
- *  Returns EINT filter register address
+ *   COnfigure a GPIO input pin based on bit-encoded description of the pin.
  *
- * Input Parameters:
- *  gpio - port id
- *
- * Returned Value:
- *  Address
  ****************************************************************************/
-static void *__gpio_eint_filter_get_addr(int gpio)
+static inline int s5j_configinput(uint32_t cfgset, unsigned int port,
+								  unsigned int pin)
 {
-	void *gpio_filter_addr;
-	struct gpio_bank *gb = gpio_to_bank(gpio);
+	uint32_t base;
+	uint32_t intbase;
 
-	gpio_filter_addr = (void *)(gb->filter_offset_addr);
+	base = g_gpiobase[port];
 
-	return gpio_filter_addr;
+	/* Set as input */
+	modifyreg32(base + S5J_GPIO_CON_OFFSET, GPIO_CON_PIN_MASK(pin),
+				GPIO_CON_INPUT << GPIO_CON_PIN_SHIFT(pin));
+
+	/* Disable all interrupt configurations that this pin might have. */
+	intbase = g_intbase[port];
+	if (intbase != 0) {
+		s5j_setintmask(port, pin, 1);
+		s5j_setintedge(port, pin, 0);
+	}
+
+	/* Set pull-up/down */
+	s5j_pullup(cfgset, port, pin);
+
+	return OK;
 }
 
 /****************************************************************************
- * Name: __gpio_eint_get_addr
+ * Name: s5j_configalt
  *
  * Description:
- *  Returns EINT CON/FLTCON/MASK/PEND register address
+ *   Configure a GPIO alternate function pin based on bit-encoded
+ *   description of the pin.
  *
- * Input Parameters:
- *  gpio - port id
- *  offset - EINT CON/FLTCON/MASK/PEND offset addr
- *
- * Returned Value:
- *  Address
  ****************************************************************************/
-static void *__gpio_eint_get_addr(int gpio, unsigned offset)
+static int s5j_configalt(uint32_t cfgset, unsigned int port,
+						 unsigned int pin, uint32_t alt)
 {
-	void *gpio_base;
-	void *eint_addr;
-	unsigned bank_num;
-	int port;
+	uint32_t base = g_gpiobase[port];
 
-	gpio_base = __gpio_to_eint_base(gpio);
-	bank_num = __gpio_to_eint_bank(gpio);
-	port = s5j_gpio_port(gpio);
+	/*
+	 * First, configure the port as a generic input so that we have
+	 * a known starting point and consistent behavior during the
+	 * re-configuration.
+	 */
+	s5j_configinput(DEFAULT_INPUT, port, pin);
 
-	if (offset == GPIO_EINT_FLTCON) {
-		eint_addr = gpio_base + offset + (unsigned)(__gpio_eint_filter_get_addr(gpio));
-		if (port >= 4) {
-			eint_addr += 0x4;
-		}
-	} else {
-		eint_addr = gpio_base + offset;
-	}
+	modifyreg32(base + S5J_GPIO_CON_OFFSET, GPIO_CON_PIN_MASK(pin),
+					alt << GPIO_CON_PIN_SHIFT(pin));
 
-	return eint_addr;
+	/* Set pull-up mode */
+	s5j_pullup(cfgset, port, pin);
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: s5j_configoutput
+ *
+ * Description:
+ *   Configure a GPIO output pin based on bit-encoded description of the pin.
+ *
+ ****************************************************************************/
+static inline int s5j_configoutput(uint32_t cfgset, unsigned int port,
+								   unsigned int pin)
+{
+	/*
+	 * First, configure the port as a generic input so that we have
+	 * a known starting point and conssitent behavior during the
+	 * re-configuration.
+	 */
+	s5j_configinput(DEFAULT_INPUT, port, pin);
+
+	/* Set the initial value of the output */
+	s5j_gpiowrite(cfgset, (cfgset & GPIO_VALUE_MASK) ^ GPIO_VALUE_ZERO);
+
+	/* Now, reconfigure the pin as an output */
+	modifyreg32(g_gpiobase[port] + S5J_GPIO_CON_OFFSET,
+				GPIO_CON_PIN_MASK(pin),
+				GPIO_CON_OUTPUT << GPIO_CON_PIN_SHIFT(pin));
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: s5j_configinterrupt
+ *
+ * Description:
+ *   Configure a GPIO interrupt pin based on bit-encoded description
+ *   of the pin
+ *
+ ****************************************************************************/
+static inline int s5j_configinterrupt(uint32_t cfgset, unsigned int port,
+									  unsigned int pin)
+{
+	uint32_t base = g_gpiobase[port];
+
+	DEBUGASSERT(g_intbase[port] != 0);
+
+	/*
+	 * First, configure the port as a generic input so that we have
+	 * a known starting point and consistent behavior during the
+	 * re-configuration.
+	 */
+	s5j_configinput(cfgset, port, pin);
+
+	/* Set as interrupt */
+	modifyreg32(base + S5J_GPIO_CON_OFFSET, GPIO_CON_PIN_MASK(pin),
+				GPIO_CON_EINT << GPIO_CON_PIN_SHIFT(pin));
+
+	/* Then, just remember the rising/falling edge interrupt enabled */
+	s5j_setintedge(port, pin, (cfgset & GPIO_EINT_MASK) >> GPIO_EINT_SHIFT);
+	s5j_setintmask(port, pin, 0);
+
+	return OK;
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-/****************************************************************************
- * Name: gpio_valid
- *
- * Description:
- *  Check if given gpio is in a valid range
- *
- * Input Parameters:
- *  gpio - port id
- *
- * Returned Value:
- *  == 1: valid gpio
- *  == 0: invalid gpio
- *
- ****************************************************************************/
-int gpio_valid(int gpio)
+uint8_t s5j_gpio_irqvector(uint32_t pincfg)
 {
-	unsigned bank, port;
+	uint8_t pin  = (pincfg & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+	uint8_t port = (pincfg & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
 
-	if (gpio < 0) {
-		return 0;
+	if (port == GPIO_PORTG1 >> GPIO_PORT_SHIFT) {
+		return IRQ_WEINT_GPG10 + pin;
+	} else if (port == GPIO_PORTG2 >> GPIO_PORT_SHIFT) {
+		return IRQ_WEINT_GPG20 + pin;
+	} else if (port == GPIO_PORTA0 >> GPIO_PORT_SHIFT) {
+		return IRQ_EINT0 + pin;
 	}
-
-	if ((gpio & 0xffff0000) != GPIO_MAGIC) {
-		return 0;
-	}
-
-	bank = s5j_gpio_bank(gpio);
-	port = s5j_gpio_port(gpio);
-
-	if (bank >= GPEND) {
-		return 0;
-	}
-
-	if (port >= s5jt200_gpio_bank[bank].nr_port) {
-		return 0;
-	}
-
-	return 1;
-}
-
-/****************************************************************************
- * Name: gpio_cfg_pin
- *
- * Description:
- *  Set gpio pin configuration
- *
- * Input Parameters:
- *  gpio - port id
- *  cfg	a mode of gpio pin(input/output/function/irq)
- *
- * Returned Value:
- *  == 0: success
- *  == -EINVAL: invalid gpio
- *
- ****************************************************************************/
-int gpio_cfg_pin(int gpio, int cfg)
-{
-	struct gpio_bank *gb;
-	unsigned port, value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_CON);
-	value &= ~CON_MASK(port);
-	value |= CON_SFR(port, cfg);
-
-	putreg32(value, gb->base + GPIO_CON);
 
 	return 0;
 }
 
-/****************************************************************************
- * Name: gpio_cfg_get_pin
- *
- * Description:
- *  Get gpio pin configuration
- *
- * Input Parameters:
- *  gpio - port id
- *
- * Returned Value:
- *  == 0: input
- *  == 1: output
- *  == f: eint
- *   >= 2: function
- *   < 0: error
- *
- ****************************************************************************/
-int gpio_cfg_get_pin(int gpio)
+void s5j_gpio_clear_pending(uint32_t pincfg)
 {
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_CON);
-
-	return ((value >> (port << 2)) & 0xF);
-}
-
-/****************************************************************************
- * Name: gpio_direction_output
- *
- * Description:
- *  Configure a direction of gpio pin as output and set an initial data
- *
- * Input Parameters:
- *  gpio - port id
- *  high - a value of gpio pin(low/high)
- *
- * Returned Value:
- *  == 0: success
- *  == -EINVAL: invalid gpio
- *
- ****************************************************************************/
-int gpio_direction_output(int gpio, int high)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_DAT);
-	value &= ~(1 << port);
-	if (high) {
-		value |= (1 << port);
-	}
-
-	putreg32(value, gb->base + GPIO_DAT);
-
-	return gpio_cfg_pin(gpio, GPIO_OUTPUT);
-}
-
-/****************************************************************************
- * Name: gpio_direction_input
- *
- * Description:
- *  Configure a direction of gpio pin as input
- *
- * Input Parameters:
- *  gpio - port id
- *
- * Returned Value:
- *  == 0: success
- *  == -EINVAL: invalid gpio
- *
- ****************************************************************************/
-int gpio_direction_input(int gpio)
-{
-	return gpio_cfg_pin(gpio, GPIO_INPUT);
-}
-
-/****************************************************************************
- * Name: gpio_set_value
- *
- * Description:
- *  Set a data value of gpio pin
- *
- * Input Parameters:
- *  gpio - port id
- *  high - value of gpio pin(low/high)
- *
- * Returned Value:
- *  == 0: success
- *  == -EINVAL: invalid gpio
- *
- ****************************************************************************/
-int gpio_set_value(int gpio, int high)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_DAT);
-	value &= ~(1 << port);
-	if (high) {
-		value |= (1 << port);
-	}
-
-	putreg32(value, gb->base + GPIO_DAT);
-
-	return 0;
-}
-
-/****************************************************************************
- * Name: gpio_get_value
- *
- * Description:
- *  Get a data value of gpio pin
- *
- * Input Parameters:
- *  gpio - port id
- *
- * Returned Value:
- *  == 1: gpio read as high== 0: success
- *  == 0: gpio read as low == -EINVAL: invalid gpio
- *   < 0: error
- ****************************************************************************/
-int gpio_get_value(int gpio)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_DAT);
-
-	return (value >> port) & 1;
-}
-
-/****************************************************************************
- * Name: gpio_set_pull
- *
- * Description:
- *  Set a gpio pin as pull up or pull-down
- *
- * Input Parameters:
- *  gpio - port id
- *  mode - gpio pin mode(pull up/pull down)
- *
- * Returned Value:
- *  == 0: success
- *  == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_set_pull(int gpio, int mode)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_PUD);
-	value &= ~PULL_MASK(port);
-
-	switch (mode) {
-	case GPIO_PULL_DOWN:
-	case GPIO_PULL_UP:
-		value |= PULL_MODE(port, mode);
-		break;
-	case GPIO_PULL_NONE:
-		/* do nothing: bit is cleared */
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	putreg32(value, gb->base + GPIO_PUD);
-
-	return 0;
-}
-
-/****************************************************************************
- * Name: gpio_get_pull
- *
- * Description:
- *  Get a gpio pin as pull up or pull-down
- *
- * Input Parameters:
- *  gpio - port id
- *
- *
- * Returned Value:
- *  >= 0: pull up down data
- *
- ****************************************************************************/
-int gpio_get_pull(int gpio)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_PUD);
-	value &= PULL_MASK(port);
-
-	return value;
-}
-
-/****************************************************************************
- * Name: gpio_set_drv
- *
- * Description:
- *  Set drive strength of gpio pin
- *
- * Input Parameters:
- *  gpio - port id
- *  mode - strength of gpio pin mode
- *
- * Returned Value:
- *   == 0: success
- *   == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_set_drv(int gpio, int mode)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_DRVSR);
-	value &= ~DRV_MASK(port);
-
-	switch (mode) {
-	case GPIO_DRV_1X:
-	case GPIO_DRV_2X:
-	case GPIO_DRV_3X:
-	case GPIO_DRV_4X:
-		value |= DRV_SET(port, mode);
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	putreg32(value, gb->base + GPIO_DRVSR);
-
-	return 0;
-}
-
-/****************************************************************************
- * Name: gpio_get_drv
- *
- * Description:
- *  Get drive strength of gpio pin
- *
- * Input Parameters:
- *  gpio - port id
- *
- *
- * Returned Value:
- *   <= 0: strength of gpio pin mode
- *   == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_get_drv(int gpio)
-{
-	struct gpio_bank *gb;
-	unsigned port, value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_DRVSR);
-	value &= ~DRV_MASK(port);
-
-	return value;
-}
-
-/****************************************************************************
- * Name: gpio_set_rate
- *
- * Description:
- *  Set a slew rate of gpio pin
- *
- * Input Parameters:
- *  gpio - port id
- *  mode - slew rate of a gpio pin
- *
- * Returned Value:
- *  == 0: success
- *  == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_set_rate(int gpio, int mode)
-{
-	struct gpio_bank *gb;
-	unsigned port, value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_DRVSR);
-	value &= ~RATE_MASK(port);
-
-	switch (mode) {
-	case GPIO_DRV_FAST:
-	case GPIO_DRV_SLOW:
-		value |= RATE_SET(port);
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	putreg32(value, gb->base + GPIO_DRVSR);
-
-	return 0;
-}
-
-/****************************************************************************
- * Name: gpio_cfg_pin_pdn
- *
- * Description:
- *  Configure a power down mode of gpio pin
- *
- * Input Parameters:
- *  gpio - port id
- *  cfg - configuration a power down mode of a gpio pin
- *
- * Returned Value:
- *  == 0: success
- *  == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_cfg_pin_pdn(int gpio, int cfg)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_CONPDN);
-	value &= ~CONPDN_MASK(port);
-	value |= CONPDN_SFR(port, cfg);
-
-	putreg32(value, gb->base + GPIO_CONPDN);
-
-	return 0;
-}
-
-/****************************************************************************
- * Name: gpio_set_pull_pdn
- *
- * Description:
- *  Configure a gpio pin as pull-up or pull-down for power down mode
- *
- * Input Parameters:
- *  gpio - port id
- *  mode - gpio pin mode(pull up/pull down)
- *
- * Returned Value:
- *  == 0: success
- *  == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_set_pull_pdn(int gpio, int mode)
-{
-	struct gpio_bank *gb;
-	unsigned int port;
-	unsigned int value;
-
-	if (!(gb = gpio_to_bank(gpio))) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-
-	value = getreg32(gb->base + GPIO_PUDPDN);
-	value &= ~PUDPDN_MASK(port);
-
-	switch (mode) {
-	case GPIO_PULL_DOWN:
-	case GPIO_PULL_UP:
-		value |= PUDPDN_MODE(port, mode);
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	putreg32(value, gb->base + GPIO_PUDPDN);
-
-	return 0;
-}
-
-/****************************************************************************
- * Name: gpio_eint_mask
- *
- * Description:
- *  Mask a gpio external interrupt
- *
- * Input Parameters:
- *  gpio - port id
- *
- * Returned Value:
- *  == 0: success
- *  == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_eint_mask(int gpio)
-{
-	u32 mask;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_MASK);
-
-	mask = getreg32(eint_addr);
-	mask |= 1 << port;
-	putreg32(mask, eint_addr);
-
-	return 0;
-}
-
-/****************************************************************************
- * Name: gpio_eint_unmask
- *
- * Description:
- *  Unmask a gpio external interrupt
- *
- * Input Parameters:
- *  gpio - port id
- *
- * Returned Value:
- *  == 0: success
- *  == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_eint_unmask(int gpio)
-{
-	u32 mask;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_MASK);
-
-	mask = getreg32(eint_addr);
-	mask &= ~(1 << port);
-	putreg32(mask, eint_addr);
-
-	return 0;
-}
-
-/****************************************************************************
- * Name: gpio_eint_ispending
- *
- * Description:
- *  Check if gpio external interrupt is pending
- *
- * Input Parameters:
- *  gpio - port id
- *
- * Returned Value:
- *  == true: gpio external interrupt is pending
- *  == false: gpio external interrupt is not pending
- ****************************************************************************/
-bool gpio_eint_ispending(int gpio)
-{
-	u32 pend;
-	void *eint_addr;
-	int port;
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_PEND);
-
-	pend = getreg32(eint_addr);
-
-	return (pend & (1 << port)) ? true : false;
-}
-
-/****************************************************************************
- * Name: gpio_eint_clear_pending
- *
- * Description:
- *   Clear  gpio pending external interrupt
- *
- * Input Parameters:
- *   gpio - port id
- *
- * Returned Value:
- *   >= 0: success
- *   == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_eint_clear_pending(int gpio)
-{
-	u32 pend;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	if (!gpio_eint_ispending(gpio)) {
-		/* cprintf("%s bank %d port is not pending\n",gpio_bank_name(gpio),s5j_gpio_port(gpio)); */
-		/* err("eint%d: port '%d' is not pending.\n"); */
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_PEND);
-
-	pend = getreg32(eint_addr);
-	pend &= 1 << port;
-	putreg32(pend, eint_addr);
-
-	return 0;
-}
-
-/****************************************************************************
- * Name: gpio_eint_enable_filter
- *
- * Description:
- *   Enable gpio external interrupt filter
- *
- * Input Parameters:
- *   gpio - port id
- *
- * Returned Value:
- *   >= 0: success
- *   == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_eint_enable_filter(int gpio)
-{
-	u32 filter_con;
-	unsigned shift_port;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_FLTCON);
-	if (port < 4) {
-		shift_port = 8 * port;
+	uint32_t regbase;
+	uint8_t pin  = (pincfg & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+	uint8_t port = (pincfg & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+
+	if (port == GPIO_PORTG1 >> GPIO_PORT_SHIFT) {
+		regbase = S5J_GPIOINT_PEND_GPG1;
+	} else if (port == GPIO_PORTG2 >> GPIO_PORT_SHIFT) {
+		regbase = S5J_GPIOINT_PEND_GPG2;
+	} else if (port  == GPIO_PORTA0 >> GPIO_PORT_SHIFT) {
+		regbase = S5J_GPIOINT_PEND_GPA0;
 	} else {
-		shift_port = 8 * (port - 4);
+		return;
 	}
 
-	filter_con = getreg32(eint_addr);
-	filter_con |= (1 << 7) << shift_port;
-	putreg32(filter_con, eint_addr);
-
-	return 0;
+	putreg32(1 << pin, regbase);
 }
 
 /****************************************************************************
- * Name: gpio_eint_disable_filter
+ * Name: s5j_configgpio
  *
  * Description:
- *   Disable a gpio external interrupt filter
+ *   Configure a GPIO pin based on bit-encoded description of the pin.
+ *   Once it is configured as alternative (GPIO_ALT1-5) function, it must be
+ *   unconfigured with s5j_unconfiggpio() with the same cfgset first before
+ *   it can be set to non-alternative function.
  *
- * Input Parameters:
- *   gpio - port id
+ * Returns:
+ *   OK on success
+ *   A negated errno value on invalid port, or when pin is locked as ALT
+ *   function.
  *
- * Returned Value:
- *   >= 0: success
- *   == -EINVAL: invalid gpio
  ****************************************************************************/
-int gpio_eint_disable_filter(int gpio)
+int s5j_configgpio(uint32_t cfgset)
 {
-	u32 filter_con;
-	unsigned shift_port;
-	void *eint_addr;
-	int port;
+	int ret = -EINVAL;
+	unsigned int pin;
+	unsigned int port;
 
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
+	/* Verify that this hardware supports the selected GPIO port */
+	port = (cfgset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+	if (port >= S5J_GPIO_NPORTS) {
+		return ret;
 	}
 
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_FLTCON);
-	if (port < 4) {
-		shift_port = 8 * port;
-	} else {
-		shift_port = 8 * (port - 4);
-	}
+	/* Get the pin number */
+	pin = (cfgset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
-	filter_con = getreg32(eint_addr);
-	filter_con &= ~((1 << 7) << shift_port);
-	putreg32(filter_con, eint_addr);
-
-	return 0;
-}
-
-/****************************************************************************
- * Name: gpio_eint_set_filter
- *
- * Description:
- *   Configure type and width of a gpio external interrupt filter
- *
- * Input Parameters:
- *   gpio - port id
- *   type - filter type(delay/digital)
- *   width - filter width(it will be ignored when filter type is delay)
- *
- * Returned Value:
- *   >= 0: success
- *   == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_eint_set_filter(int gpio, unsigned type, unsigned width)
-{
-	u32 filter_con;
-	unsigned shift_port;
-	void *eint_addr;
-	int port;
-	int bank;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	switch (type) {
-	case EINT_FILTER_DELAY:
-	case EINT_FILTER_DIGITAL:
+	switch (cfgset & GPIO_FUNC_MASK) {
+	case GPIO_INPUT:
+		ret = s5j_configinput(cfgset, port, pin);
 		break;
-	default:
-		/* err("No such eint filter type %d", type); */
-		return -EINVAL;
+
+	case GPIO_EINT:
+		ret = s5j_configinterrupt(cfgset, port, pin);
+		break;
+
+	case GPIO_OUTPUT:
+		ret = s5j_configoutput(cfgset, port, pin);
+		break;
+
+	case GPIO_ALT1 ... GPIO_ALT5:
+		ret = s5j_configalt(cfgset, port, pin,
+							(cfgset & GPIO_FUNC_MASK) >> GPIO_FUNC_SHIFT);
+		break;
 	}
 
-	bank = s5j_gpio_bank(gpio);
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_FLTCON);
-	if (port < 4) {
-		shift_port = 8 * port;
+	return ret;
+}
+
+/****************************************************************************
+ * Name: s5j_unconfiggpio
+ *
+ * Description:
+ *   Unconfigure a GPIO pin based on bit-encoded description of the pin, set
+ *   it into default state.
+ *
+ * Returns:
+ *   OK on success
+ *   A negated errno value on invalid port
+ *
+ ****************************************************************************/
+int s5j_unconfiggpio(uint32_t cfgset)
+{
+	cfgset &= (GPIO_PORT_MASK | GPIO_PIN_MASK);
+
+	return s5j_configgpio(cfgset);
+}
+
+/****************************************************************************
+ * Name: s5j_gpiowrite
+ *
+ * Description:
+ *   Write one or zero to the selected GPIO pin
+ *
+ ****************************************************************************/
+void s5j_gpiowrite(uint32_t pinset, bool value)
+{
+	unsigned int pin;
+	unsigned int port;
+
+	port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+
+	if (port < S5J_GPIO_NPORTS) {
+		pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+		modifyreg32(g_gpiobase[port] + S5J_GPIO_DAT_OFFSET,
+					1 << pin, value << pin);
+	}
+}
+
+/****************************************************************************
+ * Name: s5j_gpioread
+ *
+ * Description:
+ *   Write one or zero to the selected GPIO pin
+ *
+ ****************************************************************************/
+bool s5j_gpioread(uint32_t pinset)
+{
+	uint32_t base;
+	unsigned int pin;
+	unsigned int port;
+
+	port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+
+	if (port < S5J_GPIO_NPORTS) {
+		base = g_gpiobase[port];
+		pin  = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+
+		return !!(getreg32(base + S5J_GPIO_DAT_OFFSET) & (1 << pin));
+	}
+
+	return false;
+}
+
+static int gic_interrupt(int irq, FAR void *context, FAR void *arg)
+{
+	int gpio_irq;
+	uint32_t intpnd;
+
+	if (irq == IRQ_GPIO_GIC_0) {
+		irq = IRQ_WEINT_GPG10;
+		intpnd = getreg32(S5J_GPIOINT_PEND_GPG1);
 	} else {
-		shift_port = 8 * (port - 4);
+		irq = IRQ_WEINT_GPG20;
+		intpnd = getreg32(S5J_GPIOINT_PEND_GPG2);
 	}
 
-	filter_con = getreg32(eint_addr);
-
-	if (bank < 4) {				/* Alive Filter Setting */
-		if (type == EINT_FILTER_DELAY) {
-			filter_con &= ~((1 << 6) << shift_port);
-		} else if (type == EINT_FILTER_DIGITAL) {
-			filter_con |= (1 << 6) << shift_port;
+	/* Dispatch each GPIO interrupt */
+	for (gpio_irq = 0; intpnd; gpio_irq++) {
+		if (intpnd & (1 << gpio_irq)) {
+			irq_dispatch(irq + gpio_irq, context);
+			intpnd &= ~(1 << gpio_irq);
 		}
-
-		filter_con |= ((1 << 7) << shift_port);	/* Filter Enable */
-		filter_con &= ~(0x3f << shift_port);
-		filter_con |= width << shift_port;
 	}
 
-	else {
-		filter_con |= ((1 << 7) << shift_port);	/* Filter Enable */
-		filter_con &= ~(0x7f << shift_port);
-		filter_con |= width << shift_port;
-	}
-	putreg32(filter_con, eint_addr);
-
-	return 0;
+	return OK;
 }
 
-/****************************************************************************
- * Name: gpio_eint_set_type
- *
- * Description:
- *   Set edge/level type of a gpio external interrurt
- *
- * Input Parameters:
- *   gpio - port id
- *   type - eint interrupt type (edge/level)
- *
- * Returned Value:
- *   >= 0: success
- *   == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_eint_set_type(int gpio, unsigned type)
+void s5j_gpio_irqinitialize(void)
 {
-	u32 ctrl, mask;
-	void *eint_addr;
-	int port;
+	/* Attach the GPIO interrupt handler for second-level irq decoding */
+	DEBUGVERIFY(irq_attach(IRQ_GPIO_GIC_0, gic_interrupt, NULL));
+	DEBUGVERIFY(irq_attach(IRQ_GPIO_GIC_1, gic_interrupt, NULL));
 
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	switch (type) {
-	case EINT_TYPE_LEVEL_LOW:
-	case EINT_TYPE_LEVEL_HIGH:
-	case EINT_TYPE_EDGE_FALLING:
-	case EINT_TYPE_EDGE_RISING:
-	case EINT_TYPE_EDGE_BOTH:
-		break;
-
-	default:
-		/* err("No such irq type %d", type); */
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_CON);
-	mask = 0x7 << (port * 4);
-	ctrl = getreg32(eint_addr);
-	ctrl &= ~mask;
-	ctrl |= type << (port * 4);
-	putreg32(ctrl, eint_addr);
-
-	if (gpio_eint_ispending(gpio)) {
-		gpio_eint_clear_pending(gpio);
-	}
-
-	return 0;
-}
-
-/****************************************************************************
- * Name: gpio_eint_get_type
- *
- * Description:
- *   Get edge/level type of a gpio external interrurt
- *
- * Input Parameters:
- *   gpio - port id
- *
- * Returned Value:
- *   >= 0: eint interrupt type (edge/level)
- *   == -EINVAL: invalid gpio
- ****************************************************************************/
-int gpio_eint_get_type(int gpio)
-{
-	u32 ctrl, mask;
-	void *eint_addr;
-	int port;
-
-	if (!gpio_valid(gpio)) {
-		return -EINVAL;
-	}
-
-	port = s5j_gpio_port(gpio);
-	eint_addr = __gpio_eint_get_addr(gpio, GPIO_EINT_CON);
-	mask = 0x7 << (port * 4);
-	ctrl = getreg32(eint_addr);
-	ctrl &= mask;
-	ctrl = ctrl >> (port * 4);
-
-	return ctrl;
-}
-
-/****************************************************************************
- * Name: gpio_to_bank
- *
- * Description:
- *  Converts gpio port index into gpio bank structure address
- *
- * Input Parameters:
- *  gpio - port id
- *
- * Returned Value:
- *  gpio bank structure address
- ****************************************************************************/
-struct gpio_bank *gpio_to_bank(int gpio)
-{
-	unsigned bank;
-
-	bank = s5j_gpio_bank(gpio);
-
-	if (!gpio_valid(gpio)) {
-		return NULL;
-	}
-
-	return s5jt200_gpio_bank + bank;
+	up_enable_irq(IRQ_GPIO_GIC_0);
+	up_enable_irq(IRQ_GPIO_GIC_1);
 }

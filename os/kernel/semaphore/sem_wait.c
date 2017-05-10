@@ -120,10 +120,7 @@ int sem_wait(FAR sem_t *sem)
 
 	/* This API should not be called from interrupt handlers */
 
-	DEBUGASSERT(up_interrupt_context() == false);
-
-	/* Assume any errors reported are due to invalid arguments. */
-	set_errno(EINVAL);
+	DEBUGASSERT(sem != NULL && up_interrupt_context() == false);
 
 	/* The following operations must be performed with interrupts
 	 * disabled because sem_post() may be called from an interrupt
@@ -143,7 +140,7 @@ int sem_wait(FAR sem_t *sem)
 	}
 
 	/* Make sure we were supplied with a valid semaphore */
-	if (sem) {
+	if (sem != NULL) {
 
 		/* Check if the lock is available */
 
@@ -226,6 +223,8 @@ int sem_wait(FAR sem_t *sem)
 			sched_unlock();
 #endif
 		}
+	} else {
+		set_errno(EINVAL);
 	}
 
 	leave_cancellation_point();

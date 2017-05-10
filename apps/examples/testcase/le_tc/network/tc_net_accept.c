@@ -47,7 +47,7 @@ int s = 0;
    * Postconditions        :
    * @return               :void
    */
-void wait(void)
+static void wait(void)
 {
 	while (s <= 0) {
 
@@ -65,7 +65,7 @@ void wait(void)
    * Postconditions        :
    * @return               :void
    */
-void signal(void)
+static void signal(void)
 {
 	s++;
 }

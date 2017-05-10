@@ -61,10 +61,6 @@ ifeq ($(CONFIG_CM),y)
 CSRCS += fs_procfscm.c
 endif
 
-ifeq ($(CONFIG_ARCH_CHIP_BCM4390X),y)
-CFLAGS+=-I$(TOPDIR)/../external/WICED/bcm4390x/include
-endif
-
 ifeq ($(CONFIG_ARCH_BOARD_SIDK_S5JT200),y)
 CFLAGS+=-I$(TOPDIR)/../apps/include/netutils/wifi
 endif

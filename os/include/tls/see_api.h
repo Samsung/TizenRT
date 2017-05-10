@@ -104,17 +104,6 @@ typedef enum {
 #define ISP_CHECKBUSY()
 #endif
 
-#define _SEE_MUTEX_LOCK					\
-{							\
-	if (see_mutex_lock(&m_handler) != SEE_OK)	\
-		return SEE_MUTEX_LOCK_ERROR;		\
-}
-#define _SEE_MUTEX_UNLOCK				\
-{							\
-	if (see_mutex_unlock(&m_handler) != SEE_OK)	\
-		return SEE_MUTEX_UNLOCK_ERROR;		\
-}
-
 /****************************************************************************
  * Public types
 ****************************************************************************/
