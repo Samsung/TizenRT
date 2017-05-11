@@ -111,7 +111,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS),y)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_EASYSETUP),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
 
