@@ -53,6 +53,7 @@
 
 -include $(TOPDIR)/Make.defs
 
+DEPPATH = --dep-path .
 CFLAGS += -I$(TOPDIR)/sched
 ASRCS =
 CSRCS = artik053_boot.c \
@@ -69,7 +70,9 @@ endif
 
 # boardctl support
 ifeq ($(CONFIG_LIB_BOARDCTL),y)
-CSRCS += $(TOPDIR)/arch/boardctl.c
+DEPPATH += --dep-path $(TOPDIR)/arch
+VPATH += :$(TOPDIR)/arch
+CSRCS += boardctl.c
 endif
 
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -100,7 +103,7 @@ libboard$(LIBEXT): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(CC) -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) $(CC) -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend
