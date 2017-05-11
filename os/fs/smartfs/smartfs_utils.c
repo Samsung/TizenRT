@@ -2924,19 +2924,22 @@ static int get_next_sector_info(struct journal_transaction_manager_s *j_mgr)
 
 	ret = NO_CHANGE;
 	newsector = j_mgr->sector;
+	newoffset = j_mgr->offset;
 	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
 	startsector = SMARTFS_LOGGING_SECTOR + j_mgr->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
 	if ((j_mgr->offset + sizeof(struct smartfs_logging_entry_s)) > j_mgr->availbytes) {
+		newsector++;
+		newoffset = 0;
 		ret = NEXT_SECTOR;
 	}
-	if (j_mgr->sector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
+	if (newsector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
 		return MOVE_AREA;
 	}
-	newoffset = j_mgr->offset + sizeof(struct smartfs_logging_entry_s)
-				+ (GET_TRANS_TYPE(entry->trans_info) != T_DELETE ? entry->datalen : 0);
+
+	newoffset += sizeof(struct smartfs_logging_entry_s) + (GET_TRANS_TYPE(entry->trans_info) != T_DELETE ? entry->datalen : 0);
+
 	if (newoffset > j_mgr->availbytes) {
 		newsector++;
-		newoffset -= j_mgr->availbytes;
 	}
 	if (newsector >= startsector + CONFIG_SMARTFS_NLOGGING_SECTORS) {
 		ret = MOVE_AREA;
