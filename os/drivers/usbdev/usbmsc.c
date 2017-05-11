@@ -19,7 +19,7 @@
  * drivers/usbdev/usbmsc.c
  *
  *   Copyright (C) 2008-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@tinyara.org>
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Mass storage class device.  Bulk-only with SCSI subclass.
  *

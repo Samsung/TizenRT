@@ -19,7 +19,7 @@
  * drivers/usbdev/pl2303.c
  *
  *   Copyright (C) 2008-2013, 2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@tinyara.org>
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * This logic emulates the Prolific PL2303 serial/USB converter
  *
