@@ -19,11 +19,6 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# WIFI APIs built-in application info
-
-APPNAME = wifi_test
-THREADEXEC = TASH_EXECMD_ASYNC
-
 # WIFI APIs Example
 
 ASRCS =
@@ -91,6 +86,8 @@ else
 install:
 
 endif
+
+context:
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
