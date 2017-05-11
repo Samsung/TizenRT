@@ -1,0 +1,3 @@
+config ENTRY_ARTIK_ONBOARDING
+	bool "ARTIK Onboarding Example"
+	depends on EXAMPLES_ARTIK_ONBOARDING
