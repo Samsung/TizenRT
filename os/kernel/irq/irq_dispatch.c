@@ -112,6 +112,7 @@ void irq_dispatch(int irq, FAR void *context)
 	}
 #else
 	vector = irq_unexpected_isr;
+	arg    = NULL;
 #endif
 
 	/* Then dispatch to the interrupt handler */
