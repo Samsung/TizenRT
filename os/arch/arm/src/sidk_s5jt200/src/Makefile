@@ -53,6 +53,7 @@
 
 -include $(TOPDIR)/Make.defs
 
+DEPPATH = --dep-path .
 CFLAGS += -I$(TOPDIR)/sched
 ASRCS =
 CSRCS = s5jt200_boot.c s5jt200_tash.c

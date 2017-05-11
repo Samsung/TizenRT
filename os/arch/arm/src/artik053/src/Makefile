@@ -53,6 +53,7 @@
 
 -include $(TOPDIR)/Make.defs
 
+DEPPATH = --dep-path .
 CFLAGS += -I$(TOPDIR)/sched
 ASRCS =
 CSRCS = artik053_boot.c \
