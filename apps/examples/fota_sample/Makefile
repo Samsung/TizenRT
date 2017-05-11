@@ -130,7 +130,7 @@ endif
 
 # Register application
 
-ifeq ($(CONFIG_BUILTIN_APPS),y)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_FOTA_SAMPLE),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC))
 
