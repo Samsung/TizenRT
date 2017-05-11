@@ -58,7 +58,7 @@ main()
 			# check existence of firmware binaries
 			if [ ! -f "${FW_DIR_PATH}/bl1.bin" ] ||\
 				[ ! -f "${FW_DIR_PATH}/bl2.bin" ] ||\
-				[ ! -f "${FW_DIR_PATH}/sssfw.bin"] ||\
+				[ ! -f "${FW_DIR_PATH}/sssfw.bin" ] ||\
 				[ ! -f "${FW_DIR_PATH}/wlanfw.bin" ]; then
 				echo "Firmware binaries for ARTIK 053 are not existed"
 				exit 1
