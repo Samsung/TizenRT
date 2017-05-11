@@ -26,7 +26,12 @@
 #include "iotapi_evt_handler.h"
 
 #define IOTAPI_QUEUE_SIZE 19
-#define IOTAPI_LOG printf
+#ifdef IOTAPI_DEBUG
+#define IOTAPI_LOG(format, ...)	printf(format, ##__VA_ARGS__)
+#else
+#define IOTAPI_LOG(x...)
+#endif
+
 
 struct _iotapi_msg_queue {
 	int type;					// 1 is insert, 2 is remove, 0 is empty
@@ -102,7 +107,8 @@ void *iotapi_handler(void *data)
 		}
 
 		if (g_ia_evtlist[0].revents & POLLIN) {
-			int readed = read(g_ia_evtlist[0].fd, buf, 3);
+			int readed;
+			readed = read(g_ia_evtlist[0].fd, buf, 3);
 			IOTAPI_LOG("[iotcom] receive command(%d)\n", readed);
 			if (buf[0] == 's' && buf[1] == 't')
 				break;
