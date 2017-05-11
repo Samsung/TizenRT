@@ -26,7 +26,7 @@
 #include "iotapi_evt_handler.h"
 
 #define IOTAPI_QUEUE_SIZE 19
-#ifdef IOTAPI_DEBUG
+#ifdef CONFIG_IOTAPI_DEBUG
 #define IOTAPI_LOG(format, ...)	printf(format, ##__VA_ARGS__)
 #else
 #define IOTAPI_LOG(x...)
