@@ -71,8 +71,8 @@ iotbus_gpio_context_h iotbus_gpio_open(int gpiopin)
 {
 	struct _iotbus_gpio_s *dev = (struct _iotbus_gpio_s *)malloc(sizeof(struct _iotbus_gpio_s));
 
-	char gpio_dev[32] = { 0, };
-	snprintf(gpio_dev, 32, "/dev/gpio%d", gpiopin);
+	char gpio_dev[16] = { 0, };
+	snprintf(gpio_dev, 16, "/dev/gpio%d", gpiopin);
 
 	dev->fd = open(gpio_dev, O_RDWR);
 	if (dev->fd < 0) {
@@ -301,19 +301,19 @@ int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev)
  */
 int iotbus_gpio_read(iotbus_gpio_context_h dev)
 {
-	int state = 0;
+	char buf[4];
 
 	if (!dev)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 
-	int ret = read(dev->fd, &state, sizeof(int));
+	int ret = read(dev->fd, buf, sizeof(buf));
 	if (ret < 0)
 		return IOTBUS_ERROR_UNKNOWN;
 	ret = lseek(dev->fd, 0, SEEK_SET);
 	if (ret < 0)
 		return IOTBUS_ERROR_UNKNOWN;
 
-	return state;
+	return buf[0] == '1';
 }
 
 /**
@@ -322,6 +322,7 @@ int iotbus_gpio_read(iotbus_gpio_context_h dev)
 int iotbus_gpio_write(iotbus_gpio_context_h dev, int value)
 {
 	int ret;
+	char buf[4];
 
 	if (!dev)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
@@ -329,7 +330,7 @@ int iotbus_gpio_write(iotbus_gpio_context_h dev, int value)
 	if (value != 0 && value != 1)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 
-	ret = write(dev->fd, &value, sizeof(int));
+	ret = write(dev->fd, buf, snprintf(buf, sizeof(buf), "%d", !!value));
 
 	if (ret < 0)
 		return IOTBUS_ERROR_UNKNOWN;
