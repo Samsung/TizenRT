@@ -443,7 +443,7 @@ db_result_t db_indexing(relation_t *rel)
 	index = get_next_index_to_load();
 	if (index == NULL) {
 		DB_LOG_E("DB: Request to load an index, but no index is set to be loaded\n");
-		goto errout;
+		return DB_INDEX_ERROR;
 	}
 
 	row = NULL;

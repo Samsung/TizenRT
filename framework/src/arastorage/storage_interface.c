@@ -569,13 +569,18 @@ db_result_t storage_flush_insert_buffer()
 {
 	ssize_t r;
 	int fd;
-	if (g_storage_write_buffer.data_size > 0) {
-		fd = storage_open(g_storage_write_buffer.file_name, O_APPEND | O_RDWR);
-		if (fd < 0) {
-			DB_LOG_D("Failed to open %s\n", g_storage_write_buffer.file_name);
-			return DB_STORAGE_ERROR;
-		}
+
+	if (g_storage_write_buffer.data_size <= 0) {
+		/* There is no data to flush, return here */
+		return DB_OK;
 	}
+
+	fd = storage_open(g_storage_write_buffer.file_name, O_APPEND | O_RDWR);
+	if (fd < 0) {
+		DB_LOG_D("Failed to open %s\n", g_storage_write_buffer.file_name);
+		return DB_STORAGE_ERROR;
+	}
+
 	r = storage_write(fd, g_storage_write_buffer.buffer, g_storage_write_buffer.data_size);
 	if (r < 0) {
 		storage_close(fd);
