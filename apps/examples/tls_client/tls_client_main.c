@@ -1014,9 +1014,13 @@ usage:
 	 */
 	mbedtls_printf("  . Loading the CA root certificate ...");
 	fflush(stdout);
-	if ((ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)mbedtls_test_ca_crt_rsa, mbedtls_test_ca_crt_rsa_len)) < 0) {
-		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
-		goto exit;
+
+	for (i = 0; mbedtls_test_cas[i] != NULL; i++) {
+		ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)mbedtls_test_cas[i], mbedtls_test_cas_len[i]);
+
+		if (ret != 0) {
+			break;
+		}
 	}
 
 	mbedtls_printf(" ok (%d skipped)\n", ret);
@@ -1027,7 +1031,7 @@ usage:
 	mbedtls_printf("  . Loading the own cert...");
 	fflush(stdout);
 
-	if ((ret = mbedtls_x509_crt_parse(&clicert, (const unsigned char *)mbedtls_test_cli_crt_rsa, mbedtls_test_cli_crt_rsa_len)) != 0) {
+	if ((ret = mbedtls_x509_crt_parse(&clicert, (const unsigned char *)mbedtls_test_cli_crt, mbedtls_test_cli_crt_len)) != 0) {
 		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
 		goto exit;
 	}
@@ -1037,7 +1041,7 @@ usage:
 	mbedtls_printf("  . Loading the Private Key...");
 	fflush(stdout);
 
-	if ((ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *)mbedtls_test_cli_key_rsa, mbedtls_test_cli_key_rsa_len, NULL, 0)) != 0) {
+	if ((ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *)mbedtls_test_cli_key, mbedtls_test_cli_key_len, NULL, 0)) != 0) {
 		mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
 		goto exit;
 	}

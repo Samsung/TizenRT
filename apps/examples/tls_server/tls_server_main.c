@@ -1374,7 +1374,12 @@ usage:
 	else
 #endif
 #if defined(MBEDTLS_CERTS_C)
-		ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)mbedtls_test_ca_crt_rsa, mbedtls_test_ca_crt_rsa_len);
+		for (i = 0; mbedtls_test_cas[i] != NULL; i++) {
+			ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)mbedtls_test_cas[i], mbedtls_test_cas_len[i]);
+			if (ret != 0) {
+				break;
+			}
+		}
 #else
 	{
 		ret = 1;
@@ -1449,6 +1454,17 @@ usage:
 		}
 		key_cert_init = 2;
 #endif							/* MBEDTLS_RSA_C */
+#if defined(MBEDTLS_ECDSA_C)
+		if ((ret = mbedtls_x509_crt_parse(&srvcert2, (const unsigned char *)mbedtls_test_srv_crt_ec, mbedtls_test_srv_crt_ec_len)) != 0) {
+			mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
+			goto exit;
+		}
+		if ((ret = mbedtls_pk_parse_key(&pkey2, (const unsigned char *)mbedtls_test_srv_key_ec, mbedtls_test_srv_key_ec_len, NULL, 0)) != 0) {
+			mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned -0x%x\n\n", -ret);
+			goto exit;
+		}
+		key_cert_init2 = 2;
+#endif							/* MBEDTLS_ECDSA_C */
 #endif							/* MBEDTLS_CERTS_C */
 	}
 
