@@ -256,6 +256,7 @@ int timer_main(int argc, char *argv[])
 	/* Create Time Handler Thread */
 	tid = create_timer_thread((void *)repeat);
 	if (tid < 0) {
+		close(fd);
 		return EXIT_FAILURE;
 	}
 
