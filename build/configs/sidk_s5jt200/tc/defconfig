@@ -208,7 +208,6 @@ CONFIG_S5J_BOOTLOADER_REGION_SIZE=0x400000
 CONFIG_S5J_PWR=y
 # CONFIG_S5J_PWR_DSTOP is not set
 # CONFIG_S5J_PWR_SLEEP is not set
-# CONFIG_S5J_DMA is not set
 
 #
 # Architecture Options

@@ -165,10 +165,6 @@ CHIP_CSRCS += s5j_rtc_lowerhalf.c
 endif
 endif
 
-ifeq ($(CONFIG_S5J_DMA),y)
-CHIP_CSRCS += s5j_dma.c
-endif
-
 ifeq ($(CONFIG_S5J_SSS),y)
 VPATH += chip/sss
 CHIP_CSRCS += sss_driver_io.c

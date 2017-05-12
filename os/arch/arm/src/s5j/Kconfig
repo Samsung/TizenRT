@@ -25,7 +25,6 @@ config S5J_S5JT200
 	bool
 	default n
 	select S5J_HAVE_ADC
-	select S5J_HAVE_DMA
 	select S5J_HAVE_I2C
 	select S5J_HAVE_MCT
 	select S5J_HAVE_PWM0
@@ -52,10 +51,6 @@ menu "S5J Peripheral Support"
 # the selection MCU.
 
 config S5J_HAVE_ADC
-	bool
-	default n
-
-config S5J_HAVE_DMA
 	bool
 	default n
 
@@ -146,11 +141,6 @@ config S5J_ADC
 	---help---
 		S5J has 12-bits ADC with 4 channels. Say Y here, if you want
 		to use it.
-
-config S5J_DMA
-	bool "DMA"
-	default n
-	depends on S5J_HAVE_DMA
 
 config S5J_I2C
 	bool "I2C"
