@@ -130,18 +130,23 @@ WDOG_ID wd_create(void)
 		 */
 
 		wdog = (FAR struct wdog_s *)sq_remfirst(&g_wdfreelist);
-		DEBUGASSERT(g_wdnfree > 0);
-		g_wdnfree--;
-		irqrestore(state);
 
 		/* Did we get one? */
 
 		if (wdog) {
+			DEBUGASSERT(g_wdnfree > 0);
+			g_wdnfree--;
+
 			/* Yes.. Clear the forward link and all flags */
 
 			wdog->next = NULL;
 			wdog->flags = 0;
 		}
+		else {
+			/* If wdog is Null, g_wdnfree must be zero, else assert */
+			DEBUGASSERT(g_wdnfree == 0);
+		}
+		irqrestore(state);
 	}
 
 	/* We are in a normal tasking context AND there are not enough unreserved,
