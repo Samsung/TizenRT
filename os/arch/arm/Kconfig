@@ -41,6 +41,7 @@ config ARCH_CORTEXR4
 	default n
 	select ARCH_HAVE_MPU
 	select ARCH_HAVE_COHERENT_DCACHE if ELF || MODULE
+	select ARMV7R_HAVE_DABORTSTACK
 
 config ARCH_FAMILY
 	string

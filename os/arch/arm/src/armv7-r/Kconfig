@@ -204,6 +204,21 @@ config ARMV7R_DECODEFIQ
 		Select this option if your platform supports the function
 		arm_decodefiq().
 
+config ARMV7R_HAVE_DABORTSTACK
+	bool
+	default n
+
+config ARMV7R_DABORTSTACK
+	int "Dabort Stack Size"
+	depends on ARMV7R_HAVE_DABORTSTACK
+	default 0
+	---help---
+		This architecture supports an data abort stack. If defined, this symbol
+		will be the size of the data abort stack in bytes.  If not defined (or
+		defined to be zero or less than 512 bytes), the user task stacks
+		will be used during data abort handling. Recommended data abort stack
+		size is 1K.
+
 config BOOT_RESULT
 	bool "Save Boot Result"
 	default n
