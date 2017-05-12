@@ -533,13 +533,13 @@ static int process_options(int argc, char *argv[])
 			}
 			i++;
 		} else if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--protocol-version")) {
-			if (i==argc-1) {
+			if (i == argc - 1) {
 				fprintf(stderr, "Error: --protocol-version argument given but no version specified.\n\n");
 				return 1;
 			} else {
-				if (!strcmp(argv[i+1], "mqttv31")) {
+				if (!strcmp(argv[i + 1], "mqttv31")) {
 					g_protocol_version = MQTT_PROTOCOL_VERSION_31;
-				} else if (!strcmp(argv[i+1], "mqttv311")) {
+				} else if (!strcmp(argv[i + 1], "mqttv311")) {
 					g_protocol_version = MQTT_PROTOCOL_VERSION_311;
 				} else {
 					fprintf(stderr, "Error: Invalid protocol version argument given.\n\n");
