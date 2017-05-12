@@ -213,6 +213,8 @@ int timer_main(int argc, char *argv[])
 	int intval = -1;
 	int repeat = -1;
 
+	optind = 0;
+
 	while ((opt = getopt(argc, argv, "t:n:f:h")) != -1) {
 		switch (opt) {
 		case 't':
@@ -229,6 +231,12 @@ int timer_main(int argc, char *argv[])
 			fprintf(stdout, USAGE);
 			return opt == 'h' ? EXIT_SUCCESS : EXIT_FAILURE;
 		}
+	}
+
+	if (optind >= argc) {
+		fprintf(stderr, "timer: invalid option -- \'%s\'\n", argv[optind]);
+		fprintf(stdout, USAGE);
+		return EXIT_SUCCESS;
 	}
 
 	/* Open the timer device */
