@@ -376,16 +376,16 @@ static void tc_libc_timer_clock_daysbeforemonth(void)
 	/* test with not leapyear */
 
 	for (month_iter = 1; month_iter < 12; month_iter++) {
-		prev_month = clock_daysbeforemonth(month_iter, FALSE);
-		cur_month = clock_daysbeforemonth(month_iter+1, FALSE);
+		prev_month = clock_daysbeforemonth(month_iter - 1, FALSE);
+		cur_month = clock_daysbeforemonth(month_iter, FALSE);
 		TC_ASSERT_EQ("clock_daysbeforemonth", cur_month-prev_month, notleapyear_days[month_iter]);
 	}
 
 	/* test with leapyear */
 
 	for (month_iter = 1; month_iter < 12; month_iter++) {
-		prev_month = clock_daysbeforemonth(month_iter, TRUE);
-		cur_month = clock_daysbeforemonth(month_iter+1, TRUE);
+		prev_month = clock_daysbeforemonth(month_iter - 1, TRUE);
+		cur_month = clock_daysbeforemonth(month_iter, TRUE);
 		TC_ASSERT_EQ("clock_daysbeforemonth", cur_month-prev_month, leapyear_days[month_iter]);
 	}
 
