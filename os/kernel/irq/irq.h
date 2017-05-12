@@ -76,7 +76,7 @@ struct irq {
 	FAR void *arg;
 };
 
-extern struct irq g_irqvector[NR_IRQS + 1];
+extern struct irq g_irqvector[NR_IRQS];
 
 /****************************************************************************
  * Public Variables
