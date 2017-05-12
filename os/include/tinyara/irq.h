@@ -68,7 +68,7 @@
  */
 
 #ifndef __ASSEMBLY__
-#define irq_detach(isr) irq_attach(isr, NULL, NULL)
+#define irq_detach(irq) irq_attach(irq, NULL, NULL)
 #endif
 
 /****************************************************************************
