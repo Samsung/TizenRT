@@ -65,6 +65,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
+#include <tinyara/clock.h>
 
 #include <arch/board/board.h>
 
@@ -78,7 +79,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define USEC_TO_FREQ               (1000000)
 
 /****************************************************************************
  * Private Types
@@ -281,7 +281,7 @@ FAR struct s5j_mct_priv_s *s5j_mct_init(int timer)
 	}
 
 	if (!g_mct_initialized && priv) {
-		s5j_mct_setclock(USEC_TO_FREQ);
+		s5j_mct_setclock(USEC_PER_SEC);
 		g_mct_initialized = true;
 	}
 
