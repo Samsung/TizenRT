@@ -259,6 +259,11 @@ static void scsc_wpa_ctrl_iface_init(void)
 int board_app_initialize(void)
 {
 	int ret;
+#if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_ARTIK053_RAMMTD_NEBLOCKS;
+	static uint8_t *rambuf;
+	struct mtd_dev_s *mtd;
+#endif /* CONFIG_RAMMTD */
 
 	artik053_configure_partitions();
 
@@ -282,6 +287,30 @@ int board_app_initialize(void)
 		lldbg("Failed to mount procfs at %s: %d\n", ARTIK053_PROCFS_MOUNTPOINT, ret);
 	}
 #endif
+
+#if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	rambuf = (uint8_t *)malloc(bufsize);
+
+	mtd = rammtd_initialize(rambuf, bufsize);
+	if (!mtd) {
+		lldbg("ERROR: FAILED TO CREATE RAM MTD INSTANCE\n");
+		free(rambuf);
+	} else {
+		if (smart_initialize(CONFIG_ARTIK053_RAMMTD_DEV_NUMBER, mtd, NULL) < 0) {
+			lldbg("ERROR: FAILED TO smart_initialize\n");
+			free(rambuf);
+		} else {
+			(void)mksmartfs(CONFIG_ARTIK053_RAMMTD_DEV_POINT, false);
+
+			ret = mount(CONFIG_ARTIK053_RAMMTD_DEV_POINT, CONFIG_ARTIK053_RAMMTD_MOUNT_POINT,
+					"smartfs", 0, NULL);
+			if (ret < 0) {
+				lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
+				free(rambuf);
+			}
+		}
+	}
+#endif /* CONFIG_RAMMTD */
 
 #if defined(CONFIG_RTC_DRIVER)
 	{

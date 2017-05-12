@@ -265,6 +265,11 @@ int ee_test_main(int argc, char **args);
 int board_app_initialize(void)
 {
 	int ret;
+#if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_SIDK_S5JT200_RAMMTD_NEBLOCKS;
+	static uint8_t *rambuf;
+	struct mtd_dev_s *mtd;
+#endif /* CONFIG_RAMMTD */
 
 	sidk_s5jt200_configure_partitions();
 
@@ -308,6 +313,30 @@ int board_app_initialize(void)
 				SIDK_S5JT200_PROCFS_MOUNTPOINT, ret);
 	}
 #endif
+
+#if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	rambuf = (uint8_t *)malloc(bufsize);
+
+	mtd = rammtd_initialize(rambuf, bufsize);
+	if (!mtd) {
+		lldbg("ERROR: FAILED TO CREATE RAM MTD INSTANCE\n");
+		free(rambuf);
+	} else {
+		if (smart_initialize(CONFIG_SIDK_S5JT200_RAMMTD_DEV_NUMBER, mtd, NULL) < 0) {
+			lldbg("ERROR: FAILED TO smart_initialize\n");
+			free(rambuf);
+		} else {
+			(void)mksmartfs(CONFIG_SIDK_S5JT200_RAMMTD_DEV_POINT, false);
+
+			ret = mount(CONFIG_SIDK_S5JT200_RAMMTD_DEV_POINT, CONFIG_SIDK_S5JT200_RAMMTD_MOUNT_POINT,
+					"smartfs", 0, NULL);
+			if (ret < 0) {
+				lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
+				free(rambuf);
+			}
+		}
+	}
+#endif /* CONFIG_RAMMTD */
 
 #ifdef CONFIG_S5J_I2C
 	s5j_i2c_register(0);
