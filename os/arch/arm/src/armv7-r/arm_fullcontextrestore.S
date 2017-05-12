@@ -105,24 +105,11 @@
 up_fullcontextrestore:
 
 #ifdef CONFIG_MPU_STACKGUARD
-	mov     r5, #MPU_REG_STK_GUARD
-	mcr     p15, 0, r5, c6, c2, 0
-	add     r6,  r0, #(4*REG_RNUM_STKGUARD)
-	str     r5, [r6]
-	mcr     p15, 0, r6, c6, c1, 2
-
-	add     r6, r0, #(4*REG_RBASE_STKGUARD)
-	ldr     r2, [r6]
-	mcr     p15, 0, r2, c6, c1, 0
-
-	add     r6, r0, #(4*REG_RSIZE_STKGUARD)
-	ldr     r2, [r6]
-	mcr     p15, 0, r2, c6, c1, 2
-
-	add     r6, r0, #(4*REG_RATTR_STKGUARD)
-	ldr     r2, [r6]
-	mcr     p15, 0, r2, c6, c1, 4
+	push	{lr}
+	bl		up_mpuguardrestore
+	pop		{lr}
 #endif
+
 	/* On entry, a1 (r0) holds address of the register save area.  All other
 	 * registers are available for use.
 	 */
@@ -154,12 +141,11 @@ up_fullcontextrestore:
 	 * to either user or kernel mode.
 	 */
 
-	sub	sp, #4
+	push	{lr}
 	/* restore the MPU context information */
-	str	lr,	[sp]
-	bl up_mpucontextrestore
-	ldr	lr,	[sp]
-	add	sp, #4
+	bl		up_mpucontextrestore
+	/* restore the above saved return address before context switch */
+	pop		{lr}
 	/* Perform the System call with R0=SYS_context_restore, R1=restoreregs */
 	mov		r1, r0					/* R1: restoreregs */
 	mov		r0, #SYS_context_restore	/* R0: SYS_context_restore syscall */
@@ -204,4 +190,4 @@ up_fullcontextrestore:
 
 #endif
 
-	.size up_fullcontextrestore, . - up_fullcontextrestore
+	.size	up_fullcontextrestore, . - up_fullcontextrestore
