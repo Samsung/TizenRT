@@ -289,7 +289,7 @@ void stats_init(void);
 
 /* Display of statistics */
 #if LWIP_STATS_DISPLAY
-int stats_display(int argc, char **argv);
+int stats_display(void);
 void stats_display_proto(struct stats_proto *proto, const char *name);
 void stats_display_igmp(struct stats_igmp *igmp);
 void stats_display_mem(struct stats_mem *mem, const char *name);
