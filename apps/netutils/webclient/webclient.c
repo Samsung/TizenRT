@@ -1304,23 +1304,17 @@ int http_client_send_request(struct http_client_request_t *request,
 		return -1;
 	}
 
-	request->buffer = (char *)malloc(request->buflen);
-	if (request->buffer == NULL) {
-		printf("Error: Fail to malloc buffer\n");
-		return -1;
-	}
-
 	request->callback = NULL;
 	request->tls = false;
 	request->response = response;
 
 	if (request->url == NULL) {
 		printf("Error: URL is NULL!!\n");
-		goto errout;
+		return -1;
 	}
 	if (WEBCLIENT_CONF_MAX_ENTITY_SIZE < strlen(request->entity)) {
 		printf("Error: Too small buffer size\n");
-		goto errout;
+		return -1;
 	}
 #ifdef CONFIG_NET_SECURITY_TLS
 	if (ssl_conf) {
@@ -1330,15 +1324,18 @@ int http_client_send_request(struct http_client_request_t *request,
 		data = mallinfo();
 		if (data.fordblks < WEBCLIENT_CONF_MIN_TLS_MEMORY) {
 			printf("Error: Not enough memory!!\n");
-			goto errout;
+			return -1;
 		}
 	}
 #endif
 
+	request->buffer = (char *)malloc(request->buflen);
+	if (request->buffer == NULL) {
+		printf("Error: Fail to malloc buffer\n");
+		return -1;
+	}
+
 	return client_send_request(request);
-errout:
-	free(request->buffer);
-	return -1;
 }
 
 int http_client_send_request_async(struct http_client_request_t *request,
@@ -1359,23 +1356,17 @@ int http_client_send_request_async(struct http_client_request_t *request,
 		return -1;
 	}
 
-	request->buffer = (char *)malloc(request->buflen);
-	if (request->buffer == NULL) {
-		printf("Error: Fail to malloc buffer\n");
-		return -1;
-	}
-
 	request->callback = cb;
 	request->tls = false;
 	request->response = NULL;
 
 	if (request->url == NULL) {
 		printf("Error: URL is NULL!!\n");
-		goto errout;
+		return -1;
 	}
 	if (WEBCLIENT_CONF_MAX_ENTITY_SIZE < strlen(request->entity)) {
 		printf("Error: Too small buffer size\n");
-		goto errout;
+		return -1;
 	}
 #ifdef CONFIG_NET_SECURITY_TLS
 	if (ssl_conf) {
@@ -1385,15 +1376,18 @@ int http_client_send_request_async(struct http_client_request_t *request,
 		data = mallinfo();
 		if (data.fordblks < WEBCLIENT_CONF_MIN_TLS_MEMORY) {
 			printf("Error: Not enough memory!!\n");
-			goto errout;
+			return -1;
 		}
 	}
 #endif
 
+	request->buffer = (char *)malloc(request->buflen);
+	if (request->buffer == NULL) {
+		printf("Error: Fail to malloc buffer\n");
+		return -1;
+	}
+
 	return client_send_request(request);
-errout:
-	free(request->buffer);
-	return -1;
 }
 
 int http_client_response_init(struct http_client_response_t *response)
