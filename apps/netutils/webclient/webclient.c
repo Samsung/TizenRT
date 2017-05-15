@@ -1245,6 +1245,11 @@ int client_send_request(struct http_client_request_t *request)
 	pthread_t tid;
 	pthread_addr_t ret = NULL;
 
+	if (request == NULL) {
+		printf("Error: Request is null\n");
+		goto errret;
+	}
+
 	if (request->method < WGET_MODE_GET || request->method > WGET_MODE_DELETE) {
 		printf("Error: Incorrect method value!!\n");
 		goto errret;
