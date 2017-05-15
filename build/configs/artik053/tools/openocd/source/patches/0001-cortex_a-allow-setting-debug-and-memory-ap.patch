@@ -1,0 +1,192 @@
+From 0fae747b3b1038d8bf8b381f7ac62dc5b10cdfec Mon Sep 17 00:00:00 2001
+From: Heesub Shin <heesub.shin@samsung.com>
+Date: Mon, 15 May 2017 12:54:15 +0900
+Subject: [PATCH] cortex_a: allow setting debug and memory ap
+
+This commit adds a Cortex-A and Cortex-R4 private configuration options
+that allow setting the debug and memory access point during target
+creation. This circumvents situations in the systems when the correct
+access point can not be detected or is not available at the creation
+time.
+
+Change-Id: Id9442bd45b7459b614c327ec4138aa6871ec4ff2
+Signed-off-by: Heesub Shin <heesub.shin@samsung.com>
+---
+ src/target/arm_adi_v5.c | 18 ++++++++++++------
+ src/target/arm_adi_v5.h |  2 ++
+ src/target/cortex_a.c   | 50 ++++++++++++++++++++++++++++++++++++++++---------
+ src/target/cortex_a.h   |  2 ++
+ 4 files changed, 57 insertions(+), 15 deletions(-)
+
+diff --git a/src/target/arm_adi_v5.c b/src/target/arm_adi_v5.c
+index eafc2ddc082f..0ecdeb68cf0f 100644
+--- a/src/target/arm_adi_v5.c
++++ b/src/target/arm_adi_v5.c
+@@ -1368,9 +1368,17 @@ int adiv5_jim_configure(struct target *target, Jim_GetOptInfo *goi)
+ 
+ 	/* check if argv[0] is for us */
+ 	arg = Jim_GetString(goi->argv[0], NULL);
+-	if (strcmp(arg, "-ap-num"))
++	if (strcmp(arg, "-ap-num") && strcmp(arg, "-memap-num"))
+ 		return JIM_CONTINUE;
+ 
++	if (target->private_config == NULL) {
++		pc = calloc(1, sizeof(struct adiv5_private_config));
++		target->private_config = pc;
++		pc->ap_num = -1;
++		pc->memap_num = -1;
++	} else
++		pc = target->private_config;
++
+ 	e = Jim_GetOpt_String(goi, &arg, NULL);
+ 	if (e != JIM_OK)
+ 		return e;
+@@ -1384,12 +1392,10 @@ int adiv5_jim_configure(struct target *target, Jim_GetOptInfo *goi)
+ 	if (e != JIM_OK)
+ 		return e;
+ 
+-	if (target->private_config == NULL) {
+-		pc = calloc(1, sizeof(struct adiv5_private_config));
+-		target->private_config = pc;
++	if (strcmp(arg, "-ap-num") == 0)
+ 		pc->ap_num = ap_num;
+-	}
+-
++	else if (strcmp(arg, "-memap-num") == 0)
++		pc->memap_num = ap_num;
+ 
+ 	return JIM_OK;
+ }
+diff --git a/src/target/arm_adi_v5.h b/src/target/arm_adi_v5.h
+index bf9cb5ccee51..f3663dbeb1c9 100644
+--- a/src/target/arm_adi_v5.h
++++ b/src/target/arm_adi_v5.h
+@@ -213,6 +213,7 @@ struct adiv5_dap {
+ 
+ 	/* The current manually selected AP by the "dap apsel" command */
+ 	uint32_t apsel;
++	uint32_t memapsel;
+ 
+ 	/**
+ 	 * Cache for DP_SELECT register. A value of DP_SELECT_INVALID
+@@ -506,6 +507,7 @@ extern const struct command_registration dap_command_handlers[];
+ 
+ struct adiv5_private_config {
+ 	int ap_num;
++	int memap_num;
+ };
+ 
+ extern int adiv5_jim_configure(struct target *target, Jim_GetOptInfo *goi);
+diff --git a/src/target/cortex_a.c b/src/target/cortex_a.c
+index 8c8a2b79ea57..5a346eaa7d25 100644
+--- a/src/target/cortex_a.c
++++ b/src/target/cortex_a.c
+@@ -2937,10 +2937,14 @@ static int cortex_a_examine_first(struct target *target)
+ 	}
+ 
+ 	/* Search for the APB-AP - it is needed for access to debug registers */
+-	retval = dap_find_ap(swjdp, AP_TYPE_APB_AP, &armv7a->debug_ap);
+-	if (retval != ERROR_OK) {
+-		LOG_ERROR("Could not find APB-AP for debug access");
+-		return retval;
++	if (cortex_a->apsel < 0) {
++		retval = dap_find_ap(swjdp, AP_TYPE_APB_AP, &armv7a->debug_ap);
++		if (retval != ERROR_OK) {
++			LOG_ERROR("Could not find APB-AP for debug access");
++			return retval;
++		}
++	} else {
++		armv7a->debug_ap = dap_ap(swjdp, cortex_a->apsel);
+ 	}
+ 
+ 	retval = mem_ap_init(armv7a->debug_ap);
+@@ -2955,12 +2959,18 @@ static int cortex_a_examine_first(struct target *target)
+ 	 * REVISIT: We should search for AXI-AP as well and make sure the AP's MEMTYPE says it
+ 	 * can access system memory. */
+ 	armv7a->memory_ap_available = false;
+-	retval = dap_find_ap(swjdp, AP_TYPE_AHB_AP, &armv7a->memory_ap);
+-	if (retval == ERROR_OK) {
+-		retval = mem_ap_init(armv7a->memory_ap);
+-		if (retval == ERROR_OK)
+-			armv7a->memory_ap_available = true;
++
++	if (cortex_a->memapsel < 0) {
++		retval = dap_find_ap(swjdp, AP_TYPE_AHB_AP, &armv7a->memory_ap);
++		if (retval == ERROR_OK) {
++			retval = mem_ap_init(armv7a->memory_ap);
++			if (retval == ERROR_OK)
++				armv7a->memory_ap_available = true;
++		}
++	} else {
++		armv7a->memory_ap = dap_ap(swjdp, cortex_a->memapsel);
+ 	}
++
+ 	if (retval != ERROR_OK) {
+ 		/* AHB-AP not found or unavailable - use the CPU */
+ 		LOG_DEBUG("No AHB-AP available for memory access");
+@@ -3161,6 +3171,16 @@ static int cortex_a_target_create(struct target *target, Jim_Interp *interp)
+ 
+ 	cortex_a->armv7a_common.is_armv7r = false;
+ 
++	if (target->private_config != NULL) {
++		struct adiv5_private_config *pc =
++			(struct adiv5_private_config *)target->private_config;
++		cortex_a->apsel = pc->ap_num;
++		cortex_a->memapsel = pc->memap_num;
++	} else {
++		cortex_a->apsel = -1;
++		cortex_a->memapsel = -1;
++	}
++
+ 	return cortex_a_init_arch_info(target, cortex_a, target->tap);
+ }
+ 
+@@ -3170,6 +3190,16 @@ static int cortex_r4_target_create(struct target *target, Jim_Interp *interp)
+ 
+ 	cortex_a->armv7a_common.is_armv7r = true;
+ 
++	if (target->private_config != NULL) {
++		struct adiv5_private_config *pc =
++			(struct adiv5_private_config *)target->private_config;
++		cortex_a->apsel = pc->ap_num;
++		cortex_a->memapsel = pc->memap_num;
++	} else {
++		cortex_a->apsel = -1;
++		cortex_a->memapsel = -1;
++	}
++
+ 	return cortex_a_init_arch_info(target, cortex_a, target->tap);
+ }
+ 
+@@ -3181,6 +3211,7 @@ static void cortex_a_deinit_target(struct target *target)
+ 	free(cortex_a->brp_list);
+ 	free(dpm->dbp);
+ 	free(dpm->dwp);
++	free(target->private_config);
+ 	free(cortex_a);
+ }
+ 
+@@ -3549,6 +3580,7 @@ struct target_type cortexr4_target = {
+ 
+ 	.commands = cortex_r4_command_handlers,
+ 	.target_create = cortex_r4_target_create,
++	.target_jim_configure = adiv5_jim_configure,
+ 	.init_target = cortex_a_init_target,
+ 	.examine = cortex_a_examine,
+ 	.deinit_target = cortex_a_deinit_target,
+diff --git a/src/target/cortex_a.h b/src/target/cortex_a.h
+index ff0343208e9d..cd3b80fb788a 100644
+--- a/src/target/cortex_a.h
++++ b/src/target/cortex_a.h
+@@ -104,6 +104,8 @@ struct cortex_a_common {
+ 
+ 	struct armv7a_common armv7a_common;
+ 
++	int apsel;
++	int memapsel;
+ };
+ 
+ static inline struct cortex_a_common *
+-- 
+2.1.4
+
