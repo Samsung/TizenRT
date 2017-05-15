@@ -72,7 +72,7 @@
  * Global Variables
  ****************************************************************************/
 
-struct irq g_irqvector[NR_IRQS + 1];
+struct irq g_irqvector[NR_IRQS];
 
 /****************************************************************************
  * Private Variables
