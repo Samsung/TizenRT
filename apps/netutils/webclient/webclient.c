@@ -1286,19 +1286,16 @@ errret:
 	return -1;
 }
 
-int http_client_send_request(struct http_client_request_t *request,
-							 void *ssl_config,
-							 struct http_client_response_t *response)
+static int http_client_send_requests(struct http_client_request_t *request,
+		 void *ssl_config,
+		 struct http_client_response_t *response,
+		 wget_callback_t cb)
 {
 #ifdef CONFIG_NET_SECURITY_TLS
 	struct mallinfo data;
 	struct http_client_ssl_config_t *ssl_conf = ssl_config;
 #endif
 
-	if (response == NULL) {
-		printf("Error: Response is null\n");
-		return -1;
-	}
 	if (request == NULL) {
 		printf("Error: Request is null\n");
 		return -1;
@@ -1307,6 +1304,7 @@ int http_client_send_request(struct http_client_request_t *request,
 	request->callback = NULL;
 	request->tls = false;
 	request->response = response;
+	request->callback = cb;
 
 	if (request->url == NULL) {
 		printf("Error: URL is NULL!!\n");
@@ -1338,56 +1336,28 @@ int http_client_send_request(struct http_client_request_t *request,
 	return client_send_request(request);
 }
 
+int http_client_send_request(struct http_client_request_t *request,
+							 void *ssl_config,
+							 struct http_client_response_t *response)
+{
+	if (response == NULL) {
+		printf("Error: Response is null\n");
+		return -1;
+	}
+
+	return http_client_send_requests(request, ssl_config, response, NULL);
+}
+
 int http_client_send_request_async(struct http_client_request_t *request,
 								   void *ssl_config,
 								   wget_callback_t cb)
 {
-#ifdef CONFIG_NET_SECURITY_TLS
-	struct mallinfo data;
-	struct http_client_ssl_config_t *ssl_conf = ssl_config;
-#endif
-
 	if (cb == NULL) {
 		printf("Error: Callback is Null\n");
 		return -1;
 	}
-	if (request == NULL) {
-		printf("Error: Request is null\n");
-		return -1;
-	}
 
-	request->callback = cb;
-	request->tls = false;
-	request->response = NULL;
-
-	if (request->url == NULL) {
-		printf("Error: URL is NULL!!\n");
-		return -1;
-	}
-	if (WEBCLIENT_CONF_MAX_ENTITY_SIZE < strlen(request->entity)) {
-		printf("Error: Too small buffer size\n");
-		return -1;
-	}
-#ifdef CONFIG_NET_SECURITY_TLS
-	if (ssl_conf) {
-		request->tls = true;
-		memcpy(&request->ssl_config, ssl_conf, sizeof(struct http_client_ssl_config_t));
-
-		data = mallinfo();
-		if (data.fordblks < WEBCLIENT_CONF_MIN_TLS_MEMORY) {
-			printf("Error: Not enough memory!!\n");
-			return -1;
-		}
-	}
-#endif
-
-	request->buffer = (char *)malloc(request->buflen);
-	if (request->buffer == NULL) {
-		printf("Error: Fail to malloc buffer\n");
-		return -1;
-	}
-
-	return client_send_request(request);
+	return http_client_send_requests(request, ssl_config, NULL, cb);
 }
 
 int http_client_response_init(struct http_client_response_t *response)
