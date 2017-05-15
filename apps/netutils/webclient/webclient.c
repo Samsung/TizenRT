@@ -1302,17 +1302,18 @@ int http_client_send_request(struct http_client_request_t *request,
 	if (request == NULL) {
 		printf("Error: Request is null\n");
 		return -1;
-	} else {
-		request->buffer = (char *)malloc(request->buflen);
-		if (request->buffer == NULL) {
-			printf("Error: Fail to malloc buffer\n");
-			return -1;
-		}
-
-		request->callback = NULL;
-		request->tls = false;
-		request->response = response;
 	}
+
+	request->buffer = (char *)malloc(request->buflen);
+	if (request->buffer == NULL) {
+		printf("Error: Fail to malloc buffer\n");
+		return -1;
+	}
+
+	request->callback = NULL;
+	request->tls = false;
+	request->response = response;
+
 	if (request->url == NULL) {
 		printf("Error: URL is NULL!!\n");
 		goto errout;
@@ -1356,17 +1357,18 @@ int http_client_send_request_async(struct http_client_request_t *request,
 	if (request == NULL) {
 		printf("Error: Request is null\n");
 		return -1;
-	} else {
-		request->buffer = (char *)malloc(request->buflen);
-		if (request->buffer == NULL) {
-			printf("Error: Fail to malloc buffer\n");
-			return -1;
-		}
-
-		request->callback = cb;
-		request->tls = false;
-		request->response = NULL;
 	}
+
+	request->buffer = (char *)malloc(request->buflen);
+	if (request->buffer == NULL) {
+		printf("Error: Fail to malloc buffer\n");
+		return -1;
+	}
+
+	request->callback = cb;
+	request->tls = false;
+	request->response = NULL;
+
 	if (request->url == NULL) {
 		printf("Error: URL is NULL!!\n");
 		goto errout;
