@@ -81,6 +81,9 @@ g_undeftmp:
 g_aborttmp:
 	.word	0		/* Saved lr */
 	.word	0		/* Saved spsr */
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+	.word	0		/* Saved r0 */
+#endif
 #ifdef CONFIG_ARMV7R_DECODEFIQ
 g_fiqtmp:
 	.word	0		/* Saved lr */
@@ -484,6 +487,10 @@ arm_vectordata:
 	mrs		lr, spsr				/* Get SPSR */
 	str		lr, [r13, #4]			/* Save in temp storage */
 
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+	str		r0, [r13, #8]
+#endif
+
 	/* Then switch back to SVC mode */
 
 	bic		lr, lr, #PSR_MODE_MASK	/* Keep F and T bits */
@@ -494,6 +501,15 @@ arm_vectordata:
 	 * and store r0-r12 into the frame.
 	 */
 
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+	mov		r0, sp			/* Preserve SVC mode stack */
+	ldr		sp, .Ldabtstackbase	/* Set DABT mode stack */
+	str		r0, [sp]		/* save SVC stack pointer DABT mode stack */
+	ldr		sp, .Ldaborttmp		/* Points to temp storage */
+	ldr		r0, [sp, #8]		/* Recover r0 */
+	ldr		sp, .Ldabtstackbase	/* Set back DABT mode stack */
+	bic		sp, sp, #7		/* Force 8-byte alignment */
+#endif
 	sub		sp, sp, #XCPTCONTEXT_SIZE
 	stmia	sp, {r0-r12}			/* Save the SVC mode regs */
 
@@ -526,7 +542,12 @@ arm_vectordata:
 	 * and r2.
 	 */
 
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+	ldr		r5, .Ldabtstackbase	/* Set DABT mode stack base */
+	ldr		r1, [r5]		/* Read SVC stack pointer */
+#else
 	add		r1, sp, #XCPTCONTEXT_SIZE
+#endif
 	mov		r2, r14
 
 	/* Save r13(sp), r14(lr), r15(pc), and the CPSR */
@@ -539,7 +560,12 @@ arm_vectordata:
 #else
 	/* Get the correct values of SVC r13(sp) and r14(lr) in r1 and r2 */
 
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+	ldr		r5, .Ldabtstackbase	/* Set DABT mode stack base */
+	ldr		r1, [r5]		/* Read SVC stack pointer */
+#else
 	add		r1, sp, #XCPTCONTEXT_SIZE
+#endif
 	mov		r2, r14
 
 	/* Save r13(sp), r14(lr), r15(pc), and the CPSR */
@@ -560,6 +586,12 @@ arm_vectordata:
 	bic		sp, sp, #7				/* Force 8-byte alignment */
 	bl		arm_dataabort			/* Call the handler */
 	mov		sp, r4					/* Restore the possibly unaligned stack pointer */
+
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+	ldr		sp, .Ldabtstackbase		/* Set DABT mode stack */
+	ldr		r4, [sp]			/* Recover SVC mode stack */
+	mov		sp, r4				/* Restore SVC mode stack */
+#endif
 
 	/* Upon return from arm_dataabort, r0 holds the pointer to the register
 	 * state save area to use to restore the registers.  This may or may not
@@ -600,6 +632,10 @@ arm_vectordata:
 
 .Ldaborttmp:
 	.word	g_aborttmp
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+.Ldabtstackbase:
+	.word	g_dabtstackbase
+#endif
 	.size	arm_vectordata, . - arm_vectordata
 
 	.align	5
@@ -1069,4 +1105,25 @@ g_intstackbase:
 	.size	g_intstackalloc, (CONFIG_ARCH_INTERRUPTSTACK & ~3)
 
 #endif /* CONFIG_ARCH_INTERRUPTSTACK > 3 */
+
+/************************************************************************************
+ *  Name: g_dabtstackalloc/g_dabtstackbase
+ ************************************************************************************/
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+	.bss
+	.align	4
+
+	.globl	g_dabtstackalloc
+	.type	g_dabtstackalloc, object
+	.globl	g_dabtstackbase
+	.type	g_dabtstackbase, object
+
+g_dabtstackalloc:
+	.skip	((CONFIG_ARCH_DABORTSTACK & ~3) - 4)
+g_dabtstackbase:
+	.skip	4
+	.size	g_dabtstackbase, 4
+	.size	g_dabtstackalloc, (CONFIG_ARCH_DABORTSTACK & ~3)
+
+#endif /* defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512 */
 	.end

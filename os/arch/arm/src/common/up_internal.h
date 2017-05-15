@@ -239,6 +239,11 @@ EXTERN uint32_t g_intstackalloc;	/* Allocated stack base */
 EXTERN uint32_t g_intstackbase;	/* Initial top of interrupt stack */
 #endif
 
+#if defined(CONFIG_ARCH_DABORTSTACK) && CONFIG_ARCH_DABORTSTACK >= 512
+EXTERN uint32_t g_dabtstackalloc;	/* Allocated data abort stack base */
+EXTERN uint32_t g_dabtstackbase;	/* Initial top of data abort stack */
+#endif
+
 /* These 'addresses' of these values are setup by the linker script.  They are
  * not actual uint32_t storage locations! They are only used meaningfully in the
  * following way:
