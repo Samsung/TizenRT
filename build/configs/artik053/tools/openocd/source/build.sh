@@ -140,6 +140,7 @@ cd ../
 rm -rf openocd-install
 mkdir -p openocd-install
 cd ./openocd
+patch -p1 < ../patches/*.patch
 ./configure \
 	--enable-ftdi \
 	--disable-stlink \
