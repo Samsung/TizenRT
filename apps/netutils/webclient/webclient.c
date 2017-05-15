@@ -1295,6 +1295,10 @@ int http_client_send_request(struct http_client_request_t *request,
 	struct http_client_ssl_config_t *ssl_conf = ssl_config;
 #endif
 
+	if (response == NULL) {
+		printf("Error: Response is null\n");
+		return -1;
+	}
 	if (request == NULL) {
 		printf("Error: Request is null\n");
 		return -1;
@@ -1308,10 +1312,6 @@ int http_client_send_request(struct http_client_request_t *request,
 		request->callback = NULL;
 		request->tls = false;
 		request->response = response;
-	}
-	if (response == NULL) {
-		printf("Error: Response is null\n");
-		goto errout;
 	}
 	if (request->url == NULL) {
 		printf("Error: URL is NULL!!\n");
