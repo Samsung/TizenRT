@@ -342,7 +342,7 @@ static inline int wget_parsestatus(struct wget_s *ws)
 }
 
 /****************************************************************************
- * Name: wget_parsestatus
+ * Name: wget_parseheaders
  ****************************************************************************/
 
 static inline int wget_parseheaders(struct wget_s *ws)
