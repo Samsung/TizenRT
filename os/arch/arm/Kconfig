@@ -41,6 +41,7 @@ config ARCH_CORTEXR4
 	default n
 	select ARCH_HAVE_MPU
 	select ARCH_HAVE_COHERENT_DCACHE if ELF || MODULE
+	select ARCH_HAVE_DABORTSTACK
 
 config ARCH_FAMILY
 	string
@@ -129,6 +130,23 @@ config DEBUG_HARDFAULT
 		Enables verbose debug output when a hard fault is occurs.  This verbose
 		output is sometimes helpful when debugging difficult hard fault problems,
 		but may be more than you typcially want to see.
+
+comment "Exception stack options"
+
+config ARCH_HAVE_DABORTSTACK
+	bool
+	default n
+
+config ARCH_DABORTSTACK
+	int "Dabort Stack Size"
+	depends on ARCH_HAVE_DABORTSTACK
+	default 0
+	---help---
+		This architecture supports an data abort stack. If defined, this symbol
+		will be the size of the data abort stack in bytes.  If not defined (or
+		defined to be zero or less than 512 bytes), the user task stacks
+		will be used during data abort handling. Recommended data abort stack
+		size is 1K.
 
 if ARCH_CORTEXM3 || ARCH_CORTEXM4
 source arch/arm/src/armv7-m/Kconfig

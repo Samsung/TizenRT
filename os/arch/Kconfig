@@ -10,7 +10,6 @@ choice
 config ARCH_ARM
 	bool "ARM"
 	select ARCH_HAVE_INTERRUPTSTACK
-	select ARCH_HAVE_DABORTSTACK
 	select ARCH_HAVE_VFORK
 	select ARCH_HAVE_STACKCHECK
 	select ARCH_HAVE_CUSTOMOPT
@@ -662,23 +661,6 @@ config ARCH_INT_DISABLEALL
 		standard interrupt handling, prohibiting nesting.  Fix is simple:  Need
 		to used more priority levels so that we can make a cleaner distinction
 		with the standard interrupt handler.
-
-comment "Exception stack options"
-
-config ARCH_HAVE_DABORTSTACK
-	bool
-	default n
-
-config ARCH_DABORTSTACK
-	int "Dabort Stack Size"
-	depends on ARCH_HAVE_DABORTSTACK
-	default 0
-	---help---
-		This architecture supports an data abort stack. If defined, this symbol
-		will be the size of the data abort stack in bytes.  If not defined (or
-		defined to be zero or less than 512 bytes), the user task stacks
-		will be used during data abort handling. Recommended data abort stack
-		size is 1K.
 
 
 comment "Boot options"
