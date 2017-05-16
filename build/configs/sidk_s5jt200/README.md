@@ -77,6 +77,15 @@ cd /usr/lib
 sudo ln -s /usr/local/lib/libftd2xx.so.1.0.4 libftd2xx.so
 ```
 
+## How to program a binary
+
+After buiding a Tizen RT, execute below at $TIZENRT_BASEDIR/os folder.
+
+TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-the-sources) tab of Quick Start.
+```bash
+make download ALL
+```
+
 ## Configuration Sets
 
 There are three configuration sets for sidk_s5jt200, including 'hello_with_tash', 'kernel_sample', and 'tc'.
