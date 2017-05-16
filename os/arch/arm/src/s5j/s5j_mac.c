@@ -53,8 +53,8 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
 #include <tinyara/config.h>
+
 #if defined(CONFIG_NET)
 
 #include <stdint.h>
@@ -80,18 +80,10 @@
  *
  * Description:
  *   This is the "standard" network initialization logic called from the
- *   low-level initialization logic in up_initialize.c.  If S5J_NETHCONTROLLERS
- *   greater than one, then board specific logic will have to supply a
- *   version of up_netinitialize() that calls s5j_ethinitialize() with
- *   the appropriate interface number.
- *
- * Parameters:
- *   None.
- *
- * Returned Value:
- *   None.
- *
- * Assumptions:
+ *   low-level initialization logic in up_initialize.c.
+ *   If S5J_NETHCONTROLLERS greater than one, then board specific logic
+ *   will have to supply a version of up_netinitialize() that calls
+ *   s5j_ethinitialize() with the appropriate interface number.
  *
  ****************************************************************************/
 void udp_initialize(void)
@@ -107,4 +99,3 @@ void up_netinitialize(void)
 
 }
 #endif
-

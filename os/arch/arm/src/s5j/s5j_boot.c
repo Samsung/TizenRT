@@ -53,7 +53,6 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
 #include <tinyara/config.h>
 
 #include <stdint.h>
@@ -73,14 +72,6 @@
 #endif
 #include "cache.h"
 #include "fpu.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
 
 /****************************************************************************
  * Public Data
@@ -108,12 +99,12 @@ int s5j_mpu_initialize(void)
 #ifdef CONFIG_ARCH_CHIP_S5JT200
 	/*
 	 * Vector Table	0x02020000	0x02020FFF	4
-	 * Reserved	0x02021000	0x020217FF	2
-	 * BL1		0x02021800	0x020237FF	8
-	 * TinyARA	0x02023800	0x020E7FFF	786(WBWA)
-	 * Reserved	0x020E8000	0x020FFFFF	96 (WBWA)
-	 * Reserved	0x02100000	0x021FFFFF	64 (NCNB)
-	 * WIFI		0x02110000	0x0215FFFF	320(NCNB)
+	 * Reserved		0x02021000	0x020217FF	2
+	 * BL1			0x02021800	0x020237FF	8
+	 * TinyARA		0x02023800	0x020E7FFF	786(WBWA)
+	 * Reserved		0x020E8000	0x020FFFFF	96 (WBWA)
+	 * Reserved		0x02100000	0x021FFFFF	64 (NCNB)
+	 * WIFI			0x02110000	0x0215FFFF	320(NCNB)
 	 */
 
 	/* Region 0, Set read only for memory area */

@@ -242,7 +242,7 @@ static int s5j_configalt(uint32_t cfgset, unsigned int port,
 	s5j_configinput(DEFAULT_INPUT, port, pin);
 
 	modifyreg32(base + S5J_GPIO_CON_OFFSET, GPIO_CON_PIN_MASK(pin),
-					alt << GPIO_CON_PIN_SHIFT(pin));
+				alt << GPIO_CON_PIN_SHIFT(pin));
 
 	/* Set pull-up mode */
 	s5j_pullup(cfgset, port, pin);

@@ -101,7 +101,3 @@ enum {
 #define S5J_DEFAULT_UART_CLOCK	(26 * 1000 * 1000)
 
 #endif /* __ARCH_ARM_SRC_S5J_S5J_VCLK_H__ */
-
-
-
-
