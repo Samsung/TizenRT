@@ -8,7 +8,7 @@ config DM
 if DM
 config LWM2M_WAKAAMA
 	bool "LWM2M_WAKAAMA"
-	default n
+	default y
 	---help---
 		enable LWM2M WAKAAMA external feature
 
@@ -47,7 +47,7 @@ endif
 
 menuconfig DM_WIFI
 	bool "Set Up Wifi Info For DM Demo"
-	default n
+	default y
 	---help---
 		Enable the artik demo example
 
