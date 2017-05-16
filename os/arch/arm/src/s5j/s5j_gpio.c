@@ -111,6 +111,25 @@ static const uint32_t g_intbase[S5J_GPIO_NPORTS] = {
  * Private Functions
  ****************************************************************************/
 /****************************************************************************
+ * Name: s5j_setdrv
+ *
+ * Description:
+ *   Set drive strength of a GPIO pin.
+ *
+ ****************************************************************************/
+static void s5j_setdrv(uint32_t cfgset, unsigned int port, unsigned int pin)
+{
+	uint32_t cfg;
+	uint32_t base = g_gpiobase[port];
+
+	/* CAVEAT: GPIO_FAST|SLOWXXX is compatible with GPIO_DRV_XXX */
+	cfg = (cfgset & GPIO_DRVSTR_MASK) >> GPIO_DRVSTR_SHIFT;
+
+	modifyreg32(base + S5J_GPIO_DRV_OFFSET, GPIO_DRV_PIN_MASK(pin),
+				cfg << GPIO_DRV_PIN_SHIFT(pin));
+}
+
+/****************************************************************************
  * Name: s5j_pullup
  *
  * Description:
@@ -228,6 +247,9 @@ static int s5j_configalt(uint32_t cfgset, unsigned int port,
 	/* Set pull-up mode */
 	s5j_pullup(cfgset, port, pin);
 
+	/* Set drive strength */
+	s5j_setdrv(cfgset, port, pin);
+
 	return OK;
 }
 
@@ -255,6 +277,9 @@ static inline int s5j_configoutput(uint32_t cfgset, unsigned int port,
 	modifyreg32(g_gpiobase[port] + S5J_GPIO_CON_OFFSET,
 				GPIO_CON_PIN_MASK(pin),
 				GPIO_CON_OUTPUT << GPIO_CON_PIN_SHIFT(pin));
+
+	/* Set drive strength */
+	s5j_setdrv(cfgset, port, pin);
 
 	return OK;
 }
