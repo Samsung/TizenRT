@@ -180,8 +180,8 @@
 #define GPIO_PUD_RESERVED		0x2
 #define GPIO_PUD_PULLUP			0x3
 
-#define GPIO_DRV_PIN_MASK(p)	((p) * 4)
-#define GPIO_DRV_PIN_SHIFT(p)	(0xf << GPIO_DRV_PIN_SHIFT(p))
+#define GPIO_DRV_PIN_SHIFT(p)	((p) * 4)
+#define GPIO_DRV_PIN_MASK(p)	(0xf << GPIO_DRV_PIN_SHIFT(p))
 #define GPIO_DRV_FAST1X			0x0
 #define GPIO_DRV_FAST2X			0x1
 #define GPIO_DRV_FAST3X			0x2
