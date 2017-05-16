@@ -23,17 +23,33 @@ make
 sudo make install
 ```
 
-Set the OPENOCD_SCRIPTS to environment variable.
-This step is needed to program a binary at os folder.
+## How to program a binary
+
+There are two methods, using OpenOCD or script.
+
+After building Tizen RT, follow below steps at $TIZENRT_BASEDIR/os folder.
+
+TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-the-sources) tab of Quick Start.
+
+### Using download script
+
+```bash
+make download ALL
+```
+This makes complete set of binaries programmed.
+
+### Using OpenOCD
+
+This is used to program a partial binary.
+
+Export 'OPENOCD_SCRIPTS' to environment variable.
+
 ```bash
 export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/configs/artik053/tools/openocd
 ```
-TIZENRT_BASEDIR was set at 'Getting the sources' tab of [[Quick Start]](../../../README.md).
-
-## How to program a binary
 
 At first, programming the complete set of binaries are needed.
-After buiding a Tizen RT, execute as follows at os folder.
+
 ```bash
 openocd -f artik053.cfg -c ' \
     flash_write bl1    ../build/configs/artik053/bin/bl1.bin;      \
