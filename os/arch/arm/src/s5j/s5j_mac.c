@@ -86,14 +86,6 @@
  *   s5j_ethinitialize() with the appropriate interface number.
  *
  ****************************************************************************/
-void udp_initialize(void)
-{
-
-}
-void udp_free(void)
-{
-
-}
 void up_netinitialize(void)
 {
 
