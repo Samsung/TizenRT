@@ -1,4 +1,4 @@
-/*****************************************************************************
+/****************************************************************************
  *
  * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
@@ -15,7 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*****************************************************************************
+/****************************************************************************
  * arch/arm/src/artik053/src/artik053_tash.c
  *
  *   Copyright (C) 2010 Gregory Nutt. All rights reserved.
@@ -50,7 +50,7 @@
  *
  ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
@@ -111,7 +111,7 @@ int artik053_adc_setup(void)
 	if (ret < 0) {
 		return ret;
 	}
-#endif							/* CONFIG_S5J_ADC */
+#endif /* CONFIG_S5J_ADC */
 
 	return OK;
 }
@@ -217,7 +217,7 @@ static void artik053_configure_partitions(void)
 
 		partno++;
 	}
-#endif							/* CONFIG_ARTIK053_FLASH_PART */
+#endif /* CONFIG_ARTIK053_FLASH_PART */
 }
 
 static void scsc_wpa_ctrl_iface_init(void)
@@ -245,11 +245,11 @@ static void scsc_wpa_ctrl_iface_init(void)
 #endif
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Name: board_app_initialize
  *
  * Description:
@@ -273,7 +273,7 @@ int board_app_initialize(void)
 			lldbg("ERROR: mounting '%s' failed\n", CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME);
 		}
 	}
-#endif							/* CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME */
+#endif /* CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME */
 
 #ifdef CONFIG_FS_PROCFS
 	/* Mount the procfs file system */
@@ -295,7 +295,7 @@ int board_app_initialize(void)
 			}
 		}
 	}
-#endif							/* CONFIG_RTC_DRIVER */
+#endif /* CONFIG_RTC_DRIVER */
 
 #ifdef CONFIG_TIMER
 	{

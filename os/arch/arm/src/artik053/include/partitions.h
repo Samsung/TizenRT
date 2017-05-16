@@ -19,15 +19,15 @@
 #ifndef __ARCH_ARM_SRC_ARTIK053_INCLUDE_PARTITIONS_H__
 #define __ARCH_ARM_SRC_ARTIK053_INCLUDE_PARTITIONS_H__
 
-/******************************************************************************
+/****************************************************************************
  * Included Files
- *****************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
-/******************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- *****************************************************************************/
+ ****************************************************************************/
 
 #define MTD_SFLASH_ADDR         (0x04000000)	// SFLASH PHY ADDR
 #define MTD_SFLASH_SIZE         (8 * 1024 * 1024)	// 8MB Fixed Size
@@ -85,7 +85,7 @@
   +---------------+
 */
 
-/********************* Partition Size's ***************************************/
+/********************* Partition Size's *************************************/
 #define MTD_BLK_MASTER_SIZE     MTD_SFLASH_SIZE
 #define MTD_BLK_BOOTLDR_SIZE    (16 * MTD_1K_SIZE)
 #define MTD_BLK_OTA0_SIZE       (3008 * MTD_1K_SIZE)
@@ -130,9 +130,9 @@
 			MTD_BLK_COREDUMP_SIZE + MTD_BLK_NV_SIZE + \
 			MTD_BLK_BOOTPARAM_SIZE))
 
-/********************* End of Partition Size's  ***********************************/
+/********************* End of Partition Size's  *****************************/
 
-/********************* Partition Start Offset's ***********************************/
+/********************* Partition Start Offset's *****************************/
 /* Partition[0] : MASTER,       SIZE = 8MB */
 #define MTD_BLK_MASTER_START    (0x0)
 
@@ -176,4 +176,4 @@
 /* Partition[13] : BOOTPARAM,   SIZE = 32K */
 #define MTD_BLK_BOOTPARAM_START (MTD_BLK_NV_START + MTD_BLK_NV_SIZE)
 
-#endif							/* __ARCH_ARM_SRC_ARTIK053_INCLUDE_PARTITIONS_H__ */
+#endif /* __ARCH_ARM_SRC_ARTIK053_INCLUDE_PARTITIONS_H__ */
