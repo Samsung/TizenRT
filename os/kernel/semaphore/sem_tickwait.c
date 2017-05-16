@@ -183,7 +183,6 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 		/* Return the errno from sem_wait() */
 
 		ret = -get_errno();
-		goto errout_with_irqdisabled;
 	}
 
 	/* Stop the watchdog timer */
