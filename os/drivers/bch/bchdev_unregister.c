@@ -97,7 +97,7 @@ int bchdev_unregister(FAR const char *chardev)
 	/* Open the character driver associated with chardev */
 	fd = open(chardev, O_RDONLY);
 	if (fd < 0) {
-		_err("ERROR: Failed to open %s: %d\n", chardev, errno);
+		fdbg("ERROR: Failed to open %s: %d\n", chardev, errno);
 		return -errno;
 	}
 
@@ -109,7 +109,7 @@ int bchdev_unregister(FAR const char *chardev)
 	(void)close(fd);
 
 	if (ret < 0) {
-		_err("ERROR: ioctl failed: %d\n", errno);
+		fdbg("ERROR: ioctl failed: %d\n", errno);
 		return -errno;
 	}
 
