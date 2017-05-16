@@ -531,28 +531,27 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 	attr = (FAR struct part_procfs_file_s *)filep->f_priv;
 	DEBUGASSERT(attr);
 
+	/* Output a header before the first entry */
+	if (filep->f_pos == 0) {
+#ifdef CONFIG_MTD_PARTITION_NAMES
+		total = snprintf(buffer, buflen, "Name        Start    Size");
+#else
+		total = snprintf(buffer, buflen, "  Start    Size");
+#endif
+
+#ifndef CONFIG_FS_PROCFS_EXCLUDE_MTD
+		total += snprintf(&buffer[total], buflen - total, "   MTD\n");
+#else
+		total += snprintf(&buffer[total], buflen - total, "\n");
+#endif
+	}
+
 	/* If we are at the end of the list, then return 0 signifying the
 	 * end-of-file.  This also handles the special case when there are
 	 * no registered MTD partitions.
 	 */
 
 	if (attr->nextpart) {
-		/* Output a header before the first entry */
-
-		if (attr->nextpart == g_pfirstpartition) {
-#ifdef CONFIG_MTD_PARTITION_NAMES
-			total = snprintf(buffer, buflen, "Name        Start    Size");
-#else
-			total = snprintf(buffer, buflen, "  Start    Size");
-#endif
-
-#ifndef CONFIG_FS_PROCFS_EXCLUDE_MTD
-			total += snprintf(&buffer[total], buflen - total, "   MTD\n");
-#else
-			total += snprintf(&buffer[total], buflen - total, "\n");
-#endif
-		}
-
 		/* Get the geometry of the FLASH device */
 		ret = attr->nextpart->parent->ioctl(attr->nextpart->parent, MTDIOC_GEOMETRY, (unsigned long)((uintptr_t)&geo));
 		if (ret < 0) {
@@ -607,7 +606,7 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 		}
 #endif
 
-		if (ret + total < buflen) {
+		if (ret + total + 1 < buflen) {
 			/* It fit in the buffer totally.  Advance total and move to
 			 * next partition.
 			 */
@@ -615,8 +614,6 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 			total += ret;
 			attr->nextpart = attr->nextpart->pnext;
 		}
-
-		buffer[total] = '\0';
 	}
 
 	/* Update the file offset */
