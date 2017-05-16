@@ -55,26 +55,9 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 
+#include "up_internal.h"
+
 #if defined(CONFIG_NET)
-
-#include <stdint.h>
-#include <stdbool.h>
-#include <time.h>
-#include <string.h>
-#include <debug.h>
-#include <queue.h>
-#include <errno.h>
-
-#include <arpa/inet.h>
-
-#include <tinyara/arch.h>
-#include <tinyara/irq.h>
-#include <tinyara/wdog.h>
-
-#include <chip.h>
-#include <chip.h>
-#include <arch/chip/irq.h>
-
 /****************************************************************************
  * Function: up_netinitialize
  *
