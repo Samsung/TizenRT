@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,26 +15,27 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#include <debug.h>
-#include <tinyara/config.h>
 #include <tinyara/logm.h>
-#include <sys/types.h>
+#include <stdio.h>
 #include "logm.h"
 
-pid_t g_logm_tid;
+volatile int new_logm_bufsize = 0;
 
-void logm_start(void)
+/* This will be moved to upper layer or changed for protected build  */
+/* for setparam types, refer logm_param_type_e  */
+int logm_set(enum logm_param_type_e type, int value)
 {
-	int priority = LOGM_TASK_PRORITY;
-	int stacksize = LOGM_TASK_STACKSIZE;
-
-	g_logm_tid = task_create("logm", priority, stacksize, logm_task, NULL);
-
-	if (g_logm_tid < 0) {
-		lmdbg("LOGM Launch Failed \n");
-		return;
+	switch (type) {
+	case LOGM_BUFSIZE:
+		/* Buffer size should be adjusted to multiples of 4 */
+		new_logm_bufsize = (value + 3) & (~0x3);
+		break;
+	case LOGM_INTERVAL:
+		logm_print_interval = value * 1000;
+		break;
+	default:
+		break;
 	}
-#ifdef CONFIG_TASH
-	logm_register_tashcmds();
-#endif
+
+	return 0;					// for now, to keep compiler happy
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
  *
  ****************************************************************************/
 
-#include <tinyara/config.h>
-#include <unistd.h>
-#include <tinyara/kthread.h>
-#include <sched.h>
-#include <tinyara/logm.h>
-#include <syslog.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <syslog.h>
+#include <tinyara/kthread.h>
+#include <tinyara/logm.h>
+
 #include "logm.h"
 
 /* Global Variables */
