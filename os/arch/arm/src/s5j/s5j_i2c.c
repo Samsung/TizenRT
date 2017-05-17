@@ -501,11 +501,9 @@ static int sendbytes(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg)
 			wrcount++;
 		} else if (ret == 0) {
 			/* NAK from the slave */
-			lldbg("%s: sendbytes: NAK bailout at #%d byte\n", priv->name, count);
 			return -EIO;
 		} else {
 			/* Timeout */
-			lldbg("%s: sendbytes: error %d\n", priv->name, ret);
 			return ret;
 		}
 	}
@@ -531,7 +529,6 @@ static int readbytes(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg)
 		count--;
 	}
 
-	lldbg("\nreadbytes: %d\n", rdcount);
 	return rdcount;
 }
 
@@ -547,12 +544,6 @@ static int try_address(struct s5j_i2c_priv_s *priv, u8 addr, int retries)
 		hsi2c_stop(priv);
 		up_udelay(priv->timeout / 2);
 		hsi2c_start(priv);
-	}
-
-	if (i && ret) {
-		lldbg("%s: used %d tries to %s client at 0x%02x: %s\n", priv->name,
-						i + 1, addr & 1 ? "read from" : "write to",
-						addr >> 1, ret == 1 ? "success" : "failed, timeout?");
 	}
 
 	return ret;
@@ -571,18 +562,15 @@ static int do_address(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg)
 	if (flags & I2C_M_TEN) {
 		/* a 10-bit address in manual mode */
 		addr = 0xf0 | ((msg->addr >> 7) & 0x06);
-		lldbg("%s: addr0: %d\n", priv->name, addr);
 
 		ret = try_address(priv, addr, retries);
 		if ((ret != 1) && !nak_ok) {
-			lldbg("%s: died at extended address\n", priv->name);
 			return -ENXIO;
 		}
 
 		/* the remaining 8 bit address */
 		ret = hsi2c_outb(priv, msg->addr & 0xff);
 		if ((ret != 1) && !nak_ok) {
-			lldbg("%s: died at 2nd address\n", priv->name);
 			return -ENXIO;
 		}
 
@@ -592,7 +580,6 @@ static int do_address(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg)
 			addr |= 0x1;
 			ret = try_address(priv, addr, retries);
 			if ((ret != 1) && !nak_ok) {
-				lldbg("%s: died at repeated address\n", priv->name);
 				return -EIO;
 			}
 		}
@@ -1015,13 +1002,11 @@ static int s5j_i2c_initialize(struct s5j_i2c_priv_s *priv, unsigned int frequenc
 
 	ret = s5j_configgpio(config->scl_pin);
 	if (ret < 0) {
-		lldbg("I2C%d: s5j_configgpio(%08x) failed: %d\n", config->scl_pin, ret);
 		return ret;
 	}
 
 	ret = s5j_configgpio(config->sda_pin);
 	if (ret < 0) {
-		lldbg("I2C%d: s5j_configgpio(%08x) failed: %d\n", config->sda_pin, ret);
 		return ret;
 	}
 
@@ -1046,8 +1031,6 @@ static int s5j_i2c_initialize(struct s5j_i2c_priv_s *priv, unsigned int frequenc
 
 static int s5j_i2c_uninitialize(struct s5j_i2c_priv_s *priv)
 {
-	lldbg("I2C%d: refs=%d\n", priv->config->devno, priv->refs);
-
 	/* Disable I2C */
 	hsi2c_cleanup(priv);
 
@@ -1314,7 +1297,6 @@ struct i2c_dev_s *up_i2cinitialize(int port)
 		break;
 
 	default:
-		lldbg("I2C%d: ERROR: Not supported\n", port);
 		return NULL;
 	}
 
@@ -1357,8 +1339,6 @@ int s5j_i2cbus_uninitialize(struct i2c_dev_s *dev)
 
 	DEBUGASSERT(priv && priv->config && priv->refs > 0);
 
-	lldbg("I2C%d: Uninitialize\n", priv->config->devno);
-
 	/* Decrement reference count and check for underflow */
 	flags = irqsave();
 
@@ -1391,18 +1371,12 @@ void s5j_i2c_register(int bus)
 	char path[16];
 	int ret;
 
-	lldbg("\ns5j_i2c_register start : %d ", bus);
 	i2c = up_i2cinitialize(bus);
-	if (i2c == NULL) {
-		lldbg("ERROR: Failed to get I2C%d interface\n", bus);
-	} else {
+	if (i2c != NULL) {
 		snprintf(path, 16, "/dev/i2c-%d", bus);
 		ret = i2c_uioregister(path, i2c);
 		if (ret < 0) {
-			lldbg("ERROR: Failed to register I2C%d driver: %d\n", bus, ret);
 			s5j_i2cbus_uninitialize(i2c);
-		} else {
-			lldbg("register I2C%d driver: %d\n", bus, ret);
 		}
 	}
 }
