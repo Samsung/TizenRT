@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup MOUNT_KERNEL MOUNT
+ * @brief Provides APIs for Mount
  * @ingroup KERNEL
  *
  * @{

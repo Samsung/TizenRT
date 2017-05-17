@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup STDLIB_LIBC STDLIB
+ * @brief Provides APIs for Standard Library
  * @ingroup KERNEL
  * {
  */

@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup ASSERT_KERNEL ASSERT
+ * @brief Provides APIs for Assertion
  * @ingroup KERNEL
  *
  * @{

@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup DIRENT_KERNEL DIRENT
+ * @brief Provides APIs for Directory Entries
  * @ingroup KERNEL
  *
  * @{

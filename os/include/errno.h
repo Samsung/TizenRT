@@ -51,6 +51,7 @@
  ************************************************************************/
 /**
  * @defgroup ERRNO_KERNEL ERRNO
+ * @brief Provides APIs for Error Number
  * @ingroup KERNEL
  *
  * @{

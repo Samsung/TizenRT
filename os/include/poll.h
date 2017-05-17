@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup POLL_KERNEL POLL
+ * @brief Provides APIs for Poll
  * @ingroup KERNEL
  *
  * @{

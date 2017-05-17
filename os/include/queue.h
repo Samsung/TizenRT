@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup QUEUE_LIBC QUEUE
+ * @brief Provides APIs for Queue
  * @ingroup KERNEL
  *
  * @{

@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup INTTYPES_LIBC INTTYPES
+ * @brief Provides APIs for Integer Types
  * @ingroup KERNEL
  * @{
  */

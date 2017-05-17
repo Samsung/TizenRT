@@ -55,6 +55,7 @@
 
 /**
  * @defgroup STDIO_LIBC STDIO
+ * @brief Provides APIs for Standard Input/Output
  * @ingroup KERNEL
  *
  * @{

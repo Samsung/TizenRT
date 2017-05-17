@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup UNISTD_KERNEL UNISTD
+ * @brief Provides APIs for Standard Symbolic Constants and Types
  * @ingroup KERNEL
  *
  * @{

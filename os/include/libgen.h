@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup LIBGEN_KERNEL LIBGEN
+ * @brief Provides APIs for Pattern matching functions
  * @ingroup KERNEL
  *
  * @{

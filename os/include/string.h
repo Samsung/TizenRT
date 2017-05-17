@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup STRING_LIBC STRING
+ * @brief Provides APIs for String
  * @ingroup KERNEL
  *
  * @{

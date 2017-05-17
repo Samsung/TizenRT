@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup CRC_KERNEL CRC
+ * @brief Provides APIs for Cyclic Redundancy Check
  * @ingroup KERNEL
  *
  * @{

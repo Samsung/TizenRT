@@ -51,6 +51,7 @@
  ********************************************************************************/
 /**
  * @defgroup PTHREAD_KERNEL PTHREAD
+ * @brief Provides APIs for Pthreads
  * @ingroup KERNEL
  */
 

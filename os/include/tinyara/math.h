@@ -50,6 +50,7 @@
  ****************************************************************************/
 /**
  * @defgroup MATH_LIBC MATH
+ * @brief Provides APIs for Math
  * @ingroup KERNEL
  * @{
  */

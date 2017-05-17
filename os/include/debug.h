@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup DEBUG_KERNEL DEBUG
+ * @brief Provides APIs for Debug
  * @ingroup KERNEL
  *
  * @{
