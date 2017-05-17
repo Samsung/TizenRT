@@ -199,8 +199,8 @@ int main(int argc, char **argv, char **envp)
 	printf("# define CONFIG_SMARTFS_NLOGGING_SECTORS ((CONFIG_NFILE_DESCRIPTORS + 1) * 2)\n");
 	printf("#endif\n\n");
 	printf("/* To enable journaling, this is the minimum required size(in terms of number of sectors)\n");
-	printf("/* of the partition where filesystem is mounted.\n");
-	printf("/* If the size of partition is less then this threshold, journaling is automatically disabled\n");
+	printf(" * of the partition where filesystem is mounted.\n");
+	printf(" * If the size of partition is less then this threshold, journaling is automatically disabled\n");
 	printf(" */\n\n");
 	printf("#if CONFIG_SMARTFS_NLOGGING_SECTORS > 0\n");
 	printf("# define CONFIG_SMARTFS_JOURNALING_THRESHOLD (CONFIG_SMARTFS_NLOGGING_SECTORS * 4)\n");
