@@ -111,6 +111,9 @@ int up_timerisr(int irq, FAR void *context, FAR void *arg)
  ****************************************************************************/
 void up_timer_initialize(void)
 {
+	/* OSC_CON[16] should be set to 1, so that RTC uses XRTCXTO as srcclk */
+	modifyreg32(0x800A0554, 0x0, 1 << 16);
+
 	/* Configure the RTC timetick to generate periodic interrupts */
 	modifyreg32(S5J_RTC_RTCCON, RTC_RTCCON_TICKEN0_ENABLE, 0);
 	putreg32(SYSTICK_RELOAD, S5J_RTC_TICCNT0);
