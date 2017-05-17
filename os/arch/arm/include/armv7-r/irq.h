@@ -79,15 +79,15 @@
  */
 #define MPU_REG_ENTIRE_MAP    (0)
 #define MPU_REG_USER_RAM    (1)
-#define MPU_REG_USER_CONFIG1  (2)
-#define MPU_REG_USER_CONFIG0  (3)
-#define MPU_REG_TASK_STACK    (4)
-#define MPU_REG_KERN_FLASH    (5)
-#define MPU_REG_KERN_DATA   (6)
+#define MPU_REG_USER_CONFIG0  (2)
+#define MPU_REG_TASK_STACK    (3)
+#define MPU_REG_KERN_FLASH    (4)
+#define MPU_REG_KERN_DATA   (5)
+#define MPU_REG_STK_GUARD   (6)
 #define MPU_REG_KERN_VEC    (7)
 
 /* Total number of regions for user, including the user task region */
-#define MPU_TOTAL_USER_REG          (MPU_REG_KERN_FLASH - MPU_REG_USER_CONFIG1)
+#define MPU_TOTAL_USER_REG          (MPU_REG_KERN_FLASH - MPU_REG_USER_CONFIG0)
 
 /* IRQ Stack Frame Format:
  *
@@ -191,19 +191,13 @@
 #endif
 
 #if defined(CONFIG_BUILD_PROTECTED)
-#define REG_USR_CFG1    (ARM_CONTEXT_REGS+FPU_CONTEXT_REGS)
-#define REG_RNUM      (REG_USR_CFG1 + 0)
-#define REG_RBASE     (REG_USR_CFG1 + 1)
-#define REG_RSIZE     (REG_USR_CFG1 + 2)
-#define REG_RATTR     (REG_USR_CFG1 + 3)
+#define REG_USR_CFG    (ARM_CONTEXT_REGS+FPU_CONTEXT_REGS)
+#define REG_RNUM      (REG_USR_CFG + 0)
+#define REG_RBASE     (REG_USR_CFG + 1)
+#define REG_RSIZE     (REG_USR_CFG + 2)
+#define REG_RATTR     (REG_USR_CFG + 3)
 
-#define REG_USR_CFG0    (REG_RATTR + 1)
-#define REG_RNUM_0      (REG_USR_CFG0 + 0)
-#define REG_RBASE_0     (REG_USR_CFG0 + 1)
-#define REG_RSIZE_0     (REG_USR_CFG0 + 2)
-#define REG_RATTR_0     (REG_USR_CFG0 + 3)
-
-#define REG_USR_STK     (REG_RATTR_0 + 1)
+#define REG_USR_STK     (REG_RATTR + 1)
 #define REG_RNUM_STK    (REG_USR_STK + 0)
 #define REG_RBASE_STK   (REG_USR_STK + 1)
 #define REG_RSIZE_STK   (REG_USR_STK + 2)
@@ -215,9 +209,19 @@
 #define MPU_CONTEXT_REGS  (0)
 #endif
 
-/* The total number of registers saved by software */
+#ifdef CONFIG_MPU_STACKGUARD
+#define REG_STACK_GUARD		(ARM_CONTEXT_REGS + FPU_CONTEXT_REGS + MPU_CONTEXT_REGS)
+#define REG_RNUM_STKGUARD 	(REG_STACK_GUARD + 0)
+#define REG_RBASE_STKGUARD	(REG_STACK_GUARD + 1)
+#define REG_RSIZE_STKGUARD   	(REG_STACK_GUARD + 2)
+#define REG_RATTR_STKGUARD   	(REG_STACK_GUARD + 3)
+#define MPU_GUARD_REGS  (4)
+#else
+#define MPU_GUARD_REGS  (0)
+#endif
+ /* The total number of registers saved by software */
 
-#define XCPTCONTEXT_REGS    (ARM_CONTEXT_REGS + FPU_CONTEXT_REGS + MPU_CONTEXT_REGS)
+#define XCPTCONTEXT_REGS    (ARM_CONTEXT_REGS + FPU_CONTEXT_REGS + MPU_CONTEXT_REGS + MPU_GUARD_REGS)
 #define XCPTCONTEXT_SIZE    (4 * XCPTCONTEXT_REGS)
 
 /* Friendly register names */
