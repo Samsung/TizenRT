@@ -92,7 +92,7 @@ static void tc_net_inet_ntoa_p(void)
 	addr_inet.sin_addr.s_addr = 0x6601a8c0;
 	ret = inet_ntoa(addr_inet.sin_addr);
 
-	TC_ASSERT_NEQ("inet", ret, -1);
+	TC_ASSERT_NEQ("inet", *ret, -1);
 	TC_SUCCESS_RESULT();
 
 }
