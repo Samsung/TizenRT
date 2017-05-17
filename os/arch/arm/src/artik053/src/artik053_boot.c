@@ -118,6 +118,20 @@ static void board_gpio_initialize(void)
 #endif /* CONFIG_GPIO */
 }
 
+/****************************************************************************
+ * Name: board_i2c_initialize
+ *
+ * Description:
+ *  Expose board dependent I2Cs
+ ****************************************************************************/
+static void board_i2c_initialize(void)
+{
+#ifdef CONFIG_I2C
+	s5j_i2c_register(0);
+	s5j_i2c_register(1);
+#endif
+}
+
 /*****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -198,5 +212,6 @@ void board_initialize(void)
 #endif
 
 	board_gpio_initialize();
+	board_i2c_initialize();
 }
 #endif /* CONFIG_BOARD_INITIALIZE */
