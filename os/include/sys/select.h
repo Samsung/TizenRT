@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup SELECT_KERNEL SELECT
+ * @brief Provides APIs for Select
  * @ingroup KERNEL
  *
  * @{

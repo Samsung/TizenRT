@@ -51,6 +51,7 @@
  ********************************************************************************/
 /**
  * @defgroup SCHED_KERNEL SCHED
+ * @brief Provides APIs for Scheduling
  * @ingroup KERNEL
  */
 

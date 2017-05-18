@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup SEMAPHORE_KERNEL SEMAPHORE
+ * @brief Provides APIs for Semaphore
  * @ingroup KERNEL
  */
 

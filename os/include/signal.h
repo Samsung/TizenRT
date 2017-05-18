@@ -51,6 +51,7 @@
  ********************************************************************************/
 /**
  * @defgroup SIGNAL_KERNEL SIGNAL
+ * @brief Provides APIs for Signal
  * @ingroup KERNEL
  *
  * @{

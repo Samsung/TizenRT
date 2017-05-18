@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup TERMIOS_KERNEL TERMIOS
+ * @brief Provides APIs for Terminal Input/Output Interfaces
  * @ingroup KERNEL
  */
 

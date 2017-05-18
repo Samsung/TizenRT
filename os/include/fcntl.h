@@ -51,6 +51,7 @@
  ********************************************************************************/
 /**
  * @defgroup FCNTL_KERNEL FCNTL
+ * @brief Provides APIs for File Control
  * @ingroup KERNEL
  *
  * @{

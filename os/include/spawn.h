@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup SPAWN_LIBC SPAWN
+ * @brief Provides APIs for Spawn
  * @ingroup KERNEL
  *
  * @{

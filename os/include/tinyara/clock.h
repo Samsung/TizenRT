@@ -52,6 +52,7 @@
 
 /**
  * @defgroup CLOCK_KERNEL CLOCK
+ * @brief Provides APIs for Clock
  * @ingroup KERNEL
  *
  * @{

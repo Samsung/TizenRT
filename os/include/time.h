@@ -51,6 +51,7 @@
  ********************************************************************************/
 /**
  * @defgroup TIME_KERNEL TIME
+ * @brief Provides APIs for Time
  * @ingroup KERNEL
  */
 

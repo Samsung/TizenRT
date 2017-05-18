@@ -52,6 +52,7 @@
 
 /**
  * @defgroup STAT_KERNEL STAT
+ * @brief Provides APIs for File Status
  * @ingroup KERNEL
  *
  * @{

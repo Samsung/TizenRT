@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup IOCTL_KERNEL IOCTL
+ * @brief Provides APIs for Input/Output Control
  * @ingroup KERNEL
  *
  * @{

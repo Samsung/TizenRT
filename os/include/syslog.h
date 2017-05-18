@@ -51,6 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup SYSLOG_LIBC SYSLOG
+ * @brief Provides APIs for System Logging
  * @ingroup KERNEL
  *
  * @{

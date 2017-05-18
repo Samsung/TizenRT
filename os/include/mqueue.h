@@ -51,6 +51,7 @@
  ********************************************************************************/
 /**
  * @defgroup MQUEUE_KERNEL MQUEUE
+ * @brief Provides APIs for Message Queue
  * @ingroup KERNEL
  *
  * @{
