@@ -112,14 +112,9 @@ FAR struct netif *netdev_findbyname(const char *ifname)
 	if (ifname) {
 		netdev_semtake();
 		dev = netif_find((char *)ifname);
+		netdev_semgive();
 
-		if (NULL != dev) {
-			netdev_semgive();
-			return dev;
-		} else {
-			netdev_semgive();
-			return NULL;
-		}
+		return dev;
 	}
 
 	return NULL;
