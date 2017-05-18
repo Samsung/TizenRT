@@ -56,15 +56,28 @@
 
 #include <tinyara/config.h>
 
-#define mbedtls_printf     printf
-#define mbedtls_fprintf    fprintf
-#define mbedtls_snprintf   snprintf
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "tls/config.h"
+
+#if !defined(MBEDTLS_ENTROPY_C) || \
+	!defined(MBEDTLS_SSL_TLS_C) || !defined(MBEDTLS_SSL_CLI_C) || \
+	!defined(MBEDTLS_NET_C) || !defined(MBEDTLS_CTR_DRBG_C)
+int tls_client_main(int argc, char **argv)
+{
+	printf("MBEDTLS_ENTROPY_C and/or\n");
+	printf("MBEDTLS_SSL_TLS_C and/or MBEDTLS_SSL_CLI_C and/or\n");
+	printf("MBEDTLS_NET_C and/or MBEDTLS_CTR_DRBG_C and/or not defined.\n");
+	return 0;
+}
+#else
+
+#define mbedtls_printf     printf
+#define mbedtls_fprintf    fprintf
+#define mbedtls_snprintf   snprintf
+
 #include "tls/net.h"
 #include "tls/ssl.h"
 #include "tls/entropy.h"
@@ -1653,3 +1666,4 @@ int tls_client_main(int argc, char **argv)
 
 	return 0;
 }
+#endif

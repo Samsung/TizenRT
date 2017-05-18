@@ -40,9 +40,26 @@
  * Included Files
  ****************************************************************************/
 
-#include "tls/config.h"
+#include <tinyara/config.h>
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "tls/config.h"
+
+#if !defined(MBEDTLS_ENTROPY_C) || \
+	!defined(MBEDTLS_SSL_TLS_C) || !defined(MBEDTLS_SSL_SRV_C) || \
+	!defined(MBEDTLS_NET_C) || !defined(MBEDTLS_CTR_DRBG_C)
+int tls_server_main(int argc, char **argv)
+{
+	printf("MBEDTLS_ENTROPY_C and/or\n");
+	printf("MBEDTLS_SSL_TLS_C and/or MBEDTLS_SSL_SRV_C and/or\n");
+	printf("MBEDTLS_NET_C and/or MBEDTLS_CTR_DRBG_C and/or not defined.\n");
+	return 0;
+}
+#else
+
 #define mbedtls_free       free
 #define mbedtls_calloc    calloc
 #define mbedtls_fprintf    fprintf
@@ -57,9 +74,6 @@
 #include "tls/error.h"
 #include "tls/debug.h"
 #include "tls/timing.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 #if defined(MBEDTLS_SSL_CACHE_C)
 #include "tls/ssl_cache.h"
@@ -2212,3 +2226,4 @@ int tls_server_main(int argc, char **argv)
 
 	return 0;
 }
+#endif
