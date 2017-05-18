@@ -488,26 +488,6 @@ int net_vfcntl(int sockfd, int cmd, va_list ap);
 
 int netdev_foreach(netdev_callback_t callback, void *arg);
 
-/****************************************************************************
- * Function: netdev_foreach_sync
- *
- * Description:
- *   Enumerate each registered network device.
- *
- *   NOTE: netdev semaphore held throughout enumeration.
- *
- * Parameters:
- *   arg      - User argument passed to callback()
- *
- * Returned Value:
- *  0:Enumeration completed 1:Enumeration terminated early by callback
- *
- * Assumptions:
- *  Called from normal user mode
- *
- ****************************************************************************/
-int netdev_foreach_sync(void *arg);
-
 #undef EXTERN
 #ifdef __cplusplus
 }
