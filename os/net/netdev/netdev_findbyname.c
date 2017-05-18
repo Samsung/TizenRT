@@ -105,12 +105,11 @@
  *  Called from normal user mode
  *
  ****************************************************************************/
-
 FAR struct netif *netdev_findbyname(const char *ifname)
 {
 	struct netif *dev;
+
 	if (ifname) {
-		//printf("request to find network interface %s\n", ifname);
 		netdev_semtake();
 		dev = netif_find((char *)ifname);
 
@@ -118,12 +117,11 @@ FAR struct netif *netdev_findbyname(const char *ifname)
 			netdev_semgive();
 			return dev;
 		} else {
-			printf("No network interface found with given name %s\n", ifname);
 			netdev_semgive();
 			return NULL;
 		}
 	}
-	printf("ifname NULL or INVALID\n");
+
 	return NULL;
 }
 
