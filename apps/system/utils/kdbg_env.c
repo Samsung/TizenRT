@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,29 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
-#define SET   0
-#define UNSET 1
-#define GET   2
-
-static void kdbg_env_usages(int type)
-{
-	if (type == SET) {
-		printf("\nUSAGE : setenv <name> <value>\n");
-		printf("       <name>  : env name\n");
-		printf("       <value> : value to save at <name>\n");
-	} else if (type == UNSET) {
-		printf("\nUSAGE : unsetenv <name>\n");
-		printf("       <name>  : env name\n");
-	} else {
-		printf("\nUSAGE : getenv <name>\n");
-#ifndef CONFIG_BUILD_PROTECTED
-		printf("       <name>  : env name or all\n");
-#else
-		printf("       <name>  : env name\n");
-#endif
-	}
-}
 #endif
 
 #ifdef CONFIG_ENABLE_ENV_SET
@@ -55,7 +32,8 @@ int kdbg_env_set(int argc, char **args)
 	int ret;
 
 	if ((argc != 3) || !strcmp(args[1], "--help")) {
-		kdbg_env_usages(SET);
+		printf("\nUsage : setenv NAME VALUE\n");
+		printf("Set each NAME to VALUE in the environment");
 		return ERROR;
 	}
 
@@ -76,7 +54,8 @@ int kdbg_env_unset(int argc, char **args)
 	int ret;
 
 	if ((argc != 2) || !strcmp(args[1], "--help")) {
-		kdbg_env_usages(UNSET);
+		printf("\nUsage : unsetenv NAME\n");
+		printf("Remove the variable, NAME from the environment\n");
 		return ERROR;
 	}
 
@@ -101,15 +80,9 @@ int kdbg_env_get(int argc, char **args)
 #endif
 	int ret = OK;
 
-	if ((argc != 2) || !strcmp(args[1], "--help")) {
-		kdbg_env_usages(GET);
-		return ERROR;
-	}
-
-	/* get_environ_ptr is not supported in protected build */
-
 #ifndef CONFIG_BUILD_PROTECTED
-	if (!strcmp(args[1], "all")) {
+	/* get_environ_ptr is not supported in protected build */
+	if (argc == 1) {
 		env_ptr = get_environ_ptr(&env_size);
 		if (env_ptr != NULL) {
 			env_end = &env_ptr[env_size];
@@ -122,6 +95,18 @@ int kdbg_env_get(int argc, char **args)
 	} else
 #endif
 	{
+		if (argc != 2 || !strcmp(args[1], "--help")) {
+#ifndef CONFIG_BUILD_PROTECTED
+			printf("\nUsage : getenv [NAME]\n");
+			printf("Display the value of a variable, NAME or all environment variables\n");
+			printf("If NAME is not specified, 'name=value' pairs of all environment variables will be displayed\n");
+#else
+			printf("\nUsage : getenv NAME\n");
+			printf("Display the value of environment variable, NAME\n");
+#endif
+			return ERROR;
+		}
+
 		env_ptr = getenv(args[1]);
 		if (env_ptr != NULL) {
 			printf("%s=%s\n", args[1], env_ptr);
