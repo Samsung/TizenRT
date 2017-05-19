@@ -68,6 +68,7 @@
 #include "sched/sched.h"
 #include "group/group.h"
 #include "task/task.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Preprocessor Definitions
@@ -123,6 +124,8 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 	pid_t pid;
 	int errcode;
 	int ret;
+
+	trace_begin(TTRACE_TAG_TASK, "thread_create");
 
 	/* Allocate a TCB for the new task. */
 
@@ -200,7 +203,7 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 		dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)&g_inactivetasks);
 		goto errout_with_tcb;
 	}
-
+	trace_end(TTRACE_TAG_TASK);
 	return pid;
 
 errout_with_tcb:
@@ -208,6 +211,7 @@ errout_with_tcb:
 
 errout:
 	set_errno(errcode);
+	trace_end(TTRACE_TAG_TASK);
 	return ERROR;
 }
 

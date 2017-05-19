@@ -66,6 +66,7 @@
 
 #include "sched/sched.h"
 #include "task/task.h"
+#include <ttrace.h>
 
 /************************************************************************
  * Private Functions
@@ -100,6 +101,7 @@ int prctl(int option, ...)
 	va_list ap;
 	int err;
 
+	trace_begin(TTRACE_TAG_TASK, "prctl");
 	va_start(ap, option);
 	switch (option) {
 	case PR_SET_NAME:
@@ -173,11 +175,13 @@ int prctl(int option, ...)
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	va_end(ap);
+	trace_end(TTRACE_TAG_TASK);
 	return OK;
 #endif
 
 errout:
 	va_end(ap);
 	set_errno(err);
+	trace_end(TTRACE_TAG_TASK);
 	return ERROR;
 }

@@ -1,4 +1,4 @@
-###########################################################################
+############################################################################
 #
 # Copyright 2016 Samsung Electronics All Rights Reserved.
 #
@@ -14,14 +14,11 @@
 # either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 #
-###########################################################################
 ############################################################################
-# apps/system/utils/Makefile
+############################################################################
 #
-#   Copyright (C) 2011 Uros Platise. All rights reserved.
-#   Copyright (C) 2012 Gregory Nutt. All rights reserved.
-#   Author: Uros Platise <uros.platise@isotel.eu>
-#           Gregory Nutt <gnutt@nuttx.org>
+#   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -52,89 +49,15 @@
 #
 ############################################################################
 
-# TODO, this makefile should run make under the app dirs, instead of
-# sourcing the Make.defs!
-
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-ifeq ($(WINTOOL),y)
-INCDIROPT = -w
-endif
+# T-trace! Example
 
 ASRCS =
-ifeq ($(CONFIG_FS_CMDS),y)
-CSRCS = fs_getpath.c
-endif
-MAINSRC =
-
-ifeq ($(CONFIG_TASH),y)
-CSRCS += kernelcmd.c
-
-ifeq ($(CONFIG_FS_CMDS),y)
-CSRCS += fscmd.c
-endif
-
-ifeq ($(CONFIG_NET_CMDS),y)
-CSRCS += netcmd.c netcmd_ping.c
-endif
-
-ifeq ($(CONFIG_NETUTILS_DHCPD),y)
-CSRCS += netcmd_dhcpd.c
-endif
-
-endif #CONFIG_TASH
-
-ifeq ($(CONFIG_ENABLE_DATE),y)
-CSRCS += kdbg_date.c
-endif
-
-ifeq ($(CONFIG_ENABLE_DMESG),y)
-CSRCS += kdbg_dmesg.c
-endif
-
-ifneq ($(CONFIG_DISABLE_ENVIRON),y)
-ifeq ($(CONFIG_ENABLE_ENV_GET),y)
-CSRCS += kdbg_env.c
-else ifeq ($(CONFIG_ENABLE_ENV_SET),y)
-CSRCS += kdbg_env.c
-else ifeq ($(CONFIG_ENABLE_ENV_UNSET),y)
-CSRCS += kdbg_env.c
-endif
-endif
-
-ifeq ($(CONFIG_ENABLE_FREE),y)
-CSRCS += kdbg_free.c
-endif
-
-ifeq ($(CONFIG_ENABLE_HEAPINFO),y)
-CSRCS += kdbg_heapinfo.c
-endif
-
-ifneq ($(CONFIG_DISABLE_SIGNALS),y)
-ifeq ($(CONFIG_ENABLE_KILL),y)
-CSRCS += kdbg_kill.c
-else ifeq ($(CONFIG_ENABLE_KILLALL),y)
-CSRCS += kdbg_kill.c
-endif
-endif
-
-ifeq ($(CONFIG_ENABLE_PS),y)
-CSRCS += kdbg_ps.c
-endif
-
-ifeq ($(CONFIG_ENABLE_STACKMONITOR),y)
-CSRCS += kdbg_stackmonitor.c
-endif
-
-ifeq ($(CONFIG_TTRACE),y)
-CSRCS += kdbg_ttrace.c
-endif
-
-ifeq ($(CONFIG_ENABLE_UPTIME),y)
-CSRCS += kdbg_uptime.c
-endif
+CSRCS =
+MAINSRC = ttrace_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -163,8 +86,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_XYZ_PROGNAME ?= init$(EXEEXT)
-PROGNAME = $(CONFIG_XYZ_PROGNAME)
+CONFIG_EXAMPLES_TTRACE_PROGNAME ?= ttrace$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_TTRACE_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
@@ -173,7 +96,7 @@ ROOTDEPPATH = --dep-path .
 VPATH =
 
 all: .built
-.PHONY: context depend clean distclean
+.PHONY: clean depend distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -183,7 +106,7 @@ $(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
 
 .built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
-	$(Q) touch .built
+	@touch .built
 
 ifeq ($(CONFIG_BUILD_KERNEL),y)
 $(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
@@ -200,11 +123,9 @@ endif
 
 context:
 
-# Create dependencies
-
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
-	$(Q) touch $@
+	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	@touch $@
 
 depend: .depend
 

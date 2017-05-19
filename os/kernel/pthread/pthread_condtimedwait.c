@@ -73,6 +73,7 @@
 #include "pthread/pthread.h"
 #include "clock/clock.h"
 #include "signal/signal.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Definitions
@@ -202,6 +203,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 	int ret = OK;
 	int status;
 
+	trace_begin(TTRACE_TAG_TASK, "pthread_cond_timedwait");
 	svdbg("cond=0x%p mutex=0x%p abstime=0x%p\n", cond, mutex, abstime);
 
 	DEBUGASSERT(rtcb->waitdog == NULL);
@@ -351,5 +353,6 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 
 	svdbg("Returning %d\n", ret);
 	leave_cancellation_point();
+	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }

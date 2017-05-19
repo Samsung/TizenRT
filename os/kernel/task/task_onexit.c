@@ -66,6 +66,7 @@
 
 #include "sched/sched.h"
 #include "task/task.h"
+#include <ttrace.h>
 
 #ifdef CONFIG_SCHED_ONEXIT
 
@@ -138,6 +139,7 @@ int on_exit(CODE void (*func)(int, FAR void *), FAR void *arg)
 	int index;
 	int ret = ENOSPC;
 
+	trace_begin(TTRACE_TAG_TASK, "on_exit");
 	DEBUGASSERT(group);
 
 	/* The following must be atomic */
@@ -162,7 +164,7 @@ int on_exit(CODE void (*func)(int, FAR void *), FAR void *arg)
 
 		sched_unlock();
 	}
-
+	trace_end(TTRACE_TAG_TASK);
 	return ret;
 #else
 	FAR struct tcb_s *tcb = (FAR struct tcb_s *)g_readytorun.head;
@@ -181,6 +183,7 @@ int on_exit(CODE void (*func)(int, FAR void *), FAR void *arg)
 	}
 
 	sched_unlock();
+	trace_end(TTRACE_TAG_TASK);
 	return ret;
 #endif
 }

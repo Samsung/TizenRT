@@ -618,6 +618,12 @@ Once LOGM is approved, each module should have its own index
 #define lwipllvdbg(x...)
 #endif
 
+#ifdef CONFIG_DEBUG_TTRACE
+#define ttdbg(format, ...) dbg(format, ##__VA_ARGS__)
+#else
+#define ttdbg(format, ...)
+#endif
+
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */

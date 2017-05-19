@@ -57,6 +57,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include "sched/sched.h"
+#include <ttrace.h>
 
 /******************************************************************************************
  * Private Definitions
@@ -94,6 +95,8 @@ int pthread_setcancelstate(int state, FAR int *oldstate)
 {
 	struct tcb_s *tcb = (struct tcb_s *)g_readytorun.head;
 	int ret = OK;
+
+	trace_begin(TTRACE_TAG_TASK, "pthread_setcancelstate");
 
 	/* Suppress context changes for a bit so that the flags are stable. (the
 	 * flags should not change in interrupt handling).
@@ -134,5 +137,6 @@ int pthread_setcancelstate(int state, FAR int *oldstate)
 	}
 
 	sched_unlock();
+	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }

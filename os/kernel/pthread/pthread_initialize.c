@@ -63,6 +63,7 @@
 #include <errno.h>
 
 #include "pthread/pthread.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Definitions
@@ -128,6 +129,7 @@ void pthread_initialize(void)
 
 int pthread_takesemaphore(sem_t *sem, bool intr)
 {
+	trace_begin(TTRACE_TAG_IPC, "pthread_takesemaphore");
 	/* Verify input parameters */
 
 	DEBUGASSERT(sem != NULL);
@@ -145,10 +147,12 @@ int pthread_takesemaphore(sem_t *sem, bool intr)
 				return errcode;
 			}
 		}
+		trace_end(TTRACE_TAG_IPC);
 		return OK;
 	} else {
 		/* NULL semaphore pointer! */
 
+		trace_end(TTRACE_TAG_IPC);
 		return EINVAL;
 	}
 }

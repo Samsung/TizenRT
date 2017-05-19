@@ -66,6 +66,7 @@
 #include "group/group.h"
 #include "signal/signal.h"
 #include "task/task.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Definitions
@@ -124,6 +125,8 @@ int task_restart(pid_t pid)
 	irqstate_t state;
 	int status;
 
+	trace_begin(TTRACE_TAG_TASK, "task_restart");
+
 	/* Make sure this task does not become ready-to-run while
 	 * we are futzing with its TCB
 	 */
@@ -137,6 +140,7 @@ int task_restart(pid_t pid)
 		/* Not implemented */
 
 		set_errno(ENOSYS);
+		trace_end(TTRACE_TAG_TASK);
 		return ERROR;
 	}
 
@@ -157,6 +161,7 @@ int task_restart(pid_t pid)
 			 */
 
 			set_errno(ESRCH);
+			trace_end(TTRACE_TAG_TASK);
 			return ERROR;
 		}
 
@@ -213,10 +218,12 @@ int task_restart(pid_t pid)
 		if (status != OK) {
 			(void)task_terminate(pid, true);
 			set_errno(-status);
+			trace_end(TTRACE_TAG_TASK);
 			return ERROR;
 		}
 	}
 
 	sched_unlock();
+	trace_end(TTRACE_TAG_TASK);
 	return OK;
 }

@@ -69,6 +69,7 @@
 #include "signal/signal.h"
 #endif
 #include "task/task.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Definitions
@@ -142,6 +143,7 @@ int task_terminate(pid_t pid, bool nonblocking)
 {
 	FAR struct tcb_s *dtcb;
 	irqstate_t saved_state;
+	trace_begin(TTRACE_TAG_TASK, "task_terminate");
 
 	/* Make sure the task does not become ready-to-run while we are futzing with
 	 * its TCB by locking ourselves as the executing task.
@@ -156,6 +158,7 @@ int task_terminate(pid_t pid, bool nonblocking)
 		/* This PID does not correspond to any known task */
 
 		sched_unlock();
+		trace_end(TTRACE_TAG_TASK);
 		return -ESRCH;
 	}
 
@@ -196,6 +199,7 @@ int task_terminate(pid_t pid, bool nonblocking)
 	 */
 
 	sched_note_stop(dtcb);
+	trace_end(TTRACE_TAG_TASK);
 
 	/* Deallocate its TCB */
 

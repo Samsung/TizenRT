@@ -55,6 +55,9 @@ const static tash_cmdlist_t kdbg_cmds[] = {
 #if defined(CONFIG_ENABLE_STACKMONITOR)
 	{"stkmon",   kdbg_stackmonitor, TASH_EXECMD_SYNC},
 #endif
+#if defined(CONFIG_TTRACE)
+	{"ttrace",   kdbg_ttrace,       TASH_EXECMD_SYNC},
+#endif
 #if defined(CONFIG_ENABLE_ENV_UNSET) && !defined(CONFIG_DISABLE_ENVIRON)
 	{"unsetenv", kdbg_env_unset,    TASH_EXECMD_SYNC},
 #endif

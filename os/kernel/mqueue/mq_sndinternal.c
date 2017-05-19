@@ -74,6 +74,7 @@
 #include "signal/signal.h"
 #endif
 #include "mqueue/mqueue.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -353,6 +354,8 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 	FAR struct mqueue_msg_s *prev;
 	irqstate_t saved_state;
 
+	trace_begin(TTRACE_TAG_IPC, "mq_dosend");
+
 	/* Get a pointer to the message queue */
 
 	sched_lock();
@@ -446,5 +449,6 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 
 	irqrestore(saved_state);
 	sched_unlock();
+	trace_end(TTRACE_TAG_IPC);
 	return OK;
 }

@@ -65,6 +65,7 @@
 
 #include "sched/sched.h"
 #include "task/task.h"
+#include <ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -121,6 +122,7 @@ void task_start(void)
 	int exitcode;
 	int argc;
 
+	trace_begin(TTRACE_TAG_TASK, "task_start");
 	DEBUGASSERT((tcb->cmn.flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_PTHREAD);
 
 	/* Execute the start hook if one has been registered */
@@ -144,6 +146,7 @@ void task_start(void)
 		 */
 
 		if (++argc > MAX_START_ARGS) {
+			trace_end(TTRACE_TAG_TASK);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -162,6 +165,8 @@ void task_start(void)
 	{
 		exitcode = tcb->cmn.entry.main(argc, tcb->argv);
 	}
+
+	trace_end(TTRACE_TAG_TASK);
 
 	/* Call exit() if/when the task returns */
 
