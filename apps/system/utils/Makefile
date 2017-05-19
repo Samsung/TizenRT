@@ -128,6 +128,10 @@ ifeq ($(CONFIG_ENABLE_STACKMONITOR),y)
 CSRCS += kdbg_stackmonitor.c
 endif
 
+ifeq ($(CONFIG_ENABLE_UPTIME),y)
+CSRCS += kdbg_uptime.c
+endif
+
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 MAINOBJ = $(MAINSRC:.c=$(OBJEXT))

@@ -69,4 +69,8 @@ int kdbg_ps(int argc, char **args);
 int kdbg_stackmonitor(int argc, char **args);
 #endif
 
+#if defined(CONFIG_ENABLE_UPTIME)
+int kdbg_uptime(int argc, char **args);
+#endif
+
 #endif							/* __APPS_SYSTEM_UTILS_KDBG_COMMANDS_H */
