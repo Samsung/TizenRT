@@ -154,7 +154,7 @@ CONFIG_S5J_UART4=y
 #
 # S5J SPI(Serial Peripheral Interface Bus)
 #
-# CONFIG_S5J_SPI is not set
+CONFIG_S5J_SPI=y
 
 #
 # S5J WDT(Watch Dog Timer)
