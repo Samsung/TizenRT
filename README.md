@@ -57,8 +57,11 @@ ARTIK053 [[details]](build/configs/artik053/README.md)
 sidk_s5jt200 [[details]](build/configs/sidk_s5jt200/README.md)
 
 Tizen RT currently supports only two boards called artik053 and sidk_s5jt200.
-However, those are not available in public markets till now.
-sidk_s5jt200 or other boards for Tizen RT will be coming soon.
+The ARTIK053 is availble for purchase online. For more more info see the [[ARTIK053 product page]](https://www.artik.io/modules/artik-053/)
+
+The sidk_s5jt200 is not yet available to the public market.
+
+ Other boards for Tizen RT will be coming soon.
 
 ## Configuration Sets
 
