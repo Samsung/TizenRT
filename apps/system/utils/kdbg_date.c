@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,105 +128,98 @@ static inline int date_settime(int argc, char **args)
 	long result;
 	int ret = OK;
 
-	token = args[1];
-	if (token[0] != '-') {
+	/* Get the month abbreviation */
+
+	token = args[2];
+	if (token == NULL) {
 		goto errout_bad_parm;
 	}
-	if (token[1] == 's') {
-		/* Get the month abbreviation */
 
-		token = args[2];
-		if (token == NULL) {
-			goto errout_bad_parm;
-		}
+	tm.tm_mon = date_month(token);
+	if (tm.tm_mon < 0) {
+		goto errout_bad_parm;
+	}
 
-		tm.tm_mon = date_month(token);
-		if (tm.tm_mon < 0) {
-			goto errout_bad_parm;
-		}
+	/* Get the day of the month.  NOTE: Accepts day-of-month up to 31 for all months */
 
-		/* Get the day of the month.  NOTE: Accepts day-of-month up to 31 for all months */
+	token = args[3];
+	if (token == NULL) {
+		goto errout_bad_parm;
+	}
 
-		token = args[3];
-		if (token == NULL) {
-			goto errout_bad_parm;
-		}
+	result = strtol(token, NULL, 10);
+	if (result < 1 || result > 31) {
+		goto errout_bad_parm;
+	}
+	tm.tm_mday = (int)result;
 
-		result = strtol(token, NULL, 10);
-		if (result < 1 || result > 31) {
-			goto errout_bad_parm;
-		}
-		tm.tm_mday = (int)result;
+	/* Get the hours */
 
-		/* Get the hours */
+	token = strtok_r(args[4], ":", &saveptr);
+	if (token == NULL) {
+		goto errout_bad_parm;
+	}
 
-		token = strtok_r(args[4], ":", &saveptr);
-		if (token == NULL) {
-			goto errout_bad_parm;
-		}
+	result = strtol(token, NULL, 10);
+	if (result < 0 || result > 23) {
+		goto errout_bad_parm;
+	}
+	tm.tm_hour = (int)result;
 
-		result = strtol(token, NULL, 10);
-		if (result < 0 || result > 23) {
-			goto errout_bad_parm;
-		}
-		tm.tm_hour = (int)result;
+	/* Get the minutes */
 
-		/* Get the minutes */
+	token = strtok_r(NULL, ":", &saveptr);
+	if (token == NULL) {
+		goto errout_bad_parm;
+	}
 
-		token = strtok_r(NULL, ":", &saveptr);
-		if (token == NULL) {
-			goto errout_bad_parm;
-		}
+	result = strtol(token, NULL, 10);
+	if (result < 0 || result > 59) {
+		goto errout_bad_parm;
+	}
+	tm.tm_min = (int)result;
 
-		result = strtol(token, NULL, 10);
-		if (result < 0 || result > 59) {
-			goto errout_bad_parm;
-		}
-		tm.tm_min = (int)result;
+	/* Get the seconds */
 
-		/* Get the seconds */
+	token = strtok_r(NULL, ":", &saveptr);
+	if (token == NULL) {
+		goto errout_bad_parm;
+	}
 
-		token = strtok_r(NULL, ":", &saveptr);
-		if (token == NULL) {
-			goto errout_bad_parm;
-		}
+	result = strtol(token, NULL, 10);
+	if (result < 0 || result > 61) {
+		goto errout_bad_parm;
+	}
+	tm.tm_sec = (int)result;
 
-		result = strtol(token, NULL, 10);
-		if (result < 0 || result > 61) {
-			goto errout_bad_parm;
-		}
-		tm.tm_sec = (int)result;
+	/* And finally the year */
 
-		/* And finally the year */
+	token = args[5];
+	if (token == NULL) {
+		goto errout_bad_parm;
+	}
 
-		token = args[5];
-		if (token == NULL) {
-			goto errout_bad_parm;
-		}
+	result = strtol(token, NULL, 10);
+	if (result < 1900 || result > 2100) {
+		goto errout_bad_parm;
+	}
+	tm.tm_year = (int)result - 1900;
 
-		result = strtol(token, NULL, 10);
-		if (result < 1900 || result > 2100) {
-			goto errout_bad_parm;
-		}
-		tm.tm_year = (int)result - 1900;
+	/* Convert this to the right form, then set the timer */
 
-		/* Convert this to the right form, then set the timer */
+	ts.tv_sec = mktime(&tm);
+	ts.tv_nsec = 0;
 
-		ts.tv_sec = mktime(&tm);
-		ts.tv_nsec = 0;
-
-		ret = clock_settime(CLOCK_REALTIME, &ts);
-		if (ret < 0) {
-			printf("clock_settime failed\n");
-			ret = ERROR;
-		}
+	ret = clock_settime(CLOCK_REALTIME, &ts);
+	if (ret < 0) {
+		printf("clock_settime failed\n");
+		ret = ERROR;
 	}
 
 	return ret;
 
 errout_bad_parm:
 	printf("bad parameter\n");
-
 	return ERROR;
 }
 
@@ -242,12 +235,18 @@ int kdbg_date(int argc, char **args)
 
 	if (argc == 1) {
 		ret = date_showtime();
-	} else if (argc == 6) {
+	} else if (!strcmp(args[1], "-s") && argc == 6) {
 		ret = date_settime(argc, args);
 	} else {
-		printf("Usage : date [-s MMM DD HH:MM:SS YYYY]\n");
+		printf("\nUsage: date\n");
+		printf("   or: date [-s FORMAT]\n");
+		printf("Display, or Set system time and date information\n");
+		printf("\nOptions:\n");
+		printf(" -s FORMAT     Set system time in the given FORMAT\n");
+		printf("               FORMAT: MMM DD HH:MM:SS YYYY\n");
+		printf("                'month', 'day', 'hour':'minute':'second' 'year'\n");
+		printf("                Example: Apr 21 10:35:22 1991\n");
 		ret = ERROR;
 	}
-
 	return ret;
 }
