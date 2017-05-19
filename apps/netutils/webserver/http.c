@@ -219,7 +219,6 @@ stop:
 
 		for (i = 0; i < HTTP_CONF_MAX_CLIENT_HANDLE;  i++) {
 			pthread_kill(server->c_tid[i], HTTP_CONF_SERVER_SIGWAKEUP);
-			usleep(10000);
 		}
 
 		mq_close(msg_q);
