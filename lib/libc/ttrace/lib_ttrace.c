@@ -92,7 +92,7 @@ int create_packet_sched(struct trace_packet *packet, struct tcb_s *prev, struct 
 	int ret = TTRACE_VALID;
 	int msg_len = sizeof(struct sched_message);
 
-	gettimeofday(&(packet->ts));
+	gettimeofday(&(packet->ts), NULL);
 	packet->event_type = (int8_t)'s';
 	packet->pid = getpid();
 	packet->codelen = TTRACE_CODE_VARIABLE | msg_len;
@@ -148,7 +148,7 @@ int create_packet(struct trace_packet *packet, char type, char *str, va_list val
 		msg_len = TTRACE_MSG_BYTES;
 	}
 
-	gettimeofday(&(packet->ts));
+	gettimeofday(&(packet->ts), NULL);
 	packet->event_type = (int8_t)type;
 	packet->pid = getpid();
 	packet->codelen = TTRACE_CODE_VARIABLE | msg_len;
@@ -162,7 +162,7 @@ int create_packet(struct trace_packet *packet, char type, char *str, va_list val
 int create_packet_u(struct trace_packet *packet, char type, int8_t uid)
 {
 	int ret = 0;
-	gettimeofday(&(packet->ts));
+	gettimeofday(&(packet->ts), NULL);
 	packet->event_type = type;
 	packet->pid = getpid();
 	packet->codelen = TTRACE_CODE_UNIQUE | uid;
