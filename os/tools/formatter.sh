@@ -18,6 +18,11 @@
 ###########################################################################
 TARGET=$1
 
+die() {
+	echo $1
+	exit 1;
+}
+
 function USAGE()
 {
     echo "usage: $0 <TARGET>"
@@ -36,6 +41,10 @@ if [ ${TARGET} == "--help" ]; then
     USAGE
     exit 1
 fi
+
+which indent > /dev/null || die "indent is not installed."
+which astyle > /dev/null || die "astyle is not installed."
+which perl > /dev/null || die "perl is not installed."
 
 read -d '' INDENT_RULES << __EOF__
 	--no-blank-lines-after-declarations
