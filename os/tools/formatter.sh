@@ -37,12 +37,59 @@ if [ ${TARGET} == "--help" ]; then
     exit 1
 fi
 
+read -d '' INDENT_RULES << __EOF__
+	-nbad
+	-bap
+	-nbc
+	-bbo
+	-hnl
+	-br
+	-brs
+	-c33
+	-cd33
+	-ncdb
+	-ce
+	-ci4
+	-cli0
+	-d0
+	-di1
+	-nfc1
+	-i4
+	-ip0
+	-l1000
+	-lp
+	-npcs
+	-nprs
+	-npsl
+	-sai
+	-saf
+	-saw
+	-ncs
+	-nsc
+	-sob
+	-nfca
+	-cp33
+	-ss
+	-ts4
+	-il1
+__EOF__
+
+read -d '' ASTYLE_RULES << __EOF__
+	--style=linux
+	--add-brackets
+	--indent=force-tab=4
+	--unpad-paren
+	--pad-header
+	--pad-oper
+	--align-pointer=name
+__EOF__
+
 if [ -d ${TARGET} ]; then
-    find ${TARGET} -name "*.[c,h]" | xargs -I{} indent {} -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i4 -ip0 -l1000 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts4 -il1
-    astyle --style=linux --add-brackets --indent=force-tab=4 --unpad-paren --pad-header --pad-oper --align-pointer=name --recursive "${TARGET}/*.c" "${TARGET}/*.h"
+    find ${TARGET} -name "*.[c,h]" | xargs -I{} indent {} ${INDENT_RULES}
+    astyle ${ASTYLE_RULES} --recursive "${TARGET}/*.c" "${TARGET}/*.h"
     find ${TARGET} -name "*.[c,h]" | xargs perl -pi -e 's/ \*\) & / \*\)&/g;s/ \*\) - 1/ \*\)-1/g;s/ \*\) kmm/ \*\)kmm/g;s/ \*\) malloc/ \*\)malloc/g;s/ \*\) realloc/ \*\)realloc/g;s/ \*\) zalloc/ \*\)zalloc/g'
 else
-    indent ${TARGET} -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i4 -ip0 -l1000 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts4 -il1
-    astyle --style=linux --add-brackets --indent=force-tab=4 --unpad-paren --pad-header --pad-oper --align-pointer=name ${TARGET}
+    indent ${TARGET} ${INDENT_RULES}
+    astyle ${ASTYLE_RULES} ${TARGET}
     perl -pi -e 's/ \*\) & / \*\)&/g;s/ \*\) - 1/ \*\)-1/g;s/ \*\) kmm/ \*\)kmm/g;s/ \*\) malloc/ \*\)malloc/g;s/ \*\) realloc/ \*\)realloc/g;s/ \*\) zalloc/ \*\)zalloc/g' ${TARGET}
 fi
