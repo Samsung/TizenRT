@@ -84,12 +84,8 @@ read -d '' ASTYLE_RULES << __EOF__
 	--align-pointer=name
 __EOF__
 
-if [ -d ${TARGET} ]; then
-    find ${TARGET} -name "*.[c,h]" | xargs -I{} indent {} ${INDENT_RULES}
-    astyle ${ASTYLE_RULES} --recursive "${TARGET}/*.c" "${TARGET}/*.h"
-    find ${TARGET} -name "*.[c,h]" | xargs perl -pi -e 's/ \*\) & / \*\)&/g;s/ \*\) - 1/ \*\)-1/g;s/ \*\) kmm/ \*\)kmm/g;s/ \*\) malloc/ \*\)malloc/g;s/ \*\) realloc/ \*\)realloc/g;s/ \*\) zalloc/ \*\)zalloc/g'
-else
-    indent ${TARGET} ${INDENT_RULES}
-    astyle ${ASTYLE_RULES} ${TARGET}
-    perl -pi -e 's/ \*\) & / \*\)&/g;s/ \*\) - 1/ \*\)-1/g;s/ \*\) kmm/ \*\)kmm/g;s/ \*\) malloc/ \*\)malloc/g;s/ \*\) realloc/ \*\)realloc/g;s/ \*\) zalloc/ \*\)zalloc/g' ${TARGET}
-fi
+for file in `find ${TARGET} -name *.[ch]`; do
+	indent ${INDENT_RULES} $file
+	astyle ${ASTYLE_RULES} $file
+	perl -pi -e 's/ \*\) & / \*\)&/g;s/ \*\) - 1/ \*\)-1/g;s/ \*\) kmm/ \*\)kmm/g;s/ \*\) malloc/ \*\)malloc/g;s/ \*\) realloc/ \*\)realloc/g;s/ \*\) zalloc/ \*\)zalloc/g' $file
+done
