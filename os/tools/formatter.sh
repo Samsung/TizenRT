@@ -98,10 +98,5 @@ for file in `find ${TARGET} -name *.[ch]`; do
 	astyle ${ASTYLE_RULES} $file
 
 	# custom rules
-	perl -pi -e 's/ \*\) & / \*\)&/g' $file
 	perl -pi -e 's/ \*\) - 1/ \*\)-1/g' $file
-	perl -pi -e 's/ \*\) kmm/ \*\)kmm/g' $file
-	perl -pi -e 's/ \*\) malloc/ \*\)malloc/g' $file
-	perl -pi -e 's/ \*\) realloc/ \*\)realloc/g' $file
-	perl -pi -e 's/ \*\) zalloc/ \*\)zalloc/g' $file
 done
