@@ -38,40 +38,40 @@ if [ ${TARGET} == "--help" ]; then
 fi
 
 read -d '' INDENT_RULES << __EOF__
-	-nbad
-	-bap
-	-nbc
-	-bbo
-	-hnl
-	-br
-	-brs
-	-c33
-	-cd33
-	-ncdb
-	-ce
-	-ci4
-	-cli0
-	-d0
-	-di1
-	-nfc1
-	-i4
-	-ip0
-	-l1000
-	-lp
-	-npcs
-	-nprs
-	-npsl
-	-sai
-	-saf
-	-saw
-	-ncs
-	-nsc
-	-sob
-	-nfca
-	-cp33
-	-ss
-	-ts4
-	-il1
+	--no-blank-lines-after-declarations
+	--blank-lines-after-procedures
+	--no-blank-lines-after-commas
+	--break-before-boolean-operator
+	--honour-newlines
+	--braces-on-if-line
+	--braces-on-struct-decl-line
+	--comment-indentation33
+	--declaration-comment-column33
+	--no-comment-delimiters-on-blank-lines
+	--cuddle-else
+	--continuation-indentation4
+	--case-indentation0
+	--line-comments-indentation0
+	--declaration-indentation1
+	--dont-format-first-column-comments
+	--indent-level4
+	--parameter-indentation0
+	--line-length1000
+	--continue-at-parentheses
+	--no-space-after-function-call-names
+	--no-space-after-parentheses
+	--dont-break-procedure-type
+	--space-after-if
+	--space-after-for
+	--space-after-while
+	--no-space-after-casts
+	--dont-star-comments
+	--swallow-optional-blank-lines
+	--dont-format-comments
+	--else-endif-column33
+	--space-special-semicolon
+	--tab-size4
+	--indent-label1
 __EOF__
 
 read -d '' ASTYLE_RULES << __EOF__
