@@ -44,7 +44,7 @@ fi
 
 which indent > /dev/null || die "indent is not installed."
 which astyle > /dev/null || die "astyle is not installed."
-which perl > /dev/null || die "perl is not installed."
+which sed > /dev/null || die "sed is not installed."
 
 read -d '' INDENT_RULES << __EOF__
 	--no-blank-lines-after-declarations
@@ -98,5 +98,5 @@ for file in `find ${TARGET} -name *.[ch]`; do
 	astyle ${ASTYLE_RULES} $file
 
 	# custom rules
-	perl -pi -e 's/ \*\) - 1/ \*\)-1/g' $file
+	sed -i -e 's/ \*) - 1/ \*)-1/g' $file
 done
