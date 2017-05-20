@@ -96,5 +96,12 @@ __EOF__
 for file in `find ${TARGET} -name *.[ch]`; do
 	indent ${INDENT_RULES} $file
 	astyle ${ASTYLE_RULES} $file
-	perl -pi -e 's/ \*\) & / \*\)&/g;s/ \*\) - 1/ \*\)-1/g;s/ \*\) kmm/ \*\)kmm/g;s/ \*\) malloc/ \*\)malloc/g;s/ \*\) realloc/ \*\)realloc/g;s/ \*\) zalloc/ \*\)zalloc/g' $file
+
+	# custom rules
+	perl -pi -e 's/ \*\) & / \*\)&/g' $file
+	perl -pi -e 's/ \*\) - 1/ \*\)-1/g' $file
+	perl -pi -e 's/ \*\) kmm/ \*\)kmm/g' $file
+	perl -pi -e 's/ \*\) malloc/ \*\)malloc/g' $file
+	perl -pi -e 's/ \*\) realloc/ \*\)realloc/g' $file
+	perl -pi -e 's/ \*\) zalloc/ \*\)zalloc/g' $file
 done
