@@ -77,7 +77,6 @@ read -d '' INDENT_RULES << __EOF__
 	--dont-star-comments
 	--swallow-optional-blank-lines
 	--dont-format-comments
-	--else-endif-column33
 	--space-special-semicolon
 	--tab-size4
 	--indent-label1
