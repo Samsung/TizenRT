@@ -33,8 +33,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_DM),y)
-
 CSRCS += lwm2mclient.c
 CSRCS += object_access_control.c
 CSRCS += object_connectivity_moni.c object_connectivity_stat.c
@@ -61,5 +59,3 @@ endif
 
 DEPPATH += --dep-path wakaama/examples/client
 VPATH += :wakaama/examples/client
-
-endif
