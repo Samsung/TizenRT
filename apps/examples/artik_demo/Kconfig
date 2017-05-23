@@ -5,6 +5,9 @@
 
 menuconfig EXAMPLES_ARTIK_DEMO
 	bool "Artik API Demo Example"
+	select DM
+	select LWM2M_WAKAAMA
+	select DM_WIFI
 	default n
 	---help---
 		Enable the artik demo example
