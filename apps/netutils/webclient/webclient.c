@@ -990,14 +990,6 @@ retry:
 		goto errout_before_tlsinit;
 	}
 
-	if (param->callback) {
-		param->response = &response;
-		if (http_client_response_init(param->response) < 0) {
-			ndbg("ERROR: response init failed: %d\n", ret);
-			goto errout_before_tlsinit;
-		}
-	}
-
 #ifdef CONFIG_NET_SECURITY_TLS
 	client_tls->client_fd = sockfd;
 	if (param->tls && (ret = wget_tls_handshake(client_tls, ws.hostname))) {
@@ -1034,6 +1026,15 @@ retry:
 			sndlen -= ret;
 			buf_len += ret;
 			ndbg("SEND SUCCESS: send %d bytes\n", ret);
+		}
+	}
+
+	if (param->callback && param->response == NULL) {
+		param->response = &response;
+		if (http_client_response_init(param->response) < 0) {
+			ndbg("ERROR: response init failed: %d\n", ret);
+			param->response = NULL;
+			goto errout;
 		}
 	}
 
@@ -1080,7 +1081,7 @@ retry:
 		param->response->entity_len = strlen(param->response->entity);
 	}
 
-	if (param->callback) {
+	if (param->callback && param->response) {
 		param->callback(param->response);
 		http_client_response_release(param->response);
 	}
@@ -1099,7 +1100,7 @@ retry:
 	return (pthread_addr_t)WGET_OK;
 
 errout:
-	if (param->callback) {
+	if (param->callback && param->response) {
 		http_client_response_release(param->response);
 	}
 #ifdef CONFIG_NET_SECURITY_TLS
