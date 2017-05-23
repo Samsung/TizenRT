@@ -150,63 +150,6 @@ def printLibrarySizes():
 			print "\t"+str(sizearr[Required.keys().index(r)]),
 		print "\t" + str(librarySize[l]) + "\t" + l
 
-
-def sortByTotal(n):
-        return int(n[len(n)-2])
-
-def sortPrintLibrarySizes():
-        results = []
-	nfields = len(Required.keys())
-	for r in Required.keys():
-                print "\t"+r,
-        print "\t Total"
-	for l in allmap.keys():
-		sizearr = [0] * nfields
-		for o in allmap[l].keys():
-			if o in allmap[l].keys():
-				for s in allmap[l][o].keys():
-					sizearr[Required.keys().index(s)] += allmap[l][o][s]
-                one_result = []
-		for r in Required.keys():
-                        one_result.append(str(sizearr[Required.keys().index(r)]))
-                one_result.append(str(librarySize[l]))
-                one_result.append(l)
-                results.append(one_result)
-
-        results.sort(key=sortByTotal, reverse=True)
-        for r in results:
-                for i in range(0, len(r) - 1):
-                        print "\t" + r[i].strip(),
-		print "\t" + r[len(r) -1].strip()
-
-def sortPrintall():
-	results = []
-	nfields = len(Required.keys())
-	for l in allmap.keys():
-		print l + "\t" + str(librarySize[l])
-		for r in Required.keys():
-			print "\t"+r,
-                print "\t Total"
-		for o in allmap[l].keys():
-			sizearr = [0] * nfields
-			for s in Required.keys():
-				if s in allmap[l][o].keys():
-					sizearr[Required.keys().index(s)] = allmap[l][o][s]
-
-                        one_result = []
-			for r in Required.keys():
-                            one_result.append(str(sizearr[Required.keys().index(r)]))
-                        one_result.append(str(objectSize[o]))
-                        one_result.append(o)
-                        results.append(one_result)
-
-                results.sort(key=sortByTotal, reverse=True)
-                for r in results:
-                        for i in range(0, len(r) - 1):
-                                print "\t" + r[i].strip(),
-		        print "\t" + r[len(r) -1].strip()
-		results = []
-
 def printall():
 	nfields = len(Required.keys())
 	for l in allmap.keys():
@@ -327,13 +270,11 @@ if options.libsize:
 	print "######################################"
 	print "##          Library Sizes           ##"
 	print "######################################"
-	#printLibrarySizes()
-	sortPrintLibrarySizes()
+	printLibrarySizes()
 if options.details:
 	print "######################################"
 	print "##              Details             ##"
 	print "######################################"
-	#printall()
-	sortPrintall()
+	printall()
 	print "######################################\n"
 
