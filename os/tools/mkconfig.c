@@ -115,17 +115,6 @@ int main(int argc, char **argv, char **envp)
 	printf("/* Architecture-specific options *************************/\n\n");
 	generate_definitions(stream);
 	printf("\n/* Sanity Checks *****************************************/\n\n");
-	printf("/* If this is an NXFLAT, external build, then make sure that\n");
-	printf(" * NXFLAT support is enabled in the base code.\n");
-	printf(" */\n\n");
-	printf("#if defined(__NXFLAT__) && !defined(CONFIG_NXFLAT)\n");
-	printf("# error \"NXFLAT support not enabled in this configuration\"\n");
-	printf("#endif\n\n");
-	printf("/* NXFLAT requires PIC support in the TCBs. */\n\n");
-	printf("#if defined(CONFIG_NXFLAT)\n");
-	printf("# undef CONFIG_PIC\n");
-	printf("# define CONFIG_PIC 1\n");
-	printf("#endif\n\n");
 	printf("/* The correct way to disable RR scheduling is to set the\n");
 	printf(" * timeslice to zero.\n");
 	printf(" */\n\n");
@@ -288,7 +277,6 @@ int main(int argc, char **argv, char **envp)
 	printf("# undef CONFIG_DEBUG_LIB\n");
 	printf("# undef CONFIG_DEBUG_NET\n");
 	printf("# undef CONFIG_DEBUG_USB\n");
-	printf("# undef CONFIG_DEBUG_GRAPHICS\n");
 	printf("# undef CONFIG_DEBUG_GPIO\n");
 	printf("# undef CONFIG_DEBUG_SPI\n");
 	printf("# undef CONFIG_DEBUG_HEAP\n");
