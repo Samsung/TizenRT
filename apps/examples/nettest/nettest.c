@@ -398,6 +398,9 @@ int udp_server_thread(int num_packets)
 			assert(0);
 		}
 	}
+	close(s);
+	printf("\n[UDPSERV] Closed socket successfully\n");
+	return 0;
 
 errout_with_socket:
 	close(s);
@@ -460,6 +463,7 @@ void udp_client_thread(int num_packets, uint32_t sleep_time)
 			}
 		}
 	}
+	sendto(sockfd, 0, 0, 0, (struct sockaddr *)&serveraddr, clilen);
 	printf("[UDPCLIENT] Terminating udpclient after sending sufficient messages (%d)\n", num_packets);
 	close(sockfd);
 	return;
