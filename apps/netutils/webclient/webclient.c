@@ -1081,7 +1081,7 @@ retry:
 		param->response->entity_len = strlen(param->response->entity);
 	}
 
-	if (param->callback && param->response) {
+	if (param->callback) {
 		param->callback(param->response);
 		http_client_response_release(param->response);
 	}
