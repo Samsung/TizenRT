@@ -106,7 +106,7 @@ int pthread_attr_getstacksize(FAR const pthread_attr_t *attr, FAR long *stacksiz
 
 	sdbg("attr=0x%p stacksize=0x%p\n", attr, stacksize);
 
-	if (!stacksize) {
+	if (!attr || !stacksize) {
 		ret = EINVAL;
 	} else {
 		*stacksize = attr->stacksize;
