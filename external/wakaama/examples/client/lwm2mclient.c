@@ -936,6 +936,7 @@ int lwm2m_client_cb(void *args)
 
 	argc = ((struct pthread_arg *)args)->argc;
 	argv = ((struct pthread_arg *)args)->argv;
+	g_quit = 0;
 #else
 int lwm2m_client_main(int argc, char *argv[])
 {
