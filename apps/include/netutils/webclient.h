@@ -18,6 +18,7 @@
 
 /**
  * @defgroup HTTP_CLIENT HTTP Client
+ * @brief Provides APIs for HTTP Client
  * @ingroup HTTP
  *   The client side of Hypertext Transfer Protocol
  *

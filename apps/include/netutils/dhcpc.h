@@ -54,6 +54,7 @@
 
 /**
  * @defgroup DHCP DHCP
+ * @brief Provides APIs for DHCP(Dynamic Host Configuration Protocol) Client
  * @ingroup NETWORK
  * @{
  */

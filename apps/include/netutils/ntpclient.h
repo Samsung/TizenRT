@@ -51,7 +51,7 @@
  ****************************************************************************/
 /**
  * @defgroup NTPC NTP Client
- *   The client side of Network Time Protocol
+ * @brief Provides APIs for NTP(Network Time Protocol) Client
  * @ingroup NETWORK
  * @{
  */

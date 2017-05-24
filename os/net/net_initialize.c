@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * net/net_sockets.c
+ * net/net_initialize.c
  *
  *   Copyright (C) 2007-2009, 2011-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

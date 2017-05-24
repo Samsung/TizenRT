@@ -18,6 +18,7 @@
 
 /**
  * @defgroup PWM PWM
+ * @brief Provides APIs for PWM (Pulse Width Modulation)
  * @ingroup IOTBUS
  * @{
  */

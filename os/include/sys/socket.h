@@ -52,6 +52,7 @@
 /**
  * @defgroup NETWORK NETWORK
  * @defgroup SOCKET Socket
+ * @brief Provides APIs for BSD Socket
  * @ingroup NETWORK
  *
  * @{

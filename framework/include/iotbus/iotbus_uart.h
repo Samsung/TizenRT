@@ -18,6 +18,7 @@
 
 /**
  * @defgroup UART UART
+ * @brief Provides APIs for UART (Universal Asynchronous Receiver/Transmitter)
  * @ingroup IOTBUS
  * @{
  */

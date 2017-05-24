@@ -18,6 +18,7 @@
 
 /**
  * @defgroup SPI SPI
+ * @brief Provides APIs for SPI (Serial Peripheral Interface)
  * @ingroup IOTBUS
  * @{
  */
