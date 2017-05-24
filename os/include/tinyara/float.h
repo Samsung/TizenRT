@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,8 @@
 /* Number of base-FLT_RADIX digits in the floating-point significand, p. */
 
 #define FLT_MANT_DIG 24
+
+#define FLT_EVAL_METHOD 0
 
 #ifdef CONFIG_HAVE_DOUBLE
 #define DBL_MANT_DIG 53
