@@ -437,10 +437,7 @@ config FOTA_DRIVER
 	---help---
 		FOTA Device Driver
 
-comment "System Logging Device Options"
-
 source drivers/syslog/Kconfig
-
 source drivers/ttrace/Kconfig
 
 comment "Wireless Device Options"
