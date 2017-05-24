@@ -32,7 +32,7 @@
  ****************************************************************************/
 #define PROC_MOUNTPOINT "/proc"
 
-#define PROC_BUFFER_LEN 128
+#define PROC_BUFFER_LEN 256
 #define TASK_STACK_SIZE 512
 
 #define INTERVAL_UPDATE_SEC 2
