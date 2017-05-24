@@ -441,6 +441,10 @@ comment "System Logging Device Options"
 
 source drivers/syslog/Kconfig
 
+source drivers/ttrace/Kconfig
+
+comment "Wireless Device Options"
+
 menuconfig DRIVERS_WIRELESS
 	bool "Wireless Device Support"
 	default n
@@ -448,4 +452,4 @@ menuconfig DRIVERS_WIRELESS
 		Drivers for various wireless devices.
 
 source drivers/wireless/Kconfig
-source drivers/ttrace/Kconfig
+
