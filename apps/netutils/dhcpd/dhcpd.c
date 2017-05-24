@@ -1635,7 +1635,9 @@ int dhcpd_run(void *arg)
 		switch (g_state.ds_optmsgtype) {
 		case DHCPDISCOVER:
 			ndbg("DHCPDISCOVER\n");
-			dhcpd_discover();
+			if (dhcpd_discover() == ERROR) {
+				ndbg("DHCPDISCOVER : Failed to send DHCP Discover, errno %d\n", errno);
+			}
 			break;
 
 		case DHCPREQUEST:
