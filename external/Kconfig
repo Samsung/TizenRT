@@ -119,3 +119,8 @@ config IOTIVITY_DEBUG
 	---help---
 		select to enable all iotivity stack logs (DEBUG / INFO etc.)
 
+config LIBTUV
+	bool "libtuv"
+	default n
+	---help---
+		enable libtuv

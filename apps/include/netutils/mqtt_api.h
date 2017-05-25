@@ -39,6 +39,8 @@
 #define MQTT_DEFAULT_BROKER_PORT			1883
 #define MQTT_SECURITY_BROKER_PORT			8883
 #define MQTT_DEFAULT_KEEP_ALIVE_TIME		60
+#define MQTT_PROTOCOL_VERSION_31			3
+#define MQTT_PROTOCOL_VERSION_311			4
 
 /****************************************************************************
  * Enumeration
@@ -103,6 +105,7 @@ typedef struct _mqtt_client_config_t {
 	char *user_name; /**< client user name */
 	char *password;	/**< password corresponding to the user name */
 	bool clean_session;	/**< mqtt clean session flag */
+	int protocol_version;	/**< mqtt protocol version */
 	bool debug;	/**< mqtt debug flag */
 	mqtt_tls_param_t *tls; /**< mqtt tls parameter */
 

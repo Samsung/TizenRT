@@ -25,8 +25,8 @@ config S5J_S5JT200
 	bool
 	default n
 	select S5J_HAVE_ADC
-	select S5J_HAVE_DMA
 	select S5J_HAVE_I2C
+	select S5J_HAVE_MCT
 	select S5J_HAVE_PWM0
 	select S5J_HAVE_PWM1
 	select S5J_HAVE_PWM2
@@ -54,11 +54,11 @@ config S5J_HAVE_ADC
 	bool
 	default n
 
-config S5J_HAVE_DMA
+config S5J_HAVE_I2C
 	bool
 	default n
 
-config S5J_HAVE_I2C
+config S5J_HAVE_MCT
 	bool
 	default n
 
@@ -142,15 +142,38 @@ config S5J_ADC
 		S5J has 12-bits ADC with 4 channels. Say Y here, if you want
 		to use it.
 
-config S5J_DMA
-	bool "DMA"
-	default n
-	depends on S5J_HAVE_DMA
-
 config S5J_I2C
 	bool "I2C"
 	default n
 	depends on S5J_HAVE_I2C
+
+config S5J_MCT
+	bool
+	default n
+
+config S5J_TIMER0
+	bool "TIMER0"
+	default n
+	depends on S5J_HAVE_MCT
+	select S5J_MCT
+
+config S5J_TIMER1
+	bool "TIMER1"
+	default n
+	depends on S5J_HAVE_MCT
+	select S5J_MCT
+
+config S5J_TIMER2
+	bool "TIMER2"
+	default n
+	depends on S5J_HAVE_MCT
+	select S5J_MCT
+
+config S5J_TIMER3
+	bool "TIMER3"
+	default n
+	depends on S5J_HAVE_MCT
+	select S5J_MCT
 
 config S5J_UART_FLOWCONTROL
 	bool

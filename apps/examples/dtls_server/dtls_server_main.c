@@ -40,15 +40,33 @@
  * Included Files
  ****************************************************************************/
 
-#include "tls/config.h"
-
 #include <stdio.h>
-#define mbedtls_printf     printf
-#define mbedtls_fprintf    fprintf
-
 #include <string.h>
 #include <stdlib.h>
 
+#include "tls/config.h"
+
+#if !defined(MBEDTLS_SSL_SRV_C) || !defined(MBEDTLS_SSL_PROTO_DTLS) ||	\
+	!defined(MBEDTLS_SSL_COOKIE_C) || !defined(MBEDTLS_NET_C) ||		\
+	!defined(MBEDTLS_ENTROPY_C) || !defined(MBEDTLS_CTR_DRBG_C) ||		\
+	!defined(MBEDTLS_X509_CRT_PARSE_C) || !defined(MBEDTLS_RSA_C) ||	\
+	!defined(MBEDTLS_CERTS_C) || !defined(MBEDTLS_PEM_PARSE_C) ||		\
+	!defined(MBEDTLS_TIMING_C)
+
+int dtls_server_main(int argc, char **argv)
+{
+	printf("MBEDTLS_SSL_SRV_C and/or MBEDTLS_SSL_PROTO_DTLS and/or\n");
+	printf("MBEDTLS_SSL_COOKIE_C and/or MBEDTLS_NET_C and/or\n");
+	printf("MBEDTLS_ENTROPY_C and/or MBEDTLS_CTR_DRBG_C and/or\n");
+	printf("MBEDTLS_X509_CRT_PARSE_C and/or MBEDTLS_RSA_C and/or\n");
+	printf("MBEDTLS_CERTS_C and/or MBEDTLS_PEM_PARSE_C and/or\n");
+	printf("MBEDTLS_TIMING_C not defined.\n");
+	return 0;
+}
+#else
+
+#define mbedtls_printf     printf
+#define mbedtls_fprintf    fprintf
 #include "tls/entropy.h"
 #include "tls/ctr_drbg.h"
 #include "tls/certs.h"
@@ -439,3 +457,4 @@ int dtls_server_main(int argc, char **argv)
 
 	return 0;
 }
+#endif

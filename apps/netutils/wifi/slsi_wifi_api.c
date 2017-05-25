@@ -220,6 +220,11 @@ void slsi_demo_app_sleep(int seconds, char *str)
 #define SLSI_WIFI_WPA_ASCII_KEY_MIN     8
 #define SLSI_WIFI_WPA_ASCII_KEY_MAX     (SLSI_PASSPHRASE_LEN - 1)
 
+/* Scan interval in specified in slsi_wifi_api.h.
+ * Below values are use to boundary check */
+#define SLSI_SCAN_INTERVAL_MIN   10
+#define SLSI_SCAN_INTERVAL_MAX   60
+
 typedef enum {
 	SLSI_WIFIAPI_STATE_NOT_STARTED,
 	SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING,	//SLSI_WIFIAPI_STATE_STA_ENABLED
@@ -370,6 +375,7 @@ static int8_t slsi_wpa_close(bool terminate);
 static int8_t slsi_start_scan(void);
 static int8_t slsi_get_country_code(char *country_code);
 static WiFi_InterFace_ID_t slsi_get_op_mode(void);
+static void slsi_set_scan_interval(uint8_t interval);
 static int8_t slsi_disable_all_networks(void);
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 static slsi_ap_config_t *slsi_get_ap_config(void);
@@ -1286,6 +1292,7 @@ void slsi_monitor_thread_handler(void *param)
 						slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
 						slsi_get_network(reason.ssid, reason.ssid_len, &g_network_id);
 						g_state = SLSI_WIFIAPI_STATE_STA_CONNECTED;
+						slsi_set_scan_interval(SLSI_SCAN_INTERVAL); // connected so lets set scan interval back and save power
 						if (g_link_up) {
 							VPRINT("SLSI_API send link_up\n");
 							g_link_up(&reason);
@@ -1356,6 +1363,8 @@ void slsi_monitor_thread_handler(void *param)
 					if (slsi_event_recieved(result, WPA_EVENT_CONNECTED)) {
 						slsi_check_status(reason.ssid, &reason.ssid_len, reason.bssid);
 						g_state = SLSI_WIFIAPI_STATE_STA_CONNECTED;
+						// connected so lets set scan interval back to limit power consumption
+						slsi_set_scan_interval(SLSI_SCAN_INTERVAL);
 						event_handled = TRUE;
 					} else if (slsi_event_recieved(result, WPA_EVENT_NETWORK_NOT_FOUND)) {
 						/* Assumed to be because network with specification setup is not
@@ -1398,11 +1407,6 @@ void slsi_monitor_thread_handler(void *param)
 					if (slsi_event_recieved(result, WPA_EVENT_DISCONNECTED)) {
 						slsi_sta_disconnect_event_handler(result, &reason);
 						g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
-						if (g_network_id) {
-							slsi_remove_network(g_network_id);
-							free(g_network_id);
-							g_network_id = NULL;
-						}
 						if (g_link_down) {
 							VPRINT("SLSI_API slsi_link_event_handler send link_down\n");
 							g_link_down(&reason);
@@ -2077,6 +2081,7 @@ static int8_t slsi_join_network(uint8_t *ssid, int ssid_len, uint8_t *bssid, con
 	} else {
 		// Select network (and disable other networks)
 		g_state = SLSI_WIFIAPI_STATE_STA_CONNECTING;
+		slsi_set_scan_interval(SLSI_SCAN_INTERVAL_CONNECT); //set more agressive scan interval for connections
 		slsi_send_command_str_upto_4(WPA_COMMAND_SELECT_NETWORK, network_id, NULL, NULL, &result);
 		if (result != SLSI_STATUS_SUCCESS) {
 			g_state = SLSI_WIFIAPI_STATE_SUPPLICANT_RUNNING;
@@ -2103,9 +2108,14 @@ static void slsi_set_bss_expiration(void)
 	slsi_send_command_str_digit(WPA_COMMAND_BSS_EXPIRE_AGE, SLSI_BSS_EXPIRE_AGE);
 }
 
-static void slsi_set_scan_interval(void)
+static void slsi_set_scan_interval(uint8_t interval)
 {
-	slsi_send_command_str_digit(WPA_COMMAND_SCAN_INTERVAL, SLSI_SCAN_INTERVAL);
+	if (interval < SLSI_SCAN_INTERVAL_MIN) {
+		interval = SLSI_SCAN_INTERVAL_MIN;
+	} else if (interval > SLSI_SCAN_INTERVAL_MAX) {
+		interval = SLSI_SCAN_INTERVAL_MAX;
+	}
+	slsi_send_command_str_digit(WPA_COMMAND_SCAN_INTERVAL, interval);
 }
 
 static void slsi_set_autoconnect(uint8_t onoff)
@@ -3130,7 +3140,7 @@ static int8_t slsi_init(WiFi_InterFace_ID_t interface_id, const slsi_ap_config_t
 #endif
 			// configure supplicant
 			slsi_set_updateconfig();
-			slsi_set_scan_interval();
+			slsi_set_scan_interval(SLSI_SCAN_INTERVAL);
 			slsi_set_bss_expiration();
 			if (interface_id == SLSI_WIFI_SOFT_AP_IF) {
 				slsi_set_autoconnect(0);

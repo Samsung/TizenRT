@@ -8,6 +8,16 @@ config NET_LWIP_DEBUG
 
 if NET_LWIP_DEBUG
 
+config NET_LWIP_DEBUG_LEVEL
+	int "LWIP debug level"
+	default 1
+	range 0 3
+	---help---
+		Configure LwIP log level.
+		0 : debug all
+		1 : warning (bad checksums, dropped packets, ...)
+		2 : serious (memory allocation failures, ... )
+		3 : severe
 
 config NET_API_LIB_DEBUG
 	bool "Enable API Library Debugging"

@@ -186,7 +186,7 @@ int see_get_ecdsa_signature(struct sECC_SIGN *ecc_sign, unsigned char *hash, uns
 	}
 
 	ISP_CHECKBUSY();
-	if ((r = isp_ecdsa_sign_securekey(ecc_sign, hash, hash_len, key_index)) != 0) {
+	if ((r = isp_ecdsa_sign_md_securekey(ecc_sign, hash, hash_len, key_index)) != 0) {
 		SEE_DEBUG("isp_ecdsa_sign fail %x\n", r);
 		isp_clear(0);
 		if (see_mutex_unlock(&m_handler) != SEE_OK) {

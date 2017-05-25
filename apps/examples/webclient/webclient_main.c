@@ -147,14 +147,15 @@ static void callback(struct http_client_response_t *response)
 
 static void dump_webclient_usage(void)
 {
-	printf("webclient program usage\n");
-	printf("webclient <method> <uri> { <entity> <encoding> }\n");
-	printf("method and url parameter should be given and entity and encoding is optional\n");
-	printf("method: one of GET, POST, PUT, DELETE\n");
-	printf("uri: should start with http:// or https:// \n");
-	printf("entitiy: default NULL\n");
-	printf("enconding: default CONTENT_LENGTH if enconding=='c' then CHUNKED_ENCODING\n");
-	return;
+	printf("\n  webclient usage:\n");
+	printf("   $ webclient [method] [uri] [entity] [encoding]\n");
+	printf("\n");
+	printf(" [method]   : %%s (GET, PUT, POST, DELETE)\n");
+	printf(" [uri]      : %%s (Host address : should be started with http:// or https://)\n");
+	printf(" [entity]   : %%s (Entity : default is NULL)\n");
+	printf(" [encoding] : %%s (Enable the chenked encodning with 'c' option)\n");
+	printf("\n  example:\n");
+	printf("   $ webclient GET https://127.0.0.1/\n");
 }
 
 /****************************************************************************
@@ -269,8 +270,8 @@ pthread_addr_t webclient_cb(void *arg)
 		}
 	} else
 #endif
+	if (!strncmp(request.url, "http", 4)) {
 		/* send HTTP request */
-	{
 		if (http_client_response_init(&response) < 0) {
 			printf("fail to init\n");
 		} else {
@@ -291,7 +292,12 @@ pthread_addr_t webclient_cb(void *arg)
 			printf("fail to send request\n");
 			goto release_out;
 		}
+	} else {
+		printf("Wrong URI\n");
+		dump_webclient_usage();
+		return NULL;
 	}
+
 	/* sleep for end request */
 	while (request.async_flag > 0) {
 		usleep(100000);

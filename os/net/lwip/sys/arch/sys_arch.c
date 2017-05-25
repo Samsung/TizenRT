@@ -437,7 +437,7 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
 	systime_t start = clock_systimer();
-	u32_t status = OK;
+	int status = OK;
 
 	if (timeout == 0) {
 
@@ -451,14 +451,12 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 		}
 		status = OK;
 	} else {
-		while (sem_tickwait(sem, clock_systimer(), MSEC2TICK(timeout)) != OK) {
+		while ((status = sem_tickwait(sem, clock_systimer(), MSEC2TICK(timeout))) != OK) {
 			/* Handle the special case where the semaphore wait was
 			 * awakened by the receipt of a signal.
 			 * Restart If signal is EINTR else break if ETIMEDOUT
 			 */
-			status = get_errno();
-
-			if (status == ETIMEDOUT) {
+			if (status == -ETIMEDOUT) {
 				break;
 			} else {
 				/* calculate remaining timeout */
@@ -467,7 +465,7 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 		}
 
 	}
-	if (status == ETIMEDOUT) {
+	if (status == -ETIMEDOUT) {
 		return SYS_ARCH_TIMEOUT;
 	}
 

@@ -87,8 +87,7 @@ int http_server_stop(struct http_server_t *server)
 	server->state = HTTP_SERVER_STOP_REQ;
 
 	while (server->state != HTTP_SERVER_STOP) {
-		pthread_kill(server->tid, HTTP_CONF_SERVER_SIGWAKEUP);
-		usleep(100);
+		usleep(100000);
 	}
 
 	close(server->listen_fd);

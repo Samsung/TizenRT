@@ -111,26 +111,6 @@ FAR struct netif *netdev_findbyname(FAR const char *ifname);
 
 #endif
 
-/* netdev_findbyaddr.c *******************************************************/
-
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-#ifdef CONFIG_NET_IPv4
-#ifdef CONFIG_NETDEV_MULTINIC
-FAR struct netif *netdev_findby_ipv4addr(in_addr_t lipaddr, in_addr_t ripaddr);
-#else
-FAR struct netif *netdev_findby_ipv4addr(in_addr_t ripaddr);
-#endif
-#endif
-
-#ifdef CONFIG_NET_IPv6
-#ifdef CONFIG_NETDEV_MULTINIC
-FAR struct netif *netdev_findby_ipv6addr(const net_ipv6addr_t lipaddr, const net_ipv6addr_t ripaddr);
-#else
-FAR struct netif *netdev_findby_ipv6addr(const net_ipv6addr_t ripaddr);
-#endif
-#endif
-#endif
-
 /* netdev_default.c ***********************************************************/
 
 #if CONFIG_NSOCKET_DESCRIPTORS > 0

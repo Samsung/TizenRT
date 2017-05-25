@@ -141,11 +141,30 @@
 /* TLS configure */
 #define MBEDTLS_DEBUG_LEVEL 2
 
+#define WEBSOCKET_USAGE										\
+	"\n"													\
+	"  websocket server usage:\n"							\
+	"   $ websocket server [tls option]\n"					\
+	"\n"													\
+	"  websocket client usage:\n"							\
+	"   $ websocket client [addr] [port] [path] [tls option] [size] [num]\n"	\
+	"\n"													\
+	"   [tls option] : %%d (0 - disable / 1 - enable)\n"		\
+	"   [addr]       : %%s (IPv4 address or Domain name)\n"	\
+	"   [path]       : %%s (Page address or zero)\n"			\
+	"   [size]       : %%d (Test packet size)\n"				\
+	"   [num]        : %%d (Test packet receive and send count)\n"	\
+	"\n\n"													\
+	"  examples:\n"											\
+	"   $ websocket server 1\n"								\
+	"   $ websocket client 127.0.0.1 443 0 1 100 10\n"
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
 int received_cnt;
+int g_wsenabled;
 
 /****************************************************************************
  * Public Functions
@@ -429,6 +448,15 @@ int websocket_client(void *arg)
 	mbedtls_ctr_drbg_context ctr_drbg;
 	mbedtls_ssl_cache_context cache;
 
+	if (size < 16) {
+		printf("wrong size\n %s\n", WEBSOCKET_USAGE);
+		return -1;
+	}
+	if (send_cnt < 1) {
+		printf("wrong send count\n %s\n", WEBSOCKET_USAGE);
+		return -1;
+	}
+
 	addr = malloc(strlen(argv[0]) + 1);
 	if (addr == NULL) {
 		printf("fail to allocate memory\n");
@@ -593,6 +621,18 @@ int websocket_server(void *arg)
 		echoback_on_msg_cb		/* recv message callback */
 	};
 
+	if (tls != 0 && tls != 1) {
+		printf("wrong tls option\n %s\n", WEBSOCKET_USAGE);
+		return WEBSOCKET_INIT_ERROR;
+	}
+
+	if (g_wsenabled) {
+		printf("\nWebsocket server is already running\n");
+		return WEBSOCKET_INIT_ERROR;
+	} else {
+		g_wsenabled = 1;
+	}
+
 	mbedtls_ssl_config conf;
 	mbedtls_x509_crt cert;
 	mbedtls_pk_context pkey;
@@ -603,6 +643,7 @@ int websocket_server(void *arg)
 	websocket_t *websocket_srv = malloc(sizeof(websocket_t));
 	if (websocket_srv == NULL) {
 		printf("fail to allocate memory\n");
+		g_wsenabled = 0;
 		return WEBSOCKET_ALLOCATION_ERROR;
 	}
 
@@ -638,16 +679,9 @@ WEB_SRV_EXIT:
 		free(websocket_srv);
 	}
 
+	g_wsenabled = 0;
 	return 0;
 }
-
-#define WEBSOCKET_USAGE	\
-"-----------------------------\n"	\
-"Server usage:\n"			\
-"$websocket server [tls option]\n"	\
-"Client usage:\n"			\
-"$websocket client [addr] [port] [path] [tls_enable] [size] [num]\n"	\
-"-----------------------------\n"
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -659,56 +693,29 @@ int websocket_main(int argc, char *argv[])
 	pthread_attr_t attr;
 	pthread_t tid;
 
-	if (argc != 3 && argc != 8) {
-		printf("Not enough arguments\n\n %s", WEBSOCKET_USAGE);
+	if ((status = pthread_attr_init(&attr)) != 0) {
+		printf("fail to init thread\n");
 		return -1;
 	}
+	pthread_attr_setstacksize(&attr, WEBSOCKET_EXAMPLE_STACKSIZE);
+	pthread_attr_setschedpolicy(&attr, WEBSOCKET_SCHED_POLICY);
 
-	if (memcmp(argv[1], "client", strlen("client")) == 0) {
-		if (atoi(argv[6]) < 16) {
-			printf("size too small, minimum 16\n");
-			return -1;
-		}
-		if (atoi(argv[7]) < 1) {
-			printf("test number too small, minimum 1\n");
-			return -1;
-		}
-		status = pthread_attr_init(&attr);
-		if (status != 0) {
-			printf("fail to init thread\n");
-			return -1;
-		}
-		pthread_attr_setstacksize(&attr, WEBSOCKET_EXAMPLE_STACKSIZE);
-		pthread_attr_setschedpolicy(&attr, WEBSOCKET_SCHED_POLICY);
-		status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_client, (void *)(argv + 2));
-		if (status != 0) {
+	if (memcmp(argv[1], "client", strlen("client")) == 0 && argc == 8) {
+		if ((status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_client, (void *)(argv + 2))) != 0) {
 			printf("fail to create thread\n");
 			return -1;
 		}
 		pthread_setname_np(tid, "websocket client");
 		pthread_detach(tid);
-	} else if (memcmp(argv[1], "server", strlen("server")) == 0) {
-		if ((atoi(argv[2]) != 0) && (atoi(argv[2]) != 1)) {
-			printf("Please choose 0 or 1 for TLS option\n");
-			printf("TLS option value 1 is tls enabled, 0 is tls disabled\n");
-			return -1;
-		}
-		status = pthread_attr_init(&attr);
-		if (status != 0) {
-			printf("fail to init thread\n");
-			return -1;
-		}
-		pthread_attr_setstacksize(&attr, WEBSOCKET_EXAMPLE_STACKSIZE);
-		pthread_attr_setschedpolicy(&attr, WEBSOCKET_SCHED_POLICY);
-		status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_server, (void *)(argv + 2));
-		if (status != 0) {
+	} else if (memcmp(argv[1], "server", strlen("server")) == 0 && argc == 3) {
+		if ((status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_server, (void *)(argv + 2))) != 0) {
 			printf("fail to create thread\n");
 			return -1;
 		}
 		pthread_setname_np(tid, "websocket server");
 		pthread_detach(tid);
 	} else {
-		printf("choose client or server\n");
+		printf("\nwrong input parameter !!!\n %s\n", WEBSOCKET_USAGE);
 		return -1;
 	}
 	return 0;

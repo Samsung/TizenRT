@@ -503,7 +503,7 @@ static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
 		if (priv->parity) {
 			termiosp->c_cflag |= PARENB;
 			if (priv->parity == 1) {
-					termiosp->c_cflag |= PARODD;
+				termiosp->c_cflag |= PARODD;
 			}
 		}
 
@@ -968,7 +968,9 @@ void up_lowputc(char ch)
 	while (1) {
 		/* Wait for the transmitter to be available */
 		while ((uart_getreg32(CONSOLE_DEV.priv, S5J_UART_UTRSTAT_OFFSET) &
-					UART_UTRSTAT_TX_BUF_MASK) != UART_UTRSTAT_TX_BUF_EMPTY);
+					UART_UTRSTAT_TX_BUF_MASK) != UART_UTRSTAT_TX_BUF_EMPTY) {
+			/* Polling */
+		}
 
 		/*
 		 * Disable interrupts so that the test and the transmission are

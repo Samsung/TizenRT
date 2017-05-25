@@ -594,28 +594,12 @@ Once LOGM is approved, each module should have its own index
 #define lllvdbg(x...)
 #endif
 
-#ifdef CONFIG_DEBUG_LWIP_ERROR
+#ifdef CONFIG_NET_LWIP_DEBUG
 #define lwipdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define lwiplldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
 #else
 #define lwipdbg(x...)
 #define lwiplldbg(x...)
-#endif
-
-#ifdef CONFIG_DEBUG_LWIP_WARN
-#define lwipwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
-#define lwipllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
-#else
-#define lwipwdbg(x...)
-#define lwipllwdbg(x...)
-#endif
-
-#ifdef CONFIG_DEBUG_LWIP_INFO
-#define lwipvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
-#define lwipllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
-#else
-#define lwipvdbg(x...)
-#define lwipllvdbg(x...)
 #endif
 
 #ifdef CONFIG_DEBUG_TTRACE
@@ -950,30 +934,6 @@ Once LOGM is approved, each module should have its own index
 #else
 #define lvdbg       (void)
 #define lllvdbg     (void)
-#endif
-
-#ifdef CONFIG_DEBUG_LWIP_ERROR
-#define lwipdbg        dbg
-#define lwiplldbg      lldbg
-#else
-#define lwipdbg        (void)
-#define lwiplldbg      (void)
-#endif
-
-#ifdef CONFIG_DEBUG_LWIP_WARN
-#define lwipwdbg        wdbg
-#define lwipllwdbg      llwdbg
-#else
-#define lwipwdbg        (void)
-#define lwipllwdbg      (void)
-#endif
-
-#ifdef CONFIG_DEBUG_LWIP_INFO
-#define lwipvdbg       vdbg
-#define lwipllvdbg     llvdbg
-#else
-#define lwipvdbg       (void)
-#define lwipllvdbg     (void)
 #endif
 
 #endif							/* CONFIG_CPP_HAVE_VARARGS */

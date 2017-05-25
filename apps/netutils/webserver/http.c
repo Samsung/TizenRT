@@ -26,7 +26,7 @@
 #include "http_log.h"
 
 #define MAX_ACCEPTED_FD    20
-#define ACCEPT_TIMEOUT_MS  1
+#define ACCEPT_TIMEOUT_MS  100
 #define HTTP_LISTENING_HANDLER_STACKSIZE (1024 * 4)
 #define HTTP_CLIENT_HANDLER_STACKSIZE    (1024 * 4)
 #define HTTPS_CLIENT_HANDLER_STACKSIZE    (1024 * 8)
@@ -206,11 +206,7 @@ pthread_addr_t http_server_handler(pthread_addr_t arg)
 		}
 	}
 stop:
-	HTTP_LOGD("http_server_hander stop :%d\n", server->port);
-
 	if (msg_q >= 0) {
-
-		int n_client = HTTP_CONF_MAX_CLIENT_HANDLE;
 		http_server_mq_flush(msg_q);
 
 		for (i = 0; i < HTTP_CONF_MAX_CLIENT_HANDLE; i++) {
@@ -221,15 +217,8 @@ stop:
 
 		mq_getattr(msg_q, &mqattr);
 
-		while ((mqattr.mq_curmsgs != 0) && (n_client > 0)) {
-			usleep(100000);
-			mq_getattr(msg_q, &mqattr);
-			n_client = HTTP_CONF_MAX_CLIENT_HANDLE;
-			for (i = 0; i < HTTP_CONF_MAX_CLIENT_HANDLE;  i++) {
-				if (pthread_kill(server->c_tid[i], HTTP_CONF_SERVER_SIGWAKEUP) != OK) {
-					n_client--;
-				}
-			}
+		for (i = 0; i < HTTP_CONF_MAX_CLIENT_HANDLE;  i++) {
+			pthread_kill(server->c_tid[i], HTTP_CONF_SERVER_SIGWAKEUP);
 		}
 
 		mq_close(msg_q);
@@ -237,11 +226,10 @@ stop:
 		if (http_server_mq_close(server->port) != OK) {
 			HTTP_LOGD("mq close error %d\n", server->port);
 		}
-
-		server->state = HTTP_SERVER_STOP;
-		HTTP_LOGD("Accept loop finished.\n");
 	}
+	HTTP_LOGD("http_server_handler stop :%d\n", server->port);
 
+	server->state = HTTP_SERVER_STOP;
 	return NULL;
 }
 

@@ -278,6 +278,12 @@ mqtt_client_t *mqtt_init_client(mqtt_client_config_t *config)
 	mosquitto_subscribe_callback_set((struct mosquitto *)mqtt_client->mosq, on_subscribe_callback);
 	mosquitto_unsubscribe_callback_set((struct mosquitto *)mqtt_client->mosq, on_unsubscribe_callback);
 
+	/* set protocol version */
+	ret = mosquitto_opts_set((struct mosquitto *)mqtt_client->mosq, MOSQ_OPT_PROTOCOL_VERSION, &(config->protocol_version));
+	if (ret != MOSQ_ERR_SUCCESS) {
+		ndbg("ERROR: fail to set mqtt protocol version.\n");
+		goto done;
+	}
 #if defined(CONFIG_NETUTILS_MQTT_SECURITY)
 	if (config->tls) {
 		struct mosquitto *tmp = (struct mosquitto *)mqtt_client->mosq;

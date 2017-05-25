@@ -309,7 +309,7 @@ static pthread_t g_tid = 0;
 static char DHCPD_IFNAME[IFNAMSIZ] = {0,};
 
 #if DHCPD_SELECT
-static struct timeval g_select_timeout = {60, 0};
+static struct timeval g_select_timeout = {10, 0};
 #endif
 
 /****************************************************************************
@@ -1590,9 +1590,6 @@ int dhcpd_run(void *arg)
 			/* Read the next g_state.ds_outpacket */
 			nbytes = recv(sockfd, &g_state.ds_inpacket, sizeof(struct dhcpmsg_s), 0);
 		} else if (ret == 0) {
-			/* Debugging purpose : Timeout case */
-			ndbg("select ret %d [errno %d]\n", ret, errno);
-
 			if (!g_dhcpd_quit)
 				continue;
 			else {

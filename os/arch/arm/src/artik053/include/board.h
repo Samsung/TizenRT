@@ -55,4 +55,4 @@
 
 #define SYSCLK_FREQUENCY	32768	/* RTC clock at 32768Hz */
 
-#endif							/* __ARCH_ARM_SRC_ARTIK053_INCLUDE_BOARD_H__ */
+#endif /* __ARCH_ARM_SRC_ARTIK053_INCLUDE_BOARD_H__ */

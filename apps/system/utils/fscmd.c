@@ -1035,6 +1035,156 @@ static int tash_rmdir(int argc, char **args)
 	return ret;
 }
 
+static int df_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
+{
+	printf("%6ld %8ld %8ld  %8ld %s\n", statbuf->f_bsize, statbuf->f_blocks, statbuf->f_blocks - statbuf->f_bavail, statbuf->f_bavail, mountpoint);
+
+	return OK;
+}
+
+static const char *get_fstype(FAR struct statfs *statbuf)
+{
+	FAR const char *fstype;
+
+	/* Get the file system type */
+
+	switch (statbuf->f_type) {
+#ifdef CONFIG_FS_FAT
+	case MSDOS_SUPER_MAGIC:
+		fstype = "vfat";
+		break;
+#endif
+
+#ifdef CONFIG_FS_ROMFS
+	case ROMFS_MAGIC:
+		fstype = "romfs";
+		break;
+#endif
+
+#ifdef CONFIG_FS_TMPFS
+	case TMPFS_MAGIC:
+		fstype = "tmpfs";
+		break;
+#endif
+
+#ifdef CONFIG_FS_BINFS
+	case BINFS_MAGIC:
+		fstype = "binfs";
+		break;
+#endif
+
+#ifdef CONFIG_FS_NXFFS
+	case NXFFS_MAGIC:
+		fstype = "nxffs";
+		break;
+#endif
+
+#ifdef CONFIG_NFS
+	case NFS_SUPER_MAGIC:
+		fstype = "nfs";
+		break;
+#endif
+
+#ifdef CONFIG_FS_SMARTFS
+	case SMARTFS_MAGIC:
+		fstype = "smartfs";
+		break;
+#endif
+
+#ifdef CONFIG_FS_PROCFS
+	case PROCFS_MAGIC:
+		fstype = "procfs";
+		break;
+#endif
+
+#ifdef CONFIG_FS_UNIONFS
+	case UNIONFS_MAGIC:
+		fstype = "unionfs";
+		break;
+#endif
+
+#ifdef CONFIG_FS_HOSTFS
+	case HOSTFS_MAGIC:
+		fstype = "hostfs";
+		break;
+#endif
+
+	default:
+		fstype = "Unrecognized";
+		break;
+	}
+
+	return fstype;
+}
+
+static int df_man_readable_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
+{
+	uint32_t size;
+	uint32_t used;
+	uint32_t free;
+	int which;
+	char sizelabel;
+	char freelabel;
+	char usedlabel;
+	const char labels[5] = { 'B', 'K', 'M', 'G', 'T' };
+
+	size = statbuf->f_bsize * statbuf->f_blocks;
+	free = statbuf->f_bsize * statbuf->f_bavail;
+	used = size - free;
+
+	/* Find the label for size */
+
+	which = 0;
+	while (size >= 9999 || ((size & 0x3ff) == 0 && size != 0)) {
+		which++;
+		size >>= 10;
+	}
+
+	sizelabel = labels[which];
+
+	/* Find the label for free */
+
+	which = 0;
+	while (free >= 9999 || ((free & 0x3ff) == 0 && free != 0)) {
+		which++;
+		free >>= 10;
+	}
+
+	freelabel = labels[which];
+
+	/* Find the label for used */
+
+	which = 0;
+	while (used >= 9999 || ((used & 0x3ff) == 0 && used != 0)) {
+		which++;
+		used >>= 10;
+	}
+
+	usedlabel = labels[which];
+
+	printf("%-10s %6ld%c %8ld%c  %8ld%c %s\n", get_fstype(statbuf), size, sizelabel, used, usedlabel, free, freelabel, mountpoint);
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: tash_df
+ ****************************************************************************/
+
+static int tash_df(int argc, char **args)
+{
+	if (argc > 1 && strcmp(args[1], "-h") == 0) {
+		printf("Filesystem    Size      Used  Available Mounted on\n");
+		return foreach_mountpoint(df_man_readable_handler, NULL);
+	} else {
+		printf("  Block  Number\n");
+		printf("  Size   Blocks     Used Available Mounted on\n");
+		return foreach_mountpoint(df_handler, NULL);
+	}
+
+	return 0;
+}
+
 const static tash_cmdlist_t fs_utilcmds[] = {
 	{"cat",       tash_cat,       TASH_EXECMD_SYNC},
 	{"cd",        tash_cd,        TASH_EXECMD_SYNC},
@@ -1053,6 +1203,7 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 	{"pwd",       tash_pwd,       TASH_EXECMD_SYNC},
 	{"rm",        tash_rm,        TASH_EXECMD_SYNC},
 	{"rmdir",     tash_rmdir,     TASH_EXECMD_SYNC},
+	{"df",        tash_df,        TASH_EXECMD_SYNC},
 	{NULL,        NULL,           0}
 };
 

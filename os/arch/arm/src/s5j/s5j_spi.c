@@ -53,8 +53,8 @@
 /*****************************************************************************
  * Included Files
  *****************************************************************************/
-
 #include <tinyara/config.h>
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdint.h>
@@ -81,10 +81,9 @@
 
 #include "s5j_vclk.h"
 
-/*****************************************************************************
+/****************************************************************************
  * Definitions
- *****************************************************************************/
-
+ ****************************************************************************/
 #define CH_CFG_TX_CH_ON			(1 << 0)
 #define CH_CFG_TX_CH_OFF		(0 << 0)
 #define CH_CFG_RX_CH_ON			(1 << 1)
@@ -141,10 +140,9 @@
 #define SPI_STAT_TRAILING_BYTE(x)	((x >> 24) & 1)
 #define SPI_STAT_TX_DONE(x)			((x >> 25) & 1)
 
-/*****************************************************************************
+/****************************************************************************
  * Private Types
- *****************************************************************************/
-
+ ****************************************************************************/
 struct s5j_spidev_s {
 	struct spi_dev_s spidev;
 	uint32_t base;
@@ -164,12 +162,11 @@ struct s5j_spidev_s {
 #endif
 };
 
-/*****************************************************************************
+/****************************************************************************
  * Private Function Prototypes
- *****************************************************************************/
+ ****************************************************************************/
 
 /* SPI Driver Methods */
-
 static int spi_lock(FAR struct spi_dev_s *dev, bool lock);
 static void spi_select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
 static uint32_t spi_setfrequency(FAR struct spi_dev_s *dev, uint32_t frequency);
@@ -183,10 +180,9 @@ static void spi_sndblock(FAR struct spi_dev_s *dev, const void *txbuffer, size_t
 static void spi_recvblock(FAR struct spi_dev_s *dev, void *rxbuffer, size_t nwords);
 #endif
 
-/*****************************************************************************
+/****************************************************************************
  * Private Data
- *****************************************************************************/
-
+ ****************************************************************************/
 static const struct spi_ops_s g_spiops = {
 #ifndef CONFIG_SPI_OWNBUS
 	.lock				= spi_lock,
@@ -250,13 +246,9 @@ static struct s5j_spidev_s g_spi3dev = {
 	.gpio_mosi	= GPIO_SPI3_MOSI,
 };
 
-/*****************************************************************************
- * Public Data
- *****************************************************************************/
-
-/*****************************************************************************
+/****************************************************************************
  * Private Functions
- *****************************************************************************/
+ ****************************************************************************/
 
 /****************************************************************************
  * Name: spi_lock
@@ -329,13 +321,13 @@ static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selecte
 	putreg32(cs_reg, &pSPIRegs->CS_REG);
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Name: spi_setmode
  *
  * Description:
  *   Set the SPI mode.  see enum spi_mode_e for mode definitions
  *
- *****************************************************************************/
+ ****************************************************************************/
 static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 {
 	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
@@ -426,13 +418,11 @@ static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbu
 	pSPIRegs = (SPI_SFR *)priv->base;
 
 	/* SPI FIFO FLUSH */
-
 	int ch_cfg = getreg32(&pSPIRegs->CH_CFG);
 	putreg32(CH_CFG_FIFO_FLUSH, &pSPIRegs->CH_CFG);
 	putreg32(ch_cfg, &pSPIRegs->CH_CFG);
 
 	/* TX/RX */
-
 	if ((rxbuffer == NULL) && (txbuffer == NULL)) {
 		while (received < nwords) {
 			if (sent < nwords)
@@ -552,7 +542,6 @@ struct spi_dev_s *up_spiinitialize(int port)
 	lldbg("Prepare SPI%d for Master operation\n", priv->port);
 
 	/* SET GPIO for the port */
-
 	s5j_configgpio(priv->gpio_clk);
 	s5j_configgpio(priv->gpio_nss);
 	s5j_configgpio(priv->gpio_miso);
@@ -567,24 +556,19 @@ struct spi_dev_s *up_spiinitialize(int port)
 #endif
 
 	/* SET SPI INITIAL */
-
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *)priv->base;
 
 	/* TX/RX enable. Master.CPHA 00. */
-
 	putreg32(CH_CFG_HIGH_SPEED_DIS | CH_CFG_FIFO_FLUSH_OFF | CH_CFG_MASTER | CH_CFG_MODE(SPIDEV_MODE0) | CH_CFG_RX_CH_ON | CH_CFG_TX_CH_ON, &pSPIRegs->CH_CFG);
 
 	/*  No FIFO. N0 DMA. 8 bits */
-
 	putreg32(MODE_CFG_CH_WIDTH_8 | MODE_CFG_TRLNG_CNT(0) | MODE_CFG_BUS_WIDTH_8 | MODE_CFG_RX_RDY_LVL(0) | MODE_CFG_TX_RDY_LVL(0) | MODE_CFG_DMA_RX_OFF | MODE_CFG_DMA_TX_OFF | MODE_CFG_DMA_SINGLE, &pSPIRegs->MODE_CFG);
 
 	/* CS Manual Passive */
-
 	putreg32(CS_REG_nSS_TIME_CNT(0) | CS_REG_nSS_MANUAL | CS_REG_nSS_INACTIVE, &pSPIRegs->CS_REG);
 
 	/* Disable Interrupts */
-
 	putreg32(0, &pSPIRegs->SPI_INT_EN);
 
 	return (struct spi_dev_s *)priv;
