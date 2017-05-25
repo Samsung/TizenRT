@@ -37,7 +37,8 @@
  */
 
 #include "liblwm2m.h"
-
+#include "dm_connectivity.h"
+#include "dm_error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -106,7 +107,12 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
     }
 
     case RES_M_RADIO_SIGNAL_STRENGTH: //s-int
-        lwm2m_data_encode_int(connDataP->signalStrength, dataP);
+		if (dm_conn_get_rssi(&connDataP->signalStrength) == DM_ERROR_NONE) {
+			lwm2m_data_encode_int(connDataP->signalStrength, dataP);
+		}
+		else {
+			lwm2m_data_encode_int(-128, dataP);
+		}
         return COAP_205_CONTENT;
 
     case RES_O_LINK_QUALITY: //s-int
@@ -120,6 +126,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         for (ri = 0; ri < riCnt; ri++)
         {
             subTlvP[ri].id = ri;
+            dm_conn_get_address(connDataP->ipAddresses[ri]);
             lwm2m_data_encode_string(connDataP->ipAddresses[ri], subTlvP + ri);
         }
         lwm2m_data_encode_instances(subTlvP, riCnt, dataP);
