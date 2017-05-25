@@ -101,6 +101,7 @@ struct http_client_tls_t {
 	mbedtls_pk_context        tls_pkey;
 	mbedtls_ssl_session       tls_session;
 };
+#endif
 
 /**
  * @brief SSL configure structure.
@@ -114,8 +115,6 @@ struct http_client_ssl_config_t {
 	unsigned int private_key_len;
 	int auth_mode;
 };
-
-#endif
 
 /**
  * @brief HTTP request structure.
