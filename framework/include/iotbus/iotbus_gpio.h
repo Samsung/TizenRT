@@ -18,6 +18,7 @@
 
 /**
  * @defgroup GPIO GPIO
+ * @brief Provides APIs for GPIO (General Purpose Input/Output)
  * @ingroup IOTBUS
  * @{
  */
