@@ -21,6 +21,7 @@
  */
 /**
  * @defgroup Websocket Websocket
+ * @brief Provides APIs for Websocket
  * @ingroup NETWORK
  *
  * @{

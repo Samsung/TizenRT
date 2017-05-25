@@ -97,7 +97,7 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 
 	/* Make sure that non-NULL references were provided. */
 
-	if (!cond || !mutex) {
+	if (cond == NULL || mutex == NULL) {
 		ret = EINVAL;
 	}
 

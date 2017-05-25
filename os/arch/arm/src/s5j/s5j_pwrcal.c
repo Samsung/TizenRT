@@ -52,28 +52,18 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <tinyara/config.h>
 
 #include <stddef.h>
 #include <sys/types.h>
 #include <string.h>
+
 #include <tinyara/kmalloc.h>
 #include <arch/chip/irq.h>
 #include <chip.h>
 
 #include "s5j_cmu.h"
 #include "s5j_vclk.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
@@ -95,11 +85,11 @@ unsigned int cal_clk_is_enabled(unsigned int id)
 #define S5J_CON_DIV_CLK_SPI2 (S5J_CMU_BASE + 0x180C)
 #define S5J_CON_DIV_CLK_SPI3 (S5J_CMU_BASE + 0x1810)
 
-
 int cal_clk_setrate(unsigned int id, unsigned long rate)
 {
 	unsigned long parents;
 	unsigned int div;
+
 	switch (id) {
 	case d1_spi0:
 		/* CLK_CON_DIV_DIV_CLK_SPI */
@@ -175,7 +165,6 @@ unsigned long cal_clk_getrate(unsigned int id)
 	case gate_hsi2c3:
 		rate = S5J_DEFAULT_I2C_CLOCK;
 		break;
-	
 	default:
 		break;
 	}

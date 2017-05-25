@@ -147,4 +147,24 @@ config SIDK_S5JT200_AUTOMOUNT_SSSRW_MOUNTPOINT
 		Specifies the mount point where SSS r/w file system
 		will be mounted at.
 
+if RAMMTD
+config SIDK_S5JT200_RAMMTD_NEBLOCKS
+		int "RAM MTD erase block count"
+		default 64
+		---help---
+				Ramfs size will be RAMMTD_ERASESIZE * SIDK_S5JT200_RAMMTD_NEBLOCKS.
+				You have to consider total ramsize to alloc ramfs size.
+
+config SIDK_S5JT200_RAMMTD_DEV_NUMBER
+		int "device number for mtd of smartfs"
+		default 3
+
+config SIDK_S5JT200_RAMMTD_DEV_POINT
+		string "Device name of the partition for ramfs r/w file system"
+		default "/dev/smart3"
+
+config SIDK_S5JT200_RAMMTD_MOUNT_POINT
+		string "Mountpoint of the partition for ramfs r/w file system"
+		default "/ramfs"
+endif
 endif

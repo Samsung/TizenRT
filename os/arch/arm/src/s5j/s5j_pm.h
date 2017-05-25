@@ -48,7 +48,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifndef __ARCH_ARM_SRC_S5J_S5J_PM_H
 #define __ARCH_ARM_SRC_S5J_S5J_PM_H
@@ -56,21 +56,12 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
 #include <tinyara/config.h>
 
 #include <stdbool.h>
 
 #include <chip.h>
 #include "up_internal.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Types
- ****************************************************************************/
 
 /****************************************************************************
  * Public Data
@@ -106,7 +97,6 @@ extern "C" {
  *   errno value is returned to indicate the cause of the failure.
  *
  ****************************************************************************/
-
 int s5j_pmstop(bool lpds);
 
 /****************************************************************************
@@ -125,7 +115,6 @@ int s5j_pmstop(bool lpds);
  *   failure.
  *
  ****************************************************************************/
-
 int s5j_pmstandby(void);
 
 /****************************************************************************
@@ -138,8 +127,8 @@ int s5j_pmstandby(void);
  *   sleeponexit - true:  SLEEPONEXIT bit is set when the WFI instruction is
  *                        executed, the MCU enters Sleep mode as soon as it
  *                        exits the lowest priority ISR.
- *               - false: SLEEPONEXIT bit is cleared, the MCU enters Sleep mode
- *                        as soon as WFI or WFE instruction is executed.
+ *               - false: SLEEPONEXIT bit is cleared, the MCU enters Sleep
+ *                        mode as soon as WFI or WFE instruction is executed.
  * Returned Value:
  *   Zero means that the STOP was successfully entered and the system has
  *   been re-awakened.  The internal voltage regulator is back to its
@@ -147,13 +136,12 @@ int s5j_pmstandby(void);
  *   errno value is returned to indicate the cause of the failure.
  *
  ****************************************************************************/
-
 void s5j_pmsleep(bool sleeponexit);
 
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
-#endif							/* __ASSEMBLY__ */
+#endif /* __ASSEMBLY__ */
 
-#endif							/* __ARCH_ARM_SRC_S5E_S5E_PM_H */
+#endif /* __ARCH_ARM_SRC_S5E_S5E_PM_H */

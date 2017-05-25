@@ -6,6 +6,7 @@
 config EXAMPLES_DTLS_CLIENT
 	bool "DTLS client application"
 	default n
+	depends on NET_SECURITY_TLS
 
 if EXAMPLES_DTLS_CLIENT
 

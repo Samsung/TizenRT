@@ -50,13 +50,13 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
-
+ ****************************************************************************/
 #include <tinyara/config.h>
+
 #include <tinyara/arch.h>
 
 #include <stdint.h>
@@ -69,10 +69,9 @@
 
 #if defined(CONFIG_S5J_PWR)
 
-/************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
-
+ ****************************************************************************/
 typedef struct __attribute__((__packed__))
 {
 	unsigned CR4_DBGRSTREQ:1;
@@ -86,8 +85,7 @@ typedef struct __attribute__((__packed__))
 	unsigned WRESET:1;
 	unsigned SWRESET:1;
 	unsigned RSVD0:2;
-}
-RST_STAT_SFR;
+} RST_STAT_SFR;
 
 typedef struct __attribute__((__packed__))
 {
@@ -101,8 +99,7 @@ typedef struct __attribute__((__packed__))
 	unsigned I2C1_SDA:1;
 	unsigned RSVD0:16;
 	unsigned WAKEUP:1;
-}
-WAKEUP_STAT_SFR;
+} WAKEUP_STAT_SFR;
 
 typedef struct __attribute__((__packed__))
 {
@@ -110,8 +107,7 @@ typedef struct __attribute__((__packed__))
 	unsigned EINT1:1;
 	unsigned EINT2:1;
 	unsigned RSCD0:29;
-}
-EINT_WAKEUP_MASK_SFR;
+} EINT_WAKEUP_MASK_SFR;
 
 typedef struct __attribute__((__packed__))
 {
@@ -127,8 +123,7 @@ typedef struct __attribute__((__packed__))
 	unsigned RSVD0:1;
 	unsigned USE_LEVEL_TRIGGER:1;
 	unsigned ENABLE_WAKEUP_SW:1;
-}
-WAKEUP_MASK_SFR;
+} WAKEUP_MASK_SFR;
 
 typedef struct __attribute__((__packed__))
 {
@@ -140,8 +135,7 @@ typedef struct __attribute__((__packed__))
 	unsigned DIRECT_INTR_CR4:1;
 	unsigned RSVD0:19;
 	unsigned ENABLE_CR4:1;
-}
-WAKEUP_INTERRUPT_SFR;
+} WAKEUP_INTERRUPT_SFR;
 
 /****************************************************************************
  * Private Data
@@ -172,10 +166,9 @@ static const struct file_operations pmu_fops = {
 #endif
 };
 
-/************************************************************************************
+/****************************************************************************
  * Private Functions
- ************************************************************************************/
-
+ ****************************************************************************/
 enum _PMU_CMD_ {
 	PMU_CMD_RESET = 1,
 	PMU_CMD_LOCAL,
@@ -224,9 +217,9 @@ static int pmu_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	return OK;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************************/
+ ****************************************************************************/
 void s5j_pwr_mode(PWR_MODE emode)
 {
 	switch (emode) {
@@ -243,5 +236,4 @@ void s5j_pwr_local_power(bool poweron)
 	} else {
 	}
 }
-
-#endif							/* CONFIG_S5J_PWR */
+#endif /* CONFIG_S5J_PWR */

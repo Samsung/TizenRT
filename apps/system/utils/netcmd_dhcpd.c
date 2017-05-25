@@ -62,6 +62,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include <net/if.h>
+
 #include <apps/netutils/dhcpd.h>
 
 /****************************************************************************
@@ -112,6 +114,7 @@ static void show_usage(void)
 int cmd_dhcpd(int argc, char *argv[])
 {
 	int result = OK;
+	uint8_t flags;
 
 	if (argc < 2) {
 		show_usage();
@@ -131,14 +134,31 @@ int cmd_dhcpd(int argc, char *argv[])
 			goto done;
 		}
 
-		printf("%s : dhcpd start on %s\n", __FUNCTION__, argv[2]);
+		if (netlib_getifstatus(argv[2], &flags) == ERROR) {
+			printf("ERROR : %s, failed to get interface status\n", __FUNCTION__);
+			result = ERR;
+			goto done;
+		} else {
+			if (flags & IFF_UP) {
+				printf("%s : dhcpd start on %s\n", __FUNCTION__, argv[2]);
+			} else {
+				printf("%s : interface %s is down, unable to run dhcpd\n", __FUNCTION__, argv[2]);
+				result = ERR;
+				goto done;
+			}
+		}
+
 		if (dhcpd_start(argv[2]) != 0) {
 			printf("%s : failed to start dhcpd\n", __FUNCTION__);
 			goto done;
 		}
 	} else if (!strcmp(argv[1], "stop")) {
-		printf("%s : dhcpd stop\n", __FUNCTION__);
-		dhcpd_stop();
+		if (dhcpd_status()) {
+			printf("%s : dhcpd stop\n", __FUNCTION__);
+			dhcpd_stop();
+		} else {
+			printf("%s : dhcpd is already stopped\n", __FUNCTION__);
+		}
 	} else if (!strcmp(argv[1], "status")) {
 		printf("\ndhcpd status : ");
 		if (dhcpd_status()) {

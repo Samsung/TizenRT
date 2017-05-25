@@ -18,6 +18,7 @@
 
 /**
  * @defgroup I2C I2C
+ * @brief Provides APIs for I2C (Inter Integrated Circuit)
  * @ingroup IOTBUS
  * @{
  */

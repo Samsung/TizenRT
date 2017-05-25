@@ -135,8 +135,6 @@ int http_tls_init(struct http_server_t *server, struct ssl_config_t *ssl_config)
 
 int http_server_tls_release(struct http_server_t *server)
 {
-	HTTP_LOGD("Server TLS Release...\n");
-
 	mbedtls_ssl_cache_free(&(server->tls_cache));
 	mbedtls_x509_crt_free(&(server->tls_srvcert));
 	mbedtls_pk_free(&(server->tls_pkey));
@@ -144,7 +142,7 @@ int http_server_tls_release(struct http_server_t *server)
 	mbedtls_ctr_drbg_free(&(server->tls_ctr_drbg));
 	mbedtls_entropy_free(&(server->tls_entropy));
 
-	HTTP_LOGD("Ok\n");
+	HTTP_LOGD("TLS Context Released\n");
 
 	return HTTP_OK;
 }

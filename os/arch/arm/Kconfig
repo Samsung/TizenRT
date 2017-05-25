@@ -14,7 +14,6 @@ config ARCH_CHIP_S5J
 	bool "Samsung S5J"
 	select ARCH_CORTEXR4
 	select ARCH_HAVE_MPU
-	select ARCH_HAVE_FPU
 	select ARCH_HAVE_TICKLESS
 	select ARM_HAVE_MPU_UNIFIED
 	select ARMV7R_MEMINIT

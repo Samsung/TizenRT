@@ -146,9 +146,7 @@ nic_display_state(void)
 			printf("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
 		}
 		printf("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));
-		ioctl(fd,  SIOCGIFBRDADDR, (char *)ifr);
-		sin = (struct sockaddr_in *)&ifr->ifr_broadaddr;
-		printf("Bcast: %s\t", inet_ntoa(sin->sin_addr));
+
 		ioctl(fd, SIOCGIFNETMASK, (char *)ifr);
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
 		printf("Mask: %s\t", inet_ntoa(sin->sin_addr));

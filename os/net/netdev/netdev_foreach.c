@@ -58,10 +58,8 @@
 #include <tinyara/config.h>
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
 
-#include <net/if.h>
-#include <debug.h>
-#include <tinyara/net/net.h>
 #include <net/lwip/netif.h>
+
 #include "netdev/netdev.h"
 
 /****************************************************************************
@@ -124,34 +122,5 @@ int netdev_foreach(netdev_callback_t callback, void *arg)
 		netdev_semgive();
 	}
 	return ret;
-}
-
-int netdev_foreach_sync(void *arg)
-{
-	struct netif *dev = g_netdevices;
-	if (!arg || !dev) {
-		return -1;
-	}
-
-	struct ifconf *ifc = (struct ifconf *)arg;
-	struct ifreq *ifr = ifc->ifc_req;
-	int size = ifc->ifc_len;
-	int bsize = 0;
-	ifc->ifc_len = 0;
-	netdev_semtake();
-	for (; dev; ifr++, dev = dev->next) {
-		if (bsize > size) {
-			bsize -= sizeof(struct ifreq);
-			break;
-		}
-		strncpy(ifr->ifr_name, dev->d_ifname, IF_NAMESIZE);
-		ifr->ifr_name[IF_NAMESIZE - 1] = '\0';
-		struct sockaddr_in *sin = (struct sockaddr_in *)&(ifr->ifr_addr);
-		sin->sin_addr.s_addr = dev->ip_addr.addr;
-		bsize += sizeof(struct ifreq);
-	}
-	netdev_semgive();
-	ifc->ifc_len = bsize;
-	return 0;
 }
 #endif							/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */

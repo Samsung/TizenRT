@@ -57,7 +57,7 @@ include $(APPDIR)/Make.defs
 
 APPNAME = wifi
 FUNCNAME = slsi_wifi_main
-THREADEXEC = TASH_EXECMD_ASYNC
+THREADEXEC = TASH_EXECMD_SYNC
 
 # wifi test example using slsi wifi api
 

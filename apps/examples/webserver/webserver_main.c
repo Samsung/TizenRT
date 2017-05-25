@@ -305,9 +305,11 @@ void ws_server_on_msg_cb(websocket_context_ptr ctx, const websocket_on_msg_arg *
 
 void print_webserver_usage(void)
 {
-	printf("webserver program usage\n");
-	printf("webserver <operation>\n");
-	printf("operation is one of \"start\"/\"stop\"\n");
+	printf("\n  webserver usage:\n");
+	printf("   $ webserver [operation]\n");
+	printf("\n [operation]   : %%s (webserver start or stop)\n");
+	printf("\n example:\n");
+	printf("  $ webserver start\n");
 }
 
 void register_callbacks(struct http_server_t *server)
@@ -414,7 +416,6 @@ start:
 	return NULL;
 
 stop:
-	printf("Exit Web server...\n");
 	http_server_stop(http_server);
 	deregister_callbacks(http_server);
 	http_server_release(&http_server);
@@ -423,9 +424,6 @@ stop:
 	deregister_callbacks(https_server);
 	http_server_release(&https_server);
 #endif
-
-	/* sleep for requests in processing */
-	sleep(5);
 	printf("webserver end\n");
 
 	return NULL;

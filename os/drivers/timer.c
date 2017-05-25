@@ -194,7 +194,7 @@ static int timer_open(FAR struct file *filep)
 	uint8_t                       tmp;
 	int                           ret;
 
-	tmrinfo("crefs: %d\n", upper->crefs);
+	tmrdbg("crefs: %d\n", upper->crefs);
 
 	/*
 	 * Increment the count of references to the device. If this the first
@@ -232,7 +232,7 @@ static int timer_close(FAR struct file *filep)
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct timer_upperhalf_s *upper = inode->i_private;
 
-	tmrinfo("crefs: %d\n", upper->crefs);
+	tmrdbg("crefs: %d\n", upper->crefs);
 
 	/*
 	 * Decrement the references to the driver. If the reference count
@@ -292,7 +292,7 @@ static int timer_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	FAR struct timer_lowerhalf_s *lower = upper->lower;
 	int                           ret;
 
-	tmrinfo("cmd: %d arg: %ld\n", cmd, arg);
+	tmrdbg("cmd: %d arg: %ld\n", cmd, arg);
 	DEBUGASSERT(upper && lower);
 
 	/* Handle built-in ioctl commands */
@@ -407,7 +407,7 @@ static int timer_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	/* Any unrecognized IOCTL commands might be platform-specific ioctl commands */
 
 	default: {
-		tmrinfo("Forwarding unrecognized cmd: %d arg: %ld\n", cmd, arg);
+		tmrdbg("Forwarding unrecognized cmd: %d arg: %ld\n", cmd, arg);
 
 		/*
 		 * An ioctl commands that are not recognized by the
@@ -464,14 +464,14 @@ FAR void *timer_register(FAR const char *path,
 	int ret;
 
 	DEBUGASSERT(path && lower);
-	tmrinfo("Entry: path=%s\n", path);
+	tmrdbg("Entry: path=%s\n", path);
 
 	/* Allocate the upper-half data structure */
 
 	upper = (FAR struct timer_upperhalf_s *)
 			kmm_zalloc(sizeof(struct timer_upperhalf_s));
 	if (!upper) {
-		tmrerr("ERROR: Upper half allocation failed\n");
+		tmrlldbg("ERROR: Upper half allocation failed\n");
 		goto errout;
 	}
 
@@ -486,7 +486,7 @@ FAR void *timer_register(FAR const char *path,
 
 	upper->path = strdup(path);
 	if (!upper->path) {
-		tmrerr("ERROR: Path allocation failed\n");
+		tmrlldbg("ERROR: Path allocation failed\n");
 		goto errout_with_upper;
 	}
 
@@ -494,7 +494,7 @@ FAR void *timer_register(FAR const char *path,
 
 	ret = register_driver(path, &g_timerops, 0666, upper);
 	if (ret < 0) {
-		tmrerr("ERROR: register_driver failed: %d\n", ret);
+		tmrlldbg("ERROR: register_driver failed: %d\n", ret);
 		goto errout_with_path;
 	}
 
@@ -536,7 +536,7 @@ void timer_unregister(FAR void *handle)
 	DEBUGASSERT(upper != NULL && upper->lower != NULL);
 	lower = upper->lower;
 
-	tmrinfo("Unregistering: %s\n", upper->path);
+	tmrdbg("Unregistering: %s\n", upper->path);
 
 	/* Disable the timer */
 

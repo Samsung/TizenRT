@@ -180,22 +180,23 @@
 
 /* MDIO/MCD *****************************************************************/
 
-#define SIOCMIINOTIFY    _SIOC(0x004b)	/* Receive notificaion via signal on
+#define SIOCMIINOTIFY    _SIOC(0x004c)	/* Receive notificaion via signal on
 										 * PHY state change */
-#define SIOCGMIIPHY      _SIOC(0x004c)	/* Get address of MII PHY in use */
-#define SIOCGMIIREG      _SIOC(0x004d)	/* Get a MII register via MDIO */
-#define SIOCSMIIREG      _SIOC(0x004e)	/* Set a MII register via MDIO */
+#define SIOCGMIIPHY      _SIOC(0x004d)	/* Get address of MII PHY in use */
+#define SIOCGMIIREG      _SIOC(0x004e)	/* Get a MII register via MDIO */
+#define SIOCSMIIREG      _SIOC(0x004f)	/* Set a MII register via MDIO */
 
 /* Unix domain sockets ******************************************************/
 
-#define SIOCINQ          _SIOC(0x004f)	/* Returns the amount of queued unread
+#define SIOCINQ          _SIOC(0x0050)	/* Returns the amount of queued unread
 										 * data in the receive */
 
 /* Telnet driver ************************************************************/
-#define SIOCTELNET       _SIOC(0x0050)	/* Create a Telnet sessions.
+#define SIOCTELNET       _SIOC(0x0051)	/* Create a Telnet sessions.
+										 * See include/tinyara/net/telnet.h */
 
-* See include/tinyara/net/telnet.h */
-#define SIOCGIFCONF      _SIOC(0x0050)	/* Get NIC list */
+#define SIOCGIFCONF      _SIOC(0x0052)	/* Get NIC list */
+
 /****************************************************************************
  * Type Definitions
  ****************************************************************************/

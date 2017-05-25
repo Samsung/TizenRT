@@ -50,7 +50,7 @@ endif # DISABLE_OS_API
 menu "Clocks and Timers"
 
 config ARCH_HAVE_TICKLESS
-	bool "Enable if ARCH supports"
+	bool
 	default n
 
 config SCHED_TICKLESS

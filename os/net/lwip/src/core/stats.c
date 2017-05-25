@@ -164,72 +164,23 @@ void stats_display_sys(struct stats_sys *sys)
 }
 #endif							/* SYS_STATS */
 
-int stats_display(int argc, char *argv[])
+int stats_display(void)
 {
 	s16_t i;
-	int all = 0;
-	int cmd_opt_matched = 0;
-	if (argc < 2) {
-		LWIP_STATS_DIAG(("USAGE: lwip_stats [opt]"));
-		LWIP_STATS_DIAG(("opt: link / etharp / ipfrag / ip / igmp / icmp / udp / tcp / mem / sys / all"));
-		return 0;
-	}
-	if (!strcmp(argv[1], "all")) {
-		all = 1;
-	}
 
-	if (!strcmp(argv[1], "link") || all) {
-		LINK_STATS_DISPLAY();
-		cmd_opt_matched = 1;
+	LINK_STATS_DISPLAY();
+	ETHARP_STATS_DISPLAY();
+	IPFRAG_STATS_DISPLAY();
+	IP_STATS_DISPLAY();
+	IGMP_STATS_DISPLAY();
+	ICMP_STATS_DISPLAY();
+	UDP_STATS_DISPLAY();
+	TCP_STATS_DISPLAY();
+	MEM_STATS_DISPLAY();
+	for (i = 0; i < MEMP_MAX; i++) {
+		MEMP_STATS_DISPLAY(i);
 	}
-	if (!strcmp(argv[1], "etharp") || all) {
-		ETHARP_STATS_DISPLAY();
-		cmd_opt_matched = 1;
-	}
-	if (!strcmp(argv[1], "ipfrag") || all) {
-		IPFRAG_STATS_DISPLAY();
-		cmd_opt_matched = 1;
-	}
-	if (!strcmp(argv[1], "ip") || all) {
-		IP_STATS_DISPLAY();
-		cmd_opt_matched = 1;
-	}
-	if (!strcmp(argv[1], "igmp") || all) {
-		IGMP_STATS_DISPLAY();
-		cmd_opt_matched = 1;
-	}
-	if (!strcmp(argv[1], "icmp") || all) {
-		ICMP_STATS_DISPLAY();
-		cmd_opt_matched = 1;
-	}
-	if (!strcmp(argv[1], "udp") || all) {
-		UDP_STATS_DISPLAY();
-		cmd_opt_matched = 1;
-	}
-	if (!strcmp(argv[1], "tcp") || all) {
-		TCP_STATS_DISPLAY();
-		cmd_opt_matched = 1;
-	}
-	if (!strcmp(argv[1], "mem") || all) {
-		MEM_STATS_DISPLAY();
-		cmd_opt_matched = 1;
-	}
-	if (!strcmp(argv[1], "memp") || all) {
-		for (i = 0; i < MEMP_MAX; i++) {
-			MEMP_STATS_DISPLAY(i);
-		}
-		cmd_opt_matched = 1;
-	}
-	if (!strcmp(argv[1], "sys") || all) {
-		SYS_STATS_DISPLAY();
-		cmd_opt_matched = 1;
-	}
-	if (!cmd_opt_matched) {
-		LWIP_STATS_DIAG(("ERROR:lwip_stats - Invalid Option"));
-		LWIP_STATS_DIAG(("USAGE: lwip_stats [opt]"));
-		LWIP_STATS_DIAG(("opt: link / etharp / ipfrag / ip / igmp / icmp / udp / tcp / mem / sys / all"));
-		return 0;
-	}
+	SYS_STATS_DISPLAY();
 	return 0;
 }
 #endif							/* LWIP_STATS_DISPLAY */

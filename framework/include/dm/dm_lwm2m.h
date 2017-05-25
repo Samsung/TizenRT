@@ -18,6 +18,7 @@
 
 /**
  * @defgroup LWM2M LWM2M
+ * @brief Provides APIs for LWM2M Client
  * @ingroup DM
  * @{
  */

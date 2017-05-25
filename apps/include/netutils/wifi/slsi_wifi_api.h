@@ -39,6 +39,7 @@ typedef enum {
 
 /* Length defines */
 #define SLSI_MACADDR_LEN        6
+#define SLSI_MACADDR_STR_LEN    18
 /* The maximum length of an SSID - excluding '\0' is case of all characters used */
 #define SLSI_SSID_LEN           32
 #define SLSI_PASSPHRASE_LEN     64
@@ -69,10 +70,13 @@ typedef enum {
 #define SLSI_REASON_ASSOCIATION_REQ_FAILED          203
 
 /**
- * Specify interval between scans performed by lower layers
- * Value is in seconds (default is 30 seconds)
+ * Specify interval between scans performed by lower layers.
+ * Value is in seconds. Default is 30 seconds,
+ * but during connection it is lowered to 10 seconds.
+ * Minimum value is 10 and maximum value is 60
  */
 #define SLSI_SCAN_INTERVAL          30
+#define SLSI_SCAN_INTERVAL_CONNECT  10
 
 /**
  * Specify expiration of scans results in lower layers
@@ -156,7 +160,7 @@ typedef struct slsi_ap_config {
 
 typedef struct slsi_scan_info {
 	uint8_t ssid[SLSI_SSID_LEN + 1];	// 802.11 spec defined unspecified or uint8
-	char bssid[18];						// char string e.g. xx:xx:xx:xx:xx:xx
+	char bssid[SLSI_MACADDR_STR_LEN];	// char string e.g. xx:xx:xx:xx:xx:xx
 	int8_t ssid_len;					// length of ssid - # of valid octets
 	int8_t rssi;						// rssi level of scanned device
 	uint32_t beacon_period;				// beacon period used (default 100)
@@ -175,7 +179,7 @@ typedef struct slsi_reason {
 	uint8_t locally_generated;			// Which side cause link down, 1 = locally, 0 = remotely - valid for STA mode only
 	int8_t ssid_len;					// length of ssid - # of valid octets
 	uint8_t ssid[SLSI_SSID_LEN + 1];	// 802.11 spec defined up to 32 octets of data
-	char bssid[18];						// BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
+	char bssid[SLSI_MACADDR_STR_LEN];	// BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
 } slsi_reason_t;
 
 typedef int8_t (*network_scan_result_handler_t)(slsi_reason_t *reason);

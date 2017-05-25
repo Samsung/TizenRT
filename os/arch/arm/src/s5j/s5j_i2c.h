@@ -54,25 +54,24 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifndef __ARCH_ARM_SRC_S5J_I2C_H
 #define __ARCH_ARM_SRC_S5J_I2C_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
-
+ ****************************************************************************/
 #include <tinyara/config.h>
 #include <tinyara/i2c.h>
 
 #include "chip.h"
 
-/************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
+ ****************************************************************************/
 
-/* I2C Register Offsets *************************************************************/
+/* I2C Register Offsets *****************************************************/
 #define HSI2C_MASTER_TX_SLAVE_RX    1
 #define HSI2C_SLAVE_TX_MASTER_RX    2
 #define HSI2C_MASTER_TX_MASTER_RX   4
@@ -83,8 +82,7 @@
 #define HSI2C_MASTER_ID             0x9	/*  Master ID 00001xxx */
 #define HSI2C_SLAVE_ADDRESS         0x50
 
-/* Register Map*************************************************************** */
-
+/* Register Map *************************************************************/
 #define CTL               0x0000
 #define FIFO_CTL          0x0004
 #define TRAILING_CTL      0x0008
@@ -164,24 +162,24 @@ struct master_data {
 
 /* I2C Device hardware configuration */
 struct s5j_i2c_config_s {
-	uintptr_t base;				/* I2C base address */
-	unsigned int scl_pin;			/* GPIO configuration for SCL as SCL */
-	unsigned int sda_pin;			/* GPIO configuration for SDA as SDA */
+	uintptr_t base;						/* I2C base address */
+	unsigned int scl_pin;				/* GPIO configuration for SCL as SCL */
+	unsigned int sda_pin;				/* GPIO configuration for SDA as SDA */
 	int (*isr)(int, void *, void *);	/* Interrupt handler */
-	unsigned int irq;				/* IRQ number */
-	uint8_t devno;				/* I2Cn where n = devno */
+	unsigned int irq;					/* IRQ number */
+	uint8_t devno;						/* I2Cn where n = devno */
 };
 
 /* I2C Device Private Data */
 struct s5j_i2c_priv_s {
 	const struct i2c_ops_s *ops;	/* Standard I2C operations */
 	const struct s5j_i2c_config_s *config;	/* Port configuration */
-	sem_t exclsem;				/* Mutual exclusion semaphore */
+	sem_t exclsem;					/* Mutual exclusion semaphore */
 #ifndef CONFIG_I2C_POLLED
-	sem_t waitsem;				/* Interrupt wait semaphore */
+	sem_t waitsem;					/* Interrupt wait semaphore */
 #endif
-	uint8_t refs;				/* Reference count */
-	volatile uint8_t intstate;	/* Interrupt handshake (see enum s5j_intstate_e) */
+	uint8_t refs;					/* Reference count */
+	volatile uint8_t intstate;		/* Interrupt handshake (see enum s5j_intstate_e) */
 
 	int state;
 	int clock;
@@ -196,11 +194,11 @@ struct s5j_i2c_priv_s {
 	unsigned int initialized;
 	unsigned int retries;
 	/*  master data  */
-	uint8_t msgc;				/* Message count */
-	struct i2c_msg_s *msgv;		/* Message list */
-	uint8_t *mptr;				/* Current message buffer */
-	int mcnt;					/* Current message length */
-	uint16_t mflags;			/* Current message flags */
+	uint8_t msgc;					/* Message count */
+	struct i2c_msg_s *msgv;			/* Message list */
+	uint8_t *mptr;					/* Current message buffer */
+	int mcnt;						/* Current message length */
+	uint16_t mflags;				/* Current message flags */
 
 	struct i2c_msg_s *msg;
 
@@ -210,12 +208,20 @@ struct s5j_i2c_priv_s {
 
 };
 
-/************************************************************************************
+/****************************************************************************
  * Private Function Prototypes
- ************************************************************************************/
-static void hsi2c_set_hs_timing(unsigned int base, unsigned int nClkDiv, unsigned int tSTART_SU, unsigned int tSTART_HD, unsigned int tSTOP_SU, unsigned int tSDA_SU, unsigned int tDATA_SU, unsigned int tDATA_HD, unsigned int tSCL_L, unsigned int tSCL_H, unsigned int tSR_RELEASE);
-static void hsi2c_set_fs_timing(unsigned int base, unsigned int nClkDiv, unsigned int tSTART_SU, unsigned int tSTART_HD, unsigned int tSTOP_SU, unsigned int tDATA_SU, unsigned int tDATA_HD, unsigned int tSCL_L, unsigned int tSCL_H, unsigned int tSR_RELEASE);
-
+ ****************************************************************************/
+static void hsi2c_set_hs_timing(unsigned int base, unsigned int nClkDiv,
+				unsigned int tSTART_SU, unsigned int tSTART_HD,
+				unsigned int tSTOP_SU, unsigned int tSDA_SU,
+				unsigned int tDATA_SU, unsigned int tDATA_HD,
+				unsigned int tSCL_L, unsigned int tSCL_H,
+				unsigned int tSR_RELEASE);
+static void hsi2c_set_fs_timing(unsigned int base, unsigned int nClkDiv,
+				unsigned int tSTART_SU, unsigned int tSTART_HD,
+				unsigned int tSTOP_SU, unsigned int tDATA_SU,
+				unsigned int tDATA_HD, unsigned int tSCL_L,
+				unsigned int tSCL_H, unsigned int tSR_RELEASE);
 static void hsi2c_calculate_timing(unsigned int base, unsigned int nPclk, unsigned int nOpClk);
 static void hsi2c_conf(unsigned int base, unsigned int nOpClk);
 static void hsi2c_enable_int(unsigned int base, unsigned int bit);
@@ -262,7 +268,6 @@ static int s5j_i2c3_interrupt(int irq, void *context, void *arg);
 static int s5j_i2c_initialize(struct s5j_i2c_priv_s *priv, unsigned int frequency);
 static int s5j_i2c_uninitialize(struct s5j_i2c_priv_s *priv);
 
-
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -274,4 +279,5 @@ int s5j_i2c_write(FAR struct i2c_dev_s *dev, FAR const uint8_t *buffer, int bufl
 struct i2c_dev_s *up_i2cinitialize(int port);
 int s5j_i2cbus_uninitialize(FAR struct i2c_dev_s *dev);
 void s5j_i2c_register(int bus);
+
 #endif /* __ARCH_ARM_SRC_S5J_I2C_H */

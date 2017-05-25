@@ -59,6 +59,12 @@ include wakaama/examples/server/Make.defs
 endif
 endif
 
+ifeq ($(CONFIG_LIBTUV),y)
+include libtuv/source/tinyara/Make.defs
+include libtuv/source/unix/Make.defs
+include libtuv/source/Make.defs
+endif
+
 ifeq ($(CONFIG_DM),y)
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif

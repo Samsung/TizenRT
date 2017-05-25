@@ -326,6 +326,7 @@ static int bch_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		} else {
 			bch->refs++;
 			*bchr = bch;
+			ret = OK;
 		}
 
 		bchlib_semgive(bch);

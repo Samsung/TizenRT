@@ -40,9 +40,26 @@
  * Included Files
  ****************************************************************************/
 
-#include "tls/config.h"
+#include <tinyara/config.h>
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "tls/config.h"
+
+#if !defined(MBEDTLS_ENTROPY_C) || \
+	!defined(MBEDTLS_SSL_TLS_C) || !defined(MBEDTLS_SSL_SRV_C) || \
+	!defined(MBEDTLS_NET_C) || !defined(MBEDTLS_CTR_DRBG_C)
+int tls_server_main(int argc, char **argv)
+{
+	printf("MBEDTLS_ENTROPY_C and/or\n");
+	printf("MBEDTLS_SSL_TLS_C and/or MBEDTLS_SSL_SRV_C and/or\n");
+	printf("MBEDTLS_NET_C and/or MBEDTLS_CTR_DRBG_C and/or not defined.\n");
+	return 0;
+}
+#else
+
 #define mbedtls_free       free
 #define mbedtls_calloc    calloc
 #define mbedtls_fprintf    fprintf
@@ -57,9 +74,6 @@
 #include "tls/error.h"
 #include "tls/debug.h"
 #include "tls/timing.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 #if defined(MBEDTLS_SSL_CACHE_C)
 #include "tls/ssl_cache.h"
@@ -866,6 +880,7 @@ int tls_server_cb(void *args)
 	 */
 	mbedtls_net_init(&client_fd);
 	mbedtls_net_init(&listen_fd);
+	mbedtls_entropy_init(&entropy);
 	mbedtls_ssl_init(&ssl);
 	mbedtls_ssl_config_init(&conf);
 	mbedtls_ctr_drbg_init(&ctr_drbg);
@@ -1343,7 +1358,6 @@ usage:
 	mbedtls_printf("\n  . Seeding the random number generator...");
 	fflush(stdout);
 
-	mbedtls_entropy_init(&entropy);
 	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers))) != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_ctr_drbg_seed returned -0x%x\n", -ret);
 		goto exit;
@@ -1374,7 +1388,12 @@ usage:
 	else
 #endif
 #if defined(MBEDTLS_CERTS_C)
-		ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)mbedtls_test_ca_crt_rsa, mbedtls_test_ca_crt_rsa_len);
+		for (i = 0; mbedtls_test_cas[i] != NULL; i++) {
+			ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)mbedtls_test_cas[i], mbedtls_test_cas_len[i]);
+			if (ret != 0) {
+				break;
+			}
+		}
 #else
 	{
 		ret = 1;
@@ -1449,6 +1468,17 @@ usage:
 		}
 		key_cert_init = 2;
 #endif							/* MBEDTLS_RSA_C */
+#if defined(MBEDTLS_ECDSA_C)
+		if ((ret = mbedtls_x509_crt_parse(&srvcert2, (const unsigned char *)mbedtls_test_srv_crt_ec, mbedtls_test_srv_crt_ec_len)) != 0) {
+			mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
+			goto exit;
+		}
+		if ((ret = mbedtls_pk_parse_key(&pkey2, (const unsigned char *)mbedtls_test_srv_key_ec, mbedtls_test_srv_key_ec_len, NULL, 0)) != 0) {
+			mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned -0x%x\n\n", -ret);
+			goto exit;
+		}
+		key_cert_init2 = 2;
+#endif							/* MBEDTLS_ECDSA_C */
 #endif							/* MBEDTLS_CERTS_C */
 	}
 
@@ -2196,3 +2226,4 @@ int tls_server_main(int argc, char **argv)
 
 	return 0;
 }
+#endif

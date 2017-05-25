@@ -36,6 +36,11 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
+#include "tinyara/config.h"
+
+#include <stdio.h>
+#include <string.h>
+
 #include "tls/config.h"
 #include "tls/entropy.h"
 #include "tls/hmac_drbg.h"
@@ -62,9 +67,6 @@
 #include "tls/pkcs5.h"
 #include "tls/ecp.h"
 #include "tls/timing.h"
-
-#include <stdio.h>
-#include <string.h>
 
 #define mbedtls_printf     printf
 /*

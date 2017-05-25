@@ -205,7 +205,7 @@ static FAR const struct mountpt_operations *mount_findfs(FAR const struct fsmap_
  *
  *   EACCES A component of a path was not searchable or mounting a read-only
  *      filesystem was attempted without giving the MS_RDONLY flag.
- *   EBUSY 'source' is already  mounted.
+ *   EEXIST 'source' is already  mounted.
  *   EFAULT One of the pointer arguments points outside the user address
  *      space.
  *   EINVAL 'source' had an invalid superblock.
@@ -244,6 +244,14 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 
 		ret = find_blockdriver(source, mountflags, &blkdrvr_inode);
 		if (ret < 0) {
+			/* find_blockdriver can fail for a couple of reasons, it may return:
+			 *
+			 *  -EINVAL  - pathname or pinode is NULL
+			 *  -ENOENT  - No block driver of this name is registered
+			 *  -ENOTBLK - The inode associated with the pathname is not a block driver
+			 *  -EACCESS - The MS_RDONLY option was not set but this driver does not support write access
+			 */
+
 			fdbg("ERROR: Failed to find block driver %s\n", source);
 			errcode = -ret;
 			goto errout;

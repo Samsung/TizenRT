@@ -15,7 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*****************************************************************************
+/****************************************************************************
  * arch/arm/src/artik053/src/artik053.h
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
@@ -53,7 +53,7 @@
 #ifndef __ARCH_ARM_SRC_ARTIK053_SRC_ARTIK053_H__
 #define __ARCH_ARM_SRC_ARTIK053_SRC_ARTIK053_H__
 
-/*****************************************************************************
+/****************************************************************************
  * Included Files
  ****************************************************************************/
 
@@ -72,4 +72,4 @@ enum configdata_id {
 };
 #endif
 
-#endif							/* __ARCH_ARM_SRC_ARTIK053_SRC_ARTIK053_H__ */
+#endif /* __ARCH_ARM_SRC_ARTIK053_SRC_ARTIK053_H__ */

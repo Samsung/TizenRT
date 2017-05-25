@@ -325,6 +325,45 @@ static void ioctl_setipv6addr(FAR net_ipv6addr_t outaddr, FAR const struct socka
 }
 #endif
 
+struct ifenum {
+	FAR struct ifconf	*ifc;
+	unsigned int		pos;
+};
+
+static int netdev_getconf(FAR struct netif *dev, void *arg)
+{
+	FAR struct ifenum *ifenum = (FAR struct ifenum *)arg;
+	FAR struct ifconf *ifc = ifenum->ifc;
+	FAR struct ifreq  *ifr = (FAR struct ifreq *)(ifc->ifc_buf + ifenum->pos);
+
+	if (ifenum->pos + sizeof(struct ifreq) > ifc->ifc_len) {
+		return -EFAULT;
+	}
+
+	strncpy(ifr->ifr_name, dev->d_ifname, IFNAMSIZ - 1);
+	struct sockaddr_in *sin = (struct sockaddr_in *)&ifr->ifr_addr;
+	sin->sin_addr.s_addr = dev->ip_addr.addr;
+	ifenum->pos += sizeof(struct ifreq);
+
+	return OK;
+}
+
+static int ioctl_siocgifconf(FAR struct ifconf *ifc)
+{
+	int ret;
+	struct ifenum ife = {
+		.ifc = ifc,
+		.pos = 0,
+	};
+
+	ret = netdev_foreach(netdev_getconf, (void *)&ife);
+	if (ret == OK) {
+		ifc->ifc_len = ife.pos;
+	}
+
+	return ret;
+}
+
 /****************************************************************************
  * Name: netdev_ifrdev
  *
@@ -686,10 +725,9 @@ static int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *r
 	}
 	break;
 #endif
-	case SIOCGIFCONF: {
-		ret = netdev_foreach_sync(req);
-	}
-	break;
+	case SIOCGIFCONF:
+		ret = ioctl_siocgifconf((FAR struct ifconf *)req);
+		break;
 	default: {
 		ret = -ENOTTY;
 	}

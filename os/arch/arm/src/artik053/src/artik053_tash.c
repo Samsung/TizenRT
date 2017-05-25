@@ -1,4 +1,4 @@
-/*****************************************************************************
+/****************************************************************************
  *
  * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
@@ -15,7 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*****************************************************************************
+/****************************************************************************
  * arch/arm/src/artik053/src/artik053_tash.c
  *
  *   Copyright (C) 2010 Gregory Nutt. All rights reserved.
@@ -50,7 +50,7 @@
  *
  ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
@@ -66,6 +66,7 @@
 
 #include "s5j_adc.h"
 #include "s5j_rtc.h"
+#include "s5j_mct.h"
 #include "up_internal.h"
 
 #include <apps/shell/tash.h>
@@ -110,7 +111,7 @@ int artik053_adc_setup(void)
 	if (ret < 0) {
 		return ret;
 	}
-#endif							/* CONFIG_S5J_ADC */
+#endif /* CONFIG_S5J_ADC */
 
 	return OK;
 }
@@ -216,7 +217,7 @@ static void artik053_configure_partitions(void)
 
 		partno++;
 	}
-#endif							/* CONFIG_ARTIK053_FLASH_PART */
+#endif /* CONFIG_ARTIK053_FLASH_PART */
 }
 
 static void scsc_wpa_ctrl_iface_init(void)
@@ -244,11 +245,11 @@ static void scsc_wpa_ctrl_iface_init(void)
 #endif
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Name: board_app_initialize
  *
  * Description:
@@ -258,6 +259,11 @@ static void scsc_wpa_ctrl_iface_init(void)
 int board_app_initialize(void)
 {
 	int ret;
+#if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_ARTIK053_RAMMTD_NEBLOCKS;
+	static uint8_t *rambuf;
+	struct mtd_dev_s *mtd;
+#endif /* CONFIG_RAMMTD */
 
 	artik053_configure_partitions();
 
@@ -272,7 +278,7 @@ int board_app_initialize(void)
 			lldbg("ERROR: mounting '%s' failed\n", CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME);
 		}
 	}
-#endif							/* CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME */
+#endif /* CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME */
 
 #ifdef CONFIG_FS_PROCFS
 	/* Mount the procfs file system */
@@ -281,6 +287,30 @@ int board_app_initialize(void)
 		lldbg("Failed to mount procfs at %s: %d\n", ARTIK053_PROCFS_MOUNTPOINT, ret);
 	}
 #endif
+
+#if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
+	rambuf = (uint8_t *)malloc(bufsize);
+
+	mtd = rammtd_initialize(rambuf, bufsize);
+	if (!mtd) {
+		lldbg("ERROR: FAILED TO CREATE RAM MTD INSTANCE\n");
+		free(rambuf);
+	} else {
+		if (smart_initialize(CONFIG_ARTIK053_RAMMTD_DEV_NUMBER, mtd, NULL) < 0) {
+			lldbg("ERROR: FAILED TO smart_initialize\n");
+			free(rambuf);
+		} else {
+			(void)mksmartfs(CONFIG_ARTIK053_RAMMTD_DEV_POINT, false);
+
+			ret = mount(CONFIG_ARTIK053_RAMMTD_DEV_POINT, CONFIG_ARTIK053_RAMMTD_MOUNT_POINT,
+					"smartfs", 0, NULL);
+			if (ret < 0) {
+				lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
+				free(rambuf);
+			}
+		}
+	}
+#endif /* CONFIG_RAMMTD */
 
 #if defined(CONFIG_RTC_DRIVER)
 	{
@@ -294,7 +324,19 @@ int board_app_initialize(void)
 			}
 		}
 	}
-#endif							/* CONFIG_RTC_DRIVER */
+#endif /* CONFIG_RTC_DRIVER */
+
+#ifdef CONFIG_TIMER
+	{
+		int  i;
+		char path[CONFIG_PATH_MAX];
+
+		for (i = 0; i < CONFIG_S5J_MCT_NUM; i++) {
+			sprintf(path, "/dev/timer%d", i);
+			s5j_timer_initialize(path, i);
+		}
+	}
+#endif
 
 	artik053_adc_setup();
 

@@ -53,7 +53,6 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
 #include <tinyara/config.h>
 
 #include <stdint.h>
@@ -68,7 +67,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
 /*
  * The desired timer interrupt frequency is provided by the definition
  * CLK_TCK (see include/time.h).  CLK_TCK defines the desired number of
@@ -79,14 +77,6 @@
  * header file.
  */
 #define SYSTICK_RELOAD ((SYSCLK_FREQUENCY / CLK_TCK) - 1)
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
@@ -121,6 +111,9 @@ int up_timerisr(int irq, FAR void *context, FAR void *arg)
  ****************************************************************************/
 void up_timer_initialize(void)
 {
+	/* OSC_CON[16] should be set to 1, so that RTC uses XRTCXTO as srcclk */
+	modifyreg32(0x800A0554, 0x0, 1 << 16);
+
 	/* Configure the RTC timetick to generate periodic interrupts */
 	modifyreg32(S5J_RTC_RTCCON, RTC_RTCCON_TICKEN0_ENABLE, 0);
 	putreg32(SYSTICK_RELOAD, S5J_RTC_TICCNT0);

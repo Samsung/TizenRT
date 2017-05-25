@@ -22,6 +22,7 @@
 
 /**
  * @defgroup HTTP_SERVER HTTP Server
+ * @brief Provides APIs for HTTP Server
  * @ingroup HTTP
  *   The server side of Hypertext Transfer Protocol
  * @{

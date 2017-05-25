@@ -103,6 +103,7 @@ static int g_qos;
 static char *g_username;
 static char *g_password;
 static int g_keepalive;
+static int g_protocol_version;
 static int g_stop;
 static char *g_sub_topic;
 static char *g_unsub_topic;
@@ -294,6 +295,7 @@ static void print_usage(void)
 	printf("                     [-i id]\n");
 	printf("                     [-d]\n");
 	printf("                     [-u username [-P password]]\n");
+	printf("                     [-V protocol_version]\n");
 	printf("       %s --sub_topic topic\n", MQTT_CLIENT_SUB_COMMAND_NAME);
 	printf("       %s --unsub_topic topic\n", MQTT_CLIENT_SUB_COMMAND_NAME);
 	printf("       %s --stop\n", MQTT_CLIENT_SUB_COMMAND_NAME);
@@ -308,6 +310,8 @@ static void print_usage(void)
 	printf(" -q : quality of service level to use for all messages. Defaults to 0.\n");
 	printf(" -t : mqtt topic to subscribe to.\n");
 	printf(" -u : provide a username (requires MQTT 3.1 broker)\n");
+	printf(" -V : specify the version of the MQTT protocol to use when connecting.\n");
+	printf("      Can be mqttv31 or mqttv311. Defaults to mqttv31.\n");
 	printf(" --help : display this message.\n");
 	printf(" --quiet: don't print error messages.\n");
 	printf(" --sub_topic   : add mqtt topic to subscribe.\n");
@@ -326,6 +330,7 @@ static void init_variables(void)
 	g_username = NULL;
 	g_password = NULL;
 	g_keepalive = MQTT_DEFAULT_KEEP_ALIVE_TIME;
+	g_protocol_version = MQTT_PROTOCOL_VERSION_31;
 	g_stop = 0;
 	g_sub_topic = NULL;
 	g_unsub_topic = NULL;
@@ -423,6 +428,7 @@ static int make_client_config(void)
 	g_mqtt_client_config.user_name = strdup(g_username);
 	g_mqtt_client_config.password = strdup(g_password);
 	g_mqtt_client_config.clean_session = g_clean_session;
+	g_mqtt_client_config.protocol_version = g_protocol_version;
 	g_mqtt_client_config.debug = g_debug;
 	g_mqtt_client_config.on_connect = my_connect_callback;
 	g_mqtt_client_config.on_disconnect = my_disconnect_callback;
@@ -526,6 +532,21 @@ static int process_options(int argc, char *argv[])
 				}
 			}
 			i++;
+		} else if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--protocol-version")) {
+			if (i == argc - 1) {
+				fprintf(stderr, "Error: --protocol-version argument given but no version specified.\n\n");
+				return 1;
+			} else {
+				if (!strcmp(argv[i + 1], "mqttv31")) {
+					g_protocol_version = MQTT_PROTOCOL_VERSION_31;
+				} else if (!strcmp(argv[i + 1], "mqttv311")) {
+					g_protocol_version = MQTT_PROTOCOL_VERSION_311;
+				} else {
+					fprintf(stderr, "Error: Invalid protocol version argument given.\n\n");
+					return 1;
+				}
+				i++;
+			}
 		} else if (!strcmp(argv[i], "-q") || !strcmp(argv[i], "--qos")) {
 			if (i == argc - 1) {
 				fprintf(stderr, "Error: -q argument given but no QoS specified.\n\n");

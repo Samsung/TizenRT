@@ -56,15 +56,28 @@
 
 #include <tinyara/config.h>
 
-#define mbedtls_printf     printf
-#define mbedtls_fprintf    fprintf
-#define mbedtls_snprintf   snprintf
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "tls/config.h"
+
+#if !defined(MBEDTLS_ENTROPY_C) || \
+	!defined(MBEDTLS_SSL_TLS_C) || !defined(MBEDTLS_SSL_CLI_C) || \
+	!defined(MBEDTLS_NET_C) || !defined(MBEDTLS_CTR_DRBG_C)
+int tls_client_main(int argc, char **argv)
+{
+	printf("MBEDTLS_ENTROPY_C and/or\n");
+	printf("MBEDTLS_SSL_TLS_C and/or MBEDTLS_SSL_CLI_C and/or\n");
+	printf("MBEDTLS_NET_C and/or MBEDTLS_CTR_DRBG_C and/or not defined.\n");
+	return 0;
+}
+#else
+
+#define mbedtls_printf     printf
+#define mbedtls_fprintf    fprintf
+#define mbedtls_snprintf   snprintf
+
 #include "tls/net.h"
 #include "tls/ssl.h"
 #include "tls/entropy.h"
@@ -478,6 +491,7 @@ int tls_client_cb(void *args)
 	 */
 	mbedtls_net_init(&server_fd);
 	mbedtls_ssl_init(&ssl);
+	mbedtls_entropy_init(&entropy);
 	mbedtls_ssl_config_init(&conf);
 	memset(&saved_session, 0, sizeof(mbedtls_ssl_session));
 	mbedtls_ctr_drbg_init(&ctr_drbg);
@@ -935,7 +949,6 @@ usage:
 	mbedtls_printf("\n  . Seeding the random number generator...");
 	fflush(stdout);
 
-	mbedtls_entropy_init(&entropy);
 	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const unsigned char *)pers, strlen(pers))) != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_ctr_drbg_seed returned -0x%x\n", -ret);
 		goto exit;
@@ -1014,9 +1027,13 @@ usage:
 	 */
 	mbedtls_printf("  . Loading the CA root certificate ...");
 	fflush(stdout);
-	if ((ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)mbedtls_test_ca_crt_rsa, mbedtls_test_ca_crt_rsa_len)) < 0) {
-		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
-		goto exit;
+
+	for (i = 0; mbedtls_test_cas[i] != NULL; i++) {
+		ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *)mbedtls_test_cas[i], mbedtls_test_cas_len[i]);
+
+		if (ret != 0) {
+			break;
+		}
 	}
 
 	mbedtls_printf(" ok (%d skipped)\n", ret);
@@ -1027,7 +1044,7 @@ usage:
 	mbedtls_printf("  . Loading the own cert...");
 	fflush(stdout);
 
-	if ((ret = mbedtls_x509_crt_parse(&clicert, (const unsigned char *)mbedtls_test_cli_crt_rsa, mbedtls_test_cli_crt_rsa_len)) != 0) {
+	if ((ret = mbedtls_x509_crt_parse(&clicert, (const unsigned char *)mbedtls_test_cli_crt, mbedtls_test_cli_crt_len)) != 0) {
 		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
 		goto exit;
 	}
@@ -1037,7 +1054,7 @@ usage:
 	mbedtls_printf("  . Loading the Private Key...");
 	fflush(stdout);
 
-	if ((ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *)mbedtls_test_cli_key_rsa, mbedtls_test_cli_key_rsa_len, NULL, 0)) != 0) {
+	if ((ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *)mbedtls_test_cli_key, mbedtls_test_cli_key_len, NULL, 0)) != 0) {
 		mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
 		goto exit;
 	}
@@ -1172,9 +1189,11 @@ usage:
 #endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-	if ((ret = mbedtls_ssl_conf_psk(&conf, psk, psk_len, (const unsigned char *)opt.psk_identity, strlen(opt.psk_identity))) != 0) {
-		mbedtls_printf(" failed\n  ! mbedtls_ssl_conf_psk returned %d\n\n", ret);
-		goto exit;
+	if (psk_len) {
+		if ((ret = mbedtls_ssl_conf_psk(&conf, psk, psk_len, (const unsigned char *)opt.psk_identity, strlen(opt.psk_identity))) != 0) {
+			mbedtls_printf(" failed\n  ! mbedtls_ssl_conf_psk returned %d\n\n", ret);
+			goto exit;
+		}
 	}
 #endif
 
@@ -1647,3 +1666,4 @@ int tls_client_main(int argc, char **argv)
 
 	return 0;
 }
+#endif

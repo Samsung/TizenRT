@@ -18,6 +18,7 @@
 
 /**
  * @defgroup Connectivity Connectivity
+ * @brief Provides APIs for Connectivity Monitoring
  * @ingroup DM
  * @{
  */
