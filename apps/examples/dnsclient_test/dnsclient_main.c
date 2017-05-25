@@ -154,7 +154,6 @@ int dnsclient_main(int argc, char *argv[])
 		return -1;
 	} else {
 		printf("DNS results\n");
-		printf(" Official hostname : %s\n", shost->h_name);
 		printf(" IP Address : %s\n", ip_ntoa((ip_addr_t *)shost->h_addr_list[0]));
 	}
 
