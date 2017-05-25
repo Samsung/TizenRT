@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /****************************************************************************
  * kernel/pthread/pthread_condwait.c
  *
- *   Copyright (C) 2007-2009, 2012 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2012, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,26 +64,6 @@
 
 #include <tinyara/cancelpt.h>
 #include "pthread/pthread.h"
-
-/****************************************************************************
- * Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
@@ -138,7 +118,7 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 
 		/* Take the semaphore */
 
-		status = pthread_mutex_take(mutex, false);
+		status = pthread_takesemaphore((FAR sem_t *)&cond->sem, false);
 		if (ret == OK) {
 			/* Report the first failure that occurs */
 
@@ -156,7 +136,7 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 		svdbg("Reacquire mutex...\n");
 
 		oldstate = pthread_disable_cancel();
-		status = pthread_takesemaphore((FAR sem_t *)&mutex->sem, false);
+		status = pthread_mutex_take(mutex, false);
 		pthread_enable_cancel(oldstate);
 
 		if (ret == OK) {
