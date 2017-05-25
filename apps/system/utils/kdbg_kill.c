@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ static int find_signal(char *ptr)
 	int sigidx;
 
 	/* Check incoming parameters.  The first parameter should be "-<signal>" */
-	if (ptr == NULL) {
+	if (ptr == NULL || ptr[0] != '-') {
 		return ERROR;
 	} else if ('0' <= ptr[1] && ptr[1] <= '9') {
 		/* Extract the signal number */
@@ -133,10 +133,6 @@ static int find_signal(char *ptr)
 				break;
 			}
 		}
-	}
-
-	if (ret == ERROR) {
-		printf("%s: invalid signal specification\n", ptr + 1);
 	}
 
 	return ret;
@@ -201,34 +197,41 @@ int kdbg_kill(int argc, char **args)
 	char *ptr;
 	char *endptr;
 
-	ptr = args[1];
-	if (*ptr != '-') {
+	if (argc < 2 || argc > 3) {
 		printf("Invalid argument\n");
 		goto usage;
-	} else if (ptr[1] == 'l' && ptr[2] == '\0') {
-		/* List signal numbers and it's name */
+	}
 
-		for (sigidx = 0; kdbg_sig[sigidx].signame != NULL; sigidx++) {
-			printf("%2d) %-15s\n", kdbg_sig[sigidx].signo, kdbg_sig[sigidx].signame);
+	if (!strcmp(args[1], "--help")) {
+		goto usage;
+	}
+
+	if (argc == 2) {
+		/* For a case that no signal is specified or '-l' option */
+		/* 'kill PID' or 'kill -l' */
+		ptr = args[1];
+		if (!strcmp(ptr, "-l")) {
+			/* List signal numbers and it's name */
+			for (sigidx = 0; kdbg_sig[sigidx].signame != NULL; sigidx++) {
+				printf("%2d) %-15s\n", kdbg_sig[sigidx].signo, kdbg_sig[sigidx].signame);
+			}
+			return OK;
 		}
-		return OK;
+		signo = SIGKILL;
+	} else {
+		/* For a case that signal and pid are specified. */
+		/* 'kill -SIGNAME|SIGNUM PID' */
+		signo = find_signal(args[1]);
+		if (signo == ERROR) {
+			printf("%s: invalid signal specification\n", args[1]);
+			return ERROR;
+		}
+		ptr = args[2];
 	}
 
-	if (argc != 3) {
-		printf("Invalid argument\n");
-		goto usage;
-	}
-
-	signo = find_signal(args[1]);
-	if (signo == ERROR) {
-		return ERROR;
-	}
-
-	/* The second parameter should be <pid>  */
-
-	ptr = args[2];
 	if (*ptr < '0' || *ptr > '9') {
-		goto usage;
+		printf("Invlid arguments. It must be process ids\n");
+		return ERROR;
 	}
 
 	/* Extract the pid */
@@ -244,10 +247,13 @@ int kdbg_kill(int argc, char **args)
 	return OK;
 
 usage:
-	printf("Usage: kill -[signum, signame] PID\n");
-	printf("       kill -l\n");
-	printf("Options:\n");
-	printf("-l      list all signal names\n");
+	printf("\nUsage: kill [-SIGNAME|SIGNUM] PID\n");
+	printf("   or: kill -l\n");
+	printf("Send a signal SIGNAME or SIGNUM to a process PID\n");
+	printf("If no signal is specified, SIGKILL is sent because we don't support SIGTERM\n");
+	printf("* Caution: SIGKILL terminates task/thread without any operations\n");
+	printf("\nOptions:\n");
+	printf(" -l 		  List all signal names\n");
 
 	return ERROR;
 }
@@ -268,55 +274,69 @@ static void kdbg_killall_handler(FAR struct tcb_s *tcb, FAR void *arg)
 
 int kdbg_killall(int argc, char **args)
 {
-	int ret = OK;
 	int signo;
 	int sigidx;
 	char *ptr;
 	struct kdbg_killall_arg_s arg;
 
-	ptr = args[1];
-	if (*ptr != '-') {
+	if (argc < 2 || argc > 3) {
 		printf("Invalid argument\n");
 		goto usage;
 	}
 
-	if (ptr[1] == 'l' && ptr[2] == '\0') {
-		/* List signal numbers and it's name */
+	if (!strcmp(args[1], "--help")) {
+		goto usage;
+	}
 
-		for (sigidx = 0; kdbg_sig[sigidx].signame != NULL; sigidx++) {
-			printf("%2d) %-15s\n", kdbg_sig[sigidx].signo, kdbg_sig[sigidx].signame);
+	if (argc == 2) {
+		/* For a case that no signal is specified or '-l' option */
+		/* 'killall NAME' or 'killall -l' */
+		ptr = args[1];
+		if (!strcmp(ptr, "-l")) {
+			/* List signal numbers and it's name */
+			for (sigidx = 0; kdbg_sig[sigidx].signame != NULL; sigidx++) {
+				printf("%2d) %-15s\n", kdbg_sig[sigidx].signo, kdbg_sig[sigidx].signame);
+			}
+			return OK;
+		} else if (ptr[0] == '-') {
+			/* Invalid argument as process name */
+			printf("Invlid arguments.\n");
+			goto usage;
+		} else {
+			signo = SIGKILL;
 		}
-		return OK;
-	}
-
-	if (argc != 3) {
-		printf("Invalid argument\n");
-		goto usage;
-	}
-
-	signo = find_signal(args[1]);
-	if (signo == ERROR) {
-		return ERROR;
+	} else {
+		/* For a case that signal and name are specified. */
+		/* 'killall -SIGNAME|SIGNUM NAME' */
+		signo = find_signal(args[1]);
+		if (signo == ERROR) {
+			printf("%s: invalid signal specification\n", args[1]);
+			return ERROR;
+		}
+		ptr = args[2];
 	}
 
 	arg.signo = signo;
-	strncpy(arg.name, args[2], CONFIG_TASK_NAME_SIZE);
+	strncpy(arg.name, ptr, CONFIG_TASK_NAME_SIZE);
 	arg.count = 0;
-	arg.ret = &ret;
+	arg.ret = OK;
 
 	sched_foreach(kdbg_killall_handler, (FAR void *)&arg);
 	if (arg.count == 0) {
 		printf("%s: no thread found\n", arg.name);
-		ret = ERROR;
+		return ERROR;
 	}
 
-	return ret;
+	return OK;
 
 usage:
-	printf("Usage: killall -[signum, signame] NAME\n");
-	printf("       killall -l\n");
-	printf("Options:\n");
-	printf("-l      list all signal names\n");
+	printf("\nUsage: killall [-SIGNAME|SIGNUM] NAME\n");
+	printf("   or: killall -l\n");
+	printf("Send a signal specified by SIGNAME or SIGNUM to a processes named NAME\n");
+	printf("If no signal is specified, SIGKILL is sent because we don't support SIGTERM\n");
+	printf("* Caution: SIGKILL terminates task/thread without any operations\n");
+	printf("\nOptions:\n");
+	printf(" -l           List all signal names\n");
 
 	return ERROR;
 }

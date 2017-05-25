@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -223,10 +223,17 @@ int kdbg_stackmonitor(int argc, char **args)
 	pthread_t stkmon;
 	pthread_attr_t stkmon_attr;
 
-	/* stop the stackmonitor */
-	if (argc > 1 && strcmp(args[1], "stop") == 0) {
-		stackmonitor_stop();
-		return OK;
+	if (argc > 1) {
+		if(!strcmp(args[1], "stop")) {
+			/* stop the stackmonitor */
+			stackmonitor_stop();
+			return OK;
+		} else {
+			printf("\nUsage: stkmon\n");
+			printf("   or: stkmon stop\n");
+			printf("Start, or Stop stack monitor daemon\n");
+			return ERROR;
+		}
 	}
 
 	/* Has the monitor already started? */

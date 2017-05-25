@@ -58,8 +58,13 @@ int kdbg_heapinfo(int argc, char **args)
 	int option;
 	int mode = HEAPINFO_SIMPLE;
 	int pid = HEAPINFO_PID_NOTNEEDED;
+
+	if (argc >= 2 && !strcmp(args[1], "--help")) {
+		goto usage;
+	}
+
 	struct mm_heap_s *user_heap = mm_get_heap_info();
-	while ((option = getopt(argc, args, "iap:fh")) != ERROR) {
+	while ((option = getopt(argc, args, "iap:f")) != ERROR) {
 		switch (option) {
 		case 'i':
 			sched_foreach(kdbg_heapinfo_init, NULL);
@@ -77,15 +82,10 @@ int kdbg_heapinfo(int argc, char **args)
 			mode = HEAPINFO_DETAIL_FREE;
 			pid = HEAPINFO_PID_NOTNEEDED;
 			break;
-		case 'h':
 		case '?':
 		default:
-			printf("Usage: heapinfo [options]\n");
-			printf(" -i : initialize the heapinfo\n");
-			printf(" -a : show the all allocation details\n");
-			printf(" -p[pid] : show the specific pid allocation details \n");
-			printf(" -f : show the free list \n");
-			return OK;
+			printf("Invalid option\n");
+			goto usage;
 		}
 	}
 	heapinfo_parse(user_heap, mode, pid);
@@ -96,9 +96,18 @@ int kdbg_heapinfo(int argc, char **args)
 #endif
 	printf("STACK  HEAP Curr  Peak  NAME\n");
 	printf("------------------------------------\n");
-
 	sched_foreach(kdbg_heapinfo_task, NULL);
-#endif
-	return OK;
-}
 
+	return OK;
+
+usage:
+	printf("\nUsage: heapinfo [OPTIONS]\n");
+	printf("Display information of heap memory\n");
+	printf("\nOptions:\n");
+	printf(" -i           Initialize the heapinfo\n");
+	printf(" -a           Show the all allocation details\n");
+	printf(" -p PID       Show the specific PID allocation details \n");
+	printf(" -f           Show the free list \n");
+#endif
+	return ERROR;
+}
