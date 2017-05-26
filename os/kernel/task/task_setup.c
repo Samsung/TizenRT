@@ -117,7 +117,8 @@ static int task_assignpid(FAR struct tcb_s *tcb);
  *   tcb - TCB of task
  *
  * Return:
- *   OK on success; ERROR on failure (errno is not set)
+ *   OK on success; ERROR on failure.
+ *   errno is set as EBUSY, if already CONFIG_MAX_TASKS are running in system
  *
  ****************************************************************************/
 
@@ -176,6 +177,7 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 	 */
 
 	(void)sched_unlock();
+	set_errno(EBUSY);
 	trace_end(TTRACE_TAG_TASK);
 	return ERROR;
 }
@@ -344,8 +346,10 @@ static inline void task_dupdspace(FAR struct tcb_s *tcb)
  * Return Value:
  *   OK on success; ERROR on failure.
  *
- *   This function can only failure is it is unable to assign a new, unique
- *   task ID to the TCB (errno is not set).
+ *   This function can fail for two reasons.
+ *   1) If requested priority is beyond the allowed range, errno = EINVAL
+ *   2) If it is unable to assign a new, unique task ID to the TCB. errno = EBUSY
+ *   errno is set accodingly.
  *
  ****************************************************************************/
 
@@ -625,8 +629,10 @@ static inline int task_stackargsetup(FAR struct task_tcb_s *tcb, FAR char *const
  * Return Value:
  *   OK on success; ERROR on failure.
  *
- *   This function can only failure is it is unable to assign a new, unique
- *   task ID to the TCB (errno is not set).
+ *   This function can fail for two reasons.
+ *   1) If requested priority is beyond the allowed range, errno = EINVAL
+ *   2) If it is unable to assign a new, unique task ID to the TCB. errno = EBUSY
+ *   errno is set accodingly.
  *
  ****************************************************************************/
 
@@ -665,8 +671,10 @@ int task_schedsetup(FAR struct task_tcb_s *tcb, int priority, start_t start, mai
  * Return Value:
  *   OK on success; ERROR on failure.
  *
- *   This function can only failure is it is unable to assign a new, unique
- *   task ID to the TCB (errno is not set).
+ *   This function can fail for two reasons.
+ *   1) If requested priority is beyond the allowed range, errno = EINVAL
+ *   2) If it is unable to assign a new, unique task ID to the TCB. errno = EBUSY
+ *   errno is set accodingly.
  *
  ****************************************************************************/
 

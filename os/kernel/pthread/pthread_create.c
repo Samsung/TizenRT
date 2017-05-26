@@ -343,7 +343,7 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 
 	ret = pthread_schedsetup(ptcb, param.sched_priority, pthread_start, start_routine);
 	if (ret != OK) {
-		errcode = EBUSY;
+		errcode = get_errno();
 		goto errout_with_join;
 	}
 
