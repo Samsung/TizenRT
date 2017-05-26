@@ -44,7 +44,7 @@ static int app_dhcp_main(void)
 {
 	uint32_t timeleft = 15000;
 	struct dhcpc_state state;
-	void * dhcp_handle;
+	void *dhcp_handle;
 	int ret;
 
 	dhcp_handle = dhcpc_open(NET_DEVNAME);
@@ -54,8 +54,9 @@ static int app_dhcp_main(void)
 		//sys_msleep(10);
 		timeleft -= 10;
 
-		if (timeleft <= 0)
+		if (timeleft <= 0) {
 			break;
+		}
 	}
 
 	if (timeleft <= 0) {
@@ -71,13 +72,12 @@ static int app_dhcp_main(void)
 	return 1;
 }
 
-static conn_cb linkUpEvent()
+void linkUpEvent(void)
 {
 	isConnected = 1;
-	return 0;
 }
 
-int wifiAutoConnectInit()
+int wifiAutoConnectInit(void)
 {
 	int8_t ret;
 	uint8_t result;
@@ -85,9 +85,9 @@ int wifiAutoConnectInit()
 	isConnected = 0;
 	dm_conn_register_linkup_cb(linkUpEvent);
 
-	if (WifiIsConnected(&result, NULL) != SLSI_STATUS_SUCCESS) {
+	if (WiFiIsConnected(&result, NULL) != SLSI_STATUS_SUCCESS) {
 		printf("failed to WifiIsConnected\n");
-		return;
+		return -1;
 	}
 
 	if (result > 0) {
@@ -99,7 +99,7 @@ int wifiAutoConnectInit()
 	ret = WiFiStart(SLSI_WIFI_STATION_IF, NULL);
 	if (ret == SLSI_STATUS_SUCCESS) {
 		printf("[AutoConnect]STA mode started\n");
-		ret = WiFiNetworkJoin(CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), NULL, get_security_config(CONFIG_DM_AP_SECURITY, CONFIG_DM_AP_PASS));
+		ret = WiFiNetworkJoin((uint8_t *) CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), NULL, (slsi_security_config_t *) getSecurityConfig(CONFIG_DM_AP_SECURITY, CONFIG_DM_AP_PASS));
 		sleep(1);
 		if (ret == SLSI_STATUS_SUCCESS) {
 			printf("[AutoConnect]Start doJoin with SSID %s\n", CONFIG_DM_AP_SSID);
@@ -114,27 +114,28 @@ int wifiAutoConnectInit()
 	return -1;
 }
 
-void wifiAutoConnectDeInit()
+static void wifiAutoConnectDeInit(void)
 {
 	isConnected = 0;
 	dm_conn_unregister_linkup_cb(linkUpEvent);
 }
 
-static void wifiAutoConnect()
+static int wifiAutoConnect(void)
 {
 	int ret;
-	if ((ret = wifiAutoConnectInit()) == 1) {
+	ret = -1;
+	if (wifiAutoConnectInit() == 1) {
 		int waitTime = 10;
 		while (waitTime--) {
 			if (isConnected == 1) {
 				printf("[AutoConnect]WiFi Connected!\n");
-				int dhcp_ret = app_dhcp_main();
-				if (dhcp_ret == -1) {
+				ret = app_dhcp_main();
+				if (ret == -1) {
 					printf("Timeout fail to get ip address\n");
-					return dhcp_ret;
+					return ret;
 				} else if (dhcp_ret == 0) {
 					printf("No network interface\n");
-					return dhcp_ret;
+					return ret;
 				}
 				printf("DHCP done\n");
 				break;
@@ -144,8 +145,10 @@ static void wifiAutoConnect()
 		if (waitTime <= 0) {
 			printf("[AutoConnect]WiFi is not working. Test Canceled\n");
 			return 0;
-		}
+		} 
+		return 1;
 	}
+	return ret;
 }
 
 #ifdef CONFIG_BUILD_KERNEL
@@ -156,50 +159,49 @@ int utc_dm_main(int argc, char *argv[])
 {
 	sem_wait(&tc_sem);
 	working_tc++;
-#ifndef CONFIG_EXAMPLES_TESTCASE_DM_WIFI
+#ifndef CONFIG_DM_WIFI
 	printf("=== Please Setup WiFi Info ===\n");
 	return 0;
 #endif
-	wifiAutoConnect();
-
-	printf("=== TINYARA DM TC START! ===\n");
-	dm_lwm2m_testcase_main();
+	if (wifiAutoConnect() == 1) {
+		printf("=== TINYARA DM TC START! ===\n");
+		dm_lwm2m_testcase_main();
 #ifdef CONFIG_UTC_DM_CONN_GET_RSSI
-	dm_conn_get_rssi_main();
+		dm_conn_get_rssi_main();
 #endif
 #ifdef CONFIG_UTC_DM_CONN_GET_ADDRESS
-	dm_conn_get_address_main();
+		dm_conn_get_address_main();
 #endif
 #ifdef CONFIG_UTC_DM_CONN_GET_INTERFACE
-	dm_conn_get_interface_main();
+		dm_conn_get_interface_main();
 #endif
 #ifdef CONFIG_UTC_DM_CONN_GET_CHANNEL
-	dm_conn_get_channel_main();
+		dm_conn_get_channel_main();
 #endif
 #ifdef CONFIG_UTC_DM_CONN_GET_TX_POWER
-	dm_conn_get_tx_power_main();
+		dm_conn_get_tx_power_main();
 #endif
 #ifdef CONFIG_UTC_DM_CONN_SET_TX_POWER
-	dm_conn_set_tx_power_main();
+		dm_conn_set_tx_power_main();
 #endif
 #ifdef CONFIG_UTC_DM_CONN_REGI_LINKUP
-	dm_conn_regi_linkup_main();
+		dm_conn_regi_linkup_main();
 #endif
 #ifdef CONFIG_UTC_DM_CONN_REGI_LINKDOWN
-	dm_conn_regi_linkdown_main();
+		dm_conn_regi_linkdown_main();
 #endif
 #ifdef CONFIG_UTC_DM_CONN_UNREGI_LINKUP
-	dm_conn_unregi_linkup_main();
+		dm_conn_unregi_linkup_main();
 #endif
 #ifdef CONFIG_UTC_DM_CONN_UNREGI_LINKDOWN
-	dm_conn_unregi_linkdown_main();
+		dm_conn_unregi_linkdown_main();
 #endif
 
-	printf("\n=== TINYARA DM TC COMPLETE ===\n");
-	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+		printf("\n=== TINYARA DM TC COMPLETE ===\n");
+		printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
 
-	wifiAutoConnectDeInit();
-
+		wifiAutoConnectDeInit();
+	}
 	working_tc--;
 	sem_post(&tc_sem);
 
