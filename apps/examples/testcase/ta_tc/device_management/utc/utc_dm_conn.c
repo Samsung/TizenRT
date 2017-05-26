@@ -40,7 +40,7 @@
 * @precondition		WiFi connected
 * @postcondition
 */
-static void utc_dm_conn_get_address_n()
+static void utc_dm_conn_get_address_n(void)
 {
 	int ret;
 	ret = dm_conn_get_address(NULL);
@@ -57,7 +57,7 @@ static void utc_dm_conn_get_address_n()
 * @precondition		WiFi connected
 * @postcondition
 */
-static void utc_dm_conn_get_address_p()
+static void utc_dm_conn_get_address_p(void)
 {
 	int ret;
 	char val[20];
@@ -75,7 +75,7 @@ static void utc_dm_conn_get_address_p()
 * @precondition		WiFi connected
 * @postcondition
 */
-static void utc_dm_conn_get_channel_n()
+static void utc_dm_conn_get_channel_n(void)
 {
 	int ret;
 	ret = dm_conn_get_channel(NULL);
@@ -92,7 +92,7 @@ static void utc_dm_conn_get_channel_n()
 * @precondition		WiFi connected
 * @postcondition
 */
-static void utc_dm_conn_get_channel_p()
+static void utc_dm_conn_get_channel_p(void)
 {
 	int ret;
 	int val;
@@ -110,7 +110,7 @@ static void utc_dm_conn_get_channel_p()
 * @precondition
 * @postcondition
 */
-static void utc_dm_conn_get_interface_n()
+static void utc_dm_conn_get_interface_n(void)
 {
 	int ret;
 	ret = dm_conn_get_interface(NULL);
@@ -127,7 +127,7 @@ static void utc_dm_conn_get_interface_n()
 * @precondition
 * @postcondition
 */
-static void utc_dm_conn_get_interface_p()
+static void utc_dm_conn_get_interface_p(void)
 {
 	int ret;
 	char val[10];
@@ -145,7 +145,7 @@ static void utc_dm_conn_get_interface_p()
 * @precondition		WiFi connected
 * @postcondition
 */
-static void utc_dm_conn_get_rssi_n()
+static void utc_dm_conn_get_rssi_n(void)
 {
 	int ret;
 	ret = dm_conn_get_rssi(NULL);
@@ -162,7 +162,7 @@ static void utc_dm_conn_get_rssi_n()
 * @precondition		WiFi connected
 * @postcondition
 */
-static void utc_dm_conn_get_rssi_p()
+static void utc_dm_conn_get_rssi_p(void)
 {
 	int ret;
 	int val;
@@ -180,7 +180,7 @@ static void utc_dm_conn_get_rssi_p()
 * @precondition		WiFi connected
 * @postcondition
 */
-static void utc_dm_conn_get_tx_power_n()
+static void utc_dm_conn_get_tx_power_n(void)
 {
 	int ret;
 	ret = dm_conn_get_tx_power(NULL);
@@ -197,7 +197,7 @@ static void utc_dm_conn_get_tx_power_n()
 * @precondition		WiFi connected
 * @postcondition
 */
-static void utc_dm_conn_get_tx_power_p()
+static void utc_dm_conn_get_tx_power_p(void)
 {
 	int ret;
 	int val;
@@ -215,7 +215,7 @@ static void utc_dm_conn_get_tx_power_p()
 * @precondition		WiFi connected
 * @postcondition
 */
-static void utc_dm_conn_set_tx_power_n()
+static void utc_dm_conn_set_tx_power_n(void)
 {
 	int ret;
 	ret = dm_conn_set_tx_power(NULL);
@@ -232,7 +232,7 @@ static void utc_dm_conn_set_tx_power_n()
 * @precondition		WiFi connected
 * @postcondition
 */
-static void utc_dm_conn_set_tx_power_p()
+static void utc_dm_conn_set_tx_power_p(void)
 {
 	int ret;
 	int val;
@@ -242,7 +242,7 @@ static void utc_dm_conn_set_tx_power_p()
 	TC_SUCCESS_RESULT();
 }
 
-static conn_cb linkEvent()
+static void linkEvent(void)
 {
 	printf("Set link event\n");
 }
@@ -255,7 +255,7 @@ static conn_cb linkEvent()
 * @precondition
 * @postcondition
 */
-static void utc_dm_conn_regi_linkup_n()
+static void utc_dm_conn_regi_linkup_n(void)
 {
 	int ret;
 	ret = dm_conn_register_linkup_cb(NULL);
@@ -272,10 +272,9 @@ static void utc_dm_conn_regi_linkup_n()
 * @precondition
 * @postcondition
 */
-static void utc_dm_conn_regi_linkup_p()
+static void utc_dm_conn_regi_linkup_p(void)
 {
 	int ret;
-	int val;
 	ret = dm_conn_register_linkup_cb(linkEvent);
 
 	TC_ASSERT_EQ("dm_conn_register_linkup_cb", ret, DM_ERROR_NONE);
@@ -290,7 +289,7 @@ static void utc_dm_conn_regi_linkup_p()
 * @precondition
 * @postcondition
 */
-static void utc_dm_conn_regi_linkdown_n()
+static void utc_dm_conn_regi_linkdown_n(void)
 {
 	int ret;
 	ret = dm_conn_register_linkdown_cb(NULL);
@@ -307,10 +306,9 @@ static void utc_dm_conn_regi_linkdown_n()
 * @precondition
 * @postcondition
 */
-static void utc_dm_conn_regi_linkdown_p()
+static void utc_dm_conn_regi_linkdown_p(void)
 {
 	int ret;
-	int val;
 	ret = dm_conn_register_linkdown_cb(linkEvent);
 
 	TC_ASSERT_EQ("dm_conn_register_linkdown_cb", ret, DM_ERROR_NONE);
@@ -325,7 +323,7 @@ static void utc_dm_conn_regi_linkdown_p()
 * @precondition
 * @postcondition
 */
-static void utc_dm_conn_unregi_linkup_n()
+static void utc_dm_conn_unregi_linkup_n(void)
 {
 	int ret;
 	ret = dm_conn_unregister_linkup_cb(NULL);
@@ -342,10 +340,9 @@ static void utc_dm_conn_unregi_linkup_n()
 * @precondition		The callback function is set up
 * @postcondition
 */
-static void utc_dm_conn_unregi_linkup_p()
+static void utc_dm_conn_unregi_linkup_p(void)
 {
 	int ret;
-	int val;
 	ret = dm_conn_unregister_linkup_cb(linkEvent);
 
 	TC_ASSERT_EQ("dm_conn_unregister_linkup_cb", ret, DM_ERROR_NONE);
@@ -360,7 +357,7 @@ static void utc_dm_conn_unregi_linkup_p()
 * @precondition
 * @postcondition
 */
-static void utc_dm_conn_unregi_linkdown_n()
+static void utc_dm_conn_unregi_linkdown_n(void)
 {
 	int ret;
 	ret = dm_conn_unregister_linkdown_cb(NULL);
@@ -377,10 +374,9 @@ static void utc_dm_conn_unregi_linkdown_n()
 * @precondition		The callback function is set up
 * @postcondition
 */
-static void utc_dm_conn_unregi_linkdown_p()
+static void utc_dm_conn_unregi_linkdown_p(void)
 {
 	int ret;
-	int val;
 	ret = dm_conn_unregister_linkdown_cb(linkEvent);
 
 	TC_ASSERT_EQ("dm_conn_unregister_linkdown_cb", ret, DM_ERROR_NONE);

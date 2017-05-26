@@ -51,9 +51,10 @@ static void utc_dm_lwm2m_start_client_p(void)
 {
 	int ret;
 	ret = dm_lwm2m_start_client(&test_data1);
-        TC_ASSERT_EQ("dm_lwm2m_start_client", ret, DM_ERROR_NONE);
-        TC_SUCCESS_RESULT();
+	TC_ASSERT_EQ("dm_lwm2m_start_client", ret, DM_ERROR_NONE);
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_start_client_n
 * @brief                Start DM LWM2M client session
@@ -67,8 +68,9 @@ static void utc_dm_lwm2m_start_client_n(void)
 	int ret;
 	ret = dm_lwm2m_start_client(&test_data2);
 	TC_ASSERT_NEQ("dm_lwm2m_start_client", ret, DM_ERROR_NONE);
-        TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_get_client_lifetime_n
 * @brief                Get LWM2M client lifetime
@@ -80,10 +82,11 @@ static void utc_dm_lwm2m_start_client_n(void)
 static void utc_dm_lwm2m_get_client_lifetime_n(void)
 {
 	int ret;
-        ret = dm_lwm2m_get_client_lifetime(NULL);
-        TC_ASSERT_EQ("dm_lwm2m_get_client_lifetime", ret, DM_ERROR_INVALID_PARAMETER);
-        TC_SUCCESS_RESULT();
+	ret = dm_lwm2m_get_client_lifetime(NULL);
+	TC_ASSERT_EQ("dm_lwm2m_get_client_lifetime", ret, DM_ERROR_INVALID_PARAMETER);
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_get_client_lifetime_p
 * @brief                Get LWM2M client lifetime
@@ -96,10 +99,11 @@ static void utc_dm_lwm2m_get_client_lifetime_p(void)
 {
 	int life;
 	int ret;
-        ret = dm_lwm2m_get_client_lifetime(&life);
+	ret = dm_lwm2m_get_client_lifetime(&life);
 	TC_ASSERT_EQ("dm_lwm2m_get_client_lifetime", ret, DM_ERROR_NONE);
-        TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_get_server_address_n
 * @brief                Get LWM2M Server IP addr
@@ -111,10 +115,11 @@ static void utc_dm_lwm2m_get_client_lifetime_p(void)
 static void utc_dm_lwm2m_get_server_address_n(void)
 {
 	int ret;
-        ret = dm_lwm2m_get_server_address(NULL);
-        TC_ASSERT_EQ("dm_lwm2m_get_server_address", ret, DM_ERROR_INVALID_PARAMETER);
-        TC_SUCCESS_RESULT();
+	ret = dm_lwm2m_get_server_address(NULL);
+	TC_ASSERT_EQ("dm_lwm2m_get_server_address", ret, DM_ERROR_INVALID_PARAMETER);
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_get_server_address_p
 * @brief                Get LWM2M Server IP addr
@@ -127,9 +132,10 @@ static void utc_dm_lwm2m_get_server_address_p(void)
 {
 	char ipAddr[UTC_DM_IPADDR_LEN];
 	int ret = dm_lwm2m_get_server_address(ipAddr);
-        TC_ASSERT_EQ("dm_lwm2m_get_server_address", ret, DM_ERROR_NONE);
-        TC_SUCCESS_RESULT();
+	TC_ASSERT_EQ("dm_lwm2m_get_server_address", ret, DM_ERROR_NONE);
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_get_server_port_n
 * @brief                Get LWM2M Server IP port
@@ -141,10 +147,11 @@ static void utc_dm_lwm2m_get_server_address_p(void)
 static void utc_dm_lwm2m_get_server_port_n(void)
 {
 	int ret;
-        ret = dm_lwm2m_get_server_port(NULL);
-        TC_ASSERT_EQ("dm_lwm2m_get_server_port", ret, DM_ERROR_INVALID_PARAMETER);
-        TC_SUCCESS_RESULT();
+	ret = dm_lwm2m_get_server_port(NULL);
+	TC_ASSERT_EQ("dm_lwm2m_get_server_port", ret, DM_ERROR_INVALID_PARAMETER);
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_get_server_port_p
 * @brief                Get LWM2M Server IP port
@@ -157,9 +164,10 @@ static void utc_dm_lwm2m_get_server_port_p(void)
 {
 	char port[UTC_DM_SERVER_PORT];
 	int ret = dm_lwm2m_get_server_port(port);
-        TC_ASSERT_EQ("dm_lwm2m_get_server_port", ret, DM_ERROR_NONE);
-        TC_SUCCESS_RESULT();
+	TC_ASSERT_EQ("dm_lwm2m_get_server_port", ret, DM_ERROR_NONE);
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_get_client_state_n
 * @brief                Get LWM2M Client state
@@ -171,10 +179,11 @@ static void utc_dm_lwm2m_get_server_port_p(void)
 static void utc_dm_lwm2m_get_client_state_n(void)
 {
 	int ret;
-        ret = dm_lwm2m_get_client_state(NULL);
-        TC_ASSERT_EQ("dm_lwm2m_get_client_state", ret, DM_ERROR_INVALID_PARAMETER);
-        TC_SUCCESS_RESULT();
+	ret = dm_lwm2m_get_client_state(NULL);
+	TC_ASSERT_EQ("dm_lwm2m_get_client_state", ret, DM_ERROR_INVALID_PARAMETER);
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_get_client_state_p
 * @brief                Get LWM2M Client state
@@ -185,12 +194,13 @@ static void utc_dm_lwm2m_get_client_state_n(void)
 */
 static void utc_dm_lwm2m_get_client_state_p(void)
 {
-	int life;
+	dm_lwm2m_client_state_e state_val;
 	int ret;
-        ret = dm_lwm2m_get_client_state(&life);
-        TC_ASSERT_EQ("dm_lwm2m_get_client_state", ret, DM_ERROR_NONE);
-        TC_SUCCESS_RESULT();
+	ret = dm_lwm2m_get_client_state(&state_val);
+	TC_ASSERT_EQ("dm_lwm2m_get_client_state", ret, DM_ERROR_NONE);
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_stop_client_n
 * @brief                Get LWM2M Client state
@@ -203,9 +213,10 @@ static void utc_dm_lwm2m_stop_client_n(void)
 {
 	int ret;
 	ret = dm_lwm2m_stop_client();
-        TC_ASSERT_EQ("dm_lwm2m_stop_client", ret, DM_ERROR_ALREADY_STOPPED);
-        TC_SUCCESS_RESULT();
+	TC_ASSERT_EQ("dm_lwm2m_stop_client", ret, DM_ERROR_ALREADY_STOPPED);
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_stop_client_p
 * @brief                Get LWM2M Client state
@@ -217,9 +228,10 @@ static void utc_dm_lwm2m_stop_client_n(void)
 static void utc_dm_lwm2m_stop_client_p(void)
 {
 	int ret = dm_lwm2m_stop_client();
-        TC_ASSERT_EQ("dm_lwm2m_stop_client", ret, DM_ERROR_NONE);
-        TC_SUCCESS_RESULT();
+	TC_ASSERT_EQ("dm_lwm2m_stop_client", ret, DM_ERROR_NONE);
+	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase             utc_dm_lwm2m_display_client_resource_n
 * @brief                Display LWM2M Client resource
@@ -230,21 +242,21 @@ static void utc_dm_lwm2m_stop_client_p(void)
 */
 static void utc_dm_lwm2m_display_client_resource_n(void)
 {
-        int ret;
-        ret = dm_lwm2m_display_client_resource(NULL);
-        TC_ASSERT_EQ("dm_lwm2m_display_client_resource", ret, DM_ERROR_INVALID_PARAMETER);
-        TC_SUCCESS_RESULT();
+	int ret;
+	ret = dm_lwm2m_display_client_resource(NULL);
+	TC_ASSERT_EQ("dm_lwm2m_display_client_resource", ret, DM_ERROR_INVALID_PARAMETER);
+	TC_SUCCESS_RESULT();
 }
 
 static void utc_dm_lwm2m_display_client_resource_p(void)
 {
-        int ret;
-        char argbuffer[10];
-        memset(argbuffer, 0x00, sizeof(argbuffer));
-        strcpy(argbuffer, "/8/0");
-        ret = dm_lwm2m_display_client_resource(argbuffer);
-        TC_ASSERT_EQ("dm_lwm2m_display_client_resource", ret, DM_ERROR_NONE);
-        TC_SUCCESS_RESULT();
+	int ret;
+	char argbuffer[10];
+	memset(argbuffer, 0x00, sizeof(argbuffer));
+	strcpy(argbuffer, "/8/0");
+	ret = dm_lwm2m_display_client_resource(argbuffer);
+	TC_ASSERT_EQ("dm_lwm2m_display_client_resource", ret, DM_ERROR_NONE);
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
@@ -275,8 +287,8 @@ int dm_lwm2m_testcase_main(void)
 #endif
 
 #ifdef CONFIG_TC_DM_DISPLAY_CLIENT_RESOURCE
-        utc_dm_lwm2m_display_client_resource_n();
-        utc_dm_lwm2m_display_client_resource_p();
+	utc_dm_lwm2m_display_client_resource_n();
+	utc_dm_lwm2m_display_client_resource_p();
 #endif
 
 #ifdef CONFIG_TC_DM_CLOSE
