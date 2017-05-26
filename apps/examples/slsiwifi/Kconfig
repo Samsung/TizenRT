@@ -1,6 +1,6 @@
 #
 # For a description of the syntax of this configuration file,
-# see the file kconfig-language.txt in the NuttX tools repository.
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
 config EXAMPLES_SLSIWIFI
