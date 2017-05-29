@@ -85,6 +85,12 @@ CONFIG_ARMV7M_MPU=y
 CONFIG_ARMV7M_MPU_NREGIONS=12
 
 #
+# Exception stack options
+#
+CONFIG_ARCH_HAVE_DABORTSTACK=y
+CONFIG_ARCH_DABORTSTACK=0
+
+#
 # ARMv7-R Configuration Options
 #
 CONFIG_ARMV7R_HAVE_GICv2=y
@@ -102,58 +108,65 @@ CONFIG_ARMV7R_TOOLCHAIN_GNU_EABIL=y
 # CONFIG_BOOT_RESULT is not set
 
 #
-# Samsung S5J Chip Configuration Options
+# S5J Configuration Options
 #
 CONFIG_ARCH_CHIP_S5JT200=y
 CONFIG_S5J_S5JT200=y
 
 #
-# S5J DEBUG UART Configuration
+# S5J Peripheral Support
 #
-CONFIG_SERIAL_TERMIOS=y
-CONFIG_ARCH_HAVE_SERIAL_TERMIOS=y
+CONFIG_S5J_HAVE_ADC=y
+CONFIG_S5J_HAVE_I2C=y
+CONFIG_S5J_HAVE_MCT=y
 CONFIG_S5J_HAVE_PWM0=y
 CONFIG_S5J_HAVE_PWM1=y
 CONFIG_S5J_HAVE_PWM2=y
 CONFIG_S5J_HAVE_PWM3=y
 CONFIG_S5J_HAVE_PWM4=y
 CONFIG_S5J_HAVE_PWM5=y
+CONFIG_S5J_HAVE_PWR=y
+CONFIG_S5J_HAVE_RTC=y
+CONFIG_S5J_HAVE_SFLASH=y
+CONFIG_S5J_HAVE_SPI=y
+CONFIG_S5J_HAVE_SSS=y
 CONFIG_S5J_HAVE_UART0=y
 CONFIG_S5J_HAVE_UART1=y
 CONFIG_S5J_HAVE_UART2=y
 CONFIG_S5J_HAVE_UART3=y
 CONFIG_S5J_HAVE_UART4=y
+CONFIG_S5J_HAVE_WATCHDOG=y
+# CONFIG_S5J_ADC is not set
+# CONFIG_S5J_I2C is not set
+# CONFIG_S5J_MCT is not set
+# CONFIG_S5J_TIMER0 is not set
+# CONFIG_S5J_TIMER1 is not set
+# CONFIG_S5J_TIMER2 is not set
+# CONFIG_S5J_TIMER3 is not set
+# CONFIG_S5J_UART_FLOWCONTROL is not set
 CONFIG_S5J_UART0=y
 CONFIG_S5J_UART1=y
 CONFIG_S5J_UART2=y
+# CONFIG_S5J_UART2_FLOWCONTROL is not set
 CONFIG_S5J_UART3=y
+# CONFIG_S5J_UART3_FLOWCONTROL is not set
 CONFIG_S5J_UART4=y
 # CONFIG_S5J_PWM is not set
+# CONFIG_S5J_PWM0 is not set
+# CONFIG_S5J_PWM1 is not set
+# CONFIG_S5J_PWM2 is not set
+# CONFIG_S5J_PWM3 is not set
+# CONFIG_S5J_PWM4 is not set
+# CONFIG_S5J_PWM5 is not set
 # CONFIG_S5J_SSS is not set
-
-#
-# S5J SPI(Serial Peripheral Interface Bus)
-#
 # CONFIG_S5J_SPI is not set
-
-#
-# S5J WDT(Watch Dog Timer)
-#
 # CONFIG_S5J_WATCHDOG is not set
-# CONFIG_S5J_ADC is not set
-
-#
-# S5J I2C
-#
-# CONFIG_S5J_I2C is not set
 # CONFIG_S5J_SFLASH is not set
-
-# CONFIG_S5J_DEBUG_BREAK is not set
-
-#
-# S5J PMU Config
-#
 CONFIG_S5J_PWR=y
+
+#
+# PMU Configuration
+#
 # CONFIG_S5J_PWR_DSTOP is not set
 # CONFIG_S5J_PWR_SLEEP is not set
 
@@ -342,12 +355,14 @@ CONFIG_DEV_NULL=y
 # CONFIG_DRVR_READAHEAD is not set
 # CONFIG_CAN is not set
 # CONFIG_ARCH_HAVE_PWM_PULSECOUNT is not set
+# CONFIG_ARCH_HAVE_PWM_MULTICHAN is not set
 # CONFIG_PWM is not set
 # CONFIG_ARCH_HAVE_I2CRESET is not set
 # CONFIG_I2C is not set
 # CONFIG_SPI is not set
 CONFIG_GPIO=y
 # CONFIG_I2S is not set
+# CONFIG_BCH is not set
 # CONFIG_RTC is not set
 # CONFIG_WATCHDOG is not set
 # CONFIG_TIMER is not set
@@ -390,6 +405,8 @@ CONFIG_STANDARD_SERIAL=y
 CONFIG_SERIAL_NPOLLWAITERS=2
 # CONFIG_SERIAL_IFLOWCONTROL is not set
 # CONFIG_SERIAL_OFLOWCONTROL is not set
+CONFIG_ARCH_HAVE_SERIAL_TERMIOS=y
+CONFIG_SERIAL_TERMIOS=y
 # CONFIG_UART0_SERIAL_CONSOLE is not set
 # CONFIG_UART1_SERIAL_CONSOLE is not set
 # CONFIG_UART2_SERIAL_CONSOLE is not set
@@ -462,14 +479,19 @@ CONFIG_UART4_2STOP=0
 # CONFIG_FOTA_DRIVER is not set
 
 #
-# System Logging Device Options
-#
-
-#
 # System Logging
 #
 # CONFIG_RAMLOG is not set
 # CONFIG_SYSLOG_CONSOLE is not set
+
+#
+# T-trace
+#
+# CONFIG_TTRACE is not set
+
+#
+# Wireless Device Options
+#
 # CONFIG_DRIVERS_WIRELESS is not set
 
 #
@@ -599,37 +621,38 @@ CONFIG_LIB_SENDFILE_BUFSIZE=512
 # External Functions
 #
 # CONFIG_ENABLE_IOTIVITY is not set
+# CONFIG_LIBTUV is not set
 
 #
 # Application Configuration
 #
+# CONFIG_ENTRY_MANUAL is not set
+
+#
+# Application entry point list
+#
+CONFIG_ENTRY_HELLO=y
+CONFIG_USER_ENTRYPOINT="hello_main"
 
 #
 # Examples
 #
-# CONFIG_ENTRY_MANUAL is not set
-CONFIG_ENTRY_HELLO=y
-CONFIG_USER_ENTRYPOINT="hello_main"
-CONFIG_BUILTIN_APPS=y
-
-# CONFIG_EXAMPLES_DTLS_CLIENT is not set
-# CONFIG_EXAMPLES_DTLS_SERVER is not set
+# CONFIG_EXAMPLES_ARTIK_DEMO is not set
+# CONFIG_EXAMPLES_EEPROM_TEST is not set
 # CONFIG_EXAMPLES_FOTA_SAMPLE is not set
 CONFIG_EXAMPLES_HELLO=y
 # CONFIG_EXAMPLES_HELLOXX is not set
 # CONFIG_EXAMPLES_KERNEL_SAMPLE is not set
+# CONFIG_EXAMPLES_LIBTUV is not set
 # CONFIG_EXAMPLES_NETTEST is not set
 # CONFIG_EXAMPLES_SELECT_TEST is not set
-# CONFIG_EXAMPLES_SYSIO_TEST is not set
-# CONFIG_EXAMPLES_TELNETD is not set
-# CONFIG_EXAMPLES_TESTCASE is not set
-# CONFIG_EXAMPLES_TLS_CLIENT is not set
-# CONFIG_EXAMPLES_TLS_SELFTEST is not set
-# CONFIG_EXAMPLES_TLS_SERVER is not set
-# CONFIG_EXAMPLES_WAKAAMA_CLIENT is not set
-# CONFIG_EXAMPLES_ARTIK_DEMO is not set
-# CONFIG_EXAMPLES_EEPROM_TEST is not set
 # CONFIG_EXAMPLES_SENSORBOARD is not set
+# CONFIG_EXAMPLES_SMART is not set
+# CONFIG_EXAMPLES_SMART_TEST is not set
+# CONFIG_EXAMPLES_SYSIO_TEST is not set
+# CONFIG_EXAMPLES_TESTCASE is not set
+# CONFIG_EXAMPLES_WAKAAMA_CLIENT is not set
+# CONFIG_EXAMPLES_WIFI_TEST is not set
 
 #
 # Network Utilities
@@ -639,15 +662,15 @@ CONFIG_EXAMPLES_HELLO=y
 # CONFIG_NETUTILS_FTPC is not set
 # CONFIG_NETUTILS_FTPD is not set
 # CONFIG_NETUTILS_JSON is not set
+# CONFIG_NETUTILS_MDNS is not set
+# CONFIG_NETUTILS_MQTT is not set
+# CONFIG_NETUTILS_NETLIB is not set
+# CONFIG_NETUTILS_NTPCLIENT is not set
 # CONFIG_NETUTILS_SMTP is not set
 # CONFIG_NETUTILS_TELNETD is not set
 # CONFIG_NETUTILS_TFTPC is not set
-# CONFIG_NETUTILS_NETLIB is not set
-# CONFIG_NETUTILS_NTPCLIENT is not set
-# CONFIG_NETUTILS_XMLRPC is not set
-# CONFIG_NETUTILS_MDNS is not set
 # CONFIG_NETUTILS_WIFI is not set
-# CONFIG_NETUTILS_MQTT is not set
+# CONFIG_NETUTILS_XMLRPC is not set
 
 #
 # Platform-specific Support
@@ -660,91 +683,24 @@ CONFIG_EXAMPLES_HELLO=y
 # CONFIG_TASH is not set
 
 #
-# System Libraries
-#
-
-#
-# EMACS-like Command Line Editor
+# System Libraries and Add-Ons
 #
 # CONFIG_SYSTEM_CLE is not set
-
-#
-# CU Minimal Terminal
-#
 # CONFIG_SYSTEM_CUTERM is not set
-
-#
-# FLASH Erase-all Command
-#
-
-#
-# FOTA HAL Application Library
-#
 # CONFIG_SYSTEM_FOTA_HAL is not set
-
-#
-# I2C tool
-#
-
-#
-# INI File Parser
-#
 # CONFIG_SYSTEM_INIFILE is not set
-
-#
-# FLASH Program Installation
-#
 # CONFIG_SYSTEM_INSTALL is not set
-
-#
-# PHY Tool
-#
-
-#
-# System netdb Interface
-#
-
-#
-# Power Off
-#
 # CONFIG_SYSTEM_POWEROFF is not set
-
-#
-# P-Code Support
-#
-
-#
-# RAM test
-#
 # CONFIG_SYSTEM_RAMTEST is not set
-
-#
-# RAMTRON
-#
 # CONFIG_SYSTEM_RAMTRON is not set
-
-#
-# readline()
-#
 # CONFIG_SYSTEM_READLINE is not set
-
-#
-# Sysinfo
-#
 # CONFIG_SYSTEM_INFORMATION is not set
-
-#
-# Utils
-#
 # CONFIG_ENABLE_DATE is not set
 # CONFIG_ENABLE_FREE is not set
 # CONFIG_ENABLE_HEAPINFO is not set
 # CONFIG_ENABLE_PS is not set
 # CONFIG_ENABLE_STACKMONITOR is not set
-
-#
-# VI Work-Alike Editor
-#
+# CONFIG_ENABLE_UPTIME is not set
 # CONFIG_SYSTEM_VI is not set
 
 #
