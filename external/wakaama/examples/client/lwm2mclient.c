@@ -337,18 +337,18 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
         memcpy(&dataP->server_addr, &newConnP->addr, newConnP->addrLen);
         dataP->server_addrLen = newConnP->addrLen;
         dataP->connList = newConnP;
-    }
 
 #ifdef WITH_MBEDTLS
-    if (proto == COAP_TCP_TLS || proto == COAP_UDP_DTLS) {
-        newConnP->session = TLSSession(dataP->sock, dataP->tls_context, dataP->tls_opt);
-        if (newConnP->session == NULL) {
-            fprintf(stderr, "Failed to create secure session. \r\n");
-            goto exit;
+        if (proto == COAP_TCP_TLS || proto == COAP_UDP_DTLS) {
+            newConnP->session = TLSSession(dataP->sock, dataP->tls_context, dataP->tls_opt);
+            if (newConnP->session == NULL) {
+                fprintf(stderr, "Failed to create secure session. \r\n");
+                goto exit;
+            }
+            fprintf(stderr, "successfully create secure session. \r\n");
         }
-        fprintf(stderr, "successfully create secure session. \r\n");
-    }
 #endif
+    }
 
 exit:
     lwm2m_free(uri);
