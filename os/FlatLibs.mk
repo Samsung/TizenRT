@@ -139,6 +139,12 @@ else
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
 endif
 
+# Add libraries for the Audio sub-system
+
+ifeq ($(CONFIG_AUDIO),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
+endif
+
 # Add library for Framework
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT)
 

@@ -102,6 +102,7 @@ include wqueue/Make.defs
 include misc/Make.defs
 include netdb/Make.defs
 include ttrace/Make.defs
+include audio/Make.defs
 
 # REVISIT: Backslash causes problems in $(COBJS) target
 DELIM := $(strip /)

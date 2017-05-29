@@ -292,6 +292,12 @@
 #define _QEIOCVALID(c)    (_IOC_TYPE(c) == _QEIOCBASE)
 #define _QEIOC(nr)        _IOC(_QEIOCBASE, nr)
 
+/* Audio driver ioctl definitions *************************************/
+/* (see tinyara/audio/audio.h) */
+
+#define _AUDIOIOCVALID(c) (_IOC_TYPE(c)==_AUDIOIOCBASE)
+#define _AUDIOIOC(nr)     _IOC(_AUDIOIOCBASE,nr)
+
 /* Application Config Data driver ioctl definitions *************************/
 /* (see include/tinyara/configdata.h */
 

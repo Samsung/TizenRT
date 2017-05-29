@@ -105,6 +105,12 @@ fs$(DELIM)libfs$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT): fs$(DELIM)libfs$(LIBEXT)
 	$(Q) install fs$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT)
 
+audio$(DELIM)libaudio$(LIBEXT): context
+	$(Q) $(MAKE) -C audio TOPDIR="$(TOPDIR)" libaudio$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+
+$(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT): audio$(DELIM)libaudio$(LIBEXT)
+	$(Q) install audio$(DELIM)libaudio$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
+
 drivers$(DELIM)libdrivers$(LIBEXT): context
 	$(Q) $(MAKE) -C drivers TOPDIR="$(TOPDIR)" libdrivers$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
