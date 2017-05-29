@@ -140,12 +140,12 @@ int task_delete(pid_t pid)
 
 	dtcb = (FAR struct tcb_s *)sched_gettcb(pid);
 	if (dtcb == NULL) {
-	/* The pid does not correspond to any known thread.  The task
-	 * has probably already exited.
-	 */
+		/* The pid does not correspond to any known thread.  The task
+		 * has probably already exited.
+		 */
 
-	set_errno(ESRCH);
-	return ERROR;
+		set_errno(ESRCH);
+		return ERROR;
 	}
 
 	/* Only tasks and kernel threads should use this interface */
@@ -203,11 +203,11 @@ int task_delete(pid_t pid)
 
 	sched_unlock();
 	if (pid == rtcb->pid) {
-	/* If it is, then what we really wanted to do was exit. Note that we
-	 * don't bother to unlock the TCB since it will be going away.
-	 */
+		/* If it is, then what we really wanted to do was exit. Note that we
+		 * don't bother to unlock the TCB since it will be going away.
+		 */
 
-	exit(EXIT_SUCCESS);
+		exit(EXIT_SUCCESS);
 	}
 
 	/* Otherwise, perform the asynchronous cancellation, letting
