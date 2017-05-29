@@ -923,10 +923,10 @@ int lwm2m_server_main(int argc, char *argv[])
 
     coap_protocol_t proto = COAP_UDP;
 
+#ifdef WITH_MBEDTLS
     char * pskId = NULL;
     char * pskBuffer = NULL;
 
-#ifdef WITH_MBEDTLS
     unsigned char psk[MBEDTLS_PSK_MAX_LEN];
 
     /* set default tls option */
@@ -1129,6 +1129,7 @@ int lwm2m_server_main(int argc, char *argv[])
             } else {
                 fprintf(stderr, "TCP session has been created\r\n");
                 connList = connection_new_incoming(connList, newsock, (struct sockaddr *)&addr, addrLen);
+				close(sock);
                 sock = newsock;
             }
 #ifdef WITH_MBEDTLS
@@ -1143,6 +1144,7 @@ int lwm2m_server_main(int argc, char *argv[])
 
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) < 0) {
         fprintf(stderr, "Error : setsockopt failed %d\r\n", errno);
+		close(sock);
         return -1;
     }
 
@@ -1151,6 +1153,7 @@ int lwm2m_server_main(int argc, char *argv[])
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init2() failed\r\n");
+		close(sock);
         return -1;
     }
 
@@ -1200,7 +1203,11 @@ int lwm2m_server_main(int argc, char *argv[])
 
                 if (numBytes == -1)
                 {
-                    fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
+					fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
+					if (errno == ENOTCONN) {
+						fprintf(stderr, "Endpoint connection has been closed\r\n");
+						goto lwm2mserver_err_exit;
+					}
                 }
                 else
                 {
@@ -1267,7 +1274,9 @@ int lwm2m_server_main(int argc, char *argv[])
         }
     }
 
-    lwm2m_close(lwm2mH);
+lwm2mserver_err_exit:
+	if (lwm2mH != NULL)
+		lwm2m_close(lwm2mH);
     close(sock);
     connection_free(connList);
 

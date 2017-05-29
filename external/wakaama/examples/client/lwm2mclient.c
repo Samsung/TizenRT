@@ -1185,6 +1185,7 @@ int lwm2m_client_main(int argc, char *argv[])
     if (NULL == objArray[0])
     {
         fprintf(stderr, "Failed to create security object\r\n");
+		close(data.sock);
         return -1;
     }
     data.securityObjP = objArray[0];
@@ -1209,6 +1210,7 @@ int lwm2m_client_main(int argc, char *argv[])
     if (NULL == objArray[1])
     {
         fprintf(stderr, "Failed to create server object\r\n");
+		close(data.sock);
         return -1;
     }
 
@@ -1216,6 +1218,7 @@ int lwm2m_client_main(int argc, char *argv[])
     if (NULL == objArray[2])
     {
         fprintf(stderr, "Failed to create Device object\r\n");
+		close(data.sock);
         return -1;
     }
 
@@ -1223,6 +1226,7 @@ int lwm2m_client_main(int argc, char *argv[])
     if (NULL == objArray[3])
     {
         fprintf(stderr, "Failed to create Firmware object\r\n");
+		close(data.sock);
         return -1;
     }
 
@@ -1230,6 +1234,7 @@ int lwm2m_client_main(int argc, char *argv[])
     if (NULL == objArray[4])
     {
         fprintf(stderr, "Failed to create location object\r\n");
+		close(data.sock);
         return -1;
     }
 
@@ -1237,6 +1242,7 @@ int lwm2m_client_main(int argc, char *argv[])
     if (NULL == objArray[5])
     {
         fprintf(stderr, "Failed to create test object\r\n");
+		close(data.sock);
         return -1;
     }
 
@@ -1244,6 +1250,7 @@ int lwm2m_client_main(int argc, char *argv[])
     if (NULL == objArray[6])
     {
         fprintf(stderr, "Failed to create connectivity monitoring object\r\n");
+		close(data.sock);
         return -1;
     }
 
@@ -1251,6 +1258,7 @@ int lwm2m_client_main(int argc, char *argv[])
     if (NULL == objArray[7])
     {
         fprintf(stderr, "Failed to create connectivity statistics object\r\n");
+		close(data.sock);
         return -1;
     }
 
@@ -1259,21 +1267,25 @@ int lwm2m_client_main(int argc, char *argv[])
     if (NULL == objArray[8])
     {
         fprintf(stderr, "Failed to create Access Control object\r\n");
+		close(data.sock);
         return -1;
     }
     else if (acc_ctrl_obj_add_inst(objArray[8], instId, 3, 0, serverId)==false)
     {
         fprintf(stderr, "Failed to create Access Control object instance\r\n");
+		close(data.sock);
         return -1;
     }
     else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 0, 0b000000000001111)==false)
     {
         fprintf(stderr, "Failed to create Access Control ACL default resource\r\n");
+		close(data.sock);
         return -1;
     }
     else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 999, 0b000000000000001)==false)
     {
         fprintf(stderr, "Failed to create Access Control ACL resource for serverId: 999\r\n");
+		close(data.sock);
         return -1;
     }
 
@@ -1306,14 +1318,14 @@ int lwm2m_client_main(int argc, char *argv[])
             }
             if (cred.psk_identity == NULL && cred.psk == NULL) {
                 fprintf(stdout, "failed to set psk info\r\n");
-                return -1;
+				goto lwm2mclient_err_exit;
             }
         }
 
         data.tls_context = TLSCtx(&cred);
         if (data.tls_context == NULL) {
             fprintf(stdout, "TLS context initialize failed\r\n");
-            return -1;
+			goto lwm2mclient_err_exit;
         }
     }
 #endif
@@ -1326,7 +1338,7 @@ int lwm2m_client_main(int argc, char *argv[])
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init2() failed\r\n");
-        return -1;
+		goto lwm2mclient_err_exit;
     }
 	
     /*
@@ -1337,7 +1349,7 @@ int lwm2m_client_main(int argc, char *argv[])
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_configure() failed: 0x%X\r\n", result);
-        return -1;
+		goto lwm2mclient_err_exit;
     }
 
     //signal(SIGINT, handle_sigint);
@@ -1445,7 +1457,7 @@ int lwm2m_client_main(int argc, char *argv[])
             }
             else
 #endif /* LWM2M_BOOTSTRAP */
-                return -1;
+				goto lwm2mclient_err_exit;
         }
 #ifdef LWM2M_BOOTSTRAP
         update_bootstrap_info(&previousState, lwm2mH);
@@ -1494,6 +1506,10 @@ int lwm2m_client_main(int argc, char *argv[])
                 if (0 > numBytes)
                 {
                     fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
+					if (errno == ENOTCONN) {
+					/* To exit when TCP session has been unexpectedly closed*/
+						goto lwm2mclient_err_exit;
+					}
                 }
                 else if (0 < numBytes)
                 {
@@ -1570,7 +1586,6 @@ int lwm2m_client_main(int argc, char *argv[])
             }
         }
     }
-
     /*
      * Finally when the loop is left smoothly - asked by user in the command line interface - we unregister our client from it
      */
@@ -1580,7 +1595,13 @@ int lwm2m_client_main(int argc, char *argv[])
         close_backup_object();
 #endif
         lwm2m_close(lwm2mH);
+		lwm2mH = NULL;
     }
+
+lwm2mclient_err_exit:
+	if (lwm2mH != NULL)
+		lwm2m_close(lwm2mH);
+
     close(data.sock);
     connection_free(data.connList);
 
