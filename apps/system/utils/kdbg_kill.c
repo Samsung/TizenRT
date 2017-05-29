@@ -160,10 +160,11 @@ static int send_signal(pid_t pid, int signo)
 		} else {
 			switch ((tcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT) {
 			case TCB_FLAG_TTYPE_TASK:
+			case TCB_FLAG_TTYPE_KERNEL:
+				/* tasks and kernel threads has to use this interface */
 				ret = task_delete(pid) == OK ? OK : ERROR;
 				break;
 			case TCB_FLAG_TTYPE_PTHREAD:
-			case TCB_FLAG_TTYPE_KERNEL:
 				ret = pthread_cancel(pid) == OK ? OK : ERROR;
 				pthread_join(pid, NULL);
 				break;
