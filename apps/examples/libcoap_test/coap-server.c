@@ -61,7 +61,7 @@ static coap_async_state_t *async = NULL;
 #endif							/* WITHOUT_ASYNC */
 
 /* SIGINT handler: set quit to 1 for graceful termination */
-void handle_sigint(int signum)
+static void handle_sigint(int signum)
 {
 	quit = 1;
 }
