@@ -109,22 +109,6 @@ extern "C" {
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-/**
- * @brief  This function attempts to lock the semaphore referenced by 'sem'
- *         which will be posted from interrupt handler.
- *         This function should have nothing to do with the priority inheritance.
- *         This function should not be called from interrupt handler.
- * @since Tizen RT v1.0
- */
-int sem_wait_for_isr(FAR sem_t *sem);
-
-/**
- * @brief  Interrupt handler releases the semaphore referenced by 'sem'.
- *         This function should have nothing to do with the priority inheritance.
- *         This function should be called from interrupt handler.
- * @since Tizen RT v1.0
- */
-int sem_post_from_isr(FAR sem_t *sem);
 
 /****************************************************************************
  * Name: sem_reset
