@@ -1353,6 +1353,7 @@ static void main_loop(struct mdnsd *svr)
 	// main thread terminating. send out "goodbye packets" for services
 	mdns_init_reply(mdns_packet, 0);
 
+#if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 	pthread_mutex_lock(&svr->data_lock);
 	struct rr_list *svc_le = svr->services;
 	for (; svc_le; svc_le = svc_le->next) {
@@ -1361,6 +1362,7 @@ static void main_loop(struct mdnsd *svr)
 		mdns_packet->num_ans_rr += rr_list_append(&mdns_packet->rr_ans, svc_le->e);
 	}
 	pthread_mutex_unlock(&svr->data_lock);
+#endif
 
 	// send out packet
 	if (mdns_packet->num_ans_rr > 0) {
