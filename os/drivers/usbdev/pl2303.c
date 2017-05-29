@@ -1212,7 +1212,7 @@ static void usbclass_wrcomplete(FAR struct usbdev_ep_s *ep, FAR struct usbdev_re
 	/* Return the write request to the free list */
 
 	flags = irqsave();
-	sq_addlast((FAR sq_entry_t *) reqcontainer, &priv->reqlist);
+	sq_addlast((FAR sq_entry_t *)reqcontainer, &priv->reqlist);
 	priv->nwrq++;
 	irqrestore(flags);
 
@@ -1370,7 +1370,7 @@ static int usbclass_bind(FAR struct usbdevclass_driver_s *driver, FAR struct usb
 		reqcontainer->req->callback = usbclass_wrcomplete;
 
 		flags = irqsave();
-		sq_addlast((FAR sq_entry_t *) reqcontainer, &priv->reqlist);
+		sq_addlast((FAR sq_entry_t *)reqcontainer, &priv->reqlist);
 		priv->nwrq++;			/* Count of write requests available */
 		irqrestore(flags);
 	}
@@ -1611,7 +1611,7 @@ static int usbclass_setup(FAR struct usbdevclass_driver_s *driver, FAR struct us
 
 		case USB_REQ_GETCONFIGURATION: {
 			if (ctrl->type == USB_DIR_IN) {
-				*(FAR uint8_t *) ctrlreq->buf = priv->config;
+				*(FAR uint8_t *)ctrlreq->buf = priv->config;
 				ret = 1;
 			}
 		}
@@ -1633,7 +1633,7 @@ static int usbclass_setup(FAR struct usbdevclass_driver_s *driver, FAR struct us
 				if (index != PL2303_INTERFACEID) {
 					ret = -EDOM;
 				} else {
-					*(FAR uint8_t *) ctrlreq->buf = PL2303_ALTINTERFACEID;
+					*(FAR uint8_t *)ctrlreq->buf = PL2303_ALTINTERFACEID;
 					ret = 1;
 				}
 			}
@@ -1684,7 +1684,7 @@ static int usbclass_setup(FAR struct usbdevclass_driver_s *driver, FAR struct us
 		if ((ctrl->type & USB_REQ_RECIPIENT_MASK) == USB_REQ_RECIPIENT_DEVICE) {
 			if (ctrl->req == PL2303_RWREQUEST) {
 				if ((ctrl->type & USB_DIR_IN) != 0) {
-					*(FAR uint32_t *) ctrlreq->buf = 0xdeadbeef;
+					*(FAR uint32_t *)ctrlreq->buf = 0xdeadbeef;
 					ret = 4;
 				} else {
 					ret = 0;

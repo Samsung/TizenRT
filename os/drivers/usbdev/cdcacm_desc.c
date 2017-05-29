@@ -298,7 +298,7 @@ static const struct cfgdecsc_group_s g_cfggroup[CDCACM_CFGGROUP_SIZE] = {
 	{
 		USB_SIZEOF_CFGDESC,		/* 1. Configuration descriptor */
 		0,
-		(FAR void *) &g_cfgdesc
+		(FAR void *)&g_cfgdesc
 	},
 
 	/* If the serial device is part of a composite device, then it should
@@ -311,48 +311,48 @@ static const struct cfgdecsc_group_s g_cfggroup[CDCACM_CFGGROUP_SIZE] = {
 	{
 		USB_SIZEOF_IADDESC,		/* 1. Interface association descriptor */
 		0,
-		(FAR void *) &g_iaddesc
+		(FAR void *)&g_iaddesc
 	},
 #endif
 	{
 		USB_SIZEOF_IFDESC,			/* 2. Notification interface */
 		0,
-		(FAR void *) &g_notifdesc
+		(FAR void *)&g_notifdesc
 	},
 	{
 		SIZEOF_HDR_FUNCDESC,		/* 3. Header functional descriptor */
 		0,
-		(FAR void *) &g_funchdr
+		(FAR void *)&g_funchdr
 	},
 	{
 		SIZEOF_ACM_FUNCDESC,		/* 4. ACM functional descriptor */
 		0,
-		(FAR void *) &g_acmfunc
+		(FAR void *)&g_acmfunc
 	},
 	{
 		SIZEOF_UNION_FUNCDESC(1),	/* 5. Union functional descriptor */
 		0,
-		(FAR void *) &g_unionfunc
+		(FAR void *)&g_unionfunc
 	},
 	{
 		USB_SIZEOF_EPDESC,			/* 6. Interrupt IN endpoint descriptor */
 		CONFIG_CDCACM_EPINTIN_HSSIZE,
-		(FAR void *) &g_epintindesc
+		(FAR void *)&g_epintindesc
 	},
 	{
 		USB_SIZEOF_IFDESC,			/* 7. Data interface descriptor */
 		0,
-		(FAR void *) &g_dataifdesc
+		(FAR void *)&g_dataifdesc
 	},
 	{
 		USB_SIZEOF_EPDESC,			/* 8. Bulk OUT endpoint descriptor */
 		CONFIG_CDCACM_EPBULKOUT_HSSIZE,
-		(FAR void *) &g_epbulkoutdesc
+		(FAR void *)&g_epbulkoutdesc
 	},
 	{
 		USB_SIZEOF_EPDESC,			/* 9. Bulk OUT endpoint descriptor */
 		CONFIG_CDCACM_EPBULKIN_HSSIZE,
-		(FAR void *) &g_epbulkindesc
+		(FAR void *)&g_epbulkindesc
 	}
 };
 

@@ -191,7 +191,7 @@ static ssize_t i2c_uioread(FAR struct file *filep, FAR char *buffer, size_t bufl
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct i2c_dev_s *dev = inode->i_private;
 
-	return I2C_READ(dev, (uint8_t *) buffer, buflen);
+	return I2C_READ(dev, (uint8_t *)buffer, buflen);
 }
 
 /****************************************************************************
@@ -208,7 +208,7 @@ static ssize_t i2c_uiowrite(FAR struct file *filep, FAR const char *buffer, size
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct i2c_dev_s *dev = inode->i_private;
 
-	return I2C_WRITE(dev, (uint8_t *) buffer, buflen);
+	return I2C_WRITE(dev, (uint8_t *)buffer, buflen);
 }
 
 /****************************************************************************
@@ -249,7 +249,7 @@ static int i2c_uioctrl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 
 	case I2C_FREQUENCY:
-		freq = *((uint32_t *) arg);
+		freq = *((uint32_t *)arg);
 		ret = I2C_SETFREQUENCY(dev, freq);
 		break;
 

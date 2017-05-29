@@ -1034,7 +1034,7 @@ static int hostapd_get_aid(struct hostapd_data *hapd, struct sta_info *sta)
 	}
 
 	for (i = 0; i < AID_WORDS; i++) {
-		if (hapd->sta_aid[i] == (u32) - 1) {
+		if (hapd->sta_aid[i] == (u32)-1) {
 			continue;
 		}
 		for (j = 0; j < 32; j++) {

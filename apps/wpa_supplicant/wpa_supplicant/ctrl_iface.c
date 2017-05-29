@@ -4889,7 +4889,7 @@ static int p2p_ctrl_serv_disc_req(struct wpa_supplicant *wpa_s, char *cmd, char 
 			svc_info = pos;
 		}
 
-		ref = wpas_p2p_sd_request_asp(wpa_s, dst, (u8) id, svc_str, svc_info);
+		ref = wpas_p2p_sd_request_asp(wpa_s, dst, (u8)id, svc_str, svc_info);
 	} else {
 		len = os_strlen(pos);
 		if (len & 1) {
@@ -5165,7 +5165,7 @@ static int p2p_ctrl_service_add_asp(struct wpa_supplicant *wpa_s, u8 replace, ch
 		}
 	}
 
-	return wpas_p2p_service_add_asp(wpa_s, auto_accept, adv_id, adv_str, (u8) svc_state, (u16) config_methods, svc_info);
+	return wpas_p2p_service_add_asp(wpa_s, auto_accept, adv_id, adv_str, (u8)svc_state, (u16)config_methods, svc_info);
 }
 
 static int p2p_ctrl_service_add(struct wpa_supplicant *wpa_s, char *cmd)
@@ -7237,7 +7237,7 @@ void wpas_data_test_rx(void *ctx, const u8 *src_addr, const u8 *buf, size_t len)
 	}
 
 	for (i = 0; i < HWSIM_IP_LEN - sizeof(*ip); i++) {
-		if (*pos != (u8) i) {
+		if (*pos != (u8)i) {
 			return;
 		}
 		pos++;

@@ -100,7 +100,7 @@ int i2c_writeread(FAR struct i2c_dev_s *dev, FAR const struct i2c_config_s *conf
 
 	msg[0].addr = config->address;
 	msg[0].flags = flags;
-	msg[0].buffer = (FAR uint8_t *) wbuffer;	/* Override const */
+	msg[0].buffer = (FAR uint8_t *)wbuffer;	/* Override const */
 	msg[0].length = wbuflen;
 
 	/* The second is either a read (rbuflen > 0) or a write (rbuflen < 0) with

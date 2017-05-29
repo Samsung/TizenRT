@@ -375,7 +375,7 @@ static void spi_exchange(FAR struct spi_dev_s *dev, FAR const void *txbuffer, FA
 {
 	FAR struct spi_bitbang_s *priv = (FAR struct spi_bitbang_s *)dev;
 	FAR const uint8_t *src = (FAR const uint8_t *)txbuffer;
-	FAR uint8_t *dest = (FAR uint8_t *) rxbuffer;
+	FAR uint8_t *dest = (FAR uint8_t *)rxbuffer;
 	uint16_t dataout;
 	uint16_t datain;
 

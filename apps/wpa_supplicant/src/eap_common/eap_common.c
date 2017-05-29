@@ -89,7 +89,7 @@ const u8 *eap_hdr_validate(int vendor, EapType eap_type, const struct wpabuf *ms
 		pos += 3;
 		exp_type = WPA_GET_BE32(pos);
 		pos += 4;
-		if (exp_vendor != vendor || exp_type != (u32) eap_type) {
+		if (exp_vendor != vendor || exp_type != (u32)eap_type) {
 			wpa_printf(MSG_INFO, "EAP: Invalid expanded frame " "type");
 			return NULL;
 		}

@@ -4587,7 +4587,7 @@ static int i802_set_rts(void *priv, int rts)
 	u32 val;
 
 	if (rts >= 2347) {
-		val = (u32) - 1;
+		val = (u32)-1;
 	} else {
 		val = rts;
 	}
@@ -4614,7 +4614,7 @@ static int i802_set_frag(void *priv, int frag)
 	u32 val;
 
 	if (frag >= 2346) {
-		val = (u32) - 1;
+		val = (u32)-1;
 	} else {
 		val = frag;
 	}

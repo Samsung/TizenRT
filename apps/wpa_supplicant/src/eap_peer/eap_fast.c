@@ -777,7 +777,7 @@ static int eap_fast_parse_pac_info(struct eap_fast_pac *entry, int type, u8 *pos
 		 */
 		lifetime = WPA_GET_BE32(pos);
 		os_get_time(&now);
-		wpa_printf(MSG_DEBUG, "EAP-FAST: PAC-Info - CRED_LIFETIME %d " "(%d days)", lifetime, (lifetime - (u32) now.sec) / 86400);
+		wpa_printf(MSG_DEBUG, "EAP-FAST: PAC-Info - CRED_LIFETIME %d " "(%d days)", lifetime, (lifetime - (u32)now.sec) / 86400);
 		break;
 	case PAC_TYPE_A_ID:
 		wpa_hexdump_ascii(MSG_DEBUG, "EAP-FAST: PAC-Info - A-ID", pos, len);

@@ -913,7 +913,7 @@ static void usbhost_hub_event(FAR void *arg)
 	if (!priv->disconnected) {
 		/* Wait for the next hub event */
 
-		ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *) priv->buffer, INTIN_BUFSIZE, usbhost_callback, hubclass);
+		ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *)priv->buffer, INTIN_BUFSIZE, usbhost_callback, hubclass);
 		if (ret < 0) {
 			udbg("ERROR: Failed to queue interrupt endpoint: %d\n", ret);
 		}
@@ -980,7 +980,7 @@ static void usbhost_disconnect_event(FAR void *arg)
 
 	/* Free the allocated control request */
 
-	DRVR_FREE(hport->drvr, (FAR uint8_t *) priv->ctrlreq);
+	DRVR_FREE(hport->drvr, (FAR uint8_t *)priv->ctrlreq);
 
 	/* Free buffer for status change (INT) endpoint */
 
@@ -1201,7 +1201,7 @@ static FAR struct usbhost_class_s *usbhost_create(FAR struct usbhost_hubport_s *
 
 	/* Allocate memory for control requests */
 
-	ret = DRVR_ALLOC(hport->drvr, (FAR uint8_t **) & priv->ctrlreq, &maxlen);
+	ret = DRVR_ALLOC(hport->drvr, (FAR uint8_t **)&priv->ctrlreq, &maxlen);
 	if (ret < 0) {
 		udbg("ERROR: DRVR_ALLOC failed: %d\n", ret);
 		goto errout_with_hub;
@@ -1323,7 +1323,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *hubclass, FAR const uint8
 
 	/* Begin monitoring of port status change events */
 
-	ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *) priv->buffer, INTIN_BUFSIZE, usbhost_callback, hubclass);
+	ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *)priv->buffer, INTIN_BUFSIZE, usbhost_callback, hubclass);
 	if (ret < 0) {
 		udbg("ERROR: DRVR_ASYNCH failed: %d\n", ret);
 		(void)usbhost_hubpwr(priv, hport, false);
