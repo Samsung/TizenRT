@@ -131,6 +131,7 @@ struct http_client_ssl_config_t g_config = {
 	sizeof(c_ca_crt_rsa), sizeof(c_cli_crt_rsa), sizeof(c_cli_key_rsa), 2
 };
 
+static int g_running;
 static int g_https;
 static int g_async;
 static int g_testentity;
@@ -343,9 +344,17 @@ int webclient_main(int argc, char *argv[])
 	pthread_t tid;
 	struct webclient_input arg;
 
+	if (g_running) {
+		printf("Previous request is in process, Please wait.\n");
+		return -1;
+	} else {
+		g_running = 1;
+	}
+
 	status = pthread_attr_init(&attr);
 	if (status != 0) {
 		printf("fail to start webclient\n");
+		g_running = 0;
 		return -1;
 	}
 
@@ -360,11 +369,13 @@ int webclient_main(int argc, char *argv[])
 	status = pthread_create(&tid, &attr, webclient_cb, &arg);
 	if (status < 0) {
 		printf("fail to start webclient\n");
+		g_running = 0;
 		return -1;
 	}
 	pthread_setname_np(tid, "webclient");
 
 	pthread_join(tid, NULL);
 
+	g_running = 0;
 	return 0;
 }
