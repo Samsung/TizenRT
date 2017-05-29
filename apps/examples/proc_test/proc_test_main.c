@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <ctype.h>
@@ -33,9 +34,9 @@
 #define PROC_MOUNTPOINT "/proc"
 
 #define PROC_BUFFER_LEN 128
+#define PROC_FILEPATH_LEN CONFIG_PATH_MAX
 #define TASK_STACK_SIZE 512
-
-#define INTERVAL_UPDATE_SEC 2
+#define INTERVAL_UPDATE_SEC 10
 
 typedef int (*direntry_handler_t)(FAR const char *dirpath,
 								  FAR struct dirent *entryp,
@@ -44,13 +45,23 @@ typedef int (*direntry_handler_t)(FAR const char *dirpath,
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-char g_proc_iobuffer[PROC_BUFFER_LEN];
+
+const char *g_proc_pid_entries[] = {
+	"status",
+	"cmdline",
+#ifdef CONFIG_SCHED_CPULOAD
+	"loadavg",
+#endif
+	"stack",
+	"group/status",
+	"group/fd",
+};
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
-int proc_read_entry(direntry_handler_t handler)
+int foreach_proc_entry(direntry_handler_t handler)
 {
 	DIR *dirp;
 	FAR const char *dirpath = PROC_MOUNTPOINT;
@@ -73,8 +84,6 @@ int proc_read_entry(direntry_handler_t handler)
 			break;
 		}
 
-		printf("");
-
 		/* Call the handler with this directory entry */
 		if (handler(dirpath, entryp, NULL) < 0) {
 			/* The handler reported a problem */
@@ -83,7 +92,6 @@ int proc_read_entry(direntry_handler_t handler)
 		}
 	}
 	closedir(dirp);
-	printf("===================================\n");
 	return ret;
 }
 
@@ -91,262 +99,97 @@ int readfile(FAR const char *filepath)
 {
 	int fd;
 	ssize_t nread;
+	char buffer[PROC_BUFFER_LEN];
 
 	nread = 0;
 
 	/* Open the file */
 	fd = open(filepath, O_RDONLY);
 	if (fd < 0) {
-		printf("Open error : %s\n", filepath);
+		printf("Failed to open %s\n", filepath);
 		return ERROR;
 	}
 
 	/* Initialize buffer for read operation */
-	memset(g_proc_iobuffer, 0, PROC_BUFFER_LEN);
+	memset(buffer, 0, PROC_BUFFER_LEN);
 
-	nread = read(fd, g_proc_iobuffer, PROC_BUFFER_LEN - 1);
-	if (nread < 0) {
-		/* Read error */
-		int errcode = errno;
-		DEBUGASSERT(errcode > 0);
-		close(fd);
-		return ERROR;
-	}
+	do {
+		nread = read(fd, buffer, PROC_BUFFER_LEN - 1);
+		if (nread < 0) {
+			/* Read error */
+			printf("Failed to read : %d\n", errno);
+			close(fd);
+			return ERROR;
+		}
+		buffer[nread] = '\0';
+		printf("%s", buffer);
+	} while (nread == PROC_BUFFER_LEN - 1);
 
-	g_proc_iobuffer[nread] = '\0';
+	printf("\n");
 
 	/* Close the file and return. */
 	close(fd);
 	return nread;
 }
 
-static int proc_pid(FAR const char *dirpath, FAR struct dirent *entryp, FAR void *pvarg)
+static int read_proc_entry(FAR const char *dirpath, FAR struct dirent *entryp, FAR void *pvarg)
 {
-	FAR char *filepath;
+	/* This function is for showing all file entries of /proc like uptime, version */
+	int ret;
+	char filepath[PROC_FILEPATH_LEN];
+
+	if (DIRENT_ISDIRECTORY(entryp->d_type)) {
+		/* Is a directory... skip this entry */
+		return OK;
+	}
+
+	snprintf(filepath, PROC_FILEPATH_LEN, "%s/%s", PROC_MOUNTPOINT, entryp->d_name);
+
+	printf("%s : ", entryp->d_name);
+
+	ret = readfile(filepath);
+	if (ret < 0) {
+		printf("Failed to read %s\n", filepath);
+		return ERROR;
+	}
+	printf("----------------------------------------\n");
+
+	return OK;
+}
+
+static int read_pid_entry(FAR const char *dirpath, FAR struct dirent *entryp, FAR void *pvarg)
+{
+	/* This function is for showing all file entries of /proc/[pid] */
 	int ret;
 	int i;
+	char filepath[PROC_FILEPATH_LEN];
 
-	/* Task/thread entries in the /proc directory will all be (1) directories with
-	 * (2) all numeric names.
-	 */
 	if (!DIRENT_ISDIRECTORY(entryp->d_type)) {
 		/* Not a directory... skip this entry */
 		return OK;
 	}
 
-	/* Check each character in the name */
 	for (i = 0; i < NAME_MAX && entryp->d_name[i] != '\0'; i++) {
 		if (!isdigit(entryp->d_name[i])) {
 			/* Name contains something other than a numeric character */
 			return OK;
 		}
 	}
-
-	/* Get the task status */
 
 	printf("[TASK %s] \n", entryp->d_name);
 
-	filepath = NULL;
-	ret = asprintf(&filepath, "%s/%s/status", dirpath, entryp->d_name);
-	if (ret == ERROR) {
-		printf("Error : asprintf\n");
-		return ERROR;
-	}
-	ret = readfile(filepath);
-	if (ret >= 0) {
-		printf("%s\n", g_proc_iobuffer);
-	}
-#ifdef CONFIG_SCHED_CPULOAD
-
-	/* Get the CPU load */
-	filepath = NULL;
-	ret = asprintf(&filepath, "%s/%s/loadavg", dirpath, entryp->d_name);
-	if (ret == ERROR) {
-		printf("Error : asprintf\n");
-		return ERROR;
-	}
-	ret = readfile(filepath);
-	if (ret >= 0) {
-		printf("loadavg : %s\n", g_proc_iobuffer);
-	}
-#endif
-
-	/* Read the task/tread command line */
-	filepath = NULL;
-	ret = asprintf(&filepath, "%s/%s/cmdline", dirpath, entryp->d_name);
-	if (ret == ERROR) {
-		printf("Error : asprintf\n");
-		return ERROR;
-	}
-	ret = readfile(filepath);
-	if (ret >= 0) {
-		printf("cmdline  : %s", g_proc_iobuffer);
-	}
-
-	/* Read the stack */
-	filepath = NULL;
-	ret = asprintf(&filepath, "%s/%s/stack", dirpath, entryp->d_name);
-	if (ret == ERROR) {
-		printf("Error : asprintf\n");
-		return ERROR;
-	}
-	ret = readfile(filepath);
-	if (ret >= 0) {
-		printf("%s\n", g_proc_iobuffer);
-	}
-
-	/* Read the Group status */
-	filepath = NULL;
-	ret = asprintf(&filepath, "%s/%s/group/status", dirpath, entryp->d_name);
-	if (ret == ERROR) {
-		printf("Error : asprintf\n");
-		return ERROR;
-	}
-	ret = readfile(filepath);
-	if (ret >= 0) {
-		printf("Group status :\n");
-		printf("%s\n", g_proc_iobuffer);
-	}
-
-	/* Read the Group fd */
-	filepath = NULL;
-	ret = asprintf(&filepath, "%s/%s/group/fd", dirpath, entryp->d_name);
-	if (ret == ERROR) {
-		printf("Error : asprintf\n");
-		return ERROR;
-	}
-	ret = readfile(filepath);
-	if (ret >= 0) {
-		printf("Group File decriptor :\n");
-		printf("%s\n", g_proc_iobuffer);
-	}
-
-	return OK;
-}
-
-#ifdef CONFIG_SCHED_CPULOAD
-static int proc_cpu(FAR const char *dirpath, FAR struct dirent *entryp, FAR void *pvarg)
-{
-	FAR char *filepath;
-	int ret;
-	int i;
-
-	/* Task/thread entries in the /proc directory will all be (1) directories
-	 * with (2) all numeric names.
-	 */
-	if (!DIRENT_ISDIRECTORY(entryp->d_type)) {
-		/* Not a directory... skip this entry */
-		return OK;
-	}
-
-	/* Check each character in the name */
-	for (i = 0; i < NAME_MAX && entryp->d_name[i] != '\0'; i++) {
-		if (!isdigit(entryp->d_name[i])) {
-			/* Name contains something other than a numeric character */
-			return OK;
+	for (i = 0; i < sizeof(g_proc_pid_entries) / sizeof(g_proc_pid_entries[0]); i++) {
+		/* Read values from entries of /proc/[pid] */
+		snprintf(filepath, PROC_FILEPATH_LEN, "%s/%s/%s", PROC_MOUNTPOINT, entryp->d_name, g_proc_pid_entries[i]);
+		ret = readfile(filepath);
+		if (ret < 0) {
+			printf("Failed to read %s\n", filepath);
+			return ERROR;
 		}
 	}
-
-	/* Read the CPU load */
-	filepath = NULL;
-	ret = asprintf(&filepath, "%s/%s/loadavg", dirpath, entryp->d_name);
-	if (ret == ERROR) {
-		printf("Error : asprintf\n");
-		return ERROR;
-	}
-	ret = readfile(filepath);
-	if (ret >= 0) {
-		printf("%6s  ", g_proc_iobuffer);
-	}
-
-	/* Read the task/tread command line */
-	filepath = NULL;
-	ret = asprintf(&filepath, "%s/%s/cmdline", dirpath, entryp->d_name);
-	if (ret == ERROR) {
-		printf("Error : asprintf\n");
-		return ERROR;
-	}
-	ret = readfile(filepath);
-	if (ret >= 0) {
-		printf("%s ", g_proc_iobuffer);
-	}
+	printf("----------------------------------\n");
 
 	return OK;
-}
-#endif
-
-#if defined(CONFIG_SCHED_CPULOAD) && !defined(CONFIG_FS_PROCFS_EXCLUDE_CPULOAD)
-int proc_cpuload_test()
-{
-	char *filepath = NULL;
-	int ret;
-
-	ret = asprintf(&filepath, "%s/cpuload", PROC_MOUNTPOINT);
-
-	if (ret == ERROR) {
-		printf("Error : asprintf\n");
-		return ERROR;
-	}
-	ret = readfile(filepath);
-	if (ret >= 0) {
-		printf("======= CPU load Information =======\n");
-		printf("CPU load : %s\n", g_proc_iobuffer);
-		printf("===================================\n");
-	}
-	return OK;
-}
-#endif
-
-#ifndef CONFIG_FS_PROCFS_EXCLUDE_UPTIME
-int proc_uptime_test(void)
-{
-	char *filepath = NULL;
-	int ret;
-
-	ret = asprintf(&filepath, "%s/uptime", PROC_MOUNTPOINT);
-
-	if (ret == ERROR) {
-		printf("Error : asprintf\n");
-		return ERROR;
-	}
-	ret = readfile(filepath);
-	if (ret >= 0) {
-		printf("======= Uptime Information =======\n");
-		printf("uptime : %s\n", g_proc_iobuffer);
-		printf("===================================\n");
-	}
-	return OK;
-}
-#endif
-
-#ifndef CONFIG_FS_PROCFS_EXCLUDE_VERSION
-int proc_version_test(void)
-{
-	char *filepath = NULL;
-	int ret;
-
-	ret = asprintf(&filepath, "%s/version", PROC_MOUNTPOINT);
-
-	if (ret == ERROR) {
-		printf("Error : asprintf\n");
-		return ERROR;
-	}
-	ret = readfile(filepath);
-	if (ret >= 0) {
-		printf("======= Version Information =======\n");
-		printf("%s\n", g_proc_iobuffer);
-		printf("===================================\n");
-	}
-	return OK;
-}
-#endif
-
-static int my_task(int argc, char *argv[])
-{
-	while (1) {
-		sleep(10);
-	}
-	return 0;
 }
 
 /****************************************************************************
@@ -363,34 +206,15 @@ int proc_test_main(int argc, char *argv[])
 	printf("Proc Test START!!\n");
 
 	ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
-	if (ret >= 0) {
-		printf("Error : Failed to mount procfs\n");
-	}
-
-	int pid;
-	pid = task_create("mytask", SCHED_PRIORITY_DEFAULT, TASK_STACK_SIZE,
-					  my_task, (char *const *)NULL);
-	if (pid == ENOMEM || pid < 0) {
-		printf("task create failed : %d\n", pid);
-	} else {
-		printf("task create succeed : %d\n", pid);
+	if (ret == ERROR && errno != EEXIST) {
+		printf("Failed to mount procfs : %d\n", errno);
+		return 0;
 	}
 
 	while (1) {
+		foreach_proc_entry(read_proc_entry);
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_PROCESS
-		proc_read_entry(proc_pid);
-#ifdef CONFIG_SCHED_CPULOAD
-		proc_read_entry(proc_cpu);
-#endif
-#endif
-#if defined(CONFIG_SCHED_CPULOAD) && !defined(CONFIG_FS_PROCFS_EXCLUDE_CPULOAD)
-		proc_cpuload_test();
-#endif
-#ifndef CONFIG_FS_PROCFS_EXCLUDE_UPTIME
-		proc_uptime_test();
-#endif
-#ifndef CONFIG_FS_PROCFS_EXCLUDE_VERSION
-		proc_version_test();
+		foreach_proc_entry(read_pid_entry);
 #endif
 		sleep(INTERVAL_UPDATE_SEC);
 	}
