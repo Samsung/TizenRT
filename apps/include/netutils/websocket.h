@@ -107,7 +107,7 @@
 /**
  * @brief Websocket accept server select() timeout value, msec.
  */
-#define WEBSOCKET_SERVER_CHECK_INTERVAL              (500)	//mili second
+#define WEBSOCKET_ACCEPT_TIMEOUT              (500)	//mili second
 /**
  * @brief Websocket accept server select() timeout limit, msec.
  */
@@ -115,6 +115,7 @@
 
 /**
  * @brief Websocket event handler select() timeout value, msec.
+		  Don't set this 0, it will be busy waiting.
  */
 #define WEBSOCKET_HANDLER_TIMEOUT                    (100)	//mili second
 
@@ -128,7 +129,7 @@
 #define WEBSOCKET_PING_INTERVAL                      (20 * 100)	//MSEC_PER_TICK
 
 /**
- * @brief The maximum amount of websocket messages to be stored in queue.
+ * @brief The maximum length of websocket messages to be stored in queue.
  */
 #define WEBSOCKET_MAX_LENGTH_QUEUE                      (100 * 1024)
 /**
@@ -137,7 +138,7 @@
 #define WEBSOCKET_MAX_NUMBER_QUEUE                      (20)
 
 /**
- * @brief The maximum amount of client to accept from server.
+ * @brief The maximum amount of client to be accepted in server.
  */
 #define WEBSOCKET_MAX_CLIENT                         (3)
 
@@ -149,7 +150,7 @@
 /**
  * @brief Enable and disable the Server name indication(SNI)
  */
-#define WEBSOCKET_CONF_CHECK_TLS_HOSTNAME            (0)   // 0- disable, 1- enable
+#define WEBSOCKET_CONF_CHECK_TLS_HOSTNAME            (0)	// 0- disable, 1- enable
 
 /*
  *  Pre-definition variables from wslay below.
@@ -484,10 +485,10 @@ websocket_return_t websocket_server_init(websocket_t *server);
  *        but users can change callbacks with this function.
  * @param[in] websocket websocket structure to store callbacks.
  * @param[in] cb callbacks structure pointer to change
- * @return none
+ * @return On success, return WEBSOCKET_SUCCESS. On failure, return values defined in websocket_return_t.
  * @since Tizen RT v1.0
  */
-void websocket_register_cb(websocket_t *websocket, websocket_cb_t *cb);
+websocket_return_t websocket_register_cb(websocket_t *websocket, websocket_cb_t *cb);
 
 /*
  * @brief websocket_queue_msg() queues a message into websocket context.
@@ -532,10 +533,10 @@ websocket_return_t websocket_queue_close(websocket_t *websocket, const char *clo
  *        websocket state are defined at websocket_state.
  * @param[in] websocket websocket structure.
  * @param[in] state websocket state.
- * @return none
+ * @return On success, return WEBSOCKET_SUCCESS. On failure, return values defined in websocket_return_t.
  * @since Tizen RT v1.0
  */
-void websocket_update_state(websocket_t *websocket, int state);
+websocket_return_t websocket_update_state(websocket_t *websocket, int state);
 
 /**
  * @brief websocket_set_error() sets an error number to websocket context.
@@ -544,10 +545,10 @@ void websocket_update_state(websocket_t *websocket, int state);
  *        After this function triggered, websocket context will be closed.
  * @param[in] websocket websocket structure manages websocket context.
  * @param[in] val error value to be set.
- * @return none
+ * @return On success, return WEBSOCKET_SUCCESS. On failure, return values defined in websocket_return_t.
  * @since Tizen RT v1.0
  */
-void websocket_set_error(websocket_t *websocket, int val);
+websocket_return_t websocket_set_error(websocket_t *websocket, int val);
 
 #undef EXTERN
 #undef EXTERN
