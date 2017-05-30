@@ -62,8 +62,7 @@
 
 int bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
-	int result = lwip_bind(s, name, namelen);
-	return result;
+	return lwip_bind(s, name, namelen);
 }
 
 int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
@@ -77,8 +76,7 @@ int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 
 int shutdown(int s, int how)
 {
-	int result = lwip_shutdown(s, how);
-	return result;
+	return lwip_shutdown(s, how);
 }
 
 int closesocket(int s)
@@ -101,32 +99,27 @@ int connect(int s, const struct sockaddr *name, socklen_t namelen)
 
 int getsockname(int s, struct sockaddr *name, socklen_t *namelen)
 {
-	int result = lwip_getsockname(s, name, namelen);
-	return result;
+	return lwip_getsockname(s, name, namelen);
 }
 
 int getpeername(int s, struct sockaddr *name, socklen_t *namelen)
 {
-	int result = lwip_getpeername(s, name, namelen);
-	return result;
+	return lwip_getpeername(s, name, namelen);
 }
 
 int setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen)
 {
-	int result = lwip_setsockopt(s, level, optname, optval, optlen);
-	return result;
+	return lwip_setsockopt(s, level, optname, optval, optlen);
 }
 
 int getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen)
 {
-	int result = lwip_getsockopt(s, level, optname, optval, optlen);
-	return result;
+	return lwip_getsockopt(s, level, optname, optval, optlen);
 }
 
 int listen(int s, int backlog)
 {
-	int result = lwip_listen(s, backlog);
-	return result;
+	return lwip_listen(s, backlog);
 }
 
 int recv(int s, void *mem, size_t len, int flags)
@@ -167,8 +160,7 @@ int sendto(int s, const void *data, size_t size, int flags, const struct sockadd
 
 int socket(int domain, int type, int protocol)
 {
-	int result = lwip_socket(domain, type, protocol);
-	return result;
+	return lwip_socket(domain, type, protocol);
 }
 
 #ifdef CONFIG_DISABLE_POLL
@@ -184,8 +176,7 @@ int select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset, st
 
 int ioctlsocket(int s, long cmd, void *argp)
 {
-	int result = lwip_ioctl(s, cmd, argp);
-	return result;
+	return lwip_ioctl(s, cmd, argp);
 }
 
 #endif

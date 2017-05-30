@@ -141,14 +141,14 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 		LWIP_DEBUGF(SYS_DEBUG, ("Queue Full, Wait until gets free\n"));
 	}
 	while (tmp == mbox->front) {
-		if (status == SYS_ARCH_CANCELED) {
-			return;
-		}
 		mbox->wait_send++;
 		sys_sem_signal(&(mbox->mutex));
 		sys_arch_sem_wait(&(mbox->mail), 0);
 		status = sys_arch_sem_wait(&(mbox->mutex), 0);
 		mbox->wait_send--;
+		if (status == SYS_ARCH_CANCELED) {
+			return;
+		}
 	}
 
 	mbox->msgs[mbox->rear] = msg;
@@ -262,10 +262,6 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
 	/* wait while the queue is empty */
 	while (mbox->front == mbox->rear) {
-		if (status == SYS_ARCH_CANCELED) {
-			return SYS_ARCH_CANCELED;
-		}
-
 		mbox->wait_fetch++;
 		sys_sem_signal(&(mbox->mutex));
 
@@ -286,6 +282,9 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
 		status = sys_arch_sem_wait(&(mbox->mutex), 0);
 		mbox->wait_fetch--;
+		if (status == SYS_ARCH_CANCELED) {
+			return SYS_ARCH_CANCELED;
+		}		
 	}
 
 	if (msg != NULL) {
