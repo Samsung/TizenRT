@@ -129,6 +129,13 @@ ifeq ($(CONFIG_S5J_ADC),y)
 CHIP_CSRCS += s5j_adc.c
 endif
 
+ifeq ($(CONFIG_S5J_DMA),y)
+CHIP_CSRCS += s5j_dma.c
+CHIP_CSRCS += s5j_dma_m2m_sb_4B_x256.c
+CHIP_CSRCS += s5j_dma_m2p_sb_4B_x256.c
+CHIP_CSRCS += s5j_dma_p2m_sb_4B_x256.c
+endif
+
 ifeq ($(CONFIG_S5J_I2C),y)
 CHIP_CSRCS += s5j_i2c.c
 endif

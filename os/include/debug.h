@@ -632,7 +632,6 @@ Once LOGM is approved, each module should have its own index
 #define ttdbg(format, ...)
 #endif
 
-
 #else							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Variadic macros NOT supported */
