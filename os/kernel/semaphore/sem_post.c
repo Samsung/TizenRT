@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,91 +184,6 @@ int sem_post(FAR sem_t *sem)
 		sem_restorebaseprio(stcb, sem);
 		sched_unlock();
 #endif
-		ret = OK;
-
-		/* Interrupts may now be enabled. */
-
-		irqrestore(saved_state);
-	} else {
-		set_errno(EINVAL);
-	}
-
-	return ret;
-}
-
-/****************************************************************************
- * Name: sem_post_from_isr
- *
- * Description:
- *   When an interrupt handler has finished with a semaphore, it will call
- *   sem_post_from_isr(). This function unlocks the semaphore referenced by sem
- *   by performing the semaphore unlock operation on that semaphore.
- *   This function should have nothing to do with the priority inheritance.
- *
- *   If the semaphore value resulting from this operation is positive, then
- *   no tasks were blocked waiting for the semaphore to become unlocked; the
- *   semaphore is simply incremented.
- *
- *   If the value of the semaphore resulting from this operation is zero,
- *   then one of the tasks blocked waiting for the semaphore shall be
- *   allowed to return successfully from its call to sem_wait_for_isr().
- *
- * Parameters:
- *   sem - Semaphore descriptor
- *
- * Return Value:
- *   0 (OK) or -1 (ERROR) if unsuccessful
- *
- * Assumptions:
- *   This function may be called from an interrupt handler.
- *
- ****************************************************************************/
-
-int sem_post_from_isr(FAR sem_t *sem)
-{
-	FAR struct tcb_s *stcb = NULL;
-	irqstate_t saved_state;
-	int ret = ERROR;
-
-	/* Make sure we were supplied with a valid semaphore. */
-
-	if (sem) {
-		/* The following operations must be performed with interrupts
-		 * disabled because sem_post() may be called from an interrupt
-		 * handler.
-		 */
-
-		saved_state = irqsave();
-
-		/* Perform the semaphore unlock operation. */
-
-		ASSERT(sem->semcount < SEM_VALUE_MAX);
-		sem->semcount++;
-
-		/* If the result of of semaphore unlock is non-positive, then
-		 * there must be some task waiting for the semaphore.
-		 */
-
-		if (sem->semcount <= 0) {
-			/* Check if there are any tasks in the waiting for semaphore
-			 * task list that are waiting for this semaphore. This is a
-			 * prioritized list so the first one we encounter is the one
-			 * that we want.
-			 */
-
-			for (stcb = (FAR struct tcb_s *)g_waitingforsemaphore.head; (stcb && stcb->waitsem != sem); stcb = stcb->flink) ;
-
-			if (stcb) {
-				/* It is, let the task take the semaphore */
-
-				stcb->waitsem = NULL;
-
-				/* Restart the waiting task. */
-
-				up_unblock_task(stcb);
-			}
-		}
-
 		ret = OK;
 
 		/* Interrupts may now be enabled. */
