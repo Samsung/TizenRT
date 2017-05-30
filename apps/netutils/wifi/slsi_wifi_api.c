@@ -83,6 +83,18 @@ extern void printf_encode(char *txt, size_t maxlen, const u8 *data, size_t len);
 #define EPRINT(a, ...) (void)0
 #endif							//CONFIG_DEBUG_WLAN_API_ERROR
 
+
+#ifndef CONFIG_WPA_SUPPLICANT_ENTRYPOINT
+#error CONFIG_WPA_SUPPLICANT_ENTRYPOINT must be defined
+#endif
+
+#ifndef CONFIG_WPA_SUPPLICANT_PRIORITY
+#error CONFIG_WPA_SUPPLICANT_PRIORITY must be defined
+#endif
+
+#ifndef CONFIG_WPA_SUPPLICANT_STACKSIZE
+#error CONFIG_WPA_SUPPLICANT_STACKSIZE must be defined
+#endif
 // Enable DEBUG_SLEEP to allow sleeps and print out during run - can only be enabled manually
 #define SLSI_WIFI_API_DEBUG_SLEEP       0
 
@@ -170,6 +182,7 @@ void slsi_demo_app_sleep(int seconds, char *str)
 #define WPA_VALUE_FREQ                  "freq="
 #define WPA_VALUE_FREQUENCY             "frequency="
 #define WPA_VALUE_REASON                "reason="
+#define WPA_VALUE_REASON_CODE           "reason_code "
 #define WPA_VALUE_LOACLLY_GENERATED     "locally_generated="
 #define WPA_VALUE_IE                    "ie="
 
@@ -1025,20 +1038,6 @@ void slsi_sta_disconnect_event_handler(const char *str, slsi_reason_t *reason)
 	VPRINT("SLSI_API send link_down\n");
 }
 
-static void slsi_ap_disconnect_event_handler(const char *result)
-{
-	slsi_reason_t reason;
-	memset(&reason, 0, sizeof(slsi_reason_t));
-	result += sizeof(AP_STA_DISCONNECTED) - 1;	// Exclude null-termination
-	if (strlen(result) >= 17) {	// bssid is a 17 character string
-		memcpy(&(reason.bssid), result, 17);
-	}
-	if (g_link_down) {
-		VPRINT("SLSI_API slsi_handle_disconnect send link_down\n");
-		g_link_down(&reason);
-	}
-}
-
 #ifdef CONFIG_SCSC_WLAN_AUTO_RECOVERY
 static void slsi_clean_recover(void)
 {
@@ -1316,14 +1315,13 @@ void slsi_monitor_thread_handler(void *param)
 					break;
 				case SLSI_WIFIAPI_STATE_AP_ENABLED:
 					if (slsi_event_recieved(result, AP_STA_CONNECTED)) {
-						result += sizeof(AP_STA_CONNECTED) - 1;
-						if (strlen(result) >= 17) {	// bssid is a 17 character string
-							memcpy(&(reason.bssid), result, 17);	// Exclude null-termination
-						}
 						g_num_sta_connected++;
 						if (g_num_sta_connected == 1) {
 							g_state = SLSI_WIFIAPI_STATE_AP_CONNECTED;
-
+						}
+						result += sizeof(AP_STA_CONNECTED) - 1;
+						if (strlen(result) >= 17) { // bssid is a 17 character string
+							memcpy(&(reason.bssid), result, 17); // Exclude null-termination
 						}
 						if (g_link_up) {
 							VPRINT("SLSI_API slsi_link_event_handler send link_up\n");
@@ -1339,9 +1337,18 @@ void slsi_monitor_thread_handler(void *param)
 						if (g_num_sta_connected == 0) {
 							g_state = SLSI_WIFIAPI_STATE_AP_ENABLED;
 						}
-						/* Always call slsi_ap_disconnect_event_handler() at the end of function
-						 * as link_down callback handler is called */
-						slsi_ap_disconnect_event_handler(result);
+						result += sizeof(AP_STA_DISCONNECTED) - 1; // Exclude null-termination
+						if (strlen(result) >= 17) {// bssid is a 17 character string
+							memcpy(&(reason.bssid), result, 17);
+						}
+						result = strstr(result, WPA_VALUE_REASON_CODE);
+						if (result != NULL) {
+							reason.reason_code = (uint32_t)strtol(result + strlen(WPA_VALUE_REASON_CODE), NULL, 10);
+						}
+						if (g_link_down) {
+							VPRINT("SLSI_API slsi_handle_disconnect send link_down\n");
+							g_link_down(&reason);
+						}
 					} else {
 						VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
 					}
@@ -1431,12 +1438,13 @@ void slsi_monitor_thread_handler(void *param)
 							free(g_network_id);
 							g_network_id = NULL;
 						}
+						// Release sem_wait after finished removing the network
+						VPRINT("Before post sem count %d\n", g_sem_disconnect.semcount);
+						sem_post(&g_sem_disconnect);
 						if (g_link_down) {
 							VPRINT("SLSI_API slsi_link_event_handler send link_down\n");
 							g_link_down(&reason);
 						}
-						// Release sem_wait after finished removing the network
-						sem_post(&g_sem_disconnect);
 						// TODO: clean join info for recovery
 					} else {
 						VPRINT("Info: Event not handled %s in current state %s\n", result, slsi_state_strings[g_state]);
@@ -1458,12 +1466,12 @@ void slsi_monitor_thread_handler(void *param)
 						pid_t r_task_id = -1;
 						int status = -1;
 						UNUSED(status);
+						DPRINT("Wait for supplicant task to terminate task id=%d \n", g_task);
 						r_task_id = waitpid(g_task, &status, NULL);
-						DPRINT("Wait for supplicant task to terminate\n");
+
 						if (r_task_id != g_task) {
 							DPRINT("    result: %d, status: %d\n", r_task_id, status);
 							VPRINT("Error waiting for task termination - sleep and continue \n");
-							usleep(100000);
 						}
 						// if monitor still running - stop running
 						if (g_running) {
@@ -2333,6 +2341,7 @@ static int8_t slsi_set_ap_network(slsi_ap_config_t *ap_config)
 				pbuf = slsi_send_request(tcommand, &result);
 				if (iehex != NULL) {
 					free(iehex);
+					iehex = NULL;
 				}
 				if (tcommand) {
 					free(tcommand);
@@ -2780,6 +2789,9 @@ static int8_t slsi_get_rssi(int8_t *rssi_value)
 		result = SLSI_STATUS_SUCCESS;
 	}
 errout:
+	if (pbuf) {
+		free(pbuf);
+	}
 	return result;
 }
 
@@ -2986,7 +2998,11 @@ static uint8_t slsi_start_supplicant(void)
 	if (SLSI_WIFI_API_DEBUG_SLEEP) {
 		slsi_demo_app_sleep(1, NULL);
 	}
-	g_task = task_create("WPA Supplicant", 100, 4096, wpa_supplicant_main, sup_argv);
+	g_task = task_create("WPA Supplicant",
+			CONFIG_WPA_SUPPLICANT_PRIORITY,
+			CONFIG_WPA_SUPPLICANT_STACKSIZE,
+			CONFIG_WPA_SUPPLICANT_ENTRYPOINT,
+			sup_argv);
 	sleep(1);
 
 	VPRINT("SLSI_API task_create called \n");
@@ -3178,6 +3194,7 @@ static void slsi_deinit(void)
 	g_scanning = 0;
 	g_state = SLSI_WIFIAPI_STATE_NOT_STARTED;
 	g_task = 0;
+	g_num_sta_connected = 0;
 
 	sem_destroy(&g_sem_terminate);
 	sem_destroy(&g_sem_ap_mode);
@@ -3510,6 +3527,15 @@ int8_t WiFiNetworkLeave(void)
 		if (slsi_is_connected()) {
 			g_state = SLSI_WIFIAPI_STATE_STA_DISCONNECTING;
 			result = slsi_leave_network();
+			if (result == SLSI_STATUS_SUCCESS) {
+				VPRINT("Before wait sem count %d\n", g_sem_disconnect.semcount);
+				int res = sem_wait(&g_sem_disconnect);
+				if (res) {
+					EPRINT("g_sem_disconnect sem_wait error %d\n", errno);
+				}
+			} else {
+				EPRINT("%s Error: disconnect. \n", __func__);
+			}
 		} else {
 			result = SLSI_STATUS_NOT_CONNECTED;
 			DPRINT("SLSI_API NetworkLeave - not connected\n");

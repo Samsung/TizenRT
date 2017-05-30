@@ -31,25 +31,31 @@ void wpas_notify_supplicant_deinitialized(struct wpa_global *global)
 
 int wpas_notify_iface_added(struct wpa_supplicant *wpa_s)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return 0;
 	}
+#endif
 
 	return 0;
 }
 
 void wpas_notify_iface_removed(struct wpa_supplicant *wpa_s)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_state_changed(struct wpa_supplicant *wpa_s, enum wpa_states new_state, enum wpa_states old_state)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 
 	if (new_state == WPA_COMPLETED) {
 		wpas_p2p_notif_connected(wpa_s);
@@ -66,123 +72,157 @@ void wpas_notify_state_changed(struct wpa_supplicant *wpa_s, enum wpa_states new
 
 void wpas_notify_disconnect_reason(struct wpa_supplicant *wpa_s)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_network_changed(struct wpa_supplicant *wpa_s)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_ap_scan_changed(struct wpa_supplicant *wpa_s)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_bssid_changed(struct wpa_supplicant *wpa_s)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_auth_changed(struct wpa_supplicant *wpa_s)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_network_enabled_changed(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_network_selected(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_network_request(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid, enum wpa_ctrl_req_type rtype, const char *default_txt)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_scanning(struct wpa_supplicant *wpa_s)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_scan_done(struct wpa_supplicant *wpa_s, int success)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_scan_results(struct wpa_supplicant *wpa_s)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 
 	wpas_wps_notify_scan_results(wpa_s);
 }
 
 void wpas_notify_wps_credential(struct wpa_supplicant *wpa_s, const struct wps_credential *cred)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_wps_event_m2d(struct wpa_supplicant *wpa_s, struct wps_event_m2d *m2d)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_wps_event_fail(struct wpa_supplicant *wpa_s, struct wps_event_fail *fail)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_wps_event_success(struct wpa_supplicant *wpa_s)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_wps_event_pbc_overlap(struct wpa_supplicant *wpa_s)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_network_added(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_persistent_group_added(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
@@ -210,9 +250,11 @@ void wpas_notify_network_removed(struct wpa_supplicant *wpa_s, struct wpa_ssid *
 
 void wpas_notify_bss_added(struct wpa_supplicant *wpa_s, u8 bssid[], unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 
 	/*	wpa_msg_ctrl(wpa_s, MSG_INFO, WPA_EVENT_BSS_ADDED "%u " MACSTR,
 			     id, MAC2STR(bssid));
@@ -221,9 +263,11 @@ void wpas_notify_bss_added(struct wpa_supplicant *wpa_s, u8 bssid[], unsigned in
 
 void wpas_notify_bss_removed(struct wpa_supplicant *wpa_s, u8 bssid[], unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 
 	/*	wpa_msg_ctrl(wpa_s, MSG_INFO, WPA_EVENT_BSS_REMOVED "%u " MACSTR,
 			     id, MAC2STR(bssid));
@@ -232,86 +276,110 @@ void wpas_notify_bss_removed(struct wpa_supplicant *wpa_s, u8 bssid[], unsigned 
 
 void wpas_notify_bss_freq_changed(struct wpa_supplicant *wpa_s, unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_bss_signal_changed(struct wpa_supplicant *wpa_s, unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_bss_privacy_changed(struct wpa_supplicant *wpa_s, unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_bss_mode_changed(struct wpa_supplicant *wpa_s, unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_bss_wpaie_changed(struct wpa_supplicant *wpa_s, unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_bss_rsnie_changed(struct wpa_supplicant *wpa_s, unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_bss_wps_changed(struct wpa_supplicant *wpa_s, unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_bss_ies_changed(struct wpa_supplicant *wpa_s, unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_bss_rates_changed(struct wpa_supplicant *wpa_s, unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_bss_seen(struct wpa_supplicant *wpa_s, unsigned int id)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_blob_added(struct wpa_supplicant *wpa_s, const char *name)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_blob_removed(struct wpa_supplicant *wpa_s, const char *name)
 {
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return;
 	}
+#endif
 }
 
 void wpas_notify_debug_level_changed(struct wpa_global *global)

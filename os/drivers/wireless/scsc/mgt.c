@@ -388,7 +388,7 @@ static u8 *slsi_mib_slice(struct slsi_dev *sdev, const u8 *data, u32 length, u32
 	u8 *mib_slice;
 	u32 mib_slice_len = 0;
 
-	SLSI_UNUSED_PARAMETER_NOT_DEBUG(sdev);
+	SLSI_UNUSED_PARAMETER(sdev);
 
 	if (!length) {
 		return NULL;
@@ -583,7 +583,7 @@ struct slsi_peer *slsi_peer_add(struct slsi_dev *sdev, struct netif *dev, u8 *pe
 
 static bool slsi_search_ies_for_qos_indicators(struct slsi_dev *sdev, u8 *ies, int ies_len)
 {
-	SLSI_UNUSED_PARAMETER_NOT_DEBUG(sdev);
+	SLSI_UNUSED_PARAMETER(sdev);
 
 	if (slsi_80211_find_ie(WLAN_EID_HT_CAPABILITY, ies, ies_len)) {
 		SLSI_DBG1(sdev, SLSI_T20_80211, "QOS enabled due to WLAN_EID_HT_CAPABILITY\n");
@@ -858,7 +858,7 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_ad
 		goto exit;
 	}
 
-	SLSI_NET_DBG3(dev, SLSI_MLME, "slsi_handle_disconnect(vif:%d, MAC:" SLSI_MAC_FORMAT ")\n", ndev_vif->ifnum, SLSI_MAC_STR(peer_address));
+	SLSI_NET_DBG3(dev, SLSI_MLME, "slsi_handle_disconnect(vif:%d, MAC:" SLSI_MAC_FORMAT ") reason code=%d\n", ndev_vif->ifnum, SLSI_MAC_STR(peer_address), reason);
 
 	/* MUST only be called from somewhere that has acquired the lock */
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
@@ -884,7 +884,7 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_ad
 		} else if (ndev_vif->sta.vif_status == SLSI_VIF_STATUS_CONNECTED || (ndev_vif->sta.vif_status == SLSI_VIF_STATUS_DISCONNECTING)) {
 			/* Change keep alive and sync_loss reason code while sending to supplicant to a standard reason code */
 			if (reason == FAPI_REASONCODE_KEEP_ALIVE_FAILURE || reason == FAPI_REASONCODE_SYNCHRONISATION_LOSS) {
-				reason = WLAN_REASON_DEAUTH_LEAVING;
+				reason = WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY;
 			}
 
 			if (ndev_vif->sta.is_wps && ndev_vif->sta.vif_status == SLSI_VIF_STATUS_CONNECTED)
@@ -912,7 +912,11 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct netif *dev, u8 *peer_ad
 		memcpy(addr, peer->address, (sizeof(u8) * ETH_ALEN));
 
 		if ((peer->connected_state == SLSI_STA_CONN_STATE_CONNECTED)
-			|| (peer->connected_state == SLSI_STA_CONN_STATE_DOING_KEY_CONFIG)) {
+			|| (peer->connected_state == SLSI_STA_CONN_STATE_DOING_KEY_CONFIG)
+			|| (peer->connected_state == SLSI_STA_CONN_STATE_CONNECTING)) {
+			if (reason == FAPI_REASONCODE_KEEP_ALIVE_FAILURE) {
+				reason = WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY;
+			}
 			slsi_peer_remove(sdev, dev, peer);
 			slsi_sta_disconnected(ndev_vif, addr, reason);
 		}

@@ -105,6 +105,7 @@ static inline u32 bswap_32(u32 x)
 #define SLSI_NETIF_MBUF_TAILROOM 0
 
 #define WLAN_REASON_DEAUTH_LEAVING 3
+#define WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY 4
 
 #define mbuf_queue_walk(queue, mbuf) \
 	for (mbuf = (queue)->next;                                      \
@@ -142,15 +143,8 @@ struct ethhdr {
 
 struct max_buff;
 
-#define SLSI_MBUF_GET_ALIGNMENT_OFFSET(mbuf) 0
-
 /* Get the Compiler to ignore Unused parameters */
 #define SLSI_UNUSED_PARAMETER(x) ((void)(x))
-#ifdef UFK6_DEBUG
-#define SLSI_UNUSED_PARAMETER_NOT_DEBUG(x)
-#else
-#define SLSI_UNUSED_PARAMETER_NOT_DEBUG(x) ((void)(x))
-#endif
 
 /* Helper ERROR Macros */
 #define SLSI_ECR(func) \

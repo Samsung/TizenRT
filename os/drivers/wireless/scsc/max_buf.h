@@ -301,19 +301,6 @@ static inline void mbuf_set_mac_header(struct max_buff *mbuf, const int offset)
 	mbuf->mac_header += offset;
 }
 
-static inline struct max_buff *slsi_dev_alloc_mbuf_f(unsigned int length, const char *file, int line)
-{
-	struct max_buff *mbuf = __alloc_mbuf(SLSI_NETIF_MBUF_HEADROOM + SLSI_NETIF_MBUF_TAILROOM + length);
-
-	SLSI_UNUSED_PARAMETER(file);
-	SLSI_UNUSED_PARAMETER(line);
-
-	if (mbuf) {
-		mbuf_reserve(mbuf, SLSI_NETIF_MBUF_HEADROOM - SLSI_MBUF_GET_ALIGNMENT_OFFSET(mbuf));
-	}
-	return mbuf;
-}
-
 static inline struct max_buff *slsi_alloc_mbuf_f(unsigned int size, const char *file, int line)
 {
 	struct max_buff *mbuf = alloc_mbuf(SLSI_NETIF_MBUF_HEADROOM + SLSI_NETIF_MBUF_TAILROOM + size);
@@ -322,7 +309,7 @@ static inline struct max_buff *slsi_alloc_mbuf_f(unsigned int size, const char *
 	SLSI_UNUSED_PARAMETER(line);
 
 	if (mbuf) {
-		mbuf_reserve(mbuf, SLSI_NETIF_MBUF_HEADROOM - SLSI_MBUF_GET_ALIGNMENT_OFFSET(mbuf));
+		mbuf_reserve(mbuf, SLSI_NETIF_MBUF_HEADROOM);
 	}
 	return mbuf;
 }

@@ -1380,10 +1380,11 @@ static int wpas_select_network_from_last_scan(struct wpa_supplicant *wpa_s, int 
 		eloop_register_timeout(time_to_reenable, 0, wpas_network_reenabled, wpa_s, NULL);
 		return 0;
 	}
-
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return 0;    /* no normal connection on p2p_mgmt interface */
 	}
+#endif
 
 	selected = wpa_supplicant_pick_network(wpa_s, &ssid);
 
@@ -2492,7 +2493,7 @@ static void wpas_event_disconnect(struct wpa_supplicant *wpa_s, const u8 *addr, 
 {
 #ifdef CONFIG_AP
 	if (wpa_s->ap_iface && addr) {
-		hostapd_notif_disassoc(wpa_s->ap_iface->bss[0], addr);
+		hostapd_notif_disassoc(wpa_s->ap_iface->bss[0], addr, reason_code);
 		return;
 	}
 
@@ -2551,7 +2552,7 @@ static void wpas_event_disassoc(struct wpa_supplicant *wpa_s, struct disassoc_in
 	}
 #ifdef CONFIG_AP
 	if (wpa_s->ap_iface && info && info->addr) {
-		hostapd_notif_disassoc(wpa_s->ap_iface->bss[0], info->addr);
+		hostapd_notif_disassoc(wpa_s->ap_iface->bss[0], info->addr, reason_code);
 		return;
 	}
 
@@ -2982,6 +2983,7 @@ void wpa_supplicant_event_send(void *ctx, enum wpa_event_type event, union wpa_e
 			break;
 		case EVENT_DISASSOC:
 			os_memcpy(params->data, data, sizeof(union wpa_event_data));
+			params->data->disassoc_info.reason_code = data->disassoc_info.reason_code;
 			if (data->disassoc_info.addr) {
 				params->data->disassoc_info.addr = os_zalloc(ETH_ALEN);
 				if (params->data->disassoc_info.addr == NULL) {
@@ -3389,10 +3391,13 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event, union wpa_event_
 		wpa_dbg(wpa_s, MSG_DEBUG, "Interface was enabled");
 		if (wpa_s->wpa_state == WPA_INTERFACE_DISABLED) {
 			wpa_supplicant_update_mac_addr(wpa_s);
+#ifdef CONFIG_P2P
 			if (wpa_s->p2p_mgmt) {
 				wpa_supplicant_set_state(wpa_s, WPA_DISCONNECTED);
 				break;
 			}
+#endif
+
 #ifdef CONFIG_AP
 			if (!wpa_s->ap_iface) {
 				wpa_supplicant_set_state(wpa_s, WPA_DISCONNECTED);

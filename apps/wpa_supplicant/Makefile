@@ -36,7 +36,7 @@
 -include $(TOPDIR)/Make.defs
 
 CONFIG_WPA_SUPPLICANT_PRIORITY ?= SCHED_PRIORITY_DEFAULT
-CONFIG_WPA_SUPPLICANT_STACKSIZE ?= 16384
+CONFIG_WPA_SUPPLICANT_STACKSIZE ?= 16384 # 16*1024
 
 PRIORITY = $(CONFIG_WPA_SUPPLICANT_PRIORITY)
 STACKSIZE = $(CONFIG_WPA_SUPPLICANT_STACKSIZE)
@@ -68,7 +68,8 @@ CSRCS_WPA_SUPPLICANT += \
 	src/common/wpa_ctrl.c \
 	src/common/ieee802_11_common.c \
 	src/common/hw_features_common.c \
-	src/common/wpa_common.c
+	src/common/wpa_common.c \
+	src/common/wpa_helpers.c
 
 CSRCS_WPA_SUPPLICANT += \
 	src/drivers/drivers.c \
@@ -151,6 +152,12 @@ CSRCS_WPA_SUPPLICANT += \
 	src/crypto/sha1-prf.c \
 	src/crypto/sha1-internal.c \
 	src/crypto/crypto_internal.c
+
+ifneq ($(CONFIG_SERIAL_TERMIOS),y)
+CSRCS_WPA_SUPPLICANT += \
+	../../lib/libc/termios/lib_tcsetattr.c \
+	../../lib/libc/termios/lib_tcgetattr.c
+endif
 
 CSRCS += $(notdir $(CSRCS_WPA_SUPPLICANT))
 

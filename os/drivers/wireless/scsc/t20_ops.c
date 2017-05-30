@@ -1807,6 +1807,9 @@ int slsi_stop_ap(void *priv)
 	struct netdev_vif *ndev_vif;
 	struct netif *dev;
 	int r = 0;
+	int i = 0;
+	struct slsi_peer *peer;
+	bool peer_connected = false;
 
 	if (!drv) {
 		SLSI_ERR_NODEV("Driver not available\n");
@@ -1840,6 +1843,21 @@ int slsi_stop_ap(void *priv)
 		SLSI_NET_DBG1(dev, SLSI_T20_80211, "Invalid Device Type: %d\n", ndev_vif->iftype);
 		r = -EINVAL;
 		goto exit;
+	}
+	while (i < SLSI_PEER_INDEX_MAX) {
+		peer = ndev_vif->peer_sta_record[i];
+		if (peer && peer->valid) {
+			slsi_ps_port_control(sdev, dev, peer, SLSI_STA_CONN_STATE_DISCONNECTED);
+			peer_connected = true;
+		}
+		++i;
+	}
+	SLSI_NET_DBG1(dev, SLSI_T20_80211, "peer_connected: %d\n", peer_connected);
+	if (peer_connected) {
+		if (slsi_mlme_disconnect(sdev, dev, peer->address, WLAN_REASON_DEAUTH_LEAVING, true) != 0) {
+			SLSI_NET_ERR(dev, "Disconnection for peermac=00:00:00:00:00:00 returned with CFM failure\n");
+		}
+		r = slsi_handle_disconnect(sdev, dev, peer->address, WLAN_REASON_DEAUTH_LEAVING);
 	}
 
 	netif_set_link_down(dev);
