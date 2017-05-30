@@ -170,7 +170,7 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 	ret = task_schedsetup(tcb, priority, task_start, entry, ttype);
 	if (ret < OK) {
-		errcode = -ret;
+		errcode = get_errno();
 		goto errout_with_tcb;
 	}
 

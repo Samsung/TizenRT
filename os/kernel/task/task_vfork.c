@@ -311,6 +311,7 @@ FAR struct task_tcb_s *task_vforksetup(start_t retaddr)
 	svdbg("Child priority=%d start=%p\n", priority, retaddr);
 	ret = task_schedsetup(child, priority, retaddr, parent->entry.main, ttype);
 	if (ret < OK) {
+		ret = -get_errno();
 		goto errout_with_tcb;
 	}
 
