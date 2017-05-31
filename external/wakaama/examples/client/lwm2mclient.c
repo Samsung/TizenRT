@@ -664,10 +664,12 @@ static void prv_add(char * buffer,
         fprintf(stdout, "Adding object 1024 failed: ");
         print_status(stdout, res);
         fprintf(stdout, "\r\n");
+        free_test_object(objectP);
     }
     else
     {
         fprintf(stdout, "Object 1024 added.\r\n");
+        objArray[5] = objectP;
     }
     return;
 }
@@ -678,6 +680,8 @@ static void prv_remove(char * buffer,
     lwm2mH = (lwm2m_context_t *)user_data;
     int res;
 
+    lwm2m_object_t * objectP;
+    objectP = (lwm2m_object_t *)LWM2M_LIST_FIND(lwm2mH->objectList, 1024);
     res = lwm2m_remove_object(lwm2mH, 1024);
     if (res != 0)
     {
@@ -688,6 +692,8 @@ static void prv_remove(char * buffer,
     else
     {
         fprintf(stdout, "Object 1024 removed.\r\n");
+        free_test_object(objectP);
+        objArray[5] = NULL;
     }
     return;
 }

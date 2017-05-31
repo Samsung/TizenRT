@@ -1036,6 +1036,10 @@ coap_status_t registration_handleRequest(lwm2m_context_t * contextP,
                 if (msisdn != NULL) lwm2m_free(msisdn);
                 return COAP_412_PRECONDITION_FAILED;
             }
+            if (version != NULL)
+            {
+                lwm2m_free(version);
+            }
 
             if (lifetime == 0)
             {
