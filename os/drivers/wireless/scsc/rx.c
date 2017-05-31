@@ -64,7 +64,7 @@ void slsi_rx_scan_done_ind(struct slsi_dev *sdev, struct netif *dev, struct max_
 
 int slsi_find_scan_freq(struct slsi_80211_mgmt *mgmt, size_t mgmt_len, u16 freq)
 {
-	int ielen = mgmt_len - (mgmt->u.beacon.variable - (u8 *) mgmt);
+	int ielen = mgmt_len - (mgmt->u.beacon.variable - (u8 *)mgmt);
 	const u8 *scan_ds = slsi_80211_find_ie(WLAN_EID_DS_PARAMS, mgmt->u.beacon.variable, ielen);
 	const u8 *scan_ht = slsi_80211_find_ie(WLAN_EID_HT_OPERATION, mgmt->u.beacon.variable, ielen);
 	u8 chan = 0;
@@ -82,7 +82,7 @@ int slsi_find_scan_freq(struct slsi_80211_mgmt *mgmt, size_t mgmt_len, u16 freq)
 		if (chan > 14) {
 			band = SLSI_80211_BAND_5GHZ;
 		}
-		freq = (u16) slsi_80211_channel_to_frequency(chan, band);
+		freq = (u16)slsi_80211_channel_to_frequency(chan, band);
 	}
 	if (!freq) {
 		return 0;

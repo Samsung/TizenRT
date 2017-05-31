@@ -704,7 +704,7 @@ struct scsc_mif_abs *platform_mif_create()
 	platform->mem_size = WIFI_IMEM_SIZE << 12;
 
 #ifdef CONFIG_SCSC_WLAN_LOGLVL_ALL
-	dev_info(NULL, "platform->mem_start 0x%x platform->mem_size 0x%x\n", (u32) platform->mem_start, (u32) platform->mem_size);
+	dev_info(NULL, "platform->mem_start 0x%x platform->mem_size 0x%x\n", (u32)platform->mem_start, (u32)platform->mem_size);
 #endif
 	if (platform->mem_start == 0) {
 		dev_warn(NULL, "platform->mem_start is 0");

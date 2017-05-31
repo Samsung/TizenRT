@@ -827,7 +827,7 @@ static void cdcacm_wrcomplete(FAR struct usbdev_ep_s *ep, FAR struct usbdev_req_
 	/* Return the write request to the free list */
 
 	flags = irqsave();
-	sq_addlast((FAR sq_entry_t *) reqcontainer, &priv->reqlist);
+	sq_addlast((FAR sq_entry_t *)reqcontainer, &priv->reqlist);
 	priv->nwrq++;
 	irqrestore(flags);
 
@@ -994,7 +994,7 @@ static int cdcacm_bind(FAR struct usbdevclass_driver_s *driver, FAR struct usbde
 		reqcontainer->req->callback = cdcacm_wrcomplete;
 
 		flags = irqsave();
-		sq_addlast((FAR sq_entry_t *) reqcontainer, &priv->reqlist);
+		sq_addlast((FAR sq_entry_t *)reqcontainer, &priv->reqlist);
 		priv->nwrq++;			/* Count of write requests available */
 		irqrestore(flags);
 	}
@@ -1271,7 +1271,7 @@ static int cdcacm_setup(FAR struct usbdevclass_driver_s *driver, FAR struct usbd
 #ifndef CONFIG_CDCACM_COMPOSITE
 		case USB_REQ_GETCONFIGURATION: {
 			if (ctrl->type == USB_DIR_IN) {
-				*(FAR uint8_t *) ctrlreq->buf = priv->config;
+				*(FAR uint8_t *)ctrlreq->buf = priv->config;
 				ret = 1;
 			}
 		}
@@ -1292,7 +1292,7 @@ static int cdcacm_setup(FAR struct usbdevclass_driver_s *driver, FAR struct usbd
 		case USB_REQ_GETINTERFACE: {
 			if (ctrl->type == (USB_DIR_IN | USB_REQ_RECIPIENT_INTERFACE) && priv->config == CDCACM_CONFIGIDNONE) {
 				if ((index == CDCACM_NOTIFID && value == CDCACM_NOTALTIFID) || (index == CDCACM_DATAIFID && value == CDCACM_DATAALTIFID)) {
-					*(FAR uint8_t *) ctrlreq->buf = value;
+					*(FAR uint8_t *)ctrlreq->buf = value;
 					ret = 1;
 				} else {
 					ret = -EDOM;

@@ -704,7 +704,7 @@ static int hsi2c_master_handler(void *args)
 		hsi2c_clear_int(base, HSI2C_INT_TX_ALMOST_EMPTY);
 	}
 	if (int_status & HSI2C_INT_RX_ALMOST_FULL) {
-		msg->buffer[buf_off] = (u8) getreg32(base + RXDATA);
+		msg->buffer[buf_off] = (u8)getreg32(base + RXDATA);
 		priv->master_test_data->buf_count++;
 		hsi2c_clear_int(base, HSI2C_INT_RX_ALMOST_FULL);
 	}
@@ -1216,7 +1216,7 @@ int s5j_i2c_read(FAR struct i2c_dev_s *dev, FAR uint8_t *buffer, int buflen)
 
 	/* Setup for the transfer */
 	msg.addr = priv->slave_addr, msg.flags = (flags | I2C_M_READ);
-	msg.buffer = (FAR uint8_t *) buffer;
+	msg.buffer = (FAR uint8_t *)buffer;
 	msg.length = buflen;
 
 	/*
@@ -1238,7 +1238,7 @@ int s5j_i2c_write(FAR struct i2c_dev_s *dev, FAR const uint8_t *buffer,
 	/* Setup for the transfer */
 	msg.addr = priv->slave_addr;
 	msg.flags = (priv->addrlen == 10) ? I2C_M_TEN : 0;
-	msg.buffer = (FAR uint8_t *) buffer; /* Override const */
+	msg.buffer = (FAR uint8_t *)buffer; /* Override const */
 	msg.length = buflen;
 
 	/*

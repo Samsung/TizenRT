@@ -2454,7 +2454,7 @@ int p2p_service_add_asp(struct p2p_data *p2p, int auto_accept, u32 adv_id, const
 	adv_data->id = adv_id;
 	adv_data->state = svc_state;
 	adv_data->config_methods = config_methods & p2p->cfg->config_methods;
-	adv_data->auto_accept = (u8) auto_accept;
+	adv_data->auto_accept = (u8)auto_accept;
 	os_memcpy(adv_data->svc_name, adv_str, adv_len);
 
 	if (svc_info && info_len) {

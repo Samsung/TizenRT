@@ -733,7 +733,7 @@ static int send_signal_to_inverse_log_filter(struct slsi_log_client *log_client,
 
 static bool is_allowed_ip_frame(struct ethhdr *ehdr, u16 signal_id)
 {
-	u8 *ip_frame = ((u8 *) ehdr) + sizeof(struct ethhdr);
+	u8 *ip_frame = ((u8 *)ehdr) + sizeof(struct ethhdr);
 	u8 *ip_data;
 	u16 ip_data_offset = 20;
 	/*u8  version         = ip_frame[0] >> 4; */

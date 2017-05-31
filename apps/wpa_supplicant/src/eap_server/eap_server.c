@@ -412,7 +412,7 @@ static void eap_server_erp_init(struct eap_sm *sm)
 	if (erp == NULL) {
 		goto fail;
 	}
-	erp->recv_seq = (u32) - 1;
+	erp->recv_seq = (u32)-1;
 
 	emsk = sm->m->get_emsk(sm, sm->eap_method_priv, &emsk_len);
 	if (!emsk || emsk_len == 0 || emsk_len > ERP_MAX_KEY_LEN) {
@@ -804,7 +804,7 @@ SM_STATE(EAP, INITIATE_RECEIVED)
 		goto report_error;
 	}
 
-	if (erp->recv_seq != (u32) - 1 && erp->recv_seq >= seq) {
+	if (erp->recv_seq != (u32)-1 && erp->recv_seq >= seq) {
 		wpa_printf(MSG_DEBUG, "EAP: SEQ=%u replayed (already received SEQ=%u)", seq, erp->recv_seq);
 		goto fail;
 	}

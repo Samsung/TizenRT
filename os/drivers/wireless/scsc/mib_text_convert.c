@@ -130,7 +130,7 @@ static bool CsrWifiMibConvertStrToUint16(const char *str, u16 *returnValue)
 	if ((str[currentIndex] >= '0') && (str[currentIndex] <= '9')) {
 		while (str[currentIndex] >= '0' && str[currentIndex] <= '9') {
 			*returnValue *= 10;
-			*returnValue += (u8) str[currentIndex++] - '0';
+			*returnValue += (u8)str[currentIndex++] - '0';
 		}
 		return true;
 	}
@@ -149,7 +149,7 @@ static bool CsrWifiMibConvertStrToUint32(const char *str, u32 *returnValue)
 	if ((str[currentIndex] >= '0') && (str[currentIndex] <= '9')) {
 		while (str[currentIndex] >= '0' && str[currentIndex] <= '9') {
 			*returnValue *= 10;
-			*returnValue += (u8) str[currentIndex++] - '0';
+			*returnValue += (u8)str[currentIndex++] - '0';
 		}
 		return true;
 	}
@@ -177,7 +177,7 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 			if (current_char[0] == '#') {
 				break;
 			}
-			if (CsrIsSpace((u8) current_char[0])) {
+			if (CsrIsSpace((u8)current_char[0])) {
 				current_char++;
 				continue;
 			}
@@ -244,13 +244,13 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 			} else if (data[0] == '"') {
 				/* Null Terminated String */
 				entry.value.type = SLSI_MIB_TYPE_OCTET;
-				entry.value.u.octetValue.dataLength = (u32) strlen(&data[1]);
-				entry.value.u.octetValue.data = (u8 *) CsrStrDup(&data[1]);
+				entry.value.u.octetValue.dataLength = (u32)strlen(&data[1]);
+				entry.value.u.octetValue.data = (u8 *)CsrStrDup(&data[1]);
 				entry.value.u.octetValue.data[entry.value.u.octetValue.dataLength - 1] = '\0';
 			} else if (data[0] == '[') {
 				/* Octet String */
 				size_t i;
-				u16 octetLen = ((u16) strlen(&data[1]) - 1) / 2;
+				u16 octetLen = ((u16)strlen(&data[1]) - 1) / 2;
 
 				entry.value.type = SLSI_MIB_TYPE_OCTET;
 				entry.value.u.octetValue.dataLength = octetLen;
@@ -269,7 +269,7 @@ static bool CsrWifiMibConvertTextParseLine(const char *linestr, struct slsi_mib_
 					SLSI_ERR_NODEV("CsrWifiMibConvertTextParseLine('%s') Convert Integer <data> failed", trimmed);
 					result = false;
 				} else {
-					entry.value.u.intValue = (s32)(0 - (u32) entry.value.u.uintValue);
+					entry.value.u.intValue = (s32)(0 - (u32)entry.value.u.uintValue);
 				}
 			} else if (!CsrWifiMibConvertStrToUint32(data, &entry.value.u.uintValue)) {
 				SLSI_ERR_NODEV("CsrWifiMibConvertTextParseLine('%s') Convert Unsigned Integer <data> failed", trimmed);

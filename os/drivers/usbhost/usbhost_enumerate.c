@@ -319,7 +319,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 	 * One for the request and one for the data buffer.
 	 */
 
-	ret = DRVR_ALLOC(hport->drvr, (FAR uint8_t **) & ctrlreq, &maxlen);
+	ret = DRVR_ALLOC(hport->drvr, (FAR uint8_t **)&ctrlreq, &maxlen);
 	if (ret < 0) {
 		udbg("DRVR_ALLOC failed: %d\n", ret);
 		return ret;
@@ -538,7 +538,7 @@ errout:
 	}
 
 	if (ctrlreq) {
-		DRVR_FREE(hport->drvr, (FAR uint8_t *) ctrlreq);
+		DRVR_FREE(hport->drvr, (FAR uint8_t *)ctrlreq);
 	}
 
 	return ret;

@@ -775,7 +775,7 @@ int upnp_wps_device_send_wlan_event(struct upnp_wps_device_sm *sm, const u8 from
 		goto fail;
 	}
 
-	*(raw + pos) = (u8) ev_type;
+	*(raw + pos) = (u8)ev_type;
 	pos += 1;
 	os_snprintf(mac_text, sizeof(mac_text), MACSTR, MAC2STR(mac));
 	wpa_printf(MSG_DEBUG, "WPS UPnP: Proxying WLANEvent from %s", mac_text);

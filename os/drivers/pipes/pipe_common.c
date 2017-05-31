@@ -229,7 +229,7 @@ int pipecommon_open(FAR struct file *filep)
 	 */
 
 	if (dev->d_refs == 0 && dev->d_buffer == NULL) {
-		dev->d_buffer = (uint8_t *) kmm_malloc(CONFIG_DEV_PIPE_SIZE);
+		dev->d_buffer = (uint8_t *)kmm_malloc(CONFIG_DEV_PIPE_SIZE);
 		if (!dev->d_buffer) {
 			(void)sem_post(&dev->d_bfsem);
 			return -ENOMEM;
