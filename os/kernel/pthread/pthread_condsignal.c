@@ -136,7 +136,7 @@ int pthread_cond_signal(FAR pthread_cond_t *cond)
 			svdbg("sval=%d\n", sval);
 			if (sval < 0) {
 				svdbg("Signalling...\n");
-				ret = pthread_givesemaphore((sem_t *)&cond->sem);
+				ret = pthread_sem_give((sem_t *)&cond->sem);
 			}
 		}
 	}

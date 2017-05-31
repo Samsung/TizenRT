@@ -189,14 +189,14 @@ static void pthread_start(void)
 
 	/* Sucessfully spawned, add the pjoin to our data set. */
 
-	(void)pthread_takesemaphore(&group->tg_joinsem, false);
+	(void)pthread_sem_take(&group->tg_joinsem, false);
 	pthread_addjoininfo(group, pjoin);
-	(void)pthread_givesemaphore(&group->tg_joinsem);
+	(void)pthread_sem_give(&group->tg_joinsem);
 
 	/* Report to the spawner that we successfully started. */
 
 	pjoin->started = true;
-	(void)pthread_givesemaphore(&pjoin->data_sem);
+	(void)pthread_sem_give(&pjoin->data_sem);
 
 	/* Pass control to the thread entry point. In the kernel build this has to
 	 * be handled differently if we are starting a user-space pthread; we have
@@ -429,7 +429,7 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		 * its join structure.
 		 */
 
-		(void)pthread_takesemaphore(&pjoin->data_sem, false);
+		(void)pthread_sem_take(&pjoin->data_sem, false);
 
 		/* Return the thread information to the caller */
 

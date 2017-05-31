@@ -112,10 +112,17 @@ void pthread_initialize(void)
 }
 
 /****************************************************************************
- * Name: pthread_takesemaphore and pthread_givesemaphore
+ * Name: pthread_sem_take, pthread_sem_trytake, and
+ * 	pthread_sem_give
  *
  * Description:
  *   Support managed access to the private data sets.
+ *
+ *   REVISIT : These functions really do nothing more than match the return
+ *   value of the semaphore functions (0 or -1 with errno set) to the
+ *   return value of more pthread functions (0 or errno).  A better solution
+ *   would be to use an internal version of the semaphore functions that
+ *   return the error value in the correct form.
  *
  * Parameters:
  *  sem  - The semaphore to lock or unlock
@@ -127,9 +134,9 @@ void pthread_initialize(void)
  *
  ****************************************************************************/
 
-int pthread_takesemaphore(sem_t *sem, bool intr)
+int pthread_sem_take(sem_t *sem, bool intr)
 {
-	trace_begin(TTRACE_TAG_IPC, "pthread_takesemaphore");
+	trace_begin(TTRACE_TAG_IPC, "pthread_sem_take");
 	/* Verify input parameters */
 
 	DEBUGASSERT(sem != NULL);
@@ -176,7 +183,7 @@ int pthread_sem_trytake(sem_t *sem)
 }
 #endif
 
-int pthread_givesemaphore(sem_t *sem)
+int pthread_sem_give(sem_t *sem)
 {
 	/* Verify input parameters */
 
