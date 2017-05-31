@@ -291,9 +291,12 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	leave_cancellation_point();
 
 	/* We are either returning success or an error detected by sem_wait()
-	 * or the timeout detected by sem_timeout().  The 'errno' value has
-	 * been set appropriately by sem_wait() or sem_timeout() in those
-	 * cases.
+	 * or the timeout detected by sem_timeout() or sem_trywait() called from
+	 * wd_delete(). The 'errno' value has been set appropriately by sem_wait()
+	 * or sem_timeout() or sem_trywait() in those cases.
+	 *
+	 * wd_delete()->sched_kfree->kmm_trysemaphore->mm_trysemaphore->sem_trywait
+	 * wd_delete()->sched_ufree->kumm_trysemaphore->mm_trysemaphore->sem_trywait
 	 */
 
 	if (ret < 0) {
