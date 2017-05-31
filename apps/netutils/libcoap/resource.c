@@ -455,7 +455,7 @@ void coap_delete_attr(coap_attr_t *attr)
 	if (attr->flags & COAP_ATTR_FLAGS_RELEASE_VALUE) {
 		coap_free(attr->value.s);
 	}
-#ifdef POSIX
+#ifdef WITH_POSIX
 	coap_free(attr);
 #endif
 #ifdef WITH_LWIP
