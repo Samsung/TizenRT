@@ -133,7 +133,7 @@ static int wifiAutoConnect(void)
 				if (ret == -1) {
 					printf("Timeout fail to get ip address\n");
 					return ret;
-				} else if (dhcp_ret == 0) {
+				} else if (ret == 0) {
 					printf("No network interface\n");
 					return ret;
 				}
