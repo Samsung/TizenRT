@@ -122,6 +122,9 @@ void pthread_destroyjoin(FAR struct task_group_s *group, FAR struct join_s *pjoi
 FAR struct join_s *pthread_findjoininfo(FAR struct task_group_s *group, pid_t pid);
 void pthread_release(FAR struct task_group_s *group);
 int pthread_takesemaphore(sem_t *sem, bool intr);
+#ifdef CONFIG_PTHREAD_MUTEX_UNSAFE
+int pthread_sem_trytake(sem_t *sem);
+#endif
 int pthread_givesemaphore(sem_t *sem);
 
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
@@ -131,7 +134,7 @@ int pthread_mutex_give(FAR struct pthread_mutex_s *mutex);
 void pthread_mutex_inconsistent(FAR struct pthread_tcb_s *tcb);
 #else
 #define pthread_mutex_take(m,i) pthread_takesemaphore(&(m)->sem,(i))
-#define pthread_mutex_trytake(m) sem_trywait(&(m)->sem)
+#define pthread_mutex_trytake(m) pthread_sem_trytake(&(m)->sem)
 #define pthread_mutex_give(m)   pthread_givesemaphore(&(m)->sem)
 #endif
 

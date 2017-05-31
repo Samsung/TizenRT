@@ -157,6 +157,25 @@ int pthread_takesemaphore(sem_t *sem, bool intr)
 	}
 }
 
+#ifdef CONFIG_PTHREAD_MUTEX_UNSAFE
+int pthread_sem_trytake(sem_t *sem)
+{
+	int ret = EINVAL;
+
+	/* Verify input parameters */
+
+	DEBUGASSERT(sem != NULL);
+	if (sem != NULL) {
+		/* Try to take the semaphore */
+
+		int status = sem_trywait(sem);
+		ret = status < 0 ? get_errno() : OK;
+	}
+
+	return ret;
+}
+#endif
+
 int pthread_givesemaphore(sem_t *sem)
 {
 	/* Verify input parameters */
