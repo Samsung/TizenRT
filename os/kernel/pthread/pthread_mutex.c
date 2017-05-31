@@ -138,11 +138,11 @@ int pthread_mutex_take(FAR struct pthread_mutex_s *mutex, bool intr)
 		if ((mutex->flags & _PTHREAD_MFLAGS_INCONSISTENT) != 0) {
 			ret = EOWNERDEAD;
 		} else {
-			/* Take semaphore underlying the mutex.  pthread_takesemaphore
+			/* Take semaphore underlying the mutex.  pthread_sem_take
 			 * returns zero on success and a positive errno value on failure.
 			 */
 
-			ret = pthread_takesemaphore(&mutex->sem, intr);
+			ret = pthread_sem_take(&mutex->sem, intr);
 			if (ret == OK) {
 				/* Check if the holder of the mutex has terminated without
 				 * releasing.  In that case, the state of the mutex is
@@ -270,7 +270,7 @@ int pthread_mutex_give(FAR struct pthread_mutex_s *mutex)
 
 		/* Now release the underlying semaphore */
 
-		ret = pthread_givesemaphore(&mutex->sem);
+		ret = pthread_sem_give(&mutex->sem);
 	}
 
 	return ret;
