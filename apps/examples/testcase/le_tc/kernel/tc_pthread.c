@@ -882,27 +882,27 @@ static void tc_pthread_pthread_cancel_setcancelstate(void)
 * @fn                   :tc_pthread_pthread_take_give_semaphore
 * @brief                :Support managed access to the private data sets.
 * @Scenario             :Support managed access to the private data sets.
-* API's covered         :pthread_takesemaphore, pthread_givesemaphore
+* API's covered         :pthread_sem_take, pthread_sem_give
 * Preconditions         :none
 * Postconditions        :none
 * @return               :void
  */
 #if !defined(CONFIG_BUILD_PROTECTED)
-static void tc_pthread_pthread_take_give_semaphore(void)
+static void tc_pthread_pthread_sem_take_give(void)
 {
 	int ret_chk;
 	int get_value;
 	sem_t sem;
 	sem_init(&sem, 0, VAL_THREE);
 
-	ret_chk = pthread_takesemaphore(&sem, false);
-	TC_ASSERT_EQ("pthread_takesemaphore", ret_chk, OK);
+	ret_chk = pthread_sem_take(&sem, false);
+	TC_ASSERT_EQ("pthread_sem_take", ret_chk, OK);
 
 	sem_getvalue(&sem, &get_value);
 	TC_ASSERT_EQ("sem_getvalue", get_value, VAL_TWO);
 
-	ret_chk = pthread_givesemaphore(&sem);
-	TC_ASSERT_EQ("pthread_givesemaphore", ret_chk, OK);
+	ret_chk = pthread_sem_give(&sem);
+	TC_ASSERT_EQ("pthread_sem_give", ret_chk, OK);
 
 	sem_getvalue(&sem, &get_value);
 	TC_ASSERT_EQ("sem_getvalue", get_value, VAL_THREE);
@@ -1411,7 +1411,7 @@ int pthread_main(void)
 	tc_pthread_pthread_key_create_set_getspecific();
 	tc_pthread_pthread_cancel_setcancelstate();
 #if !defined(CONFIG_BUILD_PROTECTED)
-	tc_pthread_pthread_take_give_semaphore();
+	tc_pthread_pthread_sem_take_give();
 	tc_pthread_pthread_findjoininfo_destroyjoin();
 	tc_pthread_pthread_setschedprio();
 #endif
