@@ -62,7 +62,7 @@ websocket_t ws_srv_table[WEBSOCKET_MAX_CLIENT];
  * Private Functions
  ****************************************************************************/
 
-/* common functions */
+/****** websocket common functions *****/
 
 int websocket_tls_handshake(websocket_t *data, char *hostname, int auth_mode)
 {
@@ -127,6 +127,21 @@ websocket_return_t websocket_config_socket(int fd)
 	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (FAR const void *)&tv, (socklen_t) sizeof(struct timeval)) == -1) {
 		WEBSOCKET_DEBUG("setsockopt fail in server\n");
 		return WEBSOCKET_SOCKET_ERROR;
+	}
+
+	return WEBSOCKET_SUCCESS;
+}
+
+websocket_return_t websocket_socket_free(websocket_t *ctx)
+{
+	if (ctx == NULL) {
+		WEBSOCKET_DEBUG("NULL parameter\n");
+		return WEBSOCKET_ALLOCATION_ERROR;
+	}
+
+	if (ctx->fd >= 0) {
+		close(ctx->fd);
+		ctx->fd = -1;
 	}
 
 	return WEBSOCKET_SUCCESS;
@@ -236,7 +251,7 @@ int websocket_handler(websocket_t *websocket)
 	return WEBSOCKET_SUCCESS;
 }
 
-/* client oriented sources */
+/***** websocket client oriented sources *****/
 
 int websocket_client_handshake(websocket_t *client, char *host, char *port, char *path)
 {
@@ -336,21 +351,6 @@ EXIT_WEBSOCKET_HANDSHAKE_ERROR:
 	return WEBSOCKET_HANDSHAKE_ERROR;
 }
 
-websocket_return_t websocket_socket_free(websocket_t *ctx)
-{
-	if (ctx == NULL) {
-		WEBSOCKET_DEBUG("NULL parameter\n");
-		return WEBSOCKET_ALLOCATION_ERROR;
-	}
-
-	if (ctx->fd >= 0) {
-		close(ctx->fd);
-		ctx->fd = -1;
-	}
-
-	return WEBSOCKET_SUCCESS;
-}
-
 int connect_socket(websocket_t *client, const char *host, const char *port)
 {
 	int fd;
@@ -431,7 +431,7 @@ TLS_HS_RETRY:
 	return r;
 }
 
-/* server oriented sources */
+/***** websocket server oriented sources *****/
 
 int websocket_server_handshake(websocket_t *server)
 {
@@ -519,7 +519,7 @@ EXIT_WEBSOCKET_HANDSHAKE_ERROR:
 	return WEBSOCKET_HANDSHAKE_ERROR;
 }
 
-int websocket_server_start(websocket_t *server)
+int websocket_server_authenticate(websocket_t *server)
 {
 	int r;
 
@@ -554,7 +554,7 @@ EXIT_SERVER_START:
 	return r;
 }
 
-int websocket_accept_loop(websocket_t *init_server)
+int websocket_accept_handler(websocket_t *init_server)
 {
 	int i;
 	int r = WEBSOCKET_SUCCESS;
@@ -652,7 +652,7 @@ int websocket_accept_loop(websocket_t *init_server)
 			ws_sparam.sched_priority = WEBSOCKET_PRI;
 			pthread_attr_setschedparam(&server_handler->thread_attr, &ws_sparam);
 			pthread_attr_setschedpolicy(&server_handler->thread_attr, WEBSOCKET_SCHED_POLICY);
-			if (pthread_create(&server_handler->thread_id, &server_handler->thread_attr, (pthread_startroutine_t) websocket_server_start, (pthread_addr_t) server_handler) != 0) {
+			if (pthread_create(&server_handler->thread_id, &server_handler->thread_attr, (pthread_startroutine_t) websocket_server_authenticate, (pthread_addr_t) server_handler) != 0) {
 				WEBSOCKET_DEBUG("fail to create thread, fd == %d\n", accept_fd);
 				close(accept_fd);
 				if (server_handler->tls_ssl) {
@@ -832,6 +832,13 @@ EXIT_CLIENT_OPEN:
 	return r;
 }
 
+/*
+ * websocket_server_open function includes:
+ * 1. allocating socket fd
+ * 2. accepting client
+ * 3. authenticating with client
+ * those 3 are not needed when websocket is initiated from http(s).
+ */
 websocket_return_t websocket_server_open(websocket_t *init_server)
 {
 	int port = 0;
@@ -850,13 +857,18 @@ websocket_return_t websocket_server_open(websocket_t *init_server)
 
 	WEBSOCKET_DEBUG("websocket listen on fd == %d, port == %d\n", init_server->fd, port);
 
-	if ((r = websocket_accept_loop(init_server)) != WEBSOCKET_SUCCESS) {
+	r = websocket_accept_handler(init_server);
+	if (r != WEBSOCKET_SUCCESS) {
 		return r;
 	}
 
 	return WEBSOCKET_SUCCESS;
 }
 
+/*
+ * if websocket server is initiated from http(s), you just can call this function.
+ * see the comment of websocket_server_open to know what is different.
+ */
 websocket_return_t websocket_server_init(websocket_t *server)
 {
 	int r = WEBSOCKET_SUCCESS;
