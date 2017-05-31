@@ -111,7 +111,7 @@ void lib_take_semaphore(FAR struct file_struct *stream)
 	} else {
 		/* Take the semaphore (perhaps waiting) */
 
-		while (sem_wait(&stream->fs_sem) != 0) {
+		while (sem_wait(&stream->fs_sem) != OK) {
 			/* The only case that an error should occr here is if the wait
 			 * was awakened by a signal.
 			 */

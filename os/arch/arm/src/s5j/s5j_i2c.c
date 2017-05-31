@@ -925,7 +925,7 @@ static int hsi2c_cleanup(struct s5j_i2c_priv_s *priv)
 
 static inline void s5j_i2c_sem_wait(struct s5j_i2c_priv_s *priv)
 {
-	while (sem_wait(&priv->exclsem) != 0) {
+	while (sem_wait(&priv->exclsem) != OK) {
 		ASSERT(errno == EINTR);
 	}
 }

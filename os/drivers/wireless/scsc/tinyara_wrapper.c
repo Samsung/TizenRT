@@ -38,7 +38,7 @@ unsigned long wait_for_completion_timeout(struct completion *x, unsigned long ti
 			timeout.tv_sec++;
 			timeout.tv_nsec -= NSEC_PER_SEC;
 		}
-		while (sem_timedwait(&x->sem, &timeout) != 0) {
+		while (sem_timedwait(&x->sem, &timeout) != OK) {
 			ret = get_errno();
 			if (ret == ETIMEDOUT) {
 				ret = 1;
@@ -46,7 +46,7 @@ unsigned long wait_for_completion_timeout(struct completion *x, unsigned long ti
 			}
 		}
 	} else {
-		while (sem_wait(&x->sem) != 0) {
+		while (sem_wait(&x->sem) != OK) {
 			sem_post(&x->sem);
 		}
 	}

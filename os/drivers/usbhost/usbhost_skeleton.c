@@ -224,7 +224,7 @@ static void usbhost_takesem(sem_t *sem)
 {
 	/* Take the semaphore (perhaps waiting) */
 
-	while (sem_wait(sem) != 0) {
+	while (sem_wait(sem) != OK) {
 		/* The only case that an error should occur here is if the wait was
 		 * awakened by a signal.
 		 */

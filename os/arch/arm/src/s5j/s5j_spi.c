@@ -268,7 +268,7 @@ static int spi_lock(struct spi_dev_s *dev, bool lock)
 	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
 	if (lock) {
-		while (sem_wait(&priv->exclsem) != 0) {
+		while (sem_wait(&priv->exclsem) != OK) {
 			DEBUGASSERT(errno == EINTR);
 		}
 	} else {

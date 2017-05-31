@@ -85,7 +85,7 @@ static void *thread_waiter(void *parameter)
 		status       = pthread_mutex_lock(&mutex);
 		waiter_state = RUNNING;
 
-		if (status != 0) {
+		if (status != OK) {
 			printf("waiter_thread: ERROR pthread_mutex_lock failed, status=%d\n", status);
 			waiter_nerrors++;
 		}
@@ -152,7 +152,7 @@ static void *thread_signaler(void *parameter)
 		 */
 
 		status = pthread_mutex_lock(&mutex);
-		if (status != 0) {
+		if (status != OK) {
 			printf("thread_signaler: ERROR pthread_mutex_lock failed, status=%d\n", status);
 			signaler_nerrors++;
 		}

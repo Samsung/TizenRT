@@ -177,7 +177,7 @@ static void *highpri_thread(void *parameter)
 	ret                     = sem_wait(&g_sem);
 	g_highstate[threadno - 1] = DONE;
 
-	if (ret != 0) {
+	if (ret != OK) {
 		printf("highpri_thread-%d: sem_take failed: %d\n", threadno, ret);
 	} else if (g_middlestate == RUNNING) {
 		printf("highpri_thread-%d: SUCCESS midpri_thread is still running!\n", threadno);
@@ -275,7 +275,7 @@ static void *lowpri_thread(void *parameter)
 
 	g_lowstate[threadno - 1] = WAITING;
 	ret = sem_wait(&g_sem);
-	if (ret != 0) {
+	if (ret != OK) {
 		printf("lowpri_thread-%d: sem_take failed: %d\n", threadno, ret);
 	} else {
 		/* Hang on to the thread until the middle priority thread runs */
@@ -301,7 +301,7 @@ static void *lowpri_thread(void *parameter)
 		nwaiting = nhighpri_waiting();
 		sched_unlock();
 
-		if (ret < 0) {
+		if (ret != OK) {
 			printf("lowpri_thread-%d: ERROR sem_getvalue failed: %d\n", threadno, errno);
 		}
 		printf("lowpri_thread-%d: Sem count: %d, No. highpri thread: %d\n", threadno, count, nwaiting);

@@ -189,7 +189,7 @@ static int waiter_main(int argc, char *argv[])
 	FFLUSH();
 
 	status = sem_wait(&sem);
-	if (status != 0) {
+	if (status != OK) {
 		int error = errno;
 		if (error == EINTR) {
 			printf("waiter_main: sem_wait() successfully interrupted by signal\n");

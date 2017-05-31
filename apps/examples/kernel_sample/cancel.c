@@ -91,7 +91,7 @@ static FAR void *thread_waiter(FAR void *parameter)
 
 	printf("thread_waiter: Taking mutex\n");
 	status = pthread_mutex_lock(&mutex);
-	if (status != 0) {
+	if (status != OK) {
 		printf("thread_waiter: ERROR pthread_mutex_lock failed, status=%d\n", status);
 	}
 
@@ -438,7 +438,7 @@ void cancel_test(void)
 	 */
 
 	status = pthread_mutex_lock(&mutex);
-	if (status != 0) {
+	if (status != OK) {
 		printf("cancel_test: ERROR pthread_mutex_lock failed, status=%d\n", status);
 	}
 

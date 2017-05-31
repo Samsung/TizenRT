@@ -269,7 +269,7 @@ static ssize_t adc_read(FAR struct file *filep, FAR char *buffer,
 			dev->ad_nrxwaiters++;
 			ret = sem_wait(&dev->ad_recv.af_sem);
 			dev->ad_nrxwaiters--;
-			if (ret < 0) {
+			if (ret != OK) {
 				ret = -errno;
 				goto return_with_irqdisabled;
 			}

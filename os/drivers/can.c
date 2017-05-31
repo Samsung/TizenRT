@@ -309,7 +309,7 @@ static ssize_t can_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 			/* Wait for a message to be received */
 
 			ret = sem_wait(&dev->cd_recv.rx_sem);
-			if (ret < 0) {
+			if (ret != OK) {
 				ret = -get_errno();
 				goto return_with_irqdisabled;
 			}
@@ -499,11 +499,11 @@ static ssize_t can_write(FAR struct file *filep, FAR const char *buffer, size_t 
 				ret = sem_wait(&fifo->tx_sem);
 				dev->cd_ntxwaiters--;
 
-				if (ret < 0 && get_errno() != EINTR) {
+				if (ret != OK && get_errno() != EINTR) {
 					ret = -get_errno();
 					goto return_with_irqdisabled;
 				}
-			} while (ret < 0);
+			} while (ret != OK);
 
 			/* Re-check the FIFO state */
 

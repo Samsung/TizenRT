@@ -86,7 +86,7 @@ static void usbhost_takesem(FAR struct usbhost_devaddr_s *devgen)
 {
 	/* Take the semaphore (perhaps waiting) */
 
-	while (sem_wait(&devgen->exclsem) != 0) {
+	while (sem_wait(&devgen->exclsem) != OK) {
 		/* The only case that an error should occur here is if the wait was
 		 * awakened by a signal.
 		 */

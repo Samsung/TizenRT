@@ -361,7 +361,7 @@ void romfs_semtake(struct romfs_mountpt_s *rm)
 {
 	/* Take the semaphore (perhaps waiting) */
 
-	while (sem_wait(&rm->rm_sem) != 0) {
+	while (sem_wait(&rm->rm_sem) != OK) {
 		/* The only case that an error should occur here is if
 		 * the wait was awakened by a signal.
 		 */

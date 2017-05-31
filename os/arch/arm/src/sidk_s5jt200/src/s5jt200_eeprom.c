@@ -451,7 +451,7 @@ static void ee_semtake(FAR struct ee_dev_s *eedev)
 {
 	/* Take the semaphore (perhaps waiting) */
 
-	while (sem_wait(&eedev->sem) != 0) {
+	while (sem_wait(&eedev->sem) != OK) {
 		/*
 		 * The only case that an error should occur here is if
 		 * the wait was awakened by a signal.

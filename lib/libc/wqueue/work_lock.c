@@ -112,13 +112,13 @@ int work_lock(void)
 
 #ifdef CONFIG_BUILD_PROTECTED
 	ret = sem_wait(&g_usrsem);
-	if (ret < 0) {
+	if (ret != OK) {
 		DEBUGASSERT(errno == EINTR);
 		return -EINTR;
 	}
 #else
 	ret = pthread_mutex_lock(&g_usrmutex);
-	if (ret != 0) {
+	if (ret != OK) {
 		DEBUGASSERT(ret == EINTR);
 		return -EINTR;
 	}

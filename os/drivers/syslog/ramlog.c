@@ -275,7 +275,7 @@ static ssize_t ramlog_read(FAR struct file *filep, FAR char *buffer, size_t len)
 	/* Get exclusive access to the rl_tail index */
 
 	ret = sem_wait(&priv->rl_exclsem);
-	if (ret < 0) {
+	if (ret != OK) {
 		return ret;
 	}
 
@@ -336,7 +336,7 @@ static ssize_t ramlog_read(FAR struct file *filep, FAR char *buffer, size_t len)
 
 			/* Did we successfully get the rl_waitsem? */
 
-			if (ret >= 0) {
+			if (ret == OK) {
 				/* Yes... then retake the mutual exclusion semaphore */
 
 				ret = sem_wait(&priv->rl_exclsem);
@@ -346,7 +346,7 @@ static ssize_t ramlog_read(FAR struct file *filep, FAR char *buffer, size_t len)
 			 * mutual exclusion semaphore?
 			 */
 
-			if (ret < 0) {
+			if (ret != OK) {
 				/* No.. One of the two sem_wait's failed. */
 
 				int errval = errno;
@@ -533,7 +533,7 @@ int ramlog_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 	/* Get exclusive access to the poll structures */
 
 	ret = sem_wait(&priv->rl_exclsem);
-	if (ret < 0) {
+	if (ret != OK) {
 		int errval = errno;
 		return -errval;
 	}

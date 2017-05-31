@@ -195,8 +195,8 @@ void spawn_semtake(FAR sem_t *sem)
 
 	do {
 		ret = sem_wait(sem);
-		ASSERT(ret == 0 || get_errno() == EINTR);
-	} while (ret != 0);
+		ASSERT(ret == OK || get_errno() == EINTR);
+	} while (ret != OK);
 }
 
 /****************************************************************************

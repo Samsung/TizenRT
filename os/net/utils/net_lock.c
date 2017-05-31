@@ -98,7 +98,7 @@ static unsigned int g_count = 0;
 
 static void _net_takesem(void)
 {
-	while (sem_wait(&g_netlock) != 0) {
+	while (sem_wait(&g_netlock) != OK) {
 		/* The only case that an error should occur here is if the wait was
 		 * awakened by a signal.
 		 */

@@ -157,7 +157,7 @@ static int wdog_open(FAR struct file *filep)
 	/* Get exclusive access to the device structures */
 
 	ret = sem_wait(&upper->exclsem);
-	if (ret < 0) {
+	if (ret != OK) {
 		ret = -get_errno();
 		goto errout;
 	}
@@ -206,7 +206,7 @@ static int wdog_close(FAR struct file *filep)
 	/* Get exclusive access to the device structures */
 
 	ret = sem_wait(&upper->exclsem);
-	if (ret < 0) {
+	if (ret != OK) {
 		ret = -get_errno();
 		goto errout;
 	}
@@ -276,7 +276,7 @@ static int wdog_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	/* Get exclusive access to the device structures */
 
 	ret = sem_wait(&upper->exclsem);
-	if (ret < 0) {
+	if (ret != OK) {
 		return ret;
 	}
 

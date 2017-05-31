@@ -181,7 +181,7 @@ static void phy_semtake(void)
 {
 	/* Take the semaphore (perhaps waiting) */
 
-	while (sem_wait(&g_notify_clients_sem) != 0) {
+	while (sem_wait(&g_notify_clients_sem) != OK) {
 		/* The only case that an error should occur here is if
 		 * the wait was awakened by a signal.
 		 */

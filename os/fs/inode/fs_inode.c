@@ -226,7 +226,7 @@ void inode_semtake(void)
 	/* Take the semaphore (perhaps waiting) */
 
 	else {
-		while (sem_wait(&g_inode_sem.sem) != 0) {
+		while (sem_wait(&g_inode_sem.sem) != OK) {
 			/* The only case that an error should occr here is if
 			 * the wait was awakened by a signal.
 			 */

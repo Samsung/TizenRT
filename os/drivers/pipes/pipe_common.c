@@ -120,7 +120,7 @@ static void pipecommon_semtake(sem_t *sem);
 
 static void pipecommon_semtake(sem_t *sem)
 {
-	while (sem_wait(sem) != 0) {
+	while (sem_wait(sem) != OK) {
 		/* The only case that an error should occur here is if the wait was
 		 * awakened by a signal.
 		 */
@@ -250,7 +250,7 @@ int pipecommon_open(FAR struct file *filep)
 		 */
 
 		if (dev->d_nwriters == 1) {
-			while (sem_getvalue(&dev->d_rdsem, &sval) == 0 && sval < 0) {
+			while (sem_getvalue(&dev->d_rdsem, &sval) == OK && sval < 0) {
 				sem_post(&dev->d_rdsem);
 			}
 		}
@@ -332,7 +332,7 @@ int pipecommon_close(FAR struct file *filep)
 			 */
 
 			if (--dev->d_nwriters <= 0) {
-				while (sem_getvalue(&dev->d_rdsem, &sval) == 0 && sval < 0) {
+				while (sem_getvalue(&dev->d_rdsem, &sval) == OK && sval < 0) {
 					sem_post(&dev->d_rdsem);
 				}
 			}
@@ -396,7 +396,7 @@ ssize_t pipecommon_read(FAR struct file *filep, FAR char *buffer, size_t len)
 
 	/* Make sure that we have exclusive access to the device structure */
 
-	if (sem_wait(&dev->d_bfsem) < 0) {
+	if (sem_wait(&dev->d_bfsem) != OK) {
 		return ERROR;
 	}
 
@@ -424,7 +424,7 @@ ssize_t pipecommon_read(FAR struct file *filep, FAR char *buffer, size_t len)
 		ret = sem_wait(&dev->d_rdsem);
 		sched_unlock();
 
-		if (ret < 0 || sem_wait(&dev->d_bfsem) < 0) {
+		if (ret != OK || sem_wait(&dev->d_bfsem) != OK) {
 			return ERROR;
 		}
 	}
@@ -442,7 +442,7 @@ ssize_t pipecommon_read(FAR struct file *filep, FAR char *buffer, size_t len)
 
 	/* Notify all waiting writers that bytes have been removed from the buffer */
 
-	while (sem_getvalue(&dev->d_wrsem, &sval) == 0 && sval < 0) {
+	while (sem_getvalue(&dev->d_wrsem, &sval) == OK && sval < 0) {
 		sem_post(&dev->d_wrsem);
 	}
 
@@ -490,7 +490,7 @@ ssize_t pipecommon_write(FAR struct file *filep, FAR const char *buffer, size_t 
 	DEBUGASSERT(up_interrupt_context() == false)
 
 	/* Make sure that we have exclusive access to the device structure */
-	if (sem_wait(&dev->d_bfsem) < 0) {
+	if (sem_wait(&dev->d_bfsem) != OK) {
 		return ERROR;
 	}
 
@@ -518,7 +518,7 @@ ssize_t pipecommon_write(FAR struct file *filep, FAR const char *buffer, size_t 
 			if (++nwritten >= len) {
 				/* Yes.. Notify all of the waiting readers that more data is available */
 
-				while (sem_getvalue(&dev->d_rdsem, &sval) == 0 && sval < 0) {
+				while (sem_getvalue(&dev->d_rdsem, &sval) == OK && sval < 0) {
 					sem_post(&dev->d_rdsem);
 				}
 
@@ -537,7 +537,7 @@ ssize_t pipecommon_write(FAR struct file *filep, FAR const char *buffer, size_t 
 			if (last < nwritten) {
 				/* Yes.. Notify all of the waiting readers that more data is available */
 
-				while (sem_getvalue(&dev->d_rdsem, &sval) == 0 && sval < 0) {
+				while (sem_getvalue(&dev->d_rdsem, &sval) == OK && sval < 0) {
 					sem_post(&dev->d_rdsem);
 				}
 			}

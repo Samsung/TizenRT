@@ -351,11 +351,11 @@ static ssize_t dac_write(FAR struct file *filep, FAR const char *buffer, size_t 
 
 			do {
 				ret = sem_wait(&fifo->af_sem);
-				if (ret < 0 && errno != EINTR) {
+				if (ret != OK && errno != EINTR) {
 					ret = -errno;
 					goto return_with_irqdisabled;
 				}
-			} while (ret < 0);
+			} while (ret != OK);
 
 			/* Re-check the FIFO state */
 

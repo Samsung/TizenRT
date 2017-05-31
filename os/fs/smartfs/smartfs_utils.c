@@ -198,7 +198,7 @@ void smartfs_semtake(struct smartfs_mountpt_s *fs)
 {
 	/* Take the semaphore (perhaps waiting) */
 
-	while (sem_wait(fs->fs_sem) != 0) {
+	while (sem_wait(fs->fs_sem) != OK) {
 		/* The only case that an error should occur here is if
 		 * the wait was awakened by a signal.
 		 */

@@ -159,7 +159,7 @@ static inline int syslog_takesem(void)
 	 */
 
 	ret = sem_wait(&g_sysdev.sl_sem);
-	if (ret < 0) {
+	if (ret != OK) {
 		return -get_errno();
 	}
 

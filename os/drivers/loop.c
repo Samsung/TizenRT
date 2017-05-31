@@ -144,7 +144,7 @@ static int loop_semtake(FAR struct loop_struct_s *dev)
 	/* Take the semaphore (perhaps waiting) */
 
 	ret = sem_wait(&dev->sem);
-	if (ret < 0) {
+	if (ret != OK) {
 		int errcode = get_errno();
 
 		/* The only case that an error should occur here is if

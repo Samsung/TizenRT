@@ -72,7 +72,7 @@ static void thread_inner(int id, int level)
 
 		printf("thread_inner[%d, %d]: Locking\n", id, level);
 		status = pthread_mutex_lock(&mut);
-		if (status != 0) {
+		if (status != OK) {
 			printf("thread_inner[%d, %d]: ERROR pthread_mutex_lock failed: %d\n",
 				   id, level, status);
 		}
