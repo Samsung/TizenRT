@@ -46,6 +46,13 @@
 #endif
 #endif
 
+enum server_status {
+	SERVER_STOPPED = 0,
+	SERVER_RUNNING,
+	SERVER_UNKNOWN
+};
+static enum server_status g_operating_status;
+
 /* temporary storage for dynamic resource representations */
 static int quit = 0;
 
@@ -60,11 +67,13 @@ struct coap_resource_t *time_resource = NULL;
 static coap_async_state_t *async = NULL;
 #endif							/* WITHOUT_ASYNC */
 
+#if !defined (__TINYARA__)
 /* SIGINT handler: set quit to 1 for graceful termination */
 static void handle_sigint(int signum)
 {
 	quit = 1;
 }
+#endif
 
 #define INDEX "This is a test server made with libcoap (see http://libcoap.sf.net)\n" \
    	      "Copyright (C) 2010--2013 Olaf Bergmann <bergmann@tzi.org>\n\n"
@@ -354,21 +363,30 @@ int coap_server_test_main(int argc, char **argv)
 			}
 			strncpy(addr_str, optarg, NI_MAXHOST - 1);
 			addr_str[NI_MAXHOST - 1] = '\0';
+			printf("coap-server : addresss %s\n", addr_str);
 			break;
 		case 'p':
 			strncpy(port_str, optarg, NI_MAXSERV - 1);
 			port_str[NI_MAXSERV - 1] = '\0';
+			printf("coap-server : port %s\n", port_str);
 			break;
 		case 'v':
 			log_level = strtol(optarg, NULL, 10);
+			printf("coap-server : log_level %d\n", log_level);
 			break;
 		case 'Q':
 			quit = 1;
+			printf("coap-server : set quit flag %d\n", quit);
 			return 0;
 		default:
 			usage(argv[0], PACKAGE_VERSION);
 			exit(1);
 		}
+	}
+
+	if (g_operating_status == SERVER_RUNNING) {
+		fprintf(stderr, "coap-server : error, another coap_server is running\n");
+		return 0;
 	}
 
 	coap_set_log_level(log_level);
@@ -382,9 +400,12 @@ int coap_server_test_main(int argc, char **argv)
 	/* initialize global variables */
 	quit = 0;
 
-#if 0
+#if !defined (__TINYARA__)
 	signal(SIGINT, handle_sigint);
 #endif
+
+	g_operating_status = SERVER_RUNNING;
+	printf("coap-server : coap_server is started\n");
 
 	while (!quit) {
 		FD_ZERO(&readfds);
@@ -440,6 +461,10 @@ int coap_server_test_main(int argc, char **argv)
 	if (addr_str) {
 		coap_free(addr_str);
 	}
+
+	g_operating_status = SERVER_STOPPED;
+
+	printf("coap-server : good bye\n");
 
 	return 0;
 }
