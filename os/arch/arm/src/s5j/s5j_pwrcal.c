@@ -182,6 +182,23 @@ int cal_clk_disable(unsigned int id)
 	return 0;
 }
 
+int cal_clk_mux(unsigned int id, int val)
+{
+	switch (id) {
+	case i2s_mux:
+		if (val == i2s_bclk) {
+			modifyreg32(CLK_CON_MUX_MUX_CLKCMU_I2SB, 0, 1);
+		} else if (val == i2s_osc) {
+			modifyreg32(CLK_CON_MUX_MUX_CLKCMU_I2SB, 1, 0);
+		}
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 int cal_init(void)
 {
 	return 0;
