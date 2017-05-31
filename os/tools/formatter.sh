@@ -18,6 +18,11 @@
 ###########################################################################
 TARGET=$1
 
+die() {
+	echo $1
+	exit 1;
+}
+
 function USAGE()
 {
     echo "usage: $0 <TARGET>"
@@ -37,12 +42,60 @@ if [ ${TARGET} == "--help" ]; then
     exit 1
 fi
 
-if [ -d ${TARGET} ]; then
-    find ${TARGET} -name "*.[c,h]" | xargs -I{} indent {} -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i4 -ip0 -l1000 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts4 -il1
-    astyle --style=linux --add-brackets --indent=force-tab=4 --unpad-paren --pad-header --pad-oper --align-pointer=name --recursive "${TARGET}/*.c" "${TARGET}/*.h"
-    find ${TARGET} -name "*.[c,h]" | xargs perl -pi -e 's/ \*\) & / \*\)&/g;s/ \*\) - 1/ \*\)-1/g;s/ \*\) kmm/ \*\)kmm/g;s/ \*\) malloc/ \*\)malloc/g;s/ \*\) realloc/ \*\)realloc/g;s/ \*\) zalloc/ \*\)zalloc/g'
-else
-    indent ${TARGET} -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i4 -ip0 -l1000 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts4 -il1
-    astyle --style=linux --add-brackets --indent=force-tab=4 --unpad-paren --pad-header --pad-oper --align-pointer=name ${TARGET}
-    perl -pi -e 's/ \*\) & / \*\)&/g;s/ \*\) - 1/ \*\)-1/g;s/ \*\) kmm/ \*\)kmm/g;s/ \*\) malloc/ \*\)malloc/g;s/ \*\) realloc/ \*\)realloc/g;s/ \*\) zalloc/ \*\)zalloc/g' ${TARGET}
-fi
+which indent > /dev/null || die "indent is not installed."
+which astyle > /dev/null || die "astyle is not installed."
+which sed > /dev/null || die "sed is not installed."
+
+read -d '' INDENT_RULES << __EOF__
+	--no-blank-lines-after-declarations
+	--blank-lines-after-procedures
+	--no-blank-lines-after-commas
+	--break-before-boolean-operator
+	--honour-newlines
+	--braces-on-if-line
+	--braces-on-struct-decl-line
+	--comment-indentation33
+	--declaration-comment-column33
+	--no-comment-delimiters-on-blank-lines
+	--cuddle-else
+	--continuation-indentation4
+	--case-indentation0
+	--line-comments-indentation0
+	--declaration-indentation1
+	--dont-format-first-column-comments
+	--indent-level4
+	--parameter-indentation0
+	--line-length1000
+	--continue-at-parentheses
+	--no-space-after-function-call-names
+	--no-space-after-parentheses
+	--dont-break-procedure-type
+	--space-after-if
+	--space-after-for
+	--space-after-while
+	--no-space-after-casts
+	--dont-star-comments
+	--swallow-optional-blank-lines
+	--dont-format-comments
+	--space-special-semicolon
+	--tab-size4
+	--indent-label1
+__EOF__
+
+read -d '' ASTYLE_RULES << __EOF__
+	--style=linux
+	--add-brackets
+	--indent=force-tab=4
+	--unpad-paren
+	--pad-header
+	--pad-oper
+	--align-pointer=name
+__EOF__
+
+for file in `find ${TARGET} -name *.[ch]`; do
+	indent ${INDENT_RULES} $file
+	astyle ${ASTYLE_RULES} $file
+
+	# custom rules
+	sed -i -e 's/ \*) - 1/ \*)-1/g' $file
+done
