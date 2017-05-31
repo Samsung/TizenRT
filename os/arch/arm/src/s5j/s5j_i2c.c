@@ -84,6 +84,7 @@
 #define S5J_DEFAULT_I2CSLAVE_ADDR	0x22
 #define S5J_DEFAULT_I2C_TIMEOUT		10000
 #define S5J_DEFAULT_HS_CLOCK		400000	/* 400Khz */
+#define S5J_DEFAULT_HS_CLOCK		400000			/* 400Khz */
 
 /****************************************************************************
  * Private Types
@@ -286,7 +287,7 @@ static void hsi2c_calculate_timing(struct s5j_i2c_priv_s *priv, unsigned int nOp
 
 	tFTL_CYCLE_SCL = (i2c_getreg32(priv, S5J_I2C_CONF) >> 16) & 0x7;
 
-	uTemp0 = (priv->clock / nOpClk) - (tFTL_CYCLE_SCL + 3) * 2;
+	uTemp0 = (float)(priv->clock / nOpClk) - (tFTL_CYCLE_SCL + 3) * 2;
 
 	for (i = 0; i < 256; i++) {
 		uTemp1 = ((int)uTemp0 + ((tFTL_CYCLE_SCL + 3) % (i + 1)) * 2) / (i + 1);
