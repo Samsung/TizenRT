@@ -207,7 +207,7 @@ static int spi_lock(FAR struct spi_dev_s *dev, bool lock)
 	if (lock) {
 		/* Take the semaphore (perhaps waiting) */
 
-		while (sem_wait(&priv->exclsem) != 0) {
+		while (sem_wait(&priv->exclsem) != OK) {
 			/* The only case that an error should occur here is if the wait was awakened
 			 * by a signal.
 			 */

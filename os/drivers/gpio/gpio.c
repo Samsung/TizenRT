@@ -137,7 +137,7 @@ static int sem_reinit(FAR sem_t *sem, int pshared, unsigned int value)
 static inline int gpio_takesem(FAR sem_t *sem)
 {
 	/* Take a count from the semaphore, possibly waiting */
-	if (sem_wait(sem) < 0) {
+	if (sem_wait(sem) != OK) {
 		/* EINTR is the only error that we expect */
 		int errcode = get_errno();
 		DEBUGASSERT(errcode == EINTR);

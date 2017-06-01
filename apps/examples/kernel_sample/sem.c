@@ -89,7 +89,7 @@ static void *waiter_func(void *parameter)
 	/* Take the semaphore */
 
 	status = sem_getvalue(&sem, &value);
-	if (status < 0) {
+	if (status != OK) {
 		printf("waiter_func: ERROR thread %d could not get semaphore value\n",  id);
 	} else {
 		printf("waiter_func: Thread %d initial semaphore value = %d\n",  id, value);
@@ -97,13 +97,13 @@ static void *waiter_func(void *parameter)
 
 	printf("waiter_func: Thread %d waiting on semaphore\n",  id);
 	status = sem_wait(&sem);
-	if (status != 0) {
+	if (status != OK) {
 		printf("waiter_func: ERROR thread %d sem_wait failed\n",  id);
 	}
 	printf("waiter_func: Thread %d awakened\n",  id);
 
 	status = sem_getvalue(&sem, &value);
-	if (status < 0) {
+	if (status != OK) {
 		printf("waiter_func: ERROR thread %d could not get semaphore value\n",  id);
 	} else {
 		printf("waiter_func: Thread %d new semaphore value = %d\n",  id, value);
@@ -125,7 +125,7 @@ static void *poster_func(void *parameter)
 
 	do {
 		status = sem_getvalue(&sem, &value);
-		if (status < 0) {
+		if (status != OK) {
 			printf("poster_func: ERROR thread %d could not get semaphore value\n",  id);
 		} else {
 			printf("poster_func: Thread %d semaphore value = %d\n",  id, value);
@@ -134,14 +134,14 @@ static void *poster_func(void *parameter)
 		if (value < 0) {
 			printf("poster_func: Thread %d posting semaphore\n",  id);
 			status = sem_post(&sem);
-			if (status != 0) {
+			if (status != OK) {
 				printf("poster_func: ERROR thread %d sem_wait failed\n",  id);
 			}
 
 			pthread_yield();
 
 			status = sem_getvalue(&sem, &value);
-			if (status < 0) {
+			if (status != OK) {
 				printf("poster_func: ERROR thread %d could not get semaphore value\n",  id);
 			} else {
 				printf("poster_func: Thread %d new semaphore value = %d\n",  id, value);

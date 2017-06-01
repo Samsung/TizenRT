@@ -97,7 +97,7 @@ static int poll_semtake(FAR sem_t *sem)
 {
 	/* Take the semaphore (perhaps waiting) */
 
-	if (sem_wait(sem) < 0) {
+	if (sem_wait(sem) != OK) {
 		int err = get_errno();
 
 		/* The only case that an error should occur here is if the wait were
@@ -365,7 +365,7 @@ int poll(FAR struct pollfd *fds, nfds_t nfds, int timeout)
 			}
 
 			ret = sem_timedwait(&sem, &abstime);
-			if (ret < 0) {
+			if (ret != OK) {
 				int err = get_errno();
 
 				if (err == ETIMEDOUT) {

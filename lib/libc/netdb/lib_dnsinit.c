@@ -169,11 +169,11 @@ void dns_semtake(void)
 
 	do {
 		ret = sem_wait(&g_dns_sem);
-		if (ret < 0) {
+		if (ret != OK) {
 			errcode = get_errno();
 			DEBUGASSERT(errcode == EINTR);
 		}
-	} while (ret < 0 && errcode == EINTR);
+	} while (ret != OK && errcode == EINTR);
 }
 
 /****************************************************************************

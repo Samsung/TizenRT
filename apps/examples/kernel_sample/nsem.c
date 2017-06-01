@@ -185,7 +185,7 @@ void nsem_test(void)
 
 	printf("nsem_test: Wait on semaphore 1\n");
 	status = sem_wait(sem1);
-	if (status < 0) {
+	if (status != OK) {
 		int errcode = errno;
 		printf("nsem_test: ERROR: sem_wait(1) failed: %d\n",  errcode);
 		pthread_cancel(peer);
@@ -214,7 +214,7 @@ void nsem_test(void)
 
 	printf("nsem_test: Wait on semaphore 2\n");
 	status = sem_wait(sem2);
-	if (status < 0) {
+	if (status != OK) {
 		int errcode = errno;
 		printf("nsem_test: ERROR: sem_wait(1) failed: %d\n",  errcode);
 		pthread_cancel(peer);

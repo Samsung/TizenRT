@@ -96,7 +96,7 @@ static void _files_semtake(FAR struct filelist *list)
 {
 	/* Take the semaphore (perhaps waiting) */
 
-	while (sem_wait(&list->fl_sem) != 0) {
+	while (sem_wait(&list->fl_sem) != OK) {
 		/* The only case that an error should occr here is if
 		 * the wait was awakened by a signal.
 		 */

@@ -166,7 +166,7 @@ FAR void *shmat(int shmid, FAR const void *shmaddr, int shmflg)
 	/* Get exclusive access to the region data structure */
 
 	ret = sem_wait(&region->sr_sem);
-	if (ret < 0) {
+	if (ret != OK) {
 		shmdbg("sem_wait failed: %d\n", ret);
 		goto errout;
 	}

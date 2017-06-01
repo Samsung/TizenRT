@@ -87,7 +87,7 @@
 void bchlib_semtake(FAR struct bchlib_s *bch)
 {
 	/* Take the semaphore (perhaps waiting) */
-	while (sem_wait(&bch->sem) != 0) {
+	while (sem_wait(&bch->sem) != OK) {
 		/*
 		 * The only case that an error should occur here is if
 		 * the wait was awakened by a signal.

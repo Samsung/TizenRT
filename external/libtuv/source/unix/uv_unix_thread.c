@@ -213,7 +213,7 @@ void uv_sem_wait(uv_sem_t *sem)
 
 	do {
 		r = sem_wait(sem);
-	} while (r == -1 && errno == EINTR);
+	} while (r == ERROR && errno == EINTR);
 
 	if (r) {
 		TDLOG("uv_sem_wait abort");
@@ -227,7 +227,7 @@ int uv_sem_trywait(uv_sem_t *sem)
 
 	do {
 		r = sem_trywait(sem);
-	} while (r == -1 && errno == EINTR);
+	} while (r == ERROR && errno == EINTR);
 
 	if (r) {
 		if (errno == EAGAIN) {

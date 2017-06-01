@@ -454,7 +454,7 @@ static int telnet_open(FAR struct file *filep)
 	/* Get exclusive access to the device structures */
 
 	ret = sem_wait(&priv->td_exclsem);
-	if (ret < 0) {
+	if (ret != OK) {
 		ret = -errno;
 		goto errout;
 	}
@@ -500,7 +500,7 @@ static int telnet_close(FAR struct file *filep)
 	/* Get exclusive access to the device structures */
 
 	ret = sem_wait(&priv->td_exclsem);
-	if (ret < 0) {
+	if (ret != OK) {
 		ret = -errno;
 		goto errout;
 	}
@@ -761,10 +761,10 @@ static int telnet_session(FAR struct telnet_session_s *session)
 
 	do {
 		ret = sem_wait(&g_telnet_common.tc_exclsem);
-		if (ret < 0 && errno != -EINTR) {
+		if (ret != OK && errno != -EINTR) {
 			goto errout_with_clone;
 		}
-	} while (ret < 0);
+	} while (ret != OK);
 
 	/* Loop until the device name is verified to be unique. */
 

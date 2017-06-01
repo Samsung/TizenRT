@@ -834,7 +834,7 @@ static int mtdconfig_open(FAR struct file *filep)
 	/* Get exclusive access to the device */
 
 	ret = sem_wait(&dev->exclsem);
-	if (ret < 0) {
+	if (ret != OK) {
 		ret = -errno;
 		goto errout;
 	}

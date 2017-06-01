@@ -112,7 +112,7 @@ static FAR char *unique_chardev(void)
 	/* Loop until we get a unique device name */
 	for (; ; ) {
 		/* Get the semaphore protecting the path number */
-		while (sem_wait(&g_devno_sem) < 0) {
+		while (sem_wait(&g_devno_sem) != OK) {
 			DEBUGASSERT(errno == EINTR);
 		}
 

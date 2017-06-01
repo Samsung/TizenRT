@@ -137,7 +137,7 @@ int mm_trysemaphore(FAR struct mm_heap_s *heap)
 	} else {
 		/* Try to take the semaphore (perhaps waiting) */
 
-		if (sem_trywait(&heap->mm_semaphore) != 0) {
+		if (sem_trywait(&heap->mm_semaphore) != OK) {
 			return ERROR;
 		}
 
@@ -172,7 +172,7 @@ void mm_takesemaphore(FAR struct mm_heap_s *heap)
 		/* Take the semaphore (perhaps waiting) */
 
 		msemdbg("PID=%d taking\n", my_pid);
-		while (sem_wait(&heap->mm_semaphore) != 0) {
+		while (sem_wait(&heap->mm_semaphore) != OK) {
 			/* The only case that an error should occur here is if
 			 * the wait was awakened by a signal.
 			 */

@@ -405,10 +405,10 @@ int telnetd_start(FAR struct telnetd_config_s *config)
 		 * a receipt of a signal.
 		 */
 
-		if (ret < 0) {
+		if (ret != OK) {
 			DEBUGASSERT(errno == -EINTR);
 		}
-	} while (ret < 0);
+	} while (ret != OK);
 
 	/* Return success */
 

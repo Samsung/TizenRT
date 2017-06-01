@@ -461,7 +461,7 @@ static void usbhost_takesem(sem_t *sem)
 {
 	/* Take the semaphore (perhaps waiting) */
 
-	while (sem_wait(sem) != 0) {
+	while (sem_wait(sem) != OK) {
 		/* The only case that an error should occur here is if the wait was
 		 * awakened by a signal.
 		 */
@@ -1313,7 +1313,7 @@ static int usbhost_waitsample(FAR struct usbhost_state_s *priv, FAR struct mouse
 		ret = sem_wait(&priv->waitsem);
 		priv->nwaiters--;
 
-		if (ret < 0) {
+		if (ret != OK) {
 			/* If we are awakened by a signal, then we need to return
 			 * the failure now.
 			 */

@@ -273,7 +273,7 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	/* Now perform the blocking wait */
 
 	ret = sem_wait(sem);
-	if (ret < 0) {
+	if (ret != OK) {
 		/* sem_wait() failed.  Save the errno value */
 
 		errcode = get_errno();
@@ -296,7 +296,7 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	 * cases.
 	 */
 
-	if (ret < 0) {
+	if (ret < OK) {
 		/* On failure, restore the errno value returned by sem_wait */
 
 		set_errno(errcode);

@@ -142,7 +142,7 @@ static inline void pipe_free(int pipeno)
 	int ret;
 
 	ret = sem_wait(&g_pipesem);
-	if (ret == 0) {
+	if (ret == OK) {
 		g_pipeset &= ~(1 << pipeno);
 		(void)sem_post(&g_pipesem);
 	}
@@ -207,7 +207,7 @@ int pipe(int fd[2])
 	/* Get exclusive access to the pipe allocation data */
 
 	ret = sem_wait(&g_pipesem);
-	if (ret < 0) {
+	if (ret != OK) {
 		/* sem_wait() will have already set errno */
 
 		return ERROR;

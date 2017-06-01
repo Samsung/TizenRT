@@ -85,7 +85,7 @@ struct mx_mmap_dev {
 static void mx_gdb_semtake(sem_t *sem)
 {
 	SLSI_INFO_NODEV("Entering\n");
-	while (sem_wait(sem) != 0) {
+	while (sem_wait(sem) != OK) {
 		/* The only case that an error should occur here is if the wait was
 		 * awakened by a signal.
 		 */
@@ -211,7 +211,7 @@ int mx_gdb_open(struct file *filp)
 		 * number of readers waiting for the first writer.  Wake them all up.
 		 */
 		if (mx_dev->nwriters == 1) {
-			while (sem_getvalue(&mx_dev->read_wait, &sval) == 0 && sval < 0) {
+			while (sem_getvalue(&mx_dev->read_wait, &sval) == OK && sval < 0) {
 				sem_post(&mx_dev->read_wait);
 			}
 		}
@@ -255,7 +255,7 @@ static ssize_t mx_gdb_read(struct file *filp, FAR char *buf, size_t len)
 	SLSI_INFO_NODEV("\n");
 
 	/* Make sure that we have exclusive access to the device structure */
-	if (sem_wait(&mx_dev->data_wait) < 0) {
+	if (sem_wait(&mx_dev->data_wait) != OK) {
 		return ERROR;
 	}
 
@@ -279,7 +279,7 @@ static ssize_t mx_gdb_read(struct file *filp, FAR char *buf, size_t len)
 		ret = sem_wait(&mx_dev->read_wait);
 		sched_unlock();
 
-		if (ret < 0) {
+		if (ret != OK) {
 			return ERROR;
 		}
 	}
@@ -295,7 +295,7 @@ static ssize_t mx_gdb_read(struct file *filp, FAR char *buf, size_t len)
 	}
 
 	/* Notify all waiting writers that bytes have been removed from the buffer */
-	while (sem_getvalue(&mx_dev->write_wait, &sval) == 0 && sval < 0) {
+	while (sem_getvalue(&mx_dev->write_wait, &sval) == OK && sval < 0) {
 		sem_post(&mx_dev->write_wait);
 	}
 
@@ -334,7 +334,7 @@ void gdb_read_callback(const void *message, size_t len, void *data)
 
 	if (mx_dev->filp) {
 		/* Make sure that we have exclusive access to the device structure */
-		if (sem_wait(&mx_dev->data_wait) < 0) {
+		if (sem_wait(&mx_dev->data_wait) != OK) {
 			SLSI_ERR_NODEV("could not get exclusive access to dev structure\n");
 			return;
 		}
@@ -357,7 +357,7 @@ void gdb_read_callback(const void *message, size_t len, void *data)
 				/* Is the write complete? */
 				if (++nwritten >= len) {
 					/* Yes.. Notify all of the waiting readers that more data is available */
-					while (sem_getvalue(&mx_dev->read_wait, &sval) == 0 && sval < 0) {
+					while (sem_getvalue(&mx_dev->read_wait, &sval) == OK && sval < 0) {
 						sem_post(&mx_dev->read_wait);
 					}
 
@@ -373,7 +373,7 @@ void gdb_read_callback(const void *message, size_t len, void *data)
 				/* There is not enough room for the next byte.  Was anything written in this pass? */
 				if (last < nwritten) {
 					/* Yes.. Notify all of the waiting readers that more data is available */
-					while (sem_getvalue(&mx_dev->read_wait, &sval) == 0 && sval < 0) {
+					while (sem_getvalue(&mx_dev->read_wait, &sval) == OK && sval < 0) {
 						sem_post(&mx_dev->read_wait);
 					}
 				}
@@ -513,7 +513,7 @@ int mx_gdb_close(struct file *filp)
 			 * waiting readers that they must return end-of-file.
 			 */
 			if (--mx_dev->nwriters <= 0) {
-				while (sem_getvalue(&mx_dev->read_wait, &sval) == 0 && sval < 0) {
+				while (sem_getvalue(&mx_dev->read_wait, &sval) == OK && sval < 0) {
 					sem_post(&mx_dev->read_wait);
 				}
 

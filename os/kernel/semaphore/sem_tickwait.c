@@ -179,7 +179,7 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 	/* Now perform the blocking wait */
 
 	ret = sem_wait(sem);
-	if (ret < 0) {
+	if (ret != OK) {
 		/* Return the errno from sem_wait() */
 
 		ret = -get_errno();

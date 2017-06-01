@@ -252,7 +252,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 	/* Then wait for the task to exit */
 
 	ret = sem_wait(&group->tg_exitsem);
-	if (ret < 0) {
+	if (ret != OK) {
 		/* Unlock pre-emption and return the ERROR (sem_wait has already set
 		 * the errno).  Handle the awkward case of whether or not we need to
 		 * nullify the stat_loc value.

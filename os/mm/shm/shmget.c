@@ -401,7 +401,7 @@ int shmget(key_t key, size_t size, int shmflg)
 	/* Get exclusive access to the global list of shared memory regions */
 
 	ret = sem_wait(&g_shminfo.si_sem);
-	if (ret >= 0) {
+	if (ret == OK) {
 		/* Find the requested memory region */
 
 		ret = shm_find(key);

@@ -183,7 +183,7 @@ void aio_lock(void)
 	} else {
 		/* No.. take the semaphore */
 
-		while (sem_wait(&g_aio_exclsem) < 0) {
+		while (sem_wait(&g_aio_exclsem) != OK) {
 			DEBUGASSERT(get_errno() == EINTR);
 		}
 
@@ -240,7 +240,7 @@ FAR struct aio_container_s *aioc_alloc(void)
 	 * container set aside for us.
 	 */
 
-	while (sem_wait(&g_aioc_freesem) < 0) {
+	while (sem_wait(&g_aioc_freesem) != OK) {
 		DEBUGASSERT(get_errno() == EINTR);
 	}
 

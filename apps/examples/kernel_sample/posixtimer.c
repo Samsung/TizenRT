@@ -223,7 +223,7 @@ void timer_test(void)
 		printf("timer_test: Waiting on semaphore\n");
 		FFLUSH();
 		status = sem_wait(&sem);
-		if (status != 0) {
+		if (status != OK) {
 			int error = errno;
 			if (error == EINTR) {
 				printf("timer_test: sem_wait() successfully interrupted by signal\n");
