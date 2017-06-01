@@ -64,3 +64,64 @@ config AUDIO_NULL_WORKER_STACKSIZE
 
 endif # AUDIO_NULL
 
+config AUDIO_ALC5658
+        bool "ALC5658 audio chip"
+        default n
+        depends on AUDIO
+        ---help---
+                Select to enable support for the ALC5658 Audio codec by Wolfson
+                Microelectonics.  This chip is a lower level audio chip.. basically
+                an exotic D-to-A.  It includes no built-in support for audio CODECS
+                The ALC5658 provides:
+
+                        - Low power consumption
+                        - High SNR
+                        - Stereo digital microphone input
+                        - Digital Dynamic Range Controller (compressor / limiter)
+                        - Digital sidetone mixing
+                        - Ground-referenced headphone driver
+                        - Ground-referenced line outputs
+
+                NOTE: This driver also depends on both I2C and I2S support although
+                that dependency is not explicit here.
+
+if AUDIO_ALC5658
+
+config ALC5658_INITVOLUME
+        int "ALC5658 initial volume setting"
+        default 250
+
+config ALC5658_INFLIGHT
+        int "ALC5658 maximum in-flight audio buffers"
+        default 2
+
+config ALC5658_MSG_PRIO
+        int "ALC5658 message priority"
+        default 1
+
+config ALC5658_BUFFER_SIZE
+        int "ALC5658 preferred buffer size"
+        default 8192
+
+config ALC5658_NUM_BUFFERS
+        int "ALC5658 preferred number of buffers"
+        default 4
+
+config ALC5658_WORKER_STACKSIZE
+        int "ALC5658 worker thread stack size"
+        default 768
+
+config ALC5658_REGDUMP
+        bool "ALC5658 register dump"
+        default n
+        ---help---
+                Enable logic to dump the contents of all ALC5658 registers.
+
+config ALC5658_CLKDEBUG
+        bool "ALC5658 clock analysis"
+        default n
+        ---help---
+                Enable logic to analyze ALC5658 clock configuation.
+
+endif # AUDIO_ALC5658
+
