@@ -420,7 +420,7 @@ int8_t parseCmdLine(int argc, char *argv[])
 {
 	int8_t result = SLSI_STATUS_ERROR;
 	uint8_t ssid_len = 0;
-	if (strncmp("join", argv[0], strlen(argv[0])) == 0) {
+	if (strncmp("join", argv[1], strlen(argv[1])) == 0) {
 		char *secmode = SLSI_WIFI_SECURITY_OPEN;
 		char *passphrase = NULL;
 		/*slsiwifi join <ssid> <key> <security>
@@ -428,52 +428,52 @@ int8_t parseCmdLine(int argc, char *argv[])
 		   <security> : type of security, open, wep, wep_shared, wpa2_tkip, wpa2_aes, wpa2_mixed, wpa_aes, wpa_tkip, wpa_mixed
 		   <key> : passphrase
 		 */
-		if (argc <= 1) {
-			sw_printJoinHelp();
+		if (argc <= 2) {
+			sw_printJoinHelp(argv[0]);
 			return result;
 		} else {
-			ssid_len = strlen(argv[1]);
-			if (argc == 2) {
+			ssid_len = strlen(argv[2]);
+			if (argc == 3) {
 				secmode = SLSI_WIFI_SECURITY_OPEN;
-			} else if (argc == 3) {
-				if (strncmp(SLSI_WIFI_SECURITY_OPEN, argv[2], strlen(argv[2])) == 0) {
-					secmode = SLSI_WIFI_SECURITY_OPEN;
-				} else {		// we expect it to be a passphrase in argv[2] so use default security mode of wpa2_aes
-					secmode = SLSI_WIFI_SECURITY_WPA2_AES;
-					passphrase = argv[2];
-				}
 			} else if (argc == 4) {
-				passphrase = argv[2];
-				secmode = argv[3];
+				if (strncmp(SLSI_WIFI_SECURITY_OPEN, argv[3], strlen(argv[3])) == 0) {
+					secmode = SLSI_WIFI_SECURITY_OPEN;
+				} else {		// we expect it to be a passphrase in argv[3] so use default security mode of wpa2_aes
+					secmode = SLSI_WIFI_SECURITY_WPA2_AES;
+					passphrase = argv[3];
+				}
+			} else if (argc == 5) {
+				passphrase = argv[3];
+				secmode = argv[4];
 			} else {
-				sw_printJoinHelp();
+				sw_printJoinHelp(argv[0]);
 				return result;
 			}
 		}
 
 		/* An SSID is 32 octets, we assume all ascii here and can safely type-cast to correct data type.
 		 * as this interface only supports a subset of possible SSID's*/
-		printf("Joining network %s\n", argv[1]);
+		printf("Joining network %s\n", argv[2]);
 		printf("Security: %s\n", secmode);
 		if (passphrase) {
 			printf("Passphrase: %s\n", passphrase);
 		}
 		if (!check_security_str(secmode)) {
-			sw_printJoinHelp();
+			sw_printJoinHelp(argv[0]);
 			printf("Security mode not supported: %s\n", secmode);
 		} else {
-			(void)doJoin((uint8_t *)argv[1], ssid_len, NULL /*bssid */ , secmode, passphrase);
+			(void)doJoin((uint8_t *)argv[2], ssid_len, NULL /*bssid */ , secmode, passphrase);
 		}
-	} else if (strncmp("startsta", argv[0], MAXLEN(8, strlen(argv[0]))) == 0) {
+	} else if (strncmp("startsta", argv[1], MAXLEN(8, strlen(argv[1]))) == 0) {
 		/*no more arguments - just start sta mode */
 		(void)doStartSta();
-	} else if (strncmp("stop", argv[0], MAXLEN(4, strlen(argv[0]))) == 0) {
+	} else if (strncmp("stop", argv[1], MAXLEN(4, strlen(argv[1]))) == 0) {
 		/*no more arguments - just stop sta/softap mode */
 		(void)doStop();
 #ifdef CONFIG_EXAMPLES_SLSIDEMO_MEM_CHECK
 		getMemLeaks();
 #endif
-	} else if (strncmp("opmode", argv[0], MAXLEN(6, strlen(argv[0]))) == 0) {
+	} else if (strncmp("opmode", argv[1], MAXLEN(6, strlen(argv[1]))) == 0) {
 		if (g_mode == SLSI_WIFI_STATION_IF) {
 			printf("System is in STA mode\n");
 		} else if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
@@ -481,20 +481,20 @@ int8_t parseCmdLine(int argc, char *argv[])
 		} else {
 			printf("WiFi is not yet started\n");
 		}
-	} else if (strncmp("leave", argv[0], MAXLEN(5, strlen(argv[0]))) == 0) {
+	} else if (strncmp("leave", argv[1], MAXLEN(5, strlen(argv[1]))) == 0) {
 		/*no more arguments - just leave */
 		(void)doLeave();
-	} else if (strncmp("country", argv[0], MAXLEN(7, strlen(argv[0]))) == 0) {
-		if (!argv[1] || strlen(argv[1]) != 2) {
+	} else if (strncmp("country", argv[1], MAXLEN(7, strlen(argv[1]))) == 0) {
+		if (!argv[2] || strlen(argv[2]) != 2) {
 			sw_printHelp();
 		} else {
-			WiFiSetCountryCode(argv[1]);
+			WiFiSetCountryCode(argv[2]);
 		}
-	} else if (strncmp("txpower", argv[0], MAXLEN(7, strlen(argv[0]))) == 0) {
-		if (!argv[1] || strlen(argv[1]) != 2) {
+	} else if (strncmp("txpower", argv[1], MAXLEN(7, strlen(argv[1]))) == 0) {
+		if (!argv[2] || strlen(argv[2]) != 2) {
 			sw_printHelp();
 		} else {
-			uint8_t tx_power = (uint8_t)atoi(argv[1]);
+			uint8_t tx_power = (uint8_t)atoi(argv[2]);
 			if (tx_power >= 12 && tx_power <= 30) {
 				printf("Setting tx power to %ddBm\n", tx_power);
 				WiFiSetTxPower(&tx_power);
@@ -502,95 +502,95 @@ int8_t parseCmdLine(int argc, char *argv[])
 				sw_printHelp();
 			}
 		}
-	} else if (strncmp("scan", argv[0], MAXLEN(4, strlen(argv[0]))) == 0) {
+	} else if (strncmp("scan", argv[1], MAXLEN(4, strlen(argv[1]))) == 0) {
 		/*no more arguments - just scan */
 		(void)doScan();
-	} else if (strncmp("startap", argv[0], MAXLEN(7, strlen(argv[0]))) == 0) {
+	} else if (strncmp("startap", argv[1], MAXLEN(7, strlen(argv[1]))) == 0) {
 		//slsiwifi startap <ssid> <security> <key> <channel>
-		if (argc >= 2 && strlen(argv[1]) > 32) {
+		if (argc >= 3 && strlen(argv[2]) > 32) {
 			printf("SSID cannot be longer than 32 characters\n");
 			return result;
 		}
 		uint8_t channel = 1;
 		char *sec = "open";
 		char *passphrase = NULL;
-		/*Options for argc = 2:
+		/*Options for argc = 3:
 		 * startap <ssid>
 		 * channel defaults to 1
 		 * security defaults to open
 		 * */
-		if (argc == 2) {
+		if (argc == 3) {
 			//fallthrough
-		} else if (argc == 3) {
-			/*Options for argc = 3:
+		} else if (argc == 4) {
+			/*Options for argc = 4:
 			 * startap <ssid> <channel>
 			 * startap <ssid> open
 			 * startap <ssid> <passphrase>
 			 * channel defaults to 1
 			 * security defaults to wpa2_aes for passphrase only
 			 * */
-			if (strlen(argv[2]) <= 3) {	//We expect it to be a number = channel
-				channel = atoi(argv[2]);
-			} else if (strncmp("open", argv[2], MAXLEN(4, strlen(argv[2]))) == 0) {
+			if (strlen(argv[3]) <= 4) {	//We expect it to be a number = channel
+				channel = atoi(argv[3]);
+			} else if (strncmp("open", argv[3], MAXLEN(4, strlen(argv[3]))) == 0) {
 				//use defualt settings
 			} else {			//expect passphrase
 				sec = SLSI_WIFI_SECURITY_WPA2_AES;
-				passphrase = argv[2];
+				passphrase = argv[3];
 			}
-		} else if (argc == 4) {
-			/*Options for argc = 4:
+		} else if (argc == 5) {
+			/*Options for argc = 5:
 			 * startap <ssid> open <channel>
 			 * startap <ssid> <passphrase> <sec>
 			 * startap <ssid> <passphrase> <channel>
 			 * channel defaults to 1
 			 * security defaults to wpa2_aes for passphrase only
 			 * */
-			if (strncmp("open", argv[2], MAXLEN(4, strlen(argv[2]))) == 0) {
+			if (strncmp("open", argv[3], MAXLEN(4, strlen(argv[3]))) == 0) {
 				//use default settings
-				if (strlen(argv[3]) <= 3) {	//We expect it to be a number = channel
-					channel = atoi(argv[3]);
+				if (strlen(argv[4]) <= 4) {	//We expect it to be a number = channel
+					channel = atoi(argv[4]);
 				} else {
-					printf("%s does not look like a channel number\n", argv[3]);
+					printf("%s does not look like a channel number\n", argv[4]);
 				}
-			} else if (strncmp("wep", argv[3], MAXLEN(3, strlen(argv[3]))) == 0 || strncmp("wep_shared", argv[3], MAXLEN(10, strlen(argv[3]))) == 0) {
+			} else if (strncmp("wep", argv[4], MAXLEN(3, strlen(argv[4]))) == 0 || strncmp("wep_shared", argv[4], MAXLEN(10, strlen(argv[4]))) == 0) {
 				printf("wep security is not allowed for Soft AP\n");
-				sw_printStartapHelp();
+				sw_printStartapHelp(argv[0]);
 				return result;
 			} else {			//expect passphrase
 				sec = SLSI_WIFI_SECURITY_WPA2_AES;
-				passphrase = argv[2];
-				if (strlen(argv[3]) <= 3) {	//We expect it to be a number = channel
-					channel = atoi(argv[2]);
+				passphrase = argv[3];
+				if (strlen(argv[4]) <= 4) {	//We expect it to be a number = channel
+					channel = atoi(argv[3]);
 				} else {		//we expect it to be a passphrase
-					sec = argv[3];
+					sec = argv[4];
 				}
 			}
-		} else if (argc == 5) {
-			passphrase = argv[2];
-			sec = argv[3];
-			channel = atoi(argv[4]);
+		} else if (argc == 6) {
+			passphrase = argv[3];
+			sec = argv[4];
+			channel = atoi(argv[5]);
 		} else {
-			sw_printStartapHelp();
+			sw_printStartapHelp(argv[0]);
 			return result;
 		}
-		result = doStartAP(argv[1], sec, passphrase, channel);
-	} else if (strncmp("status", argv[0], MAXLEN(6, strlen(argv[0]))) == 0) {
+		result = doStartAP(argv[2], sec, passphrase, channel);
+	} else if (strncmp("status", argv[1], MAXLEN(6, strlen(argv[1]))) == 0) {
 		(void)doIsConnected();
-	} else if (strncmp(argv[0], "tcpserver", MAXLEN(9, strlen(argv[0]))) == 0) {
+	} else if (strncmp(argv[1], "tcpserver", MAXLEN(9, strlen(argv[1]))) == 0) {
 		if (slsi_tcp_server() != 0) {
 			printf("TCP server failed\n");
 		}
-	} else if (strncmp(argv[0], "tcpclient", MAXLEN(9, strlen(argv[0]))) == 0) {
+	} else if (strncmp(argv[1], "tcpclient", MAXLEN(9, strlen(argv[1]))) == 0) {
 		if (slsi_tcp_client() != 0) {
 			printf("TCP Client failed\n");
 		}
-	} else if (strncmp(argv[0], "udpserver", MAXLEN(9, strlen(argv[0]))) == 0) {
+	} else if (strncmp(argv[1], "udpserver", MAXLEN(9, strlen(argv[1]))) == 0) {
 		if (slsi_udp_server() != 0) {
 			printf("UDP Server failed\n");
 		}
-	} else if (strncmp(argv[0], "ie", MAXLEN(2, strlen(argv[0]))) == 0) {
-		if (argv[1] != NULL && argv[2] != NULL && strlen(argv[1]) == 6 && strlen(argv[2]) <= 253) {
-			printf("Storing new OUI=%s IE=%s\n", argv[1], argv[2]);
+	} else if (strncmp(argv[1], "ie", MAXLEN(2, strlen(argv[1]))) == 0) {
+		if (argv[2] != NULL && argv[3] != NULL && strlen(argv[2]) == 6 && strlen(argv[3]) <= 253) {
+			printf("Storing new OUI=%s IE=%s\n", argv[2], argv[3]);
 			if (g_vsie == NULL) {
 				g_vsie = (slsi_vendor_ie_t *)zalloc(sizeof(slsi_vendor_ie_t));
 				if (g_vsie == NULL) {
@@ -598,7 +598,7 @@ int8_t parseCmdLine(int argc, char *argv[])
 					return result;
 				}
 			}
-			char *poui = argv[1];
+			char *poui = argv[2];
 			if (hex2uint8(poui, &g_vsie->oui[0]) != TRUE || hex2uint8(poui + 2, &g_vsie->oui[1]) != TRUE || hex2uint8(poui + 4, &g_vsie->oui[2]) != TRUE) {
 				printf("OUI hex representation not valid\n");
 				return result;
@@ -606,23 +606,23 @@ int8_t parseCmdLine(int argc, char *argv[])
 			if (g_vsie->content != NULL) {
 				free(g_vsie->content);
 			}
-			g_vsie->content = (uint8_t *)zalloc(strlen(argv[2]));
+			g_vsie->content = (uint8_t *)zalloc(strlen(argv[3]));
 			if (g_vsie->content == NULL) {
 				printf("Could not allocate buffer for vendor IE\n");
 				return result;
 			}
-			g_vsie->content_length = strlen(argv[2]);
-			memcpy(g_vsie->content, argv[2], strlen(argv[2]));
+			g_vsie->content_length = strlen(argv[3]);
+			memcpy(g_vsie->content, argv[3], strlen(argv[3]));
 
 		}
-	} else if (strncmp(argv[0], "udpclient", MAXLEN(9, strlen(argv[0]))) == 0) {
+	} else if (strncmp(argv[1], "udpclient", MAXLEN(9, strlen(argv[1]))) == 0) {
 		if (slsi_udp_client() != 0) {
 			printf("UDP Client failed\n");
 		}
-	} else if (strncmp(argv[0], "auto", MAXLEN(4, strlen(argv[0]))) == 0 && inAuto == false) {
+	} else if (strncmp(argv[1], "auto", MAXLEN(4, strlen(argv[1]))) == 0 && inAuto == false) {
 		sem_init(&ap_conn_sem, 0, 0);
 		if (argc > 1) {
-			result = doAutoTest(argv[1]);    //filename if not null
+			result = doAutoTest(argv[2]);    //filename if not null
 		} else {
 			result = doAutoTest(NULL);
 		}
@@ -633,11 +633,11 @@ int8_t parseCmdLine(int argc, char *argv[])
 			return 1;
 		}
 #ifdef CONFIG_SLSI_WIFI_SANITY
-	} else if (strncmp(argv[0], "sanity", MAXLEN(6, strlen(argv[0]))) == 0 && inAuto == false) {
+	} else if (strncmp(argv[1], "sanity", MAXLEN(6, strlen(argv[1]))) == 0 && inAuto == false) {
 		int iterations = 0;
 		sem_init(&ap_conn_sem, 0, 0);
-		if (argc > 1) {
-			iterations = atoi(argv[1]);
+		if (argc > 2) {
+			iterations = atoi(argv[2]);
 		}
 		result = doSanityTest(iterations);
 		sem_destroy(&ap_conn_sem);
@@ -663,11 +663,11 @@ int8_t parseCmdLine(int argc, char *argv[])
 		} else {
 			return 1;
 		}
-	} else if (strncmp(argv[0], "nightly", MAXLEN(7, strlen(argv[0]))) == 0 && inAuto == false) {
+	} else if (strncmp(argv[1], "nightly", MAXLEN(7, strlen(argv[1]))) == 0 && inAuto == false) {
 		int iterations = 0;
 		sem_init(&ap_conn_sem, 0, 0);
-		if (argc > 1) {
-			iterations = atoi(argv[1]);
+		if (argc > 2) {
+			iterations = atoi(argv[2]);
 		}
 		result = doNightlyTest(iterations);
 		sem_destroy(&ap_conn_sem);
@@ -694,8 +694,8 @@ int8_t parseCmdLine(int argc, char *argv[])
 			return 1;
 		}
 #endif
-	} else if (strncmp(argv[0], "help", MAXLEN(4, strlen(argv[0]))) == 0) {
-		sw_printFullHelp();
+	} else if (strncmp(argv[1], "help", MAXLEN(4, strlen(argv[1]))) == 0) {
+		sw_printFullHelp(argv[0]);
 	} else {
 		sw_printHelp();
 	}
@@ -734,7 +734,7 @@ int slsi_wifi_main(int argc, char *argv[])
 			return result;
 		}
 
-		result = parseCmdLine(argc - 1, &argv[1]);
+		result = parseCmdLine(argc, argv);
 	}
 	return result;
 }
