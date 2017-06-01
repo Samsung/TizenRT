@@ -147,7 +147,7 @@ ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   LDFLAGS += -g
 endif
 
-LDFLAAGS += --gc-sections
+LDFLAGS += --gc-sections
 
 HOSTCC = gcc
 HOSTINCLUDES = -I.
