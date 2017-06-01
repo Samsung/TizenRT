@@ -180,7 +180,7 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 
 	ret = sem_wait(sem);
 	if (ret < 0) {
-		/* Return the errno from sem_wait() */
+		/* Return the errno from sem_wait() or from sem_timeout() */
 
 		ret = -get_errno();
 	}

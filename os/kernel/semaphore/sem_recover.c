@@ -144,7 +144,7 @@ void sem_recover(FAR struct tcb_s *tcb)
 		sem_canceled(tcb, sem);
 
 		/* And increment the count on the semaphore.  This releases the count
-		 * that was taken by sem_post().  This count decremented the semaphore
+		 * that was taken by sem_wait().  This count decremented the semaphore
 		 * count to negative and caused the thread to be blocked in the first
 		 * place.
 		 */
