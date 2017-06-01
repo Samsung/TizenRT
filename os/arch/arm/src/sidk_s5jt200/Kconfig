@@ -124,6 +124,7 @@ config SIDK_S5JT200_AUTOMOUNT_USERFS
 	bool "Automount user r/w partiton"
 	default n
 	depends on SIDK_S5JT200_AUTOMOUNT
+	depends on FS_SMARTFS
 	---help---
 		If enabled, user r/w partition will be mounted automatically
 		at boot.
@@ -148,6 +149,7 @@ config SIDK_S5JT200_AUTOMOUNT_SSSRW
 	bool "Automount sss r/w partiton"
 	default n
 	depends on SIDK_S5JT200_AUTOMOUNT
+	depends on FS_SMARTFS
 	---help---
 		If enabled, SSS r/w partition will be mounted automatically
 		at boot.
