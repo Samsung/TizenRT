@@ -272,6 +272,8 @@ int kdbg_stackmonitor(int argc, char **args)
 		if (ret != OK) {
 			printf(STKMON_PREFIX "ERROR: Failed to detach the stack monitor: %d\n", errno);
 			pthread_cancel(stkmon);
+			stkmon_started = FALSE;
+			return ERROR;
 		}
 	} else {
 		printf(STKMON_PREFIX "already started\n");
