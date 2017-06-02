@@ -14,13 +14,21 @@ LIBUSB0_SRC_MD5SUM=2ca521fffadd0c28fdf174e6ec73865b
 LIBUSB1_SRC_URL=http://excellmedia.dl.sourceforge.net/project/libusb/libusb-1.0/libusb-1.0.21/libusb-1.0.21.tar.gz
 LIBUSB1_SRC_MD5SUM=74473305ac0835d10660d53eb39583e6
 
+srcRoot=`dirname $0`
+if [ "${0:0:1}" == "." ]; then
+	srcRoot=`pwd`/$srcRoot
+fi
+
+buildDir=$srcRoot
+copyDir=$srcRoot/..
+
 die() {
 	if [ -n "$1" ]; then echo $1; fi
 	exit 1
 }
 
 fetch_openocd() {
-	if [ ! -d ./openocd ]; then
+	if [ ! -d $srcRoot/openocd ]; then
 		case $OPENOCD_SRC_URL in
 			https://*gz|http://*gz|https://*bz2)
 				IMG=`basename $OPENOCD_SRC_URL`
@@ -28,12 +36,12 @@ fetch_openocd() {
 				if [ $OPENOCD_SRC_MD5SUM != `md5sum /tmp/$IMG | awk '{print $1}'` ]; then
 					die "Checksum failed: $OPENOCD_SRC_URL($OPENOCD_SRC_MD5SUM)"
 				fi
-				mkdir ./openocd
-				tar -xvf /tmp/$IMG --strip-components 1 -C ./openocd
+				mkdir $srcRoot/openocd
+				tar -xvf /tmp/$IMG --strip-components 1 -C $srcRoot/openocd
 				rm -rf /tmp/$IMG
 				;;
 			git://*|ssh://*|http://*|https://*)
-				git clone $OPENOCD_SRC_URL ./openocd
+				git clone $OPENOCD_SRC_URL $srcRoot/openocd
 				;;
 			*)
 				die "Unknown URL type specified: \$OPENOCD_SRC_URL=$OPENOCD_SRC_URL"
@@ -50,8 +58,8 @@ fetch_libftdi() {
 	if [ $LIBFTDI_SRC_MD5SUM != `md5sum /tmp/$IMG | awk '{print $1}'` ]; then
 		die "Checksum failed: $LIBFTDI_SRC_URL($LIBFTDI_SRC_MD5SUM)"
 	fi
-	mkdir ./libftdi
-	tar -xvf /tmp/$IMG --strip-components 1 -C ./libftdi
+	mkdir $srcRoot/libftdi
+	tar -xvf /tmp/$IMG --strip-components 1 -C $srcRoot/libftdi
 	rm -rf /tmp/$IMG
 }
 
@@ -61,8 +69,8 @@ fetch_libusb0() {
 	if [ $LIBUSB0_SRC_MD5SUM != `md5sum /tmp/$IMG | awk '{print $1}'` ]; then
 		die "Checksum failed: $LIBUSB0_SRC_URL($LIBUSB0_SRC_MD5SUM)"
 	fi
-	mkdir ./libusb0
-	tar -xvf /tmp/$IMG --strip-components 1 -C ./libusb0
+	mkdir $srcRoot/libusb0
+	tar -xvf /tmp/$IMG --strip-components 1 -C $srcRoot/libusb0
 	rm -rf /tmp/$IMG
 }
 
@@ -72,8 +80,8 @@ fetch_libusb1() {
 	if [ $LIBUSB1_SRC_MD5SUM != `md5sum /tmp/$IMG | awk '{print $1}'` ]; then
 		die "Checksum failed: $LIBUSB1_SRC_URL($LIBUSB1_SRC_MD5SUM)"
 	fi
-	mkdir ./libusb1
-	tar -xvf /tmp/$IMG --strip-components 1 -C ./libusb1
+	mkdir $srcRoot/libusb1
+	tar -xvf /tmp/$IMG --strip-components 1 -C $srcRoot/libusb1
 	rm -rf /tmp/$IMG
 }
 
@@ -113,45 +121,42 @@ check() {
 
 build-libftdi() {
 	# build libftdi
-	rm -rf libftdi-install
-	mkdir -p libftdi-install
-	cd libftdi
-	cmake  -DCMAKE_INSTALL_PREFIX=`pwd`/../libftdi-install
+	rm -rf $buildDir/libftdi-install
+	mkdir -p $buildDir/libftdi-install
+	cd $srcRoot/libftdi
+	cmake  -DCMAKE_INSTALL_PREFIX=$buildDir/libftdi-install
 	make
 	make install
-	cd ../
 }
 
 build-libusb0() {
 	# build libusb-0.1
-	rm -rf libusb0-install
-	mkdir -p libusb0-install
-	cd libusb0
-	./configure --enable-static --prefix=`pwd`/../libusb0-install
+	rm -rf $buildDir/libusb0-install
+	mkdir -p $buildDir/libusb0-install
+	cd $srcRoot/libusb0
+	$srcRoot/libusb0/configure --enable-static --prefix=$buildDir/libusb0-install
 	make -j$CORES
 	make install
-	cd ../
 }
 
 build-libusb1() {
 	# build libusb-1.0
-	rm -rf libusb1-install
-	mkdir -p libusb1-install
-	cd libusb1
+	rm -rf $buildDir/libusb1-install
+	mkdir -p $buildDir/libusb1-install
+	cd $srcRoot/libusb1
 	./bootstrap.sh
-	./configure --enable-static --prefix=`pwd`/../libusb1-install
+	$srcRoot/libusb1/configure --enable-static --prefix=$buildDir/libusb1-install
 	make -j$CORES
 	make install
-	cd ../
 }
 
 build-openocd() {
 	# build openocd
-	rm -rf openocd-install
-	mkdir -p openocd-install
-	cd ./openocd
-	patch -p1 < ../patches/*.patch
-	./configure \
+	rm -rf $buildDir/openocd-install
+	mkdir -p $buildDir/openocd-install
+	cd $srcRoot/openocd
+	patch -p1 < $srcRoot/patches/*.patch
+	$srcRoot/openocd/configure \
 		--enable-ftdi \
 		--disable-stlink \
 		--disable-ti-icdi \
@@ -179,35 +184,33 @@ build-openocd() {
 		--disable-bcm2835gpio \
 		--disable-buspirate \
 		--disable-sysfsgpio \
-		--prefix=`pwd`/../openocd-install \
-		LIBFTDI_LIBS='-L`pwd`/../libftdi-install/lib -l:libftdi1.a' \
-		LIBFTDI_CFLAGS='-I `pwd`/../libftdi-install/include' \
-		LIBUSB0_LIBS='-L`pwd`/../libusb0-install/lib -l:libusb.a' \
-		LIBUSB0_CFLAGS='-I `pwd`/../libusb0-install/include' \
-		LIBUSB1_LIBS='-L`pwd`/../libusb1-install/lib -l:libusb-1.0.a' \
-		LIBUSB1_CFLAGS='-I `pwd`/../libusb1-install/include/libusb-1.0' \
+		--prefix=$buildDir/openocd-install \
+		LIBFTDI_LIBS="-L$buildDir/libftdi-install/lib -l:libftdi1.a" \
+		LIBFTDI_CFLAGS="-I $buildDir/libftdi-install/include" \
+		LIBUSB0_LIBS="-L$buildDir/libusb0-install/lib -l:libusb.a" \
+		LIBUSB0_CFLAGS="-I $buildDir/libusb0-install/include" \
+		LIBUSB1_LIBS="-L$buildDir/libusb1-install/lib -l:libusb-1.0.a" \
+		LIBUSB1_CFLAGS="-I $buildDir/libusb1-install/include/libusb-1.0" \
 		LIBS='-ludev -lpthread'
 	make
 	make install
 }
 
 packaging() {
-	cp -r `pwd`/../openocd-install/share/openocd/scripts ../../
-	cp `pwd`/../openocd-install/bin/openocd ../../$HOST/
-
-	cd ..
+	cp -r $buildDir/openocd-install/share/openocd/scripts $copyDir
+	cp $buildDir/openocd-install/bin/openocd $copyDir/$HOST/
 }
 
 cleanup() {
 	# clean up
-	rm -rf ./openocd-install
-	rm -rf ./openocd
-	rm -rf ./libftdi-install
-	rm -rf ./libftdi
-	rm -rf ./libusb0-install
-	rm -rf ./libusb0
-	rm -rf ./libusb1-install
-	rm -rf ./libusb1
+	rm -rf $buildDir/openocd-install
+	rm -rf $srcRoot/openocd
+	rm -rf $buildDir/libftdi-install
+	rm -rf $srcRoot/libftdi
+	rm -rf $buildDir/libusb0-install
+	rm -rf $srcRoot/libusb0
+	rm -rf $buildDir/libusb1-install
+	rm -rf $srcRoot/libusb1
 }
 
 components=(libftdi libusb1 libusb0 openocd)
