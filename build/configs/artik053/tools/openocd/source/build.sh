@@ -2,6 +2,9 @@
 
 CORES=`getconf _NPROCESSORS_ONLN`
 
+# Abort execution on error
+set -e
+
 OPENOCD_SRC_URL=http://excellmedia.dl.sourceforge.net/project/openocd/openocd/0.10.0/openocd-0.10.0.tar.gz
 OPENOCD_SRC_MD5SUM=8971d16aee5c2642b33ee55fc6c86239
 LIBFTDI_SRC_URL=http://www.intra2net.com/en/developer/libftdi/download/libftdi1-1.3.tar.bz2
