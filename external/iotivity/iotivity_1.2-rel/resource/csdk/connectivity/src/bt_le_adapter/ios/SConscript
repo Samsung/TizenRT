@@ -1,0 +1,15 @@
+#######################################################
+#       Build BLE adapter for Android
+#######################################################
+
+Import('env', 'src_dir')
+import os.path
+
+root_dir = os.pardir
+env.PrependUnique(CPPPATH = [ os.path.join(src_dir, 'ios') ])
+
+src_files = [ 'caleclient.m',
+              'caleserver.m',
+              'calenwmonitor.m']
+
+Return('src_files')

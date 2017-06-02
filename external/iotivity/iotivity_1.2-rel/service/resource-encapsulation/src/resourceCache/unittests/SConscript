@@ -1,0 +1,83 @@
+#******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# ResourceCache Unit Test build script
+##
+# SConscript file for Local PKI google tests
+from tools.scons.RunTest import run_test
+gtest_env = SConscript('#extlibs/gtest/SConscript')
+lib_env = gtest_env.Clone()
+
+if lib_env.get('RELEASE'):
+    lib_env.AppendUnique(CCFLAGS = ['-Os'])
+    lib_env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+else:
+    lib_env.AppendUnique(CCFLAGS = ['-g'])
+
+if lib_env.get('LOGGING'):
+    lib_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+SConscript('#service/third_party_libs.scons', 'lib_env')
+
+######################################################################
+# unit test setting
+######################################################################
+cache_test_env = lib_env.Clone()
+target_os = cache_test_env.get('TARGET_OS')
+
+######################################################################
+# Build flags
+######################################################################
+
+cache_test_env.AppendUnique(CPPPATH = ['../include'])
+cache_test_env.AppendUnique(CPPPATH = ['../../../include'])
+cache_test_env.AppendUnique(CPPPATH = ['../../common/primitiveResource/include'])
+cache_test_env.AppendUnique(CPPPATH = ['../../common/expiryTimer/include'])
+cache_test_env.AppendUnique(CPPPATH = ['../../common/expiryTimer/src'])
+cache_test_env.AppendUnique(CPPPATH = ['../../common/utils/include'])
+cache_test_env.PrependUnique(CPPPATH = [cache_test_env.get('SRC_DIR')+'/extlibs/hippomocks-master'])
+cache_test_env.AppendUnique(LIBPATH = [cache_test_env.get('BUILD_DIR')])
+cache_test_env.PrependUnique(LIBS = ['rcs_client', 'rcs_common',
+  'oc', 'octbstack', 'oc_logger',
+  'connectivity_abstraction', 'coap'])
+
+compiler = cache_test_env.get('CXX')
+if 'g++' in compiler:
+    cache_test_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0', '-std=c++0x'])
+
+if cache_test_env.get('SECURED') == '1':
+	if cache_test_env.get('WITH_TCP') == True:
+		cache_test_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+######################################################################
+# Build Test
+######################################################################
+cache_test_src = cache_test_env.Glob('./*.cpp')
+cache_test = cache_test_env.Program('cache_test', cache_test_src)
+Alias("cache_test", cache_test)
+cache_test_env.AppendTarget('cache_test')
+
+if cache_test_env.get('TEST') == '1':
+# TODO: fix this test on linux and remove this comment line
+        if target_os in ['']:
+                run_test(cache_test_env,
+                         'service_resource-encapsulation_src_resourceCache_unittests_cache_test.memtest',
+                         'service/resource-encapsulation/src/resourceCache/unittests/cache_test')

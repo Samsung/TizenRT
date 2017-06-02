@@ -1,0 +1,40 @@
+#######################################################
+#       Build BLE adapter for Tizen
+#######################################################
+
+Import('env', 'src_dir')
+import os.path
+
+root_dir = os.pardir
+division = env.get('BLE_DIVISION')
+tizen30 = env.get('BLE_TIZEN_30')
+
+env.PrependUnique(CPPPATH = [ os.path.join(src_dir, 'tizen')])
+
+env.ParseConfig("pkg-config --cflags --libs capi-network-bluetooth")
+
+if 'MCD' in division:
+    env.AppendUnique(CPPDEFINES = ['BLE_MCD'])
+    print "BLE for MCD"
+
+if tizen30 == 'True':
+    env.AppendUnique(CPPDEFINES = ['BLE_TIZEN_30'])
+    print "Build using Tizen 3.0 BLE API"
+
+if 'MCD' in division:
+    src_files = [ 'caleclient.c',
+               'caleserver_mcd.c',
+               'caleutil.c',
+               'calenwmonitor.c']
+elif 'VD' in division:
+    src_files = [ 'caleclient.c',
+               'caleserver_vd.c',
+               'caleutil.c',
+               'calenwmonitor_vd.c']
+else:
+    src_files = [ 'caleclient.c',
+               'caleserver.c',
+               'caleutil.c',
+               'calenwmonitor.c']
+
+Return('src_files')

@@ -1,0 +1,73 @@
+#******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# linux sample app  build script (Sample Client & Sample Server)
+##
+Import('env')
+
+# Add third party libraries
+lib_env = env.Clone()
+SConscript('#service/third_party_libs.scons', 'lib_env')
+
+sample_env = lib_env.Clone()
+
+sample_env.AppendUnique(CXXFLAGS = ['-Wall', '-std=c++0x'])
+sample_env.AppendUnique(LIBS = [
+    'coap',
+    'connectivity_abstraction',
+    'oc_logger',
+    'octbstack',
+    'oc',
+    'rcs_common',
+    'pthread'
+    ])
+sample_env.AppendUnique(CPPPATH = ['../../include'])
+
+if env.get('SECURED') == '1':
+   	sample_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+if 'rt' in sample_env.get('LIBS'):
+    sample_env.Append(LIBS = ['rt'])
+
+######################################################################
+# ##### Client #####
+######################################################################
+client_env = sample_env.Clone()
+client_env.AppendUnique(LIBS = 'rcs_client')
+
+sampleResourceClient = client_env.Program('sampleResourceClient', 'SampleResourceClient.cpp')
+nestedAttributesClient = client_env.Program('nestedAttributesClient', 'NestedAttributesClient.cpp')
+
+######################################################################
+# ##### Server #####
+######################################################################
+server_env = sample_env.Clone()
+server_env.AppendUnique(LIBS = 'rcs_server')
+
+sampleResourceServer = server_env.Program('sampleResourceServer', 'SampleResourceServer.cpp')
+separateResponseServer = server_env.Program('separateResponseServer', 'SeparateResponseServer.cpp')
+nestedAttributesServer = server_env.Program('nestedAttributesServer', 'NestedAttributesServer.cpp')
+
+######################################################################
+# ##### Build the RE Secure Resource Example #####
+######################################################################
+if env.get('SECURED') == '1':
+	SConscript('secureResourceExample/SConscript')

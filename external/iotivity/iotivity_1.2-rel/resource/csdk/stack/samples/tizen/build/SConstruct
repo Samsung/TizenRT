@@ -1,0 +1,19 @@
+##
+# The main build script
+#
+##
+
+# Load common build config
+
+# Load common build config
+env = SConscript('SConscript')
+
+target_os = env.get('TARGET_OS')
+transport = env.get('TARGET_TRANSPORT')
+release_mode = env.get('RELEASE')
+
+print "Given Transport is %s" % transport
+print "Given OS is %s" % target_os
+print "Given release mode is %s" % release_mode
+
+env.SConscript('scons/SConscript')

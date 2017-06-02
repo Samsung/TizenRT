@@ -1,0 +1,29 @@
+##
+# This script includes arduino specific config for oic-resource
+##
+Import('env')
+
+# Add 'SHIELD' build option, let user select board network connection type
+vars = Variables()
+if 'IP' in env.get('TARGET_TRANSPORT'):
+	vars.Add(EnumVariable('SHIELD', 'Network connection type', 'WIFI', ['ETH', 'WIFI']))
+elif 'BLE' in env.get('TARGET_TRANSPORT'):
+	vars.Add(EnumVariable('SHIELD', 'Network connection type', 'RBL_NRF8001', ['RBL_NRF8001']))
+vars.Update(env)
+Help(vars.GenerateHelpText(env))
+
+env.ImportLib('SPI')
+if 'ETH' in env.get('SHIELD'):
+	env.ImportLib('Ethernet')
+if 'WIFI' in env.get('SHIELD'):
+	env.ImportLib('WiFi')
+if 'RBL_NRF8001' in env.get('SHIELD'):
+	env.ImportLib('BLE')
+	env.ImportLib('RBL_nRF8001')
+
+env.ImportLib('Time/Time')
+# we have variety of macros for arduino!!
+env.AppendUnique(CPPDEFINES = ['WITH_ARDUINO', '__ARDUINO__'])
+if env.get('LOGGING'):
+	env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+

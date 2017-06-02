@@ -1,0 +1,126 @@
+#******************************************************************
+#
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# SceneManager Unit Test build script
+##
+# SConscript file for Local PKI google tests
+gtest_env = SConscript('#extlibs/gtest/SConscript')
+lib_env = gtest_env.Clone()
+
+if lib_env.get('RELEASE'):
+    lib_env.AppendUnique(CCFLAGS = ['-Os'])
+    lib_env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+else:
+    lib_env.AppendUnique(CCFLAGS = ['-g'])
+
+if lib_env.get('LOGGING'):
+    lib_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+SConscript('#service/third_party_libs.scons', 'lib_env')
+
+######################################################################
+#unit test setting
+######################################################################
+src_dir = lib_env.get('SRC_DIR')
+
+scene_test_env = lib_env.Clone()
+target_os = scene_test_env.get('TARGET_OS')
+
+######################################################################
+# Build flags
+######################################################################
+
+scene_test_env.AppendUnique(LIBPATH = [lib_env.get('BUILD_DIR')])
+scene_test_env.AppendUnique(LIBS = [
+    'scene_manager', 'rcs_server', 'rcs_client','rcs_common',
+    'oc', 'octbstack', 'oc_logger', 'connectivity_abstraction', 'coap'])
+
+if target_os not in ['windows']:
+    scene_test_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0'])
+
+if not scene_test_env.get('RELEASE'):
+    scene_test_env.PrependUnique(LIBS = ['gcov'])
+    scene_test_env.AppendUnique(CXXFLAGS = ['--coverage'])
+
+scene_test_env.PrependUnique(CPPPATH = [ src_dir + '/extlibs/hippomocks-master'])
+scene_test_env.AppendUnique(CPPPATH = ['../include'])
+scene_test_env.AppendUnique(CPPPATH = ['../src'])
+scene_test_env.AppendUnique(CPPPATH = ['../../resource-encapsulation/include'])
+scene_test_env.AppendUnique(CPPPATH = ['../../resource-encapsulation/src/common/primitiveResource/include'])
+scene_test_env.AppendUnique(CPPPATH = ['../../resource-encapsulation/src/common/utils/include'])
+
+if scene_test_env.get('SECURED') == '1':
+	if scene_test_env.get('WITH_TCP') == True:
+		scene_test_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509', 'mbedcrypto'])
+######################################################################
+# Build Test
+######################################################################
+
+scene_list_test_src = scene_test_env.Glob('./SceneListTest.cpp')
+scene_list_test = scene_test_env.Program('scene_list_test', scene_list_test_src)
+Alias("scene_list_test", scene_list_test)
+scene_test_env.AppendTarget('scene_list_test')
+scene_test_env.InstallTarget(scene_list_test, 'scene_list_test')
+
+scene_collection_test_src = scene_test_env.Glob('./SceneCollectionTest.cpp')
+scene_collection_test = scene_test_env.Program('scene_collection_test', scene_collection_test_src)
+Alias("scene_collection_test", scene_collection_test)
+scene_test_env.AppendTarget('scene_collection_test')
+scene_test_env.InstallTarget(scene_collection_test, 'scene_collection_test')
+
+scene_test_src = scene_test_env.Glob('./SceneTest.cpp')
+scene_test = scene_test_env.Program('scene_test', scene_test_src)
+Alias("scene_test", scene_test)
+scene_test_env.AppendTarget('scene_test')
+scene_test_env.InstallTarget(scene_test, 'scene_test')
+
+scene_action_test_src = scene_test_env.Glob('./SceneActionTest.cpp')
+scene_action_test = scene_test_env.Program('scene_action_test', scene_action_test_src)
+Alias("scene_action_test", scene_action_test)
+scene_test_env.AppendTarget('scene_action_test')
+scene_test_env.InstallTarget(scene_action_test, 'scene_action_test')
+
+remote_scene_list_test_src = scene_test_env.Glob('./RemoteSceneListTest.cpp')
+remote_scene_list_test = scene_test_env.Program('remote_scene_list_test', remote_scene_list_test_src)
+Alias("remote_scene_list_test", remote_scene_list_test)
+scene_test_env.AppendTarget('remote_scene_list_test')
+
+remote_scene_col_test_src = scene_test_env.Glob('./RemoteSceneCollectionTest.cpp')
+remote_scene_col_test = scene_test_env.Program('remote_scene_col_test', remote_scene_col_test_src)
+Alias("remote_scene_col_test", remote_scene_col_test)
+scene_test_env.AppendTarget('remote_scene_col_test')
+
+remote_scene_test_src = scene_test_env.Glob('./RemoteSceneTest.cpp')
+remote_scene_test = scene_test_env.Program('remote_scene_test', remote_scene_test_src)
+Alias("remote_scene_test", remote_scene_test)
+scene_test_env.AppendTarget('remote_scene_test')
+
+remote_scene_action_test_src = scene_test_env.Glob('./RemoteSceneActionTest.cpp')
+remote_scene_action_test = scene_test_env.Program('remote_scene_action_test', remote_scene_action_test_src)
+Alias("remote_scene_action_test", remote_scene_action_test)
+scene_test_env.AppendTarget('remote_scene_action_test')
+
+#target_os = scene_test_env.get('TARGET_OS')
+#if target_os == 'linux':
+#        from tools.scons.RunTest import *
+#        run_test(scene_test_env,
+#                 '',
+#                 'service/scene-manager/unittest/scene_test')

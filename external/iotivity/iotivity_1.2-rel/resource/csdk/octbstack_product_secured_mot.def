@@ -1,0 +1,24 @@
+; Windows octbstack.dll exports that are required when building
+; with SECURED=1 and MULTIPLE_OWNER=1.
+
+CreatePreconfigPinBasedOwnerTransferPayload
+CreatePreconfigPinBasedSelectOxmPayload
+CreateSecureSessionPreconfigPinCallback
+GeneratePin
+LoadPreconfigPinCodeCallback
+
+OCAddPreconfigPin
+OCChangeMOTMode
+OCDiscoverMultipleOwnedDevices
+OCDiscoverMultipleOwnerEnabledDevices
+OCDoMultipleOwnershipTransfer
+OCProvisionPreconfigPin
+OCSelectMOTMethod
+
+PMGenerateQuery
+
+SetPreconfigPin
+
+; Depending on the outcome of IOT-1480 this export should be removed. For now
+; it has been added for compatibility reasons.
+GetDoxmDeviceID

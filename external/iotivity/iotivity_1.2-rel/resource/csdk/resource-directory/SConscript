@@ -1,0 +1,121 @@
+#******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# Resource Directory build script
+##
+
+Import('env')
+rd_env = env.Clone()
+
+if rd_env.get('LOGGING'):
+    rd_env.AppendUnique(CPPDEFINES = ['-DTB_LOG'])
+
+target_os = env.get('TARGET_OS')
+src_dir = env.get('SRC_DIR')
+rd_mode = env.get('RD_MODE')
+
+######################################################################
+# Build flags
+######################################################################
+rd_env.AppendUnique(CPPPATH = ['include',
+                                'src/internal',
+                                '../stack/include',
+                                '../../include',
+                                '../logger/include',
+                                '../../oc_logger/include',
+])
+
+if 'CLIENT' in rd_mode:
+    rd_env.AppendUnique(CPPDEFINES = ['RD_CLIENT'])
+if 'SERVER' in rd_mode:
+    rd_env.AppendUnique(CPPDEFINES = ['RD_SERVER'])
+
+rd_env.PrependUnique(LIBPATH = [rd_env.get('BUILD_DIR')])
+if target_os != 'android':
+    rd_env.PrependUnique(RPATH = [rd_env.get('BUILD_DIR')])
+rd_env.PrependUnique(LIBS = ['octbstack', 'oc', 'oc_logger'])
+
+if target_os not in ['windows']:
+    rd_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-Wextra', '-std=c++0x'])
+
+if target_os in ['linux']:
+    rd_env.AppendUnique(LIBS = ['pthread'])
+
+if target_os == 'android':
+    rd_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])
+    rd_env.AppendUnique(LINKFLAGS = ['-Wl,-soname,libresource_directory.so'])
+    rd_env.AppendUnique(LIBS = ['gnustl_static'])
+
+    if not env.get('RELEASE'):
+        rd_env.AppendUnique(LIBS = ['log'])
+
+if target_os in ['linux', 'tizen']:
+    rd_env.ParseConfig('pkg-config --cflags --libs sqlite3')
+else:
+    rd_env.AppendUnique(CPPPATH = ['../../../extlibs/sqlite3'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+RD_SRC_DIR = 'src/'
+rd_src = []
+
+if 'SERVER' in rd_mode:
+    rd_src += [
+            RD_SRC_DIR + 'internal/rd_database.c',
+            RD_SRC_DIR + 'rd_server.c',
+            ]
+    if target_os not in ['linux', 'tizen', 'tizenrt'] :
+        rd_src += [ '../../../extlibs/sqlite3/sqlite3.c' ]
+
+if 'CLIENT' in rd_mode:
+    rd_src += [RD_SRC_DIR + 'rd_client.c',]
+    if target_os not in ['arduino','darwin','ios', 'windows', 'winrt','tizenrt']:
+        rd_src += [ RD_SRC_DIR + 'RDClient.cpp',]
+
+if target_os not in ['arduino', 'darwin', 'ios', 'windows', 'winrt', 'tizenrt']:
+    rdsdk_shared = rd_env.SharedLibrary('resource_directory', rd_src)
+    rdsdk_static = rd_env.StaticLibrary('resource_directory', rd_src)
+    rdsdk = Flatten([rdsdk_static, rdsdk_shared])
+else :
+    rdsdk = rd_env.StaticLibrary('resource_directory', rd_src)
+rd_env.InstallTarget(rdsdk, 'resource_directory')
+rd_env.UserInstallTargetLib(rdsdk, 'resource_directory')
+
+if 'CLIENT' in rd_mode:
+    rd_env.UserInstallTargetHeader('include/rd_client.h', 'resource', 'rd_client.h')
+    rd_env.UserInstallTargetHeader('include/RDClient.h', 'resource', 'RDClient.h')
+
+if 'SERVER' in rd_mode:
+    rd_env.UserInstallTargetHeader('include/rd_server.h', 'resource', 'rd_server.h')
+    rd_env.UserInstallTargetHeader('include/rd_database.h', 'resource', 'rd_database.h')
+
+######################################################################
+# Samples for the resource directory
+######################################################################
+if target_os in ['linux']:
+    SConscript('samples/SConscript')
+
+######################################################################
+# Build UnitTests of the Resource Directory
+################################################ ######################
+if target_os in ['linux']:
+    SConscript('unittests/SConscript')

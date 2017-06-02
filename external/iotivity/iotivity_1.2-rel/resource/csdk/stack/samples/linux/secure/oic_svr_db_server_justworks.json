@@ -1,0 +1,75 @@
+{
+    "acl": {
+        "aclist": {
+            "aces": [
+                {
+                    "subjectuuid": "*",
+                    "resources": [
+                        {
+                            "href": "/oic/res",
+                            "rt": ["oic.wk.res"],
+                            "if": ["oic.if.ll"],
+                            "rel": ""
+                        },
+                        {
+                            "href": "/oic/d",
+                            "rt": ["oic.wk.d"],
+                            "if": ["oic.if.baseline", "oic.if.r"],
+                            "rel": ""
+                        },
+                        {
+                            "href": "/oic/p",
+                            "rt": ["oic.wk.p"],
+                            "if": ["oic.if.baseline", "oic.if.r"],
+                            "rel": ""
+                        }
+                    ],
+                    "permission": 2
+                },
+                {
+                    "subjectuuid": "*",
+                    "resources": [
+                        {
+                            "href": "/oic/sec/doxm",
+                            "rt": ["oic.r.doxm"],
+                            "if": ["oic.if.baseline"],
+                            "rel": ""
+                        },
+                        {
+                            "href": "/oic/sec/pstat",
+                            "rt": ["oic.r.pstat"],
+                            "if": ["oic.if.baseline"],
+                            "rel": ""
+                        },
+                        {
+                            "href": "/oic/sec/cred",
+                            "rt": ["oic.r.cred"],
+                            "if": ["oic.if.baseline"],
+                            "rel": ""
+                        }
+                    ],
+                    "permission": 6
+                }
+            ]
+        },
+        "rowneruuid": "6a757374-776f-726b-4465-765575696430"
+    },
+    "pstat": {
+        "isop": false,
+        "deviceuuid": "6a757374-776f-726b-4465-765575696430",
+        "cm": 2,
+        "tm": 0,
+        "om": 4,
+        "sm": 4,
+        "rowneruuid": "6a757374-776f-726b-4465-765575696430"
+    },
+    "doxm": {
+        "oxms": [0],
+        "oxmsel": 0,
+        "sct": 1,
+        "owned": false,
+        "deviceuuid": "6a757374-776f-726b-4465-765575696430",
+        "devowneruuid": "",
+        "rowneruuid": "6a757374-776f-726b-4465-765575696430"
+    }
+}
