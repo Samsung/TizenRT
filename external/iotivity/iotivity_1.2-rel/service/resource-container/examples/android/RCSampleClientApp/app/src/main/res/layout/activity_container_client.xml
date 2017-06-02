@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:id="@+id/main"
+    android:weightSum="1"
+    android:padding="5dp">
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onDiscoverResourceClick"
+        android:text="@string/discover_resource"
+        android:id="@+id/di"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:id="@+id/log"
+        android:layout_width="fill_parent"
+        android:layout_height="250dp"
+        android:ems="10"
+        android:layout_weight="0.26"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:background="#32437200"
+        android:padding="10dp" />
+
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="376dp"
+        android:id="@+id/ResourceListView"
+        android:layout_below="@+id/di"
+        android:layout_alignParentStart="true"
+        android:layout_above="@+id/log" />
+
+</RelativeLayout>

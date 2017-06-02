@@ -1,0 +1,75 @@
+### Build Instruction ###
+
+1) build Iotivity code for linux platform
+
+   $ scons SECURED=1
+
+NOTE:
+   To build in debug mode
+   $ scons SECURED=1 RELEASE=0
+
+### Sample Apps Running Instructions ###
+
+1) Change directory to:
+
+   ~/iotivity/out/linux/{TARGET_ARCH}/{MODE}/service/resource-encapsulation/examples/linux/secureResourceExample
+
+   {TARGET_ARCH} is your machine Architecture. For Example : x86
+   {MODE} is build mode i.e. RELEASE mode or DEBUG mode.
+
+2) Set the Library Path
+
+   $ export LD_LIBRARY_PATH=../../../../../../{MODE}
+
+3) Run the sample Resource Server -> ./sampleSecureServer
+   Follow the instructions on the screen to create a secure resource.
+
+4) Open a new terminal and repeat the step (1) & (2).
+
+5) Run the Sample client -> ./sampleAutorizedClient
+   Follow the instructions on the screen to test the client functionalities.
+
+### Varification of Secure Resource ###
+
+In order to verify the resource that you created is secure or not
+you can run the other client app to access the secure resource:
+
+1) Open the new terminal goto : ~/iotivity/out/linux/{TARGET_ARCH}/{MODE}/service/resource-encapsulation/examples/linux
+
+2) Set the Library Path
+
+   $ export LD_LIBRARY_PATH=../../../../../{MODE}
+
+3) Run the sample Resource Client -> ./sampleResourceClient
+
+4) Perform the discovery for Light Resource.
+
+5) Once you discovery of Light resource done. select the option provided in the app.
+
+   For example : startMonitoring , If you select the option you will see on the server side
+   i.e. secure resource No request has came & client side no response. Because the sample that we ran is not the authorized client.
+   It doesn't have the credentials to access the resource.
+
+### About the Sample Applications ###
+
+1) In the main function of both the Client and Server samples, we are passing the json files to the OCPersistentStorage
+   Structure and same OCPersistentStorage's reference passing as the last parameter to "PlatformConfig" API.
+
+   oic_svr_db_client --> In Client Sample
+   oic_svr_db_server --> In server sample
+
+2) Additionally, on server-side while creating a Secure resource we have spcified the OC_SECURE as the
+   resource property flag.
+
+3) After Platform configuration and Resource creation, it is the Security manager module (~/iotivity/resource/csdk/security)
+   who decides whether to accept/reject the request as per the json file passed for platform configuration.
+
+4) Json files contains the static values. It means server contains the entry for the client in the ACL List, credentials and
+   other fields and client has the same subject id, credentials etc. for the server as it is there in the server Json file.
+
+5) The same json files can be used for the different client and server samples. Sample Applications is just to show that at
+   the RE layer we can have the Secure resource like we have at the CSDK and RI layer. in real scenerios
+   this json files will be populated with the mechanisms provided by the Security module of Iotivity stack.
+   (~/iotivity/resource/csdk/security).
+
+NOTE : More information about "Iotivity Security mechanism" can be found at : https://wiki.iotivity.org/iotivity_security

@@ -1,0 +1,133 @@
+#######################################################################
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+######################################################################
+# Easy-setup Enrollee SDK build script
+######################################################################
+Import('env')
+
+enrollee_env = env.Clone()
+
+target_os = enrollee_env.get('TARGET_OS')
+
+if enrollee_env.get('RELEASE'):
+    enrollee_env.AppendUnique(CCFLAGS = ['-Os'])
+    enrollee_env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+else:
+    enrollee_env.AppendUnique(CCFLAGS = ['-g'])
+
+if enrollee_env.get('LOGGING'):
+    enrollee_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+######################################################################
+# Build flags
+######################################################################
+enrollee_env.PrependUnique(CPPPATH = [
+		enrollee_env.get('SRC_DIR') + '/resource/c_common/oic_malloc/include',
+		enrollee_env.get('SRC_DIR') + '/resource/include',
+		enrollee_env.get('SRC_DIR') + '/resource/csdk/logger/include',
+		enrollee_env.get('SRC_DIR') + '/resource/oc_logger/include',
+                enrollee_env.get('SRC_DIR') + '/resource/csdk/stack/include',
+                enrollee_env.get('SRC_DIR') + '/resource/csdk/logger/include',
+		enrollee_env.get('SRC_DIR') + '/resource/csdk/security/include',
+		enrollee_env.get('SRC_DIR') + '/resource/csdk/connectivity/api',
+		enrollee_env.get('SRC_DIR') + '/extlibs/cjson',
+		enrollee_env.get('SRC_DIR') + '/service/easy-setup/inc',
+		enrollee_env.get('SRC_DIR') + '/service/easy-setup/enrollee/inc',
+		enrollee_env.get('SRC_DIR') + '/service/easy-setup/enrollee/src',
+		enrollee_env.get('SRC_DIR') + '/service/easy-setup/enrollee/inc/samsung',
+		enrollee_env.get('SRC_DIR') + '/service/easy-setup/enrollee/src/samsung'])
+if target_os not in ['tizen']:
+    enrollee_env.PrependUnique(CPPPATH = [
+        enrollee_env.get('SRC_DIR') + '/extlibs/sqlite3'])
+
+if enrollee_env.get('SECURED') == '1':
+	enrollee_env.AppendUnique(CPPPATH = [
+		enrollee_env.get('SRC_DIR') + '/resource/csdk/security/provisioning/include',
+		enrollee_env.get('SRC_DIR') + '/resource/csdk/security/provisioning/include/internal',
+		enrollee_env.get('SRC_DIR') + '/resource/csdk/security/provisioning/include/oxm'])
+	enrollee_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+if target_os not in ['windows']:
+	enrollee_env.AppendUnique(CXXFLAGS = ['-Wall', '-std=c++0x'])
+
+if not env.get('RELEASE'):
+    enrollee_env.PrependUnique(LIBS = ['gcov'])
+    enrollee_env.AppendUnique(CCFLAGS = ['--coverage'])
+
+######################################################################
+# Linux Enrollee
+######################################################################
+if target_os in ['linux']:
+	enrollee_env.AppendUnique(LIBS = ['pthread', 'dl'])
+	enrollee_env.AppendUnique(LIBPATH = [enrollee_env.get('BUILD_DIR')])
+	enrollee_env.AppendUnique(RPATH = [enrollee_env.get('BUILD_DIR')])
+	enrollee_env.AppendUnique(CXXFLAGS = ['-pthread'])
+	enrollee_env.PrependUnique(LIBS = ['oc', 'octbstack', 'oc_logger', 'pthread', 'connectivity_abstraction'])
+	if enrollee_env.get('SECURED') == '1':
+		enrollee_env.PrependUnique(LIBS = ['ocprovision', 'ocpmapi'])
+
+######################################################################
+# Tizen Enrollee
+######################################################################
+if target_os == 'tizen':
+   enrollee_env.AppendUnique(LIBPATH = [enrollee_env.get('BUILD_DIR')])
+   enrollee_env.AppendUnique(RPATH = [enrollee_env.get('BUILD_DIR')])
+   enrollee_env.AppendUnique(CXXFLAGS = ['-pthread'])
+   enrollee_env.PrependUnique(LIBS = ['oc', 'octbstack', 'oc_logger', 'pthread', 'connectivity_abstraction'])
+
+######################################################################
+# Arduino Enrollee
+######################################################################
+if target_os == 'arduino':
+	enrollee_env.AppendUnique(LIBPATH = [enrollee_env.get('BUILD_DIR')])
+	enrollee_env.AppendUnique(RPATH = [enrollee_env.get('BUILD_DIR')])
+	enrollee_env.PrependUnique(LIBS = ['oc', 'octbstack', 'oc_logger', 'pthread', 'connectivity_abstraction'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+es_enrollee_src = None
+
+if target_os in ['linux', 'tizen']:
+	es_enrollee_common_src = ['./src/easysetup.c','./src/resourcehandler.c', './src/samsung/sc_easysetup.c']
+	enrollee_sdk_shared = enrollee_env.SharedLibrary('ESEnrolleeSDK', es_enrollee_common_src)
+	enrollee_sdk_static = enrollee_env.StaticLibrary('ESEnrolleeSDK', es_enrollee_common_src)
+	enrollee_env.InstallTarget([enrollee_sdk_shared, enrollee_sdk_static], 'libESEnrollee')
+	enrollee_env.UserInstallTargetLib([enrollee_sdk_shared, enrollee_sdk_static], 'libESEnrollee')
+	enrollee_env.UserInstallTargetHeader('inc/ESEnrolleeCommon.h', 'service/easy-setup', 'ESEnrolleeCommon.h')
+	enrollee_env.UserInstallTargetHeader('inc/easysetup.h', 'service/easy-setup', 'easysetup.h')
+
+if target_os == 'arduino':
+	es_enrollee_common_src = ['./src/easysetup.c','./src/resourcehandler.c']
+	enrollee_sdk_static = enrollee_env.StaticLibrary('ESEnrolleeSDK', es_enrollee_common_src)
+	enrollee_env.InstallTarget(enrollee_sdk_static, 'libESEnrolleeSDK')
+	enrollee_env.UserInstallTargetLib(enrollee_sdk_static, 'libESEnrollee')
+
+#Go to build sample apps
+#if target_os == 'arduino':
+#	SConscript('../sampleapp/enrollee/arduino/SConscript')
+
+#if target_os in ['linux']:
+#	SConscript('../sampleapp/enrollee/linux/SConscript')
+#	SConscript('../sampleapp/enrollee/linux-samsung/SConscript')
+#	#Build UnitTestcases for Enrollee
+#	if enrollee_env.get('SECURED') == '0':
+#		SConscript('../enrollee/unittests/SConscript')
+

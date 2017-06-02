@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="auth_type">
+        <item>NONE_AUTH</item>
+        <item>WEP</item>
+        <item>WPA_PSK</item>
+        <item>WPA2_PSK</item>
+    </string-array>
+    <string-array name="enc_type">
+        <item>NONE_ENC</item>
+        <item>WEP_64</item>
+        <item>WEP_128</item>
+        <item>TKIP</item>
+        <item>AES</item>
+        <item>TKIP_AES</item>
+    </string-array>
+</resources>

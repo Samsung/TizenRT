@@ -1,0 +1,88 @@
+{
+    "acl": {
+        "aclist": {
+            "aces": [
+                {
+                    "subjectuuid": "*",
+                    "resources": [
+                        {
+                            "href": "/oic/res",
+                            "rel": "",
+                            "rt": ["oic.wk.res"],
+                            "if": ["oic.if.ll"]
+                        },
+                        {
+                            "href": "/oic/d",
+                            "rel": "",
+                            "rt": ["oic.wk.d"],
+                            "if": ["oic.if.baseline", "oic.if.r"]
+                        },
+                        {
+                            "href": "/oic/p",
+                            "rel": "",
+                            "rt": ["oic.wk.p"],
+                            "if": ["oic.if.baseline", "oic.if.r"]
+                        }
+                    ],
+                    "permission": 2
+                },
+                {
+                    "subjectuuid": "*",
+                    "resources": [
+                        {
+                            "href": "/oic/sec/doxm",
+                            "rel": "",
+                            "rt": ["oic.r.doxm"],
+                            "if": ["oic.if.baseline"]
+                        },
+                        {
+                            "href": "/oic/sec/pstat",
+                            "rel": "",
+                            "rt": ["oic.r.pstat"],
+                            "if": ["oic.if.baseline"]
+                        }
+                    ],
+                    "permission": 6
+                },
+                {
+                    "subjectuuid": "31313131-3131-3131-3131-313131313131",
+                    "resources": [
+                        {
+                            "href": "/oic/light",
+                            "rel": "",
+                            "rt": ["oic.core"],
+                            "if": ["oic.if.baseline"]
+                        },
+                        {
+                            "href": "/oic/fan",
+                            "rel": "",
+                            "rt": ["oic.core"],
+                            "if": ["oic.if.baseline"]
+                        }
+                    ],
+                    "permission": 31
+                },
+                {
+                    "subjectuuid": "33333333-3333-3333-3333-333333333333",
+                    "resources": [
+                        {
+                            "href": "/oic/light",
+                            "rel": "",
+                            "rt": ["oic.core"],
+                            "if": ["oic.if.baseline"]
+                        },
+                        {
+                            "href": "/oic/garage",
+                            "rel": "",
+                            "rt": ["oic.core"],
+                            "if": ["oic.if.baseline"]
+                        }
+                    ],
+                    "permission": 31
+                }
+            ]
+        },
+        "rowneruuid" : "32323232-3232-3232-3232-323232323232"
+    }
+}
+

@@ -1,0 +1,189 @@
+#******************************************************************
+#
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+Import('env')
+
+import os
+import sys
+import subprocess
+
+target_os = env.get('TARGET_OS')
+root_dir = env.get('SRC_DIR')
+static_lib = env.get('WITH_MBEDTLS_STATIC_LIB');
+mbedtls_dir = os.path.join(root_dir, 'extlibs','mbedtls','mbedtls/')
+start_dir = os.getcwd()
+# Right now this script assumes the revision is a tag, and not a branch or an arbitrary
+# commit. If this changes, update the check below, or else the script will always conclude
+# the repo is not up to date because a tag with that name doesn't exist.
+mbedtls_revision = 'mbedtls-2.4.0'
+
+if not os.path.exists(mbedtls_dir):
+    print '''
+*********************************** Error: ****************************************
+* Please download mbedtls using the following command:                            *
+*     $ git clone https://github.com/ARMmbed/mbedtls.git extlibs/mbedtls/mbedtls -b %s
+***********************************************************************************
+ ''' % mbedtls_revision
+    Exit(1)
+#cd extlib/mbedtls/mbedtls
+os.chdir(mbedtls_dir)
+
+# Tizen uses its own process to prepare the mbedTLS repo in gbsbuild.sh. Make sure
+# the mbedtls_revision tag selected is the same as in extlibs/mbedtls/prep.sh.
+# This code also assumes mbedtls_revision is a tag; if it changes to
+# a branch or an arbitrary commit, disable this check below.
+# if target_os != 'tizen':
+#     out = subprocess.check_output('git tag -l ' + mbedtls_revision, shell = True)
+#     if mbedtls_revision not in out:
+#         print out
+#         print '''
+# *********************************** Error: ****************************************
+# * Your mbedTLS repo is not up to date with the latest version we require. Please  *
+# * update with the following commands:                                             *
+# *     $ cd extlibs/mbedtls/mbedtls                                                *
+# *     $ git fetch                                                                 *
+# ***********************************************************************************
+#  '''
+#         Exit(1)
+
+# Apply ocf patch on git revision
+if os.path.exists('.git/HEAD'):
+    cmd = 'git checkout development && git reset --hard ' + mbedtls_revision + ' && git apply --whitespace=fix ../ocf.patch'
+    os.system(cmd)
+else:
+    print 'mbedtls: Assume ocf.patch (TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256) was applied in %s' % mbedtls_dir
+os.chdir(start_dir)
+
+
+mbedtls_env = env.Clone()
+mbedtls_env.PrependUnique(CPPPATH = [mbedtls_dir])
+mbedtls_env.AppendUnique(CPPPATH = [mbedtls_dir+'include/'])
+mbedtls_env.AppendUnique(CFLAGS = ['-fPIC', '-Wall'])
+
+######################################################################
+# Source files and Target(s)
+######################################################################
+mbedtls_src = [
+                'mbedtls/library/debug.c',
+                'mbedtls/library/net_sockets.c',
+                'mbedtls/library/ssl_cache.c',
+                'mbedtls/library/ssl_ciphersuites.c',
+                'mbedtls/library/ssl_cli.c',
+                'mbedtls/library/ssl_cookie.c',
+                'mbedtls/library/ssl_srv.c',
+                'mbedtls/library/ssl_ticket.c',
+                'mbedtls/library/ssl_tls.c'
+        ]
+
+
+mbedcrypto_src = [
+                    'mbedtls/library/aes.c',
+                    'mbedtls/library/aesni.c',
+                    'mbedtls/library/arc4.c',
+                    'mbedtls/library/asn1parse.c',
+                    'mbedtls/library/asn1write.c',
+                    'mbedtls/library/base64.c',
+                    'mbedtls/library/bignum.c',
+                    'mbedtls/library/blowfish.c',
+                    'mbedtls/library/camellia.c',
+                    'mbedtls/library/ccm.c',
+                    'mbedtls/library/cipher.c',
+                    'mbedtls/library/cipher_wrap.c',
+                    'mbedtls/library/ctr_drbg.c',
+                    'mbedtls/library/des.c',
+                    'mbedtls/library/dhm.c',
+                    'mbedtls/library/ecdh.c',
+                    'mbedtls/library/ecdsa.c',
+                    'mbedtls/library/ecjpake.c',
+                    'mbedtls/library/ecp.c',
+                    'mbedtls/library/ecp_curves.c',
+                    'mbedtls/library/entropy.c',
+                    'mbedtls/library/entropy_poll.c',
+                    'mbedtls/library/error.c',
+                    'mbedtls/library/gcm.c',
+                    'mbedtls/library/havege.c',
+                    'mbedtls/library/hmac_drbg.c',
+                    'mbedtls/library/md.c',
+                    'mbedtls/library/md2.c',
+                    'mbedtls/library/md4.c',
+                    'mbedtls/library/md5.c',
+                    'mbedtls/library/md_wrap.c',
+                    'mbedtls/library/memory_buffer_alloc.c',
+                    'mbedtls/library/oid.c',
+                    'mbedtls/library/padlock.c',
+                    'mbedtls/library/pem.c',
+                    'mbedtls/library/pk.c',
+                    'mbedtls/library/pk_wrap.c',
+                    'mbedtls/library/pkcs12.c',
+                    'mbedtls/library/pkcs5.c',
+                    'mbedtls/library/pkparse.c',
+                    'mbedtls/library/pkwrite.c',
+                    'mbedtls/library/platform.c',
+                    'mbedtls/library/ripemd160.c',
+                    'mbedtls/library/rsa.c',
+                    'mbedtls/library/sha1.c',
+                    'mbedtls/library/sha256.c',
+                    'mbedtls/library/sha512.c',
+                    'mbedtls/library/threading.c',
+                    'mbedtls/library/timing.c',
+                    'mbedtls/library/version.c',
+                    'mbedtls/library/version_features.c',
+                    'mbedtls/library/xtea.c'
+        ]
+
+mbeX509_src = [
+                'mbedtls/library/certs.c',
+                'mbedtls/library/pkcs11.c',
+                'mbedtls/library/x509.c',
+                'mbedtls/library/x509_create.c',
+                'mbedtls/library/x509_crl.c',
+                'mbedtls/library/x509_crt.c',
+                'mbedtls/library/x509_csr.c',
+                'mbedtls/library/x509write_crt.c',
+                'mbedtls/library/x509write_csr.c'
+        ]
+
+mbedcrypto_env = mbedtls_env.Clone()
+static_libmbedcrypto = mbedcrypto_env.StaticLibrary('mbedcrypto', mbedcrypto_src)
+mbedcrypto_env.InstallTarget(static_libmbedcrypto, 'mbedcrypto')
+
+mbex509_env = mbedtls_env.Clone()
+mbex509_env.AppendUnique(LIBS = ['mbedcrypto'])
+static_libmbedx509 = mbex509_env.StaticLibrary('mbedx509', mbeX509_src)
+mbex509_env.InstallTarget(static_libmbedx509, 'mbedx509')
+
+if static_lib == '1':
+	mbedtls_env.AppendUnique(LIBS = ['mbedx509', 'mbedcrypto'])
+	static_libmbedtls = mbedtls_env.StaticLibrary('mbedtls', mbedtls_src)
+	mbedtls_env.InstallTarget(static_libmbedtls, 'mbedtls')
+else:
+	if target_os in ['windows', 'msys_nt', 'ios']:
+		mbedtls_env.AppendUnique(LIBS = ['mbedx509', 'mbedcrypto'])
+		static_libmbedtls = mbedtls_env.StaticLibrary('mbedtls', mbedtls_src)
+		mbedtls_env.InstallTarget(static_libmbedtls, 'mbedtls')
+	else:
+		mbedtls_env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
+		mbedtls_env.AppendUnique(LIBS = ['mbedx509', 'mbedcrypto'])
+		static_libmbedtls = mbedtls_env.StaticLibrary('mbedtls', mbedtls_src)
+		shared_libmbedtls = mbedtls_env.SharedLibrary('mbedtls', mbedtls_src)
+		mbedtls_env.InstallTarget([static_libmbedtls, shared_libmbedtls], 'mbedtls')
+		mbedtls_env.UserInstallTargetLib([static_libmbedtls, shared_libmbedtls], 'mbedtls')
+	if target_os in ['android']:
+		mbedtls_env.AppendUnique(LINKFLAGS = ['-Wl,-soname,libmbedtls.so'])

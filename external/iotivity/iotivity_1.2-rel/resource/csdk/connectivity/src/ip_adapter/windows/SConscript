@@ -1,0 +1,12 @@
+#######################################################
+#       Build IP adapter for MSYS2
+#######################################################
+
+Import('env', 'src_dir')
+import os.path
+target_os = env.get('TARGET_OS')
+env.AppendUnique(CPPPATH = [ os.path.join(src_dir, target_os) ])
+
+src_files = [ 'caipnwmonitor.c' ]
+
+Return('src_files')

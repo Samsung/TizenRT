@@ -177,7 +177,7 @@ $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBE
 
 #Iotivity Libs
 
-ifeq ($(CONFIG_IOTIVITY_SCONS_BUILD),y)
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 
 $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT)
 	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
@@ -209,17 +209,9 @@ endif
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
 
-$(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libtinydtls$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libtinydtls$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT)
+#$(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libtinydtls$(LIBEXT)
+#	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libtinydtls$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)libmbedtls$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedtls$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedtls$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmbedtls$(LIBEXT)
-
-$(LIBRARIES_DIR)$(DELIM)libmbedcrypto$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedcrypto$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedcrypto$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmbedcrypto$(LIBEXT)
-
-$(LIBRARIES_DIR)$(DELIM)libmbedx509$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedx509$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedx509$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmbedx509$(LIBEXT)
 
 endif
 endif

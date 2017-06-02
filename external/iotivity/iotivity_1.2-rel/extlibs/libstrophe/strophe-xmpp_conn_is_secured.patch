@@ -1,0 +1,28 @@
+diff --git a/src/conn.c b/src/conn.c
+index d72386f..e4f0a39 100644
+--- a/src/conn.c
++++ b/src/conn.c
+@@ -742,6 +742,11 @@ void xmpp_conn_disable_tls(xmpp_conn_t * const conn)
+     conn->tls_disabled = 1;
+ }
+ 
++int xmpp_conn_is_secured(xmpp_conn_t * const conn)
++{
++    return conn->secured == 1 && conn->tls_failed == 0 ? 1 : 0;
++}
++
+ static void _log_open_tag(xmpp_conn_t *conn, char **attrs)
+ {
+     char buf[4096];
+diff --git a/strophe.h b/strophe.h
+index 80a5390..64b2352 100644
+--- a/strophe.h
++++ b/strophe.h
+@@ -215,6 +215,7 @@ const char *xmpp_conn_get_pass(const xmpp_conn_t * const conn);
+ void xmpp_conn_set_pass(xmpp_conn_t * const conn, const char * const pass);
+ xmpp_ctx_t* xmpp_conn_get_context(xmpp_conn_t * const conn);
+ void xmpp_conn_disable_tls(xmpp_conn_t * const conn);
++int xmpp_conn_is_secured(xmpp_conn_t * const conn);
+ 
+ int xmpp_connect_client(xmpp_conn_t * const conn, 
+ 			  const char * const altdomain,

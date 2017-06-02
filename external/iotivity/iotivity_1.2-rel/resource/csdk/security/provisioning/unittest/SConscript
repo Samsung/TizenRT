@@ -1,0 +1,124 @@
+# //******************************************************************
+# //
+# // Copyright 2015 Samsung Electronics All Rights Reserved.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# //
+# // Licensed under the Apache License, Version 2.0 (the "License");
+# // you may not use this file except in compliance with the License.
+# // You may obtain a copy of the License at
+# //
+# //      http://www.apache.org/licenses/LICENSE-2.0
+# //
+# // Unless required by applicable law or agreed to in writing, software
+# // distributed under the License is distributed on an "AS IS" BASIS,
+# // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# // See the License for the specific language governing permissions and
+# // limitations under the License.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+import os
+import os.path
+from tools.scons.RunTest import run_test
+
+# SConscript file for Local PKI google tests
+gtest_env = SConscript('#extlibs/gtest/SConscript')
+sptest_env = gtest_env.Clone()
+src_dir = sptest_env.get('SRC_DIR')
+target_os = sptest_env.get('TARGET_OS')
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = sptest_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+	# For bring up purposes only, we manually copy the forked version to where the unforked version is downloaded.
+	sptest_env.AppendUnique(CPPPATH = ['#extlibs/libcoap/libcoap/include'])
+else:
+	# For bring up purposes only, the forked version will live here.
+	sptest_env.AppendUnique(CPPPATH = ['../../../connectivity/lib/libcoap-4.1.1/include'])
+
+sptest_env.PrependUnique(CPPPATH = [
+		'../include',
+		'../../include',
+		'../include/internal',
+		'../../../stack/include',
+		'../../../ocrandom/include',
+		'../../../logger/include',
+		'../../../stack/include',
+		'../../../security/include',
+		'../../../security/include/internal',
+		'../../../security/provisioning/include/internal',
+		'../../../../oc_logger/include',
+		'../include/oxm',
+		'../../../../../extlibs/cjson',
+		'../../../../../extlibs/base64',
+		'../../../connectivity/inc',
+		'../../../connectivity/inc/pkix',
+		'../../../connectivity/common/inc',
+		'../../../connectivity/api'
+		])
+sptest_env.AppendUnique(LIBPATH = [sptest_env.get('BUILD_DIR')])
+sptest_env.PrependUnique(LIBS = [   'ocpmapi',
+                                    'oc',
+                                    'ocsrm',
+                                    'oc_logger',
+                                    'connectivity_abstraction',
+                                    'coap'])
+
+if sptest_env.get('SECURED') == '1':
+    sptest_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509','mbedcrypto'])
+
+if not sptest_env.get('RELEASE'):
+	sptest_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+if sptest_env.get('MULTIPLE_OWNER') == '1':
+	sptest_env.AppendUnique(CPPDEFINES=['MULTIPLE_OWNER'])
+
+if target_os in ['msys_nt', 'windows']:
+    sptest_env.AppendUnique(LINKFLAGS = ['/subsystem:CONSOLE'])
+    sptest_env.AppendUnique(LIBS = ['ws2_32',
+                                    'advapi32',
+                                    'bcrypt',
+                                    'octbstack_static',
+                                    'iphlpapi'])
+else:
+	sptest_env.AppendUnique(LIBS = ['octbstack'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+unittest_src = ['pmutilitytest.cpp',
+                'secureresourceprovider.cpp',
+                'provisioningdatabasemanager.cpp',
+                'ocprovisioningmanager.cpp',
+                'credentialgeneratortest.cpp',
+                ]
+
+if target_os not in ['windows']:
+    unittest_src += [ 'otmunittest.cpp' ]
+
+unittest = sptest_env.Program('unittest', unittest_src)
+
+if target_os not in ['windows']:
+    sample_server1 = sptest_env.Program('sample_server1', ['sampleserver1.cpp'])
+    sample_server2 = sptest_env.Program('sample_server2', ['sampleserver2.cpp'])
+    Alias("test", [sample_server1, sample_server2])
+
+Alias("test", [unittest])
+
+sptest_env.AppendTarget('test')
+# TODO: fix this test on linux and remove this comment line
+if sptest_env.get('TEST') == '1':
+	if target_os in ['windows']:
+		out_dir = sptest_env.get('BUILD_DIR')
+		result_dir = os.path.join(sptest_env.get('BUILD_DIR'), 'test_out') + os.sep
+		if not os.path.isdir(result_dir):
+			os.makedirs(result_dir)
+		sptest_env.AppendENVPath('GTEST_OUTPUT', ['xml:'+ result_dir])
+		sptest_env.AppendENVPath('LD_LIBRARY_PATH', [out_dir])
+		sptest_env.AppendENVPath('PATH', sptest_env.get('BUILD_DIR'))
+		run_test(sptest_env,
+				 'resource_csdk_security_provisioning_unittest.memcheck',
+				 'resource/csdk/security/provisioning/unittest/unittest')

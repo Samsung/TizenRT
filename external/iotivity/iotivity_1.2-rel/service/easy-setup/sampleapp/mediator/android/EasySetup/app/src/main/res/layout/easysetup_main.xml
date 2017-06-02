@@ -1,0 +1,807 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:baselineAligned="true"
+    android:weightSum="1"
+    android:nestedScrollingEnabled="false">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Discovery"
+            android:id="@+id/btn_discoverResource"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="10dp" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:weightSum="1"
+            android:baselineAligned="true"
+            android:layout_marginLeft="20dp"
+            android:id="@+id/layout_Security"
+            android:layout_marginRight="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/security_mode"
+                android:id="@+id/text_EnableSecurity"
+                android:phoneNumber="false"
+                android:textSize="16sp"
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="20dp" />
+
+            <ToggleButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/btn_Security"
+                android:layout_marginLeft="40dp"
+                android:layout_weight="0"
+                android:textOff="Disable"
+                android:textOn="Enable"
+                android:layout_marginTop="10dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <View
+        android:layout_height="2dip"
+        android:background="#FF909090"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_width="match_parent" />
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/layout_Excution"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/easysetup_sequence"
+            android:id="@+id/textView22"
+            android:layout_marginLeft="10dp"
+            android:textSize="16sp" />
+
+        <RadioGroup
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="5dp"
+            android:id="@+id/rg_EasysetupProcess"
+            android:layout_marginLeft="20dp">
+
+            <RadioButton
+                android:layout_width="160dp"
+                android:layout_height="32dp"
+                android:text="@string/securityprovisioning"
+                android:id="@+id/btn_configurSec"
+                android:checked="false"
+                android:textSize="12sp" />
+
+            <RadioButton
+            android:layout_width="160dp"
+            android:layout_height="32dp"
+            android:text="GetConfiguration"
+            android:id="@+id/btn_getConfiguration"
+            android:checked="false"
+            android:textSize="12sp" />
+
+            <RadioButton
+                android:layout_width="173dp"
+                android:layout_height="32dp"
+                android:text="ProvisionDeviceConfig"
+                android:id="@+id/btn_provisionDevConf"
+                android:textSize="12sp" />
+
+            <RadioButton
+                android:layout_width="160dp"
+                android:layout_height="32dp"
+                android:text="@string/cloudprovisioning"
+                android:id="@+id/btn_provisionCloudConf"
+                android:textSize="12sp" />
+        </RadioGroup>
+
+    </LinearLayout>
+
+    <View
+        android:layout_height="2dip"
+        android:background="#FF909090"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_width="match_parent" />
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/scrollView" >
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/layout_Infomation"
+            android:gravity="center_horizontal"
+            android:weightSum="1">
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:id="@+id/layout_ConfigurSec"
+                android:layout_marginTop="10dp"
+                android:weightSum="1"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:text="@string/security_provisioning_state"
+                    android:id="@+id/textView10" />
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_secState"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="80dp"
+                        android:layout_height="wrap_content"
+                        android:text="State"
+                        android:id="@+id/textView12"
+                        android:layout_gravity="center_vertical" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="empty"
+                        android:id="@+id/txt_secState" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/linearLayout2"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="80dp"
+                        android:layout_height="wrap_content"
+                        android:text="Device ID"
+                        android:id="@+id/textView"
+                        android:layout_gravity="center_vertical" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="empty"
+                        android:id="@+id/txt_secDevID" />
+                </LinearLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="82dp"
+                    android:layout_weight="0.64"></FrameLayout>
+
+                <Button
+                    android:layout_width="90dp"
+                    android:layout_height="wrap_content"
+                    android:text="START"
+                    android:id="@+id/btn_startConfigureSec"
+                    android:layout_marginTop="10dp"
+                    android:layout_gravity="bottom|right" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:id="@+id/layout_GetConfiguration"
+                android:layout_marginTop="10dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?android:attr/textAppearanceSmall"
+                        android:text="@string/enrollee_property_data"
+                        android:id="@+id/textView4" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="state : "
+                        android:id="@+id/textView18"
+                        android:layout_marginLeft="80dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="wait"
+                        android:id="@+id/txt_getConfigurationState" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_devID"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="devID"
+                        android:id="@+id/textView6"
+                        android:layout_gravity="center_vertical" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="empty"
+                        android:id="@+id/txt_devID" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_devName"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="devName"
+                        android:id="@+id/textView7"
+                        android:layout_gravity="center_vertical" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="empty"
+                        android:id="@+id/txt_devName" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_modelNumber"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="modelNumber"
+                        android:id="@+id/textView7"
+                        android:layout_gravity="center_vertical" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="empty"
+                        android:id="@+id/txt_modelNumber" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_Language"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="language"
+                        android:id="@+id/textView8"
+                        android:layout_gravity="center_vertical" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="empty"
+                        android:id="@+id/txt_language" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_Country"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="country"
+                        android:id="@+id/textView9"
+                        android:layout_gravity="center_vertical" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="empty"
+                        android:id="@+id/txt_country" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_wifimode"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="wifi mode"
+                        android:id="@+id/textView20"
+                        android:layout_gravity="center_vertical" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="empty"
+                        android:id="@+id/txt_wifiMode" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_wififreq"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="wifi freq"
+                        android:id="@+id/textView21"
+                        android:layout_gravity="center_vertical" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="empty"
+                        android:id="@+id/txt_wifiFreq" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_coludAccessAble"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="CloudAccessable"
+                        android:id="@+id/textView14"
+                        android:layout_gravity="center_vertical" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="empty"
+                        android:id="@+id/txt_cloudAccessable" />
+
+                </LinearLayout>
+
+                <Button
+                    android:layout_width="90dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/start"
+                    android:id="@+id/btn_startGetConfiguration"
+                    android:layout_gravity="bottom|right" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:id="@+id/layout_ProvisionDevConf"
+                android:layout_marginTop="10dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?android:attr/textAppearanceSmall"
+                        android:text="@string/enroller_infomation"
+                        android:id="@+id/textView_DataProvisioning" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="state : "
+                        android:id="@+id/textView19"
+                        android:layout_marginLeft="80dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="wait"
+                        android:id="@+id/txt_provisionDevConfState" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_EnrollerSSID"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp">
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="@string/enroller_ssid"
+                        android:id="@+id/txt_ssid"
+                        android:layout_gravity="center_vertical" />
+
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/editText_EnrollerSSID"
+                        android:text="Test_SSID"
+                        android:layout_marginLeft="20dp"
+                        android:layout_gravity="center_vertical" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_EnrollerPW"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="Enter Enroller&apos;s PW"
+                        android:id="@+id/txt_pass"
+                        android:layout_gravity="center_vertical" />
+
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/editText_EnrollerPW"
+                        android:text="Test_PW"
+                        android:layout_marginLeft="20dp"
+                        android:layout_gravity="center_vertical" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_InputLanguage"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="language"
+                        android:id="@+id/textView25"
+                        android:layout_gravity="center_vertical" />
+
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/editText_Language"
+                        android:text="Test_Language"
+                        android:layout_marginLeft="20dp"
+                        android:layout_gravity="center_vertical" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_InputCountry"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="country"
+                        android:id="@+id/textView23"
+                        android:layout_gravity="center_vertical" />
+
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/editText_Country"
+                        android:text="Test_Country"
+                        android:layout_marginLeft="20dp"
+                        android:layout_gravity="center_vertical" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_InputLocation"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="location"
+                        android:id="@+id/textView23"
+                        android:layout_gravity="center_vertical" />
+
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/editText_Location"
+                        android:text="Test_Location"
+                        android:layout_marginLeft="20dp"
+                        android:layout_gravity="center_vertical" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_EnrollerAuthType"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="@string/select_enroller_authentication_type"
+                        android:id="@+id/txt_authtype"
+                        android:layout_gravity="center_vertical" />
+
+                    <Spinner
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/spinner_authType"
+                        android:layout_marginLeft="20dp"
+                        android:layout_gravity="center_vertical"
+                        android:spinnerMode="dropdown" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/layout_EnrollerEncType"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="@string/select_enroller_encription_type"
+                        android:id="@+id/textView5"
+                        android:layout_gravity="center_vertical" />
+
+                    <Spinner
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/spinner_encType"
+                        android:layout_marginLeft="20dp"
+                        android:layout_gravity="center_vertical"
+                        android:spinnerMode="dropdown" />
+
+                </LinearLayout>
+
+                <Button
+                    android:layout_width="90dp"
+                    android:layout_height="wrap_content"
+                    android:text="START"
+                    android:id="@+id/btn_startProvisionDevConf"
+                    android:layout_marginTop="10dp"
+                    android:layout_gravity="bottom|right" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:id="@+id/layout_ProvisionCloudConf"
+                android:layout_marginTop="10dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?android:attr/textAppearanceSmall"
+                        android:text="Cloud Information"
+                        android:id="@+id/textView15" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="state : "
+                        android:id="@+id/textView24"
+                        android:layout_marginLeft="80dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="wait"
+                        android:id="@+id/txt_provisionCloudConfState" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/linearLayout11"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="Enter Target Cloud&apos;s Authcode"
+                        android:id="@+id/textView16"
+                        android:layout_gravity="center_vertical" />
+
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/editText_authcode"
+                        android:layout_marginLeft="20dp"
+                        android:layout_gravity="center_vertical"
+                        android:text="authcode" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/linearLayout12"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="Enter Target Cloud&apos;s AuthProvider"
+                        android:id="@+id/textView17"
+                        android:layout_gravity="center_vertical" />
+
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/editText_authprovider"
+                        android:layout_marginLeft="20dp"
+                        android:layout_gravity="center_vertical"
+                        android:text="authprovider" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/linearLayout"
+                    android:weightSum="1"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp" >
+
+                    <TextView
+                        android:layout_width="130dp"
+                        android:layout_height="wrap_content"
+                        android:text="Enter Target Cloud&apos;s Interface server"
+                        android:id="@+id/textView3"
+                        android:layout_gravity="center_vertical" />
+
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/editText_ciserver"
+                        android:layout_marginLeft="20dp"
+                        android:layout_gravity="center_vertical"
+                        android:text="coap+tcp://52.69.149.85:5683" />
+                </LinearLayout>
+
+                <Button
+                    android:layout_width="90dp"
+                    android:layout_height="wrap_content"
+                    android:text="START"
+                    android:id="@+id/btn_startProvisionCloudConf"
+                    android:layout_marginTop="10dp"
+                    android:layout_gravity="bottom|right" />
+
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

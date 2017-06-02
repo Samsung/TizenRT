@@ -76,16 +76,6 @@
 
 #define DEFAULT_PING_DATALEN 56
 
-
-#ifdef CONFIG_EXAMPLES_IOTIVITY
-extern int iotivity_main(int argc, char *argv[]);
-#ifdef CONFIG_EXAMPLES_IOTIVITY_SECURED
-extern int iotivity_sec_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_EXAMPLES_IOTIVITY_CLOUD
-extern int iotivity_cloud_main(int argc, char *argv[]);
-#endif
-#endif
 #ifdef CONFIG_SYSTEM_NETDB
 extern int netdb_main(int argc, char *argv[]);
 #endif
@@ -592,15 +582,6 @@ const static tash_cmdlist_t net_utilcmds[] = {
 };
 
 const static tash_cmdlist_t net_appcmds[] = {
-#ifdef CONFIG_EXAMPLES_IOTIVITY
-	{"iotivity", iotivity_main, TASH_EXECMD_ASYNC},
-#ifdef CONFIG_EXAMPLES_IOTIVITY_CLOUD
-	{"iotivity_cloud", iotivity_cloud_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_IOTIVITY_SECURED
-	{"iotivity_sec", iotivity_sec_main, TASH_EXECMD_ASYNC},
-#endif
-#endif							/* CONFIG_EXAMPLES_IOTIVITY */
 #ifdef CONFIG_SYSTEM_NETDB
 	{"netdb", netdb_main, TASH_EXECMD_SYNC},
 #endif

@@ -1,0 +1,54 @@
+#******************************************************************
+#
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# CoAP-HTTP-Proxy Sample Apps build script
+##
+
+Import('env')
+
+lib_env = env.Clone()
+SConscript('#service/third_party_libs.scons', 'lib_env')
+
+proxy_sample_app_env = lib_env.Clone()
+
+target_os = env.get('TARGET_OS')
+######################################################################
+# Build flags
+######################################################################
+proxy_sample_app_env.AppendUnique(CPPPATH = ['../include'])
+
+if target_os not in ['windows']:
+    proxy_sample_app_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-Wextra', '-std=c++0x'])
+proxy_sample_app_env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
+proxy_sample_app_env.AppendUnique(RPATH = [env.get('BUILD_DIR')])
+proxy_sample_app_env.PrependUnique(LIBS = ['coap_http_proxy', 'oc', 'octbstack', 'curl', 'connectivity_abstraction'])
+
+if env.get('SECURED') == '1':
+    proxy_sample_app_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+####################################################################
+# Source files and Targets
+######################################################################
+proxy_server = proxy_sample_app_env.Program('proxy_main', 'proxy_main.c')
+proxy_client = proxy_sample_app_env.Program('proxy_client', 'proxy_client.c')
+Alias("coap_http_proxy", [proxy_server])
+
+env.AppendTarget('coap_http_proxy')

@@ -1,0 +1,29 @@
+##
+# Builds Windows-specific helper library
+##
+Import('env')
+import os.path
+
+# Include any headers that might be missing on Windows
+env.AppendUnique(CPPPATH = [os.path.abspath('./include')])
+
+######################################################################
+# Source files and Targets
+######################################################################
+src_dir = Dir('src').abspath
+helper_src = [
+	os.path.join(src_dir, 'getopt.c'),
+	os.path.join(src_dir, 'win_sleep.c'),
+	os.path.join(src_dir, 'snprintf.c'),
+	os.path.join(src_dir, 'pthread_create.c')
+	]
+
+static_libwinhelper = env.StaticLibrary('win_helper', helper_src)
+env.InstallTarget(static_libwinhelper, 'win_helper')
+env.UserInstallTargetLib(static_libwinhelper, 'win_helper')
+env.UserInstallTargetHeader('include/win_sleep.h', 'c_common/windows/include', 'win_sleep.h')
+env.UserInstallTargetHeader('include/pthread_create.h', 'c_common/windows/include', 'pthread_create.h')
+env.UserInstallTargetHeader('include/vs12_snprintf.h', 'c_common/windows/include', 'vs12_snprintf.h')
+
+env.AppendUnique(LIBS = ['win_helper'])
+
