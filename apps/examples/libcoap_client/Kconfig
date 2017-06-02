@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see misc/tools/kconfig-language.txt.
+#
+
+config EXAMPLES_LIBCOAP_CLIENT_TEST
+	bool "\"libcoap Client Test\" example"
+	default n
+	depends on NETUTILS_LIBCOAP
+	---help---
+		Enable the \"libcoap Client Test\" example

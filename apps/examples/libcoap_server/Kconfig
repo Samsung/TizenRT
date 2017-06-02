@@ -3,9 +3,9 @@
 # see misc/tools/kconfig-language.txt.
 #
 
-config EXAMPLES_LIBCOAP_TEST
-	bool "\"libcoap Test\" example"
+config EXAMPLES_LIBCOAP_SERVER_TEST
+	bool "\"libcoap Server Test\" example"
 	default n
 	depends on NETUTILS_LIBCOAP
 	---help---
-		Enable the \"libcoap Test\" example
+		Enable the \"libcoap Server Test\" example

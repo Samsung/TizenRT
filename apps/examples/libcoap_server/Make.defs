@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXAMPLES_LIBCOAP_TEST),y)
-CONFIGURED_APPS += examples/libcoap_test
+ifeq ($(CONFIG_EXAMPLES_LIBCOAP_SERVER_TEST),y)
+CONFIGURED_APPS += examples/libcoap_server
 endif

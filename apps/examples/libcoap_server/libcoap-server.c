@@ -44,7 +44,7 @@
 #ifndef FD_SETSIZE
 #define FD_SETSIZE	(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)
 #endif
-#endif
+#endif /* __TINYARA__ */
 
 enum server_status {
 	SERVER_STOPPED = 0,
@@ -340,7 +340,11 @@ finish:
 	return ctx;
 }
 
+#if defined (__TINYARA__)
 int coap_server_test_main(int argc, char **argv)
+#else
+int main(int argc, char **argv)
+#endif
 {
 	coap_context_t *ctx;
 	fd_set readfds;
@@ -351,6 +355,7 @@ int coap_server_test_main(int argc, char **argv)
 	char *addr_str = NULL;
 	char port_str[NI_MAXSERV] = "5683\0";
 	int opt;
+	int invalid_opt = 0;
 	coap_log_t log_level = LOG_WARNING;
 
 	while ((opt = getopt(argc, argv, "A:p:v:Q")) != -1) {
@@ -361,12 +366,12 @@ int coap_server_test_main(int argc, char **argv)
 				coap_log(LOG_CRIT, "memory allocation failure\n");
 				return -1;
 			}
-			strncpy(addr_str, optarg, NI_MAXHOST - 1);
+			strncpy(addr_str, optarg, NI_MAXHOST-1);
 			addr_str[NI_MAXHOST - 1] = '\0';
-			printf("coap-server : addresss %s\n", addr_str);
+			printf("coap-server : address %s\n", addr_str);
 			break;
 		case 'p':
-			strncpy(port_str, optarg, NI_MAXSERV - 1);
+			strncpy(port_str, optarg, NI_MAXSERV-1);
 			port_str[NI_MAXSERV - 1] = '\0';
 			printf("coap-server : port %s\n", port_str);
 			break;
@@ -376,16 +381,29 @@ int coap_server_test_main(int argc, char **argv)
 			break;
 		case 'Q':
 			quit = 1;
-			printf("coap-server : set quit flag %d\n", quit);
-			return 0;
+			break;
 		default:
-			usage(argv[0], PACKAGE_VERSION);
-			exit(1);
+			if (!invalid_opt) {
+				invalid_opt = 1;
+				usage(argv[0], PACKAGE_VERSION);
+			}
+			break;
 		}
 	}
 
+	/* Exit program when invalid argument is passed from command line*/
+	if (invalid_opt)
+		return 0;
+
 	if (g_operating_status == SERVER_RUNNING) {
-		fprintf(stderr, "coap-server : error, another coap_server is running\n");
+		if (quit) {
+			printf("coap-server : set quit flag %d\n", quit);
+			/* To prevent memory leakage */
+			if (addr_str != NULL)
+				free(addr_str);
+		} else {
+			printf("coap-server : another libcoap-server is running\n");
+		}
 		return 0;
 	}
 
@@ -397,8 +415,6 @@ int coap_server_test_main(int argc, char **argv)
 	}
 
 	init_resources(ctx);
-	/* initialize global variables */
-	quit = 0;
 
 #if !defined (__TINYARA__)
 	signal(SIGINT, handle_sigint);
@@ -462,6 +478,8 @@ int coap_server_test_main(int argc, char **argv)
 		coap_free(addr_str);
 	}
 
+	/* initialize global variables */
+	quit = 0;
 	g_operating_status = SERVER_STOPPED;
 
 	printf("coap-server : good bye\n");

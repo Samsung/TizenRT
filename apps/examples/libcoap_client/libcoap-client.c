@@ -30,6 +30,18 @@
 #define NI_MAXSERV 32
 #endif
 
+#if defined (__TINYARA__)
+#define COAP_CLIENT_SCHED_PRI    100
+#define COAP_CLIENT_SCHED_POLICY SCHED_RR
+#define COAP_CLIENT_STACK_SIZE   (1024 * 8)
+
+/* used for sending input arguments to pthread */
+struct coap_client_input {
+	int argc;
+	char **argv;
+};
+#endif /* __TINYARA__ */
+
 int flags = 0;
 
 static unsigned char _token_data[8];
@@ -100,6 +112,25 @@ int append_to_output(const unsigned char *data, size_t len)
 	return 0;
 }
 
+#if defined (__TINYARA__)
+/*
+ * separate close_output function
+ * to prevent data abort when file descriptor is either stdout or stderr
+ * data abort can be occur when fclose among stdin, stdout and stderr
+ */
+void close_output(void)
+{
+	if (file) {
+		/* add a newline before closing in case were writing to stdout */
+		if (!output_file.s || (output_file.length && output_file.s[0] == '-')) {
+			fprintf(file, "\n");
+		} else {
+			fflush(file);
+			fclose(file);
+		}
+	}
+}
+#else
 void close_output(void)
 {
 	if (file) {
@@ -113,6 +144,7 @@ void close_output(void)
 		fclose(file);
 	}
 }
+#endif /* __TINYARA__ */
 
 coap_pdu_t *new_ack(coap_context_t *ctx, coap_queue_t *node)
 {
@@ -890,8 +922,11 @@ finish:
 	freeaddrinfo(result);
 	return ctx;
 }
-
-int coap_client_test_main(int argc, char **argv)
+#if defined (__TINYARA__)
+int coap_client_test_run(void *arg)
+#else
+int main(int argc, char **argv)
+#endif
 {
 	coap_context_t *ctx = NULL;
 	coap_address_t dst;
@@ -907,9 +942,24 @@ int coap_client_test_main(int argc, char **argv)
 	unsigned short port = COAP_DEFAULT_PORT;
 	char port_str[NI_MAXSERV] = "0";
 	int opt, res;
+	int invalid_opt = 0;
 	char *group = NULL;
 	coap_log_t log_level = LOG_WARNING;
 	coap_tid_t tid = COAP_INVALID_TID;
+
+#if defined (__TINYARA__)
+	int argc;
+	char **argv;
+
+	argc = ((struct coap_client_input *)arg)->argc;
+	argv = ((struct coap_client_input *)arg)->argv;
+
+	/*
+	 * without initialize optlist,
+	 * optlist is appened on previous value, so wrong option can be sent to coap-server
+	 */
+	optlist = NULL;
+#endif
 
 	while ((opt = getopt(argc, argv, "Nb:e:f:g:m:p:s:t:o:v:A:B:O:P:T:")) != -1) {
 		switch (opt) {
@@ -951,7 +1001,7 @@ int coap_client_test_main(int argc, char **argv)
 
 			if (!output_file.s) {
 				fprintf(stderr, "cannot set output file: insufficient memory\n");
-				exit(-1);
+				break;
 			} else {
 				/* copy filename including trailing zero */
 				memcpy(output_file.s, optarg, output_file.length + 1);
@@ -969,7 +1019,7 @@ int coap_client_test_main(int argc, char **argv)
 		case 'P':
 			if (!cmdline_proxy(optarg)) {
 				fprintf(stderr, "error specifying proxy address\n");
-				exit(-1);
+				break;
 			}
 			break;
 		case 'T':
@@ -979,10 +1029,17 @@ int coap_client_test_main(int argc, char **argv)
 			log_level = strtol(optarg, NULL, 10);
 			break;
 		default:
-			usage(argv[0], PACKAGE_VERSION);
-			exit(1);
+			if (!invalid_opt) {
+				invalid_opt = 1;
+				usage(argv[0], PACKAGE_VERSION);
+			}
+			break;
 		}
 	}
+
+	/* Exit program when invalid argument is passed from command line*/
+	if (invalid_opt)
+		return 0;
 
 	coap_set_log_level(log_level);
 
@@ -990,7 +1047,7 @@ int coap_client_test_main(int argc, char **argv)
 		cmdline_uri(argv[optind]);
 	} else {
 		usage(argv[0], PACKAGE_VERSION);
-		exit(1);
+		return 0;
 	}
 
 	if (proxy.length) {
@@ -1006,7 +1063,7 @@ int coap_client_test_main(int argc, char **argv)
 
 	if (res < 0) {
 		fprintf(stderr, "failed to resolve address\n");
-		exit(-1);
+		return -1;
 	}
 
 	dst.size = res;
@@ -1045,8 +1102,8 @@ int coap_client_test_main(int argc, char **argv)
 		join(ctx, group);
 	}
 #endif
-	/* construct CoAP message */
 
+	/* construct CoAP message */
 	if (!proxy.length && addrptr && (inet_ntop(dst.addr.sa.sa_family, addrptr, addr, sizeof(addr)) != 0)
 		&& (strlen(addr) != uri.host.length || memcmp(addr, uri.host.s, uri.host.length) != 0)) {
 		/* add Uri-Host */
@@ -1136,8 +1193,57 @@ int coap_client_test_main(int argc, char **argv)
 		}
 	}
 
+	printf("coap-client : good bye\n");
 	close_output();
 	coap_free_context(ctx);
 
 	return 0;
 }
+
+#if defined (__TINYARA__)
+int coap_client_test_main(int argc, char **argv)
+{
+	int status;
+
+	pthread_t tid;
+	pthread_attr_t attr;
+	struct sched_param sparam;
+	struct coap_client_input arg;
+
+	status = pthread_attr_init(&attr);
+
+	if (status != 0) {
+		printf("coap_client_test_main : failed to start coap-client\n");
+		return -1;
+	}
+
+	sparam.sched_priority = COAP_CLIENT_SCHED_PRI;
+	if ((status = pthread_attr_setschedparam(&attr, &sparam)) != 0) {
+		printf("coap_client_test_main : failed pthread_attr_setschedparam, errno %d\n", errno);
+		return -1;
+	}
+
+	if ((status = pthread_attr_setschedpolicy(&attr, COAP_CLIENT_SCHED_POLICY)) != 0) {
+		printf("coap_client_test_main : failed pthread_attr_setschedpolicy, errno %d\n", errno);
+		return -1;
+	}
+
+	if ((status = pthread_attr_setstacksize(&attr, COAP_CLIENT_STACK_SIZE)) != 0) {
+		printf("coap_client_test_main : failed pthread_attr_setstacksize, errno %d\n", errno);
+		return -1;
+	}
+
+	arg.argc = argc;
+	arg.argv = argv;
+
+	if ((status = pthread_create(&tid, &attr, (pthread_startroutine_t)coap_client_test_run, &arg)) < 0) {
+		printf("coap_client_test_main : failed to run coap-client, errno %d\n", errno);
+		return -1;
+	}
+
+	pthread_setname_np(tid, "coap-client-test");
+	pthread_join(tid, NULL);
+
+	return 0;
+}
+#endif /* __TINYARA__ */
