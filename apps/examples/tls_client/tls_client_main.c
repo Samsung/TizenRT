@@ -358,7 +358,9 @@ struct options {
 	int fallback;				/* is this a fallback connection?           */
 	int extended_ms;			/* negotiate extended master secret?        */
 	int etm;					/* negotiate encrypt then mac?              */
-} opt;
+};
+
+static struct options opt;
 
 static void my_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
@@ -469,7 +471,7 @@ int tls_client_cb(void *args)
 	mbedtls_ssl_config conf;
 	mbedtls_ssl_session saved_session;
 #if defined(MBEDTLS_TIMING_C)
-	mbedtls_timing_delay_context *timer;
+	mbedtls_timing_delay_context timer;
 #endif
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	uint32_t flags;
@@ -1605,7 +1607,6 @@ exit:
 		mbedtls_printf("Last error was: -0x%X - %s\n\n", -ret, error_buf);
 	}
 #endif
-
 	mbedtls_net_free(&server_fd);
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
