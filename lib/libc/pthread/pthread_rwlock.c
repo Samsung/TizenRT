@@ -71,6 +71,10 @@ int pthread_rwlock_init(FAR pthread_rwlock_t *lock, FAR const pthread_rwlockattr
 {
 	int err;
 
+	if (lock == NULL) {
+		return EINVAL;
+	}
+
 	if (attr != NULL) {
 		return ENOSYS;
 	}
