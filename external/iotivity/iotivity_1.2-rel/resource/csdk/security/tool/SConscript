@@ -1,0 +1,63 @@
+# //******************************************************************
+# //
+# // Copyright 2015 Samsung Electronics All Rights Reserved.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# //
+# // Licensed under the Apache License, Version 2.0 (the "License");
+# // you may not use this file except in compliance with the License.
+# // You may obtain a copy of the License at
+# //
+# //      http://www.apache.org/licenses/LICENSE-2.0
+# //
+# // Unless required by applicable law or agreed to in writing, software
+# // distributed under the License is distributed on an "AS IS" BASIS,
+# // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# // See the License for the specific language governing permissions and
+# // limitations under the License.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+Import('env')
+
+tools_env = env.Clone()
+src_dir = tools_env.get('SRC_DIR')
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = tools_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+    # For bring up purposes only, we manually copy the forked version to where the unforked version is downloaded.
+    tools_env.AppendUnique(CPPPATH = ['#extlibs/libcoap/libcoap/include'])
+else:
+    # For bring up purposes only, the forked version will live here.
+    tools_env.AppendUnique(CPPPATH = ['../../connectivity/lib/libcoap-4.1.1/include'])
+
+tools_env.PrependUnique(CPPPATH = ['../../../../extlibs/cjson',
+                                  '../../stack/include',
+                                  '../../stack/include/internal',
+                                  '../../logger/include',
+                                  '../../../oc_logger/include',
+                                  '../../connectivity/api',
+                                  '../../connectivity/inc/pkix',
+                                  '../include',
+                                  '../include/internal',
+                                  '../provisioning/include',
+                                  '../provisioning/include/internal'
+                                  ])
+tools_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-Wextra', '-std=c++0x'])
+tools_env.AppendUnique(LIBPATH = [tools_env.get('BUILD_DIR')])
+tools_env.AppendUnique(RPATH = [tools_env.get('BUILD_DIR')])
+tools_env.PrependUnique(LIBS = ['oc', 'octbstack', 'mbedtls', 'mbedx509', 'mbedcrypto'])
+
+if tools_env.get('MULTIPLE_OWNER') == '1':
+	tools_env.AppendUnique(CPPDEFINES=['MULTIPLE_OWNER'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+json2cbor = tools_env.Program('json2cbor', ['json2cbor.c'])
+svrdbeditor = tools_env.Program('svrdbeditor', ['svrdbeditor.c'])
+Alias("securitytools", [json2cbor, svrdbeditor])
+env.AppendTarget('securitytools')

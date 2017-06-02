@@ -1,0 +1,30 @@
+<manifest>
+	<define>
+	  <domain name="essample" />
+	  <permit>
+         	<smack permit="system::use_internet" type="rwx"/>
+	  </permit>
+         <request>
+                <smack request="system::use_internet" type="rwx"/>
+                <smack request="connman" type="rw"/>
+                <smack request="connman::set" type="rw"/>
+                <smack request="connman::get" type="rw"/>
+                <smack request="connman::profile" type="rw"/>
+                <smack request="net-config" type="rw"/>
+                <smack request="bt-service" type="rwx"/>
+                <smack request="bt-service::spp" type="rwx"/>
+                <smack request="bt-service::gap" type="rwx"/>
+                <smack request="bt-service::admin" type="rwx"/>
+                <smack request="bt-service::manager" type="rwx"/>
+                <smack request="bt-service::public" type="rwx"/>
+		  <smack request="bt-service::platform" type="rwx"/>
+         </request>
+	</define>
+	<assign>
+		<filesystem path="/opt/apps/com.oic.es.sample/bin/sample" exec_label="sample" />
+	</assign>
+	<request>
+		<domain name="essample" />
+	</request>
+</manifest>
+

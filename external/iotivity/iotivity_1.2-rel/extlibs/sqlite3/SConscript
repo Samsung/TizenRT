@@ -1,0 +1,40 @@
+##
+# Scons script to install SQLite sources if not present
+##
+
+import os
+import shutil
+
+Import('env')
+sqlite_env = env.Clone()
+
+target_os = sqlite_env.get('TARGET_OS')
+src_dir = sqlite_env.get('SRC_DIR')
+
+targets_need_sqlite = ['linux', 'android', 'msys_nt', 'windows', 'ios']
+sqlite_dir      = src_dir + '/extlibs/sqlite3/'
+sqlite_build_dir      = src_dir + '/extlibs/sqlite3/sqlite-amalgamation-3081101/'
+sqlite_zip_file = src_dir + '/extlibs/sqlite3/sqlite-amalgamation-3081101.zip'
+sqlite_url = 'https://www.sqlite.org/2015/sqlite-amalgamation-3081101.zip'
+sqlite_package= 'sqlite-amalgamation-3081101'
+sqlite_url = 'https://www.sqlite.org/2015/' + sqlite_package + '.zip'
+
+sqlite_dir = os.path.join(src_dir, 'extlibs', 'sqlite3')
+sqlite_c = os.path.join(sqlite_dir, 'sqlite3.c')
+sqlite_h = os.path.join(sqlite_dir, 'sqlite3.h')
+sqlite_tmp_dir = os.path.join(sqlite_dir, sqlite_package)
+sqlite_zip_file = sqlite_tmp_dir + '.zip'
+sqlite_c_tmp = os.path.join(sqlite_tmp_dir, 'sqlite3.c')
+sqlite_h_tmp = os.path.join(sqlite_tmp_dir, 'sqlite3.h')
+
+if target_os in targets_need_sqlite:
+    print '*** Checking for presence of %s ***' % sqlite_package
+    os.listdir(sqlite_dir)
+    if not os.path.exists(sqlite_c) or not os.path.exists(sqlite_h):
+        if not os.path.exists(sqlite_zip_file):
+            sqlite_zip_file = sqlite_env.Download(sqlite_zip_file, sqlite_url)
+        sqlite_env.UnpackAll(sqlite_tmp_dir, sqlite_zip_file)
+        os.rename(sqlite_c_tmp, sqlite_c)
+        os.rename(sqlite_h_tmp, sqlite_h)
+#        os.remove(sqlite_zip_file)
+        shutil.rmtree(sqlite_tmp_dir)

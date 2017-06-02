@@ -1,0 +1,4 @@
+; Windows octbstack.dll exports that are required just for tests.
+
+OCConvertPayload
+OCParsePayload

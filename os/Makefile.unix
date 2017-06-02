@@ -126,15 +126,15 @@ LIBRARIES_DIR = $(OUTPUT_DIR)/libraries
 BIN_DIR = $(OUTPUT_DIR)/bin
 LIB_DIR = ../lib
 
-ifeq ($(CONFIG_IOTIVITY_SCONS_BUILD),y)
-ifeq ($(CONFIG_IOTIVITY_DEBUG),y)
-IOTIVITY_LIBS=debug
-else
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+ifeq ($(CONFIG_IOTIVITY_RELEASE),y)
 IOTIVITY_LIBS=release
+else
+IOTIVITY_LIBS=debug
 endif
 IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
 IOTIVITY_TARGET_ARCH := ${shell echo $(CONFIG_ARCH_FAMILY) | sed 's/"//g'}
-IOTIVITY_LIBS_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/out/tinyara/$(IOTIVITY_TARGET_ARCH)/$(IOTIVITY_LIBS)
+IOTIVITY_LIBS_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/out/tizenrt/$(IOTIVITY_TARGET_ARCH)/$(IOTIVITY_LIBS)
 IOTIVITY_CONFIG_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/resource/c_common
 endif
 
@@ -314,7 +314,7 @@ tools/mkconfig$(HOSTEXEEXT):
 include/tinyara/config.h: $(TOPDIR)/.config tools/mkconfig$(HOSTEXEEXT)
 	$(Q) tools/mkconfig $(TOPDIR) > include/tinyara/config.h
 
-ifeq ($(CONFIG_IOTIVITY_SCONS_BUILD),y)
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 # Temporariry workaround for build error "iotivity_config.h" not found
 # The error is due to build sequence (apps being built before external)
 # Workaround is creating an empty file "iotivity_config.h" which will be

@@ -1,0 +1,96 @@
+#******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+import os
+import os.path
+
+# SConscript file for Local PKI google tests
+gtest_env = SConscript('#extlibs/gtest/SConscript')
+catest_env = gtest_env.Clone()
+target_os = catest_env.get('TARGET_OS')
+target_transport = catest_env.get('TARGET_TRANSPORT')
+
+######################################################################
+# Build flags
+######################################################################
+catest_env.PrependUnique(CPPPATH = [
+                '../../logger/include',
+                '../../stack/include',
+                '../../extlibs/cjson',
+                '../../../oc_logger/include',
+               ])
+
+catest_env.AppendUnique(LIBPATH = [catest_env.get('BUILD_DIR')])
+catest_env.PrependUnique(LIBS = ['gtest', 'gtest_main'])
+catest_env.PrependUnique(LIBS = ['octbstack',
+                                    'connectivity_abstraction',
+                                    'coap'])
+
+if target_os not in ['arduino', 'darwin', 'ios', 'msys_nt', 'windows']:
+	catest_env.AppendUnique(LIBS=['rt'])
+
+if catest_env.get('SECURED') == '1':
+	catest_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509','mbedcrypto'])
+
+if catest_env.get('LOGGING'):
+	catest_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+if target_os in ['msys_nt', 'windows']:
+	catest_env.AppendUnique(LINKFLAGS = ['/subsystem:CONSOLE'])
+	catest_env.AppendUnique(LIBS = ['ws2_32',
+                                        'advapi32',
+                                        'bcrypt',
+                                        'iphlpapi'])
+else:
+	catest_env.AppendUnique(LIBS = ['m'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+
+tests_src = [
+	'catests.cpp',
+	'caprotocolmessagetest.cpp',
+	'ca_api_unittest.cpp',
+	'octhread_tests.cpp',
+	'uarraylist_test.cpp',
+	'ulinklist_test.cpp',
+	'uqueue_test.cpp'
+]
+
+if (('IP' in target_transport) or ('ALL' in target_transport)):
+	if target_os != 'arduino':
+		tests_src = tests_src + ['cablocktransfertest.cpp']
+
+if catest_env.get('SECURED') == '1' and catest_env.get('WITH_TCP') == True:
+	tests_src = tests_src + ['ssladapter_test.cpp']
+
+catests = catest_env.Program('catests', tests_src)
+
+Alias("test", [catests])
+
+catest_env.AppendTarget('test')
+if catest_env.get('TEST') == '1':
+        if target_os in ['linux', 'windows']:
+                catest_env.AppendENVPath('PATH', catest_env.get('BUILD_DIR'))
+                from tools.scons.RunTest import *
+                run_test(catest_env,
+                         'resource_csdk_connectivity_test.memcheck',
+                         'resource/csdk/connectivity/test/catests')

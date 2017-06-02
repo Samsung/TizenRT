@@ -1,0 +1,65 @@
+#******************************************************************
+#
+# Copyright 2014 Intel Mobile Communications GmbH All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+import os
+import os.path
+
+# SConscript file for Local PKI google tests
+gtest_env = SConscript('#extlibs/gtest/SConscript')
+randomtest_env = gtest_env.Clone()
+target_os = randomtest_env.get('TARGET_OS')
+
+######################################################################
+# Build flags
+######################################################################
+randomtest_env.PrependUnique(CPPPATH = [
+        '../include',
+		'../../logger/include',
+		'../../../oc_logger/include',
+		])
+
+randomtest_env.AppendUnique(LIBPATH = [randomtest_env.get('BUILD_DIR')])
+randomtest_env.PrependUnique(LIBS = ['octbstack',
+                                     'connectivity_abstraction',
+                                     'uuid'])
+
+if target_os in ['linux']:
+    randomtest_env.AppendUnique(LIBS = ['m'])
+
+if randomtest_env.get('SECURED') == '1':
+	randomtest_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509','mbedcrypto'])
+
+if randomtest_env.get('LOGGING'):
+	randomtest_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+randomtests = randomtest_env.Program('randomtests', ['linux/randomtest.cpp'])
+
+Alias("test", [randomtests])
+
+randomtest_env.AppendTarget('test')
+if randomtest_env.get('TEST') == '1':
+	if target_os in ['linux']:
+                from tools.scons.RunTest import *
+                run_test(randomtest_env,
+                         'resource_csdk_random_test.memcheck',
+                         'resource/c_common/ocrandom/test/randomtests')

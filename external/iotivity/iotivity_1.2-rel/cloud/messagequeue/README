@@ -1,0 +1,39 @@
+This project contains the Message Queue(MQ) Broker code.
+
+Build and Run
+
+1) Install Apache Maven if you don't have it
+
+    http://maven.apache.org
+
+2) Install Apache Kafka ver.0.9.0.0 if you don't have it
+
+    http://kafka.apache.org/downloads.html
+
+    Set 'host.name' in Kafka server configuration file('server.properties' file in this folder)
+      to your ip address,
+    Run Zookeeper server and Kafka broker with the configuration file.
+
+3) Build a CloudStack. If you are building first time, then build the stack.
+
+    go to "stack" folder in root directory
+    $ mvn install -Dmaven.test.skip=true
+
+4) Build a .jar file
+
+    $ mvn install -Dmaven.test.skip=true
+
+    - The CloudMessageQueue-0.0.1-SNAPSHOT.jar file will be placed in the "target" folder
+
+5) Run .jar file
+
+    go to "target" folder
+    $ java -jar CloudMessageQueue-0.0.1-SNAPSHOT.jar arg1(MQ CoAP Server Port) 
+      arg2(Zookeeper server address) arg3(Zookeeper server port)
+      arg4(kafka server address) arg5(kafka server port) arg6(TLS mode required)
+
+    e.g java -jar CloudMessageQueue-0.0.1-SNAPSHOT.jar 5686 127.0.0.1 2181 127.0.0.1 9092 0
+
+    - Before running a MQ Broker, you should run Zookeeper server and Kafka broker first.
+    - If you want to operate on TLS mode, "CLOUD_CERT_FILE(iotivitycloud.crt)", "CLOUD_KEY_FILE(iotivitycloud.key)"
+      and ROOT_CERT_FILE(rootca.crt) files should be placed in the "target" folder.

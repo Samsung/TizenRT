@@ -1,0 +1,53 @@
+##
+# CA build script
+##
+
+SConscript('./resource/csdk/connectivity/build/SConscript')
+
+Import('env')
+
+target_os = env.get('TARGET_OS')
+transport = env.get('TARGET_TRANSPORT')
+buildsample = env.get('BUILD_SAMPLE')
+release_mode = env.get('RELEASE')
+secured = env.get('SECURED')
+logging = env.get('LOGGING')
+routing = env.get('ROUTING')
+with_proxy = env.get('WITH_PROXY')
+with_tcp = env.get('WITH_TCP')
+with_mq = env.get('WITH_MQ')
+
+with_upstream_libcoap = env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+	# For bring up purposes only, we manually copy the forked version to where the unforked version is downloaded.
+	env.AppendUnique(CPPPATH = ['#extlibs/libcoap/libcoap/include'])
+else:
+	# For bring up purposes only, the forked version will live here.
+	env.AppendUnique(CPPPATH = ['../../../../connectivity/lib/libcoap-4.1.1'])
+
+env.PrependUnique(CPPPATH = [
+		'../../../../logger/include',
+		'../../../../stack/include',
+		'../../../../../../extlibs/cjson',
+		'../../../../../oc_logger/include'
+		])
+
+env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+if routing == 'GW':
+	env.AppendUnique(CPPDEFINES = ['ROUTING_GATEWAY'])
+elif routing == 'EP':
+	env.AppendUnique(CPPDEFINES = ['ROUTING_EP'])
+env.AppendUnique(CPPDEFINES = ['__TIZEN__'])
+
+if env.get('WITH_PROXY'):
+	env.AppendUnique(CPPDEFINES = ['WITH_CHPROXY'])
+
+print "Given Transport is %s" % transport
+print "Given OS is %s" % target_os
+print "Given MQ is %s" % with_mq
+
+if target_os == 'tizen':
+	command = "sh resource/csdk/stack/samples/tizen/build/gbsbuild.sh %s %s %s %s %s %s %s %s %s" % (transport, secured, buildsample, release_mode, logging, routing, with_tcp, with_proxy, with_mq)
+	print "Created Command is %s" % command
+	gbs_script = env.Command('gbs_build', None, command)
+	AlwaysBuild ('gbs_script')

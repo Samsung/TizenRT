@@ -1,0 +1,2 @@
+# Ignore gbdus-codegen generated headers copied to this directory.
+*-glue.h
