@@ -55,7 +55,7 @@ fetch_libftdi() {
 	rm -rf /tmp/$IMG
 }
 
-fetch_libusb() {
+fetch_libusb0() {
 	IMG=`basename $LIBUSB0_SRC_URL`
 	wget $LIBUSB0_SRC_URL -O /tmp/$IMG
 	if [ $LIBUSB0_SRC_MD5SUM != `md5sum /tmp/$IMG | awk '{print $1}'` ]; then
@@ -64,7 +64,9 @@ fetch_libusb() {
 	mkdir ./libusb0
 	tar -xvf /tmp/$IMG --strip-components 1 -C ./libusb0
 	rm -rf /tmp/$IMG
+}
 
+fetch_libusb1() {
 	IMG=`basename $LIBUSB1_SRC_URL`
 	wget $LIBUSB1_SRC_URL -O /tmp/$IMG
 	if [ $LIBUSB1_SRC_MD5SUM != `md5sum /tmp/$IMG | awk '{print $1}'` ]; then
@@ -75,125 +77,151 @@ fetch_libusb() {
 	rm -rf /tmp/$IMG
 }
 
-if [ "$OSTYPE" == "linux-gnu" -o "$OSTYPE" == "linux" ]; then
-	case $HOSTTYPE in
-		x86_64*)
-			HOST=linux64
-			;;
-		i386*|i686*)
-			HOST=linux32
-			;;
-		*)
-			die "Unknown host type"
-			;;
-	esac
-else
-	die "Not-support OS type - $OSTYPE"
-fi
-
-which autoconf || die "autoconf is not installed."
-which cmake || die "cmake is not installed."
-
-if [ "$OSTYPE" == "linux-gnu" ]; then
-	automake --version || die "automake is not installed."
-	autoconf --version || die "autoconf is not installed."
-	libusb-config --version || die "libusb is not installed."
-	libtoolize --version || die "libtool is not installed."
-	if [ ! -d /usr/include/libusb-1.0 ]; then
-		die "libusb is not installed."
+setenv() {
+	if [ "$OSTYPE" == "linux-gnu" -o "$OSTYPE" == "linux" ]; then
+		case $HOSTTYPE in
+			x86_64*)
+				HOST=linux64
+				;;
+			i386*|i686*)
+				HOST=linux32
+				;;
+			*)
+				die "Unknown host type"
+				;;
+		esac
+	else
+		die "Not-support OS type - $OSTYPE"
 	fi
-	pkg-config --list-all | grep libudev || die "libudev is not installed."
-fi
+}
 
+check() {
+	which autoconf || die "autoconf is not installed."
+	which cmake || die "cmake is not installed."
 
-# fetch components
-fetch_libftdi
-fetch_libusb
-fetch_openocd
+	if [ "$OSTYPE" == "linux-gnu" ]; then
+		automake --version || die "automake is not installed."
+		autoconf --version || die "autoconf is not installed."
+		libusb-config --version || die "libusb is not installed."
+		libtoolize --version || die "libtool is not installed."
+		if [ ! -d /usr/include/libusb-1.0 ]; then
+			die "libusb is not installed."
+		fi
+		pkg-config --list-all | grep libudev || die "libudev is not installed."
+	fi
+}
 
-# build libftdi
-rm -rf libftdi-install
-mkdir -p libftdi-install
-cd libftdi
-cmake  -DCMAKE_INSTALL_PREFIX=`pwd`/../libftdi-install
-make
-make install
-cd ../
+build-libftdi() {
+	# build libftdi
+	rm -rf libftdi-install
+	mkdir -p libftdi-install
+	cd libftdi
+	cmake  -DCMAKE_INSTALL_PREFIX=`pwd`/../libftdi-install
+	make
+	make install
+	cd ../
+}
 
-# build libusb-0.1
-rm -rf libusb0-install
-mkdir -p libusb0-install
-cd libusb0
-./configure --enable-static --prefix=`pwd`/../libusb0-install
-make -j$CORES
-make install
-cd ../
+build-libusb0() {
+	# build libusb-0.1
+	rm -rf libusb0-install
+	mkdir -p libusb0-install
+	cd libusb0
+	./configure --enable-static --prefix=`pwd`/../libusb0-install
+	make -j$CORES
+	make install
+	cd ../
+}
 
-# build libusb-1.0
-rm -rf libusb1-install
-mkdir -p libusb1-install
-cd libusb1
-./bootstrap.sh
-./configure --enable-static --prefix=`pwd`/../libusb1-install
-make -j$CORES
-make install
-cd ../
+build-libusb1() {
+	# build libusb-1.0
+	rm -rf libusb1-install
+	mkdir -p libusb1-install
+	cd libusb1
+	./bootstrap.sh
+	./configure --enable-static --prefix=`pwd`/../libusb1-install
+	make -j$CORES
+	make install
+	cd ../
+}
 
-# build openocd
-rm -rf openocd-install
-mkdir -p openocd-install
-cd ./openocd
-patch -p1 < ../patches/*.patch
-./configure \
-	--enable-ftdi \
-	--disable-stlink \
-	--disable-ti-icdi \
-	--disable-ulink \
-	--disable-usb-blaster-2 \
-	--disable-openjtag \
-	--disable-jlink \
-	--disable-vsllink \
-	--disable-usbprog \
-	--disable-rlink \
-	--disable-osbdm \
-	--disable-opendous \
-	--disable-aice \
-	--disable-armjtagew \
-	--disable-cmsis-dap \
-	--disable-usb-blaster \
-	--disable-presto \
-	--disable-openjtag \
-	--disable-jtag_vpi \
-	--disable-amtjtagaccel \
-	--disable-zy1000-master \
-	--disable-zy1000 \
-	--disable-ep93xx \
-	--disable-at91rm9200 \
-	--disable-bcm2835gpio \
-	--disable-buspirate \
-	--disable-sysfsgpio \
-	--prefix=`pwd`/../openocd-install \
-	LIBFTDI_LIBS='-L`pwd`/../libftdi-install/lib -l:libftdi1.a' \
-	LIBFTDI_CFLAGS='-I `pwd`/../libftdi-install/include' \
-	LIBUSB0_LIBS='-L`pwd`/../libusb0-install/lib -l:libusb.a' \
-	LIBUSB0_CFLAGS='-I `pwd`/../libusb0-install/include' \
-	LIBUSB1_LIBS='-L`pwd`/../libusb1-install/lib -l:libusb-1.0.a' \
-	LIBUSB1_CFLAGS='-I `pwd`/../libusb1-install/include/libusb-1.0' \
-	LIBS='-ludev -lpthread'
-make
-make install
+build-openocd() {
+	# build openocd
+	rm -rf openocd-install
+	mkdir -p openocd-install
+	cd ./openocd
+	patch -p1 < ../patches/*.patch
+	./configure \
+		--enable-ftdi \
+		--disable-stlink \
+		--disable-ti-icdi \
+		--disable-ulink \
+		--disable-usb-blaster-2 \
+		--disable-openjtag \
+		--disable-jlink \
+		--disable-vsllink \
+		--disable-usbprog \
+		--disable-rlink \
+		--disable-osbdm \
+		--disable-opendous \
+		--disable-aice \
+		--disable-armjtagew \
+		--disable-cmsis-dap \
+		--disable-usb-blaster \
+		--disable-presto \
+		--disable-openjtag \
+		--disable-jtag_vpi \
+		--disable-amtjtagaccel \
+		--disable-zy1000-master \
+		--disable-zy1000 \
+		--disable-ep93xx \
+		--disable-at91rm9200 \
+		--disable-bcm2835gpio \
+		--disable-buspirate \
+		--disable-sysfsgpio \
+		--prefix=`pwd`/../openocd-install \
+		LIBFTDI_LIBS='-L`pwd`/../libftdi-install/lib -l:libftdi1.a' \
+		LIBFTDI_CFLAGS='-I `pwd`/../libftdi-install/include' \
+		LIBUSB0_LIBS='-L`pwd`/../libusb0-install/lib -l:libusb.a' \
+		LIBUSB0_CFLAGS='-I `pwd`/../libusb0-install/include' \
+		LIBUSB1_LIBS='-L`pwd`/../libusb1-install/lib -l:libusb-1.0.a' \
+		LIBUSB1_CFLAGS='-I `pwd`/../libusb1-install/include/libusb-1.0' \
+		LIBS='-ludev -lpthread'
+	make
+	make install
+}
 
-cp -r `pwd`/../openocd-install/share/openocd/scripts ../../
-cp `pwd`/../openocd-install/bin/openocd ../../$HOST/
+packaging() {
+	cp -r `pwd`/../openocd-install/share/openocd/scripts ../../
+	cp `pwd`/../openocd-install/bin/openocd ../../$HOST/
 
-cd ..
+	cd ..
+}
 
-# clean up
-rm -rf ./openocd-install
-rm -rf ./openocd
-rm -rf ./libftdi-install
-rm -rf ./libftdi
-rm -rf ./libusb0-install
-rm -rf ./libusb0
-rm -rf ./libusb1-install
-rm -rf ./libusb1
+cleanup() {
+	# clean up
+	rm -rf ./openocd-install
+	rm -rf ./openocd
+	rm -rf ./libftdi-install
+	rm -rf ./libftdi
+	rm -rf ./libusb0-install
+	rm -rf ./libusb0
+	rm -rf ./libusb1-install
+	rm -rf ./libusb1
+}
+
+components=(libftdi libusb1 libusb0 openocd)
+check
+setenv
+for p in ${components[@]};
+do
+	echo "Install package: $p"
+	# fetch components
+	fetch_$p
+
+	#build components
+	build-$p
+done
+
+packaging
+cleanup
