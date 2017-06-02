@@ -179,7 +179,7 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 
 	/* Start the watchdog with interrupts still disabled */
 
-	(void)wd_start(rtcb->waitdog, delay, (wdentry_t) sem_timeout, 1, getpid());
+	(void)wd_start(rtcb->waitdog, delay, (wdentry_t)sem_timeout, 1, getpid());
 
 	/* Now perform the blocking wait */
 

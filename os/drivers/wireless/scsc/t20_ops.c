@@ -664,12 +664,12 @@ int slsi_hw_scan(void *priv, struct wpa_driver_scan_params *request)
 		 * for wps case remove only p2p IE
 		 */
 
-		ie = (u8 *) slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPS, request->extra_ies, request->extra_ies_len);
+		ie = (u8 *)slsi_80211_find_vendor_ie(WLAN_OUI_MICROSOFT, WLAN_OUI_TYPE_MICROSOFT_WPS, request->extra_ies, request->extra_ies_len);
 		if (ie && ie[1] > SLSI_WPS_REQUEST_TYPE_POS && ie[SLSI_WPS_REQUEST_TYPE_POS] == SLSI_WPS_REQUEST_TYPE_ENROLEE_INFO_ONLY) {
 			strip_wsc = true;
 		}
 
-		ie = (u8 *) slsi_80211_find_vendor_ie(WLAN_OUI_WFA, WLAN_OUI_TYPE_WFA_P2P, request->extra_ies, request->extra_ies_len);
+		ie = (u8 *)slsi_80211_find_vendor_ie(WLAN_OUI_WFA, WLAN_OUI_TYPE_WFA_P2P, request->extra_ies, request->extra_ies_len);
 		if (ie) {
 			strip_p2p = true;
 		}
@@ -687,7 +687,7 @@ int slsi_hw_scan(void *priv, struct wpa_driver_scan_params *request)
 		r = slsi_mlme_add_scan(sdev, dev, scan_type, FAPI_REPORTMODE_REAL_TIME, request->num_ssids, request->ssids, chan_count, channels, NULL, scan_ie, scan_ie_len, false);
 		kmm_free(scan_ie);
 	} else {
-		scan_ie = (u8 *) request->extra_ies;
+		scan_ie = (u8 *)request->extra_ies;
 		scan_ie_len = request->extra_ies_len;
 		slsi_mbuf_queue_purge(&ndev_vif->scan[SLSI_SCAN_HW_ID].scan_results);
 		r = slsi_mlme_add_scan(sdev, dev, scan_type, FAPI_REPORTMODE_REAL_TIME, request->num_ssids, request->ssids, chan_count, channels, NULL, scan_ie, scan_ie_len, false);
@@ -750,7 +750,7 @@ static void slsi_add_wpa_scan_entry(struct wpa_scan_results *results, struct max
 	struct wpa_scan_res *scan_res;
 	struct slsi_80211_mgmt *frame = fapi_get_mgmt(scan);
 	size_t frame_len = fapi_get_mgmtlen(scan);
-	size_t ie_len = frame_len - (frame->u.beacon.variable - (u8 *) frame);
+	size_t ie_len = frame_len - (frame->u.beacon.variable - (u8 *)frame);
 	u8 *scan_res_ies, *ies;
 
 	scan_res = kmm_zalloc(sizeof(*scan_res) + ie_len);
@@ -1079,7 +1079,7 @@ int slsi_connect(void *priv, struct wpa_driver_associate_params *request)
 	}
 	memcpy(ndev_vif->sta.mac_addr, request->bssid, ETH_ALEN);
 
-	peer = slsi_peer_add(sdev, dev, (u8 *) request->bssid, SLSI_STA_PEER_QUEUESET + 1);
+	peer = slsi_peer_add(sdev, dev, (u8 *)request->bssid, SLSI_STA_PEER_QUEUESET + 1);
 	ndev_vif->sta.resp_id = 0;
 
 	if (!peer) {
@@ -1620,7 +1620,7 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 				u8 sec_chan_offset = 0;
 
 				append_vht_ies = true;
-				ht_operation_ie = (u8 *) slsi_80211_find_ie(WLAN_EID_HT_OPERATION, settings->beacon.tail, settings->beacon.tail_len);
+				ht_operation_ie = (u8 *)slsi_80211_find_ie(WLAN_EID_HT_OPERATION, settings->beacon.tail, settings->beacon.tail_len);
 				if (!ht_operation_ie) {
 					SLSI_NET_ERR(dev, "HT Operation IE is not passed by wpa_supplicant");
 					r = -EINVAL;
@@ -1664,8 +1664,8 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 			}
 
 			if (cfg80211_chandef_valid(ndev_vif->chandef)) {
-				slsi_modify_ies(dev, WLAN_EID_HT_OPERATION, (u8 *) settings->beacon.tail, settings->beacon.tail_len, 3, ht_info_value);
-				slsi_modify_ies(dev, WLAN_EID_HT_CAPABILITY, (u8 *) settings->beacon.tail, settings->beacon.tail_len, 2, SLSI_80211_HT_CAP_SUP_WIDTH_20_40);
+				slsi_modify_ies(dev, WLAN_EID_HT_OPERATION, (u8 *)settings->beacon.tail, settings->beacon.tail_len, 3, ht_info_value);
+				slsi_modify_ies(dev, WLAN_EID_HT_CAPABILITY, (u8 *)settings->beacon.tail, settings->beacon.tail_len, 2, SLSI_80211_HT_CAP_SUP_WIDTH_20_40);
 			} else {
 				SLSI_NET_WARN(dev, "chandef is not valid");
 			}
@@ -1688,11 +1688,11 @@ int slsi_start_ap(void *priv, struct wpa_driver_ap_params *settings)
 				mod_value |= SLSI_80211_HT_CAP_SGI_40;
 			}
 
-			slsi_modify_ies(dev, WLAN_EID_HT_CAPABILITY, (u8 *) settings->tail, settings->tail_len, 2, mod_value);
+			slsi_modify_ies(dev, WLAN_EID_HT_CAPABILITY, (u8 *)settings->tail, settings->tail_len, 2, mod_value);
 		}
 #ifdef CONFIG_SCSC_ADV_FEATURE
 		if (slsi_80211_find_ie(WLAN_EID_VHT_CAPABILITY, settings->tail, settings->tail_len)) {
-			slsi_modify_ies(dev, WLAN_EID_VHT_CAPABILITY, (u8 *) settings->tail, settings->tail_len, 2, SLSI_80211_VHT_CAP_SHORT_GI_80);
+			slsi_modify_ies(dev, WLAN_EID_VHT_CAPABILITY, (u8 *)settings->tail, settings->tail_len, 2, SLSI_80211_VHT_CAP_SHORT_GI_80);
 		}
 #endif
 	}

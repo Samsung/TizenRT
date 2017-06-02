@@ -1264,7 +1264,7 @@ static void nl80211_reg_rule_max_eirp(u32 start, u32 end, u32 max_eirp, struct p
 
 		for (c = 0; c < mode->num_channels; c++) {
 			struct hostapd_channel_data *chan = &mode->channels[c];
-			if ((u32) chan->freq - 10 >= start && (u32) chan->freq + 10 <= end) {
+			if ((u32)chan->freq - 10 >= start && (u32)chan->freq + 10 <= end) {
 				chan->max_tx_power = max_eirp;
 			}
 		}

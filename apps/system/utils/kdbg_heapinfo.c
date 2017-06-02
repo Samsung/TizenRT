@@ -37,11 +37,11 @@ static void kdbg_heapinfo_task(FAR struct tcb_s *tcb, FAR void *arg)
 	if (tcb->pid == 0) {
 		tcb->adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
 	}
-	printf("%3d  ", tcb->pid);
+	printf("%3d | ", tcb->pid);
 #if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
-	printf("%4d  ", tcb->ppid);
+	printf("%5d | ", tcb->ppid);
 #endif
-	printf("%5d      %5d  %5d  ", tcb->adj_stack_size, tcb->curr_alloc_size, tcb->peak_alloc_size);
+	printf("%5d | %9d | %9d | ", tcb->adj_stack_size, tcb->curr_alloc_size, tcb->peak_alloc_size);
 
 	/* Show task name and arguments */
 #if CONFIG_TASK_NAME_SIZE > 0
@@ -90,12 +90,16 @@ int kdbg_heapinfo(int argc, char **args)
 	}
 	heapinfo_parse(user_heap, mode, pid);
 
-	printf("\nPID  ");
+	printf("\n%3s | ", "PID");
 #if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
-	printf("PPID  ");
+	printf("%5s | ", "PPID");
 #endif
-	printf("STACK  HEAP Curr  Peak  NAME\n");
-	printf("------------------------------------\n");
+	printf("%5s | %9s | %9s | %s\n", "STACK", "CURR_HEAP", "PEAK_HEAP", "NAME");
+	printf("----|");
+#if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
+	printf("-------|");
+#endif
+	printf("-------|-----------|-----------|----------\n");
 	sched_foreach(kdbg_heapinfo_task, NULL);
 
 	return OK;

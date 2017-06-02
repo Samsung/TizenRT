@@ -428,7 +428,7 @@ consume_fb_mbulk:
 	}
 	/* Update the scoreboard */
 	if (SCSC_SCOREBOARD_VER == 0) {
-		QR(hip_priv, HIP4_MIF_Q_FH_RFB) = (u8) idx_r;
+		QR(hip_priv, HIP4_MIF_Q_FH_RFB) = (u8)idx_r;
 	} else if (update) {
 		hip4_update_index(hip, HIP4_MIF_Q_FH_RFB, ridx, idx_r);
 	}
@@ -487,7 +487,7 @@ consume_ctl_mbulk:
 	}
 	/* Update the scoreboard */
 	if (SCSC_SCOREBOARD_VER == 0) {
-		QR(hip_priv, HIP4_MIF_Q_TH_CTRL) = (u8) idx_r;
+		QR(hip_priv, HIP4_MIF_Q_TH_CTRL) = (u8)idx_r;
 	} else if (update) {
 		hip4_update_index(hip, HIP4_MIF_Q_TH_CTRL, ridx, idx_r);
 	}
@@ -543,7 +543,7 @@ consume_dat_mbulk:
 	}
 	/* Update the scoreboard */
 	if (SCSC_SCOREBOARD_VER == 0) {
-		QR(hip_priv, HIP4_MIF_Q_TH_DAT) = (u8) idx_r;
+		QR(hip_priv, HIP4_MIF_Q_TH_DAT) = (u8)idx_r;
 	} else if (update) {
 		hip4_update_index(hip, HIP4_MIF_Q_TH_DAT, ridx, idx_r);
 	}
@@ -715,7 +715,7 @@ int hip4_init(struct slsi_hip4 *hip)
 	hip_control->config_v4.log_config_loc = 0;
 	hip_control->config_v4.mif_fh_int_n = hip->hip_priv->rx_intr_fromhost;
 	hip_control->config_v4.mif_th_int_n = hip->hip_priv->rx_intr_tohost;
-	hip_control->config_v4.scbrd_loc = (u32) ref_scoreboard;
+	hip_control->config_v4.scbrd_loc = (u32)ref_scoreboard;
 	hip_control->config_v4.q_num = 6;
 	hip_control->config_v4.q_len = 256;
 	hip_control->config_v4.q_idx_sz = 1;
@@ -724,7 +724,7 @@ int hip4_init(struct slsi_hip4 *hip)
 		if (scsc_mx_service_mif_ptr_to_addr(service, &hip_control->q[i].array, &ref)) {
 			return -EFAULT;
 		}
-		hip_control->config_v4.q_loc[i] = (u32) ref;
+		hip_control->config_v4.q_loc[i] = (u32)ref;
 	}
 	/***** END VERSION 4 *******/
 
@@ -746,14 +746,14 @@ int hip4_init(struct slsi_hip4 *hip)
 	hip_control->config_v3.q_num = 6;
 	hip_control->config_v3.q_len = 256;
 	hip_control->config_v3.q_idx_sz = 1;
-	hip_control->config_v3.scbrd_loc = (u32) ref_scoreboard;	/* scoreboard location */
+	hip_control->config_v3.scbrd_loc = (u32)ref_scoreboard;	/* scoreboard location */
 
 	/* Initialize q relative positions */
 	for (i = 0; i < MIF_HIP_CFG_Q_NUM; i++) {
 		if (scsc_mx_service_mif_ptr_to_addr(service, &hip_control->q[i].array, &ref)) {
 			return -EFAULT;
 		}
-		hip_control->config_v3.q_loc[i] = (u32) ref;
+		hip_control->config_v3.q_loc[i] = (u32)ref;
 	}
 	/***** END VERSION 3 *******/
 

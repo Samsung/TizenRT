@@ -30,7 +30,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
 	memcpy(newBuffer, dst->data, dst->dataLength);
 	memcpy(&newBuffer[dst->dataLength], buffer, bufferLength);
 
-	dst->dataLength += (u16) bufferLength;
+	dst->dataLength += (u16)bufferLength;
 	kmm_free(dst->data);
 	dst->data = newBuffer;
 }
@@ -41,7 +41,7 @@ size_t slsi_mib_encode_uint32(u8 *buffer, u32 value)
 	u8 writeCount = 0;
 
 	if (value < 64) {
-		buffer[0] = (u8) value;
+		buffer[0] = (u8)value;
 		return 1;
 	}
 
@@ -69,7 +69,7 @@ size_t slsi_mib_encode_int32(u8 *buffer, s32 signedValue)
 {
 	u8 i;
 	u8 writeCount = 0;
-	u32 value = (u32) signedValue;
+	u32 value = (u32)signedValue;
 
 	if (!(value & 0x10000000))
 		/* just use the Unsigned Encoder */
@@ -78,7 +78,7 @@ size_t slsi_mib_encode_int32(u8 *buffer, s32 signedValue)
 	}
 
 	if (signedValue >= -64) {
-		buffer[0] = (u8) value & 0x7F;	/* vldata Length | more bit */
+		buffer[0] = (u8)value & 0x7F;	/* vldata Length | more bit */
 		return 1;
 	}
 
@@ -156,7 +156,7 @@ size_t slsi_mib_decodeInt32(u8 *buffer, s32 *value)
 	if (!(buffer[0] & SLSI_MIB_SIGN_MASK))
 		/* just use the Unsigned Decoder */
 	{
-		return slsi_mib_decodeUint32(buffer, (u32 *) value);
+		return slsi_mib_decodeUint32(buffer, (u32 *)value);
 	}
 
 	if (!(buffer[0] & SLSI_MIB_MORE_MASK)) {
@@ -228,7 +228,7 @@ static size_t slsi_mib_encodePsidAndIndexs(u8 *buffer, const struct slsi_mib_get
 	buffer[2] = 0;
 	buffer[3] = 0;
 	for (i = 0; i < SLSI_MIB_MAX_INDEXES && value->index[i] != 0; i++) {
-		buffer[2] += (u8) slsi_mib_encode_uint32(&buffer[4 + buffer[2]], value->index[i]);
+		buffer[2] += (u8)slsi_mib_encode_uint32(&buffer[4 + buffer[2]], value->index[i]);
 	}
 
 	if (buffer[2] % 2 == 1) {
@@ -261,7 +261,7 @@ u16 slsi_mib_encode(struct slsi_mib_data *buffer, struct slsi_mib_entry *value)
 	tmpBuffer[2] = 0;
 	tmpBuffer[3] = 0;
 	for (i = 0; i < SLSI_MIB_MAX_INDEXES && value->index[i] != 0; i++) {
-		tmpBuffer[2] += (u8) slsi_mib_encode_uint32(&tmpBuffer[4 + tmpBuffer[2]], value->index[i]);
+		tmpBuffer[2] += (u8)slsi_mib_encode_uint32(&tmpBuffer[4 + tmpBuffer[2]], value->index[i]);
 	}
 	encodedLength += tmpBuffer[2];
 
@@ -346,13 +346,13 @@ size_t slsi_mib_decode(struct slsi_mib_data *data, struct slsi_mib_entry *value)
 				decodedLength += slsi_mib_decodeUint32(&buffer[decodedLength], &v);
 				/* If this is that last value then it is the "unitValue" if other values follow it is an Index Value */
 				if ((decodedLength < 4 + length) && (indexCount != SLSI_MIB_MAX_INDEXES)) {
-					value->index[indexCount] = (u16) v;
+					value->index[indexCount] = (u16)v;
 					indexCount++;
 				} else {
 					value->value.type = type;
 					value->value.u.uintValue = v;
 					if (decodedLength != 4 + length) {
-						SLSI_WARN_NODEV("Uint Decode length:%d != expected:%d\n", (u32) decodedLength, (u32)(4 + length));
+						SLSI_WARN_NODEV("Uint Decode length:%d != expected:%d\n", (u32)decodedLength, (u32)(4 + length));
 					}
 				}
 				break;
@@ -361,14 +361,14 @@ size_t slsi_mib_decode(struct slsi_mib_data *data, struct slsi_mib_entry *value)
 				value->value.type = type;
 				decodedLength += slsi_mib_decodeInt32(&buffer[decodedLength], &value->value.u.intValue);
 				if (decodedLength != 4 + length) {
-					SLSI_WARN_NODEV("Int Decode length:%d != expected:%d\n", (u32) decodedLength, (u32)(4 + length));
+					SLSI_WARN_NODEV("Int Decode length:%d != expected:%d\n", (u32)decodedLength, (u32)(4 + length));
 				}
 				break;
 			case SLSI_MIB_TYPE_OCTET:
 				value->value.type = type;
 				decodedLength += slsi_mib_decode_octet_str(&buffer[decodedLength], &value->value.u.octetValue);
 				if (decodedLength != 4 + length) {
-					SLSI_WARN_NODEV("Octet Decode length:%d != expected:%d\n", (u32) decodedLength, (u32)(4 + length));
+					SLSI_WARN_NODEV("Octet Decode length:%d != expected:%d\n", (u32)decodedLength, (u32)(4 + length));
 				}
 				break;
 			default:
@@ -402,7 +402,7 @@ int slsi_mib_encode_get_list(struct slsi_mib_data *buffer, u16 psidsLength, cons
 		return SLSI_MIB_STATUS_OUT_OF_MEMORY;
 	}
 	for (i = 0; i < psidsLength; i++) {
-		buffer->dataLength += (u16) slsi_mib_encodePsidAndIndexs(&buffer->data[buffer->dataLength], &psids[i]);
+		buffer->dataLength += (u16)slsi_mib_encodePsidAndIndexs(&buffer->data[buffer->dataLength], &psids[i]);
 	}
 
 	return SLSI_MIB_STATUS_SUCCESS;
@@ -549,7 +549,7 @@ u16 slsi_mib_encode_octet(struct slsi_mib_data *buffer, u16 psid, size_t dataLen
 	v.psid = psid;
 	v.index[0] = idx;
 	v.value.type = SLSI_MIB_TYPE_OCTET;
-	v.value.u.octetValue.dataLength = (u32) dataLength;
-	v.value.u.octetValue.data = (u8 *) data;
+	v.value.u.octetValue.dataLength = (u32)dataLength;
+	v.value.u.octetValue.data = (u8 *)data;
 	return slsi_mib_encode(buffer, &v);
 }

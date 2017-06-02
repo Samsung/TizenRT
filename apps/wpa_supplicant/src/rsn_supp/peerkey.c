@@ -81,7 +81,7 @@ static int wpa_supplicant_send_smk_error(struct wpa_sm *sm, const u8 *dst, const
 	os_memcpy(err->replay_counter, sm->request_counter, WPA_REPLAY_COUNTER_LEN);
 	inc_byte_array(sm->request_counter, WPA_REPLAY_COUNTER_LEN);
 
-	WPA_PUT_BE16(err->key_data_length, (u16) kde_len);
+	WPA_PUT_BE16(err->key_data_length, (u16)kde_len);
 	pos = (u8 *)(err + 1);
 
 	if (peer) {
@@ -131,7 +131,7 @@ static int wpa_supplicant_send_smk_m3(struct wpa_sm *sm, const unsigned char *sr
 
 	os_memcpy(reply->key_nonce, peerkey->pnonce, WPA_NONCE_LEN);
 
-	WPA_PUT_BE16(reply->key_data_length, (u16) kde_len);
+	WPA_PUT_BE16(reply->key_data_length, (u16)kde_len);
 	pos = (u8 *)(reply + 1);
 
 	/* Peer RSN IE */
@@ -885,7 +885,7 @@ int wpa_sm_stkstart(struct wpa_sm *sm, const u8 *peer)
 	os_memcpy(req->key_nonce, peerkey->inonce, WPA_NONCE_LEN);
 	wpa_hexdump(MSG_DEBUG, "WPA: INonce for SMK handshake", req->key_nonce, WPA_NONCE_LEN);
 
-	WPA_PUT_BE16(req->key_data_length, (u16) kde_len);
+	WPA_PUT_BE16(req->key_data_length, (u16)kde_len);
 	pos = (u8 *)(req + 1);
 
 	/* Initiator RSN IE */

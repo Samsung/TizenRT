@@ -1526,7 +1526,7 @@ static int usbmsc_idlestate(FAR struct usbmsc_dev_s *priv)
 
 	/* Handle the CBW */
 
-	usbmsc_dumpdata("SCSCI CBW", (FAR uint8_t *) cbw, USBMSC_CBW_SIZEOF - USBMSC_MAXCDBLEN);
+	usbmsc_dumpdata("SCSCI CBW", (FAR uint8_t *)cbw, USBMSC_CBW_SIZEOF - USBMSC_MAXCDBLEN);
 	usbmsc_dumpdata("      CDB", cbw->cdb, MIN(cbw->cdblen, USBMSC_MAXCDBLEN));
 
 	/* Check for properly formatted CBW? */
@@ -2403,7 +2403,7 @@ static int usbmsc_cmdstatusstate(FAR struct usbmsc_dev_s *priv)
 	usbmsc_putle32(csw->residue, priv->residue);
 	csw->status = status;
 
-	usbmsc_dumpdata("SCSCI CSW", (FAR uint8_t *) csw, USBMSC_CSW_SIZEOF);
+	usbmsc_dumpdata("SCSCI CSW", (FAR uint8_t *)csw, USBMSC_CSW_SIZEOF);
 
 	req->len = USBMSC_CSW_SIZEOF;
 	req->callback = usbmsc_wrcomplete;
@@ -2414,7 +2414,7 @@ static int usbmsc_cmdstatusstate(FAR struct usbmsc_dev_s *priv)
 	if (ret < 0) {
 		usbtrace(TRACE_CLSERROR(USBMSC_TRACEERR_SNDSTATUSSUBMIT), (uint16_t)-ret);
 		flags = irqsave();
-		(void)sq_addlast((FAR sq_entry_t *) privreq, &priv->wrreqlist);
+		(void)sq_addlast((FAR sq_entry_t *)privreq, &priv->wrreqlist);
 		irqrestore(flags);
 	}
 

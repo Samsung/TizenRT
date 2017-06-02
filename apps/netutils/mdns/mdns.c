@@ -76,7 +76,7 @@ struct name_comp {
 inline uint8_t *dup_nlabel(const uint8_t *n)
 {
 	assert(n[0] <= 63);			// prevent mis-use
-	return (uint8_t *) MDNS_STRDUP((char *)n);
+	return (uint8_t *)MDNS_STRDUP((char *)n);
 }
 
 // duplicates a label
@@ -212,7 +212,7 @@ uint8_t *create_nlabel(const char *name)
 		lenpos = dot;
 	}
 
-	return (uint8_t *) label;
+	return (uint8_t *)label;
 }
 
 // copies a label from the buffer into a newly-allocated string
@@ -280,7 +280,7 @@ static uint8_t *uncompress_nlabel(uint8_t *pkt_buf, size_t pkt_len, size_t off)
 	}
 	*sp = '\0';
 
-	return (uint8_t *) str;
+	return (uint8_t *)str;
 }
 
 // ----- RR list & group functions -----
@@ -1073,7 +1073,7 @@ static size_t mdns_encode_name(uint8_t *pkt_buf, size_t pkt_len, size_t off, con
 			// cache the name for subsequent compression
 			DECL_MALLOC_ZERO_STRUCT(new_c, name_comp);
 
-			new_c->label = (uint8_t *) name;
+			new_c->label = (uint8_t *)name;
 			new_c->pos = p - pkt_buf;
 			if (c_tail) {
 				c_tail->next = new_c;
@@ -1248,7 +1248,7 @@ size_t mdns_encode_pkt(struct mdns_pkt *encoded_pkt, uint8_t *pkt_buf, size_t pk
 	memset(comp, 0, sizeof(struct name_comp));
 
 	// dummy entry
-	comp->label = (uint8_t *) "";
+	comp->label = (uint8_t *)"";
 	comp->pos = 0;
 
 	// encode of qn

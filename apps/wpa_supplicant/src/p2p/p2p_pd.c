@@ -84,7 +84,7 @@ static void p2ps_add_pd_req_attrs(struct p2p_data *p2p, struct p2p_device *dev, 
 	}
 
 	if (prov->status >= 0) {
-		p2p_buf_add_status(buf, (u8) prov->status);
+		p2p_buf_add_status(buf, (u8)prov->status);
 	} else {
 		prov->method = config_methods;
 	}

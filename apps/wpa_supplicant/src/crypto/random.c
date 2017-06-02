@@ -323,7 +323,7 @@ static void random_read_entropy(void)
 		return;
 	}
 
-	own_pool_ready = (u8) buf[0];
+	own_pool_ready = (u8)buf[0];
 	random_add_randomness(buf + 1, RANDOM_ENTROPY_SIZE);
 	random_entropy_file_read = 1;
 	os_free(buf);

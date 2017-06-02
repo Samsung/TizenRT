@@ -349,7 +349,7 @@ static int usbmsc_bind(FAR struct usbdevclass_driver_s *driver, FAR struct usbde
 		reqcontainer->req->callback = usbmsc_wrcomplete;
 
 		flags = irqsave();
-		sq_addlast((FAR sq_entry_t *) reqcontainer, &priv->wrreqlist);
+		sq_addlast((FAR sq_entry_t *)reqcontainer, &priv->wrreqlist);
 		irqrestore(flags);
 	}
 
@@ -1002,7 +1002,7 @@ void usbmsc_wrcomplete(FAR struct usbdev_ep_s *ep, FAR struct usbdev_req_s *req)
 	/* Return the write request to the free list */
 
 	flags = irqsave();
-	sq_addlast((FAR sq_entry_t *) privreq, &priv->wrreqlist);
+	sq_addlast((FAR sq_entry_t *)privreq, &priv->wrreqlist);
 	irqrestore(flags);
 
 	/* Process the received data unless this is some unusual condition */
@@ -1066,7 +1066,7 @@ void usbmsc_rdcomplete(FAR struct usbdev_ep_s *ep, FAR struct usbdev_req_s *req)
 		/* Add the filled read request from the rdreqlist */
 
 		flags = irqsave();
-		sq_addlast((FAR sq_entry_t *) privreq, &priv->rdreqlist);
+		sq_addlast((FAR sq_entry_t *)privreq, &priv->rdreqlist);
 		irqrestore(flags);
 
 		/* Signal the worker thread that there is received data to be processed */
@@ -1377,7 +1377,7 @@ int usbmsc_bindlun(FAR void *handle, FAR const char *drvrpath, unsigned int lunn
 	 */
 
 	if (!priv->iobuffer) {
-		priv->iobuffer = (FAR uint8_t *) kmm_malloc(geo.geo_sectorsize);
+		priv->iobuffer = (FAR uint8_t *)kmm_malloc(geo.geo_sectorsize);
 		if (!priv->iobuffer) {
 			usbtrace(TRACE_CLSERROR(USBMSC_TRACEERR_ALLOCIOBUFFER), geo.geo_sectorsize);
 			return -ENOMEM;
@@ -1386,13 +1386,13 @@ int usbmsc_bindlun(FAR void *handle, FAR const char *drvrpath, unsigned int lunn
 		priv->iosize = geo.geo_sectorsize;
 	} else if (priv->iosize < geo.geo_sectorsize) {
 		void *tmp;
-		tmp = (FAR uint8_t *) kmm_realloc(priv->iobuffer, geo.geo_sectorsize);
+		tmp = (FAR uint8_t *)kmm_realloc(priv->iobuffer, geo.geo_sectorsize);
 		if (!tmp) {
 			usbtrace(TRACE_CLSERROR(USBMSC_TRACEERR_REALLOCIOBUFFER), geo.geo_sectorsize);
 			return -ENOMEM;
 		}
 
-		priv->iobuffer = (FAR uint8_t *) tmp;
+		priv->iobuffer = (FAR uint8_t *)tmp;
 		priv->iosize = geo.geo_sectorsize;
 	}
 

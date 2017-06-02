@@ -407,8 +407,8 @@ static int8_t prv_dm_conn_scan_result(slsi_reason_t *reason)
 	} else {
 		WiFiFreeScanResults(&g_wifi_scan_result);
 		WiFiGetScanResults(&g_wifi_scan_result);
-		WiFiNetworkJoin((uint8_t *) CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), \
-						NULL, (slsi_security_config_t *) getSecurityConfig(CONFIG_DM_AP_SECURITY, \
+		WiFiNetworkJoin((uint8_t *)CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), \
+						NULL, (slsi_security_config_t *)getSecurityConfig(CONFIG_DM_AP_SECURITY, \
 								CONFIG_DM_AP_PASS, SLSI_WIFI_STATION_IF));
 	}
 	printf("scanned result\n");
@@ -440,7 +440,7 @@ int dm_conn_get_scan_result(dm_scan_info_t **result)
 		memset(curr_record->ssid, 0x00, SLSI_SSID_LEN + 1);
 		memset(curr_record->bssid, 0x00, DM_BSSID_LEN);
 		curr_record->rssi = g_wifi_scan_iter->rssi;
-		strncpy(curr_record->ssid, (char *) g_wifi_scan_iter->ssid, strlen((const  char*)g_wifi_scan_iter->ssid));
+		strncpy(curr_record->ssid, (char *)g_wifi_scan_iter->ssid, strlen((const  char*)g_wifi_scan_iter->ssid));
 		strncpy(curr_record->bssid, (char *)g_wifi_scan_iter->bssid, strlen((const  char*)g_wifi_scan_iter->bssid));
 		prev_record = curr_record;
 		g_wifi_scan_iter = g_wifi_scan_iter->next;
@@ -473,8 +473,8 @@ int dm_conn_wifi_scan(void)
 	if (WiFiScanNetwork() == SLSI_STATUS_SUCCESS) {
 		WiFiFreeScanResults(&g_wifi_scan_result);
 		WiFiGetScanResults(&g_wifi_scan_result);
-		WiFiNetworkJoin((uint8_t *) CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), \
-						NULL, (slsi_security_config_t *) getSecurityConfig(CONFIG_DM_AP_SECURITY, \
+		WiFiNetworkJoin((uint8_t *)CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), \
+						NULL, (slsi_security_config_t *)getSecurityConfig(CONFIG_DM_AP_SECURITY, \
 								CONFIG_DM_AP_PASS, SLSI_WIFI_STATION_IF));
 		return DM_ERROR_NONE;
 	}
@@ -508,7 +508,7 @@ int dm_conn_wifi_connect(conn_cb linkUpEvent, conn_cb linkDownEvent)
 	if (ret == SLSI_STATUS_SUCCESS) {
 		dmdbg("STA mode started\n");
 		ret = WiFiNetworkJoin((uint8_t *)CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), \
-							  NULL, (slsi_security_config_t *) getSecurityConfig(CONFIG_DM_AP_SECURITY, CONFIG_DM_AP_PASS, SLSI_WIFI_STATION_IF));
+							  NULL, (slsi_security_config_t *)getSecurityConfig(CONFIG_DM_AP_SECURITY, CONFIG_DM_AP_PASS, SLSI_WIFI_STATION_IF));
 		sleep(1);
 		if (ret == SLSI_STATUS_SUCCESS) {
 			dmdbg("Start doJoin with SSID %s\n", CONFIG_DM_AP_SSID);
