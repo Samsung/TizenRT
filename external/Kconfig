@@ -79,13 +79,6 @@ config ENABLE_IOTIVITY
 	---help---
 		select to enable the iotivity stack in tinyara
 
-config EXAMPLES_IOTIVITY
-	bool "Enable building IoTivity Samples"
-	default y
-	depends on ENABLE_IOTIVITY
-	---help---
-		Enable building IoTivity Samples
-
 config IOTIVITY_RELEASE_VERSION
 	string "iotivity stack version"
 	default "1.2-rel"
