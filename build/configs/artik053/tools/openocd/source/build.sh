@@ -129,11 +129,7 @@ check() {
 	if [ "$OSTYPE" == "linux-gnu" ]; then
 		automake --version || die "automake is not installed."
 		autoconf --version || die "autoconf is not installed."
-		libusb-config --version || die "libusb is not installed."
 		libtoolize --version || die "libtool is not installed."
-		if [ ! -d /usr/include/libusb-1.0 ]; then
-			die "libusb is not installed."
-		fi
 		pkg-config --list-all | grep libudev || die "libudev is not installed."
 	fi
 }
@@ -143,7 +139,17 @@ build-libftdi() {
 	rm -rf $buildDir/libftdi-install
 	mkdir -p $buildDir/libftdi-install
 	cd $srcRoot/libftdi
-	cmake  -DCMAKE_INSTALL_PREFIX=$buildDir/libftdi-install
+	cmake  -DCMAKE_INSTALL_PREFIX=$buildDir/libftdi-install \
+		-DEXAMPLES=OFF \
+		-DBUILD_TESTS=OFF \
+		-DPYTHON_BINDINGS=ON \
+		-DDOCUMENTATION=OFF \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DLIBUSB_INCLUDE_DIR="$buildDir/libusb1-install/include/libusb-1.0" \
+		-DLIBUSB_LIBRARIES="$buildDir/libusb1-install/lib/libusb-1.0.so" \
+		-DCONFUSE_INCLUDE_DIR="$buildDir/libconfuse-install/include/libconfuse" \
+		-DCONFUSE_LIBRARY="$buildDir/libconfuse-install/lib/libconfuse.so" \
+		"$srcRoot/libftdi"
 	make
 	make install
 }
@@ -154,7 +160,10 @@ build-libusb0() {
 	mkdir -p $buildDir/libusb0-install
 	cd $srcRoot/libusb0
 	./bootstrap.sh
-	$srcRoot/libusb0/configure --enable-static --prefix=$buildDir/libusb0-install
+	$srcRoot/libusb0/configure --enable-static --prefix=$buildDir/libusb0-install \
+		LIBUSB_1_0_CFLAGS=-I$buildDir/libusb1-install/include/libusb-1.0 \
+		LIBUSB_1_0_LIBS="-L$buildDir/libusb1-install/lib -lusb-1.0" \
+		PKG_CONFIG_LIBDIR="$buildDir/libusb1-install/lib/pkgconfig"
 	make -j$CORES
 	make install
 }
@@ -247,6 +256,8 @@ build-openocd() {
 		LIBUSB0_CFLAGS="-I $buildDir/libusb0-install/include" \
 		LIBUSB1_LIBS="-L$buildDir/libusb1-install/lib -l:libusb-1.0.a" \
 		LIBUSB1_CFLAGS="-I $buildDir/libusb1-install/include/libusb-1.0" \
+		HIDAPI_LIBS="-L$buildDir/$HIDAPI_SRC_NAME-install/lib -l:libhidapi-libusb.a" \
+		HIDAPI_CFLAGS="-I$buildDir/$HIDAPI_SRC_NAME-install/include/hidapi" \
 		LIBS='-ludev -lpthread'
 	make
 	make install
@@ -273,7 +284,7 @@ cleanup() {
 	rm -rf $buildDir/$LIBCONFUSE_SRC_NAME-install
 }
 
-components=(hidapi libconfuse libftdi libusb1 libusb0 openocd)
+components=(libusb1 libusb0 libconfuse libftdi hidapi openocd)
 check
 setenv
 for p in ${components[@]};
