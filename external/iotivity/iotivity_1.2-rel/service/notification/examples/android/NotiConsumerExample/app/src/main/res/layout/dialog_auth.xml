@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="1dp"
+        android:paddingRight="1dp"
+        android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:orientation="horizontal" >
+
+        <Button
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:id="@+id/BtnAuth"
+            android:text="@string/btn_auth"
+            android:onClick="selfDestruct" />
+
+        <EditText
+            android:id="@+id/EditTextAuth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:windowSoftInputMode="stateHidden"
+            android:hint="Add Auth Provider Name" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/LinearBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:orientation="horizontal" >
+
+        <Button
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:id="@+id/BtnUrl"
+            android:text="@string/btn_url"
+            android:onClick="selfDestruct" />
+
+        <EditText
+            android:id="@+id/EditTextUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:windowSoftInputMode="stateHidden"
+            android:hint="Add Login Account URL" />
+    </LinearLayout>
+
+    <Button
+        android:layout_gravity="center_vertical|center_horizontal"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:id="@+id/dialogButtonOK"
+        android:text="@string/btn_ok"
+        />
+    </LinearLayout>
+
+
+</RelativeLayout>

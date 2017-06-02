@@ -1,0 +1,42 @@
+##
+# This script includes windows specific config (MSVS/MSVC)
+##
+Import('env')
+import os.path
+
+# Set common flags
+if env['CC'] == 'cl':
+
+    # TODO: re-enable warnings, especially: 4244, 4267, 4365
+    env.AppendUnique(CXXFLAGS=[
+        '/wd4244',   # C4244 conversion from one type to another type results in a possible loss of data.
+        '/wd4267',   # C4267 conversion from size_t to a smaller type.
+        '/wd4355',   # C4355 'this' used in base member initializer list.
+        '/wd4800',   # C4800 forcing value to bool 'true' or 'false'.
+        '/wd4996',   # C4996 deprecated declaration.
+        '/wd4820',   # C4820 added padding to the end of a struct.
+        '/wd4514',   # C4514 unreferenced inline function has been removed
+        '/wd4365',   # C4365 signed/unsigned mismatch
+        '/wd4503'])  # C4503 decorated name length exceeded, name was truncated
+
+    env.AppendUnique(CCFLAGS=['/EHsc'])
+
+    vs_version = env['MSVC_VERSION']
+
+    # Set release/debug flags
+    if env.get('RELEASE'):
+        env.AppendUnique(CCFLAGS = ['/MD', '/O2', '/GF'])
+        env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+    elif env.get('TARGET_ARCH') in ['x86', 'x86_64'] or "14.0" in vs_version:
+        env.AppendUnique(CCFLAGS = ['/MDd', '/Od', '/ZI', '/RTC1', '/Gm'])
+        env.AppendUnique(LINKFLAGS = ['/debug'])
+    else:
+        env.AppendUnique(CCFLAGS = ['/MDd', '/Od', '/Zi', '/RTC1', '/Gm'])
+        env.AppendUnique(LINKFLAGS = ['/debug'])
+    env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
+    env.AppendUnique(PATH = os.environ['PATH'])
+
+elif env['CC'] == 'gcc':
+    print "\nError: gcc not supported on Windows.  Use Visual Studio!\n"
+    Exit(1);
+

@@ -1,0 +1,142 @@
+# -*- mode: python; python-indent-offset: 4; indent-tabs-mode: nil -*-
+# //******************************************************************
+# //
+# // Copyright 2015 Samsung Electronics All Rights Reserved.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# //
+# // Licensed under the Apache License, Version 2.0 (the "License");
+# // you may not use this file except in compliance with the License.
+# // You may obtain a copy of the License at
+# //
+# //      http://www.apache.org/licenses/LICENSE-2.0
+# //
+# // Unless required by applicable law or agreed to in writing, software
+# // distributed under the License is distributed on an "AS IS" BASIS,
+# // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# // See the License for the specific language governing permissions and
+# // limitations under the License.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+
+provisioning_env = SConscript('#build_common/thread.scons')
+target_os = provisioning_env.get('TARGET_OS')
+root_dir = './../../../../'
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = provisioning_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+	# For bring up purposes only, we manually copy the forked version to where the unforked version is downloaded.
+	provisioning_env.AppendUnique(CPPPATH = ['#extlibs/libcoap/libcoap/include'])
+else:
+	# For bring up purposes only, the forked version will live here.
+	provisioning_env.AppendUnique(CPPPATH = ['../../connectivity/lib/libcoap-4.1.1/include'])
+
+provisioning_env.AppendUnique(CPPPATH = [
+		'../../stack/include',
+		'../../stack/include/internal',
+		'../../../c_common/ocrandom/include',
+		'../../logger/include',
+		'../../../oc_logger/include',
+		'../../../c_common/oic_malloc/include',
+		'include',
+		'include/internal',
+		'include/cloud',
+		'include/oxm',
+		'../../resource/csdk/security/include',
+		'../../../../extlibs/cjson/',
+		'../../connectivity/inc',
+		'../../connectivity/inc/pkix',
+		'../../connectivity/external/inc',
+		'../../connectivity/common/inc',
+		'../../connectivity/api',
+		'../include',
+		'../include/internal',
+		'../../../../extlibs/asn1cert',
+		'ck_manager/include'
+		])
+
+provisioning_env.AppendUnique(CPPDEFINES= ['__WITH_DTLS__'])
+
+if 'g++' in provisioning_env.get('CXX'):
+    provisioning_env.AppendUnique(CXXFLAGS = ['-std=c++0x'])
+
+provisioning_env.AppendUnique(LIBPATH = [provisioning_env.get('BUILD_DIR')])
+provisioning_env.PrependUnique(LIBS = ['octbstack', 'oc_logger', 'connectivity_abstraction', 'coap', 'ocsrm'])
+
+provisioning_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509','mbedcrypto'])
+
+
+if target_os not in ['msys_nt', 'windows', 'android', 'ios']:
+	provisioning_env.ParseConfig('pkg-config --libs glib-2.0')
+
+if target_os in ['windows', 'msys_nt']:
+	provisioning_env.AppendUnique(LIBS = ['ws2_32', 'advapi32', 'iphlpapi'])
+
+if target_os in ['android']:
+	provisioning_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])
+	provisioning_env.AppendUnique(LIBS = ['gnustl_static'])
+	provisioning_env.AppendUnique(LINKFLAGS = ['-Wl,-soname,libocpmapi.so'])
+
+if target_os in ['darwin', 'ios']:
+	provisioning_env.AppendUnique(CPPDEFINES = ['_DARWIN_C_SOURCE'])
+
+if provisioning_env.get('LOGGING'):
+    provisioning_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+if provisioning_env.get('MULTIPLE_OWNER') == '1':
+	provisioning_env.AppendUnique(CPPDEFINES=['MULTIPLE_OWNER'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+provisioning_src = [
+	'src/pmutility.c',
+	'src/credentialgenerator.c',
+	'src/otmcontextlist.c',
+	'src/ownershiptransfermanager.c',
+	'src/secureresourceprovider.c',
+	'src/ocprovisioningmanager.c',
+	'src/oxmjustworks.c',
+	'src/oxmrandompin.c',
+	'src/oxmmanufacturercert.c',
+	'src/provisioningdatabasemanager.c' ]
+
+if provisioning_env.get('MULTIPLE_OWNER') == '1':
+	provisioning_src = provisioning_src + [
+		'src/multipleownershiptransfermanager.c',
+		'src/oxmpreconfpin.c']
+
+if provisioning_env.get('WITH_TCP') == True:
+	provisioning_env.AppendUnique(CPPDEFINES= ['__WITH_TLS__'])
+	provisioning_src = provisioning_src + [
+	'src/cloud/utils.c',
+	'src/cloud/crl.c',
+	'src/cloud/aclgroup.c',
+	'src/cloud/aclinvite.c',
+	'src/cloud/aclid.c',
+	'src/cloud/csr.c']
+
+if target_os in ['linux', 'tizen']:
+	provisioning_env.ParseConfig('pkg-config --cflags --libs sqlite3')
+else:
+	provisioning_env.AppendUnique(CPPPATH = ['../../../../extlibs/sqlite3'])
+	provisioning_src = provisioning_src + [root_dir+'/extlibs/sqlite3/sqlite3.c' ]
+
+if target_os in ['windows', 'msys_nt', 'ios']:
+	# octbstack.dll is exporting ocpmapi APIs on Windows - there is no ocpmapi.dll.
+	provisioningserver = provisioning_env.StaticLibrary('ocpmapi', provisioning_src)
+else:
+	static_provisioning_lib = provisioning_env.StaticLibrary('ocpmapi', provisioning_src)
+	shared_provisioning_lib = provisioning_env.SharedLibrary('ocpmapi', provisioning_src)
+	provisioningserver = Flatten([static_provisioning_lib, shared_provisioning_lib])
+
+provisioning_env.InstallTarget(provisioningserver, 'ocpmapi')
+provisioning_env.UserInstallTargetLib(provisioningserver, 'ocpmapi')
+
+if target_os in ['linux', 'msys_nt', 'windows', 'tizen']:
+	SConscript('sample/SConscript')
+

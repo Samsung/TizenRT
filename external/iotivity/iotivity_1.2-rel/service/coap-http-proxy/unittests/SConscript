@@ -1,0 +1,93 @@
+#******************************************************************
+#
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+import os
+import os.path
+
+##
+# CoAP-HTTP Proxy Unit Test build script
+##
+# SConscript file for Local PKI google tests
+gtest_env = SConscript('#extlibs/gtest/SConscript')
+lib_env = gtest_env.Clone()
+
+if lib_env.get('RELEASE'):
+    lib_env.AppendUnique(CCFLAGS = ['-Os'])
+    lib_env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+else:
+    lib_env.AppendUnique(CCFLAGS = ['-g'])
+
+if lib_env.get('LOGGING'):
+    lib_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+SConscript('#service/third_party_libs.scons', 'lib_env')
+
+######################################################################
+#unit test setting
+######################################################################
+src_dir = lib_env.get('SRC_DIR')
+
+CoAP_test_env = lib_env.Clone()
+target_os = CoAP_test_env.get('TARGET_OS')
+
+######################################################################
+# Build flags
+######################################################################
+
+CoAP_test_env.AppendUnique(LIBPATH = [lib_env.get('BUILD_DIR')])
+CoAP_test_env.AppendUnique(LIBS = [
+    'coap_http_proxy','oc', 'octbstack', 'oc_logger', 'connectivity_abstraction', 'coap'])
+
+if target_os not in ['windows']:
+    CoAP_test_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0'])
+
+if not CoAP_test_env.get('RELEASE'):
+    CoAP_test_env.PrependUnique(LIBS = ['gcov'])
+    CoAP_test_env.AppendUnique(CXXFLAGS = ['--coverage'])
+
+CoAP_test_env.AppendUnique(CPPPATH = [src_dir + '/extlibs/hippomocks-master',
+                        '../include',
+                        os.path.join(src_dir, 'resource/csdk/stack/include'),
+                        os.path.join(src_dir, 'resource/csdk/connectivity/common/inc/'),
+                        os.path.join(src_dir, 'resource/csdk/connectivity/lib/libcoap-4.1.1'),
+                        os.path.join(src_dir, 'extlibs/cjson'),
+                ])
+
+CoAP_test_env.AppendUnique(CPPPATH = ['../../resource-encapsulation/include'])
+CoAP_test_env.AppendUnique(CPPPATH = ['../../resource-encapsulation/src/common/primitiveResource/include'])
+CoAP_test_env.AppendUnique(CPPPATH = ['../../resource-encapsulation/src/common/utils/include'])
+
+
+if target_os in ['linux']:
+    CoAP_test_env.AppendUnique(LIBS = ['pthread', 'curl'])
+
+
+if CoAP_test_env.get('SECURED') == '1':
+    CoAP_test_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509', 'mbedcrypto'])
+######################################################################
+# Build Test
+######################################################################
+
+CoAP_unit_test_src = CoAP_test_env.Glob('./CoAPHttpUnitTest.cpp')
+CoAP_unit_test = CoAP_test_env.Program('CoAP_unit_test', CoAP_unit_test_src)
+Alias("CoAP_unit_test", CoAP_unit_test)
+CoAP_test_env.AppendTarget('CoAP_unit_test')
+CoAP_test_env.InstallTarget(CoAP_unit_test, 'CoAP_unit_test')
+

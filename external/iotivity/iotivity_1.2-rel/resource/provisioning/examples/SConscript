@@ -1,0 +1,125 @@
+#******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# Examples build script
+##
+thread_env = SConscript('#build_common/thread.scons')
+lib_env = thread_env.Clone()
+target_os = lib_env.get('TARGET_OS')
+
+# Add third party libraries
+SConscript('#resource/third_party_libs.scons', 'lib_env')
+
+with_ra = lib_env.get('WITH_RA')
+with_ra_ibb = lib_env.get('WITH_RA_IBB')
+
+examples_env = lib_env.Clone()
+
+######################################################################
+# Build flags
+######################################################################
+examples_env.AppendUnique(CPPPATH = [
+        '../../include/',
+        '../../csdk/stack/include',
+        '../../../extlibs/cjson',
+        '../../csdk/logger/include',
+        '../../oc_logger/include',
+        '../../csdk/connectivity/api',
+        '../../csdk/connectivity/inc/pkix',
+        '../../csdk/connectivity/common/inc',
+        '../../csdk/connectivity/lib/libcoap-4.1.1/include',
+        '../../csdk/security/include',
+        '../../csdk/security/include/internal',
+	'../../csdk/security/provisioning/include/cloud',
+        '../../csdk/security/provisioning/include',
+        '../../csdk/security/provisioning/include/oxm',
+        '../../csdk/security/provisioning/include/internal'
+		])
+
+examples_env.AppendUnique(LIBPATH = [examples_env.get('BUILD_DIR')])
+examples_env.AppendUnique(RPATH = [examples_env.get('BUILD_DIR')])
+examples_env.PrependUnique(LIBS = ['ocprovision', 'oc', 'ocpmapi', 'octbstack',
+                                    'oc_logger', 'connectivity_abstraction', 'coap'])
+if with_ra_ibb:
+	examples_env.AppendUnique(LIBS = examples_env['RALIBS'], LIBPATH = examples_env['RALIBPATH'], RPATH = examples_env['RARPATH'])
+	print "RALIBS = %s" % examples_env['RALIBS']
+	print "RALIBPATH = %s" % examples_env['RALIBPATH']
+	print "RARPATH = %s" % examples_env['RARPATH']
+	examples_env.AppendUnique(LIBS = 'wksxmppxep')
+else :
+	if with_ra:
+		examples_env.AppendUnique(LIBS = ['ra_xmpp'])
+
+if examples_env.get('SECURED') == '1':
+    examples_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509','mbedcrypto'])
+
+if 'g++' in examples_env.get('CXX'):
+   examples_env.AppendUnique(CXXFLAGS = ['-std=c++0x', '-Wall'])
+
+if target_os in ['android']:
+	examples_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])
+	examples_env.AppendUnique(LIBS = ['gnustl_shared'])
+
+	if not examples_env.get('RELEASE'):
+		examples_env.AppendUnique(LIBS = ['log'])
+
+if target_os in ['darwin', 'ios']:
+	examples_env.AppendUnique(CPPDEFINES = ['_DARWIN_C_SOURCE'])
+
+if target_os == 'tizen':
+    examples_env.AppendUnique(CPPDEFINES = ['__TIZEN__'])
+if examples_env.get('MULTIPLE_OWNER') == '1':
+    examples_env.AppendUnique(CPPDEFINES = ['MULTIPLE_OWNER'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+provisioningclient = examples_env.Program('provisioningclient', 'provisioningclient.cpp')
+if examples_env.get('MULTIPLE_OWNER') == '1':
+	subownerclient = examples_env.Program('subownerclient', 'subownerclient.cpp')
+
+if examples_env.get('WITH_TCP') == True:
+	cloudClient = examples_env.Program('cloudClient',['cloudClient.cpp', 'cloudAuth.cpp', 'cloudWrapper.cpp'])
+
+src_dir = examples_env.get('SRC_DIR')
+svr_db_src_dir = src_dir + '/resource/provisioning/examples/'
+svr_db_build_dir = examples_env.get('BUILD_DIR') +'/resource/provisioning/examples/'
+
+clientjson = examples_env.Install(svr_db_build_dir, svr_db_src_dir + 'oic_svr_db_client.json')
+clientdat = examples_env.Install(svr_db_build_dir, svr_db_src_dir + 'oic_svr_db_client.dat')
+
+if examples_env.get('MULTIPLE_OWNER') == '1':
+	subownerclientdat = examples_env.Install(svr_db_build_dir,
+		svr_db_src_dir + 'oic_svr_db_subowner_client.dat')
+	Alias("subowner", [subownerclientdat, subownerclient])
+	examples_env.AppendTarget("subowner")
+
+if examples_env.get('WITH_TCP') == True:
+	clouddat = examples_env.Install(svr_db_build_dir,
+		svr_db_src_dir + 'cloud.dat')
+	rootcert = examples_env.Install(svr_db_build_dir,
+		svr_db_src_dir + 'rootca.crt')
+	Alias("cloud", [clouddat, rootcert, cloudClient])
+	examples_env.AppendTarget("cloud")
+
+Alias("examples", [provisioningclient, clientjson,clientdat])
+examples_env.AppendTarget('examples')
+

@@ -1,0 +1,52 @@
+#******************************************************************
+#
+# Copyright 2014 Intel Mobile Communications GmbH All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+Import('env')
+
+target_os = env.get('TARGET_OS')
+transport = env.get('TARGET_TRANSPORT')
+secured = env.get('SECURED')
+routing = env.get('ROUTING')
+OIC_LIB = 'oic'
+root_dir = env.get('ROOT_DIR')
+build_dir = env.get('BUILD_DIR')
+sample_dir = build_dir
+
+env.ParseConfig("pkg-config --cflags --libs capi-network-wifi dlog gobject-2.0 gio-2.0 gthread-2.0 glib-2.0")
+env.AppendUnique(CPPFLAGS = ['-std=c++0x', '-fPIC', '-D__TIZEN__','-DWITH_POSIX', '-Wall', '-DSLP_SDK_LOG', '-g','-D_GNU_SOURCE','-DTIZEN_DEBUG_ENABLE', '-DTB_LOG','`pkg-config', '--cflags', '--libs','dlog','capi-network-wifi',
+                'gobject-2.0', 'gio-2.0', 'gthread-2.0', 'glib-2.0`'])
+
+env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
+
+if routing == 'GW':
+	env.AppendUnique(CPPDEFINES = ['ROUTING_GATEWAY'])
+elif routing == 'EP':
+	env.AppendUnique(CPPDEFINES = ['ROUTING_EP'])
+
+env.Append(LIBS=['-lgobject-2.0', '-lglib-2.0', '-lgio-2.0', '-lgthread-2.0'])
+env.PrependUnique(LIBS = ['oc', 'octbstack', 'oc_logger', 'connectivity_abstraction','coap', 'libESEnrolleeSDK','pthread'])
+
+if secured == '1':
+	env.PrependUnique(CPPPATH = [root_dir + '/external/inc/'])
+	env.AppendUnique(CPPDEFINES = ['__WITH_DTLS__'])
+
+env.Program('enrollee_wifi', [sample_dir + 'enrolleewifi.cpp', sample_dir + 'easysetup_wifi_conn.c'])

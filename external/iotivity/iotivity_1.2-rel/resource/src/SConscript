@@ -1,0 +1,170 @@
+#******************************************************************
+#
+# Copyright 2014 Intel Mobile Communications GmbH All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# OCLib (share library) build script
+##
+import os
+thread_env = SConscript('#build_common/thread.scons')
+lib_env = thread_env.Clone()
+
+# Add third party libraries
+SConscript('#resource/third_party_libs.scons', 'lib_env')
+
+oclib_env = lib_env.Clone()
+secured = oclib_env.get('SECURED')
+target_os = oclib_env.get('TARGET_OS')
+with_cloud = oclib_env.get('WITH_CLOUD')
+with_mq = oclib_env.get('WITH_MQ')
+ble_custom_adv = oclib_env.get('BLE_CUSTOM_ADV')
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = oclib_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+	# For bring up purposes only, we manually copy the forked version to where the unforked version is downloaded.
+	oclib_env.AppendUnique(CPPPATH = ['#extlibs/libcoap/libcoap/include'])
+else:
+	# For bring up purposes only, the forked version will live here.
+	oclib_env.AppendUnique(CPPPATH = ['../csdk/connectivity/lib/libcoap-4.1.1/include'])
+
+oclib_env.AppendUnique(CPPPATH = [
+		'../include/',
+		'../csdk/stack/include',
+		'../c_common/ocrandom/include',
+		'../csdk/logger/include',
+		'../oc_logger/include',
+		'../csdk/connectivity/api'
+		])
+
+oclib_env.AppendUnique(LIBPATH = [oclib_env.get('BUILD_DIR')])
+
+oclib_env.AppendUnique(LIBS = ['oc_logger'])
+oclib_env.PrependUnique(LIBS = ['octbstack', 'connectivity_abstraction', 'ocsrm'])
+
+if 'g++' in oclib_env.get('CXX'):
+	oclib_env.AppendUnique(CXXFLAGS = ['-std=c++0x'])
+	oclib_env.AppendUnique(CXXFLAGS = ['-Wall'])
+	oclib_env.AppendUnique(CXXFLAGS = ['-fPIC'])
+
+if target_os not in ['darwin', 'ios', 'windows']:
+	oclib_env.AppendUnique(LINKFLAGS = ['-Wl,--no-undefined'])
+
+if target_os == 'android':
+    oclib_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])
+    oclib_env.AppendUnique(LIBS = ['boost_thread', 'gnustl_shared', 'log'])
+    oclib_env.AppendUnique(LINKFLAGS = ['-Wl,-soname,liboc.so'])
+
+if target_os == 'tizen':
+	oclib_env.AppendUnique(CPPDEFINES = ['__TIZEN__'])
+if target_os in ['linux', 'tizen']:
+	oclib_env.ParseConfig('pkg-config --cflags --libs sqlite3')
+
+if target_os in ['linux'] and oclib_env.get('SIMULATOR', False):
+    oclib_env.Append( RPATH = oclib_env.Literal('\\$$ORIGIN'))
+
+if target_os in ['msys_nt', 'windows']:
+	oclib_env.AppendUnique(LIBPATH = [os.path.join(oclib_env.get('BUILD_DIR'), 'resource', 'oc_logger')])
+	oclib_env.AppendUnique(LIBPATH = [os.path.join(oclib_env.get('BUILD_DIR'), 'resource', 'csdk')])
+	oclib_env.AppendUnique(LIBS=['octbstack', 'logger', 'oc_logger','connectivity_abstraction', 'ocsrm', 'c_common', 'routingmanager'])
+	oclib_env.AppendUnique(LIBS=[ 'coap', 'ws2_32' ,'iphlpapi'])
+	if secured == '1':
+		oclib_env.AppendUnique(LIBS=['mbedtls', 'mbedx509','mbedcrypto'])
+
+if with_cloud:
+	oclib_env.AppendUnique(CPPDEFINES = ['WITH_CLOUD'])
+
+if ble_custom_adv == True:
+		env.AppendUnique(CPPDEFINES = ['BLE_CUSTOM_ADVERTISE'])
+
+if 'SUB' in with_mq:
+	oclib_env.AppendUnique(CPPDEFINES = ['MQ_SUBSCRIBER', 'WITH_MQ'])
+
+if 'PUB' in with_mq:
+	oclib_env.AppendUnique(CPPDEFINES = ['MQ_PUBLISHER', 'WITH_MQ'])
+
+if 'BROKER' in with_mq:
+	oclib_env.AppendUnique(CPPDEFINES = ['MQ_BROKER', 'WITH_MQ'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+oclib_src = [
+		'OCPlatform.cpp',
+		'OCPlatform_impl.cpp',
+		'OCResource.cpp',
+		'OCUtilities.cpp',
+		'OCException.cpp',
+		'OCRepresentation.cpp',
+		'InProcServerWrapper.cpp',
+		'InProcClientWrapper.cpp',
+		'OCResourceRequest.cpp',
+		'CAManager.cpp',
+		'OCDirectPairing.cpp'
+	]
+
+if with_cloud:
+	oclib_src = oclib_src + ['OCAccountManager.cpp']
+
+if target_os in ['windows','ios']:
+	oclib_src = oclib_src + ['OCApi.cpp']
+	# TODO: Add OC_EXPORT prefixes to enable DLL generation
+	oclib = oclib_env.StaticLibrary('oc', oclib_src)
+else:
+	oclib = oclib_env.SharedLibrary('oc', oclib_src)
+oclib_env.InstallTarget(oclib, 'oc')
+oclib_env.UserInstallTargetLib(oclib, 'oc')
+header_dir = os.path.join(oclib_env.get('SRC_DIR') , 'resource' , 'include') + os.sep
+
+oclib_env.UserInstallTargetHeader(header_dir + 'OCApi.h', 'resource', 'OCApi.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'OCHeaderOption.h', 'resource', 'OCHeaderOption.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'OCException.h', 'resource', 'OCException.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'StringConstants.h', 'resource', 'StringConstants.h')
+
+oclib_env.UserInstallTargetHeader(header_dir + 'OCPlatform.h', 'resource', 'OCPlatform.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'OCPlatform_impl.h', 'resource', 'OCPlatform_impl.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'WrapperFactory.h', 'resource', 'WrapperFactory.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'IClientWrapper.h', 'resource', 'IClientWrapper.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'IServerWrapper.h', 'resource', 'IServerWrapper.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'OutOfProcClientWrapper.h', 'resource', 'OutOfProcClientWrapper.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'OutOfProcServerWrapper.h', 'resource', 'OutOfProcServerWrapper.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'InProcClientWrapper.h', 'resource', 'InProcClientWrapper.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'InProcServerWrapper.h', 'resource', 'InProcServerWrapper.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'InitializeException.h', 'resource', 'InitializeException.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'ResourceInitException.h', 'resource', 'ResourceInitException.h')
+
+oclib_env.UserInstallTargetHeader(header_dir + 'OCRepresentation.h', 'resource', 'OCRepresentation.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'AttributeValue.h', 'resource', 'AttributeValue.h')
+
+oclib_env.UserInstallTargetHeader(header_dir + 'OCResource.h', 'resource', 'OCResource.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'OCResourceRequest.h', 'resource', 'OCResourceRequest.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'OCResourceResponse.h', 'resource', 'OCResourceResponse.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'OCUtilities.h', 'resource', 'OCUtilities.h')
+
+oclib_env.UserInstallTargetHeader(header_dir + 'CAManager.h', 'resource', 'CAManager.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'OCDirectPairing.h', 'resource', 'OCDirectPairing.h')
+
+if with_cloud:
+	oclib_env.UserInstallTargetHeader(header_dir + 'OCAccountManager.h', 'resource', 'OCAccountManager.h')
+
+# Add Provisioning library
+if target_os in ['linux', 'android', 'tizen', 'ios'] and secured == '1':
+        SConscript('../provisioning/SConscript')

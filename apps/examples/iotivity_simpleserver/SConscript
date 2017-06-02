@@ -1,0 +1,101 @@
+#******************************************************************
+#
+# Copyright 2014 Intel Mobile Communications GmbH All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+thread_env = SConscript('#build_common/thread.scons')
+iotivityapps_env = thread_env.Clone()
+target_os = iotivityapps_env.get('TARGET_OS')
+with_ra = iotivityapps_env.get ('WITH_RA')
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = iotivityapps_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+	# For bring up purposes only, we manually copy the forked version to where the unforked version is downloaded.
+	iotivityapps_env.AppendUnique(CPPPATH = ['#extlibs/libcoap/libcoap/include'])
+else:
+	# For bring up purposes only, the forked version will live here.
+	iotivityapps_env.AppendUnique(CPPPATH = ['#resource/csdk/connectivity/lib/libcoap-4.1.1/include'])
+
+iotivityapps_env.PrependUnique(CPPPATH = [
+		'#resource/c_common',
+		'#resource/csdk/connectivity/api',
+		'#resource/csdk/connectivity/common/inc',
+		'#resource/csdk/logger/include',
+		'#resource/csdk/oc_logger/include',
+		'#resource/csdk/stack/include',
+		'#resource/csdk/security/include',
+		'#extlibs/cjson',
+		'#extlibs/mbedtls/mbedtls/include',
+		])
+
+
+compiler = iotivityapps_env.get('CXX')
+if 'g++' in compiler:
+	iotivityapps_env.AppendUnique(CXXFLAGS = ['-std=c++0x', '-Wall'])
+
+iotivityapps_env.AppendUnique(RPATH = [iotivityapps_env.get('BUILD_DIR')])
+iotivityapps_env.AppendUnique(LIBPATH = [iotivityapps_env.get('BUILD_DIR')])
+
+iotivityapps_env.PrependUnique(LIBS = ['oc', 'oc_logger', 'octbstack', 'ocsrm', 'connectivity_abstraction', 'coap'])
+
+if iotivityapps_env.get('SECURED') == '1' and iotivityapps_env.get('PLATFORM_TLS') == '0':
+	iotivityapps_env.AppendUnique(LIBS = ['mbedtls','mbedx509','mbedcrypto'])
+
+if target_os not in ['arduino', 'windows', 'darwin', 'ios', 'msys_nt']:
+	iotivityapps_env.AppendUnique(LIBS = ['rt'])
+
+if target_os not in ['windows']:
+	iotivityapps_env.PrependUnique(LIBS = ['m'])
+
+if iotivityapps_env.get('SECURED') == '1':
+	iotivityapps_env.AppendUnique(LIBS = ['tinydtls'])
+
+if iotivityapps_env.get('LOGGING'):
+	iotivityapps_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+
+iotivityapps_src = ['port_tinyara.c',]
+
+if iotivityapps_env.get('SECURED') == '1':
+	iotivityapps_src += ['file_data.c']
+
+if iotivityapps_env.get('BUILD_SAMPLE') == 'ON':
+	iotivityapps_src += ['simpleServer.c',]
+
+#	if iotivityapps_env.get('SECURED') == '1':
+#		iotivityapps_src += ['secureServer.c',]
+
+#	if iotivityapps_env.get('WITH_CLOUD'):
+#		iotivityapps_src += ['cloudServer.c',]
+
+if target_os in ['tizen'] :
+    iotivityapps_shared = iotivityapps_env.SharedLibrary('iotivityapps', iotivityapps_src)
+    iotivityapps_static = iotivityapps_env.StaticLibrary('iotivityapps', iotivityapps_src)
+    iotivityapps = Flatten([iotivityapps_shared, iotivityapps_static])
+else :
+    iotivityapps = iotivityapps_env.StaticLibrary('iotivityapps', iotivityapps_src)
+
+iotivityapps_env.InstallTarget(iotivityapps, 'iotivityapps')
+iotivityapps_env.UserInstallTargetLib(iotivityapps, 'iotivityapps')
+

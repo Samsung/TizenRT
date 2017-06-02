@@ -1,0 +1,95 @@
+#******************************************************************
+#
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# Notification Unit Test build script
+##
+
+from tools.scons.RunTest import run_test;
+Import('env')
+
+if env.get('RELEASE'):
+	env.AppendUnique(CCFLAGS = ['-Os'])
+	env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+else:
+	env.AppendUnique(CCFLAGS = ['-g'])
+
+if env.get('LOGGING'):
+	env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+lib_env = env.Clone()
+SConscript(env.get('SRC_DIR') + '/service/third_party_libs.scons', 'lib_env')
+
+######################################################################
+#unit test setting
+######################################################################
+src_dir = lib_env.get('SRC_DIR')
+gtest_dir = src_dir + '/extlibs/gtest/gtest-1.7.0'
+
+easysetup_test_env = lib_env.Clone()
+target_os = env.get('TARGET_OS')
+
+######################################################################
+# Build flags
+######################################################################
+GTest = File(gtest_dir + '/lib/.libs/libgtest.a')
+GTest_Main = File(gtest_dir + '/lib/.libs/libgtest_main.a')
+
+easysetup_test_env.AppendUnique(LIBPATH = [lib_env.get('BUILD_DIR')])
+easysetup_test_env.PrependUnique(LIBS = [
+    'connectivity_abstraction', 'oc', 'octbstack', 'oc_logger', 'coap',
+    GTest_Main, GTest])
+
+if target_os not in ['windows', 'winrt']:
+    easysetup_test_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0', '-std=c++0x'])
+
+easysetup_test_env.AppendUnique(CXXFLAGS = ['-pthread'])
+easysetup_test_env.AppendUnique(LIBS = ['pthread'])
+
+easysetup_test_env.PrependUnique(CPPPATH = [ src_dir + '/extlibs/hippomocks-master', gtest_dir + '/include'])
+
+easysetup_test_env.AppendUnique(CPPPATH = [src_dir + '/resource/include',
+					   src_dir + '/resource/csdk/connectivity/api',
+					   src_dir + '/service/easy-setup/inc',
+					   src_dir + '/service/easy-setup/enrollee/inc',
+					   src_dir + '/service/easy-setup/mediator/richsdk/inc'])
+
+if easysetup_test_env.get('SECURED') == '1':
+	if easysetup_test_env.get('WITH_TCP') == True:
+		easysetup_test_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+######################################################################
+# Build Test
+######################################################################
+
+easysetup_enrollee_test_env = easysetup_test_env.Clone()
+easysetup_enrollee_test_env.AppendUnique(LIBS = ['ESEnrolleeSDK', 'ESMediatorRich'])
+
+easysetup_enrollee_test_src = env.Glob('./ESEnrolleeTest.cpp')
+easysetup_enrollee_test = easysetup_enrollee_test_env.Program('easysetup_enrollee_test', easysetup_enrollee_test_src)
+Alias("easysetup_enrollee_test", easysetup_enrollee_test)
+env.AppendTarget('easysetup_enrollee_test')
+
+if env.get('TEST') == '1':
+# TODO: fix this test on linux and remove this comment line
+    if target_os in ['']:
+        run_test(easysetup_enrollee_test_env,
+                 'service_easy-setup_enrollee_unittests_easysetup_enrollee_test.memcheck',
+                 'service/easy-setup/enrollee/unittests/easysetup_enrollee_test')

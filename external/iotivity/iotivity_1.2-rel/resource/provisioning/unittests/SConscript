@@ -1,0 +1,120 @@
+#******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+import os
+import os.path
+from tools.scons.RunTest import run_test
+
+# SConscript file for Local PKI google tests
+gtest_env = SConscript('#extlibs/gtest/SConscript')
+provisiontests_env = gtest_env.Clone()
+src_dir = provisiontests_env.get('SRC_DIR')
+target_os = provisiontests_env.get('TARGET_OS')
+with_ra = provisiontests_env.get('WITH_RA')
+with_ra_ibb = provisiontests_env.get('WITH_RA_IBB')
+
+######################################################################
+# Build flags
+######################################################################
+provisiontests_env.PrependUnique(CPPPATH = [
+		'../../include',
+		'../../oc_logger/include',
+		'../../csdk/stack/include',
+		'../../csdk/security/include',
+		'../../csdk/security/provisioning/include',
+		'../../csdk/security/provisioning/include/oxm',
+		'../../csdk/security/provisioning/include/internal',
+		'../../csdk/security/provisioning/include/cloud',
+		'../../csdk/stack/include/internal',
+		'../../csdk/connectivity/api',
+		'../../csdk/connectivity/inc/pkix',
+		'../../csdk/connectivity/external/inc',
+		'../../csdk/ocsocket/include',
+		'../../csdk/ocrandom/include',
+		'../../csdk/logger/include',
+		'../../csdk/connectivity/lib/libcoap-4.1.1/include',
+		'../../../extlibs/cjson/',
+		'../../../extlibs/hippomocks-master/HippoMocks',
+		'../../../extlibs/hippomocks-master/HippoMocksTest'
+		])
+
+provisiontests_env.AppendUnique(LIBPATH = [provisiontests_env.get('BUILD_DIR')])
+provisiontests_env.PrependUnique(LIBS = [
+        'ocprovision',
+		'oc',
+		'ocpmapi',
+		'octbstack',
+		'oc_logger',
+		'connectivity_abstraction',
+		'coap'
+		])
+
+if with_ra_ibb:
+	provisiontests_env.AppendUnique(LIBS = provisiontests_env['RALIBS'], LIBPATH = provisiontests_env['RALIBPATH'], RPATH = provisiontests_env['RARPATH'])
+	print "RALIBS = %s" % provisiontests_env['RALIBS']
+	print "RALIBPATH = %s" % provisiontests_env['RALIBPATH']
+	print "RARPATH = %s" % provisiontests_env['RARPATH']
+else :
+	if with_ra:
+		provisiontests_env.AppendUnique(LIBS = ['ra_xmpp'])
+
+if provisiontests_env.get('SECURED') == '1':
+	provisiontests_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509','mbedcrypto'])
+
+
+if provisiontests_env.get('LOGGING'):
+	provisiontests_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+ocprovisiontest_src = [
+	'OCProvisioningTest.cpp'
+	]
+
+if provisiontests_env.get('WITH_TCP') == True:
+	ocprovisiontest_src = ocprovisiontest_src + [
+	'OCCloudProvisioningTest.cpp'
+	]
+
+unittests = provisiontests_env.Program('provisiontests', ocprovisiontest_src)
+
+Alias("provisiontests", [unittests])
+
+provisiontests_env.AppendTarget('provisiontests')
+if provisiontests_env.get('TEST') == '1':
+	if target_os in ['linux']:
+		out_dir = provisiontests_env.get('BUILD_DIR')
+		result_dir = os.path.join(provisiontests_env.get('BUILD_DIR'), 'test_out') + os.sep
+		if not os.path.isdir(result_dir):
+			os.makedirs(result_dir)
+		provisiontests_env.AppendENVPath('GTEST_OUTPUT', ['xml:'+ result_dir])
+		provisiontests_env.AppendENVPath('LD_LIBRARY_PATH', [out_dir])
+		run_test(provisiontests_env,
+# TODO: fix this test on linux and remove this comment line
+#				 'resource_provisioning_unittests.memcheck',
+				 '',
+				 'resource/provisioning/unittests/provisiontests')
+
+src_dir = provisiontests_env.get('SRC_DIR')
+svr_db_src_dir = src_dir + '/resource/provisioning/examples/'
+svr_db_build_dir = os.path.join(provisiontests_env.get('BUILD_DIR'), 'resource', 'provisioning', 'unittests')
+provisiontests_env.Alias("install", provisiontests_env.Install( svr_db_build_dir,
+                                svr_db_src_dir + 'oic_svr_db_client.json'))

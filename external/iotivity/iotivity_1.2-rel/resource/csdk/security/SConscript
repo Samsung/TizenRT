@@ -1,0 +1,149 @@
+# //******************************************************************
+# //
+# // Copyright 2015 Intel Mobile Communications GmbH All Rights Reserved.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# //
+# // Licensed under the Apache License, Version 2.0 (the "License");
+# // you may not use this file except in compliance with the License.
+# // You may obtain a copy of the License at
+# //
+# //      http://www.apache.org/licenses/LICENSE-2.0
+# //
+# // Unless required by applicable law or agreed to in writing, software
+# // distributed under the License is distributed on an "AS IS" BASIS,
+# // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# // See the License for the specific language governing permissions and
+# // limitations under the License.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# libocsrm (share library) build script
+##
+
+Import('env')
+import os
+
+lib_env = env.Clone()
+SConscript('#resource/third_party_libs.scons', 'lib_env')
+
+libocsrm_env = lib_env.Clone()
+
+target_os = libocsrm_env.get('TARGET_OS')
+# As in the source code, it includes arduino Time library (C++)
+# It requires compile the .c with g++
+if target_os == 'arduino':
+	libocsrm_env.Replace(CC = libocsrm_env.get('CXX'))
+	libocsrm_env.Replace(CFLAGS = libocsrm_env.get('CXXFLAGS'))
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = libocsrm_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+	# For bring up purposes only, we manually copy the forked version to where the unforked version is downloaded.
+	libocsrm_env.AppendUnique(CPPPATH = ['#extlibs/libcoap/libcoap/include'])
+else:
+	# For bring up purposes only, the forked version will live here.
+	libocsrm_env.AppendUnique(CPPPATH = ['../connectivity/lib/libcoap-4.1.1/include'])
+
+libocsrm_env.PrependUnique(CPPPATH = [
+		'../../../extlibs/cjson/',
+		'../logger/include',
+		'../../c_common/ocrandom/include',
+		'../stack/include',
+		'../stack/include/internal',
+		'../../oc_logger/include',
+		'../connectivity/external/inc',
+		'../connectivity/common/inc',
+		'../connectivity/inc',
+		'../connectivity/api',
+		'../security/include',
+		'../security/include/internal',
+		'../security/provisioning/include'
+		])
+
+if target_os not in ['arduino', 'windows']:
+	libocsrm_env.AppendUnique(CPPDEFINES  = ['WITH_POSIX', '_GNU_SOURCE'])
+	libocsrm_env.AppendUnique(CFLAGS = ['-std=c99', '-Wall'])
+
+libocsrm_env.AppendUnique(LIBPATH = [libocsrm_env.get('BUILD_DIR')])
+libocsrm_env.AppendUnique(LIBS = ['coap'])
+
+if target_os == 'arduino':
+	libocsrm_env.AppendUnique(CPPDEFINES = ['NDEBUG', 'WITH_ARDUINO'])
+elif target_os not in ['windows', 'msys_nt']:
+	libocsrm_env.AppendUnique(CFLAGS = ['-fPIC'])
+	libocsrm_env.AppendUnique(LIBS = ['m'])
+
+if target_os in ['windows', 'msys_nt']:
+	libocsrm_env.AppendUnique(LIBPATH = [os.path.join(libocsrm_env.get('BUILD_DIR'), 'resource', 'oc_logger')])
+
+if target_os in ['darwin', 'ios']:
+	libocsrm_env.AppendUnique(CPPDEFINES = ['_DARWIN_C_SOURCE'])
+	libocsrm_env.AppendUnique(LIBPATH = [libocsrm_env.get('BUILD_DIR')])
+	libocsrm_env.AppendUnique(LIBS = ['coap'])
+
+if env.get('LOGGING'):
+	libocsrm_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+if env.get('MULTIPLE_OWNER') == '1':
+	libocsrm_env.AppendUnique(CPPDEFINES=['MULTIPLE_OWNER'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+OCSRM_SRC = 'src/'
+libocsrm_src = [
+	OCSRM_SRC + 'secureresourcemanager.c',
+	OCSRM_SRC + 'resourcemanager.c',
+	OCSRM_SRC + 'aclresource.c',
+	OCSRM_SRC + 'verresource.c',
+	OCSRM_SRC + 'amaclresource.c',
+	OCSRM_SRC + 'amsmgr.c',
+	OCSRM_SRC + 'pstatresource.c',
+	OCSRM_SRC + 'doxmresource.c',
+	OCSRM_SRC + 'credresource.c',
+	OCSRM_SRC + 'svcresource.c',
+	OCSRM_SRC + 'pconfresource.c',
+	OCSRM_SRC + 'dpairingresource.c',
+	OCSRM_SRC + 'policyengine.c',
+	OCSRM_SRC + 'psinterface.c',
+	OCSRM_SRC + 'srmresourcestrings.c',
+	OCSRM_SRC + 'srmutility.c',
+	OCSRM_SRC + 'iotvticalendar.c',
+	OCSRM_SRC + 'base64.c',
+	OCSRM_SRC + 'directpairing.c'
+	]
+
+if libocsrm_env.get('SECURED') == '1':
+	libocsrm_src = libocsrm_src + [OCSRM_SRC + 'oxmpincommon.c', OCSRM_SRC + 'pbkdf2.c']
+	libocsrm_src = libocsrm_src + [OCSRM_SRC + 'crlresource.c', OCSRM_SRC + 'pkix_interface.c']
+	libocsrm_src = libocsrm_src + [OCSRM_SRC + 'oxmverifycommon.c']
+	libocsrm_src = libocsrm_src + [OCSRM_SRC + 'psiutils.c'] # TODO : need for secure psi
+
+if target_os in ['windows', 'msys_nt']:
+	libocsrm_src  = libocsrm_src + [OCSRM_SRC + 'strptime.c']
+
+
+libocsrm_src.extend(env['cbor_files'])
+
+# Insert a hack for Arduino, whose compiler may not support all defines expected
+# by tinycbor
+if target_os in ['arduino']:
+	libocsrm_env.AppendUnique(CPPDEFINES = ['INT64_MAX=0x7FFFFFFFFFFFFFFF'])
+
+libocsrm_conf = Configure(libocsrm_env)
+if libocsrm_conf.CheckFunc('strptime'):
+	libocsrm_conf.env.AppendUnique(CPPDEFINES = ['HAVE_STRPTIME'])
+libocsrm_env = libocsrm_conf.Finish()
+
+libocsrm = libocsrm_env.StaticLibrary('ocsrm', libocsrm_src)
+
+libocsrm_env.InstallTarget(libocsrm, 'ocsrm')
+
+if target_os in ['linux', 'android', 'tizen', 'msys_nt', 'windows', 'ios'] and libocsrm_env.get('SECURED') == '1':
+	SConscript('provisioning/SConscript')
+
+if target_os in ['linux'] and libocsrm_env.get('SECURED') == '1':
+	SConscript('tool/SConscript')
