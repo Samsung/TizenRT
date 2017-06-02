@@ -953,12 +953,6 @@ int main(int argc, char **argv)
 
 	argc = ((struct coap_client_input *)arg)->argc;
 	argv = ((struct coap_client_input *)arg)->argv;
-
-	/*
-	 * without initialize optlist,
-	 * optlist is appened on previous value, so wrong option can be sent to coap-server
-	 */
-	optlist = NULL;
 #endif
 
 	while ((opt = getopt(argc, argv, "Nb:e:f:g:m:p:s:t:o:v:A:B:O:P:T:")) != -1) {
@@ -1193,9 +1187,20 @@ int main(int argc, char **argv)
 		}
 	}
 
-	printf("coap-client : good bye\n");
 	close_output();
 	coap_free_context(ctx);
+
+	/*
+	 * deinitialize variables
+	 * optlist : without initialize optlist, new option is appened to old option existed in optlist
+	 *           it can cause wrong creation of option field
+	 * ready : when NON message is continously sent to server, ready field should be deinitialized
+	 *         without deinitialization, it cannot enter select loop
+	 */
+	optlist = NULL;
+	ready = 0;
+
+	printf("coap-client : good bye\n");
 
 	return 0;
 }
