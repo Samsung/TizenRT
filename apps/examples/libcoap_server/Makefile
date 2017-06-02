@@ -1,5 +1,5 @@
 ############################################################################
-# apps/examples/libcoap_test/Makefile
+# apps/examples/libcoap_server/Makefile
 #
 #   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -39,9 +39,7 @@ include $(APPDIR)/Make.defs
 
 # built-in application info
 
-CLIENT_APPNAME = coap-client
-SERVER_APPNAME = coap-server
-CLIENT_FUNCNAME = coap_client_test_main
+SERVER_APPNAME = libcoap-server
 SERVER_FUNCNAME = coap_server_test_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
@@ -49,7 +47,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 CSRCS =
-MAINSRC = coap-client.c coap-server.c
+MAINSRC = libcoap-server.c
 
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
@@ -87,8 +85,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_LIBCOAP_PROGNAME ?= libcoap$(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_LIBCOAP_PROGNAME)
+CONFIG_EXAMPLES_LIBCOAP_SERVER_PROGNAME ?= libcoap-server$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_LIBCOAP_SERVER_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
@@ -116,24 +114,17 @@ $(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
 	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
 
 install: $(BIN_DIR)$(DELIM)$(PROGNAME)
-
 else
 install:
-
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_LIBCOAP_TEST),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(CLIENT_APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(call REGISTER,$(CLIENT_APPNAME),$(CLIENT_FUNCNAME),$(THREADEXEC))
-
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_LIBCOAP_SERVER_TEST),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(SERVER_APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(SERVER_APPNAME),$(SERVER_FUNCNAME),$(THREADEXEC))
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(CLIENT_APPNAME)_main.bdat $(BUILTIN_REGISTRY)$(DELIM)$(SERVER_APPNAME)_main.bdat
-
+context: $(BUILTIN_REGISTRY)$(DELIM)$(SERVER_APPNAME)_main.bdat
 else
 context:
-
 endif
 
 .depend: Makefile $(SRCS)
