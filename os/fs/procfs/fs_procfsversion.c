@@ -196,7 +196,7 @@ static ssize_t version_read(FAR struct file *filep, FAR char *buffer, size_t buf
 	remaining = buflen;
 	totalsize = 0;
 
-	linesize = snprintf(attr->line, VERSION_LINELEN, "\tVersion: %s\n", CONFIG_VERSION_STRING);
+	linesize = snprintf(attr->line, VERSION_LINELEN, "Version: %s\n", CONFIG_VERSION_STRING);
 	copysize = procfs_memcpy(attr->line, linesize, buffer, remaining, &offset);
 	totalsize += copysize;
 	buffer += copysize;
@@ -206,7 +206,7 @@ static ssize_t version_read(FAR struct file *filep, FAR char *buffer, size_t buf
 		goto end;
 	}
 
-	linesize = snprintf(attr->line, VERSION_LINELEN, "\tCommit Hash: %s\n", CONFIG_VERSION_BUILD);
+	linesize = snprintf(attr->line, VERSION_LINELEN, "Commit Hash: %s\n", CONFIG_VERSION_BUILD);
 	copysize = procfs_memcpy(attr->line, linesize, buffer, remaining, &offset);
 	totalsize += copysize;
 	buffer += copysize;
@@ -216,7 +216,7 @@ static ssize_t version_read(FAR struct file *filep, FAR char *buffer, size_t buf
 		goto end;
 	}
 
-	linesize = snprintf(attr->line, VERSION_LINELEN, "\tBuild User: %s\n", CONFIG_VERSION_BUILD_USER);
+	linesize = snprintf(attr->line, VERSION_LINELEN, "Build User: %s\n", CONFIG_VERSION_BUILD_USER);
 	copysize = procfs_memcpy(attr->line, linesize, buffer, remaining, &offset);
 	totalsize += copysize;
 	buffer += copysize;
@@ -226,7 +226,7 @@ static ssize_t version_read(FAR struct file *filep, FAR char *buffer, size_t buf
 		goto end;
 	}
 
-	linesize = snprintf(attr->line, VERSION_LINELEN, "\tBuild Time: %s", CONFIG_VERSION_BUILD_TIME);
+	linesize = snprintf(attr->line, VERSION_LINELEN, "Build Time: %s", CONFIG_VERSION_BUILD_TIME);
 	copysize = procfs_memcpy(attr->line, linesize, buffer, remaining, &offset);
 	totalsize += copysize;
 
