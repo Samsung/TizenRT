@@ -118,6 +118,10 @@ setenv() {
 	else
 		die "Not-support OS type - $OSTYPE"
 	fi
+
+	INSTALL_DIR=$buildDir/pkg-$HOST
+	rm -rf $INSTALL_DIR
+	mkdir -p $INSTALL_DIR
 }
 
 check() {
@@ -136,19 +140,17 @@ check() {
 
 build-libftdi() {
 	# build libftdi
-	rm -rf $buildDir/libftdi-install
-	mkdir -p $buildDir/libftdi-install
 	cd $srcRoot/libftdi
-	cmake  -DCMAKE_INSTALL_PREFIX=$buildDir/libftdi-install \
+	cmake  -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
 		-DEXAMPLES=OFF \
 		-DBUILD_TESTS=OFF \
 		-DPYTHON_BINDINGS=ON \
 		-DDOCUMENTATION=OFF \
 		-DCMAKE_BUILD_TYPE=Release \
-		-DLIBUSB_INCLUDE_DIR="$buildDir/libusb1-install/include/libusb-1.0" \
-		-DLIBUSB_LIBRARIES="$buildDir/libusb1-install/lib/libusb-1.0.so" \
-		-DCONFUSE_INCLUDE_DIR="$buildDir/libconfuse-install/include/libconfuse" \
-		-DCONFUSE_LIBRARY="$buildDir/libconfuse-install/lib/libconfuse.so" \
+		-DLIBUSB_INCLUDE_DIR="$INSTALL_DIR/include/libusb-1.0" \
+		-DLIBUSB_LIBRARIES="$INSTALL_DIR/lib/libusb-1.0.so" \
+		-DCONFUSE_INCLUDE_DIR="$INSTALL_DIR/include/libconfuse" \
+		-DCONFUSE_LIBRARY="$INSTALL_DIR/lib/libconfuse.so" \
 		"$srcRoot/libftdi"
 	make
 	make install
@@ -156,24 +158,21 @@ build-libftdi() {
 
 build-libusb0() {
 	# build libusb-0.1
-	rm -rf $buildDir/libusb0-install
-	mkdir -p $buildDir/libusb0-install
 	cd $srcRoot/libusb0
 	./bootstrap.sh
-	$srcRoot/libusb0/configure --enable-static --prefix=$buildDir/libusb0-install \
-		LIBUSB_1_0_CFLAGS=-I$buildDir/libusb1-install/include/libusb-1.0 \
-		LIBUSB_1_0_LIBS="-L$buildDir/libusb1-install/lib -lusb-1.0" \
-		PKG_CONFIG_LIBDIR="$buildDir/libusb1-install/lib/pkgconfig"
+	$srcRoot/libusb0/configure --enable-static --prefix=$INSTALL_DIR \
+		--includedir=$INSTALL_DIR/include/libusb0 \
+		LIBUSB_1_0_CFLAGS=-I$INSTALL_DIR/include/libusb-1.0 \
+		LIBUSB_1_0_LIBS="-L$INSTALL_DIR/lib -lusb-1.0" \
+		PKG_CONFIG_LIBDIR="$INSTALL_DIR/lib/pkgconfig"
 	make -j$CORES
 	make install
 }
 
 build-libusb1() {
 	# build libusb-1.0
-	rm -rf $buildDir/libusb1-install
-	mkdir -p $buildDir/libusb1-install
 	cd $srcRoot/libusb1
-	$srcRoot/libusb1/configure --enable-static --prefix=$buildDir/libusb1-install
+	$srcRoot/libusb1/configure --enable-static --prefix=$INSTALL_DIR
 	make -j$CORES
 	make install
 }
@@ -188,11 +187,11 @@ build-hidapi() {
 	fi
 	cd $BUILD_DIR/
 	$SRC_DIR/configure \
-		--prefix=$buildDir/$HIDAPI_SRC_NAME-install \
+		--prefix=$INSTALL_DIR \
 		--enable-static \
 		--disable-testgui \
-		libusb_CFLAGS=-I$buildDir/libusb1-install/include/libusb-1.0 \
-		libusb_LIBS="-L$buildDir/libusb1-install/lib -lusb-1.0"
+		libusb_CFLAGS=-I$INSTALL_DIR/include/libusb-1.0 \
+		libusb_LIBS="-L$INSTALL_DIR/lib -lusb-1.0"
 	make -C $BUILD_DIR
 	make -C $BUILD_DIR install
 }
@@ -207,10 +206,10 @@ build-libconfuse() {
 	fi
 	cd $BUILD_DIR
 	$SRC_DIR/configure \
-		--prefix=$buildDir/$LIBCONFUSE_SRC_NAME-install \
+		--prefix=$INSTALL_DIR \
 		--enable-static \
 		--disable-examples \
-		--includedir="$buildDir/$LIBCONFUSE_SRC_NAME-install/include/$LIBCONFUSE_SRC_NAME"
+		--includedir="$INSTALL_DIR/include/$LIBCONFUSE_SRC_NAME"
 	make -C $BUILD_DIR
 	make -C $BUILD_DIR install
 }
@@ -250,14 +249,15 @@ build-openocd() {
 		--disable-buspirate \
 		--disable-sysfsgpio \
 		--prefix=$buildDir/openocd-install \
-		LIBFTDI_LIBS="-L$buildDir/libftdi-install/lib -l:libftdi1.a" \
-		LIBFTDI_CFLAGS="-I $buildDir/libftdi-install/include" \
-		LIBUSB0_LIBS="-L$buildDir/libusb0-install/lib -l:libusb.a" \
-		LIBUSB0_CFLAGS="-I $buildDir/libusb0-install/include" \
-		LIBUSB1_LIBS="-L$buildDir/libusb1-install/lib -l:libusb-1.0.a" \
-		LIBUSB1_CFLAGS="-I $buildDir/libusb1-install/include/libusb-1.0" \
-		HIDAPI_LIBS="-L$buildDir/$HIDAPI_SRC_NAME-install/lib -l:libhidapi-libusb.a" \
-		HIDAPI_CFLAGS="-I$buildDir/$HIDAPI_SRC_NAME-install/include/hidapi" \
+		LIBFTDI_LIBS="-L$INSTALL_DIR/lib -l:libftdi1.a" \
+		LIBFTDI_CFLAGS="-I $INSTALL_DIR/include" \
+		LIBUSB0_LIBS="-L$INSTALL_DIR/lib -l:libusb.a" \
+		LIBUSB0_CFLAGS="-I $INSTALL_DIR/include/libusb0" \
+		LIBUSB1_LIBS="-L$INSTALL_DIR/lib -l:libusb-1.0.a" \
+		LIBUSB1_CFLAGS="-I $INSTALL_DIR/include/libusb-1.0" \
+		HIDAPI_LIBS="-L$INSTALL_DIR/lib -l:libhidapi-libusb.a" \
+		HIDAPI_CFLAGS="-I$INSTALL_DIR/include/hidapi" \
+		PKG_CONFIG_PATH="$INSTALL_DIR/lib/pkgconfig" \
 		LIBS='-ludev -lpthread'
 	make
 	make install
@@ -272,16 +272,13 @@ cleanup() {
 	# clean up
 	rm -rf $buildDir/openocd-install
 	rm -rf $srcRoot/openocd
-	rm -rf $buildDir/libftdi-install
+
+	rm -rf $INSTALL_DIR
 	rm -rf $srcRoot/libftdi
-	rm -rf $buildDir/libusb0-install
 	rm -rf $srcRoot/libusb0
-	rm -rf $buildDir/libusb1-install
 	rm -rf $srcRoot/libusb1
 	rm -rf $srcRoot/$HIDAPI_SRC_NAME-$HIDAPI_SRC_VERSION
-	rm -rf $buildDir/$HIDAPI_SRC_NAME-install
 	rm -rf $srcRoot/$LIBCONFUSE_SRC_NAME-$LIBCONFUSE_SRC_VERSION
-	rm -rf $buildDir/$LIBCONFUSE_SRC_NAME-install
 }
 
 components=(libusb1 libusb0 libconfuse libftdi hidapi openocd)
