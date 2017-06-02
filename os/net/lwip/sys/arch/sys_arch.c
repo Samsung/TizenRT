@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <tinyara/clock.h>
 #include <tinyara/arch.h>
+#include <tinyara/cancelpt.h>
 #include <tinyara/kthread.h>
 #include <sys/types.h>
 
@@ -128,7 +129,12 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 {
 	u8_t first_msg = 0;
 	u32_t tmp = 0;
-	sys_arch_sem_wait(&(mbox->mutex), 0);
+	u32_t status = OK;
+
+	status = sys_arch_sem_wait(&(mbox->mutex), 0);
+	if (status == SYS_ARCH_CANCELED) {
+		return;
+	}
 
 	LWIP_DEBUGF(SYS_DEBUG, ("mbox %p msg %p\n", (void *)mbox, (void *)msg));
 	/* Wait while the queue is full */
@@ -137,10 +143,13 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 		LWIP_DEBUGF(SYS_DEBUG, ("Queue Full, Wait until gets free\n"));
 	}
 	while (tmp == mbox->front) {
+		if (status == SYS_ARCH_CANCELED) {
+			return;
+		}
 		mbox->wait_send++;
 		sys_sem_signal(&(mbox->mutex));
 		sys_arch_sem_wait(&(mbox->mail), 0);
-		sys_arch_sem_wait(&(mbox->mutex), 0);
+		status = sys_arch_sem_wait(&(mbox->mutex), 0);
 		mbox->wait_send--;
 	}
 
@@ -237,19 +246,28 @@ errout_with_mutex:
  *      void **msg              -- Pointer to pointer to msg received
  *      u32_t timeout           -- Number of milliseconds until timeout
  * Outputs:
- *      u32_t                   -- SYS_ARCH_TIMEOUT if timeout, else number
- *                                  of milliseconds until received.
+ *      u32_t                   -- SYS_ARCH_CANCELED if the operation canceled,
+ *				   SYS_ARCH_TIMEOUT if timeout, else number
+ *                                 of milliseconds until received.
  *---------------------------------------------------------------------------*/
 u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 {
 	u32_t time = 0;
+	u32_t status = OK;
 
 	/* The mutex lock is quick so we don't bother with the timeout
 	   stuff here. */
-	sys_arch_sem_wait(&(mbox->mutex), 0);
+	status = sys_arch_sem_wait(&(mbox->mutex), 0);
+	if (status == SYS_ARCH_CANCELED) {
+		return SYS_ARCH_CANCELED;
+	}
 
 	/* wait while the queue is empty */
 	while (mbox->front == mbox->rear) {
+		if (status == SYS_ARCH_CANCELED) {
+			return SYS_ARCH_CANCELED;
+		}
+
 		mbox->wait_fetch++;
 		sys_sem_signal(&(mbox->mutex));
 
@@ -268,7 +286,7 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 			sys_arch_sem_wait(&(mbox->mail), 0);
 		}
 
-		sys_arch_sem_wait(&(mbox->mutex), 0);
+		status = sys_arch_sem_wait(&(mbox->mutex), 0);
 		mbox->wait_fetch--;
 	}
 
@@ -432,7 +450,8 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
  *      sys_sem_t sem           -- Semaphore to wait on
  *      u32_t timeout           -- Number of milliseconds until timeout
  * Outputs:
- *      u32_t                   -- Time elapsed or SYS_ARCH_TIMEOUT.
+ *      u32_t                   -- SYS_ARCH_CANCELED if the operation canceled,
+ *				   SYS_ARCH_TIMEOUT if timeout, else time elapsed.
  *---------------------------------------------------------------------------*/
 u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
@@ -447,6 +466,9 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 			 * Restart If signal is EINTR else crash on Assert as we can't receive ETIMEDOUT
 			 */
 			status = get_errno();
+			if (status == ECANCELED) {
+				return SYS_ARCH_CANCELED;
+			}
 			LWIP_ASSERT("status == EINTR", status == EINTR);
 		}
 		status = OK;
@@ -456,6 +478,10 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 			 * awakened by the receipt of a signal.
 			 * Restart If signal is EINTR else break if ETIMEDOUT
 			 */
+			status = get_errno();
+			if (status == ECANCELED) {
+				return SYS_ARCH_CANCELED;
+			}
 			if (status == -ETIMEDOUT) {
 				break;
 			} else {
