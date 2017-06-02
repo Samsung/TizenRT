@@ -14,6 +14,12 @@ LIBUSB0_SRC_NAME=libusb-compat-0.1
 LIBUSB0_SRC_VERSION=0.1.6-rc2
 LIBUSB1_SRC_URL=https://downloads.sourceforge.net/project/libusb/libusb-1.0/libusb-1.0.21/libusb-1.0.21.tar.bz2
 LIBUSB1_SRC_MD5SUM=1da9ea3c27b3858fa85c5f4466003e44
+HIDAPI_SRC_URL=https://github.com/signal11
+HIDAPI_SRC_NAME=hidapi
+HIDAPI_SRC_VERSION=0.8.0-rc1
+LIBCONFUSE_SRC_URL=https://github.com/martinh
+LIBCONFUSE_SRC_NAME=libconfuse
+LIBCONFUSE_SRC_VERSION=3.0
 
 srcRoot=`dirname $0`
 if [ "${0:0:1}" == "." ]; then
@@ -82,6 +88,20 @@ fetch_libusb1() {
 	rm -rf /tmp/$IMG
 }
 
+fetch_hidapi() {
+	git clone $HIDAPI_SRC_URL/$HIDAPI_SRC_NAME.git \
+		--branch $HIDAPI_SRC_NAME-$HIDAPI_SRC_VERSION \
+		--depth 1 \
+		$srcRoot/$HIDAPI_SRC_NAME-$HIDAPI_SRC_VERSION
+}
+
+fetch_libconfuse() {
+	git clone $LIBCONFUSE_SRC_URL/$LIBCONFUSE_SRC_NAME.git \
+		--branch v$LIBCONFUSE_SRC_VERSION \
+		--depth 1 \
+		$srcRoot/$LIBCONFUSE_SRC_NAME-$LIBCONFUSE_SRC_VERSION
+}
+
 setenv() {
 	if [ "$OSTYPE" == "linux-gnu" -o "$OSTYPE" == "linux" ]; then
 		case $HOSTTYPE in
@@ -103,6 +123,8 @@ setenv() {
 check() {
 	which autoconf || die "autoconf is not installed."
 	which cmake || die "cmake is not installed."
+	which autopoint || die "autopoint is not installed."
+	which flex || die "flex is not installed."
 
 	if [ "$OSTYPE" == "linux-gnu" ]; then
 		automake --version || die "automake is not installed."
@@ -145,6 +167,43 @@ build-libusb1() {
 	$srcRoot/libusb1/configure --enable-static --prefix=$buildDir/libusb1-install
 	make -j$CORES
 	make install
+}
+
+build-hidapi() {
+	local SRC_DIR=$srcRoot/$HIDAPI_SRC_NAME-$HIDAPI_SRC_VERSION
+	local BUILD_DIR=$SRC_DIR
+	cd $SRC_DIR/
+	./bootstrap
+	if [ ! -e $BUILD_DIR ]; then
+		mkdir -p $BUILD_DIR
+	fi
+	cd $BUILD_DIR/
+	$SRC_DIR/configure \
+		--prefix=$buildDir/$HIDAPI_SRC_NAME-install \
+		--enable-static \
+		--disable-testgui \
+		libusb_CFLAGS=-I$buildDir/libusb1-install/include/libusb-1.0 \
+		libusb_LIBS="-L$buildDir/libusb1-install/lib -lusb-1.0"
+	make -C $BUILD_DIR
+	make -C $BUILD_DIR install
+}
+
+build-libconfuse() {
+	local SRC_DIR=$srcRoot/$LIBCONFUSE_SRC_NAME-$LIBCONFUSE_SRC_VERSION
+	local BUILD_DIR=$SRC_DIR
+	cd $SRC_DIR/
+	./autogen.sh
+	if [ ! -e $BUILD_DIR ]; then
+		mkdir -p $BUILD_DIR
+	fi
+	cd $BUILD_DIR
+	$SRC_DIR/configure \
+		--prefix=$buildDir/$LIBCONFUSE_SRC_NAME-install \
+		--enable-static \
+		--disable-examples \
+		--includedir="$buildDir/$LIBCONFUSE_SRC_NAME-install/include/$LIBCONFUSE_SRC_NAME"
+	make -C $BUILD_DIR
+	make -C $BUILD_DIR install
 }
 
 build-openocd() {
@@ -208,9 +267,13 @@ cleanup() {
 	rm -rf $srcRoot/libusb0
 	rm -rf $buildDir/libusb1-install
 	rm -rf $srcRoot/libusb1
+	rm -rf $srcRoot/$HIDAPI_SRC_NAME-$HIDAPI_SRC_VERSION
+	rm -rf $buildDir/$HIDAPI_SRC_NAME-install
+	rm -rf $srcRoot/$LIBCONFUSE_SRC_NAME-$LIBCONFUSE_SRC_VERSION
+	rm -rf $buildDir/$LIBCONFUSE_SRC_NAME-install
 }
 
-components=(libftdi libusb1 libusb0 openocd)
+components=(hidapi libconfuse libftdi libusb1 libusb0 openocd)
 check
 setenv
 for p in ${components[@]};
