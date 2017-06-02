@@ -108,17 +108,23 @@
  *             to sem_trywait().
  *
  * Return Value:
- *   Zero (OK) is returned on success.  A negated errno value is returned on
- *   failure.  -ETIMEDOUT is returned on the timeout condition.
+ *   Zero (OK) is returned on success.
+ *   On failure, -1 (ERROR) is returned and the errno
+ *   is set appropriately:
+ *
+ *   ETIMEDOUT The semaphore could not be locked before the specified timeout
+ *             (delay) expired.
+ *   ENOMEM    Out of memory
  *
  ****************************************************************************/
+
 
 int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 {
 	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
 	irqstate_t flags;
 	systime_t elapsed;
-	int ret;
+	int ret = ERROR;
 
 	DEBUGASSERT(sem != NULL && up_interrupt_context() == false && rtcb->waitdog == NULL);
 
@@ -129,7 +135,8 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 
 	rtcb->waitdog = wd_create();
 	if (!rtcb->waitdog) {
-		return -ENOMEM;
+		set_errno(ENOMEM);
+		return ret;
 	}
 
 	/* We will disable interrupts until we have completed the semaphore
@@ -141,7 +148,6 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 	 */
 
 	flags = irqsave();
-
 	/* Try to take the semaphore without waiting. */
 
 	ret = sem_trywait(sem);
@@ -158,7 +164,6 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 	if (delay == 0) {
 		/* Return the errno from sem_trywait() */
 
-		ret = -get_errno();
 		goto errout_with_irqdisabled;
 	}
 
@@ -166,7 +171,7 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 
 	elapsed = clock_systimer() - start;
 	if (/* elapsed >= (UINT32_MAX / 2) || */ elapsed >= delay) {
-		ret = -ETIMEDOUT;
+		set_errno(ETIMEDOUT);
 		goto errout_with_irqdisabled;
 	}
 
@@ -179,11 +184,6 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 	/* Now perform the blocking wait */
 
 	ret = sem_wait(sem);
-	if (ret < 0) {
-		/* Return the errno from sem_wait() or from sem_timeout() */
-
-		ret = -get_errno();
-	}
 
 	/* Stop the watchdog timer */
 
