@@ -9,10 +9,11 @@ OPENOCD_SRC_URL=http://excellmedia.dl.sourceforge.net/project/openocd/openocd/0.
 OPENOCD_SRC_MD5SUM=8971d16aee5c2642b33ee55fc6c86239
 LIBFTDI_SRC_URL=http://www.intra2net.com/en/developer/libftdi/download/libftdi1-1.3.tar.bz2
 LIBFTDI_SRC_MD5SUM=156cdf40cece9f8a3ce1582db59a502a
-LIBUSB0_SRC_URL=http://sourceforge.net/projects/libusb/files/libusb-compat-0.1/libusb-compat-0.1.4/libusb-compat-0.1.4.tar.bz2
-LIBUSB0_SRC_MD5SUM=2ca521fffadd0c28fdf174e6ec73865b
-LIBUSB1_SRC_URL=http://excellmedia.dl.sourceforge.net/project/libusb/libusb-1.0/libusb-1.0.21/libusb-1.0.21.tar.gz
-LIBUSB1_SRC_MD5SUM=74473305ac0835d10660d53eb39583e6
+LIBUSB0_SRC_URL=https://github.com/libusb
+LIBUSB0_SRC_NAME=libusb-compat-0.1
+LIBUSB0_SRC_VERSION=0.1.6-rc2
+LIBUSB1_SRC_URL=https://downloads.sourceforge.net/project/libusb/libusb-1.0/libusb-1.0.21/libusb-1.0.21.tar.bz2
+LIBUSB1_SRC_MD5SUM=1da9ea3c27b3858fa85c5f4466003e44
 
 srcRoot=`dirname $0`
 if [ "${0:0:1}" == "." ]; then
@@ -64,14 +65,10 @@ fetch_libftdi() {
 }
 
 fetch_libusb0() {
-	IMG=`basename $LIBUSB0_SRC_URL`
-	wget $LIBUSB0_SRC_URL -O /tmp/$IMG
-	if [ $LIBUSB0_SRC_MD5SUM != `md5sum /tmp/$IMG | awk '{print $1}'` ]; then
-		die "Checksum failed: $LIBUSB0_SRC_URL($LIBUSB0_SRC_MD5SUM)"
-	fi
-	mkdir $srcRoot/libusb0
-	tar -xvf /tmp/$IMG --strip-components 1 -C $srcRoot/libusb0
-	rm -rf /tmp/$IMG
+	git clone $LIBUSB0_SRC_URL/$LIBUSB0_SRC_NAME.git \
+		--depth 1 \
+		--branch v$LIBUSB0_SRC_VERSION \
+		$srcRoot/libusb0
 }
 
 fetch_libusb1() {
@@ -134,6 +131,7 @@ build-libusb0() {
 	rm -rf $buildDir/libusb0-install
 	mkdir -p $buildDir/libusb0-install
 	cd $srcRoot/libusb0
+	./bootstrap.sh
 	$srcRoot/libusb0/configure --enable-static --prefix=$buildDir/libusb0-install
 	make -j$CORES
 	make install
@@ -144,7 +142,6 @@ build-libusb1() {
 	rm -rf $buildDir/libusb1-install
 	mkdir -p $buildDir/libusb1-install
 	cd $srcRoot/libusb1
-	./bootstrap.sh
 	$srcRoot/libusb1/configure --enable-static --prefix=$buildDir/libusb1-install
 	make -j$CORES
 	make install
