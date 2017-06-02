@@ -1,0 +1,176 @@
+# //******************************************************************
+# //
+# // Copyright 2015 Samsung Electronics All Rights Reserved.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# //
+# // Licensed under the Apache License, Version 2.0 (the "License");
+# // you may not use this file except in compliance with the License.
+# // You may obtain a copy of the License at
+# //
+# //      http://www.apache.org/licenses/LICENSE-2.0
+# //
+# // Unless required by applicable law or agreed to in writing, software
+# // distributed under the License is distributed on an "AS IS" BASIS,
+# // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# // See the License for the specific language governing permissions and
+# // limitations under the License.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+
+Import('env')
+import os.path
+
+provisioning_env = env.Clone()
+target_os = provisioning_env.get('TARGET_OS')
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = provisioning_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+	# For bring up purposes only, we manually copy the forked version to where the unforked version is downloaded.
+	provisioning_env.AppendUnique(CPPPATH = ['#extlibs/libcoap/libcoap/include'])
+else:
+	# For bring up purposes only, the forked version will live here.
+	provisioning_env.AppendUnique(CPPPATH = ['../../../connectivity/lib/libcoap-4.1.1/include'])
+
+provisioning_env.AppendUnique(CPPPATH = [
+		'../../../stack/include',
+		'../../../ocrandom/include',
+		'../../../logger/include',
+		'../../../stack/include',
+		'../../../security/include',
+		'../../../security/include/internal',
+		'../../../security/provisioning/include/internal',
+		'../../../../oc_logger/include',
+		'../include',
+		'../include/oxm',
+		'../include/cloud',
+		'../../include',
+		'../../../../../extlibs/cjson',
+		'../../../../../extlibs/base64',
+		'../../../connectivity/inc',
+		'../../../connectivity/inc/pkix',
+		'../../../connectivity/common/inc',
+		'../../../connectivity/api',
+		'cloud',
+		'hw_emul'
+		])
+
+target_os = env.get('TARGET_OS')
+provisioning_env.AppendUnique(RPATH = [env.get('BUILD_DIR')])
+provisioning_env.AppendUnique(CPPDEFINES = ['__WITH_DTLS__'])
+
+if target_os not in ['windows']:
+	provisioning_env.AppendUnique(CFLAGS = ['-std=c99'])
+	provisioning_env.AppendUnique(CXXFLAGS = ['-std=c++0x', '-Wall', '-pthread', '-fpermissive'])
+	provisioning_env.AppendUnique(LIBS = ['pthread'])
+
+if target_os not in ['msys_nt', 'windows']:
+	provisioning_env.AppendUnique(LIBS = ['dl', 'm'])
+	provisioning_env.ParseConfig('pkg-config --libs glib-2.0');
+	provisioning_env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
+else:
+	provisioning_env.AppendUnique(LIBPATH = [os.path.join(env.get('BUILD_DIR'), 'resource', 'csdk')])
+	provisioning_env.AppendUnique(LIBS = ['ws2_32', 'iphlpapi', 'advapi32'])
+
+provisioning_env.PrependUnique(LIBS = ['oc', 'oc_logger', 'octbstack', 'connectivity_abstraction', 'coap'])
+
+if target_os not in ['msys_nt', 'windows']:
+	# octbstack.dll is exporting ocpmapi and ocsrm APIs on Windows.
+	provisioning_env.PrependUnique(LIBS = ['ocpmapi', 'ocsrm'])
+
+if env.get('SECURED') == '1':
+    provisioning_env.AppendUnique(LIBS = ['mbedtls','mbedx509','mbedcrypto'])
+
+
+if env.get('MULTIPLE_OWNER') == '1':
+	provisioning_env.AppendUnique(CPPDEFINES = ['MULTIPLE_OWNER'])
+
+provisioning_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+if target_os == 'tizen':
+    provisioning_env.AppendUnique(CPPDEFINES = ['__TIZEN__'])
+if target_os in ['linux', 'tizen']:
+    provisioning_env.ParseConfig('pkg-config --cflags --libs sqlite3')
+
+######################################################################
+# Source files and Targets
+######################################################################
+
+hwemul_src = [
+	'hw_emul/hw_interface.c',
+	'hw_emul/ss_emul.c']
+provisioningclient = provisioning_env.Program('provisioningclient', hwemul_src + ['provisioningclient.c'])
+sampleserver_justworks = provisioning_env.Program('sampleserver_justworks', 'sampleserver_justworks.cpp')
+sampleserver_randompin = provisioning_env.Program('sampleserver_randompin', 'sampleserver_randompin.cpp')
+sampleserver_mfg = provisioning_env.Program('sampleserver_mfg', hwemul_src + ['sampleserver_mfg.cpp'])
+sampleserver_mvjustworks = provisioning_env.Program('sampleserver_mvjustworks', 'sampleserver_mvjustworks.cpp')
+
+if provisioning_env.get('MULTIPLE_OWNER') == '1':
+	subownerclient = provisioning_env.Program('subownerclient', 'subownerclient.c')
+	sampleserver_preconfpin = provisioning_env.Program('sampleserver_preconfpin', 'sampleserver_preconfpin.cpp')
+
+if provisioning_env.get('WITH_TCP') == True:
+    cloud_src = [
+        'cloud/cloudAuth.c',
+        'cloud/cloudCommon.c',
+        'cloud/cloudWrapper.c',
+        'cloud/cloudDiscovery.c']
+    cloudClient = provisioning_env.Program('cloudClient', cloud_src + ['cloudClient.c'])
+    cloudServer = provisioning_env.Program('cloudServer', cloud_src + ['cloudServer.c', 'cloud/cloudResource.c'])
+
+src_dir = provisioning_env.get('SRC_DIR')
+sec_provisioning_src_dir = src_dir + '/resource/csdk/security/provisioning/sample/'
+sec_provisioning_build_dir = env.get('BUILD_DIR') +'/resource/csdk/security/provisioning/sample/'
+
+
+clientdat = provisioning_env.Install(sec_provisioning_build_dir,
+                                        sec_provisioning_src_dir + 'oic_svr_db_client.dat')
+justworksdat = provisioning_env.Install(sec_provisioning_build_dir,
+                                    sec_provisioning_src_dir + 'oic_svr_db_server_justworks.dat')
+randompindat = provisioning_env.Install(sec_provisioning_build_dir,
+                                    sec_provisioning_src_dir+ 'oic_svr_db_server_randompin.dat')
+mfgdat = provisioning_env.Install(sec_provisioning_build_dir,
+                                    sec_provisioning_src_dir+ 'oic_svr_db_server_mfg.dat')
+randompin_with_emptyuuid_dat = provisioning_env.Install(sec_provisioning_build_dir,
+                                    sec_provisioning_src_dir+ 'oic_svr_db_randompin_with_empty_deviceid.dat')
+mvjustworksdat = provisioning_env.Install(sec_provisioning_build_dir,
+									sec_provisioning_src_dir + 'oic_svr_db_server_mvjustworks.dat')
+
+if provisioning_env.get('MULTIPLE_OWNER') == '1':
+	subownerclientdat = provisioning_env.Install(sec_provisioning_build_dir,
+	                                        sec_provisioning_src_dir + 'oic_svr_db_subowner_client.dat')
+	preconfserverdat = provisioning_env.Install(sec_provisioning_build_dir,
+	                                        sec_provisioning_src_dir + 'oic_svr_db_server_preconfpin.dat')
+
+if provisioning_env.get('WITH_TCP') == True:
+    clouddat = provisioning_env.Install(sec_provisioning_build_dir,
+                                        sec_provisioning_src_dir + 'cloud.dat')
+    rootcert = provisioning_env.Install(sec_provisioning_build_dir,
+                                        sec_provisioning_src_dir + 'rootca.crt')
+    Alias("cloud", [clouddat, rootcert, cloudClient, cloudServer])
+    provisioning_env.AppendTarget("cloud")
+
+if provisioning_env.get('MULTIPLE_OWNER') == '1':
+	Alias("samples", [
+					provisioningclient, subownerclient,
+					sampleserver_justworks, sampleserver_randompin, sampleserver_mfg,
+					sampleserver_preconfpin,
+					clientdat, subownerclientdat, preconfserverdat,
+					justworksdat, randompindat, mfgdat, randompin_with_emptyuuid_dat,
+					mvjustworksdat
+				])
+else:
+	Alias("samples", [
+					provisioningclient,
+					sampleserver_justworks, sampleserver_randompin, sampleserver_mfg,
+					clientdat,
+					justworksdat, randompindat, mfgdat, randompin_with_emptyuuid_dat,
+					mvjustworksdat
+				])
+
+provisioning_env.AppendTarget('samples')
+

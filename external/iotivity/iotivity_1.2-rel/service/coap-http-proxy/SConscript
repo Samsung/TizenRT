@@ -1,0 +1,89 @@
+#******************************************************************
+#
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# CoAP-HTTP Proxy build script
+##
+Import('env')
+import os
+local_env = env.Clone()
+
+if local_env.get('LOGGING'):
+    local_env.AppendUnique(CPPDEFINES = ['-DTB_LOG'])
+
+if env.get('RELEASE'):
+    env.AppendUnique(CCFLAGS = ['-Os'])
+    env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+else:
+    env.AppendUnique(CCFLAGS = ['-g'])
+
+target_os = env.get('TARGET_OS')
+src_dir = env.get('SRC_DIR')
+
+######################################################################
+# Build flags
+######################################################################
+local_env.AppendUnique(CPPPATH = ['include',
+                        os.path.join(src_dir, 'resource/csdk/stack/include'),
+                        os.path.join(src_dir, 'resource/csdk/connectivity/common/inc/'),
+                        os.path.join(src_dir, 'resource/csdk/connectivity/lib/libcoap-4.1.1/include'),
+                        os.path.join(src_dir, 'extlibs/cjson'),
+		])
+local_env.PrependUnique(LIBS = ['oc', 'octbstack', 'oc_logger', 'connectivity_abstraction', 'coap'])
+if target_os not in ['windows']:
+    local_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-Wextra'])
+
+if target_os in ['linux', 'tizen']:
+    local_env.AppendUnique(LIBS = ['pthread', 'curl'])
+
+if target_os == 'android':
+    local_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])
+    local_env.AppendUnique(LIBS = ['gnustl_static'])
+
+    if not env.get('RELEASE'):
+        rd_env.AppendUnique(LIBS = ['log'])
+######################################################################
+# Source files and Targets
+######################################################################
+
+proxy_src = [
+	'./src/CoapHttpHandler.c',
+	'./src/CoapHttpMap.c',
+	'./src/CoapHttpParser.c',
+]
+
+if target_os in ['tizen'] :
+    proxysdk = local_env.SharedLibrary('coap_http_proxy', proxy_src)
+else :
+    proxysdk = local_env.StaticLibrary('coap_http_proxy', proxy_src)
+
+local_env.InstallTarget(proxysdk, 'coap_http_proxy')
+local_env.UserInstallTargetLib(proxysdk, 'coap_http_proxy')
+local_env.UserInstallTargetHeader('include/CoapHttpHandler.h', 'service/coap-http-proxy', 'CoapHttpHandler.h')
+
+
+######################################################################
+# Samples for the proxy
+######################################################################
+if target_os in ['linux', 'tizen']:
+    SConscript('samples/SConscript')
+
+if target_os in ['linux']:
+    SConscript('unittests/SConscript')

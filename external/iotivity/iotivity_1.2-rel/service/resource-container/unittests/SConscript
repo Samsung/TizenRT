@@ -1,0 +1,186 @@
+#******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# ResourceContainer (rcs_container) Unit Test build script
+##
+import os
+import os.path
+from tools.scons.RunTest import run_test
+
+# SConscript file for Local PKI google tests
+gtest_env = SConscript('#extlibs/gtest/SConscript')
+lib_env = gtest_env.Clone()
+target_os = lib_env.get('TARGET_OS')
+src_dir = lib_env.get('SRC_DIR')
+
+containerJavaSupport = ARGUMENTS.get('containerJavaSupport',0)
+
+def filtered_glob(env, pattern, omit=[],
+  ondisk=True, source=False, strings=False):
+    return filter(
+      lambda f: os.path.basename(f.path) not in omit,
+      lib_env.Glob(pattern))
+
+lib_env.AddMethod(filtered_glob, "FilteredGlob");
+
+if lib_env.get('RELEASE'):
+    lib_env.AppendUnique(CCFLAGS = ['-Os'])
+    lib_env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+else:
+    lib_env.AppendUnique(CCFLAGS = ['-g'])
+
+if lib_env.get('LOGGING'):
+    lib_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+# Add third party libraries
+SConscript(src_dir + '/service/third_party_libs.scons', 'lib_env')
+
+container_gtest_env = lib_env.Clone()
+
+if int(containerJavaSupport):
+    try:
+        print 'Java Home: ', os.environ['JAVA_HOME']
+        print 'Java Lib: ', os.environ['JAVA_LIB']
+        container_gtest_env.Append(CPPDEFINES={'JAVA_SUPPORT_TEST':1})
+    except KeyError:
+        print '''
+    *********************************** Error *************************************
+    * Building resource container without Java support. JAVA_HOME or JAVA_LIB are not set properly
+    * Please configure JAVA_HOME to point to your Java 7 JDK and
+    * JAVA_LIB to your folder containing libjvm
+    * Example: export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-i386
+    *          export JAVA_LIB=/usr/lib/jvm/java-7-openjdk-i386/jre/lib/i386/server/
+    *******************************************************************************
+        '''
+        container_gtest_env.Append(CPPDEFINES={'JAVA_SUPPORT_TEST':0})
+
+
+
+######################### unit test setting ##########################
+######################################################################
+
+
+######################################################################
+# Build flags
+######################################################################
+container_gtest_env.AppendUnique(
+    CPPPATH = [
+        src_dir + '/extlibs',
+        '../include',
+        '../../resource-encapsulation/include',
+        '../../resource-encapsulation/src/common/utils/include',
+        '../bundle-api/include',
+        '../src'
+    ])
+
+if int(containerJavaSupport):
+    try:
+        container_gtest_env.AppendUnique(
+        CPPPATH = [
+            os.environ['JAVA_HOME']+'/include',
+            os.environ['JAVA_HOME']+'/include/linux'
+        ])
+    except KeyError:
+        print ''
+
+if target_os not in ['windows']:
+    container_gtest_env.AppendUnique(LIBS = ['dl'])
+    container_gtest_env.AppendUnique(CCFLAGS = ['-Wnoexcept'])
+
+container_gtest_env.PrependUnique(LIBS = ['rcs_container', 'rcs_client', 'rcs_server', 'rcs_common',
+  'oc','octbstack', 'oc_logger', 'oc_logger_core',
+  'connectivity_abstraction'])
+
+if target_os in ['android']:
+    container_gtest_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])
+    container_gtest_env.PrependUnique(LIBS = ['gnustl_shared', 'compatibility', 'log'])
+
+container_gtest_env.PrependUnique(CPPPATH = [src_dir + '/extlibs/hippomocks-master'])
+
+if int(containerJavaSupport):
+    try:
+        container_gtest_env.AppendUnique(LIBPATH = [os.environ['JAVA_LIB']])
+    except KeyError:
+        print ''
+container_gtest_env.PrependUnique(LIBS = ['rcs_container', 'rcs_client', 'rcs_server', 'rcs_common',
+  'oc','octbstack', 'oc_logger', 'oc_logger_core',
+  'connectivity_abstraction',
+  'gtest', 'gtest_main'])
+
+if int(containerJavaSupport):
+    try:
+        print 'Java Lib: ', os.environ['JAVA_LIB']
+        container_gtest_env.AppendUnique(LIBS = ['jvm'])
+    except KeyError:
+        print ''
+
+if container_gtest_env.get('SECURED') == '1':
+    container_gtest_env.AppendUnique(CPPDEFINES = ['SECURED'])
+    if container_gtest_env.get('WITH_TCP') == True:
+        container_gtest_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+######################################################################
+# build test bundle
+######################################################################
+test_bundle_env = container_gtest_env.Clone()
+test_bundle_env.AppendUnique(CCFLAGS = ['-fPIC'])
+
+if target_os not in ['darwin', 'ios', 'windows']:
+    test_bundle_env.AppendUnique(LINKFLAGS = ['-Wl,--no-undefined'])
+
+TEST_BUNDLE_DIR = 'TestBundle/'
+test_bundle_env.AppendUnique(CPPPATH = [
+        TEST_BUNDLE_DIR + 'include'
+        ])
+
+test_bundle_src = [ Glob(TEST_BUNDLE_DIR + 'src/*.cpp'), Glob('src/*.cpp')]
+
+TestBundle = test_bundle_env.SharedLibrary('TestBundle', test_bundle_src)
+test_bundle_env.InstallTarget(TestBundle, 'libTestBundle')
+
+
+######################################################################
+# Build Test
+######################################################################
+if 'g++' in container_gtest_env.get('CXX'):
+    container_gtest_env.AppendUnique(CXXFLAGS = ['-std=c++0x'])
+
+container_gtest_src = container_gtest_env.Glob('./ResourceContainerTest.cpp')
+
+container_test = container_gtest_env.Program('container_test', container_gtest_src)
+Alias("container_test", container_test)
+container_gtest_env.AppendTarget('container_test')
+
+# Copy test configuration
+Command("./ResourceContainerTestConfig.xml","./ResourceContainerTestConfig.xml", Copy("$TARGET", "$SOURCE"))
+Ignore("./ResourceContainerTestConfig.xml", "./ResourceContainerTestConfig.xml")
+Command("./ResourceContainerInvalidConfig.xml","./ResourceContainerInvalidConfig.xml", Copy("$TARGET", "$SOURCE"))
+Ignore("./ResourceContainerInvalidConfig.xml", "./ResourceContainerInvalidConfig.xml")
+Command("./TestBundleJava/hue-0.1-jar-with-dependencies.jar","./TestBundleJava/hue-0.1-jar-with-dependencies.jar", Copy("$TARGET", "$SOURCE"))
+Ignore("./TestBundleJava/hue-0.1-jar-with-dependencies.jar", "./TestBundleJava/hue-0.1-jar-with-dependencies.jar")
+
+if container_gtest_env.get('TEST') == '1':
+# TODO: fix this test on linux and remove this comment line
+    if target_os in ['']:
+        run_test(container_gtest_env,
+            '',
+#           'service_resource-container_unittests_container_test.memcheck',
+            'service/resource-container/unittests/container_test')

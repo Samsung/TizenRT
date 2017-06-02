@@ -1,0 +1,41 @@
+##
+# CA build script
+##
+
+Import('env')
+
+print "Reading common folder script"
+
+ca_os = env.get('TARGET_OS')
+src_dir = env.get('SRC_DIR')
+root_dir = './../'
+
+
+ca_common_path = root_dir + 'common/'
+ca_common_src_path = ca_common_path + 'src/'
+
+env.AppendUnique(CPPPATH = [
+	'#resource/c_common/octhread/include/',
+	'common/inc/',
+	src_dir + '/resource/csdk/logger/include/',
+	])
+
+######################################################################
+# Source files and Target(s)
+######################################################################
+ca_common_src = [
+		ca_common_src_path + 'uarraylist.c',
+		ca_common_src_path + 'ulinklist.c',
+		ca_common_src_path + 'uqueue.c',
+		ca_common_src_path + 'caremotehandler.c'
+	]
+
+if env['POSIX_SUPPORTED'] or ca_os in ['windows']:
+	platform_src = [
+		ca_common_src_path + 'cathreadpool_pthreads.c',
+	]
+else:
+	platform_src = []
+
+env.AppendUnique(CA_SRC = ca_common_src)
+env.AppendUnique(CA_SRC = platform_src)

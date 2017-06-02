@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns="http://tizen.org/ns/packages" package="com.oic.es.sample" version="0.1.12" install-location="internal-only">
+	<label>essample</label>
+	<author email="oic" href="www.iotivity.org">OIC</author>
+	<description>essample</description>
+	<ui-application appid="com.oic.es.sample" exec="/usr/apps/com.oic.es.sample/bin/sample" nodisplay="false" multiple="false" type="capp" taskmanage="true">
+		<icon>com.oic.es.sample.png</icon>
+		<label>essample</label>
+		<label xml:lang="en-us">essample</label>
+		<label xml:lang="nl-nl">essample</label>
+	</ui-application>
+	<privileges>
+         	<privilege>http://tizen.org/privilege/socket</privilege>
+	</privileges>
+
+</manifest>
+

@@ -1,0 +1,22 @@
+language: cpp
+compiler:
+- clang
+- gcc
+script:
+- make && make test
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "Jt0baUgI9mwbUptf+4NpYJREp7s2YfDj+jH7e9ZTAdriuN6h8Qwtd+tHjIusAG5iO4wecHOh8kOxlDvqTAn6YiXnHELhJieNxFIFwUlyfwYpnNMF41JpO5nsvyffu/xSJHw1hUpJ5xJDOKOBAQ1UBR42gM56hJfyjRE8zoKxM0s="
+
+addons:
+  coverity_scan:
+    project:
+      name: "dascandy/hippomocks"
+      description: "HippoMocks, C++98 Mocking Framework"
+    notification_email: dascandy@gmail.com
+    build_command: make && make test
+    branch_pattern: master
+

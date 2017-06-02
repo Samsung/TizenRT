@@ -1,0 +1,80 @@
+#******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# linux RE Secure sample apps  build script (Secure Server &  Client)
+##
+Import('env')
+
+# Add third party libraries
+lib_env = env.Clone()
+SConscript('#service/third_party_libs.scons', 'lib_env')
+
+sample_env = lib_env.Clone()
+
+sample_env.AppendUnique(CXXFLAGS = ['-Wall', '-std=c++0x'])
+sample_env.AppendUnique(LIBS = [
+    'coap',
+    'connectivity_abstraction',
+    'oc_logger',
+    'octbstack',
+    'oc',
+    'rcs_common',
+    'pthread',
+    'mbedtls', 'mbedx509', 'mbedcrypto'
+    ])
+sample_env.AppendUnique(CPPPATH = ['../../../include'])
+
+if env.get('SECURED') == '1':
+	if env.get('WITH_TCP') == True:
+		sample_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+if 'rt' in sample_env.get('LIBS'):
+    sample_env.Append(LIBS = ['rt'])
+
+######################################################################
+# ##### Authorized Client #####
+######################################################################
+client_env = sample_env.Clone()
+client_env.AppendUnique(LIBS = 'rcs_client')
+
+sampleAuthorizedClient = client_env.Program('sampleAuthorizedClient', 'SampleAuthorizedClient.cpp')
+client_env.InstallTarget(sampleAuthorizedClient, 'sampleAuthorizedClient')
+
+######################################################################
+# ##### Secure Server #####
+######################################################################
+server_env = sample_env.Clone()
+server_env.AppendUnique(LIBS = 'rcs_server')
+
+sampleSecureServer = server_env.Program('sampleSecureServer', 'SampleSecureServer.cpp')
+server_env.InstallTarget(sampleSecureServer, 'sampleSecureServer')
+
+######################################################################
+# ##### Copy the client & Server credentials files to build directory #####
+######################################################################
+
+src_dir = sample_env.get('SRC_DIR')
+svr_db_src_dir = src_dir + '/service/resource-encapsulation/examples/linux/secureResourceExample/'
+svr_db_build_dir = env.get('BUILD_DIR') +'/service/resource-encapsulation/examples/linux/secureResourceExample/'
+sample_env.Alias("install", sample_env.Install( svr_db_build_dir,
+                svr_db_src_dir + 'oic_svr_db_client.json'))
+sample_env.Alias("install", sample_env.Install( svr_db_build_dir,
+                svr_db_src_dir + 'oic_svr_db_server.json'))
