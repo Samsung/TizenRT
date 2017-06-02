@@ -102,7 +102,7 @@
  *
  ****************************************************************************/
 
-int gettimeofday(struct timeval *tp, void *tzp)
+int gettimeofday(struct timeval *tp, FAR struct timezone *tzp)
 {
 	struct timespec ts;
 	int ret;

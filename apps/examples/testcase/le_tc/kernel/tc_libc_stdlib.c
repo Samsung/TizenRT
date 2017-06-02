@@ -203,15 +203,15 @@ static void tc_libc_stdlib_rand(void)
 
 	ret_chk = rand();
 	TC_ASSERT_GEQ("rand", ret_chk, 0);
-	TC_ASSERT_LT("rand", ret_chk, MAX_RAND);
+	TC_ASSERT_LT("rand", ret_chk, RAND_MAX);
 
 	ret_chk = rand();
 	TC_ASSERT_GEQ("rand", ret_chk, 0);
-	TC_ASSERT_LT("rand", ret_chk, MAX_RAND);
+	TC_ASSERT_LT("rand", ret_chk, RAND_MAX);
 
 	ret_chk = rand();
 	TC_ASSERT_GEQ("rand", ret_chk, 0);
-	TC_ASSERT_LT("rand", ret_chk, MAX_RAND);
+	TC_ASSERT_LT("rand", ret_chk, RAND_MAX);
 
 	TC_SUCCESS_RESULT();
 }
