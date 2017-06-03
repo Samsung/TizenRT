@@ -1,7 +1,7 @@
 
 config LWM2M_WAKAAMA
 	bool "LWM2M_WAKAAMA"
-	default y
+	default n
 	---help---
 		enable LWM2M WAKAAMA external feature
 
