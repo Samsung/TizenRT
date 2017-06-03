@@ -103,21 +103,29 @@ fetch_libconfuse() {
 }
 
 setenv() {
-	if [ "$OSTYPE" == "linux-gnu" -o "$OSTYPE" == "linux" ]; then
-		case $HOSTTYPE in
-			x86_64*)
-				HOST=linux64
-				;;
-			i386*|i686*)
-				HOST=linux32
-				;;
-			*)
-				die "Unknown host type"
-				;;
-		esac
-	else
-		die "Not-support OS type - $OSTYPE"
-	fi
+	case $OSTYPE in
+		linux*)
+			HOST=linux
+			;;
+		msys*)
+			HOST=win
+			;;
+		*)
+			die "Not-support OS type - $OSTYPE"
+			;;
+	esac
+
+	case $HOSTTYPE in
+		x86_64*)
+			HOST=${HOST}64
+			;;
+		i386*|i686*)
+			HOST=${HOST}32
+			;;
+		*)
+			die "Unknown host type"
+			;;
+	esac
 
 	INSTALL_DIR=$buildDir/pkg-$HOST
 	rm -rf $INSTALL_DIR
@@ -135,32 +143,98 @@ check() {
 		autoconf --version || die "autoconf is not installed."
 		libtoolize --version || die "libtool is not installed."
 		pkg-config --list-all | grep libudev || die "libudev is not installed."
+	else
+		local depend_list=(gcc-libs binutils readline \
+			headers-git crt-git \
+			libwinpthread boost swig python3 gettext libiconv)
+
+		local cross_tools=(gcc mingw32-make cmake pkg-config)
+		local tools=(autoconf automake libtoolize)
+
+		if [ -z ${MINGW_PACKAGE_PREFIX} ]; then
+			echo "undefined reference to \$MINGW_PACKAGE_PREFIX: $MINGW_PACKAGE_PREFIX"
+			echo "You should be try again on mingw${HOST: -2}.exe"
+			die
+		fi
+
+		echo "SET UP#1. Git confiure"
+		if [ ! -e "`which git`" ]; then
+			echo "uninstalled Git on your PC"
+			pacman -S --noconfirm --needed git
+		else
+			echo "already installed Git"
+		fi
+
+		for f in ${tools[@]};
+		do
+			echo check for $f...
+			local ret=`which $f`
+			if [ ! -e "$ret" ]; then
+				echo "You should be install $f :"
+				echo "    pacman -S --noconfirm --needed base-devel"
+				die
+			fi
+		done
+
+		for f in ${cross_tools[@]};
+		do
+			echo check for $f...
+			if [ ! -e "`which $f`" ]; then
+				echo "You should be install $f :"
+				echo "    pacman -S --noconfirm --needed $MINGW_PACKAGE_PREFIX-toolchain $MINGW_PACKAGE_PREFIX-cmake"
+				die
+			fi
+		done
+
+		local pkg=""
+
+		for f in ${depend_list[@]};
+		do
+			pkg="$pkg $MINGW_PACKAGE_PREFIX-$f"
+		done
+		pacman -S --noconfirm --needed $pkg > /dev/null 2>&1
 	fi
 }
 
 build-libftdi() {
+	if [ $OSTYPE == "msys" ]; then
+		local option=-G"MSYS Makefiles"
+		local LIBEXT=".dll.a"
+	else
+		local LIBEXT=".so"
+	fi
 	# build libftdi
 	cd $srcRoot/libftdi
-	cmake  -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+	cmake "$option" -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
 		-DEXAMPLES=OFF \
 		-DBUILD_TESTS=OFF \
 		-DPYTHON_BINDINGS=ON \
 		-DDOCUMENTATION=OFF \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DLIBUSB_INCLUDE_DIR="$INSTALL_DIR/include/libusb-1.0" \
-		-DLIBUSB_LIBRARIES="$INSTALL_DIR/lib/libusb-1.0.so" \
+		-DLIBUSB_LIBRARIES="$INSTALL_DIR/lib/libusb-1.0$LIBEXT" \
 		-DCONFUSE_INCLUDE_DIR="$INSTALL_DIR/include/libconfuse" \
-		-DCONFUSE_LIBRARY="$INSTALL_DIR/lib/libconfuse.so" \
+		-DCONFUSE_LIBRARY="$INSTALL_DIR/lib/libconfuse$LIBEXT" \
 		"$srcRoot/libftdi"
 	make
 	make install
 }
 
 build-libusb0() {
+	if [ $OSTYPE == "msys" ]; then
+		local option=$(cat << EOF
+			--host=${MSYSTEM_CHOST}
+			--target=${MSYSTEM_CHOST}
+			--build=${MSYSTEM_CHOST}
+			--enable-shared
+			--disable-dependency-tracking
+EOF
+)
+	fi
 	# build libusb-0.1
 	cd $srcRoot/libusb0
 	./bootstrap.sh
-	$srcRoot/libusb0/configure --enable-static --prefix=$INSTALL_DIR \
+	$srcRoot/libusb0/configure $option --enable-static --prefix=$INSTALL_DIR \
 		--includedir=$INSTALL_DIR/include/libusb0 \
 		LIBUSB_1_0_CFLAGS=-I$INSTALL_DIR/include/libusb-1.0 \
 		LIBUSB_1_0_LIBS="-L$INSTALL_DIR/lib -lusb-1.0" \
@@ -170,14 +244,32 @@ build-libusb0() {
 }
 
 build-libusb1() {
+	if [ $OSTYPE == "msys" ]; then
+		local option=$(cat << EOF
+			--host=${MSYSTEM_CHOST}
+			--target=${MSYSTEM_CHOST}
+			--build=${MSYSTEM_CHOST}
+			--enable-shared
+EOF
+)
+	fi
 	# build libusb-1.0
 	cd $srcRoot/libusb1
-	$srcRoot/libusb1/configure --enable-static --prefix=$INSTALL_DIR
+	$srcRoot/libusb1/configure $option --enable-static --prefix=$INSTALL_DIR
 	make -j$CORES
 	make install
 }
 
 build-hidapi() {
+	if [ $OSTYPE == "msys" ]; then
+		local option=$(cat << EOF
+			--host=${MSYSTEM_CHOST}
+			--target=${MSYSTEM_CHOST}
+			--build=${MSYSTEM_CHOST}
+			--enable-shared
+EOF
+)
+	fi
 	local SRC_DIR=$srcRoot/$HIDAPI_SRC_NAME-$HIDAPI_SRC_VERSION
 	local BUILD_DIR=$SRC_DIR
 	cd $SRC_DIR/
@@ -186,7 +278,7 @@ build-hidapi() {
 		mkdir -p $BUILD_DIR
 	fi
 	cd $BUILD_DIR/
-	$SRC_DIR/configure \
+	$SRC_DIR/configure $option \
 		--prefix=$INSTALL_DIR \
 		--enable-static \
 		--disable-testgui \
@@ -197,6 +289,15 @@ build-hidapi() {
 }
 
 build-libconfuse() {
+	if [ $OSTYPE == "msys" ]; then
+		local option=$(cat << EOF
+			--host=${MSYSTEM_CHOST}
+			--target=${MSYSTEM_CHOST}
+			--build=${MSYSTEM_CHOST}
+			--enable-shared
+EOF
+)
+	fi
 	local SRC_DIR=$srcRoot/$LIBCONFUSE_SRC_NAME-$LIBCONFUSE_SRC_VERSION
 	local BUILD_DIR=$SRC_DIR
 	cd $SRC_DIR/
@@ -205,7 +306,7 @@ build-libconfuse() {
 		mkdir -p $BUILD_DIR
 	fi
 	cd $BUILD_DIR
-	$SRC_DIR/configure \
+	$SRC_DIR/configure $option \
 		--prefix=$INSTALL_DIR \
 		--enable-static \
 		--disable-examples \
@@ -215,12 +316,28 @@ build-libconfuse() {
 }
 
 build-openocd() {
+	if [ $OSTYPE == "msys" ]; then
+		local option=$(cat << EOF
+			--host=${MSYSTEM_CHOST}
+			--target=${MSYSTEM_CHOST}
+			--build=${MSYSTEM_CHOST}
+			--enable-shared
+			--disable-werror
+			--enable-parport-giveio
+EOF
+)
+		local LDFLAGS="-L$MSYSTEM_PREFIX/$MINGW_CHOST/lib -static -static-libgcc -static-libstdc++"
+		local LIBS='-lpthread'
+	else
+		local LIBS='-ludev -lpthread'
+	fi
+
 	# build openocd
 	rm -rf $buildDir/openocd-install
 	mkdir -p $buildDir/openocd-install
 	cd $srcRoot/openocd
 	patch -p1 < $srcRoot/patches/*.patch
-	$srcRoot/openocd/configure \
+	$srcRoot/openocd/configure $option \
 		--enable-ftdi \
 		--disable-stlink \
 		--disable-ti-icdi \
@@ -258,7 +375,8 @@ build-openocd() {
 		HIDAPI_LIBS="-L$INSTALL_DIR/lib -l:libhidapi-libusb.a" \
 		HIDAPI_CFLAGS="-I$INSTALL_DIR/include/hidapi" \
 		PKG_CONFIG_PATH="$INSTALL_DIR/lib/pkgconfig" \
-		LIBS='-ludev -lpthread'
+		LDFLAGS="$LDFLAGS" \
+		LIBS="$LIBS"
 	make
 	make install
 }
