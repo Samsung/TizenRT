@@ -29,6 +29,8 @@ fi
 buildDir=$srcRoot
 copyDir=$srcRoot/..
 
+CFLAGS="-mtune=generic -O2 -pipe"
+
 die() {
 	if [ -n "$1" ]; then echo $1; fi
 	exit 1
@@ -121,6 +123,7 @@ setenv() {
 			;;
 		i386*|i686*)
 			HOST=${HOST}32
+			CFLAGS="-march=$HOSTTYPE $CFLAGS"
 			;;
 		*)
 			die "Unknown host type"
@@ -215,6 +218,7 @@ build-libftdi() {
 		-DLIBUSB_LIBRARIES="$INSTALL_DIR/lib/libusb-1.0$LIBEXT" \
 		-DCONFUSE_INCLUDE_DIR="$INSTALL_DIR/include/libconfuse" \
 		-DCONFUSE_LIBRARY="$INSTALL_DIR/lib/libconfuse$LIBEXT" \
+		CFLAGS="$CFLAGS" \
 		"$srcRoot/libftdi"
 	make
 	make install
@@ -238,7 +242,8 @@ EOF
 		--includedir=$INSTALL_DIR/include/libusb0 \
 		LIBUSB_1_0_CFLAGS=-I$INSTALL_DIR/include/libusb-1.0 \
 		LIBUSB_1_0_LIBS="-L$INSTALL_DIR/lib -lusb-1.0" \
-		PKG_CONFIG_LIBDIR="$INSTALL_DIR/lib/pkgconfig"
+		PKG_CONFIG_LIBDIR="$INSTALL_DIR/lib/pkgconfig" \
+		CFLAGS="$CFLAGS"
 	make -j$CORES
 	make install
 }
@@ -255,7 +260,8 @@ EOF
 	fi
 	# build libusb-1.0
 	cd $srcRoot/libusb1
-	$srcRoot/libusb1/configure $option --enable-static --prefix=$INSTALL_DIR
+	$srcRoot/libusb1/configure $option --enable-static --prefix=$INSTALL_DIR \
+		CFLAGS="$CFLAGS"
 	make -j$CORES
 	make install
 }
@@ -283,7 +289,8 @@ EOF
 		--enable-static \
 		--disable-testgui \
 		libusb_CFLAGS=-I$INSTALL_DIR/include/libusb-1.0 \
-		libusb_LIBS="-L$INSTALL_DIR/lib -lusb-1.0"
+		libusb_LIBS="-L$INSTALL_DIR/lib -lusb-1.0" \
+		CFLAGS="$CFLAGS"
 	make -C $BUILD_DIR
 	make -C $BUILD_DIR install
 }
@@ -310,7 +317,8 @@ EOF
 		--prefix=$INSTALL_DIR \
 		--enable-static \
 		--disable-examples \
-		--includedir="$INSTALL_DIR/include/$LIBCONFUSE_SRC_NAME"
+		--includedir="$INSTALL_DIR/include/$LIBCONFUSE_SRC_NAME" \
+		CFLAGS="$CFLAGS"
 	make -C $BUILD_DIR
 	make -C $BUILD_DIR install
 }
@@ -376,7 +384,8 @@ EOF
 		HIDAPI_CFLAGS="-I$INSTALL_DIR/include/hidapi" \
 		PKG_CONFIG_PATH="$INSTALL_DIR/lib/pkgconfig" \
 		LDFLAGS="$LDFLAGS" \
-		LIBS="$LIBS"
+		LIBS="$LIBS" \
+		CFLAGS="$CFLAGS"
 	make
 	make install
 }
