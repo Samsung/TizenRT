@@ -183,7 +183,11 @@ CONFIG_S5J_SPI=y
 # S5J WDT(Watch Dog Timer)
 #
 # CONFIG_S5J_WATCHDOG is not set
-# CONFIG_S5J_ADC is not set
+
+#
+# S5J ADC
+#
+CONFIG_S5J_ADC=y
 
 #
 # S5J I2C

@@ -175,7 +175,7 @@ CONFIG_S5J_SPI=y
 #
 # S5J ADC
 #
-# CONFIG_S5J_ADC is not set
+CONFIG_S5J_ADC=y
 
 #
 # S5J I2C
