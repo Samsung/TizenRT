@@ -844,20 +844,57 @@ int pthread_barrierattr_getpshared(FAR const pthread_barrierattr_t *attr, FAR in
  * @since Tizen RT v1.0
  */
 int pthread_barrierattr_setpshared(FAR pthread_barrierattr_t *attr, int pshared);
-/**
-	 * @} *///end for PTHREAD_KERNEL
 
 /* Pthread rwlock */
 
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 int pthread_rwlock_destroy(FAR pthread_rwlock_t *rw_lock);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 int pthread_rwlock_init(FAR pthread_rwlock_t *rw_lock, FAR const pthread_rwlockattr_t *attr);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 int pthread_rwlock_rdlock(pthread_rwlock_t *lock);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 int pthread_rwlock_timedrdlock(FAR pthread_rwlock_t *lock, FAR const struct timespec *abstime);
-int pthread_rwlock_tryrdlock(FAR pthread_rwlock_t *lock);
-int pthread_rwlock_wrlock(FAR pthread_rwlock_t *lock);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 int pthread_rwlock_timedwrlock(FAR pthread_rwlock_t *lock, FAR const struct timespec *abstime);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int pthread_rwlock_tryrdlock(FAR pthread_rwlock_t *lock);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 int pthread_rwlock_trywrlock(FAR pthread_rwlock_t *lock);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 int pthread_rwlock_unlock(FAR pthread_rwlock_t *lock);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int pthread_rwlock_wrlock(FAR pthread_rwlock_t *lock);
+
+/**
+ * @} */
 
 #ifdef __cplusplus
 }
