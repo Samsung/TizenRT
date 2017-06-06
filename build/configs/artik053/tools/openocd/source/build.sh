@@ -392,8 +392,15 @@ EOF
 }
 
 packaging() {
+	if [ ! -e $copyDir/$HOST ]; then
+		mkdir -p $copyDir/$HOST
+	fi
+	if [ $OSTYPE == "msys" ]; then
+		cp $INSTALL_DIR/bin/libusb-1.0.dll $copyDir/$HOST/
+		EXT=".exe"
+	fi
 	cp -r $buildDir/openocd-install/share/openocd/scripts $copyDir
-	cp $buildDir/openocd-install/bin/openocd $copyDir/$HOST/
+	cp $buildDir/openocd-install/bin/openocd$EXT $copyDir/$HOST/
 }
 
 cleanup() {
