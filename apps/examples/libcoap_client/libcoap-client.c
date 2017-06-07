@@ -466,20 +466,35 @@ void usage(const char *program, const char *version)
 			"\t\t[-g group] [-m method] [-N] [-o file] [-P addr[:port]] [-p port]\n"
 			"\t\t[-s duration] [-O num,text] [-T string] [-v num] URI\n\n"
 			"\tURI can be an absolute or relative coap URI,\n"
-			"\t-A type...\taccepted media types as comma-separated list of\n"
-			"\t\t\tsymbolic or numeric values\n"
+			"\t-A type...\taccepted media types as comma-separated list of\n" "\t\t\tsymbolic or numeric values\n"
 			"\t-t type\t\tcontent type for given resource for PUT/POST\n"
 			"\t-b [num,]size\tblock size to be used in GET/PUT/POST requests\n"
 			"\t       \t\t(value must be a multiple of 16 not larger than 1024)\n"
 			"\t       \t\tIf num is present, the request chain will start at\n"
 			"\t       \t\tblock num\n"
-			"\t-B seconds\tbreak operation after waiting given seconds\n"
-			"\t\t\t(default is %d)\n"
-			"\t-e text\t\tinclude text as payload (use percent-encoding for\n"
-			"\t\t\tnon-ASCII characters)\n" "\t-f file\t\tfile to send with PUT/POST (use '-' for STDIN)\n" "\t-g group\tjoin the given multicast group\n" "\t-m method\trequest method (get|put|post|delete), default is 'get'\n" "\t-N\t\tsend NON-confirmable message\n" "\t-o file\t\toutput received data to this file (use '-' for STDOUT)\n" "\t-p port\t\tlisten on specified port\n" "\t-s duration\tsubscribe for given duration [s]\n" "\t-v num\t\tverbosity level (default: 3)\n" "\t-O num,text\tadd option num with contents text to request\n" "\t-P addr[:port]\tuse proxy (automatically adds Proxy-Uri option to\n" "\t\t\trequest)\n" "\t-T token\tinclude specified token\n" "\n" "examples:\n" "\tcoap-client -m get coap://[::1]/\n" "\tcoap-client -m get coap://[::1]/.well-known/core\n" "\tcoap-client -m get -T cafe coap://[::1]/time\n" "\techo 1000 | coap-client -m put -T cafe coap://[::1]/time -f -\n", program, version, program, wait_seconds);
+			"\t-B seconds\tbreak operation after waiting given seconds\n" "\t\t\t(default is %d)\n"
+			"\t-e text\t\tinclude text as payload (use percent-encoding for\n" "\t\t\tnon-ASCII characters)\n"
+			/*
+			"\t-g group\tjoin the given multicast group\n"
+			*/
+			"\t-m method\trequest method (get|put|post|delete), default is 'get'\n"
+			"\t-N\t\tsend NON-confirmable message\n"
+			"\t-p port\t\tlisten on specified port\n" "\t-s duration\tsubscribe for given duration [s]\n"
+			"\t-v num\t\tverbosity level (default: 3)\n"
+			/*
+			"\t-O num,text\tadd option num with contents text to request\n"
+			"\t-P addr[:port]\tuse proxy (automatically adds Proxy-Uri option to\n"
+			*/
+			"\t\t\trequest)\n"
+			"\t-T token\tinclude specified token\n" "\n"
+			"examples:\n" "\tcoap-client -m get coap://[::1]/\n"
+			"\tcoap-client -m get coap://[::1]/.well-known/core\n"
+			"\tcoap-client -m get -T cafe coap://[::1]/time\n"
+			"\tcoap-client -m put -e 1000 -T cafe coap://[::1]/time\n"
+			, program, version, program, wait_seconds);
 }
 
-#if 0
+#if !defined (__TINYARA__)
 int join(coap_context_t *ctx, char *group_name)
 {
 	struct ipv6_mreq mreq;
@@ -968,11 +983,6 @@ int main(int argc, char **argv)
 				payload.length = 0;
 			}
 			break;
-		case 'f':
-			if (!cmdline_input_from_file(optarg, &payload)) {
-				payload.length = 0;
-			}
-			break;
 		case 'g':
 			group = optarg;
 			break;
@@ -988,18 +998,6 @@ int main(int argc, char **argv)
 			break;
 		case 's':
 			cmdline_subscribe(optarg);
-			break;
-		case 'o':
-			output_file.length = strlen(optarg);
-			output_file.s = (unsigned char *)coap_malloc(output_file.length + 1);
-
-			if (!output_file.s) {
-				fprintf(stderr, "cannot set output file: insufficient memory\n");
-				break;
-			} else {
-				/* copy filename including trailing zero */
-				memcpy(output_file.s, optarg, output_file.length + 1);
-			}
 			break;
 		case 'A':
 			cmdline_content_type(optarg, COAP_OPTION_ACCEPT);

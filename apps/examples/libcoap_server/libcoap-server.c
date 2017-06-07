@@ -295,7 +295,13 @@ static void usage(const char *program, const char *version)
 		program = ++p;
 	}
 
-	fprintf(stderr, "%s v%s -- a small CoAP implementation\n" "(c) 2010,2011 Olaf Bergmann <bergmann@tzi.org>\n\n" "usage: %s [-A address] [-p port]\n\n" "\t-A address\tinterface address to bind to\n" "\t-p port\t\tlisten on specified port\n" "\t-v num\t\tverbosity level (default: 3)\n" "\t-Q exit server program\n", program, version, program);
+	fprintf(stderr, "%s v%s -- a small CoAP implementation\n"
+					"(c) 2010,2011 Olaf Bergmann <bergmann@tzi.org>\n\n"
+					"usage: %s [-A address] [-p port]\n\n" "\t-A address\tinterface address to bind to\n"
+					"\t-p port\t\tlisten on specified port\n"
+					"\t-v num\t\tverbosity level (default: 3)\n"
+					"\t-Q exit server program\n"
+					, program, version, program);
 }
 
 static coap_context_t *get_context(const char *node, const char *port)
