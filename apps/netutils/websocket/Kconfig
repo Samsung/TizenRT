@@ -9,3 +9,11 @@ config NETUTILS_WEBSOCKET
 	depends on NET_SECURITY_TLS
 	---help---
 		Enable support for the web socket.
+
+if NETUTILS_WEBSOCKET
+
+config NETUTILS_WEBSOCKET_RX_TIMEOUT
+	int "Websocket RX socket timeout (seconds)"
+	default 5
+
+endif

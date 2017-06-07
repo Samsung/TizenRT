@@ -103,7 +103,11 @@
 /**
  * @brief Websocket socket input timeout value, msec.
  */
+#ifdef CONFIG_NETUTILS_WEBSOCKET_RX_TIMEOUT
+#define WEBSOCKET_SOCK_RCV_TIMEOUT                   (CONFIG_NETUTILS_WEBSOCKET_RX_TIMEOUT * 1000)	//mili second
+#else
 #define WEBSOCKET_SOCK_RCV_TIMEOUT                   (5 * 1000)	//mili second
+#endif
 /**
  * @brief Websocket accept server select() timeout value, msec.
  */
