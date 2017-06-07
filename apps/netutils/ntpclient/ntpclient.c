@@ -333,7 +333,7 @@ static int ntpc_daemon(int argc, char **argv)
 	}
 
 	/* Setup a receive timeout on the socket */
-	tv.tv_sec = 5;
+	tv.tv_sec = CONFIG_NETUTILS_NTPCLIENT_SOCK_TIMEOUT;
 	tv.tv_usec = 0;
 	srv_index = 0;
 

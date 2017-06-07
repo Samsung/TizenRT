@@ -24,4 +24,8 @@ config NETUTILS_NTPCLIENT_SIGWAKEUP
 	default 18
 	depends on !DISABLE_SIGNALS
 
+config NETUTILS_NTPCLIENT_SOCK_TIMEOUT
+	int "NTP client socket timeout (seconds)"
+	default 5
+
 endif # NETUTILS_NTPCLIENT
