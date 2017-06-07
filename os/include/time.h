@@ -163,7 +163,7 @@ struct timeval {
 };
 
 struct timezone {
-	int tz_minuteswest;			/* munutes west of Greenwich */
+	int tz_minuteswest;			/* minutes west of Greenwich */
 	int tz_dsttime;				/* type of DST correction */
 };
 
