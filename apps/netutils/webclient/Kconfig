@@ -20,4 +20,8 @@ if NETUTILS_WEBCLIENT
 	---help---
 		Sets user agent. It apply to request message.
 
+	config NETUTILS_WEBCLIENT_RX_TIMEOUT
+	int "Webclient RX socket timeout (seconds)"
+	default 5
+
 endif
