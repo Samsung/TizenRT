@@ -120,7 +120,7 @@ int s5jt200_rgbled_setup(void)
 		/* Call s5j_pwminitialize() to get an instance of the PWM interface */
 		ledb = (struct pwm_lowerhalf_s*)s5j_pwminitialize(1);
 		if (!ledb) {
-			lldbg("ERROR: Failed to get the STM32 PWM lower half to LEDR\n");
+			lldbg("ERROR: Failed to get PWM lower half to LEDR\n");
 			return -ENODEV;
 		}
 
@@ -135,7 +135,7 @@ int s5jt200_rgbled_setup(void)
 		/* Call s5j_pwminitialize() to get an instance of the PWM interface */
 		ledg = (struct pwm_lowerhalf_s*)s5j_pwminitialize(2);
 		if (!ledg) {
-			lldbg("ERROR: Failed to get the STM32 PWM lower half to LEDG\n");
+			lldbg("ERROR: Failed to get PWM lower half to LEDG\n");
 			return -ENODEV;
 		}
 
@@ -146,7 +146,7 @@ int s5jt200_rgbled_setup(void)
 		/* Call s5j_pwminitialize() to get an instance of the PWM interface */
 		ledr = (struct pwm_lowerhalf_s*)s5j_pwminitialize(3);
 		if (!ledr) {
-			lldbg("ERROR: Failed to get the STM32 PWM lower half to LEDB\n");
+			lldbg("ERROR: Failed to get PWM lower half to LEDB\n");
 			return -ENODEV;
 		}
 
