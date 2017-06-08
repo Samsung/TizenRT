@@ -310,7 +310,7 @@ void itc_arastorage_db_print_value_p(void)
 */
 void itc_arastorage_cursor_get_count_p(void)
 {
-    tuple_id_t count;
+    cursor_row_t count;
 
     count = cursor_get_count(g_cursor);
     printf("cursor count : %d\n", count);
@@ -434,8 +434,8 @@ void itc_arastorage_cursor_is_first_row_p(void)
     ret = cursor_move_first(g_cursor);
     TC_ASSERT_EQ("cursor_move_first", DB_ERROR(ret), 0);
 
-    ret = cursor_is_first_row(g_cursor);
-    TC_ASSERT_EQ("cursor_is_first_row", DB_ERROR(ret), 0);
+    bool bret = cursor_is_first_row(g_cursor);
+    TC_ASSERT_EQ("cursor_is_first_row", DB_ERROR(bret), 0);
 
     TC_SUCCESS_RESULT();
 }
@@ -454,8 +454,9 @@ void itc_arastorage_cursor_is_last_row_p(void)
 
     ret = cursor_move_last(g_cursor);
     TC_ASSERT_EQ("cursor_move_last", DB_ERROR(ret), 0);
-    ret = cursor_is_last_row(g_cursor);
-    TC_ASSERT_EQ("cursor_is_last_row", DB_ERROR(ret), 0);
+
+    bool bret = cursor_is_last_row(g_cursor);
+    TC_ASSERT_EQ("cursor_is_last_row", DB_ERROR(bret), 0);
     TC_SUCCESS_RESULT();
 }
 
@@ -629,7 +630,25 @@ void itc_arastorage_cursor_get_string_value_p(void)
     TC_SUCCESS_RESULT();
 }
 
+/**
+* @testcase         itc_arastorage_cursor_get_row_tc_p
+* @brief            Get current row in cursor
+* @scenario         Get current row in cursor
+* @apicovered       cursor_get_row
+* @precondition     Database resource must be initialized
+* @postcondition    none
+*/
+void itc_arastorage_cursor_get_row_tc_p(void)
+{
+    cursor_row_t row;
+    tuple_id_t id = 3;
 
+    cursor_move_to(g_cursor, id);
+    row = cursor_get_row(g_cursor);
+    TC_ASSERT_EQ("cursor_get_row", row, id);
+
+    TC_SUCCESS_RESULT();
+}
 
 int itc_arastorage_launcher(int argc, FAR char *argv[])
 {
