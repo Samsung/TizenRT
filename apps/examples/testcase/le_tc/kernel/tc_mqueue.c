@@ -515,39 +515,7 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_libc_mqueue_mq_setattr_getattr(void)
-{
-	mqd_t mqdes;
-	struct mq_attr mqstat;
-	struct mq_attr nmqstat;
-
-	mqdes = mq_open("mqsetget", O_CREAT | O_RDWR, 0666, 0);
-	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
-
-	memset(&mqstat, 0, sizeof(mqstat));
-	memset(&nmqstat, 0, sizeof(mqstat));
-
-	TC_ASSERT_NEQ("mq_getattr", mq_getattr(mqdes, &mqstat), ERROR);
-
-	mqstat.mq_maxmsg = mqstat.mq_maxmsg + 1;
-	mqstat.mq_msgsize = mqstat.mq_msgsize + 1;
-	mqstat.mq_curmsgs = mqstat.mq_curmsgs + 1;
-
-	TC_ASSERT_EQ("mq_setattr", mq_setattr(mqdes, &mqstat, NULL), OK);
-
-	TC_ASSERT_NEQ("mq_getattr", mq_getattr(mqdes, &nmqstat), ERROR);
-
-	TC_ASSERT_NEQ("mq_setattr_getattr", nmqstat.mq_maxmsg, mqstat.mq_maxmsg);
-	TC_ASSERT_NEQ("mq_setattr_getattr", nmqstat.mq_msgsize, mqstat.mq_msgsize);
-	TC_ASSERT_NEQ("mq_setattr_getattr", nmqstat.mq_curmsgs, mqstat.mq_curmsgs);
-
-	mq_close(mqdes);
-	mq_unlink("mqsetget");
-
-	TC_SUCCESS_RESULT();
-}
-
-static void tc_libc_mqueue_mq_notify(void)
+static void tc_mqueue_mq_notify(void)
 {
 	mqd_t mqdes;
 	const char s_msg_ptr[15] = "test message\n";
@@ -583,7 +551,7 @@ cleanup:
 	mq_unlink("noti_queue");
 }
 
-static void tc_libc_mqueue_mq_timedsend_timedreceive(void)
+static void tc_mqueue_mq_timedsend_timedreceive(void)
 {
 	int ret_chk = OK;
 
@@ -597,7 +565,7 @@ static void tc_libc_mqueue_mq_timedsend_timedreceive(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_libc_mqueue_mq_unlink(void)
+static void tc_mqueue_mq_unlink(void)
 {
 	int ret;
 	mqd_t mqdes;
@@ -628,10 +596,9 @@ static void tc_libc_mqueue_mq_unlink(void)
 int mqueue_main(void)
 {
 	tc_mqueue_mq_open_close_send_receive();
-	tc_libc_mqueue_mq_setattr_getattr();
-	tc_libc_mqueue_mq_notify();
-	tc_libc_mqueue_mq_timedsend_timedreceive();
-	tc_libc_mqueue_mq_unlink();
+	tc_mqueue_mq_notify();
+	tc_mqueue_mq_timedsend_timedreceive();
+	tc_mqueue_mq_unlink();
 
 	return 0;
 }

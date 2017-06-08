@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_semaphore.c
+/// @file tc_libc_semaphore.c
 /// @brief Test Case Example for Libc Semaphore API
 
 /****************************************************************************
@@ -29,45 +29,89 @@
 #include <sys/types.h>
 #include "tc_internal.h"
 
+#define SEM_VALUE SEM_VALUE_MAX
 #define PSHARED 0
-
-sem_t g_semaphore;
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
 /**
-* @fn                   :tc_libc_semaphores_semaphore_sem_init_getvalue
-* @brief                :function initialises and retrieves the value of a named or unnamed semaphore.
-* @Scenario             :function initialises and retrieves the value of a named or unnamed semaphore.
-* API's covered         :sem_init, sem_getvalue
+* @fn                   :tc_libc_semaphore_sem_init
+* @brief                :this tc test sem_init function
+* @Scenario             :If sem is NULL or sem value is bigger then SEM_VALUE_MAX, it return ERROR and errno EINVAL is set.
+*                        Else sem is intialized to the default value.
+* API's covered         :sem_init
 * Preconditions         :NA
 * Postconditions        :NA
 * @return               :total_pass on success.
 */
-static void tc_libc_semaphore_sem_init_getvalue(void)
+static void tc_libc_semaphore_sem_init(void)
 {
-	int ret_chk = ERROR;
-	int getvalue_num;
-	int sem_value;
-	int sem_num = 1;
-	/* If pshared has the value 0, then the semaphore is shared between the threads of a process */
+	sem_t sem;
+	unsigned int value = SEM_VALUE;
+	int ret_chk;
 
-	for (sem_num = 1; sem_num <= SEM_VALUE_MAX; sem_num++) {
-		sem_value = sem_num;
-		ret_chk = sem_init(&g_semaphore, PSHARED, sem_value);
-		TC_ASSERT_EQ("sem_init", ret_chk, OK);
+	ret_chk = sem_init(NULL, PSHARED, 0);
+	TC_ASSERT_EQ("sem_init", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_init", get_errno(), EINVAL);
 
-		ret_chk = sem_getvalue(&g_semaphore, &getvalue_num);
-		TC_ASSERT_EQ("sem_getvalue", ret_chk, OK);
-		TC_ASSERT_EQ_CLEANUP("sem_getvalue",
-							 getvalue_num, sem_value,
-							 get_errno(),
-							 sem_destroy(&g_semaphore));
-		sem_destroy(&g_semaphore);
-	}
+	ret_chk = sem_init(&sem, PSHARED, SEM_VALUE_MAX + 1);
+	TC_ASSERT_EQ("sem_init", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_init", get_errno(), EINVAL);
+
+	ret_chk = sem_init(&sem, PSHARED, value);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+	TC_ASSERT_EQ("sem_init", sem.semcount, value);
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	TC_ASSERT_EQ("sem_init", sem.flags, 0);
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+	TC_ASSERT_EQ("sem_init", sem.hhead, NULL);
+#else
+	TC_ASSERT_EQ("sem_init", sem.holder.htcb, NULL);
+	TC_ASSERT_EQ("sem_init", sem.holder.counts, 0);
+#endif
+#endif
 
 	TC_SUCCESS_RESULT();
+	return;
+}
+
+
+/**
+* @fn                   :tc_libc_semaphore_sem_getvalue
+* @brief                :this tc test sem_init function
+* @Scenario             :If sem or sval is NULL, it return ERROR and errno EINVAL is set.
+*                        Else sval get sem->semcount.
+* API's covered         :sem_getvalue
+* Preconditions         :NA
+* Postconditions        :NA
+* @return               :total_pass on success.
+*/
+static void tc_libc_semaphore_sem_getvalue(void)
+{
+	sem_t sem;
+	unsigned int value = SEM_VALUE;
+	int sval;
+	int ret_chk;
+
+	ret_chk = sem_init(&sem, PSHARED, value);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
+	ret_chk = sem_getvalue(NULL, &sval);
+	TC_ASSERT_EQ("sem_getvalue", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_getvalue", get_errno(), EINVAL);
+
+	ret_chk = sem_getvalue(&sem, NULL);
+	TC_ASSERT_EQ("sem_getvalue", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_getvalue", get_errno(), EINVAL);
+
+	ret_chk = sem_getvalue(&sem, &sval);
+	TC_ASSERT_EQ("sem_getvalue", ret_chk, OK);
+	TC_ASSERT_EQ("sem_getvalue", sval, value);
+
+	TC_SUCCESS_RESULT();
+	return;
 }
 
 /****************************************************************************
@@ -76,7 +120,8 @@ static void tc_libc_semaphore_sem_init_getvalue(void)
 
 int libc_semaphore_main(void)
 {
-	tc_libc_semaphore_sem_init_getvalue();
+	tc_libc_semaphore_sem_init();
+	tc_libc_semaphore_sem_getvalue();
 
 	return 0;
 }

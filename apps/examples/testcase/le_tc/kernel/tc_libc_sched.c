@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_sched.c
+/// @file tc_libc_sched.c
 
 /// @brief Test Case Example for Libc Sched API
 
@@ -30,10 +30,7 @@
 #include <sched.h>
 #include "tc_internal.h"
 
-#define MAX_FIFO 255
-#define MAX_RR 255
-#define MIN_FIFO 1
-#define MIN_RR 1
+#define SCHED_ERROR 0
 
 /**
 * @fn                   :tc_libc_sched_sched_get_priority_max
@@ -48,11 +45,14 @@ static void tc_libc_sched_sched_get_priority_max(void)
 {
 	int ret_chk;
 
+	ret_chk = sched_get_priority_max(SCHED_ERROR);
+	TC_ASSERT_EQ("sched_get_priority_max", ret_chk, ERROR);
+
 	ret_chk = sched_get_priority_max(SCHED_FIFO);
-	TC_ASSERT_EQ("sched_get_priority_max", ret_chk, MAX_FIFO);
+	TC_ASSERT_EQ("sched_get_priority_max", ret_chk, SCHED_PRIORITY_MAX);
 
 	ret_chk = sched_get_priority_max(SCHED_RR);
-	TC_ASSERT_EQ("sched_get_priority_max", ret_chk, MAX_RR);
+	TC_ASSERT_EQ("sched_get_priority_max", ret_chk, SCHED_PRIORITY_MAX);
 
 	TC_SUCCESS_RESULT();
 }
@@ -70,11 +70,14 @@ static void tc_libc_sched_sched_get_priority_min(void)
 {
 	int ret_chk;
 
+	ret_chk = sched_get_priority_min(SCHED_ERROR);
+	TC_ASSERT_EQ("sched_get_priority_min", ret_chk, ERROR);
+
 	ret_chk = sched_get_priority_min(SCHED_FIFO);
-	TC_ASSERT_EQ("sched_get_priority_min", ret_chk, MIN_FIFO);
+	TC_ASSERT_EQ("sched_get_priority_min", ret_chk, SCHED_PRIORITY_MIN);
 
 	ret_chk = sched_get_priority_min(SCHED_RR);
-	TC_ASSERT_EQ("sched_get_priority_min", ret_chk, MIN_RR);
+	TC_ASSERT_EQ("sched_get_priority_min", ret_chk, SCHED_PRIORITY_MIN);
 
 	TC_SUCCESS_RESULT();
 }

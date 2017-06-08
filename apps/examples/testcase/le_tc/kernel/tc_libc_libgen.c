@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file libc_libgen.c
+/// @file tc_libc_libgen.c
 
 /// @brief Test Case Example for Libc Libgen API
 
@@ -41,31 +41,32 @@
  */
 static void tc_libc_libgen_basename(void)
 {
-	char *psz_str = NULL;
-	char *path = "/etc/passwd";
+	char *path;
+	char *ret_chk;
 
-	psz_str = basename(path);
-	TC_ASSERT_EQ("basename", strncmp(psz_str, "passwd", strlen(psz_str)), 0);
+	path = NULL;
+	ret_chk = basename(path);
+	TC_ASSERT_EQ("basename", strncmp(ret_chk, ".", strlen(".")), 0);
 
-	path = "/etc";
-	psz_str = basename(path);
-	TC_ASSERT_EQ("basename", strncmp(psz_str, "etc", strlen(psz_str)), 0);
-
-	path = "etc";
-	psz_str = basename(path);
-	TC_ASSERT_EQ("basename", strncmp(psz_str, "etc", strlen(psz_str)), 0);
+	path = "\0";
+	ret_chk = basename(path);
+	TC_ASSERT_EQ("basename", strncmp(ret_chk, ".", strlen(".")), 0);
 
 	path = "/";
-	psz_str = basename(path);
-	TC_ASSERT_EQ("basename", strncmp(psz_str, "/", strlen(psz_str)), 0);
+	ret_chk = basename(path);
+	TC_ASSERT_EQ("basename", strncmp(ret_chk, "/", strlen("/")), 0);
 
-	path = ".";
-	psz_str = basename(path);
-	TC_ASSERT_EQ("basename", strncmp(psz_str, ".", strlen(psz_str)), 0);
+	path = "//";
+	ret_chk = basename(path);
+	TC_ASSERT_EQ("basename", strncmp(ret_chk, "/", strlen("/")), 0);
 
-	path = "..";
-	psz_str = basename(path);
-	TC_ASSERT_EQ("basename", strncmp(psz_str, "..", strlen(psz_str)), 0);
+	path = "/dirname/basename";
+	ret_chk = basename(path);
+	TC_ASSERT_EQ("basename", strncmp(ret_chk, "basename", strlen("basename")), 0);
+
+	path = "basename";
+	ret_chk = basename(path);
+	TC_ASSERT_EQ("basename", strncmp(ret_chk, "basename", strlen("basename")), 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -82,31 +83,32 @@ static void tc_libc_libgen_basename(void)
  */
 static void tc_libc_libgen_dirname(void)
 {
-	char *psz_str = NULL;
-	char path[] = "/etc/passwd";
+	char *path;
+	char *ret_chk;
 
-	psz_str = dirname(path);
-	TC_ASSERT_EQ("dirname", strncmp(psz_str, "/etc", strlen(psz_str)), 0);
+	path = NULL;
+	ret_chk = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(ret_chk, ".", strlen(".")), 0);
 
-	strncpy(path, "/etc", strlen(path));
-	psz_str = dirname(path);
-	TC_ASSERT_EQ("dirname", strncmp(psz_str, "/", strlen(psz_str)), 0);
+	path = "\0";
+	ret_chk = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(ret_chk, ".", strlen(".")), 0);
 
-	strncpy(path, "etc", strlen(path));
-	psz_str = dirname(path);
-	TC_ASSERT_EQ("dirname", strncmp(psz_str, ".", strlen(psz_str)), 0);
+	path = "/";
+	ret_chk = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(ret_chk, "/", strlen("/")), 0);
 
-	strncpy(path, "/", strlen(path));
-	psz_str = dirname(path);
-	TC_ASSERT_EQ("dirname", strncmp(psz_str, "/", strlen(psz_str)), 0);
+	path = "//";
+	ret_chk = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(ret_chk, "/", strlen("/")), 0);
 
-	strncpy(path, ".", strlen(path));
-	psz_str = dirname(path);
-	TC_ASSERT_EQ("dirname", strncmp(psz_str, ".", strlen(psz_str)), 0);
+	path = "/dirname/basename";
+	ret_chk = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(ret_chk, "/dirname", strlen("/dirname")), 0);
 
-	strncpy(path, "..", strlen(path));
-	psz_str = dirname(path);
-	TC_ASSERT_EQ("dirname", strncmp(psz_str, ".", strlen(psz_str)), 0);
+	path = "basename";
+	ret_chk = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(ret_chk, ".", strlen(".")), 0);
 
 	TC_SUCCESS_RESULT();
 }
