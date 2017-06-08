@@ -54,6 +54,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <time.h>
 
 #include "result.h"
 #include "db_options.h"
@@ -336,7 +337,10 @@ static db_result_t create(index_t *index)
 	int offset = 0;
 	db_result_t result;
 	uint8_t success = 0;
+	int curtime;
 
+	curtime = time(NULL);
+	random_init(curtime);
 	tree_t *tree = malloc(sizeof(tree_t));
 	if (tree == NULL) {
 		DB_LOG_E("DB: Failed to allocate a tree\n");
@@ -715,7 +719,6 @@ static db_result_t insert(index_t *index, attribute_value_t *key, tuple_id_t val
 {
 	tree_t *tree;
 	long long_key;
-	qnode_t *tmp_node;
 
 	tree = (tree_t *)index->opaque_data;
 	long_key = db_value_to_long(key);
@@ -730,9 +733,18 @@ static db_result_t insert(index_t *index, attribute_value_t *key, tuple_id_t val
 		DB_LOG_E("DB: Failed to insert key %ld into a bplus-tree index\n", long_key);
 		return DB_INDEX_ERROR;
 	}
+
+	/***************************************************************************************
+	 *	The following code is to implement write through caching structure.
+	 *	The write back cache gives better performance as compared to write through cache
+	 *	and write back is preferred.
+	 ***************************************************************************************/
+#ifdef DB_WIP
+	qnode_t *tmp_node;
 	storage_write_to(tree->tree_storage, tree, 0, sizeof(tree_t));
 
 	/* Bucket Cache being flushed */
+
 	tmp_node = tree->buck_cache->in_cache.head->next;
 	while (tmp_node != tree->buck_cache->in_cache.tail) {
 		if ((tmp_node->node_state & NODE_STATE_DIRTY) && (tmp_node->node_state & NODE_STATE_VALID)) {
@@ -749,7 +761,7 @@ static db_result_t insert(index_t *index, attribute_value_t *key, tuple_id_t val
 		}
 		tmp_node = tmp_node->next;
 	}
-
+#endif
 	return DB_OK;
 }
 
