@@ -361,15 +361,13 @@ static void tc_libc_stdio_vfprintf(const char *format, ...)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_stdio_asprintf(const char *format, ...)
+static void tc_libc_stdio_asprintf(void)
 {
 	int ret_chk;
 	char *buffer;
-	va_list args;
 
-	va_start(args, format);
-	ret_chk = avsprintf(&buffer, format, args);
-	va_end(args);
+	ret_chk = asprintf(&buffer, "%s", printable_chars);
+
 	TC_ASSERT_NOT_NULL("asprintf", buffer);
 	TC_ASSERT_EQ_CLEANUP("asprintf",
 						 ret_chk, strlen(printable_chars),
@@ -425,7 +423,7 @@ int libc_stdio_main(void)
 	tc_libc_stdio_perror();
 	tc_libc_stdio_printf();
 	tc_libc_stdio_vfprintf("%s", printable_chars);
-	tc_libc_stdio_asprintf("%s", printable_chars);
+	tc_libc_stdio_asprintf();
 	tc_libc_stdio_putchar();
 
 	return 0;
