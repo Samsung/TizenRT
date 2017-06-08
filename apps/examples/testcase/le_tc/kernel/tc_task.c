@@ -202,10 +202,6 @@ static int vfork_task(int argc, char *argv[])
 		}
 	}
 
-	while (vfork_val != CONFIG_MAX_TASKS - task_cnt) {
-		usleep(USEC_10);
-	}
-
 	return OK;
 }
 #endif
