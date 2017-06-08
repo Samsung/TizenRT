@@ -29,7 +29,9 @@ fi
 buildDir=$srcRoot
 copyDir=$srcRoot/..
 
-CFLAGS="-mtune=generic -O2 -pipe"
+CFLAGS="-O2 -pipe"
+
+CTARGET=`gcc -dumpmachine`
 
 die() {
 	if [ -n "$1" ]; then echo $1; fi
@@ -105,28 +107,29 @@ fetch_libconfuse() {
 }
 
 setenv() {
-	case $OSTYPE in
-		linux*)
+	case $CTARGET in
+		*linux*)
 			HOST=linux
 			;;
-		msys*)
+		*mingw*|*msys)
 			HOST=win
 			;;
 		*)
-			die "Not-support OS type - $OSTYPE"
+			die "Not-support OS type - $CTARGET"
 			;;
 	esac
 
-	case $HOSTTYPE in
+	case $CTARGET in
 		x86_64*)
 			HOST=${HOST}64
+			CFLAGS="-mtune=generic $CFLAGS"
 			;;
 		i386*|i686*)
 			HOST=${HOST}32
-			CFLAGS="-march=$HOSTTYPE $CFLAGS"
+			CFLAGS="-m32 -march=i686 $CFLAGS"
 			;;
 		*)
-			die "Unknown host type"
+			die "Unknown arch type"
 			;;
 	esac
 
