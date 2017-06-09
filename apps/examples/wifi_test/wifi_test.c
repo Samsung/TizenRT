@@ -80,8 +80,8 @@ void WiFi_Link_Down(void)
 
 void parse_aps_list(void)
 {
-	char *ptr;
-	char *p;
+	char *ptr = NULL;
+	char *p = NULL;
 	int i;
 	int c;
 	int cnt;
