@@ -64,6 +64,32 @@ static void tc_libc_math_cbrt(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_exp2
+ * @brief                :Returns the base-2 exponential value
+ * @Scenario             :Returns the base-2 exponential value
+ * API's covered         :exp2
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_exp2(void)
+{
+	const double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const double sol_val[8] = { 1.0, INFINITY, ZERO, INFINITY, ZERO, INFINITY, ZERO, NAN };
+	double ret_val[8];
+	int exp2_idx;
+
+	for (exp2_idx = 0; exp2_idx < 8; exp2_idx++) {
+		ret_val[exp2_idx] = exp2(in_val[exp2_idx]);
+		if (!(isnan(sol_val[exp2_idx]) && isnan(ret_val[exp2_idx]))) {
+			TC_ASSERT_LEQ("exp2", fabs(sol_val[exp2_idx] - ret_val[exp2_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_fabs
  * @brief                :Returns the absolute value of parameter
  * @Scenario             :Returns the absolute value of parameter
@@ -220,6 +246,85 @@ static void tc_libc_math_hypot(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_j0
+ * @brief                :Returns the bessel value of 1st kind of order 0
+ * @Scenario             :Returns the bessel value of 1st kind of order 0
+ * API's covered         :j0
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_j0(void)
+{
+	const double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const double sol_val[8] = { 1.0, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, NAN };
+	double ret_val[8] = { ZERO };
+	int j0_idx;
+
+	for (j0_idx = 0; j0_idx < 8; j0_idx++) {
+		ret_val[j0_idx] = j0(in_val[j0_idx]);
+		if (!(isnan(sol_val[j0_idx]) && isnan(ret_val[j0_idx]))) {
+			TC_ASSERT_LEQ("j0", fabs(sol_val[j0_idx] - ret_val[j0_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_j1
+ * @brief                :Returns the bessel value of 1st kind of order 1
+ * @Scenario             :Returns the bessel value of 1st kind of order 1
+ * API's covered         :j1
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_j1(void)
+{
+	const double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const double sol_val[8] = { ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO, NAN };
+	double ret_val[8] = { ZERO };
+	int j1_idx;
+
+	for (j1_idx = 0; j1_idx < 8; j1_idx++) {
+		ret_val[j1_idx] = j1(in_val[j1_idx]);
+		if (!(isnan(sol_val[j1_idx]) && isnan(ret_val[j1_idx]))) {
+			TC_ASSERT_LEQ("j1", fabs(sol_val[j1_idx] - ret_val[j1_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_jn
+ * @brief                :Returns the bessel value of 1st kind of order n
+ * @Scenario             :Returns the bessel value of 1st kind of order n
+ * API's covered         :jn
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_jn(void)
+{
+	const double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const double sol_val[8] = { ZERO, -ZERO, -ZERO, -ZERO, -ZERO, ZERO, ZERO, NAN };
+	double ret_val[8];
+	int jn_idx;
+	int order = 2;
+
+	for (jn_idx = 0; jn_idx < 8; jn_idx++) {
+		ret_val[jn_idx] = jn(order, in_val[jn_idx]);
+		if (!(isnan(sol_val[jn_idx]) && isnan(ret_val[jn_idx]))) {
+			TC_ASSERT_LEQ("jn", fabs(sol_val[jn_idx] - ret_val[jn_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_pow
  * @brief                :Returns the power value of parameter
  * @Scenario             :Returns the power value of parameter
@@ -247,6 +352,116 @@ static void tc_libc_math_pow(void)
 
 	TC_SUCCESS_RESULT();
 }
+
+/**
+ * @fn                   :tc_libc_math_scalbn
+ * @brief                :Returns the multiply of argument1 by FLT_RADIX (probably 2) to the power of argument2
+ * @Scenario             :Returns the multiply of argument1 by FLT_RADIX (probably 2) to the power of argument2
+ * API's covered         :scalbn
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_scalbn(void)
+{
+	const double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const double sol_val[8][6] = { { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { 9007199254740994.0, 17592186044416.003906250, ZERO, INFINITY, INFINITY, ZERO }, { -9007199254740994.0, -17592186044416.003906250, -ZERO, -INFINITY, -INFINITY, -ZERO }, { 18014398509481984.0, 35184372088832.0, ZERO, INFINITY, INFINITY, ZERO }, { -18014398509481984.0, -35184372088832.0, -ZERO, -INFINITY, -INFINITY, -ZERO }, { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY }, { -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { NAN, NAN, NAN, NAN, NAN, NAN } };
+	double ret_val[8][6];
+	int scalbn_idx;
+	long int exp[6] = { 2, -7, -1024, 1024, 3072, -3072 };
+	int exp_idx;
+
+	for (scalbn_idx = 0; scalbn_idx < 8; scalbn_idx++) {
+		for (exp_idx = 0; exp_idx < 6; exp_idx++) {
+			ret_val[scalbn_idx][exp_idx] = scalbn(in_val[scalbn_idx], exp[exp_idx]);
+			if (!(isnan(sol_val[scalbn_idx][exp_idx]) && isnan(ret_val[scalbn_idx][exp_idx]))) {
+				TC_ASSERT_LEQ("scalbn", fabs(sol_val[scalbn_idx][exp_idx] - ret_val[scalbn_idx][exp_idx]), FLT_EPSILON);
+			}
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_y0
+ * @brief                :Returns the bessel value of 2nd kind of order 0
+ * @Scenario             :Returns the bessel value of 2nd kind of order 0
+ * API's covered         :y0
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_y0(void)
+{
+	const double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const double sol_val[8] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN };
+	double ret_val[8];
+	int y0_idx;
+
+	for (y0_idx = 0; y0_idx < 8; y0_idx++) {
+		ret_val[y0_idx] = y0(in_val[y0_idx]);
+		if (!(isnan(sol_val[y0_idx]) && isnan(ret_val[y0_idx]))) {
+			TC_ASSERT_LEQ("y0", fabs(sol_val[y0_idx] - ret_val[y0_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_y1
+ * @brief                :Returns the bessel value of 2nd kind of order 1
+ * @Scenario             :Returns the bessel value of 2nd kind of order 1
+ * API's covered         :y1
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_y1(void)
+{
+	const double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const double sol_val[8] = { -INFINITY, -ZERO, NAN, -ZERO, NAN, ZERO, NAN, NAN };
+	double ret_val[8];
+	int y1_idx;
+
+	for (y1_idx = 0; y1_idx < 8; y1_idx++) {
+		ret_val[y1_idx] = y1(in_val[y1_idx]);
+		if (!(isnan(sol_val[y1_idx]) && isnan(ret_val[y1_idx]))) {
+			TC_ASSERT_LEQ("y1", fabs(sol_val[y1_idx] - ret_val[y1_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_yn
+ * @brief                :Returns the bessel value of 2nd kind of order n
+ * @Scenario             :Returns the bessel value of 2nd kind of order n
+ * API's covered         :yn
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_yn(void)
+{
+	const double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const double sol_val[8] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN };
+	double ret_val[8];
+	int yn_idx;
+	int order = 3;
+
+	for (yn_idx = 0; yn_idx < 8; yn_idx++) {
+		ret_val[yn_idx] = yn(order, in_val[yn_idx]);
+		if (!(isnan(sol_val[yn_idx]) && isnan(ret_val[yn_idx]))) {
+			TC_ASSERT_LEQ("yn", fabs(sol_val[yn_idx] - ret_val[yn_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
 #endif
 
 /****************************************************************************
@@ -256,13 +471,21 @@ int libc_math_main(void)
 {
 #ifdef CONFIG_HAVE_DOUBLE
 	tc_libc_math_cbrt();
+	tc_libc_math_exp2();
 	tc_libc_math_fabs();
 	tc_libc_math_fdim();
 	tc_libc_math_floor();
 	tc_libc_math_fmax();
 	tc_libc_math_fmin();
 	tc_libc_math_hypot();
+	tc_libc_math_j0();
+	tc_libc_math_j1();
+	tc_libc_math_jn();
 	tc_libc_math_pow();
+	tc_libc_math_scalbn();
+	tc_libc_math_y0();
+	tc_libc_math_y1();
+	tc_libc_math_yn();
 #else
 	printf("tc_libc_math will not be executed. CONFIG_HAVE_DOUBLE is not set.\n");
 #endif
