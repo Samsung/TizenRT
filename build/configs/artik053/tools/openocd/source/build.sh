@@ -31,7 +31,11 @@ copyDir=$srcRoot/..
 
 CFLAGS="-O2 -pipe"
 
+#CHOST=i686-linux-gnu
+#CTARGET=i686-linux-gnu
+CHOST=`gcc -dumpmachine`
 CTARGET=`gcc -dumpmachine`
+CBUILD=`gcc -dumpmachine`
 
 die() {
 	if [ -n "$1" ]; then echo $1; fi
@@ -127,6 +131,8 @@ setenv() {
 		i386*|i686*)
 			HOST=${HOST}32
 			CFLAGS="-m32 -march=i686 $CFLAGS"
+			LDFLAGS="-m32"
+			CXXFLAGS="-m32"
 			;;
 		*)
 			die "Unknown arch type"
@@ -203,7 +209,7 @@ check() {
 }
 
 build-libftdi() {
-	if [ $OSTYPE == "msys" ]; then
+	if [ -z "${HOST##win*}" ]; then
 		local option=-G"MSYS Makefiles"
 		local LIBEXT=".dll.a"
 	else
@@ -221,61 +227,50 @@ build-libftdi() {
 		-DLIBUSB_LIBRARIES="$INSTALL_DIR/lib/libusb-1.0$LIBEXT" \
 		-DCONFUSE_INCLUDE_DIR="$INSTALL_DIR/include/libconfuse" \
 		-DCONFUSE_LIBRARY="$INSTALL_DIR/lib/libconfuse$LIBEXT" \
-		CFLAGS="$CFLAGS" \
+		-DCMAKE_C_FLAGS="$CFLAGS" \
+		-DCMAKE_CXX_FLAGS="$CXXFLAGS" \
 		"$srcRoot/libftdi"
 	make
 	make install
 }
 
 build-libusb0() {
-	if [ $OSTYPE == "msys" ]; then
-		local option=$(cat << EOF
-			--host=${MSYSTEM_CHOST}
-			--target=${MSYSTEM_CHOST}
-			--build=${MSYSTEM_CHOST}
-			--disable-dependency-tracking
-EOF
-)
-	fi
 	# build libusb-0.1
 	cd $srcRoot/libusb0
 	./bootstrap.sh
 	$srcRoot/libusb0/configure $option --enable-static --prefix=$INSTALL_DIR \
 		--includedir=$INSTALL_DIR/include/libusb0 \
+		--host=$CHOST \
+		--target=$CTARGET \
+		--build=$CBUILD \
+		--disable-dependency-tracking \
 		LIBUSB_1_0_CFLAGS=-I$INSTALL_DIR/include/libusb-1.0 \
 		LIBUSB_1_0_LIBS="-L$INSTALL_DIR/lib -lusb-1.0" \
 		PKG_CONFIG_LIBDIR="$INSTALL_DIR/lib/pkgconfig" \
-		CFLAGS="$CFLAGS"
+		CFLAGS="$CFLAGS" \
+		CXXFLAGS="$CXXFLAGS" \
+		LDFLAGS="$LDFLAGS"
+
 	make -j$CORES
 	make install
 }
 
 build-libusb1() {
-	if [ $OSTYPE == "msys" ]; then
-		local option=$(cat << EOF
-			--host=${MSYSTEM_CHOST}
-			--target=${MSYSTEM_CHOST}
-			--build=${MSYSTEM_CHOST}
-EOF
-)
-	fi
 	# build libusb-1.0
 	cd $srcRoot/libusb1
-	$srcRoot/libusb1/configure $option --enable-static --prefix=$INSTALL_DIR \
-		CFLAGS="$CFLAGS"
+	$srcRoot/libusb1/configure --enable-static --prefix=$INSTALL_DIR \
+		--host=$CHOST \
+		--target=$CTARGET \
+		--build=$CBUILD \
+		CFLAGS="$CFLAGS" \
+		CXXFLAGS="$CXXFLAGS" \
+		LDFLAGS="$LDFLAGS"
+
 	make -j$CORES
 	make install
 }
 
 build-hidapi() {
-	if [ $OSTYPE == "msys" ]; then
-		local option=$(cat << EOF
-			--host=${MSYSTEM_CHOST}
-			--target=${MSYSTEM_CHOST}
-			--build=${MSYSTEM_CHOST}
-EOF
-)
-	fi
 	local SRC_DIR=$srcRoot/$HIDAPI_SRC_NAME-$HIDAPI_SRC_VERSION
 	local BUILD_DIR=$SRC_DIR
 	cd $SRC_DIR/
@@ -284,26 +279,24 @@ EOF
 		mkdir -p $BUILD_DIR
 	fi
 	cd $BUILD_DIR/
-	$SRC_DIR/configure $option \
+	$SRC_DIR/configure \
+		--host=$CHOST \
+		--target=$CTARGET \
+		--build=$CBUILD \
 		--prefix=$INSTALL_DIR \
 		--enable-static \
 		--disable-testgui \
 		libusb_CFLAGS=-I$INSTALL_DIR/include/libusb-1.0 \
 		libusb_LIBS="-L$INSTALL_DIR/lib -lusb-1.0" \
-		CFLAGS="$CFLAGS"
+		CFLAGS="$CFLAGS" \
+		CXXFLAGS="$CXXFLAGS" \
+		LDFLAGS="$LDFLAGS"
+
 	make -C $BUILD_DIR
 	make -C $BUILD_DIR install
 }
 
 build-libconfuse() {
-	if [ $OSTYPE == "msys" ]; then
-		local option=$(cat << EOF
-			--host=${MSYSTEM_CHOST}
-			--target=${MSYSTEM_CHOST}
-			--build=${MSYSTEM_CHOST}
-EOF
-)
-	fi
 	local SRC_DIR=$srcRoot/$LIBCONFUSE_SRC_NAME-$LIBCONFUSE_SRC_VERSION
 	local BUILD_DIR=$SRC_DIR
 	cd $SRC_DIR/
@@ -312,28 +305,31 @@ EOF
 		mkdir -p $BUILD_DIR
 	fi
 	cd $BUILD_DIR
-	$SRC_DIR/configure $option \
+	$SRC_DIR/configure \
+		--host=$CHOST \
+		--target=$CTARGET \
+		--build=$CBUILD \
 		--prefix=$INSTALL_DIR \
 		--enable-static \
 		--disable-examples \
 		--includedir="$INSTALL_DIR/include/$LIBCONFUSE_SRC_NAME" \
-		CFLAGS="$CFLAGS"
+		CFLAGS="$CFLAGS" \
+		CXXFLAGS="$CXXFLAGS" \
+		LDFLAGS="$LDFLAGS"
+
 	make -C $BUILD_DIR
 	make -C $BUILD_DIR install
 }
 
 build-openocd() {
-	if [ $OSTYPE == "msys" ]; then
+	if [ -z "${HOST##win*}" ]; then
 		local option=$(cat << EOF
-			--host=${MSYSTEM_CHOST}
-			--target=${MSYSTEM_CHOST}
-			--build=${MSYSTEM_CHOST}
 			--enable-static
 			--disable-werror
 			--enable-parport-giveio
 EOF
 )
-		local LDFLAGS="-L$MSYSTEM_PREFIX/$MINGW_CHOST/lib -static -static-libgcc -static-libstdc++"
+		LDFLAGS="$LDFLAGS -L$MSYSTEM_PREFIX/$MINGW_CHOST/lib -static -static-libgcc -static-libstdc++"
 		local LIBS='-lwinpthread'
 		local HIDAPI_LIB='-l:libhidapi.a'
 	else
@@ -347,6 +343,9 @@ EOF
 	cd $srcRoot/openocd
 	patch -p1 < $srcRoot/patches/*.patch
 	$srcRoot/openocd/configure $option \
+		--host=$CHOST \
+		--target=$CTARGET \
+		--build=$CBUILD \
 		--enable-ftdi \
 		--disable-stlink \
 		--disable-ti-icdi \
@@ -384,9 +383,11 @@ EOF
 		HIDAPI_LIBS="-L$INSTALL_DIR/lib $HIDAPI_LIB" \
 		HIDAPI_CFLAGS="-I$INSTALL_DIR/include/hidapi" \
 		PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$INSTALL_DIR/lib/pkgconfig" \
-		LDFLAGS="$LDFLAGS" \
 		LIBS="$LIBS" \
-		CFLAGS="$CFLAGS"
+		CFLAGS="$CFLAGS" \
+		CXXFLAGS="$CXXFLAGS" \
+		LDFLAGS="$LDFLAGS"
+
 	make
 	make install
 }
@@ -395,7 +396,7 @@ packaging() {
 	if [ ! -e $copyDir/$HOST ]; then
 		mkdir -p $copyDir/$HOST
 	fi
-	if [ $OSTYPE == "msys" ]; then
+	if [ -z "${HOST##win*}" ]; then
 		cp $INSTALL_DIR/bin/libusb-1.0.dll $copyDir/$HOST/
 		EXT=".exe"
 	fi
