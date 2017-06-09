@@ -40,7 +40,7 @@ typedef struct {
  * @param[in] str - command's first string(Example: ps, ls, ifconfig etc)
  * @param[in] cb - callback function for the command
  * @param[in] thread_exec: TASH_EXECMD_ASYNC-execute callback as a thread
-						   TASH_EXECMD_SYNC -invokde callback directly
+						   TASH_EXECMD_SYNC -invoked callback directly
  * @retval 0 Success
  * @retval -ve Failure
  *
