@@ -349,6 +349,22 @@ long double expl(long double x);
 /**
  * @internal
  */
+float exp2f(float x);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double exp2(double x);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double exp2l(long double x);
+#endif
+/**
+ * @internal
+ */
 float logf(float x);
 /**
  * @internal
@@ -785,6 +801,50 @@ double hypot(double x, double y);
  */
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double hypotl(long double x, long double y);
+#endif
+/**
+ * @internal
+ */
+float scalbnf(float x, int exp);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double scalbn(double x, int exp);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double scalbnl(long double x, int exp);
+#endif
+/**
+ * @internal
+ */
+float j0f(float x);
+float j1f(float x);
+float jnf(int n, float x);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double j0(double x);
+double j1(double x);
+double jn(int n, double x);
+#endif
+/**
+ * @internal
+ */
+float y0f(float x);
+float y1f(float x);
+float ynf(int n, float x);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double y0(double x);
+double y1(double x);
+double yn(int n, double x);
 #endif
 /**
  * @internal
