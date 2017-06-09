@@ -230,7 +230,6 @@ build-libusb0() {
 			--host=${MSYSTEM_CHOST}
 			--target=${MSYSTEM_CHOST}
 			--build=${MSYSTEM_CHOST}
-			--enable-shared
 			--disable-dependency-tracking
 EOF
 )
@@ -254,7 +253,6 @@ build-libusb1() {
 			--host=${MSYSTEM_CHOST}
 			--target=${MSYSTEM_CHOST}
 			--build=${MSYSTEM_CHOST}
-			--enable-shared
 EOF
 )
 	fi
@@ -272,7 +270,6 @@ build-hidapi() {
 			--host=${MSYSTEM_CHOST}
 			--target=${MSYSTEM_CHOST}
 			--build=${MSYSTEM_CHOST}
-			--enable-shared
 EOF
 )
 	fi
@@ -301,7 +298,6 @@ build-libconfuse() {
 			--host=${MSYSTEM_CHOST}
 			--target=${MSYSTEM_CHOST}
 			--build=${MSYSTEM_CHOST}
-			--enable-shared
 EOF
 )
 	fi
@@ -329,15 +325,17 @@ build-openocd() {
 			--host=${MSYSTEM_CHOST}
 			--target=${MSYSTEM_CHOST}
 			--build=${MSYSTEM_CHOST}
-			--enable-shared
+			--enable-static
 			--disable-werror
 			--enable-parport-giveio
 EOF
 )
 		local LDFLAGS="-L$MSYSTEM_PREFIX/$MINGW_CHOST/lib -static -static-libgcc -static-libstdc++"
-		local LIBS='-lpthread'
+		local LIBS='-lwinpthread'
+		local HIDAPI_LIB='-l:libhidapi.a'
 	else
 		local LIBS='-ludev -lpthread'
+		local HIDAPI_LIB='-l:libhidapi-libusb.a'
 	fi
 
 	# build openocd
@@ -374,15 +372,15 @@ EOF
 		--disable-buspirate \
 		--disable-sysfsgpio \
 		--prefix=$buildDir/openocd-install \
-		LIBFTDI_LIBS="-L$INSTALL_DIR/lib -l:libftdi1.a" \
-		LIBFTDI_CFLAGS="-I $INSTALL_DIR/include" \
+		LIBFTDI_LIBS="-L$INSTALL_DIR/bin -L$INSTALL_DIR/lib -l:libftdi1.a -l:libusb-1.0.a" \
+		LIBFTDI_CFLAGS="-I$INSTALL_DIR/include/libftdi1 -I$INSTALL_DIR/include/libusb-1.0" \
 		LIBUSB0_LIBS="-L$INSTALL_DIR/lib -l:libusb.a" \
-		LIBUSB0_CFLAGS="-I $INSTALL_DIR/include/libusb0" \
+		LIBUSB0_CFLAGS="-I$INSTALL_DIR/include/libusb0 -I$INSTALL_DIR/include/libusb-1.0" \
 		LIBUSB1_LIBS="-L$INSTALL_DIR/lib -l:libusb-1.0.a" \
-		LIBUSB1_CFLAGS="-I $INSTALL_DIR/include/libusb-1.0" \
-		HIDAPI_LIBS="-L$INSTALL_DIR/lib -l:libhidapi-libusb.a" \
+		LIBUSB1_CFLAGS="-I$INSTALL_DIR/include/libusb-1.0" \
+		HIDAPI_LIBS="-L$INSTALL_DIR/lib $HIDAPI_LIB" \
 		HIDAPI_CFLAGS="-I$INSTALL_DIR/include/hidapi" \
-		PKG_CONFIG_PATH="$INSTALL_DIR/lib/pkgconfig" \
+		PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$INSTALL_DIR/lib/pkgconfig" \
 		LDFLAGS="$LDFLAGS" \
 		LIBS="$LIBS" \
 		CFLAGS="$CFLAGS"
