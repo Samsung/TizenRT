@@ -564,27 +564,25 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len
 	ssize_t amount = 0;
 	size_t recv_len;
 	char *pos;
-	int res;
 #ifdef CONFIG_CTRL_IFACE_UDP
 	UNUSED(flags);
 #endif
-	while ((amount >= 0) && ((amount + offset) < CTRL_HEADER_SIZE)) {
+	while ((offset += amount) < CTRL_HEADER_SIZE) {
 #ifdef CONFIG_CTRL_IFACE_UDP
 		amount = recvfrom(sock, buf + offset, CTRL_HEADER_SIZE - offset, 0, from, fromlen);
 #else
 		amount = read(sock, buf + offset, CTRL_HEADER_SIZE - offset);
 #endif
+		if (amount < 0) {
+			return amount;
+		}
 	}
-	if (amount < 0) {
-		return amount;
-	} else {
-		msg_size = wpa_ctrl_get_header(buf);
-		offset = 0;
-		amount = 0;
-		buf[CTRL_HEADER_SIZE] = '\0';
-		wpa_printf(MSG_EXCESSIVE, "received message size: %d ('%s')", msg_size, buf);
-	}
-	while ((amount >= 0) && ((amount + offset) < msg_size)) {
+	msg_size = wpa_ctrl_get_header(buf);
+	offset = 0;
+	amount = 0;
+	buf[CTRL_HEADER_SIZE] = '\0';
+	wpa_printf(MSG_EXCESSIVE, "received message size: %d ('%s')", msg_size, buf);
+	while ((offset += amount) < msg_size) {
 		if (msg_size > len) {	// This is BAD!!! read out the message to keep alignment.
 			pos = buf;
 		} else {
@@ -596,16 +594,14 @@ int wpa_ctrl_recvfrom(int sock, char *buf, size_t len
 #else
 		amount += read(sock, pos, recv_len);
 #endif
+		if (amount < 0) {
+			return amount;
+		}
 	}
 	if (msg_size > len) {
 		return -1;				// Buffer too small for the message, return error
 	}
-	if (amount >= 0) {
-		res = amount + offset;
-	} else {
-		res = amount;
-	}
-	return res;
+	return msg_size;
 }
 
 static int _wpa_ctrl_sendto(int sock, const char *buf, size_t len

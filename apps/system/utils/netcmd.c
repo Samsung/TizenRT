@@ -89,12 +89,6 @@ extern int iotivity_cloud_main(int argc, char *argv[]);
 #ifdef CONFIG_SYSTEM_NETDB
 extern int netdb_main(int argc, char *argv[]);
 #endif
-#ifdef CONFIG_LWM2M_CLIENT_MODE
-extern int lwm2m_client_main(int argc, char *argv[]);
-#endif
-#ifdef CONFIG_LWM2M_SERVER_MODE
-extern int lwm2m_server_main(int argc, char *argv[]);
-#endif
 
 #if defined(CONFIG_NETUTILS_TFTPC)
 struct tftpc_args_s {
@@ -603,12 +597,6 @@ const static tash_cmdlist_t net_appcmds[] = {
 #endif							/* CONFIG_EXAMPLES_IOTIVITY */
 #ifdef CONFIG_SYSTEM_NETDB
 	{"netdb", netdb_main, TASH_EXECMD_SYNC},
-#endif
-#ifdef CONFIG_LWM2M_CLIENT_MODE
-	{"lwm2mclient", lwm2m_client_main, TASH_EXECMD_SYNC},
-#endif
-#ifdef CONFIG_LWM2M_SERVER_MODE
-	{"lwm2mserver", lwm2m_server_main, TASH_EXECMD_SYNC},
 #endif
 	{NULL, NULL, 0}
 };

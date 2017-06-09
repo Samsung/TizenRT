@@ -315,9 +315,12 @@ static int wpa_ctrl_set_ap_vendor_ie(struct wpa_supplicant *wpa_s, char *value)
 	wpabuf_put_u8(wpa_buf, oui[1]);	/* OUI 2nd */
 	wpabuf_put_u8(wpa_buf, oui[2]);	/* OUI 3rd */
 	ie = wpabuf_put(wpa_buf, ie_len);	/* Hex string would be double in length */
-	hexstr2bin(value, ie, data_len);
+	hexstr2bin(value, ie, ie_len);
 	wpa_printf(MSG_DEBUG, "wpa_ctrl_set_vendor_ie");
 	/* copy into ap_vendor elements so that they get published in beacon , probe resp */
+	if (wpa_s->conf->ap_vendor_elements) {
+		os_free(wpa_s->conf->ap_vendor_elements);
+	}
 	wpa_s->conf->ap_vendor_elements = wpa_buf;
 	return 0;
 }
@@ -379,7 +382,9 @@ static int wpa_supplicant_ctrl_iface_set(struct wpa_supplicant *wpa_s, char *cmd
 			ret = -1;
 		}
 	} else if (os_strcasecmp(cmd, "wps_fragment_size") == 0) {
+#ifdef CONFIG_WPS
 		wpa_s->wps_fragment_size = atoi(value);
+#endif
 #ifdef CONFIG_WPS_TESTING
 	} else if (os_strcasecmp(cmd, "wps_version_number") == 0) {
 		long int val;
@@ -6569,9 +6574,9 @@ static void wpa_supplicant_ctrl_iface_flush(struct wpa_supplicant *wpa_s)
 	wpa_s->wps_fragment_size = 0;
 	wpas_wps_cancel(wpa_s);
 	wps_registrar_flush(wpa_s->wps->registrar);
-#endif							/* CONFIG_WPS */
 	wpa_s->after_wps = 0;
 	wpa_s->known_wps_freq = 0;
+#endif							/* CONFIG_WPS */
 
 #ifdef CONFIG_TDLS
 #ifdef CONFIG_TDLS_TESTING
@@ -6988,8 +6993,10 @@ static void wpas_ctrl_scan(struct wpa_supplicant *wpa_s, char *params, char *rep
 
 		wpa_s->normal_scans = 0;
 		wpa_s->scan_req = MANUAL_SCAN_REQ;
+#ifdef CONFIG_WPS
 		wpa_s->after_wps = 0;
 		wpa_s->known_wps_freq = 0;
+#endif
 		wpa_supplicant_req_scan(wpa_s, 0, 0);
 		if (wpa_s->manual_scan_use_id) {
 			wpa_s->manual_scan_id++;

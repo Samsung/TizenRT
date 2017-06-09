@@ -708,8 +708,10 @@ void wpa_supplicant_set_state(struct wpa_supplicant *wpa_s, enum wpa_states stat
 #ifndef IEEE8021X_EAPOL
 		wpa_drv_set_supp_port(wpa_s, 1);
 #endif							/* IEEE8021X_EAPOL */
+#ifdef CONFIG_WPS
 		wpa_s->after_wps = 0;
 		wpa_s->known_wps_freq = 0;
+#endif
 		wpas_p2p_completed(wpa_s);
 
 		sme_sched_obss_scan(wpa_s, 1);
@@ -2960,7 +2962,11 @@ void wpa_supplicant_rx_eapol(void *ctx, const u8 *src_addr, const u8 *buf, size_
 
 int wpa_supplicant_update_mac_addr(struct wpa_supplicant *wpa_s)
 {
-	if ((!wpa_s->p2p_mgmt || !(wpa_s->drv_flags & WPA_DRIVER_FLAGS_DEDICATED_P2P_DEVICE)) && !(wpa_s->drv_flags & WPA_DRIVER_FLAGS_P2P_DEDICATED_INTERFACE)) {
+	if ((
+#ifdef CONFIG_P2P
+			!wpa_s->p2p_mgmt ||
+#endif
+			!(wpa_s->drv_flags & WPA_DRIVER_FLAGS_DEDICATED_P2P_DEVICE)) && !(wpa_s->drv_flags & WPA_DRIVER_FLAGS_P2P_DEDICATED_INTERFACE)) {
 		l2_packet_deinit(wpa_s->l2);
 		wpa_msg(wpa_s, MSG_INFO, "callling L2_packet_init: ");
 		wpa_s->l2 = l2_packet_init(wpa_s->ifname, wpa_drv_get_mac_addr(wpa_s), ETH_P_EAPOL, wpa_supplicant_rx_eapol, wpa_s, 0);
@@ -3052,7 +3058,11 @@ int wpa_supplicant_driver_init(struct wpa_supplicant *wpa_s)
 			interface_count = 0;
 		}
 #ifndef ANDROID
-		if (!wpa_s->p2p_mgmt && wpa_supplicant_delayed_sched_scan(wpa_s, interface_count % 3, 100000)) {
+		if (
+#ifdef CONFIG_P2P
+			!wpa_s->p2p_mgmt &&
+#endif
+			wpa_supplicant_delayed_sched_scan(wpa_s, interface_count % 3, 100000)) {
 			wpa_supplicant_req_scan(wpa_s, interface_count % 3, 100000);
 		}
 #endif							/* ANDROID */
@@ -3883,11 +3893,13 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s, struct wpa_in
 	 * Doing it here as it determines whether l2_packet_init() will be done
 	 * during wpa_supplicant_driver_init().
 	 */
+#ifdef CONFIG_P2P
 	if (wpa_s->drv_flags & WPA_DRIVER_FLAGS_DEDICATED_P2P_DEVICE) {
 		wpa_s->p2p_mgmt = iface->p2p_mgmt;
 	} else {
 		iface->p2p_mgmt = 1;
 	}
+#endif
 
 	if (wpa_s->num_multichan_concurrent == 0) {
 		wpa_s->num_multichan_concurrent = 1;
@@ -3898,7 +3910,11 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s, struct wpa_in
 	}
 
 #ifdef CONFIG_TDLS
-	if ((!iface->p2p_mgmt || !(wpa_s->drv_flags & WPA_DRIVER_FLAGS_DEDICATED_P2P_DEVICE)) && wpa_tdls_init(wpa_s->wpa)) {
+	if ((
+#ifdef CONFIG_P2P
+			!iface->p2p_mgmt ||
+#endif
+			!(wpa_s->drv_flags & WPA_DRIVER_FLAGS_DEDICATED_P2P_DEVICE)) && wpa_tdls_init(wpa_s->wpa)) {
 		return -1;
 	}
 #endif							/* CONFIG_TDLS */
@@ -4159,12 +4175,14 @@ int wpa_supplicant_remove_iface(struct wpa_global *global, struct wpa_supplicant
 	}
 #endif							/* CONFIG_MESH */
 
+#ifdef CONFIG_P2P
 	if (global->p2p_group_formation == wpa_s) {
 		global->p2p_group_formation = NULL;
 	}
 	if (global->p2p_invite_group == wpa_s) {
 		global->p2p_invite_group = NULL;
 	}
+#endif
 	wpa_supplicant_deinit_iface(wpa_s, 1, terminate);
 
 #ifdef CONFIG_MESH
@@ -4236,6 +4254,7 @@ static const char *wpa_supplicant_msg_ifname_cb(void *ctx)
  * initialization, the returned data pointer can be used to add and remove
  * network interfaces, and eventually, to deinitialize %wpa_supplicant.
  */
+static int g_wpa_run;
 struct wpa_global *wpa_supplicant_init(struct wpa_params *params)
 {
 	struct wpa_global *global;
@@ -4245,6 +4264,10 @@ struct wpa_global *wpa_supplicant_init(struct wpa_params *params)
 		return NULL;
 	}
 
+	while (g_wpa_run) {
+		usleep(100);
+	}
+	g_wpa_run = 1;
 #ifdef CONFIG_DRIVER_NDIS
 	{
 		void driver_ndis_init_ops(void);
@@ -4285,8 +4308,10 @@ struct wpa_global *wpa_supplicant_init(struct wpa_params *params)
 	if (global == NULL) {
 		return NULL;
 	}
+#ifdef CONFIG_P2P
 	dl_list_init(&global->p2p_srv_bonjour);
 	dl_list_init(&global->p2p_srv_upnp);
+#endif
 	global->params.daemonize = params->daemonize;
 	global->params.wait_for_monitor = params->wait_for_monitor;
 	global->params.dbus_ctrl_interface = params->dbus_ctrl_interface;
@@ -4447,15 +4472,16 @@ void wpa_supplicant_deinit(struct wpa_global *global)
 	os_free(global->params.override_ctrl_interface);
 #ifdef CONFIG_P2P
 	os_free(global->params.conf_p2p_dev);
-#endif
 	os_free(global->p2p_disallow_freq.range);
 	os_free(global->p2p_go_avoid_freq.range);
+#endif
 	os_free(global->add_psk);
 
 	os_free(global);
 	wpa_debug_close_syslog();
 	wpa_debug_close_file();
 	wpa_debug_close_linux_tracing();
+	g_wpa_run = 0;
 }
 
 void wpa_supplicant_update_config(struct wpa_supplicant *wpa_s)
@@ -4723,11 +4749,11 @@ int wpas_network_disabled(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 {
 	int i;
 	unsigned int drv_enc;
-
+#ifdef CONFIG_P2P
 	if (wpa_s->p2p_mgmt) {
 		return 1;    /* no normal network profiles on p2p_mgmt interface */
 	}
-
+#endif
 	if (ssid == NULL) {
 		return 1;
 	}

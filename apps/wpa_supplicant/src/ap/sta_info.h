@@ -209,7 +209,7 @@ void ap_sta_stop_sa_query(struct hostapd_data *hapd, struct sta_info *sta);
 int ap_check_sa_query_timeout(struct hostapd_data *hapd, struct sta_info *sta);
 void ap_sta_disconnect(struct hostapd_data *hapd, struct sta_info *sta, const u8 *addr, u16 reason);
 
-void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta, int authorized);
+void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta, int authorized, int reason);
 static inline int ap_sta_is_authorized(struct sta_info *sta)
 {
 	return sta->flags & WLAN_STA_AUTHORIZED;

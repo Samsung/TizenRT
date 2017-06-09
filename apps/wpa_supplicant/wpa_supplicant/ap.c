@@ -1183,14 +1183,16 @@ int wpas_ap_wps_add_nfc_pw(struct wpa_supplicant *wpa_s, u16 pw_id, const struct
 int wpas_ap_stop_ap(struct wpa_supplicant *wpa_s)
 {
 	struct hostapd_data *hapd;
+	int retvalue = 0;
 	if (!wpa_s->ap_iface) {
 		return -1;
 	}
+	hapd = wpa_s->ap_iface->bss[0];
 	//Current_ssid need to be made NULL for back to back AP start and stop.
 	wpa_s->current_ssid = NULL;
-	hapd = wpa_s->ap_iface->bss[0];
+	retvalue = hostapd_ctrl_iface_stop_ap(hapd);
 	wpa_supplicant_ap_deinit(wpa_s);
-	return hostapd_ctrl_iface_stop_ap(hapd);
+	return retvalue;
 }
 #endif							/* CONFIG_CTRL_IFACE */
 

@@ -126,6 +126,9 @@ connection_t * connection_new_incoming(connection_t * connList,
         memcpy(&(connP->addr), addr, addrLen);
         connP->addrLen = addrLen;
         connP->next = connList;
+#ifdef WITH_MBEDTLS
+        connP->session = NULL;
+#endif
     }
 
     return connP;
@@ -224,6 +227,15 @@ void connection_free(connection_t * connList)
         connection_t * nextP;
 
         nextP = connList->next;
+#ifdef WITH_MBEDTLS
+        if (connList->session) {
+            if (TLSSession_free(connList->session)) {
+                fprintf(stderr, "Error: fail to free tls session\r\n");
+            }
+            connList->session = NULL;
+        }
+#endif
+
         free(connList);
 
         connList = nextP;

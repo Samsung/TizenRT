@@ -44,29 +44,28 @@ ASRCS =
 CSRCS =
 VPATH = .
 
+ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
+  include wakaama/core/Make.defs
+  include wakaama/core/er-coap-13/Make.defs
+endif
 
 ifeq ($(CONFIG_DM),y)
-ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
-include wakaama/core/Make.defs
-include wakaama/core/er-coap-13/Make.defs
-include wakaama/examples/shared/Make.defs
+  ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
+    include wakaama/examples/shared/Make.defs
+    include wakaama/examples/client/Make.defs
+  endif
+  ifeq ($(CONFIG_LWM2M_SERVER_MODE),y)
+    include wakaama/examples/shared/Make.defs
+    include wakaama/examples/server/Make.defs
+  endif
+  CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif
-ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
-include wakaama/examples/client/Make.defs
-endif
-ifeq ($(CONFIG_LWM2M_SERVER_MODE),y)
-include wakaama/examples/server/Make.defs
-endif
-endif
+
 
 ifeq ($(CONFIG_LIBTUV),y)
-include libtuv/source/tinyara/Make.defs
-include libtuv/source/unix/Make.defs
-include libtuv/source/Make.defs
-endif
-
-ifeq ($(CONFIG_DM),y)
-CFLAGS+=-I$(TOPDIR)/../framework/include/dm
+  include libtuv/source/tinyara/Make.defs
+  include libtuv/source/unix/Make.defs
+  include libtuv/source/Make.defs
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

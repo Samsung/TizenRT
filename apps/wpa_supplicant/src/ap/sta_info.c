@@ -155,7 +155,7 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 	accounting_sta_stop(hapd, sta);
 
 	/* just in case */
-	ap_sta_set_authorized(hapd, sta, 0);
+	ap_sta_set_authorized(hapd, sta, 0, 0);
 
 	if (sta->flags & WLAN_STA_WDS) {
 		hostapd_set_wds_sta(hapd, NULL, sta->addr, sta->aid, 0);
@@ -435,7 +435,7 @@ skip_poll:
 		break;
 	case STA_DISASSOC:
 	case STA_DISASSOC_FROM_CLI:
-		ap_sta_set_authorized(hapd, sta, 0);
+		ap_sta_set_authorized(hapd, sta, 0, 0);
 		sta->flags &= ~WLAN_STA_ASSOC;
 		ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
 		if (!sta->acct_terminate_cause) {
@@ -619,7 +619,7 @@ void ap_sta_disassociate(struct hostapd_data *hapd, struct sta_info *sta, u16 re
 	wpa_printf(MSG_DEBUG, "%s: disassociate STA " MACSTR, hapd->conf->iface, MAC2STR(sta->addr));
 	sta->last_seq_ctrl = WLAN_INVALID_MGMT_SEQ;
 	sta->flags &= ~(WLAN_STA_ASSOC | WLAN_STA_ASSOC_REQ_OK);
-	ap_sta_set_authorized(hapd, sta, 0);
+	ap_sta_set_authorized(hapd, sta, 0, reason);
 	sta->timeout_next = STA_DEAUTH;
 	wpa_printf(MSG_DEBUG, "%s: reschedule ap_handle_timer timeout " "for " MACSTR " (%d seconds - " "AP_MAX_INACTIVITY_AFTER_DISASSOC)", __func__, MAC2STR(sta->addr), AP_MAX_INACTIVITY_AFTER_DISASSOC);
 	eloop_cancel_timeout(ap_handle_timer, hapd, sta);
@@ -647,7 +647,7 @@ void ap_sta_deauthenticate(struct hostapd_data *hapd, struct sta_info *sta, u16 
 	wpa_printf(MSG_DEBUG, "%s: deauthenticate STA " MACSTR, hapd->conf->iface, MAC2STR(sta->addr));
 	sta->last_seq_ctrl = WLAN_INVALID_MGMT_SEQ;
 	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC | WLAN_STA_ASSOC_REQ_OK);
-	ap_sta_set_authorized(hapd, sta, 0);
+	ap_sta_set_authorized(hapd, sta, 0, reason);
 	sta->timeout_next = STA_REMOVE;
 	wpa_printf(MSG_DEBUG, "%s: reschedule ap_handle_timer timeout " "for " MACSTR " (%d seconds - " "AP_MAX_INACTIVITY_AFTER_DEAUTH)", __func__, MAC2STR(sta->addr), AP_MAX_INACTIVITY_AFTER_DEAUTH);
 	eloop_cancel_timeout(ap_handle_timer, hapd, sta);
@@ -860,7 +860,7 @@ void ap_sta_stop_sa_query(struct hostapd_data *hapd, struct sta_info *sta)
 
 #endif							/* CONFIG_IEEE80211W */
 
-void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta, int authorized)
+void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta, int authorized, int reason)
 {
 	const u8 *dev_addr = NULL;
 	char buf[100];
@@ -913,7 +913,7 @@ void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta, int 
 			wpa_msg_no_global(hapd->msg_ctx_parent, MSG_INFO, AP_STA_CONNECTED "%s%s", buf, ip_addr);
 		}
 	} else {
-		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_DISCONNECTED "%s", buf);
+		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_DISCONNECTED "%s " "reason_code " "%d", buf, reason);
 
 		if (hapd->msg_ctx_parent && hapd->msg_ctx_parent != hapd->msg_ctx) {
 			wpa_msg_no_global(hapd->msg_ctx_parent, MSG_INFO, AP_STA_DISCONNECTED "%s", buf);
@@ -935,7 +935,7 @@ void ap_sta_disconnect(struct hostapd_data *hapd, struct sta_info *sta, const u8
 	if (sta == NULL) {
 		return;
 	}
-	ap_sta_set_authorized(hapd, sta, 0);
+	ap_sta_set_authorized(hapd, sta, 0, reason);
 	wpa_auth_sm_event(sta->wpa_sm, WPA_DEAUTH);
 	ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
 	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);

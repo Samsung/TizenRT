@@ -398,7 +398,7 @@ u16 slsi_get_chann_info(struct slsi_dev *sdev, struct hostapd_freq_params *chand
 {
 	u16 chann_info;
 
-	SLSI_UNUSED_PARAMETER_NOT_DEBUG(sdev);
+	SLSI_UNUSED_PARAMETER(sdev);
 
 	switch (chandef->bandwidth) {
 	case 20:
@@ -2434,38 +2434,6 @@ int slsi_mlme_register_action_frame(struct slsi_dev *sdev, struct netif *dev, u3
 	return r;
 }
 
-int slsi_mlme_channel_switch(struct slsi_dev *sdev, struct netif *dev, u16 center_freq, u16 chan_info)
-{
-	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct max_buff *req;
-	struct max_buff *cfm;
-	int r = 0;
-
-	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
-
-	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_channel_switch_req(vif:%d, freq: %d, channel info: 0x%x)\n", ndev_vif->ifnum, center_freq, chan_info);
-	req = fapi_alloc(mlme_channel_switch_req, MLME_CHANNEL_SWITCH_REQ, ndev_vif->ifnum, 0);
-	if (!req) {
-		return -ENOMEM;
-	}
-
-	fapi_set_u16(req, u.mlme_channel_switch_req.channel_frequency, SLSI_FREQ_HOST_TO_FW(center_freq));
-	fapi_set_u16(req, u.mlme_channel_switch_req.channel_information, chan_info);
-
-	cfm = slsi_mlme_req_cfm(sdev, dev, req, MLME_CHANNEL_SWITCH_CFM);
-	if (!cfm) {
-		return -EIO;
-	}
-
-	if (fapi_get_u16(cfm, u.mlme_channel_switch_cfm.result_code) != FAPI_RESULTCODE_SUCCESS) {
-		SLSI_NET_ERR(dev, "mlme_channel_switch_cfm(result:%u) ERROR\n", fapi_get_u16(cfm, u.mlme_channel_switch_cfm.result_code));
-		r = -EINVAL;
-	}
-
-	slsi_kfree_mbuf(cfm);
-	return r;
-}
-
 int slsi_mlme_add_info_elements(struct slsi_dev *sdev, struct netif *dev, u16 purpose, const u8 *ies, const u16 ies_len)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
@@ -2807,6 +2775,47 @@ int slsi_mlme_set_acl(struct slsi_dev *sdev, struct netif *dev, const struct cfg
 	slsi_kfree_mbuf(cfm);
 	return r;
 }
+
+int slsi_mlme_blockack_control_req(struct slsi_dev *sdev, struct netif *dev, u16 blockack_control_bitmap, u16 direction, const u8 *peer_sta_address)
+{
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+	struct max_buff *req;
+	struct max_buff *cfm;
+	int r = 0;
+
+	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
+
+	if (!peer_sta_address) {
+		SLSI_NET_WARN(dev, "INVALID PEER ADDRESS");
+		return -EINVAL;
+	}
+
+	req = fapi_alloc(mlme_blockack_control_req, MLME_BLOCKACK_CONTROL_REQ, ndev_vif->ifnum, 0);
+	if (!req) {
+		SLSI_NET_ERR(dev, "memory allocation failed for blockack control request\n");
+		return -ENOMEM;
+	}
+
+	fapi_set_u16(req, u.mlme_blockack_control_req.blockack_control_bitmap, blockack_control_bitmap);
+	fapi_set_u16(req, u.mlme_blockack_control_req.direction, direction);
+	fapi_set_memcpy(req, u.mlme_blockack_control_req.peer_sta_address, peer_sta_address);
+
+	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_blockack_control_req(vif:%u, direction:%d, blockack_control_bitmap:%d)\n", ndev_vif->ifnum, direction, blockack_control_bitmap);
+	cfm = slsi_mlme_req_cfm(sdev, dev, req, MLME_BLOCKACK_CONTROL_CFM);
+	if (!cfm) {
+		return -EIO;
+	}
+
+	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_blockack_control_cfm: peer=" SLSI_MAC_FORMAT " up=%X dir=%X\n", SLSI_MAC_STR(peer_sta_address), blockack_control_bitmap, direction);
+
+	if (fapi_get_u16(cfm, u.mlme_blockack_control_cfm.result_code) != FAPI_RESULTCODE_SUCCESS) {
+		SLSI_NET_ERR(dev, "mlme_blockack_control_cfm (result: %u) ERROR\n", fapi_get_u16(cfm, u.mlme_blockack_control_cfm.result_code));
+		r = -EINVAL;
+	}
+
+	slsi_kfree_mbuf(cfm);
+	return r;
+}
 #endif							/* CONFIG_SCSC_ADV_FEATURE */
 
 int slsi_mlme_set_ext_capab(struct slsi_dev *sdev, struct netif *dev, struct slsi_mib_value *mib_val)
@@ -2891,46 +2900,5 @@ int slsi_mlme_set_iw_ext_cap(struct slsi_dev *sdev, struct netif *dev, const u8 
 
 exit:
 	kmm_free(mibrsp.data);
-	return r;
-}
-
-int slsi_mlme_blockack_control_req(struct slsi_dev *sdev, struct netif *dev, u16 blockack_control_bitmap, u16 direction, const u8 *peer_sta_address)
-{
-	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	struct max_buff *req;
-	struct max_buff *cfm;
-	int r = 0;
-
-	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
-
-	if (!peer_sta_address) {
-		SLSI_NET_WARN(dev, "INVALID PEER ADDRESS");
-		return -EINVAL;
-	}
-
-	req = fapi_alloc(mlme_blockack_control_req, MLME_BLOCKACK_CONTROL_REQ, ndev_vif->ifnum, 0);
-	if (!req) {
-		SLSI_NET_ERR(dev, "memory allocation failed for blockack control request\n");
-		return -ENOMEM;
-	}
-
-	fapi_set_u16(req, u.mlme_blockack_control_req.blockack_control_bitmap, blockack_control_bitmap);
-	fapi_set_u16(req, u.mlme_blockack_control_req.direction, direction);
-	fapi_set_memcpy(req, u.mlme_blockack_control_req.peer_sta_address, peer_sta_address);
-
-	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_blockack_control_req(vif:%u, direction:%d, blockack_control_bitmap:%d)\n", ndev_vif->ifnum, direction, blockack_control_bitmap);
-	cfm = slsi_mlme_req_cfm(sdev, dev, req, MLME_BLOCKACK_CONTROL_CFM);
-	if (!cfm) {
-		return -EIO;
-	}
-
-	SLSI_NET_DBG2(dev, SLSI_MLME, "mlme_blockack_control_cfm: peer=" SLSI_MAC_FORMAT " up=%X dir=%X\n", SLSI_MAC_STR(peer_sta_address), blockack_control_bitmap, direction);
-
-	if (fapi_get_u16(cfm, u.mlme_blockack_control_cfm.result_code) != FAPI_RESULTCODE_SUCCESS) {
-		SLSI_NET_ERR(dev, "mlme_blockack_control_cfm (result: %u) ERROR\n", fapi_get_u16(cfm, u.mlme_blockack_control_cfm.result_code));
-		r = -EINVAL;
-	}
-
-	slsi_kfree_mbuf(cfm);
 	return r;
 }

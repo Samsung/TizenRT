@@ -618,6 +618,10 @@ int eloop_cancel_timeout(eloop_timeout_handler handler, void *eloop_data, void *
 	int removed = 0;
 
 	dl_list_for_each_safe(timeout, prev, &eloop.timeout, struct eloop_timeout, list) {
+		if (timeout == NULL) {
+			wpa_printf(MSG_ERROR, "timeout is NULL\n");
+			continue;
+		}
 		if (timeout->handler == handler && (timeout->eloop_data == eloop_data || eloop_data == ELOOP_ALL_CTX) && (timeout->user_data == user_data || user_data == ELOOP_ALL_CTX)) {
 			eloop_remove_timeout(timeout);
 			removed++;

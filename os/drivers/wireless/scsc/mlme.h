@@ -143,7 +143,6 @@ int slsi_mlme_powermgt(struct slsi_dev *sdev, struct netif *dev, u16 ps_mode);
 int slsi_mlme_powermgt_unlocked(struct slsi_dev *sdev, struct netif *dev, u16 ps_mode);
 #endif
 int slsi_mlme_register_action_frame(struct slsi_dev *sdev, struct netif *dev, u32 af_bitmap_active, u32 af_bitmap_suspended);
-int slsi_mlme_channel_switch(struct slsi_dev *sdev, struct netif *dev, u16 center_freq, u16 chan_info);
 int slsi_mlme_add_info_elements(struct slsi_dev *sdev, struct netif *dev, u16 purpose, const u8 *ies, const u16 ies_len);
 int slsi_mlme_send_frame_mgmt(struct slsi_dev *sdev, struct netif *dev, const u8 *frame, int frame_len, u16 data_desc, u16 msg_type, u16 host_tag, u16 freq, u32 dwell_time, u32 period);
 int slsi_mlme_send_frame_data(struct slsi_dev *sdev, struct netif *dev, struct max_buff *mbuf, u16 msg_type);
@@ -157,9 +156,8 @@ int slsi_mlme_set_pmk(struct slsi_dev *sdev, struct netif *dev, const u8 *pmk, u
 #ifdef CONFIG_SCSC_ADV_FEATURE
 void slsi_ap_obss_scan_done_ind(struct netif *dev, struct netdev_vif *ndev_vif);
 int slsi_mlme_set_acl(struct slsi_dev *sdev, struct netif *dev, const struct cfg80211_acl_data *params);
-#endif
 int slsi_mlme_blockack_control_req(struct slsi_dev *sdev, struct netif *dev, u16 blockack_control_bitmap, u16 direction, const u8 *peer_sta_address);
-
+#endif
 int slsi_mlme_set_ext_capab(struct slsi_dev *sdev, struct netif *dev, struct slsi_mib_value *mib_val);
 int slsi_mlme_set_iw_ext_cap(struct slsi_dev *sdev, struct netif *dev, const u8 *ies, int ie_len);
 int slsi_modify_ies(struct netif *dev, u8 eid, u8 *ies, int ies_len, u8 ie_index, u8 ie_value);

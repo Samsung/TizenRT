@@ -33,8 +33,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_DM),y)
-
 CSRCS += lwm2mserver.c
 
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
@@ -48,5 +46,3 @@ endif
 
 DEPPATH += --dep-path wakaama/examples/server
 VPATH += :wakaama/examples/server
-
-endif

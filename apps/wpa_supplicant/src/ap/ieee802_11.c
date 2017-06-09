@@ -1681,7 +1681,7 @@ static void handle_disassoc(struct hostapd_data *hapd, const struct ieee80211_mg
 		return;
 	}
 
-	ap_sta_set_authorized(hapd, sta, 0);
+	ap_sta_set_authorized(hapd, sta, 0, 0);
 	sta->last_seq_ctrl = WLAN_INVALID_MGMT_SEQ;
 	sta->flags &= ~(WLAN_STA_ASSOC | WLAN_STA_ASSOC_REQ_OK);
 	wpa_auth_sm_event(sta->wpa_sm, WPA_DISASSOC);
@@ -1724,7 +1724,7 @@ static void handle_deauth(struct hostapd_data *hapd, const struct ieee80211_mgmt
 		return;
 	}
 
-	ap_sta_set_authorized(hapd, sta, 0);
+	ap_sta_set_authorized(hapd, sta, 0, 0);
 	sta->last_seq_ctrl = WLAN_INVALID_MGMT_SEQ;
 	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC | WLAN_STA_ASSOC_REQ_OK);
 	wpa_auth_sm_event(sta->wpa_sm, WPA_DEAUTH);
@@ -2076,7 +2076,7 @@ static void handle_assoc_cb(struct hostapd_data *hapd, const struct ieee80211_mg
 		 * Open, static WEP, or FT protocol; no separate authorization
 		 * step.
 		 */
-		ap_sta_set_authorized(hapd, sta, 1);
+		ap_sta_set_authorized(hapd, sta, 1, 0);
 	}
 
 	if (reassoc) {
