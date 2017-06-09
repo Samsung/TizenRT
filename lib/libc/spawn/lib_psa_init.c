@@ -93,6 +93,10 @@ int posix_spawnattr_init(posix_spawnattr_t *attr)
 
 	DEBUGASSERT(attr);
 
+	if (attr == NULL) {
+		return EINVAL;
+	}
+
 	/* Flags: None */
 
 	attr->flags = 0;
