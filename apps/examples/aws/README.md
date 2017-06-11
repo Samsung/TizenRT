@@ -1,110 +1,175 @@
-##Overview
+# AWS Example
+This example codes are from [AWS IoT device SDK](https://github.com/aws/aws-iot-device-sdk-embedded-C).
 
-The AWS IoT device SDK for embedded C is a collection of C source files which can be used in embedded applications to securely connect to the [AWS IoT platform](http://docs.aws.amazon.com/iot/latest/developerguide/what-is-aws-iot.html). It includes transport clients **MQTT**, **TLS** implementations and examples for their use. It also supports AWS IoT specific features such as **Thing Shadow**. It is distributed in source form and intended to be built into customer firmware along with application code, other libraries and RTOS. For additional information about porting the Device SDK for embedded C onto additional platforms please refer to the [PortingGuide](https://github.com/aws/aws-iot-device-sdk-embedded-c/blob/master/PortingGuide.md/).
+## How to Build
+Configure the build from $TIZENRT_BASEDIR/os/tools directory
+TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-the-sources) tab of Quick Start.
 
-##Features
-The Device SDK simplifies access to the Pub/Sub functionality of the AWS IoT broker via MQTT and provide APIs to interact with Thing Shadows. The SDK has been tested to work with the AWS IoT platform to ensure best interoperability of a device with the AWS IoT platform.
+This example was tested on sidk_s5jt200[[details]](../../../build/configs/sidk_s5jt200/README.md).
 
-###MQTT Connection
-The Device SDK provides functionality to create and maintain a mutually authenticated TLS connection over which it runs MQTT. This connection is used for any further publish operations and allow for subscribing to MQTT topics which will call a configurable callback function when these topics are received.
-
-###Thing Shadow
-The Device SDK implements the specific protocol for Thing Shadows to retrieve, update and delete Thing Shadows adhering to the protocol that is implemented to ensure correct versioning and support for client tokens. It abstracts the necessary MQTT topic subscriptions by automatically subscribing to and unsubscribing from the reserved topics as needed for each API call. Inbound state change requests are automatically signalled via a configurable callback.
-
-## Design Goals of this SDK
-The embedded C SDK was specifically designed for resource constrained devices (running on micro-controllers and RTOS).
-
-Primary aspects are:
- * Flexibility in picking and choosing functionality (reduce memory footprint)
- * Static memory only (no malloc’s)
- * Configurable resource usage(JSON tokens, MQTT subscription handlers, etc…)
- * Can be ported to a different RTOS, uses wrappers for OS specific functions
- 
-For more information on the Architecture of the SDK refer [here](http://aws-iot-device-sdk-embedded-c-docs.s3-website-us-east-1.amazonaws.com/index.html)
-
-##How to get started ?
-Ensure you understand the AWS IoT platform and create the necessary certificates and policies. For more information on the AWS IoT platform please visit the [AWS IoT developer guide](http://docs.aws.amazon.com/iot/latest/developerguide/iot-security-identity.html).
-
-In order to quickly get started with the AWS IoT platform, we have ported the SDK for POSIX type Operating Systems like Ubuntu, OS X and RHEL. The SDK is configured for the mbedTLS library and can be built out of the box with *GCC* using *make utility*. The tarball can be downloaded from the below link:
-
-* [mbedTLS from ARM](https://s3.amazonaws.com/aws-iot-device-sdk-embedded-c/linux_mqtt_mbedtls-2.1.1.tar)
-
-##Installation
-This section explains the individual steps to retrieve the necessary files and be able to build your first application using the AWS IoT device SDK for embedded C.
-
-Steps:
-
- * Create a directory to hold your application e.g. (/home/<user>/aws_iot/my_app)
- * Change directory to this new directory
- * Download the SDK to device and place in the newly created directory
- * Expand the tarball (tar -xf <tarball.tar>).  This will create the below directories:
-    * `certs` - TLS certificates directory
-    * `docs` - SDK API and file documentation. This folder is not present on GitHub. You can access the documentation [here](http://aws-iot-device-sdk-embedded-c-docs.s3-website-us-east-1.amazonaws.com/index.html)
-    * `external_libs` - The mbedTLS and jsmn source files
-    * `include` - The AWS IoT SDK header files
-    * `platform` - Platform specific files for timer, TLS and threading layers
-    * `samples` - The sample applications
-    * `src` - The AWS IoT SDK source files
-    * `tests` - Contains tests for verifying that the SDK is functioning as expected. More information can be found [here](https://github.com/aws/aws-iot-device-sdk-embedded-c/blob/master/tests/README.md)
- * View further information on how to use the SDK in the Readme file for samples that can be found [here](https://github.com/aws/aws-iot-device-sdk-embedded-c/blob/master/samples/README.md)
- 	
-Also, for a guided example on getting started with the Thing Shadow, visit the AWS IoT Console's [Interactive Guide](https://console.aws.amazon.com/iot).
-
-## Porting to different platforms
-As Embedded devices run on different Real Time Operating Systems and TCP/IP stacks, it is one of the important design goals for the Device SDK to keep it portable. Please refer to the [porting guide](https://github.com/aws/aws-iot-device-sdk-embedded-C/blob/master/PortingGuide.md) to get more information on how to make this SDK run on your devices (i.e. micro-controllers).
-
-## Migrating from 1.x to 2.x
-The 2.x branch makes several changes to the SDK. This section provides information on what changes will be required in the client application for migrating from v1.x to 2.x.
-
- * The first change is in the folder structure. Client applications using the SDK now need to keep only the certs, external_libs, include, src and platform folder in their application. The folder descriptions can be found above
- * All the SDK headers are in the `include` folder. These need to be added to the makefile as include directories
- * The source files are in the `src` folder. These need to be added to the makefile as one of the source directories
- * Similar to 1.x, the platform folder contains the platform specific headers and source files. These need to be added to the makefile as well
- * The `platform/threading` folder only needs to be added if multi-threading is required, and the `_ENABLE_THREAD_SUPPORT_` macro is defined in config 
- * The list below provides a mapping for migrating from the major APIs used in 1.x to the new APIs:
-
-    | Description | 1.x | 2.x |
-    | :---------- | :-- | :-- |
-    | Initializing the client | ```void aws_iot_mqtt_init(MQTTClient_t *pClient);``` | ```IoT_Error_t aws_iot_mqtt_init(AWS_IoT_Client *pClient, IoT_Client_Init_Params *pInitParams);``` |
-    | Connect | ```IoT_Error_t aws_iot_mqtt_connect(MQTTConnectParams *pParams);``` | ```IoT_Error_t aws_iot_mqtt_connect(AWS_IoT_Client *pClient, IoT_Client_Connect_Params *pConnectParams);``` |
-    | Subscribe | ```IoT_Error_t aws_iot_mqtt_subscribe(MQTTSubscribeParams *pParams);``` | ```IoT_Error_t aws_iot_mqtt_subscribe(AWS_IoT_Client *pClient, const char *pTopicName, uint16_t topicNameLen, QoS qos, pApplicationHandler_t pApplicationHandler, void *pApplicationHandlerData);``` |
-    | Unsubscribe | ```IoT_Error_t aws_iot_mqtt_unsubscribe(char *pTopic);``` | ```IoT_Error_t aws_iot_mqtt_unsubscribe(AWS_IoT_Client *pClient, const char *pTopicFilter, uint16_t topicFilterLen);``` |
-    | Yield | ```IoT_Error_t aws_iot_mqtt_yield(int timeout);``` | ```IoT_Error_t aws_iot_mqtt_yield(AWS_IoT_Client *pClient, uint32_t timeout_ms);``` |
-    | Publish | ```IoT_Error_t aws_iot_mqtt_publish(MQTTPublishParams *pParams);``` | ```IoT_Error_t aws_iot_mqtt_publish(AWS_IoT_Client *pClient, const char *pTopicName, uint16_t topicNameLen, IoT_Publish_Message_Params *pParams);``` |
-    | Disconnect | ```IoT_Error_t aws_iot_mqtt_disconnect(void);``` | ```IoT_Error_t aws_iot_mqtt_disconnect(AWS_IoT_Client *pClient);``` |
-
-You can find more information on how to use the new APIs in the Readme file for samples that can be found [here](https://github.com/aws/aws-iot-device-sdk-embedded-c/blob/master/samples/README.md)
-
-## Resources
-[API Documentation](http://aws-iot-device-sdk-embedded-c-docs.s3-website-us-east-1.amazonaws.com/index.html)
-
-[MQTT 3.1.1 Spec](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/csprd02/mqtt-v3.1.1-csprd02.html)
-
-## Support
-If you have any technical questions about AWS IoT Device SDK, use the [AWS IoT forum](https://forums.aws.amazon.com/forum.jspa?forumID=210).
-For any other questions on AWS IoT, contact [AWS Support](https://aws.amazon.com/contact-us/).
-
-## Sample APIs
-Connecting to the AWS IoT MQTT platform
-
-```
-AWS_IoT_Client client;
-rc = aws_iot_mqtt_init(&client, &iotInitParams);
-rc = aws_iot_mqtt_connect(&client, &iotConnectParams);
+```bash
+cd os/tools
+./configure.sh sidk_s5jt200/sidk_tash_aws
 ```
 
+Above copies the canned configuration-set into the $TIZENRT_BASEDIR/os directory.
 
-Subscribe to a topic
+Configuration can be modified through make menuconfig from $TIZENRT_BASEDIR/os.
+```bash
+cd ..
+make menuconfig
+```
+
+Finally, initiate build by make from $TIZENRT_BASEDIR/os
+```bash
+make
+```
+
+Built binaries are in $TIZENRT_BASEDIR/build/output/bin.
+
+
+## Modify User Specific Information
+### Certification Key Data
+User certification keys are needed to connect, because AWS uses secure network protocol(HTTPS/MQTT).
+
+Key values for the three certificate files need to be copied to ***certData.c*** file in $TIZENRT_BASEDIR/apps/examples/aws/platform/TizenRT/cert/ directory.
+- copy contents of rootCA.crt file to *root_ca_pem[ ]* array
+- copy contents of cert.pem file to *client_cert_pem[ ]* array
+- copy contents of privkey.pem file to *client_private_key_pem[ ]* array
+
+<certData.c>
+```c
+const unsigned char root_ca_pem[] =
+"-----BEGIN CERTIFICATE-----\r\n"
+"MIIE0zCCA7ugAwIBAgIQGNrRniZ96LtKIVjNzGs7SjANBgkqhkiG9w0BAQUFADCB\r\n"
+"ExZWZXJpU2lnbiBUcnVzdCBOZXR3b3JrMTowOAYDVQQLEzEoYykgMjAwNiBWZXJp\r\n"
+"..."
+"..."
+"hnacRHr2lVz2XTIIM6RUthg/aFzyQkqFOFSDX9HoLPKsEdao7WNq\r\n"
+"-----END CERTIFICATE-----\r\n";
+const int rootCaLen = sizeof(root_ca_pem);
+
+const unsigned char client_cert_pem[] =
+"-----BEGIN CERTIFICATE-----\r\n"
+"MIIDWTCCAkGgAwIBAgIUSspy09t4c2O7tLrwenrkVvbbL8YwDQYJKoZIhvcNAQEL\r\n"
+"..."
+"..."
+"mwMi4q9hN6MT9FGa0R0KwmD9y+o11yCbrNBbP0Gud/7m/y4r+09By8xr68Lz\r\n"
+"-----END CERTIFICATE-----\r\n";
+const int clientCertLen = sizeof(client_cert_pem);
+
+const unsigned char client_private_key_pem[] =
+"-----BEGIN RSA PRIVATE KEY-----\r\n"
+"MIEFyBt7KWeu4tZ9h3NoTA1gTcIrOpTOt5GZ0YOj6epqAkCaC+XfkJHXX/9kKAwK\r\n"
+"..."
+"..."
+"9bc8aGVeZ+mD3SYYJamB77XqH2kcCd5Axc2EckdL9ansf+S9v1FP\r\n"
+"-----END RSA PRIVATE KEY-----\r\n";
+const int clientPrivateKeyLen = sizeof(client_private_key_pem);
+```
+
+### Host and device information
+AWS user specific HOST and DEVICE information is in ***aws_iot_config.h*** header file in each example code directory under $TIZENRT_BASEDIR/apps/examples/aws/samples/TizenRT/.
+
+The following values are need to be updated.
+- AWS_IOT_MQTT_HOST
+- AWS_IOT_MQTT_CLIENT_ID
+- AWS_IOT_MY_THING_NAME
+
+<aws_iot_config.h>
+```c
+#define AWS_IOT_MQTT_HOST              "" ///< Customer specific MQTT HOST. The same will be used for Thing Shadow
+#define AWS_IOT_MQTT_PORT              8883 ///< default port for MQTT/S
+#define AWS_IOT_MQTT_CLIENT_ID         "c-sdk-client-id" ///< MQTT client ID should be unique for every device
+#define AWS_IOT_MY_THING_NAME          "AWS-IoT-C-SDK" ///< Thing Name of the Shadow this device is associated with
+```
+
+## How to program binary
+Built binary can be written into flash, using OpenOCD.
+
+Please see the [Environment Set-up](../../../build/configs/sidk_s5jt200/README.md#environment-set-up) to use OpenOCD.
+
+After building Tizen RT, follow below steps at $TIZENRT_BASEDIR/os folder.
+
+### Using download script
+
+```bash
+make download ALL
+```
+This makes complete set of binaries programmed.
+
+
+## How to run example
+To run AWS sample application, WiFi connection is established and current date value need to be set.
+
+#### Step 1 : Start WiFi Station Mode
+Start WiFi as station mode.
+```bash
+TASH>> wifi startsta
+```
+#### Step 2 : Scan WiFi AP
+**'wifi scan'** command shows the list of WiFi APs.
+This command shows the information of BSSID, SECURITY, CH, and SSID.
+
+```bash
+TASH>> wifi scan
+```
+#### Step 3 : Connect to AP
+Use **'wifi join'** command to connect to AP.
+SSID is required to connect AP and it was the one of the list on Step 2.
+The key and security information also required when the Wi-Fi network to connect is not open mode.
 
 ```
-AWS_IoT_Client client;
-rc = aws_iot_mqtt_subscribe(&client, "sdkTest/sub", 11, QOS0, iot_subscribe_callback_handler, NULL);
+usage : wifi join <ssid> [ <key> <security> ] 
+        ssid : name of Wi-Fi AP (maximum 32 bytes) 
+        key : passphrase (format depends on security mode)
+        security : type of security, Choose between:
+                   open, wep, wep_shared, wpa2_tkip, wpa2_aes,
+                   wpa2_mixed, wpa_aes, wpa_tkip, wpa_mixed
+
+        If <key> is omitted, then security mode "open" is expected.
+        If <ssid> or <key> contains a space then encapsulate it with quotes ""
 ```
 
+\<example\>
+```bash
+TASH>> wifi join NETGEAR48 testwifi371 wpa2_aes
+```
+#### Step 4 : Get IP address
+```bash
+TASH>> ifconfig wl1 dhcp
+```
+#### Step 5 : Set Date and time
+Set current date and time on device. Network connection fails if there is big difference of date and time value between on device and current.
+```bash
+TASH>> date -s Jun 10 13:28:47 2017
+```
+#### Step 6 : Run AWS example
+There are 5 examples :
+1. shadow
+2. shadow console echo
+3. subscribe publish cpp
+4. subscribe publish library
+5. subscribe publish
 
-Update Thing Shadow from a device
+**aws_sample** command runs one of the 5 examples.
 
-``` 
-rc = aws_iot_shadow_update(&mqttClient, AWS_IOT_MY_THING_NAME, pJsonDocumentBuffer, ShadowUpdateStatusCallback,
-                            pCallbackContext, TIMEOUT_4SEC, persistenSubscription);
+If there is no argument, this command shows the list of examples.
+
+```bash
+TASH>> aws_sample
+usage : aws_sample <example_no>
+    ex) aws_sample 5 ==> run aws_subscribe_publish
+    1. aws_shadow
+    2. aws_shadow_console_echo
+    3. aws_subscribe_publish_cpp
+    4. aws_subscribe_publish_library
+    5. aws_subscribe_publish
+
+TASH>> aws_sample 5
+
+AWS IoT SDK Version 2.1.1-
+
+Connecting...
+Subscribing...
 ```
