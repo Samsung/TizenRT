@@ -1,0 +1,9 @@
+CSRCS += aws_iot_json_utils.c aws_iot_mqtt_client.c aws_iot_mqtt_client_common_internal.c \
+	aws_iot_mqtt_client_connect.c aws_iot_mqtt_client_publish.c \
+	aws_iot_mqtt_client_subscribe.c aws_iot_mqtt_client_unsubscribe.c \
+	aws_iot_mqtt_client_yield.c aws_iot_shadow_actions.c \
+	aws_iot_shadow.c aws_iot_shadow_json.c \
+	aws_iot_shadow_records.c
+
+ROOTDEPPATH += --dep-path src/
+VPATH += :src/
