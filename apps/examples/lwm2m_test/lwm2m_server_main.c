@@ -731,11 +731,16 @@ static void prv_create_client(char *buffer,
 
 		format = LWM2M_CONTENT_TLV;
 		temp_length = lwm2m_data_serialize(NULL, 1, dataP, &format, &temp_buffer);
+		lwm2m_data_free(1, dataP);
 	}
 	/* End Client dependent part*/
 
 	//Create
 	result = lwm2m_dm_create(lwm2mH, clientId, &uri, format, temp_buffer, temp_length, prv_result_callback, NULL);
+
+	if (temp_buffer != NULL) {
+		lwm2m_free(temp_buffer);
+	}
 
 	if (result == 0) {
 		fprintf(stdout, "OK");
