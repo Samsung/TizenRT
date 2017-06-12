@@ -203,6 +203,7 @@
 #define SIG_ERR         ((CODE void*)-1)
 #define SIG_DFL         ((CODE void*)0)
 #define SIG_IGN         ((CODE void*)0)
+#define SIG_HOLD        ((_sa_handler_t)1)   /* Used only with sigset() */
 
 /********************************************************************************
  * Global Type Declarations
@@ -336,7 +337,32 @@ int sighold(int signo);
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
+int sigignore(int sig);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int sigpause(int sig);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int raise(int sig);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 int sigrelse(int signo);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+CODE void (*sigset(int sig, CODE void (*func)(int sig)))(int sig);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+CODE void (*signal(int sig, CODE void (*func)(int sig)))(int sig);
 /**
  * @} */
 
