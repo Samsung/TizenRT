@@ -401,7 +401,7 @@ void dump_tlv(FILE *stream,
 	}
 }
 
-#define CODE_TO_STRING(X)   case X:(return #X)
+#define CODE_TO_STRING(X)   case (X): return #X
 
 static const char *prv_status_to_string(int status)
 {
