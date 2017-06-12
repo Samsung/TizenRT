@@ -1,0 +1,9 @@
+.gradle
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build/*
+/resource-container/build/*
+/resource-container/src/main/obj/*
+/resource-container/src/main/libs/*

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">NotificationConsumerExample</string>
+    <string name="btn_auth">Auth</string>
+    <string name="btn_url"> URL</string>
+    <string name="btn_ok">Enter Details</string>
+    <string name="btn_addr"> Addr. </string>
+    <string name="btn_topic">Topic</string>
+</resources>

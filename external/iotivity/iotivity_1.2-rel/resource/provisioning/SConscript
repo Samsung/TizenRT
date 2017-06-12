@@ -1,0 +1,95 @@
+#******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+Import('env')
+
+lib_env = env.Clone()
+SConscript(lib_env.get('SRC_DIR') + '/resource/third_party_libs.scons', 'lib_env')
+
+ocprovision_env = lib_env.Clone()
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = ocprovision_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+	# For bring up purposes only, we manually copy the forked version to where the unforked version is downloaded.
+	ocprovision_env.AppendUnique(CPPPATH = ['#extlibs/libcoap/libcoap/include'])
+else:
+	# For bring up purposes only, the forked version will live here.
+	ocprovision_env.AppendUnique(CPPPATH = ['../csdk/connectivity/lib/libcoap-4.1.1/include'])
+
+ocprovision_env.AppendUnique(CPPPATH = [
+		'../include/',
+		'../csdk/stack/include',
+		'../csdk/logger/include',
+		'../oc_logger/include',
+		'../csdk/connectivity/api',
+		'../csdk/security/include',
+		'../csdk/connectivity/inc/pkix',
+		'../csdk/security/provisioning/include',
+		'../csdk/security/provisioning/include/oxm',
+		'../csdk/security/provisioning/include/internal',
+		'../csdk/security/provisioning/include/cloud',
+        '../csdk/connectivity/lib/libcoap-4.1.1/',
+        '../../extlibs/cjson/'
+		])
+
+target_os = ocprovision_env.get('TARGET_OS')
+if target_os not in ['windows']:
+	ocprovision_env.AppendUnique(CXXFLAGS = ['-std=c++0x', '-Wall', '-fPIC'])
+
+if target_os == 'android':
+	ocprovision_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])
+	ocprovision_env.AppendUnique(LIBPATH = [ocprovision_env.get('BUILD_DIR')])
+	ocprovision_env.AppendUnique(LIBS = ['oc', 'octbstack', 'ocpmapi', 'oc_logger', 'boost_thread', 'gnustl_shared', 'log'])
+	ocprovision_env.AppendUnique(LINKFLAGS = ['-Wl,-soname,libocprovision.so'])
+
+if target_os in ['linux', 'tizen']:
+	ocprovision_env.AppendUnique(LIBPATH = [ocprovision_env.get('BUILD_DIR')])
+        ocprovision_env.AppendUnique(LIBS = ['oc', 'octbstack', 'ocpmapi', 'oc_logger', 'boost_thread'])
+
+if target_os in ['darwin', 'ios']:
+	ocprovision_env.AppendUnique(LIBPATH = [ocprovision_env.get('BUILD_DIR')])
+	ocprovision_env.AppendUnique(LIBS = ['octbstack', 'oc_logger'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+ocprovision_src = [
+		'src/OCProvisioningManager.cpp'
+	]
+
+if ocprovision_env.get('WITH_TCP') == True:
+	ocprovision_src = ocprovision_src + [
+	'src/OCCloudProvisioning.cpp'
+	]
+        ocprovision_env.UserInstallTargetHeader('../include/OCCloudProvisioning.hpp', 'resource', 'OCCloudProvisioning.hpp')
+
+if target_os not in ['darwin', 'ios']:
+    ocprovision = ocprovision_env.SharedLibrary('ocprovision', ocprovision_src)
+else:
+    ocprovision = ocprovision_env.StaticLibrary('ocprovision', ocprovision_src)
+ocprovision_env.InstallTarget(ocprovision, 'libocprovision')
+ocprovision_env.UserInstallTargetLib(ocprovision, 'libocprovision')
+ocprovision_env.UserInstallTargetHeader('../include/OCProvisioningManager.hpp', 'resource', 'OCProvisioningManager.hpp')
+
+if target_os in ['linux', 'tizen']:
+    SConscript('examples/SConscript')

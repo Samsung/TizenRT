@@ -1,0 +1,97 @@
+##
+# Notification build script
+##
+
+Import('env')
+
+lib_env = env.Clone()
+SConscript(env.get('SRC_DIR') + '/service/third_party_libs.scons', 'lib_env')
+notification_sample_env = lib_env.Clone()
+
+target_os = env.get('TARGET_OS')
+######################################################################
+# Build flags
+######################################################################
+notification_sample_env.AppendUnique(CPPPATH = ['../../include'])
+notification_sample_env.AppendUnique(CPPPATH = ['../../src/common'])
+notification_sample_env.AppendUnique(CPPPATH = ['../../src/provider'])
+notification_sample_env.AppendUnique(CPPPATH = ['../../../../resource/csdk/stack/include'])
+notification_sample_env.AppendUnique(CPPPATH = ['../../../../resource/csdk/resource-directory/include'])
+notification_sample_env.AppendUnique(CPPPATH = ['../../../../resource/csdk/connectivity/api'])
+
+notification_sample_env.PrependUnique(LIBS = [
+	'octbstack',
+	'oc_logger',
+	'connectivity_abstraction',
+	'libcoap',
+        'resource_directory'
+	])
+
+if target_os not in ['windows', 'winrt']:
+	notification_sample_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0', '-std=c++0x'])
+
+if target_os not in ['darwin', 'ios', 'windows', 'winrt']:
+	notification_sample_env.AppendUnique(LINKFLAGS = ['-Wl,--no-undefined'])
+
+if target_os == 'linux':
+	notification_sample_env.AppendUnique(LIBS = ['pthread'])
+
+if target_os == 'android':
+	notification_sample_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])
+	notification_sample_env.AppendUnique(LIBS = ['gnustl_shared','log'])
+
+	if not env.get('RELEASE'):
+		notification_sample_env.AppendUnique(LIBS = ['log'])
+
+notification_sample_consumer_src = 'notificationconsumer.c'
+notification_sample_provider_src = 'notificationprovider.c'
+
+if env.get('WITH_CLOUD') == True:
+	notification_sample_env.AppendUnique(CPPPATH = ['../../src/consumer'])
+        notification_sample_env.AppendUnique(CPPPATH = ['../../src/provider'])
+	notification_sample_env.AppendUnique(CPPDEFINES = ['WITH_CLOUD'])
+
+        providerCloudConnectorObj = notification_sample_env.Object('cloud_connector.c')
+        consumerCloudConnectorObj = notification_sample_env.Object('cloud_connector.c')
+
+        #PROVIDER_CLOUD = File('cloud_connector.c')
+        #notification_sample_provider_src = ['notificationprovider.c', PROVIDER_CLOUD]
+        notification_sample_provider_src = ['notificationprovider.c', providerCloudConnectorObj]
+	#CONSUMER_CLOUD = File('cloud_connector.c')
+	#notification_sample_consumer_src = ['notificationconsumer.c', CONSUMER_CLOUD]
+        notification_sample_consumer_src = ['notificationconsumer.c', consumerCloudConnectorObj]
+
+if env.get('WITH_TCP') == True:
+	notification_sample_env.AppendUnique(CPPDEFINES = ['WITH_TCP'])
+if env.get('SECURED') == '1':
+	notification_sample_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+with_mq = env.get('WITH_MQ')
+if 'SUB' in with_mq:
+    notification_sample_env.AppendUnique(CPPDEFINES = ['MQ_SUBSCRIBER', 'WITH_MQ'])
+    print "MQ SUB support"
+
+if 'PUB' in with_mq:
+    notification_sample_env.AppendUnique(CPPDEFINES = ['MQ_PUBLISHER', 'WITH_MQ'])
+    print "MQ PUB support"
+
+if 'BROKER' in with_mq:
+    notification_sample_env.AppendUnique(CPPDEFINES = ['MQ_BROKER', 'WITH_MQ'])
+    print "MQ Broker support"
+
+####################################################################
+# Source files and Targets
+######################################################################
+notification_sample_provider_env = notification_sample_env.Clone()
+notification_sample_provider_env.AppendUnique(LIBS = 'libnotification_provider')
+notificationprovider = notification_sample_provider_env.Program('notificationprovider', notification_sample_provider_src)
+i_notificationprovider = notification_sample_provider_env.Install(env.get('BUILD_DIR'), notificationprovider)
+
+notification_sample_consumer_env = notification_sample_env.Clone()
+notification_sample_consumer_env.AppendUnique(LIBS = 'libnotification_consumer')
+notificationconsumer = notification_sample_consumer_env.Program('notificationconsumer', notification_sample_consumer_src)
+i_notificationprovider = notification_sample_consumer_env.Install(env.get('BUILD_DIR'), notificationconsumer)
+
+if env.get('WITH_CLOUD') == True:
+        Export('providerCloudConnectorObj')
+        Export('consumerCloudConnectorObj')

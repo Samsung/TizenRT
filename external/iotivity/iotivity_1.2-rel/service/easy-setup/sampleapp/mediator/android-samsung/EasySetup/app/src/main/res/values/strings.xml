@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Easy Setup</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="security_mode">Security Mode</string>
+    <string name="enroller_ssid">Enter Enroller\'s SSID</string>
+    <string name="select_enroller_authentication_type">Select Enroller\'s Authentication Type</string>
+    <string name="select_enroller_encription_type">Select Enroller\'s Encription Type</string>
+    <string name="enroller_infomation">Enroller\'s Infomation</string>
+    <string name="requsetpropertydata">RequsetPropertyData</string>
+    <string name="securityprovisioning">SecurityProvisioning</string>
+    <string name="dataprovisioning">DataProvisioning</string>
+    <string name="cloudprovisioning">CloudProvisioning</string>
+    <string name="log">log</string>
+    <string name="start">START</string>
+    <string name="enrollee_property_data">Enrollee\'s Property Data</string>
+    <string name="enter_enroller_apos_s_pw">Enter Enroller\'s PW</string>
+    <string name="easysetup_sequence">Easysetup Sequence</string>
+    <string name="security_provisioning_state">Security Provisioning State</string>
+
+
+</resources>

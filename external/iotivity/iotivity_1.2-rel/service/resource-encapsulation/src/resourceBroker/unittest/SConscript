@@ -1,0 +1,93 @@
+#******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# ResourceBroker Unit Test build script
+##
+# SConscript file for Local PKI google tests
+from tools.scons.RunTest import run_test
+
+gtest_env = SConscript('#extlibs/gtest/SConscript')
+lib_env = gtest_env.Clone()
+
+if lib_env.get('RELEASE'):
+    lib_env.AppendUnique(CCFLAGS = ['-Os'])
+    lib_env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+else:
+    lib_env.AppendUnique(CCFLAGS = ['-g'])
+
+if lib_env.get('LOGGING'):
+    lib_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+SConscript('#service/third_party_libs.scons', 'lib_env')
+
+######################################################################
+#unit test setting
+######################################################################
+broker_test_env = lib_env.Clone()
+src_dir = broker_test_env.get('SRC_DIR')
+target_os = broker_test_env.get('TARGET_OS')
+
+######################################################################
+# Build flags
+######################################################################
+
+broker_test_env.AppendUnique(CPPPATH = ['../include'])
+broker_test_env.AppendUnique(CPPPATH = ['../../../include'])
+broker_test_env.AppendUnique(CPPPATH = ['../../common/primitiveResource/include'])
+broker_test_env.AppendUnique(CPPPATH = ['../../common/expiryTimer/include'])
+broker_test_env.AppendUnique(CPPPATH = ['../../common/expiryTimer/src'])
+broker_test_env.AppendUnique(CPPPATH = ['../../common/utils/include'])
+
+broker_test_env.PrependUnique(CPPPATH = [broker_test_env.get('SRC_DIR')+'/extlibs/hippomocks-master'])
+broker_test_env.AppendUnique(LIBPATH = [broker_test_env.get('BUILD_DIR')])
+
+broker_test_env.PrependUnique(LIBS = ['coap'])
+broker_test_env.AppendUnique(LIBS = ['connectivity_abstraction'])
+broker_test_env.AppendUnique(LIBS = ['oc_logger'])
+broker_test_env.AppendUnique(LIBS = ['octbstack'])
+broker_test_env.AppendUnique(LIBS = ['oc'])
+broker_test_env.AppendUnique(LIBS = ['rcs_client'])
+broker_test_env.AppendUnique(LIBS = ['rcs_common'])
+
+compiler = broker_test_env.get('CXX')
+if 'g++' in compiler:
+    broker_test_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0', '-std=c++0x'])
+
+if broker_test_env.get('SECURED') == '1':
+	if broker_test_env.get('WITH_TCP') == True:
+		broker_test_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+######################################################################
+# Build Test
+######################################################################
+
+broker_test_src = broker_test_env.Glob('./*.cpp')
+broker_test = broker_test_env.Program('broker_test', broker_test_src)
+Alias("broker_test", broker_test)
+broker_test_env.AppendTarget('broker_test')
+
+if broker_test_env.get('TEST') == '1':
+        if target_os in ['linux']:
+                run_test(broker_test_env,
+# TODO: fix this test on linux and remove this comment line
+                         '',
+#                        'service_resource-encapsulation_src_resourceBroker_unittest_broker_test.memcheck',
+                         'service/resource-encapsulation/src/resourceBroker/unittest/broker_test')

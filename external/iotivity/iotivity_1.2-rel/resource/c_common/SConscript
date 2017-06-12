@@ -1,0 +1,187 @@
+#******************************************************************
+#
+# Copyright 2014 Intel Mobile Communications GmbH All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+Import('env')
+import os
+import datetime
+
+target_os = env.get('TARGET_OS')
+target_arch = env.get('TARGET_ARCH')
+
+######################################################################
+# Generate iotivity_config.h using presence of headers
+######################################################################
+
+config_h_env = env.Clone()
+conf = Configure(config_h_env)
+
+config_h_header = '''
+/* ****************************************************************************
+ * iotivity_config.h - IoTivity platform-specific configuration header.
+ *
+ * Auto-generated code for the %s %s platform.
+ *
+ * Generated at %s
+ *
+ *************************************************************************** */
+
+#ifndef IOTIVITY_CONFIG_H__
+#define IOTIVITY_CONFIG_H__
+
+''' % (str(target_os), str(target_arch), str(datetime.datetime.utcnow()))
+
+config_h_body = ''
+
+config_h_footer = '''
+
+#include "platform_features.h"
+
+#endif // IOTIVITY_CONFIG_H__
+
+'''
+
+cxx_headers = ['arpa/inet.h',
+               'fcntl.h',
+               'grp.h',
+               'in6addr.h',
+               'linux/limits.h',
+               'memory.h',
+               'netdb.h',
+               'netinet/in.h',
+               'pthread.h',
+               'pwd.h',
+               'stdlib.h',
+               'string.h',
+               'strings.h',
+               'sys/socket.h',
+               'sys/stat.h',
+               'sys/time.h',
+               'sys/timeb.h',
+               'sys/types.h',
+               'sys/unistd.h',
+               'syslog.h',
+               'time.h',
+               'unistd.h',
+               'uuid/uuid.h',
+               'windows.h',
+               'winsock2.h',
+               'ws2tcpip.h']
+
+if target_os == 'arduino':
+	# Detection of headers on the Arduino platform is currently broken.
+	cxx_headers = []
+
+if target_os in ['tizenrt']:
+	env.AppendUnique(CCFLAGS = ['-std=c99'])
+	env.AppendUnique(CCFLAGS = ['-w'])
+	cxx_headers.remove('sys/timeb.h')
+	config_h_body += "#include <tinyara/config.h>\n\n"
+
+if target_os == 'msys_nt':
+	# WinPThread provides a pthread.h, but we want to use native threads.
+	cxx_headers.remove('pthread.h')
+
+def get_define_from_header_file(header_file):
+	header_file_converted = header_file.replace("/","_").replace(".","_").upper()
+	return "HAVE_" + header_file_converted
+
+for header_file_name in cxx_headers:
+	if target_os == 'tizenrt':
+		if conf.CheckCHeader(header_file_name):
+			config_h_body += "#define %s 1\n\n" % get_define_from_header_file(header_file_name)
+	else:
+		if conf.CheckCXXHeader(header_file_name):
+			config_h_body += "#define %s 1\n\n" % get_define_from_header_file(header_file_name)
+conf.Finish()
+
+# Autoconf feature doesn't work with Jenkins' arduino toolchain, so hardcode it here.
+if target_os == 'arduino':
+	config_h_body += "#define HAVE_ARDUINO_TIME_H\n\n"
+
+# Generate the file
+src_dir = env.get('SRC_DIR')
+config_h_file_path = os.path.join(src_dir, 'resource', 'c_common', 'iotivity_config.h')
+if os.path.exists(config_h_file_path):
+	os.remove(config_h_file_path)
+config_h_file = open(config_h_file_path, "w")
+config_h_file.write(config_h_header + config_h_body + config_h_footer)
+config_h_file.close()
+
+# Sanity check to ensure that the above block created the file.
+if not os.path.exists(config_h_file_path):
+	print "Error: iotivity_config.h file not created!"
+
+# iotivity_config.h should be copied to the build dir
+env.UserInstallTargetHeader(config_h_file_path, 'c_common', 'iotivity_config.h')
+
+# Use the generated file internally
+env.AppendUnique(CPPPATH = [os.path.join(src_dir, 'resource', 'c_common')])
+
+######################################################################
+
+######################################################################
+# Add platform-specific helper library
+######################################################################
+
+if target_os in ['windows', 'msys_nt']:
+	SConscript('windows/SConscript')
+
+env.AppendUnique(CPPPATH = [
+            os.path.join(Dir('.').abspath, 'oic_malloc', 'include'),
+            os.path.join(Dir('.').abspath, 'oic_string', 'include'),
+            os.path.join(Dir('.').abspath, 'oic_time', 'include'),
+            os.path.join(Dir('.').abspath, 'ocrandom', 'include'),
+            os.path.join(Dir('.').abspath, 'octhread', 'include')
+        ])
+
+if target_os == 'tizen':
+	env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
+else:
+	env.AppendUnique(LIBPATH = [os.path.join(env.get('BUILD_DIR'), 'resource', 'c_common')])
+
+if target_os in ['tizen', 'linux']:
+	env.ParseConfig("pkg-config --cflags --libs uuid")
+
+common_env = env.Clone()
+
+######################################################################
+# Source files and Targets
+######################################################################
+common_src = [
+	'oic_string/src/oic_string.c',
+	'oic_malloc/src/oic_malloc.c',
+	'oic_time/src/oic_time.c',
+	'ocrandom/src/ocrandom.c'
+	]
+
+if env['POSIX_SUPPORTED']:
+	common_src.append('octhread/src/posix/octhread.c')
+elif target_os  in ['windows']:
+	common_src.append('octhread/src/windows/octhread.c')
+else:
+	common_src.append('octhread/src/noop/octhread.c')
+
+commonlib = common_env.StaticLibrary('c_common', common_src)
+common_env.InstallTarget(commonlib, 'c_common')
+common_env.UserInstallTargetLib(commonlib, 'c_common')
+common_env.UserInstallTargetHeader('platform_features.h', 'c_common', 'platform_features.h')
+
+env.PrependUnique(LIBS = ['c_common'])

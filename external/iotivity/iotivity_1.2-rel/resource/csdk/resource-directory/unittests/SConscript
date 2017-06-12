@@ -1,0 +1,96 @@
+#******************************************************************
+#
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# ResourceDirectory Unit Test build script
+##
+# SConscript file for Local PKI google tests
+from tools.scons.RunTest import run_test
+
+gtest_env = SConscript('#extlibs/gtest/SConscript')
+lib_env = gtest_env.Clone()
+target_os = lib_env.get('TARGET_OS')
+
+if lib_env.get('RELEASE'):
+    lib_env.AppendUnique(CCFLAGS = ['-Os'])
+    lib_env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+else:
+    lib_env.AppendUnique(CCFLAGS = ['-g'])
+
+if lib_env.get('LOGGING'):
+    lib_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+# Add third party libraries
+SConscript('#resource/third_party_libs.scons', 'lib_env')
+
+if target_os in ['linux']:
+    # Verify that 'hippomocks' mocking code is installed.  If not,
+    # get it and install it
+    SConscript('#extlibs/hippomocks.scons')
+
+rd_test_env = lib_env.Clone()
+
+######################################################################
+#unit test setting
+######################################################################
+src_dir = lib_env.get('SRC_DIR')
+
+######################################################################
+# Build flags
+######################################################################
+rd_test_env.AppendUnique(
+        CPPPATH = [
+                src_dir + '/extlibs/hippomocks-master',
+                '../include',
+                src_dir + '/resource/include',
+                src_dir + '/resource/csdk/stack/include',
+                src_dir + '/resource/csdk/stack/test/',
+                src_dir + '/resource/oc_logger/include',])
+
+rd_test_env.AppendUnique(LIBPATH = [lib_env.get('BUILD_DIR')])
+rd_test_env.AppendUnique(RPATH = [lib_env.get('BUILD_DIR')])
+rd_test_env.PrependUnique(LIBS = ['resource_directory', 'octbstack' ])
+
+if rd_test_env.get('RD_MODE'):
+    rd_mode = rd_test_env.get('RD_MODE')
+    if 'CLIENT' in rd_mode:
+        rd_test_env.AppendUnique(CPPDEFINES = ['RD_CLIENT'])
+    if 'SERVER' in rd_mode:
+        rd_test_env.AppendUnique(CPPDEFINES = ['RD_SERVER'])
+
+######################################################################
+# Build Test
+######################################################################
+rd_test_src = ['rdtests.cpp']
+if 'SERVER' in rd_test_env.get('RD_MODE'):
+    rd_test_src += ['rddatabase.cpp']
+
+rd_client_test = rd_test_env.Program('rdtests', rd_test_src)
+Alias("rd_client_test", rd_client_test)
+rd_test_env.AppendTarget('rd_client_test')
+
+if rd_test_env.get('TEST') == '1':
+    target_os = rd_test_env.get('TARGET_OS')
+    if target_os in ['linux']:
+        run_test(rd_test_env,
+                 '',
+# TODO: fix this test on linux and remove this comment line
+#                'resource_csdk_resource-directory_unittests_rdtests.memcheck',
+                 'resource/csdk/resource-directory/unittests/rdtests')
