@@ -49,10 +49,6 @@
 #define TASH_CMDTASK_PRIORITY		(SCHED_PRIORITY_DEFAULT)
 #endif
 #define TASH_CMDS_PER_LINE			(4)
-#ifndef CONFIG_DISABLE_ENVIRON
-#define TASH_ASYNC_CMD_PRI_STR		"CMD_PRI"
-#define TASH_ASYNC_CMD_STACK_STR	"CMD_STACK"
-#endif
 
 /****************************************************************************
  * Global Variables
