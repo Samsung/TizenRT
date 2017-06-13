@@ -40,9 +40,7 @@
 
 static int g_callback;
 #ifndef CONFIG_BUILD_PROTECTED
-static volatile int vfork_val;
 static volatile int task_cnt;
-static volatile int vfork_cnt;
 static volatile pid_t ppid;
 #endif
 
@@ -174,6 +172,14 @@ static void task_cnt_func(struct tcb_s *tcb, void *arg)
 	task_cnt++;
 }
 
+static int vfork_temp_task(int argc, char *argv[])
+{
+	int rc = 0;
+
+	waitpid(ppid, &rc, 0);
+	return OK;
+}
+
 /**
 * @fn                   :vfork_task function
 * @brief                :utility function for tc_task_vfork
@@ -182,28 +188,33 @@ static void task_cnt_func(struct tcb_s *tcb, void *arg)
 static int vfork_task(int argc, char *argv[])
 {
 	pid_t pid;
+	int vfork_cnt;
 
-	task_cnt = vfork_val = 0;
+	task_cnt = 0;
+
 	ppid = getpid();
 
 	sched_foreach(task_cnt_func, NULL);
 
-	for (vfork_cnt = 0; vfork_cnt < (CONFIG_MAX_TASKS - task_cnt + 1); vfork_cnt++) {
-		pid = vfork();
-		if (pid == 0) {
-			vfork_val++;
-			exit(OK);
-		} else if (pid < 0) {
-			if (vfork_val >= (CONFIG_MAX_TASKS - task_cnt) && errno == EPERM) {
-				/* the num of tasks is full, and the errno is set to EPERM */
-				break;
-			}
-			g_callback = ERROR;
-		}
+	pid = vfork();
+	if (pid == 0) {
+		exit(OK);
+	} else if (pid < 0) {
+		g_callback = ERROR;
+		return ERROR;
 	}
 
-	while (vfork_val != CONFIG_MAX_TASKS - task_cnt) {
-		usleep(USEC_10);
+	/* intentionally creates more than CONFIG_MAX_TASKS */
+	for (vfork_cnt = 0; vfork_cnt < CONFIG_MAX_TASKS - task_cnt; vfork_cnt++) {
+		task_create("tc_vfork_temp", SCHED_PRIORITY_MAX - 1, 1024, vfork_temp_task, (char * const *)NULL);
+	}
+
+	pid = vfork();
+	if (pid == 0) {
+		g_callback = ERROR;
+		exit(OK);
+	} else if (pid < 0) {
+		g_callback = OK;
 	}
 
 	return OK;
@@ -427,7 +438,7 @@ static void tc_task_vfork(void)
 	g_callback = OK;
 	pid = task_create("tc_vfork", SCHED_PRIORITY_MAX - 1, 1024, vfork_task, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", pid, 0);
-	TC_ASSERT_EQ("task_restart", g_callback, OK);
+	TC_ASSERT_EQ("vfork", g_callback, OK);
 
 	TC_SUCCESS_RESULT();
 }
