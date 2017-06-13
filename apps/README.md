@@ -1,35 +1,32 @@
-Application Folder
-==================
+# Application Folder
 
-Contents
---------
+### Contents
 
-  General
-  Directory Location
-  Built-In Applications
-  TinyAra Shell (TASH) Built-In Commands
-  Application Configuration File
-  Example Built-In Application
-  Building TinyAra with Board-Specific Pieces Outside the Source Tree
+> [**General**](README.md#general)  
+> [**Directory Location**](README.md#directory-location)  
+> [**Built-In Applications**](builtin/README.md)  
+> [**Shell (TASH)**](shell/README.md)  
+> [**Application Configuration File**](README.md#application-configuration-file)  
+> [**Building TinyAra with Board-Specific Pieces Outside the Source Tree**](README.md#building-tinyara-with-board-specific-pieces-outside-the-source-tree)
 
-General
--------
+## General
+
 This folder provides various applications found in sub-directories.  These
 applications are not inherently a part of TinyAra but are provided to help
 you develop your own applications.  The apps/ directory is a "break away"
 part of the configuration that you may choose to use or not.
 
-Directory Location
-------------------
+## Directory Location
+
 The default application directory used by the TinyAra build should be named
 apps/ (or apps-x.y/ where x.y is the TinyAra version number).  This apps/
 directory should appear in the directory tree at the same level as the
 TinyAra os directory.  Like:
 
- .
- |- os
- |
- `- apps
+	.  
+	|- os  
+	|  
+	`- apps
 
 If all of the above conditions are TRUE, then TinyAra will be able to
 find the application directory.  If your application directory has a
@@ -38,37 +35,36 @@ have to inform the TinyAra build system of that location.  There are several
 ways to do that:
 
 1) You can define CONFIG_APPS_DIR to be the full path to your application
-   directory in the TinyAra configuration file.
-2) You can provide the path to the application directory on the command line
-   like:  make APPDIR=<path> or make CONFIG_APPS_DIR=<path>
+   directory in the TinyAra configuration file.  
+2) You can provide the path to the application directory on the command line  
+   like:  make APPDIR=\<path\> or make CONFIG_APPS_DIR=\<path\>
 3) When you configure TinyAra using tools/configure.sh, you can provide that
-   path to the application directory on the configuration command line
-   like: ./configure.sh -a <app-dir> <board-name>/<config-name>
+   path to the application directory on the configuration command line  
+   like: ./configure.sh -a \<app-dir\> \<board-name\>/\<config-name\>
 
-Application Configuration File
-------------------------------
+## Application Configuration File
+
 The TinyAra configuration uses kconfig-frontends tools and the TinyAra
 configuration file (.config) file.  For example, the TinyAra .config
 may have:
 
-  CONFIG_EXAMPLES_HELLO=y
+	CONFIG_EXAMPLES_HELLO=y
 
 This will select the apps/examples/hello in the following way:
 
-- The top-level make will include examples/Make.defs
-- examples/Make.defs will set CONFIGURED_APPS += examples/hello
+- The top-level make will include examples/Make.defs  
+- examples/Make.defs will set CONFIGURED_APPS += examples/hello  
   like this:
 
-  ifeq ($(CONFIG_EXAMPLES_HELLO),y)
-  CONFIGURED_APPS += examples/hello
-  endif
+	ifeq ($(CONFIG_EXAMPLES_HELLO),y)  
+	CONFIGURED_APPS += examples/hello  
+	endif
 
 
-Building TinyAra with Board-Specific Pieces Outside the Source Tree
------------------------------------------------------------------
+## FAQ
 
 Q: Has anyone come up with a tidy way to build TinyAra with board-
-   specific pieces outside the source tree?
+   specific pieces outside the source tree?  
 A: Here are four:
 
    1) There is a make target called 'make export'. It will build
@@ -85,8 +81,8 @@ A: Here are four:
       You can copy any pieces that you like from the old apps/directory
       to your custom apps directory as necessary.
 
-      This is documented in build/configs/README.txt and
-      docs/TinyAra_Config_Variables.html. And in the apps/README.txt file.
+      This is documented in build/configs/README.txt and  
+      docs/TinyAra_Config_Variables.html. And in the apps/README.md file.
 
    3) If you like the random collection of stuff in the apps/ directory
       but just want to expand the existing components with your own,
@@ -103,14 +99,13 @@ A: Here are four:
       installs a custom application, configuration, and board specific
       directory:
 
-      a) Copy 'MyBoard' directory to configs/MyBoard.
-      b) Add a symbolic link to MyApplication at apps/external
-      c) Configure TinyAra (usually by:
+      a) Copy 'MyBoard' directory to configs/MyBoard.  
+      b) Add a symbolic link to MyApplication at apps/external  
+      c) Configure TinyAra (usually by:  
 
-         tools/configure.sh MyBoard/MyConfiguration
-
-         or simply by copying defconfig->os/.config,
-         setenv.sh->os/setenv.sh, and Make.defs->os/Make.defs.
+		tools/configure.sh MyBoard/MyConfiguration  
+		or simply by copying defconfig->os/.config,  
+		setenv.sh->os/setenv.sh and Make.defs->os/Make.defs.
 
       Using the 'external' link makes it especially easy to add a
       'built-in' application an existing configuration.
@@ -118,9 +113,9 @@ A: Here are four:
    4) Add any link to apps/
 
       a) Add symbolic links apps/ to as many other directories as you
-         want,
+         want,  
       b) Add the symbolic link to the list of candidate paths in the
-         top level apps/Makefile, and
+         top level apps/Makefile, and  
       b) Add the (relative) paths to the CONFIGURED_APPS list
          in the Make.defs file in your new directory.
 
