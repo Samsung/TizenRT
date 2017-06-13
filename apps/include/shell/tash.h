@@ -34,6 +34,14 @@ typedef struct {
 	const int thread_exec;
 } tash_cmdlist_t;
 
+struct tash_taskinfo_s {
+	const char *str;
+	const int task_prio;
+	const int task_stacksize;
+};
+
+typedef struct tash_taskinfo_s tash_taskinfo_t;
+
 /** @name tash_cmd_install
  * @brief API to install TASH shell commands
  * @ingroup tash

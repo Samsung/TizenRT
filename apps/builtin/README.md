@@ -24,7 +24,7 @@ Application Configuration -> Support builtin applications to y
 1. Add calling REGISTER at context tab
 ```bash
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC))
+	$(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
 context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
 ```
@@ -39,6 +39,8 @@ include $(APPDIR)/Make.defs
 APPNAME =
 FUNCNAME =
 THREADEXEC =
+PRIORITY =
+STACKSIZE =
 ```
 
 For arguments details, please refer **Public APIs** [[tab]](../shell/README.md#public-apis) of TASH README

@@ -134,7 +134,7 @@ endif
 
 ifeq ($(CONFIG_EXAMPLES_LIBTUV),y)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
+	$(Q) $(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
 context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
 
