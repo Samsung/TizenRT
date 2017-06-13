@@ -53,7 +53,7 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# NSH Library
+# TASH Library
 
 all:
 .PHONY: context depend clean distclean
