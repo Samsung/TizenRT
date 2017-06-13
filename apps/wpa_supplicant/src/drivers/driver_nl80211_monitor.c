@@ -141,7 +141,7 @@ static void handle_monitor_read(int sock, void *eloop_ctx, void *sock_ctx)
 			datarate = *iter.this_arg * 5;
 			break;
 		case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
-			ssi_signal = (s8) * iter.this_arg;
+			ssi_signal = (s8)*iter.this_arg;
 			break;
 		}
 	}

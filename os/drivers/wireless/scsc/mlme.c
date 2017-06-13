@@ -2327,7 +2327,7 @@ int slsi_mlme_get_sinfo_mib(struct slsi_dev *sdev, struct netif *dev, struct wpa
 
 		if (values[1].type != SLSI_MIB_TYPE_NONE) {
 			WARN_ON(values[1].type != SLSI_MIB_TYPE_INT);
-			si->current_signal = (s8) values[1].u.intValue;
+			si->current_signal = (s8)values[1].u.intValue;
 			SLSI_DBG3(sdev, SLSI_MLME, "SLSI_PSID_UNIFI_RSSI = %d\n", values[1].u.intValue);
 		}
 	} else {
