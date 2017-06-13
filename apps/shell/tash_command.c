@@ -88,6 +88,7 @@ static int tash_help(int argc, char **args);
 static int tash_exit(int argc, char **args);
 static int tash_reboot(int argc, char **argv);
 
+extern tash_taskinfo_t tash_taskinfo_list[];
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
@@ -197,6 +198,17 @@ static int tash_launch_cmdtask(TASH_CMD_CALLBACK cb, int argc, char **args)
 	int ret = 0;
 	int pri = TASH_CMDTASK_PRIORITY;
 	long stack_size = TASH_CMDTASK_STACKSIZE;
+#if defined(CONFIG_BUILTIN_APPS)
+	int cmd_idx;
+
+	for (cmd_idx = 0; (cmd_idx < tash_cmds_info.count) && (tash_taskinfo_list[cmd_idx].str != NULL); cmd_idx++) {
+		if (!(strncmp(args[0], tash_taskinfo_list[cmd_idx].str, TASH_CMD_MAXSTRLENGTH - 1))) {
+			pri = tash_taskinfo_list[cmd_idx].task_prio;
+			stack_size = tash_taskinfo_list[cmd_idx].task_stacksize;
+			break;
+		}
+	}
+#endif
 
 	printf("Command will be launched with pri (%d), stack size(%d)\n", pri, stack_size);
 
