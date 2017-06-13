@@ -4,6 +4,7 @@
 /Make.dep
 /builtin_list.h
 /builtin_proto.h
+/builtin_taskinfo.h
 /*.src
 /*.obj
 /*.lst
