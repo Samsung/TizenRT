@@ -497,7 +497,7 @@ db_result_t storage_get_row(relation_t *rel, tuple_id_t *tuple_id, storage_row_t
 	}
 
 	if (*tuple_id >= nrows) {
-		DB_LOG_E("DB : tuple_id : %d nrows : %d\n", &tuple_id, row);
+		DB_LOG_E("DB : tuple_id : %d nrows : %d\n", *tuple_id, nrows);
 		return DB_FINISHED;
 	}
 

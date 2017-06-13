@@ -230,6 +230,9 @@
 #define DB_TREE_CACHE_LIMIT             10
 #endif
 
+#ifdef DB_WIP
+#undef DB_WIP 						/* DB WORK IN PROGRESS */
+#endif
 /*----------------------------------------------------------------------------*/
 
 /* LVM options. */
