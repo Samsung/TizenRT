@@ -480,7 +480,7 @@ db_result_t db_indexing(relation_t *rel)
 
 	for (tuple_id = 0; tuple_id < cardinality; tuple_id++) {
 		memset(row, 0, sizeof(row));
-		DB_LOG_V("DB: Indexing Tuple id %d\n",tuple_id);
+		DB_LOG_V("DB: Indexing Tuple id %d\n", tuple_id);
 		result = storage_get_row(rel, &tuple_id, row);
 		if (DB_ERROR(result)) {
 			DB_LOG_E("DB: Failed to get a row in relation %s!\n", rel->name);

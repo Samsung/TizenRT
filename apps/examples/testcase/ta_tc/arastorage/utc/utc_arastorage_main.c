@@ -54,7 +54,6 @@ struct arastorage_data_type_s {
 	long long_value;
 	char *string_value;
 	double double_value;
-
 };
 
 typedef struct arastorage_data_type_s arastorage_data_t;
@@ -195,21 +194,21 @@ void utc_arastorage_db_exec_tc_p(void)
 
 #ifdef CONFIG_ARCH_FLOAT_H
 
-	for (; i < DATA_SET_NUM*DATA_SET_MULTIPLIER; i++) {
+	for (; i < DATA_SET_NUM * DATA_SET_MULTIPLIER; i++) {
 		memset(query, 0, QUERY_LENGTH);
 		snprintf(query, "INSERT (%d, %ld, \'%s\', %d, %f) INTO %s;", QUERY_LENGTH,
-				 i, g_arastorage_data_set[i%DATA_SET_NUM].long_value,
-				 g_arastorage_data_set[i%DATA_SET_NUM].string_value, 1000 - i,
-				 g_arastorage_data_set[i%DATA_SET_NUM].double_value, RELATION_NAME);
+				 i, g_arastorage_data_set[i % DATA_SET_NUM].long_value,
+				 g_arastorage_data_set[i % DATA_SET_NUM].string_value, 1000 - i,
+				 g_arastorage_data_set[i % DATA_SET_NUM].double_value, RELATION_NAME);
 		res = db_exec(query);
 		TC_ASSERT("db_exec", DB_SUCCESS(res));
 	}
 #else
-	for (; i < DATA_SET_NUM*DATA_SET_MULTIPLIER; i++) {
+	for (; i < DATA_SET_NUM * DATA_SET_MULTIPLIER; i++) {
 		memset(query, 0, QUERY_LENGTH);
 		snprintf(query, QUERY_LENGTH, "INSERT (%d, %ld, \'%s\', %d) INTO %s;",
-				 i, g_arastorage_data_set[i%DATA_SET_NUM].long_value,
-				 g_arastorage_data_set[i%DATA_SET_NUM].string_value, 1000 - i, RELATION_NAME);
+				 i, g_arastorage_data_set[i % DATA_SET_NUM].long_value,
+				 g_arastorage_data_set[i % DATA_SET_NUM].string_value, 1000 - i, RELATION_NAME);
 		res = db_exec(query);
 		TC_ASSERT("db_exec", DB_SUCCESS(res));
 	}
