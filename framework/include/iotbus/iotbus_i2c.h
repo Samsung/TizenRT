@@ -106,7 +106,7 @@ int iotbus_i2c_set_address(iotbus_i2c_context_h hnd, uint8_t address);
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
  */
-int iotbus_i2c_read(iotbus_i2c_context_h hnd, uint8_t *data, int length);
+int iotbus_i2c_read(iotbus_i2c_context_h hnd, uint8_t *data, size_t length);
 
 /**
  * @brief writes to i2c device.
@@ -117,7 +117,7 @@ int iotbus_i2c_read(iotbus_i2c_context_h hnd, uint8_t *data, int length);
  * @return On success, size is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
  */
-int iotbus_i2c_write(iotbus_i2c_context_h hnd, const uint8_t *data, int length);
+int iotbus_i2c_write(iotbus_i2c_context_h hnd, const uint8_t *data, size_t length);
 
 #ifdef __cplusplus
 }

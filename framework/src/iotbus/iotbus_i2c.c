@@ -110,7 +110,7 @@ int iotbus_i2c_set_address(iotbus_i2c_context_h hnd, uint8_t address)
 	return IOTBUS_ERROR_NONE;
 }
 
-int iotbus_i2c_read(iotbus_i2c_context_h hnd, uint8_t *data, int length)
+int iotbus_i2c_read(iotbus_i2c_context_h hnd, uint8_t *data, size_t length)
 {
 	if (!hnd)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
@@ -122,7 +122,7 @@ int iotbus_i2c_read(iotbus_i2c_context_h hnd, uint8_t *data, int length)
 	return ret;
 }
 
-int iotbus_i2c_write(iotbus_i2c_context_h hnd, const uint8_t *data, int length)
+int iotbus_i2c_write(iotbus_i2c_context_h hnd, const uint8_t *data, size_t length)
 {
 	if (!hnd)
 		return IOTBUS_ERROR_INVALID_PARAMETER;

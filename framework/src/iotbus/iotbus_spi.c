@@ -102,7 +102,7 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
 	return handle;
 }
 
-int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, int length)
+int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, size_t length)
 {
 	if (!hnd)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
@@ -119,7 +119,7 @@ int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, int length)
 	return 0;
 }
 
-int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, int length)
+int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, size_t length)
 {
 
 	if (!hnd)
@@ -137,7 +137,7 @@ int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, int length)
 	return 0;
 }
 
-int iotbus_spi_transfer_buf(iotbus_spi_context_h hnd, uint8_t *txbuf, uint8_t *rxbuf, int length)
+int iotbus_spi_transfer_buf(iotbus_spi_context_h hnd, uint8_t *txbuf, uint8_t *rxbuf, size_t length)
 {
 
 	if (!hnd)
@@ -174,16 +174,16 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus,
 {
 	return NULL;
 }
-int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, int length)
+int iotbus_spi_write(iotbus_spi_context_h hnd, uint8_t *txbuf, size_t length)
 {
 	return IOTBUS_ERROR_NOT_SUPPORTED;
 }
-int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, int length)
+int iotbus_spi_recv(iotbus_spi_context_h hnd, uint8_t *rxbuf, size_t length)
 {
 	return IOTBUS_ERROR_NOT_SUPPORTED;
 }
 int iotbus_spi_transfer_buf(iotbus_spi_context_h hnd, uint8_t *txbuf,
-				uint8_t *rxbuf, int length)
+				uint8_t *rxbuf, size_t length)
 {
 	return IOTBUS_ERROR_NOT_SUPPORTED;
 }
