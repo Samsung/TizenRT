@@ -56,8 +56,6 @@ struct arastorage_data_type_s {
 	double double_value;
 };
 
-typedef struct arastorage_data_type_s arastorage_data_t;
-
 const static struct arastorage_data_type_s g_arastorage_data_set[DATA_SET_NUM] = {
 	{20160101,       "apple"     , 1.0 },
 	{20160102,       "banana"    , 2.0 },
