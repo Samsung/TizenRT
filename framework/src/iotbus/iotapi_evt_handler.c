@@ -48,7 +48,7 @@ int g_pipes_handler[2];
 int g_max_fd;
 
 /**
- * Priavate API
+ * Private API
  */
 int _iotapi_alloc_event(void)
 {
