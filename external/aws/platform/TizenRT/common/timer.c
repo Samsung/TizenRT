@@ -34,7 +34,7 @@ bool has_timer_expired(Timer *timer) {
 	struct timeval now, res;
 	gettimeofday(&now, NULL);
 	timersub(&timer->end_time, &now, &res);
-	return res.tv_sec < 0 || (res.tv_sec == 0 && res.tv_usec <= 0);
+	return res.tv_sec >= 0x80000000 || (res.tv_sec == 0 && res.tv_usec <= 0);
 }
 
 void countdown_ms(Timer *timer, uint32_t timeout) {
@@ -53,7 +53,7 @@ uint32_t left_ms(Timer *timer) {
 	uint32_t result_ms = 0;
 	gettimeofday(&now, NULL);
 	timersub(&timer->end_time, &now, &res);
-	if(res.tv_sec >= 0) {
+	if(res.tv_sec < 0x80000000) {
 		result_ms = (uint32_t) (res.tv_sec * 1000 + res.tv_usec / 1000);
 	}
 	return result_ms;

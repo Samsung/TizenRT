@@ -83,13 +83,6 @@ IoT_Error_t iot_tls_init(Network *pNetwork, char *pRootCALocation, char *pDevice
 	return SUCCESS;
 }
 
-#if defined (MBEDTLS_DEBUG_C)
-void mbedtls_debug(void *ctx, int level,const char *file, int line, const char *str )
-{
-   //((void) level);
-   //printf("%s (%d): %s\r\n", file,line,str);
-}
-#endif
 IoT_Error_t iot_tls_is_connected(Network *pNetwork) {
 	/* Use this to add implementation which can check for physical layer disconnect */
 	return NETWORK_PHYSICAL_LAYER_CONNECTED;
@@ -125,10 +118,6 @@ IoT_Error_t iot_tls_connect(Network *pNetwork, TLSConnectParams *params) {
 	mbedtls_x509_crt_init(&(tlsDataParams->clicert));
 	mbedtls_pk_init(&(tlsDataParams->pkey));
 
-#if defined (MBEDTLS_DEBUG_C)
-//    mbedtls_ssl_conf_dbg(&(tlsDataParams->conf), mbedtls_debug, NULL);
-//    mbedtls_debug_set_threshold(5);
-#endif
 	IOT_DEBUG("\n  . Seeding the random number generator...");
 	mbedtls_entropy_init(&(tlsDataParams->entropy));
 	if((ret = mbedtls_ctr_drbg_seed(&(tlsDataParams->ctr_drbg), mbedtls_entropy_func, &(tlsDataParams->entropy),

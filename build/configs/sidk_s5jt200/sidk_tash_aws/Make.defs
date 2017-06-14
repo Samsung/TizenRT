@@ -104,10 +104,10 @@ ARCHCFLAGS = -fno-builtin -mcpu=cortex-r4 -mfpu=vfpv3 -ffunction-sections -fdata
 ARCHCXXFLAGS = -fno-builtin -fexceptions -mcpu=cortex-r4 -mfpu=vfpv3
 ifeq ($(QUICKBUILD),y)
 ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
-ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef
+ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef -Wno-unused-function -Wno-unused-but-set-variable
 else
 ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
-ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef
+ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef -Wno-unused-function -Wno-unused-but-set-variable
 # only version 4.9 supports color diagnostics
 ifeq "$(ARCHMAJOR)" "4"
 ifeq "$(ARCHMINOR)" "9"
@@ -122,7 +122,7 @@ ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
 
 CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
-CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
+CXXFLAGS = $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
 AFLAGS = $(CFLAGS) -D__ASSEMBLY__

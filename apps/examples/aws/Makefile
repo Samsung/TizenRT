@@ -64,63 +64,19 @@ THREADEXEC = TASH_EXECMD_SYNC
 
 # AWS example
 
-IOT_CLIENT_DIR = .
-PLATFORM_DIR = $(IOT_CLIENT_DIR)/platform/TizenRT
-PLATFORM_COMMON_DIR = $(PLATFORM_DIR)/common
-PLATFORM_CERT_DIR = $(PLATFORM_DIR)/cert
-SAMPLE_DIR = $(IOT_CLIENT_DIR)/samples/TizenRT
-
-include src$(DELIM)Make.defs
-
 ASRCS =
-CSRCS += $(SAMPLE_DIR)/subscribe_publish_sample/subscribe_publish_sample.c \
-		 $(SAMPLE_DIR)/subscribe_publish_library_sample/subscribe_publish_library_sample.c \
-		 $(SAMPLE_DIR)/shadow_sample_console_echo/shadow_console_echo.c \
-		 $(SAMPLE_DIR)/shadow_sample/shadow_sample.c
-CSRCS += $(PLATFORM_DIR)/mbedtls/network_mbedtls_wrapper.c
-CSRCS += $(PLATFORM_COMMON_DIR)/timer.c
-CSRCS += $(PLATFORM_CERT_DIR)/certData.c
-CSRCS += $(IOT_CLIENT_DIR)/external_libs/jsmn/jsmn.c
+CSRCS =
 
-MAINSRC = $(SAMPLE_DIR)/aws_sample_main.c
+MAINSRC = aws_sample_main.c
 
-CXXSRCS += $(SAMPLE_DIR)/subscribe_publish_cpp_sample/subscribe_publish_cpp_sample.cpp
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
-CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
 MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
 
-SRCS = $(ASRCS) $(CSRCS) $(CXXSRCS) $(MAINSRC)
-OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
+SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
+OBJS = $(AOBJS) $(COBJS)
 
-
-CFLAGS += -I$(TOPDIR)/include
-
-CFLAGS += -I$(IOT_CLIENT_DIR)/include
-CFLAGS += -I$(IOT_CLIENT_DIR)/external_libs/jsmn
-CFLAGS += -I$(PLATFORM_COMMON_DIR)
-CFLAGS += -I$(PLATFORM_CERT_DIR)
-CFLAGS += -I$(PLATFORM_DIR)/mbedtls
-CFLAGS += -I$(SAMPLE_DIR)/subscribe_publish_sample
-CFLAGS += -I$(SAMPLE_DIR)/subscribe_publish_library_sample
-CFLAGS += -I$(SAMPLE_DIR)/subscribe_publish_cpp_sample
-CFLAGS += -I$(SAMPLE_DIR)/shadow_console_echo
-CFLAGS += -I$(SAMPLE_DIR)/shadow_sample
-
-# Enable AWS IoT Debugging Messages
-#CFLAGS += -DENABLE_IOT_TRACE
-#CFLAGS += -DENABLE_IOT_DEBUG
-CFLAGS += -DENABLE_IOT_INFO
-CFLAGS += -DENABLE_IOT_ERROR
-
-
-CXXFLAGS += -I$(IOT_CLIENT_DIR)/include
-CXXFLAGS += -I$(IOT_CLIENT_DIR)/external_libs/jsmn
-CXXFLAGS += -I$(PLATFORM_COMMON_DIR)
-CXXFLAGS += -I$(PLATFORM_CERT_DIR)
-CXXFLAGS += -I$(PLATFORM_DIR)/mbedtls
-CXXFLAGS += -I$(SAMPLE_DIR)/subscribe_publish_cpp_sample
 
 ifneq ($(CONFIG_BUILD_KERNEL),y)
   OBJS += $(MAINOBJ)
@@ -177,21 +133,13 @@ install:
 
 endif
 
-
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_HELLO),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
 
 context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
 
-else
-context:
-
-endif
-
-.depend: Makefile $(CSRCS) $(CXXSRCS)
+.depend: Makefile $(CSRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(CSRCS) >Make.dep
-	@$(MKDEP) $(ROOTDEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(CXXSRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend
@@ -199,7 +147,7 @@ depend: .depend
 .PHONY: clean
 clean:
 	$(call DELFILE, .built)
-	$(foreach OBJFILE, $(OBJS), $(call DELFILE, $(OBJFILE)))
+	$(call CLEAN)
 
 distclean: clean
 	$(call DELFILE, Make.dep)

@@ -127,7 +127,7 @@ static void parseInputArgsForConnectParams(int argc, char **argv) {
 
 }
 
-int aws_subscribe_publish(int ac, char **argv) {
+int aws_subscribe_publish(int argc, char **argv) {
 	bool infinitePublishFlag = true;
 
 	char rootCA[PATH_MAX + 1];
@@ -147,7 +147,7 @@ int aws_subscribe_publish(int ac, char **argv) {
 	IoT_Publish_Message_Params paramsQOS0;
 	IoT_Publish_Message_Params paramsQOS1;
 
-	parseInputArgsForConnectParams(ac, argv);
+	parseInputArgsForConnectParams(argc, argv);
 
 	IOT_INFO("\nAWS IoT SDK Version %d.%d.%d-%s\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
 

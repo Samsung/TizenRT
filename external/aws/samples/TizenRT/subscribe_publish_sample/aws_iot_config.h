@@ -23,10 +23,10 @@
 
 // Get from console
 // =================================================
-#define AWS_IOT_MQTT_HOST              "" ///< Customer specific MQTT HOST. The same will be used for Thing Shadow
+#define AWS_IOT_MQTT_HOST              "a2w1jnvr7mzhr1.iot.ap-northeast-2.amazonaws.com" ///< Customer specific MQTT HOST. The same will be used for Thing Shadow
 #define AWS_IOT_MQTT_PORT              8883 ///< default port for MQTT/S
 #define AWS_IOT_MQTT_CLIENT_ID         "c-sdk-client-id" ///< MQTT client ID should be unique for every device
-#define AWS_IOT_MY_THING_NAME          "AWS-IoT-C-SDK" ///< Thing Name of the Shadow this device is associated with
+#define AWS_IOT_MY_THING_NAME 		   "samsung_aws"
 #define AWS_IOT_ROOT_CA_FILENAME       "rootCA.crt" ///< Root CA file name
 #define AWS_IOT_CERTIFICATE_FILENAME   "cert.pem" ///< device signed certificate file name
 #define AWS_IOT_PRIVATE_KEY_FILENAME   "privkey.pem" ///< Device private key filename
@@ -50,8 +50,6 @@
 #define MAX_SHADOW_TOPIC_LENGTH_BYTES MAX_SHADOW_TOPIC_LENGTH_WITHOUT_THINGNAME + MAX_SIZE_OF_THING_NAME ///< This size includes the length of topic with Thing Name
 
 // Auto Reconnect specific config
-// TizenRT
-//#define AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL 1000 ///< Minimum time before the First reconnect attempt is made as part of the exponential back-off algorithm
 #define AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL 1000 ///< Minimum time before the First reconnect attempt is made as part of the exponential back-off algorithm
 #define AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL 128000 ///< Maximum time interval after which exponential back-off will stop attempting to reconnect.
 
