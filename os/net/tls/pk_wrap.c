@@ -617,7 +617,7 @@ int hw_ecdsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned cha
 		goto cleanup;
 	}
 
-	if ((ret = see_setup_key_internal(der_buf + der_buflen - len, len, SECURE_STORAGE_TYPE_KEY_ECC, key_buf) != 0)) {
+	if ((ret = see_setup_key_internal(der_buf + der_buflen - len, len, SECURE_STORAGE_TYPE_KEY_ECC, key_buf)) != 0) {
 		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 		goto cleanup;
 	}
@@ -726,9 +726,7 @@ int hw_ecdsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned cha
 	ret = see_verify_ecdsa_signature_internal(&ecc_sign, t_hash, hash_len, key_buf);
 
 cleanup:
-	if (der_buf) {
-		free(der_buf);
-	}
+	free(der_buf);
 
 	if (key_buf) {
 		free(key_buf);
