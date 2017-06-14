@@ -262,23 +262,23 @@ static void pcm_callback(FAR void *arg, uint16_t reason, FAR struct ap_buffer_s 
 #ifdef CONFIG_PCM_DEBUG
 static void pcm_dump(FAR const struct wav_header_s *wav)
 {
-	audinfo("Wave file header\n");
-	audinfo("  Header Chunk:\n");
-	audinfo("    Chunk ID:        0x%08x\n", wav->hdr.chunkid);
-	audinfo("    Chunk Size:      %u\n", wav->hdr.chunklen);
-	audinfo("    Format:          0x%08x\n", wav->hdr.format);
-	audinfo("  Format Chunk:\n");
-	audinfo("    Chunk ID:        0x%08x\n", wav->fmt.chunkid);
-	audinfo("    Chunk Size:      %u\n", wav->fmt.chunklen);
-	audinfo("    Audio Format:    0x%04x\n", wav->fmt.format);
-	audinfo("    Num. Channels:   %d\n", wav->fmt.nchannels);
-	audinfo("    Sample Rate:     %u\n", wav->fmt.samprate);
-	audinfo("    Byte Rate:       %u\n", wav->fmt.byterate);
-	audinfo("    Block Align:     %d\n", wav->fmt.align);
-	audinfo("    Bits Per Sample: %d\n", wav->fmt.bpsamp);
-	audinfo("  Data Chunk:\n");
-	audinfo("    Chunk ID:        0x%08x\n", wav->data.chunkid);
-	audinfo("    Chunk Size:      %u\n", wav->data.chunklen);
+	audvdbg("Wave file header\n");
+	audvdbg("  Header Chunk:\n");
+	audvdbg("    Chunk ID:        0x%08x\n", wav->hdr.chunkid);
+	audvdbg("    Chunk Size:      %u\n", wav->hdr.chunklen);
+	audvdbg("    Format:          0x%08x\n", wav->hdr.format);
+	audvdbg("  Format Chunk:\n");
+	audvdbg("    Chunk ID:        0x%08x\n", wav->fmt.chunkid);
+	audvdbg("    Chunk Size:      %u\n", wav->fmt.chunklen);
+	audvdbg("    Audio Format:    0x%04x\n", wav->fmt.format);
+	audvdbg("    Num. Channels:   %d\n", wav->fmt.nchannels);
+	audvdbg("    Sample Rate:     %u\n", wav->fmt.samprate);
+	audvdbg("    Byte Rate:       %u\n", wav->fmt.byterate);
+	audvdbg("    Block Align:     %d\n", wav->fmt.align);
+	audvdbg("    Bits Per Sample: %d\n", wav->fmt.bpsamp);
+	audvdbg("  Data Chunk:\n");
+	audvdbg("    Chunk ID:        0x%08x\n", wav->data.chunkid);
+	audvdbg("    Chunk Size:      %u\n", wav->data.chunklen);
 }
 #endif
 
@@ -417,7 +417,7 @@ static bool pcm_parsewav(FAR struct pcm_decode_s *priv, uint8_t *data)
 #ifndef CONFIG_AUDIO_EXCLUDE_FFORWARD
 static void pcm_subsample_configure(FAR struct pcm_decode_s *priv, uint8_t subsample)
 {
-	audinfo("subsample: %d\n", subsample);
+	audvdbg("subsample: %d\n", subsample);
 
 	/* Three possibilities:
 	 *
@@ -431,7 +431,7 @@ static void pcm_subsample_configure(FAR struct pcm_decode_s *priv, uint8_t subsa
 		 */
 
 		if (subsample != AUDIO_SUBSAMPLE_NONE) {
-			audinfo("Start sub-sampling\n");
+			audvdbg("Start sub-sampling\n");
 
 			/* Save the current subsample setting. Subsampling will begin on
 			 * then next audio buffer that we receive.
@@ -448,7 +448,7 @@ static void pcm_subsample_configure(FAR struct pcm_decode_s *priv, uint8_t subsa
 	 */
 
 	else if (subsample == AUDIO_SUBSAMPLE_NONE) {
-		audinfo("Stop sub-sampling\n");
+		audvdbg("Stop sub-sampling\n");
 
 		/* Indicate that we are in normal play mode.  This will take effect
 		 * when the next audio buffer is received.
@@ -717,7 +717,7 @@ static int pcm_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct aud
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->configure);
 
-	audinfo("Defer to lower configure\n");
+	audvdbg("Defer to lower configure\n");
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	return lower->ops->configure(lower, session, caps);
 #else
@@ -755,7 +755,7 @@ static int pcm_shutdown(FAR struct audio_lowerhalf_s *dev)
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->start);
 
-	audinfo("Defer to lower shutdown\n");
+	audvdbg("Defer to lower shutdown\n");
 	return lower->ops->shutdown(lower);
 }
 
@@ -786,7 +786,7 @@ static int pcm_start(FAR struct audio_lowerhalf_s *dev)
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->start);
 
-	audinfo("Defer to lower start\n");
+	audvdbg("Defer to lower start\n");
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	return lower->ops->start(lower, session);
 #else
@@ -825,7 +825,7 @@ static int pcm_stop(FAR struct audio_lowerhalf_s *dev)
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->stop);
 
-	audinfo("Defer to lower stop\n");
+	audvdbg("Defer to lower stop\n");
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	return lower->ops->stop(lower, session);
 #else
@@ -859,7 +859,7 @@ static int pcm_pause(FAR struct audio_lowerhalf_s *dev)
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->pause);
 
-	audinfo("Defer to lower pause\n");
+	audvdbg("Defer to lower pause\n");
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	return lower->ops->pause(lower, session);
 #else
@@ -892,7 +892,7 @@ static int pcm_resume(FAR struct audio_lowerhalf_s *dev)
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->resume);
 
-	audinfo("Defer to lower resume\n");
+	audvdbg("Defer to lower resume\n");
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	return lower->ops->resume(lower, session);
 #else
@@ -925,7 +925,7 @@ static int pcm_allocbuffer(FAR struct audio_lowerhalf_s *dev, FAR struct audio_b
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->allocbuffer);
 
-	audinfo("Defer to lower allocbuffer\n");
+	audvdbg("Defer to lower allocbuffer\n");
 	return lower->ops->allocbuffer(lower, apb);
 }
 
@@ -951,7 +951,7 @@ static int pcm_freebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct audio_bu
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->freebuffer);
 
-	audinfo("Defer to lower freebuffer, apb=%p\n", apb);
+	audvdbg("Defer to lower freebuffer, apb=%p\n", apb);
 	return lower->ops->freebuffer(lower, apb);
 }
 
@@ -982,7 +982,7 @@ static int pcm_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_bu
 	int ret;
 
 	DEBUGASSERT(priv);
-	audinfo("Received buffer %p, streaming=%d\n", apb, priv->streaming);
+	audvdbg("Received buffer %p, streaming=%d\n", apb, priv->streaming);
 
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->enqueuebuffer && lower->ops->configure);
@@ -999,7 +999,7 @@ static int pcm_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_bu
 			priv->streaming = false;
 		}
 #ifndef CONFIG_AUDIO_EXCLUDE_FFORWARD
-		audinfo("Received: apb=%p curbyte=%d nbytes=%d flags=%04x\n", apb, apb->curbyte, apb->nbytes, apb->flags);
+		audvdbg("Received: apb=%p curbyte=%d nbytes=%d flags=%04x\n", apb, apb->curbyte, apb->nbytes, apb->flags);
 
 		/* Perform any necessary sub-sampling operations */
 
@@ -1008,7 +1008,7 @@ static int pcm_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_bu
 
 		/* Then give the audio buffer to the lower driver */
 
-		audinfo("Pass to lower enqueuebuffer: apb=%p curbyte=%d nbytes=%d\n", apb, apb->curbyte, apb->nbytes);
+		audvdbg("Pass to lower enqueuebuffer: apb=%p curbyte=%d nbytes=%d\n", apb, apb->curbyte, apb->nbytes);
 
 		return lower->ops->enqueuebuffer(lower, apb);
 	}
@@ -1020,7 +1020,7 @@ static int pcm_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_bu
 	 */
 
 	bytesleft = apb->nbytes - apb->curbyte;
-	audinfo("curbyte=%d nbytes=%d nmaxbytes=%d bytesleft=%d\n", apb->curbyte, apb->nbytes, apb->nmaxbytes, bytesleft);
+	audvdbg("curbyte=%d nbytes=%d nmaxbytes=%d bytesleft=%d\n", apb->curbyte, apb->nbytes, apb->nmaxbytes, bytesleft);
 
 	if (bytesleft >= sizeof(struct wav_header_s)) {
 		/* Parse and verify the candidate PCM WAV file header */
@@ -1056,7 +1056,7 @@ static int pcm_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_bu
 			apb->curbyte += sizeof(struct wav_header_s);
 
 #ifndef CONFIG_AUDIO_EXCLUDE_FFORWARD
-			audinfo("Begin streaming: apb=%p curbyte=%d nbytes=%d\n", apb, apb->curbyte, apb->nbytes);
+			audvdbg("Begin streaming: apb=%p curbyte=%d nbytes=%d\n", apb, apb->curbyte, apb->nbytes);
 
 			/* Perform any necessary sub-sampling operations */
 
@@ -1065,7 +1065,7 @@ static int pcm_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_bu
 
 			/* Then give the audio buffer to the lower driver */
 
-			audinfo("Pass to lower enqueuebuffer: apb=%p curbyte=%d nbytes=%d\n", apb, apb->curbyte, apb->nbytes);
+			audvdbg("Pass to lower enqueuebuffer: apb=%p curbyte=%d nbytes=%d\n", apb, apb->curbyte, apb->nbytes);
 
 			ret = lower->ops->enqueuebuffer(lower, apb);
 			if (ret == OK) {
@@ -1127,7 +1127,7 @@ static int pcm_cancelbuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_buf
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->cancelbuffer);
 
-	audinfo("Defer to lower cancelbuffer, apb=%p\n", apb);
+	audvdbg("Defer to lower cancelbuffer, apb=%p\n", apb);
 	return lower->ops->cancelbuffer(lower, apb);
 }
 
@@ -1151,7 +1151,7 @@ static int pcm_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long a
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->ioctl);
 
-	audinfo("Defer to lower ioctl, cmd=%d arg=%ld\n");
+	audvdbg("Defer to lower ioctl, cmd=%d arg=%ld\n");
 	return lower->ops->ioctl(lower, cmd, arg);
 }
 
@@ -1196,7 +1196,7 @@ static int pcm_reserve(FAR struct audio_lowerhalf_s *dev)
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->reserve);
 
-	audinfo("Defer to lower reserve\n");
+	audvdbg("Defer to lower reserve\n");
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	ret = lower->ops->reserve(lower, &priv->session);
 
@@ -1238,7 +1238,7 @@ static int pcm_release(FAR struct audio_lowerhalf_s *dev)
 	lower = priv->lower;
 	DEBUGASSERT(lower && lower->ops->release);
 
-	audinfo("Defer to lower release\n");
+	audvdbg("Defer to lower release\n");
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	return lower->ops->release(lower, session);
 #else
