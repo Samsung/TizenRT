@@ -454,7 +454,7 @@ void mbedtls_dhm_free(mbedtls_dhm_context *ctx)
 
 #if defined(CONFIG_HW_DH_PARAM)
 	if (ctx->key_buf) {
-		memset(ctx->key_buf, 0, sizeof(SEE_MAX_ENCRYPTED_KEY_SIZE));
+		memset(ctx->key_buf, 0, SEE_MAX_ENCRYPTED_KEY_SIZE);
 		free(ctx->key_buf);
 		ctx->key_buf = NULL;
 	}
@@ -850,18 +850,26 @@ int hw_calculate_dhm_secret(mbedtls_dhm_context *ctx, unsigned char *output, siz
 	/*
 	 *  1. Initialize G, P, GX context.
 	 */
-
 	n1 = mbedtls_mpi_size(&ctx->P);
 	n2 = mbedtls_mpi_size(&ctx->G);
 	n3 = mbedtls_mpi_size(&ctx->GY);
 
 	d_param.modules_p = malloc(n1);
+	if (d_param.modules_p == NULL) {
+		goto cleanup;
+	}
 	d_param.modules_p_byte_len = n1;
 
 	d_param.generator_g = malloc(n2);
+	if (d_param.generator_g == NULL) {
+		goto cleanup;
+	}
 	d_param.generator_g_byte_len = n2;
 
 	d_param.publickey = malloc(n3);
+	if (d_param.publickey == NULL) {
+		goto cleanup;
+	}
 	d_param.publickey_byte_len = n3;
 
 	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&ctx->P, d_param.modules_p,
