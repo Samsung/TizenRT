@@ -41,6 +41,9 @@
 #define DECIMAL 10
 #define HEXADECIMAL 16
 #define BINARY 2
+#define QSORT_SMALL_ARRSIZE 6
+#define QSORT_BIG_ARRSIZE 45
+#define BSEARCH_ARRSIZE 10
 
 /**
 * @fn                   :compare
@@ -174,15 +177,24 @@ static void tc_libc_stdlib_itoa(void)
 */
 static void tc_libc_stdlib_qsort(void)
 {
-	/* random values filled in array for sorting */
-	int value_arr[] = { 40, 10, 100, 90, 20, 25 };
-	int data_idx = 0, arr_length;
-	arr_length = (sizeof(value_arr) / sizeof(int));
-	qsort(value_arr, arr_length, sizeof(int), compare);
-	for (data_idx = 0; data_idx < arr_length; data_idx++) {
-		if (data_idx != arr_length - 1) {
-			TC_ASSERT_LEQ("qsort", value_arr[data_idx], value_arr[data_idx + 1]);
-		}
+	/* qsort checks that the number of data is greater than 7 or not.
+	  So tc checks with 7 data and 40 data for magic numbers.  */
+	int qsort_smalldata[QSORT_SMALL_ARRSIZE] = { 40, 10, 100, 90, 20, 25 };
+	int qsort_bigdata[QSORT_BIG_ARRSIZE] = { 16, 10, 27, 49, 18, 82, 27, 31, 11, 13, 101, 2, 99, 32, 51,
+				72, 182, 939, 1, 61, 83, 5, 60, 131, 52, 39, 33, 127, 29, 19,
+				12, 81, 281, 8, 931, 17, 111, 356, 14, 93, 20, 40, 30, 37, 73 };
+	int data_idx;
+
+	/* check that the number of data is smaller than 7 */
+	qsort(qsort_smalldata, QSORT_SMALL_ARRSIZE, sizeof(int), compare);
+	for (data_idx = 0; data_idx < QSORT_SMALL_ARRSIZE - 1; data_idx++) {
+		TC_ASSERT_LEQ("qsort", qsort_smalldata[data_idx], qsort_smalldata[data_idx + 1]);
+	}
+
+	/* check that the number of data is bigger than 40 */
+	qsort(qsort_bigdata, QSORT_BIG_ARRSIZE, sizeof(int), compare);
+	for (data_idx = 0; data_idx < QSORT_BIG_ARRSIZE - 1; data_idx++) {
+		TC_ASSERT_LEQ("qsort", qsort_bigdata[data_idx], qsort_bigdata[data_idx + 1]);
 	}
 
 	TC_SUCCESS_RESULT();
@@ -373,12 +385,26 @@ static void tc_libc_stdlib_strtoull(void)
 
 static void tc_libc_stdlib_strtod(void)
 {
-	char target[100] = "1234.56abcd";
 	char *pos = NULL;
 	double ret_chk = 0;
 
-	ret_chk = strtod(target, &pos);
-	TC_ASSERT_EQ("atoi", ret_chk, 1234.56);
+	ret_chk = strtod("1234.56abcd", &pos);
+	TC_ASSERT_EQ("strtod", ret_chk, 1234.56);
+
+	ret_chk = strtod("+1234.56abcd", &pos);
+	TC_ASSERT_EQ("strtod", ret_chk, 1234.56);
+
+	ret_chk = strtod("-1234.56abcd", &pos);
+	TC_ASSERT_EQ("strtod", ret_chk, -1234.56);
+
+	ret_chk = strtod("1.1E4abcd", &pos);
+	TC_ASSERT_EQ("strtod", ret_chk, 1.1E4);
+
+	ret_chk = strtod("+1.1E4abcd", &pos);
+	TC_ASSERT_EQ("strtod", ret_chk, 1.1E4);
+
+	ret_chk = strtod("-1.1E4abcd", &pos);
+	TC_ASSERT_EQ("strtod", ret_chk, -1.1E4);
 
 	TC_SUCCESS_RESULT();
 }
@@ -454,6 +480,25 @@ static void tc_libc_stdlib_atof(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_libc_stdlib_bsearch(void)
+{
+	/* bsearch can find the result when data is ordered. So now using ordered data. */
+	int test_data[BSEARCH_ARRSIZE] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+	int key;
+	int *search_result;
+
+	/* check with valid key */
+	key = 6;
+	search_result = (int *)bsearch(&key, test_data, BSEARCH_ARRSIZE, sizeof(test_data[0]), compare);
+	TC_ASSERT_EQ("bsearch", (*search_result) - (*test_data), 5);
+
+	/* check with invalid key */
+	key = 11;
+	search_result = (int *)bsearch(&key, test_data, BSEARCH_ARRSIZE, sizeof(test_data[0]), compare);
+	TC_ASSERT_EQ("bsearch", search_result, NULL);
+
+	TC_SUCCESS_RESULT();
+}
 /****************************************************************************
  * Name: libc_stdlib
  ****************************************************************************/
@@ -474,6 +519,7 @@ int libc_stdlib_main(void)
 	tc_libc_stdlib_atoll();
 	tc_libc_stdlib_srand();
 	tc_libc_stdlib_atof();
+	tc_libc_stdlib_bsearch();
 
 	return 0;
 }
