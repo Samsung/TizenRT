@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /// @file fs_main.c
-/// @brief Cursor functions.
+/// @brief Main Function for Filesystem TestCase Example
 
 /****************************************************************************
  * Included Files
@@ -45,9 +45,7 @@
 #include <apps/shell/tash.h>
 #include <time.h>
 #include "tc_common.h"
-#ifdef CONFIG_FS_AIO
-#include <aio.h>
-#endif
+#include "tc_internal.h"
 
 /****************************************************************************
  * Definitions
@@ -1665,6 +1663,9 @@ static int fs_sample_launcher(int argc, char **args)
 #endif
 	fs_vfs_rename_tc();
 	fs_vfs_ioctl_tc();
+#ifdef CONFIG_TC_FS_PROCFS
+	tc_fs_procfs_main();
+#endif
 	libc_stdio_fdopen_tc();
 	libc_stdio_fopen_tc();
 	libc_stdio_fclose_tc();
@@ -1686,6 +1687,7 @@ static int fs_sample_launcher(int argc, char **args)
 	libc_stdio_gets_s_tc();
 	libc_stdio_fileno_tc();
 	libc_stdio_ungetc_tc();
+
 	printf("#########################################\n");
 	printf("           FS TC Result               \n");
 	printf("           PASS : %d FAIL : %d        \n",

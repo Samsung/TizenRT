@@ -53,6 +53,9 @@
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM),y)
 CSRCS += fs_main.c
+ifeq ($(CONFIG_TC_FS_PROCFS),y)
+  CSRCS += tc_fs_procfs.c
+endif
 
 # Include filesystem build support
 
