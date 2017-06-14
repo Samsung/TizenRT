@@ -17,6 +17,7 @@ config SYSIO_UTC_UART
 config SYSIO_UTC_SPI
 	bool "Sysio SPI TC"
 	default n
+	depends on S5J_SPI
 
 config SYSIO_UTC_I2C
 	bool "Sysio I2C TC"
