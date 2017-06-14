@@ -292,7 +292,7 @@ void p2p_buf_add_oob_go_neg_channel(struct wpabuf *buf, const char *country, u8 
 	wpabuf_put_data(buf, country, 3);
 	wpabuf_put_u8(buf, oper_class);	/* Operating Class */
 	wpabuf_put_u8(buf, channel);	/* Channel Number */
-	wpabuf_put_u8(buf, (u8) role);	/* Role indication */
+	wpabuf_put_u8(buf, (u8)role);	/* Role indication */
 	wpa_printf(MSG_DEBUG, "P2P: * OOB GO Negotiation Channel: Operating " "Class %u Channel %u Role %d", oper_class, channel, role);
 }
 
@@ -319,7 +319,7 @@ void p2p_buf_add_session_info(struct wpabuf *buf, const char *info)
 
 	/* Session Information Data Info */
 	wpabuf_put_u8(buf, P2P_ATTR_SESSION_INFORMATION_DATA);
-	wpabuf_put_le16(buf, (u16) info_len);
+	wpabuf_put_le16(buf, (u16)info_len);
 
 	if (info) {
 		wpabuf_put_data(buf, info, info_len);
@@ -484,7 +484,7 @@ static int p2p_buf_add_service_info(struct wpabuf *buf, struct p2p_data *p2p, u3
 	*pos = wpabuf_put(buf, 0);
 
 	*total_len += info_len;
-	WPA_PUT_LE16(attr_len, (u16) * total_len);
+	WPA_PUT_LE16(attr_len, (u16)*total_len);
 	return 0;
 }
 
@@ -519,7 +519,7 @@ void p2p_buf_add_service_instance(struct wpabuf *buf, struct p2p_data *p2p, u8 h
 
 	wpabuf_put_u8(tmp_buf, P2P_ATTR_ADVERTISED_SERVICE);
 	attr_len = wpabuf_put(tmp_buf, sizeof(u16));
-	WPA_PUT_LE16(attr_len, (u16) total_len);
+	WPA_PUT_LE16(attr_len, (u16)total_len);
 	p2p_buf_update_ie_hdr(tmp_buf, ie_len);
 	pos = wpabuf_put(tmp_buf, 0);
 

@@ -99,7 +99,7 @@ void MD5Update(struct MD5Context *ctx, unsigned char const *buf, unsigned len)
 	/* Update bitcount */
 
 	t = ctx->bits[0];
-	if ((ctx->bits[0] = t + ((u32) len << 3)) < t) {
+	if ((ctx->bits[0] = t + ((u32)len << 3)) < t) {
 		ctx->bits[1]++;    /* Carry from low to high */
 	}
 	ctx->bits[1] += len >> 29;

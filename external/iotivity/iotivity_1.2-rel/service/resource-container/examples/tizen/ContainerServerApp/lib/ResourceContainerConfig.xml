@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<container>
+    <bundle>
+        <id>oic.bundle.hueSample</id>
+        <path>/opt/usr/apps/org.tizen.containerserver/lib/libHueBundle.so</path>
+        <activator>huesample</activator>
+        <version>1.0.0</version>
+        <resources>
+            
+        </resources>
+    </bundle>       
+</container>
+
+
+
+

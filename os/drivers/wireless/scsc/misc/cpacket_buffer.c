@@ -35,7 +35,7 @@ static inline void cpacketbuffer_advance_index(uint32_t *idx, uint32_t amount, u
  */
 static inline uint32_t cpacketbuffer_address_to_index(struct cpacketbuffer *buffer, const uint8_t *address)
 {
-	ptrdiff_t offset = address - (uint8_t *) buffer->buffer;
+	ptrdiff_t offset = address - (uint8_t *)buffer->buffer;
 
 	return (offset / buffer->packet_size) % buffer->num_packets;
 }
@@ -45,7 +45,7 @@ static inline uint32_t cpacketbuffer_address_to_index(struct cpacketbuffer *buff
  */
 static inline uint8_t *cpacketbuffer_index_to_address(struct cpacketbuffer *buffer, uint32_t *idx)
 {
-	return (uint8_t *) buffer->buffer + (*idx % buffer->num_packets) * buffer->packet_size;
+	return (uint8_t *)buffer->buffer + (*idx % buffer->num_packets) * buffer->packet_size;
 }
 
 /** Returns the current read index of the buffer */
@@ -253,7 +253,7 @@ uint32_t cpacketbuffer_read(struct cpacketbuffer *buffer, void *buf, uint32_t nu
 		uint32_t initial_read_size = (buffer->num_packets - cpacketbuffer_read_index(buffer)) * buffer->packet_size;
 
 		memcpy(buf, read_start, initial_read_size);
-		memcpy((uint8_t *) buf + initial_read_size, buffer->buffer, num_bytes - initial_read_size);
+		memcpy((uint8_t *)buf + initial_read_size, buffer->buffer, num_bytes - initial_read_size);
 	} else {
 		memcpy(buf, read_start, num_bytes);
 	}

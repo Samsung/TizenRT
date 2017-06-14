@@ -172,7 +172,7 @@ SM_STATE(EAP, INITIALIZE)
 	sm->prev_failure = 0;
 	sm->expected_failure = 0;
 	sm->reauthInit = FALSE;
-	sm->erp_seq = (u32) - 1;
+	sm->erp_seq = (u32)-1;
 }
 
 /*

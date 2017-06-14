@@ -587,14 +587,14 @@ static void wpas_sd_req_asp(struct wpa_supplicant *wpa_s, struct wpabuf *resp, u
 			wpabuf_put_be16(resp, adv_data->config_methods);
 
 			/* Service Name */
-			wpabuf_put_u8(resp, (u8) len);
+			wpabuf_put_u8(resp, (u8)len);
 			wpabuf_put_data(resp, adv_data->svc_name, len);
 
 			/* Service State */
 			wpabuf_put_u8(resp, adv_data->state);
 
 			/* Service Information */
-			wpabuf_put_le16(resp, (u16) svc_info_len);
+			wpabuf_put_le16(resp, (u16)svc_info_len);
 			wpabuf_put_data(resp, adv_data->svc_info, svc_info_len);
 
 			/* Update length and count */
@@ -896,9 +896,9 @@ u64 wpas_p2p_sd_request_asp(struct wpa_supplicant *wpa_s, const u8 *dst, u8 id, 
 	wpabuf_put_le16(tlvs, plen);
 	wpabuf_put_u8(tlvs, P2P_SERV_P2PS);
 	wpabuf_put_u8(tlvs, id);	/* Service Transaction ID */
-	wpabuf_put_u8(tlvs, (u8) svc_len);	/* Service String Length */
+	wpabuf_put_u8(tlvs, (u8)svc_len);	/* Service String Length */
 	wpabuf_put_data(tlvs, svc_str, svc_len);
-	wpabuf_put_u8(tlvs, (u8) substr_len);	/* Info Substring Length */
+	wpabuf_put_u8(tlvs, (u8)substr_len);	/* Info Substring Length */
 	wpabuf_put_data(tlvs, info_substr, substr_len);
 	ret = wpas_p2p_sd_request(wpa_s, dst, tlvs);
 	wpabuf_free(tlvs);

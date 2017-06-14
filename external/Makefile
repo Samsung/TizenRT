@@ -34,7 +34,7 @@
 ############################################################################
 
 
-#EXTDIR = ${shell pwd}
+EXTDIR = ${shell pwd}
 -include $(TOPDIR)/Make.defs
 
 DELIM ?= $(strip /)
@@ -57,6 +57,11 @@ endif
 ifeq ($(CONFIG_LWM2M_SERVER_MODE),y)
 include wakaama/examples/server/Make.defs
 endif
+endif
+
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
+IOTIVITY_BASE_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)
 endif
 
 ifeq ($(CONFIG_LIBTUV),y)
@@ -96,9 +101,18 @@ $(CXXOBJS): %$(OBJEXT): %.cpp
 
 $(BIN): $(OBJS)
 ifeq ($(CONFIG_IOTIVITY_SCONS_BUILD),y)
+iotivity_build:
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+	touch $(IOTIVITY_BASE_DIR)/iotivity.built
+	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/out
+	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconsign.dblite
+	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconf_temp
+	$(call DELFILE, $(IOTIVITY_BASE_DIR)/config.log)
 	$(Q) echo "Launching IoTivity Build"
 	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/build_iotivity.sh
 endif
+
+$(BIN): $(OBJS) iotivity_build
 	$(call ARCHIVE, $@, $(OBJS))
 
 .depend: Makefile $(SRCS)
@@ -109,18 +123,23 @@ endif
 
 depend: .depend
 
+iotivity_clean:
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+ifneq ("$(wildcard $(IOTIVITY_BASE_DIR)/iotivity.built)","")
+	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/iotivity.built
+	$(Q) echo "Cleaning IoTivity Build"
+	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/clean_iotivity.sh
+	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/out
+	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls
+	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconsign.dblite
+	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconf_temp
+endif
+endif
+
 custom_clean:
 	$(foreach OBJFILE, $(OBJS), rm -f $(OBJFILE))
 
-clean: custom_clean
-ifeq ($(CONFIG_IOTIVITY_SCONS_BUILD),y)
-	$(Q) echo "Cleaning IoTivity Build"
-	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/clean_iotivity.sh
-	$(Q) rm -rf $(TOPDIR)/../external/iotivity/iotivity_$(CONFIG_IOTIVITY_RELEASE_VERSION)/out
-	$(Q) rm -rf $(TOPDIR)/../external/iotivity/iotivity_$(CONFIG_IOTIVITY_RELEASE_VERSION)/.sconsign.dblite
-	$(Q) rm -rf $(TOPDIR)/../external/iotivity/iotivity_$(CONFIG_IOTIVITY_RELEASE_VERSION)/.sconf_temp
-	$(call DELFILE, $(TOPDIR)/../external/iotivity/iotivity_$(CONFIG_IOTIVITY_RELEASE_VERSION)/config.log)
-endif
+clean: custom_clean iotivity_clean
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 

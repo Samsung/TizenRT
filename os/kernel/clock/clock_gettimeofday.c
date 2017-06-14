@@ -102,13 +102,13 @@
  *
  ****************************************************************************/
 
-int gettimeofday(struct timeval *tp, void *tzp)
+int gettimeofday(struct timeval *tv, FAR struct timezone *tz)
 {
 	struct timespec ts;
 	int ret;
 
 #ifdef CONFIG_DEBUG
-	if (!tp) {
+	if (!tv) {
 		set_errno(EINVAL);
 		return ERROR;
 	}
@@ -120,8 +120,8 @@ int gettimeofday(struct timeval *tp, void *tzp)
 	if (ret == OK) {
 		/* Convert the struct timespec to a struct timeval */
 
-		tp->tv_sec  = ts.tv_sec;
-		tp->tv_usec = ts.tv_nsec / NSEC_PER_USEC;
+		tv->tv_sec  = ts.tv_sec;
+		tv->tv_usec = ts.tv_nsec / NSEC_PER_USEC;
 	}
 
 	return ret;

@@ -108,17 +108,24 @@
  *             to sem_trywait().
  *
  * Return Value:
- *   Zero (OK) is returned on success.  A negated errno value is returned on
- *   failure.  -ETIMEDOUT is returned on the timeout condition.
+ *   Zero (OK) is returned on success.
+ *   On failure, -1 (ERROR) is returned and the errno
+ *   is set appropriately:
+ *
+ *   ETIMEDOUT The semaphore could not be locked before the specified timeout
+ *             (delay) expired.
+ *   ENOMEM    Out of memory
  *
  ****************************************************************************/
+
 
 int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 {
 	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
 	irqstate_t flags;
 	systime_t elapsed;
-	int ret;
+	int errcode = OK;
+	int ret = ERROR;
 
 	DEBUGASSERT(sem != NULL && up_interrupt_context() == false && rtcb->waitdog == NULL);
 
@@ -129,7 +136,8 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 
 	rtcb->waitdog = wd_create();
 	if (!rtcb->waitdog) {
-		return -ENOMEM;
+		set_errno(ENOMEM);
+		return ret;
 	}
 
 	/* We will disable interrupts until we have completed the semaphore
@@ -141,7 +149,6 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 	 */
 
 	flags = irqsave();
-
 	/* Try to take the semaphore without waiting. */
 
 	ret = sem_trywait(sem);
@@ -157,8 +164,7 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 
 	if (delay == 0) {
 		/* Return the errno from sem_trywait() */
-
-		ret = -get_errno();
+		errcode = get_errno();
 		goto errout_with_irqdisabled;
 	}
 
@@ -166,7 +172,8 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 
 	elapsed = clock_systimer() - start;
 	if (/* elapsed >= (UINT32_MAX / 2) || */ elapsed >= delay) {
-		ret = -ETIMEDOUT;
+		/* Already timedout as elapsed time is more than required delay */
+		errcode =  ETIMEDOUT;
 		goto errout_with_irqdisabled;
 	}
 
@@ -174,15 +181,14 @@ int sem_tickwait(FAR sem_t *sem, systime_t start, uint32_t delay)
 
 	/* Start the watchdog with interrupts still disabled */
 
-	(void)wd_start(rtcb->waitdog, delay, (wdentry_t) sem_timeout, 1, getpid());
+	(void)wd_start(rtcb->waitdog, delay, (wdentry_t)sem_timeout, 1, getpid());
 
 	/* Now perform the blocking wait */
 
 	ret = sem_wait(sem);
-	if (ret < 0) {
-		/* Return the errno from sem_wait() */
-
-		ret = -get_errno();
+	if (ret != OK) {
+		/* Return the errorcode set either by sem_wait() or sem_timeout() */
+		errcode = get_errno();
 	}
 
 	/* Stop the watchdog timer */
@@ -201,5 +207,12 @@ errout_with_irqdisabled:
 	irqrestore(flags);
 	wd_delete(rtcb->waitdog);
 	rtcb->waitdog = NULL;
+	/* some functions (sem_trywait()) inside wd_delete() may fail and set the
+	 * errorno. this would override the any errors set above. In recursice
+	 * error scenario, catch the first error and set it as errorno.
+	 */
+	if (errcode != OK) {
+		set_errno(errcode);
+	}
 	return ret;
 }

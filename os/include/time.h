@@ -162,6 +162,11 @@ struct timeval {
 	long tv_usec;				/* Microseconds */
 };
 
+struct timezone {
+	int tz_minuteswest;			/* minutes west of Greenwich */
+	int tz_dsttime;				/* type of DST correction */
+};
+
 /**
  * @ingroup TIME_KERNEL
  * @brief Structure containing a calendar date and time */

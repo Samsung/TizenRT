@@ -24,134 +24,139 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdio.h>
-#include <errno.h>
 #include <signal.h>
 #include "tc_internal.h"
 
-#define SIGINT  2				/* interrupt */
-#define SIGQUIT 3				/* quit */
+#define SIG1  SIGUSR1
+#define SIG2  SIGUSR2
+#define TRUE  1
+#define FALSE 0
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /**
-* @fn                   :tc_libc_signal_sigaddset_sigdelset
-* @brief                :sigaddset() adds the signal specified by the signo to the signal set pointed to by set.\
-*                        sigdelset() deletes the signal specified by signo from the signal set pointed to by set.
-* @scenario             :The sigaddset() adds the signal specified by the signo\
-*                        sigdelset() deletes the signal specified by signo and  to verify we use sigismember.
-* API's covered         :sigaddset, sigdelset
+* @fn                   :tc_libc_signal_sigemptyset
+* @brief                :tc_libc_signal_sigemptyset test sigemptyset function.
+* @scenario             :sigemptyset() initialize the signal set as NULL_SIGNAL_SET.
+* API's covered         :sigemptyset
 * Preconditions         :none
 * Preconditions         :none
 * @return               :void
 */
-static void tc_libc_signal_sigaddset_sigdelset(void)
+static void tc_libc_signal_sigemptyset(void)
 {
-	int ret_chk = 0;
-	sigset_t sigset;
+	int ret_chk;
+	sigset_t sigset = ALL_SIGNAL_SET;
 
 	ret_chk = sigemptyset(&sigset);
 	TC_ASSERT_EQ("sigemptyset", ret_chk, OK);
-
-	ret_chk = sigaddset(&sigset, SIGQUIT);
-	TC_ASSERT_EQ("sigaddset", ret_chk, OK);
-
-	ret_chk = sigismember(&sigset, SIGQUIT);
-	TC_ASSERT_EQ("sigismember", ret_chk, 1);
-
-	ret_chk = sigdelset(&sigset, SIGQUIT);
-	TC_ASSERT_EQ("sigdelset", ret_chk, OK);
-
-	/* should not find that signal as it has already deleted */
-
-	ret_chk = sigismember(&sigset, SIGQUIT);
-	TC_ASSERT_NEQ("sigismember", ret_chk, 1);
-	TC_ASSERT_NEQ("sigismember", ret_chk, ERROR);
+	TC_ASSERT_EQ("sigemptyset", sigset, NULL_SIGNAL_SET);
 
 	TC_SUCCESS_RESULT();
 }
 
 /**
-* @fn                   :tc_libc_signal_sigemptyset_sigfillset
-* @brief                :sigemptyset() and sigfillset() initialize the signal set pointed to by set,\
-*                        such that all signals defined are included and excluded respectively.
-* @scenario             :sigemptyset() and sigfillset() initialize the signal set pointed to by set,\
-*                        such that all signals defined are included and excluded respectively. To verify we use sigismember.
-* API's covered         :sigemptyset, sigfillset
+* @fn                   :tc_libc_signal_sigfillset
+* @brief                :tc_libc_signal_sigfillset test sigfillset function.
+* @scenario             :sigfillset() initialize the signal set as NULL_SIGNAL_SET.
+* API's covered         :sigfillset
 * Preconditions         :none
 * Preconditions         :none
 * @return               :void
 */
-static void tc_libc_signal_sigemptyset_sigfillset(void)
+static void tc_libc_signal_sigfillset(void)
 {
-	int ret_chk = 0;
-	sigset_t sigset;
+	int ret_chk;
+	sigset_t sigset = NULL_SIGNAL_SET;
 
 	ret_chk = sigfillset(&sigset);
 	TC_ASSERT_EQ("sigfillset", ret_chk, OK);
+	TC_ASSERT_EQ("sigfillset", sigset, ALL_SIGNAL_SET);
 
-	ret_chk = sigismember(&sigset, SIGQUIT);
-	TC_ASSERT_EQ("sigismember", ret_chk, 1);
+	TC_SUCCESS_RESULT();
+}
 
-	ret_chk = sigismember(&sigset, SIGINT);
-	TC_ASSERT_EQ("sigismember", ret_chk, 1);
 
-	ret_chk = sigemptyset(&sigset);
-	TC_ASSERT_EQ("sigemptyset", ret_chk, OK);
 
-	/* sigismember should not find any signal as all signals are set empty */
+/**
+* @fn                   :tc_libc_signal_sigaddset
+* @brief                :tc_libc_signal_sigaddset test sigaddset function
+* @scenario             :If signo > MAX_SIGNO, it returns ERROR.
+*                        Else, it return OK and set signal.
+* API's covered         :sigaddset
+* Preconditions         :none
+* Preconditions         :none
+* @return               :void
+*/
+static void tc_libc_signal_sigaddset(void)
+{
+	int ret_chk;
+	sigset_t sigset = NULL_SIGNAL_SET;
+	sigset_t sigset_expected = NULL_SIGNAL_SET | SIGNO2SET(SIG1);
 
-	ret_chk = sigismember(&sigset, SIGQUIT);
-	TC_ASSERT_NEQ("sigemptyset", ret_chk, 1);
-	TC_ASSERT_NEQ("sigismember", ret_chk, ERROR);
+	ret_chk = sigaddset(&sigset, MAX_SIGNO + 1);
+	TC_ASSERT_EQ("sigaddset", ret_chk, ERROR);
 
-	/* sigfillset will fill all signals to signal set */
+	ret_chk = sigaddset(&sigset, SIG1);
+	TC_ASSERT_EQ("sigaddset", ret_chk, OK);
+	TC_ASSERT_EQ("sigaddset", sigset, sigset_expected);
 
-	ret_chk = sigfillset(&sigset);
-	TC_ASSERT_EQ("sigfillset", ret_chk, OK);
+	TC_SUCCESS_RESULT();
+}
 
-	ret_chk = sigismember(&sigset, SIGQUIT);
-	TC_ASSERT_EQ("sigismember", ret_chk, 1);
+/**
+* @fn                   :tc_libc_signal_sigdelset
+* @brief                :tc_libc_signal_sigdelset test sigdelset function
+* @scenario             :If signo > MAX_SIGNO, it returns ERROR.
+*                        Else, it return OK and set signal.
+* API's covered         :sigdelset
+* Preconditions         :none
+* Preconditions         :none
+* @return               :void
+*/
+static void tc_libc_signal_sigdelset(void)
+{
+	int ret_chk;
+	sigset_t sigset = ALL_SIGNAL_SET;
+	sigset_t sigset_expected = ALL_SIGNAL_SET & (~(SIGNO2SET(SIG1)));
 
-	ret_chk = sigismember(&sigset, SIGINT);
-	TC_ASSERT_EQ("sigismember", ret_chk, 1);
+	ret_chk = sigdelset(&sigset, MAX_SIGNO + 1);
+	TC_ASSERT_EQ("sigdelset", ret_chk, ERROR);
+
+	ret_chk = sigdelset(&sigset, SIG1);
+	TC_ASSERT_EQ("sigdelset", ret_chk, OK);
+	TC_ASSERT_EQ("sigdelset", sigset, sigset_expected);
 
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @fn                   :tc_libc_signal_sigismember
-* @brief                :sigismember() function shall test whether the signal specified by signo is a member of the set pointed to by set.
-* @scenario             :empty the sigset using sigemptyset() ,then verify it with sigismember() function which\
-*                        shall test whether the signal specified by signo is a member
+* @brief                :tc_libc_signal_sigismember test sigismember function
+* @scenario             :If signo > MAX_SIGNO, it returns ERROR.
+*                        Else if signo is the member of sigset, it returns 1.
+*                        Else it returns 0
 * API's covered         :sigismember()
-* Preconditions         :sigemptyset()
+* Preconditions         :none
 * Preconditions         :none
 * @return               :void
 */
 
 static void tc_libc_signal_sigismember(void)
 {
-	int ret_chk = 0;
-	sigset_t sigset;
+	int ret_chk;
+	sigset_t sigset = NULL_SIGNAL_SET | SIGNO2SET(SIG1);
 
-	ret_chk = sigemptyset(&sigset);
-	TC_ASSERT_EQ("sigemptyset", ret_chk, OK);
+	ret_chk = sigismember(&sigset, MAX_SIGNO + 1);
+	TC_ASSERT_EQ("sigismember", ret_chk, ERROR);
 
-	ret_chk = sigismember(&sigset, SIGQUIT);
-	TC_ASSERT_NEQ("sigismember", ret_chk, 1);
-	TC_ASSERT_NEQ("sigismember", ret_chk, ERROR);
+	ret_chk = sigismember(&sigset, SIG1);
+	TC_ASSERT_EQ("sigismember", ret_chk, TRUE);
 
-	/* sigfillset will fill all signals to signal set */
-
-	ret_chk = sigfillset(&sigset);
-	TC_ASSERT_EQ("sigfillset", ret_chk, OK);
-
-	/* sigismember will find the signals which were filled by sigfillset */
-
-	ret_chk = sigismember(&sigset, SIGQUIT);
-	TC_ASSERT_EQ("sigismember", ret_chk, 1);
+	ret_chk = sigismember(&sigset, SIG2);
+	TC_ASSERT_EQ("sigismember", ret_chk, FALSE);
 
 	TC_SUCCESS_RESULT();
 }
@@ -162,8 +167,10 @@ static void tc_libc_signal_sigismember(void)
 
 int libc_signal_main(void)
 {
-	tc_libc_signal_sigaddset_sigdelset();
-	tc_libc_signal_sigemptyset_sigfillset();
+	tc_libc_signal_sigemptyset();
+	tc_libc_signal_sigfillset();
+	tc_libc_signal_sigaddset();
+	tc_libc_signal_sigdelset();
 	tc_libc_signal_sigismember();
 
 	return 0;

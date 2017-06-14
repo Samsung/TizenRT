@@ -22,9 +22,6 @@
 #include <tinyara/config.h>
 #include <string.h>
 #include <stdio.h>
-#ifndef CONFIG_DISABLE_ENVIRON
-#include <stdlib.h>
-#endif
 #include <sys/types.h>
 #include <sys/boardctl.h>
 #include <apps/shell/tash.h>
@@ -52,10 +49,6 @@
 #define TASH_CMDTASK_PRIORITY		(SCHED_PRIORITY_DEFAULT)
 #endif
 #define TASH_CMDS_PER_LINE			(4)
-#ifndef CONFIG_DISABLE_ENVIRON
-#define TASH_ASYNC_CMD_PRI_STR		"CMD_PRI"
-#define TASH_ASYNC_CMD_STACK_STR	"CMD_STACK"
-#endif
 
 /****************************************************************************
  * Global Variables
@@ -91,6 +84,7 @@ static int tash_help(int argc, char **args);
 static int tash_exit(int argc, char **args);
 static int tash_reboot(int argc, char **argv);
 
+extern tash_taskinfo_t tash_taskinfo_list[];
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
@@ -160,10 +154,7 @@ static int tash_help(int argc, char **args)
 		}
 	}
 	printf("\n");
-#ifndef CONFIG_DISABLE_ENVIRON
-	printf("\nIf you want to run an ASYNC command with specific priority and stacksize\n");
-	printf("use \"setenv %s\" or \"%s\"\n", TASH_ASYNC_CMD_PRI_STR, TASH_ASYNC_CMD_STACK_STR);
-#endif
+
 	return 0;
 }
 
@@ -203,28 +194,20 @@ static int tash_launch_cmdtask(TASH_CMD_CALLBACK cb, int argc, char **args)
 	int ret = 0;
 	int pri = TASH_CMDTASK_PRIORITY;
 	long stack_size = TASH_CMDTASK_STACKSIZE;
-#ifndef CONFIG_DISABLE_ENVIRON
-	char *env_pri;
-	char *env_stack;
-	int is_setenv = false;
+#if defined(CONFIG_BUILTIN_APPS)
+	int cmd_idx;
 
-	env_pri = getenv(TASH_ASYNC_CMD_PRI_STR);
-	if (env_pri != NULL) {
-		pri = atoi(env_pri);
-		is_setenv = true;
-	}
-
-	env_stack = getenv(TASH_ASYNC_CMD_STACK_STR);
-	if (env_stack != NULL) {
-		stack_size = atoi(env_stack);
-		is_setenv = true;
-	}
-
-	if (is_setenv) {
-		printf("Priority and Stack size for TASH ASYNC cmd are changed\n");
-		printf("Command will be launched with pri (%d), stack size(%d)\n", pri, stack_size);
+	for (cmd_idx = 0; (cmd_idx < tash_cmds_info.count) && (tash_taskinfo_list[cmd_idx].str != NULL); cmd_idx++) {
+		if (!(strncmp(args[0], tash_taskinfo_list[cmd_idx].str, TASH_CMD_MAXSTRLENGTH - 1))) {
+			pri = tash_taskinfo_list[cmd_idx].task_prio;
+			stack_size = tash_taskinfo_list[cmd_idx].task_stacksize;
+			break;
+		}
 	}
 #endif
+
+	printf("Command will be launched with pri (%d), stack size(%d)\n", pri, stack_size);
+
 	ret = task_create(args[0], pri, stack_size, cb, &args[1]);
 
 	return ret;

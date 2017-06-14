@@ -93,7 +93,7 @@ void sysinfo(void)
 		do {
 			nread = read(fd, sysinfo_str, MAX_BUF_SIZE);
 			sysinfo_str[nread] = '\0';
-			printf("%s", sysinfo_str);
+			printf("\t%s", sysinfo_str);
 		} while (nread == MAX_BUF_SIZE);
 		close(fd);
 		printf("\n");

@@ -1,0 +1,170 @@
+################################################################################
+#
+# Copyright 2016 Intel Corporation
+#
+#
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+################################################################################
+
+##
+# 'libcoap' script to check if LibCoAP library is installed.  If not,
+# get it and install it
+#
+##
+
+import os
+import glob
+
+Import('env')
+
+libcoap_env = env.Clone()
+target_os = libcoap_env.get('TARGET_OS')
+src_dir = libcoap_env.get('SRC_DIR')
+ca_transport = libcoap_env.get('TARGET_TRANSPORT')
+with_tcp = libcoap_env.get('WITH_TCP')
+with_upstream_libcoap = libcoap_env.get('WITH_UPSTREAM_LIBCOAP')
+
+# Temporary LibCoAP URL is a fork of the original.
+# Once a pull request is merged, change this back to the obgm original below.
+libcoap_repo_url    = 'https://github.com/dthaler/libcoap'
+#libcoap_repo_url    = 'https://github.com/obgm/libcoap'
+
+######################################################################
+# Download libCoAP
+######################################################################
+libcoap_branch           = 'develop'
+libcoap_dir              = os.path.join(src_dir, 'extlibs', 'libcoap', 'libcoap')
+libcoap_zip_file         = os.path.join(src_dir, 'extlibs', 'libcoap', libcoap_branch + '.zip')
+libcoap_url              = libcoap_repo_url + '/archive/' + libcoap_branch + '.zip'
+libcoap_checkout_command = 'git clone ' + libcoap_repo_url + '.git extlibs/libcoap/libcoap --branch ' + libcoap_branch
+
+if with_upstream_libcoap == '1':
+    print '*** Checking for installation of libCoAP ***'
+    if not os.path.exists(libcoap_dir):
+        # If the libcoap zip file is not already present, download it
+        if not os.path.exists(libcoap_zip_file):
+            libcoap_zip = libcoap_env.Download(libcoap_zip_file, libcoap_url)
+        else:
+            libcoap_zip = libcoap_zip_file
+        # Unzip libcoap
+        if libcoap_zip and not os.path.exists(os.path.join(libcoap_dir, 'configure')):
+            print 'Unzipping libCoAP'
+            env.UnpackAll(libcoap_dir, libcoap_zip)
+        # Rename libcoap
+        libcoap_unzip_dir = os.path.join(src_dir, 'extlibs', 'libcoap', 'libcoap-' + libcoap_branch)
+        if os.path.exists(os.path.join(libcoap_unzip_dir)):
+            os.rename(libcoap_unzip_dir, libcoap_dir)
+        if not os.path.exists(os.path.join(libcoap_dir, 'README')):
+            print '''
+*********************************** Error: ****************************************
+* Unable to download and unpack libcoap!                                          *
+* Please download libcoap using the following command:                            *
+*                                                                                 *
+''' + libcoap_checkout_command + '''
+*                                                                                 *
+***********************************************************************************'''
+            Exit()
+else:
+    print '''
+*********************************** Info: *****************************************
+* Using FORKED copy of libCoap located in:                                        *
+* resource/csdk/connectivity/lib/libcoap-4.1.1                                    *
+***********************************************************************************'''
+
+######################################################################
+# Build libCoAP
+######################################################################
+# As in the source code(C) includes arduino Time library head file(C++)
+# It requires compile the .c with g++
+if target_os == 'arduino':
+    libcoap_env.Replace(CFLAGS = libcoap_env.get('CXXFLAGS'))
+    libcoap_env.PrependUnique(CPPPATH = [
+        './',
+        env.get('ARDUINO_HOME') + '/',
+        env.get('ARDUINO_HOME') + '/hardware/arduino/avr/cores/arduino',
+        env.get('ARDUINO_HOME') + '/hardware/tools/avr/avr/include/',
+        env.get('ARDUINO_HOME') + '/hardware/arduino/avr/variants/mega',
+        env.get('ARDUINO_HOME') + '/libraries/Time/Time',
+        env.get('ARDUINO_HOME') + '/libraries/TimedAction',
+        env.get('ARDUINO_HOME') + '/hardware/arduino/avr/libraries/SPI',
+        env.get('ARDUINO_HOME') + '/libraries/Ethernet/src/utility',
+        ])
+
+# Build flags
+if target_os not in ['arduino', 'windows', 'winrt', 'msys_nt']:
+    libcoap_env.AppendUnique(CPPDEFINES = ['WITH_POSIX', '_DEFAULT_SOURCE'])
+    libcoap_env.AppendUnique(CFLAGS = ['-std=gnu99','-fPIC'])
+
+if target_os not in ['windows', 'winrt']:
+    libcoap_env.AppendUnique(CFLAGS = ['-Wall', '-ffunction-sections',
+            '-fdata-sections', '-fno-exceptions'])
+
+if target_os == 'msys_nt':
+    libcoap_env.AppendUnique(CPPDEFINES = ['_DEFAULT_SOURCE'])
+    libcoap_env.AppendUnique(CFLAGS = ['-std=c99'])
+
+if target_os in ['linux', 'tizen', 'android', 'ios', 'arduino', 'tizenrt']:
+    if with_tcp == True:
+        libcoap_env.AppendUnique(CPPDEFINES = ['WITH_TCP'])
+
+if target_os in ['linux', 'tizen', 'android', 'arduino', 'tizenrt']:
+    libcoap_env.AppendUnique(LIBS = ['log'])
+    if (('BLE' in ca_transport) or ('BT' in ca_transport) or ('ALL' in ca_transport)):
+        libcoap_env.AppendUnique(CPPDEFINES = ['WITH_TCP'])
+
+if target_os == 'arduino':
+    libcoap_env.AppendUnique(CPPDEFINES = ['NDEBUG', 'WITH_ARDUINO'])
+
+if target_os in ['darwin', 'ios']:
+    libcoap_env.AppendUnique(CPPDEFINES = ['_DARWIN_C_SOURCE'])
+
+if env.get('LOGGING') == '1':
+    libcoap_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+######################################################################
+# Source files and Target(s)
+######################################################################
+with_upstream_libcoap = libcoap_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+    libcoap_env.PrependUnique(CPPPATH = ['libcoap/include/coap'])
+    libcoap_env.AppendUnique(CPPDEFINES = ['WITH_UPSTREAM_LIBCOAP'])
+    libcoap_src_root = os.path.join(libcoap_dir, 'src')
+
+    # We need to generate coap.h from coap.h.in
+    coap_h_pc_file = os.path.join(libcoap_dir, 'include', 'coap', 'coap.h.in')
+    coap_h_output  = os.path.join(libcoap_dir, 'include', 'coap', 'coap.h')
+
+    libcoap_version = libcoap_branch
+    lib_prefix = '' + str(libcoap_env.get('PREFIX'))
+    pc_vars = {
+        '\@LIBCOAP_PACKAGE_NAME\@'          : lib_prefix + 'coap',
+        '\@LIBCOAP_PACKAGE_STRING\@'        : lib_prefix + 'coap-' + libcoap_version,
+        '\@LIBCOAP_PACKAGE_URL\@'           : libcoap_repo_url,
+        '\@LIBCOAP_PACKAGE_BUGREPORT\@'     : libcoap_repo_url + '/issues',
+        '\@LIBCOAP_PACKAGE_VERSION\@'       : libcoap_version
+        }
+    libcoap_env.Substfile(coap_h_pc_file, SUBST_DICT = pc_vars)
+
+    libcoap_src = glob.glob(os.path.join(libcoap_src_root, '*.c'))
+    libcoap_src.remove(os.path.join(libcoap_src_root, 'coap_io_lwip.c'))
+else:
+    # For bring up purposes only, the forked version will live here.
+    libcoap_src_root = src_dir + '/resource/csdk/connectivity/lib/libcoap-4.1.1'
+    libcoap_src = glob.glob(os.path.join(libcoap_src_root, '*.c'))
+
+libcoap = libcoap_env.StaticLibrary('coap', libcoap_src, OBJPREFIX='libcoap_')
+
+libcoap_env.InstallTarget([libcoap], 'coap')
+

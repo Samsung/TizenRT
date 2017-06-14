@@ -99,7 +99,7 @@ int wifiAutoConnectInit(void)
 	ret = WiFiStart(SLSI_WIFI_STATION_IF, NULL);
 	if (ret == SLSI_STATUS_SUCCESS) {
 		printf("[AutoConnect]STA mode started\n");
-		ret = WiFiNetworkJoin((uint8_t *) CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), NULL, (slsi_security_config_t *) getSecurityConfig(CONFIG_DM_AP_SECURITY, CONFIG_DM_AP_PASS));
+		ret = WiFiNetworkJoin((uint8_t *)CONFIG_DM_AP_SSID, strlen(CONFIG_DM_AP_SSID), NULL, (slsi_security_config_t *)getSecurityConfig(CONFIG_DM_AP_SECURITY, CONFIG_DM_AP_PASS));
 		sleep(1);
 		if (ret == SLSI_STATUS_SUCCESS) {
 			printf("[AutoConnect]Start doJoin with SSID %s\n", CONFIG_DM_AP_SSID);
@@ -133,7 +133,7 @@ static int wifiAutoConnect(void)
 				if (ret == -1) {
 					printf("Timeout fail to get ip address\n");
 					return ret;
-				} else if (dhcp_ret == 0) {
+				} else if (ret == 0) {
 					printf("No network interface\n");
 					return ret;
 				}

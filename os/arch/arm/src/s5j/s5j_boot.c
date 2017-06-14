@@ -86,7 +86,7 @@ void up_copyvectorblock(void)
 {
 	uint32_t *src = (uint32_t *)&_vector_start;
 	uint32_t *end = (uint32_t *)&_vector_end;
-	uint32_t *dest = (uint32_t *) VECTOR_BASE;
+	uint32_t *dest = (uint32_t *)VECTOR_BASE;
 
 	while (src < end) {
 		*dest++ = *src++;

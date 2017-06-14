@@ -51,7 +51,7 @@ void slsi_get_hw_mac_address(struct slsi_dev *sdev, u8 *addr)
 	up_wlan_get_mac_addr(addr, ETH_ALEN);
 
 	if ((addr[0] == 0) && (addr[1] == 0) && (addr[2] == 0) && (addr[3] == 0) && (addr[4] == 0) && (addr[5] == 0)) {
-		SLSI_ETHER_COPY(addr, (u8 *) SLSI_DEFAULT_HW_MAC_ADDR);
+		SLSI_ETHER_COPY(addr, (u8 *)SLSI_DEFAULT_HW_MAC_ADDR);
 		SLSI_DBG1(sdev, SLSI_INIT_DEINIT, "Using default MAC ADDR: " SLSI_MAC_FORMAT "\n", SLSI_MAC_STR(addr));
 	}
 }
@@ -468,7 +468,7 @@ static int slsi_mib_initial_get(struct slsi_dev *sdev)
 	if (r == 0) {
 		struct slsi_mib_value *values;
 
-		mibrsp.dataLength = (u32) rxLength;
+		mibrsp.dataLength = (u32)rxLength;
 
 		values = slsi_mib_decode_get_list(&mibrsp, sizeof(getValues) / sizeof(struct slsi_mib_get_entry), getValues);
 		if (values == NULL) {
@@ -633,12 +633,12 @@ void slsi_peer_update_assoc_req(struct slsi_dev *sdev, struct netif *dev, struct
 		mbuf_pull(mbuf, fapi_get_siglen(mbuf));
 
 		if (slsi_80211_is_assoc_req(mgmt->frame_control)) {
-			mgmt_hdr_len = (mgmt->u.assoc_req.variable - (u8 *) mgmt);
+			mgmt_hdr_len = (mgmt->u.assoc_req.variable - (u8 *)mgmt);
 			if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 				peer->capabilities = le16_to_cpu(mgmt->u.assoc_req.capab_info);
 			}
 		} else if (slsi_80211_is_reassoc_req(mgmt->frame_control)) {
-			mgmt_hdr_len = (mgmt->u.reassoc_req.variable - (u8 *) mgmt);
+			mgmt_hdr_len = (mgmt->u.reassoc_req.variable - (u8 *)mgmt);
 			if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 				peer->capabilities = le16_to_cpu(mgmt->u.reassoc_req.capab_info);
 			}
@@ -685,10 +685,10 @@ void slsi_peer_update_assoc_rsp(struct slsi_dev *sdev, struct netif *dev, struct
 		mbuf_pull(mbuf, fapi_get_siglen(mbuf));
 
 		if (slsi_80211_is_assoc_resp(mgmt->frame_control)) {
-			mgmt_hdr_len = (mgmt->u.assoc_resp.variable - (u8 *) mgmt);
+			mgmt_hdr_len = (mgmt->u.assoc_resp.variable - (u8 *)mgmt);
 			peer->capabilities = le16_to_cpu(mgmt->u.assoc_resp.capab_info);
 		} else if (slsi_80211_is_reassoc_resp(mgmt->frame_control)) {
-			mgmt_hdr_len = (mgmt->u.reassoc_resp.variable - (u8 *) mgmt);
+			mgmt_hdr_len = (mgmt->u.reassoc_resp.variable - (u8 *)mgmt);
 			peer->capabilities = le16_to_cpu(mgmt->u.reassoc_resp.capab_info);
 		} else {
 			goto exit_with_warnon;
@@ -2292,7 +2292,7 @@ int slsi_get_mib(struct slsi_dev *sdev, u16 psid, int *mib_value)
 	if (r == 0) {
 		struct slsi_mib_value *values;
 
-		mibrsp.dataLength = (u32) rxLength;
+		mibrsp.dataLength = (u32)rxLength;
 
 		values = slsi_mib_decode_get_list(&mibrsp, sizeof(getValues) / sizeof(struct slsi_mib_get_entry), getValues);
 		if (values == NULL) {

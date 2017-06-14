@@ -807,7 +807,7 @@ void sem_destroyholder(FAR sem_t *sem)
  *   sem  - A reference to the incremented semaphore
  *
  * Return Value:
- *   0 (OK) or -1 (ERROR) if unsuccessful
+ *   None
  *
  * Assumptions:
  *   Interrupts are disabled.
@@ -842,13 +842,14 @@ void sem_addholder_tcb(FAR struct tcb_s *htcb, FAR sem_t *sem)
  * Name: sem_addholder
  *
  * Description:
- *   Called from sem_wait() when the calling thread obtains the semaphore
+ *   Called from sem_wait() or sem_trywait() when the calling thread
+ *   obtains the semaphore
  *
  * Parameters:
  *   sem - A reference to the incremented semaphore
  *
  * Return Value:
- *   0 (OK) or -1 (ERROR) if unsuccessful
+ *   None
  *
  * Assumptions:
  *   Interrupts are disabled.
@@ -870,7 +871,7 @@ void sem_addholder(FAR sem_t *sem)
  *   None
  *
  * Return Value:
- *   0 (OK) or -1 (ERROR) if unsuccessful
+ *   None
  *
  * Assumptions:
  *

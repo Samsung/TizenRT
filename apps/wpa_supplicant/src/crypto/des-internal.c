@@ -262,7 +262,7 @@ static void deskey(const u8 *key, int decrypt, u32 *keyout)
 	u8 pc1m[56], pcr[56];
 
 	for (j = 0; j < 56; j++) {
-		l = (u32) pc1[j];
+		l = (u32)pc1[j];
 		m = l & 7;
 		pc1m[j] = (u8)
 				  ((key[l >> 3U] & bytebit[m]) == bytebit[m] ? 1 : 0);
@@ -277,7 +277,7 @@ static void deskey(const u8 *key, int decrypt, u32 *keyout)
 		n = m + 1;
 		kn[m] = kn[n] = 0L;
 		for (j = 0; j < 28; j++) {
-			l = j + (u32) totrot[i];
+			l = j + (u32)totrot[i];
 			if (l < 28) {
 				pcr[j] = pc1m[l];
 			} else {
@@ -285,7 +285,7 @@ static void deskey(const u8 *key, int decrypt, u32 *keyout)
 			}
 		}
 		for (/* j = 28 */ ; j < 56; j++) {
-			l = j + (u32) totrot[i];
+			l = j + (u32)totrot[i];
 			if (l < 56) {
 				pcr[j] = pc1m[l];
 			} else {

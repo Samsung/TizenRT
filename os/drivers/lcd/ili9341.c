@@ -707,7 +707,7 @@ static int ili9341_getrun(int devno, fb_coord_t row, fb_coord_t col, FAR uint8_t
 {
 	FAR struct ili9341_dev_s *dev = &g_lcddev[devno];
 	FAR struct ili9341_lcd_s *lcd = dev->lcd;
-	FAR uint16_t *dest = (uint16_t *) buffer;
+	FAR uint16_t *dest = (uint16_t *)buffer;
 
 	DEBUGASSERT(buffer && ((uintptr_t)buffer & 1) == 0);
 
@@ -967,7 +967,7 @@ static int ili9341_getplaneinfo(FAR struct lcd_dev_s *dev, unsigned int planeno,
 		pinfo->getrun = priv->getrun;
 #endif
 		pinfo->bpp = priv->bpp;
-		pinfo->buffer = (uint8_t *) priv->runbuffer;	/* Run scratch buffer */
+		pinfo->buffer = (uint8_t *)priv->runbuffer;	/* Run scratch buffer */
 
 		lcdvdbg("planeno: %d bpp: %d\n", planeno, pinfo->bpp);
 

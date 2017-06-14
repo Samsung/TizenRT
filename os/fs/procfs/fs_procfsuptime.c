@@ -261,7 +261,7 @@ static ssize_t uptime_read(FAR struct file *filep, FAR char *buffer, size_t bufl
 		/* Convert the system up time to a seconds + hundredths of seconds string */
 
 		now = (double)ticktime / (double)CLOCKS_PER_SEC;
-		linesize = snprintf(attr->line, UPTIME_LINELEN, "%10.2f\n", now);
+		linesize = snprintf(attr->line, UPTIME_LINELEN, "%10.2f", now);
 
 #else
 		/* Convert the system up time to seconds + hundredths of seconds */
@@ -279,9 +279,9 @@ static ssize_t uptime_read(FAR struct file *filep, FAR char *buffer, size_t bufl
 
 		/* Convert the seconds + hundredths of seconds to a string */
 #ifdef CONFIG_SYSTEM_TIME64
-		linesize = snprintf(attr->line, UPTIME_LINELEN, "%7llu.%02u\n", sec, csec);
+		linesize = snprintf(attr->line, UPTIME_LINELEN, "%7llu.%02u", sec, csec);
 #else
-		linesize = snprintf(attr->line, UPTIME_LINELEN, "%7lu.%02u\n", sec, csec);
+		linesize = snprintf(attr->line, UPTIME_LINELEN, "%7lu.%02u", sec, csec);
 #endif
 
 #endif

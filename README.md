@@ -62,7 +62,7 @@ sidk_s5jt200 or other boards for Tizen RT will be coming soon.
 
 ## Configuration Sets
 
-To build a Tizen RT application, use the default configuration files named 'defconfig' under 'build/configs/<board>/' folder.
+To build a Tizen RT application, use the default configuration files named 'defconfig' under build/configs/\<board\>/\<configuration_set\> folder.
 
 To customize your application with specific configuration settings, using the menuconfig tool is recommended  at os folder as shown:
 ```bash

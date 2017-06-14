@@ -102,7 +102,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, int pid)
 
 	if (mode != HEAPINFO_SIMPLE) {
 		printf("****************************************************************\n");
-		printf("Heap Walker Output for Heap =0x%p\n", heap);
+		printf("Heap Walker Output for Heap = 0x%p\n", heap);
 		printf("****************************************************************\n");
 	}
 
@@ -122,7 +122,8 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, int pid)
 			printf("****************************************************************\n");
 			printf("Heap Alloation Info- (Size in Bytes)\n");
 			printf("****************************************************************\n");
-			printf("  MemAddr    Size      Owner    Pid \n");
+			printf("  MemAddr |   Size   | Status |   Owner   | Pid |\n");
+			printf("----------|----------|--------|-----------|-----|\n");
 		}
 
 		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
@@ -130,7 +131,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, int pid)
 			/* Check if the node corresponds to an allocated memory chunk */
 			if ((pid == HEAPINFO_PID_NOTNEEDED || node->pid == pid) && (node->preceding & MM_ALLOC_BIT) != 0) {
 				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_PID) {
-					printf("0x%x %6d %c 0x%x %3d \n", node, node->size, 'A', node->alloc_call_addr, node->pid);
+					printf("0x%x | %8d |   %c    | 0x%x | %3d |\n", node, node->size, 'A', node->alloc_call_addr, node->pid);
 				}
 
 #if CONFIG_TASK_NAME_SIZE > 0
@@ -151,7 +152,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, int pid)
 					mxordblk = node->size;
 				}
 				if (mode == HEAPINFO_DETAIL_ALL || mode == HEAPINFO_DETAIL_FREE) {
-					printf("0x%x %6d %c\n", node, node->size, 'F');
+					printf("0x%x | %8d |   %c    |           |     |\n", node, node->size, 'F');
 				}
 			}
 		}
@@ -172,11 +173,11 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, int pid)
 
 	printf("\nNon Scheduled Task Resources   : %d\n", nonsched_resource);
 	if (mode != HEAPINFO_SIMPLE) {
-		printf("PID  SIZE\n");
-		printf("----------\n");
+		printf(" PID | SIZE \n");
+		printf("-----|------\n");
 		for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
 			if (nonsched_list[nonsched_idx] != -1) {
-				printf("%4d %5d\n", nonsched_list[nonsched_idx], nonsched_size[nonsched_idx]);
+				printf("%4d | %5d\n", nonsched_list[nonsched_idx], nonsched_size[nonsched_idx]);
 			}
 		}
 	}

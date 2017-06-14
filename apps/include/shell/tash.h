@@ -34,13 +34,21 @@ typedef struct {
 	const int thread_exec;
 } tash_cmdlist_t;
 
+struct tash_taskinfo_s {
+	const char *str;
+	const int task_prio;
+	const int task_stacksize;
+};
+
+typedef struct tash_taskinfo_s tash_taskinfo_t;
+
 /** @name tash_cmd_install
  * @brief API to install TASH shell commands
  * @ingroup tash
  * @param[in] str - command's first string(Example: ps, ls, ifconfig etc)
  * @param[in] cb - callback function for the command
  * @param[in] thread_exec: TASH_EXECMD_ASYNC-execute callback as a thread
-						   TASH_EXECMD_SYNC -invokde callback directly
+						   TASH_EXECMD_SYNC -invoked callback directly
  * @retval 0 Success
  * @retval -ve Failure
  *

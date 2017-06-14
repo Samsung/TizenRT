@@ -169,7 +169,7 @@ int task_init(FAR struct tcb_s *tcb, const char *name, int priority, FAR uint32_
 
 	ret = task_schedsetup(ttcb, priority, task_start, entry, TCB_FLAG_TTYPE_TASK);
 	if (ret < OK) {
-		errcode = -ret;
+		errcode = get_errno();
 		goto errout_with_group;
 	}
 

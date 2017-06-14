@@ -53,7 +53,7 @@ int eap_pax_kdf(u8 mac_id, const u8 *key, size_t key_len, const char *identifier
 
 	pos = output;
 	left = output_len;
-	for (counter = 1; counter <= (u8) num_blocks; counter++) {
+	for (counter = 1; counter <= (u8)num_blocks; counter++) {
 		size_t clen = left > EAP_PAX_MAC_LEN ? EAP_PAX_MAC_LEN : left;
 		hmac_sha1_vector(key, key_len, 3, addr, len, mac);
 		os_memcpy(pos, mac, clen);

@@ -475,7 +475,7 @@ static err_t slsi_set_multicast_list(struct netif *dev, ip_addr_t *group, u8_t a
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
-	u8 addr[ETH_ALEN] = MULTICAST_IP_TO_MAC((u8 *) group);
+	u8 addr[ETH_ALEN] = MULTICAST_IP_TO_MAC((u8 *)group);
 
 	if (ndev_vif->vif_type != FAPI_VIFTYPE_STATION) {
 		return 0;

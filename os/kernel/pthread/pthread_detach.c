@@ -126,7 +126,7 @@ int pthread_detach(pthread_t thread)
 
 	/* Find the entry associated with this pthread. */
 
-	(void)pthread_takesemaphore(&group->tg_joinsem, false);
+	(void)pthread_sem_take(&group->tg_joinsem, false);
 	pjoin = pthread_findjoininfo(group, (pid_t)thread);
 	if (!pjoin) {
 		sdbg("Could not find thread entry\n");
@@ -152,7 +152,7 @@ int pthread_detach(pthread_t thread)
 		ret = OK;
 	}
 
-	(void)pthread_givesemaphore(&group->tg_joinsem);
+	(void)pthread_sem_give(&group->tg_joinsem);
 
 	svdbg("Returning %d\n", ret);
 	trace_end(TTRACE_TAG_TASK);

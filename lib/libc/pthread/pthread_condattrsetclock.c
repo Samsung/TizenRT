@@ -100,7 +100,7 @@ int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id)
 	/* Make sure the value fits in the bits we reserved.  */
 	//assert (clock_id < (1 << COND_NWAITERS_SHIFT));
 
-	// int *valuep = &((struct pthread_condattr *) attr)->value;
+	// int *valuep = &((struct pthread_condattr *)attr)->value;
 
 	/*
 	 *valuep = ((*valuep & ~(((1 << COND_NWAITERS_SHIFT) - 1) << 1)) | (clock_id << 1));

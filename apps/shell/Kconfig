@@ -1,5 +1,5 @@
 
-menu "Enable Shell"
+menu "Shell"
 config TASH
 	bool "Enable shell"
 	default y

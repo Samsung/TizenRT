@@ -1184,7 +1184,7 @@ int slsi_modify_ies(struct netif *dev, u8 eid, u8 *ies, int ies_len, u8 ie_index
 
 	SLSI_NET_DBG1(dev, SLSI_MLME, "eid: %d, ie_value = 0x%x\n", eid, ie_value);
 
-	ie = (u8 *) slsi_80211_find_ie_mod(eid, ies, ies_len);
+	ie = (u8 *)slsi_80211_find_ie_mod(eid, ies, ies_len);
 	if (ie) {
 		switch (eid) {
 		case WLAN_EID_HT_OPERATION:
@@ -1218,7 +1218,7 @@ static void slsi_mlme_start_prepare_ies(struct max_buff *req, struct netif *dev,
 	 * Channel list of Country IE prepared by hostapd is wrong, so driver needs remove the existing country IE and prepare correct one.
 	 * Hostapd adds country IE at the beginning of the tail, beacon_tail is moved to the next IE to avoid the default county IE.
 	 */
-	country_ie = (u8 *) slsi_80211_find_ie(WLAN_EID_COUNTRY, beacon_tail, beacon_tail_len);
+	country_ie = (u8 *)slsi_80211_find_ie(WLAN_EID_COUNTRY, beacon_tail, beacon_tail_len);
 	if (country_ie) {
 		u8 *new_country_ie = NULL;
 
@@ -1404,7 +1404,7 @@ int slsi_mlme_start(struct slsi_dev *sdev, struct netif *dev, u8 *bssid, struct 
 	}
 
 	mgmt = (struct ieee80211_mgmt *)settings->head;
-	beacon_ie_head_len = settings->head_len - ((u8 *) mgmt->u.beacon.variable - (u8 *) mgmt);
+	beacon_ie_head_len = settings->head_len - ((u8 *)mgmt->u.beacon.variable - (u8 *)mgmt);
 
 	/* For port enabling, save the privacy bit used in assoc response or beacon */
 	if (mgmt->u.beacon.capab_info & WLAN_CAPABILITY_PRIVACY) {
@@ -1917,7 +1917,7 @@ int slsi_mlme_connect(struct slsi_dev *sdev, struct netif *dev, struct wpa_drive
 	/* We save the WEP key for shared authentication. */
 	if ((auth_type == SLSI_80211_AUTHTYPE_SHARED_KEY) && ((sme->group_suite == WPA_CIPHER_WEP40) || (sme->group_suite == WPA_CIPHER_WEP104)) && (ndev_vif->vif_type == FAPI_VIFTYPE_STATION)) {
 		SLSI_NET_DBG3(dev, SLSI_MLME, "key len (%d)\n", sme->wep_key_len[sme->wep_tx_keyidx]);
-		slsi_key.key = (u8 *) sme->wep_key[sme->wep_tx_keyidx];
+		slsi_key.key = (u8 *)sme->wep_key[sme->wep_tx_keyidx];
 		if (slsi_key.key == NULL) {
 			return -EINVAL;
 		}
@@ -2156,7 +2156,7 @@ int slsi_mlme_set_key(struct slsi_dev *sdev, struct netif *dev, u16 key_id, u16 
 	fapi_set_u32(req, u.mlme_setkeys_req.cipher_suite_selector, key->cipher);
 
 	if (key->cipher == SLSI_WLAN_CIPHER_SUITE_WEP40 || key->cipher == SLSI_WLAN_CIPHER_SUITE_WEP104) {
-		u8 wep_key_id = (u8) key_id;
+		u8 wep_key_id = (u8)key_id;
 
 		if (key_id > 3) {
 			SLSI_NET_WARN(dev, "Key ID is greater than 3");
@@ -2311,7 +2311,7 @@ int slsi_mlme_get_sinfo_mib(struct slsi_dev *sdev, struct netif *dev, struct wpa
 	kmm_free(mibreq.data);
 
 	if (r == 0) {
-		mibrsp.dataLength = (u32) data_length;
+		mibrsp.dataLength = (u32)data_length;
 		values = slsi_mib_decode_get_list(&mibrsp, (sizeof(getValues) / sizeof(struct slsi_mib_get_entry)), getValues);
 		if (values == NULL) {
 			SLSI_NET_DBG1(dev, SLSI_MLME, "mib decode list failed\n");
@@ -2321,7 +2321,7 @@ int slsi_mlme_get_sinfo_mib(struct slsi_dev *sdev, struct netif *dev, struct wpa
 		if (values[0].type != SLSI_MIB_TYPE_NONE) {
 			WARN_ON(values[0].type != SLSI_MIB_TYPE_UINT);
 			//supplicant actually doing -  si.current_txrate / 1000, to compensate the same we are multiplying with 1000
-			si->current_txrate = slsi_mlme_fw_tx_rate_calc((u16) values[0].u.uintValue) * 1000;
+			si->current_txrate = slsi_mlme_fw_tx_rate_calc((u16)values[0].u.uintValue) * 1000;
 			SLSI_DBG3(sdev, SLSI_MLME, "SLSI_PSID_UNIFI_TX_DATA_RATE = %d\n", values[0].u.uintValue);
 		}
 

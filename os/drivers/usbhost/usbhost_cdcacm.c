@@ -759,7 +759,7 @@ static void usbhost_notification_work(FAR void *arg)
 
 		/* Setup to receive the next line status change event */
 
-		ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *) priv->notification, MAX_NOTIFICATION, usbhost_notification_callback, priv);
+		ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *)priv->notification, MAX_NOTIFICATION, usbhost_notification_callback, priv);
 		if (ret < 0) {
 			udbg("ERROR: DRVR_ASYNCH failed: %d\n", ret);
 		}
@@ -1626,7 +1626,7 @@ static int usbhost_alloc_buffers(FAR struct usbhost_cdcacm_s *priv)
 
 	/* Allocate memory for control requests */
 
-	ret = DRVR_ALLOC(hport->drvr, (FAR uint8_t **) & priv->ctrlreq, &maxlen);
+	ret = DRVR_ALLOC(hport->drvr, (FAR uint8_t **)&priv->ctrlreq, &maxlen);
 	if (ret < 0) {
 		udbg("ERROR: DRVR_ALLOC of ctrlreq failed: %d\n", ret);
 		goto errout;
@@ -1927,7 +1927,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *usbclass, FAR const uint8
 		/* Begin monitoring of port status change events */
 
 		uvdbg("Start notification monitoring\n");
-		ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *) priv->notification, MAX_NOTIFICATION, usbhost_notification_callback, priv);
+		ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *)priv->notification, MAX_NOTIFICATION, usbhost_notification_callback, priv);
 		if (ret < 0) {
 			udbg("ERROR: DRVR_ASYNCH failed: %d\n", ret);
 		}

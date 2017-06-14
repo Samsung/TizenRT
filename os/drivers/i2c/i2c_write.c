@@ -93,7 +93,7 @@ int i2c_write(FAR struct i2c_dev_s *dev, FAR const struct i2c_config_s *config, 
 
 	msg.addr = config->address;
 	msg.flags = (config->addrlen == 10) ? I2C_M_TEN : 0;
-	msg.buffer = (FAR uint8_t *) buffer;	/* Override const */
+	msg.buffer = (FAR uint8_t *)buffer;	/* Override const */
 	msg.length = buflen;
 
 	/* Then perform the transfer

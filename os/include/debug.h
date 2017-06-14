@@ -82,7 +82,7 @@
  *
  * [a-z]dbg() -- Outputs messages to the console similar to printf() except
  *    that the output is not buffered.  The first character indicates the
- *    system system (e.g., n=network, f=filesystm, etc.).  If the first
+ *    system system (e.g., n=network, f=filesystem, etc.).  If the first
  *    character is missing (i.e., dbg()), then it is common.  The common
  *    dbg() macro is enabled by CONFIG_DEBUG.  Subsystem debug requires an
  *    additional configuration setting to enable it (e.g., CONFIG_DEBUG_NET

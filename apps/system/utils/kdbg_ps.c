@@ -79,9 +79,9 @@ static const char *kdbg_ttypenames[4] = {
 
 static void kdbg_pseach(FAR struct tcb_s *tcb, FAR void *arg)
 {
-	printf("%5d %4d %4s %7s %c%c %8s", tcb->pid, tcb->sched_priority, tcb->flags & TCB_FLAG_ROUND_ROBIN ? "RR  " : "FIFO", kdbg_ttypenames[(tcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], tcb->flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', tcb->flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', kdbg_statenames[tcb->task_state]);
+	printf("%5d | %4d | %4s | %7s | %c%c | %8s", tcb->pid, tcb->sched_priority, tcb->flags & TCB_FLAG_ROUND_ROBIN ? "RR  " : "FIFO", kdbg_ttypenames[(tcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], tcb->flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', tcb->flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', kdbg_statenames[tcb->task_state]);
 #if CONFIG_TASK_NAME_SIZE > 0
-	printf(" %s", tcb->name);
+	printf(" | %s", tcb->name);
 #endif
 	printf("\n");
 }
@@ -89,11 +89,13 @@ static void kdbg_pseach(FAR struct tcb_s *tcb, FAR void *arg)
 int kdbg_ps(int argc, char **args)
 {
 #if CONFIG_TASK_NAME_SIZE > 0
-	printf("\n  PID PRIO FLAG    TYPE NP   STATUS             NAME\n");
-	printf("------------------------------------------------------\n");
+	printf("\n");
+	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | NAME\n");
+	printf("------|------|------|---------|----|----------|----------\n");
 #else
-	printf("\n  PID PRIO FLAG    TYPE NP   STATUS\n");
-	printf("-------------------------------------\n");
+	printf("\n");
+	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS\n");
+	printf("------|------|------|---------|----|--------\n");
 #endif
 	sched_foreach(kdbg_pseach, NULL);
 	return 0;

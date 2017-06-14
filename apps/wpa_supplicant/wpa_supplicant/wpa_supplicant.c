@@ -520,7 +520,7 @@ void wpa_clear_keys(struct wpa_supplicant *wpa_s, const u8 *addr)
 		/* MLME-SETPROTECTION.request(None) */
 		wpa_drv_mlme_setprotection(wpa_s, addr, MLME_SETPROTECTION_PROTECT_TYPE_NONE, MLME_SETPROTECTION_KEY_TYPE_PAIRWISE);
 	}
-	wpa_s->keys_cleared = (u32) - 1;
+	wpa_s->keys_cleared = (u32)-1;
 }
 
 /**
@@ -2342,7 +2342,7 @@ void wpa_supplicant_deauthenticate(struct wpa_supplicant *wpa_s, int reason_code
 	if (addr) {
 		wpa_drv_deauthenticate(wpa_s, addr, reason_code);
 		os_memset(&event, 0, sizeof(event));
-		event.deauth_info.reason_code = (u16) reason_code;
+		event.deauth_info.reason_code = (u16)reason_code;
 		event.deauth_info.locally_generated = 1;
 		wpa_supplicant_event(wpa_s, EVENT_DEAUTH, &event);
 		if (zero_addr) {

@@ -319,7 +319,7 @@ void gdb_read_callback(const void *message, size_t len, void *data)
 	int nxtwrndx;
 
 	DEBUGASSERT(mx_dev);
-	uint8_t *buffer = (FAR uint8_t *) message;
+	uint8_t *buffer = (FAR uint8_t *)message;
 
 	SLSI_INFO_NODEV("\n");
 
