@@ -1298,7 +1298,7 @@ int http_client_response_init(struct http_client_response_t *response)
 		return -1;
 	}
 	response->headers = malloc(sizeof(struct http_keyvalue_list_t));
-	if (http_keyvalue_list_init(response->headers) < 0) {
+	if (response->headers == NULL || http_keyvalue_list_init(response->headers) < 0) {
 		ndbg("Error: Fail to init\n");
 		free(response->phrase);
 		free(response->message);
