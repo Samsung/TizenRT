@@ -65,7 +65,7 @@
 
 #include "s5j_gpio.h"
 #include "chip.h"
-#include "chip/s5j_i2s.h"
+#include "chip/s5jt200_i2s.h"
 
 /************************************************************************************
  * Pre-processor Definitions
