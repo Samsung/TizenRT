@@ -514,7 +514,10 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 		strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH);
 		strncat(path, "index.shtml", HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH);
 		if ((f = fopen(path, "w"))) {
-			fputs(entity, f);
+			if (fputs(entity, f) < 0) {
+				HTTP_LOGE("Error: Fail to execute fputs\n");
+				break;
+			}
 			if (http_send_response(client, 200, path, NULL) == HTTP_ERROR) {
 				HTTP_LOGE("Error: Fail to send response\n");
 			}
@@ -528,7 +531,10 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 		break;
 	case HTTP_METHOD_PUT:
 		if ((f = fopen(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH), "w"))) {
-			fputs(entity, f);
+			if (fputs(entity, f) < 0) {
+				HTTP_LOGE("Error: Fail to execute fputs\n");
+				break;
+			}
 			if (http_send_response(client, 200, url, NULL) == HTTP_ERROR) {
 				HTTP_LOGE("Error: Fail to send response\n");
 			}

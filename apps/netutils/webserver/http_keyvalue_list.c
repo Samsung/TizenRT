@@ -54,12 +54,14 @@ int http_keyvalue_list_init(struct http_keyvalue_list_t *list)
 
 int http_keyvalue_list_release(struct http_keyvalue_list_t *list)
 {
-	while (http_keyvalue_list_delete_tail(list) == HTTP_OK) {
-		/* Delete all containers */
-	}
+	if (list->head && list->tail) {
+		while (http_keyvalue_list_delete_tail(list) == HTTP_OK) {
+			/* Delete all containers */
+		}
 
-	HTTP_FREE(list->head);
-	HTTP_FREE(list->tail);
+		HTTP_FREE(list->head);
+		HTTP_FREE(list->tail);
+	}
 	return HTTP_OK;
 }
 
