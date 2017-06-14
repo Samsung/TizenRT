@@ -84,6 +84,7 @@
 #include "chip.h"
 #include "chip/s5jt200_i2s.h"
 #include "s5j_dma.h"
+#include "s5j_i2s.h"
 #include "s5j_vclk.h"
 
 /****************************************************************************
@@ -649,48 +650,45 @@ static int i2s_rxdma_setup(struct s5j_i2s_s *priv)
 	timeout = 0;
 	notimeout = false;
 
-	do {
-		/* Remove the pending RX transfer at the head of the RX pending queue. */
+	/* Remove the pending RX transfer at the head of the RX pending queue. */
 
-		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.pend);
-		DEBUGASSERT(bfcontainer && bfcontainer->apb);
+	bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.pend);
+	DEBUGASSERT(bfcontainer && bfcontainer->apb);
 
-		apb = bfcontainer->apb;
-		dmatask = bfcontainer->dmatask;
-		/* No data received yet */
+	apb = bfcontainer->apb;
+	dmatask = bfcontainer->dmatask;
+	/* No data received yet */
 
-		apb->nbytes = 0;
-		apb->curbyte = 0;
+	apb->nbytes = 0;
+	apb->curbyte = 0;
 
-		dmatask->dst = (void *)apb->samp;
-		dmatask->src = (void *)(priv->base + S5J_I2S_RXD);
-		dmatask->size = apb->nmaxbytes;
-		dmatask->callback = i2s_rxdma_callback;
-		dmatask->arg = priv;
+	dmatask->dst = (void *)apb->samp;
+	dmatask->src = (void *)(priv->base + S5J_I2S_RXD);
+	dmatask->size = apb->nmaxbytes;
+	dmatask->callback = i2s_rxdma_callback;
+	dmatask->arg = priv;
 
-		/* Configure the RX DMA task */
+	/* Configure the RX DMA task */
 
-		s5j_dmasetup(priv->rx.dma, dmatask);
+	s5j_dmasetup(priv->rx.dma, dmatask);
 
-		/* Increment the DMA timeout */
+	/* Increment the DMA timeout */
 
-		if (bfcontainer->timeout > 0) {
+	if (bfcontainer->timeout > 0) {
 			timeout += bfcontainer->timeout;
-		} else {
+	} else {
 			notimeout = true;
-		}
-
-		/* Add the container to the list of active DMAs */
-
-		sq_addlast((sq_entry_t *) bfcontainer, &priv->rx.act);
-
-		/* Invalidate the data cache so that nothing gets flush into the
-		 * DMA buffer after starting the DMA transfer.
-		 */
-
-		arch_invalidate_dcache((uintptr_t) dmatask->dst, (uintptr_t)(dmatask->dst + apb->nmaxbytes));
-
 	}
+
+	/* Add the container to the list of active DMAs */
+
+	sq_addlast((sq_entry_t *) bfcontainer, &priv->rx.act);
+
+	/* Invalidate the data cache so that nothing gets flush into the
+	 * DMA buffer after starting the DMA transfer.
+	 */
+
+	arch_invalidate_dcache((uintptr_t) dmatask->dst, (uintptr_t)(dmatask->dst + apb->nmaxbytes));
 
 	/* FLUSH RX FIFO */
 	putreg32(I2S_FIC_RFLUSH, priv->base + S5J_I2S_FIC);
@@ -1010,45 +1008,43 @@ static int i2s_txpdma_setup(struct s5j_i2s_s *priv)
 	timeout = 0;
 	notimeout = false;
 
-	do {
-		/* Remove the pending TX transfer at the head of the TX pending queue. */
+	/* Remove the pending TX transfer at the head of the TX pending queue. */
 
-		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.pend);
-		DEBUGASSERT(bfcontainer && bfcontainer->apb);
+	bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.pend);
+	DEBUGASSERT(bfcontainer && bfcontainer->apb);
 
-		apb = bfcontainer->apb;
-		dmatask = bfcontainer->dmatask;
-		/* Get the transfer information, accounting for any data offset */
+	apb = bfcontainer->apb;
+	dmatask = bfcontainer->dmatask;
+	/* Get the transfer information, accounting for any data offset */
 
-		//dmatask->dst = (void *)((((int)apb->samp) & ~3) + 4);
-		dmatask->dst = (void *)(priv->base + S5J_I2S_TXD);
-		dmatask->src = (void *)&apb->samp[apb->curbyte];
-		dmatask->size = apb->nbytes - apb->curbyte;
-		dmatask->callback = i2s_txpdma_callback;
-		dmatask->arg = priv;
+	//dmatask->dst = (void *)((((int)apb->samp) & ~3) + 4);
+	dmatask->dst = (void *)(priv->base + S5J_I2S_TXD);
+	dmatask->src = (void *)&apb->samp[apb->curbyte];
+	dmatask->size = apb->nbytes - apb->curbyte;
+	dmatask->callback = i2s_txpdma_callback;
+	dmatask->arg = priv;
 
-		/* Configure the TX DMA task */
+	/* Configure the TX DMA task */
 
-		s5j_dmasetup(priv->txp.dma, dmatask);
+	s5j_dmasetup(priv->txp.dma, dmatask);
 
-		/* Increment the DMA timeout */
+	/* Increment the DMA timeout */
 
-		if (bfcontainer->timeout > 0) {
+	if (bfcontainer->timeout > 0) {
 			timeout += bfcontainer->timeout;
-		} else {
+	} else {
 			notimeout = true;
-		}
-
-		/* Add the container to the list of active DMAs */
-
-		sq_addlast((sq_entry_t *) bfcontainer, &priv->txp.act);
-
-		/* Flush the data cache so that everything is in the physical memory
-		 * before starting the DMA.
-		 */
-
-		arch_clean_dcache((uintptr_t) dmatask->src, (uintptr_t)(dmatask->src + dmatask->size));
 	}
+
+	/* Add the container to the list of active DMAs */
+
+	sq_addlast((sq_entry_t *) bfcontainer, &priv->txp.act);
+
+	/* Flush the data cache so that everything is in the physical memory
+	 * before starting the DMA.
+	 */
+
+	arch_clean_dcache((uintptr_t) dmatask->src, (uintptr_t)(dmatask->src + dmatask->size));
 
 	/* Start the DMA, saving the container as the current active transfer */
 	s5j_dmastart(priv->txp.dma, dmatask);
