@@ -298,14 +298,14 @@ config UIMAGE_ENTRY_POINT
 
 endif
 
-menuconfig DOWNLOAD_IMAGE
+config DOWNLOAD_IMAGE
 	bool "Convert RAW binary to download image"
 	select RAW_BINARY
 	depends on !WINDOWS_NATIVE
 	---help---
 		Create download image based on RAW binary
 
-menuconfig SMARTFS_IMAGE
+config SMARTFS_IMAGE
 	bool "Make smartfs binary image"
 	select RAW_BINARY
 	depends on !WINDOWS_NATIVE
