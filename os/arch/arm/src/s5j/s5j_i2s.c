@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/sama5/s5j_i2s.c
+ * arch/arm/src/s5j/s5j_i2s.c
  *
  *   Copyright (C) 2013-2014, 2016 Gregory Nutt. All rights reserved.
  *   Authors: Gregory Nutt <gnutt@nuttx.org>
