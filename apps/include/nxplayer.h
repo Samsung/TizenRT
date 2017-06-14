@@ -54,8 +54,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_SYSTEM_NXPLAYER_NXPLAYER_H
-#define __APPS_SYSTEM_NXPLAYER_NXPLAYER_H 1
+#ifndef __APPS_INCLUDE_NXPLAYER_H
+#define __APPS_INCLUDE_NXPLAYER_H 1
 
 /****************************************************************************
  * Included Files
@@ -485,4 +485,4 @@ int nxplayer_systemreset(FAR struct nxplayer_s *pPlayer);
 }
 #endif
 
-#endif							/* __APPS_SYSTEM_NXPLAYER_NXPLAYER_H */
+#endif							/* __APPS_INCLUDE_NXPLAYER_H */
