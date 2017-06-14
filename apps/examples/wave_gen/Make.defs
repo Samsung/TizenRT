@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXAMPLE_WAVE_GEN),y)
+ifeq ($(CONFIG_EXAMPLES_WAVE_GEN),y)
 CONFIGURED_APPS += examples/wave_gen
 endif
 
