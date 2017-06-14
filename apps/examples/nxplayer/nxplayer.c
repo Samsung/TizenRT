@@ -1969,6 +1969,7 @@ int nxplayer_systemreset(FAR struct nxplayer_s *pPlayer)
 	}
 
 	pPlayer->devFd = -1;
+	closedir(dirp);
 	return OK;
 }
 #endif							/* CONFIG_NXPLAYER_INCLUDE_SYSTEM_RESET */
