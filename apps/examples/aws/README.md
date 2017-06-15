@@ -32,7 +32,7 @@ Built binaries are in $TIZENRT_BASEDIR/build/output/bin.
 ### Certification Key Data
 User certification keys are needed to connect, because AWS uses secure network protocol(HTTPS/MQTT).
 
-Key values for the three certificate files need to be copied to ***certData.c*** file in $TIZENRT_BASEDIR/apps/examples/aws/platform/TizenRT/cert/ directory.
+Key values for the three certificate files need to be copied to ***certData.c*** file in $TIZENRT_BASEDIR/external/aws/certs/ directory.
 - copy contents of rootCA.crt file to *root_ca_pem[ ]* array
 - copy contents of cert.pem file to *client_cert_pem[ ]* array
 - copy contents of privkey.pem file to *client_private_key_pem[ ]* array
@@ -69,7 +69,7 @@ const int clientPrivateKeyLen = sizeof(client_private_key_pem);
 ```
 
 ### Host and device information
-AWS user specific HOST and DEVICE information is in ***aws_iot_config.h*** header file in each example code directory under $TIZENRT_BASEDIR/apps/examples/aws/samples/TizenRT/.
+AWS user specific HOST and DEVICE information is in ***aws_iot_config.h*** header file in each example code directory under $TIZENRT_BASEDIR/external/aws/samples/TizenRT/
 
 The following values are need to be updated.
 - AWS_IOT_MQTT_HOST
