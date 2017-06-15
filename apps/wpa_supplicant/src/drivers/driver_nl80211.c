@@ -1062,17 +1062,16 @@ static int get_link_signal(struct nl_msg *msg, void *arg)
 		return NL_SKIP;
 	}
 
-	sig_change->current_signal = (s8) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
+	sig_change->current_signal = (s8)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
 
 	if (sinfo[NL80211_STA_INFO_SIGNAL_AVG]) {
-		sig_change->avg_signal = (s8) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]);
+		sig_change->avg_signal = (s8)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]);
 	} else {
 		sig_change->avg_signal = 0;
 	}
 
 	if (sinfo[NL80211_STA_INFO_BEACON_SIGNAL_AVG])
-		sig_change->avg_beacon_signal = (s8)
-										nla_get_u8(sinfo[NL80211_STA_INFO_BEACON_SIGNAL_AVG]);
+		sig_change->avg_beacon_signal = (s8)nla_get_u8(sinfo[NL80211_STA_INFO_BEACON_SIGNAL_AVG]);
 	else {
 		sig_change->avg_beacon_signal = 0;
 	}
@@ -1140,7 +1139,7 @@ static int get_link_noise(struct nl_msg *msg, void *arg)
 		return NL_SKIP;
 	}
 
-	sig_change->current_noise = (s8) nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
+	sig_change->current_noise = (s8)nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
 
 	return NL_SKIP;
 }

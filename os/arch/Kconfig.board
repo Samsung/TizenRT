@@ -31,8 +31,8 @@ endchoice
 
 config ARCH_BOARD
 	string
-	default "artik053" if ARCH_BOARD_ARTIK053
-	default "sidk_s5jt200" if ARCH_BOARD_SIDK_S5JT200
+	default "artik053"           if ARCH_BOARD_ARTIK053
+	default "sidk_s5jt200"       if ARCH_BOARD_SIDK_S5JT200
 
 comment "Common Board Options"
 

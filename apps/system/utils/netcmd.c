@@ -265,7 +265,7 @@ int tftpc_parseargs(int argc, char **argv, struct tftpc_args_s *args)
 
 	return OK;
 
- errout:
+errout:
 	printf(fmt, argv[0]);
 	return ERROR;
 }
