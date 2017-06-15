@@ -257,13 +257,22 @@ struct mm_allocnode_s {
 /* What is the size of the allocnode? */
 
 #ifdef CONFIG_MM_SMALL
-#define SIZEOF_MM_ALLOCNODE   4
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+/* 10 = (uint16_t + uint16_t + uint16_t + uint16_t + uint16_t ) */
+#define SIZEOF_MM_ALLOCNODE   (sizeof(mmsize_t) + sizeof(mmsize_t) + SIZEOF_MM_MALLOC_DEBUG_INFO)
+#else
+/* 4 = (uint16_t + uint16_t) */
+#define SIZEOF_MM_ALLOCNODE   (sizeof(mmsize_t) + sizeof(mmsize_t))
+#endif
+
 #else
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-#define SIZEOF_MM_ALLOCNODE   16	/* 8 Bytes added for storing memory allocation info  */
+/* 16 = (uint32_t + uint32_t + uint32_t + uint16_t + uint16_t ) */
+#define SIZEOF_MM_ALLOCNODE  (sizeof(mmsize_t) + sizeof(mmsize_t) + SIZEOF_MM_MALLOC_DEBUG_INFO)
 #else
-#define SIZEOF_MM_ALLOCNODE   8
+/* 8 = (uint32_t + uint32_t) */
+#define SIZEOF_MM_ALLOCNODE   (sizeof(mmsize_t) + sizeof(mmsize_t))
 #endif
 #endif
 
