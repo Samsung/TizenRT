@@ -170,6 +170,7 @@
 #define DMA_MC_1B_SET(a, b) 	(*(char *)(a) = (char)(b))
 #define DMA_MC_EV_SET(a, b) 	(*(char *)(a) = (char)(b << 3))
 
+#define DMA_NOP		(0x18)
 
 /************************************************************************************
  * Public Types
@@ -196,7 +197,6 @@ typedef enum {
 	DMA_CH6,
 	DMA_CH7
 } DMA_CHANNEL_NUM;
-
 
 typedef struct dma_drvdata dma_drvdata;
 
