@@ -2505,37 +2505,41 @@ static int smartfs_redo_rename(struct smartfs_mountpt_s *fs)
 	}
 	direntry = (struct smartfs_entry_header_s *)&req.buffer[oldoffset];
 
-	oldflags = direntry->flags;
+	if (ENTRY_VALID(direntry)) {
+		oldflags = direntry->flags;
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-	type = (smartfs_rdle16(&oldflags) & SMARTFS_DIRENT_TYPE);
-	mode = (smartfs_rdle16(&oldflags) & SMARTFS_DIRENT_MODE);
+		type = (smartfs_rdle16(&oldflags) & SMARTFS_DIRENT_TYPE);
+		mode = (smartfs_rdle16(&oldflags) & SMARTFS_DIRENT_MODE);
 #else
-	type = oldflags & SMARTFS_DIRENT_TYPE;
-	mode = oldflags & SMARTFS_DIRENT_MODE;
+		type = oldflags & SMARTFS_DIRENT_TYPE;
+		mode = oldflags & SMARTFS_DIRENT_MODE;
 #endif
 
-	/* Now create new entry at new location */
-	firstsector = (uint16_t)direntry->firstsector;
-	entry->generic_1 = (uint16_t)mode;
-	memcpy(j_mgr->buffer + sizeof(struct smartfs_logging_entry_s), filename, entry->datalen);
-	fdbg("first sector : %d\n", firstsector);
-	ret = smartfs_redo_create(fs, type, firstsector);
-	if (ret != OK) {
-		goto errout;
-	}
+		/* Now create new entry at new location */
+		firstsector = (uint16_t)direntry->firstsector;
+		entry->generic_1 = (uint16_t)mode;
+		memcpy(j_mgr->buffer + sizeof(struct smartfs_logging_entry_s), filename, entry->datalen);
+		fdbg("first sector : %d\n", firstsector);
+		ret = smartfs_redo_create(fs, type, firstsector);
+		if (ret != OK) {
+			goto errout;
+		}
 
-	/* Set old entry to inactive */
+		/* Set old entry to inactive */
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
-	oldflags &= ~SMARTFS_DIRENT_ACTIVE;
+		oldflags &= ~SMARTFS_DIRENT_ACTIVE;
 #else
-	oldflags |= SMARTFS_DIRENT_ACTIVE;
+		oldflags |= SMARTFS_DIRENT_ACTIVE;
 #endif
-	direntry->flags = oldflags;
+		direntry->flags = oldflags;
 
-	req.offset = oldoffset + offsetof(struct smartfs_entry_header_s, flags);
-	req.count = sizeof(direntry->flags);
-	req.buffer = (uint8_t *)&direntry->flags;
-	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
+		req.offset = oldoffset + offsetof(struct smartfs_entry_header_s, flags);
+		req.count = sizeof(direntry->flags);
+		req.buffer = (uint8_t *)&direntry->flags;
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
+		} else {
+			ret = OK;
+		}
 errout:
 	if (filename) {
 		kmm_free(filename);
