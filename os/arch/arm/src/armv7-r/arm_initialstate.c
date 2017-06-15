@@ -60,6 +60,8 @@
 #include <string.h>
 
 #include <tinyara/arch.h>
+#include <arch/irq.h>
+#include <chip/mpu-reg.h>
 
 #include "arm.h"
 #include "up_internal.h"
