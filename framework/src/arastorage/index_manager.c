@@ -214,9 +214,11 @@ db_result_t index_destroy(index_t *index)
 		}
 	}
 	list_remove(indices, index);
-	res = storage_remove(index->descriptor_file);
-	if (DB_ERROR(res)) {
-		return res;
+	if (index->descriptor_file[0] != '\0') {
+		res = storage_remove(index->descriptor_file);
+		if (DB_ERROR(res)) {
+			return res;
+		}
 	}
 	if (DB_ERROR(storage_remove_index(index->rel, index->attr))) {
 		return DB_STORAGE_ERROR;
@@ -384,8 +386,6 @@ tuple_id_t index_get_next(index_iterator_t *iterator, uint8_t matched_condition)
 	if ((iterator->index->attr->flags & ATTRIBUTE_FLAG_UNIQUE) && iterator->next_item_no == 1) {
 		min = db_value_to_long(&iterator->min_value);
 		max = db_value_to_long(&iterator->max_value);
-		printf("%d\n", __LINE__);
-		sleep(1);
 		if (min == max) {
 			/*
 			 * We stop if this is an equivalence search on an attribute
@@ -452,7 +452,9 @@ db_result_t db_indexing(relation_t *rel)
 		DB_LOG_E("DB: Failed to allocate row\n");
 		return DB_ALLOCATION_ERROR;
 	}
-
+#ifdef CONFIG_ARASTORAGE_ENABLE_WRITE_BUFFER
+	storage_flush_insert_buffer();
+#endif
 	DB_LOG_D("DB: Loading the index for %s.%s...\n", index->rel->name, index->attr->name);
 
 	offset  = 0;
@@ -478,14 +480,14 @@ db_result_t db_indexing(relation_t *rel)
 
 	for (tuple_id = 0; tuple_id < cardinality; tuple_id++) {
 		memset(row, 0, sizeof(row));
+		DB_LOG_V("DB: Indexing Tuple id %d\n", tuple_id);
 		result = storage_get_row(rel, &tuple_id, row);
 		if (DB_ERROR(result)) {
 			DB_LOG_E("DB: Failed to get a row in relation %s!\n", rel->name);
 			goto errout;
 		}
 
-		row += offset;
-		result = db_phy_to_value(&value, index->attr, row);
+		result = db_phy_to_value(&value, index->attr, row + offset);
 		if (DB_ERROR(result)) {
 			DB_LOG_E("DB: Failed to get value from row\n");
 			goto errout;
