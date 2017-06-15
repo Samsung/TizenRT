@@ -58,6 +58,7 @@ int total_fail;
 	if ((var) != (ref)) {\
 		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) and (%s == 0x%x) are not equal\n", __func__, __LINE__, api_name, #var, (int)(var), #ref, (int)(ref)); \
 		total_fail++; \
+		return; \
 	} \
 }
 
