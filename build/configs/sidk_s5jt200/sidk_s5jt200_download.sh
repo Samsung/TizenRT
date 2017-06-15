@@ -99,7 +99,11 @@ main()
 
 			# download all binaries using openocd script
 			pushd ${OPENOCD_DIR_PATH}
-			${OPENOCD_BIN_PATH}/openocd -f s5jt200_silicon_evt0_fusing_flash_all.cfg || exit 1
+			if [ "${CONFIG_BUILD_PROTECTED}" = "y" ]; then
+				${OPENOCD_BIN_PATH}/openocd -f s5jt200_silicon_evt0_fusing_flash_all_protected.cfg
+			else
+				${OPENOCD_BIN_PATH}/openocd -f s5jt200_silicon_evt0_fusing_flash_all.cfg
+			fi
 			popd
 			;;
 

@@ -21,6 +21,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/irq.h>
+#include <chip/mpu-reg.h>
 #include "up_internal.h"
 #include "svcall.h"
 #include "mpu.h"

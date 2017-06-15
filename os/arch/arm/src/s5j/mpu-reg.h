@@ -39,8 +39,8 @@
  */
 #define MPU_REG_ENTIRE_MAP     MPU_REG0
 #define MPU_REG_USER_DATA      MPU_REG1
-#define MPU_REG_USER_CONFIG0   MPU_REG2
-#define MPU_REG_USER_HEAP      MPU_REG3
+#define MPU_REG_USER_HEAP      MPU_REG2
+#define MPU_REG_USER_CONFIG0   MPU_REG3
 #define MPU_REG_TASK_STACK     MPU_REG4
 #define MPU_REG_KERN_DATA      MPU_REG5
 #define MPU_REG_KERN_REG1      MPU_REG6
@@ -52,6 +52,20 @@
 #define MPU_REG_STK_GUARD      MPU_REG10
 #endif
 #define MPU_REG_KERN_VEC       MPU_REG11
+#endif
+
+#ifndef __ASSEMBLY__
+typedef void (*fptr)(uintptr_t base, size_t size);
+
+struct mpu_region_info
+{
+	fptr	call;
+	unsigned int	base;
+	unsigned int	size;
+	unsigned int	rgno;
+};
+
+extern const struct mpu_region_info regions_info[];
 #endif
 
 #endif /* __ARCH_ARM_INCLUDE_CHIP_MPU_H */

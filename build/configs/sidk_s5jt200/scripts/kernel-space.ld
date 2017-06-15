@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * configs/sidk_s5jt200/scripts/ld_s5jt200_flash.script
+ * configs/sidk_s5jt200/scripts/kernel-space.ld
  *
  *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -52,16 +52,11 @@
  ****************************************************************************/
 
 /* The S5JT200 has FLASH beginning at address 0x0400:0000 and
- * SRAM beginning at address 0x0202:0000. SRAM 0x02020000 mapped to 0xFFFF:0000 
+ * SRAM beginning at address 0x0202:0000. SRAM 0x02020000 mapped to 0xFFFF:0000
  * for Vector handling. The bootloader change program counter to flash _stext area
  * but it checks program header before jump.
  */
-
-MEMORY
-{
-    flash   (rx)    : ORIGIN = 0x040C8000, LENGTH = 2400K
-    sram    (rwx)   : ORIGIN = 0x02023800, LENGTH = 722K
-}
+ /* Refer memory.ld for allocated kernel space FLASH and SRAM region's */
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
 OUTPUT_ARCH(arm)
@@ -74,7 +69,7 @@ SECTIONS
 		LONG(0);
 		LONG(0x656d6264);
 		. = ALIGN(0x20);
-	} > flash =0x0
+	} > kflash =0x0
 
 	.text : {
 		_stext = ABSOLUTE(.);
@@ -90,22 +85,22 @@ SECTIONS
 		*(.gcc_except_table)
 		*(.gnu.linkonce.r.*)
 		_etext = ABSOLUTE(.);
-	} > flash
+	} > kflash
 
 	.init_section : {
 		_sinit = ABSOLUTE(.);
 		*(.init_array .init_array.*)
 		_einit = ABSOLUTE(.);
-	} > flash
+	} > kflash
 
 	.ARM.extab : {
 		*(.ARM.extab*)
-	} > flash
+	} > kflash
 
 	__exidx_start = ABSOLUTE(.);
 	.ARM.exidx : {
 		*(.ARM.exidx*)
-	} > flash
+	} > kflash
 	__exidx_end = ABSOLUTE(.);
 
 	_eronly = ABSOLUTE(.);
@@ -114,10 +109,9 @@ SECTIONS
 		_sdata = ABSOLUTE(.);
 		*(.data .data.*)
 		*(.gnu.linkonce.d.*)
-		CONSTRUCTORS
+	     CONSTRUCTORS
 		_edata = ABSOLUTE(.);
-	} > sram AT > flash
-
+	} > ksram AT > kflash
 	.bss : {
 		_sbss = ABSOLUTE(.);
 		*(.bss .bss.*)
@@ -125,7 +119,7 @@ SECTIONS
 		*(COMMON)
 		. = ALIGN(4);
 		_ebss = ABSOLUTE(.);
-	} > sram
+	} > ksram
 
 	/* Stabs debugging sections. */
 	.stab 0 : { *(.stab) }
@@ -146,8 +140,5 @@ SECTIONS
 		. = . + 1020;
 		LONG(0);
 		_end = .;
-	} > flash
+	} > kflash
 }
-
-__ksram_segment_start__   = ORIGIN(sram);
-__ksram_segment_size__    = LENGTH(sram);

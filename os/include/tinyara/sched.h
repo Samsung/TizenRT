@@ -178,6 +178,9 @@
 #define CHILD_FLAG_TTYPE_KERNEL  (2 << CHILD_FLAG_TTYPE_SHIFT)	/* Kernel thread */
 #define CHILD_FLAG_EXITED          (1 << 0)	/* Bit 2: The child thread has exit'ed */
 
+#define is_tasktype_kernel(flags) ((flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_KERNEL)
+#define is_tasktype_utask(flags) ((flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_TASK)
+#define is_tasktype_pthread(flags) ((flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD)
 /********************************************************************************
  * Public Type Definitions
  ********************************************************************************/
