@@ -343,6 +343,8 @@ int s5j_dmastart(DMA_HANDLE handle, dma_task *task)
 	DMA_CH_CONTEXT *ch;
 	ch = handle;
 
+	dmavdbg("DMA ch %d start\n", ch->dma_chan_num);
+
 	/* Somwhere here run DMA */
 	ch->task = task;
 

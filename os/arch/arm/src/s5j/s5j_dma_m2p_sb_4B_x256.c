@@ -60,9 +60,13 @@ typedef struct d_dma_task_priv {
 	void *SAR;
 	void *DAR;
 	void *CCR;
+	void *LOOP2;
 	void *LOOP1;
 	void *LOOP0;
 	void *EVENT_CH;
+	void *finish_1;
+	void *finish_2;
+	int finish_size;
 } t_dma_task_priv;
 
 /****************************************************************************
@@ -88,6 +92,8 @@ static int s5j_dma_priv_setup(DMA_HANDLE handle, dma_task *task)
 	t_dma_task_priv *priv_task = (t_dma_task_priv *) task;
 	DMA_CH_CONTEXT *ch;
 	ch = handle;
+	unsigned int tx_num = (task->size / 4) & (~0xFF);
+	unsigned int tx_num_residual = (task->size / 4) & 0xFF;
 
 	priv_task->chflags = CCR_M2P_DFLT |
 						 SRC_BURST_SIZE(BS_1) |
@@ -96,10 +102,24 @@ static int s5j_dma_priv_setup(DMA_HANDLE handle, dma_task *task)
 	DMA_MC_4B_SET(priv_task->SAR, task->src);
 	DMA_MC_4B_SET(priv_task->DAR, task->dst);
 	DMA_MC_4B_SET(priv_task->CCR, priv_task->chflags);
-	DMA_MC_1B_SET(priv_task->LOOP1, (((task->size / 4 - 1) >> 8) & 0xFF));
-	DMA_MC_1B_SET(priv_task->LOOP0, (task->size / 4 - 1) & 0xFF);
+
+	if (tx_num > 0) {
+		DMA_MC_1B_SET(priv_task->LOOP1, (((tx_num - 1) >> 8) & 0xFF));
+		DMA_MC_1B_SET(priv_task->LOOP0, (tx_num - 1) & 0xFF);
+
+		DMA_MC_1B_SET(priv_task->LOOP2, (tx_num_residual - 1) & 0xFF);
+	} else {
+		DMA_MC_1B_SET(priv_task->LOOP1, 0);
+		DMA_MC_1B_SET(priv_task->LOOP0, (tx_num_residual - 1) & 0xFF);
+	}
 
 	DMA_MC_EV_SET(priv_task->EVENT_CH, ch->dma_chan_num);
+
+	if ((tx_num_residual == 0) || (tx_num == 0)) {
+		memcpy(priv_task->finish_1, priv_task->finish_2, priv_task->finish_size);
+	} else {
+		memset(priv_task->finish_1, DMA_NOP, priv_task->finish_size);
+	}
 
 	arch_clean_dcache((uintptr_t)task->microcode,
 					  (uintptr_t)(task->microcode + priv_task->mc_size));
@@ -131,6 +151,7 @@ dma_task *dma_task_m2p_sb_4B_x256_alloc(DMA_REQ_MAP d_ph_ch)
 	void *mc_base;
 	void *loop_offs0;
 	void *loop_offs1;
+	void *loop_offs2;
 
 	task = zalloc(sizeof(t_dma_task_priv));
 	if (task == NULL) {
@@ -138,7 +159,7 @@ dma_task *dma_task_m2p_sb_4B_x256_alloc(DMA_REQ_MAP d_ph_ch)
 		return NULL;
 	}
 
-	task->microcode = zalloc(64);
+	task->microcode = zalloc(128);
 	if (task->microcode == NULL) {
 		dmadbg("ERROR: Failed to allocate microcode memory\n");
 		free(task);
@@ -146,43 +167,63 @@ dma_task *dma_task_m2p_sb_4B_x256_alloc(DMA_REQ_MAP d_ph_ch)
 	}
 
 	priv_task = (t_dma_task_priv *) task;
-	priv_task->mc_array_size = 64;
+	priv_task->mc_array_size = 128;
 
 	mc_base = task->microcode;
-
+	/* Set src, dst, ctrl registers */
 	mc_base += DMA_Encode_DMAMOV(mc_base, &(priv_task->SAR), DMA_SAR);
 	mc_base += DMA_Encode_DMAMOV(mc_base, &(priv_task->DAR), DMA_DAR);
 	mc_base += DMA_Encode_DMAMOV(mc_base, &(priv_task->CCR), DMA_CCR);
 
 	mc_base += DMA_Encode_DMAFLUSHP(mc_base, d_ph_ch);
 
-	/*loop start */
+	/* Basic loop start */
 	mc_base += DMA_Encode_DMALP(mc_base, LC1, &(priv_task->LOOP1));
 	loop_offs1 = mc_base;
 	mc_base += DMA_Encode_DMALP(mc_base, LC0, &(priv_task->LOOP0));
 	loop_offs0 = mc_base;
 
-	/* 0 - wait for either Sinnle/Busrs requests */
-	mc_base += DMA_Encode_DMAWFP(mc_base, 1, d_ph_ch);
+	mc_base += DMA_Encode_DMAWFP(mc_base, 1, d_ph_ch);	/* 0 - wait for either Sinnle/Busrs requests */
 
-	/* 0 - LD does not depend on burst L/S settings */
-	mc_base += DMA_Encode_DMALD(mc_base, 0);
-	mc_base += DMA_Encode_DMALD(mc_base, 0);
-	mc_base += DMA_Encode_DMALD(mc_base, 0);
-	mc_base += DMA_Encode_DMALD(mc_base, 0);
-
-	/* 0 - STP singles / NOP burst */
-	mc_base += DMA_Encode_DMASTP(mc_base, 0, d_ph_ch);
-
-	/* 2 - NOP singles / STP burst */
-	mc_base += DMA_Encode_DMASTP(mc_base, 2, d_ph_ch);
+	mc_base += DMA_Encode_DMALD(mc_base, 0);	/* 0 - LD does not depend on burst L/S settings */
+	mc_base += DMA_Encode_DMALD(mc_base, 0);	/* 0 - LD does not depend on burst L/S settings */
+	mc_base += DMA_Encode_DMALD(mc_base, 0);	/* 0 - LD does not depend on burst L/S settings */
+	mc_base += DMA_Encode_DMALD(mc_base, 0);	/* 0 - LD does not depend on burst L/S settings */
+	mc_base += DMA_Encode_DMASTP(mc_base, 0, d_ph_ch);	/* 0 - STP singles / NOP burst */
+	mc_base += DMA_Encode_DMASTP(mc_base, 2, d_ph_ch);	/* 2 - NOP singles / STP burst */
 
 	mc_base += DMA_Encode_DMAFLUSHP(mc_base, d_ph_ch);
 
-	/*loop end */
 	mc_base += DMA_Encode_DMALPEND(mc_base, LC0_END, mc_base - loop_offs0);
 	mc_base += DMA_Encode_DMALPEND(mc_base, LC1_END, mc_base - loop_offs1);
+	/*Basic loop end */
 
+	/* Finish here, if only basic loop used */
+	priv_task->finish_1 = mc_base;
+	mc_base += DMA_Encode_DMAWMB(mc_base);
+	mc_base += DMA_Encode_DMASEV(mc_base, &(priv_task->EVENT_CH));
+	mc_base += DMA_Encode_DMAEND(mc_base);
+	priv_task->finish_size = mc_base - priv_task->finish_1;
+
+	/* Additional loop start */
+	mc_base += DMA_Encode_DMALP(mc_base, LC0, &(priv_task->LOOP2));
+	loop_offs2 = mc_base;
+
+	mc_base += DMA_Encode_DMAWFP(mc_base, 1, d_ph_ch);	/* 0 - wait for either Sinnle/Busrs requests */
+
+	mc_base += DMA_Encode_DMALD(mc_base, 0);	/* 0 - LD does not depend on burst L/S settings */
+	mc_base += DMA_Encode_DMALD(mc_base, 0);	/* 0 - LD does not depend on burst L/S settings */
+	mc_base += DMA_Encode_DMALD(mc_base, 0);	/* 0 - LD does not depend on burst L/S settings */
+	mc_base += DMA_Encode_DMALD(mc_base, 0);	/* 0 - LD does not depend on burst L/S settings */
+	mc_base += DMA_Encode_DMASTP(mc_base, 0, d_ph_ch);	/* 0 - STP singles / NOP burst */
+	mc_base += DMA_Encode_DMASTP(mc_base, 2, d_ph_ch);	/* 2 - NOP singles / STP burst */
+
+	mc_base += DMA_Encode_DMAFLUSHP(mc_base, d_ph_ch);
+
+	mc_base += DMA_Encode_DMALPEND(mc_base, LC0_END, mc_base - loop_offs2);
+	/*loop end */
+
+	priv_task->finish_2 = mc_base;
 	mc_base += DMA_Encode_DMAWMB(mc_base);
 	mc_base += DMA_Encode_DMASEV(mc_base, &(priv_task->EVENT_CH));
 	mc_base += DMA_Encode_DMAEND(mc_base);
