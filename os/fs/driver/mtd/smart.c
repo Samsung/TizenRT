@@ -1700,6 +1700,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	uint16_t sectorsize, prerelease;
 	uint16_t logicalsector;
 	uint16_t loser;
+	uint16_t winner;
 	uint32_t readaddress;
 	uint32_t offset;
 	uint16_t seq1;
@@ -1816,6 +1817,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	}
 
 	for (sector = 0; sector < totalsectors; sector++) {
+		winner = sector;
 		fvdbg("Scan sector %d\n", sector);
 
 		/* Calculate the read address for this sector */
@@ -2114,10 +2116,16 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 #else
 				loser = dupsector;
 #endif
+				winner = sector;
 			} else {
 				/* We keep the original mapping and seq2 is the loser */
 
 				loser = sector;
+#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
+			winner = dev->sMap[logicalsector];
+#else
+			winner = smart_cache_lookup(dev, logicalsector);
+#endif
 			}
 
 			/* Now release the loser sector */
@@ -2142,13 +2150,13 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 		/* Update the logical to physical sector map */
 
-		dev->sMap[logicalsector] = sector;
+		dev->sMap[logicalsector] = winner;
 #else
 		/* Mark the logical sector as used in the bitmap */
 		dev->sBitMap[logicalsector >> 3] |= 1 << (logicalsector & 0x07);
 
 		if (logicalsector < dev->reservedsector) {
-			smart_add_sector_to_cache(dev, logicalsector, sector, __LINE__);
+			smart_add_sector_to_cache(dev, logicalsector, winner, __LINE__);
 		}
 #endif
 	}

@@ -2475,6 +2475,7 @@ static int smartfs_redo_rename(struct smartfs_mountpt_s *fs)
 	char *filename;
 	uint16_t oldflags;
 	uint16_t oldoffset;
+	uint16_t firstsector;
 	mode_t mode;
 	uint16_t type;
 	struct smart_read_write_s req;
@@ -2514,9 +2515,11 @@ static int smartfs_redo_rename(struct smartfs_mountpt_s *fs)
 #endif
 
 	/* Now create new entry at new location */
+	firstsector = (uint16_t)direntry->firstsector;
 	entry->generic_1 = (uint16_t)mode;
 	memcpy(j_mgr->buffer + sizeof(struct smartfs_logging_entry_s), filename, entry->datalen);
-	ret = smartfs_redo_create(fs, type, (uint16_t)direntry->firstsector);
+	fdbg("first sector : %d\n", firstsector);
+	ret = smartfs_redo_create(fs, type, firstsector);
 	if (ret != OK) {
 		goto errout;
 	}
