@@ -42,13 +42,35 @@ die() {
 	exit 1
 }
 
+checksum() {
+	local file=$1
+	local key=$2
+
+	case $HOST in
+		win* | linux*)
+			local sum=`md5sum $file | awk '{print $1}'`
+			;;
+		mac*)
+			local sum=`md5 $file | awk '{print $4}'`
+			;;
+		*)
+			;;
+	esac
+
+	if [ "$key" = "$sum" ]; then
+		echo "0"
+	else
+		echo "1"
+	fi
+}
+
 fetch_openocd() {
 	if [ ! -d $srcRoot/openocd ]; then
 		case $OPENOCD_SRC_URL in
 			https://*gz|http://*gz|https://*bz2)
 				IMG=`basename $OPENOCD_SRC_URL`
 				wget $OPENOCD_SRC_URL -O /tmp/$IMG
-				if [ $OPENOCD_SRC_MD5SUM != `md5sum /tmp/$IMG | awk '{print $1}'` ]; then
+				if [ `checksum /tmp/$IMG $OPENOCD_SRC_MD5SUM` -eq 1 ]; then
 					die "Checksum failed: $OPENOCD_SRC_URL($OPENOCD_SRC_MD5SUM)"
 				fi
 				mkdir $srcRoot/openocd
@@ -70,7 +92,7 @@ fetch_openocd() {
 fetch_libftdi() {
 	IMG=`basename $LIBFTDI_SRC_URL`
 	wget $LIBFTDI_SRC_URL -O /tmp/$IMG
-	if [ $LIBFTDI_SRC_MD5SUM != `md5sum /tmp/$IMG | awk '{print $1}'` ]; then
+	if [ `checksum /tmp/$IMG $LIBFTDI_SRC_MD5SUM` -eq 1 ]; then
 		die "Checksum failed: $LIBFTDI_SRC_URL($LIBFTDI_SRC_MD5SUM)"
 	fi
 	mkdir $srcRoot/libftdi
@@ -88,9 +110,10 @@ fetch_libusb0() {
 fetch_libusb1() {
 	IMG=`basename $LIBUSB1_SRC_URL`
 	wget $LIBUSB1_SRC_URL -O /tmp/$IMG
-	if [ $LIBUSB1_SRC_MD5SUM != `md5sum /tmp/$IMG | awk '{print $1}'` ]; then
+	if [ `checksum /tmp/$IMG $LIBUSB1_SRC_MD5SUM` -eq 1 ]; then
 		die "Checksum failed: $LIBUSB1_SRC_URL($LIBUSB1_SRC_MD5SUM)"
 	fi
+
 	mkdir $srcRoot/libusb1
 	tar -xvf /tmp/$IMG --strip-components 1 -C $srcRoot/libusb1
 	rm -rf /tmp/$IMG
@@ -117,6 +140,9 @@ setenv() {
 			;;
 		*mingw*|*msys)
 			HOST=win
+			;;
+		*darwin*)
+			HOST=mac
 			;;
 		*)
 			die "Not-support OS type - $CTARGET"
@@ -150,71 +176,97 @@ check() {
 	which autopoint || die "autopoint is not installed."
 	which flex || die "flex is not installed."
 
-	if [ "$OSTYPE" == "linux-gnu" ]; then
-		automake --version || die "automake is not installed."
-		autoconf --version || die "autoconf is not installed."
-		libtoolize --version || die "libtool is not installed."
-		pkg-config --list-all | grep libudev || die "libudev is not installed."
-	else
-		local depend_list=(gcc-libs binutils readline \
-			headers-git crt-git \
-			libwinpthread boost swig python3 gettext libiconv)
+	case $OSTYPE in
+		linux-gnu | linux )
+			automake --version || die "automake is not installed."
+			autoconf --version || die "autoconf is not installed."
+			libtoolize --version || die "libtool is not installed."
+			pkg-config --list-all | grep libudev || die "libudev is not installed."
+			;;
+		darwin* )
+			local tools=(glibtoolize install_name_tool)
+			for f in ${tools[@]};
+			do
+				echo check for $f...
+				if [ ! -e "`which $f`" ]; then
+					echo "You should be install $f"
+					echo "	brew install libtool gettext;"
+					echo "  export PATH=$PATH:${gettext_dir}/bin"
+					echo "And Xcode can be installed from the APP store."
+					die
+				fi
+			done
+			;;
+		msys*)
+			local depend_list=(gcc-libs binutils readline \
+				headers-git crt-git \
+				libwinpthread boost swig python3 gettext libiconv)
 
-		local cross_tools=(gcc mingw32-make cmake pkg-config)
-		local tools=(autoconf automake libtoolize)
+			local cross_tools=(gcc mingw32-make cmake pkg-config)
+			local tools=(autoconf automake libtoolize)
 
-		if [ -z ${MINGW_PACKAGE_PREFIX} ]; then
-			echo "undefined reference to \$MINGW_PACKAGE_PREFIX: $MINGW_PACKAGE_PREFIX"
-			echo "You should be try again on mingw${HOST: -2}.exe"
-			die
-		fi
-
-		echo "SET UP#1. Git confiure"
-		if [ ! -e "`which git`" ]; then
-			echo "uninstalled Git on your PC"
-			pacman -S --noconfirm --needed git
-		else
-			echo "already installed Git"
-		fi
-
-		for f in ${tools[@]};
-		do
-			echo check for $f...
-			local ret=`which $f`
-			if [ ! -e "$ret" ]; then
-				echo "You should be install $f :"
-				echo "    pacman -S --noconfirm --needed base-devel"
+			if [ -z ${MINGW_PACKAGE_PREFIX} ]; then
+				echo "undefined reference to \$MINGW_PACKAGE_PREFIX: $MINGW_PACKAGE_PREFIX"
+				echo "You should be try again on mingw${HOST: -2}.exe"
 				die
 			fi
-		done
 
-		for f in ${cross_tools[@]};
-		do
-			echo check for $f...
-			if [ ! -e "`which $f`" ]; then
-				echo "You should be install $f :"
-				echo "    pacman -S --noconfirm --needed $MINGW_PACKAGE_PREFIX-toolchain $MINGW_PACKAGE_PREFIX-cmake"
-				die
+			echo "SET UP#1. Git confiure"
+			if [ ! -e "`which git`" ]; then
+				echo "uninstalled Git on your PC"
+				pacman -S --noconfirm --needed git
+			else
+				echo "already installed Git"
 			fi
-		done
 
-		local pkg=""
+			for f in ${tools[@]};
+			do
+				echo check for $f...
+				local ret=`which $f`
+				if [ ! -e "$ret" ]; then
+					echo "You should be install $f :"
+					echo "	pacman -S --noconfirm --needed base-devel"
+					die
+				fi
+			done
 
-		for f in ${depend_list[@]};
-		do
-			pkg="$pkg $MINGW_PACKAGE_PREFIX-$f"
-		done
-		pacman -S --noconfirm --needed $pkg > /dev/null 2>&1
-	fi
+			for f in ${cross_tools[@]};
+			do
+				echo check for $f...
+				if [ ! -e "`which $f`" ]; then
+					echo "You should be install $f :"
+					echo "	pacman -S --noconfirm --needed $MINGW_PACKAGE_PREFIX-toolchain $MINGW_PACKAGE_PREFIX-cmake"
+					die
+				fi
+			done
+
+			local pkg=""
+
+			for f in ${depend_list[@]};
+			do
+				pkg="$pkg $MINGW_PACKAGE_PREFIX-$f"
+			done
+			pacman -S --noconfirm --needed $pkg > /dev/null 2>&1
+			;;
+		*)
+			;;
+	esac
 }
 
 build-libftdi() {
-	if [ -z "${HOST##win*}" ]; then
-		local option=-G"MSYS Makefiles"
-		local LIBEXT=".dll.a"
-	else
-		local LIBEXT=".so"
-	fi
+	case $HOST in
+		win*)
+			local option=-G"MSYS Makefiles"
+			local LIBEXT=".dll.a"
+			;;
+		linux*)
+			local LIBEXT=".so"
+			;;
+		mac*)
+			local LIBEXT=".dylib"
+			;;
+	esac
+
 	# build libftdi
 	cd $srcRoot/libftdi
 	cmake "$option" -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
@@ -322,21 +374,35 @@ build-libconfuse() {
 }
 
 build-openocd() {
-	if [ -z "${HOST##win*}" ]; then
-		local option=$(cat << EOF
-			--enable-static
-			--disable-werror
-			--enable-parport-giveio
+	case $HOST in
+		win*)
+			local option=$(cat << EOF
+				--enable-static
+				--disable-werror
+				--enable-parport-giveio
 EOF
 )
-		LDFLAGS="$LDFLAGS -L$MSYSTEM_PREFIX/$MINGW_CHOST/lib -static -static-libgcc -static-libstdc++"
-		local LIBS='-lwinpthread'
-		local HIDAPI_LIB='-l:libhidapi.a'
-	else
-		local LIBS='-ludev -lpthread'
-		local HIDAPI_LIB='-l:libhidapi-libusb.a'
+			LDFLAGS="$LDFLAGS -L$MSYSTEM_PREFIX/$MINGW_CHOST/lib -static -static-libgcc -static-libstdc++"
+			local LIBS='-lwinpthread'
+			local HIDAPI_LIB='-lhidapi'
+			;;
+		linux*)
+			local LIBS='-ludev -lpthread'
+			local HIDAPI_LIB='-l:libhidapi-libusb.a'
+			;;
+		mac*)
+			local option=--disable-werror
+			local LIBS='-lSystem'
+			LDFLAGS="$LDFLAGS -Bstatic"
+			local HIDAPI_LIB='-lhidapi'
+			;;
+	esac
+
+	if [ ! -e "`which $CHOST-gcc`" ]; then
+		CHOST=
 	fi
 
+	LDFLAGS="$LDFLAGS -L$INSTALL_DIR/bin -L$INSTALL_DIR/lib"
 	# build openocd
 	rm -rf $buildDir/openocd-install
 	mkdir -p $buildDir/openocd-install
@@ -374,13 +440,13 @@ EOF
 		--disable-buspirate \
 		--disable-sysfsgpio \
 		--prefix=$buildDir/openocd-install \
-		LIBFTDI_LIBS="-L$INSTALL_DIR/bin -L$INSTALL_DIR/lib -l:libftdi1.a -l:libusb-1.0.a" \
+		LIBFTDI_LIBS="-lftdi1 -lusb-1.0" \
 		LIBFTDI_CFLAGS="-I$INSTALL_DIR/include/libftdi1 -I$INSTALL_DIR/include/libusb-1.0" \
-		LIBUSB0_LIBS="-L$INSTALL_DIR/lib -l:libusb.a" \
+		LIBUSB0_LIBS="-lusb" \
 		LIBUSB0_CFLAGS="-I$INSTALL_DIR/include/libusb0 -I$INSTALL_DIR/include/libusb-1.0" \
-		LIBUSB1_LIBS="-L$INSTALL_DIR/lib -l:libusb-1.0.a" \
+		LIBUSB1_LIBS="-lusb-1.0" \
 		LIBUSB1_CFLAGS="-I$INSTALL_DIR/include/libusb-1.0" \
-		HIDAPI_LIBS="-L$INSTALL_DIR/lib $HIDAPI_LIB" \
+		HIDAPI_LIBS="$HIDAPI_LIB" \
 		HIDAPI_CFLAGS="-I$INSTALL_DIR/include/hidapi" \
 		PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$INSTALL_DIR/lib/pkgconfig" \
 		LIBS="$LIBS" \
@@ -396,10 +462,25 @@ packaging() {
 	if [ ! -e $copyDir/$HOST ]; then
 		mkdir -p $copyDir/$HOST
 	fi
-	if [ -z "${HOST##win*}" ]; then
-		cp $INSTALL_DIR/bin/libusb-1.0.dll $copyDir/$HOST/
-		EXT=".exe"
-	fi
+	case $HOST in
+		win*)
+			cp $INSTALL_DIR/bin/libusb-1.0.dll $copyDir/$HOST/
+			EXT=".exe"
+			;;
+		mac*)
+			for f in `otool -L $buildDir/openocd-install/bin/openocd$EXT | awk '{print $1}' | grep dylib`;
+			do
+				if [ -e "$INSTALL_DIR/lib/`basename $f`" ]; then
+					cp "$INSTALL_DIR/lib/`basename $f`" $copyDir/$HOST/
+					install_name_tool -change $f \
+						"@executable_path/`basename $f`" \
+						$buildDir/openocd-install/bin/openocd$EXT
+				fi
+			done
+			;;
+		linux*)
+			;;
+	esac
 	cp -r $buildDir/openocd-install/share/openocd/scripts $copyDir
 	cp $buildDir/openocd-install/bin/openocd$EXT $copyDir/$HOST/
 }
