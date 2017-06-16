@@ -165,6 +165,9 @@ unsigned long cal_clk_getrate(unsigned int id)
 	case gate_hsi2c3:
 		rate = S5J_DEFAULT_I2C_CLOCK;
 		break;
+	case gate_wdt:
+		rate = S5J_DEFAULT_WDT_CLOCK;
+		break;
 	default:
 		break;
 	}
