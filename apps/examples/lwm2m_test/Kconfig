@@ -6,6 +6,7 @@
 config EXAMPLES_LWM2M_TEST
 	bool "lwm2m test application"
 	default n
+	depends on !DM
 	depends on LWM2M_CLIENT_MODE || LWM2M_SERVER_MODE
 
 if EXAMPLES_LWM2M_TEST
