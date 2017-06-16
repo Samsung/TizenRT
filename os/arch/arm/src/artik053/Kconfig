@@ -1,5 +1,3 @@
-if ARCH_BOARD_ARTIK053
-
 config ARTIK053_BOOT_FAILURE_DETECTION
 	bool "Clear bootcount when boot completes"
 	default y
@@ -154,5 +152,4 @@ config ARTIK053_RAMMTD_DEV_POINT
 config ARTIK053_RAMMTD_MOUNT_POINT
 	string "Mountpoint of the partition for ramfs r/w file system"
 	default "/ramfs"
-endif
 endif
