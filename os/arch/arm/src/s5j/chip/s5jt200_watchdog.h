@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/s5j/s5j_watchdog.h
+ * arch/arm/src/s5j/chip/s5j200_watchdog.h
  *
- *   Copyright (C) 2009, 2013, 2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009-2010, 2014-2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,56 +50,31 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_S5J_S5J_WATCHDOG_H
-#define __ARCH_ARM_SRC_S5J_S5J_WATCHDOG_H
-
-/****************************************************************************
- * Included Files
- ****************************************************************************/
-#include <tinyara/config.h>
-
-#if defined(CONFIG_S5J_S5JT200)
-#include "chip/s5jt200_watchdog.h"
-#endif
+#ifndef __ARCH_ARM_SRC_S5J_CHIP_S5JT200_WATCHDOG_H
+#define __ARCH_ARM_SRC_S5J_CHIP_S5JT200_WATCHDOG_H
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#ifndef __ASSEMBLY__
+/* Register Address *********************************************************/
+#define S5J_WDT_WTCON			0x80030000
+#define S5J_WDT_WTDAT			0x80030004
+#define S5J_WDT_WTCNT			0x80030008
+#define S5J_WDT_WTCLRINT		0x8003000C
 
-#undef EXTERN
-#if defined(__cplusplus)
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
+#define S5J_WDT_OSC				(26*1000*1000)
 
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-void s5j_watchdog_disable(void);
+/* Register Bitfield Definitions ********************************************/
 
-#ifdef CONFIG_S5J_WATCHDOG
-void s5j_watchdog_enable(void);
-void s5j_watchdog_reset_disable(void);
-void s5j_watchdog_reset_enable(void);
-void s5j_watchdog_irq_disable(void);
-void s5j_watchdog_irq_enable(void);
-void s5j_watchdog_clk_set(unsigned int prescaler, unsigned int divider);
-void s5j_watchdog_set_reload_val(unsigned int reload_val);
-unsigned int s5j_watchdog_get_curr(void);
-void s5j_watchdog_set_curr(unsigned int curr_val);
-void s5j_watchdog_clear_int(void);
-#endif
+/* WTCON register */
+#define WTCON_PRESCALER(a)						((a & 0xF) << 8)
+#define WTCON_WATCHDOG_EN						(1 << 5)
+#define WTCON_WATCHDOG_DIS						(0 << 5)
+#define WTCON_CLOCK(a)							((a & 0x3) << 3)
+#define WTCON_IRQ_EN							(1 << 2)
+#define WTCON_IRQ_DIS							(0 << 2)
+#define WTCON_RESET_EN							(1 << 0)
+#define WTCON_RESET_DIS							(0 << 0)
 
-int s5j_wdg_initialize(FAR const char *devpath);
-
-#undef EXTERN
-#if defined(__cplusplus)
-}
-#endif
-
-#endif							/* __ASSEMBLY__ */
-#endif							/* __ARCH_ARM_SRC_S5J_S5J_WATCHDOG_H */
+#endif							/* __ARCH_ARM_SRC_S5J_CHIP_S5JT200_WATCHDOG_H */

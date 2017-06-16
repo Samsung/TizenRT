@@ -117,8 +117,12 @@ endif
 CHIP_CSRCS += s5j_boot.c s5j_irq.c
 CHIP_CSRCS += s5j_serial.c
 CHIP_CSRCS += s5j_mac.c
-CHIP_CSRCS += s5j_watchdog.c
 CHIP_CSRCS += s5j_systemreset.c
+
+CHIP_CSRCS += s5j_watchdog.c
+ifeq ($(CONFIG_WATCHDOG),y)
+CHIP_CSRCS += s5j_watchdog_lowerhalf.c
+endif
 
 CHIP_CSRCS += s5j_gpio.c
 ifeq ($(CONFIG_GPIO),y)
