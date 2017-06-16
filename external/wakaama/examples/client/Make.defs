@@ -33,6 +33,8 @@
 #
 ############################################################################
 
+ifeq ($(CONFIG_DM),y)
+
 CSRCS += lwm2mclient.c
 CSRCS += object_access_control.c
 CSRCS += object_connectivity_moni.c object_connectivity_stat.c
@@ -44,7 +46,6 @@ CSRCS += object_server.c
 CSRCS += system_api.c
 CSRCS += test_object.c
 
-
 # Interface API functions for dm frameworks
 CSRCS += connectivity_interface.c
 
@@ -53,9 +54,7 @@ CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/shared
 
 CFLAGS+=-D__TINYARA__
 
-ifeq ($(CONFIG_LWM2M_SECURITY),y)
-CFLAGS+=-DWITH_MBEDTLS
-endif
-
 DEPPATH += --dep-path wakaama/examples/client
 VPATH += :wakaama/examples/client
+
+endif

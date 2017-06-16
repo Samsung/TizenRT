@@ -33,6 +33,8 @@
 #
 ############################################################################
 
+ifeq ($(CONFIG_DM),y)
+
 # Routing table support
 
 CSRCS = object_device.c object_security.c object_server.c test_object.c
@@ -41,3 +43,5 @@ MAINSRC = lightclient.c
 
 DEPPATH += --dep-path wakaama/examples/lightclient
 VPATH += :wakaama/examples/lightclient
+
+endif
