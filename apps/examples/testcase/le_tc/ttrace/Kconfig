@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_TESTCASE_TTRACE
+	bool "T-trace TestCase Example"
+	default n
+	---help---
+		Enable the T-trace TestCase example
+
