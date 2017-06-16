@@ -75,7 +75,7 @@
  * Description:
  *   This function walk through heap and displays alloc info.
  ****************************************************************************/
-void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, int pid)
+void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 {
 	struct mm_allocnode_s *node;
 	size_t mxordblk = 0;
@@ -191,7 +191,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, int pid)
  * Description:
  * Add the allocated size in tcb
  ****************************************************************************/
-void heapinfo_add_size(int16_t pid, size_t size)
+void heapinfo_add_size(pid_t pid, mmsize_t size)
 {
 	struct tcb_s *rtcb = sched_gettcb(pid);
 	if (rtcb) {
@@ -209,7 +209,7 @@ void heapinfo_add_size(int16_t pid, size_t size)
  * Description:
  * Subtract the allocated size in tcb
  ****************************************************************************/
-void heapinfo_subtract_size(int16_t pid, size_t size)
+void heapinfo_subtract_size(pid_t pid, mmsize_t size)
 {
 	struct tcb_s *rtcb = sched_gettcb(pid);
 
@@ -225,7 +225,7 @@ void heapinfo_subtract_size(int16_t pid, size_t size)
  * Description:
  * Calculate the total allocated size and update the peak allocated size for heap
  ****************************************************************************/
-void heapinfo_update_total_size(struct mm_heap_s *heap, int size)
+void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size)
 {
 	heap->total_alloc_size += size;
 	if (heap->total_alloc_size > heap->peak_alloc_size) {

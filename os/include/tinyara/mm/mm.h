@@ -235,7 +235,7 @@ typedef size_t mmaddress_t;		/* 32 bit address space */
 #endif
 
 #define SIZEOF_MM_MALLOC_DEBUG_INFO \
-	(sizeof(mmaddress_t) + sizeof(int16_t) + sizeof(uint16_t))
+	(sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
 #endif
 
 /* This describes an allocated chunk.  An allocated chunk is
@@ -247,8 +247,8 @@ struct mm_allocnode_s {
 	mmsize_t size;					/* Size of this chunk */
 	mmsize_t preceding;				/* Size of the preceding chunk */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t alloc_call_addr;	/* malloc call address */
-	int16_t pid;					/* PID info */
+	mmaddress_t alloc_call_addr;			/* malloc call address */
+	pid_t pid;					/* PID info */
 	uint16_t reserved;				/* Reserved for future use. */
 #endif
 
@@ -601,13 +601,13 @@ int mm_size2ndx(size_t size);
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions contained in kmm_mallinfo.c . Used to display memory allocation details */
-void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, int pid);
+void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid);
 /* Funciton to add memory allocation info */
 void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_retaddr);
 
-void heapinfo_add_size(int16_t pid, size_t size);
-void heapinfo_subtract_size(int16_t pid, size_t size);
-void heapinfo_update_total_size(struct mm_heap_s *heap, int size);
+void heapinfo_add_size(pid_t pid, mmsize_t size);
+void heapinfo_subtract_size(pid_t pid, mmsize_t size);
+void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size);
 #endif
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
