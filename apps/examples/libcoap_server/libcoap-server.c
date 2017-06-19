@@ -173,6 +173,7 @@ void hnd_put_time(coap_context_t *ctx, struct coap_resource_t *resource, coap_ad
 		}
 		my_clock_base -= t / COAP_TICKS_PER_SECOND;
 	}
+	printf("coap_server : hnd_put_time, my_clock_base changed %ld\n", my_clock_base);
 }
 
 void hnd_delete_time(coap_context_t *ctx, struct coap_resource_t *resource, coap_address_t *peer, coap_pdu_t *request, str *token, coap_pdu_t *response)
@@ -266,7 +267,7 @@ void init_resources(coap_context_t *ctx)
 	r = coap_resource_init((unsigned char *)"time", 4, 0);
 	coap_register_handler(r, COAP_REQUEST_GET, hnd_get_time);
 	coap_register_handler(r, COAP_REQUEST_PUT, hnd_put_time);
-	coap_register_handler(r, COAP_REQUEST_DELETE, hnd_delete_time);
+	//coap_register_handler(r, COAP_REQUEST_DELETE, hnd_delete_time);
 
 	coap_add_attr(r, (unsigned char *)"ct", 2, (unsigned char *)"0", 1, 0);
 	coap_add_attr(r, (unsigned char *)"title", 5, (unsigned char *)"\"Internal Clock\"", 16, 0);
