@@ -1,0 +1,27 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+comment "Sensor Drivers"
+
+if SENSOR
+
+config SENSOR_PPD42NS
+	bool "Shinyei PPD42NS Dust Sensor"
+	default n
+	select GPIO
+	---help---
+		Enable driver support for the Shinyei PPD42NS Dust Sensor
+
+if SENSOR_PPD42NS
+config SENSOR_PPD42NS_GPIO_NUM
+	int "PPD42NS GPIO Pin Number"
+	default 58
+	---help---
+		the pin number of GPIO that is connected to PPD42NS's Dust Signal Pin
+
+endif # SENSOR_PPD42NS
+
+endif # SENSOR
+

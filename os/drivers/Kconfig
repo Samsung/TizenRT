@@ -466,3 +466,12 @@ menuconfig DRIVERS_WIRELESS
 
 source drivers/wireless/Kconfig
 
+menuconfig SENSOR
+	bool "Sensor Driver Support"
+	default n
+	---help---
+		This selection enables building of the sensor driver.
+
+if SENSOR
+source drivers/sensors/Kconfig
+endif
