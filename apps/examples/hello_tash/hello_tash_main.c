@@ -69,11 +69,12 @@
  * Private Data & Functions
  ****************************************************************************/
 /* example */
-static int hello_example(int argc, char *argv[])
+static void *hello_example(void *arg)
 {
+	(void)arg;
 	printf("This is an example to add it in tash\n");
 	printf("Hello, World!!\n");
-	return 0;
+	return NULL;
 }
 
 /*  Call-back function registered in TASH.
@@ -83,7 +84,7 @@ static int hello_example(int argc, char *argv[])
  *   2. stacksize
  *   3. register entry function of pthread (example)
  */
-static void hello_tash_cb(int argc, char **args)
+static int hello_tash_cb(int argc, char **args)
 {
 	pthread_t hello_tash;
 	pthread_attr_t attr;
@@ -126,6 +127,7 @@ static void hello_tash_cb(int argc, char **args)
 #endif
 
 	printf("hello_tash is finished\n");
+	return 0;
 }
 
 /****************************************************************************
