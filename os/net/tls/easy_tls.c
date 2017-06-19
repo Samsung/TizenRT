@@ -153,7 +153,10 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 		if (ret) {
 			return TLS_INVALID_DEVKEY;
 		}
-		mbedtls_ssl_conf_own_cert(ctx->conf, ctx->crt->next, ctx->pkey);
+		ret = mbedtls_ssl_conf_own_cert(ctx->conf, ctx->crt->next, ctx->pkey);
+		if (ret) {
+			return TLS_INVALID_DEVCERT;
+		}
 	}
 
 	return ret;
@@ -224,7 +227,11 @@ static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 	if (opt->force_ciphersuites[0] > 0) {
 		mbedtls_ssl_conf_ciphersuites(ctx->conf, opt->force_ciphersuites);
 	}
-	mbedtls_ssl_setup(session->ssl, ctx->conf);
+
+	if ((ret = mbedtls_ssl_setup(session->ssl, ctx->conf) != 0)) {
+		ret = TLS_SET_DEFAULT_FAIL;
+		goto errout;
+	}
 
 	return TLS_SUCCESS;
 
@@ -286,8 +293,6 @@ int TLSCtx_free(tls_ctx *ctx)
 	tls_context_release(ctx);
 	tls_context_free(ctx);
 
-	TLS_FREE(ctx);
-
 	EASY_TLS_DEBUG("TLSCtx free\n");
 	return TLS_SUCCESS;
 }
@@ -300,7 +305,7 @@ tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt)
 	mbedtls_net_context listen_ctx;
 	tls_session *session = NULL;
 
-	if (ctx == NULL || opt == NULL) {
+	if (fd < 0 || ctx == NULL || opt == NULL) {
 		EASY_TLS_DEBUG("TLSSession input error\n");
 		return NULL;
 	}
@@ -374,6 +379,7 @@ reset:
 	return session;
 errout:
 	TLSSession_free(session);
+	TLS_FREE(session);
 	return NULL;
 }
 
@@ -386,7 +392,6 @@ int TLSSession_free(tls_session *session)
 	mbedtls_ssl_free(session->ssl);
 	mbedtls_net_free(&session->net);
 	TLS_FREE(session->ssl);
-	TLS_FREE(session);
 
 	EASY_TLS_DEBUG("TLSSession free\n");
 	return 0;

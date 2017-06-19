@@ -560,8 +560,12 @@ int hw_ecdsa_sign_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned char 
 		goto cleanup;
 	}
 
-	mbedtls_mpi_read_binary(&r, ecc_sign.r, ecc_sign.r_byte_len);
-	mbedtls_mpi_read_binary(&s, ecc_sign.s, ecc_sign.s_byte_len);
+	if ((ret = mbedtls_mpi_read_binary(&r, ecc_sign.r, ecc_sign.r_byte_len)) != 0) {
+		goto cleanup;
+	}
+	if ((ret = mbedtls_mpi_read_binary(&s, ecc_sign.s, ecc_sign.s_byte_len)) != 0) {
+		goto cleanup;
+	}
 
 	MBEDTLS_MPI_CHK(ecdsa_signature_to_asn1(&r, &s, sig, sig_len));
 
@@ -617,7 +621,7 @@ int hw_ecdsa_verify_wrap(void *ctx, mbedtls_md_type_t md_alg, const unsigned cha
 		goto cleanup;
 	}
 
-	if ((ret = see_setup_key_internal(der_buf + der_buflen - len, len, SECURE_STORAGE_TYPE_KEY_ECC, key_buf)) != 0) {
+	if (see_setup_key_internal(der_buf + der_buflen - len, len, SECURE_STORAGE_TYPE_KEY_ECC, key_buf) != 0) {
 		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 		goto cleanup;
 	}
