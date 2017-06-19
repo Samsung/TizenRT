@@ -1,0 +1,3 @@
+config ENTRY_IOTBUS_TEST
+	bool "iotbus example"
+	depends on EXAMPLES_IOTBUS_TEST
