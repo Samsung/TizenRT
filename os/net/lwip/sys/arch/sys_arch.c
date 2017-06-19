@@ -41,6 +41,9 @@
 #include <net/lwip/memp.h>
 #include <net/lwip/pbuf.h>
 #include <net/lwip/arch/cc.h>
+#ifdef CONFIG_SCSC_WLAN_UDP_FLOWCONTROL
+#include <net/lwip/tcpip.h>
+#endif
 
 /* TinyAra RTOS implementation of the lwip operating system abstraction */
 #include <net/lwip/arch/sys_arch.h>
@@ -164,6 +167,51 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 	return;
 }
 
+#ifdef CONFIG_SCSC_WLAN_UDP_FLOWCONTROL
+
+/*---------------------------------------------------------------------------*
+ * Routine:  sys_mbox_setprio_lpwork
+ *---------------------------------------------------------------------------*
+ * Description:
+ *
+ *
+ * Inputs:
+ *      sys_mbox_t mbox         -- Handle of mailbox
+ *
+ * Outputs:
+ *      err_t                   -- ERR_OK if message posted, else void
+ *
+ *---------------------------------------------------------------------------*/
+
+#define LWIP_TCPIP_MBOX_MIN_AVAIL_SIZE      (TCPIP_MBOX_SIZE / 2)
+#define LWIP_SCHED_LPWORKPRIORITY           80
+
+int sys_mbox_setprio_lpwork(sys_mbox_t *mbox, void *msg)
+{
+	u32_t left_mbox_size = (mbox->rear >= mbox->front) ? mbox->queue_size - (mbox->rear - mbox->front + 1) : (mbox->front - mbox->rear + 1);
+
+	struct tcpip_msg *m = (struct tcpip_msg *)msg;
+
+	if (m->type != TCPIP_MSG_INPKT) {
+		return ERR_OK;
+	}
+
+	if (left_mbox_size < LWIP_TCPIP_MBOX_MIN_AVAIL_SIZE) {
+		/* set lpwork priority to low */
+		lpwork_setpriority(0, LWIP_SCHED_LPWORKPRIORITY);
+
+	} else if (left_mbox_size >= (TCPIP_MBOX_SIZE - LWIP_TCPIP_MBOX_MIN_AVAIL_SIZE)) {
+		/* set lpwork priority to original */
+		lpwork_setpriority(0, CONFIG_SCHED_LPWORKPRIORITY);
+
+	} else {
+		/* do nothing */
+	}
+
+	return ERR_OK;
+}
+#endif
+
 /*---------------------------------------------------------------------------*
  * Routine:  sys_mbox_trypost
  *---------------------------------------------------------------------------*
@@ -208,6 +256,9 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 	if (first_msg && mbox->wait_fetch) {
 		sys_sem_signal(&(mbox->mail));
 	}
+#ifdef CONFIG_SCSC_WLAN_UDP_FLOWCONTROL
+	(void)sys_mbox_setprio_lpwork(mbox, msg);
+#endif
 
 errout_with_mutex:
 	sys_sem_signal(&(mbox->mutex));

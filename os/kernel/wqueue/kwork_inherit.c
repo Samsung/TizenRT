@@ -388,4 +388,34 @@ void lpwork_restorepriority(uint8_t reqprio)
 	irqrestore(flags);
 }
 
+/****************************************************************************
+ * Name: lpwork_setpriority
+ *
+ * Description:
+ *   This function is called to set the priority newly
+ *
+ * Parameters:
+ *   wid - worker ID in g_lpwork set
+ *   prio - requested priority
+ *
+ * Return Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void lpwork_setpriority(int wid, uint8_t prio)
+{
+	FAR struct tcb_s *wtcb = NULL;
+	irqstate_t flags;
+
+	flags = irqsave();
+	sched_lock();
+
+	wtcb = sched_gettcb(g_lpwork.worker[wid].pid);
+	(void)sched_setpriority(wtcb, prio);
+
+	sched_unlock();
+	irqrestore(flags);
+}
+
 #endif							/* CONFIG_SCHED_WORKQUEUE && CONFIG_SCHED_LPWORK && CONFIG_PRIORITY_INHERITANCE */
