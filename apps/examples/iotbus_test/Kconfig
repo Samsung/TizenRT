@@ -1,0 +1,26 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_IOTBUS_TEST
+	bool "Iotbus example"
+	default n
+	---help---
+		Enable the Iotbus example example
+
+if EXAMPLES_IOTBUS_TEST
+
+config EXAMPLES_IOTBUS_TEST_PROGNAME
+	string "Program name"
+	default "iotbus_test"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "iotbus_test_main" if ENTRY_IOTBUS_TEST
