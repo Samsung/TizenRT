@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,29 +73,20 @@ static void gpio_event_callback(void *user_data)
 {
 	iotbus_gpio_context_h hnd = (iotbus_gpio_context_h)user_data;
 
-	if (hnd == left_btn)
-	{
+	if (hnd == left_btn) {
 		int left_btn_read = iotbus_gpio_read(left_btn);
 
-		if (left_btn_read == 0)
-		{
+		if (left_btn_read == 0) {
 			iotbus_gpio_write(r_led, 1);
-		}
-		else if (left_btn_read == 1)
-		{
+		} else if (left_btn_read == 1) {
 			iotbus_gpio_write(r_led, 0);
 		}
-	}
-	else if (hnd == right_btn)
-	{
+	} else if (hnd == right_btn) {
 		int right_btn_read = iotbus_gpio_read(right_btn);
 
-		if (right_btn_read == 0)
-		{
+		if (right_btn_read == 0) {
 			iotbus_gpio_write(b_led, 1);
-		}
-		else if (right_btn_read == 1)
-		{
+		} else if (right_btn_read == 1) {
 			iotbus_gpio_write(b_led, 0);
 		}
 	}
@@ -126,16 +117,14 @@ int iotbus_test_main(int argc, char *argv[])
 	printf("Press R/B Test Button!!!\n");
 
 	ret = iotbus_gpio_register_cb(left_btn, IOTBUS_GPIO_EDGE_BOTH, gpio_event_callback, (void *)left_btn);
-	if (ret != IOTBUS_ERROR_NONE)
-	{
+	if (ret != IOTBUS_ERROR_NONE) {
 		printf("Registering LeftBtn Callback Error!\n");
 
 		goto iotbus_err;
 	}
 
 	ret = iotbus_gpio_register_cb(right_btn, IOTBUS_GPIO_EDGE_BOTH, gpio_event_callback, (void *)right_btn);
-	if (ret != IOTBUS_ERROR_NONE)
-	{
+	if (ret != IOTBUS_ERROR_NONE) {
 		printf("Registering RightBtn Callback Error!\n");
 
 		goto iotbus_err;
@@ -145,13 +134,11 @@ int iotbus_test_main(int argc, char *argv[])
 
 iotbus_err:
 	ret = iotbus_gpio_unregister_cb(left_btn);
-	if (ret != IOTBUS_ERROR_NONE)
-	{
+	if (ret != IOTBUS_ERROR_NONE) {
 		printf("Unregistering LefttBtn Callback Error!\n");
 	}
 	ret = iotbus_gpio_unregister_cb(right_btn);
-	if (ret != IOTBUS_ERROR_NONE)
-	{
+	if (ret != IOTBUS_ERROR_NONE) {
 		printf("Unregistering RightBtn Callback Error!\n");
 	}
 
