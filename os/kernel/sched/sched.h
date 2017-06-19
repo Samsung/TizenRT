@@ -192,6 +192,12 @@ extern volatile dq_queue_t g_waitingforfill;
 
 extern volatile dq_queue_t g_inactivetasks;
 
+/* This gives number of alive tasks at any point of time in the system.
+ * If the system is already running CONFIG_MAX_TASKS, Creating new
+ * task is not supported.
+ */
+extern volatile uint8_t g_alive_taskcount;
+
 /* These are lists of dayed memory deallocations that need to be handled
  * within the IDLE loop or worker thread.  These deallocations get queued
  * by sched_kufree and sched_kfree() if the OS needs to deallocate memory

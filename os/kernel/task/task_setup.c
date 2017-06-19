@@ -166,6 +166,9 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 #endif
 			tcb->pid = next_pid;
 
+			/* Increment the task count */
+			g_alive_taskcount++;
+
 			(void)sched_unlock();
 			trace_end(TTRACE_TAG_TASK);
 			return OK;
