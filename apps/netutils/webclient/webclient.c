@@ -929,7 +929,7 @@ static pthread_addr_t wget_base(void *arg)
 	struct http_message_len_t mlen = {0,};
 	struct wget_s ws;
 	struct http_client_request_t *param = (struct http_client_request_t *)arg;
-	struct http_client_response_t response;
+	struct http_client_response_t response = {0, };
 	bool read_finish = false;
 
 	struct http_client_tls_t *client_tls = (struct http_client_tls_t *)malloc(sizeof(
@@ -1247,17 +1247,17 @@ int client_send_request(struct http_client_request_t *request)
 
 	if (request == NULL) {
 		printf("Error: Request is null\n");
-		goto errret;
+		return -1;
 	}
 
 	if (request->method < WGET_MODE_GET || request->method > WGET_MODE_DELETE) {
 		printf("Error: Incorrect method value!!\n");
-		goto errret;
+		return -1;
 	}
 
 	if (request->buffer == NULL) {
 		printf("Error: Buffer is NULL!!\n");
-		goto errret;
+		return -1;
 	}
 
 	if (request->buflen <= 0) {
