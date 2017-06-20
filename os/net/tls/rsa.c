@@ -87,6 +87,10 @@ void mbedtls_rsa_init(mbedtls_rsa_context *ctx, int padding, int hash_id)
 #if defined(MBEDTLS_THREADING_C)
 	mbedtls_mutex_init(&ctx->mutex);
 #endif
+#if defined(CONFIG_TLS_WITH_SSS)
+	ctx->key_index = 0xFF;
+
+#endif
 }
 
 /*
