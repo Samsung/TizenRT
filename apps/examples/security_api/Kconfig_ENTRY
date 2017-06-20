@@ -1,0 +1,3 @@
+config ENTRY_SECURITY_API_TC
+	bool "Security API Test case"
+	depends on EXAMPLES_SECURITY_API_TC

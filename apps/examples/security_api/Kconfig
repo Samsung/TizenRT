@@ -1,0 +1,22 @@
+#
+# For a description of the syntax of this configuration file,
+# see misc/tools/kconfig-language.txt.
+#
+
+config EXAMPLES_SECURITY_API_TC
+	bool "Security API Test case"
+	depends on TLS_WITH_SSS && SUPPORT_FULL_SECURITY
+	default n
+
+if EXAMPLES_SECURITY_API_TC
+
+config EXAMPLES_SECURITY_API_PROGNAME
+	string "Program name"
+	default "security api selftest"
+	depends on BUILD_KERNEL
+
+endif # EXAMPLES_SECURITY_API_TC
+
+config USER_ENTRYPOINT
+	string
+	default "security_api_tc_main" if ENTRY_SECURITY_API_TC
