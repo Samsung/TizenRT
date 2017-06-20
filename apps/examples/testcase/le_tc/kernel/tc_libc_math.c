@@ -325,6 +325,60 @@ static void tc_libc_math_jn(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_nextafter
+ * @brief                :Returns the next representable floating-point value following argument1 in the direction of argument2
+ * @Scenario             :Returns the next representable floating-point value following argument1 in the direction of argument2
+ * API's covered         :nextafter
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_nextafter(void)
+{
+	const double in_val1[7] = { VAL1, VAL1, ZERO, -VAL1, -VAL2 , VAL1, NAN };
+	const double in_val2[7] = { VAL1, VAL2, VAL1, -VAL2, ZERO, NAN, VAL2 };
+	const double sol_val[7] = { VAL1, 2251799813685249.0, ZERO, -2251799813685249.0, -4503599627370495.5, NAN, NAN };
+	double ret_val[7];
+	int nextafter_idx;
+
+	for (nextafter_idx = 0; nextafter_idx < 7; nextafter_idx++) {
+		ret_val[nextafter_idx] = nextafter(in_val1[nextafter_idx], in_val2[nextafter_idx]);
+		if (!(isnan(sol_val[nextafter_idx]) && isnan(ret_val[nextafter_idx]))) {
+			TC_ASSERT_LEQ("nextafter", fabs(sol_val[nextafter_idx] - ret_val[nextafter_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_nexttoward
+ * @brief                :Returns the next representable floating-point value following argument1 in the direction of argument2
+ * @Scenario             :Returns the next representable floating-point value following argument1 in the direction of argument2
+ * API's covered         :nexttoward
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_nexttoward(void)
+{
+	const double in_val1[7] = { VAL1, VAL1, ZERO, -VAL1, -VAL2 , VAL1, NAN };
+	const long double in_val2[7] = { VAL1, VAL2, VAL1, -VAL2, ZERO, NAN, VAL2 };
+	const double sol_val[7] = { VAL1, 2251799813685249.0, ZERO, -2251799813685249.0, -4503599627370495.5, NAN, NAN };
+	double ret_val[7];
+	int nexttoward_idx;
+
+	for (nexttoward_idx = 0; nexttoward_idx < 7; nexttoward_idx++) {
+		ret_val[nexttoward_idx] = nexttoward(in_val1[nexttoward_idx], in_val2[nexttoward_idx]);
+		if (!(isnan(sol_val[nexttoward_idx]) && isnan(ret_val[nexttoward_idx]))) {
+			TC_ASSERT_LEQ("nexttoward", fabs(sol_val[nexttoward_idx] - ret_val[nexttoward_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_pow
  * @brief                :Returns the power value of parameter
  * @Scenario             :Returns the power value of parameter
@@ -347,6 +401,63 @@ static void tc_libc_math_pow(void)
 			TC_ASSERT_EQ("pow", sol_val[pow_idx], ret_val[pow_idx]);
 		} else {
 			TC_ASSERT_LT("pow", fabs(sol_val[pow_idx] - ret_val[pow_idx]), 0.00000000000001);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_remainder
+ * @brief                :Returns the floating-point remainder of dividing argument1 by argument2
+ * @Scenario             :Returns the floating-point remainder of dividing argument1 by argument2
+ * API's covered         :remainder
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_remainder(void)
+{
+	const double in_val1[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
+	const double in_val2[10] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, NAN, VAL2 };
+	const double sol_val[10] = { ZERO, -ZERO, -2251799813685247.5, 2251799813685247.5, -1.0, 1.0, -NAN, -NAN, NAN, -NAN };
+	double ret_val[10];
+	int remainder_idx;
+
+	for (remainder_idx = 0; remainder_idx < 10; remainder_idx++) {
+		ret_val[remainder_idx] = remainder(in_val1[remainder_idx], in_val2[remainder_idx]);
+		if (!(isnan(sol_val[remainder_idx]) && isnan(ret_val[remainder_idx]))) {
+			TC_ASSERT_LEQ("remainder", fabs(sol_val[remainder_idx] - ret_val[remainder_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_remquo
+ * @brief                :Returns the floating-point remainder and stores part of quotient in argument3
+ * @Scenario             :Returns the floating-point remainder and stores part of quotient in argument3
+ * API's covered         :remquo
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_remquo(void)
+{
+	const double in_val1[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
+	const double in_val2[10] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, NAN, VAL2 };
+	const double sol_val[10] = { ZERO, -ZERO, -2251799813685247.5, 2251799813685247.5, -1.0, 1.0, -NAN, -NAN, NAN, -NAN };
+	int sol_quo[10] =  { 0, 0, -1, -1, -2, -2, 0, 0, 0, 0 };
+	double ret_val[10];
+	int ret_quo[10];
+	int remquo_idx;
+
+	for (remquo_idx = 0; remquo_idx < 10; remquo_idx++) {
+		ret_val[remquo_idx] = remquo(in_val1[remquo_idx], in_val2[remquo_idx], &ret_quo[remquo_idx]);
+		if (!(isnan(sol_val[remquo_idx]) && isnan(ret_val[remquo_idx]))) {
+			TC_ASSERT_LEQ("remquo", fabs(sol_val[remquo_idx] - ret_val[remquo_idx]), FLT_EPSILON);
+			TC_ASSERT_EQ("remquo", sol_quo[remquo_idx], ret_quo[remquo_idx]);
 		}
 	}
 
@@ -481,7 +592,11 @@ int libc_math_main(void)
 	tc_libc_math_j0();
 	tc_libc_math_j1();
 	tc_libc_math_jn();
+	tc_libc_math_nextafter();
+	tc_libc_math_nexttoward();
 	tc_libc_math_pow();
+	tc_libc_math_remainder();
+	tc_libc_math_remquo();
 	tc_libc_math_scalbn();
 	tc_libc_math_y0();
 	tc_libc_math_y1();
