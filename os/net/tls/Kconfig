@@ -36,7 +36,7 @@ config HW_ECDH_PARAM
 	---help---
 		Generates and caculates eliptic curve params with hardware.
                 Supporting curves :
-		 . SECP 192, 224, 256, 384, 512
+		 . SECP 192, 224, 256, 384, 521
 		 . Brainpool 256
 
 config HW_RSA_VERIFICATION
@@ -52,8 +52,15 @@ config HW_ECDSA_VERIFICATION
 	---help---
 		Verifing a ECDSA signature based on hardware.
 		Supporting curves :
-		 . SECP 192, 224, 256, 384, 512
+		 . SECP 192, 224, 256, 384, 521
 		 . Brainpool 256
+
+config HW_RSA_ENC
+	bool "HW rsa encryption"
+	default n
+	---help---
+		Encrypts a data based on hardware.
+		Supporting key size : 1024, 2048
 
 endmenu
 
