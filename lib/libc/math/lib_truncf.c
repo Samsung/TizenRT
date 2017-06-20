@@ -47,9 +47,6 @@
  * Included Files
  ************************************************************************/
 
-#include <tinyara/config.h>
-#include <tinyara/compiler.h>
-
 #include <stdint.h>
 #include <math.h>
 

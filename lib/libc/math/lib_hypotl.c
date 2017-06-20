@@ -44,9 +44,6 @@
  * Included Files
  ************************************************************************/
 
-#include <tinyara/config.h>
-#include <tinyara/compiler.h>
-
 #include "libm.h"
 
 #ifdef CONFIG_HAVE_LONG_DOUBLE

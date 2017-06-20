@@ -44,8 +44,7 @@
  * Included Files
  ************************************************************************/
 
-#include <tinyara/compiler.h>
-#include <tinyara/math.h>
+#include <math.h>
 
 /************************************************************************
  * Public Functions

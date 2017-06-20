@@ -71,8 +71,6 @@
  * Included Files
  ************************************************************************/
 
-#include <tinyara/compiler.h>
-
 #include "libm.h"
 
 #ifdef CONFIG_HAVE_DOUBLE

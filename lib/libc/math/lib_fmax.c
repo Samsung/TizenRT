@@ -44,10 +44,7 @@
  * Included Files
  ************************************************************************/
 
-#include <tinyara/config.h>
-#include <tinyara/compiler.h>
-
-#include <tinyara/math.h>
+#include <math.h>
 
 #ifdef CONFIG_HAVE_DOUBLE
 
