@@ -91,39 +91,40 @@
 
 CODE void (*sigset(int sig, CODE void (*func)(int sig)))(int sig)
 {
-	_sa_handler_t disposition;
+	_sa_handler_t disposition = SIG_ERR;
 	sigset_t set;
 	int ret;
 
-	DEBUGASSERT(GOOD_SIGNO(sig) && func != SIG_ERR);
+	if (GOOD_SIGNO(sig)) {
 
-	(void)sigemptyset(&set);
-	(void)sigaddset(&set, sig);
+		(void)sigemptyset(&set);
+		(void)sigaddset(&set, sig);
 
-	/* Check if we are being asked to block the signal */
+		/* Check if we are being asked to block the signal */
 
-	if (func == SIG_HOLD) {
-		ret = sigprocmask(SIG_BLOCK, &set, NULL);
-		disposition = ret < 0 ? SIG_ERR : SIG_HOLD;
-	}
+		if (func == SIG_HOLD) {
+			ret = sigprocmask(SIG_BLOCK, &set, NULL);
+			disposition = ret < 0 ? SIG_ERR : SIG_HOLD;
+		}
 
-	/* No.. then signal can handle the other cases */
+		/* No.. then signal can handle the other cases */
 
-	else {
-		/* Set the signal handler disposition */
+		else {
+			/* Set the signal handler disposition */
 
-		disposition = signal(sig, func);
-		if (disposition != SIG_ERR) {
-			/* And unblock the signal */
+			disposition = signal(sig, func);
+			if (disposition != SIG_ERR) {
+				/* And unblock the signal */
 
-			ret = sigprocmask(SIG_UNBLOCK, &set, NULL);
-			if (ret < 0) {
-				/* Restore the original signal disposition and return and
-				 * error.
-				 */
+				ret = sigprocmask(SIG_UNBLOCK, &set, NULL);
+				if (ret < 0) {
+					/* Restore the original signal disposition and return and
+					 * error.
+					 */
 
-				(void)signal(sig, disposition);
-				disposition = SIG_ERR;
+					(void)signal(sig, disposition);
+					disposition = SIG_ERR;
+				}
 			}
 		}
 	}
