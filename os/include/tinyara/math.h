@@ -849,6 +849,70 @@ double yn(int n, double x);
 /**
  * @internal
  */
+#ifdef CONFIG_HAVE_DOUBLE
+double nextafter(double x, double y);
+#endif
+/**
+ * @internal
+ */
+float nextafterf(float x, float y);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double nextafterl(long double x, long double y);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double nexttoward(double x, long double y);
+#endif
+/**
+ * @internal
+ */
+float nexttowardf(float x, long double y);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double nexttowardl(long double x, long double y);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double remainder(double x, double y);
+#endif
+/**
+ * @internal
+ */
+float remainderf(float x, float y);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double remainderl(long double x, long double y);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double remquo(double x, double y, int *quo);
+#endif
+/**
+ * @internal
+ */
+float remquof(float x, float y, int *quo);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double remquol(long double x, long double y, int *quo);
+#endif
+/**
+ * @internal
+ */
 #define nanf(x) ((float)(NAN))
 /**
  * @internal
