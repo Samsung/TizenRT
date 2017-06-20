@@ -92,44 +92,45 @@ CODE void (*signal(int sig, CODE void (*func)(int sig)))(int sig)
 	struct sigaction oact;
 	int ret;
 
-	DEBUGASSERT(GOOD_SIGNO(sig) && func != SIG_ERR && func != SIG_HOLD);
+	if (GOOD_SIGNO(sig)) {
 
-	/* Initialize the sigaction structure */
+		/* Initialize the sigaction structure */
 
-	act.sa_handler = func;
-	act.sa_flags = 0;
-	(void)sigemptyset(&act.sa_mask);
+		act.sa_handler = func;
+		act.sa_flags = 0;
+		(void)sigemptyset(&act.sa_mask);
 
-	/* Check for SIG_IGN and SIG_DFL (and someday SIG_HOLD)
-	 *
-	 * REVISIT:  Currently SIG_IGN, SIG_DFL, and SIG_HOLD have the same value
-	 * and cannot be distinguished.
-	 */
-
-	if (func != SIG_DFL /* && func != SIG_IGN */) {
-		/* Add the signal to the set of signals to be ignored when the signal
-		 * handler executes.
+		/* Check for SIG_IGN and SIG_DFL (and someday SIG_HOLD)
+		 *
+		 * REVISIT:  Currently SIG_IGN, SIG_DFL, and SIG_HOLD have the same value
+		 * and cannot be distinguished.
 		 */
 
-		ret = sigaddset(&act.sa_mask, sig);
-		if (ret < 0) {
-			/* Would happen if sig were invalid */
+		if (func != SIG_DFL /* && func != SIG_IGN */) {
+			/* Add the signal to the set of signals to be ignored when the signal
+			 * handler executes.
+			 */
 
-			return (_sa_handler_t)SIG_ERR;
+			ret = sigaddset(&act.sa_mask, sig);
+			if (ret < 0) {
+				/* Would happen if sig were invalid */
+
+				return (_sa_handler_t)SIG_ERR;
+			}
 		}
-	}
 
-	/* Set the signal disposition */
+		/* Set the signal disposition */
 
-	ret = sigaction(sig, &act, &oact);
+		ret = sigaction(sig, &act, &oact);
 
-	/* Upon successful completion, signal() will the signal's previous
-	 * disposition. Otherwise, SIG_ERR will be returned and errno set to
-	 * indicate the error.
-	 */
+		/* Upon successful completion, signal() will the signal's previous
+		 * disposition. Otherwise, SIG_ERR will be returned and errno set to
+		 * indicate the error.
+		 */
 
-	if (ret == OK) {
-		return oact.sa_handler;
+		if (ret == OK) {
+			return oact.sa_handler;
+		}
 	}
 
 	return (_sa_handler_t)SIG_ERR;
