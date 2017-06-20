@@ -88,9 +88,7 @@ int tls_client_main(int argc, char **argv)
 #include "tls/debug.h"
 #include "tls/timing.h"
 
-#ifdef CONFIG_EXAMPLES_TLS_ARTIK_KEY
 #include "tls/see_api.h"
-#endif
 
 /*
  * Definition for handling pthread
@@ -103,7 +101,8 @@ struct pthread_arg {
 	int argc;
 	char **argv;
 };
-
+#define ALGO_RSA	0
+#define ALGO_ECC	1
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -113,7 +112,7 @@ struct pthread_arg {
 #define DFL_SERVER_PORT         "4433"
 #define DFL_REQUEST_PAGE        "/"
 #define DFL_REQUEST_SIZE        -1
-#define DFL_DEBUG_LEVEL         5
+#define DFL_DEBUG_LEVEL         0
 #define DFL_NBIO                0
 #define DFL_READ_TIMEOUT        0
 #define DFL_MAX_RESEND          0
@@ -148,6 +147,8 @@ struct pthread_arg {
 #define DFL_FALLBACK            -1
 #define DFL_EXTENDED_MS         -1
 #define DFL_ETM                 -1
+#define DFL_ALG_TYPE		ALGO_RSA
+#define DFL_IS_HW               0
 
 #define GET_REQUEST "GET %s HTTP/1.0\r\nExtra-header: "
 #define GET_REQUEST_END "\r\n\r\n"
@@ -268,7 +269,7 @@ struct pthread_arg {
 #endif
 
 #define USAGE \
-	"\n usage: ssl_client2 param=<>...\n"                   \
+	"\n usage: tls_client param=<>...\n"                   \
 	"\n acceptable parameters:\n"                           \
 	"    server_name=%%s      default: localhost\n"         \
 	"    server_addr=%%s      default: given by name\n"     \
@@ -312,6 +313,9 @@ struct pthread_arg {
 	"    max_version=%%s      default: (library default: tls1_2)\n"     \
 	"    force_version=%%s    default: \"\" (none)\n"       \
 	"                        options: ssl3, tls1, tls1_1, tls1_2, dtls1, dtls1_2\n" \
+	"    algo_type=%%s        default: rsa\n"     \
+	"                        options: (artik053 : rsa, ecc)\n" \
+	"                                 (artik053s : rsa, ecc, hwrsa, hwecc\n" \
 	"\n"                                                    \
 	"    force_ciphersuite=<name>    default: all enabled\n"\
 	" acceptable ciphersuite names:\n"
@@ -358,9 +362,8 @@ struct options {
 	int fallback;				/* is this a fallback connection?           */
 	int extended_ms;			/* negotiate extended master secret?        */
 	int etm;					/* negotiate encrypt then mac?              */
-};
-
-static struct options opt;
+	int algo_type;			/* algorithm of key/cert             */
+} opt;
 
 static void my_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
@@ -471,7 +474,7 @@ int tls_client_cb(void *args)
 	mbedtls_ssl_config conf;
 	mbedtls_ssl_session saved_session;
 #if defined(MBEDTLS_TIMING_C)
-	mbedtls_timing_delay_context timer;
+	mbedtls_timing_delay_context *timer;
 #endif
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	uint32_t flags;
@@ -484,6 +487,13 @@ int tls_client_cb(void *args)
 	char *q;
 	const int *list;
 	unsigned char buf[2000];
+#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+	int is_hw = 0;
+	unsigned char *der_buf = NULL;
+	unsigned int der_buflen = 2048;
+	unsigned char *t_der_buf = NULL;
+	unsigned int t_len;
+#endif
 
 	argc = ((struct pthread_arg *)args)->argc;
 	argv = ((struct pthread_arg *)args)->argv;
@@ -568,6 +578,7 @@ usage:
 	opt.fallback = DFL_FALLBACK;
 	opt.extended_ms = DFL_EXTENDED_MS;
 	opt.etm = DFL_ETM;
+	opt.algo_type = DFL_ALG_TYPE;
 
 	for (i = 1; i < argc; i++) {
 		p = argv[i];
@@ -831,6 +842,23 @@ usage:
 			if (opt.dhmlen < 0) {
 				goto usage;
 			}
+		} else if (strcmp(p, "algo_type") == 0) {
+			if (strcmp(q, "rsa") == 0) {
+				opt.algo_type = ALGO_RSA;
+			} else if (strcmp(q, "ecc") == 0) {
+				opt.algo_type = ALGO_ECC;
+#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+			} else if (strcmp(q, "hwrsa") == 0) {
+				opt.algo_type = ALGO_RSA;
+				is_hw = 1;
+			} else if (strcmp(q, "hwecc") == 0) {
+				opt.algo_type = ALGO_ECC;
+				is_hw = 1;
+#endif
+			} else {
+				goto usage;
+			}
+
 		} else {
 			goto usage;
 		}
@@ -961,7 +989,6 @@ usage:
 #ifdef CONFIG_EXAMPLES_TLS_ARTIK_KEY
 	unsigned int cert_buflen = SEE_MAX_BUF_SIZE;
 	char *cert_buf = NULL;
-	const char cert_start[2] = { 0x30, 0x82 };
 
 	cert_buf = (char *)malloc(SEE_MAX_BUF_SIZE);
 
@@ -976,22 +1003,28 @@ usage:
 		goto exit;
 	}
 
-	char *cert_offset[3] = { NULL, NULL, NULL };
+	char *cert_offset[3] = {NULL, NULL, NULL};
+	int cert_length[3] = {0, 0, 0};
 
-	cert_offset[0] = cert_buf + 4;
-	cert_offset[1] = strstr(cert_offset[0] + 4, cert_start);
-	cert_offset[2] = strstr(cert_offset[1] + 4, cert_start);
+	cert_offset[0] = cert_buf;
+	cert_length[0] = (cert_offset[0][2] << 8) + cert_offset[0][3] + 4;
+	cert_offset[1] = cert_offset[0] + cert_length[0];
+	cert_length[1] = (cert_offset[1][2] << 8) + cert_offset[1][3] + 4;
+	cert_offset[2] = cert_offset[1] + cert_length[1];
+	cert_length[2] = (cert_offset[2][2] << 8) + cert_offset[2][3] + 4;
 
 	/* Parse CA Cert */
-	if ((ret = mbedtls_x509_crt_parse_der(&cacert, (const unsigned char *)cert_offset[0], cert_offset[1] - cert_offset[0])) < 0) {
-		mbedtls_printf(" failed\n  ! mbedtls_x509_crt_parse -0x%x\n", -ret);
+	ret = mbedtls_x509_crt_parse_der(&cacert, (const unsigned char *)cert_offset[0], cert_length[0]);
+	if (ret < 0) {
+		mbedtls_printf(" failed\n  ! mbedtls_x509_crt_parse CA cert -0x%x\n", -ret);
 		free(cert_buf);
 		goto exit;
 	}
 
 	/* Parse Device Cert */
-	if ((ret = mbedtls_x509_crt_parse_der(&clicert, (const unsigned char *)cert_offset[2], cert_buflen - (cert_offset[2] - cert_buf))) < 0) {
-		mbedtls_printf(" failed\n  ! mbedtls_x509_crt_parse -0x%x\n", -ret);
+	ret = mbedtls_x509_crt_parse_der(&clicert, (const unsigned char *)cert_offset[2], cert_length[2]);
+	if (ret < 0) {
+		mbedtls_printf(" failed\n  ! mbedtls_x509_crt_parse Device cert -0x%x\n", -ret);
 		free(cert_buf);
 		goto exit;
 	}
@@ -1002,12 +1035,14 @@ usage:
 	 */
 	const mbedtls_pk_info_t *pk_info;
 
-	if ((pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY)) == NULL) {
+	pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY);
+	if (pk_info == NULL) {
 		mbedtls_printf(" failed\n  ! mbedtls_pk_info_from_type -0x%x\n", -ret);
 		goto exit;
 	}
 
-	if ((ret = mbedtls_pk_setup(&pkey, pk_info)) != 0) {
+	ret = mbedtls_pk_setup(&pkey, pk_info);
+	if (ret != 0) {
 		mbedtls_printf(" failed\n  ! mbedtls_pk_setup -0x%x\n", -ret);
 		goto exit;
 	}
@@ -1046,20 +1081,113 @@ usage:
 	mbedtls_printf("  . Loading the own cert...");
 	fflush(stdout);
 
-	if ((ret = mbedtls_x509_crt_parse(&clicert, (const unsigned char *)mbedtls_test_cli_crt, mbedtls_test_cli_crt_len)) != 0) {
-		mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
-		goto exit;
-	}
+	if (opt.algo_type == ALGO_ECC) {
+		ret = mbedtls_x509_crt_parse(&clicert, (const unsigned char *)mbedtls_test_cli_crt_ec, mbedtls_test_cli_crt_ec_len);
+		if (ret != 0) {
+			mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
+			goto exit;
+		}
 
+		mbedtls_printf(" ok\n");
+
+		mbedtls_printf("  . Loading the Private Key...");
+		fflush(stdout);
+
+		ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *)mbedtls_test_cli_key_ec, mbedtls_test_cli_key_ec_len, NULL, 0);
+		if (ret != 0) {
+			mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
+			goto exit;
+		}
+#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+		if (is_hw) {
+			unsigned index = 7;
+
+			der_buf = (unsigned char *)malloc(der_buflen);
+			if (der_buf == NULL) {
+				ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
+				goto exit;
+			}
+
+			t_len = mbedtls_pk_write_key_der(&pkey, der_buf, der_buflen);
+			if (t_len == 0) {
+				ret = MBEDTLS_ERR_ECP_INVALID_KEY;
+				goto exit;
+			}
+
+			t_der_buf = der_buf + der_buflen - t_len;
+
+			unsigned char test_key[] = {
+				0x30, 0x77, 0x02, 0x01, 0x01, 0x04, 0x20, 0xf6, 0xf7, 0x86, 0x64, 0xf1, 0x67, 0x7f, 0xe6, 0x64,
+				0x8d, 0xef, 0xca, 0x4e, 0xe9, 0xdd, 0x4d, 0xf0, 0x05, 0xff, 0x96, 0x22, 0x8a, 0x7a, 0x84, 0x38,
+				0x64, 0x17, 0x32, 0x61, 0x98, 0xb7, 0x2a, 0xa0, 0x0a, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d,
+				0x03, 0x01, 0x07, 0xa1, 0x44, 0x03, 0x42, 0x00, 0x04, 0x57, 0xe5, 0xae, 0xb1, 0x73, 0xdf, 0xd3,
+				0xac, 0xbb, 0x93, 0xb8, 0x81, 0xff, 0x12, 0xae, 0xee, 0xe6, 0x53, 0xac, 0xce, 0x55, 0x53, 0xf6,
+				0x34, 0x0e, 0xcc, 0x2e, 0xe3, 0x63, 0x25, 0x0b, 0xdf, 0x98, 0xe2, 0xf3, 0x5c, 0x60, 0x36, 0x96,
+				0xc0, 0xd5, 0x18, 0x14, 0x70, 0xe5, 0x7f, 0x9f, 0xd5, 0x4b, 0x45, 0x18, 0xe5, 0xb0, 0x6c, 0xd5,
+				0x5c, 0xf8, 0x96, 0x8f, 0x87, 0x70, 0xa3, 0xe4, 0xc7
+			};
+			ret = see_setup_key(test_key, sizeof(test_key),
+					SECURE_STORAGE_TYPE_KEY_ECC, index);
+			if (ret != 0) {
+				mbedtls_printf(" failed\n  !  see_setup_key dev  returned %d\n\n", ret);
+				goto exit;
+			}
+
+			((mbedtls_ecdsa_context *)(pkey.pk_ctx))->grp.id = MBEDTLS_ECP_DP_SECP256R1;
+			((mbedtls_ecdsa_context *)(pkey.pk_ctx))->key_index = index;
+		}
+#endif
+	} else	{
+		ret = mbedtls_x509_crt_parse(&clicert, (const unsigned char *)mbedtls_test_cli_crt_rsa, mbedtls_test_cli_crt_rsa_len);
+		if (ret != 0) {
+			mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
+			goto exit;
+		}
+
+
+		mbedtls_printf(" ok\n");
+
+		mbedtls_printf("  . Loading the Private Key...");
+		fflush(stdout);
+
+		ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *)mbedtls_test_cli_key_rsa, mbedtls_test_cli_key_rsa_len, NULL, 0);
+		if (ret != 0) {
+			mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
+			goto exit;
+		}
+#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+		if (is_hw) {
+			unsigned index = 7;
+
+			der_buf = (unsigned char *)malloc(der_buflen);
+			if (der_buf == NULL) {
+				ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
+				goto exit;
+			}
+
+			t_len = mbedtls_pk_write_key_der(&pkey, der_buf, der_buflen);
+			if (t_len == 0) {
+				ret = MBEDTLS_ERR_ECP_INVALID_KEY;
+				goto exit;
+			}
+
+			t_der_buf = der_buf + der_buflen - t_len;
+
+			ret = see_setup_key(t_der_buf, t_len,
+					SECURE_STORAGE_TYPE_KEY_RSA, index);
+			if (ret != 0) {
+				mbedtls_printf(" failed\n  !  see_setup_key dev  returned %d\n\n", ret);
+				goto exit;
+			}
+
+			((mbedtls_rsa_context *)(pkey.pk_ctx))->key_index = index;
+			((mbedtls_rsa_context *)(pkey.pk_ctx))->len = 256;
+		}
+#endif
+
+	}
 	mbedtls_printf(" ok\n");
 
-	mbedtls_printf("  . Loading the Private Key...");
-	fflush(stdout);
-
-	if ((ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *)mbedtls_test_cli_key, mbedtls_test_cli_key_len, NULL, 0)) != 0) {
-		mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
-		goto exit;
-	}
 	/*
 	 * 2. Start the connection
 	 */
@@ -1216,12 +1344,6 @@ usage:
 		mbedtls_printf(" failed\n  ! mbedtls_ssl_setup returned -0x%x\n\n", -ret);
 		goto exit;
 	}
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-	if ((ret = mbedtls_ssl_set_hostname(&ssl, opt.server_name)) != 0) {
-		mbedtls_printf(" failed\n  ! mbedtls_ssl_set_hostname returned %d\n\n", ret);
-		goto exit;
-	}
-#endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
 	if (opt.ecjpake_pw != DFL_ECJPAKE_PW) {
@@ -1604,6 +1726,7 @@ exit:
 		mbedtls_printf("Last error was: -0x%X - %s\n\n", -ret, error_buf);
 	}
 #endif
+
 	mbedtls_net_free(&server_fd);
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
@@ -1623,6 +1746,11 @@ exit:
 	getchar();
 #endif
 
+#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+	if (der_buf) {
+		free(der_buf);
+	}
+#endif
 	return ret;
 }
 
