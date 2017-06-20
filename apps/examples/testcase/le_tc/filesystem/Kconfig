@@ -11,12 +11,9 @@ config EXAMPLES_TESTCASE_FILESYSTEM
 
 if EXAMPLES_TESTCASE_FILESYSTEM
 
-config EXAMPLES_FS_SAMPLE_PROGNAME
-	string "Program name"
-	default "fs_sample"
-	depends on BUILD_KERNEL
-	---help---
-		This is the name of the program that will be use when the NSH ELF
-		program is installed.
+config TC_FS_PROCFS
+	bool "Procfs Testcase"
+	default n
+	select FS_PROCFS
 
 endif
