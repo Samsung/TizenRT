@@ -99,3 +99,75 @@ There are three configuration sets for sidk_s5jt200, including 'hello_with_tash'
 #### tc
  for runnig unit test cases
 
+#### sidk_tash_aws
+ for running AWS IoT SDK examples.
+
+
+## Board Configuration
+
+### Board Layout
+![SIDK_S5JT200 Layout](media/SIDK_Layout.png)
+
+### JTAG selection
+There are two JTAG ports, one is OpenOCD through USB port and the other is normal JTAG interface like Lauterbach Trace-32.
+
+![J3 : JTAG Selection](media/J3.png)
+
+J3 Header pin is used to select JTAG port.
+
+Pin  | OpenOCD | Normal JTAG
+---  | ------- | --------
+1-2  | Connect | Open
+3-4  | Connect | Open
+5-6  | Connect | Open
+7-8  | Connect | Open
+9-10 | Connect | Open
+
+### UART source selection for CON3
+One of UART0, UART1, UART2, UART3, or UARTDBG channel could be connected to CON3 through the J2 configuration.
+
+![J2 : CON3 source selection](media/J2.png)
+
+Pin   | UART0   | UART1   | UART2   | UART3   | UARTDBG<br>(CON3) | UARTDBG<br>(CON4)
+---   | -----   | -----   | -----   | -----   | ------- | ---------------
+1-2   | Open    | Open    | Open    | Open    | Connect | Open
+3-4   | Open    | Open    | Open    | OPen    | Connect | Open
+7-8   | Connect | Open    | Open    | OPen    | Open    | Open
+9-10  | Connect | Open    | Open    | OPen    | Open    | Open
+11-12 | Open    | Connect | Open    | OPen    | Open    | Open
+13-14 | Open    | Connect | Open    | OPen    | Open    | Open
+15-16 | Open    | Open    | Connect | OPen    | Open    | Open
+17-18 | Open    | Open    | Connect | OPen    | Open    | Open
+19-20 | Open    | Open    | Open    | Connect | Open    | Open
+21-22 | Open    | Open    | Open    | Connect | Open    | Open
+
+### UART source selection for CON5
+UART source for CON5 could be selected through J7 configuration.
+
+![J7 : CON5 source selection](media/J7.png)
+
+Pin   | UART0   | UART1   | UART2   | UART3
+---   | -----   | -----   | -----   | -----
+1-2   | Connect | Open    | Open    | OPen
+3-4   | Connect | Open    | Open    | OPen
+5-6   | Open    | Connect | Open    | OPen
+7-8   | Open    | Connect | Open    | OPen
+9-10  | Open    | Open    | Connect | OPen
+11-12 | Open    | Open    | Connect | OPen
+13-14 | Open    | Open    | Open    | Connect
+15-16 | Open    | Open    | Open    | Connect
+
+### Console Terminal
+UARTDBG channel is being used as Console and it could be connected to CON3 or CON4 with J2 and J4 pin configuration.
+
+
+![J4 : CON4 source selection](media/J4.png)
+
+Pin      | UARTDBG<br>on CON3<br>(SERIAL) | UARTDBT<br>on CON4<br>(USB)
+-------- | --------------- | ---------------
+J2 : 1-2 | Connect         | Open
+J2 : 3-4 | Connect         | Open
+J4 : 1-2 | Open            | Connect
+J4 : 3-4 | Open            | Connect
+
+
