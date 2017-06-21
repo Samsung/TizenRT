@@ -89,7 +89,6 @@
 #  define STDIN_FILENO 0
 #endif
 
-static int cc = 0;
 int g_reboot = 0;
 static int g_quit = 0;
 
@@ -189,12 +188,12 @@ void handle_sigint(int signum)
 	g_quit = 2;
 }
 
-void handle_value_changed(lwm2m_context_t *lwm2mH,
+void handle_value_changed(lwm2m_context_t *lwm2mP,
 						  lwm2m_uri_t *uri,
 						  const char *value,
 						  size_t valueLength)
 {
-	lwm2m_object_t *object = (lwm2m_object_t *)LWM2M_LIST_FIND(lwm2mH->objectList, uri->objectId);
+	lwm2m_object_t *object = (lwm2m_object_t *)LWM2M_LIST_FIND(lwm2mP->objectList, uri->objectId);
 
 	if (NULL != object) {
 		if (object->writeFunc != NULL) {
@@ -224,7 +223,7 @@ void handle_value_changed(lwm2m_context_t *lwm2mH,
 				fprintf(stderr, "Failed to change value!\n");
 			} else {
 				fprintf(stderr, "value changed!\n");
-				lwm2m_resource_value_changed(lwm2mH, uri);
+				lwm2m_resource_value_changed(lwm2mP, uri);
 			}
 			lwm2m_data_free(1, dataP);
 			return;
@@ -253,7 +252,7 @@ void *lwm2m_connect_server(uint16_t secObjInstID,
 	}
 
 
-	newConnP = connection_create(dataP->connList, dataP->sock, securityObj, instance->id, dataP->lwm2mH, dataP->addressFamily);
+	newConnP = connection_create(COAP_UDP, dataP->connList, dataP->sock, securityObj, instance->id, dataP->lwm2mH, dataP->addressFamily);
 	if (newConnP == NULL) {
 		fprintf(stderr, "Connection creation failed.\n");
 		return NULL;
@@ -306,7 +305,7 @@ void *lwm2m_connect_server(uint16_t secObjInstID,
 	port++;
 
 	fprintf(stderr, "Opening connection to server at %s:%s\r\n", host, port);
-	newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
+	newConnP = connection_create(COAP_UDP, dataP->connList, dataP->sock, host, port, dataP->addressFamily);
 	if (newConnP == NULL) {
 		fprintf(stderr, "Connection creation failed.\r\n");
 	} else {
@@ -360,7 +359,7 @@ void lwm2m_close_connection(void *sessionH,
 static void prv_output_servers(char *buffer,
 							   void *user_data)
 {
-	lwm2m_context_t *lwm2mH = (lwm2m_context_t *) user_data;
+	lwm2mH = (lwm2m_context_t *) user_data;
 	lwm2m_server_t *targetP;
 
 	targetP = lwm2mH->bootstrapServerList;
@@ -434,7 +433,7 @@ static void prv_output_servers(char *buffer,
 static void prv_change(char *buffer,
 					   void *user_data)
 {
-	lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
+	lwm2mH = (lwm2m_context_t *) user_data;
 	lwm2m_uri_t uri;
 	char *end = NULL;
 	int result;
@@ -466,7 +465,7 @@ syntax_error:
 static void prv_object_list(char *buffer,
 							void *user_data)
 {
-	lwm2m_context_t *lwm2mH = (lwm2m_context_t *)user_data;
+	lwm2mH = (lwm2m_context_t *)user_data;
 	lwm2m_object_t *objectP;
 
 	for (objectP = lwm2mH->objectList; objectP != NULL; objectP = objectP->next) {
@@ -506,7 +505,7 @@ static void prv_instance_dump(lwm2m_object_t *objectP,
 static void prv_object_dump(char *buffer,
 							void *user_data)
 {
-	lwm2m_context_t *lwm2mH = (lwm2m_context_t *) user_data;
+	lwm2mH = (lwm2m_context_t *) user_data;
 	lwm2m_uri_t uri;
 	char *end = NULL;
 	int result;
@@ -552,7 +551,7 @@ syntax_error:
 static void prv_update(char *buffer,
 					   void *user_data)
 {
-	lwm2m_context_t *lwm2mH = (lwm2m_context_t *)user_data;
+	lwm2mH = (lwm2m_context_t *)user_data;
 	if (buffer[0] == 0) {
 		goto syntax_error;
 	}
@@ -605,7 +604,7 @@ static void update_battery_level(lwm2m_context_t *context)
 static void prv_add(char *buffer,
 					void *user_data)
 {
-	lwm2m_context_t *lwm2mH = (lwm2m_context_t *)user_data;
+	lwm2mH = (lwm2m_context_t *)user_data;
 	lwm2m_object_t *objectP;
 	int res;
 
@@ -628,7 +627,7 @@ static void prv_add(char *buffer,
 static void prv_remove(char *buffer,
 					   void *user_data)
 {
-	lwm2m_context_t *lwm2mH = (lwm2m_context_t *)user_data;
+	lwm2mH = (lwm2m_context_t *)user_data;
 	int res;
 
 	res = lwm2m_remove_object(lwm2mH, 1024);
@@ -647,7 +646,7 @@ static void prv_remove(char *buffer,
 static void prv_initiate_bootstrap(char *buffer,
 								   void *user_data)
 {
-	lwm2m_context_t *lwm2mH = (lwm2m_context_t *)user_data;
+	lwm2mH = (lwm2m_context_t *)user_data;
 	lwm2m_server_t *targetP;
 
 	// HACK !!!
@@ -662,7 +661,7 @@ static void prv_initiate_bootstrap(char *buffer,
 static void prv_display_objects(char *buffer,
 								void *user_data)
 {
-	lwm2m_context_t *lwm2mH = (lwm2m_context_t *)user_data;
+	lwm2mH = (lwm2m_context_t *)user_data;
 	lwm2m_object_t *object;
 
 	for (object = lwm2mH->objectList; object != NULL; object = object->next) {
@@ -930,7 +929,7 @@ static void process_udpconn(int sockfd, fd_set *readfds)
 			fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
 		} else if (0 < numBytes) {
 			char s[INET6_ADDRSTRLEN];
-			in_port_t port;
+			in_port_t port = 0;
 
 #ifdef WITH_TINYDTLS
 			dtls_connection_t *connP;
@@ -1004,9 +1003,11 @@ pthread_addr_t client_main(void)
 	int lifetime = g_lifetime;
 	int batterylevelchanging = 0;
 	time_t reboot_time = 0;
-	int opt;
 	bool bootstrapRequested = g_bootstrapRequested;
+#if 0
+	int opt;
 	bool serverPortChanged = false;
+#endif
 
 	if (bootstrapRequested) {
 		server = g_bootstrapserverAddr;
@@ -1016,15 +1017,14 @@ pthread_addr_t client_main(void)
 		serverPort = g_serverPort;
 	}
 
-
-#ifdef LWM2M_BOOTSTRAP
 	lwm2m_client_state_t previousState = STATE_INITIAL;
-#endif
 
 	char *pskId = NULL;
-	char *psk = NULL;
+	char *psk;
 	uint16_t pskLen = -1;
 	char *pskBuffer = NULL;
+
+	psk = NULL;
 
 	/*
 	 * The function start by setting up the command line interface (which may or not be useful depending on your project)
@@ -1052,7 +1052,9 @@ pthread_addr_t client_main(void)
 		},
 #endif
 		{"ls", "List Objects and Instances", NULL, prv_object_list, NULL},
+#ifdef LWM2M_BOOTSTRAP
 		{"disp", "Display current objects/instances/resources", NULL, prv_display_objects, NULL},
+#endif
 		{
 			"dump", "Dump an Object", "dump URI"
 			"URI: uri of the Object or Instance such as /3/0, /1\r\n", prv_object_dump, NULL
@@ -1168,10 +1170,10 @@ pthread_addr_t client_main(void)
 	 *This call an internal function that create an IPV6 socket on the port 5683.
 	 */
 	fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", localPort);
-	data.sock = create_socket(localPort, data.addressFamily);
+	data.sock = create_socket(COAP_UDP, localPort, data.addressFamily);
 	if (data.sock < 0) {
 		fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
-		return -1;
+		return NULL;
 	}
 
 	/*
@@ -1185,7 +1187,7 @@ pthread_addr_t client_main(void)
 
 		if (NULL == pskBuffer) {
 			fprintf(stderr, "Failed to create PSK binary buffer\r\n");
-			return -1;
+			return NULL;
 		}
 		// Hex string to binary
 		char *h = psk;
@@ -1198,7 +1200,7 @@ pthread_addr_t client_main(void)
 
 			if (!r || !l) {
 				fprintf(stderr, "Failed to parse Pre-Shared-Key HEXSTRING\r\n");
-				return -1;
+				return NULL;
 			}
 
 			*b = ((l - xlate) << 4) + (r - xlate);
@@ -1216,66 +1218,66 @@ pthread_addr_t client_main(void)
 #endif
 	if (NULL == objArray[0]) {
 		fprintf(stderr, "Failed to create security object\r\n");
-		return -1;
+		return NULL;
 	}
 	data.securityObjP = objArray[0];
 
 	objArray[1] = get_server_object(serverId, "U", lifetime, false);
 	if (NULL == objArray[1]) {
 		fprintf(stderr, "Failed to create server object\r\n");
-		return -1;
+		return NULL;
 	}
 
 	objArray[2] = get_object_device();
 	if (NULL == objArray[2]) {
 		fprintf(stderr, "Failed to create Device object\r\n");
-		return -1;
+		return NULL;
 	}
 
 	objArray[3] = get_object_firmware();
 	if (NULL == objArray[3]) {
 		fprintf(stderr, "Failed to create Firmware object\r\n");
-		return -1;
+		return NULL;
 	}
 
 	objArray[4] = get_object_location();
 	if (NULL == objArray[4]) {
 		fprintf(stderr, "Failed to create location object\r\n");
-		return -1;
+		return NULL;
 	}
 
 	objArray[5] = get_test_object();
 	if (NULL == objArray[5]) {
 		fprintf(stderr, "Failed to create test object\r\n");
-		return -1;
+		return NULL;
 	}
 
 	objArray[6] = get_object_conn_m();
 	if (NULL == objArray[6]) {
 		fprintf(stderr, "Failed to create connectivity monitoring object\r\n");
-		return -1;
+		return NULL;
 	}
 
 	objArray[7] = get_object_conn_s();
 	if (NULL == objArray[7]) {
 		fprintf(stderr, "Failed to create connectivity statistics object\r\n");
-		return -1;
+		return NULL;
 	}
 
 	int instId = 0;
 	objArray[8] = acc_ctrl_create_object();
 	if (NULL == objArray[8]) {
 		fprintf(stderr, "Failed to create Access Control object\r\n");
-		return -1;
+		return NULL;
 	} else if (acc_ctrl_obj_add_inst(objArray[8], instId, 3, 0, serverId) == false) {
 		fprintf(stderr, "Failed to create Access Control object instance\r\n");
-		return -1;
+		return NULL;
 	} else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 0, 0b000000000001111) == false) {
 		fprintf(stderr, "Failed to create Access Control ACL default resource\r\n");
-		return -1;
+		return NULL;
 	} else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 999, 0b000000000000001) == false) {
 		fprintf(stderr, "Failed to create Access Control ACL resource for serverId: 999\r\n");
-		return -1;
+		return NULL;
 	}
 	/*
 	 * The liblwm2m library is now initialized with the functions that will be in
@@ -1284,7 +1286,7 @@ pthread_addr_t client_main(void)
 	lwm2mH = lwm2m_init(&data);
 	if (NULL == lwm2mH) {
 		fprintf(stderr, "lwm2m_init() failed\r\n");
-		return -1;
+		return NULL;
 	}
 
 #ifdef WITH_TINYDTLS
@@ -1298,7 +1300,7 @@ pthread_addr_t client_main(void)
 	result = lwm2m_configure(lwm2mH, name, NULL, NULL, OBJ_COUNT, objArray);
 	if (result != 0) {
 		fprintf(stderr, "lwm2m_configure() failed: 0x%X\r\n", result);
-		return -1;
+		return NULL;
 	}
 
 	//signal(SIGINT, handle_sigint);
@@ -1325,7 +1327,6 @@ pthread_addr_t client_main(void)
 	while (0 == g_quit) {
 		struct timeval tv;
 		fd_set readfds;
-		int sockfd;
 		connection_t *connPtr = NULL;
 
 		struct timespec tv1;
@@ -1409,7 +1410,7 @@ pthread_addr_t client_main(void)
 				prv_restore_objects(lwm2mH);
 				lwm2mH->state = STATE_INITIAL;
 			} else {
-				return -1;
+				return NULL;
 			}
 		}
 #ifdef LWM2M_BOOTSTRAP
@@ -1436,9 +1437,6 @@ pthread_addr_t client_main(void)
 				fprintf(stderr, "Error in select(): %d %s\r\n", errno, strerror(errno));
 			}
 		} else if (result > 0) {
-			uint8_t buffer[MAX_PACKET_SIZE];
-			int numBytes;
-
 			/*
 			 * If an event happens on the socket
 			 */

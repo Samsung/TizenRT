@@ -20,7 +20,7 @@
 #include "common_monitor_interface.h"
 
 
-uint8_t cm_iobuffer[PROC_BUFFER_LEN];
+char cm_iobuffer[PROC_BUFFER_LEN];
 
 
 
@@ -65,7 +65,7 @@ void get_interface_name(char *mac)
 void get_ip_address(char *ipAddr)
 {
     int ret;    
-    uint8_t *filepath;
+    char *filepath;
     ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
     printf("mount returns value %d\n", ret);
     ret = asprintf(&filepath, "%s/connectivity/ipaddr", PROC_MOUNTPOINT);
@@ -118,7 +118,7 @@ void get_router_ip_address(char *routerIPAddr)
 void get_signal_strength(int *rssi_value)
 {
     int ret;    
-    uint8_t *filepath;
+    char *filepath;
     ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
     printf("mount returns value %d\n", ret);
     ret = asprintf(&filepath, "%s/connectivity/rssi", PROC_MOUNTPOINT);
@@ -181,6 +181,7 @@ int get_link_utilization()
 int get_tx_data()
 {
 //TODO: Feature implementation
+	return 0;
 }
 
 /****************************************************************************
@@ -197,6 +198,7 @@ int get_tx_data()
 int get_rx_data()
 {
 ///TODO: Feature implementation
+	return 0;
 }
 
 /****************************************************************************
@@ -212,6 +214,7 @@ int get_rx_data()
  int get_max_message_size()
 {
 ///TODO: Feature implementation
+	return 0;
 }
 
 
@@ -228,7 +231,7 @@ int get_rx_data()
  void get_bitrate(int *bitrate)
  {
     int ret;    
-    uint8_t *filepath;
+    char *filepath;
     ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
     printf("mount returns value %d\n", ret);
     ret = asprintf(&filepath, "%s/connectivity/bitrate", PROC_MOUNTPOINT);
@@ -252,7 +255,7 @@ int get_rx_data()
 void get_network_bearer(int *nwbearer)
 {
     int ret;    
-    uint8_t *filepath;
+    char *filepath;
     ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
     printf("mount returns value %d\n", ret);
     ret = asprintf(&filepath, "%s/connectivity/nwbearer", PROC_MOUNTPOINT);
@@ -274,7 +277,7 @@ void get_network_bearer(int *nwbearer)
 void get_avl_network_bearer(int *nwbearer)
 {
     int ret;    
-    uint8_t *filepath;
+    char *filepath;
     ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
     printf("mount returns value %d\n", ret);
     ret = asprintf(&filepath, "%s/connectivity/available_bearer", PROC_MOUNTPOINT);

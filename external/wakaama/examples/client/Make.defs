@@ -48,6 +48,7 @@ CSRCS += test_object.c
 
 
 # Interface API functions for dm frameworks
+CSRCS += common_monitor_interface.c
 CSRCS += connectivity_interface.c
 
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
