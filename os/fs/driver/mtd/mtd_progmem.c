@@ -96,7 +96,7 @@ struct progmem_dev_s {
 
 /* Internal helper functions */
 
-static int32_t progmem_log2(size_t blocksize);
+static int32_t progmem_log2(size_t num);
 
 /* MTD driver methods */
 
@@ -132,34 +132,30 @@ static struct progmem_dev_s g_progmem = {
  ****************************************************************************/
 
 /****************************************************************************
- * Name: progmem_erase
+ * Name: progmem_log2
  *
  * Description:
- *   Erase several blocks, each of the size previously reported.
+ *   Calculate the base 2 logarithm of a given number
  *
  ****************************************************************************/
 
-static int32_t progmem_log2(uint32_t blocksize)
+static int32_t progmem_log2(uint32_t num)
 {
-	uint32_t log2 = 0;
+	uint32_t log2;
 
-	/* Search every bit in the blocksize from bit zero to bit 30 (omitting bit
-	 * 31 which is the sign bit on return)
-	 */
-
-	for (log2 = 0; log2 < 31; log2++, blocksize >>= 1) {
+	for (log2 = 0; log2 < 31; log2++, num >>= 1) {
 		/* Is bit zero set? */
 
-		if ((blocksize & 1) != 0) {
+		if ((num & 1) != 0) {
 			/* Yes... the value should be exactly one.  We do not support
-			 * block sizes that are not exact powers of two.
+			 * numbers that are not exact powers of two.
 			 */
 
-			return blocksize == 1 ? log2 : -ENOSYS;
+			return num == 1 ? log2 : -ENOSYS;
 		}
 	}
 
-	return blocksize == 0 ? -EINVAL : -E2BIG;
+	return num == 0 ? -EINVAL : -E2BIG;
 }
 
 /****************************************************************************
