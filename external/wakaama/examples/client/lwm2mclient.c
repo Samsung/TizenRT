@@ -55,11 +55,6 @@
  Bosch Software Innovations GmbH - Please refer to git log
 
 */
-#include <tinyara/config.h>
-#include <time.h>
-#ifdef CONFIG_NET_LWIP
-
-//#include "object_connectivity_stat.h"
 
 #include "lwm2mclient.h"
 #include "liblwm2m.h"
@@ -80,40 +75,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
-#include <debug.h>
-#include <semaphore.h>
-#include <sys/ioctl.h>
-
-#include <net/if.h>
-#include <netinet/arp.h>
-
-#include <apps/netutils/netlib.h>
-#include <netdb.h>
-#include <tinyara/net/dns.h>
-
-
-/****************************************************************************
- * Definitions
- ****************************************************************************/
-
-#if defined(CONFIG_NET_ETHERNET) && CONFIG_NET_ETHERNET == 1
-#if LWIP_HAVE_LOOPIF
-#define NET_DEVNAME "en1"
-#else
-#define NET_DEVNAME "en0"
-#endif
-#elif defined(CONFIG_NET_802154) && CONFIG_NET_802154 == 1
-#define NET_DEVNAME "wpan0"
-#else
-#error "undefined CONFIG_NET_<type>, check your .config"
-#endif
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
 
 #define MAX_PACKET_SIZE 1024
 #define DEFAULT_SERVER_IPV6 "[::1]"
@@ -135,7 +100,7 @@ static char g_bootstrapserverPort[PORTLEN_MAX];
 static uint16_t g_lifetime;
 bool g_bootstrapRequested;
 
-#define OBJ_COUNT 10
+#define OBJ_COUNT 9
 lwm2m_object_t *objArray[OBJ_COUNT];
 
 // only backup security and server objects
@@ -297,7 +262,7 @@ void *lwm2m_connect_server(uint16_t secObjInstID,
 	dataP->connList = newConnP;
 	return (void *)newConnP;
 }
-#else
+#else /*  WITH_TINYDTLS */
 void *lwm2m_connect_server(uint16_t secObjInstID,
 						   void *userData)
 {
@@ -347,20 +312,12 @@ void *lwm2m_connect_server(uint16_t secObjInstID,
 	} else {
 		dataP->connList = newConnP;
 	}
-#ifdef LWM2M_CLIENT_MODE
-	printf("lwm2mH->state = %d\n", lwm2mH->state);
-	if (lwm2mH->state == STATE_REGISTERING              ||
-		lwm2mH->state == STATE_REGISTER_REQUIRED) {
-		prv_update_server(dataP, secObjInstID);
-	}
-
-#endif
 
 exit:
 	lwm2m_free(uri);
 	return (void *)newConnP;
 }
-#endif
+#endif /*  WITH_TINYDTLS */
 
 void lwm2m_close_connection(void *sessionH,
 							void *userData)
@@ -399,7 +356,6 @@ void lwm2m_close_connection(void *sessionH,
 		}
 	}
 }
-#endif
 
 static void prv_output_servers(char *buffer,
 							   void *user_data)
@@ -478,13 +434,15 @@ static void prv_output_servers(char *buffer,
 static void prv_change(char *buffer,
 					   void *user_data)
 {
-
+	lwm2m_context_t * lwm2mH = (lwm2m_context_t *) user_data;
 	lwm2m_uri_t uri;
 	char *end = NULL;
 	int result;
 
 	end = get_end_of_arg(buffer);
-//   if (end[0] == 0) goto syntax_error;
+	if (end[0] == 0) {
+		goto syntax_error;
+	}
 
 	result = lwm2m_stringToUri(buffer, end - buffer, &uri);
 	if (result == 0) {
@@ -555,7 +513,9 @@ static void prv_object_dump(char *buffer,
 	lwm2m_object_t *objectP;
 
 	end = get_end_of_arg(buffer);
-	//if (end[0] == 0) goto syntax_error;
+	if (end[0] == 0) {
+		goto syntax_error;
+	}
 
 	result = lwm2m_stringToUri(buffer, end - buffer, &uri);
 	if (result == 0) {
@@ -740,7 +700,6 @@ static void prv_display_objects(char *buffer,
 static void prv_display_backup(char *buffer,
 							   void *user_data)
 {
-	if (NULL != backupObjectArray) {
 		int i;
 		for (i = 0 ; i < BACKUP_OBJECT_COUNT ; i++) {
 			lwm2m_object_t *object = backupObjectArray[i];
@@ -758,7 +717,6 @@ static void prv_display_backup(char *buffer,
 			}
 		}
 	}
-}
 
 static void prv_backup_objects(lwm2m_context_t *context)
 {
@@ -1201,7 +1159,7 @@ pthread_addr_t client_main(void)
 		}
 		opt += 1;
 	}
-#endif
+#endif /* Disabled due to DM Framework */
 	if (!server) {
 		server = (AF_INET == data.addressFamily ? DEFAULT_SERVER_IPV4 : DEFAULT_SERVER_IPV6);
 	}
@@ -1318,24 +1276,6 @@ pthread_addr_t client_main(void)
 	} else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 999, 0b000000000000001) == false) {
 		fprintf(stderr, "Failed to create Access Control ACL resource for serverId: 999\r\n");
 		return -1;
-	}
-	objArray[9] = get_power_monitor_object();
-	if (NULL == objArray[9]) {
-		fprintf(stderr, "Failed to create Power Monitoring object\r\n");
-		return -1;
-	} else {
-		if (power_monitor_obj_add_inst(objArray[9], instId, 0) == false) {
-			fprintf(stderr, "Failed to create Power Monitoring object instance\r\n");
-			return -1;
-		}
-		if (power_monitor_obj_add_inst(objArray[9], instId + 1, 0) == false) {
-			fprintf(stderr, "Failed to create Power Monitoring object instance\r\n");
-			return -1;
-		}
-		if (power_monitor_obj_add_inst(objArray[9], instId + 2, 0) == false) {
-			fprintf(stderr, "Failed to create Power Monitoring object instance\r\n");
-			return -1;
-		}
 	}
 	/*
 	 * The liblwm2m library is now initialized with the functions that will be in
@@ -1538,7 +1478,6 @@ pthread_addr_t client_main(void)
 	free_object_conn_m(objArray[6]);
 	free_object_conn_s(objArray[7]);
 	acl_ctrl_free_object(objArray[8]);
-	power_monitor_free_object(objArray[9]);
 
 #ifdef MEMORY_TRACE
 	if (g_quit == 1) {
