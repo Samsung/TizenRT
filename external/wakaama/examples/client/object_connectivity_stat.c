@@ -20,18 +20,18 @@
  * 
  *  Resources:
  *
- *          Name         | ID | Oper. | Inst. | Mand.|  Type   | Range | Units | Description |
- *  SMS Tx Counter       |  0 |   R   | Single|  No  | Integer |       |       |             |
- *  SMS Rx Counter       |  1 |   R   | Single|  No  | Integer |       |       |             |
- *  Tx Data              |  2 |   R   | Single|  No  | Integer |       | kByte |             |
- *  Rx Data              |  3 |   R   | Single|  No  | Integer |       | kByte |             |
- *  Max Message Size     |  4 |   R   | Single|  No  | Integer |       | Byte  |             |
- *  Average Message Size |  5 |   R   | Single|  No  | Integer |       | Byte  |             |
- *  StartOrReset         |  6 |   E   | Single|  Yes | Integer |       |       |             |
+ *          Name         | ID | Oper. | Inst. | Mand.|  Type   | Range | Units | Descripton |
+ *  SMS Tx Counter       |  0 |   R   | Single|  No  | Integer |       |       |            |
+ *  SMS Rx Counter       |  1 |   R   | Single|  No  | Integer |       |       |            |
+ *  Tx Data              |  2 |   R   | Single|  No  | Integer |       | kByte |            |
+ *  Rx Data              |  3 |   R   | Single|  No  | Integer |       | kByte |            |
+ *  Max Message Size     |  4 |   R   | Single|  No  | Integer |       | Byte  |            |
+ *  Average Message Size |  5 |   R   | Single|  No  | Integer |       | Byte  |            |
+ *  StartOrReset         |  6 |   E   | Single|  Yes | Integer |       |       |            |
  */
 
 #include "liblwm2m.h"
-
+#include "tinyara/net/net.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,6 +45,7 @@
 #define RES_O_MAX_MESSAGE_SIZE          4
 #define RES_O_AVERAGE_MESSAGE_SIZE      5
 #define RES_M_START_OR_RESET            6
+#define RES_O_COLLECTION_PERIOD         7
 
 typedef struct
 {
@@ -56,35 +57,240 @@ typedef struct
     int64_t   avrMessageSize;
     int64_t   messageCount;           // private for incremental average calc.
     bool      collectDataStarted;
+	uint32_t collectionPeriod;
 } conn_s_data_t;
 
+
+/****************************************************************************
+ * Name: fetch_smsTx
+ *
+ * Description:
+ *   To get the smsTx statistic value for lwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ void fetch_smsTx(int *value);
+
+ /****************************************************************************
+ * Name: fetch_smsRx
+ *
+ * Description:
+ *   To get the smsRx statistic value forlwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ void fetch_smsRx(int *value);
+
+/****************************************************************************
+ * Name: fetch_txDataByte
+ *
+ * Description:
+ *   To get the txDataByte value for lwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ void fetch_txDataByte(int *value);
+
+/****************************************************************************
+ * Name: fetch_rxDataByte
+ *
+ * Description:
+ *   To get the rxDataByte value for lwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ void fetch_rxDataByte(int *value);
+
+/****************************************************************************
+ * Name: fetch_maxMessageSize
+ *
+ * Description:
+ *   To get the maximum message size for lwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ void fetch_maxMessageSize(int *value);
+
+/****************************************************************************
+ * Name: fetch_avrMessageSize
+ *
+ * Description:
+ *   To get the avegare message size for lwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ void fetch_avrMessageSize(int *value);
+
+
+
+/****************************************************************************
+ * Name: fetch_smsTx
+ *
+ * Description:
+ *   To get the smsTx statistic value for lwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ 
+ void fetch_smsTx(int *value)
+{
+	(*value)=0;
+}
+
+ /****************************************************************************
+ * Name: fetch_smsRx
+ *
+ * Description:
+ *   To get the smsRx statistic value forlwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ 
+void fetch_smsRx(int *value)
+{
+	(*value)=0;
+}
+
+ /****************************************************************************
+ * Name: fetch_txDataByte
+ *
+ * Description:
+ *   To get the txDataByte value for lwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ 
+void fetch_txDataByte(int *value)
+{
+#ifdef CONFIG_WL_WICED
+	 (*value)= wifi_tx_count/1000;
+#endif
+#ifdef CONFIG_ENC28J60
+	 (*value)= eth_tx_count/1000;
+#endif
+
+}
+
+ /****************************************************************************
+ * Name: fetch_rxDataByte
+ *
+ * Description:
+ *   To get the rxDataByte value for lwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ 
+ void fetch_rxDataByte(int *value)
+{
+#ifdef CONFIG_WL_WICED
+	 (*value)=wifi_total_message_size/1000;
+#endif
+#ifdef CONFIG_ENC28J60
+	 (*value)=eth_total_message_size/1000;
+#endif
+}
+
+ /****************************************************************************
+ * Name: fetch_maxMessageSize
+ *
+ * Description:
+ *   To get the maximum message size for lwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ 
+ void fetch_maxMessageSize(int *value)
+{
+#ifdef CONFIG_WL_WICED
+	 (*value)=wifi_max_message_size/1000;
+#endif
+#ifdef CONFIG_ENC28J60
+	 (*value)=eth_max_message_size/1000;
+#endif
+}
+
+ /****************************************************************************
+ * Name: fetch_avrMessageSize
+ *
+ * Description:
+ *   To get the avegare message size for lwm2m from connectivity manager
+ *
+ * Returned Value:
+ *   
+ *
+ ****************************************************************************/
+ 
+ void fetch_avrMessageSize(int *value)
+{
+#ifdef CONFIG_WL_WICED
+	 (*value)=wifi_avg_message_size/1000;
+#endif
+#ifdef CONFIG_ENC28J60
+	 (*value)=eth_avg_message_size/1000;
+#endif
+
+}
+ 
 static uint8_t prv_set_tlv(lwm2m_data_t * dataP, conn_s_data_t * connStDataP)
 {
     switch (dataP->id) {
     case RES_O_SMS_TX_COUNTER:
+	//fetch_smsTx(&connStDataP->smsTxCounter);
         lwm2m_data_encode_int(connStDataP->smsTxCounter, dataP);
         return COAP_205_CONTENT;
         break;
     case RES_O_SMS_RX_COUNTER:
+        //	fetch_smsRx(&connStDataP->smsRxCounter);
         lwm2m_data_encode_int(connStDataP->smsRxCounter, dataP);
         return COAP_205_CONTENT;
         break;
     case RES_O_TX_DATA:
+	//fetch_txDataByte(&connStDataP->txDataByte);
         lwm2m_data_encode_int(connStDataP->txDataByte/1024, dataP);
         return COAP_205_CONTENT;
         break;
     case RES_O_RX_DATA:
+	//fetch_rxDataByte(&connStDataP->rxDataByte);
         lwm2m_data_encode_int(connStDataP->rxDataByte/1024, dataP);
         return COAP_205_CONTENT;
         break;
     case RES_O_MAX_MESSAGE_SIZE:
+	//fetch_maxMessageSize(&connStDataP->maxMessageSize);
         lwm2m_data_encode_int(connStDataP->maxMessageSize, dataP);
         return COAP_205_CONTENT;
         break;
     case RES_O_AVERAGE_MESSAGE_SIZE:
+	//fetch_avrMessageSize(&connStDataP->avrMessageSize);
         lwm2m_data_encode_int(connStDataP->avrMessageSize, dataP);
         return COAP_205_CONTENT;
         break;
+    case RES_O_COLLECTION_PERIOD:          
+	//fetch_avrMessageSize(&connStDataP->collectionPeriod);
+        lwm2m_data_encode_int(connStDataP->collectionPeriod, dataP);
+        return COAP_205_CONTENT;
+        break; 
     default:
         return COAP_404_NOT_FOUND ;
     }
@@ -110,7 +316,8 @@ static uint8_t prv_read(uint16_t instanceId, int * numDataP, lwm2m_data_t** data
                 RES_O_TX_DATA,
                 RES_O_RX_DATA,
                 RES_O_MAX_MESSAGE_SIZE,
-                RES_O_AVERAGE_MESSAGE_SIZE
+                RES_O_AVERAGE_MESSAGE_SIZE,
+                RES_O_COLLECTION_PERIOD,
         };
         int nbRes = sizeof(resList) / sizeof(uint16_t);
 
@@ -144,7 +351,23 @@ static void prv_resetCounter(lwm2m_object_t* objectP, bool start)
     myData->maxMessageSize      = 0;
     myData->avrMessageSize      = 0;
     myData->messageCount        = 0;
+    myData->collectionPeriod = 0;
     myData->collectDataStarted  = start;
+#ifdef CONFIG_WL_WICED
+   wifi_tx_count=0;
+   wifi_rx_count=0;
+   wifi_max_message_size=0;
+   wifi_avg_message_size=0;
+   wifi_total_message_size=0;
+#endif   
+#ifdef CONFIG_ENC28J60
+   eth_tx_count=0;
+   eth_rx_count=0;
+   eth_max_message_size=0;
+   eth_avg_message_size=0;
+   eth_total_message_size=0;
+#endif   
+
 }
 
 static uint8_t prv_exec(uint16_t instanceId, uint16_t resourceId,
@@ -168,6 +391,7 @@ static uint8_t prv_exec(uint16_t instanceId, uint16_t resourceId,
     }
 }
 
+#if 1
 void conn_s_updateTxStatistic(lwm2m_object_t * objectP, uint16_t txDataByte, bool smsBased)
 {
     conn_s_data_t* myData = (conn_s_data_t*) (objectP->userData);
@@ -198,7 +422,7 @@ void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataByte, boo
         if (smsBased) myData->smsRxCounter++;
     }
 }
-
+#endif
 
 lwm2m_object_t * get_object_conn_s(void)
 {

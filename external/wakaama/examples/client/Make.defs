@@ -35,24 +35,12 @@
 
 ifeq ($(CONFIG_DM),y)
 
-CSRCS += lwm2mclient.c
-CSRCS += object_access_control.c
-CSRCS += object_connectivity_moni.c object_connectivity_stat.c
-CSRCS += object_device.c
-CSRCS += object_firmware.c
-CSRCS += object_location.c
-CSRCS += object_security.c
-CSRCS += object_server.c
-CSRCS += system_api.c
-CSRCS += test_object.c
+# Routing table support
 
-# Interface API functions for dm frameworks
-CSRCS += connectivity_interface.c
+CSRCS += object_access_control.c object_connectivity_moni.c object_connectivity_stat.c object_device.c object_firmware.c object_location.c object_security.c object_server.c system_api.c test_object.c lwm2mclient.c common_monitor_interface.c connectivity_interface.c power_monitor_interface.c object_power_moni.c
 
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/shared
-
-CFLAGS+=-D__TINYARA__
 
 DEPPATH += --dep-path wakaama/examples/client
 VPATH += :wakaama/examples/client

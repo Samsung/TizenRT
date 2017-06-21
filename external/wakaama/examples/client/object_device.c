@@ -57,7 +57,7 @@
 
 #include "liblwm2m.h"
 #include "lwm2mclient.h"
-
+#include "power_monitor_interface.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -108,6 +108,12 @@
 #define RES_O_SOFTWARE_VERSION      19
 #define RES_O_BATTERY_STATUS        20
 #define RES_O_MEMORY_TOTAL          21
+/* Added for Tinyara */
+#define RES_O_POWER_STATES              22
+#define RES_O_POWER_CURR_STATE          23
+#define RES_O_POWER_TIME_SPENT          24
+#define RES_O_POWER_EXPECTED_LIFETIME   25
+
 
 
 typedef struct
@@ -117,6 +123,9 @@ typedef struct
     int64_t time;
     uint8_t battery_level;
     char time_offset[PRV_OFFSET_MAXLEN];
+    char power_states[POWER_STATES_LEN];
+    char battery_lifetime[BATTERY_LIFETIME_LEN];
+    char battery_levels[BATTERY_LEVEL_LEN];
 } device_data_t;
 
 
@@ -238,7 +247,9 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
     }
 
     case RES_O_BATTERY_LEVEL:
-        lwm2m_data_encode_int(devDataP->battery_level, dataP);
+        fetch_battery_level(devDataP->battery_levels);
+        lwm2m_data_encode_string(devDataP->battery_levels, dataP);
+        printf("power level = %s\n", devDataP->battery_levels);
         return COAP_205_CONTENT;
 
     case RES_O_MEMORY_FREE:
@@ -275,6 +286,26 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
       
     case RES_M_BINDING_MODES:
         lwm2m_data_encode_string(PRV_BINDING_MODE, dataP);
+        return COAP_205_CONTENT;
+        
+    case RES_O_POWER_STATES:
+        fetch_power_states(devDataP->power_states);
+        lwm2m_data_encode_string(devDataP->power_states, dataP);
+        printf("power states = %s\n", devDataP->power_states);
+        return COAP_205_CONTENT;
+            
+    case RES_O_POWER_CURR_STATE:
+        
+        return COAP_205_CONTENT;
+        
+    case RES_O_POWER_TIME_SPENT:
+        
+        return COAP_205_CONTENT;
+        
+    case RES_O_POWER_EXPECTED_LIFETIME:
+        fetch_battery_lifetime(devDataP->battery_lifetime);
+        lwm2m_data_encode_string(devDataP->battery_lifetime, dataP);
+        printf("battery lifetime = %s\n", devDataP->battery_lifetime);
         return COAP_205_CONTENT;
 
     default:
@@ -316,7 +347,11 @@ static uint8_t prv_device_read(uint16_t instanceId,
                 RES_O_CURRENT_TIME,
                 RES_O_UTC_OFFSET,
                 RES_O_TIMEZONE,
-                RES_M_BINDING_MODES
+                RES_M_BINDING_MODES,
+                RES_O_POWER_STATES,
+                RES_O_POWER_CURR_STATE,
+                RES_O_POWER_TIME_SPENT,
+                RES_O_POWER_EXPECTED_LIFETIME,              
         };
         int nbRes = sizeof(resList)/sizeof(uint16_t);
 
@@ -479,7 +514,13 @@ static uint8_t prv_device_write(uint16_t instanceId,
 
     return result;
 }
-
+static void prv_reboot(void)
+{
+    g_reboot = 1;
+#ifdef CONFIG_ARCH_CHIP_S5JT200
+    *(int*)0x80090400 = 1;
+#endif
+}
 static uint8_t prv_device_execute(uint16_t instanceId,
                                   uint16_t resourceId,
                                   uint8_t * buffer,
@@ -498,7 +539,7 @@ static uint8_t prv_device_execute(uint16_t instanceId,
     {
     case RES_M_REBOOT:
         fprintf(stdout, "\n\t REBOOT\r\n\n");
-        g_reboot = 1;
+        prv_reboot();
         return COAP_204_CHANGED;
     case RES_O_FACTORY_RESET:
         fprintf(stdout, "\n\t FACTORY RESET\r\n\n");
@@ -589,6 +630,7 @@ lwm2m_object_t * get_object_device()
         }
     }
 
+    mount_procfs();
     return deviceObj;
 }
 
