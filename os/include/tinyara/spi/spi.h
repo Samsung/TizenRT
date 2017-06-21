@@ -155,12 +155,12 @@
  *   mode - The SPI mode requested
  *
  * Returned Value:
- *   0 on success; negated errno on failure.
+ *   none
  *
  ****************************************************************************/
 
 #define SPI_SETMODE(d, m) \
-	((d)->ops->setmode) ? (d)->ops->setmode(d, m) : -1
+	do { if ((d)->ops->setmode) (d)->ops->setmode(d, m); } while (0)
 
 /****************************************************************************
  * Name: SPI_SETBITS
@@ -175,12 +175,12 @@
  *           If value is below < 0, then it implies LSB first with -nbits
  *
  * Returned Value:
- *   0 on success; negated errno on failure.
+ *   none
  *
  ****************************************************************************/
 
 #define SPI_SETBITS(d, b) \
-	((d)->ops->setbits) ? (d)->ops->setbits(d, b) : -1
+	do { if ((d)->ops->setbits) (d)->ops->setbits(d, b); } while (0)
 
 /****************************************************************************
  * Name: SPI_STATUS
