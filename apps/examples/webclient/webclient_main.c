@@ -68,6 +68,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -242,7 +243,7 @@ int webclient_init_request(void *arg, struct http_client_request_t *request)
 		} else if (strcmp(p, "test_entity") == 0) {
 			int t = atoi(q);
 			if (t > 0 && t <= WEBCLIENT_CONF_MAX_ENTITY_SIZE) {
-				request->entity = malloc(t);
+				request->entity = (char *)malloc(t);
 				if (request->entity == NULL) {
 					return -1;
 				}
