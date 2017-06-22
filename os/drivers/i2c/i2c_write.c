@@ -88,6 +88,7 @@
 int i2c_write(FAR struct i2c_dev_s *dev, FAR const struct i2c_config_s *config, FAR const uint8_t *buffer, int buflen)
 {
 	struct i2c_msg_s msg;
+	int ret = -1;
 
 	/* Setup for the transfer */
 
@@ -102,8 +103,12 @@ int i2c_write(FAR struct i2c_dev_s *dev, FAR const struct i2c_config_s *config, 
 	 * assure thread safety.
 	 */
 
-	I2C_SETFREQUENCY(dev, config->frequency);
-	return I2C_TRANSFER(dev, &msg, 1);
+	if (dev != 0x0) {
+		I2C_SETFREQUENCY(dev, config->frequency);
+		ret = I2C_TRANSFER(dev, &msg, 1);
+	}
+
+	return ret;
 }
 
 #endif							/* CONFIG_I2C_TRANSFER */
