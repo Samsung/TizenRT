@@ -68,9 +68,9 @@ int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte
 	}
 
 	/* Calculate the sector number what we sholuld read  */
-	start_sector = start_offset / geo.erasesize;
-	end_sector = end_offset / geo.erasesize;
-	nsector = end_sector - start_sector + ((end_offset % geo.erasesize) ? (1) : (0));
+	start_sector = start_offset / geo.blocksize;
+	end_sector = end_offset / geo.blocksize;
+	nsector = end_sector - start_sector + ((end_offset % geo.blocksize) ? (1) : (0));
 
 	if (geo.erasesize * geo.neraseblocks < end_offset) {
 		ret = ERROR_SSTORAGE_INVALID_DATA_LEN;
@@ -78,7 +78,7 @@ int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte
 	}
 
 	/* Allocate temporary read buffer */
-	read_buf = (unsigned char *)malloc(nsector * geo.erasesize);
+	read_buf = (unsigned char *)malloc(nsector * geo.blocksize);
 	if (read_buf == NULL) {
 		fdbg("Fail to allocate memory\n");
 		ret = ERROR_SSTORAGE_SFS_FREAD;
@@ -91,7 +91,7 @@ int sss_ro_read(unsigned int start_offset, unsigned char *buf, unsigned int byte
 		fdbg("Fail to read start_sector = %d, nsector = %d, errno = %d\n", start_sector, nsector, errno);
 		ret = ERROR_SSTORAGE_SFS_FREAD;
 	} else {
-		memcpy(buf, read_buf + (start_offset % geo.erasesize), byte_size);
+		memcpy(buf, read_buf + (start_offset % geo.blocksize), byte_size);
 		ret = 0;
 	}
 

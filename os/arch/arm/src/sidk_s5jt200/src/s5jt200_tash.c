@@ -163,8 +163,8 @@ static void sidk_s5jt200_configure_partitions(void)
 		}
 
 		mtd_part = mtd_partition(mtd, partoffset,
-					partsize / geo.erasesize, partno);
-		partoffset += partsize / geo.erasesize;
+					partsize / geo.blocksize, partno);
+		partoffset += partsize / geo.blocksize;
 
 		if (!mtd_part) {
 			lldbg("ERROR: failed to create partition.\n");
