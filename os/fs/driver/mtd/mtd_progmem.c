@@ -87,7 +87,7 @@ struct progmem_dev_s {
 	/* Fields unique to the progmem MTD driver */
 
 	bool initialized;			/* True: Already initialized */
-	uint8_t blkshift;			/* Log2 of the flash block size */
+	uint8_t pgshift;			/* Log2 of the flash page size */
 };
 
 /****************************************************************************
@@ -206,7 +206,7 @@ static ssize_t progmem_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t
 	 */
 
 	src = (FAR const uint8_t *)up_progmem_getaddress(startblock);
-	memcpy(buffer, src, nblocks << priv->blkshift);
+	memcpy(buffer, src, nblocks << priv->pgshift);
 	return nblocks;
 }
 
@@ -227,7 +227,7 @@ static ssize_t progmem_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_
 	 * (The positive, number of blocks actually written or a negated errno)
 	 */
 
-	result = up_progmem_write(up_progmem_getaddress(startblock), buffer, nblocks << priv->blkshift);
+	result = up_progmem_write(up_progmem_getaddress(startblock), buffer, nblocks << priv->pgshift);
 	return result < 0 ? result : nblocks;
 }
 
@@ -250,9 +250,9 @@ static ssize_t progmem_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyt
 	 * errno)
 	 */
 
-	block = offset >> priv->blkshift;
+	block = offset >> priv->pgshift;
 	src = (FAR const uint8_t *)up_progmem_getaddress(block) +
-				(offset & ((1 << priv->blkshift) - 1));
+				(offset & ((1 << priv->pgshift) - 1));
 	memcpy(buffer, src, nbytes);
 	return nbytes;
 }
@@ -277,9 +277,9 @@ static ssize_t progmem_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nby
 	 * (The positive, number of blocks actually written or a negated errno)
 	 */
 
-	block = offset >> priv->blkshift;
+	block = offset >> priv->pgshift;
 	result = up_progmem_write(up_progmem_getaddress(block) +
-			(offset & ((1 << priv->blkshift) - 1)), buffer, nbytes);
+			(offset & ((1 << priv->pgshift) - 1)), buffer, nbytes);
 	return result < 0 ? result : nbytes;
 }
 #endif
@@ -306,8 +306,8 @@ static int progmem_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 			 * appear so.
 			 */
 
-			geo->blocksize = (1 << priv->blkshift);	/* Size of one read/write block */
-			geo->erasesize = (1 << priv->blkshift);	/* Size of one erase block */
+			geo->blocksize = (1 << priv->pgshift);		/* Size of one read/write block */
+			geo->erasesize = (1 << priv->pgshift);		/* Size of one erase block */
 			geo->neraseblocks = up_progmem_npages();	/* Number of erase blocks */
 			ret = OK;
 		}
@@ -363,7 +363,7 @@ static int progmem_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 FAR struct mtd_dev_s *progmem_initialize(void)
 {
 	FAR struct progmem_dev_s *priv = (FAR struct progmem_dev_s *)&g_progmem;
-	int32_t blkshift;
+	int32_t pgshift;
 
 	/* Perform initialization if necessary */
 
@@ -373,18 +373,17 @@ FAR struct mtd_dev_s *progmem_initialize(void)
 		 * other block.
 		 */
 
-		size_t blocksize = up_progmem_pagesize(0);
+		size_t pagesize = up_progmem_pagesize(0);
 
-		/* Calculate Log2 of the flash block size */
-
-		blkshift = progmem_log2(blocksize);
-		if (blkshift < 0) {
+		/* Calculate Log2 of the flash page size */
+		pgshift = progmem_log2(pagesize);
+		if (pgshift < 0) {
 			return NULL;
 		}
 
 		/* Save the configuration data */
 
-		g_progmem.blkshift = blkshift;
+		g_progmem.pgshift = pgshift;
 		g_progmem.initialized = true;
 
 #ifdef CONFIG_MTD_REGISTRATION
