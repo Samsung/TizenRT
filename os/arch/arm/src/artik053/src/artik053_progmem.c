@@ -54,12 +54,15 @@
 #include <stdbool.h>
 #include <tinyara/progmem.h>
 
+/* mtd_smart sector size cannot be less than this */
+#define INTERNAL_SECTOR_SIZE 256
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 size_t up_progmem_npages(void)
 {
-	return CONFIG_ARTIK053_FLASH_CAPACITY / CONFIG_ARTIK053_FLASH_PAGE_SIZE;
+	return CONFIG_ARTIK053_FLASH_CAPACITY / INTERNAL_SECTOR_SIZE;
 }
 
 bool up_progmem_isuniform(void)
@@ -69,7 +72,7 @@ bool up_progmem_isuniform(void)
 
 size_t up_progmem_pagesize(size_t page)
 {
-	return CONFIG_ARTIK053_FLASH_PAGE_SIZE;
+	return INTERNAL_SECTOR_SIZE;
 }
 
 size_t up_progmem_blocksize(void)
