@@ -90,6 +90,7 @@ int i2c_writeread(FAR struct i2c_dev_s *dev, FAR const struct i2c_config_s *conf
 {
 	struct i2c_msg_s msg[2];
 	unsigned int flags;
+	int ret = -1;
 
 	/* 7- or 10-bit address? */
 
@@ -124,8 +125,12 @@ int i2c_writeread(FAR struct i2c_dev_s *dev, FAR const struct i2c_config_s *conf
 	 * assure thread safety.
 	 */
 
-	I2C_SETFREQUENCY(dev, config->frequency);
-	return I2C_TRANSFER(dev, msg, 2);
+	if (dev != 0x0) {
+		I2C_SETFREQUENCY(dev, config->frequency);
+		ret = I2C_TRANSFER(dev, msg, 2);
+	}
+
+	return ret;
 }
 
 #endif							/* CONFIG_I2C_TRANSFER */
