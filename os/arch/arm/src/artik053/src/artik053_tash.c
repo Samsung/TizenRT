@@ -159,8 +159,8 @@ static void artik053_configure_partitions(void)
 			return;
 		}
 
-		mtd_part = mtd_partition(mtd, partoffset, partsize / geo.erasesize, partno);
-		partoffset += partsize / geo.erasesize;
+		mtd_part = mtd_partition(mtd, partoffset, partsize / geo.blocksize, partno);
+		partoffset += partsize / geo.blocksize;
 
 		if (!mtd_part) {
 			lldbg("ERROR: failed to create partition.\n");
