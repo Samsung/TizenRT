@@ -88,6 +88,7 @@ struct progmem_dev_s {
 
 	bool initialized;			/* True: Already initialized */
 	uint8_t pgshift;			/* Log2 of the flash page size */
+	uint8_t blkshift;			/* Log2 of the flash block size */
 };
 
 /****************************************************************************
@@ -307,7 +308,7 @@ static int progmem_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 			 */
 
 			geo->blocksize = (1 << priv->pgshift);		/* Size of one read/write block */
-			geo->erasesize = (1 << priv->pgshift);		/* Size of one erase block */
+			geo->erasesize = (1 << priv->blkshift);		/* Size of one erase block */
 			geo->neraseblocks = up_progmem_npages();	/* Number of erase blocks */
 			ret = OK;
 		}
@@ -363,7 +364,7 @@ static int progmem_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 FAR struct mtd_dev_s *progmem_initialize(void)
 {
 	FAR struct progmem_dev_s *priv = (FAR struct progmem_dev_s *)&g_progmem;
-	int32_t pgshift;
+	int32_t pgshift, blkshift;
 
 	/* Perform initialization if necessary */
 
@@ -381,9 +382,17 @@ FAR struct mtd_dev_s *progmem_initialize(void)
 			return NULL;
 		}
 
-		/* Save the configuration data */
+		size_t blocksize = up_progmem_blocksize();
 
+		/* Calculate Log2 of the flash block size */
+		blkshift = progmem_log2(blocksize);
+		if (blkshift < 0) {
+			return NULL;
+		}
+
+		/* Save the configuration data */
 		g_progmem.pgshift = pgshift;
+		g_progmem.blkshift = blkshift;
 		g_progmem.initialized = true;
 
 #ifdef CONFIG_MTD_REGISTRATION
