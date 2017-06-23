@@ -1189,12 +1189,33 @@ int main(int argc, char **argv)
 	coap_free_context(ctx);
 
 	/*
+	 * free payload.s
+	 * when cmdline_input function is used (e option), parameter s has allocated memory
+	 */
+	if (payload.s) {
+		free(payload.s);
+	}
+
+	payload.s = NULL;
+	payload.length = 0;
+
+	/*
 	 * deinitialize variables
 	 * optlist : without initialize optlist, new option is appened to old option existed in optlist
 	 *           it can cause wrong creation of option field
 	 * ready : when NON message is continously sent to server, ready field should be deinitialized
 	 *         without deinitialization, it cannot enter select loop
 	 */
+
+	coap_list_t *next = NULL;
+
+	if (optlist) {
+		do {
+			next = optlist->next;
+			coap_delete(optlist);
+			optlist = next;
+		} while (optlist != NULL);
+	}
 	optlist = NULL;
 	ready = 0;
 
