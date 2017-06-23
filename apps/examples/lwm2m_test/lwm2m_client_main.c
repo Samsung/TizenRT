@@ -798,12 +798,14 @@ void print_usage(void)
 	fprintf(stdout, "  -h HOST\tSet the hostname of the LWM2M Server to connect to. Default: localhost\r\n");
 	fprintf(stdout, "  -t TIME\tSet the lifetime of the Client. Default: 300\r\n");
 #ifdef WITH_MBEDTLS
-	fprintf(stdout, "  -i STRING\t Set PSK identity. If not set use none secure mode\r\n");
-	fprintf(stdout, "  -s HEXSTRING\t Set Pre-Shared-Key. If not set use none secure mode\r\n");
+	fprintf(stdout, "  -i STRING\t Set PSK identity.\r\n");
+	fprintf(stdout, "  -s HEXSTRING\t Set Pre-Shared-Key. The input length should be even, such as 11, 1111.\r\n");
 #endif
 	fprintf(stdout, "Examples:\r\n");
 	fprintf(stdout, "  lwm2mclient -h coap://127.0.0.1\r\n");
-	fprintf(stdout, "  lwm2mclient -h coaps+tcp://127.0.0.1 -i PSK_identity -s 4938271\r\n");
+	fprintf(stdout, "  lwm2mclient -h coaps://127.0.0.1 -i PSK_identity -s 11111111\r\n");
+	fprintf(stdout, "  lwm2mclient -h coap+tcp://127.0.0.1\r\n");
+	fprintf(stdout, "  lwm2mclient -h coaps+tcp://127.0.0.1 -i PSK_identity -s 11111111\r\n");
 	fprintf(stdout, "\r\n");
 }
 

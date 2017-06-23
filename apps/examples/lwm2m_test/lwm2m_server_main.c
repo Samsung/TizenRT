@@ -957,11 +957,14 @@ void print_usage(void)
 	fprintf(stdout, "Options:\r\n");
 	fprintf(stdout, "  -p protocol \tSet protocol type, (0: UDP, 1: UDP+DTLS, 2: TCP, 3: TCP+TLS)\r\n");
 #ifdef WITH_MBEDTLS
-	fprintf(stdout, "  -i STRING\t Set PSK identity. If not set use none secure mode\r\n");
-	fprintf(stdout, "  -s HEXSTRING\t Set Pre-Shared-Key. If not set use none secure mode\r\n");
+	fprintf(stdout, "  -i STRING\t Set PSK identity.\r\n");
+	fprintf(stdout, "  -s HEXSTRING\t Set Pre-Shared-Key. The input length should be even, such as 11, 1111.\r\n");
 #endif
 	fprintf(stdout, "Examples:\r\n");
-	fprintf(stdout, "  lwm2mserver -p 3\r\n");
+	fprintf(stdout, "  lwm2mserver -p 0\r\n");
+	fprintf(stdout, "  lwm2mserver -p 1 -i PSK_identity -s 11111111\r\n");
+	fprintf(stdout, "  lwm2mserver -p 2\r\n");
+	fprintf(stdout, "  lwm2mserver -p 3 -i PSK_identity -s 11111111\r\n");
 	fprintf(stdout, "\r\n");
 }
 
