@@ -194,6 +194,23 @@ menuconfig I2S
 if I2S
 endif # I2S
 
+
+menuconfig AUDIO_DEVICES
+        bool "Audio Device Support"
+        default n
+        ---help---
+                Enable support for audio device drivers.  This includes drivers for
+                MP3, WMA and Ogg Vorbis encoding, decoding, as well as drivers for
+                interfacing with external DSP chips to perform custom audio functions.
+
+                NOTE: All of these drivers depend on support from the audio subsystem
+                enabled with the AUDIO selection.
+
+if AUDIO_DEVICES
+source drivers/audio/Kconfig
+endif # AUDIO_DEVICES
+
+
 menuconfig BCH
 	bool "Block-to-Character (BCH) Support"
 	default n
