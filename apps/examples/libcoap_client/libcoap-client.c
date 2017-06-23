@@ -782,7 +782,7 @@ int cmdline_proxy(char *arg)
 	return 1;
 }
 
-inline void cmdline_token(char *arg)
+inline static void cmdline_token(char *arg)
 {
 	strncpy((char *)the_token.s, arg, min(sizeof(_token_data), strlen(arg)));
 	the_token.length = strlen(arg);
