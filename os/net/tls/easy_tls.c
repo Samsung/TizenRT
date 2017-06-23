@@ -293,6 +293,8 @@ int TLSCtx_free(tls_ctx *ctx)
 	tls_context_release(ctx);
 	tls_context_free(ctx);
 
+	TLS_FREE(ctx);
+
 	EASY_TLS_DEBUG("TLSCtx free\n");
 	return TLS_SUCCESS;
 }
@@ -391,7 +393,9 @@ int TLSSession_free(tls_session *session)
 
 	mbedtls_ssl_free(session->ssl);
 	mbedtls_net_free(&session->net);
+
 	TLS_FREE(session->ssl);
+	TLS_FREE(session);
 
 	EASY_TLS_DEBUG("TLSSession free\n");
 	return 0;
