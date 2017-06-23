@@ -146,7 +146,7 @@ static inline bool pthread_mutex_islocked(FAR pthread_mutex_t *mutex)
 
 int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 {
-	int ret = OK;
+	int ret = EPERM;
 
 	svdbg("mutex=0x%p\n", mutex);
 	DEBUGASSERT(mutex != NULL);
@@ -160,8 +160,10 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 	sched_lock();
 
 	/* The unlock operation is only performed if the mutex is actually locked.
-	 * If the mutex is not locked, then SUCCESS will be returned (there is
-	 * no error return value specified for this case).
+	 * EPERM *must* be returned if the mutex type is PTHREAD_MUTEX_ERRORCHECK
+	 * or PTHREAD_MUTEX_RECURSIVE, or the mutex is a robust mutex, and the
+	 * current thread does not own the mutex.  Behavior is undefined for the
+	 * remaining case.
 	 */
 	if (pthread_mutex_islocked(mutex)) {
 #if !defined(CONFIG_PTHREAD_MUTEX_UNSAFE) || defined(CONFIG_PTHREAD_MUTEX_TYPES)
