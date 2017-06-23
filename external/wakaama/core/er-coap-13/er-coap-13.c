@@ -388,7 +388,7 @@ size_t coap_serialize_get_size_tcp(void *packet)
 {
 	coap_packet_t *coap_pkt = (coap_packet_t *) packet;
 
-	uint16_t len = 0;
+	uint32_t len = 0;
 	uint16_t options_len = 0;
 
 	size_t length = 0;
