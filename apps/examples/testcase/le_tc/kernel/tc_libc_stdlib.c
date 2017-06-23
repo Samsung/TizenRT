@@ -175,15 +175,29 @@ static void tc_libc_stdlib_itoa(void)
 static void tc_libc_stdlib_qsort(void)
 {
 	/* random values filled in array for sorting */
-	int value_arr[] = { 40, 10, 100, 90, 20, 25 };
-	int data_idx = 0, arr_length;
-	arr_length = (sizeof(value_arr) / sizeof(int));
-	qsort(value_arr, arr_length, sizeof(int), compare);
+	int value_arr1[] = { 40, 10, 100, 90, 20, 25 };
+	float value_arr2[] = { 16, 10, 27, 49, 18, 82, 27, 31, 11, 13, 101, 2, 99, 32, 51,
+				72, 182, 939, 1, 61, 83, 5, 60, 131, 52, 39, 33, 127, 29, 19,
+				12, 81, 281, 8, 931, 17, 111, 356, 14, 93, 20, 40, 30, 37, 73 };
+	int data_idx = 0;
+	int arr_length;
+
+	arr_length = (sizeof(value_arr1) / sizeof(int));
+	qsort(value_arr1, arr_length, sizeof(int), compare);
 	for (data_idx = 0; data_idx < arr_length; data_idx++) {
 		if (data_idx != arr_length - 1) {
-			TC_ASSERT_LEQ("qsort", value_arr[data_idx], value_arr[data_idx + 1]);
+			TC_ASSERT_LEQ("qsort", value_arr1[data_idx], value_arr1[data_idx + 1]);
 		}
 	}
+
+	arr_length = (sizeof(value_arr2) / sizeof(int));
+	qsort(value_arr2, arr_length, sizeof(int), compare);
+	for (data_idx = 0; data_idx < arr_length; data_idx++) {
+		if (data_idx != arr_length - 1) {
+			TC_ASSERT_LEQ("qsort", value_arr2[data_idx], value_arr2[data_idx + 1]);
+		}
+	}
+
 
 	TC_SUCCESS_RESULT();
 }
