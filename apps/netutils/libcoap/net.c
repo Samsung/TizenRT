@@ -314,6 +314,12 @@ coap_context_t *coap_new_context(const coap_address_t *listen_addr)
 
 	if (!listen_addr) {
 		coap_log(LOG_EMERG, "no listen address specified\n");
+#ifdef WITH_POSIX
+		/* To prevent memory leakage */
+		if (c) {
+			free(c);
+		}
+#endif
 		return NULL;
 	}
 
@@ -1499,7 +1505,9 @@ void coap_dispatch(coap_context_t *context)
 				handle_response(context, sent, rcvd);
 			} else {
 				debug("dropped message with invalid code\n");
-				coap_send_message_type(context, &rcvd->remote, rcvd->pdu, COAP_MESSAGE_RST);
+				if (coap_send_message_type(context, &rcvd->remote, rcvd->pdu, COAP_MESSAGE_RST) == COAP_INVALID_TID) {
+					debug("failed to send RST message\n");
+				}
 			}
 		}
 

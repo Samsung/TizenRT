@@ -23,6 +23,11 @@ unsigned int coap_opt_block_num(const coap_opt_t *block_opt)
 	unsigned int num = 0;
 	unsigned short len;
 
+	if (block_opt == NULL) {
+		warn("block_opt is null\n");
+		return 0;
+	}
+
 	len = coap_opt_length(block_opt);
 
 	if (len == 0) {
