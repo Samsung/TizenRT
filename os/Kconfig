@@ -669,8 +669,6 @@ config DEBUG_SYSCALL_INFO
 
 endif #DEBUG_SYSCALL
 
-comment "SLSI WLAN Debug Options"
-
 config DEBUG_WLAN
 	bool "WLAN Debug Output"
 	default y
