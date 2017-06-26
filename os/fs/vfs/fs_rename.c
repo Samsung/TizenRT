@@ -123,7 +123,8 @@ int rename(FAR const char *oldpath, FAR const char *newpath)
 	 */
 
 	if (!oldpath || *oldpath == '\0' || oldpath[0] != '/' || !newpath || *newpath == '\0' || newpath[0] != '/') {
-		return -EINVAL;
+		errcode = EINVAL;
+		goto errout;
 	}
 
 	/* Get an inode that includes the oldpath */
