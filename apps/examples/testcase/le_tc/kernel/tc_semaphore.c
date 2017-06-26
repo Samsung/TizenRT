@@ -25,8 +25,7 @@
 #include <sys/types.h>
 #include "tc_internal.h"
 
-#define HALF_SEC        500000
-#define SEC_1           1
+#define SEC_2           2
 
 int g_pshared = 0;
 int g_count = 1;
@@ -200,40 +199,106 @@ static void tc_semaphore_sem_trywait(void)
 
 /**
 * @fn                   :tc_semaphore_sem_timedwait
-* @brief                :same as sem_wait(), except that abs_timeout specifies a limit on the amount of
+* @brief                :this tc tests sem_timedwait
+* @scenario             :if parameters are invalid, sem_timedwait returns ERROR
 *                        time that the call should block if the decrement cannot be immediately performed.
-* @scenario             :same as sem_wait(), except that abs_timeout specifies a limit on the amount of
-*                        time that the call should block if the decrement cannot be immediately performed.
-* API's covered         :sem_init, sem_timedwait
-* Preconditions         :Semaphore should be initialised and timespec structure should be specified.
-* Postconditions        :Semaphore should be destroyed.
+* API's covered         :sem_timedwait
+* Preconditions         :none
+* Postconditions        :none
 * @return               :void
 */
 static void tc_semaphore_sem_timedwait(void)
 {
-	int ret_val = ERROR;
-	struct timespec st_set_time;
-	struct timespec st_init_time;
-	struct timespec st_final_time;
-	sem_t sem_name;
-	ret_val = sem_init(&sem_name, g_pshared, g_count);
-	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
+	struct timespec abstime;
+	struct timespec curtime;
+	sem_t sem;
+	int ret_chk;
 
-	ret_val = clock_gettime(CLOCK_REALTIME, &st_init_time);
-	TC_ASSERT_EQ("clock_gettime", ret_val, OK);
+	/* init sem count to 1 */
 
-	st_set_time.tv_sec = st_init_time.tv_sec + SEC_1;
+	ret_chk = sem_init(&sem, 0, 1);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
 
-	ret_val = sem_timedwait(&sem_name, &st_set_time);
-	TC_ASSERT_NEQ("sem_timedwait", ret_val, ERROR);
+#ifdef CONFIG_DEBUG
+	/* NULL case test */
 
-	ret_val = clock_gettime(CLOCK_REALTIME, &st_final_time);
-	TC_ASSERT_EQ("clock_gettime", ret_val, OK);
+	ret_chk = sem_timedwait(&sem, NULL);
+	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_timedwait", get_errno(), EINVAL);
 
-	if (g_count == 0) {
-		TC_ASSERT_EQ("sem_timedwait", st_init_time.tv_sec + SEC_1, st_final_time.tv_sec);
-	}
-	sem_destroy(&sem_name);
+	ret_chk = sem_timedwait(NULL, &abstime);
+	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_timedwait", get_errno(), EINVAL);
+#endif
+
+	/* success to get sem case test */
+
+	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
+
+	abstime.tv_sec = abstime.tv_sec + SEC_2;
+	abstime.tv_nsec = 0;
+
+	ret_chk = sem_timedwait(&sem, &abstime);
+	TC_ASSERT_EQ("sem_timedwait", ret_chk, OK);
+
+	ret_chk = clock_gettime(CLOCK_REALTIME, &curtime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
+	TC_ASSERT_NEQ("sem_timedwait", abstime.tv_sec, curtime.tv_sec);
+
+	ret_chk = sem_post(&sem);
+	TC_ASSERT_EQ("sem_post", ret_chk, OK);
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+
+	/* init sem count to 0 */
+
+	ret_chk = sem_init(&sem, 0, 0);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
+	/* invalid time test */
+
+	abstime.tv_nsec = -1;
+	ret_chk = sem_timedwait(&sem, &abstime);
+	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_timedwait", get_errno(), EINVAL);
+
+	abstime.tv_nsec = 1000000000;
+	ret_chk = sem_timedwait(&sem, &abstime);
+	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_timedwait", get_errno(), EINVAL);
+
+	/* expired time test */
+
+	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
+
+	ret_chk = sem_timedwait(&sem, &abstime);
+	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_timedwait", get_errno(), ETIMEDOUT);
+
+	/* fail to get sem case test */
+
+	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
+
+	abstime.tv_sec = abstime.tv_sec + SEC_2;
+	abstime.tv_nsec = 0;
+
+	ret_chk = sem_timedwait(&sem, &abstime);
+	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_timedwait", get_errno(), ETIMEDOUT);
+
+	ret_chk = clock_gettime(CLOCK_REALTIME, &curtime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
+	TC_ASSERT_EQ("sem_timedwait", abstime.tv_sec, curtime.tv_sec);
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -269,7 +334,7 @@ int semaphore_main(void)
 {
 	tc_semaphore_sem_init_post_wait();
 	tc_semaphore_sem_trywait();
-	tc_semaphore_sem_timedwait();	/*tc fails if g_count is set 0 */
+	tc_semaphore_sem_timedwait();
 	tc_semaphore_sem_destroy();
 
 	return 0;
