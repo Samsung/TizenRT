@@ -304,26 +304,33 @@ static void tc_semaphore_sem_timedwait(void)
 
 /**
 * @fn                   :tc_semaphore_sem_destroy
-* @brief                :Destroy an unnamed semaphore
-* @scenario             :Destroy an unnamed semaphore
-* API's covered         :sem_init, sem_destroy
-* Preconditions         :Semaphore should be initialised
-* Postconditions        :Semaphore should be destroyed.
+* @brief                :this tc tests sem_destroy function
+* @scenario             :if sem is NULL, it returns ERROR
+*                        else, it returns OK
+* API's covered         :sem_destroy
+* Preconditions         :none
+* Postconditions        :none
 * @return               :void
 */
 static void tc_semaphore_sem_destroy(void)
 {
-	int ret_val = ERROR;
-	sem_t sem_name;
-	ret_val = sem_init(&sem_name, g_pshared, g_count);
-	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
+	sem_t sem;
+	int ret_chk;
 
-	ret_val = sem_destroy(&sem_name);
-	TC_ASSERT_EQ("sem_destroy", ret_val, OK);
+	/* NULL parameter check */
 
-	/* The effect of subsequent use of the semaphore sem is undefined until sem is re-initialised
-	   by another call to sem_init(). */
-	TC_SUCCESS_RESULT()
+	ret_chk = sem_destroy(NULL);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_destroy", get_errno(), EINVAL);
+
+	ret_chk = sem_init(&sem, g_pshared, g_count);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+	TC_ASSERT_EQ("sem_destroy", sem.semcount, 1);
+
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
