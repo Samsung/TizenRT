@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,6 +121,33 @@
 #define isinf(x)    (((x) == INFINITY) || ((x) == -INFINITY))
 #define isfinite(x) (!(isinf(x)) && (x != NAN))
 
+static __inline unsigned __FLOAT_BITS(float __f)
+{
+	union {
+		float __f;
+		unsigned __i;
+	} __u;
+	__u.__f = __f;
+	return __u.__i;
+}
+
+#if CONFIG_HAVE_DOUBLE
+static __inline unsigned long long __DOUBLE_BITS(double __f)
+{
+	union {
+		double __f;
+		unsigned long long __i;
+	} __u;
+	__u.__f = __f;
+	return __u.__i;
+}
+#endif
+
+#define signbit(x) ( \
+		sizeof(x) == sizeof(float) ? (int)(__FLOAT_BITS(x)>>31) : \
+		sizeof(x) == sizeof(double) ? (int)(__DOUBLE_BITS(x)>>63) : \
+		(int)(__DOUBLE_BITS(x)>>63) )
+
 /* Exponential and Logarithmic constants ************************************/
 
 #define M_E        2.7182818284590452353602874713526625
@@ -155,8 +182,8 @@ extern "C" {
  */
 float ceilf(float x);
 /**
- * @internal
- */
+  * @internal
+  */
 #ifdef CONFIG_HAVE_DOUBLE
 double ceil(double x);
 #endif
@@ -274,7 +301,6 @@ double fmod(double x, double div);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double fmodl(long double x, long double div);
 #endif
-
 /* Exponential and Logarithmic Functions *********************************** */
 /**
  * @internal
@@ -323,6 +349,22 @@ long double expl(long double x);
 /**
  * @internal
  */
+float exp2f(float x);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double exp2(double x);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double exp2l(long double x);
+#endif
+/**
+ * @internal
+ */
 float logf(float x);
 /**
  * @internal
@@ -367,6 +409,22 @@ double log2(double x);
  */
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double log2l(long double x);
+#endif
+/**
+ * @internal
+ */
+float cbrtf(float x);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double cbrt(double x);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double cbrtl(long double x);
 #endif
 /**
  * @internal
@@ -679,6 +737,178 @@ double trunc(double x);
  */
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double truncl(long double x);
+#endif
+/**
+ * @internal
+ */
+float fdimf(float x, float y);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double fdim(double x, double y);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double fdiml(long double x, long double y);
+#endif
+/**
+ * @internal
+ */
+float fmaxf(float x, float y);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double fmax(double x, double y);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double fmaxl(long double x, long double y);
+#endif
+/**
+ * @internal
+ */
+float fminf(float x, float y);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double fmin(double x, double y);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double fminl(long double x, long double y);
+#endif
+/**
+ * @internal
+ */
+float hypotf(float x, float y);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double hypot(double x, double y);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double hypotl(long double x, long double y);
+#endif
+/**
+ * @internal
+ */
+float scalbnf(float x, int exp);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double scalbn(double x, int exp);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double scalbnl(long double x, int exp);
+#endif
+/**
+ * @internal
+ */
+float j0f(float x);
+float j1f(float x);
+float jnf(int n, float x);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double j0(double x);
+double j1(double x);
+double jn(int n, double x);
+#endif
+/**
+ * @internal
+ */
+float y0f(float x);
+float y1f(float x);
+float ynf(int n, float x);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double y0(double x);
+double y1(double x);
+double yn(int n, double x);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double nextafter(double x, double y);
+#endif
+/**
+ * @internal
+ */
+float nextafterf(float x, float y);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double nextafterl(long double x, long double y);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double nexttoward(double x, long double y);
+#endif
+/**
+ * @internal
+ */
+float nexttowardf(float x, long double y);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double nexttowardl(long double x, long double y);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double remainder(double x, double y);
+#endif
+/**
+ * @internal
+ */
+float remainderf(float x, float y);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double remainderl(long double x, long double y);
+#endif
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_DOUBLE
+double remquo(double x, double y, int *quo);
+#endif
+/**
+ * @internal
+ */
+float remquof(float x, float y, int *quo);
+/**
+ * @internal
+ */
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+long double remquol(long double x, long double y, int *quo);
 #endif
 /**
  * @internal
