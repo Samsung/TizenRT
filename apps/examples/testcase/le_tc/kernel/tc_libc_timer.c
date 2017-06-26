@@ -305,23 +305,76 @@ static void tc_libc_timer_mktime(void)
 */
 static void tc_libc_timer_strftime(void)
 {
-	time_t test_time;
-	struct tm *st_time;
+	struct tm st_time;
 	char buffer[BUFF_SIZE];
-	time(&test_time);
-	st_time = localtime(&test_time);
+	int ret_chk;
+
+	/* using specific tm struct */
+	st_time.tm_sec = 15;
+	st_time.tm_min = 21;
+	st_time.tm_hour = 18;
+	st_time.tm_mday = 19;
+	st_time.tm_mon = 5;
+	st_time.tm_year = 2017 - YEAR_BASE;
 
 	/* Verifying year and month filled in time structure.
 	 * time structure has month in range 0-11,
 	 * so tm_mon + 1 represents actual month number */
 
-	strftime(buffer, BUFF_SIZE, "%m", st_time);
-	TC_ASSERT_EQ("strftime", atoi(buffer), st_time->tm_mon + 1);
+	strftime(buffer, BUFF_SIZE, "%m", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_mon + 1);
 
-	/* st_time->tm_year represents year relative to YEAR_BASE */
+	/* Check the abbreviated month name */
+	strftime(buffer, BUFF_SIZE, "%b", &st_time);
+	TC_ASSERT_EQ("strftime", strcmp(buffer, "Jun"), 0);
 
-	strftime(buffer, BUFF_SIZE, "%Y", st_time);
-	TC_ASSERT_EQ("strftime", atoi(buffer), st_time->tm_year + YEAR_BASE);
+	/* Check the full month name */
+	strftime(buffer, BUFF_SIZE, "%B", &st_time);
+	TC_ASSERT_EQ("strftime", strcmp(buffer, "June"), 0);
+
+	/* Check the century number (year/100) as a 2-digit integer */
+	strftime(buffer, BUFF_SIZE, "%C", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_year % 100);
+
+	/* Check the day of month as a decimal number (range 01 to 31) */
+	strftime(buffer, BUFF_SIZE, "%d", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_mday);
+
+	/* Check the hour as a decimal number using a 24-hour clock (range 00 to 23) */
+	strftime(buffer, BUFF_SIZE, "%H", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_hour);
+
+	/* Check the hour as a decimal number using a 12-hour clock (range 01 to 12) */
+	strftime(buffer, BUFF_SIZE, "%I", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_hour - 12);
+
+	/* Check the day of the year as a decimal number (range 001 to 366) */
+	strftime(buffer, BUFF_SIZE, "%j", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), clock_daysbeforemonth(st_time.tm_mon, false) + st_time.tm_mday);
+
+	/* Check either "AM" or "PM" according to the given time value, Noon is treated as "PM" and midnight as "AM" */
+	strftime(buffer, BUFF_SIZE, "%p", &st_time);
+	TC_ASSERT_EQ("strftime", strcmp(buffer, "PM"), 0);
+
+	/* Check either "am" or "pm" according to the given time value, Noon is treated as "pm" and midnight as "am" */
+	strftime(buffer, BUFF_SIZE, "%P", &st_time);
+	TC_ASSERT_EQ("strftime", strcmp(buffer, "pm"), 0);
+
+	/* Check the second as a decimal number (range 00 to 60) */
+	strftime(buffer, BUFF_SIZE, "%S", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_sec);
+
+	/* Check the year as a decimal number including the century */
+	strftime(buffer, BUFF_SIZE, "%Y", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_year + YEAR_BASE);
+
+	/* Check the year as a decimal number without a century (range 00 to 99) */
+	strftime(buffer, BUFF_SIZE, "%y", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_year % 100);
+
+	/* Check with invalid param. it will returns 0. */
+	ret_chk = strftime(buffer, BUFF_SIZE, "%f", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), 0);
 
 	TC_SUCCESS_RESULT();
 }
