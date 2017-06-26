@@ -57,8 +57,8 @@ pthread_t thread[PTHREAD_CNT];
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t g_cond;
-pthread_once_t g_once = PTHREAD_ONCE_INIT;
 pthread_key_t g_tlskey;
+static pthread_once_t g_once = PTHREAD_ONCE_INIT;
 static bool g_bpthreadcallback = false;
 
 static int g_cnt;
@@ -375,19 +375,11 @@ err:
 /**
 * @fn                   :run_once
 * @brief                :utilify function for tc_pthread_pthread_once
-* @return               :void*
+* @return               :void
 */
 static void run_once(void)
 {
-	static int run_idx = 0;
-	g_bpthreadcallback = true;
-	if (run_idx != 0) {
-		printf("tc_pthread_pthread_once FAIL\n");
-		g_bpthreadcallback = false;
-		RETURN_ERR;
-	}
-	run_idx++;
-	RETURN_ERR;
+	g_bpthreadcallback = !g_bpthreadcallback;
 }
 
 /**
@@ -524,6 +516,17 @@ void *thread_cond_signal(void *parm)
 		goto err;
 	}
 err:
+	return NULL;
+}
+
+/**
+* @fn                   :thread_mutex_lock_exit_without_unlock
+* @brief                :utility function
+* @return               :void*
+*/
+static void *thread_mutex_lock_exit_without_unlock(void *param)
+{
+	pthread_mutex_lock(&g_mutex);
 	return NULL;
 }
 
@@ -1075,43 +1078,103 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 }
 
 /**
-* @fn                   :tc_pthread_pthread_mutex_init_destroy
-* @brief                :shall initialize and destroy the mutex referenced by mutex with attributes specified by attr.
-* @Scenario             :If successful, the pthread_mutex_destroy() and pthread_mutex_init() functions shall return zero\
-*                        otherwise, an error number shall be returned to indicate the error.
-* API's covered         :pthread_mutex_init, pthread_mutex_destroy
-* Preconditions         :pthread_mutexattr_init
-* Postconditions         :pthread_mutexattr_destroy
+* @fn                   :tc_pthread_pthread_mutex_init
+* @brief                :this tc test pthread_mutex_init
+* @Scenario             :If mutex is NULL, pthread_mutex_init return EINVAL.
+*                        Otherwise, it return OK and set mutex as default value.
+* API's covered         :pthread_mutex_init
+* Preconditions         :none
+* Postconditions        :none
 * @return               :void
 */
 
-static void tc_pthread_pthread_mutex_init_destroy(void)
+static void tc_pthread_pthread_mutex_init(void)
 {
-	int ret_chk = ERROR;
-	pthread_mutex_t mMutex;
 	pthread_mutexattr_t attr;
-	int nType = PTHREAD_MUTEX_ERRORCHECK;
+	pthread_mutex_t mutex;
+	int ret_chk;
 
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, nType);
+	ret_chk = pthread_mutexattr_init(&attr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
 
-	ret_chk = pthread_mutex_init(&mMutex, &attr);
+	ret_chk = pthread_mutex_init(NULL, &attr);
+	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, EINVAL);
+
+	ret_chk = pthread_mutex_init(&mutex, &attr);
+	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_mutex_init", mutex.pid, -1);
+#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+	TC_ASSERT_EQ("pthread_mutex_init", mutex.flink, NULL);
+	TC_ASSERT_EQ("pthread_mutex_init", mutex.flags, (attr.robust == PTHREAD_MUTEX_ROBUST ? _PTHREAD_MFLAGS_ROBUST : 0));
+#endif
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
+	TC_ASSERT_EQ("pthread_mutex_init", mutex.type, attr.type);
+	TC_ASSERT_EQ("pthread_mutex_init", mutex.nlocks, 0);
+#endif
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_pthread_pthread_mutex_destroy
+* @brief                :this tc test pthread_mutex_destroy
+* @Scenario             :1. If mutex is NULL, pthread_mutex_destroy makes assertion or returns EINVAL
+*                        2. If an alive thread holds mutex, pthread_mutex_destroy returns EBUSY
+*                        3. But the thread is no longer exist, pthread_mutex_destory returns OK and destroys mutex
+*                        4. pthread_mutex_destroy returns OK even mutex is already destroyed
+* API's covered         :pthread_mutex_destroy
+* Preconditions         :none
+* Postconditions        :g_mutex will be destroyed
+* @return               :void
+*/
+
+static void tc_pthread_pthread_mutex_destroy(void)
+{
+	pthread_mutexattr_t attr;
+	pthread_t pid;
+	int ret_chk;
+
+	ret_chk = pthread_mutexattr_init(&attr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
+
+	ret_chk = pthread_mutex_init(&g_mutex, &attr);
 	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
 
-	ret_chk = pthread_mutex_lock(&mMutex);
+#ifndef CONFIG_DEBUG
+	/* test NULL case. ASSERT will rise when debug is enabled */
+
+	ret_chk = pthread_mutex_destroy(NULL);
+	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, EINVAL);
+#endif
+
+	/* try pthread_mutex_destroy while mutex is used */
+
+	ret_chk = pthread_mutex_lock(&g_mutex);
 	TC_ASSERT_EQ("pthread_mutex_lock", ret_chk, OK);
 
-	pthread_mutex_unlock(&mMutex);
+	ret_chk = pthread_mutex_destroy(&g_mutex);
+	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, EBUSY);
 
-	ret_chk = pthread_mutex_destroy(&mMutex);
+	ret_chk = pthread_mutex_unlock(&g_mutex);
+	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
+
+	/* try ptherad_mutex_destroy when dead thread hold mutex */
+
+	ret_chk = pthread_create(&pid, NULL, thread_mutex_lock_exit_without_unlock, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+
+	ret_chk = pthread_join(pid, NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+
+	ret_chk = pthread_mutex_destroy(&g_mutex);
+	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_mutex_destroy", g_mutex.pid, -1);
+
+	/* test revisit case */
+
+	ret_chk = pthread_mutex_destroy(&g_mutex);
 	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, OK);
 
-	pthread_mutexattr_destroy(&attr);
-
-	/* if Mutex is destoryed, then sem of mutex will be set to 1. */
-	TC_ASSERT_EQ("pthread_mutexattr_destroy", mMutex.sem.semcount, 1);
-
-	pthread_mutex_destroy(&mMutex);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1128,18 +1191,31 @@ static void tc_pthread_pthread_mutex_init_destroy(void)
 */
 static void tc_pthread_pthread_once(void)
 {
-	int ret_chk = ERROR;
-	ret_chk = pthread_once(&g_once, &run_once);
-	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+	int ret_chk;
 
-	sleep(SEC_1);
+	/* Test NULL case */
 
+	g_bpthreadcallback = false;
+	ret_chk = pthread_once(NULL, &run_once);
+	TC_ASSERT_EQ("pthread_once", ret_chk, EINVAL);
+	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, false);
+
+	g_bpthreadcallback = false;
+	ret_chk = pthread_once(&g_once, NULL);
+	TC_ASSERT_EQ("pthread_once", ret_chk, EINVAL);
+	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, false);
+
+	/* g_bpthreadcallback will be toggled only once */
+
+	g_bpthreadcallback = false;
 	ret_chk = pthread_once(&g_once, &run_once);
 	TC_ASSERT_EQ("pthread_once", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, true);
 
-	sleep(SEC_1);
-
-	TC_ASSERT("pthread_once", g_bpthreadcallback);
+	g_bpthreadcallback = false;
+	ret_chk = pthread_once(&g_once, &run_once);
+	TC_ASSERT_EQ("pthread_once", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, false);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1416,8 +1492,9 @@ int pthread_main(void)
 	tc_pthread_pthread_setschedprio();
 #endif
 	tc_pthread_pthread_timed_wait();
+	tc_pthread_pthread_mutex_init();
+	tc_pthread_pthread_mutex_destroy();
 	tc_pthread_pthread_mutex_lock_unlock_trylock();
-	tc_pthread_pthread_mutex_init_destroy();
 	tc_pthread_pthread_once();
 	tc_pthread_pthread_yield();
 	tc_pthread_pthread_cond_signal_wait();
