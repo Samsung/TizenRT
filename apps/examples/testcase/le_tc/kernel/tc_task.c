@@ -37,6 +37,8 @@
 #define SEC_1           1
 #define SEC_2           2
 #define USEC_10         10
+#define PR_INVALID      -1
+#define PID_INVALID     -1
 
 static int g_callback;
 #ifndef CONFIG_BUILD_PROTECTED
@@ -374,31 +376,49 @@ static void tc_task_on_exit(void)
 */
 static void tc_task_prctl(void)
 {
-	int ret_chk;
 	const char *setname = "a Test program";
 	char getname[CONFIG_TASK_NAME_SIZE + 1];
 	char oldname[CONFIG_TASK_NAME_SIZE + 1];
+	int ret_chk;
+
+	/* unrecognized option case */
+
+	ret_chk = prctl(PR_INVALID, oldname, 0, 0, 0);
+	TC_ASSERT_EQ("prctl", ret_chk, ERROR);
+	TC_ASSERT_EQ("prctl", get_errno(), EINVAL);
+
+	/* no such process case */
+
+	ret_chk = prctl(PR_GET_NAME, oldname, PID_INVALID, 0, 0);
+	TC_ASSERT_EQ("prctl", ret_chk, ERROR);
+	TC_ASSERT_EQ("prctl", get_errno(), ESRCH);
+
+	/* no name case */
+
+	ret_chk = prctl(PR_GET_NAME, NULL, 0, 0, 0);
+	TC_ASSERT_EQ("prctl", ret_chk, ERROR);
+	TC_ASSERT_EQ("prctl", get_errno(), EFAULT);
 
 	/* save taskname */
 
-	ret_chk = prctl(PR_GET_NAME, (unsigned long)oldname, 0, 0, 0);
+	ret_chk = prctl(PR_GET_NAME, oldname, 0, 0, 0);
 	TC_ASSERT_EQ("prctl", ret_chk, OK);
 
 	/* set taskname */
 
-	ret_chk = prctl(PR_SET_NAME, (unsigned long)setname, 0, 0, 0);
+	ret_chk = prctl(PR_SET_NAME, setname, 0, 0, 0);
 	TC_ASSERT_EQ("prctl", ret_chk, OK);
 
 	/* get taskname */
 
-	ret_chk = prctl(PR_GET_NAME, (unsigned long)getname, 0, 0, 0);
-	TC_ASSERT_EQ_CLEANUP("prctl", ret_chk, OK, get_errno(), prctl(PR_SET_NAME, (unsigned long)oldname, 0, 0, 0));
+	ret_chk = prctl(PR_GET_NAME, getname, 0, 0, 0);
+	TC_ASSERT_EQ_CLEANUP("prctl", ret_chk, OK, get_errno(), prctl(PR_SET_NAME, oldname, 0, 0, 0));
 
 	/* compare getname and setname */
 
-	TC_ASSERT_EQ_CLEANUP("prctl", strncmp(getname, setname, CONFIG_TASK_NAME_SIZE), 0, get_errno(), prctl(PR_SET_NAME, (unsigned long)oldname, 0, 0, 0));
+	TC_ASSERT_EQ_CLEANUP("prctl", strncmp(getname, setname, CONFIG_TASK_NAME_SIZE), 0, get_errno(), prctl(PR_SET_NAME, oldname, 0, 0, 0));
 
-	prctl(PR_SET_NAME, (unsigned long)oldname, 0, 0, 0);
+	prctl(PR_SET_NAME, oldname, 0, 0, 0);
 	TC_SUCCESS_RESULT();
 }
 
