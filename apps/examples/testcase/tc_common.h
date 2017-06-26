@@ -119,11 +119,31 @@ int total_fail;
 	} \
 }
 
+#define TC_ASSERT_LT_CLEANUP(api_name, var, ref, error, freeResource) \
+{\
+	if ((var) >= (ref)) {\
+		printf("\n[%s][Line : %d] FAIL, %s : API error returned = %s, (%s == 0x%x) is not lower than (%s == 0x%x)\n", __func__, __LINE__, api_name, error, #var, (int)(var), #ref, (int)(ref)); \
+		total_fail++; \
+		freeResource; \
+		return; \
+	} \
+}
+
 #define TC_ASSERT_LT(api_name, var, ref) \
 {\
 	if ((var) >= (ref)) {\
 		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) is not lower than (%s == 0x%x)\n", __func__, __LINE__, api_name, #var, (int)(var), #ref, (int)(ref)); \
 		total_fail++; \
+		return; \
+	} \
+}
+
+#define TC_ASSERT_LEQ_CLEANUP(api_name, var, ref, error, freeResource) \
+{\
+	if ((var) > (ref)) {\
+		printf("\n[%s][Line : %d] FAIL, %s : API error returned = %s, (%s == 0x%x) is not lower than or equal to (%s == 0x%x)\n", __func__, __LINE__, api_name, error, #var, (int)(var), #ref, (int)(ref)); \
+		total_fail++; \
+		freeResource; \
 		return; \
 	} \
 }
