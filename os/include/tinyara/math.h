@@ -181,26 +181,26 @@ extern "C" {
  * @internal
  */
 float ceilf(float x);
-/**
-  * @internal
-  */
 #ifdef CONFIG_HAVE_DOUBLE
-double ceil(double x);
-#endif
 /**
  * @internal
  */
+double ceil(double x);
+#endif
 #ifdef CONFIG_HAVE_LONG_DOUBLE
+/**
+ * @internal
+ */
 long double ceill(long double x);
 #endif
 /**
  * @internal
  */
 float floorf(float x);
-#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @endcond
  */
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
@@ -208,43 +208,43 @@ float floorf(float x);
  */
 double floor(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @cond
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double floorl(long double x);
 #endif
 /**
  * @internal
  */
 float roundf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double round(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double roundl(long double x);
 #endif
 /**
  * @internal
  */
 float rintf(float x);		/* Not implemented */
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double rint(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double rintl(long double x);	/* Not implemented */
 #endif
 /**
@@ -262,21 +262,21 @@ float fabsf(float x);
  */
 double fabs(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @cond
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double fabsl(long double x);
 #endif
 /**
  * @internal
  */
 float modff(float x, float *iptr);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double modf(double x, double *iptr);
 #endif
 /**
@@ -289,16 +289,16 @@ long double modfl(long double x, long double *iptr);
  * @internal
  */
 float fmodf(float x, float div);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double fmod(double x, double div);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double fmodl(long double x, long double div);
 #endif
 /* Exponential and Logarithmic Functions *********************************** */
@@ -317,11 +317,11 @@ float powf(float b, float e);
  */
 double pow(double b, double e);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @cond
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double powl(long double b, long double e);
 #endif
 /**
@@ -332,17 +332,17 @@ float expf(float x);
  * @internal
  */
 #define expm1f(x) (expf(x) - 1.0)
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double exp(double x);
 #define expm1(x) (exp(x) - 1.0)
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double expl(long double x);
 #define expm1l(x) (expl(x) - 1.0)
 #endif
@@ -351,63 +351,69 @@ long double expl(long double x);
  */
 float exp2f(float x);
 /**
- * @internal
+ * @endcond
  */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double exp2(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
+ * @cond
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double exp2l(long double x);
 #endif
 /**
  * @internal
  */
 float logf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double log(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double logl(long double x);
 #endif
 /**
  * @internal
  */
 float log10f(float x);
+#if CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#if CONFIG_HAVE_DOUBLE
 double log10(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double log10l(long double x);
 #endif
 /**
  * @internal
  */
 float log2f(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double log2(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double log2l(long double x);
 #endif
 /**
@@ -415,63 +421,69 @@ long double log2l(long double x);
  */
 float cbrtf(float x);
 /**
- * @internal
+ * @endcond
  */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double cbrt(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
+ * @cond
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double cbrtl(long double x);
 #endif
 /**
  * @internal
  */
 float sqrtf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double sqrt(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double sqrtl(long double x);
 #endif
 /**
  * @internal
  */
 float ldexpf(float x, int n);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double ldexp(double x, int n);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double ldexpl(long double x, int n);
 #endif
 /**
  * @internal
  */
 float frexpf(float x, int *exp);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double frexp(double x, int *exp);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double frexpl(long double x, int *exp);
 #endif
 
@@ -480,208 +492,208 @@ long double frexpl(long double x, int *exp);
  * @internal
  */
 float sinf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double sin(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double sinl(long double x);
 #endif
 /**
  * @internal
  */
 float cosf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double cos(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double cosl(long double x);
 #endif
 /**
  * @internal
  */
 float tanf(float x);
+#if CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#if CONFIG_HAVE_DOUBLE
 double tan(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double tanl(long double x);
 #endif
 /**
  * @internal
  */
 float asinf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double asin(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double asinl(long double x);
 #endif
 /**
  * @internal
  */
 float acosf(float x);
+#if CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#if CONFIG_HAVE_DOUBLE
 double acos(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double acosl(long double x);
 #endif
 /**
  * @internal
  */
 float atanf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double atan(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double atanl(long double x);
 #endif
 /**
  * @internal
  */
 float atan2f(float y, float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double atan2(double y, double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double atan2l(long double y, long double x);
 #endif
 /**
  * @internal
  */
 float sinhf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double sinh(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double sinhl(long double x);
 #endif
 /**
  * @internal
  */
 float coshf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double cosh(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double coshl(long double x);
 #endif
 /**
  * @internal
  */
 float tanhf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double tanh(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double tanhl(long double x);
 #endif
 /**
  * @internal
  */
 float asinhf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double asinh(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double asinhl(long double x);
 #endif
 /**
  * @internal
  */
 float acoshf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double acosh(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double acoshl(long double x);
 #endif
 /**
  * @internal
  */
 float atanhf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double atanh(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double atanhl(long double x);
 #endif
 /**
@@ -692,17 +704,17 @@ float erff(float x);
  * @internal
  */
 #define     erfcf(x) (1 - erff(x))
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double erf(double x);
 #define     erfc(x) (1 - erf(x))
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double erfl(long double x);
 #define     erfcl(x) (1 - erfl(x))
 #endif
@@ -710,32 +722,32 @@ long double erfl(long double x);
  * @internal
  */
 float copysignf(float x, float y);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double copysign(double x, double y);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double copysignl(long double x, long double y);
 #endif
 /**
  * @internal
  */
 float truncf(float x);
+#ifdef CONFIG_HAVE_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_DOUBLE
 double trunc(double x);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double truncl(long double x);
 #endif
 /**
@@ -743,15 +755,21 @@ long double truncl(long double x);
  */
 float fdimf(float x, float y);
 /**
- * @internal
+ * @endcond
  */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double fdim(double x, double y);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
+ * @cond
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double fdiml(long double x, long double y);
 #endif
 /**
@@ -759,15 +777,21 @@ long double fdiml(long double x, long double y);
  */
 float fmaxf(float x, float y);
 /**
- * @internal
+ * @endcond
  */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double fmax(double x, double y);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
+ * @cond
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double fmaxl(long double x, long double y);
 #endif
 /**
@@ -775,15 +799,21 @@ long double fmaxl(long double x, long double y);
  */
 float fminf(float x, float y);
 /**
- * @internal
+ * @endcond
  */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double fmin(double x, double y);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
+ * @cond
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double fminl(long double x, long double y);
 #endif
 /**
@@ -791,15 +821,21 @@ long double fminl(long double x, long double y);
  */
 float hypotf(float x, float y);
 /**
- * @internal
+ * @endcond
  */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double hypot(double x, double y);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
+ * @cond
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double hypotl(long double x, long double y);
 #endif
 /**
@@ -807,107 +843,173 @@ long double hypotl(long double x, long double y);
  */
 float scalbnf(float x, int exp);
 /**
- * @internal
+ * @endcond
  */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double scalbn(double x, int exp);
 #endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
+ * @cond
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double scalbnl(long double x, int exp);
 #endif
 /**
  * @internal
  */
 float j0f(float x);
-float j1f(float x);
-float jnf(int n, float x);
 /**
  * @internal
  */
+float j1f(float x);
+/**
+ * @internal
+ */
+float jnf(int n, float x);
+/**
+ * @endcond
+ */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double j0(double x);
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double j1(double x);
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double jn(int n, double x);
 #endif
 /**
  * @internal
  */
 float y0f(float x);
-float y1f(float x);
-float ynf(int n, float x);
 /**
  * @internal
  */
+float y1f(float x);
+/**
+ * @internal
+ */
+float ynf(int n, float x);
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double y0(double x);
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double y1(double x);
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double yn(int n, double x);
 #endif
-/**
- * @internal
- */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double nextafter(double x, double y);
 #endif
 /**
+ * @cond
  * @internal
  */
 float nextafterf(float x, float y);
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double nextafterl(long double x, long double y);
 #endif
 /**
- * @internal
+ * @endcond
  */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double nexttoward(double x, long double y);
 #endif
 /**
+ * @cond
  * @internal
  */
 float nexttowardf(float x, long double y);
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double nexttowardl(long double x, long double y);
 #endif
 /**
- * @internal
+ * @endcond
  */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double remainder(double x, double y);
 #endif
 /**
+ * @cond
  * @internal
  */
 float remainderf(float x, float y);
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double remainderl(long double x, long double y);
 #endif
 /**
- * @internal
+ * @endcond
  */
 #ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup MATH_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
 double remquo(double x, double y, int *quo);
 #endif
 /**
+ * @cond
  * @internal
  */
 float remquof(float x, float y, int *quo);
+#ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @internal
  */
-#ifdef CONFIG_HAVE_LONG_DOUBLE
 long double remquol(long double x, long double y, int *quo);
 #endif
 /**
