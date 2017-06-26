@@ -462,6 +462,19 @@ void usage(const char *program, const char *version)
 
 	fprintf(stderr, "%s v%s -- a small CoAP implementation\n"
 			"(c) 2010-2013 Olaf Bergmann <bergmann@tzi.org>\n\n"
+#if defined (__TINYARA__)
+			"usage: %s [-A type...] [-t type] [-B seconds] [-e text]\n"
+			"\t\t[-m method] [-N] [-p port] [-T string] [-v num] URI\n\n"
+			"\tURI can be an absolute or relative coap URI,\n"
+			"\t-A type...\taccepted media types as comma-separated list of\n" "\t\t\tsymbolic or numeric values\n"
+			"\t-B seconds\tbreak operation after waiting given seconds\n" "\t\t\t(default is %d)\n"
+			"\t-e text\t\tinclude text as payload (use percent-encoding for\n" "\t\t\tnon-ASCII characters)\n"
+			"\t-m method\trequest method (get|put|post|delete), default is 'get'\n"
+			"\t-N\t\tsend NON-confirmable message\n"
+			"\t-p port\t\tlisten on specified port\n" "\t-s duration\tsubscribe for given duration [s]\n"
+			"\t-v num\t\tverbosity level (default: 3)\n"
+			"\t-T token\tinclude specified token\n" "\n"
+#else
 			"usage: %s [-A type...] [-t type] [-b [num,]size] [-B seconds] [-e text]\n"
 			"\t\t[-g group] [-m method] [-N] [-o file] [-P addr[:port]] [-p port]\n"
 			"\t\t[-s duration] [-O num,text] [-T string] [-v num] URI\n\n"
@@ -474,23 +487,20 @@ void usage(const char *program, const char *version)
 			"\t       \t\tblock num\n"
 			"\t-B seconds\tbreak operation after waiting given seconds\n" "\t\t\t(default is %d)\n"
 			"\t-e text\t\tinclude text as payload (use percent-encoding for\n" "\t\t\tnon-ASCII characters)\n"
-			/*
 			"\t-g group\tjoin the given multicast group\n"
-			*/
 			"\t-m method\trequest method (get|put|post|delete), default is 'get'\n"
 			"\t-N\t\tsend NON-confirmable message\n"
 			"\t-p port\t\tlisten on specified port\n" "\t-s duration\tsubscribe for given duration [s]\n"
 			"\t-v num\t\tverbosity level (default: 3)\n"
-			/*
 			"\t-O num,text\tadd option num with contents text to request\n"
 			"\t-P addr[:port]\tuse proxy (automatically adds Proxy-Uri option to\n"
-			*/
 			"\t\t\trequest)\n"
 			"\t-T token\tinclude specified token\n" "\n"
-			"examples:\n" "\tcoap-client -m get coap://[::1]/\n"
-			"\tcoap-client -m get coap://[::1]/.well-known/core\n"
-			"\tcoap-client -m get -T cafe coap://[::1]/time\n"
-			"\tcoap-client -m put -e 1000 -T cafe coap://[::1]/time\n"
+#endif
+			"examples:\n" "\tlibcoap-client -m get coap://[::1]/\n"
+			"\tlibcoap-client -m get coap://[::1]/.well-known/core\n"
+			"\tlibcoap-client -m get -T cafe coap://[::1]/time\n"
+			"\tlibcoap-client -m put -e 1000 -T cafe coap://[::1]/time\n"
 			, program, version, program, wait_seconds);
 }
 
