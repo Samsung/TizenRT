@@ -57,8 +57,8 @@ pthread_t thread[PTHREAD_CNT];
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t g_cond;
-pthread_once_t g_once = PTHREAD_ONCE_INIT;
 pthread_key_t g_tlskey;
+static pthread_once_t g_once = PTHREAD_ONCE_INIT;
 static bool g_bpthreadcallback = false;
 
 static int g_cnt;
@@ -375,19 +375,11 @@ err:
 /**
 * @fn                   :run_once
 * @brief                :utilify function for tc_pthread_pthread_once
-* @return               :void*
+* @return               :void
 */
 static void run_once(void)
 {
-	static int run_idx = 0;
-	g_bpthreadcallback = true;
-	if (run_idx != 0) {
-		printf("tc_pthread_pthread_once FAIL\n");
-		g_bpthreadcallback = false;
-		RETURN_ERR;
-	}
-	run_idx++;
-	RETURN_ERR;
+	g_bpthreadcallback = !g_bpthreadcallback;
 }
 
 /**
@@ -1199,18 +1191,31 @@ static void tc_pthread_pthread_mutex_destroy(void)
 */
 static void tc_pthread_pthread_once(void)
 {
-	int ret_chk = ERROR;
-	ret_chk = pthread_once(&g_once, &run_once);
-	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+	int ret_chk;
 
-	sleep(SEC_1);
+	/* Test NULL case */
 
+	g_bpthreadcallback = false;
+	ret_chk = pthread_once(NULL, &run_once);
+	TC_ASSERT_EQ("pthread_once", ret_chk, EINVAL);
+	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, false);
+
+	g_bpthreadcallback = false;
+	ret_chk = pthread_once(&g_once, NULL);
+	TC_ASSERT_EQ("pthread_once", ret_chk, EINVAL);
+	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, false);
+
+	/* g_bpthreadcallback will be toggled only once */
+
+	g_bpthreadcallback = false;
 	ret_chk = pthread_once(&g_once, &run_once);
 	TC_ASSERT_EQ("pthread_once", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, true);
 
-	sleep(SEC_1);
-
-	TC_ASSERT("pthread_once", g_bpthreadcallback);
+	g_bpthreadcallback = false;
+	ret_chk = pthread_once(&g_once, &run_once);
+	TC_ASSERT_EQ("pthread_once", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, false);
 
 	TC_SUCCESS_RESULT();
 }
