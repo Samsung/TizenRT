@@ -638,43 +638,43 @@ static void *race_cond_thread1(void *data)
 	int status;
 	struct race_cond_s *rc = (struct race_cond_s *)data;
 
-	TC_ASSERT_EQ("race_cond_thread1", g_race_cond_thread_pos++, OK);
+	TC_ASSERT_EQ_RETURN("race_cond_thread1", g_race_cond_thread_pos++, OK, NULL);
 
 	status = pthread_rwlock_wrlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_wrlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_wrlock", status, OK, NULL);
 
 	sem_post(rc->sem2);
 	sem_wait(rc->sem1);
 	// Context Switch -> Runs 3rd
 
-	TC_ASSERT_EQ("race_cond_thread1", g_race_cond_thread_pos++, 2);
+	TC_ASSERT_EQ_RETURN("race_cond_thread1", g_race_cond_thread_pos++, 2, NULL);
 
 	status = pthread_rwlock_unlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_unlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
 
 	status = pthread_rwlock_rdlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_rdlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_rdlock", status, OK, NULL);
 
 	sem_wait(rc->sem1);
 	// Context Switch - Runs 5th
 
-	TC_ASSERT_EQ("race_cond_thread1", g_race_cond_thread_pos++, 4);
+	TC_ASSERT_EQ_RETURN("race_cond_thread1", g_race_cond_thread_pos++, 4, NULL);
 
 	status = pthread_rwlock_unlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_unlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
 
 	status = pthread_rwlock_rdlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_rdlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_rdlock", status, OK, NULL);
 
 	sem_post(rc->sem2);
 	sem_wait(rc->sem1);
 
 	/* Context switch - Runs 7th */
 
-	TC_ASSERT_EQ("race_cond_thread1", g_race_cond_thread_pos++, 6);
+	TC_ASSERT_EQ_RETURN("race_cond_thread1", g_race_cond_thread_pos++, 6, NULL);
 
 	status = pthread_rwlock_unlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_unlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
 
 	return NULL;
 
@@ -687,44 +687,44 @@ static void *race_cond_thread2(void *data)
 
 	status = sem_wait(rc->sem2);
 	// Runs 2nd
-	TC_ASSERT_EQ("sem_wait", status, OK);
+	TC_ASSERT_EQ_RETURN("sem_wait", status, OK, NULL);
 
-	TC_ASSERT_EQ("race_cond_thread2", g_race_cond_thread_pos++,1);
+	TC_ASSERT_EQ_RETURN("race_cond_thread2", g_race_cond_thread_pos++, 1, NULL);
 
 	status = pthread_rwlock_tryrdlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_tryrdlock", status, EBUSY);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_tryrdlock", status, EBUSY, NULL);
 
 	status = pthread_rwlock_trywrlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_trywrlock", status, EBUSY);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_trywrlock", status, EBUSY, NULL);
 
 	sem_post(rc->sem1);
 	status = pthread_rwlock_rdlock(rc->rw_lock);
 	// Context - Switch Runs 4th
-	TC_ASSERT_EQ("pthread_rwlock_rdlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_rdlock", status, OK, NULL);
 
-	TC_ASSERT_EQ("race_cond_thread2", g_race_cond_thread_pos++,3);
+	TC_ASSERT_EQ_RETURN("race_cond_thread2", g_race_cond_thread_pos++, 3, NULL);
 
 	status = pthread_rwlock_unlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_unlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
 
 	sem_post(rc->sem1);
 	sem_wait(rc->sem2);
 
 	/* Context switch Runs 6th */
 
-	TC_ASSERT_EQ("race_cond_thread2", g_race_cond_thread_pos++,5);
+	TC_ASSERT_EQ_RETURN("race_cond_thread2", g_race_cond_thread_pos++, 5, NULL);
 
 	sem_post(rc->sem1);
 	status = pthread_rwlock_wrlock(rc->rw_lock);
 
 	/* Context switch runs 8th */
 
-	TC_ASSERT_EQ("pthread_rwlock_wrlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_wrlock", status, OK, NULL);
 
-	TC_ASSERT_EQ("race_cond_thread2", g_race_cond_thread_pos++,7);
+	TC_ASSERT_EQ_RETURN("race_cond_thread2", g_race_cond_thread_pos++, 7, NULL);
 
 	status = pthread_rwlock_unlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_unlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
 
 	return NULL;
 
@@ -767,12 +767,12 @@ static void *timeout_thread1(FAR void *data)
 	int status;
 
 	status = pthread_rwlock_wrlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_wrlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_wrlock", status, OK, NULL);
 
 	sem_wait(rc->sem1);
 
 	status = pthread_rwlock_unlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_unlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
 
 	return NULL;
 }
@@ -787,23 +787,23 @@ static void *timeout_thread2(FAR void *data)
 	time.tv_sec += 2;
 
 	status = pthread_rwlock_timedwrlock(rc->rw_lock, &time);
-	TC_ASSERT_EQ("pthread_rwlock_timedwrlock", status, ETIMEDOUT);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_timedwrlock", status, ETIMEDOUT, NULL);
 
 	status = clock_gettime(CLOCK_REALTIME, &time);
 	time.tv_sec += 2;
 
 	status = pthread_rwlock_timedrdlock(rc->rw_lock, &time);
-	TC_ASSERT_EQ("pthread_rwlock_timedrdlock", status, ETIMEDOUT);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_timedrdlock", status, ETIMEDOUT, NULL);
 
 	status = clock_gettime(CLOCK_REALTIME, &time);
 	time.tv_sec += 2;
 
 	sem_post(rc->sem1);
 	status = pthread_rwlock_timedrdlock(rc->rw_lock, &time);
-	TC_ASSERT_EQ("pthread_rwlock_timedrdlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_timedrdlock", status, OK, NULL);
 
 	status = pthread_rwlock_unlock(rc->rw_lock);
-	TC_ASSERT_EQ("pthread_rwlock_unlock", status, OK);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
 
 	return NULL;
 }
