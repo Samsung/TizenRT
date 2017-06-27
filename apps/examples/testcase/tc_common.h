@@ -53,14 +53,16 @@ int total_fail;
 	} \
 }
 
-#define TC_ASSERT_EQ(api_name, var, ref) \
-{\
-	if ((var) != (ref)) {\
+#define TC_ASSERT_EQ_RETURN(api_name, var, ref, ret) \
+{ \
+	if ((var) != (ref)) { \
 		printf("\n[%s][Line : %d] FAIL, %s : Values (%s == 0x%x) and (%s == 0x%x) are not equal\n", __func__, __LINE__, api_name, #var, (int)(var), #ref, (int)(ref)); \
 		total_fail++; \
-		return; \
+		return ret; \
 	} \
 }
+
+#define TC_ASSERT_EQ(api_name, var, ref) TC_ASSERT_EQ_RETURN(api_name, var, ref,)
 
 #define TC_ASSERT_NEQ_CLEANUP(api_name, var, ref, error, freeResource) \
 {\
