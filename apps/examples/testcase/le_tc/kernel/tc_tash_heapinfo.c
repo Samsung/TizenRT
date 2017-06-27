@@ -81,7 +81,7 @@ static int tc_tash_heapinfo(int argc, char **args)
 	tc_thread_attr.priority = TC_HEAPINFO_PRIO;
 
 	ret = pthread_create(&tc_thread, &tc_thread_attr, heapinfo_thread, NULL);
-	TC_ASSERT_EQ("pthread_create", ret, OK);
+	TC_ASSERT_EQ_RETURN("pthread_create", ret, OK, ERROR);
 	pthread_setname_np(tc_thread, TC_HEAPINFO_TASKNAME);
 
 	pthread_detach(tc_thread);

@@ -33,10 +33,34 @@
 #include <tinyara/pthread.h>
 #include "tc_internal.h"
 
+/****************************************************************************
+ * Definitions
+ ****************************************************************************/
+
 #define STACKSIZE    PTHREAD_STACK_DEFAULT
 #define PRIORITY     PTHREAD_DEFAULT_PRIORITY
 #define POLICY       PTHREAD_DEFAULT_POLICY
 #define INHERITSCHED PTHREAD_EXPLICIT_SCHED
+
+/****************************************************************************
+ * Global Variables
+ ****************************************************************************/
+
+struct race_cond_s {
+	sem_t *sem1;
+	sem_t *sem2;
+	pthread_rwlock_t *rw_lock;
+};
+
+/****************************************************************************
+ * Public Functions
+ **************************************************************************/
+
+static int g_race_cond_thread_pos;
+
+/****************************************************************************
+  * Private Functions
+ ****************************************************************************/
 
 /**
 * @fn                   :tc_libc_pthread_pthread_attr_init
@@ -606,6 +630,365 @@ static void tc_libc_pthread_pthread_mutexattr_destroy(void)
 }
 
 /****************************************************************************
+ * Name: Test Case API's for libc_pthread_rwlock
+ ****************************************************************************/
+static void *race_cond_thread1(void *data)
+{
+	// Runs 1st
+	int status;
+	struct race_cond_s *rc = (struct race_cond_s *)data;
+
+	TC_ASSERT_EQ_RETURN("race_cond_thread1", g_race_cond_thread_pos++, OK, NULL);
+
+	status = pthread_rwlock_wrlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_wrlock", status, OK, NULL);
+
+	sem_post(rc->sem2);
+	sem_wait(rc->sem1);
+	// Context Switch -> Runs 3rd
+
+	TC_ASSERT_EQ_RETURN("race_cond_thread1", g_race_cond_thread_pos++, 2, NULL);
+
+	status = pthread_rwlock_unlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
+
+	status = pthread_rwlock_rdlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_rdlock", status, OK, NULL);
+
+	sem_wait(rc->sem1);
+	// Context Switch - Runs 5th
+
+	TC_ASSERT_EQ_RETURN("race_cond_thread1", g_race_cond_thread_pos++, 4, NULL);
+
+	status = pthread_rwlock_unlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
+
+	status = pthread_rwlock_rdlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_rdlock", status, OK, NULL);
+
+	sem_post(rc->sem2);
+	sem_wait(rc->sem1);
+
+	/* Context switch - Runs 7th */
+
+	TC_ASSERT_EQ_RETURN("race_cond_thread1", g_race_cond_thread_pos++, 6, NULL);
+
+	status = pthread_rwlock_unlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
+
+	return NULL;
+
+}
+
+static void *race_cond_thread2(void *data)
+{
+	int status;
+	struct race_cond_s *rc = (struct race_cond_s *)data;
+
+	status = sem_wait(rc->sem2);
+	// Runs 2nd
+	TC_ASSERT_EQ_RETURN("sem_wait", status, OK, NULL);
+
+	TC_ASSERT_EQ_RETURN("race_cond_thread2", g_race_cond_thread_pos++, 1, NULL);
+
+	status = pthread_rwlock_tryrdlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_tryrdlock", status, EBUSY, NULL);
+
+	status = pthread_rwlock_trywrlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_trywrlock", status, EBUSY, NULL);
+
+	sem_post(rc->sem1);
+	status = pthread_rwlock_rdlock(rc->rw_lock);
+	// Context - Switch Runs 4th
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_rdlock", status, OK, NULL);
+
+	TC_ASSERT_EQ_RETURN("race_cond_thread2", g_race_cond_thread_pos++, 3, NULL);
+
+	status = pthread_rwlock_unlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
+
+	sem_post(rc->sem1);
+	sem_wait(rc->sem2);
+
+	/* Context switch Runs 6th */
+
+	TC_ASSERT_EQ_RETURN("race_cond_thread2", g_race_cond_thread_pos++, 5, NULL);
+
+	sem_post(rc->sem1);
+	status = pthread_rwlock_wrlock(rc->rw_lock);
+
+	/* Context switch runs 8th */
+
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_wrlock", status, OK, NULL);
+
+	TC_ASSERT_EQ_RETURN("race_cond_thread2", g_race_cond_thread_pos++, 7, NULL);
+
+	status = pthread_rwlock_unlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
+
+	return NULL;
+
+}
+
+static void test_two_threads(void)
+{
+	pthread_t thread1;
+	pthread_t thread2;
+	int status;
+	pthread_rwlock_t rw_lock;
+	sem_t sem1;
+	sem_t sem2;
+	struct race_cond_s rc;
+
+	status = pthread_rwlock_init(&rw_lock, NULL);
+	TC_ASSERT_EQ("pthread_rwlock_init", status, OK);
+
+	status = sem_init(&sem1, 0, 0);
+	TC_ASSERT_EQ("sem_init", status, OK);
+
+	status = sem_init(&sem2, 0, 0);
+	TC_ASSERT_EQ("sem_init", status, OK);
+
+	rc.sem1 = &sem1;
+	rc.sem2 = &sem2;
+	rc.rw_lock = &rw_lock;
+
+	g_race_cond_thread_pos = 0;
+	status = pthread_create(&thread1, NULL, race_cond_thread1, &rc);
+	status = pthread_create(&thread2, NULL, race_cond_thread2, &rc);
+	(void)pthread_join(thread1, NULL);
+	(void)pthread_join(thread2, NULL);
+
+}
+
+static void *timeout_thread1(FAR void *data)
+{
+	FAR struct race_cond_s *rc = (FAR struct race_cond_s *)data;
+	int status;
+
+	status = pthread_rwlock_wrlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_wrlock", status, OK, NULL);
+
+	sem_wait(rc->sem1);
+
+	status = pthread_rwlock_unlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
+
+	return NULL;
+}
+
+static void *timeout_thread2(FAR void *data)
+{
+	FAR struct race_cond_s *rc = (FAR struct race_cond_s *)data;
+	struct timespec time;
+	int status;
+
+	status = clock_gettime(CLOCK_REALTIME, &time);
+	time.tv_sec += 2;
+
+	status = pthread_rwlock_timedwrlock(rc->rw_lock, &time);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_timedwrlock", status, ETIMEDOUT, NULL);
+
+	status = clock_gettime(CLOCK_REALTIME, &time);
+	time.tv_sec += 2;
+
+	status = pthread_rwlock_timedrdlock(rc->rw_lock, &time);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_timedrdlock", status, ETIMEDOUT, NULL);
+
+	status = clock_gettime(CLOCK_REALTIME, &time);
+	time.tv_sec += 2;
+
+	sem_post(rc->sem1);
+	status = pthread_rwlock_timedrdlock(rc->rw_lock, &time);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_timedrdlock", status, OK, NULL);
+
+	status = pthread_rwlock_unlock(rc->rw_lock);
+	TC_ASSERT_EQ_RETURN("pthread_rwlock_unlock", status, OK, NULL);
+
+	return NULL;
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_rwlock_rdlock_wrlock
+* @Description          :creates and initializes a new read-write lock object with specified attributes and \
+*                        creates two threads using pthread_create and tries acquiring read & write locks referenced rwlock \
+*                        destroys the read-write lock object referenced by rwlock and release any resources used by the lock started with pthread_rwlock_init.
+* API's covered         :pthread_rwlock_init, pthread_rwlock_wrlock, pthread_rwlock_rdlock, pthread_rwlock_trywrlock, pthread_rwlock_tryrdlock, pthread_rwlock_unlock
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+
+static void tc_libc_pthread_pthread_rwlock_rdlock_wrlock(void)
+{
+	int status;
+	pthread_rwlock_t rw_lock;
+
+	status = pthread_rwlock_init(&rw_lock, NULL);
+	TC_ASSERT_EQ("pthread_rwlock_init", status, OK);
+
+	status = pthread_rwlock_trywrlock(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_trywrlock", status, OK);
+
+	status = pthread_rwlock_trywrlock(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_trywrlock", status, EBUSY);
+
+	status = pthread_rwlock_tryrdlock(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_tryrdlock", status, EBUSY);
+
+	status = pthread_rwlock_unlock(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_unlock", status, OK);
+
+	test_two_threads();
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_rwlock_test_timeout
+* @Description          :creates and initializes a new read-write lock object with specified attributes and \
+*                        tries acquiring timed read & write lock referenced rwlock multple times and checks whether it times out correctly \
+*                        destroys the read-write lock object referenced by rwlock and release any resources used by the lock started with pthread_rwlock_init.
+* API's covered         :pthread_rwlock_init, pthread_rwlock_timedwrlock, pthread_rwlock_timedrdlock, pthread_rwlock_unlock
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+
+static void tc_libc_pthread_pthread_rwlock_test_timeout(void)
+{
+
+	pthread_rwlock_t rw_lock;
+	struct race_cond_s rc;
+	pthread_t thread1;
+	pthread_t thread2;
+	int status;
+	sem_t sem1;
+	sem_t sem2;
+
+	status = pthread_rwlock_init(&rw_lock, NULL);
+	TC_ASSERT_EQ("pthread_rwlock_init", status, OK);
+
+	status = sem_init(&sem1, 0, 0);
+	TC_ASSERT_EQ("sem_init", status, OK);
+
+	status = sem_init(&sem2, 0, 0);
+	TC_ASSERT_EQ("sem_init", status, OK);
+
+	rc.sem1 = &sem1;
+	rc.sem2 = &sem2;
+	rc.rw_lock = &rw_lock;
+
+	status = pthread_create(&thread1, NULL, timeout_thread1, &rc);
+	status = pthread_create(&thread2, NULL, timeout_thread2, &rc);
+
+	(void)pthread_join(thread1, NULL);
+	(void)pthread_join(thread2, NULL);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_rwlock_init_unlock_destroy
+* @Description          :creates and initializes a new read-write lock object with specified attributes and \
+*			 unlock releases the lock held on the read-write lock object referenced by rwlock and then \
+*                        destroys the read-write lock object referenced by rwlock and release any resources used by the lock started with pthread_rwlock_init.
+* API's covered         :pthread_rwlock_init, pthread_rwlock_wrlock, pthread_rwlock_unlock, pthread_rwlock_destroy
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+
+static void tc_libc_pthread_pthread_rwlock_init_unlock_destroy(void)
+{
+	int status;
+	pthread_rwlock_t rw_lock;
+	pthread_rwlockattr_t attr;
+
+	status = pthread_rwlock_init(NULL, &attr);
+	TC_ASSERT_EQ("pthread_rwlock_init", status, EINVAL);
+
+	status = pthread_rwlock_init(&rw_lock, NULL);
+	TC_ASSERT_EQ("pthread_rwlock_init", status, OK);
+
+	status = pthread_rwlock_wrlock(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_wrlock", status, OK);
+
+	status = pthread_rwlock_unlock(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_unlock", status, OK);
+
+	status = pthread_rwlock_destroy(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_destroy", status, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_rwlock_tryrdlock
+* @Description          :creates and initializes a new read-write lock object with specified attributes and \
+*                        pthread_rwlock_tryrdlock applies a timed read lock to the read-write lock referenced by rwlock \
+*			 The calling thread acquires the read lock if a writer does not hold the lock and there are no writers blocked on the lock and then \
+*                        unlocks & destroys the rw lock object referenced by rwlock & release any resources used by the lock started with pthread_rwlock_init.
+* API's covered         :pthread_rwlock_init, pthread_rwlock_tryrdlock, pthread_rwlock_unlock, pthread_rwlock_destroy
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+
+static void tc_libc_pthread_pthread_rwlock_tryrdlock(void)
+{
+	int status;
+	pthread_rwlock_t rw_lock;
+
+	status = pthread_rwlock_init(&rw_lock, NULL);
+	TC_ASSERT_EQ("pthread_rwlock_init", status, OK);
+
+	status = pthread_rwlock_tryrdlock(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_tryrdlock", status, OK);
+
+	status = pthread_rwlock_unlock(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_unlock", status, OK);
+
+	status = pthread_rwlock_destroy(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_destroy", status, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_rwlock_trywrlock
+* @Description          :creates and initializes a new read-write lock object with specified attributes and \
+*                        pthread_rwlock_trywrlock applies a timed write lock to the read-write lock referenced by rwlock \
+*			 If the lock cannot be acquired without waiting for other threads to unlock the lock \
+*			 this wait shall be terminated when the specified timeout expires and then \
+*                        unlocks & destroys the read-write lock object referenced by rwlock and release any resources used by the lock started with pthread_rwlock_init.
+* API's covered         :pthread_rwlock_init, pthread_rwlock_trywrlock, pthread_rwlock_unlock, pthread_rwlock_destroy
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+
+static void tc_libc_pthread_pthread_rwlock_trywrlock(void)
+{
+	int status;
+	pthread_rwlock_t rw_lock;
+
+	status = pthread_rwlock_init(&rw_lock, NULL);
+	TC_ASSERT_EQ("pthread_rwlock_init", status, OK);
+
+	status = pthread_rwlock_trywrlock(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_trywrlock", status, OK);
+
+	status = pthread_rwlock_unlock(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_unlock", status, OK);
+
+	status = pthread_rwlock_destroy(&rw_lock);
+	TC_ASSERT_EQ("pthread_rwlock_destroy", status, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+/****************************************************************************
  * Name: libc_pthread
  ****************************************************************************/
 
@@ -629,6 +1012,11 @@ int libc_pthread_main(void)
 	tc_libc_pthread_pthread_condattr_destroy();
 	tc_libc_pthread_pthread_mutexattr_init();
 	tc_libc_pthread_pthread_mutexattr_destroy();
+	tc_libc_pthread_pthread_rwlock_init_unlock_destroy();
+	tc_libc_pthread_pthread_rwlock_tryrdlock();
+	tc_libc_pthread_pthread_rwlock_trywrlock();
+	tc_libc_pthread_pthread_rwlock_rdlock_wrlock();
+	tc_libc_pthread_pthread_rwlock_test_timeout();
 
 	return 0;
 }
