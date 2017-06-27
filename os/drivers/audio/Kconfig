@@ -35,7 +35,6 @@ config AUDIO_I2SCHAR_TXTIMEOUT
 
 endif # AUDIO_I2SCHAR
 
-
 config AUDIO_NULL
 	bool "NULL audio device"
 	default n
