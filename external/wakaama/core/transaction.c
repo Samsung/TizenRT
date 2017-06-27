@@ -299,6 +299,14 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
             	        reset = COAP_TYPE_RST == message->type;
             	    }
                 }
+                // Because there is no ACK type message (with TCP/TLS), we should set
+                // transacP->ack_received, if we received CON type message from our peer.
+                else if (message->type == COAP_TYPE_CON &&
+                         (proto == COAP_TCP || proto == COAP_TCP_TLS))
+                {
+                    found = true;
+                    transacP->ack_received = true;
+                }
             }
 
             if (reset || prv_checkFinished(transacP, message))
