@@ -1,0 +1,64 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config AUDIO_I2SCHAR
+	bool "I2S character driver (for testing only)"
+	default n
+	depends on I2S && AUDIO
+	---help---
+		This selection enables a simple character driver that supports I2S
+		transfers via a read() and write().  The intent of this driver is to
+		support I2S testing.  It is not an audio driver but does conform to
+		some of the buffer management heuristics of an audio driver.  It is
+		not suitable for use in any real driver application in its current
+		form.
+
+if AUDIO_I2SCHAR
+
+config AUDIO_I2SCHAR_RXTIMEOUT
+	int "RX timeout"
+	default 0
+	---help---
+		This is a fixed timeout value that will be used for all receiver
+		transfers.  This is in units of system clock ticks (configurable).
+		The special value of zero disables RX timeouts.  Default: 0
+
+config AUDIO_I2SCHAR_TXTIMEOUT
+	int "TX timeout"
+	default 0
+	---help---
+		This is a fixed timeout value that will be used for all transmitter
+		transfers.  This is in units of system clock ticks (configurable).
+		The special value of zero disables RX timeouts.  Default: 0
+
+endif # AUDIO_I2SCHAR
+
+config AUDIO_NULL
+	bool "NULL audio device"
+	default n
+	depends on AUDIO
+	---help---
+		A do-nothinig audio device driver to simplify testing of audio
+		decoders.
+
+if AUDIO_NULL
+
+config AUDIO_NULL_MSG_PRIO
+	int "Null audio device message priority"
+	default 1
+
+config AUDIO_NULL_BUFFER_SIZE
+	int "Null audio device preferred buffer size"
+	default 8192
+
+config AUDIO_NULL_NUM_BUFFERS
+	int "Null audio device preferred number of buffers"
+	default 4
+
+config AUDIO_NULL_WORKER_STACKSIZE
+	int "Null audio device worker thread stack size"
+	default 768
+
+endif # AUDIO_NULL
