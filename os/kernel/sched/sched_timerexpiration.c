@@ -243,7 +243,7 @@ static void sched_timespec_subtract(FAR const struct timespec *ts1, FAR const st
 #if CONFIG_RR_INTERVAL > 0
 static unsigned int sched_process_timeslice(unsigned int ticks, bool noswitches)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 #ifdef KEEP_ALIVE_HACK
 	unsigned int ret = MSEC2TICK(CONFIG_RR_INTERVAL);
 #else
@@ -321,7 +321,7 @@ static unsigned int sched_process_timeslice(unsigned int ticks, bool noswitches)
 					 * the new task at the head of the ready to run list
 					 */
 
-					rtcb = (FAR struct tcb_s *)g_readytorun.head;
+					rtcb = this_task();
 
 					/* Check if the new task at the head of the ready-to-run
 					 * supports round robin scheduling.

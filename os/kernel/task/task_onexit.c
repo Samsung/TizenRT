@@ -134,7 +134,7 @@
 int on_exit(CODE void (*func)(int, FAR void *), FAR void *arg)
 {
 #if defined(CONFIG_SCHED_ONEXIT_MAX) && CONFIG_SCHED_ONEXIT_MAX > 1
-	FAR struct tcb_s *tcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *tcb = this_task();
 	FAR struct task_group_s *group = tcb->group;
 	int index;
 	int ret = ENOSPC;
@@ -167,7 +167,7 @@ int on_exit(CODE void (*func)(int, FAR void *), FAR void *arg)
 	trace_end(TTRACE_TAG_TASK);
 	return ret;
 #else
-	FAR struct tcb_s *tcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *tcb = this_task();
 	FAR struct task_group_s *group = tcb->group;
 	int ret = ENOSPC;
 

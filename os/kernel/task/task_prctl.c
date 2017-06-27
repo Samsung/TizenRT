@@ -119,7 +119,7 @@ int prctl(int option, ...)
 		 */
 
 		if (!pid) {
-			tcb = (FAR struct tcb_s *)g_readytorun.head;
+			tcb = this_task();
 		} else {
 			tcb = sched_gettcb(pid);
 		}

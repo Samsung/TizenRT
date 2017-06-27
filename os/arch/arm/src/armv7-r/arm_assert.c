@@ -234,7 +234,7 @@ static void unwind_backtrace_with_fp(arm_regs_t *regs, struct tcb_s *task)
 {
 	uint32_t ustacksize;
 	struct stackframe stack_frame;
-	struct tcb_s *current = (struct tcb_s *)g_readytorun.head;
+	struct tcb_s *current = this_task();
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Task(pid): %s(%d), TaskAddr: [0x%p] and [Current : %s]\n", task ? task->name : "No Task", task->pid, task, current ? current->name : "No Task");
@@ -323,7 +323,7 @@ void dump_stack(void)
 	/* Disable the irqs */
 	irqstate_t flags = irqsave();
 
-	struct tcb_s *current = (struct tcb_s *)g_readytorun.head;
+	struct tcb_s *current = this_task();
 
 	/* Display call stack for current task */
 	print_callstack(current, NULL);
@@ -581,7 +581,7 @@ static int assert_tracecallback(FAR struct usbtrace_s *trace, FAR void *arg)
 #ifdef CONFIG_ARCH_STACKDUMP
 static void up_dumpstate(void)
 {
-	struct tcb_s *rtcb = (struct tcb_s *)g_readytorun.head;
+	struct tcb_s *rtcb = this_task();
 	uint32_t sp = up_getsp();
 	uint32_t ustackbase;
 	uint32_t ustacksize;
@@ -756,7 +756,7 @@ static void _up_assert(int errorcode)
 #endif
 	/* Are we in an interrupt handler or the idle task? */
 
-	if (g_upassert || current_regs || ((struct tcb_s *)g_readytorun.head)->pid == 0) {
+	if (g_upassert || current_regs || (this_task())->pid == 0) {
 		(void)irqsave();
 		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
@@ -782,7 +782,7 @@ static void _up_assert(int errorcode)
 void up_assert(const uint8_t *filename, int lineno)
 {
 #ifdef CONFIG_PRINT_TASKNAME
-	struct tcb_s *rtcb = (struct tcb_s *)g_readytorun.head;
+	struct tcb_s *rtcb = this_task();
 #endif
 	board_autoled_on(LED_ASSERTION);
 
@@ -794,7 +794,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	up_dumpstate();
 
 #ifdef CONFIG_BOARD_CRASHDUMP
-	board_crashdump(up_getsp(), g_readytorun.head, (uint8_t *)filename, lineno);
+	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
 #endif
 
 	_up_assert(EXIT_FAILURE);

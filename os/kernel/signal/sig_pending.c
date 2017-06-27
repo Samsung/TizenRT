@@ -106,7 +106,7 @@
 
 int sigpending(FAR sigset_t *set)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 	int ret = ERROR;
 
 	if (set) {

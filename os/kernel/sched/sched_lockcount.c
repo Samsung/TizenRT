@@ -108,6 +108,6 @@
 
 int sched_lockcount(void)
 {
-	struct tcb_s *rtcb = (struct tcb_s *)g_readytorun.head;
+	struct tcb_s *rtcb = this_task();
 	return (int)rtcb->lockcount;
 }

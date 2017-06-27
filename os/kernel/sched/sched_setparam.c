@@ -143,7 +143,7 @@ int sched_setparam(pid_t pid, const struct sched_param *param)
 
 	/* Check if the task to reprioritize is the calling task */
 
-	rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	rtcb = this_task();
 	if (pid == 0 || pid == rtcb->pid) {
 		tcb = rtcb;
 	}

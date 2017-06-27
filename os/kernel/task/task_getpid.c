@@ -104,7 +104,7 @@ pid_t getpid(void)
 	 * with pid == 0 must be running.
 	 */
 
-	rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	rtcb = this_task();
 	if (rtcb) {
 		/* Return the task ID from the TCB at the head of the ready-to-run
 		 * task list

@@ -67,7 +67,7 @@ void up_schedyield(struct tcb_s *rtcb)
 		 * of the g_readytorun task list.
 		 */
 
-		rtcb = (struct tcb_s *)g_readytorun.head;
+		rtcb = this_task();
 		/* Then switch contexts.  Any necessary address environment
 		 * changes will be made when the interrupt returns.
 		 */
@@ -85,7 +85,7 @@ void up_schedyield(struct tcb_s *rtcb)
 		 * of the g_readytorun task list.
 		 */
 
-		rtcb = (struct tcb_s *)g_readytorun.head;
+		rtcb = this_task();
 		/* Then switch contexts */
 
 		up_fullcontextrestore(rtcb->xcp.regs);

@@ -119,7 +119,7 @@ bool sched_mergepending(void)
 
 	/* Initialize the inner search loop */
 
-	rtrtcb = (FAR struct tcb_s *)g_readytorun.head;
+	rtrtcb = this_task();
 
 	/* Process every TCB in the g_pendingtasks list */
 

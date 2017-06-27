@@ -223,7 +223,7 @@ static int assert_tracecallback(FAR struct usbtrace_s *trace, FAR void *arg)
 #ifdef CONFIG_ARCH_STACKDUMP
 static void up_dumpstate(void)
 {
-	struct tcb_s *rtcb = (struct tcb_s *)g_readytorun.head;
+	struct tcb_s *rtcb = this_task();
 	uint32_t sp = up_getsp();
 	uint32_t ustackbase;
 	uint32_t ustacksize;
@@ -338,7 +338,7 @@ static void _up_assert(int errorcode)
 {
 	/* Are we in an interrupt handler or the idle task? */
 
-	if (current_regs || ((struct tcb_s *)g_readytorun.head)->pid == 0) {
+	if (current_regs || (this_task())->pid == 0) {
 		(void)irqsave();
 		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
@@ -382,7 +382,7 @@ void dump_all_stack(void)
 void up_assert(const uint8_t *filename, int lineno)
 {
 #ifdef CONFIG_PRINT_TASKNAME
-	struct tcb_s *rtcb = (struct tcb_s *)g_readytorun.head;
+	struct tcb_s *rtcb = this_task();
 #endif
 
 	board_led_on(LED_ASSERTION);

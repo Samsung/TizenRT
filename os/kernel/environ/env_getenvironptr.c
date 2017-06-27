@@ -88,7 +88,7 @@
 
 FAR char *get_environ_ptr(size_t *envsize)
 {
-	FAR struct tcb_s *ptcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *ptcb = this_task();
 	FAR struct task_group_s *group;
 	char *ret;
 

@@ -110,7 +110,7 @@
 
 int sched_lock(void)
 {
-	struct tcb_s *rtcb = (struct tcb_s *)g_readytorun.head;
+	struct tcb_s *rtcb = this_task();
 
 	/* Check for some special cases:  (1) rtcb may be NULL only during
 	 * early boot-up phases, and (2) sched_lock() should have no

@@ -105,7 +105,7 @@ void group_free(FAR struct task_group_s *group, FAR void *mem)
 	/* A NULL group pointer means the current group */
 
 	if (!group) {
-		FAR struct tcb_s *tcb = (FAR struct tcb_s *)g_readytorun.head;
+		FAR struct tcb_s *tcb = this_task();
 		DEBUGASSERT(tcb && tcb->group);
 		group = tcb->group;
 	}

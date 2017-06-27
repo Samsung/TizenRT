@@ -105,7 +105,7 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 	   ) {
 		PANIC();
 	} else {
-		struct tcb_s *rtcb = (struct tcb_s *)g_readytorun.head;
+		struct tcb_s *rtcb = this_task();
 		bool switch_needed;
 
 		slldbg("TCB=%p PRI=%d\n", tcb, priority);
@@ -156,7 +156,7 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				 * of the g_readytorun task list.
 				 */
 
-				rtcb = (struct tcb_s *)g_readytorun.head;
+				rtcb = this_task();
 
 				/* Then switch contexts.  Any necessary address environment
 				 * changes will be made when the interrupt returns.
@@ -174,7 +174,7 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				 * of the g_readytorun task list.
 				 */
 
-				rtcb = (struct tcb_s *)g_readytorun.head;
+				rtcb = this_task();
 
 				/* Then switch contexts */
 				up_fullcontextrestore(rtcb->xcp.regs);

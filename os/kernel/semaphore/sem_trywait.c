@@ -113,7 +113,7 @@
 
 int sem_trywait(FAR sem_t *sem)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 	irqstate_t saved_state;
 	int ret = ERROR;
 

@@ -153,7 +153,7 @@ static void pthread_cleanup_pop_tcb(FAR struct pthread_tcb_s *tcb, int execute)
 
 void pthread_cleanup_pop(int execute)
 {
-	FAR struct pthread_tcb_s *tcb = (FAR struct pthread_tcb_s *)g_readytorun.head;
+	FAR struct pthread_tcb_s *tcb = (FAR struct pthread_tcb_s *)this_task();
 
 	/* We don't assert if called from a non-pthread; we just don't do anything */
 
@@ -174,7 +174,7 @@ void pthread_cleanup_pop(int execute)
 
 void pthread_cleanup_push(pthread_cleanup_t routine, FAR void *arg)
 {
-	FAR struct pthread_tcb_s *tcb = (FAR struct pthread_tcb_s *)g_readytorun.head;
+	FAR struct pthread_tcb_s *tcb = (FAR struct pthread_tcb_s *)this_task();
 
 	/* We don't assert if called from a non-pthread; we just don't do anything */
 
