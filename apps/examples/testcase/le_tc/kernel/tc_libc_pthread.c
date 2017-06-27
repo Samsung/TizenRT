@@ -41,6 +41,7 @@
 #define PRIORITY     PTHREAD_DEFAULT_PRIORITY
 #define POLICY       PTHREAD_DEFAULT_POLICY
 #define INHERITSCHED PTHREAD_EXPLICIT_SCHED
+#define PTHREAD_PRIO_INVALID -1
 
 /****************************************************************************
  * Global Variables
@@ -629,6 +630,244 @@ static void tc_libc_pthread_pthread_mutexattr_destroy(void)
 	return;
 }
 
+/**
+* @fn                   :tc_libc_pthread_pthread_mutexattr_getpshared
+* @brief                :This tc tests pthread_mutexattr_getpshared()
+* @Scenario             :Get and check the pthread_mutexattr's pshared value
+*                        with proper and not-proper parameter
+* @API'scovered         :pthread_mutexattr_getpshared
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+static void tc_libc_pthread_pthread_mutexattr_getpshared(void)
+{
+	int ret_chk;
+	pthread_mutexattr_t attr;
+	int mutexattr_pshared;
+
+	ret_chk = pthread_mutexattr_init(&attr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
+
+	ret_chk = pthread_mutexattr_getpshared(NULL, 0);
+	TC_ASSERT_EQ("pthread_mutexattr_getpshared", ret_chk, EINVAL);
+
+	ret_chk = pthread_mutexattr_getpshared(&attr, &mutexattr_pshared);
+	TC_ASSERT_EQ("pthread_mutexattr_getpshared", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_mutexattr_getpshared", mutexattr_pshared, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_mutexattr_setpshared
+* @brief                :This tc tests pthread_mutexattr_setpshared()
+* @Scenario             :Set and check the pthread_mutexattr's pshared value
+*                        with proper and not-proper parameter
+* @API'scovered         :pthread_mutexattr_setpshared
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+static void tc_libc_pthread_pthread_mutexattr_setpshared(void)
+{
+	int ret_chk;
+	pthread_mutexattr_t attr;
+
+	ret_chk = pthread_mutexattr_setpshared(NULL, 0);
+	TC_ASSERT_EQ("pthread_mutexattr_setpshared", ret_chk, EINVAL);
+
+	ret_chk = pthread_mutexattr_setpshared(&attr, 1);
+	TC_ASSERT_EQ("pthread_mutexattr_setpshared", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_mutexattr_setpshared", attr.pshared, 1);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_mutexattr_gettype
+* @brief                :This tc tests pthread_mutexattr_gettype()
+* @Scenario             :Get and check the pthread_mutexattr's type value
+*                        with proper and not-proper parameter
+* @API'scovered         :pthread_mutexattr_gettype
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+static void tc_libc_pthread_pthread_mutexattr_gettype(void)
+{
+	int ret_chk;
+	pthread_mutexattr_t attr;
+	int mutexattr_type;
+
+	ret_chk = pthread_mutexattr_init(&attr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
+
+	ret_chk = pthread_mutexattr_gettype(NULL, &mutexattr_type);
+	TC_ASSERT_EQ("pthread_mutexattr_gettype", ret_chk, EINVAL);
+
+	ret_chk = pthread_mutexattr_gettype(&attr, &mutexattr_type);
+	TC_ASSERT_EQ("pthread_mutexattr_gettype", ret_chk, 0);
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
+	TC_ASSERT_EQ("pthread_mutexattr_gettype", mutexattr_type, attr.type);
+#else
+	TC_ASSERT_EQ("pthread_mutexattr_gettype", mutexattr_type, PTHREAD_MUTEX_NORMAL);
+#endif
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_mutexattr_settype
+* @brief                :This tc tests pthread_mutexattr_settype()
+* @Scenario             :Set and check the pthread_mutexattr's type value
+*                        with proper and not-proper parameter
+* @API'scovered         :pthread_mutexattr_settype
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+static void tc_libc_pthread_pthread_mutexattr_settype(void)
+{
+	int ret_chk;
+	pthread_mutexattr_t attr;
+
+	ret_chk = pthread_mutexattr_settype(NULL, PTHREAD_MUTEX_NORMAL);
+	TC_ASSERT_EQ("pthread_mutexattr_settype", ret_chk, EINVAL);
+
+	ret_chk = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
+	TC_ASSERT_EQ("pthread_mutexattr_segttype", ret_chk, OK);
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
+	TC_ASSERT_EQ("pthread_mutexattr_settype", attr.type, PTHREAD_MUTEX_NORMAL);
+#else
+	ret_chk = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+	TC_ASSERT_EQ("pthread_mutexattr_settype", ret_chk, ENOSYS);
+#endif
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_mutexattr_getprotocol
+* @brief                :This tc tests pthread_mutexattr_getprotocol()
+* @Scenario             :Get and check the pthread_mutexattr's proto value
+*                        with proper and not-proper parameter
+* @API'scovered         :pthread_mutexattr_getprotocol
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+static void tc_libc_pthread_pthread_mutexattr_getprotocol(void)
+{
+	int ret_chk;
+	pthread_mutexattr_t attr;
+	int mutexattr_protocol;
+
+	ret_chk = pthread_mutexattr_init(&attr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	ret_chk = pthread_mutexattr_getprotocol(&attr, &mutexattr_protocol);
+	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", ret_chk, PTHREAD_PRIO_INHERIT);
+#else
+	ret_chk = pthread_mutexattr_getprotocol(&attr, &mutexattr_protocol);
+	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", ret_chk, PTHREAD_PRIO_NONE);
+#endif
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_mutexattr_setprotocol
+* @brief                :This tc tests pthread_mutexattr_setprotocol()
+* @Scenario             :Set and check the pthread_mutexattr's proto value
+*                        with proper and not-proper parameter
+* @API'scovered         :pthread_mutexattr_settype
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+static void tc_libc_pthread_pthread_mutexattr_setprotocol(void)
+{
+	int ret_chk;
+	pthread_mutexattr_t attr;
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	ret_chk = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INVALID);
+	TC_ASSERT_EQ("pthread_mutexattr_setprotocol", ret_chk, EINVAL);
+
+	ret_chk = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_NONE);
+	TC_ASSERT_EQ("pthread_mutexattr_setprotocol", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_mutexattr_setprotocol", attr.proto, PTHREAD_PRIO_NONE);
+#else
+	ret_chk = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INVALID);
+	TC_ASSERT_EQ("pthread_mutexattr_setprotocol", ret_chk, ENOSYS);
+
+	ret_chk = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_NONE);
+	TC_ASSERT_EQ("pthread_mutexattr_setprotocol", ret_chk, OK);
+#endif
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_mutexattr_getrobust
+* @brief                :This tc tests pthread_mutexattr_getrobust()
+* @Scenario             :Get and check the pthread_mutexattr's robust value
+*                        with proper and not-proper parameter
+* @API'scovered         :pthread_mutexattr_getrobust
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+static void tc_libc_pthread_pthread_mutexattr_getrobust(void)
+{
+	int ret_chk;
+	pthread_mutexattr_t attr;
+	int mutexattr_robust;
+
+	ret_chk = pthread_mutexattr_init(&attr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
+
+	ret_chk = pthread_mutexattr_getrobust(&attr, NULL);
+	TC_ASSERT_EQ("pthread_mutexattr_getrobust", ret_chk, EINVAL);
+
+	ret_chk = pthread_mutexattr_getrobust(&attr, &mutexattr_robust);
+#if defined(CONFIG_PTHREAD_MUTEX_UNSAFE) || defined(CONFIG_PTHREAD_MUTEX_DEFAULT_UNSAFE)
+	TC_ASSERT_EQ("pthread_mutexattr_getrobust", mutexattr_robust, PTHREAD_MUTEX_STALLED);
+#else
+	TC_ASSERT_EQ("pthread_mutexattr_getrobust", mutexattr_robust, PTHREAD_MUTEX_ROBUST);
+#endif
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_mutexattr_setrobust
+* @brief                :This tc tests pthread_mutexattr_setrobust()
+* @Scenario             :Set and check the pthread_mutexattr's robust value
+*                        with proper and not-proper parameter
+* @API'scovered         :pthread_mutexattr_setrobust
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+static void tc_libc_pthread_pthread_mutexattr_setrobust(void)
+{
+	int ret_chk;
+	pthread_mutexattr_t attr;
+
+	ret_chk = pthread_mutexattr_setrobust(NULL, PTHREAD_MUTEX_STALLED);
+	TC_ASSERT_EQ("pthread_mutexattr_setrobust", ret_chk, EINVAL);
+#ifdef CONFIG_PTHREAD_MUTEX_UNSAFE
+	ret_chk = pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_STALLED);
+	TC_ASSERT_EQ("pthread_mutexattr_setrobust", ret_chk, OK);
+#elif defined(CONFIG_PTHREAD_MUTEX_BOTH)
+	ret_chk = pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_STALLED);
+	TC_ASSERT_EQ("pthread_mutexattr_setrobust", attr.robust, PTHREAD_MUTEX_STALLED);
+#else
+	ret_chk = pthread_mutexattr_setrobust(&attr, _PTHREAD_MFLAGS_ROBUST);
+	TC_ASSERT_EQ("pthread_mutexattr_setrobust", ret_chk, OK);
+#endif
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: Test Case API's for libc_pthread_rwlock
  ****************************************************************************/
@@ -1012,6 +1251,14 @@ int libc_pthread_main(void)
 	tc_libc_pthread_pthread_condattr_destroy();
 	tc_libc_pthread_pthread_mutexattr_init();
 	tc_libc_pthread_pthread_mutexattr_destroy();
+	tc_libc_pthread_pthread_mutexattr_getpshared();
+	tc_libc_pthread_pthread_mutexattr_setpshared();
+	tc_libc_pthread_pthread_mutexattr_gettype();
+	tc_libc_pthread_pthread_mutexattr_settype();
+	tc_libc_pthread_pthread_mutexattr_getprotocol();
+	tc_libc_pthread_pthread_mutexattr_setprotocol();
+	tc_libc_pthread_pthread_mutexattr_getrobust();
+	tc_libc_pthread_pthread_mutexattr_setrobust();
 	tc_libc_pthread_pthread_rwlock_init_unlock_destroy();
 	tc_libc_pthread_pthread_rwlock_tryrdlock();
 	tc_libc_pthread_pthread_rwlock_trywrlock();
