@@ -57,7 +57,7 @@ static void wait(void)
 }
 
 /**
-   * @fn                   :signal
+   * @fn                   :nw_signal
    * @brief                :function to signal semaphore
    * @scenario             :
    * API's covered         :
@@ -65,7 +65,7 @@ static void wait(void)
    * Postconditions        :
    * @return               :void
    */
-static void signal(void)
+static void nw_signal(void)
 {
 	s++;
 }
@@ -133,7 +133,7 @@ void *Server(void *args)
 
 	listen(SocketFD, 1);
 
-	signal();
+	nw_signal();
 	tc_net_accept_p(SocketFD);
 	tc_net_accept_socket_n(SocketFD);
 
