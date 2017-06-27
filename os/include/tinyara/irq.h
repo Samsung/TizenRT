@@ -68,9 +68,13 @@
  */
 
 #ifndef __ASSEMBLY__
+#ifdef CONFIG_DEBUG_IRQ_INFO
+#define irq_attach(irq, handler, arg) irq_attach_withname(irq, handler, arg, #handler)
+#define irq_detach(irq) irq_attach_withname(irq, NULL, NULL, NULL)
+#else
 #define irq_detach(irq) irq_attach(irq, NULL, NULL)
 #endif
-
+#endif
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -110,7 +114,25 @@ extern "C" {
  *
  ****************************************************************************/
 
+#ifdef CONFIG_DEBUG_IRQ_INFO
+int irq_attach_withname(int irq, xcpt_t isr, FAR void *arg, const char *name);
+#else
 int irq_attach(int irq, xcpt_t isr, FAR void *arg);
+#endif
+
+#ifdef CONFIG_DEBUG_IRQ_INFO
+
+/****************************************************************************
+ * Name: irq_info
+ *
+ * Description:
+ *   Display the registered IRQ numbers and it's isr details to user
+ *
+ ****************************************************************************/
+
+void irq_info(void);
+
+#endif
 
 #undef EXTERN
 #ifdef __cplusplus

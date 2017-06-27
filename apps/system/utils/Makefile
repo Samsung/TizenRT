@@ -118,6 +118,10 @@ ifeq ($(CONFIG_ENABLE_HEAPINFO),y)
 CSRCS += kdbg_heapinfo.c
 endif
 
+ifeq ($(CONFIG_ENABLE_IRQINFO),y)
+CSRCS += kdbg_irqinfo.c
+endif
+
 ifneq ($(CONFIG_DISABLE_SIGNALS),y)
 ifeq ($(CONFIG_ENABLE_KILL),y)
 CSRCS += kdbg_kill.c
