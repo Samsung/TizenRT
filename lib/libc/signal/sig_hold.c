@@ -64,12 +64,12 @@
  * Name: sighold
  *
  * Description:
- *   The sighold() function will add 'signo' to the calling process' signal
+ *   The sighold() function will add 'sig' to the calling process' signal
  *   mask.
  *
  ****************************************************************************/
 
-int sighold(int signo)
+int sighold(int sig)
 {
 	sigset_t set;
 	int ret;
@@ -77,7 +77,7 @@ int sighold(int signo)
 	/* Create a set of signals with only the signal to be blocked */
 
 	(void)sigemptyset(&set);
-	ret = sigaddset(&set, signo);
+	ret = sigaddset(&set, sig);
 	if (ret == OK) {
 		/* Block the signal */
 
