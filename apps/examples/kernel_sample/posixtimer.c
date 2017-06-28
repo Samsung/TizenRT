@@ -249,7 +249,7 @@ errorout:
 
 	/* Detach the signal handler */
 
-	act.sa_sigaction = SIG_DFL;
+	act.sa_handler = SIG_DFL;
 	status = sigaction(MY_TIMER_SIGNAL, &act, &oact);
 
 	printf("timer_test: done\n");

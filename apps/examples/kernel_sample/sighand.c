@@ -202,7 +202,7 @@ static int waiter_main(int argc, char *argv[])
 
 	/* Detach the signal handler */
 
-	act.sa_sigaction = SIG_DFL;
+	act.sa_handler = SIG_DFL;
 	(void)sigaction(WAKEUP_SIGNAL, &act, &oact);
 
 	printf("waiter_main: done\n");
@@ -307,7 +307,7 @@ void sighand_test(void)
 	/* Detach the signal handler */
 
 #ifdef CONFIG_SCHED_HAVE_PARENT
-	act.sa_sigaction = SIG_DFL;
+	act.sa_handler = SIG_DFL;
 	(void)sigaction(SIGCHLD, &act, &oact);
 #endif
 
