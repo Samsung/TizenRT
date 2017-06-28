@@ -83,7 +83,7 @@
 int pthread_mutexattr_setprotocol(FAR pthread_mutexattr_t *attr,
 				  int protocol)
 {
-	linfo("attr=0x%p protocol=%d\n", attr, protocol);
+	svdbg("attr=0x%p protocol=%d\n", attr, protocol);
 	DEBUGASSERT(attr != NULL);
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
