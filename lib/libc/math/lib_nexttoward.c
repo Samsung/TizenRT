@@ -45,7 +45,7 @@
  ************************************************************************/
 
 #include <tinyara/compiler.h>
-#include <tinyara/math.h>
+#include <math.h>
 
 #include "libm.h"
 

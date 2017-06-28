@@ -59,7 +59,7 @@
  * Included Files
  ************************************************************************/
 
-#include <tinyara/math.h>
+#include <math.h>
 
 #include "libm.h"
 
