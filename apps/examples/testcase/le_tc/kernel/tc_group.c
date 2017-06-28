@@ -80,7 +80,6 @@ static void tc_group_group_add_find_remove_child(void)
 	TC_ASSERT_EQ_CLEANUP("group_removechild",
 						 child_returned,
 						 NULL,
-						 get_errno(),
 						 (group_removechild(group, child_pid), group_freechild(child)));
 
 	group_freechild(child);
