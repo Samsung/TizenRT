@@ -185,6 +185,13 @@ static void artik053_configure_partitions(void)
 				smart_initialize(CONFIG_ARTIK053_FLASH_MINOR, mtd_part, partref);
 			} else
 #endif
+#if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FS_SMARTFS)
+			if (!strncmp(types, "romfs,", 6)) {
+				char partref[6];
+				sprintf(partref, "rom%d", partno);
+				smart_initialize(MTD_ROMFS, mtd_part, partref);
+			} else
+#endif
 			{
 			}
 
