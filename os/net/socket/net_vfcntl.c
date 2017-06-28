@@ -99,7 +99,7 @@
 int net_vfcntl(int sockfd, int cmd, va_list ap)
 {
 
-	FAR struct socket *sock = get_socket(sockfd);
+	FAR struct socket *sock = (struct socket *)get_socket(sockfd);
 	net_lock_t flags;
 	int err = 0;
 	int ret = 0;

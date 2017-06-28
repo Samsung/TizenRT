@@ -15,6 +15,7 @@ Make.dep
 .*.swp
 .gdbinit
 cscope.out
+tags
 
 # ctags index file
 .tags

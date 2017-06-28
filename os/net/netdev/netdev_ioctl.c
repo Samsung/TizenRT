@@ -76,7 +76,7 @@
 
 #include <net/lwip/netif.h>
 #include <net/lwip/netifapi.h>
-#include <net/lwip/ipv4/igmp.h>
+#include <net/lwip/igmp.h>
 
 #ifdef CONFIG_NET_IGMP
 #include "sys/sockio.h"
@@ -126,16 +126,28 @@ static int ioctl_addipv4route(FAR struct rtentry *rtentry)
 	in_addr_t router;
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_target;
+#if CONFIG_NET_LWIP
+	target = (in_addr_t)ip_2_ip4(addr->sin_addr);
+#else
 	target = (in_addr_t)addr->sin_addr.s_addr;
+#endif
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_netmask;
+#if CONFIG_NET_LWIP
+	netmask = (in_addr_t)ip_2_ip4(addr->sin_addr);
+#else
 	netmask = (in_addr_t)addr->sin_addr.s_addr;
+#endif
 
 	/* The router is an optional argument */
 
 	if (rtentry->rt_router) {
 		addr = (FAR struct sockaddr_in *)rtentry->rt_router;
-		router = (in_addr_t)addr->sin_addr.s_addr;
+#if CONFIG_NET_LWIP
+	    router = (in_addr_t)ip_2_ip4(addr->sin_addr);
+#else
+	    router = (in_addr_t)addr->sin_addr.s_addr;
+#endif
 	} else {
 		router = 0;
 	}
@@ -164,16 +176,28 @@ static int ioctl_addipv6route(FAR struct rtentry *rtentry)
 	net_ipv6addr_t router;
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_target;
+#if CONFIG_NET_LWIP
+	target = (net_ipv6addr_t)ip_2_ip6(addr->sin6_addr);
+#else
 	target = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#endif
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_netmask;
+#if CONFIG_NET_LWIP
+	netmask = (net_ipv6addr_t)ip_2_ip6(addr->sin6_addr);
+#else
 	netmask = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#endif
 
 	/* The router is an optional argument */
 
 	if (rtentry->rt_router) {
 		addr = (FAR struct sockaddr_in6 *)rtentry->rt_router;
-		router = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#if CONFIG_NET_LWIP
+	    router = (net_ipv6addr_t)ip_2_ip6(addr->sin6_addr);
+#else
+	    router = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#endif
 	} else {
 		router = NULL;
 	}
@@ -201,10 +225,18 @@ static int ioctl_delipv4route(FAR struct rtentry *rtentry)
 	in_addr_t netmask;
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_target;
+#if CONFIG_NET_LWIP
+	target = (in_addr_t)ip_2_ip4(addr->sin_addr);
+#else
 	target = (in_addr_t)addr->sin_addr.s_addr;
+#endif
 
 	addr = (FAR struct sockaddr_in *)rtentry->rt_netmask;
+#if CONFIG_NET_LWIP
+	netmask = (in_addr_t)ip_2_ip4(addr->sin_addr);
+#else
 	netmask = (in_addr_t)addr->sin_addr.s_addr;
+#endif
 
 	return net_delroute(target, netmask);
 }
@@ -229,10 +261,18 @@ static int ioctl_delipv6route(FAR struct rtentry *rtentry)
 	net_ipv6addr_t netmask;
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_target;
+#if CONFIG_NET_LWIP
+	target = (net_ipv6addr_t)ip_2_ip6(addr->sin6_addr);
+#else
 	target = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#endif
 
 	addr = (FAR struct sockaddr_in6 *)rtentry->rt_netmask;
+#if CONFIG_NET_LWIP
+	netmask = (net_ipv6addr_t)ip_2_ip6(addr->sin6_addr);
+#else
 	netmask = (net_ipv6addr_t)addr->sin6_addr.u6_addr16;
+#endif
 
 	return net_delroute(target, netmask);
 }

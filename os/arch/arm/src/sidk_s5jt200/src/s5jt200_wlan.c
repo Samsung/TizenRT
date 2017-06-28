@@ -142,13 +142,14 @@ int up_wlan_get_mac_addr(char *macaddr)
 
 	while ((getreg32(0x80000400) & 0x1) == 0);
 
-	addr.low  = getreg32(0x80000320);
+	addr.low = getreg32(0x80000320);
 	addr.high = getreg32(0x80000324);
 
-	addr.raw  = addr.raw >> 6;
+	addr.raw = addr.raw >> 6;
 
-	for (i = 5; i >= 0; i--)
+	for (i = 5; i >= 0; i--) {
 		*macaddr++ = addr.bytes[i];
+	}
 
 	return 0;
 }
@@ -162,9 +163,9 @@ struct netif *wlan_netif;
 
 void up_wlan_init(struct netif *dev)
 {
-	struct ip_addr ipaddr;
-	struct ip_addr netmask;
-	struct ip_addr gw;
+	struct ip4_addr ipaddr;
+	struct ip4_addr netmask;
+	struct ip4_addr gw;
 
 	/* Start LWIP network thread */
 	ipaddr.addr = inet_addr("0.0.0.0");
@@ -173,7 +174,6 @@ void up_wlan_init(struct netif *dev)
 
 	netif_set_default(dev);
 
-	wlan_netif = netif_add(dev, &ipaddr, &netmask, &gw,
-					NULL, wlan_init, tcpip_input);
+	wlan_netif = netif_add(dev, &ipaddr, &netmask, &gw, NULL, wlan_init, tcpip_input);
 	wlan_netif->flags |= NETIF_FLAG_IGMP;
 }

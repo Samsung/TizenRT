@@ -62,9 +62,10 @@
 #include <sys/types.h>
 #include <stdint.h>
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/ipv4/inet.h>
+#include <net/lwip/inet.h>
 #endif
 
+#ifndef CONFIG_NET_LWIP
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -120,7 +121,6 @@
 #define INADDR_NONE           ((in_addr_t)0xffffffff)	/* Address indicating an error return */
 #define INADDR_LOOPBACK       ((in_addr_t)0x7f000001)	/* Inet 127.0.0.1.  */
 
-#endif
 /* Special initializer for in6_addr_t */
 
 #define IN6ADDR_ANY_INIT      { { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} } }
@@ -131,6 +131,8 @@
 #define s6_addr               in6_u.u6_addr8
 #define s6_addr16             in6_u.u6_addr16
 #define s6_addr32             in6_u.u6_addr32
+
+#endif // CONFIG_NET_LWIP
 
 /****************************************************************************
  * Public Type Definitions
@@ -151,19 +153,15 @@ struct in_addr {
 };
 
 struct sockaddr_in {
-#if defined(CONFIG_NET_LWIP)
 	uint8_t sin_len;
 	uint8_t sin_family;
-#else
 	sa_family_t sin_family;		/* Address family: AF_INET */
-#endif
 	uint16_t sin_port;			/* Port in network byte order */
 	struct in_addr sin_addr;	/* Internet address */
 	char sin_zero[8];
 };
 
 /* IPv6 Internet address */
-
 struct in6_addr {
 	union {
 		uint8_t u6_addr8[16];
@@ -225,4 +223,6 @@ EXTERN const struct in6_addr in6addr_any;
 }
 #endif
 
-#endif							/* __INCLUDE_NETINET_IN_H */
+#endif /* ifndef CONFIG_NET_LWIP */
+
+#endif /* __INCLUDE_NETINET_IN_H */

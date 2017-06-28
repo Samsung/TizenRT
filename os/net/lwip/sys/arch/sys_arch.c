@@ -255,6 +255,7 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
 	/* The mutex lock is quick so we don't bother with the timeout
 	   stuff here. */
+
 	status = sys_arch_sem_wait(&(mbox->mutex), 0);
 	if (status == SYS_ARCH_CANCELED) {
 		return SYS_ARCH_CANCELED;
@@ -483,6 +484,11 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 				timeout -= TICK2MSEC(clock_systimer() - start);
 			}
 		}
+
+	}
+
+	if (status == -ETIMEDOUT) {
+		return SYS_ARCH_TIMEOUT;
 	}
 
 	systime_t end = clock_systimer();
@@ -627,7 +633,7 @@ void sys_mutex_unlock(sys_mutex_t *mutex)
 #endif							/*LWIP_COMPAT_MUTEX */
 /*-----------------------------------------------------------------------------------*/
 
-systime_t sys_now(void)
+u32_t sys_now(void)
 {
 	return TICK2MSEC(clock_systimer());
 }
@@ -655,7 +661,7 @@ sys_thread_t sys_thread_new(const char *name, lwip_thread_fn entry_function, voi
 
 	if (s_nextthread < SYS_THREAD_MAX) {
 		sys_thread_t new_thread;
-		new_thread = kernel_thread(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
+		new_thread = task_create(name, priority, stacksize, (main_t) entry_function, (char *const *)NULL);
 		if (new_thread < 0) {
 			int errval = errno;
 			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
@@ -692,7 +698,7 @@ sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_functi
 
 	if (s_nextthread < SYS_THREAD_MAX) {
 		sys_thread_t new_thread;
-		new_thread = kernel_thread(name, priority, stacksize, (main_t)entry_function, (char * const *)NULL);
+		new_thread = kernel_thread(name, priority, stacksize, (main_t) entry_function, (char *const *)NULL);
 		if (new_thread < 0) {
 			int errval = errno;
 			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
@@ -709,7 +715,7 @@ sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_functi
 sys_prot_t sys_arch_protect(void)
 {
 	sched_lock();
-	return (sys_prot_t)1;
+	return (sys_prot_t) 1;
 }
 
 void sys_arch_unprotect(sys_prot_t p)

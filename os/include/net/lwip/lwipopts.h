@@ -64,7 +64,7 @@
  * Instead of using lwIP DHCP, please use netutils dhcpc and dhcpd
  */
 #define LWIP_DHCPS                      0
-#define LWIP_DHCP                       0
+#define LWIP_DHCP                       1
 #define LWIP_NETIF_API                  1
 
 #ifdef CONFIG_NET_ENABLE_LOOPBACK
@@ -75,7 +75,6 @@
 #define LWIP_ETHERNET    CONFIG_NET_LWIP_ETHERNET
 #endif
 /* --------- PreDefined Configurations -------------*/
-
 
 /* ---------- ARP options ---------- */
 #ifdef CONFIG_NET_ARP
@@ -94,7 +93,6 @@
 #define ARP_QUEUEING                    CONFIG_NET_ARP_QUEUEING
 #endif
 
-
 #ifdef CONFIG_NET_ETHARP_TRUST_IP_MAC
 #define ETHARP_TRUST_IP_MAC             CONFIG_NET_ETHARP_TRUST_IP_MAC
 #endif
@@ -109,7 +107,6 @@
 
 /* ---------- ARP options ---------- */
 
-
 /* ---------- VLAN options ---------- */
 #ifdef CONFIG_NET_LWIP_VLAN
 #define ETHARP_SUPPORT_VLAN             1
@@ -120,7 +117,6 @@
 #define ETHARP_SUPPORT_VLAN             0
 #endif
 /* ---------- VLAN options ---------- */
-
 
 /* ---------- IP options ---------- */
 
@@ -153,7 +149,6 @@
 #endif
 
 /* ---------- IP options ---------- */
-
 
 /* ---------- ICMP options ---------- */
 #ifdef CONFIG_NET_ICMP
@@ -257,7 +252,6 @@
 
 /* ---------- TCP options ---------- */
 
-
 /* ---------- UDP options ---------- */
 
 #ifdef CONFIG_NET_UDP
@@ -278,8 +272,6 @@
 #endif
 
 /* ---------- UDP options ---------- */
-
-
 
 /* ---------- SNMP options ---------- */
 #ifdef CONFIG_NET_LWIP_SNMP
@@ -306,7 +298,6 @@
 #define SNMP_MAX_TREE_DEPTH             CONFIG_NET_LWIP_SNMP_MAX_TREE_DEPTH
 #endif
 /* ---------- SNMP options ---------- */
-
 
 /* ---------- Memory options ---------- */
 
@@ -405,11 +396,11 @@
 #endif
 */
 #ifdef CONFIG_NET_MEMP_NUM_TCPIP_MSG_API
-#define MEMP_NUM_TCPIP_MSG_API  CONFIG_NET_MEMP_NUM_TCPIP_MSG_API
+#define MEMP_NUM_TCPIP_MSG_API 	CONFIG_NET_MEMP_NUM_TCPIP_MSG_API
 #endif
 
 #ifdef CONFIG_NET_MEMP_NUM_TCPIP_MSG_INPKT
-#define MEMP_NUM_TCPIP_MSG_INPKT  CONFIG_NET_MEMP_NUM_TCPIP_MSG_INPKT
+#define MEMP_NUM_TCPIP_MSG_INPKT 	CONFIG_NET_MEMP_NUM_TCPIP_MSG_INPKT
 #endif
 
 #ifdef CONFIG_NET_MEMP_NUM_SNMP_NODE
@@ -438,7 +429,6 @@
 
 /*---------- Interanl Memory Pool Sizes ----*/
 
-
 /* ---------- Raw Socket options ---------- */
 #ifdef CONFIG_NET_RAW
 #define LWIP_RAW	         CONFIG_NET_RAW
@@ -447,7 +437,6 @@
 #ifdef CONFIG_NET_RAW_TTL
 #define RAW_TTL	             CONFIG_NET_RAW_TTL
 #endif
-
 
 /* ---------- Socket options ---------- */
 
@@ -507,7 +496,6 @@
 #endif
 
 /* ---------- Socket options ---------- */
-
 
 /* ---------- SLIP options ---------- */
 #ifdef CONFIG_NET_LWIP_SLIP_INTERFACE
@@ -583,7 +571,6 @@
 #endif
 /* ---------- PPP options ---------- */
 
-
 /* ---------- System options ---------- */
 
 /* NO_SYS==1: Provides VERY minimal functionality. Otherwise,
@@ -594,11 +581,11 @@
 #define LWIP_RAND() rand()
 
 #ifdef CONFIG_NET_TCPIP_CORE_LOCKING
-#define TCPIP_CORE_LOCKING	CONFIG_NET_TCPIP_CORE_LOCKING
+#define LWIP_TCPIP_CORE_LOCKING CONFIG_NET_TCPIP_CORE_LOCKING
 #endif
 
 #ifdef CONFIG_NET_TCPIP_CORE_LOCKING_INPUT
-#define TCPIP_CORE_LOCKING_INPUT	CONFIG_NET_TCPIP_CORE_LOCKING_INPUT
+#define LWIP_TCPIP_CORE_LOCKING_INPUT CONFIG_NET_TCPIP_CORE_LOCKING_INPUT
 #endif
 
 #ifdef CONFIG_NET_TCPIP_THREAD_NAME
@@ -633,7 +620,6 @@
 #define DEFAULT_THREAD_STACKSIZE	CONFIG_NET_DEFAULT_THREAD_STACKSIZE
 #endif
 
-
 /* ---------- Mailbox options ---------- */
 
 #ifdef CONFIG_NET_DEFAULT_ACCEPTMBOX_SIZE
@@ -657,7 +643,6 @@
 #endif
 
 /* ---------- Mailbox options ---------- */
-
 
 /* ---------- Debug options ---------- */
 #ifdef CONFIG_NET_LWIP_ASSERT
@@ -852,7 +837,6 @@
 #endif /* CONFIG_NET_LWIP_DEBUG */
 /* ---------- Debug options ---------- */
 
-
 /* ---------- Stat options ---------- */
 
 #ifdef CONFIG_NET_STATS
@@ -909,11 +893,9 @@
 
 /* ---------- Stat options ---------- */
 
-
 /* ----------Else ----------------*/
 #ifdef CONFIG_NET_LWIP_LOOPBACK_INTERFACE
 #define LWIP_HAVE_LOOPIF                CONFIG_NET_LWIP_LOOPBACK_INTERFACE
 #endif
-
 
 #endif							/* __LWIP_LWIPOPTS_H__ */

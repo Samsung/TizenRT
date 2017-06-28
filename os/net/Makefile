@@ -92,6 +92,9 @@ include lwip/src/core/snmp/Make.defs
 ifeq ($(CONFIG_NET_IPv4),y)
 include lwip/src/core/ipv4/Make.defs
 endif
+ifeq ($(CONFIG_NET_IPv6),y)
+include lwip/src/core/ipv6/Make.defs
+endif
 #include lwip/src/core/ipv6/Make.defs
 include lwip/src/netif/ppp/Make.defs
 include lwip/sys/arch/Make.defs

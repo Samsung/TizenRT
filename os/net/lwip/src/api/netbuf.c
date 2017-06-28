@@ -76,23 +76,9 @@ netbuf *netbuf_new(void)
 
 	buf = (struct netbuf *)memp_malloc(MEMP_NETBUF);
 	if (buf != NULL) {
-		buf->p = NULL;
-		buf->ptr = NULL;
-		ip_addr_set_any(&buf->addr);
-		buf->port = 0;
-#if LWIP_NETBUF_RECVINFO || LWIP_CHECKSUM_ON_COPY
-#if LWIP_CHECKSUM_ON_COPY
-		buf->flags = 0;
-#endif							/* LWIP_CHECKSUM_ON_COPY */
-		buf->toport_chksum = 0;
-#if LWIP_NETBUF_RECVINFO
-		ip_addr_set_any(&buf->toaddr);
-#endif							/* LWIP_NETBUF_RECVINFO */
-#endif							/* LWIP_NETBUF_RECVINFO || LWIP_CHECKSUM_ON_COPY */
-		return buf;
-	} else {
-		return NULL;
+		memset(buf, 0, sizeof(struct netbuf));
 	}
+	return buf;
 }
 
 /**
@@ -170,7 +156,7 @@ err_t netbuf_ref(struct netbuf *buf, const void *dataptr, u16_t size)
 		buf->ptr = NULL;
 		return ERR_MEM;
 	}
-	buf->p->payload = (void *)dataptr;
+	((struct pbuf_rom *)buf->p)->payload = dataptr;
 	buf->p->len = buf->p->tot_len = size;
 	buf->ptr = buf->p;
 	return ERR_OK;
@@ -184,7 +170,7 @@ err_t netbuf_ref(struct netbuf *buf, const void *dataptr, u16_t size)
  */
 void netbuf_chain(struct netbuf *head, struct netbuf *tail)
 {
-	LWIP_ERROR("netbuf_ref: invalid head", (head != NULL), return;);
+	LWIP_ERROR("netbuf_chain: invalid head", (head != NULL), return;);
 	LWIP_ERROR("netbuf_chain: invalid tail", (tail != NULL), return;);
 	pbuf_cat(head->p, tail->p);
 	head->ptr = head->p;
@@ -226,7 +212,7 @@ err_t netbuf_data(struct netbuf *buf, void **dataptr, u16_t *len)
  */
 s8_t netbuf_next(struct netbuf *buf)
 {
-	LWIP_ERROR("netbuf_free: invalid buf", (buf != NULL), return -1;);
+	LWIP_ERROR("netbuf_next: invalid buf", (buf != NULL), return -1;);
 	if (buf->ptr->next == NULL) {
 		return -1;
 	}
@@ -246,7 +232,7 @@ s8_t netbuf_next(struct netbuf *buf)
  */
 void netbuf_first(struct netbuf *buf)
 {
-	LWIP_ERROR("netbuf_free: invalid buf", (buf != NULL), return;);
+	LWIP_ERROR("netbuf_first: invalid buf", (buf != NULL), return;);
 	buf->ptr = buf->p;
 }
 

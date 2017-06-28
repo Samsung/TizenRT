@@ -94,17 +94,17 @@
 /* compression option */
 
 typedef struct ipcp_options {
-	u_int neg_addr : 1;			/* Negotiate IP Address? */
-	u_int old_addrs : 1;			/* Use old (IP-Addresses) option? */
-	u_int req_addr : 1;			/* Ask peer to send IP address? */
-	u_int default_route : 1;		/* Assign default route through interface? */
-	u_int proxy_arp : 1;			/* Make proxy ARP entry for peer? */
-	u_int neg_vj : 1;				/* Van Jacobson Compression? */
-	u_int old_vj : 1;				/* use old (short) form of VJ option? */
-	u_int accept_local : 1;		/* accept peer's value for ouraddr */
-	u_int accept_remote : 1;		/* accept peer's value for hisaddr */
-	u_int req_dns1 : 1;			/* Ask peer to send primary DNS address? */
-	u_int req_dns2 : 1;			/* Ask peer to send secondary DNS address? */
+	u_int neg_addr: 1;			/* Negotiate IP Address? */
+	u_int old_addrs: 1;			/* Use old (IP-Addresses) option? */
+	u_int req_addr: 1;			/* Ask peer to send IP address? */
+	u_int default_route: 1;		/* Assign default route through interface? */
+	u_int proxy_arp: 1;			/* Make proxy ARP entry for peer? */
+	u_int neg_vj: 1;				/* Van Jacobson Compression? */
+	u_int old_vj: 1;				/* use old (short) form of VJ option? */
+	u_int accept_local: 1;		/* accept peer's value for ouraddr */
+	u_int accept_remote: 1;		/* accept peer's value for hisaddr */
+	u_int req_dns1: 1;			/* Ask peer to send primary DNS address? */
+	u_int req_dns2: 1;			/* Ask peer to send secondary DNS address? */
 	u_short vj_protocol;		/* protocol value to use in VJ option */
 	u_char maxslotindex;		/* VJ slots - 1. */
 	u_char cflag;				/* VJ slot compression flag. */

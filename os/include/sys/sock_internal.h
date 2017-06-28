@@ -62,6 +62,8 @@
 
 #include <uio.h>
 
+#ifndef CONFIG_NET_LWIP
+
 struct msghdr {
 	void *msg_name;				/* Socket name      */
 	int msg_namelen;			/* Length of name   */
@@ -291,5 +293,7 @@ struct linger {
 	int l_onoff;				/* Indicates whether linger option is enabled. */
 	int l_linger;				/* Linger time, in seconds. */
 };
+
+#endif							/* CONFIG_NET_LWIP */
 
 #endif							/* __INCLUDE_SYS_SOCK_INTERNAL_H */

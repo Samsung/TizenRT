@@ -34,8 +34,9 @@
 #include <net/lwip/mem.h>
 #include <net/lwip/pbuf.h>
 #include <net/lwip/stats.h>
+#include <net/lwip/ip_addr.h>
+
 #include <net/lwip/netif/etharp.h>
-#include <net/lwip/ipv4/ip_addr.h>
 
 #define ETHERNET_MTU 1500
 
@@ -217,7 +218,14 @@ err_t ethernetif_init(struct netif *netif)
 	 * You can instead declare your own function an call etharp_output()
 	 * from it if you have to do some checks before sending (e.g. if link
 	 * is available...) */
-	netif->output = etharp_output;
+#if LWIP_IPV4 && LWIP_IPV6
+	netif->output = (netif_output_fn)etharp_output;
+	netif->output_ip6 = (netif_output_ip6_fn)etharp_output;
+#elif LWIP_IPV4
+	netif->output = (netif_output_fn)etharp_output;
+#else
+	netif->output_ip6 = (netif_output_ip6_fn)etharp_output;
+#endif
 	/* netif->linkoutput is set in enc_initialize function */
 	netif->linkoutput = ethernetif_output;
 	netif->mtu = ETHERNET_MTU;
@@ -249,9 +257,15 @@ err_t ethernetif_init(struct netif *netif)
 
 	memcpy(netif->d_mac.ether_addr_octet, netif->hwaddr, IFHWADDRLEN);
 #endif
-	netif->d_ipaddr = netif->ip_addr.addr;
-	netif->d_draddr = netif->gw.addr;
-	netif->d_netmask = netif->netmask.addr;
+#if CONFIG_NET_LWIP
+	netif->d_ipaddr = ip_2_ip4(netif->ip_addr).addr;
+	netif->d_draddr = ip_2_ip4(netif->gw).addr;
+	netif->d_netmask = ip_2_ip4(netif->netmask).addr;
+#else
+	netif->d_ipaddr = netif->ip_addr.s_addr.addr;
+	netif->d_draddr = netif->gw.s_addr.addr;
+	netif->d_netmask = netif->netmask.s_addr.addr;
+#endif
 	//memcpy(netif->d_mac.ether_addr_octet,netif->hwaddr, IFHWADDRLEN);
 	/* Do whatever else is needed to initialize interface. */
 	return ERR_OK;

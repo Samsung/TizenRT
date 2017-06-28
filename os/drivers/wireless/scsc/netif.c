@@ -29,7 +29,7 @@
 #include <tinyara/net/net.h>
 #include <arpa/inet.h>
 #include <net/lwip/netif/etharp.h>
-#include <net/lwip/ipv4/igmp.h>
+#include <net/lwip/igmp.h>
 
 #include "debug_scsc.h"
 #include "netif.h"
@@ -483,7 +483,7 @@ exit:
 				  (u8)(ip)[2], \
 				  (u8)(ip)[3] \
 }
-static err_t slsi_set_multicast_list(struct netif *dev, ip_addr_t *group, u8_t action)
+static err_t slsi_set_multicast_list(struct netif *dev, const ip4_addr_t *group, u8_t action)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
