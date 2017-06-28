@@ -74,7 +74,7 @@
 #define NODE_DEPTH      2
 #define LEAF_NODES      pow(BRANCH_FACTOR, NODE_DEPTH)
 #define EMPTY_NODE(node)        (node)->val[BRANCH_FACTOR-1] == 0
-#define KEY_MAX 32768
+#define KEY_MAX INT_MAX
 #define ROW_XOR 0xf6U
 #define NODE_STATE_VALID 1
 #define NODE_STATE_LOCK 2
@@ -128,13 +128,13 @@
  * Private Types
  ****************************************************************************/
 struct key_value_pair_s {
-	uint16_t key;
+	int key;
 	uint16_t value;
 };
 typedef struct key_value_pair_s pair_t;
 
 struct tree_node_s {
-	uint16_t val[BRANCH_FACTOR];
+	int val[BRANCH_FACTOR];
 	uint16_t id[BRANCH_FACTOR];
 	uint16_t is_leaf;
 };
@@ -281,8 +281,10 @@ static db_result_t release(index_t *);
 static db_result_t insert(index_t *, attribute_value_t *, tuple_id_t);
 static db_result_t delete(index_t *, attribute_value_t *);
 static tuple_id_t get_next(index_iterator_t *, uint8_t);
-static db_result_t vacuum(tree_t *, relation_t *);
 
+#ifdef DB_WIP
+static db_result_t vacuum(tree_t *, relation_t *);
+#endif
 /****************************************************************************
 * Private Functions
 ****************************************************************************/
@@ -811,8 +813,8 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 	};
 	int i;
 	static struct iteration_cache cache;
-	uint16_t key_max;
-	uint16_t key_min;
+	int key_max;
+	int key_min;
 	tree_t *tree;
 	key_min = *(int *)&iterator->min_value;
 	key_max = *(int *)&iterator->max_value;
@@ -879,9 +881,11 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 	if (matched_condition == FALSE) {
 		modify_cache(tree, cache.bucket_id, BUCKET, INVALIDATE);
 		cache_write_bucket(tree, cache.bucket_id, cache.bucket);
-		if ((double)(tree->deleted) / tree->inserted >= VACUUM_THRESHOLD) {
+#ifdef DB_WIP
+		if ((int)((double)(tree->deleted) * 100 / tree->inserted) >= VACUUM_THRESHOLD) {
 			vacuum(tree, iterator->index->rel);
 		}
+#endif
 	} else {
 		modify_cache(tree, cache.bucket_id, BUCKET, UNLOCK);
 	}
@@ -929,6 +933,9 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 	return get_next(iterator, matched_condition);
 }
 
+
+
+#ifdef DB_WIP
 /****************************************************************************
  * Name: vacuum
  *
@@ -1010,6 +1017,7 @@ static db_result_t vacuum(tree_t *tree, relation_t *rel)
 	storage_remove(old_rel.tuple_filename);
 	return DB_OK;
 }
+#endif
 
 /****************************************************************************
  * Name: modify_cache
@@ -1437,6 +1445,8 @@ static pair_t *tree_find(tree_t *tree, int key)
 	return NULL;
 }
 
+
+#if (DEBUG & DEBUG_VERBOSE) || (DEBUG & DEBUG_ENABLE)
 /****************************************************************************
  * Name: tree_print
  *
@@ -1477,6 +1487,7 @@ void tree_print(tree_t *tree, int id)
 	modify_cache(tree, id, NODE, UNLOCK);
 	DB_LOG_D("Node End\n");
 }
+#endif
 
 /****************************************************************************
  * Name: bucket_read
