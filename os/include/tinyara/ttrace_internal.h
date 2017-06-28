@@ -46,10 +46,12 @@
  * Public Type Declarations
  ****************************************************************************/
 #define TTRACE_START               's'
+#define TTRACE_OVERWRITE           'o'
 #define TTRACE_FINISH              'f'
 #define TTRACE_INFO                'i'
 #define TTRACE_SELECTED_TAG        't'
 #define TTRACE_FUNC_TAG            'g'
+#define TTRACE_SET_BUFSIZE         'z'
 #define TTRACE_USED_BUFSIZE        'u'
 #define TTRACE_BUFFER              'b'
 #define TTRACE_DUMP                'd'
@@ -65,6 +67,7 @@
 #define TTRACE_COMM_BYTES           12
 #define TTRACE_BYTE_ALIGN           4
 
+#define TTRACE_NODATA              -2
 #define TTRACE_INVALID             -1
 #define TTRACE_VALID                0
 
@@ -117,7 +120,6 @@ struct trace_packet {        // total 44 byte(message), 12byte(uid)
 	pid_t pid;                 // 2B, int16_t(16b)
 	char event_type;           // 1B, char(8b)
 	int8_t codelen;            // 1B, code(1b) + variable length(7b) or uid(7b)
-	int32_t pad;
 	union trace_message msg;   // 32B
 };
 

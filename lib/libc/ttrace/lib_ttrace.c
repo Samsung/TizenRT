@@ -96,7 +96,6 @@ int create_packet_sched(struct trace_packet *packet, struct tcb_s *prev, struct 
 	packet->event_type = (int8_t)'s';
 	packet->pid = getpid();
 	packet->codelen = TTRACE_CODE_VARIABLE | msg_len;
-	packet->pad = -1;
 
 	packet->msg.sched_msg.pad = -1;
 
@@ -121,6 +120,9 @@ int create_packet_sched(struct trace_packet *packet, struct tcb_s *prev, struct 
 		packet->msg.sched_msg.next_pid = 0;
 		packet->msg.sched_msg.next_prio = 0;
 	}
+
+	packet->msg.sched_msg.prev_comm[TTRACE_COMM_BYTES - 1] = '\0';
+	packet->msg.sched_msg.next_comm[TTRACE_COMM_BYTES - 1] = '\0';
 
 	return ret;
 }
@@ -152,7 +154,6 @@ int create_packet(struct trace_packet *packet, char type, char *str, va_list val
 	packet->event_type = (int8_t)type;
 	packet->pid = getpid();
 	packet->codelen = TTRACE_CODE_VARIABLE | msg_len;
-	packet->pad = -1;
 
 	vsnprintf(packet->msg.message, msg_len, str, valist);
 
@@ -166,7 +167,6 @@ int create_packet_u(struct trace_packet *packet, char type, int8_t uid)
 	packet->event_type = type;
 	packet->pid = getpid();
 	packet->codelen = TTRACE_CODE_UNIQUE | uid;
-	packet->pad = -1;
 
 	return ret;
 }
