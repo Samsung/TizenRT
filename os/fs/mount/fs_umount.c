@@ -207,5 +207,6 @@ errout_with_mountpt:
 		inode_release(blkdrvr_inode);
 	}
 errout:
-	return errcode;
+	set_errno(errcode);
+	return ERROR;
 }
