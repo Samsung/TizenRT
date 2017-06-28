@@ -673,7 +673,7 @@ static uint8_t *slsi_hexstr_2_bytearray(char *str, size_t str_size, size_t *arra
 		for (i = 0; i < str_len; i += 2) {
 			a = string[i + 0];
 			b = string[i + 1];
-			byte_array[i / 2] = ((a < '9' ? a - '0' : a - 'a' + 10) << 4) + (b < '9' ? b - '0' : b - 'a' + 10);
+			byte_array[i / 2] = ((a <= '9' ? a - '0' : a - 'a' + 10) << 4) + (b <= '9' ? b - '0' : b - 'a' + 10);
 			// printf used due to not wanting function name pre-appended
 			if (SLSI_API_VERBOSE) {
 				printf("%02x, ", byte_array[i / 2]);
