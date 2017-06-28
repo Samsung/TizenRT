@@ -64,12 +64,12 @@
  * Name: sigrelse
  *
  * Description:
- *   The sigrelse() function will remove 'signo' from the calling process'
+ *   The sigrelse() function will remove 'sig' from the calling process'
  *   signal mask.
  *
  ****************************************************************************/
 
-int sigrelse(int signo)
+int sigrelse(int sig)
 {
 	sigset_t set;
 	int ret;
@@ -77,7 +77,7 @@ int sigrelse(int signo)
 	/* Create a set of signals with only the signal to be unblocked */
 
 	(void)sigemptyset(&set);
-	ret = sigaddset(&set, signo);
+	ret = sigaddset(&set, sig);
 	if (ret == OK) {
 		/* Unblock the signal */
 
