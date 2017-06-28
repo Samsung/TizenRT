@@ -261,7 +261,7 @@ static void fs_vfs_write_tc(void)
 	char *buf = VFS_TEST_CONTENTS_1;
 	int len;
 	fd = open(VFS_FILE_PATH, O_WRONLY | O_TRUNC);
-	TC_ASSERT_GEQ("write", fd, 0);
+	TC_ASSERT_GEQ("open", fd, 0);
 	len = strlen(buf);
 	ret = write(fd, buf, len);
 	close(fd);
@@ -282,7 +282,7 @@ static void fs_vfs_read_tc(void)
 	int fd, ret;
 	char buf[20];
 	fd = open(VFS_FILE_PATH, O_RDONLY);
-	TC_ASSERT_GEQ("read", fd, 0);
+	TC_ASSERT_GEQ("open", fd, 0);
 	memset(buf, 0, sizeof(buf));
 	ret = read(fd, buf, sizeof(buf));
 	close(fd);
@@ -303,7 +303,7 @@ static void fs_vfs_close_tc(void)
 {
 	int fd, ret;
 	fd = open(VFS_FILE_PATH, O_RDONLY);
-	TC_ASSERT_GEQ("close", fd, 0);
+	TC_ASSERT_GEQ("open", fd, 0);
 	ret = close(fd);
 	TC_ASSERT_GEQ("close", ret, 0);
 	TC_SUCCESS_RESULT();
@@ -329,37 +329,37 @@ static void fs_vfs_dup_tc(void)
 
 	memset(buf, 0, sizeof(buf));
 	fd1 = open(filename, O_RDWR | O_CREAT | O_TRUNC);
-	TC_ASSERT_GEQ("dup", fd1, 0);
+	TC_ASSERT_GEQ("open", fd1, 0);
 
 	len = strlen(str1);
 	ret = write(fd1, str1, len);
-	TC_ASSERT_EQ_CLEANUP("dup", ret, len, ERROR_MSG_BAD_SIZE, close(fd1));
+	TC_ASSERT_EQ_CLEANUP("write", ret, len, ERROR_MSG_BAD_SIZE, close(fd1));
 
 	fd2 = dup(fd1);
-	TC_ASSERT_GEQ("dup", fd2, 0);
+	TC_ASSERT_GEQ_CLEANUP("dup", fd2, 0, ERROR_MSG_OP_FAILED,  close(fd1));
 
 	len = strlen(str2);
 	ret = write(fd2, str2, strlen(str2));
 	close(fd1);
 	close(fd2);
-	TC_ASSERT_EQ("dup", ret, len);
+	TC_ASSERT_EQ("write", ret, len);
 
 	fd1 = open(filename, O_RDOK);
-	TC_ASSERT_GEQ("dup", fd1, 0);
+	TC_ASSERT_GEQ("open", fd1, 0);
 
 	len = strlen(str1);
 	ret = read(fd1, buf, len);
 
-	TC_ASSERT_GT_CLEANUP("dup", ret, 0, ERROR_MSG_BAD_SIZE, close(fd1));
-	TC_ASSERT_EQ_CLEANUP("dup", strcmp(buf, VFS_TEST_CONTENTS_1), 0, ERROR_MSG_DIFFRENT_CONTENTS, close(fd1));
+	TC_ASSERT_GT_CLEANUP("read", ret, 0, ERROR_MSG_BAD_SIZE, close(fd1));
+	TC_ASSERT_EQ_CLEANUP("read", strcmp(buf, VFS_TEST_CONTENTS_1), 0, ERROR_MSG_DIFFRENT_CONTENTS, close(fd1));
 
 	memset(buf, 0, sizeof(buf));
 	len = strlen(str2);
 	ret = read(fd1, buf, len);
 	close(fd1);
 
-	TC_ASSERT_GT("dup", ret, 0);
-	TC_ASSERT_EQ("dup", strcmp(buf, VFS_TEST_CONTENTS_2), 0);
+	TC_ASSERT_GT("read", ret, 0);
+	TC_ASSERT_EQ("read", strcmp(buf, VFS_TEST_CONTENTS_2), 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -384,11 +384,11 @@ static void fs_vfs_dup2_tc(void)
 	memset(buf, 0, sizeof(buf));
 
 	fd1 = open(filename1, O_RDWR);
-	TC_ASSERT_GEQ("dup2", fd1, 0);
+	TC_ASSERT_GEQ("open", fd1, 0);
 
 	fd2 = open(filename2, O_RDWR | O_CREAT);
 	close(fd1);
-	TC_ASSERT_GEQ("dup2", fd2, 0);
+	TC_ASSERT_GEQ("open", fd2, 0);
 
 	/* now fd1 points fd2 */
 	ret = dup2(fd2, fd1);
@@ -396,18 +396,18 @@ static void fs_vfs_dup2_tc(void)
 
 	len = strlen(VFS_TEST_CONTENTS_3);
 	ret = write(fd1, str, len);
-	TC_ASSERT_EQ_CLEANUP("dup2", ret, len, ERROR_MSG_BAD_SIZE, close(fd2));
+	TC_ASSERT_EQ_CLEANUP("write", ret, len, ERROR_MSG_BAD_SIZE, close(fd2));
 	close(fd1);
 	close(fd2);
 
 	fd2 = open(filename2, O_RDONLY);
-	TC_ASSERT_GEQ("dup2", fd2, 0);
+	TC_ASSERT_GEQ("open", fd2, 0);
 
 	ret = read(fd2, buf, len);
 	close(fd2);
 
-	TC_ASSERT_GT("dup2", ret, 0);
-	TC_ASSERT_EQ("dup2", strcmp(buf, VFS_TEST_CONTENTS_3), 0);
+	TC_ASSERT_GT("read", ret, 0);
+	TC_ASSERT_EQ("read", strcmp(buf, VFS_TEST_CONTENTS_3), 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -426,11 +426,11 @@ static void fs_vfs_fsync_tc(void)
 	char *str = VFS_TEST_CONTENTS_2;
 
 	fd = open(filename, O_WROK | O_TRUNC);
-	TC_ASSERT_GEQ("fsync", fd, 0);
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	len = strlen(str);
 	ret = write(fd, str, len);
-	TC_ASSERT_EQ_CLEANUP("fsync", ret, len, ERROR_MSG_BAD_SIZE, close(fd));
+	TC_ASSERT_EQ_CLEANUP("write", ret, len, ERROR_MSG_BAD_SIZE, close(fd));
 
 	ret = fsync(fd);
 	TC_ASSERT_GEQ_CLEANUP("fsync", ret, 0, ERROR_MSG_OP_FAILED, close(fd));
@@ -453,7 +453,7 @@ static void fs_vfs_lseek_tc(void)
 	char buf[20];
 
 	fd = open(filename, O_RDONLY);
-	TC_ASSERT_GEQ("lseek", fd, 0);
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	ret = lseek(fd, 5, SEEK_SET);
 	TC_ASSERT_EQ_CLEANUP("lseek", ret, 5, ERROR_MSG_OP_FAILED, close(fd));
@@ -462,8 +462,8 @@ static void fs_vfs_lseek_tc(void)
 	ret = read(fd, buf, sizeof(buf));
 	close(fd);
 
-	TC_ASSERT_GT("lseek", ret, 0);
-	TC_ASSERT_EQ("lseek", strcmp(buf, "IS VFS TEST 2"), 0);
+	TC_ASSERT_GT("read", ret, 0);
+	TC_ASSERT_EQ("read", strcmp(buf, "IS VFS TEST 2"), 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -482,7 +482,7 @@ static void fs_vfs_pwrite_tc(void)
 	char *str = "pwrite test!";
 
 	fd = open(filename, O_WRONLY | O_APPEND);
-	TC_ASSERT_GEQ("pwrite", fd, 0);
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	ret = pwrite(fd, str, strlen(str), 10);
 	close(fd);
@@ -506,7 +506,7 @@ static void fs_vfs_pread_tc(void)
 	char buf[20];
 
 	fd = open(filename, O_RDONLY);
-	TC_ASSERT_GEQ("pread", fd, 0);
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	memset(buf, 0, sizeof(buf));
 	ret = pread(fd, buf, 20, 10);
@@ -577,7 +577,7 @@ static void fs_vfs_readdir_tc(void)
 	struct dirent *dirent;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("readdir", dirp);
+	TC_ASSERT("opendir", dirp);
 
 	count = 0;
 	while (1) {
@@ -588,7 +588,7 @@ static void fs_vfs_readdir_tc(void)
 		count++;
 	}
 	ret = closedir(dirp);
-	TC_ASSERT_EQ("readdir", ret, OK);
+	TC_ASSERT_EQ("closedir", ret, OK);
 	TC_ASSERT_EQ("readdir", count, VFS_LOOP_COUNT);
 	TC_SUCCESS_RESULT();
 }
@@ -608,7 +608,7 @@ static void fs_vfs_rewinddir_tc(void)
 	struct dirent *dirent;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("rewinddir", dirp);
+	TC_ASSERT("opendir", dirp);
 
 	count = 0;
 	while (1) {
@@ -623,8 +623,8 @@ static void fs_vfs_rewinddir_tc(void)
 		count++;
 	}
 	ret = closedir(dirp);
-	TC_ASSERT_EQ("readdir", ret, OK);
-	TC_ASSERT_EQ("readdir", count, VFS_LOOP_COUNT * 2);
+	TC_ASSERT_EQ("closedir", ret, OK);
+	TC_ASSERT_EQ("rewinddir", count, VFS_LOOP_COUNT * 2);
 	TC_SUCCESS_RESULT();
 }
 
@@ -645,19 +645,21 @@ static void fs_vfs_seekdir_tc(void)
 	char filename[1];
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("seekdir", dirp);
+	TC_ASSERT("opendir", dirp);
 
 	offset = 2;
 	seekdir(dirp, offset);
+	TC_ASSERT_CLEANUP("seekdir", dirp, ERROR_MSG_OP_FAILED, closedir(dirp));
 	dirent = readdir(dirp);
-	TC_ASSERT("seekdir", dirent);
-
-	itoa((int)offset, filename, 10);
-	TC_ASSERT_EQ("seekdir", dirent->d_type, DTYPE_DIRECTORY);
-	TC_ASSERT_EQ("seekdir", strncmp(dirent->d_name, filename, 1), 0);
+	TC_ASSERT_CLEANUP("readdir", dirent, ERROR_MSG_OP_FAILED, closedir(dirp));
+	TC_ASSERT_EQ_CLEANUP("readdir", dirent->d_type, DTYPE_DIRECTORY, ERROR_MSG_OP_FAILED, closedir(dirp));
 
 	ret = closedir(dirp);
-	TC_ASSERT_EQ("readdir", ret, OK);
+	TC_ASSERT_EQ("closedir", ret, OK);
+
+	itoa((int)offset, filename, 10);
+	TC_ASSERT_EQ("readdir", strncmp(dirent->d_name, filename, 1), 0);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -677,7 +679,7 @@ static void fs_libc_dirent_readdir_r_tc(void)
 	struct dirent *result;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("seekdir", dirp);
+	TC_ASSERT("opendir", dirp);
 
 	count = 0;
 	while (1) {
@@ -688,7 +690,7 @@ static void fs_libc_dirent_readdir_r_tc(void)
 		count++;
 	}
 	ret = closedir(dirp);
-	TC_ASSERT_EQ("readdir_r", ret, OK);
+	TC_ASSERT_EQ("closedir", ret, OK);
 	TC_ASSERT_EQ("readdir_r", count, VFS_LOOP_COUNT);
 	TC_SUCCESS_RESULT();
 }
@@ -708,14 +710,16 @@ static void fs_libc_dirent_telldir_tc(void)
 	int ret;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("telldir", dirp);
+	TC_ASSERT("opendir", dirp);
 
 	offset = 2;
 	seekdir(dirp, offset);
+	TC_ASSERT_CLEANUP("seekdir", dirp, ERROR_MSG_OP_FAILED, closedir(dirp));
 	res = telldir(dirp);
-	TC_ASSERT_EQ("telldir", res, offset);
+	TC_ASSERT_EQ_CLEANUP("telldir", res, offset, ERROR_MSG_OP_FAILED, closedir(dirp));
 	ret = closedir(dirp);
-	TC_ASSERT_EQ("telldir", ret, OK);
+	TC_ASSERT_EQ("closedir", ret, OK);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -733,7 +737,7 @@ static void fs_vfs_closedir_tc(void)
 	DIR *dirp;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("closedir", dirp);
+	TC_ASSERT("opendir", dirp);
 
 	ret = closedir(dirp);
 	TC_ASSERT_EQ("closedir", ret, OK);
@@ -844,18 +848,16 @@ static void fs_vfs_mkfifo_tc(void)
 	int count;
 	char buf[12];
 	size_t size;
-	bool result = false;
 	g_thread_result = true;
 
 	ret = mkfifo(FIFO_FILE_PATH, 0666);
-	result = (ret >= 0) || (ret == -EEXIST);
-	TC_ASSERT("mkfifo", result);
+	TC_ASSERT("mkfifo", (ret >= 0) || (ret == -EEXIST));
 
 	fd = open(FIFO_FILE_PATH, O_WRONLY);
-	TC_ASSERT_GEQ("mkfifo", fd, 0);
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	ret = pthread_create(&tid, NULL, (pthread_startroutine_t)mkfifo_test_listener, NULL);
-	TC_ASSERT_EQ_CLEANUP("mkfifo", ret, 0, ERROR_MSG_OP_FAILED, close(fd));
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret, 0, ERROR_MSG_OP_FAILED, close(fd));
 
 	size = strlen(FIFO_DATA) + 2;
 	count = 1;
@@ -865,7 +867,7 @@ static void fs_vfs_mkfifo_tc(void)
 		}
 		snprintf(buf, size, "%s%d\0", FIFO_DATA, count);
 		ret = write(fd, buf, size);
-		TC_ASSERT_GT_CLEANUP("mkfifo", ret, 0, ERROR_MSG_BAD_SIZE, goto errout);
+		TC_ASSERT_GT_CLEANUP("write", ret, 0, ERROR_MSG_BAD_SIZE, goto errout);
 		count++;
 		sleep(5);
 	}
@@ -898,14 +900,14 @@ static void fs_vfs_sendfile_tc(void)
 	snprintf(dest_file, 12, "%s_dest", src_file);
 
 	fd1 = open(src_file, O_RDONLY);
-	TC_ASSERT_GEQ("sendfile", fd1, 0);
+	TC_ASSERT_GEQ("open", fd1, 0);
 
 	ret = stat(src_file, &st);
-	TC_ASSERT_EQ("sendfile", ret, OK);
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, ERROR_MSG_OP_FAILED, close(fd1));
 
 	size = st.st_size;
 	fd2 = open(dest_file, O_WRONLY | O_CREAT);
-	TC_ASSERT_GEQ_CLEANUP("sendfile", fd2, 0, ERROR_MSG_BAD_FD, close(fd1));
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, ERROR_MSG_BAD_FD, close(fd1));
 
 	ret = sendfile(fd2, fd1, 0, size);
 	close(fd1);
@@ -913,8 +915,8 @@ static void fs_vfs_sendfile_tc(void)
 	TC_ASSERT_EQ("sendfile", ret, size);
 
 	ret = stat(dest_file, &st);
-	TC_ASSERT_EQ("sendfile", ret, OK);
-	TC_ASSERT_EQ("sendfile", size, st.st_size);
+	TC_ASSERT_EQ("stat", ret, OK);
+	TC_ASSERT_EQ("stat", size, st.st_size);
 	TC_SUCCESS_RESULT();
 }
 
@@ -931,7 +933,7 @@ static void fs_vfs_fcntl_tc(void)
 	int fd, mode;
 	char *filename = VFS_FILE_PATH;
 	fd = open(filename, O_WROK);
-	TC_ASSERT_GEQ("fcntl", fd, 0);
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	mode = fcntl(fd, F_GETFL, 0) & O_ACCMODE;
 	close(fd);
@@ -1063,7 +1065,7 @@ static void fs_vfs_ioctl_tc(void)
 	long size;
 
 	fd = open("/dev/console", O_RDWR);
-	TC_ASSERT_GEQ("ioctl", fd, 0);
+	TC_ASSERT_GEQ("open", fd, 0);
 	ret = ioctl(fd, FIONREAD, &size);
 	close(fd);
 	TC_ASSERT_EQ("ioctl", ret, OK);
@@ -1085,7 +1087,7 @@ static void libc_stdio_fdopen_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fd = open(filename, O_WROK | O_CREAT);
-	TC_ASSERT_GEQ("fdopen", fd, 0);
+	TC_ASSERT_GEQ("open", fd, 0);
 
 	fp = fdopen(fd, "r");
 	TC_ASSERT_CLEANUP("fdopen", fp, ERROR_MSG_OP_FAILED, close(fd));
@@ -1111,6 +1113,7 @@ static void libc_stdio_fopen_tc(void)
 	fp = fopen(filename, "w");
 	TC_ASSERT("fopen", fp);
 	fclose(fp);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1129,7 +1132,7 @@ static void libc_stdio_fclose_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fclose", fp);
+	TC_ASSERT("fopen", fp);
 	ret = fclose(fp);
 	TC_ASSERT_EQ("fclose", ret, OK);
 	TC_SUCCESS_RESULT();
@@ -1150,8 +1153,9 @@ static void libc_stdio_fputs_tc(void)
 	char *str = VFS_TEST_CONTENTS_1;
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fputs", fp);
-	TC_ASSERT_EQ_CLEANUP("fputs", fputs(str, fp), strlen(str), ERROR_MSG_BAD_SIZE, fclose(fp));
+	TC_ASSERT("fopen", fp);
+	TC_ASSERT_EQ_CLEANUP("fputs", fputs(str, fp), strlen(str), ERROR_MSG_OP_FAILED, fclose(fp));
+
 	fclose(fp);
 	TC_SUCCESS_RESULT();
 }
@@ -1171,13 +1175,13 @@ static void libc_stdio_fgets_tc(void)
 	char buf[20];
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fgets", fp);
+	TC_ASSERT("fopen", fp);
 
 	memset(buf, 0, sizeof(buf));
-	TC_ASSERT_CLEANUP("fgets", fgets(buf, 20, fp), ERROR_MSG_BAD_SIZE, fclose(fp));
+	TC_ASSERT_CLEANUP("fgets", fgets(buf, 20, fp), ERROR_MSG_OP_FAILED, fclose(fp));
+	TC_ASSERT_EQ_CLEANUP("fgets", strcmp(buf, VFS_TEST_CONTENTS_1), 0, ERROR_MSG_DIFFRENT_CONTENTS, fclose(fp));
 
 	fclose(fp);
-	TC_ASSERT_EQ("fgets", strcmp(buf, VFS_TEST_CONTENTS_1), 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1197,15 +1201,15 @@ static void libc_stdio_fseek_tc(void)
 	char buf[20];
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fseek", fp);
+	TC_ASSERT("fopen", fp);
 
 	ret = fseek(fp, 5, SEEK_SET);
 	TC_ASSERT_EQ_CLEANUP("fseek", ret, OK, ERROR_MSG_OP_FAILED, fclose(fp));
 
 	memset(buf, 0, sizeof(buf));
-	TC_ASSERT_CLEANUP("fseek", fgets(buf, 20, fp), ERROR_MSG_BAD_SIZE, fclose(fp));
+	TC_ASSERT_CLEANUP("fgets", fgets(buf, 20, fp), ERROR_MSG_OP_FAILED, fclose(fp));
 	fclose(fp);
-	TC_ASSERT_EQ("fseek", strcmp(buf, "IS VFS TEST 1"), 0);
+	TC_ASSERT_EQ("fgets", strcmp(buf, "IS VFS TEST 1"), 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1225,14 +1229,15 @@ static void libc_stdio_ftell_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("ftell", fp);
+	TC_ASSERT("fopen", fp);
 
 	ret = fseek(fp, 5, SEEK_SET);
-	TC_ASSERT_EQ_CLEANUP("ftell", ret, OK, ERROR_MSG_OP_FAILED, fclose(fp));
+	TC_ASSERT_EQ_CLEANUP("fseek", ret, OK, ERROR_MSG_OP_FAILED, fclose(fp));
 
 	ret = ftell(fp);
 	fclose(fp);
 	TC_ASSERT_EQ("ftell", ret, 5);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1250,10 +1255,10 @@ static void libc_stdio_feof_tc(void)
 	char *filename = LONG_FILE_PATH;
 	char buf[32];
 
-	TC_ASSERT_NEQ("feof", make_long_file(), ERROR);
+	TC_ASSERT_NEQ("make_long_file", make_long_file(), ERROR);
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("feof", fp);
+	TC_ASSERT("fopen", fp);
 
 	/* Print contents of long file, if below became infinite loop, it means failed */
 	while (!feof(fp)) {
@@ -1282,7 +1287,7 @@ static void libc_stdio_fprintf_tc(void)
 	int ret;
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("fprintf", fp);
+	TC_ASSERT("fopen", fp);
 
 	ret = fprintf(fp, "%s", str);
 	fclose(fp);
@@ -1306,16 +1311,17 @@ static void libc_stdio_fsetpos_tc(void)
 	int ch, ret;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fsetpos", fp);
+	TC_ASSERT("fopen", fp);
 
 	ret = fsetpos(fp, &pos);
 	TC_ASSERT_EQ_CLEANUP("fsetpos", ret, OK, ERROR_MSG_OP_FAILED, fclose(fp));
 
 	ch = fgetc(fp);
-	fclose(fp);
-	TC_ASSERT_NEQ("fsetpos", ch, EOF);
+
+	TC_ASSERT_NEQ_CLEANUP("fgetc", ch, EOF, ERROR_MSG_OP_FAILED, fclose(fp));
 	/* 'S' is 4th position of "THIS IS VFS TEST 2" */
-	TC_ASSERT_EQ("fsetpos", ch, 'S');
+	TC_ASSERT_EQ_CLEANUP("fgetc", ch, 'S', ERROR_MSG_OP_FAILED, fclose(fp));
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1335,13 +1341,15 @@ static void libc_stdio_fgetpos_tc(void)
 	int ret;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fsetpos", fp);
+	TC_ASSERT("fopen", fp);
 
 	ret = fsetpos(fp, &pos);
-	TC_ASSERT_EQ_CLEANUP("fgetpos", ret, OK, ERROR_MSG_OP_FAILED, fclose(fp));
+	TC_ASSERT_EQ_CLEANUP("fsetpos", ret, OK, ERROR_MSG_OP_FAILED, fclose(fp));
 
 	ret = fgetpos(fp, &pos);
 	fclose(fp);
+	TC_ASSERT_EQ("fgetpos", ret, OK);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1360,7 +1368,7 @@ static void libc_stdio_fputc_tc(void)
 	int ret;
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("fputc", fp);
+	TC_ASSERT("fopen", fp);
 
 	ret = fputc('S', fp);
 	fclose(fp);
@@ -1407,7 +1415,7 @@ static void libc_stdio_fwrite_tc(void)
 	int len, ret;
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("fwrite", fp);
+	TC_ASSERT("fopen", fp);
 
 	len = strlen(VFS_TEST_CONTENTS_1);
 	ret = fwrite(VFS_TEST_CONTENTS_1, 1, len, fp);
@@ -1441,7 +1449,7 @@ static void libc_stdio_fread_tc(void)
 	int len, ret;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fread", fp);
+	TC_ASSERT("fopen", fp);
 
 	len = strlen(VFS_TEST_CONTENTS_1);
 	memset(buf, 0, sizeof(buf));
@@ -1480,10 +1488,10 @@ static void libc_stdio_ferror_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("ferror", fp);
+	TC_ASSERT("fopen", fp);
 
 	ret = fputc(32, fp);
-	TC_ASSERT_EQ_CLEANUP("ferror", ret, EOF, ERROR_MSG_OP_FAILED, fclose(fp));
+	TC_ASSERT_EQ_CLEANUP("fputc", ret, EOF, ERROR_MSG_OP_FAILED, fclose(fp));
 
 	ret = ferror(fp);
 	fclose(fp);
@@ -1508,10 +1516,10 @@ static void libc_stdio_clearerr_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("ferror", fp);
+	TC_ASSERT("fopen", fp);
 
 	ret = fputc(32, fp);
-	TC_ASSERT_EQ_CLEANUP("ferror", ret, EOF, ERROR_MSG_OP_FAILED, fclose(fp));
+	TC_ASSERT_EQ_CLEANUP("fputc", ret, EOF, ERROR_MSG_OP_FAILED, fclose(fp));
 
 	ret = ferror(fp);
 	TC_ASSERT_NEQ_CLEANUP("ferror", ret, OK, ERROR_MSG_OP_FAILED, fclose(fp));
@@ -1575,11 +1583,12 @@ static void libc_stdio_fileno_tc(void)
 	int fd;
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fileno", fp);
+	TC_ASSERT("fopen", fp);
 
 	fd = fileno(fp);
 	fclose(fp);
 	TC_ASSERT_GEQ("fileno", fd, 0);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1599,27 +1608,26 @@ static void libc_stdio_ungetc_tc(void)
 	int ch1, ch2;
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("ungetc", fp);
+	TC_ASSERT("fopen", fp);
 
 	ret = fputc(32, fp);
 	fclose(fp);
-	TC_ASSERT_NEQ("ungetc", ret, EOF);
-
+	TC_ASSERT_NEQ("fputc", ret, EOF);
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("ungetc", fp);
+	TC_ASSERT("fopen", fp);
 
 	ch1 = fgetc(fp);
-	TC_ASSERT_NEQ_CLEANUP("ungetc", ch1, EOF, ERROR_MSG_DIFFRENT_CONTENTS, fclose(fp));
+	TC_ASSERT_NEQ_CLEANUP("fgetc", ch1, EOF, ERROR_MSG_DIFFRENT_CONTENTS, fclose(fp));
 
 	ret = ungetc(64, fp);
 	TC_ASSERT_NEQ_CLEANUP("ungetc", ret, EOF, ERROR_MSG_OP_FAILED, fclose(fp));
 
 	ch2 = fgetc(fp);
 	fclose(fp);
-	TC_ASSERT_NEQ("ungetc", ch2, EOF);
+	TC_ASSERT_NEQ("fgetc", ch2, EOF);
 
-	TC_ASSERT_NEQ("ungetc", ch1, ch2);
+	TC_ASSERT_NEQ("fgetc", ch1, ch2);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1696,7 +1704,6 @@ static int fs_sample_launcher(int argc, char **args)
 	return total_pass;
 }
 
-
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -1717,6 +1724,3 @@ int fs_main(int argc, char *argv[])
 
 	return 0;
 }
-
-
-
