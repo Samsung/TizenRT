@@ -224,7 +224,7 @@ static void *thread_kill_func_callback(void *param)
 		tckndbg("sigaction failed, status=%d\n", status);
 	}
 	sleep(SEC_5);
-	act.sa_sigaction = SIG_DFL;
+	act.sa_handler = SIG_DFL;
 	(void)sigaction(SIGUSR1, &act, NULL);
 
 	tcknvdbg("done\n");
