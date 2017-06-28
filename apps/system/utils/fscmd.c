@@ -127,14 +127,13 @@ typedef struct fscmd_redirection redirection_t;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
 static void fscmd_free(FAR char *path)
 {
 	if (path) {
 		free(path);
 	}
 }
-
+#ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: tash_cat
  *
@@ -295,7 +294,8 @@ error:
 
 	return 0;
 }
-
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: tash_cd
  *
@@ -333,7 +333,8 @@ static int tash_cd(int argc, char **args)
 
 	return ret;
 }
-
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: foreach_direntry
  *
@@ -626,7 +627,8 @@ static int tash_ls(int argc, char **args)
 
 	return ret;
 }
-
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: tash_mkdir
  *
@@ -652,7 +654,7 @@ static int tash_mkdir(int argc, char **args)
 
 	return ret;
 }
-
+#endif
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 #ifdef CONFIG_RAMDISK
 /****************************************************************************
@@ -813,6 +815,7 @@ static int tash_mksmartfs(int argc, char **args)
 }
 #endif							/* END OF CONFIG FS_SMARTFS */
 
+#ifndef CONFIG_DISABLE_ENVIRON
 static int mount_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
 {
 	char *fstype;
@@ -940,7 +943,8 @@ errout:
 
 	return ret;
 }
-
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: tash_umount
  *
@@ -965,8 +969,10 @@ static int tash_umount(int argc, char **args)
 
 	return ret;
 }
+#endif
 #endif							/* END OF CONFIG_DISABLE_MOUNTPOINT */
 
+#ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: tash_pwd
  *
@@ -982,7 +988,8 @@ static int tash_pwd(int argc, char **args)
 
 	return 0;
 }
-
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: tash_rm
  *
@@ -1008,7 +1015,8 @@ static int tash_rm(int argc, char **args)
 
 	return ret;
 }
-
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: tash_rmdir
  *
@@ -1034,14 +1042,13 @@ static int tash_rmdir(int argc, char **args)
 
 	return ret;
 }
-
+#endif
 static int df_handler(FAR const char *mountpoint, FAR struct statfs *statbuf, FAR void *arg)
 {
 	printf("%6ld %8ld %8ld  %8ld %s\n", statbuf->f_bsize, statbuf->f_blocks, statbuf->f_blocks - statbuf->f_bavail, statbuf->f_bavail, mountpoint);
 
 	return OK;
 }
-
 static const char *get_fstype(FAR struct statfs *statbuf)
 {
 	FAR const char *fstype;
@@ -1186,10 +1193,18 @@ static int tash_df(int argc, char **args)
 }
 
 const static tash_cmdlist_t fs_utilcmds[] = {
+#ifndef CONFIG_DISABLE_ENVIRON
 	{"cat",       tash_cat,       TASH_EXECMD_SYNC},
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 	{"cd",        tash_cd,        TASH_EXECMD_SYNC},
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 	{"ls",        tash_ls,        TASH_EXECMD_SYNC},
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 	{"mkdir",     tash_mkdir,     TASH_EXECMD_SYNC},
+#endif
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 #ifdef CONFIG_RAMDISK
 	{"mkrd",      tash_mkrd,      TASH_EXECMD_SYNC},
@@ -1197,12 +1212,22 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 #ifdef CONFIG_FS_SMARTFS
 	{"mksmartfs", tash_mksmartfs, TASH_EXECMD_SYNC},
 #endif
+#ifndef CONFIG_DISABLE_ENVIRON
 	{"mount",     tash_mount,     TASH_EXECMD_SYNC},
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 	{"umount",    tash_umount,    TASH_EXECMD_SYNC},
 #endif
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 	{"pwd",       tash_pwd,       TASH_EXECMD_SYNC},
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 	{"rm",        tash_rm,        TASH_EXECMD_SYNC},
+#endif
+#ifndef CONFIG_DISABLE_ENVIRON
 	{"rmdir",     tash_rmdir,     TASH_EXECMD_SYNC},
+#endif
 	{"df",        tash_df,        TASH_EXECMD_SYNC},
 	{NULL,        NULL,           0}
 };
