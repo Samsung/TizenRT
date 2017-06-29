@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /********************************************************************************
- * kernel/pthread/pthread_barriedestroy.c
+ * libc/pthread/pthread_once.c
  *
  *   Copyright (C) 2007, 2009 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -56,13 +56,14 @@
 
 #include <tinyara/config.h>
 
+#include <stdbool.h>
 #include <pthread.h>
-#include <semaphore.h>
+#include <sched.h>
 #include <errno.h>
 #include <debug.h>
 
 /********************************************************************************
- * Definitions
+ * Pre-processor Definitions
  ********************************************************************************/
 
 /********************************************************************************
@@ -86,39 +87,56 @@
  ********************************************************************************/
 
 /********************************************************************************
- * Name: pthread_barrier_destroy
+ * Name: pthread_once
  *
  * Description:
- *   The pthread_barrier_destroy() function destroys the barrier referenced by
- *   'barrier' and releases any resources used by the barrier. The effect of
- *   subsequent use of the barrier is undefined until the barrier is
- *   reinitialized by another call to pthread_barrier_init(). The results are
- *   undefined if pthread_barrier_destroy() is called when any thread is blocked
- *   on the barrier, or if this function is called with an uninitialized barrier.
+ *   The  first call to pthread_once() by any thread with a given once_control,
+ *   will call the init_routine with no arguments. Subsequent calls to
+ *   pthread_once() with the same once_control will have no effect.  On return
+ *   from pthread_once(), init_routine will have completed.
  *
  * Parameters:
- *   barrier - barrier to be destroyed.
+ *   once_control - Determines if init_routine should be called.  once_control
+ *      should be declared and initializeed as follows:
+ *
+ *        pthread_once_t once_control = PTHREAD_ONCE_INIT;
+ *
+ *       PTHREAD_ONCE_INIT is defined in pthread.h
+ *   init_routine - The initialization routine that will be called once.
  *
  * Return Value:
- *   0 (OK) on success or on of the following error numbers:
- *
- *   EBUSY  The implementation has detected an attempt to destroy a barrier while
- *           it is in use.
- *   EINVAL The value specified by barrier is invalid.
+ *   0 (OK) on success or EINVAL if either once_control or init_routine are
+ *   invalid
  *
  * Assumptions:
  *
  ********************************************************************************/
 
-int pthread_barrier_destroy(FAR pthread_barrier_t *barrier)
+int pthread_once(FAR pthread_once_t *once_control, CODE void (*init_routine)(void))
 {
-	int ret = OK;
+	/* Sanity checks */
 
-	if (!barrier) {
-		ret = EINVAL;
-	} else {
-		sem_destroy(&barrier->sem);
-		barrier->count = 0;
+	if (once_control && init_routine) {
+		/* Prohibit pre-emption while we test and set the once_control */
+
+		sched_lock();
+		if (!*once_control) {
+			*once_control = true;
+
+			/* Call the init_routine with pre-emption enabled. */
+
+			sched_unlock();
+			init_routine();
+			return OK;
+		}
+
+		/* The init_routine has already been called.  Restore pre-emption and return */
+
+		sched_unlock();
+		return OK;
 	}
-	return ret;
+
+	/* One of the two arguments is NULL */
+
+	return EINVAL;
 }

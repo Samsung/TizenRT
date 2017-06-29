@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /********************************************************************************
- * kernel/pthread/pthread_barrierwait.c
+ * libc/pthread/pthread_barriedestroy.c
  *
- *   Copyright (C) 2007, 2009, 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2009 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,6 @@
 
 #include <pthread.h>
 #include <semaphore.h>
-#include <sched.h>
 #include <errno.h>
 #include <debug.h>
 
@@ -87,105 +86,39 @@
  ********************************************************************************/
 
 /********************************************************************************
- * Name: pthread_barrier_wait
+ * Name: pthread_barrier_destroy
  *
  * Description:
- *   The pthread_barrier_wait() function synchronizse participating threads at
- *   the barrier referenced by 'barrier'.  The calling thread is blocked until
- *   the required number of threads have called pthread_barrier_wait() specifying
- *   the same 'barrier'.  When the required number of threads have called
- *   pthread_barrier_wait() specifying the 'barrier', the constant
- *   PTHREAD_BARRIER_SERIAL_THREAD will be returned to one unspecified thread
- *   and zero will be returned to each of the remaining threads. At this point,
- *   the barrier will be reset to the state it had as a result of the most recent
- *   pthread_barrier_init() function that referenced it.
- *
- *   The constant PTHREAD_BARRIER_SERIAL_THREAD is defined in pthread.h and its
- *   value must be distinct from any other value returned by pthread_barrier_wait().
- *
- *   The results are undefined if this function is called with an uninitialized
- *   barrier.
- *
- *   If a signal is delivered to a thread blocked on a barrier, upon return from
- *   the signal handler the thread will resume waiting at the barrier if the barrier
- *   wait has not completed; otherwise, the thread will continue as normal from
- *   the completed barrier wait. Until the thread in the signal handler returns
- *   from it, it is unspecified whether other threads may proceed past the barrier
- *   once they have all reached it.
- *
- *   A thread that has blocked on a barrier will not prevent any unblocked thread
- *   that is eligible to use the same processing resources from eventually making
- *   forward progress in its execution.  Eligibility for processing resources will
- *   be determined by the scheduling policy.
+ *   The pthread_barrier_destroy() function destroys the barrier referenced by
+ *   'barrier' and releases any resources used by the barrier. The effect of
+ *   subsequent use of the barrier is undefined until the barrier is
+ *   reinitialized by another call to pthread_barrier_init(). The results are
+ *   undefined if pthread_barrier_destroy() is called when any thread is blocked
+ *   on the barrier, or if this function is called with an uninitialized barrier.
  *
  * Parameters:
- *   barrier - the barrier to wait on
+ *   barrier - barrier to be destroyed.
  *
  * Return Value:
- *   0 (OK) on success or EINVAL if the barrier is not valid.
+ *   0 (OK) on success or on of the following error numbers:
+ *
+ *   EBUSY  The implementation has detected an attempt to destroy a barrier while
+ *           it is in use.
+ *   EINVAL The value specified by barrier is invalid.
  *
  * Assumptions:
  *
  ********************************************************************************/
 
-int pthread_barrier_wait(FAR pthread_barrier_t *barrier)
+int pthread_barrier_destroy(FAR pthread_barrier_t *barrier)
 {
-	int semcount;
 	int ret = OK;
 
 	if (!barrier) {
-		return EINVAL;
-	}
-
-	/* Disable pre-emption throughout the following */
-
-	sched_lock();
-
-	/* Find out how many threads are already waiting at the barrier */
-
-	ret = sem_getvalue(&barrier->sem, &semcount);
-	if (ret != OK) {
-		sched_unlock();
-		return EINVAL;
-	}
-
-	/* If the number of waiters would be equal to the count, then we are done */
-
-	if ((1 - semcount) >= (int)barrier->count) {
-		/* Free all of the waiting threads */
-
-		while (semcount < 0) {
-			(void)sem_post(&barrier->sem);
-			(void)sem_getvalue(&barrier->sem, &semcount);
-		}
-
-		/* Then return PTHREAD_BARRIER_SERIAL_THREAD to the final thread */
-
-		sched_unlock();
-		return PTHREAD_BARRIER_SERIAL_THREAD;
+		ret = EINVAL;
 	} else {
-		/* Otherwise, this thread must wait as well */
-
-		while (sem_wait(&barrier->sem) != OK) {
-			/* If the thread is awakened by a signal, just continue to wait */
-
-			int errornumber = get_errno();
-			if (errornumber != EINTR) {
-				/* If it is awakened by some other error, then there is a
-				 * problem
-				 */
-
-				sched_unlock();
-				return errornumber;
-			}
-		}
-
-		/* We will only get here when we are one of the N-1 threads that were
-		 * waiting for the final thread at the barrier.  We just need to return
-		 * zero.
-		 */
-
-		sched_unlock();
-		return 0;
+		sem_destroy(&barrier->sem);
+		barrier->count = 0;
 	}
+	return ret;
 }

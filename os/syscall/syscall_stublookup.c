@@ -257,14 +257,8 @@ uintptr_t STUB_shmdt(int nbr, uintptr_t parm1);
 
 /* The following are defined if pthreads are enabled */
 
-uintptr_t STUB_pthread_barrier_destroy(int nbr, uintptr_t parm1);
-uintptr_t STUB_pthread_barrier_init(int nbr, uintptr_t parm1,
-									uintptr_t parm2, uintptr_t parm3);
-uintptr_t STUB_pthread_barrier_wait(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_cancel(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_cond_broadcast(int nbr, uintptr_t parm1);
-uintptr_t STUB_pthread_cond_destroy(int nbr, uintptr_t parm1);
-uintptr_t STUB_pthread_cond_init(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_pthread_cond_signal(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_cond_wait(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_pthread_create(int nbr, uintptr_t parm1, uintptr_t parm2,
@@ -284,7 +278,6 @@ uintptr_t STUB_pthread_mutex_init(int nbr, uintptr_t parm1,
 uintptr_t STUB_pthread_mutex_lock(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_mutex_trylock(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_mutex_unlock(int nbr, uintptr_t parm1);
-uintptr_t STUB_pthread_once(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_pthread_setcancelstate(int nbr, uintptr_t parm1,
 									  uintptr_t parm2);
 uintptr_t STUB_pthread_setschedparam(int nbr, uintptr_t parm1,
@@ -293,7 +286,6 @@ uintptr_t STUB_pthread_setschedprio(int nbr, uintptr_t parm1,
 									uintptr_t parm2);
 uintptr_t STUB_pthread_setspecific(int nbr, uintptr_t parm1,
 								   uintptr_t parm2);
-uintptr_t STUB_pthread_yield(int nbr);
 
 uintptr_t STUB_pthread_cond_timedwait(int nbr, uintptr_t parm1,
 									  uintptr_t parm2, uintptr_t parm3);

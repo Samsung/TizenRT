@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/pthread/pthread_conddestroy.c
+ * libc/pthread/pthread_conddestroy.c
  *
  *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -59,7 +59,6 @@
 #include <pthread.h>
 #include <debug.h>
 #include <errno.h>
-#include "pthread/pthread.h"
 
 /****************************************************************************
  * Global Functions

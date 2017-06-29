@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /********************************************************************************
- * kernel/pthread/pthread_once.c
+ * libc/pthread/pthread_barrierwait.c
  *
- *   Copyright (C) 2007, 2009 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2009, 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,14 +56,14 @@
 
 #include <tinyara/config.h>
 
-#include <stdbool.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <sched.h>
 #include <errno.h>
 #include <debug.h>
 
 /********************************************************************************
- * Pre-processor Definitions
+ * Definitions
  ********************************************************************************/
 
 /********************************************************************************
@@ -87,56 +87,106 @@
  ********************************************************************************/
 
 /********************************************************************************
- * Name: pthread_once
+ * Name: pthread_barrier_wait
  *
  * Description:
- *   The  first call to pthread_once() by any thread with a given once_control,
- *   will call the init_routine with no arguments. Subsequent calls to
- *   pthread_once() with the same once_control will have no effect.  On return
- *   from pthread_once(), init_routine will have completed.
+ *   The pthread_barrier_wait() function synchronizse participating threads at
+ *   the barrier referenced by 'barrier'.  The calling thread is blocked until
+ *   the required number of threads have called pthread_barrier_wait() specifying
+ *   the same 'barrier'.  When the required number of threads have called
+ *   pthread_barrier_wait() specifying the 'barrier', the constant
+ *   PTHREAD_BARRIER_SERIAL_THREAD will be returned to one unspecified thread
+ *   and zero will be returned to each of the remaining threads. At this point,
+ *   the barrier will be reset to the state it had as a result of the most recent
+ *   pthread_barrier_init() function that referenced it.
+ *
+ *   The constant PTHREAD_BARRIER_SERIAL_THREAD is defined in pthread.h and its
+ *   value must be distinct from any other value returned by pthread_barrier_wait().
+ *
+ *   The results are undefined if this function is called with an uninitialized
+ *   barrier.
+ *
+ *   If a signal is delivered to a thread blocked on a barrier, upon return from
+ *   the signal handler the thread will resume waiting at the barrier if the barrier
+ *   wait has not completed; otherwise, the thread will continue as normal from
+ *   the completed barrier wait. Until the thread in the signal handler returns
+ *   from it, it is unspecified whether other threads may proceed past the barrier
+ *   once they have all reached it.
+ *
+ *   A thread that has blocked on a barrier will not prevent any unblocked thread
+ *   that is eligible to use the same processing resources from eventually making
+ *   forward progress in its execution.  Eligibility for processing resources will
+ *   be determined by the scheduling policy.
  *
  * Parameters:
- *   once_control - Determines if init_routine should be called.  once_control
- *      should be declared and initializeed as follows:
- *
- *        pthread_once_t once_control = PTHREAD_ONCE_INIT;
- *
- *       PTHREAD_ONCE_INIT is defined in pthread.h
- *   init_routine - The initialization routine that will be called once.
+ *   barrier - the barrier to wait on
  *
  * Return Value:
- *   0 (OK) on success or EINVAL if either once_control or init_routine are
- *   invalid
+ *   0 (OK) on success or EINVAL if the barrier is not valid.
  *
  * Assumptions:
  *
  ********************************************************************************/
 
-int pthread_once(FAR pthread_once_t *once_control, CODE void (*init_routine)(void))
+int pthread_barrier_wait(FAR pthread_barrier_t *barrier)
 {
-	/* Sanity checks */
+	int semcount;
+	int ret = OK;
 
-	if (once_control && init_routine) {
-		/* Prohibit pre-emption while we test and set the once_control */
-
-		sched_lock();
-		if (!*once_control) {
-			*once_control = true;
-
-			/* Call the init_routine with pre-emption enabled. */
-
-			sched_unlock();
-			init_routine();
-			return OK;
-		}
-
-		/* The init_routine has already been called.  Restore pre-emption and return */
-
-		sched_unlock();
-		return OK;
+	if (!barrier) {
+		return EINVAL;
 	}
 
-	/* One of the two arguments is NULL */
+	/* Disable pre-emption throughout the following */
 
-	return EINVAL;
+	sched_lock();
+
+	/* Find out how many threads are already waiting at the barrier */
+
+	ret = sem_getvalue(&barrier->sem, &semcount);
+	if (ret != OK) {
+		sched_unlock();
+		return EINVAL;
+	}
+
+	/* If the number of waiters would be equal to the count, then we are done */
+
+	if ((1 - semcount) >= (int)barrier->count) {
+		/* Free all of the waiting threads */
+
+		while (semcount < 0) {
+			(void)sem_post(&barrier->sem);
+			(void)sem_getvalue(&barrier->sem, &semcount);
+		}
+
+		/* Then return PTHREAD_BARRIER_SERIAL_THREAD to the final thread */
+
+		sched_unlock();
+		return PTHREAD_BARRIER_SERIAL_THREAD;
+	} else {
+		/* Otherwise, this thread must wait as well */
+
+		while (sem_wait(&barrier->sem) != OK) {
+			/* If the thread is awakened by a signal, just continue to wait */
+
+			int errornumber = get_errno();
+
+			if (errornumber != EINTR) {
+				/* If it is awakened by some other error, then there is a
+				 * problem
+				 */
+
+				sched_unlock();
+				return errornumber;
+			}
+		}
+
+		/* We will only get here when we are one of the N-1 threads that were
+		 * waiting for the final thread at the barrier.  We just need to return
+		 * zero.
+		 */
+
+		sched_unlock();
+		return 0;
+	}
 }
