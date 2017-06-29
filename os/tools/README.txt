@@ -131,6 +131,21 @@ mkconfigvars.sh
     -h
        show this help message and exit
 
+mkdefconfig.sh
+--------------
+
+  The shell script expects to have a default configuration sets at build/configs folder when .config file makes and needs to save.
+  Two arguments should be given for board name and configuration name.
+
+  $ tools/mkdefconfig.sh --help
+
+  USAGE: ${0} <board-name> <config-name>
+  Make the default configuration sets at build/config folder from .config
+
+  Where:
+    <board-name> is the name of the board in the configs directory
+    <config-name> is the name of the board configuration sub-directory
+
 mkexport.sh and Makefile.export
 -------------------------------
 
