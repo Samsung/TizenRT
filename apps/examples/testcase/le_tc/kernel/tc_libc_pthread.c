@@ -65,7 +65,7 @@ static int g_race_cond_thread_pos;
 
 /**
 * @fn                   :tc_libc_pthread_pthread_attr_init
-* @brief                :This tc test pthread_attr_init()
+* @brief                :This tc tests pthread_attr_init()
 * @Scenario             :If pthread_attr is NULL, ENOMEM is returned.
 *                        Else, it return OK and pthread_attr is set to default value
 * @API'scovered         :pthread_attr_init
@@ -94,7 +94,7 @@ static void tc_libc_pthread_pthread_attr_init(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_attr_destroy
-* @brief                :This tc test pthread_attr_destroy()
+* @brief                :This tc tests pthread_attr_destroy()
 * @Scenario             :If pthread_attr is NULL, EINVAL is returned.
 *                        Else, it return OK and pthread_attr is set to zero
 * @API'scovered         :pthread_attr_destroy
@@ -123,7 +123,7 @@ static void tc_libc_pthread_pthread_attr_destroy(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_attr_getstacksize
-* @brief                :This tc test pthread_attr_getstacksize()
+* @brief                :This tc tests pthread_attr_getstacksize()
 * @Scenario             :If pthread_attr or stacksize parameter is NULL, EINVAL is returned.
 *                        Else, it return OK and stacksize is set to the stack size of pthread_attr
 * @API'scovered         :pthread_attr_getstacksize
@@ -155,7 +155,7 @@ static void tc_libc_pthread_pthread_attr_getstacksize(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_attr_setstacksize
-* @brief                :This tc test pthread_attr_setstacksize()
+* @brief                :This tc tests pthread_attr_setstacksize()
 * @Scenario             :If pthread_attr is NULL or stacksize is under PTHREAD_STACK_MIN , EINVAL is returned.
 *                        Else, it return OK and stacksize of pthread_attr is set to stacksize parameter.
 * @API'scovered         :pthread_attr_setstacksize
@@ -185,7 +185,7 @@ static void tc_libc_pthread_pthread_attr_setstacksize(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_attr_getschedparam
-* @brief                :This tc test pthread_attr_getschedparam()
+* @brief                :This tc tests pthread_attr_getschedparam()
 * @Scenario             :If pthread_attr or sched_param parameter is NULL, EINVAL is returned.
 *                        Else, it return OK and sched_priority of sched_param is set to the priority of pthread_attr
 * @API'scovered         :pthread_attr_getschedparam
@@ -217,7 +217,7 @@ static void tc_libc_pthread_pthread_attr_getschedparam(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_attr_setschedparam
-* @brief                :This tc test pthread_attr_setschedparam()
+* @brief                :This tc tests pthread_attr_setschedparam()
 * @Scenario             :If pthread_attr or sched_param parameter is NULL, EINVAL is returned.
 *                        Else, it return OK and sched_priority of sched_param is set to the priority of pthread_attr
 * @API'scovered         :pthread_attr_setschedparam
@@ -249,7 +249,7 @@ static void tc_libc_pthread_pthread_attr_setschedparam(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_attr_getschedpolicy
-* @brief                :This tc test pthread_attr_getschedpolicy()
+* @brief                :This tc tests pthread_attr_getschedpolicy()
 * @Scenario             :If pthread_attr or policy is NULL, EINVAL is returned.
 *                        Else, it return OK and policy is set to policy of pthread_attr_t
 * @API'scovered         :pthread_attr_getschedpolicy
@@ -281,7 +281,7 @@ static void tc_libc_pthread_pthread_attr_getschedpolicy(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_attr_setschedpolicy
-* @brief                :This tc test pthread_attr_setschedpolicy()
+* @brief                :This tc tests pthread_attr_setschedpolicy()
 * @Scenario             :If pthread_attr is NULL or policy parameter is invalid, EINVAL is returned.
 *                        Else, it return OK and inheritsched of pthread_attr is set to inheritsched
 * @API'scovered         :pthread_attr_setschedpolicy
@@ -323,7 +323,7 @@ static void tc_libc_pthread_pthread_attr_setschedpolicy(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_attr_getinheritsched
-* @brief                :This tc test pthread_attr_getinheritsched()
+* @brief                :This tc tests pthread_attr_getinheritsched()
 * @Scenario             :If pthread_attr or inheritsched is NULL, EINVAL is returned.
 *                        Else, it return OK and inheritsched is set to inheritsched of pthread_attr_t
 * @API'scovered         :pthread_attr_getinheritsched
@@ -355,7 +355,7 @@ static void tc_libc_pthread_pthread_attr_getinheritsched(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_attr_setinheritsched
-* @brief                :This tc test pthread_attr_setinheritsched()
+* @brief                :This tc tests pthread_attr_setinheritsched()
 * @Scenario             :If pthread_attr is NULL or inheritsched parameter is invalid, EINVAL is returned.
 *                        Else, it return OK and inheritsched of pthread_attr is set to inheritsched
 * @API'scovered         :pthread_attr_setinheritsched
@@ -393,7 +393,7 @@ static void tc_libc_pthread_pthread_attr_setinheritsched(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_barrierattr_init
-* @brief                :This tc test pthread_barrierattr_init()
+* @brief                :This tc tests pthread_barrierattr_init()
 * @Scenario             :If pthread_barrierattr is NULL, EINVAL is returned.
 *                        Else, it return OK and pthread_barrierattr is set to default value
 * @API'scovered         :pthread_barrierattr_init
@@ -419,7 +419,7 @@ static void tc_libc_pthread_pthread_barrierattr_init(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_barrierattr_destroy
-* @brief                :This tc test pthread_barrierattr_destroy()
+* @brief                :This tc tests pthread_barrierattr_destroy()
 * @Scenario             :If pthread_barrierattr_destroy is NULL, EINVAL is returned.
 *                        Else, it return OK and pthread_barrierattr is set to default value
 * @API'scovered         :pthread_barrierattr_destroy
@@ -445,7 +445,7 @@ static void tc_libc_pthread_pthread_barrierattr_destroy(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_barrierattr_getpshared
-* @brief                :This tc test pthread_barrierattr_getpshared()
+* @brief                :This tc tests pthread_barrierattr_getpshared()
 * @Scenario             :If pthread_barrierattr or psahred is NULL, EINVAL is returned.
 *                        Else, it return OK and pshared is set to psahred of pthread_barrierattr
 * @API'scovered         :pthread_barrierattr_getpshared
@@ -481,7 +481,7 @@ static void tc_libc_pthread_pthread_barrierattr_getpshared(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_barrierattr_setpshared
-* @brief                :This tc test pthread_attr_setinheritsched()
+* @brief                :This tc tests pthread_attr_setinheritsched()
 * @Scenario             :If pthread_attr is NULL or inheritsched parameter is invalid, EINVAL is returned.
 *                        Else, it return OK and pshared of pthread_barrierattr is set to pshared.
 * @API'scovered         :pthread_barrierattr_setpshared
@@ -519,7 +519,7 @@ static void tc_libc_pthread_pthread_barrierattr_setpshared(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_condattr_init
-* @brief                :This tc test pthread_condattr_init()
+* @brief                :This tc tests pthread_condattr_init()
 * @Scenario             :If pthread_condattr is NULL, EINVAL is returned.
 *                        Else, it return OK and pthread_condattr is set to 0 value
 * @API'scovered         :pthread_condattr_init
@@ -545,7 +545,7 @@ static void tc_libc_pthread_pthread_condattr_init(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_condattr_destroy
-* @brief                :This tc test pthread_condattr_destroy()
+* @brief                :This tc tests pthread_condattr_destroy()
 * @Scenario             :If pthread_condattr_destroy is NULL, EINVAL is returned.
 *                        Else, it return OK
 * @API'scovered         :pthread_condattr_destroy
@@ -570,7 +570,7 @@ static void tc_libc_pthread_pthread_condattr_destroy(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_mutexattr_init
-* @brief                :This tc test pthread_mutexattr_init()
+* @brief                :This tc tests pthread_mutexattr_init()
 * @Scenario             :If pthread_mutexattr is NULL, EINVAL is returned.
 *                        Else, it return OK and pthread_mutexattr is set to default value
 * @API'scovered         :pthread_mutexattr_init
@@ -606,7 +606,7 @@ static void tc_libc_pthread_pthread_mutexattr_init(void)
 
 /**
 * @fn                   :tc_libc_pthread_pthread_mutexattr_destroy
-* @brief                :This tc test pthread_mutexattr_destroy()
+* @brief                :This tc tests pthread_mutexattr_destroy()
 * @Scenario             :If pthread_condattr_destroy is NULL, EINVAL is returned.
 *                        Else, it return OK
 * @API'scovered         :pthread_mutexattr_destroy
