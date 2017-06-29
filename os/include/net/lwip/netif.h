@@ -84,26 +84,6 @@ struct dhcp;
 struct autoip;
 #endif
 
-/* Temporary Static IP Settings, will be removed once config parameter is finalized and used */
-
-/* Static IP ADDRESS */
-#define IP_ADDR0   192
-#define IP_ADDR1   168
-#define IP_ADDR2   2
-#define IP_ADDR3   10
-
-/* NETMASK */
-#define NETMASK_ADDR0   255
-#define NETMASK_ADDR1   255
-#define NETMASK_ADDR2   255
-#define NETMASK_ADDR3   0
-
-/* Gateway Address */
-#define GW_ADDR0   192
-#define GW_ADDR1   168
-#define GW_ADDR2   2
-#define GW_ADDR3   1
-
 #ifdef __cplusplus
 #define EXTERN extern "C"
 extern "C" {
@@ -363,7 +343,6 @@ extern struct netif *netif_default;
 void netif_init(void);
 
 struct netif *netif_add(struct netif *netif, ip_addr_t *ipaddr, ip_addr_t *netmask, ip_addr_t *gw, void *state, netif_init_fn init, netif_input_fn input);
-void netif_register_with_initial_ip(struct netif *netif, netif_init_fn netif_init);
 
 /**
  * @endcond

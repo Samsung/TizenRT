@@ -849,7 +849,7 @@
 #define POLL_DEBUG	LWIP_DBG_OFF
 #endif
 
-#endif
+#endif /* CONFIG_NET_LWIP_DEBUG */
 /* ---------- Debug options ---------- */
 
 

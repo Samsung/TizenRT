@@ -2451,6 +2451,9 @@ static int enc_reset(FAR struct enc_driver_s *priv)
 
 int enc_initialize(FAR struct spi_dev_s *spi, FAR const struct enc_lower_s *lower, unsigned int devno)
 {
+	struct ip_addr ipaddr;
+	struct ip_addr netmask;
+	struct ip_addr gw;
 	FAR struct enc_driver_s *priv;
 
 	DEBUGASSERT(devno < CONFIG_ENC28J60_NINTERFACES);
@@ -2491,7 +2494,13 @@ int enc_initialize(FAR struct spi_dev_s *spi, FAR const struct enc_lower_s *lowe
 	}
 
 	/* Register the device with the OS so that socket IOCTLs can be performed */
-	netif_register_with_initial_ip(&priv->dev, ethernetif_init);
+	ipaddr.addr = inet_addr("0.0.0.0");
+	netmask.addr = inet_addr("255.255.255.255");
+	gw.addr = inet_addr("0.0.0.0");
+
+	netif_set_default(&priv->dev);
+
+	netif_add(&priv->dev, &ipaddr, &netmask, &gw, NULL, ethernetif_init, tcpip_input);
 
 	return OK;
 }

@@ -63,12 +63,12 @@
 #include <net/lwip/ipv4/igmp.h>
 #include <net/lwip/netif/etharp.h>
 #include <net/lwip/stats.h>
-#if ENABLE_LOOPBACK
 #include <net/lwip/sys.h>
+#if ENABLE_LOOPBACK
 #if LWIP_NETIF_LOOPBACK_MULTITHREADING
 #include <net/lwip/tcpip.h>
-#endif							/* LWIP_NETIF_LOOPBACK_MULTITHREADING */
-#endif							/* ENABLE_LOOPBACK */
+#endif /* LWIP_NETIF_LOOPBACK_MULTITHREADING */
+#endif /* ENABLE_LOOPBACK */
 
 #if LWIP_AUTOIP
 #include <net/lwip/ipv4/autoip.h>
@@ -242,48 +242,6 @@ struct netif *netif_add(struct netif *netif, ip_addr_t *ipaddr, ip_addr_t *netma
 	ip_addr_debug_print(NETIF_DEBUG, gw);
 	LWIP_DEBUGF(NETIF_DEBUG, ("\n"));
 	return netif;
-}
-
-/**
- * Register a network interface to the list of lwIP netifs with initial static IP settings.
- *
- * @param netif a pre-allocated netif structure
- * @param netif_init callback function that initializes the interface
- */
-void netif_register_with_initial_ip(struct netif *netif, netif_init_fn netif_init)
-{
-
-	ip_addr_t ipaddr;
-	ip_addr_t netmask;
-	ip_addr_t gw;
-
-	/* IP address setting */
-
-	IP4_ADDR(&ipaddr, IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-	IP4_ADDR(&netmask, NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-	IP4_ADDR(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-
-	/* - netif_add(struct netif *netif, struct ip_addr *ipaddr,
-	   struct ip_addr *netmask, struct ip_addr *gw,
-	   void *state, err_t (* init)(struct netif *netif),
-	   err_t (* input)(struct pbuf *p, struct netif *netif))
-
-	   Adds your network interface to the netif_list. Allocate a struct
-	   netif and pass a pointer to this structure as the first argument.
-	   Give pointers to cleared ip_addr structures when using DHCP,
-	   or fill them with sane numbers otherwise. The state pointer may be NULL.
-
-	   The init function pointer must point to a initialization function for
-	   your ethernet netif interface. The following code illustrates it's use. */
-
-	netif_add(netif, &ipaddr, &netmask, &gw, NULL, netif_init, &tcpip_input);
-
-	/*  Registers the default network interface. */
-	netif_set_default(netif);
-
-	LWIP_DEBUGF(NETIF_DEBUG, ("netif_register_with_initial_ip: successfully registered network interface %s \n", netif->d_ifname));
-
-	return;
 }
 
 /**
