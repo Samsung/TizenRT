@@ -131,12 +131,12 @@ ssize_t up_progmem_erasepage(size_t page)
 	s5j_sflash_enable_wp();
 
 	/* Invalidate cache */
-	arch_invalidate_dcache(addr, addr + up_progmem_pagesize(page));
+	arch_invalidate_dcache(addr, addr + up_progmem_blocksize());
 
 	/* Restore IRQs */
 	irqrestore(irqs);
 
-	return up_progmem_pagesize(page);
+	return up_progmem_blocksize();
 }
 
 ssize_t up_progmem_ispageerased(size_t page)
