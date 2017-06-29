@@ -135,7 +135,7 @@ int task_restart(pid_t pid)
 
 	/* Check if the task to restart is the calling task */
 
-	rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	rtcb = this_task();
 	if ((pid == 0) || (pid == rtcb->pid)) {
 		/* Not implemented */
 

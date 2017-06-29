@@ -543,7 +543,7 @@ static int sem_restoreholderprio(FAR struct semholder_s *pholder, FAR sem_t *sem
 
 static int sem_restoreholderprioA(FAR struct semholder_s *pholder, FAR sem_t *sem, FAR void *arg)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 	if (pholder->htcb != rtcb) {
 		return sem_restoreholderprio(pholder, sem, arg);
 	}
@@ -561,7 +561,7 @@ static int sem_restoreholderprioA(FAR struct semholder_s *pholder, FAR sem_t *se
 
 static int sem_restoreholderprioB(FAR struct semholder_s *pholder, FAR sem_t *sem, FAR void *arg)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 	if (pholder->htcb == rtcb) {
 		(void)sem_restoreholderprio(pholder, sem, arg);
 		return 1;
@@ -662,7 +662,7 @@ static inline void sem_restorebaseprio_irq(FAR struct tcb_s *stcb, FAR sem_t *se
 
 static inline void sem_restorebaseprio_task(FAR struct tcb_s *stcb, FAR sem_t *sem)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 	FAR struct semholder_s *pholder;
 
 	/* Perform the following actions only if a new thread was given a count.
@@ -857,7 +857,7 @@ void sem_addholder_tcb(FAR struct tcb_s *htcb, FAR sem_t *sem)
  ****************************************************************************/
 void sem_addholder(FAR sem_t *sem)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 	sem_addholder_tcb(rtcb, sem);
 }
 
@@ -879,7 +879,7 @@ void sem_addholder(FAR sem_t *sem)
 
 void sem_boostpriority(FAR sem_t *sem)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 
 	/* Boost the priority of every thread holding counts on this semaphore
 	 * that are lower in priority than the new thread that is waiting for a
@@ -908,7 +908,7 @@ void sem_boostpriority(FAR sem_t *sem)
 
 void sem_releaseholder(FAR sem_t *sem)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 	FAR struct semholder_s *pholder;
 
 	/* Find the container for this holder */

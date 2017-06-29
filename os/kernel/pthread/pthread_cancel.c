@@ -177,7 +177,7 @@ int pthread_cancel(pthread_t thread)
 	 * same as pthread_exit(PTHREAD_CANCELED).
 	 */
 
-	if (tcb == (FAR struct pthread_tcb_s *)g_readytorun.head) {
+	if (tcb == (FAR struct pthread_tcb_s *)this_task()) {
 		pthread_exit(PTHREAD_CANCELED);
 	}
 

@@ -98,7 +98,7 @@
 
 void up_unblock_task(struct tcb_s *tcb)
 {
-	struct tcb_s *rtcb = (struct tcb_s *)g_readytorun.head;
+	struct tcb_s *rtcb = this_task();
 
 	/* Verify that the context switch can be performed */
 
@@ -138,7 +138,7 @@ void up_unblock_task(struct tcb_s *tcb)
 			 * of the g_readytorun task list.
 			 */
 
-			rtcb = (struct tcb_s *)g_readytorun.head;
+			rtcb = this_task();
 
 			/* Then switch contexts */
 
@@ -152,7 +152,7 @@ void up_unblock_task(struct tcb_s *tcb)
 			 * ready to run list.
 			 */
 
-			struct tcb_s *nexttcb = (struct tcb_s *)g_readytorun.head;
+			struct tcb_s *nexttcb = this_task();
 			up_switchcontext(rtcb->xcp.regs, nexttcb->xcp.regs);
 
 			/* up_switchcontext forces a context switch to the task at the

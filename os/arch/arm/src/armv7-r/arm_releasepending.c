@@ -82,7 +82,7 @@
 
 void up_release_pending(void)
 {
-	struct tcb_s *rtcb = (struct tcb_s *)g_readytorun.head;
+	struct tcb_s *rtcb = this_task();
 
 	sllvdbg("From TCB=%p\n", rtcb);
 
@@ -107,7 +107,7 @@ void up_release_pending(void)
 			 * of the g_readytorun task list.
 			 */
 
-			rtcb = (struct tcb_s *)g_readytorun.head;
+			rtcb = this_task();
 
 			/* Then switch contexts.  Any necessary address environment
 			 * changes will be made when the interrupt returns.
@@ -126,7 +126,7 @@ void up_release_pending(void)
 			 * of the g_readytorun task list.
 			 */
 
-			rtcb = (struct tcb_s *)g_readytorun.head;
+			rtcb = this_task();
 
 			/* Then switch contexts */
 			up_fullcontextrestore(rtcb->xcp.regs);

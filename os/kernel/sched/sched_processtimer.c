@@ -108,7 +108,7 @@
 #if CONFIG_RR_INTERVAL > 0
 static inline void sched_process_timeslice(void)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 
 	/* Check if the currently executing task uses round robin
 	 * scheduling.

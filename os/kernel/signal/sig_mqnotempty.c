@@ -107,7 +107,7 @@ int sig_mqnotempty(int pid, int signo, void *sival_ptr)
 #endif
 {
 #ifdef CONFIG_SCHED_HAVE_PARENT
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 #endif
 	siginfo_t info;
 	int ret;

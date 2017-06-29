@@ -131,7 +131,7 @@ int task_delete(pid_t pid)
 	 * except that it obeys the cancellation semantics.
 	 */
 
-	rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	rtcb = this_task();
 	if (pid == 0) {
 		pid = rtcb->pid;
 	}

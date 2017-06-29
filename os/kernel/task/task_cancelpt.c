@@ -127,7 +127,7 @@
 
 bool enter_cancellation_point(void)
 {
-	FAR struct tcb_s *tcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *tcb = this_task();
 	bool ret = false;
 
 	/* Disabling pre-emption should provide sufficient protection.  We only
@@ -212,7 +212,7 @@ bool enter_cancellation_point(void)
 
 void leave_cancellation_point(void)
 {
-	FAR struct tcb_s *tcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *tcb = this_task();
 
 	/* Disabling pre-emption should provide sufficient protection.  We only
 	 * need the TCB to be stationary (no interrupt level modification is

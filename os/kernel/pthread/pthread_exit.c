@@ -112,7 +112,7 @@
 
 void pthread_exit(FAR void *exit_value)
 {
-	struct tcb_s *tcb = (struct tcb_s *)g_readytorun.head;
+	struct tcb_s *tcb = this_task();
 	int status;
 
 	svdbg("exit_value=%p\n", exit_value);

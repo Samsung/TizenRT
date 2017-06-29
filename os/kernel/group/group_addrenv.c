@@ -130,7 +130,7 @@ int group_addrenv(FAR struct tcb_s *tcb)
 	 */
 
 	if (!tcb) {
-		tcb = (FAR struct tcb_s *)g_readytorun.head;
+		tcb = this_task();
 	}
 
 	DEBUGASSERT(tcb && tcb->group);

@@ -203,7 +203,7 @@ FAR struct mqueue_msg_s *mq_waitreceive(mqd_t mqdes)
 		if ((mqdes->oflags & O_NONBLOCK) == 0) {
 			/* Yes.. Block and try again */
 
-			rtcb = (FAR struct tcb_s *)g_readytorun.head;
+			rtcb = this_task();
 			rtcb->msgwaitq = msgq;
 			msgq->nwaitnotempty++;
 

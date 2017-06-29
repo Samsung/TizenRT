@@ -128,7 +128,7 @@
 
 int sigsuspend(FAR const sigset_t *set)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 	sigset_t intersection;
 	sigset_t saved_sigprocmask;
 	FAR sigpendq_t *sigpend;

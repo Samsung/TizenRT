@@ -205,7 +205,7 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 #ifdef CONFIG_SCHED_HAVE_PARENT
 static inline void task_saveparent(FAR struct tcb_s *tcb, uint8_t ttype)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 
 #if defined(HAVE_GROUP_MEMBERS) || defined(CONFIG_SCHED_CHILD_STATUS)
 	DEBUGASSERT(tcb && tcb->group && rtcb->group);
@@ -311,7 +311,7 @@ static inline void task_saveparent(FAR struct tcb_s *tcb, uint8_t ttype)
 #ifdef CONFIG_PIC
 static inline void task_dupdspace(FAR struct tcb_s *tcb)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 	if (rtcb->dspace != NULL) {
 		/* Copy the D-Space structure reference and increment the reference
 		 * count on the memory.  The D-Space memory will persist until the

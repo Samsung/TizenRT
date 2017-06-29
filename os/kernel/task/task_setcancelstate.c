@@ -93,7 +93,7 @@
 
 int task_setcancelstate(int state, FAR int *oldstate)
 {
-	FAR struct tcb_s *tcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *tcb = this_task();
 	int ret = OK;
 
 	/* Suppress context changes for a bit so that the flags are stable. (the

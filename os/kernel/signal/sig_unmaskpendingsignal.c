@@ -97,7 +97,7 @@
 
 void sig_unmaskpendingsignal(void)
 {
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 	sigset_t unmaskedset;
 	FAR sigpendq_t *pendingsig;
 	int signo;

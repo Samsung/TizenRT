@@ -92,7 +92,7 @@ int sched_yield(void)
 {
 #ifndef CONFIG_SCHED_YIELD_OPTIMIZATION
 
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 
 	/* This equivalent to just resetting the task priority to its current value
 	 * since this will cause the task to be rescheduled behind any other tasks
@@ -103,7 +103,7 @@ int sched_yield(void)
 
 #else
 
-	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *rtcb = this_task();
 	FAR struct tcb_s *ntcb = (FAR struct tcb_s *)rtcb->flink;
 
 	/* 1) Make sure only current task can execute sched_yield API to yield it's

@@ -94,5 +94,5 @@
 
 FAR struct tcb_s *sched_self(void)
 {
-	return (FAR struct tcb_s *)g_readytorun.head;
+	return this_task();
 }
