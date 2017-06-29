@@ -29,6 +29,8 @@
 #include "../../../../../os/kernel/group/group.h"
 #include "tc_internal.h"
 
+#define TASK_STACKSIZE 2048
+
 static int group_exitchild_func(int argc, char *argv[])
 {
 	task_delete(0);
@@ -138,7 +140,7 @@ static void tc_group_group_exit_child(void)
 	group = st_tcb->group;
 	TC_ASSERT_NOT_NULL("sched_self", group);
 
-	child_pid = task_create("group", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, group_exitchild_func, (char *const *)NULL);
+	child_pid = task_create("group", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, group_exitchild_func, (char *const *)NULL);
 
 	child = group_findchild(group, child_pid);
 	TC_ASSERT_NOT_NULL("group_findchild", child);

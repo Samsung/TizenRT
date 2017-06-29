@@ -39,6 +39,7 @@
 #define ARRLEN          2
 #define VAL_3           3
 #define VAL_5           5
+#define TASK_STACKSIZE 2048
 
 pthread_t thread1, thread2;
 
@@ -237,10 +238,10 @@ static void tc_sched_wait(void)
 	int status;
 
 	/* creating new process */
-	child1_pid = task_create("sched1", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_wait, (char * const *)NULL);
+	child1_pid = task_create("sched1", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_wait, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child1_pid, 0);
 
-	child2_pid = task_create("sched2", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_waitlong, (char * const *)NULL);
+	child2_pid = task_create("sched2", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitlong, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child2_pid, 0);
 
 	/* child which exits first is handled by wait, here child1_pid exits earlier. */
@@ -273,7 +274,7 @@ static void tc_sched_waitid(void)
 	pid_t child_pid;
 	siginfo_t info;
 
-	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_waitid, (char * const *)NULL);
+	child_pid = task_create("tc_waitid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_waitid, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
 	ret_chk = waitid(P_PID, child_pid, &info, WEXITED);
@@ -302,7 +303,7 @@ static void tc_sched_waitpid(void)
 	pid_t child_pid;
 	int *status = (int *)malloc(sizeof(int));
 
-	child_pid = task_create("tc_waitpid", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_wait, (char * const *)NULL);
+	child_pid = task_create("tc_waitpid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_wait, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
 	ret_chk = waitpid(child_pid, status, 0);
@@ -329,7 +330,7 @@ static void tc_sched_sched_gettcb(void)
 	pid_t pid;
 	int stat_loc;
 
-	pid = task_create("tc_gettcb", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_wait, (char * const *)NULL);
+	pid = task_create("tc_gettcb", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_wait, (char * const *)NULL);
 	TC_ASSERT_NEQ("task_create", pid, ERROR);
 
 	tcb = sched_gettcb(pid);
