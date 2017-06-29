@@ -93,7 +93,7 @@
 
 int pthread_setcancelstate(int state, FAR int *oldstate)
 {
-	struct tcb_s *tcb = (struct tcb_s *)g_readytorun.head;
+	FAR struct tcb_s *tcb = this_task();
 	int ret = OK;
 
 	trace_begin(TTRACE_TAG_TASK, "pthread_setcancelstate");
