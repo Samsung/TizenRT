@@ -66,6 +66,10 @@
 
 #define S5J_WDT_MAXTIMEOUT		1000000
 
+#ifndef CONFIG_S5J_WDT_DEFTIMEOUT
+#define CONFIG_S5J_WDT_DEFTIMEOUT	7000
+#endif
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
