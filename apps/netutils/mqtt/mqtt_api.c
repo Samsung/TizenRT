@@ -466,8 +466,15 @@ int mqtt_disconnect(mqtt_client_t *handle)
 	handle->state = MQTT_CLIENT_STATE_DISCONNECT_REQUEST;
 	ret = mosquitto_disconnect(mosq);
 	if (ret != 0) {
-		ndbg("ERROR: mosquitto_disconnect() failed.\n");
-		handle->state = prev_state;
+		ndbg("ERROR: mosquitto_disconnect() failed. (ret=%d)\n", ret);
+		if (ret == MOSQ_ERR_NO_CONN) {
+			ndbg("the return value of mosquitto_disconnect() is MOSQ_ERR_NO_CONN.\n");
+			handle->state = MQTT_CLIENT_STATE_NOT_CONNECTED;
+			result = 0;
+		} else {
+			handle->state = prev_state;
+		}
+
 		goto done;
 	}
 
