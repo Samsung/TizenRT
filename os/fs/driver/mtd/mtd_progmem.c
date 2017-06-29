@@ -169,12 +169,15 @@ static int32_t progmem_log2(uint32_t num)
 
 static int progmem_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 {
+	int page;
 	ssize_t result;
+	FAR struct progmem_dev_s *priv = (FAR struct progmem_dev_s *)dev;
+
 
 	/* Erase the specified blocks and return status (OK or a negated errno) */
-
 	while (nblocks > 0) {
-		result = up_progmem_erasepage(startblock);
+		page = startblock << (priv->blkshift - priv->pgshift);
+		result = up_progmem_erasepage(page);
 		if (result < 0) {
 			return (int)result;
 		}
