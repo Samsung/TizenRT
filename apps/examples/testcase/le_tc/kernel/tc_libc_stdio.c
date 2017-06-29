@@ -139,11 +139,55 @@ static void tc_libc_stdio_snprintf(void)
 static void tc_libc_stdio_sprintf(void)
 {
 	int ret_chk;
-	char sz_pptr[BUFF_SIZE];
+	char buf[BUFF_SIZE];
 
-	ret_chk = sprintf(sz_pptr, "%s", printable_chars);
+	/* specifier % */
+
+	ret_chk = sprintf(buf, "%%", 'a');
+	TC_ASSERT_EQ("sprintf", ret_chk, 1);
+	TC_ASSERT_EQ("sprintf", buf[0], '%');
+
+	/* characters */
+
+	ret_chk = sprintf(buf, "%c", 'a');
+	TC_ASSERT_EQ("sprintf", ret_chk, 1);
+	TC_ASSERT_EQ("sprintf", buf[0], 'a');
+
+	/* string */
+
+	ret_chk = sprintf(buf, "%s", printable_chars);
 	TC_ASSERT_EQ("sprintf", ret_chk, strlen(printable_chars));
-	TC_ASSERT_EQ("sprintf", strncmp(printable_chars, sz_pptr, strlen(printable_chars)), 0);
+	TC_ASSERT_EQ("sprintf", strncmp(printable_chars, buf, strlen(printable_chars)), 0);
+
+	/* radices */
+
+	ret_chk = sprintf(buf, "%d", 100);
+	TC_ASSERT_EQ("sprintf", ret_chk, 3);
+	TC_ASSERT_EQ("sprintf", strncmp(buf, "100", strlen("100")), 0);
+
+	ret_chk = sprintf(buf, "%x", 100);
+	TC_ASSERT_EQ("sprintf", ret_chk, 2);
+	TC_ASSERT_EQ("sprintf", strncmp(buf, "64", strlen("64")), 0);
+
+	ret_chk = sprintf(buf, "%o", 100);
+	TC_ASSERT_EQ("sprintf", ret_chk, 3);
+	TC_ASSERT_EQ("sprintf", strncmp(buf, "144", strlen("144")), 0);
+
+	/* + flag */
+
+	ret_chk = sprintf(buf, "%+d", 100);
+	TC_ASSERT_EQ("sprintf", ret_chk, 4);
+	TC_ASSERT_EQ("sprintf", strncmp(buf, "+100", strlen("+100")), 0);
+
+	/* # flag */
+
+	ret_chk = sprintf(buf, "%#x", 100);
+	TC_ASSERT_EQ("sprintf", ret_chk, 4);
+	TC_ASSERT_EQ("sprintf", strncmp(buf, "0x64", strlen("0x64")), 0);
+
+	ret_chk = sprintf(buf, "%#o", 100);
+	TC_ASSERT_EQ("sprintf", ret_chk, 4);
+	TC_ASSERT_EQ("sprintf", strncmp(buf, "0144", strlen("0144")), 0);
 
 	TC_SUCCESS_RESULT();
 }

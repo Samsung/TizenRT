@@ -25,15 +25,13 @@
 #include <sys/types.h>
 #include "tc_internal.h"
 
-#define SEC_2           2
+#define PSHARED     0
+#define SEC_2       2
+#define LOOP_CNT    5
 
-int g_pshared = 0;
-int g_count = 1;
-
-sem_t g_empty;
-sem_t g_full;
-sem_t g_mutex;
-int g_loop_cnt = 5;
+static sem_t g_empty;
+static sem_t g_full;
+static sem_t g_sem;
 
 /**
 * @fn                   :producer_func
@@ -43,25 +41,25 @@ int g_loop_cnt = 5;
 static void *producer_func(void *arg)
 {
 	int index;
-	int ret_val;
-	for (index = 0; index < g_loop_cnt; index++) {
-		ret_val = sem_wait(&g_empty);
-		if (ret_val == ERROR) {
+	int ret_chk;
+	for (index = 0; index < LOOP_CNT; index++) {
+		ret_chk = sem_wait(&g_empty);
+		if (ret_chk == ERROR) {
 			pthread_exit("sem_wait(&g_empty)");
 		}
 
-		ret_val = sem_wait(&g_mutex);
-		if (ret_val == ERROR) {
+		ret_chk = sem_wait(&g_sem);
+		if (ret_chk == ERROR) {
 			pthread_exit("sem_wait(&g_mutex)");
 		}
 
-		ret_val = sem_post(&g_mutex);
-		if (ret_val == ERROR) {
+		ret_chk = sem_post(&g_sem);
+		if (ret_chk == ERROR) {
 			pthread_exit("sem_post(&g_mutex)");
 		}
 
-		ret_val = sem_post(&g_full);
-		if (ret_val == ERROR) {
+		ret_chk = sem_post(&g_full);
+		if (ret_chk == ERROR) {
 			pthread_exit("sem_post(&g_full)");
 		}
 	}
@@ -77,25 +75,25 @@ static void *producer_func(void *arg)
 static void *consumer_func(void *arg)
 {
 	int index;
-	int ret_val;
-	for (index = 0; index < g_loop_cnt; index++) {
-		ret_val = sem_wait(&g_full);
-		if (ret_val == ERROR) {
+	int ret_chk;
+	for (index = 0; index < LOOP_CNT; index++) {
+		ret_chk = sem_wait(&g_full);
+		if (ret_chk == ERROR) {
 			pthread_exit("sem_wait(&g_full)");
 		}
 
-		ret_val = sem_wait(&g_mutex);
-		if (ret_val == ERROR) {
+		ret_chk = sem_wait(&g_sem);
+		if (ret_chk == ERROR) {
 			pthread_exit("sem_wait(&g_mutex)");
 		}
 
-		ret_val = sem_post(&g_mutex);
-		if (ret_val == ERROR) {
+		ret_chk = sem_post(&g_sem);
+		if (ret_chk == ERROR) {
 			pthread_exit("sem_post(&g_mutex)");
 		}
 
-		ret_val = sem_post(&g_empty);
-		if (ret_val == ERROR) {
+		ret_chk = sem_post(&g_empty);
+		if (ret_chk == ERROR) {
 			pthread_exit("sem_post(&g_empty)");
 		}
 	}
@@ -104,96 +102,117 @@ static void *consumer_func(void *arg)
 }
 
 /**
-* @fn                   :tc_semaphore_sem_init_post_wait
-* @brief                :Unlocks the semaphore passed as argument.
+* @fn                   :tc_semaphore_sem_post_wait
+* @brief                :this tc tests sem_post, sem_wait
 * @scenario             :Unlocks the semaphore passed as argument.
-* API's covered         :sem_init, sem_post, sem_wait
-* Preconditions         :Semaphore should be initialised.
+* API's covered         :sem_post, sem_wait
+* Preconditions         :none
 * Postconditions        :Semaphore should be destroyed.
 * @return               :void
 */
-static void tc_semaphore_sem_init_post_wait(void)
+static void tc_semaphore_sem_post_wait(void)
 {
-	int ret_val;
 	pthread_addr_t pexit_value = NULL;
 	pthread_t pid;
 	pthread_t cid;
+	int ret_chk;
 
-	ret_val = sem_init(&g_empty, g_pshared, g_count);
-	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
+#ifndef CONFIG_DEBUG
+	/* sem_wait test NULL case */
 
-	ret_val = sem_init(&g_full, g_pshared, 0);
-	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
+	ret_chk = sem_wait(NULL);
+	TC_ASSERT_EQ("sem_wait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_wait", get_errno(), EINVAL);
+#endif
 
-	ret_val = sem_init(&g_mutex, g_pshared, g_count);
-	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
+	/* sem_post test NULL case */
 
-	ret_val = pthread_create(&pid, NULL, producer_func, NULL);
-	TC_ASSERT_EQ("pthread_create", ret_val, OK);
+	ret_chk = sem_post(NULL);
+	TC_ASSERT_EQ("sem_post", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_post", get_errno(), EINVAL);
 
-	ret_val = pthread_create(&cid, NULL, consumer_func, NULL);
-	TC_ASSERT_EQ("pthread_create", ret_val, OK);
+	/* sem_wait & sem post ping-pong test */
 
-	ret_val = pthread_join(pid, &pexit_value);
-	TC_ASSERT_EQ("pthread_join", ret_val, OK);
-	TC_ASSERT_EQ("pthread_join", pexit_value, NULL);
+	ret_chk = sem_init(&g_empty, PSHARED, 1);
+	TC_ASSERT_EQ_CLEANUP("sem_init", ret_chk, OK, "fail to init semaphore", goto cleanup);
 
-	ret_val = pthread_join(cid, &pexit_value);
-	TC_ASSERT_EQ("pthread_join", ret_val, OK);
-	TC_ASSERT_EQ("pthread_join", pexit_value, NULL);
+	ret_chk = sem_init(&g_full, PSHARED, 0);
+	TC_ASSERT_EQ_CLEANUP("sem_init", ret_chk, OK, "fail to init semaphore", goto cleanup);
 
+	ret_chk = sem_init(&g_sem, PSHARED, 1);
+	TC_ASSERT_EQ_CLEANUP("sem_init", ret_chk, OK, "fail to init semaphore", goto cleanup);
+
+	ret_chk = pthread_create(&pid, NULL, producer_func, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, "fail to create pthread", goto cleanup);
+
+	ret_chk = pthread_create(&cid, NULL, consumer_func, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, "fail to create pthread", goto cleanup);
+
+	ret_chk = pthread_join(pid, &pexit_value);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, "fail to join pthread", goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", pexit_value, NULL, "unexpected exit value", goto cleanup);
+
+	ret_chk = pthread_join(cid, &pexit_value);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, "fail to join pthread", goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", pexit_value, NULL, "unexpected exit value", goto cleanup);
+
+	TC_SUCCESS_RESULT();
+
+cleanup:
 	sem_destroy(&g_empty);
 	sem_destroy(&g_full);
-	sem_destroy(&g_mutex);
-	TC_SUCCESS_RESULT();
+	sem_destroy(&g_sem);
 }
+
 
 /**
 * @fn                   :tc_semaphore_sem_trywait
-* @brief                :sem_trywait() is the same as sem_wait(), except that if the decrement cannot be
-*                        immediately performed, then call returns an error (errno set to EAGAIN)
-*                        instead of blocking.
-* @scenario             :sem_trywait() is the same as sem_wait(), except that if the decrement cannot be
-*                        immediately performed, then call returns an error (errno set to EAGAIN)
-*                        instead of blocking.
-* API's covered         :sem_init, sem_trywait
-* Preconditions         :Semaphore should be initialised and should be unlocked.
-* Postconditions        :Semaphore should be destroyed.
+* @brief                :this tc tests sem_trywait
+* @scenario             :if sem is NULL, sem_trywait returns ERROR and set errno to EINVAL
+*                        else if sem is not available, it returns ERROR and set errno to EAGAIN
+*                        else(==sem is available), it returns OK and get sem
+* API's covered         :sem_trywait
+* Preconditions         :none
+* Postconditions        :none
 * @return               :void
 */
 
 static void tc_semaphore_sem_trywait(void)
 {
-	int ret_val = ERROR;
-	sem_t sem_name;
+	sem_t sem;
+	int ret_chk;
 
-	ret_val = sem_init(&sem_name, g_pshared, 0);
-	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
+#ifndef CONFIG_DEBUG
+	/* test NULL case */
 
-	/* semname count is 0, sem_trywait will not block, but return immediately with error */
-	ret_val = sem_trywait(&sem_name);
-	TC_ASSERT_EQ("sem_trywait", ret_val, ERROR);
-	sem_destroy(&sem_name);
+	ret_chk = sem_trywait(NULL);
+	TC_ASSERT_EQ("sem_trywait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_trywait", get_errno(), EINVAL);
+#endif
 
-	ret_val = sem_init(&sem_name, g_pshared, g_count);
-	TC_ASSERT_NEQ("sem_init", ret_val, ERROR);
+	/* sem_trywait can't get sem */
 
-	ret_val = sem_trywait(&sem_name);
-	TC_ASSERT_NEQ("sem_trywait", ret_val, ERROR);
+	ret_chk = sem_init(&sem, PSHARED, 0);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
 
-	ret_val = sem_post(&sem_name);
-	TC_ASSERT_NEQ("sem_post", ret_val, ERROR);
+	ret_chk = sem_trywait(&sem);
+	TC_ASSERT_EQ("sem_trywait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_trywait", get_errno(), EAGAIN);
 
-	/* locking semaphore to test sem_trywait */
-	ret_val = sem_wait(&sem_name);
-	if (ret_val == ERROR) {
-		printf("tc_semaphore_sem_trywait FAIL : Semaphore not locked so skipping scenario to test sem_trywait in locked semaphore state \n");
-	} else {
-		/* locking semaphore in locked state using sem_trywait will return ERROR on pass */
-		ret_val = sem_trywait(&sem_name);
-		TC_ASSERT_EQ("sem_trywait", ret_val, ERROR);
-	}
-	sem_destroy(&sem_name);
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+
+	/* sem_trywait can get sem */
+
+	ret_chk = sem_init(&sem, PSHARED, 1);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
+	ret_chk = sem_trywait(&sem);
+	TC_ASSERT_EQ("sem_trywait", ret_chk, OK);
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -216,7 +235,7 @@ static void tc_semaphore_sem_timedwait(void)
 
 	/* init sem count to 1 */
 
-	ret_chk = sem_init(&sem, 0, 1);
+	ret_chk = sem_init(&sem, PSHARED, 1);
 	TC_ASSERT_EQ("sem_init", ret_chk, OK);
 	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
 	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
@@ -256,7 +275,7 @@ static void tc_semaphore_sem_timedwait(void)
 
 	/* init sem count to 0 */
 
-	ret_chk = sem_init(&sem, 0, 0);
+	ret_chk = sem_init(&sem, PSHARED, 0);
 	TC_ASSERT_EQ("sem_init", ret_chk, OK);
 
 	/* invalid time test */
@@ -323,7 +342,7 @@ static void tc_semaphore_sem_destroy(void)
 	TC_ASSERT_EQ("sem_destroy", ret_chk, ERROR);
 	TC_ASSERT_EQ("sem_destroy", get_errno(), EINVAL);
 
-	ret_chk = sem_init(&sem, g_pshared, g_count);
+	ret_chk = sem_init(&sem, PSHARED, 1);
 	TC_ASSERT_EQ("sem_init", ret_chk, OK);
 
 	ret_chk = sem_destroy(&sem);
@@ -339,7 +358,7 @@ static void tc_semaphore_sem_destroy(void)
 
 int semaphore_main(void)
 {
-	tc_semaphore_sem_init_post_wait();
+	tc_semaphore_sem_post_wait();
 	tc_semaphore_sem_trywait();
 	tc_semaphore_sem_timedwait();
 	tc_semaphore_sem_destroy();

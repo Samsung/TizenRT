@@ -325,14 +325,18 @@ static void tc_sched_waitpid(void)
 */
 static void tc_sched_sched_gettcb(void)
 {
-	struct tcb_s *st_tcb;
-	pid_t child_pid;
-	child_pid = task_create("tc_gettcb", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_wait, (char * const *)NULL);
-	st_tcb = sched_gettcb(child_pid);
+	struct tcb_s *tcb;
+	pid_t pid;
+	int stat_loc;
 
-	TC_ASSERT_NOT_NULL("sched_gettcb", st_tcb);
-	TC_ASSERT_EQ("sched_gettcb", st_tcb->pid, child_pid);
+	pid = task_create("tc_gettcb", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, function_wait, (char * const *)NULL);
+	TC_ASSERT_NEQ("task_create", pid, ERROR);
 
+	tcb = sched_gettcb(pid);
+	TC_ASSERT_NOT_NULL("sched_gettcb", tcb);
+	TC_ASSERT_EQ("sched_gettcb", tcb->pid, pid);
+
+	waitpid(pid, &stat_loc, 0);
 	TC_SUCCESS_RESULT();
 }
 
