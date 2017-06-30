@@ -57,7 +57,8 @@ DEPPATH = --dep-path .
 ASRCS =
 CSRCS = artik053_boot.c \
 	artik053_tash.c \
-	artik053_pwm.c
+	artik053_pwm.c \
+	artik053_alc5658.c
 
 ifeq ($(CONFIG_MTD_PROGMEM),y)
 CSRCS += artik053_progmem.c
