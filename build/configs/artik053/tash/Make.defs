@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# configs/sidk_s5jt200/hello_with_tash/Make.defs
+# configs/artik053/tash/Make.defs
 #
 #   Copyright (C) 2011, 2012-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
