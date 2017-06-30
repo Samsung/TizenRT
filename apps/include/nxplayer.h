@@ -81,12 +81,12 @@ struct nxplayer_s {
 	int crefs;					/* Number of references to the player */
 	sem_t sem;					/* Thread sync semaphore */
 	FILE *fileFd;				/* File descriptor of open file */
-#ifdef CONFIG_NXPLAYER_INCLUDE_PREFERRED_DEVICE
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_PREFERRED_DEVICE
 	char prefdevice[CONFIG_NAME_MAX];	/* Preferred audio device */
 	int prefformat;				/* Formats supported by preferred device */
 	int preftype;				/* Types supported by preferred device */
 #endif
-#ifdef CONFIG_NXPLAYER_INCLUDE_MEDIADIR
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR
 	char mediadir[CONFIG_NAME_MAX];	/* Root media directory where media is located */
 #endif
 #ifdef CONFIG_AUDIO_MULTI_SESSION
@@ -476,7 +476,7 @@ int nxplayer_settreble(FAR struct nxplayer_s *pPlayer, uint8_t treble);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_SYSTEM_RESET
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_SYSTEM_RESET
 int nxplayer_systemreset(FAR struct nxplayer_s *pPlayer);
 #endif
 

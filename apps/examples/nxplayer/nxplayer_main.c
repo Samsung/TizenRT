@@ -74,7 +74,7 @@
 
 #define	NXPLAYER_VER		"1.04"
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_HELP
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_HELP
 #define NXPLAYER_HELP_TEXT(x)  #x
 #else
 #define NXPLAYER_HELP_TEXT(x)
@@ -98,11 +98,11 @@ struct mp_cmd_s {
 static int nxplayer_cmd_quit(FAR struct nxplayer_s *pPlayer, char *parg);
 static int nxplayer_cmd_play(FAR struct nxplayer_s *pPlayer, char *parg);
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_SYSTEM_RESET
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_SYSTEM_RESET
 static int nxplayer_cmd_reset(FAR struct nxplayer_s *pPlayer, char *parg);
 #endif
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_PREFERRED_DEVICE
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_PREFERRED_DEVICE
 static int nxplayer_cmd_device(FAR struct nxplayer_s *pPlayer, char *parg);
 #endif
 
@@ -111,7 +111,7 @@ static int nxplayer_cmd_pause(FAR struct nxplayer_s *pPlayer, char *parg);
 static int nxplayer_cmd_resume(FAR struct nxplayer_s *pPlayer, char *parg);
 #endif
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_MEDIADIR
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR
 static int nxplayer_cmd_mediadir(FAR struct nxplayer_s *pPlayer, char *parg);
 #endif
 
@@ -131,7 +131,7 @@ static int nxplayer_cmd_bass(FAR struct nxplayer_s *pPlayer, char *parg);
 static int nxplayer_cmd_treble(FAR struct nxplayer_s *pPlayer, char *parg);
 #endif
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_HELP
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_HELP
 static int nxplayer_cmd_help(FAR struct nxplayer_s *pPlayer, char *parg);
 #endif
 
@@ -148,16 +148,16 @@ static struct mp_cmd_s g_nxplayer_cmds[] = {
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE
 	{"bass", "d%", nxplayer_cmd_bass, NXPLAYER_HELP_TEXT(Set bass level percentage)},
 #endif
-#ifdef CONFIG_NXPLAYER_INCLUDE_PREFERRED_DEVICE
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_PREFERRED_DEVICE
 	{"device", "devfile", nxplayer_cmd_device, NXPLAYER_HELP_TEXT(Specify a preferred audio device)},
 #endif
-#ifdef CONFIG_NXPLAYER_INCLUDE_HELP
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_HELP
 	{"h", "", nxplayer_cmd_help, NXPLAYER_HELP_TEXT(Display help for commands)}
 	,
 	{"help", "", nxplayer_cmd_help, NXPLAYER_HELP_TEXT(Display help for commands)}
 	,
 #endif
-#ifdef CONFIG_NXPLAYER_INCLUDE_MEDIADIR
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR
 	{"mediadir", "path", nxplayer_cmd_mediadir, NXPLAYER_HELP_TEXT(Change the media directory)}
 	,
 #endif
@@ -167,7 +167,7 @@ static struct mp_cmd_s g_nxplayer_cmds[] = {
 	{"pause", "", nxplayer_cmd_pause, NXPLAYER_HELP_TEXT(Pause playback)}
 	,
 #endif
-#ifdef CONFIG_NXPLAYER_INCLUDE_SYSTEM_RESET
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_SYSTEM_RESET
 	{"reset", "", nxplayer_cmd_reset, NXPLAYER_HELP_TEXT(Perform a HW reset)}
 	,
 #endif
@@ -370,7 +370,7 @@ static int nxplayer_cmd_balance(FAR struct nxplayer_s *pPlayer, char *parg)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_SYSTEM_RESET
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_SYSTEM_RESET
 static int nxplayer_cmd_reset(FAR struct nxplayer_s *pPlayer, char *parg)
 {
 	nxplayer_systemreset(pPlayer);
@@ -387,7 +387,7 @@ static int nxplayer_cmd_reset(FAR struct nxplayer_s *pPlayer, char *parg)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_MEDIADIR
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR
 static int nxplayer_cmd_mediadir(FAR struct nxplayer_s *pPlayer, char *parg)
 {
 	/* If no arg given, then print current media dir */
@@ -466,7 +466,7 @@ static int nxplayer_cmd_resume(FAR struct nxplayer_s *pPlayer, char *parg)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_PREFERRED_DEVICE
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_PREFERRED_DEVICE
 static int nxplayer_cmd_device(FAR struct nxplayer_s *pPlayer, char *parg)
 {
 	int ret;
@@ -514,7 +514,7 @@ static int nxplayer_cmd_device(FAR struct nxplayer_s *pPlayer, char *parg)
 
 	return OK;
 }
-#endif							/* CONFIG_NXPLAYER_INCLUDE_PREFERRED_DEVICE */
+#endif							/* CONFIG_EXAMPLES_NXPLAYER_INCLUDE_PREFERRED_DEVICE */
 
 /****************************************************************************
  * Name: nxplayer_cmd_quit
@@ -540,7 +540,7 @@ static int nxplayer_cmd_quit(FAR struct nxplayer_s *pPlayer, char *parg)
  *   supported commands and command syntax.
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_HELP
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_HELP
 static int nxplayer_cmd_help(FAR struct nxplayer_s *pPlayer, char *parg)
 {
 	int x, len, maxlen = 0;

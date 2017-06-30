@@ -95,19 +95,19 @@
 #define CONFIG_AUDIO_BUFFER_NUMBYTES  8192
 #endif
 
-#ifndef CONFIG_NXPLAYER_MSG_PRIO
-#define CONFIG_NXPLAYER_MSG_PRIO  1
+#ifndef CONFIG_EXAMPLES_NXPLAYER_MSG_PRIO
+#define CONFIG_EXAMPLES_NXPLAYER_MSG_PRIO  1
 #endif
 
-#ifndef CONFIG_NXPLAYER_PLAYTHREAD_STACKSIZE
-#define CONFIG_NXPLAYER_PLAYTHREAD_STACKSIZE    1500
+#ifndef CONFIG_EXAMPLES_NXPLAYER_PLAYTHREAD_STACKSIZE
+#define CONFIG_EXAMPLES_NXPLAYER_PLAYTHREAD_STACKSIZE    1500
 #endif
 
 /****************************************************************************
  * Private Type Declarations
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_FMT_FROM_EXT
+#ifdef CONFIG_EXAMPLES_NXPLAYER_FMT_FROM_EXT
 struct nxplayer_ext_fmt_s {
 	const char *ext;
 	uint16_t format;
@@ -127,7 +127,7 @@ int nxplayer_getmidisubformat(FAR FILE *fd);
  * Private Data
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_FMT_FROM_EXT
+#ifdef CONFIG_EXAMPLES_NXPLAYER_FMT_FROM_EXT
 static const struct nxplayer_ext_fmt_s g_known_ext[] = {
 #ifdef CONFIG_AUDIO_FORMAT_AC3
 	{"ac3", AUDIO_FMT_AC3, NULL},
@@ -154,7 +154,7 @@ static const struct nxplayer_ext_fmt_s g_known_ext[] = {
 };
 
 static const int g_known_ext_count = sizeof(g_known_ext) / sizeof(struct nxplayer_ext_fmt_s);
-#endif							/* CONFIG_NXPLAYER_FMT_FROM_EXT */
+#endif							/* CONFIG_EXAMPLES_NXPLAYER_FMT_FROM_EXT */
 
 /****************************************************************************
  * Private Functions
@@ -179,7 +179,7 @@ static int nxplayer_opendevice(FAR struct nxplayer_s *pPlayer, int format, int s
 {
 	/* If we have a preferred device, then open it */
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_PREFERRED_DEVICE
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_PREFERRED_DEVICE
 	if (pPlayer->prefdevice[0] != '\0') {
 		/* Use the saved prefformat to test if the requested
 		 * format is specified by the device
@@ -208,13 +208,13 @@ static int nxplayer_opendevice(FAR struct nxplayer_s *pPlayer, int format, int s
 	}
 #endif
 
-#if defined(CONFIG_NXPLAYER_INCLUDE_PREFERRED_DEVICE) && \
-    defined(CONFIG_NXPLAYER_INCLUDE_DEVICE_SEARCH)
+#if defined(CONFIG_EXAMPLES_NXPLAYER_INCLUDE_PREFERRED_DEVICE) && \
+	defined(CONFIG_EXAMPLES_NXPLAYER_INCLUDE_DEVICE_SEARCH)
 
 	else
 #endif
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_DEVICE_SEARCH
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_DEVICE_SEARCH
 	{
 		struct audio_caps_s caps;
 		FAR struct dirent *pDevice;
@@ -331,7 +331,7 @@ static int nxplayer_opendevice(FAR struct nxplayer_s *pPlayer, int format, int s
 
 		closedir(dirp);
 	}
-#endif							/* CONFIG_NXPLAYER_INCLUDE_DEVICE_SEARCH */
+#endif							/* CONFIG_EXAMPLES_NXPLAYER_INCLUDE_DEVICE_SEARCH */
 
 	/* Device not found */
 
@@ -388,7 +388,7 @@ int nxplayer_getmidisubformat(FAR FILE *fd)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_FMT_FROM_EXT
+#ifdef CONFIG_EXAMPLES_NXPLAYER_FMT_FROM_EXT
 static inline int nxplayer_fmtfromextension(FAR struct nxplayer_s *pPlayer,
                                             FAR const char *pFilename,
                                             FAR int *subfmt)
@@ -435,7 +435,7 @@ static inline int nxplayer_fmtfromextension(FAR struct nxplayer_s *pPlayer,
 
 	return AUDIO_FMT_UNDEF;
 }
-#endif							/* CONFIG_NXPLAYER_FMT_FROM_EXT */
+#endif							/* CONFIG_EXAMPLES_NXPLAYER_FMT_FROM_EXT */
 
 /****************************************************************************
  * Name: nxplayer_fmtfromheader
@@ -445,12 +445,12 @@ static inline int nxplayer_fmtfromextension(FAR struct nxplayer_s *pPlayer,
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_FMT_FROM_HEADER
+#ifdef CONFIG_EXAMPLES_NXPLAYER_FMT_FROM_HEADER
 static int nxplayer_fmtfromheader(FAR struct nxplayer_s *pPlayer)
 {
 	return AUDIO_FMT_UNDEF;
 }
-#endif							/* CONFIG_NXPLAYER_FMT_FROM_HEADER */
+#endif							/* CONFIG_EXAMPLES_NXPLAYER_FMT_FROM_HEADER */
 
 /****************************************************************************
  * Name: nxplayer_mediasearch
@@ -461,7 +461,7 @@ static int nxplayer_fmtfromheader(FAR struct nxplayer_s *pPlayer)
  *
  ****************************************************************************/
 
-#if defined(CONFIG_NXPLAYER_MEDIA_SEARCH) && defined(CONFIG_NXPLAYER_INCLUDE_MEDIADIR)
+#if defined(CONFIG_EXAMPLES_NXPLAYER_MEDIA_SEARCH) && defined(CONFIG_EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR)
 static int nxplayer_mediasearch(FAR struct nxplayer_s *pPlayer,
                                 FAR const char *pFilename,
                                 FAR const char *path, int pathmax)
@@ -1451,7 +1451,7 @@ int nxplayer_cancel_motion(FAR struct nxplayer_s *pPlayer, bool paused)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_PREFERRED_DEVICE
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_PREFERRED_DEVICE
 int nxplayer_setdevice(FAR struct nxplayer_s *pPlayer, FAR const char *pDevice)
 {
 	int tempFd;
@@ -1493,7 +1493,7 @@ int nxplayer_setdevice(FAR struct nxplayer_s *pPlayer, FAR const char *pDevice)
 
 	return OK;
 }
-#endif							/* CONFIG_NXPLAYER_INCLUDE_PREFERRED_DEVICE */
+#endif							/* CONFIG_EXAMPLES_NXPLAYER_INCLUDE_PREFERRED_DEVICE */
 
 /****************************************************************************
  * Name: nxplayer_stop
@@ -1528,7 +1528,7 @@ int nxplayer_stop(FAR struct nxplayer_s *pPlayer)
 
 	term_msg.msgId = AUDIO_MSG_STOP;
 	term_msg.u.data = 0;
-	mq_send(pPlayer->mq, (FAR const char *)&term_msg, sizeof(term_msg), CONFIG_NXPLAYER_MSG_PRIO);
+	mq_send(pPlayer->mq, (FAR const char *)&term_msg, sizeof(term_msg), CONFIG_EXAMPLES_NXPLAYER_MSG_PRIO);
 
 	/* Join the thread.  The thread will do all the cleanup. */
 
@@ -1569,7 +1569,7 @@ int nxplayer_playfile(FAR struct nxplayer_s *pPlayer,
 	struct sched_param sparam;
 	pthread_attr_t tattr;
 	void *value;
-#ifdef CONFIG_NXPLAYER_INCLUDE_MEDIADIR
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR
 	char path[128];
 #endif
 	int tmpsubfmt = AUDIO_FMT_UNDEF;
@@ -1591,11 +1591,11 @@ int nxplayer_playfile(FAR struct nxplayer_s *pPlayer,
 	if ((pPlayer->fileFd = fopen(pFilename, "r")) == NULL) {
 		/* File not found.  Test if its in the mediadir */
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_MEDIADIR
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR
 		snprintf(path, sizeof(path), "%s/%s", pPlayer->mediadir, pFilename);
 
 		if ((pPlayer->fileFd = fopen(path, "r")) == NULL) {
-#ifdef CONFIG_NXPLAYER_MEDIA_SEARCH
+#ifdef CONFIG_EXAMPLES_NXPLAYER_MEDIA_SEARCH
 			/* File not found in the media dir.  Do a search */
 
 			if (nxplayer_mediasearch(pPlayer, pFilename, path, sizeof(path)) != OK) {
@@ -1605,15 +1605,15 @@ int nxplayer_playfile(FAR struct nxplayer_s *pPlayer,
 #else
 			auddbg("ERROR: Could not open %s or %s\n", pFilename, path);
 			return -ENOENT;
-#endif							/* CONFIG_NXPLAYER_MEDIA_SEARCH */
+#endif							/* CONFIG_EXAMPLES_NXPLAYER_MEDIA_SEARCH */
 		}
-#else							/* CONFIG_NXPLAYER_INCLUDE_MEDIADIR */
+#else							/* CONFIG_EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR */
 
 		auddbg("ERROR: Could not open %s\n", pFilename);
 		return -ENOENT;
-#endif							/* CONFIG_NXPLAYER_INCLUDE_MEDIADIR */
+#endif							/* CONFIG_EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR */
 	}
-#ifdef CONFIG_NXPLAYER_FMT_FROM_EXT
+#ifdef CONFIG_EXAMPLES_NXPLAYER_FMT_FROM_EXT
 	/* Try to determine the format of audio file based on the extension */
 
 	if (filefmt == AUDIO_FMT_UNDEF) {
@@ -1621,7 +1621,7 @@ int nxplayer_playfile(FAR struct nxplayer_s *pPlayer,
 	}
 #endif
 
-#ifdef CONFIG_NXPLAYER_FMT_FROM_HEADER
+#ifdef CONFIG_EXAMPLES_NXPLAYER_FMT_FROM_HEADER
 	/* If type not identified, then test for known header types */
 
 	if (filefmt == AUDIO_FMT_UNDEF) {
@@ -1707,7 +1707,7 @@ int nxplayer_playfile(FAR struct nxplayer_s *pPlayer,
 	pthread_attr_init(&tattr);
 	sparam.sched_priority = sched_get_priority_max(SCHED_FIFO) - 9;
 	(void)pthread_attr_setschedparam(&tattr, &sparam);
-	(void)pthread_attr_setstacksize(&tattr, CONFIG_NXPLAYER_PLAYTHREAD_STACKSIZE);
+	(void)pthread_attr_setstacksize(&tattr, CONFIG_EXAMPLES_NXPLAYER_PLAYTHREAD_STACKSIZE);
 
 	/* Add a reference count to the player for the thread and start the
 	 * thread.  We increment for the thread to avoid thread start-up
@@ -1746,7 +1746,7 @@ err_out_nodev:
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_MEDIADIR
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR
 void nxplayer_setmediadir(FAR struct nxplayer_s *pPlayer,
 						  FAR const char *mediadir)
 {
@@ -1784,7 +1784,7 @@ FAR struct nxplayer_s *nxplayer_create(void)
 	pPlayer->state = NXPLAYER_STATE_IDLE;
 	pPlayer->devFd = -1;
 	pPlayer->fileFd = NULL;
-#ifdef CONFIG_NXPLAYER_INCLUDE_PREFERRED_DEVICE
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_PREFERRED_DEVICE
 	pPlayer->prefdevice[0] = '\0';
 	pPlayer->prefformat = 0;
 	pPlayer->preftype = 0;
@@ -1810,8 +1810,8 @@ FAR struct nxplayer_s *nxplayer_create(void)
 	pPlayer->session = NULL;
 #endif
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_MEDIADIR
-	strncpy(pPlayer->mediadir, CONFIG_NXPLAYER_DEFAULT_MEDIADIR, sizeof(pPlayer->mediadir));
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR
+	strncpy(pPlayer->mediadir, CONFIG_EXAMPLES_NXPLAYER_DEFAULT_MEDIADIR, sizeof(pPlayer->mediadir));
 #endif
 	sem_init(&pPlayer->sem, 0, 1);
 
@@ -1918,7 +1918,7 @@ void nxplayer_reference(FAR struct nxplayer_s *pPlayer)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NXPLAYER_INCLUDE_SYSTEM_RESET
+#ifdef CONFIG_EXAMPLES_NXPLAYER_INCLUDE_SYSTEM_RESET
 int nxplayer_systemreset(FAR struct nxplayer_s *pPlayer)
 {
 	struct dirent *pDevice;
@@ -1972,4 +1972,4 @@ int nxplayer_systemreset(FAR struct nxplayer_s *pPlayer)
 	closedir(dirp);
 	return OK;
 }
-#endif							/* CONFIG_NXPLAYER_INCLUDE_SYSTEM_RESET */
+#endif							/* CONFIG_EXAMPLES_NXPLAYER_INCLUDE_SYSTEM_RESET */

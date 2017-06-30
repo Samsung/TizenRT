@@ -13,13 +13,13 @@ config EXAMPLES_NXPLAYER
 
 if EXAMPLES_NXPLAYER
 
-config NXPLAYER_PLAYTHREAD_STACKSIZE
+config EXAMPLES_NXPLAYER_PLAYTHREAD_STACKSIZE
 	int "NxPlayer thread stack size"
 	default 1500
 	---help---
 		Stack size to use with the NxPlayer play thread.
 
-config NXPLAYER_COMMAND_LINE
+config EXAMPLES_NXPLAYER_COMMAND_LINE
 	bool "Include nxplayer command line application"
 	default y
 	---help---
@@ -28,9 +28,9 @@ config NXPLAYER_COMMAND_LINE
 		the nxplayer library to play media files, control the
 		volume, balance, bass, etc.
 
-if NXPLAYER_COMMAND_LINE
+if EXAMPLES_NXPLAYER_COMMAND_LINE
 
-config NXPLAYER_INCLUDE_HELP
+config EXAMPLES_NXPLAYER_INCLUDE_HELP
 	bool "Include HELP command and text"
 	default y
 	---help---
@@ -39,7 +39,7 @@ config NXPLAYER_INCLUDE_HELP
 
 endif
 
-config NXPLAYER_INCLUDE_DEVICE_SEARCH
+config EXAMPLES_NXPLAYER_INCLUDE_DEVICE_SEARCH
 	bool "Include audio device search code"
 	default y
 	---help---
@@ -49,7 +49,7 @@ config NXPLAYER_INCLUDE_DEVICE_SEARCH
 		mean the calling application must specify the path of the
 		audio device to use before performing any other operations.
 
-config NXPLAYER_INCLUDE_PREFERRED_DEVICE
+config EXAMPLES_NXPLAYER_INCLUDE_PREFERRED_DEVICE
 	bool "Include preferred audio device specification code"
 	default y
 	---help---
@@ -57,7 +57,7 @@ config NXPLAYER_INCLUDE_PREFERRED_DEVICE
 		for audio operations.  If this feature is not enabled, then
 		an audio device search will be performed.
 
-config NXPLAYER_FMT_FROM_EXT
+config EXAMPLES_NXPLAYER_FMT_FROM_EXT
 	bool "Include code to determine Audio format from extension"
 	default y
 	---help---
@@ -67,7 +67,7 @@ config NXPLAYER_FMT_FROM_EXT
 		specified, and will take priority over the more lengthy
 		file content detection approach.
 
-config NXPLAYER_FMT_FROM_HEADER
+config EXAMPLES_NXPLAYER_FMT_FROM_HEADER
 	bool "Include code to find Audio format from file content"
 	default n
 	---help---
@@ -76,7 +76,7 @@ config NXPLAYER_FMT_FROM_HEADER
 		This feature is used when the format type cannot be
 		determined from the filename extension.
 
-config NXPLAYER_INCLUDE_MEDIADIR
+config EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR
 	bool "Include support for specifying a media directory"
 	default y
 	---help---
@@ -84,9 +84,9 @@ config NXPLAYER_INCLUDE_MEDIADIR
 		will be searched when a request is made to play a file
 		which is not fully qualified.
 
-if NXPLAYER_INCLUDE_MEDIADIR
+if EXAMPLES_NXPLAYER_INCLUDE_MEDIADIR
 
-config NXPLAYER_DEFAULT_MEDIADIR
+config EXAMPLES_NXPLAYER_DEFAULT_MEDIADIR
 	string "Default root directory to search for media files"
 	default "/music"
 	---help---
@@ -95,7 +95,7 @@ config NXPLAYER_DEFAULT_MEDIADIR
 		changed at the nxplayer command line, but will default
 		to this value each time nxplayer is launched.
 
-config NXPLAYER_RECURSIVE_MEDIA_SEARCH
+config EXAMPLES_NXPLAYER_RECURSIVE_MEDIA_SEARCH
 	bool "Perform recursive directory search for media files"
 	default n
 	---help---
@@ -106,7 +106,7 @@ config NXPLAYER_RECURSIVE_MEDIA_SEARCH
 
 endif
 
-config NXPLAYER_INCLUDE_SYSTEM_RESET
+config EXAMPLES_NXPLAYER_INCLUDE_SYSTEM_RESET
 	bool "Include support for system / hardware reset"
 	default n
 	---help---
