@@ -223,5 +223,9 @@ void board_initialize(void)
 	board_gpio_initialize();
 	board_i2c_initialize();
 	board_wdt_initialize();
+
+#ifdef CONFIG_AUDIO_ALC5658
+	s5j_alc5658_initialize(0);
+#endif
 }
 #endif /* CONFIG_BOARD_INITIALIZE */
