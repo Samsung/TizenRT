@@ -1,9 +1,16 @@
-sudo: required
+sudo: false
+dist: trusty
+group: deprecated-2017Q2
 
 language: c
 
 services:
-  - docker
+- docker
+
+env:
+- BUILD_CONFIG=tash
+- BUILD_CONFIG=nettest
+- BUILD_CONFIG=minimal
 
 before_install:
 - docker pull an4967/tizenrt:1.1
@@ -12,5 +19,5 @@ before_install:
 script:
 - docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os an4967/tizenrt:1.1 /bin/bash
 - docker exec tizenrt_docker make distclean
-- docker exec -it tizenrt_docker bash -c 'cd tools; ./configure.sh artik053/nettest'
-- docker exec -it tizenrt_docker bash -c 'export PATH=/root/gcc-arm-none-eabi-4_9-2015q3/bin:$PATH;make;'
+- docker exec -it tizenrt_docker bash -c "cd tools; ./configure.sh artik053/${BUILD_CONFIG}"
+- docker exec -it tizenrt_docker bash -c "export PATH=/root/gcc-arm-none-eabi-4_9-2015q3/bin:$PATH;make;"
