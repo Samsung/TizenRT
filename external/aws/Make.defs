@@ -1,0 +1,49 @@
+AWS_SAMPLE_DIR=aws/samples/TizenRT
+AWS_CERT_DIR=aws/certs
+AWS_PLATFORM_DIR=aws/platform/TizenRT
+
+CSRCS += $(AWS_SAMPLE_DIR)/subscribe_publish_sample/subscribe_publish_sample.c \
+		 $(AWS_SAMPLE_DIR)/subscribe_publish_library_sample/subscribe_publish_library_sample.c \
+		 $(AWS_SAMPLE_DIR)/shadow_sample_console_echo/shadow_console_echo.c \
+		 $(AWS_SAMPLE_DIR)/shadow_sample/shadow_sample.c
+CSRCS += $(AWS_PLATFORM_DIR)/mbedtls/network_mbedtls_wrapper.c
+CSRCS += $(AWS_PLATFORM_DIR)/common/timer.c
+CSRCS += $(AWS_CERT_DIR)/certData.c
+CSRCS += aws/external_libs/jsmn/jsmn.c
+
+
+CXXSRCS += $(AWS_SAMPLE_DIR)/subscribe_publish_cpp_sample/subscribe_publish_cpp_sample.cpp
+
+CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
+
+SRCS += $(CXXSRCS)
+
+OBJS += $(CXXOBJS)
+
+CFLAGS += -I$(TOPDIR)/include
+CFLAGS += -Iaws/include
+CFLAGS += -Iaws/external_libs/jsmn
+CFLAGS += -I$(AWS_PLATFORM_DIR)/common
+CFLAGS += -I$(AWS_CERT_DIR)
+CFLAGS += -I$(AWS_PLATFORM_DIR)/mbedtls
+CFLAGS += -I$(AWS_SAMPLE_DIR)/subscribe_publish_sample
+CFLAGS += -I$(AWS_SAMPLE_DIR)/subscribe_publish_library_sample
+CFLAGS += -I$(AWS_SAMPLE_DIR)/subscribe_publish_cpp_sample
+CFLAGS += -I$(AWS_SAMPLE_DIR)/shadow_console_echo
+CFLAGS += -I$(AWS_SAMPLE_DIR)/shadow_sample
+
+# Enable AWS IoT Debugging Messages
+#CFLAGS += -DENABLE_IOT_TRACE
+#CFLAGS += -DENABLE_IOT_DEBUG
+CFLAGS += -DENABLE_IOT_INFO
+CFLAGS += -DENABLE_IOT_ERROR
+
+CXXFLAGS += -Iaws/include
+CXXFLAGS += -Iaws/external_libs/jsmn
+CXXFLAGS += -I$(AWS_PLATFORM_DIR)/common
+CXXFLAGS += -I$(AWS_CERT_DIR)
+CXXFLAGS += -I$(AWS_PLATFORM_DIR)/mbedtls
+CXXFLAGS += -I$(AWS_SAMPLE_DIR)/subscribe_publish_cpp_sample
+
+DEPPATH += --dep-path aws
+VPATH += :aws

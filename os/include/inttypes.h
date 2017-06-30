@@ -236,6 +236,27 @@ uintmax_t wcstoumax(const wchar_t *, wchar_t **, int);
 #endif
 
 #define PRId64   __PRI64_PREFIX "d"
+
+#define PRIu8       "u"
+#define PRIu16      "u"
+#define PRIu32      "u"
+#define PRIu64      __PRI64_PREFIX "u"
+
+
+#define PRIi8       "i"
+#define PRIi16      "i"
+#define PRIi32      "i"
+#define PRIi64      __PRI64_PREFIX "i"
+
+#define SCNu8       "hhu"
+#define SCNu16      "hu"
+#define SCNu32      "u"
+#define SCNu64      __PRI64_PREFIX "u"
+
+#define SCNi8       "hhi"
+#define SCNi16      "hi"
+#define SCNi32      "i"
+#define SCNi64      __PRI64_PREFIX "i"
 /**
  * @endcond
  */

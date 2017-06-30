@@ -70,15 +70,21 @@ include libtuv/source/unix/Make.defs
 include libtuv/source/Make.defs
 endif
 
+ifeq ($(CONFIG_AWS_SDK),y)
+include aws/Make.defs
+include aws/src/Make.defs
+endif
+
 ifeq ($(CONFIG_DM),y)
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
+CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
 
-SRCS = $(ASRCS) $(CSRCS)
-OBJS = $(AOBJS) $(COBJS)
+SRCS = $(ASRCS) $(CSRCS) $(CXXSRCS)
+OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
 
 BIN	= libexternal$(LIBEXT)
 
@@ -89,6 +95,9 @@ $(AOBJS): %$(OBJEXT): %.S
 
 $(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
+
+$(CXXOBJS): %$(OBJEXT): %.cpp
+	$(call COMPILEXX, $<, $@)
 
 iotivity_build:
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
@@ -105,7 +114,9 @@ $(BIN): $(OBJS) iotivity_build
 	$(call ARCHIVE, $@, $(OBJS))
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(ASRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(CSRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(CXXSRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend
