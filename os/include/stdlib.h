@@ -350,7 +350,7 @@ double_t strtod(const char *, char **);
  * @param[in] value Integer value
  * @param[out] str String where store the result
  * @param[in] base Numerical base
- * @return On success, 0 is returned. On failure, none-zero is returned.
+ * @return A pointer to the resulting null-terminated string, same as parameter str.
  * @since Tizen RT v1.0
  */
 char *itoa(int value, char *str, int base);
