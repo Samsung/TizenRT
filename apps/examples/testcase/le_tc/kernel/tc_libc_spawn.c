@@ -40,6 +40,7 @@
 #define SEC_10000 10000
 #define MIN_SIGNO 0
 #define FILEPATH "/dev/smart1"
+#define SPAWN_STACKSIZE 2048
 
 /**
 * @fn                   :function_name_spawn
@@ -197,7 +198,7 @@ static void tc_libc_spawn_task_spawnattr_setgetstacksize(void)
 	ret_chk = posix_spawnattr_init(&st_attr);
 	TC_ASSERT_EQ("posix_spawnattr_init", ret_chk, OK);
 
-	ret_chk = task_spawnattr_setstacksize(&st_attr, CONFIG_USERMAIN_STACKSIZE);
+	ret_chk = task_spawnattr_setstacksize(&st_attr, SPAWN_STACKSIZE);
 	TC_ASSERT_EQ("task_spawnattr_setstacksize", ret_chk, OK);
 
 	ret_chk = task_spawn(&pid, "spawn_stacksize", function_name_spawn, NULL, &st_attr, (char *const *)NULL, (char *const *)NULL);
@@ -206,7 +207,7 @@ static void tc_libc_spawn_task_spawnattr_setgetstacksize(void)
 
 	ret_chk = task_spawnattr_getstacksize(&st_attr, &stacksize);
 	TC_ASSERT_EQ("task_spawnattr_getstacksize", ret_chk, OK);
-	TC_ASSERT_EQ("task_spawnattr_getstacksize", stacksize, CONFIG_USERMAIN_STACKSIZE);
+	TC_ASSERT_EQ("task_spawnattr_getstacksize", stacksize, SPAWN_STACKSIZE);
 
 	TC_SUCCESS_RESULT();
 }
