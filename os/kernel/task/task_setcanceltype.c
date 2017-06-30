@@ -69,7 +69,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: task_setcancelstate
+ * Name: task_setcanceltype
  *
  * Description:
  *   The task_setcanceltype() function atomically both sets the calling

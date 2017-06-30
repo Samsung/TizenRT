@@ -78,7 +78,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pthread_setcancelstate
+ * Name: pthread_setcanceltype
  *
  * Description:
  *   The pthread_setcanceltype() function atomically both sets the calling
