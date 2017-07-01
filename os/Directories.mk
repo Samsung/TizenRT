@@ -159,6 +159,11 @@ else
 OTHERDIRS += syscall
 endif
 
+ifeq ($(CONFIG_AUDIO),y)
+NONFSDIRS += audio
+else
+OTHERDIRS += audio
+endif
 
 # CLEANDIRS are the directories that will clean in.  These are
 #   all directories that we know about.
