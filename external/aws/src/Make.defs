@@ -1,0 +1,17 @@
+AWS_SRC_DIR=aws/src
+
+CSRCS += $(AWS_SRC_DIR)/aws_iot_json_utils.c \
+		$(AWS_SRC_DIR)/aws_iot_mqtt_client.c \
+		$(AWS_SRC_DIR)/aws_iot_mqtt_client_common_internal.c \
+		$(AWS_SRC_DIR)/aws_iot_mqtt_client_connect.c \
+		$(AWS_SRC_DIR)/aws_iot_mqtt_client_publish.c \
+		$(AWS_SRC_DIR)/aws_iot_mqtt_client_subscribe.c \
+		$(AWS_SRC_DIR)/aws_iot_mqtt_client_unsubscribe.c \
+		$(AWS_SRC_DIR)/aws_iot_mqtt_client_yield.c \
+		$(AWS_SRC_DIR)/aws_iot_shadow_actions.c \
+		$(AWS_SRC_DIR)/aws_iot_shadow.c \
+		$(AWS_SRC_DIR)/aws_iot_shadow_json.c \
+		$(AWS_SRC_DIR)/aws_iot_shadow_records.c
+
+ROOTDEPPATH += --dep-path aws/src/
+VPATH += :aws/src/

@@ -170,3 +170,10 @@ config LIBTUV
 	default n
 	---help---
 		enable libtuv
+
+config AWS_SDK
+	bool "AWS IoT SDK"
+	default n
+	---help---
+		enable AWS IoT Device SDK
+
