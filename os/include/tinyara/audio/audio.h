@@ -78,6 +78,8 @@
 
 #ifdef CONFIG_AUDIO
 
+#define audinfo printf
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -283,12 +285,12 @@
 #define AUDIO_ABP_STATIC            0x0020	/* Set if statically allocated */
 #define AUDIO_ABP_ACTIVE            0x0040	/* Set if this buffer is still active.
                                                 *   A buffer could become inactive
-						*   if it is processed by an output
-						*   device or a processing device
-						*   that replaces it with an alternate
-						*   buffer as a result of some DSP
-						*   operation, etc.
-						*/
+                                                *   if it is processed by an output
+                                                *   device or a processing device
+                                                *   that replaces it with an alternate
+                                                *   buffer as a result of some DSP
+                                                *   operation, etc.
+                                                */
 
 /* Standard Audio Message Queue message IDs */
 
@@ -328,7 +330,7 @@ struct audio_caps_s {
 	uint8_t ac_len;			/* Length of the structure */
 	uint8_t ac_type;		/* Capabilities (device) type */
 	uint8_t ac_subtype;		/* Capabilities sub-type, if needed */
-	uint8_t ac_channels;		/* Number of channels (1, 2, 5, 7) */
+	uint8_t ac_channels;            /* Number of channels (1, 2, 5, 7) */
 
 	union {				/* Audio data format(s) for this device */
 		uint8_t b[2];
@@ -336,7 +338,8 @@ struct audio_caps_s {
 	} ac_format;
 
 	union {
-		/* Device specific controls. For AUDIO_DEVICE_QUERY, *//*   this field reports the device type supported */
+		/* Device specific controls. For AUDIO_DEVICE_QUERY, */
+		/*   this field reports the device type supported */
 		uint8_t b[4];		/*   by this lower-half driver. */
 		uint16_t hw[2];
 		uint32_t w;
@@ -374,11 +377,11 @@ struct ap_buffer_info_s {
 
 /* This structure describes an Audio Pipeline Buffer */
 
-begin_packed_struct struct ap_buffer_s {
+struct ap_buffer_s {
 	struct dq_entry_s dq_entry;	/* Double linked queue entry */
 	struct audio_info_s i;		/* The info for samples in this buffer */
 #ifdef CONFIG_AUDIO_MULTI_SESSION
-	FAR void *session;			/* Associated session */
+	FAR void *session;		/* Associated session */
 #endif
 	apb_samp_t nmaxbytes;		/* The maximum number of bytes */
 	apb_samp_t nbytes;		/* The number of bytes used */
@@ -387,7 +390,7 @@ begin_packed_struct struct ap_buffer_s {
 	uint16_t flags;			/* Buffer flags */
 	uint16_t crefs;			/* Number of reference counts */
 	uint8_t samp[0];		/* Offset of the first sample */
-} end_packed_struct;
+};
 
 /* Structure defining the messages passed to a listening audio thread
  * for dequeuing buffers and other operations.  Also used to allocate
