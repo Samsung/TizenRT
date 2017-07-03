@@ -378,7 +378,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	int buf_len = 0;
 	int remain = HTTP_CONF_MAX_REQUEST_LENGTH;
 	int enc = HTTP_CONTENT_LENGTH;
-	struct http_req_message req;
+	struct http_req_message req = {0, };
 	int state = HTTP_REQUEST_HEADER;
 	struct http_message_len_t mlen = {0,};
 	struct sockaddr_in addr;
@@ -401,6 +401,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	req.url = url;
 	req.headers = request_params;
 	req.client_ip = addr.sin_addr.s_addr;
+	req.encoding = HTTP_CONTENT_LENGTH;
 
 	while (!read_finish) {
 		if (remain <= 0) {
