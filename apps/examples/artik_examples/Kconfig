@@ -1,0 +1,34 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+menuconfig EXAMPLES_ARTIK_SDK
+	bool "ARTIK SDK examples"
+	default n
+	depends on ARTIK_SDK
+if EXAMPLES_ARTIK_SDK
+	config EXAMPLES_ARTIK_ADC
+		bool "ARTIK ADC example"
+	config EXAMPLES_ARTIK_CLOUD
+		bool "ARTIK Cloud example"
+	config EXAMPLES_ARTIK_GPIO
+		bool "ARTIK GPIO example"
+	config EXAMPLES_ARTIK_HTTP
+		bool "ARTIK HTTP example"
+	config EXAMPLES_ARTIK_MODULE
+		bool "ARTIK Module example"
+	config EXAMPLES_ARTIK_PWM
+		bool "ARTIK PWM example"
+	config EXAMPLES_ARTIK_SECURITY
+		bool "ARTIK Security example"
+	config EXAMPLES_ARTIK_WEBSOCKET
+		bool "ARTIK Websocket example"
+	config EXAMPLES_ARTIK_WIFI
+		bool "ARTIK WiFi example"
+endif
+
+config USER_ENTRYPOINT
+-       string
+-       default "artik_cloud_main" if ENTRY_ARTIK_EXAMPLES && EXAMPLES_ARTIK_CLOUD
+-       default "artik_http_main" if ENTRY_ARTIK_EXAMPLES && EXAMPLES_ARTIK_HTTP
+-       default "artik_websocket_main" if ENTRY_ARTIK_EXAMPLES && EXAMPLES_ARTIK_WEBSOCKET
