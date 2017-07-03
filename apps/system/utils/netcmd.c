@@ -271,7 +271,7 @@ errout:
 }
 #endif
 
-#if defined(CONFIG_NETUTILS_TFTPC)
+#if defined(CONFIG_NETUTILS_TFTPC) && !defined(CONFIG_DISABLE_ENVIRON)
 int cmd_get(int argc, char **argv)
 {
 	struct tftpc_args_s args;
@@ -565,7 +565,7 @@ int cmd_ifconfig(int argc, char **argv)
 
 
 const static tash_cmdlist_t net_utilcmds[] = {
-#ifdef CONFIG_NETUTILS_TFTPC
+#if defined(CONFIG_NETUTILS_TFTPC) && !defined(CONFIG_DISABLE_ENVIRON)
 	{"ftp_get", cmd_get, TASH_EXECMD_SYNC},
 #endif
 	{"ifconfig", cmd_ifconfig, TASH_EXECMD_SYNC},

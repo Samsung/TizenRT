@@ -64,10 +64,12 @@ INCDIROPT = -w
 endif
 
 ASRCS =
-ifeq ($(CONFIG_FS_CMDS),y)
-CSRCS = fs_getpath.c
-endif
+CSRCS =
 MAINSRC =
+
+ifneq ($(CONFIG_DISABLE_ENVIRON),y)
+CSRCS += fs_getpath.c
+endif
 
 ifeq ($(CONFIG_TASH),y)
 CSRCS += kernelcmd.c
