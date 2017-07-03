@@ -107,4 +107,6 @@ EXTERN int ether_line(const char *line, struct ether_addr *addr, char *hostname)
 #endif
 
 #endif							/*   __INCLUDE_NETINET_ETHER_H */
-/** @} */ // end of SOCKET group
+/**
+ * @}
+ */

@@ -77,4 +77,6 @@ int trace_sched(struct tcb_s *prev, struct tcb_s *next);
 #endif
 
 #endif /* __INCLUDE_TTRACE_H */
-/** @} */
+/**
+ * @}
+ */

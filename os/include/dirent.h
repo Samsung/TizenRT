@@ -184,4 +184,5 @@ off_t telldir(FAR DIR *dirp);
 
 #endif							/* __INCLUDE_DIRENT_H */
 /**
- * @} */
+ * @}
+ */

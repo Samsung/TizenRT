@@ -894,7 +894,8 @@ int pthread_rwlock_unlock(FAR pthread_rwlock_t *lock);
 int pthread_rwlock_wrlock(FAR pthread_rwlock_t *lock);
 
 /**
- * @} */
+ * @}
+ */
 
 #ifdef __cplusplus
 }

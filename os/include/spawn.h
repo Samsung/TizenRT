@@ -329,4 +329,6 @@ void posix_spawnattr_dump(FAR posix_spawnattr_t *attr);
 }
 #endif
 #endif							/* __INCLUDE_SPAWN_H */
-/** @} */// end of SPAWN_LIBC
+/**
+ * @}
+ */

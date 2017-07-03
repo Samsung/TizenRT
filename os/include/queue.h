@@ -254,4 +254,6 @@ FAR dq_entry_t *dq_remfirst(FAR dq_queue_t *queue);
 #endif
 
 #endif							/* __INCLUDE_QUEUE_H_ */
-/** @} */// end of QUEUE_LIBC
+/**
+ * @}
+ */

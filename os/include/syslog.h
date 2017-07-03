@@ -303,4 +303,6 @@ int setlogmask(int mask);
 }
 #endif
 #endif							/* __INCLUDE_SYSLOG_H */
-/** @} */
+/**
+ * @}
+ */
