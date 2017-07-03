@@ -16,12 +16,10 @@
 #
 ############################################################################
 ############################################################################
-# drivers/audio/Make.defs
-# These drivers support various Audio devices using the NuttX Audio
-# interface.
+# libc/audio/Make.defs
 #
-#   Copyright (C) 2013 Ken Pettit. All rights reserved.
-#   Author: Ken Pettit <pettitkd@gmail.com>
+#   Copyright (C) 2013 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -52,17 +50,10 @@
 #
 ############################################################################
 
-# Include Audio drivers
+ifeq ($(CONFIG_AUDIO),y)
+CSRCS += lib_buffer.c
 
-ifeq ($(CONFIG_AUDIO_DEVICES),y)
-CSRCS += audio.c
-ifeq ($(CONFIG_AUDIO_I2SCHAR),y)
-CSRCS += i2schar.c
-endif
-
-# Include Audio driver support
 
 DEPPATH += --dep-path audio
 VPATH += :audio
-
 endif

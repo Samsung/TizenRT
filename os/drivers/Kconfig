@@ -183,17 +183,6 @@ config GPIO
 		driver. See include/tinyara/gpio.h for further GPIO driver
 		information.
 
-menuconfig I2S
-	bool "I2S Driver Support"
-	default n
-	---help---
-		This selection enables selection of common I2S options.  This option
-		should be enabled by all platforms that support I2S interfaces.
-		See include/tinyara/audio/i2s.h for further I2S driver information.
-
-if I2S
-endif # I2S
-
 menuconfig BCH
 	bool "Block-to-Character (BCH) Support"
 	default n
@@ -330,17 +319,6 @@ config TIMER
 		driver. See include/tinyara/timer.h for further timer driver
 		information.
 
-menuconfig I2S
-        bool "I2S Driver Support"
-        default n
-        ---help---
-                This selection enables selection of common I2S options.  This option
-                should be enabled by all platforms that support I2S interfaces.
-                See include/tinyara/audio/i2s.h for further I2S driver information.
-
-if I2S
-endif # I2S
-
 menuconfig ANALOG
 	bool "Analog Device(ADC/DAC) Support"
 	default n
@@ -353,22 +331,6 @@ menuconfig ANALOG
 if ANALOG
 source drivers/analog/Kconfig
 endif # ANALOG
-
-menuconfig AUDIO_DEVICES
-        bool "Audio Device Support"
-        default n
-        ---help---
-                Enable support for audio device drivers.  This includes drivers for
-                MP3, WMA and Ogg Vorbis encoding, decoding, as well as drivers for
-                interfacing with external DSP chips to perform custom audio functions.
-
-                NOTE: All of these drivers depend on support from the audio subsystem
-                enabled with the AUDIO selection.
-
-if AUDIO_DEVICES
-source drivers/audio/Kconfig
-endif # AUDIO_DEVICES
-
 
 menuconfig LCD
 	bool "LCD Driver Support"
@@ -477,3 +439,4 @@ menuconfig DRIVERS_WIRELESS
 
 source drivers/wireless/Kconfig
 
+source drivers/audio/Kconfig
