@@ -359,10 +359,21 @@ int libc_misc_main(void)
 	tc_libc_misc_crc16part();
 	tc_libc_misc_crc32();
 	tc_libc_misc_crc32part();
+#ifdef CONFIG_DEBUG
+#ifdef CONFIG_DEBUG_ERROR
 	tc_libc_misc_dbg();
+#ifdef CONFIG_ARCH_LOWPUTC
 	tc_libc_misc_lldbg();
-	tc_libc_misc_llvdbg();
+#endif
+#endif
+
+#ifdef CONFIG_DEBUG_VERBOSE
 	tc_libc_misc_vdbg();
+#ifdef CONFIG_ARCH_LOWPUTC
+	tc_libc_misc_llvdbg();
+#endif
+#endif
+#endif /* CONFIG_DEBUG */
 
 	return 0;
 }
