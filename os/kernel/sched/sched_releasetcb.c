@@ -102,6 +102,8 @@ static void sched_releasepid(pid_t pid)
 	g_cpuload_total -= g_pidhash[hash_ndx].ticks;
 	g_pidhash[hash_ndx].ticks = 0;
 #endif
+	/* Decrement the alive task count as task is exiting */
+	g_alive_taskcount--;
 }
 
 /************************************************************************

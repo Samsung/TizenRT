@@ -176,6 +176,12 @@ volatile sq_queue_t g_delayed_kufree;
 volatile sq_queue_t g_delayed_kfree;
 #endif
 
+/* This gives number of alive tasks at any point of time in the system.
+ * If the system is already running CONFIG_MAX_TASKS, Creating new
+ * task is not supported.
+ */
+volatile uint8_t g_alive_taskcount;
+
 /* This is the value of the last process ID assigned to a task */
 
 volatile pid_t g_lastpid;
@@ -304,6 +310,9 @@ void os_start(void)
 
 	g_pidhash[PIDHASH(0)].tcb = &g_idletcb.cmn;
 	g_pidhash[PIDHASH(0)].pid = 0;
+
+	/* Increment the g_alive_taskcount as first task "idle task" is created */
+	g_alive_taskcount++;
 
 	/* Initialize the IDLE task TCB *******************************************/
 	/* Initialize a TCB for this thread of execution.  NOTE:  The default
