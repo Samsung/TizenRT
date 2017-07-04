@@ -138,8 +138,15 @@
 
 #define WEBSOCKET_EXAMPLE_STACKSIZE (1024 * 10)
 
-/* TLS configure */
-#define MBEDTLS_DEBUG_LEVEL 2
+/* 
+ * TLS debug configure (0 ~ 5)
+ *
+ * This configuration is good to debug TLS handshake state. But, more than
+ * 2 level of debug sometimes make recv timeout. So we recommend to set
+ * WEBSOCKET_SOCK_RCV_TIMEOUT than 5 seconds with debug mode.
+ * (in include/netutils/websocket.h)
+ */
+#define MBEDTLS_DEBUG_LEVEL 0
 
 #define WEBSOCKET_USAGE										\
 	"\n"													\
