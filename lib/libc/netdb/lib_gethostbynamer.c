@@ -215,7 +215,7 @@ static int lib_numeric_address(FAR const char *name, FAR struct hostent *host, F
 	/* And copy name */
 
 	namelen = strlen(name);
-	if (addrlen + namelen + 1 > buflen) {
+	if ((namelen + 1) > buflen) {
 		return -ERANGE;
 	}
 
@@ -403,7 +403,7 @@ static int lib_find_answer(FAR const char *name, FAR struct hostent *host, FAR c
 	/* And copy the host name */
 
 	namelen = strlen(name);
-	if (addrlen + namelen + 1 > buflen) {
+	if ((namelen + 1) > buflen) {
 		return -ERANGE;
 	}
 
@@ -539,7 +539,7 @@ static int lib_dns_lookup(FAR const char *name, FAR struct hostent *host, FAR ch
 		/* And copy name */
 
 		namelen = strlen(name);
-		if (addrlen + namelen + 1 > buflen) {
+		if ((namelen + 1) > buflen) {
 			return -ERANGE;
 		}
 
