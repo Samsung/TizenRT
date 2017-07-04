@@ -71,7 +71,7 @@ int strncmp(const char *cs, const char *ct, size_t nb)
 {
 	int result = 0;
 	for (; nb > 0; nb--) {
-		if ((result = (int) * cs - (int) * ct++) != 0 || !*cs++) {
+		if ((result = (int)*cs - (int)*ct++) != 0 || !*cs++) {
 			break;
 		}
 	}
