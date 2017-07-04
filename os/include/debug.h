@@ -1115,4 +1115,6 @@ int llvdbg(const char *format, ...);
 }
 #endif
 #endif							/* __INCLUDE_DEBUG_H */
-/** @} *///end of DEBUG_KERNEL
+/**
+ * @}
+ */

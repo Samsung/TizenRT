@@ -218,4 +218,6 @@ void up_assert(void) noreturn_function;
 
 #endif							/* __INCLUDE_ASSERT_H */
 
-/** @} *///end of ASSERT_KERNEL
+/**
+ * @}
+ */

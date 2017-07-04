@@ -269,4 +269,5 @@ uintmax_t wcstoumax(const wchar_t *, wchar_t **, int);
 #endif							/* __INCLUDE_INTTYPES_H */
 
 /**
- * @} */
+ * @}
+ */

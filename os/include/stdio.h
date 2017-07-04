@@ -432,4 +432,6 @@ FAR char *tempnam(FAR const char *dir, FAR const char *pfx);
 #endif
 
 #endif							/* __INCLUDE_STDIO_H */
-/** @} */// end of STDIO_LIBC
+/**
+ * @}
+ */

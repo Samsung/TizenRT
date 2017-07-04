@@ -107,4 +107,6 @@ uint16_t crc16(FAR const uint8_t *src, size_t len);
 
 #endif							/* __INCLUDE_CRC16_H */
 
-/** @} *///end of CRC_KERNEL
+/**
+ * @}
+ */

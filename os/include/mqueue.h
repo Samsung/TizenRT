@@ -176,4 +176,5 @@ int mq_getattr(mqd_t mqdes, FAR struct mq_attr *mq_stat);
 
 #endif							/* __INCLUDE_MQUEUE_H */
 /**
- * @} */
+ * @}
+ */
