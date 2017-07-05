@@ -174,21 +174,19 @@ websocket_return_t websocket_wait_state(websocket_t *websocket, int state, int u
 	return WEBSOCKET_SUCCESS;
 }
 
-void websocket_ping_counter(FAR void *arg)
+int websocket_ping_counter(websocket_t *websocket)
 {
-	websocket_t *websocket = arg;
-
 	if (websocket->state != WEBSOCKET_STOP) {
 		websocket->ping_cnt++;
 
 		if (websocket->ping_cnt >= WEBSOCKET_MAX_PING_IGNORE) {
 			WEBSOCKET_DEBUG("ping messages couldn't receive pong messages for %d times, closing.\n", WEBSOCKET_MAX_PING_IGNORE);
-			websocket_update_state(websocket, WEBSOCKET_STOP);
-			return;
-		} else {
-			websocket_queue_ping(websocket);
+			return WEBSOCKET_SOCKET_ERROR;
 		}
+		websocket_queue_ping(websocket);
 	}
+
+	return WEBSOCKET_SUCCESS;
 }
 
 int websocket_handler(websocket_t *websocket)
@@ -205,7 +203,9 @@ int websocket_handler(websocket_t *websocket)
 		FD_ZERO(&read_fds);
 		FD_ZERO(&write_fds);
 
-		FD_SET(fd, &read_fds);
+		if (wslay_event_want_read(ctx)) {
+			FD_SET(fd, &read_fds);
+		}
 		if (wslay_event_want_write(ctx)) {
 			FD_SET(fd, &write_fds);
 		}
@@ -213,25 +213,21 @@ int websocket_handler(websocket_t *websocket)
 		tv.tv_sec = (WEBSOCKET_HANDLER_TIMEOUT / 1000);
 		tv.tv_usec = ((WEBSOCKET_HANDLER_TIMEOUT % 1000) * 1000);
 		r = select(fd + 1, &read_fds, &write_fds, NULL, &tv);
-		if (r == -1) {
-			if (errno == EINVAL) {
-				WEBSOCKET_DEBUG("socket fd is not exist, fd == %d\n", fd);
-				websocket_update_state(websocket, WEBSOCKET_STOP);
-				return WEBSOCKET_SOCKET_ERROR;
-			}
-
+		if (r < 0) {
 			if (errno == EAGAIN || errno == EBUSY || errno == EINTR) {
 				continue;
 			}
 
 			WEBSOCKET_DEBUG("select function returned errno == %d\n", errno);
-			continue;
+			return WEBSOCKET_SOCKET_ERROR;
 		} else if (r == 0) {
 			if (WEBSOCKET_HANDLER_TIMEOUT != 0) {
 				timeout++;
 				if ((WEBSOCKET_HANDLER_TIMEOUT * timeout) >= (WEBSOCKET_PING_INTERVAL * 10)) {
 					timeout = 0;
-					websocket_ping_counter((void *)websocket);
+					if (websocket_ping_counter(websocket) != WEBSOCKET_SUCCESS) {
+						return WEBSOCKET_SOCKET_ERROR;
+					}
 				}
 			}
 
@@ -1033,6 +1029,8 @@ websocket_return_t websocket_queue_ping(websocket_t *websocket)
 
 websocket_return_t websocket_queue_close(websocket_t *websocket, const char *close_message)
 {
+	int r = WEBSOCKET_SUCCESS;
+
 	if (websocket == NULL) {
 		WEBSOCKET_DEBUG("NULL parameter\n");
 		return WEBSOCKET_ALLOCATION_ERROR;
@@ -1045,14 +1043,14 @@ websocket_return_t websocket_queue_close(websocket_t *websocket, const char *clo
 	if (websocket->ctx != NULL && websocket->state != WEBSOCKET_STOP) {
 		if (wslay_event_queue_close(websocket->ctx, 1000, (const uint8_t *)close_message, strlen(close_message)) != WEBSOCKET_SUCCESS) {
 			WEBSOCKET_DEBUG("fail to queue close message\n");
-			websocket_socket_free(websocket);
-			wslay_event_context_free(websocket->ctx);
-			return WEBSOCKET_SEND_ERROR;
+			r = WEBSOCKET_SEND_ERROR;
+			goto EXIT_QUEUE_CLOSE;
 		}
 		websocket_wait_state(websocket, WEBSOCKET_STOP, 100000);
-		WEBSOCKET_DEBUG("websocket handler stopped, closing\n");
+		WEBSOCKET_DEBUG("websocket handler successfully stopped, closing\n");
 	}
 
+EXIT_QUEUE_CLOSE:
 	websocket_socket_free(websocket);
 
 	if (websocket->ctx) {
@@ -1060,7 +1058,9 @@ websocket_return_t websocket_queue_close(websocket_t *websocket, const char *clo
 		websocket->ctx = NULL;
 	}
 
-	return WEBSOCKET_SUCCESS;
+	websocket_update_state(websocket, WEBSOCKET_STOP);
+
+	return r;
 }
 
 websocket_return_t websocket_update_state(websocket_t *websocket, int state)
