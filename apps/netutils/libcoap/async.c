@@ -21,6 +21,7 @@
 #include <apps/netutils/libcoap/debug.h>
 #include <apps/netutils/libcoap/async.h>
 
+/* TODO : Considering TCP Case */
 coap_async_state_t *coap_register_async(coap_context_t *context, coap_address_t *peer, coap_pdu_t *request, unsigned char flags, void *data)
 {
 	coap_async_state_t *s;
@@ -37,17 +38,18 @@ coap_async_state_t *coap_register_async(coap_context_t *context, coap_address_t 
 	}
 
 	/* store information for handling the asynchronous task */
-	s = (coap_async_state_t *) coap_malloc(sizeof(coap_async_state_t) + request->hdr->token_length);
+	s = (coap_async_state_t *) coap_malloc(sizeof(coap_async_state_t) +
+			request->transport_hdr->udp.token_length);
 	if (!s) {
 		coap_log(LOG_CRIT, "coap_register_async: insufficient memory\n");
 		return NULL;
 	}
 
-	memset(s, 0, sizeof(coap_async_state_t) + request->hdr->token_length);
+	memset(s, 0, sizeof(coap_async_state_t) + request->transport_hdr->udp.token_length);
 
 	/* set COAP_ASYNC_CONFIRM according to request's type */
 	s->flags = flags & ~COAP_ASYNC_CONFIRM;
-	if (request->hdr->type == COAP_MESSAGE_CON) {
+	if (request->transport_hdr->udp.type == COAP_MESSAGE_CON) {
 		s->flags |= COAP_ASYNC_CONFIRM;
 	}
 
@@ -55,9 +57,9 @@ coap_async_state_t *coap_register_async(coap_context_t *context, coap_address_t 
 
 	memcpy(&s->peer, peer, sizeof(coap_address_t));
 
-	if (request->hdr->token_length) {
-		s->tokenlen = request->hdr->token_length;
-		memcpy(s->token, request->hdr->token, request->hdr->token_length);
+	if (request->transport_hdr->udp.token_length) {
+		s->tokenlen = request->transport_hdr->udp.token_length;
+		memcpy(s->token, request->transport_hdr->udp.token, request->transport_hdr->udp.token_length);
 	}
 
 	memcpy(&s->id, &id, sizeof(coap_tid_t));

@@ -95,7 +95,7 @@ void hnd_get_index(coap_context_t *ctx, struct coap_resource_t *resource, coap_a
 {
 	unsigned char buf[3];
 
-	response->hdr->code = COAP_RESPONSE_CODE(205);
+	response->transport_hdr->udp.code = COAP_RESPONSE_CODE(205);
 
 	coap_add_option(response, COAP_OPTION_CONTENT_TYPE, coap_encode_var_bytes(buf, COAP_MEDIATYPE_TEXT_PLAIN), buf);
 
@@ -118,12 +118,12 @@ void hnd_get_time(coap_context_t *ctx, struct coap_resource_t *resource, coap_ad
 	 * when query ?ticks is given. */
 
 	/* if my_clock_base was deleted, we pretend to have no such resource */
-	response->hdr->code = my_clock_base ? COAP_RESPONSE_CODE(205) : COAP_RESPONSE_CODE(404);
+	response->transport_hdr->udp.code = my_clock_base ? COAP_RESPONSE_CODE(205) : COAP_RESPONSE_CODE(404);
 
 	if (request != NULL && coap_check_option(request, COAP_OPTION_OBSERVE, &opt_iter)) {
 		subscription = coap_add_observer(resource, peer, token);
 		if (subscription) {
-			subscription->non = request->hdr->type == COAP_MESSAGE_NON;
+			subscription->non = request->transport_hdr->udp.type == COAP_MESSAGE_NON;
 			coap_add_option(response, COAP_OPTION_OBSERVE, 0, NULL);
 		}
 	}
@@ -170,7 +170,7 @@ void hnd_put_time(coap_context_t *ctx, struct coap_resource_t *resource, coap_ad
 	 */
 
 	/* if my_clock_base was deleted, we pretend to have no such resource */
-	response->hdr->code = my_clock_base ? COAP_RESPONSE_CODE(204) : COAP_RESPONSE_CODE(201);
+	response->transport_hdr->udp.code = my_clock_base ? COAP_RESPONSE_CODE(204) : COAP_RESPONSE_CODE(201);
 
 	resource->dirty = 1;
 
@@ -193,7 +193,7 @@ void hnd_delete_time(coap_context_t *ctx, struct coap_resource_t *resource, coap
 {
 	my_clock_base = 0;			/* mark clock as "deleted" */
 
-	/* type = request->hdr->type == COAP_MESSAGE_CON  */
+	/* type = request->transport_hdr->udp.type == COAP_MESSAGE_CON  */
 	/*   ? COAP_MESSAGE_ACK : COAP_MESSAGE_NON; */
 }
 
@@ -206,10 +206,10 @@ void hnd_get_async(coap_context_t *ctx, struct coap_resource_t *resource, coap_a
 	size_t size;
 
 	if (async) {
-		if (async->id != request->hdr->id) {
+		if (async->id != request->transport_hdr->udp.id) {
 			coap_opt_filter_t f;
 			coap_option_filter_clear(f);
-			response->hdr->code = COAP_RESPONSE_CODE(503);
+			response->transport_hdr->udp.code = COAP_RESPONSE_CODE(503);
 		}
 		return;
 	}
@@ -245,7 +245,7 @@ void check_async(coap_context_t *ctx, coap_tick_t now)
 		return;
 	}
 
-	response->hdr->id = coap_new_message_id(ctx);
+	response->transport_hdr->udp.id = coap_new_message_id(ctx);
 
 	if (async->tokenlen) {
 		coap_add_token(response, async->tokenlen, async->token);
@@ -254,7 +254,7 @@ void check_async(coap_context_t *ctx, coap_tick_t now)
 	coap_add_data(response, 4, (unsigned char *)"done");
 
 	if (coap_send(ctx, &async->peer, response) == COAP_INVALID_TID) {
-		debug("check_async: cannot send response for message %d\n", response->hdr->id);
+		debug("check_async: cannot send response for message %d\n", response->transport_hdr->udp.id);
 	}
 	coap_delete_pdu(response);
 	coap_remove_async(ctx, async->id, &tmp);

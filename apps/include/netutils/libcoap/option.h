@@ -69,7 +69,7 @@ size_t coap_opt_size(const coap_opt_t *opt);
  * @param pdu The PDU containing the options.
  * @return A pointer to the first option if available, or @c NULL otherwise.
  */
-coap_opt_t *options_start(coap_pdu_t *pdu);
+coap_opt_t *options_start(coap_pdu_t *pdu, coap_transport_t transport);
 
 /**
  * Interprets @p opt as pointer to a CoAP option and advances to
@@ -176,6 +176,24 @@ typedef struct {
 } coap_opt_iterator_t;
 
 /**
+ * Initializes the given option iterator @p oi to point to the beginning of the
+ * @p pdu's option list. This function returns @p oi on success, @c NULL
+ * otherwise (i.e. when no options exist). Note that a length check on the
+ * option list must be performed before coap_option_iterator_init() is called.
+ *
+ * @param pdu    The PDU the options of which should be walked through.
+ * @param oi     An iterator object that will be initilized.
+ * @param filter An optional option type filter.
+ *               With @p type != @c COAP_OPT_ALL, coap_option_next()
+ *               will return only options matching this bitmask.
+ *               Fence-post options @c 14, @c 28, @c 42, ... are always
+ *               skipped.
+ *
+ * @return       The iterator object @p oi on success, @c NULL otherwise.
+ */
+coap_opt_iterator_t *coap_option_iterator_init(coap_pdu_t *pdu, coap_opt_iterator_t *oi, const coap_opt_filter_t filter);
+
+/**
  * Initializes the given option iterator @p oi to point to the
  * beginning of the @p pdu's option list. This function returns @p oi
  * on success, @c NULL otherwise (i.e. when no options exist).
@@ -192,7 +210,7 @@ typedef struct {
  *
  * @return The iterator object @p oi on success, @c NULL otherwise.
  */
-coap_opt_iterator_t *coap_option_iterator_init(coap_pdu_t *pdu, coap_opt_iterator_t *oi, const coap_opt_filter_t filter);
+coap_opt_iterator_t *coap_option_iterator_init2(coap_pdu_t *pdu, coap_opt_iterator_t *oi, const coap_opt_filter_t filter, coap_transport_t transport);
 
 /**
  * Updates the iterator @p oi to point to the next option. This

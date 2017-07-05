@@ -158,9 +158,9 @@ coap_pdu_t *new_ack(coap_context_t *ctx, coap_queue_t *node)
 	coap_pdu_t *pdu = coap_new_pdu();
 
 	if (pdu) {
-		pdu->hdr->type = COAP_MESSAGE_ACK;
-		pdu->hdr->code = 0;
-		pdu->hdr->id = node->pdu->hdr->id;
+		pdu->transport_hdr->udp.type = COAP_MESSAGE_ACK;
+		pdu->transport_hdr->udp.code = 0;
+		pdu->transport_hdr->udp.id = node->pdu->transport_hdr->udp.id;
 	}
 
 	return pdu;
@@ -171,7 +171,7 @@ coap_pdu_t *new_response(coap_context_t *ctx, coap_queue_t *node, unsigned int c
 	coap_pdu_t *pdu = new_ack(ctx, node);
 
 	if (pdu) {
-		pdu->hdr->code = code;
+		pdu->transport_hdr->udp.code = code;
 	}
 
 	return pdu;
@@ -186,11 +186,11 @@ coap_pdu_t *coap_new_request(coap_context_t *ctx, method_t m, coap_list_t *optio
 		return NULL;
 	}
 
-	pdu->hdr->type = msgtype;
-	pdu->hdr->id = coap_new_message_id(ctx);
-	pdu->hdr->code = m;
+	pdu->transport_hdr->udp.type = msgtype;
+	pdu->transport_hdr->udp.id = coap_new_message_id(ctx);
+	pdu->transport_hdr->udp.code = m;
 
-	pdu->hdr->token_length = the_token.length;
+	pdu->transport_hdr->udp.token_length = the_token.length;
 	if (!coap_add_token(pdu, the_token.length, the_token.s)) {
 		debug("cannot add token to request\n");
 	}
@@ -237,7 +237,7 @@ coap_tid_t clear_obs(coap_context_t *ctx, const coap_address_t *remote)
 			}
 		}
 
-		if (pdu->hdr->type == COAP_MESSAGE_CON) {
+		if (pdu->transport_hdr->udp.type == COAP_MESSAGE_CON) {
 			tid = coap_send_confirmed(ctx, remote, pdu);
 		} else {
 			tid = coap_send(ctx, remote, pdu);
@@ -246,7 +246,7 @@ coap_tid_t clear_obs(coap_context_t *ctx, const coap_address_t *remote)
 		if (tid == COAP_INVALID_TID) {
 			debug("clear_obs: error sending new request");
 			coap_delete_pdu(pdu);
-		} else if (pdu->hdr->type != COAP_MESSAGE_CON) {
+		} else if (pdu->transport_hdr->udp.type != COAP_MESSAGE_CON) {
 			coap_delete_pdu(pdu);
 		}
 	}
@@ -1207,13 +1207,13 @@ int main(int argc, char **argv)
 	}
 #endif
 
-	if (pdu->hdr->type == COAP_MESSAGE_CON) {
+	if (pdu->transport_hdr->udp.type == COAP_MESSAGE_CON) {
 		tid = coap_send_confirmed(ctx, &dst, pdu);
 	} else {
 		tid = coap_send(ctx, &dst, pdu);
 	}
 
-	if (pdu->hdr->type != COAP_MESSAGE_CON || tid == COAP_INVALID_TID) {
+	if (pdu->transport_hdr->udp.type != COAP_MESSAGE_CON || tid == COAP_INVALID_TID) {
 		coap_delete_pdu(pdu);
 	}
 

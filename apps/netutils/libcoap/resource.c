@@ -726,17 +726,17 @@ static void coap_notify_observers(coap_context_t *context, coap_resource_t *r)
 
 			token.length = obs->token_length;
 			token.s = obs->token;
-
-			response->hdr->id = coap_new_message_id(context);
+			/* TODO : Considering TCP Case */
+			response->transport_hdr->udp.id = coap_new_message_id(context);
 			if (obs->non && obs->non_cnt < COAP_OBS_MAX_NON) {
-				response->hdr->type = COAP_MESSAGE_NON;
+				response->transport_hdr->udp.type = COAP_MESSAGE_NON;
 			} else {
-				response->hdr->type = COAP_MESSAGE_CON;
+				response->transport_hdr->udp.type = COAP_MESSAGE_CON;
 			}
 			/* fill with observer-specific data */
 			h(context, r, &obs->subscriber, NULL, &token, response);
 
-			if (response->hdr->type == COAP_MESSAGE_CON) {
+			if (response->transport_hdr->udp.type == COAP_MESSAGE_CON) {
 				tid = coap_send_confirmed(context, &obs->subscriber, response);
 				obs->non_cnt = 0;
 			} else {
@@ -744,7 +744,7 @@ static void coap_notify_observers(coap_context_t *context, coap_resource_t *r)
 				obs->non_cnt++;
 			}
 
-			if (COAP_INVALID_TID == tid || response->hdr->type != COAP_MESSAGE_CON) {
+			if (COAP_INVALID_TID == tid || response->transport_hdr->udp.type != COAP_MESSAGE_CON) {
 				coap_delete_pdu(response);
 			}
 			if (COAP_INVALID_TID == tid) {

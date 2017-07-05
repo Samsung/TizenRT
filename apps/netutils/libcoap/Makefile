@@ -88,6 +88,7 @@ endif
 ifeq ($(CONFIG_NET_SECURITY_TLS),y)
 CFLAGS += -DWITH_MBEDTLS
 endif
+CFLAGS += -DWITH_TCP
 #CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)$(DELIM)include$(DELIM)netutils$(DELIM)libcoap}
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)

@@ -81,6 +81,16 @@ int coap_split_uri(unsigned char *str_var, size_t len, coap_uri_t *uri)
 		--len;
 	}
 
+#ifdef WITH_TCP
+	/* Add to support tcp prefix */
+	q = (unsigned char *)"+tcp";
+	while (len && *q && tolower(*p) == *q) {
+		++p;
+		++q;
+		--len;
+	}
+#endif
+
 	q = (unsigned char *)"://";
 	while (len && *q && tolower(*p) == *q) {
 		++p;

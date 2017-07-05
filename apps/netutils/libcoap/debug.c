@@ -236,12 +236,18 @@ size_t coap_print_addr(const struct coap_address_t *addr, unsigned char *buf, si
 #ifndef WITH_CONTIKI
 void coap_show_pdu(const coap_pdu_t *pdu)
 {
-	unsigned char buf[COAP_MAX_PDU_SIZE];	/* need some space for output creation */
+#ifndef WITH_TCP
+	unsigned char buf[COAP_MAX_PDU_SIZE]; /* need some space for output creation */
+#else
+	unsigned char buf[COAP_TCP_LENGTH_LIMIT_32_BIT]; /* need some space for output creation */
+#endif
 	int encode = 0, have_options = 0;
 	coap_opt_iterator_t opt_iter;
 	coap_opt_t *option;
-
-	fprintf(COAP_DEBUG_FD, "v:%d t:%d tkl:%d c:%d id:%u", pdu->hdr->version, pdu->hdr->type, pdu->hdr->token_length, pdu->hdr->code, ntohs(pdu->hdr->id));
+	/* TODO : Considering TCP Case */
+	fprintf(COAP_DEBUG_FD, "v:%d t:%d tkl:%d c:%d id:%u", pdu->transport_hdr->udp.version,
+			pdu->transport_hdr->udp.type, pdu->transport_hdr->udp.token_length,
+			            pdu->transport_hdr->udp.code, ntohs(pdu->transport_hdr->udp.id));
 
 	/* show options, if any */
 	coap_option_iterator_init((coap_pdu_t *) pdu, &opt_iter, COAP_OPT_ALL);
@@ -254,7 +260,11 @@ void coap_show_pdu(const coap_pdu_t *pdu)
 			fprintf(COAP_DEBUG_FD, ",");
 		}
 
-		if (opt_iter.type == COAP_OPTION_URI_PATH || opt_iter.type == COAP_OPTION_PROXY_URI || opt_iter.type == COAP_OPTION_URI_HOST || opt_iter.type == COAP_OPTION_LOCATION_PATH || opt_iter.type == COAP_OPTION_LOCATION_QUERY || opt_iter.type == COAP_OPTION_URI_PATH || opt_iter.type == COAP_OPTION_URI_QUERY) {
+	if (opt_iter.type == COAP_OPTION_URI_PATH || opt_iter.type == COAP_OPTION_PROXY_URI
+		|| opt_iter.type == COAP_OPTION_URI_HOST
+		|| opt_iter.type == COAP_OPTION_LOCATION_PATH
+		|| opt_iter.type == COAP_OPTION_LOCATION_QUERY
+		|| opt_iter.type == COAP_OPTION_URI_PATH || opt_iter.type == COAP_OPTION_URI_QUERY) {
 			encode = 0;
 		} else {
 			encode = 1;
@@ -284,7 +294,10 @@ void coap_show_pdu(const coap_pdu_t *pdu)
 {
 	unsigned char buf[80];		/* need some space for output creation */
 
-	PRINTF("v:%d t:%d oc:%d c:%d id:%u", pdu->hdr->version, pdu->hdr->type, pdu->hdr->optcnt, pdu->hdr->code, uip_ntohs(pdu->hdr->id));
+	PRINTF("v:%d t:%d oc:%d c:%d id:%u",
+		pdu->transport_hdr->udp.version, pdu->transport_hdr->udp.type,
+		pdu->transport_hdr->udp.optcnt, pdu->transport_hdr->udp.code,
+		uip_ntohs(pdu->transport_hdr->udp.id));
 
 	/* show options, if any */
 	if (pdu->hdr->optcnt) {
