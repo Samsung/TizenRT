@@ -111,21 +111,30 @@ int websocket_tls_handshake(websocket_t *data, char *hostname, int auth_mode)
 
 websocket_return_t websocket_config_socket(int fd)
 {
-	int r;
 	int flags;
+	int opt = 1;
 	struct timeval tv;
 
-	while ((flags = fcntl(fd, F_GETFL, 0)) == -1) ;
-	while ((r = fcntl(fd, F_SETFL, flags & (~O_NONBLOCK))) == -1 && errno == EINTR) ;
-	if (r == -1) {
-		WEBSOCKET_DEBUG("fail to set TCP socket blocked\n");
+	flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1) {
+		WEBSOCKET_DEBUG("fcntl GET failed\n");
+		return WEBSOCKET_SOCKET_ERROR;
+	}
+
+	if (fcntl(fd, F_SETFL, flags & (~O_NONBLOCK)) == -1) {
+		WEBSOCKET_DEBUG("fcntl SET failed\n");
 		return WEBSOCKET_SOCKET_ERROR;
 	}
 
 	tv.tv_sec = (WEBSOCKET_SOCK_RCV_TIMEOUT / 1000);
 	tv.tv_usec = ((WEBSOCKET_SOCK_RCV_TIMEOUT % 1000) * 1000);
 	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (FAR const void *)&tv, (socklen_t) sizeof(struct timeval)) == -1) {
-		WEBSOCKET_DEBUG("setsockopt fail in server\n");
+		WEBSOCKET_DEBUG("setsockopt failed\n");
+		return WEBSOCKET_SOCKET_ERROR;
+	}
+
+	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) == -1) {
+		WEBSOCKET_DEBUG("setsockopt failed\n");
 		return WEBSOCKET_SOCKET_ERROR;
 	}
 
