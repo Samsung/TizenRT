@@ -171,6 +171,7 @@
  ****************************************************************************/
 
 int received_cnt;
+int g_wcenabled;
 int g_wsenabled;
 
 /****************************************************************************
@@ -300,7 +301,7 @@ RECV_RETRY:
 	if (r == 0) {
 		websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
 	} else if (r < 0) {
-		printf("recv err : %d\n", errno);
+		printf("websocket recv_cb err : %d\n", errno);
 		if (retry_cnt == 0) {
 			websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
 			return r;
@@ -329,7 +330,7 @@ SEND_RETRY:
 	}
 
 	if (r < 0) {
-		printf("send err : %d\n", errno);
+		printf("websocket send_cb err : %d\n", errno);
 		if (retry_cnt == 0) {
 			websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
 			return r;
@@ -455,46 +456,41 @@ int websocket_client(void *arg)
 	mbedtls_ctr_drbg_context ctr_drbg;
 	mbedtls_ssl_cache_context cache;
 
+	if (g_wcenabled) {
+		printf("\nWebsocket client is already running\n");
+		return WEBSOCKET_INIT_ERROR;
+	}
+	g_wcenabled = 1;
+
 	if (size < 16) {
 		printf("wrong size\n %s\n", WEBSOCKET_USAGE);
+		g_wcenabled = 0;
 		return -1;
 	}
 	if (send_cnt < 1) {
 		printf("wrong send count\n %s\n", WEBSOCKET_USAGE);
+		g_wcenabled = 0;
 		return -1;
 	}
 
-	addr = malloc(strlen(argv[0]) + 1);
-	if (addr == NULL) {
+	addr = calloc(1, (strlen(argv[0]) + 1));
+	port = calloc(1, (strlen(argv[1]) + 1));
+	path = calloc(1, (strlen(argv[2]) + 1));
+	if (addr == NULL || port == NULL || path == NULL) {
 		printf("fail to allocate memory\n");
 		goto WEB_CLI_EXIT;
 	}
-	port = malloc(strlen(argv[1]) + 1);
-	if (port == NULL) {
-		printf("fail to allocate memory\n");
-		goto WEB_CLI_EXIT;
-	}
-	path = malloc(strlen(argv[2]) + 1);
-	if (path == NULL) {
-		printf("fail to allocate memory\n");
-		goto WEB_CLI_EXIT;
-	}
-
-	memset(addr, 0, strlen(argv[0]) + 1);
-	memset(port, 0, strlen(argv[1]) + 1);
-	memset(path, 0, strlen(argv[2]) + 1);
 
 	strncpy(addr, argv[0], strlen(argv[0]));
 	strncpy(port, argv[1], strlen(argv[1]));
 	strncpy(path, argv[2], strlen(argv[2]));
 
 	received_cnt = 0;
-	websocket_cli = malloc(sizeof(websocket_t));
+	websocket_cli = calloc(1, sizeof(websocket_t));
 	if (websocket_cli == NULL) {
 		printf("fail to allocate memory\n");
 		goto WEB_CLI_EXIT;
 	}
-	memset(websocket_cli, 0, sizeof(websocket_t));
 
 	websocket_cli->fd = -1;
 	websocket_cli->cb = &cb;
@@ -529,6 +525,7 @@ int websocket_client(void *arg)
 
 	test_message = malloc(size);
 	if (test_message == NULL) {
+		printf("fail to allocate memory\n");
 		goto WEB_CLI_EXIT;
 	}
 	memset(test_message, '.', size);
@@ -536,12 +533,11 @@ int websocket_client(void *arg)
 	sprintf(test_message, "[%d] websocket", size);
 	test_message[size - 1] = '\0';
 
-	tx_frame = malloc(sizeof(websocket_frame_t));
+	tx_frame = calloc(1, sizeof(websocket_frame_t));
 	if (tx_frame == NULL) {
 		printf("fail to allocate memory\n");
 		goto WEB_CLI_EXIT;
 	}
-	memset(tx_frame, 0, sizeof(websocket_frame_t));
 
 	tx_frame->opcode = WEBSOCKET_TEXT_FRAME;
 	tx_frame->msg = (const uint8_t *)test_message;
@@ -559,6 +555,7 @@ int websocket_client(void *arg)
 		/* wait for server echoes back */
 		while (received_cnt != i) {
 			if (websocket_cli->state == WEBSOCKET_STOP) {
+				printf("websocket client terminated during the test\n");
 				goto WEB_CLI_EXIT;
 			}
 			usleep(100000);
@@ -609,6 +606,8 @@ WEB_CLI_EXIT:
 		free(test_message);
 	}
 
+	g_wcenabled = 0;
+
 	return r;
 }
 
@@ -636,9 +635,8 @@ int websocket_server(void *arg)
 	if (g_wsenabled) {
 		printf("\nWebsocket server is already running\n");
 		return WEBSOCKET_INIT_ERROR;
-	} else {
-		g_wsenabled = 1;
 	}
+	g_wsenabled = 1;
 
 	mbedtls_ssl_config conf;
 	mbedtls_x509_crt cert;
@@ -647,14 +645,12 @@ int websocket_server(void *arg)
 	mbedtls_ctr_drbg_context ctr_drbg;
 	mbedtls_ssl_cache_context cache;
 
-	websocket_t *websocket_srv = malloc(sizeof(websocket_t));
+	websocket_t *websocket_srv = calloc(1, sizeof(websocket_t));
 	if (websocket_srv == NULL) {
 		printf("fail to allocate memory\n");
 		g_wsenabled = 0;
 		return WEBSOCKET_ALLOCATION_ERROR;
 	}
-
-	memset(websocket_srv, 0, sizeof(websocket_t));
 
 	websocket_srv->fd = -1;
 	websocket_srv->cb = &cb;
@@ -688,8 +684,10 @@ WEB_SRV_EXIT:
 		free(websocket_srv);
 	}
 
-	g_wsenabled = 0;
 	printf("websocket server is finished\n");
+
+	g_wsenabled = 0;
+
 	return 0;
 }
 
