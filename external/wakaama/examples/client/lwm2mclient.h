@@ -28,7 +28,6 @@
 #define LWM2MCLIENT_H_
 
 #include "liblwm2m.h"
-#include <pthread.h>
 
 extern int g_reboot;
 
@@ -108,7 +107,7 @@ void clean_security_object(lwm2m_object_t * objectP);
 char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
 void display_security_object(lwm2m_object_t * objectP);
 void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
-pthread_addr_t client_main(void);
+int client_main(void);
 
 /*
  * Server IP address, Port

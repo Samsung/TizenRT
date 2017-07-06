@@ -985,26 +985,28 @@ static void prv_close_sock(void)
 	}
 }
 
-pthread_addr_t client_main(void)
+int client_main(void)
 {
 	int result;
 	int i;
 
 	const char *localPort = "56830";
-#if 0
+#if !defined(CONFIG_DM)
 	const char *server = "192.168.0.4";
 	const char *serverPort = LWM2M_STANDARD_PORT_STR;
 	char *name = "testlwm2mclient";
 	int lifetime = 300;
-#endif
+#else
 	char *server = g_serverAddr;
 	char *serverPort = g_serverPort;
 	char *name = "myawesomeclient";
 	int lifetime = g_lifetime;
+#endif
 	int batterylevelchanging = 0;
 	time_t reboot_time = 0;
 	bool bootstrapRequested = g_bootstrapRequested;
-#if 0
+
+#if !defined(CONFIG_DM)
 	int opt;
 	bool serverPortChanged = false;
 #endif
@@ -1067,18 +1069,18 @@ pthread_addr_t client_main(void)
 		COMMAND_END_LIST
 	};
 
-	printf("Inside client_main check serial\n");
-
 	memset(&data, 0, sizeof(client_data_t));
 	data.addressFamily = AF_INET;
-#if 0
+#if defined(CONFIG_DM)
+	printf("Inside %s check serial\n", __func__);
+#else
 	opt = 1;
 	while (opt < argc) {
 		if (argv[opt] == NULL
 			|| argv[opt][0] != '-'
 			|| argv[opt][2] != 0) {
 			print_usage();
-			return 0;
+			return -1;
 		}
 		switch (argv[opt][1]) {
 		case 'b':
@@ -1094,11 +1096,11 @@ pthread_addr_t client_main(void)
 			opt++;
 			if (opt >= argc) {
 				print_usage();
-				return 0;
+				return -1;
 			}
 			if (1 != sscanf(argv[opt], "%d", &lifetime)) {
 				print_usage();
-				return 0;
+				return -1;
 			}
 			break;
 #ifdef WITH_TINYDTLS
@@ -1106,7 +1108,7 @@ pthread_addr_t client_main(void)
 			opt++;
 			if (opt >= argc) {
 				print_usage();
-				return 0;
+				return -1;
 			}
 			pskId = argv[opt];
 			break;
@@ -1114,7 +1116,7 @@ pthread_addr_t client_main(void)
 			opt++;
 			if (opt >= argc) {
 				print_usage();
-				return 0;
+				return -1;
 			}
 			psk = argv[opt];
 			break;
@@ -1123,7 +1125,7 @@ pthread_addr_t client_main(void)
 			opt++;
 			if (opt >= argc) {
 				print_usage();
-				return 0;
+				return -1;
 			}
 			name = argv[opt];
 			break;
@@ -1131,7 +1133,7 @@ pthread_addr_t client_main(void)
 			opt++;
 			if (opt >= argc) {
 				print_usage();
-				return 0;
+				return -1;
 			}
 			localPort = argv[opt];
 			break;
@@ -1139,7 +1141,7 @@ pthread_addr_t client_main(void)
 			opt++;
 			if (opt >= argc) {
 				print_usage();
-				return 0;
+				return -1;
 			}
 			server = argv[opt];
 			break;
@@ -1147,7 +1149,7 @@ pthread_addr_t client_main(void)
 			opt++;
 			if (opt >= argc) {
 				print_usage();
-				return 0;
+				return -1;
 			}
 			serverPort = argv[opt];
 			serverPortChanged = true;
@@ -1157,11 +1159,11 @@ pthread_addr_t client_main(void)
 			break;
 		default:
 			print_usage();
-			return 0;
+			return -1;
 		}
 		opt += 1;
 	}
-#endif /* Disabled due to DM Framework */
+#endif /* CONFIG_DM */
 	if (!server) {
 		server = (AF_INET == data.addressFamily ? DEFAULT_SERVER_IPV4 : DEFAULT_SERVER_IPV6);
 	}
@@ -1173,7 +1175,7 @@ pthread_addr_t client_main(void)
 	data.sock = create_socket(COAP_UDP, localPort, data.addressFamily);
 	if (data.sock < 0) {
 		fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
-		return NULL;
+		return -1;
 	}
 
 	/*
@@ -1187,7 +1189,7 @@ pthread_addr_t client_main(void)
 
 		if (NULL == pskBuffer) {
 			fprintf(stderr, "Failed to create PSK binary buffer\r\n");
-			return NULL;
+			return -1;
 		}
 		// Hex string to binary
 		char *h = psk;
@@ -1200,7 +1202,7 @@ pthread_addr_t client_main(void)
 
 			if (!r || !l) {
 				fprintf(stderr, "Failed to parse Pre-Shared-Key HEXSTRING\r\n");
-				return NULL;
+				return -1;
 			}
 
 			*b = ((l - xlate) << 4) + (r - xlate);
@@ -1218,66 +1220,66 @@ pthread_addr_t client_main(void)
 #endif
 	if (NULL == objArray[0]) {
 		fprintf(stderr, "Failed to create security object\r\n");
-		return NULL;
+		return -1;
 	}
 	data.securityObjP = objArray[0];
 
 	objArray[1] = get_server_object(serverId, "U", lifetime, false);
 	if (NULL == objArray[1]) {
 		fprintf(stderr, "Failed to create server object\r\n");
-		return NULL;
+		return -1;
 	}
 
 	objArray[2] = get_object_device();
 	if (NULL == objArray[2]) {
 		fprintf(stderr, "Failed to create Device object\r\n");
-		return NULL;
+		return -1;
 	}
 
 	objArray[3] = get_object_firmware();
 	if (NULL == objArray[3]) {
 		fprintf(stderr, "Failed to create Firmware object\r\n");
-		return NULL;
+		return -1;
 	}
 
 	objArray[4] = get_object_location();
 	if (NULL == objArray[4]) {
 		fprintf(stderr, "Failed to create location object\r\n");
-		return NULL;
+		return -1;
 	}
 
 	objArray[5] = get_test_object();
 	if (NULL == objArray[5]) {
 		fprintf(stderr, "Failed to create test object\r\n");
-		return NULL;
+		return -1;
 	}
 
 	objArray[6] = get_object_conn_m();
 	if (NULL == objArray[6]) {
 		fprintf(stderr, "Failed to create connectivity monitoring object\r\n");
-		return NULL;
+		return -1;
 	}
 
 	objArray[7] = get_object_conn_s();
 	if (NULL == objArray[7]) {
 		fprintf(stderr, "Failed to create connectivity statistics object\r\n");
-		return NULL;
+		return -1;
 	}
 
 	int instId = 0;
 	objArray[8] = acc_ctrl_create_object();
 	if (NULL == objArray[8]) {
 		fprintf(stderr, "Failed to create Access Control object\r\n");
-		return NULL;
+		return -1;
 	} else if (acc_ctrl_obj_add_inst(objArray[8], instId, 3, 0, serverId) == false) {
 		fprintf(stderr, "Failed to create Access Control object instance\r\n");
-		return NULL;
+		return -1;
 	} else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 0, 0b000000000001111) == false) {
 		fprintf(stderr, "Failed to create Access Control ACL default resource\r\n");
-		return NULL;
+		return -1;
 	} else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 999, 0b000000000000001) == false) {
 		fprintf(stderr, "Failed to create Access Control ACL resource for serverId: 999\r\n");
-		return NULL;
+		return -1;
 	}
 	/*
 	 * The liblwm2m library is now initialized with the functions that will be in
@@ -1286,7 +1288,7 @@ pthread_addr_t client_main(void)
 	lwm2mH = lwm2m_init(&data);
 	if (NULL == lwm2mH) {
 		fprintf(stderr, "lwm2m_init() failed\r\n");
-		return NULL;
+		return -1;
 	}
 
 #ifdef WITH_TINYDTLS
@@ -1300,7 +1302,7 @@ pthread_addr_t client_main(void)
 	result = lwm2m_configure(lwm2mH, name, NULL, NULL, OBJ_COUNT, objArray);
 	if (result != 0) {
 		fprintf(stderr, "lwm2m_configure() failed: 0x%X\r\n", result);
-		return NULL;
+		return -1;
 	}
 
 	//signal(SIGINT, handle_sigint);
@@ -1410,7 +1412,7 @@ pthread_addr_t client_main(void)
 				prv_restore_objects(lwm2mH);
 				lwm2mH->state = STATE_INITIAL;
 			} else {
-				return NULL;
+				return -1;
 			}
 		}
 #ifdef LWM2M_BOOTSTRAP
