@@ -87,6 +87,7 @@ int tls_client_main(int argc, char **argv)
 #include "tls/error.h"
 #include "tls/debug.h"
 #include "tls/timing.h"
+#include "tinyara/clock.h"
 
 #include "tls/see_api.h"
 
@@ -487,6 +488,8 @@ int tls_client_cb(void *args)
 	char *q;
 	const int *list;
 	unsigned char buf[2000];
+	unsigned int j_s, j_e;
+	unsigned int t_time = 0;
 #if defined(CONFIG_SUPPORT_FULL_SECURITY)
 	int is_hw = 0;
 	unsigned char *der_buf = NULL;
@@ -1371,6 +1374,7 @@ usage:
 	mbedtls_printf("  . Performing the SSL/TLS handshake...");
 	fflush(stdout);
 
+	j_s = clock_systimer();
 	while ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
 		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
 			mbedtls_printf(" failed\n  ! mbedtls_ssl_handshake returned -0x%x\n", -ret);
@@ -1381,6 +1385,8 @@ usage:
 			goto exit;
 		}
 	}
+	j_e = clock_systimer();
+	t_time = (j_e - j_s) * MSEC_PER_TICK;
 
 	mbedtls_printf(" ok\n    [ Protocol is %s ]\n    [ Ciphersuite is %s ]\n", mbedtls_ssl_get_version(&ssl), mbedtls_ssl_get_ciphersuite(&ssl));
 
@@ -1751,6 +1757,9 @@ exit:
 		free(der_buf);
 	}
 #endif
+	printf("\n----------------------------\n");
+	printf("total time : total = %u\n", t_time);
+	printf("----------------------------\n");
 	return ret;
 }
 
