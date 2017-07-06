@@ -569,7 +569,7 @@ int websocket_accept_handler(websocket_t *init_server)
 		ws_srv_table[i].state = WEBSOCKET_STOP;
 	}
 
-	init_server->state = WEBSOCKET_RUNNING;
+	init_server->state = WEBSOCKET_RUN_SERVER;
 	while (init_server->state != WEBSOCKET_STOP) {
 		FD_ZERO(&init_server_read_fds);
 		FD_SET(listen_fd, &init_server_read_fds);
@@ -779,7 +779,7 @@ websocket_t *websocket_find_table(void)
 		return NULL;
 	}
 
-	websocket_update_state(&ws_srv_table[i], WEBSOCKET_RUNNING);
+	websocket_update_state(&ws_srv_table[i], WEBSOCKET_RUN_SERVER);
 
 	return &ws_srv_table[i];
 }
@@ -796,7 +796,9 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 		return WEBSOCKET_ALLOCATION_ERROR;
 	}
 
-	websocket_update_state(client, WEBSOCKET_RUNNING);
+	websocket_update_state(client, WEBSOCKET_RUN_CLIENT);
+
+	//TODO : all TLS initializing code will be moved from example to here
 
 	if (websocket_connect(client, host, port) != WEBSOCKET_SUCCESS) {
 		r = WEBSOCKET_CONNECT_ERROR;
@@ -902,6 +904,8 @@ websocket_return_t websocket_server_open(websocket_t *init_server)
 		WEBSOCKET_DEBUG("NULL parameter\n");
 		return WEBSOCKET_ALLOCATION_ERROR;
 	}
+
+	//TODO : all TLS initializing code will be moved from example to here
 
 	port = init_server->tls_enabled ? 443 : 80;
 

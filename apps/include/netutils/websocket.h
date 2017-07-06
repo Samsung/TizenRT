@@ -309,7 +309,8 @@ typedef enum {
  */
 enum websocket_state {
 	WEBSOCKET_STOP,				///< stopped
-	WEBSOCKET_RUNNING,			///< running
+	WEBSOCKET_RUN_CLIENT,			///< client is running
+	WEBSOCKET_RUN_SERVER,			///< server is running
 	WEBSOCKET_MAX_STATE			///< websocket number of max state.
 };
 
@@ -356,7 +357,7 @@ enum websocket_opcode {
  */
 typedef struct {
 	int state;
-///< 0 - closed 1 - running
+///< 0 - closed / 1 - running client / 2 - running server
 	int fd;
 ///< Each server or client has own socket fd
 	int tls_enabled;

@@ -183,7 +183,7 @@ static void websocket_tls_debug(void *ctx, int level, const char *file, int line
 	printf("%s:%04d: %s", file, line, str);
 }
 
-websocket_return_t websocket_tls_init(int param, websocket_t *data, mbedtls_ssl_config *conf, mbedtls_x509_crt *cert, mbedtls_pk_context *pkey, mbedtls_entropy_context *entropy, mbedtls_ctr_drbg_context *ctr_drbg, mbedtls_ssl_cache_context *cache)
+websocket_return_t websocket_tls_init(websocket_t *data, mbedtls_ssl_config *conf, mbedtls_x509_crt *cert, mbedtls_pk_context *pkey, mbedtls_entropy_context *entropy, mbedtls_ctr_drbg_context *ctr_drbg, mbedtls_ssl_cache_context *cache)
 {
 	int r;
 	const char *crt = mbedtls_test_srv_crt;
@@ -193,7 +193,7 @@ websocket_return_t websocket_tls_init(int param, websocket_t *data, mbedtls_ssl_
 	size_t cacrt_len = mbedtls_test_cas_pem_len;
 	size_t key_len = mbedtls_test_srv_key_len;
 
-	if (param) {
+	if (data->state == WEBSOCKET_RUN_CLIENT) {
 		crt = mbedtls_test_cli_crt;
 		key = mbedtls_test_cli_key;
 		ca_crt = mbedtls_test_cas_pem;
@@ -243,14 +243,14 @@ websocket_return_t websocket_tls_init(int param, websocket_t *data, mbedtls_ssl_
 	/* 3. Setup ssl stuff */
 	printf("  . Setting up the SSL data...");
 
-	if ((r = mbedtls_ssl_config_defaults(conf, param ? MBEDTLS_SSL_IS_CLIENT : MBEDTLS_SSL_IS_SERVER, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
+	if ((r = mbedtls_ssl_config_defaults(conf, (data->state == WEBSOCKET_RUN_CLIENT)  ? MBEDTLS_SSL_IS_CLIENT : MBEDTLS_SSL_IS_SERVER, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
 		printf("Error: mbedtls_ssl_config_defaults returned %d\n", r);
 		return WEBSOCKET_INIT_ERROR;
 	}
 
 	mbedtls_ssl_conf_rng(conf, mbedtls_ctr_drbg_random, ctr_drbg);
 	mbedtls_ssl_conf_dbg(conf, websocket_tls_debug, stdout);
-	if (!param) {
+	if (data->state == WEBSOCKET_RUN_SERVER) {
 		mbedtls_ssl_cache_init(cache);
 		mbedtls_ssl_conf_session_cache(conf, cache, mbedtls_ssl_cache_get, mbedtls_ssl_cache_set);
 	}
@@ -495,13 +495,14 @@ int websocket_client(void *arg)
 	websocket_cli->fd = -1;
 	websocket_cli->cb = &cb;
 	websocket_cli->tls_enabled = tls;
+	websocket_cli->state = WEBSOCKET_RUN_CLIENT; // websocket state assigned here temporary before easy_TLS api
 
 	/* TLS init routine */
 	if (tls) {
 #ifdef MBEDTLS_DEBUG_C
 		mbedtls_debug_set_threshold(MBEDTLS_DEBUG_LEVEL);
 #endif
-		if ((r = websocket_tls_init(1, websocket_cli, &conf, &cert, &pkey, &entropy, &ctr_drbg, &cache)) != WEBSOCKET_SUCCESS) {
+		if ((r = websocket_tls_init(websocket_cli, &conf, &cert, &pkey, &entropy, &ctr_drbg, &cache)) != WEBSOCKET_SUCCESS) {
 			printf("fail to init TLS, error: %d\n", r);
 			goto WEB_CLI_EXIT;
 		}
@@ -563,7 +564,7 @@ int websocket_client(void *arg)
 	}
 
 	/* wait until every message is tested. */
-	while (websocket_cli->state == WEBSOCKET_RUNNING) {
+	while (websocket_cli->state == WEBSOCKET_RUN_CLIENT) {
 		/* all echo back message received */
 		if (received_cnt == send_cnt) {
 			printf("all message was received well\n");
@@ -655,13 +656,14 @@ int websocket_server(void *arg)
 	websocket_srv->fd = -1;
 	websocket_srv->cb = &cb;
 	websocket_srv->tls_enabled = tls;
+	websocket_srv->state = WEBSOCKET_RUN_SERVER; // websocket state assigned here temporary before easy_TLS api
 
 	/* TLS init routine */
 	if (tls) {
 #ifdef MBEDTLS_DEBUG_C
 		mbedtls_debug_set_threshold(MBEDTLS_DEBUG_LEVEL);
 #endif
-		if ((r = websocket_tls_init(0, websocket_srv, &conf, &cert, &pkey, &entropy, &ctr_drbg, &cache)) != WEBSOCKET_SUCCESS) {
+		if ((r = websocket_tls_init(websocket_srv, &conf, &cert, &pkey, &entropy, &ctr_drbg, &cache)) != WEBSOCKET_SUCCESS) {
 			printf("fail to init TLS\n");
 			goto WEB_SRV_EXIT;
 		}
