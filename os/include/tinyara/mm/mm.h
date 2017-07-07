@@ -608,6 +608,7 @@ void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_re
 void heapinfo_add_size(pid_t pid, mmsize_t size);
 void heapinfo_subtract_size(pid_t pid, mmsize_t size);
 void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size);
+void heapinfo_exclude_stacksize(void *stack_ptr);
 #endif
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
