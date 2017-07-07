@@ -555,11 +555,11 @@ int websocket_client(void *arg)
 
 		/* wait for server echoes back */
 		while (received_cnt != i) {
-			if (websocket_cli->state == WEBSOCKET_STOP) {
-				printf("websocket client terminated during the test\n");
+			if (websocket_cli->state == WEBSOCKET_ERROR) {
+				printf("websocket client handler is stopped during the test\n");
 				goto WEB_CLI_EXIT;
 			}
-			usleep(100000);
+			usleep(100000); // 100 msec
 		}
 	}
 

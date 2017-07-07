@@ -224,15 +224,19 @@ int websocket_handler(websocket_t *websocket)
 			timeout = 0;
 
 			if (FD_ISSET(fd, &read_fds)) {
-				if (wslay_event_recv(ctx) != WEBSOCKET_SUCCESS) {
-					WEBSOCKET_DEBUG("fail to process recv event\n");
+				r = wslay_event_recv(ctx);
+				if (r != WEBSOCKET_SUCCESS) {
+					WEBSOCKET_DEBUG("fail to process recv event, result : %d\n", r);
+					websocket_update_state(websocket, WEBSOCKET_ERROR);
 					return WEBSOCKET_SOCKET_ERROR;
 				}
 			}
 
 			if (FD_ISSET(fd, &write_fds)) {
-				if (wslay_event_send(ctx) != WEBSOCKET_SUCCESS) {
-					WEBSOCKET_DEBUG("fail to process send event\n");
+				r = wslay_event_send(ctx);
+				if (r != WEBSOCKET_SUCCESS) {
+					WEBSOCKET_DEBUG("fail to process send event, result : %d\n", r);
+					websocket_update_state(websocket, WEBSOCKET_ERROR);
 					return WEBSOCKET_SOCKET_ERROR;
 				}
 			}

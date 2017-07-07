@@ -309,8 +309,9 @@ typedef enum {
  */
 enum websocket_state {
 	WEBSOCKET_STOP,				///< stopped
-	WEBSOCKET_RUN_CLIENT,			///< client is running
-	WEBSOCKET_RUN_SERVER,			///< server is running
+	WEBSOCKET_ERROR,			///< websocket handler is stopped for an error.
+	WEBSOCKET_RUN_CLIENT,		///< client is running
+	WEBSOCKET_RUN_SERVER,		///< server is running
 	WEBSOCKET_MAX_STATE			///< websocket number of max state.
 };
 
