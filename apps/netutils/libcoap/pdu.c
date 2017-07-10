@@ -6,7 +6,7 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -19,10 +19,10 @@
 #include <arpa/inet.h>
 #endif
 
-#include "debug.h"
-#include "pdu.h"
-#include "option.h"
-#include "encode.h"
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/pdu.h>
+#include <apps/netutils/libcoap/option.h>
+#include <apps/netutils/libcoap/encode.h>
 
 #ifdef WITH_CONTIKI
 #include "memb.h"
@@ -36,7 +36,7 @@ void coap_pdu_resources_init()
 	memb_init(&pdu_storage);
 }
 #else							/* WITH_CONTIKI */
-#include "mem.h"
+#include <apps/netutils/libcoap/mem.h>
 #endif							/* WITH_CONTIKI */
 
 void coap_pdu_clear(coap_pdu_t *pdu, size_t size)

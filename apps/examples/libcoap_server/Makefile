@@ -43,7 +43,7 @@ SERVER_APPNAME = libcoap-server
 SERVER_FUNCNAME = coap_server_test_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
-# mqtt test example
+# libcoap-server test example
 
 ASRCS =
 CSRCS =
@@ -63,7 +63,7 @@ CFLAGS += -D__TINYARA__
 ifeq ($(CONFIG_NETUTILS_LIBCOAP_DEBUG),n)
 CFLAGS += -DNDEBUG
 endif
-CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)$(DELIM)include$(DELIM)netutils$(DELIM)libcoap}
+#CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)$(DELIM)include$(DELIM)netutils$(DELIM)libcoap}
 
 ifneq ($(CONFIG_BUILD_KERNEL),y)
   OBJS += $(MAINOBJ)

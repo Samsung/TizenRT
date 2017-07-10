@@ -6,7 +6,7 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #include <ctype.h>
 #include <stdio.h>
@@ -35,15 +35,15 @@
 #include <net/lwip/timers.h>
 #endif
 
-#include "debug.h"
-#include "mem.h"
-#include "str.h"
-#include "async.h"
-#include "resource.h"
-#include "option.h"
-#include "encode.h"
-#include "block.h"
-#include "net.h"
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/mem.h>
+#include <apps/netutils/libcoap/str.h>
+#include <apps/netutils/libcoap/async.h>
+#include <apps/netutils/libcoap/resource.h>
+#include <apps/netutils/libcoap/option.h>
+#include <apps/netutils/libcoap/encode.h>
+#include <apps/netutils/libcoap/block.h>
+#include <apps/netutils/libcoap/net.h>
 
 #if defined(WITH_POSIX)
 

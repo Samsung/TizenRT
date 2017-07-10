@@ -7,7 +7,7 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -16,8 +16,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "option.h"
-#include "debug.h"
+#include <apps/netutils/libcoap/option.h>
+#include <apps/netutils/libcoap/debug.h>
 
 coap_opt_t *options_start(coap_pdu_t *pdu)
 {

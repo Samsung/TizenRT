@@ -10,8 +10,8 @@
 #include <stdio.h>
 #endif
 
-#include "config.h"
-#include "encode.h"
+#include <apps/netutils/libcoap/config.h>
+#include <apps/netutils/libcoap/encode.h>
 
 /* Carsten suggested this when fls() is not available: */
 int coap_fls(unsigned int i)

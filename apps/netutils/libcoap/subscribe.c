@@ -7,7 +7,7 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -21,10 +21,10 @@
 
 /* #include "resource.h" */
 
-#include "mem.h"
-#include "encode.h"
-#include "debug.h"
-#include "subscribe.h"
+#include <apps/netutils/libcoap/mem.h>
+#include <apps/netutils/libcoap/encode.h>
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/subscribe.h>
 
 void coap_subscription_init(coap_subscription_t *s)
 {

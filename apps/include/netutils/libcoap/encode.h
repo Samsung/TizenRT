@@ -11,7 +11,7 @@
 
 #include <tinyara/config.h>
 
-#ifdef __TINYARA__
+#if defined (__TINYARA__)
 #include <string.h>
 #else
 #if (BSD >= 199103) || defined(WITH_CONTIKI)

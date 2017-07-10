@@ -21,7 +21,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "coap.h"
+#include <apps/netutils/libcoap/coap.h>
 
 #ifndef NI_MAXHOST
 #define NI_MAXHOST 1025

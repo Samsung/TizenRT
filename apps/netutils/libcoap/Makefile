@@ -85,7 +85,7 @@ CFLAGS += -D__TINYARA__
 ifeq ($(CONFIG_NETUTILS_LIBCOAP_DEBUG),n)
 CFLAGS += -DNDEBUG
 endif
-CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)$(DELIM)include$(DELIM)netutils$(DELIM)libcoap}
+#CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)$(DELIM)include$(DELIM)netutils$(DELIM)libcoap}
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
   BIN = ..\..\libapps$(LIBEXT)

@@ -13,13 +13,13 @@
 
 #ifndef WITHOUT_ASYNC
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
-#include "utlist.h"
+#include <apps/netutils/libcoap/utlist.h>
 
-#include "mem.h"
-#include "debug.h"
-#include "async.h"
+#include <apps/netutils/libcoap/mem.h>
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/async.h>
 
 coap_async_state_t *coap_register_async(coap_context_t *context, coap_address_t *peer, coap_pdu_t *request, unsigned char flags, void *data)
 {

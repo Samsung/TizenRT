@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
@@ -40,11 +40,11 @@ extern "C" {
 #include <net/lwip/ipv4/ip_addr.h>
 #endif
 
-#include "option.h"
-#include "address.h"
-#include "prng.h"
-#include "pdu.h"
-#include "coap_time.h"
+#include <apps/netutils/libcoap/option.h>
+#include <apps/netutils/libcoap/address.h>
+#include <apps/netutils/libcoap/prng.h>
+#include <apps/netutils/libcoap/pdu.h>
+#include <apps/netutils/libcoap/coap_time.h>
 
 struct coap_queue_t;
 

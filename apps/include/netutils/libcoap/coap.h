@@ -13,20 +13,20 @@
 extern "C" {
 #endif
 
-#include "config.h"
-#include "debug.h"
-#include "mem.h"
-#include "coap_list.h"
-#include "pdu.h"
-#include "option.h"
-#include "net.h"
-#include "encode.h"
-#include "str.h"
-#include "uri.h"
-#include "async.h"
-#include "resource.h"
-#include "subscribe.h"
-#include "block.h"
+#include <apps/netutils/libcoap/config.h>
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/mem.h>
+#include <apps/netutils/libcoap/coap_list.h>
+#include <apps/netutils/libcoap/pdu.h>
+#include <apps/netutils/libcoap/option.h>
+#include <apps/netutils/libcoap/net.h>
+#include <apps/netutils/libcoap/encode.h>
+#include <apps/netutils/libcoap/str.h>
+#include <apps/netutils/libcoap/uri.h>
+#include <apps/netutils/libcoap/async.h>
+#include <apps/netutils/libcoap/resource.h>
+#include <apps/netutils/libcoap/subscribe.h>
+#include <apps/netutils/libcoap/block.h>
 
 #ifdef __cplusplus
 }

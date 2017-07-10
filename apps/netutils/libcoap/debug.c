@@ -6,7 +6,7 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -25,8 +25,8 @@
 #include <time.h>
 #endif
 
-#include "debug.h"
-#include "net.h"
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/net.h>
 
 #ifdef WITH_CONTIKI
 #ifndef DEBUG

@@ -15,8 +15,8 @@
 #ifndef _OPTION_H_
 #define _OPTION_H_
 
-#include "bits.h"
-#include "pdu.h"
+#include <apps/netutils/libcoap/bits.h>
+#include <apps/netutils/libcoap/pdu.h>
 
 /**
  * Use byte-oriented access methods here because sliding a complex

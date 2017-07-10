@@ -6,14 +6,14 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
 #endif
 
-#include "debug.h"
-#include "block.h"
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/block.h>
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 

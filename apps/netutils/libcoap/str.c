@@ -6,13 +6,13 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #include <stdio.h>
 
-#include "debug.h"
-#include "mem.h"
-#include "str.h"
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/mem.h>
+#include <apps/netutils/libcoap/str.h>
 
 str *coap_new_string(size_t size)
 {

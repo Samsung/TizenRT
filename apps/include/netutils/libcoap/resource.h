@@ -14,8 +14,8 @@
 #ifndef _COAP_RESOURCE_H_
 #define _COAP_RESOURCE_H_
 
-#include "config.h"
-#include "t_list.h"
+#include <apps/netutils/libcoap/config.h>
+#include <apps/netutils/libcoap/t_list.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -28,18 +28,18 @@
 
 #ifndef WITH_CONTIKI
 #ifdef COAP_RESOURCES_NOHASH
-#include "utlist.h"
+#include <apps/netutils/libcoap/utlist.h>
 #else
-#include "uthash.h"
+#include <apps/netutils/libcoap/uthash.h>
 #endif
 #else							/* WITH_CONTIKI */
 #endif							/* WITH_CONTIKI */
-#include "hashkey.h"
-#include "async.h"
-#include "str.h"
-#include "pdu.h"
-#include "net.h"
-#include "subscribe.h"
+#include <apps/netutils/libcoap/hashkey.h>
+#include <apps/netutils/libcoap/async.h>
+#include <apps/netutils/libcoap/str.h>
+#include <apps/netutils/libcoap/pdu.h>
+#include <apps/netutils/libcoap/net.h>
+#include <apps/netutils/libcoap/subscribe.h>
 
 /** Definition of message handler function (@sa coap_resource_t). */
 typedef void (*coap_method_handler_t)

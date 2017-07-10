@@ -6,7 +6,7 @@
  * README for terms of use.
  */
 
-#include "hashkey.h"
+#include <apps/netutils/libcoap/hashkey.h>
 
 /* Caution: When changing this, update COAP_DEFAULT_WKC_HASHKEY
  * accordingly (see int coap_hash_path());

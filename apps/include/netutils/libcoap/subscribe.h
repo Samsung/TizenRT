@@ -10,8 +10,8 @@
 #ifndef _COAP_SUBSCRIBE_H_
 #define _COAP_SUBSCRIBE_H_
 
-#include "config.h"
-#include "address.h"
+#include <apps/netutils/libcoap/config.h>
+#include <apps/netutils/libcoap/address.h>
 
 /**
  * @defgroup observe Resource observation

@@ -9,9 +9,9 @@
 #ifndef _PDU_H_
 #define _PDU_H_
 
-#include "config.h"
-#include "coap_list.h"
-#include "uri.h"
+#include <apps/netutils/libcoap/config.h>
+#include <apps/netutils/libcoap/coap_list.h>
+#include <apps/netutils/libcoap/uri.h>
 
 #ifdef WITH_LWIP
 #include <net/lwip/pbuf.h>

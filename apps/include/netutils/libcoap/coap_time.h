@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 /**
  * @defgroup clock Clock Handling

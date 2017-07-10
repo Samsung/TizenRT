@@ -9,9 +9,9 @@
 #ifndef _COAP_BLOCK_H_
 #define _COAP_BLOCK_H_
 
-#include "option.h"
-#include "encode.h"
-#include "pdu.h"
+#include <apps/netutils/libcoap/option.h>
+#include <apps/netutils/libcoap/encode.h>
+#include <apps/netutils/libcoap/pdu.h>
 
 /**
  * @defgroup block Block Transfer

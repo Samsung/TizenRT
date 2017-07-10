@@ -14,7 +14,7 @@
 #ifndef _COAP_HASHKEY_H_
 #define _COAP_HASHKEY_H_
 
-#include "str.h"
+#include <apps/netutils/libcoap/str.h>
 
 typedef unsigned char coap_key_t[4];
 

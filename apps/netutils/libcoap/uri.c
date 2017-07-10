@@ -6,7 +6,7 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -16,11 +16,11 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "mem.h"
-#include "debug.h"
-#include "pdu.h"
-#include "option.h"
-#include "uri.h"
+#include <apps/netutils/libcoap/mem.h>
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/pdu.h>
+#include <apps/netutils/libcoap/option.h>
+#include <apps/netutils/libcoap/uri.h>
 
 /**
  * A length-safe version of strchr(). This function returns a pointer

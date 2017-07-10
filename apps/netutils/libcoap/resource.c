@@ -6,11 +6,11 @@
  * README for terms of use.
  */
 
-#include "config.h"
-#include "net.h"
-#include "debug.h"
-#include "resource.h"
-#include "subscribe.h"
+#include <apps/netutils/libcoap/config.h>
+#include <apps/netutils/libcoap/net.h>
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/resource.h>
+#include <apps/netutils/libcoap/subscribe.h>
 
 #ifdef WITH_LWIP
 #include "utlist.h"
@@ -28,8 +28,8 @@
 
 #endif
 #ifdef WITH_POSIX
-#include "utlist.h"
-#include "mem.h"
+#include <apps/netutils/libcoap/utlist.h>
+#include <apps/netutils/libcoap/mem.h>
 
 #define COAP_MALLOC_TYPE(Type) \
   ((coap_##Type##_t *)coap_malloc(sizeof(coap_##Type##_t)))

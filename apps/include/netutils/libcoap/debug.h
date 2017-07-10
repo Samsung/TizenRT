@@ -9,7 +9,7 @@
 #ifndef _COAP_DEBUG_H_
 #define _COAP_DEBUG_H_
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #ifndef COAP_DEBUG_FD
 #define COAP_DEBUG_FD stdout
@@ -54,7 +54,7 @@ void coap_log_impl(coap_log_t level, const char *format, ...);
 #define warn(...) coap_log(LOG_WARNING, __VA_ARGS__)
 #define debug(...) coap_log(LOG_DEBUG, __VA_ARGS__)
 
-#include "pdu.h"
+#include <apps/netutils/libcoap/pdu.h>
 void coap_show_pdu(const coap_pdu_t *);
 
 struct coap_address_t;

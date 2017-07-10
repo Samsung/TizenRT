@@ -9,8 +9,8 @@
 #ifndef _COAP_URI_H_
 #define _COAP_URI_H_
 
-#include "hashkey.h"
-#include "str.h"
+#include <apps/netutils/libcoap/hashkey.h>
+#include <apps/netutils/libcoap/str.h>
 
 /** Representation of parsed URI. Components may be filled from a
  * string with coap_split_uri() and can be used as input for
