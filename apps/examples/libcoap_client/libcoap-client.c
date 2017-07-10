@@ -33,7 +33,7 @@
 #if defined (__TINYARA__)
 #define COAP_CLIENT_SCHED_PRI    100
 #define COAP_CLIENT_SCHED_POLICY SCHED_RR
-#define COAP_CLIENT_STACK_SIZE   (1024 * 8)
+#define COAP_CLIENT_STACK_SIZE   (1024 * 16)
 
 /* used for sending input arguments to pthread */
 struct coap_client_input {

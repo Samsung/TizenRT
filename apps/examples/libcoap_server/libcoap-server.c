@@ -41,6 +41,16 @@
 #endif
 
 #if defined(__TINYARA__)
+#define COAP_SERVER_SCHED_PRI    100
+#define COAP_SERVER_SCHED_POLICY SCHED_RR
+#define COAP_SERVER_STACK_SIZE   (1024 * 16)
+
+/* used for sending input arguments to pthread */
+struct coap_server_input {
+	int argc;
+	char **argv;
+};
+
 #ifndef FD_SETSIZE
 #define FD_SETSIZE	(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)
 #endif
@@ -348,7 +358,7 @@ finish:
 }
 
 #if defined (__TINYARA__)
-int coap_server_test_main(int argc, char **argv)
+int coap_server_test_run(void *arg)
 #else
 int main(int argc, char **argv)
 #endif
@@ -364,6 +374,14 @@ int main(int argc, char **argv)
 	int opt;
 	int invalid_opt = 0;
 	coap_log_t log_level = LOG_WARNING;
+
+#if defined (__TINYARA__)
+	int argc;
+	char **argv;
+
+	argc = ((struct coap_server_input *)arg)->argc;
+	argv = ((struct coap_server_input *)arg)->argv;
+#endif
 
 	while ((opt = getopt(argc, argv, "A:p:v:Q")) != -1) {
 		switch (opt) {
@@ -493,3 +511,51 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
+#if defined (__TINYARA__)
+int coap_server_test_main(int argc, char **argv)
+{
+	int status;
+
+	pthread_t tid;
+	pthread_attr_t attr;
+	struct sched_param sparam;
+	struct coap_server_input arg;
+
+	status = pthread_attr_init(&attr);
+
+	if (status != 0) {
+		printf("coap_server_test_main : failed to start coap-client\n");
+		return -1;
+	}
+
+	sparam.sched_priority = COAP_SERVER_SCHED_PRI;
+	if ((status = pthread_attr_setschedparam(&attr, &sparam)) != 0) {
+		printf("coap_server_test_main : failed pthread_attr_setschedparam, errno %d\n", errno);
+		return -1;
+	}
+
+	if ((status = pthread_attr_setschedpolicy(&attr, COAP_SERVER_SCHED_POLICY)) != 0) {
+		printf("coap_server_test_main : failed pthread_attr_setschedpolicy, errno %d\n", errno);
+		return -1;
+	}
+
+	if ((status = pthread_attr_setstacksize(&attr, COAP_SERVER_STACK_SIZE)) != 0) {
+		printf("coap_server_test_main : failed pthread_attr_setstacksize, errno %d\n", errno);
+		return -1;
+	}
+
+	arg.argc = argc;
+	arg.argv = argv;
+
+	if ((status = pthread_create(&tid, &attr, (pthread_startroutine_t)coap_server_test_run, &arg)) < 0) {
+		printf("coap_server_test_main : failed to run coap-client, errno %d\n", errno);
+		return -1;
+	}
+
+	pthread_setname_np(tid, "coap-server-test");
+	pthread_join(tid, NULL);
+
+	return 0;
+}
+#endif /* __TINYARA__ */
