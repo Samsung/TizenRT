@@ -538,7 +538,6 @@ static int gpio_close(FAR struct file *filep)
 	for (prev = NULL, curr = priv->gu_open; curr && curr != opriv;
 			prev = curr, curr = curr->go_flink);
 
-	DEBUGASSERT(curr);
 	if (!curr) {
 		lldbg("ERROR: Failed to find open entry\n");
 		ret = -ENOENT;
