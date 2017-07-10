@@ -134,6 +134,7 @@ static int smart_create_test_file(char *filename)
 		} else {
 			printf("\n");
 			printf("%s is failed.(%d)", string, ret);
+			break;
 		}
 
 		printf("\r%d", x);
@@ -252,7 +253,7 @@ static int smart_append_test(char *filename)
 
 	/* Now seek to that position and read the data back */
 
-	fseek(fd, 30, SEEK_END);
+	fseek(fd, -30, SEEK_END);
 	fread(readstring, 1, 30, fd);
 	readstring[30] = '\0';
 	if (strcmp(readstring, "This is a test of the append.\n") != 0) {
@@ -593,7 +594,7 @@ int smart_test_main(int argc, char *argv[])
 	/* Argument given? */
 
 	optind = -1;
-	while ((opt = getopt(argc, argv, "c:e:l:r:s:t:w:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:e:l:r:s:a:t:w:")) != -1) {
 		switch (opt) {
 		case 'c':
 			g_circCount = atoi(optarg);
