@@ -63,6 +63,9 @@
  * Pre-processor Definitions
  ****************************************************************************/
 #define MM_PIDHASH(pid) ((pid) & (CONFIG_MAX_TASKS - 1))
+#define HEAPINFO_INT -1
+#define HEAPINFO_STACK -2
+#define HEAPINFO_NONSCHED -3
 
 /****************************************************************************
  * Public Functions
@@ -98,7 +101,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	nonsched_resource = 0;
 	stack_resource = 0;
 	for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
-		nonsched_list[nonsched_idx] = -1;
+		nonsched_list[nonsched_idx] = HEAPINFO_NONSCHED;
 		nonsched_size[nonsched_idx] = 0;
 	}
 
@@ -137,9 +140,9 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 				}
 
 #if CONFIG_TASK_NAME_SIZE > 0
-				if (node->pid == -1 && mode != HEAPINFO_SIMPLE) {
+				if (node->pid == HEAPINFO_INT && mode != HEAPINFO_SIMPLE) {
 					printf("INT Context\n");
-				} else if (node->pid == -2) {
+				} else if (node->pid == HEAPINFO_STACK) {
 					stack_resource += node->size;
 				} else if (sched_gettcb(node->pid) == NULL) {
 					nonsched_list[MM_PIDHASH(node->pid)] = node->pid;
@@ -181,7 +184,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 		printf(" PID | SIZE \n");
 		printf("-----|------\n");
 		for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
-			if (nonsched_list[nonsched_idx] != -1) {
+			if (nonsched_list[nonsched_idx] != HEAPINFO_NONSCHED) {
 				printf("%4d | %5d\n", nonsched_list[nonsched_idx], nonsched_size[nonsched_idx]);
 			}
 		}
@@ -249,8 +252,8 @@ void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_re
 	node->alloc_call_addr = caller_retaddr;
 	node->reserved = 0;
 	if (up_interrupt_context() == true) {
-		/* update pid as -1 if allocation is from INT context */
-		node->pid = -1;
+		/* update pid as HEAPINFO_INT(-1) if allocation is from INT context */
+		node->pid = HEAPINFO_INT;
 	} else {
 		node->pid = getpid();
 	}
@@ -272,6 +275,6 @@ void heapinfo_exclude_stacksize(void *stack_ptr)
 	rtcb = sched_gettcb(node->pid);
 
 	rtcb->curr_alloc_size -= node->size;
-	node->pid = -2;
+	node->pid = HEAPINFO_STACK;
 }
 #endif
