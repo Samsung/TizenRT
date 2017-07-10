@@ -52,7 +52,9 @@ int pmtest_dev_prepare(struct pm_callback_s *cb, int domain, enum pm_state_e sta
 static int pmtest_kthread(int argc, char *argv[])
 {
 	enum pm_state_e s = PM_IDLE;
+#ifdef CONFIG_PM_METRICS
 	struct pm_time_in_each_s m;
+#endif
 	struct timespec start_time;
 	struct timespec elapsed_time;
 
@@ -64,8 +66,10 @@ static int pmtest_kthread(int argc, char *argv[])
 		sleep(PMTEST_THREAD_SLEEP_TIME);
 		pm_changestate(PMTEST_DOMAIN, s);
 		pm_dumpstates();
+#ifdef CONFIG_PM_METRICS
 		pm_get_domainmetrics(0, &m);
 		pmvdbg("Normal:%d Idle:%d standby:%d sleep:%d \n", m.normal, m.idle, m.standby, m.sleep);
+#endif
 		clock_gettime(CLOCK_REALTIME, &elapsed_time);
 	}
 	return 0;
