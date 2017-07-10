@@ -82,6 +82,7 @@ int s5jt200_rgbled_state_task(void)
 			info.frequency = freq * 1000;
 
 			switch (freq % 3) {
+			default:
 			case 0:
 				ledb->ops->start(ledr, &info);
 				break;
@@ -90,8 +91,6 @@ int s5jt200_rgbled_state_task(void)
 				break;
 			case 2:
 				ledr->ops->start(ledb, &info);
-				break;
-			default:
 				break;
 			}
 
