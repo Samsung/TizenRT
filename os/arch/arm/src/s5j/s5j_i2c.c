@@ -288,7 +288,7 @@ static void hsi2c_calculate_timing(struct s5j_i2c_priv_s *priv, unsigned int nOp
 	unsigned int nClkDiv;
 	unsigned int tFTL_CYCLE_SCL;
 	s32 i;
-	s32 uTemp0;
+	float uTemp0;
 	s32 uTemp1;
 	s32 uTemp2 = 0;
 
@@ -305,7 +305,7 @@ static void hsi2c_calculate_timing(struct s5j_i2c_priv_s *priv, unsigned int nOp
 	uTemp0 = (float)(priv->clock / nOpClk) - (tFTL_CYCLE_SCL + 3) * 2;
 
 	for (i = 0; i < 256; i++) {
-		uTemp1 = (uTemp0 + ((tFTL_CYCLE_SCL + 3) % (i + 1)) * 2) / (i + 1);
+		uTemp1 = ((int)uTemp0 + ((tFTL_CYCLE_SCL + 3) % (i + 1)) * 2) / (i + 1);
 		if (uTemp1 < 512) {		/*  TSCL_L/H max is 512 / 2 */
 			uTemp2 = uTemp1 - 2;
 			break;
