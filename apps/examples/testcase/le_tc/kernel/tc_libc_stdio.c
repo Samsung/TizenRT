@@ -72,6 +72,10 @@ static void tc_libc_stdio_flush(void)
 	sleep(3);
 	printf("\n");
 
+	/* flush with stream argument NULL. It will flush all streams */
+	ret_chk = fflush(NULL);
+	TC_ASSERT_EQ("fflush", ret_chk, OK);
+
 	TC_SUCCESS_RESULT();
 }
 
