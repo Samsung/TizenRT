@@ -466,4 +466,6 @@ int get_errno(void);
 
 #endif							/* __INCLUDE_ERRNO_H */
 
-/** @} */// end of ERRNO_KERNEL
+/**
+ * @}
+ */

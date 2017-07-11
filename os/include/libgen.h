@@ -98,4 +98,6 @@ FAR char *dirname(FAR char *path);
 #endif
 
 #endif							/* __INCLUDE_LIBGEN_H */
-/** @} */// end of LIBGEN_KERNEL
+/**
+ * @}
+ */

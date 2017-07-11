@@ -1,0 +1,13 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_AWS
+	bool "AWS demo application"
+	default n
+	select AWS_SDK
+	select NETUTILS_WIFI
+	---help---
+		Enable AWS IoT Device example application
+

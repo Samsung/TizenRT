@@ -107,4 +107,6 @@ uint32_t crc32(FAR const uint8_t *src, size_t len);
 
 #endif							/* __INCLUDE_CRC32_H */
 
-/** @} *///end of CRC_KERNEL
+/**
+ * @}
+ */

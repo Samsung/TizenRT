@@ -242,80 +242,80 @@ extern "C" {
 #ifndef CONFIG_HAVE_LONG_LONG
 /* Multiplication operators */
 /**
-* @brief multiply two b16 numbers
-* @todo
-* @param[in] first operand
-* @param[in] second operand
-* @return the result of two multiplication
-*/
+ * @brief multiply two b16 numbers
+ * @todo
+ * @param[in] first operand
+ * @param[in] second operand
+ * @return the result of two multiplication
+ */
 b16_t b16mulb16(b16_t m1, b16_t m2);
 /**
-* @brief multiply two unsigned b16 numbers
-* @todo
-* @param[in] first operand
-* @param[in] second operand
-* @return the result of two multiplication
-*/
+ * @brief multiply two unsigned b16 numbers
+ * @todo
+ * @param[in] first operand
+ * @param[in] second operand
+ * @return the result of two multiplication
+ */
 ub16_t ub16mulub16(ub16_t m1, ub16_t m2);
 
 /* Square operators */
 /**
-* @brief square b16 number
-* @todo
-* @param[in] first operand
-* @return the result of square
-*/
+ * @brief square b16 number
+ * @todo
+ * @param[in] first operand
+ * @return the result of square
+ */
 b16_t b16sqr(b16_t a);
 /**
-* @brief square unsigned b16 number
-* @todo
-* @param[in] first operand
-* @return the result of square
-*/
+ * @brief square unsigned b16 number
+ * @todo
+ * @param[in] first operand
+ * @return the result of square
+ */
 ub16_t ub16sqr(ub16_t a);
 
 /* Division operators */
 /**
-* @brief divide operation
-* @todo
-* @param[in] a dividend
-* @param[in] a divisor
-* @return the result of divide
-*/
+ * @brief divide operation
+ * @todo
+ * @param[in] a dividend
+ * @param[in] a divisor
+ * @return the result of divide
+ */
 b16_t b16divb16(b16_t num, b16_t denom);
 /**
-* @brief divide operation
-* @todo
-* @param[in] a dividend
-* @param[in] a divisor
-* @return the result of divide
-*/
+ * @brief divide operation
+ * @todo
+ * @param[in] a dividend
+ * @param[in] a divisor
+ * @return the result of divide
+ */
 ub16_t ub16divub16(ub16_t num, ub16_t denom);
 #endif
 
 /* Trigonometric Functions */
 /**
-* @brief Trigonometric sine operation
-* @todo
-* @param[in] a radian value
-* @return the result of sine operation
-*/
+ * @brief Trigonometric sine operation
+ * @todo
+ * @param[in] a radian value
+ * @return the result of sine operation
+ */
 b16_t b16sin(b16_t rad);
 /**
-* @brief Trigonometric cosine operation
-* @todo
-* @param[in] a radian value
-* @return the result of cosine operation
-*/
+ * @brief Trigonometric cosine operation
+ * @todo
+ * @param[in] a radian value
+ * @return the result of cosine operation
+ */
 b16_t b16cos(b16_t rad);
 /**
-* @brief Trigonometric tangent operation
-* @details calculates the arctangent of y/x
-* @todo
-* @param[in] a radian y value
-* @param[in] a radian x value
-* @return the result of tangent operation
-*/
+ * @brief Trigonometric tangent operation
+ * @details calculates the arctangent of y/x
+ * @todo
+ * @param[in] a radian y value
+ * @param[in] a radian x value
+ * @return the result of tangent operation
+ */
 b16_t b16atan2(b16_t y, b16_t x);
 
 #undef EXTERN
@@ -327,4 +327,5 @@ b16_t b16atan2(b16_t y, b16_t x);
 
 /**
  * @endcond
-		  * @} *///end for FIXEDMATH_KERNEL
+ * @}
+ */

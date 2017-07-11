@@ -73,6 +73,8 @@
 
 #define VFS_FILE_PATH MOUNT_DIR"vfs"
 
+#define VFS_INVALID_FILE_PATH MOUNT_DIR"noexistfile"
+
 #define VFS_DUP_FILE_PATH MOUNT_DIR"dup"
 
 #define VFS_DUP2_FILE_PATH MOUNT_DIR"dup2"
@@ -103,6 +105,8 @@
 #define ERROR_MSG_DIFFRENT_FLAG "diffrent flag"
 
 #define ERROR_MSG_OP_FAILED "operation failed"
+
+#define ERROR_MSG_NEGATIVE_OP_FAILED "operation failed with invalid arguements"
 
 #if defined(CONFIG_PIPES) && (CONFIG_DEV_PIPE_SIZE > 11)
 #define FIFO_FILE_PATH "/dev/fifo_test"
@@ -244,6 +248,11 @@ static void fs_vfs_open_tc(void)
 	fd = open(VFS_FILE_PATH, O_WROK | O_CREAT);
 	TC_ASSERT_GEQ("open", fd, 0);
 	close(fd);
+
+	/* Nagative case with invalid argument, not existing pathname. It will return ERROR */
+	fd = open(VFS_INVALID_FILE_PATH, O_WROK);
+	TC_ASSERT_LT_CLEANUP("open", fd, 0, ERROR_MSG_NEGATIVE_OP_FAILED, close(fd));
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -259,13 +268,24 @@ static void fs_vfs_write_tc(void)
 {
 	int fd, ret;
 	char *buf = VFS_TEST_CONTENTS_1;
-	int len;
+
 	fd = open(VFS_FILE_PATH, O_WRONLY | O_TRUNC);
 	TC_ASSERT_GEQ("open", fd, 0);
-	len = strlen(buf);
-	ret = write(fd, buf, len);
+	ret = write(fd, buf, strlen(buf));
 	close(fd);
-	TC_ASSERT_EQ("write", ret, len);
+	TC_ASSERT_EQ("write", ret, strlen(buf));
+
+	/* Nagative case with invalid argument, no write access. It will return ERROR */
+	fd = open(VFS_FILE_PATH, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+	ret = write(fd, buf, sizeof(buf));
+	TC_ASSERT_LT_CLEANUP("write", ret, 0, ERROR_MSG_NEGATIVE_OP_FAILED, close(fd));
+	close(fd);
+
+	/* Nagative case with invalid argument, fd. It will return ERROR */
+	ret = write(CONFIG_NFILE_DESCRIPTORS, buf, sizeof(buf));
+	TC_ASSERT_EQ("write", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -281,6 +301,7 @@ static void fs_vfs_read_tc(void)
 {
 	int fd, ret;
 	char buf[20];
+
 	fd = open(VFS_FILE_PATH, O_RDONLY);
 	TC_ASSERT_GEQ("open", fd, 0);
 	memset(buf, 0, sizeof(buf));
@@ -288,6 +309,19 @@ static void fs_vfs_read_tc(void)
 	close(fd);
 	TC_ASSERT_GEQ("read", ret, 0);
 	TC_ASSERT_EQ("read", strcmp(buf, VFS_TEST_CONTENTS_1), 0);
+
+	/* Nagative case with invalid argument, no read access. It will return ERROR */
+	fd = open(VFS_FILE_PATH, O_WRONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+	memset(buf, 0, sizeof(buf));
+	ret = read(fd, buf, sizeof(buf));
+	TC_ASSERT_LT_CLEANUP("read", ret, 0, ERROR_MSG_NEGATIVE_OP_FAILED, close(fd));
+	close(fd);
+
+	/* Nagative case with invalid argument, fd. It will return ERROR */
+	ret = read(CONFIG_NFILE_DESCRIPTORS, buf, sizeof(buf));
+	TC_ASSERT_EQ("read", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -360,6 +394,18 @@ static void fs_vfs_dup_tc(void)
 
 	TC_ASSERT_GT("read", ret, 0);
 	TC_ASSERT_EQ("read", strcmp(buf, VFS_TEST_CONTENTS_2), 0);
+
+	/* Nagative case with invalid argument, invalid fd. It will return ERROR */
+#if CONFIG_NFILE_DESCRIPTORS > 0
+	ret = dup(CONFIG_NFILE_DESCRIPTORS);
+	TC_ASSERT_EQ("dup", ret, ERROR);
+#endif
+
+#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
+	ret = dup(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS);
+	TC_ASSERT_EQ("dup", ret, ERROR);
+#endif
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -396,8 +442,8 @@ static void fs_vfs_dup2_tc(void)
 
 	len = strlen(VFS_TEST_CONTENTS_3);
 	ret = write(fd1, str, len);
-	TC_ASSERT_EQ_CLEANUP("write", ret, len, ERROR_MSG_BAD_SIZE, close(fd2));
 	close(fd1);
+	TC_ASSERT_EQ_CLEANUP("write", ret, len, ERROR_MSG_BAD_SIZE, close(fd2));
 	close(fd2);
 
 	fd2 = open(filename2, O_RDONLY);
@@ -408,6 +454,12 @@ static void fs_vfs_dup2_tc(void)
 
 	TC_ASSERT_GT("read", ret, 0);
 	TC_ASSERT_EQ("read", strcmp(buf, VFS_TEST_CONTENTS_3), 0);
+
+	/* Nagative case with invalid argument, invalid fd. It will return ERROR */
+	ret = dup2(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS, fd1);
+	TC_ASSERT_LT_CLEANUP("dup2", fd1, 0, ERROR_MSG_NEGATIVE_OP_FAILED, close(fd1));
+	TC_ASSERT_EQ("dup2", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -435,6 +487,19 @@ static void fs_vfs_fsync_tc(void)
 	ret = fsync(fd);
 	TC_ASSERT_GEQ_CLEANUP("fsync", ret, 0, ERROR_MSG_OP_FAILED, close(fd));
 	close(fd);
+
+	/* Nagative case with invalid argument, no write access. It will return ERROR */
+	fd = open(filename, O_RDOK);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = fsync(fd);
+	TC_ASSERT_EQ_CLEANUP("fsync", ret, ERROR, ERROR_MSG_NEGATIVE_OP_FAILED, close(fd));
+	close(fd);
+
+	/* Nagative case with invalid argument, fd. It will return ERROR */
+	ret = fsync(CONFIG_NFILE_DESCRIPTORS);
+	TC_ASSERT_EQ_CLEANUP("fsync", ret, ERROR, ERROR_MSG_NEGATIVE_OP_FAILED, close(fd));
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -464,6 +529,11 @@ static void fs_vfs_lseek_tc(void)
 
 	TC_ASSERT_GT("read", ret, 0);
 	TC_ASSERT_EQ("read", strcmp(buf, "IS VFS TEST 2"), 0);
+
+	/* Nagative case with invalid argument, fd. It will return ERROR */
+	ret = lseek(CONFIG_NFILE_DESCRIPTORS, 5, SEEK_SET);
+	TC_ASSERT_EQ("lseek", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -487,6 +557,11 @@ static void fs_vfs_pwrite_tc(void)
 	ret = pwrite(fd, str, strlen(str), 10);
 	close(fd);
 	TC_ASSERT_NEQ("pwrite", ret, ERROR);
+
+	/* Nagative case with invalid argument, fd. It will return ERROR */
+	ret = pwrite(CONFIG_NFILE_DESCRIPTORS, str, strlen(str), 10);
+	TC_ASSERT_EQ("pwrite", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -513,6 +588,11 @@ static void fs_vfs_pread_tc(void)
 	close(fd);
 	TC_ASSERT_GT("pread", ret, 0);
 	TC_ASSERT_EQ("pread", strcmp(buf, str), 0);
+
+	/* Nagative case with invalid argument, fd. It will return ERROR */
+	ret = pread(CONFIG_NFILE_DESCRIPTORS, buf, 20, 10);
+	TC_ASSERT_EQ("pread", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -542,6 +622,7 @@ static void fs_vfs_mkdir_tc(void)
 		ret = mkdir(filename, 0777);
 		TC_ASSERT_EQ("mkdir", ret, OK);
 	}
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -720,6 +801,10 @@ static void fs_libc_dirent_telldir_tc(void)
 	ret = closedir(dirp);
 	TC_ASSERT_EQ("closedir", ret, OK);
 
+	/* Nagative case with invalid argument, NULL stream. It will return (off_t)-1 */
+	res = telldir(NULL);
+	TC_ASSERT_EQ("telldir", res, (off_t)-1);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -771,6 +856,11 @@ static void fs_vfs_rmdir_tc(void)
 	/** now there is no entry, remove parent folder **/
 	ret = rmdir(VFS_FOLDER_PATH);
 	TC_ASSERT_EQ("rmdir", ret, OK);
+
+	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
+	ret = rmdir(NULL);
+	TC_ASSERT_EQ("rmdir", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -789,6 +879,11 @@ static void fs_vfs_unlink_tc(void)
 
 	ret = unlink(filename);
 	TC_ASSERT_EQ("unlink", ret, OK);
+
+	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
+	ret = unlink(NULL);
+	TC_ASSERT_EQ("unlink", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -808,6 +903,19 @@ static void fs_vfs_stat_tc(void)
 
 	ret = stat(filename, &st);
 	TC_ASSERT_EQ("stat", ret, OK);
+
+	/* stat root directory */
+	ret = stat("/", &st);
+	TC_ASSERT_EQ("stat", ret, OK);
+
+	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
+	ret = stat(NULL, &st);
+	TC_ASSERT_EQ("stat", ret, ERROR);
+
+	/* Nagative case with invalid argument, not existing pathname. It will return ERROR */
+	ret = stat(VFS_INVALID_FILE_PATH, &st);
+	TC_ASSERT_EQ("stat", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -829,6 +937,11 @@ static void fs_vfs_statfs_tc(void)
 #ifdef CONFIG_FS_SMARTFS
 	TC_ASSERT_EQ("statfs", fs.f_type, SMARTFS_MAGIC);
 #endif
+
+	/* Nagative case with invalid argument, NULL pathname. It will return ERROR */
+	ret = statfs(NULL, &fs);
+	TC_ASSERT_EQ("statfs", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -892,12 +1005,12 @@ errout:
 static void fs_vfs_sendfile_tc(void)
 {
 	char *src_file = VFS_FILE_PATH;
-	char dest_file[12];
+	char dest_file[16];
 	struct stat st;
 	int fd1, fd2, ret;
 	off_t size;
 
-	snprintf(dest_file, 12, "%s_dest", src_file);
+	snprintf(dest_file, sizeof(dest_file), "%s_dest", src_file);
 
 	fd1 = open(src_file, O_RDONLY);
 	TC_ASSERT_GEQ("open", fd1, 0);
@@ -1039,15 +1152,34 @@ static void fs_vfs_select_tc(void)
 */
 static void fs_vfs_rename_tc(void)
 {
+	int fd;
 	int ret;
-	char *filename = VFS_FILE_PATH;
-	char dest_file[12];
+	char *old_file = VFS_FILE_PATH;
+	char new_file[12];
 
-	snprintf(dest_file, 12, "%s_re", filename);
-	unlink(dest_file);
+	snprintf(new_file, 12, "%s_re", old_file);
+	unlink(new_file);
 
-	ret = rename(filename, dest_file);
+	ret = rename(old_file, new_file);
 	TC_ASSERT_EQ("rename", ret, OK);
+
+	/* Nagative case with invalid argument, not existing old pathname. It will return ERROR */
+	ret = rename(old_file, new_file);
+	TC_ASSERT_EQ("rename", ret, ERROR);
+
+	old_file = new_file;
+
+	/* Nagative case with invalid argument, already existing new pathname. It will return ERROR */
+	fd = open(VFS_FILE_PATH, O_WROK | O_CREAT);
+	TC_ASSERT_GEQ("open", fd, 0);
+	close(fd);
+	ret = rename(old_file, VFS_FILE_PATH);
+	TC_ASSERT_EQ("rename", ret, ERROR);
+
+	/* Nagative case with invalid argument, NULL filepath. It will return ERROR */
+	ret = rename(old_file, NULL);
+	TC_ASSERT_EQ("rename", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1094,6 +1226,11 @@ static void libc_stdio_fdopen_tc(void)
 	close(fd);
 	TC_ASSERT_EQ_CLEANUP("fdopen", fp->fs_oflags, O_RDONLY, ERROR_MSG_DIFFRENT_FLAG, fclose(fp));
 	fclose(fp);
+
+	/* Nagative case with invalid argument, negative fd value. It will return NULL */
+	fp = fdopen(-1, "r");
+	TC_ASSERT_EQ_CLEANUP("fdopen", fp, NULL, ERROR_MSG_NEGATIVE_OP_FAILED, fclose(fp));
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1113,6 +1250,40 @@ static void libc_stdio_fopen_tc(void)
 	fp = fopen(filename, "w");
 	TC_ASSERT("fopen", fp);
 	fclose(fp);
+
+	fp = fopen(filename, "r+");
+	TC_ASSERT("fopen", fp);
+	fclose(fp);
+
+	fp = fopen(filename, "rb");
+	TC_ASSERT("fopen", fp);
+	fclose(fp);
+
+	fp = fopen(filename, "rx");
+	TC_ASSERT("fopen", fp);
+	fclose(fp);
+
+	/* Nagative cases with invalid mode. It will return NULL */
+	fp = fopen(filename, "b");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, ERROR_MSG_NEGATIVE_OP_FAILED, fclose(fp));
+
+	fp = fopen(filename, "x");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, ERROR_MSG_NEGATIVE_OP_FAILED, fclose(fp));
+
+	fp = fopen(filename, "z");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, ERROR_MSG_NEGATIVE_OP_FAILED, fclose(fp));
+
+	fp = fopen(filename, "+");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, ERROR_MSG_NEGATIVE_OP_FAILED, fclose(fp));
+
+	fp = fopen(filename, "rw");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, ERROR_MSG_NEGATIVE_OP_FAILED, fclose(fp));
+
+	fp = fopen(filename, "wr");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, ERROR_MSG_NEGATIVE_OP_FAILED, fclose(fp));
+
+	fp = fopen(filename, "wa");
+	TC_ASSERT_EQ_CLEANUP("fopen", fp, NULL, ERROR_MSG_NEGATIVE_OP_FAILED, fclose(fp));
 
 	TC_SUCCESS_RESULT();
 }
@@ -1156,6 +1327,9 @@ static void libc_stdio_fputs_tc(void)
 	TC_ASSERT("fopen", fp);
 	TC_ASSERT_EQ_CLEANUP("fputs", fputs(str, fp), strlen(str), ERROR_MSG_OP_FAILED, fclose(fp));
 
+	/* Nagative case with invalid argument, NULL stream. It will return EOF */
+	TC_ASSERT_EQ_CLEANUP("fputs", fputs(NULL, fp), EOF, ERROR_MSG_NEGATIVE_OP_FAILED, fclose(fp));
+
 	fclose(fp);
 	TC_SUCCESS_RESULT();
 }
@@ -1181,6 +1355,8 @@ static void libc_stdio_fgets_tc(void)
 	TC_ASSERT_CLEANUP("fgets", fgets(buf, 20, fp), ERROR_MSG_OP_FAILED, fclose(fp));
 	TC_ASSERT_EQ_CLEANUP("fgets", strcmp(buf, VFS_TEST_CONTENTS_1), 0, ERROR_MSG_DIFFRENT_CONTENTS, fclose(fp));
 
+	/* Nagative case with invalid argument, negative buffer size. It will return NULL */
+	TC_ASSERT_EQ_CLEANUP("fgets", fgets(buf, -1, fp), NULL, ERROR_MSG_NEGATIVE_OP_FAILED, fclose(fp));
 	fclose(fp);
 	TC_SUCCESS_RESULT();
 }
@@ -1211,6 +1387,10 @@ static void libc_stdio_fseek_tc(void)
 	fclose(fp);
 	TC_ASSERT_EQ("fgets", strcmp(buf, "IS VFS TEST 1"), 0);
 
+	/* Nagative case with invalid argument, NULL stream. It will return ERROR */
+	ret = fseek(NULL, 5, SEEK_SET);
+	TC_ASSERT_EQ("fseek", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1237,6 +1417,10 @@ static void libc_stdio_ftell_tc(void)
 	ret = ftell(fp);
 	fclose(fp);
 	TC_ASSERT_EQ("ftell", ret, 5);
+
+	/* Nagative case with invalid argument, NULL stream. It will return ERROR */
+	ret = ftell(NULL);
+	TC_ASSERT_EQ("ftell", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1322,6 +1506,11 @@ static void libc_stdio_fsetpos_tc(void)
 	/* 'S' is 4th position of "THIS IS VFS TEST 2" */
 	TC_ASSERT_EQ_CLEANUP("fgetc", ch, 'S', ERROR_MSG_OP_FAILED, fclose(fp));
 
+	/* Nagative case with invalid arguments, NULL position. It will return ERROR */
+	ret = fsetpos(fp, NULL);
+	TC_ASSERT_EQ_CLEANUP("fsetpos", ret, ERROR, ERROR_MSG_NEGATIVE_OP_FAILED, fclose(fp));
+	fclose(fp);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1349,6 +1538,10 @@ static void libc_stdio_fgetpos_tc(void)
 	ret = fgetpos(fp, &pos);
 	fclose(fp);
 	TC_ASSERT_EQ("fgetpos", ret, OK);
+
+	/* Nagative case with invalid arguments. It will return ERROR */
+	ret = fgetpos(NULL, NULL);
+	TC_ASSERT_EQ("fgetpos", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1588,6 +1781,10 @@ static void libc_stdio_fileno_tc(void)
 	fd = fileno(fp);
 	fclose(fp);
 	TC_ASSERT_GEQ("fileno", fd, 0);
+
+	/* Nagative case with invalid argument, NULL stream. It will return ERROR */
+	fd = fileno(NULL);
+	TC_ASSERT_EQ("fileno", fd, ERROR);
 
 	TC_SUCCESS_RESULT();
 }

@@ -1035,4 +1035,5 @@ long double remquol(long double x, long double y, int *quo);
 #endif							/* CONFIG_LIBM */
 #endif							/* __INCLUDE_MATH_H */
 /**
- *@} */
+ * @}
+ */

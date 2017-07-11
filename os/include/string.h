@@ -255,4 +255,6 @@ size_t strlcpy(char *__restrict dest, const char *__restrict src, size_t size);
 }
 #endif
 #endif							/* __INCLUDE_STRING_H */
-/** @} */// end of STRING_LIBC
+/**
+ * @}
+ */

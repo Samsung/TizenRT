@@ -378,6 +378,22 @@ typedef bool pthread_once_t;
 typedef CODE void (*pthread_cleanup_t)(FAR void *arg);
 #endif
 
+struct pthread_rwlock_s {
+	pthread_mutex_t lock;
+	pthread_cond_t cv;
+	unsigned int num_readers;
+	unsigned int num_writers;
+	bool write_in_progress;
+};
+
+typedef struct pthread_rwlock_s pthread_rwlock_t;
+
+typedef int pthread_rwlockattr_t;
+
+#define PTHREAD_RWLOCK_INITIALIZER  {PTHREAD_MUTEX_INITIALIZER, \
+                                     PTHREAD_COND_INITIALIZER, \
+                                     0, 0, false}
+
 /* Forware references */
 
 struct sched_param;			/* Defined in sched.h */
@@ -445,7 +461,7 @@ int pthread_cancel(pthread_t thread);
  */
 int pthread_setcancelstate(int state, FAR int *oldstate);
 
-int  pthread_setcanceltype(int type, FAR int *oldtype);
+int pthread_setcanceltype(int type, FAR int *oldtype);
 
 /**
  * @cond
@@ -828,8 +844,58 @@ int pthread_barrierattr_getpshared(FAR const pthread_barrierattr_t *attr, FAR in
  * @since Tizen RT v1.0
  */
 int pthread_barrierattr_setpshared(FAR pthread_barrierattr_t *attr, int pshared);
+
+/* Pthread rwlock */
+
 /**
-	 * @} *///end for PTHREAD_KERNEL
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int pthread_rwlock_destroy(FAR pthread_rwlock_t *rw_lock);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int pthread_rwlock_init(FAR pthread_rwlock_t *rw_lock, FAR const pthread_rwlockattr_t *attr);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int pthread_rwlock_rdlock(pthread_rwlock_t *lock);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int pthread_rwlock_timedrdlock(FAR pthread_rwlock_t *lock, FAR const struct timespec *abstime);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int pthread_rwlock_timedwrlock(FAR pthread_rwlock_t *lock, FAR const struct timespec *abstime);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int pthread_rwlock_tryrdlock(FAR pthread_rwlock_t *lock);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int pthread_rwlock_trywrlock(FAR pthread_rwlock_t *lock);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int pthread_rwlock_unlock(FAR pthread_rwlock_t *lock);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int pthread_rwlock_wrlock(FAR pthread_rwlock_t *lock);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

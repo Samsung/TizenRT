@@ -98,4 +98,5 @@ EXTERN int gettimeofday(struct timeval *tv, FAR struct timezone *tz);
 
 #endif							/* __INCLUDE_SYS_TIME_H */
 /**
-		  * @} *///end for TIME_KERNEL
+ * @}
+ */

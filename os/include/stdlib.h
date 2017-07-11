@@ -148,7 +148,8 @@ struct lldiv_s {
 
 typedef struct lldiv_s lldiv_t;
 /**
-* @} */
+ * @}
+ */
 
 /****************************************************************************
  * Global Function Prototypes

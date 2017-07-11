@@ -435,7 +435,12 @@ db_result_t relation_remove(char *name, int remove_tuples)
 	if (rel->references > 1) {
 		return DB_BUSY_ERROR;
 	}
-
+#ifdef CONFIG_ARASTORAGE_ENABLE_WRITE_BUFFER
+	/* Flush insert buffer to make sure of writing tuples before removing relation */
+	if (DB_SUCCESS(storage_flush_insert_buffer())) {
+		DB_LOG_D("DB : flush insert buffer!!\n");
+	}
+#endif
 	result = storage_drop_relation(rel, remove_tuples);
 	relation_free(rel);
 	return result;
@@ -982,13 +987,6 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 
 end_removal:
 	DB_LOG_E("DB: Finished removing tuples. Result relation has %d tuples\n", (*handle)->result_rel->cardinality);
-
-#ifdef CONFIG_ARASTORAGE_ENABLE_WRITE_BUFFER
-	/* Flush insert buffer to make sure of writing tuples in new relation */
-	if (DB_SUCCESS(storage_flush_insert_buffer())) {
-		DB_LOG_D("DB : flush insert buffer!!\n");
-	}
-#endif
 
 	relation_release((*handle)->rel);
 

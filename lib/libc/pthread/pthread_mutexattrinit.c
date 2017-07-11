@@ -121,9 +121,9 @@ int pthread_mutexattr_init(FAR pthread_mutexattr_t *attr)
 
 #ifdef CONFIG_PTHREAD_MUTEX_BOTH
 #ifdef CONFIG_PTHREAD_MUTEX_DEFAULT_UNSAFE
-	attr->robust  = PTHREAD_MUTEX_STALLED;
+		attr->robust  = PTHREAD_MUTEX_STALLED;
 #else
-	attr->robust  = PTHREAD_MUTEX_ROBUST;
+		attr->robust  = PTHREAD_MUTEX_ROBUST;
 #endif
 #endif
 	}

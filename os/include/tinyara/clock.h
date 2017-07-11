@@ -377,4 +377,5 @@ int clock_cpuload(int pid, FAR struct cpuload_s *cpuload);
 #endif							/* _INCLUDE_CLOCK_H */
 
 /**
- * @} */ //end for CLOCK_KERNEL
+ * @}
+ */

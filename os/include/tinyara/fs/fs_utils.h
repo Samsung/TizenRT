@@ -85,6 +85,7 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+#ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: getwd
  *
@@ -104,7 +105,7 @@ FAR const char *getwd(const char *wd);
  ****************************************************************************/
 FAR char *get_fullpath(FAR const char *relpath);
 char *get_dirpath(const char *dirpath, const char *relpath);
-
+#endif
 #undef EXTERN
 #if defined(__cplusplus)
 }

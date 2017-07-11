@@ -112,9 +112,13 @@
  *                parameters are required, argv may be NULL.
  *
  * Return Value:
- *   Returns the non-zero process ID of the new task or ERROR if memory is
- *   insufficient or the task cannot be created.  The errno will be set to
- *   indicate the nature of the error (always ENOMEM).
+ *   Returns the non-zero process ID of the new task on success
+ *   ERROR on failure. The errno will be set to indicate the nature of the error.
+ *
+ *   This function can fail for three reasons.
+ *   1) If the memory is insufficient, errno = ENOMEM
+ *   2) If requested priority is beyond the allowed range, errno = EINVAL
+ *   3) If it is unable to assign a new, unique task ID to the TCB. errno = EBUSY
  *
  ****************************************************************************/
 
@@ -126,6 +130,13 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 	int ret;
 
 	trace_begin(TTRACE_TAG_TASK, "thread_create");
+
+	/* Check whether we are allowed to create new task ? */
+	if (g_alive_taskcount == CONFIG_MAX_TASKS) {
+		sdbg("ERROR: CONFIG_MAX_TASKS(%d) count reached\n",CONFIG_MAX_TASKS);
+		errcode = EBUSY;
+		goto errout;
+	}
 
 	/* Allocate a TCB for the new task. */
 
@@ -247,9 +258,13 @@ errout:
  *                parameters are required, argv may be NULL.
  *
  * Return Value:
- *   Returns the non-zero process ID of the new task or ERROR if memory is
- *   insufficient or the task cannot be created.  The errno will be set to
- *   indicate the nature of the error (always ENOMEM).
+ *   Returns the non-zero process ID of the new task on success
+ *   ERROR on failure. The errno will be set to indicate the nature of the error.
+ *
+ *   This function can fail for three reasons.
+ *   1) If the memory is insufficient, errno = ENOMEM
+ *   2) If requested priority is beyond the allowed range, errno = EINVAL
+ *   3) If it is unable to assign a new, unique task ID to the TCB. errno = EBUSY
  *
  ****************************************************************************/
 
