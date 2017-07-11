@@ -45,17 +45,18 @@ CSRCS =
 VPATH = .
 
 
-ifeq ($(CONFIG_DM),y)
-ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
+ifneq ($(CONFIG_DM)$(CONFIG_EXTERNAL_WAKAAMA_EXAMPLE),)
 include wakaama/core/Make.defs
 include wakaama/core/er-coap-13/Make.defs
 include wakaama/examples/shared/Make.defs
-endif
 ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
 include wakaama/examples/client/Make.defs
 endif
 ifeq ($(CONFIG_LWM2M_SERVER_MODE),y)
 include wakaama/examples/server/Make.defs
+endif
+ifeq ($(CONFIG_DM),y)
+CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif
 endif
 
@@ -70,6 +71,7 @@ include libtuv/source/unix/Make.defs
 include libtuv/source/Make.defs
 endif
 
+
 ifeq ($(CONFIG_AWS_SDK),y)
 include aws/Make.defs
 include aws/src/Make.defs
@@ -78,6 +80,7 @@ endif
 ifeq ($(CONFIG_DM),y)
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif
+
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

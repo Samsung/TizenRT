@@ -642,7 +642,8 @@ static void prv_create_client(char * buffer,
     {
         lwm2m_data_t * dataP;
 
-        if (1 != sscanf(buffer, "%d", &value))
+        value = 0;
+        if (1 != sscanf(buffer, "%"PRId64, &value))
         {
             fprintf(stdout, "Invalid value !");
             return;
@@ -659,11 +660,17 @@ static void prv_create_client(char * buffer,
 
         format = LWM2M_CONTENT_TLV;
         temp_length = lwm2m_data_serialize(NULL, 1, dataP, &format, &temp_buffer);
+        lwm2m_data_free(1, dataP);
     }
    /* End Client dependent part*/
 
     //Create
     result = lwm2m_dm_create(lwm2mH, clientId, &uri, format, temp_buffer, temp_length, prv_result_callback, NULL);
+
+    if (temp_buffer != NULL)
+    {
+        lwm2m_free(temp_buffer);
+    }
 
     if (result == 0)
     {
@@ -903,6 +910,7 @@ int lwm2m_server_cb(void *args)
 
     argc = ((struct pthread_arg *)args)->argc;
     argv = ((struct pthread_arg *)args)->argv;
+    g_quit = 0;
 #else
 int lwm2m_server_main(int argc, char *argv[])
 {
@@ -921,10 +929,10 @@ int lwm2m_server_main(int argc, char *argv[])
 
     coap_protocol_t proto = COAP_UDP;
 
+#ifdef WITH_MBEDTLS
     char * pskId = NULL;
     char * pskBuffer = NULL;
 
-#ifdef WITH_MBEDTLS
     unsigned char psk[MBEDTLS_PSK_MAX_LEN];
 
     /* set default tls option */
@@ -1113,7 +1121,7 @@ int lwm2m_server_main(int argc, char *argv[])
     if (sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);
-        return -1;
+        goto exit;
     }
 
     switch(proto) {
@@ -1122,11 +1130,11 @@ int lwm2m_server_main(int argc, char *argv[])
             newsock = create_tcp_session(sock, &addr, &addrLen);
             if (newsock < 0) {
                 fprintf(stderr, "Error create tcp session\r\n");
-                close(sock);
-                return -1;
+                goto exit;
             } else {
                 fprintf(stderr, "TCP session has been created\r\n");
                 connList = connection_new_incoming(connList, newsock, (struct sockaddr *)&addr, addrLen);
+				close(sock);
                 sock = newsock;
             }
 #ifdef WITH_MBEDTLS
@@ -1141,7 +1149,7 @@ int lwm2m_server_main(int argc, char *argv[])
 
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) < 0) {
         fprintf(stderr, "Error : setsockopt failed %d\r\n", errno);
-        return -1;
+        goto exit;
     }
 
     /* Use new API to set protocol type */
@@ -1149,7 +1157,7 @@ int lwm2m_server_main(int argc, char *argv[])
     if (NULL == lwm2mH)
     {
         fprintf(stderr, "lwm2m_init2() failed\r\n");
-        return -1;
+        goto exit;
     }
 
     //signal(SIGINT, handle_sigint);
@@ -1175,7 +1183,7 @@ int lwm2m_server_main(int argc, char *argv[])
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
-            return -1;
+            goto exit;
         }
 
         result = select(FD_SETSIZE, &readfds, 0, 0, &tv);
@@ -1198,7 +1206,11 @@ int lwm2m_server_main(int argc, char *argv[])
 
                 if (numBytes == -1)
                 {
-                    fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
+                    fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
+                    if (errno == ENOTCONN) {
+                        fprintf(stderr, "Endpoint connection has been closed\r\n");
+                        goto exit;
+                    }
                 }
                 else
                 {
@@ -1265,9 +1277,27 @@ int lwm2m_server_main(int argc, char *argv[])
         }
     }
 
-    lwm2m_close(lwm2mH);
-    close(sock);
-    connection_free(connList);
+exit:
+#ifdef WITH_MBEDTLS
+    if (connList && connList->session) {
+        TLSSession_free(connList->session);
+    }
+    if (tls_context) {
+        TLSCtx_free(tls_context);
+    }
+#endif
+
+    if (lwm2mH) {
+        lwm2m_close(lwm2mH);
+    }
+
+    if (sock >= 0) { 
+        close(sock);
+    }
+
+    if (connList) {
+        connection_free(connList);
+    }
 
 #ifdef MEMORY_TRACE
     if (g_quit == 1)

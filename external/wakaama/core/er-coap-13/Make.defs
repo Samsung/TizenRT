@@ -33,13 +33,9 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_DM),y)
-
 # Routing table support
 
 CSRCS += er-coap-13.c
 
 DEPPATH += --dep-path wakaama/core/er-coap-13
 VPATH += :wakaama/core/er-coap-13
-
-endif

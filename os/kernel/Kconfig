@@ -1077,13 +1077,6 @@ config USERMAIN_STACKSIZE
 		The size of the stack to allocate for the user initialization thread
 		that is started as soon as the OS completes its initialization.
 
-config PREAPP_STACKSIZE
-	int "pre-app thread stack size"
-	default 2048
-	---help---
-		The size of the stack to allocate for the pre-application thread
-		that is started as soon as the OS completes its initialization.
-
 config MPU_STACKGAURD
 	bool "protect thread stack"
 	default n

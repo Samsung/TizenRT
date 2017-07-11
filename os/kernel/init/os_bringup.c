@@ -273,11 +273,13 @@ static inline void os_do_appstart(void)
 
 	svdbg("Starting application init thread\n");
 
+#ifdef CONFIG_SYSTEM_PREAPP_INIT
 #ifdef CONFIG_BUILD_PROTECTED
 	DEBUGASSERT(USERSPACE->preapp_start != NULL);
-	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_PREAPP_STACKSIZE, USERSPACE->preapp_start, (FAR char *const *)NULL);
+	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, USERSPACE->preapp_start, (FAR char *const *)NULL);
 #else
-	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_PREAPP_STACKSIZE, preapp_start, (FAR char *const *)NULL);
+	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, preapp_start, (FAR char *const *)NULL);
+#endif
 #endif
 
 	svdbg("Starting application main thread\n");

@@ -959,7 +959,6 @@ usage:
 #ifdef CONFIG_EXAMPLES_TLS_ARTIK_KEY
 	unsigned int cert_buflen = SEE_MAX_BUF_SIZE;
 	char *cert_buf = NULL;
-	const char cert_start[2] = { 0x30, 0x82 };
 
 	cert_buf = (char *)malloc(SEE_MAX_BUF_SIZE);
 
@@ -974,22 +973,26 @@ usage:
 		goto exit;
 	}
 
-	char *cert_offset[3] = { NULL, NULL, NULL };
+	char *cert_offset[3] = {NULL, NULL, NULL};
+	int cert_length[3] = {0, 0, 0};
 
-	cert_offset[0] = cert_buf + 4;
-	cert_offset[1] = strstr(cert_offset[0] + 4, cert_start);
-	cert_offset[2] = strstr(cert_offset[1] + 4, cert_start);
+	cert_offset[0] = cert_buf;
+	cert_length[0] = (cert_offset[0][2] << 8) + cert_offset[0][3] + 4;
+	cert_offset[1] = cert_offset[0] + cert_length[0];
+	cert_length[1] = (cert_offset[1][2] << 8) + cert_offset[1][3] + 4;
+	cert_offset[2] = cert_offset[1] + cert_length[1];
+	cert_length[2] = (cert_offset[2][2] << 8) + cert_offset[2][3] + 4;
 
 	/* Parse CA Cert */
-	if ((ret = mbedtls_x509_crt_parse_der(&cacert, (const unsigned char *)cert_offset[0], cert_offset[1] - cert_offset[0])) < 0) {
-		mbedtls_printf(" failed\n  ! mbedtls_x509_crt_parse -0x%x\n", -ret);
+	if ((ret = mbedtls_x509_crt_parse_der(&cacert, (const unsigned char *)cert_offset[0], cert_length[0])) < 0) {
+		mbedtls_printf(" failed\n  ! mbedtls_x509_crt_parse CA cert -0x%x\n", -ret);
 		free(cert_buf);
 		goto exit;
 	}
 
 	/* Parse Device Cert */
-	if ((ret = mbedtls_x509_crt_parse_der(&clicert, (const unsigned char *)cert_offset[2], cert_buflen - (cert_offset[2] - cert_buf))) < 0) {
-		mbedtls_printf(" failed\n  ! mbedtls_x509_crt_parse -0x%x\n", -ret);
+	if ((ret = mbedtls_x509_crt_parse_der(&clicert, (const unsigned char *)cert_offset[2], cert_length[2])) < 0) {
+		mbedtls_printf(" failed\n  ! mbedtls_x509_crt_parse Device cert -0x%x\n", -ret);
 		free(cert_buf);
 		goto exit;
 	}

@@ -1,11 +1,4 @@
 
-config DM
-	bool "DM"
-	default n
-	depends on NET
-	---help---
-		enable the DM functionality
-if DM
 config LWM2M_WAKAAMA
 	bool "LWM2M_WAKAAMA"
 	default y
@@ -13,20 +6,28 @@ config LWM2M_WAKAAMA
 		enable LWM2M WAKAAMA external feature
 
 if LWM2M_WAKAAMA
+
 choice
-	prompt "LWM2M WAKAAMA example"
+	prompt "LWM2M WAKAAMA modes"
 	default LWM2M_CLIENT_MODE
 
 config LWM2M_CLIENT_MODE
 	bool "CLIENT_MODE"
 	---help---
-		enable LWM2M WAKAAMA client example
+		enable LWM2M WAKAAMA client mode
 
 config LWM2M_SERVER_MODE
 	bool "SERVER_MODE"
 	---help---
-		enable LWM2M WAKAAMA server example
+		enable LWM2M WAKAAMA server mode
 endchoice
+
+config EXTERNAL_WAKAAMA_EXAMPLE
+	bool "EXTERNAL_WAKAAMA_EXAMPLE"
+	depends on LWM2M_CLIENT_MODE || LWM2M_SERVER_MODE
+	default n
+	---help---
+		enable LWM2M WAKAAMA server or client example
 
 config LWM2M_LITTLE_ENDIAN
 	bool "LITTLE_ENDIAN"
@@ -45,6 +46,15 @@ config LWM2M_SECURITY
 		This definition is for enabling COAP over TLS and DTLS.
 endif
 
+config DM
+    bool "DM"
+    default n
+    depends on NET
+	select LWM2M_WAKAAMA
+    ---help---
+        enable the DM functionality
+
+if DM
 menuconfig DM_WIFI
 	bool "Set Up Wifi Info For DM Demo"
 	default y
