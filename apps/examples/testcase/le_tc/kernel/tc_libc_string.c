@@ -365,7 +365,6 @@ static void tc_libc_string_strdup(void)
 	TC_ASSERT_NOT_NULL("strdup", dest_arr);
 	TC_ASSERT_EQ_CLEANUP("strdup",
 						 strncmp(dest_arr, src, BUFF_SIZE), OK,
-						 get_errno(),
 						 TC_FREE_MEMORY(dest_arr));
 
 	TC_FREE_MEMORY(dest_arr);
@@ -542,7 +541,6 @@ static void tc_libc_string_strndup(void)
 	TC_ASSERT_NOT_NULL("strndup", dest_arr);
 	TC_ASSERT_EQ_CLEANUP("strndup",
 						 strncmp(dest_arr, src, BUFF_SIZE), 0,
-						 get_errno(),
 						 TC_FREE_MEMORY(dest_arr));
 
 	TC_FREE_MEMORY(dest_arr);

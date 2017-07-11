@@ -307,8 +307,7 @@ static void tc_sched_waitpid(void)
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
 	ret_chk = waitpid(child_pid, status, 0);
-	TC_ASSERT_NEQ_CLEANUP("waitpid", ret_chk, ERROR, errno, TC_FREE_MEMORY(status));
-	TC_ASSERT_EQ_CLEANUP("waitpid", ret_chk, child_pid, errno, free(status));
+	TC_ASSERT_EQ_ERROR_CLEANUP("waitpid", ret_chk, child_pid, errno, TC_FREE_MEMORY(status));
 
 	free(status);
 	TC_SUCCESS_RESULT();
