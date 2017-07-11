@@ -226,6 +226,7 @@ db_result_t index_destroy(index_t *index)
 	index->rel = NULL;
 	index->attr->index = NULL;
 	index->attr = NULL;
+	index = NULL;
 	return DB_OK;
 }
 
