@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_LWM2M
+	bool "artik-cloud-lwm2m"
+	default n
+	---help---
+		Enable lwm2m client example

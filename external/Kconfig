@@ -6,11 +6,19 @@ config DM
 	---help---
 		enable the DM functionality
 if DM
+choice
+	prompt "Choose the default implementation of LWM2M"
+	default LWM2M_WAKAAMA
 config LWM2M_WAKAAMA
 	bool "LWM2M_WAKAAMA"
-	default y
 	---help---
 		enable LWM2M WAKAAMA external feature
+
+config LWM2M_WAKAAMA_CLIENT
+	bool "LWM2M_WAKAAMA_CLIENT"
+	---help---
+		enable LWM2M Artik Cloud client
+endchoice
 
 if LWM2M_WAKAAMA
 choice
@@ -43,7 +51,6 @@ config LWM2M_SECURITY
 	depends on NET_SECURITY_TLS
 	---help---
 		This definition is for enabling COAP over TLS and DTLS.
-endif
 
 menuconfig DM_WIFI
 	bool "Set Up Wifi Info For DM Demo"
@@ -67,6 +74,8 @@ config DM_AP_SECURITY
 
 endif #DM_WIFI
 
+
+endif
 endif
 
 menu "IOTIVITY Config Parameters"

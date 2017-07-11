@@ -57,6 +57,9 @@ endif
 ifeq ($(CONFIG_LWM2M_SERVER_MODE),y)
 include wakaama/examples/server/Make.defs
 endif
+ifeq ($(CONFIG_LWM2M_WAKAAMA_CLIENT),y)
+include wakaama-client/Make.defs
+endif
 endif
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)

@@ -1,0 +1,65 @@
+###########################################################################
+#
+# Copyright 2017 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+ifeq ($(CONFIG_DM),y)
+
+CSRCS += er-coap-13.c
+CSRCS += bootstrap.c
+CSRCS += data.c
+CSRCS += discover.c
+CSRCS += json.c
+CSRCS += liblwm2m.c
+CSRCS += list.c
+CSRCS += management.c
+CSRCS += objects.c
+CSRCS += observe.c
+CSRCS += packet.c
+CSRCS += registration.c
+CSRCS += tlv.c
+CSRCS += transaction.c
+CSRCS += uri.c
+CSRCS += lwm2m_utils.c
+CSRCS += object_access_control.c
+CSRCS += object_server.c
+CSRCS += object_security.c
+CSRCS += object_location.c
+CSRCS += object_connectivity_stat.c
+CSRCS += object_firmware.c
+CSRCS += object_device.c
+CSRCS += object_connectivity_moni.c
+CSRCS += lwm2mclient.c
+CSRCS += commandline.c
+CSRCS += platform.c
+CSRCS += memtrace.c
+CSRCS += connection.c
+
+CFLAGS+=-I$(TOPDIR)/../external/wakaama-client/core
+CFLAGS+=-I$(TOPDIR)/../external/wakaama-client/core/er-coap-13
+CFLAGS+=-I$(TOPDIR)/../external/wakaama-client/shared
+CFLAGS+=-I$(TOPDIR)/../external/wakaama-client/lwm2mclient
+
+CFLAGS+=-DLWM2M_CLIENT_MODE
+CFLAGS+=-DLWM2M_LITTLE_ENDIAN
+#CFLAGS+=-DWITH_LOGS
+#CFLAGS+=-DLWM2M_WITH_LOGS
+CFLAGS+=-DWITH_MBEDTLS
+
+DEPPATH += --dep-path wakaama-client/core --dep-path wakaama-client/core/er-coap-13 --dep-path wakaama-client/shared --dep-path wakaama-client/lwm2mclient
+VPATH += :wakaama-client/core :wakaama-client/core/er-coap-13 :wakaama-client/shared :wakaama-client/lwm2mclient
+
+endif

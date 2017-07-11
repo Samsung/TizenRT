@@ -1,0 +1,14 @@
+{
+    global:
+        lwm2m_client_service;
+        lwm2m_client_stop;
+        lwm2m_client_start;
+        lwm2m_register_callback;
+        lwm2m_unregister_callback;
+        lwm2m_write_resource;
+        lwm2m_read_resource;
+        lwm2m_serialize_tlv_string;
+        lwm2m_serialize_tlv_int;
+    local:
+        *;
+};
