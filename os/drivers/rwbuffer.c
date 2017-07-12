@@ -794,7 +794,7 @@ int rwb_read(FAR struct rwbuffer_s *rwb, off_t startblock, uint32_t nblocks, FAR
 		rwb_semgive(&rwb->rhsem);
 		ret = nblocks;
 	} else
-#else
+#endif
 	{
 		/* No read-ahead buffering, (re)load the data directly into
 		 * the user buffer.
@@ -802,9 +802,8 @@ int rwb_read(FAR struct rwbuffer_s *rwb, off_t startblock, uint32_t nblocks, FAR
 
 		ret = rwb->rhreload(rwb->dev, startblock, nblocks, rdbuffer);
 	}
-#endif
 
-		return ret;
+	return ret;
 }
 
 /****************************************************************************
@@ -859,7 +858,7 @@ int rwb_write(FAR struct rwbuffer_s *rwb, off_t startblock, size_t nblocks, FAR 
 		 * driver write method
 		 */
 	} else
-#else
+#endif
 	{
 		/* No write buffer.. just pass the write operation through via the
 		 * flush callback.
@@ -868,9 +867,7 @@ int rwb_write(FAR struct rwbuffer_s *rwb, off_t startblock, size_t nblocks, FAR 
 		ret = rwb->wrflush(rwb->dev, wrbuffer, startblock, nblocks);
 	}
 
-#endif
-
-		return ret;
+	return ret;
 }
 
 /****************************************************************************
