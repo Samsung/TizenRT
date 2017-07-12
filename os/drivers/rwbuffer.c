@@ -800,7 +800,7 @@ int rwb_read(FAR struct rwbuffer_s *rwb, off_t startblock, uint32_t nblocks, FAR
 		 * the user buffer.
 		 */
 
-		ret = rwb->rhreload(rwb->dev, startblock, nblocks, rdbuffer);
+		ret = rwb->rhreload(rwb->dev, rdbuffer, startblock, nblocks);
 	}
 #endif
 
