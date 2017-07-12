@@ -26,18 +26,8 @@
 
 #ifndef LWM2MCLIENT_H_
 #define LWM2MCLIENT_H_
-#include <pthread.h>
 
 #include "liblwm2m.h"
-
-/*
- * struct lwm2mclient_input can be used for
- * pthread arguments called by lwm2m_client_run API
- */
-struct lwm2mclient_input {
-	int argc;
-	char **argv;
-};
 
 extern int g_reboot;
 
@@ -103,25 +93,6 @@ bool  acc_ctrl_oi_add_ac_val(lwm2m_object_t* accCtrlObjP, uint16_t instId,
  * lwm2mclient.c
  */
 void handle_value_changed(lwm2m_context_t* lwm2mH, lwm2m_uri_t* uri, const char * value, size_t valueLength);
-
-/*
- * TINYARA
- * DM (Device Management) Frameworks APIs
- */
-pthread_addr_t lwm2m_client_run(void *arg);
-
-char *client_set_serverAddr(FAR const char *serverAddr, bool isbootstrap);
-char *client_get_serverAddr(void);
-char *client_set_serverPort(FAR const char *serverPort, bool isbootstrap);
-char *client_get_serverPort(void);
-
-int client_object_dump(char *buffer);
-int client_set_lifetime(int lifetime);
-int client_change_resource(char *buffer, void *user_data);
-
-void client_initiate_bootstrap(void);
-void client_close(void);
-
 /*
  * system_api.c
  */
@@ -136,5 +107,21 @@ void clean_security_object(lwm2m_object_t * objectP);
 char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
 void display_security_object(lwm2m_object_t * objectP);
 void copy_security_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc);
+int client_main(void);
 
+/*
+ * Server IP address, Port
+ */
+
+char *client_set_serverAddr(FAR const char *serverAddr, bool isbootstrap);
+char *client_get_serverAddr(void);
+char *client_set_serverPort(FAR const char *serverPort, bool isbootstrap);
+char *client_get_serverPort(void);
+int client_object_dump(char *buffer);
+
+
+int client_set_lifetime(int lifetime);
+void client_initiate_bootstrap(void);
+void client_close(void);
+int client_change_resource(char *buffer, void *user_data);
 #endif /* LWM2MCLIENT_H_ */

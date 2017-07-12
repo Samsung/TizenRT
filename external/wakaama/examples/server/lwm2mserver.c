@@ -51,6 +51,7 @@
 
 */
 
+
 #include "liblwm2m.h"
 
 #include <string.h>
@@ -72,60 +73,9 @@
 #include "commandline.h"
 #include "connection.h"
 
-#if defined (__TINYARA__)
-#include <tinyara/ascii.h>
-#endif
-
-#ifdef WITH_MBEDTLS
-#include "tls/certs.h"
-#include "tls/easy_tls.h"
-#endif
-
 #define MAX_PACKET_SIZE 1024
 
-#if defined(__TINYARA__)
-
-/* Definitions*/
-#ifndef FD_SETSIZE
-#define FD_SETSIZE  (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)
-#endif
-
-#ifndef STDIN_FILENO
-#define STDIN_FILENO 0
-#endif
-#ifndef STDOUT_FILENO
-#define STDOUT_FILENO 1
-#endif
-#ifndef STDERR_FILENO
-#define STDERR_FILENO 2
-#endif
-
-/*
- * Definition for handling pthread
- */
-#define LWM2M_SERVER_PRIORITY     100
-#define LWM2M_SERVER_STACK_SIZE   16384
-#define LWM2M_SERVER_SCHED_POLICY SCHED_RR
-
-struct pthread_arg {
-    int argc;
-    char **argv;
-};
-
-#endif /* __TINYARA__ */
-
 static int g_quit = 0;
-static char g_coap_protocol[COAP_PROTOCOL_MAX][COAP_MAX_URI_PREFIX_SIZE] = {
-    "UDP",
-    "UDP+DTLS",
-    "TCP",
-    "TCP+TLS"
-};
-
-#if defined (__TINYARA__)
-/* Private Functions */
-static int read_input_command_line(char *buf);
-#endif /*__TINYARA__*/
 
 static void prv_print_error(uint8_t status)
 {
@@ -642,8 +592,7 @@ static void prv_create_client(char * buffer,
     {
         lwm2m_data_t * dataP;
 
-        value = 0;
-        if (1 != sscanf(buffer, "%"PRId64, &value))
+        if (1 != sscanf(buffer, "%d", &value))
         {
             fprintf(stdout, "Invalid value !");
             return;
@@ -660,17 +609,11 @@ static void prv_create_client(char * buffer,
 
         format = LWM2M_CONTENT_TLV;
         temp_length = lwm2m_data_serialize(NULL, 1, dataP, &format, &temp_buffer);
-        lwm2m_data_free(1, dataP);
     }
    /* End Client dependent part*/
 
     //Create
     result = lwm2m_dm_create(lwm2mH, clientId, &uri, format, temp_buffer, temp_length, prv_result_callback, NULL);
-
-    if (temp_buffer != NULL)
-    {
-        lwm2m_free(temp_buffer);
-    }
 
     if (result == 0)
     {
@@ -848,43 +791,6 @@ void handle_sigint(int signum)
     g_quit = 2;
 }
 
-#ifdef WITH_MBEDTLS
-
-#define HEX2NUM(c)                    \
-    if (c >= '0' && c <= '9')      \
-        c -= '0';                   \
-    else if (c >= 'a' && c <= 'f') \
-        c -= 'a' - 10;              \
-    else if (c >= 'A' && c <= 'F') \
-        c -= 'A' - 10;              \
-    else                            \
-        return(-1);
-
-int lwm2m_unhexify(unsigned char *output, const char *input, size_t *olen)
-{
-    unsigned char c;
-    size_t j;
-
-    *olen = strlen(input);
-    if (*olen % 2 != 0 || *olen / 2 > MBEDTLS_PSK_MAX_LEN) {
-        return (-1);
-    }
-    *olen /= 2;
-
-    for (j = 0; j < *olen * 2; j += 2) {
-        c = input[j];
-        HEX2NUM(c);
-        output[j / 2] = c << 4;
-
-        c = input[j + 1];
-        HEX2NUM(c);
-        output[j / 2] |= c;
-    }
-
-    return (0);
-}
-#endif
-
 void print_usage(void)
 {
     fprintf(stderr, "Usage: lwm2mserver [OPTION]\r\n");
@@ -892,31 +798,13 @@ void print_usage(void)
     fprintf(stdout, "Options:\r\n");
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Server. Default: "LWM2M_STANDARD_PORT_STR"\r\n");
-    fprintf(stdout, "  -p protocol \tSet protocol type, (0: UDP, 1: UDP+DTLS, 2: TCP, 3: TCP+TLS)\r\n");
-#ifdef WITH_MBEDTLS
-    fprintf(stdout, "  -i STRING\t Set PSK identity. If not set use none secure mode\r\n");
-    fprintf(stdout, "  -s HEXSTRING\t Set Pre-Shared-Key. If not set use none secure mode\r\n");
-#endif
-    fprintf(stdout, "Examples:\r\n");
-    fprintf(stdout, "  lwm2mserver -4 -p 3\r\n");
     fprintf(stdout, "\r\n");
 }
 
-#ifdef __TINYARA__
-int lwm2m_server_cb(void *args)
-{
-    int argc;
-    char **argv;
 
-    argc = ((struct pthread_arg *)args)->argc;
-    argv = ((struct pthread_arg *)args)->argv;
-    g_quit = 0;
-#else
-int lwm2m_server_main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-#endif /* __TINYARA__ */
-    int sock, newsock;
-    int reuse;
+    int sock;
     fd_set readfds;
     struct timeval tv;
     int result;
@@ -926,29 +814,6 @@ int lwm2m_server_main(int argc, char *argv[])
     int addressFamily = AF_INET6;
     int opt;
     const char * localPort = LWM2M_STANDARD_PORT_STR;
-
-    coap_protocol_t proto = COAP_UDP;
-
-#ifdef WITH_MBEDTLS
-    char * pskId = NULL;
-    char * pskBuffer = NULL;
-
-    unsigned char psk[MBEDTLS_PSK_MAX_LEN];
-
-    /* set default tls option */
-    tls_opt tls_option;
-    memset(&tls_option, 0, sizeof(tls_opt));
-
-    tls_option.server = MBEDTLS_SSL_IS_SERVER;
-    tls_option.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
-    tls_option.auth_mode = 2;
-    tls_option.debug_mode = 5;
-
-    tls_ctx *tls_context = NULL;
-#endif
-
-    struct sockaddr_storage addr;
-    socklen_t addrLen = sizeof(addr);
 
     command_desc_t commands[] =
     {
@@ -1034,42 +899,6 @@ int lwm2m_server_main(int argc, char *argv[])
             }
             localPort = argv[opt];
             break;
-#ifdef WITH_MBEDTLS
-        case 'i':
-            opt++;
-            if (opt >= argc)
-            {
-                print_usage();
-                return 0;
-            }
-            pskId = argv[opt];
-            break;
-        case 's':
-            opt++;
-            if (opt >= argc)
-            {
-                print_usage();
-                return 0;
-            }
-            pskBuffer = argv[opt];
-            break;
-#endif
-        case 'p':
-            opt++;
-            if (opt >= argc)
-            {
-                print_usage();
-                return 0;
-            }
-            proto = (coap_protocol_t)atoi(argv[opt]);
-            if (proto >= COAP_PROTOCOL_MAX || proto < 0) {
-                fprintf(stderr, "Error : not supported protocol\n");
-                print_usage();
-                return 0;
-            } else {
-                fprintf(stdout, "INFO : selected protocol : %s\n", g_coap_protocol[proto]);
-            }
-            break;
         default:
             print_usage();
             return 0;
@@ -1077,90 +906,21 @@ int lwm2m_server_main(int argc, char *argv[])
         opt += 1;
     }
 
-#ifdef WITH_MBEDTLS
-    if (proto == COAP_TCP_TLS || proto == COAP_UDP_DTLS) {
-
-        /* Set Transport layer (TCP or UDP) */
-        switch(proto) {
-        case COAP_TCP_TLS:
-            tls_option.transport = MBEDTLS_SSL_TRANSPORT_STREAM;
-            break;
-        case COAP_UDP_DTLS:
-            tls_option.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
-            break;
-        default:
-            break;
-        }
-
-        /* Set credential information */
-        tls_cred cred;
-        memset(&cred, 0, sizeof(tls_cred));
-
-        if (pskBuffer) {
-            if (lwm2m_unhexify(psk, pskBuffer, &cred.psk_len) == 0) {
-                if (pskId) {
-                    cred.psk_identity = pskId;
-                    cred.psk = psk;
-                }
-            }
-            if (cred.psk_identity == NULL && cred.psk == NULL) {
-                fprintf(stdout, "failed to set psk info\r\n");
-                return -1;
-            }
-        }
-
-        tls_context = TLSCtx(&cred);
-        if (tls_context == NULL) {
-            fprintf(stdout, "TLS context initialize filaed\n");
-            return -1;
-        }
-        localPort = LWM2M_DTLS_PORT_STR;
-    }
-#endif
-    sock = create_socket(proto, localPort, addressFamily);
+    sock = create_socket(localPort, addressFamily);
     if (sock < 0)
     {
         fprintf(stderr, "Error opening socket: %d\r\n", errno);
-        goto exit;
+        return -1;
     }
 
-    switch(proto) {
-        case COAP_TCP:
-        case COAP_TCP_TLS:
-            newsock = create_tcp_session(sock, &addr, &addrLen);
-            if (newsock < 0) {
-                fprintf(stderr, "Error create tcp session\r\n");
-                goto exit;
-            } else {
-                fprintf(stderr, "TCP session has been created\r\n");
-                connList = connection_new_incoming(connList, newsock, (struct sockaddr *)&addr, addrLen);
-				close(sock);
-                sock = newsock;
-            }
-#ifdef WITH_MBEDTLS
-            if (proto == COAP_TCP_TLS) {
-                connList->session = TLSSession(sock, tls_context, &tls_option);
-            }
-#endif
-            break;
-        default:
-            break;
-    }
-
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) < 0) {
-        fprintf(stderr, "Error : setsockopt failed %d\r\n", errno);
-        goto exit;
-    }
-
-    /* Use new API to set protocol type */
-    lwm2mH = lwm2m_init2(NULL, proto);
+    lwm2mH = lwm2m_init(NULL);
     if (NULL == lwm2mH)
     {
-        fprintf(stderr, "lwm2m_init2() failed\r\n");
-        goto exit;
+        fprintf(stderr, "lwm2m_init() failed\r\n");
+        return -1;
     }
 
-    //signal(SIGINT, handle_sigint);
+    signal(SIGINT, handle_sigint);
 
     for (i = 0 ; commands[i].name != NULL ; i++)
     {
@@ -1183,7 +943,7 @@ int lwm2m_server_main(int argc, char *argv[])
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
-            goto exit;
+            return -1;
         }
 
         result = select(FD_SETSIZE, &readfds, 0, 0, &tv);
@@ -1198,27 +958,27 @@ int lwm2m_server_main(int argc, char *argv[])
         else if (result > 0)
         {
             uint8_t buffer[MAX_PACKET_SIZE];
-            int numBytes = 0;
+            int numBytes;
 
             if (FD_ISSET(sock, &readfds))
             {
-                numBytes = connection_read(proto, connList, sock, buffer, MAX_PACKET_SIZE, &addr, &addrLen);
+                struct sockaddr_storage addr;
+                socklen_t addrLen;
+
+                addrLen = sizeof(addr);
+                numBytes = recvfrom(sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (numBytes == -1)
                 {
-                    fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
-                    if (errno == ENOTCONN) {
-                        fprintf(stderr, "Endpoint connection has been closed\r\n");
-                        goto exit;
-                    }
+                    fprintf(stderr, "Error in recvfrom(): %d\r\n", errno);
                 }
                 else
                 {
                     char s[INET6_ADDRSTRLEN];
-                    in_port_t port = 0;
+                    in_port_t port;
                     connection_t * connP;
 
-                    s[0] = 0;
+					s[0] = 0;
                     if (AF_INET == addr.ss_family)
                     {
                         struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
@@ -1252,11 +1012,7 @@ int lwm2m_server_main(int argc, char *argv[])
             }
             else if (FD_ISSET(STDIN_FILENO, &readfds))
             {
-#if defined (__TINYARA__)
-                numBytes = read_input_command_line((char *)buffer);
-#else
                 numBytes = read(STDIN_FILENO, buffer, MAX_PACKET_SIZE - 1);
-#endif
 
                 if (numBytes > 1)
                 {
@@ -1277,27 +1033,9 @@ int lwm2m_server_main(int argc, char *argv[])
         }
     }
 
-exit:
-#ifdef WITH_MBEDTLS
-    if (connList && connList->session) {
-        TLSSession_free(connList->session);
-    }
-    if (tls_context) {
-        TLSCtx_free(tls_context);
-    }
-#endif
-
-    if (lwm2mH) {
-        lwm2m_close(lwm2mH);
-    }
-
-    if (sock >= 0) { 
-        close(sock);
-    }
-
-    if (connList) {
-        connection_free(connList);
-    }
+    lwm2m_close(lwm2mH);
+    close(sock);
+    connection_free(connList);
 
 #ifdef MEMORY_TRACE
     if (g_quit == 1)
@@ -1308,115 +1046,3 @@ exit:
 
     return 0;
 }
-
-#if defined (__TINYARA__)
-/* Private APIs */
-
-static int read_input_command_line(char *buf)
-{
-	char buffer[MAX_PACKET_SIZE] = {0,};
-
-	int nbytes = 0;
-	int pos = 0;
-	int char_idx = 0;
-	int bufsize = MAX_PACKET_SIZE;
-
-	do {
-		nbytes = read(STDIN_FILENO, &buffer[pos], (bufsize - pos));
-		if (nbytes <= 0) {
-			fprintf(stderr, "cannot read command\n");
-			return 0;
-		}
-
-		for (char_idx = 0; char_idx < nbytes; char_idx++) {
-			if ((buffer[pos] == ASCII_BS) || (buffer[pos] == ASCII_DEL)) {
-				int valid_char_pos = pos + 1;
-
-				if (pos > 0) {
-					pos--;
-					/* update screen */
-					if (write(STDOUT_FILENO, "\b \b",3) <= 0) {
-						fprintf(stderr, "write failed (errno = %d)\n", get_errno());
-					}
-				}
-
-				if (buffer[valid_char_pos] != 0x0 && (valid_char_pos < MAX_PACKET_SIZE)) {
-					memcpy(&buffer[pos], &buffer[valid_char_pos], (bufsize - valid_char_pos));
-				}
-			} else {
-				if (buffer[pos] == ASCII_CR) {
-					buffer[pos] = ASCII_LF;
-				}
-
-				/* echo */
-				if (write(STDOUT_FILENO, &buffer[pos], 1) <= 0) {
-					fprintf(stderr, "failed to write (errno = %d)\n", get_errno());
-				}
-
-				if (buffer[pos] == ASCII_LF) {
-					pos++;
-					break;
-				}
-
-				pos++;
-				if (pos >= MAX_PACKET_SIZE) {
-					fprintf(stderr, "out of range : command is too long, maximum length %d\n", MAX_PACKET_SIZE);
-					memset(buf, 0x0, MAX_PACKET_SIZE);
-					return 0;
-				}
-			}
-		}
-	} while(buffer[pos - 1] != ASCII_LF);
-
-	memcpy(buf, buffer, pos);
-
-	return pos;
-}
-
-int lwm2m_server_main(int argc, char *argv[])
-{
-    pthread_t tid;
-    pthread_attr_t attr;
-    struct sched_param sparam;
-    int r;
-
-    struct pthread_arg args;
-    args.argc = argc;
-    args.argv = argv;
-
-    /* Initialize the attribute variable */
-    if ((r = pthread_attr_init(&attr)) != 0) {
-        printf("%s: pthread_attr_init failed, status=%d\n", __func__, r);
-        return -1;
-    }
-
-    /* 1. set a priority */
-    sparam.sched_priority = LWM2M_SERVER_PRIORITY;
-    if ((r = pthread_attr_setschedparam(&attr, &sparam)) != 0) {
-        printf("%s: pthread_attr_setschedparam failed, status=%d\n", __func__, r);
-        return -1;
-    }
-
-    if ((r = pthread_attr_setschedpolicy(&attr, LWM2M_SERVER_SCHED_POLICY)) != 0) {
-        printf("%s: pthread_attr_setschedpolicy failed, status=%d\n", __func__, r);
-        return -1;
-    }
-
-    /* 2. set a stacksize */
-    if ((r = pthread_attr_setstacksize(&attr, LWM2M_SERVER_STACK_SIZE)) != 0) {
-        printf("%s: pthread_attr_setstacksize failed, status=%d\n", __func__, r);
-        return -1;
-    }
-
-    /* 3. create pthread with entry function */
-    if ((r = pthread_create(&tid, &attr, (pthread_startroutine_t)lwm2m_server_cb, (void *)&args)) != 0) {
-        printf("%s: pthread_create failed, status=%d\n", __func__, r);
-        return -1;
-    }
-
-    /* Wait for the threads to stop */
-    pthread_join(tid, NULL);
-
-    return 0;
-}
-#endif /* __TINYARA__ */

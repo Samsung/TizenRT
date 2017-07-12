@@ -111,7 +111,7 @@ int dm_lwm2m_start_client(struct dm_lwm2m_context_s *dm_context)
 	wakaama_sparam.sched_priority = SCHED_PRIORITY_DEFAULT;
 	(void)pthread_attr_setschedparam(&wakaama_attr, &wakaama_sparam);
 	(void)pthread_attr_setstacksize(&wakaama_attr, 4096);
-	ret = pthread_create(&wakaama_thread, &wakaama_attr, (pthread_startroutine_t)lwm2m_client_run, NULL);
+	ret = pthread_create(&wakaama_thread, &wakaama_attr, (pthread_startroutine_t)client_main, NULL);
 	pthread_detach(wakaama_thread);
 	/* Function return value */
 	if (ret != 0) {

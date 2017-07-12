@@ -76,7 +76,7 @@ int coap_split_uri(unsigned char *str_var, size_t len, coap_uri_t *uri)
 	}
 
 	/* There might be an additional 's', indicating the secure version: */
-	if (len && (secure = tolower(*p) == 's')) {
+	if (len && (secure = (tolower(*p) == 's'))) {
 		++p;
 		--len;
 	}

@@ -206,7 +206,7 @@ pthread_addr_t http_server_handler(pthread_addr_t arg)
 		}
 	}
 stop:
-	if (msg_q >= 0) {
+	if (msg_q != NULL) {
 		http_server_mq_flush(msg_q);
 
 		for (i = 0; i < HTTP_CONF_MAX_CLIENT_HANDLE; i++) {

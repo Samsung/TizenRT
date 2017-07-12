@@ -608,19 +608,39 @@ int websocket_accept_handler(websocket_t *init_server)
 				continue;
 			}
 		} else {
+			websocket_t *server_handler = NULL;
 			timeout_cnt = 0;
+
+			server_handler = websocket_find_table();
+			if (server_handler == NULL) {
+				continue;
+			}
+
+			if (pthread_attr_init(&server_handler->thread_attr) != 0) {
+				WEBSOCKET_DEBUG("fail to init attribute\n");
+				goto EXIT_INIT_SERVER;
+			}
+
+			if (pthread_attr_setstacksize(&server_handler->thread_attr, WEBSOCKET_STACKSIZE) != 0) {
+				WEBSOCKET_DEBUG("fail to set stack size\n");
+				goto EXIT_INIT_SERVER;
+			}
+
+			ws_sparam.sched_priority = WEBSOCKET_PRI;
+			if (pthread_attr_setschedparam(&server_handler->thread_attr, &ws_sparam) != 0) {
+				WEBSOCKET_DEBUG("fail to setschedparam\n");
+				goto EXIT_INIT_SERVER;
+			}
+
+			if (pthread_attr_setschedpolicy(&server_handler->thread_attr, WEBSOCKET_SCHED_POLICY) != 0) {
+				WEBSOCKET_DEBUG("fail to set scheduler policy\n");
+				goto EXIT_INIT_SERVER;
+			}
 
 			accept_fd = accept(listen_fd, (struct sockaddr *)&clientaddr, &addrlen);
 			if (accept_fd < 0) {
 				WEBSOCKET_DEBUG("Error in accept err == %d\n", errno);
 				return WEBSOCKET_SOCKET_ERROR;
-			}
-			websocket_t *server_handler = NULL;
-
-			server_handler = websocket_find_table();
-			if (server_handler == NULL) {
-				close(accept_fd);
-				continue;
 			}
 
 			if (init_server->tls_enabled) {
@@ -647,11 +667,6 @@ int websocket_accept_handler(websocket_t *init_server)
 			WEBSOCKET_DEBUG("accept client, fd == %d\n", accept_fd);
 			server_handler->fd = accept_fd;
 
-			pthread_attr_init(&server_handler->thread_attr);
-			pthread_attr_setstacksize(&server_handler->thread_attr, WEBSOCKET_STACKSIZE);
-			ws_sparam.sched_priority = WEBSOCKET_PRI;
-			pthread_attr_setschedparam(&server_handler->thread_attr, &ws_sparam);
-			pthread_attr_setschedpolicy(&server_handler->thread_attr, WEBSOCKET_SCHED_POLICY);
 			if (pthread_create(&server_handler->thread_id, &server_handler->thread_attr, (pthread_startroutine_t) websocket_server_authenticate, (pthread_addr_t) server_handler) != 0) {
 				WEBSOCKET_DEBUG("fail to create thread, fd == %d\n", accept_fd);
 				close(accept_fd);
@@ -661,9 +676,15 @@ int websocket_accept_handler(websocket_t *init_server)
 				websocket_update_state(server_handler, WEBSOCKET_STOP);
 				continue;
 			}
-			pthread_setname_np(server_handler->thread_id, "websocket server handler");
+
+			if (pthread_setname_np(server_handler->thread_id, "websocket server handler") != 0) {
+				WEBSOCKET_DEBUG("fail to set thread name\n");
+			}
+
 			/* Detach thread in order to avoid memory leaks. */
-			pthread_detach(server_handler->thread_id);
+			if (pthread_detach(server_handler->thread_id) != 0) {
+				WEBSOCKET_DEBUG("fail to detach thread\n");
+			}
 		}
 	}
 
@@ -803,18 +824,48 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	WEBSOCKET_DEBUG("start websocket client handling thread\n");
 	websocket_update_state(client, WEBSOCKET_RUNNING);
 
-	pthread_attr_init(&client->thread_attr);
-	pthread_attr_setstacksize(&client->thread_attr, WEBSOCKET_STACKSIZE);
+	if (pthread_attr_init(&client->thread_attr) != 0) {
+		WEBSOCKET_DEBUG("fail to init pthread attribute\n");
+		r = WEBSOCKET_ALLOCATION_ERROR;
+		goto EXIT_CLIENT_OPEN;
+	}
+
+	if (pthread_attr_setstacksize(&client->thread_attr, WEBSOCKET_STACKSIZE) != 0) {
+		WEBSOCKET_DEBUG("fail to set stack size\n");
+		r = WEBSOCKET_ALLOCATION_ERROR;
+		goto EXIT_CLIENT_OPEN;
+	}
 	ws_sparam.sched_priority = WEBSOCKET_PRI;
-	pthread_attr_setschedparam(&client->thread_attr, &ws_sparam);
-	pthread_attr_setschedpolicy(&client->thread_attr, WEBSOCKET_SCHED_POLICY);
+
+	if (pthread_attr_setschedparam(&client->thread_attr, &ws_sparam) != 0) {
+		WEBSOCKET_DEBUG("fail to set priority\n");
+		r = WEBSOCKET_ALLOCATION_ERROR;
+		goto EXIT_CLIENT_OPEN;
+	}
+
+	if (pthread_attr_setschedpolicy(&client->thread_attr, WEBSOCKET_SCHED_POLICY) != 0) {
+		WEBSOCKET_DEBUG("fail to set scheduler policy\n");
+		r = WEBSOCKET_ALLOCATION_ERROR;
+		goto EXIT_CLIENT_OPEN;
+	}
+
 	if (pthread_create(&client->thread_id, &client->thread_attr, (pthread_startroutine_t) websocket_handler, (pthread_addr_t) client) != 0) {
 		WEBSOCKET_DEBUG("fail to create websocket client thread\n");
 		r = WEBSOCKET_ALLOCATION_ERROR;
 		goto EXIT_CLIENT_OPEN;
 	}
-	pthread_setname_np(client->thread_id, "websocket client handler");
-	pthread_detach(client->thread_id);
+
+	if (pthread_setname_np(client->thread_id, "websocket client handler") != 0) {
+		WEBSOCKET_DEBUG("fail to set thread name\n");
+		r = WEBSOCKET_ALLOCATION_ERROR;
+		goto EXIT_CLIENT_OPEN;
+	}
+
+	if (pthread_detach(client->thread_id) != 0) {
+		WEBSOCKET_DEBUG("fail to detach websocket handler thread\n");
+		r = WEBSOCKET_ALLOCATION_ERROR;
+		goto EXIT_CLIENT_OPEN;
+	}
 
 	return r;
 

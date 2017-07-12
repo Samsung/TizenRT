@@ -33,14 +33,14 @@
 #
 ############################################################################
 
+ifeq ($(CONFIG_DM),y)
+
 # Routing table support
 
 CSRCS += commandline.c connection.c platform.c memtrace.c
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
 
-ifeq ($(CONFIG_LWM2M_SECURITY),y)
-CFLAGS+=-DWITH_MBEDTLS
-endif
-
 DEPPATH += --dep-path wakaama/examples/shared
 VPATH += :wakaama/examples/shared
+
+endif

@@ -416,7 +416,9 @@ struct options {
 	uint32_t hs_to_max;			/* Max value of DTLS handshake timer        */
 	int badmac_limit;			/* Limit of records with bad MAC            */
 	int retry;					/* Server retry count                       */
-} opt;
+};
+
+static struct options opt;
 
 static void my_debug(void *ctx, int level, const char *file, int line, const char *str)
 {

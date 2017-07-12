@@ -33,6 +33,8 @@
 #
 ############################################################################
 
+ifeq ($(CONFIG_DM),y)
+
 # Routing table support
 
 CSRCS = bootstrap_info.c
@@ -40,3 +42,5 @@ MAINSRC = bootstrap_server.c
 
 DEPPATH += --dep-path wakaama/examples/bootstrap_server
 VPATH += :wakaama/examples/bootstrap_server
+
+endif

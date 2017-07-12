@@ -90,6 +90,9 @@ static void tls_context_free(tls_ctx *ctx)
 #ifdef MBEDTLS_SSL_CACHE_C
 		TLS_FREE(ctx->cache);
 #endif
+		if (ctx->cookie) {
+			TLS_FREE(ctx->cookie);
+		}
 	}
 }
 
@@ -104,6 +107,9 @@ static void tls_context_release(tls_ctx *ctx)
 #ifdef MBEDTLS_SSL_CACHE_C
 		mbedtls_ssl_cache_free(ctx->cache);
 #endif
+		if (ctx->cookie) {
+			mbedtls_ssl_cookie_free(ctx->cookie);
+		}
 	}
 }
 
@@ -147,7 +153,10 @@ static int tls_set_cred(tls_ctx *ctx, tls_cred *cred)
 		if (ret) {
 			return TLS_INVALID_DEVKEY;
 		}
-		mbedtls_ssl_conf_own_cert(ctx->conf, ctx->crt->next, ctx->pkey);
+		ret = mbedtls_ssl_conf_own_cert(ctx->conf, ctx->crt->next, ctx->pkey);
+		if (ret) {
+			return TLS_INVALID_DEVCERT;
+		}
 	}
 
 	return ret;
@@ -158,7 +167,6 @@ static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 	int ret;
 
 	mbedtls_ssl_init(session->ssl);
-	mbedtls_ssl_setup(session->ssl, ctx->conf);
 
 	if (opt->server != MBEDTLS_SSL_IS_SERVER && opt->server != MBEDTLS_SSL_IS_CLIENT) {
 		ret = TLS_INVALID_INPUT_PARAM;
@@ -201,13 +209,28 @@ static int tls_set_default(tls_session *session, tls_ctx *ctx, tls_opt *opt)
 
 	if (opt->transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
 		mbedtls_ssl_set_timer_cb(session->ssl, ctx->timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
-		mbedtls_ssl_set_bio(session->ssl, &session->net, mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
-	} else {
-		mbedtls_ssl_set_bio(session->ssl, &session->net, mbedtls_net_send, mbedtls_net_recv, NULL);
+		if (opt->server == MBEDTLS_SSL_IS_SERVER) {
+			ctx->cookie = malloc(sizeof(mbedtls_ssl_cookie_ctx));
+			if (ctx->cookie == NULL) {
+				ret = TLS_ALLOC_FAIL;
+				goto errout;
+			}
+			mbedtls_ssl_cookie_init(ctx->cookie);
+			if ((mbedtls_ssl_cookie_setup(ctx->cookie, mbedtls_ctr_drbg_random, ctx->ctr_drbg)) != 0) {
+				ret = TLS_SET_COOKIE_FAIL;
+				goto errout;
+			}
+			mbedtls_ssl_conf_dtls_cookies(ctx->conf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check, ctx->cookie);
+		}
 	}
 
 	if (opt->force_ciphersuites[0] > 0) {
 		mbedtls_ssl_conf_ciphersuites(ctx->conf, opt->force_ciphersuites);
+	}
+
+	if ((ret = mbedtls_ssl_setup(session->ssl, ctx->conf) != 0)) {
+		ret = TLS_SET_DEFAULT_FAIL;
+		goto errout;
 	}
 
 	return TLS_SUCCESS;
@@ -279,9 +302,12 @@ int TLSCtx_free(tls_ctx *ctx)
 tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt)
 {
 	int ret;
+	unsigned char ip[16];
+	unsigned int ip_len;
+	mbedtls_net_context listen_ctx;
 	tls_session *session = NULL;
 
-	if (ctx == NULL || opt == NULL || fd <= 0) {
+	if (fd < 0 || ctx == NULL || opt == NULL) {
 		EASY_TLS_DEBUG("TLSSession input error\n");
 		return NULL;
 	}
@@ -299,16 +325,49 @@ tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt)
 		return NULL;
 	}
 
-	session->net.fd = fd;
 	if ((ret = tls_set_default(session, ctx, opt)) != TLS_SUCCESS) {
 		EASY_TLS_DEBUG("tls_set_default fail %d\n", ret);
 		goto errout;
+	}
+
+	if (opt->transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
+		mbedtls_ssl_set_bio(session->ssl, &session->net, mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
+	} else {
+		mbedtls_ssl_set_bio(session->ssl, &session->net, mbedtls_net_send, mbedtls_net_recv, NULL);
+	}
+
+	listen_ctx.fd = fd;
+	session->net.fd = fd;
+reset:
+	if (opt->server == MBEDTLS_SSL_IS_SERVER) {
+		mbedtls_ssl_session_reset(session->ssl);
+		if ((ret = mbedtls_net_accept(&listen_ctx, &session->net, ip, sizeof(ip), &ip_len)) != 0) {
+			EASY_TLS_DEBUG("mbedtls_net_accept failed %d\n", ret);
+			goto errout;
+		}
+
+		if ((ret = mbedtls_net_set_block(&session->net)) != 0) {
+			EASY_TLS_DEBUG("mbedtls_net_set_block failed %d\n", ret);
+			goto errout;
+		}
+
+		if (opt->transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
+			if ((ret = mbedtls_ssl_set_client_transport_id(session->ssl, ip, ip_len)) != 0) {
+				EASY_TLS_DEBUG("mbedtls_ssl_set_client_transport_id failed -0x%x\n", -ret);
+				goto errout;
+			}
+		}
 	}
 
 	EASY_TLS_DEBUG("Handshake start .... ");
 
 	while ((ret = mbedtls_ssl_handshake(session->ssl)) != 0) {
 		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+			if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
+				EASY_TLS_DEBUG("Hello verification requested\n");
+				mbedtls_net_free(&session->net);
+				goto reset;
+			}
 			if (ret == MBEDTLS_ERR_X509_CERT_VERIFY_FAILED) {
 				EASY_TLS_DEBUG("Failed !! certificate verify fail %d\n", ret);
 			}
@@ -322,6 +381,7 @@ tls_session *TLSSession(int fd, tls_ctx *ctx, tls_opt *opt)
 	return session;
 errout:
 	TLSSession_free(session);
+	TLS_FREE(session);
 	return NULL;
 }
 
@@ -333,6 +393,7 @@ int TLSSession_free(tls_session *session)
 
 	mbedtls_ssl_free(session->ssl);
 	mbedtls_net_free(&session->net);
+
 	TLS_FREE(session->ssl);
 	TLS_FREE(session);
 
