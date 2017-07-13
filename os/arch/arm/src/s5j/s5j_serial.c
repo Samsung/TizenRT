@@ -68,6 +68,7 @@
 #endif
 
 #include "s5j_gpio.h"
+#include "s5j_clock.h"
 #include "up_arch.h"
 #include "up_internal.h"
 
@@ -226,11 +227,6 @@ struct up_dev_s {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static uint32_t s5j_get_sclk_uclk(void)
-{
-		return 26000000;
-}
-
 static inline uint32_t uart_getreg8(struct up_dev_s *priv, int offset)
 {
 	return getreg8(priv->uartbase + offset);
@@ -373,7 +369,7 @@ static int up_setup(struct uart_dev_s *dev)
 	uart_putreg32(priv, S5J_UART_UCON_OFFSET, regval);
 
 	/* UBRDIV and UFRACVAL */
-	div = ((float)s5j_get_sclk_uclk() / (priv->baud * 16)) - 1;
+	div = ((float)s5j_clk_get_rate(CLK_SPL_UART) / (priv->baud * 16)) - 1;
 
 	uart_putreg32(priv, S5J_UART_UBRDIV_OFFSET, (uint32_t)div);
 	uart_putreg32(priv, S5J_UART_UFRACVAL_OFFSET, ((div - (uint32_t)div) * 16));
