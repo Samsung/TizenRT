@@ -65,6 +65,7 @@
 #include "up_arch.h"
 #include "s5j_pwm.h"
 #include "s5j_gpio.h"
+#include "s5j_clock.h"
 
 /****************************************************************************
  * Private Types
@@ -80,11 +81,6 @@ struct s5j_pwmtimer_s {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static unsigned int s5j_get_oscclk(void)
-{
-	return 26000000;
-}
-
 static uint32_t pwm_getreg32(struct s5j_pwmtimer_s *priv, int offset)
 {
 	return getreg32(priv->base + offset);
@@ -121,7 +117,8 @@ static unsigned int pwm_get_divider(struct s5j_pwmtimer_s *priv)
 
 static unsigned int pwm_clk_freq(struct s5j_pwmtimer_s *priv)
 {
-	return (s5j_get_oscclk() / (pwm_get_prescaler(priv) + 1)) >> pwm_get_divider(priv);
+	return (s5j_clk_get_rate(CLK_DFT_OSCCLK) / (pwm_get_prescaler(priv) + 1))
+						>> pwm_get_divider(priv);
 }
 
 /****************************************************************************
