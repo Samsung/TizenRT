@@ -23,12 +23,19 @@
 
 #include <apps/netutils/libcoap/coap.h>
 
+#ifdef WITH_MBEDTLS
+#define COAP_MBEDTLS_CIPHERSUIT "TLS-PSK-WITH-AES-128-CBC-SHA"
+#endif
+
 #ifndef NI_MAXHOST
 #define NI_MAXHOST 1025
 #endif
 #ifndef NI_MAXSERV
 #define NI_MAXSERV 32
 #endif
+
+#define COAP_STANDARD_PORT "5683"
+#define COAP_SECURITY_PORT "5684"
 
 #if defined (__TINYARA__)
 #define COAP_CLIENT_SCHED_PRI    100
@@ -246,9 +253,8 @@ coap_tid_t clear_obs(coap_context_t *ctx, const coap_address_t *remote)
 	return tid;
 }
 
-int resolve_address(const str *server, struct sockaddr *dst)
+int resolve_address(const str *server, struct sockaddr *dst, coap_protocol_t protocol)
 {
-
 	struct addrinfo *res, *ainfo;
 	struct addrinfo hints;
 	static char addrstr[256];
@@ -262,7 +268,19 @@ int resolve_address(const str *server, struct sockaddr *dst)
 	}
 
 	memset((char *)&hints, 0, sizeof(hints));
-	hints.ai_socktype = SOCK_DGRAM;
+	switch (protocol) {
+	case COAP_PROTO_UDP:
+	case COAP_PROTO_DTLS:
+		hints.ai_socktype = SOCK_DGRAM;
+		break;
+	case COAP_PROTO_TCP:
+	case COAP_PROTO_TLS:
+		hints.ai_socktype = SOCK_STREAM;
+		break;
+	default:
+		printf("resolve_address : not-supported protocol %d\n", protocol);
+		break;
+	}
 	hints.ai_family = AF_UNSPEC;
 
 	error = getaddrinfo(addrstr, NULL, &hints, &res);
@@ -474,6 +492,10 @@ void usage(const char *program, const char *version)
 			"\t-p port\t\tlisten on specified port\n" "\t-s duration\tsubscribe for given duration [s]\n"
 			"\t-v num\t\tverbosity level (default: 3)\n"
 			"\t-T token\tinclude specified token\n" "\n"
+#ifdef WITH_MBEDTLS
+			"\t-I identity\tPre-Shared Key identity used to security session\n"
+			"\t-S pre-shared key\tPre-Shared Key. Input length MUST be even (e.g, 11, 1111.)\n"
+#endif /* WITH_MBEDTLS */
 #else
 			"usage: %s [-A type...] [-t type] [-b [num,]size] [-B seconds] [-e text]\n"
 			"\t\t[-g group] [-m method] [-N] [-o file] [-P addr[:port]] [-p port]\n"
@@ -501,6 +523,10 @@ void usage(const char *program, const char *version)
 			"\tlibcoap-client -m get coap://[::1]/.well-known/core\n"
 			"\tlibcoap-client -m get -T cafe coap://[::1]/time\n"
 			"\tlibcoap-client -m put -e 1000 -T cafe coap://[::1]/time\n"
+#ifdef WITH_MBEDTLS
+			"examples for secure session:\n"
+			"\tlibcoap-client -m get coaps://[::1]/.well-known/core\n"
+#endif
 			, program, version, program, wait_seconds);
 }
 
@@ -906,47 +932,6 @@ method_t cmdline_method(char *arg)
 	return i;					/* note that we do not prevent illegal methods */
 }
 
-static coap_context_t *get_context(const char *node, const char *port)
-{
-	coap_context_t *ctx = NULL;
-	int s;
-	struct addrinfo hints;
-	struct addrinfo *result, *rp;
-
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
-	hints.ai_socktype = SOCK_DGRAM;	/* Coap uses UDP */
-	hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST | AI_NUMERICSERV | AI_ALL;
-
-	s = getaddrinfo(node, port, &hints, &result);
-	if (s != 0) {
-		fprintf(stderr, "getaddrinfo: %d\n", s);
-		return NULL;
-	}
-
-	/* iterate through results until success */
-	for (rp = result; rp != NULL; rp = rp->ai_next) {
-		coap_address_t addr;
-
-		if (rp->ai_addrlen <= sizeof(addr.addr)) {
-			coap_address_init(&addr);
-			addr.size = rp->ai_addrlen;
-			memcpy(&addr.addr, rp->ai_addr, rp->ai_addrlen);
-
-			ctx = coap_new_context(&addr);
-			if (ctx) {
-				/* TODO: output address:port for successful binding */
-				goto finish;
-			}
-		}
-	}
-
-	fprintf(stderr, "no context available for interface '%s'\n", node);
-
-finish:
-	freeaddrinfo(result);
-	return ctx;
-}
 #if defined (__TINYARA__)
 int coap_client_test_run(void *arg)
 #else
@@ -965,12 +950,17 @@ int main(int argc, char **argv)
 	coap_pdu_t *pdu;
 	static str server;
 	unsigned short port = COAP_DEFAULT_PORT;
-	char port_str[NI_MAXSERV] = "0";
+	char port_str[NI_MAXSERV] = {0,};
+	char host_str[256] = {0,};
 	int opt, res;
+	int portChanged = 0;
 	int invalid_opt = 0;
 	char *group = NULL;
+
 	coap_log_t log_level = LOG_WARNING;
 	coap_tid_t tid = COAP_INVALID_TID;
+
+	coap_protocol_t protocol = COAP_PROTO_UDP;
 
 #if defined (__TINYARA__)
 	int argc;
@@ -980,7 +970,27 @@ int main(int argc, char **argv)
 	argv = ((struct coap_client_input *)arg)->argv;
 #endif
 
-	while ((opt = getopt(argc, argv, "Nb:e:f:g:m:p:s:t:o:v:A:B:O:P:T:")) != -1) {
+#ifdef WITH_MBEDTLS
+	char *pskId = NULL;
+	char *pskBuffer = NULL;
+	unsigned char psk[MBEDTLS_PSK_MAX_LEN];
+
+	tls_opt tls_option;
+	tls_ctx *tls_context = NULL;
+	tls_cred cred;
+
+	memset(&tls_option, 0, sizeof(tls_opt));
+
+	tls_option.server = MBEDTLS_SSL_IS_CLIENT;
+	tls_option.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
+	tls_option.auth_mode = 0;
+	tls_option.debug_mode = 3;
+
+	tls_option.force_ciphersuites[0] = mbedtls_ssl_get_ciphersuite_id(COAP_MBEDTLS_CIPHERSUIT);
+	tls_option.force_ciphersuites[1] = 0;
+#endif
+
+	while ((opt = getopt(argc, argv, "Nb:e:f:g:m:p:s:t:o:v:A:B:O:P:T:I:S:")) != -1) {
 		switch (opt) {
 		case 'b':
 			cmdline_blocksize(optarg);
@@ -998,6 +1008,7 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			strncpy(port_str, optarg, NI_MAXSERV - 1);
+			portChanged = 1;
 			port_str[NI_MAXSERV - 1] = '\0';
 			break;
 		case 'm':
@@ -1030,6 +1041,16 @@ int main(int argc, char **argv)
 		case 'v':
 			log_level = strtol(optarg, NULL, 10);
 			break;
+#ifdef WITH_MBEDTLS
+		case 'I':
+			pskId = optarg;
+			printf("coap-client : Pre-Shared Key ID %s\n", pskId);
+			break;
+		case 'S':
+			pskBuffer = optarg;
+			printf("coap-client : Pre-Shared Key %s\n", pskBuffer);
+			break;
+#endif
 		default:
 			if (!invalid_opt) {
 				invalid_opt = 1;
@@ -1046,10 +1067,38 @@ int main(int argc, char **argv)
 	coap_set_log_level(log_level);
 
 	if (optind < argc) {
+		protocol = coap_get_protocol_from_uri(argv[optind]);
+		if (protocol >= COAP_PROTO_MAX) {
+			printf("coap-client : uri prefix might be wrong %s\n", argv[optind]);
+			return 0;
+		} else {
+			printf("coap-client : transport protocol %d\n", protocol);
+			/* TODO : DTLS not support CON message type ? */
+			if (protocol != COAP_PROTO_UDP)
+				msgtype = COAP_MESSAGE_NON;
+		}
 		cmdline_uri(argv[optind]);
 	} else {
 		usage(argv[0], PACKAGE_VERSION);
 		return 0;
+	}
+
+	/* Set default port when there are no inserted port number from user */
+	if (!portChanged) {
+		memset(port_str, 0, NI_MAXSERV-1);
+		switch (protocol) {
+		case COAP_PROTO_UDP:
+		case COAP_PROTO_TCP:
+			strncpy(port_str, COAP_STANDARD_PORT, strlen(COAP_STANDARD_PORT));
+			break;
+		case COAP_PROTO_DTLS:
+		case COAP_PROTO_TLS:
+			strncpy(port_str, COAP_SECURITY_PORT, strlen(COAP_SECURITY_PORT));
+			break;
+		default:
+			printf("coap-client : not-supported protocol %d\n", protocol);
+			return -1;
+		}
 	}
 
 	if (proxy.length) {
@@ -1061,7 +1110,7 @@ int main(int argc, char **argv)
 	}
 
 	/* resolve destination address where server should be sent */
-	res = resolve_address(&server, &dst.addr.sa);
+	res = resolve_address(&server, &dst.addr.sa, protocol);
 
 	if (res < 0) {
 		fprintf(stderr, "failed to resolve address\n");
@@ -1071,28 +1120,57 @@ int main(int argc, char **argv)
 	dst.size = res;
 	dst.addr.sin.sin_port = htons(port);
 
-	/* add Uri-Host if server address differs from uri.host */
+	memcpy(host_str, server.s, server.length);
 
-	switch (dst.addr.sa.sa_family) {
-	case AF_INET:
-		addrptr = &dst.addr.sin.sin_addr;
-
-		/* create context for IPv4 */
-		ctx = get_context("0.0.0.0", port_str);
-		break;
-	case AF_INET6:
-		addrptr = &dst.addr.sin6.sin6_addr;
-
-		/* create context for IPv6 */
-		ctx = get_context("::", port_str);
-		break;
-	default:
-		;
-	}
+	ctx = coap_create_context(protocol);
 
 	if (!ctx) {
 		coap_log(LOG_EMERG, "cannot create context\n");
 		return -1;
+	}
+
+#ifdef WITH_MBEDTLS
+	if (protocol == COAP_PROTO_TLS || protocol == COAP_PROTO_DTLS) {
+		tls_option.transport = (protocol == COAP_PROTO_TLS) ?
+			(MBEDTLS_SSL_TRANSPORT_STREAM) : (MBEDTLS_SSL_TRANSPORT_DATAGRAM);
+
+		/* Set credential information */
+		memset(&cred, 0, sizeof(tls_cred));
+
+		if (pskBuffer) {
+			if (coap_unhexify(psk, pskBuffer, &cred.psk_len) == 0) {
+				if (pskId) {
+					cred.psk_identity = pskId;
+					cred.psk = psk;
+				}
+			}
+
+			if (!cred.psk_identity && !cred.psk) {
+				printf("coap-client : failed to create PSK info\n");
+				goto error_exit;
+			}
+		} else {
+			printf("coap-client : MUST set PSK and PSK Identity\n");
+			goto error_exit;
+		}
+
+		tls_context = TLSCtx(&cred);
+		if (tls_context == NULL) {
+			printf("coap-client : failed to initialize TLS\n");
+			goto error_exit;
+		}
+	}
+#endif
+
+	/* Try to connect to network */
+#ifdef WITH_MBEDTLS
+	if (coap_net_connect(ctx, host_str, port_str, (void *)tls_context, (void *)&tls_option) < 0)
+#else
+	if (coap_net_connect(ctx, host_str, port_str, NULL, NULL) < 0)
+#endif
+	{
+		printf("coap-client : failed to connect network\n");
+		goto error_exit;
 	}
 
 	coap_register_option(ctx, COAP_OPTION_BLOCK2);
@@ -1194,8 +1272,21 @@ int main(int argc, char **argv)
 			}
 		}
 	}
-
+error_exit:
 	close_output();
+#ifdef WITH_MBEDTLS
+	if (ctx->session) {
+		TLSSession_free(ctx->session);
+	}
+
+	if (tls_context) {
+		TLSCtx_free(tls_context);
+	}
+#endif
+	if (ctx->sockfd > 0) {
+		close(ctx->sockfd);
+	}
+
 	coap_free_context(ctx);
 
 	/*

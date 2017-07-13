@@ -46,6 +46,12 @@ extern "C" {
 #include <apps/netutils/libcoap/pdu.h>
 #include <apps/netutils/libcoap/coap_time.h>
 
+#ifdef WITH_MBEDTLS
+#include "tls/certs.h"
+#include "tls/easy_tls.h"
+#define COAP_CIPHERSUIT "TLS-PSK-WITH-AES-128-CBC-SHA"
+#endif
+
 struct coap_queue_t;
 
 typedef struct coap_queue_t {
@@ -92,6 +98,14 @@ typedef struct {
 	unsigned char flags[COAP_MID_CACHE_SIZE];
 	coap_key_t item[COAP_MID_CACHE_SIZE];
 } coap_mid_cache_t;
+
+typedef enum {
+	COAP_PROTO_UDP = 0,
+	COAP_PROTO_DTLS,
+	COAP_PROTO_TCP,
+	COAP_PROTO_TLS,
+	COAP_PROTO_MAX
+} coap_protocol_t;
 
 /** The CoAP stack's global state is stored in a coap_context_t object */
 typedef struct coap_context_t {
@@ -149,6 +163,18 @@ typedef struct coap_context_t {
 	 */
 	unsigned int observe;
 
+	/**
+	 * The value to be used to check transport protocol for coap.
+	 */
+	coap_protocol_t protocol;
+
+#ifdef WITH_MBEDTLS
+	/**
+	 * The value to be used to store TLS session information.
+	 */
+	tls_session *session;
+#endif
+
 	coap_response_handler_t response_handler;
 } coap_context_t;
 
@@ -191,6 +217,24 @@ coap_queue_t *coap_pop_next(coap_context_t *context);
 
 /** Creates a new coap_context_t object that will hold the CoAP stack status.  */
 coap_context_t *coap_new_context(const coap_address_t *listen_addr);
+
+/** Creates a new coap_context_t object that will hold the CoAP stack status.
+ *  Note that,
+ *  This API doens't include socket operation
+ */
+coap_context_t *coap_create_context(coap_protocol_t protocol);
+
+/**
+ * Connect endpoint by using provided host and port
+ * @return On succeed, returns positive value, On failure, returns negative value
+ */
+int coap_net_connect(coap_context_t *ctx, const char *host, const char *port, void *tls_context, void *tls_option);
+
+/**
+ * Waiting for new session from client
+ * @return On succeed, returns positive value, On failure, returns negative value
+ */
+int coap_net_bind(coap_context_t *ctx, const char *host, const char *port, void *tls_context, void *tls_option);
 
 /**
  * Returns a new message id and updates @p context->message_id
@@ -446,5 +490,15 @@ int coap_option_check_critical(coap_context_t *ctx, coap_pdu_t *pdu, coap_opt_fi
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * Get transport protocol type from URI.
+ *
+ * @param uri    The URI string to get transport protocol by using pre-defined prefix
+ *
+ * @return On success, transport protocol number is returned (refer coap_protocol_t),
+ *         On failure, COAP_PROTO_MAX is returned.
+ */
+coap_protocol_t coap_get_protocol_from_uri(const char *uri);
 
 #endif							/* _COAP_NET_H_ */

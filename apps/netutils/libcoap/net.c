@@ -28,6 +28,9 @@
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
+#ifdef HAVE_NETDB_H
+#include <netdb.h>
+#endif
 
 #ifdef WITH_LWIP
 #include <net/lwip/pbuf.h>
@@ -295,6 +298,50 @@ int is_wkc(coap_key_t k)
 }
 #endif
 
+coap_context_t *coap_create_context(coap_protocol_t protocol)
+{
+#ifdef WITH_POSIX
+	coap_context_t *c = coap_malloc(sizeof(coap_context_t));
+
+	if (!c) {
+		coap_log(LOG_EMERG, "failed to create context, errno %d\n", errno);
+		return NULL;
+	}
+	coap_clock_init();
+	prng_init(rand());
+
+	memset(c, 0, sizeof(coap_context_t));
+
+	/* initialize message id */
+	prng((unsigned char *)&c->message_id, sizeof(unsigned short));
+
+	/* register the critical options that we know */
+	coap_register_option(c, COAP_OPTION_IF_MATCH);
+	coap_register_option(c, COAP_OPTION_URI_HOST);
+	coap_register_option(c, COAP_OPTION_IF_NONE_MATCH);
+	coap_register_option(c, COAP_OPTION_URI_PORT);
+	coap_register_option(c, COAP_OPTION_URI_PATH);
+	coap_register_option(c, COAP_OPTION_URI_QUERY);
+	coap_register_option(c, COAP_OPTION_ACCEPT);
+	coap_register_option(c, COAP_OPTION_PROXY_URI);
+	coap_register_option(c, COAP_OPTION_PROXY_SCHEME);
+	coap_register_option(c, COAP_OPTION_BLOCK2);
+	coap_register_option(c, COAP_OPTION_BLOCK1);
+
+	/* initialize socket file descriptor */
+	c->sockfd = -1;
+	/* set transport protocol information in context */
+	c->protocol = protocol;
+#ifdef WITH_MBEDTLS
+	/* initialize TLS session pointer in context */
+	c->session = NULL;
+#endif /* WITH_MBEDTLS */
+	return c;
+#else
+	return NULL;
+#endif /* WITH_POSIX */
+}
+
 coap_context_t *coap_new_context(const coap_address_t *listen_addr)
 {
 #ifdef WITH_POSIX
@@ -366,23 +413,18 @@ coap_context_t *coap_new_context(const coap_address_t *listen_addr)
 
 #ifdef WITH_POSIX
 	c->sockfd = socket(listen_addr->addr.sa.sa_family, SOCK_DGRAM, 0);
+
 	if (c->sockfd < 0) {
-#ifndef NDEBUG
-		coap_log(LOG_EMERG, "coap_new_context: socket\n");
-#endif							/* WITH_POSIX */
+		coap_log(LOG_EMERG, "coap_new_context: failed to create socket\n");
 		goto onerror;
 	}
 
 	if (setsockopt(c->sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
-#ifndef NDEBUG
-		coap_log(LOG_WARNING, "setsockopt SO_REUSEADDR\n");
-#endif
+		coap_log(LOG_WARNING, "coap_new_context : failed to setsockopt SO_REUSEADDR\n");
 	}
 
 	if (bind(c->sockfd, &listen_addr->addr.sa, listen_addr->size) < 0) {
-#ifndef NDEBUG
-		coap_log(LOG_EMERG, "coap_new_context: bind\n");
-#endif
+		coap_log(LOG_EMERG, "coap_new_context : failed to bind socket\n");
 		goto onerror;
 	}
 
@@ -395,7 +437,7 @@ onerror:
 	coap_free(c);
 	return NULL;
 
-#endif							/* WITH_POSIX */
+#endif /* WITH_POSIX */
 #ifdef WITH_CONTIKI
 	c->conn = udp_new(NULL, 0, NULL);
 	udp_bind(c->conn, listen_addr->port);
@@ -453,7 +495,7 @@ void coap_free_context(coap_context_t *context)
 #endif
 		coap_delete_resource(context, res->key);
 	}
-#endif							/* WITH_POSIX || WITH_LWIP */
+#endif /* WITH_POSIX || WITH_LWIP */
 
 #ifdef WITH_POSIX
 	/* coap_delete_list(context->subscriptions); */
@@ -467,7 +509,7 @@ void coap_free_context(coap_context_t *context)
 #ifdef WITH_CONTIKI
 	memset(&the_coap_context, 0, sizeof(coap_context_t));
 	initialized = 0;
-#endif							/* WITH_CONTIKI */
+#endif /* WITH_CONTIKI */
 }
 
 int coap_option_check_critical(coap_context_t *ctx, coap_pdu_t *pdu, coap_opt_filter_t unknown)
@@ -561,14 +603,30 @@ coap_tid_t coap_send_ack(coap_context_t *context, const coap_address_t *dst, coa
 /* releases space allocated by PDU if free_pdu is set */
 coap_tid_t coap_send_impl(coap_context_t *context, const coap_address_t *dst, coap_pdu_t *pdu)
 {
-	ssize_t bytes_written;
+	ssize_t bytes_written = -1;
 	coap_tid_t id = COAP_INVALID_TID;
 
 	if (!context || !dst || !pdu) {
 		return id;
 	}
 
-	bytes_written = sendto(context->sockfd, pdu->hdr, pdu->length, 0, &dst->addr.sa, dst->size);
+	switch (context->protocol) {
+	case COAP_PROTO_UDP:
+		bytes_written = sendto(context->sockfd, pdu->hdr, pdu->length, 0, &dst->addr.sa, dst->size);
+		break;
+	case COAP_PROTO_TCP:
+		bytes_written = send(context->sockfd, pdu->hdr, pdu->length, 0);
+		break;
+#ifdef WITH_MBEDTLS
+	case COAP_PROTO_TLS:
+	case COAP_PROTO_DTLS:
+		bytes_written = mbedtls_ssl_write(context->session->ssl, (unsigned char *)pdu->hdr, pdu->length);
+		break;
+#endif
+	default:
+		warn("coap_send_impl : not supported transport protocol %d\n", context->protocol);
+		break;
+	}
 
 	if (bytes_written >= 0) {
 		coap_transaction_id(dst, pdu, &id);
@@ -578,7 +636,7 @@ coap_tid_t coap_send_impl(coap_context_t *context, const coap_address_t *dst, co
 
 	return id;
 }
-#endif							/* WITH_POSIX */
+#endif /* WITH_POSIX */
 #ifdef WITH_CONTIKI
 /* releases space allocated by PDU if free_pdu is set */
 coap_tid_t coap_send_impl(coap_context_t *context, const coap_address_t *dst, coap_pdu_t *pdu)
@@ -647,7 +705,7 @@ coap_tid_t coap_send_impl(coap_context_t *context, const coap_address_t *dst, co
 
 	return id;
 }
-#endif							/* WITH_LWIP */
+#endif /* WITH_LWIP */
 
 coap_tid_t coap_send(coap_context_t *context, const coap_address_t *dst, coap_pdu_t *pdu)
 {
@@ -795,7 +853,7 @@ coap_tid_t coap_retransmit(coap_context_t *context, coap_queue_t *node)
 
 		coap_handle_failed_notify(context, &node->remote, &token);
 	}
-#endif							/* WITHOUT_OBSERVE */
+#endif /* WITHOUT_OBSERVE */
 
 	/* And finally delete the node */
 	coap_delete_node(node);
@@ -844,8 +902,24 @@ int coap_read(coap_context_t *ctx)
 	coap_address_init(&src);
 
 #ifdef WITH_POSIX
-	bytes_read = recvfrom(ctx->sockfd, buf, sizeof(buf), 0, &src.addr.sa, &src.size);
-#endif							/* WITH_POSIX */
+	switch (ctx->protocol) {
+	case COAP_PROTO_UDP:
+		bytes_read = recvfrom(ctx->sockfd, buf, sizeof(buf), 0, &src.addr.sa, &src.size);
+		break;
+	case COAP_PROTO_TCP:
+		bytes_read = recv(ctx->sockfd, buf, sizeof(buf), 0);
+		break;
+#ifdef WITH_MBEDTLS
+	case COAP_PROTO_DTLS:
+	case COAP_PROTO_TLS:
+		bytes_read = mbedtls_ssl_read(ctx->session->ssl, (unsigned char *)buf, sizeof(buf));
+		break;
+#endif
+	default:
+		warn("coap_read : not supported protocol %d\n", ctx->protocol);
+		goto error_early;
+	}
+#endif /* WITH_POSIX */
 #ifdef WITH_CONTIKI
 	if (uip_newdata()) {
 		uip_ipaddr_copy(&src.addr, &UIP_IP_BUF->srcipaddr);
@@ -868,7 +942,7 @@ int coap_read(coap_context_t *ctx)
 #endif							/* WITH_LWIP */
 
 	if (bytes_read < 0) {
-		warn("coap_read: recvfrom");
+		warn("coap_read: failed to read, ret %d, errno %d\n", bytes_read, errno);
 		goto error_early;
 	}
 
@@ -877,7 +951,9 @@ int coap_read(coap_context_t *ctx)
 		goto error_early;
 	}
 
-	if (pdu->version != COAP_DEFAULT_VERSION) {
+	/* TCP doesn't have version field in PDU */
+	if ((ctx->protocol == COAP_PROTO_UDP || ctx->protocol == COAP_PROTO_DTLS)
+					&& pdu->version != COAP_DEFAULT_VERSION) {
 		debug("coap_read: unknown protocol version\n");
 		goto error_early;
 	}
@@ -886,7 +962,6 @@ int coap_read(coap_context_t *ctx)
 	if (!node) {
 		goto error_early;
 	}
-
 #ifdef WITH_LWIP
 	node->pdu = coap_pdu_from_pbuf(ctx->pending_package);
 	ctx->pending_package = NULL;
@@ -1647,3 +1722,229 @@ static void coap_retransmittimer_restart(coap_context_t *ctx)
 	}
 }
 #endif
+
+
+/** Representation of CoAP Prefix of URI.
+ *  It can be used to get transport protocol type from URI through
+ *  coap_get_protocol_from_uri function.
+ */
+#define COAP_MAX_URI_PREFIX_LEN 32
+static char coap_uri_prefix[COAP_PROTO_MAX][COAP_MAX_URI_PREFIX_LEN] = {
+	"coap://",      /**< URI prefix of CoAP over UDP  */
+	"coaps://",     /**< URI prefix of CoAP over DTLS */
+	"coap+tcp://",  /**< URI prefix of CoAP over TCP  */
+	"coaps+tcp://", /**< URI prefix of CoAP over TLS  */
+};
+
+coap_protocol_t coap_get_protocol_from_uri(const char *uri)
+{
+	coap_protocol_t protocol;
+
+	for (protocol = COAP_PROTO_UDP; protocol < COAP_PROTO_MAX; protocol++) {
+		if (!strncmp(uri, coap_uri_prefix[protocol], strlen(coap_uri_prefix[protocol]))) {
+			return protocol;
+		}
+	}
+
+	return protocol;
+}
+
+int coap_net_bind(coap_context_t *ctx, const char *host, const char *port, void *tls_context, void *tls_option)
+{
+	int n;
+	int newsock = -1;
+
+	struct addrinfo hints;
+	struct addrinfo *res;
+	struct addrinfo *p;
+
+	struct sockaddr caddr;
+	socklen_t caddrlen;
+
+#ifdef WITH_MBEDTLS
+	tls_session *session = NULL;
+#endif
+
+	ASSERT(ctx);
+
+	memset(&hints, 0, sizeof(hints));
+
+	switch (ctx->protocol) {
+	case COAP_PROTO_TCP:
+	case COAP_PROTO_TLS:
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_protocol = IPPROTO_TCP;
+		break;
+	case COAP_PROTO_UDP:
+	case COAP_PROTO_DTLS:
+		hints.ai_socktype = SOCK_DGRAM;
+		hints.ai_protocol = IPPROTO_UDP;
+		break;
+	default:
+		/* Should not enter here */
+		break;
+	}
+
+	hints.ai_family = AF_UNSPEC;
+	if (host == NULL) {
+		hints.ai_flags = AI_PASSIVE;
+	}
+	hints.ai_next  = NULL;
+
+	if (0 != getaddrinfo(host, port, &hints, &res)) {
+		return ctx->sockfd;
+	}
+
+	for (p = res; p; p = p->ai_next) {
+		ctx->sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+		if (ctx->sockfd < 0) {
+			continue;
+		} else {
+			n = 1;
+			if (setsockopt(ctx->sockfd, SOL_SOCKET, SO_REUSEADDR, &n, sizeof(n)) < 0) {
+				close(ctx->sockfd);
+				ctx->sockfd = -1;
+				continue;
+			}
+
+			if (bind(ctx->sockfd, p->ai_addr, p->ai_addrlen) < 0) {
+				close(ctx->sockfd);
+				ctx->sockfd = -1;
+				continue;
+			}
+
+			switch (ctx->protocol) {
+			case COAP_PROTO_TCP:
+				if (listen(ctx->sockfd, TCP_LISTEN_BACKLOG) < 0) {
+					printf("coap_net_bind : failed to listen, errno %d\n", errno);
+					close(ctx->sockfd);
+					ctx->sockfd = -1;
+					break;
+				}
+
+				newsock = accept(ctx->sockfd, &caddr, &caddrlen);
+
+				if (newsock < 0) {
+					printf("coap_net_bind : failed to accept, errno %d\n", errno);
+					close(ctx->sockfd);
+					ctx->sockfd = -1;
+				} else {
+					ctx->sockfd = newsock;
+					goto exit;
+				}
+				break;
+#ifdef WITH_MBEDTLS
+			case COAP_PROTO_TLS:
+				if (listen(ctx->sockfd, TCP_LISTEN_BACKLOG) < 0) {
+					printf("coap_net_bind : failed to listen, errno %d\n", errno);
+					close(ctx->sockfd);
+					ctx->sockfd = -1;
+					break;
+				}
+			case COAP_PROTO_DTLS:
+				session = TLSSession(ctx->sockfd, (tls_ctx *)tls_context, (tls_opt *)tls_option);
+				if (session == NULL) {
+					printf("coap_net_bind : failed to create TLS session\n");
+					close(ctx->sockfd);
+					ctx->sockfd = -1;
+				} else {
+					ctx->sockfd = session->net.fd;
+					ctx->session = session;
+					goto exit;
+				}
+				break;
+#endif
+			case COAP_PROTO_UDP:
+				/* Do nothing */
+				goto exit;
+			default:
+				/* Should not enter here */
+				break;
+			}
+		}
+	}
+
+exit:
+	freeaddrinfo(res);
+	return ctx->sockfd;
+}
+
+int coap_net_connect(coap_context_t *ctx, const char *host, const char *port, void *tls_context, void *tls_option)
+{
+	struct addrinfo hints;
+	struct addrinfo *servinfo = NULL;
+	struct addrinfo *p = NULL;
+	struct sockaddr *sa = NULL;
+	socklen_t sl = 0;
+
+	struct timeval tv = {10, 0};
+
+	ASSERT(ctx);
+
+	memset(&hints, 0, sizeof(hints));
+
+	switch (ctx->protocol) {
+	case COAP_PROTO_TCP:
+	case COAP_PROTO_TLS:
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_protocol = IPPROTO_TCP;
+		break;
+	case COAP_PROTO_UDP:
+	case COAP_PROTO_DTLS:
+		hints.ai_socktype = SOCK_DGRAM;
+		hints.ai_protocol = IPPROTO_UDP;
+		break;
+	default:
+		/* Should not enter here */
+		break;
+	}
+
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_next  = NULL;
+
+	if (0 != getaddrinfo(host, port, &hints, &servinfo)) {
+		return ctx->sockfd;
+	}
+
+	for (p = servinfo; p; p = p->ai_next) {
+		ctx->sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+
+		if (ctx->sockfd < 0) {
+			continue;
+		}
+
+		sa = p->ai_addr;
+#ifdef CONFIG_NET_LWIP
+		sa->sa_len = p->ai_addrlen;
+#endif
+		sl = p->ai_addrlen;
+
+		if (setsockopt(ctx->sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval)) < 0) {
+			printf("coap_net_connect : setsockopt failed, errno %d\n", errno);
+		}
+
+		if (connect(ctx->sockfd, sa, sl) < 0) {
+			printf("coap_net_connect : failed to connect, errno %d\n", errno);
+			close(ctx->sockfd);
+			ctx->sockfd = -1;
+			continue;
+		} else
+			break;
+	}
+
+#ifdef WITH_MBEDTLS
+	/* Create TLS Session : Start TLS Handshake */
+	if (ctx->sockfd > 0 && (ctx->protocol == COAP_PROTO_TLS || ctx->protocol == COAP_PROTO_DTLS)) {
+		ctx->session = TLSSession(ctx->sockfd, (tls_ctx *)tls_context, (tls_opt *)tls_option);
+		if (ctx->session != NULL) {
+			ctx->sockfd = ctx->session->net.fd;
+		} else {
+			printf("coap_net_connect : TLS handshake, failed to create secure session\n");
+			close(ctx->sockfd);
+			ctx->sockfd = -1;
+		}
+	}
+#endif /* WITH_MBEDTLS */
+	freeaddrinfo(servinfo);
+	return ctx->sockfd;
+}

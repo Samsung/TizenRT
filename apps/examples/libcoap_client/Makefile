@@ -63,6 +63,9 @@ CFLAGS += -D__TINYARA__
 ifeq ($(CONFIG_NETUTILS_LIBCOAP_DEBUG),n)
 CFLAGS += -DNDEBUG
 endif
+ifeq ($(CONFIG_NET_SECURITY_TLS),y)
+CFLAGS += -DWITH_MBEDTLS
+endif
 #CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)$(DELIM)include$(DELIM)netutils$(DELIM)libcoap}
 
 ifneq ($(CONFIG_BUILD_KERNEL),y)

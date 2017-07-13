@@ -56,6 +56,9 @@ struct coap_server_input {
 #endif
 #endif /* __TINYARA__ */
 
+#define COAP_STANDARD_PORT "5683"
+#define COAP_SECURITY_PORT "5684"
+
 enum server_status {
 	SERVER_STOPPED = 0,
 	SERVER_RUNNING,
@@ -308,53 +311,18 @@ static void usage(const char *program, const char *version)
 
 	fprintf(stderr, "%s v%s -- a small CoAP implementation\n"
 					"(c) 2010,2011 Olaf Bergmann <bergmann@tzi.org>\n\n"
-					"usage: %s [-A address] [-p port]\n\n" "\t-A address\tinterface address to bind to\n"
+					"usage: %s [-A address] [-p port] [-v level] [-P protocol]\n\n"
+					"\t-A address\tinterface address to bind to\n"
 					"\t-p port\t\tlisten on specified port\n"
 					"\t-v num\t\tverbosity level (default: 3)\n"
+#ifdef WITH_MBEDTLS
+					"\t-P protocol\t\t type of transport protocol\n"
+					"\t\t\t\t - 0 : UDP, 1 : DTLS (default : 0)\n"
+					"\t-i identity\tPre-Shared Key identity used to security session\n"
+					"\t-s pre-shared key\tPre-Shared Key. Input length MUST be even (e.g, 11, 1111.)\n"
+#endif
 					"\t-Q exit server program\n"
 					, program, version, program);
-}
-
-static coap_context_t *get_context(const char *node, const char *port)
-{
-	coap_context_t *ctx = NULL;
-	int s;
-	struct addrinfo hints;
-	struct addrinfo *result, *rp;
-
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
-	hints.ai_socktype = SOCK_DGRAM;	/* Coap uses UDP */
-	hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST;
-
-	s = getaddrinfo(node, port, &hints, &result);
-	if (s != 0) {
-		fprintf(stderr, "getaddrinfo: %d\n", s);
-		return NULL;
-	}
-
-	/* iterate through results until success */
-	for (rp = result; rp != NULL; rp = rp->ai_next) {
-		coap_address_t addr;
-
-		if (rp->ai_addrlen <= sizeof(addr.addr)) {
-			coap_address_init(&addr);
-			addr.size = rp->ai_addrlen;
-			memcpy(&addr.addr, rp->ai_addr, rp->ai_addrlen);
-
-			ctx = coap_new_context(&addr);
-			if (ctx) {
-				/* TODO: output address:port for successful binding */
-				goto finish;
-			}
-		}
-	}
-
-	fprintf(stderr, "no context available for interface '%s'\n", node);
-
-finish:
-	freeaddrinfo(result);
-	return ctx;
 }
 
 #if defined (__TINYARA__)
@@ -363,17 +331,20 @@ int coap_server_test_run(void *arg)
 int main(int argc, char **argv)
 #endif
 {
-	coap_context_t *ctx;
+	coap_context_t *ctx = NULL;
 	fd_set readfds;
 	struct timeval tv, *timeout;
 	int result;
 	coap_tick_t now;
 	coap_queue_t *nextpdu;
 	char *addr_str = NULL;
-	char port_str[NI_MAXSERV] = "5683\0";
+	char port_str[NI_MAXSERV] = {0,};
 	int opt;
 	int invalid_opt = 0;
+	int portChanged = 0;
+
 	coap_log_t log_level = LOG_WARNING;
+	coap_protocol_t protocol = COAP_PROTO_UDP;
 
 #if defined (__TINYARA__)
 	int argc;
@@ -383,7 +354,23 @@ int main(int argc, char **argv)
 	argv = ((struct coap_server_input *)arg)->argv;
 #endif
 
-	while ((opt = getopt(argc, argv, "A:p:v:Q")) != -1) {
+#ifdef WITH_MBEDTLS
+	char *pskId = "coaptest";
+	char *pskBuffer = "12345678";
+	unsigned char psk[MBEDTLS_PSK_MAX_LEN];
+
+	tls_opt tls_option;
+	tls_ctx *tls_context = NULL;
+
+	memset(&tls_option, 0, sizeof(tls_opt));
+
+	tls_option.server = MBEDTLS_SSL_IS_SERVER;
+	tls_option.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
+	tls_option.auth_mode = 2;
+	tls_option.debug_mode = 3;
+#endif
+
+	while ((opt = getopt(argc, argv, "A:p:v:P:i:s:Q")) != -1) {
 		switch (opt) {
 		case 'A':
 			addr_str = (char *)coap_malloc(sizeof(char) * NI_MAXHOST);
@@ -398,6 +385,7 @@ int main(int argc, char **argv)
 		case 'p':
 			strncpy(port_str, optarg, NI_MAXSERV-1);
 			port_str[NI_MAXSERV - 1] = '\0';
+			portChanged = 1;
 			printf("coap-server : port %s\n", port_str);
 			break;
 		case 'v':
@@ -407,12 +395,44 @@ int main(int argc, char **argv)
 		case 'Q':
 			quit = 1;
 			break;
+		case 'P':
+			protocol = strtol(optarg, NULL, COAP_PROTO_MAX);
+			printf("coap-server : protocol type %d\n", protocol);
+			break;
+#ifdef WITH_MBEDTLS
+		case 's':
+			pskBuffer = optarg;
+			printf("coap-server : Pre-Shared Key %s\n", pskBuffer);
+			break;
+		case 'i':
+			pskId = optarg;
+			printf("coap-server : Pre-Shared Key ID %s\n", pskId);
+			break;
+#endif
 		default:
 			if (!invalid_opt) {
 				invalid_opt = 1;
 				usage(argv[0], PACKAGE_VERSION);
 			}
 			break;
+		}
+	}
+
+	/* Set default port when there are no inserted port number from user */
+	if (!portChanged) {
+		memset(port_str, 0, NI_MAXSERV-1);
+		switch (protocol) {
+		case COAP_PROTO_UDP:
+		case COAP_PROTO_TCP:
+			strncpy(port_str, COAP_STANDARD_PORT, strlen(COAP_STANDARD_PORT));
+			break;
+		case COAP_PROTO_DTLS:
+		case COAP_PROTO_TLS:
+			strncpy(port_str, COAP_SECURITY_PORT, strlen(COAP_SECURITY_PORT));
+			break;
+		default:
+			printf("coap-server : not-supported protocol %d\n", protocol);
+			return -1;
 		}
 	}
 
@@ -434,9 +454,52 @@ int main(int argc, char **argv)
 
 	coap_set_log_level(log_level);
 
-	ctx = get_context(addr_str, port_str);
+	ctx = coap_create_context(protocol);
 	if (!ctx) {
+		printf("coap-server : failed to create context\n");
 		return -1;
+	}
+
+#ifdef WITH_MBEDTLS
+	/* Initialize TLS context */
+	if (protocol == COAP_PROTO_TLS || protocol == COAP_PROTO_DTLS) {
+		tls_option.transport = (protocol == COAP_PROTO_TLS) ?
+			(MBEDTLS_SSL_TRANSPORT_STREAM) : (MBEDTLS_SSL_TRANSPORT_DATAGRAM);
+		tls_cred cred;
+		memset(&cred, 0, sizeof(tls_cred));
+
+		if (pskBuffer) {
+			if (coap_unhexify(psk, pskBuffer, &cred.psk_len) == 0) {
+				if (pskId) {
+					cred.psk_identity = pskId;
+					cred.psk = psk;
+				}
+			}
+			if (cred.psk_identity == NULL && cred.psk == NULL) {
+				printf("coap-server : failed to set psk info\n");
+				return -1;
+			}
+		} else {
+			printf("coap-server : need to set psk and psk ID\n");
+			return -1;
+		}
+
+		tls_context = TLSCtx(&cred);
+		if (tls_context == NULL) {
+			printf("coap-server : failed to initialize TLS context\n");
+			return -1;
+		}
+	}
+#endif
+
+#ifdef WITH_MBEDTLS
+	if (coap_net_bind(ctx, NULL, port_str, (void *)tls_context, (void *)&tls_option) < 0)
+#else
+	if (coap_net_bind(ctx, NULL, NULL) < 0)
+#endif
+	{
+		printf("coap-server : failed to get session from client\n");
+		goto exit;
 	}
 
 	init_resources(ctx);
@@ -446,7 +509,7 @@ int main(int argc, char **argv)
 #endif
 
 	g_operating_status = SERVER_RUNNING;
-	printf("coap-server : coap_server is started\n");
+	printf("coap-server : coap_server is started, sockfd %d\n", ctx->sockfd);
 
 	while (!quit) {
 		FD_ZERO(&readfds);
@@ -496,6 +559,20 @@ int main(int argc, char **argv)
 		/* check if we have to send observe notifications */
 		coap_check_notify(ctx);
 #endif							/* WITHOUT_OBSERVE */
+	}
+
+exit:
+#ifdef WITH_MBEDTLS
+	if (ctx->session) {
+		TLSSession_free(ctx->session);
+	}
+
+	if (tls_context) {
+		TLSCtx_free(tls_context);
+	}
+#endif
+	if (ctx->sockfd > 0) {
+		close(ctx->sockfd);
 	}
 
 	coap_free_context(ctx);

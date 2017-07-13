@@ -55,4 +55,11 @@ unsigned int coap_decode_var_bytes(unsigned char *buf, unsigned int len);
  */
 unsigned int coap_encode_var_bytes(unsigned char *buf, unsigned int val);
 
+
+#ifdef WITH_MBEDTLS
+/**
+ * Convert string (ascii code) to hexadecimal number
+ */
+int coap_unhexify(unsigned char *output, const char *input, size_t *olen);
+#endif /* WITH_MBEDTLS */
 #endif							/* _COAP_ENCODE_H_ */
