@@ -74,7 +74,7 @@
 #include "up_arch.h"
 #include "s5j_gpio.h"
 #include "s5j_i2c.h"
-#include "s5j_vclk.h"
+#include "s5j_clock.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -876,25 +876,25 @@ struct i2c_dev_s *up_i2cinitialize(int port)
 	case 0:
 		priv = &s5j_i2c0_priv;
 		config = &s5j_i2c0_config;
-		priv->clock = cal_clk_getrate(gate_hsi2c0);
+		priv->clock = s5j_clk_get_rate(CLK_SPL_BUS_P0);
 		break;
 
 	case 1:
 		priv = &s5j_i2c1_priv;
 		config = &s5j_i2c1_config;
-		priv->clock = cal_clk_getrate(gate_hsi2c1);
+		priv->clock = s5j_clk_get_rate(CLK_SPL_BUS_P0);
 		break;
 
 	case 2:
 		priv = &s5j_i2c2_priv;
 		config = &s5j_i2c2_config;
-		priv->clock = cal_clk_getrate(gate_hsi2c2);
+		priv->clock = s5j_clk_get_rate(CLK_SPL_BUS_P0);
 		break;
 
 	case 3:
 		priv = &s5j_i2c3_priv;
 		config = &s5j_i2c3_config;
-		priv->clock = cal_clk_getrate(gate_hsi2c3);
+		priv->clock = s5j_clk_get_rate(CLK_SPL_BUS_P0);
 		break;
 
 	default:

@@ -160,9 +160,7 @@ CHIP_CSRCS += s5j_pminitialize.c
 CHIP_CSRCS += s5j_pmnormal.c s5j_pmstandby.c s5j_pmstop.c
 endif
 
-ifeq ($(CONFIG_S5J_PWR),y)
-CHIP_CSRCS += s5j_pwrcal.c
-endif
+CHIP_CSRCS += s5j_clock.c
 
 ifeq ($(CONFIG_S5J_PWM),y)
 CHIP_CSRCS += s5j_pwm.c

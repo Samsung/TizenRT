@@ -62,7 +62,7 @@
 
 #include "up_arch.h"
 #include "s5j_watchdog.h"
-#include "s5j_vclk.h"
+#include "s5j_clock.h"
 
 #define S5J_WDT_MAXTIMEOUT		1000000
 
@@ -490,7 +490,7 @@ int s5j_wdg_initialize(FAR const char *devpath)
 	/* Initialize the driver private data structure */
 
 	priv->ops = &g_wdgops;
-	priv->clk_handle = cal_clk_getrate(gate_wdt);	/* for SFR clock */
+	priv->clk_handle = s5j_clk_get_rate(CLK_DFT_OSCCLK);
 	priv->next = NULL;
 
 	if (wdt_head == NULL) {

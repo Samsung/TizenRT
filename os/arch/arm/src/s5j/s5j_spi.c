@@ -79,7 +79,7 @@
 #include <stddef.h>
 #include <chip.h>
 
-#include "s5j_vclk.h"
+#include "s5j_clock.h"
 
 /****************************************************************************
  * Definitions
@@ -209,7 +209,7 @@ static struct s5j_spidev_s g_spi0dev = {
 	.spidev		= { .ops = &g_spiops },
 	.base		= S5J_SPI0_BASE,
 	.port		= SPI_PORT0,
-	.freqid		= d1_spi0,
+	.freqid		= CLK_SPL_SPI0,
 	.gpio_clk	= GPIO_SPI0_CLK,
 	.gpio_nss	= GPIO_SPI0_CS,
 	.gpio_miso	= GPIO_SPI0_MISO,
@@ -219,7 +219,7 @@ static struct s5j_spidev_s g_spi1dev = {
 	.spidev		= { .ops = &g_spiops },
 	.base		= S5J_SPI1_BASE,
 	.port		= SPI_PORT1,
-	.freqid		= d1_spi1,
+	.freqid		= CLK_SPL_SPI1,
 	.gpio_clk	= GPIO_SPI1_CLK,
 	.gpio_nss	= GPIO_SPI1_CS,
 	.gpio_miso	= GPIO_SPI1_MISO,
@@ -229,7 +229,7 @@ static struct s5j_spidev_s g_spi2dev = {
 	.spidev		= { .ops = &g_spiops },
 	.base		= S5J_SPI2_BASE,
 	.port		= SPI_PORT2,
-	.freqid		= d1_spi2,
+	.freqid		= CLK_SPL_SPI2,
 	.gpio_clk	= GPIO_SPI2_CLK,
 	.gpio_nss	= GPIO_SPI2_CS,
 	.gpio_miso	= GPIO_SPI2_MISO,
@@ -239,7 +239,7 @@ static struct s5j_spidev_s g_spi3dev = {
 	.spidev		= { .ops = &g_spiops },
 	.base		= S5J_SPI3_BASE,
 	.port		= SPI_PORT3,
-	.freqid		= d1_spi3,
+	.freqid		= CLK_SPL_SPI3,
 	.gpio_clk	= GPIO_SPI3_CLK,
 	.gpio_nss	= GPIO_SPI3_CS,
 	.gpio_miso	= GPIO_SPI3_MISO,
@@ -289,7 +289,7 @@ static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 {
 	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
-	cal_clk_setrate(priv->freqid, (unsigned long)frequency);
+	s5j_clk_set_rate(priv->freqid, (unsigned long)frequency);
 
 	return OK;
 }

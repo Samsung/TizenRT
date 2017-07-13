@@ -64,7 +64,7 @@
 #include "cache.h"
 #include "chip.h"
 
-#include "s5j_vclk.h"
+#include "s5j_clock.h"
 #include "s5j_gpio.h"
 #include "chip/s5jt200_sflash.h"
 
@@ -228,5 +228,5 @@ void s5j_sflash_init(void)
 	s5j_sflash_enable_wp();
 
 	/* Set FLASH clk 80Mhz for Max performance */
-	cal_clk_setrate(d1_serialflash, 80000000);
+	s5j_clk_set_rate(CLK_SPL_SFLASH, 80000000);
 }
