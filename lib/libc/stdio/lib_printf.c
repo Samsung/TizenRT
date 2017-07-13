@@ -63,6 +63,10 @@
 
 #include "lib_internal.h"
 
+#if defined(CONFIG_LOGM) && defined(CONFIG_PRINTF2LOGM)
+#include <tinyara/logm.h>
+#endif
+
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -110,7 +114,7 @@ int printf(FAR const char *fmt, ...)
 	va_start(ap, fmt);
 
 #if defined(CONFIG_LOGM) && defined(CONFIG_PRINTF2LOGM)
-	ret = logm_internal(LOGM_DEF_PRIORITY, fmt, ap);
+	ret = logm_internal(LOGM_NORMAL, LOGM_UNKNOWN, LOGM_DEF_PRIORITY, fmt, ap);
 #elif CONFIG_NFILE_STREAMS > 0
 	ret = vfprintf(stdout, fmt, ap);
 #elif CONFIG_NFILE_DESCRIPTORS > 0

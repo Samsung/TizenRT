@@ -61,8 +61,9 @@
 
 #include <tinyara/clock.h>
 #include <tinyara/streams.h>
+#if defined(CONFIG_LOGM) && defined(CONFIG_SYSLOG2LOGM)
 #include <tinyara/logm.h>
-
+#endif
 #include "syslog/syslog.h"
 
 /****************************************************************************
@@ -208,7 +209,7 @@ int vsyslog(int priority, FAR const char *fmt, va_list ap)
 	if ((g_syslog_mask & LOG_MASK(priority)) != 0) {
 		/* Yes.. let vsylog_internal do the deed */
 #if defined(CONFIG_LOGM) && defined(CONFIG_SYSLOG2LOGM)
-		ret = logm_internal(priority, fmt, ap);
+		ret = logm_internal(LOGM_NORMAL, LOGM_UNKNOWN, priority, fmt, ap);
 #else
 		ret = vsyslog_internal(fmt, ap);
 #endif
