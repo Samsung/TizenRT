@@ -156,6 +156,9 @@ static err_t netif_loopif_init(struct netif *netif)
 #if LWIP_LOOPIF_MULTICAST
 	netif->flags |= NETIF_FLAG_IGMP;
 #endif
+	/* d_ifname is used by netdev_foreach to print out interface name */
+	snprintf(netif->d_ifname, 6, "%c%c%d", netif->name[0], netif->name[1], netif->num);
+
 	return ERR_OK;
 }
 #endif							/* LWIP_HAVE_LOOPIF */
@@ -312,6 +315,8 @@ struct netif *netif_add(struct netif *netif,
 	netif->next = netif_list;
 	netif_list = netif;
 	mib2_netif_added(netif);
+
+	g_netdevices = netif_list;
 
 #if LWIP_IGMP
 	/* start IGMP processing */
