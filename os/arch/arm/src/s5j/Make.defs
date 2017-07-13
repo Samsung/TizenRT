@@ -155,7 +155,7 @@ ifeq ($(CONFIG_S5J_SFLASH),y)
 CHIP_CSRCS += s5j_sflash.c
 endif
 
-ifeq ($(CONFIG_ARCH_CUSTOM_PMINIT),y)
+ifeq ($(CONFIG_PM),y)
 CHIP_CSRCS += s5j_pminitialize.c
 CHIP_CSRCS += s5j_pmstandby.c s5j_pmstop.c
 endif
