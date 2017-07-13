@@ -222,6 +222,8 @@ struct up_dev_s {
 	uint16_t	txd;
 	uint16_t	rts;
 	uint16_t	cts;
+	uint32_t	pclk;
+	uint32_t	extclk;
 };
 
 /****************************************************************************
@@ -299,6 +301,9 @@ static int up_setup(struct uart_dev_s *dev)
 {
 	uint32_t regval;
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+
+	s5j_clk_enable(priv->pclk);
+	s5j_clk_enable(priv->extclk);
 
 #if !defined(CONFIG_SUPPRESS_UART_CONFIG)
 	float div;
@@ -418,6 +423,9 @@ static void up_shutdown(struct uart_dev_s *dev)
 		s5j_unconfiggpio(priv->cts);
 	}
 #endif
+
+	s5j_clk_disable(priv->pclk);
+	s5j_clk_disable(priv->extclk);
 }
 
 /****************************************************************************
@@ -729,6 +737,8 @@ static struct up_dev_s g_uart0priv = {
 	.stopbits2	= CONFIG_UART0_2STOP,
 	.rxd		= GPIO_UART0_RXD,
 	.txd		= GPIO_UART0_TXD,
+	.pclk		= CLK_GATE_UART0_PCLK,
+	.extclk		= CLK_GATE_UART0_EXTCLK,
 };
 
 static uart_dev_t g_uart0port = {
@@ -755,6 +765,8 @@ static struct up_dev_s g_uart1priv = {
 	.stopbits2	= CONFIG_UART1_2STOP,
 	.rxd		= GPIO_UART1_RXD,
 	.txd		= GPIO_UART1_TXD,
+	.pclk		= CLK_GATE_UART1_PCLK,
+	.extclk		= CLK_GATE_UART1_EXTCLK,
 };
 
 static uart_dev_t g_uart1port = {
@@ -785,6 +797,8 @@ static struct up_dev_s g_uart2priv = {
 	.rts		= GPIO_UART2_RTS,
 	.cts		= GPIO_UART2_CTS,
 #endif
+	.pclk		= CLK_GATE_UART2_PCLK,
+	.extclk		= CLK_GATE_UART2_EXTCLK,
 };
 
 static uart_dev_t g_uart2port = {
@@ -815,6 +829,8 @@ static struct up_dev_s g_uart3priv = {
 	.rts		= GPIO_UART3_RTS,
 	.cts		= GPIO_UART3_CTS,
 #endif
+	.pclk		= CLK_GATE_UART3_PCLK,
+	.extclk		= CLK_GATE_UART3_EXTCLK,
 };
 
 static uart_dev_t g_uart3port = {
@@ -841,6 +857,8 @@ static struct up_dev_s g_uart4priv = {
 	.stopbits2	= CONFIG_UART4_2STOP,
 	.rxd		= GPIO_UART4_RXD,
 	.txd		= GPIO_UART4_TXD,
+	.pclk		= CLK_GATE_UART0_PCLK,
+	.extclk		= CLK_GATE_UART0_EXTCLK,
 };
 
 static uart_dev_t g_uart4port = {
@@ -873,6 +891,16 @@ static uart_dev_t g_uart4port = {
 #if defined(USE_EARLYSERIALINIT)
 void up_earlyserialinit(void)
 {
+	/* Disable clocks on UARTs by default except UARTDBG */
+	s5j_clk_disable(CLK_GATE_UART0_EXTCLK);
+	s5j_clk_disable(CLK_GATE_UART0_PCLK);
+	s5j_clk_disable(CLK_GATE_UART1_EXTCLK);
+	s5j_clk_disable(CLK_GATE_UART1_PCLK);
+	s5j_clk_disable(CLK_GATE_UART2_EXTCLK);
+	s5j_clk_disable(CLK_GATE_UART2_PCLK);
+	s5j_clk_disable(CLK_GATE_UART3_EXTCLK);
+	s5j_clk_disable(CLK_GATE_UART3_PCLK);
+
 #if defined(HAVE_SERIAL_CONSOLE)
 	CONSOLE_DEV.isconsole = true;
 	CONSOLE_DEV.ops->setup(&CONSOLE_DEV);
