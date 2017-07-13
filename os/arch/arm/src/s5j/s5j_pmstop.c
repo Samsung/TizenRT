@@ -59,6 +59,7 @@
 
 #include "up_arch.h"
 #include "s5j_pm.h"
+#include "s5j_clock.h"
 
 /****************************************************************************
  * Public Functions
@@ -73,4 +74,5 @@
  ****************************************************************************/
 void s5j_pmstop(void)
 {
+	s5j_clk_pll_select_mux(false);
 }
