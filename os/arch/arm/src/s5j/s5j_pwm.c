@@ -147,7 +147,9 @@ static int s5j_pwm_setup(FAR struct pwm_lowerhalf_s *dev)
 {
 	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
 
-	return s5j_configgpio(priv->pincfg);
+	VERIFY(s5j_configgpio(priv->pincfg) == OK);
+
+	return OK;
 }
 
 /****************************************************************************
@@ -245,7 +247,9 @@ static int s5j_pwm_shutdown(FAR struct pwm_lowerhalf_s *dev)
 	s5j_pwm_stop(dev);
 
 	/* Then put the GPIO pins back to the default state */
-	return s5j_unconfiggpio(priv->pincfg);
+	VERIFY(s5j_unconfiggpio(priv->pincfg) == OK);
+
+	return OK;
 }
 
 /****************************************************************************
