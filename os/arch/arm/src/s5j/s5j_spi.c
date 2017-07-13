@@ -206,47 +206,47 @@ static const struct spi_ops_s g_spiops = {
 };
 
 static struct s5j_spidev_s g_spi0dev = {
-	.spidev = {.ops = &g_spiops},
-	.base = S5J_SPI0_BASE,
-	.port = SPI_PORT0,
-	.freqid = CLK_SPL_SPI0,
-	.gpio_clk = GPIO_SPI0_CLK,
-	.gpio_nss = GPIO_SPI0_CS,
-	.gpio_miso = GPIO_SPI0_MISO,
-	.gpio_mosi = GPIO_SPI0_MOSI,
+	.spidev		= { .ops = &g_spiops },
+	.base		= S5J_SPI0_BASE,
+	.port		= SPI_PORT0,
+	.freqid		= CLK_SPL_SPI0,
+	.gpio_clk	= GPIO_SPI0_CLK,
+	.gpio_nss	= GPIO_SPI0_CS,
+	.gpio_miso	= GPIO_SPI0_MISO,
+	.gpio_mosi	= GPIO_SPI0_MOSI,
 };
 
 static struct s5j_spidev_s g_spi1dev = {
-	.spidev = {.ops = &g_spiops},
-	.base = S5J_SPI1_BASE,
-	.port = SPI_PORT1,
-	.freqid = CLK_SPL_SPI1,
-	.gpio_clk = GPIO_SPI1_CLK,
-	.gpio_nss = GPIO_SPI1_CS,
-	.gpio_miso = GPIO_SPI1_MISO,
-	.gpio_mosi = GPIO_SPI1_MOSI,
+	.spidev		= { .ops = &g_spiops },
+	.base		= S5J_SPI1_BASE,
+	.port		= SPI_PORT1,
+	.freqid		= CLK_SPL_SPI1,
+	.gpio_clk	= GPIO_SPI1_CLK,
+	.gpio_nss	= GPIO_SPI1_CS,
+	.gpio_miso	= GPIO_SPI1_MISO,
+	.gpio_mosi	= GPIO_SPI1_MOSI,
 };
 
 static struct s5j_spidev_s g_spi2dev = {
-	.spidev = {.ops = &g_spiops},
-	.base = S5J_SPI2_BASE,
-	.port = SPI_PORT2,
-	.freqid = CLK_SPL_SPI2,
-	.gpio_clk = GPIO_SPI2_CLK,
-	.gpio_nss = GPIO_SPI2_CS,
-	.gpio_miso = GPIO_SPI2_MISO,
-	.gpio_mosi = GPIO_SPI2_MOSI,
+	.spidev		= { .ops = &g_spiops },
+	.base		= S5J_SPI2_BASE,
+	.port		= SPI_PORT2,
+	.freqid		= CLK_SPL_SPI2,
+	.gpio_clk	= GPIO_SPI2_CLK,
+	.gpio_nss	= GPIO_SPI2_CS,
+	.gpio_miso	= GPIO_SPI2_MISO,
+	.gpio_mosi	= GPIO_SPI2_MOSI,
 };
 
 static struct s5j_spidev_s g_spi3dev = {
-	.spidev = {.ops = &g_spiops},
-	.base = S5J_SPI3_BASE,
-	.port = SPI_PORT3,
-	.freqid = CLK_SPL_SPI3,
-	.gpio_clk = GPIO_SPI3_CLK,
-	.gpio_nss = GPIO_SPI3_CS,
-	.gpio_miso = GPIO_SPI3_MISO,
-	.gpio_mosi = GPIO_SPI3_MOSI,
+	.spidev		= { .ops = &g_spiops },
+	.base		= S5J_SPI3_BASE,
+	.port		= SPI_PORT3,
+	.freqid		= CLK_SPL_SPI3,
+	.gpio_clk	= GPIO_SPI3_CLK,
+	.gpio_nss	= GPIO_SPI3_CS,
+	.gpio_miso	= GPIO_SPI3_MISO,
+	.gpio_mosi	= GPIO_SPI3_MOSI,
 };
 
 /****************************************************************************

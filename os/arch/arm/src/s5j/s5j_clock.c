@@ -137,7 +137,7 @@ static unsigned long clk_sflash_get_rate(void)
 	unsigned long sclk, div;
 
 	sclk = clk_wpll_get_rate(CLK_WPLL_DIV3);
-	div = clk_div_get_ratio(CLK_DIV_SFLASH);
+	div  = clk_div_get_ratio(CLK_DIV_SFLASH);
 
 	return sclk / div;
 }
