@@ -1,8 +1,7 @@
 ############################################################################
-# apps/wpa_supplicant/Make.defs
-# Make defs - wpa_supplicant
+# apps/wpa_supplicant/Makefile
 #
-#   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,6 +33,26 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_WPA_SUPPLICANT),y)
-CONFIGURED_APPS += wpa_supplicant
-endif
+#include $(TOPDIR)/Make.defs
+
+CONFIG_WPA_SUPPLICANT_PRIORITY ?= SCHED_PRIORITY_DEFAULT
+CONFIG_WPA_SUPPLICANT_STACKSIZE ?= 16384
+
+PRIORITY = $(CONFIG_WPA_SUPPLICANT_PRIORITY)
+STACKSIZE = $(CONFIG_WPA_SUPPLICANT_STACKSIZE)
+
+CONFIG_OS=tinyara
+
+DEPPATH += --dep-path wpa_supplicant/src/eapol_auth
+
+
+ASRCS =
+
+
+CSRCS += \
+	 eapol_auth_sm.c
+# Common build
+VPATH += :wpa_supplicant/src/eapol_auth
+DEPPATH += --dep-path wpa_supplicant/src/eapol_auth
+#$(sort $(dir $(CSRCS_WPA_SUPPLICANT)))
+

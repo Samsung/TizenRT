@@ -75,6 +75,21 @@ include aws/Make.defs
 include aws/src/Make.defs
 endif
 
+ifeq ($(CONFIG_WPA_SUPPLICANT),y)
+include wpa_supplicant/wpa_supplicant/Make.defs
+include wpa_supplicant/src/Make.defs
+include wpa_supplicant/src/common/Make.defs
+include wpa_supplicant/src/ap/Make.defs
+include wpa_supplicant/src/utils/Make.defs
+include wpa_supplicant/src/crypto/Make.defs
+include wpa_supplicant/src/eap_common/Make.defs
+include wpa_supplicant/src/eap_server/Make.defs
+include wpa_supplicant/src/rsn_supp/Make.defs
+include wpa_supplicant/src/drivers/Make.defs
+include wpa_supplicant/src/l2_packet/Make.defs
+include wpa_supplicant/src/eapol_auth/Make.defs
+endif
+
 ifeq ($(CONFIG_DM),y)
 CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif
@@ -109,7 +124,11 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 	$(Q) echo "Launching IoTivity Build"
 	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/build_iotivity.sh
 endif
+wpa_supplicant_build:
+ifeq ($(CONFIG_WPA_SUPPLICANT),y)
 
+endif
+	
 $(BIN): $(OBJS) iotivity_build
 	$(call ARCHIVE, $@, $(OBJS))
 
