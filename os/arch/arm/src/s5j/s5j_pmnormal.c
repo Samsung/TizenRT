@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/s5j/s5j_pm.h
+ * arch/arm/src/s5j/s5j_pmnormal.c
  *
  *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,33 +50,15 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_S5J_S5J_PM_H
-#define __ARCH_ARM_SRC_S5J_S5J_PM_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
 
-#include <stdbool.h>
-
-#include <chip.h>
-#include "up_internal.h"
+#include "up_arch.h"
 
 /****************************************************************************
- * Public Data
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
-
-/****************************************************************************
- * Public Function Prototypes
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
@@ -86,49 +68,7 @@ extern "C" {
  *   Enter NORMAL mode.
  *
  ****************************************************************************/
-int s5j_pmnormal(void);
+void s5j_pmnormal(void)
+{
 
-/****************************************************************************
- * Name: s5j_pmstop
- *
- * Description:
- *   Enter STOP mode.
- *
- ****************************************************************************/
-void s5j_pmstop(void);
-
-/****************************************************************************
- * Name: s5j_pmstandby
- *
- * Description:
- *   Enter STANDBY mode.
- *
- * Input Parameters:
- *   None
- *
- ****************************************************************************/
-void s5j_pmstandby(void);
-
-/****************************************************************************
- * Name: s3e_pmsleep
- *
- * Description:
- *   Enter SLEEP mode.
- *
- * Input Parameters:
- *   sleeponexit - true:  SLEEPONEXIT bit is set when the WFI instruction is
- *                        executed, the MCU enters Sleep mode as soon as it
- *                        exits the lowest priority ISR.
- *               - false: SLEEPONEXIT bit is cleared, the MCU enters Sleep
- *                        mode as soon as WFI or WFE instruction is executed.
- *
- ****************************************************************************/
-void s5j_pmsleep(bool sleeponexit);
-
-#undef EXTERN
-#ifdef __cplusplus
 }
-#endif
-#endif /* __ASSEMBLY__ */
-
-#endif /* __ARCH_ARM_SRC_S5E_S5E_PM_H */
