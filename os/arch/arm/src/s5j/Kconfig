@@ -365,17 +365,4 @@ config S5J_PWR
 	default n
 	depends on S5J_HAVE_PWR
 
-menu "PMU Configuration"
-	depends on S5J_PWR
-
-config S5J_PWR_DSTOP
-	bool "S5J DSTOP Power Mode"
-	default n
-
-config S5J_PWR_SLEEP
-	bool "S5J SLEEP Power Mode"
-	default n
-
-endmenu
-
 endmenu
