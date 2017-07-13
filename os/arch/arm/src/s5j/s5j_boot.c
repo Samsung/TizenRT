@@ -198,7 +198,7 @@ void arm_boot(void)
 	arch_enable_dcache();
 #endif
 
-	cal_init();
+	s5j_clkinit();
 
 #ifdef USE_EARLYSERIALINIT
 	up_earlyserialinit();
