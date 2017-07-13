@@ -13,13 +13,19 @@ config NETUTILS_WEBSERVER
 		User can configure webserver by modifying CONF values in http_server.h.
 
 if NETUTILS_WEBSERVER
+	config NETUTILS_WEBSERVER_MAX_CLIENT_HANDLER
+	int "HTTP maximum client handler"
+	default 1
+	---help---
+		Set maximum client handler number in webserver.
+
 	config NETUTILS_WEBSERVER_LOGD
 	bool "HTTP debugging log"
 	default n
 	---help---
 		Enables HTTP debugging logs.
 
-config NETUTILS_WEBSERVER_LOGE
+	config NETUTILS_WEBSERVER_LOGE
 	bool "HTTP error log"
 	default n
 	---help---
