@@ -50,6 +50,13 @@ config LIBC_FLOATINGPOINT
 		By default, floating point
 		support in printf, sscanf, etc. is disabled.
 
+config NOPRINTF_LONGLONG_TO_ASCII
+	bool "Disable long long type in printf"
+	default n
+	---help---
+		sprintf-related logic is a little smaller if we do not support long long type
+		conversion
+
 config LIBC_IOCTL_VARIADIC
 	bool "Enable variadic ioctl()"
 	default n
