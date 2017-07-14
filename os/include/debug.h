@@ -135,19 +135,17 @@
 Once LOGM is approved, each module should have its own index
 */
 #define LOGM_IDX (0)
-#define LOGM_PRI (1)
-#define LOGM_EN  (2)
 
 #ifdef CONFIG_DEBUG_ERROR
 #ifdef CONFIG_LOGM
 #define dbg(format, ...) \
-	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+	logm(LOGM_NORMAL, LOGM_IDX, LOGM_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
 #define dbg_noarg(format, ...) \
-	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, format, ##__VA_ARGS__)
+	logm(LOGM_NORMAL, LOGM_IDX, LOGM_ERR, format, ##__VA_ARGS__)
 
 #define lldbg(format, ...) \
-	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
 #else
 /**
@@ -179,10 +177,10 @@ Once LOGM is approved, each module should have its own index
 #ifdef CONFIG_DEBUG_WARN
 #ifdef CONFIG_LOGM
 #define wdbg(format, ...) \
-	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+	logm(LOGM_NORMAL, LOGM_IDX, LOGM_WRN, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
 #define llwdbg(format, ...) \
-	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_WRN, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
 #else
 /**
@@ -212,10 +210,10 @@ Once LOGM is approved, each module should have its own index
 #ifdef CONFIG_DEBUG_VERBOSE
 #ifdef CONFIG_LOGM
 #define vdbg(format, ...) \
-	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+	logm(LOGM_NORMAL, LOGM_IDX, LOGM_INF, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
 #define llvdbg(format, ...) \
-	logm(LOGM_EN, LOGM_IDX, LOGM_PRI, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
+	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_INF, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
 
 #else
 /**
