@@ -219,9 +219,6 @@ menuconfig BCH
 		that performed by loop.c. See include/tinyara/fs/fs.h for
 		registration information.
 
-if BCH
-endif # BCH
-
 menuconfig RTC
 	bool "RTC Driver Support"
 	default n
