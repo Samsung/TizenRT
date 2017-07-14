@@ -179,6 +179,20 @@ $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBE
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 
+$(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
+
+$(IOTIVITY_LIBS_DIR)$(DELIM)libc_common$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
+
+$(IOTIVITY_LIBS_DIR)$(DELIM)libcoap$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
+
+$(IOTIVITY_LIBS_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT):$(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
+
+$(IOTIVITY_LIBS_DIR)$(DELIM)liblogger$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
+
+$(IOTIVITY_LIBS_DIR)$(DELIM)libocsrm$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
+
+$(IOTIVITY_LIBS_DIR)$(DELIM)libroutingmanager$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
+
 $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT)
 	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
 
@@ -201,6 +215,7 @@ $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)
 	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libroutingmanager$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT)
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
+$(IOTIVITY_LIBS_DIR)$(DELIM)libresource_directory$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libresource_directory$(LIBEXT)
 	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libresource_directory$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
