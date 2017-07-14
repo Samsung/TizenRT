@@ -87,6 +87,7 @@ config ARTIK053_AUTOMOUNT_USERFS
 	bool "Automount user r/w partiton"
 	default n
 	depends on ARTIK053_AUTOMOUNT
+	depends on FS_SMARTFS
 	---help---
 		If enabled, user r/w partition will be mounted automatically
 		at boot.
