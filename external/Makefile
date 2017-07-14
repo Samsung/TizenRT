@@ -72,16 +72,10 @@ include libtuv/source/unix/Make.defs
 include libtuv/source/Make.defs
 endif
 
-
 ifeq ($(CONFIG_AWS_SDK),y)
 include aws/Make.defs
 include aws/src/Make.defs
 endif
-
-ifeq ($(CONFIG_DM),y)
-CFLAGS+=-I$(TOPDIR)/../framework/include/dm
-endif
-
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
