@@ -220,6 +220,11 @@ static int lib_numeric_address(FAR const char *name, FAR struct hostent *host, F
 	}
 
 	strncpy(ptr, name, buflen);
+
+	/* Set the address to h_name */
+
+	host->h_name = ptr;
+
 	return 0;
 }
 
@@ -300,6 +305,10 @@ static int lib_localhost(FAR const char *name, FAR struct hostent *host, FAR cha
 		}
 
 		strncpy(dest, name, buflen);
+
+		/* Set the address to h_name */
+
+		host->h_name = dest;
 		return 0;
 	}
 
@@ -408,6 +417,10 @@ static int lib_find_answer(FAR const char *name, FAR struct hostent *host, FAR c
 	}
 
 	strncpy(ptr, name, buflen);
+
+	/* Set the address to h_name */
+
+	host->h_name = ptr;
 	return OK;
 }
 #endif							/* CONFIG_NETDB_DNSCLIENT */
@@ -544,6 +557,10 @@ static int lib_dns_lookup(FAR const char *name, FAR struct hostent *host, FAR ch
 		}
 
 		strncpy(ptr, name, buflen);
+
+		/* Set the address to h_name */
+
+		host->h_name = ptr;
 		return OK;
 	}
 
