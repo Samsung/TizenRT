@@ -74,7 +74,7 @@
 #ifdef CONFIG_NET_SOCKET
 #include <net/lwip/sockets.h>
 #include <net/lwip/api.h>
-#endif							/* CONFIG_CUSTOM_SOCKETS */
+#endif	/* CONFIG_NET_SOCKET */
 
 /****************************************************************************
  * Public Function Prototypes
