@@ -64,6 +64,7 @@ extern "C" {
 #define DHCP_CLIENT_PORT  68
 #define DHCP_SERVER_PORT  67
 
+
 /* DHCP message item offsets and length */
 #define DHCP_CHADDR_LEN   16U
 #define DHCP_SNAME_OFS    44U
@@ -188,7 +189,9 @@ typedef enum {
 #define DHCP_OVERLOAD_SNAME         2
 #define DHCP_OVERLOAD_SNAME_FILE    3
 
+
 #ifdef __cplusplus
 }
 #endif
+
 #endif							/*LWIP_HDR_PROT_DHCP_H */

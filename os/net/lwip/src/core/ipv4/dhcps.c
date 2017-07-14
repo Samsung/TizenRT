@@ -17,40 +17,40 @@
  ****************************************************************************/
 
 /**
-* The MIT License (MIT)
+ * The MIT License (MIT)
 
-* Copyright (c) 2014 zeroday nodemcu.com
+ * Copyright (c) 2014 zeroday nodemcu.com
 
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
 
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
-**/
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ **/
 
 /**
-* @file dhcps.c
-* @brief DHCP Server Program
-* **/
+ * @file dhcps.c
+ * @brief DHCP Server Program
+ **/
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 #include <net/lwip/opt.h>
 
-#if LWIP_DHCP					/* don't build if not configured for use in lwipopts.h */
+#if LWIP_IPV4 && LWIP_DHCP /* don't build if not configured for use in lwipopts.h */
 #if LWIP_DHCPS
 #include <net/lwip/stats.h>
 #include <net/lwip/mem.h>
@@ -62,6 +62,7 @@
 #include <net/lwip/dhcp.h>
 #include <net/lwip/autoip.h>
 #include <net/lwip/netif/etharp.h>
+#include <net/lwip/prot/dhcp.h>
 
 #include <string.h>
 
@@ -143,17 +144,17 @@ struct list_node {
 };
 
 static struct _dhcps_lease dhcps_lease;
-static struct udp_pcb *pcb_dhcps = NULL;
+static struct udp_pcb *pcb_dhcps;
 
 static ip_addr_t broadcast_dhcps;
 static ip_addr_t server_address;
 static ip_addr_t client_address;
 static ip_addr_t client_address_plus;
 
-static struct list_node *plist = NULL;
+static struct list_node *plist;
 
 //static _uint8_t offer = 0xFF;
-static bool renew = false;
+static bool renew;
 static const _uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };	//0x63825363; // 99.130.83.99
 
 /****************************************************************************
@@ -172,7 +173,7 @@ static void dhcps_create_msg(struct dhcps_msg *m);
 static void dhcps_send_msg(struct dhcps_msg *m, u8_t msg_type);
 static uint8_t dhcps_parse_options(uint8_t *optptr, int16_t len);
 static int16_t dhcps_parse_msg(struct dhcps_msg *m, u16_t len);
-static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, uint16_t port);
+static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
 
 #if 0							/* Temporary disabled : will be used */
 static void kill_oldest_dhcps_pool(void);
@@ -183,13 +184,13 @@ static void kill_oldest_dhcps_pool(void);
  ****************************************************************************/
 
 /**
-* @fn dhcps_node_insert_to_list
-* @brief insert the node to the list
-* @param phead
-* @param pinsert
-* @return void
-* @section
-* **/
+ * @fn dhcps_node_insert_to_list
+ * @brief insert the node to the list
+ * @param phead
+ * @param pinsert
+ * @return void
+ * @section
+ * **/
 
 static void dhcps_node_insert_to_list(struct list_node **phead, struct list_node *pinsert)
 {
@@ -226,13 +227,13 @@ static void dhcps_node_insert_to_list(struct list_node **phead, struct list_node
 }
 
 /**
-* @fn dhcps_node_delete_from_list
-* @brief remove the node from list
-* @param phead
-* @param pdelete
-* @return void
-* @section
-* **/
+ * @fn dhcps_node_delete_from_list
+ * @brief remove the node from list
+ * @param phead
+ * @param pdelete
+ * @return void
+ * @section
+ * **/
 static void dhcps_node_remove_from_list(struct list_node **phead, struct list_node *pdelete)
 {
 	struct list_node *list = NULL;
@@ -255,13 +256,13 @@ static void dhcps_node_remove_from_list(struct list_node **phead, struct list_no
 }
 
 /**
-* @fn dhcps_add_msg_type
-* @brief add DHCP msg type
-* @param optptr
-* @param type
-* @return optptr address
-* @section
-* **/
+ * @fn dhcps_add_msg_type
+ * @brief add DHCP msg type
+ * @param optptr
+ * @param type
+ * @return optptr address
+ * @section
+ * **/
 static uint8_t *dhcps_add_msg_type(uint8_t *optptr, uint8_t type)
 {
 	*optptr++ = DHCP_OPTION_MESSAGE_TYPE;
@@ -271,12 +272,12 @@ static uint8_t *dhcps_add_msg_type(uint8_t *optptr, uint8_t type)
 }
 
 /**
-* @fn add_offer_options
-* @brief add DHCP OFFER options
-* @param optptr
-* @return optptr address
-* @section
-* **/
+ * @fn add_offer_options
+ * @brief add DHCP OFFER options
+ * @param optptr
+ * @return optptr address
+ * @section
+ * **/
 static uint8_t *dhcps_add_offer_options(uint8_t *optptr)
 {
 	ip_addr_t ipaddr;
@@ -322,12 +323,12 @@ static uint8_t *dhcps_add_offer_options(uint8_t *optptr)
 }
 
 /**
-* @fn dhcps_add_end
-* @brief add DHCP_OPTION_END msg
-* @param optptr
-* @return optptr address
-* @section
-* **/
+ * @fn dhcps_add_end
+ * @brief add DHCP_OPTION_END msg
+ * @param optptr
+ * @return optptr address
+ * @section
+ * **/
 static uint8_t *dhcps_add_end(uint8_t *optptr)
 {
 	*optptr++ = DHCP_OPTION_END;
@@ -335,12 +336,12 @@ static uint8_t *dhcps_add_end(uint8_t *optptr)
 }
 
 /**
-* @fn dhcps_create_msg
-* @brief create DHCP messages
-* @param m
-* @return void
-* @section
-* **/
+ * @fn dhcps_create_msg
+ * @brief create DHCP messages
+ * @param m
+ * @return void
+ * @section
+ * **/
 static void dhcps_create_msg(struct dhcps_msg *m)
 {
 	ip_addr_t client;
@@ -359,13 +360,13 @@ static void dhcps_create_msg(struct dhcps_msg *m)
 }
 
 /**
-* @fn dhcps_send_msg
-* @brief send DHCP messages
-* @param m dhcp message format
-* @param type
-* @return DHCP state
-* @section
-* **/
+ * @fn dhcps_send_msg
+ * @brief send DHCP messages
+ * @param m dhcp message format
+ * @param type
+ * @return DHCP state
+ * @section
+ * **/
 static void dhcps_send_msg(struct dhcps_msg *m, u8_t msg_type)
 {
 	u8_t *end;
@@ -415,13 +416,13 @@ static void dhcps_send_msg(struct dhcps_msg *m, u8_t msg_type)
 }
 
 /**
-* @fn dhcps_parse_options
-* @brief parsing DHCP options
-* @param optptr dhcp message format
-* @param len
-* @return DHCP state
-* @section
-* **/
+ * @fn dhcps_parse_options
+ * @brief parsing DHCP options
+ * @param optptr dhcp message format
+ * @param len
+ * @return DHCP state
+ * @section
+ * **/
 static uint8_t dhcps_parse_options(uint8_t *optptr, int16_t len)
 {
 	bool is_dhcp_parse_end = false;
@@ -437,7 +438,7 @@ static uint8_t dhcps_parse_options(uint8_t *optptr, int16_t len)
 
 	while (optptr < end) {
 		LWIP_DEBUGF(DHCP_DEBUG, ("parse_options(): *optptr = %d\n", *optptr));
-		switch ((int16_t) * optptr) {
+		switch ((int16_t) *optptr) {
 		case DHCP_OPTION_MESSAGE_TYPE:
 			type = *(optptr + 2);
 			break;
@@ -490,17 +491,17 @@ static uint8_t dhcps_parse_options(uint8_t *optptr, int16_t len)
 		break;
 	}
 	LWIP_DEBUGF(DHCP_DEBUG, ("parse_options(): return s.state = %d\n", s.state));
-	return (s.state);
+	return s.state;
 }
 
 /**
-* @fn dhcps_parse_msg
-* @brief parsing DHCP message
-* @param m dhcp message format
-* @param len
-* @return DHCP state
-* @section
-* **/
+ * @fn dhcps_parse_msg
+ * @brief parsing DHCP message
+ * @param m dhcp message format
+ * @param len
+ * @return DHCP state
+ * @section
+ * **/
 static int16_t dhcps_parse_msg(struct dhcps_msg *m, u16_t len)
 {
 	bool flag = false;
@@ -605,7 +606,7 @@ POOL_CHECK:
 
 	LWIP_DEBUGF(DHCP_DEBUG, ("Assigned client IP address %u.%u.%u.%u\n", (unsigned char)((htonl(client_address.addr) >> 24) & 0xff), (unsigned char)((htonl(client_address.addr) >> 16) & 0xff), (unsigned char)((htonl(client_address.addr) >> 8) & 0xff), (unsigned char)((htonl(client_address.addr) >> 0) & 0xff)));
 
-	ret = dhcps_parse_options(&m->options[4], len);;
+	ret = dhcps_parse_options(&m->options[4], len);
 
 	if (ret == DHCPS_STATE_RELEASE) {
 		if (pnode != NULL) {
@@ -625,17 +626,17 @@ POOL_CHECK:
 }
 
 /**
-* @fn dhcps_handle_dhcp
-* @brief handle received DHCP message
-* @param arg
-* @param pcb
-* @param p
-* @param addr
-* @param port
-* @return DHCP state
-* @section
-* **/
-static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, uint16_t port)
+ * @fn dhcps_handle_dhcp
+ * @brief handle received DHCP message
+ * @param arg
+ * @param pcb
+ * @param p
+ * @param addr
+ * @param port
+ * @return DHCP state
+ * @section
+ * **/
+static void dhcps_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
 	int16_t tlen = 0;
 
@@ -707,12 +708,12 @@ free_pbuf_and_return:
 }
 
 /**
-* @fn kill_oldest_dhcps_pool
-* @brief delete DHCP POOL
-* @param void
-* @return void
-* @section
-* **/
+ * @fn kill_oldest_dhcps_pool
+ * @brief delete DHCP POOL
+ * @param void
+ * @return void
+ * @section
+ * **/
 #if 0							/* Temporary disabled : Reason - Not used */
 static void kill_oldest_dhcps_pool(void)
 {
@@ -748,12 +749,12 @@ static void kill_oldest_dhcps_pool(void)
 #endif
 
 /**
-* @fn dhcps_start
-* @brief start DHCP server
-* @param info
-* @return void
-* @section
-* **/
+ * @fn dhcps_start
+ * @brief start DHCP server
+ * @param info
+ * @return void
+ * @section
+ * **/
 err_t dhcps_start(struct netif *netif)
 {
 	struct udp_pcb *dhcps;
@@ -852,12 +853,12 @@ err_t dhcps_start(struct netif *netif)
 }
 
 /**
-* @fn dhcps_stop
-* @brief stop DHCP server
-* @param void
-* @return void
-* @section
-* **/
+ * @fn dhcps_stop
+ * @brief stop DHCP server
+ * @param void
+ * @return void
+ * @section
+ * **/
 void dhcps_stop(struct netif *netif)
 {
 	struct list_node *pnode = NULL;

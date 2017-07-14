@@ -24,7 +24,7 @@
 
 LWIP_CSRCS += def.c init.c mem.c memp.c netif.c ip.c dns.c timeouts.c
 LWIP_CSRCS += pbuf.c raw.c stats.c sys.c tcp.c tcp_in.c tcp_out.c udp.c
-LWIP_CSRCS += dhcp.c dhcps.c inet_chksum.c
+LWIP_CSRCS += inet_chksum.c
 
 # Include core build support
 

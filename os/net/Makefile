@@ -84,7 +84,6 @@ include socket/Make.defs
 #LWIP Support
 
 ifeq ($(CONFIG_NET_LWIP),y)
-
 include lwip/src/core/Make.defs
 include lwip/src/api/Make.defs
 include lwip/src/netif/Make.defs

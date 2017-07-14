@@ -396,6 +396,9 @@ struct netif {
 #endif
 #if LWIP_DHCP
 	struct dhcp *dhcp;
+#if LWIP_DHCPS
+	struct udp_pcb *dhcps_pcb;
+#endif
 #endif
 };
 
