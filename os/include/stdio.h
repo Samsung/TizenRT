@@ -89,6 +89,20 @@
 
 #define FILENAME_MAX _POSIX_NAME_MAX
 
+/* The (default) size of the I/O buffers */
+
+#if (CONFIG_STDIO_BUFFER_SIZE > 0)
+#  define BUFSSIZ   CONFIG_STDIO_BUFFER_SIZE
+#else
+#  define BUFSSIZ   64
+#endif
+
+/* The following three definitions are for ANSI C, used by setvbuf */
+
+#define _IOFBF     0               /* Fully buffered */
+#define _IOLBF     1               /* Line buffered */
+#define _IONBF     2               /* Unbuffered */
+
 /* File system error values *************************************************/
 
 #define EOF        (-1)
@@ -232,6 +246,26 @@ char *fgets(FAR char *s, int n, FAR FILE *stream);
  * @since Tizen RT v1.0
  */
 FAR FILE *fopen(FAR const char *path, FAR const char *type);
+/**
+ * @brief  Reopen stream with different file or mode
+ * @cond
+ * @internal
+ */
+FAR FILE *freopen(FAR const char *path, FAR const char *mode, FAR FILE *stream);
+/**
+ * @brief  Set stream buffer
+ * @internal
+ */
+void   setbuf(FAR FILE *stream, FAR char *buf);
+/**
+ * @brief  Change stream buffering
+ * @internal
+ */
+int    setvbuf(FAR FILE *stream, FAR char *buffer, int mode, size_t size);
+/**
+ * @endcond
+ */
+
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
@@ -423,9 +457,13 @@ FAR char *tmpnam(FAR char *s);
  */
 FAR char *tempnam(FAR const char *dir, FAR const char *pfx);
 /**
+ * @brief  Remove file
+ * @internal
+ */
+int remove(FAR const char *path);
+/**
  * @endcond
  */
-
 #undef EXTERN
 #if defined(__cplusplus)
 }
