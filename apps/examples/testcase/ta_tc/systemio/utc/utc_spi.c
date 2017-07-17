@@ -44,7 +44,6 @@ unsigned char rxbuf[64] = { 0, };;
 struct iotbus_spi_config_s config = {
 	(char)8,
 	0,
-	0,
 	12000000,
 	0,
 };

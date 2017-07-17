@@ -31,7 +31,6 @@
 
 struct _iotbus_spi_s {
 	unsigned int bpw;
-	int lsb;
 	int freq; // clock speed
 	int cs;
 	iotbus_spi_mode_e mode;
@@ -63,8 +62,6 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
 		return NULL;
 	if (config->frequency == 0 || config->frequency > _IOTBUS_SPI_MAX_FREQUENCY)
 		return NULL;
-	if (config->lsb != 0 && config->lsb != 1)
-		return NULL;
 	switch (config->mode) {
 	case IOTBUS_SPI_MODE0:
 	case IOTBUS_SPI_MODE1:
@@ -81,7 +78,6 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
 
 	struct _iotbus_spi_s *handle = (struct _iotbus_spi_s *)malloc(sizeof(struct _iotbus_spi_s));
 	handle->bpw = config->bits_per_word;
-	handle->lsb = config->lsb;
 	handle->freq = config->frequency;
 	handle->cs = config->chip_select;
 	handle->mode = config->mode;
@@ -90,13 +86,7 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
 
 	SPI_LOCK(dev, true);
 	SPI_SETMODE(dev, handle->mode);
-
-	if (handle->lsb == 0) // MSB
-		SPI_SETBITS(dev, handle->bpw);
-	else
-		// LSB
-		SPI_SETBITS(dev, -handle->bpw);
-
+	SPI_SETBITS(dev, handle->bpw);
 	SPI_SETFREQUENCY(dev, handle->freq);
 	SPI_LOCK(dev, false);
 	return handle;
