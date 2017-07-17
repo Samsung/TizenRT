@@ -21,17 +21,6 @@ menuconfig NET_IPv6
 
 source "net/lwip/configs/ipv6/Kconfig"
 
-menuconfig NET_IPv6_ICMP
-	bool "IPv6 icmp support"
-	depends on NET_IPv6
-	default y
-	---help---
-		Build in support icmp for IPv6.
-
-if NET_IPv6_ICMP
-source net/lwip/configs/icmp6/Kconfig
-endif
-
 source "net/lwip/configs/socket/Kconfig"
 
 menuconfig NET_ARP
@@ -46,7 +35,7 @@ source "net/lwip/configs/arp/Kconfig"
 
 menuconfig NET_UDP
 	bool "UDP Support"
-	depends on NET_IPv4
+	depends on NET_IPv4 || NET_IPv6
 	default y
 	---help---
 		UDP support on or off
@@ -56,7 +45,7 @@ source "net/lwip/configs/udp/Kconfig"
 
 menuconfig NET_TCP
 	bool "TCP Support"
-	depends on NET_IPv4
+	depends on NET_IPv4 || NET_IPv6
 	default y
 	---help---
 		TCP support on or off
@@ -66,6 +55,7 @@ source "net/lwip/configs/tcp/Kconfig"
 
 menuconfig NET_ICMP
 	bool "ICMP Support"
+	depends on NET_IPv4
 	default n
 	---help---
 		Enable minimal ICMP support. Includes built-in support
@@ -74,6 +64,15 @@ menuconfig NET_ICMP
 if NET_ICMP
 source "net/lwip/configs/icmp/Kconfig"
 endif
+
+menuconfig NET_IPv6_ICMP
+	bool "ICMP6 support"
+	depends on NET_IPv6
+	default y
+	---help---
+		Build in support icmp for IPv6.
+
+source net/lwip/configs/icmp6/Kconfig
 
 
 menuconfig NET_LWIP_IGMP
