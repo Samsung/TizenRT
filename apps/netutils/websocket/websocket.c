@@ -533,6 +533,7 @@ int websocket_server_authenticate(websocket_t *server)
 			goto EXIT_SERVER_START;
 		}
 	}
+
 	if (websocket_server_handshake(server) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to handshake\n");
 		r = WEBSOCKET_HANDSHAKE_ERROR;
@@ -560,7 +561,6 @@ int websocket_accept_handler(websocket_t *init_server)
 	int i;
 	int r = WEBSOCKET_SUCCESS;
 	int timeout_cnt = 0;
-	int accept_fd = -1;
 	int listen_fd = init_server->fd;
 	fd_set init_server_read_fds;
 	socklen_t addrlen = sizeof(struct sockaddr);
@@ -569,7 +569,6 @@ int websocket_accept_handler(websocket_t *init_server)
 	struct sched_param ws_sparam;
 
 	for (i = 0; i < WEBSOCKET_MAX_CLIENT; i++) {
-		memcpy(&ws_srv_table[i], init_server, sizeof(websocket_t));
 		ws_srv_table[i].state = WEBSOCKET_STOP;
 	}
 
@@ -609,60 +608,59 @@ int websocket_accept_handler(websocket_t *init_server)
 				continue;
 			}
 		} else {
+			int accept_fd = -1;
 			websocket_t *server_handler = NULL;
-			timeout_cnt = 0;
 
+			timeout_cnt = 0;
+			r = WEBSOCKET_SUCCESS;
+
+			/* finds empty websocket server structure */
 			server_handler = websocket_find_table();
 			if (server_handler == NULL) {
 				WEBSOCKET_DEBUG("fail to find empty server table\n");
 				r = WEBSOCKET_INIT_ERROR;
-				goto EXIT_INIT_SERVER;
+				goto EXIT_ACCEPT;
 			}
+
+			/* To copy TLS context and websocket_call backs from init_server to server_handler */
+			memcpy(server_handler, init_server, sizeof(websocket_t));
 
 			if (pthread_attr_init(&server_handler->thread_attr) != 0) {
 				WEBSOCKET_DEBUG("fail to init attribute\n");
 				r = WEBSOCKET_INIT_ERROR;
-				websocket_update_state(server_handler, WEBSOCKET_STOP);
-				goto EXIT_INIT_SERVER;
+				goto EXIT_ACCEPT;
 			}
 
 			if (pthread_attr_setstacksize(&server_handler->thread_attr, WEBSOCKET_STACKSIZE) != 0) {
 				WEBSOCKET_DEBUG("fail to set stack size\n");
 				r = WEBSOCKET_INIT_ERROR;
-				websocket_update_state(server_handler, WEBSOCKET_STOP);
-				goto EXIT_INIT_SERVER;
+				goto EXIT_ACCEPT;
 			}
 
 			ws_sparam.sched_priority = WEBSOCKET_PRI;
 			if (pthread_attr_setschedparam(&server_handler->thread_attr, &ws_sparam) != 0) {
 				WEBSOCKET_DEBUG("fail to setschedparam\n");
 				r = WEBSOCKET_INIT_ERROR;
-				websocket_update_state(server_handler, WEBSOCKET_STOP);
-				goto EXIT_INIT_SERVER;
+				goto EXIT_ACCEPT;
 			}
 
 			if (pthread_attr_setschedpolicy(&server_handler->thread_attr, WEBSOCKET_SCHED_POLICY) != 0) {
 				WEBSOCKET_DEBUG("fail to set scheduler policy\n");
 				r = WEBSOCKET_INIT_ERROR;
-				websocket_update_state(server_handler, WEBSOCKET_STOP);
-				goto EXIT_INIT_SERVER;
+				goto EXIT_ACCEPT;
 			}
 
 			accept_fd = accept(listen_fd, (struct sockaddr *)&clientaddr, &addrlen);
 			if (accept_fd < 0) {
 				WEBSOCKET_DEBUG("Error in accept err == %d\n", errno);
 				r = WEBSOCKET_SOCKET_ERROR;
-				websocket_update_state(server_handler, WEBSOCKET_STOP);
-				goto EXIT_INIT_SERVER;
+				goto EXIT_ACCEPT;
 			}
 
 			if (websocket_config_socket(accept_fd) != WEBSOCKET_SUCCESS) {
-				WEBSOCKET_FREE(server_handler->tls_ssl);
 				WEBSOCKET_DEBUG("fail to config socket\n");
 				r = WEBSOCKET_SOCKET_ERROR;
-				WEBSOCKET_CLOSE(accept_fd);
-				websocket_update_state(server_handler, WEBSOCKET_STOP);
-				goto EXIT_INIT_SERVER;
+				goto EXIT_ACCEPT;
 			}
 
 			WEBSOCKET_DEBUG("accept client, fd == %d\n", accept_fd);
@@ -671,23 +669,23 @@ int websocket_accept_handler(websocket_t *init_server)
 			if (pthread_create(&server_handler->thread_id, &server_handler->thread_attr, (pthread_startroutine_t) websocket_server_authenticate, (pthread_addr_t) server_handler) != 0) {
 				WEBSOCKET_DEBUG("fail to create thread, fd == %d\n", accept_fd);
 				r = WEBSOCKET_INIT_ERROR;
-				WEBSOCKET_CLOSE(accept_fd);
-				websocket_update_state(server_handler, WEBSOCKET_STOP);
-				goto EXIT_INIT_SERVER;
+				goto EXIT_ACCEPT;
 			}
 
 			if (pthread_setname_np(server_handler->thread_id, "websocket server handler") != 0) {
 				WEBSOCKET_DEBUG("fail to set thread name\n");
 				r = WEBSOCKET_INIT_ERROR;
-				WEBSOCKET_CLOSE(accept_fd);
-				websocket_update_state(server_handler, WEBSOCKET_STOP);
-				goto EXIT_INIT_SERVER;
+				goto EXIT_ACCEPT;
 			}
 
 			/* Detach thread in order to avoid memory leaks. */
 			if (pthread_detach(server_handler->thread_id) != 0) {
 				WEBSOCKET_DEBUG("fail to detach thread\n");
 				r = WEBSOCKET_INIT_ERROR;
+				goto EXIT_ACCEPT;
+			}
+EXIT_ACCEPT:
+			if (r != WEBSOCKET_SUCCESS) {
 				WEBSOCKET_CLOSE(accept_fd);
 				websocket_update_state(server_handler, WEBSOCKET_STOP);
 				goto EXIT_INIT_SERVER;
@@ -783,7 +781,9 @@ websocket_t *websocket_find_table(void)
 		return NULL;
 	}
 
+	memset(&ws_srv_table[i], 0, sizeof(websocket_t));
 	websocket_update_state(&ws_srv_table[i], WEBSOCKET_RUN_SERVER);
+	ws_srv_table[i].fd = -1;
 
 	return &ws_srv_table[i];
 }

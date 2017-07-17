@@ -448,7 +448,6 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 		if (ws == NULL) {
 			goto errout;
 		}
-		memset(ws, 0, sizeof(websocket_t));
 		ws->fd = client->client_fd;
 		ws->cb = &client->server->ws_cb;
 #ifdef CONFIG_NET_SECURITY_TLS
