@@ -460,7 +460,6 @@ int systemio_test_spi(char *failstr)
 	struct iotbus_spi_config_s config = {
 		(char)8,
 		0,
-		0,
 		12000000,
 		0,
 	};

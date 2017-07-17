@@ -51,7 +51,6 @@ typedef enum {
  */
 struct iotbus_spi_config_s {
 	char bits_per_word;
-	int lsb; // 0 is MSB, 1 is LSB
 	unsigned int chip_select;
 	unsigned int frequency; // frequency in Hz
 	iotbus_spi_mode_e mode;
@@ -75,7 +74,6 @@ extern "C"
  * @param[in] bus spi bus number
  * @param[in] config spi config
  *                   - config->bits_per_word : bits per word
- *                   - config->lsb : 0 is MSB, 1 is LSB
  *                   - config->chip_select : chip select number
  *                   - config->frequency : frequency in Hz
  *                   - config->mode : spi mode
