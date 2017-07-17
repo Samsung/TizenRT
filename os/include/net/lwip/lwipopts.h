@@ -150,6 +150,54 @@
 
 /* ---------- IP options ---------- */
 
+/* ---------- IPv6 options ---------- */
+#ifdef CONFIG_NET_IPv6
+#define LWIP_IPV6			CONFIG_NET_IPv6
+#else
+#define LWIP_IPV6			0
+#endif
+
+#ifdef CONFIG_NET_IPv6_NUM_ADDRESSES
+#define LWIP_IPV6_NUM_ADDRESSES		CONFIG_NET_IPv6_NUM_ADDRESSES
+#endif
+
+#ifdef CONFIG_NET_IPv6_FORWARD
+#define LWIP_IPV6_FORWARD		CONFIG_NET_IPv6_FORWARD
+#else
+#define LWIP_IPV6_FORWARD		0
+#endif
+
+#ifdef CONFIG_NET_IPv6_FRAG
+#define LWIP_IPV6_FRAG			CONFIG_NET_IPv6_FRAG
+#else
+#define LWIP_IPV6_FRAG			0
+#endif
+
+#ifdef CONFIG_NET_IPv6_REASS
+#define LWIP_IPV6_REASS			CONFIG_NET_IPv6_REASS
+#else
+#define LWIP_IPV6_REASS			0
+#endif
+
+#ifdef CONFIG_NET_IPv6_SEND_ROUTER_SOLICIT
+#define LWIP_IPV6_SEND_ROUTER_SOLICIT	CONFIG_NET_IPv6_SEND_ROUTER_SOLICIT
+#else
+#define LWIP_IPV6_SEND_ROUTER_SOLICIT	0
+#endif
+
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+#define LWIP_IPV6_AUTOCONFIG		CONFIG_NET_IPv6_AUTOCONFIG
+#else
+#define LWIP_IPV6_AUTOCONFIG		0
+#endif
+
+
+#ifdef CONFIG_NET_IPv6_DUP_DETECT_ATTEMPTS
+#define LWIP_IPV6_DUP_DETECT_ATTEMPTS	CONFIG_NET_IPv6_DUP_DETECT_ATTEMPTS
+#endif
+
+/* ---------- IPv6 options ---------- */
+
 /* ---------- ICMP options ---------- */
 #ifdef CONFIG_NET_ICMP
 #define LWIP_ICMP                       CONFIG_NET_ICMP
@@ -891,7 +939,38 @@
 #define SYS_STATS	CONFIG_NET_SYS_STATS
 #endif
 
+#ifdef CONFIG_NET_IPv6_STATS
+#define IP6_STATS	CONFIG_NET_IPv6_STATS
+#else
+#define IP6_STATS	0	
+#endif
+
+#ifdef CONFIG_NET_IPv6_ICMP_STATS
+#define ICMP6_STATS	CONFIG_NET_IPv6_ICMP_STATS
+#else
+#define ICMP6_STATS	0	
+#endif
+
+#ifdef CONFIG_NET_IPv6_FRAG_STATS
+#define IP6_FRAG_STATS	CONFIG_NET_IPv6_FRAG_STATS
+#else
+#define IP6_FRAG_STATS	0
+#endif
+
+#ifdef CONFIG_NET_IPv6_MLD_STATS
+#define MLD6_STATS	CONFIG_NET_IPv6_MLD_STATS
+#else
+#define MLD6_STATS	0
+#endif
+
+#ifdef CONFIG_NET_IPv6_ND_STATS
+#define ND6_STATS	CONFIG_NET_IPv6_ND_STATS
+#else
+#define ND6_STATS 	0
+#endif
+
 /* ---------- Stat options ---------- */
+
 
 /* ----------Else ----------------*/
 #ifdef CONFIG_NET_LWIP_LOOPBACK_INTERFACE
