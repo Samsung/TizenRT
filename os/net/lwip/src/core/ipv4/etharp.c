@@ -787,9 +787,9 @@ err_t etharp_output(struct netif *netif, struct pbuf *q, const ip4_addr_t *ipadd
 		mcastaddr.addr[0] = LL_IP4_MULTICAST_ADDR_0;
 		mcastaddr.addr[1] = LL_IP4_MULTICAST_ADDR_1;
 		mcastaddr.addr[2] = LL_IP4_MULTICAST_ADDR_2;
-		mcastaddr.addr[3] = ip4ip4_addr2(ipaddr) & 0x7f;
-		mcastaddr.addr[4] = ip4ip4_addr3(ipaddr);
-		mcastaddr.addr[5] = ip4ip4_addr4(ipaddr);
+		mcastaddr.addr[3] = ip4_addr2(ipaddr) & 0x7f;
+		mcastaddr.addr[4] = ip4_addr3(ipaddr);
+		mcastaddr.addr[5] = ip4_addr4(ipaddr);
 		/* destination Ethernet address is multicast */
 		dest = &mcastaddr;
 		/* unicast destination IP address? */

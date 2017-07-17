@@ -73,9 +73,11 @@ struct ethernetif {
 #ifdef LWIP_NETIF_STATUS_CALLBACK
 void ethernetif_status_callback(struct netif *netif)
 {
+#if 0
 	if (netif->flags & NETIF_FLAG_UP) {
-		printf("IP: %d.%d.%d.%d\n", ip4_addr1_16(&netif->ip_addr), ip4_addr2_16(&netif->ip_addr), ip4_addr3_16(&netif->ip_addr), ip4_addr4_16(&netif->ip_addr));
+		printf("IP: %d.%d.%d.%d\n", netif->ip_addr.addr, ip4_addr2_16(&netif->ip_addr), ip4_addr3_16(&netif->ip_addr), ip4_addr4_16(&netif->ip_addr));
 	}
+#endif
 }
 #endif
 
@@ -258,9 +260,9 @@ err_t ethernetif_init(struct netif *netif)
 	memcpy(netif->d_mac.ether_addr_octet, netif->hwaddr, IFHWADDRLEN);
 #endif
 #if CONFIG_NET_LWIP
-	netif->d_ipaddr = ip_2_ip4(netif->ip_addr).addr;
-	netif->d_draddr = ip_2_ip4(netif->gw).addr;
-	netif->d_netmask = ip_2_ip4(netif->netmask).addr;
+	netif->d_ipaddr = ip4_addr_get_u3(ip_2_ip4(&netif->ip_addr));
+	netif->d_draddr = ip4_addr_get_u32(ip_2_ip4(&netif->gw));
+	netif->d_netmask = ip4_addr_get_u32(ip_2_ip4(&netif->netmask));
 #else
 	netif->d_ipaddr = netif->ip_addr.s_addr.addr;
 	netif->d_draddr = netif->gw.s_addr.addr;

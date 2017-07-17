@@ -78,7 +78,7 @@
 #include <errno.h>
 
 #ifdef CONFIG_NET_LWIP
-#include "net/lwip/netif.h"
+#include <net/lwip/netif.h>
 #endif
 
 /*
@@ -1636,7 +1636,7 @@ static int mdnsd_set_host_info_by_netif(struct mdnsd *svr, const char *hostname,
 	// find ip address with lwip netif_find() function
 	netif = netif_find(netif_name);
 	if (netif) {
-		ipaddr = netif->ip_addr.addr;
+		ipaddr = ip4_addr_get_u32(ip_2_ip4(&netif->ip_addr));
 	} else {
 		ndbg("ERROR: mdnsd cannot find netif.(%s)\n", netif_name);
 		goto done;

@@ -94,7 +94,6 @@ endif
 ifeq ($(CONFIG_NET_IPv6),y)
 include lwip/src/core/ipv6/Make.defs
 endif
-#include lwip/src/core/ipv6/Make.defs
 include lwip/src/netif/ppp/Make.defs
 include lwip/sys/arch/Make.defs
 endif

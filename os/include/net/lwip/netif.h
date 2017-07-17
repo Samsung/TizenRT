@@ -103,36 +103,33 @@ extern "C" {
 /** Whether the network interface is 'up'. This is
  * a software flag used to control whether this network
  * interface is enabled and processes traffic.
- * It is set by the startup code (for static IP configuration) or
- * by dhcp/autoip when an address has been assigned.
+ * It must be set by the startup code before this netif can be used
+ * (also for dhcp/autoip).
  */
 #define NETIF_FLAG_UP           0x01U
 /** If set, the netif has broadcast capability.
  * Set by the netif driver in its init function. */
 #define NETIF_FLAG_BROADCAST    0x02U
-/** If set, the netif is one end of a point-to-point connection.
- * Set by the netif driver in its init function. */
-#define NETIF_FLAG_POINTTOPOINT 0x04U
-/** If set, the interface is configured using DHCP.
- * Set by the DHCP code when starting or stopping DHCP. */
-#define NETIF_FLAG_DHCP         0x08U
 /** If set, the interface has an active link
  *  (set by the network interface driver).
  * Either set by the netif driver in its init function (if the link
  * is up at that time) or at a later point once the link comes up
  * (if link detection is supported by the hardware). */
-#define NETIF_FLAG_LINK_UP      0x10U
+#define NETIF_FLAG_LINK_UP      0x04U
 /** If set, the netif is an ethernet device using ARP.
  * Set by the netif driver in its init function.
  * Used to check input packet types and use of DHCP. */
-#define NETIF_FLAG_ETHARP       0x20U
+#define NETIF_FLAG_ETHARP       0x08U
 /** If set, the netif is an ethernet device. It might not use
  * ARP or TCP/IP if it is used for PPPoE only.
  */
-#define NETIF_FLAG_ETHERNET     0x40U
+#define NETIF_FLAG_ETHERNET     0x10U
 /** If set, the netif has IGMP capability.
  * Set by the netif driver in its init function. */
-#define NETIF_FLAG_IGMP         0x80U
+#define NETIF_FLAG_IGMP         0x20U
+/** If set, the netif has MLD6 capability.
+ * Set by the netif driver in its init function. */
+#define NETIF_FLAG_MLD6         0x40U
 
 /**
  * @}
@@ -257,19 +254,13 @@ struct netif {
 	/** pointer to next in linked list */
 	struct netif *next;
 
-#if LWIP_IPV4
 	/** IP address configuration in network byte order */
 	ip_addr_t ip_addr;
 	ip_addr_t netmask;
 	ip_addr_t gw;
-#endif							/* LWIP_IPV4 */
-#if LWIP_IPV6
-	/** Array of IPv6 addresses for this netif. */
-	ip_addr_t ip6_addr[LWIP_IPV6_NUM_ADDRESSES];
 	/** The state of each IPv6 address (Tentative, Preferred, etc).
 	 * @see ip6_addr.h */
 	u8_t ip6_addr_state[LWIP_IPV6_NUM_ADDRESSES];
-#endif							/* LWIP_IPV6 */
 	/** This function is called by the network device driver
 	 *  to pass a packet up the TCP/IP stack. */
 	netif_input_fn input;
@@ -515,9 +506,9 @@ err_t netif_input(struct pbuf *p, struct netif *inp);
 
 #if LWIP_IPV6
 /** @ingroup netif_ip6 */
-#define netif_ip_addr6(netif, i)  ((const ip_addr_t*)(&((netif)->ip6_addr[i])))
+#define netif_ip_addr6(netif, i)  ((const ip_addr_t*)(&((netif)->ip_addr)))
 /** @ingroup netif_ip6 */
-#define netif_ip6_addr(netif, i)  ((const ip6_addr_t*)ip_2_ip6(&((netif)->ip6_addr[i])))
+#define netif_ip6_addr(netif, i)  ((const ip6_addr_t*)ip_2_ip6(&((netif)->ip_addr)))
 void netif_ip6_addr_set(struct netif *netif, s8_t addr_idx, const ip6_addr_t * addr6);
 void netif_ip6_addr_set_parts(struct netif *netif, s8_t addr_idx, u32_t i0, u32_t i1, u32_t i2, u32_t i3);
 #define netif_ip6_addr_state(netif, i)  ((netif)->ip6_addr_state[i])

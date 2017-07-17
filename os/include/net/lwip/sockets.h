@@ -63,9 +63,6 @@
 #include <time.h>
 #endif
 
-#include <sys/sock_internal.h>
-#include <netinet/in.h>
-
 #include <net/lwip/ip_addr.h>
 #include <net/lwip/err.h>
 #include <net/lwip/inet.h>

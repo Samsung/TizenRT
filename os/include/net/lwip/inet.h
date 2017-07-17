@@ -60,7 +60,6 @@
 #include <net/lwip/opt.h>
 #include <net/lwip/def.h>
 #include <net/lwip/ip_addr.h>
-#include <net/lwip/ip6_addr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,9 +78,13 @@ struct in_addr {
 struct in6_addr {
 	union {
 		u32_t u32_addr[4];
+		u16_t u16_addr[8];
 		u8_t u8_addr[16];
 	} un;
-#define s6_addr  un.u8_addr
+#define s6_addr 	un.u8_addr
+#define s6_addr8 	un.u8_addr
+#define s6_addr16 	un.u16_addr
+#define s6_addr32 	un.u32_addr
 };
 
 /** 255.255.255.255 */

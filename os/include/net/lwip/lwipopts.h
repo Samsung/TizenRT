@@ -76,6 +76,20 @@
 #endif
 /* --------- PreDefined Configurations -------------*/
 
+/* ---------- IPv options ---------- */
+
+#ifdef CONFIG_NET_IPv4
+#define LWIP_IPV4 CONFIG_NET_IPv4
+#else
+#define LWIP_IPV4 0
+#endif
+
+#ifdef CONFIG_NET_IPv6
+#define LWIP_IPV6 CONFIG_NET_IPv6
+#else
+#define LWIP_IPV6 0
+#endif
+
 /* ---------- ARP options ---------- */
 #ifdef CONFIG_NET_ARP
 #define LWIP_ARP                        CONFIG_NET_ARP

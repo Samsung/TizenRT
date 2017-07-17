@@ -54,9 +54,9 @@
 #ifndef LWIP_HDR_PROT_ND6_H
 #define LWIP_HDR_PROT_ND6_H
 
-#include "lwip/arch.h"
-#include "lwip/ip6_addr.h"
-#include "lwip/prot/ip6.h"
+#include <net/lwip/arch.h>
+#include <net/lwip/ip6_addr.h>
+#include <net/lwip/prot/ip6.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -61,8 +61,10 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+
 #ifdef CONFIG_NET_LWIP
 #include <net/lwip/inet.h>
+#include <net/lwip/sockets.h>
 #endif
 
 #ifndef CONFIG_NET_LWIP
@@ -108,7 +110,6 @@
 #define MCAST_EXCLUDE         0
 #define MCAST_INCLUDE         1
 
-#ifndef CONFIG_NET_LWIP
 /* Test if an IPv4 address is a multicast address */
 
 #define IN_CLASSD(i)          (((uint32_t)(i) & 0xf0000000) == 0xe0000000)
@@ -131,8 +132,6 @@
 #define s6_addr               in6_u.u6_addr8
 #define s6_addr16             in6_u.u6_addr16
 #define s6_addr32             in6_u.u6_addr32
-
-#endif // CONFIG_NET_LWIP
 
 /****************************************************************************
  * Public Type Definitions
