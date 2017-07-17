@@ -21,6 +21,17 @@ menuconfig NET_IPv6
 
 source "net/lwip/configs/ipv6/Kconfig"
 
+menuconfig NET_IPv6_ICMP
+	bool "IPv6 icmp support"
+	depends on NET_IPv6
+	default y
+	---help---
+		Build in support icmp for IPv6.
+
+if NET_IPv6_ICMP
+source net/lwip/configs/icmp6/Kconfig
+endif
+
 source "net/lwip/configs/socket/Kconfig"
 
 menuconfig NET_ARP
