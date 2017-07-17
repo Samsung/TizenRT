@@ -32,6 +32,14 @@ menuconfig NET_ARP
 
 source "net/lwip/configs/arp/Kconfig"
 
+menuconfig NET_IPv6_ND
+	bool "ND support"
+	depends on NET_IPv6
+	default y
+	---help---
+		Build in support for IPv6 Neighbor Discovery.
+
+source "net/lwip/configs/nd/Kconfig"
 
 menuconfig NET_UDP
 	bool "UDP Support"
