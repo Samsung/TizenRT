@@ -1,0 +1,17 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NET_IPv6_ICMP6_DATASIZE
+	int "bytes from original packet to send back in ICMPv6 error messages"
+	default 8
+	---help---
+		Bytes from original packet to send back in ICMPv6 error messages.
+
+
+config NET_IPv6_ICMP6_HL
+	int "default hop limit for ICMPv6 messages"
+	default 255
+	---help---
+		Default hop limit for ICMPv6 messages.

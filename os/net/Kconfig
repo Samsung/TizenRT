@@ -26,7 +26,6 @@ choice
 
 config	NET_LWIP
 	bool "LwIP"
-	select NET_IPv4
 
 endchoice
 
