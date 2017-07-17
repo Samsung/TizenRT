@@ -6,7 +6,7 @@
 config EXAMPLES_WAKAAMA_CLIENT
 	bool "WAKAAMA_CLIENT"
 	default n
-
+	depends on DM
 
 if EXAMPLES_WAKAAMA_CLIENT
 

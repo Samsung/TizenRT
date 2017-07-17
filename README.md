@@ -73,7 +73,7 @@ Please keep in mind that we are actively working on board configurations, and wi
 
 1. The *gperf* and *libncurses5-dev* packages should be installed.
 ```bash
-sudo apt-get install gperf libncurses5-dev
+sudo apt-get install byacc flex gperf libncurses5-dev
 ```
 
 2. Download and untar *kconfig-frontends* package.  

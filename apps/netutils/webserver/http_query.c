@@ -77,7 +77,9 @@ int http_dispatch_url(struct http_client_t *client, struct http_req_message *req
 	struct http_keyvalue_list_t params_list;
 	char *origin_url = req->url;
 
-	http_divide_query_params(req->url, query, params);
+	if (http_divide_query_params(req->url, query, params)) {
+		return HTTP_ERROR;
+	}
 	req->url = query;
 	req->query_string = params;
 
@@ -228,7 +230,6 @@ int http_parse_query(const char *query, struct http_divided_query_t *dq)
 
 	dq->paths = (char *)HTTP_MALLOC(dq->slash_count * HTTP_CONF_MAX_DIVIDED_PATH_LENGTH);
 	if (!(dq->paths)) {
-		HTTP_FREE(dq->paths);
 		return HTTP_ERROR;
 	}
 
@@ -306,6 +307,10 @@ int http_divide_query_params(const char *url, char *query, char *params)
 		}
 	}
 	question_position = i;
+
+	if (question_position >= HTTP_CONF_MAX_URL_QUERY_LENGTH) {
+		return HTTP_ERROR;
+	}
 
 	HTTP_MEMCPY(query, url, question_position);
 	query[question_position] = '\0';

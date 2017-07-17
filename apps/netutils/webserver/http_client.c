@@ -480,8 +480,10 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 		/* Need to create file with unique file name */
 		strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH);
 		strncat(path, "index.shtml", HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH);
+
 		if (valid && (f = fopen(path, "w"))) {
 			fputs(entity, f);
+
 			if (http_send_response(client, 200, path, NULL) == HTTP_ERROR) {
 				HTTP_LOGE("Error: Fail to send response\n");
 			}
@@ -502,6 +504,7 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 			valid = 1;
 		if (valid && (f = fopen(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH), "w"))) {
 			fputs(entity, f);
+
 			if (http_send_response(client, 200, url, NULL) == HTTP_ERROR) {
 				HTTP_LOGE("Error: Fail to send response\n");
 			}

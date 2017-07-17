@@ -592,10 +592,15 @@ int dhcpc_request(void *handle, struct dhcpc_state *presult)
 		 */
 
 		else if (msgtype == DHCPOFFER) {
-			ndbg("Received another OFFER, send DECLINE\n");
-			result = dhcpc_sendmsg(pdhcpc, presult, DHCPDECLINE);
-			if (result <= 0) {
-				ndbg("recv request error(%d)(%d)\n", result, errno);
+			/* If we get OFFERs from same dhcp server, do not send DECLINE */
+			if (pdhcpc->serverid.s_addr == presult->serverid.s_addr) {
+				ndbg("Received duplicated OFFER from %08x\n", ntohl(presult->serverid.s_addr));
+			} else {
+				ndbg("Received another OFFER from %08x, send DECLINE\n", ntohl(presult->serverid.s_addr));
+				result = dhcpc_sendmsg(pdhcpc, presult, DHCPDECLINE);
+				if (result <= 0) {
+					ndbg("recv request error(%d)(%d)\n", result, errno);
+				}
 			}
 		}
 

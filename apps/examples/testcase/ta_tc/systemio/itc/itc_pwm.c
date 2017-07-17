@@ -68,11 +68,11 @@ void itc_pwm_set_get_duty_cycle_p(void)
     iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
     TC_ASSERT_NOT_NULL("iotbus_pwm_open", h_pwm);
 
-    ret = iotbus_pwm_set_duty_cycle(h_pwm, cycle);
-    TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_duty_cycle", ret, OK, "Not able to set duty cycle", iotbus_pwm_close(h_pwm));
+	ret = iotbus_pwm_set_duty_cycle(h_pwm, cycle);
+	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_duty_cycle", ret, OK, iotbus_pwm_close(h_pwm));
 
-    ret = iotbus_pwm_get_duty_cycle(h_pwm);
-    TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_duty_cycle", ret, cycle, "set and get cycle value mismatch", iotbus_pwm_close(h_pwm));
+	ret = iotbus_pwm_get_duty_cycle(h_pwm);
+	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_duty_cycle", ret, cycle, iotbus_pwm_close(h_pwm));
 
     ret = iotbus_pwm_close(h_pwm);
     TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
@@ -97,11 +97,11 @@ void itc_pwm_set_get_period_p(void)
     iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
     TC_ASSERT_NOT_NULL("iotbus_pwm_open", h_pwm);
 
-    ret = iotbus_pwm_set_period(h_pwm, period);
-    TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_period", ret, OK, "Not able to set period", iotbus_pwm_close(h_pwm));
+	ret = iotbus_pwm_set_period(h_pwm, period);
+	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_period", ret, OK, iotbus_pwm_close(h_pwm));
 
-    ret = iotbus_pwm_get_period(h_pwm);
-    TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_period", ret, period, "set and get period value mismatch", iotbus_pwm_close(h_pwm));
+	ret = iotbus_pwm_get_period(h_pwm);
+	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_period", ret, period, iotbus_pwm_close(h_pwm));
 
     ret = iotbus_pwm_close(h_pwm);
     TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
@@ -119,50 +119,50 @@ void itc_pwm_set_get_period_p(void)
 */
 void itc_pwm_set_enabled_is_enabled_p(void)
 {
-    int device = 0;
-    int channel = 1;
-    int period = 1000;
-    int ret = 0;
-    int default_state = 0;
-    int get_state = 0;
-    iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
-    TC_ASSERT_NOT_NULL("iotbus_pwm_open", h_pwm);
+	int device = 0;
+	int channel = 1;
+	int period = 1000;
+	int ret = 0;
+	int default_state = 0;
+	int get_state = 0;
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	TC_ASSERT_NOT_NULL("iotbus_pwm_open", h_pwm);
 
-    ret = iotbus_pwm_set_period(h_pwm, period);
-    TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_period", ret, OK, "Not able to set period", iotbus_pwm_close(h_pwm));
+	ret = iotbus_pwm_set_period(h_pwm, period);
+	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_period", ret, OK, iotbus_pwm_close(h_pwm));
 
-    ret = iotbus_pwm_get_period(h_pwm);
-    TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_period", ret, period, "set and get period value mismatch", iotbus_pwm_close(h_pwm));
+	ret = iotbus_pwm_get_period(h_pwm);
+	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_period", ret, period, iotbus_pwm_close(h_pwm));
 
-    default_state = iotbus_pwm_is_enabled(h_pwm);
-    TC_ASSERT_EQ_CLEANUP("iotbus_pwm_is_enabled", default_state < OK, false, "unexpected error", iotbus_pwm_close(h_pwm));
+	default_state = iotbus_pwm_is_enabled(h_pwm);
+	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_is_enabled", default_state < OK, false, iotbus_pwm_close(h_pwm));
 
-    iotbus_pwm_state_e e_state = IOTBUS_PWM_ENABLE;
-    if (default_state == IOTBUS_PWM_DISABLE) {
-        ret = iotbus_pwm_set_enabled(h_pwm, e_state);
-        TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_enabled", ret, OK, "unexpected error", iotbus_pwm_close(h_pwm));
+	iotbus_pwm_state_e e_state = IOTBUS_PWM_ENABLE;
+	if (default_state == IOTBUS_PWM_DISABLE) {
+		ret = iotbus_pwm_set_enabled(h_pwm, e_state);
+		TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_enabled", ret, OK, iotbus_pwm_close(h_pwm));
 
-        get_state = iotbus_pwm_is_enabled(h_pwm);
-        TC_ASSERT_EQ_CLEANUP("iotbus_pwm_is_enabled", get_state, e_state, "state value mismatch", iotbus_pwm_close(h_pwm); iotbus_pwm_set_enabled(h_pwm, default_state));
+		get_state = iotbus_pwm_is_enabled(h_pwm);
+		TC_ASSERT_EQ_CLEANUP("iotbus_pwm_is_enabled", get_state, e_state, iotbus_pwm_close(h_pwm); iotbus_pwm_set_enabled(h_pwm, default_state));
 
-        // Restoring default state
-        iotbus_pwm_set_enabled(h_pwm, default_state);
-    } else {
-        e_state = IOTBUS_PWM_DISABLE;
-        ret = iotbus_pwm_set_enabled(h_pwm, e_state);
-        TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_enabled", ret, OK, "unexpected error", iotbus_pwm_close(h_pwm));
+		// Restoring default state
+		iotbus_pwm_set_enabled(h_pwm, default_state);
+	} else {
+		e_state = IOTBUS_PWM_DISABLE;
+		ret = iotbus_pwm_set_enabled(h_pwm, e_state);
+		TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_enabled", ret, OK, iotbus_pwm_close(h_pwm));
 
-        get_state = iotbus_pwm_is_enabled(h_pwm);
-        TC_ASSERT_EQ_CLEANUP("iotbus_pwm_is_enabled", get_state, e_state, "state value mismatch", iotbus_pwm_close(h_pwm); iotbus_pwm_set_enabled(h_pwm, default_state));
+		get_state = iotbus_pwm_is_enabled(h_pwm);
+		TC_ASSERT_EQ_CLEANUP("iotbus_pwm_is_enabled", get_state, e_state, iotbus_pwm_close(h_pwm); iotbus_pwm_set_enabled(h_pwm, default_state));
 
-        // Restoring default state
-        iotbus_pwm_set_enabled(h_pwm, default_state);
-    }
+		// Restoring default state
+		iotbus_pwm_set_enabled(h_pwm, default_state);
+	}
 
-    ret = iotbus_pwm_close(h_pwm);
-    TC_ASSERT_NOT_NULL("iotbus_pwm_close", h_pwm);
+	ret = iotbus_pwm_close(h_pwm);
+	TC_ASSERT_NOT_NULL("iotbus_pwm_close", h_pwm);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 int itc_pwm_main(void)

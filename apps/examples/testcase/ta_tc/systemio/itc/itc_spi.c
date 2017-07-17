@@ -78,17 +78,17 @@ void itc_iotbus_spi_write_recv_trasfer_p(void)
     iotbus_spi_context_h h_spi = iotbus_spi_open(gBus, &_g_st_config);
     TC_ASSERT_NOT_NULL("iotbus_spi_open", h_spi);
 
-    ret = iotbus_spi_write(h_spi, sz_txbuf, 8);
-    TC_ASSERT_EQ_CLEANUP("iotbus_spi_write", ret, IOTBUS_ERROR_NONE, "Not able to write", iotbus_spi_close(h_spi));
+	ret = iotbus_spi_write(h_spi, sz_txbuf, 8);
+	TC_ASSERT_EQ_CLEANUP("iotbus_spi_write", ret, IOTBUS_ERROR_NONE, iotbus_spi_close(h_spi));
 
-    ret = iotbus_spi_recv(h_spi, sz_rxbuf, 8);
-    TC_ASSERT_EQ_CLEANUP("iotbus_spi_recv", ret, IOTBUS_ERROR_NONE, "Not able to recv", iotbus_spi_close(h_spi));
+	ret = iotbus_spi_recv(h_spi, sz_rxbuf, 8);
+	TC_ASSERT_EQ_CLEANUP("iotbus_spi_recv", ret, IOTBUS_ERROR_NONE, iotbus_spi_close(h_spi));
 
     ret = iotbus_spi_transfer_buf(h_spi, sz_txbuf, sz_rxbuf, 16);
 #ifdef CONFIG_SPI_EXCHANGE
-    TC_ASSERT_EQ_CLEANUP("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_NONE, "Not able to transfer", iotbus_spi_close(h_spi));
+	TC_ASSERT_EQ_CLEANUP("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_NONE, iotbus_spi_close(h_spi));
 #else
-    TC_ASSERT_EQ_CLEANUP("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_NOT_SUPPORTED, "Unexpected Error", iotbus_spi_close(h_spi));
+	TC_ASSERT_EQ_CLEANUP("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_NOT_SUPPORTED, iotbus_spi_close(h_spi));
 #endif
 
     ret = iotbus_spi_close(h_spi);

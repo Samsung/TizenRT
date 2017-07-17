@@ -641,8 +641,8 @@ static void tc_pthread_pthread_kill(void)
 
 	ret_chk = pthread_kill(g_thread1, SIGUSR1);
 	sleep(SEC_1);
-	TC_ASSERT_EQ_CLEANUP("pthread_kill", ret_chk, OK, get_errno(), pthread_detach(g_thread1));
-	TC_ASSERT_EQ_CLEANUP("pthread_kill", g_bpthreadcallback, true, get_errno(), pthread_detach(g_thread1));
+	TC_ASSERT_EQ_CLEANUP("pthread_kill", ret_chk, OK, pthread_detach(g_thread1));
+	TC_ASSERT_EQ_CLEANUP("pthread_kill", g_bpthreadcallback, true, pthread_detach(g_thread1));
 	pthread_join(g_thread1, NULL);
 
 	TC_SUCCESS_RESULT();
@@ -670,11 +670,11 @@ static void tc_pthread_pthread_cond_broadcast(void)
 	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
 
 	ret_chk = pthread_cond_init(&g_cond, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_cond_init", ret_chk, OK, get_errno(), pthread_mutex_destroy(&g_mutex));
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_init", ret_chk, OK, pthread_mutex_destroy(&g_mutex));
 
 	for (ipthread_id = 0; ipthread_id < PTHREAD_CNT; ipthread_id++) {
 		ret_chk = pthread_create(&rgthread[ipthread_id], NULL, pthread_wait_callback, NULL);
-		TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, get_errno(), goto cleanup_cond);
+		TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, goto cleanup_cond);
 	}
 
 	/* To check all thread block conditional lock */
@@ -684,25 +684,25 @@ static void tc_pthread_pthread_cond_broadcast(void)
 
 	/* To make sure all waiter are currently block on pthread_cond_wait */
 	ret_chk = pthread_mutex_lock(&g_mutex);
-	TC_ASSERT_EQ_CLEANUP("pthread_mutex_lock", ret_chk, OK, get_errno(), goto cleanup_mutex);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_lock", ret_chk, OK, goto cleanup_mutex);
 
 	ret_chk = pthread_mutex_unlock(&g_mutex);
-	TC_ASSERT_EQ_CLEANUP("pthread_mutex_unlock", ret_chk, OK, get_errno(), goto cleanup_mutex);
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_unlock", ret_chk, OK, goto cleanup_mutex);
 
 	ret_chk = pthread_cond_broadcast(&g_cond);
-	TC_ASSERT_EQ_CLEANUP("pthread_cond_broadcast", ret_chk, OK, get_errno(), goto cleanup_cond);
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_broadcast", ret_chk, OK, goto cleanup_cond);
 
 	sleep(SEC_1);
-	TC_ASSERT_GEQ_CLEANUP("pthread_cond_broadcast", g_barrier_count_out, PTHREAD_CNT, get_errno(), goto cleanup_cond);
+	TC_ASSERT_GEQ_CLEANUP("pthread_cond_broadcast", g_barrier_count_out, PTHREAD_CNT, goto cleanup_cond);
 
 	/* Wait till terminate all thread */
 	for (ipthread_id = 0; ipthread_id < PTHREAD_CNT; ipthread_id++) {
 		ret_chk = pthread_join(rgthread[ipthread_id], NULL);
-		TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, get_errno(), goto cleanup_cond);
+		TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, goto cleanup_cond);
 	}
 
 	ret_chk = pthread_cond_destroy(&g_cond);
-	TC_ASSERT_EQ_CLEANUP("pthread_cond_destroy", ret_chk, OK, ret_chk, pthread_mutex_destroy(&g_mutex));
+	TC_ASSERT_EQ_CLEANUP("pthread_cond_destroy", ret_chk, OK, pthread_mutex_destroy(&g_mutex));
 
 	ret_chk = pthread_mutex_destroy(&g_mutex);
 	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, OK);
@@ -784,21 +784,21 @@ static void tc_pthread_pthread_set_get_schedparam(void)
 	st_setparam.sched_priority = SCHED_PRIORITY;
 
 	ret_chk = pthread_create(&g_thread1, NULL, threadfunc_sched, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, errno, pthread_detach(g_thread1));
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, pthread_detach(g_thread1));
 	sleep(SEC_2);
 
 	ret_chk = pthread_setschedparam(g_thread1, setpolicy, &st_setparam);
-	TC_ASSERT_EQ_CLEANUP("pthread_setschedparam", ret_chk, OK, errno, pthread_detach(g_thread1));
+	TC_ASSERT_EQ_CLEANUP("pthread_setschedparam", ret_chk, OK, pthread_detach(g_thread1));
 
 	sleep(SEC_1);
 
 	ret_chk = pthread_getschedparam(g_thread1, &getpolicy, &st_getparam);
-	TC_ASSERT_EQ_CLEANUP("pthread_getschedparam", ret_chk, OK, errno, pthread_detach(g_thread1));
-	TC_ASSERT_EQ_CLEANUP("pthread_getschedparam", getpolicy, setpolicy, errno, pthread_detach(g_thread1));
-	TC_ASSERT_EQ_CLEANUP("pthread_getschedparam", st_getparam.sched_priority, st_setparam.sched_priority, errno, pthread_detach(g_thread1));
+	TC_ASSERT_EQ_CLEANUP("pthread_getschedparam", ret_chk, OK, pthread_detach(g_thread1));
+	TC_ASSERT_EQ_CLEANUP("pthread_getschedparam", getpolicy, setpolicy, pthread_detach(g_thread1));
+	TC_ASSERT_EQ_CLEANUP("pthread_getschedparam", st_getparam.sched_priority, st_setparam.sched_priority, pthread_detach(g_thread1));
 
 	ret_chk = pthread_join(g_thread1, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, errno, pthread_detach(g_thread1));
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, pthread_detach(g_thread1));
 
 	TC_SUCCESS_RESULT();
 }
@@ -828,14 +828,10 @@ static void tc_pthread_pthread_key_create_set_getspecific(void)
 	sleep(SEC_2);
 
 	ret_chk = pthread_create(&g_thread1, NULL, func_set_get_callback, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, errno, {
-		pthread_detach(g_thread1);
-	});
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, pthread_detach(g_thread1));
 
 	ret_chk = pthread_join(g_thread1, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, errno, {
-		pthread_detach(g_thread1);
-	});
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, pthread_detach(g_thread1));
 
 	TC_ASSERT_EQ("pthread_join", g_bpthreadcallback, true);
 
@@ -861,16 +857,12 @@ static void tc_pthread_pthread_cancel_setcancelstate(void)
 	g_bpthreadcallback = false;
 
 	ret_chk = pthread_create(&g_thread1, NULL, cancel_state_func, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, errno, {
-		pthread_detach(g_thread1);
-	});
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, pthread_detach(g_thread1));
 
 	sleep(SEC_1);
 	/* this cancel request goes to pending if cancel is disabled */
 	ret_chk = pthread_cancel(g_thread1);
-	TC_ASSERT_EQ_CLEANUP("pthread_cancel", ret_chk, OK, errno, {
-		pthread_detach(g_thread1);
-	});
+	TC_ASSERT_EQ_CLEANUP("pthread_cancel", ret_chk, OK, pthread_detach(g_thread1));
 
 	sleep(SEC_3);
 	TC_ASSERT("pthread_cancel", g_bpthreadcallback);
@@ -989,14 +981,10 @@ static void tc_pthread_pthread_findjoininfo_destroyjoin(void)
 	g_bpthreadcallback = false;
 
 	ret_chk = pthread_create(&g_thread1, NULL, findjoininfo_callback, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, errno, {
-		pthread_detach(g_thread1);
-	});
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, pthread_detach(g_thread1));
 
 	pthread_join(g_thread1, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", g_bpthreadcallback, true, errno, {
-		pthread_detach(g_thread1);
-	});
+	TC_ASSERT_EQ_CLEANUP("pthread_join", g_bpthreadcallback, true, pthread_detach(g_thread1));
 
 	TC_SUCCESS_RESULT();
 }
@@ -1024,9 +1012,7 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 	TC_ASSERT_EQ("pthread_mutex_lock", ret_chk, OK);
 
 	ret_chk = pthread_mutex_trylock(&g_mutex);
-	TC_ASSERT_EQ_CLEANUP("pthread_mutex_trylock", ret_chk, EBUSY, errno, {
-		pthread_mutex_unlock(&g_mutex);
-	});
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_trylock", ret_chk, EBUSY, pthread_mutex_unlock(&g_mutex));
 
 	ret_chk = pthread_mutex_unlock(&g_mutex);
 	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
@@ -1242,11 +1228,11 @@ static void tc_pthread_pthread_yield(void)
 
 	sleep(SEC_1);
 
-	TC_ASSERT_EQ_CLEANUP("pthread_yield", g_bpthreadcallback, true, get_errno(), {pthread_detach(g_thread1);});
+	TC_ASSERT_EQ_CLEANUP("pthread_yield", g_bpthreadcallback, true, pthread_detach(g_thread1));
 
 	ret_chk = pthread_create(&g_thread2, NULL, thread_yield_callback, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, get_errno(), {pthread_detach(g_thread2);});
-	TC_ASSERT_EQ_CLEANUP("pthread_create", g_bpthreadcallback, true, get_errno(), {pthread_detach(g_thread2);});
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, pthread_detach(g_thread2));
+	TC_ASSERT_EQ_CLEANUP("pthread_create", g_bpthreadcallback, true, pthread_detach(g_thread2));
 
 	/* wait for threads to exit */
 	sleep(SEC_5);

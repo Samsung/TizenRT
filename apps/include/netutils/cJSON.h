@@ -81,10 +81,16 @@ extern "C"
 	cJSON_AddItemToObject(object, name, cJSON_CreateTrue())cd
 #define cJSON_AddFalseToObject(object, name) \
 	cJSON_AddItemToObject(object, name, cJSON_CreateFalse())
+#define cJSON_AddBoolToObject(object, name, b) \
+	cJSON_AddItemToObject(object, name, cJSON_CreateBool(b))
 #define cJSON_AddNumberToObject(object, name, n) \
 	cJSON_AddItemToObject(object, name, cJSON_CreateNumber(n))
 #define cJSON_AddStringToObject(object, name, s) \
 	cJSON_AddItemToObject(object, name, cJSON_CreateString(s))
+
+/* When assigning an integer value, it needs to be propagated to valuedouble too. */
+
+#define cJSON_SetIntValue(object, val)			((object) ? (object)->valueint = (object)->valuedouble = (val) : (val))
 
 /****************************************************************************
  * Public Types
@@ -215,6 +221,20 @@ void cJSON_DeleteItemFromObject(cJSON *object, const char *string);
 
 void cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem);
 void cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem);
+
+/* Duplicate a cJSON item */
+
+cJSON *cJSON_Duplicate(cJSON *item, int recurse);
+
+/* Duplicate will create a new, identical cJSON item to the one you pass, in new memory that will
+need to be released. With recurse!=0, it will duplicate any children connected to the item.
+The item->next and ->prev pointers are always zero on return from Duplicate. */
+
+/* ParseWithOpts allows you to require (and check) that the JSON is null terminated, and to retrieve the pointer to the final byte parsed. */
+
+cJSON *cJSON_ParseWithOpts(const char *value, const char **return_parse_end, int require_null_terminated);
+
+void cJSON_Minify(char *json);
 
 #ifdef __cplusplus
 // *INDENT-OFF*

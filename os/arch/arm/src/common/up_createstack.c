@@ -236,7 +236,9 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 #ifdef CONFIG_STACK_COLORATION
 		up_stack_color(tcb->stack_alloc_ptr, tcb->adj_stack_size);
 #endif
-
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		heapinfo_exclude_stacksize(tcb->stack_alloc_ptr);
+#endif
 		board_led_on(LED_STACKCREATED);
 		return OK;
 	}

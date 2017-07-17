@@ -55,22 +55,22 @@ static void tc_environ_setenv_getenv_unsetenv(void)
 	char *psz_getvalue = NULL;
 
 	ret_chk = setenv(psz_name, psz_value, overwrite_num);
-	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, get_errno(), clearenv());
+	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, clearenv());
 
 	psz_getvalue = getenv(psz_name);
-	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, get_errno(), clearenv());
+	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, clearenv());
 
 	/* with overwrite_num = 0, psz_value should not be updated */
 
 	psz_value = "pqr";
 	overwrite_num = 0;
 	ret_chk = setenv(psz_name, psz_value, overwrite_num);
-	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, get_errno(), clearenv());
+	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, clearenv());
 
 	/* set and get value should not be equal as overwrite is 0 */
 
 	psz_getvalue = getenv(psz_name);
-	TC_ASSERT_NEQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, get_errno(), clearenv());
+	TC_ASSERT_NEQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, clearenv());
 
 	/* random value, getenv should fail */
 

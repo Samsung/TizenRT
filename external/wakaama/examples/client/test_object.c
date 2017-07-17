@@ -17,6 +17,7 @@
  *    Axel Lorente - Please refer to git log
  *    Achim Kraus, Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
+ *    Ville Skytta - Please refer to git log
  *    
  *******************************************************************************/
 
@@ -57,7 +58,7 @@
  * Object |  ID  | Instances | Mandatoty |
  *  Test  | 1024 |    Yes    |    No     |
  *
- *  Ressources:
+ *  Resources:
  *              Supported    Multiple
  *  Name | ID | Operations | Instances | Mandatory |  Type   | Range | Units | Description |
  *  test |  1 |    R/W     |    No     |    Yes    | Integer | 0-255 |       |             |

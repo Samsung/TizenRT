@@ -68,6 +68,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -126,6 +127,16 @@ const char c_cli_key_rsa[] =
 	"DFi6X0ECgYEA4wOv/pjSC3ty6TuOvKX2rOUiBrLXXv2JSxZnMoMiWI5ipLQt+RYT\r\n"
 	"VPafL/m7Dn6MbwjayOkcZhBwk5CNz5A6Q4lJ64Mq/lqHznRCQQ2Mc1G8eyDF/fYL\r\n" "Ze2pLvwP9VD5jTc2miDfw+MnvJhywRRLcemDFP8k4hQVtm8PMp3ZmNECgYEA4gz7\r\n" "wzObR4gn8ibe617uQPZjWzUj9dUHYd+in1gwBCIrtNnaRn9I9U/Q6tegRYpii4ys\r\n" "c176NmU+umy6XmuSKV5qD9bSpZWG2nLFnslrN15Lm3fhZxoeMNhBaEDTnLT26yoi\r\n" "33gp0mSSWy94ZEqipms+ULF6sY1ZtFW6tpGFoy8CgYAQHhnnvJflIs2ky4q10B60\r\n" "ZcxFp3rtDpkp0JxhFLhiizFrujMtZSjYNm5U7KkgPVHhLELEUvCmOnKTt4ap/vZ0\r\n" "BxJNe1GZH3pW6SAvGDQpl9sG7uu/vTFP+lCxukmzxB0DrrDcvorEkKMom7ZCCRvW\r\n" "KZsZ6YeH2Z81BauRj218kQKBgQCUV/DgKP2985xDTT79N08jUo3hTP5MVYCCuj/+\r\n" "UeEw1TvZcx3LJby7P6Xad6a1/BqveaGyFKIfEFIaBUBItk801sDDpDaYc4gL00Xc\r\n" "7lFuBHOZkxJYlss5QrGpuOEl9ZwUt5IrFLBdYaKqNHzNVC1pCPfb/JyH6Dr2HUxq\r\n" "gxUwAQKBgQCcU6G2L8AG9d9c0UpOyL1tMvFe5Ttw0KjlQVdsh1MP6yigYo9DYuwu\r\n" "bHFVW2r0dBTqegP2/KTOxKzaHfC1qf0RGDsUoJCNJrd1cwoCLG8P2EF4w3OBrKqv\r\n" "8u4ytY0F+Vlanj5lm3TaoHSVF1+NWPyOTiwevIECGKwSxvlki4fDAA==\r\n" "-----END RSA PRIVATE KEY-----\r\n";
 
+struct http_client_ssl_config_t g_config = {
+	(char *)c_ca_crt_rsa, (char *)c_cli_crt_rsa, (char *)c_cli_key_rsa,
+	sizeof(c_ca_crt_rsa), sizeof(c_cli_crt_rsa), sizeof(c_cli_key_rsa), 2
+};
+
+static int g_running;
+static int g_https;
+static int g_async;
+static int g_testentity;
+
 static const char headerfield_connect[] = "Connect";
 static const char headerfield_close[] = "close";
 static const char headerfield_useragent[] = "User-Agent";
@@ -140,22 +151,27 @@ static const char headerfield_tinyara[] = "TinyARA";
 
 static void callback(struct http_client_response_t *response)
 {
-	printf("in response callback\n");
+	printf("----------async response----------\n");
 	printf("status %d %s\n", response->status, response->phrase);
 	printf("%s\n", response->entity);
+	printf("---------------------------------\n");
 }
 
 static void dump_webclient_usage(void)
 {
 	printf("\n  webclient usage:\n");
-	printf("   $ webclient [method] [uri] [entity] [encoding]\n");
+	printf("   $ webclient <method> <uri> [options...] \n");
 	printf("\n");
-	printf(" [method]   : %%s (GET, PUT, POST, DELETE)\n");
-	printf(" [uri]      : %%s (Host address : should be started with http:// or https://)\n");
-	printf(" [entity]   : %%s (Entity : default is NULL)\n");
-	printf(" [encoding] : %%s (Enable the chenked encodning with 'c' option)\n");
+	printf(" <method>   : %%s (GET, PUT, POST, DELETE)\n");
+	printf(" <uri>      : %%s (Host address : should be started with http:// or https://)\n");
+	printf("\n [options...] \n");
+	printf(" async=1               Enable asynchronous mode (default is synchronous)\n");
+	printf(" chunked=1             Enable chunked encoding (default is disabled)\n");
+	printf(" entity=DATA           Set entity data (default is NULL)\n");
+	printf(" test_entity=SIZE      Test entity size (default is 0)\n");
 	printf("\n  example:\n");
 	printf("   $ webclient GET https://127.0.0.1/\n");
+	printf("   $ webclient GET https://127.0.0.1/ async=1 entity=data\n");
 }
 
 /****************************************************************************
@@ -166,64 +182,102 @@ static void dump_webclient_usage(void)
  * Name: wget_main
  ****************************************************************************/
 
-pthread_addr_t webclient_cb(void *arg)
+int webclient_init_request(void *arg, struct http_client_request_t *request)
 {
-	int argc;
+	int argc, i;
 	char **argv;
+	char *p, *q;
 	struct webclient_input *input;
-	struct http_client_request_t request;
-	struct http_keyvalue_list_t headers;
-	struct http_client_response_t response;
-#ifdef CONFIG_NET_SECURITY_TLS
-	struct http_client_ssl_config_t ssl_config;
-#endif
 
 	input = arg;
 	argc = input->argc;
 	argv = input->argv;
 
-	/* Many embedded network interfaces must have a software assigned MAC */
-
-	/* Then start the server */
-
-	/* argument1 is method. default is GET */
+	g_async = 0;
+	g_testentity = 0;
+	memset(request, 0, sizeof(struct http_client_request_t));
 
 	if (argc < 3) {
-		dump_webclient_usage();
-		return NULL;
+		return -1;
 	}
 
 	if (!strcmp(argv[1], "GET")) {
-		request.method = WGET_MODE_GET;
+		request->method = WGET_MODE_GET;
 	} else if (!strcmp(argv[1], "POST")) {
-		request.method = WGET_MODE_POST;
+		request->method = WGET_MODE_POST;
 	} else if (!strcmp(argv[1], "PUT")) {
-		request.method = WGET_MODE_PUT;
+		request->method = WGET_MODE_PUT;
 	} else if (!strcmp(argv[1], "DELETE")) {
-		request.method = WGET_MODE_DELETE;
+		request->method = WGET_MODE_DELETE;
 	} else {
 		dump_webclient_usage();
-		return NULL;
+		return -1;
 	}
 
 	/* argument2 is url. */
-	request.url = argv[2];
-
-	/* argument3 is entity. default is NULL */
-	request.entity = NULL;
-	if (argc >= 4) {
-		request.entity = argv[3];
+	request->url = argv[2];
+#ifdef CONFIG_NET_SECURITY_TLS
+	if (!strncmp(request->url, "https", 5)) {
+		g_https = 1;
+	} else
+#endif
+	if (!strncmp(request->url, "http", 4)) {
+		g_https = 0;
+	} else {
+		return -1;
 	}
 
-	/* argument4 is encoding selection. default is content-length */
-	request.encoding = CONTENT_LENGTH;
-	if (argc >= 5) {
-		if (!strcmp(argv[4], "c")) {
-			request.encoding = CHUNKED_ENCODING;
+	for (i = 3; i < argc; i++) {
+		p = argv[i];
+		if ((q = strchr(p, '=')) == NULL) {
+			return -1;
+		}
+		*q++ = '\0';
+
+		if (strcmp(p, "async") == 0) {
+			g_async = atoi(q);
+		} else if (strcmp(p, "chunked") == 0) {
+			request->encoding = atoi(q);
+		} else if (strcmp(p, "entity") == 0) {
+			request->entity = q;
+		} else if (strcmp(p, "test_entity") == 0) {
+			int t = atoi(q);
+			if (t > 0 && t <= WEBCLIENT_CONF_MAX_ENTITY_SIZE) {
+				request->entity = (char *)malloc(t);
+				if (request->entity == NULL) {
+					return -1;
+				}
+				g_testentity = 1;
+				memset(request->entity, '1', t);
+			} else {
+				printf("entity is too big\n");
+				return -1;
+			}
+		} else {
+			return -1;
 		}
 	}
 
-	request.buflen = WEBCLIENT_BUF_SIZE;
+	request->buflen = WEBCLIENT_BUF_SIZE;
+	return 0;
+}
+
+pthread_addr_t webclient_cb(void *arg)
+{
+	struct http_client_request_t request;
+	struct http_keyvalue_list_t headers;
+	struct http_client_response_t response;
+	struct http_client_ssl_config_t *ssl_config = NULL;
+
+	if (webclient_init_request(arg, &request)) {
+		dump_webclient_usage();
+		if (g_testentity && request.entity) {
+			free(request.entity);
+		}
+		return NULL;
+	}
+
+	ssl_config = g_https? &g_config : NULL;
 
 	/* before sending request,
 	 * must initialize keyvalue list for request headers
@@ -233,80 +287,47 @@ pthread_addr_t webclient_cb(void *arg)
 	http_keyvalue_list_add(&headers, headerfield_useragent, headerfield_tinyara);
 	request.headers = &headers;
 
-#ifdef CONFIG_NET_SECURITY_TLS
-	/* send HTTPS request */
-	if (!strncmp(request.url, "https", 5)) {
-		ssl_config.root_ca = (char *)c_ca_crt_rsa;
-		ssl_config.root_ca_len = sizeof(c_ca_crt_rsa);
-		ssl_config.dev_cert = (char *)c_cli_crt_rsa;
-		ssl_config.dev_cert_len = sizeof(c_cli_crt_rsa);
-		ssl_config.private_key = (char *)c_cli_key_rsa;
-		ssl_config.private_key_len = sizeof(c_cli_key_rsa);
-		/* before sending request by sync function,
-		 * must initialize response structure
-		 */
-		if (http_client_response_init(&response) < 0) {
-			printf("fail to init\n");
-		} else {
-			if (http_client_send_request(&request, &ssl_config, &response)) {
-				printf("fail to send request\n");
-				http_client_response_release(&response);
-				goto release_out;
-			} else {
-				printf("----------sync response----------\n");
-				printf("status %d %s\n", response.status, response.phrase);
-				printf("%s\n", response.entity);
-				printf("---------------------------------\n");
-			}
-			/* after sending request by sync function,
-			 * must release response structure
-			 */
-			http_client_response_release(&response);
-		}
-
-		if (http_client_send_request_async(&request, &ssl_config, (wget_callback_t)callback)) {
+	/* before sending request by sync function,
+	 * must initialize response structure
+	 */
+	if (g_async) {
+		if (http_client_send_request_async(&request, ssl_config, (wget_callback_t)callback)) {
 			printf("fail to send request\n");
 			goto release_out;
 		}
-	} else
-#endif
-	if (!strncmp(request.url, "http", 4)) {
-		/* send HTTP request */
-		if (http_client_response_init(&response) < 0) {
-			printf("fail to init\n");
-		} else {
-			if (http_client_send_request(&request, NULL, &response)) {
-				printf("fail to send request\n");
-				http_client_response_release(&response);
-				goto release_out;
-			} else {
-				printf("----------sync response----------\n");
-				printf("status %d %s\n", response.status, response.phrase);
-				printf("%s\n", response.entity);
-				printf("---------------------------------\n");
-			}
-			http_client_response_release(&response);
+		/* sleep for end request */
+		while (request.async_flag > 0) {
+			usleep(100000);
 		}
-
-		if (http_client_send_request_async(&request, NULL, (wget_callback_t)callback)) {
+		if (request.async_flag < 0) {
 			printf("fail to send request\n");
-			goto release_out;
 		}
 	} else {
-		printf("Wrong URI\n");
-		dump_webclient_usage();
-		return NULL;
-	}
-
-	/* sleep for end request */
-	while (request.async_flag > 0) {
-		usleep(100000);
-	}
-	if (request.async_flag < 0) {
-		printf("fail to send request\n");
+		if (http_client_response_init(&response) < 0) {
+			printf("fail to response init\n");
+			goto release_out;
+		}
+		if (http_client_send_request(&request, ssl_config, &response)) {
+			printf("fail to send request\n");
+			goto release_out;
+		}
+		printf("----------sync response----------\n");
+		printf("status %d %s\n", response.status, response.phrase);
+		printf("%s\n", response.entity);
+		printf("---------------------------------\n");
 	}
 
 release_out:
+	if (g_testentity) {
+		free(request.entity);
+		g_testentity = 0;
+	}
+	/* after sending request by sync function,
+	 * must release response structure
+	 */
+	if (g_async == 0) {
+		http_client_response_release(&response);
+	}
 	/* before finish of app,
 	 * must release keyvalue list for request headers
 	 */
@@ -324,9 +345,17 @@ int webclient_main(int argc, char *argv[])
 	pthread_t tid;
 	struct webclient_input arg;
 
+	if (g_running) {
+		printf("Previous request is in process, Please wait.\n");
+		return -1;
+	} else {
+		g_running = 1;
+	}
+
 	status = pthread_attr_init(&attr);
 	if (status != 0) {
 		printf("fail to start webclient\n");
+		g_running = 0;
 		return -1;
 	}
 
@@ -341,11 +370,13 @@ int webclient_main(int argc, char *argv[])
 	status = pthread_create(&tid, &attr, webclient_cb, &arg);
 	if (status < 0) {
 		printf("fail to start webclient\n");
+		g_running = 0;
 		return -1;
 	}
 	pthread_setname_np(tid, "webclient");
 
 	pthread_join(tid, NULL);
 
+	g_running = 0;
 	return 0;
 }

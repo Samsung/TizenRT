@@ -110,7 +110,7 @@ const char srv_key_rsa[] =
 	"CIrgpozCc+UaZJLo7UxvC6an85r1b2nKPCLQFaggJ0H4Q0J/sZOhBIXaoBzWxveK\r\n" "nupceKdVxGsFi8CDy86DBfiyFivfBj+47BbaQzPBj7C4rK7UlLjab2rDAoGBAN2u\r\n" "AM2gchoFiu4v1HFL8D7lweEpi6ZnMJjnEu/dEgGQJFjwdpLnPbsj4c75odQ4Gz8g\r\n" "sw9lao9VVzbusoRE/JGI4aTdO0pATXyG7eG1Qu+5Yc1YGXcCrliA2xM9xx+d7f+s\r\n" "mPzN+WIEg5GJDYZDjAzHG5BNvi/FfM1C9dOtjv2dAoGAF0t5KmwbjWHBhcVqO4Ic\r\n" "BVvN3BIlc1ue2YRXEDlxY5b0r8N4XceMgKmW18OHApZxfl8uPDauWZLXOgl4uepv\r\n" "whZC3EuWrSyyICNhLY21Ah7hbIEBPF3L3ZsOwC+UErL+dXWLdB56Jgy3gZaBeW7b\r\n" "vDrEnocJbqCm7IukhXHOBK8CgYEAwqdHB0hqyNSzIOGY7v9abzB6pUdA3BZiQvEs\r\n" "3LjHVd4HPJ2x0N8CgrBIWOE0q8+0hSMmeE96WW/7jD3fPWwCR5zlXknxBQsfv0gP\r\n" "3BC5PR0Qdypz+d+9zfMf625kyit4T/hzwhDveZUzHnk1Cf+IG7Q+TOEnLnWAWBED\r\n" "ISOWmrUCgYAFEmRxgwAc/u+D6t0syCwAYh6POtscq9Y0i9GyWk89NzgC4NdwwbBH\r\n" "4AgahOxIxXx2gxJnq3yfkJfIjwf0s2DyP0kY2y6Ua1OeomPeY9mrIS4tCuDQ6LrE\r\n" "TB6l9VGoxJL4fyHnZb8L5gGvnB1bbD8cL6YPaDiOhcRseC9vBiEuVg==\r\n" "-----END RSA PRIVATE KEY-----\r\n";
 
 static const char *root_url = "/";
-static const char *devid_url = "/device/:id";
+static const char *busy_url = "/busy";
 
 static const char g_httpcontype[] = "Content-type";
 static const char g_httpconhtml[] = "text/html";
@@ -135,32 +135,18 @@ void http_get_root(struct http_client_t *client, struct http_req_message *req)
 	http_keyvalue_list_add(&response_headers, g_httpcontsize, contlen);
 	http_keyvalue_list_add(&response_headers, g_httpconnect, g_httpcnlost);
 
-	printf(">>>> get_root\n");
+	printf("===== GET_ROOT CALLBACK url : %s =====\n", req->url);
 	if (http_send_response(client, 200, msg, &response_headers) < 0) {
 		printf("Error: Fail to send response\n");
 	}
 	http_keyvalue_list_release(&response_headers);
 }
 
-void http_get_device_id(struct http_client_t *client, struct http_req_message *req)
-{
-	char buf[128] = { 0, };
-
-	printf("%s\n", req->url);
-	printf("%s\n", req->query_string);
-
-	snprintf(buf, sizeof(buf), "You asked for device.");
-
-	if (http_send_response(client, 200, buf, NULL) < 0) {
-		printf("Error: Fail to send response\n");
-	}
-}
-
 void http_get_callback(struct http_client_t *client, struct http_req_message *req)
 {
-	printf("===== GET CALLBACK url : %s=====\n", req->url);
+	printf("===== GET CALLBACK url : %s =====\n", req->url);
 
-	if (http_send_response(client, 200, "GET SUCCESS\n", NULL) < 0) {
+	if (http_send_response(client, 200, "GET SUCCESS", NULL) < 0) {
 		printf("Error: Fail to send response\n");
 	}
 }
@@ -168,9 +154,21 @@ void http_get_callback(struct http_client_t *client, struct http_req_message *re
 /* PUT callback */
 void http_put_callback(struct http_client_t *client,  struct http_req_message *req)
 {
-	printf("===== PUT CALLBACK url : %s=====\n", req->url);
+	printf("===== PUT CALLBACK url : %s entity size : %d =====\n", req->url, strlen(req->entity));
 
-	if (http_send_response(client, 200, "PUT SUCCESS\n", NULL) < 0) {
+	if (http_send_response(client, 200, "PUT SUCCESS", NULL) < 0) {
+		printf("Error: Fail to send response\n");
+	}
+}
+
+void http_put_busy(struct http_client_t *client, struct http_req_message *req)
+{
+	int i;
+
+	printf("===== PUT BUSY CALLBACK url : %s entity size : %d =====\n", req->url, strlen(req->entity));
+	for (i = 0; i < 100; i++) sleep(1);
+
+	if (http_send_response(client, 200, "PUT BUSY Success", NULL) < 0) {
 		printf("Error: Fail to send response\n");
 	}
 }
@@ -178,7 +176,7 @@ void http_put_callback(struct http_client_t *client,  struct http_req_message *r
 /* POST callback */
 void http_post_callback(struct http_client_t *client, struct http_req_message *req)
 {
-	printf("===== POST CALLBACK url : %s=====\n", req->url);
+	printf("===== POST CALLBACK url : %s =====\n", req->url);
 
 	/*
 	 * in callback for POST and PUT request,
@@ -190,7 +188,7 @@ void http_post_callback(struct http_client_t *client, struct http_req_message *r
 		return;
 	}
 
-	if (http_send_response(client, 200, "POST SUCCESS\n", NULL) < 0) {
+	if (http_send_response(client, 200, "POST SUCCESS", NULL) < 0) {
 		printf("Error: Fail to send response\n");
 	}
 }
@@ -198,9 +196,9 @@ void http_post_callback(struct http_client_t *client, struct http_req_message *r
 /* DELETE callback */
 void http_delete_callback(struct http_client_t *client,  struct http_req_message *req)
 {
-	printf("===== DELETE CALLBACK url : %s=====\n", req->url);
+	printf("===== DELETE CALLBACK url : %s =====\n", req->url);
 
-	if (http_send_response(client, 200, "DELETE SUCCESS\n", NULL) < 0) {
+	if (http_send_response(client, 200, "DELETE SUCCESS", NULL) < 0) {
 		printf("Error: Fail to send response\n");
 	}
 }
@@ -316,9 +314,10 @@ void register_callbacks(struct http_server_t *server)
 {
 	http_server_register_cb(server, HTTP_METHOD_GET, NULL, http_get_callback);
 	http_server_register_cb(server, HTTP_METHOD_GET, root_url, http_get_root);
-	http_server_register_cb(server, HTTP_METHOD_GET, devid_url, http_get_device_id);
 
 	http_server_register_cb(server, HTTP_METHOD_PUT, NULL, http_put_callback);
+	http_server_register_cb(server, HTTP_METHOD_PUT, busy_url, http_put_busy);
+
 	http_server_register_cb(server, HTTP_METHOD_POST, NULL, http_post_callback);
 	http_server_register_cb(server, HTTP_METHOD_DELETE, NULL, http_delete_callback);
 
@@ -333,9 +332,10 @@ void deregister_callbacks(struct http_server_t *server)
 {
 	http_server_deregister_cb(server, HTTP_METHOD_GET, NULL);
 	http_server_deregister_cb(server, HTTP_METHOD_GET, root_url);
-	http_server_deregister_cb(server, HTTP_METHOD_GET, devid_url);
 
 	http_server_deregister_cb(server, HTTP_METHOD_PUT, NULL);
+	http_server_deregister_cb(server, HTTP_METHOD_PUT, busy_url);
+
 	http_server_deregister_cb(server, HTTP_METHOD_POST, NULL);
 	http_server_deregister_cb(server, HTTP_METHOD_DELETE, NULL);
 }

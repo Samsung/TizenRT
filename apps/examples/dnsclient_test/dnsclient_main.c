@@ -82,6 +82,9 @@
 #define DNS_DEFAULT_PORT   53
 #endif
 
+#ifndef CONFIG_NETDB_DNSCLIENT_NAMESIZE
+#error "CONFIG_NETDB_DNSCLIENT_NAMESIZE is not defined"
+#endif
 /****************************************************************************
  * Enumeration
  ****************************************************************************/
@@ -93,6 +96,7 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+char hostname[CONFIG_NETDB_DNSCLIENT_NAMESIZE];
 
 /****************************************************************************
  * function prototype
@@ -123,10 +127,10 @@ static void show_usage(FAR const char *progname)
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int dnsclient_main(int argc, char *argv[])
+int dnsclient_main(int argc, FAR char *argv[])
 #endif
 {
-	struct hostent *shost;
+	struct hostent *shost = NULL;
 #ifdef CONFIG_NETDB_DNSSERVER_IPv4
 	struct sockaddr_in dns;
 #endif
@@ -138,24 +142,33 @@ int dnsclient_main(int argc, char *argv[])
 
 	if (argc == 3 && argv[2] != NULL) {
 #ifdef CONFIG_NETDB_DNSSERVER_IPv4
-		printf("dns_add_nameserver : %s\n", argv[2]);
+		printf("dnsclient : dns_add_nameserver : %s\n", argv[2]);
 		dns.sin_family = AF_INET;
 		dns.sin_port = htons(DNS_DEFAULT_PORT);
 		dns.sin_addr.s_addr = inet_addr(argv[2]);
 		dns_add_nameserver((FAR struct sockaddr *)&dns, sizeof(struct sockaddr_in));
 #endif
 #ifdef CONFIG_NETDB_DNSSERVER_BY_DHCP
-		printf("dns server address is set by DHCP\n");
+		printf("dnsclient : dns server address is set by DHCP\n");
 #endif
 	}
 
-	if ((shost = gethostbyname(argv[1])) == NULL) {
-		printf("failed to resolve host's IP address\n");
+	memset(hostname, 0x00, CONFIG_NETDB_DNSCLIENT_NAMESIZE);
+
+	if (strlen(argv[1]) > CONFIG_NETDB_DNSCLIENT_NAMESIZE) {
+		printf("dnsclient : length of hostname has to lower than %d\n", CONFIG_NETDB_DNSCLIENT_NAMESIZE);
+		return -1;
+	}
+
+	strncpy(hostname, argv[1], CONFIG_NETDB_DNSCLIENT_NAMESIZE);
+	printf("\nHostname : %s [len %d]\n", hostname, strlen(hostname));
+
+	if ((shost = gethostbyname(hostname)) == NULL || shost->h_addr_list == NULL) {
+		printf("dnsclient : failed to resolve host's IP address, shost %p\n", shost);
 		return -1;
 	} else {
 		printf("DNS results\n");
-		printf(" Official hostname : %s\n", shost->h_name);
-		printf(" IP Address : %s\n", ip_ntoa((ip_addr_t *)shost->h_addr_list[0]));
+		printf("IP Address : %s\n", ip_ntoa((ip_addr_t *)shost->h_addr_list[0]));
 	}
 
 	return 0;

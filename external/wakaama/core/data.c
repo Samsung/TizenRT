@@ -74,7 +74,6 @@ static int prv_setBuffer(lwm2m_data_t * dataP,
     dataP->value.asBuffer.buffer = (uint8_t *)lwm2m_malloc(bufferLen);
     if (dataP->value.asBuffer.buffer == NULL)
     {
-        lwm2m_data_free(1, dataP);
         return 0;
     }
     dataP->value.asBuffer.length = bufferLen;
@@ -429,6 +428,8 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
                      lwm2m_media_type_t format,
                      lwm2m_data_t ** dataP)
 {
+    int res;
+
     LOG_ARG("format: %s, bufferLen: %d", STR_MEDIA_TYPE(format), bufferLen);
     LOG_URI(uriP);
     switch (format)
@@ -439,7 +440,13 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
         if (*dataP == NULL) return 0;
         (*dataP)->id = uriP->resourceId;
         (*dataP)->type = LWM2M_TYPE_STRING;
-        return prv_setBuffer(*dataP, buffer, bufferLen);
+        res = prv_setBuffer(*dataP, buffer, bufferLen);
+        if (res == 0)
+        {
+            lwm2m_data_free(1, *dataP);
+            *dataP = NULL;
+        }
+        return res;
 
     case LWM2M_CONTENT_OPAQUE:
         if (!LWM2M_URI_IS_SET_RESOURCE(uriP)) return 0;
@@ -447,7 +454,13 @@ int lwm2m_data_parse(lwm2m_uri_t * uriP,
         if (*dataP == NULL) return 0;
         (*dataP)->id = uriP->resourceId;
         (*dataP)->type = LWM2M_TYPE_OPAQUE;
-        return prv_setBuffer(*dataP, buffer, bufferLen);
+        res = prv_setBuffer(*dataP, buffer, bufferLen);
+        if (res == 0)
+        {
+            lwm2m_data_free(1, *dataP);
+            *dataP = NULL;
+        }
+        return res;
 
 #ifdef LWM2M_OLD_CONTENT_FORMAT_SUPPORT
     case LWM2M_CONTENT_TLV_OLD:

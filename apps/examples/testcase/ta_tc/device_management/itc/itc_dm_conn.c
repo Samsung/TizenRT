@@ -123,7 +123,7 @@ static void itc_dm_conn_set_get_tx_power_p(void)
     TC_ASSERT_EQ("dm_conn_set_tx_power" , ret , DM_ERROR_NONE);
     ret = dm_conn_get_tx_power(&getVal);
     TC_ASSERT_EQ("dm_conn_get_tx_power" , ret, DM_ERROR_NONE);
-    TC_ASSERT_EQ_CLEANUP("itc_dm_conn_set_get_power" , setVal , getVal, "set and get value mismatch", dm_conn_set_tx_power(&defaultvalue));
+    TC_ASSERT_EQ_CLEANUP("itc_dm_conn_set_get_power" , setVal , getVal, dm_conn_set_tx_power(&defaultvalue));
     dm_conn_set_tx_power(&defaultvalue);
     TC_SUCCESS_RESULT();
 }

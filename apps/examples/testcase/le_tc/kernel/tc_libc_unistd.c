@@ -37,7 +37,7 @@
 #define MSG_SIZE 30
 
 sem_t pipe_sem;
-int pipe_tc_chk;
+int pipe_tc_chk = OK;
 int pipe_fd[2];
 const char msg[MSG_SIZE + 1] = "012345678901234567890123456789";
 char pipe_buf[MSG_SIZE + 1];
@@ -200,14 +200,14 @@ static void tc_libc_unistd_pipe(void)
 
 	sem_init(&pipe_sem, 0, 0);
 	pid[0] = task_create("tx", 99, 1024, pipe_tx_func, NULL);
-	TC_ASSERT_GEQ_CLEANUP("task_create", pid[0], 0, get_errno(), goto cleanup_pipe);
+	TC_ASSERT_GEQ_CLEANUP("task_create", pid[0], 0, goto cleanup_pipe);
 
 	pid[1] = task_create("rx", 99, 1024, pipe_rx_func, NULL);
-	TC_ASSERT_GEQ_CLEANUP("task_create", pid[1], 0, get_errno(), goto cleanup_pipe);
+	TC_ASSERT_GEQ_CLEANUP("task_create", pid[1], 0, goto cleanup_pipe);
 
 	sem_wait(&pipe_sem);
 
-	TC_ASSERT_NEQ_CLEANUP("pipe", pipe_tc_chk, ERROR, get_errno(), goto cleanup_pipe);
+	TC_ASSERT_EQ_CLEANUP("pipe", pipe_tc_chk, OK, goto cleanup_pipe);
 
 	TC_SUCCESS_RESULT();
 

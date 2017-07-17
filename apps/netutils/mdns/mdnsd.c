@@ -1355,6 +1355,7 @@ static void main_loop(struct mdnsd *svr)
 
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 	pthread_mutex_lock(&svr->data_lock);
+
 	struct rr_list *svc_le = svr->services;
 	for (; svc_le; svc_le = svc_le->next) {
 		// set TTL to zero

@@ -532,12 +532,12 @@ static void tc_mqueue_mq_notify(void)
 	sa.sa_flags = 0;
 	sigaction(SIGUSR1, &sa, NULL);
 
-	TC_ASSERT_EQ_CLEANUP("mq_notify", mq_notify(mqdes, &notification), OK, get_errno(), {
+	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, &notification), OK, get_errno(), {
 		goto cleanup;
 	}
 						);
 
-	TC_ASSERT_NEQ_CLEANUP("mq_send", mq_send(mqdes, s_msg_ptr, 15, prio), ERROR, get_errno(), {
+	TC_ASSERT_EQ_CLEANUP("mq_send", mq_send(mqdes, s_msg_ptr, 15, prio), OK, {
 		goto cleanup;
 	}
 						 );
@@ -574,17 +574,13 @@ static void tc_mqueue_mq_unlink(void)
 	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
 
 	ret = mq_unlink("mqunlink");
-	TC_ASSERT_EQ_CLEANUP("mq_unlink", ret, OK, get_errno(), {
+	TC_ASSERT_EQ_ERROR_CLEANUP("mq_unlink", ret, OK, get_errno(), {
 		mq_close(mqdes);
 	});
 
 	ret = mq_unlink("mqunlink");
-	TC_ASSERT_EQ_CLEANUP("mq_unlink", ret, ERROR, get_errno(), {
-		mq_close(mqdes);
-	});
-	TC_ASSERT_EQ_CLEANUP("mq_unlink", errno, ENOENT, get_errno(), {
-		mq_close(mqdes);
-	});
+	TC_ASSERT_EQ_CLEANUP("mq_unlink", ret, ERROR, mq_close(mqdes));
+	TC_ASSERT_EQ_CLEANUP("mq_unlink", errno, ENOENT, mq_close(mqdes));
 
 	mq_close(mqdes);
 	TC_SUCCESS_RESULT();

@@ -37,17 +37,17 @@ static void tc_libc_mqueue_mq_getattr(void)
 	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)ERROR);
 
 	ret_chk = mq_getattr(NULL, &mq_stat);
-	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, ERROR, "not ERROR", goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, ERROR, goto errout);
 
 	ret_chk = mq_getattr(mqdes, NULL);
-	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, ERROR, "not ERROR", goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, ERROR, goto errout);
 
 	ret_chk = mq_getattr(mqdes, &mq_stat);
-	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, OK, "not OK", goto errout);
-	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_maxmsg, mqdes->msgq->maxmsgs, "ERROR", goto errout);
-	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_msgsize, mqdes->msgq->maxmsgsize, "ERROR", goto errout);
-	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_flags, mqdes->oflags, "ERROR", goto errout);
-	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_curmsgs, (size_t)mqdes->msgq->nmsgs, "ERROR", goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, OK, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_maxmsg, mqdes->msgq->maxmsgs, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_msgsize, mqdes->msgq->maxmsgsize, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_flags, mqdes->oflags, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_curmsgs, (size_t)mqdes->msgq->nmsgs, goto errout);
 
 	mq_close(mqdes);
 	mq_unlink("mqgetattr");
@@ -70,26 +70,26 @@ static void tc_libc_mqueue_mq_setattr(void)
 	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)ERROR);
 
 	ret_chk = mq_getattr(mqdes, &mq_stat);
-	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, OK, "not OK", goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, OK, goto errout);
 
 	ret_chk = mq_setattr(NULL, &mq_stat, &oldstat);
-	TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, ERROR, "not ERROR", goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, ERROR, goto errout);
 
 	ret_chk = mq_setattr(mqdes, NULL, &oldstat);
-	TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, ERROR, "not ERROR", goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, ERROR, goto errout);
 
 	if (mq_stat.mq_flags & O_NONBLOCK) {
 		mq_stat.mq_flags = mq_stat.mq_flags & (~O_NONBLOCK);
 		ret_chk = mq_setattr(mqdes, &mq_stat, &oldstat);
-		TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, OK, "not OK", goto errout);
-		TC_ASSERT_EQ_CLEANUP("mq_setattr", oldstat.mq_flags & O_NONBLOCK, O_NONBLOCK, "ERROR", goto errout);
-		TC_ASSERT_EQ_CLEANUP("mq_setattr", mqdes->oflags & O_NONBLOCK, 0, "ERROR", goto errout);
+		TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, OK, goto errout);
+		TC_ASSERT_EQ_CLEANUP("mq_setattr", oldstat.mq_flags & O_NONBLOCK, O_NONBLOCK, goto errout);
+		TC_ASSERT_EQ_CLEANUP("mq_setattr", mqdes->oflags & O_NONBLOCK, 0, goto errout);
 	} else {
 		mq_stat.mq_flags = mq_stat.mq_flags | O_NONBLOCK;
 		ret_chk = mq_setattr(mqdes, &mq_stat, &oldstat);
-		TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, OK, "not OK", goto errout);
-		TC_ASSERT_EQ_CLEANUP("mq_setattr", oldstat.mq_flags & O_NONBLOCK, 0, "ERROR", goto errout);
-		TC_ASSERT_EQ_CLEANUP("mq_setattr", mqdes->oflags & O_NONBLOCK, O_NONBLOCK, "ERROR", goto errout);
+		TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, OK, goto errout);
+		TC_ASSERT_EQ_CLEANUP("mq_setattr", oldstat.mq_flags & O_NONBLOCK, 0, goto errout);
+		TC_ASSERT_EQ_CLEANUP("mq_setattr", mqdes->oflags & O_NONBLOCK, O_NONBLOCK, goto errout);
 	}
 
 	mq_close(mqdes);
