@@ -37,7 +37,6 @@ unsigned int gBus = 0;
 struct iotbus_spi_config_s _g_st_config = {
     (char)8,
     0,
-    0,
     12000000,
     IOTBUS_SPI_MODE0,
 };
