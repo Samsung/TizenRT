@@ -174,9 +174,16 @@
 #define LWIP_ND6_RDNSS_MAX_DNS_SERVERS	CONFIG_NET_IPv6_ND_RDNSS_MAX_DNS_SERVERS
 #endif
 
-
-
 /* ---------- ND6 options ---------- */
+
+
+/* ---------- DHCP6 options ---------- */
+
+#ifdef CONFIG_NET_IPv6_DHCP
+#define LWIP_IPV6_DHCP6			CONFIG_NET_IPv6_DHCP
+#else
+#define LWIP_IPV6_DHCP6			0
+#endif
 
 /* ---------- VLAN options ---------- */
 #ifdef CONFIG_NET_LWIP_VLAN

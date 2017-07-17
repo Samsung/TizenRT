@@ -107,6 +107,13 @@ if NET_IPv6_MLD
 source "net/lwip/configs/mld/Kconfig"
 endif
 
+config NET_IPv6_DHCP
+	bool "DHCPv6 Support"
+	depends on NET_IPv6
+	default n
+	---help---
+		Enable DHCPv6 stateful address autoconfiguration.
+
 
 source "net/lwip/configs/mbox/Kconfig"
 source "net/lwip/configs/mem/Kconfig"
