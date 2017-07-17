@@ -226,33 +226,22 @@ ssize_t ws_recv_cb(websocket_context_ptr ctx, uint8_t *buf, size_t len, int flag
 RECV_RETRY:
 	if (info->data->tls_enabled) {
 		r = mbedtls_ssl_read(info->data->tls_ssl, buf, len);
-		if (r == 0) {
-			websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
-		} else if (r < 0) {
-			printf("mbedtls_ssl_read err : %d\n", errno);
-			if (retry_cnt == 0) {
-				websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
-				return r;
-			}
-			retry_cnt--;
-			goto RECV_RETRY;
-		}
 	} else {
 		r = recv(fd, buf, len, 0);
-		if (r == 0) {
-			websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
-		} else if (r < 0) {
-			printf("recv err : %d\n", errno);
-			if (errno == EAGAIN || errno == EBUSY) {
-				if (retry_cnt == 0) {
-					websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
-					return r;
-				}
-				retry_cnt--;
-				goto RECV_RETRY;
-			}
-		}
 	}
+
+	if (r == 0) {
+		websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+	} else if (r < 0) {
+		printf("websocket recv_cb err : %d\n", errno);
+		if (retry_cnt == 0) {
+			websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+			return r;
+		}
+		retry_cnt--;
+		goto RECV_RETRY;
+	}
+
 	return r;
 }
 
@@ -268,28 +257,18 @@ ssize_t ws_send_cb(websocket_context_ptr ctx, const uint8_t *buf, size_t len, in
 SEND_RETRY:
 	if (info->data->tls_enabled) {
 		r = mbedtls_ssl_write(info->data->tls_ssl, buf, len);
-		if (r < 0) {
-			printf("mbedtls_ssl_write err : %d\n", errno);
-			if (retry_cnt == 0) {
-				websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
-				return r;
-			}
-			retry_cnt--;
-			goto SEND_RETRY;
-		}
 	} else {
 		r = send(fd, buf, len, flags);
-		if (r < 0) {
-			printf("send err : %d\n", errno);
-			if (errno == EAGAIN || errno == EBUSY) {
-				if (retry_cnt == 0) {
-					websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
-					return r;
-				}
-				retry_cnt--;
-				goto SEND_RETRY;
-			}
+	}
+
+	if (r < 0) {
+		printf("websocket send_cb err : %d\n", errno);
+		if (retry_cnt == 0) {
+			websocket_set_error(info->data, WEBSOCKET_ERR_CALLBACK_FAILURE);
+			return r;
 		}
+		retry_cnt--;
+		goto SEND_RETRY;
 	}
 
 	return r;
@@ -305,8 +284,13 @@ void ws_server_on_msg_cb(websocket_context_ptr ctx, const websocket_on_msg_arg *
 	/* Echo back non-closing message */
 	if (WEBSOCKET_CHECK_NOT_CTRL_FRAME(arg->opcode)) {
 		websocket_queue_msg(info->data, &msgarg);
-	} else {
-		printf("server on_msg received close message\n");
+		//echo back the message
+	} else if (WEBSOCKET_CHECK_CTRL_CLOSE(arg->opcode)) {
+		printf("echoback_on_msg received close message\n");
+	} else if (WEBSOCKET_CHECK_CTRL_PING(arg->opcode)) {
+		printf("srv got ping\n");
+	} else if (WEBSOCKET_CHECK_CTRL_PONG(arg->opcode)) {
+		printf("srv got pong\n");
 	}
 }
 #endif
