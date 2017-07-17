@@ -183,7 +183,7 @@ void netif_init(void)
 #endif							/* NO_SYS */
 
 #if LWIP_IPV6
-	IP_ADDR6_HOST(&loop_netif.ip_addr, 0, 0, 0, 0x00000001UL);
+	IP_ADDR6_HOST(loop_netif.ip6_addr, 0, 0, 0, 0x00000001UL);
 	loop_netif.ip6_addr_state[0] = IP6_ADDR_VALID;
 #endif							/* LWIP_IPV6 */
 
@@ -259,7 +259,7 @@ struct netif *netif_add(struct netif *netif,
 #endif							/* LWIP_IPV4 */
 #if LWIP_IPV6
 	for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
-		ip_addr_set_zero_ip6(&netif->ip_addr);
+		ip_addr_set_zero_ip6(&netif->ip6_addr[i]);
 		netif->ip6_addr_state[i] = IP6_ADDR_INVALID;
 	}
 	netif->output_ip6 = netif_null_output_ip6;
@@ -994,8 +994,8 @@ void netif_ip6_addr_set_parts(struct netif *netif, s8_t addr_idx, u32_t i0, u32_
 		}
 		/* @todo: remove/readd mib2 ip6 entries? */
 
-		IP6_ADDR(ip_2_ip6(&netif->ip_addr), i0, i1, i2, i3);
-		IP_SET_TYPE_VAL(netif->ip_addr, IPADDR_TYPE_V6);
+		IP6_ADDR(ip_2_ip6(&(netif->ip6_addr[addr_idx])), i0, i1, i2, i3);
+		IP_SET_TYPE_VAL(netif->ip6_addr[addr_idx], IPADDR_TYPE_V6);
 
 		if (netif_ip6_addr_state(netif, addr_idx) & IP6_ADDR_VALID) {
 			netif_issue_reports(netif, NETIF_REPORT_TYPE_IPV6);
@@ -1003,7 +1003,9 @@ void netif_ip6_addr_set_parts(struct netif *netif, s8_t addr_idx, u32_t i0, u32_
 		}
 	}
 
-	LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("netif: IPv6 address %d of interface %c%c set to %s/0x%" X8_F "\n", addr_idx, netif->name[0], netif->name[1], ip6addr_ntoa(netif_ip6_addr(netif, addr_idx)), netif_ip6_addr_state(netif, addr_idx)));
+	LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("netif: IPv6 address %d of interface %c%c set to %s/0x%"X8_F"\n",
+	addr_idx, netif->name[0], netif->name[1], ip6addr_ntoa(netif_ip6_addr(netif, addr_idx)),
+	netif_ip6_addr_state(netif, addr_idx)));
 }
 
 /**
@@ -1097,25 +1099,31 @@ void netif_create_ip6_linklocal_address(struct netif *netif, u8_t from_mac_48bit
 	u8_t i, addr_index;
 
 	/* Link-local prefix. */
-	ip_2_ip6(&netif->ip_addr)->addr[0] = PP_HTONL(0xfe800000ul);
-	ip_2_ip6(&netif->ip_addr)->addr[1] = 0;
+	ip_2_ip6(&netif->ip6_addr[0])->addr[0] = PP_HTONL(0xfe800000ul);
+	ip_2_ip6(&netif->ip6_addr[0])->addr[1] = 0;
 
 	/* Generate interface ID. */
 	if (from_mac_48bit) {
 		/* Assume hwaddr is a 48-bit IEEE 802 MAC. Convert to EUI-64 address. Complement Group bit. */
-		ip_2_ip6(&netif->ip_addr)->addr[2] = lwip_htonl((((u32_t)(netif->hwaddr[0] ^ 0x02)) << 24) | ((u32_t)(netif->hwaddr[1]) << 16) | ((u32_t)(netif->hwaddr[2]) << 8) | (0xff));
-		ip_2_ip6(&netif->ip_addr)->addr[3] = lwip_htonl((0xfeul << 24) | ((u32_t)(netif->hwaddr[3]) << 16) | ((u32_t)(netif->hwaddr[4]) << 8) | (netif->hwaddr[5]));
+		ip_2_ip6(&netif->ip6_addr[0])->addr[2] = lwip_htonl((((u32_t)(netif->hwaddr[0] ^ 0x02)) << 24) |
+			((u32_t)(netif->hwaddr[1]) << 16) |
+			((u32_t)(netif->hwaddr[2]) << 8) |
+			(0xff));
+		ip_2_ip6(&netif->ip6_addr[0])->addr[3] = lwip_htonl((0xfeul << 24) |
+			((u32_t)(netif->hwaddr[3]) << 16) |
+			((u32_t)(netif->hwaddr[4]) << 8) |
+			(netif->hwaddr[5]));
 	} else {
 		/* Use hwaddr directly as interface ID. */
-		ip_2_ip6(&netif->ip_addr)->addr[2] = 0;
-		ip_2_ip6(&netif->ip_addr)->addr[3] = 0;
+		ip_2_ip6(&netif->ip6_addr[0])->addr[2] = 0;
+		ip_2_ip6(&netif->ip6_addr[0])->addr[3] = 0;
 
 		addr_index = 3;
 		for (i = 0; (i < 8) && (i < netif->hwaddr_len); i++) {
 			if (i == 4) {
 				addr_index--;
 			}
-			ip_2_ip6(&netif->ip_addr)->addr[addr_index] |= ((u32_t)(netif->hwaddr[netif->hwaddr_len - i - 1])) << (8 * (i & 0x03));
+			ip_2_ip6(&netif->ip6_addr[0])->addr[addr_index] |= ((u32_t)(netif->hwaddr[netif->hwaddr_len - i - 1])) << (8 * (i & 0x03));
 		}
 	}
 
@@ -1154,7 +1162,7 @@ err_t netif_add_ip6_address(struct netif *netif, const ip6_addr_t *ip6addr, s8_t
 	/* Find a free slot -- musn't be the first one (reserved for link local) */
 	for (i = 1; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
 		if (ip6_addr_isinvalid(netif_ip6_addr_state(netif, i))) {
-			ip_addr_copy_from_ip6(netif->ip_addr, *ip6addr);
+			ip_addr_copy_from_ip6(netif->ip6_addr[i], *ip6addr);
 			netif_ip6_addr_set_state(netif, i, IP6_ADDR_TENTATIVE);
 			if (chosen_idx != NULL) {
 				*chosen_idx = i;

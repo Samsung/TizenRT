@@ -254,13 +254,18 @@ struct netif {
 	/** pointer to next in linked list */
 	struct netif *next;
 
+#if LWIP_IPV4
 	/** IP address configuration in network byte order */
 	ip_addr_t ip_addr;
 	ip_addr_t netmask;
 	ip_addr_t gw;
+#endif /* LWIP_IPV4 */
+#if LWIP_IPV6
+	ip_addr_t ip6_addr[LWIP_IPV6_NUM_ADDRESSES];
 	/** The state of each IPv6 address (Tentative, Preferred, etc).
 	 * @see ip6_addr.h */
 	u8_t ip6_addr_state[LWIP_IPV6_NUM_ADDRESSES];
+#endif /* LWIP_IPV6 */
 	/** This function is called by the network device driver
 	 *  to pass a packet up the TCP/IP stack. */
 	netif_input_fn input;
