@@ -101,7 +101,7 @@ endif #NET_LWIP_IGMP
 menuconfig NET_IPv6_MLD
 	bool "MLD Support"
 	depends on NET_IPv6
-	default n
+	default y
 
 if NET_IPv6_MLD
 source "net/lwip/configs/mld/Kconfig"
