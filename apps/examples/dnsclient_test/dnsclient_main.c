@@ -82,6 +82,10 @@
 #define DNS_DEFAULT_PORT   53
 #endif
 
+#ifndef CONFIG_EXAMPLES_DNSCLIENT_TEST_SERVER_PORT
+#define CONFIG_EXAMPLES_DNSCLIENT_TEST_SERVER_PORT	DNS_DEFAULT_PORT
+#endif
+
 #ifndef CONFIG_NETDB_DNSCLIENT_NAMESIZE
 #error "CONFIG_NETDB_DNSCLIENT_NAMESIZE is not defined"
 #endif
@@ -144,7 +148,7 @@ int dnsclient_main(int argc, FAR char *argv[])
 #ifdef CONFIG_NETDB_DNSSERVER_IPv4
 		printf("dnsclient : dns_add_nameserver : %s\n", argv[2]);
 		dns.sin_family = AF_INET;
-		dns.sin_port = htons(DNS_DEFAULT_PORT);
+		dns.sin_port = htons(CONFIG_EXAMPLES_DNSCLIENT_TEST_SERVER_PORT);
 		dns.sin_addr.s_addr = inet_addr(argv[2]);
 		dns_add_nameserver((FAR struct sockaddr *)&dns, sizeof(struct sockaddr_in));
 #endif

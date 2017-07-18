@@ -20,4 +20,11 @@ config EXAMPLES_DNSCLIENT_TEST_PROGNAME
 		This is the name of the program that will be use when the NSH ELF
 		program is installed.
 
+config EXAMPLES_DNSCLIENT_TEST_SERVER_PORT
+	int "DNS server port number"
+	default 53
+	depends on NETDB_DNSSERVER_IPv4
+	---help---
+		This is the port number of DNS server.
+
 endif
