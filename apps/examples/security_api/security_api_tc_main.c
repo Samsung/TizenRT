@@ -1061,24 +1061,60 @@ struct fac_info {
 int print_crt(int debug_mode, unsigned char *buf, unsigned int buf_len)
 {
 	int ret;
+	int pos = 0;
+	size_t len = 0;
+	unsigned char *p;
+	int buf_format = MBEDTLS_X509_FORMAT_DER;
 
 	if (debug_mode != 1) {
 		return 0;
 	}
 
 	mbedtls_x509_crt crt;
+	mbedtls_x509_crt *t_crt;
 
 	mbedtls_x509_crt_init(&crt);
 
-	ret = mbedtls_x509_crt_parse(&crt, buf, buf_len);
-	if (ret != 0) {
-		goto exit;
+	if (strstr((const char *)buf, "-----BEGIN CERTIFICATE-----") != NULL) {
+		buf_format = MBEDTLS_X509_FORMAT_PEM;
 	}
-	ret = mbedtls_x509_crt_info((char *)buf, buf_len, "  - ", &crt);
-	if (ret <= 0) {
-		goto exit;
+
+	if (buf_format == MBEDTLS_X509_FORMAT_DER) {
+
+		p = (unsigned char *)buf;
+
+		while (pos < buf_len) {
+			p = (unsigned char *)buf + pos;
+			ret = mbedtls_asn1_get_tag(&p, buf + buf_len, &len,
+				MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE);
+			if (ret != 0) {
+				goto exit;
+			}
+			if (pos + len < buf_len) {
+				ret = mbedtls_x509_crt_parse(&crt, buf + pos, len + 4);
+				if (ret != 0) {
+					goto exit;
+				}
+			}
+			pos += len + 4;
+		}
+	} else {
+		ret = mbedtls_x509_crt_parse(&crt, buf, buf_len);
+		if (ret != 0) {
+			goto exit;
+		}
 	}
-	printf("\n%s\n", buf);
+
+	t_crt = &crt;
+
+	while (t_crt != NULL) {
+		ret = mbedtls_x509_crt_info((char *)buf, buf_len, "  - ", t_crt);
+		if (ret <= 0) {
+			goto exit;
+		}
+		printf("\n%s\n", buf);
+		t_crt = t_crt->next;
+	}
 
 	return 0;
 
