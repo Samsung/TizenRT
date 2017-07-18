@@ -75,7 +75,8 @@ CSRCS_DRIVER += block/fs_devsyslog.c
 endif
 endif
 
-# Include MTD drivers
+# Include MTD drivers only if mountpoints are enabled
+ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
 
 ifeq ($(CONFIG_MTD),y)
 CSRCS_DRIVER += mtd/mtd_config.c
@@ -112,7 +113,8 @@ ifeq ($(CONFIG_MTD_M25P),y)
 CSRCS_DRIVER += mtd/m25px/m25px.c
 endif
 
-endif
+endif # CONFIG_MTD
+endif # CONFIG_DISABLE_MOUNTPOINT
 
 CSRCS += $(notdir $(CSRCS_DRIVER))
 
