@@ -28,6 +28,7 @@ config FS_WRITABLE
 	bool
 	default y
 
+if !DISABLE_MOUNTPOINT
 source fs/aio/Kconfig
 source fs/semaphore/Kconfig
 source fs/mqueue/Kconfig
@@ -36,6 +37,7 @@ source fs/procfs/Kconfig
 source fs/romfs/Kconfig
 source fs/driver/block/Kconfig
 source fs/driver/mtd/Kconfig
+endif
 
 comment "System Logging"
 
