@@ -24,6 +24,12 @@ config NETUTILS_NTPCLIENT_SIGWAKEUP
 	default 18
 	depends on !DISABLE_SIGNALS
 
+config NETUTILS_NTPCLIENT_DEBUG
+	bool "NTP client debug message option"
+	default n
+	---help---
+		Enable NTP client debug message
+
 config NETUTILS_NTPCLIENT_SOCK_TIMEOUT
 	int "NTP client socket timeout (seconds)"
 	default 5
