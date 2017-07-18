@@ -271,6 +271,7 @@ int board_app_initialize(void)
 	struct mtd_dev_s *mtd;
 #endif /* CONFIG_RAMMTD */
 
+#ifndef CONFIG_DISABLE_MOUNTPOINT
 	sidk_s5jt200_configure_partitions();
 
 #if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME)
@@ -348,6 +349,8 @@ int board_app_initialize(void)
 		}
 	}
 #endif /* CONFIG_RAMMTD */
+
+#endif /* CONFIG_DISABLE_MOUNTPOINT */
 
 #ifdef CONFIG_S5J_I2C
 	s5j_i2c_register(0);
