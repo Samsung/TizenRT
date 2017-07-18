@@ -493,6 +493,16 @@ void coap_free_context(coap_context_t *context)
 #else
 	HASH_ITER(hh, context->resources, res, rtmp) {
 #endif
+/* To prevent memory leakage due to remained subscribers */
+#ifndef WITHOUT_OBSERVE
+		coap_subscription_t *s = NULL;
+		for (s = list_head(res->subscribers); s; s = list_item_next(s)) {
+			if (s) {
+				list_remove(res->subscribers, s);
+				coap_free(s);
+			}
+		}
+#endif
 		coap_delete_resource(context, res->key);
 	}
 #endif /* WITH_POSIX || WITH_LWIP */
