@@ -79,18 +79,18 @@ int websocket_tls_handshake(websocket_t *data, char *hostname, int auth_mode)
 
 	/* default setting block mode */
 	if ((r = mbedtls_net_set_block(&(data->tls_net))) != 0) {
-		WEBSOCKET_DEBUG("Error: mbedtls_net_set_block returned %d\n", r);
+		WEBSOCKET_DEBUG("Error: mbedtls_net_set_block returned -%4x\n", -r);
 		return -1;
 	}
 
 	if ((r = mbedtls_ssl_setup(data->tls_ssl, data->tls_conf)) != 0) {
-		WEBSOCKET_DEBUG("Error: mbedtls_ssl_setup returned %d\n", r);
+		WEBSOCKET_DEBUG("Error: mbedtls_ssl_setup returned -%4x\n", -r);
 		return -1;
 	}
 #if WEBSOCKET_CONF_CHECK_TLS_HOSTNAME
 	if (hostname != NULL) {
 		if ((r = mbedtls_ssl_set_hostname(data->tls_ssl, hostname)) != 0) {
-			WEBSOCKET_DEBUG("Error: mbedtls_hostname fail %d\n", r);
+			WEBSOCKET_DEBUG("Error: mbedtls_hostname returned -%4x\n", -r);
 			return -1;
 		}
 	}
@@ -103,7 +103,7 @@ int websocket_tls_handshake(websocket_t *data, char *hostname, int auth_mode)
 
 	while ((r = mbedtls_ssl_handshake(data->tls_ssl)) != 0) {
 		if (r != MBEDTLS_ERR_SSL_WANT_READ && r != MBEDTLS_ERR_SSL_WANT_WRITE) {
-			WEBSOCKET_DEBUG("Error: mbedtls_ssl_handshake returned %d\n", r);
+			WEBSOCKET_DEBUG("Error: mbedtls_ssl_handshake returned -%4x\n", -r);
 			return r;
 		}
 	}

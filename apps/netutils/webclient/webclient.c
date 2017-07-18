@@ -488,7 +488,7 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 	ndbg("  . Seeding the random number generator...");
 
 	if ((result = mbedtls_ctr_drbg_seed(&(client->tls_ctr_drbg), mbedtls_entropy_func, &(client->tls_entropy), (const unsigned char *)tlsname, strlen(tlsname))) != 0) {
-		ndbg("Error: mbedtls_ctr_drbg_seed returned %d\n", result);
+		ndbg("Error: mbedtls_ctr_drbg_seed returned -%4x\n", -result);
 		goto TLS_INIT_EXIT;
 	}
 
@@ -501,7 +501,7 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 				  MBEDTLS_SSL_IS_CLIENT,
 				  MBEDTLS_SSL_TRANSPORT_STREAM,
 				  MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
-		ndbg("Error: mbedtls_ssl_config_defaults returned %d\n", result);
+		ndbg("Error: mbedtls_ssl_config_defaults returned -%4x\n", -result);
 		goto TLS_INIT_EXIT;
 	}
 
@@ -519,21 +519,21 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 		if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
 											 (const unsigned char *)ssl_config->dev_cert,
 											 ssl_config->dev_cert_len)) != 0) {
-			ndbg("Error: cli_cert parse fail, return %d\n", result);
+			ndbg("Error: cli_cert parse fail, returned -%4x\n", -result);
 			goto TLS_INIT_EXIT;
 		}
 
 		if ((result = mbedtls_pk_parse_key(&(client->tls_pkey),
 										   (const unsigned char *)ssl_config->private_key,
 										   ssl_config->private_key_len, NULL, 0)) != 0) {
-			ndbg("Error: cli_key parse fail, return %d\n", result);
+			ndbg("Error: cli_key parse fail, returned -%4x\n", -result);
 			goto TLS_INIT_EXIT;
 		}
 
 		if ((result = mbedtls_ssl_conf_own_cert(&(client->tls_conf),
 												&(client->tls_clicert),
 												&(client->tls_pkey))) != 0) {
-			ndbg("Error: mbedtls_ssl_conf_own_cert returned %d\n", result);
+			ndbg("Error: mbedtls_ssl_conf_own_cert returned -%4x\n", -result);
 			goto TLS_INIT_EXIT;
 		}
 
@@ -549,7 +549,7 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 		if ((result = mbedtls_x509_crt_parse(&(client->tls_clicert),
 											 (const unsigned char *)ssl_config->root_ca,
 											 ssl_config->root_ca_len)) != 0) {
-			ndbg("Error: CA_cert parse fail, return %d\n", result);
+			ndbg("Error: CA_cert parse fail, returned -%4x\n", -result);
 			goto TLS_INIT_EXIT;
 		}
 
@@ -611,7 +611,7 @@ int wget_tls_handshake(struct http_client_tls_t *client, const char *hostname)
 
 	if ((result = mbedtls_ssl_setup(&(client->tls_ssl),
 									&(client->tls_conf))) != 0) {
-		ndbg("Error: mbedtls_ssl_setup returned %d\n", result);
+		ndbg("Error: mbedtls_ssl_setup returned -%4x\n", -result);
 		goto HANDSHAKE_FAIL;
 	}
 
@@ -624,7 +624,7 @@ int wget_tls_handshake(struct http_client_tls_t *client, const char *hostname)
 	 */
 #if WEBCLIENT_CONF_CHECK_TLS_HOSTNAME
 	if ((result = mbedtls_ssl_set_hostname(&(client->tls_ssl), hostname)) != 0) {
-		ndbg("Error: mbedtls_hostname fail %d\n", result);
+		ndbg("Error: mbedtls_hostname returned -%4x\n", -result);
 		goto HANDSHAKE_FAIL;
 	}
 #endif
@@ -636,7 +636,7 @@ int wget_tls_handshake(struct http_client_tls_t *client, const char *hostname)
 	while ((result = mbedtls_ssl_handshake(&(client->tls_ssl))) != 0) {
 		if (result != MBEDTLS_ERR_SSL_WANT_READ &&
 			result != MBEDTLS_ERR_SSL_WANT_WRITE) {
-			ndbg("Error: TLS Handshake fail returned %d\n", result);
+			ndbg("Error: TLS Handshake fail returned -%4x\n", -result);
 			goto HANDSHAKE_FAIL;
 		}
 	}

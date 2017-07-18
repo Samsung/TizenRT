@@ -214,17 +214,17 @@ websocket_return_t websocket_tls_init(websocket_t *data, mbedtls_ssl_config *con
 
 	/* S/W Certificiate */
 	if ((r = mbedtls_x509_crt_parse(cert, (const unsigned char *)crt, crt_len)) != 0) {
-		printf("Error: mbedtls_x509_crt_parse when read crt returned %d\n", r);
+		printf("Error: mbedtls_x509_crt_parse when read crt returned -%4x\n", -r);
 		return WEBSOCKET_INIT_ERROR;
 	}
 
 	if ((r = mbedtls_x509_crt_parse(cert, (const unsigned char *)ca_crt, cacrt_len)) != 0) {
-		printf("Error: mbedtls_x509_crt_parse when read caspem returned %d\n", r);
+		printf("Error: mbedtls_x509_crt_parse when read caspem returned -%4x\n", -r);
 		return WEBSOCKET_INIT_ERROR;
 	}
 
 	if ((r = mbedtls_pk_parse_key(pkey, (const unsigned char *)key, key_len, NULL, 0)) != 0) {
-		printf("Error: mbedtls_pk_parse_key returned %d\n", r);
+		printf("Error: mbedtls_pk_parse_key returned -%4x\n", -r);
 		return WEBSOCKET_INIT_ERROR;
 	}
 
@@ -234,7 +234,7 @@ websocket_return_t websocket_tls_init(websocket_t *data, mbedtls_ssl_config *con
 	printf("  . Seeding the random number generator...");
 
 	if ((r = mbedtls_ctr_drbg_seed(ctr_drbg, mbedtls_entropy_func, entropy, NULL, 0)) != 0) {
-		printf("Error: mbedtls_ctr_drbg_seed returned %d\n", r);
+		printf("Error: mbedtls_ctr_drbg_seed returned -%4x\n", -r);
 		return WEBSOCKET_INIT_ERROR;
 	}
 
@@ -244,7 +244,7 @@ websocket_return_t websocket_tls_init(websocket_t *data, mbedtls_ssl_config *con
 	printf("  . Setting up the SSL data...");
 
 	if ((r = mbedtls_ssl_config_defaults(conf, (data->state == WEBSOCKET_RUN_CLIENT)  ? MBEDTLS_SSL_IS_CLIENT : MBEDTLS_SSL_IS_SERVER, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
-		printf("Error: mbedtls_ssl_config_defaults returned %d\n", r);
+		printf("Error: mbedtls_ssl_config_defaults returned -%4x\n", -r);
 		return WEBSOCKET_INIT_ERROR;
 	}
 
@@ -257,7 +257,7 @@ websocket_return_t websocket_tls_init(websocket_t *data, mbedtls_ssl_config *con
 
 	mbedtls_ssl_conf_ca_chain(conf, cert->next, NULL);
 	if ((r = mbedtls_ssl_conf_own_cert(conf, cert, pkey)) != 0) {
-		printf("Error: mbedtls_ssl_conf_own_cert returned %d\n", r);
+		printf("Error: mbedtls_ssl_conf_own_cert returned -%4x\n", -r);
 		return WEBSOCKET_INIT_ERROR;
 	}
 	data->tls_conf = conf;
