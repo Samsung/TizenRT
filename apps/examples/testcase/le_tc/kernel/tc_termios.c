@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,18 @@ static void tc_termios_tcsetattr_tcgetattr(void)
 	if (ret_chk != 0) {
 		printf("tc_termios_tcsetattr_tcgetattr fail : getattr %d\n", errno);
 	}
+
+	sleep(1);
+	ret_chk = isatty(fileno(stdin));
+	TC_ASSERT_EQ("isatty", ret_chk, 0);
+
+	ret_chk = cfgetspeed(&prev_tio);
+	TC_ASSERT_GEQ("cfgetspeed", ret_chk, 0);
+
+	/* Failure case: invalid option */
+	sleep(1);
+	ret_chk = tcsetattr(fileno(stdin), 33, &prev_tio);
+	TC_ASSERT_LT("tcsetattr", ret_chk, 0);
 
 	sleep(1);
 	prev_tio.c_oflag &= ~ONLCR;
