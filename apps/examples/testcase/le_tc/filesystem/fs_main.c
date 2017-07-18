@@ -814,6 +814,13 @@ static void fs_vfs_closedir_tc(void)
 
 	ret = closedir(dirp);
 	TC_ASSERT_EQ("closedir", ret, OK);
+
+	dirp = opendir("nodir");
+	TC_ASSERT_EQ("opendir", dirp, NULL);
+
+	ret = closedir(NULL);
+	TC_ASSERT_EQ("closedir", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
