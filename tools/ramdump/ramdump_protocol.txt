@@ -1,4 +1,4 @@
-RAMDUMP PROTOCAL :
+RAMDUMP PROTOCOL :
 -----------------
 
 HOST  ------------> TARGET
