@@ -60,11 +60,11 @@ config NETUTILS_DHCPD_MAXLEASES
 
 config NETUTILS_DHCPD_STARTIP
 	hex "First IP address"
-	default 0xc0a82f02
+	default 0xc0a80a02
 
 config NETUTILS_DHCPD_ROUTERIP
 	hex "Router IP (0 to disable)"
-	default 0xc0a82f01
+	default 0xc0a80a01
 
 config NETUTILS_DHCPD_NETMASK
 	hex "Netmask (0 to disable)"
