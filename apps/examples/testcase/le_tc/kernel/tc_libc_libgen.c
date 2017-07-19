@@ -110,6 +110,10 @@ static void tc_libc_libgen_dirname(void)
 	ret_chk = dirname(path);
 	TC_ASSERT_EQ("dirname", strncmp(ret_chk, ".", strlen(".")), 0);
 
+	path = "/dirname ";
+	ret_chk = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(ret_chk, "/", strlen("/")), 0);
+
 	TC_SUCCESS_RESULT();
 }
 
