@@ -126,7 +126,7 @@ int fclose(FAR FILE *stream)
 
 		/* Release the buffer */
 
-		if (stream->fs_bufstart) {
+		if (stream->fs_bufstart != NULL && (stream->fs_flags & __FS_FLAG_UBF) == 0) {
 			lib_free(stream->fs_bufstart);
 		}
 
