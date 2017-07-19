@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,6 +89,24 @@ static void tc_libc_unistd_chdir_getcwd(void)
 
 	cwd = getcwd(buff, BUFFSIZE);
 	TC_ASSERT_EQ("getcwd", strcmp(directory, cwd), 0);
+
+	/* Failure case: size less than strlen(buff) or invalid size */
+	cwd = getcwd(buff, 1);
+	TC_ASSERT_EQ("getcwd", cwd, NULL);
+
+	/* Failure case: when "PWD" is not defined*/
+	unsetenv("PWD");
+	cwd = getcwd(buff, BUFFSIZE);
+	TC_ASSERT_EQ("getcwd", strcmp(cwd, CONFIG_LIB_HOMEDIR), 0);
+
+	directory = NULL;
+	ret_chk = chdir(directory);
+	TC_ASSERT_EQ("chdir", ret_chk, ERROR);
+
+	/* Failure case: path is not a directory */
+	directory = "NOTDIR";
+	ret_chk = chdir(directory);
+	TC_ASSERT_EQ("chdir", ret_chk, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -216,6 +234,29 @@ cleanup_pipe:
 	close(pipe_fd[1]);
 }
 
+/**
+* @fn                   :tc_libc_unistd_access
+* @brief                :check real user's permissions for a file
+* @Scenario             :checks whether the calling process can access the file path‐name
+* API's covered         :access
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_libc_unistd_access(void)
+{
+	int ret_chk;
+	char path[BUFFSIZE];
+
+	getcwd(path, BUFFSIZE);
+	sprintf(path, "%s/%s", path, __FILE__);
+
+	ret_chk = access(path, F_OK);
+	TC_ASSERT_EQ("access", ret_chk, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: libc_unistd
  ****************************************************************************/
@@ -227,6 +268,7 @@ int libc_unistd_main(void)
 	tc_libc_unistd_sleep();
 	tc_libc_unistd_usleep();
 	tc_libc_unistd_pipe();
+	tc_libc_unistd_access();
 
 	return 0;
 }
