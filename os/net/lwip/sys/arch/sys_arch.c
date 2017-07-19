@@ -167,7 +167,7 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 	return;
 }
 
-#ifdef CONFIG_SCSC_WLAN_UDP_FLOWCONTROL
+#if defined(CONFIG_SCSC_WLAN_UDP_FLOWCONTROL) && defined(CONFIG_PRIORITY_INHERITANCE)
 
 /*---------------------------------------------------------------------------*
  * Routine:  sys_mbox_setprio_lpwork
@@ -256,7 +256,7 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 	if (first_msg && mbox->wait_fetch) {
 		sys_sem_signal(&(mbox->mail));
 	}
-#ifdef CONFIG_SCSC_WLAN_UDP_FLOWCONTROL
+#if defined(CONFIG_SCSC_WLAN_UDP_FLOWCONTROL) && defined(CONFIG_PRIORITY_INHERITANCE)
 	(void)sys_mbox_setprio_lpwork(mbox, msg);
 #endif
 
