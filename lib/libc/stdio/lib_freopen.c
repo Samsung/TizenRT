@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_fclose.c
+ * libc/stdio/lib_freopen.c
  *
- *   Copyright (C) 2007-2009, 2011, 3013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,110 +54,98 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-
-#include <unistd.h>
-#include <stdlib.h>
+#include <stdio.h>
 #include <fcntl.h>
-#include <string.h>
 #include <errno.h>
 
 #include "lib_internal.h"
 
 /****************************************************************************
- * Global Functions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: fclose
+ * Name: freopen
  *
- * Description
- *   The fclose() function will flush the stream pointed to by stream
- *   (writing any buffered output data using lib_fflush()) and close the
- *   underlying file descriptor.
+ * Description:
+ *   Reuses stream to either open the file specified by path or to change
+ *   its access mode.
+ *
+ *   If a new path is specified, the function first attempts to close
+ *   any file already associated with stream (third parameter) and
+ *   disassociates it. Then, independently of whether that stream was
+ *   successfuly closed or not, freopen opens the file specified by path
+ *   and associates it with the stream just as fopen would do using the
+ *   specified mode.
+ *
+ *   If path is a null pointer, the function attempts to change the mode
+ *   of the stream. Although a particular library implementation is allowed
+ *   to restrict the changes permitted, and under which circumstances.
+ *
+ *   The error indicator and eof indicator are automatically cleared (as if
+ *   clearerr was called).
+ *
+ * Input Paramters:
+ *   path   - If non-NULL, refers to the name of the file to be opened.
+ *   mode   - String describing the new file access mode
+ *   stream - Pointer to the type FILE to be reopened.
  *
  * Returned Value:
- *   Upon successful completion 0 is returned. Otherwise, EOF is returned
- *   and the global variable errno is set to indicate the error. In either
- *   case any further access (including another call to fclose()) to the
- *   stream results in undefined behaviour.
+ *   If the file is successfully reopened, the function returns the pointer
+ *   passed as parameter stream, which can be used to identify the reopened
+ *   stream.   Otherwise, a null pointer is returned and the errno variable
+ *   is also set to a system-specific error code on failure.
  *
  ****************************************************************************/
 
-int fclose(FAR FILE *stream)
+FAR FILE *freopen(FAR const char *path, FAR const char *mode, FAR FILE *stream)
 {
-	int err = EINVAL;
-	int ret = ERROR;
-	int status;
+	int oflags;
+	int ret;
+	int fd;
 
-	/* Verify that a stream was provided. */
+	/* Was a file name provided? */
+
+	if (path != NULL) {
+		/* Yes, close the stream */
+
+		if (stream) {
+			(void)fclose(stream);
+		}
+
+		/* And attempt to reopen the file at the provided path */
+
+		return fopen(path, mode);
+	}
+
+	/* Otherwise, we are just changing the mode of the current file. */
 
 	if (stream) {
-		/* Check that the underlying file descriptor corresponds to an an open
-		 * file.
-		 */
+		/* Convert the mode string into standard file open mode flags. */
 
-		ret = OK;
-		if (stream->fs_fd >= 0) {
-			/* If the stream was opened for writing, then flush the stream */
-
-			if ((stream->fs_oflags & O_WROK) != 0) {
-				ret = lib_fflush(stream, true);
-				err = errno;
-			}
-
-			/* Close the underlying file descriptor and save the return status */
-
-			status = close(stream->fs_fd);
-
-			/* If close() returns an error but flush() did not then make sure
-			 * that we return the close() error condition.
-			 */
-
-			if (ret == OK) {
-				ret = status;
-				err = errno;
-			}
-		}
-#if CONFIG_STDIO_BUFFER_SIZE > 0
-		/* Destroy the semaphore */
-
-		sem_destroy(&stream->fs_sem);
-
-		/* Release the buffer */
-
-		if (stream->fs_bufstart != NULL && (stream->fs_flags & __FS_FLAG_UBF) == 0) {
-			lib_free(stream->fs_bufstart);
+		oflags = lib_mode2oflags(mode);
+		if (oflags == 0) {
+			return NULL;
 		}
 
-		/* Clear the whole structure */
+		/* Get the underlying file descriptor from the stream */
 
-		memset(stream, 0, sizeof(FILE));
-#else
-#if CONFIG_NUNGET_CHARS > 0
-		/* Reset the number of ungetc characters */
+		fd = fileno(stream);
+		if (fd < 0) {
+			return NULL;
+		}
 
-		stream->fs_nungotten = 0;
-#endif
-		/* Reset the flags */
+		/* Set the new file mode for the file descriptor */
 
-		stream->fs_oflags = 0;
-#endif
-		/* Setting the file descriptor to -1 makes the stream available for reuse */
+		ret = fcntl(fd, F_SETFL, oflags);
+		if (ret < 0) {
+			return NULL;
+		}
 
-		stream->fs_fd = -1;
+		clearerr(stream);
+		return stream;
 	}
 
-	/* On an error, reset the errno to the first error encountered and return
-	 * EOF.
-	 */
-
-	if (ret != OK) {
-		set_errno(err);
-		return EOF;
-	}
-
-	/* Return success */
-
-	return OK;
+	set_errno(EINVAL);
+	return NULL;
 }

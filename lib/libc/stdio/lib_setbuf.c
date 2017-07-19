@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_fclose.c
+ * libc/stdio/lib_setbuf.c
  *
- *   Copyright (C) 2007-2009, 2011, 3013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2017 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT will THE
  * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
  * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
@@ -56,108 +56,47 @@
 
 #include <tinyara/config.h>
 
-#include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <string.h>
-#include <errno.h>
-
-#include "lib_internal.h"
+#include <stdio.h>
+#include <assert.h>
 
 /****************************************************************************
- * Global Functions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: fclose
+ * Name: setbuf
  *
- * Description
- *   The fclose() function will flush the stream pointed to by stream
- *   (writing any buffered output data using lib_fflush()) and close the
- *   underlying file descriptor.
+ * Description:
+ *   Except that it returns no value, the function call setbuf(stream, buf)
+ *   is equivalent to:
+ *
+ *     setvbuf(stream, buf, _IOFBF, BUFFSIZ)
+ *
+ *   if buf is not a null pointer, or to:
+ *
+ *     setvbuf(stream, buf, _IONBF, BUFFSIZ)
+ *
+ *   if buf is a null pointer.
+ *
+ * Input Parameters:
+ *   stream - The stream whose buffer will be modified
+ *   buffer - If non-NULL, this is user allocated buffer of size BUFFSIZ. If
+ *            NULL, setvbuf will disable buffering
  *
  * Returned Value:
- *   Upon successful completion 0 is returned. Otherwise, EOF is returned
- *   and the global variable errno is set to indicate the error. In either
- *   case any further access (including another call to fclose()) to the
- *   stream results in undefined behaviour.
+ *   None
  *
  ****************************************************************************/
 
-int fclose(FAR FILE *stream)
-{
-	int err = EINVAL;
-	int ret = ERROR;
-	int status;
-
-	/* Verify that a stream was provided. */
-
-	if (stream) {
-		/* Check that the underlying file descriptor corresponds to an an open
-		 * file.
-		 */
-
-		ret = OK;
-		if (stream->fs_fd >= 0) {
-			/* If the stream was opened for writing, then flush the stream */
-
-			if ((stream->fs_oflags & O_WROK) != 0) {
-				ret = lib_fflush(stream, true);
-				err = errno;
-			}
-
-			/* Close the underlying file descriptor and save the return status */
-
-			status = close(stream->fs_fd);
-
-			/* If close() returns an error but flush() did not then make sure
-			 * that we return the close() error condition.
-			 */
-
-			if (ret == OK) {
-				ret = status;
-				err = errno;
-			}
-		}
 #if CONFIG_STDIO_BUFFER_SIZE > 0
-		/* Destroy the semaphore */
+void setbuf(FAR FILE *stream, FAR char *buf)
+{
+	int mode;
 
-		sem_destroy(&stream->fs_sem);
+	DEBUGASSERT(stream != NULL);
 
-		/* Release the buffer */
+	mode = (buf != NULL) ? _IOFBF : _IONBF;
+	(void)setvbuf(stream, buf, mode, BUFSSIZ);
 
-		if (stream->fs_bufstart != NULL && (stream->fs_flags & __FS_FLAG_UBF) == 0) {
-			lib_free(stream->fs_bufstart);
-		}
-
-		/* Clear the whole structure */
-
-		memset(stream, 0, sizeof(FILE));
-#else
-#if CONFIG_NUNGET_CHARS > 0
-		/* Reset the number of ungetc characters */
-
-		stream->fs_nungotten = 0;
-#endif
-		/* Reset the flags */
-
-		stream->fs_oflags = 0;
-#endif
-		/* Setting the file descriptor to -1 makes the stream available for reuse */
-
-		stream->fs_fd = -1;
-	}
-
-	/* On an error, reset the errno to the first error encountered and return
-	 * EOF.
-	 */
-
-	if (ret != OK) {
-		set_errno(err);
-		return EOF;
-	}
-
-	/* Return success */
-
-	return OK;
 }
+#endif

@@ -117,13 +117,16 @@ void lib_stream_initialize(FAR struct task_group_s *group)
 	/* Initialize each FILE structure */
 
 	for (i = 0; i < CONFIG_NFILE_STREAMS; i++) {
+
+		FAR struct file_struct *stream = &list->sl_streams[i];
+
 		/* Clear the IOB */
 
-		memset(&list->sl_streams[i], 0, sizeof(FILE));
+		memset(stream, 0, sizeof(FILE));
 
 		/* Indicate not opened */
 
-		list->sl_streams[i].fs_fd = -1;
+		stream->fs_fd = -1;
 
 		/* Initialize the stream semaphore to one to support one-at-
 		 * a-time access to private data sets.
@@ -169,17 +172,20 @@ void lib_stream_release(FAR struct task_group_s *group)
 
 #if CONFIG_STDIO_BUFFER_SIZE > 0
 	for (i = 0; i < CONFIG_NFILE_STREAMS; i++) {
+
+		FAR struct file_struct *stream = &list->sl_streams[i];
+
 		/* Destroy the semaphore that protects the IO buffer */
 
-		(void)sem_destroy(&list->sl_streams[i].fs_sem);
+		(void)sem_destroy(&stream->fs_sem);
 
 		/* Release the IO buffer */
 
-		if (list->sl_streams[i].fs_bufstart) {
+		if (stream->fs_bufstart != NULL && (stream->fs_flags & __FS_FLAG_UBF) == 0) {
 #ifndef CONFIG_BUILD_KERNEL
 			/* Release memory from the user heap */
 
-			sched_ufree(list->sl_streams[i].fs_bufstart);
+			sched_ufree(stream->fs_bufstart);
 #else
 			/* If the exiting group is unprivileged, then it has an address
 			 * environment.  Don't bother to release the memory in this case...
@@ -190,7 +196,7 @@ void lib_stream_release(FAR struct task_group_s *group)
 			 */
 
 			if ((group->tg_flags & GROUP_FLAG_PRIVILEGED) != 0) {
-				sched_kfree(list->sl_streams[i].fs_bufstart);
+				sched_kfree(stream->fs_bufstart);
 			}
 #endif
 		}
