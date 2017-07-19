@@ -82,7 +82,7 @@ float sqrtf(float x)
 
 	y = lib_sqrtapprox(x);
 
-	/* Perform four iterations of approximation.  This number (4) is
+	/* Perform four iterations of approximation. This number (4) is
 	 * definitely optimal
 	 */
 
@@ -91,7 +91,7 @@ float sqrtf(float x)
 	y = 0.5 * (y + x / y);
 	y = 0.5 * (y + x / y);
 
-	/* If guess was terribe (out of range of float).  Repeat approximation
+	/* If guess was terribe (out of range of float). Repeat approximation
 	 * until convergence.
 	 */
 
