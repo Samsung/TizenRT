@@ -171,18 +171,18 @@ cJSON *cJSON_GetObjectItem(cJSON *object, const char *string);
  * Defined when cJSON_Parse() returns 0. 0 when cJSON_Parse() succeeds.
  */
 
-const char *cJSON_GetErrorPtr();
+const char *cJSON_GetErrorPtr(void);
 
 /* These calls create a cJSON item of the appropriate type. */
 
-cJSON *cJSON_CreateNull();
-cJSON *cJSON_CreateTrue();
-cJSON *cJSON_CreateFalse();
+cJSON *cJSON_CreateNull(void);
+cJSON *cJSON_CreateTrue(void);
+cJSON *cJSON_CreateFalse(void);
 cJSON *cJSON_CreateBool(int b);
 cJSON *cJSON_CreateNumber(double num);
 cJSON *cJSON_CreateString(const char *string);
-cJSON *cJSON_CreateArray();
-cJSON *cJSON_CreateObject();
+cJSON *cJSON_CreateArray(void);
+cJSON *cJSON_CreateObject(void);
 
 /* These utilities create an Array of count items. */
 
