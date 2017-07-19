@@ -90,9 +90,9 @@ config ARCH_USE_MMU
 	default n
 	depends on ARCH_HAVE_MMU
 	---help---
-		The architecture supports supports an MMU.  Enable this option in
-		order to enable use of the MMU.  For most architectures, this is
-		not really an option:  It is required to use the MMU.  In those
+		The architecture supports MMU. Enable this option in order to
+		enable use of the MMU. For most architectures, this is not
+		really an option: It is required to use the MMU. In those
 		cases, this selection will always be forced.
 
 config ARCH_USE_MPU
@@ -100,9 +100,9 @@ config ARCH_USE_MPU
 	default n
 	depends on ARCH_HAVE_MPU
 	---help---
-		The architecture supports supports an MPU.  Enable this option in
-		order to enable use of the MPU.  For most architectures, this option
-		is enabled by other, platform-specific logic.  In those cases, this
+		The architecture supports MPU. Enable this option in order to
+		enable use of the MPU. For most architectures, this option is
+		enabled by other, platform-specific logic. In those cases, this
 		selection will always be forced.
 
 menuconfig ARCH_ADDRENV
