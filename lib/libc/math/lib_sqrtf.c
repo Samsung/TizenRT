@@ -57,7 +57,8 @@
 
 float sqrtf(float x)
 {
-	float y, y1;
+	float y;
+	float y1;
 
 	/* Filter out invalid/trivial inputs */
 

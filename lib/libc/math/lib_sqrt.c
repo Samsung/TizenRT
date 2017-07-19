@@ -60,7 +60,8 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double sqrt(double x)
 {
-	double y, y1;
+	double y;
+	double y1;
 
 	/* Filter out invalid/trivial inputs */
 
