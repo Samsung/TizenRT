@@ -29,7 +29,7 @@
 #include <sys/types.h>
 #include "tc_internal.h"
 
-#define ARG_3 3
+#define ARG_COUNT 6
 #define SEC_3 3
 
 #define USLEEP_INTERVAL 3000000
@@ -90,6 +90,24 @@ static void tc_libc_unistd_chdir_getcwd(void)
 	cwd = getcwd(buff, BUFFSIZE);
 	TC_ASSERT_EQ("getcwd", strcmp(directory, cwd), 0);
 
+	/* Failure case: size less than strlen(buff) or invalid size */
+	cwd = getcwd(buff, 1);
+	TC_ASSERT_EQ("getcwd", cwd, NULL);
+
+	/* Failure case: when "PWD" is not defined*/
+	unsetenv("PWD");
+	cwd = getcwd(buff, BUFFSIZE);
+	TC_ASSERT_EQ("getcwd", strcmp(cwd, CONFIG_LIB_HOMEDIR), 0);
+
+	directory = NULL;
+	ret_chk = chdir(directory);
+	TC_ASSERT_EQ("chdir", ret_chk, ERROR);
+
+	/* Failure case: path is not a directory */
+	directory = "NOTDIR";
+	ret_chk = chdir(directory);
+	TC_ASSERT_EQ("chdir", ret_chk, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -108,23 +126,39 @@ static void tc_libc_unistd_getopt(void)
 	int flag_a = 0;
 	int flag_b = 0;
 	int ret = -1;
-	int argc = ARG_3;
-	char *sz_argv[] = { "-a", "-a", "-b" };
+	int argc = ARG_COUNT;
+	char *sz_argv[] = { "arg0", "-a2", "-b", "-c", "-a", "-:" };
+	char **arg;
+	int *opt;
+	int *idx;
 
 	optind = -1;
-	while ((ret = getopt(argc, sz_argv, "ab")) != ERROR)
+	while ((ret = getopt(argc, sz_argv, ":a:b")) != ERROR)
 		switch (ret) {
 		case 'a':
 			flag_a = 1;
+			arg = getoptargp();
+			vdbg("getoptargp: optarg = %s\n", *arg);
 			break;
 		case 'b':
 			flag_b = 1;
+			idx = getoptindp();
+			vdbg("getoptindp: optind = %d\n", *idx);
 			break;
 		default:
+			opt = getoptoptp();
+			vdbg("getoptoptp: optopt = %c\n", *opt);
 			break;
 		}
 	TC_ASSERT_EQ("getopt", flag_a, 1);
 	TC_ASSERT_EQ("getopt", flag_b, 1);
+
+	ret = getopt(argc, sz_argv, NULL);
+	TC_ASSERT_EQ("getopt", ret, ERROR);
+
+	sz_argv[1] = "a";
+	ret = getopt(argc, sz_argv, ":a:b");
+	TC_ASSERT_EQ("getopt", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -216,17 +250,41 @@ cleanup_pipe:
 	close(pipe_fd[1]);
 }
 
+/**
+* @fn                   :tc_libc_unistd_access
+* @brief                :check real user's permissions for a file
+* @Scenario             :checks whether the calling process can access the file path‐name
+* API's covered         :access
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_libc_unistd_access(void)
+{
+	int ret_chk;
+	char path[BUFFSIZE];
+
+	getcwd(path, BUFFSIZE);
+	sprintf(path, "%s/%s", path, __FILE__);
+
+	ret_chk = access(path, F_OK);
+	TC_ASSERT_EQ("access", ret_chk, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: libc_unistd
  ****************************************************************************/
 
 int libc_unistd_main(void)
 {
+	tc_libc_unistd_access();
 	tc_libc_unistd_chdir_getcwd();
 	tc_libc_unistd_getopt();
+	tc_libc_unistd_pipe();
 	tc_libc_unistd_sleep();
 	tc_libc_unistd_usleep();
-	tc_libc_unistd_pipe();
 
 	return 0;
 }
