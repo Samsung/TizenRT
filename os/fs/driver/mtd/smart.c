@@ -5322,8 +5322,6 @@ int smart_validatesector(FAR struct inode *inode, uint16_t logsector, char *vali
 		SET_TO_TRUE(validsectors, physsector);
 		return OK;
 	}
-
-	fdbg("physsector is corrupted!!\n");
 	return -EINVAL;
 }
 

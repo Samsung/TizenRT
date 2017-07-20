@@ -1532,23 +1532,33 @@ static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **ha
 
 	ret = smartfs_mount(fs, true);
 	if (ret != 0) {
-		smartfs_semgive(fs);
-		kmm_free(fs);
-		return ret;
+		goto error_with_semaphore;
 	}
 
 	*handle = (void *)fs;
 #ifdef CONFIG_SMARTFS_JOURNALING
 	ret = smartfs_journal_init(fs);
 	if (ret != 0) {
-		smartfs_semgive(fs);
-		kmm_free(fs);
-		return ret;
+		fdbg("init failed!!\n");
+		goto error_with_semaphore;
 	}
 #endif
-	smartfs_semgive(fs);
 
-	return OK;
+#ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
+	ret = smartfs_recover(fs);
+	if (ret != 0) {
+		fdbg("recovery failed!!\n");
+		goto error_with_semaphore;
+	}
+#endif
+
+	smartfs_semgive(fs);
+	return ret;
+
+error_with_semaphore:
+	smartfs_semgive(fs);
+	kmm_free(fs);
+	return ret;
 }
 
 /****************************************************************************

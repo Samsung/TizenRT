@@ -1826,10 +1826,9 @@ errout:
  * Description: Recovery after  a power failure
  *
  ****************************************************************************/
-int smartfs_recover(struct inode *mountpt)
+int smartfs_recover(struct smartfs_mountpt_s *fs)
 {
 	int i, ret;
-	struct smartfs_mountpt_s *fs;
 	uint8_t rootsector;
 	uint16_t nsectors;
 	char *validsectors;
@@ -1838,7 +1837,6 @@ int smartfs_recover(struct inode *mountpt)
 	int nrecovered;
 	struct sector_queue_s *node;
 
-	fs = mountpt->i_private;
 	nsectors = fs->fs_llformat.nsectors;
 	rootsector = fs->fs_rootsector;
 
@@ -1861,7 +1859,6 @@ int smartfs_recover(struct inode *mountpt)
 	node->type = SMARTFS_SECTOR_TYPE_DIR;
 	sq_addlast((FAR sq_entry_t *)node, &g_recovery_queue);
 
-	smartfs_semtake(fs);
 	nusedsectors = 0;
 	ret = smartfs_examine_sector(fs, validsectors, &nusedsectors);
 	if (ret != OK) {
@@ -1884,7 +1881,6 @@ int smartfs_recover(struct inode *mountpt)
 	fdbg("Recovered Sectors : %d\n\n", nrecovered);
 
 errout_with_semaphore:
-	smartfs_semgive(fs);
 	if (validsectors) {
 		kmm_free(validsectors);
 	}
