@@ -7,6 +7,7 @@ Samsung IoT Development Kit for S5JT200 chipset.
 > [Information](#information)  
 > [Environment Set-up](#environment-set-up)  
 > [How to program a binary](#how-to-program-a-binary)  
+> [ROMFS](#romfs)  
 > [Configuration Sets](#configuration-sets)  
 > [Board Configuration](#board-configuration)
 
@@ -93,6 +94,32 @@ TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-th
 ```bash
 make download ALL
 ```
+
+## ROMFS
+
+Before executing below steps, execute [generic steps](../../../external/contents/README.md), step 1 and step 2.
+
+3. Modify partition configs.  
+    Below steps creates ROMFS partition with size 256KB at the end,  
+    where romfs device is a smart device and romfs filesystem will be mounted on smartdevice "/dev/smart0p15"  
+    1. Split last partition size to (256, 256) in SIDK_S5JT200_FLASH_PART_LIST
+        ```bash
+        Board Selection -> change values at Flash partition size list (in KBytes)
+        ```
+    2. Append "smartfs" at end to SIDK_S5JT200_FLASH_PART_TYPE
+        ```bash
+        Board Selection -> append string at Flash partition type list
+        ```
+    3. Append "romfs" at end to SIDK_S5JT200_FLASH_PART_NAME
+        ```bash
+        Board Selection -> append string at FLash partition name list
+        ```
+4. Enable auto-mount config.
+    ```bash
+    Board Selection -> Automount partitions -> Automount ROM read only partition to y
+    ```
+
+After above two steps, build Tizen RT and program a Tizen RT binary through above [method](#how-to-program-a-binary).
 
 ## Configuration Sets
 
