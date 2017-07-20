@@ -107,12 +107,13 @@ config ENABLE_PS
 config ENABLE_STACKMONITOR
 	bool "Stack monitor"
 	default n
+	depends on !BUILD_PROTECTED && !BUILD_KERNEL
 	select STACK_COLORATION
 	---help---
 		The stack monitor is a daemon that will periodically assess
 		stack usage by all tasks and threads in the system.  This
 		feature depends on internal OS features and, hence, is
-		not available if the kernel build is selected.
+		not available if the kernel build or protected build is selected.
 
 if ENABLE_STACKMONITOR
 config STACKMONITOR_PRIORITY
