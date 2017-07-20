@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@
 float sqrtf(float x)
 {
 	float y;
+	float y1;
 
 	/* Filter out invalid/trivial inputs */
 
@@ -82,13 +83,26 @@ float sqrtf(float x)
 
 	y = lib_sqrtapprox(x);
 
-	/* Perform three iterations of approximation. This number (3) is
+	/* Perform four iterations of approximation. This number (4) is
 	 * definitely optimal
 	 */
 
 	y = 0.5 * (y + x / y);
 	y = 0.5 * (y + x / y);
 	y = 0.5 * (y + x / y);
+	y = 0.5 * (y + x / y);
+
+	/* If guess was terribe (out of range of float). Repeat approximation
+	 * until convergence.
+	 */
+
+	if (y * y < x - 1.0 || y * y > x + 1.0) {
+		y1 = -1.0;
+		while (y != y1) {
+			y1 = y;
+			y = 0.5 * (y + x / y);
+		}
+	}
 
 	return y;
 }

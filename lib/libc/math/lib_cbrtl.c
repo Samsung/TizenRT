@@ -105,7 +105,7 @@ long double cbrtl(long double x)
 	}
 	if (e == 0) {
 		/* Adjust subnormal numbers. */
-		u.f *= 0x1 p120;
+		u.f *= 0x1p120;
 		e = u.i.se & 0x7fff;
 		/* If x = +-0, then cbrt(x) = +-0. */
 		if (e == 0) {
@@ -158,7 +158,7 @@ long double cbrtl(long double x)
 	 * Round it away from zero to 32 bits (32 so that t*t is exact, and
 	 * away from zero for technical reasons).
 	 */
-	t = dt + (0x1 .0 p32L + 0x1 .0 p - 31L) - 0x1 .0 p32;
+	t = dt + (0x1.0p32L + 0x1.0p-31L) - 0x1.0p32;
 #elif LDBL_MANT_DIG == 113
 	/*
 	 * Round dt away from zero to 47 bits.  Since we don't trust the 47,
@@ -168,7 +168,7 @@ long double cbrtl(long double x)
 	 * for rounding up might not apply to either case in cbrtl() since
 	 * dt is much more accurate than needed.
 	 */
-	t = dt + 0x2 .0 p - 46 + 0x1 .0 p60L - 0x1 .0 p60;
+	t = dt + 0x2.0p-46 + 0x1.0p60L-0x1.0p60;
 #endif
 
 	/*
