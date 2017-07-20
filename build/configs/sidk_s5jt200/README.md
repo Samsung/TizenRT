@@ -2,6 +2,14 @@
 
 Samsung IoT Development Kit for S5JT200 chipset.
 
+## Contents
+
+> [Information](#information)  
+> [Environment Set-up](#environment-set-up)  
+> [How to program a binary](#how-to-program-a-binary)  
+> [Configuration Sets](#configuration-sets)  
+> [Board Configuration](#board-configuration)
+
 ## Information
 
 will be updated
