@@ -52,8 +52,6 @@ static int logm_change_bufsize(int buflen)
 	g_logm_head = 0;
 	g_logm_tail = 0;
 	logm_bufsize = buflen;
-	g_logm_available = buflen;
-	g_logm_enqueued_count = 0;
 	g_logm_dropmsg_count = 0;
 	g_logm_overflow_offset = -1;
 
@@ -64,7 +62,6 @@ static int logm_change_bufsize(int buflen)
 
 int logm_task(int argc, char *argv[])
 {
-	int ret = 0;
 	irqstate_t flags;
 
 	g_logm_rsvbuf = (char *)malloc(logm_bufsize);
@@ -72,27 +69,18 @@ int logm_task(int argc, char *argv[])
 
 	/* Now logm is ready */
 	LOGM_STATUS_SET(LOGM_READY);
-	g_logm_available = logm_bufsize;
 
 #ifdef CONFIG_LOGM_TEST
 	logmtest_init();
 #endif
 
 	while (1) {
-		while (g_logm_enqueued_count > 0) {
-			ret = 0;
-			while (*(g_logm_rsvbuf + (g_logm_head + ret) % logm_bufsize)) {
-				fputc(g_logm_rsvbuf[(g_logm_head + ret++) % logm_bufsize], stdout);
-			}
-			g_logm_head = (g_logm_head + ret + 1) % logm_bufsize;
-			g_logm_available += (ret + 1);
-
-			g_logm_enqueued_count--;
-
+		while (g_logm_head != g_logm_tail) {
+			fputc(g_logm_rsvbuf[g_logm_head], stdout);
+			g_logm_head = (g_logm_head + 1) % logm_bufsize;
 			if (LOGM_STATUS(LOGM_BUFFER_OVERFLOW)) {
 				LOGM_STATUS_CLEAR(LOGM_BUFFER_OVERFLOW);
 			}
-
 			if (g_logm_overflow_offset >= 0 && g_logm_overflow_offset == g_logm_head) {
 				fprintf(stdout, "\n[LOGM BUFFER OVERFLOW] %d messages are dropped\n", g_logm_dropmsg_count);
 				g_logm_overflow_offset = -1;

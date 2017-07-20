@@ -67,8 +67,6 @@ extern "C" {
 
 EXTERN int g_logm_head;
 EXTERN int g_logm_tail;
-EXTERN int g_logm_available;
-EXTERN int g_logm_enqueued_count;
 EXTERN int g_logm_overflow_offset;
 EXTERN int g_logm_dropmsg_count;
 EXTERN char * g_logm_rsvbuf;

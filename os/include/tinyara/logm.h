@@ -24,7 +24,7 @@
 #define LOGM_DEF_PRIORITY (7)
 /* Log priority levels in logm */
 
-enum logm_loglevels_e {
+enum logm_loglevel_e {
 	LOGM_EMR, /* Emergency */
 	LOGM_ART, /* Alert */
 	LOGM_CRT, /* Critical */
@@ -43,6 +43,18 @@ enum logm_param_type_e {
 	/* This would grow later */
 };
 
+/* Log flags for somethings related to logging */
+enum logm_logflag_e {
+	LOGM_NORMAL,
+	LOGM_LOWPUT
+};
+
+/* Log index means where messages are from */
+enum logm_logindex_e {
+	LOGM_UNKNOWN
+	/* Not supported yet. This would be updated later */
+};
+
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
@@ -53,8 +65,8 @@ extern "C"
 #endif
 
 void logm_start(void);
-int logm_internal(int priority, const char *fmt, va_list valst);
-int logm(int flag, int mod, int priority, const char *fmt, ...);
+int logm_internal(int flag, int indx, int priority, const char *fmt, va_list valst);
+int logm(int flag, int indx, int priority, const char *fmt, ...);
 int logm_set_values(enum logm_param_type_e type, int value);
 int logm_get_values(enum logm_param_type_e type, int* value);
 
