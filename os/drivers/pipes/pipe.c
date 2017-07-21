@@ -224,7 +224,7 @@ int pipe(int fd[2])
 
 	/* Create a pathname to the pipe device */
 
-	sprintf(devname, "/dev/pipe%d", pipeno);
+	snprintf(devname, sizeof(devname), "/dev/pipe%d", pipeno);
 
 	/* Check if the pipe device has already been created */
 
