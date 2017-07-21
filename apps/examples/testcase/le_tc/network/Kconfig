@@ -37,8 +37,8 @@ config TC_NET_ALL
 	select TC_NET_ETHER
 	select TC_NET_NETDB
 	select TC_NETDEV_CARRIER
-    select TC_NET_DECISEC_TIME
-    select TC_NET_CORE
+	select TC_NET_DECISEC_TIME
+        select TC_NET_CORE
 
 config TC_NET_SOCKET
 	bool "socket() api"
@@ -137,12 +137,12 @@ config TC_NET_ETHERNETIF_STATUS
 	default n
 
 config TC_NET_API
-    bool "api() api"
-    default n
+        bool "api() api"
+        default n
 
 config TC_NET_CORE
-    bool "core() api"
-    default n
+        bool "core() api"
+        default n
 
 
 endif #EXAMPLES_TESTCASE_NETWORK
