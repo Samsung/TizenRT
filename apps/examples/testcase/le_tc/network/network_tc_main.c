@@ -105,10 +105,28 @@ int network_tc_main(int argc, char *argv[])
 	net_inet_main();
 #endif
 #ifdef CONFIG_TC_NET_ETHER
-	net_ether_main();
+    net_ether_main();
 #endif
 #ifdef CONFIG_TC_NET_NETDB
-	net_netdb_main();
+    net_netdb_main();
+#endif
+#ifdef CONFIG_TC_NET_CORE_NTOHS
+    net_lwip_ntohs_main();
+#endif
+#ifdef CONFIG_TC_NET_IPV4_NETMASK_VALID
+    net_ipv4_addr_netmask_valid_main();
+#endif
+#ifdef CONFIG_TC_NETDEV_CARRIER
+    netdev_carrier_main();
+#endif
+#ifdef CONFIG_TC_NET_DECISEC_TIME
+    net_decisec_time_main();
+#endif
+#ifdef CONFIG_TC_NET_API
+    net_api_main();
+#endif
+#ifdef CONFIG_TC_NET_CORE
+    net_core_main();
 #endif
 
 	printf("\n=== TINYARA Network TC COMPLETE ===\n");
