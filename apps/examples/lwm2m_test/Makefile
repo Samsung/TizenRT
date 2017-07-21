@@ -64,7 +64,7 @@ CSRCS =
 CSRCS += commandline.c platform.c connection.c
 
 ifeq ($(CONFIG_EXAMPLES_LWM2M_CLIENT),y)
-APPNAME = lwm2m_client
+APP_NAME = lwm2m_client
 CSRCS += object_location.c object_access_control.c
 CSRCS += object_connectivity_moni.c object_connectivity_stat.c
 CSRCS += object_device.c object_firmware.c
@@ -76,7 +76,7 @@ MAINSRC = lwm2m_client_main.c
 endif
 
 ifeq ($(CONFIG_EXAMPLES_LWM2M_SERVER),y)
-APPNAME = lwm2m_server
+APP_NAME = lwm2m_server
 CFLAGS +=-DLWM2M_SERVER_MODE
 MAINSRC = lwm2m_server_main.c
 endif
@@ -154,10 +154,10 @@ install:
 endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_LWM2M_TEST),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
+$(BUILTIN_REGISTRY)$(DELIM)$(APP_NAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APP_NAME),$(APP_NAME)_main,$(THREADEXEC))
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APP_NAME)_main.bdat
 else
 context:
 

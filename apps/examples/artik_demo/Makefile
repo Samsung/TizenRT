@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = artik_demo
+FUNCNAME = artik_demo_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # artik demo example

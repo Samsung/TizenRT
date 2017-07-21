@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = tls_client
+FUNCNAME = tls_client_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # tls client example

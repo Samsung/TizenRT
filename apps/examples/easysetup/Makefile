@@ -40,6 +40,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = easysetup
+FUNCNAME = easysetup_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # easysetup example

@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = smart
+FUNCNAME = smart_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # smart file sytem test example

@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = telnetd
+FUNCNAME = telnetd_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # telnet daemon example

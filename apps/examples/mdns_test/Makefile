@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = mdns
+FUNCNAME = mdns_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # mdns test example
