@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = sysio
+FUNCNAME = sysio_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # system input / output test example

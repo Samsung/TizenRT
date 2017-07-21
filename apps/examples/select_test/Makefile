@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # LWIP NetStack! built-in application info
 
 APPNAME = select_test
+FUNCNAME = select_test_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # LWIP NetStack Example

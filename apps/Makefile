@@ -60,10 +60,12 @@ TOPDIR ?= $(APPDIR)/import
 
 # Application Directories
 
+# KCONFDIRS is the list of examples level directories containing Kconfig.
 # BUILDIRS is the list of top-level directories containing Make.defs files
 # CLEANDIRS is the list of all top-level directories containing Makefiles.
 #   It is used only for cleaning.
 
+KCONFDIRS  := $(dir $(wildcard examples/*/Kconfig))
 BUILDIRS   := $(dir $(filter-out import/Make.defs,$(wildcard */Make.defs)))
 CLEANDIRS  := $(dir $(wildcard */Makefile))
 
@@ -93,7 +95,7 @@ BIN = libapps$(LIBEXT)
 # Build targets
 
 all: $(BIN)
-.PHONY: import install context context_serialize context_rest .depdirs preconfig depend clean distclean
+.PHONY: import install context context_serialize context_rest .depdirs preconfig depend clean distclean applist appupdate
 
 define MAKE_template
 	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" BIN_DIR="$(BIN_DIR)"
@@ -151,6 +153,12 @@ clean: $(foreach SDIR, $(CLEANDIRS), $(SDIR)_clean)
 	$(call DELFILE, $(BIN))
 	$(call DELDIR, $(BIN_DIR))
 	$(call CLEAN)
+
+applist:
+	$(foreach DIR, $(KCONFDIRS), ./tools/create_appspec.sh $(DIR))
+appupdate:
+	$(Q) ./tools/update_config.sh -sw
+	$(Q) rm ../os/.appSpec
 
 distclean: $(foreach SDIR, $(CLEANDIRS), $(SDIR)_distclean)
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
