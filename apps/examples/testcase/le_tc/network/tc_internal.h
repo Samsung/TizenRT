@@ -87,4 +87,23 @@ int net_shutdown_main(void);
 #ifdef CONFIG_TC_NET_SELECT
 int net_select_main(void);
 #endif
+#ifdef CONFIG_TC_NET_CORE_NTOHS
+int net_lwip_ntohs_main(void);
+#endif
+#ifdef CONFIG_TC_NET_IPV4_NETMASK_VALID
+int net_ipv4_addr_netmask_valid_main(void);
+#endif
+#ifdef CONFIG_TC_NETDEV_CARRIER
+int netdev_carrier_main(void);
+#endif
+#ifdef CONFIG_TC_NET_DECISEC_TIME
+int net_decisec_time_main(void);
+#endif
+#ifdef CONFIG_TC_NET_API
+int net_api_main(void);
+#endif
+#ifdef CONFIG_TC_NET_CORE
+int net_core_main(void);
+#endif
+
 #endif /* __EXAMPLES_TESTCASE_NETWORK_TC_INTERNAL_H */
