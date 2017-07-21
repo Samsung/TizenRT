@@ -59,6 +59,7 @@
 #include <pthread.h>
 #include <assert.h>
 #include <debug.h>
+#include <errno.h>
 
 /****************************************************************************
  * Public Functions
@@ -80,16 +81,18 @@
  *
  ****************************************************************************/
 
-int pthread_mutexattr_getprotocol(FAR const pthread_mutexattr_t *attr,
-				  FAR int *protocol)
+int pthread_mutexattr_getprotocol(FAR const pthread_mutexattr_t *attr, FAR int *protocol)
 {
-	DEBUGASSERT(attr != NULL && protocol != NULL);
-
+	if (attr != NULL && protocol != NULL) {
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	svdbg("Returning %d\n", attr->proto);
-	return attr->proto;
+		svdbg("Returning %d\n", attr->proto);
+		*protocol = attr->proto;
 #else
-	svdbg("Returning %d\n", PTHREAD_PRIO_NONE);
-	return PTHREAD_PRIO_NONE;
+		svdbg("Returning %d\n", PTHREAD_PRIO_NONE);
+		*protocol = PTHREAD_PRIO_NONE;
 #endif
+		return 0;
+	}
+
+	return EINVAL;
 }
