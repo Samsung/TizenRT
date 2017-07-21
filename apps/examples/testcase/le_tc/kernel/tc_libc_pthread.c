@@ -766,11 +766,13 @@ static void tc_libc_pthread_pthread_mutexattr_getprotocol(void)
 	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
+	attr.proto = PTHREAD_PRIO_INHERIT;
 	ret_chk = pthread_mutexattr_getprotocol(&attr, &mutexattr_protocol);
-	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", ret_chk, PTHREAD_PRIO_INHERIT);
+	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", mutexattr_protocol, attr.proto);
 #else
 	ret_chk = pthread_mutexattr_getprotocol(&attr, &mutexattr_protocol);
-	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", ret_chk, PTHREAD_PRIO_NONE);
+	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", ret_chk, OK);
 #endif
 	TC_SUCCESS_RESULT();
 }
