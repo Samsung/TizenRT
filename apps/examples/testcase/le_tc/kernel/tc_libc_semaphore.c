@@ -37,15 +37,15 @@
  ****************************************************************************/
 
 /**
-* @fn                   :tc_libc_semaphore_sem_init
-* @brief                :this tc test sem_init function
-* @Scenario             :If sem is NULL or sem value is bigger then SEM_VALUE_MAX, it return ERROR and errno EINVAL is set.
-*                        Else sem is intialized to the default value.
-* API's covered         :sem_init
-* Preconditions         :NA
-* Postconditions        :NA
-* @return               :total_pass on success.
-*/
+ * @fn                   :tc_libc_semaphore_sem_init
+ * @brief                :this tc test sem_init function
+ * @Scenario             :If sem is NULL or sem value is bigger then SEM_VALUE_MAX, it return ERROR and errno EINVAL is set.
+ *                        Else sem is intialized to the default value.
+ * API's covered         :sem_init
+ * Preconditions         :NA
+ * Postconditions        :NA
+ * @return               :total_pass on success.
+ */
 static void tc_libc_semaphore_sem_init(void)
 {
 	sem_t sem;
@@ -79,15 +79,15 @@ static void tc_libc_semaphore_sem_init(void)
 
 
 /**
-* @fn                   :tc_libc_semaphore_sem_getvalue
-* @brief                :this tc test sem_init function
-* @Scenario             :If sem or sval is NULL, it return ERROR and errno EINVAL is set.
-*                        Else sval get sem->semcount.
-* API's covered         :sem_getvalue
-* Preconditions         :NA
-* Postconditions        :NA
-* @return               :total_pass on success.
-*/
+ * @fn                   :tc_libc_semaphore_sem_getvalue
+ * @brief                :this tc test sem_init function
+ * @Scenario             :If sem or sval is NULL, it return ERROR and errno EINVAL is set.
+ *                        Else sval get sem->semcount.
+ * API's covered         :sem_getvalue
+ * Preconditions         :NA
+ * Postconditions        :NA
+ * @return               :total_pass on success.
+ */
 static void tc_libc_semaphore_sem_getvalue(void)
 {
 	sem_t sem;
@@ -114,6 +114,32 @@ static void tc_libc_semaphore_sem_getvalue(void)
 	return;
 }
 
+/**
+ * @fn                   :tc_libc_semaphore_sem_getprotocol
+ * @brief                :this tc test sem_getprotocol function
+ * @Scenario             :Return the value of the semaphore protocol attribute.
+ * API's covered         :sem_init, sem_getprotocol
+ * Preconditions         :NA
+ * Postconditions        :NA
+ * @return               :total_pass on success.
+ */
+static void tc_libc_semaphore_sem_getprotocol(void)
+{
+	sem_t sem;
+	unsigned int value = SEM_VALUE;
+	int protocol;
+	int ret_chk;
+
+	ret_chk = sem_init(&sem, PSHARED, value);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
+	ret_chk = sem_getprotocol(&sem, &protocol);
+	TC_ASSERT_EQ("sem_getprotocol", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+	return;
+}
+
 /****************************************************************************
  * Name: libc_semaphore
  ****************************************************************************/
@@ -122,6 +148,7 @@ int libc_semaphore_main(void)
 {
 	tc_libc_semaphore_sem_init();
 	tc_libc_semaphore_sem_getvalue();
+	tc_libc_semaphore_sem_getprotocol();
 
 	return 0;
 }
