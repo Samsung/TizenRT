@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,6 +157,11 @@ static void tc_libc_string_memmove(void)
 	TC_ASSERT_NOT_NULL("memmove", res_ptr);
 	TC_ASSERT_EQ("memmove", strncmp(res_ptr, buffer2, BUFF_SIZE), 0);
 	TC_ASSERT_EQ("memmove", strncmp(buffer1, buffer2, BUFF_SIZE), 0);
+
+	res_ptr = (char *)memmove(buffer2, buffer1, sizeof(buffer1));
+	TC_ASSERT_NOT_NULL("memmove", res_ptr);
+	TC_ASSERT_EQ("memmove", strncmp(res_ptr, buffer1, BUFF_SIZE), 0);
+	TC_ASSERT_EQ("memmove", strncmp(buffer2, buffer1, BUFF_SIZE), 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -675,6 +680,15 @@ static void tc_libc_string_strstr(void)
 	char *res_ptr = NULL;
 	char *psz = "str";
 
+	res_ptr = strstr(dest_arr, psz);
+	TC_ASSERT_NOT_NULL("strstr", res_ptr);
+	TC_ASSERT_EQ("strspn", strncmp(res_ptr, dest_arr, BUFF_SIZE_10), 0);
+
+	psz = "notfound";
+	res_ptr = strstr(dest_arr, psz);
+	TC_ASSERT_EQ("strstr", res_ptr, NULL);
+
+	psz = "";
 	res_ptr = strstr(dest_arr, psz);
 	TC_ASSERT_NOT_NULL("strstr", res_ptr);
 	TC_ASSERT_EQ("strspn", strncmp(res_ptr, dest_arr, BUFF_SIZE_10), 0);

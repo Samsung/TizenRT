@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1344,6 +1344,9 @@ static void tc_pthread_pthread_sigmask(void)
 
 	sigemptyset(&st_newmask);
 	sigaddset(&st_newmask, SIGQUIT);
+
+	ret_chk = pthread_sigmask(333, &st_newmask, &st_oldmask);
+	TC_ASSERT_EQ("pthread_sigmask", ret_chk, EINVAL);
 
 	ret_chk = pthread_sigmask(SIG_BLOCK, &st_newmask, &st_oldmask);
 	TC_ASSERT_GEQ("pthread_sigmask", ret_chk, 0);

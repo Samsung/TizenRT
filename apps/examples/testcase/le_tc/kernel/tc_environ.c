@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,15 @@ static void tc_environ_setenv_getenv_unsetenv(void)
 	psz_getvalue = getenv("arv");
 	TC_ASSERT_EQ("getenv", psz_getvalue, NULL);
 
+	ret_chk = setenv(NULL, psz_value, overwrite_num);
+	TC_ASSERT_EQ("setenv", ret_chk, ERROR);
+
+	ret_chk = setenv(psz_name, NULL, overwrite_num);
+	TC_ASSERT_EQ("setenv", ret_chk, OK);
+
+	ret_chk = setenv(psz_name, NULL, 0);
+	TC_ASSERT_EQ("setenv", ret_chk, OK);
+
 	clearenv();
 	TC_SUCCESS_RESULT();
 }
@@ -150,6 +159,9 @@ static void tc_environ_putenv(void)
 
 	psz_getvalue = getenv("PATH");
 	TC_ASSERT_EQ("getenv", strcmp(psz_getvalue, "D:"), 0);
+
+	ret_chk = putenv(NULL);
+	TC_ASSERT_EQ("putenv", ret_chk, ERROR);
 
 	clearenv();
 	TC_SUCCESS_RESULT();

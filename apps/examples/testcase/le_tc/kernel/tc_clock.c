@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,9 @@ static void tc_clock_clock_getres(void)
 	TC_ASSERT_EQ("clock_getres", ret_chk, OK);
 	TC_ASSERT_EQ("clock_getres", st_res.tv_sec, 0);
 	TC_ASSERT_EQ("clock_getres", st_res.tv_nsec, NSEC_PER_TICK);
+
+	ret_chk = clock_getres(33 , &st_res);
+	TC_ASSERT_EQ("clock_getres", ret_chk, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -135,6 +138,9 @@ static void tc_clock_clock_gettimeofday(void)
 	if (tv2.tv_sec == tv1.tv_sec + SEC_2) {
 		TC_ASSERT_GEQ("gettimeofday", tv2.tv_usec, tv1.tv_usec);
 	}
+
+	ret_chk = gettimeofday(NULL, NULL);
+	TC_ASSERT_EQ("gettimeofday", ret_chk, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
