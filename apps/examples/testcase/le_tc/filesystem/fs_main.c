@@ -425,24 +425,25 @@ static void fs_vfs_dup2_tc(void)
 
 	/* now fd1 points fd2 */
 	ret = dup2(fd2, fd1);
-	TC_ASSERT_GEQ_CLEANUP("dup2", ret, 0, close(fd2));
+	close(fd2);
+	TC_ASSERT_NEQ("dup2", ret, ERROR);
+	TC_ASSERT_GEQ("dup2", fd1, 0);
 
 	len = strlen(VFS_TEST_CONTENTS_3);
 	ret = write(fd1, str, len);
 	close(fd1);
-	TC_ASSERT_EQ_CLEANUP("write", ret, len, close(fd2));
-	close(fd2);
+	TC_ASSERT_EQ("write", ret, len);
 
 	fd2 = open(filename2, O_RDONLY);
 	TC_ASSERT_GEQ("open", fd2, 0);
 
 	ret = read(fd2, buf, len);
 	close(fd2);
-
 	TC_ASSERT_GT("read", ret, 0);
 	TC_ASSERT_EQ("read", strcmp(buf, VFS_TEST_CONTENTS_3), 0);
 
 	/* Nagative case with invalid argument, invalid fd. It will return ERROR */
+	fd1 = -1;
 	ret = dup2(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS, fd1);
 	TC_ASSERT_LT_CLEANUP("dup2", fd1, 0, close(fd1));
 	TC_ASSERT_EQ("dup2", ret, ERROR);
