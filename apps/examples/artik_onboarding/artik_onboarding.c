@@ -38,6 +38,8 @@ static pthread_addr_t start_onboarding(pthread_addr_t arg)
 {
 	printf("Onboarding service version %s\n", ONBOARDING_VERSION);
 
+	current_service_state = STATE_ONBOARDING;
+
 	/* Check if AKC device type requires secure communication */
 	cloud_secure_dt = CloudIsSecureDeviceType(cloud_config.device_type_id);
 
@@ -134,8 +136,9 @@ int artik_onboarding_main(int argc, char *argv[])
 		}
 	}
 
-	/* If already in onboarding mode, do nothing */
-	if (current_service_state == STATE_ONBOARDING)
+	/* If already in onboarding mode or trying to connect, do nothing */
+	if ((current_service_state == STATE_ONBOARDING) ||
+			(current_service_state == STATE_CONNECTING))
 		goto exit;
 
 	if (current_service_state == STATE_CONNECTED) {
