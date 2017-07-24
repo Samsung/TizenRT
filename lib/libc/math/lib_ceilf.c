@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,8 +54,10 @@
 
 float ceilf(float x)
 {
+	float x1 = x;
+
 	modff(x, &x);
-	if (x > 0.0) {
+	if (x1 > 0.0 && fabsf(x1 - x) > 0.0) {
 		x += 1.0;
 	}
 
