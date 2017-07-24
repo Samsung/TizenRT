@@ -173,7 +173,7 @@ db_result_t index_create(index_type_t index_type, relation_t *rel, attribute_t *
 	attr->index = index;
 	list_push(indices, index);
 
-	if (index->descriptor_file[0] != '\0' && DB_ERROR(storage_put_index(index))) {
+	if (DB_ERROR(storage_put_index(index))) {
 		index_destroy(index);
 		DB_LOG_E("DB: Failed to store index data in file \"%s\"\n", index->descriptor_file);
 		return DB_INDEX_ERROR;
@@ -223,10 +223,7 @@ db_result_t index_destroy(index_t *index)
 	if (DB_ERROR(storage_remove_index(index->rel, index->attr))) {
 		return DB_STORAGE_ERROR;
 	}
-	index->rel = NULL;
 	index->attr->index = NULL;
-	index->attr = NULL;
-	index = NULL;
 	return DB_OK;
 }
 

@@ -550,18 +550,21 @@ static db_result_t load(index_t *index)
 	DB_LOG_D("load index : descriptor file name : %s\n", index->descriptor_file);
 	fd = storage_open(index->descriptor_file, O_RDWR);
 	if (fd < 0) {
-		DB_LOG_E("Failed opening index descriptor file\n");
-		goto storage_error;
+		DB_LOG_E("Failed opening index descriptor file :%s Error Code %d",index->descriptor_file);
+		free(tree);
+		return DB_STORAGE_ERROR;
 	}
 	if (DB_ERROR(storage_read_from(fd, bucket_file, sizeof(tree_t), sizeof(bucket_file)))) {
 		DB_LOG_E("Failed reading bucket file\n");
 		storage_close(fd);
-		goto storage_error;
+		free(tree);
+		return DB_STORAGE_ERROR;
 	}
 	if (DB_ERROR(storage_read_from(fd, tree, 0, sizeof(tree_t)))) {
 		DB_LOG_E("Failed  reading tree structure from descriptor file\n");
 		storage_close(fd);
-		goto storage_error;
+		free(tree);
+		return DB_STORAGE_ERROR;
 	}
 	storage_close(fd);
 
@@ -641,17 +644,6 @@ static db_result_t load(index_t *index)
 	DB_LOG_D("DB: Loaded btree index from file %s and bucket file %s\n", index->descriptor_file, bucket_file);
 
 	return DB_OK;
-
-storage_error:
-	DB_LOG_E("DB: Storage error while loading index\n");
-	free(tree->node_cache->in_cache.head);
-	free(tree->node_cache->in_cache.tail);
-	free(tree->buck_cache->in_cache.head);
-	free(tree->buck_cache->in_cache.tail);
-	free(tree->buck_cache);
-	free(tree->node_cache);
-	free(tree);
-	return DB_STORAGE_ERROR;
 
 }
 
