@@ -29,6 +29,7 @@
 #include <tinyara/net/net.h>
 #include <arpa/inet.h>
 #include <net/lwip/netif/etharp.h>
+#include <net/lwip/ethip6.h>
 #include <net/lwip/igmp.h>
 
 #include "debug_scsc.h"
@@ -531,6 +532,9 @@ static struct netif *slsi_alloc_netdev(int sizeof_priv)
 	dev->d_ifdown = slsi_net_stop;
 	dev->linkoutput = slsi_linkoutput;
 	dev->output = etharp_output;
+#if LWIP_IPV6
+	dev->output_ip6 = ethip6_output;
+#endif
 	dev->igmp_mac_filter = slsi_set_multicast_list;
 #ifdef CONFIG_NETDEV_PHY_IOCTL
 	dev->d_ioctl = slsi_net_ioctl;

@@ -262,7 +262,9 @@ struct netif *netif_add(struct netif *netif,
 		ip_addr_set_zero_ip6(&netif->ip6_addr[i]);
 		netif->ip6_addr_state[i] = IP6_ADDR_INVALID;
 	}
-	netif->output_ip6 = netif_null_output_ip6;
+	if (netif->output_ip6 == NULL) {
+		netif->output_ip6 = netif_null_output_ip6;
+	}
 #endif							/* LWIP_IPV6 */
 	NETIF_SET_CHECKSUM_CTRL(netif, NETIF_CHECKSUM_ENABLE_ALL);
 	netif->flags = 0;

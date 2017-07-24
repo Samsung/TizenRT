@@ -37,6 +37,7 @@
 #include <net/lwip/ip_addr.h>
 
 #include <net/lwip/netif/etharp.h>
+#include <net/lwip/ethip6.h>
 
 #define ETHERNET_MTU 1500
 
@@ -221,12 +222,12 @@ err_t ethernetif_init(struct netif *netif)
 	 * from it if you have to do some checks before sending (e.g. if link
 	 * is available...) */
 #if LWIP_IPV4 && LWIP_IPV6
-	netif->output = (netif_output_fn)etharp_output;
-	netif->output_ip6 = (netif_output_ip6_fn)etharp_output;
+	netif->output = etharp_output;
+	netif->output_ip6 = ethip6_output;
 #elif LWIP_IPV4
-	netif->output = (netif_output_fn)etharp_output;
+	netif->output = etharp_output;
 #else
-	netif->output_ip6 = (netif_output_ip6_fn)etharp_output;
+	netif->output_ip6 = ethip6_output;
 #endif
 	/* netif->linkoutput is set in enc_initialize function */
 	netif->linkoutput = ethernetif_output;
