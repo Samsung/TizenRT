@@ -22,19 +22,49 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-#include <tinyara/sensors/sensor.h>
 
-#define SENSOR_NAME_PPD42NS				ppd42ns
-SENSOR_EXTERNAL_FUNCTION_PROTOTYPE(SENSOR_NAME_PPD42NS);
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+typedef void (*ppd42ns_handler_t)(FAR void *arg);
 
-/********************
-   definitions
- ********************/
-#define PPD42NS_DEBUG_ON			0
+struct ppd42ns_config_s {
+	/* gpio pin number */
+	int gpionum;
 
-/********************
-   custom ioctl id
- ********************/
-#define PPD42NS_IOCTL_ID_GET_GPIO_DEVPATH			(SENSOR_IOCTL_ID_CUSTOM	+ 0)
+	/* callback function: read gpio pin signal */
+	int (*read_gpio)(struct ppd42ns_config_s *config);
+
+	/* callback function: attach the ppd42ns interrupt handler to the GPIO interrupt */
+	int (*attach)(struct ppd42ns_config_s *config, ppd42ns_handler_t handler, FAR char *arg);
+
+	/* callback function: enable or disable gpio pin interrupt */
+	int (*enable)(struct ppd42ns_config_s *config, int enable);
+
+	/* board specific data */
+	void *priv;
+};
+
+/****************************************************************************
+ * Public Function
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: ppd42ns_register
+ *
+ * Description:
+ *  This function will register ppd42ns dust sensor driver as /dev/dustN where N
+ *  is the minor device number
+ *
+ * Input Parameters:
+ *   devname  - The full path to the driver to register. E.g., "/dev/dust0"
+ *   config      - configuration for the ppd42ns driver.
+ *
+ * Returned Value:
+ *   Zero is returned on success.  Otherwise, a negated errno value is
+ *   returned to indicate the nature of the failure.
+ *
+ ****************************************************************************/
+int ppd42ns_register(FAR const char *devname, FAR struct ppd42ns_config_s *config);
 
 #endif							/* __PPD42NS_H__ */

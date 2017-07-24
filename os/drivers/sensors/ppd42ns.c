@@ -21,567 +21,355 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdio.h>
-#include <string.h>
-#include <fcntl.h>
-#include <stdlib.h>
 #include <errno.h>
+#include <debug.h>
 #include <math.h>
-#include <semaphore.h>
-#include <poll.h>
-#include <tinyara/gpio.h>
-#include <tinyara/sensors/sensor.h>
+
 #include <tinyara/sensors/ppd42ns.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define PPD42NS_TIME_GET(time)          gettimeofday(&time, NULL)
+#define PPD42NS_TIME_DIFF_USEC(old_time, cur_time) \
+	((cur_time.tv_sec * 1000000 + cur_time.tv_usec) - (old_time.tv_sec * 1000000 + old_time.tv_usec))
+
 #define GPIO_SIGNAL_LOW				0
 #define GPIO_SIGNAL_HIGH			1
 
 /****************************************************************************
- * Structures
+ * Private Types
  ****************************************************************************/
-typedef struct {
-	int initialized;
-	int activated;
-	sem_t exclsem;
-	int fd;
-	char devpath[16];
-	int old_signal;
-	int lowpulseoccupancy;
-	struct timeval start_time;
-	struct timeval lowpulse_start_time;
-	int pipe_evt_task[2];
-	int evt_task_loop;
-} ppd42ns_priv;
-
-/****************************************************************************
- * Static Function Prototype
- ****************************************************************************/
-static int ppd42ns_init(sensor_device_t *sensor);
-static int ppd42ns_deinit(sensor_device_t *sensor);
-static int ppd42ns_activate(sensor_device_t *sensor);
-static int ppd42ns_deactivate(sensor_device_t *sensor);
-static int ppd42ns_ioctl(sensor_device_t *sensor, int id, sensor_ioctl_value_t *val);
-static int ppd42ns_get_data(sensor_device_t *sensor, sensor_data_t *data);
-
-/****************************************************************************
- * Variables
- ****************************************************************************/
-static sensor_operations_t g_ops = {
-	.init = ppd42ns_init,
-	.deinit = ppd42ns_deinit,
-	.activate = ppd42ns_activate,
-	.deactivate = ppd42ns_deactivate,
-	.ioctl = ppd42ns_ioctl,
-	.set_trigger = NULL,
-	.get_data = ppd42ns_get_data,
+struct ppd42ns_dev_s {
+	FAR struct ppd42ns_config_s *config;	/* ppd42ns driver config */
+	int crefs;					/* reference count on the driver instance */
+	sem_t exclsem;				/* exclusive access to the device */
+	sem_t datasem;				/* exclusive access while reading sensor data */
+	int old_signal;				/* previous gpio signal */
+	int lowpulseoccupancy;		/* low pulse signal time */
+	struct timeval start_time;	/* start time of total period */
+	struct timeval lowpulse_start_time;	/* start time of low pulse signal period */
 };
 
-static ppd42ns_priv g_priv;
+/****************************************************************************
+ * Private Functions Prototype
+ ****************************************************************************/
+static int ppd42ns_open(FAR struct file *filep);
+static int ppd42ns_close(FAR struct file *filep);
+static ssize_t ppd42ns_read(FAR struct file *filep, FAR char *buffer, size_t len);
 
 /****************************************************************************
- * Static Function
+ * Private Data
  ****************************************************************************/
 
-static void ppd42ns_event_handler(sensor_device_t *sensor)
+/* ppd42ns driver instance */
+static FAR struct ppd42ns_dev_s g_ppd42ns_priv;
+
+/* This the vtable that supports the character driver interface */
+static const struct file_operations g_ppd42ns_fops = {
+	ppd42ns_open,				/* open */
+	ppd42ns_close,				/* close */
+	ppd42ns_read,				/* read */
+	0,							/* write */
+	0,							/* seek */
+	0,							/* ioctl */
+};
+
+/****************************************************************************
+ * Private Function
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: ppd42ns_takesem
+ *
+ * Description:
+ *    Take the lock, waiting as necessary
+ *
+ ****************************************************************************/
+static inline int ppd42ns_takesem(FAR sem_t *sem)
 {
-	/* this is both edge interrupt handler on ppd42ns's digital signal pin */
-
-	struct timeval time;
-	ppd42ns_priv *priv;
-
-	if (sensor && sensor->priv) {
-		priv = (ppd42ns_priv *) sensor->priv;
-	} else {
-		return;
-	}
-
-	if (priv->old_signal == GPIO_SIGNAL_LOW) {
-		/* signal LOW -> HIGH */
-		SENSOR_TIME_GET(time);
-		priv->lowpulseoccupancy += SENSOR_TIME_DIFF_USEC(priv->lowpulse_start_time, time);
-		priv->old_signal = GPIO_SIGNAL_HIGH;
-#if PPD42NS_DEBUG_ON
-		SENSOR_DEBUG("LOW -> HIGH : tv_sec=%d, tv_usec=%d, lowpulse_time=%d\n", time.tv_sec, time.tv_usec, SENSOR_TIME_DIFF_USEC(priv->lowpulse_start_time, time));
-#endif
-	} else {
-		/* signal HIGH -> LOW */
-		SENSOR_TIME_GET(priv->lowpulse_start_time);
-		priv->old_signal = GPIO_SIGNAL_LOW;
-#if PPD42NS_DEBUG_ON
-		SENSOR_DEBUG("HIGH -> LOW : tv_sec=%d, tv_usec=%d\n", priv->lowpulse_start_time.tv_sec, priv->lowpulse_start_time.tv_usec);
-#endif
-	}
-}
-
-static void ppd42ns_event_task(sensor_device_t *sensor)
-{
-	int ret;
-	ppd42ns_priv *priv;
-	struct pollfd fds[2];
-	int size;
-	int timeout;
-
-#if PPD42NS_DEBUG_ON
-	SENSOR_DEBUG("start event task \n");
-#endif
-
-	if (sensor && sensor->priv) {
-		priv = (ppd42ns_priv *) sensor->priv;
-	} else {
-		SENSOR_DEBUG("ERROR: %s is NULL.\n", sensor == NULL ? "sensor" : "sensor->priv");
-		return;
-	}
-
-	/* initializes pollfd */
-	memset(fds, 0, sizeof(fds));
-	fds[0].fd = priv->pipe_evt_task[1];
-	fds[0].events = POLLIN;
-	fds[1].fd = priv->fd;
-	fds[1].events = POLLIN;
-
-	timeout = 1000;
-	size = sizeof(fds) / sizeof(struct pollfd);
-	priv->evt_task_loop = 1;
-	while (priv->evt_task_loop) {
-		ret = poll(fds, size, timeout);
-		if (ret < 0) {
-			SENSOR_DEBUG("ERROR: %s is NULL.\n");
-			return;
-		} else if (ret == 0) {
-			/* poll timeout */
-			continue;
-		}
-
-		/* stop message via pipe */
-		if (fds[0].revents & POLLIN) {
-#if PPD42NS_DEBUG_ON
-			SENSOR_DEBUG("received stop message via pipe.\n");
-#endif
-			priv->evt_task_loop = 0;
-			break;
-		}
-
-		/* gpio interrupt */
-		if (fds[1].revents & POLLIN) {
-#if PPD42NS_DEBUG_ON
-			SENSOR_DEBUG("gpio interrupt occurred.\n");
-#endif
-			ppd42ns_event_handler(sensor);
-		}
-	}
-
-#if PPD42NS_DEBUG_ON
-	SENSOR_DEBUG("stop event task \n");
-#endif
-}
-
-static int ppd42ns_event_task_start(sensor_device_t *sensor)
-{
-	int result = -1;
-	int ret;
-	pthread_t tid;
-	ppd42ns_priv *priv;
-
-	if (sensor && sensor->priv) {
-		priv = (ppd42ns_priv *) sensor->priv;
-	} else {
-		SENSOR_DEBUG("ERROR: %s is NULL.\n", sensor == NULL ? "sensor" : "sensor->priv");
-		return -1;
-	}
-
-	/* create pipe which is connected to event task */
-	priv->pipe_evt_task[0] = -1;
-	priv->pipe_evt_task[1] = -1;
-	ret = pipe(priv->pipe_evt_task);
-	if (ret == -1) {
-		SENSOR_DEBUG("ERROR: pipe() failed.\n");
-		goto done;
-	}
-
-	/* create event task */
-	ret = pthread_create(&tid, NULL, (pthread_startroutine_t) ppd42ns_event_task, (void *)sensor);
-	if (ret != 0) {
-		SENSOR_DEBUG("ERROR: pthread_create() failed. (ret=%d)\n", ret);
-		goto done;
-	}
-	ret = pthread_detach(tid);
-	if (ret != 0) {
-		SENSOR_DEBUG("ERROR: pthread_detach() failed. (ret=%d)\n", ret);
-	}
-
-	/* result is success */
-	result = 0;
-
-done:
-	if (result != 0) {
-		if (priv->pipe_evt_task[0] != -1) {
-			close(priv->pipe_evt_task[0]);
-			priv->pipe_evt_task[0] = -1;
-		}
-
-		if (priv->pipe_evt_task[1] != -1) {
-			close(priv->pipe_evt_task[1]);
-			priv->pipe_evt_task[1] = -1;
-		}
-
-		SENSOR_DEBUG("ERROR: fail to start event task\n");
-	}
-
-	return result;
-
-}
-
-static int ppd42ns_event_task_stop(sensor_device_t *sensor)
-{
-	ppd42ns_priv *priv;
-
-	if (sensor && sensor->priv) {
-		priv = (ppd42ns_priv *) sensor->priv;
-	} else {
-		SENSOR_DEBUG("ERROR: %s is NULL.\n", sensor == NULL ? "sensor" : "sensor->priv");
-		return -1;
-	}
-
-	if (priv->evt_task_loop) {
-		if (write(priv->pipe_evt_task[1], "#", 1) < 0) {
-			SENSOR_DEBUG("ERROR: pipe write() failed. (errno=%d)\n", errno);
-		}
-
-		while (priv->evt_task_loop) {
-			usleep(100 * 1000);
-		}
-	}
-
-	if (priv->pipe_evt_task[0] != -1) {
-		close(priv->pipe_evt_task[0]);
-		priv->pipe_evt_task[0] = -1;
-	}
-
-	if (priv->pipe_evt_task[1] != -1) {
-		close(priv->pipe_evt_task[1]);
-		priv->pipe_evt_task[1] = -1;
+	/* Take a count from the semaphore, possibly waiting */
+	if (sem_wait(sem) < 0) {
+		/* EINTR is the only error that we expect */
+		int errcode = get_errno();
+		DEBUGASSERT(errcode == EINTR);
+		return errcode;
 	}
 
 	return 0;
 }
 
-static int ppd42ns_init(sensor_device_t *sensor)
+/****************************************************************************
+ * Name: ppd42ns_givesem
+ *
+ * Description:
+ *    release the lock
+ *
+ ****************************************************************************/
+static inline void ppd42ns_givesem(sem_t *sem)
 {
-	int result = -1;
-	ppd42ns_priv *priv;
-
-	if (sensor == NULL || sensor->priv == NULL) {
-		SENSOR_DEBUG("ERROR: %s is NULL.\n", sensor == NULL ? "sensor" : "sensor->priv");
-		goto done;
-	}
-	priv = sensor->priv;
-
-	if (priv->initialized) {
-		SENSOR_DEBUG("ERROR: ppd42ns driver has already been initialized.\n");
-		goto done;
-	}
-
-	/* set gpio device */
-	snprintf(priv->devpath, 16, "/dev/gpio%d", CONFIG_SENSOR_PPD42NS_GPIO_NUM);
-
-	/* init semaphore */
-	sem_init(&priv->exclsem, 0, 1);
-
-	/* init private variables */
-	priv->activated = 0;
-	priv->evt_task_loop = 0;
-	priv->pipe_evt_task[0] = -1;
-	priv->pipe_evt_task[1] = -1;
-
-	/* initialized flag is set */
-	priv->initialized = 1;
-
-	/* result is success */
-	result = 0;
-
-done:
-	return result;
+	sem_post(sem);
 }
 
-static int ppd42ns_deinit(sensor_device_t *sensor)
+/****************************************************************************
+ * Name: ppd42ns_interrupt_handler
+ *
+ * Description:
+ *    handle ppd42ns's digital pin interrupt
+ *
+ ****************************************************************************/
+static void ppd42ns_interrupt_handler(FAR void *arg)
 {
-	int result = -1;
-	ppd42ns_priv *priv;
+	/* this is both edge interrupt handler on ppd42ns's digital signal pin */
+	FAR struct ppd42ns_dev_s *priv = (FAR struct ppd42ns_dev_s *)arg;
+	struct timeval time;
+	irqstate_t flags;
 
-	if (sensor == NULL || sensor->priv == NULL) {
-		SENSOR_DEBUG("ERROR: %s is NULL.\n", sensor == NULL ? "sensor" : "sensor->priv");
-		goto done;
-	}
-	priv = sensor->priv;
-
-	/* deactivate if activated currently */
-	if (priv->activated) {
-		ppd42ns_deactivate(sensor);
+	if (priv == NULL) {
+		return;
 	}
 
-	/* deinit semaphore */
-	sem_destroy(&priv->exclsem);
+	/* This ISR handles only when gpio signal is changed. */
+	if (priv->config->read_gpio(priv->config) == priv->old_signal) {
+		return;
+	}
 
-	/* clear priv data */
-	memset(priv, 0, sizeof(*priv));
+	/* disable interrupt */
+	flags = irqsave();
 
-	/* result is success */
-	result = 0;
+	if (priv->old_signal == GPIO_SIGNAL_LOW) {
+		/* signal LOW -> HIGH */
+		PPD42NS_TIME_GET(time);
+		priv->lowpulseoccupancy += PPD42NS_TIME_DIFF_USEC(priv->lowpulse_start_time, time);
+		priv->old_signal = GPIO_SIGNAL_HIGH;
+	} else {
+		/* signal HIGH -> LOW */
+		PPD42NS_TIME_GET(priv->lowpulse_start_time);
+		priv->old_signal = GPIO_SIGNAL_LOW;
+	}
 
-done:
-	return result;
+	/* enable interrupt */
+	irqrestore(flags);
 }
 
-static int ppd42ns_activate(sensor_device_t *sensor)
+/****************************************************************************
+ * Name: ppd42ns_open
+ *
+ * Description:
+ *   Standard character driver open method.
+ *
+ ****************************************************************************/
+static int ppd42ns_open(FAR struct file *filep)
 {
-	int result = -1;
 	int ret;
-	int signal;
-	ppd42ns_priv *priv;
-	struct gpio_pollevents_s pollevents;
+	FAR struct inode *inode = filep->f_inode;
+	FAR struct ppd42ns_dev_s *priv = inode->i_private;
 
-	if (sensor == NULL || sensor->priv == NULL) {
-		SENSOR_DEBUG("ERROR: %s is NULL.\n", sensor == NULL ? "sensor" : "sensor->priv");
-		goto done_without_sem;
-	}
-
-	if (sensor == NULL || sensor->priv == NULL) {
-		SENSOR_DEBUG("ERROR: %s is NULL.\n", sensor == NULL ? "sensor" : "sensor->priv");
-		goto done_without_sem;
-	}
-	priv = sensor->priv;
-
-	if (priv->activated) {
-		SENSOR_DEBUG("ERROR: ppd42ns driver has already been activated.\n");
-		goto done_without_sem;
-	}
-
-	do {
-		ret = sem_wait(&priv->exclsem);
-	} while (ret != 0 && errno == EINTR);
-
-	if (ret != 0) {
-		SENSOR_DEBUG("ERROR: sem_wait() failed.\n");
-		goto done_without_sem;
-	}
-
-	/* open gpio pin */
-	priv->fd = open(priv->devpath, O_RDWR);
-	if (priv->fd < 0) {
-		SENSOR_DEBUG("ERROR: open() failed. (dev: %s)\n", priv->devpath);
-		goto done;
-	}
-
-	/* set gpio direction */
-	ret = ioctl(priv->fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_IN);
+	ret = ppd42ns_takesem(&priv->exclsem);
 	if (ret < 0) {
-		SENSOR_DEBUG("ERROR: ioctl() failed. (dev: %s, ioctl_id: %d, errno: %d)\n", priv->devpath, GPIOIOC_SET_DIRECTION, errno);
-		goto done;
+		/*
+		 * A signal received while waiting for the last close
+		 * operation.
+		 */
+		lldbg("ERROR: ppd42ns_takesem() failed: %d\n", ret);
+		return ret;
+	}
+
+	/* ppd42ns driver allows only 1 instance */
+	if (priv->crefs > 0) {
+		lldbg("ERROR: ppd42ns driver is already opened.\n");
+		goto errout_with_sem;
+	}
+
+	/* set reference count */
+	priv->crefs = 1;
+
+	/* enable the gpio pin interrupt */
+	ret = priv->config->enable(priv->config, 1);
+	if (ret < 0) {
+		lldbg("ERROR: failed to enable the interrupt handler. (ret=%d)\n", ret);
+		goto errout_with_sem;
 	}
 
 	/* set start time */
-	SENSOR_TIME_GET(priv->start_time);
+	PPD42NS_TIME_GET(priv->start_time);
+	priv->lowpulse_start_time = priv->start_time;
 
 	/* get initial signal */
-	ret = read(priv->fd, (void *)&signal, sizeof(int));
-	if (ret < 0) {
-		SENSOR_DEBUG("ERROR: read() failed. (fd: %d, errno: %d)\n", priv->fd, errno);
-		goto done;
-	}
+	priv->old_signal = priv->config->read_gpio(priv->config);
 
-	if (signal == GPIO_SIGNAL_LOW) {
-		SENSOR_TIME_GET(priv->lowpulse_start_time);
-	}
+	/* initialize lowpulseoccupancy */
 	priv->lowpulseoccupancy = 0;
-	priv->old_signal = signal;
 
-	/* set interrupt on both edge and poll event */
-	pollevents.gp_rising = true;
-	pollevents.gp_falling = true;
-	ret = ioctl(priv->fd, GPIOIOC_POLLEVENTS, (unsigned long)&pollevents);
+	ret = 0;
+
+errout_with_sem:
+	ppd42ns_givesem(&priv->exclsem);
+	return ret;
+}
+
+/****************************************************************************
+ * Name: ppd42ns_close
+ *
+ * Description:
+ *   Standard character driver close method.
+ *
+ ****************************************************************************/
+static int ppd42ns_close(FAR struct file *filep)
+{
+	int ret;
+	FAR struct inode *inode = filep->f_inode;
+	FAR struct ppd42ns_dev_s *priv = inode->i_private;
+
+	/* Get exclusive access to the driver structure */
+	ret = ppd42ns_takesem(&priv->exclsem);
 	if (ret < 0) {
-		SENSOR_DEBUG("ERROR: ioctl() failed. (dev: %s, ioctl_id: %d, errno: %d)\n", priv->devpath, GPIOIOC_POLLEVENTS, errno);
-		goto done;
+		lldbg("ERROR: ppd42ns_takesem() failed: %d\n", ret);
+		return ret;
 	}
 
-	if (ppd42ns_event_task_start(sensor) != 0) {
-		SENSOR_DEBUG("ERROR: ppd42ns_event_task_start() failed. (dev: %s)\n", priv->devpath);
-		goto done;
+	if (priv->crefs == 0) {
+		lldbg("ERROR: ppd42ns driver is already closed.\n");
+		goto errout_with_sem;
 	}
 
-	/* activated flag is set */
-	priv->activated = 1;
+	priv->crefs = 0;
 
-	/* result is success */
-	result = 0;
+	/* disable the gpio pin interrupt */
+	ret = priv->config->enable(priv->config, 0);
+	if (ret < 0) {
+		lldbg("ERROR: failed to disable the interrupt handler. (ret=%d)\n", ret);
+		goto errout_with_sem;
+	}
 
-done:
-	sem_post(&priv->exclsem);
+	ret = 0;
 
-done_without_sem:
-	return result;
+errout_with_sem:
+	ppd42ns_givesem(&priv->exclsem);
+	return ret;
 }
 
-static int ppd42ns_deactivate(sensor_device_t *sensor)
+/****************************************************************************
+ * Name: ppd42ns_read
+ *
+ * Description:
+ *   Standard character driver read method.
+ *
+ ****************************************************************************/
+static ssize_t ppd42ns_read(FAR struct file *filep, FAR char *buffer, size_t len)
 {
-	int result = -1;
 	int ret;
-	ppd42ns_priv *priv;
-
-	if (sensor == NULL || sensor->priv == NULL) {
-		SENSOR_DEBUG("ERROR: %s is NULL.\n", sensor == NULL ? "sensor" : "sensor->priv");
-		goto done_without_sem;
-	}
-	priv = sensor->priv;
-
-	do {
-		ret = sem_wait(&priv->exclsem);
-	} while (ret != 0 && errno == EINTR);
-
-	if (ret != 0) {
-		SENSOR_DEBUG("ERROR: sem_wait() failed.\n");
-		goto done_without_sem;
-	}
-
-	ppd42ns_event_task_stop(sensor);
-
-	/* close gpio */
-	close(priv->fd);
-
-	/* activated flag is unset */
-	priv->activated = 0;
-
-	/* result is success */
-	result = 0;
-
-	sem_post(&priv->exclsem);
-
-done_without_sem:
-	return result;
-}
-
-static int ppd42ns_ioctl(sensor_device_t *sensor, int id, sensor_ioctl_value_t *val)
-{
-	int result = -1;
-	int ret;
-	ppd42ns_priv *priv;
-
-	if (sensor == NULL || sensor->priv == NULL) {
-		SENSOR_DEBUG("ERROR: %s is NULL.\n", sensor == NULL ? "sensor" : "sensor->priv");
-		goto done_without_sem;
-	}
-	priv = sensor->priv;
-
-	if (!priv->initialized) {
-		SENSOR_DEBUG("ERROR: ppd42ns driver is not initialized.\n");
-		goto done_without_sem;
-	}
-
-	if (val == NULL) {
-		SENSOR_DEBUG("ERROR: ioctl val is null.\n");
-		goto done_without_sem;
-	}
-
-	do {
-		ret = sem_wait(&priv->exclsem);
-	} while (ret != 0 && errno == EINTR);
-
-	if (ret != 0) {
-		SENSOR_DEBUG("ERROR: sem_wait() failed.\n");
-		goto done_without_sem;
-	}
-
-	switch (id) {
-	case PPD42NS_IOCTL_ID_GET_GPIO_DEVPATH:
-		val->p_str = priv->devpath;
-		break;
-	default:
-		SENSOR_DEBUG("ERROR: unknown ioctl id. (id: %d)\n", id);
-		goto done;
-	}
-
-	/* result is success */
-	result = 0;
-
-done:
-	sem_post(&priv->exclsem);
-
-done_without_sem:
-	return result;
-}
-
-static int ppd42ns_get_data(sensor_device_t *sensor, sensor_data_t *data)
-{
-	int result = -1;
+	FAR struct inode *inode = filep->f_inode;
+	FAR struct ppd42ns_dev_s *priv = inode->i_private;
+	int signal;
 	float ratio = 0.0;
 	float concentration;
 	struct timeval time;
-	int ret;
-	int signal;
-	ppd42ns_priv *priv;
 
-	if (sensor == NULL || sensor->priv == NULL) {
-		SENSOR_DEBUG("ERROR: %s is NULL.\n", sensor == NULL ? "sensor" : "sensor->priv");
-		goto done_without_sem;
-	}
-	priv = sensor->priv;
-
-	if (!priv->activated) {
-		SENSOR_DEBUG("ERROR: ppd42ns driver is not activated.\n");
-		goto done_without_sem;
-	}
-
-	do {
-		ret = sem_wait(&priv->exclsem);
-	} while (ret != 0 && errno == EINTR);
-
-	if (ret != 0) {
-		SENSOR_DEBUG("ERROR: sem_wait() failed.\n");
-		goto done_without_sem;
-	}
-
-	lseek(priv->fd, 0, SEEK_SET);
-	ret = read(priv->fd, (void *)&signal, sizeof(int));
+	ret = ppd42ns_takesem(&priv->datasem);
 	if (ret < 0) {
-		SENSOR_DEBUG("ERROR: read() failed. (fd: %d, errno: %d)\n", priv->fd, errno);
-		goto done;
+		lldbg("ERROR: ppd42ns_takesem() failed: %d\n", ret);
+		return ret;
 	}
 
-	SENSOR_TIME_GET(time);
+	/* disable gpio pin interrupt */
+	priv->config->enable(priv->config, 0);
+
+	/* get gpio signal */
+	signal = priv->config->read_gpio(priv->config);
+
+	PPD42NS_TIME_GET(time);
 	if (signal == GPIO_SIGNAL_LOW) {
-		priv->lowpulseoccupancy += SENSOR_TIME_DIFF_USEC(priv->lowpulse_start_time, time);
+		priv->lowpulseoccupancy += PPD42NS_TIME_DIFF_USEC(priv->lowpulse_start_time, time);
 		priv->lowpulse_start_time = time;
 	}
 
 	if (priv->lowpulseoccupancy != 0) {
-		ratio = (float)priv->lowpulseoccupancy / (float)SENSOR_TIME_DIFF_USEC(priv->start_time, time) * 100.0;	/* Integer percentage 0=>100 */
+		ratio = (float)priv->lowpulseoccupancy / (float)PPD42NS_TIME_DIFF_USEC(priv->start_time, time) * 100.0;	/* percentage 0~100 */
 		concentration = 1.1 * pow(ratio, 3) - 3.8 * pow(ratio, 2) + 520 * ratio + 0.62;	/* using spec sheet curve */
 	} else {
 		concentration = 0.0;
 	}
-	data->fval = concentration;
 
-#if PPD42NS_DEBUG_ON
-	SENSOR_DEBUG("lowpulse_time=%d, total_time=%d, ratio=%.2f \n", priv->lowpulseoccupancy, SENSOR_TIME_DIFF_USEC(priv->start_time, time), ratio);
+#ifdef CONFIG_SENSOR_PPD42NS_DEBUG
+	lldbg("lowpulse_time=%d, total_time=%d, ratio=%.2f, concentration=%.2f \n", priv->lowpulseoccupancy, PPD42NS_TIME_DIFF_USEC(priv->start_time, time), ratio, concentration);
 #endif
 
 	priv->start_time = time;
 	priv->lowpulseoccupancy = 0;
 	priv->old_signal = signal;
 
-	/* result is success */
-	result = 0;
+	/* enable gpio pin interrupt */
+	priv->config->enable(priv->config, 1);
 
-done:
-	sem_post(&priv->exclsem);
+	memcpy(buffer, &concentration, sizeof(float));
 
-done_without_sem:
-	return result;
+	ppd42ns_givesem(&priv->datasem);
+
+	return sizeof(float);
 }
 
 /****************************************************************************
- * Create Sensor Instance
+ * Public Function
  ****************************************************************************/
-SENSOR_CREATE_INSTANCE(SENSOR_NAME_PPD42NS, SENSOR_DEVICE_TYPE_DUST, &g_ops, &g_priv);
+
+/****************************************************************************
+ * Name: ppd42ns_register
+ *
+ * Description:
+ *  This function will register ppd42ns dust sensor driver as /dev/dustN where N
+ *  is the minor device number
+ *
+ * Input Parameters:
+ *   devname  - The full path to the driver to register. E.g., "/dev/dust0"
+ *   config      - configuration for the ppd42ns driver.
+ *
+ * Returned Value:
+ *   Zero is returned on success.  Otherwise, a negated errno value is
+ *   returned to indicate the nature of the failure.
+ *
+ ****************************************************************************/
+int ppd42ns_register(FAR const char *devname, FAR struct ppd42ns_config_s *config)
+{
+	int ret;
+	struct ppd42ns_dev_s *priv = &g_ppd42ns_priv;
+
+	/* validate ppd42ns config */
+	if (config == NULL || config->read_gpio == NULL || config->attach == NULL || config->enable == NULL) {
+		ret = EINVAL;
+		lldbg("ERROR: invalid ppd42ns config\n");
+		return ret;
+	}
+
+	/* set ppd42ns config */
+	priv->config = config;
+
+	/* reference count is set to 0 */
+	priv->crefs = 0;
+
+	/* init semaphore */
+	sem_init(&priv->exclsem, 0, 1);
+	sem_init(&priv->datasem, 0, 1);
+
+	/* attach the interrupt handler */
+	ret = priv->config->attach(priv->config, ppd42ns_interrupt_handler, (FAR void *)priv);
+	if (ret < 0) {
+		lldbg("ERROR: failed to attach the interrupt handler. (ret=%d)\n", ret);
+		sem_destroy(&priv->exclsem);
+		sem_destroy(&priv->datasem);
+		return ret;
+	}
+
+	/* register the character device driver */
+	ret = register_driver(devname, &g_ppd42ns_fops, 0666, priv);
+	if (ret < 0) {
+		lldbg("ERROR: failed to register driver %s. (ret=%d)\n", devname, ret);
+		sem_destroy(&priv->exclsem);
+		sem_destroy(&priv->datasem);
+		return ret;
+	}
+
+	lldbg("Registered %s\n", devname);
+
+	return 0;
+}

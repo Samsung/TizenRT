@@ -64,6 +64,7 @@
 #include <arch/board/artik053_alc5658_i2c.h>
 #include "up_arch.h"
 #include "s5j_gpio.h"
+#include "s5j_ppd42ns.h"
 
 /*****************************************************************************
  * Private Functions
@@ -123,13 +124,26 @@ static void board_gpio_initialize(void)
  * Name: board_i2c_initialize
  *
  * Description:
- *  Expose board dependent I2Cs
+ *  Expose board dependent I2Cs 
  ****************************************************************************/
 static void board_i2c_initialize(void)
 {
 #ifdef CONFIG_I2C
 	s5j_i2c_register(0);
 	s5j_i2c_register(1);
+#endif
+}
+
+/****************************************************************************
+ * Name: board_sensor_initialize
+ *
+ * Description:
+ *  Expose board dependent Sensors
+ ****************************************************************************/
+static void board_sensor_initialize(void)
+{
+#if defined(CONFIG_SENSOR_PPD42NS) && defined(CONFIG_S5J_SENSOR_PPD42NS)
+	s5j_ppd42ns_initialize();
 #endif
 }
 
@@ -215,7 +229,6 @@ void board_initialize(void)
 	board_gpio_initialize();
 	board_i2c_initialize();
 
-
 #if defined(CONFIG_AUDIO_ALC5658)
 	s5j_alc5658_initialize(0);
 #elif defined(CONFIG_AUDIO_ALC5658CHAR)
@@ -224,5 +237,6 @@ void board_initialize(void)
 	alc5658_i2c_initialize();
 	i2schar_devinit();
 #endif
+	board_sensor_initialize();
 }
 #endif /* CONFIG_BOARD_INITIALIZE */
