@@ -213,7 +213,6 @@ int see_compute_dhm_param_internal(struct sDH_PARAM *d_param, unsigned char *key
 }
 #endif /* CONFIG_HW_DH_PARAM */
 
-#if defined(CONFIG_HW_ECDSA_VERIFICATION)
 int see_setup_key_internal(unsigned char *key_der, unsigned int key_len, unsigned int key_type, unsigned char *key_buf)
 {
 	int r;
@@ -251,6 +250,7 @@ int see_setup_key_internal(unsigned char *key_der, unsigned int key_len, unsigne
 	return SEE_OK;
 }
 
+#if defined(CONFIG_HW_ECDSA_VERIFICATION)
 int see_verify_ecdsa_signature_internal(struct sECC_SIGN *ecc_sign, unsigned char *hash, unsigned int hash_len, unsigned char *key_buf)
 {
 	int r;
