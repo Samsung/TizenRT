@@ -364,7 +364,9 @@ struct options {
 	int extended_ms;			/* negotiate extended master secret?        */
 	int etm;					/* negotiate encrypt then mac?              */
 	int algo_type;			/* algorithm of key/cert             */
-} opt;
+};
+
+static struct options opt;
 
 static void my_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
@@ -475,7 +477,7 @@ int tls_client_cb(void *args)
 	mbedtls_ssl_config conf;
 	mbedtls_ssl_session saved_session;
 #if defined(MBEDTLS_TIMING_C)
-	mbedtls_timing_delay_context *timer;
+	mbedtls_timing_delay_context timer;
 #endif
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	uint32_t flags;
