@@ -43,8 +43,23 @@
 #else
 #  define OC_CAT_(a, b) a ## b
 #  define OC_CAT(a, b) OC_CAT_(a, b)
-#  define OC_STATIC_ASSERT(condition, msg) \
-        typedef int OC_CAT(StaticAssertTemp, __LINE__)[2 * !!(condition) - 1]
+/*
+ * __COUNTER__ Expands to an integer that starts at 0 an is incremented by 1 every
+ * time it is used in a source file.
+ * It is used here to create a unique identifier.
+ * It is supported in MSVC since at least VS2015 and gcc version 4.3.0
+ */
+#  ifdef __COUNTER__
+#    define OC_STATIC_ASSERT(condition, msg) \
+       { enum { OC_CAT(StaticAssert_, __COUNTER__) = 1/(int)(!!(condition)) }; }
+#  else
+     /*
+      * Note this can not be used twice on the same line. Make sure header guards
+      * (i.e #ifdef HEADER ... #endif) are used to avoid including twice.
+      */
+#    define OC_STATIC_ASSERT(condition, msg) \
+       { enum { OC_CAT(StaticAssert_line_, __LINE__) = 1/(int)(!!(condition)) }; }
+#  endif
 #endif
 
 #if !(defined _GLIBCXX_USE_NANOSLEEP) \
