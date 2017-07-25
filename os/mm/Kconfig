@@ -31,7 +31,7 @@ config MM_KERNEL_HEAPSIZE
 		user-mode heap.  This value may need to be aligned to units of the
 		size of the smallest memory protection region.
 
-config DISABLE_REALLOC_NEIGHBOR_EXTENTION
+config DISABLE_REALLOC_NEIGHBOR_EXTENSION
 	bool "Disable Realloc Neighbor Extension"
 	default n
 	---help---
