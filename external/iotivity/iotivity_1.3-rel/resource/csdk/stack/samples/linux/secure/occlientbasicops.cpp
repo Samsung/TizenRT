@@ -512,6 +512,28 @@ int parseClientResponse(OCClientResponse *clientResponse)
             }
         }
 
+        //old servers support
+        if (0 == coapSecureResource && res->secure)
+        {
+#ifdef __WITH_TLS__
+            if (WithTcp)
+            {
+                endpoint->flags = (OCTransportFlags)(endpoint->flags | OC_SECURE);
+                endpoint->adapter = OC_ADAPTER_TCP;
+                endpoint->port = res->tcpPort;
+                OIC_LOG_V(INFO, TAG, "TLS port: %d", endpoint->port);
+            }
+            else
+#endif
+            {
+                endpoint->port = res->port;
+                endpoint->flags = (OCTransportFlags)(endpoint->flags | OC_SECURE);
+                endpoint->adapter = OC_ADAPTER_IP;
+                OIC_LOG_V(INFO, TAG, "DTLS port: %d", endpoint->port);
+            }
+            coapSecureResource = 1;
+        }
+
         OIC_LOG_V(INFO, TAG, "Secure -- %s", coapSecureResource == 1 ? "YES" : "NO");
 
         // If we discovered a secure resource, exit from here
@@ -525,4 +547,3 @@ int parseClientResponse(OCClientResponse *clientResponse)
 
     return 0;
 }
-
