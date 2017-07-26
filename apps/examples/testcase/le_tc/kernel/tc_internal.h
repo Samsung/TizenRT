@@ -66,6 +66,7 @@ int clock_main(void);
 int environ_main(void);
 int errno_main(void);
 int group_main(void);
+int libc_fixedmath_main(void);
 int libc_libgen_main(void);
 int libc_math_main(void);
 int libc_misc_main(void);
