@@ -61,7 +61,7 @@ int hello_main(int argc, char *argv[])
 
 void main(void)
 {
-	tash_cmd_intall("hello", hello_main, TASH_EXECMD_ASYNC);
+	tash_cmd_install("hello", hello_main, TASH_EXECMD_ASYNC);
 }
 ```
 
