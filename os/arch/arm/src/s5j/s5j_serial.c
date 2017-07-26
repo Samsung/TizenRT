@@ -314,10 +314,8 @@ static int up_setup(struct uart_dev_s *dev)
 	uint32_t regval;
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 
-#if defined(CONFIG_PM)
 	s5j_clk_enable(priv->pclk);
 	s5j_clk_enable(priv->extclk);
-#endif
 
 #if !defined(CONFIG_SUPPRESS_UART_CONFIG)
 	float div;
@@ -438,10 +436,8 @@ static void up_shutdown(struct uart_dev_s *dev)
 	}
 #endif
 
-#if defined(CONFIG_PM)
 	s5j_clk_disable(priv->pclk);
 	s5j_clk_disable(priv->extclk);
-#endif
 }
 
 /****************************************************************************
