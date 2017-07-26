@@ -19,8 +19,12 @@
 #ifndef DRIVER_IO_H_
 #define DRIVER_IO_H_
 
+#include <tinyara/config.h>
+
+#ifdef CONFIG_MTD_FTL
 #ifndef SSS_OVER_MTDFTL
 #define SSS_OVER_MTDFTL
+#endif
 #endif
 
 char *sss_get_flash_device_name(void);
