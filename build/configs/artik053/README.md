@@ -149,6 +149,20 @@ openocd -f artik053.cfg -c ' \
     exit'
 ```
 
+If you have an 'ARTIK053S' device, please do the following.
+
+```bash
+../build/configs/artik053/tools/codesigner/artik053_codesigner -sign ../build/output/bin/tinyara_head.bin
+
+openocd -f artik053.cfg -c ' \
+    flash_write bl1    ../build/configs/artik053/bin/bl1.secure.bin;  \
+    flash_write bl2    ../build/configs/artik053/bin/bl2.bin;         \
+    flash_write sssfw  ../build/configs/artik053/bin/sssfw.bin;       \
+    flash_write wlanfw ../build/configs/artik053/bin/wlanfw.bin;      \
+    flash_write os     ../build/output/bin/tinyara_head.bin-signed;   \
+    exit'
+```
+
 Once the complete binaries are successfully programmed, each partition can be updated seperately with new one.
 ```bash
 openocd -f artik053.cfg -c ' \
