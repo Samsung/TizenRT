@@ -6,6 +6,13 @@
 lightweight RTOS-based platform to support low-end IoT devices.  
 Please find project details like **APIs**, **Specification** and **Long-term Goals** on our [Tizen Site](https://source.tizen.org/documentation/tizen-rt).
 
+## Contents
+
+> [Quick Start](#quick-start)  
+> [Supported Board](#supported-board)  
+> [Configuration Sets](#configuration-sets)  
+> [APPENDIX](#appendix)
+
 ## Quick Start
 ### Getting the toolchain
 
