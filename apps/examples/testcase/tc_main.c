@@ -73,7 +73,18 @@ int main(int argc, FAR char *argv[])
 int tc_main(int argc, char *argv[])
 #endif
 {
+#if defined(CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_UTC) ||	\
+	defined(CONFIG_EXAMPLES_TESTCASE_ARASTORAGE_ITC) ||	\
+	defined(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM) ||		\
+	defined(CONFIG_EXAMPLES_TESTCASE_KERNEL) ||			\
+	defined(CONFIG_EXAMPLES_TESTCASE_MPU) ||			\
+	defined(CONFIG_EXAMPLES_TESTCASE_NETWORK) ||		\
+	defined(CONFIG_EXAMPLES_TESTCASE_DM_UTC) ||			\
+	defined(CONFIG_EXAMPLES_TESTCASE_DM_ITC) ||			\
+	defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC) ||	\
+	defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_ITC)
 	int pid;
+#endif
 
 	sem_init(&tc_sem, 0, 1);
 
