@@ -6,6 +6,7 @@
 config EXAMPLES_WAVE_GEN
 	bool "Wave file generation application"
 	default n
+	depends on AUDIO
 	---help---
 
 
