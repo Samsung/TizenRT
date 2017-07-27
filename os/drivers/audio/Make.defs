@@ -60,8 +60,8 @@ ifeq ($(CONFIG_AUDIO_NULL),y)
 CSRCS += audio_null.c
 endif
 
-ifeq ($(CONFIG_AUDIO_I2SCHAR),y)
-CSRCS += i2schar.c
+ifeq ($(CONFIG_AUDIO_ALC5658CHAR),y)
+CSRCS += alc5658char.c
 endif
 
 ifeq ($(CONFIG_AUDIO_ALC5658),y)
