@@ -42,12 +42,21 @@
 #define TASK_STACKSIZE 2048
 #define PID_INVAL       -1
 #define PID_IDLE        0
+#define TASK_CANCEL_INVALID  -1
 
 pthread_t thread1, thread2;
 
 pid_t g_task_pid;
 bool g_callback = false;
 bool g_pthread_callback = true;
+
+#ifdef CONFIG_CANCELLATION_POINTS
+#ifdef CONFIG_SCHED_WAITPID
+#ifndef CONFIG_SCHED_CHILD_STATUS
+static int tasksetcanceltype_status = -1;
+#endif
+#endif
+#endif
 
 /**
 * @fn                   :sched_foreach_callback
@@ -61,6 +70,46 @@ static void sched_foreach_callback(struct tcb_s *tcb, void *arg)
 		g_callback = true;
 	}
 }
+
+/**
+* @fn                   :function_task_setcanceltype_childthread
+* @description          :Function for tc_sched_task_setcanceltype
+* @return               :int
+*/
+#ifdef CONFIG_SCHED_WAITPID
+#ifdef CONFIG_CANCELLATION_POINTS
+#ifndef CONFIG_SCHED_CHILD_STATUS
+static int tc_sched_task_setcanceltype_childthread(int argc, char *argv[])
+{
+	int ret_chk;
+	int type;
+	int oldtype;
+	struct tcb_s *stcb = this_task();
+
+	/* Negative case with invalid mode. It will return EINVAL & set errno flag */
+	type = TASK_CANCEL_INVALID;
+	ret_chk = task_setcanceltype(type, &oldtype);
+	TC_ASSERT_EQ_RETURN("task_setcanceltype", ret_chk, EINVAL, -1);
+
+	/* Positive cases with valid mode. It will return OK(NULL) */
+	type = TASK_CANCEL_ASYNCHRONOUS;
+	ret_chk = task_setcanceltype(type, &oldtype);
+	TC_ASSERT_EQ_RETURN("task_setcanceltype", ret_chk, OK, -1);
+	TC_ASSERT_EQ_RETURN("task_setcanceltype", stcb->flags & !TCB_FLAG_CANCEL_DEFERRED, !TCB_FLAG_CANCEL_DEFERRED, -1);
+
+	type = TASK_CANCEL_DEFERRED;
+	ret_chk = task_setcanceltype(type, &oldtype);
+	TC_ASSERT_EQ_RETURN("task_setcanceltype", ret_chk, OK,-1);
+	TC_ASSERT_EQ_RETURN("task_setcanceltype", stcb->flags & TCB_FLAG_CANCEL_DEFERRED, TCB_FLAG_CANCEL_DEFERRED, -1);
+
+	/* Update child task status to 0 if all TC's pass */
+	tasksetcanceltype_status = 0;
+
+	return 0;
+}
+#endif
+#endif
+#endif
 
 /**
 * @fn                   :function_wait
@@ -524,6 +573,59 @@ static void tc_sched_sched_getstreams(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_sched_task_setcanceltype
+ * @brief                :This tc tests tc_sched_task_setcanceltype()
+ * @Scenario             :The task_setcanceltype() function atomically both sets the calling
+ *                        task's cancelability type to the indicated type and returns the
+ *                        previous cancelability type at the location referenced by oldtype
+ *                        If successful pthread_setcanceltype() function shall return zero;
+ *                        otherwise, an error number shall be returned to indicate the error.
+ * @API'scovered         :task_setcanceltype
+ * @Preconditions        :none
+ * @Postconditions       :none
+ * @return               :void
+ */
+#ifdef CONFIG_CANCELLATION_POINTS
+#ifdef CONFIG_SCHED_WAITPID
+#ifndef CONFIG_SCHED_CHILD_STATUS
+static void tc_sched_task_setcanceltype(void)
+{
+	pid_t pid;
+	int ret_chk;
+
+	/* creating new process */
+	pid = task_create("sched1", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, tc_sched_task_setcanceltype_childthread, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, 0);
+
+	ret_chk = waitpid(pid, &tasksetcanceltype_status, 0);
+
+	/* If TC's pass , only then execute success result */
+	if(tasksetcanceltype_status == 0) {
+		TC_SUCCESS_RESULT();
+	}
+}
+#endif
+#endif
+
+/**
+ * @fn                   :tc_sched_task_testcancel
+ * @brief                :This tc tests tc_sched_task_testcancel()
+ * @Scenario             :The task_testcancel() function creates a cancellation point in the calling thread.
+ *                        It has no effect if cancelability is disabled
+ * @API'scovered         :task_testcancel
+ * @Preconditions        :none
+ * @Postconditions       :none
+ * @return               :void
+ */
+static void tc_sched_task_testcancel(void)
+{
+	task_testcancel();
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
 /****************************************************************************
  * Name: sched
  ****************************************************************************/
@@ -546,6 +648,14 @@ int sched_main(void)
 	tc_sched_sched_foreach();
 	tc_sched_sched_lockcount();
 	tc_sched_sched_getstreams();
+#ifdef CONFIG_CANCELLATION_POINTS
+#ifdef CONFIG_SCHED_WAITPID
+#ifndef CONFIG_SCHED_CHILD_STATUS
+	tc_sched_task_setcanceltype();
+#endif
+#endif
+	tc_sched_task_testcancel();
+#endif
 
 	return 0;
 }
