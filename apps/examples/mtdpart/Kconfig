@@ -6,7 +6,7 @@
 config EXAMPLES_MTDPART
 	bool "MTD partition test"
 	default n
-	depends on MTD_PARTITION && !BUILD_PROTECTED && !BUILD_KERNEL
+	depends on RAMMTD && MTD_PARTITION && !BUILD_PROTECTED && !BUILD_KERNEL
 	---help---
 		Enable the MTD partition test example.
 
