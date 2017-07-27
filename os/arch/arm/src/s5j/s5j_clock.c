@@ -296,7 +296,7 @@ void s5j_clk_enable(enum clk_gate_id id)
 {
 	struct mcu_clk *cmu = (struct mcu_clk *)S5J_CMU_BASE;
 
-	cmu->gates[id].cg = 0;
+	cmu->gates[id].cg = 1;
 	cmu->gates[id].mode = 1;
 }
 
@@ -304,7 +304,7 @@ void s5j_clk_disable(enum clk_gate_id id)
 {
 	struct mcu_clk *cmu = (struct mcu_clk *)S5J_CMU_BASE;
 
-	cmu->gates[id].cg = 1;
+	cmu->gates[id].cg = 0;
 	cmu->gates[id].mode = 1;
 }
 
