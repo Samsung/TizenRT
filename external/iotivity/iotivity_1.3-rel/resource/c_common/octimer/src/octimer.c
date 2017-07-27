@@ -19,8 +19,10 @@
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 
-
+/* Legacy feature macro. For older versions of glibc < 2.19 */
 #define _BSD_SOURCE
+/* New feature macro that provides everything _BSD_SOURCE and more glibc >= 2.20 */
+#define _DEFAULT_SOURCE
 
 #include "iotivity_config.h"
 #ifdef HAVE_WINDOWS_H
