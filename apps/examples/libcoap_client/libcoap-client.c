@@ -192,7 +192,7 @@ coap_pdu_t *coap_new_request(coap_context_t *ctx, method_t m, coap_list_t *optio
 
 	pdu->transport_hdr->udp.token_length = the_token.length;
 	if (!coap_add_token(pdu, the_token.length, the_token.s)) {
-		debug("cannot add token to request\n");
+		debug("coap_new_request : cannot add token to request\n");
 	}
 
 	coap_show_pdu(pdu);
@@ -209,7 +209,13 @@ coap_pdu_t *coap_new_request(coap_context_t *ctx, method_t m, coap_list_t *optio
 		}
 	}
 
-	return pdu;
+	if (ctx->protocol == COAP_PROTO_TCP || ctx->protocol == COAP_PROTO_TLS) {
+		coap_pdu_t *tcp_pdu = NULL;
+		tcp_pdu = coap_convert_to_tcp_pdu(pdu);
+		return tcp_pdu;
+	} else {
+		return pdu;
+	}
 }
 
 coap_tid_t clear_obs(coap_context_t *ctx, const coap_address_t *remote)

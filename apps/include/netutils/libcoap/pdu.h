@@ -24,7 +24,12 @@
 #define COAP_DEFAULT_PORT           5683	/* CoAP default UDP port */
 #define COAP_DEFAULT_MAX_AGE          60	/* default maximum object lifetime in seconds */
 #ifndef COAP_MAX_PDU_SIZE
+#ifdef WITH_TCP
+/* FIXME : MAX_PDU_SIZE should be configurable */
+#define COAP_MAX_PDU_SIZE           533     /* maximum size of a CoAP PDU */
+#else
 #define COAP_MAX_PDU_SIZE           1400	/* maximum size of a CoAP PDU */
+#endif
 #endif							/* COAP_MAX_PDU_SIZE */
 
 #define COAP_DEFAULT_VERSION           1	/* version of CoAP supported */
@@ -160,7 +165,9 @@ typedef int coap_tid_t;
 
 /** Indicates an invalid transaction id. */
 #define COAP_INVALID_TID -1
+#define COAP_TCP_TID      2
 
+#define COAP_UDP_HEADER             4
 #define COAP_TCP_HEADER_NO_FIELD    2
 #define COAP_TCP_HEADER_8_BIT       3
 #define COAP_TCP_HEADER_16_BIT      4
@@ -600,4 +607,17 @@ int coap_add_data(coap_pdu_t *pdu, unsigned int len, const unsigned char *data);
  */
 int coap_get_data(coap_pdu_t *pdu, size_t *len, unsigned char **data);
 
+/**
+ * Function for printing PDU in order to debugging
+ */
+void coap_debug_pdu_print(coap_pdu_t *pdu, coap_transport_t transport);
+
+/**
+ * Function for create TCP pdu by using UDP pdu
+ * Warning
+ * input parameter pdu will be freed in this function so after call this function
+ * so do not dereference pdu after called this function
+ *
+ */
+coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu);
 #endif							/* _PDU_H_ */

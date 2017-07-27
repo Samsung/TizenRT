@@ -731,7 +731,7 @@ int coap_get_data(coap_pdu_t *pdu, size_t *len, unsigned char **data)
 	assert(data);
 
 	if (pdu->data) {
-		*len = (unsigned char *)pdu->hdr + pdu->length - pdu->data;
+		*len = (unsigned char *)pdu->transport_hdr + pdu->length - pdu->data;
 		*data = pdu->data;
 	} else {					/* no data, clear everything */
 		*len = 0;
@@ -969,4 +969,268 @@ int coap_pdu_parse2(unsigned char *data, size_t length, coap_pdu_t *pdu, coap_tr
 
 discard:
 	return 0;
+}
+
+coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu)
+{
+	coap_transport_t transport = COAP_UDP;
+	coap_pdu_t *tcp_pdu = NULL;
+	coap_opt_t *tcp_opt = NULL, *udp_opt = NULL;
+
+	size_t tokenlen = 0;
+	size_t newsize = 0; /* size of UDP pdu without UDP Header */
+	size_t length = 0;
+
+	if (pdu == NULL) {
+		warn("coap_convert_to_tcp_pdu : do not allow empty pdu\n");
+		return pdu;
+	}
+
+	transport = coap_get_tcp_header_type_from_size((pdu->length - COAP_UDP_HEADER));
+
+	newsize = (pdu->length - COAP_UDP_HEADER);
+	length = newsize; /* Used to find pdu->data pointer */
+
+	tcp_pdu = coap_pdu_init2(0, pdu->transport_hdr->udp.code, 0, (newsize + 1), transport);
+
+	if (!tcp_pdu) {
+		warn("coap_new_request : failed to create pdu for TCP\n");
+		goto convert_error_discard;
+	} else {
+		debug("coap_new_request : new tcp pdu is created, size %d\n", pdu->length);
+
+		/* Fill extended length field on CoAP over TCP header */
+		coap_add_length(tcp_pdu, transport, newsize);
+
+		/* Copy Token length and Token field to CoAP over TCP Header */
+		tokenlen = pdu->transport_hdr->udp.token_length;
+
+		switch(transport) {
+		case COAP_TCP:
+			tcp_pdu->transport_hdr->tcp.header_data[0] |= tokenlen;
+			if (tokenlen > 0)
+				memcpy(tcp_pdu->transport_hdr->tcp.token, pdu->transport_hdr->udp.token, tokenlen);
+			/* Move TCP pdu pointer to start of option */
+			tcp_opt = (unsigned char *)(&(tcp_pdu->transport_hdr->tcp) + 1) + tokenlen;
+			break;
+		case COAP_TCP_8BIT:
+			tcp_pdu->transport_hdr->tcp_8bit.header_data[0] |= tokenlen;
+			if (tokenlen > 0)
+				memcpy(tcp_pdu->transport_hdr->tcp_8bit.token, pdu->transport_hdr->udp.token, tokenlen);
+			/* Move TCP pdu pointer to start of option */
+			tcp_opt = (unsigned char *)(&(tcp_pdu->transport_hdr->tcp_8bit) + 1) + tokenlen;
+			break;
+		case COAP_TCP_16BIT:
+			tcp_pdu->transport_hdr->tcp_16bit.header_data[0] |= tokenlen;
+			if (tokenlen > 0)
+				memcpy(tcp_pdu->transport_hdr->tcp_16bit.token, pdu->transport_hdr->udp.token, tokenlen);
+			/* Move TCP pdu pointer to start of option */
+			tcp_opt = (unsigned char *)(&(tcp_pdu->transport_hdr->tcp_16bit) + 1) + tokenlen;
+			break;
+		case COAP_TCP_32BIT:
+			tcp_pdu->transport_hdr->tcp_32bit.header_data[0] |= tokenlen;
+			if (tokenlen > 0)
+				memcpy(tcp_pdu->transport_hdr->tcp_32bit.token, pdu->transport_hdr->udp.token, tokenlen);
+			/* Move TCP pdu pointer to start of option */
+			tcp_opt = (unsigned char *)(&(tcp_pdu->transport_hdr->tcp_32bit) + 1) + tokenlen;
+			break;
+		default:
+			break;
+		}
+
+		/* Move UDP pdu pointer to start of option */
+		udp_opt = (unsigned char *)(&(pdu->transport_hdr->udp) +1) + tokenlen;
+
+		/* copy udp pdu to tcp pdu starting from token */
+		newsize = newsize - tokenlen;
+		memcpy(tcp_opt, udp_opt, newsize);
+
+		/* Copy payload data from UDP pdu  */
+		length -= (tokenlen + coap_get_tcp_header_length_for_transport(transport));
+		while (length && *tcp_opt != COAP_PAYLOAD_START) {
+			coap_option_t option;
+			memset(&option, 0, sizeof(coap_option_t));
+			if (!next_option_safe(&tcp_opt, &length, &option)) {
+				debug("coap_convert_to_tcp_pdu : drop\n");
+				goto convert_error_discard;
+			}
+		}
+
+		if (length) {
+			if (*tcp_opt != COAP_PAYLOAD_START) {
+				/* somethings wrong ..*/
+				goto convert_error_discard;
+			} else {
+				tcp_opt++;
+				length--;
+				if (length > 0)
+					tcp_pdu->data = (unsigned char *)tcp_opt;
+			}
+		}
+
+		/* Fill extra TCP pdu Info */
+		tcp_pdu->max_size = pdu->max_size;
+		tcp_pdu->max_delta = pdu->max_delta;
+		tcp_pdu->length = newsize + tokenlen + coap_get_tcp_header_length_for_transport(transport);
+		/* If you want to see the PDU in details, enable below functions */
+#if 0
+		coap_debug_pdu_print(pdu, COAP_UDP);
+		coap_debug_pdu_print(tcp_pdu, transport);
+#endif
+
+		/* Use TCP PDU, so free UDP pdu */
+		coap_delete_pdu(pdu);
+		pdu = NULL;
+	}
+
+	return tcp_pdu;
+
+convert_error_discard:
+	coap_delete_pdu(tcp_pdu);
+	coap_delete_pdu(pdu);
+
+	pdu = NULL;
+	tcp_pdu = NULL;
+
+	return tcp_pdu;
+}
+
+void coap_debug_pdu_print(coap_pdu_t *pdu, coap_transport_t transport)
+{
+	size_t tokenLen = 0;
+	char buffer[COAP_MAX_PDU_SIZE] = {0,};
+
+	if (!pdu) {
+		printf("coap_debug_pdu_print : pdu is empty\n");
+		return;
+	}
+
+	printf("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-\n");
+
+	switch(transport) {
+	case COAP_UDP: /* 4 Bytes Header */
+		printf("UDP header\n");
+
+		tokenLen = pdu->transport_hdr->udp.token_length;
+
+		printf("ver %d | type %d | tkl %d | code %d | mid %d\n",
+					pdu->transport_hdr->udp.version,
+					pdu->transport_hdr->udp.type,
+					pdu->transport_hdr->udp.token_length,
+					pdu->transport_hdr->udp.code,
+					pdu->transport_hdr->udp.id);
+
+		if (tokenLen > 0) {
+			strncpy(buffer, (const char *)pdu->transport_hdr->udp.token, tokenLen);
+			printf("token %s\n", buffer);
+		}
+
+		break;
+	case COAP_TCP: /* 2 Bytes Header */
+		printf("TCP header\n");
+
+		tokenLen = (pdu->transport_hdr->tcp.header_data[0] & 0x0f);
+
+		printf("len %d | tkl %d | code %d\n",
+					((pdu->transport_hdr->tcp.header_data[0] >> 4) & 0x0f),
+					(pdu->transport_hdr->tcp.header_data[0] & 0x0f),
+					pdu->transport_hdr->tcp.header_data[1]);
+
+		if (tokenLen > 0) {
+			strncpy(buffer, (const char *)pdu->transport_hdr->tcp.token, tokenLen);
+			printf("token %s\n", buffer);
+		}
+
+		break;
+	case COAP_TCP_8BIT: /* 3 Bytes Header */
+		printf("TCP-8bit header\n");
+
+		tokenLen = (pdu->transport_hdr->tcp_8bit.header_data[0] & 0x0f);
+
+		printf("len %d | tkl %d | extended len %x | code %d\n",
+					((pdu->transport_hdr->tcp_8bit.header_data[0] >> 4) & 0x0f),
+					(pdu->transport_hdr->tcp_8bit.header_data[0] & 0x0f),
+					pdu->transport_hdr->tcp_8bit.header_data[1],
+					pdu->transport_hdr->tcp_8bit.header_data[2]);
+
+		if (tokenLen > 0) {
+			strncpy(buffer, (const char *)pdu->transport_hdr->tcp_8bit.token, tokenLen);
+			printf("token %s\n", buffer);
+		}
+
+		break;
+	case COAP_TCP_16BIT: /* 4 Bytes Header */
+		printf("TCP-16bit header\n");
+
+		tokenLen = (pdu->transport_hdr->tcp_16bit.header_data[0] & 0x0f);
+
+		printf("len %d | tkl %d | extended len %x%x | code %d\n",
+					((pdu->transport_hdr->tcp_16bit.header_data[0] >> 4) & 0x0f),
+					(pdu->transport_hdr->tcp_16bit.header_data[0] & 0x0f),
+					pdu->transport_hdr->tcp_16bit.header_data[1],
+					pdu->transport_hdr->tcp_16bit.header_data[2],
+					pdu->transport_hdr->tcp_16bit.header_data[3]);
+
+		if (tokenLen > 0) {
+			strncpy(buffer, (const char *)pdu->transport_hdr->tcp_16bit.token, tokenLen);
+			printf("token %s\n", buffer);
+		}
+
+		break;
+	case COAP_TCP_32BIT: /* 6 Bytes Header */
+		printf("TCP-32bit header\n");
+
+		tokenLen = (pdu->transport_hdr->tcp_32bit.header_data[0] & 0x0f);
+
+		printf("len %d | tkl %d | extended len %x%x%x%x | code %d\n",
+					((pdu->transport_hdr->tcp_32bit.header_data[0] >> 4) & 0x0f),
+					(pdu->transport_hdr->tcp_32bit.header_data[0] & 0x0f),
+					pdu->transport_hdr->tcp_32bit.header_data[1],
+					pdu->transport_hdr->tcp_32bit.header_data[2],
+					pdu->transport_hdr->tcp_32bit.header_data[3],
+					pdu->transport_hdr->tcp_32bit.header_data[4],
+					pdu->transport_hdr->tcp_32bit.header_data[5]);
+
+		if (tokenLen > 0) {
+			strncpy(buffer, (const char *)pdu->transport_hdr->tcp_32bit.token, tokenLen);
+			printf("token %s\n", buffer);
+		}
+
+		break;
+	default:
+		break;
+	}
+
+	printf("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-\n");
+	coap_opt_iterator_t opt_iterator;
+
+	if (!coap_option_iterator_init2(pdu, &opt_iterator, NULL, transport)) {
+		printf("No options\n");
+	} else {
+		coap_opt_t *option = NULL;
+		size_t opt_len = 0;
+
+		while ((option = coap_option_next(&opt_iterator))) {
+			/* TODO : should consider option delta (extended) */
+			memset(buffer, 0x0, COAP_MAX_PDU_SIZE);
+			opt_len = (size_t)coap_opt_length(option);
+			if (opt_len > 0) {
+				strncpy(buffer, (const char *)coap_opt_value(option), opt_len);
+			}
+
+			printf("option delta %u len %d value %s\n",
+					coap_opt_delta(option), opt_len, buffer);
+		}
+	}
+
+	printf("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-\n");
+	if (!pdu->data)
+		printf("No payload\n");
+	else
+		printf("payload %s\n", pdu->data);
+
+	printf("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-\n");
+	printf("additional info : pdu_len %d max delta %d max size %d\n",
+				pdu->length, pdu->max_delta, pdu->max_size);
+	printf("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-\n");
 }
