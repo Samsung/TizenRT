@@ -1,0 +1,13 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_ALC5658CHAR_TEST
+	bool "ALC5658 Character Codec reference application"
+	default n
+	depends on AUDIO_ALC5658CHAR
+	---help---
+
+
+
