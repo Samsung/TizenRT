@@ -144,8 +144,6 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 		mbox->wait_send--;
 	}
 
-	mbox->msgs[mbox->rear] = msg;
-	LWIP_DEBUGF(SYS_DEBUG, ("Post SUCCESS\n"));
 	if (mbox->rear == mbox->front) {
 		first_msg = 1;
 	} else {
@@ -153,6 +151,8 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 	}
 
 	mbox->rear = tmp;
+	mbox->msgs[mbox->rear] = msg;
+	LWIP_DEBUGF(SYS_DEBUG, ("Post SUCCESS\n"));
 
 	/* If msg was posted to an empty queue, Release semaphore for
 	   some fetch api blocked on this sem due to Empty queue. */
@@ -193,8 +193,6 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 		goto errout_with_mutex;
 	}
 
-	mbox->msgs[mbox->rear] = msg;
-	LWIP_DEBUGF(SYS_DEBUG, ("Post SUCCESS\n"));
 	if (mbox->rear == mbox->front) {
 		first_msg = 1;
 	} else {
@@ -202,6 +200,8 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 	}
 
 	mbox->rear = tmp;
+	mbox->msgs[mbox->rear] = msg;
+	LWIP_DEBUGF(SYS_DEBUG, ("Post SUCCESS\n"));
 
 	/* If msg was posted to an empty queue, Release semaphore for
 	   some fetch api blocked on this sem due to Empty queue. */
@@ -272,14 +272,13 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 		mbox->wait_fetch--;
 	}
 
+	mbox->front = (mbox->front + 1) % mbox->queue_size;
 	if (msg != NULL) {
 		*msg = mbox->msgs[mbox->front];
 		LWIP_DEBUGF(SYS_DEBUG, (" mbox %p msg %p\n", (void *)mbox, *msg));
 	} else {
 		LWIP_DEBUGF(SYS_DEBUG, (" mbox %p, null msg\n", (void *)mbox));
 	}
-
-	mbox->front = (mbox->front + 1) % mbox->queue_size;
 
 	/* We just fetched a msg, Release semaphore for
 	   some post api blocked on this sem due to queue full. */
@@ -320,14 +319,13 @@ u32_t sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
 		goto errout_with_mutex;
 	}
 
+	mbox->front = (mbox->front + 1) % mbox->queue_size;
 	if (msg != NULL) {
 		LWIP_DEBUGF(SYS_DEBUG, ("mbox %p msg %p\n", (void *)mbox, *msg));
 		*msg = mbox->msgs[mbox->front];
 	} else {
 		LWIP_DEBUGF(SYS_DEBUG, ("mbox %p, null msg\n", (void *)mbox));
 	}
-
-	mbox->front = (mbox->front + 1) % mbox->queue_size;
 
 	/* We just fetched a msg, Release semaphore for
 	   some post api blocked on this sem due to queue full. */
