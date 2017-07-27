@@ -138,6 +138,7 @@
 #define AUDIOIOC_REGISTERMQ         _AUDIOIOC(14)
 #define AUDIOIOC_UNREGISTERMQ       _AUDIOIOC(15)
 #define AUDIOIOC_HWRESET            _AUDIOIOC(16)
+#define AUDIOIOC_DEQUEUEBUFFER      _AUDIOIOC(17)
 
 /* Audio Device Types *******************************************************/
 /* The NuttX audio interface support different types of audio devices for
@@ -251,6 +252,7 @@
 #define AUDIO_FU_UNDERFLOW          0x2000
 #define AUDIO_FU_OVERFLOW           0x4000
 #define AUDIO_FU_LATENCY            0x8000
+#define AUDIO_FU_MICGAIN            0x8001
 
 /* Processing Unit controls *************************************************/
 
