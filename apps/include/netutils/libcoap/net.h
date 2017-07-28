@@ -69,6 +69,8 @@ typedef struct coap_queue_t {
 	/**< remote address */
 	coap_tid_t id;	/**< unique transaction id */
 
+	coap_transport_t transport; /**< CoAP PDU transport type */
+
 	coap_pdu_t *pdu;/**< the CoAP PDU to send */
 } coap_queue_t;
 
@@ -287,6 +289,25 @@ coap_tid_t coap_send_confirmed(coap_context_t *context, const coap_address_t *ds
  * @return A pointer to the new message or @c NULL on error.
  */
 coap_pdu_t *coap_new_error_response(coap_pdu_t *request, unsigned char code, coap_opt_filter_t opts);
+
+/**
+ * Creates a new ACK PDU with specified error @p code. The options
+ * specified by the filter expression @p opts will be copied from the
+ * original request contained in @p request.  Unless @c
+ * SHORT_ERROR_RESPONSE was defined at build time, the textual reason
+ * phrase for @p code will be added as payload, with Content-Type @c
+ * 0.  This function returns a pointer to the new response message, or
+ * @c NULL on error. The storage allocated for the new message must be
+ * relased with coap_free().
+ *
+ * @param request Specification of the received (confirmable) request.
+ * @param code The error code to set.
+ * @param opts An option filter that specifies which options to copy
+ *             from the original request in @p node.
+ * @param protocol Using transport protocol of the session
+ * @return A pointer to the new message or @c NULL on error.
+ */
+coap_pdu_t *coap_new_error_response2(coap_pdu_t *request, unsigned char code, coap_opt_filter_t opts, coap_protocol_t protocol);
 /**
  * Sends a non-confirmed CoAP message to given destination. The memory
  * that is allocated by pdu will not be released by coap_send().
@@ -380,6 +401,16 @@ int coap_read(coap_context_t *context);
  * @param id   Set to the new id.
  */
 void coap_transaction_id(const coap_address_t *peer, const coap_pdu_t *pdu, coap_tid_t *id);
+
+/**
+ * Calculates a unique transaction id from given arguments @p peer and
+ * @p pdu. The id is returned in @p id.
+ *
+ * @param peer The remote party who sent @p pdu.
+ * @param pdu  The message that initiated the transaction.
+ * @param id   Set to the new id.
+ */
+void coap_transaction_id2(const coap_address_t *peer, const coap_pdu_t *pdu, coap_tid_t *id, coap_protocol_t protocol);
 
 /**
  * This function removes the element with given @p id from the list
@@ -486,6 +517,41 @@ void coap_ticks(coap_tick_t *);
  * @return @c 1 if everything was ok, @c 0 otherwise.
  */
 int coap_option_check_critical(coap_context_t *ctx, coap_pdu_t *pdu, coap_opt_filter_t unknown);
+
+/**
+ * Verifies that @p pdu contains no unknown critical options. Options
+ * must be registered at @p ctx, using the function
+ * coap_register_option(). A basic set of options is registered
+ * automatically by coap_new_context(). This function returns @c 1 if
+ * @p pdu is ok, @c 0 otherwise. The given filter object @p unknown
+ * will be updated with the unknown options. As only @c COAP_MAX_OPT
+ * options can be signalled this way, remaining options must be
+ * examined manually.
+ *
+ * @code
+  coap_opt_filter_t f = COAP_OPT_NONE;
+  coap_opt_iterator_t opt_iter;
+
+  if (coap_option_check_critical(ctx, pdu, f) == 0) {
+    coap_option_iterator_init(pdu, &opt_iter, f);
+
+    while (coap_option_next(&opt_iter)) {
+      if (opt_iter.type & 0x01) {
+	... handle unknown critical option in opt_iter ...
+      }
+    }
+  }
+ * @endcode
+ *
+ * @param ctx      The context where all known options are registered.
+ * @param pdu      The PDU to check.
+ * @param unknown  The output filter that will be updated to indicate the
+ *                 unknown critical options found in @p pdu.
+ * @param transport The transport type of PDU
+ *
+ * @return @c 1 if everything was ok, @c 0 otherwise.
+ */
+int coap_option_check_critical2(coap_context_t *ctx, coap_pdu_t *pdu, coap_opt_filter_t unknown, coap_transport_t transport);
 
 #ifdef __cplusplus
 }

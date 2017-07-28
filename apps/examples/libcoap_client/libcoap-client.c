@@ -313,7 +313,7 @@ finish:
 	return len;
 }
 
-static inline coap_opt_t *get_block(coap_pdu_t *pdu, coap_opt_iterator_t *opt_iter)
+static inline coap_opt_t *get_block(coap_pdu_t *pdu, coap_opt_iterator_t *opt_iter, coap_transport_t transport)
 {
 	coap_opt_filter_t f;
 
@@ -323,7 +323,7 @@ static inline coap_opt_t *get_block(coap_pdu_t *pdu, coap_opt_iterator_t *opt_it
 	coap_option_setb(f, COAP_OPTION_BLOCK1);
 	coap_option_setb(f, COAP_OPTION_BLOCK2);
 
-	coap_option_iterator_init(pdu, opt_iter, f);
+	coap_option_iterator_init2(pdu, opt_iter, f, transport);
 	return coap_option_next(opt_iter);
 }
 
@@ -338,9 +338,17 @@ inline int check_token(coap_pdu_t *received)
 	return received->hdr->token_length == the_token.length && memcmp(received->hdr->token, the_token.s, the_token.length) == 0;
 }
 
+int check_token_by_value(unsigned char *token, size_t len)
+{
+	if (len == the_token.length) {
+		if (!strncmp((char *)token, (char *)the_token.s, len))
+			return 1;
+	}
+	return 0;
+}
+
 void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, coap_pdu_t *sent, coap_pdu_t *received, const coap_tid_t id)
 {
-
 	coap_pdu_t *pdu = NULL;
 	coap_opt_t *block_opt;
 	coap_opt_iterator_t opt_iter;
@@ -350,46 +358,73 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 	unsigned char *databuf;
 	coap_tid_t tid;
 
-#ifndef NDEBUG
-	if (LOG_DEBUG <= coap_get_log_level()) {
-		debug("** process incoming %d.%02d response:\n", (received->hdr->code >> 5), received->hdr->code & 0x1F);
-		coap_show_pdu(received);
+	coap_transport_t transport = COAP_UDP;
+
+	size_t tokenlen;
+	unsigned char *token_ptr = NULL;
+	char token[8] = {0,};
+
+	unsigned short code;
+
+	if (ctx->protocol == COAP_PROTO_TCP || ctx->protocol == COAP_PROTO_TLS) {
+		transport = coap_get_tcp_header_type_from_size(received->length);
 	}
-#endif
+
+	coap_get_token2((received->transport_hdr), transport, &token_ptr, &tokenlen);
+
+	if (tokenlen > 0) {
+		strncpy(token, (const char *)token_ptr, tokenlen);
+		printf("message_handler : token %s, len %d, the_token %s, len %d, token_ptr %s\n",
+				token, tokenlen, the_token.s, the_token.length, token_ptr);
+	}
 
 	/* check if this is a response to our original request */
-	if (!check_token(received)) {
+	if (!check_token_by_value((unsigned char *)token, tokenlen)) {
 		/* drop if this was just some message, or send RST in case of notification */
-		if (!sent && (received->hdr->type == COAP_MESSAGE_CON || received->hdr->type == COAP_MESSAGE_NON)) {
-			coap_send_rst(ctx, remote, received);
+		if (!sent) {
+			if (ctx->protocol == COAP_PROTO_UDP || ctx->protocol == COAP_PROTO_DTLS) {
+				if (received->transport_hdr->udp.type == COAP_MESSAGE_CON ||
+							received->transport_hdr->udp.type == COAP_MESSAGE_NON) {
+					coap_send_rst(ctx, remote, received);
+				}
+			} else if (ctx->protocol == COAP_PROTO_TCP || ctx->protocol == COAP_PROTO_TLS) {
+				/* TODO: do nothing? */
+			} else {
+				/* should not enter here */
+			}
 		}
+		printf("message_handler : unmatched token, ignore it\n");
 		return;
 	}
 
-	switch (received->hdr->type) {
-	case COAP_MESSAGE_CON:
-		/* acknowledge received response if confirmable (TODO: check Token) */
-		coap_send_ack(ctx, remote, received);
-		break;
-	case COAP_MESSAGE_RST:
-		info("got RST\n");
-		return;
-	default:
-		;
+	if (ctx->protocol == COAP_PROTO_UDP || ctx->protocol == COAP_PROTO_DTLS) {
+		switch (received->hdr->type) {
+		case COAP_MESSAGE_CON:
+			/* acknowledge received response if confirmable (TODO: check Token) */
+			coap_send_ack(ctx, remote, received);
+			break;
+		case COAP_MESSAGE_RST:
+			info("got RST\n");
+			return;
+		default:
+			break;
+		}
 	}
+
+	code = (unsigned short)coap_get_code(received, transport);
 
 	/* output the received data, if any */
-	if (received->hdr->code == COAP_RESPONSE_CODE(205)) {
+	if (code == COAP_RESPONSE_CODE(205)) {
 
 		/* set obs timer if we have successfully subscribed a resource */
-		if (sent && coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter)) {
+		if (sent && coap_check_option2(received, COAP_OPTION_SUBSCRIPTION, &opt_iter, transport)) {
 			debug("observation relationship established, set timeout to %d\n", obs_seconds);
 			set_timeout(&obs_wait, obs_seconds);
 		}
 
 		/* Got some data, check if block option is set. Behavior is undefined if
 		 * both, Block1 and Block2 are present. */
-		block_opt = get_block(received, &opt_iter);
+		block_opt = get_block(received, &opt_iter, transport);
 		if (!block_opt) {
 			/* There is no block option set, just read the data and we are done. */
 			if (coap_get_data(received, &len, &databuf)) {
@@ -417,34 +452,48 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 						case COAP_OPTION_URI_PORT:
 						case COAP_OPTION_URI_PATH:
 						case COAP_OPTION_URI_QUERY:
-							coap_add_option(pdu, COAP_OPTION_KEY(*(coap_option *) option->data), COAP_OPTION_LENGTH(*(coap_option *) option->data), COAP_OPTION_DATA(*(coap_option *) option->data));
+							coap_add_option2(pdu, COAP_OPTION_KEY(*(coap_option *) option->data),
+									COAP_OPTION_LENGTH(*(coap_option *) option->data),
+									COAP_OPTION_DATA(*(coap_option *) option->data), transport);
 							break;
 						default:
-							;	/* skip other options */
+							break;	/* skip other options */
 						}
 					}
 
 					/* finally add updated block option from response, clear M bit */
 					/* blocknr = (blocknr & 0xfffffff7) + 0x10; */
 					debug("query block %d\n", (coap_opt_block_num(block_opt) + 1));
-					coap_add_option(pdu, blktype, coap_encode_var_bytes(buf, ((coap_opt_block_num(block_opt) + 1) << 4) | COAP_OPT_BLOCK_SZX(block_opt)), buf);
+					coap_add_option2(pdu, blktype, coap_encode_var_bytes(buf, ((coap_opt_block_num(block_opt) + 1) << 4) | COAP_OPT_BLOCK_SZX(block_opt)), buf, transport);
 
-					if (received->hdr->type == COAP_MESSAGE_CON) {
-						tid = coap_send_confirmed(ctx, remote, pdu);
-					} else {
-						tid = coap_send(ctx, remote, pdu);
-					}
-
-					if (tid == COAP_INVALID_TID) {
-						debug("message_handler: error sending new request");
-						coap_delete_pdu(pdu);
-					} else {
-						set_timeout(&max_wait, wait_seconds);
-						if (received->hdr->type != COAP_MESSAGE_CON) {
-							coap_delete_pdu(pdu);
+					switch (ctx->protocol) {
+					case COAP_PROTO_UDP:
+					case COAP_PROTO_DTLS:
+						if (received->hdr->type == COAP_MESSAGE_CON) {
+							tid = coap_send_confirmed(ctx, remote, pdu);
+						} else {
+							tid = coap_send(ctx, remote, pdu);
 						}
-					}
 
+						if (tid == COAP_INVALID_TID) {
+							debug("message_handler: error sending new request");
+							coap_delete_pdu(pdu);
+						} else {
+							set_timeout(&max_wait, wait_seconds);
+							if (received->hdr->type != COAP_MESSAGE_CON) {
+								coap_delete_pdu(pdu);
+							}
+						}
+						break;
+					case COAP_PROTO_TCP:
+					case COAP_PROTO_TLS:
+						tid = coap_send(ctx, remote, pdu);
+						set_timeout(&max_wait, wait_seconds);
+						coap_delete_pdu(pdu);
+						break;
+					default: /* should not be entered here */
+						break;
+					}
 					return;
 				}
 			}
@@ -452,7 +501,7 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 	} else {					/* no 2.05 */
 
 		/* check if an error was signaled and output payload if so */
-		if (COAP_RESPONSE_CLASS(received->hdr->code) >= 4) {
+		if (COAP_RESPONSE_CLASS(code) >= 4) {
 			fprintf(stderr, "%d.%02d", (received->hdr->code >> 5), received->hdr->code & 0x1F);
 			if (coap_get_data(received, &len, &databuf)) {
 				fprintf(stderr, " ");
@@ -472,7 +521,7 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 	coap_delete_pdu(pdu);
 
 	/* our job is done, we can exit at any time */
-	ready = coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter) == NULL;
+	ready = coap_check_option2(received, COAP_OPTION_SUBSCRIPTION, &opt_iter, transport) == NULL;
 }
 
 void usage(const char *program, const char *version)
@@ -1213,14 +1262,31 @@ int main(int argc, char **argv)
 	}
 #endif
 
-	if (pdu->transport_hdr->udp.type == COAP_MESSAGE_CON) {
-		tid = coap_send_confirmed(ctx, &dst, pdu);
-	} else {
-		tid = coap_send(ctx, &dst, pdu);
-	}
 
-	if (pdu->transport_hdr->udp.type != COAP_MESSAGE_CON || tid == COAP_INVALID_TID) {
-		coap_delete_pdu(pdu);
+	switch(protocol) {
+	case COAP_PROTO_UDP:
+	case COAP_PROTO_DTLS:
+		if (pdu->transport_hdr->udp.type == COAP_MESSAGE_CON) {
+			tid = coap_send_confirmed(ctx, &dst, pdu);
+		} else {
+			tid = coap_send(ctx, &dst, pdu);
+		}
+
+		if (pdu->transport_hdr->udp.type != COAP_MESSAGE_CON || tid == COAP_INVALID_TID) {
+			coap_delete_pdu(pdu);
+		}
+		break;
+	case COAP_PROTO_TCP:
+	case COAP_PROTO_TLS:
+		tid = coap_send(ctx, &dst, pdu);
+
+		if (tid == COAP_INVALID_TID) {
+			coap_delete_pdu(pdu);
+		}
+		break;
+	default :
+		/* should not enter here */
+		break;
 	}
 
 	set_timeout(&max_wait, wait_seconds);

@@ -336,7 +336,7 @@ void coap_log_impl(coap_log_t level, const char *format, ...)
 		return;
 	}
 
-	log_fd = level <= LOG_CRIT ? COAP_ERR_FD : COAP_DEBUG_FD;
+	log_fd = stderr;
 
 	coap_ticks(&now);
 	if (print_timestamp(timebuf, sizeof(timebuf), now)) {

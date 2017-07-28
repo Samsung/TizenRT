@@ -43,7 +43,6 @@ coap_opt_t *options_start(coap_pdu_t *pdu, coap_transport_t transport)
 
 size_t coap_opt_parse(const coap_opt_t *opt, size_t length, coap_option_t *result)
 {
-
 	const coap_opt_t *opt_start = opt;	/* store where parsing starts  */
 
 	assert(opt);
@@ -253,16 +252,21 @@ coap_opt_t *coap_option_next(coap_opt_iterator_t *oi)
 	return current_opt;
 }
 
-coap_opt_t *coap_check_option(coap_pdu_t *pdu, unsigned char type, coap_opt_iterator_t *oi)
+coap_opt_t *coap_check_option2(coap_pdu_t *pdu, unsigned char type, coap_opt_iterator_t *oi, coap_transport_t transport)
 {
 	coap_opt_filter_t f;
 
 	coap_option_filter_clear(f);
 	coap_option_setb(f, type);
 
-	coap_option_iterator_init(pdu, oi, f);
+	coap_option_iterator_init2(pdu, oi, f, transport);
 
 	return coap_option_next(oi);
+}
+
+coap_opt_t *coap_check_option(coap_pdu_t *pdu, unsigned char type, coap_opt_iterator_t *oi)
+{
+	return coap_check_option2(pdu, type, oi, COAP_UDP);
 }
 
 unsigned short coap_opt_delta(const coap_opt_t *opt)

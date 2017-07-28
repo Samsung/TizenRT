@@ -250,6 +250,23 @@ coap_opt_t *coap_option_next(coap_opt_iterator_t *oi);
 coap_opt_t *coap_check_option(coap_pdu_t *pdu, unsigned char type, coap_opt_iterator_t *oi);
 
 /**
+ * Retrieves the first option of type @p type from @p pdu. @p oi must
+ * point to a coap_opt_iterator_t object that will be initialized by
+ * this function to filter only options with code @p type. This
+ * function returns the first option with this type, or @c NULL if not
+ * found.
+ *
+ * @param pdu  The PDU to parse for options.
+ * @param type The option type code to search for.
+ * @param oi   An iterator object to use.
+ * @param transport The transport header type of PDU
+ *
+ * @return A pointer to the first option of type @p type, or @c NULL
+ *         if not found.
+ */
+coap_opt_t *coap_check_option2(coap_pdu_t *pdu, unsigned char type, coap_opt_iterator_t *oi, coap_transport_t transport);
+
+/**
  * Encodes the given delta and length values into @p opt. This
  * function returns the number of bytes that were required to encode
  * @p delta and @p length or @c 0 on error. Note that the result

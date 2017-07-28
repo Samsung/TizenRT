@@ -96,6 +96,21 @@ static inline void coap_opt_block_set_m(coap_opt_t *block_opt, int m)
 int coap_get_block(coap_pdu_t *pdu, unsigned short type, coap_block_t *block);
 
 /**
+ * Initializes @p block from @p pdu. @p type must be either COAP_OPTION_BLOCK1
+ * or COAP_OPTION_BLOCK2. When option @p type was found in @p pdu, @p block
+ * is initialized with values from this option and the function returns the
+ * value @c 1. Otherwise, @c 0 is returned.
+ *
+ * @param pdu   The pdu to search for option @p type.
+ * @param type  The option to search for (must be COAP_OPTION_BLOCK1 or
+ *              COAP_OPTION_BLOCK2)
+ * @param block The block structure to initilize.
+ * @param transport The transport type of pdu
+ * @return @c 1 on success, @c 0 otherwise.
+ */
+int coap_get_block2(coap_pdu_t *pdu, unsigned short type, coap_block_t *block, coap_transport_t transport);
+
+/**
  * Writes a block option of type @p type to message @p pdu. If the
  * requested block size is too large to fit in @p pdu, it is reduced
  * accordingly. An exception is made for the final block when less

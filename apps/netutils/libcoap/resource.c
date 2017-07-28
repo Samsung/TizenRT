@@ -421,7 +421,7 @@ void coap_delete_attr(coap_attr_t *attr)
 #endif
 }
 
-void coap_hash_request_uri(const coap_pdu_t *request, coap_key_t key)
+void coap_hash_request_uri2(const coap_pdu_t *request, coap_key_t key, coap_transport_t transport)
 {
 	coap_opt_iterator_t opt_iter;
 	coap_opt_filter_t filter;
@@ -432,10 +432,15 @@ void coap_hash_request_uri(const coap_pdu_t *request, coap_key_t key)
 	coap_option_filter_clear(filter);
 	coap_option_setb(filter, COAP_OPTION_URI_PATH);
 
-	coap_option_iterator_init((coap_pdu_t *) request, &opt_iter, filter);
+	coap_option_iterator_init2((coap_pdu_t *) request, &opt_iter, filter, transport);
 	while ((option = coap_option_next(&opt_iter))) {
 		coap_hash(COAP_OPT_VALUE(option), COAP_OPT_LENGTH(option), key);
 	}
+}
+
+void coap_hash_request_uri(const coap_pdu_t *request, coap_key_t key)
+{
+	coap_hash_request_uri2(request, key, COAP_UDP);
 }
 
 void coap_add_resource(coap_context_t *context, coap_resource_t *resource)

@@ -41,7 +41,7 @@ unsigned int coap_opt_block_num(const coap_opt_t *block_opt)
 	return (num << 4) | ((*COAP_OPT_BLOCK_LAST(block_opt) & 0xF0) >> 4);
 }
 
-int coap_get_block(coap_pdu_t *pdu, unsigned short type, coap_block_t *block)
+int coap_get_block2(coap_pdu_t *pdu, unsigned short type, coap_block_t *block, coap_transport_t transport)
 {
 	coap_opt_iterator_t opt_iter;
 	coap_opt_t *option;
@@ -49,7 +49,7 @@ int coap_get_block(coap_pdu_t *pdu, unsigned short type, coap_block_t *block)
 	assert(block);
 	memset(block, 0, sizeof(coap_block_t));
 
-	if (pdu && (option = coap_check_option(pdu, type, &opt_iter))) {
+	if (pdu && (option = coap_check_option2(pdu, type, &opt_iter, transport))) {
 		block->szx = COAP_OPT_BLOCK_SZX(option);
 		if (COAP_OPT_BLOCK_MORE(option)) {
 			block->m = 1;
@@ -59,6 +59,11 @@ int coap_get_block(coap_pdu_t *pdu, unsigned short type, coap_block_t *block)
 	}
 
 	return 0;
+}
+
+int coap_get_block(coap_pdu_t *pdu, unsigned short type, coap_block_t *block)
+{
+	return coap_get_block2(pdu, type, block, COAP_UDP);
 }
 
 int coap_write_block_opt(coap_block_t *block, unsigned short type, coap_pdu_t *pdu, size_t data_length)

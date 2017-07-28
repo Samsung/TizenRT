@@ -27,7 +27,7 @@ coap_async_state_t *coap_register_async(coap_context_t *context, coap_address_t 
 	coap_async_state_t *s;
 	coap_tid_t id;
 
-	coap_transaction_id(peer, request, &id);
+	coap_transaction_id2(peer, request, &id, context->protocol);
 	LL_SEARCH_SCALAR(context->async_state, s, id, id);
 
 	if (s != NULL) {

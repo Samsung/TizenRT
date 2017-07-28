@@ -107,6 +107,7 @@ coap_pdu_t *coap_pdu_init2(unsigned char type, unsigned char code, unsigned shor
 #endif
 
 	unsigned int length = 0;
+
 	switch (transport) {
 	case COAP_UDP:
 		length = sizeof(pdu->transport_hdr->udp);
@@ -128,6 +129,8 @@ coap_pdu_t *coap_pdu_init2(unsigned char type, unsigned char code, unsigned shor
 	default:
 		debug("it has wrong type\n");
 	}
+
+	debug("coap_pdu_init2 : transport %d, length %d, size %d\n", transport, length, size);
 
 #ifndef WITH_TCP
 	assert(size <= COAP_MAX_PDU_SIZE);
@@ -820,8 +823,7 @@ int coap_pdu_parse2(unsigned char *data, size_t length, coap_pdu_t *pdu, coap_tr
 	assert(pdu);
 
 	if (pdu->max_size < length) {
-		debug("insufficient space to store parsed PDU\n");
-		printf("[COAP] insufficient space to store parsed PDU\n");
+		printf("coap_pdu_parse2 : insufficient space to store parsed PDU\n");
 		return -1;
 	}
 
@@ -882,7 +884,7 @@ int coap_pdu_parse2(unsigned char *data, size_t length, coap_pdu_t *pdu, coap_tr
 		opt = ((unsigned char *)&(pdu->transport_hdr->tcp_32bit)) + headerSize + tokenLength;
 		break;
 	default:
-		printf("it has wrong type\n");
+		printf("coap_pdu_parse2 : it has wrong type\n");
 	}
 #endif
 	pdu->length = length;
@@ -973,31 +975,40 @@ discard:
 
 coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu)
 {
-	coap_transport_t transport = COAP_UDP;
+	coap_transport_t transport = COAP_TCP;
 	coap_pdu_t *tcp_pdu = NULL;
 	coap_opt_t *tcp_opt = NULL, *udp_opt = NULL;
 
 	size_t tokenlen = 0;
 	size_t newsize = 0; /* size of UDP pdu without UDP Header */
-	size_t length = 0;
+	int length = 0; /* size of UDP pdu length including UDP header */
 
 	if (pdu == NULL) {
 		warn("coap_convert_to_tcp_pdu : do not allow empty pdu\n");
 		return pdu;
 	}
 
-	transport = coap_get_tcp_header_type_from_size((pdu->length - COAP_UDP_HEADER));
+	if (pdu->length <= COAP_UDP_HEADER) {
+		transport = COAP_TCP;
+	} else {
+		transport = coap_get_tcp_header_type_from_size((pdu->length - COAP_UDP_HEADER));
+	}
 
-	newsize = (pdu->length - COAP_UDP_HEADER);
-	length = newsize; /* Used to find pdu->data pointer */
+	if ((pdu->length - COAP_UDP_HEADER) < 0) {
+		newsize = 0;
+	} else {
+		newsize = (pdu->length - COAP_UDP_HEADER);
+	}
+
+	debug("coap_convert_to_tcp_pdu : transport %d, newsize %d\n", transport, newsize);
 
 	tcp_pdu = coap_pdu_init2(0, pdu->transport_hdr->udp.code, 0, (newsize + 1), transport);
 
 	if (!tcp_pdu) {
-		warn("coap_new_request : failed to create pdu for TCP\n");
+		warn("coap_convert_to_tcp_pdu : failed to create pdu for TCP\n");
 		goto convert_error_discard;
 	} else {
-		debug("coap_new_request : new tcp pdu is created, size %d\n", pdu->length);
+		debug("coap_convert_to_tcp_pdu : new tcp pdu is created, size %d\n", pdu->length);
 
 		/* Fill extended length field on CoAP over TCP header */
 		coap_add_length(tcp_pdu, transport, newsize);
@@ -1038,6 +1049,13 @@ coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu)
 			break;
 		}
 
+		/* Fill extra TCP pdu Info */
+		tcp_pdu->max_size = pdu->max_size;
+		tcp_pdu->max_delta = pdu->max_delta;
+		tcp_pdu->length = newsize + tokenlen + coap_get_tcp_header_length_for_transport(transport);
+
+		length = (int)tcp_pdu->length;
+
 		/* Move UDP pdu pointer to start of option */
 		udp_opt = (unsigned char *)(&(pdu->transport_hdr->udp) +1) + tokenlen;
 
@@ -1045,13 +1063,18 @@ coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu)
 		newsize = newsize - tokenlen;
 		memcpy(tcp_opt, udp_opt, newsize);
 
-		/* Copy payload data from UDP pdu  */
 		length -= (tokenlen + coap_get_tcp_header_length_for_transport(transport));
+
+		if (length < 0) {
+				/* Reset to length to 0 when there are no options and no payload */
+				length = 0;
+		}
+
 		while (length && *tcp_opt != COAP_PAYLOAD_START) {
 			coap_option_t option;
 			memset(&option, 0, sizeof(coap_option_t));
-			if (!next_option_safe(&tcp_opt, &length, &option)) {
-				debug("coap_convert_to_tcp_pdu : drop\n");
+			if (!next_option_safe(&tcp_opt, (size_t *)&length, &option)) {
+				printf("coap_convert_to_tcp_pdu : drop\n");
 				goto convert_error_discard;
 			}
 		}
@@ -1059,6 +1082,7 @@ coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu)
 		if (length) {
 			if (*tcp_opt != COAP_PAYLOAD_START) {
 				/* somethings wrong ..*/
+				printf("coap_convert_to_tcp_pdu : cannot find COAP_PAYLOAD_START\n");
 				goto convert_error_discard;
 			} else {
 				tcp_opt++;
@@ -1068,10 +1092,6 @@ coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu)
 			}
 		}
 
-		/* Fill extra TCP pdu Info */
-		tcp_pdu->max_size = pdu->max_size;
-		tcp_pdu->max_delta = pdu->max_delta;
-		tcp_pdu->length = newsize + tokenlen + coap_get_tcp_header_length_for_transport(transport);
 		/* If you want to see the PDU in details, enable below functions */
 #if 0
 		coap_debug_pdu_print(pdu, COAP_UDP);
