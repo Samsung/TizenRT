@@ -50,6 +50,7 @@
 #define LWIP_HDR_MEM_H
 
 #include <net/lwip/opt.h>
+#include <net/lwip/arch.h>
 
 #ifdef __cplusplus
 extern "C" {

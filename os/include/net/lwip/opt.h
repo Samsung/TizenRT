@@ -60,6 +60,7 @@
  * will be set to standard values. Override anything you don't like!
  */
 #include <net/lwip/lwipopts.h>
+#include <net/lwip/debug.h>
 
 /**
  * NO_SYS==1: Use lwIP without OS-awareness (no thread, semaphores, mutexes or
