@@ -64,5 +64,6 @@ CSRCS += \
 
 DEPPATH += --dep-path wireless$(DELIM)scsc
 VPATH += :wireless$(DELIM)scsc
-CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)scsc}
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)scsc \
+			$(TOPDIR)$(DELIM)drivers$(DELIM)wireless$(DELIM)scsc$(DELIM)misc}
 endif
