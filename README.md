@@ -78,7 +78,7 @@ Please keep in mind that we are actively working on board configurations, and wi
 ## APPENDIX
 ### Kconfig-frontends Installation
 
-1. The *gperf* and *libncurses5-dev* packages should be installed.
+1. The *byacc*, *flex*, *gperf* and *libncurses5-dev* packages should be installed.
 ```bash
 sudo apt-get install byacc flex gperf libncurses5-dev
 ```
