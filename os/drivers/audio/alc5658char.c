@@ -85,21 +85,16 @@
  ****************************************************************************/
 /* Configuration ************************************************************/
 
-#ifndef CONFIG_AUDIO_I2SCHAR_RXTIMEOUT
-#define CONFIG_AUDIO_I2SCHAR_RXTIMEOUT 0
+#ifndef CONFIG_AUDIO_ALC5658CHAR_RXTIMEOUT
+#define CONFIG_AUDIO_ALC5658CHAR_RXTIMEOUT	0
 #endif
 
-#ifndef CONFIG_AUDIO_I2SCHAR_TXTIMEOUT
-#define CONFIG_AUDIO_I2SCHAR_TXTIMEOUT 0
+#ifndef CONFIG_AUDIO_ALC5658CHAR_TXTIMEOUT
+#define CONFIG_AUDIO_ALC5658CHAR_TXTIMEOUT	0
 #endif
 
-#ifndef CONFIG_AUDIO_I2SCHAR_NRXBUF
-#define CONFIG_AUDIO_I2SCHAR_NRXBUF  8
-#endif
-
-#ifndef CONFIG_AUDIO_I2SCHAR_NTXBUF
-#define CONFIG_AUDIO_I2SCHAR_NTXBUF  8
-#endif
+#define ALC5658CHAR_RXBUF_CNT	8
+#define ALC5658CHAR_TXBUF_CNT	8
 
 /* Device naming ************************************************************/
 #define DEVNAME_FMT    "/dev/alc5658char%d"
@@ -673,7 +668,7 @@ static ssize_t alc5658char_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		audvdbg("AUDIOIOC_ENQUEUEBUFFER, arg - %ld\n", arg);
 
 		bufdesc = (FAR struct audio_buf_desc_s *)arg;
-		ret = I2S_SEND(priv->i2s, bufdesc->u.pBuffer, alc5658char_txcallback, priv, CONFIG_AUDIO_I2SCHAR_TXTIMEOUT);
+		ret = I2S_SEND(priv->i2s, bufdesc->u.pBuffer, alc5658char_txcallback, priv, CONFIG_AUDIO_ALC5658CHAR_TXTIMEOUT);
 
 	}
 	break;
@@ -684,7 +679,7 @@ static ssize_t alc5658char_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		bufdesc = (FAR struct audio_buf_desc_s *)arg;
 
 		/* Try to allocate needed buffers and enqueue in receive queue */
-		while (priv->rx_cnt < CONFIG_AUDIO_I2SCHAR_NRXBUF) {
+		while (priv->rx_cnt < ALC5658CHAR_RXBUF_CNT) {
 
 			if (bufdesc->numbytes == 0) {
 				bufdesc->numbytes = 1024 * 16;
@@ -697,7 +692,7 @@ static ssize_t alc5658char_ioctl(FAR struct file *filep, int cmd, unsigned long 
 				break;
 			}
 
-			ret = I2S_RECEIVE(priv->i2s, apb, alc5658char_rxcallback, priv, CONFIG_AUDIO_I2SCHAR_RXTIMEOUT);
+			ret = I2S_RECEIVE(priv->i2s, apb, alc5658char_rxcallback, priv, CONFIG_AUDIO_ALC5658CHAR_RXTIMEOUT);
 
 			if (ret < 0) {
 				apb_free(apb);
@@ -804,7 +799,7 @@ int alc5658char_register(FAR struct i2s_dev_s *i2s, FAR struct i2c_dev_s *i2c, F
 
 		sem_init(&priv->exclsem, 0, 1);
 
-		sem_init(&priv->alloc, 0, CONFIG_AUDIO_I2SCHAR_NTXBUF);
+		sem_init(&priv->alloc, 0, ALC5658CHAR_TXBUF_CNT);
 
 		dq_init(&priv->rxedq);	/* Queue of received audio IN buffers */
 		sem_init(&priv->rxsem, 0, 1);	/* Protect dq */
