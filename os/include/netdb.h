@@ -78,6 +78,7 @@
 
 #include <inttypes.h>
 
+#include <net/lwip/netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 
@@ -211,6 +212,7 @@
  * Public Types
  ****************************************************************************/
 /** hostent structure contains DNS clients parameters */
+#ifndef CONFIG_NET_LWIP
 struct hostent {
 	FAR char *h_name;			/* Official name of the host. */
 	FAR char **h_aliases;		/* A pointer to an array of pointers to alternative
@@ -223,6 +225,7 @@ struct hostent {
 };
 
 #define h_addr h_addr_list[0]	/* For backward compatibility */
+#endif
 
 struct netent {
 	FAR char *n_name;			/* Official, fully-qualified (including the domain)
@@ -252,6 +255,7 @@ struct servent {
 								 * contacting the service. */
 };
 
+#ifndef CONFIG_NET_LWIP
 struct addrinfo {
 	int ai_flags;				/* Input flags.  */
 	int ai_family;				/* Address family of socket.  */
@@ -263,6 +267,7 @@ struct addrinfo {
 	FAR char *ai_canonname;		/* Canonical name of service location.  */
 	FAR struct addrinfo *ai_next;	/* Pointer to next in list.  */
 };
+#endif
 
 struct servent_data {
 	void *fp;
