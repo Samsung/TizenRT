@@ -37,7 +37,7 @@ static int security_serial(int argc, char *argv[]);
 
 const struct command security_commands[] = {
 	{ "cert", "Display certificate stored in SE", security_cert },
-	{ "pk", "Display private key extracted from the certificate stored in SE", security_pk },
+	{ "pk", "Display public key extracted from the certificate stored in SE", security_pk },
 	{ "root", " Display root CA extracted from the certificate stored in SE", security_root },
 	{ "rand", "rand <num> - Generate <num> random bytes from the SE", security_rand },
 	{ "serial", "Return the Serial Number contained in the certificate stored in SE", security_serial },
@@ -117,7 +117,7 @@ static int security_pk(int argc, char *argv[])
 
 	err = security->get_key_from_cert(handle, se_cert, &se_pk);
 	if (err != S_OK || !se_pk) {
-		fprintf(stderr, "Failed to get private key (err=%d)\n", err);
+		fprintf(stderr, "Failed to get public key (err=%d)\n", err);
 		err = -1;
 		goto exit;
 	}
