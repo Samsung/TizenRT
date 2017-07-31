@@ -45,8 +45,6 @@ extern "C" {
 #define __bitwise
 #endif
 
-#define STRUCT_PACKED __attribute__ ((__packed__))
-
 #ifndef __packed
 #define __packed __attribute__((__packed__))
 #endif
