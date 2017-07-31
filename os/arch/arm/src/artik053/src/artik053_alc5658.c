@@ -185,23 +185,23 @@ static bool alc5658_enable(FAR const struct alc5658_lower_s *lower, bool enable)
 
 	/* Has the interrupt state changed */
 
-	flags = enter_critical_section();
+	flags = irqsave();
 	if (enable != enabled) {
 		/* Enable or disable interrupts */
 
 		if (enable && g_alc5658info.handler) {
 			audvdbg("Enabling\n");
-// DO IRQ ENABLING HERE
+			/* DO IRQ ENABLING HERE */
 			enabled = true;
 		} else {
 			audvdbg("Disabling\n");
-// DO IRQ DISABLING HERE
+			/* DO IRQ DISABLING HERE */
 			enabled = false;
 		}
 	}
 
 	ret = enabled;
-	leave_critical_section(flags);
+	irqrestore(flags);
 	return ret;
 }
 

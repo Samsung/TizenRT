@@ -97,9 +97,6 @@ extern "C" {
  * Public Function Prototypes
  ************************************************************************************/
 
-#define enter_critical_section() 	0
-#define leave_critical_section(x)
-
 /****************************************************************************
  * Name: s5j_i2s_initialize
  *
