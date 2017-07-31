@@ -79,6 +79,10 @@ static bool IsValidStateTransition(OicSecDeviceOnboardingState_t oldState,
             ret = true;
         }
         break;
+        case DOS_STATE_COUNT:
+        // The DOS_STATE_COUNT should never be passed into this function
+        assert(false);
+        break;
     }
 
     OIC_LOG_V(INFO, TAG, "%s: returning %s.", __func__, ret?"true":"false");
@@ -563,6 +567,10 @@ static OCStackResult DoStateChange(OicSecDeviceOnboardingState_t newState)
         {
             ret = OC_STACK_FORBIDDEN_REQ;
         }
+        break;
+        case DOS_STATE_COUNT:
+        // The DOS_STATE_COUNT should never be passed into this function
+        assert(false);
         break;
     }
 
