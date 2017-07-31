@@ -1706,6 +1706,8 @@ void coap_dispatch(coap_context_t *context)
 			/* CoAP over TCP pdu will be handled as NON */
 			transport = rcvd->transport;
 
+			/* find transaction in sendqueue to stop retransmission */
+
 			if (coap_option_check_critical2(context, rcvd->pdu, opt_filter, transport) == 0) {
 				goto cleanup;
 			}

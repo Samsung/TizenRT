@@ -80,7 +80,7 @@ method_t method = 1;			/* the method we are using in our requests */
 
 coap_block_t block = {.num = 0, .m = 0, .szx = 6 };
 
-unsigned int wait_seconds = 90;	/* default timeout in seconds */
+unsigned int wait_seconds = 10;	/* default timeout in seconds */
 coap_tick_t max_wait;			/* global timeout (changed by set_timeout()) */
 
 unsigned int obs_seconds = 30;	/* default observe time */
@@ -221,14 +221,20 @@ coap_pdu_t *coap_new_request(coap_context_t *ctx, method_t m, coap_list_t *optio
 coap_tid_t clear_obs(coap_context_t *ctx, const coap_address_t *remote)
 {
 	coap_list_t *option;
-	coap_pdu_t *pdu;
+	coap_pdu_t *pdu = NULL;
+	coap_pdu_t *tcp_pdu = NULL;
 	coap_tid_t tid = COAP_INVALID_TID;
 
 	/* create bare PDU w/o any option  */
-	pdu = coap_new_request(ctx, COAP_REQUEST_GET, NULL);
+	/* pdu = coap_new_request(ctx, COAP_REQUEST_GET, NULL); */
+	pdu = coap_pdu_init(msgtype, COAP_REQUEST_GET, coap_new_message_id(ctx), COAP_MAX_PDU_SIZE);
 
 	if (pdu) {
-		/* FIXME: add token */
+		pdu->transport_hdr->udp.token_length = the_token.length;
+		if (!coap_add_token(pdu, the_token.length, the_token.s)) {
+			debug("clear_obs : cannot add token to pdu\n");
+		}
+
 		/* add URI components from optlist */
 		for (option = optlist; option; option = option->next) {
 			switch (COAP_OPTION_KEY(*(coap_option *) option->data)) {
@@ -239,21 +245,50 @@ coap_tid_t clear_obs(coap_context_t *ctx, const coap_address_t *remote)
 				coap_add_option(pdu, COAP_OPTION_KEY(*(coap_option *) option->data), COAP_OPTION_LENGTH(*(coap_option *) option->data), COAP_OPTION_DATA(*(coap_option *) option->data));
 				break;
 			default:
-				;				/* skip other options */
+				break; /* skip other options */
 			}
 		}
 
-		if (pdu->transport_hdr->udp.type == COAP_MESSAGE_CON) {
-			tid = coap_send_confirmed(ctx, remote, pdu);
-		} else {
-			tid = coap_send(ctx, remote, pdu);
+		/* Add payload data to pdu */
+		if (payload.length) {
+			if ((flags & FLAGS_BLOCK) == 0) {
+				coap_add_data(pdu, payload.length, payload.s);
+			} else {
+				coap_add_block(pdu, payload.length, payload.s, block.num, block.szx);
+			}
 		}
 
-		if (tid == COAP_INVALID_TID) {
-			debug("clear_obs: error sending new request");
-			coap_delete_pdu(pdu);
-		} else if (pdu->transport_hdr->udp.type != COAP_MESSAGE_CON) {
-			coap_delete_pdu(pdu);
+		switch (ctx->protocol) {
+		case COAP_PROTO_UDP:
+		case COAP_PROTO_DTLS:
+			if (pdu->transport_hdr->udp.type == COAP_MESSAGE_CON) {
+				tid = coap_send_confirmed(ctx, remote, pdu);
+			} else {
+				tid = coap_send(ctx, remote, pdu);
+			}
+
+			if (tid == COAP_INVALID_TID) {
+				debug("clear_obs: error sending new request");
+				coap_delete_pdu(pdu);
+			} else if (pdu->transport_hdr->udp.type != COAP_MESSAGE_CON) {
+				coap_delete_pdu(pdu);
+			}
+			break;
+		case COAP_PROTO_TCP:
+		case COAP_PROTO_TLS:
+			tcp_pdu = coap_convert_to_tcp_pdu(pdu);
+			if (tcp_pdu == NULL) {
+				warn("clear_obs : error to create TCP pdu\n");
+			} else {
+				tid = coap_send(ctx, remote, tcp_pdu);
+				if (tid == COAP_INVALID_TID) {
+					debug("clear_obs : error sending new TCP request\n");
+				}
+				coap_delete_pdu(tcp_pdu);
+			}
+			break;
+		default:
+			break;
 		}
 	}
 	return tid;
@@ -417,8 +452,10 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 	if (code == COAP_RESPONSE_CODE(205)) {
 
 		/* set obs timer if we have successfully subscribed a resource */
+		info("message_handler : code %d, sent %p\n", code, sent);
+
 		if (sent && coap_check_option2(received, COAP_OPTION_SUBSCRIPTION, &opt_iter, transport)) {
-			debug("observation relationship established, set timeout to %d\n", obs_seconds);
+			printf("message_handler : observation relationship established, set timeout to %d\n", obs_seconds);
 			set_timeout(&obs_wait, obs_seconds);
 		}
 
@@ -1319,6 +1356,9 @@ int main(int argc, char **argv)
 			}
 		}
 
+		info("coap-client : timeout info, tv %lu sec. %ld usec, now %lu, obs_wait %lu\n",
+				(unsigned long)tv.tv_sec, tv.tv_usec, (unsigned long)now, (unsigned long)obs_wait);
+
 		result = select(ctx->sockfd + 1, &readfds, 0, 0, &tv);
 
 		if (result < 0) {		/* error */
@@ -1335,9 +1375,9 @@ int main(int argc, char **argv)
 				break;
 			}
 			if (obs_wait && obs_wait <= now) {
-				debug("clear observation relationship\n");
+				info("\nclear observation relationship obs_wait %lu, now %lu\n",
+						(unsigned long)obs_wait, (unsigned long)now);
 				clear_obs(ctx, &dst);	/* FIXME: handle error case COAP_TID_INVALID */
-
 				/* make sure that the obs timer does not fire again */
 				obs_wait = 0;
 				obs_seconds = 0;

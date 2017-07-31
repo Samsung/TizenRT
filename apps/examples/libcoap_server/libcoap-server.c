@@ -115,7 +115,6 @@ void hnd_get_time(coap_context_t *ctx, struct coap_resource_t *resource, coap_ad
 	coap_subscription_t *subscription;
 
 	coap_transport_t transport = COAP_UDP;
-	unsigned short req_code;
 
 	/* FIXME: return time, e.g. in human-readable by default and ticks
 	 * when query ?ticks is given. */
@@ -136,17 +135,20 @@ void hnd_get_time(coap_context_t *ctx, struct coap_resource_t *resource, coap_ad
 		break;
 	}
 
-	req_code = (unsigned short)coap_get_code(response, transport);
-
 	response->transport_hdr->udp.code = my_clock_base ? COAP_RESPONSE_CODE(205) : COAP_RESPONSE_CODE(404);
 
 	if (request != NULL && coap_check_option2(request, COAP_OPTION_OBSERVE, &opt_iter, transport)) {
+		if (token && token->length > 0) {
+			printf("hnd_get_time : add observer with token %s, token len %d\n", token->s, token->length);
+		}
+
 		subscription = coap_add_observer(resource, peer, token);
 		if (subscription) {
 			if (ctx->protocol == COAP_PROTO_UDP || ctx->protocol == COAP_PROTO_DTLS) {
 				subscription->non = request->transport_hdr->udp.type == COAP_MESSAGE_NON;
 			} else if (ctx->protocol == COAP_PROTO_TCP || ctx->protocol == COAP_PROTO_TLS) {
 				/* TCP / TLS doesn't have type field on header */
+				printf("hnd_get_time : succeed to add observer\n");
 				subscription->non = 1;
 			} else {
 				/* Should not enter here */
