@@ -1665,14 +1665,11 @@ int dhcpd_run(void *arg)
 	}
 	g_dhcpd_running = 0;
 
-	/*
-	 * Don't de-initialize network here, since it happens within 60 seconds
-	 * after the application requests it, and which may have changed the
-	 * network configuration in the meantime. Instead we should implement
-	 * a mechanism where dhcpd_stop triggers the release of dhcpd_run and
-	 * waits until it properly releases everything and resets the network
-	 * configuration.
-	 */
+	/* de-initialize netif address (ip address, netmask, default gateway) */
+
+	if (dhcpd_netif_deinit(DHCPD_IFNAME) < 0) {
+		ndbg("Failed to deinit netif %s\n", DHCPD_IFNAME);
+	}
 
 	return ret;
 }
