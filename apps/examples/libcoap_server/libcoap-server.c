@@ -114,16 +114,43 @@ void hnd_get_time(coap_context_t *ctx, struct coap_resource_t *resource, coap_ad
 	coap_tick_t t;
 	coap_subscription_t *subscription;
 
+	coap_transport_t transport = COAP_UDP;
+	unsigned short req_code;
+
 	/* FIXME: return time, e.g. in human-readable by default and ticks
 	 * when query ?ticks is given. */
 
 	/* if my_clock_base was deleted, we pretend to have no such resource */
+
+	switch(ctx->protocol) {
+	case COAP_PROTO_UDP:
+	case COAP_PROTO_DTLS:
+		transport = COAP_UDP;
+		break;
+	case COAP_PROTO_TCP:
+	case COAP_PROTO_TLS:
+		transport = coap_get_tcp_header_type_from_size(request->length);
+		break;
+	default:
+		/* Should not enter here */
+		break;
+	}
+
+	req_code = (unsigned short)coap_get_code(response, transport);
+
 	response->transport_hdr->udp.code = my_clock_base ? COAP_RESPONSE_CODE(205) : COAP_RESPONSE_CODE(404);
 
-	if (request != NULL && coap_check_option(request, COAP_OPTION_OBSERVE, &opt_iter)) {
+	if (request != NULL && coap_check_option2(request, COAP_OPTION_OBSERVE, &opt_iter, transport)) {
 		subscription = coap_add_observer(resource, peer, token);
 		if (subscription) {
-			subscription->non = request->transport_hdr->udp.type == COAP_MESSAGE_NON;
+			if (ctx->protocol == COAP_PROTO_UDP || ctx->protocol == COAP_PROTO_DTLS) {
+				subscription->non = request->transport_hdr->udp.type == COAP_MESSAGE_NON;
+			} else if (ctx->protocol == COAP_PROTO_TCP || ctx->protocol == COAP_PROTO_TLS) {
+				/* TCP / TLS doesn't have type field on header */
+				subscription->non = 1;
+			} else {
+				/* Should not enter here */
+			}
 			coap_add_option(response, COAP_OPTION_OBSERVE, 0, NULL);
 		}
 	}
@@ -143,7 +170,7 @@ void hnd_get_time(coap_context_t *ctx, struct coap_resource_t *resource, coap_ad
 		coap_ticks(&t);
 		now = my_clock_base + (t / COAP_TICKS_PER_SECOND);
 
-		if (request != NULL && (option = coap_check_option(request, COAP_OPTION_URI_QUERY, &opt_iter))
+		if (request != NULL && (option = coap_check_option2(request, COAP_OPTION_URI_QUERY, &opt_iter, transport))
 			&& memcmp(COAP_OPT_VALUE(option), "ticks", min(5, COAP_OPT_LENGTH(option))) == 0) {
 			/* output ticks */
 			len = snprintf((char *)buf, min(sizeof(buf), response->max_size - response->length), "%u", (unsigned int)now);
@@ -205,16 +232,38 @@ void hnd_get_async(coap_context_t *ctx, struct coap_resource_t *resource, coap_a
 	unsigned long delay = 5;
 	size_t size;
 
+	coap_opt_filter_t f;
+	coap_transport_t transport = COAP_UDP;
+
+	switch(ctx->protocol) {
+	case COAP_PROTO_UDP:
+	case COAP_PROTO_DTLS:
+		transport = COAP_UDP;
+		break;
+	case COAP_PROTO_TCP:
+	case COAP_PROTO_TLS:
+		transport = coap_get_tcp_header_type_from_size(request->length);
+		break;
+	default:
+		break;
+	}
+
 	if (async) {
-		if (async->id != request->transport_hdr->udp.id) {
-			coap_opt_filter_t f;
-			coap_option_filter_clear(f);
+
+		coap_option_filter_clear(f);
+		if (ctx->protocol == COAP_PROTO_UDP || ctx->protocol == COAP_PROTO_DTLS) {
+			if (async->id != request->transport_hdr->udp.id) {
+				response->transport_hdr->udp.code = COAP_RESPONSE_CODE(503);
+			}
+		} else if (ctx->protocol == COAP_PROTO_TCP || ctx->protocol == COAP_PROTO_TLS) {
 			response->transport_hdr->udp.code = COAP_RESPONSE_CODE(503);
+		} else {
+			/* Should not enter here */
 		}
 		return;
 	}
 
-	option = coap_check_option(request, COAP_OPTION_URI_QUERY, &opt_iter);
+	option = coap_check_option2(request, COAP_OPTION_URI_QUERY, &opt_iter, transport);
 	if (option) {
 		unsigned char *p = COAP_OPT_VALUE(option);
 
@@ -240,7 +289,7 @@ void check_async(coap_context_t *ctx, coap_tick_t now)
 
 	response = coap_pdu_init(async->flags & COAP_ASYNC_CONFIRM ? COAP_MESSAGE_CON : COAP_MESSAGE_NON, COAP_RESPONSE_CODE(205), 0, size);
 	if (!response) {
-		debug("check_async: insufficient memory, we'll try later\n");
+		debug("check_async : insufficient memory, we'll try later\n");
 		async->appdata = (void *)((unsigned long)async->appdata + 15 * COAP_TICKS_PER_SECOND);
 		return;
 	}
@@ -253,10 +302,26 @@ void check_async(coap_context_t *ctx, coap_tick_t now)
 
 	coap_add_data(response, 4, (unsigned char *)"done");
 
-	if (coap_send(ctx, &async->peer, response) == COAP_INVALID_TID) {
-		debug("check_async: cannot send response for message %d\n", response->transport_hdr->udp.id);
+	if (ctx->protocol == COAP_PROTO_UDP || ctx->protocol == COAP_PROTO_DTLS) {
+		if (coap_send(ctx, &async->peer, response) == COAP_INVALID_TID) {
+			debug("check_async : cannot send response for message %d\n", response->transport_hdr->udp.id);
+		}
+		coap_delete_pdu(response);
+	} else if (ctx->protocol == COAP_PROTO_TCP || ctx->protocol == COAP_PROTO_TLS) {
+		coap_pdu_t *tcp_resp = NULL;
+		tcp_resp = coap_convert_to_tcp_pdu(response);
+		if (tcp_resp != NULL) {
+			warn("check_async : failed to create tcp response\n");
+		} else {
+			if (coap_send(ctx, &async->peer, tcp_resp) == COAP_INVALID_TID) {
+				debug("check_async : cannot send TCP response for message %d\n", response->transport_hdr->udp.id);
+			}
+			coap_delete_pdu(tcp_resp);
+		}
+	} else {
+		/* Should not enter here */
 	}
-	coap_delete_pdu(response);
+
 	coap_remove_async(ctx, async->id, &tmp);
 	coap_free_async(async);
 	async = NULL;

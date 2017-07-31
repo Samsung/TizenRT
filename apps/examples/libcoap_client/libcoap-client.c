@@ -502,7 +502,7 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 
 		/* check if an error was signaled and output payload if so */
 		if (COAP_RESPONSE_CLASS(code) >= 4) {
-			fprintf(stderr, "%d.%02d", (received->hdr->code >> 5), received->hdr->code & 0x1F);
+			fprintf(stderr, "%d.%02d", (code >> 5), code & 0x1F);
 			if (coap_get_data(received, &len, &databuf)) {
 				fprintf(stderr, " ");
 				while (len--) {

@@ -693,7 +693,8 @@ static void coap_notify_observers(coap_context_t *context, coap_resource_t *r)
 	coap_method_handler_t h;
 	coap_subscription_t *obs;
 	str token;
-	coap_pdu_t *response;
+	coap_pdu_t *response = NULL;
+	coap_pdu_t *tcp_resp = NULL;
 
 	if (r->observable && (r->dirty || r->partiallydirty)) {
 		r->partiallydirty = 0;
@@ -731,7 +732,7 @@ static void coap_notify_observers(coap_context_t *context, coap_resource_t *r)
 
 			token.length = obs->token_length;
 			token.s = obs->token;
-			/* TODO : Considering TCP Case */
+
 			response->transport_hdr->udp.id = coap_new_message_id(context);
 			if (obs->non && obs->non_cnt < COAP_OBS_MAX_NON) {
 				response->transport_hdr->udp.type = COAP_MESSAGE_NON;
@@ -741,17 +742,39 @@ static void coap_notify_observers(coap_context_t *context, coap_resource_t *r)
 			/* fill with observer-specific data */
 			h(context, r, &obs->subscriber, NULL, &token, response);
 
-			if (response->transport_hdr->udp.type == COAP_MESSAGE_CON) {
-				tid = coap_send_confirmed(context, &obs->subscriber, response);
-				obs->non_cnt = 0;
-			} else {
-				tid = coap_send(context, &obs->subscriber, response);
-				obs->non_cnt++;
+			switch (context->protocol) {
+			case COAP_PROTO_UDP:
+			case COAP_PROTO_DTLS:
+				if (response->transport_hdr->udp.type == COAP_MESSAGE_CON) {
+					tid = coap_send_confirmed(context, &obs->subscriber, response);
+					obs->non_cnt = 0;
+				} else {
+					tid = coap_send(context, &obs->subscriber, response);
+					obs->non_cnt++;
+				}
+
+				if (COAP_INVALID_TID == tid ||
+					response->transport_hdr->udp.type != COAP_MESSAGE_CON) {
+					coap_delete_pdu(response);
+				}
+				break;
+			case COAP_PROTO_TCP:
+			case COAP_PROTO_TLS:
+				tcp_resp = coap_convert_to_tcp_pdu(response);
+				if (tcp_resp == NULL) {
+					warn("coap_check_notify : failed to create TCP response\n");
+				} else {
+					tid = coap_send(context, &obs->subscriber, tcp_resp);
+					if (COAP_INVALID_TID == tid) {
+						coap_delete_pdu(tcp_resp);
+					}
+				}
+				break;
+			default:
+				/* Should not enter here */
+				break;
 			}
 
-			if (COAP_INVALID_TID == tid || response->transport_hdr->udp.type != COAP_MESSAGE_CON) {
-				coap_delete_pdu(response);
-			}
 			if (COAP_INVALID_TID == tid) {
 				debug("coap_check_notify: sending failed, resource stays partially dirty\n");
 				obs->dirty = 1;

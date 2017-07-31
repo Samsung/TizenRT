@@ -1022,7 +1022,8 @@ int coap_read(coap_context_t *ctx)
 		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)buf)[0] >> 4);
 		debug("coap_read : received header type, transport %d, len %u, bytes_read %d\n", transport, ((buf[0] >> 4) & 0x0f), bytes_read);
 		if (!coap_pdu_parse2((unsigned char*)buf, bytes_read, node->pdu, transport)) {
-			warn("coap_read : discard malformed TCP PDU\n");
+			/* FIXME : prevent printing log when continuously received wrong PDU */
+			//warn("coap_read : discard malformed TCP PDU\n");
 			goto error;
 		}
 		node->transport = transport;
