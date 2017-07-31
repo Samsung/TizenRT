@@ -99,9 +99,6 @@
 #define ALC5658_DEFAULT_NCHANNELS 	2
 #define ALC5658_DEFAULT_BPSAMP 		16
 
-#define enter_critical_section() 	0
-#define leave_critical_section(x)
-
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -275,7 +272,6 @@ uint16_t alc5658_readreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr)
 	}
 
 	regval = ((uint16_t) reg[0] << 8) | (uint16_t) reg[1];
-//        audvdbg("I2CRead: %04x -> %04x\n", regaddr, regval);
 
 	return regval;
 }
@@ -306,14 +302,14 @@ static void alc5658_writereg(FAR struct alc5658_dev_s *priv, uint16_t regaddr, u
 		auddbg("Error, cannot write reg %x\n", regaddr);
 		return;
 	}
-//      audvdbg("I2CWrite: %04x <- %04x\n", regaddr, regval);
+
 	return;
 }
 
 static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr, uint16_t set, uint16_t clear)
 {
 	uint16_t data;
-//      audvdbg("I2Cmodify ------\n");
+
 	data = alc5658_readreg(priv, regaddr);
 	data &= ~clear;
 	data |= set;
@@ -329,7 +325,6 @@ static void alc5658_exec_i2c_script(FAR struct alc5658_dev_s *priv, t_codec_init
 
 	for (i = 0; i < size; i++) {
 		ret = alc5658_modifyreg(priv, script[i].addr, script[i].val, 0xFFFF);
-//        audvdbg("ALC %04x := %04x\n", script[i].addr, ret);
 		delay(script[i].delay);
 	}
 }
@@ -784,7 +779,7 @@ static void alc5658_senddone(FAR struct i2s_dev_s *i2s, FAR struct ap_buffer_s *
 	 * against that possibility.
 	 */
 
-	flags = enter_critical_section();
+	flags = irqsave();
 
 	/* Add the completed buffer to the end of our doneq.  We do not yet
 	 * decrement the reference count.
@@ -801,7 +796,7 @@ static void alc5658_senddone(FAR struct i2s_dev_s *i2s, FAR struct ap_buffer_s *
 	/* REVISIT:  This can be overwritten */
 
 	priv->result = result;
-	leave_critical_section(flags);
+	irqrestore(flags);
 
 	/* Now send a message to the worker thread, informing it that there are
 	 * buffers in the done queue that need to be cleaned up.
@@ -834,12 +829,12 @@ static void alc5658_returnbuffers(FAR struct alc5658_dev_s *priv)
 	 * use interrupt controls to protect against that possibility.
 	 */
 
-	flags = enter_critical_section();
+	flags = irqsave();
 	while (dq_peek(&priv->doneq) != NULL) {
 		/* Take the next buffer from the queue of completed transfers */
 
 		apb = (FAR struct ap_buffer_s *)dq_remfirst(&priv->doneq);
-		leave_critical_section(flags);
+		irqrestore(flags);
 
 		audvdbg("Returning: apb=%p curbyte=%d nbytes=%d flags=%04x\n", apb, apb->curbyte, apb->nbytes, apb->flags);
 
@@ -871,10 +866,10 @@ static void alc5658_returnbuffers(FAR struct alc5658_dev_s *priv)
 #else
 		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
 #endif
-		flags = enter_critical_section();
+		flags = irqsave();
 	}
 
-	leave_critical_section(flags);
+	irqrestore(flags);
 }
 
 /****************************************************************************
@@ -919,9 +914,9 @@ static int alc5658_sendbuffer(FAR struct alc5658_dev_s *priv)
 		 * to avoid a possible race condition.
 		 */
 
-		flags = enter_critical_section();
+		flags = irqsave();
 		priv->inflight++;
-		leave_critical_section(flags);
+		irqrestore(flags);
 
 		/* Send the entire audio buffer via I2S.  What is a reasonable timeout
 		 * to use?  This would depend on the bit rate and size of the buffer.
