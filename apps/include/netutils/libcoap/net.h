@@ -125,9 +125,12 @@ typedef struct coap_context_t {
 	 * to sendqueue_basetime. */
 	coap_tick_t sendqueue_basetime;
 	coap_queue_t *sendqueue, *recvqueue;
-#if WITH_POSIX
+#ifdef WITH_POSIX
 	int sockfd;		/**< send/receive socket */
 #endif							/* WITH_POSIX */
+#ifdef WITH_TCP
+	int listen_sockfd; /**< TCP listen socket */
+#endif  /* WITH_TCP */
 #ifdef WITH_CONTIKI
 	struct uip_udp_conn *conn;
 	/**< uIP connection object */

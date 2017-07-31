@@ -1996,6 +1996,9 @@ int coap_net_bind(coap_context_t *ctx, const char *host, const char *port, void 
 #endif
 
 	ASSERT(ctx);
+#ifdef WITH_TCP
+	ctx->listen_sockfd = -1;
+#endif
 
 	memset(&hints, 0, sizeof(hints));
 
@@ -2059,6 +2062,10 @@ int coap_net_bind(coap_context_t *ctx, const char *host, const char *port, void 
 					close(ctx->sockfd);
 					ctx->sockfd = -1;
 				} else {
+#ifdef WITH_TCP
+					/* Copy to sock to listen sock */
+					ctx->listen_sockfd = ctx->sockfd;
+#endif
 					ctx->sockfd = newsock;
 					goto exit;
 				}
@@ -2078,6 +2085,10 @@ int coap_net_bind(coap_context_t *ctx, const char *host, const char *port, void 
 					close(ctx->sockfd);
 					ctx->sockfd = -1;
 				} else {
+#ifdef WITH_TCP
+					/* Copy to sock to listen sock */
+					ctx->listen_sockfd = ctx->sockfd;
+#endif
 					ctx->sockfd = session->net.fd;
 					ctx->session = session;
 					goto exit;

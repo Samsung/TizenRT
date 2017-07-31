@@ -639,6 +639,11 @@ exit:
 	if (ctx->sockfd > 0) {
 		close(ctx->sockfd);
 	}
+#ifdef WITH_TCP
+	if (ctx->listen_sockfd > 0) {
+		close(ctx->listen_sockfd);
+	}
+#endif
 
 	coap_free_context(ctx);
 	if (addr_str) {
