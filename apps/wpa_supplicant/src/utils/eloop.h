@@ -344,5 +344,5 @@ int eloop_terminated(void);
  */
 void eloop_wait_for_read_sock(int sock);
 
-eloop_timeout_handler fn_destroy;
+extern eloop_timeout_handler fn_destroy;
 #endif							/* ELOOP_H */
