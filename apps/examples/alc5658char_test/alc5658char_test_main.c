@@ -122,17 +122,16 @@ void *buff;
 pthread_addr_t alc5658char_receiver(void *arg)
 {
 	int fd;
-	int pcm_fd;
 	int i = 0;
 	int errcode;
 	int pos = 0;
-	int nwritten;
 	int mode = *(int *)arg;
 
 	FAR struct audio_buf_desc_s bufdesc;
 	char sign[4] = {'|', '/', '-', '\\'};
 
-	/* Open the alc character device */
+	/* Open the alc5658 character device */
+
 	fd = open(DEVICE_PATH, O_RDWR);
 	if (fd < 0) {
 		errcode = errno;
@@ -140,20 +139,23 @@ pthread_addr_t alc5658char_receiver(void *arg)
 		return NULL;
 	}
 
-	if (mode == MODE_LOOPBACK)
+	if (mode == MODE_LOOPBACK) {
 		i = LOOPBACK_CNT;
-	else if (mode == MODE_RECORD)
+	} else if (mode == MODE_RECORD) {
 		i = RECORD_CNT;
+	}
 
 	while (i--) {
 		printf("Now Recording.. ");
 		printf("%c\r", sign[i%4]);
 
 		/* Define buffer size, if not defined 16KB buffer will be used */
+
 		bufdesc.numbytes = BUFFSIZE;
 		bufdesc.u.ppBuffer = NULL;
 
 		/* Initiate Audio IN, read audio data */
+
 		ioctl(fd, AUDIOIOC_DEQUEUEBUFFER, (unsigned long)&bufdesc);
 
 		rx_apb = bufdesc.u.pBuffer;
@@ -173,19 +175,22 @@ pthread_addr_t alc5658char_receiver(void *arg)
 	if (mode == MODE_RECORD) {
 		printf("Received Data Write Start..\n");
 
-		pcm_fd = open("/mnt/test.pcm", O_RDWR | O_CREAT | O_TRUNC);
+		int pcm_fd = open("/mnt/test.pcm", O_RDWR | O_CREAT | O_TRUNC);
 		if (pcm_fd < 0) {
 			errcode = errno;
 			printf("failed to open file, %d\n", errcode);
+			close(fd);
 			return NULL;
 		}
 
-		nwritten = write(pcm_fd, buff, BUFFSIZE * RECORD_CNT);
+		int nwritten = write(pcm_fd, buff, BUFFSIZE * RECORD_CNT);
 
-		if (nwritten != (BUFFSIZE * RECORD_CNT))
+		if (nwritten != (BUFFSIZE * RECORD_CNT)) {
 			printf("File Write Fail\n");
+		}
 
 		printf("File Write Done\n");
+		close(pcm_fd);
 	}
 
 	close(fd);
@@ -196,11 +201,9 @@ pthread_addr_t alc5658char_receiver(void *arg)
 pthread_addr_t alc5658char_transmitter(void *arg)
 {
 	int fd;
-	int pcm_fd;
 	int i = 0;
 	int errcode;
 	int pos = 0;
-	int nwritten;
 	int mode = *(int *)arg;
 	FAR struct audio_buf_desc_s bufdesc;
 	struct ap_buffer_s *apb;
@@ -208,19 +211,24 @@ pthread_addr_t alc5658char_transmitter(void *arg)
 	if (mode == MODE_RECORD) {
 		printf("Read File Start..\n");
 
-		pcm_fd = open("/mnt/test.pcm", O_RDONLY | O_NONBLOCK);
+		int pcm_fd = open("/mnt/test.pcm", O_RDONLY | O_NONBLOCK);
 		if (pcm_fd < 0) {
 			errcode = errno;
 			printf("failed to open file, %d\n", errcode);
 			return NULL;
 		}
 
-		nwritten = read(pcm_fd, buff, BUFFSIZE * RECORD_CNT);
+		int nwritten = read(pcm_fd, buff, BUFFSIZE * RECORD_CNT);
+
+		if (nwritten != (BUFFSIZE * RECORD_CNT)) {
+			printf("File Read Fail\n");
+		}
 
 		printf("File Read Done\n");
+		close(pcm_fd);
 	}
 
-	/* Open the alc character device */
+	/* Open the alc5658 character device */
 
 	fd = open(DEVICE_PATH, O_RDWR);
 	if (fd < 0) {
@@ -229,16 +237,19 @@ pthread_addr_t alc5658char_transmitter(void *arg)
 		return NULL;
 	}
 
-	if (mode == MODE_LOOPBACK)
+	if (mode == MODE_LOOPBACK) {
 		i = LOOPBACK_CNT;
-	else if (mode == MODE_RECORD)
+	} else if (mode == MODE_RECORD) {
 		i = RECORD_CNT;
+	}
 
 	while (i--)	{
-		if (mode == MODE_LOOPBACK)
+		if (mode == MODE_LOOPBACK) {
 			sem_wait(&rx_done_sem);
+		}
 
 		/* Define APB size and allocate */
+
 		bufdesc.numbytes = BUFFSIZE;
 		bufdesc.u.ppBuffer = &apb;
 		ioctl(fd, AUDIOIOC_ALLOCBUFFER, (unsigned long)&bufdesc);
@@ -258,6 +269,7 @@ pthread_addr_t alc5658char_transmitter(void *arg)
 		}
 
 		/* Enqueue buffer to be sent */
+
 		ioctl(fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc);
 	}
 
@@ -307,7 +319,8 @@ int alc5658char_test_main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	/* Open the alc character device */
+	/* Open the alc5658 character device */
+
 	fd = open(DEVICE_PATH, O_RDWR);
 	if (fd < 0) {
 		errcode = errno;
@@ -323,6 +336,7 @@ int alc5658char_test_main(int argc, char *argv[])
 	printf("HELLO!!! %s\n", argv[0]);
 
 	/* Input will be the same since it is the same I2S channel */
+
 	caps.ac_len = sizeof(struct audio_caps_s);
 	caps.ac_type = AUDIO_TYPE_OUTPUT;
 	caps.ac_channels = 2;
@@ -332,7 +346,7 @@ int alc5658char_test_main(int argc, char *argv[])
 
 	ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
 
-	if (mode == MODE_RECORD)	{
+	if (mode == MODE_RECORD) {
 		buff = malloc(BUFFSIZE * RECORD_CNT);
 		if (!buff) {
 			printf("Alloc failed!!! Please Decrease BUFFSIZE\n");
@@ -341,10 +355,12 @@ int alc5658char_test_main(int argc, char *argv[])
 	}
 
 	/* Start the receiver thread */
+
 	sched_lock();
 	pthread_attr_init(&attr);
 
 	/* Set the receiver stack size */
+
 	(void)pthread_attr_setstacksize(&attr, CONFIG_EXAMPLES_ALC5658CHAR_RXSTACKSIZE);
 
 	/* Start the receiver */
@@ -362,6 +378,7 @@ int alc5658char_test_main(int argc, char *argv[])
 	ioctl(fd, AUDIOIOC_START, 0);
 
 	/* Set Volume */
+
 	caps.ac_type = AUDIO_TYPE_FEATURE;
 
 	caps.ac_format.hw = AUDIO_FU_VOLUME;
@@ -377,6 +394,7 @@ int alc5658char_test_main(int argc, char *argv[])
 	ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
 
 	/* Values -16 ~ 0 ~ 53 equal to -12dB ~ 0dB ~ 39.75 */
+
 	caps.ac_format.hw = AUDIO_FU_MICGAIN;
 	caps.ac_controls.hw[0] = 0;
 	ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
@@ -390,10 +408,12 @@ int alc5658char_test_main(int argc, char *argv[])
 	}
 
 	/* Start the transmitter thread */
+
 	sched_lock();
 	pthread_attr_init(&attr);
 
 	/* Set the transmitter stack size */
+
 	(void)pthread_attr_setstacksize(&attr, CONFIG_EXAMPLES_ALC5658CHAR_TXSTACKSIZE);
 
 	ret = pthread_create(&transmitter, &attr, alc5658char_transmitter, (void *)&mode);
@@ -427,8 +447,9 @@ int alc5658char_test_main(int argc, char *argv[])
 
 	ioctl(fd, AUDIOIOC_STOP, 0);
 	close(fd);
-	if (buff != NULL)
+	if (buff != NULL) {
 		free(buff);
+	}
 
 	return EXIT_SUCCESS;
 
@@ -438,7 +459,8 @@ err:
 
 	ioctl(fd, AUDIOIOC_STOP, 0);
 	close(fd);
-	if (buff != NULL)
+	if (buff != NULL) {
 		free(buff);
+	}
 	return EXIT_FAILURE;
 }
