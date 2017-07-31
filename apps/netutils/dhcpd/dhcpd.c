@@ -303,6 +303,7 @@ static struct dhcpd_state_s g_state;
 
 static int g_dhcpd_running = 0;
 static int g_dhcpd_quit = 0;
+static sem_t g_sem_quit;
 
 static pthread_t g_tid = 0;
 
@@ -1528,6 +1529,7 @@ void dhcpd_stop(void)
 #if DHCPD_SELECT
 	ndbg("WARN : dhcpd will be stopped after %d seconds\n", g_select_timeout.tv_sec);
 #endif
+	sem_wait(&g_sem_quit);
 }
 
 
@@ -1549,7 +1551,7 @@ int dhcpd_run(void *arg)
 	ndbg("Started on %s\n", DHCPD_IFNAME);
 
 	/* Initialize everything to zero */
-
+	sem_init(&g_sem_quit, 0, 0);
 	memset(&g_state, 0, sizeof(struct dhcpd_state_s));
 
 	/* Initialize netif address (ip address, netmask, default gateway) */
@@ -1670,6 +1672,8 @@ int dhcpd_run(void *arg)
 	if (dhcpd_netif_deinit(DHCPD_IFNAME) < 0) {
 		ndbg("Failed to deinit netif %s\n", DHCPD_IFNAME);
 	}
+
+	sem_post(&g_sem_quit);
 
 	return ret;
 }
