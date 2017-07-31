@@ -7,7 +7,7 @@
  */
 
 #include "include/coap/config.h"
-
+#include "iotivity_config.h"
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 # include <assert.h>
 #endif
