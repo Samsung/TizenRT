@@ -587,6 +587,84 @@ static void tc_libc_math_atan2l(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_cbrt
+ * @brief                :Returns the cube root of parameter
+ * @Scenario             :Returns the cube root of parameter
+ * API's covered         :cbrt
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_cbrt(void)
+{
+	const double in_val[6] = { ZERO, VAL1, -VAL1, INFINITY, -INFINITY, NAN };
+	const double sol_val[6] = { ZERO, 131072.0, -131072.0, INFINITY, -INFINITY, NAN };
+	double ret_val[6];
+	int cbrt_idx;
+
+	for (cbrt_idx = 0; cbrt_idx < 6; cbrt_idx++) {
+		ret_val[cbrt_idx] = cbrt(in_val[cbrt_idx]);
+		if (!(isnan(sol_val[cbrt_idx]) && isnan(ret_val[cbrt_idx]))) {
+			TC_ASSERT_LEQ("cbrt", fabs(sol_val[cbrt_idx] - ret_val[cbrt_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_cbrtf
+ * @brief                :Returns the cube root of parameter
+ * @Scenario             :Returns the cube root of parameter
+ * API's covered         :cbrtf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_cbrtf(void)
+{
+	const float in_val[6] = { ZERO, VAL1, -VAL1, INFINITY, -INFINITY, NAN };
+	const float sol_val[6] = { ZERO, 131072.0, -131072.0, INFINITY, -INFINITY, NAN };
+	float ret_val[6];
+	int cbrtf_idx;
+
+	for (cbrtf_idx = 0; cbrtf_idx < 6; cbrtf_idx++) {
+		ret_val[cbrtf_idx] = cbrtf(in_val[cbrtf_idx]);
+		if (!(isnan(sol_val[cbrtf_idx]) && isnan(ret_val[cbrtf_idx]))) {
+			TC_ASSERT_LEQ("cbrtf", fabsf((float)sol_val[cbrtf_idx] - ret_val[cbrtf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_cbrtl
+ * @brief                :Returns the cube root of parameter
+ * @Scenario             :Returns the cube root of parameter
+ * API's covered         :cbrtl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_cbrtl(void)
+{
+	const long double in_val[6] = { ZERO, VAL1, -VAL1, INFINITY, -INFINITY, NAN };
+	const long double sol_val[6] = { ZERO, 131072.0, -131072.0, INFINITY, -INFINITY, NAN };
+	long double ret_val[6];
+	int cbrtl_idx;
+
+	for (cbrtl_idx = 0; cbrtl_idx < 6; cbrtl_idx++) {
+		ret_val[cbrtl_idx] = cbrtl(in_val[cbrtl_idx]);
+		if (!(isnan(sol_val[cbrtl_idx]) && isnan(ret_val[cbrtl_idx]))) {
+			TC_ASSERT_LEQ("cbrtl", fabsl(sol_val[cbrtl_idx] - ret_val[cbrtl_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_ceil
  * @brief                :Rounds x upward, returning the smallest integral value that is not less than x
  * @Scenario             :Rounds x upward, returning the smallest integral value that is not less than x
@@ -980,25 +1058,77 @@ static void tc_libc_math_erfl(void)
 }
 
 /**
- * @fn                   :tc_libc_math_cbrt
- * @brief                :Returns the cube root of parameter
- * @Scenario             :Returns the cube root of parameter
- * API's covered         :cbrt
+ * @fn                   :tc_libc_math_exp
+ * @brief                :Returns the base-e exponential value
+ * @Scenario             :Returns the base-e exponential value
+ * API's covered         :exp
  * Preconditions         :None
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_math_cbrt(void)
+static void tc_libc_math_exp(void)
 {
-	const double in_val[6] = { ZERO, VAL1, -VAL1, INFINITY, -INFINITY, NAN };
-	const double sol_val[6] = { ZERO, 131072.0, -131072.0, INFINITY, -INFINITY, NAN };
-	double ret_val[6];
-	int cbrt_idx;
+	const double in_val[8] = { ZERO, INFINITY, -INFINITY, NAN, VAL1, -VAL1, VAL2, -VAL2 };
+	const double sol_val[8] = { 1.0, INFINITY, ZERO, NAN, INFINITY, ZERO, INFINITY, ZERO };
+	double ret_val[8];
+	int exp_idx;
 
-	for (cbrt_idx = 0; cbrt_idx < 6; cbrt_idx++) {
-		ret_val[cbrt_idx] = cbrt(in_val[cbrt_idx]);
-		if (!(isnan(sol_val[cbrt_idx]) && isnan(ret_val[cbrt_idx]))) {
-			TC_ASSERT_LEQ("cbrt", fabs(sol_val[cbrt_idx] - ret_val[cbrt_idx]), FLT_EPSILON);
+	for (exp_idx = 0; exp_idx < 8; exp_idx++) {
+		ret_val[exp_idx] = exp(in_val[exp_idx]);
+		if (!(isnan(sol_val[exp_idx]) && isnan(ret_val[exp_idx]))) {
+			TC_ASSERT_LEQ("exp", fabs(sol_val[exp_idx] - ret_val[exp_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_expf
+ * @brief                :Returns the base-e exponential value
+ * @Scenario             :Returns the base-e exponential value
+ * API's covered         :expf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_expf(void)
+{
+	const float in_val[8] = { ZERO, INFINITY, -INFINITY, NAN, VAL1, -VAL1, VAL2, -VAL2 };
+	const float sol_val[8] = { 1.0, INFINITY, ZERO, NAN, INFINITY, ZERO, INFINITY, ZERO };
+	float ret_val[8];
+	int expf_idx;
+
+	for (expf_idx = 0; expf_idx < 8; expf_idx++) {
+		ret_val[expf_idx] = expf(in_val[expf_idx]);
+		if (!(isnan(sol_val[expf_idx]) && isnan(ret_val[expf_idx]))) {
+			TC_ASSERT_LEQ("expf", fabsf(sol_val[expf_idx] - ret_val[expf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_expl
+ * @brief                :Returns the base-e exponential value
+ * @Scenario             :Returns the base-e exponential value
+ * API's covered         :expl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_expl(void)
+{
+	const long double in_val[8] = { ZERO, INFINITY, -INFINITY, NAN, VAL1, -VAL1, VAL2, -VAL2 };
+	const long double sol_val[8] = { 1.0, INFINITY, ZERO, NAN, INFINITY, ZERO, INFINITY, ZERO };
+	long double ret_val[8];
+	int expl_idx;
+
+	for (expl_idx = 0; expl_idx < 8; expl_idx++) {
+		ret_val[expl_idx] = expl(in_val[expl_idx]);
+		if (!(isnan(sol_val[expl_idx]) && isnan(ret_val[expl_idx]))) {
+			TC_ASSERT_LEQ("expl", fabsl(sol_val[expl_idx] - ret_val[expl_idx]), FLT_EPSILON);
 		}
 	}
 
@@ -1032,6 +1162,58 @@ static void tc_libc_math_exp2(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_exp2f
+ * @brief                :Returns the base-2 exponential value
+ * @Scenario             :Returns the base-2 exponential value
+ * API's covered         :exp2f
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_exp2f(void)
+{
+	const float in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const float sol_val[8] = { 1.0, INFINITY, ZERO, INFINITY, ZERO, INFINITY, ZERO, NAN };
+	float ret_val[8];
+	int exp2f_idx;
+
+	for (exp2f_idx = 0; exp2f_idx < 8; exp2f_idx++) {
+		ret_val[exp2f_idx] = exp2f(in_val[exp2f_idx]);
+		if (!(isnan(sol_val[exp2f_idx]) && isnan(ret_val[exp2f_idx]))) {
+			TC_ASSERT_LEQ("exp2f", fabsf(sol_val[exp2f_idx] - ret_val[exp2f_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_exp2l
+ * @brief                :Returns the base-2 exponential value
+ * @Scenario             :Returns the base-2 exponential value
+ * API's covered         :exp2l
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_exp2l(void)
+{
+	const long double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const long double sol_val[8] = { 1.0, INFINITY, ZERO, INFINITY, ZERO, INFINITY, ZERO, NAN };
+	long double ret_val[8];
+	int exp2l_idx;
+
+	for (exp2l_idx = 0; exp2l_idx < 8; exp2l_idx++) {
+		ret_val[exp2l_idx] = exp2l(in_val[exp2l_idx]);
+		if (!(isnan(sol_val[exp2l_idx]) && isnan(ret_val[exp2l_idx]))) {
+			TC_ASSERT_LEQ("exp2l", fabsl(sol_val[exp2l_idx] - ret_val[exp2l_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_fabs
  * @brief                :Returns the absolute value of parameter
  * @Scenario             :Returns the absolute value of parameter
@@ -1042,14 +1224,66 @@ static void tc_libc_math_exp2(void)
  */
 static void tc_libc_math_fabs(void)
 {
-	const double in_val[5] = { ZERO, VAL1, -VAL1, INFINITY, -INFINITY };
-	const double sol_val[5] = { ZERO, 2251799813685248.5, 2251799813685248.5, INFINITY, INFINITY };
-	double ret_val[5];
+	const double in_val[7] = { ZERO, -ZERO, VAL1, -VAL1, INFINITY, -INFINITY, NAN };
+	const double sol_val[7] = { ZERO, ZERO, 2251799813685248.5, 2251799813685248.5, INFINITY, INFINITY, NAN };
+	double ret_val[7];
 	int fabs_idx;
 
-	for (fabs_idx = 0; fabs_idx < 5; fabs_idx++) {
+	for (fabs_idx = 0; fabs_idx < 7; fabs_idx++) {
 		ret_val[fabs_idx] = fabs(in_val[fabs_idx]);
-		TC_ASSERT_EQ("fabs", sol_val[fabs_idx], ret_val[fabs_idx]);
+		if (!(isnan(sol_val[fabs_idx]) && isnan(ret_val[fabs_idx]))) {
+			TC_ASSERT_EQ("fabs", sol_val[fabs_idx], ret_val[fabs_idx]);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_fabsf
+ * @brief                :Returns the absolute value of parameter
+ * @Scenario             :Returns the absolute value of parameter
+ * API's covered         :fabsf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_fabsf(void)
+{
+	const float in_val[7] = { ZERO, -ZERO, VAL1, -VAL1, INFINITY, -INFINITY, NAN };
+	const float sol_val[7] = { ZERO, ZERO, 2251799813685248.5, 2251799813685248.5, INFINITY, INFINITY, NAN };
+	float ret_val[7];
+	int fabsf_idx;
+	for (fabsf_idx = 0; fabsf_idx < 7; fabsf_idx++) {
+		ret_val[fabsf_idx] = fabsf(in_val[fabsf_idx]);
+		if (!(isnan(sol_val[fabsf_idx]) && isnan(ret_val[fabsf_idx]))) {
+			TC_ASSERT_EQ("fabsf", sol_val[fabsf_idx], ret_val[fabsf_idx]);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_fabsl
+ * @brief                :Returns the absolute value of parameter
+ * @Scenario             :Returns the absolute value of parameter
+ * API's covered         :fabsl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_fabsl(void)
+{
+	const long double in_val[7] = { ZERO, -ZERO, VAL1, -VAL1, INFINITY, -INFINITY, NAN };
+	const long double sol_val[7] = { ZERO, ZERO, 2251799813685248.5, 2251799813685248.5, INFINITY, INFINITY, NAN };
+	long double ret_val[7];
+	int fabsl_idx;
+	for (fabsl_idx = 0; fabsl_idx < 7; fabsl_idx++) {
+		ret_val[fabsl_idx] = fabsl(in_val[fabsl_idx]);
+		if (!(isnan(sol_val[fabsl_idx]) && isnan(ret_val[fabsl_idx]))) {
+			TC_ASSERT_EQ("fabsl", sol_val[fabsl_idx], ret_val[fabsl_idx]);
+		}
 	}
 
 	TC_SUCCESS_RESULT();
@@ -1066,16 +1300,70 @@ static void tc_libc_math_fabs(void)
  */
 static void tc_libc_math_fdim(void)
 {
-	const double in_val1[9] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const double in_val2[9] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, NAN };
-	const double sol_val[9] = { INFINITY, ZERO, 6755399441055744.0, ZERO, 6755399441055744.0, ZERO, INFINITY, ZERO, NAN };
-	double ret_val[9];
+	const double in_val1[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, VAL1 };
+	const double in_val2[10] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, NAN, NAN };
+	const double sol_val[10] = { INFINITY, ZERO, 6755399441055744.0, ZERO, 6755399441055744.0, ZERO, INFINITY, ZERO, NAN, NAN };
+	double ret_val[10];
 	int fdim_idx;
 
-	for (fdim_idx = 0; fdim_idx < 9; fdim_idx++) {
+	for (fdim_idx = 0; fdim_idx < 10; fdim_idx++) {
 		ret_val[fdim_idx] = fdim(in_val1[fdim_idx], in_val2[fdim_idx]);
 		if (!(isnan(sol_val[fdim_idx]) && isnan(ret_val[fdim_idx]))) {
 			TC_ASSERT_LEQ("fdim", fabs(sol_val[fdim_idx] - ret_val[fdim_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_fdimf
+ * @brief                :Returns the positive  difference max(x-y,0),  between thier arguments
+ * @Scenario             :Returns the positive  difference max(x-y,0),  between their arguments
+ * API's covered         :fdimf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_fdimf(void)
+{
+	const float in_val1[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, VAL1 };
+	const float in_val2[10] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, NAN, NAN };
+	const float sol_val[10] = { INFINITY, ZERO, 6755399441055744.0, ZERO, 6755399441055744.0, ZERO, INFINITY, ZERO, NAN, NAN };
+	float ret_val[10];
+	int fdimf_idx;
+
+	for (fdimf_idx = 0; fdimf_idx < 10; fdimf_idx++) {
+		ret_val[fdimf_idx] = fdimf(in_val1[fdimf_idx], in_val2[fdimf_idx]);
+		if (!(isnan(sol_val[fdimf_idx]) && isnan(ret_val[fdimf_idx]))) {
+			TC_ASSERT_LEQ("fdimf", fabsf(sol_val[fdimf_idx] - ret_val[fdimf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_fdiml
+ * @brief                :Returns the positive  difference max(x-y,0),  between thier arguments
+ * @Scenario             :Returns the positive  difference max(x-y,0),  between their arguments
+ * API's covered         :fdiml
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_fdiml(void)
+{
+	const long double in_val1[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, VAL1 };
+	const long double in_val2[10] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, NAN, NAN };
+	const long double sol_val[10] = { INFINITY, ZERO, 6755399441055744.0, ZERO, 6755399441055744.0, ZERO, INFINITY, ZERO, NAN, NAN };
+	long double ret_val[10];
+	int fdiml_idx;
+
+	for (fdiml_idx = 0; fdiml_idx < 10; fdiml_idx++) {
+		ret_val[fdiml_idx] = fdiml(in_val1[fdiml_idx], in_val2[fdiml_idx]);
+		if (!(isnan(sol_val[fdiml_idx]) && isnan(ret_val[fdiml_idx]))) {
+			TC_ASSERT_LEQ("fdiml", fabsl(sol_val[fdiml_idx] - ret_val[fdiml_idx]), FLT_EPSILON);
 		}
 	}
 
@@ -1095,12 +1383,65 @@ static void tc_libc_math_floor(void)
 {
 	const double in_val[8] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY };
 	const double sol_val[8] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685249.0, 4503599627370496.0, -4503599627370497.0, INFINITY, -INFINITY };
-	double ret_val[8];
+	double ret_val[8] = { ZERO };
 	int floor_idx;
 
 	for (floor_idx = 0; floor_idx < 8; floor_idx++) {
 		ret_val[floor_idx] = floor(in_val[floor_idx]);
-		TC_ASSERT_EQ("floor", sol_val[floor_idx], ret_val[floor_idx]);
+		if (!(isnan(sol_val[floor_idx]) && isnan(ret_val[floor_idx]))) {
+			TC_ASSERT_EQ("floor", sol_val[floor_idx], ret_val[floor_idx]);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_floorf
+ * @brief                :Returns the floor value of parameter
+ * @Scenario             :Returns the floor value of parameter
+ * API's covered         :floorf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_floorf(void)
+{
+	const float in_val[8] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY };
+	const float sol_val[8] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685249.0, 4503599627370496.0, -4503599627370497.0, INFINITY, -INFINITY };
+	float ret_val[8] = { ZERO };
+	int floorf_idx;
+
+	for (floorf_idx = 0; floorf_idx < 8; floorf_idx++) {
+		ret_val[floorf_idx] = floorf(in_val[floorf_idx]);
+		if (!(isnan(sol_val[floorf_idx]) && isnan(ret_val[floorf_idx]))) {
+			TC_ASSERT_EQ("floorf", sol_val[floorf_idx], ret_val[floorf_idx]);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_floorl
+ * @brief                :Returns the floor value of parameter
+ * @Scenario             :Returns the floor value of parameter
+ * API's covered         :floorl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_floorl(void)
+{
+	const long double in_val[8] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY };
+	const long double sol_val[8] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685249.0, 4503599627370496.0, -4503599627370497.0, INFINITY, -INFINITY };
+	long double ret_val[8] = { ZERO };
+	int floorl_idx;
+	for (floorl_idx = 0; floorl_idx < 8; floorl_idx++) {
+		ret_val[floorl_idx] = floorl(in_val[floorl_idx]);
+		if (!(isnan(sol_val[floorl_idx]) && isnan(ret_val[floorl_idx]))) {
+			TC_ASSERT_EQ("floorl", sol_val[floorl_idx], ret_val[floorl_idx]);
+		}
 	}
 
 	TC_SUCCESS_RESULT();
@@ -1134,6 +1475,60 @@ static void tc_libc_math_fmax(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_fmaxf
+ * @brief                :Returns the maximum value of argument1 and argument2
+ * @Scenario             :Returns the maximum value of argument1 and argument2
+ * API's covered         :fmaxf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_fmaxf(void)
+{
+	const float in_val1[7] = { ZERO, VAL1, -VAL1, INFINITY, -INFINITY, NAN, VAL1 };
+	const float in_val2[7] = { -INFINITY, INFINITY, -VAL1, VAL1, ZERO, NAN, NAN };
+	const float sol_val[7] = { ZERO, INFINITY, -VAL1, INFINITY, ZERO, NAN, VAL1 };
+	float ret_val[7];
+	int fmaxf_idx;
+
+	for (fmaxf_idx = 0; fmaxf_idx < 7; fmaxf_idx++) {
+		ret_val[fmaxf_idx] = fmaxf(in_val1[fmaxf_idx], in_val2[fmaxf_idx]);
+		if (!(isnan(sol_val[fmaxf_idx]) && isnan(ret_val[fmaxf_idx]))) {
+			TC_ASSERT_LEQ("fmaxf", fabsf(sol_val[fmaxf_idx] - ret_val[fmaxf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_fmaxl
+ * @brief                :Returns the maximum value of argument1 and argument2
+ * @Scenario             :Returns the maximum value of argument1 and argument2
+ * API's covered         :fmaxl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_fmaxl(void)
+{
+	const long double in_val1[7] = { ZERO, VAL1, -VAL1, INFINITY, -INFINITY, NAN, VAL1 };
+	const long double in_val2[7] = { -INFINITY, INFINITY, -VAL1, VAL1, ZERO, NAN, NAN };
+	const long double sol_val[7] = { ZERO, INFINITY, -VAL1, INFINITY, ZERO, NAN, VAL1 };
+	long double ret_val[7];
+	int fmaxl_idx;
+
+	for (fmaxl_idx = 0; fmaxl_idx < 7; fmaxl_idx++) {
+		ret_val[fmaxl_idx] = fmaxl(in_val1[fmaxl_idx], in_val2[fmaxl_idx]);
+		if (!(isnan(sol_val[fmaxl_idx]) && isnan(ret_val[fmaxl_idx]))) {
+			TC_ASSERT_LEQ("fmaxl", fabsl(sol_val[fmaxl_idx] - ret_val[fmaxl_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_fmin
  * @brief                :Returns the minimum value of argument1 and argument2
  * @Scenario             :Returns the minimum value of argument1 and argument2
@@ -1154,6 +1549,60 @@ static void tc_libc_math_fmin(void)
 		ret_val[fmin_idx] = fmin(in_val1[fmin_idx], in_val2[fmin_idx]);
 		if (!(isnan(sol_val[fmin_idx]) && isnan(ret_val[fmin_idx]))) {
 			TC_ASSERT_LEQ("fmin", fabs(sol_val[fmin_idx] - ret_val[fmin_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_fminf
+ * @brief                :Returns the minimum value of argument1 and argument2
+ * @Scenario             :Returns the minimum value of argument1 and argument2
+ * API's covered         :fminf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_fminf(void)
+{
+	const float in_val1[7] = { ZERO, VAL1, -VAL1, INFINITY, -INFINITY, NAN, VAL1 };
+	const float in_val2[7] = { -INFINITY, INFINITY, -VAL1, VAL1, ZERO, NAN, NAN };
+	const float sol_val[7] = { -INFINITY, VAL1, -VAL1, VAL1, -INFINITY, NAN, VAL1 };
+	float ret_val[7];
+	int fminf_idx;
+
+	for (fminf_idx = 0; fminf_idx < 7; fminf_idx++) {
+		ret_val[fminf_idx] = fminf(in_val1[fminf_idx], in_val2[fminf_idx]);
+		if (!(isnan(sol_val[fminf_idx]) && isnan(ret_val[fminf_idx]))) {
+			TC_ASSERT_LEQ("fminf", fabsf(sol_val[fminf_idx] - ret_val[fminf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_fminl
+ * @brief                :Returns the minimum value of argument1 and argument2
+ * @Scenario             :Returns the minimum value of argument1 and argument2
+ * API's covered         :fminl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_fminl(void)
+{
+	const long double in_val1[7] = { ZERO, VAL1, -VAL1, INFINITY, -INFINITY, NAN, VAL1 };
+	const long double in_val2[7] = { -INFINITY, INFINITY, -VAL1, VAL1, ZERO, NAN, NAN };
+	const long double sol_val[7] = { -INFINITY, VAL1, -VAL1, VAL1, -INFINITY, NAN, VAL1 };
+	long double ret_val[7];
+	int fminl_idx;
+
+	for (fminl_idx = 0; fminl_idx < 7; fminl_idx++) {
+		ret_val[fminl_idx] = fminl(in_val1[fminl_idx], in_val2[fminl_idx]);
+		if (!(isnan(sol_val[fminl_idx]) && isnan(ret_val[fminl_idx]))) {
+			TC_ASSERT_LEQ("fminl", fabsl(sol_val[fminl_idx] - ret_val[fminl_idx]), FLT_EPSILON);
 		}
 	}
 
@@ -1275,6 +1724,64 @@ static void tc_libc_math_hypot(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_hypotf
+ * @brief                :Returns the length of a right-angled  triangle
+ *						  with sides of length parameter1 and parameter2
+ * @Scenario             :Returns the length of a right-angled  triangle
+ *                        with sides of length parameter1 and parameter2
+ * API's covered         :hypotf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_hypotf(void)
+{
+	const float in_val1[11] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, VAL1, 0x5fe };
+	const float in_val2[11] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, INFINITY, NAN, 0x1p-700 };
+	const float sol_val[11] = { INFINITY, INFINITY, 5035177455121576.0, 5035177455121576.0, 5035177455121576.0, 5035177455121576.0, INFINITY, INFINITY, INFINITY, NAN, 0x5fe };
+	float ret_val[11];
+	int hypotf_idx;
+
+	for (hypotf_idx = 0; hypotf_idx < 11; hypotf_idx++) {
+		ret_val[hypotf_idx] = hypotf(in_val1[hypotf_idx], in_val2[hypotf_idx]);
+		if (!(isnan(sol_val[hypotf_idx]) && isnan(ret_val[hypotf_idx]))) {
+			TC_ASSERT_LEQ("hypotf", fabsf(sol_val[hypotf_idx] - ret_val[hypotf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_hypotl
+ * @brief                :Returns the length of a right-angled  triangle
+ *						  with sides of length parameter1 and parameter2
+ * @Scenario             :Returns the length of a right-angled  triangle
+ *                        with sides of length parameter1 and parameter2
+ * API's covered         :hypotl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_hypotl(void)
+{
+	const long double in_val1[11] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, VAL1, 0x5fe };
+	const long double in_val2[11] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, INFINITY, NAN, 0x1p-700 };
+	const long double sol_val[11] = { INFINITY, INFINITY, 5035177455121576.0, 5035177455121576.0, 5035177455121576.0, 5035177455121576.0, INFINITY, INFINITY, INFINITY, NAN, 0x5fe };
+	long double ret_val[11];
+	int hypotl_idx;
+
+	for (hypotl_idx = 0; hypotl_idx < 11; hypotl_idx++) {
+		ret_val[hypotl_idx] = hypotl(in_val1[hypotl_idx], in_val2[hypotl_idx]);
+		if (!(isnan(sol_val[hypotl_idx]) && isnan(ret_val[hypotl_idx]))) {
+			TC_ASSERT_LEQ("hypotl", fabsl(sol_val[hypotl_idx] - ret_val[hypotl_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_j0
  * @brief                :Returns the bessel value of 1st kind of order 0
  * @Scenario             :Returns the bessel value of 1st kind of order 0
@@ -1294,6 +1801,32 @@ static void tc_libc_math_j0(void)
 		ret_val[j0_idx] = j0(in_val[j0_idx]);
 		if (!(isnan(sol_val[j0_idx]) && isnan(ret_val[j0_idx]))) {
 			TC_ASSERT_LEQ("j0", fabs(sol_val[j0_idx] - ret_val[j0_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_j0f
+ * @brief                :Returns the bessel value of 1st kind of order 0
+ * @Scenario             :Returns the bessel value of 1st kind of order 0
+ * API's covered         :j0f
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_j0f(void)
+{
+	const float in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const float sol_val[8] = { 1.0, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, NAN };
+	float ret_val[8] = { ZERO };
+	int j0f_idx;
+
+	for (j0f_idx = 0; j0f_idx < 8; j0f_idx++) {
+		ret_val[j0f_idx] = j0f(in_val[j0f_idx]);
+		if (!(isnan(sol_val[j0f_idx]) && isnan(ret_val[j0f_idx]))) {
+			TC_ASSERT_LEQ("j0f", fabsf(sol_val[j0f_idx] - ret_val[j0f_idx]), FLT_EPSILON);
 		}
 	}
 
@@ -1327,6 +1860,32 @@ static void tc_libc_math_j1(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_j1f
+ * @brief                :Returns the bessel value of 1st kind of order 1
+ * @Scenario             :Returns the bessel value of 1st kind of order 1
+ * API's covered         :j1f
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_j1f(void)
+{
+	const float in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const float sol_val[8] = { ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO, NAN };
+	float ret_val[8] = { ZERO };
+	int j1f_idx;
+
+	for (j1f_idx = 0; j1f_idx < 8; j1f_idx++) {
+		ret_val[j1f_idx] = j1f(in_val[j1f_idx]);
+		if (!(isnan(sol_val[j1f_idx]) && isnan(ret_val[j1f_idx]))) {
+			TC_ASSERT_LEQ("j1f", fabsf(sol_val[j1f_idx] - ret_val[j1f_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_jn
  * @brief                :Returns the bessel value of 1st kind of order n
  * @Scenario             :Returns the bessel value of 1st kind of order n
@@ -1347,6 +1906,33 @@ static void tc_libc_math_jn(void)
 		ret_val[jn_idx] = jn(order, in_val[jn_idx]);
 		if (!(isnan(sol_val[jn_idx]) && isnan(ret_val[jn_idx]))) {
 			TC_ASSERT_LEQ("jn", fabs(sol_val[jn_idx] - ret_val[jn_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_jnf
+ * @brief                :Returns the bessel value of 1st kind of order n
+ * @Scenario             :Returns the bessel value of 1st kind of order n
+ * API's covered         :jnf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_jnf(void)
+{
+	const float in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const float sol_val[8] = { ZERO, -ZERO, -ZERO, -ZERO, -ZERO, ZERO, ZERO, NAN };
+	float ret_val[8];
+	int jnf_idx;
+	int order = 2;
+
+	for (jnf_idx = 0; jnf_idx < 8; jnf_idx++) {
+		ret_val[jnf_idx] = jnf(order, in_val[jnf_idx]);
+		if (!(isnan(sol_val[jnf_idx]) && isnan(ret_val[jnf_idx]))) {
+			TC_ASSERT_LEQ("jnf", fabsf(sol_val[jnf_idx] - ret_val[jnf_idx]), FLT_EPSILON);
 		}
 	}
 
@@ -1540,6 +2126,64 @@ static void tc_libc_math_nextafter(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_nextafterf
+ * @brief                :Returns the next representable floating-point
+ *						  value following argument1 in the direction of argument2
+ * @Scenario             :Returns the next representable floating-point
+ *						  value following argument1 in the direction of argument2
+ * API's covered         :nextafterf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_nextafterf(void)
+{
+	const float in_val1[7] = { VAL1, VAL1, ZERO, -VAL1, -VAL2 , VAL1, NAN };
+	const float in_val2[7] = { VAL1, VAL2, VAL1, -VAL2, ZERO, NAN, VAL2 };
+	const float sol_val[7] = { 2251799813685248.0, 2251800082120704.0, ZERO, -2251800082120704.0, -4503599358935040.0, NAN, NAN };
+	float ret_val[7];
+	int nextafterf_idx;
+
+	for (nextafterf_idx = 0; nextafterf_idx < 7; nextafterf_idx++) {
+		ret_val[nextafterf_idx] = nextafterf(in_val1[nextafterf_idx], in_val2[nextafterf_idx]);
+		if (!(isnan(sol_val[nextafterf_idx]) && isnan(ret_val[nextafterf_idx]))) {
+			TC_ASSERT_LEQ("nextafterf", fabsf(sol_val[nextafterf_idx] - ret_val[nextafterf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_nextafterl
+ * @brief                :Returns the next representable floating-point
+ *						  value following argument1 in the direction of argument2
+ * @Scenario             :Returns the next representable floating-point
+ *						  value following argument1 in the direction of argument2
+ * API's covered         :nextafterl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_nextafterl(void)
+{
+	const long double in_val1[7] = { VAL1, VAL1, ZERO, -VAL1, -VAL2 , VAL1, NAN };
+	const long double in_val2[7] = { VAL1, VAL2, VAL1, -VAL2, ZERO, NAN, VAL2 };
+	const long double sol_val[7] = { VAL1, 2251799813685249.0, ZERO, -2251799813685249.0, -4503599627370495.5, NAN, NAN };
+	long double ret_val[7];
+	int nextafterl_idx;
+
+	for (nextafterl_idx = 0; nextafterl_idx < 7; nextafterl_idx++) {
+		ret_val[nextafterl_idx] = nextafterl(in_val1[nextafterl_idx], in_val2[nextafterl_idx]);
+		if (!(isnan(sol_val[nextafterl_idx]) && isnan(ret_val[nextafterl_idx]))) {
+			TC_ASSERT_LEQ("nextafterl", fabsl(sol_val[nextafterl_idx] - ret_val[nextafterl_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_nexttoward
  * @brief                :Returns the next representable floating-point value following argument1 in the direction of argument2
  * @Scenario             :Returns the next representable floating-point value following argument1 in the direction of argument2
@@ -1567,6 +2211,64 @@ static void tc_libc_math_nexttoward(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_nexttowardf
+ * @brief                :Returns the next representable floating-point
+ *						  value following argument1 in the direction of argument2
+ * @Scenario             :Returns the next representable floating-point
+ *						  value following argument1 in the direction of argument2
+ * API's covered         :nexttowardf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_nexttowardf(void)
+{
+	const float in_val1[7] = { VAL1, VAL1, ZERO, -VAL1, -VAL2 , VAL1, NAN };
+	const long double in_val2[7] = { VAL1, VAL2, VAL1, -VAL2, ZERO, NAN, VAL2 };
+	const float sol_val[7] = { 2251800082120704.0, 2251800082120704.0, ZERO, -2251800082120704.0, -4503599358935040.0, NAN, NAN };
+	float ret_val[7];
+	int nexttowardf_idx;
+
+	for (nexttowardf_idx = 0; nexttowardf_idx < 7; nexttowardf_idx++) {
+		ret_val[nexttowardf_idx] = nexttowardf(in_val1[nexttowardf_idx], in_val2[nexttowardf_idx]);
+		if (!(isnan(sol_val[nexttowardf_idx]) && isnan(ret_val[nexttowardf_idx]))) {
+			TC_ASSERT_LEQ("nexttowardf", fabsf(sol_val[nexttowardf_idx] - ret_val[nexttowardf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_nexttowardl
+ * @brief                :Returns the next representable floating-point
+ *						  value following argument1 in the direction of argument2
+ * @Scenario             :Returns the next representable floating-point
+ *						  value following argument1 in the direction of argument2
+ * API's covered         :nexttowardl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_nexttowardl(void)
+{
+	const long double in_val1[7] = { VAL1, VAL1, ZERO, -VAL1, -VAL2 , VAL1, NAN };
+	const long double in_val2[7] = { VAL1, VAL2, VAL1, -VAL2, ZERO, NAN, VAL2 };
+	const long double sol_val[7] = { VAL1, 2251799813685249.0, ZERO, -2251799813685249.0, -4503599627370495.5, NAN, NAN };
+	long double ret_val[7];
+	int nexttowardl_idx;
+
+	for (nexttowardl_idx = 0; nexttowardl_idx < 7; nexttowardl_idx++) {
+		ret_val[nexttowardl_idx] = nexttowardl(in_val1[nexttowardl_idx], in_val2[nexttowardl_idx]);
+		if (!(isnan(sol_val[nexttowardl_idx]) && isnan(ret_val[nexttowardl_idx]))) {
+			TC_ASSERT_LEQ("nexttowardl", fabsl(sol_val[nexttowardl_idx] - ret_val[nexttowardl_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_pow
  * @brief                :Returns the power value of parameter
  * @Scenario             :Returns the power value of parameter
@@ -1575,7 +2277,6 @@ static void tc_libc_math_nexttoward(void)
  * Postconditions        :None
  * @return               :void
  */
-
 static void tc_libc_math_pow(void)
 {
 	const double in_val[13][2] = { { 2, 2 }, { 2, 0.5 }, { 2, -2 }, { 2, -0.5 }, { 1, NAN }, { ZERO, 0.5 }, { ZERO, -2 }, { -ZERO, -1 }, { -ZERO, -2 }, { -2, -1 }, { -2, -2 }, { 0.5, INFINITY }, { 2, INFINITY } };
@@ -1623,6 +2324,60 @@ static void tc_libc_math_remainder(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_remainderf
+ * @brief                :Returns the floating-point remainder of dividing argument1 by argument2
+ * @Scenario             :Returns the floating-point remainder of dividing argument1 by argument2
+ * API's covered         :remainderf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_remainderf(void)
+{
+	const float in_val1[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
+	const float in_val2[10] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, NAN, VAL2 };
+	const float sol_val[10] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685248.0, ZERO, -ZERO, -NAN, -NAN, NAN, -NAN };
+	float ret_val[10];
+	int remainderf_idx;
+
+	for (remainderf_idx = 0; remainderf_idx < 10; remainderf_idx++) {
+		ret_val[remainderf_idx] = remainderf(in_val1[remainderf_idx], in_val2[remainderf_idx]);
+		if (!(isnan(sol_val[remainderf_idx]) && isnan(ret_val[remainderf_idx]))) {
+			TC_ASSERT_LEQ("remainderf", fabsf(sol_val[remainderf_idx] - ret_val[remainderf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_remainderl
+ * @brief                :Returns the floating-point remainder of dividing argument1 by argument2
+ * @Scenario             :Returns the floating-point remainder of dividing argument1 by argument2
+ * API's covered         :remainderl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_remainderl(void)
+{
+	const long double in_val1[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
+	const long double in_val2[10] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, NAN, VAL2 };
+	const long double sol_val[10] = { ZERO, -ZERO, -2251799813685247.5, 2251799813685247.5, -1.0, 1.0, -NAN, -NAN, NAN, -NAN };
+	long double ret_val[10];
+	int remainderl_idx;
+
+	for (remainderl_idx = 0; remainderl_idx < 10; remainderl_idx++) {
+		ret_val[remainderl_idx] = remainderl(in_val1[remainderl_idx], in_val2[remainderl_idx]);
+		if (!(isnan(sol_val[remainderl_idx]) && isnan(ret_val[remainderl_idx]))) {
+			TC_ASSERT_LEQ("remainderl", fabsl(sol_val[remainderl_idx] - ret_val[remainderl_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_remquo
  * @brief                :Returns the floating-point remainder and stores part of quotient in argument3
  * @Scenario             :Returns the floating-point remainder and stores part of quotient in argument3
@@ -1636,7 +2391,7 @@ static void tc_libc_math_remquo(void)
 	const double in_val1[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
 	const double in_val2[10] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, NAN, VAL2 };
 	const double sol_val[10] = { ZERO, -ZERO, -2251799813685247.5, 2251799813685247.5, -1.0, 1.0, -NAN, -NAN, NAN, -NAN };
-	int sol_quo[10] = { 0, 0, -1, -1, -2, -2, 0, 0, 0, 0 };
+	const int sol_quo[10] =  { 0, 0, -1, -1, -2, -2, 0, 0, 0, 0 };
 	double ret_val[10];
 	int ret_quo[10];
 	int remquo_idx;
@@ -1646,6 +2401,222 @@ static void tc_libc_math_remquo(void)
 		if (!(isnan(sol_val[remquo_idx]) && isnan(ret_val[remquo_idx]))) {
 			TC_ASSERT_LEQ("remquo", fabs(sol_val[remquo_idx] - ret_val[remquo_idx]), FLT_EPSILON);
 			TC_ASSERT_EQ("remquo", sol_quo[remquo_idx], ret_quo[remquo_idx]);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_remquof
+ * @brief                :Returns the floating-point remainder and stores part of quotient in argument3
+ * @Scenario             :Returns the floating-point remainder and stores part of quotient in argument3
+ * API's covered         :remquof
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_remquof(void)
+{
+	const float in_val1[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
+	const float in_val2[10] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, NAN, VAL2 };
+	const float sol_val[10] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685248.0, ZERO, -ZERO, -NAN, -NAN, NAN, -NAN };
+	const int sol_quo[10] =  { 0, 0, 0, 0, -2, -2, 0, 0, 0, 0 };
+	float ret_val[10];
+	int ret_quo[10] = { 0 };
+	int remquof_idx;
+
+	for (remquof_idx = 0; remquof_idx < 10; remquof_idx++) {
+		ret_val[remquof_idx] = remquof(in_val1[remquof_idx], in_val2[remquof_idx], &ret_quo[remquof_idx]);
+		if (!(isnan(sol_val[remquof_idx]) && isnan(ret_val[remquof_idx]))) {
+			TC_ASSERT_LEQ("remquof", fabsf(sol_val[remquof_idx] - ret_val[remquof_idx]), FLT_EPSILON);
+			TC_ASSERT_EQ("remquof", sol_quo[remquof_idx], ret_quo[remquof_idx]);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_remquol
+ * @brief                :Returns the floating-point remainder and stores part of quotient in argument3
+ * @Scenario             :Returns the floating-point remainder and stores part of quotient in argument3
+ * API's covered         :remquol
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_remquol(void)
+{
+	const long double in_val1[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
+	const long double in_val2[10] = { -INFINITY, INFINITY, -VAL2, VAL2, -VAL1, VAL1, -ZERO, ZERO, NAN, VAL2 };
+	const long double sol_val[10] = { ZERO, -ZERO, -2251799813685247.5, 2251799813685247.5, -1.0, 1.0, -NAN, -NAN, NAN, -NAN };
+	const int sol_quo[10] =  { 0, 0, -1, -1, -2, -2, 0, 0, 0, 0 };
+	long double ret_val[10];
+	int ret_quo[10] = { 0 };
+	int remquol_idx;
+
+	for (remquol_idx = 0; remquol_idx < 10; remquol_idx++) {
+		ret_val[remquol_idx] = remquol(in_val1[remquol_idx], in_val2[remquol_idx], &ret_quo[remquol_idx]);
+		if (!(isnan(sol_val[remquol_idx]) && isnan(ret_val[remquol_idx]))) {
+			TC_ASSERT_LEQ("remquol", fabsl(sol_val[remquol_idx] - ret_val[remquol_idx]), FLT_EPSILON);
+			TC_ASSERT_EQ("remquol", sol_quo[remquol_idx], ret_quo[remquol_idx]);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_rint
+ * @brief                :Returns the rounded integer value
+ * @Scenario             :round their argument to an integer value in floating-point format
+ * API's covered         :rint
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_rint(void)
+{
+	const double in_val[6] = { ZERO, -ZERO, 1073741823.5, -1073741820.5, 2147483645.5, -2147483642.5 };
+	const double sol_val[6] = { ZERO, -ZERO, 1073741824.0, -1073741820.0, 2147483646.0, -2147483642.0 };
+	double ret_val[6];
+	int rint_idx;
+
+	for (rint_idx = 0; rint_idx < 6; rint_idx++) {
+		ret_val[rint_idx] = rint(in_val[rint_idx]);
+		if (!(isnan(sol_val[rint_idx]) && isnan(ret_val[rint_idx]))) {
+			TC_ASSERT_LEQ("rint", fabs(sol_val[rint_idx] - ret_val[rint_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_rintf
+ * @brief                :Returns the rounded integer value
+ * @Scenario             :round their argument to an integer value in floating-point format
+ * API's covered         :rintf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_rintf(void)
+{
+	const float in_val[6] = { ZERO, -ZERO, 1073741823.5, -1073741820.5, 2147483645.5, -2147483642.5 };
+	const float sol_val[6] = { ZERO, -ZERO, 1073741824.0, -1073741820.0, 2147483646.0, -2147483642.0 };
+	float ret_val[6];
+	int rintf_idx;
+
+	for (rintf_idx = 0; rintf_idx < 6; rintf_idx++) {
+		ret_val[rintf_idx] = rintf(in_val[rintf_idx]);
+		if (!(isnan(sol_val[rintf_idx]) && isnan(ret_val[rintf_idx]))) {
+			TC_ASSERT_LEQ("rintf", fabsf(sol_val[rintf_idx] - ret_val[rintf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_rintl
+ * @brief                :Returns the rounded integer value
+ * @Scenario             :round their argument to an integer value in floating-point format
+ * API's covered         :rintl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_rintl(void)
+{
+	const long double in_val[6] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2 };
+	const long double sol_val[6] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685248.0, 4503599627370496.0, -4503599627370496.0 };
+	long double ret_val[6];
+	int rintl_idx;
+
+	for (rintl_idx = 0; rintl_idx < 6; rintl_idx++) {
+		ret_val[rintl_idx] = rintl(in_val[rintl_idx]);
+		if (!(isnan(sol_val[rintl_idx]) && isnan(ret_val[rintl_idx]))) {
+			TC_ASSERT_LEQ("rintl", fabsl(sol_val[rintl_idx] - ret_val[rintl_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_round
+ * @brief                :Returns the rounded integer value
+ * @Scenario             :round their argument to nearest integer, away from zero
+ * API's covered         :round
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_round(void)
+{
+	const double in_val[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
+	const double sol_val[10] = { ZERO, -ZERO, 2251799813685249.0, -2251799813685249.0, 4503599627370496.0, -4503599627370496.0, INFINITY, -INFINITY, NAN, INFINITY };
+	double ret_val[10];
+	int round_idx;
+
+	for (round_idx = 0; round_idx < 10; round_idx++) {
+		ret_val[round_idx] = round(in_val[round_idx]);
+		if (!(isnan(sol_val[round_idx]) && isnan(ret_val[round_idx]))) {
+			TC_ASSERT_LEQ("round", fabs(sol_val[round_idx] - ret_val[round_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_roundf
+ * @brief                :Returns the rounded integer value
+ * @Scenario             :round their argument to nearest integer, away from zero
+ * API's covered         :roundf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_roundf(void)
+{
+	const float in_val[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
+	const float sol_val[10] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685248.0, 4503599627370496.0, -4503599627370496.0, INFINITY, -INFINITY, NAN, INFINITY };
+	float ret_val[10];
+	int roundf_idx;
+
+	for (roundf_idx = 0; roundf_idx < 10; roundf_idx++) {
+		ret_val[roundf_idx] = roundf(in_val[roundf_idx]);
+		if (!(isnan(sol_val[roundf_idx]) && isnan(ret_val[roundf_idx]))) {
+			TC_ASSERT_LEQ("roundf", fabsf(sol_val[roundf_idx] - ret_val[roundf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_roundl
+ * @brief                :Returns the rounded integer value
+ * @Scenario             :round their argument to nearest integer, away from zero
+ * API's covered         :roundl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_roundl(void)
+{
+	const long double in_val[10] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
+	const long double sol_val[10] = { ZERO, -ZERO, 2251799813685249.0, -2251799813685249.0, 4503599627370496.0, -4503599627370496.0, INFINITY, -INFINITY, NAN, INFINITY };
+	long double ret_val[10];
+	int roundl_idx;
+
+	for (roundl_idx = 0; roundl_idx < 10; roundl_idx++) {
+		ret_val[roundl_idx] = roundl(in_val[roundl_idx]);
+		if (!(isnan(sol_val[roundl_idx]) && isnan(ret_val[roundl_idx]))) {
+			TC_ASSERT_LEQ("roundl", fabsl(sol_val[roundl_idx] - ret_val[roundl_idx]), FLT_EPSILON);
 		}
 	}
 
@@ -1664,10 +2635,10 @@ static void tc_libc_math_remquo(void)
 static void tc_libc_math_scalbn(void)
 {
 	const double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const double sol_val[8][6] = { {ZERO, ZERO, ZERO, ZERO, ZERO, ZERO}, {9007199254740994.0, 17592186044416.003906250, ZERO, INFINITY, INFINITY, ZERO}, { -9007199254740994.0, -17592186044416.003906250, -ZERO, -INFINITY, -INFINITY, -ZERO}, {18014398509481984.0, 35184372088832.0, ZERO, INFINITY, INFINITY, ZERO}, { -18014398509481984.0, -35184372088832.0, -ZERO, -INFINITY, -INFINITY, -ZERO}, {INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY}, { -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY}, {NAN, NAN, NAN, NAN, NAN, NAN} };
+	const double sol_val[8][6] = { { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { 9007199254740994.0, 17592186044416.003906250, ZERO, INFINITY, INFINITY, ZERO }, { -9007199254740994.0, -17592186044416.003906250, -ZERO, -INFINITY, -INFINITY, -ZERO }, { 18014398509481984.0, 35184372088832.0, ZERO, INFINITY, INFINITY, ZERO }, { -18014398509481984.0, -35184372088832.0, -ZERO, -INFINITY, -INFINITY, -ZERO }, { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY }, { -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { NAN, NAN, NAN, NAN, NAN, NAN } };
+	const int exp[6] = { 2, -7, -1024, 1024, 3072, -3072 };
 	double ret_val[8][6];
 	int scalbn_idx;
-	long int exp[6] = { 2, -7, -1024, 1024, 3072, -3072 };
 	int exp_idx;
 
 	for (scalbn_idx = 0; scalbn_idx < 8; scalbn_idx++) {
@@ -1675,6 +2646,66 @@ static void tc_libc_math_scalbn(void)
 			ret_val[scalbn_idx][exp_idx] = scalbn(in_val[scalbn_idx], exp[exp_idx]);
 			if (!(isnan(sol_val[scalbn_idx][exp_idx]) && isnan(ret_val[scalbn_idx][exp_idx]))) {
 				TC_ASSERT_LEQ("scalbn", fabs(sol_val[scalbn_idx][exp_idx] - ret_val[scalbn_idx][exp_idx]), FLT_EPSILON);
+			}
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_scalbnf
+ * @brief                :Returns the multiply of argument1 by FLT_RADIX (probably 2) to the power of argument2
+ * @Scenario             :Returns the multiply of argument1 by FLT_RADIX (probably 2) to the power of argument2
+ * API's covered         :scalbnf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_scalbnf(void)
+{
+	const float in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const float sol_val[8][6] = { { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { 9007199254740994.0, 17592186044416.003906250, ZERO, INFINITY, INFINITY, ZERO }, { -9007199254740994.0, -17592186044416.003906250, -ZERO, -INFINITY, -INFINITY, -ZERO }, { 18014398509481984.0, 35184372088832.0, ZERO, INFINITY, INFINITY, ZERO }, { -18014398509481984.0, -35184372088832.0, -ZERO, -INFINITY, -INFINITY, -ZERO }, { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY }, { -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { NAN, NAN, NAN, NAN, NAN, NAN } };
+	const int exp[6] = { 2, -7, -1024, 1024, 3072, -3072 };
+	float ret_val[8][6];
+	int scalbnf_idx;
+	int exp_idx;
+
+	for (scalbnf_idx = 0; scalbnf_idx < 8; scalbnf_idx++) {
+		for (exp_idx = 0; exp_idx < 6; exp_idx++) {
+			ret_val[scalbnf_idx][exp_idx] = scalbnf(in_val[scalbnf_idx], exp[exp_idx]);
+			if (!(isnan(sol_val[scalbnf_idx][exp_idx]) && isnan(ret_val[scalbnf_idx][exp_idx]))) {
+				TC_ASSERT_LEQ("scalbnf", fabsf(sol_val[scalbnf_idx][exp_idx] - ret_val[scalbnf_idx][exp_idx]), FLT_EPSILON);
+			}
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_scalbnl
+ * @brief                :Returns the multiply of argument1 by FLT_RADIX (probably 2) to the power of argument2
+ * @Scenario             :Returns the multiply of argument1 by FLT_RADIX (probably 2) to the power of argument2
+ * API's covered         :scalbnl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_scalbnl(void)
+{
+	const long double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const long double sol_val[8][6] = { { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { 9007199254740994.0, 17592186044416.003906250, ZERO, INFINITY, INFINITY, ZERO }, { -9007199254740994.0, -17592186044416.003906250, -ZERO, -INFINITY, -INFINITY, -ZERO }, { 18014398509481984.0, 35184372088832.0, ZERO, INFINITY, INFINITY, ZERO }, { -18014398509481984.0, -35184372088832.0, -ZERO, -INFINITY, -INFINITY, -ZERO }, { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY }, { -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { NAN, NAN, NAN, NAN, NAN, NAN } };
+	const int exp[6] = { 2, -7, -1024, 1024, 3072, -3072 };
+	long double ret_val[8][6];
+	int scalbnl_idx;
+	int exp_idx;
+
+	for (scalbnl_idx = 0; scalbnl_idx < 8; scalbnl_idx++) {
+		for (exp_idx = 0; exp_idx < 6; exp_idx++) {
+			ret_val[scalbnl_idx][exp_idx] = scalbnl(in_val[scalbnl_idx], exp[exp_idx]);
+			if (!(isnan(sol_val[scalbnl_idx][exp_idx]) && isnan(ret_val[scalbnl_idx][exp_idx]))) {
+				TC_ASSERT_LEQ("scalbnl", fabsl(sol_val[scalbnl_idx][exp_idx] - ret_val[scalbnl_idx][exp_idx]), FLT_EPSILON);
 			}
 		}
 	}
@@ -1839,6 +2870,84 @@ static void tc_libc_math_sinl(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_sqrt
+ * @brief                :Returns the square root of argument1
+ * @Scenario             :Returns the square root of argument1
+ * API's covered         :sqrt
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_sqrt(void)
+{
+	const double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const double sol_val[8] = { ZERO, 47453132.8121257797, -NAN, 67108864.0, -NAN, INFINITY, -NAN, NAN };
+	double ret_val[8];
+	int sqrt_idx;
+
+	for (sqrt_idx = 0; sqrt_idx < 8; sqrt_idx++) {
+		ret_val[sqrt_idx] = sqrt(in_val[sqrt_idx]);
+		if (!(isnan(sol_val[sqrt_idx]) && isnan(ret_val[sqrt_idx]))) {
+			TC_ASSERT_LEQ("sqrt", fabs(sol_val[sqrt_idx] - ret_val[sqrt_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_sqrtf
+ * @brief                :Returns the square root of argument1
+ * @Scenario             :Returns the square root of argument1
+ * API's covered         :sqrtf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_sqrtf(void)
+{
+	const float in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const float sol_val[8] = { ZERO, 47453132.8121257797, -NAN, 67108864.0, -NAN, INFINITY, -NAN, NAN };
+	float ret_val[8];
+	int sqrtf_idx;
+
+	for (sqrtf_idx = 0; sqrtf_idx < 8; sqrtf_idx++) {
+		ret_val[sqrtf_idx] = sqrtf(in_val[sqrtf_idx]);
+		if (!(isnan(sol_val[sqrtf_idx]) && isnan(ret_val[sqrtf_idx]))) {
+			TC_ASSERT_LEQ("sqrtf", fabsf(sol_val[sqrtf_idx] - ret_val[sqrtf_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_sqrtl
+ * @brief                :Returns the square root of argument1
+ * @Scenario             :Returns the square root of argument1
+ * API's covered         :sqrtl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_sqrtl(void)
+{
+	const long double in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const long double sol_val[8] = { ZERO, 47453132.8121257797, -NAN, 67108864.0, -NAN, INFINITY, -NAN, NAN };
+	long double ret_val[8];
+	int sqrtl_idx;
+
+	for (sqrtl_idx = 0; sqrtl_idx < 8; sqrtl_idx++) {
+		ret_val[sqrtl_idx] = sqrtl(in_val[sqrtl_idx]);
+		if (!(isnan(sol_val[sqrtl_idx]) && isnan(ret_val[sqrtl_idx]))) {
+			TC_ASSERT_LEQ("sqrtl", fabsl(sol_val[sqrtl_idx] - ret_val[sqrtl_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_trunc
  * @brief                :Round to truncated integer value
  * @Scenario             :Round to truncated integer value
@@ -1917,6 +3026,32 @@ static void tc_libc_math_y0(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_y0f
+ * @brief                :Returns the bessel value of 2nd kind of order 0
+ * @Scenario             :Returns the bessel value of 2nd kind of order 0
+ * API's covered         :y0f
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_y0f(void)
+{
+	const float in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const float sol_val[8] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN };
+	float ret_val[8];
+	int y0f_idx;
+
+	for (y0f_idx = 0; y0f_idx < 8; y0f_idx++) {
+		ret_val[y0f_idx] = y0f(in_val[y0f_idx]);
+		if (!(isnan(sol_val[y0f_idx]) && isnan(ret_val[y0f_idx]))) {
+			TC_ASSERT_LEQ("y0f", fabsf(sol_val[y0f_idx] - ret_val[y0f_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_y1
  * @brief                :Returns the bessel value of 2nd kind of order 1
  * @Scenario             :Returns the bessel value of 2nd kind of order 1
@@ -1936,6 +3071,32 @@ static void tc_libc_math_y1(void)
 		ret_val[y1_idx] = y1(in_val[y1_idx]);
 		if (!(isnan(sol_val[y1_idx]) && isnan(ret_val[y1_idx]))) {
 			TC_ASSERT_LEQ("y1", fabs(sol_val[y1_idx] - ret_val[y1_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_y1f
+ * @brief                :Returns the bessel value of 2nd kind of order 1
+ * @Scenario             :Returns the bessel value of 2nd kind of order 1
+ * API's covered         :y1f
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_y1f(void)
+{
+	const float in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const float sol_val[8] = { -INFINITY, -ZERO, NAN, -ZERO, NAN, ZERO, NAN, NAN };
+	float ret_val[8];
+	int y1f_idx;
+
+	for (y1f_idx = 0; y1f_idx < 8; y1f_idx++) {
+		ret_val[y1f_idx] = y1f(in_val[y1f_idx]);
+		if (!(isnan(sol_val[y1f_idx]) && isnan(ret_val[y1f_idx]))) {
+			TC_ASSERT_LEQ("y1f", fabsf(sol_val[y1f_idx] - ret_val[y1f_idx]), FLT_EPSILON);
 		}
 	}
 
@@ -1963,6 +3124,33 @@ static void tc_libc_math_yn(void)
 		ret_val[yn_idx] = yn(order, in_val[yn_idx]);
 		if (!(isnan(sol_val[yn_idx]) && isnan(ret_val[yn_idx]))) {
 			TC_ASSERT_LEQ("yn", fabs(sol_val[yn_idx] - ret_val[yn_idx]), FLT_EPSILON);
+		}
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_ynf
+ * @brief                :Returns the bessel value of 2nd kind of order n
+ * @Scenario             :Returns the bessel value of 2nd kind of order n
+ * API's covered         :ynf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_ynf(void)
+{
+	const float in_val[8] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
+	const float sol_val[8] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN };
+	float ret_val[8];
+	int ynf_idx;
+	int order = 3;
+
+	for (ynf_idx = 0; ynf_idx < 8; ynf_idx++) {
+		ret_val[ynf_idx] = ynf(order, in_val[ynf_idx]);
+		if (!(isnan(sol_val[ynf_idx]) && isnan(ret_val[ynf_idx]))) {
+			TC_ASSERT_LEQ("ynf", fabsf(sol_val[ynf_idx] - ret_val[ynf_idx]), FLT_EPSILON);
 		}
 	}
 
@@ -1999,6 +3187,8 @@ int libc_math_main(void)
 	tc_libc_math_atan2f();
 	tc_libc_math_atan2l();
 	tc_libc_math_cbrt();
+	tc_libc_math_cbrtf();
+	tc_libc_math_cbrtl();
 	tc_libc_math_ceil();
 	tc_libc_math_ceilf();
 	tc_libc_math_ceill();
@@ -2014,19 +3204,39 @@ int libc_math_main(void)
 	tc_libc_math_erf();
 	tc_libc_math_erff();
 	tc_libc_math_erfl();
+	tc_libc_math_exp();
+	tc_libc_math_expf();
+	tc_libc_math_expl();
 	tc_libc_math_exp2();
+	tc_libc_math_exp2f();
+	tc_libc_math_exp2l();
 	tc_libc_math_fabs();
+	tc_libc_math_fabsf();
+	tc_libc_math_fabsl();
 	tc_libc_math_fdim();
+	tc_libc_math_fdimf();
+	tc_libc_math_fdiml();
 	tc_libc_math_floor();
+	tc_libc_math_floorf();
+	tc_libc_math_floorl();
 	tc_libc_math_fmax();
+	tc_libc_math_fmaxf();
+	tc_libc_math_fmaxl();
 	tc_libc_math_fmin();
+	tc_libc_math_fminf();
+	tc_libc_math_fminl();
 	tc_libc_math_frexp();
 	tc_libc_math_frexpf();
 	tc_libc_math_frexpl();
 	tc_libc_math_hypot();
+	tc_libc_math_hypotf();
+	tc_libc_math_hypotl();
 	tc_libc_math_j0();
+	tc_libc_math_j0f();
 	tc_libc_math_j1();
+	tc_libc_math_j1f();
 	tc_libc_math_jn();
+	tc_libc_math_jnf();
 	tc_libc_math_ldexp();
 	tc_libc_math_ldexpf();
 	tc_libc_math_ldexpl();
@@ -2034,22 +3244,44 @@ int libc_math_main(void)
 	tc_libc_math_log2f();
 	tc_libc_math_log2l();
 	tc_libc_math_nextafter();
+	tc_libc_math_nextafterf();
+	tc_libc_math_nextafterl();
 	tc_libc_math_nexttoward();
+	tc_libc_math_nexttowardf();
+	tc_libc_math_nexttowardl();
 	tc_libc_math_pow();
 	tc_libc_math_remainder();
+	tc_libc_math_remainderf();
+	tc_libc_math_remainderl();
 	tc_libc_math_remquo();
+	tc_libc_math_remquof();
+	tc_libc_math_remquol();
+	tc_libc_math_rint();
+	tc_libc_math_rintf();
+	tc_libc_math_rintl();
+	tc_libc_math_round();
+	tc_libc_math_roundf();
+	tc_libc_math_roundl();
 	tc_libc_math_scalbn();
+	tc_libc_math_scalbnf();
+	tc_libc_math_scalbnl();
 	tc_libc_math_sin();
 	tc_libc_math_sinf();
 	tc_libc_math_sinh();
 	tc_libc_math_sinhf();
 	tc_libc_math_sinhl();
 	tc_libc_math_sinl();
+	tc_libc_math_sqrt();
+	tc_libc_math_sqrtf();
+	tc_libc_math_sqrtl();
 	tc_libc_math_trunc();
 	tc_libc_math_truncf();
 	tc_libc_math_y0();
+	tc_libc_math_y0f();
 	tc_libc_math_y1();
+	tc_libc_math_y1f();
 	tc_libc_math_yn();
+	tc_libc_math_ynf();
 #else
 	printf("tc_libc_math will not be executed. CONFIG_HAVE_DOUBLE is not set.\n");
 #endif
