@@ -785,6 +785,7 @@ int psk_callback(void *p_info, mbedtls_ssl_context *ssl, const unsigned char *na
 }
 #endif							/* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED */
 
+#if 0
 static mbedtls_net_context listen_fd, client_fd;
 
 /* Interruption handler to ensure clean exit (for valgrind testing) */
@@ -797,6 +798,7 @@ void term_handler(int sig)
 	mbedtls_net_free(&listen_fd);	/* causes mbedtls_net_accept() to abort */
 	mbedtls_net_free(&client_fd);	/* causes net_read() to abort */
 }
+#endif
 #endif
 
 /****************************************************************************
@@ -876,6 +878,9 @@ int tls_server_cb(void *args)
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 	mbedtls_memory_buffer_alloc_init(alloc_buf, sizeof(alloc_buf));
 #endif
+
+	mbedtls_net_context listen_fd;
+	mbedtls_net_context client_fd;
 
 	/*
 	 * Make sure memory references are valid in case we exit early.
@@ -1754,12 +1759,14 @@ reset:
 	if (!(opt.retry--)) {
 		goto exit;
 	}
+#if 0
 #if !defined(_WIN32)
 	if (received_sigterm) {
 		mbedtls_printf(" interrupted by SIGTERM\n");
 		ret = 0;
 		goto exit;
 	}
+#endif
 #endif
 
 	if (ret == MBEDTLS_ERR_SSL_CLIENT_RECONNECT) {
@@ -1788,6 +1795,7 @@ reset:
 		goto exit;
 	}
 	if ((ret = mbedtls_net_accept(&listen_fd, &client_fd, client_ip, sizeof(client_ip), &cliip_len)) != 0) {
+#if 0
 #if !defined(_WIN32)
 		if (received_sigterm) {
 			mbedtls_printf(" interrupted by signal\n");
@@ -1795,7 +1803,7 @@ reset:
 			goto exit;
 		}
 #endif
-
+#endif
 		mbedtls_printf(" failed\n  ! mbedtls_net_accept returned -0x%x\n\n", -ret);
 		goto exit;
 	}
