@@ -1993,6 +1993,8 @@ int coap_net_bind(coap_context_t *ctx, const char *host, const char *port, void 
 	struct sockaddr caddr;
 	socklen_t caddrlen;
 
+	struct timeval timeout = {10, 0}; /* Timeout for TCP accept */
+
 #ifdef WITH_MBEDTLS
 	tls_session *session = NULL;
 #endif
@@ -2055,6 +2057,10 @@ int coap_net_bind(coap_context_t *ctx, const char *host, const char *port, void 
 					close(ctx->sockfd);
 					ctx->sockfd = -1;
 					break;
+				}
+
+				if (setsockopt(ctx->sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0) {
+					printf("coap_net_bind : failed to set socket option, errno %d\n", errno);
 				}
 
 				newsock = accept(ctx->sockfd, &caddr, &caddrlen);
