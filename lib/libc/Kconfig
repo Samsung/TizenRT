@@ -43,6 +43,7 @@ config NOPRINTF_FIELDWIDTH
 
 config LIBC_FLOATINGPOINT
 	bool "Enable floating point in printf"
+	depends on LIBM
 	default n
 	---help---
 		By default, floating point
