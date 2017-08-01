@@ -51,10 +51,6 @@ static bool g_callbackResult;
 static const char* g_otmCtx = "Test User Context";
 static OCProvisionDev_t* g_unownedDevices = NULL;
 static OCProvisionDev_t* g_ownedDevices = NULL;
-#ifdef MULTIPLE_OWNER
-static OCProvisionDev_t* g_motEnabledDevices = NULL;
-static OCProvisionDev_t* g_multiplOwnedDevices = NULL;
-#endif //MULTIPLE_OWNER
 static int gNumOfUnownDevice = 0;
 static int gNumOfOwnDevice = 0;
 
@@ -491,6 +487,9 @@ TEST(PerformUnlinkDevices, NullParam)
 //TODO will fix after IOT-2106
 #if 0
 //#ifdef MULTIPLE_OWNER
+static OCProvisionDev_t* g_motEnabledDevices = NULL;
+static OCProvisionDev_t* g_multiplOwnedDevices = NULL;
+
 static void updateDoxmForMOTCB(void* ctx, size_t nOfRes, OCProvisionResult_t* arr, bool hasError)
 {
     OC_UNUSED(nOfRes);
