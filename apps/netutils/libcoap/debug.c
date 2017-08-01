@@ -236,21 +236,75 @@ size_t coap_print_addr(const struct coap_address_t *addr, unsigned char *buf, si
 #ifndef WITH_CONTIKI
 void coap_show_pdu(const coap_pdu_t *pdu)
 {
-#ifndef WITH_TCP
-	unsigned char buf[COAP_MAX_PDU_SIZE]; /* need some space for output creation */
-#else
-	unsigned char buf[COAP_TCP_LENGTH_LIMIT_32_BIT]; /* need some space for output creation */
-#endif
+
+	unsigned int buf_len = 0;
+	unsigned char *buf = NULL;
+
 	int encode = 0, have_options = 0;
 	coap_opt_iterator_t opt_iter;
 	coap_opt_t *option;
-	/* TODO : Considering TCP Case */
-	fprintf(COAP_DEBUG_FD, "v:%d t:%d tkl:%d c:%d id:%u", pdu->transport_hdr->udp.version,
-			pdu->transport_hdr->udp.type, pdu->transport_hdr->udp.token_length,
-			            pdu->transport_hdr->udp.code, ntohs(pdu->transport_hdr->udp.id));
+
+	coap_transport_t transport = COAP_UDP;
+
+	buf_len = pdu->length + 1;
+	buf = (unsigned char *)malloc((size_t)(buf_len * sizeof(unsigned char)));
+
+	if (!buf) {
+		warn("coap_show_pdu : failed to create buf, len %d\n", buf_len);
+		return;
+	}
+
+	memset(buf, 0, buf_len);
+
+	transport = coap_get_tcp_header_type_from_size(pdu->length);
+
+	switch (transport) {
+	case COAP_UDP:
+		fprintf(COAP_DEBUG_FD, "v:%d t:%d tkl:%d c:%d id:%u\n",
+				pdu->transport_hdr->udp.version,
+				pdu->transport_hdr->udp.type,
+				pdu->transport_hdr->udp.token_length,
+				pdu->transport_hdr->udp.code,
+				ntohs(pdu->transport_hdr->udp.id));
+		break;
+	case COAP_TCP:
+		fprintf(COAP_DEBUG_FD, "len:%d tkl:%d c:%d\n",
+				((pdu->transport_hdr->tcp.header_data[0] >> 4) & 0x0f),
+				(pdu->transport_hdr->tcp.header_data[0] & 0x0f),
+				pdu->transport_hdr->tcp.header_data[1]);
+		break;
+	case COAP_TCP_8BIT:
+		fprintf(COAP_DEBUG_FD, "len:%d tkl:%d extlen:%x c:%d\n",
+				((pdu->transport_hdr->tcp_8bit.header_data[0] >> 4) & 0x0f),
+				(pdu->transport_hdr->tcp_8bit.header_data[0] & 0x0f),
+				pdu->transport_hdr->tcp_8bit.header_data[1],
+				pdu->transport_hdr->tcp_8bit.header_data[2]);
+		break;
+	case COAP_TCP_16BIT:
+		fprintf(COAP_DEBUG_FD, "len:%d tkl:%d extlen:%x%x c:%d\n",
+				((pdu->transport_hdr->tcp_16bit.header_data[0] >> 4) & 0x0f),
+				(pdu->transport_hdr->tcp_16bit.header_data[0] & 0x0f),
+				pdu->transport_hdr->tcp_16bit.header_data[1],
+				pdu->transport_hdr->tcp_16bit.header_data[2],
+				pdu->transport_hdr->tcp_16bit.header_data[3]);
+		break;
+	case COAP_TCP_32BIT:
+		fprintf(COAP_DEBUG_FD, "len:%d tkl:%d extlen:%x%x%x%x c:%d\n",
+				((pdu->transport_hdr->tcp_32bit.header_data[0] >> 4) & 0x0f),
+				(pdu->transport_hdr->tcp_32bit.header_data[0] & 0x0f),
+				pdu->transport_hdr->tcp_32bit.header_data[1],
+				pdu->transport_hdr->tcp_32bit.header_data[2],
+				pdu->transport_hdr->tcp_32bit.header_data[3],
+				pdu->transport_hdr->tcp_32bit.header_data[4],
+				pdu->transport_hdr->tcp_32bit.header_data[5]);
+		break;
+	default:
+		/* Should not enter here */
+		break;
+	}
 
 	/* show options, if any */
-	coap_option_iterator_init((coap_pdu_t *) pdu, &opt_iter, COAP_OPT_ALL);
+	coap_option_iterator_init2((coap_pdu_t *) pdu, &opt_iter, COAP_OPT_ALL, transport);
 
 	while ((option = coap_option_next(&opt_iter))) {
 		if (!have_options) {
@@ -280,10 +334,12 @@ void coap_show_pdu(const coap_pdu_t *pdu)
 	}
 
 	if (pdu->data) {
-		assert(pdu->data < (unsigned char *)pdu->hdr + pdu->length);
-		print_readable(pdu->data, (unsigned char *)pdu->hdr + pdu->length - pdu->data, buf, sizeof(buf), 0);
+		assert(pdu->data < (unsigned char *)pdu->transport_hdr + pdu->length);
+		print_readable(pdu->data, (unsigned char *)pdu->transport_hdr + pdu->length - pdu->data, buf, sizeof(buf), 0);
 		fprintf(COAP_DEBUG_FD, " d:%s", buf);
 	}
+
+	free(buf);
 	fprintf(COAP_DEBUG_FD, "\n");
 	fflush(COAP_DEBUG_FD);
 }

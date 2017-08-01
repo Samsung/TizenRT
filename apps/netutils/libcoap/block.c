@@ -50,11 +50,13 @@ int coap_get_block2(coap_pdu_t *pdu, unsigned short type, coap_block_t *block, c
 	memset(block, 0, sizeof(coap_block_t));
 
 	if (pdu && (option = coap_check_option2(pdu, type, &opt_iter, transport))) {
-		block->szx = COAP_OPT_BLOCK_SZX(option);
-		if (COAP_OPT_BLOCK_MORE(option)) {
-			block->m = 1;
+		if (option) { /* to prevent dereference null options */
+			block->szx = COAP_OPT_BLOCK_SZX(option);
+			if (COAP_OPT_BLOCK_MORE(option)) {
+				block->m = 1;
+			}
+			block->num = coap_opt_block_num(option);
 		}
-		block->num = coap_opt_block_num(option);
 		return 1;
 	}
 

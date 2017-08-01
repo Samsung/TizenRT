@@ -994,7 +994,7 @@ coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu)
 		transport = coap_get_tcp_header_type_from_size((pdu->length - COAP_UDP_HEADER));
 	}
 
-	if ((pdu->length - COAP_UDP_HEADER) < 0) {
+	if ((int)(pdu->length - COAP_UDP_HEADER) < 0) {
 		newsize = 0;
 	} else {
 		newsize = (pdu->length - COAP_UDP_HEADER);
