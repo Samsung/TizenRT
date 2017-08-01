@@ -98,6 +98,7 @@
 #define ALC5658_DEFAULT_SAMPRATE 	48000
 #define ALC5658_DEFAULT_NCHANNELS 	2
 #define ALC5658_DEFAULT_BPSAMP 		16
+#define FAIL	0xFFFF
 
 /****************************************************************************
  * Private Function Prototypes
@@ -262,13 +263,13 @@ uint16_t alc5658_readreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr)
 	ret = i2c_write(dev, alc5658_i2c_config, reg, 2);
 	if (ret < 0) {
 		auddbg("Error, cannot read reg %x\n", regaddr);
-		return 0;
+		return FAIL;
 	}
 
 	ret = i2c_read(dev, alc5658_i2c_config, reg, 2);
 	if (ret < 0) {
 		auddbg("Error, cannot read reg %x\n", regaddr);
-		return 0;
+		return FAIL;
 	}
 
 	regval = ((uint16_t) reg[0] << 8) | (uint16_t) reg[1];

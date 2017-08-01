@@ -96,6 +96,8 @@
 #define ALC5658CHAR_RXBUF_CNT	8
 #define ALC5658CHAR_TXBUF_CNT	8
 
+#define FAIL	0xFFFF
+
 /* Device naming ************************************************************/
 #define DEVNAME_FMT    "/dev/alc5658char%d"
 #define DEVNAME_FMTLEN (16 + 3 + 1)
@@ -208,13 +210,13 @@ static uint16_t alc5658char_readreg(FAR struct alc5658char_dev_s *priv, uint16_t
 	ret = i2c_write(dev, alc5658char_i2c_config, reg, 2);
 	if (ret < 0) {
 		auddbg("Error, cannot read reg %x\n", regaddr);
-		return 0;
+		return FAIL;
 	}
 
 	ret = i2c_read(dev, alc5658char_i2c_config, reg, 2);
 	if (ret < 0) {
 		auddbg("Error, cannot read reg %x\n", regaddr);
-		return 0;
+		return FAIL;
 	}
 
 	regval = ((uint16_t) reg[0] << 8) | (uint16_t) reg[1];
@@ -782,6 +784,7 @@ int alc5658char_register(FAR struct i2s_dev_s *i2s, FAR struct i2c_dev_s *i2c, F
 	FAR struct alc5658char_dev_s *priv;
 	char devname[DEVNAME_FMTLEN];
 	int ret;
+	uint16_t regval;
 
 	/* Sanity check */
 
@@ -805,6 +808,12 @@ int alc5658char_register(FAR struct i2s_dev_s *i2s, FAR struct i2c_dev_s *i2c, F
 		sem_init(&priv->rxsem, 0, 1);	/* Protect dq */
 		sem_init(&priv->cnt_rxsem, 0, 0);	/* Assume we did not receive anything yet!!! */
 		priv->rx_cnt = 0;		/* Count allocated RX buffers */
+
+		regval = alc5658char_readreg(priv, ACL5658_RESET);
+		if (regval != 0) {
+			auddbg("ERROR: ALC5658 not found: ID=%04x\n", regval);
+			return -ENODEV;
+		}
 
 		/* Create the character device name */
 		snprintf(devname, DEVNAME_FMTLEN, DEVNAME_FMT, minor);
