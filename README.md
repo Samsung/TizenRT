@@ -6,21 +6,34 @@
 lightweight RTOS-based platform to support low-end IoT devices.  
 Please find project details like **APIs**, **Specification** and **Long-term Goals** on our [Tizen Site](https://source.tizen.org/documentation/tizen-rt).
 
+## Contents
+
+> [Quick Start](#quick-start)  
+> [Supported Board](#supported-board)  
+> [Configuration Sets](#configuration-sets)  
+> [APPENDIX](#appendix)
+
 ## Quick Start
 ### Getting the toolchain
 
-Get the build in binaries and libraries, [gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar](https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update)  
-Untar the gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar and export the path like
+Get the build in binaries and libraries, [gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2](https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update)  
+Unzip and untar the gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2 and export the path like
 
 ```bash
-tar xvf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar
+tar xvjf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
 export PATH=<Your Toolchain PATH>:$PATH
+```
+
+if you run on ubuntu x64, 
+
+```bash
+sudo apt-get -y install lib32ncurses5
 ```
 
 ### Getting the sources
 
 ```bash
-git clone https://github.com/Samsung/TizenRT.git
+git clone https://github.sec.samsung.net.com/RS7-OpensourceGroup/tizenrt.git 
 cd TizenRT
 TIZENRT_BASEDIR="$PWD"
 ```
@@ -71,9 +84,9 @@ Please keep in mind that we are actively working on board configurations, and wi
 ## APPENDIX
 ### Kconfig-frontends Installation
 
-1. The *gperf* and *libncurses5-dev* packages should be installed.
+1. The *byacc*, *flex*, *gperf* and *libncurses5-dev* packages should be installed.
 ```bash
-sudo apt-get install gperf libncurses5-dev
+sudo apt-get install byacc flex gperf libncurses5-dev
 ```
 
 2. Download and untar *kconfig-frontends* package.  
