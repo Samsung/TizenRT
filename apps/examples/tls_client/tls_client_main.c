@@ -492,7 +492,7 @@ int tls_client_cb(void *args)
 	unsigned char buf[2000];
 	unsigned int j_s, j_e;
 	unsigned int t_time = 0;
-#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+#if defined(CONFIG_SUPPORT_FULL_SECURITY) && !defined(CONFIG_EXAMPLES_TLS_ARTIK_KEY)
 	int is_hw = 0;
 	unsigned char *der_buf = NULL;
 	unsigned int der_buflen = 2048;
@@ -852,7 +852,7 @@ usage:
 				opt.algo_type = ALGO_RSA;
 			} else if (strcmp(q, "ecc") == 0) {
 				opt.algo_type = ALGO_ECC;
-#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+#if defined(CONFIG_SUPPORT_FULL_SECURITY) && !defined(CONFIG_EXAMPLES_TLS_ARTIK_KEY)
 			} else if (strcmp(q, "hwrsa") == 0) {
 				opt.algo_type = ALGO_RSA;
 				is_hw = 1;
@@ -1103,7 +1103,7 @@ usage:
 			mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
 			goto exit;
 		}
-#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+#if defined(CONFIG_SUPPORT_FULL_SECURITY) && !defined(CONFIG_EXAMPLES_TLS_ARTIK_KEY)
 		if (is_hw) {
 			unsigned index = 7;
 
@@ -1160,7 +1160,7 @@ usage:
 			mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
 			goto exit;
 		}
-#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+#if defined(CONFIG_SUPPORT_FULL_SECURITY) && !defined(CONFIG_EXAMPLES_TLS_ARTIK_KEY)
 		if (is_hw) {
 			unsigned index = 7;
 
@@ -1754,7 +1754,7 @@ exit:
 	getchar();
 #endif
 
-#if defined(CONFIG_SUPPORT_FULL_SECURITY)
+#if defined(CONFIG_SUPPORT_FULL_SECURITY) && !defined(CONFIG_EXAMPLES_TLS_ARTIK_KEY)
 	if (der_buf) {
 		free(der_buf);
 	}
