@@ -326,14 +326,14 @@ static void alc5658char_setvolume(FAR struct alc5658char_dev_s *priv)
 	}
 
 	if (priv->mute) {
-		alc5658char_writereg(priv, ACL5658_HPOUT_MUTE, 0x8080);
+		alc5658char_writereg(priv, ALC5658_HPOUT_MUTE, 0x8080);
 	} else {
-		alc5658char_writereg(priv, ACL5658_HPOUT_MUTE, 0x0000);
+		alc5658char_writereg(priv, ALC5658_HPOUT_MUTE, 0x0000);
 	}
 
-	alc5658char_writereg(priv, ACL5658_HPOUT_VLML, vol_l << 8);
-	alc5658char_writereg(priv, ACL5658_HPOUT_VLMR, vol_r << 8);
-	audvdbg("MUTE %x, VOLL %x VOLR %x\n", (uint32_t) alc5658char_readreg(priv, ACL5658_HPOUT_MUTE), (uint32_t) alc5658char_readreg(priv, ACL5658_HPOUT_VLML), (uint32_t) alc5658char_readreg(priv, ACL5658_HPOUT_VLMR));
+	alc5658char_writereg(priv, ALC5658_HPOUT_VLML, vol_l << 8);
+	alc5658char_writereg(priv, ALC5658_HPOUT_VLMR, vol_r << 8);
+	audvdbg("MUTE %x, VOLL %x VOLR %x\n", (uint32_t) alc5658char_readreg(priv, ALC5658_HPOUT_MUTE), (uint32_t) alc5658char_readreg(priv, ALC5658_HPOUT_VLML), (uint32_t) alc5658char_readreg(priv, ALC5658_HPOUT_VLMR));
 
 }
 
@@ -347,8 +347,8 @@ static void alc5658char_setvolume(FAR struct alc5658char_dev_s *priv)
 
 static void alc5658char_setmic(FAR struct alc5658char_dev_s *priv)
 {
-	alc5658char_writereg(priv, ACL5658_IN1_CTRL, (priv->micgain + 16) << 8);
-	audvdbg("MIC GAIN 0x%x\n", (uint32_t) alc5658char_readreg(priv, ACL5658_IN1_CTRL));
+	alc5658char_writereg(priv, ALC5658_IN1_CTRL, (priv->micgain + 16) << 8);
+	audvdbg("MIC GAIN 0x%x\n", (uint32_t) alc5658char_readreg(priv, ALC5658_IN1_CTRL));
 }
 
 /****************************************************************************
@@ -809,7 +809,7 @@ int alc5658char_register(FAR struct i2s_dev_s *i2s, FAR struct i2c_dev_s *i2c, F
 		sem_init(&priv->cnt_rxsem, 0, 0);	/* Assume we did not receive anything yet!!! */
 		priv->rx_cnt = 0;		/* Count allocated RX buffers */
 
-		regval = alc5658char_readreg(priv, ACL5658_RESET);
+		regval = alc5658char_readreg(priv, ALC5658_RESET);
 		if (regval != 0) {
 			auddbg("ERROR: ALC5658 not found: ID=%04x\n", regval);
 			return -ENODEV;

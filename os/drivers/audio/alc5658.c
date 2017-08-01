@@ -1706,12 +1706,12 @@ FAR struct audio_lowerhalf_s *alc5658_initialize(FAR struct i2c_dev_s *i2c, FAR 
 		 * default state.
 		 */
 
-		alc5658_writereg(priv, ACL5658_RESET, 0);
+		alc5658_writereg(priv, ALC5658_RESET, 0);
 		alc5658_dump_registers(&priv->dev, "After reset");
 
 		/* Verify that ALC5658 is present and available on this I2C */
 
-		regval = alc5658_readreg(priv, ACL5658_RESET);
+		regval = alc5658_readreg(priv, ALC5658_RESET);
 		if (regval != 0) {
 			auddbg("ERROR: ALC5658 not found: ID=%04x\n", regval);
 			goto errout_with_dev;
