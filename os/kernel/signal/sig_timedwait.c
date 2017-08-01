@@ -231,14 +231,14 @@ int sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *info, FAR const st
 			memcpy(info, &sigpend->info, sizeof(struct siginfo));
 		}
 
+		/* The return value is the number of the signal that awakened us */
+
+		ret = sigpend->info.si_signo;
+
 		/* Then dispose of the pending signal structure properly */
 
 		sig_releasependingsignal(sigpend);
 		irqrestore(saved_state);
-
-		/* The return value is the number of the signal that awakened us */
-
-		ret = sigpend->info.si_signo;
 	}
 
 	/* We will have to wait for a signal to be posted to this task. */
