@@ -1720,8 +1720,11 @@ static int init_mdns_context(int domain)
 	sem_init(&g_svr->sendmsg_sem, 0, 0);
 	g_svr->sendmsg_requested = 1;
 
-	// init thread
-	pthread_attr_init(&attr);
+	/* init thread */
+	if (pthread_attr_init(&attr) != 0) {
+		ndbg("ERROR: pthread_attr_init() failed.\n");
+		goto errout_with_mutex;
+	}
 #if 0							/* PTHREAD_CREATE_DETACHED is not supported in tinyara */
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 #endif
