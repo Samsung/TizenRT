@@ -358,10 +358,10 @@ static void tc_semaphore_sem_destroy(void)
 
 int semaphore_main(void)
 {
+	tc_semaphore_sem_destroy();
 	tc_semaphore_sem_post_wait();
 	tc_semaphore_sem_trywait();
 	tc_semaphore_sem_timedwait();
-	tc_semaphore_sem_destroy();
 
 	return 0;
 }

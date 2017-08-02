@@ -158,6 +158,11 @@ static void tc_libc_string_memmove(void)
 	TC_ASSERT_EQ("memmove", strncmp(res_ptr, buffer2, BUFF_SIZE), 0);
 	TC_ASSERT_EQ("memmove", strncmp(buffer1, buffer2, BUFF_SIZE), 0);
 
+	res_ptr = (char *)memmove(buffer2, buffer1, sizeof(buffer1));
+	TC_ASSERT_NOT_NULL("memmove", res_ptr);
+	TC_ASSERT_EQ("memmove", strncmp(res_ptr, buffer1, BUFF_SIZE), 0);
+	TC_ASSERT_EQ("memmove", strncmp(buffer2, buffer1, BUFF_SIZE), 0);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -677,7 +682,21 @@ static void tc_libc_string_strstr(void)
 
 	res_ptr = strstr(dest_arr, psz);
 	TC_ASSERT_NOT_NULL("strstr", res_ptr);
-	TC_ASSERT_EQ("strspn", strncmp(res_ptr, dest_arr, BUFF_SIZE_10), 0);
+	TC_ASSERT_EQ("strstr", strncmp(res_ptr, dest_arr, BUFF_SIZE_10), 0);
+
+	psz = "test";
+	res_ptr = strstr(dest_arr, psz);
+	TC_ASSERT_NOT_NULL("strstr", res_ptr);
+	TC_ASSERT_EQ("strstr", strncmp(res_ptr, dest_arr + 4, BUFF_SIZE_10), 0);
+
+	psz = "notfound";
+	res_ptr = strstr(dest_arr, psz);
+	TC_ASSERT_EQ("strstr", res_ptr, NULL);
+
+	psz = "";
+	res_ptr = strstr(dest_arr, psz);
+	TC_ASSERT_NOT_NULL("strstr", res_ptr);
+	TC_ASSERT_EQ("strstr", strncmp(res_ptr, dest_arr, BUFF_SIZE_10), 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -765,6 +784,20 @@ static void tc_libc_string_strcasestr(void)
 	char *res_ptr = NULL;
 	char *psz = "str";
 
+	res_ptr = strcasestr(dest_arr, psz);
+	TC_ASSERT_NOT_NULL("strcasestr", res_ptr);
+	TC_ASSERT_EQ("strcasestr", strncmp(res_ptr, dest_arr, BUFF_SIZE_10), 0);
+
+	psz = "test";
+	res_ptr = strcasestr(dest_arr, psz);
+	TC_ASSERT_NOT_NULL("strcasestr", res_ptr);
+	TC_ASSERT_EQ("strcasestr", strncmp(res_ptr, dest_arr + 4, BUFF_SIZE_10), 0);
+
+	psz = "notfound";
+	res_ptr = strcasestr(dest_arr, psz);
+	TC_ASSERT_EQ("strcasestr", res_ptr, NULL);
+
+	psz = "";
 	res_ptr = strcasestr(dest_arr, psz);
 	TC_ASSERT_NOT_NULL("strcasestr", res_ptr);
 	TC_ASSERT_EQ("strcasestr", strncmp(res_ptr, dest_arr, BUFF_SIZE_10), 0);
