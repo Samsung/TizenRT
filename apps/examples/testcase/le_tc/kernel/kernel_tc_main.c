@@ -75,6 +75,10 @@ int kernel_tc_main(int argc, char *argv[])
 	group_main();
 #endif
 
+#ifdef CONFIG_TC_KERNEL_LIBC_FIXEDMATH
+	libc_fixedmath_main();
+#endif
+
 #ifdef CONFIG_TC_KERNEL_LIBC_LIBGEN
 	libc_libgen_main();
 #endif

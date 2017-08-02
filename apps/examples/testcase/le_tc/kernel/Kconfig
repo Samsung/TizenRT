@@ -21,7 +21,7 @@ config TC_KN_ALL
 	select TC_KERNEL_CLOCK
 	select TC_KERNEL_ENVIRON
 	select TC_KERNEL_ERRNO
-	select TC_KERNEL_LIBC_SYSLOG
+	select TC_KERNEL_LIBC_FIXEDMATH
 	select TC_KERNEL_LIBC_LIBGEN
 	select TC_KERNEL_LIBC_MATH
 	select TC_KERNEL_LIBC_MISC
@@ -35,6 +35,7 @@ config TC_KN_ALL
 	select TC_KERNEL_LIBC_STDIO
 	select TC_KERNEL_LIBC_STDLIB
 	select TC_KERNEL_LIBC_STRING
+	select TC_KERNEL_LIBC_SYSLOG
 	select TC_KERNEL_LIBC_TIMER
 	select TC_KERNEL_LIBC_UNISTD
 	select TC_KERNEL_MQUEUE
@@ -66,6 +67,11 @@ config TC_KERNEL_GROUP
 	default n
 	select SCHED_HAVE_PARENT
 	select SCHED_CHILD_STATUS
+
+config TC_KERNEL_LIBC_FIXEDMATH
+	bool "Libc FixedMath"
+	default n
+	depends on LIBM
 
 config TC_KERNEL_LIBC_LIBGEN
 	bool "Libc Libgen"
