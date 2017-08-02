@@ -517,15 +517,15 @@ static void tc_libc_math_atanl(void)
  */
 static void tc_libc_math_atan2(void)
 {
-	const double in_val1[] = { 0.50, -0.50, 5, 10, -5, -10 };
-	const double in_val2[] = { 0.50, -0.50, 5, 20, -5, 10 };
-	const double sol_val[] = { 0.78539816339745, -2.3561944901923, 0.78539816339745, 0.46364760900081, -2.3561944901923, -0.78539816339745 };
+	const double in_val1[] = { 0.50, -0.50, -0.50, 10, 5, -10, 0 };
+	const double in_val2[] = { 0.50, -0.50, 0, 0, -5, 10, 0 };
+	const double sol_val[] = { 0.78539816339745, -2.3561944901923, -M_PI_2,  M_PI_2, 2.3561944901923, -0.7853981633974, 0 };
 	double ret_val[SIZE(sol_val, double)];
 	int atan2_idx;
 
 	/* Returns the principal value of the arc tangent of y/x */
 
-	for (atan2_idx = 0; atan2_idx < SIZE(sol_val, double); atan2_idx++) {
+	for (atan2_idx = 0; atan2_idx < SIZE(in_val1, double); atan2_idx++) {
 		ret_val[atan2_idx] = atan2(in_val1[atan2_idx], in_val2[atan2_idx]);
 		TC_ASSERT_LEQ("atan2", fabs(sol_val[atan2_idx] - ret_val[atan2_idx]), FLT_EPSILON);
 	}
@@ -544,15 +544,15 @@ static void tc_libc_math_atan2(void)
  */
 static void tc_libc_math_atan2f(void)
 {
-	const float in_val1[] = { 0.50, -0.50, 5, 10, -5, -10 };
-	const float in_val2[] = { 0.50, -0.50, 5, 20, -5, 10 };
-	const float sol_val[] = { 0.78539816339745, -2.3561944901923, 0.78539816339745, 0.46364760900081, -2.3561944901923, -0.78539816339745 };
+	const float in_val1[] = { 0.50, -0.50, -0.50, 10, 5, -10, 0 };
+	const float in_val2[] = { 0.50, -0.50, 0, 0, -5, 10, 0 };
+	const double sol_val[] = { 0.78539816339745, -2.3561944901923, -M_PI_2,  M_PI_2, 2.3561944901923, -0.7853981633974, 0 };
 	float ret_val[SIZE(sol_val, float)];
 	int atan2f_idx;
 
 	/* Returns the principal value of the arc tangent of y/x */
 
-	for (atan2f_idx = 0; atan2f_idx < SIZE(sol_val, float); atan2f_idx++) {
+	for (atan2f_idx = 0; atan2f_idx < SIZE(in_val1, float); atan2f_idx++) {
 		ret_val[atan2f_idx] = atan2f(in_val1[atan2f_idx], in_val2[atan2f_idx]);
 		TC_ASSERT_LEQ("atan2f", fabsf(sol_val[atan2f_idx] - ret_val[atan2f_idx]), FLT_EPSILON);
 	}
@@ -571,15 +571,15 @@ static void tc_libc_math_atan2f(void)
  */
 static void tc_libc_math_atan2l(void)
 {
-	const long double in_val1[] = { 0.50, -0.50, 5, 10, -5, -10 };
-	const long double in_val2[] = { 0.50, -0.50, 5, 20, -5, 10 };
-	const long double sol_val[] = { 0.78539816339745, -2.3561944901923, 0.78539816339745, 0.46364760900081, -2.3561944901923, -0.78539816339745 };
+	const long double in_val1[] = { 0.50, -0.50, -0.50, 10, 5, -10, 0 };
+	const long double in_val2[] = { 0.50, -0.50, 0, 0, -5, 10, 0 };
+	const double sol_val[] = { 0.78539816339745, -2.3561944901923, -M_PI_2,  M_PI_2, 2.3561944901923, -0.7853981633974, 0 };
 	long double ret_val[SIZE(sol_val, long double)];
 	int atan2l_idx;
 
 	/* Returns the principal value of the arc tangent of y/x */
 
-	for (atan2l_idx = 0; atan2l_idx < SIZE(sol_val, long double); atan2l_idx++) {
+	for (atan2l_idx = 0; atan2l_idx < SIZE(in_val1, long double); atan2l_idx++) {
 		ret_val[atan2l_idx] = atan2l(in_val1[atan2l_idx], in_val2[atan2l_idx]);
 		TC_ASSERT_LEQ("atan2l", fabsl(sol_val[atan2l_idx] - ret_val[atan2l_idx]), FLT_EPSILON);
 	}
