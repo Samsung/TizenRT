@@ -2949,6 +2949,162 @@ static void tc_libc_math_sqrtl(void)
 }
 
 /**
+ * @fn                  :tc_libc_math_tan
+ * @brief               :Returns the tangent of an angle of x radians
+ * @scenario            :Returns the tangent of an angle of x radians
+ * @API's covered       :tan
+ * @Preconditions       :None
+ * @Postconditions      :None
+ * @Return              :void
+ */
+static void tc_libc_math_tan(void)
+{
+	const double in_val[] = { M_PI_4, 0.50, -0.50, 5, 10, -5, -10 };
+	const double sol_val[] = { 1, 0.54630248984379, -0.54630248984379, -3.3805150062466, 0.64836082745909, 3.3805150062466, -0.64836082745909 };
+	double ret_val[SIZE(in_val, double)];
+	int tan_idx;
+
+	/* Returns the tangent of an angle x */
+
+	for (tan_idx = 0; tan_idx < SIZE(in_val, double); tan_idx++) {
+		ret_val[tan_idx] = tan(in_val[tan_idx]);
+		TC_ASSERT_LEQ("tan", fabs(sol_val[tan_idx] - ret_val[tan_idx]), FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                  :tc_libc_math_tanf
+ * @brief               :Returns the tangent of an angle of x radians
+ * @scenario            :Returns the tangent of an angle of x radians
+ * @API's covered       :tanf
+ * @Preconditions       :None
+ * @Postconditions      :None
+ * @Return              :void
+ */
+static void tc_libc_math_tanf(void)
+{
+	const double in_val[] = { M_PI_4, 0.50, -0.50, 5, 10, -5, -10 };
+	const double sol_val[] = { 1, 0.54630248984379, -0.54630248984379, -3.3805160522461, 0.6483603715897, 3.3805131912231, -0.6483607292175 };
+	double ret_val[SIZE(in_val, double)];
+	int tanf_idx;
+
+	/* Returns the tangent of an angle x */
+
+	for (tanf_idx = 0; tanf_idx < SIZE(in_val, double); tanf_idx++) {
+		ret_val[tanf_idx] = tanf(in_val[tanf_idx]);
+		TC_ASSERT_LEQ("tanf", fabsf(sol_val[tanf_idx] - ret_val[tanf_idx]), FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                  :tc_libc_math_tanh
+ * @brief               :Return the hyperbolic tangent of an angle of x radians
+ * @scenario            :Return the hyperbolic tangent of an angle of x radians
+ * @API's covered       :tanh
+ * @Preconditions       :None
+ * @Postconditions      :None
+ * @Return              :void
+ */
+static void tc_libc_math_tanh(void)
+{
+	const double in_val[] = { M_PI_4, 0.50, -0.50, 5, 10, -5, -10 };
+	const double sol_val[] = { 0.65579420263267, 0.46211715726001, -0.46211715726001, 0.9999092042626, 0.99999999587769, -0.9999092042626, -0.99999999587769 };
+	double ret_val[SIZE(in_val, double)];
+	int tanh_idx;
+
+	/* Returns the hyperbolic tangent of an angle x */
+
+	for (tanh_idx = 0; tanh_idx < SIZE(in_val, double); tanh_idx++) {
+		ret_val[tanh_idx] = tanh(in_val[tanh_idx]);
+		TC_ASSERT_LEQ("tanh", fabs(sol_val[tanh_idx] - ret_val[tanh_idx]), FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                  :tc_libc_math_tanhf
+ * @brief               :Return the hyperbolic tangent of an angle of x radians
+ * @scenario            :Return the hyperbolic tangent of an angle of x radians
+ * @API's covered       :tanhf
+ * @Preconditions       :None
+ * @Postconditions      :None
+ * @Return              :void
+ */
+static void tc_libc_math_tanhf(void)
+{
+	const double in_val[] = { M_PI_4, 0.50, -0.50, 5, 10, -5, -10 };
+	const double sol_val[] = { 0.65579420263267, 0.46211715726001, -0.46211715726001, 0.9999092042626, 0.99999999587769, -0.9999092042626, -0.99999999587769 };
+	double ret_val[SIZE(in_val, double)];
+	int tanhf_idx;
+
+	/* Returns the hyperbolic tangent of an angle x */
+
+	for (tanhf_idx = 0; tanhf_idx < SIZE(in_val, double); tanhf_idx++) {
+		ret_val[tanhf_idx] = tanhf(in_val[tanhf_idx]);
+		TC_ASSERT_LEQ("tanhf", fabsf(sol_val[tanhf_idx] - ret_val[tanhf_idx]), FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                  :tc_libc_math_tanhl
+ * @brief               :Return the hyperbolic tangent of an angle of x radians
+ * @scenario            :Return the hyperbolic tangent of an angle of x radians
+ * @API's covered       :tanhl
+ * @Preconditions       :None
+ * @Postconditions      :None
+ * @Return              :void
+ */
+static void tc_libc_math_tanhl(void)
+{
+	const double in_val[] = { M_PI_4, 0.50, -0.50, 5, 10, -5, -10 };
+	const double sol_val[] = { 0.65579420263267, 0.46211715726001, -0.46211715726001, 0.9999092042626, 0.99999999587769, -0.9999092042626, -0.99999999587769 };
+	double ret_val[SIZE(in_val, double)];
+	int tanhl_idx;
+
+	/* Returns the hyperbolic tangent of an angle x */
+
+	for (tanhl_idx = 0; tanhl_idx < SIZE(in_val, double); tanhl_idx++) {
+		ret_val[tanhl_idx] = tanhl(in_val[tanhl_idx]);
+		TC_ASSERT_LEQ("tanhl", fabsl(sol_val[tanhl_idx] - ret_val[tanhl_idx]), FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                  :tc_libc_math_tanl
+ * @brief               :Returns the tangent of an angle of x radians
+ * @scenario            :Returns the tangent of an angle of x radians
+ * @API's covered       :tanl
+ * @Preconditions       :None
+ * @Postconditions      :None
+ * @Return              :void
+ */
+static void tc_libc_math_tanl(void)
+{
+	const double in_val[] = { M_PI_4, 0.50, -0.50, 5, 10, -5, -10 };
+	const double sol_val[] = { 1, 0.54630248984379, -0.54630248984379, -3.3805150062466, 0.64836082745909, 3.3805150062466, -0.64836082745909 };
+	double ret_val[SIZE(in_val, double)];
+	int tanl_idx;
+
+	/* Returns the tangent of an angle x */
+
+	for (tanl_idx = 0; tanl_idx < SIZE(in_val, double); tanl_idx++) {
+		ret_val[tanl_idx] = tanl(in_val[tanl_idx]);
+		TC_ASSERT_LEQ("tanl", fabsl(sol_val[tanl_idx] - ret_val[tanl_idx]), FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_trunc
  * @brief                :Round to truncated integer value
  * @Scenario             :Round to truncated integer value
@@ -3275,6 +3431,12 @@ int libc_math_main(void)
 	tc_libc_math_sqrt();
 	tc_libc_math_sqrtf();
 	tc_libc_math_sqrtl();
+	tc_libc_math_tan();
+	tc_libc_math_tanf();
+	tc_libc_math_tanh();
+	tc_libc_math_tanhf();
+	tc_libc_math_tanhl();
+	tc_libc_math_tanl();
 	tc_libc_math_trunc();
 	tc_libc_math_truncf();
 	tc_libc_math_y0();
