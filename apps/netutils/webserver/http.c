@@ -275,7 +275,10 @@ int http_server_start(struct http_server_t *server)
 		return HTTP_ERROR;
 	}
 
-	pthread_attr_init(&attr);
+	if (pthread_attr_init(&attr) != 0) {
+		HTTP_LOGE("Error: Cannot initialize ptread attribute\n");
+		return HTTP_ERROR;
+	}
 	pthread_attr_setschedpolicy(&attr, SCHED_RR);
 	pthread_attr_setstacksize(&attr, HTTP_LISTENING_HANDLER_STACKSIZE);
 
