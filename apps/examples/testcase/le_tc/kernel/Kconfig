@@ -71,6 +71,7 @@ config TC_KERNEL_GROUP
 config TC_KERNEL_LIBC_FIXEDMATH
 	bool "Libc FixedMath"
 	default n
+	depends on LIBM
 
 config TC_KERNEL_LIBC_LIBGEN
 	bool "Libc Libgen"
