@@ -156,8 +156,6 @@ static inline int tftp_parsedatapacket(const uint8_t *packet, uint16_t *opcode, 
 
 int tftpget(FAR const char *remote, FAR const char *local, in_addr_t addr, bool binary)
 {
-	printf("tftpget is called\n");
-
 	struct sockaddr_in server;	/* The address of the TFTP server */
 	struct sockaddr_in from;	/* The address the last UDP message recv'd from */
 	FAR uint8_t *packet;		/* Allocated memory to hold one packet */
@@ -302,9 +300,13 @@ int tftpget(FAR const char *remote, FAR const char *local, in_addr_t addr, bool 
 
 		ndatabytes = nbytesrecvd - TFTP_DATAHEADERSIZE;
 		tftp_dumpbuffer("Recvd DATA", packet + TFTP_DATAHEADERSIZE, ndatabytes);
-		if (tftp_write(fd, packet + TFTP_DATAHEADERSIZE, ndatabytes) < 0) {
+
+		ssize_t nSize = tftp_write(fd, packet + TFTP_DATAHEADERSIZE, ndatabytes);
+
+		if (nSize < 0) {
 			goto errout_with_sd;
 		}
+		printf("Received %d bytes\n", nSize);
 
 		/* Send the acknowledgment */
 
