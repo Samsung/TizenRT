@@ -516,6 +516,8 @@ class FirmwareResource : public Resource // x.org.iotivity.firmware
         {
             FirmwareResource *pThread = (FirmwareResource *)pArg;
             pThread->onUpdateFirmware();
+            // the function must return something - NULL will do
+            return NULL;
         }
 
         void setFirmwareRepresentation(OCRepresentation &rep)
