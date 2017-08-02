@@ -460,7 +460,10 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 			mbedtls_ssl_set_bio(ws->tls_ssl, &ws->tls_net, mbedtls_net_send, mbedtls_net_recv, NULL);
 		}
 #endif
-		pthread_attr_init(&ws->thread_attr);
+		if (pthread_attr_init(&ws->thread_attr) != 0) {
+			HTTP_LOGE("Error: Cannot initialize thread attribute\n");
+			goto errout;
+		}
 		pthread_attr_setstacksize(&ws->thread_attr, WEBSOCKET_STACKSIZE);
 		pthread_attr_setschedpolicy(&ws->thread_attr, SCHED_RR);
 		if (pthread_create(&ws->thread_id, &ws->thread_attr,

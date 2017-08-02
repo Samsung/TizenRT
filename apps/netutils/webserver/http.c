@@ -293,7 +293,10 @@ int http_server_start(struct http_server_t *server)
 #endif
 
 	for (i = 0; i < HTTP_CONF_MAX_CLIENT_HANDLE; i++) {
-		pthread_attr_init(&attr);
+		if (pthread_attr_init(&attr) != 0) {
+			HTTP_LOGE("Error: Cannot initialize thread attribute\n");
+			return HTTP_ERROR;
+		}
 		pthread_attr_setschedpolicy(&attr, SCHED_RR);
 		pthread_attr_setstacksize(&attr, cli_handle_stack);
 		if (pthread_create(&server->c_tid[i], &attr, http_handle_client, (void *)server) != 0) {

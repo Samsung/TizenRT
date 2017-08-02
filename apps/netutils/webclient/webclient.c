@@ -1272,7 +1272,11 @@ int client_send_request(struct http_client_request_t *request)
 
 	if (request->callback) {
 		request->async_flag = 1;
-		pthread_attr_init(&attr);
+		if (pthread_attr_init(&attr) != 0) {
+			printf("Error: Cannot initialize thread attribute\n");
+			goto errret;
+		}
+
 		pthread_attr_setstacksize(&attr, CLIENT_REQ_THREAD_STACK);
 
 		if (pthread_create(&tid, &attr, wget_base, (void *)request) != 0) {
