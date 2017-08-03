@@ -238,6 +238,7 @@ static int smart_append_test(char *filename)
 	fprintf(fd, "This is a test of the append.\n");
 	if (ferror(fd) != OK) {
 		printf("Error appending message... Maybe disk has been fulled\n");
+		fclose(fd);
 		return ERROR;
 	}
 	pos = ftell(fd);
