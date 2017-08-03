@@ -141,8 +141,9 @@ int netdb_main(int argc, char *argv[])
 	FAR struct hostent *host;
 	FAR const char *addrtype;
 	char buffer[48];
+#ifdef HAVE_GETHOSTBYADDR
 	int ret;
-
+#endif
 	/* Handle: netdb --help */
 
 	if (argc == 2 && strcmp(argv[1], "--help") == 0) {
