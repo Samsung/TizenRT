@@ -86,6 +86,10 @@ ifeq ($(CONFIG_NETUTILS_DHCPD),y)
 CSRCS += netcmd_dhcpd.c
 endif
 
+ifeq ($(CONFIG_NETUTILS_TFTPC),y)
+CSRCS += netcmd_tftpc.c
+endif
+
 endif #CONFIG_TASH
 
 ifeq ($(CONFIG_ENABLE_DATE),y)
