@@ -37,6 +37,9 @@ do
 	APPNAME=`sed -n '/^APPNAME/p' $APPDIR$FILE$MAKEFILE | sed -n 's/APPNAME = //p'`
 	FUNCTION=`sed -n '/^FUNCNAME/p' $APPDIR$FILE$MAKEFILE | sed -n 's/FUNCNAME = //p'`
 	CONFIG_NAME=`sed -n '/depends/p' $APPDIR$FILE$KCONFIG_ENTRY | sed -n 's/.*depends on //p'`
+	if [ "$CONFIG_NAME" = "" ]; then
+		continue
+	fi
 	CHECK=`sed -n "/# CONFIG_$CONFIG_NAME is not set/p" $DOTCONFIG`
 	if [ "$CHECK" = "" ]
 		then CONFIG_USE="y"
