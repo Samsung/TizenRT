@@ -457,6 +457,8 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 	SYS_STATS_INC_USED(sem);
 #endif							/* SYS_STATS */
 
+	sem_setprotocol(sem, SEM_PRIO_NONE);
+
 	return ERR_OK;
 }
 
