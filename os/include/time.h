@@ -203,12 +203,6 @@ struct sigevent;
  * Public Data
  ********************************************************************************/
 
-/* extern char *tznames[]; not supported */
-
-/********************************************************************************
- * Public Function Prototypes
- ********************************************************************************/
-
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
@@ -217,6 +211,24 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+#ifdef CONFIG_LIBC_LOCALTIME
+
+/* daylight - Daylight savings time flag */
+/* EXTERN int daylight; not supported */
+
+/* timezone - Difference from UTC and local standard time */
+/* EXTERN long int timezone; not supported */
+
+/* tzname[] - Timezone strings
+ * Setup by tzset()
+ */
+
+EXTERN FAR char *tzname[2];
+#endif
+
+/********************************************************************************
+ * Public Function Prototypes
+ ********************************************************************************/
 /**
  * @ingroup TIME_KERNEL
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
@@ -383,6 +395,10 @@ int timer_getoverrun(timer_t timerid);
  * @since Tizen RT v1.0
  */
 int nanosleep(FAR const struct timespec *rqtp, FAR struct timespec *rmtp);
+
+#ifdef CONFIG_LIBC_LOCALTIME
+void tzset(void);
+#endif
 
 #undef EXTERN
 #if defined(__cplusplus)
