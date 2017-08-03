@@ -98,10 +98,13 @@ void irq_initialize(void)
 {
 	int i;
 
+	/* It will explicitly set all arguments of g_irqvector to 0 */
+
+	memset(g_irqvector, 0, sizeof(g_irqvector));
+
 	/* Point all interrupt vectors to the unexpected interrupt */
 
 	for (i = 0; i < NR_IRQS; i++) {
 		g_irqvector[i].handler = irq_unexpected_isr;
-		g_irqvector[i].arg     = NULL;
 	}
 }

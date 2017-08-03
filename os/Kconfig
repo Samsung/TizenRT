@@ -824,6 +824,12 @@ config DEBUG_IRQ
 		that here is a problem with that logic.  On some platforms, this
 		option may even cause crashes! Use with care!
 
+config DEBUG_IRQ_INFO
+	bool "Interrupt Debug information"
+	default n
+	---help---
+		List the registered interrupts, it's occurrence count and corresponding isr.
+
 config DEBUG_PAGING
 	bool "Demand Paging Debug Output"
 	default n

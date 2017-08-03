@@ -81,6 +81,14 @@ config ENABLE_HEAPINFO
 	---help---
 		Show information about memory status per thread
 
+config ENABLE_IRQINFO
+	bool "irqinfo"
+	default n
+	depends on TASH && !BUILD_PROTECTED && !BUILD_KERNEL
+	select DEBUG_IRQ_INFO if DEBUG
+	---help---
+		List the registered interrupts, it's occurrence counts and corresponding isr.
+
 if !DISABLE_SIGNALS
 config ENABLE_KILL
 	bool "kill"
@@ -136,4 +144,3 @@ config ENABLE_UPTIME
 	default y
 	---help---
 		print how long the system has been running
-
