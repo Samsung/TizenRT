@@ -78,7 +78,7 @@ void check_query_result(char * query)
 	if (DB_SUCCESS(cursor_move_first(g_cursor))) {
 		do {
 			res = db_print_tuple(g_cursor);
-			TC_ASSERT("db_print_tuple",DB_SUCCESS(res));
+			TC_ASSERT("db_print_tuple", DB_SUCCESS(res));
 		} while (DB_SUCCESS(cursor_move_next(g_cursor)));
 	}
 
@@ -173,10 +173,12 @@ void utc_arastorage_db_exec_tc_p(void)
 		TC_ASSERT("db_exec", DB_SUCCESS(res));
 	}
 
+	memset(query, 0, QUERY_LENGTH);
 	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME2);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
 
+	memset(query, 0, QUERY_LENGTH);
 	snprintf(query, QUERY_LENGTH, "CREATE RELATION %s;", RELATION_NAME2);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
@@ -282,6 +284,7 @@ void utc_arastorage_db_exec_tc_p(void)
 		TC_ASSERT("db_exec", DB_SUCCESS(res));
 	}
 #endif
+
 	memset(query, 0, QUERY_LENGTH);
 	sprintf(query, "REMOVE INDEX %s.%s ;", RELATION_NAME1, g_attribute_set[0]);
 	res = db_exec(query);
@@ -408,6 +411,7 @@ void utc_arastorage_db_query_tc_p(void)
 	check_query_result(query);
 
 	/* Select over inline index */
+
 #ifdef CONFIG_ARCH_FLOAT_H
 	snprintf(query, QUERY_LENGTH, "SELECT id, date, fruit, weight FROM %s WHERE id > 0;", RELATION_NAME1);
 
@@ -1415,6 +1419,22 @@ void utc_arastorage_cursor_get_string_value_tc_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+void cleanup(void)
+{
+	char query[QUERY_LENGTH];
+	db_result_t res;
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME2);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+}
+
 int arastorage_sample_launcher(int argc, FAR char *argv[])
 {
 	total_pass = 0;
@@ -1482,6 +1502,7 @@ int arastorage_sample_launcher(int argc, FAR char *argv[])
 #endif
 	utc_arastorage_cursor_get_string_value_tc_n();
 	utc_arastorage_db_cursor_free_tc_n();
+	cleanup();
 	db_deinit();
 
 
@@ -1490,6 +1511,7 @@ int arastorage_sample_launcher(int argc, FAR char *argv[])
 	printf("         Total TC : %d              \n", (total_pass + total_fail));
 	printf("         PASS : %d FAIL : %d        \n", total_pass, total_fail);
 	printf("#########################################\n");
+
 	return 0;
 }
 

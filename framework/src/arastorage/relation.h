@@ -189,7 +189,7 @@ attribute_t *relation_attribute_get(relation_t *, char *);
 db_result_t relation_get_value(relation_t *, attribute_t *, unsigned char *, attribute_value_t *);
 db_result_t relation_attribute_remove(relation_t *, char *);
 db_result_t relation_set_primary_key(relation_t *, char *);
-db_result_t relation_remove(char *, int);
+db_result_t relation_remove(relation_t *, int);
 db_result_t relation_insert(relation_t *, attribute_value_t *);
 db_result_t relation_select(db_handle_t **, relation_t *, void *);
 tuple_id_t relation_cardinality(relation_t *);
