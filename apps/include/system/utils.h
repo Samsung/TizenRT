@@ -19,6 +19,24 @@
 #define __APPS_INCLUDE_SYSTEM_UTILS_H
 #include <tinyara/config.h>
 
+#ifdef CONFIG_ENABLE_STACKMONITOR
+#include <tinyara/clock.h>
+#include <sys/types.h>
+
+struct stkmon_save_s {
+	systime_t timestamp;
+	pid_t chk_pid;
+	size_t chk_stksize;
+	size_t chk_peaksize;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	int chk_peakheap;
+#endif
+#if (CONFIG_TASK_NAME_SIZE > 0)
+	char chk_name[CONFIG_TASK_NAME_SIZE + 1];
+#endif
+};
+#endif
+
 #ifdef CONFIG_TASH
 #ifdef CONFIG_KERNEL_CMDS
 void kernel_register_utilcmds(void);

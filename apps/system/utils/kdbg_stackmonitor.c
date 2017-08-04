@@ -57,13 +57,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
+#include <stdint.h>
 #include <sched.h>
 #include <pthread.h>
 #include <errno.h>
 #include <tinyara/arch.h>
-#include <tinyara/clock.h>
 #include <tinyara/sched.h>
+#include <apps/system/utils.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -81,23 +81,10 @@
 #ifndef CONFIG_STACKMONITOR_INTERVAL
 #define CONFIG_STACKMONITOR_INTERVAL 5
 #endif
-
 extern const uint32_t g_idle_topstack;
 /****************************************************************************
  * Private Types
  ****************************************************************************/
-struct stkmon_save_s {
-	systime_t timestamp;
-	pid_t chk_pid;
-	size_t chk_stksize;
-	size_t chk_peaksize;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	int chk_peakheap;
-#endif
-#if (CONFIG_TASK_NAME_SIZE > 0)
-	char chk_name[CONFIG_TASK_NAME_SIZE + 1];
-#endif
-};
 
 /****************************************************************************
  * Private Data
@@ -234,7 +221,7 @@ int kdbg_stackmonitor(int argc, char **args)
 	pthread_attr_t stkmon_attr;
 
 	if (argc > 1) {
-		if(!strcmp(args[1], "stop")) {
+		if (!strcmp(args[1], "stop")) {
 			/* stop the stackmonitor */
 			stackmonitor_stop();
 			return OK;
