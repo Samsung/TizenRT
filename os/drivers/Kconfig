@@ -10,10 +10,12 @@ config DISABLE_POLL
 config DEV_NULL
 	bool "Enable /dev/null"
 	default y
+	depends on NFILE_DESCRIPTORS != 0
 
 config DEV_ZERO
 	bool "Enable /dev/zero"
 	default n
+	depends on NFILE_DESCRIPTORS != 0
 
 menu "Buffering"
 
@@ -179,6 +181,7 @@ endif
 config GPIO
 	bool "GPIO Driver Support"
 	default n
+	depends on NFILE_DESCRIPTORS != 0
 	---help---
 		This selection enables building of the "upper-half" GPIO
 		driver. See include/tinyara/gpio.h for further GPIO driver
