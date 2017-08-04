@@ -50,6 +50,10 @@ extern "C"
 {
 #endif //__cplusplus
 
+// This should be enabled or all code found in the #if PROVISION_CRED_SUPPORTED removed
+// see IOT-2619
+#define PROVISION_CRED_SUPPORTED 0
+
 // declaration(s) for provisioning client using C-level provisioning API
 // user input definition for main loop on provisioning client
 #define _10_DISCOV_MOT_ENABLED_DEV_         10
@@ -72,10 +76,6 @@ extern "C"
 static const char* SVR_DB_FILE_NAME = "oic_svr_db_subowner_client.dat";
         // '_' for separaing from the same constant variable in |srmresourcestrings.c|
 static const char* PRVN_DB_FILE_NAME = "oic_pdm_subowner.db";
-static const OicSecPrm_t  SUPPORTED_PRMS[1] =
-{
-    PRM_PRE_CONFIGURED,
-};
 
 // |g_ctx| means provision manager application context and
 // the following, includes |un/own_list|, could be variables, which |g_ctx| has,
@@ -87,8 +87,10 @@ static OCProvisionDev_t* g_own_list;
 static OCProvisionDev_t* g_unown_list;
 static OCProvisionDev_t* g_motdev_list;
 static OCProvisionDev_t* g_mowned_list;
+// see IOT-2619
+#if PROVISION_CRED_SUPPORTED
 static int g_own_cnt;
-static int g_unown_cnt;
+#endif
 static int g_motdev_cnt;
 static int g_mowned_cnt;
 static bool g_doneCB;
@@ -96,12 +98,10 @@ static bool g_doneCB;
 // function declaration(s) for calling them before implementing
 static OCProvisionDev_t* getDevInst(const OCProvisionDev_t*, const int);
 static int printDevList(const OCProvisionDev_t*);
-static size_t printUuidList(const OCUuidList_t*);
 static size_t printResultList(const OCProvisionResult_t*, const size_t);
 static void printUuid(const OicUuid_t*);
 static FILE* fopen_prvnMng(const char*, const char*);
 static int waitCallbackRet(void);
-static int selectTwoDiffNum(int*, int*, const int, const char*);
 
 // callback function(s) for provisioning client using C-level provisioning API
 static void multipleOwnershipTransferCB(void* ctx, size_t nOfRes, OCProvisionResult_t* arr, bool hasError)
@@ -118,35 +118,8 @@ static void multipleOwnershipTransferCB(void* ctx, size_t nOfRes, OCProvisionRes
     g_doneCB = true;
 }
 
-// callback function(s) for provisioning client using C-level provisioning API
-static void ownershipTransferCB(void* ctx, size_t nOfRes, OCProvisionResult_t* arr, bool hasError)
-{
-    if(!hasError)
-    {
-        OIC_LOG_V(INFO, TAG, "Ownership Transfer SUCCEEDED - ctx: %s", (char*) ctx);
-    }
-    else
-    {
-        OIC_LOG_V(ERROR, TAG, "Ownership Transfer FAILED - ctx: %s", (char*) ctx);
-        printResultList((const OCProvisionResult_t*) arr, nOfRes);
-    }
-    g_doneCB = true;
-}
-
-static void updateDoxmForMOTCB(void* ctx, size_t nOfRes, OCProvisionResult_t* arr, bool hasError)
-{
-    if(!hasError)
-    {
-        OIC_LOG_V(INFO, TAG, "POST 'doxm' SUCCEEDED - ctx: %s", (char*) ctx);
-    }
-    else
-    {
-        OIC_LOG_V(ERROR, TAG, "POST 'doxm'  FAILED - ctx: %s", (char*) ctx);
-        printResultList((const OCProvisionResult_t*) arr, nOfRes);
-    }
-    g_doneCB = true;
-}
-
+// see IOT-2619
+#if PROVISION_CRED_SUPPORTED
 static void provisionCredCB(void* ctx, size_t nOfRes, OCProvisionResult_t* arr, bool hasError)
 {
     if(!hasError)
@@ -160,6 +133,7 @@ static void provisionCredCB(void* ctx, size_t nOfRes, OCProvisionResult_t* arr, 
     }
     g_doneCB = true;
 }
+#endif
 
 static void provisionAclCB(void* ctx, size_t nOfRes, OCProvisionResult_t* arr, bool hasError)
 {
@@ -658,6 +632,8 @@ PVACL_ERROR:
     return -1;
 }
 
+// see IOT-2619
+#if PROVISION_CRED_SUPPORTED
 static int provisionCred()
 {
     // check |unown_list| for registering devices
@@ -750,6 +726,7 @@ static int provisionCred()
 PVPWS_ERROR:
     return -1;
 }
+#endif
 
 static OCProvisionDev_t* getDevInst(const OCProvisionDev_t* dev_lst, const int dev_num)
 {
@@ -786,28 +763,6 @@ static int printDevList(const OCProvisionDev_t* dev_lst)
     {
         printf("     [%d] ", ++lst_cnt);
         printUuid((const OicUuid_t*) &lst->doxm->deviceID);
-        printf("\n");
-        lst = lst->next;
-    }
-    printf("\n");
-
-    return lst_cnt;
-}
-
-static size_t printUuidList(const OCUuidList_t* uid_lst)
-{
-    if(!uid_lst)
-    {
-        printf("     Device List is Empty..\n\n");
-        return 0;
-    }
-
-    OCUuidList_t* lst = (OCUuidList_t*) uid_lst;
-    size_t lst_cnt = 0;
-    while(lst)
-    {
-        printf("     [%" PRIuPTR "] ", ++lst_cnt);
-        printUuid((const OicUuid_t*) &lst->dev);
         printf("\n");
         lst = lst->next;
     }
@@ -881,44 +836,6 @@ static int waitCallbackRet(void)
     }
 
     return 0;
-}
-
-static int selectTwoDiffNum(int* a, int* b, const int max, const char* str)
-{
-    if(!a || !b || 2>max || !str)
-    {
-        return -1;
-    }
-
-    for( ; ; )
-    {
-        for(int i=0; 2>i; ++i)
-        {
-            int* num = 0==i?a:b;
-            for( ; ; )
-            {
-                printf("   > Enter Device[%d] Number, %s: ", i+1, str);
-                for(int ret=0; 1!=ret; )
-                {
-                    ret = scanf("%d", num);
-                    for( ; 0x20<=getchar(); );  // for removing overflow garbages
-                                                // '0x20<=code' is character region
-                }
-                if(0<*num && max>=*num)
-                {
-                    break;
-                }
-                printf("     Entered Wrong Number. Please Enter Again\n");
-            }
-        }
-        if(*a != *b)
-        {
-            printf("\n");
-            return 0;
-        }
-    }
-
-    return -1;
 }
 
 static void printMenu(void)
@@ -1011,15 +928,18 @@ int main()
             }
             break;
         case _41_PROVISION_CRED_:
-            OIC_LOG(ERROR, TAG, "NOT SUPPORTED YET.");
-            break;
-            /*
+            // see IOT-2619
+#if PROVISION_CRED_SUPPORTED
             if(provisionCred())
             {
                 OIC_LOG(ERROR, TAG, "_41_PROVISION_CRED_: error");
             }
             break;
-            */
+#else
+            OIC_LOG(ERROR, TAG, "NOT SUPPORTED YET.");
+            break;
+#endif
+
         case _99_EXIT_PRVN_CLT_:
             goto PMCLT_ERROR;
         default:
