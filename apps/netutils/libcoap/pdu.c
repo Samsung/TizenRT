@@ -638,6 +638,9 @@ size_t coap_add_option2(coap_pdu_t *pdu, unsigned short type, unsigned int len, 
 	}
 
 	switch (transport) {
+	case COAP_UDP:
+		opt = (unsigned char *)&(pdu->transport_hdr->udp) + pdu->length;
+		break;
 #ifdef WITH_TCP
 	case COAP_TCP:
 		opt = (unsigned char *)&(pdu->transport_hdr->tcp) + pdu->length;

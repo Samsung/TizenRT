@@ -139,6 +139,10 @@ coap_opt_iterator_t *coap_option_iterator_init2(coap_pdu_t *pdu, coap_opt_iterat
 	unsigned int headerSize;
 
 	switch (transport) {
+	case COAP_UDP:
+		token_length = (pdu->transport_hdr->udp.token_length);
+		headerSize = COAP_UDP_HEADER;
+		break;
 #ifdef WITH_TCP
 	case COAP_TCP:
 		token_length = (pdu->transport_hdr->tcp.header_data[0]) & 0x0f;
@@ -180,7 +184,11 @@ coap_opt_iterator_t *coap_option_iterator_init2(coap_pdu_t *pdu, coap_opt_iterat
 	}
 #endif
 
-	assert((headerSize + token_length) <= pdu->length);
+	if ((headerSize + token_length) > pdu->length) {
+		//assert((headerSize + token_length) <= pdu->length);
+		printf("coap_option_iterator_init2 : invalid length of pdu, headerSize %d token_length %d pdu->length %d\n", headerSize, token_length, pdu->length);
+		return NULL;
+	}
 
 	oi->length = pdu->length - (headerSize + token_length);
 

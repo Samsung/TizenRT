@@ -974,13 +974,26 @@ int coap_read(coap_context_t *ctx)
 		goto error_early;
 	}
 
-#ifndef WITH_TCP
-	/* TCP header can be smaller than coap_hdr_t */
-	if ((size_t) bytes_read < sizeof(coap_hdr_t)) {
-		debug("coap_read: discarded invalid frame\n");
-		goto error_early;
+	switch (ctx->protocol) {
+	case COAP_PROTO_UDP:
+	case COAP_PROTO_DTLS:
+		/* the size of CoAP over UDP header is 4 Bytes */
+		if ((size_t)bytes_read < COAP_UDP_HEADER) {
+			warn("coap_read : discarded invalid UDP frame\n");
+			goto error_early;
+		}
+		break;
+	case COAP_PROTO_TCP:
+	case COAP_PROTO_TLS:
+		/* the size of CoAP over TCP header is 2 Bytes */
+		if ((size_t)bytes_read < COAP_TCP_HEADER_NO_FIELD) {
+			warn("coap_read : discarded invalid TCP frame\n");
+			goto error_early;
+		}
+		break;
+	default:
+		break;
 	}
-#endif
 
 	/* TCP doesn't have version field in PDU */
 	if ((ctx->protocol == COAP_PROTO_UDP || ctx->protocol == COAP_PROTO_DTLS)
