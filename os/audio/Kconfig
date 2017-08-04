@@ -95,7 +95,7 @@ config AUDIO_FORMAT_PCM
 
 config AUDIO_FORMAT_MP3
 	bool "MPEG 3 Layer 1"
-	default y
+	default n
 	---help---
 		Build in support for MP3 Audio format.
 
