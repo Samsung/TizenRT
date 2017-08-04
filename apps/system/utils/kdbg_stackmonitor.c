@@ -63,7 +63,7 @@
 #include <errno.h>
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
-#include <apps/system/utils.h>
+#include "kdbg_utils.h"
 
 /****************************************************************************
  * Pre-processor Definitions
