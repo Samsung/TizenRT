@@ -373,6 +373,10 @@ int nxplayer_getmidisubformat(FAR FILE *fd)
 	case 2:
 		ret = AUDIO_SUBFMT_MIDI_2;
 		break;
+
+	default:
+		ret = AUDIO_SUBFMT_END;
+		break;
 	}
 	fseek(fd, 0, SEEK_SET);
 
