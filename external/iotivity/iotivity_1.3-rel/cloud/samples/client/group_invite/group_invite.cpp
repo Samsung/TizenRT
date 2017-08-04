@@ -968,9 +968,9 @@ int main(int argc, char *argv[])
                         OCDeviceInfo devInfoBinarySwitch;
                         OCStringLL deviceType;
 
-                        deviceType.value = "oic.d.binaryswitch";
+                        deviceType.value = const_cast<char *>("oic.d.binaryswitch");
                         deviceType.next = NULL;
-                        devInfoBinarySwitch.deviceName = "FAC_2016";
+                        devInfoBinarySwitch.deviceName = const_cast<char *>("FAC_2016");
                         devInfoBinarySwitch.types = &deviceType;
                         devInfoBinarySwitch.specVersion = NULL;
                         devInfoBinarySwitch.dataModelVersions = NULL;
