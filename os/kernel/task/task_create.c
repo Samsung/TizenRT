@@ -64,11 +64,11 @@
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/kthread.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
 #include "task/task.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Preprocessor Definitions

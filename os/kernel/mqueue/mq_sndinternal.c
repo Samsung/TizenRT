@@ -69,12 +69,12 @@
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #include <tinyara/cancelpt.h>
+#include <tinyara/ttrace.h>
 #include "sched/sched.h"
 #ifndef CONFIG_DISABLE_SIGNALS
 #include "signal/signal.h"
 #endif
 #include "mqueue/mqueue.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions

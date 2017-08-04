@@ -67,10 +67,10 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/cancelpt.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "mqueue/mqueue.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions

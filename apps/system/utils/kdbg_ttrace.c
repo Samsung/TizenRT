@@ -22,12 +22,26 @@
 #include <getopt.h>
 #include <string.h>
 #include <debug.h>
-#include <ttrace.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <tinyara/config.h>
+#include <tinyara/ttrace.h>
 #include <tinyara/clock.h>
-#include <tinyara/ttrace_internal.h>
+
+struct tag_list {
+	const char *name;
+	const char *longname;
+	const int tags;
+};
+
+static const struct tag_list ttrace_tags[] = {
+	{"none",    "None",          TTRACE_TAG_OFF},
+	{"apps",    "Applications",  TTRACE_TAG_APPS},
+	{"libs",    "Libraries",     TTRACE_TAG_LIBS},
+	{"lock",    "Lock",          TTRACE_TAG_LOCK},
+	{"task",    "TASK",          TTRACE_TAG_TASK},
+	{"ipc",     "IPC",           TTRACE_TAG_IPC},
+};
 
 int param = 0;
 int selected_tags = 0;

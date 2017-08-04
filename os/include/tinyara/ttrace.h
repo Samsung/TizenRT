@@ -22,18 +22,18 @@
  * @{
  */
 
-///@file ttrace_internal.h
-///@brief ttrace internal APIs
+///@file ttrace.h
+///@brief ttrace APIs
 
-#ifndef __INCLUDE_TINYARA_TTRACE_INTERNAL_H
-#define __INCLUDE_TINYARA_TTRACE_INTERNAL_H
+#ifndef __INCLUDE_TINYARA_TTRACE_H
+#define __INCLUDE_TINYARA_TTRACE_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
 #include <tinyara/config.h>
 
+#ifdef CONFIG_TTRACE
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -60,9 +60,6 @@
 #define TTRACE_CODE_VARIABLE        0
 #define TTRACE_CODE_UNIQUE         (1 << 7)
 
-#define TTRACE_EVENT_TYPE_BEGIN    'b'
-#define TTRACE_EVENT_TYPE_END      'e'
-
 #define TTRACE_MSG_BYTES            32
 #define TTRACE_COMM_BYTES           12
 #define TTRACE_BYTE_ALIGN           4
@@ -71,33 +68,22 @@
 #define TTRACE_INVALID             -1
 #define TTRACE_VALID                0
 
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
+#define TTRACE_TAG_ALL             -1
+#define TTRACE_TAG_OFF             0
+#define TTRACE_TAG_APPS            (1 << 0)
+#define TTRACE_TAG_LIBS            (1 << 1)
+#define TTRACE_TAG_LOCK            (1 << 2)
+#define TTRACE_TAG_TASK            (1 << 3)
+#define TTRACE_TAG_IPC             (1 << 4)
 
 /****************************************************************************
- * Public Function Prototypes
+ * Public Variables
  ****************************************************************************/
 
 #if defined(__cplusplus)
 extern "C"
 {
 #endif
-
-struct tag_list {
-	const char *name;
-	const char *longname;
-	const int tags;
-};
-
-static const struct tag_list ttrace_tags[] = {
-	{"none",    "None",          TTRACE_TAG_OFF},
-	{"apps",    "Applications",  TTRACE_TAG_APPS},
-	{"libs",    "Libraries",     TTRACE_TAG_LIBS},
-	{"lock",    "Lock",          TTRACE_TAG_LOCK},
-	{"task",    "TASK",          TTRACE_TAG_TASK},
-	{"ipc",     "IPC",           TTRACE_TAG_IPC},
-};
 
 struct sched_message {          // total 32B
 	pid_t prev_pid;                     // 2B
@@ -123,46 +109,27 @@ struct trace_packet {        // total 44 byte(message), 12byte(uid)
 	union trace_message msg;   // 32B
 };
 
-static int show_packet(struct trace_packet *packet)
-{
-	int uid = (packet->codelen & TTRACE_CODE_UNIQUE) >> 7;
-	int msg_len = (packet->codelen & ~TTRACE_CODE_UNIQUE);
-	int pad = 0;
-	ttdbg("time: %06d.%06d\r\n", packet->ts.tv_sec, packet->ts.tv_usec);
-	ttdbg("event_type: %c, %d\r\n", packet->event_type, packet->event_type);
-	ttdbg("pid: %d\r\n", packet->pid);
-	ttdbg("codelen: %d\r\n", packet->codelen);
-	ttdbg("unique code? %d\r\n", uid);
-	if (uid == TRUE) {
-		ttdbg("uid: %d\r\n", (packet->codelen & ~TTRACE_CODE_UNIQUE));
-		pad = TTRACE_MSG_BYTES;
-	} else {
-		ttdbg("message: %s\r\n", packet->msg.message);
-		pad = 0;
-	}
-
-	return sizeof(struct trace_packet) - pad;
-}
-
-static int show_sched_packet(struct trace_packet *packet)
-{
-	ttdbg("[%06d:%06d] %03d: %c|prev_comm=%s prev_pid=%u prev_prio=%u prev_state=%u ==> next_comm=%s next_pid=%u next_prio=%u\r\n",
-		  packet->ts.tv_sec, packet->ts.tv_usec,
-		  packet->pid,
-		  (char)packet->event_type,
-		  packet->msg.sched_msg.prev_comm,
-		  packet->msg.sched_msg.prev_pid,
-		  packet->msg.sched_msg.prev_prio,
-		  packet->msg.sched_msg.prev_state,
-		  packet->msg.sched_msg.next_comm,
-		  packet->msg.sched_msg.next_pid,
-		  packet->msg.sched_msg.next_prio);
-	return sizeof(struct trace_packet);
-}
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+int trace_begin(int tag, char *str, ...);
+int trace_begin_u(int tag, int8_t uid);
+int trace_end(int tag);
+int trace_end_u(int tag);
+int trace_sched(struct tcb_s *prev, struct tcb_s *next);
+#else
+#define trace_begin(a, b, ...)
+#define trace_begin_u(a, b)
+#define trace_end(a)
+#define trace_end_u(a)
+#define trace_sched(a, b)
 
 #if defined(__cplusplus)
 }
 #endif
 
+#endif /* CONFIG_TTRACE */
 #endif /* __INCLUDE_TINYARA_TTRACE_INTERNAL_H */
-/** @} */
+/**
+ * @}
+ */
