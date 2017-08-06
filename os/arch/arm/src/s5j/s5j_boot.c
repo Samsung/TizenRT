@@ -85,6 +85,12 @@ extern uint32_t _vector_end;
 #ifdef CONFIG_STACK_COLORATION
 static inline void up_idlestack_color(void *pv, unsigned int nbytes)
 {
+	register void *r0 __asm__("r0");
+	register unsigned int r1 __asm__("r1");
+
+	r0 = pv;
+	r1 = nbytes;
+
 	/* Set the IDLE stack to the stack coloration value then jump to
 	 * os_start().  We take extreme care here because were currently
 	 * executing on this stack.
@@ -103,7 +109,10 @@ static inline void up_idlestack_color(void *pv, unsigned int nbytes)
 						 "\tbne  1b\n"	/* Bottom of the loop */
 						 "2:\n" "\tmov  r14, #0\n"	/* LR = return address (none) */
 						 "\tb    os_start\n"	/* Branch to os_start */
+						:: "r"(r0), "r"(r1)
 						);
+
+	__builtin_unreachable();
 }
 #endif
 
