@@ -473,6 +473,12 @@ int iperf_run_client(struct iperf_test *test)
 			if (iperf_recv(test, &read_set) < 0) {
 				return -1;
 			}
+		} else if (test->state == TEST_END) {
+			//clear write_set for preventing infinite loop
+			SLIST_FOREACH(sp, &test->streams, streams)
+				if (FD_ISSET(sp->socket, &test->write_set)) {
+					FD_CLR(sp->socket, &test->write_set);
+				}
 		}
 	}
 
