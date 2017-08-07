@@ -24,15 +24,20 @@ OSDIR="../os/"
 APPDIR="../apps/"
 KCONFIG_ENTRY="Kconfig_ENTRY"
 DOTCONFIG=`find ../os/ -name '.config'`
-EXAMPLEDIR=`echo "$*" | sed -n 's/.\/tools\/create_appspec.sh //pg'`
+TARGET_DIR_LIST=`find . -name Kconfig_ENTRY | sed -n 's/Kconfig_ENTRY//p'`
 
-	USER_ENTRYPOINT=`sed -n '/CONFIG_USER_ENTRYPOINT/p' $DOTCONFIG | sed -n 's/.*=//p'`
-	echo -e "USER_ENTRYPOINT=$USER_ENTRYPOINT\n" >> $OSDIR$METAFILE
+# Remove an old meta file before making a new meta
+if [ -f $OSDIR$METAFILE ]; then
+	rm $OSDIR$METAFILE
+fi
+
+USER_ENTRYPOINT=`sed -n '/CONFIG_USER_ENTRYPOINT/p' $DOTCONFIG | sed -n 's/.*=//p'`
+echo -e "USER_ENTRYPOINT=$USER_ENTRYPOINT\n" >> $OSDIR$METAFILE
 
 # get app's info from Kconfig & Kconfig_ENTRY;
 # find CONFIG_NAME from Kconfig_ENTRY and search SELECTABLE(find select & depends on);
 
-for FILE in $EXAMPLEDIR
+for FILE in $TARGET_DIR_LIST
 do
 	APPNAME=`sed -n '/^APPNAME/p' $APPDIR$FILE$MAKEFILE | sed -n 's/APPNAME = //p'`
 	FUNCTION=`sed -n '/^FUNCNAME/p' $APPDIR$FILE$MAKEFILE | sed -n 's/FUNCNAME = //p'`
@@ -40,11 +45,11 @@ do
 	if [ "$CONFIG_NAME" = "" ]; then
 		continue
 	fi
-	CHECK=`sed -n "/# CONFIG_$CONFIG_NAME is not set/p" $DOTCONFIG`
+	CHECK=`sed -n "/CONFIG_$CONFIG_NAME=y/p" $DOTCONFIG`
 	if [ "$CHECK" = "" ]
-		then CONFIG_USE="y"
+		then CONFIG_USE="n"
 	else
-		CONFIG_USE="n"
+		CONFIG_USE="y"
 	fi
 	DISCRIPTION=`sed -n '/bool/p' $APPDIR$FILE$KCONFIG_ENTRY | sed -n 's/.*bool //p'`
 	KCONFIG_INFO=`sed -n "/config $CONFIG_NAME$/,/^$/p" $APPDIR$FILE$KCONFIG`
@@ -59,3 +64,5 @@ do
 		then echo "{ $APPNAME, $FUNCTION, CONFIG_$CONFIG_NAME, $CONFIG_USE, $SELECTABLE, $DISCRIPTION }" >> $OSDIR$METAFILE
 	fi
 done
+
+echo "$METAFILE was made at os directory."
