@@ -205,15 +205,8 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 	/* Activate the task */
 
-	ret = task_activate((FAR struct tcb_s *)tcb);
-	if (ret < OK) {
-		errcode = get_errno();
+	(void)task_activate((FAR struct tcb_s *)tcb);
 
-		/* The TCB was added to the active task list by task_schedsetup() */
-
-		dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)&g_inactivetasks);
-		goto errout_with_tcb;
-	}
 	trace_end(TTRACE_TAG_TASK);
 	return pid;
 
