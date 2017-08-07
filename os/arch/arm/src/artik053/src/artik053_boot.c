@@ -264,5 +264,10 @@ void board_initialize(void)
 	board_audio_initialize();
 	board_sensor_initialize();
 	board_wdt_initialize();
+
+#ifdef CONFIG_S5J_SSS
+	/* verify ARTIK Key */
+	sssro_verify();
+#endif
 }
 #endif							/* CONFIG_BOARD_INITIALIZE */
