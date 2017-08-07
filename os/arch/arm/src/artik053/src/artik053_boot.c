@@ -229,5 +229,10 @@ void board_initialize(void)
 #elif defined(CONFIG_AUDIO_ALC5658CHAR)
 	s5j_alc5658char_initialize(0);
 #endif
+
+#ifdef CONFIG_S5J_SSS
+	/* verify ARTIK Key */
+	sssro_verify();
+#endif
 }
 #endif /* CONFIG_BOARD_INITIALIZE */
