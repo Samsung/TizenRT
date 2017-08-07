@@ -197,12 +197,6 @@ static inline void group_release(FAR struct task_group_s *group)
 #endif							/* CONFIG_NFILE_STREAMS */
 #endif							/* CONFIG_NFILE_DESCRIPTORS */
 
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-	/* Free resource held by the socket list */
-
-	net_releaselist(&group->tg_socketlist);
-#endif							/* CONFIG_NSOCKET_DESCRIPTORS */
-
 #ifndef CONFIG_DISABLE_ENVIRON
 	/* Release all shared environment variables */
 

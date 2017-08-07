@@ -728,9 +728,6 @@ static ssize_t proc_groupfd(FAR struct proc_file_s *procfile, FAR struct tcb_s *
 #if CONFIG_NFILE_DESCRIPTORS > 0	/* Guaranteed to be true */
 	FAR struct file *file;
 #endif
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-	FAR struct socket *socket;
-#endif
 	size_t remaining;
 	size_t linesize;
 	size_t copysize;
@@ -773,39 +770,6 @@ static ssize_t proc_groupfd(FAR struct proc_file_s *procfile, FAR struct tcb_s *
 		}
 	}
 #endif
-
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "\n%3-s %-2s %-3s %s\n", "SD", "RF", "TYP", "FLAGS");
-	copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining, &offset);
-
-	totalsize += copysize;
-	buffer += copysize;
-	remaining -= copysize;
-
-	if (totalsize >= buflen) {
-		return totalsize;
-	}
-
-	/* Examine each open socket descriptor */
-
-	for (i = 0, socket = group->tg_socketlist.sl_sockets; i < CONFIG_NSOCKET_DESCRIPTORS; i++, socket++) {
-		/* Is there an connection associated with the socket descriptor? */
-
-		if (socket->conn) {
-			linesize = snprintf(procfile->line, STATUS_LINELEN, "%3d %2d %3d %02x", i + CONFIG_NFILE_DESCRIPTORS, (long)socket->conn->state, socket->conn->type, socket->conn->flags);
-			copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining, &offset);
-
-			totalsize += copysize;
-			buffer += copysize;
-			remaining -= copysize;
-
-			if (totalsize >= buflen) {
-				return totalsize;
-			}
-		}
-	}
-#endif
-
 	return totalsize;
 }
 

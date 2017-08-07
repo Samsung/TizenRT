@@ -438,12 +438,6 @@ struct task_group_s {
 #endif
 #endif
 
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-	/* Sockets ******************************************************************* */
-
-	struct socketlist tg_socketlist;	/* Maps socket descriptor to socket         */
-#endif
-
 #ifndef CONFIG_DISABLE_MQUEUE
 	/* POSIX Named Message Queue Fields ****************************************** */
 
