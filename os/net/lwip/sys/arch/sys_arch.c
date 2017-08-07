@@ -490,7 +490,8 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 				/* calculate remaining timeout */
 				remaining_time -= TICK2MSEC(clock_systimer() - start);
 				if (remaining_time < MSEC_PER_TICK) {
-					return SYS_ARCH_TIMEOUT;
+					status = -ETIMEDOUT;
+					break;
 				}
 			}
 		}
