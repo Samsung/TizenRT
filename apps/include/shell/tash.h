@@ -84,7 +84,7 @@ void tash_cmdlist_install(const tash_cmdlist_t list[]);
  **/
 int tash_start(void);
 
-#if defined(CONFIG_TASH_TELNET_INTERFACE)
+#if defined(CONFIG_TASH_COMMAND_INTERFACE)
 /** @name tash_get_cmdscount
  * @brief API to get the number of registered tash commands.
  * In protected build, it returns the count of user context commands only.
@@ -117,6 +117,6 @@ int tash_get_cmdscount(void);
  * @endcode
  **/
 int tash_get_cmdpair(char *str, TASH_CMD_CALLBACK *cb, int index);
-#endif							/*CONFIG_TASH_TELNET_INTERFACE */
+#endif							/*CONFIG_TASH_COMMAND_INTERFACE */
 
 #endif /*__APPS_INCLUDE_SHELL_TASH_H*/

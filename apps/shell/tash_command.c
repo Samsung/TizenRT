@@ -334,7 +334,7 @@ void tash_register_basic_cmds(void)
 	tash_cmdlist_install(tash_basic_cmds);
 }
 
-#if defined(CONFIG_TASH_TELNET_INTERFACE)
+#if defined(CONFIG_TASH_COMMAND_INTERFACE)
 /** @name tash_get_cmdscount
  * @brief API to get the number of registered tash commands.
  * In protected build, it returns the count of user context commands only.
