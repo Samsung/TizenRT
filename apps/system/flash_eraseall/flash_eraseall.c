@@ -61,7 +61,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <tinyara/mtd/mtd.h>
+#include <tinyara/fs/mtd.h>
 
 /****************************************************************************
  * Pre-processor Definitions
