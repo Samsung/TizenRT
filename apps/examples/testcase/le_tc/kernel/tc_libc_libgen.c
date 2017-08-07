@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,6 +109,10 @@ static void tc_libc_libgen_dirname(void)
 	path = "basename";
 	ret_chk = dirname(path);
 	TC_ASSERT_EQ("dirname", strncmp(ret_chk, ".", strlen(".")), 0);
+
+	path = "/dirname ";
+	ret_chk = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(ret_chk, "/", strlen("/")), 0);
 
 	TC_SUCCESS_RESULT();
 }

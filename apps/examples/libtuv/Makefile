@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = libtuv
+FUNCNAME = libtuv_main
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
 THREADEXEC = TASH_EXECMD_SYNC

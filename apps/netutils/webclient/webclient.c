@@ -342,7 +342,7 @@ static inline int wget_parsestatus(struct wget_s *ws)
 }
 
 /****************************************************************************
- * Name: wget_parsestatus
+ * Name: wget_parseheaders
  ****************************************************************************/
 
 static inline int wget_parseheaders(struct wget_s *ws)
@@ -917,7 +917,7 @@ static int wget_socket_connect(struct wget_s *ws)
  *  -1: On a failure with errno set appropriately
  *
  ****************************************************************************/
-
+#ifdef CONFIG_NET_SECURITY_TLS
 static pthread_addr_t wget_base(void *arg)
 {
 	int sockfd = -1;
@@ -929,10 +929,9 @@ static pthread_addr_t wget_base(void *arg)
 	struct http_message_len_t mlen = {0,};
 	struct wget_s ws;
 	struct http_client_request_t *param = (struct http_client_request_t *)arg;
-	struct http_client_response_t response;
+	struct http_client_response_t response = {0, };
 	bool read_finish = false;
 
-#ifdef CONFIG_NET_SECURITY_TLS
 	struct http_client_tls_t *client_tls = (struct http_client_tls_t *)malloc(sizeof(
 			struct http_client_tls_t));
 	int handshake_retry = WEBCLIENT_CONF_HANDSHAKE_RETRY;
@@ -941,7 +940,6 @@ static pthread_addr_t wget_base(void *arg)
 		free(param->buffer);
 		return (pthread_addr_t)WGET_ERR;
 	}
-#endif
 
 	/* Initialize the state structure */
 	memset(&ws, 0, sizeof(struct wget_s));
@@ -953,20 +951,16 @@ static pthread_addr_t wget_base(void *arg)
 	if (ret != 0) {
 		ndbg("ERROR: Malformed HTTP URL: %s\n", param->url);
 		free(param->buffer);
-#ifdef CONFIG_NET_SECURITY_TLS
 		free(client_tls);
-#endif
 		return (pthread_addr_t)WGET_ERR;
 	}
 
 	nvdbg("hostname='%s' filename='%s'\n", ws.hostname, ws.filename);
 
-#ifdef CONFIG_NET_SECURITY_TLS
 	if (param->tls && webclient_tls_init(client_tls, &param->ssl_config)) {
 		ndbg("Fail to client tls init\n");
 		goto errout_before_tlsinit;
 	}
-#endif
 
 	/* Re-initialize portions of the state structure that could have
 	 * been left from the previous time through the loop and should not
@@ -982,23 +976,12 @@ static pthread_addr_t wget_base(void *arg)
 		goto errout_before_tlsinit;
 	}
 
-#ifdef CONFIG_NET_SECURITY_TLS
 retry:
-#endif
 	if ((sockfd = wget_socket_connect(&ws)) < 0) {
 		ndbg("ERROR: socket failed: %d\n", errno);
 		goto errout_before_tlsinit;
 	}
 
-	if (param->callback) {
-		param->response = &response;
-		if (http_client_response_init(param->response) < 0) {
-			ndbg("ERROR: response init failed: %d\n", ret);
-			goto errout_before_tlsinit;
-		}
-	}
-
-#ifdef CONFIG_NET_SECURITY_TLS
 	client_tls->client_fd = sockfd;
 	if (param->tls && (ret = wget_tls_handshake(client_tls, ws.hostname))) {
 		if (handshake_retry-- > 0) {
@@ -1013,19 +996,15 @@ retry:
 		}
 		goto errout;
 	}
-#endif
+
 	buf_len = 0;
 	while (sndlen > 0) {
-#ifdef CONFIG_NET_SECURITY_TLS
 		if (param->tls) {
 			ret = mbedtls_ssl_write(&(client_tls->tls_ssl),
 									(const unsigned char *)param->buffer + buf_len,
 									sndlen);
-		} else
-#endif
-		{
-			ret = send(sockfd, param->buffer + buf_len,
-					   sndlen, 0);
+		} else {
+			ret = send(sockfd, param->buffer + buf_len, sndlen, 0);
 		}
 		if (ret < 1) {
 			ndbg("ERROR: send failed: %d\n", ret);
@@ -1037,20 +1016,27 @@ retry:
 		}
 	}
 
+	if (param->callback && param->response == NULL) {
+		param->response = &response;
+		if (http_client_response_init(param->response) < 0) {
+			ndbg("ERROR: response init failed: %d\n", ret);
+			param->response = NULL;
+			goto errout;
+		}
+	}
+
 	buf_len = 0;
 	while (!read_finish) {
 		if (remain <= 0) {
 			ndbg("Error: Response Size is too large\n");
 			goto errout;
 		}
-#ifdef CONFIG_NET_SECURITY_TLS
+
 		if (param->tls) {
 			len = mbedtls_ssl_read(&(client_tls->tls_ssl),
 								   (unsigned char *)param->response->message + buf_len,
 								   WEBCLIENT_CONF_MAX_MESSAGE_SIZE - buf_len);
-		} else
-#endif
-		{
+		} else {
 			len = recv(sockfd, param->response->message + buf_len,
 					   WEBCLIENT_CONF_MAX_MESSAGE_SIZE - buf_len, 0);
 		}
@@ -1084,13 +1070,11 @@ retry:
 		param->callback(param->response);
 		http_client_response_release(param->response);
 	}
-#ifdef CONFIG_NET_SECURITY_TLS
 	if (param->tls) {
 		wget_tls_release(client_tls);
 		wget_tls_ssl_release(client_tls);
 	}
 	free(client_tls);
-#endif
 	if (!param->tls) {
 		close(sockfd);
 	}
@@ -1099,23 +1083,19 @@ retry:
 	return (pthread_addr_t)WGET_OK;
 
 errout:
-	if (param->callback) {
+	if (param->callback && param->response) {
 		http_client_response_release(param->response);
 	}
-#ifdef CONFIG_NET_SECURITY_TLS
 	if (param->tls) {
 		wget_tls_ssl_release(client_tls);
 	}
-#endif
 errout_before_tlsinit:
-#ifdef CONFIG_NET_SECURITY_TLS
 	if (param->tls) {
 		wget_tls_release(client_tls);
 	}
 	if (client_tls) {
 		free(client_tls);
 	}
-#endif
 	if (!param->tls && sockfd > 0) {
 		close(sockfd);
 	}
@@ -1123,6 +1103,137 @@ errout_before_tlsinit:
 	param->async_flag = WGET_ERR;
 	return (pthread_addr_t)WGET_ERR;
 }
+#endif
+
+#ifndef CONFIG_NET_SECURITY_TLS
+static pthread_addr_t wget_base(void *arg)
+{
+	int sockfd = -1;
+	int ret;
+	int buf_len, sndlen, len;
+	int remain = WEBCLIENT_CONF_MAX_MESSAGE_SIZE;
+	int encoding = CONTENT_LENGTH;
+	int state = HTTP_REQUEST_HEADER;
+	struct http_message_len_t mlen = {0,};
+	struct wget_s ws;
+	struct http_client_request_t *param = (struct http_client_request_t *)arg;
+	struct http_client_response_t response;
+	bool read_finish = false;
+
+	/* Initialize the state structure */
+	memset(&ws, 0, sizeof(struct wget_s));
+	ws.buffer = param->buffer;
+	ws.buflen = param->buflen;
+
+	/* Parse the hostname (with optional port number) and filename from the URL */
+	ret = netlib_parsehttpurl(param->url, &ws.port, ws.hostname, CONFIG_WEBCLIENT_MAXHOSTNAME, ws.filename, CONFIG_WEBCLIENT_MAXFILENAME);
+	if (ret != 0) {
+		ndbg("ERROR: Malformed HTTP URL: %s\n", param->url);
+		free(param->buffer);
+		return (pthread_addr_t)WGET_ERR;
+	}
+
+	nvdbg("hostname='%s' filename='%s'\n", ws.hostname, ws.filename);
+
+	/* Re-initialize portions of the state structure that could have
+	 * been left from the previous time through the loop and should not
+	 * persist with the new connection.
+	 */
+	ws.httpstatus = HTTPSTATUS_NONE;
+	ws.offset = 0;
+	ws.datend = 0;
+	ws.ndx = 0;
+
+	if ((sndlen = wget_msg_construct(ws.buffer, param, &ws)) <= 0) {
+		ndbg("ERROR: construction message failed\n");
+		goto errout_before_init;
+	}
+
+	if ((sockfd = wget_socket_connect(&ws)) < 0) {
+		ndbg("ERROR: socket failed: %d\n", errno);
+		goto errout_before_init;
+	}
+
+	buf_len = 0;
+	while (sndlen > 0) {
+		ret = send(sockfd, param->buffer + buf_len, sndlen, 0);
+		if (ret < 1) {
+			ndbg("ERROR: send failed: %d\n", ret);
+			goto errout;
+		} else {
+			sndlen -= ret;
+			buf_len += ret;
+			ndbg("SEND SUCCESS: send %d bytes\n", ret);
+		}
+	}
+
+	if (param->callback && param->response == NULL) {
+		param->response = &response;
+		if (http_client_response_init(param->response) < 0) {
+			ndbg("ERROR: response init failed: %d\n", ret);
+			param->response = NULL;
+			goto errout;
+		}
+	}
+
+	buf_len = 0;
+	while (!read_finish) {
+		if (remain <= 0) {
+			ndbg("Error: Response Size is too large\n");
+			goto errout;
+		}
+		len = recv(sockfd, param->response->message + buf_len,
+				   WEBCLIENT_CONF_MAX_MESSAGE_SIZE - buf_len, 0);
+
+		if (len < 0) {
+			ndbg("Error: Receive Fail\n");
+			goto errout;
+		} else if (len == 0) {
+			ndbg("Finish read\n");
+			goto errout;
+		}
+
+		buf_len += len;
+		remain -= len;
+		usleep(1);
+		read_finish = http_parse_message(param->response->message,
+						 len, NULL, param->response->url,
+						 &param->response->entity,
+						 &encoding, &state, &mlen,
+						 param->response->headers,
+						 NULL, param->response, NULL);
+	}
+
+	param->response->method = param->method;
+	param->response->url = param->url;
+	if (param->response->entity) {
+		param->response->entity_len = strlen(param->response->entity);
+	}
+
+	if (param->callback) {
+		param->callback(param->response);
+		http_client_response_release(param->response);
+	}
+
+	close(sockfd);
+
+	free(param->buffer);
+	param->async_flag = WGET_OK;
+	return (pthread_addr_t)WGET_OK;
+
+errout:
+	if (param->callback && param->response) {
+		http_client_response_release(param->response);
+	}
+errout_before_init:
+	if (sockfd > 0) {
+		close(sockfd);
+	}
+	free(param->buffer);
+	param->async_flag = WGET_ERR;
+	return (pthread_addr_t)WGET_ERR;
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -1134,14 +1245,19 @@ int client_send_request(struct http_client_request_t *request)
 	pthread_t tid;
 	pthread_addr_t ret = NULL;
 
+	if (request == NULL) {
+		printf("Error: Request is null\n");
+		return -1;
+	}
+
 	if (request->method < WGET_MODE_GET || request->method > WGET_MODE_DELETE) {
 		printf("Error: Incorrect method value!!\n");
-		goto errret;
+		return -1;
 	}
 
 	if (request->buffer == NULL) {
 		printf("Error: Buffer is NULL!!\n");
-		goto errret;
+		return -1;
 	}
 
 	if (request->buflen <= 0) {
@@ -1175,9 +1291,10 @@ errret:
 	return -1;
 }
 
-int http_client_send_request(struct http_client_request_t *request,
-							 void *ssl_config,
-							 struct http_client_response_t *response)
+static int http_client_send_requests(struct http_client_request_t *request,
+		 void *ssl_config,
+		 struct http_client_response_t *response,
+		 wget_callback_t cb)
 {
 #ifdef CONFIG_NET_SECURITY_TLS
 	struct mallinfo data;
@@ -1187,28 +1304,20 @@ int http_client_send_request(struct http_client_request_t *request,
 	if (request == NULL) {
 		printf("Error: Request is null\n");
 		return -1;
-	} else {
-		request->buffer = (char *)malloc(request->buflen);
-		if (request->buffer == NULL) {
-			printf("Error: Fail to malloc buffer\n");
-			return -1;
-		}
+	}
 
-		request->callback = NULL;
-		request->tls = false;
-		request->response = response;
-	}
-	if (response == NULL) {
-		printf("Error: Response is null\n");
-		goto errout;
-	}
+	request->callback = NULL;
+	request->tls = false;
+	request->response = response;
+	request->callback = cb;
+
 	if (request->url == NULL) {
 		printf("Error: URL is NULL!!\n");
-		goto errout;
+		return -1;
 	}
 	if (WEBCLIENT_CONF_MAX_ENTITY_SIZE < strlen(request->entity)) {
 		printf("Error: Too small buffer size\n");
-		goto errout;
+		return -1;
 	}
 #ifdef CONFIG_NET_SECURITY_TLS
 	if (ssl_conf) {
@@ -1218,69 +1327,42 @@ int http_client_send_request(struct http_client_request_t *request,
 		data = mallinfo();
 		if (data.fordblks < WEBCLIENT_CONF_MIN_TLS_MEMORY) {
 			printf("Error: Not enough memory!!\n");
-			goto errout;
+			return -1;
 		}
 	}
 #endif
 
+	request->buffer = (char *)malloc(request->buflen);
+	if (request->buffer == NULL) {
+		printf("Error: Fail to malloc buffer\n");
+		return -1;
+	}
+
 	return client_send_request(request);
-errout:
-	free(request->buffer);
-	return -1;
+}
+
+int http_client_send_request(struct http_client_request_t *request,
+							 void *ssl_config,
+							 struct http_client_response_t *response)
+{
+	if (response == NULL) {
+		printf("Error: Response is null\n");
+		return -1;
+	}
+
+	return http_client_send_requests(request, ssl_config, response, NULL);
 }
 
 int http_client_send_request_async(struct http_client_request_t *request,
 								   void *ssl_config,
 								   wget_callback_t cb)
 {
-#ifdef CONFIG_NET_SECURITY_TLS
-	struct mallinfo data;
-	struct http_client_ssl_config_t *ssl_conf = ssl_config;
-#endif
-
 	if (cb == NULL) {
 		printf("Error: Callback is Null\n");
 		return -1;
 	}
-	if (request == NULL) {
-		printf("Error: Request is null\n");
-		return -1;
-	} else {
-		request->buffer = (char *)malloc(request->buflen);
-		if (request->buffer == NULL) {
-			printf("Error: Fail to malloc buffer\n");
-			return -1;
-		}
 
-		request->callback = cb;
-		request->tls = false;
-		request->response = NULL;
-	}
-	if (request->url == NULL) {
-		printf("Error: URL is NULL!!\n");
-		goto errout;
-	}
-	if (WEBCLIENT_CONF_MAX_ENTITY_SIZE < strlen(request->entity)) {
-		printf("Error: Too small buffer size\n");
-		goto errout;
-	}
-#ifdef CONFIG_NET_SECURITY_TLS
-	if (ssl_conf) {
-		request->tls = true;
-		memcpy(&request->ssl_config, ssl_conf, sizeof(struct http_client_ssl_config_t));
-
-		data = mallinfo();
-		if (data.fordblks < WEBCLIENT_CONF_MIN_TLS_MEMORY) {
-			printf("Error: Not enough memory!!\n");
-			goto errout;
-		}
-	}
-#endif
-
-	return client_send_request(request);
-errout:
-	free(request->buffer);
-	return -1;
+	return http_client_send_requests(request, ssl_config, NULL, cb);
 }
 
 int http_client_response_init(struct http_client_response_t *response)
@@ -1297,7 +1379,7 @@ int http_client_response_init(struct http_client_response_t *response)
 		return -1;
 	}
 	response->headers = malloc(sizeof(struct http_keyvalue_list_t));
-	if (http_keyvalue_list_init(response->headers) < 0) {
+	if (response->headers == NULL || http_keyvalue_list_init(response->headers) < 0) {
 		ndbg("Error: Fail to init\n");
 		free(response->phrase);
 		free(response->message);

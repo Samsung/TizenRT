@@ -186,7 +186,7 @@ static void sidk_s5jt200_configure_partitions(void)
 #if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
 		if (!strncmp(types, "smartfs,", 8)) {
 			char partref[4];
-			sprintf(partref, "p%d", partno);
+			snprintf(partref, sizeof(partref), "p%d", partno);
 			smart_initialize(CONFIG_SIDK_S5JT200_FLASH_MINOR,
 					mtd_part, partref);
 		} else
@@ -272,6 +272,17 @@ int board_app_initialize(void)
 #endif /* CONFIG_RAMMTD */
 
 	sidk_s5jt200_configure_partitions();
+
+#if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME)
+	ret = mount(CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME,
+			CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_MOUNTPOINT,
+			"romfs", 0, NULL);
+
+	if (ret != OK) {
+		lldbg("ERROR: mounting '%s'(ROMFS) failed\n",
+			CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME);
+	}
+#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME */
 
 #ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
 	/* Initialize and mount user partition (if we have) */
@@ -380,7 +391,7 @@ int board_app_initialize(void)
 		char path[CONFIG_PATH_MAX];
 
 		for (i = 0; i < CONFIG_S5J_MCT_NUM; i++) {
-			sprintf(path, "/dev/timer%d", i);
+			snprintf(path, sizeof(path), "/dev/timer%d", i);
 			s5j_timer_initialize(path, i);
 		}
 	}

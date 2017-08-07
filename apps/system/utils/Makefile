@@ -86,6 +86,10 @@ ifeq ($(CONFIG_NETUTILS_DHCPD),y)
 CSRCS += netcmd_dhcpd.c
 endif
 
+ifeq ($(CONFIG_NETUTILS_TFTPC),y)
+CSRCS += netcmd_tftpc.c
+endif
+
 endif #CONFIG_TASH
 
 ifeq ($(CONFIG_ENABLE_DATE),y)
@@ -112,6 +116,10 @@ endif
 
 ifeq ($(CONFIG_ENABLE_HEAPINFO),y)
 CSRCS += kdbg_heapinfo.c
+endif
+
+ifeq ($(CONFIG_ENABLE_IRQINFO),y)
+CSRCS += kdbg_irqinfo.c
 endif
 
 ifneq ($(CONFIG_DISABLE_SIGNALS),y)

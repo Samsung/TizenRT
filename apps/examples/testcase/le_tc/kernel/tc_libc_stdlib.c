@@ -46,24 +46,35 @@
 #define BSEARCH_ARRSIZE 10
 
 /**
-* @fn                   :compare
-* @description          :Function for tc_libc_stdlib_qsort
-* @return               :int
-*/
+ *@fn					:thread_func
+ *@description			:Function for tc_libc_stdlib_abort
+ *@return				:void*
+ */
+static void *thread_func(void *arg)
+{
+	abort();
+	return NULL;
+}
+
+/**
+ * @fn                   :compare
+ * @description          :Function for tc_libc_stdlib_qsort
+ * @return               :int
+ */
 static int compare(const void *a, const void *b)
 {
 	return (*(int *)a - *(int *)b);
 }
 
 /**
-* @fn                   :tc_abs_labs_llabs
-* @brief                :Returns the absolute value of parameter
-* @Scenario             :Returns the absolute value of parameter
-* API's covered         :abs, labs, llabs
-* Preconditions         :None
-* Postconditions        :None
-* @return               :void
-*/
+ * @fn                   :tc_abs_labs_llabs
+ * @brief                :Returns the absolute value of parameter
+ * @Scenario             :Returns the absolute value of parameter
+ * API's covered         :abs, labs, llabs
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_abs_labs_llabs(void)
 {
 	int val;
@@ -113,14 +124,14 @@ static void tc_libc_stdlib_abs_labs_llabs(void)
 }
 
 /**
-* @fn                   :tc_imaxabs
-* @brief                :Calculate the absolute value of the argument of the appropriate integer type
-* @Scenario             :Compute the absolute value of the argument of the appropriate integer type for the function
-* API's covered         :imaxabs
-* Preconditions         :None
-* Postconditions        :None
-* @return               :void
-*/
+ * @fn                   :tc_libc_stdlib_imaxabs
+ * @brief                :Calculate the absolute value of the argument of the appropriate integer type
+ * @Scenario             :Compute the absolute value of the argument of the appropriate integer type for the function
+ * API's covered         :imaxabs
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_imaxabs(void)
 {
 	intmax_t val = -NVAL1;
@@ -131,15 +142,15 @@ static void tc_libc_stdlib_imaxabs(void)
 }
 
 /**
-* @fn                   :tc_itoa
-* @brief                :Convert integer to string
-* @Scenario             :Converts an integer value to a null-terminated string using the specified base and
-*                        stores the result in the array given by str parameter.
-* API's covered         :itoa
-* Preconditions         :None
-* Postconditions        :None
-* @return               :void
-*/
+ * @fn                   :tc_libc_stdlib_itoa
+ * @brief                :Convert integer to string
+ * @Scenario             :Converts an integer value to a null-terminated string using the specified base and
+ *                        stores the result in the array given by str parameter.
+ * API's covered         :itoa
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_itoa(void)
 {
 	/* ITOA_VAL = 12 */
@@ -151,6 +162,9 @@ static void tc_libc_stdlib_itoa(void)
 
 	itoa(val, buffer, DECIMAL);
 	TC_ASSERT_EQ("itoa", strcmp(buffer, "12"), 0);
+
+	itoa(-val, buffer, DECIMAL);
+	TC_ASSERT_EQ("itoa", strcmp(buffer, "-12"), 0);
 
 	/* conversion in hexadecimal */
 
@@ -166,20 +180,23 @@ static void tc_libc_stdlib_itoa(void)
 }
 
 /**
-* @fn                   :tc_qsort
-* @brief                :Sorts the elements of the array
-* @Scenario             :Sorts the num elements of the array pointed to by base, each element size bytes long,
-*                        using the compar function to determine the order.
-* API's covered         :qsort
-* Preconditions         :None
-* Postconditions        :None
-* @return               :void
-*/
+ * @fn                   :tc_libc_stdlib_qsort
+ * @brief                :Sorts the elements of the array
+ * @Scenario             :Sorts the num elements of the array pointed to by base, each element size bytes long,
+ *                        using the compar function to determine the order.
+ * API's covered         :qsort
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_qsort(void)
 {
 	/* qsort checks that the number of data is greater than 7 or not.
 	  So tc checks with 7 data and 40 data for magic numbers.  */
 	int qsort_smalldata[QSORT_SMALL_ARRSIZE] = { 40, 10, 100, 90, 20, 25 };
+	int  qsort_smalldata1[QSORT_SMALL_ARRSIZE + 1] = { 1, 2, 3 };
+	long lqsort_smalldata[QSORT_SMALL_ARRSIZE + 1] = { 10, 40, 10, 100, 90, 20, 25 };
+	long lqsort_smalldata1[QSORT_SMALL_ARRSIZE + 1] = { 7, 6, 5, 4, 3, 2, 1 };
 	int qsort_bigdata[QSORT_BIG_ARRSIZE] = { 16, 10, 27, 49, 18, 82, 27, 31, 11, 13, 101, 2, 99, 32, 51,
 				72, 182, 939, 1, 61, 83, 5, 60, 131, 52, 39, 33, 127, 29, 19,
 				12, 81, 281, 8, 931, 17, 111, 356, 14, 93, 20, 40, 30, 37, 73 };
@@ -189,6 +206,22 @@ static void tc_libc_stdlib_qsort(void)
 	qsort(qsort_smalldata, QSORT_SMALL_ARRSIZE, sizeof(int), compare);
 	for (data_idx = 0; data_idx < QSORT_SMALL_ARRSIZE - 1; data_idx++) {
 		TC_ASSERT_LEQ("qsort", qsort_smalldata[data_idx], qsort_smalldata[data_idx + 1]);
+	}
+
+	/* check that the number of data is equal to 7 */
+	qsort(qsort_smalldata1, QSORT_SMALL_ARRSIZE + 1, sizeof(int), compare);
+	for (data_idx = 0; data_idx < QSORT_SMALL_ARRSIZE; data_idx++) {
+		TC_ASSERT_LEQ("qsort", qsort_smalldata1[data_idx], qsort_smalldata1[data_idx + 1]);
+	}
+
+	qsort(lqsort_smalldata, QSORT_SMALL_ARRSIZE + 1, sizeof(long), compare);
+	for (data_idx = 0; data_idx < QSORT_SMALL_ARRSIZE; data_idx++) {
+		TC_ASSERT_LEQ("qsort", lqsort_smalldata[data_idx], lqsort_smalldata[data_idx + 1]);
+	}
+
+	qsort(lqsort_smalldata1, QSORT_SMALL_ARRSIZE + 1, sizeof(long), compare);
+	for (data_idx = 0; data_idx < QSORT_SMALL_ARRSIZE; data_idx++) {
+		TC_ASSERT_LEQ("qsort", lqsort_smalldata1[data_idx], lqsort_smalldata1[data_idx + 1]);
 	}
 
 	/* check that the number of data is bigger than 40 */
@@ -201,14 +234,14 @@ static void tc_libc_stdlib_qsort(void)
 }
 
 /**
-* @fn                   :tc_rand
-* @brief                :Returns a pseudo-random integral number
-* @Scenario             :Returns a pseudo-random integral number in the range between 0 and RAND_MAX.
-* API's covered         :rand, frand1, frand3, nrand, fgenerate1
-* Preconditions         :None
-* Postconditions        :None
-* @return               :void
-*/
+ * @fn                   :tc_libc_stdlib_rand
+ * @brief                :Returns a pseudo-random integral number
+ * @Scenario             :Returns a pseudo-random integral number in the range between 0 and RAND_MAX.
+ * API's covered         :rand, frand1, frand3, nrand, fgenerate1
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_rand(void)
 {
 	int ret_chk = ERROR;
@@ -229,19 +262,19 @@ static void tc_libc_stdlib_rand(void)
 }
 
 /**
-* @fn                   :tc_strtol
-* @brief                :converts the string to a long integer value
-* @Scenario             :The strtol() function converts the initial part of the string in nptr to a long integer value
-*                        according to the given base, which must be between 2 and 36 inclusive, or be the special value 0.
-* API's covered         :strtol
-* Preconditions         :None
-* Postconditions        :None
-* @return               :void
-*/
+ * @fn                   :tc_libc_stdlib_strtol
+ * @brief                :converts the string to a long integer value
+ * @Scenario             :The strtol() function converts the initial part of the string in nptr to a long integer value
+ *                        according to the given base, which must be between 2 and 36 inclusive, or be the special value 0.
+ * API's covered         :strtol
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_strtol(void)
 {
 	/* random string used for conversion */
-	char str_lnum[] = "2001 60c0c0 -1101110100110100100000 0x6fffff";
+	char str_lnum[] = "+2001 60c0c0 -1101110100110100100000 0x6fffff";
 	char *end_ptr;
 	long int ret_chk;
 
@@ -269,17 +302,17 @@ static void tc_libc_stdlib_strtol(void)
 }
 
 /**
-* @fn                   :tc_strtoll
-* @brief                :converts the string to a long long integer value
-* @Scenario             :The strtoll() function works just like the strtol() function but returns a long long integer value.
-* API's covered         :strtoll
-* Preconditions         :None
-* Postconditions        :None
-* @return               :void
-*/
+ * @fn                   :tc_libc_stdlib_strtoll
+ * @brief                :converts the string to a long long integer value
+ * @Scenario             :The strtoll() function works just like the strtol() function but returns a long long integer value.
+ * API's covered         :strtoll
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_strtoll(void)
 {
-	char str_llnum[] = "1856892505 17b00a12b -01100011010110000010001101100 0x6fffff";
+	char str_llnum[] = "+1856892505 17b00a12b -01100011010110000010001101100 0x6fffff";
 	char *end_ptr;
 	long long int ret_chk;
 
@@ -307,18 +340,18 @@ static void tc_libc_stdlib_strtoll(void)
 }
 
 /**
-* @fn                   :tc_strtoul
-* @brief                :converts the string to a unsigned long integer value
-* @Scenario             :The strtoul() function converts the initial part of the string in nptr to an unsigned long int value
-*                        according to the given base, which must be between 2 and 36 inclusive, or be the special value 0.
-* API's covered         :strtoul
-* Preconditions         :None
-* Postconditions        :None
-* @return               :void
-*/
+ * @fn                   :tc_libc_stdlib_strtoul
+ * @brief                :converts the string to a unsigned long integer value
+ * @Scenario             :The strtoul() function converts the initial part of the string in nptr to an unsigned long int value
+ *                        according to the given base, which must be between 2 and 36 inclusive, or be the special value 0.
+ * API's covered         :strtoul
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_strtoul(void)
 {
-	char str_ulnum[] = "201 60 1100 0x6f";
+	char str_ulnum[] = "201 0x60 1100 0x6f";
 	char *end_ptr;
 	unsigned long int ret_chk;
 
@@ -346,14 +379,14 @@ static void tc_libc_stdlib_strtoul(void)
 }
 
 /**
-* @fn                   :tc_strtoull
-* @brief                :converts the string to a unsigned long long integer value
-* @Scenario             :The strtoull() function works just like the strtoul() function but returns an unsigned long long int value.
-* API's covered         :strtoull
-* Preconditions         :None
-* Postconditions        :None
-* @return               :void
-*/
+ * @fn                   :tc_libc_stdlib_strtoull
+ * @brief                :converts the string to a unsigned long long integer value
+ * @Scenario             :The strtoull() function works just like the strtoul() function but returns an unsigned long long int value.
+ * API's covered         :strtoull
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_strtoull(void)
 {
 	char str_ullnum[] = "250068492 7b06af00 1100011011110101010001100000 0x6fffff";
@@ -383,10 +416,20 @@ static void tc_libc_stdlib_strtoull(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_libc_stdlib_strtod
+ * @brief                :convert ASCII string to floating-point number
+ * @Scenario             :convert ASCII string to floating-point number
+ * API's covered         :strtod
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_strtod(void)
 {
 	char *pos = NULL;
 	double ret_chk = 0;
+	const double inf = (1.0/0.0);
 
 	ret_chk = strtod("1234.56abcd", &pos);
 	TC_ASSERT_EQ("strtod", ret_chk, 1234.56);
@@ -406,9 +449,27 @@ static void tc_libc_stdlib_strtod(void)
 	ret_chk = strtod("-1.1E4abcd", &pos);
 	TC_ASSERT_EQ("strtod", ret_chk, -1.1E4);
 
+	ret_chk = strtod("   ", &pos);
+	TC_ASSERT_EQ("strtod", ret_chk, 0.0);
+
+	ret_chk = strtod("+1.1e+1040", &pos);
+	TC_ASSERT_EQ("strtod", ret_chk, inf);
+
+	ret_chk = strtod("+1.1e+1024", &pos);
+	TC_ASSERT_EQ("strtod", ret_chk, inf);
+
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_libc_stdlib_atoi
+ * @brief                :convert a string to an integer
+ * @Scenario             :convert a string to an integer
+ * API's covered         :atoi
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_atoi(void)
 {
 	/* random string used for conversion */
@@ -421,6 +482,15 @@ static void tc_libc_stdlib_atoi(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_libc_stdlib_atol
+ * @brief                :convert a string to an long integer
+ * @Scenario             :convert a string to an long integer
+ * API's covered         :atol
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_atol(void)
 {
 	/* random string used for conversion */
@@ -433,6 +503,15 @@ static void tc_libc_stdlib_atol(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_libc_stdlib_atoll
+ * @brief                :convert a string to an long long integer
+ * @Scenario             :convert a string to an long long integer
+ * API's covered         :atoll
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_atoll(void)
 {
 	/* random string used for conversion */
@@ -445,6 +524,15 @@ static void tc_libc_stdlib_atoll(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_libc_stdlib_srand
+ * @brief                :pseudo-random number generator
+ * @Scenario             :pseudo-random number generator
+ * API's covered         :srand
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_srand(void)
 {
 	unsigned int test_num = 1234;
@@ -469,6 +557,15 @@ static void tc_libc_stdlib_srand(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_libc_stdlib_atof
+ * @brief                :Convert a string to a double
+ * @Scenario             :Convert a string to a double
+ * API's covered         :atof
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_atof(void)
 {
 	char target[100] = "1234.56abcd";
@@ -480,6 +577,15 @@ static void tc_libc_stdlib_atof(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_libc_stdlib_bsearch
+ * @brief                :Binary search of a sorted array
+ * @Scenario             :Binary search of a sorted array
+ * API's covered         :bsearch
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
 static void tc_libc_stdlib_bsearch(void)
 {
 	/* bsearch can find the result when data is ordered. So now using ordered data. */
@@ -499,12 +605,77 @@ static void tc_libc_stdlib_bsearch(void)
 
 	TC_SUCCESS_RESULT();
 }
+
+/**
+ * @fn                   :tc_libc_stdlib_abort
+ * @brief                :Cause abnormal process termination
+ * @Scenario             :Cause abnormal process termination
+ * API's covered         :abort
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_stdlib_abort(void)
+{
+	pthread_t th_id;
+	int ret_chk;
+
+	ret_chk = pthread_create(&th_id, NULL, thread_func, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+
+	ret_chk = pthread_join(th_id, NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_stdlib_div
+ * @brief                :Compute quotient and remainder of an integer division
+ * @Scenario             :Compute quotient and remainder of an integer division
+ * API's covered         :div, ldiv, lldiv
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_stdlib_div(void)
+{
+	int num = 2147483647;
+	int denom = 28672;
+	int ret_quot = 74898;
+	int ret_rem = 8191;
+	div_t ret_val;
+	ldiv_t lret_val;
+	lldiv_t llret_val;
+
+	ret_val = div(num, denom);
+	TC_ASSERT_EQ("div", ret_val.quot, ret_quot);
+	TC_ASSERT_EQ("div", ret_val.rem, ret_rem);
+
+	lret_val = ldiv(num, denom);
+	TC_ASSERT_EQ("ldiv", lret_val.quot, ret_quot);
+	TC_ASSERT_EQ("ldiv", lret_val.rem, ret_rem);
+
+	llret_val = lldiv(num, denom);
+	TC_ASSERT_EQ("lldiv", llret_val.quot, ret_quot);
+	TC_ASSERT_EQ("lldiv", llret_val.rem, ret_rem);
+
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: libc_stdlib
  ****************************************************************************/
 int libc_stdlib_main(void)
 {
+	tc_libc_stdlib_abort();
 	tc_libc_stdlib_abs_labs_llabs();
+	tc_libc_stdlib_atof();
+	tc_libc_stdlib_atoi();
+	tc_libc_stdlib_atol();
+	tc_libc_stdlib_atoll();
+	tc_libc_stdlib_bsearch();
+	tc_libc_stdlib_div();
 	tc_libc_stdlib_imaxabs();
 	tc_libc_stdlib_itoa();
 	tc_libc_stdlib_qsort();
@@ -514,12 +685,7 @@ int libc_stdlib_main(void)
 	tc_libc_stdlib_strtoull();
 	tc_libc_stdlib_strtoul();
 	tc_libc_stdlib_strtod();
-	tc_libc_stdlib_atoi();
-	tc_libc_stdlib_atol();
-	tc_libc_stdlib_atoll();
 	tc_libc_stdlib_srand();
-	tc_libc_stdlib_atof();
-	tc_libc_stdlib_bsearch();
 
 	return 0;
 }

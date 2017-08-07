@@ -57,7 +57,8 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = dnsclient
-THREADEXEC = TASH_EXECMD_ASYNC
+FUNCNAME = dnsclient_main
+THREADEXEC = TASH_EXECMD_SYNC
 
 # dnsclient test example
 

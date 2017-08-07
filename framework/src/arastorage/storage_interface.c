@@ -413,7 +413,7 @@ db_result_t storage_remove_index(relation_t *rel, attribute_t *attr)
 	offset = storage_seek(fd, 0, SEEK_END);
 	storage_close(fd);
 
-	if (sizeof(record) >= offset) {
+	if (sizeof(record) > offset) {
 		res = storage_remove(filename);
 		if (DB_ERROR(res)) {
 			free(filename);
@@ -441,7 +441,7 @@ db_result_t storage_remove_index(relation_t *rel, attribute_t *attr)
 			storage_close(fd);
 			return res;
 		}
-		fd_tmp = storage_open(new_filename, O_RDWR);
+		fd_tmp = storage_open(new_filename, O_WROK | O_APPEND | O_CREAT);
 		if (fd_tmp < 0) {
 			free(filename);
 			free(new_filename);
@@ -464,6 +464,7 @@ db_result_t storage_remove_index(relation_t *rel, attribute_t *attr)
 					free(new_filename);
 					return DB_STORAGE_ERROR;
 				}
+
 			}
 		}
 		storage_close(fd_tmp);

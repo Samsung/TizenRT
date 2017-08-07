@@ -72,6 +72,10 @@ static void tc_libc_stdio_flush(void)
 	sleep(3);
 	printf("\n");
 
+	/* flush with stream argument NULL. It will flush all streams */
+	ret_chk = fflush(NULL);
+	TC_ASSERT_EQ("fflush", ret_chk, OK);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -95,11 +99,9 @@ static void tc_libc_stdio_avsprintf(const char *format, ...)
 	TC_ASSERT_NOT_NULL("avsprintf", buffer);
 	TC_ASSERT_EQ_CLEANUP("avsprintf",
 						 ret_chk, strlen(printable_chars),
-						 get_errno(),
 						 TC_FREE_MEMORY(buffer));
 	TC_ASSERT_EQ_CLEANUP("avsprintf",
 						 strcmp(printable_chars, buffer), 0,
-						 get_errno(),
 						 TC_FREE_MEMORY(buffer));
 
 	TC_FREE_MEMORY(buffer);
@@ -548,11 +550,9 @@ static void tc_libc_stdio_asprintf(void)
 	TC_ASSERT_NOT_NULL("asprintf", buffer);
 	TC_ASSERT_EQ_CLEANUP("asprintf",
 						 ret_chk, strlen(printable_chars),
-						 get_errno(),
 						 TC_FREE_MEMORY(buffer));
 	TC_ASSERT_EQ_CLEANUP("asprintf",
 						 strcmp(printable_chars, buffer), 0,
-						 get_errno(),
 						 TC_FREE_MEMORY(buffer));
 
 	TC_FREE_MEMORY(buffer);

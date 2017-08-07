@@ -63,6 +63,9 @@
  * Pre-processor Definitions
  ****************************************************************************/
 #define MM_PIDHASH(pid) ((pid) & (CONFIG_MAX_TASKS - 1))
+#define HEAPINFO_INT -1
+#define HEAPINFO_STACK -2
+#define HEAPINFO_NONSCHED -3
 
 /****************************************************************************
  * Public Functions
@@ -81,6 +84,7 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	size_t mxordblk = 0;
 	int    ordblks  = 0;		/* Number of non-inuse chunks */
 	size_t fordblks = 0;		/* Total non-inuse space */
+	int stack_resource;
 	int nonsched_resource;
 	int nonsched_idx;
 
@@ -93,10 +97,11 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 #else
 #define region 0
 #endif
-	/* initialize the nonsched */
+	/* initialize the nonsched and stack resource */
 	nonsched_resource = 0;
+	stack_resource = 0;
 	for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
-		nonsched_list[nonsched_idx] = -1;
+		nonsched_list[nonsched_idx] = HEAPINFO_NONSCHED;
 		nonsched_size[nonsched_idx] = 0;
 	}
 
@@ -135,8 +140,10 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 				}
 
 #if CONFIG_TASK_NAME_SIZE > 0
-				if (node->pid == -1 && mode != HEAPINFO_SIMPLE) {
+				if (node->pid == HEAPINFO_INT && mode != HEAPINFO_SIMPLE) {
 					printf("INT Context\n");
+				} else if (node->pid == HEAPINFO_STACK) {
+					stack_resource += node->size;
 				} else if (sched_gettcb(node->pid) == NULL) {
 					nonsched_list[MM_PIDHASH(node->pid)] = node->pid;
 					nonsched_size[MM_PIDHASH(node->pid)] += node->size;
@@ -170,13 +177,14 @@ void heapinfo_parse(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	printf("Free Size                      : %d\n", fordblks);
 	printf("Largest Free Node Size         : %d\n", mxordblk);
 	printf("Number of Free Node            : %d\n", ordblks);
+	printf("\nStack Resources                : %d", stack_resource);
 
 	printf("\nNon Scheduled Task Resources   : %d\n", nonsched_resource);
 	if (mode != HEAPINFO_SIMPLE) {
 		printf(" PID | SIZE \n");
 		printf("-----|------\n");
 		for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
-			if (nonsched_list[nonsched_idx] != -1) {
+			if (nonsched_list[nonsched_idx] != HEAPINFO_NONSCHED) {
 				printf("%4d | %5d\n", nonsched_list[nonsched_idx], nonsched_size[nonsched_idx]);
 			}
 		}
@@ -244,11 +252,29 @@ void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_re
 	node->alloc_call_addr = caller_retaddr;
 	node->reserved = 0;
 	if (up_interrupt_context() == true) {
-		/* update pid as -1 if allocation is from INT context */
-		node->pid = -1;
+		/* update pid as HEAPINFO_INT(-1) if allocation is from INT context */
+		node->pid = HEAPINFO_INT;
 	} else {
 		node->pid = getpid();
 	}
 	return;
+}
+
+/****************************************************************************
+ * Name: heapinfo_exclude_stacksize
+ *
+ * Description:
+ * when create a stack, subtract the stacksize from parent
+ ****************************************************************************/
+void heapinfo_exclude_stacksize(void *stack_ptr)
+{
+	struct mm_allocnode_s *node;
+	struct tcb_s *rtcb;
+
+	node = (struct mm_allocnode_s *)(stack_ptr - SIZEOF_MM_ALLOCNODE);
+	rtcb = sched_gettcb(node->pid);
+
+	rtcb->curr_alloc_size -= node->size;
+	node->pid = HEAPINFO_STACK;
 }
 #endif

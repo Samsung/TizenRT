@@ -79,12 +79,12 @@ long double remquol(long double x, long double y, int *quo)
 	/* normalize x and y */
 	if (!ex) {
 		ux.i.se = ex;
-		ux.f *= 0x1 p120f;
+		ux.f *= 0x1p120f;
 		ex = ux.i.se - 120;
 	}
 	if (!ey) {
 		uy.i.se = ey;
-		uy.f *= 0x1 p120f;
+		uy.f *= 0x1p120f;
 		ey = uy.i.se - 120;
 	}
 
@@ -166,7 +166,7 @@ long double remquol(long double x, long double y, int *quo)
 	/* scale result and decide between |x| and |x|-|y| */
 	if (ex <= 0) {
 		ux.i.se = ex + 120;
-		ux.f *= 0x1 p - 120f;
+		ux.f *= 0x1p-120f;
 	} else {
 		ux.i.se = ex;
 	}

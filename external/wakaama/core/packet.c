@@ -430,18 +430,45 @@ coap_status_t message_send(lwm2m_context_t * contextP,
     coap_status_t result = COAP_500_INTERNAL_SERVER_ERROR;
     uint8_t * pktBuffer;
     size_t pktBufferLen = 0;
-    size_t allocLen;
+    size_t allocLen = 0;
+
+	coap_protocol_t proto = contextP->protocol;
 
     LOG("Entering");
-    allocLen = coap_serialize_get_size(message);
-    LOG_ARG("Size to allocate: %d", allocLen);
+
+	switch (proto) {
+	case COAP_UDP:
+	case COAP_UDP_DTLS:
+		allocLen = coap_serialize_get_size(message);
+		break;
+	case COAP_TCP:
+	case COAP_TCP_TLS:
+		allocLen = coap_serialize_get_size_tcp(message);
+		break;
+	default:
+		break;
+	}
+	LOG_ARG("Size to allocate: %d (protocol %d)", allocLen, proto);
+
     if (allocLen == 0) return COAP_500_INTERNAL_SERVER_ERROR;
 
     pktBuffer = (uint8_t *)lwm2m_malloc(allocLen);
     if (pktBuffer != NULL)
     {
-        pktBufferLen = coap_serialize_message(message, pktBuffer);
-        LOG_ARG("coap_serialize_message() returned %d", pktBufferLen);
+		switch (proto) {
+		case COAP_UDP:
+		case COAP_UDP_DTLS:
+			pktBufferLen = coap_serialize_message(message, pktBuffer);
+			break;
+		case COAP_TCP:
+		case COAP_TCP_TLS:
+			pktBufferLen = coap_serialize_message_tcp(message, pktBuffer);
+			break;
+		default:
+			break;
+		}
+		LOG_ARG("coap_serialize_message() returned %d (protocol %d)", pktBufferLen, proto);
+
         if (0 != pktBufferLen)
         {
             result = lwm2m_buffer_send(sessionH, pktBuffer, pktBufferLen, contextP->userData, contextP->protocol);

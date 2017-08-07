@@ -57,6 +57,7 @@
 #include <stddef.h>				/* for size_t */
 #include <string.h>				/* for memset used by FD_ZERO */
 #include <fcntl.h>
+#include <tinyara/fs/ioctl.h> 
 #if LWIP_TIMEVAL_PRIVATE
 #include <time.h>
 #endif

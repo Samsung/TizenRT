@@ -1,0 +1,21 @@
+RAMDUMP PROTOCOL :
+-----------------
+
+HOST  ------------> TARGET
+HOST  <-----------  TARGET
+
+1. TARGET will be waiting for Handshake string from HOST application.
+2. HOST will send handshake string to TARGET.
+3. TARGET will receive handshake string.
+4. TARGET will check if the handshake string is the expected one,
+	if success, TARGET will send character 'A' as acknowledge.
+	if failure, TARGET will send character 'N' as negative acknowlede.
+5. TARGET will send 4 bytes holding RAMDUMP start address.
+6. HOST will receive 4 bytes RAMDUMP start address.
+7. TARGET will send 4 bytes holding RAMDUMP size.
+8. HOST will receive 4 bytes RAMDUMP size.
+9. TARGET will send RAMDUMP size bytes in a loop.
+10. HOST will receive RAMDUMP size bytes in a loop untill all "size" bytes received.
+
+Note :
+Handshake string is "RAMDUMP".

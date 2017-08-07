@@ -62,22 +62,22 @@ void itc_iotbus_i2c_init_stop_p(void)
 */
 void itc_iotbus_i2c_set_frequency_p(void)
 {
-    int ret = IOTBUS_ERROR_NONE;
-    int szFreqMode[] = { IOTBUS_I2C_STD, IOTBUS_I2C_FAST, IOTBUS_I2C_HIGH };
-    int numModes = sizeof(szFreqMode) / sizeof(int);
-    int index = 0;
-    iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
-    TC_ASSERT_NOT_NULL("iotbus_i2c_init", h_i2c);
+	int ret = IOTBUS_ERROR_NONE;
+	int szFreqMode[] = { IOTBUS_I2C_STD, IOTBUS_I2C_FAST, IOTBUS_I2C_HIGH };
+	int numModes = sizeof(szFreqMode) / sizeof(int);
+	int index = 0;
+	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
+	TC_ASSERT_NOT_NULL("iotbus_i2c_init", h_i2c);
 
-    for (index = 0; index < numModes; index++) {
-        ret = iotbus_i2c_set_frequency(h_i2c, szFreqMode[index]);
-        TC_ASSERT_EQ_CLEANUP("iotbus_i2c_set_frequency", ret, IOTBUS_ERROR_NONE, "Not able to set frequency", iotbus_i2c_stop(h_i2c));
-    }
+	for (index = 0; index < numModes; index++) {
+		ret = iotbus_i2c_set_frequency(h_i2c, szFreqMode[index]);
+		TC_ASSERT_EQ_CLEANUP("iotbus_i2c_set_frequency", ret, IOTBUS_ERROR_NONE, iotbus_i2c_stop(h_i2c));
+	}
 
-    ret = iotbus_i2c_stop(h_i2c);
-    TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
+	ret = iotbus_i2c_stop(h_i2c);
+	TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -95,8 +95,8 @@ void itc_iotbus_i2c_set_address_p(void)
     iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
     TC_ASSERT_NOT_NULL("iotbus_i2c_init", h_i2c);
 
-    ret = iotbus_i2c_set_address(h_i2c, address);
-    TC_ASSERT_EQ_CLEANUP("iotbus_i2c_set_address", ret, IOTBUS_ERROR_NONE, "Not able to set address", iotbus_i2c_stop(h_i2c));
+	ret = iotbus_i2c_set_address(h_i2c, address);
+	TC_ASSERT_EQ_CLEANUP("iotbus_i2c_set_address", ret, IOTBUS_ERROR_NONE, iotbus_i2c_stop(h_i2c));
 
     ret = iotbus_i2c_stop(h_i2c);
     TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
@@ -120,11 +120,11 @@ void itc_iotbus_i2c_write_read_p(void)
     iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
     TC_ASSERT_NOT_NULL("iotbus_i2c_init", h_i2c);
 
-    ret = iotbus_i2c_write(h_i2c, szCmd, 1);
-    TC_ASSERT_EQ_CLEANUP("iotbus_i2c_write", (ret < 0), false, "Not able to write", iotbus_i2c_stop(h_i2c));
+	ret = iotbus_i2c_write(h_i2c, szCmd, 1);
+	TC_ASSERT_EQ_CLEANUP("iotbus_i2c_write", (ret < 0), false, iotbus_i2c_stop(h_i2c));
 
-    ret = iotbus_i2c_read(h_i2c, szReadBuf, 10);
-    TC_ASSERT_EQ_CLEANUP("iotbus_i2c_read", ret, IOTBUS_ERROR_NONE, "Not able to read", iotbus_i2c_stop(h_i2c));
+	ret = iotbus_i2c_read(h_i2c, szReadBuf, 10);
+	TC_ASSERT_EQ_CLEANUP("iotbus_i2c_read", ret, IOTBUS_ERROR_NONE, iotbus_i2c_stop(h_i2c));
 
     ret = iotbus_i2c_stop(h_i2c);
     TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);

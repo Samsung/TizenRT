@@ -60,6 +60,6 @@ long double tanhl(long double x)
 	long double x0 = exp(x);
 	long double x1 = 1.0 / x0;
 
-	return ((x0 + x1) / (x0 - x1));
+	return ((x0 - x1) / (x0 + x1));
 }
 #endif

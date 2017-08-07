@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = tls_selftest
+FUNCNAME = tls_selftest_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # tls self test example

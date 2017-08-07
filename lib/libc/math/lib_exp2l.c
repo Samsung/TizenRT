@@ -94,7 +94,7 @@ long double exp2l(long double x)
  ************************************************************************/
 
 static const double redux = 0x1.8p63 / TBLSIZE;
-static const double P1 = 0x1.62e42f efa39efp-1;
+static const double P1 = 0x1.62e42fefa39efp-1;
 static const double P2 = 0x1.ebfbdff82c58fp-3;
 static const double P3 = 0x1.c6b08d7049fap-5;
 static const double P4 = 0x1.3b2ab6fba4da5p-7;

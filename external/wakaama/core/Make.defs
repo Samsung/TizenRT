@@ -33,8 +33,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_DM),y)
-
 # Routing table support
 CSRCS += block1.c
 CSRCS += management.c objects.c observe.c data.c discover.c packet.c registration.c transaction.c utils.c list.c liblwm2m.c json.c bootstrap.c
@@ -64,5 +62,3 @@ CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
 
 DEPPATH += --dep-path wakaama/core
 VPATH += :wakaama/core
-
-endif

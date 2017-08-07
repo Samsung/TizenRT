@@ -34,18 +34,23 @@ static void kdbg_heapinfo_init(FAR struct tcb_s *tcb, FAR void *arg)
 
 static void kdbg_heapinfo_task(FAR struct tcb_s *tcb, FAR void *arg)
 {
-	if (tcb->pid == 0) {
-		tcb->adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
-	}
-	printf("%3d | ", tcb->pid);
+	struct mm_allocnode_s *node;
+	node = (struct mm_allocnode_s *)(tcb->stack_alloc_ptr - SIZEOF_MM_ALLOCNODE);
+
+	printf("%3d", tcb->pid);
 #if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(HAVE_GROUP_MEMBERS)
-	printf("%5d | ", tcb->ppid);
+	printf(" | %5d", tcb->ppid);
 #endif
-	printf("%5d | %9d | %9d | ", tcb->adj_stack_size, tcb->curr_alloc_size, tcb->peak_alloc_size);
+	if (tcb->pid == 0) {
+		printf(" | %5d", CONFIG_IDLETHREAD_STACKSIZE);
+	} else {
+		printf(" | %5d", node->size);
+	}
+	printf(" | %9d | %9d", tcb->curr_alloc_size, tcb->peak_alloc_size);
 
 	/* Show task name and arguments */
 #if CONFIG_TASK_NAME_SIZE > 0
-	printf("%s(", tcb->name);
+	printf(" | %s(", tcb->name);
 #else
 	printf("<noname>(");
 #endif
@@ -102,6 +107,9 @@ int kdbg_heapinfo(int argc, char **args)
 	printf("-------|-----------|-----------|----------\n");
 	sched_foreach(kdbg_heapinfo_task, NULL);
 
+	printf("\n** NOTED **\n");
+	printf("* Idle Task's stack is not allocated in heap region\n");
+	printf("* And another stack size is allocated stack size + alloc node size(task:32/pthread:20)\n\n");
 	return OK;
 
 usage:

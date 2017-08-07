@@ -1,0 +1,3 @@
+config ENTRY_XMLRPC
+	bool "XML RPC example"
+	depends on EXAMPLES_XMLRPC

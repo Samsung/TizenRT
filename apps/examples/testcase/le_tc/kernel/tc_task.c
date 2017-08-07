@@ -412,11 +412,11 @@ static void tc_task_prctl(void)
 	/* get taskname */
 
 	ret_chk = prctl(PR_GET_NAME, getname, 0, 0, 0);
-	TC_ASSERT_EQ_CLEANUP("prctl", ret_chk, OK, get_errno(), prctl(PR_SET_NAME, oldname, 0, 0, 0));
+	TC_ASSERT_EQ_ERROR_CLEANUP("prctl", ret_chk, OK, get_errno(), prctl(PR_SET_NAME, oldname, 0, 0, 0));
 
 	/* compare getname and setname */
 
-	TC_ASSERT_EQ_CLEANUP("prctl", strncmp(getname, setname, CONFIG_TASK_NAME_SIZE), 0, get_errno(), prctl(PR_SET_NAME, oldname, 0, 0, 0));
+	TC_ASSERT_EQ_ERROR_CLEANUP("prctl", strncmp(getname, setname, CONFIG_TASK_NAME_SIZE), 0, get_errno(), prctl(PR_SET_NAME, oldname, 0, 0, 0));
 
 	prctl(PR_SET_NAME, oldname, 0, 0, 0);
 	TC_SUCCESS_RESULT();

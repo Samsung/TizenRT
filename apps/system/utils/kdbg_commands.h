@@ -51,6 +51,10 @@ int kdbg_free(int argc, char **args);
 int kdbg_heapinfo(int argc, char **args);
 #endif
 
+#if defined(CONFIG_ENABLE_IRQINFO)
+int kdbg_irqinfo(int argc, char **args);
+#endif
+
 #ifndef CONFIG_DISABLE_SIGNALS
 #if defined(CONFIG_ENABLE_KILL)
 int kdbg_kill(int argc, char **args);

@@ -526,7 +526,7 @@ int websocket_client(void *arg)
 	}
 	memset(test_message, '.', size);
 
-	sprintf(test_message, "[%d] hello websocket", size);
+	sprintf(test_message, "[%d] websocket", size);
 	test_message[size - 1] = '\0';
 
 	tx_frame = malloc(sizeof(websocket_frame_t));
@@ -664,6 +664,8 @@ int websocket_server(void *arg)
 		}
 	}
 
+	printf("websocket server is starting\n");
+
 	/* Start Websocket server program */
 	if ((r = websocket_server_open(websocket_srv)) != WEBSOCKET_SUCCESS) {
 		printf("websocket_server_open returned error : %d\n", r);
@@ -680,6 +682,7 @@ WEB_SRV_EXIT:
 	}
 
 	g_wsenabled = 0;
+	printf("websocket server is finished\n");
 	return 0;
 }
 

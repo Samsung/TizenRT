@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = simpleServer
+FUNCNAME = simpleServer_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # iotivitySimServ example

@@ -58,11 +58,11 @@ static void tc_timer_timer_create_delete(void)
 	TC_ASSERT_NOT_NULL("timer_create", timer_id);
 
 	st_ret_prt = (struct posix_timer_s *)timer_id;
-	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_value.sival_ptr, st_sigevent.sigev_value.sival_ptr, "posix_timer_s for sigevent not available", timer_delete(timer_id));
-	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_signo, st_sigevent.sigev_signo, "posix_timer_s for sigevent not available", timer_delete(timer_id));
-	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_crefs, 1, "posix_timer_s for sigevent not available", timer_delete(timer_id));
-	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_owner, getpid(), "posix_timer_s for sigevent not available", timer_delete(timer_id));
-	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_delay, 0, "posix_timer_s for sigevent not available", timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_value.sival_ptr, st_sigevent.sigev_value.sival_ptr, timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_signo, st_sigevent.sigev_signo, timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_crefs, 1, timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_owner, getpid(), timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_delay, 0, timer_delete(timer_id));
 
 	st_timer_spec_val.it_value.tv_sec = 1;
 	st_timer_spec_val.it_value.tv_nsec = 0;
@@ -71,7 +71,7 @@ static void tc_timer_timer_create_delete(void)
 	st_timer_spec_val.it_interval.tv_nsec = 0;
 
 	ret_chk = timer_settime(timer_id, 0, &st_timer_spec_val, NULL);
-	TC_ASSERT_NEQ_CLEANUP("timer_settime", ret_chk, ERROR, errno, timer_delete(timer_id));
+	TC_ASSERT_EQ_ERROR_CLEANUP("timer_settime", ret_chk, OK, errno, timer_delete(timer_id));
 
 	ret_chk = timer_delete(timer_id);
 	TC_ASSERT_NEQ("timer_delete", ret_chk, ERROR);
@@ -81,10 +81,10 @@ static void tc_timer_timer_create_delete(void)
 
 	st_ret_prt = (struct posix_timer_s *)gtimer_id;
 
-	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_value.sival_ptr, st_ret_prt, "posix_timer_s for NULL not available", timer_delete(gtimer_id));
-	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_crefs, 1, "posix_timer_s for NULL not available", timer_delete(gtimer_id));
-	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_owner, getpid(), "posix_timer_s for NULL not available", timer_delete(gtimer_id));
-	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_delay, 0, "posix_timer_s for NULL not available", timer_delete(gtimer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_value.sival_ptr, st_ret_prt, timer_delete(gtimer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_crefs, 1, timer_delete(gtimer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_owner, getpid(), timer_delete(gtimer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_delay, 0, timer_delete(gtimer_id));
 
 	ret_chk = timer_delete(gtimer_id);
 	TC_ASSERT_NEQ("timer_delete", ret_chk, ERROR);
@@ -123,16 +123,16 @@ static void tc_timer_timer_set_get_time(void)
 	st_timer_spec_set.it_value.tv_nsec = 0;	/* expire; */
 
 	ret_chk = timer_settime(timer_id, 0, &st_timer_spec_set, NULL);	/* Flag =1 :TIMER_ABSTIME */
-	TC_ASSERT_EQ_CLEANUP("timer_settime", ret_chk, OK, errno, timer_delete(timer_id));
+	TC_ASSERT_EQ_ERROR_CLEANUP("timer_settime", ret_chk, OK, errno, timer_delete(timer_id));
 
 	usleep(USECINT);
 
 	ret_chk = timer_gettime(timer_id, &st_timer_spec_get);
-	TC_ASSERT_NEQ_CLEANUP("timer_gettime", ret_chk, ERROR, errno, timer_delete(timer_id));
-	TC_ASSERT_GEQ_CLEANUP("timer_gettime", st_timer_spec_get.it_interval.tv_nsec, st_timer_spec_set.it_interval.tv_nsec, errno, timer_delete(timer_id));
-	TC_ASSERT_GEQ_CLEANUP("timer_gettime", st_timer_spec_get.it_interval.tv_sec, st_timer_spec_set.it_interval.tv_sec, errno, timer_delete(timer_id));
-	TC_ASSERT_GEQ_CLEANUP("timer_gettime", st_timer_spec_get.it_value.tv_sec, st_timer_spec_set.it_value.tv_sec, errno, timer_delete(timer_id));
-	TC_ASSERT_GEQ_CLEANUP("timer_gettime", st_timer_spec_get.it_value.tv_nsec, st_timer_spec_set.it_value.tv_nsec, errno, timer_delete(timer_id));
+	TC_ASSERT_EQ_ERROR_CLEANUP("timer_gettime", ret_chk, OK, errno, timer_delete(timer_id));
+	TC_ASSERT_GEQ_CLEANUP("timer_gettime", st_timer_spec_get.it_interval.tv_nsec, st_timer_spec_set.it_interval.tv_nsec, timer_delete(timer_id));
+	TC_ASSERT_GEQ_CLEANUP("timer_gettime", st_timer_spec_get.it_interval.tv_sec, st_timer_spec_set.it_interval.tv_sec, timer_delete(timer_id));
+	TC_ASSERT_GEQ_CLEANUP("timer_gettime", st_timer_spec_get.it_value.tv_sec, st_timer_spec_set.it_value.tv_sec, timer_delete(timer_id));
+	TC_ASSERT_GEQ_CLEANUP("timer_gettime", st_timer_spec_get.it_value.tv_nsec, st_timer_spec_set.it_value.tv_nsec, timer_delete(timer_id));
 
 	timer_delete(timer_id);
 	TC_SUCCESS_RESULT();
@@ -206,10 +206,10 @@ static void tc_timer_timer_initialize(void)
 		finalfree_cnt++;
 	}
 
-	TC_ASSERT_EQ_CLEANUP("timer_initialise", initalloc_cnt, finalalloc_cnt, "Timer ID not available", timer_delete(timer_id));
-	TC_ASSERT_EQ_CLEANUP("timer_initialise", initfree_cnt, finalfree_cnt, "Timer ID not available", timer_delete(timer_id));
-	TC_ASSERT_NEQ_CLEANUP("timer_initialise", createalloc_cnt, finalalloc_cnt, "Timer ID not available", timer_delete(timer_id));
-	TC_ASSERT_NEQ_CLEANUP("timer_initialise", createfree_cnt, finalfree_cnt, "Timer ID not available", timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_initialise", initalloc_cnt, finalalloc_cnt, timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_initialise", initfree_cnt, finalfree_cnt, timer_delete(timer_id));
+	TC_ASSERT_NEQ_CLEANUP("timer_initialise", createalloc_cnt, finalalloc_cnt, timer_delete(timer_id));
+	TC_ASSERT_NEQ_CLEANUP("timer_initialise", createfree_cnt, finalfree_cnt, timer_delete(timer_id));
 
 	timer_delete(timer_id);
 	TC_SUCCESS_RESULT();

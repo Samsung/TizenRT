@@ -134,27 +134,27 @@ static void tc_semaphore_sem_post_wait(void)
 	/* sem_wait & sem post ping-pong test */
 
 	ret_chk = sem_init(&g_empty, PSHARED, 1);
-	TC_ASSERT_EQ_CLEANUP("sem_init", ret_chk, OK, "fail to init semaphore", goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("sem_init", ret_chk, OK, goto cleanup);
 
 	ret_chk = sem_init(&g_full, PSHARED, 0);
-	TC_ASSERT_EQ_CLEANUP("sem_init", ret_chk, OK, "fail to init semaphore", goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("sem_init", ret_chk, OK, goto cleanup);
 
 	ret_chk = sem_init(&g_sem, PSHARED, 1);
-	TC_ASSERT_EQ_CLEANUP("sem_init", ret_chk, OK, "fail to init semaphore", goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("sem_init", ret_chk, OK, goto cleanup);
 
 	ret_chk = pthread_create(&pid, NULL, producer_func, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, "fail to create pthread", goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, goto cleanup);
 
 	ret_chk = pthread_create(&cid, NULL, consumer_func, NULL);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, "fail to create pthread", goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, goto cleanup);
 
 	ret_chk = pthread_join(pid, &pexit_value);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, "fail to join pthread", goto cleanup);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", pexit_value, NULL, "unexpected exit value", goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", pexit_value, NULL, goto cleanup);
 
 	ret_chk = pthread_join(cid, &pexit_value);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, "fail to join pthread", goto cleanup);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", pexit_value, NULL, "unexpected exit value", goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK,goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", pexit_value, NULL, goto cleanup);
 
 	TC_SUCCESS_RESULT();
 
@@ -358,10 +358,10 @@ static void tc_semaphore_sem_destroy(void)
 
 int semaphore_main(void)
 {
+	tc_semaphore_sem_destroy();
 	tc_semaphore_sem_post_wait();
 	tc_semaphore_sem_trywait();
 	tc_semaphore_sem_timedwait();
-	tc_semaphore_sem_destroy();
 
 	return 0;
 }

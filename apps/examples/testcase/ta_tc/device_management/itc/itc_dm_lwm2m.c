@@ -52,7 +52,7 @@ static int display_resource(FAR void *arg)
     strcpy(argbuffer, "/8/0");
 
     ret = dm_lwm2m_display_client_resource(argbuffer);
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_display_client_resource", ret, DM_ERROR_NONE, "UNEXPECTED_ERROR", dm_lwm2m_stop_client());
+    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_display_client_resource", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
     ret = dm_lwm2m_stop_client();
     TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
 }
@@ -93,8 +93,8 @@ static void itc_dm_lwm2m_get_client_lifetime_p(void)
     TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
 
     ret = dm_lwm2m_get_client_lifetime(&life);
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_lifetime", ret, DM_ERROR_NONE, "UNEXPECTED_ERROR", dm_lwm2m_stop_client());
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_lifetime", (life < 0), false,"invalid lifetime", dm_lwm2m_stop_client());
+    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_lifetime", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
+    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_lifetime", (life < 0), false, dm_lwm2m_stop_client());
 
     ret = dm_lwm2m_stop_client();
     TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
@@ -117,8 +117,8 @@ static void itc_dm_lwm2m_get_server_address_p(void)
 
     char ipAddr[ITC_DM_IPADDR_LEN];
     ret = dm_lwm2m_get_server_address(ipAddr);
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_address", ret, DM_ERROR_NONE, "UNEXPECTED_ERROR", dm_lwm2m_stop_client());
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_address" , ipAddr[3] , '.', "UNEXPECTED_ERROR", dm_lwm2m_stop_client());
+    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_address", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
+    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_address" , ipAddr[3] , '.', dm_lwm2m_stop_client());
 
     ret = dm_lwm2m_stop_client();
     TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
@@ -141,8 +141,8 @@ static void itc_dm_lwm2m_get_server_port_p(void)
     TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
 
     ret = dm_lwm2m_get_server_port(port);
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_port", ret, DM_ERROR_NONE, "UNEXPECTED_ERROR", dm_lwm2m_stop_client());
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_port", (port[0] < 0), false,"INVALID_PORT", dm_lwm2m_stop_client());
+    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_port", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
+    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_port", (port[0] < 0), false, dm_lwm2m_stop_client());
 
     ret = dm_lwm2m_stop_client();
     TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
@@ -165,8 +165,8 @@ static void itc_dm_lwm2m_get_client_state_p(void)
     TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
 
     ret = dm_lwm2m_get_client_state(&state);
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_state", ret, DM_ERROR_NONE, "UNEXPECTED_ERROR", dm_lwm2m_stop_client());
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_state", (state < 0), false,"INVALID_STATE", dm_lwm2m_stop_client());
+    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_state", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
+    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_state", (state < 0), false, dm_lwm2m_stop_client());
 
     ret = dm_lwm2m_stop_client();
     TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);

@@ -175,7 +175,9 @@ config BUILD_PROTECTED
 	select LIB_SYSCALL
 	select BUILD_2PASS
 	---help---
-		Builds TinyAra and selected applications as two "blobs":  A protected, privileged kernel blob and a separate unprivileged, user blob.  This require sue of the two pass build with each blob being build on each pass.
+		Builds TinyAra and selected applications as two "blobs":  A protected,
+		privileged kernel blob and a separate unprivileged, user blob. This
+		require sue of the two pass build with each blob being build on each pass.
 
 		NOTE:  This build configuration requires that the platform support
 		a memory protection unit (MPU).  Support, however, may not be
@@ -191,7 +193,7 @@ config BUILD_KERNEL
 		they can be loaded into memory for execution.
 
 		NOTE:  This build configuration requires that the platform support
-		a memory management unit (MPU) and address environments.  Support,
+		a memory management unit (MMU) and address environments.  Support,
 		however, may not be implemented on all platforms.
 
 endchoice # Build configuration
@@ -298,14 +300,14 @@ config UIMAGE_ENTRY_POINT
 
 endif
 
-menuconfig DOWNLOAD_IMAGE
+config DOWNLOAD_IMAGE
 	bool "Convert RAW binary to download image"
 	select RAW_BINARY
 	depends on !WINDOWS_NATIVE
 	---help---
 		Create download image based on RAW binary
 
-menuconfig SMARTFS_IMAGE
+config SMARTFS_IMAGE
 	bool "Make smartfs binary image"
 	select RAW_BINARY
 	depends on !WINDOWS_NATIVE
@@ -823,6 +825,12 @@ config DEBUG_IRQ
 		should *not* enable interrupt controller debug unless you suspect
 		that here is a problem with that logic.  On some platforms, this
 		option may even cause crashes! Use with care!
+
+config DEBUG_IRQ_INFO
+	bool "Interrupt Debug information"
+	default n
+	---help---
+		List the registered interrupts, it's occurrence count and corresponding isr.
 
 config DEBUG_PAGING
 	bool "Demand Paging Debug Output"

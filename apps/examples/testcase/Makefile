@@ -58,6 +58,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = tc
+FUNCNAME = tc_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # testcase example

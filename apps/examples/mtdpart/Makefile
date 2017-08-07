@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # mtdpart built-in application info
 
 APPNAME = mtdpart
+FUNCNAME = mtdpart_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # mtdpart Example

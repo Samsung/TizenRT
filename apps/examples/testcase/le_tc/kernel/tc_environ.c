@@ -51,26 +51,24 @@ static void tc_environ_setenv_getenv_unsetenv(void)
 	const char *psz_name = "abc";
 	const char *psz_value = "xyz";
 	const char *pusz_name = "arv";
-	int overwrite_num = 1;
 	char *psz_getvalue = NULL;
 
-	ret_chk = setenv(psz_name, psz_value, overwrite_num);
-	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, get_errno(), clearenv());
+	ret_chk = setenv(psz_name, psz_value, 1);
+	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, clearenv());
 
 	psz_getvalue = getenv(psz_name);
-	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, get_errno(), clearenv());
+	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, clearenv());
 
 	/* with overwrite_num = 0, psz_value should not be updated */
 
 	psz_value = "pqr";
-	overwrite_num = 0;
-	ret_chk = setenv(psz_name, psz_value, overwrite_num);
-	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, get_errno(), clearenv());
+	ret_chk = setenv(psz_name, psz_value, 0);
+	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, clearenv());
 
 	/* set and get value should not be equal as overwrite is 0 */
 
 	psz_getvalue = getenv(psz_name);
-	TC_ASSERT_NEQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, get_errno(), clearenv());
+	TC_ASSERT_NEQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, clearenv());
 
 	/* random value, getenv should fail */
 
@@ -86,6 +84,15 @@ static void tc_environ_setenv_getenv_unsetenv(void)
 
 	psz_getvalue = getenv("arv");
 	TC_ASSERT_EQ("getenv", psz_getvalue, NULL);
+
+	ret_chk = setenv(NULL, psz_value, 0);
+	TC_ASSERT_EQ("setenv", ret_chk, ERROR);
+
+	ret_chk = setenv(psz_name, NULL, 1);
+	TC_ASSERT_EQ("setenv", ret_chk, OK);
+
+	ret_chk = setenv(psz_name, NULL, 0);
+	TC_ASSERT_EQ("setenv", ret_chk, OK);
 
 	clearenv();
 	TC_SUCCESS_RESULT();
@@ -150,6 +157,9 @@ static void tc_environ_putenv(void)
 
 	psz_getvalue = getenv("PATH");
 	TC_ASSERT_EQ("getenv", strcmp(psz_getvalue, "D:"), 0);
+
+	ret_chk = putenv(NULL);
+	TC_ASSERT_EQ("putenv", ret_chk, ERROR);
 
 	clearenv();
 	TC_SUCCESS_RESULT();

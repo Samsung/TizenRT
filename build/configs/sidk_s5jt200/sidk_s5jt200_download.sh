@@ -29,10 +29,12 @@ BOARD_NAME=${CONFIG_ARCH_BOARD}
 # ENV : Set to proper path's
 OS_DIR_PATH=${PWD}
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
+OUTPUT_PATH=${BUILD_DIR_PATH}/output
 OUTPUT_BIN_PATH=${BUILD_DIR_PATH}/output/bin
 BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/${BOARD_NAME}
 OPENOCD_DIR_PATH=${BOARD_DIR_PATH}/tools/openocd
 FW_DIR_PATH=${BOARD_DIR_PATH}/boot_bin
+RESOURCE_DIR_PATH=${OS_DIR_PATH}/../external/contents
 
 SYSTEM_TYPE=`getconf LONG_BIT`
 if [ "$SYSTEM_TYPE" = "64" ]; then
@@ -40,6 +42,22 @@ if [ "$SYSTEM_TYPE" = "64" ]; then
 else
 	OPENOCD_BIN_PATH=${OPENOCD_DIR_PATH}/linux32
 fi
+
+# ROMFS
+prepare_resource()
+{
+	if [ -d "${RESOURCE_DIR_PATH}" ]; then
+		echo "Packing resources into romfs.img ..."
+
+		# create resource directory in ${output_path}
+		mkdir -p ${OUTPUT_PATH}/res
+		cp -rf ${RESOURCE_DIR_PATH}/* ${OUTPUT_PATH}/res/
+
+		# create romfs.img
+		sh ${OS_DIR_PATH}/../apps/tools/mkromfsimg.sh
+	fi
+}
+
 
 # MAIN
 main()
@@ -68,6 +86,19 @@ main()
 				[ ! -f "${FW_DIR_PATH}/t20.wlan.bin" ]; then
 				echo "Firmware binaries for sidk_s5jt200 are not existed"
 				exit 1
+			fi
+
+			if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
+				prepare_resource
+				if [ ! -f "${OUTPUT_BIN_PATH}/romfs.img" ]; then
+					echo "ROMFS image is not present"
+					exit 1
+				fi
+			fi
+
+			# Generate Partition Map
+			if [ -f "${OPENOCD_DIR_PATH}/partition_gen.sh" ]; then
+				${OPENOCD_DIR_PATH}/partition_gen.sh
 			fi
 
 			# download all binaries using openocd script

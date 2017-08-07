@@ -28,6 +28,7 @@
 #include <tls/ctr_drbg.h>
 #include <tls/x509_crt.h>
 #include <tls/timing.h>
+#include <tls/ssl_cookie.h>
 
 #ifdef MBEDTLS_SSL_CACHE_C
 #include <tls/ssl_cache.h>
@@ -44,6 +45,7 @@ enum easy_tls_error {
 	TLS_INVALID_CRED,
 	TLS_SET_DEFAULT_FAIL,
 	TLS_SET_HOSTNAME_FAIL,
+	TLS_SET_COOKIE_FAIL,
 	TLS_INVALID_CACERT,
 	TLS_INVALID_DEVCERT,
 	TLS_INVALID_DEVKEY,
@@ -71,6 +73,7 @@ typedef struct tls_context {
 	mbedtls_entropy_context *entropy;
 	mbedtls_ctr_drbg_context *ctr_drbg;
 	mbedtls_timing_delay_context *timer;
+	mbedtls_ssl_cookie_ctx *cookie;
 #ifdef MBEDTLS_SSL_CACHE_C
 	mbedtls_ssl_cache_context *cache;
 #endif

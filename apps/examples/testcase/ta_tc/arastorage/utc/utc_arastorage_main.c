@@ -35,13 +35,14 @@
 #define CONFIG_MOUNT_POINT "/mnt"
 #endif
 
-#define RELATION_NAME "rel"
+#define RELATION_NAME1 "rel1"
+#define RELATION_NAME2 "rel2"
 #define INDEX_BPLUS "bplustree"
 #define INDEX_INLINE "inline"
 #define QUERY_LENGTH 128
 
 #define DATA_SET_NUM 10
-#define DATA_SET_MULTIPLIER 40
+#define DATA_SET_MULTIPLIER 80
 /****************************************************************************
  *  Global Variables
  ****************************************************************************/
@@ -68,6 +69,23 @@ const static struct arastorage_data_type_s g_arastorage_data_set[DATA_SET_NUM] =
 	{20160109,       "strawberry", 9.0 },
 	{20160110,       "watermelon", 10.0}
 };
+
+void check_query_result(char * query)
+{
+	db_result_t res;
+	g_cursor = db_query(query);
+	TC_ASSERT_NOT_NULL("db_query", g_cursor);
+	if (DB_SUCCESS(cursor_move_first(g_cursor))) {
+		do {
+			res = db_print_tuple(g_cursor);
+			TC_ASSERT("db_print_tuple", DB_SUCCESS(res));
+		} while (DB_SUCCESS(cursor_move_next(g_cursor)));
+	}
+
+	res = db_cursor_free(g_cursor);
+	TC_ASSERT("db_cursor_free", DB_SUCCESS(res));
+	g_cursor = NULL;
+}
 
 /****************************************************************************
  * Public Functions
@@ -123,45 +141,100 @@ void utc_arastorage_db_exec_tc_p(void)
 	char query[QUERY_LENGTH];
 	int i;
 
-	snprintf(query, QUERY_LENGTH, "CREATE RELATION %s;", RELATION_NAME);
+	snprintf(query, QUERY_LENGTH, "CREATE RELATION %s;", RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+	snprintf(query, QUERY_LENGTH, "CREATE RELATION %s;", RELATION_NAME2);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
 
 	memset(query, 0, QUERY_LENGTH);
 	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN int IN %s;", g_attribute_set[0],
-			 RELATION_NAME);
+			 RELATION_NAME2);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
 
 	memset(query, 0, QUERY_LENGTH);
 	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN long IN %s;", g_attribute_set[1],
-			 RELATION_NAME);
+			 RELATION_NAME2);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
 
 	memset(query, 0, QUERY_LENGTH);
-	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN string(32) IN %s;",
-			 g_attribute_set[2],
-			 RELATION_NAME);
+	sprintf(query, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME2, g_attribute_set[1], INDEX_BPLUS);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+	for (i = 0; i < DATA_SET_NUM * 10; i++) {
+		memset(query, 0, QUERY_LENGTH);
+		snprintf(query, QUERY_LENGTH, "INSERT (%d, %ld) INTO %s;", i, rand()%10000, RELATION_NAME2);
+		res = db_exec(query);
+		TC_ASSERT("db_exec", DB_SUCCESS(res));
+	}
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME2);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
 
 	memset(query, 0, QUERY_LENGTH);
-	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN int IN %s;", g_attribute_set[3],
-			 RELATION_NAME);
+	snprintf(query, QUERY_LENGTH, "CREATE RELATION %s;", RELATION_NAME2);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN int IN %s;", g_attribute_set[0], RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN long IN %s;", g_attribute_set[1], RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN string(32) IN %s;", g_attribute_set[2], RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN int IN %s;", g_attribute_set[3], RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN int IN %s;", g_attribute_set[0], RELATION_NAME2);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN long IN %s;", g_attribute_set[1], RELATION_NAME2);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
 
 
 	memset(query, 0, QUERY_LENGTH);
-	sprintf(query, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME, g_attribute_set[0], INDEX_INLINE);
+	sprintf(query, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME1, g_attribute_set[0], INDEX_INLINE);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+	memset(query, 0, QUERY_LENGTH);
+	sprintf(query, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME2, g_attribute_set[1], INDEX_BPLUS);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+
+	for (i = 0; i < DATA_SET_NUM * 10; i++) {
+		memset(query, 0, QUERY_LENGTH);
+		snprintf(query, QUERY_LENGTH, "INSERT (%d, %ld) INTO %s;", i, rand()%10000, RELATION_NAME2);
+		res = db_exec(query);
+		TC_ASSERT("db_exec", DB_SUCCESS(res));
+	}
 
 #ifdef CONFIG_ARCH_FLOAT_H
 	memset(query, 0, QUERY_LENGTH);
-	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN double IN %s;", g_attribute_set[4],
-			 RELATION_NAME);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN double IN %s;", g_attribute_set[4], RELATION_NAME1);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
 
@@ -170,7 +243,7 @@ void utc_arastorage_db_exec_tc_p(void)
 		snprintf(query, "INSERT (%d, %ld, \'%s\', %d, %f) INTO %s;", QUERY_LENGTH,
 				 i, g_arastorage_data_set[i].long_value,
 				 g_arastorage_data_set[i].string_value, 1000 - i,
-				 g_arastorage_data_set[i].double_value, RELATION_NAME);
+				 g_arastorage_data_set[i].double_value, RELATION_NAME1);
 		res = db_exec(query);
 		TC_ASSERT("db_exec", DB_SUCCESS(res));
 	}
@@ -179,13 +252,13 @@ void utc_arastorage_db_exec_tc_p(void)
 		memset(query, 0, QUERY_LENGTH);
 		snprintf(query, QUERY_LENGTH, "INSERT (%d, %ld, \'%s\', %d) INTO %s;",
 				 i, g_arastorage_data_set[i].long_value,
-				 g_arastorage_data_set[i].string_value, 1000 - i, RELATION_NAME);
+				 g_arastorage_data_set[i].string_value, 1000 - i, RELATION_NAME1);
 		res = db_exec(query);
 		TC_ASSERT("db_exec", DB_SUCCESS(res));
 	}
 #endif
 	memset(query, 0, QUERY_LENGTH);
-	sprintf(query, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME, g_attribute_set[3], INDEX_BPLUS);
+	sprintf(query, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME1, g_attribute_set[3], INDEX_BPLUS);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
 
@@ -197,7 +270,7 @@ void utc_arastorage_db_exec_tc_p(void)
 		snprintf(query, "INSERT (%d, %ld, \'%s\', %d, %f) INTO %s;", QUERY_LENGTH,
 				 i, g_arastorage_data_set[i % DATA_SET_NUM].long_value,
 				 g_arastorage_data_set[i % DATA_SET_NUM].string_value, 1000 - i,
-				 g_arastorage_data_set[i % DATA_SET_NUM].double_value, RELATION_NAME);
+				 g_arastorage_data_set[i % DATA_SET_NUM].double_value, RELATION_NAME1);
 		res = db_exec(query);
 		TC_ASSERT("db_exec", DB_SUCCESS(res));
 	}
@@ -206,22 +279,21 @@ void utc_arastorage_db_exec_tc_p(void)
 		memset(query, 0, QUERY_LENGTH);
 		snprintf(query, QUERY_LENGTH, "INSERT (%d, %ld, \'%s\', %d) INTO %s;",
 				 i, g_arastorage_data_set[i % DATA_SET_NUM].long_value,
-				 g_arastorage_data_set[i % DATA_SET_NUM].string_value, 1000 - i, RELATION_NAME);
+				 g_arastorage_data_set[i % DATA_SET_NUM].string_value, 1000 - i, RELATION_NAME1);
 		res = db_exec(query);
 		TC_ASSERT("db_exec", DB_SUCCESS(res));
 	}
 #endif
+
 	memset(query, 0, QUERY_LENGTH);
-	sprintf(query, "REMOVE INDEX %s.%s ;", RELATION_NAME, g_attribute_set[0]);
+	sprintf(query, "REMOVE INDEX %s.%s ;", RELATION_NAME1, g_attribute_set[0]);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
 
 	memset(query, 0, QUERY_LENGTH);
-	sprintf(query, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME, g_attribute_set[0], INDEX_INLINE);
+	sprintf(query, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME1, g_attribute_set[0], INDEX_INLINE);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
-
-
 
 	TC_SUCCESS_RESULT();
 }
@@ -238,22 +310,46 @@ void utc_arastorage_db_exec_tc_n(void)
 {
 	db_result_t res;
 	char query[QUERY_LENGTH];
-
+	char *name = "BAD_RELATION";
+	char *attr_name = "attr";
 	/* Try to create existing relation */
 	memset(query, 0, QUERY_LENGTH);
-	snprintf(query, QUERY_LENGTH, "CREATE RELATION %s;", RELATION_NAME);
+	snprintf(query, QUERY_LENGTH, "CREATE RELATION %s;", RELATION_NAME1);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_ERROR(res));
 
 	/* Try to create existing attribute */
 	memset(query, 0, QUERY_LENGTH);
-	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN int IN %s;", g_attribute_set[0],
-			 RELATION_NAME);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN int IN %s;", g_attribute_set[0], RELATION_NAME1);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_ERROR(res));
 
 	/* Try to excute db with NULL value */
 	res = db_exec(NULL);
+	TC_ASSERT("db_exec", DB_ERROR(res));
+
+	/* Try to parse mis-spelt query */
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CRAETE ATTRIBUTE %s DOMAIN int IN %s;", g_attribute_set[0], RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_ERROR(res));
+
+	/* Create duplicate attribute */
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE ATTRIBUTE %s DOMAIN int IN %s;", g_attribute_set[0], name);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_ERROR(res));
+
+	/* Index on non-existent attribute */
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME1, attr_name, INDEX_BPLUS);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_ERROR(res));
+
+	/* execute un-implemented operation */
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "REMOVE ATTRIBUTE %s.%s;", RELATION_NAME1, g_attribute_set[0]);
+	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_ERROR(res));
 
 	TC_SUCCESS_RESULT();
@@ -272,15 +368,12 @@ void utc_arastorage_db_query_tc_p(void)
 	db_result_t res;
 	char query[QUERY_LENGTH];
 
+	/* Select over bplus-tree index */
 #ifdef CONFIG_ARCH_FLOAT_H
-	snprintf(query, QUERY_LENGTH, "SELECT %s, %s, %s, %s, %s FROM %s WHERE %s < 990;",
-			 g_attribute_set[0],
-			 g_attribute_set[1], g_attribute_set[2], g_attribute_set[3], g_attribute_set[4], RELATION_NAME,
-			 g_attribute_set[3]);
+	snprintf(query, QUERY_LENGTH, "SELECT id, date, fruit, value, weight FROM %s WHERE value < 990;", RELATION_NAME1);
 
 #else
-	snprintf(query, QUERY_LENGTH, "SELECT %s, %s, %s, %s FROM %s WHERE %s < 990;", g_attribute_set[0],
-			 g_attribute_set[1], g_attribute_set[2], g_attribute_set[3], RELATION_NAME, g_attribute_set[3]);
+	snprintf(query, QUERY_LENGTH, "SELECT id, date, fruit, value FROM %s WHERE value < 990;", RELATION_NAME1);
 #endif
 	g_cursor = db_query(query);
 	TC_ASSERT_NOT_NULL("db_query", g_cursor);
@@ -289,16 +382,41 @@ void utc_arastorage_db_query_tc_p(void)
 	TC_ASSERT("db_cursor_free", DB_SUCCESS(res));
 	g_cursor = NULL;
 
+	/* Select with AND condition */
+	snprintf(query, QUERY_LENGTH, "SELECT id, date FROM %s WHERE id < 25 AND id > 10;", RELATION_NAME2);
+	check_query_result(query);
+
+	/* Count aggregation operation */
+	snprintf(query, QUERY_LENGTH, "SELECT COUNT(id) FROM %s WHERE id = 5 OR id = 85;", RELATION_NAME2);
+	check_query_result(query);
+
+	/* Mean aggregation operation */
+	snprintf(query, QUERY_LENGTH, "SELECT MEAN(id) FROM %s;", RELATION_NAME2);
+	check_query_result(query);
+
+	/* Sum aggregation operation */
+	snprintf(query, QUERY_LENGTH, "SELECT SUM(id) FROM %s;", RELATION_NAME2);
+	check_query_result(query);
+
+	/* Max aggregation operation */
+	snprintf(query, QUERY_LENGTH, "SELECT MAX(id) FROM %s;", RELATION_NAME2);
+	check_query_result(query);
+
+	/* Min aggregation operation */
+	snprintf(query, QUERY_LENGTH, "SELECT MIN(id) FROM %s;", RELATION_NAME2);
+	check_query_result(query);
+
+	/* Remove operation */
+	snprintf(query, QUERY_LENGTH, "REMOVE FROM %s WHERE date > 2000 AND date < 8000;", RELATION_NAME2);
+	check_query_result(query);
+
+	/* Select over inline index */
 
 #ifdef CONFIG_ARCH_FLOAT_H
-	snprintf(query, QUERY_LENGTH, "SELECT %s, %s, %s, %s FROM %s WHERE %s > 0;",
-			 g_attribute_set[0],
-			 g_attribute_set[1], g_attribute_set[2], g_attribute_set[3], RELATION_NAME,
-			 g_attribute_set[0]);
+	snprintf(query, QUERY_LENGTH, "SELECT id, date, fruit, weight FROM %s WHERE id > 0;", RELATION_NAME1);
 
 #else
-	snprintf(query, QUERY_LENGTH, "SELECT %s, %s, %s FROM %s WHERE %s > 0;", g_attribute_set[0],
-			 g_attribute_set[1], g_attribute_set[2], RELATION_NAME, g_attribute_set[0]);
+	snprintf(query, QUERY_LENGTH, "SELECT id, date, fruit FROM %s WHERE id > 0;", RELATION_NAME1);
 #endif
 	g_cursor = db_query(query);
 	TC_ASSERT_NOT_NULL("db_query", g_cursor);
@@ -450,12 +568,8 @@ void utc_arastorage_db_print_tuple_tc_n(void)
 {
 	db_result_t res;
 
-	if (DB_SUCCESS(cursor_move_first(g_cursor))) {
-		do {
-			res = db_print_tuple(NULL);
-			TC_ASSERT("db_print_tuple", DB_ERROR(res));
-		} while (DB_SUCCESS(cursor_move_next(g_cursor)));
-	}
+	res = db_print_tuple(NULL);
+	TC_ASSERT("db_print_tuple", DB_ERROR(res));
 
 	TC_SUCCESS_RESULT();
 }
@@ -471,6 +585,12 @@ void utc_arastorage_db_print_tuple_tc_n(void)
 void utc_arastorage_db_print_value_tc_p(void)
 {
 	db_result_t res;
+
+	res = db_print_value(g_cursor, 0);
+	TC_ASSERT("db_print_value", DB_SUCCESS(res));
+
+	res = db_print_value(g_cursor, 1);
+	TC_ASSERT("db_print_value", DB_SUCCESS(res));
 
 	res = db_print_value(g_cursor, 2);
 	TC_ASSERT("db_print_value", DB_SUCCESS(res));
@@ -493,7 +613,7 @@ void utc_arastorage_db_print_value_tc_n(void)
 	res = db_print_value(NULL, 2);
 	TC_ASSERT("db_print_value", DB_ERROR(res));
 
-	res = db_print_value(g_cursor, 4);
+	res = db_print_value(g_cursor, 5);
 	TC_ASSERT("db_print_value", DB_ERROR(res));
 
 	TC_SUCCESS_RESULT();
@@ -854,7 +974,7 @@ void utc_arastorage_cursor_is_first_row_tc_n(void)
 
 	/* We need to get valid cursor for this test */
 	snprintf(query, QUERY_LENGTH, "SELECT %s, %s, %s FROM %s WHERE %s > 0;", g_attribute_set[0],
-			 g_attribute_set[1], g_attribute_set[2], RELATION_NAME, g_attribute_set[0]);
+			 g_attribute_set[1], g_attribute_set[2], RELATION_NAME1, g_attribute_set[0]);
 	g_cursor = db_query(query);
 	TC_ASSERT_NOT_NULL("db_query", g_cursor);
 	res = cursor_move_last(g_cursor);
@@ -902,7 +1022,7 @@ void utc_arastorage_cursor_is_last_row_tc_n(void)
 
 	/* We need to get valid cursor for this test */
 	snprintf(query, QUERY_LENGTH, "SELECT %s, %s, %s FROM %s WHERE %s > 0;", g_attribute_set[0],
-			 g_attribute_set[1], g_attribute_set[2], RELATION_NAME, g_attribute_set[0]);
+			 g_attribute_set[1], g_attribute_set[2], RELATION_NAME1, g_attribute_set[0]);
 	g_cursor = db_query(query);
 	TC_ASSERT_NOT_NULL("db_query", g_cursor);
 	res = cursor_move_first(g_cursor);
@@ -1299,6 +1419,22 @@ void utc_arastorage_cursor_get_string_value_tc_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+void cleanup(void)
+{
+	char query[QUERY_LENGTH];
+	db_result_t res;
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME1);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+
+	memset(query, 0, QUERY_LENGTH);
+	snprintf(query, QUERY_LENGTH, "REMOVE RELATION %s;", RELATION_NAME2);
+	res = db_exec(query);
+	TC_ASSERT("db_exec", DB_SUCCESS(res));
+}
+
 int arastorage_sample_launcher(int argc, FAR char *argv[])
 {
 	total_pass = 0;
@@ -1366,6 +1502,7 @@ int arastorage_sample_launcher(int argc, FAR char *argv[])
 #endif
 	utc_arastorage_cursor_get_string_value_tc_n();
 	utc_arastorage_db_cursor_free_tc_n();
+	cleanup();
 	db_deinit();
 
 
@@ -1374,6 +1511,7 @@ int arastorage_sample_launcher(int argc, FAR char *argv[])
 	printf("         Total TC : %d              \n", (total_pass + total_fail));
 	printf("         PASS : %d FAIL : %d        \n", total_pass, total_fail);
 	printf("#########################################\n");
+
 	return 0;
 }
 

@@ -44,19 +44,21 @@ ASRCS =
 CSRCS =
 VPATH = .
 
-
-ifeq ($(CONFIG_DM),y)
 ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
 include wakaama/core/Make.defs
-include wakaama/core/er-coap-13/Make.defs
-include wakaama/examples/shared/Make.defs
+include wakaama/core/er-coap-13/Make.defs	
 endif
+
+ifeq ($(CONFIG_DM),y)
 ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
-include wakaama/examples/client/Make.defs
+   include wakaama/examples/shared/Make.defs
+   include wakaama/examples/client/Make.defs
 endif
 ifeq ($(CONFIG_LWM2M_SERVER_MODE),y)
-include wakaama/examples/server/Make.defs
+    include wakaama/examples/shared/Make.defs
+    include wakaama/examples/server/Make.defs
 endif
+  CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
@@ -88,10 +90,6 @@ include wpa_supplicant/src/rsn_supp/Make.defs
 include wpa_supplicant/src/drivers/Make.defs
 include wpa_supplicant/src/l2_packet/Make.defs
 include wpa_supplicant/src/eapol_auth/Make.defs
-endif
-
-ifeq ($(CONFIG_DM),y)
-CFLAGS+=-I$(TOPDIR)/../framework/include/dm
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
@@ -148,6 +146,7 @@ ifneq ("$(wildcard $(IOTIVITY_BASE_DIR)/iotivity.built)","")
 	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/clean_iotivity.sh
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/out
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls
+	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/*.o
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconsign.dblite
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconf_temp
 endif

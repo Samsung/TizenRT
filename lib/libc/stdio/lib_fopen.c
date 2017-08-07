@@ -97,7 +97,7 @@
  * Name: lib_mode2oflags
  ****************************************************************************/
 
-static int lib_mode2oflags(FAR const char *mode)
+int lib_mode2oflags(FAR const char *mode)
 {
 	unsigned int state;
 	int oflags;

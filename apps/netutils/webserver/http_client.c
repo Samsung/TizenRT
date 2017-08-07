@@ -303,7 +303,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 
 					/* calculate chunked size */
 					for (i = 1; sentence_end - i >= len->sentence_start; ++i) {
-						cha = (int) * (buf + sentence_end - i);
+						cha = (int)*(buf + sentence_end - i);
 						if (cha > '9') {
 							cha = cha - 'a' + 10;
 						} else {
@@ -495,6 +495,9 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 {
 	FILE *f;
 	char path[HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH + 1] = ".";
+	int ref;
+	int valid = 1;
+
 	switch (method) {
 	case HTTP_METHOD_GET:
 		if ((f = fopen(url, "r")) != NULL) {
@@ -510,11 +513,21 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 		}
 		break;
 	case HTTP_METHOD_POST:
+		ref = strlen(url) + 12;
+		if (ref > HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH) {
+			valid = 0;
+			HTTP_LOGE("ERROR: URL length is too long. Cannot send response\n");
+		} else
+			valid = 1;
 		/* Need to create file with unique file name */
 		strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH);
 		strncat(path, "index.shtml", HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH);
-		if ((f = fopen(path, "w"))) {
-			fputs(entity, f);
+		if (valid && (f = fopen(path, "w"))) {
+			if (fputs(entity, f) < 0) {
+				HTTP_LOGE("Error: Fail to execute fputs\n");
+				fclose(f);
+				break;
+			}
 			if (http_send_response(client, 200, path, NULL) == HTTP_ERROR) {
 				HTTP_LOGE("Error: Fail to send response\n");
 			}
@@ -527,8 +540,18 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 		}
 		break;
 	case HTTP_METHOD_PUT:
-		if ((f = fopen(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH), "w"))) {
-			fputs(entity, f);
+		ref = strlen(url) + 1;
+		if (ref > HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH) {
+			valid = 0;
+			HTTP_LOGE("ERROR: URL length is too long. Cannot send response\n");
+		} else
+			valid = 1;
+		if (valid && (f = fopen(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH), "w"))) {
+			if (fputs(entity, f) < 0) {
+				HTTP_LOGE("Error: Fail to execute fputs\n");
+				fclose(f);
+				break;
+			}
 			if (http_send_response(client, 200, url, NULL) == HTTP_ERROR) {
 				HTTP_LOGE("Error: Fail to send response\n");
 			}
@@ -541,7 +564,13 @@ void http_handle_file(struct http_client_t *client, int method, const char *url,
 		}
 		break;
 	case HTTP_METHOD_DELETE:
-		if (unlink(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH))) {
+		ref = strlen(url) + 1;
+		if (ref > HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH) {
+			valid = 0;
+			HTTP_LOGE("ERROR: URL length is too long. Cannot send response\n");
+		} else
+			valid = 1;
+		if (valid && unlink(strncat(path, url, HTTP_CONF_MAX_REQUEST_HEADER_URL_LENGTH))) {
 			HTTP_LOGE("fail to delete %s\n", url);
 			if (http_send_response(client, 500, HTTP_ERROR_500, NULL) == HTTP_ERROR) {
 				HTTP_LOGE("Error: Fail to send response\n");

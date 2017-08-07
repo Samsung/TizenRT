@@ -60,7 +60,8 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double sqrtl(long double x)
 {
-	long double y, y1;
+	long double y;
+	long double y1;
 
 	/* Filter out invalid/trivial inputs */
 

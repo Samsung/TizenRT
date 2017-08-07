@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = workqueue
+FUNCNAME = workqueue_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # workqueue example

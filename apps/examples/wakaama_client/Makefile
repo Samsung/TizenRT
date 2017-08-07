@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = wakaamaclient
+FUNCNAME = wakaamaclient_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/shared

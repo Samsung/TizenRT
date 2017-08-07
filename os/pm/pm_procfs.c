@@ -627,7 +627,7 @@ static int power_readdir(struct fs_dirent_s *dir)
 		/* Listing the contents of domains */
 		if (index >= 0 && index < CONFIG_PM_NDOMAINS) {
 			dir->fd_dir.d_type = DTYPE_DIRECTORY;
-			sprintf(dir->fd_dir.d_name, "%d", index);
+			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), "%d", index);
 			powerdir->base.index++;
 			return OK;
 		}

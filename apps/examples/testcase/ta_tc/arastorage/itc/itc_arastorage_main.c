@@ -233,7 +233,7 @@ void itc_arastorage_db_print_header_p(void)
 	g_cursor = db_query(g_query);
 	TC_ASSERT_NOT_NULL("db_query", g_cursor);
 	ret = db_print_header(g_cursor);
-	TC_ASSERT_EQ_CLEANUP("db_print_header", DB_ERROR(ret), 0, "db_print_header failed\n", db_cursor_free(g_cursor));
+	TC_ASSERT_EQ_CLEANUP("db_print_header", DB_ERROR(ret), 0, db_cursor_free(g_cursor));
 	db_cursor_free(g_cursor);
 	g_cursor = NULL;
 	TC_SUCCESS_RESULT();

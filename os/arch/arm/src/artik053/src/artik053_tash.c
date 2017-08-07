@@ -181,14 +181,14 @@ static void artik053_configure_partitions(void)
 #if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
 			if (!strncmp(types, "smartfs,", 8)) {
 				char partref[4];
-				sprintf(partref, "p%d", partno);
+				snprintf(partref, sizeof(partref), "p%d", partno);
 				smart_initialize(CONFIG_ARTIK053_FLASH_MINOR, mtd_part, partref);
 			} else
 #endif
 #if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FS_SMARTFS)
 			if (!strncmp(types, "romfs,", 6)) {
 				char partref[6];
-				sprintf(partref, "rom%d", partno);
+				snprintf(partref, sizeof(partref), "rom%d", partno);
 				smart_initialize(MTD_ROMFS, mtd_part, partref);
 			} else
 #endif
@@ -339,7 +339,7 @@ int board_app_initialize(void)
 		char path[CONFIG_PATH_MAX];
 
 		for (i = 0; i < CONFIG_S5J_MCT_NUM; i++) {
-			sprintf(path, "/dev/timer%d", i);
+			snprintf(path, sizeof(path), "/dev/timer%d", i);
 			s5j_timer_initialize(path, i);
 		}
 	}

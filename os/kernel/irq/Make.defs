@@ -52,6 +52,10 @@
 
 CSRCS += irq_initialize.c irq_attach.c irq_dispatch.c irq_unexpectedisr.c
 
+ifeq ($(CONFIG_DEBUG_IRQ_INFO),y)
+CSRCS += irq_info.c
+endif
+
 # Include irq build support
 
 DEPPATH += --dep-path irq

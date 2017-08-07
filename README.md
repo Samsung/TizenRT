@@ -6,6 +6,13 @@
 lightweight RTOS-based platform to support low-end IoT devices.  
 Please find project details like **APIs**, **Specification** and **Long-term Goals** on our [Tizen Site](https://source.tizen.org/documentation/tizen-rt).
 
+## Contents
+
+> [Quick Start](#quick-start)  
+> [Supported Board](#supported-board)  
+> [Configuration Sets](#configuration-sets)  
+> [APPENDIX](#appendix)
+
 ## Quick Start
 ### Getting the toolchain
 
@@ -71,9 +78,9 @@ Please keep in mind that we are actively working on board configurations, and wi
 ## APPENDIX
 ### Kconfig-frontends Installation
 
-1. The *gperf* and *libncurses5-dev* packages should be installed.
+1. The *byacc*, *flex*, *gperf* and *libncurses5-dev* packages should be installed.
 ```bash
-sudo apt-get install gperf libncurses5-dev
+sudo apt-get install byacc flex gperf libncurses5-dev
 ```
 
 2. Download and untar *kconfig-frontends* package.  

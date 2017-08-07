@@ -82,8 +82,11 @@
 #define MAX_RETRIES      8
 
 /* Buffer sizes */
-
-#define SEND_BUFFER_SIZE 64
+/*
+ * Note that, DNS name size should be applied on SEND_BUFFER_SIZE, since
+ * DNS query = Header (12 bytes) + DNS Name (Variable) + Query type (2 bytes) + Query Class (2 bytes)
+ */
+#define SEND_BUFFER_SIZE (32 + CONFIG_NETDB_DNSCLIENT_NAMESIZE)
 #define RECV_BUFFER_SIZE CONFIG_NETDB_DNSCLIENT_MAXRESPONSE
 
 /****************************************************************************

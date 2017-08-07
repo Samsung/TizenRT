@@ -30,19 +30,17 @@
 
 int g_logm_head;
 int g_logm_tail;
-int g_logm_available;
-int g_logm_enqueued_count;
 int g_logm_dropmsg_count;
 int g_logm_overflow_offset;
 
 static void logm_putc(FAR struct lib_outstream_s *this, int ch)
 {
-	if (this->nput < g_logm_available - 1) {
+	if ((g_logm_tail + this->nput + 1) % logm_bufsize != g_logm_head) {
 		g_logm_rsvbuf[(g_logm_tail + this->nput++) % logm_bufsize] = ch;
 	}
 }
 
-static void logm_initstream(FAR struct lib_outstream_s *outstream)
+static void logm_outstream(FAR struct lib_outstream_s *outstream)
 {
 	outstream->put = logm_putc;
 #ifdef CONFIG_STDIO_LINEBUFFER
@@ -51,8 +49,29 @@ static void logm_initstream(FAR struct lib_outstream_s *outstream)
 	outstream->nput = 0;
 }
 
+#ifdef CONFIG_ARCH_LOWPUTC
+static void logm_flush(struct lib_outstream_s *stream)
+{
+	sched_lock();
+
+	while (g_logm_head != g_logm_tail) {
+		stream->put(stream, g_logm_rsvbuf[g_logm_head]);
+		g_logm_head = (g_logm_head + 1) % logm_bufsize;
+	}
+
+	if (LOGM_STATUS(LOGM_BUFFER_OVERFLOW)) {
+		LOGM_STATUS_CLEAR(LOGM_BUFFER_OVERFLOW);
+	}
+
+	/* Reset nput in stream for next stream */
+	stream->nput = 0;
+
+	sched_unlock();
+}
+#endif
+
 /* logm_internal hook for syslog & printfs */
-int logm_internal(int priority, const char *fmt, va_list ap)
+int logm_internal(int flag, int indx, int priority, const char *fmt, va_list ap)
 {
 	irqstate_t flags;
 	int ret = 0;
@@ -61,7 +80,9 @@ int logm_internal(int priority, const char *fmt, va_list ap)
 	struct timespec ts;
 #endif
 
-	if (LOGM_STATUS(LOGM_READY) && !LOGM_STATUS(LOGM_BUFFER_RESIZE_REQ) && !up_interrupt_context()) {
+	if (LOGM_STATUS(LOGM_READY) && !LOGM_STATUS(LOGM_BUFFER_RESIZE_REQ) \
+		&& flag == LOGM_NORMAL && !up_interrupt_context()) {
+
 		flags = irqsave();
 
 		if (LOGM_STATUS(LOGM_BUFFER_OVERFLOW)) {
@@ -70,16 +91,8 @@ int logm_internal(int priority, const char *fmt, va_list ap)
 			return 0;
 		}
 
-		if (g_logm_available <= 0) {
-			LOGM_STATUS_SET(LOGM_BUFFER_OVERFLOW);
-			g_logm_dropmsg_count = 1;
-			g_logm_overflow_offset = g_logm_tail;
-			irqrestore(flags);
-			return 0;
-		}
-
 		/*  Initializes a stream for use with logm buffer */
-		logm_initstream(&strm);
+		logm_outstream(&strm);
 
 #ifdef CONFIG_LOGM_TIMESTAMP
 		/* Get the current time and prepend timestamp to message */
@@ -88,18 +101,20 @@ int logm_internal(int priority, const char *fmt, va_list ap)
 		}
 #endif
 		ret = lib_vsprintf(&strm, fmt, ap);
-		g_logm_rsvbuf[(g_logm_tail + ret) % logm_bufsize] = '\0';
 
-		/* set g_logm_tail for next entered message */
-		g_logm_tail = (g_logm_tail + ret + 1) % logm_bufsize;
-		g_logm_available -= (ret + 1);
-		g_logm_enqueued_count++;
+		g_logm_tail = (g_logm_tail + ret) % logm_bufsize;
 
+		if ((g_logm_tail + 1) % logm_bufsize == g_logm_head) {
+			LOGM_STATUS_SET(LOGM_BUFFER_OVERFLOW);
+			g_logm_dropmsg_count = 1;
+			g_logm_overflow_offset = g_logm_tail;
+		}
 		irqrestore(flags);
 	} else {
 		/* Low Output: Sytem is not yet completely ready or this is called from interrupt handler */
 #ifdef CONFIG_ARCH_LOWPUTC
 		lib_lowoutstream(&strm);
+		logm_flush(&strm);
 		ret = lib_vsprintf(&strm, fmt, ap);
 #endif
 	}
@@ -116,7 +131,7 @@ int logm(int flag, int indx, int priority, const char *fmt, ...)
 	/* LOGIC for initial test here */
 
 	va_start(ap, fmt);
-	ret = logm_internal(priority, fmt, ap);
+	ret = logm_internal(flag, indx, priority, fmt, ap);
 	va_end(ap);
 
 	return ret;

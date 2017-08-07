@@ -225,7 +225,7 @@ db_result_t db_exec(char *format)
 		}
 		break;
 	case AQL_TYPE_REMOVE_RELATION:
-		res = relation_remove(adt.relations[0], 1);
+		res = relation_remove(rel, 1);
 		break;
 	default:
 		break;

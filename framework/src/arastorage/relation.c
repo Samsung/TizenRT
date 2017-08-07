@@ -316,8 +316,9 @@ relation_t *relation_create(char *name, db_direction_t dir)
 
 db_result_t relation_rename(char *old_name, char *new_name)
 {
+	relation_t *rel = relation_load(new_name);
 
-	if (DB_ERROR(relation_remove(new_name, 1)) || DB_ERROR(storage_rename_relation(old_name, new_name))) {
+	if (DB_ERROR(relation_remove(rel, 1)) || DB_ERROR(storage_rename_relation(old_name, new_name))) {
 		return DB_STORAGE_ERROR;
 	}
 
@@ -417,12 +418,13 @@ db_result_t relation_set_primary_key(relation_t *rel, char *name)
 	return DB_OK;
 }
 
-db_result_t relation_remove(char *name, int remove_tuples)
+db_result_t relation_remove(relation_t *rel, int remove_tuples)
 {
-	relation_t *rel;
 	db_result_t result;
+	attribute_t *attr;
+	int len;
+	char *filename;
 
-	rel = relation_load(name);
 	if (rel == NULL) {
 		/*
 		 * Attempt to remove an inexistent relation. To allow for this
@@ -434,6 +436,34 @@ db_result_t relation_remove(char *name, int remove_tuples)
 
 	if (rel->references > 1) {
 		return DB_BUSY_ERROR;
+	}
+#ifdef CONFIG_ARASTORAGE_ENABLE_WRITE_BUFFER
+	/* Flush insert buffer to make sure of writing tuples before removing relation */
+	if (DB_SUCCESS(storage_flush_insert_buffer())) {
+		DB_LOG_D("DB : flush insert buffer!!\n");
+	}
+#endif
+	attr = list_head(rel->attributes);
+
+	while (attr != NULL) {
+		if (DB_SUCCESS(index_load(rel, attr))) {
+			result = index_destroy(attr->index);
+			if (DB_ERROR(result)) {
+				DB_LOG_E("DB: Index %s.%s destroy failed\n", rel->name, attr->name);
+			}
+		}
+		attr = list_item_next(attr);
+	}
+
+	len = strlen(rel->name) + strlen(INDEX_NAME_SUFFIX) + 1;
+	filename = malloc(sizeof(char) * len);
+	if (filename == NULL) {
+		return DB_STORAGE_ERROR;
+	}
+	snprintf(filename, len, "%s%s\0", rel->name, INDEX_NAME_SUFFIX);
+	result = storage_remove(filename);
+	if (DB_ERROR(result)) {
+		DB_LOG_E("DB: Index file unlinking failed\n");
 	}
 
 	result = storage_drop_relation(rel, remove_tuples);
@@ -909,10 +939,10 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 	unsigned attribute_count;
 	unsigned char *from_ptr;
 	attribute_t *from_attr;
-	index_t *index;
 	storage_row_t row = NULL;
 	tuple_t result_row;
 	source_dest_map_t *attr_map_ptr, *attr_map_end;
+	char name[RELATION_NAME_LENGTH + 1];
 	int i;
 
 	if ((*handle)->tuple == NULL) {
@@ -982,30 +1012,16 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 
 end_removal:
 	DB_LOG_E("DB: Finished removing tuples. Result relation has %d tuples\n", (*handle)->result_rel->cardinality);
-
-#ifdef CONFIG_ARASTORAGE_ENABLE_WRITE_BUFFER
-	/* Flush insert buffer to make sure of writing tuples in new relation */
-	if (DB_SUCCESS(storage_flush_insert_buffer())) {
-		DB_LOG_D("DB : flush insert buffer!!\n");
-	}
-#endif
-
-	relation_release((*handle)->rel);
+	memcpy(name, (*handle)->rel->name, sizeof(name));
+	relation_remove((*handle)->rel, 1);
 
 	/* Rename the name of new relation to old relation */
-	result = relation_rename((*handle)->result_rel->name, (*handle)->rel->name);
+	result = relation_rename((*handle)->result_rel->name, name);
 	if (DB_ERROR(result)) {
 		DB_LOG_E("DB: Failed to rename newly created relation\n");
 		goto errout;
 	}
 	memcpy((*handle)->result_rel->name, (*handle)->rel->name, sizeof((*handle)->result_rel->name));
-
-	/* Destory exsting index for old relation */
-	index = (*handle)->index_iterator.index;
-	if (index != NULL) {
-		index_destroy(index);
-		relation_index_clear((*handle)->result_rel);
-	}
 
 	/* Process finished, we allocate cursor for result of remove */
 	if (DB_ERROR(cursor_init(&cursor, (*handle)->result_rel)) || DB_ERROR(cursor_data_set(cursor, (*handle)->attr_map, (*handle)->result_rel->attribute_count))) {
@@ -1092,6 +1108,7 @@ db_result_t relation_select(db_handle_t **handle, relation_t *rel, void *adt_ptr
 	db_direction_t dir;
 	char *attribute_name;
 	attribute_t *attr, *attr_ptr;
+	relation_t * res_rel;
 	int i;
 	int normal_attributes = 0;
 	adt = (aql_adt_t *)adt_ptr;
@@ -1109,7 +1126,8 @@ db_result_t relation_select(db_handle_t **handle, relation_t *rel, void *adt_ptr
 		dir = DB_MEMORY;
 	}
 
-	relation_remove(name, 1);
+	res_rel = relation_load(name);
+	relation_remove(res_rel, 1);
 	relation_create(name, dir);
 	(*handle)->result_rel = relation_load(name);
 

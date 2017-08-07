@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = sensorbd
+FUNCNAME = sensorbd_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # Example

@@ -60,7 +60,7 @@ config MTD_PROGMEM
 		Those interfaces must be exported by chip-specific logic.
 
 config MTD_FTL
-	bool "Elable MTD ftl layer"
+	bool "Enable MTD ftl layer"
 	default n
 	---help---
 		Enable to support a MTD FTL layer.

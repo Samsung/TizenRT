@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = dtls_server
+FUNCNAME = dtls_server_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =

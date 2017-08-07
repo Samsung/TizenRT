@@ -10,6 +10,14 @@ choice
 	prompt "ARM chip selection"
 	default ARCH_CHIP_S5J
 
+config ARCH_CHIP_LM
+	bool "TI/Luminary Stellaris"
+	select ARCH_HAVE_CMNVECTOR
+	select ARCH_HAVE_MPU
+	select ARM_HAVE_MPU_UNIFIED
+	---help---
+		TI/Luminary Stellaris LMS3 and LM4F architectures (ARM Cortex-M3/4)
+
 config ARCH_CHIP_S5J
 	bool "Samsung S5J"
 	select ARCH_CORTEXR4
@@ -50,6 +58,7 @@ config ARCH_FAMILY
 config ARCH_CHIP
 	string
 	default "s5j"       if ARCH_CHIP_S5J
+	default "tiva"      if ARCH_CHIP_LM
 
 config ARMV7M_USEBASEPRI
 	bool "Use BASEPRI Register"
@@ -152,6 +161,9 @@ source arch/arm/src/armv7-m/Kconfig
 endif
 if ARCH_CORTEXR4
 source arch/arm/src/armv7-r/Kconfig
+endif
+if ARCH_CHIP_LM
+source arch/arm/src/tiva/Kconfig
 endif
 if ARCH_CHIP_S5J
 source arch/arm/src/s5j/Kconfig

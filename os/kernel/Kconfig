@@ -441,7 +441,7 @@ config PTHREAD_MUTEX_UNSAFE
 		software you may be porting or, perhaps, if you are trying to minimize
 		footprint.
 
-	config PTHREAD_MUTEX_BOTH
+config PTHREAD_MUTEX_BOTH
 	bool "Both robust and unsafe mutexes"
 	---help---
 		Support both forms of NORMAL mutexes.
@@ -453,12 +453,12 @@ choice
 	default PTHREAD_MUTEX_DEFAULT_ROBUST
 	depends on PTHREAD_MUTEX_BOTH
 
-	config PTHREAD_MUTEX_DEFAULT_ROBUST
+config PTHREAD_MUTEX_DEFAULT_ROBUST
 	bool "Robust default"
 	---help---
 		The default is robust NORMAL mutexes (non-standard)
 
-	config PTHREAD_MUTEX_DEFAULT_UNSAFE
+config PTHREAD_MUTEX_DEFAULT_UNSAFE
 	bool "Unsafe default"
 	---help---
 		The default is traditional unsafe NORMAL mutexes (standard)
@@ -1075,13 +1075,6 @@ config USERMAIN_STACKSIZE
 	default 2048
 	---help---
 		The size of the stack to allocate for the user initialization thread
-		that is started as soon as the OS completes its initialization.
-
-config PREAPP_STACKSIZE
-	int "pre-app thread stack size"
-	default 2048
-	---help---
-		The size of the stack to allocate for the pre-application thread
 		that is started as soon as the OS completes its initialization.
 
 config MPU_STACKGAURD
