@@ -127,6 +127,7 @@ int iperf_main(int argc, char **argv)
 		goto main_exit;
 	}
 
+
 	if (run(test) < 0) {
 		printf("error - %s\n", iperf_strerror(i_errno));
 		goto main_exit;
@@ -162,9 +163,16 @@ static int run(struct iperf_test *test)
 		break;
 	case 'c':
 		if (iperf_run_client(test) < 0) {
+			struct iperf_stream *sp;
+
+			iperf_set_send_state(test, IPERF_DONE);
+			close(test->ctrl_sck);
+			SLIST_FOREACH(sp, &test->streams, streams) {
+				close(sp->socket);
+			}
+			iperf_free_test(test);
 			printf("error - %s\n", iperf_strerror(i_errno));
-			iperf_client_end(test);
-			goto run_exit;
+			exit(1);
 		}
 		break;
 	default:
@@ -172,6 +180,5 @@ static int run(struct iperf_test *test)
 		break;
 	}
 
-run_exit:
 	return 0;
 }
