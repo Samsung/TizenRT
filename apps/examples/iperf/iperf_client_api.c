@@ -347,10 +347,11 @@ int iperf_client_end(struct iperf_test *test)
 
 	iperf_set_send_state(test, IPERF_DONE);
 
+	close(test->ctrl_sck);
+
 	/* Close all stream sockets */
 	SLIST_FOREACH(sp, &test->streams, streams) {
 		close(sp->socket);
-		close(test->ctrl_sck);
 	}
 
 	return 0;
