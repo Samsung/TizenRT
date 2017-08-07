@@ -195,7 +195,7 @@ coap_pdu_t *coap_new_request(coap_context_t *ctx, method_t m, coap_list_t *optio
 		debug("coap_new_request : cannot add token to request\n");
 	}
 
-	coap_show_pdu(pdu);
+	coap_show_pdu2(pdu, ctx->protocol);
 
 	for (opt = options; opt; opt = opt->next) {
 		coap_add_option(pdu, COAP_OPTION_KEY(*(coap_option *) opt->data), COAP_OPTION_LENGTH(*(coap_option *) opt->data), COAP_OPTION_DATA(*(coap_option *) opt->data));
@@ -211,6 +211,7 @@ coap_pdu_t *coap_new_request(coap_context_t *ctx, method_t m, coap_list_t *optio
 
 	if (ctx->protocol == COAP_PROTO_TCP || ctx->protocol == COAP_PROTO_TLS) {
 		coap_pdu_t *tcp_pdu = NULL;
+		debug("\ncoap_new_request : tcp pdu created\n");
 		tcp_pdu = coap_convert_to_tcp_pdu(pdu);
 		return tcp_pdu;
 	} else {
@@ -402,14 +403,20 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 	unsigned short code;
 
 	if (ctx->protocol == COAP_PROTO_TCP || ctx->protocol == COAP_PROTO_TLS) {
-		transport = coap_get_tcp_header_type_from_size(received->length);
+		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)received->transport_hdr)[0] >> 4);
+		debug("message_handler : received transport %d\n", transport);
+#ifdef WITH_DEBUG_PDU_PRINT
+		coap_debug_pdu_print(received, transport);
+#endif
+	} else {
+		transport = COAP_UDP;
 	}
 
 	coap_get_token2((received->transport_hdr), transport, &token_ptr, &tokenlen);
 
 	if (tokenlen > 0) {
 		strncpy(token, (const char *)token_ptr, tokenlen);
-		printf("message_handler : token %s, len %d, the_token %s, len %d, token_ptr %s\n",
+		debug("message_handler : token %s, len %d, the_token %s, len %d, token_ptr %s\n",
 				token, tokenlen, the_token.s, the_token.length, token_ptr);
 	}
 
@@ -428,7 +435,7 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 				/* should not enter here */
 			}
 		}
-		printf("message_handler : unmatched token, ignore it\n");
+		warn("message_handler : unmatched token, ignore it\n");
 		return;
 	}
 
@@ -1295,7 +1302,7 @@ int main(int argc, char **argv)
 #ifndef NDEBUG
 	if (LOG_DEBUG <= coap_get_log_level()) {
 		debug("sending CoAP request:\n");
-		coap_show_pdu(pdu);
+		coap_show_pdu2(pdu, protocol);
 	}
 #endif
 
@@ -1362,7 +1369,8 @@ int main(int argc, char **argv)
 		result = select(ctx->sockfd + 1, &readfds, 0, 0, &tv);
 
 		if (result < 0) {		/* error */
-			perror("select");
+			printf("ERROR : failed on select, errno %d\n", errno);
+			break;
 		} else if (result > 0) {	/* read from socket */
 			if (FD_ISSET(ctx->sockfd, &readfds)) {
 				coap_read(ctx);	/* read received data */

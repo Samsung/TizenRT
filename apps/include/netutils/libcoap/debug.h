@@ -55,6 +55,8 @@ void coap_log_impl(coap_log_t level, const char *format, ...);
 #define debug(...) coap_log(LOG_DEBUG, __VA_ARGS__)
 
 #include <apps/netutils/libcoap/pdu.h>
+
+void coap_show_pdu2(const coap_pdu_t *, coap_protocol_t protocol);
 void coap_show_pdu(const coap_pdu_t *);
 
 struct coap_address_t;

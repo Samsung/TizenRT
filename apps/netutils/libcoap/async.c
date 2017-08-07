@@ -38,7 +38,7 @@ coap_async_state_t *coap_register_async(coap_context_t *context, coap_address_t 
 		break;
 	case COAP_PROTO_TCP:
 	case COAP_PROTO_TLS:
-		transport = coap_get_tcp_header_type_from_size(request->length);
+		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)request->transport_hdr)[0] >> 4);
 		break;
 	default:
 		break;

@@ -721,7 +721,7 @@ int coap_add_data(coap_pdu_t *pdu, unsigned int len, const unsigned char *data)
 		return 0;
 	}
 
-	pdu->data = (unsigned char *)pdu->hdr + pdu->length;
+	pdu->data = (unsigned char *)pdu->transport_hdr + pdu->length;
 	*pdu->data = COAP_PAYLOAD_START;
 	pdu->data++;
 
@@ -890,6 +890,8 @@ int coap_pdu_parse2(unsigned char *data, size_t length, coap_pdu_t *pdu, coap_tr
 		printf("coap_pdu_parse2 : it has wrong type\n");
 	}
 #endif
+	debug("coap_pdu_parse2 : transport %d, headerSize %d, tokenlen %d\n", transport, headerSize, tokenLength);
+
 	pdu->length = length;
 
 	if (COAP_UDP == transport) {
@@ -938,7 +940,7 @@ int coap_pdu_parse2(unsigned char *data, size_t length, coap_pdu_t *pdu, coap_tr
 		 * of the PDU structure. */
 
 		/* append data (including the Token) to pdu structure */
-		memcpy(((unsigned char *)pdu->hdr) + headerSize, data + headerSize, length - headerSize);
+		memcpy(((unsigned char *)pdu->transport_hdr) + headerSize, data + headerSize, length - headerSize);
 
 		/* skip header + token */
 		length -= (tokenLength + headerSize);
@@ -969,7 +971,10 @@ int coap_pdu_parse2(unsigned char *data, size_t length, coap_pdu_t *pdu, coap_tr
 		pdu->data = (unsigned char *)opt;
 		//printf("[COAP] pdu - data : %s\n", pdu->data);
 	}
-
+#ifdef WITH_DEBUG_PDU_PRINT
+	printf("\ncoap_parse2 : parsed PDU\n");
+	coap_debug_pdu_print(pdu, transport);
+#endif
 	return 1;
 
 discard:
@@ -991,21 +996,26 @@ coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu)
 		return pdu;
 	}
 
-	if (pdu->length <= COAP_UDP_HEADER) {
-		transport = COAP_TCP;
-	} else {
-		transport = coap_get_tcp_header_type_from_size((pdu->length - COAP_UDP_HEADER));
+	/* Copy Token length and Token field to CoAP over TCP Header */
+	if (pdu->transport_hdr->udp.token_length > 0) {
+		tokenlen = pdu->transport_hdr->udp.token_length;
 	}
 
-	if ((int)(pdu->length - COAP_UDP_HEADER) < 0) {
-		newsize = 0;
+	if ((int)(pdu->length - COAP_UDP_HEADER - tokenlen) < 0) {
+		warn("coap_convert_to_tcp_pdu : invalid length of PDU\n");
+		coap_delete_pdu(pdu);
+		pdu = NULL;
+		return pdu;
 	} else {
-		newsize = (pdu->length - COAP_UDP_HEADER);
+		/* newsize : optionLen + payloadLen + PAYLOAD_MARKER */
+		newsize = (pdu->length - COAP_UDP_HEADER - tokenlen);
+		transport = coap_get_tcp_header_type_from_size(newsize);
 	}
 
 	debug("coap_convert_to_tcp_pdu : transport %d, newsize %d\n", transport, newsize);
 
-	tcp_pdu = coap_pdu_init2(0, pdu->transport_hdr->udp.code, 0, (newsize + 1), transport);
+	/* FIXME: Can we make more small packet ?*/
+	tcp_pdu = coap_pdu_init2(0, pdu->transport_hdr->udp.code, 0, COAP_MAX_PDU_SIZE, transport);
 
 	if (!tcp_pdu) {
 		warn("coap_convert_to_tcp_pdu : failed to create pdu for TCP\n");
@@ -1015,9 +1025,6 @@ coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu)
 
 		/* Fill extended length field on CoAP over TCP header */
 		coap_add_length(tcp_pdu, transport, newsize);
-
-		/* Copy Token length and Token field to CoAP over TCP Header */
-		tokenlen = pdu->transport_hdr->udp.token_length;
 
 		switch(transport) {
 		case COAP_TCP:
@@ -1056,15 +1063,13 @@ coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu)
 		tcp_pdu->max_size = pdu->max_size;
 		tcp_pdu->max_delta = pdu->max_delta;
 		tcp_pdu->length = newsize + tokenlen + coap_get_tcp_header_length_for_transport(transport);
-
 		length = (int)tcp_pdu->length;
 
 		/* Move UDP pdu pointer to start of option */
 		udp_opt = (unsigned char *)(&(pdu->transport_hdr->udp) +1) + tokenlen;
 
 		/* copy udp pdu to tcp pdu starting from token */
-		newsize = newsize - tokenlen;
-		memcpy(tcp_opt, udp_opt, newsize);
+		memcpy(tcp_opt, udp_opt, (newsize + 1));
 
 		length -= (tokenlen + coap_get_tcp_header_length_for_transport(transport));
 
@@ -1096,7 +1101,7 @@ coap_pdu_t *coap_convert_to_tcp_pdu(coap_pdu_t *pdu)
 		}
 
 		/* If you want to see the PDU in details, enable below functions */
-#if 0
+#ifdef WITH_DEBUG_PDU_PRINT
 		coap_debug_pdu_print(pdu, COAP_UDP);
 		coap_debug_pdu_print(tcp_pdu, transport);
 #endif

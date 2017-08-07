@@ -234,9 +234,8 @@ size_t coap_print_addr(const struct coap_address_t *addr, unsigned char *buf, si
 }
 
 #ifndef WITH_CONTIKI
-void coap_show_pdu(const coap_pdu_t *pdu)
+void coap_show_pdu2(const coap_pdu_t *pdu, coap_protocol_t protocol)
 {
-
 	unsigned int buf_len = 0;
 	unsigned char *buf = NULL;
 
@@ -256,7 +255,11 @@ void coap_show_pdu(const coap_pdu_t *pdu)
 
 	memset(buf, 0, buf_len);
 
-	transport = coap_get_tcp_header_type_from_size(pdu->length);
+	if (protocol == COAP_PROTO_TCP || protocol == COAP_PROTO_TLS) {
+		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)pdu->transport_hdr)[0] >> 4);
+	} else {
+		transport = COAP_UDP;
+	}
 
 	switch (transport) {
 	case COAP_UDP:
@@ -342,6 +345,11 @@ void coap_show_pdu(const coap_pdu_t *pdu)
 	free(buf);
 	fprintf(COAP_DEBUG_FD, "\n");
 	fflush(COAP_DEBUG_FD);
+}
+
+void coap_show_pdu(const coap_pdu_t *pdu)
+{
+	coap_show_pdu2(pdu, COAP_PROTO_UDP);
 }
 
 #else							/* WITH_CONTIKI */

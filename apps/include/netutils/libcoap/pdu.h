@@ -197,6 +197,14 @@ typedef enum {
     COAP_TCP_32BIT
 } coap_transport_t;
 
+typedef enum {
+	COAP_PROTO_UDP = 0,
+	COAP_PROTO_DTLS,
+	COAP_PROTO_TCP,
+	COAP_PROTO_TLS,
+	COAP_PROTO_MAX
+} coap_protocol_t;
+
 #ifdef WORDS_BIGENDIAN
 typedef struct {
 	unsigned short version:2;      /* protocol version */

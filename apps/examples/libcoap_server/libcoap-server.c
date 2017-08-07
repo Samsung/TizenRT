@@ -128,7 +128,9 @@ void hnd_get_time(coap_context_t *ctx, struct coap_resource_t *resource, coap_ad
 		break;
 	case COAP_PROTO_TCP:
 	case COAP_PROTO_TLS:
-		transport = coap_get_tcp_header_type_from_size(request->length);
+		if (request) {
+			transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)request->transport_hdr)[0] >> 4);
+		}
 		break;
 	default:
 		/* Should not enter here */
@@ -198,6 +200,8 @@ void hnd_put_time(coap_context_t *ctx, struct coap_resource_t *resource, coap_ad
 	 * (insist on query ?ticks). Return Created or Ok.
 	 */
 
+	debug("hnd_put_time : enter\n");
+
 	/* if my_clock_base was deleted, we pretend to have no such resource */
 	response->transport_hdr->udp.code = my_clock_base ? COAP_RESPONSE_CODE(204) : COAP_RESPONSE_CODE(201);
 
@@ -244,21 +248,20 @@ void hnd_get_async(coap_context_t *ctx, struct coap_resource_t *resource, coap_a
 		break;
 	case COAP_PROTO_TCP:
 	case COAP_PROTO_TLS:
-		transport = coap_get_tcp_header_type_from_size(request->length);
+		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)request->transport_hdr)[0] >> 4);
 		break;
 	default:
 		break;
 	}
 
 	if (async) {
-
 		coap_option_filter_clear(f);
 		if (ctx->protocol == COAP_PROTO_UDP || ctx->protocol == COAP_PROTO_DTLS) {
 			if (async->id != request->transport_hdr->udp.id) {
 				response->transport_hdr->udp.code = COAP_RESPONSE_CODE(503);
 			}
 		} else if (ctx->protocol == COAP_PROTO_TCP || ctx->protocol == COAP_PROTO_TLS) {
-			response->transport_hdr->udp.code = COAP_RESPONSE_CODE(503);
+			//response->transport_hdr->udp.code = COAP_RESPONSE_CODE(503);
 		} else {
 			/* Should not enter here */
 		}
@@ -604,7 +607,8 @@ int main(int argc, char **argv)
 
 		if (result < 0) {		/* error */
 			if (errno != EINTR) {
-				perror("select");
+				printf("ERROR : failed to on select, errno %d\n", errno);
+				break;
 			}
 		} else if (result > 0) {	/* read from socket */
 			if (FD_ISSET(ctx->sockfd, &readfds)) {

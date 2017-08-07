@@ -101,14 +101,6 @@ typedef struct {
 	coap_key_t item[COAP_MID_CACHE_SIZE];
 } coap_mid_cache_t;
 
-typedef enum {
-	COAP_PROTO_UDP = 0,
-	COAP_PROTO_DTLS,
-	COAP_PROTO_TCP,
-	COAP_PROTO_TLS,
-	COAP_PROTO_MAX
-} coap_protocol_t;
-
 /** The CoAP stack's global state is stored in a coap_context_t object */
 typedef struct coap_context_t {
 	coap_opt_filter_t known_options;

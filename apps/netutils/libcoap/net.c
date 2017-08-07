@@ -610,17 +610,33 @@ void coap_transaction_id(const coap_address_t *peer, const coap_pdu_t *pdu, coap
 
 coap_tid_t coap_send_ack(coap_context_t *context, const coap_address_t *dst, coap_pdu_t *request)
 {
-	coap_pdu_t *response;
+	coap_pdu_t *response = NULL;
 	coap_tid_t result = COAP_INVALID_TID;
 
-	/* TODO : Considering TCP Case */
-	if (request && request->transport_hdr->udp.type == COAP_MESSAGE_CON) {
-		response = coap_pdu_init(COAP_MESSAGE_ACK, 0, request->transport_hdr->udp.id, sizeof(coap_pdu_t));
-		if (response) {
-			result = coap_send(context, dst, response);
-			coap_delete_pdu(response);
+	coap_transport_t transport = COAP_UDP;
+
+	switch(context->protocol) {
+	case COAP_PROTO_UDP:
+	case COAP_PROTO_DTLS:
+		if (request && request->transport_hdr->udp.type == COAP_MESSAGE_CON) {
+			response = coap_pdu_init(COAP_MESSAGE_ACK, 0, request->transport_hdr->udp.id, sizeof(coap_pdu_t));
 		}
+		break;
+	case COAP_PROTO_TCP:
+	case COAP_PROTO_TLS:
+		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)request->transport_hdr)[0] >> 4);
+		result = COAP_TCP_TID;
+		/* Do nothing? */
+		break;
+	default:
+		break;
 	}
+
+	if (response) {
+		result = coap_send(context, dst, response);
+		coap_delete_pdu(response);
+	}
+
 	return result;
 }
 
@@ -637,10 +653,11 @@ coap_tid_t coap_send_impl(coap_context_t *context, const coap_address_t *dst, co
 
 	switch (context->protocol) {
 	case COAP_PROTO_UDP:
-		bytes_written = sendto(context->sockfd, pdu->hdr, pdu->length, 0, &dst->addr.sa, dst->size);
+		bytes_written = sendto(context->sockfd, pdu->transport_hdr, pdu->length, 0, &dst->addr.sa, dst->size);
 		break;
 	case COAP_PROTO_TCP:
-		bytes_written = send(context->sockfd, pdu->hdr, pdu->length, 0);
+		debug("coap_send_impl : enter, sockfd %d\n", context->sockfd);
+		bytes_written = send(context->sockfd, pdu->transport_hdr, pdu->length, 0);
 		break;
 #ifdef WITH_MBEDTLS
 	case COAP_PROTO_TLS:
@@ -987,7 +1004,7 @@ int coap_read(coap_context_t *ctx)
 	case COAP_PROTO_TLS:
 		/* the size of CoAP over TCP header is 2 Bytes */
 		if ((size_t)bytes_read < COAP_TCP_HEADER_NO_FIELD) {
-			warn("coap_read : discarded invalid TCP frame\n");
+			//warn("coap_read : discarded invalid TCP frame\n");
 			goto error_early;
 		}
 		break;
@@ -1009,22 +1026,24 @@ int coap_read(coap_context_t *ctx)
 #ifdef WITH_LWIP
 	node->pdu = coap_pdu_from_pbuf(ctx->pending_package);
 	ctx->pending_package = NULL;
-#else
-	node->pdu = coap_pdu_init(0, 0, 0, bytes_read);
 #endif
-	if (!node->pdu) {
-		goto error;
-	}
-
-	coap_ticks(&node->t);
-	memcpy(&node->local, &dst, sizeof(coap_address_t));
-	memcpy(&node->remote, &src, sizeof(coap_address_t));
 
 	coap_transport_t transport;
 
 	switch (ctx->protocol) {
 	case COAP_PROTO_UDP:
 	case COAP_PROTO_DTLS:
+		node->pdu = coap_pdu_init(0, 0, 0, bytes_read);
+
+		if (!node->pdu) {
+			warn("coap_read : failed to coap_pdu_init2\n");
+			goto error;
+		}
+
+		coap_ticks(&node->t);
+		memcpy(&node->local, &dst, sizeof(coap_address_t));
+		memcpy(&node->remote, &src, sizeof(coap_address_t));
+
 		if (!coap_pdu_parse((unsigned char *)buf, bytes_read, node->pdu)) {
 			warn("coap_read : discard malformed PDU");
 			goto error;
@@ -1034,6 +1053,17 @@ int coap_read(coap_context_t *ctx)
 	case COAP_PROTO_TLS:
 		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)buf)[0] >> 4);
 		debug("coap_read : received header type, transport %d, len %u, bytes_read %d\n", transport, ((buf[0] >> 4) & 0x0f), bytes_read);
+
+		node->pdu = coap_pdu_init2(0, 0, 0, bytes_read, transport);
+		if (!node->pdu) {
+			warn("coap_read : failed to coap_pdu_init2, transport %d\n", transport);
+			goto error;
+		}
+
+		coap_ticks(&node->t);
+		memcpy(&node->local, &dst, sizeof(coap_address_t));
+		memcpy(&node->remote, &src, sizeof(coap_address_t));
+
 		if (!coap_pdu_parse2((unsigned char*)buf, bytes_read, node->pdu, transport)) {
 			/* FIXME : prevent printing log when continuously received wrong PDU */
 			//warn("coap_read : discard malformed TCP PDU\n");
@@ -1041,9 +1071,6 @@ int coap_read(coap_context_t *ctx)
 		}
 		node->transport = transport;
 		debug("coap_read : Received %d type pdu\n", transport);
-#if 0
-		coap_debug_pdu_print(node->pdu, transport);
-#endif
 		break;
 	default:
 		break;
@@ -1064,7 +1091,7 @@ int coap_read(coap_context_t *ctx)
 			debug("** received %d bytes from %s:\n", (int)bytes_read, addr);
 		}
 
-		coap_show_pdu(node->pdu);
+		coap_show_pdu2(node->pdu, ctx->protocol);
 	}
 #endif
 
@@ -1183,15 +1210,42 @@ coap_queue_t *coap_find_transaction(coap_queue_t *queue, coap_tid_t id)
 coap_pdu_t *coap_new_error_response2(coap_pdu_t *request, unsigned char code, coap_opt_filter_t opts, coap_protocol_t protocol)
 {
 	coap_opt_iterator_t opt_iter;
-	coap_pdu_t *response;
-	/* TODO : Considering TCP Case */
-	size_t size = sizeof(coap_hdr_t) + request->transport_hdr->udp.token_length;
-	int type;
+	coap_pdu_t *response = NULL;
+
+	size_t size = 0;
+	int type = 0;
 	coap_opt_t *option;
 	unsigned short opt_type = 0;	/* used for calculating delta-storage */
 
+	coap_transport_t transport = COAP_UDP;
+	size_t tokenLen = 0;
+	unsigned char tokenStr[8] = {0,};
+	unsigned char *token_ptr = NULL;
+
 #if COAP_ERROR_PHRASE_LENGTH > 0
-	char *phrase = coap_response_phrase(code);
+	char *phrase = NULL;
+#endif
+
+	assert(request);
+
+	if (protocol == COAP_PROTO_TCP || protocol == COAP_PROTO_TLS) {
+		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)request->transport_hdr)[0] >> 4);
+	} else {
+		transport = COAP_UDP;
+		/* cannot send ACK if original request was not confirmable */
+		type = request->transport_hdr->udp.type == COAP_MESSAGE_CON ? COAP_MESSAGE_ACK : COAP_MESSAGE_NON;
+	}
+
+	coap_get_token2(request->transport_hdr, transport, &token_ptr, &tokenLen);
+	if (tokenLen > 0) {
+		memcpy((char *)tokenStr, (char *)token_ptr, tokenLen);
+	} else
+		tokenLen = 0;
+
+	size = tokenLen;
+
+#if COAP_ERROR_PHRASE_LENGTH > 0
+	phrase = coap_response_phrase(code);
 
 	/* Need some more space for the error phrase and payload start marker */
 	if (phrase) {
@@ -1199,18 +1253,12 @@ coap_pdu_t *coap_new_error_response2(coap_pdu_t *request, unsigned char code, co
 	}
 #endif
 
-	assert(request);
-
-	/* cannot send ACK if original request was not confirmable */
-	/* TODO : Considering TCP Case */
-	type = request->transport_hdr->udp.type == COAP_MESSAGE_CON ? COAP_MESSAGE_ACK : COAP_MESSAGE_NON;
-
 	/* Estimate how much space we need for options to copy from
 	 * request. We always need the Token, for 4.02 the unknown critical
 	 * options must be included as well. */
 	coap_option_clrb(opts, COAP_OPTION_CONTENT_TYPE);	/* we do not want this */
 
-	coap_option_iterator_init(request, &opt_iter, opts);
+	coap_option_iterator_init2(request, &opt_iter, opts, transport);
 
 	/* Add size of each unknown critical option. As known critical
 	   options as well as elective options are not copied, the delta
@@ -1247,17 +1295,26 @@ coap_pdu_t *coap_new_error_response2(coap_pdu_t *request, unsigned char code, co
 
 	/* Now create the response and fill with options and payload data. */
 	/* TODO : Considering TCP Case */
-	response = coap_pdu_init(type, code, request->transport_hdr->udp.id, size);
+	if (protocol == COAP_PROTO_UDP || protocol == COAP_PROTO_DTLS) {
+		response = coap_pdu_init(type, code, request->transport_hdr->udp.id, COAP_MAX_PDU_SIZE);
+	} else if (protocol == COAP_PROTO_TCP || protocol == COAP_PROTO_TLS) {
+		response = coap_pdu_init(type, code, 0, COAP_MAX_PDU_SIZE);
+	} else {
+		/* Should not enter here */
+		response = NULL;
+		return response;
+	}
+
 	if (response) {
 		/* copy token */
-		if (!coap_add_token(response, request->transport_hdr->udp.token_length, request->transport_hdr->udp.token)) {
+		if (!coap_add_token(response, tokenLen, tokenStr)) {
 			debug("cannot add token to error response\n");
 			coap_delete_pdu(response);
 			return NULL;
 		}
 
 		/* copy all options */
-		coap_option_iterator_init(request, &opt_iter, opts);
+		coap_option_iterator_init2(request, &opt_iter, opts, transport);
 		while ((option = coap_option_next(&opt_iter))) {
 			coap_add_option(response, opt_iter.type, COAP_OPT_LENGTH(option), COAP_OPT_VALUE(option));
 		}
@@ -1265,6 +1322,7 @@ coap_pdu_t *coap_new_error_response2(coap_pdu_t *request, unsigned char code, co
 #if COAP_ERROR_PHRASE_LENGTH > 0
 		/* note that diagnostic messages do not need a Content-Format option. */
 		if (phrase) {
+			debug("coap_new_error_response2 : phrase %s\n", phrase);
 			coap_add_data(response, strlen(phrase), (unsigned char *)phrase);
 		}
 #endif
@@ -1277,10 +1335,6 @@ coap_pdu_t *coap_new_error_response2(coap_pdu_t *request, unsigned char code, co
 			warn("coap_new_error_response2 : failed to convert to TCP pdu\n");
 		} else {
 			debug("coap_new_error_response2 : succeed to convert to TCP pdu\n");
-#if 0
-			coap_debug_pdu_print(response, COAP_UDP);
-			coap_debug_pdu_print(tcp_response, coap_get_tcp_header_type_from_size((response->length - COAP_UDP_HEADER)));
-#endif
 		}
 		return tcp_response;
 	} else {
@@ -1327,7 +1381,7 @@ coap_pdu_t *wellknown_response(coap_context_t *context, coap_pdu_t *request)
 
 	coap_pdu_t *tcp_resp = NULL; /* used for TCP pdu */
 
-	coap_transport_t transport = COAP_UDP; /* Request pdu transport type */
+	coap_transport_t transport = COAP_UDP;
 
 	unsigned char msgType = COAP_MESSAGE_NON;
 	unsigned short msgId = 0;
@@ -1336,9 +1390,9 @@ coap_pdu_t *wellknown_response(coap_context_t *context, coap_pdu_t *request)
 	unsigned char *token_ptr = NULL; /* Token pointer for request */
 
 	if (context->protocol == COAP_PROTO_TCP || context->protocol == COAP_PROTO_TLS) {
-		transport = coap_get_tcp_header_type_from_size((request->length - COAP_UDP_HEADER));
-
+		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)request->transport_hdr)[0] >> 4);
 	} else if (context->protocol == COAP_PROTO_UDP || context->protocol == COAP_PROTO_DTLS) {
+		transport = COAP_UDP;
 		if (request->transport_hdr->udp.type == COAP_MESSAGE_CON) {
 			msgType = COAP_MESSAGE_ACK;
 		} else {
@@ -1360,7 +1414,7 @@ coap_pdu_t *wellknown_response(coap_context_t *context, coap_pdu_t *request)
 		debug("wellknown_response: cannot create PDU\n");
 		return NULL;
 	}
-	/* TODO : Considering TCP Case */
+
 	if (!coap_add_token(resp, tokenlen, token_ptr)) {
 		debug("wellknown_response: cannot add token\n");
 		goto error;
@@ -1452,10 +1506,6 @@ coap_pdu_t *wellknown_response(coap_context_t *context, coap_pdu_t *request)
 			warn("wellknown_response : failed to convert to TCP pdu\n");
 		} else {
 			debug("wellknown_response : convert to new TCP pdu\n");
-#if 0
-			coap_debug_pdu_print(resp, COAP_UDP);
-			coap_debug_pdu_print(tcp_resp, coap_get_tcp_header_type_from_size((resp->length - COAP_UDP_HEADER)));
-#endif
 		}
 
 		return tcp_resp;
@@ -1477,10 +1527,6 @@ error:
 			warn("wellknown_response : failed to convert to TCP pdu\n");
 		} else {
 			debug("wellknown_response : convert to new TCP pdu\n");
-#if 0
-			coap_debug_pdu_print(resp, COAP_UDP);
-			coap_debug_pdu_print(tcp_resp, coap_get_tcp_header_type_from_size((resp->length - COAP_UDP_HEADER)));
-#endif
 		}
 
 	}
@@ -1504,6 +1550,10 @@ void handle_request(coap_context_t *context, coap_queue_t *node)
 
 	coap_pdu_t *tcp_response = NULL;
 
+	unsigned char tokenStr[8] = {0,};
+	unsigned char *token_ptr = NULL;
+	size_t tokenLen = 0;
+
 	coap_option_filter_clear(opt_filter);
 
 	/* try to find the resource from the request URI */
@@ -1513,7 +1563,7 @@ void handle_request(coap_context_t *context, coap_queue_t *node)
 
 	code = coap_get_code(node->pdu, transport);
 
-	debug("handle_request : code %d transport %d\n", code, transport);
+	debug("handle_request : code %d transport %d, resource %p\n", code, transport, resource);
 
 	if (!resource) {
 		/* The resource was not found. Check if the request URI happens to
@@ -1560,13 +1610,25 @@ void handle_request(coap_context_t *context, coap_queue_t *node)
 
 	if (h) {
 		debug("handle_request : call custom handler for resource 0x%02x%02x%02x%02x\n", key[0], key[1], key[2], key[3]);
-		response = coap_pdu_init(node->pdu->transport_hdr->udp.type == COAP_MESSAGE_CON ? COAP_MESSAGE_ACK : COAP_MESSAGE_NON,
-					0, node->pdu->transport_hdr->udp.id, COAP_MAX_PDU_SIZE);
+		switch (context->protocol) {
+		case COAP_PROTO_UDP:
+		case COAP_PROTO_DTLS:
+			response = coap_pdu_init(node->pdu->transport_hdr->udp.type == COAP_MESSAGE_CON ? COAP_MESSAGE_ACK : COAP_MESSAGE_NON, 0, node->pdu->transport_hdr->udp.id, COAP_MAX_PDU_SIZE);
+			break;
+		default:
+			response = coap_pdu_init(COAP_MESSAGE_NON, 0, 0, COAP_MAX_PDU_SIZE);
+			break;
+		}
+
+		coap_get_token2(node->pdu->transport_hdr, transport, &token_ptr, &tokenLen);
+		if (tokenLen > 0) {
+			memcpy((char *)tokenStr, (char *)token_ptr, tokenLen);
+		}
 
 		/* Implementation detail: coap_add_token() immediately returns 0
 		   if response == NULL */
-		if (coap_add_token(response, node->pdu->transport_hdr->udp.token_length, node->pdu->transport_hdr->udp.token)) {
-			str token = { node->pdu->transport_hdr->udp.token_length, node->pdu->transport_hdr->udp.token };
+		if (coap_add_token(response, tokenLen, tokenStr)) {
+			str token = { tokenLen, tokenStr };
 
 			h(context, resource, &node->remote, node->pdu, &token, response);
 
@@ -1589,15 +1651,10 @@ void handle_request(coap_context_t *context, coap_queue_t *node)
 					warn("handle_request : failed to convert TCP pdu\n");
 				} else {
 					debug("handle_request : succeed to convert TCP pdu\n");
-					transport = coap_get_tcp_header_type_from_size((response->length - COAP_UDP_HEADER));
-#if 0
-					coap_debug_pdu_print(response, COAP_UDP);
-					coap_debug_pdu_print(tcp_response, transport);
-#endif
 				}
 
-				code = coap_get_code(tcp_response, transport);
-
+				code = coap_get_code(tcp_response,
+						coap_get_tcp_header_type_from_initbyte(((unsigned char *)tcp_response->transport_hdr)[0] >> 4));
 				if (code >= 64 && !coap_is_mcast(&node->local)) {
 					if (coap_send(context, &node->remote, tcp_response) == COAP_INVALID_TID) {
 						debug("handle_request : cannot send TCP reponse\n");
@@ -1720,7 +1777,6 @@ void coap_dispatch(coap_context_t *context)
 			transport = rcvd->transport;
 
 			/* find transaction in sendqueue to stop retransmission */
-
 			if (coap_option_check_critical2(context, rcvd->pdu, opt_filter, transport) == 0) {
 				goto cleanup;
 			}
