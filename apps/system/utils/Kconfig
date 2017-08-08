@@ -139,6 +139,13 @@ config STACKMONITOR_INTERVAL
 
 endif #ENABLE_STACKMONITOR
 
+config ENABLE_STACKOPT
+	bool "Stack opt"
+	default y
+	depends on ENABLE_STACKMONITOR && TASH_COMMAND_INTERFACE
+	---help---
+		Measure optimal stack size of APP
+
 config ENABLE_UPTIME
 	bool "uptime"
 	default y

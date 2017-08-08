@@ -58,6 +58,9 @@ const static tash_cmdlist_t kdbg_cmds[] = {
 #if defined(CONFIG_ENABLE_STACKMONITOR)
 	{"stkmon",   kdbg_stackmonitor, TASH_EXECMD_SYNC},
 #endif
+#if defined(CONFIG_ENABLE_STACKOPT)
+	{"stkopt",   kdbg_stackopt,    TASH_EXECMD_ASYNC},
+#endif
 #if defined(CONFIG_TTRACE)
 	{"ttrace",   kdbg_ttrace,       TASH_EXECMD_SYNC},
 #endif
