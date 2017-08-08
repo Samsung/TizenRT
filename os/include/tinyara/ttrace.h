@@ -109,10 +109,53 @@ struct trace_packet {        // total 44 byte(message), 12byte(uid)
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+/**
+ * @ingroup TTRACE_LIBC
+ * @brief writes a trace log with string to indicate that a event has begun
+ * @param[in] number for tag
+ * @param[in] unique strings like function name for distinguishing events
+ * @return On success, TTRACE_VALID is returned. On failure, ERROR is returned and errno is set appropriately.
+ * @since Tizen RT vX.X
+ */
 int trace_begin(int tag, char *str, ...);
+
+/**
+ * @ingroup TTRACE_LIBC
+ * @brief writes a trace log with unique id to indicate that a event has begun
+ * @param[in] number for tag
+ * @param[in] unique id for distinguishing events
+ * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
+ * @since Tizen RT vX.X
+ */
 int trace_begin_u(int tag, int8_t uid);
+
+/**
+ * @ingroup TTRACE_LIBC
+ * @brief writes a trace log to indicate that the event has ended
+ * @param[in] number for tag
+ * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
+ * @since Tizen RT vX.X
+ */
 int trace_end(int tag);
+
+/**
+ * @ingroup TTRACE_LIBC
+ * @brief writes a trace log to indicate that a event has ended
+ * @param[in] number for tag
+ * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
+ * @since Tizen RT vX.X
+ */
 int trace_end_u(int tag);
+
+/**
+ * @ingroup TTRACE_LIBC
+ * @brief writes a trace log for scheduler events
+ * @param[in] tcb of current task
+ * @param[in] tcb of next task which will be switched
+ * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
+ * @since Tizen RT vX.X
+ */
 int trace_sched(struct tcb_s *prev, struct tcb_s *next);
 #else
 #define trace_begin(a, b, ...)
