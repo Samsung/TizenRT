@@ -245,20 +245,6 @@
 #undef  CONFIG_SMARTFS_DYNAMIC_HEADER
 #endif
 
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-#define ENTRY_VALID(e) ((smartfs_rdle16(&e->flags) & SMARTFS_DIRENT_EMPTY) != \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
-						((smartfs_rdle16(&e->flags) & SMARTFS_DIRENT_ACTIVE) == \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
-
-#else
-#define ENTRY_VALID(e) ((e->flags & SMARTFS_DIRENT_EMPTY) != \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
-						((e->flags & SMARTFS_DIRENT_ACTIVE) == \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
-
-#endif
-
 #ifdef CONFIG_SMARTFS_JOURNALING
 
 /*
@@ -437,6 +423,10 @@ struct smartfs_logging_entry_s {
 								 *      the previous transaction. Thus, there can be at most 2 unfinished
 								 *      transactions for a sector in case of power failure.
 								 */
+
+	uint8_t crc16[2];			/*      For CRC value to check validation of journal entry
+							     *      First 8bits for entry, next 8bits for entry + data
+							     */
 
 	uint16_t curr_sector;		/*      Transaction type : Use
 								 *        1) T_WRITE  : sector number of sector to be written.
