@@ -137,5 +137,5 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-	@gnome-terminal -e "qemu-system-arm -M lm3s6965evb -kernel $(TOPDIR)/../build/output/bin/tinyara -nographic"
+	@gnome-terminal -e "qemu-system-arm -M lm3s6965evb -kernel $(TOPDIR)/../build/output/bin/tinyara -nographic -gdb tcp::3333"
 endef

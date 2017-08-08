@@ -26,13 +26,23 @@ TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-th
 ### Using QEMU command
 
 ```
-qemu-system-arm -M lm3s6965evb -kernel ../build/output/bin/tinyara -nographic
+qemu-system-arm -M lm3s6965evb -kernel ../build/output/bin/tinyara -nographic -gdb tcp::3333
 ```
 
 ### Using make command
 
 ```
 make download
+```
+
+## How to debug
+
+To debug Tizen RT on QEMU, GDB should be connected through below commands.
+
+```
+arm-none-eabi-gdb
+(gdb) file ../build/output/bin/tinyara
+(gdb) target remote:3333
 ```
 
 ## Configuration Sets
