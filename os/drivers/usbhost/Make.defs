@@ -50,8 +50,6 @@
 #
 ############################################################################
 
-CSRCS += hid_parser.c
-
 ifeq ($(CONFIG_USBHOST),y)
 
 # Include built-in USB host driver logic
@@ -69,14 +67,6 @@ endif
 
 ifeq ($(CONFIG_USBHOST_CDCACM),y)
 CSRCS += usbhost_cdcacm.c
-endif
-
-ifeq ($(CONFIG_USBHOST_HIDKBD),y)
-CSRCS += usbhost_hidkbd.c
-endif
-
-ifeq ($(CONFIG_USBHOST_HIDMOUSE),y)
-CSRCS += usbhost_hidmouse.c
 endif
 
 # HCD debug/trace logic
