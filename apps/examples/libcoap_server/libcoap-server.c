@@ -513,12 +513,17 @@ int main(int argc, char **argv)
 	if (g_operating_status == SERVER_RUNNING) {
 		if (quit) {
 			printf("coap-server : set quit flag %d\n", quit);
-			/* To prevent memory leakage */
-			if (addr_str != NULL)
+			while (g_operating_status != SERVER_STOPPED) {
+				usleep(100000);
+			}
+			printf("coap-server : server process has been stopped\n");
+			if (addr_str) {
 				free(addr_str);
+			}
 		} else {
 			printf("coap-server : another libcoap-server is running\n");
 		}
+
 		return 0;
 	}
 

@@ -431,6 +431,7 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 				}
 			} else if (ctx->protocol == COAP_PROTO_TCP || ctx->protocol == COAP_PROTO_TLS) {
 				/* TODO: do nothing? */
+				debug("message_handler : do nothing\n");
 			} else {
 				/* should not enter here */
 			}
@@ -455,12 +456,12 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 
 	code = (unsigned short)coap_get_code(received, transport);
 
+	debug("message_handler : code %d, sent %p\n", code, sent);
+
 	/* output the received data, if any */
 	if (code == COAP_RESPONSE_CODE(205)) {
 
 		/* set obs timer if we have successfully subscribed a resource */
-		info("message_handler : code %d, sent %p\n", code, sent);
-
 		if (sent && coap_check_option2(received, COAP_OPTION_SUBSCRIPTION, &opt_iter, transport)) {
 			printf("message_handler : observation relationship established, set timeout to %d\n", obs_seconds);
 			set_timeout(&obs_wait, obs_seconds);
@@ -544,6 +545,7 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 		}
 	} else {					/* no 2.05 */
 
+		debug("message_handler : response class %d\n", COAP_RESPONSE_CLASS(code));
 		/* check if an error was signaled and output payload if so */
 		if (COAP_RESPONSE_CLASS(code) >= 4) {
 			fprintf(stderr, "%d.%02d", (code >> 5), code & 0x1F);
@@ -559,8 +561,12 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
 	}
 
 	/* finally send new request, if needed */
-	if (pdu && coap_send(ctx, remote, pdu) == COAP_INVALID_TID) {
-		debug("message_handler: error sending response");
+	if (pdu != NULL) {
+		if (coap_send(ctx, remote, pdu) == COAP_INVALID_TID) {
+			debug("message_handler: error sending response");
+		}
+	} else {
+		debug("message_handler: pdu is NULL\n");
 	}
 	coap_delete_pdu(pdu);
 
@@ -1323,10 +1329,7 @@ int main(int argc, char **argv)
 	case COAP_PROTO_TCP:
 	case COAP_PROTO_TLS:
 		tid = coap_send(ctx, &dst, pdu);
-
-		if (tid == COAP_INVALID_TID) {
-			coap_delete_pdu(pdu);
-		}
+		coap_delete_pdu(pdu);
 		break;
 	default :
 		/* should not enter here */

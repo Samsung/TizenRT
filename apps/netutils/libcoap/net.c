@@ -777,14 +777,29 @@ coap_tid_t coap_send_message_type(coap_context_t *context, const coap_address_t 
 	coap_pdu_t *response;
 	coap_tid_t result = COAP_INVALID_TID;
 
-	if (request) {
-		/* TODO : Considering TCP Case */
-		response = coap_pdu_init(type, 0, request->transport_hdr->udp.id, sizeof(coap_pdu_t));
-		if (response) {
-			result = coap_send(context, dst, response);
-			coap_delete_pdu(response);
+	coap_transport_t transport;
+
+	switch (context->protocol) {
+	case COAP_PROTO_UDP:
+	case COAP_PROTO_DTLS:
+		transport = COAP_UDP;
+		if (request) {
+			response = coap_pdu_init(type, 0, request->transport_hdr->udp.id, sizeof(coap_pdu_t));
+			if (response) {
+				result = coap_send(context, dst, response);
+				coap_delete_pdu(response);
+			}
 		}
+		break;
+	case COAP_PROTO_TCP:
+	case COAP_PROTO_TLS:
+		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)request)[0] >> 4);
+		result = COAP_TCP_TID;
+		break;
+	default:
+		break;
 	}
+
 	return result;
 }
 
@@ -1294,7 +1309,6 @@ coap_pdu_t *coap_new_error_response2(coap_pdu_t *request, unsigned char code, co
 	}
 
 	/* Now create the response and fill with options and payload data. */
-	/* TODO : Considering TCP Case */
 	if (protocol == COAP_PROTO_UDP || protocol == COAP_PROTO_DTLS) {
 		response = coap_pdu_init(type, code, request->transport_hdr->udp.id, COAP_MAX_PDU_SIZE);
 	} else if (protocol == COAP_PROTO_TCP || protocol == COAP_PROTO_TLS) {
@@ -1694,7 +1708,12 @@ static inline void handle_response(coap_context_t *context, coap_queue_t *sent, 
 		context->response_handler(context, &rcvd->remote, sent ? sent->pdu : NULL, rcvd->pdu, rcvd->id);
 	} else {
 		/* send ACK if rcvd is confirmable (i.e. a separate response) */
-		coap_send_ack(context, &rcvd->remote, rcvd->pdu);
+		if (context->protocol == COAP_PROTO_UDP || context->protocol == COAP_PROTO_DTLS) {
+			coap_send_ack(context, &rcvd->remote, rcvd->pdu);
+		} else {
+			debug("handle_response : do nothing\n");
+			/* TODO: CoAP over TCP doesn't have ACK message */
+		}
 	}
 }
 

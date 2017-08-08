@@ -765,9 +765,10 @@ static void coap_notify_observers(coap_context_t *context, coap_resource_t *r)
 					warn("coap_check_notify : failed to create TCP response\n");
 				} else {
 					tid = coap_send(context, &obs->subscriber, tcp_resp);
-					if (COAP_INVALID_TID == tid) {
-						coap_delete_pdu(tcp_resp);
+					if (tid == COAP_INVALID_TID) {
+						debug("coap_check_notify: coap_send failed\n");
 					}
+					coap_delete_pdu(tcp_resp);
 				}
 				break;
 			default:
