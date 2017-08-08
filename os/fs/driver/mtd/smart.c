@@ -3386,7 +3386,9 @@ static uint16_t smart_findfreephyssector(FAR struct smart_struct_s *dev, uint8_t
 	uint32_t readaddr;
 	struct smart_sect_header_s header;
 	int ret;
-
+	uint8_t   *sector_buff;
+	int i;
+	bool bitflipped;
 	/* Determine which erase block we should allocate the new
 	 * sector from. This is based on the number of free sectors
 	 * available in each erase block. */
@@ -3394,6 +3396,7 @@ static uint16_t smart_findfreephyssector(FAR struct smart_struct_s *dev, uint8_t
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 retry:
 #endif
+	bitflipped = FALSE;
 	allocfreecount = 0;
 	allocblock = 0xFFFF;
 #ifdef CONFIG_MTD_SMART_WEAR_LEVEL
@@ -3499,10 +3502,11 @@ retry:
 
 		{
 			fdbg("Program bug!  Expected a free sector, free=%d\n", dev->freesectors);
+#ifdef CONFIG_DEBUG_FS
 			for (x = 0; x < dev->neraseblocks; x++) {
-				fdbg("%d ", dev->freecount[x]);
+				fsdbg("%d ", dev->freecount[x]);
 			}
-
+#endif
 			/* No free sectors found!  Bug? */
 
 			return -1;
@@ -3511,6 +3515,11 @@ retry:
 
 	/* Now find a free physical sector within this selected
 	 * erase block to allocate. */
+	sector_buff = (uint8_t *)kmm_zalloc(dev->mtdBlksPerSector * dev->geo.blocksize);
+	if (sector_buff == NULL) {
+		printf("secotr_buff allocation fail\n");
+		return physicalsector;
+	}
 
 	for (x = allocblock * dev->sectorsPerBlk; x < allocblock * dev->sectorsPerBlk + dev->availSectPerBlk; x++) {
 		/* Check if this physical sector is available. */
@@ -3544,12 +3553,11 @@ retry:
 		ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
 		if (ret != sizeof(struct smart_sect_header_s)) {
 			fdbg("Error reading phys sector %d\n", physicalsector);
+			free(sector_buff);
 			return -1;
 		}
-//                if ((*((FAR uint16_t *)header.logicalsector) == 0xFFFF) &&
 		if ((UINT8TOUINT16(header.logicalsector) == 0xFFFF) &&
 #if SMART_STATUS_VERSION == 1
-//                    (*((FAR uint16_t *)&header.seq) == 0xFFFF) &&
 			((header.seq == 0xFF) && (header.crc8 == 0xFF)) &&
 #else
 			(header.seq == CONFIG_SMARTFS_ERASEDSTATE) &&
@@ -3558,22 +3566,67 @@ retry:
 #ifdef CONFIG_SMARTFS_BAD_SECTOR
 			if (dev->badSectorList[x] == FALSE) {
 #endif
-				physicalsector = x;
-				dev->lastallocblock = allocblock;
-				break;
+				ret = MTD_READ(dev->mtd, readaddr, dev->mtdBlksPerSector * dev->geo.blocksize, sector_buff);
+				for (i = 0; i < dev->mtdBlksPerSector * dev->geo.blocksize; i++) {
+					if (sector_buff[i] != 0xff) {
+						break;
+					}
+				}
+
+				if (i == dev->mtdBlksPerSector * dev->geo.blocksize) {
+					physicalsector = x;
+					dev->lastallocblock = allocblock;
+					break;
+				} else {
+					bitflipped = TRUE;
+					fdbg("bit flip occur %d offset %d byte %x\n", x, i, sector_buff[i]);
+					fdbg("set Released and commited to Erase%d\n", x);
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
+					header.status = header.status & ~(SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED);
+#else
+					header.status = header.status | SMART_STATUS_COMMITTED | SMART_STATUS_RELEASED;
+#endif
+					ret = smart_bytewrite(dev, readaddr + offsetof(struct smart_sect_header_s, status), 1, &header.status);
+					if (ret < 0) {
+						fdbg("Error %d releasing corrupted sector\n", -ret);
+						goto error;
+					}
+#ifdef CONFIG_MTD_SMART_PACK_COUNTS
+					smart_add_count(dev, dev->freecount, x / dev->sectorsPerBlk, -1);
+					smart_add_count(dev, dev->releasecount, allocblock, 1);
+#else
+					dev->freecount[x / dev->sectorsPerBlk]--;
+					dev->releasecount[allocblock]++;
+#endif
+					dev->freesectors--;
+					dev->releasesectors++;
+				}
 #ifdef CONFIG_SMARTFS_BAD_SECTOR
 			}
 #endif
 		}
 	}
 
+error :
 	if (physicalsector == 0xFFFF) {
-		dbg("Program bug!  Expected a free sector\n");
+		if (bitflipped) {
+			fdbg("retry allocation \n");
+			canrelocate = FALSE;
+			goto retry;
+		}
+		dbg("Program bug!  Expected a free sector %d\n", allocblock);
 	}
 
 	if (physicalsector >= dev->totalsectors) {
+		if (bitflipped) {
+			fdbg("retry allocation \n");
+			canrelocate = FALSE;
+			goto retry;
+		}
 		dbg("Program bug!  Selected sector too big!!!\n");
 	}
+
+	free(sector_buff);
 
 	return physicalsector;
 }
