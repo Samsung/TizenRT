@@ -978,7 +978,7 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 				readwrite.count = sizeof(uint16_t);
 #ifdef CONFIG_SMARTFS_JOURNALING
 				ret = smartfs_create_journalentry(fs, T_WRITE, readwrite.logsector,
-					readwrite.offset, readwrite.count, 0, 0, readwrite.buffer, &t_sector, &t_offset);
+												  readwrite.offset, readwrite.count, 0, 0, readwrite.buffer, &t_sector, &t_offset);
 				if (ret != OK) {
 					fdbg("Journal entry creation failed.\n");
 					goto errout_with_semaphore;

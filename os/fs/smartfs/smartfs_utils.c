@@ -112,16 +112,16 @@ extern size_t smart_sect_header_size;
 #endif
 
 #ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-#define ENTRY_VALID(e) ((smartfs_rdle16(&e->flags) & SMARTFS_DIRENT_EMPTY) != \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
-						((smartfs_rdle16(&e->flags) & SMARTFS_DIRENT_ACTIVE) == \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
+#define ENTRY_VALID(e) ((smartfs_rdle16(&(e)->flags) & SMARTFS_DIRENT_EMPTY) != \
+                        (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
+                        ((smartfs_rdle16(&(e)->flags) & SMARTFS_DIRENT_ACTIVE) == \
+                        (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
 
 #else
-#define ENTRY_VALID(e) ((e->flags & SMARTFS_DIRENT_EMPTY) != \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
-						((e->flags & SMARTFS_DIRENT_ACTIVE) == \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
+#define ENTRY_VALID(e) (((e)->flags & SMARTFS_DIRENT_EMPTY) != \
+                        (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
+                        (((e)->flags & SMARTFS_DIRENT_ACTIVE) == \
+                        (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
 
 #endif
 
@@ -1274,6 +1274,7 @@ int smartfs_createentry(struct smartfs_mountpt_s *fs, uint16_t parentdirsector, 
 	readwrite.buffer = (uint8_t *)&fs->fs_rwbuffer[offset];
 	ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 	if (ret < 0) {
+		fdbg("failed to write new entry to parent directory psector : %d\n", psector);
 		goto errout;
 	}
 
@@ -1945,6 +1946,9 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 	memset(journal->active_sectors, 0, mapsize);
 
 	if (journal->jarea != -1) {
+#ifdef CONFIG_DEBUG_FS
+		print_journal_sectors(fs);
+#endif
 		startsector = SMARTFS_LOGGING_SECTOR + journal->jarea * CONFIG_SMARTFS_NLOGGING_SECTORS;
 		journal->sector = startsector;
 		readsect = startsector;
@@ -2028,7 +2032,11 @@ int smartfs_journal_init(struct smartfs_mountpt_s *fs)
 	}
 	journal->sector = SMARTFS_LOGGING_SECTOR;
 	journal->offset = 1;
-	return set_area_id_bits(fs, AREA_USED);
+	ret = set_area_id_bits(fs, AREA_USED);
+	if (ret != OK) {
+		fdbg("set_area_id_bits failed... bits : %d\n", AREA_USED);
+	}
+	return ret;
 
 err_out:
 	/* Free in case of failure */
@@ -2126,7 +2134,7 @@ static int smartfs_get_journal_area(struct smartfs_mountpt_s *fs)
 	return result[index[0]][index[1]];
 }
 
-#ifdef CONFIG_SMARTFS_JOURNALING_TEST
+#ifdef CONFIG_DEBUG_FS
 int print_journal_sectors(struct smartfs_mountpt_s *fs)
 {
 	int ret;
@@ -2137,7 +2145,7 @@ int print_journal_sectors(struct smartfs_mountpt_s *fs)
 	struct journal_transaction_manager_s *j_mgr;
 	struct smartfs_logging_entry_s *entry;
 
-	fvdbg("Print all Journal sectors\n");
+	fdbg("Print all Journal sectors\n");
 	j_mgr = fs->journal;
 
 	if (!(j_mgr->enabled)) {
@@ -2163,22 +2171,29 @@ int print_journal_sectors(struct smartfs_mountpt_s *fs)
 						break;
 					}
 				}
-				fdbg("*****Entry*****\n");
-				fdbg("Transaction Type: %u\n", GET_TRANS_TYPE(entry->trans_info));
-				fdbg("Transaction Started: %s\n", T_START_CHECK(entry->trans_info) ? "yes" : "no");
-				fdbg("Transaction Finished: %s\n", T_FINISH_CHECK(entry->trans_info) ? "yes" : "no");
-				fdbg("Transaction required a sync: %s\n", T_NEEDSYNC_CHECK(entry->trans_info) ? "yes" : "no");
-				fdbg("sector: %u\n", entry->curr_sector);
-				fdbg("offset: %u\n", entry->offset);
-				fdbg("seq_no: %u\n", entry->seq_no);
-				fdbg("datalen: %u\n", entry->datalen);
-				fdbg("generic_1 %u\n", entry->generic_1);
-				if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE) {
-					fdbg("Data: ");
-					for (i = 0; i < entry->datalen; i++) {
-						fsdbg("%02x ", j_mgr->buffer[sizeof(struct smartfs_logging_entry_s) + i]);
+				if (!T_FINISH_CHECK(entry->trans_info)) {
+					fdbg("*****Entry*****\n");
+					fdbg("Transaction Type: %u\n", GET_TRANS_TYPE(entry->trans_info));
+					fdbg("Transaction Started: %s\n", T_START_CHECK(entry->trans_info) ? "yes" : "no");
+					fdbg("Transaction Finished: %s\n", T_FINISH_CHECK(entry->trans_info) ? "yes" : "no");
+					fdbg("Transaction required a sync: %s\n", T_NEEDSYNC_CHECK(entry->trans_info) ? "yes" : "no");
+					fdbg("sector: %u\n", entry->curr_sector);
+					fdbg("offset: %u\n", entry->offset);
+					fdbg("seq_no: %u\n", entry->seq_no);
+					fdbg("datalen: %u\n", entry->datalen);
+					fdbg("generic_1 %u\n", entry->generic_1);
+#ifdef CONFIG_DEBUG_FS
+#ifndef DEBUG_VERBOSE
+					if (entry->datalen > 0 && GET_TRANS_TYPE(entry->trans_info) != T_DELETE)
+#endif
+					{
+						fdbg("Data: ");
+						for (i = 0; i < entry->datalen; i++) {
+							fsdbg("%02x ", j_mgr->buffer[sizeof(struct smartfs_logging_entry_s) + i]);
+						}
+						fsdbg("\n");
 					}
-					fsdbg("\n");
+#endif
 				}
 			} else {
 				break;
@@ -2532,6 +2547,9 @@ static int smartfs_redo_rename(struct smartfs_mountpt_s *fs)
 		req.count = sizeof(direntry->flags);
 		req.buffer = (uint8_t *)&direntry->flags;
 		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
+		if (ret != OK) {
+			fdbg("Inactive old entry failed... offset : %d\n", req.offset);
+		}
 	} else {
 		ret = OK;
 	}
@@ -2711,7 +2729,7 @@ static int process_transaction(struct smartfs_mountpt_s *fs)
 	/* Check whether the transaction qualifies for redo */
 	if (T_START_CHECK(entry->trans_info) && !T_FINISH_CHECK(entry->trans_info)) {
 		/* Choose redo routine based on transaction type */
-		fvdbg("type = %d\n", GET_TRANS_TYPE(entry->trans_info));
+		fdbg("type : %d sector : %d generic_1 : %d\n", GET_TRANS_TYPE(entry->trans_info), entry->curr_sector, entry->generic_1);
 		switch (GET_TRANS_TYPE(entry->trans_info)) {
 		case T_SYNC:
 		case T_WRITE:
@@ -3067,6 +3085,7 @@ static int smartfs_set_sequence(struct smartfs_mountpt_s *fs, uint16_t sector, u
 	struct smart_read_write_s req;
 	struct smartfs_logging_entry_s *entry;
 	struct journal_transaction_manager_s *j_mgr;
+	int ret;
 
 	j_mgr = fs->journal;
 	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
@@ -3077,8 +3096,12 @@ static int smartfs_set_sequence(struct smartfs_mountpt_s *fs, uint16_t sector, u
 
 	req.count = sizeof(entry->seq_no);
 	req.buffer = (uint8_t *)&(entry->seq_no);
-	if ((req.offset + req.count <= j_mgr->availbytes) && (FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req) == OK)) {
-		return OK;
+	if (req.offset + req.count <= j_mgr->availbytes)  {
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&req);
+		if (ret != OK) {
+			fdbg("set sequence failed.. seq no : %d logicsector : %d\n", seq, sector);
+		}
+		return ret;
 	}
 	return ERROR;
 }
@@ -3211,7 +3234,7 @@ static int remove_from_list(struct journal_transaction_manager_s *j_mgr, uint16_
 	}
 	SET_INACTIVE(j_mgr->active_sectors, sector);
 errout:
-	return ret;;
+	return ret;
 }
 
 /****************************************************************************
@@ -3291,6 +3314,7 @@ int smartfs_create_journalentry(struct smartfs_mountpt_s *fs, enum logging_trans
 		}
 		break;
 	}
+	fvdbg("Create journalentry : %d\n", *t_sector);
 	return OK;
 }
 

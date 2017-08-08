@@ -1948,7 +1948,6 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 					}
 				}				//if(logicalsector == SMART_BAD_SECTOR_NUMBER)
 #endif							/*CONFIG_SMARTFS_BAD_SECTOR */
-
 			} else {
 				fvdbg("logicalsector : physicalsector -> %d : %d; status_released: %d, status_committed: %d\n", logicalsector, sector, status_released, status_committed);
 			}
@@ -4173,7 +4172,7 @@ relocate_good_sector:
 		oldphyssector = physsector;
 		physsector = smart_findfreephyssector(dev, FALSE);
 		if (physsector == 0xFFFF) {
-			//fdbg("Error relocating sector %d\n", req->logsector);
+			fdbg("Error relocating sector %d\n", req->logsector);
 			ret = -EIO;
 			goto errout;
 		}
@@ -5435,7 +5434,7 @@ int smart_recoversectors(FAR struct inode *inode, char *validsectors, int *nobso
 		status_committed = SECTOR_IS_COMMITTED(header);
 
 		if (logicalsector > 0 && status_committed && !status_released && !GET_VAL(validsectors, sector)) {
-			fdbg("RECOVERY: sector %u CORRUPTED!!\n", sector);
+			fdbg("RECOVERY: logical %d phy : %d sector %u CORRUPTED!!\n", logicalsector, physsector, sector);
 			(*nobsolete)++;
 
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
