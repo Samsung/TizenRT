@@ -25,7 +25,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <time.h>
-#include <ttrace.h>
+#include <tinyara/ttrace.h>
 #include <semaphore.h>
 #include <apps/shell/tash.h>
 #include "tc_common.h"

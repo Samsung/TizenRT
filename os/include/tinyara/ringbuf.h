@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,28 +22,37 @@
  * @{
  */
 
-///@file ttrace.h
-///@brief ttrace APIs
+///@file ringbuf.h
+///@brief ttrace ringbuffer APIs
 
-#ifndef __INCLUDE_TTRACE_H
-#define __INCLUDE_TTRACE_H
+#ifndef __INCLUDE_TINYARA_TTRACE_RINGBUF_H
+#define __INCLUDE_TINYARA_TTRACE_RINGBUF_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+
 #include <tinyara/config.h>
+
+#include <stdio.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <debug.h>
+#include <time.h>
 #include <sys/types.h>
 
 /****************************************************************************
  * Public Type Declarations
  ****************************************************************************/
-#define TTRACE_TAG_ALL             -1
-#define TTRACE_TAG_OFF             0
-#define TTRACE_TAG_APPS            (1 << 0)
-#define TTRACE_TAG_LIBS            (1 << 1)
-#define TTRACE_TAG_LOCK            (1 << 2)
-#define TTRACE_TAG_TASK            (1 << 3)
-#define TTRACE_TAG_IPC             (1 << 4)
+
+struct ringbuf {
+	char buffer[CONFIG_TTRACE_BUFSIZE];
+	size_t bufsize;
+	uint16_t index;
+	int is_overwritten;
+	int is_overwritable;
+};
 
 /****************************************************************************
  * Public Variables
@@ -54,29 +63,15 @@
  ****************************************************************************/
 
 #if defined(__cplusplus)
-extern "C"
-{
+extern "C" {
 #endif
 
-#ifdef CONFIG_TTRACE
-int trace_begin(int tag, char *str, ...);
-int trace_begin_u(int tag, int8_t uid);
-int trace_end(int tag);
-int trace_end_u(int tag);
-int trace_sched(struct tcb_s *prev, struct tcb_s *next);
-#else
-#define trace_begin(a, b, ...)
-#define trace_begin_u(a, b)
-#define trace_end(a)
-#define trace_end_u(a)
-#define trace_sched(a, b)
-#endif
+void printBuf(char *buf, struct ringbuf *rbp);
+ssize_t ringbuf_write(FAR const char *buffer, size_t len, struct ringbuf *rbp);
+ssize_t ringbuf_read(char *buffer, size_t len, struct ringbuf *rbp);
 
 #if defined(__cplusplus)
 }
 #endif
-
-#endif /* __INCLUDE_TTRACE_H */
-/**
- * @}
- */
+#endif							/* __INCLUDE_TINYARA_TTRACE_RINGBUF_H */
+/** @} */

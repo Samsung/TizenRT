@@ -21,7 +21,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <ttrace.h>
+#include <tinyara/ttrace.h>
 #include <stdio.h>
 #include <unistd.h>
 

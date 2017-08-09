@@ -63,10 +63,10 @@
 #include <errno.h>
 
 #include <tinyara/fs/fs.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "task/task.h"
-#include <ttrace.h>
 
 #ifdef CONFIG_SCHED_ONEXIT
 

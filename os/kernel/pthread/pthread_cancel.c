@@ -60,11 +60,11 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "task/task.h"
 #include "pthread/pthread.h"
-#include <ttrace.h>
 
 /**************************************************************************
  * Private Definitions

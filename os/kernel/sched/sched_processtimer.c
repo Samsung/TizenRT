@@ -61,6 +61,7 @@
 #if CONFIG_RR_INTERVAL > 0
 #include <sched.h>
 #include <tinyara/arch.h>
+#include <tinyara/ttrace.h>
 #endif
 
 #include "sched/sched.h"

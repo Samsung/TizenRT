@@ -61,12 +61,12 @@
 #include <errno.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
 #include "signal/signal.h"
 #include "task/task.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Definitions

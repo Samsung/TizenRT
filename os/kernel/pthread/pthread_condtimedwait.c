@@ -65,15 +65,15 @@
 #include <errno.h>
 #include <assert.h>
 #include <debug.h>
-#include <tinyara/cancelpt.h>
 
+#include <tinyara/cancelpt.h>
 #include <tinyara/wdog.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "pthread/pthread.h"
 #include "clock/clock.h"
 #include "signal/signal.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Definitions

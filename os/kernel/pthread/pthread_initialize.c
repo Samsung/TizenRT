@@ -61,10 +61,9 @@
 #include <semaphore.h>
 #include <assert.h>
 #include <errno.h>
+#include <tinyara/ttrace.h>
 
 #include "pthread/pthread.h"
-#include <ttrace.h>
-
 /****************************************************************************
  * Definitions
  ****************************************************************************/
