@@ -6,6 +6,7 @@
 config NETUTILS_NTPCLIENT
 	bool "NTP client"
 	default n
+	depends on LIBC_NETDB
 	---help---
 		Enable support for the minimal NTP client.
 

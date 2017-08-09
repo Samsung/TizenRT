@@ -37,6 +37,7 @@ endif #NET_LWIP
 config NET_SECURITY_TLS
 	bool "TLS Support"
 	default n
+	depends on LIBC_NETDB
 
 if NET_SECURITY_TLS
 source net/tls/Kconfig
