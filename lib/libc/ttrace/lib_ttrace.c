@@ -34,6 +34,7 @@
  ****************************************************************************/
 #define TTRACE_EVENT_TYPE_BEGIN    'b'
 #define TTRACE_EVENT_TYPE_END      'e'
+#define TTRACE_EVENT_TYPE_SCHED    's'
 
 /****************************************************************************
  * Private Type Declarations
@@ -88,42 +89,45 @@ static bool is_tag_available(int tag)
 	return true;
 }
 
-static int show_packet(struct trace_packet *packet)
+#ifdef CONFIG_DEBUG_TTRACE
+static void show_packet(struct trace_packet *packet)
 {
-	int uid = (packet->codelen & TTRACE_CODE_UNIQUE) >> 7;
-	int msg_len = (packet->codelen & ~TTRACE_CODE_UNIQUE);
-	int pad = 0;
-	ttdbg("time: %06d.%06d\r\n", packet->ts.tv_sec, packet->ts.tv_usec);
-	ttdbg("event_type: %c, %d\r\n", packet->event_type, packet->event_type);
-	ttdbg("pid: %d\r\n", packet->pid);
-	ttdbg("codelen: %d\r\n", packet->codelen);
-	ttdbg("unique code? %d\r\n", uid);
-	if (uid == TRUE) {
-		ttdbg("uid: %d\r\n", (packet->codelen & ~TTRACE_CODE_UNIQUE));
-		pad = TTRACE_MSG_BYTES;
+	int uid;
+	int size;
+
+	if (packet->event_type == TTRACE_EVENT_TYPE_SCHED) {
+		ttdbg("[%06d:%06d] %03d: %c|prev_comm=%s prev_pid=%u prev_prio=%u prev_state=%u ==> next_comm=%s next_pid=%u next_prio=%u\r\n",
+			packet->ts.tv_sec, packet->ts.tv_usec,
+			packet->pid,
+			(char)packet->event_type,
+			packet->msg.sched_msg.prev_comm,
+			packet->msg.sched_msg.prev_pid,
+			packet->msg.sched_msg.prev_prio,
+			packet->msg.sched_msg.prev_state,
+			packet->msg.sched_msg.next_comm,
+			packet->msg.sched_msg.next_pid,
+			packet->msg.sched_msg.next_prio);
+		size = sizeof(struct trace_packet);
 	} else {
-		ttdbg("message: %s\r\n", packet->msg.message);
-		pad = 0;
+		ttdbg("time: %06d.%06d\r\n", packet->ts.tv_sec, packet->ts.tv_usec);
+		ttdbg("event_type: %c, %d\r\n", packet->event_type, packet->event_type);
+		ttdbg("pid: %d\r\n", packet->pid);
+		ttdbg("codelen: %d\r\n", packet->codelen);
+
+		uid = (packet->codelen & TTRACE_CODE_UNIQUE) >> 7;
+		ttdbg("unique code? %d\r\n", uid);
+		if (uid == TRUE) {
+			ttdbg("uid: %d\r\n", (packet->codelen & ~TTRACE_CODE_UNIQUE));
+			size = sizeof(struct trace_packet) - TTRACE_MSG_BYTES;
+		} else {
+			ttdbg("message: %s\r\n", packet->msg.message);
+			size = sizeof(struct trace_packet);
+		}
 	}
 
-	return sizeof(struct trace_packet) - pad;
+	ttdbg("packet size: %d\r\n", size);
 }
-
-static int show_sched_packet(struct trace_packet *packet)
-{
-	ttdbg("[%06d:%06d] %03d: %c|prev_comm=%s prev_pid=%u prev_prio=%u prev_state=%u ==> next_comm=%s next_pid=%u next_prio=%u\r\n",
-		  packet->ts.tv_sec, packet->ts.tv_usec,
-		  packet->pid,
-		  (char)packet->event_type,
-		  packet->msg.sched_msg.prev_comm,
-		  packet->msg.sched_msg.prev_pid,
-		  packet->msg.sched_msg.prev_prio,
-		  packet->msg.sched_msg.prev_state,
-		  packet->msg.sched_msg.next_comm,
-		  packet->msg.sched_msg.next_pid,
-		  packet->msg.sched_msg.next_prio);
-	return sizeof(struct trace_packet);
-}
+#endif
 
 static int send_packet_sched(struct trace_packet *packet)
 {
@@ -138,7 +142,7 @@ static int create_packet_sched(struct trace_packet *packet, struct tcb_s *prev, 
 	int msg_len = sizeof(struct sched_message);
 
 	gettimeofday(&(packet->ts), NULL);
-	packet->event_type = (int8_t)'s';
+	packet->event_type = TTRACE_EVENT_TYPE_SCHED;
 	packet->pid = getpid();
 	packet->codelen = TTRACE_CODE_VARIABLE | msg_len;
 
@@ -239,7 +243,7 @@ int trace_sched(struct tcb_s *prev_tcb, struct tcb_s *next_tcb)
 	}
 
 #ifdef CONFIG_DEBUG_TTRACE
-	show_sched_packet(&packet);
+	show_packet(&packet);
 #endif
 
 	ret = send_packet_sched(&packet);
