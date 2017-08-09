@@ -86,7 +86,7 @@
 
 #define I2S_CR_FRXOFSTATUS 	(1 << 26)
 #define I2S_CR_FRXOFINTEN 	(1 << 25)
-#define I2S_CR_FTXSUR STATUS 	(1 << 24)
+#define I2S_CR_FTXSURSTATUS	(1 << 24)
 #define I2S_CR_FTXSURINTEN 	(1 << 23)
 #define I2S_CR_FTXSEMPT 	(1 << 22)
 #define I2S_CR_FTXSFULL 	(1 << 21)
