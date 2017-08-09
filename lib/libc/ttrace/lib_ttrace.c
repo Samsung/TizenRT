@@ -238,7 +238,9 @@ int trace_sched(struct tcb_s *prev_tcb, struct tcb_s *next_tcb)
 		assert(0);
 	}
 
-	//show_sched_packet(&packet);
+#ifdef CONFIG_DEBUG_TTRACE
+	show_sched_packet(&packet);
+#endif
 
 	ret = send_packet_sched(&packet);
 	return ret;
@@ -275,7 +277,9 @@ int trace_begin(int tag, char *str, ...)
 		assert(0);
 	}
 
-	//show_packet(&packet);
+#ifdef CONFIG_DEBUG_TTRACE
+	show_packet(&packet);
+#endif
 
 	ret = send_packet(&packet);
 	return ret;
@@ -299,7 +303,9 @@ int trace_begin_u(int tag, int8_t uid)
 		assert(0);
 	}
 
-	//show_packet(&packet);
+#ifdef CONFIG_DEBUG_TTRACE
+	show_packet(&packet);
+#endif
 
 	ret = send_packet(&packet);
 	return ret;
@@ -333,7 +339,9 @@ int trace_end(int tag)
 		assert(0);
 	}
 
-	//show_packet(&packet);
+#ifdef CONFIG_DEBUG_TTRACE
+	show_packet(&packet);
+#endif
 
 	ret = send_packet(&packet);
 	return ret;
