@@ -1462,6 +1462,59 @@ static void tc_pthread_pthread_setgetname_np(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @fn                   :tc_pthread_pthread_setcanceltype
+* @brief                :This tc tests pthread_setcanceltype()
+* @Scenario             :The function shall atomically both set the calling thread's cancelability type to the indicated type 
+*                        and return the previous cancelability type at the location referenced by oldtype
+*                        If successful pthread_setcanceltype() function shall return zero;
+*                        otherwise, an error number shall be returned to indicate the error.
+* @API'scovered         :pthread_setcanceltype
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+#ifdef CONFIG_CANCELLATION_POINTS
+static void tc_pthread_pthread_setcanceltype(void)
+{
+	int type;
+	int oldtype;
+	int ret_chk;
+
+	type = PTHREAD_CANCEL_ASYNCHRONOUS;
+	oldtype = PTHREAD_CANCEL_DEFERRED;
+	ret_chk = pthread_setcanceltype(type, &oldtype);
+	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_setcanceltype", oldtype, PTHREAD_CANCEL_ASYNCHRONOUS);
+
+	type = PTHREAD_CANCEL_DEFERRED;
+	ret_chk = pthread_setcanceltype(type, &oldtype);
+	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, ENOSYS);
+	TC_ASSERT_EQ("pthread_setcanceltype", oldtype, PTHREAD_CANCEL_ASYNCHRONOUS);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/**
+* @fn                   :tc_libc_pthread_pthread_testcancel
+* @brief                :This tc tests pthread_testcancel()
+* @Scenario             :The function shall create a cancellation point in the calling thread
+                         It has no effect if cancelability is disabled.
+* @API'scovered         :pthread_testcancel
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+#ifdef CONFIG_CANCELLATION_POINTS
+static void tc_pthread_pthread_testcancel(void)
+{
+	pthread_testcancel();
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
 /****************************************************************************
  * Name: pthread
  ****************************************************************************/
@@ -1493,6 +1546,10 @@ int pthread_main(void)
 	tc_pthread_pthread_self();
 	tc_pthread_pthread_equal();
 	tc_pthread_pthread_setgetname_np();
+#ifdef CONFIG_CANCELLATION_POINTS
+	tc_pthread_pthread_setcanceltype();
+	tc_pthread_pthread_testcancel();
+#endif
 
 	return 0;
 }
