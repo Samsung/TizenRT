@@ -92,6 +92,7 @@ config TC_KERNEL_LIBC_MISC
 config TC_KERNEL_LIBC_MQUEUE
 	bool "Libc Mqueue"
 	default n
+	depends on !DISABLE_MQUEUE
 
 config TC_KERNEL_LIBC_PTHREAD
 	bool "Libc Pthread"

@@ -77,6 +77,9 @@ endif
 ifeq ($(CONFIG_TC_KERNEL_LIBC_MISC),y)
   CSRCS += tc_libc_misc.c
 endif
+ifeq ($(CONFIG_TC_KERNEL_LIBC_MQUEUE),y)
+  CSRCS += tc_libc_mqueue.c
+endif
 ifeq ($(CONFIG_TC_KERNEL_LIBC_PTHREAD),y)
   CSRCS += tc_libc_pthread.c
 endif
