@@ -646,6 +646,9 @@ exit:
 	}
 #endif
 	if (ctx->sockfd > 0) {
+		if (FD_ISSET(ctx->sockfd, &readfds)) {
+			FD_CLR(ctx->sockfd, &readfds);
+		}
 		close(ctx->sockfd);
 	}
 #ifdef WITH_TCP

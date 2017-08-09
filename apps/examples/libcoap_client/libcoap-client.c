@@ -1366,7 +1366,13 @@ int main(int argc, char **argv)
 			}
 		}
 
-		info("coap-client : timeout info, tv %lu sec. %ld usec, now %lu, obs_wait %lu\n",
+		/* To prevent abnormal waiting on select */
+		if (tv.tv_sec > (time_t)wait_seconds) {
+			tv.tv_sec = (time_t)wait_seconds;
+			tv.tv_usec = 0;
+		}
+
+		debug("coap-client : timeout info, tv %lu sec. %ld usec, now %lu, obs_wait %lu\n",
 				(unsigned long)tv.tv_sec, tv.tv_usec, (unsigned long)now, (unsigned long)obs_wait);
 
 		result = select(ctx->sockfd + 1, &readfds, 0, 0, &tv);
@@ -1407,6 +1413,9 @@ error_exit:
 	}
 #endif
 	if (ctx->sockfd > 0) {
+		if (FD_ISSET(ctx->sockfd, &readfds)) {
+			FD_CLR(ctx->sockfd, &readfds);
+		}
 		close(ctx->sockfd);
 	}
 
