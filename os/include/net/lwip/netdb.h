@@ -65,15 +65,15 @@ extern "C" {
 
 /* some rarely used options */
 #ifndef LWIP_DNS_API_DECLARE_H_ERRNO
-#define LWIP_DNS_API_DECLARE_H_ERRNO  1
+#define LWIP_DNS_API_DECLARE_H_ERRNO  0
 #endif
 
 #ifndef LWIP_DNS_API_DEFINE_ERRORS
-#define LWIP_DNS_API_DEFINE_ERRORS    1
+#define LWIP_DNS_API_DEFINE_ERRORS    0
 #endif
 
 #ifndef LWIP_DNS_API_DEFINE_FLAGS
-#define LWIP_DNS_API_DEFINE_FLAGS     1
+#define LWIP_DNS_API_DEFINE_FLAGS     0
 #endif
 
 #ifndef LWIP_DNS_API_DECLARE_STRUCTS

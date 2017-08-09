@@ -52,7 +52,7 @@
  *
  */
 
-#include <net/lwip/netdb.h>
+#include <netdb.h>
 
 #if LWIP_DNS && LWIP_SOCKET
 
