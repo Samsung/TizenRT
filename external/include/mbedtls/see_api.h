@@ -145,18 +145,8 @@ typedef enum {
 #define MAX_DATA_SIZE	(208)
 #define SEE_BUF_MAX_SIZE	(4096)
 
-#define SEE_IOTIVITY_MAXSIZE       (SEE_IOTIVITY_MAX_SLOT_SIZE * SEE_IOTIVITY_SLOT_NUM)
-#define SEE_IOTIVITY_MAX_SLOT_SIZE (SEE_BUF_MAX_SIZE - 8)
-#define SEE_IOTIVITY_SLOT_NUM      (2)
-#define SEE_IOTIVITY_SLOT_START    (6)
-#define SEE_IOTIVITY_SLOT_END      (7)
-#define SEE_IOTIVITY_DATAMASK      (0xFFFFFFFF)
-
-struct iotivity_data {
-	unsigned int size;			/* Size field, this field indicate size of data */
-	unsigned int mask;			/* Masking field, it should be set 0xFFFFFFFF */
-	unsigned char data[SEE_IOTIVITY_MAXSIZE];	/* Data field */
-};
+#define SEE_IOTIVITY_MAXSIZE       (SEE_BUF_MAX_SIZE * 2)
+#define SEE_IOTIVITY_SLOT          (7)
 
 /**
  * @brief structure to contain options for making cert.
