@@ -79,12 +79,6 @@
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
-
-#if defined(__cplusplus)
-extern "C"
-{
-#endif
-
 struct sched_message {          // total 32B
 	pid_t prev_pid;                     // 2B
 	uint8_t prev_prio;                  // 1B
@@ -112,6 +106,9 @@ struct trace_packet {        // total 44 byte(message), 12byte(uid)
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
+#if defined(__cplusplus)
+extern "C" {
+#endif
 int trace_begin(int tag, char *str, ...);
 int trace_begin_u(int tag, int8_t uid);
 int trace_end(int tag);
