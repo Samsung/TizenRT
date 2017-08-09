@@ -115,9 +115,6 @@ $(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	@touch .built
 
-httpd_fsdata.c: httpd-fs/*
-	$(TOPDIR)/tools/mkfsdata.pl
-
 ifeq ($(CONFIG_BUILD_KERNEL),y)
 $(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
 	@echo "LD: $(PROGNAME)"
@@ -150,7 +147,6 @@ epend: .depend
 
 clean:
 	$(call DELFILE, .built)
-	$(call DELFILE, httpd_fsdata.c)
 	$(call CLEAN)
 
 distclean: clean
