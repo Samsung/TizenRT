@@ -142,15 +142,6 @@
 #define NI_NUMERICSCOPE (1 << 4)
 #define NI_DGRAM        (1 << 5)
 
-/* The <netdb.h> header shall define the following macros for use as error
- * values for gethostbyaddr() and gethostbyname()
- */
-
-#define HOST_NOT_FOUND  1
-#define NO_DATA         2
-#define NO_RECOVERY     3
-#define TRY_AGAIN       4
-
 /* Address Information Errors.  The <netdb.h> header shall define the
  * following macros for use as error values for getaddrinfo() and
  * getnameinfo():
