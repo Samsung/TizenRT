@@ -60,10 +60,10 @@
 #include <tinyara/config.h>
 
 #ifdef __cplusplus
-// *INDENT-OFF*
-extern "C"
-{
-// *INDENT-ON*
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
 #endif
 
 /****************************************************************************
@@ -87,9 +87,9 @@ void urlrawdecode(char *urlbuf);
 void urlrawencode(char *str, char *urlbuf);
 #endif							/* CONFIG_CODECS_AVR_URLCODE */
 
+#undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
+
 #endif							/* __APPS_INCLUDE_NETUTILS_URLDECODE_H */

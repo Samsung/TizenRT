@@ -95,12 +95,10 @@ struct dhcpc_state {
  ****************************************************************************/
 
 #ifdef __cplusplus
-// *INDENT-OFF*
 #define EXTERN extern "C"
 extern "C" {
 #else
 #define EXTERN extern
-// *INDENT-ON*
 #endif
 
 /**
@@ -135,9 +133,7 @@ void dhcpc_close(void *handle);
 
 #undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
 
 #endif							/* __APPS_INCLUDE_NETUTILS_DHCPC_H */

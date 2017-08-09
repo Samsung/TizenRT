@@ -121,6 +121,13 @@ struct xmlrpc_entry_s {
 	char *name;
 };
 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -132,5 +139,10 @@ int xmlrpc_getbool(struct xmlrpc_s *xmlcall, int *arg);
 int xmlrpc_getdouble(struct xmlrpc_s *xmlcall, double *arg);
 int xmlrpc_getstring(struct xmlrpc_s *xmlcall, char *arg);
 int xmlrpc_buildresponse(struct xmlrpc_s *, char *, ...);
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
 
 #endif							/* __APPS_INCLUDE_NETUTILS_XMLRPC_H */

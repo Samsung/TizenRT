@@ -111,6 +111,13 @@
 #define HTTP_ERROR_404            "Not Found"
 #define HTTP_ERROR_500            "Internal Server Error"
 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -296,6 +303,12 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
  * @since Tizen RT v1.0
  */
 int http_tls_init(struct http_server_t *server, struct ssl_config_t *ssl_config);
+#endif
+
+
+#undef EXTERN
+#ifdef __cplusplus
+}
 #endif
 
 #endif

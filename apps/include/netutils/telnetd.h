@@ -109,12 +109,10 @@ struct telnetd_config_s {
  ****************************************************************************/
 
 #ifdef __cplusplus
-// *INDENT-OFF*
 #define EXTERN extern "C"
 extern "C" {
 #else
 #define EXTERN extern
-// *INDENT-ON*
 #endif
 
 /****************************************************************************
@@ -140,8 +138,6 @@ EXTERN int telnetd_start(FAR struct telnetd_config_s *config);
 
 #undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
 #endif							/* __APPS_INCLUDE_NETUTILS_TELNETD_H */

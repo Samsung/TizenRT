@@ -31,8 +31,12 @@
 #ifndef SLSI_WIFI_API_H_
 #define SLSI_WIFI_API_H_
 
-#ifdef  __cplusplus
-extern "C" {
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
 #endif
 
 /* interface name to use */
@@ -411,6 +415,7 @@ int8_t WiFiSetCountryCode(const char *country_code);
  */
 int8_t WiFiSaveConfig(void);
 
+#undef EXTERN
 #ifdef  __cplusplus
 }
 #endif

@@ -43,6 +43,13 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+
 #define LWM2M_STANDARD_PORT_STR "5683"
 #define LWM2M_STANDARD_PORT      5683
 
@@ -62,5 +69,10 @@ connection_t *connection_create(connection_t *connList, int sock, char *host, ch
 void connection_free(connection_t *connList);
 
 int connection_send(connection_t *connP, uint8_t *buffer, size_t length);
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -75,8 +75,7 @@
  * Public Data
  ****************************************************************************/
 
-#undef EXTERN
-#if defined(__cplusplus)
+#ifdef __cplusplus
 #define EXTERN extern "C"
 extern "C" {
 #else
@@ -108,7 +107,7 @@ extern "C" {
 EXTERN int ipmsfilter(FAR const char *ifname, FAR const struct in_addr *multiaddr, uint32_t fmode);
 
 #undef EXTERN
-#if defined(__cplusplus)
+#ifdef __cplusplus
 }
 #endif
 

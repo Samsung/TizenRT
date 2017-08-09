@@ -35,6 +35,13 @@
 #include <stdio.h>
 #include <apps/netutils/webserver/http_server.h>
 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+
 /*****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -115,6 +122,11 @@ int   http_keyvalue_list_delete_tail(struct http_keyvalue_list_t *list);
  * @since Tizen RT v1.0
  */
 char *http_keyvalue_list_find(struct http_keyvalue_list_t *list, const char *key);
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 /** @} */

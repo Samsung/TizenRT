@@ -73,12 +73,10 @@
  ****************************************************************************/
 
 #ifdef __cplusplus
-// *INDENT-OFF*
 #define EXTERN extern "C"
 extern "C" {
 #else
 #define EXTERN extern
-// *INDENT-ON*
 #endif
 
 int tftpget(const char *remote, const char *local, in_addr_t addr, bool binary);
@@ -86,9 +84,7 @@ int tftpput(const char *local, const char *remote, in_addr_t addr, bool binary);
 
 #undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
 
 #endif							/* __APPS_INCLUDE_NETUTILS_TFTP_H */

@@ -33,6 +33,13 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -208,6 +215,11 @@ int mqtt_subscribe(mqtt_client_t *handle, char *topic, uint8_t qos);
  *
  */
 int mqtt_unsubscribe(mqtt_client_t *handle, char *topic);
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
 
 #endif							/* __MQTT_API_H__ */
 

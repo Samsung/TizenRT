@@ -71,9 +71,10 @@
 #define _LWM2M_CLIENT_H_
 
 #ifdef __cplusplus
-// *INDENT-OFF*
+#define EXTERN extern "C"
 extern "C" {
-// *INDENT-ON*
+#else
+#define EXTERN extern
 #endif
 
 #include <stdint.h>
@@ -651,9 +652,9 @@ int lwm2m_bootstrap_finish(lwm2m_context_t *contextP, void *sessionH);
 
 #endif
 
+#undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
+
 #endif

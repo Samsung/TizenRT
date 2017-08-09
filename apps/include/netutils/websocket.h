@@ -553,7 +553,6 @@ websocket_return_t websocket_update_state(websocket_t *websocket, int state);
 websocket_return_t websocket_set_error(websocket_t *websocket, int val);
 
 #undef EXTERN
-#undef EXTERN
 #ifdef __cplusplus
 }
 #endif

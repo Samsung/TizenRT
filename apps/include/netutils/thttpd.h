@@ -63,8 +63,7 @@
  * Public Data
  ****************************************************************************/
 
-#undef EXTERN
-#if defined(__cplusplus)
+#ifdef __cplusplus
 #define EXTERN extern "C"
 extern "C" {
 #else
@@ -109,7 +108,7 @@ EXTERN int g_thttpdnsymbols;
 EXTERN int thttpd_main(int argc, char **argv);
 
 #undef EXTERN
-#if defined(__cplusplus)
+#ifdef __cplusplus
 }
 #endif
 

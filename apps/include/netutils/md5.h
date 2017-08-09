@@ -83,10 +83,10 @@
 #ifdef CONFIG_CODECS_HASH_MD5
 
 #ifdef __cplusplus
-// *INDENT-OFF*
-extern "C"
-{
-// *INDENT-ON*
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
 #endif
 
 /****************************************************************************
@@ -113,10 +113,9 @@ void MD5Transform(uint32_t buf[4], uint32_t const in[16]);
 void md5_sum(const uint8_t *addr, const size_t len, uint8_t *mac);
 char *md5_hash(const uint8_t *addr, const size_t len);
 
+#undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
 #endif							/* CONFIG_CODECS_HASH_MD5 */
 #endif							/* __APPS_INCLUDE_NETUTILS_MD5_H */

@@ -46,6 +46,13 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+
 enum wslay_error {
 	WSLAY_ERR_WANT_READ = -100,
 	WSLAY_ERR_WANT_WRITE = -101,
@@ -731,5 +738,10 @@ size_t wslay_event_get_queued_msg_count(wslay_event_context_ptr ctx);
  * wslay_event_queue_close().
  */
 size_t wslay_event_get_queued_msg_length(wslay_event_context_ptr ctx);
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
 
 #endif							/* WSLAY_H */
