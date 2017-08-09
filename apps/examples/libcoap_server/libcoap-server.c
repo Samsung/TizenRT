@@ -7,8 +7,6 @@
  * README for terms of use.
  */
 
-#include <tinyara/config.h>
-
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>

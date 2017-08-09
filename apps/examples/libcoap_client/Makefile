@@ -57,18 +57,6 @@ MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
 SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
 OBJS = $(AOBJS) $(COBJS)
 
-# libcoap flags
-CFLAGS += -DWITH_POSIX
-CFLAGS += -D__TINYARA__
-ifeq ($(CONFIG_NETUTILS_LIBCOAP_DEBUG),n)
-CFLAGS += -DNDEBUG
-endif
-ifeq ($(CONFIG_NET_SECURITY_TLS),y)
-CFLAGS += -DWITH_MBEDTLS
-endif
-CFLAGS += -DWITH_TCP
-#CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)$(DELIM)include$(DELIM)netutils$(DELIM)libcoap}
-
 ifneq ($(CONFIG_BUILD_KERNEL),y)
   OBJS += $(MAINOBJ)
 endif

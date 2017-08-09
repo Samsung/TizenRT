@@ -19,6 +19,31 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
 /********************************************************
+ *  Tinyara defined configuration
+ *********************************************************/
+#include <tinyara/config.h>
+
+/* Default Configuration : WITH_POSIX and WITH_TCP */
+#define WITH_POSIX
+#define WITH_TCP
+
+#ifndef __TINYARA__
+#define __TINYARA__
+#endif
+
+#ifndef CONFIG_NETUTILS_LIBCOAP_DEBUG
+#define NDEBUG
+#else
+#undef NDEBUG
+#endif
+
+#ifdef CONFIG_NET_SECURITY_TLS
+#define WITH_MBEDTLS
+#else
+#undef WITH_MBEDTLS
+#endif
+
+/********************************************************
  *  User defined configuration (via Kconfig)
  *********************************************************/
 /* Define if building universal (internal helper macro) */

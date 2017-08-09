@@ -26,7 +26,7 @@
 #ifndef _COAP_ENCODE_H_
 #define _COAP_ENCODE_H_
 
-#include <tinyara/config.h>
+#include <apps/netutils/libcoap/config.h>
 
 #if defined (__TINYARA__)
 #include <string.h>
