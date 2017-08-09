@@ -190,7 +190,10 @@ struct s5j_transport_s {
 
 struct s5j_i2s_s {
 	struct i2s_dev_s dev;		/* Externally visible I2S interface */
-	uintptr_t base;				/* I2S controller register base address */
+	uintptr_t base;			/* I2S controller register base address */
+	int isr_num;			/* isr number */
+	xcpt_t isr_handler;		/* irs handler */
+
 	sem_t exclsem;				/* Assures mutually exclusive acess to I2S */
 	uint8_t datalen;			/* Data width (8, 16, or 32) */
 	uint8_t rx_datalen;			/* Data width (8, 16, or 32) */
@@ -222,7 +225,6 @@ struct s5j_i2s_s {
 	sem_t bufsem_rx;			/* Buffer wait semaphore */
 	struct s5j_buffer_s *freelist_rx;	/* A list a free buffer containers */
 	struct s5j_buffer_s containers_rx[CONFIG_S5J_I2S_MAXINFLIGHT];
-	/* Debug stuff */
 };
 
 /****************************************************************************
@@ -698,6 +700,8 @@ static int i2s_rxdma_setup(struct s5j_i2s_s *priv)
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_RXDMACTIVE);
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_I2SACTIVE);
 
+	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FRXOFINTEN);
+
 	/* Start the DMA, saving the container as the current active transfer */
 
 	s5j_dmastart(priv->rx.dma, dmatask);
@@ -1052,6 +1056,9 @@ static int i2s_txpdma_setup(struct s5j_i2s_s *priv)
 	/* Enable transmitter */
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_TXDMACTIVE);
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_I2SACTIVE);
+
+	/* Enable TX interrupt to catch the end of TX */
+	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FTXURINTEN);
 
 	/* Start a watchdog to catch DMA timeouts */
 
@@ -1962,6 +1969,36 @@ static int i2s_configure(struct s5j_i2s_s *priv)
 	return 0;
 }
 
+static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
+{
+	volatile u32 reg;
+	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)arg;
+
+	/* Check faults here */
+	reg = getreg32(priv->base + S5J_I2S_CON);
+
+	if (reg & I2S_CR_FTXURSTATUS) {
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_FTXURINTEN, 0);
+		modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FTXURSTATUS);
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_TXDMACTIVE, 0);
+	}
+
+	if (reg & I2S_CR_FRXOFSTATUS) {
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_FRXOFINTEN, 0);
+		modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FRXOFSTATUS);
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_RXDMACTIVE, 0);
+	}
+
+	reg = getreg32(priv->base + S5J_I2S_CON);
+
+	if ((reg & (I2S_CR_TXDMACTIVE | I2S_CR_RXDMACTIVE)) == 0) {
+		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_I2SACTIVE, 0);
+	}
+
+	return 0;
+}
+
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -1994,6 +2031,8 @@ struct i2s_dev_s *s5j_i2s_initialize(void)
 		lldbg("ERROR: Failed to allocate a chip select structure\n");
 		return NULL;
 	}
+	priv->isr_num = IRQ_I2S;
+	priv->isr_handler = i2s_irq_handler;
 
 	/* Initialize the I2S priv device structure  */
 	sem_init(&priv->exclsem, 0, 1);
@@ -2039,6 +2078,9 @@ struct i2s_dev_s *s5j_i2s_initialize(void)
 	if (ret < 0) {
 		goto errout_with_alloc;
 	}
+
+	irq_attach(priv->isr_num, priv->isr_handler, priv);
+	up_enable_irq(priv->isr_num);
 
 	/* Success exit */
 	return &priv->dev;
