@@ -89,6 +89,10 @@ config TC_KERNEL_LIBC_MISC
 	select DEBUG_ERROR
 	select DEBUG_VERBOSE
 
+config TC_KERNEL_LIBC_MQUEUE
+	bool "Libc Mqueue"
+	default n
+
 config TC_KERNEL_LIBC_PTHREAD
 	bool "Libc Pthread"
 	default n
