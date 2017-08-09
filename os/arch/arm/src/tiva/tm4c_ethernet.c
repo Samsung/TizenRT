@@ -76,15 +76,10 @@
 #endif
 
 #include <tinyara/net/mii.h>
-#include <tinyara/net/arp.h>
 #include <tinyara/net/netdev.h>
 
 #ifdef CONFIG_TIVA_PHY_INTERRUPTS
 #include <tinyara/net/phy.h>
-#endif
-
-#ifdef CONFIG_NET_PKT
-#include <tinyara/net/pkt.h>
 #endif
 
 #include "up_internal.h"
@@ -746,12 +741,7 @@ static inline void tiva_txavail_process(FAR struct tiva_ethmac_s *priv);
 static void tiva_txavail_work(FAR void *arg);
 #endif
 static int tiva_txavail(struct net_driver_s *dev);
-#if defined(CONFIG_NET_IGMP) || defined(CONFIG_NET_ICMPv6)
-static int tiva_addmac(struct net_driver_s *dev, FAR const uint8_t *mac);
-#endif
-#ifdef CONFIG_NET_IGMP
-static int tiva_rmmac(struct net_driver_s *dev, FAR const uint8_t *mac);
-#endif
+
 #ifdef CONFIG_NETDEV_PHY_IOCTL
 static int tiva_ioctl(struct net_driver_s *dev, int cmd, long arg);
 #endif
@@ -1658,12 +1648,6 @@ static void tiva_receive(FAR struct tiva_ethmac_s *priv)
 	 */
 
 	while (tiva_recvframe(priv) == OK) {
-#ifdef CONFIG_NET_PKT
-		/* When packet sockets are enabled, feed the frame into the packet tap */
-
-		pkt_input(&priv->dev);
-#endif
-
 		/* Check if the packet is a valid size for the uIP buffer configuration
 		 * (this should not happen)
 		 */
@@ -2598,27 +2582,6 @@ static int tiva_txavail(struct net_driver_s *dev)
  *
  ****************************************************************************/
 
-#if defined(CONFIG_NET_IGMP) || defined(CONFIG_NET_ICMPv6)
-static uint32_t tiva_calcethcrc(const uint8_t *data, size_t length)
-{
-	uint32_t crc = 0xffffffff;
-	size_t i;
-	int j;
-
-	for (i = 0; i < length; i++) {
-		for (j = 0; j < 8; j++) {
-			if (((crc >> 31) ^ (data[i] >> j)) & 0x01) {
-				/* x^26+x^23+x^22+x^16+x^12+x^11+x^10+x^8+x^7+x^5+x^4+x^2+x+1 */
-				crc = (crc << 1) ^ 0x04c11db7;
-			} else {
-				crc = crc << 1;
-			}
-		}
-	}
-
-	return ~crc;
-}
-#endif							/* CONFIG_NET_IGMP || CONFIG_NET_ICMPv6 */
 
 /****************************************************************************
  * Function: tiva_addmac
@@ -2638,7 +2601,7 @@ static uint32_t tiva_calcethcrc(const uint8_t *data, size_t length)
  *
  ****************************************************************************/
 
-#if defined(CONFIG_NET_IGMP) || defined(CONFIG_NET_ICMPv6)
+#if defined(CONFIG_NET_ICMPv6)
 static int tiva_addmac(struct net_driver_s *dev, FAR const uint8_t *mac)
 {
 	uint32_t crc;
@@ -2673,62 +2636,6 @@ static int tiva_addmac(struct net_driver_s *dev, FAR const uint8_t *mac)
 }
 #endif
 
-/****************************************************************************
- * Function: tiva_rmmac
- *
- * Description:
- *   NuttX Callback: Remove the specified MAC address from the hardware multicast
- *   address filtering
- *
- * Parameters:
- *   dev  - Reference to the NuttX driver state structure
- *   mac  - The MAC address to be removed
- *
- * Returned Value:
- *   None
- *
- * Assumptions:
- *
- ****************************************************************************/
-
-#ifdef CONFIG_NET_IGMP
-static int tiva_rmmac(struct net_driver_s *dev, FAR const uint8_t *mac)
-{
-	uint32_t crc;
-	uint32_t hashindex;
-	uint32_t temp;
-	uint32_t registeraddress;
-
-	nvdbg("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-
-	/* Remove the MAC address to the hardware multicast hash table */
-
-	crc = tiva_calcethcrc(mac, 6);
-
-	hashindex = (crc >> 26) & 0x3F;
-
-	if (hashindex > 31) {
-		registeraddress = TIVA_EMAC_HASHTBLH;
-		hashindex -= 32;
-	} else {
-		registeraddress = TIVA_EMAC_HASHTBLL;
-	}
-
-	temp = tiva_getreg(registeraddress);
-	temp &= ~(1 << hashindex);
-	tiva_putreg(temp, registeraddress);
-
-	/* If there is no address registered any more, delete multicast filtering */
-
-	if (tiva_getreg(TIVA_EMAC_HASHTBLH) == 0 && tiva_getreg(TIVA_EMAC_HASHTBLL) == 0) {
-		temp = tiva_getreg(TIVA_EMAC_FRAMEFLTR);
-		temp &= ~(EMAC_FRAMEFLTR_HMC | EMAC_FRAMEFLTR_HPF);
-		tiva_putreg(temp, TIVA_EMAC_FRAMEFLTR);
-	}
-
-	return OK;
-}
-#endif
 
 /****************************************************************************
  * Function: tiva_txdescinit
@@ -4030,10 +3937,6 @@ int tiva_ethinitialize(int intf)
 	priv->dev.d_ifup = tiva_ifup;	/* I/F up (new IP address) callback */
 	priv->dev.d_ifdown = tiva_ifdown;	/* I/F down callback */
 	priv->dev.d_txavail = tiva_txavail;	/* New TX data callback */
-#ifdef CONFIG_NET_IGMP
-	priv->dev.d_addmac = tiva_addmac;	/* Add multicast MAC address */
-	priv->dev.d_rmmac = tiva_rmmac;	/* Remove multicast MAC address */
-#endif
 #ifdef CONFIG_NETDEV_PHY_IOCTL
 	priv->dev.d_ioctl = tiva_ioctl;	/* Support PHY ioctl() calls */
 #endif

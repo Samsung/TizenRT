@@ -30,9 +30,9 @@
 #endif
 
 #ifdef WITH_LWIP
-#include <lwip/pbuf.h>
-#include <lwip/udp.h>
-#include <lwip/timers.h>
+#include <net/lwip/pbuf.h>
+#include <net/lwip/udp.h>
+#include <net/lwip/timers.h>
 #endif
 
 #include "debug.h"
@@ -61,7 +61,7 @@ static inline void coap_free_node(coap_queue_t *node)
 #endif							/* WITH_POSIX */
 #ifdef WITH_LWIP
 
-#include <lwip/memp.h>
+#include <net/lwip/memp.h>
 
 static void coap_retransmittimer_execute(void *arg);
 static void coap_retransmittimer_restart(coap_context_t *ctx);
