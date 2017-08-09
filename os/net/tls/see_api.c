@@ -1070,11 +1070,8 @@ int see_verify_ecdsa_signature(struct sECC_SIGN *ecc_sign, unsigned char *hash, 
 
 int see_write_iotivity_storage(unsigned char *buf, unsigned int buflen)
 {
-	int r = SEE_OK;
-	unsigned int size = 0;
-	unsigned int index = SEE_IOTIVITY_SLOT_START;
-	unsigned char *pbuf = buf;
-	struct iotivity_data *input;
+	int r;
+	unsigned int index = SEE_IOTIVITY_SLOT;
 
 	/* 0. check input params */
 	if (buf == NULL || buflen == 0) {
@@ -1085,11 +1082,6 @@ int see_write_iotivity_storage(unsigned char *buf, unsigned int buflen)
 		return SEE_INVALID_INPUT_PARAMS;
 	}
 
-	input = malloc(sizeof(struct iotivity_data));
-	if (input == NULL) {
-		return SEE_ALLOC_ERROR;
-	}
-
 	/* 1. lock mutex */
 	if (see_mutex_lock(&m_handler) != SEE_OK) {
 		return SEE_MUTEX_LOCK_ERROR;
@@ -1098,55 +1090,32 @@ int see_write_iotivity_storage(unsigned char *buf, unsigned int buflen)
 	ISP_CHECKBUSY();
 
 	/* 2. write */
-	while (buflen && r == SEE_OK) {
-		size = (buflen > SEE_IOTIVITY_MAX_SLOT_SIZE) ? (SEE_IOTIVITY_MAX_SLOT_SIZE) : (buflen);
-
-		input->size = buflen;
-		input->mask = SEE_IOTIVITY_DATAMASK;
-		memcpy(&input->data, pbuf, size);
-
-		r = isp_write_cert((unsigned char *)input, size + 8, index++);
-		if (r) {
-			SEE_DEBUG("isp_write_cert fail %d\n", r);
-		}
-
-		buflen -= size;
-		pbuf += size;
-	}
-
-	/* reset sss status */
+	r = isp_write_cert((unsigned char *)buf, buflen, index);
 	if (r) {
 		isp_clear(0);
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
+		SEE_DEBUG("isp_write_cert fail %d\n", r);
+		return SEE_ERROR;
 	}
 
-	/* unlock mutex */
+	/* 3. unlock mutex */
 	if (see_mutex_unlock(&m_handler) != SEE_OK) {
 		return SEE_MUTEX_UNLOCK_ERROR;
 	}
 
-	memset(input, 0, sizeof(struct iotivity_data));
-	free(input);
-
-	return r;
+	return SEE_OK;
 }
 
 int see_read_iotivity_storage(unsigned char *buf, unsigned int buflen, unsigned int *olen)
 {
 	int r;
-	int index = SEE_IOTIVITY_SLOT_START;
-	int remains = SEE_IOTIVITY_SLOT_NUM;
-	unsigned int readlen = SEE_BUF_MAX_SIZE;
-	unsigned char *pbuf = buf;
-	struct iotivity_data *output;
+	int index = SEE_IOTIVITY_SLOT;
 
 	/* 0. check input params */
 	if (buf == NULL || !buflen) {
 		return SEE_INVALID_INPUT_PARAMS;
-	}
-
-	output = malloc(sizeof(struct iotivity_data));
-	if (output == NULL) {
-		return SEE_ALLOC_ERROR;
 	}
 
 	*olen = 0;
@@ -1159,48 +1128,14 @@ int see_read_iotivity_storage(unsigned char *buf, unsigned int buflen, unsigned 
 	ISP_CHECKBUSY();
 
 	/* 2. read */
-	while (remains-- > 0) {
-		memset(output, 0, sizeof(struct iotivity_data));
-
-		r = isp_read_cert((unsigned char *)output, &readlen, index++);
-		if (r) {
-			SEE_DEBUG("isp_read_cert fail %d\n", r);
-		}
-
-		/* Error1. No data */
-		if (readlen == 0) {
-			remains = 0;
-			continue;
-		}
-
-		/* Error2. Invalid mask or size */
-		if (output->mask != SEE_IOTIVITY_DATAMASK || output->size > SEE_IOTIVITY_MAXSIZE) {
-			remains = 0;
-			continue;
-		}
-
-		/* Error3. Input buffer is too small */
-		if (buflen < *olen + readlen - 8) {
-			free(output);
-			isp_clear(0);
-			if (see_mutex_unlock(&m_handler) != SEE_OK) {
-				return SEE_MUTEX_UNLOCK_ERROR;
-			}
-			return SEE_INVALID_BUFFER_SIZE;
-		}
-
-		memcpy(pbuf + *olen, output->data, readlen - 8);
-		*olen += readlen - 8;
-
-		/* No more data */
-		if (output->size <= SEE_IOTIVITY_MAX_SLOT_SIZE) {
-			remains = 0;
-		}
-	}
-
-	/* reset sss status */
+	r = isp_read_cert((unsigned char *)buf, olen, index);
 	if (r) {
 		isp_clear(0);
+		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			return SEE_MUTEX_UNLOCK_ERROR;
+		}
+		SEE_DEBUG("isp_read_cert fail %d\n", r);
+		return SEE_ERROR;
 	}
 
 	/* 3. unlock mutex */
@@ -1208,8 +1143,7 @@ int see_read_iotivity_storage(unsigned char *buf, unsigned int buflen, unsigned 
 		return SEE_MUTEX_UNLOCK_ERROR;
 	}
 
-	free(output);
-	return r;
+	return SEE_OK;
 }
 
 int see_generate_certificate(struct cert_opt opt, unsigned char *out_buf, unsigned int *out_buflen)
