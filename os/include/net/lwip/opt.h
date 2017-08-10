@@ -992,7 +992,7 @@
  * transport.
  */
 #ifndef LWIP_DNS
-#define LWIP_DNS                        1
+#define LWIP_DNS                        0
 #endif
 
 /** DNS maximum number of entries to maintain locally. */

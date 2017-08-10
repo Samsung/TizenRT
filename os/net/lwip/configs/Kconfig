@@ -275,4 +275,11 @@ config NET_SOFTAP_IFNAME
     default "sa"
 endmenu #"Interface Name"
 
+menuconfig NET_LWIP_NETDB
+	bool "Enable LWIP NETDB Library"
+	default y
+	depends on (NET_IPv4 || NET_IPv6) && NET_UDP
+
+source "net/lwip/configs/netdb/Kconfig"
+
 endmenu #LwIP options

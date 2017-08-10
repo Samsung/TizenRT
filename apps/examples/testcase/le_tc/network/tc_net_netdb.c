@@ -29,13 +29,13 @@
 #include <netutils/netlib.h>
 
 #include <sys/socket.h>
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 #include <netdb.h>
 #endif
 
 #include "tc_internal.h"
 
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 /**
 * @testcase		tc_net_netdb_p
 * @brief		freeaddrinfo() has no way to check errors.
@@ -72,7 +72,7 @@ static void tc_net_netdb_p(void)
 
 int net_netdb_main(void)
 {
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 	tc_net_netdb_p();
 #endif
 	return 0;

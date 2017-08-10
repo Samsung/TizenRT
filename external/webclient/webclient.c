@@ -78,7 +78,7 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 #include <netdb.h>
 #endif
 #include <arpa/inet.h>
@@ -447,7 +447,7 @@ exit:
 
 static int wget_gethostip(FAR char *hostname, in_addr_t *ipv4addr)
 {
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 	FAR struct hostent *he;
 	he = gethostbyname(hostname);
 	if (he == NULL) {
@@ -461,7 +461,7 @@ static int wget_gethostip(FAR char *hostname, in_addr_t *ipv4addr)
 	memcpy(ipv4addr, he->h_addr, sizeof(in_addr_t));
 	return OK;
 #else
-	ndbg("LIBC NETDB is not supported\n");
+	ndbg("NETDB is not supported\n");
 	return ERROR;
 #endif
 }

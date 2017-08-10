@@ -6,7 +6,7 @@
 config SYSTEM_NETDB
 	bool "netdb interface"
 	default n
-	depends on LIBC_NETDB
+	depends on NET_LWIP_NETDB
 
 if SYSTEM_NETDB
 

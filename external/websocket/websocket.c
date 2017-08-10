@@ -353,7 +353,7 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 	socklen_t addrlen;
 	struct sockaddr_in serveraddr;
 
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 	struct hostent *he = NULL;
 	char ip_str[INET6_ADDRSTRLEN];
 
@@ -376,7 +376,7 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_port = htons(atoi(port));
-#ifdef CONFIG_LIBC_NETDB
+#ifdef CONFIG_NET_LWIP_NETDB
 	serveraddr.sin_addr.s_addr = inet_addr(ip_str);
 #else
 	serveraddr.sin_addr.s_addr = inet_addr(host);

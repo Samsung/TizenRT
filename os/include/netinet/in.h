@@ -152,8 +152,6 @@ struct in_addr {
 };
 
 struct sockaddr_in {
-	uint8_t sin_len;
-	uint8_t sin_family;
 	sa_family_t sin_family;		/* Address family: AF_INET */
 	uint16_t sin_port;			/* Port in network byte order */
 	struct in_addr sin_addr;	/* Internet address */
