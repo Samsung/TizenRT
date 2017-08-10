@@ -435,6 +435,7 @@ int see_read_secure_storage(unsigned char *data, unsigned int *data_len, unsigne
 	}
 
 	if (see_mutex_lock(&m_handler) != SEE_OK) {
+		free(t_buf);
 		return SEE_MUTEX_LOCK_ERROR;
 	}
 
@@ -443,6 +444,7 @@ int see_read_secure_storage(unsigned char *data, unsigned int *data_len, unsigne
 	if (r != 0) {
 		isp_clear(0);
 		if (see_mutex_unlock(&m_handler) != SEE_OK) {
+			free(t_buf);
 			return SEE_MUTEX_UNLOCK_ERROR;
 		}
 		SEE_DEBUG("isp_read_storage fail %x\n", r);
@@ -451,6 +453,7 @@ int see_read_secure_storage(unsigned char *data, unsigned int *data_len, unsigne
 	}
 
 	if (see_mutex_unlock(&m_handler) != SEE_OK) {
+		free(t_buf);
 		return SEE_MUTEX_UNLOCK_ERROR;
 	}
 
