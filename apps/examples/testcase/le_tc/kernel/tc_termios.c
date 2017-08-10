@@ -81,6 +81,8 @@ static void tc_termios_tcsetattr_tcgetattr(void)
 	printf("\n");
 	printf("<< Enable (NL) to (CR-NL) >>\n");
 	printf("-> This line is adapted to Carriage-return\n");
+
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
