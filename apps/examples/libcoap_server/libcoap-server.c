@@ -385,10 +385,13 @@ static void usage(const char *program, const char *version)
 					"\t-v num\t\tverbosity level (default: 3)\n"
 #ifdef WITH_MBEDTLS
 					"\t-P protocol\t\t type of transport protocol\n"
-					"\t\t\t\t - 0 : UDP, 1 : DTLS (default : 0)\n"
+					"\t\t\t\t - 0 : UDP, 1 : DTLS , 2 : TCP, 3 : TLS (default : 0)\n"
 					"\t-i identity\tPre-Shared Key identity used to security session\n"
 					"\t-s pre-shared key\tPre-Shared Key. Input length MUST be even (e.g, 11, 1111.)\n"
-#endif
+#else
+					"\t-P protocol\t\t type of transport protocol\n"
+					"\t\t\t\t - 0 : UDP, 2 : TCP (default : 0)\n"
+#endif /* WITH_MBEDTLS */
 					"\t-Q exit server program\n"
 					, program, version, program);
 }
@@ -550,25 +553,30 @@ int main(int argc, char **argv)
 			}
 			if (cred.psk_identity == NULL && cred.psk == NULL) {
 				printf("coap-server : failed to set psk info\n");
-				return -1;
+				goto exit;
 			}
 		} else {
 			printf("coap-server : need to set psk and psk ID\n");
-			return -1;
+			goto exit;
 		}
 
 		tls_context = TLSCtx(&cred);
 		if (tls_context == NULL) {
 			printf("coap-server : failed to initialize TLS context\n");
-			return -1;
+			goto exit;
 		}
 	}
-#endif
+#else
+	if (protocol == COAP_PROTO_TLS || protocol == COAP_PROTO_DTLS) {
+		printf("coap-server : not supported protocol\n");
+		goto exit;
+	}
+#endif /* WITH_MBEDTLS */
 
 #ifdef WITH_MBEDTLS
 	if (coap_net_bind(ctx, NULL, port_str, (void *)tls_context, (void *)&tls_option) < 0)
 #else
-	if (coap_net_bind(ctx, NULL, NULL) < 0)
+	if (coap_net_bind(ctx, NULL, port_str, NULL, NULL) < 0)
 #endif
 	{
 		printf("coap-server : failed to get session from client\n");
@@ -609,10 +617,8 @@ int main(int argc, char **argv)
 		result = select(FD_SETSIZE, &readfds, 0, 0, timeout);
 
 		if (result < 0) {		/* error */
-			if (errno != EINTR) {
-				printf("ERROR : failed to on select, errno %d\n", errno);
-				break;
-			}
+			printf("ERROR : failed on select, errno %d\n", errno);
+			break;
 		} else if (result > 0) {	/* read from socket */
 			if (FD_ISSET(ctx->sockfd, &readfds)) {
 				coap_read(ctx);	/* read received data */

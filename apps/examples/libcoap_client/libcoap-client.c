@@ -631,6 +631,7 @@ void usage(const char *program, const char *version)
 #ifdef WITH_MBEDTLS
 			"examples for secure session:\n"
 			"\tlibcoap-client -m get coaps://[::1]/.well-known/core\n"
+			"\tlibcoap-client -m get coaps+tcp://[::1]/.well-known/core\n"
 #endif
 			, program, version, program, wait_seconds);
 }
@@ -1173,6 +1174,7 @@ int main(int argc, char **argv)
 
 	if (optind < argc) {
 		protocol = coap_get_protocol_from_uri(argv[optind]);
+#ifdef WITH_MBEDTLS
 		if (protocol >= COAP_PROTO_MAX) {
 			printf("coap-client : uri prefix might be wrong %s\n", argv[optind]);
 			return 0;
@@ -1182,6 +1184,12 @@ int main(int argc, char **argv)
 			if (protocol != COAP_PROTO_UDP)
 				msgtype = COAP_MESSAGE_NON;
 		}
+#else
+		if (protocol != COAP_PROTO_UDP && protocol != COAP_PROTO_TCP) {
+			printf("coap-client : not supported protocol\n");
+			return 0;
+		}
+#endif /* WITH_MBEDTLS*/
 		cmdline_uri(argv[optind]);
 	} else {
 		usage(argv[0], PACKAGE_VERSION);
