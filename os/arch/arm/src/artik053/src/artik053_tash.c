@@ -303,7 +303,7 @@ int board_app_initialize(void)
 	/* Initialize and mount secure storage partition (if we have) */
 	ret = mksmartfs(CONFIG_ARTIK053_AUTOMOUNT_SSSRW_DEVNAME, false);
 	if (ret != OK) {
-		lldbg("ERROR: mksmartfs on %s failed", CONFIG_ARTIK053_AUTOMOUNT_SSSRW_DEVNAME);
+		lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_ARTIK053_AUTOMOUNT_SSSRW_DEVNAME);
 	} else {
 		ret = mount(CONFIG_ARTIK053_AUTOMOUNT_SSSRW_DEVNAME, CONFIG_ARTIK053_AUTOMOUNT_SSSRW_MOUNTPOINT, "smartfs", 0, NULL);
 		if (ret != OK) {
