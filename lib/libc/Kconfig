@@ -337,8 +337,8 @@ config MEMSET_OPTSPEED
 	default n
 	depends on !ARCH_MEMSET
 	---help---
-		Select this option to use a version of memcpy() optimized for speed.
-		Default: memcpy() is optimized for size.
+		Select this option to use a version of memset() optimized for speed.
+		Default: memset() is optimized for size.
 
 config MEMSET_64BIT
 	bool "64-bit memset()"
