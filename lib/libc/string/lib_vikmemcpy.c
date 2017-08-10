@@ -254,9 +254,9 @@
 
 #define COPY_SHIFT(shift)                                         \
 	do {                                                          \
-		UIntN* dstN  = (UIntN*)((((UIntN)dst8) PRE_LOOP_ADJUST) & \
+		UIntN *dstN  = (UIntN *)((((uintptr_t)dst8) PRE_LOOP_ADJUST) & \
 								 ~(TYPE_WIDTH - 1));              \
-		UIntN* srcN  = (UIntN*)((((UIntN)src8) PRE_LOOP_ADJUST) & \
+		UIntN *srcN  = (UIntN *)((((uintptr_t)src8) PRE_LOOP_ADJUST) & \
 								 ~(TYPE_WIDTH - 1));              \
 		size_t length  = count / TYPE_WIDTH;                      \
 		UIntN srcWord = INC_VAL(srcN);                            \
@@ -335,12 +335,12 @@ void *memcpy(void *dest, const void *src, size_t count)
 	START_VAL(dst8);
 	START_VAL(src8);
 
-	while (((UIntN)dst8 & (TYPE_WIDTH - 1)) != WHILE_DEST_BREAK) {
+	while (((uintptr_t)dst8 & (TYPE_WIDTH - 1)) != WHILE_DEST_BREAK) {
 		INC_VAL(dst8) = INC_VAL(src8);
 		count--;
 	}
 
-	switch ((((UIntN)src8) PRE_SWITCH_ADJUST) & (TYPE_WIDTH - 1)) {
+	switch ((((uintptr_t)src8) PRE_SWITCH_ADJUST) & (TYPE_WIDTH - 1)) {
 	case 0:
 		COPY_NO_SHIFT();
 		break;
