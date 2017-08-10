@@ -65,15 +65,15 @@ extern "C" {
 
 /* some rarely used options */
 #ifndef LWIP_DNS_API_DECLARE_H_ERRNO
-#define LWIP_DNS_API_DECLARE_H_ERRNO  0
+#define LWIP_DNS_API_DECLARE_H_ERRNO  1
 #endif
 
 #ifndef LWIP_DNS_API_DEFINE_ERRORS
-#define LWIP_DNS_API_DEFINE_ERRORS    0
+#define LWIP_DNS_API_DEFINE_ERRORS    1
 #endif
 
 #ifndef LWIP_DNS_API_DEFINE_FLAGS
-#define LWIP_DNS_API_DEFINE_FLAGS     0
+#define LWIP_DNS_API_DEFINE_FLAGS     1
 #endif
 
 #ifndef LWIP_DNS_API_DECLARE_STRUCTS
@@ -142,11 +142,13 @@ void lwip_freeaddrinfo(struct addrinfo *ai);
 int lwip_getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res);
 
 #if LWIP_COMPAT_SOCKETS
-/** @ingroup netdbapi */
+#define gethostbyname(name) lwip_gethostbyname(name)
+#define gethostbyname_r(name, ret, buf, buflen, result, h_errnop) \
+       lwip_gethostbyname_r(name, ret, buf, buflen, result, h_errnop)
 #define freeaddrinfo(addrinfo) lwip_freeaddrinfo(addrinfo)
-/** @ingroup netdbapi */
 #define getaddrinfo(nodname, servname, hints, res) \
        lwip_getaddrinfo(nodname, servname, hints, res)
+#define getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 #endif							/* LWIP_COMPAT_SOCKETS */
 
 #ifdef __cplusplus

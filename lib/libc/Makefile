@@ -104,7 +104,6 @@ include wchar/Make.defs
 include wctype/Make.defs
 include wqueue/Make.defs
 include misc/Make.defs
-include netdb/Make.defs
 include ttrace/Make.defs
 include audio/Make.defs
 
