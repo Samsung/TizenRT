@@ -20,7 +20,7 @@
  * do on lwip. */
 #include "mem.h"
 
-#include <lwip/memp.h>
+#include <net/lwip/memp.h>
 
 #define COAP_MALLOC_TYPE(Type) \
   ((coap_##Type##_t *)memp_malloc(MEMP_COAP_##Type))

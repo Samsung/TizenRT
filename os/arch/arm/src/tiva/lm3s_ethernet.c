@@ -70,12 +70,7 @@
 #include <tinyara/wdog.h>
 #include <tinyara/irq.h>
 #include <arch/board/board.h>
-#include <tinyara/net/arp.h>
 #include <tinyara/net/netdev.h>
-
-#ifdef CONFIG_NET_PKT
-#include <tinyara/net/pkt.h>
-#endif
 
 #include "chip.h"
 #include "up_arch.h"
@@ -286,10 +281,6 @@ static void tiva_txtimeout(int argc, uint32_t arg, ...);
 static int tiva_ifup(struct net_driver_s *dev);
 static int tiva_ifdown(struct net_driver_s *dev);
 static int tiva_txavail(struct net_driver_s *dev);
-#ifdef CONFIG_NET_IGMP
-static int tiva_addmac(struct net_driver_s *dev, FAR const uint8_t *mac);
-static int tiva_rmmac(struct net_driver_s *dev, FAR const uint8_t *mac);
-#endif
 
 /****************************************************************************
  * Private Functions
@@ -794,12 +785,6 @@ static void tiva_receive(struct tiva_driver_s *priv)
 
 		priv->ld_dev.d_len = pktlen - 6;
 		tiva_dumppacket("Received packet", priv->ld_dev.d_buf, priv->ld_dev.d_len);
-
-#ifdef CONFIG_NET_PKT
-		/* When packet sockets are enabled, feed the frame into the packet tap */
-
-		pkt_input(&priv->ld_dev);
-#endif
 
 		/* We only accept IP packets of the configured type and ARP packets */
 
@@ -1384,17 +1369,6 @@ static int tiva_txavail(struct net_driver_s *dev)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NET_IGMP
-static int tiva_addmac(struct net_driver_s *dev, FAR const uint8_t *mac)
-{
-	FAR struct tiva_driver_s *priv = (FAR struct tiva_driver_s *)dev->d_private;
-
-	/* Add the MAC address to the hardware multicast routing table */
-
-#warning "Multicast MAC support not implemented"
-	return OK;
-}
-#endif
 
 /****************************************************************************
  * Function: tiva_rmmac
@@ -1414,17 +1388,6 @@ static int tiva_addmac(struct net_driver_s *dev, FAR const uint8_t *mac)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NET_IGMP
-static int tiva_rmmac(struct net_driver_s *dev, FAR const uint8_t *mac)
-{
-	FAR struct tiva_driver_s *priv = (FAR struct tiva_driver_s *)dev->d_private;
-
-	/* Add the MAC address to the hardware multicast routing table */
-
-#warning "Multicast MAC support not implemented"
-	return OK;
-}
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -1472,10 +1435,6 @@ static inline int tiva_ethinitialize(int intf)
 	priv->ld_dev.d_ifup = tiva_ifup;	/* I/F down callback */
 	priv->ld_dev.d_ifdown = tiva_ifdown;	/* I/F up (new IP address) callback */
 	priv->ld_dev.d_txavail = tiva_txavail;	/* New TX data callback */
-#ifdef CONFIG_NET_IGMP
-	priv->ld_dev.d_addmac = tiva_addmac;	/* Add multicast MAC address */
-	priv->ld_dev.d_rmmac = tiva_rmmac;	/* Remove multicast MAC address */
-#endif
 	priv->ld_dev.d_private = (void *)priv;	/* Used to recover private state from dev */
 
 	/* Create a watchdog for timing polling for and timing of transmissions */
