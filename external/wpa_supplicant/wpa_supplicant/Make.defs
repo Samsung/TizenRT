@@ -1,0 +1,95 @@
+############################################################################
+# apps/wpa_supplicant/Makefile
+#
+#   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+
+#include $(TOPDIR)/Make.defs
+
+CONFIG_WPA_SUPPLICANT_PRIORITY ?= SCHED_PRIORITY_DEFAULT
+CONFIG_WPA_SUPPLICANT_STACKSIZE ?= 16384
+
+PRIORITY = $(CONFIG_WPA_SUPPLICANT_PRIORITY)
+STACKSIZE = $(CONFIG_WPA_SUPPLICANT_STACKSIZE)
+
+CONFIG_OS=tinyara
+
+DEPPATH += --dep-path wpa_supplicant/wpa_supplicant
+
+ASRCS =
+CSRCS += \
+	main.c \
+	config.c \
+	scan.c \
+	bss.c \
+	events.c \
+	wpa_supplicant.c \
+	notify.c \
+	wpas_glue.c \
+	blacklist.c \
+	wmm_ac.c \
+	eap_register.c \
+	config_file.c \
+	ctrl_iface.c \
+	ctrl_iface_udp.c \
+	ctrl_iface_fifo.c \
+	ap.c
+
+
+#AOBJS = $(ASRCS:.S=$(OBJEXT))
+#COBJS = $(CSRCS:.c=$(OBJEXT))
+
+#SRCS = $(ASRCS) $(CSRCS)
+#OBJS = $(AOBJS) $(COBJS)
+
+#ROOTDEPPATH += --dep-path wpa_supplicant
+
+CFLAGS += -DCONFIG_DRIVER_T20
+CFLAGS += -DCONFIG_DEBUG_FILE
+CFLAGS += -DCONFIG_NO_RANDOM_POOL
+CFLAGS += -DCONFIG_CTRL_IFACE -DCONFIG_CTRL_IFACE_FIFO -DCONFIG_ELOOP_POLL
+CFLAGS += -DNEED_AP_MLME
+
+# CONFIG AP and its related flags
+CFLAGS += -DCONFIG_AP -DCONFIG_NO_RADIUS -DCONFIG_NO_ACCOUNTING -DCONFIG_NO_VLAN -DCONFIG_CRYPTO_INTERNAL
+CFLAGS += -DIEEE8021x_EAPOL
+CFLAGS += -DCONFIG_IEEE80211N
+
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)/../external/wpa_supplicant/ $(TOPDIR)/../external/wpa_supplicant/src $(TOPDIR)/../external/wpa_supplicant/src$(DELIM)utils $(TOPDIR)/../external/wpa_supplicant/src$(DELIM)rsn_supp }
+CONFIG_WPA_SUPPLICANT_PROGNAME ?= wpa_supplicant$(EXEEXT)
+
+# Common build
+VPATH += :wpa_supplicant/wpa_supplicant
+DEPPATH += --dep-path wpa_supplicant/wpa_supplicant
+
+#$(sort $(dir $(CSRCS_WPA_SUPPLICANT)))
+

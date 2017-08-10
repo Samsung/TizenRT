@@ -46,9 +46,9 @@ else
 endif
 endif
 
-CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)$(DELIM)wpa_supplicant$(DELIM)src \
-			$(APPDIR)$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)utils \
-			$(APPDIR)$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)common \
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src \
+			$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)utils \
+			$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)common \
 			$(APPDIR)$(DELIM)include$(DELIM)netutils$(DELIM)wifi}
 
 ROOTDEPPATH	= --dep-path .
