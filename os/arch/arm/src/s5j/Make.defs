@@ -102,6 +102,10 @@ ifeq ($(CONFIG_ARMV7M_MPU),y)
 CMN_CSRCS += arm_mpu.c
 endif
 
+ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
+CMN_CSRCS += up_schedyield.c
+endif
+
 ifeq ($(CONFIG_BUILD_KERNEL),y)
 CMN_CSRCS += up_task_start.c up_pthread_start.c arm_signal_dispatch.c
 endif
