@@ -7,6 +7,7 @@ config NETUTILS_WEBCLIENT
 	bool "Webclient"
 	default n
 	depends on NET
+	depends on NETUTILS_WEBSERVER
 	---help---
 		Enables the webclient.
 		This webclient supports to send request by sync/async mode.
