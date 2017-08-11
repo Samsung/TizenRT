@@ -718,7 +718,6 @@
  * It should be set NO_SYS for TizenRT.
  */
 #define NO_SYS 0
-#define LWIP_RAND() rand()
 
 #ifdef CONFIG_NET_TCPIP_CORE_LOCKING
 #define LWIP_TCPIP_CORE_LOCKING CONFIG_NET_TCPIP_CORE_LOCKING

@@ -140,15 +140,6 @@ extern const struct in6_addr in6addr_any;
 
 #define IN_LOOPBACKNET      IP_LOOPBACKNET
 
-#ifndef INET_ADDRSTRLEN
-#define INET_ADDRSTRLEN     IP4ADDR_STRLEN_MAX
-#endif
-#if LWIP_IPV6
-#ifndef INET6_ADDRSTRLEN
-#define INET6_ADDRSTRLEN    IP6ADDR_STRLEN_MAX
-#endif
-#endif
-
 #if LWIP_IPV4
 
 #define inet_addr_from_ip4addr(target_inaddr, source_ipaddr) ((target_inaddr)->s_addr = ip4_addr_get_u32(source_ipaddr))
