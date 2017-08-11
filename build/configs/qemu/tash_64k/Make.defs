@@ -55,13 +55,17 @@ include ${TOPDIR}/tools/Config.mk
 include ${TOPDIR}/arch/arm/src/armv7-m/Toolchain.defs
 
 # Choose proper ld script
-ifeq ($(CONFIG_QEMU_SRAM),y)
-LDSCRIPT = flash-sram-qemu-memory-increased.ld  #Qemu SRAM increased
+ifeq ($(CONFIG_QEMU_FLASH_512K_SRAM_128K),y)
+LDSCRIPT = lm3s6965-flash512k-sram128k.ld
 else
-ifeq ($(CONFIG_QEMU_SDRAM),y)
-LDSCRIPT = flash-sdram-qemu-memory-increased.ld #Qemu SDRAM enabled
+ifeq ($(CONFIG_QEMU_FLASH_2400K_SRAM_946K),y)
+LDSCRIPT = lm3s6965-flash2400k-sram946k.ld
 else
-LDSCRIPT = flash-sram.ld
+ifeq ($(CONFIG_QEMU_FLASH_128M_SRAM_16M),y)
+LDSCRIPT = lm3s6965-flash128m-sram16m.ld
+else
+LDSCRIPT = lm3s6965.ld
+endif
 endif
 endif
 

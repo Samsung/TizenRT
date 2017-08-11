@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * build/configs/qemu/scripts/flash-sdram-qemu-memory-increased.ld
+ * build/configs/qemu/scripts/lm3s6965-flash2400k-sram772k.ld
  *
  *   Copyright (C) 2010 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,14 +50,10 @@
  *
  ****************************************************************************/
 
-/* The QEMU LM3S6965 hardware has 128MB of FLASH beginning at address 0x0000:0000
- * and 512MB of External SDRAM beginning at 0x6000:0000.
- */
-
 MEMORY
 {
-    flash (rx) : ORIGIN = 0x00000000, LENGTH = 128M
-    sdram (rwx) : ORIGIN = 0x60000000, LENGTH = 512M
+    flash (rx) : ORIGIN = 0x00000000, LENGTH = 2400K
+    sram (rwx) : ORIGIN = 0x20000000, LENGTH = 946K
 }
 
 OUTPUT_ARCH(arm)
@@ -98,15 +94,13 @@ SECTIONS
 
 	_eronly = ABSOLUTE(.);
 
-	/* The LM3S6918 has 64Kb of SRAM beginning at the following address */
-
 	.data : {
 		_sdata = ABSOLUTE(.);
 		*(.data .data.*)
 		*(.gnu.linkonce.d.*)
 		CONSTRUCTORS
 		_edata = ABSOLUTE(.);
-	} > sdram AT > flash
+	} > sram AT > flash
 
 	.bss : {			/* BSS				*/
 		_sbss = ABSOLUTE(.);
@@ -114,7 +108,7 @@ SECTIONS
 		*(.gnu.linkonce.b.*)
 		*(COMMON)
 		_ebss = ABSOLUTE(.);
-	} > sdram
+	} > sram
 					/* Stabs debugging sections.	*/
 	.stab 0 : { *(.stab) }
 	.stabstr 0 : { *(.stabstr) }

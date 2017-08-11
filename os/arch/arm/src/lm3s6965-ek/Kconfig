@@ -9,19 +9,26 @@ choice
 	bool "Build for qemu hardware"
 	default QEMU_NONE
 
-config QEMU_SRAM
-	bool "Build for SRAM increased QEMU Hardware"
-	---help---
-		Build for SRAM increased QEMU Hardware.
-
-config QEMU_SDRAM
-	bool "Build for SDRAM(External RAM) enabled QEMU Hardware"
-	---help---
-		Build for SDRAM(External RAM) enabled QEMU Hardware.
-
 config QEMU_NONE
 	bool "NONE"
 	---help---
+		Build for FLASH 256K, SRAM 64K.
 		Dont build for Qemu Hardware.
+
+config QEMU_FLASH_512K_SRAM_128K
+	bool "FLASH 512K, SRAM 128K"
+	---help---
+		Build for FLASH 512K, SRAM 128K QEMU Hardware.
+
+config QEMU_FLASH_2400K_SRAM_946K
+	bool "FLASH 2400K, SRAM 722K"
+	---help---
+		Build for FLASH 2400K, SRAM 946K QEMU Hardware.
+
+config QEMU_FLASH_128M_SRAM_16M
+	bool "FLASH 128M, SRAM 16M"
+	---help---
+		Build for FLASH 128M, SRAM 16M QEMU Hardware.
+
 endchoice
 endif
