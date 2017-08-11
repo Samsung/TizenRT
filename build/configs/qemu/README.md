@@ -10,9 +10,9 @@ QEMU uses lm3s6963-ek machine.
 ### QEMU installation
 
 ```
-wget http://download.qemu-project.org/qemu-2.0.0.tar.xz
-tar xvjf qemu-2.0.0.tar.xz
-cd qemu-2.0.0
+wget http://download.qemu-project.org/qemu-2.10.0-rc2.tar.xz
+tar xvJf qemu-2.10.0-rc2.tar.xz
+cd qemu-2.10.0-rc2
 ./configure --target-list=arm-softmmu
 make -j 4
 Check executable in "arm-softmmu/qemu-system-arm" 
