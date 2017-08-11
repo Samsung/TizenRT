@@ -129,8 +129,10 @@ static void board_gpio_initialize(void)
 static void board_i2c_initialize(void)
 {
 #ifdef CONFIG_I2C
+#ifdef CONFIG_S5J_I2C
 	s5j_i2c_register(0);
 	s5j_i2c_register(1);
+#endif
 #endif
 }
 
