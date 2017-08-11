@@ -107,9 +107,7 @@ void *iotapi_handler(void *data)
 		}
 
 		if (g_ia_evtlist[0].revents & POLLIN) {
-			int readed;
-			readed = read(g_ia_evtlist[0].fd, buf, 3);
-			IOTAPI_LOG("[iotcom] receive command(%d)\n", readed);
+			IOTAPI_LOG("[iotcom] receive command(%d)\n", read(g_ia_evtlist[0].fd, buf, 3));
 			if (buf[0] == 's' && buf[1] == 't')
 				break;
 
