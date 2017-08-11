@@ -235,9 +235,13 @@ config LIB_SENDFILE_BUFSIZE
 	---help---
 		Size of the I/O buffer to allocate in sendfile().  Default: 512b
 
+config ARCH_HAVE_ROMGETC
+	bool
+
 config ARCH_ROMGETC
 	bool "Support for ROM string access"
 	default n
+	depends on ARCH_HAVE_ROMGETC
 	---help---
 		In Harvard architectures, data accesses and instruction accesses
 		occur on different buses, perhaps concurrently.  All data accesses
