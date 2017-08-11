@@ -447,10 +447,6 @@ int vdprintf(int fd, FAR const char *fmt, va_list ap);
 /**
  * @internal
  */
-int statfs(FAR const char *path, FAR struct statfs *buf);
-/**
- * @internal
- */
 FAR char *tmpnam(FAR char *s);
 /**
  * @internal
