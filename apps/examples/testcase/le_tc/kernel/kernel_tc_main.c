@@ -94,6 +94,10 @@ int kernel_tc_main(int argc, char *argv[])
 	libc_misc_main();
 #endif
 
+#ifdef CONFIG_TC_KERNEL_LIBC_MQUEUE
+	libc_mqueue_main();
+#endif
+
 #ifdef CONFIG_TC_KERNEL_LIBC_PTHREAD
 #if (!defined CONFIG_PTHREAD_MUTEX_TYPES)
 #error CONFIG_PTHREAD_MUTEX_TYPES is needed for testing LIBC_PTHREAD TC

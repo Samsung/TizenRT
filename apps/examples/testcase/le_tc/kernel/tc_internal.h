@@ -70,6 +70,7 @@ int libc_fixedmath_main(void);
 int libc_libgen_main(void);
 int libc_math_main(void);
 int libc_misc_main(void);
+int libc_mqueue_main(void);
 int libc_pthread_main(void);
 int libc_queue_main(void);
 int libc_sched_main(void);

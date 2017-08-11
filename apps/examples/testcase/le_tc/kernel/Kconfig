@@ -89,6 +89,11 @@ config TC_KERNEL_LIBC_MISC
 	select DEBUG_ERROR
 	select DEBUG_VERBOSE
 
+config TC_KERNEL_LIBC_MQUEUE
+	bool "Libc Mqueue"
+	default n
+	depends on !DISABLE_MQUEUE
+
 config TC_KERNEL_LIBC_PTHREAD
 	bool "Libc Pthread"
 	default n
@@ -142,6 +147,7 @@ config TC_KERNEL_LIBC_SYSLOG
 config TC_KERNEL_MQUEUE
 	bool "Mqueue"
 	default n
+	depends on !DISABLE_MQUEUE
 
 config TC_KERNEL_PTHREAD
 	bool "Pthread"
