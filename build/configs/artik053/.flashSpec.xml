@@ -17,7 +17,7 @@
 <flash name="artik053 flash" virtual="false">
     <!-- path attribute value must be relative path from project root -->
     <executors>
-        <execute name="linux flash" path="os" command="make download" os="linux" bit="all"></execute>
+        <execute name="flash" path="${PROJECT_PATH}/os" command="make download" os="linux" bit="all"></execute>
     </executors>
     <options>
         <option>ALL</option>

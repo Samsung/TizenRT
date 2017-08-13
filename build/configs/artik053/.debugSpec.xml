@@ -26,13 +26,13 @@
         <!-- path attribute value must be relative path from project root -->
         <!-- usage : openocd -f debug_all.cfg -->
         <options name="scriptfile" type="file" path="${PROJECT_PATH}/build/configs/${BOARD}/tools/openocd" filter="*.cfg"/>
-        <execute name="linux 32 debug" os="linux" bit="32" command="${PROJECT_PATH}/build/configs/${BOARD}/tools/openocd/linux32/openocd">
+        <execute name="debug" os="linux" bit="32" command="${PROJECT_PATH}/build/configs/${BOARD}/tools/openocd/linux32/openocd">
             <params>
                 <param prefix="-s" value="${SCRIPT_PATH}"/>
                 <param prefix="-f" value="${SCRIPT_FILE}"/>
             </params>
         </execute>
-        <execute name="linux 64 debug" os="linux" bit="64" command="${PROJECT_PATH}/build/configs/${BOARD}/tools/openocd/linux64/openocd">
+        <execute name="debug" os="linux" bit="64" command="${PROJECT_PATH}/build/configs/${BOARD}/tools/openocd/linux64/openocd">
             <params>
                 <param prefix="-s" value="${SCRIPT_PATH}"/>
                 <param prefix="-f" value="${SCRIPT_FILE}"/>
