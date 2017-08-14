@@ -8,6 +8,7 @@ Samsung IoT Development Kit for S5JT200 chipset.
 > [Environment Set-up](#environment-set-up)  
 > [How to program a binary](#how-to-program-a-binary)  
 > [ROMFS](#romfs)  
+> [Using GDB](#using-gdb)  
 > [Configuration Sets](#configuration-sets)  
 > [Board Configuration](#board-configuration)
 
@@ -120,6 +121,28 @@ Before executing below steps, execute [generic steps](../../../external/contents
     ```
 
 After above two steps, build Tizen RT and program a Tizen RT binary through above [method](#how-to-program-a-binary).
+
+## Using GDB
+1. Build Tizen RT and program a Tizen RT binary through above [method](#how-to-program-a-binary)
+
+2. Run GDB server by running openocd with gdb cfg
+    ```bash
+    cd $TIZENRT_BASEDIR/build/configs/sidk_s5jt200/tools/openocd/
+    ./linux64/openocd -f s5jt200_attach_gdb.cfg
+    ```
+3. Run GDB client from another terminal
+    ```bash
+    cd $TIZENRT_BASEDIR/os/
+    arm-none-eabi-gdb -ex "target remote :3333" $TIZENRT_BASEDIR/build/output/bin/tinyara
+    ```
+    1. To run tinyara from beginning, set entrypoint to pc register in gdb.
+    ```bash
+    (gdb) set $pc = entry_addr
+    ```
+    2. entry_addr can be obtained by
+    ```bash
+    arm-none-eabi-readelf -h $TIZENRT_BASEDIR/build/output/bin/tinyara
+    ```
 
 ## Configuration Sets
 
