@@ -99,9 +99,6 @@ int kernel_tc_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_LIBC_PTHREAD
-#if (!defined CONFIG_PTHREAD_MUTEX_TYPES)
-#error CONFIG_PTHREAD_MUTEX_TYPES is needed for testing LIBC_PTHREAD TC
-#endif
 	libc_pthread_main();
 #endif
 
@@ -160,9 +157,6 @@ int kernel_tc_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_PTHREAD
-#if (!defined CONFIG_PTHREAD_MUTEX_TYPES)
-#error CONFIG_PTHREAD_MUTEX_TYPES is needed for testing PTHREAD TC
-#endif
 	pthread_main();
 #endif
 
