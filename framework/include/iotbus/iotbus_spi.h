@@ -28,11 +28,11 @@
  * @brief Iotbus APIs for SPI
  */
 
-#include <stdint.h>
-#include <sys/types.h>
-
 #ifndef IOTBUS_SPI_H_
 #define IOTBUS_SPI_H_
+
+#include <stdint.h>
+#include <sys/types.h>
 
 /**
  * @brief Enumeration of SPI mode

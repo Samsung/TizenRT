@@ -28,11 +28,11 @@
  * @brief Iotbus APIs for I2C
  */
 
-#include <stdint.h>
-#include <sys/types.h>
-
 #ifndef IOTBUS_I2C_H_
 #define IOTBUS_I2C_H_
+
+#include <stdint.h>
+#include <sys/types.h>
 
 struct _iotbus_i2c_s;
 

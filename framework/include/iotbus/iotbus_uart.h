@@ -28,10 +28,10 @@
  * @brief Iotbus APIs for UART
  */
 
-#include <stdint.h>
-
 #ifndef IOTBUS_UART_H_
 #define IOTBUS_UART_H_
+
+#include <stdint.h>
 
 /**
  * @brief Enumeration of UART parity type
