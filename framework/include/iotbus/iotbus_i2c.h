@@ -56,8 +56,7 @@ typedef enum {
 } iotbus_i2c_mode_e;
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /**

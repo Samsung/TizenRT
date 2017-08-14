@@ -53,8 +53,7 @@ struct _iotbus_uart_s;
 typedef struct _iotbus_uart_s *iotbus_uart_context_h;
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /**
