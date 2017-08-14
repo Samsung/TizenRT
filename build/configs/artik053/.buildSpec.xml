@@ -24,17 +24,17 @@
     <!-- path attribute value must be relative path from project root -->
     <!-- Don't touch command name. IDE use command with name -->
     <commands>
-        <command name="config" command="./configure.sh" path="os/tools" shellcmd="true">
+        <command name="config" command="./configure.sh" path="${PROJECT_PATH}/os/tools" shellcmd="true">
             <param name="buildOption" value="${BOARD}/${BUILD_OPTION}"/>
         </command>
-        <command name="build" command="make" path="os" shellcmd="true">
+        <command name="build" command="make" path="${PROJECT_PATH}/os" shellcmd="true">
             <param name="V" value="V=1"/>
         </command>
-        <command name="buildWithToolchain" command=". ./setenv.sh ${TOOLCHAIN_PATH};make V=1" path="os" shellcmd="true" shell="/bin/bash"/>
-        <command name="clean" command="make clean" path="os" shellcmd="true">
+        <command name="buildWithToolchain" command=". ./setenv.sh ${TOOLCHAIN_PATH};make V=1" path="${PROJECT_PATH}/os" shellcmd="true" shell="/bin/bash"/>
+        <command name="clean" command="make clean" path="${PROJECT_PATH}/os" shellcmd="true">
             <param name="clean" value="clean"/>
         </command>
-        <command name="distclean" command="make distclean" path="os" shellcmd="true">
+        <command name="distclean" command="make distclean" path="${PROJECT_PATH}/os" shellcmd="true">
             <param name="distclean" value="distclean"/>
         </command>
     </commands>
