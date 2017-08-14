@@ -49,7 +49,8 @@ typedef struct _iotbus_pwm_s *iotbus_pwm_context_h;
  * IOTBUS_PWM_ENABLE\n
  */
 typedef enum {
-	IOTBUS_PWM_DISABLE = 0, IOTBUS_PWM_ENABLE,
+	IOTBUS_PWM_DISABLE = 0,
+	IOTBUS_PWM_ENABLE,
 } iotbus_pwm_state_e;
 
 /*
