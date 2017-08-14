@@ -3304,7 +3304,7 @@ static void tc_libc_math_ynf(void)
 	int ynf_idx;
 	int order = 3;
 
-	for (ynf_idx = 0; ynf_idx < SIZE(in_val,float); ynf_idx++) {
+	for (ynf_idx = 0; ynf_idx < SIZE(in_val, float); ynf_idx++) {
 		ret_val[ynf_idx] = ynf(order, in_val[ynf_idx]);
 		if (!(isnan(sol_val[ynf_idx]) && isnan(ret_val[ynf_idx]))) {
 			TC_ASSERT_LEQ("ynf", fabsf(sol_val[ynf_idx] - ret_val[ynf_idx]), FLT_EPSILON);
