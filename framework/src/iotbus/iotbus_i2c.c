@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <tinyara/i2c.h>
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_i2c.h>

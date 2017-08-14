@@ -29,6 +29,7 @@
  */
 
 #include <stdint.h>
+#include <sys/types.h>
 
 #ifndef IOTBUS_SPI_H_
 #define IOTBUS_SPI_H_

@@ -29,6 +29,7 @@
  */
 
 #include <stdint.h>
+#include <sys/types.h>
 
 #ifndef IOTBUS_I2C_H_
 #define IOTBUS_I2C_H_
