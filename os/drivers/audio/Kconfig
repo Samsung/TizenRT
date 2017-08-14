@@ -31,9 +31,6 @@ config AUDIO_NULL_WORKER_STACKSIZE
 
 endif # AUDIO_NULL
 
-choice
-	prompt "Select how to use the alc5658"
-
 config AUDIO_ALC5658
 	bool "ALC5658 audio chip"
 	depends on AUDIO
@@ -84,7 +81,7 @@ endif # AUDIO_ALC5658
 
 config AUDIO_ALC5658CHAR
 	bool "ALC5658 Character Driver (for testing and demo only)"
-	depends on I2S && AUDIO && I2C
+	depends on I2S && AUDIO && I2C && !AUDIO_ALC5658 && EXAMPLES_SENSORBOARD
 	---help---
 		This selection enables a simple character driver that supports ALC codec
 		transfers via a read() and write() ioctl.  The intent of this driver is to
@@ -112,5 +109,3 @@ config AUDIO_ALC5658CHAR_TXTIMEOUT
 		The special value of zero disables RX timeouts.  Default: 0
 
 endif # AUDIO_ALC5658CHAR
-
-endchoice

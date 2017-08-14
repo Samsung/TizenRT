@@ -9,6 +9,14 @@ config EXAMPLES_SENSORBOARD
 	select I2C
 	select I2C_USERIO
 	select PWM
+	select I2S
+	select S5J_I2S
+	select S5J_I2S_RX
+	select S5J_I2S_TX_P
+	select DMA
+	select S5J_DMA
+	select AUDIO_DEVICES
+	select AUDIO_ALC5658CHAR
 	default n
 	---help---
 		Enable the Sensor Board Example

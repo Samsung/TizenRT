@@ -135,6 +135,7 @@ static pthread_addr_t alc5658char_receiver(void *arg)
 		printf("Received Data Write Start..\n");
 
 		int pcm_fd = open("/mnt/test.pcm", O_RDWR | O_CREAT | O_TRUNC);
+
 		if (pcm_fd < 0) {
 			errcode = errno;
 			printf("failed to open file, %d\n", errcode);
@@ -171,6 +172,7 @@ static pthread_addr_t alc5658char_transmitter(void *arg)
 		printf("Read File Start..\n");
 
 		int pcm_fd = open("/mnt/test.pcm", O_RDONLY | O_NONBLOCK);
+
 		if (pcm_fd < 0) {
 			errcode = errno;
 			printf("failed to open file, %d\n", errcode);
@@ -251,7 +253,7 @@ static void alc5658char_test_help(FAR const char *program)
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int alc5658char_test_main(int argc, char *argv[])
+int alc5658test_main(int argc, char *argv[])
 #endif
 {
 	pthread_attr_t attr;
@@ -264,17 +266,17 @@ int alc5658char_test_main(int argc, char *argv[])
 	int mode;
 	struct audio_caps_s caps;
 
-	if (argc > 2) {
+	if (argc > 3) {
 		alc5658char_test_help(argv[0]);
 		return -EINVAL;
 	}
 
-	if (!strcmp(argv[1], "loopback")) {
+	if (!strcmp(argv[2], "loopback")) {
 		mode = MODE_LOOPBACK;
-	} else if (!strcmp(argv[1], "record")) {
+	} else if (!strcmp(argv[2], "record")) {
 		mode = MODE_RECORD;
 	} else {
-		alc5658char_test_help(argv[0]);
+		alc5658char_test_help(argv[1]);
 		return -EINVAL;
 	}
 
@@ -291,8 +293,6 @@ int alc5658char_test_main(int argc, char *argv[])
 		sem_init(&tx_start_sem, 0, 0);
 		sem_init(&rx_done_sem, 0, 0);
 	}
-
-	printf("HELLO!!! %s\n", argv[0]);
 
 	/* Input will be the same since it is the same I2S channel */
 

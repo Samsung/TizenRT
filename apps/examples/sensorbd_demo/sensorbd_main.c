@@ -34,6 +34,8 @@ static void show_usage(FAR const char *program)
 	printf(" %s k6ds3      : spi 6-axis acceler sensor(K6DS3) test\n", program);
 	printf(" %s lis3lv02qd : spi 3-axis acceler sensor(LIS3LV02QD) test\n", program);
 	printf(" %s adctest    : adc print all channel value\n", program);
+	printf(" %s alc5658 loopback   : i2s audio codec(alc5658) loopback\n", program);
+	printf(" %s alc5658 record     : i2s audio codec(alc5658) record\n", program);
 }
 
 #ifdef CONFIG_BUILD_KERNEL
@@ -70,6 +72,16 @@ int sensorbd_main(int argc, FAR char *argv[])
 			lis3lv02qd_main(argc, argv);
 		} else if (strcmp(argv[1], "adctest") == 0) {
 			adctest_main(argc, argv);
+		} else {
+			show_usage(argv[0]);
+		}
+		break;
+	case 3:
+		if (strcmp(argv[1], "alc5658") == 0) {
+			printf("Init Codec.. ");
+			s5j_alc5658char_initialize(0);
+			printf("Done\n");
+			alc5658test_main(argc, argv);
 		} else {
 			show_usage(argv[0]);
 		}

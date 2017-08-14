@@ -224,12 +224,6 @@ void board_initialize(void)
 	board_i2c_initialize();
 	board_wdt_initialize();
 
-#if defined(CONFIG_AUDIO_ALC5658)
-	s5j_alc5658_initialize(0);
-#elif defined(CONFIG_AUDIO_ALC5658CHAR)
-	s5j_alc5658char_initialize(0);
-#endif
-
 #ifdef CONFIG_S5J_SSS
 	/* verify ARTIK Key */
 	sssro_verify();
