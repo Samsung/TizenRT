@@ -55,6 +55,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <time.h>
+#include <sys/types.h>
 
 #include "result.h"
 #include "db_options.h"

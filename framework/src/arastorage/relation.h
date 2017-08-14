@@ -59,6 +59,7 @@
  ****************************************************************************/
 #include <stdint.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <arastorage/arastorage.h>
 #include "db_options.h"
 #include "list.h"
