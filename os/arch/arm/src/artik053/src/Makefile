@@ -59,9 +59,7 @@ CSRCS = artik053_boot.c \
 	artik053_tash.c \
 	artik053_pwm.c
 
-ifeq ($(CONFIG_AUDIO_ALC5658),y)
-CSRCS += artik053_alc5658.c
-else ifeq ($(CONFIG_AUDIO_ALC5658CHAR),y)
+ifeq ($(CONFIG_AUDIO_ALC5658CHAR),y)
 CSRCS += artik053_alc5658char.c
 endif
 
