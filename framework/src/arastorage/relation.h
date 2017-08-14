@@ -76,19 +76,19 @@
 #define GET_POS(a) ((a) % (sizeof(uint32_t) * 8))
 
 /* This decides int array size to present all tuples in relation */
-#define GET_CURSOR_DATA_ARR_SIZE(a) (((a) / (sizeof(uint32_t)*8)) + 1)
+#define GET_CURSOR_DATA_ARR_SIZE(a) (((a) / (sizeof(uint32_t) * 8)) + 1)
 
 /* Set a bit to 1 */
-#define BIT_SET(a, b) ((a) |= (1u<<(b)))
+#define BIT_SET(a, b) ((a) |= (1u << (b)))
 
 /* Clear a bit to 0 */
-#define BIT_CLEAR(a, b) ((a) &= ~(1u<<(b)))
+#define BIT_CLEAR(a, b) ((a) &= ~(1u << (b)))
 
 /* Reverse a bit */
-#define BIT_FLIP(a, b) ((a) ^= (1u<<(b)))
+#define BIT_FLIP(a, b) ((a) ^= (1u << (b)))
 
 /* Check a bit whether 1 or 0 */
-#define BIT_CHECK(a, b) ((a) & (1u<<(b)))
+#define BIT_CHECK(a, b) ((a) & (1u << (b)))
 
 /* Check cursor is empty or not */
 #define IS_EMPTY_CURSOR(a) ((a) == NULL || (a)->total_rows <= 0 || (a)->cursor_rows <= 0)

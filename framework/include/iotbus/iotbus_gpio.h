@@ -85,8 +85,7 @@ struct _iotbus_gpio_s;
 typedef struct _iotbus_gpio_s *iotbus_gpio_context_h;
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 typedef void (*gpio_isr_cb)(void *user_data);
