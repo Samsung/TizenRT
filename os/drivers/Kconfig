@@ -154,6 +154,7 @@ config ARCH_HAVE_I2CRESET
 
 menuconfig I2C
 	bool "I2C Driver Support"
+	depends on ARCH_HAVE_I2C
 	default n
 	---help---
 		This selection enables building of the "upper-half" I2C driver.
