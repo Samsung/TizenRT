@@ -422,6 +422,8 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 	if (count == 0)
 		sem_setprotocol(sem, SEM_PRIO_NONE);
 
+	sem_setprotocol(sem, SEM_PRIO_NONE);
+
 	return ERR_OK;
 }
 
