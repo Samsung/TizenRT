@@ -27,6 +27,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <pthread.h>
 #include "tc_internal.h"
 
 #define ARG_COUNT 6
@@ -42,18 +43,21 @@ int pipe_fd[2];
 const char msg[MSG_SIZE + 1] = "012345678901234567890123456789";
 char pipe_buf[MSG_SIZE + 1];
 
-static int pipe_tx_func(int argc, char *argv[])
+static void *pipe_tx_func(void *arg)
 {
 	int tx_iter;
+
 	for (tx_iter = 0; tx_iter < 10; tx_iter++) {
 		write(pipe_fd[1], msg, MSG_SIZE);
 	}
-	return 0;
+
+	return NULL;
 }
 
-static int pipe_rx_func(int argc, char *argv[])
+static void *pipe_rx_func(void *arg)
 {
 	int rx_iter;
+
 	for (rx_iter = 0; rx_iter < 10; rx_iter++) {
 		read(pipe_fd[0], pipe_buf, MSG_SIZE);
 		if (strcmp(pipe_buf, msg) != 0) {
@@ -62,7 +66,7 @@ static int pipe_rx_func(int argc, char *argv[])
 	}
 	sem_post(&pipe_sem);
 
-	return 0;
+	return NULL;
 }
 
 /**
@@ -227,19 +231,24 @@ static void tc_libc_unistd_usleep(void)
 static void tc_libc_unistd_pipe(void)
 {
 	int ret_chk;
-	int pid[2];
+	pthread_t th_id[2];
 
 	ret_chk = pipe(pipe_fd);
 	TC_ASSERT_NEQ("pipe", ret_chk, ERROR);
 
 	sem_init(&pipe_sem, 0, 0);
-	pid[0] = task_create("tx", 99, 1024, pipe_tx_func, NULL);
-	TC_ASSERT_GEQ_CLEANUP("task_create", pid[0], 0, goto cleanup_pipe);
 
-	pid[1] = task_create("rx", 99, 1024, pipe_rx_func, NULL);
-	TC_ASSERT_GEQ_CLEANUP("task_create", pid[1], 0, goto cleanup_pipe);
+	ret_chk = pthread_create(&th_id[0], NULL, pipe_tx_func, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, goto cleanup_pipe);
 
-	sem_wait(&pipe_sem);
+	ret_chk = pthread_create(&th_id[1], NULL, pipe_rx_func, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, goto cleanup_pipe);
+
+	ret_chk = pthread_join(th_id[0], NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+
+	ret_chk = pthread_join(th_id[1], NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
 
 	TC_ASSERT_EQ_CLEANUP("pipe", pipe_tc_chk, OK, goto cleanup_pipe);
 
