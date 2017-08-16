@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * build/configs/qemu/scripts/flash-sram.ld
+ * build/configs/qemu/scripts/lm3s6965.ld
  *
  *   Copyright (C) 2010 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
