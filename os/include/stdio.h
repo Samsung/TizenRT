@@ -247,25 +247,20 @@ char *fgets(FAR char *s, int n, FAR FILE *stream);
  */
 FAR FILE *fopen(FAR const char *path, FAR const char *type);
 /**
- * @brief  Reopen stream with different file or mode
- * @cond
- * @internal
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v2.0
  */
 FAR FILE *freopen(FAR const char *path, FAR const char *mode, FAR FILE *stream);
 /**
- * @brief  Set stream buffer
- * @internal
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v2.0
  */
 void   setbuf(FAR FILE *stream, FAR char *buf);
 /**
- * @brief  Change stream buffering
- * @internal
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v2.0
  */
 int    setvbuf(FAR FILE *stream, FAR char *buffer, int mode, size_t size);
-/**
- * @endcond
- */
-
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
@@ -453,13 +448,10 @@ FAR char *tmpnam(FAR char *s);
  */
 FAR char *tempnam(FAR const char *dir, FAR const char *pfx);
 /**
- * @brief  Remove file
- * @internal
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v2.0
  */
 int remove(FAR const char *path);
-/**
- * @endcond
- */
 
 #undef EXTERN
 #if defined(__cplusplus)
