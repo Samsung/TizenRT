@@ -50,6 +50,7 @@ static void *pipe_tx_func(void *arg)
 	for (tx_iter = 0; tx_iter < 10; tx_iter++) {
 		write(pipe_fd[1], msg, MSG_SIZE);
 	}
+	sem_post(&pipe_sem);
 
 	return NULL;
 }
@@ -58,6 +59,7 @@ static void *pipe_rx_func(void *arg)
 {
 	int rx_iter;
 
+	sem_wait(&pipe_sem);
 	for (rx_iter = 0; rx_iter < 10; rx_iter++) {
 		read(pipe_fd[0], pipe_buf, MSG_SIZE);
 		if (strcmp(pipe_buf, msg) != 0) {
