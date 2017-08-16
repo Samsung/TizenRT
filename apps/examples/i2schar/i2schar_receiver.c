@@ -1,4 +1,4 @@
-/*****************************************************************************
+/****************************************************************************
  *
  * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
@@ -15,10 +15,10 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*****************************************************************************
- * arch/arm/src/artik053/src/artik053_i2schar.c
+/****************************************************************************
+ * examples/i2schar/i2schar_receiver.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,73 +50,114 @@
  *
  ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Included Files
  ****************************************************************************/
+
 #include <tinyara/config.h>
 
 #include <sys/types.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <pthread.h>
 #include <errno.h>
 #include <debug.h>
-#include <tinyara/clock.h>
 
-#if defined(CONFIG_AUDIO_I2SCHAR) && defined(CONFIG_S5J_I2S)
+#include <tinyara/audio/audio.h>
 
-#include <tinyara/audio/i2s.h>
-#include "s5j_i2s.h"
+#include "i2schar.h"
 
-/*****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
+#ifdef CONFIG_EXAMPLES_I2SCHAR_RX
 
-#ifndef CONFIG_S5JT200_I2SCHAR_MINOR
-#define CONFIG_S5JT200_I2SCHAR_MINOR 0
-#endif
-
-/*****************************************************************************
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-/*****************************************************************************
- * Name: i2schar_devinit
+/****************************************************************************
+ * Name: i2schar_receiver()
  *
  * Description:
- *   All architectures must provide the following interface in order to
- *   work with apps/examples/i2schar.
+ *   This is the entry point for the receiver thread.
  *
  ****************************************************************************/
 
-int i2schar_devinit(void)
+pthread_addr_t i2schar_receiver(pthread_addr_t arg)
 {
-	static bool initialized;
-	struct i2s_dev_s *i2s;
+	FAR struct ap_buffer_s *apb[CONFIG_EXAMPLES_I2SCHAR_TXBUFFERS];
+	struct audio_buf_desc_s desc;
+	int bufsize;
+	int nread;
 	int ret;
+	int fd;
+	int i;
 
-	/* Have we already initialized? */
+	/* Open the I2S character device */
 
-	if (!initialized) {
-		/* Call s5j_i2s_initialize() to get an instance of the I2S interface */
+	fd = open(g_i2schar.devpath, O_RDONLY);
+	if (fd < 0) {
+		int errcode = errno;
 
-		i2s = s5j_i2s_initialize();
-		if (!i2s) {
-			auddbg("ERROR: Failed to get the S5J I2S driver\n");
-			return -ENODEV;
-		}
-
-		/* Register the I2S character driver at "/dev/i2schar0" */
-
-		ret = i2schar_register(i2s, CONFIG_S5JT200_I2SCHAR_MINOR);
-		if (ret < 0) {
-			auddbg("ERROR: i2schar_register failed: %d\n", ret);
-			return ret;
-		}
-
-		/* Now we are initialized */
-
-		initialized = true;
+		printf("i2schar_receiver: ERROR: failed to open %s: %d\n", g_i2schar.devpath, errcode);
+		pthread_exit(NULL);
 	}
 
-	return OK;
+	/* Loop for the requested number of times */
+
+	for (i = 0; i < CONFIG_EXAMPLES_I2SCHAR_TXBUFFERS; i++) {
+		/* Allocate an audio buffer of the configured size */
+
+		desc.numbytes = CONFIG_EXAMPLES_I2SCHAR_BUFSIZE;
+		desc.u.ppBuffer = &apb[i];
+
+		ret = apb_alloc(&desc);
+		if (ret < 0) {
+			printf("i2schar_receiver: ERROR: failed to allocate buffer %d: %d\n", i + 1, ret);
+			close(fd);
+			pthread_exit(NULL);
+		}
+
+		bufsize = sizeof(struct ap_buffer_s) + CONFIG_EXAMPLES_I2SCHAR_BUFSIZE;
+
+		/* Then receifve into the buffer */
+
+		do {
+			/* Flush any output before reading */
+
+			fflush(stdout);
+
+			/* Read the buffer to the I2S character driver */
+
+			nread = read(fd, apb[i], bufsize);
+			if (nread < 0) {
+				int errcode = errno;
+
+				if (errcode != EINTR) {
+					printf("i2schar_receiver: ERROR: read failed: %d\n", errcode);
+					close(fd);
+					pthread_exit(NULL);
+				}
+			} else if (nread != bufsize) {
+				printf("i2schar_receiver: ERROR: partial read: %d\n", nread);
+				close(fd);
+				pthread_exit(NULL);
+			} else {
+				printf("i2schar_receiver: Received buffer %d\n", i + 1);
+			}
+		} while (nread != bufsize);
+
+		/* Make sure that the transmitter thread has a chance to run */
+
+		pthread_yield();
+	}
+
+	sleep(2);
+
+	for (i = 0; i < CONFIG_EXAMPLES_I2SCHAR_TXBUFFERS; i++) {
+		apb_free(apb[i]);
+	}
+
+	close(fd);
+	return NULL;
 }
 
-#endif							/* CONFIG_AUDIO_I2SCHAR && CONFIG_S5J_I2S */
+#endif							/* CONFIG_EXAMPLES_I2SCHAR_RX */
