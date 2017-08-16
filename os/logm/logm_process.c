@@ -81,7 +81,7 @@ int logm_task(int argc, char *argv[])
 			if (LOGM_STATUS(LOGM_BUFFER_OVERFLOW)) {
 				LOGM_STATUS_CLEAR(LOGM_BUFFER_OVERFLOW);
 			}
-			if (g_logm_overflow_offset >= 0 && g_logm_overflow_offset == g_logm_head) {
+			if (g_logm_overflow_offset >= 0 && g_logm_overflow_offset == g_logm_head && g_logm_dropmsg_count > 0) {
 				fprintf(stdout, "\n[LOGM BUFFER OVERFLOW] %d messages are dropped\n", g_logm_dropmsg_count);
 				g_logm_overflow_offset = -1;
 			}
