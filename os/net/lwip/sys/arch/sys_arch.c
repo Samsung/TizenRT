@@ -269,6 +269,10 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 		/* We block while waiting for a mail to arrive in the mailbox. We
 		   must be prepared to timeout. */
 		if (timeout != 0) {
+
+			if (timeout < MSEC_PER_TICK)
+				timeout = MSEC_PER_TICK;
+
 			time = sys_arch_sem_wait(&(mbox->mail), timeout);
 
 			if (time == SYS_ARCH_TIMEOUT) {

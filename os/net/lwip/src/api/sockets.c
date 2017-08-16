@@ -1462,9 +1462,9 @@ int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptse
 					msectimeout = 0;
 				} else {
 					msectimeout = ((timeout->tv_sec * 1000) + ((timeout->tv_usec + 500) / 1000));
-					if (msectimeout == 0) {
-						/* Wait 1ms at least (0 means wait forever) */
-						msectimeout = 1;
+					if (msectimeout >= 0 && msectimeout < MSEC_PER_TICK) {
+						/* Wait MSEC_PER_TICK at least (0 means wait forever) */
+						msectimeout = MSEC_PER_TICK;
 					}
 				}
 
@@ -1513,7 +1513,7 @@ int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptse
 #if LWIP_NETCONN_SEM_PER_THREAD
 		if (select_cb.sem_signalled && (!waited || (waitres == SYS_ARCH_TIMEOUT))) {
 			/* don't leave the thread-local semaphore signalled */
-			sys_arch_sem_wait(select_cb.sem, 1);
+			sys_arch_sem_wait(select_cb.sem, MSEC_PER_TICK);
 		}
 #else							/* LWIP_NETCONN_SEM_PER_THREAD */
 		sys_sem_free(&select_cb.sem);
