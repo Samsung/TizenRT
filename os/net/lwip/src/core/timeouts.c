@@ -77,6 +77,8 @@
 #include <net/lwip/pbuf.h>
 #include <net/lwip/netif/etharp.h>
 
+#include <tinyara/clock.h>
+
 #if LWIP_DEBUG_TIMERNAMES
 #define HANDLER(x) x, #x
 #else							/* LWIP_DEBUG_TIMERNAMES */
@@ -421,6 +423,12 @@ again:
 	}
 
 	sleeptime = sys_timeouts_sleeptime();
+
+	if (sleeptime > 0 && sleeptime <= MSEC_PER_TICK) {
+		sleeptime = MSEC_PER_TICK;
+	}
+
+
 	if (sleeptime == 0 || sys_arch_mbox_fetch(mbox, msg, sleeptime) == SYS_ARCH_TIMEOUT) {
 		/* If a SYS_ARCH_TIMEOUT value is returned, a timeout occurred
 		   before a message could be fetched. */
