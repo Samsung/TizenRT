@@ -250,7 +250,7 @@ static ssize_t i2schar_read(FAR struct file *filep, FAR char *buffer, size_t buf
 	if (ret < 0) {
 		ret = -errno;
 		DEBUGASSERT(ret < 0);
-		i2serr("ERROR: sem_wait returned: %d\n", ret);
+		lldbg("ERROR: sem_wait returned: %d\n", ret);
 		goto errout_with_reference;
 	}
 
@@ -258,7 +258,7 @@ static ssize_t i2schar_read(FAR struct file *filep, FAR char *buffer, size_t buf
 
 	ret = I2S_RECEIVE(priv->i2s, apb, i2schar_rxcallback, priv, CONFIG_AUDIO_I2SCHAR_RXTIMEOUT);
 	if (ret < 0) {
-		i2serr("ERROR: I2S_RECEIVE returned: %d\n", ret);
+		lldbg("ERROR: I2S_RECEIVE returned: %d\n", ret);
 		goto errout_with_reference;
 	}
 
@@ -321,7 +321,7 @@ static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, siz
 	if (ret < 0) {
 		ret = -errno;
 		DEBUGASSERT(ret < 0);
-		i2serr("ERROR: sem_wait returned: %d\n", ret);
+		lldbg("ERROR: sem_wait returned: %d\n", ret);
 		goto errout_with_reference;
 	}
 
@@ -329,7 +329,7 @@ static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, siz
 
 	ret = I2S_SEND(priv->i2s, apb, i2schar_txcallback, priv, CONFIG_AUDIO_I2SCHAR_TXTIMEOUT);
 	if (ret < 0) {
-		i2serr("ERROR: I2S_SEND returned: %d\n", ret);
+		lldbg("ERROR: I2S_SEND returned: %d\n", ret);
 		goto errout_with_reference;
 	}
 
