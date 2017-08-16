@@ -180,6 +180,7 @@ static void tc_umm_heap_memalign(struct tcb_s *st_tcb)
 */
 static void tc_umm_heap_random_malloc(struct tcb_s *st_tcb)
 {
+	struct mallinfo info;
 	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
 	int allocated[ALLOC_FREE_TIMES] = { 0 };
 	int alloc_cnt;
@@ -191,15 +192,27 @@ static void tc_umm_heap_random_malloc(struct tcb_s *st_tcb)
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		allocated_size = 0;
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
-			allocated[alloc_cnt] = rand();
+			allocated[alloc_cnt] = rand() + 1;
+#ifdef CONFIG_CAN_PASS_STRUCTS
+			info = mallinfo();
+#else
+			mallinfo(&info);
+#endif
 			mem_ptr[alloc_cnt] = (int *)malloc(allocated[alloc_cnt]);
-			TC_ASSERT_NOT_NULL("malloc", mem_ptr[alloc_cnt]);
+			if (info.mxordblk > allocated[alloc_cnt]) {
+				TC_ASSERT_NOT_NULL("malloc", mem_ptr[alloc_cnt]);
+			} else {
+				TC_ASSERT_EQ("malloc", mem_ptr[alloc_cnt], NULL);
+				allocated[alloc_cnt] = 0;
+			}
 		}
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
 			/* do alloc 'allocated[alloc_cnt]',
 			   but allocated MM_ALIGN_UP'(allocated[alloc_cnt] + SIZEOF_MM_ALLOCNODE)',
 			   because of the chunk size */
-			allocated_size += MM_ALIGN_UP(allocated[alloc_cnt] + SIZEOF_MM_ALLOCNODE);
+			if (allocated[alloc_cnt] > 0) {
+				allocated_size += MM_ALIGN_UP(allocated[alloc_cnt] + SIZEOF_MM_ALLOCNODE);
+			}
 		}
 		TC_ASSERT_EQ_ERROR_CLEANUP("malloc", st_tcb->curr_alloc_size, allocated_size, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
