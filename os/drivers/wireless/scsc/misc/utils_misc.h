@@ -221,17 +221,17 @@ static inline unsigned long get_first_bit(unsigned long elem)
 	return num;
 }
 
-#define min(x,y) ({ \
-        typeof(x) _x = (x);     \
-        typeof(y) _y = (y);     \
-        (void) (&_x == &_y);    \
-        _x < _y ? _x : _y; })
+#define min(x, y) ({ \
+		typeof(x) _x = (x);     \
+		typeof(y) _y = (y);     \
+		(void) (&_x == &_y);    \
+		_x < _y ? _x : _y; })
 
-#define max(x,y) ({ \
-        typeof(x) _x = (x);     \
-        typeof(y) _y = (y);     \
-        (void) (&_x == &_y);    \
-        _x > _y ? _x : _y; })
+#define max(x, y) ({ \
+		typeof(x) _x = (x);     \
+		typeof(y) _y = (y);     \
+		(void) (&_x == &_y);    \
+		_x > _y ? _x : _y; })
 
 static unsigned long find_first_bit(const unsigned long *addr, unsigned long size)
 {
@@ -391,7 +391,7 @@ static inline void prefetch(__attribute__((unused))
 
 #define container_of(ptr, type, member) ({				\
 		const typeof(((type*)0)->member) *__mptr = (ptr);	\
-		(type *)((char *)__mptr - offsetof(type, member));})
+		(type *)((char *)__mptr - offsetof(type, member)); })
 
 /**
  * dlist_entry - get the struct for this entry

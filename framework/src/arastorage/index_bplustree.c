@@ -550,7 +550,7 @@ static db_result_t load(index_t *index)
 	DB_LOG_D("load index : descriptor file name : %s\n", index->descriptor_file);
 	fd = storage_open(index->descriptor_file, O_RDWR);
 	if (fd < 0) {
-		DB_LOG_E("Failed opening index descriptor file :%s Error Code %d",index->descriptor_file);
+		DB_LOG_E("Failed opening index descriptor file :%s Error Code %d", index->descriptor_file);
 		free(tree);
 		return DB_STORAGE_ERROR;
 	}
