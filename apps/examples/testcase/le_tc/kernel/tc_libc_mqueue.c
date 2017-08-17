@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include "tc_internal.h"
 
-static void tc_libc_mqueue_mq_getattr(void)
+static void tc_libc_mqueue_mq_getattr_p(void)
 {
 	mqd_t mqdes;
 	struct mq_attr mq_stat;
@@ -35,12 +35,6 @@ static void tc_libc_mqueue_mq_getattr(void)
 
 	mqdes = mq_open("mqgetattr", O_CREAT | O_RDWR, 0666, 0);
 	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)ERROR);
-
-	ret_chk = mq_getattr(NULL, &mq_stat);
-	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, ERROR, goto errout);
-
-	ret_chk = mq_getattr(mqdes, NULL);
-	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, ERROR, goto errout);
 
 	ret_chk = mq_getattr(mqdes, &mq_stat);
 	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, OK, goto errout);
@@ -59,7 +53,32 @@ errout:
 	mq_unlink("mqgetattr");
 }
 
-static void tc_libc_mqueue_mq_setattr(void)
+static void tc_libc_mqueue_mq_getattr_n(void)
+{
+	mqd_t mqdes;
+	struct mq_attr mq_stat;
+	int ret_chk;
+
+	mqdes = mq_open("mqgetattr", O_CREAT | O_RDWR, 0666, 0);
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)ERROR);
+
+	ret_chk = mq_getattr(NULL, &mq_stat);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, ERROR, goto errout);
+
+	ret_chk = mq_getattr(mqdes, NULL);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, ERROR, goto errout);
+
+	mq_close(mqdes);
+	mq_unlink("mqgetattr");
+	TC_SUCCESS_RESULT();
+	return;
+
+errout:
+	mq_close(mqdes);
+	mq_unlink("mqgetattr");
+}
+
+static void tc_libc_mqueue_mq_setattr_p(void)
 {
 	mqd_t mqdes;
 	struct mq_attr mq_stat;
@@ -71,12 +90,6 @@ static void tc_libc_mqueue_mq_setattr(void)
 
 	ret_chk = mq_getattr(mqdes, &mq_stat);
 	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, OK, goto errout);
-
-	ret_chk = mq_setattr(NULL, &mq_stat, &oldstat);
-	TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, ERROR, goto errout);
-
-	ret_chk = mq_setattr(mqdes, NULL, &oldstat);
-	TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, ERROR, goto errout);
 
 	if (mq_stat.mq_flags & O_NONBLOCK) {
 		mq_stat.mq_flags = mq_stat.mq_flags & (~O_NONBLOCK);
@@ -102,13 +115,44 @@ errout:
 	mq_unlink("mqsetattr");
 }
 
+static void tc_libc_mqueue_mq_setattr_n(void)
+{
+	mqd_t mqdes;
+	struct mq_attr mq_stat;
+	struct mq_attr oldstat;
+	int ret_chk;
+
+	mqdes = mq_open("mqsetattr", O_CREAT | O_RDWR, 0666, 0);
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)ERROR);
+
+	ret_chk = mq_getattr(mqdes, &mq_stat);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, OK, goto errout);
+
+	ret_chk = mq_setattr(NULL, &mq_stat, &oldstat);
+	TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, ERROR, goto errout);
+
+	ret_chk = mq_setattr(mqdes, NULL, &oldstat);
+	TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, ERROR, goto errout);
+
+	mq_close(mqdes);
+	mq_unlink("mqsetattr");
+	TC_SUCCESS_RESULT();
+	return;
+
+errout:
+	mq_close(mqdes);
+	mq_unlink("mqsetattr");
+}
+
 /****************************************************************************
  * Name: libc_mqueue
  ****************************************************************************/
 int libc_mqueue_main(void)
 {
-	tc_libc_mqueue_mq_getattr();
-	tc_libc_mqueue_mq_setattr();
+	tc_libc_mqueue_mq_getattr_p();
+	tc_libc_mqueue_mq_getattr_n();
+	tc_libc_mqueue_mq_setattr_p();
+	tc_libc_mqueue_mq_setattr_n();
 
 	return 0;
 }
