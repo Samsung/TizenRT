@@ -68,6 +68,10 @@ ifeq ($(CONFIG_AUDIO_ALC5658),y)
 CSRCS += alc5658.c
 endif
 
+ifeq ($(CONFIG_AUDIO_ALC5658CHAR),y)
+CSRCS += alc5658char.c
+endif
+
 # Include Audio driver support
 
 DEPPATH += --dep-path audio
