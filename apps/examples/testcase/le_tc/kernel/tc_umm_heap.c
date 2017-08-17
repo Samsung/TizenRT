@@ -35,7 +35,7 @@
 #define ALLOC_FREE_TIMES 5
 #define TEST_TIMES 100
 #define ALL_FREE 0
-#define TOTAL_ALLOC_SIZE (MM_ALIGN_UP((sizeof(int)*ALLOC_SIZE_VAL) + SIZEOF_MM_ALLOCNODE))*ALLOC_FREE_TIMES
+#define TOTAL_ALLOC_SIZE (MM_ALIGN_UP((sizeof(int) * ALLOC_SIZE_VAL) + SIZEOF_MM_ALLOCNODE)) * ALLOC_FREE_TIMES
 /****************************************************************************
  * Definitions
  ****************************************************************************/

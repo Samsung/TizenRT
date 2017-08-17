@@ -153,7 +153,7 @@ static void tc_semaphore_sem_post_wait(void)
 	TC_ASSERT_EQ_CLEANUP("pthread_join", pexit_value, NULL, goto cleanup);
 
 	ret_chk = pthread_join(cid, &pexit_value);
-	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK,goto cleanup);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, goto cleanup);
 	TC_ASSERT_EQ_CLEANUP("pthread_join", pexit_value, NULL, goto cleanup);
 
 	TC_SUCCESS_RESULT();
