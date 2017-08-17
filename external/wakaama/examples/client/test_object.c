@@ -18,7 +18,7 @@
  *    Achim Kraus, Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Ville Skytta - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*

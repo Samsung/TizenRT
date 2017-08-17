@@ -145,7 +145,7 @@ static int wifiAutoConnect(void)
 		if (waitTime <= 0) {
 			printf("[AutoConnect]WiFi is not working. Test Canceled\n");
 			return 0;
-		} 
+		}
 		return 1;
 	}
 	return ret;

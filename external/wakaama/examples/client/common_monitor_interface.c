@@ -11,10 +11,10 @@
 int readonce(FAR const char *filename, FAR char *buffer, uint8_t buflen)
 {
     int ret;
-    
+
     printf("opening %s\n", filename);
     int fd = open(filename, O_RDONLY);
-    
+
     memset(buffer, 0x00, buflen);
     if (fd < 0)
     {
@@ -23,34 +23,34 @@ int readonce(FAR const char *filename, FAR char *buffer, uint8_t buflen)
     }
     else
     {
-        size_t nbytes;   
-        
-        
+        size_t nbytes;
+
+
         /* Read until we hit the end of the file, until we have exhausted the
         * buffer space, or until some irrecoverable error occurs
         */
 
         *buffer   = '\0';       /* NUL terminate the empty buffer */
         ret       = ERROR;      /* Assume failure */
-        
-        nbytes = read(fd, buffer, buflen);           
+
+        nbytes = read(fd, buffer, buflen);
         printf("%d bytes read\n", nbytes);
         if (nbytes < 0)
         {
             /* Read error */
-            
+
             int errcode = errno;
             DEBUGASSERT(errcode > 0);
-            
+
             /* EINTR is not a read error.  It simply means that a signal was
             * received while waiting for the read to complete.
             */
-            
+
             if (errcode != EINTR)
             {
                 /* Fatal error */
-                
-                printf("EINTR error\n");                
+
+                printf("EINTR error\n");
             }
         }
         else if (nbytes >= 0)
@@ -60,7 +60,7 @@ int readonce(FAR const char *filename, FAR char *buffer, uint8_t buflen)
         }
 
     }
-    
+
     /* Close the file and return. */
 
     close(fd);
@@ -74,10 +74,10 @@ int readfile(FAR const char *filename, FAR char *buffer, uint8_t buflen)
     //ssize_t nread;
     ssize_t ntotal;
     int ret;
-    
+
     printf("opening %s\n", filename);
     int fd = open(filename, O_RDONLY);
-    
+
     if (fd < 0)
     {
         printf("error reading file %s\n", filename);
@@ -85,9 +85,9 @@ int readfile(FAR const char *filename, FAR char *buffer, uint8_t buflen)
     }
     else
     {
-        size_t nbytes;   
-        
-        
+        size_t nbytes;
+
+
         /* Read until we hit the end of the file, until we have exhausted the
         * buffer space, or until some irrecoverable error occurs
         */
@@ -97,25 +97,25 @@ int readfile(FAR const char *filename, FAR char *buffer, uint8_t buflen)
         bufptr    = buffer;     /* Working pointer */
         remaining = buflen - 1; /* Reserve one byte for a NUL terminator */
         ret       = ERROR;      /* Assume failure */
-        
+
         do {
-            nbytes = read(fd, buffer, buflen);           
+            nbytes = read(fd, buffer, buflen);
             printf("%d bytes read\n", nbytes);
             if (nbytes < 0)
             {
                 /* Read error */
-                
+
                 int errcode = errno;
                 DEBUGASSERT(errcode > 0);
-                
+
                 /* EINTR is not a read error.  It simply means that a signal was
                 * received while waiting for the read to complete.
                 */
-                
+
                 if (errcode != EINTR)
                 {
                     /* Fatal error */
-                    
+
                     printf("EINTR error\n");
                     break;
                 }
@@ -144,7 +144,7 @@ int readfile(FAR const char *filename, FAR char *buffer, uint8_t buflen)
             }
         } while (buflen > 0);
     }
-    
+
     /* Close the file and return. */
 
     close(fd);
@@ -153,7 +153,7 @@ int readfile(FAR const char *filename, FAR char *buffer, uint8_t buflen)
 
 void mount_procfs(void)
 {
-    int ret;    
+    int ret;
     ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
 }
 

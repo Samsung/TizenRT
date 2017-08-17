@@ -14,7 +14,7 @@
  *    Gregory Lemercier, Samsung Semiconductor - support for TCP/TLS
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 #include <stdlib.h>

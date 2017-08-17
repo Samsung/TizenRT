@@ -14,9 +14,9 @@
 #include <netdb.h>
 #include <signal.h>
 
-#include "tinydtls.h" 
-#include "dtls.h" 
-#include "debug.h" 
+#include "tinydtls.h"
+#include "dtls.h"
+#include "debug.h"
 
 #define DEFAULT_PORT 20220
 
@@ -124,7 +124,7 @@ verify_ecdsa_key(struct dtls_context_t *ctx,
 #define DTLS_SERVER_CMD_RENEGOTIATE "server:renegotiate"
 
 static int
-read_from_peer(struct dtls_context_t *ctx, 
+read_from_peer(struct dtls_context_t *ctx,
 	       session_t *session, uint8 *data, size_t len) {
   size_t i;
   for (i = 0; i < len; i++)
@@ -145,7 +145,7 @@ read_from_peer(struct dtls_context_t *ctx,
 }
 
 static int
-send_to_peer(struct dtls_context_t *ctx, 
+send_to_peer(struct dtls_context_t *ctx,
 	     session_t *session, uint8 *data, size_t len) {
 
   int fd = *(int *)dtls_get_app_data(ctx);
@@ -173,7 +173,7 @@ dtls_handle_read(struct dtls_context_t *ctx) {
     perror("recvfrom");
     return -1;
   } else {
-    dtls_debug("got %d bytes from port %d\n", len, 
+    dtls_debug("got %d bytes from port %d\n", len,
 	     ntohs(session.addr.sin6.sin6_port));
     if (sizeof(buf) < len) {
       dtls_warn("packet was truncated (%d bytes lost)\n", len - sizeof(buf));
@@ -181,11 +181,11 @@ dtls_handle_read(struct dtls_context_t *ctx) {
   }
 
   return dtls_handle_message(ctx, &session, buf, len);
-}    
+}
 
 static int
 resolve_address(const char *server, struct sockaddr *dst) {
-  
+
   struct addrinfo *res, *ainfo;
   struct addrinfo hints;
   static char addrstr[256];
@@ -254,7 +254,7 @@ static dtls_handler_t cb = {
 #endif /* DTLS_ECC */
 };
 
-int 
+int
 main(int argc, char **argv) {
   dtls_context_t *the_context = NULL;
   log_t log_level = DTLS_LOG_WARN;
@@ -341,12 +341,12 @@ main(int argc, char **argv) {
 
     FD_SET(fd, &rfds);
     /* FD_SET(fd, &wfds); */
-    
+
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
-    
+
     result = select( fd+1, &rfds, &wfds, 0, &timeout);
-    
+
     if (result < 0) {		/* error */
       if (errno != EINTR)
 	perror("select");
@@ -359,7 +359,7 @@ main(int argc, char **argv) {
       }
     }
   }
-  
+
  error:
   dtls_free_context(the_context);
   exit(0);

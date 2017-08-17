@@ -1232,7 +1232,7 @@ static void tc_libc_pthread_pthread_rwlock_trywrlock(void)
 /**
 * @fn                   :tc_libc_pthread_pthread_setcancelstate
 * @brief                :This tc tests pthread_setcancelstate()
-* @Scenario             :The function shall atomically both set the calling thread's cancelability state to the indicated state 
+* @Scenario             :The function shall atomically both set the calling thread's cancelability state to the indicated state
 *                        and return the previous cancelability state at the location referenced by oldstate
 *                        If successful pthread_setcancelstate() function shall return zero;
 *                        otherwise, an error number shall be returned to indicate the error.
@@ -1261,7 +1261,7 @@ static void tc_libc_pthread_pthread_setcancelstate(void)
 /**
 * @fn                   :tc_libc_pthread_pthread_setcanceltype
 * @brief                :This tc tests pthread_setcanceltype()
-* @Scenario             :The function shall atomically both set the calling thread's cancelability type to the indicated type 
+* @Scenario             :The function shall atomically both set the calling thread's cancelability type to the indicated type
 *                        and return the previous cancelability type at the location referenced by oldtype
 *                        If successful pthread_setcanceltype() function shall return zero;
 *                        otherwise, an error number shall be returned to indicate the error.
