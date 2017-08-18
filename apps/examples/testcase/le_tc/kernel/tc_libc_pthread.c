@@ -1296,7 +1296,7 @@ static void tc_libc_pthread_pthread_setcanceltype(void)
 * @fn                   :tc_libc_pthread_pthread_testcancel
 * @brief                :This tc tests pthread_testcancel()
 * @Scenario             :The function shall create a cancellation point in the calling thread
-                         It has no effect if cancelability is disabled.
+*                        It has no effect if cancelability is disabled.
 * @API'scovered         :pthread_testcancel
 * @Preconditions        :none
 * @Postconditions       :none
