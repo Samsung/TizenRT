@@ -40,6 +40,8 @@
 #define VAL_3           3
 #define VAL_5           5
 #define TASK_STACKSIZE 2048
+#define PID_INVAL       -1
+#define PID_IDLE        0
 
 pthread_t thread1, thread2;
 
@@ -326,17 +328,14 @@ static void tc_sched_waitpid(void)
 static void tc_sched_sched_gettcb(void)
 {
 	struct tcb_s *tcb;
-	pid_t pid;
-	int stat_loc;
 
-	pid = task_create("tc_gettcb", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_wait, (char * const *)NULL);
-	TC_ASSERT_NEQ("task_create", pid, ERROR);
+	tcb = sched_gettcb(PID_INVAL);
+	TC_ASSERT_EQ("sched_gettcb", tcb, NULL);
 
-	tcb = sched_gettcb(pid);
+	tcb = sched_gettcb(PID_IDLE);
 	TC_ASSERT_NOT_NULL("sched_gettcb", tcb);
-	TC_ASSERT_EQ("sched_gettcb", tcb->pid, pid);
+	TC_ASSERT_EQ("sched_gettcb", tcb->pid, PID_IDLE);
 
-	waitpid(pid, &stat_loc, 0);
 	TC_SUCCESS_RESULT();
 }
 

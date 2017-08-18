@@ -82,7 +82,9 @@ struct tash_cmd_info_s {
 
 static int tash_help(int argc, char **args);
 static int tash_exit(int argc, char **args);
+#if defined(CONFIG_BOARDCTL_RESET)
 static int tash_reboot(int argc, char **argv);
+#endif
 
 extern tash_taskinfo_t tash_taskinfo_list[];
 /****************************************************************************
