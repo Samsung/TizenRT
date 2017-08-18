@@ -180,22 +180,10 @@ int mpu9250_main(int argc, char *argv[])
 
 	for (i = 0; i < 30; i++) {
 		data[0] = mpu9250_get_axis(MPU9250_AXIS_X);
-		if (data[0] < 0) {
-			break;
-		}
-
 		data[1] = mpu9250_get_axis(MPU9250_AXIS_Y);
-		if (data[1] < 0) {
-			break;
-		}
-
 		data[2] = mpu9250_get_axis(MPU9250_AXIS_Z);
-		if (data[2] < 0) {
-			break;
-		}
 
 		printf("ACC:      %-10d%-10d%-10d\n", (int16_t)data[0], (int16_t)data[1], (int16_t)data[2]);
-
 		up_mdelay(500);
 	}
 

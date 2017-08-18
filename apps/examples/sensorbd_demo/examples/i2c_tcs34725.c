@@ -173,7 +173,7 @@ static uint16_t tcs34725_calctemperature(uint16_t r, uint16_t g, uint16_t b)
 
 static void tcs34725_initialize(void)
 {
-	uint8_t reg;
+	uint8_t reg = 0;
 	tcs34725IntegrationTime = TCS34725_INTEGRATIONTIME_50MS;
 
 	tcs34725_read(TCS34725_ID, &reg, 1);
@@ -209,6 +209,7 @@ void tcs34725_main(int argc, char *argv[])
 
 	tcs34725_initialize();
 
+	r = g = b = c = temp = lux = 0;
 	for (i = 0; i < 30; i++) {
 		tcs34725_getdata(&r, &g, &b, &c);
 

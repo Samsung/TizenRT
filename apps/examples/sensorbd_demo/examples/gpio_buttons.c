@@ -92,8 +92,14 @@ void switch_main(int argc, char *argv[])
 			for (j = 0; j < nbtns; j++) {
 				if (poll_list[j].revents & POLLIN) {
 					char buf[4];
-					lseek(poll_list[j].fd, 0, SEEK_SET);
-					read(poll_list[j].fd, buf, sizeof(buf));
+					if (lseek(poll_list[j].fd, 0, SEEK_SET) < 0) {
+						printf("lseek error\n");
+						return;
+					}
+					if (read(poll_list[j].fd, buf, sizeof(buf)) < 0) {
+						printf("read error\n");
+						return;
+					}
 					printf("%s is %s\n", buttons[j].name,
 						buf[0] == '1' ? "rising" : "falling");
 
