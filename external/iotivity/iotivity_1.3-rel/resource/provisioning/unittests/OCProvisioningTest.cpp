@@ -49,7 +49,7 @@ namespace OCProvisioningTest
 
     TEST(ProvisionInitTest, TestValidPath)
     {
-        std::string dbPath("./dbPath");
+        std::string dbPath("./dbPath.tmp");
         EXPECT_EQ(OC_STACK_OK, OCSecure::provisionInit(dbPath));
         EXPECT_EQ(OC_STACK_OK, OCSecure::provisionClose());
     }
