@@ -253,8 +253,10 @@ OCStackResult RMUpdateInfo(CAHeaderOption_t **options, uint8_t *numOptions,
         {
             memcpy(endpoint->routeData, (*options + routeIndex)->optionData + count,
                    GATEWAY_ID_LENGTH);
-            OIC_LOG_V(DEBUG, TAG, "adding srcgid: %u in endpoint [%d]",
-                     *((uint32_t *)endpoint->routeData), sLen);
+
+            uint32_t rData1 = 0;
+            memcpy(&rData1, endpoint->routeData, sizeof(rData1));
+            OIC_LOG_V(DEBUG, TAG, "adding srcgid: %u in endpoint [%d]", rData1, sLen);
 
             count += GATEWAY_ID_LENGTH;
 
@@ -262,8 +264,10 @@ OCStackResult RMUpdateInfo(CAHeaderOption_t **options, uint8_t *numOptions,
             {
                 memcpy(endpoint->routeData + GATEWAY_ID_LENGTH,
                        (*options + routeIndex)->optionData + count, ENDPOINT_ID_LENGTH);
-                OIC_LOG_V(DEBUG, TAG, "adding srceid: %u in endpoint",
-                         *((uint16_t *)(endpoint->routeData + GATEWAY_ID_LENGTH)));
+
+                uint16_t rData2 = 0;
+                memcpy(&rData2, endpoint->routeData + GATEWAY_ID_LENGTH, sizeof(rData2));
+                OIC_LOG_V(DEBUG, TAG, "adding srceid: %u in endpoint", rData2);
             }
         }
     }
