@@ -1028,6 +1028,7 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 
 	sleep(SEC_2);
 
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 	/* initalize mutex with PTHREAD_MUTEX_RECURSIVE attribute */
 	pthread_mutex_init(&g_mutex, &attr);
 
@@ -1042,6 +1043,7 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 
 	ret_chk = pthread_mutex_unlock(&g_mutex);
 	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
+#endif
 
 	/* mutex_lock mutex_unlock check through multi threads */
 	g_mutex_cnt = 0;

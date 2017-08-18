@@ -296,7 +296,7 @@ struct pthread_mutexattr_s {
 #ifdef CONFIG_PTHREAD_MUTEX_TYPES
 	uint8_t type    : 2; /* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
 #endif
-#ifdef CONFIG_PTHREAD_MUTEX_BOTH
+#if defined(CONFIG_PTHREAD_MUTEX_BOTH) || defined(CONFIG_PTHREAD_MUTEX_ROBUST)
 	uint8_t robust  : 1; /* PTHREAD_MUTEX_STALLED or PTHREAD_MUTEX_ROBUST */
 #endif
 };
