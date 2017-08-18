@@ -328,7 +328,6 @@ unsigned int TC_see_read_write_secure_storage(void)
 			see_selfprintf(" success\n");
 		}
 
-		ret = 0;
 		inlen[0] = 18;
 		inlen[1] = 208;
 		inlen[2] = 209;

@@ -80,6 +80,10 @@ void pwmbuzzer_main(int argc, char *argv[])
 
 	/* device 0 channel 1 */
 	fd = open("/dev/pwm1", O_RDWR);
+	if (fd < 0) {
+		printf("fd open fail\n");
+		return;
+	}
 
 	for (i = 0; i < 8; i++) {
 		pwm_info.frequency = octavef1[i];
@@ -97,6 +101,10 @@ void pwmbuzzer_main(int argc, char *argv[])
 
 	/* device 0 channel 2 */
 	fd = open("/dev/pwm2", O_RDWR);
+	if (fd < 0) {
+		printf("fd open fail\n");
+		return;
+	}
 
 	for (i = 0; i < 8; i++) {
 		pwm_info.frequency = octavef2[i];
