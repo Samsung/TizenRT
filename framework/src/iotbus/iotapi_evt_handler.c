@@ -32,6 +32,10 @@
 #define IOTAPI_LOG(x...)
 #endif
 
+#define IOTAPI_MESSAGE_QUEUE_EMPTY 	0
+#define IOTAPI_MESSAGE_QUEUE_INSERT 1
+#define IOTAPI_MESSAGE_QUEUE_REMOVE 2
+
 
 struct _iotapi_msg_queue {
 	int type;					// 1 is insert, 2 is remove, 0 is empty
@@ -74,12 +78,12 @@ void *iotapi_handler(void *data)
 	char buf[3];
 
 	pthread_mutex_lock(&g_ia_lock);
-	if (g_ia_msg_queue[0].type == 1) {
+	if (g_ia_msg_queue[0].type == IOTAPI_MESSAGE_QUEUE_INSERT) {
 		g_ia_evt_queue[0].fd = g_ia_msg_queue[0].evt.fd;
 		g_ia_evt_queue[0].data = g_ia_msg_queue[0].evt.data;
 		g_ia_evt_queue[0].func = g_ia_msg_queue[0].evt.func;
 		g_ia_evt_size = 1;
-		g_ia_msg_queue[0].type = 0;
+		g_ia_msg_queue[0].type = IOTAPI_MESSAGE_QUEUE_EMPTY;
 	}
 	pthread_mutex_unlock(&g_ia_lock);
 
@@ -107,14 +111,12 @@ void *iotapi_handler(void *data)
 		}
 
 		if (g_ia_evtlist[0].revents & POLLIN) {
-			int readed;
-			readed = read(g_ia_evtlist[0].fd, buf, 3);
-			IOTAPI_LOG("[iotcom] receive command(%d)\n", readed);
+			IOTAPI_LOG("[iotcom] receive command(%d)\n", read(g_ia_evtlist[0].fd, buf, 3));
 			if (buf[0] == 's' && buf[1] == 't')
 				break;
 
 			pthread_mutex_lock(&g_ia_lock);
-			if (g_ia_msg_queue[0].type == 1) {
+			if (g_ia_msg_queue[0].type == IOTAPI_MESSAGE_QUEUE_INSERT) {
 				g_ia_evt_size++;
 				int i = 0;
 				for (; i < IOTAPI_QUEUE_SIZE; i++) {
@@ -126,9 +128,9 @@ void *iotapi_handler(void *data)
 						break;
 					}
 				}
-				g_ia_msg_queue[0].type = 0;
+				g_ia_msg_queue[0].type = IOTAPI_MESSAGE_QUEUE_EMPTY;
 			}
-			if (g_ia_msg_queue[1].type == 2) {
+			if (g_ia_msg_queue[1].type == IOTAPI_MESSAGE_QUEUE_REMOVE) {
 				g_ia_evt_size--;
 				int i = 0;
 				for (; i < IOTAPI_QUEUE_SIZE; i++) {
@@ -138,7 +140,7 @@ void *iotapi_handler(void *data)
 						break;
 					}
 				}
-				g_ia_msg_queue[1].type = 0;
+				g_ia_msg_queue[1].type = IOTAPI_MESSAGE_QUEUE_EMPTY;
 			}
 
 			if (g_ia_evt_size == 0) {
@@ -197,6 +199,7 @@ int iotapi_handler_start(int fd)
 		IOTAPI_LOG("[iotcom] create iotapi handler fail(%d)\n", ret);
 		return -1;
 	}
+	pthread_detach(tid);
 	return 0;
 }
 
@@ -239,7 +242,7 @@ int iotapi_insert(iotapi_elem * item)
 	}
 	if (g_ia_evt_size == 0)
 		mode = 0;
-	g_ia_msg_queue[0].type = 1;
+	g_ia_msg_queue[0].type = IOTAPI_MESSAGE_QUEUE_INSERT;
 	g_ia_msg_queue[0].evt.fd = item->fd;
 	g_ia_msg_queue[0].evt.data = item->data;
 	g_ia_msg_queue[0].evt.func = item->func;
@@ -268,7 +271,7 @@ int iotapi_remove(iotapi_elem * item)
 		pthread_mutex_unlock(&g_ia_lock);
 		ret = -1;
 	}
-	g_ia_msg_queue[1].type = 2;
+	g_ia_msg_queue[1].type = IOTAPI_MESSAGE_QUEUE_REMOVE;
 	g_ia_msg_queue[1].evt.fd = item->fd;
 
 	pthread_mutex_unlock(&g_ia_lock);
