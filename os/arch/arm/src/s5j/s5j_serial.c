@@ -565,7 +565,7 @@ static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
 
 		priv->baud = cfgetispeed(termiosp);
 
-		dev->ops->setup(dev);
+		up_configure(priv);
 		break;
 
 	default:
