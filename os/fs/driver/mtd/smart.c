@@ -3607,7 +3607,7 @@ retry:
 		}
 	}
 
-error :
+error:
 	if (physicalsector == 0xFFFF) {
 		if (bitflipped) {
 			fdbg("retry allocation \n");
