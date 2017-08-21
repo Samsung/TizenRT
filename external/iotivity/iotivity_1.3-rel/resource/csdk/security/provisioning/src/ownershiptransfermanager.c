@@ -1273,6 +1273,8 @@ exit:
     return  OC_STACK_DELETE_TRANSACTION;
 }
 
+static void SetAclVer2(char specVer[]){specVer[0]='o'; specVer[1]='c'; specVer[2]='f';}
+
 /**
  * Response handler for update owner ACL request.
  *
@@ -1282,19 +1284,22 @@ exit:
  * @return  OC_STACK_DELETE_TRANSACTION to delete the transaction
  *          and  OC_STACK_KEEP_TRANSACTION to keep it.
  */
-static OCStackApplicationResult OwnerAclHandler(void *ctx, OCDoHandle UNUSED,
+static OCStackApplicationResult OwnerAclHandler(void *ctx, OCDoHandle handle,
                                 OCClientResponse *clientResponse)
 {
-    VERIFY_NOT_NULL(TAG, clientResponse, WARNING);
-    VERIFY_NOT_NULL(TAG, ctx, WARNING);
-
     OIC_LOG(DEBUG, TAG, "IN OwnerAclHandler");
-    (void)UNUSED;
-    OCStackResult res = clientResponse->result;
-    OTMContext_t* otmCtx = (OTMContext_t*)ctx;
-    otmCtx->ocDoHandle = NULL;
-    OCProvisionDev_t* selectedDeviceInfo = otmCtx->selectedDeviceInfo;
 
+    OC_UNUSED(handle);
+
+    VERIFY_NOT_NULL(TAG, ctx, WARNING);
+    OTMContext_t* otmCtx = (OTMContext_t*)ctx;
+    VERIFY_NOT_NULL(TAG, otmCtx->selectedDeviceInfo, WARNING);
+    OCProvisionDev_t* selectedDeviceInfo = otmCtx->selectedDeviceInfo;
+    VERIFY_NOT_NULL(TAG, clientResponse, WARNING);
+
+    otmCtx->ocDoHandle = NULL;
+
+    OCStackResult res = clientResponse->result;
     if(OC_STACK_RESOURCE_CHANGED == res)
     {
         if(NULL != selectedDeviceInfo)
@@ -1311,15 +1316,23 @@ static OCStackApplicationResult OwnerAclHandler(void *ctx, OCDoHandle UNUSED,
             }
         }
     }
+    else if(OC_STACK_NO_RESOURCE == res)
+    {
+        OIC_LOG_V(WARNING, TAG, "%s: not found uri", __func__);
+        if(OIC_SEC_ACL_V1 == GET_ACL_VER(otmCtx->selectedDeviceInfo->specVer))
+        {
+            SetAclVer2(otmCtx->selectedDeviceInfo->specVer);
+            OIC_LOG_V(WARNING, TAG, "%s: set acl v2", __func__);
+            PostOwnerAcl(otmCtx, OIC_SEC_ACL_V2);
+        }
+    }
     else
     {
         OIC_LOG_V(ERROR, TAG, "OwnerAclHandler : Unexpected result %d", res);
         SetResult(otmCtx, res);
     }
-
-    OIC_LOG(DEBUG, TAG, "OUT OwnerAclHandler");
-
 exit:
+    OIC_LOG(DEBUG, TAG, "OUT OwnerAclHandler");
     return  OC_STACK_DELETE_TRANSACTION;
 }
 
