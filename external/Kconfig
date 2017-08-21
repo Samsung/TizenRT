@@ -98,7 +98,7 @@ config EXAMPLES_IOTIVITY
 
 config IOTIVITY_RELEASE_VERSION
 	string "iotivity stack version"
-	default "1.2-rel"
+	default "1.3.0"
 	depends on ENABLE_IOTIVITY
 	---help---
 		define this to iotivity stack release veriosn in use

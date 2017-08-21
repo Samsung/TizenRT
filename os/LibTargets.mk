@@ -186,21 +186,6 @@ $(LIBRARIES_DIR)$(DELIM)libartik-sdk$(LIBEXT): $(ARTIKSDKDIR)$(DELIM)libartik-sd
 #Iotivity Libs
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-
-$(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
-
-$(IOTIVITY_LIBS_DIR)$(DELIM)libc_common$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
-
-$(IOTIVITY_LIBS_DIR)$(DELIM)libcoap$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
-
-$(IOTIVITY_LIBS_DIR)$(DELIM)libconnectivity_abstraction$(LIBEXT):$(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
-
-$(IOTIVITY_LIBS_DIR)$(DELIM)liblogger$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
-
-$(IOTIVITY_LIBS_DIR)$(DELIM)libocsrm$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
-
-$(IOTIVITY_LIBS_DIR)$(DELIM)libroutingmanager$(LIBEXT): $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
-
 $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT)
 	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)liboctbstack$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)
 

@@ -79,9 +79,10 @@ endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
+CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
 
-SRCS = $(ASRCS) $(CSRCS)
-OBJS = $(AOBJS) $(COBJS)
+SRCS = $(ASRCS) $(CSRCS) $(CXXSRCS)
+OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
 
 BIN	= libexternal$(LIBEXT)
 
@@ -91,7 +92,12 @@ $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
 $(COBJS): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
+	$(if $(KASAN_AVOID_SANITIZE_$*),\
+		$(call COMPILE, $<, $@),\
+		$(call COMPILE_SANITIZE, $<, $@))
+
+$(CXXOBJS): %$(OBJEXT): %.cpp
+	$(call COMPILEXX, $<, $@)
 
 iotivity_build:
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
@@ -107,8 +113,11 @@ endif
 $(BIN): $(OBJS) iotivity_build
 	$(call ARCHIVE, $@, $(OBJS))
 
+
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(ASRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(CSRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(CXXSRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend
@@ -120,6 +129,7 @@ ifneq ("$(wildcard $(IOTIVITY_BASE_DIR)/iotivity.built)","")
 	$(Q) echo "Cleaning IoTivity Build"
 	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/clean_iotivity.sh
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/out
+	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/*.o
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconsign.dblite
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconf_temp
@@ -132,6 +142,7 @@ ifeq ($(CONFIG_ARTIK_SDK),y)
 endif
 
 custom_clean:
+	$(foreach OBJFILE, $(OBJS), rm -f $(OBJFILE))
 
 clean: custom_clean iotivity_clean artiksdk_clean
 	$(call DELFILE, $(BIN))
