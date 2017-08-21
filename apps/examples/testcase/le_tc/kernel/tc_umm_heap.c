@@ -199,7 +199,10 @@ static void tc_umm_heap_random_malloc(struct tcb_s *st_tcb)
 			mallinfo(&info);
 #endif
 			mem_ptr[alloc_cnt] = (int *)malloc(allocated[alloc_cnt]);
-			if (info.mxordblk > allocated[alloc_cnt]) {
+			/* If the largest free chunk is bigger than the memory to allocate,
+			   malloc will be successful and return the pointer of memory.
+			   Else, malloc will be failed and return NULL pointer */
+			if (info.mxordblk >= MM_ALIGN_UP(allocated[alloc_cnt] + SIZEOF_MM_ALLOCNODE)) {
 				TC_ASSERT_NOT_NULL("malloc", mem_ptr[alloc_cnt]);
 			} else {
 				TC_ASSERT_EQ("malloc", mem_ptr[alloc_cnt], NULL);

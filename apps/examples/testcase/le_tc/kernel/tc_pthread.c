@@ -59,7 +59,7 @@ pthread_t thread[PTHREAD_CNT];
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t g_cond;
 pthread_key_t g_tlskey;
-static pthread_once_t g_once = PTHREAD_ONCE_INIT;
+static pthread_once_t g_once;
 static bool g_bpthreadcallback = false;
 
 static int g_cnt;
@@ -1181,6 +1181,10 @@ static void tc_pthread_pthread_mutex_destroy(void)
 static void tc_pthread_pthread_once(void)
 {
 	int ret_chk;
+
+	/* Initialize g_once */
+
+	g_once = PTHREAD_ONCE_INIT;
 
 	/* Test NULL case */
 
