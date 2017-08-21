@@ -1467,7 +1467,7 @@ static void tc_pthread_pthread_setgetname_np(void)
 /**
 * @fn                   :tc_pthread_pthread_setcanceltype
 * @brief                :This tc tests pthread_setcanceltype()
-* @Scenario             :The function shall atomically both set the calling thread's cancelability type to the indicated type 
+* @Scenario             :The function shall atomically both set the calling thread's cancelability type to the indicated type
 *                        and return the previous cancelability type at the location referenced by oldtype
 *                        If successful pthread_setcanceltype() function shall return zero;
 *                        otherwise, an error number shall be returned to indicate the error.

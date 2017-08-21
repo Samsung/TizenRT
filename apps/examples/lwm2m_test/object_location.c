@@ -67,7 +67,7 @@
 #define HORIZONTAL_VELOCITY_VERTICAL         1  // set vertical direction bit!
 #define HORIZONTAL_VELOCITY_WITH_UNCERTAINTY 2
 
-#define VELOCITY_OCTETS                      5  // for HORIZONTAL_VELOCITY_WITH_UNCERTAINTY 
+#define VELOCITY_OCTETS                      5  // for HORIZONTAL_VELOCITY_WITH_UNCERTAINTY
 
 typedef struct {
 	float    latitude;

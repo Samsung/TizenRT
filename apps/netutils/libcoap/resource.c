@@ -77,7 +77,7 @@ static inline void coap_free_subscription(coap_subscription_t *subscription)
   } else {						\
     (Offset)--;						\
   }							\
- 
+
 /**
  * Adds Char to Buf if Offset is zero and Buf is less than Bufend.
  */

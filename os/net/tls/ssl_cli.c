@@ -347,7 +347,7 @@ static void ssl_write_supported_point_formats_ext(mbedtls_ssl_context *ssl, unsi
 
 	*olen = 6;
 }
-#endif							/* MBEDTLS_ECDH_C || MBEDTLS_ECDSA_C || 
+#endif							/* MBEDTLS_ECDH_C || MBEDTLS_ECDSA_C ||
 								   MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED */
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
@@ -1140,7 +1140,7 @@ static int ssl_parse_supported_point_formats_ext(mbedtls_ssl_context *ssl, const
 	MBEDTLS_SSL_DEBUG_MSG(1, ("no point format in common"));
 	return (MBEDTLS_ERR_SSL_BAD_HS_SERVER_HELLO);
 }
-#endif							/* MBEDTLS_ECDH_C || MBEDTLS_ECDSA_C || 
+#endif							/* MBEDTLS_ECDH_C || MBEDTLS_ECDSA_C ||
 								   MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED */
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)

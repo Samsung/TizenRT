@@ -1,4 +1,4 @@
-#include "tinydtls.h" 
+#include "tinydtls.h"
 
 /* This is needed for apple */
 #define __APPLE_USE_RFC_3542
@@ -16,9 +16,9 @@
 #include <netdb.h>
 #include <signal.h>
 
-#include "global.h" 
-#include "debug.h" 
-#include "dtls.h" 
+#include "global.h"
+#include "debug.h"
+#include "dtls.h"
 
 #define DEFAULT_PORT 20220
 
@@ -183,7 +183,7 @@ handle_stdin() {
 }
 
 static int
-read_from_peer(struct dtls_context_t *ctx, 
+read_from_peer(struct dtls_context_t *ctx,
 	       session_t *session, uint8 *data, size_t len) {
   size_t i;
   for (i = 0; i < len; i++)
@@ -192,7 +192,7 @@ read_from_peer(struct dtls_context_t *ctx,
 }
 
 static int
-send_to_peer(struct dtls_context_t *ctx, 
+send_to_peer(struct dtls_context_t *ctx,
 	     session_t *session, uint8 *data, size_t len) {
 
   int fd = *(int *)dtls_get_app_data(ctx);
@@ -209,15 +209,15 @@ dtls_handle_read(struct dtls_context_t *ctx) {
   int len;
 
   fd = *(int *)dtls_get_app_data(ctx);
-  
+
   if (!fd)
     return -1;
 
   memset(&session, 0, sizeof(session_t));
   session.size = sizeof(session.addr);
-  len = recvfrom(fd, buf, MAX_READ_BUF, 0, 
+  len = recvfrom(fd, buf, MAX_READ_BUF, 0,
 		 &session.addr.sa, &session.size);
-  
+
   if (len < 0) {
     perror("recvfrom");
     return -1;
@@ -227,7 +227,7 @@ dtls_handle_read(struct dtls_context_t *ctx) {
   }
 
   return dtls_handle_message(ctx, &session, buf, len);
-}    
+}
 
 static void dtls_handle_signal(int sig)
 {
@@ -239,7 +239,7 @@ static void dtls_handle_signal(int sig)
 /* stolen from libcoap: */
 static int
 resolve_address(const char *server, struct sockaddr *dst) {
-  
+
   struct addrinfo *res, *ainfo;
   struct addrinfo hints;
   static char addrstr[256];
@@ -321,7 +321,7 @@ static dtls_handler_t cb = {
 #define DTLS_CLIENT_CMD_CLOSE "client:close"
 #define DTLS_CLIENT_CMD_RENEGOTIATE "client:renegotiate"
 
-int 
+int
 main(int argc, char **argv) {
   fd_set rfds, wfds;
   struct timeval timeout;
@@ -372,7 +372,7 @@ main(int argc, char **argv) {
     case 'o' :
       output_file.length = strlen(optarg);
       output_file.s = (unsigned char *)malloc(output_file.length + 1);
-      
+
       if (!output_file.s) {
 	dtls_crit("cannot set output file: insufficient memory\n");
 	exit(-1);
@@ -391,12 +391,12 @@ main(int argc, char **argv) {
   }
 
   dtls_set_log_level(log_level);
-  
+
   if (argc <= optind) {
     usage(argv[0], dtls_package_version());
     exit(1);
   }
-  
+
   memset(&dst, 0, sizeof(session_t));
   /* resolve destination address where server should be sent */
   res = resolve_address(argv[optind++], &dst.addr.sa);
@@ -410,7 +410,7 @@ main(int argc, char **argv) {
      port, otherwise */
   dst.addr.sin.sin_port = htons(atoi(optind < argc ? argv[optind++] : port_str));
 
-  
+
   /* init socket and set it to non-blocking */
   fd = socket(dst.addr.sa.sa_family, SOCK_DGRAM, 0);
 
@@ -460,12 +460,12 @@ main(int argc, char **argv) {
     FD_SET(fileno(stdin), &rfds);
     FD_SET(fd, &rfds);
     /* FD_SET(fd, &wfds); */
-    
+
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
-    
+
     result = select(fd+1, &rfds, &wfds, 0, &timeout);
-    
+
     if (result < 0) {		/* error */
       if (errno != EINTR)
 	perror("select");
@@ -495,7 +495,7 @@ main(int argc, char **argv) {
       }
     }
   }
-  
+
   dtls_free_context(dtls_context);
   exit(0);
 }
