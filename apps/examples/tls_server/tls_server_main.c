@@ -1736,12 +1736,12 @@ usage:
 #if defined(MBEDTLS_FS_IO)
 	if (opt.dhm_file != NULL) {
 		ret = mbedtls_ssl_conf_dh_param_ctx(&conf, &dhm);
+		if (ret != 0) {
+			mbedtls_printf("  failed\n  mbedtls_ssl_conf_dh_param returned -0x%04X\n\n", -ret);
+			goto exit;
+		}
 	}
 #endif
-	if (ret != 0) {
-		mbedtls_printf("  failed\n  mbedtls_ssl_conf_dh_param returned -0x%04X\n\n", -ret);
-		goto exit;
-	}
 #endif
 
 	if (opt.min_version != DFL_MIN_VERSION) {
