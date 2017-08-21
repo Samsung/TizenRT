@@ -62,7 +62,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
-#include <uio.h>
+//iotivity_1.3.0
+//#include <uio.h>
 
 #include "socket/socket.h"
 
@@ -94,7 +95,8 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 	uint8_t *buf = (uint8_t *)(msg->msg_iov->iov_base);
 	size_t len = msg->msg_iov->iov_len;
 	struct sockaddr *from = (struct sockaddr *)msg->msg_name;
-	socklen_t *addrlen = &(msg->msg_namelen);
+	//iotivity_1.3.0
+	int *addrlen = (int *)&(msg->msg_namelen);
 
 	printf("\n[Received IOTIVITY Packet][%s:%d] \n", __FUNCTION__, __LINE__);
 
