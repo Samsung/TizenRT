@@ -1,0 +1,272 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "title": "my_example_device",
+      "version": "my device version"
+    },
+
+
+    "schemes": [
+        "http"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "paths": {
+       "/switch": {
+
+          "get": {
+
+
+            "parameters": [
+               {
+                 "name": "if",
+                 "in": "query",
+                 "description": "",
+                 "enum": [ "oic.if.a","oic.if.baseline" ],
+
+                 "type": "string"
+                }
+            ],
+            "responses": {
+              "200" : {
+                  "description" : "",
+                  "schema" :
+                  {
+                    "$ref": "#/definitions/BinarySwitch"
+                  }
+               }
+            }
+
+           },
+
+          "post": {
+
+
+            "parameters": [
+               {
+                 "name": "if",
+                 "in": "query",
+                 "description": "",
+                 "enum": [ "oic.if.a","oic.if.baseline" ],
+
+                 "type": "string"
+                }
+                 ,{
+                  "name": "body",
+                  "in": "body",
+                  "required": false,
+                   "schema" :
+                  {
+                    "$ref": "#/definitions/BinarySwitch"
+                  }
+
+                }
+            ],
+            "responses": {
+              "200" : {
+                  "description" : "",
+                   "schema" :
+                  {
+                    "$ref": "#/definitions/BinarySwitch"
+                  }
+
+               }
+            }
+          }
+        },
+       "/brightness": {
+
+          "get": {
+
+
+            "parameters": [
+               {
+                 "name": "if",
+                 "in": "query",
+                 "description": "",
+                 "enum": [ "oic.if.a","oic.if.baseline" ],
+
+                 "type": "string"
+                }
+            ],
+            "responses": {
+              "200" : {
+                  "description" : "",
+                 "schema" :
+                  {
+                    "$ref": "#/definitions/Brightness"
+                  }
+               }
+            }
+
+           },
+
+          "post": {
+
+
+            "parameters": [
+               {
+                 "name": "if",
+                 "in": "query",
+                 "description": "",
+                 "enum": [ "oic.if.a","oic.if.baseline" ],
+
+                 "type": "string"
+                }
+                 ,{
+                  "name": "body",
+                  "in": "body",
+                  "required": false,
+                 "schema" :
+                  {
+                    "$ref": "#/definitions/Brightness"
+                  }
+                }
+            ],
+            "responses": {
+              "200" : {
+                  "description" : "",
+                 "schema" :
+                  {
+                    "$ref": "#/definitions/Brightness"
+                  }
+
+               }
+            }
+
+          }
+        }
+    },
+    "definitions":
+    {
+        "BinarySwitch": {
+           "type": "object",
+           "required": [
+             "id"
+           ],
+           "properties":  {
+               "value": {
+                  "type": "boolean",
+                  "description": "Status of the switch"
+                },
+                "rt": {
+                "type": "array",
+                "items" : [
+                  {
+                    "type" : "string",
+                    "maxLength": 64
+                  }
+                ],
+                "minItems" : 1,
+                "description": "Resource Type",
+                "readOnly" : true,
+                "default" : [ "oic.r.switch.binary" ]
+                },
+                "if": {
+                    "type": "array",
+                    "description": "The interface set supported by this resource",
+                    "readOnly" : true,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "oic.if.baseline",
+                            "oic.if.a"
+                        ]
+                    }
+                },
+                "p": {
+                    "type": "integer",
+                    "description": "Bitmap indicating observable and discoverable",
+                    "readOnly" : true
+                },
+                "n": {
+                    "type": "string",
+                    "description": "Friendly name of the resource",
+                    "readOnly" : true
+                },
+                "id": {
+                    "type": "string",
+                    "description": "Instance ID of this specific resource",
+                    "readOnly" : true
+                },
+                "range": {
+                    "type": "array",
+                    "description": "The valid range for the value Property",
+                    "readOnly" : true,
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            }
+        },
+        "Brightness": {
+           "type": "object",
+           "required": [
+             "id"
+           ],
+           "properties":  {
+               "brighness": {
+                  "type": "integer",
+                  "description": "Current sensed or set value for Brightness"
+                },
+                "rt": {
+                "type": "array",
+                "items" : [
+                  {
+                    "type" : "string",
+                    "maxLength": 64
+                  }
+                ],
+                "minItems" : 1,
+                "description": "Resource Type",
+                "readOnly" : true,
+                "default" : [ "oic.r.light.brightness" ]
+                },
+                "if": {
+                    "type": "array",
+                    "description": "The interface set supported by this resource",
+                    "readOnly" : true,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "oic.if.baseline",
+                            "oic.if.a"
+                        ]
+                    }
+                },
+                "p": {
+                    "type": "integer",
+                    "description": "Bitmap indicating observable and discoverable",
+                    "readOnly" : true
+                },
+                "n": {
+                    "type": "string",
+                    "description": "Friendly name of the resource",
+                    "readOnly" : true
+                },
+                "id": {
+                    "type": "string",
+                    "description": "Instance ID of this specific resource",
+                    "readOnly" : true
+                },
+                "range": {
+                    "type": "array",
+                    "description": "The valid range for the value Property",
+                    "readOnly" : true,
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            }
+        }
+    }
+
+}

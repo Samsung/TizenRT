@@ -1,0 +1,15 @@
+#######################################################
+#       Build IP adapter for Android
+#######################################################
+import os
+
+Import('connectivity_env')
+
+src_dir = os.path.abspath(os.curdir)
+
+connectivity_env.PrependUnique(CPPPATH = [ src_dir ])
+
+src_files = [ os.path.join(src_dir, 'caipnwmonitor.c'),
+              os.path.join(src_dir, 'caifaddrs.c') ]
+
+connectivity_env.AppendUnique(CA_SRC = src_files)

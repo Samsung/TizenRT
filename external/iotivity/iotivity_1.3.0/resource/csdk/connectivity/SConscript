@@ -1,0 +1,31 @@
+##
+# CA build script
+##
+
+Import('env')
+
+connectivity_env = env.Clone()
+target_os = connectivity_env.get('TARGET_OS')
+transport = connectivity_env.get('TARGET_TRANSPORT')
+build_sample = connectivity_env.get('BUILD_SAMPLE')
+with_ra = connectivity_env.get('WITH_RA')
+with_tcp = connectivity_env.get('WITH_TCP')
+with_mq = connectivity_env.get('WITH_MQ')
+
+print "Given Transport is %s" % transport
+print "Given OS is %s" % target_os
+print "BUILD_SAMPLE is %s" % build_sample
+print "MQ flag is %s" % with_mq
+
+if target_os in ['msys_nt', 'windows']:
+    connectivity_env.AppendUnique(CCFLAGS=['/W4', '/WX'])
+
+targets_disallow_multitransport = ['arduino']
+
+if target_os in targets_disallow_multitransport:
+    if ('ALL' in transport) or (len(transport) != 1):
+        print "*** Error invalid option values: TARGET_TRANSPORT"
+        print "%s disallowed until testing can validate use of multiple transports on %s %d" % (transport, target_os, len(transport))
+        Exit(1)
+
+SConscript('src/SConscript', exports = 'connectivity_env')

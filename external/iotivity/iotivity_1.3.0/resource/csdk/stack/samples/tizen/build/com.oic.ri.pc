@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/OICHeaders
+
+Name: com-oic-ca
+Description: Oic core library
+Version: 1.0
+Cflags: -I${includedir}
+

@@ -1,0 +1,20 @@
+#######################################################
+#       Build TCP adapter for Ardunino
+#######################################################
+import os
+
+Import('connectivity_env')
+
+src_dir = os.path.abspath(os.curdir)
+
+connectivity_env.PrependUnique(CPPPATH = [ src_dir ])
+
+src_files = None
+if connectivity_env.get('SHIELD') == 'ETH':
+    src_files = [ os.path.join(src_dir, 'catcpserver_eth.cpp') ,
+                  os.path.join(src_dir, 'catcpadapterutils_eth.cpp')]
+else:
+    print "\nError: TCP is not supported for WIFI shield"
+    Exit(1)
+
+connectivity_env.AppendUnique(CA_SRC = src_files)

@@ -1,0 +1,30 @@
+This project contains the Resource Directory(RD) Server code.
+
+Build and Run
+
+1) Install Apache Maven if you don't have it
+
+	http://maven.apache.org
+
+2) Install Mongo DB if you don't have it
+
+	http://www.mongodb.org/downloads
+
+3) Build a CloudStack. If you are building first time, then build the stack.
+
+	go to "stack" folder in root directory
+	$ mvn install -Dmaven.test.skip=true
+
+4) Build a .jar file
+
+	$ mvn install -Dmaven.test.skip=true
+
+	- The CloudResourceDirectory-0.0.1-SNAPSHOT.jar file will be placed in the "target" folder
+
+5) Run .jar file
+
+	go to "target" folder
+	$ java -jar CloudResourceDirectory-0.0.1-SNAPSHOT.jar arg1(RD CoAP Server Port) arg2(MongoDB IP Address) arg3(MongoDB Port) arg4(TLS mode required)
+	e.g java -jar CloudResourceDirectory-0.0.1-SNAPSHOT.jar 5684 127.0.0.1 27017 0
+
+    - If you want to operate on TLS mode, "CLOUD_CERT_FILE(iotivitycloud.crt)", "CLOUD_KEY_FILE(iotivitycloud.key)" and ROOT_CERT_FILE(rootca.crt) files should be placed in the "target" folder.

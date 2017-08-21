@@ -1,0 +1,13 @@
+This project contains the common stack for all server instances.
+
+Build
+
+1) Install Apache Maven if you don't have it
+
+	http://maven.apache.org
+
+2) Build a .jar file
+
+	$ mvn install -Dmaven.test.skip=true
+
+	- The CloudStack-0.0.1-SNAPSHOT.jar file will be placed in the "target" folder.

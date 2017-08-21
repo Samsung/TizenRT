@@ -1,0 +1,31 @@
+#######################################################
+#	Build IP adapter
+#######################################################
+import os
+
+Import('connectivity_env')
+
+print "Reading IP adapter script"
+
+target_os = connectivity_env.get('TARGET_OS')
+src_dir = os.path.abspath(os.curdir)
+
+# Source files to build common for all platforms
+common_files = [ os.path.join(src_dir, 'caipadapter.c') ]
+if target_os != 'arduino':
+    common_files.append(os.path.join(src_dir, 'caipserver.c'))
+    # Source files to build for Linux-like platforms
+    if target_os in ['linux','darwin','ios']:
+        common_files.append(os.path.join(src_dir, 'linux/caipnwmonitor.c'))
+    elif target_os in ['msys_nt', 'windows']:
+        common_files.append(os.path.join(src_dir, 'windows/caipnwmonitor.c'))
+
+connectivity_env.AppendUnique(CA_SRC = common_files)
+
+# Check for the existence of the platform-specific SConscript file
+# relative to the top-level source directory, not the build (variant)
+# directory, before calling that SConscript file to prevent a missing
+# file warning platforms that don't provide one.
+target_sconscript = target_os + '/SConscript'
+if os.path.exists(target_sconscript):
+    SConscript(target_sconscript, exports='connectivity_env')

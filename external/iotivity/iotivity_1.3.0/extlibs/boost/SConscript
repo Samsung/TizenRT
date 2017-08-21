@@ -1,0 +1,112 @@
+import os, string, sys, subprocess
+import SCons.Errors
+
+Import('env')
+
+boost_env = env.Clone()
+
+modules = ['thread','program_options', 'system', 'date_time']
+
+target_os = env.get('TARGET_OS')
+target_arch = env.get('TARGET_ARCH')
+src_dir = env.get('SRC_DIR')
+
+boost_version   = '1.60.0'
+
+# TODO: Remove coupling between build scripts and 1_58_0 version for Android
+if target_os in ['android']:
+    boost_version   = '1.58.0'
+
+boost_base_name  = 'boost_'+string.replace(boost_version,'.','_')
+boost_arch_name  = boost_base_name+'.zip'
+boost_b2_name    = boost_base_name+os.sep+'b2'
+boost_url       = 'http://downloads.sourceforge.net/project/boost/boost/'+boost_version+'/'+boost_arch_name+'?r=&ts=1421801329&use_mirror=iweb'
+
+boost_dir = os.path.join(src_dir,'extlibs','boost','boost')
+boost_bootstrap = os.path.join(boost_dir,'bootstrap.bat')
+
+if 'linux' == target_os :
+    # Check for Boost libraries in /usr/boost
+    print 'TODO: Perform platform check for linux'
+    raise SCons.Errors.EnvironmentError('Unsupported platform')
+
+elif target_os in ['windows']:
+    boost_zip_file   = os.path.join(src_dir,'extlibs','boost',boost_arch_name)
+
+    if not os.path.exists(boost_bootstrap):
+
+        # Download if necessary
+        if os.path.exists(boost_zip_file):
+            boost_zip = boost_zip_file
+        else:
+            print '*** Downloading Boost zip file (> 100MB). Please wait... ***'
+            boost_zip = boost_env.Download(boost_zip_file, boost_url)
+
+        # Unzip boost
+        print '*** Unpacking boost %s zip file ... ***' % boost_version
+        boost_env.UnpackAll(boost_dir, boost_zip)
+
+        # Rename from boost_1_60_0 -> boost
+        os.rename(boost_base_name, 'boost')
+
+    # Sanity check, in case the above method didn't work
+    if not os.path.exists(boost_bootstrap):
+        print '''
+*********************************** Error: ****************************************
+* Please download boost from the following website:
+*
+*   ''' + boost_url + '''
+*
+* and extract the contents directly into
+*
+*    ''' + boost_dir + '''
+*
+* such that this build system can find:
+*
+* ''' + boost_bootstrap + '''
+*
+***********************************************************************************
+'''
+        Exit(1)
+
+elif target_os in ['android']:
+    boost_env.Tool('URLDownload',    toolpath=['../../tools/scons'])
+    boost_env.Tool('UnpackAll',      toolpath=['../../tools/scons'])
+    boost_env.Tool('BoostBootstrap', toolpath=['../../tools/scons'])
+    boost_env.Tool('BoostBuild',     toolpath=['../../tools/scons'])
+
+    host_os = sys.platform
+
+    if host_os == 'linux2' :
+        boost_bootstrap = boost_base_name+os.sep+'bootstrap.sh'
+    else :
+        msg="Host platform (%s) is currently not supported for boost builds" % host_os
+        raise SCons.Errors.EnvironmentError(msg)
+
+    if not os.path.exists(boost_arch_name) and not os.path.exists(boost_base_name):
+        boost_arch_name = boost_env.URLDownload(boost_arch_name, boost_url)
+
+    if not os.path.exists(boost_base_name):
+	boost_arch_name = boost_env.UnpackAll(boost_bootstrap, boost_arch_name)
+
+    boost_b2  = boost_env.BoostBootstrap(boost_b2_name, boost_arch_name)
+
+    dep_sys_root = boost_env['DEP_SYS_ROOT']
+    dep_src_dir =  dep_sys_root + os.sep + 'include'
+    dep_lib_dir =  dep_sys_root + os.sep + 'lib'
+
+    boost_targets = [
+        os.path.join(dep_src_dir, 'boost', 'config.hpp'),
+        os.path.join(dep_src_dir, 'boost', 'variant.hpp'),
+        os.path.join(dep_src_dir, 'boost', 'program_options.hpp'),
+        os.path.join(dep_src_dir, 'boost', 'thread.hpp'),
+        os.path.join(dep_src_dir, 'boost', 'date_time.hpp'),
+        os.path.join(dep_src_dir, 'libboost_thread.a'),        
+        os.path.join(dep_src_dir, 'libboost_date_time.a'),
+        os.path.join(dep_src_dir, 'libboost_atomic.a'),
+        os.path.join(dep_src_dir, 'libboost_system.a'),
+        os.path.join(dep_src_dir, 'libboost_program_options.a')
+        ]
+
+    boost_build = boost_env.BoostBuild(boost_targets, boost_b2, PREFIX=dep_sys_root, MODULES=modules)
+

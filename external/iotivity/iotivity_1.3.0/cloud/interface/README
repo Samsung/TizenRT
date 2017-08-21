@@ -1,0 +1,28 @@
+This project contains the Cloud Interface(CI) Server code.
+
+Build and Run
+
+1) Install Apache Maven if you don't have it
+
+	http://maven.apache.org
+
+2) Build a CloudStack. If you are building first time, then build the stack.
+
+	go to "stack" folder in root directory
+	$ mvn install -Dmaven.test.skip=true
+
+3) Build a .jar file
+
+	$ mvn install -Dmaven.test.skip=true
+
+	- The CloudInterface-0.0.1-SNAPSHOT.jar file will be placed in the "target" folder
+
+4) Run .jar file
+
+	go to "target" folder
+	$ java -jar CloudInterface-0.0.1-SNAPSHOT.jar arg1(CI CoAP Server Port) arg2(RD CoAP Server IP) arg3(RD CoAP Server Port) arg4(Account Server IP) arg5(Account Server Port) arg6(MQBroker IP) arg7(MQBroker Port)
+		arg8(CI Http-CoAP proxy server port, '0' if unnecessary) arg9(CI CoAP websocket server port, '0' if unnecessary) arg10(TLS mode <0|1> required) arg11(web log IP, optional) and arg12(web log port, optional)
+	e.g. java -jar CloudInterface-0.0.1-SNAPSHOT.jar 5683 127.0.0.1 5684 127.0.0.1 5685 127.0.0.1 5686 80 8080 0
+
+	- Before running a CI server, you should run a RD server, Account server and MQBroker first.
+	- If you want to operate on TLS mode, "CLOUD_CERT_FILE(iotivitycloud.crt)", "CLOUD_KEY_FILE(iotivitycloud.key)" and ROOT_CERT_FILE(rootca.crt) files should be placed in the "target" folder.

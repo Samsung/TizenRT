@@ -1,0 +1,77 @@
+# //******************************************************************
+# //
+# // Copyright 2015 Samsung Electronics All Rights Reserved.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# //
+# // Licensed under the Apache License, Version 2.0 (the "License");
+# // you may not use this file except in compliance with the License.
+# // You may obtain a copy of the License at
+# //
+# //      http://www.apache.org/licenses/LICENSE-2.0
+# //
+# // Unless required by applicable law or agreed to in writing, software
+# // distributed under the License is distributed on an "AS IS" BASIS,
+# // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# // See the License for the specific language governing permissions and
+# // limitations under the License.
+# //
+# //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+Import('libocsrm_env')
+import os
+
+tools_env = libocsrm_env.Clone()
+src_dir = tools_env.get('SRC_DIR')
+target_os = tools_env.get('TARGET_OS')
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = tools_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+    tools_env.AppendUnique(CPPPATH = ['#extlibs/libcoap/libcoap/include'])
+else:
+    tools_env.AppendUnique(CPPPATH = ['../../connectivity/lib/libcoap-4.1.1/include'])
+
+tools_env.PrependUnique(CPPPATH = ['#/extlibs/cjson',
+                                  '../../include',
+                                  '../../stack/include',
+                                  '../../stack/include/internal',
+                                  '../../logger/include',
+                                  '../../../oc_logger/include',
+                                  '../../connectivity/api',
+                                  '../../connectivity/inc/pkix',
+                                  '../include',
+                                  '../include/internal'
+                                  ])
+tools_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-Wextra', '-std=c++0x'])
+tools_env.AppendUnique(RPATH = [tools_env.get('BUILD_DIR')])
+
+if target_os in ['windows', 'msys_nt']:
+    # Macro needed for Windows builds to avoid __declspec(dllexport) and __declspec(dllimport) for cJSON APIs.
+    tools_env.AppendUnique(CPPDEFINES = ['CJSON_HIDE_SYMBOLS'])
+
+if target_os not in ['darwin', 'msys_nt', 'windows']:
+    tools_env.PrependUnique(LIBS = ['octbstack', 'ocsrm', 'm'])
+else:
+    if target_os in ['darwin']:
+        tools_env.AppendUnique(LIBS = ['octbstack', 'connectivity_abstraction'])
+    else:
+        # This IoTivity-internal app calls non-Public APIs, so link with LIBS intended
+        # for IoTivity-internal tests (such as octbstack_internal).
+        tools_env.AppendUnique(LIBS = ['octbstack_internal', 'connectivity_abstraction_internal'])
+        if target_os in ['windows']:
+            tools_env.AppendUnique(LIBS = ['sqlite3'])
+    tools_env.AppendUnique(LIBS = ['coap', 'mbedtls', 'mbedx509', 'mbedcrypto',
+                                   'ocsrm', 'routingmanager'])
+
+tools_env.PrependUnique(LIBS = ['cjson'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+json2cbor_src = ['json2cbor.c']
+json2cbor = tools_env.Program('json2cbor', json2cbor_src)
+Alias("json2cbor", [json2cbor])
+tools_env.AppendTarget('json2cbor')
