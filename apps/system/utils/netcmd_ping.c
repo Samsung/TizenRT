@@ -184,10 +184,10 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 	char addr_str[64];
 	socklen_t fromlen;
 	int status = ERROR;
+	int icmp_hdrlen;
 	int iphdr_len;
-	int icmp_echohdr_len;
 	int len;
-	struct sockaddr_in *from = NULL;
+	struct sockaddr *from = NULL;
 	struct icmp_echo_hdr *iecho = NULL;
 	struct ip_hdr *iphdr = NULL;
 
@@ -195,18 +195,19 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 	if (family == AF_INET6) {
 		fromlen = sizeof(struct sockaddr_in6);
 		iphdr_len = sizeof(struct ip6_hdr);
-		icmp_echohdr_len = sizeof(struct icmp6_echo_hdr);
+		icmp_hdrlen = sizeof(struct icmp6_echo_hdr);
 	} else
 #endif
 	if (family == AF_INET) {
 		fromlen = sizeof(struct sockaddr_in);
 		iphdr_len = sizeof(struct ip_hdr);
-		icmp_echohdr_len = sizeof(struct icmp_echo_hdr);
+		icmp_hdrlen = sizeof(struct icmp_echo_hdr);
 	} else {
 		printf("nu_ping_recv: invalid family\n");
 		return ERROR;
 	}
 
+	/* allocate memory due to difference of size between ipv4/v6 socket structure */
 	from = malloc(fromlen);
 	if (from == NULL) {
 		printf("nu_ping_recv: fail to allocate memoru\n");
@@ -214,14 +215,14 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 	}
 
 	while (1) {
-		len = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr *)from, &fromlen);
+		len = recvfrom(s, buf, sizeof(buf), 0, from, &fromlen);
 		if (len < 0) {
 			printf("nu_ping_recv: recvfrom error(%d)\n", errno);
 			goto err_out;
 		} else if (len == 0) {
 			printf("nu_ping_recv: timeout\n");
 		}
-		if (len >= iphdr_len + icmp_echohdr_len) {
+		if (len >= iphdr_len + icmp_hdrlen) {
 #if LWIP_IPV6
 			if (family == AF_INET6) {
 				inet_ntop(family, (void *)&((struct sockaddr_in6 *)from)->sin6_addr, addr_str, 64);
@@ -233,7 +234,7 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 			} else
 #endif
 			{
-				inet_ntop(family, (void *)&from->sin_addr, addr_str, 64);
+				inet_ntop(family, (void *)&((struct sockaddr_in *)from)->sin_addr, addr_str, 64);
 
 				iphdr = (struct ip_hdr *)buf;
 				iecho = (struct icmp_echo_hdr *)(buf + (IPH_HL(iphdr) * 4));
@@ -243,11 +244,12 @@ static int nu_ping_recv(int family, int s, struct timespec *ping_time)
 			}
 
 			if (status == OK) {
+				uint32_t elapsed;
 				struct timespec now;
 
 				clock_gettime(CLOCK_REALTIME, &now);
 				g_ping_recv_counter++;
-				uint32_t elapsed = (now.tv_sec - ping_time->tv_sec) * 1000 + (now.tv_nsec - ping_time->tv_nsec) / 1000000;
+				elapsed = (now.tv_sec - ping_time->tv_sec) * 1000 + (now.tv_nsec - ping_time->tv_nsec) / 1000000;
 				printf(" %d bytes from %s: icmp_seq=%d ttl=255 time=%" U32_F "ms\n", len, addr_str, g_ping_seq_num, elapsed);
 
 				if ((iecho->id == PING_ID) && (iecho->seqno == htons(g_ping_seq_num))) {
@@ -274,18 +276,26 @@ err_out:
 
 static void nu_ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t len)
 {
+	int icmp_hdrlen;
 	size_t i;
-	size_t data_len;
 
-	data_len = len - sizeof(struct icmp_echo_hdr);
+#if LWIP_IPV6
+	if (family == AF_INET6) {
+		icmp_hdrlen = sizeof(struct icmp6_echo_hdr);
+	} else
+#else
+	{
+		icmp_hdrlen = sizeof(struct icmp_echo_hdr);
+	}
+#endif
 	ICMPH_CODE_SET(iecho, 0);
 	iecho->id = PING_ID;
 	++g_ping_seq_num;
 	iecho->seqno = htons(g_ping_seq_num);
 
 	/* fill the additional data buffer with some data */
-	for (i = 0; i < data_len; i++) {
-		((char *)iecho)[sizeof(struct icmp_echo_hdr) + i] = (char)i;
+	for (i = icmp_hdrlen; i < len; i++) {
+		((char *)iecho)[i] = (char)i;
 	}
 
 #if LWIP_IPV6
@@ -301,8 +311,7 @@ static void nu_ping_prepare_echo(int family, struct icmp_echo_hdr *iecho, u16_t 
 	}
 }
 
-/* This function assume that icmp and icmpv6 headers are the same */
-static int nu_ping_send(int s, struct sockaddr_in *to)
+static int nu_ping_send(int s, struct sockaddr *to)
 {
 	int ret;
 	size_t ping_size;
@@ -310,18 +319,19 @@ static int nu_ping_send(int s, struct sockaddr_in *to)
 	struct icmp_echo_hdr *iecho = NULL;
 
 #if LWIP_IPV6
-	if (to->sin_family == AF_INET6) {
+	if (to->sa_family == AF_INET6) {
 		addrlen = sizeof(struct sockaddr_in6);
+		ping_size = sizeof(struct icmp6_echo_hdr) + 32;
 	} else
 #endif
-	if (to->sin_family == AF_INET) {
+	if (to->sa_family == AF_INET) {
 		addrlen = sizeof(struct sockaddr_in);
+		ping_size = sizeof(struct icmp_echo_hdr) + 32;
 	} else {
 		printf("nu_ping_send: invalid family\n");
 		return ERROR;
 	}
 
-	ping_size = sizeof(struct icmp_echo_hdr) + 32;
 
 	iecho = (struct icmp_echo_hdr *)malloc(ping_size);
 	if (!iecho) {
@@ -329,9 +339,9 @@ static int nu_ping_send(int s, struct sockaddr_in *to)
 		return ERROR;
 	}
 
-	nu_ping_prepare_echo((int)to->sin_family, iecho, (u16_t) ping_size);
+	nu_ping_prepare_echo((int)to->sa_family, iecho, (u16_t) ping_size);
 
-	ret = sendto(s, iecho, ping_size, 0, (struct sockaddr *)to, addrlen);
+	ret = sendto(s, iecho, ping_size, 0, to, addrlen);
 	if (ret <= 0) {
 		free(iecho);
 		return ret;
@@ -350,7 +360,7 @@ static int nu_ping_process(int count, const char *taddr)
 	struct addrinfo hints;
 	struct addrinfo *result = NULL;
 	struct addrinfo *rp = NULL;
-	struct sockaddr_in *to = NULL;
+	struct sockaddr *to = NULL;
 	g_ping_seq_num = 0;
 	g_ping_recv_counter = 0;
 
@@ -396,7 +406,7 @@ static int nu_ping_process(int count, const char *taddr)
 	}
 
 	/* copy the socket pointer we found */
-	to = (struct sockaddr_in *)rp->ai_addr;
+	to = rp->ai_addr;
 
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
@@ -408,7 +418,7 @@ static int nu_ping_process(int count, const char *taddr)
 	while (1) {
 		if (nu_ping_send(s, to) == ERR_OK) {
 			clock_gettime(CLOCK_REALTIME, &ping_time);
-			nu_ping_recv((int)to->sin_family, s, &ping_time);
+			nu_ping_recv((int)to->sa_family, s, &ping_time);
 		} else {
 			printf("nu_ping_process: sendto error(%d)\n", errno);
 			break;
