@@ -268,7 +268,11 @@ error:
 		MBEDTLS_SSL_IS_CLIENT,
 		MBEDTLS_SSL_TRANSPORT_DATAGRAM,
 		0,
+#ifdef WITH_LOGS
 		5,
+#else
+		0,
+#endif
 		NULL
 	};
 	option.force_ciphersuites[0] = 0;
