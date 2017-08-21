@@ -301,24 +301,17 @@ static int up_interrupt(int irq, void *context, void *arg)
 }
 
 /****************************************************************************
- * Name: up_setup
+ * Name: up_configure
  *
  * Description:
- *   Configure the UART baud, bits, parity, fifos, etc. This
- *   method is called the first time that the serial port is
- *   opened.
+ *   Configure the UART baud, bits, parity, etc.
  *
  ****************************************************************************/
-static int up_setup(struct uart_dev_s *dev)
+static void up_configure(struct up_dev_s *priv)
 {
-	uint32_t regval;
-	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-
-	s5j_clk_enable(priv->pclk);
-	s5j_clk_enable(priv->extclk);
-
 #if !defined(CONFIG_SUPPRESS_UART_CONFIG)
 	float div;
+	uint32_t regval;
 
 	/* wait until Tx FIFO gets empty not to disturb on-going transmission */
 	do {
@@ -391,6 +384,27 @@ static int up_setup(struct uart_dev_s *dev)
 	uart_putreg32(priv, S5J_UART_UBRDIV_OFFSET, (uint32_t)div);
 	uart_putreg32(priv, S5J_UART_UFRACVAL_OFFSET, ((div - (uint32_t)div) * 16));
 #endif /* CONFIG_SUPPRESS_UART_CONFIG */
+}
+
+/****************************************************************************
+ * Name: up_setup
+ *
+ * Description:
+ *   Configure the UART baud, bits, parity, etc.
+ *   This also disables all interrupts and initializes FIFO mode.
+ *   This method is called the first time that the serial port is
+ *   opened.
+ *
+ ****************************************************************************/
+static int up_setup(struct uart_dev_s *dev)
+{
+	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+
+	s5j_clk_enable(priv->pclk);
+	s5j_clk_enable(priv->extclk);
+
+	/* Configure the UART baud, bits, parity, etc. */
+	up_configure(priv);
 
 	/* Mask all interrupts; will be enabled by upper-half */
 	uart_putreg32(priv, S5J_UART_UINTM_OFFSET,
@@ -398,11 +412,12 @@ static int up_setup(struct uart_dev_s *dev)
 					UART_UINTM_ERROR_MASK | UART_UINTM_RXD_MASK);
 
 	/* Reset TX and RX FIFO and enable FIFO mode */
-	regval = UART_UFCON_FIFO_ENABLE |
-			UART_UFCON_TX_FIFO_RESET | UART_UFCON_RX_FIFO_RESET |
-			UART_UFCON_TX_FIFO_TRIG_4BYTES | UART_UFCON_RX_FIFO_TRIG_4BYTES;
-
-	uart_putreg32(priv, S5J_UART_UFCON_OFFSET, regval);
+	uart_putreg32(priv, S5J_UART_UFCON_OFFSET,
+					UART_UFCON_FIFO_ENABLE |
+					UART_UFCON_TX_FIFO_RESET |
+					UART_UFCON_RX_FIFO_RESET |
+					UART_UFCON_TX_FIFO_TRIG_4BYTES |
+					UART_UFCON_RX_FIFO_TRIG_4BYTES);
 
 	return OK;
 }
