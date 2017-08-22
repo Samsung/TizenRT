@@ -1086,7 +1086,7 @@ static void tc_libc_pthread_pthread_rwlock_rdlock_wrlock(void)
 }
 
 /**
-* @fn                   :tc_libc_pthread_pthread_rwlock_test_timeout
+* @fn                   :tc_libc_pthread_pthread_rwlock_timedwrlock_timedrdlock
 * @Description          :creates and initializes a new read-write lock object with specified attributes and \
 *                        tries acquiring timed read & write lock referenced rwlock multple times and checks whether it times out correctly \
 *                        destroys the read-write lock object referenced by rwlock and release any resources used by the lock started with pthread_rwlock_init.
@@ -1096,7 +1096,7 @@ static void tc_libc_pthread_pthread_rwlock_rdlock_wrlock(void)
 * @return               :void
 */
 
-static void tc_libc_pthread_pthread_rwlock_test_timeout(void)
+static void tc_libc_pthread_pthread_rwlock_timedwrlock_timedrdlock(void)
 {
 
 	pthread_rwlock_t rw_lock;
@@ -1347,7 +1347,7 @@ int libc_pthread_main(void)
 	tc_libc_pthread_pthread_rwlock_tryrdlock();
 	tc_libc_pthread_pthread_rwlock_trywrlock();
 	tc_libc_pthread_pthread_rwlock_rdlock_wrlock();
-	tc_libc_pthread_pthread_rwlock_test_timeout();
+	tc_libc_pthread_pthread_rwlock_timedwrlock_timedrdlock();
 	tc_libc_pthread_pthread_setcancelstate();
 #ifndef CONFIG_CANCELLATION_POINTS
 	tc_libc_pthread_pthread_setcanceltype();
