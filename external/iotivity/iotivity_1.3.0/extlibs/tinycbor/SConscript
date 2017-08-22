@@ -27,7 +27,7 @@ src_dir = env.get('SRC_DIR')
 target_os = env.get('TARGET_OS')
 
 cborDir = os.path.join(src_dir, 'extlibs','tinycbor','tinycbor')
-cborRevision = 'v0.4.1'
+cborRevision = 'v0.4'
 
 if not os.path.exists(cborDir):
     print '''
