@@ -94,6 +94,10 @@ ifeq ($(CONFIG_NET),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libnet$(LIBEXT)
 endif
 
+ifeq ($(CONFIG_AUDIO),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
+endif
+
 # Add libraries for iotivity support
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)liboctbstack$(LIBEXT)

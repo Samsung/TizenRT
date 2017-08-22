@@ -197,7 +197,9 @@ void arm_boot(void)
 	arch_enable_dcache();
 #endif
 
+#ifdef CONFIG_S5J_PWR
 	cal_init();
+#endif
 
 #ifdef USE_EARLYSERIALINIT
 	up_earlyserialinit();

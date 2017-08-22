@@ -91,8 +91,16 @@ ifeq ($(CONFIG_PM),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libpm$(LIBEXT)
 endif
 
+# Add logm library
+
 ifeq ($(CONFIG_LOGM),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)liblogm$(LIBEXT)
+endif
+
+# Add audio library
+
+ifeq ($(CONFIG_AUDIO),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
 endif
 
 # Add libraries for file system support

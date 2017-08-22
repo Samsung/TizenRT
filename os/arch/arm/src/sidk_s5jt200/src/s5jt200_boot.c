@@ -224,5 +224,27 @@ void board_initialize(void)
 #ifdef CONFIG_SIDK_S5JT200_EEPROM
 	sidk_s5jt200_eeprom_init();
 #endif
+
+
+#if defined(CONFIG_S5J_DMA)
+	up_dmainitialize();
+#endif
+
+#ifdef CONFIG_AUDIO_NULL
+	/* Configure the NULL audio device */
+
+	if (s5j_audio_null_initialize(0) != OK) {
+		audinfo("ERROR: Failed to initialize the NULL audio device \n");
+	}
+#endif
+
+#ifdef CONFIG_AUDIO_ALC5658
+	s5j_alc5658_initialize(0);
+#elif defined(CONFIG_AUDIO_I2SCHAR)
+	i2schar_devinit();
+#elif defined(CONFIG_AUDIO_ALCCHAR)
+	alcchar_devinit();
+#endif
+
 }
 #endif /* CONFIG_BOARD_INITIALIZE */

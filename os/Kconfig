@@ -994,6 +994,10 @@ menu "Networking Support"
 source net/Kconfig
 endmenu
 
+menu "Audio Support"
+source audio/Kconfig
+endmenu
+
 menu "File Systems"
 source fs/Kconfig
 endmenu

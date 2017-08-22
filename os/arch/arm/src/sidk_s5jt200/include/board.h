@@ -70,5 +70,19 @@ extern struct spi_dev_s *eeprom_dev;
 extern void sidk_s5jt200_eeprom_init(void);
 #endif /* CONFIG_SIDK_S5JT200_EEPROM */
 
+#ifdef CONFIG_AUDIO_NULL
+int s5j_audio_null_initialize(int minor);
+#endif
+
+#if defined(CONFIG_AUDIO_I2SCHAR)
+int i2schar_devinit(void);
+#elif defined(CONFIG_AUDIO_ALCCHAR)
+int alcchar_devinit(void);
+#endif
+
+#ifdef CONFIG_AUDIO_ALC5658
+int s5j_alc5658_initialize(int minor);
+#endif
+
 #endif
 #endif /* __ARCH_ARM_SRC_SIDK_S5JT200_INCLUDE_BOARD_H */

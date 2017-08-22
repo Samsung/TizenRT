@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# drivers/audio/Make.defs
-# These drivers support various Audio devices using the NuttX Audio
-# interface.
+# audio/Makefile
 #
 #   Copyright (C) 2013 Ken Pettit. All rights reserved.
 #   Author: Ken Pettit <pettitkd@gmail.com>
@@ -52,30 +50,58 @@
 #
 ############################################################################
 
-# Include Audio drivers
+-include $(TOPDIR)/Make.defs
+DELIM ?= $(strip /)
 
-ifeq ($(CONFIG_AUDIO_DEVICES),y)
-
-ifeq ($(CONFIG_AUDIO_NULL),y)
-CSRCS += audio_null.c
+ifeq ($(WINTOOL),y)
+INCDIROPT = -w
 endif
 
-ifeq ($(CONFIG_AUDIO_I2SCHAR),y)
-CSRCS += i2schar.c
+DEPPATH = --dep-path .
+ASRCS =
+CSRCS = audio.c
+VPATH = .
+
+# Include support for various drivers.  Each Make.defs file will add its
+# files to the source file list, add its DEPPATH info, and will add
+# the appropriate paths to the VPATH variable
+
+ifeq ($(CONFIG_AUDIO_FORMAT_PCM),y)
+  CSRCS += pcm_decode.c
 endif
 
-ifeq ($(CONFIG_AUDIO_ALCCHAR),y)
-CSRCS += alc5658_char.c
-endif
+AOBJS = $(ASRCS:.S=$(OBJEXT))
+COBJS = $(CSRCS:.c=$(OBJEXT))
 
-ifeq ($(CONFIG_AUDIO_ALC5658),y)
-CSRCS += alc5658.c
-endif
+SRCS = $(ASRCS) $(CSRCS)
+OBJS = $(AOBJS) $(COBJS)
 
+BIN = libaudio$(LIBEXT)
 
-# Include Audio driver support
+all: $(BIN)
+.PHONY: depend clean distclean
 
-DEPPATH += --dep-path audio
-VPATH += :audio
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
 
-endif
+$(COBJS): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+$(BIN): $(OBJS)
+	$(call ARCHIVE, $@, $(OBJS))
+
+.depend: Makefile $(SRCS)
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) touch $@
+
+depend: .depend
+
+clean:
+	$(call DELFILE, $(BIN))
+	$(call CLEAN)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
+-include Make.dep

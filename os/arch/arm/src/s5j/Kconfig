@@ -329,4 +329,73 @@ config S5J_PWR_SLEEP
 
 endmenu
 
+menu "S5J DMA"
+config S5J_DMA
+        bool "S5J DMA enable"
+        default n
+
+if S5J_DMA
+
+config DEBUG_DMA_ERROR
+        bool "Output DMA Error Debug Messages"
+        default n
+
+config DEBUG_DMA_WARN
+        bool "Output DMA Warning Debug Messages"
+        default n
+
+config DEBUG_DMA_INFO
+        bool "Output DMA Info Debug Messages"
+        default n
+endif
+
+endmenu
+
+menu "S5J I2S"
+config S5J_I2S
+        bool "S5J I2S support"
+        default n
+        select I2S
+        select AUDIO
+        select S5J_DMA
+
+if S5J_I2S
+
+config S5J_I2S_RX
+        bool "S5J I2S RX support"
+        default n
+
+config S5J_I2S_TX_P
+        bool "S5J I2S TX Prime support"
+        default n
+
+config S5J_I2S_TX_S
+        bool "S5J I2S TX Secondary support"
+        default n
+
+
+config S5J_I2S_MAXINFLIGHT
+       int "I2S queue size"
+       default 16
+        ---help---
+                This is the total number of transfers, both RX and TX, that can be
+                enqueue before the caller is required to wait.  This setting
+                determines the number certain queue data structures that will be
+                pre-allocated.
+
+config DEBUG_I2S_ERROR
+        bool "Output I2S Error Debug Messages"
+        default n
+
+config DEBUG_I2S_WARN
+        bool "Output I2S Warning Debug Messages"
+        default n
+
+config DEBUG_I2S_INFO
+        bool "Output I2S Info Debug Messages"
+        default n
+
+endif
+
+endmenu
 endmenu
