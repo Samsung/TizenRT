@@ -19,6 +19,7 @@ menu "Buffering"
 
 config DRVR_WRITEBUFFER
 	bool "Enable write buffer support"
+	depends on SCHED_WORKQUEUE
 	default n
 	---help---
 		Enable generic write buffering support that can be used by a variety
