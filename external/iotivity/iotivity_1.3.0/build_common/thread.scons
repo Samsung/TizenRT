@@ -1,0 +1,14 @@
+# Factorize pthread configurations in single file
+import os
+
+Import('thread_env')
+
+target_os = thread_env.get('TARGET_OS')
+
+# Export flags once for all
+compiler = thread_env.get('CC')
+if 'gcc' in compiler:
+    thread_env.AppendUnique(CFLAGS = ['-Wall'])
+    if target_os not in ['android']:
+        thread_env.AppendUnique(CFLAGS = ['-pthread'])
+        thread_env.AppendUnique(LIBS = ['pthread'])
