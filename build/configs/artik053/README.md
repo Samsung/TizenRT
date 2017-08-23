@@ -32,6 +32,20 @@ make
 sudo make install
 ```
 
+### Add USB device Rules
+
+This is an optional environment.  
+But as ARTIK is connected through USB, some operation like programming of binary can't be worked without this configuration.
+
+1. Make a file named 99-\<anyname\>.rules.
+2. Add below contents at above file.
+```
+SUBSYSTEMS=="usb",ATTRS{idVendor}=="0403",ATTRS{idProduct}=="6010",MODE="0666" RUN+="/sbin/modprobe ftdi_sio" RUN+="/bin/sh -c 'echo 0403 6010 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'"
+```
+3. Place the above file in /etc/udev/rules.d folder with sudo permission.
+4. Reboot your system.
+
+
 ## How to program a binary
 
 There are two methods, using OpenOCD or script.
