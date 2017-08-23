@@ -68,6 +68,7 @@ char *WifiScanResult(void);
 void WifiResetConfig(bool reset_ntp);
 artik_error StartSoftAP(bool start);
 artik_error StartStationConnection(bool start);
+void StopWifi(void);
 void StartMDNSService(bool start);
 
 /*

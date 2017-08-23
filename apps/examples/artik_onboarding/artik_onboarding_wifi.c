@@ -77,6 +77,23 @@ static void ntp_link_error(void)
 	ntpc_stop();
 }
 
+void StopWifi(void)
+{
+	switch (g_mode) {
+	case ARTIK_WIFI_MODE_AP:
+		StartSoftAP(false);
+		g_mode = ARTIK_WIFI_MODE_NONE;
+		break;
+	case ARTIK_WIFI_MODE_STATION:
+		StartStationConnection(false);
+		g_mode = ARTIK_WIFI_MODE_NONE;
+	break;
+	case ARTIK_WIFI_MODE_NONE:
+	default:
+		break;
+	}
+}
+
 void WifiResetConfig(bool reset_ntp)
 {
 	strncpy(wifi_config.ssid, "", SSID_MAX_LEN);

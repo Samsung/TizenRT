@@ -33,6 +33,17 @@
 #include "artik_onboarding.h"
 
 enum ServiceState current_service_state = STATE_IDLE;
+pid_t onboarding_service_pid = -1;
+
+static void StopOnboardingService(void)
+{
+	StopWifi();
+	StartWebServer(false, API_SET_WIFI | API_SET_CLOUD);
+	StartCloudWebsocket(false);
+	StartLwm2m(false);
+	current_service_state = STATE_IDLE;
+	onboarding_service_pid = -1;
+}
 
 static pthread_addr_t start_onboarding(pthread_addr_t arg)
 {
@@ -92,6 +103,8 @@ int artik_onboarding_main(int argc, char *argv[])
 {
 	int ret = 0;
 	pthread_t tid;
+	sigset_t mask;
+
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "reset")) {
@@ -133,7 +146,18 @@ int artik_onboarding_main(int argc, char *argv[])
 			strncpy(wifi_config.ntp_server, argv[2], NTP_SERVER_MAX_LEN);
 			SaveConfiguration();
 			goto exit;
+		} else if (!strcmp(argv[1], "stop")) {
+			if (onboarding_service_pid != -1) {
+				kill(onboarding_service_pid, SIGUSR1);
+			}
+
+			goto exit;
 		}
+	}
+
+	if (onboarding_service_pid != -1) {
+		printf("Onboarding service is already launched.");
+		goto exit;
 	}
 
 	/* If already in onboarding mode or trying to connect, do nothing */
@@ -156,6 +180,13 @@ int artik_onboarding_main(int argc, char *argv[])
 	pthread_create(&tid, NULL, start_onboarding, NULL);
 	pthread_setname_np(tid, "onboarding start");
 	pthread_join(tid, NULL);
+	onboarding_service_pid = getpid();
+
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGUSR1);
+	sigwaitinfo(&mask, NULL);
+
+	StopOnboardingService();
 
 exit:
 	return ret;

@@ -57,6 +57,8 @@ include $(APPDIR)/Make.defs
 APPNAME = onboard
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
+THREADEXEC = TASH_EXECMD_SYNC
+
 ASRCS =
 ARTIK_SDK_DIR = $(TOPDIR)/../external/artik-sdk
 CFLAGS += -Wno-error=strict-prototypes
