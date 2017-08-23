@@ -274,7 +274,7 @@ int board_app_initialize(void)
 
 	artik053_configure_partitions();
 
-#ifdef CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME
+#ifdef CONFIG_ARTIK053_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 	ret = mksmartfs(CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME, false);
 	if (ret != OK) {
@@ -285,7 +285,7 @@ int board_app_initialize(void)
 			lldbg("ERROR: mounting '%s' failed\n", CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME);
 		}
 	}
-#endif /* CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME */
+#endif /* CONFIG_ARTIK053_AUTOMOUNT_USERFS */
 
 #ifdef CONFIG_FS_PROCFS
 	/* Mount the procfs file system */
