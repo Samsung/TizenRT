@@ -237,7 +237,7 @@ static inline int date_settime(int argc, char **args)
 	}
 
 	tm.tm_wday = day_of_week(token);
-        if (tm.tm_wday < 0) {
+	if (tm.tm_wday < 0) {
 		goto errout_bad_parm;
 	}
 
