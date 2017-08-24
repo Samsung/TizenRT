@@ -120,11 +120,11 @@ Before executing below steps, execute [generic steps](../../../external/contents
         ```bash
         Board Selection -> change values at Flash partition size list (in KBytes)
         ```
-    2. Append "smartfs" at end to SIDK_S5JT200_FLASH_PART_TYPE
+    2. Append "smartfs," at end to SIDK_S5JT200_FLASH_PART_TYPE
         ```bash
         Board Selection -> append string at Flash partition type list
         ```
-    3. Append "romfs" at end to SIDK_S5JT200_FLASH_PART_NAME
+    3. Append "romfs," at end to SIDK_S5JT200_FLASH_PART_NAME
         ```bash
         Board Selection -> append string at FLash partition name list
         ```
