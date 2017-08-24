@@ -103,6 +103,8 @@ u32_t lwip_htonl(u32_t x);
 #endif
 #define lwip_ntohl(x) lwip_htonl(x)
 
+#define LWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS
+
 /* Provide usual function names as macros for users, but this can be turned off */
 #ifndef LWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS
 #define htons(x) lwip_htons(x)
