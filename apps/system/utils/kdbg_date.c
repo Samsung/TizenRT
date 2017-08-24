@@ -241,6 +241,7 @@ static inline int date_settime(int argc, char **args)
 		goto errout_bad_parm;
 	}
 
+#if !defined(CONFIG_RTC_DATETIME)
 	/* Get the day of the year.  NOTE: Accepts day-of-year from 0 to 365 */
 
 	token = args[7];
@@ -268,7 +269,7 @@ static inline int date_settime(int argc, char **args)
 		}
 		tm.tm_isdst = (int)result;
 	}
-
+#endif
 #endif
 
 	/* Convert this to the right form, then set the timer */
@@ -303,6 +304,8 @@ int kdbg_date(int argc, char **args)
 		ret = date_showtime();
 #if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
 	} else if (!strcmp(args[1], "-s") && argc == 6) {
+#elif defined(CONFIG_RTC_DATETIME)
+	} else if (!strcmp(args[1], "-s") && argc == 7) {
 #else
 	} else if (!strcmp(args[1], "-s") && (argc >= 7 && argc <= 9)) {
 #endif
@@ -326,10 +329,15 @@ int kdbg_date(int argc, char **args)
 		printf(" -s FORMAT     Set system time in the given FORMAT\n");
 		printf("               FORMAT: MMM DD HH:MM:SS YYYY DWR DYR D\n");
 		printf("                Day of Week Range(DWR) = [Sunday = Sun, Monday = Mon, and so on...]\n");
+#if !defined(CONFIG_RTC_DATETIME)
 		printf("                Day of Year Range(DYR) = [0,365], \n");
 		printf("                daylight_savings_flag: +ve(in effect), 0(low), -ve(information unavailable)\n");
 		printf("                'month', 'day', 'hour':'minute':'second' 'year' 'day_of_week' 'day_of_year' 'daylight_savings_flag'\n");
 		printf("                Example: Apr 21 10:35:22 1991 Sun 175 1\n");
+#else
+		printf("                'month', 'day', 'hour':'minute':'second' 'year' 'day_of_week'\n");
+		printf("                Example: Apr 21 10:35:22 1991 Sun\n");
+#endif
 		ret = ERROR;
 #endif
 	}
