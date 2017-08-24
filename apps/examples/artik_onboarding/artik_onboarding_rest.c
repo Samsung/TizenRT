@@ -49,12 +49,15 @@
 #define RESP_ERROR_MISSING_PARAM_TPL  RESP_ERROR(API_ERROR_MISSING_PARAM, "Input argument missing in JSON")
 
 /*
- * We cannot enable HTTPs without a proper certificate, as iOS "AFNetworking"
- * library requires a non self-signed certificate to process HTTPs requests.
+ * Uncomment the following variable to disable HTTPS and use unsecure
+ * HTTP instead. Note that doing so will drop encryption of the packets
+ * exchanged between the mobile app and the onboarding service, exposing
+ * critical information such as the Wifi access point passphrase over the
+ * air.
  */
-//#define WEBSERVER_ENABLE_HTTPS
+//#define WEBSERVER_DISABLE_HTTPS
 
-#ifdef WEBSERVER_ENABLE_HTTPS
+#ifndef WEBSERVER_DISABLE_HTTPS
 /*
  * Self-signed certificate used when HTTPs webserver is enabled
  */
@@ -250,15 +253,15 @@ static pthread_addr_t cloud_onboarding_start(pthread_addr_t arg)
 		return NULL;
 	}
 
-	printf("Start MDNS service\n");
-	StartMDNSService(true);
-
 	printf("Start webserver cloud API\n");
 	if (StartWebServer(true, API_SET_CLOUD) != S_OK) {
 		StartSoftAP(false);
 		printf("Failed to start Web server\n");
 		return NULL;
 	}
+
+	printf("Start MDNS service\n");
+	StartMDNSService(true);
 
 	return 0;
 }
@@ -366,8 +369,12 @@ exit:
 
 	if (start_connection) {
 		pthread_t tid;
+		pthread_attr_t attr;
 
-		pthread_create(&tid, NULL, cloud_onboarding_start, NULL);
+		pthread_attr_init(&attr);
+		pthread_attr_setschedpolicy(&attr, SCHED_RR);
+		pthread_attr_setstacksize(&attr, 8 * 1024);
+		pthread_create(&tid, &attr, cloud_onboarding_start, NULL);
 		pthread_detach(tid);
 	}
 
@@ -444,7 +451,7 @@ static void put_akc_registration_callback(struct http_client_t *client, struct h
 artik_error StartWebServer(bool start, enum ApiSet api_set)
 {
 	if (start) {
-#ifdef WEBSERVER_ENABLE_HTTPS
+#ifndef WEBSERVER_DISABLE_HTTPS
 		struct ssl_config_t ssl_config;
 
 		https_server = http_server_init(443);
@@ -456,7 +463,7 @@ artik_error StartWebServer(bool start, enum ApiSet api_set)
 			return E_BUSY;
 		}
 
-#ifdef WEBSERVER_ENABLE_HTTPS
+#ifndef WEBSERVER_DISABLE_HTTPS
 		memset(&ssl_config, 0, sizeof(ssl_config));
 		ssl_config.auth_mode = MBEDTLS_SSL_VERIFY_NONE;
 		ssl_config.dev_cert = (char *)artik_srv_crt_rsa;

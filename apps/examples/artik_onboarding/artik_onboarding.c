@@ -104,7 +104,7 @@ int artik_onboarding_main(int argc, char *argv[])
 	int ret = 0;
 	pthread_t tid;
 	sigset_t mask;
-
+	pthread_attr_t attr;
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "reset")) {
@@ -177,7 +177,10 @@ int artik_onboarding_main(int argc, char *argv[])
 		goto exit;
 	}
 
-	pthread_create(&tid, NULL, start_onboarding, NULL);
+	pthread_attr_init(&attr);
+	pthread_attr_setschedpolicy(&attr, SCHED_RR);
+	pthread_attr_setstacksize(&attr, 16 * 1024);
+	pthread_create(&tid, &attr, start_onboarding, NULL);
 	pthread_setname_np(tid, "onboarding start");
 	pthread_join(tid, NULL);
 	onboarding_service_pid = getpid();
