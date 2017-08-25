@@ -721,7 +721,7 @@ static int dhcpd_addoption(uint8_t *option)
 	int len = 4;
 
 	if (g_state.ds_optend) {
-		offset = g_state.ds_outpacket.options - g_state.ds_optend;
+		offset = g_state.ds_optend - g_state.ds_outpacket.options;
 		len = option[DHCPD_OPTION_LENGTH] + 2;
 
 		/* Check if the option will fit into the options array */
