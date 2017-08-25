@@ -97,6 +97,12 @@ if (not os.path.isfile(config_h_file_path)) and (not env.GetOption('clean')):
         # Detection of headers on the Arduino platform is currently broken.
         cxx_headers = []
 
+    if target_os in ['tizenrt']:
+	env.AppendUnique(CCFLAGS = ['-std=c99'])
+	env.AppendUnique(CCFLAGS = ['-w'])
+	cxx_headers.remove('sys/timeb.h')
+	config_h_body += "#include <tinyara/config.h>\n\n"
+
     if target_os == 'msys_nt':
         # WinPThread provides a pthread.h, but we want to use native threads.
         cxx_headers.remove('pthread.h')
@@ -106,8 +112,12 @@ if (not os.path.isfile(config_h_file_path)) and (not env.GetOption('clean')):
         return "HAVE_" + header_file_converted
 
     for header_file_name in cxx_headers:
-        if conf.CheckCXXHeader(header_file_name):
-            config_h_body += "#define %s 1\n\n" % get_define_from_string(header_file_name)
+	if target_os == 'tizenrt':
+		if conf.CheckCHeader(header_file_name):
+			config_h_body += "#define %s 1\n\n" % get_define_from_header_file(header_file_name)
+	else:
+		if conf.CheckCXXHeader(header_file_name):
+			config_h_body += "#define %s 1\n\n" % get_define_from_string(header_file_name)
 
     for function_name in cxx_functions:
         if conf.CheckFunc(function_name):
@@ -171,6 +181,9 @@ if target_os in ['windows', 'msys_nt']:
 
 if target_os in ['windows', 'msys_nt']:
     SConscript('windows/SConscript', 'common_env')
+
+if target_os in ['tizenrt']:
+    common_env.AppendUnique(CFLAGS = ['-std=c99'])
 
 ######################################################################
 # Source files and Targets

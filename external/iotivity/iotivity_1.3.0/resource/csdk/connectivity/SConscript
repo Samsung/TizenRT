@@ -20,6 +20,9 @@ print "MQ flag is %s" % with_mq
 if target_os in ['msys_nt', 'windows']:
     connectivity_env.AppendUnique(CCFLAGS=['/W4', '/WX'])
 
+if target_os in ['tizenrt']:
+    connectivity_env.AppendUnique(CCFLAGS=['-std=c99'])
+
 targets_disallow_multitransport = ['arduino']
 
 if target_os in targets_disallow_multitransport:

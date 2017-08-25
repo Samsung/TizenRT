@@ -103,7 +103,7 @@ if env.get('SECURED') == '1':
 liboctbstack_env.AppendUnique(LIBS = ['mbedcrypto'])
 
 if target_os in ['android', 'linux', 'tizen', 'msys_nt', 'windows']:
-    if target_os not in ['windows', 'msys_nt']:
+    if target_os not in ['windows', 'msys_nt', 'tizenrt']:
         liboctbstack_env.PrependUnique(LIBS = ['connectivity_abstraction'])
     else:
         # On Windows, apps don't link directly with connectivity_abstraction.
@@ -231,7 +231,7 @@ if ((target_os in ['windows']) and (liboctbstack_env.get('UWP_APP') == '1')):
 internal_liboctbstack = liboctbstack_env.StaticLibrary('octbstack_internal', liboctbstack_src)
 octbstack_libs = Flatten(internal_liboctbstack)
 
-if target_os not in ['arduino', 'darwin', 'ios'] :
+if target_os not in ['arduino', 'darwin', 'ios','tizenrt'] :
     shared_liboctbstack = liboctbstack_env.SharedLibrary('octbstack', liboctbstack_src)
     octbstack_libs += Flatten(shared_liboctbstack)
     liboctbstack_env.UserInstallTargetHeader('include/ocstack.h', 'resource', 'ocstack.h')

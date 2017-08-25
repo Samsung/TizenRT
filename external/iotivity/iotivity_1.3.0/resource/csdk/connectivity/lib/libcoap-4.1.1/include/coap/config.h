@@ -32,6 +32,9 @@
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #if !defined(WITH_ARDUINO) && !defined(_WIN32)
 #define HAVE_NETINET_IN_H 1
+#if defined (__TIZENRT__)
+#define HAVE_ARPA_INET_H 1
+#endif
 #endif
 
 /* Define to 1 if you have the `select' function. */

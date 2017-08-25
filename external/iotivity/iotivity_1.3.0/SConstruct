@@ -53,7 +53,7 @@ build_dir = env.get('BUILD_DIR')
 # Build 'resource' sub-project
 SConscript(build_dir + 'resource/SConscript')
 
-if target_os not in ['arduino','darwin','ios', 'android', 'msys_nt', 'windows']:
+if target_os not in ['arduino','darwin','ios', 'android', 'msys_nt', 'windows', 'tizenrt']:
 	SConscript(build_dir + 'examples/OICMiddle/SConscript')
 
 java_build = None
@@ -70,7 +70,11 @@ if (env.get('BUILD_JAVA') == True and env.get('JAVA_HOME') != None) or target_os
 SConscript(build_dir + 'cloud/SConscript')
 
 # Build "plugin interface" sub-project
-SConscript(build_dir + 'plugins/SConscript')
+if target_os not in ['tizenrt']:
+        SConscript(build_dir + 'plugins/SConscript')
+
+if target_os == 'tizenrt':
+	SConscript('../../../apps/examples/iotivity_simpleserver' + '/SConscript')
 
 # Build "bridging" sub-project
 SConscript(build_dir + 'bridging/SConscript')

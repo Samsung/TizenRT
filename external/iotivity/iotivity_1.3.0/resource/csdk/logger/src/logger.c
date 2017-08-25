@@ -71,7 +71,7 @@ static const uint16_t LINE_BUFFER_SIZE = (16 * 2) + 16 + 1;  // Show 16 bytes, 2
 #endif //defined(_MSC_VER)
 
 #ifdef __ANDROID__
-#elif defined __linux__ || defined __APPLE__ || defined _WIN32
+#elif defined __linux__ || defined __APPLE__ || defined _WIN32 || defined(__TIZENRT__)
 static oc_log_level LEVEL_XTABLE[] = {OC_LOG_DEBUG, OC_LOG_INFO,
                                       OC_LOG_WARNING, OC_LOG_ERROR, OC_LOG_FATAL};
 #endif
@@ -86,7 +86,7 @@ static oc_log_level LEVEL_XTABLE[] = {OC_LOG_DEBUG, OC_LOG_INFO,
     static android_LogPriority LEVEL[] =
     {ANDROID_LOG_DEBUG, ANDROID_LOG_INFO, ANDROID_LOG_WARN, ANDROID_LOG_ERROR, ANDROID_LOG_FATAL};
 #endif
-#elif defined(__linux__) || defined(__APPLE__) || defined(__msys_nt__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__msys_nt__)|| defined(__TIZENRT__)
     static const char * LEVEL[] __attribute__ ((unused)) = {"DEBUG", "INFO", "WARNING", "ERROR", "FATAL"};
 #elif defined(_MSC_VER)
     static const char * LEVEL[] = {"DEBUG", "INFO", "WARNING", "ERROR", "FATAL"};
@@ -179,7 +179,7 @@ void OCLogInit()
 
 void OCLogShutdown()
 {
-#if defined(__linux__) || defined(__APPLE__) || defined(_WIN32)
+#if defined(__linux__) || defined(__APPLE__) || defined(_WIN32)|| defined(__TIZENRT__)
     if (logCtx && logCtx->destroy)
     {
         logCtx->destroy(logCtx);

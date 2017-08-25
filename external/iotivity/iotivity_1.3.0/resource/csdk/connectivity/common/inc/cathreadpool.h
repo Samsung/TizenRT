@@ -71,8 +71,12 @@ CAResult_t ca_thread_pool_init(int32_t num_of_threads, ca_thread_pool_t *thread_
  * @return CA_STATUS_OK on success.
  * @return Error on failure.
  */
+#ifndef __TIZENRT__
 CAResult_t ca_thread_pool_add_task(ca_thread_pool_t thread_pool, ca_thread_func method,
                     void *data);
+#else
+CAResult_t ca_thread_pool_add_task(ca_thread_pool_t thread_pool, ca_thread_func method, void *data, uint32_t *taskId, const char *task_name, int stack_size);
+#endif
 
 /**
  * This function stops all the worker threads (stop & exit). And frees all the allocated memory.

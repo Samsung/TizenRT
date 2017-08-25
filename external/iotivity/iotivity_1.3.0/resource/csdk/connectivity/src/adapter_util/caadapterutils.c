@@ -145,11 +145,15 @@ CAResult_t CAConvertAddrToName(const struct sockaddr_storage *sockAddr, socklen_
     VERIFY_NON_NULL_RET(host, CA_ADAPTER_UTILS_TAG, "host is null", CA_STATUS_INVALID_PARAM);
     VERIFY_NON_NULL_RET(port, CA_ADAPTER_UTILS_TAG, "port is null", CA_STATUS_INVALID_PARAM);
 
+#if 0 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
     int r = getnameinfo((struct sockaddr *)sockAddr,
                         sockAddrLen,
                         host, MAX_ADDR_STR_SIZE_CA,
                         NULL, 0,
                         NI_NUMERICHOST|NI_NUMERICSERV);
+#else
+    int r = 0;
+#endif
     if (r)
     {
 #if defined(EAI_SYSTEM)
@@ -421,6 +425,7 @@ void CALogAdapterTypeInfo(CATransportAdapter_t adapter)
     }
 }
 
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
 CAResult_t CAGetIpv6AddrScopeInternal(const char *addr, CATransportFlags_t *scopeLevel)
 {
     if (!addr || !scopeLevel)
@@ -464,4 +469,5 @@ CAResult_t CAGetIpv6AddrScopeInternal(const char *addr, CATransportFlags_t *scop
         return CA_STATUS_FAILED;
     }
 }
+#endif
 #endif

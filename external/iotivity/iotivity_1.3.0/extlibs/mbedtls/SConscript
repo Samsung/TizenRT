@@ -33,13 +33,13 @@ mbedtls_config_file = 'config-iotivity.h' if target_os != 'windows' else 'config
 # Right now this script assumes the revision is a tag, and not a branch or an arbitrary
 # commit. If this changes, update the check below, or else the script will always conclude
 # the repo is not up to date because a tag with that name doesn't exist.
-mbedtls_revision = 'mbedtls-2.4.0'
+mbedtls_revision = 'mbedtls-2.4.2'
 
 if not os.path.exists(mbedtls_dir):
     print '''
 *********************************** Error: ****************************************
 * Please download mbedtls using the following command:                            *
-* $ git clone https://github.com/ARMmbed/mbedtls.git extlibs/mbedtls/mbedtls -b %s
+* $ git clone https://github.com/ARMmbed/mbedtls.git extlibs/mbedtls/mbedtls      *
 ***********************************************************************************
  ''' % mbedtls_revision
     Exit(1)
@@ -50,19 +50,19 @@ os.chdir(mbedtls_dir)
 # the mbedtls_revision tag selected is the same as in extlibs/mbedtls/prep.sh.
 # This code also assumes mbedtls_revision is a tag; if it changes to
 # a branch or an arbitrary commit, disable this check below.
-if os.path.exists('.git/HEAD'):
-    out = subprocess.check_output('git tag -l ' + mbedtls_revision, shell = True)
-    if mbedtls_revision not in out:
-        print out
-        print '''
-*********************************** Error: ****************************************
-* Your mbedTLS repo is not up to date with the latest version we require. Please  *
-* update with the following commands:                                             *
-*     $ cd extlibs/mbedtls/mbedtls                                                *
-*     $ git fetch                                                                 *
-***********************************************************************************
- '''
-        Exit(1)
+#if os.path.exists('.git/HEAD'):
+#    out = subprocess.check_output('git tag -l ' + mbedtls_revision, shell = True)
+#    if mbedtls_revision not in out:
+#        print out
+#        print '''
+#*********************************** Error: ****************************************
+#* Your mbedTLS repo is not up to date with the latest version we require. Please  *
+#* update with the following commands:                                             *
+#*     $ cd extlibs/mbedtls/mbedtls                                                *
+#*     $ git fetch                                                                 *
+#***********************************************************************************
+# '''
+#        Exit(1)
 
 
 pattern = '#define MBEDTLS_HAVE_WINSOCK2'
@@ -78,8 +78,8 @@ with open(mbedtls_header, 'r') as stream:
 if not found:
     if os.path.exists('.git/HEAD'):
         # Apply ocf patch on git revision
-        cmd = 'git checkout development && git reset --hard ' + mbedtls_revision + ' && git clean -f && git apply --whitespace=fix ../ocf.patch'
-        res = os.system(cmd)
+        cmd = 'git checkout master && git reset --hard ' + mbedtls_revision + ' && git clean -f && git apply ../ocf.patch'
+        os.system(cmd)
     else:
         # Fallback to regular patch command
         cmd = 'patch -p1 -l -f < ../ocf.patch'
@@ -211,7 +211,6 @@ mbex509_env = mbedtls_env.Clone()
 mbex509_env.AppendUnique(LIBS = ['mbedcrypto'])
 static_libmbedx509 = mbex509_env.StaticLibrary('mbedx509', mbeX509_src)
 mbex509_env.InstallTarget(static_libmbedx509, 'mbedx509')
-
 
 mbedtls_env.AppendUnique(LIBS = ['mbedx509', 'mbedcrypto'])
 static_libmbedtls = mbedtls_env.StaticLibrary('mbedtls', mbedtls_src)

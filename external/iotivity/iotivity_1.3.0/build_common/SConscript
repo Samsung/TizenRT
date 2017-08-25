@@ -118,6 +118,7 @@ if target_os in targets_without_dtls_support:
     help_vars.Add(EnumVariable('SECURED', 'Build with DTLS', '0', allowed_values=('0', '1')))
 else:
     help_vars.Add(EnumVariable('SECURED', 'Build with DTLS', '1', allowed_values=('0', '1')))
+help_vars.Add(EnumVariable('WITH_MBEDTLS_STATIC_LIB', 'Build mbedTLS library as static library', '0', allowed_values=('0', '1')))
 help_vars.Add(EnumVariable('MULTIPLE_OWNER', 'Enable multiple owner', '0', allowed_values=('0', '1')))
 help_vars.Add(EnumVariable('EXC_PROV_SUPPORT', 'Except OCPMAPI library(libocpmapi.so)', '0', allowed_values=('0', '1')))
 help_vars.Add(EnumVariable('TEST', 'Run unit tests', '0', allowed_values=('0', '1')))
@@ -133,6 +134,14 @@ help_vars.Add(PathVariable('ANDROID_GRADLE', 'Gradle binary file', None, PathVar
 help_vars.Add(EnumVariable('WITH_UPSTREAM_LIBCOAP', 'Use latest stable version of LibCoAP downloaded from github', default_with_upstream_libcoap, allowed_values=('0','1')))
 help_vars.Add(BoolVariable('WITH_ENV', 'Use compiler options from environment', False))
 help_vars.Add(BoolVariable('AUTOMATIC_UPDATE', 'Makes libcoap update automatically to the required versions if needed.', False))
+help_vars.Add(EnumVariable('BLE_CUSTOM_ADV', 'Build with CUSTOM Advertisement', 'False', allowed_values=('True', 'False')))
+help_vars.Add(EnumVariable('BLE_DIVISION', 'BLE Build with division code', 'OFF', allowed_values=('OFF', 'MCD', 'VD')))
+help_vars.Add(EnumVariable('BLE_TIZEN_30', 'Build with tizen 3.0 BLE api', 'False', allowed_values=('True', 'False')))
+help_vars.Add(PathVariable('TIZENRT_OS_DIR', 'Absolute Path to TizenRT OS directory', None, PathVariable.PathAccept))
+help_vars.Add(EnumVariable('PLATFORM_TLS', 'Use platform tls instead of local mbedtls', '0', allowed_values=('0', '1')))
+help_vars.Add(EnumVariable('OIC_SUPPORT_TIZEN_TRACE', 'Tizen Trace(T-trace) api availability', 'False', allowed_values=('True', 'False')))
+help_vars.Add(EnumVariable('DEBUGSYM', 'Enable/Disable Debug Symbols', 'False', allowed_values=('True', 'False')))
+help_vars.Add(EnumVariable('NOTI_SRV', 'Enable/Disable Notification Provider Service', 'False', allowed_values=('True', 'False')))
 
 if target_os == 'windows':
 	# For VS2013, MSVC_VERSION is '12.0'. For VS2015, MSVC_VERSION is '14.0'.
@@ -155,7 +164,7 @@ AddOption('--prefix',
 ######################################################################
 # Platform(build target) specific options: SDK/NDK & toolchain
 ######################################################################
-targets_support_cc = ['linux', 'arduino', 'tizen']
+targets_support_cc = ['linux', 'arduino', 'tizen', 'tizenrt']
 
 if target_os in targets_support_cc:
     # Set cross compile toolchain
@@ -233,6 +242,9 @@ if target_os in targets_support_cc:
         sys_root = os.path.abspath(tc_path + '/../')
         env.AppendUnique(CCFLAGS = ['--sysroot=' + sys_root])
         env.AppendUnique(LINKFLAGS = ['--sysroot=' + sys_root])
+
+    if target_os == 'tizenrt':
+        env.PrependENVPath('PATH', os.environ['PATH'])
 
     if prefix or tc_path:
         print tc_set_msg

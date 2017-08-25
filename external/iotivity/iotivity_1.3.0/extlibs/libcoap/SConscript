@@ -130,11 +130,11 @@ if target_os == 'msys_nt':
     libcoap_env.AppendUnique(CPPDEFINES = ['_DEFAULT_SOURCE'])
     libcoap_env.AppendUnique(CFLAGS = ['-std=c99'])
 
-if target_os in ['linux', 'tizen', 'android', 'ios', 'arduino', 'windows']:
+if target_os in ['linux', 'tizen', 'android', 'ios', 'arduino', 'windows', 'tizenrt']:
     if with_tcp == True:
         libcoap_env.AppendUnique(CPPDEFINES = ['WITH_TCP'])
 
-if target_os in ['linux', 'tizen', 'android', 'arduino']:
+if target_os in ['linux', 'tizen', 'android', 'arduino', 'tizenrt']:
     libcoap_env.AppendUnique(LIBS = ['log'])
     if (('BLE' in ca_transport) or ('BT' in ca_transport) or ('ALL' in ca_transport)):
         libcoap_env.AppendUnique(CPPDEFINES = ['WITH_TCP'])

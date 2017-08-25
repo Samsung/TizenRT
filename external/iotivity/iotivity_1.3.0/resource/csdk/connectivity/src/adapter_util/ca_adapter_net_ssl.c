@@ -107,8 +107,12 @@
  * @def TLS_MSG_BUF_LEN
  * @brief Buffer size for TLS record. A single TLS record may be up to 16384 octets in length
  */
-
+#if defined (__TIZENRT__)
+#define TLS_MSG_BUF_LEN (4096)
+#else
 #define TLS_MSG_BUF_LEN (16384)
+#endif
+
 /**
  * @def PSK_LENGTH
  * @brief PSK keys max length
@@ -354,6 +358,44 @@ static void DebugSsl(void *ctx, int level, const char *file, int line, const cha
     }
 
     OIC_LOG_V(DEBUG, MBED_TLS_TAG, "%s", str);
+}
+#endif
+
+#if defined(_WIN32) || defined (__TIZENRT__)
+/*
+ * Finds the first occurrence of the byte string s in byte string l.
+ */
+
+static void * memmem(const void *l, size_t lLen, const void *s, size_t sLen)
+{
+    char *cur;
+    char *last;
+    const char *cl = (const char *)l;
+    const char *cs = (const char *)s;
+
+    if (lLen == 0 || sLen == 0)
+    {
+        return NULL;
+    }
+    if (lLen < sLen)
+    {
+        return NULL;
+    }
+    if (sLen == 1)
+    {
+        return (void *)memchr(l, (int)*cs, lLen);
+    }
+
+    last = (char *)cl + lLen - sLen;
+
+    for (cur = (char *)cl; cur <= last; cur++)
+    {
+        if (cur[0] == cs[0] && memcmp(cur, cs, sLen) == 0)
+        {
+            return cur;
+        }
+    }
+    return NULL;
 }
 #endif
 

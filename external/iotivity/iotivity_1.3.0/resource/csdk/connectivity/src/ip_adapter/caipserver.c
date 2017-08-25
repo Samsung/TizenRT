@@ -61,6 +61,11 @@
 #include <linux/rtnetlink.h>
 #endif
 
+#ifdef __TIZENRT__
+#include <tinyara/config.h>
+#include <mqueue.h>
+#include <net/lwip/inet.h>
+#endif
 #include <coap/pdu.h>
 #include "caipinterface.h"
 #include "caipnwmonitor.h"
@@ -80,8 +85,20 @@
 /*
  * Logging tag for module name
  */
+#if defined(__TIZENRT__)
+#define TAG IP_SERVER_TAG
+#else
 #define TAG "OIC_CA_IP_SERVER"
+#endif
 
+#ifdef __TIZENRT__
+mqd_t g_nwevent_mqfd;
+#ifdef CONFIG_NET_LWIP
+#define SOCK_CLOEXEC 0
+#else
+#define SOCK_CLOEXEC 1
+#endif
+#endif
 #define SELECT_TIMEOUT 1     // select() seconds (and termination latency)
 
 #define IPv4_MULTICAST     "224.0.1.187"
@@ -121,6 +138,30 @@ static char *ipv6mcnames[IPv6_DOMAINS] = {
     IPv6_MULTICAST_GLB,
     NULL
 };
+
+#ifdef __TIZENRT__ /* this code block may be modified , by wonsang */
+struct in6_pktinfo {
+        struct in6_addr ipi6_addr;
+        int             ipi6_ifindex;
+};
+
+struct in_pktinfo
+{
+  unsigned int   ipi_ifindex;  /* Interface index */
+  struct in_addr ipi_spec_dst; /* Local address */
+  struct in_addr ipi_addr;     /* Header Destination
+                                    address */
+};
+
+
+#define RTMGRP_LINK 1
+#define IP_PKTINFO         8
+#define IPV6_PKTINFO            50
+#define IPV6_MULTICAST_IF 9
+#define IPV6_V6ONLY 27
+#define IPV6_RECVPKTINFO       50
+#define IPV6_JOIN_GROUP 12
+#endif
 
 #if defined (_WIN32)
 #define IFF_UP_RUNNING_FLAGS  (IFF_UP)
@@ -203,10 +244,12 @@ static void CAFindReadyMessage()
     SET(m4,  &readFds)
     SET(m4s, &readFds)
 
+#ifndef __TIZENRT__
     if (caglobals.ip.shutdownFds[0] != -1)
     {
         FD_SET(caglobals.ip.shutdownFds[0], &readFds);
     }
+#endif
     if (caglobals.ip.netlinkFd != OC_INVALID_SOCKET)
     {
         FD_SET(caglobals.ip.netlinkFd, &readFds);
@@ -220,6 +263,22 @@ static void CAFindReadyMessage()
         return;
     }
 
+#ifdef __TIZENRT__
+    u_arraylist_t *iflist = CAFindInterfaceChange();
+    if (iflist)
+    {
+        uint32_t listLength = u_arraylist_length(iflist);
+        for (uint32_t i = 0; i < listLength; i++)
+        {
+            CAInterface_t *ifitem = (CAInterface_t *)u_arraylist_get(iflist, i);
+            if (ifitem)
+            {
+                CAProcessNewInterface(ifitem);
+            }
+        }
+        u_arraylist_destroy(iflist);
+    }
+#endif
     if (0 == ret)
     {
         return;
@@ -253,6 +312,7 @@ static void CASelectReturned(fd_set *readFds, int ret)
         else ISSET(m4s, readFds, CA_MULTICAST | CA_IPV4 | CA_SECURE)
         else if ((caglobals.ip.netlinkFd != OC_INVALID_SOCKET) && FD_ISSET(caglobals.ip.netlinkFd, readFds))
         {
+#ifndef __TIZENRT__
             OIC_LOG_V(DEBUG, TAG, "Netlink event detacted");
             u_arraylist_t *iflist = CAFindInterfaceChange();
             if (iflist)
@@ -269,7 +329,9 @@ static void CASelectReturned(fd_set *readFds, int ret)
                 u_arraylist_destroy(iflist);
             }
             break;
+#endif
         }
+#ifndef __TIZENRT__
         else if (FD_ISSET(caglobals.ip.shutdownFds[0], readFds))
         {
             char buf[10] = {0};
@@ -280,6 +342,7 @@ static void CASelectReturned(fd_set *readFds, int ret)
             }
             break;
         }
+#endif
         else
         {
             break;
@@ -552,6 +615,7 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
         unsigned char data[CMSG_SPACE(sizeof (struct in6_pktinfo))];
     } cmsg;
 
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
     if (flags & CA_IPV6)
     {
         namelen = sizeof (struct sockaddr_in6);
@@ -560,6 +624,7 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
         len = sizeof (struct in6_pktinfo);
     }
     else
+#endif
     {
         namelen = sizeof (struct sockaddr_in);
         level = IPPROTO_IP;
@@ -644,6 +709,7 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
 
     CASecureEndpoint_t sep = {.endpoint = {.adapter = CA_ADAPTER_IP, .flags = flags}};
 
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
     if (flags & CA_IPV6)
     {
         sep.endpoint.ifindex = ((struct in6_pktinfo *)pktinfo)->ipi6_ifindex;
@@ -659,6 +725,7 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
         }
     }
     else
+#endif
     {
         sep.endpoint.ifindex = ((struct in_pktinfo *)pktinfo)->ipi_ifindex;
 
@@ -730,6 +797,7 @@ static CASocketFd_t CACreateSocket(int family, uint16_t *port, bool isMulticast)
     struct sockaddr_storage sa = { .ss_family = (short)family };
     socklen_t socklen = 0;
 
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
     if (family == AF_INET6)
     {
         int on = 1;
@@ -752,6 +820,7 @@ static CASocketFd_t CACreateSocket(int family, uint16_t *port, bool isMulticast)
         socklen = sizeof (struct sockaddr_in6);
     }
     else
+#endif
     {
         int on = 1;
         if (OC_SOCKET_ERROR == setsockopt(fd, IPPROTO_IP, IP_PKTINFO, OPTVAL_T(&on), sizeof (on)))
@@ -856,6 +925,17 @@ static void CARegisterForAddressChanges()
             CHECKFD(caglobals.ip.netlinkFd);
         }
     }
+#elif defined (__TIZENRT__) // pkmsgq
+    struct mq_attr lq_attr;
+    lq_attr.mq_maxmsg = 10;
+    lq_attr.mq_msgsize = 4;
+    lq_attr.mq_flags = 0;
+    g_nwevent_mqfd = mq_open("netlink_evtq", O_RDWR | O_NONBLOCK | O_CREAT, 0666, &lq_attr);
+    if (g_nwevent_mqfd == (mqd_t) - 1)
+    {
+        OIC_LOG_V(ERROR, TAG,"RECV mq_open failed\n");
+        return ;
+    }
 #endif
 #endif
     OIC_LOG_V(DEBUG, TAG, "OUT %s", __func__);
@@ -873,10 +953,13 @@ static void CAInitializeFastShutdownMechanism()
         ret = 0;
     }
 #elif defined(HAVE_PIPE2)
+#ifndef __TIZENRT__
     ret = pipe2(caglobals.ip.shutdownFds, O_CLOEXEC);
     CHECKFD(caglobals.ip.shutdownFds[0]);
     CHECKFD(caglobals.ip.shutdownFds[1]);
+#endif
 #else
+#ifndef __TIZENRT__
     ret = pipe(caglobals.ip.shutdownFds);
     if (-1 != ret)
     {
@@ -903,6 +986,7 @@ static void CAInitializeFastShutdownMechanism()
     }
     CHECKFD(caglobals.ip.shutdownFds[0]);
     CHECKFD(caglobals.ip.shutdownFds[1]);
+#endif
 #endif
     if (-1 == ret)
     {
@@ -1003,7 +1087,12 @@ CAResult_t CAIPStartServer(const ca_thread_pool_t threadPool)
     }
 
     caglobals.ip.terminate = false;
+#ifndef __TIZENRT__
     res = ca_thread_pool_add_task(threadPool, CAReceiveHandler, NULL);
+#else
+    res = ca_thread_pool_add_task(threadPool, CAReceiveHandler, NULL, NULL, "IoT_ReceiveHandler",
+                                  CONFIG_IOTIVITY_RECEIVEHANDLER_PTHREAD_STACKSIZE);
+#endif
     if (CA_STATUS_OK != res)
     {
         OIC_LOG(ERROR, TAG, "thread_pool_add_task failed");
@@ -1021,6 +1110,7 @@ void CAIPStopServer()
     caglobals.ip.terminate = true;
 
 #if !defined(WSA_WAIT_EVENT_0)
+#ifndef __TIZENRT__
     if (caglobals.ip.shutdownFds[1] != -1)
     {
         close(caglobals.ip.shutdownFds[1]);
@@ -1030,6 +1120,7 @@ void CAIPStopServer()
     {
         // receive thread will stop in SELECT_TIMEOUT seconds.
     }
+#endif
 #else
     // receive thread will stop immediately.
     if (!WSASetEvent(caglobals.ip.shutdownEvent))
@@ -1042,6 +1133,7 @@ void CAIPStopServer()
 void CAWakeUpForChange()
 {
 #if !defined(WSA_WAIT_EVENT_0)
+#ifndef __TIZENRT__
     if (caglobals.ip.shutdownFds[1] != -1)
     {
         ssize_t len = 0;
@@ -1054,6 +1146,7 @@ void CAWakeUpForChange()
             OIC_LOG_V(DEBUG, TAG, "write failed: %s", strerror(errno));
         }
     }
+#endif
 #else
     if (!WSASetEvent(caglobals.ip.shutdownEvent))
     {
@@ -1069,6 +1162,7 @@ static void applyMulticastToInterface4(uint32_t ifindex)
         return;
     }
 
+#if 0 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
 #if defined(USE_IP_MREQN)
     struct ip_mreqn mreq = { .imr_multiaddr = IPv4MulticastAddress,
                              .imr_address.s_addr = htonl(INADDR_ANY),
@@ -1076,6 +1170,11 @@ static void applyMulticastToInterface4(uint32_t ifindex)
 #else
     struct ip_mreq mreq  = { .imr_multiaddr.s_addr = IPv4MulticastAddress.s_addr,
                              .imr_interface.s_addr = htonl(ifindex) };
+#endif
+#else
+    struct ip_mreq mreq;
+//    memcpy(&mreq.imr_multiaddr,&IPv4MulticastAddress,sizeof(struct in_addr));
+//    memcpy(&mreq.imr_interface,&inaddr,sizeof(struct in_addr));
 #endif
 
     int ret = setsockopt(caglobals.ip.m4.fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, OPTVAL_T(&mreq), sizeof (mreq));
@@ -1117,6 +1216,7 @@ static void applyMulticastToInterface4(uint32_t ifindex)
 
 static void applyMulticast6(CASocketFd_t fd, struct in6_addr *addr, uint32_t ifindex)
 {
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
     struct ipv6_mreq mreq = { .ipv6mr_interface = ifindex };
 
     // VS2013 has problems with struct copies inside struct initializers, so copy separately.
@@ -1143,6 +1243,7 @@ static void applyMulticast6(CASocketFd_t fd, struct in6_addr *addr, uint32_t ifi
             OIC_LOG_V(ERROR, TAG, "IPv6 IPV6_JOIN_GROUP failed: %s", CAIPS_GET_ERROR);
         }
     }
+#endif
 }
 
 static void applyMulticastToInterface6(uint32_t ifindex)
@@ -1382,6 +1483,7 @@ static void sendMulticastData6(const u_arraylist_t *iflist,
                                CAEndpoint_t *endpoint,
                                const void *data, size_t datalen)
 {
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
     if (!endpoint)
     {
         OIC_LOG(DEBUG, TAG, "endpoint is null");
@@ -1423,6 +1525,7 @@ static void sendMulticastData6(const u_arraylist_t *iflist,
         }
         sendData(fd, endpoint, data, datalen, "multicast", "ipv6");
     }
+#endif
 }
 
 static void sendMulticastData4(const u_arraylist_t *iflist,
@@ -1431,6 +1534,8 @@ static void sendMulticastData4(const u_arraylist_t *iflist,
 {
     VERIFY_NON_NULL_VOID(endpoint, TAG, "endpoint is NULL");
 
+
+#if 0 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
 #if defined(USE_IP_MREQN)
     struct ip_mreqn mreq = { .imr_multiaddr = IPv4MulticastAddress,
                              .imr_address.s_addr = htonl(INADDR_ANY),
@@ -1438,6 +1543,11 @@ static void sendMulticastData4(const u_arraylist_t *iflist,
 #else
     struct ip_mreq mreq  = { .imr_multiaddr.s_addr = IPv4MulticastAddress.s_addr,
                              .imr_interface = {0}};
+#endif
+#else
+    struct ip_mreq mreq;
+//    memcpy(&mreq.imr_multiaddr,&IPv4MulticastAddress,sizeof(struct in_addr));
+//    memcpy(&mreq.imr_interface,&inaddr,sizeof(struct in_addr));
 #endif
 
     OICStrcpy(endpoint->addr, sizeof(endpoint->addr), IPv4_MULTICAST);
@@ -1459,8 +1569,13 @@ static void sendMulticastData4(const u_arraylist_t *iflist,
         {
             continue;
         }
+
+#if 0 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
 #if defined(USE_IP_MREQN)
         mreq.imr_ifindex = ifitem->index;
+#else
+        mreq.imr_interface.s_addr = htonl(ifitem->index);
+#endif
 #else
         mreq.imr_interface.s_addr = htonl(ifitem->index);
 #endif

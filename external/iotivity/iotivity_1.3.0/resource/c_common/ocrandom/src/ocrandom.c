@@ -214,6 +214,14 @@ bool OCGetRandomBytes(uint8_t * output, size_t len)
         output[i] = OC_arduino_random_function() & 0x00ff;
     }
 
+#elif defined(__TIZENRT__) /* temporarilly modified, by wonsang */
+    size_t i;
+    for (i = 0; i < len; i++)
+    {
+        output[i] = rand() % 0xff;
+    }
+
+
 #else
     #error Unrecognized platform
 #endif

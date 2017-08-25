@@ -198,7 +198,7 @@ bool g_multicastServerStopped = false;
 #define MILLISECONDS_PER_SECOND   (1000)
 
 // handle case that SCNd64 is not defined in arduino's inttypes.h
-#if defined(WITH_ARDUINO) && !defined(SCNd64)
+#if (defined(WITH_ARDUINO) || defined(__TIZENRT__)) && !defined(SCNd64)
 #define SCNd64 "lld"
 #endif
 //-----------------------------------------------------------------------------
@@ -1455,6 +1455,7 @@ OCStackResult OCMapZoneIdToLinkLocalEndpoint(OCDiscoveryPayload *payload, uint32
             if (eps->family & OC_IP_USE_V6)
             {
                 CATransportFlags_t scopeLevel;
+#ifndef __TIZENRT__ // temporarilly disabled IPv6, by wonsang
                 if (CA_STATUS_OK == CAGetIpv6AddrScope(eps->addr, &scopeLevel))
                 {
                     if (CA_SCOPE_LINK == scopeLevel)
@@ -1476,6 +1477,7 @@ OCStackResult OCMapZoneIdToLinkLocalEndpoint(OCDiscoveryPayload *payload, uint32
                     }
                 }
                 else
+#endif
                 {
                     OIC_LOG(ERROR, TAG, "failed at parse ipv6 scope level");
                     return OC_STACK_ERROR;
@@ -6279,6 +6281,7 @@ OCStackResult OCSelectCipherSuite(uint16_t cipher, OCTransportAdapter adapterTyp
     return CAResultToOCResult(CASelectCipherSuite(cipher, (CATransportAdapter_t)adapterType));
 }
 
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
 OCStackResult OCGetIpv6AddrScope(const char *addr, OCTransportFlags *scope)
 {
     // OCTransportFlags and CATransportFlags_t are using the same bits for each scope.
@@ -6310,3 +6313,4 @@ OCStackResult OCGetIpv6AddrScope(const char *addr, OCTransportFlags *scope)
 
     return CAResultToOCResult(caResult);
 }
+#endif

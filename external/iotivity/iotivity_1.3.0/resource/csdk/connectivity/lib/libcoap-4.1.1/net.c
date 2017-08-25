@@ -41,9 +41,9 @@
 #endif
 
 #ifdef WITH_LWIP
-#include <lwip/pbuf.h>
-#include <lwip/udp.h>
-#include <lwip/timers.h>
+#include <net/lwip/pbuf.h>
+#include <net/lwip/udp.h>
+#include <net/lwip/timers.h>
 #endif
 
 #include "include/coap/debug.h"
@@ -61,7 +61,7 @@
 time_t clock_offset=0;
 
 INLINE_API coap_queue_t *
-coap_malloc_node()
+coap_malloc_node(void)
 {
     return (coap_queue_t *)coap_malloc(sizeof(coap_queue_t));
 }
@@ -333,13 +333,13 @@ coap_new_context(const coap_address_t *listen_addr)
 #if defined(WITH_POSIX) || defined(_WIN32)
     coap_context_t *c = coap_malloc( sizeof( coap_context_t ) );
     int reuse = 1;
-#elif WITH_CONTIKI
+#elif defined(WITH_CONTIKI)
     coap_context_t *c =NULL;
     if (initialized)
     {
         return NULL;
     }
-#elif WITH_LWIP
+#elif defined(WITH_LWIP)
     coap_context_t *c = memp_malloc(MEMP_COAP_CONTEXT);
 #endif /* WITH_POSIX */
     if (!listen_addr)
@@ -347,7 +347,7 @@ coap_new_context(const coap_address_t *listen_addr)
         coap_log(LOG_EMERG, "no listen address specified\n");
 #if defined(WITH_POSIX)
         coap_free_context(c);
-#elif WITH_LWIP
+#elif defined(WITH_LWIP)
         memp_free(c);
 #endif
         return NULL;

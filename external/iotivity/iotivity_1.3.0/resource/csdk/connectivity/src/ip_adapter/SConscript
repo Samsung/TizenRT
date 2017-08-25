@@ -19,6 +19,8 @@ if target_os != 'arduino':
         common_files.append(os.path.join(src_dir, 'linux/caipnwmonitor.c'))
     elif target_os in ['msys_nt', 'windows']:
         common_files.append(os.path.join(src_dir, 'windows/caipnwmonitor.c'))
+    elif target_os in ['tizenrt']:
+        common_files.append(os.path.join(src_dir, 'tizenrt/caipnwmonitor.c'))
 
 connectivity_env.AppendUnique(CA_SRC = common_files)
 

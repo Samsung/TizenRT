@@ -414,10 +414,12 @@ CAResult_t CAUtilSetBTConfigure(CAUtilConfig_t config)
 #endif
 }
 
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
 CAResult_t CAGetIpv6AddrScope(const char *addr, CATransportFlags_t *scopeLevel)
 {
     return CAGetIpv6AddrScopeInternal(addr, scopeLevel);
 }
+#endif
 
 void CAUtilSetLogLevel(CAUtilLogLevel_t level, bool hidePrivateLogEntries)
 {

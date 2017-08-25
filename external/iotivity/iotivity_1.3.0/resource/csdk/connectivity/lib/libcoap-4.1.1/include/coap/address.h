@@ -135,8 +135,10 @@ _coap_is_mcast_impl(const coap_address_t *a)
     {
         case AF_INET:
         return IN_MULTICAST(a->addr.sin.sin_addr.s_addr);
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
         case AF_INET6:
         return IN6_IS_ADDR_MULTICAST(&a->addr.sin6.sin6_addr);
+#endif
         default: /* fall through and signal error */
         ;
     }

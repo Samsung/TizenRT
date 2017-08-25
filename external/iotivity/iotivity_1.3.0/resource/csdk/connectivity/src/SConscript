@@ -145,7 +145,7 @@ if 'BLE' in ca_transport:
 if 'NFC' in ca_transport:
     transports.add('nfc_adapter')
 
-if ca_os in ['linux', 'tizen', 'android', 'ios', 'windows'] and with_tcp:
+if ca_os in ['linux', 'tizen', 'android', 'ios', 'windows', 'tizenrt'] and with_tcp:
     transports.add('tcp_adapter')
 
 SConscript(dirs = list(transports), exports='connectivity_env')

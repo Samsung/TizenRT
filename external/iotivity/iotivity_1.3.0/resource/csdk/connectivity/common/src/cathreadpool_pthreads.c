@@ -64,6 +64,9 @@ typedef struct ca_thread_pool_callback_info_t
 typedef struct ca_thread_pool_thread_info_t
 {
     oc_thread thread;
+#ifdef __TIZENRT__
+    uint32_t taskId;
+#endif
 } ca_thread_pool_thread_info_t;
 
 // passthrough function to convert the pthreads call to a u_thread_func call
@@ -143,8 +146,13 @@ exit:
     return CA_STATUS_FAILED;
 }
 
+#ifndef __TIZENRT__
 CAResult_t ca_thread_pool_add_task(ca_thread_pool_t thread_pool, ca_thread_func method,
                                    void *data)
+#else
+CAResult_t ca_thread_pool_add_task(ca_thread_pool_t thread_pool, ca_thread_func method, void *data,
+                                   uint32_t *taskId, const char *task_name, int stack_size)
+#endif
 {
     OIC_LOG(DEBUG, TAG, "IN");
 
@@ -173,6 +181,14 @@ CAResult_t ca_thread_pool_add_task(ca_thread_pool_t thread_pool, ca_thread_func 
         return CA_STATUS_FAILED;
     }
 
+#ifdef __TIZENRT__
+    threadInfo->taskId = OCGetRandom();
+    if (taskId)
+    {
+        *taskId = threadInfo->taskId;
+    }
+#endif
+
     oc_mutex_lock(thread_pool->details->list_lock);
     bool addResult = u_arraylist_add(thread_pool->details->threads_list, (void*) threadInfo);
     if (!addResult)
@@ -185,7 +201,12 @@ CAResult_t ca_thread_pool_add_task(ca_thread_pool_t thread_pool, ca_thread_func 
         return CA_STATUS_FAILED;
     }
 
+#ifndef __TIZENRT__
     int thrRet = oc_thread_new(&threadInfo->thread, ca_thread_pool_pthreads_delegate, info);
+#else
+    int thrRet = oc_thread_new(&threadInfo->thread, ca_thread_pool_pthreads_delegate, info,
+                               task_name, stack_size);
+#endif
     if (thrRet != 0)
     {
         size_t index = 0;
@@ -198,6 +219,11 @@ CAResult_t ca_thread_pool_add_task(ca_thread_pool_t thread_pool, ca_thread_func 
         OICFree(info);
         return CA_STATUS_FAILED;
     }
+
+#ifdef __TIZENRT__
+    OIC_LOG_V(DEBUG, TAG, "created taskId: %u", threadInfo->taskId);
+#endif
+
     oc_mutex_unlock(thread_pool->details->list_lock);
 
     OIC_LOG(DEBUG, TAG, "OUT");

@@ -18,6 +18,10 @@
  *
  ******************************************************************/
 
+#ifdef __TIZENRT__
+#include <tinyara/config.h>
+#endif
+
 #include "iotivity_config.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -153,8 +157,11 @@ ERROR_MEM_FAILURE:
     }
     return CA_MEMORY_ALLOC_FAILED;
 }
-
+#ifndef __TIZENRT__
 CAResult_t CAQueueingThreadStart(CAQueueingThread_t *thread)
+#else
+CAResult_t CAQueueingThreadStart(CAQueueingThread_t *thread, const char *thread_name)
+#endif
 {
     if (NULL == thread)
     {
@@ -179,9 +186,13 @@ CAResult_t CAQueueingThreadStart(CAQueueingThread_t *thread)
     thread->isStop = false;
     // mutex unlock
     oc_mutex_unlock(thread->threadMutex);
-
+#ifndef __TIZENRT__
     CAResult_t res = ca_thread_pool_add_task(thread->threadPool, CAQueueingThreadBaseRoutine,
                                              thread);
+#else
+    CAResult_t res = ca_thread_pool_add_task(thread->threadPool, CAQueueingThreadBaseRoutine,
+                                             thread, NULL, thread_name, CONFIG_IOTIVITY_QUEING_PTHREAD_STACKSIZE);
+#endif
     if (res != CA_STATUS_OK)
     {
         // update thread status.

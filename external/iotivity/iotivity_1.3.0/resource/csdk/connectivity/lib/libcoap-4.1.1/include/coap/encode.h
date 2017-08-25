@@ -9,7 +9,7 @@
 #ifndef _COAP_ENCODE_H_
 #define _COAP_ENCODE_H_
 
-#if (BSD >= 199103) || defined(WITH_CONTIKI)
+#if ((defined(BSD) && BSD >= 199103) || defined(WITH_CONTIKI) || defined(__TIZENRT__))
 # include <string.h>
 #else
 #if !defined(WITH_ARDUINO) && !defined(_MSC_VER)

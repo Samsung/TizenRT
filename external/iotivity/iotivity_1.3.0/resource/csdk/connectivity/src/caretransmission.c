@@ -41,6 +41,10 @@
 #define _POSIX_C_SOURCE 200809L
 #endif
 
+#ifdef __TIZENRT__
+#include <tinyara/config.h>
+#endif
+
 #include "iotivity_config.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -126,9 +130,14 @@ CAResult_t CARetransmissionStart(CARetransmission_t *context)
         OIC_LOG(ERROR, TAG, "thread pool handle is empty..");
         return CA_STATUS_INVALID_PARAM;
     }
-
+#ifndef __TIZENRT__
     CAResult_t res = ca_thread_pool_add_task(context->threadPool, CARetransmissionBaseRoutine,
                                              context);
+#else
+    CAResult_t res = ca_thread_pool_add_task(context->threadPool, CARetransmissionBaseRoutine,
+                                             context, NULL, "IoT_Retransmit",
+                                             CONFIG_IOTIVITY_RETRANSMIT_PTHREAD_STACKSIZE);
+#endif
 
     if (CA_STATUS_OK != res)
     {
@@ -155,8 +164,10 @@ static bool CACheckTimeout(uint64_t currentTime, CARetransmissionData_t *retData
 
     if (currentTime >= retData->timeStamp + timeout)
     {
+#ifndef __TIZENRT__
         OIC_LOG_V(DEBUG, TAG, "%" PRIu64 " microseconds time out!!, tried count(%d)",
                   timeout, retData->triedCount);
+#endif
         return true;
     }
 #else
@@ -289,8 +300,10 @@ void CARetransmissionBaseRoutine(void *threadValue)
         else if (!context->isStop)
         {
             // check each RETRANSMISSION_CHECK_PERIOD_SEC time.
+#ifndef __TIZENRT__
             OIC_LOG_V(DEBUG, TAG, "wait..(%" PRIu64 ")microseconds",
                       RETRANSMISSION_CHECK_PERIOD_SEC * (uint64_t) USECS_PER_SEC);
+#endif
 
             // wait
             uint64_t absTime = RETRANSMISSION_CHECK_PERIOD_SEC * (uint64_t) USECS_PER_SEC;

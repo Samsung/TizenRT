@@ -18,7 +18,9 @@
 //
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+#ifndef __TIZENRT__
 #include <memory.h>
+#endif
 #include <limits.h>
 
 #include "ocstack.h"

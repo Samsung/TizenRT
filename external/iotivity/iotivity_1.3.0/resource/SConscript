@@ -30,7 +30,7 @@ target_os = env.get('TARGET_OS')
 # Build C Common dependencies
 SConscript('c_common/SConscript')
 
-if target_os not in ['arduino', 'darwin', 'ios', 'android', 'msys_nt', 'windows']:
+if target_os not in ['arduino', 'darwin', 'ios', 'android', 'msys_nt', 'windows', 'tizenrt']:
     env.AppendUnique(LIBS=['rt'])
 
 # Download (if not already present) & build libcoap
@@ -39,7 +39,7 @@ SConscript('#extlibs/libcoap/SConscript')
 # Build csdk
 SConscript('csdk/SConscript')
 
-if target_os not in ['arduino', 'darwin', 'ios']:
+if target_os not in ['arduino', 'darwin', 'ios', 'tizenrt']:
     # Build liboc_logger
     SConscript('oc_logger/SConscript')
 
@@ -50,7 +50,7 @@ if target_os in ['windows', 'linux']:
     # Build IoTivity Procedural Client API
     SConscript('IPCA/SConscript')
 
-if target_os not in ['arduino','darwin','ios','android']:
+if target_os not in ['arduino','darwin','ios','android','tizenrt']:
     # Build examples
     SConscript('examples/SConscript')
 

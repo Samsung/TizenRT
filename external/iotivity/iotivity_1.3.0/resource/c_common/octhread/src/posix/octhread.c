@@ -121,13 +121,30 @@ static pthread_t oc_get_current_thread_id()
 }
 #endif
 
+#ifndef __TIZENRT__
 OCThreadResult_t oc_thread_new(oc_thread *t, void *(*start_routine)(void *), void *arg)
+#else
+OCThreadResult_t oc_thread_new(oc_thread *t, void *(*start_routine)(void *), void *arg, const char *task_name, int stack_size)
+#endif
 {
     OCThreadResult_t res = OC_THREAD_SUCCESS;
     oc_thread_internal *threadInfo = (oc_thread_internal*)OICMalloc(sizeof(oc_thread_internal));
     if (NULL != threadInfo)
     {
+#ifdef __TIZENRT__
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+		struct sched_param prio;
+		prio.sched_priority = 90;
+        (void)pthread_attr_setschedparam(&attr, &prio);
+		(void)pthread_attr_setstacksize(&attr, stack_size);
+
+
+        int result = pthread_create(&threadInfo->thread, &attr, start_routine, arg);
+		pthread_setname_np(threadInfo->thread, task_name);
+#else
         int result = pthread_create(&threadInfo->thread, NULL, start_routine, arg);
+#endif
         if (result != 0)
         {
             res = OC_THREAD_CREATE_FAILURE;
@@ -178,6 +195,22 @@ OCThreadResult_t oc_thread_wait(oc_thread t)
 
     return res;
 }
+
+#ifdef __TIZEN__
+OCThreadResult_t oc_thread_cancel(oc_thread t)
+{
+    OCThreadResult_t res = OC_THREAD_SUCCESS;
+    oc_thread_internal *threadInfo = (oc_thread_internal*) t;
+    int ret = pthread_cancel(threadInfo->thread);
+    if (0 != ret)
+    {
+        OIC_LOG_V(ERROR, TAG, "Failed to cancel thread with error %d", ret);
+        res = OC_THREAD_CANCEL_FAILURE;
+    }
+
+    return res;
+}
+#endif
 
 oc_mutex oc_mutex_new(void)
 {

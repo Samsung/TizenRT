@@ -313,7 +313,9 @@ static void CAInitializeIPGlobals()
     {
         flags |= caglobals.serverFlags;
     }
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
     caglobals.ip.ipv6enabled = flags & CA_IPV6;
+#endif
     caglobals.ip.ipv4enabled = flags & CA_IPV4;
     caglobals.ip.dualstack = caglobals.ip.ipv6enabled && caglobals.ip.ipv4enabled;
 }
@@ -399,7 +401,11 @@ CAResult_t CAStartIP()
     }
 
     // Start send queue thread
+#ifndef __TIZENRT__
     if (CA_STATUS_OK != CAQueueingThreadStart(g_sendQueueHandle))
+#else
+    if (CA_STATUS_OK != CAQueueingThreadStart(g_sendQueueHandle, "IoT_IPSendQueue"))
+#endif
     {
         OIC_LOG(ERROR, TAG, "Failed to Start Send Data Thread");
         return CA_STATUS_FAILED;

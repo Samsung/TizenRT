@@ -1089,7 +1089,11 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                  */
                 if (arrayIndex <= UINT32_MAX)
                 {
+#ifdef PRIu32 /* __TIZENRT__ */
                     snprintf(name, UINT64_MAX_STRLEN + 1, "%" PRIu32, (uint32_t)arrayIndex);
+#else
+                    snprintf(name, UINT64_MAX_STRLEN + 1, "%lu", (uint32_t)arrayIndex);
+#endif
                 }
                 else
                 {

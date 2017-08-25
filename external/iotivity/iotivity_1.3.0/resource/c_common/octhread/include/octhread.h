@@ -78,7 +78,11 @@ typedef enum
  * @retval OC_THREAD_CREATE_FAILURE If a thread was unable to be started
  *
  */
+#ifndef __TIZENRT__
 OCThreadResult_t oc_thread_new(oc_thread *t, void *(*start_routine)(void *), void *arg);
+#else
+OCThreadResult_t oc_thread_new(oc_thread *t, void *(*start_routine)(void *), void *arg, const char *task_name, int stack_size);
+#endif
 
 /**
  * Frees a thread previously allocated with oc_thread_new()
@@ -101,6 +105,19 @@ OCThreadResult_t oc_thread_free(oc_thread t);
  *
  */
 OCThreadResult_t oc_thread_wait(oc_thread t);
+
+#ifdef __TIZEN__
+/**
+ * Cancel the thread without block
+ *
+ * @param[in] t The thread to be canceled on
+ * @return OCThreadResult_t An enumeration of possible outcomes
+ * @retval OC_THREAD_SUCCESS If the thread successfully completed execution
+ * @retval OC_THREAD_CANCEL_FAILURE If a problem occured while canceling
+ *
+ */
+OCThreadResult_t oc_thread_cancel(oc_thread t);
+#endif
 
 /**
  * Creates new mutex.

@@ -78,7 +78,11 @@ CAResult_t CAQueueingThreadInitialize(CAQueueingThread_t *thread, ca_thread_pool
  * @param[in]   thread        thread data that needs to be started.
  * @return  CA_STATUS_OK or ERROR CODES (CAResult_t error codes in cacommon.h).
  */
+#ifndef __TIZENRT__
 CAResult_t CAQueueingThreadStart(CAQueueingThread_t *thread);
+#else
+CAResult_t CAQueueingThreadStart(CAQueueingThread_t *thread, const char* thread_name);
+#endif
 
 /**
  * Add queuing thread data for new thread.

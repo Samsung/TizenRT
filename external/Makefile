@@ -106,6 +106,7 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconsign.dblite
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconf_temp
 	$(call DELFILE, $(IOTIVITY_BASE_DIR)/config.log)
+	cp $(IOTIVITY_BASE_DIR)/resource/c_common/iotivity_config_built.h $(IOTIVITY_BASE_DIR)/resource/c_common/iotivity_config.h
 	$(Q) echo "Launching IoTivity Build"
 	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/build_iotivity.sh
 endif
@@ -129,7 +130,7 @@ ifneq ("$(wildcard $(IOTIVITY_BASE_DIR)/iotivity.built)","")
 	$(Q) echo "Cleaning IoTivity Build"
 	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/clean_iotivity.sh
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/out
-	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls
+#	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/lib/libcoap-4.1.1/*.o
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconsign.dblite
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconf_temp

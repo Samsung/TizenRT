@@ -86,7 +86,7 @@ if 'SERVER' in rd_mode:
         RD_SRC_DIR + 'internal/rd_database.c',
         RD_SRC_DIR + 'rd_server.c',
         ]
-    if target_os not in ['linux', 'tizen', 'windows'] :
+    if target_os not in ['linux', 'tizen', 'windows', 'tizenrt'] :
         rd_src_c += [ '../../../extlibs/sqlite3/sqlite3.c' ]
 
 if 'CLIENT' in rd_mode:
@@ -94,16 +94,16 @@ if 'CLIENT' in rd_mode:
 
 rd_src_all = rd_src_c
 
-if target_os not in ['arduino','darwin','ios']:
+if target_os not in ['arduino','darwin','ios', 'tizenrt'] :
     rd_src_cpp += [ RD_SRC_DIR + 'RDClient.cpp']
     if 'CLIENT' in rd_mode:
         rd_src_all += rd_src_cpp
 
-if target_os not in ['arduino', 'darwin', 'ios', 'msys_nt', 'windows']:
+if target_os not in ['arduino', 'darwin', 'ios', 'msys_nt', 'windows', 'tizenrt'] :
     rdsdk_shared = rd_env.SharedLibrary('resource_directory', rd_src_all)
     rdsdk_static = rd_env.StaticLibrary('resource_directory', rd_src_all)
     rdsdk = Flatten([rdsdk_static, rdsdk_shared])
-elif target_os in ['msys_nt', 'windows']:
+elif target_os in ['msys_nt', 'windows', 'tizenrt'] :
     rdsdk_c = rd_env.StaticLibrary('resource_directory_internal', rd_src_c)
     rdsdk_cpp = rd_env.StaticLibrary('resource_directory', rd_src_cpp)
     rdsdk = Flatten([rdsdk_c, rdsdk_cpp])

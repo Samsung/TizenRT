@@ -1091,7 +1091,11 @@ CAResult_t CAInitializeMessageHandler(CATransportAdapter_t transportType)
     }
 
     // start send thread
+#ifndef __TIZENRT__
     res = CAQueueingThreadStart(&g_sendThread);
+#else
+    res = CAQueueingThreadStart(&g_sendThread, "IoT_MessageHandlerQueue");
+#endif
     if (CA_STATUS_OK != res)
     {
         OIC_LOG(ERROR, TAG, "thread start error(send thread).");
