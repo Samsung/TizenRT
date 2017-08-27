@@ -88,9 +88,6 @@
 #define CONFIG_AUDIO_I2SCHAR_TXTIMEOUT 0
 #endif
 
-#define i2serr printf
-#define i2sinfo printf
-
 /* Device naming ************************************************************/
 #define DEVNAME_FMT    "/dev/i2schar%d"
 #define DEVNAME_FMTLEN (12 + 3 + 1)

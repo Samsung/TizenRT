@@ -55,7 +55,7 @@
 # Include Audio drivers
 
 ifeq ($(CONFIG_AUDIO_DEVICES),y)
-CSRCS += audio.c
+
 ifeq ($(CONFIG_AUDIO_I2SCHAR),y)
 CSRCS += i2schar.c
 endif
