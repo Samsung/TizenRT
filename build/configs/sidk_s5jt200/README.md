@@ -111,7 +111,7 @@ make download ALL
 
 ## ROMFS
 
-Before executing below steps, execute [generic steps](../../../external/contents/README.md), step 1 and step 2.
+Before executing below steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.
 
 3. Modify partition configs.  
     Below steps creates ROMFS partition with size 256KB at the end,  

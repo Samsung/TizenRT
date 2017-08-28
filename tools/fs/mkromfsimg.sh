@@ -17,7 +17,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/tools/mkromfsimg.sh
+# tools/fs/mkromfsimg.sh
 #
 #   Copyright (C) 2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>

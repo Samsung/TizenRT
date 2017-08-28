@@ -24,6 +24,7 @@ source .config
 BOARDNAME=$CONFIG_ARCH_BOARD
 POSTFIX=_smartfs.bin
 BINNAME=$BOARDNAME$POSTFIX
+CONTENTSDIR=../tools/fs/contents
 
 blkcount=8192
 
@@ -32,8 +33,8 @@ echo "mksmartfsimg.sh : $BINNAME, Target Board: $BOARDNAME"
 echo " - block count := $blkcount (bs=1024)"
 echo "============================================================="
 
-if [ ! -d ../external/contents/$BOARDNAME/mnt ]; then
-mkdir ../external/contents/$BOARDNAME/mnt/
+if [ ! -d $CONTENTSDIR/$BOARDNAME/mnt ]; then
+mkdir $CONTENTSDIR/$BOARDNAME/mnt/
 fi
 
 # Making image file
@@ -43,12 +44,12 @@ dd if=/dev/zero of=../build/bin/$BINNAME bs=1024 count=$blkcount
 tools/nxfuse -t smartfs -g 1 -m ../build/bin/$BINNAME
 
 # Mounting mnt
-tools/nxfuse -t smartfs ../external/contents/$BOARDNAME/mnt ../build/bin/$BINNAME
+tools/nxfuse -t smartfs $CONTENTSDIR/$BOARDNAME/mnt ../build/bin/$BINNAME
 
 # Copying files to smartfs file system
-cp -rf ../external/contents/$BOARDNAME/base-files/* ../external/contents/$BOARDNAME/mnt/
+cp -rf $CONTENTSDIR/$BOARDNAME/base-files/* $CONTENTSDIR/$BOARDNAME/mnt/
 
 # Unmounting
 sleep 2
-fusermount -u ../external/contents/$BOARDNAME/mnt
+fusermount -u $CONTENTSDIR/$BOARDNAME/mnt
 echo "DONE"

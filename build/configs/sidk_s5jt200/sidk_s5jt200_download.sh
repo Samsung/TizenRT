@@ -34,7 +34,7 @@ OUTPUT_BIN_PATH=${BUILD_DIR_PATH}/output/bin
 BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/${BOARD_NAME}
 OPENOCD_DIR_PATH=${BOARD_DIR_PATH}/tools/openocd
 FW_DIR_PATH=${BOARD_DIR_PATH}/boot_bin
-RESOURCE_DIR_PATH=${OS_DIR_PATH}/../external/contents
+RESOURCE_DIR_PATH=${OS_DIR_PATH}/../tools/fs/contents
 
 SYSTEM_TYPE=`getconf LONG_BIT`
 if [ "$SYSTEM_TYPE" = "64" ]; then
@@ -54,7 +54,7 @@ prepare_resource()
 		cp -rf ${RESOURCE_DIR_PATH}/* ${OUTPUT_PATH}/res/
 
 		# create romfs.img
-		sh ${OS_DIR_PATH}/../apps/tools/mkromfsimg.sh
+		sh ${OS_DIR_PATH}/../tools/fs/mkromfsimg.sh
 	fi
 }
 
