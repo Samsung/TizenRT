@@ -62,6 +62,7 @@ CSRCS = artik053_boot.c \
 ifeq ($(CONFIG_AUDIO_I2SCHAR),y)
 ifeq ($(CONFIG_S5J_I2S),y)
 CSRCS += artik053_i2schar.c
+CSRCS += artik053_alc5658_i2c.c
 endif
 endif
 
