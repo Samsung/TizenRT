@@ -29,7 +29,7 @@ export PATH=<Your Toolchain PATH>:$PATH
 ### Getting the sources
 
 ```bash
-~$ git clone https://github.com/Samsung/TizenRT.git
+~$ git clone https://github.com/SamsungARTIK/TizenRT.git
 ~$ cd TizenRT
 TIZENRT_BASEDIR="$PWD"
 ```
@@ -83,7 +83,7 @@ sidk_s5jt200 or other boards for Tizen RT will be coming soon.
 
 To build a Tizen RT application, use the default configuration files named 'defconfig' under 'build/configs/<board>/' folder.
 
-To customize your application with specific configuration settings, using the menuconfig tool is recommended  at os folder as shown:
+To customize your application with specific configuration settings, using the menuconfig tool is recommended at os folder as shown:
 ```bash
 ~/TizenRT/os$ make menuconfig
 ```
