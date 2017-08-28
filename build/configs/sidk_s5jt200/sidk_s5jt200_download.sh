@@ -29,12 +29,12 @@ BOARD_NAME=${CONFIG_ARCH_BOARD}
 # ENV : Set to proper path's
 OS_DIR_PATH=${PWD}
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
-OUTPUT_PATH=${BUILD_DIR_PATH}/output
 OUTPUT_BIN_PATH=${BUILD_DIR_PATH}/output/bin
 BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/${BOARD_NAME}
 OPENOCD_DIR_PATH=${BOARD_DIR_PATH}/tools/openocd
 FW_DIR_PATH=${BOARD_DIR_PATH}/boot_bin
-RESOURCE_DIR_PATH=${OS_DIR_PATH}/../tools/fs/contents
+FSTOOLS_DIR_PATH=${OS_DIR_PATH}/../tools/fs
+RESOURCE_DIR_PATH=${FSTOOLS_DIR_PATH}/contents
 
 SYSTEM_TYPE=`getconf LONG_BIT`
 if [ "$SYSTEM_TYPE" = "64" ]; then
@@ -49,12 +49,8 @@ prepare_resource()
 	if [ -d "${RESOURCE_DIR_PATH}" ]; then
 		echo "Packing resources into romfs.img ..."
 
-		# create resource directory in ${output_path}
-		mkdir -p ${OUTPUT_PATH}/res
-		cp -rf ${RESOURCE_DIR_PATH}/* ${OUTPUT_PATH}/res/
-
 		# create romfs.img
-		sh ${OS_DIR_PATH}/../tools/fs/mkromfsimg.sh
+		sh ${FSTOOLS_DIR_PATH}/mkromfsimg.sh
 	fi
 }
 

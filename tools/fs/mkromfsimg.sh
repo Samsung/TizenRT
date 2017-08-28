@@ -65,13 +65,13 @@ fi
 
 topdir=$PWD
 buildpath=${topdir}/../build
-fsdir=${buildpath}/output/res/
+contentsdir=${topdir}/../tools/fs/contents
 romfsimg=${buildpath}/output/bin/romfs.img
 
 # Sanity checks
 
-if [ ! -d "${fsdir}" ]; then
-  echo "ERROR: Directory ${fsdir} does not exist"
+if [ ! -d "${contentsdir}" ]; then
+  echo "ERROR: Directory ${contentsdir} does not exist"
   exit 1
 fi
 
@@ -83,6 +83,6 @@ genromfs -h 1>/dev/null 2>&1 || { \
 
 # Now we are ready to make the ROMFS image
 
-genromfs -f ${romfsimg} -d ${fsdir} -V "NuttXBootVol" || { echo "genromfs failed" ; exit 1 ; }
+genromfs -f ${romfsimg} -d ${contentsdir} -V "NuttXBootVol" || { echo "genromfs failed" ; exit 1 ; }
 
 # And, finally, create the header file
