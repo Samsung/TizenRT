@@ -248,6 +248,7 @@ config S5J_UART2_FLOWCONTROL
 	bool "UART2 Flow Control"
 	default n
 	depends on S5J_UART2
+	depends on !S5J_UART1
 	select S5J_UART_FLOWCONTROL
 
 config S5J_UART3
@@ -261,6 +262,8 @@ config S5J_UART3_FLOWCONTROL
 	bool "UART3 Flow Control"
 	default n
 	depends on S5J_UART3
+	depends on !S5J_PWM0
+	depends on !S5J_PWM1
 	select S5J_UART_FLOWCONTROL
 
 config S5J_UART4
