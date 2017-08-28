@@ -137,6 +137,10 @@ ifeq ($(CONFIG_S5J_I2C),y)
 CHIP_CSRCS += s5j_i2c.c
 endif
 
+ifeq ($(CONFIG_S5J_I2S),y)
+CHIP_CSRCS += s5j_i2s.c
+endif
+
 ifeq ($(CONFIG_S5J_MCT),y)
 CHIP_CSRCS += s5j_mct.c
 ifeq ($(CONFIG_TIMER),y)
@@ -167,6 +171,10 @@ CHIP_CSRCS += s5j_rtc.c
 ifeq ($(CONFIG_RTC_DRIVER),y)
 CHIP_CSRCS += s5j_rtc_lowerhalf.c
 endif
+endif
+
+ifeq ($(CONFIG_S5J_DMA),y)
+CHIP_CSRCS += s5j_dma.c
 endif
 
 ifeq ($(CONFIG_S5J_SSS),y)

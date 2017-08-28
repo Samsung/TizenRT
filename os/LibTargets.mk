@@ -99,6 +99,14 @@ logm$(DELIM)liblogm$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)liblogm$(LIBEXT): logm$(DELIM)liblogm$(LIBEXT)
 	$(Q) install logm$(DELIM)liblogm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liblogm$(LIBEXT)
 
+
+audio$(DELIM)libaudio$(LIBEXT): context
+	$(Q) $(MAKE) -C audio TOPDIR="$(TOPDIR)" libaudio$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+
+$(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT): audio$(DELIM)libaudio$(LIBEXT)
+	$(Q) install audio$(DELIM)libaudio$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
+
+
 fs$(DELIM)libfs$(LIBEXT): context
 	$(Q) $(MAKE) -C fs TOPDIR="$(TOPDIR)" libfs$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 

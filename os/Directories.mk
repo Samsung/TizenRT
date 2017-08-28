@@ -196,6 +196,14 @@ KERNDEPDIRS += net
 endif
 CLEANDIRS += net
 
+# Add networking directories to KERNDEPDIRS and CLEANDIRS
+
+ifeq ($(CONFIG_AUDIO),y)
+KERNDEPDIRS += audio
+endif
+CLEANDIRS += audio
+
+
 # Add Power Managment Module
 
 ifeq ($(CONFIG_PM),y)

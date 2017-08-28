@@ -1,7 +1,6 @@
-
 /****************************************************************************
  *
- * Copyright 2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,7 +136,7 @@ static const struct file_operations g_audioops = {
 	0,							/* seek */
 	audio_ioctl					/* ioctl */
 #ifndef CONFIG_DISABLE_POLL
-	, 0							/* poll */
+	, 0						/* poll */
 #endif
 };
 
@@ -813,7 +812,7 @@ static void audio_callback(FAR void *handle, uint16_t reason, FAR struct ap_buff
  *   reset state (as if the shutdown() method had already been called).
  *
  * Input parameters:
- *   path - The full path to the driver to be registers in the tinyara pseudo-
+ *   path - The full path to the driver to be registers in the NuttX pseudo-
  *     filesystem.  The recommended convention is to name Audio drivers
  *     based on the function they provide, such as "/dev/pcm0", "/dev/mp31",
  *     etc.

@@ -78,6 +78,28 @@ ifeq ($(CONFIG_NET), y)
 CSRCS += slip_if.c
 endif
 
+ifeq ($(CONFIG_AUDIO_NULL),y)
+CSRCS += sidk_s5jt200_audio_null.c
+endif
+
+ifeq ($(CONFIG_AUDIO_ALC5658),y)
+CSRCS += s5jt200_alc5658.c
+CSRCS += s5jt200_alc5658_i2c.c
+else
+ ifeq ($(CONFIG_S5J_I2S),y)
+  ifeq ($(CONFIG_S5J_I2C),y)
+   ifeq ($(CONFIG_AUDIO_I2SCHAR),y)
+    CSRCS += s5jt200_i2schar.c
+    CSRCS += s5jt200_alc5658_i2c.c
+   else
+    ifeq ($(CONFIG_AUDIO_ALCCHAR),y)
+     CSRCS += s5jt200_alcchar.c
+    endif
+   endif
+  endif
+ endif
+endif
+
 ifeq ($(CONFIG_MTD_PROGMEM),y)
 CSRCS += s5jt200_progmem.c
 endif

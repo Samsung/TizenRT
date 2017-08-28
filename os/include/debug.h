@@ -472,6 +472,59 @@ Once LOGM is approved, each module should have its own index
 #define dmllvdbg(x...)
 #endif
 
+#ifdef CONFIG_DEBUG_AUDIO_ERROR
+#define auddbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define auderr(format, ...)    dbg(format, ##__VA_ARGS__)
+#define audlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define auddbg(x...)
+#define auderr(x...)
+#define audlldbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_AUDIO_WARN
+#define audwarn(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define audllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define audwarn(x...)
+#define audllwdbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_AUDIO_INFO
+#define audvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define audinfo(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define audllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define audvdbg(x...)
+#define audinfo(x...)
+#define audllvdbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_I2S_ERROR
+#define i2serr(format, ...)    dbg(format, ##__VA_ARGS__)
+#define i2slldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define i2serr(x...)
+#define i2slldbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_I2S_WARN
+#define i2swarn(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define i2sllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define i2swarn(x...)
+#define i2sllwdbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_I2S_INFO
+#define i2sinfo(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define i2sllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define i2sinfo(x...)
+#define i2sllvdbg(x...)
+#endif
+
+
 #ifdef CONFIG_DEBUG_INPUT_ERROR
 #define idbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define illdbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -765,6 +818,59 @@ Once LOGM is approved, each module should have its own index
 #define nvdbg       (void)
 #define nllvdbg     (void)
 #endif
+
+#ifdef CONFIG_DEBUG_AUDIO_ERROR
+#define auddbg    dbg
+#define auderr    dbg
+#define audlldbg  lldbg
+#else
+#define auddbg (void)
+#define auderr (void)
+#define audlldbg (void)
+#endif
+
+#ifdef CONFIG_DEBUG_AUDIO_WARN
+#define audwarn    wdbg
+#define audllwdbg  llwdbg
+#else
+#define audwarn  (void)
+#define audllwdbg  (void)
+#endif
+
+#ifdef CONFIG_DEBUG_AUDIO_INFO
+#define audvdbg   vdbg
+#define audinfo   vdbg
+#define audllvdbg llvdbg
+#else
+#define audvdbg  (void)
+#define audinfo  (void)
+#define audllvdbg  (void)
+#endif
+
+#ifdef CONFIG_DEBUG_I2S_ERROR
+#define i2serr    dbg
+#define i2slldbg  lldbg
+#else
+#define i2serr (void)
+#define i2slldbg (void)
+#endif
+
+#ifdef CONFIG_DEBUG_I2S_WARN
+#define i2swarn    wdbg
+#define i2sllwdbg  llwdbg
+#else
+#define i2swarn (void)
+#define i2sllwdbg (void)
+#endif
+
+#ifdef CONFIG_DEBUG_I2S_INFO
+#define i2sinfo   vdbg
+#define i2sllvdbg llvdbg
+#else
+#define i2sinfo  (void)
+#define i2sllvdbg (void)
+#endif
+
 
 #ifdef CONFIG_DEBUG_USB_ERROR
 #define udbg        dbg

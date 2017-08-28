@@ -57,6 +57,8 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include "chip/s5jt200_gpio.h"
+#include "s5j_gpio.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -160,6 +162,7 @@
 #define GPIO_I2S0_BCLK     (GPIO_ALT1 | GPIO_FLOAT | GPIO_FAST1X | GPIO_PORTG3 | GPIO_PIN0)
 #define GPIO_I2S0_LRCK     (GPIO_ALT1 | GPIO_FLOAT | GPIO_FAST1X | GPIO_PORTG3 | GPIO_PIN1)
 #define GPIO_I2S0_SDI      (GPIO_ALT1 | GPIO_FLOAT | GPIO_FAST1X | GPIO_PORTG3 | GPIO_PIN2)
+#define GPIO_I2S0_SDO      (GPIO_ALT1 | GPIO_FLOAT | GPIO_FAST1X | GPIO_PORTG3 | GPIO_PIN2)
 
 /* MCT */
 #define GPIO_MCT0_INTLEV   (GPIO_ALT2 | GPIO_FLOAT | GPIO_FAST1X | GPIO_PORTG3 | GPIO_PIN0)

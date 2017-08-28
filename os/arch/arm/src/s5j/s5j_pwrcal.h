@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/s5j/s5j_pwrcal.c
+ * arch/arm/src/s5j/s5j_pwrcal.h
  *
  *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -52,154 +52,28 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-#include <tinyara/config.h>
-
-#include <stddef.h>
-#include <sys/types.h>
-#include <string.h>
-
-#include <tinyara/kmalloc.h>
-#include <arch/chip/irq.h>
-#include <chip.h>
-
-#include "s5j_cmu.h"
 #include "s5j_vclk.h"
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-unsigned int cal_clk_is_enabled(unsigned int id)
-{
-	return 0;
-}
 
-/*
- *  This definition of SPI_CLK should be replaced by function
- *  reruning actual CLK frequency
- */
-#define SPI_CLK 40000000
+unsigned int cal_clk_is_enabled(unsigned int id);
+int cal_clk_setrate(unsigned int id, unsigned long rate);
+unsigned long cal_clk_getrate(unsigned int id);
+int cal_clk_enable(unsigned int id);
+int cal_clk_disable(unsigned int id);
+int cal_clk_mux(unsigned int id, int val);
+int cal_init(void);
 
-/* This definitions should be moved into the right place */
-#define S5J_CON_DIV_CLK_SPI0 (S5J_CMU_BASE + 0x1804)
-#define S5J_CON_DIV_CLK_SPI1 (S5J_CMU_BASE + 0x1808)
-#define S5J_CON_DIV_CLK_SPI2 (S5J_CMU_BASE + 0x180C)
-#define S5J_CON_DIV_CLK_SPI3 (S5J_CMU_BASE + 0x1810)
-
-int cal_clk_setrate(unsigned int id, unsigned long rate)
-{
-	unsigned long parents;
-	unsigned int div;
-
-	switch (id) {
-	case d1_spi0:
-		/* CLK_CON_DIV_DIV_CLK_SPI */
-		parents = SPI_CLK;
-		div = parents / rate;
-		if (div == 0) {
-			div = 1;
-		}
-		modifyreg32(S5J_CON_DIV_CLK_SPI0, 0x7ff, (div - 1));
-		break;
-	case d1_spi1:
-		/* CLK_CON_DIV_DIV_CLK_SPI1 */
-		parents = SPI_CLK;
-		div = parents / rate;
-		if (div == 0) {
-			div = 1;
-		}
-		modifyreg32(S5J_CON_DIV_CLK_SPI1, 0x7FF, (div - 1));
-		break;
-	case d1_spi2:
-		/* CLK_CON_DIV_DIV_CLK_SPI2 */
-		parents = SPI_CLK;
-		div = parents / rate;
-		if (div == 0) {
-			div = 1;
-		}
-		modifyreg32(S5J_CON_DIV_CLK_SPI2, 0x7ff, (div - 1));
-		break;
-	case d1_spi3:
-		/* CLK_CON_DIV_DIV_CLK_SPI3 */
-		parents = SPI_CLK;
-		div = parents / rate;
-		if (div == 0) {
-			div = 1;
-		}
-		modifyreg32(S5J_CON_DIV_CLK_SPI3, 0x7ff, (div - 1));
-		break;
-	case gate_hsi2c0:
-	case gate_hsi2c1:
-	case gate_hsi2c2:
-	case gate_hsi2c3:
-		break;
-	case d1_serialflash:
-		/* CLK_CON_DIV_DIV_CLK_SERIALFLASH */
-		parents = 320000000;
-		div = parents / rate;
-		modifyreg32(0x80081800, 0xf, (div - 1));
-		break;
-	default:
-		break;
-	}
-
-	return -1;
-}
-
-unsigned long cal_clk_getrate(unsigned int id)
-{
-	unsigned long rate = 0;
-
-	switch (id) {
-	case d1_spi0:
-		break;
-	case d1_spi1:
-		break;
-	case d1_serialflash:
-		break;
-	case m1_clkcmu_uart:
-		rate = S5J_DEFAULT_UART_CLOCK;
-		break;
-	case gate_hsi2c0:
-	case gate_hsi2c1:
-	case gate_hsi2c2:
-	case gate_hsi2c3:
-		rate = S5J_DEFAULT_I2C_CLOCK;
-		break;
-	default:
-		break;
-	}
-
-	return rate;
-}
-
-int cal_clk_mux(unsigned int id, int val)
-{
-    switch(id)
-    {
-    case i2s_mux:
-        if (val == i2s_bclk)
-                modifyreg32(CLK_CON_MUX_MUX_CLKCMU_I2SB, 0, 1);
-        else if (val == i2s_osc)
-                modifyreg32(CLK_CON_MUX_MUX_CLKCMU_I2SB, 1, 0);
-        break;
-    default:
-        break;
-    }
-
-return 0;
-}
-
-int cal_clk_enable(unsigned int id)
-{
-	return 0;
-}
-
-int cal_clk_disable(unsigned int id)
-{
-	return 0;
-}
-
-int cal_init(void)
-{
-	return 0;
-}

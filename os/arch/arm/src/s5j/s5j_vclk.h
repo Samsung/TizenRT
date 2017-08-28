@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,6 +95,9 @@ enum {
 	dvfs_dummy = 0x0A070000,
 	vclk_group_dfs_end,
 	num_of_dfs = vclk_group_dfs_end - 0x0A070000,
+	i2s_mux = 0x0A080000,
+	i2s_bclk,
+	i2s_osc,
 };
 
 #define S5J_DEFAULT_I2C_CLOCK	(160 * 1000 * 1000)
