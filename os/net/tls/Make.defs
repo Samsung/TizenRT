@@ -81,7 +81,7 @@ SRC_TLS_CSRCS =       debug.c         net.c           ssl_cache.c     \
                       ssl_ticket.c    easy_tls.c
 
 ifeq ($(CONFIG_TLS_WITH_SSS),y)
-SRC_SEE_CSRCS += see_api.c	see_internal.c
+SRC_SEE_CSRCS += see_api.c	see_internal.c	see_misc.c
 endif
 
 TLS_CSRCS += $(SRC_CRYPTO_CSRCS) $(SRC_X509_CSRCS) $(SRC_TLS_CSRCS) $(SRC_SEE_CSRCS)
