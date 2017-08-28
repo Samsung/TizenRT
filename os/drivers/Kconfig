@@ -15,9 +15,7 @@ config DEV_ZERO
 	bool "Enable /dev/zero"
 	default n
 
-menu "Buffering"
-
-config DRVR_WRITEBUFFER
+menuconfig DRVR_WRITEBUFFER
 	bool "Enable write buffer support"
 	depends on SCHED_WORKQUEUE
 	default n
@@ -61,8 +59,6 @@ config DRVR_INVALIDATE
 	default n
 
 endif # DRVR_WRITEBUFFER || DRVR_READAHEAD
-
-endmenu # Buffering
 
 menuconfig CAN
 	bool "CAN Driver Support"
