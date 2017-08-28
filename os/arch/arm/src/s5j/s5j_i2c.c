@@ -302,7 +302,7 @@ static void hsi2c_calculate_timing(struct s5j_i2c_priv_s *priv, unsigned int nOp
 
 	tFTL_CYCLE_SCL = (i2c_getreg32(priv, S5J_I2C_CONF) >> 16) & 0x7;
 
-	uTemp0 = (float)(priv->clock / nOpClk) - (tFTL_CYCLE_SCL + 3) * 2;
+	uTemp0 = (priv->clock / nOpClk) - (tFTL_CYCLE_SCL + 3) * 2;
 
 	for (i = 0; i < 256; i++) {
 		uTemp1 = ((int)uTemp0 + ((tFTL_CYCLE_SCL + 3) % (i + 1)) * 2) / (i + 1);
