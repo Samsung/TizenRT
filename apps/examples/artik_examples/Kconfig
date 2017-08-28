@@ -28,7 +28,7 @@ if EXAMPLES_ARTIK_SDK
 endif
 
 config USER_ENTRYPOINT
--       string
--       default "artik_cloud_main" if ENTRY_ARTIK_EXAMPLES && EXAMPLES_ARTIK_CLOUD
--       default "artik_http_main" if ENTRY_ARTIK_EXAMPLES && EXAMPLES_ARTIK_HTTP
--       default "artik_websocket_main" if ENTRY_ARTIK_EXAMPLES && EXAMPLES_ARTIK_WEBSOCKET
+	string
+	default "artik_cloud_main" if ENTRY_ARTIK_EXAMPLES && EXAMPLES_ARTIK_CLOUD
+	default "artik_http_main" if ENTRY_ARTIK_EXAMPLES && EXAMPLES_ARTIK_HTTP
+	default "artik_websocket_main" if ENTRY_ARTIK_EXAMPLES && EXAMPLES_ARTIK_WEBSOCKET
