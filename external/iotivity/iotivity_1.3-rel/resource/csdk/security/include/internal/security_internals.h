@@ -114,7 +114,7 @@ OCStackResult CreateCredResource();
  * @return ::OC_STACK_OK if conversion is successful, else ::OC_STACK_ERROR if unsuccessful.
  */
 OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
-                                OicSecCred_t **secCred);
+                                OicSecCred_t **secCred, OicUuid_t **rownerId);
 
 /**
  * This internal method is used to create '/oic/sec/doxm' resource.

@@ -67,6 +67,7 @@ void RefreshCred()
     OicSecCred_t *credList = NULL;
     OicSecCred_t *cred = NULL;
     OicSecCred_t *tmpCred = NULL;
+    OicUuid_t *rownerId = NULL;
     //Load security resouce data from SVR DB.
     ocResult = GetSecureVirtualDatabaseFromPS(OIC_JSON_CRED_NAME, &secPayload, &payloadSize);
     if (OC_STACK_OK != ocResult)
@@ -76,7 +77,7 @@ void RefreshCred()
     }
     if (secPayload && 0 != payloadSize)
     {
-        ocResult = CBORPayloadToCred(secPayload, payloadSize, &credList);
+        ocResult = CBORPayloadToCred(secPayload, payloadSize, &credList, &rownerId);
         if (OC_STACK_OK != ocResult)
         {
             PRINT_ERR("CBORPayloadToCred : %d", ocResult);
@@ -85,6 +86,7 @@ void RefreshCred()
         }
     }
     OICFree(secPayload);
+    OICFree(rownerId);
     DeInitCredResource();
 
     //Add the loaded credentials into gCred of CredResource module in order to use the credential management mechanism.
@@ -358,7 +360,7 @@ void PrintCredList(const OicSecCred_t *creds)
     if (!isEmptyList)
     {
         PRINT_PROG("%15s : ", OIC_JSON_ROWNERID_NAME);
-        PrintUuid(&(creds->rownerID));
+//        PrintUuid(&(creds->rownerID));
     }
     else
     {

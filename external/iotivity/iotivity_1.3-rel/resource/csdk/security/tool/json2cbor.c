@@ -1327,13 +1327,13 @@ OicSecCred_t *JSONToCredBin(const char *jsonStr)
     }
 
     // rownerid
-    cJSON *jsonCredObj = cJSON_GetObjectItem(jsonCredMap, OIC_JSON_ROWNERID_NAME);
+/*    cJSON *jsonCredObj = cJSON_GetObjectItem(jsonCredMap, OIC_JSON_ROWNERID_NAME);
     VERIFY_NOT_NULL(TAG, jsonCredObj, ERROR);
     VERIFY_SUCCESS(TAG, cJSON_String == jsonCredObj->type, ERROR);
     ret = ConvertStrToUuid(jsonCredObj->valuestring, &headCred->rownerID);
     VERIFY_SUCCESS(TAG, OC_STACK_OK == ret, ERROR);
     ret = OC_STACK_OK;
-
+*/  
 exit:
     cJSON_Delete(jsonRoot);
     if (OC_STACK_OK != ret)

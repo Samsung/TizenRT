@@ -57,7 +57,6 @@ OicSecCred_t * getCredList()
     VERIFY_NOT_NULL(TAG, cred->privateData.data, ERROR);
     OICStrcpy((char *)cred->privateData.data, strlen("My private Key11")+1,"My private Key11");
     // use |memcpy| for copying full-lengthed UUID without null termination
-    memcpy(cred->rownerID.id, "aaaaaaaaaaaaaaaa", sizeof(cred->rownerID.id));
     cred->next = (OicSecCred_t*)OICCalloc(1, sizeof(*cred->next));
     VERIFY_NOT_NULL(TAG, cred->next, ERROR);
     cred->next->credId = 5678;
@@ -80,7 +79,6 @@ OicSecCred_t * getCredList()
     OICStrcpy(cred->next->publicData.data, sz,"My Public Key123");
 #endif
     // use |memcpy| for copying full-lengthed UUID without null termination
-    memcpy(cred->next->rownerID.id, "bbbbbbbbbbbbbbbb", sizeof(cred->next->rownerID.id));
 
     return cred;
 
@@ -113,7 +111,6 @@ static void printCred(const OicSecCred_t * cred)
            OIC_LOG_V(INFO, TAG, "cred->publicData.data = %s", credTmp1->publicData.data);
         }
 #endif /* __WITH_DTLS__ */
-    OIC_LOG_V(INFO, TAG, "cred->rownerID = %s", credTmp1->rownerID.id);
     }
 }
 
@@ -254,9 +251,12 @@ TEST(CredResourceTest, CBORPayloadToCredVALID)
     ASSERT_TRUE(NULL != payload);
 
     OicSecCred_t *cred2 = NULL;
-    EXPECT_EQ(OC_STACK_OK, CBORPayloadToCred(payload, size, &cred2));
+    OicUuid_t *rownerId = NULL;
+    EXPECT_EQ(OC_STACK_OK, CBORPayloadToCred(payload, size, &cred2, &rownerId));
     OICFree(payload);
     ASSERT_TRUE(cred2 != NULL);
+    ASSERT_TRUE(rownerId != NULL);
+    OICFree(rownerId);
     DeleteCredList(cred2);
 }
 
@@ -276,12 +276,14 @@ TEST(CredResourceTest, CBORPayloadToCredSecureVALID)
     ASSERT_TRUE(NULL != payload);
 
     OicSecCred_t *cred2 = NULL;
-    EXPECT_EQ(OC_STACK_OK, CBORPayloadToCred(payload, size, &cred2));
+    OicUuid_t *rownerId = NULL;
+    EXPECT_EQ(OC_STACK_OK, CBORPayloadToCred(payload, size, &cred2, &rownerId));
     ASSERT_TRUE(cred2 != NULL);
     ASSERT_TRUE(NULL == cred2->privateData.data);
     ASSERT_TRUE(0 == cred2->privateData.len);
 
     OICFree(payload);
+    OICFree(rownerId);
 
     DeleteCredList(cred1);
     DeleteCredList(cred2);
@@ -290,14 +292,16 @@ TEST(CredResourceTest, CBORPayloadToCredSecureVALID)
 TEST(CredResourceTest, CBORPayloadToCredNULL)
 {
     OicSecCred_t *cred = NULL;
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(NULL, 0, NULL));
+    OicUuid_t *rownerId = NULL;
+    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(NULL, 0, NULL, NULL));
     uint8_t *cborPayload = (uint8_t *) OICCalloc(1, 10);
     ASSERT_TRUE(NULL != cborPayload);
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(NULL, 0, &cred));
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(cborPayload, 0, NULL));
+    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(NULL, 0, &cred, &rownerId));
+    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(cborPayload, 0, NULL, NULL));
     cred = getCredList();
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(cborPayload, 0, &cred));
+    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(cborPayload, 0, &cred, &rownerId));
     DeleteCredList(cred);
+    OICFree(rownerId);
     OICFree(cborPayload);
 }
 
@@ -388,5 +392,5 @@ TEST(CredAddTmpPskWithPINTest, NullSubject)
 #endif // __WITH_DTLS__ or __WITH_TLS__
 TEST(CredCBORPayloadToCredTest, NullPayload)
 {
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(NULL, 0, NULL));
+    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(NULL, 0, NULL, NULL));
 }
