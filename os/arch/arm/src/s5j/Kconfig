@@ -156,6 +156,7 @@ config S5J_DMA
 	bool "DMA"
 	default n
 	depends on S5J_HAVE_DMA
+	select ARCH_DMA
 
 config S5J_I2C
 	bool "I2C"

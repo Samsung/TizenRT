@@ -616,6 +616,32 @@ Once LOGM is approved, each module should have its own index
 #define audllvdbg(x...)
 #endif
 
+#ifdef CONFIG_DEBUG_I2C_ERROR
+#define i2cerr(format, ...)    dbg(format, ##__VA_ARGS__)
+#define i2clldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define i2cerr(x...)
+#define i2clldbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_I2C_WARN
+#define i2cwarn(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define i2cllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define i2cwarn(x...)
+#define i2cllwdbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_I2C_INFO
+#define i2cinfo(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define i2cllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define i2cinfo(x...)
+#define i2cllvdbg(x...)
+#endif
+
+
+
 #ifdef CONFIG_NET_LWIP_DEBUG
 #define lwipdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define lwiplldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
