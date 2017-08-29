@@ -35,7 +35,7 @@
 int g_prioidx[PRIORITY_NUM] = { LOG_EMERG, LOG_ALERT, LOG_CRIT, LOG_ERR, LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG };
 const char *g_priostr[PRIORITY_NUM] = { "Emergency", "Alert", "Critical", "Error", "Warning", "Notice", "Information", "Debug" };
 
-char g_syslogmsg[MAX_SYSLOG_MSG];
+char g_syslogmsg[MAX_SYSLOG_MSG + 1];
 
 /**
  * @fn                  :tc_libc_syslog_setlogmask
@@ -87,7 +87,7 @@ static void tc_libc_syslog_syslog(void)
 	int i;
 
 	for (i = 0; i < PRIORITY_NUM; i++) {
-		sprintf(g_syslogmsg, "%s message\n", g_priostr[i]);
+		snprintf(g_syslogmsg, MAX_SYSLOG_MSG, "%s message\n", g_priostr[i]);
 		usleep(USEC_100);
 		ret_chk = syslog(g_prioidx[i], g_syslogmsg);
 		TC_ASSERT_EQ("syslog", ret_chk, strlen(g_syslogmsg));
@@ -128,7 +128,7 @@ static void tc_libc_syslog_vsyslog(void)
 	int i;
 
 	for (i = 0; i < PRIORITY_NUM; i++) {
-		sprintf(g_syslogmsg, "%s message\n", g_priostr[i]);
+		snprintf(g_syslogmsg, MAX_SYSLOG_MSG, "%s message\n", g_priostr[i]);
 		usleep(USEC_100);
 		ret_chk = vsyslogFunc(g_prioidx[i], g_syslogmsg);
 		TC_ASSERT_EQ("vsyslog", ret_chk, strlen(g_syslogmsg));
@@ -153,7 +153,7 @@ static void tc_libc_syslog_lowsyslog(void)
 	int i;
 
 	for (i = 0; i < PRIORITY_NUM; i++) {
-		sprintf(g_syslogmsg, "%s message\n", g_priostr[i]);
+		snprintf(g_syslogmsg, MAX_SYSLOG_MSG, "%s message\n", g_priostr[i]);
 		usleep(USEC_100);
 		ret_chk = lowsyslog(g_prioidx[i], g_syslogmsg);
 		TC_ASSERT_EQ("lowsyslog", ret_chk, strlen(g_syslogmsg));
@@ -194,7 +194,7 @@ static void tc_libc_syslog_lowvsyslog(void)
 	int i;
 
 	for (i = 0; i < PRIORITY_NUM; i++) {
-		sprintf(g_syslogmsg, "%s message\n", g_priostr[i]);
+		snprintf(g_syslogmsg, MAX_SYSLOG_MSG, "%s message\n", g_priostr[i]);
 		usleep(USEC_100);
 		ret_chk = lowvsyslogFunc(g_prioidx[i], g_syslogmsg);
 		TC_ASSERT_EQ("lowvsyslog", ret_chk, strlen(g_syslogmsg));

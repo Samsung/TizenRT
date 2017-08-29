@@ -895,7 +895,8 @@ static void tc_pthread_pthread_sem_take_give(void)
 	TC_ASSERT_EQ("pthread_sem_take", ret_chk, OK);
 
 	sem_getvalue(&sem, &get_value);
-	TC_ASSERT_EQ("sem_getvalue", get_value, VAL_TWO);
+	/* if get_value is not matched with VAL_TWO, then TC fails. but we will not use sem anymore, so destroy it */
+	TC_ASSERT_EQ_CLEANUP("sem_getvalue", get_value, VAL_TWO, sem_destroy(&sem));
 
 	ret_chk = pthread_sem_give(&sem);
 	TC_ASSERT_EQ("pthread_sem_give", ret_chk, OK);
@@ -1281,7 +1282,8 @@ static void tc_pthread_pthread_cond_signal_wait(void)
 	ret_chk = pthread_create(&pthread_waiter, NULL, thread_cond_signal, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	TC_ASSERT_EQ("pthread_mutex_lock", g_cond_sig_val, VAL_ONE);
+	/* if g_cond_sig_val is not matched with VAL_ONE, then TC fails. but we will not use g_mutex anymore, so destroy it */
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_lock", g_cond_sig_val, VAL_ONE, pthread_mutex_destroy(&g_mutex));
 
 	ret_chk = pthread_mutex_unlock(&g_mutex);
 	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
