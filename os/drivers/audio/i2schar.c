@@ -88,9 +88,6 @@
 #define CONFIG_AUDIO_I2SCHAR_TXTIMEOUT 0
 #endif
 
-#define i2serr printf
-#define i2sinfo printf
-
 /* Device naming ************************************************************/
 #define DEVNAME_FMT    "/dev/i2schar%d"
 #define DEVNAME_FMTLEN (12 + 3 + 1)
@@ -101,7 +98,7 @@
 
 struct i2schar_dev_s {
 	FAR struct i2s_dev_s *i2s;	/* The lower half i2s driver */
-	sem_t exclsem;			/* Assures mutually exclusive access */
+	sem_t exclsem;				/* Assures mutually exclusive access */
 };
 
 /****************************************************************************
@@ -122,14 +119,14 @@ static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, siz
  ****************************************************************************/
 
 static const struct file_operations i2schar_fops = {
-	NULL,					/* open  */
-	NULL,					/* close */
+	NULL,						/* open  */
+	NULL,						/* close */
 	i2schar_read,				/* read  */
 	i2schar_write,				/* write */
-	NULL,					/* seek  */
-	NULL,					/* ioctl */
+	NULL,						/* seek  */
+	NULL,						/* ioctl */
 #ifndef CONFIG_DISABLE_POLL
-	NULL,					/* poll  */
+	NULL,						/* poll  */
 #endif
 };
 
@@ -159,7 +156,7 @@ static void i2schar_rxcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s
 	FAR struct i2schar_dev_s *priv = (FAR struct i2schar_dev_s *)arg;
 
 	DEBUGASSERT(priv && apb);
-	i2sinfo("apb=%p nbytes=%d result=%d\n", apb, apb->nbytes, result);
+	llvdbg("apb=%p nbytes=%d result=%d\n", apb, apb->nbytes, result);
 
 	/* REVISIT: If you want this to actually do something other than
 	 * test I2S data transfer, then this is the point where you would
@@ -170,7 +167,7 @@ static void i2schar_rxcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s
 	 * now.
 	 */
 
-	i2sinfo("Freeing apb=%p crefs=%d\n", apb, apb->crefs);
+	llvdbg("Freeing apb=%p crefs=%d\n", apb, apb->crefs);
 	apb_free(apb);
 }
 
@@ -192,7 +189,7 @@ static void i2schar_txcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s
 	FAR struct i2schar_dev_s *priv = (FAR struct i2schar_dev_s *)arg;
 
 	DEBUGASSERT(priv && apb);
-	i2sinfo("apb=%p nbytes=%d result=%d\n", apb, apb->nbytes, result);
+	llvdbg("apb=%p nbytes=%d result=%d\n", apb, apb->nbytes, result);
 
 	/* REVISIT: If you want this to actually do something other than
 	 * test I2S data transfer, then this is the point where you would
@@ -203,7 +200,7 @@ static void i2schar_txcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s
 	 * now.
 	 */
 
-	i2sinfo("Freeing apb=%p crefs=%d\n", apb, apb->crefs);
+	llvdbg("Freeing apb=%p crefs=%d\n", apb, apb->crefs);
 	apb_free(apb);
 }
 
@@ -223,7 +220,7 @@ static ssize_t i2schar_read(FAR struct file *filep, FAR char *buffer, size_t buf
 	size_t nbytes;
 	int ret;
 
-	i2sinfo("buffer=%p buflen=%d\n", buffer, (int)buflen);
+	llvdbg("buffer=%p buflen=%d\n", buffer, (int)buflen);
 
 	/* Get our private data structure */
 
@@ -253,7 +250,7 @@ static ssize_t i2schar_read(FAR struct file *filep, FAR char *buffer, size_t buf
 	if (ret < 0) {
 		ret = -errno;
 		DEBUGASSERT(ret < 0);
-		i2serr("ERROR: sem_wait returned: %d\n", ret);
+		lldbg("ERROR: sem_wait returned: %d\n", ret);
 		goto errout_with_reference;
 	}
 
@@ -261,7 +258,7 @@ static ssize_t i2schar_read(FAR struct file *filep, FAR char *buffer, size_t buf
 
 	ret = I2S_RECEIVE(priv->i2s, apb, i2schar_rxcallback, priv, CONFIG_AUDIO_I2SCHAR_RXTIMEOUT);
 	if (ret < 0) {
-		i2serr("ERROR: I2S_RECEIVE returned: %d\n", ret);
+		lldbg("ERROR: I2S_RECEIVE returned: %d\n", ret);
 		goto errout_with_reference;
 	}
 
@@ -294,7 +291,7 @@ static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, siz
 	size_t nbytes;
 	int ret;
 
-	i2sinfo("buffer=%p buflen=%d\n", buffer, (int)buflen);
+	llvdbg("buffer=%p buflen=%d\n", buffer, (int)buflen);
 
 	/* Get our private data structure */
 
@@ -324,7 +321,7 @@ static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, siz
 	if (ret < 0) {
 		ret = -errno;
 		DEBUGASSERT(ret < 0);
-		i2serr("ERROR: sem_wait returned: %d\n", ret);
+		lldbg("ERROR: sem_wait returned: %d\n", ret);
 		goto errout_with_reference;
 	}
 
@@ -332,7 +329,7 @@ static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, siz
 
 	ret = I2S_SEND(priv->i2s, apb, i2schar_txcallback, priv, CONFIG_AUDIO_I2SCHAR_TXTIMEOUT);
 	if (ret < 0) {
-		i2serr("ERROR: I2S_SEND returned: %d\n", ret);
+		lldbg("ERROR: I2S_SEND returned: %d\n", ret);
 		goto errout_with_reference;
 	}
 

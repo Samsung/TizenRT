@@ -1,4 +1,3 @@
-
 /****************************************************************************
  *
  * Copyright 2017 Samsung Electronics All Rights Reserved.
@@ -68,7 +67,10 @@
 #include <debug.h>
 
 #include <tinyara/audio/audio.h>
-#include "libc.h"
+
+#include "lib_internal.h"
+
+#if defined(CONFIG_AUDIO)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -133,7 +135,6 @@ int apb_alloc(FAR struct audio_buf_desc_s *bufdesc)
 	int ret;
 	struct ap_buffer_s *apb;
 
-	DEBUGASSERT(bufdesc != NULL);
 	DEBUGASSERT(bufdesc->u.ppBuffer != NULL);
 
 	/* Perform a user mode allocation */
@@ -184,7 +185,7 @@ void apb_free(FAR struct ap_buffer_s *apb)
 	apb_semgive(apb);
 
 	if (refcount <= 1) {
-		audinfo("Freeing %p\n", apb);
+		audvdbg("Freeing %p\n", apb);
 		lib_ufree(apb);
 	}
 }
@@ -207,3 +208,4 @@ void apb_reference(FAR struct ap_buffer_s *apb)
 	apb_semgive(apb);
 }
 
+#endif							/* CONFIG_AUDIO */

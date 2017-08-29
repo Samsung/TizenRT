@@ -25,7 +25,9 @@ config S5J_S5JT200
 	bool
 	default n
 	select S5J_HAVE_ADC
+	select S5J_HAVE_DMA
 	select S5J_HAVE_I2C
+	select S5J_HAVE_I2S
 	select S5J_HAVE_MCT
 	select S5J_HAVE_PWM0
 	select S5J_HAVE_PWM1
@@ -54,7 +56,15 @@ config S5J_HAVE_ADC
 	bool
 	default n
 
+config S5J_HAVE_DMA
+	bool
+	default n
+
 config S5J_HAVE_I2C
+	bool
+	default n
+
+config S5J_HAVE_I2S
 	bool
 	default n
 
@@ -142,10 +152,49 @@ config S5J_ADC
 		S5J has 12-bits ADC with 4 channels. Say Y here, if you want
 		to use it.
 
+config S5J_DMA
+	bool "DMA"
+	default n
+	depends on S5J_HAVE_DMA
+	select ARCH_DMA
+
 config S5J_I2C
 	bool "I2C"
 	default n
 	depends on S5J_HAVE_I2C
+
+config S5J_I2S
+	bool "I2S"
+	default n
+	depends on S5J_HAVE_I2S
+	select I2S
+	select AUDIO
+	select S5J_DMA
+
+config S5J_I2S_RX
+	bool "S5J I2S RX support"
+	default n
+	depends on S5J_I2S
+
+config S5J_I2S_TX_P
+	bool "S5J I2S TX Prime support"
+	default n
+	depends on S5J_I2S
+
+config S5J_I2S_TX_S
+	bool "S5J I2S TX Secondary support"
+	default n
+	depends on S5J_I2S
+
+config S5J_I2S_MAXINFLIGHT
+	int "I2S queue size"
+	default 16
+	depends on S5J_I2S
+	---help---
+		This is the total number of transfers, both RX and TX, that can be
+		enqueue before the caller is required to wait.  This setting
+		determines the number certain queue data structures that will be
+		pre-allocated.
 
 config S5J_MCT
 	bool

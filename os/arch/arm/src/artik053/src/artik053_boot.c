@@ -61,6 +61,7 @@
 
 #include <tinyara/gpio.h>
 
+#include <arch/board/artik053_alc5658_i2c.h>
 #include "up_arch.h"
 #include "s5j_gpio.h"
 
@@ -213,5 +214,15 @@ void board_initialize(void)
 
 	board_gpio_initialize();
 	board_i2c_initialize();
+
+
+#if defined(CONFIG_AUDIO_ALC5658)
+	s5j_alc5658_initialize(0);
+#elif defined(CONFIG_AUDIO_ALC5658CHAR)
+	s5j_alc5658char_initialize(0);
+#elif defined(CONFIG_AUDIO_I2SCHAR)
+	alc5658_i2c_initialize();
+	i2schar_devinit();
+#endif
 }
 #endif /* CONFIG_BOARD_INITIALIZE */

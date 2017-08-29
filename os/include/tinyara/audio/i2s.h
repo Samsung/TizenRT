@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
+ * include/tinyara/audio/i2s.h
  *
  *   Copyright(C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -89,7 +90,7 @@
  *
  ****************************************************************************/
 
-#define I2S_RXSAMPLERATE(d, f) ((d)->ops->i2s_rxsamplerate(d, r))
+#define I2S_RXSAMPLERATE(d,f) ((d)->ops->i2s_rxsamplerate(d,r))
 
 /****************************************************************************
  * Name: I2S_RXDATAWIDTH
@@ -107,7 +108,7 @@
  *
  ****************************************************************************/
 
-#define I2S_RXDATAWIDTH(d, b) ((d)->ops->i2s_rxdatawidth(d, b))
+#define I2S_RXDATAWIDTH(d,b) ((d)->ops->i2s_rxdatawidth(d,b))
 
 /****************************************************************************
  * Name: I2S_RECEIVE
@@ -139,7 +140,7 @@
  *
  ****************************************************************************/
 
-#define I2S_RECEIVE(d, b, c, a, t) ((d)->ops->i2s_receive(d, b, c, a, t))
+#define I2S_RECEIVE(d,b,c,a,t) ((d)->ops->i2s_receive(d,b,c,a,t))
 
 /****************************************************************************
  * Name: I2S_TXSAMPLERATE
@@ -159,7 +160,7 @@
  *
  ****************************************************************************/
 
-#define I2S_TXSAMPLERATE(d, f) ((d)->ops->i2s_txsamplerate(d, r))
+#define I2S_TXSAMPLERATE(d,f) ((d)->ops->i2s_txsamplerate(d,r))
 
 /****************************************************************************
  * Name: I2S_TXDATAWIDTH
@@ -177,7 +178,7 @@
  *
  ****************************************************************************/
 
-#define I2S_TXDATAWIDTH(d, b) ((d)->ops->i2s_txdatawidth(d, b))
+#define I2S_TXDATAWIDTH(d,b) ((d)->ops->i2s_txdatawidth(d,b))
 
 /****************************************************************************
  * Name: I2S_SEND
@@ -209,7 +210,7 @@
  *
  ****************************************************************************/
 
-#define I2S_SEND(d, b, c, a, t) ((d)->ops->i2s_send(d, b, c, a, t))
+#define I2S_SEND(d,b,c,a,t) ((d)->ops->i2s_send(d,b,c,a,t))
 
 /****************************************************************************
  * Public Types
@@ -224,14 +225,14 @@ typedef CODE void (*i2s_callback_t)(FAR struct i2s_dev_s *dev, FAR struct ap_buf
 struct i2s_ops_s {
 	/* Receiver methods */
 
-	CODE uint32_t (*i2s_rxsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
-	CODE uint32_t (*i2s_rxdatawidth)(FAR struct i2s_dev_s *dev, int bits);
+	CODE uint32_t(*i2s_rxsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
+	CODE uint32_t(*i2s_rxdatawidth)(FAR struct i2s_dev_s *dev, int bits);
 	CODE int (*i2s_receive)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, i2s_callback_t callback, FAR void *arg, uint32_t timeout);
 
 	/* Transmitter methods */
 
-	CODE uint32_t (*i2s_txsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
-	CODE uint32_t (*i2s_txdatawidth)(FAR struct i2s_dev_s *dev, int bits);
+	CODE uint32_t(*i2s_txsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
+	CODE uint32_t(*i2s_txdatawidth)(FAR struct i2s_dev_s *dev, int bits);
 	CODE int (*i2s_send)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, i2s_callback_t callback, FAR void *arg, uint32_t timeout);
 };
 
@@ -290,5 +291,5 @@ int i2schar_register(FAR struct i2s_dev_s *i2s, int minor);
 }
 #endif
 
-#endif	/* CONFIG_I2S */
-#endif	/* __INCLUDE_TINYARA_AUDIO_I2S_H */
+#endif							/* CONFIG_I2S */
+#endif							/* __INCLUDE_TINYARA_AUDIO_I2S_H */

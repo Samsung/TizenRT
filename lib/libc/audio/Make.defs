@@ -1,4 +1,4 @@
-############################################################################
+###########################################################################
 #
 # Copyright 2017 Samsung Electronics All Rights Reserved.
 #
@@ -14,7 +14,7 @@
 # either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 #
-############################################################################
+###########################################################################
 ############################################################################
 # libc/audio/Make.defs
 #
@@ -53,6 +53,7 @@
 ifeq ($(CONFIG_AUDIO),y)
 CSRCS += lib_buffer.c
 
+# Add the audio/ directory to the build
 
 DEPPATH += --dep-path audio
 VPATH += :audio

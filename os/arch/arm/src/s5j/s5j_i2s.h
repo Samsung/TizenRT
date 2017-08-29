@@ -1,4 +1,3 @@
-
 /****************************************************************************
  *
  * Copyright 2017 Samsung Electronics All Rights Reserved.
@@ -16,10 +15,10 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/****************************************************************************
- * libc/libc.h
+/************************************************************************************
+ * arch/arm/src/sama5/sam_ssc.h
  *
- *   Copyright (C) 2007-2014, 2016-2017 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,83 +48,42 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ****************************************************************************/
+ ************************************************************************************/
 
-#ifndef __LIB_LIBC_H
-#define __LIB_LIBC_H
+#ifndef __ARCH_ARM_SRC_S5JT200_S5J_I2S_H
+#define __ARCH_ARM_SRC_S5JT200_S5J_I2S_H
 
-/****************************************************************************
+/************************************************************************************
  * Included Files
- ****************************************************************************/
+ ************************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/audio/i2s.h>
 
-#include <sys/types.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <limits.h>
-#include <semaphore.h>
+#include <arch/chip/irq.h>
+#include <chip.h>
 
-#include <tinyara/streams.h>
+#include "s5j_gpio.h"
+#include "chip.h"
+#include "chip/s5jt200_i2s.h"
 
-/****************************************************************************
+/************************************************************************************
  * Pre-processor Definitions
- ****************************************************************************/
+ ************************************************************************************/
 
-/* The Tinyara C library an be build in two modes: (1) as a standard, C-library
- * that can be used by normal, user-space applications, or (2) as a special,
- * kernel-mode C-library only used within the OS.  If NuttX is not being
- * built as separated kernel- and user-space modules, then only the first
- * mode is supported.
- */
-
-#if (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)) || \
-     defined(CONFIG_BUILD_KERNEL)
-#include <tinyara/kmalloc.h>
-
-/* Domain-specific allocations */
-
-#define lib_malloc(s)     kmm_malloc(s)
-#define lib_zalloc(s)     kmm_zalloc(s)
-#define lib_realloc(p,s)  kmm_realloc(p,s)
-#define lib_memalign(p,s) kmm_memalign(p,s)
-#define lib_free(p)       kmm_free(p)
-
-/* User-accessible allocations */
-
-#define lib_umalloc(s)    kumm_malloc(s)
-#define lib_uzalloc(s)    kumm_zalloc(s)
-#define lib_urealloc(p,s) kumm_realloc(p,s)
-#define lib_ufree(p)      kumm_free(p)
-
-#else
-#include <stdlib.h>
-
-/* Domain-specific allocations */
-
-#define lib_malloc(s)     malloc(s)
-#define lib_zalloc(s)     zalloc(s)
-#define lib_realloc(p,s)  realloc(p,s)
-#define lib_free(p)       free(p)
-
-/* User-accessible allocations */
-
-#define lib_umalloc(s)    malloc(s)
-#define lib_uzalloc(s)    zalloc(s)
-#define lib_urealloc(p,s) realloc(p,s)
-#define lib_ufree(p)      free(p)
-
-#endif
-
-#define LIB_BUFLEN_UNKNOWN INT_MAX
-
-/****************************************************************************
+/************************************************************************************
  * Public Types
- ****************************************************************************/
+ ************************************************************************************/
 
-/****************************************************************************
+/************************************************************************************
+ * Inline Functions
+ ************************************************************************************/
+
+#ifndef __ASSEMBLY__
+
+/************************************************************************************
  * Public Data
- ****************************************************************************/
+ ************************************************************************************/
 
 #undef EXTERN
 #if defined(__cplusplus)
@@ -135,9 +93,30 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+/************************************************************************************
+ * Public Function Prototypes
+ ************************************************************************************/
+
+/****************************************************************************
+ * Name: s5j_i2s_initialize
+ *
+ * Description:
+ *   Initialize the selected I2S port.
+ *
+ * Input Parameter:
+ *   Port number (for hardware that has mutiple I2S interfaces)
+ *
+ * Returned Value:
+ *   Valid I2S device structure reference on succcess; a NULL on failure
+ *
+ ****************************************************************************/
+
+FAR struct i2s_dev_s *s5j_i2s_initialize(void);
+
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif							/* __LIB_LIBC_H */
+#endif							/* __ASSEMBLY__ */
+#endif							/* __ARCH_ARM_SRC_S5JT200_S5J_I2S_H */
