@@ -485,8 +485,11 @@ int main(int argc, char *argv[])
         OIC_LOG(ERROR, TAG, "thread pool initialize error.");
         return res;
     }
-
+#ifndef __TIZENRT__
     res = ca_thread_pool_add_task(g_threadPoolHandle, userRequests, NULL);
+#else
+	res = ca_thread_pool_add_task(g_threadPoolHandle, userRequests, NULL, "IoT_userRequest", 4092);
+#endif
     if (CA_STATUS_OK != res)
     {
         OIC_LOG(ERROR, TAG, "thread pool add task error.");

@@ -33,8 +33,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#ifdef __TIZENRT__
+#include <poll.h>
+#else
 #ifdef HAVE_SYS_POLL_H
 #include <sys/poll.h>
+#endif
 #endif
 
 #ifdef HAVE_WINSOCK2_H
@@ -70,7 +74,7 @@ extern "C"
 /**
  * Max header options data length.
  */
-#ifdef ARDUINO
+#if defined(ARDUINO) || defined(__TIZENRT__)
 #define CA_MAX_HEADER_OPTION_DATA_LENGTH 20
 #else
 #define CA_MAX_HEADER_OPTION_DATA_LENGTH 1024
@@ -615,7 +619,9 @@ typedef struct
         WSAEVENT shutdownEvent;     /**< Event used to signal threads to stop */
 #else
         int netlinkFd;              /**< netlink */
+#ifndef __TIZENRT__
         int shutdownFds[2];         /**< fds used to signal threads to stop */
+#endif
         CASocketFd_t maxfd;         /**< highest fd (for select) */
 #endif
         int selectTimeout;          /**< in seconds */
@@ -657,7 +663,9 @@ typedef struct
 #if defined(_WIN32)
         WSAEVENT updateEvent;   /**< Event used to signal thread to stop or update the FD list */
 #else
+#ifndef __TIZENRT__
         int shutdownFds[2];     /**< shutdown pipe */
+#endif
         int connectionFds[2];   /**< connection pipe */
         CASocketFd_t maxfd;     /**< highest fd (for select) */
 #endif

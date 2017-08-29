@@ -30,9 +30,11 @@
 #define PLATFORM_FEATURES_H_
 
 
+#ifndef __TIZENRT__
 #if (__STDC_VERSION__ >= 201112L)
 #  include <assert.h>
 #  define OC_STATIC_ASSERT(condition, msg) static_assert(condition, msg)
+#endif
 #elif defined(_WIN32)
 #  if defined(__msys_nt__) && !defined(__cplusplus)
 #    define static_assert _Static_assert

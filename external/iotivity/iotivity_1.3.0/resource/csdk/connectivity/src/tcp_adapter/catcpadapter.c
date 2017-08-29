@@ -404,7 +404,11 @@ CAResult_t CAStartTCP()
     }
 
     // Start send queue thread
+#ifndef __TIZENRT__
     if (CA_STATUS_OK != CAQueueingThreadStart(g_sendQueueHandle))
+#else
+    if (CA_STATUS_OK != CAQueueingThreadStart(g_sendQueueHandle, "IoT_TCPSendQueue"))
+#endif
     {
         OIC_LOG(ERROR, TAG, "Failed to Start Send Data Thread");
         return CA_STATUS_FAILED;
@@ -672,7 +676,11 @@ void CADataDestroyer(void *data, uint32_t size)
 {
     if (size < sizeof(CATCPData))
     {
+#ifndef __TIZENRT__
         OIC_LOG_V(ERROR, TAG, "Destroy data too small %p %" PRIu32, data, size);
+#else
+        OIC_LOG_V(ERROR, TAG, "Destroy data too small %p %" "lu", data, size);
+#endif
     }
     CATCPData *TCPData = (CATCPData *) data;
 

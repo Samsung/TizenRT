@@ -27,7 +27,6 @@
 #ifndef CA_SECURITY_INTERFACE_H_
 #define CA_SECURITY_INTERFACE_H_
 
-
 #include "cacommon.h"
 #include "byte_array.h"
 

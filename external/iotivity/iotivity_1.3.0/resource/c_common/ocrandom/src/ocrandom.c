@@ -215,12 +215,18 @@ bool OCGetRandomBytes(uint8_t * output, size_t len)
     }
 
 #elif defined(__TIZENRT__) /* temporarilly modified, by wonsang */
+    static int isSeeded = 0;
     size_t i;
+
+    if ( !isSeeded )
+    {
+        srand(time(NULL));
+        isSeeded = 1;
+    }
     for (i = 0; i < len; i++)
     {
         output[i] = rand() % 0xff;
     }
-
 
 #else
     #error Unrecognized platform

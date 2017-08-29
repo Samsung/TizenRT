@@ -22,7 +22,11 @@
 #include <string.h>
 #include <inttypes.h>
 #include "utlist.h"
+#if defined (__TIZENRT__)
+#include <apps/netutils/cJSON.h>
+#else
 #include "cJSON.h"
+#endif
 #include "base64.h"
 #include "cainterface.h"
 #include "ocstack.h"

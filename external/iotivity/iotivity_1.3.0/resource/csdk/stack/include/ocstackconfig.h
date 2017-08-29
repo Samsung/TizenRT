@@ -33,7 +33,7 @@
  * Maximum length of the URI supported by client/server while processing
  * REST requests/responses.
  */
-#ifdef ARDUINO
+#if defined(ARDUINO) || defined(__TIZENRT__)
 #define MAX_URI_LENGTH (64)
 #else
 #define MAX_URI_LENGTH (256)
@@ -43,7 +43,7 @@
  * Maximum length of the query supported by client/server while processing
  * REST requests/responses.
  */
-#ifdef ARDUINO
+#if defined(ARDUINO) || defined(__TIZENRT__)
 #define MAX_QUERY_LENGTH (64)
 #else
 #define MAX_QUERY_LENGTH (256)
@@ -86,7 +86,7 @@
  *  Maximum number of vendor specific header options an application can set or receive
  *  in PDU
  */
-#ifdef ARDUINO
+#if defined(ARDUINO) || defined(__TIZENRT__)
 #define MAX_HEADER_OPTIONS (2)
 #else
 #define MAX_HEADER_OPTIONS (50)
@@ -95,7 +95,7 @@
 /**
  *  Maximum Length of the vendor specific header option
  */
-#ifdef ARDUINO
+#if defined(ARDUINO) || defined(__TIZENRT__)
 #define MAX_HEADER_OPTION_DATA_LENGTH (20)
 #else
 #define MAX_HEADER_OPTION_DATA_LENGTH (1024)

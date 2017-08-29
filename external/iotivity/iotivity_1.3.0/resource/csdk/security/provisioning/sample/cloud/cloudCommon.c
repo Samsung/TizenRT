@@ -695,7 +695,11 @@ OCStackResult initPersistentStorage()
 
 OCStackResult startRequestsThread(OCMode *mode)
 {
+#ifndef __TIZENRT__
     OCThreadResult_t res = oc_thread_new(&g_requestsThread, userRequests, mode);
+#else
+    OCThreadResult_t res = oc_thread_new(&g_requestsThread, userRequests, mode, "IoT_userRequest", 4092);
+#endif
 
     if (OC_THREAD_SUCCESS != res)
     {

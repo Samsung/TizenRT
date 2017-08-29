@@ -1145,10 +1145,15 @@ OCStackResult CBORPayloadToCred(const uint8_t *cborPayload, size_t size,
                             // credtype
                             if (strcmp(name, OIC_JSON_CREDTYPE_NAME)  == 0)
                             {
+#ifdef __TIZENRT__
+                                cborFindResult = cbor_value_get_int(&credMap, (int *) &cred->credType);
+                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding CredType.");
+#else
                                 uint64_t credType = 0;
                                 cborFindResult = cbor_value_get_uint64(&credMap, &credType);
                                 VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding CredType.");
                                 cred->credType = (OicSecCredType_t)credType;
+#endif
                             }
                             // privatedata
                             if (strcmp(name, OIC_JSON_PRIVATEDATA_NAME)  == 0)
@@ -1960,7 +1965,11 @@ static bool FillPrivateDataOfOwnerPSK(OicSecCred_t* receviedCred, const CAEndpoi
     // TODO: Added as workaround, will be replaced soon.
     if(OIC_ENCODING_RAW == receviedCred->privateData.encoding)
     {
+#ifndef __TIZENRT__
         receviedCred->privateData.data = (uint8_t *)OICCalloc(1, OWNER_PSK_LENGTH_128);
+#else
+        receviedCred->privateData.data = (uint8_t *)OICRealloc(receviedCred->privateData.data, OWNER_PSK_LENGTH_128);
+#endif
         VERIFY_NOT_NULL(TAG, receviedCred->privateData.data, ERROR);
         receviedCred->privateData.len = OWNER_PSK_LENGTH_128;
         memcpy(receviedCred->privateData.data, ownerPSK, OWNER_PSK_LENGTH_128);
@@ -1975,8 +1984,11 @@ static bool FillPrivateDataOfOwnerPSK(OicSecCred_t* receviedCred, const CAEndpoi
 
         b64res = b64Encode(ownerPSK, OWNER_PSK_LENGTH_128, b64Buf, b64BufSize, &b64OutSize);
         VERIFY_SUCCESS(TAG, B64_OK == b64res, ERROR);
-
+#ifndef __TIZENRT__
         receviedCred->privateData.data = (uint8_t *)OICCalloc(1, b64OutSize + 1);
+#else
+        receviedCred->privateData.data = (uint8_t *)OICRealloc(receviedCred->privateData.data, b64OutSize + 1);
+#endif
         VERIFY_NOT_NULL(TAG, receviedCred->privateData.data, ERROR);
         receviedCred->privateData.len = b64OutSize;
         strncpy((char*)receviedCred->privateData.data, b64Buf, b64OutSize);
@@ -2121,7 +2133,31 @@ static OCEntityHandlerResult HandlePostRequest(OCEntityHandlerRequest * ehReques
                 case SYMMETRIC_PAIR_WISE_KEY:
                 {
                     OCServerRequest *request = (OCServerRequest *)ehRequest->requestHandle;
+                    if (NULL == request)
+                    {
+                        OIC_LOG(ERROR, TAG, "Failed to get a server request information.");
+                        ret = OC_EH_ERROR;
+                        break;
+                    }
+#ifdef __TIZENRT__
+                    CAEndpoint_t *ep_addr = (CAEndpoint_t *)malloc(sizeof(CAEndpoint_t));
+                    if(!ep_addr)
+                    {
+                        ret = OC_STACK_NO_MEMORY;
+                        break;
+                    }
+                    ep_addr->adapter=   request->devAddr.adapter;
+                    ep_addr->flags=   request->devAddr.flags;
+                    ep_addr->port  =   request->devAddr.port;
+                    memcpy(ep_addr->addr,request->devAddr.addr,MAX_ADDR_STR_SIZE_CA);
+                    ep_addr->ifindex  =   request->devAddr.ifindex;
+#if defined (ROUTING_GATEWAY) || defined (ROUTING_EP)
+                    memcpy(ep_addr->routeData,request->devAddr.routeData,MAX_ADDR_STR_SIZE_CA);
+#endif
+                    if(FillPrivateDataOfOwnerPSK(cred, ep_addr, doxm))
+#else
                     if(FillPrivateDataOfOwnerPSK(cred, (CAEndpoint_t *)&request->devAddr, doxm))
+#endif
                     {
                         if(OC_STACK_RESOURCE_DELETED == RemoveCredential(&cred->subject))
                         {
@@ -2144,7 +2180,9 @@ static OCEntityHandlerResult HandlePostRequest(OCEntityHandlerRequest * ehReques
                         OIC_LOG(ERROR, TAG, "Failed to verify receviced OwnerPKS.");
                         ret = OC_EH_ERROR;
                     }
-
+#ifdef __TIZENRT__
+                    free(ep_addr);
+#endif
                     if(OC_EH_CHANGED == ret)
                     {
                         /**
