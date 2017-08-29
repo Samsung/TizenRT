@@ -273,10 +273,10 @@ cleanup_pipe:
 static void tc_libc_unistd_access(void)
 {
 	int ret_chk;
-	char path[BUFFSIZE];
+	char path[BUFFSIZE + 1];
 
 	getcwd(path, BUFFSIZE);
-	sprintf(path, "%s/%s", path, __FILE__);
+	snprintf(path, BUFFSIZE, "%s/%s", path, __FILE__);
 
 	ret_chk = access(path, F_OK);
 	TC_ASSERT_EQ("access", ret_chk, 0);

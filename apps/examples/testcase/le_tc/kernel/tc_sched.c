@@ -303,15 +303,14 @@ static void tc_sched_waitpid(void)
 {
 	int ret_chk;
 	pid_t child_pid;
-	int *status = (int *)malloc(sizeof(int));
+	int status;
 
 	child_pid = task_create("tc_waitpid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, function_wait, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
-	ret_chk = waitpid(child_pid, status, 0);
-	TC_ASSERT_EQ_ERROR_CLEANUP("waitpid", ret_chk, child_pid, errno, TC_FREE_MEMORY(status));
+	ret_chk = waitpid(child_pid, &status, 0);
+	TC_ASSERT_EQ("waitpid", ret_chk, child_pid);
 
-	free(status);
 	TC_SUCCESS_RESULT();
 }
 #endif
