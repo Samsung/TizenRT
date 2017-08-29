@@ -136,11 +136,13 @@ int dm_conn_unregister_linkup_cb(conn_cb cb);
  */
 int dm_conn_unregister_linkdown_cb(conn_cb cb);
 
+// @cond
 /**
  * @brief Perform a WiFi scan over all channels
  *
  * @param[in] None.
  * @return On success, 0 is returned. On failure, a negative value is returned.
+ * @internal
  */
 int dm_conn_wifi_scan(void);
 
@@ -149,6 +151,7 @@ int dm_conn_wifi_scan(void);
  *
  * @param[out] pointer to WiFi scan structure to hold result.
  * @return On success, 0 is returned. On failure, a negative value is returned.
+ * @internal
  */
 int dm_conn_get_scan_result(dm_scan_info_t **result);
 
@@ -157,6 +160,7 @@ int dm_conn_get_scan_result(dm_scan_info_t **result);
  *
  * @param[out] pointer to WiFi scan structure that holds result.
  * @return On completion, 0 is returned.
+ * @internal
  */
 int dm_conn_free_scan_result(dm_scan_info_t **result);
 
@@ -165,6 +169,7 @@ int dm_conn_free_scan_result(dm_scan_info_t **result);
  *
  * @param[in] callback functions to handle WiFi link being up and down.
  * @return On completion, 0 is returned. On failure, a negative value is returned.
+ * @internal
  */
 int dm_conn_wifi_connect(conn_cb linkUpEvent, conn_cb linkDownEvent);
 
@@ -173,6 +178,7 @@ int dm_conn_wifi_connect(conn_cb linkUpEvent, conn_cb linkDownEvent);
  *
  * @param None
  * @return On completion, 0 is returned. On failure, a negative value is returned.
+ * @internal
  */
 int dm_conn_dhcp_init(void);
 
@@ -181,9 +187,10 @@ int dm_conn_dhcp_init(void);
  *
  * @param None
  * @return On completion, 0 is returned. On failure, a negative value is returned.
+ * @internal
  */
 int dm_conn_wifi_disconnect(void);
-
+// @endcond
 #ifdef __cplusplus
 }
 #endif
