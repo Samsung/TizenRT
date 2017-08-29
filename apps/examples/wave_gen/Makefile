@@ -60,7 +60,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = wave_gen
-THREADEXEC = TASH_EXECMD_ASYNC
+THREADEXEC = TASH_EXECMD_SYNC
 
 
 ASRCS =
@@ -129,7 +129,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLE_WAVE_GEN),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_WAVE_GEN),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
 
