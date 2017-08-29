@@ -279,7 +279,6 @@ tls_ctx *TLSCtx(tls_cred *cred)
 	return ctx;
 errout:
 	TLSCtx_free(ctx);
-	TLS_FREE(ctx);
 
 	return NULL;
 }
@@ -381,7 +380,7 @@ reset:
 	return session;
 errout:
 	TLSSession_free(session);
-	TLS_FREE(session);
+
 	return NULL;
 }
 
