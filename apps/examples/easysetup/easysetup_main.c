@@ -261,11 +261,11 @@ static void http_post_ctrl_cb(struct http_client_t *client, struct http_req_mess
 			}
 		}
 		cJSON_Delete(request_json);
-	}
 
-	if (msg->encoding == HTTP_CHUNKED_ENCODING && msg->entity[0] != '\0') {
-		g_stop_easysetup = stop_val;
-		return;
+		if (msg->encoding == HTTP_CHUNKED_ENCODING && msg->entity[0] != '\0') {
+			g_stop_easysetup = stop_val;
+			return;
+		}
 	}
 
 	http_send_response(client, 200, NULL, NULL);

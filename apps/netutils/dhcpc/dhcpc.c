@@ -393,7 +393,7 @@ void *dhcpc_open(const char *intf)
 
 	pdhcpc->sockfd = socket(PF_INET, SOCK_DGRAM, 0);
 	if (pdhcpc->sockfd < 0) {
-		nvdbg("socket handle %d\n", ret);
+		nvdbg("get the socket handle fail\n");
 		free(pdhcpc);
 		return NULL;
 	}
