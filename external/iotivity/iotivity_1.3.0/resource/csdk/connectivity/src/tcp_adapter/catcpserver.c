@@ -33,8 +33,13 @@
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
+#ifdef __TIZENRT__
+#include <tinyara/config.h>
+#include <poll.h>
+#else
 #ifdef HAVE_SYS_POLL_H
 #include <sys/poll.h>
+#endif
 #endif
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
@@ -74,7 +79,11 @@
 /**
  * Logging tag for module name.
  */
+#ifndef __TIZENRT__
 #define TAG "OIC_CA_TCP_SERVER"
+#else
+#define TAG TCP_SERVER_TAG
+#endif
 
 /**
  * Maximum CoAP over TCP header length
@@ -86,6 +95,18 @@
  * TLS header size
  */
 #define TLS_HEADER_SIZE 5
+
+#if __TIZENRT__
+/**
+ * Thread pool.
+ */
+static ca_thread_pool_t g_threadPool = NULL;
+
+/**
+ * An unique identifier of receive thread.
+ */
+static uint32_t g_recvThreadId = 0;
+#endif
 
 /**
  * Mutex to synchronize device object list.
@@ -235,11 +256,12 @@ static void CAFindReadyMessage()
     CA_FD_SET(ipv4s, &readFds);
     CA_FD_SET(ipv6, &readFds);
     CA_FD_SET(ipv6s, &readFds);
-
+#ifndef __TIZENRT__
     if (OC_INVALID_SOCKET != caglobals.tcp.shutdownFds[0])
     {
         FD_SET(caglobals.tcp.shutdownFds[0], &readFds);
     }
+#endif
     if (OC_INVALID_SOCKET != caglobals.tcp.connectionFds[0])
     {
         FD_SET(caglobals.tcp.connectionFds[0], &readFds);
@@ -952,11 +974,14 @@ static CASocketFd_t CACreateAcceptSocket(int family, CASocket_t *sock)
     {
         // the socket is restricted to sending and receiving IPv6 packets only.
         int on = 1;
+
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
         if (OC_SOCKET_ERROR == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, OPTVAL_T(&on), sizeof (on)))
         {
             OIC_LOG_V(ERROR, TAG, "IPV6_V6ONLY failed: %s", strerror(errno));
             goto exit;
         }
+#endif
         ((struct sockaddr_in6 *)&server)->sin6_port = htons(sock->port);
         socklen = sizeof (struct sockaddr_in6);
     }
@@ -1011,6 +1036,20 @@ exit:
 static void CAInitializePipe(int *fds)
 {
     int ret = pipe(fds);
+// TODO: Remove temporary workaround once F_GETFD / F_SETFD support is in TizenRT
+/* Temporary workaround: By pass F_GETFD / F_SETFD */
+#ifdef __TIZENRT__
+	if (-1 == ret)
+	{
+	    close(fds[1]);
+	    close(fds[0]);
+
+	    fds[0] = -1;
+	    fds[1] = -1;
+
+	    OIC_LOG_V(ERROR, TAG, "pipe failed: %s", strerror(errno));
+	}
+#else
     if (-1 != ret)
     {
         ret = fcntl(fds[0], F_GETFD);
@@ -1037,6 +1076,7 @@ static void CAInitializePipe(int *fds)
             OIC_LOG_V(ERROR, TAG, "pipe failed: %s", strerror(errno));
         }
     }
+#endif
 }
 #endif
 
@@ -1077,6 +1117,7 @@ CAResult_t CATCPStartServer(const ca_thread_pool_t threadPool)
         return res;
     }
 
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
     if (caglobals.tcp.ipv6tcpenabled)
     {
         NEWSOCKET(AF_INET6, ipv6);
@@ -1086,6 +1127,7 @@ CAResult_t CATCPStartServer(const ca_thread_pool_t threadPool)
         OIC_LOG_V(DEBUG, TAG, "IPv6 secure socket fd=%d, port=%d",
                   caglobals.tcp.ipv6s.fd, caglobals.tcp.ipv6s.port);
     }
+#endif
 
     if (caglobals.tcp.ipv4tcpenabled)
     {
@@ -1106,9 +1148,11 @@ CAResult_t CATCPStartServer(const ca_thread_pool_t threadPool)
         return res;
     }
 #else
+#ifndef __TIZENRT__
     CAInitializePipe(caglobals.tcp.shutdownFds);
     CHECKFD(caglobals.tcp.shutdownFds[0]);
     CHECKFD(caglobals.tcp.shutdownFds[1]);
+#endif
 #endif
 
 #ifndef WSA_WAIT_EVENT_0
@@ -1118,10 +1162,19 @@ CAResult_t CATCPStartServer(const ca_thread_pool_t threadPool)
 #endif
 
     caglobals.tcp.terminate = false;
+#ifndef __TIZENRT__
     res = ca_thread_pool_add_task(threadPool, CAReceiveHandler, NULL);
+#else
+    res = ca_thread_pool_add_task(g_threadPool, CAReceiveHandler, NULL, &g_recvThreadId,
+                                 "IoT_TCPReceive", CONFIG_IOTIVITY_TCPRECEIVE_PTHREAD_STACKSIZE);
+#endif
     if (CA_STATUS_OK != res)
     {
         OIC_LOG(ERROR, TAG, "thread_pool_add_task failed");
+#ifdef __TIZENRT__
+        g_recvThreadId = 0;
+        CATCPStopServer();
+#endif
         return res;
     }
     OIC_LOG(DEBUG, TAG, "CAReceiveHandler thread started successfully.");
@@ -1145,12 +1198,14 @@ void CATCPStopServer()
     caglobals.tcp.terminate = true;
 
 #if !defined(WSA_WAIT_EVENT_0)
+#ifndef __TIZENRT__
     if (caglobals.tcp.shutdownFds[1] != -1)
     {
         close(caglobals.tcp.shutdownFds[1]);
         caglobals.tcp.shutdownFds[1] = OC_INVALID_SOCKET;
         // receive thread will stop immediately
     }
+#endif
     if (caglobals.tcp.connectionFds[1] != -1)
     {
         close(caglobals.tcp.connectionFds[1]);

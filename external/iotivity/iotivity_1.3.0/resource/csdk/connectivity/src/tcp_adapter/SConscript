@@ -12,7 +12,7 @@ src_dir = os.path.abspath(os.curdir)
 
 # Source files to build common for all platforms
 common_files = [os.path.join(src_dir, 'catcpadapter.c')]
-if target_os in ['linux', 'tizen', 'android', 'ios', 'windows']:
+if target_os in ['linux', 'tizen', 'android', 'ios', 'windows','tizenrt']:
     common_files.append(os.path.join(src_dir, 'catcpserver.c'))
 
 connectivity_env.AppendUnique(CA_SRC = common_files)
