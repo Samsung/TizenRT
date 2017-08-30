@@ -54,6 +54,8 @@ static uint keep_alive_period = SLSI_P2PGO_KEEP_ALIVE_PERIOD_SEC;
 }
 #endif
 
+struct slsi_cm_ctx cm_ctx;
+
 static struct slsi_80211_channel slsi_2ghz_channels[] = {
 	CHAN2G(2412, 1),
 	CHAN2G(2417, 2),

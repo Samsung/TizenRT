@@ -342,17 +342,16 @@ int iperf_client_end(struct iperf_test *test)
 {
 	struct iperf_stream *sp;
 
-	/* Close all stream sockets */
-	SLIST_FOREACH(sp, &test->streams, streams) {
-		close(sp->socket);
-		close(test->ctrl_sck);
-	}
-
 	/* show final summary */
 	test->reporter_callback(test);
 
-	if (iperf_set_send_state(test, IPERF_DONE) != 0) {
-		return -1;
+	iperf_set_send_state(test, IPERF_DONE);
+
+	close(test->ctrl_sck);
+
+	/* Close all stream sockets */
+	SLIST_FOREACH(sp, &test->streams, streams) {
+		close(sp->socket);
 	}
 
 	return 0;
@@ -390,7 +389,8 @@ int iperf_run_client(struct iperf_test *test)
 
 	/* Start the client and connect to the server */
 	if (iperf_connect(test) < 0) {
-		return -1;
+		iperf_free_test(test);
+		exit(1);
 	}
 
 	/* Begin calculating CPU utilization */
@@ -474,6 +474,12 @@ int iperf_run_client(struct iperf_test *test)
 			if (iperf_recv(test, &read_set) < 0) {
 				return -1;
 			}
+		} else if (test->state == TEST_END) {
+			//clear write_set for preventing infinite loop
+			SLIST_FOREACH(sp, &test->streams, streams)
+				if (FD_ISSET(sp->socket, &test->write_set)) {
+					FD_CLR(sp->socket, &test->write_set);
+				}
 		}
 	}
 

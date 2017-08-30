@@ -46,6 +46,8 @@
 #include "mesh_mpm.h"
 #include "wmm_ac.h"
 
+eloop_timeout_handler fn_destroy;
+
 #ifndef CONFIG_NO_SCAN_PROCESSING
 static int wpas_select_network_from_last_scan(struct wpa_supplicant *wpa_s, int new_scan, int own_request);
 #endif							/* CONFIG_NO_SCAN_PROCESSING */

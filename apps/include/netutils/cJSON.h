@@ -51,10 +51,10 @@
 #define __APPS_INCLUDE_NETUTILS_JSON_H
 
 #ifdef __cplusplus
-// *INDENT-OFF*
-extern "C"
-{
-// *INDENT-ON*
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
 #endif
 
 /****************************************************************************
@@ -236,9 +236,8 @@ cJSON *cJSON_ParseWithOpts(const char *value, const char **return_parse_end, int
 
 void cJSON_Minify(char *json);
 
+#undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
 #endif							/* __APPS_INCLUDE_NETUTILS_JSON_H */

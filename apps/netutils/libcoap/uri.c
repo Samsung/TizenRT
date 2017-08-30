@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /* uri.c -- helper functions for URI treatment
  *
  * Copyright (C) 2010--2012 Olaf Bergmann <bergmann@tzi.org>
@@ -6,7 +23,7 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -16,11 +33,11 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "mem.h"
-#include "debug.h"
-#include "pdu.h"
-#include "option.h"
-#include "uri.h"
+#include <apps/netutils/libcoap/mem.h>
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/pdu.h>
+#include <apps/netutils/libcoap/option.h>
+#include <apps/netutils/libcoap/uri.h>
 
 /**
  * A length-safe version of strchr(). This function returns a pointer
@@ -80,6 +97,16 @@ int coap_split_uri(unsigned char *str_var, size_t len, coap_uri_t *uri)
 		++p;
 		--len;
 	}
+
+#ifdef WITH_TCP
+	/* Add to support tcp prefix */
+	q = (unsigned char *)"+tcp";
+	while (len && *q && tolower(*p) == *q) {
+		++p;
+		++q;
+		--len;
+	}
+#endif
 
 	q = (unsigned char *)"://";
 	while (len && *q && tolower(*p) == *q) {

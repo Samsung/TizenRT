@@ -58,8 +58,13 @@ int mosquitto_loop_start(struct mosquitto *mosq)
 	pthread_attr_t attr;
 
 	mosq->threaded = mosq_ts_self;
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, TINYARA_MQTT_PTHREAD_STACK_SIZE);
+	if (pthread_attr_init(&attr) != 0) {
+		return MOSQ_ERR_ERRNO;
+	}
+
+	if (pthread_attr_setstacksize(&attr, TINYARA_MQTT_PTHREAD_STACK_SIZE) != 0) {
+		return MOSQ_ERR_ERRNO;
+	}
 
 	if (pthread_create(&mosq->thread_id, &attr, _mosquitto_thread_main, mosq) != 0) {
 		return MOSQ_ERR_ERRNO;

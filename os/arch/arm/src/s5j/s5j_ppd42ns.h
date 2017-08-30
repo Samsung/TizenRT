@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- *  apps/include/netutils/thttpd.h
+ * arch/arm/src/s5j/s5j_ppd42ns.h
  *
- *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2009-2010, 2014-2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,18 +50,19 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_NETUTILS_THTTPD_H
-#define __APPS_INCLUDE_NETUTILS_THTTPD_H
+#ifndef __ARCH_ARM_SRC_S5J_S5J_PPD42NS_H
+#define __ARCH_ARM_SRC_S5J_S5J_PPD42NS_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
 #include <tinyara/config.h>
 
 /****************************************************************************
- * Public Data
+ * Pre-processor Definitions
  ****************************************************************************/
+
+#ifndef __ASSEMBLY__
 
 #undef EXTERN
 #if defined(__cplusplus)
@@ -71,46 +72,33 @@ extern "C" {
 #define EXTERN extern
 #endif
 
-/* These values must be provided by the user before the THTTPD task daemon
- * is started:
- *
- * g_thttpdsymtab:  A symbol table describing all of the symbols exported
- *   from the base system.  These symbols are used to bind address references
- *   in CGI programs to TinyAra.
- * g_nsymbols:  The number of symbols in g_thttpdsymtab[].
- *
- * (See examples/nxflat and examples/thttpd for examples of how such a symbol
- *  table may be created.)
- */
-
-EXTERN FAR const struct symtab_s *g_thttpdsymtab;
-EXTERN int g_thttpdnsymbols;
-
 /****************************************************************************
- * Public Function Prototypes
+ * Public Types
  ****************************************************************************/
 
 /****************************************************************************
- * Function: thttpd_main
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: s5j_ppd42ns_initialize
  *
  * Description:
- *   This function is the entrypoint into the THTTPD server.  It does not
- *   return.  It may be called, the normal mechanism for starting the server
- *   is:
+ *	 Initialize the ppd42ns dust sensor driver.
  *
- *   1) Set is g_thttpdsymtab and g_thttpdnsymbols.  The user is required
- *      to provide a symbol table to use for binding CGI programs (if CGI
- *      is enabled.  See examples/nxflat and examples/thttpd for examples of
- *      how such a symbol table may be created.)
- *   2) Call task_create() to start thttpd_main()
+ * Input Parameters:
+ *	 None
+ *
+ * Returned Value:
+ *	 Zero (OK) on success; a negated errno on failure
  *
  ****************************************************************************/
-
-EXTERN int thttpd_main(int argc, char **argv);
+int s5j_ppd42ns_initialize(void);
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif							/* __APPS_INCLUDE_NETUTILS_THTTPD_H */
+#endif							/* __ASSEMBLY__ */
+#endif							/* __ARCH_ARM_SRC_S5J_S5J_PPD42NS_H */

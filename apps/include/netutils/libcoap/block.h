@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /* block.h -- block transfer
  *
  * Copyright (C) 2010--2012,2014 Olaf Bergmann <bergmann@tzi.org>
@@ -9,9 +26,9 @@
 #ifndef _COAP_BLOCK_H_
 #define _COAP_BLOCK_H_
 
-#include "option.h"
-#include "encode.h"
-#include "pdu.h"
+#include <apps/netutils/libcoap/option.h>
+#include <apps/netutils/libcoap/encode.h>
+#include <apps/netutils/libcoap/pdu.h>
 
 /**
  * @defgroup block Block Transfer
@@ -94,6 +111,21 @@ static inline void coap_opt_block_set_m(coap_opt_t *block_opt, int m)
  * @return @c 1 on success, @c 0 otherwise.
  */
 int coap_get_block(coap_pdu_t *pdu, unsigned short type, coap_block_t *block);
+
+/**
+ * Initializes @p block from @p pdu. @p type must be either COAP_OPTION_BLOCK1
+ * or COAP_OPTION_BLOCK2. When option @p type was found in @p pdu, @p block
+ * is initialized with values from this option and the function returns the
+ * value @c 1. Otherwise, @c 0 is returned.
+ *
+ * @param pdu   The pdu to search for option @p type.
+ * @param type  The option to search for (must be COAP_OPTION_BLOCK1 or
+ *              COAP_OPTION_BLOCK2)
+ * @param block The block structure to initilize.
+ * @param transport The transport type of pdu
+ * @return @c 1 on success, @c 0 otherwise.
+ */
+int coap_get_block2(coap_pdu_t *pdu, unsigned short type, coap_block_t *block, coap_transport_t transport);
 
 /**
  * Writes a block option of type @p type to message @p pdu. If the

@@ -79,6 +79,14 @@ struct mdns_service_info {
 	unsigned int port;
 };
 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
+
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
 
 /**
@@ -146,6 +154,12 @@ int mdnsd_resolve_hostname(char *hostname, int *ipaddr);
  *
  */
 int mdnsd_discover_service(char *service_type, int discover_time_msec, struct mdns_service_info **service_list, int *num_of_services);
+
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
 
 #endif							/*!__MDNSD_H__ */
 

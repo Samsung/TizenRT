@@ -18,10 +18,15 @@
 #ifndef SLSI_WIFI_NVMAP_H_
 #define SLSI_WIFI_NVMAP_H_
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
 #include <stdlib.h>
+
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
 
 /* struct containing all the values that needs to be read/written
  * from/to the non-volatile memory.
@@ -50,6 +55,7 @@ typedef struct slsi_wifi_nv_data {
 
 #define SLSI_WIFI_NV_DATA_SIZE				(sizeof(slsi_wifi_nv_data_t))
 
+#undef EXTERN
 #ifdef  __cplusplus
 }
 #endif

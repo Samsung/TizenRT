@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /* resource.c -- generic resource handling
  *
  * Copyright (C) 2010--2014 Olaf Bergmann <bergmann@tzi.org>
@@ -6,11 +23,11 @@
  * README for terms of use.
  */
 
-#include "config.h"
-#include "net.h"
-#include "debug.h"
-#include "resource.h"
-#include "subscribe.h"
+#include <apps/netutils/libcoap/config.h>
+#include <apps/netutils/libcoap/net.h>
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/resource.h>
+#include <apps/netutils/libcoap/subscribe.h>
 
 #ifdef WITH_LWIP
 #include "utlist.h"
@@ -28,8 +45,8 @@
 
 #endif
 #ifdef WITH_POSIX
-#include "utlist.h"
-#include "mem.h"
+#include <apps/netutils/libcoap/utlist.h>
+#include <apps/netutils/libcoap/mem.h>
 
 #define COAP_MALLOC_TYPE(Type) \
   ((coap_##Type##_t *)coap_malloc(sizeof(coap_##Type##_t)))
@@ -421,7 +438,7 @@ void coap_delete_attr(coap_attr_t *attr)
 #endif
 }
 
-void coap_hash_request_uri(const coap_pdu_t *request, coap_key_t key)
+void coap_hash_request_uri2(const coap_pdu_t *request, coap_key_t key, coap_transport_t transport)
 {
 	coap_opt_iterator_t opt_iter;
 	coap_opt_filter_t filter;
@@ -432,10 +449,15 @@ void coap_hash_request_uri(const coap_pdu_t *request, coap_key_t key)
 	coap_option_filter_clear(filter);
 	coap_option_setb(filter, COAP_OPTION_URI_PATH);
 
-	coap_option_iterator_init((coap_pdu_t *) request, &opt_iter, filter);
+	coap_option_iterator_init2((coap_pdu_t *) request, &opt_iter, filter, transport);
 	while ((option = coap_option_next(&opt_iter))) {
 		coap_hash(COAP_OPT_VALUE(option), COAP_OPT_LENGTH(option), key);
 	}
+}
+
+void coap_hash_request_uri(const coap_pdu_t *request, coap_key_t key)
+{
+	coap_hash_request_uri2(request, key, COAP_UDP);
 }
 
 void coap_add_resource(coap_context_t *context, coap_resource_t *resource)
@@ -688,7 +710,8 @@ static void coap_notify_observers(coap_context_t *context, coap_resource_t *r)
 	coap_method_handler_t h;
 	coap_subscription_t *obs;
 	str token;
-	coap_pdu_t *response;
+	coap_pdu_t *response = NULL;
+	coap_pdu_t *tcp_resp = NULL;
 
 	if (r->observable && (r->dirty || r->partiallydirty)) {
 		r->partiallydirty = 0;
@@ -727,26 +750,49 @@ static void coap_notify_observers(coap_context_t *context, coap_resource_t *r)
 			token.length = obs->token_length;
 			token.s = obs->token;
 
-			response->hdr->id = coap_new_message_id(context);
+			response->transport_hdr->udp.id = coap_new_message_id(context);
 			if (obs->non && obs->non_cnt < COAP_OBS_MAX_NON) {
-				response->hdr->type = COAP_MESSAGE_NON;
+				response->transport_hdr->udp.type = COAP_MESSAGE_NON;
 			} else {
-				response->hdr->type = COAP_MESSAGE_CON;
+				response->transport_hdr->udp.type = COAP_MESSAGE_CON;
 			}
 			/* fill with observer-specific data */
 			h(context, r, &obs->subscriber, NULL, &token, response);
 
-			if (response->hdr->type == COAP_MESSAGE_CON) {
-				tid = coap_send_confirmed(context, &obs->subscriber, response);
-				obs->non_cnt = 0;
-			} else {
-				tid = coap_send(context, &obs->subscriber, response);
-				obs->non_cnt++;
+			switch (context->protocol) {
+			case COAP_PROTO_UDP:
+			case COAP_PROTO_DTLS:
+				if (response->transport_hdr->udp.type == COAP_MESSAGE_CON) {
+					tid = coap_send_confirmed(context, &obs->subscriber, response);
+					obs->non_cnt = 0;
+				} else {
+					tid = coap_send(context, &obs->subscriber, response);
+					obs->non_cnt++;
+				}
+
+				if (COAP_INVALID_TID == tid ||
+					response->transport_hdr->udp.type != COAP_MESSAGE_CON) {
+					coap_delete_pdu(response);
+				}
+				break;
+			case COAP_PROTO_TCP:
+			case COAP_PROTO_TLS:
+				tcp_resp = coap_convert_to_tcp_pdu(response);
+				if (tcp_resp == NULL) {
+					warn("coap_check_notify : failed to create TCP response\n");
+				} else {
+					tid = coap_send(context, &obs->subscriber, tcp_resp);
+					if (tid == COAP_INVALID_TID) {
+						debug("coap_check_notify: coap_send failed\n");
+					}
+					coap_delete_pdu(tcp_resp);
+				}
+				break;
+			default:
+				/* Should not enter here */
+				break;
 			}
 
-			if (COAP_INVALID_TID == tid || response->hdr->type != COAP_MESSAGE_CON) {
-				coap_delete_pdu(response);
-			}
 			if (COAP_INVALID_TID == tid) {
 				debug("coap_check_notify: sending failed, resource stays partially dirty\n");
 				obs->dirty = 1;

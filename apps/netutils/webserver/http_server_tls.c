@@ -61,7 +61,7 @@ int http_tls_init(struct http_server_t *server, struct ssl_config_t *ssl_config)
 	HTTP_LOGD("  . Seeding the random number generator...");
 
 	if ((result = mbedtls_ctr_drbg_seed(&(server->tls_ctr_drbg), mbedtls_entropy_func, &(server->tls_entropy), (const unsigned char *)pers, strlen(pers))) != 0) {
-		HTTP_LOGE("Error: mbedtls_ctr_drbg_seed returned %d\n", result);
+		HTTP_LOGE("Error: mbedtls_ctr_drbg_seed returned -%4x\n", -result);
 		return HTTP_ERROR;
 	}
 
@@ -75,18 +75,18 @@ int http_tls_init(struct http_server_t *server, struct ssl_config_t *ssl_config)
 	if (ssl_config->dev_cert && ssl_config->private_key) {
 		/* 2-1 Load device cert */
 		if ((result = mbedtls_x509_crt_parse(&(server->tls_srvcert), (const unsigned char *)ssl_config->dev_cert, ssl_config->dev_cert_len)) != 0) {
-			HTTP_LOGE("Error: srv_cert parse fail, return %d\n", result);
+			HTTP_LOGE("Error: srv_cert parse fail, returned -%4x\n", -result);
 			return HTTP_ERROR;
 		}
 
 		/* 2-2 Setup device key */
 		if ((result = mbedtls_pk_parse_key(&(server->tls_pkey), (const unsigned char *)ssl_config->private_key, ssl_config->private_key_len, NULL, 0)) != 0) {
-			HTTP_LOGE("Error: srv_key parse fail, return %d\n", result);
+			HTTP_LOGE("Error: srv_key parse fail, returned -%4x\n", -result);
 			return HTTP_ERROR;
 		}
 
 		if ((result = mbedtls_ssl_conf_own_cert(&(server->tls_conf), &(server->tls_srvcert), &(server->tls_pkey))) != 0) {
-			HTTP_LOGE("Error: mbedtls_ssl_conf_own_cert returned %d\n", result);
+			HTTP_LOGE("Error: mbedtls_ssl_conf_own_cert returned -%4x\n", -result);
 			return HTTP_ERROR;
 		}
 	}
@@ -96,7 +96,7 @@ int http_tls_init(struct http_server_t *server, struct ssl_config_t *ssl_config)
 		mbedtls_x509_crt *chain;
 
 		if ((result = mbedtls_x509_crt_parse(&(server->tls_srvcert), (const unsigned char *)ssl_config->root_ca, ssl_config->root_ca_len)) != 0) {
-			HTTP_LOGE("Error: CA_cert parse fail, return %d\n", result);
+			HTTP_LOGE("Error: CA_cert parse fail, returned -%4x\n", -result);
 			return HTTP_ERROR;
 		}
 
@@ -121,7 +121,7 @@ int http_tls_init(struct http_server_t *server, struct ssl_config_t *ssl_config)
 				  MBEDTLS_SSL_TRANSPORT_STREAM,
 				  MBEDTLS_SSL_PRESET_DEFAULT))
 		!= 0) {
-		HTTP_LOGE("Error: mbedtls_ssl_config_defaults returned %d\n", result);
+		HTTP_LOGE("Error: mbedtls_ssl_config_defaults returned -%4x\n", -result);
 		return HTTP_ERROR;
 	}
 

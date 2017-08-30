@@ -373,7 +373,6 @@ static inline void WPA_PUT_LE64(u8 *a, u64 val)
 
 #ifdef __GNUC__
 #define PRINTF_FORMAT(a,b) __attribute__ ((format (printf, (a), (b))))
-#define STRUCT_PACKED __attribute__ ((packed))
 #else
 #define PRINTF_FORMAT(a,b)
 #define STRUCT_PACKED

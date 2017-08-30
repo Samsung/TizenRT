@@ -76,10 +76,10 @@
 #include <tinyara/config.h>
 
 #ifdef __cplusplus
-// *INDENT-OFF*
-extern "C"
-{
-// *INDENT-ON*
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
 #endif
 
 /****************************************************************************
@@ -93,9 +93,9 @@ unsigned char *base64w_encode(const unsigned char *src, size_t len, unsigned cha
 unsigned char *base64w_decode(const unsigned char *src, size_t len, unsigned char *dst, size_t * out_len);
 #endif							/* CONFIG_CODECS_BASE64 */
 
+#undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
+
 #endif							/* __APPS_INCLUDE_NETUTILS_BASE64_H */

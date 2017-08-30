@@ -98,7 +98,7 @@
 int close(int fd)
 {
 	int err;
-#if CONFIG_NFILE_DESCRIPTORS > 0
+#if (CONFIG_NFILE_DESCRIPTORS > 0) || (CONFIG_NSOCKET_DESCRIPTORS > 0)
 	int ret;
 #endif
 	/* close() is a cancellation point */

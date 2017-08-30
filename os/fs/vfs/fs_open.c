@@ -146,7 +146,7 @@ int open(const char *path, int oflags, ...)
 	}
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
-	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS)
+	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && defined(CONFIG_BCH)
 	/*
 	 * If the inode is block driver, then we may return a character driver
 	 * proxy for the block driver. block_proxy() will instantiate a BCH

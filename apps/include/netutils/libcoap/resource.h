@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /* resource.h -- generic resource handling
  *
  * Copyright (C) 2010,2011,2014 Olaf Bergmann <bergmann@tzi.org>
@@ -14,8 +31,8 @@
 #ifndef _COAP_RESOURCE_H_
 #define _COAP_RESOURCE_H_
 
-#include "config.h"
-#include "t_list.h"
+#include <apps/netutils/libcoap/config.h>
+#include <apps/netutils/libcoap/t_list.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -28,18 +45,18 @@
 
 #ifndef WITH_CONTIKI
 #ifdef COAP_RESOURCES_NOHASH
-#include "utlist.h"
+#include <apps/netutils/libcoap/utlist.h>
 #else
-#include "uthash.h"
+#include <apps/netutils/libcoap/uthash.h>
 #endif
 #else							/* WITH_CONTIKI */
 #endif							/* WITH_CONTIKI */
-#include "hashkey.h"
-#include "async.h"
-#include "str.h"
-#include "pdu.h"
-#include "net.h"
-#include "subscribe.h"
+#include <apps/netutils/libcoap/hashkey.h>
+#include <apps/netutils/libcoap/async.h>
+#include <apps/netutils/libcoap/str.h>
+#include <apps/netutils/libcoap/pdu.h>
+#include <apps/netutils/libcoap/net.h>
+#include <apps/netutils/libcoap/subscribe.h>
 
 /** Definition of message handler function (@sa coap_resource_t). */
 typedef void (*coap_method_handler_t)
@@ -249,6 +266,16 @@ coap_resource_t *coap_get_resource_from_key(coap_context_t *context, coap_key_t 
  */
 void coap_hash_request_uri(const coap_pdu_t *request, coap_key_t key);
 
+/**
+ * Calculates the hash key for the resource requested by the
+ * Uri-Options of @p request.  This function calls coap_hash() for
+ * every path segment.
+ *
+ * @param request   The requesting pdu.
+ * @param key       The resulting hash is stored in @p key
+ * @param transport The type of transport protocol header type
+ */
+void coap_hash_request_uri2(const coap_pdu_t *request, coap_key_t key, coap_transport_t transport);
 /**
  * @addtogroup observe
  */

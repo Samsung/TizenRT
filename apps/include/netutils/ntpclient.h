@@ -124,12 +124,10 @@ struct ntpc_server_s {
  ****************************************************************************/
 
 #ifdef __cplusplus
-// *INDENT-OFF*
 #define EXTERN extern "C"
 extern "C" {
 #else
 #define EXTERN extern
-// *INDENT-ON*
 #endif
 
 /****************************************************************************
@@ -186,9 +184,7 @@ int ntpc_get_link_status(void);
 
 #undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
 
 #endif							/* __APPS_INCLUDE_NETUTILS_NTPCLIENT_H */

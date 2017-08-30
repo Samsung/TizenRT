@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /* async.c -- state management for asynchronous messages
  *
  * Copyright (C) 2010,2011 Olaf Bergmann <bergmann@tzi.org>
@@ -13,51 +30,78 @@
 
 #ifndef WITHOUT_ASYNC
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
-#include "utlist.h"
+#include <apps/netutils/libcoap/utlist.h>
 
-#include "mem.h"
-#include "debug.h"
-#include "async.h"
+#include <apps/netutils/libcoap/mem.h>
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/async.h>
 
 coap_async_state_t *coap_register_async(coap_context_t *context, coap_address_t *peer, coap_pdu_t *request, unsigned char flags, void *data)
 {
 	coap_async_state_t *s;
 	coap_tid_t id;
 
-	coap_transaction_id(peer, request, &id);
+	coap_transport_t transport = COAP_UDP;
+
+	unsigned char *token;
+	unsigned int token_len = 0;
+
+	switch(context->protocol) {
+	case COAP_PROTO_UDP:
+	case COAP_PROTO_DTLS:
+		transport = COAP_UDP;
+		break;
+	case COAP_PROTO_TCP:
+	case COAP_PROTO_TLS:
+		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)request->transport_hdr)[0] >> 4);
+		break;
+	default:
+		break;
+	}
+
+	coap_transaction_id2(peer, request, &id, context->protocol);
 	LL_SEARCH_SCALAR(context->async_state, s, id, id);
+
+	coap_get_token2(request->transport_hdr, transport, &token, &token_len);
+
+	if (token_len > 8) {
+		debug("coap_register_async : invalied length of token\n");
+		return NULL;
+	}
 
 	if (s != NULL) {
 		/* We must return NULL here as the caller must know that he is
 		 * responsible for releasing @p data. */
-		debug("asynchronous state for transaction %d already registered\n", id);
+		debug("coap_register_async : asynchronous state for transaction %d already registered\n", id);
 		return NULL;
 	}
 
 	/* store information for handling the asynchronous task */
-	s = (coap_async_state_t *) coap_malloc(sizeof(coap_async_state_t) + request->hdr->token_length);
+	s = (coap_async_state_t *)coap_malloc(sizeof(coap_async_state_t) + token_len);
 	if (!s) {
-		coap_log(LOG_CRIT, "coap_register_async: insufficient memory\n");
+		coap_log(LOG_CRIT, "coap_register_async : insufficient memory\n");
 		return NULL;
 	}
 
-	memset(s, 0, sizeof(coap_async_state_t) + request->hdr->token_length);
+	memset(s, 0, sizeof(coap_async_state_t) + token_len);
 
 	/* set COAP_ASYNC_CONFIRM according to request's type */
 	s->flags = flags & ~COAP_ASYNC_CONFIRM;
-	if (request->hdr->type == COAP_MESSAGE_CON) {
-		s->flags |= COAP_ASYNC_CONFIRM;
+	if (context->protocol == COAP_PROTO_UDP || context->protocol == COAP_PROTO_TCP) {
+		if (request->transport_hdr->udp.type == COAP_MESSAGE_CON) {
+			s->flags |= COAP_ASYNC_CONFIRM;
+		}
 	}
 
 	s->appdata = data;
 
 	memcpy(&s->peer, peer, sizeof(coap_address_t));
 
-	if (request->hdr->token_length) {
-		s->tokenlen = request->hdr->token_length;
-		memcpy(s->token, request->hdr->token, request->hdr->token_length);
+	if (token_len) {
+		s->tokenlen = token_len;
+		memcpy(s->token, token, token_len);
 	}
 
 	memcpy(&s->id, &id, sizeof(coap_tid_t));

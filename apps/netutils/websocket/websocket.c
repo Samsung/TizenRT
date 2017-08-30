@@ -48,6 +48,9 @@
  * Definitions
  ****************************************************************************/
 
+#define WEBSOCKET_FREE(a) do { if (a != NULL) { free(a); a = NULL; } } while (0)
+#define WEBSOCKET_CLOSE(a) do { if (a >= 0) { close(a); a = -1; } } while (0)
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -76,18 +79,18 @@ int websocket_tls_handshake(websocket_t *data, char *hostname, int auth_mode)
 
 	/* default setting block mode */
 	if ((r = mbedtls_net_set_block(&(data->tls_net))) != 0) {
-		WEBSOCKET_DEBUG("Error: mbedtls_net_set_block returned %d\n", r);
+		WEBSOCKET_DEBUG("Error: mbedtls_net_set_block returned -%4x\n", -r);
 		return -1;
 	}
 
 	if ((r = mbedtls_ssl_setup(data->tls_ssl, data->tls_conf)) != 0) {
-		WEBSOCKET_DEBUG("Error: mbedtls_ssl_setup returned %d\n", r);
+		WEBSOCKET_DEBUG("Error: mbedtls_ssl_setup returned -%4x\n", -r);
 		return -1;
 	}
 #if WEBSOCKET_CONF_CHECK_TLS_HOSTNAME
 	if (hostname != NULL) {
 		if ((r = mbedtls_ssl_set_hostname(data->tls_ssl, hostname)) != 0) {
-			WEBSOCKET_DEBUG("Error: mbedtls_hostname fail %d\n", r);
+			WEBSOCKET_DEBUG("Error: mbedtls_hostname returned -%4x\n", -r);
 			return -1;
 		}
 	}
@@ -100,7 +103,7 @@ int websocket_tls_handshake(websocket_t *data, char *hostname, int auth_mode)
 
 	while ((r = mbedtls_ssl_handshake(data->tls_ssl)) != 0) {
 		if (r != MBEDTLS_ERR_SSL_WANT_READ && r != MBEDTLS_ERR_SSL_WANT_WRITE) {
-			WEBSOCKET_DEBUG("Error: mbedtls_ssl_handshake returned %d\n", r);
+			WEBSOCKET_DEBUG("Error: mbedtls_ssl_handshake returned -%4x\n", -r);
 			return r;
 		}
 	}
@@ -111,37 +114,31 @@ int websocket_tls_handshake(websocket_t *data, char *hostname, int auth_mode)
 
 websocket_return_t websocket_config_socket(int fd)
 {
-	int r;
 	int flags;
+	int opt = 1;
 	struct timeval tv;
 
-	while ((flags = fcntl(fd, F_GETFL, 0)) == -1) ;
-	while ((r = fcntl(fd, F_SETFL, flags & (~O_NONBLOCK))) == -1 && errno == EINTR) ;
-	if (r == -1) {
-		WEBSOCKET_DEBUG("fail to set TCP socket blocked\n");
+	flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1) {
+		WEBSOCKET_DEBUG("fcntl GET failed\n");
+		return WEBSOCKET_SOCKET_ERROR;
+	}
+
+	if (fcntl(fd, F_SETFL, flags & (~O_NONBLOCK)) == -1) {
+		WEBSOCKET_DEBUG("fcntl SET failed\n");
 		return WEBSOCKET_SOCKET_ERROR;
 	}
 
 	tv.tv_sec = (WEBSOCKET_SOCK_RCV_TIMEOUT / 1000);
 	tv.tv_usec = ((WEBSOCKET_SOCK_RCV_TIMEOUT % 1000) * 1000);
 	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (FAR const void *)&tv, (socklen_t) sizeof(struct timeval)) == -1) {
-		WEBSOCKET_DEBUG("setsockopt fail in server\n");
+		WEBSOCKET_DEBUG("setsockopt failed\n");
 		return WEBSOCKET_SOCKET_ERROR;
 	}
 
-	return WEBSOCKET_SUCCESS;
-}
-
-websocket_return_t websocket_socket_free(websocket_t *ctx)
-{
-	if (ctx == NULL) {
-		WEBSOCKET_DEBUG("NULL parameter\n");
-		return WEBSOCKET_ALLOCATION_ERROR;
-	}
-
-	if (ctx->fd >= 0) {
-		close(ctx->fd);
-		ctx->fd = -1;
+	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) == -1) {
+		WEBSOCKET_DEBUG("setsockopt failed\n");
+		return WEBSOCKET_SOCKET_ERROR;
 	}
 
 	return WEBSOCKET_SUCCESS;
@@ -165,21 +162,19 @@ websocket_return_t websocket_wait_state(websocket_t *websocket, int state, int u
 	return WEBSOCKET_SUCCESS;
 }
 
-void websocket_ping_counter(FAR void *arg)
+int websocket_ping_counter(websocket_t *websocket)
 {
-	websocket_t *websocket = arg;
-
 	if (websocket->state != WEBSOCKET_STOP) {
 		websocket->ping_cnt++;
 
 		if (websocket->ping_cnt >= WEBSOCKET_MAX_PING_IGNORE) {
 			WEBSOCKET_DEBUG("ping messages couldn't receive pong messages for %d times, closing.\n", WEBSOCKET_MAX_PING_IGNORE);
-			websocket_update_state(websocket, WEBSOCKET_STOP);
-			return;
-		} else {
-			websocket_queue_ping(websocket);
+			return WEBSOCKET_SOCKET_ERROR;
 		}
+		websocket_queue_ping(websocket);
 	}
+
+	return WEBSOCKET_SUCCESS;
 }
 
 int websocket_handler(websocket_t *websocket)
@@ -196,7 +191,9 @@ int websocket_handler(websocket_t *websocket)
 		FD_ZERO(&read_fds);
 		FD_ZERO(&write_fds);
 
-		FD_SET(fd, &read_fds);
+		if (wslay_event_want_read(ctx)) {
+			FD_SET(fd, &read_fds);
+		}
 		if (wslay_event_want_write(ctx)) {
 			FD_SET(fd, &write_fds);
 		}
@@ -204,25 +201,21 @@ int websocket_handler(websocket_t *websocket)
 		tv.tv_sec = (WEBSOCKET_HANDLER_TIMEOUT / 1000);
 		tv.tv_usec = ((WEBSOCKET_HANDLER_TIMEOUT % 1000) * 1000);
 		r = select(fd + 1, &read_fds, &write_fds, NULL, &tv);
-		if (r == -1) {
-			if (errno == EINVAL) {
-				WEBSOCKET_DEBUG("socket fd is not exist, fd == %d\n", fd);
-				websocket_update_state(websocket, WEBSOCKET_STOP);
-				return WEBSOCKET_SOCKET_ERROR;
-			}
-
+		if (r < 0) {
 			if (errno == EAGAIN || errno == EBUSY || errno == EINTR) {
 				continue;
 			}
 
 			WEBSOCKET_DEBUG("select function returned errno == %d\n", errno);
-			continue;
+			return WEBSOCKET_SOCKET_ERROR;
 		} else if (r == 0) {
 			if (WEBSOCKET_HANDLER_TIMEOUT != 0) {
 				timeout++;
 				if ((WEBSOCKET_HANDLER_TIMEOUT * timeout) >= (WEBSOCKET_PING_INTERVAL * 10)) {
 					timeout = 0;
-					websocket_ping_counter((void *)websocket);
+					if (websocket_ping_counter(websocket) != WEBSOCKET_SUCCESS) {
+						return WEBSOCKET_SOCKET_ERROR;
+					}
 				}
 			}
 
@@ -231,17 +224,19 @@ int websocket_handler(websocket_t *websocket)
 			timeout = 0;
 
 			if (FD_ISSET(fd, &read_fds)) {
-				if (wslay_event_recv(ctx) != WEBSOCKET_SUCCESS) {
-					WEBSOCKET_DEBUG("fail to process recv event\n");
-					websocket_update_state(websocket, WEBSOCKET_STOP);
+				r = wslay_event_recv(ctx);
+				if (r != WEBSOCKET_SUCCESS) {
+					WEBSOCKET_DEBUG("fail to process recv event, result : %d\n", r);
+					websocket_update_state(websocket, WEBSOCKET_ERROR);
 					return WEBSOCKET_SOCKET_ERROR;
 				}
 			}
 
 			if (FD_ISSET(fd, &write_fds)) {
-				if (wslay_event_send(ctx) != WEBSOCKET_SUCCESS) {
-					WEBSOCKET_DEBUG("fail to process send event\n");
-					websocket_update_state(websocket, WEBSOCKET_STOP);
+				r = wslay_event_send(ctx);
+				if (r != WEBSOCKET_SUCCESS) {
+					WEBSOCKET_DEBUG("fail to process send event, result : %d\n", r);
+					websocket_update_state(websocket, WEBSOCKET_ERROR);
 					return WEBSOCKET_SOCKET_ERROR;
 				}
 			}
@@ -344,10 +339,10 @@ int websocket_client_handshake(websocket_t *client, char *host, char *port, char
 		WEBSOCKET_DEBUG("invalid key\n");
 		goto EXIT_WEBSOCKET_HANDSHAKE_ERROR;
 	}
-	free(header);
+	WEBSOCKET_FREE(header);
 	return WEBSOCKET_SUCCESS;
 EXIT_WEBSOCKET_HANDSHAKE_ERROR:
-	free(header);
+	WEBSOCKET_FREE(header);
 	return WEBSOCKET_HANDSHAKE_ERROR;
 }
 
@@ -388,7 +383,7 @@ int connect_socket(websocket_t *client, const char *host, const char *port)
 	addrlen = sizeof(struct sockaddr);
 	if (connect(fd, (struct sockaddr *)&serveraddr, addrlen) < 0) {
 		WEBSOCKET_DEBUG("fail to connect socket (errno=%d)\n", errno);
-		close(fd);
+		WEBSOCKET_CLOSE(fd);
 		return WEBSOCKET_CONNECT_ERROR;
 	}
 	client->fd = fd;
@@ -407,10 +402,8 @@ TLS_HS_RETRY:
 		return r;
 	}
 
-	websocket_update_state(client, WEBSOCKET_RUNNING);
-
 	if (websocket_config_socket(client->fd) != WEBSOCKET_SUCCESS) {
-		websocket_socket_free(client);
+		WEBSOCKET_CLOSE(client->fd);
 		return WEBSOCKET_SOCKET_ERROR;
 	}
 
@@ -511,11 +504,11 @@ int websocket_server_handshake(websocket_t *server)
 			header_sent += r;
 		}
 	}
-	free(header);
+	WEBSOCKET_FREE(header);
 	return WEBSOCKET_SUCCESS;
 
 EXIT_WEBSOCKET_HANDSHAKE_ERROR:
-	free(header);
+	WEBSOCKET_FREE(header);
 	return WEBSOCKET_HANDSHAKE_ERROR;
 }
 
@@ -524,14 +517,23 @@ int websocket_server_authenticate(websocket_t *server)
 	int r;
 
 	if (server->tls_enabled) {
+		server->tls_ssl = malloc(sizeof(mbedtls_ssl_context));
+		if (server->tls_ssl == NULL) {
+			WEBSOCKET_DEBUG("fail to allocate memory for server\n");
+			r = WEBSOCKET_ALLOCATION_ERROR;
+			goto EXIT_SERVER_START;
+		}
+
 		mbedtls_ssl_init(server->tls_ssl);
 		mbedtls_net_init(&(server->tls_net));
 
 		if ((r = websocket_tls_handshake(server, NULL, server->auth_mode)) != WEBSOCKET_SUCCESS) {
+			WEBSOCKET_DEBUG("fail to tls handshake\n");
 			r = WEBSOCKET_TLS_HANDSHAKE_ERROR;
 			goto EXIT_SERVER_START;
 		}
 	}
+
 	if (websocket_server_handshake(server) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to handshake\n");
 		r = WEBSOCKET_HANDSHAKE_ERROR;
@@ -541,12 +543,12 @@ int websocket_server_authenticate(websocket_t *server)
 	return websocket_server_init(server);
 
 EXIT_SERVER_START:
-	websocket_socket_free(server);
+	WEBSOCKET_CLOSE(server->fd);
 
 	if (server->tls_enabled) {
 		mbedtls_ssl_free(server->tls_ssl);
 		mbedtls_net_free(&(server->tls_net));
-		free(server->tls_ssl);
+		WEBSOCKET_FREE(server->tls_ssl);
 	}
 
 	websocket_update_state(server, WEBSOCKET_STOP);
@@ -559,7 +561,6 @@ int websocket_accept_handler(websocket_t *init_server)
 	int i;
 	int r = WEBSOCKET_SUCCESS;
 	int timeout_cnt = 0;
-	int accept_fd = -1;
 	int listen_fd = init_server->fd;
 	fd_set init_server_read_fds;
 	socklen_t addrlen = sizeof(struct sockaddr);
@@ -568,11 +569,10 @@ int websocket_accept_handler(websocket_t *init_server)
 	struct sched_param ws_sparam;
 
 	for (i = 0; i < WEBSOCKET_MAX_CLIENT; i++) {
-		memcpy(&ws_srv_table[i], init_server, sizeof(websocket_t));
 		ws_srv_table[i].state = WEBSOCKET_STOP;
 	}
 
-	init_server->state = WEBSOCKET_RUNNING;
+	init_server->state = WEBSOCKET_RUN_SERVER;
 	while (init_server->state != WEBSOCKET_STOP) {
 		FD_ZERO(&init_server_read_fds);
 		FD_SET(listen_fd, &init_server_read_fds);
@@ -608,60 +608,59 @@ int websocket_accept_handler(websocket_t *init_server)
 				continue;
 			}
 		} else {
+			int accept_fd = -1;
 			websocket_t *server_handler = NULL;
-			timeout_cnt = 0;
 
+			timeout_cnt = 0;
+			r = WEBSOCKET_SUCCESS;
+
+			/* finds empty websocket server structure */
 			server_handler = websocket_find_table();
 			if (server_handler == NULL) {
-				continue;
+				WEBSOCKET_DEBUG("fail to find empty server table\n");
+				r = WEBSOCKET_INIT_ERROR;
+				goto EXIT_ACCEPT;
 			}
+
+			/* To copy TLS context and websocket_call backs from init_server to server_handler */
+			memcpy(server_handler, init_server, sizeof(websocket_t));
 
 			if (pthread_attr_init(&server_handler->thread_attr) != 0) {
 				WEBSOCKET_DEBUG("fail to init attribute\n");
-				goto EXIT_INIT_SERVER;
+				r = WEBSOCKET_INIT_ERROR;
+				goto EXIT_ACCEPT;
 			}
 
 			if (pthread_attr_setstacksize(&server_handler->thread_attr, WEBSOCKET_STACKSIZE) != 0) {
 				WEBSOCKET_DEBUG("fail to set stack size\n");
-				goto EXIT_INIT_SERVER;
+				r = WEBSOCKET_INIT_ERROR;
+				goto EXIT_ACCEPT;
 			}
 
 			ws_sparam.sched_priority = WEBSOCKET_PRI;
 			if (pthread_attr_setschedparam(&server_handler->thread_attr, &ws_sparam) != 0) {
 				WEBSOCKET_DEBUG("fail to setschedparam\n");
-				goto EXIT_INIT_SERVER;
+				r = WEBSOCKET_INIT_ERROR;
+				goto EXIT_ACCEPT;
 			}
 
 			if (pthread_attr_setschedpolicy(&server_handler->thread_attr, WEBSOCKET_SCHED_POLICY) != 0) {
 				WEBSOCKET_DEBUG("fail to set scheduler policy\n");
-				goto EXIT_INIT_SERVER;
+				r = WEBSOCKET_INIT_ERROR;
+				goto EXIT_ACCEPT;
 			}
 
 			accept_fd = accept(listen_fd, (struct sockaddr *)&clientaddr, &addrlen);
 			if (accept_fd < 0) {
 				WEBSOCKET_DEBUG("Error in accept err == %d\n", errno);
-				return WEBSOCKET_SOCKET_ERROR;
-			}
-
-			if (init_server->tls_enabled) {
-				server_handler->tls_ssl = malloc(sizeof(mbedtls_ssl_context));
-				if (server_handler->tls_ssl == NULL) {
-					WEBSOCKET_DEBUG("fail to allocate memory for server\n");
-					r = WEBSOCKET_ALLOCATION_ERROR;
-					close(accept_fd);
-					websocket_update_state(server_handler, WEBSOCKET_STOP);
-					goto EXIT_INIT_SERVER;
-				}
+				r = WEBSOCKET_SOCKET_ERROR;
+				goto EXIT_ACCEPT;
 			}
 
 			if (websocket_config_socket(accept_fd) != WEBSOCKET_SUCCESS) {
-				if (server_handler->tls_ssl) {
-					free(server_handler->tls_ssl);
-				}
+				WEBSOCKET_DEBUG("fail to config socket\n");
 				r = WEBSOCKET_SOCKET_ERROR;
-				close(accept_fd);
-				websocket_update_state(server_handler, WEBSOCKET_STOP);
-				goto EXIT_INIT_SERVER;
+				goto EXIT_ACCEPT;
 			}
 
 			WEBSOCKET_DEBUG("accept client, fd == %d\n", accept_fd);
@@ -669,27 +668,33 @@ int websocket_accept_handler(websocket_t *init_server)
 
 			if (pthread_create(&server_handler->thread_id, &server_handler->thread_attr, (pthread_startroutine_t) websocket_server_authenticate, (pthread_addr_t) server_handler) != 0) {
 				WEBSOCKET_DEBUG("fail to create thread, fd == %d\n", accept_fd);
-				close(accept_fd);
-				if (server_handler->tls_ssl) {
-					free(server_handler->tls_ssl);
-				}
-				websocket_update_state(server_handler, WEBSOCKET_STOP);
-				continue;
+				r = WEBSOCKET_INIT_ERROR;
+				goto EXIT_ACCEPT;
 			}
 
 			if (pthread_setname_np(server_handler->thread_id, "websocket server handler") != 0) {
 				WEBSOCKET_DEBUG("fail to set thread name\n");
+				r = WEBSOCKET_INIT_ERROR;
+				goto EXIT_ACCEPT;
 			}
 
 			/* Detach thread in order to avoid memory leaks. */
 			if (pthread_detach(server_handler->thread_id) != 0) {
 				WEBSOCKET_DEBUG("fail to detach thread\n");
+				r = WEBSOCKET_INIT_ERROR;
+				goto EXIT_ACCEPT;
+			}
+EXIT_ACCEPT:
+			if (r != WEBSOCKET_SUCCESS) {
+				WEBSOCKET_CLOSE(accept_fd);
+				websocket_update_state(server_handler, WEBSOCKET_STOP);
+				goto EXIT_INIT_SERVER;
 			}
 		}
 	}
 
 EXIT_INIT_SERVER:
-	websocket_socket_free(init_server);
+	WEBSOCKET_CLOSE(init_server->fd);
 	return r;
 }
 
@@ -707,7 +712,7 @@ int websocket_listen(int *listen_fd, int port)
 
 	if (setsockopt(*listen_fd, SOL_SOCKET, SO_REUSEADDR, &val, (socklen_t) sizeof(int)) == -1) {
 		WEBSOCKET_DEBUG("setsockopt fail\n");
-		close(*listen_fd);
+		WEBSOCKET_CLOSE(*listen_fd);
 		return WEBSOCKET_SOCKET_ERROR;
 	}
 
@@ -717,13 +722,13 @@ int websocket_listen(int *listen_fd, int port)
 	addrlen = sizeof(struct sockaddr);
 	if (bind(*listen_fd, (struct sockaddr *)&serveraddr, addrlen) == -1) {
 		WEBSOCKET_DEBUG("fail to bind socket\n");
-		close(*listen_fd);
+		WEBSOCKET_CLOSE(*listen_fd);
 		return WEBSOCKET_SOCKET_ERROR;
 	}
 
 	if (listen(*listen_fd, 16) == -1) {
 		WEBSOCKET_DEBUG("fail to listen socket\n");
-		close(*listen_fd);
+		WEBSOCKET_CLOSE(*listen_fd);
 		return WEBSOCKET_SOCKET_ERROR;
 	}
 
@@ -776,7 +781,9 @@ websocket_t *websocket_find_table(void)
 		return NULL;
 	}
 
-	websocket_update_state(&ws_srv_table[i], WEBSOCKET_RUNNING);
+	memset(&ws_srv_table[i], 0, sizeof(websocket_t));
+	websocket_update_state(&ws_srv_table[i], WEBSOCKET_RUN_SERVER);
+	ws_srv_table[i].fd = -1;
 
 	return &ws_srv_table[i];
 }
@@ -792,6 +799,10 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 		WEBSOCKET_DEBUG("NULL parameter\n");
 		return WEBSOCKET_ALLOCATION_ERROR;
 	}
+
+	websocket_update_state(client, WEBSOCKET_RUN_CLIENT);
+
+	//TODO : all TLS initializing code will be moved from example to here
 
 	if (websocket_connect(client, host, port) != WEBSOCKET_SUCCESS) {
 		r = WEBSOCKET_CONNECT_ERROR;
@@ -816,13 +827,12 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 
 	if (wslay_event_context_client_init(&client->ctx, client->cb, socket_data) != WEBSOCKET_SUCCESS) {
 		WEBSOCKET_DEBUG("fail to init websocket client context\n");
-		free(socket_data);
+		WEBSOCKET_FREE(socket_data);
 		r = WEBSOCKET_INIT_ERROR;
 		goto EXIT_CLIENT_OPEN;
 	}
 
 	WEBSOCKET_DEBUG("start websocket client handling thread\n");
-	websocket_update_state(client, WEBSOCKET_RUNNING);
 
 	if (pthread_attr_init(&client->thread_attr) != 0) {
 		WEBSOCKET_DEBUG("fail to init pthread attribute\n");
@@ -870,14 +880,13 @@ websocket_return_t websocket_client_open(websocket_t *client, char *host, char *
 	return r;
 
 EXIT_CLIENT_OPEN:
-	if (fd >= 0) {
-		close(fd);
-		fd = -1;
-	}
+	WEBSOCKET_CLOSE(fd);
+
 	if (client->ctx) {
 		wslay_event_context_free(client->ctx);
 		client->ctx = NULL;
 	}
+
 	websocket_update_state(client, WEBSOCKET_STOP);
 
 	return r;
@@ -899,6 +908,8 @@ websocket_return_t websocket_server_open(websocket_t *init_server)
 		WEBSOCKET_DEBUG("NULL parameter\n");
 		return WEBSOCKET_ALLOCATION_ERROR;
 	}
+
+	//TODO : all TLS initializing code will be moved from example to here
 
 	port = init_server->tls_enabled ? 443 : 80;
 
@@ -930,15 +941,12 @@ websocket_return_t websocket_server_init(websocket_t *server)
 		return WEBSOCKET_ALLOCATION_ERROR;
 	}
 
-	websocket_update_state(server, WEBSOCKET_RUNNING);
-
-	socket_data = malloc(sizeof(struct websocket_info_t));
+	socket_data = calloc(1, sizeof(struct websocket_info_t));
 	if (socket_data == NULL) {
 		WEBSOCKET_DEBUG("fail to allocate memory\n");
 		r = WEBSOCKET_ALLOCATION_ERROR;
 		goto EXIT_SERVER_INIT;
 	}
-	memset(socket_data, 0, sizeof(struct websocket_info_t));
 	socket_data->data = server;
 
 	if (wslay_event_context_server_init(&(server->ctx), server->cb, socket_data) != WEBSOCKET_SUCCESS) {
@@ -956,17 +964,17 @@ websocket_return_t websocket_server_init(websocket_t *server)
 	r = websocket_handler(server);
 
 EXIT_SERVER_INIT:
-	websocket_socket_free(server);
-
-	if (server->tls_enabled) {
-		mbedtls_net_free(&(server->tls_net));
-		mbedtls_ssl_free(server->tls_ssl);
-		free(server->tls_ssl);
-	}
+	WEBSOCKET_CLOSE(server->fd);
 
 	if (server->ctx) {
 		wslay_event_context_free(server->ctx);
 		server->ctx = NULL;
+	}
+
+	if (server->tls_enabled) {
+		mbedtls_net_free(&(server->tls_net));
+		mbedtls_ssl_free(server->tls_ssl);
+		WEBSOCKET_FREE(server->tls_ssl);
 	}
 
 	websocket_update_state(server, WEBSOCKET_STOP);
@@ -1024,6 +1032,8 @@ websocket_return_t websocket_queue_ping(websocket_t *websocket)
 
 websocket_return_t websocket_queue_close(websocket_t *websocket, const char *close_message)
 {
+	int r = WEBSOCKET_SUCCESS;
+
 	if (websocket == NULL) {
 		WEBSOCKET_DEBUG("NULL parameter\n");
 		return WEBSOCKET_ALLOCATION_ERROR;
@@ -1036,22 +1046,24 @@ websocket_return_t websocket_queue_close(websocket_t *websocket, const char *clo
 	if (websocket->ctx != NULL && websocket->state != WEBSOCKET_STOP) {
 		if (wslay_event_queue_close(websocket->ctx, 1000, (const uint8_t *)close_message, strlen(close_message)) != WEBSOCKET_SUCCESS) {
 			WEBSOCKET_DEBUG("fail to queue close message\n");
-			websocket_socket_free(websocket);
-			wslay_event_context_free(websocket->ctx);
-			return WEBSOCKET_SEND_ERROR;
+			r = WEBSOCKET_SEND_ERROR;
+			goto EXIT_QUEUE_CLOSE;
 		}
 		websocket_wait_state(websocket, WEBSOCKET_STOP, 100000);
-		WEBSOCKET_DEBUG("websocket handler stopped, closing\n");
+		WEBSOCKET_DEBUG("websocket handler successfully stopped, closing\n");
 	}
 
-	websocket_socket_free(websocket);
+EXIT_QUEUE_CLOSE:
+	WEBSOCKET_CLOSE(websocket->fd);
 
 	if (websocket->ctx) {
 		wslay_event_context_free(websocket->ctx);
 		websocket->ctx = NULL;
 	}
 
-	return WEBSOCKET_SUCCESS;
+	websocket_update_state(websocket, WEBSOCKET_STOP);
+
+	return r;
 }
 
 websocket_return_t websocket_update_state(websocket_t *websocket, int state)

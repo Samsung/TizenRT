@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /* encode.h -- encoding and decoding of CoAP data types
  *
  * Copyright (C) 2010--2012 Olaf Bergmann <bergmann@tzi.org>
@@ -9,9 +26,9 @@
 #ifndef _COAP_ENCODE_H_
 #define _COAP_ENCODE_H_
 
-#include <tinyara/config.h>
+#include <apps/netutils/libcoap/config.h>
 
-#ifdef __TINYARA__
+#if defined (__TINYARA__)
 #include <string.h>
 #else
 #if (BSD >= 199103) || defined(WITH_CONTIKI)
@@ -55,4 +72,11 @@ unsigned int coap_decode_var_bytes(unsigned char *buf, unsigned int len);
  */
 unsigned int coap_encode_var_bytes(unsigned char *buf, unsigned int val);
 
+
+#ifdef WITH_MBEDTLS
+/**
+ * Convert string (ascii code) to hexadecimal number
+ */
+int coap_unhexify(unsigned char *output, const char *input, size_t *olen);
+#endif /* WITH_MBEDTLS */
 #endif							/* _COAP_ENCODE_H_ */

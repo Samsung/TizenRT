@@ -41,12 +41,6 @@
 
 #if defined(MBEDTLS_SSL_CLI_C)
 
-#include "tls/debug.h"
-#include "tls/ssl.h"
-#include "tls/ssl_internal.h"
-
-#include <string.h>
-
 #if defined(MBEDTLS_PLATFORM_C)
 #include "tls/platform.h"
 #else
@@ -55,13 +49,12 @@
 #define mbedtls_free      free
 #endif
 
+#include <string.h>
+#include <stdint.h>
+
 #include "tls/debug.h"
 #include "tls/ssl.h"
 #include "tls/ssl_internal.h"
-
-#include <string.h>
-
-#include <stdint.h>
 
 #if defined(MBEDTLS_HAVE_TIME)
 #include "tls/platform_time.h"

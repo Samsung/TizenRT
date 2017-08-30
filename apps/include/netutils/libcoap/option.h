@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /*
  * option.h -- helpers for handling options in CoAP PDUs
  *
@@ -15,8 +32,8 @@
 #ifndef _OPTION_H_
 #define _OPTION_H_
 
-#include "bits.h"
-#include "pdu.h"
+#include <apps/netutils/libcoap/bits.h>
+#include <apps/netutils/libcoap/pdu.h>
 
 /**
  * Use byte-oriented access methods here because sliding a complex
@@ -69,7 +86,7 @@ size_t coap_opt_size(const coap_opt_t *opt);
  * @param pdu The PDU containing the options.
  * @return A pointer to the first option if available, or @c NULL otherwise.
  */
-coap_opt_t *options_start(coap_pdu_t *pdu);
+coap_opt_t *options_start(coap_pdu_t *pdu, coap_transport_t transport);
 
 /**
  * Interprets @p opt as pointer to a CoAP option and advances to
@@ -176,6 +193,24 @@ typedef struct {
 } coap_opt_iterator_t;
 
 /**
+ * Initializes the given option iterator @p oi to point to the beginning of the
+ * @p pdu's option list. This function returns @p oi on success, @c NULL
+ * otherwise (i.e. when no options exist). Note that a length check on the
+ * option list must be performed before coap_option_iterator_init() is called.
+ *
+ * @param pdu    The PDU the options of which should be walked through.
+ * @param oi     An iterator object that will be initilized.
+ * @param filter An optional option type filter.
+ *               With @p type != @c COAP_OPT_ALL, coap_option_next()
+ *               will return only options matching this bitmask.
+ *               Fence-post options @c 14, @c 28, @c 42, ... are always
+ *               skipped.
+ *
+ * @return       The iterator object @p oi on success, @c NULL otherwise.
+ */
+coap_opt_iterator_t *coap_option_iterator_init(coap_pdu_t *pdu, coap_opt_iterator_t *oi, const coap_opt_filter_t filter);
+
+/**
  * Initializes the given option iterator @p oi to point to the
  * beginning of the @p pdu's option list. This function returns @p oi
  * on success, @c NULL otherwise (i.e. when no options exist).
@@ -192,7 +227,7 @@ typedef struct {
  *
  * @return The iterator object @p oi on success, @c NULL otherwise.
  */
-coap_opt_iterator_t *coap_option_iterator_init(coap_pdu_t *pdu, coap_opt_iterator_t *oi, const coap_opt_filter_t filter);
+coap_opt_iterator_t *coap_option_iterator_init2(coap_pdu_t *pdu, coap_opt_iterator_t *oi, const coap_opt_filter_t filter, coap_transport_t transport);
 
 /**
  * Updates the iterator @p oi to point to the next option. This
@@ -230,6 +265,23 @@ coap_opt_t *coap_option_next(coap_opt_iterator_t *oi);
  *         if not found.
  */
 coap_opt_t *coap_check_option(coap_pdu_t *pdu, unsigned char type, coap_opt_iterator_t *oi);
+
+/**
+ * Retrieves the first option of type @p type from @p pdu. @p oi must
+ * point to a coap_opt_iterator_t object that will be initialized by
+ * this function to filter only options with code @p type. This
+ * function returns the first option with this type, or @c NULL if not
+ * found.
+ *
+ * @param pdu  The PDU to parse for options.
+ * @param type The option type code to search for.
+ * @param oi   An iterator object to use.
+ * @param transport The transport header type of PDU
+ *
+ * @return A pointer to the first option of type @p type, or @c NULL
+ *         if not found.
+ */
+coap_opt_t *coap_check_option2(coap_pdu_t *pdu, unsigned char type, coap_opt_iterator_t *oi, coap_transport_t transport);
 
 /**
  * Encodes the given delta and length values into @p opt. This

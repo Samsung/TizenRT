@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /* debug.c -- debug utilities
  *
  * Copyright (C) 2010--2012 Olaf Bergmann <bergmann@tzi.org>
@@ -6,7 +23,7 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -25,8 +42,8 @@
 #include <time.h>
 #endif
 
-#include "debug.h"
-#include "net.h"
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/net.h>
 
 #ifdef WITH_CONTIKI
 #ifndef DEBUG
@@ -234,17 +251,80 @@ size_t coap_print_addr(const struct coap_address_t *addr, unsigned char *buf, si
 }
 
 #ifndef WITH_CONTIKI
-void coap_show_pdu(const coap_pdu_t *pdu)
+void coap_show_pdu2(const coap_pdu_t *pdu, coap_protocol_t protocol)
 {
-	unsigned char buf[COAP_MAX_PDU_SIZE];	/* need some space for output creation */
+	unsigned int buf_len = 0;
+	unsigned char *buf = NULL;
+
 	int encode = 0, have_options = 0;
 	coap_opt_iterator_t opt_iter;
 	coap_opt_t *option;
 
-	fprintf(COAP_DEBUG_FD, "v:%d t:%d tkl:%d c:%d id:%u", pdu->hdr->version, pdu->hdr->type, pdu->hdr->token_length, pdu->hdr->code, ntohs(pdu->hdr->id));
+	coap_transport_t transport = COAP_UDP;
+
+	buf_len = pdu->length + 1;
+	buf = (unsigned char *)malloc((size_t)(buf_len * sizeof(unsigned char)));
+
+	if (!buf) {
+		warn("coap_show_pdu : failed to create buf, len %d\n", buf_len);
+		return;
+	}
+
+	memset(buf, 0, buf_len);
+
+	if (protocol == COAP_PROTO_TCP || protocol == COAP_PROTO_TLS) {
+		transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)pdu->transport_hdr)[0] >> 4);
+	} else {
+		transport = COAP_UDP;
+	}
+
+	switch (transport) {
+	case COAP_UDP:
+		fprintf(COAP_DEBUG_FD, "v:%d t:%d tkl:%d c:%d id:%u\n",
+				pdu->transport_hdr->udp.version,
+				pdu->transport_hdr->udp.type,
+				pdu->transport_hdr->udp.token_length,
+				pdu->transport_hdr->udp.code,
+				ntohs(pdu->transport_hdr->udp.id));
+		break;
+	case COAP_TCP:
+		fprintf(COAP_DEBUG_FD, "len:%d tkl:%d c:%d\n",
+				((pdu->transport_hdr->tcp.header_data[0] >> 4) & 0x0f),
+				(pdu->transport_hdr->tcp.header_data[0] & 0x0f),
+				pdu->transport_hdr->tcp.header_data[1]);
+		break;
+	case COAP_TCP_8BIT:
+		fprintf(COAP_DEBUG_FD, "len:%d tkl:%d extlen:%x c:%d\n",
+				((pdu->transport_hdr->tcp_8bit.header_data[0] >> 4) & 0x0f),
+				(pdu->transport_hdr->tcp_8bit.header_data[0] & 0x0f),
+				pdu->transport_hdr->tcp_8bit.header_data[1],
+				pdu->transport_hdr->tcp_8bit.header_data[2]);
+		break;
+	case COAP_TCP_16BIT:
+		fprintf(COAP_DEBUG_FD, "len:%d tkl:%d extlen:%x%x c:%d\n",
+				((pdu->transport_hdr->tcp_16bit.header_data[0] >> 4) & 0x0f),
+				(pdu->transport_hdr->tcp_16bit.header_data[0] & 0x0f),
+				pdu->transport_hdr->tcp_16bit.header_data[1],
+				pdu->transport_hdr->tcp_16bit.header_data[2],
+				pdu->transport_hdr->tcp_16bit.header_data[3]);
+		break;
+	case COAP_TCP_32BIT:
+		fprintf(COAP_DEBUG_FD, "len:%d tkl:%d extlen:%x%x%x%x c:%d\n",
+				((pdu->transport_hdr->tcp_32bit.header_data[0] >> 4) & 0x0f),
+				(pdu->transport_hdr->tcp_32bit.header_data[0] & 0x0f),
+				pdu->transport_hdr->tcp_32bit.header_data[1],
+				pdu->transport_hdr->tcp_32bit.header_data[2],
+				pdu->transport_hdr->tcp_32bit.header_data[3],
+				pdu->transport_hdr->tcp_32bit.header_data[4],
+				pdu->transport_hdr->tcp_32bit.header_data[5]);
+		break;
+	default:
+		/* Should not enter here */
+		break;
+	}
 
 	/* show options, if any */
-	coap_option_iterator_init((coap_pdu_t *) pdu, &opt_iter, COAP_OPT_ALL);
+	coap_option_iterator_init2((coap_pdu_t *) pdu, &opt_iter, COAP_OPT_ALL, transport);
 
 	while ((option = coap_option_next(&opt_iter))) {
 		if (!have_options) {
@@ -254,7 +334,11 @@ void coap_show_pdu(const coap_pdu_t *pdu)
 			fprintf(COAP_DEBUG_FD, ",");
 		}
 
-		if (opt_iter.type == COAP_OPTION_URI_PATH || opt_iter.type == COAP_OPTION_PROXY_URI || opt_iter.type == COAP_OPTION_URI_HOST || opt_iter.type == COAP_OPTION_LOCATION_PATH || opt_iter.type == COAP_OPTION_LOCATION_QUERY || opt_iter.type == COAP_OPTION_URI_PATH || opt_iter.type == COAP_OPTION_URI_QUERY) {
+	if (opt_iter.type == COAP_OPTION_URI_PATH || opt_iter.type == COAP_OPTION_PROXY_URI
+		|| opt_iter.type == COAP_OPTION_URI_HOST
+		|| opt_iter.type == COAP_OPTION_LOCATION_PATH
+		|| opt_iter.type == COAP_OPTION_LOCATION_QUERY
+		|| opt_iter.type == COAP_OPTION_URI_PATH || opt_iter.type == COAP_OPTION_URI_QUERY) {
 			encode = 0;
 		} else {
 			encode = 1;
@@ -270,12 +354,19 @@ void coap_show_pdu(const coap_pdu_t *pdu)
 	}
 
 	if (pdu->data) {
-		assert(pdu->data < (unsigned char *)pdu->hdr + pdu->length);
-		print_readable(pdu->data, (unsigned char *)pdu->hdr + pdu->length - pdu->data, buf, sizeof(buf), 0);
+		assert(pdu->data < (unsigned char *)pdu->transport_hdr + pdu->length);
+		print_readable(pdu->data, (unsigned char *)pdu->transport_hdr + pdu->length - pdu->data, buf, sizeof(buf), 0);
 		fprintf(COAP_DEBUG_FD, " d:%s", buf);
 	}
+
+	free(buf);
 	fprintf(COAP_DEBUG_FD, "\n");
 	fflush(COAP_DEBUG_FD);
+}
+
+void coap_show_pdu(const coap_pdu_t *pdu)
+{
+	coap_show_pdu2(pdu, COAP_PROTO_UDP);
 }
 
 #else							/* WITH_CONTIKI */
@@ -284,7 +375,10 @@ void coap_show_pdu(const coap_pdu_t *pdu)
 {
 	unsigned char buf[80];		/* need some space for output creation */
 
-	PRINTF("v:%d t:%d oc:%d c:%d id:%u", pdu->hdr->version, pdu->hdr->type, pdu->hdr->optcnt, pdu->hdr->code, uip_ntohs(pdu->hdr->id));
+	PRINTF("v:%d t:%d oc:%d c:%d id:%u",
+		pdu->transport_hdr->udp.version, pdu->transport_hdr->udp.type,
+		pdu->transport_hdr->udp.optcnt, pdu->transport_hdr->udp.code,
+		uip_ntohs(pdu->transport_hdr->udp.id));
 
 	/* show options, if any */
 	if (pdu->hdr->optcnt) {
@@ -323,7 +417,7 @@ void coap_log_impl(coap_log_t level, const char *format, ...)
 		return;
 	}
 
-	log_fd = level <= LOG_CRIT ? COAP_ERR_FD : COAP_DEBUG_FD;
+	log_fd = stderr;
 
 	coap_ticks(&now);
 	if (print_timestamp(timebuf, sizeof(timebuf), now)) {

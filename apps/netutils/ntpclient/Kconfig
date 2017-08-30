@@ -6,6 +6,7 @@
 config NETUTILS_NTPCLIENT
 	bool "NTP client"
 	default n
+	depends on LIBC_NETDB
 	---help---
 		Enable support for the minimal NTP client.
 
@@ -23,5 +24,11 @@ config NETUTILS_NTPCLIENT_SIGWAKEUP
 	int "NTP client wakeup signal number"
 	default 18
 	depends on !DISABLE_SIGNALS
+
+config NETUTILS_NTPCLIENT_DEBUG
+	bool "NTP client debug message option"
+	default n
+	---help---
+		Enable NTP client debug message
 
 endif # NETUTILS_NTPCLIENT

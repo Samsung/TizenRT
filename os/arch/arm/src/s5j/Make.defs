@@ -187,3 +187,7 @@ CHIP_CSRCS += sss_driver_io.c
 # built-in static library
 EXTRA_LIBS += chip/sss/libispdriver.a
 endif
+
+ifeq ($(CONFIG_S5J_SENSOR_PPD42NS),y)
+CHIP_CSRCS += s5j_ppd42ns.c
+endif

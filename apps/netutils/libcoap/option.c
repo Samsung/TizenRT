@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /*
  * option.c -- helpers for handling options in CoAP PDUs
  *
@@ -7,7 +24,7 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -16,17 +33,26 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "option.h"
-#include "debug.h"
+#include <apps/netutils/libcoap/option.h>
+#include <apps/netutils/libcoap/debug.h>
 
-coap_opt_t *options_start(coap_pdu_t *pdu)
+coap_opt_t *options_start(coap_pdu_t *pdu, coap_transport_t transport)
 {
-
-	if (pdu && pdu->hdr && (pdu->hdr->token + pdu->hdr->token_length < (unsigned char *)pdu->hdr + pdu->length)) {
-
-		coap_opt_t *opt = pdu->hdr->token + pdu->hdr->token_length;
-		return (*opt == COAP_PAYLOAD_START) ? NULL : opt;
-
+	if (pdu && pdu->hdr) {
+		if (COAP_UDP == transport &&
+			(pdu->transport_hdr->udp.token + pdu->transport_hdr->udp.token_length < (unsigned char *)pdu->hdr + pdu->length)) {
+			coap_opt_t *opt = pdu->transport_hdr->udp.token + pdu->transport_hdr->udp.token_length;
+			return (*opt == COAP_PAYLOAD_START) ? NULL : opt;
+		}
+#ifdef WITH_TCP
+		else if (COAP_TCP == transport &&
+				(pdu->transport_hdr->tcp.token + ((pdu->transport_hdr->tcp.header_data[0]) & 0x0f)
+										   < (unsigned char *)pdu->hdr + pdu->length)) {
+			coap_opt_t *opt = pdu->transport_hdr->tcp.token + ((pdu->transport_hdr->tcp.header_data[0]) & 0x0f);
+			return (*opt == COAP_PAYLOAD_START) ? NULL : opt;
+		}
+#endif
+		return NULL;
 	} else {
 		return NULL;
 	}
@@ -34,7 +60,6 @@ coap_opt_t *options_start(coap_pdu_t *pdu)
 
 size_t coap_opt_parse(const coap_opt_t *opt, size_t length, coap_option_t *result)
 {
-
 	const coap_opt_t *opt_start = opt;	/* store where parsing starts  */
 
 	assert(opt);
@@ -116,22 +141,73 @@ size_t coap_opt_parse(const coap_opt_t *opt, size_t length, coap_option_t *resul
 
 coap_opt_iterator_t *coap_option_iterator_init(coap_pdu_t *pdu, coap_opt_iterator_t *oi, const coap_opt_filter_t filter)
 {
+	return coap_option_iterator_init2(pdu, oi, filter, COAP_UDP);
+}
+
+coap_opt_iterator_t *coap_option_iterator_init2(coap_pdu_t *pdu, coap_opt_iterator_t *oi, const coap_opt_filter_t filter, coap_transport_t transport)
+{
 	assert(pdu);
 	assert(pdu->hdr);
 	assert(oi);
 
 	memset(oi, 0, sizeof(coap_opt_iterator_t));
 
-	oi->next_option = (unsigned char *)pdu->hdr + sizeof(coap_hdr_t)
-					  + pdu->hdr->token_length;
-	if ((unsigned char *)pdu->hdr + pdu->length <= oi->next_option) {
-		oi->bad = 1;
+	unsigned int token_length;
+	unsigned int headerSize;
+
+	switch (transport) {
+	case COAP_UDP:
+		token_length = (pdu->transport_hdr->udp.token_length);
+		headerSize = COAP_UDP_HEADER;
+		break;
+#ifdef WITH_TCP
+	case COAP_TCP:
+		token_length = (pdu->transport_hdr->tcp.header_data[0]) & 0x0f;
+		headerSize = COAP_TCP_HEADER_NO_FIELD;
+		break;
+	case COAP_TCP_8BIT:
+		token_length = (pdu->transport_hdr->tcp_8bit.header_data[0]) & 0x0f;
+		headerSize = COAP_TCP_HEADER_8_BIT;
+		break;
+	case COAP_TCP_16BIT:
+		token_length = (pdu->transport_hdr->tcp_16bit.header_data[0]) & 0x0f;
+		headerSize = COAP_TCP_HEADER_16_BIT;
+		break;
+	case COAP_TCP_32BIT:
+		token_length = pdu->transport_hdr->tcp_32bit.header_data[0] & 0x0f;
+		headerSize = COAP_TCP_HEADER_32_BIT;
+		break;
+#endif
+	default:
+		token_length = pdu->transport_hdr->udp.token_length;
+		headerSize = sizeof(pdu->transport_hdr->udp);
+		break;
+	}
+
+	oi->next_option = (unsigned char *)pdu->hdr + headerSize + token_length;
+
+	if (COAP_UDP == transport) {
+		if ((unsigned char *)&(pdu->transport_hdr->udp) + pdu->length <= oi->next_option) {
+			oi->bad = 1;
+			return NULL;
+		}
+	}
+#ifdef WITH_TCP
+	else {
+		if ((unsigned char *)&(pdu->transport_hdr->tcp) + pdu->length <= oi->next_option) {
+			oi->bad = 1;
+			return NULL;
+		}
+	}
+#endif
+
+	if ((headerSize + token_length) > pdu->length) {
+		//assert((headerSize + token_length) <= pdu->length);
+		printf("coap_option_iterator_init2 : invalid length of pdu, headerSize %d token_length %d pdu->length %d\n", headerSize, token_length, pdu->length);
 		return NULL;
 	}
 
-	assert((sizeof(coap_hdr_t) + pdu->hdr->token_length) <= pdu->length);
-
-	oi->length = pdu->length - (sizeof(coap_hdr_t) + pdu->hdr->token_length);
+	oi->length = pdu->length - (headerSize + token_length);
 
 	if (filter) {
 		memcpy(oi->filter, filter, sizeof(coap_opt_filter_t));
@@ -201,16 +277,21 @@ coap_opt_t *coap_option_next(coap_opt_iterator_t *oi)
 	return current_opt;
 }
 
-coap_opt_t *coap_check_option(coap_pdu_t *pdu, unsigned char type, coap_opt_iterator_t *oi)
+coap_opt_t *coap_check_option2(coap_pdu_t *pdu, unsigned char type, coap_opt_iterator_t *oi, coap_transport_t transport)
 {
 	coap_opt_filter_t f;
 
 	coap_option_filter_clear(f);
 	coap_option_setb(f, type);
 
-	coap_option_iterator_init(pdu, oi, f);
+	coap_option_iterator_init2(pdu, oi, f, transport);
 
 	return coap_option_next(oi);
+}
+
+coap_opt_t *coap_check_option(coap_pdu_t *pdu, unsigned char type, coap_opt_iterator_t *oi)
+{
+	return coap_check_option2(pdu, type, oi, COAP_UDP);
 }
 
 unsigned short coap_opt_delta(const coap_opt_t *opt)
@@ -326,7 +407,7 @@ size_t coap_opt_setheader(coap_opt_t *opt, size_t maxlen, unsigned short delta, 
 
 	assert(opt);
 
-	if (maxlen == 0) {		/* need at least one byte */
+	if (maxlen == 0) {			/* need at least one byte */
 		return 0;
 	}
 
@@ -395,7 +476,7 @@ size_t coap_opt_encode(coap_opt_t *opt, size_t maxlen, unsigned short delta, con
 		return 0;
 	}
 
-	if (val) {				/* better be safe here */
+	if (val) {					/* better be safe here */
 		memcpy(opt, val, length);
 	}
 

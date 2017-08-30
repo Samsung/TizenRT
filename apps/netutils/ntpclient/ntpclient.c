@@ -85,7 +85,9 @@
 #define NTP2UNIX_TRANLSLATION 2208988800u
 #define NTP_VERSION           3
 
-#define DEBUG_OPTION          0
+#ifndef CONFIG_NETUTILS_NTPCLIENT_DEBUG
+#define CONFIG_NETUTILS_NTPCLIENT_DEBUG		0
+#endif
 
 /****************************************************************************
  * Private Types
@@ -118,7 +120,7 @@ void (*ntp_link_err_cb)(void);
 
 static struct ntpc_daemon_s g_ntpc_daemon;
 static struct ntpc_server_info_s g_ntps;
-static int g_debug = DEBUG_OPTION;
+static int g_debug = CONFIG_NETUTILS_NTPCLIENT_DEBUG;
 
 /****************************************************************************
  * Private Functions Prototype

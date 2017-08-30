@@ -1720,8 +1720,11 @@ static int init_mdns_context(int domain)
 	sem_init(&g_svr->sendmsg_sem, 0, 0);
 	g_svr->sendmsg_requested = 1;
 
-	// init thread
-	pthread_attr_init(&attr);
+	/* init thread */
+	if (pthread_attr_init(&attr) != 0) {
+		ndbg("ERROR: pthread_attr_init() failed.\n");
+		goto errout_with_mutex;
+	}
 #if 0							/* PTHREAD_CREATE_DETACHED is not supported in tinyara */
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 #endif
@@ -2038,19 +2041,39 @@ static void mdns_service_destroy(struct mdns_service *srv)
 {
 	assert(srv != NULL);
 	rr_list_destroy(srv->entries, 0);
-	free(srv);
+	MDNS_FREE(srv);
 }
 
-int mdnsd_register_service(const char *instance_name, const char *type,
-				uint16_t port, const char *hostname, const char *txt[])
+int mdnsd_register_service(const char *instance_name, const char *type, uint16_t port, const char *hostname, const char *txt[])
 {
-	struct rr_entry *txt_e = NULL,
-					*srv_e = NULL,
-					*ptr_e = NULL,
-					*bptr_e = NULL;
+	int result = -1;
+	struct rr_entry *txt_e = NULL, *srv_e = NULL, *ptr_e = NULL, *bptr_e = NULL;
 	uint8_t *target;
 	uint8_t *inst_nlabel, *type_nlabel, *nlabel;
-	struct mdns_service *service = malloc(sizeof(struct mdns_service));
+	struct mdns_service *service = NULL;
+
+	if (g_svr == NULL) {
+		ndbg("ERROR: mdnsd is not running.\n");
+		goto out;
+	}
+
+	if (check_mdns_domain(type) == MDNS_DOMAIN_UNKNOWN) {
+		ndbg("ERROR: service type is invalid. service type should be "
+#if defined(CONFIG_NETUTILS_MDNS_XMDNS)
+			 "%s or %s domain.\n", MDNS_SUFFIX_LOCAL, MDNS_SUFFIX_SITE);
+#else
+			 "%s domain.\n", MDNS_SUFFIX_LOCAL);
+#endif
+		goto out;
+	}
+
+	mdns_cmd_mutex_lock();
+
+	service = (struct mdns_service *)MDNS_MALLOC(sizeof(struct mdns_service));
+	if (service == NULL) {
+		ndbg("ERROR: memory allocation failed.\n");
+		goto out_with_mutex;
+	}
 	memset(service, 0, sizeof(struct mdns_service));
 
 	// combine service name
@@ -2068,12 +2091,9 @@ int mdnsd_register_service(const char *instance_name, const char *type,
 			rr_add_txt(txt_e, *txt);
 		}
 	}
-
 	// create SRV record
-	assert(hostname || g_svr->hostname);  // either one as target
-	target = hostname ?
-	create_nlabel(hostname) :
-	dup_nlabel(g_svr->hostname);
+	assert(hostname || g_svr->hostname);	// either one as target
+	target = hostname ? create_nlabel(hostname) : dup_nlabel(g_svr->hostname);
 
 	srv_e = rr_create_srv(dup_nlabel(nlabel), port, target);
 	rr_list_append(&service->entries, srv_e);
@@ -2110,7 +2130,14 @@ int mdnsd_register_service(const char *instance_name, const char *type,
 
 	mdns_service_destroy(service);
 
-	return 0;
+	/* result is success */
+	result = 0;
+
+out_with_mutex:
+	mdns_cmd_mutex_unlock();
+
+out:
+	return result;
 }
 #endif							/*CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT */
 
@@ -2145,7 +2172,12 @@ int mdnsd_resolve_hostname(char *hostname, int *ipaddr)
 
 	domain = check_mdns_domain(hostname);
 	if (domain == MDNS_DOMAIN_UNKNOWN) {
-		ndbg("ERROR: hostname is invalid. hostname should be %s or %s domain.\n", MDNS_SUFFIX_LOCAL, MDNS_SUFFIX_SITE);
+		ndbg("ERROR: hostname is invalid. hostname should be "
+#if defined(CONFIG_NETUTILS_MDNS_XMDNS)
+			 "%s or %s domain.\n", MDNS_SUFFIX_LOCAL, MDNS_SUFFIX_SITE);
+#else
+			 "%s domain.\n", MDNS_SUFFIX_LOCAL);
+#endif
 		goto out;
 	}
 

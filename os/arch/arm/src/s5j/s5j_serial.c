@@ -895,6 +895,7 @@ void up_earlyserialinit(void)
 #if defined(USE_SERIALDRIVER)
 void up_serialinit(void)
 {
+#if CONFIG_NFILE_DESCRIPTORS > 0
 	/* Register the console */
 #if defined(HAVE_SERIAL_CONSOLE)
 	uart_register("/dev/console", &CONSOLE_DEV);
@@ -916,6 +917,7 @@ void up_serialinit(void)
 #ifdef TTYS4_DEV
 	uart_register("/dev/ttyS4", &TTYS4_DEV);
 #endif
+#endif /* CONFIG_NFILE_DESCRIPTORS > 0 */
 }
 #endif /* USE_SERIALDRIVER */
 

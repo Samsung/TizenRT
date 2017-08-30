@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /* subscribe.c -- subscription handling for CoAP
  *                see draft-ietf-coap-observe-09
  *
@@ -7,7 +24,7 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
@@ -21,10 +38,10 @@
 
 /* #include "resource.h" */
 
-#include "mem.h"
-#include "encode.h"
-#include "debug.h"
-#include "subscribe.h"
+#include <apps/netutils/libcoap/mem.h>
+#include <apps/netutils/libcoap/encode.h>
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/subscribe.h>
 
 void coap_subscription_init(coap_subscription_t *s)
 {

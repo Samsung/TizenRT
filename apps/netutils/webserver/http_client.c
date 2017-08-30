@@ -378,7 +378,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	int buf_len = 0;
 	int remain = HTTP_CONF_MAX_REQUEST_LENGTH;
 	int enc = HTTP_CONTENT_LENGTH;
-	struct http_req_message req;
+	struct http_req_message req = {0, };
 	int state = HTTP_REQUEST_HEADER;
 	struct http_message_len_t mlen = {0,};
 	struct sockaddr_in addr;
@@ -401,6 +401,7 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 	req.url = url;
 	req.headers = request_params;
 	req.client_ip = addr.sin_addr.s_addr;
+	req.encoding = HTTP_CONTENT_LENGTH;
 
 	while (!read_finish) {
 		if (remain <= 0) {
@@ -447,7 +448,6 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 		if (ws == NULL) {
 			goto errout;
 		}
-		memset(ws, 0, sizeof(websocket_t));
 		ws->fd = client->client_fd;
 		ws->cb = &client->server->ws_cb;
 #ifdef CONFIG_NET_SECURITY_TLS
@@ -460,7 +460,10 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 			mbedtls_ssl_set_bio(ws->tls_ssl, &ws->tls_net, mbedtls_net_send, mbedtls_net_recv, NULL);
 		}
 #endif
-		pthread_attr_init(&ws->thread_attr);
+		if (pthread_attr_init(&ws->thread_attr) != 0) {
+			HTTP_LOGE("Error: Cannot initialize thread attribute\n");
+			goto errout;
+		}
 		pthread_attr_setstacksize(&ws->thread_attr, WEBSOCKET_STACKSIZE);
 		pthread_attr_setschedpolicy(&ws->thread_attr, SCHED_RR);
 		if (pthread_create(&ws->thread_id, &ws->thread_attr,

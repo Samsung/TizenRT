@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 /* block.c -- block transfer
  *
  * Copyright (C) 2010--2012 Olaf Bergmann <bergmann@tzi.org>
@@ -6,14 +23,14 @@
  * README for terms of use.
  */
 
-#include "config.h"
+#include <apps/netutils/libcoap/config.h>
 
 #if defined(HAVE_ASSERT_H) && !defined(assert)
 #include <assert.h>
 #endif
 
-#include "debug.h"
-#include "block.h"
+#include <apps/netutils/libcoap/debug.h>
+#include <apps/netutils/libcoap/block.h>
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
@@ -41,7 +58,7 @@ unsigned int coap_opt_block_num(const coap_opt_t *block_opt)
 	return (num << 4) | ((*COAP_OPT_BLOCK_LAST(block_opt) & 0xF0) >> 4);
 }
 
-int coap_get_block(coap_pdu_t *pdu, unsigned short type, coap_block_t *block)
+int coap_get_block2(coap_pdu_t *pdu, unsigned short type, coap_block_t *block, coap_transport_t transport)
 {
 	coap_opt_iterator_t opt_iter;
 	coap_opt_t *option;
@@ -49,16 +66,23 @@ int coap_get_block(coap_pdu_t *pdu, unsigned short type, coap_block_t *block)
 	assert(block);
 	memset(block, 0, sizeof(coap_block_t));
 
-	if (pdu && (option = coap_check_option(pdu, type, &opt_iter))) {
-		block->szx = COAP_OPT_BLOCK_SZX(option);
-		if (COAP_OPT_BLOCK_MORE(option)) {
-			block->m = 1;
+	if (pdu && (option = coap_check_option2(pdu, type, &opt_iter, transport))) {
+		if (option) { /* to prevent dereference null options */
+			block->szx = COAP_OPT_BLOCK_SZX(option);
+			if (COAP_OPT_BLOCK_MORE(option)) {
+				block->m = 1;
+			}
+			block->num = coap_opt_block_num(option);
 		}
-		block->num = coap_opt_block_num(option);
 		return 1;
 	}
 
 	return 0;
+}
+
+int coap_get_block(coap_pdu_t *pdu, unsigned short type, coap_block_t *block)
+{
+	return coap_get_block2(pdu, type, block, COAP_UDP);
 }
 
 int coap_write_block_opt(coap_block_t *block, unsigned short type, coap_pdu_t *pdu, size_t data_length)

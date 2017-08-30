@@ -521,7 +521,7 @@ struct spi_dev_s *up_spiinitialize(int port)
 {
 	FAR struct s5j_spidev_s *priv = NULL;
 
-	if (port >= SPI_PORT_MAX) {
+	if (port < 0 || port >= SPI_PORT_MAX) {
 		return NULL;
 	}
 

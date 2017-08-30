@@ -35,7 +35,7 @@ int http_client_tls_init(struct http_client_t *client)
 	HTTP_LOGD("Ok\n");
 
 	if ((result = mbedtls_ssl_setup(&(client->tls_ssl), &(client->server->tls_conf))) != 0) {
-		HTTP_LOGE("Error: mbedtls_ssl_setup returned %d\n", result);
+		HTTP_LOGE("Error: mbedtls_ssl_setup returned -%4x\n", -result);
 		return HTTP_ERROR;
 	}
 
@@ -47,7 +47,7 @@ int http_client_tls_init(struct http_client_t *client)
 
 	while ((result = mbedtls_ssl_handshake(&(client->tls_ssl))) != 0) {
 		if (result != MBEDTLS_ERR_SSL_WANT_READ && result != MBEDTLS_ERR_SSL_WANT_WRITE) {
-			HTTP_LOGE("Error: mbedtls_ssl_handshake returned %d\n", result);
+			HTTP_LOGE("Error: mbedtls_ssl_handshake returned -%4x\n", -result);
 			return HTTP_ERROR;
 		}
 	}

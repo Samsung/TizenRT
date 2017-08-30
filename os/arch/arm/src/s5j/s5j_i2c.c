@@ -1261,6 +1261,12 @@ struct i2c_dev_s *up_i2cinitialize(int port)
 	struct s5j_i2c_priv_s *priv = NULL;
 	const struct s5j_i2c_config_s *config;
 	int flags;
+	int total_ports = sizeof(g_s5j_i2c_priv) / sizeof(g_s5j_i2c_priv[0]);
+
+	/* check if port is valid */
+	if (port < 0 || port >= total_ports) {
+		return NULL;
+	}
 
 	/* Get I2C private structure */
 	if (g_s5j_i2c_priv[port] != NULL) {

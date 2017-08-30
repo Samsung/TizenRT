@@ -55,6 +55,14 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -82,5 +90,10 @@ struct discover_info_s {
  ****************************************************************************/
 
 int discover_start(struct discover_info_s *info);
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
 
 #endif							/* __APPS_INCLUDE_NETUTILS_DISCOVER_H */

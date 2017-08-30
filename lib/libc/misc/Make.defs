@@ -69,7 +69,7 @@ CSRCS += lib_ioctl.c
 endif
 
 else
-ifneq ($(CONFIG_NSOCKET_DESCRIPTORS),0)
+ifeq ($(CONFIG_NET),y)
 
 CSRCS += lib_sendfile.c
 

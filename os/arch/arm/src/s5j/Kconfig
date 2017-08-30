@@ -378,4 +378,8 @@ config S5J_PWR_SLEEP
 
 endmenu
 
+config S5J_SENSOR_PPD42NS
+	bool "PPD42NS Dust Sensor"
+	default n
+
 endmenu

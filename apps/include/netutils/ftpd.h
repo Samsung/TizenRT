@@ -133,12 +133,10 @@ typedef FAR void *FTPD_SESSION;
  ****************************************************************************/
 
 #ifdef __cplusplus
-// *INDENT-OFF*
 #define EXTERN extern "C"
 extern "C" {
 #else
 #define EXTERN extern
-// *INDENT-ON*
 #endif
 
 /****************************************************************************
@@ -229,8 +227,6 @@ EXTERN void ftpd_close(FTPD_SESSION handle);
 
 #undef EXTERN
 #ifdef __cplusplus
-// *INDENT-OFF*
 }
-// *INDENT-ON*
 #endif
 #endif							/* __APPS_INCLUDE_NETUTILS_FTPD_H */
