@@ -944,7 +944,7 @@ CAResult_t CASetNextBlockOption1(coap_pdu_t *pdu, const CAEndpoint_t *endpoint,
             (CAToken_t)pdu->transport_hdr->udp.token,
             (uint8_t)pdu->transport_hdr->udp.token_length,
             endpoint->addr, endpoint->port);
-    if ((NULL == blockDataID) || (blockDataID->idLength < 1) || 
+    if ((NULL == blockDataID) || (blockDataID->idLength < 1) ||
         (blockDataID->idLength > UINT8_MAX))
     {
         OIC_LOG(ERROR, TAG, "blockId is incorrect");
@@ -2501,7 +2501,7 @@ CAResult_t CACheckBlockDataValidation(const CAData_t *sendData, CABlockData_t **
     VERIFY_NON_NULL(sendData, TAG, "sendData");
     VERIFY_NON_NULL(blockData, TAG, "blockData");
 
-    if (sendData->responseInfo)
+    if (sendData->responseInfo && sendData->remoteEndpoint)
     {
         CABlockDataID_t* blockDataID = CACreateBlockDatablockId(
                 (CAToken_t)sendData->responseInfo->info.token,
