@@ -1207,10 +1207,11 @@ static OCStackResult OCParseRepPayload(OCPayload **outPayload, CborValue *root)
     OCRepPayload *temp = NULL;
     OCRepPayload *rootPayload = NULL;
     OCRepPayload *curPayload = NULL;
-    CborValue rootMap = *root;
+    CborValue rootMap;
     VERIFY_PARAM_NON_NULL(TAG, outPayload, "Invalid Parameter outPayload");
     VERIFY_PARAM_NON_NULL(TAG, root, "Invalid Parameter root");
 
+    rootMap = *root;
     *outPayload = NULL;
     if (cbor_value_is_array(root))
     {
