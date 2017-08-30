@@ -207,7 +207,7 @@ union ldshape {
 	((union {                   \
 		_Complex t __z;         \
 		t __xy[2];              \
-	}){.__xy = {(x), (y)}}.__z)
+	}){ .__xy = {(x), (y)} } .__z)
 
 #define CMPLX(x, y)  __CMPLX(x, y, double)
 #define CMPLXF(x, y) __CMPLX(x, y, float)
