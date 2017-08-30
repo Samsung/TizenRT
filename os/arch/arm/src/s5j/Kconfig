@@ -161,7 +161,7 @@ config S5J_DMA
 config S5J_I2C
 	bool "I2C"
 	default n
-	depends on S5J_HAVE_I2C
+	depends on S5J_HAVE_I2C && I2C_USERIO
 
 config S5J_I2S
 	bool "I2S"
