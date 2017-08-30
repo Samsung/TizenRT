@@ -585,7 +585,7 @@ gconfig: apps_preconfig
 # that the archiver is 'ar'
 
 export: pass2deps
-	$(Q) $(MKEXPORT) $(MKEXPORT_ARGS) -l "$(EXPORTLIBS)"
+	$(Q) MAKE=${MAKE} $(MKEXPORT) $(MKEXPORT_ARGS) -l "$(EXPORTLIBS)"
 
 # General housekeeping targets:  dependencies, cleaning, etc.
 #
