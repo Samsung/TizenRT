@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_rawinstream.c
+ * libc/stdio/lib_rawsistream.c
  *
- *   Copyright (C) 2007-2009, 2011-2012, 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,12 +65,12 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: rawinstream_getc
+ * Name: rawsistream_getc
  ****************************************************************************/
 
-static int rawinstream_getc(FAR struct lib_instream_s *this)
+static int rawsistream_getc(FAR struct lib_sistream_s *this)
 {
-	FAR struct lib_rawinstream_s *rthis = (FAR struct lib_rawinstream_s *)this;
+	FAR struct lib_rawsistream_s *rthis = (FAR struct lib_rawsistream_s *)this;
 	int nwritten;
 	char ch;
 
@@ -94,18 +94,30 @@ static int rawinstream_getc(FAR struct lib_instream_s *this)
 }
 
 /****************************************************************************
+ * Name: rawsistream_seek
+ ****************************************************************************/
+
+static off_t rawsistream_seek(FAR struct lib_sistream_s *this, off_t offset, int whence)
+{
+	FAR struct lib_rawsistream_s *mthis = (FAR struct lib_rawsistream_s *)this;
+
+	DEBUGASSERT(this);
+	return lseek(mthis->fd, offset, whence);
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: lib_rawinstream
+ * Name: lib_rawsistream
  *
  * Description:
  *   Initializes a stream for use with a file descriptor.
  *
  * Input parameters:
  *   instream - User allocated, uninitialized instance of struct
- *              lib_rawinstream_s to be initialized.
+ *              lib_rawsistream_s to be initialized.
  *   fd       - User provided file/socket descriptor (must have been opened
  *              for the correct access).
  *
@@ -114,9 +126,10 @@ static int rawinstream_getc(FAR struct lib_instream_s *this)
  *
  ****************************************************************************/
 
-void lib_rawinstream(FAR struct lib_rawinstream_s *instream, int fd)
+void lib_rawsistream(FAR struct lib_rawsistream_s *instream, int fd)
 {
-	instream->public.get = rawinstream_getc;
+	instream->public.get = rawsistream_getc;
+	instream->public.seek = rawsistream_seek;
 	instream->public.nget = 0;
 	instream->fd = fd;
 }
