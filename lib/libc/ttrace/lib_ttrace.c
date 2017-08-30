@@ -325,7 +325,7 @@ int trace_end(int tag)
 		return TTRACE_INVALID;
 	}
 
-	ret = create_packet_u(&packet, TTRACE_EVENT_TYPE_END, 0);
+	ret = create_packet_uid(&packet, TTRACE_EVENT_TYPE_END, 0);
 	if (ret == TTRACE_INVALID) {
 		assert(0);
 	}
