@@ -289,15 +289,15 @@ typedef struct pthread_cond_s pthread_cond_t;
  * @brief Structure of pthread mutex attr configuration
  */
 struct pthread_mutexattr_s {
-	uint8_t pshared : 1; /* PTHREAD_PROCESS_PRIVATE or PTHREAD_PROCESS_SHARED */
+	uint8_t pshared:1; /* PTHREAD_PROCESS_PRIVATE or PTHREAD_PROCESS_SHARED */
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	uint8_t proto   : 2; /* See PTHREAD_PRIO_* definitions */
+	uint8_t proto:2; /* See PTHREAD_PRIO_* definitions */
 #endif
 #ifdef CONFIG_PTHREAD_MUTEX_TYPES
-	uint8_t type    : 2; /* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
+	uint8_t type:2; /* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
 #endif
 #if defined(CONFIG_PTHREAD_MUTEX_BOTH) || defined(CONFIG_PTHREAD_MUTEX_ROBUST)
-	uint8_t robust  : 1; /* PTHREAD_MUTEX_STALLED or PTHREAD_MUTEX_ROBUST */
+	uint8_t robust:1; /* PTHREAD_MUTEX_STALLED or PTHREAD_MUTEX_ROBUST */
 #endif
 };
 typedef struct pthread_mutexattr_s pthread_mutexattr_t;
@@ -339,14 +339,14 @@ typedef struct pthread_mutex_s pthread_mutex_t;
 
 #if defined(CONFIG_PTHREAD_MUTEX_TYPES) && !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
 #define PTHREAD_MUTEX_INITIALIZER {NULL, SEM_INITIALIZER(1), -1, \
-                                     __PTHREAD_MUTEX_DEFAULT_FLAGS, \
-                                     PTHREAD_MUTEX_DEFAULT, 0}
+				   __PTHREAD_MUTEX_DEFAULT_FLAGS, \
+				   PTHREAD_MUTEX_DEFAULT, 0}
 #elif defined(CONFIG_PTHREAD_MUTEX_TYPES)
 #define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1, \
-                                     PTHREAD_MUTEX_DEFAULT, 0}
+				   PTHREAD_MUTEX_DEFAULT, 0}
 #elif !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
 #define PTHREAD_MUTEX_INITIALIZER {NULL, SEM_INITIALIZER(1), -1,\
-                                     __PTHREAD_MUTEX_DEFAULT_FLAGS}
+				   __PTHREAD_MUTEX_DEFAULT_FLAGS}
 #else
 #define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1}
 #endif
@@ -394,9 +394,9 @@ typedef struct pthread_rwlock_s pthread_rwlock_t;
 
 typedef int pthread_rwlockattr_t;
 
-#define PTHREAD_RWLOCK_INITIALIZER  {PTHREAD_MUTEX_INITIALIZER, \
-                                     PTHREAD_COND_INITIALIZER, \
-                                     0, 0, false}
+#define PTHREAD_RWLOCK_INITIALIZER {PTHREAD_MUTEX_INITIALIZER, \
+				    PTHREAD_COND_INITIALIZER, \
+				    0, 0, false}
 
 /* Forware references */
 

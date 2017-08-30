@@ -141,8 +141,7 @@ WDOG_ID wd_create(void)
 
 			wdog->next = NULL;
 			wdog->flags = 0;
-		}
-		else {
+		} else {
 			/* If wdog is Null, g_wdnfree must be zero, else assert */
 			DEBUGASSERT(g_wdnfree == 0);
 		}

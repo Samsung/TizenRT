@@ -75,7 +75,7 @@
 /* Watchdog Timer Power Control */
 
 #ifdef TIVA_SYSCON_PRWD
-#define tiva_wdt_periphrdy(p)      tiva_periphrdy(TIVA_SYSCON_PRWD,SYSCON_PRWD(p))
+#define tiva_wdt_periphrdy(p)      tiva_periphrdy(TIVA_SYSCON_PRWD, SYSCON_PRWD(p))
 #else
 #define tiva_wdt_periphrdy(p)      (true)
 #endif
