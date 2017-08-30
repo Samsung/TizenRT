@@ -287,9 +287,9 @@ static OCEntityHandlerResult handleDeleteRequest(const OCEntityHandlerRequest *e
 
         keyValuePair = strtok_r(NULL, OC_QUERY_SEPARATOR, &restOfQuery);
     }
-    if (!di)
+    if (!di && !nIns)
     {
-        OIC_LOG_V(ERROR, TAG, "Missing required di query parameter!");
+        OIC_LOG_V(ERROR, TAG, "Missing required query parameters!");
         goto exit;
     }
 

@@ -598,7 +598,7 @@ static int deleteResources(const char *deviceId, const int64_t *instanceIds, uin
             "WHERE ins IN ("
             "SELECT RD_DEVICE_LINK_LIST.ins FROM RD_DEVICE_LINK_LIST "
             "INNER JOIN RD_DEVICE_LIST ON RD_DEVICE_LINK_LIST.DEVICE_ID=RD_DEVICE_LIST.ID "
-            "WHERE RD_DEVICE_LIST.di=@deviceId AND RD_DEVICE_LINK_LIST.ins IN (";
+            "WHERE RD_DEVICE_LINK_LIST.ins IN (";
         size_t inLen = nInstanceIds + (nInstanceIds - 1);
         static const char post[] = "))";
         size_t delResourceSize = sizeof(pre) + inLen + (sizeof(post) - 1);
@@ -617,12 +617,9 @@ static int deleteResources(const char *deviceId, const int64_t *instanceIds, uin
         OICStrcat(delResource, delResourceSize, post);
         VERIFY_SQLITE(sqlite3_prepare_v2(gRDDB, delResource, (int)delResourceSize,
                         &stmt, NULL));
-        VERIFY_SQLITE(sqlite3_bind_text(stmt, sqlite3_bind_parameter_index(stmt, "@deviceId"),
-                        deviceId, (int)strlen(deviceId), SQLITE_STATIC));
-        assert(sqlite3_bind_parameter_index(stmt, "@deviceId") == 1);
         for (uint16_t i = 0; i < nInstanceIds; ++i)
         {
-            VERIFY_SQLITE(sqlite3_bind_int64(stmt, 2 + i, instanceIds[i]));
+            VERIFY_SQLITE(sqlite3_bind_int64(stmt, 1 + i, instanceIds[i]));
         }
     }
 
