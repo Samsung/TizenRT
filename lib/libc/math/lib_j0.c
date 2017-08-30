@@ -102,6 +102,7 @@
 
 #include <tinyara/compiler.h>
 #include <math.h>
+#include <sys/types.h>
 
 #include "libm.h"
 
