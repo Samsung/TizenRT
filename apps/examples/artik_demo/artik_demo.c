@@ -279,7 +279,7 @@ static int wifiAutoConnectInit()
 	/*
 	 * Check WifiIsConnected or not
 	 */
-	if (WifiIsConnected(&result, NULL) != SLSI_STATUS_SUCCESS) {
+	if (WiFiIsConnected(&result, NULL) != SLSI_STATUS_SUCCESS) {
 		/* Error : failed to WifiIsConnected */
 		printf("failed to WifiIsConnected\n");
 		return -1;
@@ -295,8 +295,8 @@ static int wifiAutoConnectInit()
 	if (ret == SLSI_STATUS_SUCCESS) {
 		printf("[AutoConnect]STA mode started\n");
 		ret = WiFiNetworkJoin((uint8_t*)CONFIG_AP_SSID, strlen(CONFIG_AP_SSID), NULL,
-				(const slsi_security_config_t *)get_security_config(
-						CONFIG_AP_SECURITY, CONFIG_AP_PASS));
+				(const slsi_security_config_t *)getSecurityConfig(
+						CONFIG_AP_SECURITY, CONFIG_AP_PASS, SLSI_WIFI_STATION_IF));
 		sleep(1);
 		if (ret == SLSI_STATUS_SUCCESS) {
 			printf("[AutoConnect]Start to Join with SSID %s\n", CONFIG_AP_SSID);
