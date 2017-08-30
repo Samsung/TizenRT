@@ -73,7 +73,7 @@ void uartloopback_main(int argc, char *argv[])
 			}
 
 			// rx
-			char buf_rx[255];
+			char buf_rx[255] = {0, };
 			struct timeval tv;
 			fd_set readfds;
 			FD_ZERO(&readfds);
