@@ -181,7 +181,7 @@ db_result_t storage_get_relation(relation_t *rel, char *name)
 		return DB_STORAGE_ERROR;
 	}
 
-	strncpy(rel->name, name, sizeof(rel->name));
+	strncpy(rel->name, name, sizeof(rel->name) - 1);
 
 	r = storage_read(fd, rel->tuple_filename, sizeof(rel->tuple_filename));
 	if (r != sizeof(rel->tuple_filename)) {
@@ -554,7 +554,7 @@ db_result_t storage_write_row(db_storage_id_t fd, storage_row_t row, unsigned le
 	}
 	memcpy(g_storage_write_buffer.buffer + g_storage_write_buffer.data_size, row, length);
 	g_storage_write_buffer.data_size += length;
-	memcpy(g_storage_write_buffer.file_name, filename, strlen(filename));
+	memcpy(g_storage_write_buffer.file_name, filename, strlen(filename) + 1);
 #else
 	if (storage_write(fd, row, length) < 0) {
 		DB_LOG_D("DB: Failed to store %u bytes\n", length);

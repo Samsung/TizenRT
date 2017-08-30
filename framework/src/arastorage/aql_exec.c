@@ -313,10 +313,6 @@ errout:
 		relation_release(rel);
 	}
 
-	if (cursor != NULL) {
-		cursor_deinit(cursor);
-	}
-
 	aql_deinit_handle(&handler);
 
 	return NULL;

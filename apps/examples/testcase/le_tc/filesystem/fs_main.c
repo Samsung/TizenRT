@@ -384,13 +384,13 @@ static void fs_vfs_dup_tc(void)
 
 	/* Nagative case with invalid argument, invalid fd. It will return ERROR */
 #if CONFIG_NFILE_DESCRIPTORS > 0
-	ret = dup(CONFIG_NFILE_DESCRIPTORS);
-	TC_ASSERT_EQ("dup", ret, ERROR);
+	fd1 = dup(CONFIG_NFILE_DESCRIPTORS);
+	TC_ASSERT_LT_CLEANUP("dup", fd1, 0, close(fd1));
 #endif
 
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
-	ret = dup(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS);
-	TC_ASSERT_EQ("dup", ret, ERROR);
+	fd1 = dup(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS);
+	TC_ASSERT_LT_CLEANUP("dup", fd1, 0, close(fd1));
 #endif
 
 	TC_SUCCESS_RESULT();
@@ -445,7 +445,8 @@ static void fs_vfs_dup2_tc(void)
 	/* Nagative case with invalid argument, invalid fd. It will return ERROR */
 	fd1 = -1;
 	ret = dup2(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS, fd1);
-	TC_ASSERT_LT_CLEANUP("dup2", fd1, 0, close(fd1));
+	close(fd1);
+	TC_ASSERT_LT("dup2", fd1, 0);
 	TC_ASSERT_EQ("dup2", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
@@ -486,7 +487,7 @@ static void fs_vfs_fsync_tc(void)
 
 	/* Nagative case with invalid argument, fd. It will return ERROR */
 	ret = fsync(CONFIG_NFILE_DESCRIPTORS);
-	TC_ASSERT_EQ_CLEANUP("fsync", ret, ERROR, close(fd));
+	TC_ASSERT_EQ("fsync", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -628,6 +629,7 @@ static void fs_vfs_opendir_tc(void)
 
 	dirp = opendir(VFS_FOLDER_PATH);
 	TC_ASSERT("opendir", dirp);
+	closedir(dirp);
 	TC_SUCCESS_RESULT();
 }
 
@@ -816,7 +818,7 @@ static void fs_vfs_closedir_tc(void)
 	TC_ASSERT_EQ("closedir", ret, OK);
 
 	dirp = opendir("nodir");
-	TC_ASSERT_EQ("opendir", dirp, NULL);
+	TC_ASSERT_EQ_CLEANUP("opendir", dirp, NULL, closedir(dirp));
 
 	ret = closedir(NULL);
 	TC_ASSERT_EQ("closedir", ret, ERROR);

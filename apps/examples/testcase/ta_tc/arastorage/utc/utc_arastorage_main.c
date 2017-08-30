@@ -162,7 +162,7 @@ void utc_arastorage_db_exec_tc_p(void)
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
 
 	memset(query, 0, QUERY_LENGTH);
-	sprintf(query, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME2, g_attribute_set[1], INDEX_BPLUS);
+	snprintf(query, QUERY_LENGTH, "CREATE INDEX %s.%s TYPE %s;", RELATION_NAME2, g_attribute_set[1], INDEX_BPLUS);
 	res = db_exec(query);
 	TC_ASSERT("db_exec", DB_SUCCESS(res));
 
@@ -674,7 +674,7 @@ void utc_arastorage_cursor_get_count_tc_p(void)
 	tuple_id_t count;
 
 	count = cursor_get_count(g_cursor);
-	TC_ASSERT_GEQ("cursor_get_count", count, 0);
+	TC_ASSERT_GT("cursor_get_count", count, 0);
 	printf("cursor count : %d\n", count);
 
 	TC_SUCCESS_RESULT();

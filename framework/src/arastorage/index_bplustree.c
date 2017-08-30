@@ -524,6 +524,7 @@ static db_result_t destroy(index_t *index)
 		return DB_STORAGE_ERROR;
 	}
 	if (DB_ERROR(storage_read_from(fd, bucket_file, sizeof(tree_t), sizeof(bucket_file)))) {
+		storage_close(fd);
 		return DB_STORAGE_ERROR;
 	}
 	storage_close(fd);
@@ -1388,6 +1389,7 @@ static pair_t *tree_find(tree_t *tree, int key)
 		 */
 		node = tree_read(tree, id);
 		if (node == NULL) {
+			free(path);
 			return NULL;
 		}
 		index = id;
@@ -1411,6 +1413,7 @@ static pair_t *tree_find(tree_t *tree, int key)
 			if (tree->lock_buckets[node->id[index]]) {
 				pthread_mutex_unlock(&(tree->bucket_lock));
 				modify_cache(tree, id, NODE, UNLOCK);
+				free(path);
 				return NULL;
 			} else {
 				tree->lock_buckets[node->id[index]] = 1;
@@ -1435,6 +1438,7 @@ static pair_t *tree_find(tree_t *tree, int key)
 			modify_cache(tree, index, NODE, UNLOCK);
 		}
 	}
+	free(path);
 	return NULL;
 }
 

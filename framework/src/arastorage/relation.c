@@ -463,6 +463,7 @@ db_result_t relation_remove(relation_t *rel, int remove_tuples)
 	}
 	snprintf(filename, len, "%s%s\0", rel->name, INDEX_NAME_SUFFIX);
 	result = storage_remove(filename);
+	free(filename);
 	if (DB_ERROR(result)) {
 		DB_LOG_E("DB: Index file unlinking failed\n");
 	}
@@ -1099,6 +1100,7 @@ db_cursor_t *relation_process_result(db_handle_t *handler)
 			break;
 		}
 	}
+	cursor_deinit(cursor);
 	return NULL;
 }
 
