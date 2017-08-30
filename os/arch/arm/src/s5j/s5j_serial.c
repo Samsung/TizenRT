@@ -971,8 +971,8 @@ static struct up_dev_s g_uart4priv = {
 	.stopbits2	= CONFIG_UART4_2STOP,
 	.rxd		= GPIO_UART4_RXD,
 	.txd		= GPIO_UART4_TXD,
-	.pclk		= CLK_GATE_UART0_PCLK,
-	.extclk		= CLK_GATE_UART0_EXTCLK,
+	.pclk		= CLK_GATE_UARTDBG_PCLK,
+	.extclk		= CLK_GATE_UARTDBG_EXTCLK,
 };
 
 static uart_dev_t g_uart4port = {
