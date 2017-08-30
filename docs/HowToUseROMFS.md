@@ -5,7 +5,7 @@ There are two parts to use ROMFS, generic and board specific.
 ## 1. Generic
 
 This part supports making ROMFS image.  
-Please find it at [README](../external/contents/README.md)
+Please find it at [README](../tools/fs/README_ROMFS.md)
 
 ## 2. Board Specific
 

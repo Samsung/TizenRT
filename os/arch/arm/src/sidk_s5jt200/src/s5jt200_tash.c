@@ -273,7 +273,7 @@ int board_app_initialize(void)
 
 	sidk_s5jt200_configure_partitions();
 
-#if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME)
+#if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS)
 	ret = mount(CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME,
 			CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_MOUNTPOINT,
 			"romfs", 0, NULL);
@@ -282,9 +282,9 @@ int board_app_initialize(void)
 		lldbg("ERROR: mounting '%s'(ROMFS) failed\n",
 			CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME);
 	}
-#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME */
+#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS */
 
-#ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME
+#ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 	ret = mksmartfs(CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME, false);
 	if (ret != OK) {
@@ -298,9 +298,9 @@ int board_app_initialize(void)
 			lldbg("ERROR: mounting '%s' failed\n",
 				CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME);
 	}
-#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS_DEVNAME */
+#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_USERFS */
 
-#ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME
+#ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW
 	/* Initialize and mount sssrw partition (if we have) */
 	ret = mksmartfs(CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME, false);
 	if (ret != OK) {
@@ -314,7 +314,7 @@ int board_app_initialize(void)
 			lldbg("ERROR: mounting '%s' failed\n",
 				CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME);
 	}
-#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW_DEVNAME */
+#endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_SSSRW */
 
 #ifdef CONFIG_FS_PROCFS
 	/* Mount the procfs file system */

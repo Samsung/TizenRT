@@ -91,7 +91,7 @@ openocd -f artik053.cfg -c ' \
 
 ## ROMFS
 
-Before executing below steps, execute [generic steps](../../../external/contents/README.md), step 1 and step 2.
+Before executing below steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.
 
 3. Modify partition configs.  
     Below steps creates ROMFS partition with size 400KB at next of user partition.  
@@ -110,7 +110,7 @@ Before executing below steps, execute [generic steps](../../../external/contents
 4. Build Tizen RT  
 5. Prepare ROM image
     ```bash
-    sh $TIZENRT_BASEDIR/../apps/tools/mkromfsimg.sh
+    sh $TIZENRT_BASEDIR/../tools/fs/mkromfsimg.sh
     ```
 6. Modify partition map to *$TIZENRT_BASEDIR/../build/configs/artik053/tools/openocd/partition_map.cfg*
     ```bash
