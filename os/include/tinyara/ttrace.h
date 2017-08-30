@@ -128,7 +128,7 @@ int trace_begin(int tag, char *str, ...);
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
  * @since Tizen RT vX.X
  */
-int trace_begin_u(int tag, int8_t uid);
+int trace_begin_uid(int tag, int8_t uniqueid);
 
 /**
  * @ingroup TTRACE_LIBC
@@ -146,7 +146,7 @@ int trace_end(int tag);
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
  * @since Tizen RT vX.X
  */
-int trace_end_u(int tag);
+int trace_end_uid(int tag);
 
 /**
  * @ingroup TTRACE_LIBC
@@ -159,9 +159,9 @@ int trace_end_u(int tag);
 int trace_sched(struct tcb_s *prev, struct tcb_s *next);
 #else
 #define trace_begin(a, b, ...)
-#define trace_begin_u(a, b)
+#define trace_begin_uid(a, b)
 #define trace_end(a)
-#define trace_end_u(a)
+#define trace_end_uid(a)
 #define trace_sched(a, b)
 
 #if defined(__cplusplus)

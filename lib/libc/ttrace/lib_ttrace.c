@@ -209,13 +209,13 @@ static int create_packet(struct trace_packet *packet, char type, char *str, va_l
 	return ret;
 }
 
-static int create_packet_u(struct trace_packet *packet, char type, int8_t uid)
+static int create_packet_uid(struct trace_packet *packet, char type, int8_t uniqueid)
 {
 	int ret = 0;
 	gettimeofday(&(packet->ts), NULL);
 	packet->event_type = type;
 	packet->pid = getpid();
-	packet->codelen = TTRACE_CODE_UNIQUE | uid;
+	packet->codelen = TTRACE_CODE_UNIQUE | uniqueid;
 
 	return ret;
 }
@@ -283,7 +283,7 @@ int trace_begin(int tag, char *str, ...)
 	return ret;
 }
 
-int trace_begin_u(int tag, int8_t uid)
+int trace_begin_uid(int tag, int8_t uniqueid)
 {
 	int ret = TTRACE_VALID;
 	struct trace_packet packet;
@@ -292,7 +292,7 @@ int trace_begin_u(int tag, int8_t uid)
 		return TTRACE_INVALID;
 	}
 
-	ret = create_packet_u(&packet, TTRACE_EVENT_TYPE_BEGIN, uid);
+	ret = create_packet_uid(&packet, TTRACE_EVENT_TYPE_BEGIN, uniqueid);
 	if (ret == TTRACE_INVALID) {
 		assert(0);
 	}
@@ -339,7 +339,7 @@ int trace_end(int tag)
 	return ret;
 }
 
-int trace_end_u(int tag)
+int trace_end_uid(int tag)
 {
 	return trace_end(tag);
 }
