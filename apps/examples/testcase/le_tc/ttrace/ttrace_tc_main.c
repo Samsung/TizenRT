@@ -149,7 +149,7 @@ static int ttrace_tc_launcher(int argc, char **args)
 	tc_libc_trace_end_u();
 	tc_libc_trace_sched();
 	printf("#########################################\n");
-	printf("           FS TC Result               \n");
+	printf("           T-trace TC Result             \n");
 	printf("           PASS : %d FAIL : %d        \n", total_pass, total_fail);
 	printf("#########################################\n");
 	return total_pass;
@@ -165,7 +165,7 @@ int ttrace_tc_main(int argc, char *argv[])
 	working_tc++;
 
 #ifdef CONFIG_TASH
-	tash_cmd_install("ttrace_tc_main", ttrace_tc_launcher, TASH_EXECMD_SYNC);
+	tash_cmd_install("ttrace_tc", ttrace_tc_launcher, TASH_EXECMD_SYNC);
 #else
 	ttrace_tc_launcher(argc, argv);
 #endif

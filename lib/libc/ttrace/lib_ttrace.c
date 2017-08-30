@@ -229,11 +229,7 @@ int trace_sched(struct tcb_s *prev_tcb, struct tcb_s *next_tcb)
 	int tag = TTRACE_TAG_TASK;
 	struct trace_packet packet;
 
-	if (is_fd_available() < 0) {
-		return TTRACE_INVALID;
-	}
-
-	if (is_tag_available(tag) == TTRACE_INVALID) {
+	if (is_fd_available() < 0 || !is_tag_available(tag)) {
 		return TTRACE_INVALID;
 	}
 
@@ -247,6 +243,7 @@ int trace_sched(struct tcb_s *prev_tcb, struct tcb_s *next_tcb)
 #endif
 
 	ret = send_packet_sched(&packet);
+
 	return ret;
 
 }
@@ -266,11 +263,7 @@ int trace_begin(int tag, char *str, ...)
 	struct trace_packet packet;
 	va_list ap;
 
-	if (is_fd_available() < 0) {
-		return TTRACE_INVALID;
-	}
-
-	if (is_tag_available(tag) == TTRACE_INVALID) {
+	if (is_fd_available() < 0 || !is_tag_available(tag)) {
 		return TTRACE_INVALID;
 	}
 
@@ -286,6 +279,7 @@ int trace_begin(int tag, char *str, ...)
 #endif
 
 	ret = send_packet(&packet);
+
 	return ret;
 }
 
@@ -294,11 +288,7 @@ int trace_begin_u(int tag, int8_t uid)
 	int ret = TTRACE_VALID;
 	struct trace_packet packet;
 
-	if (is_fd_available() < 0) {
-		return TTRACE_INVALID;
-	}
-
-	if (is_tag_available(tag) == TTRACE_INVALID) {
+	if (is_fd_available() < 0 || !is_tag_available(tag)) {
 		return TTRACE_INVALID;
 	}
 
@@ -312,6 +302,7 @@ int trace_begin_u(int tag, int8_t uid)
 #endif
 
 	ret = send_packet(&packet);
+
 	return ret;
 }
 
@@ -330,11 +321,7 @@ int trace_end(int tag)
 	int ret = TTRACE_VALID;
 	struct trace_packet packet;
 
-	if (is_fd_available() < 0) {
-		return TTRACE_INVALID;
-	}
-
-	if (is_tag_available(tag) == TTRACE_INVALID) {
+	if (is_fd_available() < 0 || !is_tag_available(tag)) {
 		return TTRACE_INVALID;
 	}
 
@@ -348,6 +335,7 @@ int trace_end(int tag)
 #endif
 
 	ret = send_packet(&packet);
+
 	return ret;
 }
 

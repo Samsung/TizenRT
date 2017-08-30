@@ -214,11 +214,7 @@ static int ttrace_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		g_selected_tag |= arg;
 		break;
 	case TTRACE_FUNC_TAG:
-		if ((g_selected_tag & arg) > TTRACE_VALID) {
-			ret = TTRACE_VALID;
-		} else {
-			ret = TTRACE_INVALID;
-		}
+		ret = g_selected_tag;
 		break;
 	case TTRACE_SET_BUFSIZE:
 		g_ringbuf.bufsize = CONFIG_TTRACE_BUFSIZE - (CONFIG_TTRACE_BUFSIZE % arg);
