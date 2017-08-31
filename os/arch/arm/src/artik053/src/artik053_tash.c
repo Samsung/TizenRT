@@ -272,6 +272,7 @@ int board_app_initialize(void)
 	struct mtd_dev_s *mtd;
 #endif /* CONFIG_RAMMTD */
 
+#ifndef CONFIG_DISABLE_MOUNTPOINT
 	artik053_configure_partitions();
 
 #ifdef CONFIG_ARTIK053_AUTOMOUNT_USERFS
@@ -318,6 +319,8 @@ int board_app_initialize(void)
 		}
 	}
 #endif /* CONFIG_RAMMTD */
+
+#endif /* CONFIG_DISABLE_MOUNTPOINT */
 
 #if defined(CONFIG_RTC_DRIVER)
 	{
