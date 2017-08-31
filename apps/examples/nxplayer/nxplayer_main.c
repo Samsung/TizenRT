@@ -142,7 +142,7 @@ static int nxplayer_cmd_help(FAR struct nxplayer_s *pPlayer, char *parg);
 static struct mp_cmd_s g_nxplayer_cmds[] = {
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 #ifndef CONFIG_AUDIO_EXCLUDE_BALANCE
-	{"balance", "d%", nxplayer_cmd_balance, NXPLAYER_HELP_TEXT(Set balance percentage( < 50 % means more left))},
+	{"balance", "d%", nxplayer_cmd_balance, NXPLAYER_HELP_TEXT(Set balance percentage(< 50 % means more left))},
 #endif
 #endif
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE
