@@ -73,9 +73,11 @@ static FAR const char *const g_datemontab[] = {
 	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 static FAR const char *const g_dayofweek[] = {
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
+#endif
 
 /****************************************************************************
  * Private Functions
