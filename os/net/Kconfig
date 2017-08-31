@@ -110,4 +110,10 @@ endmenu # Data link support
 source net/netdev/Kconfig
 source net/route/Kconfig
 
+menu "Protocols"
+source ../external/dhcpd/Kconfig.protocol
+endmenu #Protocols
+
+
 endif # NET
+

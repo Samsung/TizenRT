@@ -84,6 +84,8 @@ endif
 
 ifeq ($(CONFIG_NETUTILS_DHCPD),y)
 CSRCS += netcmd_dhcpd.c
+#CFLAGS += -I$(EXTDIR)/dhcpd/
+CFLAGS += -I../../../external/dhcpd/
 endif
 
 ifeq ($(CONFIG_NETUTILS_TFTPC),y)

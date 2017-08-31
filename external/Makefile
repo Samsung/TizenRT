@@ -77,6 +77,9 @@ include aws/Make.defs
 include aws/src/Make.defs
 endif
 
+#DHCPD
+include dhcpd/Make.defs
+
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
