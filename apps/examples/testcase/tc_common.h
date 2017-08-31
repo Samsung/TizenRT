@@ -34,7 +34,7 @@ int total_fail;
 	} \
 }
 
-#define TC_ASSERT(api_name, var) TC_ASSERT_CLEANUP(api_name, var,)
+#define TC_ASSERT(api_name, var) TC_ASSERT_CLEANUP(api_name, var, )
 
 #define TC_ASSERT_EQ_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -65,7 +65,7 @@ int total_fail;
 	} \
 }
 
-#define TC_ASSERT_EQ(api_name, var, ref) TC_ASSERT_EQ_RETURN(api_name, var, ref,)
+#define TC_ASSERT_EQ(api_name, var, ref) TC_ASSERT_EQ_RETURN(api_name, var, ref, )
 
 #define TC_ASSERT_NEQ_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -77,7 +77,7 @@ int total_fail;
 	} \
 }
 
-#define TC_ASSERT_NEQ(api_name, var, ref) TC_ASSERT_NEQ_CLEANUP(api_name, var, ref,)
+#define TC_ASSERT_NEQ(api_name, var, ref) TC_ASSERT_NEQ_CLEANUP(api_name, var, ref, )
 
 #define TC_ASSERT_GT_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -89,7 +89,7 @@ int total_fail;
 	} \
 }
 
-#define TC_ASSERT_GT(api_name, var, ref) TC_ASSERT_GT_CLEANUP(api_name, var, ref,)
+#define TC_ASSERT_GT(api_name, var, ref) TC_ASSERT_GT_CLEANUP(api_name, var, ref, )
 
 #define TC_ASSERT_GEQ_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -101,7 +101,7 @@ int total_fail;
 	} \
 }
 
-#define TC_ASSERT_GEQ(api_name, var, ref) TC_ASSERT_GEQ_CLEANUP(api_name, var, ref,)
+#define TC_ASSERT_GEQ(api_name, var, ref) TC_ASSERT_GEQ_CLEANUP(api_name, var, ref, )
 
 #define TC_ASSERT_LT_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -113,7 +113,7 @@ int total_fail;
 	} \
 }
 
-#define TC_ASSERT_LT(api_name, var, ref) TC_ASSERT_LT_CLEANUP(api_name, var, ref,)
+#define TC_ASSERT_LT(api_name, var, ref) TC_ASSERT_LT_CLEANUP(api_name, var, ref, )
 
 #define TC_ASSERT_LEQ_CLEANUP(api_name, var, ref, freeResource) \
 {\
@@ -125,7 +125,7 @@ int total_fail;
 	} \
 }
 
-#define TC_ASSERT_LEQ(api_name, var, ref) TC_ASSERT_LEQ_CLEANUP(api_name, var, ref,)
+#define TC_ASSERT_LEQ(api_name, var, ref) TC_ASSERT_LEQ_CLEANUP(api_name, var, ref, )
 
 #define TC_ASSERT_NOT_NULL(api_name, handle) \
 {\
