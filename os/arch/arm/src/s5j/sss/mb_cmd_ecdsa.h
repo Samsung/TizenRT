@@ -8,8 +8,8 @@
 #ifndef MB_CMD_ECDSA_H_
 #define MB_CMD_ECDSA_H_
 
-#define MAX_ECDSA_BLOCK_BLEN 	(128)
-#define MAX_ECDSA_KEY_BLEN 		(244)
+#define MAX_ECDSA_BLOCK_BLEN    (128)
+#define MAX_ECDSA_KEY_BLEN      (244)
 
 // ======================================
 // Structure

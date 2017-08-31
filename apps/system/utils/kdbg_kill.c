@@ -254,7 +254,7 @@ usage:
 	printf("If no signal is specified, SIGKILL is sent because we don't support SIGTERM\n");
 	printf("* Caution: SIGKILL terminates task/thread without any operations\n");
 	printf("\nOptions:\n");
-	printf(" -l 		  List all signal names\n");
+	printf(" -l		List all signal names\n");
 
 	return ERROR;
 }

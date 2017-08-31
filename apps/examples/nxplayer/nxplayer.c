@@ -209,7 +209,7 @@ static int nxplayer_opendevice(FAR struct nxplayer_s *pPlayer, int format, int s
 #endif
 
 #if defined(CONFIG_NXPLAYER_INCLUDE_PREFERRED_DEVICE) && \
-    defined(CONFIG_NXPLAYER_INCLUDE_DEVICE_SEARCH)
+	defined(CONFIG_NXPLAYER_INCLUDE_DEVICE_SEARCH)
 
 	else
 #endif
@@ -394,8 +394,8 @@ int nxplayer_getmidisubformat(FAR FILE *fd)
 
 #ifdef CONFIG_NXPLAYER_FMT_FROM_EXT
 static inline int nxplayer_fmtfromextension(FAR struct nxplayer_s *pPlayer,
-                                            FAR const char *pFilename,
-                                            FAR int *subfmt)
+						FAR const char *pFilename,
+						FAR int *subfmt)
 {
 	const char *pExt;
 	uint8_t x;
@@ -467,8 +467,8 @@ static int nxplayer_fmtfromheader(FAR struct nxplayer_s *pPlayer)
 
 #if defined(CONFIG_NXPLAYER_MEDIA_SEARCH) && defined(CONFIG_NXPLAYER_INCLUDE_MEDIADIR)
 static int nxplayer_mediasearch(FAR struct nxplayer_s *pPlayer,
-                                FAR const char *pFilename,
-                                FAR const char *path, int pathmax)
+				FAR const char *pFilename,
+				FAR const char *path, int pathmax)
 {
 	return -ENOENT;
 }
@@ -483,7 +483,7 @@ static int nxplayer_mediasearch(FAR struct nxplayer_s *pPlayer,
  ****************************************************************************/
 
 static int nxplayer_readbuffer(FAR struct nxplayer_s *pPlayer,
-                               FAR struct ap_buffer_s* apb)
+				FAR struct ap_buffer_s* apb)
 {
 	/* Validate the file is still open.  It will be closed automatically when
 	 * we encounter the end of file (or, perhaps, a read error that we cannot
@@ -561,7 +561,7 @@ static int nxplayer_readbuffer(FAR struct nxplayer_s *pPlayer,
  ****************************************************************************/
 
 static int nxplayer_enqueuebuffer(FAR struct nxplayer_s *pPlayer,
-                                  FAR struct ap_buffer_s* apb)
+					FAR struct ap_buffer_s* apb)
 {
 	struct audio_buf_desc_s bufdesc;
 	int ret;
@@ -1086,7 +1086,7 @@ int nxplayer_setvolume(FAR struct nxplayer_s *pPlayer, uint16_t volume)
 
 #ifndef CONFIG_AUDIO_EXCLUDE_EQUALIZER
 int nxplayer_setequalization(FAR struct nxplayer_s *pPlayer,
-                             FAR uint8_t *equalization)
+				FAR uint8_t *equalization)
 {
 #warning Missing logic
 	return -ENOSYS;
@@ -1567,7 +1567,7 @@ int nxplayer_stop(FAR struct nxplayer_s *pPlayer)
  ****************************************************************************/
 
 int nxplayer_playfile(FAR struct nxplayer_s *pPlayer,
-                      FAR const char *pFilename, int filefmt, int subfmt)
+			FAR const char *pFilename, int filefmt, int subfmt)
 {
 	struct mq_attr attr;
 	struct sched_param sparam;

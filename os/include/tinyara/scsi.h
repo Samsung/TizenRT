@@ -438,11 +438,11 @@
 /* Inquiry */
 
 #define SCSICMD_INQUIRYFLAGS_EVPD                0x01  /* Bit 0: EVPD */
-                                                       /* Bits 5-7: Peripheral Qualifier */
+						        /* Bits 5-7: Peripheral Qualifier */
 #define SCSIRESP_INQUIRYPQ_CONNECTED             0x00  /*   000: Device is connected */
 #define SCSIRESP_INQUIRYPQ_NOTCONNECTED          0x20  /*   001: Device is NOT connected */
 #define SCSIRESP_INQUIRYPQ_NOTCAPABLE            0x60  /*   011: LUN not supported */
-                                                       /* Bits 0-4: Peripheral Device */
+						        /* Bits 0-4: Peripheral Device */
 #define SCSIRESP_INQUIRYPD_DIRECTACCESS          0x00  /*   Direct-access block device */
 #define SCSIRESP_INQUIRYPD_SEQUENTIALACCESS      0x01  /*   Sequential-access block device */
 #define SCSIRESP_INQUIRYPD_PRINTER               0x02  /*   Printer device */
@@ -538,7 +538,7 @@
 #define SCSICMD_MODESENSE_PGCODEMASK             0x3f /* Bits 0-5: Page code */
 
 #define SCSICMD_MODESENSE6_PCDEFAULT             0x80 /*   Default values */
-                                                      /* Direct-access device page codes */
+						       /* Direct-access device page codes */
 #define SCSIRESP_MODESENSE_PGCCODE_VENDOR        0x00 /*   Vendor-specific */
 #define SCSIRESP_MODESENSE_PGCCODE_RWERROR       0x01 /*   Read/Write error recovery mode page */
 #define SCSIRESP_MODESENSE_PGCCODE_RECONNECT     0x02 /*   Disconnect-reconnect mode page */
@@ -559,7 +559,7 @@
 #define SCSIRESP_MODESENSE_PGCCODE_IE            0x1c /*   Informational exceptions control mode page (0x1c/0x00) */
 #define SCSIRESP_MODESENSE_PGCCODE_BC            0x1c /*   Background control mode page (0x1c/0x01) */
 #define SCSIRESP_MODESENSE_PGCCODE_RETURNALL     0x3f /*   Return all mode pages */
-                                                      /* Direct-access caching mode page */
+						       /* Direct-access caching mode page */
 #define SCSIRESP_CACHINGMODEPG_PS                0x80 /*   Byte 0, Bit 7: PS */
 #define SCSIRESP_CACHINGMODEPG_SPF               0x60 /*   Byte 0, Bit 6: SPF */
 #define SCSIRESP_CACHINGMODEPG_IC                0x80 /*   Byte 2, Bit 7: IC */
@@ -676,7 +676,7 @@ struct scsiresp_fixedsensedata_s {
 	uint8_t qual2;         /* 13: Additional sense code qualifier */
 	uint8_t fru;           /* 14: Field replacement unit code */
 	uint8_t key[3];        /* 15-17: Sense key specific */
-	                       /* 18-: Additional bytes may follow */
+			       /* 18-: Additional bytes may follow */
 };
 #define SCSIRESP_FIXEDSENSEDATA_SIZEOF 18 /* Minimum size */
 
@@ -718,7 +718,7 @@ struct scsiresp_inquiry_s {
 	uint8_t version7[2];   /* 70-71: Version Descriptor 7 */
 	uint8_t version8[2];   /* 72-73: Version Descriptor 8 */
 	uint8_t reserved2[22]; /* 74-95: Reserved */
-	                       /* 96-: Vendor-specific parameters may follow */
+			       /* 96-: Vendor-specific parameters may follow */
 };
 #define SCSIRESP_INQUIRY_SIZEOF 36 /* Minimum size */
 

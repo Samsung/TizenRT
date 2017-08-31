@@ -21,8 +21,8 @@ struct sHASH_MSG {
 	unsigned int msg_type;
 };
 
-#define MAX_HASH_BLOCK_BLEN 		(144)
-#define GET_HASH_SIZE(OID)			((OID>> 8)&0x07)
+#define MAX_HASH_BLOCK_BLEN     (144)
+#define GET_HASH_SIZE(OID)      ((OID >> 8) & 0x07)
 
 // ======================================
 // Function
@@ -37,10 +37,10 @@ int mb_hash_descriptor(unsigned char *hash, unsigned int object_id, unsigned int
 // ======================================
 // Mailbox Command
 // ======================================
-#define FUNC_HASH_INIT					(0x00103102)
-#define FUNC_HASH_UPDATE				(0x00203102)
-#define FUNC_HASH_FINAL					(0x00303102)
-#define FUNC_HASH_DMA					(0x01013102)
-#define FUNC_HASH_DESCRIPTOR			(0x02013102)
+#define FUNC_HASH_INIT          (0x00103102)
+#define FUNC_HASH_UPDATE        (0x00203102)
+#define FUNC_HASH_FINAL         (0x00303102)
+#define FUNC_HASH_DMA           (0x01013102)
+#define FUNC_HASH_DESCRIPTOR    (0x02013102)
 
 #endif							/* MB_CMD_HASH_H_ */

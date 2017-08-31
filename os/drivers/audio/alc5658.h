@@ -224,11 +224,11 @@ t_codec_init_script_entry codec_init_script[] = {
 /* Commonly defined and redefined macros */
 
 #ifndef MIN
-#define MIN(a,b)                   (((a) < (b)) ? (a) : (b))
+#define MIN(a, b)                   (((a) < (b)) ? (a) : (b))
 #endif
 
 #ifndef MAX
-#define MAX(a,b)                   (((a) > (b)) ? (a) : (b))
+#define MAX(a, b)                   (((a) > (b)) ? (a) : (b))
 #endif
 
 /****************************************************************************

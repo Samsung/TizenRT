@@ -632,7 +632,7 @@ struct pthread_tcb_s {
 	/* Robust mutex support *********************************************/
 
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
-  	FAR struct pthread_mutex_s *mhead;	/* List of mutexes held by thread      */
+	FAR struct pthread_mutex_s *mhead;	/* List of mutexes held by thread      */
 #endif
 
 	/* Clean-up stack ***************************************************/
