@@ -18,9 +18,6 @@
 /****************************************************************************
  * examples/websocket/websocket_main.c
  *
- *   Copyright (C) 2016 SAMSUNG ELECTRONICS CO., LTD. All rights reserved.
- *   Author: Jisuu Kim <jisuu.kim@samsung.com>
- *
  *   Copyright (C) 2008, 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
