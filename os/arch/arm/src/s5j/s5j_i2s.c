@@ -153,9 +153,9 @@
 #undef CONFIG_I2S_TXS_DMACH
 #undef CONFIG_I2S_RX_DMACH
 
-#define CONFIG_I2S_TXP_DMACH 	0
-#define CONFIG_I2S_TXS_DMACH 	1
-#define CONFIG_I2S_RX_DMACH 	2
+#define CONFIG_I2S_TXP_DMACH    0
+#define CONFIG_I2S_TXS_DMACH    1
+#define CONFIG_I2S_RX_DMACH     2
 #endif
 
 #if defined(I2S_HAVE_RX) || defined(I2S_HAVE_TX_P) || defined(I2S_HAVE_TX_S)
@@ -200,9 +200,9 @@ struct s5j_i2s_s {
 	uint8_t txp_datalen;		/* Data width (8, 16, or 32) */
 	uint8_t txs_datalen;		/* Data width (8, 16, or 32) */
 
-	uint8_t rxenab: 1;			/* True: RX transfers enabled */
-	uint8_t txpenab: 1;			/* True: TX primary transfers enabled */
-	uint8_t txsenab: 1;			/* True: TX secondary transfers enabled */
+	uint8_t rxenab:1;			/* True: RX transfers enabled */
+	uint8_t txpenab:1;			/* True: TX primary transfers enabled */
+	uint8_t txsenab:1;			/* True: TX secondary transfers enabled */
 
 	uint32_t samplerate;		/* Not actually needed in slave mode */
 
@@ -234,11 +234,11 @@ struct s5j_i2s_s {
 /* Register helpers */
 
 #ifdef CONFIG_S5J_I2S_DUMPBUFFERS
-#define       i2s_init_buffer(b,s)   memset(b, 0x55, s);
-#define       i2s_dump_buffer(m,b,s) lib_dumpbuffer(m,b,s)
+#define       i2s_init_buffer(b, s)    memset(b, 0x55, s);
+#define       i2s_dump_buffer(m, b, s) lib_dumpbuffer(m, b, s)
 #else
-#define       i2s_init_buffer(b,s)
-#define       i2s_dump_buffer(m,b,s)
+#define       i2s_init_buffer(b, s)
+#define       i2s_dump_buffer(m, b, s)
 #endif
 
 /* Semaphore helpers */

@@ -228,7 +228,7 @@ i2c_alc *alc5658_i2c_initialize(void)
 	configs.address = ALC5658_ADDR;
 	configs.addrlen = CONFIG_ALC5658_I2C_ADDRLEN;
 
-        i2c = &i2c_alc5658;
+	i2c = &i2c_alc5658;
 
 	for (i = 0; i < sizeof(codec_init_script) / sizeof(t_codec_init_script_entry); i++) {
 		ret = i2c->modify(codec_init_script[i].addr, codec_init_script[i].val, 0xFFFF);

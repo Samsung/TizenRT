@@ -52,8 +52,8 @@
 #endif
 
 #if !defined(_POSIX_SOURCE) && !defined(_POSIX_C_SOURCE) \
- && !defined(_XOPEN_SOURCE) && !defined(_GNU_SOURCE) \
- && !defined(_BSD_SOURCE) && !defined(__STRICT_ANSI__)
+	&& !defined(_XOPEN_SOURCE) && !defined(_GNU_SOURCE) \
+	&& !defined(_BSD_SOURCE) && !defined(__STRICT_ANSI__)
 #define _BSD_SOURCE 1
 #define _XOPEN_SOURCE 700
 #endif

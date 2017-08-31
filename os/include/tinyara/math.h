@@ -144,9 +144,9 @@ static __inline unsigned long long __DOUBLE_BITS(double __f)
 #endif
 
 #define signbit(x) ( \
-		sizeof(x) == sizeof(float) ? (int)(__FLOAT_BITS(x)>>31) : \
-		sizeof(x) == sizeof(double) ? (int)(__DOUBLE_BITS(x)>>63) : \
-		(int)(__DOUBLE_BITS(x)>>63) )
+		sizeof(x) == sizeof(float) ? (int)(__FLOAT_BITS(x) >> 31) : \
+		sizeof(x) == sizeof(double) ? (int)(__DOUBLE_BITS(x) >> 63) : \
+		(int)(__DOUBLE_BITS(x) >> 63))
 
 /* Exponential and Logarithmic constants ************************************/
 

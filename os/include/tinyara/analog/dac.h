@@ -101,7 +101,7 @@ struct dac_fifo_s {
 	sem_t         af_sem;                  /* Counting semaphore */
 	uint8_t       af_head;                 /* Index to the head [IN] index in the circular buffer */
 	uint8_t       af_tail;                 /* Index to the tail [OUT] index in the circular buffer */
-	                                       /* Circular buffer of CAN messages */
+					       /* Circular buffer of CAN messages */
 	struct dac_msg_s af_buffer[CONFIG_DAC_FIFOSIZE];
 };
 

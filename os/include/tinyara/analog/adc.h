@@ -95,7 +95,7 @@
 #define ADC_SETUP(dev)         ((dev)->ad_ops->ao_setup((dev)))
 #define ADC_SHUTDOWN(dev)      ((dev)->ad_ops->ao_shutdown((dev)))
 #define ADC_RXINT(dev)         ((dev)->ad_ops->ao_rxint((dev)))
-#define ADC_IOCTL(dev,cmd,arg) ((dev)->ad_ops->ao_ioctl((dev),(cmd),(arg)))
+#define ADC_IOCTL(dev, cmd, arg) ((dev)->ad_ops->ao_ioctl((dev), (cmd), (arg)))
 
 /****************************************************************************
  * Public Types
