@@ -3,7 +3,7 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-menuconfig LOGM
+config LOGM
 	bool "Logger Module"
 	default n
 	---help---
