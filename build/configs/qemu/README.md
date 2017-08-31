@@ -13,9 +13,12 @@ QEMU uses lm3s6963-ek machine.
 wget http://download.qemu-project.org/qemu-2.10.0-rc2.tar.xz
 tar xvJf qemu-2.10.0-rc2.tar.xz
 cd qemu-2.10.0-rc2
+/* Copy qemu-2.10.0-rc2_increase_ram_size.patch from TizenRT/build/configs/qemu */
+patch -p1 < qemu-2.10.0-rc2_increase_ram_size.patch
 ./configure --target-list=arm-softmmu
 make -j 4
-Check executable in "arm-softmmu/qemu-system-arm" 
+cd arm-softmmu/
+sudo ln qemu-system-arm /usr/local/bin/qemu-system-arm
 ```
 ## How to program a binary
 
