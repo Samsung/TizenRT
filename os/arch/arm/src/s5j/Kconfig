@@ -62,6 +62,7 @@ config S5J_HAVE_DMA
 
 config S5J_HAVE_I2C
 	bool
+	select ARCH_HAVE_I2C if S5J_I2C
 	default n
 
 config S5J_HAVE_I2S
