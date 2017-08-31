@@ -110,7 +110,13 @@
 #define I2C_TENBIT           0x0704	/* 0 for 7 bit addrs, != 0 for 10 bit */
 #define I2C_RDWR             0x0707	/* Combined R/W transfer (one STOP only) */
 
-#define I2C_FREQUENCY    0X801
+#define I2C_FREQUENCY        0X0801
+
+/* Transaction settings: standard mandated or TizenRT incompatible adoptions */
+#define I2C_ATOMICITY        0X0810
+
+#define I2C_ATOMIC_FLAG      0x0001
+
 
 #define I2C_M_IGNORE_NAK  0x1000	/* if I2C_FUNC_PROTOCOL_MANGLING */
 #define I2C_M_NOSTART   0x4000	/* if I2C_FUNC_NOSTART */
@@ -134,6 +140,10 @@
  ****************************************************************************/
 
 #define I2C_SETFREQUENCY(d, f) ((d)->ops->setfrequency(d, f))
+
+#ifdef CONFIG_I2C_ARTIK_EXTENSIONS
+#define I2C_SETATOMIC(d, f)    ((d)->ops->setatomic(d, f))
+#endif
 
 /****************************************************************************
  * Name: I2C_SETADDRESS
@@ -289,6 +299,9 @@ struct i2c_ops_s {
 	int (*setownaddress)(FAR struct i2c_dev_s *dev, int addr, int nbits);
 
 	int (*registercallback)(FAR struct i2c_dev_s *dev, int (*callback)(void));
+#endif
+#ifdef CONFIG_I2C_ARTIK_EXTENSIONS
+	int (*setatomic)(FAR struct i2c_dev_s *dev, int atomic);
 #endif
 };
 
@@ -469,6 +482,10 @@ int i2c_read(FAR struct i2c_dev_s *dev, FAR const struct i2c_config_s *config, F
 
 #ifdef CONFIG_I2C_USERIO
 int i2c_uioregister(FAR const char *path, FAR struct i2c_dev_s *dev);
+#endif
+
+#if defined(CONFIG_I2C_ARTIK_EXTENSIONS) || defined(CONFIG_I2C_USERIO)
+int i2c_ioctrl(FAR struct i2c_dev_s *dev, int cmd, unsigned long arg);
 #endif
 
 #undef EXTERN
