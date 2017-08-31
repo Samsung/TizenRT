@@ -74,9 +74,9 @@ static void sigint_handler(int signo, siginfo_t *info, void *ctx)
 /**
 * @fn                   :sigusr1_func
 * @brief                :utility function used in tc_signal_sigwaitinfo
-* @return               :int
+* @return               :void*
 */
-static int sigusr1_func(int argc, char *argv[])
+static void *sigusr1_func(void *arg)
 {
 	unsigned int remain = SEC_2;
 	while (remain > 0) {
@@ -84,15 +84,15 @@ static int sigusr1_func(int argc, char *argv[])
 	}
 	/* Kill sends the signal */
 	kill(g_sig_pid, SIGUSR1);
-	return 0;
+	return NULL;
 }
 
 /**
 * @fn                   :sigusr2_func
 * @brief                :utility function used in tc_signal_sigwaitinfo
-* @return               :int
+* @return               :void*
 */
-static int sigusr2_func(int argc, char *argv[])
+static void *sigusr2_func(void *arg)
 {
 	unsigned int remain = SEC_5;
 	while (remain > 0) {
@@ -101,8 +101,7 @@ static int sigusr2_func(int argc, char *argv[])
 
 	/* Kill sends the signal */
 	kill(g_sig_pid, SIGUSR2);
-	task_delete(0);
-	return 0;
+	return NULL;
 }
 
 /**
@@ -125,13 +124,15 @@ void sigaction_handler(int signo)
 */
 static void tc_signal_sigwaitinfo(void)
 {
-	int ret_chk;
+	pthread_t pid;
 	struct siginfo value;
 	sigset_t sigset;
+	int ret_chk;
 
 	g_sig_pid = getpid();
 
-	task_create("sigwaitinfo", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
+	ret_chk = pthread_create(&pid, NULL, sigusr1_func, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
 	/* Wait for a signal */
 
@@ -139,10 +140,12 @@ static void tc_signal_sigwaitinfo(void)
 	(void)sigaddset(&sigset, SIGUSR1);
 	value.si_value.sival_int = -1;
 	ret_chk = sigwaitinfo(&sigset, &value);
-	TC_ASSERT_EQ("sigwaitinfo", ret_chk, SIGUSR1);
-	TC_ASSERT_GEQ("sigwaitinfo", value.si_value.sival_int, 0);
+	TC_ASSERT_EQ_CLEANUP("sigwaitinfo", ret_chk, SIGUSR1, goto errout);
+	TC_ASSERT_GEQ_CLEANUP("sigwaitinfo", value.si_value.sival_int, 0, goto errout);
 
 	TC_SUCCESS_RESULT();
+errout:
+	pthread_join(pid, NULL);
 }
 
 /**
@@ -232,16 +235,19 @@ static void tc_signal_kill(void)
 static void tc_signal_nanosleep(void)
 {
 	struct timespec st_timespec;
+	struct timespec st_init_timespec;
+	struct timespec st_final_timespec;
+	clockid_t clock_id = CLOCK_REALTIME;
 	int ret_chk;
 
 	st_timespec.tv_sec = SEC_2;
 	st_timespec.tv_nsec = 0;
 
-	struct timespec st_init_timespec;
-	struct timespec st_final_timespec;
-	clockid_t clock_id = CLOCK_REALTIME;
+	/* Set start time. do while statement prevents nanotime carry */
 
-	clock_gettime(clock_id, &st_init_timespec);
+	do {
+		clock_gettime(clock_id, &st_init_timespec);
+	} while (st_init_timespec.tv_nsec > 900000000);
 
 	ret_chk = nanosleep(&st_timespec, NULL);
 	TC_ASSERT_NEQ("nanosleep", ret_chk, ERROR);
@@ -262,13 +268,15 @@ static void tc_signal_nanosleep(void)
 */
 static void tc_signal_pause(void)
 {
-	int ret_chk = ERROR;
-
+	pthread_t pid1;
+	pthread_t pid2;
 	sigset_t saved;
 	sigset_t newmask;
 	struct timespec st_init_timespec;
 	struct timespec st_final_timespec;
 	clockid_t clock_id = CLOCK_REALTIME;
+	int ret_chk;
+
 	g_sig_pid = getpid();
 
 	sigemptyset(&newmask);
@@ -279,28 +287,32 @@ static void tc_signal_pause(void)
 	TC_ASSERT_EQ("sigprocmask", ret_chk, OK);
 
 	clock_gettime(clock_id, &st_init_timespec);
-	task_create("sigpause1", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
-	task_create("sigpause2", SCHED_PRIORITY_DEFAULT, 512, sigusr2_func, (char * const *)NULL);
+	ret_chk = pthread_create(&pid1, NULL, sigusr1_func, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+	ret_chk = pthread_create(&pid2, NULL, sigusr2_func, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, goto errout);
 
 	/* Wait for a signal */
 
 	ret_chk = pause();
-	TC_ASSERT_EQ("pause", ret_chk, ERROR);
-	TC_ASSERT_EQ("pause", get_errno(), EINTR);
+	TC_ASSERT_EQ_CLEANUP("pause", ret_chk, ERROR, goto errout);
+	TC_ASSERT_EQ_CLEANUP("pause", get_errno(), EINTR, goto errout);
 
 	clock_gettime(clock_id, &st_final_timespec);
 	if (st_final_timespec.tv_sec - st_init_timespec.tv_sec < SEC_5) {
 		ret_chk = sigprocmask(SIG_SETMASK, &saved, NULL);
-		TC_ASSERT_EQ("sigprocmask", ret_chk, OK);
+		TC_ASSERT_EQ_CLEANUP("sigprocmask", ret_chk, OK, goto errout);
 	}
 
 	/* Restore sigprocmask */
 
 	ret_chk = sigprocmask(SIG_SETMASK, &saved, NULL);
-	TC_ASSERT_EQ("sigprocmask", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("sigprocmask", ret_chk, OK, goto errout);
 
 	TC_SUCCESS_RESULT();
-	return;
+errout:
+	pthread_join(pid1, NULL);
+	pthread_join(pid2, NULL);
 }
 
 /**
@@ -314,13 +326,15 @@ static void tc_signal_pause(void)
 */
 static void tc_signal_sigsuspend(void)
 {
-	int ret_chk = ERROR;
-
+	pthread_t pid1;
+	pthread_t pid2;
 	sigset_t saved;
 	sigset_t newmask;
 	struct timespec st_init_timespec;
 	struct timespec st_final_timespec;
 	clockid_t clock_id = CLOCK_REALTIME;
+	int ret_chk;
+
 	g_sig_pid = getpid();
 
 	sigemptyset(&newmask);
@@ -329,45 +343,31 @@ static void tc_signal_sigsuspend(void)
 	/* Save the current sigprocmask */
 
 	ret_chk = sigprocmask(SIG_SETMASK, &newmask, &saved);
-	TC_ASSERT_EQ_CLEANUP("sigprocmask", ret_chk, OK, {
-		tckndbg("ERROR sigprocmask failed: %d\n", get_errno()); goto errout;
-	}
-						);
+	TC_ASSERT_EQ("sigprocmask", ret_chk, OK);
 
 	clock_gettime(clock_id, &st_init_timespec);
-	task_create("sigsuspend1", SCHED_PRIORITY_DEFAULT, 512, sigusr1_func, (char * const *)NULL);
-	task_create("sigsuspend2", SCHED_PRIORITY_DEFAULT, 512, sigusr2_func, (char * const *)NULL);
+	ret_chk = pthread_create(&pid1, NULL, sigusr1_func, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+	ret_chk = pthread_create(&pid2, NULL, sigusr2_func, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, goto errout);
 
 	/* Wait for a signal */
 
 	ret_chk = sigsuspend(&newmask);
-	TC_ASSERT_EQ_CLEANUP("sigsuspend", ret_chk, ERROR, {
-		tckndbg("ERROR sigsuspend failed: %d\n", get_errno()); goto errout_with_mask;
-	}
-						);
+	TC_ASSERT_EQ_CLEANUP("sigsuspend", ret_chk, ERROR, goto errout);
 
 	clock_gettime(clock_id, &st_final_timespec);
-	TC_ASSERT_GEQ_CLEANUP("clock_gettime", st_final_timespec.tv_sec - st_init_timespec.tv_sec, SEC_5, goto errout_with_mask);
-
-	/* Restore sigprocmask */
-
-	ret_chk = sigprocmask(SIG_SETMASK, &saved, NULL);
-	TC_ASSERT_EQ_CLEANUP("sigprocmask", ret_chk, OK, {
-		tckndbg("ERROR sognprocmask failed: %d\n", get_errno()); goto errout;
-	}
-						);
+	TC_ASSERT_GEQ_CLEANUP("clock_gettime", st_final_timespec.tv_sec - st_init_timespec.tv_sec, SEC_5, goto errout);
 
 	TC_SUCCESS_RESULT();
-	return;
 
-errout_with_mask:
+errout:
+	pthread_join(pid1, NULL);
+	pthread_join(pid2, NULL);
 
 	/* Restore sigprocmask */
 
 	sigprocmask(SIG_SETMASK, &saved, NULL);
-errout:
-
-	RETURN_ERR;
 }
 
 /**
@@ -486,13 +486,14 @@ static void tc_signal_sigqueue(void)
 
 static void tc_signal_sigtimedwait(void)
 {
-	int ret_chk;
+	pthread_t pid;
 	struct siginfo value;
 	sigset_t sigset;
 	struct timespec st_timeout;
 	struct timespec st_init_timespec;
 	struct timespec st_final_timespec;
 	clockid_t clock_id = CLOCK_REALTIME;
+	int ret_chk;
 
 	g_sig_pid = getpid();
 	st_timeout.tv_sec = SEC_5;
@@ -504,17 +505,20 @@ static void tc_signal_sigtimedwait(void)
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGUSR1);
 
-	task_create("tc_sig_time", SCHED_PRIORITY_DEFAULT - 1, 512, sigusr1_func, (char * const *)NULL);
+	ret_chk = pthread_create(&pid, NULL, sigusr1_func, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
 	clock_gettime(clock_id, &st_init_timespec);
 	ret_chk = sigtimedwait(&sigset, &value, &st_timeout);
-	TC_ASSERT_NEQ("sigtimedwait", ret_chk, ERROR);
+	TC_ASSERT_NEQ_CLEANUP("sigtimedwait", ret_chk, ERROR, goto errout);
 
 	clock_gettime(clock_id, &st_final_timespec);
-	TC_ASSERT_LEQ("clock_gettime", st_final_timespec.tv_sec - st_init_timespec.tv_sec, SEC_3);
+	TC_ASSERT_LEQ_CLEANUP("clock_gettime", st_final_timespec.tv_sec - st_init_timespec.tv_sec, SEC_3, goto errout);
+	TC_ASSERT_GEQ_CLEANUP("sigtimedwait", value.si_value.sival_int, 0, goto errout);
 
-	TC_ASSERT_GEQ("sigtimedwait", value.si_value.sival_int, 0);
 	TC_SUCCESS_RESULT();
+errout:
+	pthread_join(pid, NULL);
 }
 
 /**
