@@ -96,7 +96,11 @@ USERLIBS += $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
 # Add library for ARTIK SDK
 
 ifeq ($(CONFIG_ARTIK_SDK),y)
+ifeq ($(CONFIG_ARCH_BOARD_ARTIK053S),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libartik-sdk-a053s$(LIBEXT)
+else
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libartik-sdk$(LIBEXT)
+endif
 endif
 
 # Add libraries for iotivity support
