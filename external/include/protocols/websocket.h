@@ -42,16 +42,16 @@
 #include <protocols/wslay/wslay.h>
 #include <tinyara/wqueue.h>
 
-#include "tls/config.h"
-#include "tls/entropy.h"
-#include "tls/ctr_drbg.h"
-#include "tls/certs.h"
-#include "tls/x509.h"
-#include "tls/ssl.h"
-#include "tls/net.h"
-#include "tls/error.h"
-#include "tls/debug.h"
-#include "tls/ssl_cache.h"
+#include "mbedtls/config.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/certs.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/net.h"
+#include "mbedtls/error.h"
+#include "mbedtls/debug.h"
+#include "mbedtls/ssl_cache.h"
 
 #define WEBSOCKET_DEBUG_PRINT
 /**< websocket debug print option if defined, enables debug print */

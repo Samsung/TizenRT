@@ -13,8 +13,8 @@
 
 #include "common.h"
 #include "tls.h"
-#include "tls/tlsv1_client.h"
-#include "tls/tlsv1_server.h"
+#include "mbedtls/tlsv1_client.h"
+#include "mbedtls/tlsv1_server.h"
 
 static int tls_ref_count = 0;
 

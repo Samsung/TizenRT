@@ -75,13 +75,6 @@ SOCK_CSRCS  =
 NETDEV_ASRCS =
 NETDEV_CSRCS =
 
-#tls support
-
-ifeq ($(CONFIG_NET_SECURITY_TLS),y)
-TLS_ASRCS = 
-TLS_CSRCS =
-endif
-
 VPATH =
 DEPPATH = --dep-path .
 
@@ -106,10 +99,6 @@ endif
 
 include route/Make.defs
 include utils/Make.defs
-
-ifeq ($(CONFIG_NET_SECURITY_TLS),y)
-include tls/Make.defs
-endif
 
 endif
 

@@ -95,7 +95,7 @@ include telnetd/Make.defs
 include smtp/Make.defs
 include netlib/Make.defs
 include json/Make.defs
-
+include mbedtls/Make.defs
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

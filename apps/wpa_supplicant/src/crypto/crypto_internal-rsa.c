@@ -10,9 +10,9 @@
 
 #include "common.h"
 #include "crypto.h"
-#include "tls/rsa.h"
-#include "tls/pkcs1.h"
-#include "tls/pkcs8.h"
+#include "mbedtls/rsa.h"
+#include "mbedtls/pkcs1.h"
+#include "mbedtls/pkcs8.h"
 
 /* Dummy structures; these are just typecast to struct crypto_rsa_key */
 struct crypto_public_key;

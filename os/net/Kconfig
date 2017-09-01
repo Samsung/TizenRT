@@ -34,14 +34,7 @@ if NET_LWIP
 source net/lwip/configs/Kconfig
 endif #NET_LWIP
 
-config NET_SECURITY_TLS
-	bool "TLS Support"
-	default n
-	depends on LIBC_NETDB
 
-if NET_SECURITY_TLS
-source net/tls/Kconfig
-endif #NET_SECURITY_TLS
 
 menu "Driver buffer configuration"
 
@@ -129,6 +122,15 @@ source "$EXTERNALDIR/smtp/Kconfig.protocol"
 source "$EXTERNALDIR/netlib/Kconfig.protocl"
 
 source "../framework/src/mqtt/Kconfig.protocol"
+
+config NET_SECURITY_TLS
+	bool "TLS Support"
+	default n
+	depends on LIBC_NETDB
+
+if NET_SECURITY_TLS
+source "$EXTERNALDIR/mbedtls/Kconfig.protocol"
+endif #NET_SECURITY_TLS
 
 endmenu #Protocols
 

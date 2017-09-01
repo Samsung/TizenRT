@@ -49,11 +49,11 @@
 #endif
 
 #ifdef WITH_MBEDTLS
-#include "tls/ssl.h"
-#include "tls/net.h"
-#include "tls/x509_crt.h"
-#include "tls/pk.h"
-#include "tls/ctr_drbg.h"
-#include "tls/ssl_cache.h"
-#include "tls/entropy.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/net.h"
+#include "mbedtls/x509_crt.h"
+#include "mbedtls/pk.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/ssl_cache.h"
+#include "mbedtls/entropy.h"
 #endif

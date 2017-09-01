@@ -59,8 +59,8 @@ static const char g_httpcnlost[]   = "close";
 static struct timeval rt;
 
 #ifdef CONFIG_HW_RSA
-#include "tls/sss_key.h"
-#include "tls/see_api.h"
+#include "mbedtls/sss_key.h"
+#include "mbedtls/see_api.h"
 
 #define EASY_CA_KEY_INDEX		1
 #define EASY_DEV_KEY_INDEX		2

@@ -38,8 +38,8 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/time.h>
-#include <tls/sha1.h>
-#include <tls/base64.h>
+#include "mbedtls/sha1.h"
+#include "mbedtls/base64.h"
 #include <protocols/netlib.h>
 #include <protocols/websocket.h>
 #include <protocols/wslay/wslay.h>

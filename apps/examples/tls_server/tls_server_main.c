@@ -46,7 +46,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tls/config.h"
+#include "mbedtls/config.h"
 
 #if !defined(MBEDTLS_ENTROPY_C) || \
 	!defined(MBEDTLS_SSL_TLS_C) || !defined(MBEDTLS_SSL_SRV_C) || \
@@ -65,30 +65,30 @@ int tls_server_main(int argc, char **argv)
 #define mbedtls_fprintf    fprintf
 #define mbedtls_printf     printf
 
-#include "tls/net.h"
-#include "tls/ssl.h"
-#include "tls/entropy.h"
-#include "tls/ctr_drbg.h"
-#include "tls/certs.h"
-#include "tls/x509.h"
-#include "tls/error.h"
-#include "tls/debug.h"
-#include "tls/timing.h"
+#include "mbedtls/net.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/certs.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/error.h"
+#include "mbedtls/debug.h"
+#include "mbedtls/timing.h"
 
 #if defined(MBEDTLS_SSL_CACHE_C)
-#include "tls/ssl_cache.h"
+#include "mbedtls/ssl_cache.h"
 #endif
 
 #if defined(MBEDTLS_SSL_TICKET_C)
-#include "tls/ssl_ticket.h"
+#include "mbedtls/ssl_ticket.h"
 #endif
 
 #if defined(MBEDTLS_SSL_COOKIE_C)
-#include "tls/ssl_cookie.h"
+#include "mbedtls/ssl_cookie.h"
 #endif
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
-#include "tls/memory_buffer_alloc.h"
+#include "mbedtls/memory_buffer_alloc.h"
 #endif
 
 #if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION) && defined(MBEDTLS_FS_IO)
