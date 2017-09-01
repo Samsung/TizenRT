@@ -78,11 +78,11 @@ config ARTIK053_FLASH_PART_NAME
 		Comma separated list of partition names.
 
 config ARTIK053_AUTOMOUNT
-       bool "Automount partitions"
-       default n
-       depends on ARTIK053_FLASH_PART
+	bool "Automount partitions"
+	default n
+	depends on ARTIK053_FLASH_PART
 	depends on !DISABLE_MOUNTPOINT
-       ---help---
+	---help---
 		If enabled, mount userrw and sssrw partitions at boot.
 
 config ARTIK053_AUTOMOUNT_USERFS
@@ -112,22 +112,22 @@ config ARTIK053_AUTOMOUNT_USERFS_MOUNTPOINT
 
 if RAMMTD
 config ARTIK053_RAMMTD_NEBLOCKS
-		int "RAM MTD erase block count"
-		default 64
-		---help---
-				Ramfs size will be RAMMTD_ERASESIZE * SIDK_ARTIK053_RAMMTD_NEBLOCKS.
-				You have to consider total ramsize to alloc ramfs size.
+	int "RAM MTD erase block count"
+	default 64
+	---help---
+		Ramfs size will be RAMMTD_ERASESIZE * SIDK_ARTIK053_RAMMTD_NEBLOCKS.
+		You have to consider total ramsize to alloc ramfs size.
 
 config ARTIK053_RAMMTD_DEV_NUMBER
-		int "device number for mtd of smartfs"
-		default 3
+	int "device number for mtd of smartfs"
+	default 3
 
 config ARTIK053_RAMMTD_DEV_POINT
-		string "Device name of the partition for ramfs r/w file system"
-		default "/dev/smart3"
+	string "Device name of the partition for ramfs r/w file system"
+	default "/dev/smart3"
 
 config ARTIK053_RAMMTD_MOUNT_POINT
-		string "Mountpoint of the partition for ramfs r/w file system"
-		default "/ramfs"
+	string "Mountpoint of the partition for ramfs r/w file system"
+	default "/ramfs"
 endif
 endif
