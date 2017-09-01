@@ -117,7 +117,7 @@ build_common/arduino/extlibs/arduino/arduino-1.5.8
 extlibs/tinydtls/dtls-client
 extlibs/tinydtls/dtls-server
 extlibs/bluez/bluez
-#extlibs/mbedtls/mbedtls
+extlibs/mbedtls/mbedtls
 extlibs/raxmpp/raxmpp
 extlibs/yaml/yaml
 
