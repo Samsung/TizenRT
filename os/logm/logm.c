@@ -16,11 +16,15 @@
  *
  ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
+#ifdef CONFIG_ARCH_LOWPUTC
+#include <sched.h>
+#endif
 #include <arch/irq.h>
-#include <tinyara/config.h>
+#include <tinyara/arch.h>
 #include <tinyara/logm.h>
 #include <tinyara/streams.h>
 #ifdef CONFIG_LOGM_TIMESTAMP

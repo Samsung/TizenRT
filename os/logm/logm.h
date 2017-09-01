@@ -80,7 +80,6 @@ EXTERN volatile int logm_print_interval;
  ************************************************************************************/
 int logm_task(int argc, char *argv[]);
 void logm_register_tashcmds(void);
-static int logm_tash(int argc, char **args);
 
 #undef EXTERN
 #if defined(__cplusplus)
