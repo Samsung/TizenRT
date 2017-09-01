@@ -97,7 +97,6 @@ include lwip/src/netif/ppp/Make.defs
 include lwip/sys/arch/Make.defs
 endif
 
-include route/Make.defs
 include utils/Make.defs
 
 endif

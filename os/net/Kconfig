@@ -39,7 +39,7 @@ endif #NET_LWIP
 menu "Driver buffer configuration"
 
 config NET_MULTIBUFFER
-	bool "Use multiple device-side I/O buffers"
+	bool #"Use multiple device-side I/O buffers"
 	default n
 	---help---
 		Traditionally, uIP has used a single buffer for all incoming and
@@ -50,7 +50,7 @@ config NET_MULTIBUFFER
 		input/ouput and output transfers for better performance.
 
 config NET_ETH_MTU
-	int "Ethernet packet buffer size (MTU)"
+	int #"Ethernet packet buffer size (MTU)"
 	default 1294 if NET_IPv6
 	default 590 if !NET_IPv6
 	depends on NET_ETHERNET
@@ -69,7 +69,7 @@ config NET_ETH_MTU
 		resulting in a minimum buffer size of of 1220+20+40+14 = 1294
 
 config NET_GUARDSIZE
-	int "Driver I/O guard size"
+	int #"Driver I/O guard size"
 	default 2
 	---help---
 		Network drivers often receive packets with garbage at the end and
@@ -101,7 +101,6 @@ config NET_ETHERNET
 endmenu # Data link support
 
 source net/netdev/Kconfig
-source net/route/Kconfig
 
 menu "Protocols"
 
