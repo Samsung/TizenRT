@@ -2824,6 +2824,13 @@ static void CALESecureReceiveDataCB(const CASecureEndpoint_t *sep,
 }
 #endif
 
+static void CALEErrorHandlerInternal(const CAEndpoint_t *endpoint,
+                                     const void *data, size_t dataLen,
+                                     CAResult_t result)
+{
+    g_errorHandler(endpoint, data, dataLen, result);
+}
+
 CAResult_t CAInitializeLE(CARegisterConnectivityCallback registerCallback,
                           CANetworkPacketReceivedCallback reqRespCallback,
                           CAAdapterChangeCallback netCallback,
@@ -2890,7 +2897,7 @@ CAResult_t CAInitializeLE(CARegisterConnectivityCallback registerCallback,
     }
     else
     {
-        CAsetSslAdapterCallbacks(CALESecureReceiveDataCB, CALESecureSendDataCB, CA_ADAPTER_GATT_BTLE);
+        CAsetSslAdapterCallbacks(CALESecureReceiveDataCB, CALESecureSendDataCB, CALEErrorHandlerInternal, CA_ADAPTER_GATT_BTLE);
     }
 #endif
 
@@ -2982,7 +2989,7 @@ static void CATerminateLE()
 #endif
 
 #ifdef __WITH_DTLS__
-    CAsetSslAdapterCallbacks(NULL, NULL, CA_ADAPTER_GATT_BTLE);
+    CAsetSslAdapterCallbacks(NULL, NULL, NULL, CA_ADAPTER_GATT_BTLE);
 #endif
 
     CATerminateLEAdapterMutex();
@@ -3748,8 +3755,7 @@ static void CALEErrorHandler(const char *remoteAddress,
                                                remoteAddress,
                                                0);
 
-    // if required, will be used to build remote endpoint
-    g_errorHandler(rep, data, dataLen, result);
+    CALEErrorHandlerInternal(rep, data, dataLen, result);
 
     CAFreeEndpoint(rep);
 

@@ -116,13 +116,6 @@ typedef bool (*SPResponseCallback) (const CAEndpoint_t *object,
                                     const CAResponseInfo_t *responseInfo);
 
 /**
- * Function to register provisoning API's response callback.
- *
- * @param respHandler response handler callback.
- */
-void SRMRegisterProvisioningResponseHandler(SPResponseCallback respHandler);
-
-/**
  * Check the security resource URI.
  * @param uri Pointers to security resource URI.
  * @return true if the URI is one of security resources, otherwise false.

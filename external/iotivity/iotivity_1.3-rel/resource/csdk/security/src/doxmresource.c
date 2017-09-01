@@ -1049,8 +1049,8 @@ OCStackResult DoxmUpdateWriteableProperty(const OicSecDoxm_t* src, OicSecDoxm_t*
  * @param[out]   object           remote device information.
  * @param[out]   errorInfo        CA Error information.
  */
-void MultipleOwnerDTLSHandshakeCB(const CAEndpoint_t *object,
-                                const CAErrorInfo_t *errorInfo)
+CAResult_t MultipleOwnerDTLSHandshakeCB(const CAEndpoint_t *object,
+                                        const CAErrorInfo_t *errorInfo)
 {
     OIC_LOG(DEBUG, TAG, "IN MultipleOwnerDTLSHandshakeCB");
 
@@ -1063,14 +1063,14 @@ void MultipleOwnerDTLSHandshakeCB(const CAEndpoint_t *object,
             if (!gDoxm)
             {
                 OIC_LOG_V(WARNING, TAG, "%s: gDoxm is NULL", __func__);
-                return;
+                return CA_HANDLE_ERROR_OTHER_MODULE;
             }
 
             if (0 == memcmp(authenticationSubOwnerInfo.identity.id, gDoxm->owner.id,
                             authenticationSubOwnerInfo.identity.id_length))
             {
                 OIC_LOG(WARNING, TAG, "Super owner tried MOT, this request will be ignored.");
-                return;
+                return CA_HANDLE_ERROR_OTHER_MODULE;
             }
 
             OicSecSubOwner_t* subOwnerInst = NULL;
@@ -1093,14 +1093,14 @@ void MultipleOwnerDTLSHandshakeCB(const CAEndpoint_t *object,
                     if (sizeof(subOwnerInst->uuid.id) < authenticationSubOwnerInfo.identity.id_length)
                     {
                         OIC_LOG(ERROR, TAG, "Identity id is too long");
-                        return;
+                        return CA_HANDLE_ERROR_OTHER_MODULE;
                     }
                     memcpy(subOwnerInst->uuid.id, authenticationSubOwnerInfo.identity.id,
                            authenticationSubOwnerInfo.identity.id_length);
                     if(OC_STACK_OK != ConvertUuidToStr(&subOwnerInst->uuid, &strUuid))
                     {
                         OIC_LOG(ERROR, TAG, "Failed to allocate memory.");
-                        return;
+                        return CA_HANDLE_ERROR_OTHER_MODULE;
                     }
                     OIC_LOG_V(DEBUG, TAG, "Adding New SubOwner(%s)", strUuid);
                     OICFree(strUuid);
@@ -1124,6 +1124,7 @@ void MultipleOwnerDTLSHandshakeCB(const CAEndpoint_t *object,
     }
 
     OIC_LOG(DEBUG, TAG, "OUT MultipleOwnerDTLSHandshakeCB");
+    return CA_STATUS_OK;
 }
 #endif //MULTIPLE_OWNER
 #endif // defined(__WITH_DTLS__) || defined (__WITH_TLS__)
@@ -1168,7 +1169,7 @@ static bool ValidateOxmsel(const OicSecOxm_t *supportedMethods,
 }
 
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-static void DoxmDTLSHandshakeCB(const CAEndpoint_t *endpoint, const CAErrorInfo_t *info)
+static CAResult_t DoxmDTLSHandshakeCB(const CAEndpoint_t *endpoint, const CAErrorInfo_t *info)
 {
     OIC_LOG_V(DEBUG, TAG, "In %s(%p, %p)", __func__, endpoint, info);
 
@@ -1183,9 +1184,10 @@ static void DoxmDTLSHandshakeCB(const CAEndpoint_t *endpoint, const CAErrorInfo_
     }
 
     OIC_LOG_V(DEBUG, TAG, "Out %s(%p, %p)", __func__, endpoint, info);
+    return CA_STATUS_OK;
 }
 
-static void RegisterOTMSslHandshakeCallback(CAErrorCallback callback)
+static void RegisterOTMSslHandshakeCallback(CAHandshakeErrorCallback callback)
 {
     OC_VERIFY(CA_STATUS_OK == CAregisterSslHandshakeCallback(callback));
 }

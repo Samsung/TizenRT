@@ -136,7 +136,7 @@ CAResult_t CAregisterGetCredentialTypesHandler(CAgetCredentialTypesHandler getCr
  * @param[in] tlsHandshakeCallback callback for get tls handshake result
  * @return ::CA_STATUS_OK
  */
-CAResult_t CAregisterSslHandshakeCallback(CAErrorCallback tlsHandshakeCallback);
+CAResult_t CAregisterSslHandshakeCallback(CAHandshakeErrorCallback tlsHandshakeCallback);
 
 /**
  * Register callback to get TLS PSK credentials.

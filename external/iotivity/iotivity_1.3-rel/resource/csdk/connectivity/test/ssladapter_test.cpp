@@ -888,6 +888,10 @@ static void CATCPPacketReceivedCB(const CASecureEndpoint_t *, const void *data, 
     msglen = dataLength;
 }
 
+static void CATCPPacketErrorCB(const CAEndpoint_t *, const void *, size_t, CAResult_t)
+{
+}
+
 static void PacketReceive(unsigned char *data, int * datalen)
 {
     int n;
@@ -999,6 +1003,10 @@ static void CATCPPacketReceivedCB_server(const CASecureEndpoint_t *, const void 
 {
     memcpy(msg, data, dataLength);
     msglen = dataLength;
+}
+
+static void CATCPPacketErrorCB_server(const CAEndpoint_t *, const void *, size_t, CAResult_t)
+{
 }
 
 static void PacketReceive_server(unsigned char *data, int * datalen)
@@ -1797,11 +1805,13 @@ static int testCAsetSslAdapterCallbacks()
         return 1;
     }
 
-    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, (CATransportAdapter_t)0);
-    if (g_caSslContext->adapterCallbacks[0].recvCallback == NULL &&
-        g_caSslContext->adapterCallbacks[0].sendCallback == NULL &&
-        g_caSslContext->adapterCallbacks[1].recvCallback == NULL &&
-        g_caSslContext->adapterCallbacks[1].sendCallback == NULL)
+    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CATCPPacketErrorCB, (CATransportAdapter_t)0);
+    if (g_caSslContext->adapterCallbacks[0].recvCallback  == NULL &&
+        g_caSslContext->adapterCallbacks[0].sendCallback  == NULL &&
+        g_caSslContext->adapterCallbacks[0].errorCallback == NULL &&
+        g_caSslContext->adapterCallbacks[1].recvCallback  == NULL &&
+        g_caSslContext->adapterCallbacks[1].sendCallback  == NULL &&
+        g_caSslContext->adapterCallbacks[1].errorCallback == NULL)
     {
         ret = 0;
     }
@@ -1809,12 +1819,14 @@ static int testCAsetSslAdapterCallbacks()
     {
         ret = 1;
     }
-    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CA_ADAPTER_IP);
-    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CA_ADAPTER_TCP);
-    if (g_caSslContext->adapterCallbacks[0].recvCallback == CATCPPacketReceivedCB &&
-        g_caSslContext->adapterCallbacks[0].sendCallback == CATCPPacketSendCB &&
-        g_caSslContext->adapterCallbacks[1].recvCallback == CATCPPacketReceivedCB &&
-        g_caSslContext->adapterCallbacks[1].sendCallback == CATCPPacketSendCB)
+    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CATCPPacketErrorCB, CA_ADAPTER_IP);
+    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CATCPPacketErrorCB, CA_ADAPTER_TCP);
+    if (g_caSslContext->adapterCallbacks[0].recvCallback  == CATCPPacketReceivedCB &&
+        g_caSslContext->adapterCallbacks[0].sendCallback  == CATCPPacketSendCB &&
+        g_caSslContext->adapterCallbacks[0].errorCallback == CATCPPacketErrorCB &&
+        g_caSslContext->adapterCallbacks[1].recvCallback  == CATCPPacketReceivedCB &&
+        g_caSslContext->adapterCallbacks[1].sendCallback  == CATCPPacketSendCB &&
+        g_caSslContext->adapterCallbacks[1].errorCallback == CATCPPacketErrorCB)
     {
         ret += 0;
     }
@@ -2061,7 +2073,7 @@ static void * testCAencryptSsl(void * arg)
 
     CAinitSslAdapter();
 
-    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CA_ADAPTER_TCP);
+    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CATCPPacketErrorCB, CA_ADAPTER_TCP);
 
     CAsetPkixInfoCallback(infoCallback_that_loads_x509);
 
@@ -2475,7 +2487,7 @@ static void * testCAdecryptSsl(void * arg)
 
     CAinitSslAdapter();
 
-    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CA_ADAPTER_TCP);
+    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CATCPPacketErrorCB, CA_ADAPTER_TCP);
 
     CAsetPkixInfoCallback(infoCallback_that_loads_x509);
 
@@ -2598,7 +2610,7 @@ static int testCAdeinitSslAdapter()
 
     CAinitSslAdapter();
 
-    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CA_ADAPTER_TCP);
+    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CATCPPacketErrorCB, CA_ADAPTER_TCP);
 
     CAsetPkixInfoCallback(infoCallback_that_loads_x509);
 
@@ -2648,7 +2660,7 @@ static void * testServer(void * arg)
 
     CAinitSslAdapter();
 
-    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB_server, CATCPPacketSendCB_server, CA_ADAPTER_TCP);
+    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB_server, CATCPPacketSendCB_server, CATCPPacketErrorCB_server, CA_ADAPTER_TCP);
     CAsetPkixInfoCallback(infoCallback_that_loads_x509);
 
     CAsetCredentialTypesCallback(clutch);
@@ -2977,7 +2989,7 @@ TEST(TLSAdapter, Test_11)
     mbedtls_x509_crl_init(&g_caSslContext->crl);
     oc_mutex_unlock(g_sslContextMutex);
 
-    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CA_ADAPTER_TCP);
+    CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CATCPPacketErrorCB, CA_ADAPTER_TCP);
 
     CAsetPkixInfoCallback(infoCallback_that_loads_x509);
 

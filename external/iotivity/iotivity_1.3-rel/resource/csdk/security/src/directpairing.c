@@ -524,10 +524,10 @@ OCStackResult FinalizeDirectPairing(void *ctx, OCDirectPairingDev_t* peer,
  * @param   errorInfo [IN] Error information from the endpoint.
  * @return  NONE
  */
-void DirectPairingDTLSHandshakeCB(const CAEndpoint_t *endpoint, const CAErrorInfo_t *info)
+CAResult_t DirectPairingDTLSHandshakeCB(const CAEndpoint_t *endpoint, const CAErrorInfo_t *info)
 {
     OIC_LOG(INFO, TAG, "IN DirectPairingDTLSHandshakeCB");
-
+    CAResult_t result = CA_STATUS_OK;
 
     if(g_dp_proceed_ctx && g_dp_proceed_ctx->peer && endpoint && info)
     {
@@ -551,13 +551,13 @@ void DirectPairingDTLSHandshakeCB(const CAEndpoint_t *endpoint, const CAErrorInf
                 if(OC_STACK_OK != res)
                 {
                     OIC_LOG(ERROR, TAG, "Failed to finalize direct-pairing");
-                    resultCallback(g_dp_proceed_ctx->userCtx, peer, res);
+                    result = CA_HANDLE_ERROR_OTHER_MODULE;
                 }
             }
             else if(CA_DTLS_AUTHENTICATION_FAILURE == info->result)
             {
                 OIC_LOG(INFO, TAG, "DirectPairingDTLSHandshakeCB - Authentication failed");
-                resultCallback(g_dp_proceed_ctx->userCtx, peer, OC_STACK_AUTHENTICATION_FAILURE);
+                result = CA_HANDLE_ERROR_OTHER_MODULE;
             }
 
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
@@ -579,6 +579,7 @@ void DirectPairingDTLSHandshakeCB(const CAEndpoint_t *endpoint, const CAErrorInf
     }
 
     OIC_LOG(INFO, TAG, "OUT DirectPairingDTLSHandshakeCB");
+    return result;
 }
 
 /**

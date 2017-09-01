@@ -374,7 +374,7 @@ CAResult_t CAInitializeTCP(CARegisterConnectivityCallback registerCallback,
     }
     else
     {
-        CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CA_ADAPTER_TCP);
+        CAsetSslAdapterCallbacks(CATCPPacketReceivedCB, CATCPPacketSendCB, CATCPErrorHandler, CA_ADAPTER_TCP);
     }
 #endif
 
@@ -561,6 +561,9 @@ CAResult_t CAStopTCP()
 
 void CATerminateTCP()
 {
+#ifdef __WITH_TLS__
+    CAsetSslAdapterCallbacks(NULL, NULL, NULL, CA_ADAPTER_TCP);
+#endif
     CAStopTCP();
     CATCPSetPacketReceiveCallback(NULL);
 

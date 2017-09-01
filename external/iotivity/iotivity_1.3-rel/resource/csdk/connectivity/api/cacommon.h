@@ -369,6 +369,8 @@ typedef enum
     CA_NOT_SUPPORTED,               /**< Not supported */
     CA_STATUS_NOT_INITIALIZED,      /**< Not Initialized*/
     CA_DTLS_AUTHENTICATION_FAILURE, /**< Decryption error in DTLS */
+    CA_CONTINUE_OPERATION,          /**< Error happens but current operation should continue */
+    CA_HANDLE_ERROR_OTHER_MODULE,   /**< Error happens but it should be handled in other module */
     CA_STATUS_FAILED =255           /**< Failure */
     /* Result code - END HERE */
 } CAResult_t;
@@ -715,6 +717,14 @@ typedef void (*CAResponseCallback)(const CAEndpoint_t *object,
  */
 typedef void (*CAErrorCallback)(const CAEndpoint_t *object,
                                 const CAErrorInfo_t *errorInfo);
+
+/**
+ * Callback function type for error.
+ * @param[out]   object           remote device information.
+ * @param[out]   result           error information.
+ */
+typedef CAResult_t (*CAHandshakeErrorCallback)(const CAEndpoint_t *object,
+                                               const CAErrorInfo_t *errorInfo);
 
 /**
  * Callback function type for network status changes delivery from CA common logic.

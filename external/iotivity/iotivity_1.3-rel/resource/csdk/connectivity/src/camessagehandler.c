@@ -1301,6 +1301,40 @@ void CAErrorHandler(const CAEndpoint_t *endpoint,
         return;
     }
 
+#ifdef WITH_TCP
+    if (CAIsSupportedCoAPOverTCP(endpoint->adapter))
+    {
+        OIC_LOG(INFO, TAG, "retransmission is not supported");
+    }
+    else
+#endif
+    {
+        //Fix up CoAP message to adjust it to current retransmission implementation
+        coap_hdr_t *hdr = (coap_hdr_t *)(pdu->transport_hdr);
+        hdr->type = CA_MSG_RESET;
+        hdr->code = CA_EMPTY;
+
+        // for retransmission
+        void *retransmissionPdu = NULL;
+        CARetransmissionReceivedData(&g_retransmissionContext, cadata->remoteEndpoint,
+                                     pdu->transport_hdr, pdu->length, &retransmissionPdu);
+
+        // get token from saved data in retransmission list
+        if (retransmissionPdu && cadata->errorInfo)
+        {
+            CAInfo_t *info = &cadata->errorInfo->info;
+            CAResult_t res = CAGetTokenFromPDU((const coap_hdr_transport_t *)retransmissionPdu,
+                                               info, endpoint);
+            if (CA_STATUS_OK != res)
+            {
+                OIC_LOG(ERROR, TAG, "fail to get Token from retransmission list");
+                OICFree(info->token);
+                info->tokenLength = 0;
+            }
+        }
+        OICFree(retransmissionPdu);
+    }
+
     cadata->errorInfo->result = result;
 
     CAQueueingThreadAddData(&g_receiveThread, cadata, sizeof(CAData_t));

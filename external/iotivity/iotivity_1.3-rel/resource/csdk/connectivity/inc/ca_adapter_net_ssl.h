@@ -26,6 +26,7 @@ extern "C" {
 
 #include "caadapterutils.h"
 #include "cainterface.h"
+#include "caadapterinterface.h"
 
 /**
  * Currently TLS supported adapters(3) WIFI, ETHENET and BLE for linux platform.
@@ -58,15 +59,17 @@ typedef ssize_t (*CAPacketSendCallback)(CAEndpoint_t *endpoint,
 CAResult_t CAsetTlsCipherSuite(const uint32_t cipher);
 
 /**
- * Used set send and recv callbacks for different adapters(WIFI,EtherNet).
+ * Used set send,recv and error callbacks for different adapters(WIFI,EtherNet).
  *
  * @param[in]  recvCallback    packet received callback.
  * @param[in]  sendCallback    packet sent callback.
+ * @param[in]  errorCallback   packet error callback.
  * @param[in]  type  type of adapter.
  *
  */
 void CAsetSslAdapterCallbacks(CAPacketReceivedCallback recvCallback,
                               CAPacketSendCallback sendCallback,
+                              CAErrorHandleCallback errorCallback,
                               CATransportAdapter_t type);
 
 /**
@@ -153,7 +156,7 @@ CAResult_t CAinitiateSslHandshake(const CAEndpoint_t *endpoint);
  * Register callback to deliver the result of TLS handshake
  * @param[in] tlsHandshakeCallback Callback to receive the result of TLS handshake.
  */
-void CAsetSslHandshakeCallback(CAErrorCallback tlsHandshakeCallback);
+void CAsetSslHandshakeCallback(CAHandshakeErrorCallback tlsHandshakeCallback);
 
 /**
  * Generate ownerPSK using PRF

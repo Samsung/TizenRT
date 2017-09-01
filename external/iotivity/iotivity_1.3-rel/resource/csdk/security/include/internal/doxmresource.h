@@ -237,8 +237,8 @@ void RestoreDoxmToInitState();
  * @param[out]   object           remote device information.
  * @param[out]   errorInfo        CA Error information.
  */
-void MultipleOwnerDTLSHandshakeCB(const CAEndpoint_t *object,
-                                const CAErrorInfo_t *errorInfo);
+CAResult_t MultipleOwnerDTLSHandshakeCB(const CAEndpoint_t *object,
+                                        const CAErrorInfo_t *errorInfo);
 #endif //__WITH_DTLS__ && MULTIPLE_OWNER
 
 /**

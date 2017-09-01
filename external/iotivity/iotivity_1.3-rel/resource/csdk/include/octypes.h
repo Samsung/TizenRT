@@ -1114,6 +1114,7 @@ typedef enum
      */
     OC_STACK_AUTHENTICATION_FAILURE,
     OC_STACK_NOT_ALLOWED_OXM,
+    OC_STACK_CONTINUE_OPERATION,
 
     /** Request come from endpoint which is not mapped to the resource. */
     OC_STACK_BAD_ENDPOINT,

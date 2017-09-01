@@ -5871,6 +5871,10 @@ OCStackResult CAResultToOCResult(CAResult_t caResult)
             return OC_STACK_ERROR;
         case CA_NOT_SUPPORTED:
             return OC_STACK_NOTIMPL;
+        case CA_HANDLE_ERROR_OTHER_MODULE:
+            return OC_STACK_COMM_ERROR;
+        case CA_CONTINUE_OPERATION:
+            return OC_STACK_CONTINUE_OPERATION;
         default:
             return OC_STACK_ERROR;
     }

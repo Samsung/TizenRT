@@ -362,7 +362,7 @@ CAResult_t CAInitializeIP(CARegisterConnectivityCallback registerCallback,
     }
     else
     {
-        CAsetSslAdapterCallbacks(CAIPPacketReceivedCB, CAIPPacketSendCB, CA_ADAPTER_IP);
+        CAsetSslAdapterCallbacks(CAIPPacketReceivedCB, CAIPPacketSendCB, CAIPErrorHandler, CA_ADAPTER_IP);
     }
 #endif
 
@@ -544,7 +544,7 @@ CAResult_t CAStopIP()
 void CATerminateIP()
 {
 #ifdef __WITH_DTLS__
-    CAsetSslAdapterCallbacks(NULL, NULL, CA_ADAPTER_IP);
+    CAsetSslAdapterCallbacks(NULL, NULL, NULL, CA_ADAPTER_IP);
 #endif
 
     CAIPSetPacketReceiveCallback(NULL);
