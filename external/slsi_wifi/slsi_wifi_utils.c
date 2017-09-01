@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <tinyara/mm/mm.h>
-#include "slsi_wifi_api.h"
+#include <slsi_wifi/slsi_wifi_api.h>
 
 /* Supported security modes as string */
 #define SLSI_WIFI_SECURITY_OPEN          "open"

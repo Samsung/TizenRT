@@ -26,8 +26,7 @@
 #include <string.h>
 #include <errno.h>
 #include <math.h>
-#include <slsi_wifi_api.h>
-#include <slsi_wifi_utils.h>
+#include <slsi_wifi/slsi_wifi_utils.h>
 #include "output_functions.h"
 // the mm functions are badly guarded with CONFIG_DEBUG
 #ifndef CONFIG_DEBUG

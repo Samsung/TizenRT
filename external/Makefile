@@ -77,6 +77,10 @@ include aws/Make.defs
 include aws/src/Make.defs
 endif
 
+ifeq ($(CONFIG_NETUTILS_WIFI),y)
+include slsi_wifi/Make.defs
+endif
+
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
