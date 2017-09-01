@@ -66,6 +66,9 @@ config SIDK_S5JT200_FLASH_MINOR
 config SIDK_S5JT200_FLASH_PART
 	bool "Enable partition support on FLASH"
 	default n
+	select MTD
+	select MTD_PARTITION
+	select MTD_PROGMEM
 	depends on S5J_SFLASH
 	---help---
 		Enables creation of partitions on the FLASH
@@ -96,6 +99,7 @@ config SIDK_S5JT200_AUTOMOUNT
 	bool "Automount partitions"
 	default n
 	depends on SIDK_S5JT200_FLASH_PART
+	depends on !DISABLE_MOUNTPOINT
 	---help---
 		If enabled, mount userrw and sssrw partitions at boot.
 

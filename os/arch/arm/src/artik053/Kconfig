@@ -42,7 +42,7 @@ config ARTIK053_FLASH_PART
 	select MTD
 	select MTD_PARTITION
 	select MTD_PROGMEM
-	depends on S5J_SFLASH && !DISABLE_MOUNTPOINT
+	depends on S5J_SFLASH
 	---help---
 		Enables creation of partitions on the FLASH
 
@@ -81,6 +81,7 @@ config ARTIK053_AUTOMOUNT
        bool "Automount partitions"
        default n
        depends on ARTIK053_FLASH_PART
+	depends on !DISABLE_MOUNTPOINT
        ---help---
 		If enabled, mount userrw and sssrw partitions at boot.
 
