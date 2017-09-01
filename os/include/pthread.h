@@ -467,14 +467,14 @@ int pthread_setcancelstate(int state, FAR int *oldstate);
 /**
  * @ingroup PTHREAD_KERNEL
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_setcanceltype(int type, FAR int *oldtype);
 
 /**
  * @ingroup PTHREAD_KERNEL
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 void pthread_testcancel(void);
 
@@ -809,25 +809,25 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_mutexattr_getprotocol(FAR const pthread_mutexattr_t *attr,
 				  FAR int *protocol);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_mutexattr_setprotocol(FAR pthread_mutexattr_t *attr,
 				  int protocol);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_mutexattr_getrobust(FAR const pthread_mutexattr_t *attr,
 				FAR int *robust);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_mutexattr_setrobust(FAR pthread_mutexattr_t *attr,
 				int robust);
@@ -870,47 +870,47 @@ int pthread_barrierattr_setpshared(FAR pthread_barrierattr_t *attr, int pshared)
 
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_destroy(FAR pthread_rwlock_t *rw_lock);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_init(FAR pthread_rwlock_t *rw_lock, FAR const pthread_rwlockattr_t *attr);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_rdlock(pthread_rwlock_t *lock);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_timedrdlock(FAR pthread_rwlock_t *lock, FAR const struct timespec *abstime);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_timedwrlock(FAR pthread_rwlock_t *lock, FAR const struct timespec *abstime);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_tryrdlock(FAR pthread_rwlock_t *lock);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_trywrlock(FAR pthread_rwlock_t *lock);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_unlock(FAR pthread_rwlock_t *lock);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_wrlock(FAR pthread_rwlock_t *lock);
 

@@ -427,7 +427,7 @@ long long int llabs(long long int j);
 /**
  * @ingroup STDLIB_LIBC
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 div_t div(int numer, int denom);
 /**
@@ -471,7 +471,7 @@ void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, co
 /**
  * @ingroup STDLIB_LIBC
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 FAR void *bsearch(FAR const void *key, FAR const void *base, size_t nel, size_t width, CODE int (*compar)(FAR const void *, FAR const void *));
 
