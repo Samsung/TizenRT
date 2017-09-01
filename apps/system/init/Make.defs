@@ -16,5 +16,6 @@
 #
 ###########################################################################
 
+ifeq ($(CONFIG_SYSTEM_PREAPP_INIT),y)
 CONFIGURED_APPS += system/init
-
+endif
