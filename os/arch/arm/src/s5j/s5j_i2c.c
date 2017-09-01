@@ -1270,7 +1270,9 @@ struct i2c_dev_s *up_i2cinitialize(int port)
 
 	/* Get I2C private structure */
 	if (g_s5j_i2c_priv[port] != NULL) {
-		return (FAR struct i2c_dev_s *)g_s5j_i2c_priv[port];
+		priv = g_s5j_i2c_priv[port];
+		priv->refs++;
+		return (FAR struct i2c_dev_s *)priv;
 	}
 
 	switch (port) {
