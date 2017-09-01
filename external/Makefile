@@ -106,7 +106,6 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconsign.dblite
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconf_temp
 	$(call DELFILE, $(IOTIVITY_BASE_DIR)/config.log)
-	cp $(IOTIVITY_BASE_DIR)/resource/c_common/iotivity_config_built.h $(IOTIVITY_BASE_DIR)/resource/c_common/iotivity_config.h
 	$(Q) echo "Launching IoTivity Build"
 	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/build_iotivity.sh
 endif

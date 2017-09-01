@@ -17,9 +17,6 @@ else:
 if env.get('OIC_SUPPORT_TIZEN_TRACE') == 'True':
 	env.AppendUnique(CPPDEFINES = ['OIC_SUPPORT_TIZEN_TRACE'])
 
-if env.get('TARGET_OS') == 'tizenrt':
-	env.AppendUnique(CCFLAGS=['-std=c99'])
-
 local_env = env.Clone()
 
 ######################################################################

@@ -1,26 +1,14 @@
-#ifndef __IOTIVITY_CONFIG_H__
-#define __IOTIVITY_CONFIG_H__
-
-//resource/c_common/octhread/src/posix/octhread.c
-#define HAVE_PTHREAD_H
-
-//resource/c_common/oic_platform/src/oic_platform.c
-#define HAVE_NETDB_H
-
-//resource/c_common/octhread/src/posix/octhread.c
-#define HAVE_SYS_TIME_H
-
-//resource/csdk/connectivity/inc/caadapterutils.h
-#define HAVE_SYS_SOCKET_H
-
-// resource/csdk/connectivity/src/ip_adapter/caipserver.c
-#define HAVE_NET_IF_H
-
-
-#if 1 /* from sys/sock_internal.h */
+#ifndef _TIZENRT_COMPAT_H_
+#define _TIZENRT_COMPAT_H_
 
 #include <sys/types.h>
 #include <net/lwip/sockets.h>
+
+/*
+ *  POSIX 1003.1g - ancillary data object information
+ *  Ancillary data consits of a sequence of pairs of
+ *  (cmsghdr, cmsg_data[])
+ */
 
 struct cmsghdr {
         __kernel_size_t cmsg_len;       /* data byte count, including hdr */
@@ -58,8 +46,4 @@ static inline struct cmsghdr *cmsg_nxthdr(struct msghdr *__msg, struct cmsghdr *
         return __cmsg_nxthdr(__msg->msg_control, __msg->msg_controllen, __cmsg);
 }
 
-#endif
-
-#include "platform_features.h"
-
-#endif /* __IOTIVITY_CONFIG_H__ */
+#endif /* _TIZENRT_COMPAT_H_ */

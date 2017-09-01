@@ -32,7 +32,7 @@ src_dir = env.get('SRC_DIR')
 ######################################################################
 config_h_file_path = os.path.join(src_dir, 'resource', 'c_common', 'iotivity_config.h')
 
-if (os.path.exists(config_h_file_path)) and (env.GetOption('clean')):
+if (os.path.exists(config_h_file_path)):
     os.remove(config_h_file_path)
 
 if (not os.path.isfile(config_h_file_path)) and (not env.GetOption('clean')):
@@ -100,8 +100,8 @@ if (not os.path.isfile(config_h_file_path)) and (not env.GetOption('clean')):
     if target_os in ['tizenrt']:
 	env.AppendUnique(CCFLAGS = ['-std=c99'])
 	env.AppendUnique(CCFLAGS = ['-w'])
-	cxx_headers.remove('sys/timeb.h')
-	config_h_body += "#include <tinyara/config.h>\n\n"
+	config_h_body += "#include <tinyara/config.h>\n"
+	config_h_body += "#include <tizenrt_compat.h>\n\n"
 
     if target_os == 'msys_nt':
         # WinPThread provides a pthread.h, but we want to use native threads.
@@ -114,7 +114,7 @@ if (not os.path.isfile(config_h_file_path)) and (not env.GetOption('clean')):
     for header_file_name in cxx_headers:
 	if target_os == 'tizenrt':
 		if conf.CheckCHeader(header_file_name):
-			config_h_body += "#define %s 1\n\n" % get_define_from_header_file(header_file_name)
+			config_h_body += "#define %s 1\n\n" % get_define_from_string(header_file_name)
 	else:
 		if conf.CheckCXXHeader(header_file_name):
 			config_h_body += "#define %s 1\n\n" % get_define_from_string(header_file_name)
@@ -145,6 +145,10 @@ env.UserInstallTargetHeader(config_h_file_path, 'c_common', 'iotivity_config.h')
 
 # Use the generated file internally
 env.AppendUnique(CPPPATH = [os.path.join(src_dir, 'resource', 'c_common')])
+
+if target_os == 'tizenrt':
+    compat_h_file_path = os.path.join(src_dir, 'build_common', 'tizenrt', 'compatibility', 'tizenrt_compat.h')
+    env.UserInstallTargetHeader(compat_h_file_path, 'c_common', 'tizenrt_compat.h')
 
 ######################################################################
 
@@ -181,9 +185,6 @@ if target_os in ['windows', 'msys_nt']:
 
 if target_os in ['windows', 'msys_nt']:
     SConscript('windows/SConscript', 'common_env')
-
-if target_os in ['tizenrt']:
-    common_env.AppendUnique(CFLAGS = ['-std=c99'])
 
 ######################################################################
 # Source files and Targets

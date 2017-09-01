@@ -75,6 +75,7 @@ CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/logger/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/security/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/stack/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls/include
+CFLAGS += -I$(IOTIVITY_BASE_DIR)/build_common/tizenrt/compatibility
 
 CFLAGS += -DWITH_POSIX -DIP_ADAPTER
 CFLAGS += -DWITH_BWT
