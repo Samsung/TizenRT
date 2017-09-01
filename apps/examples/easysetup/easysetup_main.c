@@ -14,9 +14,9 @@
 #include <semaphore.h>
 #include <time.h>
 #include <sys/socket.h>
-#include <apps/netutils/webserver/http_server.h>
-#include <apps/netutils/webserver/http_keyvalue_list.h>
-#include <apps/netutils/cJSON.h>
+#include <protocols/webserver/http_server.h>
+#include <protocols/webserver/http_keyvalue_list.h>
+#include <json/cJSON.h>
 #include "wifi_api.h"
 
 /****************************************************************************

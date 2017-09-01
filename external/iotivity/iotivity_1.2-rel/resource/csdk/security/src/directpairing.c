@@ -39,7 +39,7 @@
 #include "oic_string.h"
 #include "logger.h"
 #if defined (__TIZENRT__)
-#include <apps/netutils/cJSON.h>
+#include <json/cJSON.h>
 #else
 #include "cJSON.h"
 #endif

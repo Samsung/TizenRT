@@ -111,7 +111,25 @@ source net/netdev/Kconfig
 source net/route/Kconfig
 
 menu "Protocols"
-source ../external/dhcpd/Kconfig.protocol
+
+source "$EXTERNALDIR/dhcpd/Kconfig.protocol"
+source "$EXTERNALDIR/xmlrpc/Kconfig.protocol"
+source "$EXTERNALDIR/ntpclient/Kconfig.protocol"
+source "$EXTERNALDIR/webserver/Kconfig.protocol"
+source "$EXTERNALDIR/ftpc/Kconfig.protocol"
+source "$EXTERNALDIR/mdns/Kconfig.protocol"
+source "$EXTERNALDIR/webclient/Kconfig.protocol"
+source "$EXTERNALDIR/ftpd/Kconfig.protocol"
+source "$EXTERNALDIR/dhcpc/Kconfig.protocol"
+source "$EXTERNALDIR/websocket/Kconfig.protocol"
+source "$EXTERNALDIR/libcoap/Kconfig.protocol"
+source "$EXTERNALDIR/tftpc/Kconfig.protocol"
+source "$EXTERNALDIR/telnetd/Kconfig.protocol"
+source "$EXTERNALDIR/smtp/Kconfig.protocol"
+source "$EXTERNALDIR/netlib/Kconfig.protocl"
+
+source "../framework/src/mqtt/Kconfig.protocol"
+
 endmenu #Protocols
 
 

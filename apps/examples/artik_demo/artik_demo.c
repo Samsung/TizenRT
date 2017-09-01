@@ -30,16 +30,16 @@
 #include <tinyara/config.h>
 #include <apps/shell/tash.h>
 
-#include <apps/netutils/dhcpc.h>
-#include <apps/netutils/netlib.h>
-#include <apps/netutils/webclient.h>
+#include <protocols/dhcpc.h>
+#include <protocols/netlib.h>
+#include <protocols/webclient.h>
 
 #include <net/if.h>
 
 #include <dm/dm_error.h>
 #include <dm/dm_connectivity.h>
 
-#include <apps/netutils/wifi/slsi_wifi_api.h>
+#include <protocols/wifi/slsi_wifi_api.h>
 
 /****************************************************************************
  * Definitions

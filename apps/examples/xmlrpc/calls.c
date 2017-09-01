@@ -62,7 +62,7 @@
  ****************************************************************************/
 
 #include <string.h>
-#include <apps/netutils/xmlrpc.h>
+#include <protocols/xmlrpc.h>
 
 /****************************************************************************
  * Private Function Prototypes

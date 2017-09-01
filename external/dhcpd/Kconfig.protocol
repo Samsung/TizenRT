@@ -1,0 +1,89 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NETUTILS_DHCPD
+	bool "DHCP server"
+	default n
+	depends on NET_IPv4
+	---help---
+		Enable support for the DHCP server.
+
+if NETUTILS_DHCPD
+
+config NETUTILS_DHCPD_HOST
+	bool "Host-based DHCPD build"
+	default n
+	depends on EXPERIMENTAL
+	---help---
+		DHCPD supports a host based build for testing on a PC.  It is
+		enabled by this configuration, however, ti cannot really be used
+		in the context to the TinyAra build as it currently stands.
+
+config NETUTILS_DHCPD_IGNOREBROADCAST
+	bool "Ignore client broadcast"
+	default y
+	---help---
+		This is a hack.  I've had problems with Windows machines responding
+		to unicast.  I think this is associated with a Windows registry key in
+		HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\DHCPServer\Parameters:
+		The IgnoreBroadcastFlag value controls this behavior:  A value of 1 will
+		cause the server to ignore the client broadcast flag and always respond
+		with multicast; the value 0 to allows clients to request unicast.
+
+config NETUTILS_DHCPD_INTERFACE
+	string "DHCPD network interface"
+	default "wl1"
+
+config NETUTILS_DHCPD_LEASETIME
+	int "Lease time (seconds)"
+	default 864000
+	---help---
+		Default: 10 days
+
+config NETUTILS_DHCPD_MINLEASETIME
+	int "Minimum lease time (seconds)"
+	default 86400
+	---help---
+		Default: 1 days
+
+config NETUTILS_DHCPD_MAXLEASETIME
+	int "Maximum lease time (seconds)"
+	default 2592000
+	---help---
+		Default: 30 days
+
+config NETUTILS_DHCPD_MAXLEASES
+	int "Maximum number of leases"
+	default 6
+
+config NETUTILS_DHCPD_STARTIP
+	hex "First IP address"
+	default 0xc0a82f02
+
+config NETUTILS_DHCPD_ROUTERIP
+	hex "Router IP (0 to disable)"
+	default 0xc0a82f01
+
+config NETUTILS_DHCPD_NETMASK
+	hex "Netmask (0 to disable)"
+	default 0xffffff00
+
+config NETUTILS_DHCPD_DNSIP
+	hex "DNS (0 to disable)"
+	default 0x08080808
+
+config NETUTILS_DHCPD_OFFERTIME
+	int "Offer time (seconds)"
+	default 3600
+	---help---
+		Default: 1 hour
+
+config NETUTILS_DHCPD_DECLINETIME
+	int "Decline time (seconds)"
+	default 3600
+	---help---
+	Default: 1 hour
+
+endif

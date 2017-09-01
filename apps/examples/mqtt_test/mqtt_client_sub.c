@@ -32,7 +32,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 
-#include <apps/netutils/mqtt_api.h>
+#include <mqtt/mqtt_api.h>
 
 #if defined(CONFIG_NETUTILS_MQTT_SECURITY)
 #include "tls/x509_crt.h"

@@ -62,9 +62,9 @@
 #include <netinet/in.h>
 
 #include <tinyara/net/ethernet.h>
-#include <apps/netutils/netlib.h>
-#include <apps/netutils/webserver/http_server.h>
-#include <apps/netutils/webserver/http_keyvalue_list.h>
+#include <protocols/netlib.h>
+#include <protocols/webserver/http_server.h>
+#include <protocols/webserver/http_keyvalue_list.h>
 
 #define WEBSERVER_STACK_SIZE   (1024 * 8)
 #define WEBSERVER_SCHED_PRI    100

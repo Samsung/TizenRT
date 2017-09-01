@@ -36,7 +36,7 @@
 #include <net/lwip/ipv4/inet.h>
 #include <net/lwip/dhcp.h>
 #include <net/lwip/sys.h>
-#include <apps/netutils/netlib.h>
+#include <protocols/netlib.h>
 #include <net/lwip/tcpip.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/arch/sys_arch.h>

@@ -55,7 +55,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "netcmd.h"
-#include <apps/netutils/tftp.h>
+#include <protocols/tftp.h>
 
 #if defined(CONFIG_NETUTILS_TFTPC)
 struct tftpc_args_s {

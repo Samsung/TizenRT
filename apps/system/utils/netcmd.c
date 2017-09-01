@@ -46,19 +46,19 @@
 #include <net/lwip/dhcp.h>
 #include <net/lwip/stats.h>
 #include <tinyara/net/ip.h>
-#include <apps/netutils/dhcpc.h>
+#include <protocols/dhcpc.h>
 
 #ifdef CONFIG_NETUTILS_NETLIB
-#include <apps/netutils/netlib.h>
+#include <protocols/netlib.h>
 #endif
 
-#include <apps/netutils/netlib.h>
-#include <apps/netutils/tftp.h>
+#include <protocols/netlib.h>
+#include <protocols/tftp.h>
 
 #ifdef CONFIG_HAVE_GETHOSTBYNAME
 #include <netdb.h>
 #endif
-#include <apps/netutils/dhcpc.h>
+#include <protocols/dhcpc.h>
 #ifndef DNS_DEFAULT_PORT
 #define DNS_DEFAULT_PORT   53
 #endif

@@ -21,7 +21,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include <apps/netutils/libcoap/coap.h>
+#include <protocols/libcoap/coap.h>
 
 #ifdef WITH_MBEDTLS
 #define COAP_MBEDTLS_CIPHERSUIT "TLS-PSK-WITH-AES-128-CBC-SHA"

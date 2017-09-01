@@ -77,8 +77,25 @@ include aws/Make.defs
 include aws/src/Make.defs
 endif
 
-#DHCPD
-include dhcpd/Make.defs
+
+include dhcpd/Make.defs #DHCPD
+include xmlrpc/Make.defs
+include ntpclient/Make.defs
+include webserver/Make.defs
+include ftpc/Make.defs
+include mdns/Make.defs
+include webclient/Make.defs
+include mosquitto/Make.defs
+include ftpd/Make.defs
+include dhcpc/Make.defs
+include websocket/Make.defs
+include libcoap/Make.defs
+include tftpc/Make.defs
+include telnetd/Make.defs
+include smtp/Make.defs
+include netlib/Make.defs
+include json/Make.defs
+
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

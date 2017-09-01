@@ -117,7 +117,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <apps/netutils/websocket.h>
+#include <protocols/websocket.h>
 
 #include <tls/config.h>
 #include <tls/entropy.h>
