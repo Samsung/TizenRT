@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/netutils/ftpc/ftpc_config.h
+ * external/ftpc/ftpc_config.h
  *
  *   Copyright (C) 2011 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

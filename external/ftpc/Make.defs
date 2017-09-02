@@ -15,8 +15,8 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# apps/netutils/ftpc/Make.defs
-# Adds selected applications to apps/ build
+# external/ftpc/Make.defs
+# Adds selected applications to external/ build
 #
 #   Copyright (C) 2016 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>

@@ -1,4 +1,4 @@
-apps/netutils/json/README.txt
+external/json/README.txt
 =============================
 
 This directory contains logic taken from the cJSON project:

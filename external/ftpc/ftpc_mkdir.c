@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * apps/netutils/ftpc/ftpc_mkdir.c
+ * external/ftpc/ftpc_mkdir.c
  *
  *   Copyright (C) 2011 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

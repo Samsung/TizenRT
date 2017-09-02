@@ -1,6 +1,6 @@
 ############################################################################
 # apps/examples/dnsclient_test/Make.defs
-# Adds selected applications to apps/ build
+# Adds selected applications to external/ build
 #
 #   Copyright (C) 2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>

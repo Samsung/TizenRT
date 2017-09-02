@@ -15,7 +15,7 @@ These applications are not all heavily tested.
 Apps include:
 
   dhcpc     - Dynamic Host Configuration Protocol (DHCP) client.
-              See apps/netutils/dhcpc.h for interface information.
+              See external/dhcpc.h for interface information.
   dhcpd     - Dynamic Host Configuration Protocol (DHCP) server.
               See apps/include/netutils/dhcpd.h for interface information.
   ftpc      - FTP client.
@@ -28,9 +28,9 @@ Apps include:
               http://www.drdobbs.com/web-development/an-embeddable-lightweight-xml-rpc-server/184405364.
               See apps/include/netutils/cJSON.h for interface information.
   mdns      - multicast Domain Name System (mDNS).
-              See apps/netutils/mdns/mdns.h for interface information.
+              See external/mdns/mdns.h for interface information.
   netlib    - network libraries that includes IP address support, HTTP support and generic server logic.
-              See apps/netutils/netlib.h for interface information.
+              See external/netlib.h for interface information.
   ntpclient - This is a fragmentary NTP client. It neither well-tested
               nor mature nor complete at this point in time.
               See apps/include/netutils/ntpclient.h for interface information.
@@ -43,7 +43,7 @@ Apps include:
   webclient - HTTP web client.
               See apps/include/netutils/webclient.h for interface information.
   webserver - HTTP web server.
-              See os/include/apps/netutils/webserver/http_server.h for interface information.
+              See os/include/external/webserver/http_server.h for interface information.
   websocket - websocket server and client.
               See apps/include/netutils/websocket.h for interface information.
   xmlrpc    - The Embeddable Lightweight XML-RPC Server discussed at

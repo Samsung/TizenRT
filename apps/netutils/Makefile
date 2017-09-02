@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/netutils/Makefile
+# external/Makefile
 #
 #   Copyright (C) 2011-2012, 2016 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
