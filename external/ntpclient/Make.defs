@@ -50,12 +50,8 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_NTPCLIENT),y)
-
 CSRCS += ntpclient/ntpclient.c
 
 DEPPATH += --dep-path ntpclient
 VPATH += :ntpclient
-
-endif
 

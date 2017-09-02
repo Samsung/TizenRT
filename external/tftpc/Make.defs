@@ -50,12 +50,8 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_TFTPC),y)
-
 CSRCS += tftpc/tftpc_get.c tftpc/tftpc_put.c tftpc/tftpc_packets.c
 
 DEPPATH += --dep-path tftpc
 VPATH += :tftpc
-
-endif
 

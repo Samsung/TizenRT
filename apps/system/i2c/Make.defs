@@ -17,7 +17,7 @@
 ###########################################################################
 ############################################################################
 # apps/system/i2c/Make.defs
-# Adds selected applications to external/ build
+# Adds selected applications to apps/ build
 #
 #   Copyright (C) 2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>

@@ -50,12 +50,8 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_DHCPD),y)
-
 CSRCS += dhcpd/dhcpd.c
 
 DEPPATH += --dep-path dhcpd
 VPATH += :dhcpd
-
-endif
 

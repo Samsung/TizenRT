@@ -50,10 +50,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_WEBSERVER),y)
-CONFIGURED_APPS += netutils/webserver
-
-ifeq ($(CONFIG_NETUTILS_WEBSERVER),y)
 CSRCS	+= webserver/http.c
 CSRCS   += webserver/http_server.c
 CSRCS   += webserver/http_client.c
@@ -64,10 +60,7 @@ endif
 CSRCS   += webserver/http_string_util.c
 CSRCS   += webserver/http_keyvalue_list.c
 CSRCS   += webserver/http_query.c
-endif
 
 DEPPATH += --dep-path webserver
 VPATH += :webserver
-
-endif
 

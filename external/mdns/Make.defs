@@ -16,11 +16,8 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_NETUTILS_MDNS),y)
-
 CSRCS += mdns/mdns.c mdns/mdnsd.c
 
 DEPPATH += --dep-path mdns
 VPATH += :mdns
 
-endif

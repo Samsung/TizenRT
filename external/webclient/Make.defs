@@ -50,14 +50,8 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_WEBCLIENT),y)
-
-ifeq ($(CONFIG_NETUTILS_WEBCLIENT),y)
 CSRCS	+= webclient/webclient.c
-endif
 
 DEPPATH += --dep-path webclient
 VPATH += :webclient
-
-endif
 

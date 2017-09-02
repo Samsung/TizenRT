@@ -51,13 +51,9 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_XMLRPC),y)
-
 CSRCS += xmlrpc/xmlparser.c \
 	  xmlrpc/response.c
 
 DEPPATH += --dep-path xmlrpc
 VPATH += :xmlrpc
-
-endif
 

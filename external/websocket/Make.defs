@@ -16,9 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_NETUTILS_WEBSOCKET),y)
-CONFIGURED_APPS += netutils/websocket
-
 CSRCS += websocket/websocket.c
 CSRCS += websocket/wslay/wslay_net.c \
 	  websocket/wslay/wslay_queue.c \
@@ -27,6 +24,4 @@ CSRCS += websocket/wslay/wslay_net.c \
 
 DEPPATH += --dep-path websocket
 VPATH += :websocket
-
-endif
 

@@ -16,8 +16,8 @@
 #
 ###########################################################################
 ############################################################################
-# external/Make.defs
-# Adds selected applications to external/ build
+# apps/netutils/Make.defs
+# Adds selected applications to apps/ build
 #
 #   Copyright (C) 2012, 2016 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>

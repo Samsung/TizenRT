@@ -50,8 +50,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_MQTT),y)
-
 include mosquitto/config.mk
 
 CSRCS += mosquitto/tls_mosq.c
@@ -72,10 +70,6 @@ CSRCS += mosquitto/read_handle.c
 CSRCS += mosquitto/time_mosq.c
 CSRCS += mosquitto/memory_mosq.c
 
-#CFLAGS += -Imosquitto
-
 DEPPATH += --dep-path mosquitto
 VPATH += :mosquitto
-
-endif
 

@@ -50,8 +50,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_LIBCOAP),y)
-
 CSRCS += libcoap/async.c
 CSRCS += libcoap/block.c
 CSRCS += libcoap/coap_list.c
@@ -68,7 +66,4 @@ CSRCS += libcoap/uri.c
 
 DEPPATH += --dep-path libcoap
 VPATH += :libcoap
-
-endif
-
 

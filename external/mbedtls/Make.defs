@@ -17,7 +17,7 @@
 ###########################################################################
 
 ############################################################################
-# net/tls/make.defs
+# external/mbedtls/make.defs
 #
 #   Copyright (C) 2007, 2008, 2011-2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -51,7 +51,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NET_SECURITY_TLS),y)
 SRC_CRYPTO_CSRCS =    mbedtls/aes.c           mbedtls/aesni.c         mbedtls/arc4.c          \
                       mbedtls/asn1parse.c     mbedtls/asn1write.c     mbedtls/base64.c        \
                       mbedtls/bignum.c        mbedtls/blowfish.c      mbedtls/camellia.c      \
@@ -91,4 +90,3 @@ CSRCS += $(TLS_CSRCS)
 DEPPATH += --dep-path mbedtls
 VPATH += :mbedtls
 
-endif

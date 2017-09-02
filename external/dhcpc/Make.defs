@@ -50,12 +50,8 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_DHCPC),y)
-
 CSRCS += dhcpc/dhcpc.c
 
 DEPPATH += --dep-path dhcpc
 VPATH += :dhcpc
-
-endif
 

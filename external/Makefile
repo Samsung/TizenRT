@@ -81,25 +81,77 @@ ifeq ($(CONFIG_NETUTILS_WIFI),y)
 include slsi_wifi/Make.defs
 endif
 
+ifeq ($(CONFIG_NETUTILS_DHCPD),y)
 include dhcpd/Make.defs
-include xmlrpc/Make.defs
-include ntpclient/Make.defs
-include webserver/Make.defs
-include ftpc/Make.defs
-include mdns/Make.defs
-include webclient/Make.defs
-include mosquitto/Make.defs
-include ftpd/Make.defs
-include dhcpc/Make.defs
-include websocket/Make.defs
-include libcoap/Make.defs
-include tftpc/Make.defs
-include telnetd/Make.defs
-include smtp/Make.defs
-include netlib/Make.defs
-include json/Make.defs
-include mbedtls/Make.defs
+endif
 
+ifeq ($(CONFIG_NETUTILS_XMLRPC),y)
+include xmlrpc/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_NTPCLIENT),y)
+include ntpclient/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_WEBSERVER),y)
+include webserver/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_FTPC),y)
+include ftpc/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_MDNS),y)
+include mdns/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_WEBCLIENT),y)
+include webclient/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_MQTT),y)
+include mosquitto/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_FTPD),y)
+include ftpd/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_DHCPC),y)
+include dhcpc/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_WEBSOCKET),y)
+include websocket/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_LIBCOAP),y)
+include libcoap/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_TFTPC),y)
+include tftpc/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_TELNETD),y)
+include telnetd/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_SMTP),y)
+include smtp/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_NETLIB),y)
+include netlib/Make.defs
+endif
+
+ifeq ($(CONFIG_NETUTILS_JSON),y)
+include json/Make.defs
+endif
+
+ifeq ($(CONFIG_NET_SECURITY_TLS),y)
+include mbedtls/Make.defs
+endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

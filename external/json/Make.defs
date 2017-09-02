@@ -50,12 +50,8 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_JSON),y)
-
 CSRCS += json/cJSON.c
 
 DEPPATH += --dep-path json
 VPATH += :json
-
-endif
 

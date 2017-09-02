@@ -50,12 +50,8 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_SMTP),y)
-
 CSRCS	+= smtp/smtp.c
 
 DEPPATH += --dep-path smtp
 VPATH += :smtp
-
-endif
 

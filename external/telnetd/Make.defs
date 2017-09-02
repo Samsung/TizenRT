@@ -50,13 +50,8 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_TELNETD),y)
-CONFIGURED_APPS += netutils/telnetd
-
 CSRCS		+= telnetd/telnetd_daemon.c
 
 DEPPATH += --dep-path telnetd
 VPATH += :telnetd
-
-endif
 

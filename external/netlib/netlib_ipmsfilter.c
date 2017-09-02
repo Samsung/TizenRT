@@ -69,7 +69,7 @@
 #include <sys/sockio.h>
 
 #include <netutils/netlib.h>
-#include <protocols/ipmsfilter.h>
+#include <netutils/ipmsfilter.h>
 
 #ifdef CONFIG_NET_IGMP
 

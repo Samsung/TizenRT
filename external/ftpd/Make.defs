@@ -50,14 +50,10 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_FTPD),y)
-
 ifeq ($(CONFIG_NET_LWIP),y)
 CSRCS		+= ftpd/ftpd.c
 endif
 
 DEPPATH += --dep-path ftpd
 VPATH += :ftpd
-
-endif
 
