@@ -58,7 +58,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <apps/netutils/urldecode.h>
+#include <codecs/urldecode.h>
 
 /****************************************************************************
  * Pre-processor Definitions

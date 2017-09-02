@@ -82,7 +82,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include <apps/netutils/md5.h>
+#include <codecs/md5.h>
 
 #ifdef CONFIG_CODECS_HASH_MD5
 

@@ -74,7 +74,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <apps/netutils/base64.h>
+#include <codecs/base64.h>
 
 #ifdef CONFIG_CODECS_BASE64
 
