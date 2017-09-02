@@ -50,43 +50,43 @@
 #
 ############################################################################
 
-CSRCS += netlib/netlib.c
-CSRCS += netlib/netlib_parsehttpurl.c
-CSRCS += netlib/netlib_setifstatus.c \
-	netlib/netlib_getifstatus.c
+CSRCS += netutils/netlib.c
+CSRCS += netutils/netlib_parsehttpurl.c
+CSRCS += netutils/netlib_setifstatus.c \
+	netutils/netlib_getifstatus.c
 
 
 ifeq ($(CONFIG_NET_IPv4),y)
-CSRCS += netlib/netlib_setipv4addr.c \
-	netlib/netlib_getipv4addr.c \
-	netlib/netlib_getdripv4addr.c \
-	netlib/netlib_setdripv4addr.c \
-	netlib/netlib_setipv4netmask.c
+CSRCS += netutils/netlib_setipv4addr.c \
+	netutils/netlib_getipv4addr.c \
+	netutils/netlib_getdripv4addr.c \
+	netutils/netlib_setdripv4addr.c \
+	netutils/netlib_setipv4netmask.c
 endif
 
 ifeq ($(CONFIG_NET_IPv6),y)
-CSRCS += netlib/netlib_setipv6addr.c \
-	netlib/netlib_getipv6addr.c \
-	netlib/netlib_getdripv6addr.c \
-	netlib/netlib_setdripv6addr.c \
-	netlib/netlib_setipv6netmask.c \
-	netlib/netlib_prefix2ipv6netmask.c \
-	netlib/netlib_ipv6netmask2prefix.c
+CSRCS += netutils/netlib_setipv6addr.c \
+	netutils/netlib_getipv6addr.c \
+	netutils/netlib_getdripv6addr.c \
+	netutils/netlib_setdripv6addr.c \
+	netutils/netlib_setipv6netmask.c \
+	netutils/netlib_prefix2ipv6netmask.c \
+	netutils/netlib_ipv6netmask2prefix.c
 endif
 
 
 # No MAC address support for SLIP (Ethernet only)
 
 ifeq ($(CONFIG_NET_ETHERNET),y)
-CSRCS += netlib/netlib_setmacaddr.c \
-	netlib/netlib_getmacaddr.c
+CSRCS += netutils/netlib_setmacaddr.c \
+	netutils/netlib_getmacaddr.c
 endif
 
 # IGMP support
 
 ifeq ($(CONFIG_NET_IGMP),y)
 ifeq ($(CONFIG_NET_IPv4),y) # Not yet available for IPv6
-CSRCS += netlib/netlib_ipmsfilter.c
+CSRCS += netutils/netlib_ipmsfilter.c
 endif
 endif
 

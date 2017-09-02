@@ -142,7 +142,7 @@ include smtp/Make.defs
 endif
 
 ifeq ($(CONFIG_NETUTILS_NETLIB),y)
-include netlib/Make.defs
+include netutils/Make.defs
 endif
 
 ifeq ($(CONFIG_NETUTILS_JSON),y)

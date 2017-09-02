@@ -135,7 +135,7 @@ endmenu #Protocols
 
 menu "Network utilities"
 
-source "$EXTERNALDIR/netlib/Kconfig.netutil"
+source "$EXTERNALDIR/netutils/Kconfig.netutil"
 
 endmenu #menu "Network utilities"
 
