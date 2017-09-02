@@ -50,8 +50,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_WIFI),y)
-
 CSRCS += slsi_wifi_api.c
 CSRCS += slsi_wifi_utils.c
 
@@ -61,5 +59,3 @@ CFLAGS += -I$(TOPDIR)$(DELIM)../apps$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)com
 
 DEPPATH += --dep-path slsi_wifi
 VPATH += :slsi_wifi
-
-endif
