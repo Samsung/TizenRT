@@ -1,6 +1,6 @@
 #ifndef _WIFI_API_H_
 #define _WIFI_API_H_
-#include "apps/netutils/wifi/slsi_wifi_api.h"
+#include <slsi_wifi/slsi_wifi_api.h>
 
 enum wifi_state {
     WIFI_CONNECTED,

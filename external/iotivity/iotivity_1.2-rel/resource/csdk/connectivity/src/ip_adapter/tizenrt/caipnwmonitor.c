@@ -33,7 +33,7 @@
 #include <net/if.h>
 #include <netdb.h>
 #include <errno.h>
-#include <apps/netutils/wifi/slsi_wifi_api.h>
+#include <slsi_wifi/slsi_wifi_api.h>
 
 #include "octhread.h"
 #include "caipnwmonitor.h"
