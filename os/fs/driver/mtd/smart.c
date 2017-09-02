@@ -195,6 +195,7 @@
  * 7:   0000       15:  0101
  */
 
+#ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 static const uint8_t gWearLevelToBitMap4[] = {
 	0x0F, 0x0E, 0x0C, 0x08,		/* Single bit erased (x3) */
 	0x07, 0x06, 0x04, 0x00,		/* Single bit erased (x3) */
@@ -203,13 +204,16 @@ static const uint8_t gWearLevelToBitMap4[] = {
 	0x03,
 	0x05
 };
+#endif
 
 /* Map a Wear Level bit pattern back to the wear level */
 
+#ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 static const uint8_t gWearBitToLevelMap4[] = {
 	7, 13, 10, 14, 6, 15, 5, 4,
 	3, 12, 9, 8, 2, 11, 1, 0
 };
+#endif
 
 /****************************************************************************
  * Private Types

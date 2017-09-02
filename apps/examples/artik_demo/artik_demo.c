@@ -39,7 +39,7 @@
 #include <dm/dm_error.h>
 #include <dm/dm_connectivity.h>
 
-#include <protocols/wifi/slsi_wifi_api.h>
+#include <slsi_wifi/slsi_wifi_api.h>
 
 /****************************************************************************
  * Definitions

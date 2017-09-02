@@ -12,7 +12,6 @@
 #include <net/lwip/dhcp.h>
 #include <net/lwip/netif.h>
 #endif
-#include "apps/netutils/wifi/slsi_wifi_api.h"
 #include "wifi_api.h"
 
 #ifndef BIT

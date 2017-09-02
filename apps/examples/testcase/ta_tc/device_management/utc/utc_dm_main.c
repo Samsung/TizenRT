@@ -28,7 +28,7 @@
 #include <dm/dm_connectivity.h>
 
 #include <protocols/dhcpc.h>
-#include <protocols/wifi/slsi_wifi_api.h>
+#include <slsi_wifi/slsi_wifi_api.h>
 
 #define NET_DEVNAME "wl1"
 

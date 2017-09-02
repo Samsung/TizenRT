@@ -77,8 +77,11 @@ include aws/Make.defs
 include aws/src/Make.defs
 endif
 
+ifeq ($(CONFIG_NETUTILS_WIFI),y)
+include slsi_wifi/Make.defs
+endif
 
-include dhcpd/Make.defs #DHCPD
+include dhcpd/Make.defs
 include xmlrpc/Make.defs
 include ntpclient/Make.defs
 include webserver/Make.defs
@@ -96,6 +99,7 @@ include smtp/Make.defs
 include netlib/Make.defs
 include json/Make.defs
 include mbedtls/Make.defs
+
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

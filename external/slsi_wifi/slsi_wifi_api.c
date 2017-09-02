@@ -33,8 +33,8 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/stat.h>
-#include <slsi_wifi_api.h>
-#include <slsi_wifi_nvmap.h>
+#include <slsi_wifi/slsi_wifi_api.h>
+#include <slsi_wifi/slsi_wifi_nvmap.h>
 
 extern int wpa_supplicant_main(int argc, char *argv[]);
 /* Reuse SSID decoder from wpa_supplicant: mind requires buf to be len+1 long to avoid mem corruption*/

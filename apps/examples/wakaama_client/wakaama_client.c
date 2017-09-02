@@ -26,10 +26,9 @@
 #include "connection.h"
 #include <tinyara/wqueue.h>
 #include <tinyara/clock.h>
-
 #include <protocols/dhcpc.h>
+#include <slsi_wifi/slsi_wifi_api.h>
 
-#include <protocols/wifi/slsi_wifi_api.h>
 
 #define NET_DEVNAME "wl1"
 
