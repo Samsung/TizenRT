@@ -65,7 +65,7 @@
 #include <netinet/in.h>
 #include <tinyara/config.h>
 #include <protocols/telnetd.h>
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 #include "telnetd.h"
 
 /****************************************************************************

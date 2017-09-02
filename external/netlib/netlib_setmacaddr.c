@@ -70,7 +70,7 @@
 #include <netinet/in.h>
 #include <net/if.h>
 
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 
 /****************************************************************************
  * Pre-processor Definitions

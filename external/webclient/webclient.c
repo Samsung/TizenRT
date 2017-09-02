@@ -85,7 +85,7 @@
 #include <netinet/in.h>
 
 #include <tinyara/version.h>
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 
 #include "../webserver/http_string_util.h"
 #include "../webserver/http_client.h"

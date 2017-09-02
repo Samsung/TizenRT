@@ -49,10 +49,10 @@
 #include <protocols/dhcpc.h>
 
 #ifdef CONFIG_NETUTILS_NETLIB
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 #endif
 
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 #include <protocols/tftp.h>
 
 #ifdef CONFIG_HAVE_GETHOSTBYNAME

@@ -62,7 +62,7 @@
 #include <netinet/in.h>
 
 #include <tinyara/net/ethernet.h>
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 #include <protocols/webserver/http_server.h>
 #include <protocols/webserver/http_keyvalue_list.h>
 

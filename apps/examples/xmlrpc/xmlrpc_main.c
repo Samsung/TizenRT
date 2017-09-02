@@ -82,7 +82,7 @@
 #include <net/if.h>
 #include <netinet/in.h>
 
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 #include <protocols/xmlrpc.h>
 
 /****************************************************************************

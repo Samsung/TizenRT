@@ -68,7 +68,7 @@
 
 #include <netinet/in.h>
 
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 
 /****************************************************************************
  * Public Functions

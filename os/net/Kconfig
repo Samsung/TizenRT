@@ -118,7 +118,7 @@ source "$EXTERNALDIR/libcoap/Kconfig.protocol"
 source "$EXTERNALDIR/tftpc/Kconfig.protocol"
 source "$EXTERNALDIR/telnetd/Kconfig.protocol"
 source "$EXTERNALDIR/smtp/Kconfig.protocol"
-source "$EXTERNALDIR/netlib/Kconfig.protocl"
+
 
 source "../framework/src/mqtt/Kconfig.protocol"
 
@@ -133,6 +133,11 @@ endif #NET_SECURITY_TLS
 
 endmenu #Protocols
 
+menu "Network utilities"
+
+source "$EXTERNALDIR/netlib/Kconfig.netutil"
+
+endmenu #menu "Network utilities"
 
 endif # NET
 

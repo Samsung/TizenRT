@@ -68,7 +68,7 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 
 /****************************************************************************
  * Definitions

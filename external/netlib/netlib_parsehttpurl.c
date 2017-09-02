@@ -60,7 +60,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 
 /****************************************************************************
  * Private Data

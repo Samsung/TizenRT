@@ -31,7 +31,7 @@
 #include <apps/shell/tash.h>
 
 #include <protocols/dhcpc.h>
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 #include <protocols/webclient.h>
 
 #include <net/if.h>

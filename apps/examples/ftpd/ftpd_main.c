@@ -63,7 +63,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 #include <protocols/ftpd.h>
 
 #include "ftpd.h"

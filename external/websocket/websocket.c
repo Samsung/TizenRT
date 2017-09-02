@@ -40,7 +40,7 @@
 #include <sys/time.h>
 #include "mbedtls/sha1.h"
 #include "mbedtls/base64.h"
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 #include <protocols/websocket.h>
 #include <protocols/wslay/wslay.h>
 

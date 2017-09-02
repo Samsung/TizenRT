@@ -65,7 +65,7 @@
 #include <string.h>
 #include <debug.h>
 
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 
 /****************************************************************************
  * Public Functions

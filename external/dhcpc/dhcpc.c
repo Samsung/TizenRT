@@ -72,7 +72,7 @@
 #include <arpa/inet.h>
 
 #include <protocols/dhcpc.h>
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 
 #if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
 #include <tinyara/net/dns.h>

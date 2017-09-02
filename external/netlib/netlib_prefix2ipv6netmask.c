@@ -59,7 +59,7 @@
 #include <stdint.h>
 #include <netinet/ip.h>
 
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 
 #ifdef CONFIG_NET_IPv6
 

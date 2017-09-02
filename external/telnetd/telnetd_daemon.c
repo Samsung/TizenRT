@@ -77,7 +77,7 @@
 #include <tinyara/net/telnet.h>
 
 #include <protocols/telnetd.h>
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 
 /****************************************************************************
  * Private Types

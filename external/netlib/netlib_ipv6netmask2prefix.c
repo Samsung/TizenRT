@@ -59,7 +59,7 @@
 #include <stdint.h>
 #include <arpa/inet.h>
 
-#include <protocols/netlib.h>
+#include <netutils/netlib.h>
 
 #ifdef CONFIG_NET_IPv6
 
