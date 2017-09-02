@@ -82,8 +82,8 @@
 #include <net/if.h>
 #include <netinet/in.h>
 
-#include <apps/netutils/netlib.h>
-#include <apps/netutils/xmlrpc.h>
+#include <netutils/netlib.h>
+#include <protocols/xmlrpc.h>
 
 /****************************************************************************
  * Private Data

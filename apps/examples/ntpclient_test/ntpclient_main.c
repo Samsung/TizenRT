@@ -64,7 +64,7 @@
 #include <string.h>
 #include <time.h>
 
-#include <apps/netutils/ntpclient.h>
+#include <protocols/ntpclient.h>
 
 /****************************************************************************
  * Definitions

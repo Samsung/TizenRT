@@ -1,0 +1,92 @@
+###########################################################################
+#
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+############################################################################
+# external/mbedtls/make.defs
+#
+#   Copyright (C) 2007, 2008, 2011-2015 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+
+SRC_CRYPTO_CSRCS =    mbedtls/aes.c           mbedtls/aesni.c         mbedtls/arc4.c          \
+                      mbedtls/asn1parse.c     mbedtls/asn1write.c     mbedtls/base64.c        \
+                      mbedtls/bignum.c        mbedtls/blowfish.c      mbedtls/camellia.c      \
+                      mbedtls/ccm.c           mbedtls/cipher.c        mbedtls/cipher_wrap.c   \
+                      mbedtls/cmac.c          mbedtls/ctr_drbg.c      mbedtls/des.c           mbedtls/dhm.c    \
+                      mbedtls/ecdh.c          mbedtls/ecdsa.c         mbedtls/ecjpake.c       mbedtls/ecp.c \
+                      mbedtls/ecp_curves.c    mbedtls/entropy.c       mbedtls/entropy_poll.c  \
+                      mbedtls/error.c         mbedtls/gcm.c           mbedtls/havege.c        \
+                      mbedtls/hmac_drbg.c     mbedtls/md.c            mbedtls/md2.c           \
+                      mbedtls/md4.c           mbedtls/md5.c           mbedtls/md_wrap.c       \
+                      mbedtls/memory_buffer_alloc.c           mbedtls/oid.c           \
+                      mbedtls/padlock.c       mbedtls/pem.c           mbedtls/pk.c            \
+                      mbedtls/pk_wrap.c       mbedtls/pkcs12.c        mbedtls/pkcs5.c         \
+                      mbedtls/pkparse.c       mbedtls/pkwrite.c       mbedtls/platform.c      \
+                      mbedtls/ripemd160.c     mbedtls/rsa.c           mbedtls/sha1.c          \
+                      mbedtls/sha256.c        mbedtls/sha512.c        mbedtls/threading.c     \
+                      mbedtls/timing.c        mbedtls/version.c                       \
+                      mbedtls/version_features.c              mbedtls/xtea.c
+
+SRC_X509_CSRCS =      mbedtls/certs.c         mbedtls/pkcs11.c        mbedtls/x509.c          \
+                      mbedtls/x509_create.c   mbedtls/x509_crl.c      mbedtls/x509_crt.c      \
+                      mbedtls/x509_csr.c      mbedtls/x509write_crt.c mbedtls/x509write_csr.c
+
+SRC_TLS_CSRCS =       mbedtls/debug.c         mbedtls/net.c           mbedtls/ssl_cache.c     \
+                      mbedtls/ssl_ciphersuites.c              mbedtls/ssl_tls.c       \
+                      mbedtls/ssl_cli.c       mbedtls/ssl_cookie.c    mbedtls/ssl_srv.c       \
+                      mbedtls/ssl_ticket.c    mbedtls/easy_tls.c
+
+ifeq ($(CONFIG_TLS_WITH_SSS),y)
+SRC_SEE_CSRCS += see_api.c	see_internal.c
+endif
+
+TLS_CSRCS += $(SRC_CRYPTO_CSRCS) $(SRC_X509_CSRCS) $(SRC_TLS_CSRCS) $(SRC_SEE_CSRCS)
+
+CSRCS += $(TLS_CSRCS)
+
+DEPPATH += --dep-path mbedtls
+VPATH += :mbedtls
+

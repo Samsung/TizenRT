@@ -62,7 +62,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <apps/netutils/mdnsd.h>
+#include <protocols/mdnsd.h>
 
 #include <netinet/in.h>
 #include <netdb.h>

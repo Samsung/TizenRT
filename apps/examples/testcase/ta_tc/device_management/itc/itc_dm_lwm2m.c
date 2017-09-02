@@ -23,7 +23,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <apps/netutils/netlib.h>
+#include <netutils/netlib.h>
 #include <sys/socket.h>
 #include "itc_internal.h"
 #include "dm_lwm2m.h"

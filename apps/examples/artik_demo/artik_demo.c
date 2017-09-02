@@ -30,9 +30,9 @@
 #include <tinyara/config.h>
 #include <apps/shell/tash.h>
 
-#include <apps/netutils/dhcpc.h>
-#include <apps/netutils/netlib.h>
-#include <apps/netutils/webclient.h>
+#include <protocols/dhcpc.h>
+#include <netutils/netlib.h>
+#include <protocols/webclient.h>
 
 #include <net/if.h>
 

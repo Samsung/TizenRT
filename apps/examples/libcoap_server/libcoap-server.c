@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <signal.h>
 
-#include <apps/netutils/libcoap/coap.h>
+#include <protocols/libcoap/coap.h>
 
 #define COAP_RESOURCE_CHECK_TIME 2
 

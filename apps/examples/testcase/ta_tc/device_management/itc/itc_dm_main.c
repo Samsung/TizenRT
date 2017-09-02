@@ -27,7 +27,7 @@
 #include <dm/dm_error.h>
 #include <dm/dm_connectivity.h>
 
-#include <apps/netutils/dhcpc.h>
+#include <protocols/dhcpc.h>
 
 #include <slsi_wifi/slsi_wifi_api.h>
 

@@ -72,7 +72,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <apps/netutils/webclient.h>
+#include <protocols/webclient.h>
 
 /****************************************************************************
  * Preprocessor Definitions

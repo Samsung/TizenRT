@@ -60,7 +60,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tls/config.h"
+#include "mbedtls/config.h"
 
 #if !defined(MBEDTLS_ENTROPY_C) || \
 	!defined(MBEDTLS_SSL_TLS_C) || !defined(MBEDTLS_SSL_CLI_C) || \
@@ -78,18 +78,18 @@ int tls_client_main(int argc, char **argv)
 #define mbedtls_fprintf    fprintf
 #define mbedtls_snprintf   snprintf
 
-#include "tls/net.h"
-#include "tls/ssl.h"
-#include "tls/entropy.h"
-#include "tls/ctr_drbg.h"
-#include "tls/certs.h"
-#include "tls/x509.h"
-#include "tls/error.h"
-#include "tls/debug.h"
-#include "tls/timing.h"
+#include "mbedtls/net.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/certs.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/error.h"
+#include "mbedtls/debug.h"
+#include "mbedtls/timing.h"
 
 #ifdef CONFIG_EXAMPLES_TLS_ARTIK_KEY
-#include "tls/see_api.h"
+#include "mbedtls/see_api.h"
 #endif
 
 /*

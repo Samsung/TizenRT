@@ -38,6 +38,10 @@ ifeq ($(CONFIG_ARASTORAGE), y)
 include src$(DELIM)arastorage$(DELIM)Make.defs
 endif
 
+ifeq ($(CONFIG_NETUTILS_MQTT), y)
+include src$(DELIM)mqtt$(DELIM)Make.defs
+endif
+
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 

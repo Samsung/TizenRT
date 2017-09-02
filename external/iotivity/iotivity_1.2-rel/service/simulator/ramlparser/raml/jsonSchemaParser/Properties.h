@@ -34,7 +34,7 @@
 #include <boost/lexical_cast.hpp>
 #include <limits>
 #if defined (__TIZENRT__)
-#include <apps/netutils/cJSON.h>
+#include <json/cJSON.h>
 #else
 #include "cJSON.h"
 #endif
