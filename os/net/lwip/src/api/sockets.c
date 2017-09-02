@@ -701,6 +701,9 @@ int lwip_recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from
 				LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_recvfrom(%d): buf == NULL, error is \"%s\"!\n", s, lwip_strerr(err)));
 				sock_set_errno(sock, err_to_errno(err));
 				if (err == ERR_CLSD) {
+					// Normal operation, peer ended
+					// TODO: should call lwip_shutdown(s, SHUT_RD)?
+					sock->conn->last_err = ERR_OK;
 					return 0;
 				} else {
 					return -1;
