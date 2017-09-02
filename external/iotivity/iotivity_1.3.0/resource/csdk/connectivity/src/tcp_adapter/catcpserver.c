@@ -973,9 +973,9 @@ static CASocketFd_t CACreateAcceptSocket(int family, CASocket_t *sock)
     if (family == AF_INET6)
     {
         // the socket is restricted to sending and receiving IPv6 packets only.
+#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
         int on = 1;
 
-#ifndef __TIZENRT__ /* temporarilly disabled IPv6, by wonsang */
         if (OC_SOCKET_ERROR == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, OPTVAL_T(&on), sizeof (on)))
         {
             OIC_LOG_V(ERROR, TAG, "IPV6_V6ONLY failed: %s", strerror(errno));

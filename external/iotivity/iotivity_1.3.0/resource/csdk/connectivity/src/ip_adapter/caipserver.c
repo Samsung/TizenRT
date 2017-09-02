@@ -153,6 +153,14 @@ struct in_pktinfo
                                     address */
 };
 
+// TODO
+// hong : ip_mreqn is not included in "os/include/netinet/in.h", because CONFIG_NET_LWIP is enabled.
+struct ip_mreqn {
+	struct in_addr imr_multiaddr;   /* IP multicast address of group */
+	struct in_addr imr_address; /* local IP address of interface */
+	int imr_ifindex;            /* Interface index */
+};
+
 
 #define RTMGRP_LINK 1
 #define IP_PKTINFO         8
@@ -1162,7 +1170,7 @@ static void applyMulticastToInterface4(uint32_t ifindex)
         return;
     }
 
-#if 0 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
+#if 1 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
 #if defined(USE_IP_MREQN)
     struct ip_mreqn mreq = { .imr_multiaddr = IPv4MulticastAddress,
                              .imr_address.s_addr = htonl(INADDR_ANY),
@@ -1535,7 +1543,7 @@ static void sendMulticastData4(const u_arraylist_t *iflist,
     VERIFY_NON_NULL_VOID(endpoint, TAG, "endpoint is NULL");
 
 
-#if 0 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
+#if 1 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
 #if defined(USE_IP_MREQN)
     struct ip_mreqn mreq = { .imr_multiaddr = IPv4MulticastAddress,
                              .imr_address.s_addr = htonl(INADDR_ANY),
@@ -1570,7 +1578,7 @@ static void sendMulticastData4(const u_arraylist_t *iflist,
             continue;
         }
 
-#if 0 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
+#if 1 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
 #if defined(USE_IP_MREQN)
         mreq.imr_ifindex = ifitem->index;
 #else
