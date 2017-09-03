@@ -133,6 +133,12 @@ endif #NET_SECURITY_TLS
 
 endmenu #Protocols
 
+menu "Wireless"
+
+source ../framework/src/wifi_manager/Kconfig
+
+endmenu #Wireless
+
 menu "Network utilities"
 
 source "$EXTERNALDIR/netutils/Kconfig.netutil"

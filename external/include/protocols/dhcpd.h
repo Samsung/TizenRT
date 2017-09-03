@@ -88,6 +88,8 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+typedef void (*dhcp_sta_joined)(void);
+
 /**
  * @brief Starts DHCP server which is attached given network interface.
  *
@@ -102,7 +104,7 @@ int dhcpd_run(void *arg);
  * @param[in] intf the name of network interface to run DHCP server
  * @return On success, 0. On failure, returns -1
 */
-int dhcpd_start(char *intf);
+int dhcpd_start(char *intf, dhcp_sta_joined dhcp_join_cb);
 
 #undef EXTERN
 #ifdef __cplusplus
