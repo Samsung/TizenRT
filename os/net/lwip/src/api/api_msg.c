@@ -1089,7 +1089,12 @@ void do_listen(struct api_msg_msg *msg)
 #endif							/* TCP_LISTEN_BACKLOG */
 					if (lpcb == NULL) {
 						/* in this case, the old pcb is still allocated */
-						msg->err = ERR_MEM;
+						/* tcp_listen_with_backlog will return null in case of addr in use too */
+						if (get_errno() == EADDRINUSE) {
+							msg->err = ERR_USE;
+						} else {
+							msg->err = ERR_MEM;
+						}
 					} else {
 						/* delete the recvmbox and allocate the acceptmbox */
 						if (sys_mbox_valid(&msg->conn->recvmbox)) {
