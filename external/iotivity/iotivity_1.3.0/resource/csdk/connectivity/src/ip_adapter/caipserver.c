@@ -65,6 +65,7 @@
 #include <tinyara/config.h>
 #include <mqueue.h>
 #include <net/lwip/inet.h>
+#include <net/lwip/sockets.h>
 #endif
 #include <coap/pdu.h>
 #include "caipinterface.h"
@@ -78,7 +79,7 @@
 #include "oic_string.h"
 
 #define USE_IP_MREQN
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__TIZENRT__)
 #undef USE_IP_MREQN
 #endif
 
@@ -148,15 +149,6 @@ struct in_pktinfo
   struct in_addr ipi_addr;     /* Header Destination
                                     address */
 };
-
-// TODO
-// hong : ip_mreqn is not included in "os/include/netinet/in.h", because CONFIG_NET_LWIP is enabled.
-struct ip_mreqn {
-	struct in_addr imr_multiaddr;   /* IP multicast address of group */
-	struct in_addr imr_address; /* local IP address of interface */
-	int imr_ifindex;            /* Interface index */
-};
-
 
 #define RTMGRP_LINK 1
 #define IP_PKTINFO         8
@@ -1166,7 +1158,6 @@ static void applyMulticastToInterface4(uint32_t ifindex)
         return;
     }
 
-#if 1 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
 #if defined(USE_IP_MREQN)
     struct ip_mreqn mreq = { .imr_multiaddr = IPv4MulticastAddress,
                              .imr_address.s_addr = htonl(INADDR_ANY),
@@ -1174,11 +1165,6 @@ static void applyMulticastToInterface4(uint32_t ifindex)
 #else
     struct ip_mreq mreq  = { .imr_multiaddr.s_addr = IPv4MulticastAddress.s_addr,
                              .imr_interface.s_addr = htonl(ifindex) };
-#endif
-#else
-    struct ip_mreq mreq;
-//    memcpy(&mreq.imr_multiaddr,&IPv4MulticastAddress,sizeof(struct in_addr));
-//    memcpy(&mreq.imr_interface,&inaddr,sizeof(struct in_addr));
 #endif
 
     int ret = setsockopt(caglobals.ip.m4.fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, OPTVAL_T(&mreq), sizeof (mreq));
@@ -1538,8 +1524,6 @@ static void sendMulticastData4(const u_arraylist_t *iflist,
 {
     VERIFY_NON_NULL_VOID(endpoint, TAG, "endpoint is NULL");
 
-
-#if 1 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
 #if defined(USE_IP_MREQN)
     struct ip_mreqn mreq = { .imr_multiaddr = IPv4MulticastAddress,
                              .imr_address.s_addr = htonl(INADDR_ANY),
@@ -1547,11 +1531,6 @@ static void sendMulticastData4(const u_arraylist_t *iflist,
 #else
     struct ip_mreq mreq  = { .imr_multiaddr.s_addr = IPv4MulticastAddress.s_addr,
                              .imr_interface = {0}};
-#endif
-#else
-    struct ip_mreq mreq;
-//    memcpy(&mreq.imr_multiaddr,&IPv4MulticastAddress,sizeof(struct in_addr));
-//    memcpy(&mreq.imr_interface,&inaddr,sizeof(struct in_addr));
 #endif
 
     OICStrcpy(endpoint->addr, sizeof(endpoint->addr), IPv4_MULTICAST);
@@ -1573,13 +1552,8 @@ static void sendMulticastData4(const u_arraylist_t *iflist,
         {
             continue;
         }
-
-#if 1 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
 #if defined(USE_IP_MREQN)
         mreq.imr_ifindex = ifitem->index;
-#else
-        mreq.imr_interface.s_addr = htonl(ifitem->index);
-#endif
 #else
         mreq.imr_interface.s_addr = htonl(ifitem->index);
 #endif
