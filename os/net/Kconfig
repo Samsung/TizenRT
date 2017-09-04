@@ -118,6 +118,7 @@ source "$EXTERNALDIR/tftpc/Kconfig.protocol"
 source "$EXTERNALDIR/telnetd/Kconfig.protocol"
 source "$EXTERNALDIR/smtp/Kconfig.protocol"
 
+source "$EXTERNALDIR/slsi_wifi/Kconfig"
 
 source "../framework/src/mqtt/Kconfig.protocol"
 

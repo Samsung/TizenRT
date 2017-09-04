@@ -338,10 +338,12 @@ void ws_server_on_msg_cb(websocket_context_ptr ctx, const websocket_on_msg_arg *
 void print_webserver_usage(void)
 {
 	printf("\n  webserver usage:\n");
-	printf("   $ webserver [operation]\n");
+	printf("   $ webserver [operation] [option]\n");
 	printf("\n [operation]   : %%s (webserver start or stop)\n");
+	printf("\n [option]   : %%s default:require (require, optional, none)\n");
 	printf("\n example:\n");
 	printf("  $ webserver start\n");
+
 }
 
 void register_callbacks(struct http_server_t *server)
@@ -377,41 +379,54 @@ void deregister_callbacks(struct http_server_t *server)
 pthread_addr_t httptest_cb(void *arg)
 {
 	int http_port = 80;
+
 #ifdef CONFIG_NET_SECURITY_TLS
 	int https_port = 443;
 	struct ssl_config_t ssl_config;
+	int auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
 #endif
-	struct webserver_input *input;
+	int i = 0;
+	struct webserver_input *input = arg;
 
-	input = arg;
-	if (input->argc != 2) {
+	if (!input && (input->argc != 2 || input->argc != 3)) {
 		print_webserver_usage();
-		return NULL;
+		goto release;
 	}
-
+	
 	if (!strcmp(input->argv[1], "start")) {
+#ifdef CONFIG_NET_SECURITY_TLS
+		if (strcmp(input->argv[2], "required") == 0) {
+			auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
+		} else if (strcmp(input->argv[2], "optional") == 0) {
+			auth_mode = MBEDTLS_SSL_VERIFY_OPTIONAL;
+		} else if (strcmp(input->argv[2], "none") == 0) {
+			auth_mode = MBEDTLS_SSL_VERIFY_NONE;
+		} else {
+			goto release;
+		}
+#endif
 		goto start;
 	} else if (!strcmp(input->argv[1], "stop")) {
 		goto stop;
 	} else {
 		print_webserver_usage();
-		return NULL;
+		goto release;
 	}
 
 start:
 	if (http_server != NULL) {
 		printf("Error: HTTP server is already run\n");
-		return NULL;
+		goto release;
 	}
 #ifdef CONFIG_NET_SECURITY_TLS
 	if (https_server != NULL) {
 		printf("Error: HTTPS server is already run\n");
-		return NULL;
+		goto release;
 	}
 	https_server = http_server_init(https_port);
 	if (https_server == NULL) {
 		printf("Error: Cannot allocate server structure!!\n");
-		return NULL;
+		goto release;
 	}
 	ssl_config.root_ca = (char *)ca_crt_rsa;
 	ssl_config.root_ca_len = sizeof(ca_crt_rsa);
@@ -419,18 +434,18 @@ start:
 	ssl_config.dev_cert_len = sizeof(srv_crt_rsa);
 	ssl_config.private_key = (char *)srv_key_rsa;
 	ssl_config.private_key_len = sizeof(srv_key_rsa);
-	ssl_config.auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
+	ssl_config.auth_mode = auth_mode;
 
 	if (http_tls_init(https_server, &ssl_config) != 0) {
 		printf("ssl config Error\n");
-		return NULL;
+		goto release;
 	}
 #endif
 	http_server = http_server_init(http_port);
 
 	if (http_server == NULL) {
 		printf("Error: Cannot allocate server structure!!\n");
-		return NULL;
+		goto release;
 	}
 
 	register_callbacks(http_server);
@@ -447,7 +462,7 @@ start:
 	if (http_server_start(http_server) < 0) {
 		printf("Fail to start HTTP server\n");
 	}
-	return NULL;
+	goto release;
 
 stop:
 	http_server_stop(http_server);
@@ -460,6 +475,12 @@ stop:
 #endif
 	printf("webserver end\n");
 
+release:
+	for (; i < input->argc; i++) {
+		free(input->argv[i]);
+	}
+	free(input);
+	
 	return NULL;
 }
 
@@ -469,8 +490,27 @@ int webserver_main(int argc, char *argv[])
 	int status;
 	struct sched_param sparam;
 	pthread_t tid;
-	struct webserver_input arg;
+	struct webserver_input *input;
 
+	input = (struct webserver_input *)malloc(sizeof(struct webserver_input));
+	if (!input) {
+		printf(" malloc fail\n");
+		return -1;
+	}
+
+	input->argv = (char **)malloc(sizeof(char *) * argc);
+	if (!input->argv) {
+		printf(" malloc argv fail\n");
+		return -1;
+	}
+
+	input->argc = argc;
+	int i = 0;
+	for (; i < argc; i++) {
+		input->argv[i] = (char *)malloc(sizeof(char) * (strlen(argv[i]) + 1));
+		strcpy(input->argv[i], argv[i]);
+	}
+	
 	status = pthread_attr_init(&attr);
 	if (status != 0) {
 		printf("fail to start webserver\n");
@@ -482,10 +522,7 @@ int webserver_main(int argc, char *argv[])
 	status = pthread_attr_setschedpolicy(&attr, WEBSERVER_SCHED_POLICY);
 	status = pthread_attr_setstacksize(&attr, WEBSERVER_STACK_SIZE);
 
-	arg.argc = argc;
-	arg.argv = argv;
-
-	status = pthread_create(&tid, &attr, httptest_cb, &arg);
+	status = pthread_create(&tid, &attr, httptest_cb, input);
 	if (status < 0) {
 		printf("fail to start webserver\n");
 		return -1;
