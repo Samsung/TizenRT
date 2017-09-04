@@ -168,7 +168,7 @@ static inline void sched_dupfiles(FAR struct task_tcb_s *tcb)
 
 int group_setuptaskfiles(FAR struct task_tcb_s *tcb)
 {
-#if CONFIG_NFILE_DESCRIPTORS > 0 || CONFIG_NSOCKET_DESCRIPTORS > 0
+#if CONFIG_NFILE_DESCRIPTORS > 0
 	FAR struct task_group_s *group = tcb->cmn.group;
 
 	DEBUGASSERT(group);
