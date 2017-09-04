@@ -8,8 +8,8 @@ Official page: https://www.iotivity.org/
 
 ### Prerequisites
 You need to install scons to build Iotivity with TizenRT.
-
 Please refer to the following page to install scons.
+
 http://www.scons.org/doc/production/HTML/scons-user.html#chap-build-install
 
 ### Build Iotivity
