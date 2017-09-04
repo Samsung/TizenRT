@@ -20,8 +20,8 @@ include:
                 See external/include/protocols/ftpd.h for interface information.
     mdns      - multicast Domain Name System (mDNS).
                 See external/mdns/mdns.h for interface information.
-    netlib    - network libraries that includes IP address support, HTTP support and generic server logic.
-                See external/netlib.h for interface information.
+    netlib    - network libraries that includes IP address support.
+                See external/include/netutils/netlib.h for interface information.
     ntpclient - This is a fragmentary NTP client. It neither well-tested
                 nor mature nor complete at this point in time.
                 See external/include/protocols/ntpclient.h for interface information.
@@ -34,7 +34,7 @@ include:
     webclient - HTTP web client.
                 See external/include/protocols/webclient.h for interface information.
     webserver - HTTP web server.
-                See os/include/external/webserver/http_server.h for interface information.
+                See external/include/protocols/webserver/http_server.h for interface information.
     websocket - websocket server and client.
                 See external/include/protocols/websocket.h for interface information.
     xmlrpc    - The Embeddable Lightweight XML-RPC Server discussed at
@@ -44,7 +44,7 @@ include:
                 simple-as-can-be ANSI-C compliant JSON parser, under MIT license.
                 Embeddable Lightweight XML-RPC Server discussed at
                 http://www.drdobbs.com/web-development/an-embeddable-lightweight-xml-rpc-server/184405364.
-                See external/include/protocols/cJSON.h for interface information.
+                See external/include/json/cJSON.h for interface information.
 			  
 ## How to enable
 
