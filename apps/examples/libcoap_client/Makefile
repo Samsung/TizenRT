@@ -39,8 +39,8 @@ include $(APPDIR)/Make.defs
 
 # built-in application info
 
-CLIENT_APPNAME = libcoap-client
-CLIENT_FUNCNAME = coap_client_test_main
+APPNAME = libcoap-client
+FUNCNAME = coap_client_test_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # libcoap-client test example
@@ -111,10 +111,10 @@ install:
 endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_LIBCOAP_CLIENT_TEST),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(CLIENT_APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(call REGISTER,$(CLIENT_APPNAME),$(CLIENT_FUNCNAME),$(THREADEXEC))
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC))
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(CLIENT_APPNAME)_main.bdat
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
 else
 context:
 endif
