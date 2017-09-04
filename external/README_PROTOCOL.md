@@ -2,12 +2,12 @@
 
 ## Contents
 
-> [Network Applications](#network-applications)  
-> [Tips for Using DHCPC](#tips-for-using-dhcpc)
+> [Network Protocols](#network-protocols)  
+> [How to enable](#how-to-enable)
 
-## Network Applications
+## Network Protocols
 
-This directory contains most of the network applications.  
+This directory contains most of the network protocols.  
 include:
 
     dhcpc     - Dynamic Host Configuration Protocol (DHCP) client.
@@ -46,10 +46,12 @@ include:
                 http://www.drdobbs.com/web-development/an-embeddable-lightweight-xml-rpc-server/184405364.
                 See external/include/protocols/cJSON.h for interface information.
 			  
-## Tips for Using DHCPC
+## How to enable
 
-If you use DHCPC, this configuration network option is required.
+There protocols are controled by menuconfig. And they are in *"Networking Support"* - *"Protocols"* menu.  
+For example, if you use DHCPC, this configuration network option is required.
 ```
 CONFIG_NETUTILS_DHCPC=y
 ```
-This config is in *"Networking Support"* - *"Protocols"* menu.
+
+Be aware of being in network menu, not in external libraries.
