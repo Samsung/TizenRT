@@ -51,7 +51,7 @@ do
 	else
 		CONFIG_USE="y"
 	fi
-	DISCRIPTION=`sed -n '/bool/p' $APPDIR$FILE$KCONFIG_ENTRY | sed -n 's/.*bool //p'`
+	DESCRIPTION=`sed -n '/bool/p' $APPDIR$FILE$KCONFIG_ENTRY | sed -n 's/.*bool //p'`
 	KCONFIG_INFO=`sed -n "/config $CONFIG_NAME$/,/^$/p" $APPDIR$FILE$KCONFIG`
 	DEPENDENCY=`echo "$KCONFIG_INFO" | sed -n '/depends on/p'`
 	SELECTFLAG=`echo "$KCONFIG_INFO" | sed -n '/select/p'`
@@ -61,7 +61,7 @@ do
 		SELECTABLE="y"
 	fi
 	if [ "$APPNAME" != "" ]
-		then echo "{ $APPNAME, $FUNCTION, CONFIG_$CONFIG_NAME, $CONFIG_USE, $SELECTABLE, $DISCRIPTION }" >> $OSDIR$METAFILE
+		then echo "{ $APPNAME, $FUNCTION, CONFIG_$CONFIG_NAME, $CONFIG_USE, $SELECTABLE, $DESCRIPTION }" >> $OSDIR$METAFILE
 	fi
 done
 
