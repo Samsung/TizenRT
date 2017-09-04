@@ -320,6 +320,9 @@ struct pthread_arg {
 #define USAGE_ECJPAKE ""
 #endif
 
+#define USAGE_LARGEDATA \
+	"    aging=%%s       default: false (disabled, receive a http request)\n"
+
 #define USAGE \
 	"\n usage: ssl_server2 param=<>...\n"                   \
 	"\n acceptable parameters:\n"                           \
@@ -354,6 +357,7 @@ struct pthread_arg {
 	USAGE_ALPN                                              \
 	USAGE_EMS                                               \
 	USAGE_ETM                                               \
+	USAGE_LARGEDATA                                         \
 	"\n"                                                    \
 	"    arc4=%%d             default: (library default: 0)\n" \
 	"    min_version=%%s      default: (library default: tls1)\n"       \
@@ -367,6 +371,7 @@ struct pthread_arg {
 	"    force_ciphersuite=<name>    default: all enabled\n"            \
 	" acceptable ciphersuite names:\n"
 
+#define MAX_DATA_SIZE 100*1024*1024 // Maximum data size for aging test 100MB
 /*
  * global options
  */
@@ -416,6 +421,7 @@ struct options {
 	uint32_t hs_to_max;			/* Max value of DTLS handshake timer        */
 	int badmac_limit;			/* Limit of records with bad MAC            */
 	int retry;					/* Server retry count                       */
+	int aging;                  /* enable large data transfer test          */
 };
 
 static struct options opt;
@@ -1238,6 +1244,16 @@ usage:
 			opt.sni = q;
 		} else if (strcmp(p, "retry") == 0) {
 			opt.retry = atoi(q);
+		} else if (strcmp(p, "aging") == 0){
+			if(strcmp (q, "true") == 0) {
+				opt.aging = 1;
+			}
+			else if(strcmp(q,"false") == 0){
+				opt.aging = -1;
+			}
+			else {
+				goto usage;
+			}
 		} else {
 			goto usage;
 		}
@@ -1924,6 +1940,48 @@ handshake:
 
 	exchanges_left = opt.exchanges;
 data_exchange:
+
+	if (opt.aging > 0) {
+		/*
+		 * 6. Read the large data from client
+		 */
+		unsigned char big_buf[1024];
+		int received = 0;
+
+		// read transfer size from the client
+		unsigned int datasize;
+		ret = mbedtls_ssl_read(&ssl, (void *)&datasize, sizeof(unsigned int));
+
+		if(ret <= 0 &&
+			ret != MBEDTLS_ERR_SSL_WANT_READ &&
+			ret != MBEDTLS_ERR_SSL_WANT_WRITE ){
+			mbedtls_printf(" read the data size error(%d)\n", ret);
+			goto exit;
+		}
+		datasize = ntohl(datasize);
+		mbedtls_printf(" < Read the large data from the client (%d)B\n", datasize);
+
+		struct timeval start_time, end_time;
+		gettimeofday(&start_time, NULL);
+
+		do {
+			ret = mbedtls_ssl_read(&ssl, big_buf, sizeof(big_buf) );
+			if(ret == MBEDTLS_ERR_SSL_WANT_READ ||
+				ret == MBEDTLS_ERR_SSL_WANT_WRITE ){
+				mbedtls_printf(" read error(%d)\n", ret);
+				continue;
+			}
+			received += ret;
+			mbedtls_printf(" read(%d) progress(%d/%d)\n", ret, received, datasize);
+		} while(datasize - received > 0);
+		gettimeofday(&end_time, NULL);
+		int duration = (end_time.tv_sec - start_time.tv_sec) * 1000000 +
+			(end_time.tv_usec - start_time.tv_usec);
+		mbedtls_printf(" Transfer is done %dKB %lfmbps\n", datasize/1024,
+					   (double)datasize/(double)duration/(1024*1024)*1000000);
+		goto close_notify;
+	}
+		
 	/*
 	 * 6. Read the HTTP Request
 	 */

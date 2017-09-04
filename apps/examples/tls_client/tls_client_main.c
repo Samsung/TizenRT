@@ -267,6 +267,9 @@ struct pthread_arg {
 #define USAGE_ECJPAKE ""
 #endif
 
+#define USAGE_LARGEDATA \
+	"    aging=%%s       default: 0 (disabled, receive a http request)\n"
+
 #define USAGE \
 	"\n usage: ssl_client2 param=<>...\n"                   \
 	"\n acceptable parameters:\n"                           \
@@ -306,6 +309,7 @@ struct pthread_arg {
 	USAGE_ETM                                               \
 	USAGE_RECSPLIT                                          \
 	USAGE_DHMLEN                                            \
+	USAGE_LARGEDATA                                         \
 	"\n"                                                    \
 	"    arc4=%%d             default: (library default: 0)\n" \
 	"    min_version=%%s      default: (library default: tls1)\n"       \
@@ -315,6 +319,8 @@ struct pthread_arg {
 	"\n"                                                    \
 	"    force_ciphersuite=<name>    default: all enabled\n"\
 	" acceptable ciphersuite names:\n"
+
+#define MAX_DATA_SIZE 100*1024*1024 /* Maximum transfer size is 100MB */
 
 struct options {
 	const char *server_name;	/* hostname of the server (client only)     */
@@ -358,7 +364,10 @@ struct options {
 	int fallback;				/* is this a fallback connection?           */
 	int extended_ms;			/* negotiate extended master secret?        */
 	int etm;					/* negotiate encrypt then mac?              */
+	int aging;                  /* enable the aging test when value is larger than 0*/
 };
+
+
 
 static struct options opt;
 
@@ -568,6 +577,7 @@ usage:
 	opt.fallback = DFL_FALLBACK;
 	opt.extended_ms = DFL_EXTENDED_MS;
 	opt.etm = DFL_ETM;
+	opt.aging = -1;
 
 	for (i = 1; i < argc; i++) {
 		p = argv[i];
@@ -831,7 +841,13 @@ usage:
 			if (opt.dhmlen < 0) {
 				goto usage;
 			}
-		} else {
+		} else if(strcmp(p, "aging") == 0) {
+			opt.aging = atoi(q);
+			if(opt.aging <= 0 && opt.aging > MAX_DATA_SIZE) {
+				goto usage;
+			}
+		}
+		else {
 			goto usage;
 		}
 	}
@@ -1339,6 +1355,42 @@ usage:
 	 */
 	retry_left = opt.max_resend;
 send_request:
+		if (opt.aging > 0) {
+		mbedtls_printf("   start the aging test (%d)B sendbuf size(%d)B\n", opt.aging, sizeof(buf));
+		int send_left = opt.aging;
+
+		// send buf size
+		unsigned int aging_size = htonl(opt.aging);
+		ret = mbedtls_ssl_write(&ssl, (void *)&aging_size, sizeof(unsigned int));
+		if (ret <= 0 && ret != MBEDTLS_ERR_SSL_WANT_READ &&
+			ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+			mbedtls_printf(" failed to send transfer size to the tls server(%x)\n", -ret);
+			goto exit;
+		}
+		
+		while (send_left > 0) {
+		    int datasize = send_left < MBEDTLS_SSL_MAX_CONTENT_LEN? send_left : MBEDTLS_SSL_MAX_CONTENT_LEN;
+			for(written = 0, frags = 0; written < datasize; written += ret, frags++ )
+			{
+				int bufsize = datasize - written;
+				while((ret = mbedtls_ssl_write(&ssl, buf + written, bufsize ) ) <= 0 )
+				{
+					if(ret != MBEDTLS_ERR_SSL_WANT_READ &&
+						ret != MBEDTLS_ERR_SSL_WANT_WRITE )
+					{
+						mbedtls_printf(" failed\n  ! mbedtls_ssl_write returned -0x%x\n\n", -ret );
+						goto exit;
+					}
+				}
+				mbedtls_printf(" sent (%d/%d)\n", ret, send_left);
+			}
+			send_left -= MBEDTLS_SSL_MAX_CONTENT_LEN;
+		}
+		mbedtls_printf(" transfer is done frags(%d)\n", frags);
+		ret = 0;
+		goto exit;
+	}
+		
 	mbedtls_printf("  > Write to server:");
 	fflush(stdout);
 
