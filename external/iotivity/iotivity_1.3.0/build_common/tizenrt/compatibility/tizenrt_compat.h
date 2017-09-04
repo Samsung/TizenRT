@@ -4,6 +4,10 @@
 #include <sys/types.h>
 #include <net/lwip/sockets.h>
 
+
+/*************************************
+   access ancillary data
+ *************************************/
 /*
  *  POSIX 1003.1g - ancillary data object information
  *  Ancillary data consits of a sequence of pairs of
@@ -45,5 +49,14 @@ static inline struct cmsghdr *cmsg_nxthdr(struct msghdr *__msg, struct cmsghdr *
 {
         return __cmsg_nxthdr(__msg->msg_control, __msg->msg_controllen, __cmsg);
 }
+
+
+
+/*************************************
+   fprintf macros
+ *************************************/
+#define PRIu32          "lu"
+#define PRIuPTR         "u"
+
 
 #endif /* _TIZENRT_COMPAT_H_ */

@@ -471,11 +471,7 @@ CAResult_t CAGetNetworkInfo(CAEndpoint_t **info, size_t *size)
 
             OIC_LOG_V(DEBUG,
                       TAG,
-#ifndef __TIZENRT__
                       "%" PRIu32 " adapter network info size is %" PRIu32 " res:%d",
-#else
-                      "%lu" " adapter network info size is %" PRIu32 " res:%d",
-#endif
                       index,
                       tempSize[index],
                       res);

@@ -676,11 +676,7 @@ void CADataDestroyer(void *data, uint32_t size)
 {
     if (size < sizeof(CATCPData))
     {
-#ifndef __TIZENRT__
         OIC_LOG_V(ERROR, TAG, "Destroy data too small %p %" PRIu32, data, size);
-#else
-        OIC_LOG_V(ERROR, TAG, "Destroy data too small %p %" "lu", data, size);
-#endif
     }
     CATCPData *TCPData = (CATCPData *) data;
 
