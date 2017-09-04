@@ -224,14 +224,15 @@ static void tc_libc_signal_sigpause(void)
 	st_timer_spec_val.it_value.tv_sec = 2;
 
 	ret_chk = timer_settime(timer_id, 0, &st_timer_spec_val, NULL);
-	TC_ASSERT_EQ_ERROR_CLEANUP("timer_settime", ret_chk, OK, errno, timer_delete(timer_id));
+	TC_ASSERT_EQ_CLEANUP("timer_settime", ret_chk, OK, timer_delete(timer_id));
 
 	printf("sigpause test : Before Pause\n");
 	ret_chk = sigpause(SIG1);
-	TC_ASSERT_EQ("sigpause", ret_chk, ERROR);
+	TC_ASSERT_EQ_CLEANUP("sigpause", ret_chk, ERROR, timer_delete(timer_id));
 
 	printf("sigpause test : 2 sec After Pause\n");
 
+	timer_delete(timer_id);
 	TC_SUCCESS_RESULT();
 }
 
