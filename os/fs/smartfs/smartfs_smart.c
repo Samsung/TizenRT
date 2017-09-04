@@ -345,6 +345,12 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	goto errout_with_semaphore;
 
 errout_with_buffer:
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	if (sf->buffer != NULL) {
+		kmm_free(sf->buffer);
+		sf->buffer = NULL;
+	}
+#endif
 	if (sf->entry.name != NULL) {
 		/* Free the space for the name too */
 
