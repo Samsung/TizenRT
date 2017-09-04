@@ -65,6 +65,11 @@ void freeifaddrs(struct ifaddrs *ifa)
 	/* do nothing because memory is not allocated in getifaddrs() */
 }
 
+const char *gai_strerror(int errcode)
+{
+	static const char *n_str = "null";
+	return n_str;
+}
 
 unsigned int if_nametoindex(const char *ifname)
 {

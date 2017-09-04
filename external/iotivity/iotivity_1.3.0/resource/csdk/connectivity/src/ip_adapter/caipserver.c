@@ -85,11 +85,7 @@
 /*
  * Logging tag for module name
  */
-#if defined(__TIZENRT__)
-#define TAG IP_SERVER_TAG
-#else
 #define TAG "OIC_CA_IP_SERVER"
-#endif
 
 #ifdef __TIZENRT__
 mqd_t g_nwevent_mqfd;

@@ -79,11 +79,7 @@
 /**
  * Logging tag for module name.
  */
-#ifndef __TIZENRT__
 #define TAG "OIC_CA_TCP_SERVER"
-#else
-#define TAG TCP_SERVER_TAG
-#endif
 
 /**
  * Maximum CoAP over TCP header length
