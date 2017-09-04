@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_SYSTEM_NXPLAYER),y)
+ifeq ($(CONFIG_EXAMPLES_NXPLAYER),y)
 CONFIGURED_APPS += examples/nxplayer
 endif
 
