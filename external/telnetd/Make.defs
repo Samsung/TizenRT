@@ -50,7 +50,7 @@
 #
 ############################################################################
 
-CSRCS		+= telnetd/telnetd_daemon.c
+CSRCS		+= telnetd_daemon.c
 
 DEPPATH += --dep-path telnetd
 VPATH += :telnetd

@@ -50,7 +50,7 @@
 #
 ############################################################################
 
-CSRCS += tftpc/tftpc_get.c tftpc/tftpc_put.c tftpc/tftpc_packets.c
+CSRCS += tftpc_get.c tftpc_put.c tftpc_packets.c
 
 DEPPATH += --dep-path tftpc
 VPATH += :tftpc

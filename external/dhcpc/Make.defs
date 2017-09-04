@@ -50,7 +50,7 @@
 #
 ############################################################################
 
-CSRCS += dhcpc/dhcpc.c
+CSRCS += dhcpc.c
 
 DEPPATH += --dep-path dhcpc
 VPATH += :dhcpc

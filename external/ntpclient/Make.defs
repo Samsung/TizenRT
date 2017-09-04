@@ -50,7 +50,7 @@
 #
 ############################################################################
 
-CSRCS += ntpclient/ntpclient.c
+CSRCS += ntpclient.c
 
 DEPPATH += --dep-path ntpclient
 VPATH += :ntpclient

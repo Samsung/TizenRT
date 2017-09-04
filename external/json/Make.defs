@@ -50,7 +50,7 @@
 #
 ############################################################################
 
-CSRCS += json/cJSON.c
+CSRCS += cJSON.c
 
 DEPPATH += --dep-path json
 VPATH += :json
