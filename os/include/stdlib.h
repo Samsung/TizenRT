@@ -190,6 +190,8 @@ int rand(void);
 /**
  * @ingroup STDLIB_LIBC
  * @brief Return a pointer to the thread specific environ variable
+ * @details This API is not a standard API. But another APIs which are related to ENV are in Stdlib,
+ *         so this API is in Stdlib for ease.
  * @param[in] A pointer to notify a size of environ variable
  * @return A pointer to the current thread environ variable
  * @since Tizen RT v1.0
