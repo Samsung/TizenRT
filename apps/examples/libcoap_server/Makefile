@@ -39,8 +39,8 @@ include $(APPDIR)/Make.defs
 
 # built-in application info
 
-SERVER_APPNAME = libcoap-server
-SERVER_FUNCNAME = coap_server_test_main
+APPNAME = libcoap-server
+FUNCNAME = coap_server_test_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # libcoap-server test example
@@ -111,10 +111,10 @@ install:
 endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_LIBCOAP_SERVER_TEST),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(SERVER_APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(call REGISTER,$(SERVER_APPNAME),$(SERVER_FUNCNAME),$(THREADEXEC))
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC))
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(SERVER_APPNAME)_main.bdat
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
 else
 context:
 endif
