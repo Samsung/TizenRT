@@ -15,7 +15,7 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# external/dhcpd/Make.defs
+# external/mosquitto/Make.defs
 # Adds selected applications to external/ build
 #
 #   Copyright (C) 2016 Gregory Nutt. All rights reserved.
@@ -50,25 +50,25 @@
 #
 ############################################################################
 
-include mosquitto/config.mk
+include config.mk
 
-CSRCS += mosquitto/tls_mosq.c
-CSRCS += mosquitto/net_mosq.c
-CSRCS += mosquitto/send_client_mosq.c
-CSRCS += mosquitto/messages_mosq.c
-CSRCS += mosquitto/util_mosq.c
-CSRCS += mosquitto/socks_mosq.c
-CSRCS += mosquitto/will_mosq.c
-CSRCS += mosquitto/mosquitto.c
-CSRCS += mosquitto/logging_mosq.c
-CSRCS += mosquitto/send_mosq.c
-CSRCS += mosquitto/read_handle_shared.c
-CSRCS += mosquitto/srv_mosq.c
-CSRCS += mosquitto/thread_mosq.c
-CSRCS += mosquitto/read_handle_client.c
-CSRCS += mosquitto/read_handle.c
-CSRCS += mosquitto/time_mosq.c
-CSRCS += mosquitto/memory_mosq.c
+CSRCS += tls_mosq.c
+CSRCS += net_mosq.c
+CSRCS += send_client_mosq.c
+CSRCS += messages_mosq.c
+CSRCS += util_mosq.c
+CSRCS += socks_mosq.c
+CSRCS += will_mosq.c
+CSRCS += mosquitto.c
+CSRCS += logging_mosq.c
+CSRCS += send_mosq.c
+CSRCS += read_handle_shared.c
+CSRCS += srv_mosq.c
+CSRCS += thread_mosq.c
+CSRCS += read_handle_client.c
+CSRCS += read_handle.c
+CSRCS += time_mosq.c
+CSRCS += memory_mosq.c
 
 DEPPATH += --dep-path mosquitto
 VPATH += :mosquitto

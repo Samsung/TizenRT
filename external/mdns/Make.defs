@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-CSRCS += mdns/mdns.c mdns/mdnsd.c
+CSRCS += mdns.c mdnsd.c
 
 DEPPATH += --dep-path mdns
 VPATH += :mdns

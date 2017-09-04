@@ -51,8 +51,8 @@
 #
 ############################################################################
 
-CSRCS += xmlrpc/xmlparser.c \
-	  xmlrpc/response.c
+CSRCS += xmlparser.c \
+	  response.c
 
 DEPPATH += --dep-path xmlrpc
 VPATH += :xmlrpc

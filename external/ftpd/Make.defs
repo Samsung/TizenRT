@@ -51,7 +51,7 @@
 ############################################################################
 
 ifeq ($(CONFIG_NET_LWIP),y)
-CSRCS		+= ftpd/ftpd.c
+CSRCS		+= ftpd.c
 endif
 
 DEPPATH += --dep-path ftpd

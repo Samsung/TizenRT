@@ -50,7 +50,7 @@
 #
 ############################################################################
 
-CSRCS	+= webclient/webclient.c
+CSRCS	+= webclient.c
 
 DEPPATH += --dep-path webclient
 VPATH += :webclient

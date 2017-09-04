@@ -50,7 +50,7 @@
 #
 ############################################################################
 
-CSRCS += dhcpd/dhcpd.c
+CSRCS += dhcpd.c
 
 DEPPATH += --dep-path dhcpd
 VPATH += :dhcpd

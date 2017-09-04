@@ -50,7 +50,7 @@
 #
 ############################################################################
 
-CSRCS	+= smtp/smtp.c
+CSRCS	+= smtp.c
 
 DEPPATH += --dep-path smtp
 VPATH += :smtp
