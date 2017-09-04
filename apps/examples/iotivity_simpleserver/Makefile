@@ -75,7 +75,9 @@ CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/logger/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/security/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/stack/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/extlibs/mbedtls/mbedtls/include
+ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION),1.2-rel)
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/build_common/tizenrt/compatibility
+endif
 
 CFLAGS += -DWITH_POSIX -DIP_ADAPTER
 CFLAGS += -DWITH_BWT
@@ -84,13 +86,13 @@ CFLAGS += -DROUTING_EP
 else
 CFLAGS += -DROUTING_GW
 endif
-CFLAGS += -D__TINYARA__
+CFLAGS += -D__TIZENRT__
 CFLAGS += -std=c99
 CFLAGS += -w
 CFLAGS += -D__WITH_DTLS__
 
-ifeq ($(CONFIG_EXAMPLES_IOTIVITY),y)
-CSRCS += port_tinyara.c
+ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION),1.2-rel)
+CSRCS += iotivity_common.c
 else
 CSRCS += port_tinyara.c
 endif

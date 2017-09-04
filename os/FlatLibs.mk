@@ -113,6 +113,9 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libmbedtls$(LIBEXT)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libmbedx509$(LIBEXT)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libmbedcrypto$(LIBEXT)
 endif
+ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION),1.2-rel)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
+endif
 endif
 
 # Add libraries for power management module

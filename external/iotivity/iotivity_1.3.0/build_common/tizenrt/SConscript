@@ -86,3 +86,6 @@ env.AppendUnique(CPPPATH = [ dep_src_dir1, dep_src_dir2, compatibility_dir ])
 env.AppendUnique(LIBPATH = [ dep_lib_dir ])
 
 print env.get('CPPPATH')
+
+# run SConscript for compatibility of Tizen RT
+SConscript('compatibility/tizenrt_compat.scons')

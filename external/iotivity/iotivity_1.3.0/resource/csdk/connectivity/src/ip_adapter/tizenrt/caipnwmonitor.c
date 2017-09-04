@@ -462,7 +462,6 @@ exit:
 
 CAResult_t CAGetLinkLocalZoneIdInternal(uint32_t ifindex, char **zoneId)
 {
-#if 0 /* __TIZENRT__ : temporarilly modified for avoiding compile error, It should be fixed!!!, by wonsang */
     if (!zoneId || (*zoneId != NULL))
     {
         return CA_STATUS_INVALID_PARAM;
@@ -484,6 +483,6 @@ CAResult_t CAGetLinkLocalZoneIdInternal(uint32_t ifindex, char **zoneId)
     }
 
     OIC_LOG_V(DEBUG, TAG, "Given ifindex is %d parsed zoneId is %s", ifindex, *zoneId);
-#endif
+
     return CA_STATUS_OK;
 }

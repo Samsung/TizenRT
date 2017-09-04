@@ -231,6 +231,11 @@ $(LIBRARIES_DIR)$(DELIM)libmbedcrypto$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libm
 	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedcrypto$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmbedcrypto$(LIBEXT)
 
 endif
+
+ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION),1.2-rel)
+$(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
+	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libtizenrt_compat$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
+endif
 endif
 
 # Possible non-kernel builds

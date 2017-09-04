@@ -24,7 +24,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <net/lwip/netif.h>
-#include <ocstack.h>
 #include "uuid/uuid.h"
 
 #if CONFIG_NSOCKET_DESCRIPTORS > 0
@@ -94,56 +93,3 @@ const char *gai_strerror(int errcode)
 	return n_str;
 }
 
-const char *getResult(OCStackResult result)
-{
-	switch (result) {
-	case OC_STACK_OK:
-		return "OC_STACK_OK";
-	case OC_STACK_RESOURCE_CREATED:
-		return "OC_STACK_RESOURCE_CREATED";
-	case OC_STACK_RESOURCE_DELETED:
-		return "OC_STACK_RESOURCE_DELETED";
-	case OC_STACK_RESOURCE_CHANGED:
-		return "OC_STACK_RESOURCE_CHANGED";
-	case OC_STACK_INVALID_URI:
-		return "OC_STACK_INVALID_URI";
-	case OC_STACK_INVALID_QUERY:
-		return "OC_STACK_INVALID_QUERY";
-	case OC_STACK_INVALID_IP:
-		return "OC_STACK_INVALID_IP";
-	case OC_STACK_INVALID_PORT:
-		return "OC_STACK_INVALID_PORT";
-	case OC_STACK_INVALID_CALLBACK:
-		return "OC_STACK_INVALID_CALLBACK";
-	case OC_STACK_INVALID_METHOD:
-		return "OC_STACK_INVALID_METHOD";
-	case OC_STACK_NO_MEMORY:
-		return "OC_STACK_NO_MEMORY";
-	case OC_STACK_COMM_ERROR:
-		return "OC_STACK_COMM_ERROR";
-	case OC_STACK_INVALID_PARAM:
-		return "OC_STACK_INVALID_PARAM";
-	case OC_STACK_NOTIMPL:
-		return "OC_STACK_NOTIMPL";
-	case OC_STACK_NO_RESOURCE:
-		return "OC_STACK_NO_RESOURCE";
-	case OC_STACK_RESOURCE_ERROR:
-		return "OC_STACK_RESOURCE_ERROR";
-	case OC_STACK_SLOW_RESOURCE:
-		return "OC_STACK_SLOW_RESOURCE";
-	case OC_STACK_NO_OBSERVERS:
-		return "OC_STACK_NO_OBSERVERS";
-	case OC_STACK_UNAUTHORIZED_REQ:
-		return "OC_STACK_UNAUTHORIZED_REQ";
-#ifdef WITH_PRESENCE
-	case OC_STACK_PRESENCE_STOPPED:
-		return "OC_STACK_PRESENCE_STOPPED";
-	case OC_STACK_PRESENCE_TIMEOUT:
-		return "OC_STACK_PRESENCE_TIMEOUT";
-#endif
-	case OC_STACK_ERROR:
-		return "OC_STACK_ERROR";
-	default:
-		return "UNKNOWN";
-	}
-}
