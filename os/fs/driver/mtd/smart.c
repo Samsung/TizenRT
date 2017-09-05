@@ -3393,9 +3393,7 @@ static uint16_t smart_findfreephyssector(FAR struct smart_struct_s *dev, uint8_t
 	 * sector from. This is based on the number of free sectors
 	 * available in each erase block. */
 
-#ifdef CONFIG_MTD_SMART_WEAR_LEVEL
 retry:
-#endif
 	bitflipped = FALSE;
 	allocfreecount = 0;
 	allocblock = 0xFFFF;
@@ -3517,7 +3515,7 @@ retry:
 	 * erase block to allocate. */
 	sector_buff = (uint8_t *)kmm_zalloc(dev->mtdBlksPerSector * dev->geo.blocksize);
 	if (sector_buff == NULL) {
-		printf("secotr_buff allocation fail\n");
+		fdbg("sector_buff allocation fail\n");
 		return physicalsector;
 	}
 
@@ -3553,7 +3551,7 @@ retry:
 		ret = MTD_READ(dev->mtd, readaddr, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
 		if (ret != sizeof(struct smart_sect_header_s)) {
 			fdbg("Error reading phys sector %d\n", physicalsector);
-			free(sector_buff);
+			kmm_free(sector_buff);
 			return -1;
 		}
 		if ((UINT8TOUINT16(header.logicalsector) == 0xFFFF) &&
@@ -3567,6 +3565,11 @@ retry:
 			if (dev->badSectorList[x] == FALSE) {
 #endif
 				ret = MTD_READ(dev->mtd, readaddr, dev->mtdBlksPerSector * dev->geo.blocksize, sector_buff);
+				if (ret != dev->mtdBlksPerSector * dev->geo.blocksize) {
+					fdbg("Error reading physical sector %d\n",physicalsector);
+					kmm_free(sector_buff);
+					return -1;
+				}
 				for (i = 0; i < dev->mtdBlksPerSector * dev->geo.blocksize; i++) {
 					if (sector_buff[i] != 0xff) {
 						break;
@@ -3608,25 +3611,21 @@ retry:
 	}
 
 error:
-	if (physicalsector == 0xFFFF) {
+	if (physicalsector == 0xFFFF || physicalsector >= dev->totalsectors) {
 		if (bitflipped) {
 			fdbg("retry allocation \n");
 			canrelocate = FALSE;
+			kmm_free(sector_buff);
 			goto retry;
 		}
-		dbg("Program bug!  Expected a free sector %d\n", allocblock);
-	}
-
-	if (physicalsector >= dev->totalsectors) {
-		if (bitflipped) {
-			fdbg("retry allocation \n");
-			canrelocate = FALSE;
-			goto retry;
+		if (physicalsector == 0xFFFF) {
+			dbg("Program bug!  Expected a free sector %d\n", allocblock);
+		} else if (physicalsector >= dev->totalsectors) {
+			dbg("Program bug!  Selected sector too big!!!\n");
 		}
-		dbg("Program bug!  Selected sector too big!!!\n");
 	}
 
-	free(sector_buff);
+	kmm_free(sector_buff);
 
 	return physicalsector;
 }
