@@ -700,7 +700,9 @@ static int i2s_rxdma_setup(struct s5j_i2s_s *priv)
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_RXDMACTIVE);
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_I2SACTIVE);
 
+#ifdef CONFIG_S5J_I2S_BUFFER_FLOW_CONTROL
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FRXOFINTEN);
+#endif
 
 	/* Start the DMA, saving the container as the current active transfer */
 
@@ -1057,8 +1059,10 @@ static int i2s_txpdma_setup(struct s5j_i2s_s *priv)
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_TXDMACTIVE);
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_I2SACTIVE);
 
+#ifdef CONFIG_S5J_I2S_BUFFER_FLOW_CONTROL
 	/* Enable TX interrupt to catch the end of TX */
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FTXURINTEN);
+#endif
 
 	/* Start a watchdog to catch DMA timeouts */
 
@@ -1971,6 +1975,7 @@ static int i2s_configure(struct s5j_i2s_s *priv)
 
 static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
 {
+#ifdef CONFIG_S5J_I2S_BUFFER_FLOW_CONTROL
 	volatile u32 reg;
 	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)arg;
 
@@ -1994,6 +1999,7 @@ static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
 	if ((reg & (I2S_CR_TXDMACTIVE | I2S_CR_RXDMACTIVE)) == 0) {
 		modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_I2SACTIVE, 0);
 	}
+#endif
 
 	return 0;
 }

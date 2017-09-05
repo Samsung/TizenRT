@@ -191,6 +191,13 @@ config S5J_I2S_MAXINFLIGHT
 		determines the number certain queue data structures that will be
 		pre-allocated.
 
+config S5J_I2S_BUFFER_FLOW_CONTROL
+	bool "S5J I2S BUFFER CONTROL"
+	default n
+	depends on S5J_I2S
+	---help---
+		I2S operation stops when buffer overflow/underflow occurs.
+
 config S5J_MCT
 	bool
 	default n
