@@ -691,10 +691,3 @@ config LIB_USRWORKSTACKSIZE
 
 endif # LIB_USRWORK
 endif # BUILD_PROTECTED || BUILD_KERNEL
-
-
-config AUDIO
-	bool "Audio library"
-	default n
-	---help---
-		Audio library.

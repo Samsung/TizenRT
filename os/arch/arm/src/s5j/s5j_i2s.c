@@ -100,8 +100,6 @@
 #error CONFIG_AUDIO required by this driver
 #endif
 
-#define S5J_I2S_MAXPORTS 1
-
 #ifndef CONFIG_S5J_I2S_MAXINFLIGHT
 #define CONFIG_S5J_I2S_MAXINFLIGHT 16
 #endif
@@ -155,9 +153,9 @@
 #undef CONFIG_I2S_TXS_DMACH
 #undef CONFIG_I2S_RX_DMACH
 
-#define CONFIG_I2S_TXP_DMACH    0
-#define CONFIG_I2S_TXS_DMACH    1
-#define CONFIG_I2S_RX_DMACH     2
+#define CONFIG_I2S_TXP_DMACH	0
+#define CONFIG_I2S_TXS_DMACH	1
+#define CONFIG_I2S_RX_DMACH	2
 #endif
 
 #if defined(I2S_HAVE_RX) || defined(I2S_HAVE_TX_P) || defined(I2S_HAVE_TX_S)
@@ -192,9 +190,9 @@ struct s5j_transport_s {
 
 struct s5j_i2s_s {
 	struct i2s_dev_s dev;		/* Externally visible I2S interface */
-	uintptr_t base;			/* I2S controller register base address */
-	int isr_num;			/* isr number */
-	xcpt_t isr_handler;		/* irs handler */
+	uintptr_t base;				/* I2S controller register base address */
+	int isr_num;				/* isr number */
+	xcpt_t isr_handler;			/* irs handler */
 
 	sem_t exclsem;				/* Assures mutually exclusive acess to I2S */
 	uint8_t datalen;			/* Data width (8, 16, or 32) */
@@ -236,7 +234,7 @@ struct s5j_i2s_s {
 /* Register helpers */
 
 #ifdef CONFIG_S5J_I2S_DUMPBUFFERS
-#define       i2s_init_buffer(b, s)    memset(b, 0x55, s);
+#define       i2s_init_buffer(b, s)   memset(b, 0x55, s);
 #define       i2s_dump_buffer(m, b, s) lib_dumpbuffer(m, b, s)
 #else
 #define       i2s_init_buffer(b, s)
@@ -284,14 +282,12 @@ static void i2s_txpdma_callback(DMA_HANDLE handle, void *arg, int result);
 static int i2s_checkwidth(struct s5j_i2s_s *priv, int bits);
 
 static uint32_t i2s_rxdatawidth(struct i2s_dev_s *dev, int bits);
-static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb,
-				       i2s_callback_t callback, void *arg, uint32_t timeout);
+static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout);
 
 static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate);
 
 static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits);
-static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb,
-				    i2s_callback_t callback, void *arg, uint32_t timeout);
+static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout);
 
 /* Initialization */
 
@@ -325,8 +321,6 @@ static const struct i2s_ops_s g_i2sops = {
 	.i2s_txdatawidth = i2s_txdatawidth,
 	.i2s_send = i2s_send,
 };
-
-static struct s5j_i2s_s *g_i2sdevice[S5J_I2S_MAXPORTS];
 
 /****************************************************************************
  * Public Data
@@ -681,9 +675,9 @@ static int i2s_rxdma_setup(struct s5j_i2s_s *priv)
 	/* Increment the DMA timeout */
 
 	if (bfcontainer->timeout > 0) {
-			timeout += bfcontainer->timeout;
+		timeout += bfcontainer->timeout;
 	} else {
-			notimeout = true;
+		notimeout = true;
 	}
 
 	/* Add the container to the list of active DMAs */
@@ -1039,9 +1033,9 @@ static int i2s_txpdma_setup(struct s5j_i2s_s *priv)
 	/* Increment the DMA timeout */
 
 	if (bfcontainer->timeout > 0) {
-			timeout += bfcontainer->timeout;
+		timeout += bfcontainer->timeout;
 	} else {
-			notimeout = true;
+		notimeout = true;
 	}
 
 	/* Add the container to the list of active DMAs */
@@ -1938,13 +1932,10 @@ static int i2s_configure(struct s5j_i2s_s *priv)
 
 	/* Reset I2S */
 	putreg32(0, priv->base + S5J_I2S_CON);
-	modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_SW_RST_MASK,
-				I2S_CR_SW_RST_RELEASE);
+	modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_SW_RST_MASK, I2S_CR_SW_RST_RELEASE);
 
 	/* Set Mode */
-	reg = I2S_MOD_OP_CLK_PCLK | I2S_MOD_CDCLKCON_IN | I2S_MOD_MSS_SLAVE |
-		  I2S_MOD_RCLKSRC | I2S_MOD_TXR(TXR_TXRX) | I2S_MOD_RFS(RFS_256) |
-		  I2S_MOD_BFS(BFS_64);
+	reg = I2S_MOD_OP_CLK_PCLK | I2S_MOD_CDCLKCON_IN | I2S_MOD_MSS_SLAVE | I2S_MOD_RCLKSRC | I2S_MOD_TXR(TXR_TXRX) | I2S_MOD_RFS(RFS_256) | I2S_MOD_BFS(BFS_64);
 	putreg32(reg, priv->base + S5J_I2S_MOD);
 
 	ret = s5j_configgpio(GPIO_I2S0_BCLK);
@@ -2002,7 +1993,6 @@ static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
 	return 0;
 }
 
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -2021,16 +2011,8 @@ static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
  *
  ****************************************************************************/
 
-struct i2s_dev_s *s5j_i2s_initialize(uint16_t port)
+struct i2s_dev_s *s5j_i2s_initialize(void)
 {
-	if (port >= S5J_I2S_MAXPORTS) {
-		lldbg("ERROR: Port number outside the allowed port number range\n");
-		return NULL;
-	}
-	if (g_i2sdevice[port] != NULL) {
-		return &g_i2sdevice[port]->dev;
-	}
-
 	struct s5j_i2s_s *priv;
 	int ret;
 
@@ -2093,8 +2075,6 @@ struct i2s_dev_s *s5j_i2s_initialize(uint16_t port)
 
 	irq_attach(priv->isr_num, priv->isr_handler, priv);
 	up_enable_irq(priv->isr_num);
-
-	g_i2sdevice[port] = priv;
 
 	/* Success exit */
 	return &priv->dev;

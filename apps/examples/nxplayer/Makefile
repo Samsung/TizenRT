@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/alctest/Makefile
+# apps/examples/nxplayer/Makefile
 #
 #   Copyright (C) 2013 Ken Pettit. All rights reserved.
-#   Copyright (C) 2012-2013 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2012-2013, 2016 Gregory Nutt. All rights reserved.
 #   Author: Ken Pettit <pettitkd@gmail.com>
 #           Gregory Nutt <gnutt@nuttx.org>
 #
@@ -59,14 +59,12 @@ include $(APPDIR)/Make.defs
 
 # built-in application info
 
-APPNAME = alctest
-FUNCNAME = alc5658char_test_main
-THREADEXEC = TASH_EXECMD_ASYNC
-
+APPNAME = nxplayer
+THREADEXEC = TASH_EXECMD_SYNC
 
 ASRCS =
-CSRCS =
-MAINSRC = alc5658char_test_main.c
+CSRCS = nxplayer.c
+MAINSRC = nxplayer_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -95,8 +93,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_ALC5658CHAR_TEST_PROGNAME ?= alc5658char_test$(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_ALC5658CHAR_TEST_PROGNAME)
+CONFIG_EXAMPLES_NXPLAYER_PROGNAME ?= nxplayer$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_NXPLAYER_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
@@ -130,11 +128,11 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_ALC5658CHAR_TEST),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
-	$(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC))
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_SYSTEM_NXPLAYER),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC))
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
 
 else
 context:

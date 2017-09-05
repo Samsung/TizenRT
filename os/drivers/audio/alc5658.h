@@ -90,12 +90,12 @@ typedef enum {
 
 	ALC5658_SIDETONE = 0x0018,
 
-	/* DIGITAL Volume*/
+	/* DIGITAL Volume */
 	ALC5658_DAC_L1R1_VLM = 0x0019,
 	ALC5658_DAC_L2R2_VLM = 0x001A,
 	ALC5658_DAC_L2R2_MUTE = 0x001B,
 
-	/* DIGITAL Mixers*/
+	/* DIGITAL Mixers */
 	ALC5658_ADC_2_DAC_MXR = 0x0029,
 	ALC5658_DAC_STR_MXR = 0x002A,
 	ALC5658_DAC_MN_MXR = 0x002B,
@@ -137,7 +137,7 @@ typedef enum {
 	ALC5658_TDM_CTRL3 = 0x0079,
 	ALC5658_TDM_CTRL4 = 0x007A,
 
-	/* Global Clock*/
+	/* Global Clock */
 	ALC5658_GLBL_CLK = 0x0080,
 	ALC5658_GLBL_PLL1 = 0x0081,
 	ALC5658_GLBL_PLL2 = 0x0082,
@@ -224,11 +224,11 @@ t_codec_init_script_entry codec_init_script[] = {
 /* Commonly defined and redefined macros */
 
 #ifndef MIN
-#define MIN(a, b)                   (((a) < (b)) ? (a) : (b))
+#define MIN(a,b)                   (((a) < (b)) ? (a) : (b))
 #endif
 
 #ifndef MAX
-#define MAX(a, b)                   (((a) > (b)) ? (a) : (b))
+#define MAX(a,b)                   (((a) > (b)) ? (a) : (b))
 #endif
 
 /****************************************************************************

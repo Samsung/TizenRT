@@ -60,11 +60,6 @@ config AUDIO_DRIVER_SPECIFIC_BUFFERS
 
 endmenu # Audio Buffer Configuration
 
-config AUDIO_MULTI_CARD
-	bool "Registering audio device as different devices for capture and playback"
-	default n
-
-
 config DEBUG_AUDIO_ERROR
 	bool "Output AUDIO Error Debug Messages"
 	default n

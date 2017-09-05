@@ -88,9 +88,6 @@
 #define CONFIG_AUDIO_I2SCHAR_TXTIMEOUT 0
 #endif
 
-#define i2serr printf
-#define i2sinfo printf
-
 /* Device naming ************************************************************/
 #define DEVNAME_FMT    "/dev/i2schar%d"
 #define DEVNAME_FMTLEN (12 + 3 + 1)
@@ -122,14 +119,14 @@ static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, siz
  ****************************************************************************/
 
 static const struct file_operations i2schar_fops = {
-	NULL,					/* open  */
-	NULL,					/* close */
+	NULL,						/* open  */
+	NULL,						/* close */
 	i2schar_read,				/* read  */
 	i2schar_write,				/* write */
-	NULL,					/* seek  */
-	NULL,					/* ioctl */
+	NULL,						/* seek  */
+	NULL,						/* ioctl */
 #ifndef CONFIG_DISABLE_POLL
-	NULL,					/* poll  */
+	NULL,						/* poll  */
 #endif
 };
 

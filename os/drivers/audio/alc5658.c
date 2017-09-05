@@ -95,10 +95,10 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define ALC5658_DEFAULT_SAMPRATE	48000
-#define ALC5658_DEFAULT_NCHANNELS	2
-#define ALC5658_DEFAULT_BPSAMP		16
-#define FAIL				0xFFFF
+#define ALC5658_DEFAULT_SAMPRATE 	48000
+#define ALC5658_DEFAULT_NCHANNELS 	2
+#define ALC5658_DEFAULT_BPSAMP 		16
+#define FAIL	0xFFFF
 
 /****************************************************************************
  * Private Function Prototypes

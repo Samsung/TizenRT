@@ -95,9 +95,7 @@ static int s5j_dma_priv_setup(DMA_HANDLE handle, dma_task *task)
 	unsigned int rx_num = (task->size / 4) & (~0xFF);
 	unsigned int rx_num_residual = (task->size / 4) & 0xFF;
 
-	priv_task->chflags = CCR_P2M_DFLT |
-						 SRC_BURST_SIZE(BS_4) |
-						 DST_BURST_SIZE(BS_1);
+	priv_task->chflags = CCR_P2M_DFLT | SRC_BURST_SIZE(BS_4) | DST_BURST_SIZE(BS_1);
 
 	DMA_MC_4B_SET(priv_task->SAR, task->src);
 	DMA_MC_4B_SET(priv_task->DAR, task->dst);
@@ -121,8 +119,7 @@ static int s5j_dma_priv_setup(DMA_HANDLE handle, dma_task *task)
 		memset(priv_task->finish_1, DMA_NOP, priv_task->finish_size);
 	}
 
-	arch_clean_dcache((uintptr_t)task->microcode,
-					  (uintptr_t)(task->microcode + priv_task->mc_size));
+	arch_clean_dcache((uintptr_t) task->microcode, (uintptr_t)(task->microcode + priv_task->mc_size));
 
 	return OK;
 }

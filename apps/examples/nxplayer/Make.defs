@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXAMPLES_ALC5658CHAR_TEST),y)
-CONFIGURED_APPS += examples/alc5658char_test
+ifeq ($(CONFIG_SYSTEM_NXPLAYER),y)
+CONFIGURED_APPS += examples/nxplayer
 endif
 

@@ -1,17 +1,6 @@
 #
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
-#
-
-menuconfig I2S
-	bool "I2S Driver Support"
-	default n
-	---help---
-		This selection enables selection of common I2S options.  This option
-		should be enabled by all platforms that support I2S interfaces.
-		See include/tinyara/audio/i2s.h for further I2S driver information.
-
-if I2S
 
 config AUDIO_I2SCHAR
 	bool "I2S character driver (for testing only)"
@@ -44,145 +33,79 @@ config AUDIO_I2SCHAR_TXTIMEOUT
 		The special value of zero disables RX timeouts.  Default: 0
 
 endif # AUDIO_I2SCHAR
-endif # I2S
 
-config AUDIO_DEVICES
-	bool "Support for Audio Devices"
+config AUDIO_NULL
+	bool "NULL audio device"
 	default n
 	depends on AUDIO
 	---help---
-		Enables support for Audio Devices.
+		A do-nothinig audio device driver to simplify testing of audio
+		decoders.
 
-if AUDIO_DEVICES
-
-config AUDIO_MULTI_SESSION
-	bool "Support multiple sessions"
-	default n
+config AUDIO_ALC5658
+	bool "ALC5658 audio chip"
+	depends on AUDIO
 	---help---
-		Some audio devices, such as USB attached sound cards, may support more
-		than one streaming session at a time (each with one or more audio channels).
-		Selecting this feature adds support for tracking multiple concurrent
-		sessions with the lower-level audio devices.
+		Select to enable support for the ALC5658 Audio codec by Realtek
+		NOTE: This driver also depends on both I2C and I2S support although
+		that dependency is not explicit here.
 
-menu "Audio Buffer Configuration"
+if AUDIO_ALC5658
 
-config AUDIO_LARGE_BUFFERS
-	bool "Support Audio Buffers with greater than 65K samples"
-	default n
-	---help---
-		By default, the Audio Pipeline Buffers use a 16-bit max sample count, limiting
-		the number of samples per buffer to 65K.  Enable this option to specify a
-		32-bit max sample count for increased samples / buffer capability.
-		channel capability.
+config ALC5658_INITVOLUME
+	int "ALC5658 initial volume setting"
+	default 250
 
-config AUDIO_NUM_BUFFERS
-	int "Number of buffers for audio processing"
+config ALC5658_INFLIGHT
+	int "ALC5658 maximum in-flight audio buffers"
 	default 2
-	---help---
-		Specifies the number of buffers to allocate for audio processing.
-		If Driver Specified buffer sizes is enabled (below), then the
-		low-level drivers will have the opportunity to override this
-		value.
 
-config AUDIO_BUFFER_NUMBYTES
-	int "Size of each audio buffer for audio processing"
+config ALC5658_MSG_PRIO
+	int "ALC5658 message priority"
+	default 1
+
+config ALC5658_BUFFER_SIZE
+	int "ALC5658 preferred buffer size"
 	default 8192
-	---help---
-		Specifies the allocation size for each audio buffer
-		If Driver Specified buffer sizes is enabled (below), then the
-		low-level drivers will have the opportunity to override this
-		value.
 
-config AUDIO_DRIVER_SPECIFIC_BUFFERS
-	bool "Support for Driver specified buffer sizes"
+config ALC5658_NUM_BUFFERS
+	int "ALC5658 preferred number of buffers"
+	default 4
+
+config ALC5658_WORKER_STACKSIZE
+	int "ALC5658 worker thread stack size"
+	default 768
+
+config ALC5658_REGDUMP
+	bool "ALC5658 register dump"
 	default n
 	---help---
-		By default, the Audio system uses the same size and number of buffers
-		regardless of the specific audio device in use.  Specifying 'y' here
-		adds extra code which allows the lower-level audio device to specify
-		a partucular size and number of buffers.
+		Enable logic to dump the contents of all ALC5658 registers.
 
-endmenu # Audio Buffer Configuration
-
-menu "Supported Audio Formats"
-
-config AUDIO_FORMAT_PCM
-	bool "PCM Audio"
-	default y
-	---help---
-		Build in support for PCM Audio format.
-
-endmenu
-
-menu "Exclude Specific Audio Features"
-
-config AUDIO_EXCLUDE_PAUSE_RESUME
-	bool "Exclude pause and resume controls"
+config ALC5658_CLKDEBUG
+	bool "ALC5658 clock analysis"
 	default n
 	---help---
-		Exclude building support for pausing and resuming audio files
-		once they are submitted.  If the sound system is being used to play
-		short system notification or error type sounds that typicaly only
-		last a second or two, then there is no need (or chance) to pause or
-		resume sound playback once it has started.
+		Enable logic to analyze ALC5658 clock configuation.
 
-config AUDIO_EXCLUDE_STOP
-	bool "Exclude stop playback controls"
-	default n
-	---help---
-		Exclude building support for stopping audio files once they are
-		submitted.  If the sound system is being used to play short sytem
-		notification or error type sounds that typically only last a second
-		or two, then there is no need (or chance) to stop the sound
-		playback once it has started.
+endif # AUDIO_ALC5658
 
-config AUDIO_EXCLUDE_FFORWARD
-	bool "Exclude fast forward controls"
-	default n if !AUDIO_EXCLUDE_STOP
-	default y if AUDIO_EXCLUDE_STOP
-	---help---
-		Exclude building support for fast forwarding through audio files
-		once they are submitted.  Selecting this option would only make
-		if the underlying audio decoding logic is capable of sub-sampling
-		in the stream of audio data.
+if AUDIO_NULL
 
-config AUDIO_EXCLUDE_REWIND
-	bool "Exclude rewind controls"
-	default y
-	---help---
-		Rewind may be supported by some audio devices, but not the typical
-		device that receives a non-seekable, stream of audio buffers.
+config AUDIO_NULL_MSG_PRIO
+	int "Null audio device message priority"
+	default 1
 
-endmenu
+config AUDIO_NULL_BUFFER_SIZE
+	int "Null audio device preferred buffer size"
+	default 8192
 
-config AUDIO_CUSTOM_DEV_PATH
-	bool "Use custom device path"
-	default n
-	---help---
-		By default, all audio devices on the target are are registered in the
-		/dev/audio directory.  Select this option to change the default location
-		for the device registration.
+config AUDIO_NULL_NUM_BUFFERS
+	int "Null audio device preferred number of buffers"
+	default 4
 
-if AUDIO_CUSTOM_DEV_PATH
+config AUDIO_NULL_WORKER_STACKSIZE
+	int "Null audio device worker thread stack size"
+	default 768
 
-config AUDIO_DEV_ROOT
-	bool "Place audio devices in /dev"
-	default n
-	---help---
-		This option causes all device entries to appear in /dev with all the
-		other device entries.  This option generates the smallest code and
-		RAM footprint.
-
-if !AUDIO_DEV_ROOT
-
-config AUDIO_DEV_PATH
-	string "Base path for Audio devices"
-	default "/dev/audio"
-	---help---
-		The path on the target where audio devices are registered.  The default
-		is to place all audio devices in the /dev/audio/ directory.
-
-endif # AUDIO_CUSTOM_DEV_PATH
-endif #AUDIO_DEV_ROOT
-
-endif # AUDIO_DEVICES
+endif # AUDIO_NULL
