@@ -100,6 +100,8 @@
 #error CONFIG_AUDIO required by this driver
 #endif
 
+#define S5J_I2S_MAXPORTS 1
+
 #ifndef CONFIG_S5J_I2S_MAXINFLIGHT
 #define CONFIG_S5J_I2S_MAXINFLIGHT 16
 #endif
@@ -321,6 +323,8 @@ static const struct i2s_ops_s g_i2sops = {
 	.i2s_txdatawidth = i2s_txdatawidth,
 	.i2s_send = i2s_send,
 };
+
+static struct s5j_i2s_s *g_i2sdevice[S5J_I2S_MAXPORTS];
 
 /****************************************************************************
  * Public Data
@@ -2011,8 +2015,16 @@ static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
  *
  ****************************************************************************/
 
-struct i2s_dev_s *s5j_i2s_initialize(void)
+struct i2s_dev_s *s5j_i2s_initialize(uint16_t port)
 {
+	if (port >= S5J_I2S_MAXPORTS) {
+		lldbg("ERROR: Port number outside the allowed port number range\n");
+		return NULL;
+	}
+	if (g_i2sdevice[port] != NULL) {
+		return &g_i2sdevice[port]->dev;
+	}
+
 	struct s5j_i2s_s *priv;
 	int ret;
 
@@ -2075,6 +2087,8 @@ struct i2s_dev_s *s5j_i2s_initialize(void)
 
 	irq_attach(priv->isr_num, priv->isr_handler, priv);
 	up_enable_irq(priv->isr_num);
+
+	g_i2sdevice[port] = priv;
 
 	/* Success exit */
 	return &priv->dev;
