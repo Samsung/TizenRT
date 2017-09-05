@@ -126,14 +126,31 @@ static void board_gpio_initialize(void)
  ****************************************************************************/
 static void board_i2c_initialize(void)
 {
-#ifdef CONFIG_I2C
-#ifdef CONFIG_S5J_I2C
+#if defined(CONFIG_I2C) && defined(CONFIG_S5J_I2C)
 	s5j_i2c_register(0);
 	s5j_i2c_register(1);
 #endif
+}
+
+static void board_i2s_initialize(void)
+{
+#if defined(CONFIG_I2S) && defined(CONFIG_S5J_I2S)
+	s5j_i2s_initialize(0);
 #endif
 }
 
+/****************************************************************************
+  * Name: board_sensor_initialize
+  *
+  * Description:
+  *  Expose board dependent Sensors
+  ****************************************************************************/
+static void board_sensor_initialize(void)
+{
+#if defined(CONFIG_SENSOR_PPD42NS) && defined(CONFIG_S5J_SENSOR_PPD42NS)
+	s5j_ppd42ns_initialize();
+#endif
+}
 
 /*****************************************************************************
  * Public Functions
@@ -216,6 +233,9 @@ void board_initialize(void)
 
 	board_gpio_initialize();
 	board_i2c_initialize();
+	board_i2s_initialize();
+
+	board_sensor_initialize();
 
 }
 #endif /* CONFIG_BOARD_INITIALIZE */

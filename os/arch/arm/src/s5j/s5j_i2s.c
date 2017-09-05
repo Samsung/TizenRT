@@ -85,7 +85,7 @@
 #include "chip/s5jt200_i2s.h"
 #include "s5j_dma.h"
 #include "s5j_i2s.h"
-#include "s5j_vclk.h"
+#include "s5j_clock.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -1964,7 +1964,7 @@ static int i2s_configure(struct s5j_i2s_s *priv)
 		return ret;
 	}
 
-	cal_clk_mux(i2s_mux, i2s_bclk);
+	s5j_clk_mux_select(CLK_MUX_I2SB, CLK_MUX_SELECT_BCLK);
 
 	/* We are always slave here ... Below code should set priv structure */
 	/* Set priv structure here */
