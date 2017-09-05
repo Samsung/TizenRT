@@ -83,9 +83,22 @@ openocd -f artik053.cfg -c ' \
 
 ## Configuration Sets
 
-will be updated
+After configuration, you can add / remove the configuration you want via menuconfig. If you want to run menuconfig, you need to install `kconfig-frontends`. kconfig-frontends was set at [[kconfig-frontends]](../../../README.md#set-kconfig-frontends) tab of Quick Start.
 
 #### nettest
 
-#### tash
+This is the basic configuration of ARTIK05x products. You can set and build the following:
 
+```bash
+~/TizenRT$ cd os/tools
+~/TizenRT/os/tools$ ./configure.sh artik053/nettest
+```
+
+#### nettestsecure
+
+This is the basic configuration of ARTIK05xS products. It is the same as 'nettest', and has a function related to secureboot. If you have an ARTIK05xS product, use this config.
+
+```bash
+~/TizenRT$ cd os/tools
+~/TizenRT/os/tools$ ./configure.sh artik053/nettestsecure
+```
