@@ -373,7 +373,7 @@ err_t ip6_input(struct pbuf *p, struct netif *inp)
 {
 	struct ip6_hdr *ip6hdr;
 	struct netif *netif;
-	u8_t nexth;
+	u8_t *nexth;
 	u16_t hlen;					/* the current header length */
 	u8_t i;
 #if 0							/*IP_ACCEPT_LINK_LAYER_ADDRESSING */
@@ -537,7 +537,7 @@ netif_found:
 	ip_data.current_netif = netif;
 
 	/* Save next header type. */
-	nexth = IP6H_NEXTH(ip6hdr);
+	nexth = &IP6H_NEXTH(ip6hdr);
 
 	/* Init header length. */
 	hlen = ip_data.current_ip_header_tot_len = IP6_HLEN;
@@ -546,12 +546,12 @@ netif_found:
 	pbuf_header(p, -IP6_HLEN);
 
 	/* Process known option extension headers, if present. */
-	while (nexth != IP6_NEXTH_NONE) {
-		switch (nexth) {
+	while (*nexth != IP6_NEXTH_NONE) {
+		switch (*nexth) {
 		case IP6_NEXTH_HOPBYHOP:
 			LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with Hop-by-Hop options header\n"));
 			/* Get next header type. */
-			nexth = *((u8_t *) p->payload);
+			nexth = ((u8_t *) p->payload);
 
 			/* Get the header length. */
 			hlen = 8 * (1 + * ((u8_t *) p->payload + 1));
@@ -572,7 +572,7 @@ netif_found:
 		case IP6_NEXTH_DESTOPTS:
 			LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with Destination options header\n"));
 			/* Get next header type. */
-			nexth = *((u8_t *) p->payload);
+			nexth = ((u8_t *) p->payload);
 
 			/* Get the header length. */
 			hlen = 8 * (1 + * ((u8_t *) p->payload + 1));
@@ -593,7 +593,7 @@ netif_found:
 		case IP6_NEXTH_ROUTING:
 			LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with Routing header\n"));
 			/* Get next header type. */
-			nexth = *((u8_t *) p->payload);
+			nexth = ((u8_t *) p->payload);
 
 			/* Get the header length. */
 			hlen = 8 * (1 + * ((u8_t *) p->payload + 1));
@@ -619,7 +619,7 @@ netif_found:
 			frag_hdr = (struct ip6_frag_hdr *)p->payload;
 
 			/* Get next header type. */
-			nexth = frag_hdr->_nexth;
+			nexth = &frag_hdr->_nexth;
 
 			/* Fragment Header length. */
 			hlen = 8;
@@ -653,7 +653,7 @@ netif_found:
 				/* Returned p point to IPv6 header.
 				 * Update all our variables and pointers and continue. */
 				ip6hdr = (struct ip6_hdr *)p->payload;
-				nexth = IP6H_NEXTH(ip6hdr);
+				nexth = &IP6H_NEXTH(ip6hdr);
 				hlen = ip_data.current_ip_header_tot_len = IP6_HLEN;
 				pbuf_header(p, -IP6_HLEN);
 
@@ -688,7 +688,7 @@ options_done:
 	if (raw_input(p, inp) == 0)
 #endif							/* LWIP_RAW */
 	{
-		switch (nexth) {
+		switch (*nexth) {
 		case IP6_NEXTH_NONE:
 			pbuf_free(p);
 			break;
@@ -720,7 +720,7 @@ options_done:
 #if LWIP_ICMP6
 			/* send ICMP parameter problem unless it was a multicast or ICMPv6 */
 			if ((!ip6_addr_ismulticast(ip6_current_dest_addr())) && (IP6H_NEXTH(ip6hdr) != IP6_NEXTH_ICMP6)) {
-				icmp6_param_problem(p, ICMP6_PP_HEADER, ip_data.current_ip_header_tot_len - hlen);
+				icmp6_param_problem(p, ICMP6_PP_HEADER, (u32_t)nexth - (u32_t)ip_data.current_ip6_header);
 			}
 #endif							/* LWIP_ICMP */
 			LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("ip6_input: Unsupported transport protocol %" U16_F "\n", (u16_t) IP6H_NEXTH(ip6hdr)));

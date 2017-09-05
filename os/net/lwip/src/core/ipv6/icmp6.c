@@ -291,7 +291,7 @@ static void icmp6_send_response(struct pbuf *p, u8_t code, u32_t data, u8_t type
 	icmp6hdr = (struct icmp6_hdr *)q->payload;
 	icmp6hdr->type = type;
 	icmp6hdr->code = code;
-	icmp6hdr->data = data;
+	icmp6hdr->data = lwip_htonl(data);
 
 	/* copy fields from original packet */
 	SMEMCPY((u8_t *) q->payload + sizeof(struct icmp6_hdr), (u8_t *) p->payload, IP6_HLEN + LWIP_ICMP6_DATASIZE);
