@@ -210,9 +210,13 @@ you must modify partition_map.cfg matching the sizes in ARTIK053_FLASH_PART_LIST
 
 ## Configuration Sets
 
-will be updated
 
 #### nettest
 
-#### tash
+This is the basic configuration of ARTIK05x products. You can set and build the following:
+
+```bash
+cd os/tools
+./configure.sh artik053/nettest
+```
 
