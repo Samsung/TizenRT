@@ -67,7 +67,7 @@
 #include <tinyara/audio/audio.h>
 #include <tinyalsa/tinyalsa.h>
 
-#define MILLI_TO_NAMO	1000000
+#define MILLI_TO_NANO	1000000
 
 #ifndef CONFIG_AUDIO_NUM_BUFFERS
 #define CONFIG_AUDIO_NUM_BUFFERS  2
