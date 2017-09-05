@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# configs/artik053/iotivity/Make.defs
+# configs/artik053/nettestsecure/Make.defs
 #
 #   Copyright (C) 2011, 2012-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
