@@ -59,4 +59,17 @@ static inline struct cmsghdr *cmsg_nxthdr(struct msghdr *__msg, struct cmsghdr *
 #define PRIuPTR         "u"
 
 
+
+/*****************************************
+   function related to netdb
+ *****************************************/
+#define NI_NOFQDN       (1 << 0)
+#define NI_NUMERICHOST  (1 << 1)
+#define NI_NAMEREQD     (1 << 2)
+#define NI_NUMERICSERV  (1 << 3)
+#define NI_NUMERICSCOPE (1 << 4)
+#define NI_DGRAM        (1 << 5)
+
+
+
 #endif /* _TIZENRT_COMPAT_H_ */

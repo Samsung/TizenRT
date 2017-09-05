@@ -18,6 +18,7 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <net/if.h>
@@ -26,7 +27,9 @@
 #include <string.h>
 #include <errno.h>
 #include <net/lwip/netif.h>
+#include <net/lwip/netdb.h>
 
+#include "tizenrt_compat.h"
 
 /*****************************************
    function related to network interface
@@ -97,4 +100,51 @@ char * if_indextoname(unsigned int ifindex, char *ifname)
 	errno = error;
 	return(ifname);
 }
+
+/*****************************************
+   function related to netdb
+ *****************************************/
+#ifndef CONFIG_LIBC_NETDB
+int getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen, char *serv, size_t servlen, int flags)
+{
+	struct sockaddr_in *sin = (struct sockaddr_in *)sa;
+	struct hostent *hp;
+	char tmpserv[16];
+
+	if (serv != NULL) {
+		snprintf(tmpserv, sizeof(tmpserv), "%d", ntohs(sin->sin_port));
+		if (strlcpy(serv, tmpserv, servlen) >= servlen) {
+			return (EAI_MEMORY);
+		}
+	}
+
+	if (host != NULL) {
+		if (flags & NI_NUMERICHOST) {
+			if (strlcpy(host, (const char *)inet_ntoa(sin->sin_addr), hostlen) >= hostlen) {
+				return (EAI_MEMORY);
+			} else {
+				return (0);
+			}
+		} else {
+#if 0 /* The other flags except for NI_NUMERICHOST are not permitted. */
+			hp = gethostbyaddr((char *)&sin->sin_addr, sizeof(struct in_addr), AF_INET);
+			if (hp == NULL) {
+				return (NO_DATA);
+			}
+
+			if (strlcpy(host, hp->h_name, hostlen) >= hostlen) {
+				return (EAI_MEMORY);
+			} else {
+				return (0);
+			}
+#else
+			return (EAI_FAIL);
+#endif
+		}
+	}
+
+	return (0);
+}
+
+#endif
 
