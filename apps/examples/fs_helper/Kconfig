@@ -3,8 +3,6 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-menu "filesystem helper application"
-
 config FILESYSTEM_HELPER_ENABLE
     bool "enable filesystem helper application"
     default n
@@ -49,4 +47,3 @@ config PROCFS_TEST
 
 endif #FILESYSTEM_HELPER_ENABLE
 
-endmenu

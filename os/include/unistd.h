@@ -331,7 +331,7 @@ FAR char *getcwd(FAR char *buf, size_t size);
 /**
  * @ingroup STDLIB_LIBC
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int access(FAR const char *path, int amode);
 /**

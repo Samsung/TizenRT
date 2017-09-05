@@ -50,16 +50,16 @@
 #
 ############################################################################
 
-CSRCS	+= webserver/http.c
-CSRCS   += webserver/http_server.c
-CSRCS   += webserver/http_client.c
+CSRCS	+= http.c
+CSRCS   += http_server.c
+CSRCS   += http_client.c
 ifeq ($(CONFIG_NET_SECURITY_TLS),y)
-CSRCS   += webserver/http_client_tls.c
-CSRCS   += webserver/http_server_tls.c
+CSRCS   += http_client_tls.c
+CSRCS   += http_server_tls.c
 endif
-CSRCS   += webserver/http_string_util.c
-CSRCS   += webserver/http_keyvalue_list.c
-CSRCS   += webserver/http_query.c
+CSRCS   += http_string_util.c
+CSRCS   += http_keyvalue_list.c
+CSRCS   += http_query.c
 
 DEPPATH += --dep-path webserver
 VPATH += :webserver

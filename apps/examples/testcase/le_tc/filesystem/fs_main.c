@@ -302,8 +302,8 @@ static void fs_vfs_read_tc(void)
 	TC_ASSERT_GEQ("open", fd, 0);
 	memset(buf, 0, sizeof(buf));
 	ret = read(fd, buf, sizeof(buf));
-	TC_ASSERT_LT_CLEANUP("read", ret, 0, close(fd));
 	close(fd);
+	TC_ASSERT_LT("read", ret, 0);
 
 	/* Nagative case with invalid argument, fd. It will return ERROR */
 	ret = read(CONFIG_NFILE_DESCRIPTORS, buf, sizeof(buf));
@@ -357,11 +357,11 @@ static void fs_vfs_dup_tc(void)
 	TC_ASSERT_EQ_CLEANUP("write", ret, len, close(fd1));
 
 	fd2 = dup(fd1);
-	TC_ASSERT_GEQ_CLEANUP("dup", fd2, 0,  close(fd1));
+	close(fd1);
+	TC_ASSERT_GEQ("dup", fd2, 0);
 
 	len = strlen(str2);
 	ret = write(fd2, str2, strlen(str2));
-	close(fd1);
 	close(fd2);
 	TC_ASSERT_EQ("write", ret, len);
 
@@ -474,16 +474,16 @@ static void fs_vfs_fsync_tc(void)
 	TC_ASSERT_EQ_CLEANUP("write", ret, len, close(fd));
 
 	ret = fsync(fd);
-	TC_ASSERT_GEQ_CLEANUP("fsync", ret, 0, close(fd));
 	close(fd);
+	TC_ASSERT_GEQ("fsync", ret, 0);
 
 	/* Nagative case with invalid argument, no write access. It will return ERROR */
 	fd = open(filename, O_RDOK);
 	TC_ASSERT_GEQ("open", fd, 0);
 
 	ret = fsync(fd);
-	TC_ASSERT_EQ_CLEANUP("fsync", ret, ERROR, close(fd));
 	close(fd);
+	TC_ASSERT_EQ("fsync", ret, ERROR);
 
 	/* Nagative case with invalid argument, fd. It will return ERROR */
 	ret = fsync(CONFIG_NFILE_DESCRIPTORS);
@@ -1219,8 +1219,8 @@ static void libc_stdio_fdopen_tc(void)
 	TC_ASSERT_GEQ("open", fd, 0);
 
 	fp = fdopen(fd, "r");
-	TC_ASSERT_CLEANUP("fdopen", fp, close(fd));
 	close(fd);
+	TC_ASSERT("fdopen", fp);
 	TC_ASSERT_EQ_CLEANUP("fdopen", fp->fs_oflags, O_RDONLY, fclose(fp));
 	fclose(fp);
 
@@ -1505,8 +1505,8 @@ static void libc_stdio_fsetpos_tc(void)
 
 	/* Nagative case with invalid arguments, NULL position. It will return ERROR */
 	ret = fsetpos(fp, NULL);
-	TC_ASSERT_EQ_CLEANUP("fsetpos", ret, ERROR, fclose(fp));
 	fclose(fp);
+	TC_ASSERT_EQ("fsetpos", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1581,7 +1581,7 @@ static void libc_stdio_fgetc_tc(void)
 	int ch;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fgetc", fp);
+	TC_ASSERT("fopen", fp);
 
 	ch = fgetc(fp);
 	fclose(fp);
@@ -1617,9 +1617,9 @@ static void libc_stdio_fwrite_tc(void)
 
 	len = strlen(VFS_TEST_CONTENTS_3);
 	ret = fwrite(VFS_TEST_CONTENTS_3, 1, len, fp);
-	TC_ASSERT_EQ_CLEANUP("fwrite", ret, len, fclose(fp));
-
 	fclose(fp);
+	TC_ASSERT_EQ("fwrite", ret, len);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1656,10 +1656,75 @@ static void libc_stdio_fread_tc(void)
 	len = strlen(VFS_TEST_CONTENTS_3);
 	memset(buf, 0, sizeof(buf));
 	ret = fread(buf, 1, len, fp);
-	TC_ASSERT_EQ_CLEANUP("fread", ret, len, fclose(fp));
-	TC_ASSERT_EQ_CLEANUP("fread", strcmp(buf, VFS_TEST_CONTENTS_3), 0, fclose(fp));
-
 	fclose(fp);
+	TC_ASSERT_EQ("fread", ret, len);
+	TC_ASSERT_EQ("fread", strcmp(buf, VFS_TEST_CONTENTS_3), 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_freopen_tc
+* @brief            Open file by freopen
+* @scenario         Open file
+* @apicovered       freopen
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_freopen_tc(void)
+{
+	FILE *fp;
+	char *filename = VFS_FILE_PATH;
+
+	fp = freopen(filename, "w", NULL);
+	TC_ASSERT("freopen", fp);
+	fclose(fp);
+
+	fp = freopen(filename, "w", fp);
+	TC_ASSERT("freopen", fp);
+	fclose(fp);
+
+	fp = freopen(filename, "r+", fp);
+	TC_ASSERT("freopen", fp);
+	fclose(fp);
+
+	fp = freopen(filename, "rb", fp);
+	TC_ASSERT("freopen", fp);
+	fclose(fp);
+
+	fp = freopen(filename, "rx", fp);
+	TC_ASSERT("freopen", fp);
+	fclose(fp);
+
+	/* Nagative cases with invalid mode. It will return NULL */
+
+	fp = freopen(NULL, "w", NULL);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
+
+	fp = freopen(NULL, "b", fp);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
+
+	fp = freopen(filename, "b", fp);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
+
+	fp = freopen(filename, "x", fp);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
+
+	fp = freopen(filename, "z", fp);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
+
+	fp = freopen(filename, "+", fp);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
+
+	fp = freopen(filename, "rw", fp);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
+
+	fp = freopen(filename, "wr", fp);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
+
+	fp = freopen(filename, "wa", fp);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1787,6 +1852,115 @@ static void libc_stdio_fileno_tc(void)
 }
 
 /**
+* @testcase         libc_stdio_remove_tc
+* @brief            Deletes the file whose name is specified in filename.
+* @scenario         Open file
+* @apicovered       remove
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_remove_tc(void)
+{
+	char *filename = VFS_FILE_PATH;
+	int ret = NULL;
+
+	ret = remove(filename);
+	TC_ASSERT_EQ("remove", ret, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_setbuf_tc
+* @brief            Set stream buffer
+* @scenario         Open file
+* @apicovered       setbuf, setvbuf
+* @precondition     NA
+* @postcondition    NA
+*/
+#if CONFIG_STDIO_BUFFER_SIZE > 0
+static void libc_stdio_setbuf_tc(void)
+{
+	FILE *fp;
+	char buffer[64];
+	char *filename = VFS_FILE_PATH;
+
+	/* setbuf_test: DEFAULT buffering */
+
+	fp = fopen(filename, "w");
+	TC_ASSERT("fopen", fp);
+
+	/* setbuf_test: NO buffering */
+
+	setbuf(fp, NULL);
+	TC_ASSERT_EQ_CLEANUP("setbuf", fp->fs_bufstart, NULL, fclose(fp));
+
+	/* setbuf_test: pre-allocated buffer */
+
+	setbuf(fp, buffer);
+	TC_ASSERT_EQ_CLEANUP("setbuf", fp->fs_bufstart, (FAR unsigned char *)buffer, fclose(fp));
+	setbuf(fp, NULL);
+	TC_ASSERT_EQ_CLEANUP("setbuf", fp->fs_bufstart, NULL, fclose(fp));
+
+	fclose(fp);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/**
+* @testcase         libc_stdio_setvbuf_tc
+* @brief            Change stream buffering
+* @scenario         Open file
+* @apicovered       setbuf, setvbuf
+* @precondition     NA
+* @postcondition    NA
+*/
+#if CONFIG_STDIO_BUFFER_SIZE > 0
+static void libc_stdio_setvbuf_tc(void)
+{
+	FILE *fp;
+	char buffer[64];
+	char *filename = VFS_FILE_PATH;
+	int ret = NULL;
+
+	/* setvbuf_test: DEFAULT buffering */
+
+	fp = fopen(filename, "w");
+	TC_ASSERT("fopen", fp);
+
+	/* setvbuf_test: NO buffering */
+
+	ret = setvbuf(fp, NULL, _IONBF, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+
+	/* setvbuf_test: FULL buffering */
+
+	ret = setvbuf(fp, NULL, _IOFBF, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+	ret = setvbuf(fp, NULL, _IONBF, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+
+	/* setvbuf_test: LINE buffering */
+
+	ret = setvbuf(fp, NULL, _IOLBF, 64);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+	ret = setvbuf(fp, NULL, _IONBF, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+
+	/* setvbuf_test: FULL buffering, pre-allocated buffer */
+
+	ret = setvbuf(fp, buffer, _IOFBF, 64);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+	ret = setvbuf(fp, NULL, _IONBF, 0);
+	fclose(fp);
+	TC_ASSERT_LEQ("setvbuf", ret, 0);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/**
 * @testcase         libc_stdio_ungetc_tc
 * @brief            Input character into file stream
 * @scenario         Get character by fgets and then input again with ungetc. after that compare both of characters
@@ -1883,11 +2057,17 @@ static int fs_sample_launcher(int argc, char **args)
 	libc_stdio_fgetc_tc();
 	libc_stdio_fwrite_tc();
 	libc_stdio_fread_tc();
+	libc_stdio_freopen_tc();
 	libc_stdio_ferror_tc();
 	libc_stdio_clearerr_tc();
 	libc_stdio_gets_tc();
 	libc_stdio_gets_s_tc();
 	libc_stdio_fileno_tc();
+	libc_stdio_remove_tc();
+#if CONFIG_STDIO_BUFFER_SIZE > 0
+	libc_stdio_setbuf_tc();
+	libc_stdio_setvbuf_tc();
+#endif
 	libc_stdio_ungetc_tc();
 
 	printf("#########################################\n");

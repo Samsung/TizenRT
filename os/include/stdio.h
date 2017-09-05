@@ -248,17 +248,17 @@ char *fgets(FAR char *s, int n, FAR FILE *stream);
 FAR FILE *fopen(FAR const char *path, FAR const char *type);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 FAR FILE *freopen(FAR const char *path, FAR const char *mode, FAR FILE *stream);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 void   setbuf(FAR FILE *stream, FAR char *buf);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int    setvbuf(FAR FILE *stream, FAR char *buffer, int mode, size_t size);
 /**
@@ -449,7 +449,7 @@ FAR char *tmpnam(FAR char *s);
 FAR char *tempnam(FAR const char *dir, FAR const char *pfx);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v2.0
+ * @since Tizen RT v1.1
  */
 int remove(FAR const char *path);
 

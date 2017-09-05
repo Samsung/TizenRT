@@ -16,12 +16,11 @@
 #
 ###########################################################################
 
-CSRCS += websocket/websocket.c
-CSRCS += websocket/wslay/wslay_net.c \
-	  websocket/wslay/wslay_queue.c \
-	  websocket/wslay/wslay_frame.c \
-	  websocket/wslay/wslay_event.c
+CSRCS += websocket.c
+CSRCS += wslay_net.c \
+	  wslay_queue.c \
+	  wslay_frame.c \
+	  wslay_event.c
 
-DEPPATH += --dep-path websocket
-VPATH += :websocket
-
+DEPPATH += --dep-path websocket --dep-path websocket/wslay
+VPATH += websocket websocket/wslay

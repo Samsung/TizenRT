@@ -116,7 +116,7 @@ extern "C" {
  * @param[in] number for tag
  * @param[in] unique strings like function name for distinguishing events
  * @return On success, TTRACE_VALID is returned. On failure, ERROR is returned and errno is set appropriately.
- * @since Tizen RT vX.X
+ * @since Tizen RT v1.1
  */
 int trace_begin(int tag, char *str, ...);
 
@@ -126,7 +126,7 @@ int trace_begin(int tag, char *str, ...);
  * @param[in] number for tag
  * @param[in] unique id for distinguishing events
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
- * @since Tizen RT vX.X
+ * @since Tizen RT v1.1
  */
 int trace_begin_uid(int tag, int8_t uniqueid);
 
@@ -135,7 +135,7 @@ int trace_begin_uid(int tag, int8_t uniqueid);
  * @brief writes a trace log to indicate that the event has ended
  * @param[in] number for tag
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
- * @since Tizen RT vX.X
+ * @since Tizen RT v1.1
  */
 int trace_end(int tag);
 
@@ -144,7 +144,7 @@ int trace_end(int tag);
  * @brief writes a trace log to indicate that a event has ended
  * @param[in] number for tag
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
- * @since Tizen RT vX.X
+ * @since Tizen RT v1.1
  */
 int trace_end_uid(int tag);
 
@@ -154,7 +154,7 @@ int trace_end_uid(int tag);
  * @param[in] tcb of current task
  * @param[in] tcb of next task which will be switched
  * @return On success, TTRACE_VALID is returned. On failure, TTRACE_INVALID is returned and errno is set appropriately.
- * @since Tizen RT vX.X
+ * @since Tizen RT v1.1
  */
 int trace_sched(struct tcb_s *prev, struct tcb_s *next);
 #else

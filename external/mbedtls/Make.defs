@@ -51,33 +51,33 @@
 #
 ############################################################################
 
-SRC_CRYPTO_CSRCS =    mbedtls/aes.c           mbedtls/aesni.c         mbedtls/arc4.c          \
-                      mbedtls/asn1parse.c     mbedtls/asn1write.c     mbedtls/base64.c        \
-                      mbedtls/bignum.c        mbedtls/blowfish.c      mbedtls/camellia.c      \
-                      mbedtls/ccm.c           mbedtls/cipher.c        mbedtls/cipher_wrap.c   \
-                      mbedtls/cmac.c          mbedtls/ctr_drbg.c      mbedtls/des.c           mbedtls/dhm.c    \
-                      mbedtls/ecdh.c          mbedtls/ecdsa.c         mbedtls/ecjpake.c       mbedtls/ecp.c \
-                      mbedtls/ecp_curves.c    mbedtls/entropy.c       mbedtls/entropy_poll.c  \
-                      mbedtls/error.c         mbedtls/gcm.c           mbedtls/havege.c        \
-                      mbedtls/hmac_drbg.c     mbedtls/md.c            mbedtls/md2.c           \
-                      mbedtls/md4.c           mbedtls/md5.c           mbedtls/md_wrap.c       \
-                      mbedtls/memory_buffer_alloc.c           mbedtls/oid.c           \
-                      mbedtls/padlock.c       mbedtls/pem.c           mbedtls/pk.c            \
-                      mbedtls/pk_wrap.c       mbedtls/pkcs12.c        mbedtls/pkcs5.c         \
-                      mbedtls/pkparse.c       mbedtls/pkwrite.c       mbedtls/platform.c      \
-                      mbedtls/ripemd160.c     mbedtls/rsa.c           mbedtls/sha1.c          \
-                      mbedtls/sha256.c        mbedtls/sha512.c        mbedtls/threading.c     \
-                      mbedtls/timing.c        mbedtls/version.c                       \
-                      mbedtls/version_features.c              mbedtls/xtea.c
+SRC_CRYPTO_CSRCS =    aes.c           aesni.c         arc4.c          \
+                      asn1parse.c     asn1write.c     base64.c        \
+                      bignum.c        blowfish.c      camellia.c      \
+                      ccm.c           cipher.c        cipher_wrap.c   \
+                      cmac.c          ctr_drbg.c      des.c           dhm.c    \
+                      ecdh.c          ecdsa.c         ecjpake.c       ecp.c \
+                      ecp_curves.c    entropy.c       entropy_poll.c  \
+                      error.c         gcm.c           havege.c        \
+                      hmac_drbg.c     md.c            md2.c           \
+                      md4.c           md5.c           md_wrap.c       \
+                      memory_buffer_alloc.c           oid.c           \
+                      padlock.c       pem.c           pk.c            \
+                      pk_wrap.c       pkcs12.c        pkcs5.c         \
+                      pkparse.c       pkwrite.c       platform.c      \
+                      ripemd160.c     rsa.c           sha1.c          \
+                      sha256.c        sha512.c        threading.c     \
+                      timing.c        version.c                       \
+                      version_features.c              xtea.c
 
-SRC_X509_CSRCS =      mbedtls/certs.c         mbedtls/pkcs11.c        mbedtls/x509.c          \
-                      mbedtls/x509_create.c   mbedtls/x509_crl.c      mbedtls/x509_crt.c      \
-                      mbedtls/x509_csr.c      mbedtls/x509write_crt.c mbedtls/x509write_csr.c
+SRC_X509_CSRCS =      certs.c         pkcs11.c        x509.c          \
+                      x509_create.c   x509_crl.c      x509_crt.c      \
+                      x509_csr.c      x509write_crt.c x509write_csr.c
 
-SRC_TLS_CSRCS =       mbedtls/debug.c         mbedtls/net.c           mbedtls/ssl_cache.c     \
-                      mbedtls/ssl_ciphersuites.c              mbedtls/ssl_tls.c       \
-                      mbedtls/ssl_cli.c       mbedtls/ssl_cookie.c    mbedtls/ssl_srv.c       \
-                      mbedtls/ssl_ticket.c    mbedtls/easy_tls.c
+SRC_TLS_CSRCS =       debug.c         net.c           ssl_cache.c     \
+                      ssl_ciphersuites.c              ssl_tls.c       \
+                      ssl_cli.c       ssl_cookie.c    ssl_srv.c       \
+                      ssl_ticket.c    easy_tls.c
 
 ifeq ($(CONFIG_TLS_WITH_SSS),y)
 SRC_SEE_CSRCS += see_api.c	see_internal.c
