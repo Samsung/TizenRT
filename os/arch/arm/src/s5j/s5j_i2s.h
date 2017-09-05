@@ -111,7 +111,7 @@ extern "C" {
  *
  ****************************************************************************/
 
-FAR struct i2s_dev_s *s5j_i2s_initialize(void);
+FAR struct i2s_dev_s *s5j_i2s_initialize(uint16_t port);
 
 #undef EXTERN
 #if defined(__cplusplus)
