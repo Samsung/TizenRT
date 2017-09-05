@@ -144,6 +144,8 @@ extern "C" {
  * @ingroup libtinyalsa-pcm
  */
 enum pcm_format {
+    /** Error Case */
+    PCM_FORMAT_NONE = -1,
     /** Signed, 8-bit */
     PCM_FORMAT_S8 = 1,
     /** Signed 16-bit, little endian */

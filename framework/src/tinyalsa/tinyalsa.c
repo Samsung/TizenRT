@@ -148,6 +148,10 @@ static int oops(struct pcm *pcm, int e, const char *fmt, ...)
  */
 unsigned int pcm_get_buffer_size(const struct pcm *pcm)
 {
+	if (pcm == NULL) {
+		return 0;
+	}
+
 	return pcm->buffer_size;
 }
 
@@ -158,6 +162,10 @@ unsigned int pcm_get_buffer_size(const struct pcm *pcm)
  */
 unsigned int pcm_get_channels(const struct pcm *pcm)
 {
+	if (pcm == NULL) {
+		return 0;
+	}
+
 	return pcm->config.channels;
 }
 
@@ -184,6 +192,10 @@ const struct pcm_config *pcm_get_config(const struct pcm *pcm)
  */
 unsigned int pcm_get_rate(const struct pcm *pcm)
 {
+	if (pcm == NULL) {
+		return 0;
+	}
+
 	return pcm->config.rate;
 }
 
@@ -194,6 +206,10 @@ unsigned int pcm_get_rate(const struct pcm *pcm)
  */
 enum pcm_format pcm_get_format(const struct pcm *pcm)
 {
+	if (pcm == NULL) {
+		return PCM_FORMAT_NONE;
+	}
+
 	return pcm->config.format;
 }
 
@@ -205,6 +221,10 @@ enum pcm_format pcm_get_format(const struct pcm *pcm)
  */
 int pcm_get_file_descriptor(const struct pcm *pcm)
 {
+	if (pcm == NULL) {
+		return -EINVAL;
+	}
+
 	return pcm->fd;
 }
 
@@ -216,6 +236,10 @@ int pcm_get_file_descriptor(const struct pcm *pcm)
  */
 const char *pcm_get_error(const struct pcm *pcm)
 {
+	if (pcm == NULL) {
+		return NULL;
+	}
+
 	return pcm->error;
 }
 
@@ -234,7 +258,7 @@ int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 	int ret;
 
 	if (pcm == NULL) {
-		return -EFAULT;
+		return -EINVAL;
 	} else if (config == NULL) {
 		config = &pcm->config;
 		pcm->config.channels = 2;
@@ -269,6 +293,10 @@ int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
  * @return The subdevice on which the pcm has been opened */
 unsigned int pcm_get_subdevice(const struct pcm *pcm)
 {
+	if (pcm == NULL) {
+		return 0;
+	}
+
 	return pcm->subdevice;
 }
 
@@ -305,6 +333,10 @@ unsigned int pcm_format_to_bits(enum pcm_format format)
  */
 unsigned int pcm_bytes_to_frames(const struct pcm *pcm, unsigned int bytes)
 {
+	if (pcm == NULL || bytes == 0) {
+		return 0;
+	}
+
 	return bytes / (pcm->config.channels * (pcm_format_to_bits(pcm->config.format) >> 3));
 }
 
@@ -316,6 +348,10 @@ unsigned int pcm_bytes_to_frames(const struct pcm *pcm, unsigned int bytes)
  */
 unsigned int pcm_frames_to_bytes(const struct pcm *pcm, unsigned int frames)
 {
+	if (pcm == NULL || frames == 0) {
+		return 0;
+	}
+
 	return frames * pcm->config.channels * (pcm_format_to_bits(pcm->config.format) >> 3);
 }
 
@@ -392,6 +428,10 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 	struct audio_msg_s msg;
 	unsigned int size;
 	int prio;
+
+	if (pcm == NULL || data == NULL) {
+		return -EINVAL;
+	}
 
 	if (pcm->flags & PCM_IN) {
 		return -EINVAL;
@@ -471,6 +511,10 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 	struct audio_msg_s msg;
 	unsigned int size;
 	int prio;
+
+	if (pcm == NULL || data == NULL) {
+		return -EINVAL;
+	}
 
 	if (!(pcm->flags & PCM_IN)) {
 		return -EINVAL;
@@ -638,7 +682,7 @@ int pcm_close(struct pcm *pcm)
 	struct audio_buf_desc_s buf_desc;
 
 	if (pcm == NULL) {
-		return oops(pcm, EINVAL, "pcm is null");
+		return -EINVAL;
 	}
 
 	if (pcm == &bad_pcm) {
@@ -711,6 +755,9 @@ int pcm_close(struct pcm *pcm)
 struct pcm *pcm_open_by_name(const char *name, unsigned int flags, const struct pcm_config *config)
 {
 	unsigned int card, device;
+	if (name == NULL) {
+		return NULL;
+	}
 	if ((name[0] != 'h')
 		|| (name[1] != 'w')
 		|| (name[2] != ':')) {
@@ -750,11 +797,10 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	int x;
 
 	pcm = malloc(sizeof(struct pcm));
-	memset(pcm, 0, sizeof(struct pcm));
-
 	if (!pcm) {
-		return &bad_pcm;
+		return NULL;
 	}
+	memset(pcm, 0, sizeof(struct pcm));
 
 #ifdef CONFIG_AUDIO_MULTI_CARD
 	snprintf(fn, sizeof(fn), "/dev/audio/pcmC%uD%u%c", card, device, flags & PCM_IN ? 'c' : 'p');
@@ -763,7 +809,12 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 #endif
 
 	pcm->flags = flags;
-	pcm->fd = open(fn, O_RDWR);
+	if (flags & PCM_IN) {
+		pcm->fd = open(fn, O_RDONLY);
+	} else {
+		pcm->fd = open(fn, O_WRONLY);
+	}
+
 	if (pcm->fd < 0) {
 		oops(pcm, errno, "cannot open device '%s'", fn);
 		return pcm;
@@ -807,7 +858,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	ioctl(pcm->fd, AUDIOIOC_REGISTERMQ, (unsigned long)pcm->mq);
 
 #ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-	if ((ret = ioctl(pcm->fd, AUDIOIOC_GETBUFFERINFO, (unsigned long)&buf_info)) != OK) {
+	if (ioctl(pcm->fd, AUDIOIOC_GETBUFFERINFO, (unsigned long)&buf_info) < 0) {
 		/* Driver doesn't report it's buffer size.  Use our default. */
 		buf_info.buffer_size = CONFIG_AUDIO_BUFFER_NUMBYTES;
 		buf_info.nbuffers = CONFIG_AUDIO_NUM_BUFFERS;
@@ -861,7 +912,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 
 		if (ret != sizeof(buf_desc)) {
 			/* Buffer alloc Operation not supported or error allocating! */
-			oops(pcm, -1, "Could not allocate buffer %d\n", x);
+			oops(pcm, ENOMEM, "Could not allocate buffer %d\n", x);
 			goto fail_cleanup_buffers;
 		}
 	}
@@ -980,6 +1031,9 @@ int pcm_unlink(struct pcm *pcm)
  */
 int pcm_prepare(struct pcm *pcm)
 {
+	if (pcm == NULL) {
+		return -EINVAL;
+	}
 	if (pcm->prepared) {
 		return 0;
 	}
@@ -999,6 +1053,9 @@ int pcm_start(struct pcm *pcm)
 {
 	struct audio_buf_desc_s bufdesc;
 
+	if (pcm == NULL) {
+		return -EINVAL;
+	}
 	int prepare_error = pcm_prepare(pcm);
 	if (prepare_error) {
 		return prepare_error;
@@ -1046,6 +1103,9 @@ int pcm_start(struct pcm *pcm)
  */
 int pcm_stop(struct pcm *pcm)
 {
+	if (pcm == NULL) {
+		return -EINVAL;
+	}
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	if (ioctl(pcm->fd, AUDIOIOC_STOP, (unsigned long)pcm->session) < 0)
 #else
@@ -1065,11 +1125,17 @@ int pcm_stop(struct pcm *pcm)
 
 static inline int pcm_mmap_avail(struct pcm *pcm)
 {
+	if (pcm == NULL) {
+		return 0;
+	}
 	return pcm_bytes_to_frames(pcm, pcm->nextSize);
 }
 
 int pcm_mmap_begin(struct pcm *pcm, void **areas, unsigned int *offset, unsigned int *frames)
 {
+	if (pcm == NULL || *areas == NULL || offset == NULL || frames == NULL) {
+		return -EINVAL;
+	}
 	int nframes = pcm_bytes_to_frames(pcm, pcm->nextSize);
 
 	/* If data is not available, return -1 */
@@ -1098,6 +1164,9 @@ int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames)
 	/* not used */
 	(void)offset;
 
+	if (pcm == NULL) {
+		return -EINVAL;
+	}
 	struct audio_buf_desc_s bufdesc;
 
 	if (pcm->nextSize == 0) {
@@ -1136,6 +1205,9 @@ int pcm_wait(struct pcm *pcm, int timeout)
 	int prio;
 	struct timespec st_time;
 
+	if (pcm == NULL) {
+		return -EINVAL;
+	}
 #ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 	if ((pcm->flags & PCM_OUT) && pcm->bufPtr < pcm->config.period_count)
 #else
@@ -1192,7 +1264,7 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 		/* get the available space for writing new frames */
 		avail = pcm_avail_update(pcm);
 		if (avail < 0) {
-			return oops(pcm, 1, "cannot determine available mmap frames");
+			return oops(pcm, ENOMEM, "cannot determine available mmap frames");
 		}
 
 		/* start the audio if we reach the threshold */
@@ -1233,7 +1305,7 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 		/* copy frames from buffer */
 		frames = pcm_mmap_transfer_areas(pcm, (void *)buffer, offset, frames);
 		if (frames < 0) {
-			return oops(pcm, 1, "write error: avail 0x%x\n", avail);
+			return oops(pcm, ENOMEM, "write error: avail 0x%x\n", avail);
 		}
 
 		offset += frames;
@@ -1245,6 +1317,9 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 
 int pcm_mmap_write(struct pcm *pcm, const void *data, unsigned int count)
 {
+	if (pcm == NULL || data == NULL) {
+		return -EINVAL;
+	}
 	if ((~pcm->flags) & (PCM_OUT | PCM_MMAP)) {
 		return -ENOSYS;
 	}
@@ -1254,6 +1329,9 @@ int pcm_mmap_write(struct pcm *pcm, const void *data, unsigned int count)
 
 int pcm_mmap_read(struct pcm *pcm, void *data, unsigned int count)
 {
+	if (pcm == NULL || data == NULL) {
+		return -EINVAL;
+	}
 	if ((~pcm->flags) & (PCM_IN | PCM_MMAP)) {
 		return -ENOSYS;
 	}
