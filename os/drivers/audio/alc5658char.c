@@ -741,6 +741,18 @@ static ssize_t alc5658char_ioctl(FAR struct file *filep, int cmd, unsigned long 
 	case AUDIOIOC_STOP: {
 		audvdbg("AUDIOIOC_STOP, arg - %ld\n", arg);
 		ret = alc5658char_stop(priv, (FAR const struct audio_caps_s *)arg);
+
+		while (priv->rx_cnt--) {
+			sem_wait(&priv->cnt_rxsem);
+			sem_wait(&priv->rxsem);
+			apb = (FAR struct ap_buffer_s *)dq_remfirst(&priv->rxedq);
+			sem_post(&priv->rxsem);
+
+			if (apb != NULL) {
+				apb_free(apb);
+			}
+		}
+		priv->rx_cnt = 0;
 	}
 	break;
 
