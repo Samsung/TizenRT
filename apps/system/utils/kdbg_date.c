@@ -304,9 +304,9 @@ int kdbg_date(int argc, char **args)
 	if (argc == 1) {
 		ret = date_showtime();
 #if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
-	} else if (!strcmp(args[1], "-s") && argc == 6) {
+	} else if (!strncmp(args[1], "-s", strlen("-s")) && argc == 6) {
 #else
-	} else if (!strcmp(args[1], "-s") && (argc >= 7 && argc <= 9)) {
+	} else if (!strncmp(args[1], "-s", strlen("-s")) && (argc >= 7 && argc <= 9)) {
 #endif
 		ret = date_settime(argc, args);
 	} else {

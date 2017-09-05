@@ -28,6 +28,8 @@
 #include <tinyara/ttrace.h>
 #include <tinyara/clock.h>
 
+#define MAX_TAG_NAMESIZE 4
+
 struct tag_list {
 	const char *name;
 	const char *longname;
@@ -118,7 +120,7 @@ static int assign_tag(char *name)
 	int tags = 0;
 	int len_tags = sizeof(ttrace_tags) / sizeof(struct tag_list);
 	for (i = 0; i < len_tags; i++)
-		if (strcmp(name, ttrace_tags[i].name) == 0) {
+		if (strncmp(name, ttrace_tags[i].name, MAX_TAG_NAMESIZE) == 0) {
 			tags = ttrace_tags[i].tags;
 		}
 	return tags;
@@ -178,7 +180,7 @@ static int parse_args(int argc, char **args)
 static int check_args_validation(int argc, char **args)
 {
 	ttdbg("argc: %d, args[1]: %s\r\n", argc, args[1]);
-	if (argc == 1 || (strcmp(args[1], "--help") == 0)) {
+	if (argc == 1 || (strncmp(args[1], "--help", strlen("--help")) == 0)) {
 		show_help();
 		return TTRACE_INVALID;
 	}
