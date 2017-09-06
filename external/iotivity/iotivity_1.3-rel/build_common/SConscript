@@ -862,5 +862,8 @@ help_vars.AddVariables(
 )
 help_vars.Update(env)
 Help(help_vars.GenerateHelpText(env, sort=cmp))
+# Replicate change that occured after help_var initialisation from env
+if target_os == "yocto":
+    env['TARGET_OS'] = 'linux'
 
 Return('env')
