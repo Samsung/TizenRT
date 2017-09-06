@@ -71,7 +71,7 @@
 
 #include <netinet/in.h>
 
-#include <apps/ftpc.h>
+#include <protocols/ftpc.h>
 
 /****************************************************************************
  * Pre-processor Definitions
