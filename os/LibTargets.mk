@@ -170,7 +170,7 @@ $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT): $(FRAMEWORK_LIB_DIR)$(DELIM)libfr
 	$(Q) install $(FRAMEWORK_LIB_DIR)$(DELIM)libframework$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT)
 
 $(EXTDIR)$(DELIM)libexternal$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libexternal$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" libexternal$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBEXT)
 	$(Q) install $(EXTDIR)$(DELIM)libexternal$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
