@@ -31,7 +31,7 @@ int kdbg_env_set(int argc, char **args)
 {
 	int ret;
 
-	if ((argc != 3) || !strncmp(args[1], "--help", strlen("--help"))) {
+	if ((argc != 3) || !strncmp(args[1], "--help", strlen("--help") + 1)) {
 		printf("\nUsage : setenv NAME VALUE\n");
 		printf("Set each NAME to VALUE in the environment");
 		return ERROR;
@@ -53,7 +53,7 @@ int kdbg_env_unset(int argc, char **args)
 {
 	int ret;
 
-	if ((argc != 2) || !strncmp(args[1], "--help", strlen("--help"))) {
+	if ((argc != 2) || !strncmp(args[1], "--help", strlen("--help") + 1)) {
 		printf("\nUsage : unsetenv NAME\n");
 		printf("Remove the variable, NAME from the environment\n");
 		return ERROR;

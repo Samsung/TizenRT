@@ -180,7 +180,7 @@ static int parse_args(int argc, char **args)
 static int check_args_validation(int argc, char **args)
 {
 	ttdbg("argc: %d, args[1]: %s\r\n", argc, args[1]);
-	if (argc == 1 || (strncmp(args[1], "--help", strlen("--help")) == 0)) {
+	if (argc == 1 || (strncmp(args[1], "--help", strlen("--help") + 1) == 0)) {
 		show_help();
 		return TTRACE_INVALID;
 	}
