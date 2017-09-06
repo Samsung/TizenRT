@@ -138,6 +138,23 @@ IOTIVITY_LIBS_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/out/tizenrt/$(
 IOTIVITY_CONFIG_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/resource/c_common
 endif
 
+
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+
+ifeq ($(IOTJS_ROOT_DIR),)
+  IOTJS_ROOT_DIR = $(EXTDIR)/iotjs
+endif
+
+ifeq ($(CONFIG_DEBUG),y)
+  IOTJS_BUILDTYPE = debug
+  IOTJS_LIB_DIR = $(IOTJS_ROOT_DIR)/build/arm-tizenrt/debug/lib
+else
+  IOTJS_BUILDTYPE = release
+  IOTJS_LIB_DIR = $(IOTJS_ROOT_DIR)/build/arm-tizenrt/release/lib
+endif
+
+endif
+
 # Add-on directories.  These may or may not be in place in the
 # TinyAra source tree (they must be specifically installed)
 #

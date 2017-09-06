@@ -77,6 +77,23 @@ include aws/Make.defs
 include aws/src/Make.defs
 endif
 
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+
+ifeq ($(IOTJS_ROOT_DIR),)
+    IOTJS_ROOT_DIR = $(EXTDIR)/iotjs
+endif
+
+ifeq ($(CONFIG_DEBUG),y)
+  IOTJS_BUILDTYPE = debug
+  IOTJS_LIB_DIR = $(IOTJS_ROOT_DIR)/build/arm-tizenrt/debug/lib
+else
+  IOTJS_BUILDTYPE = release
+  IOTJS_LIB_DIR = $(IOTJS_ROOT_DIR)/build/arm-tizenrt/release/lib
+endif
+
+endif
+
+
 ifeq ($(CONFIG_NETUTILS_WIFI),y)
 include slsi_wifi/Make.defs
 endif
@@ -184,7 +201,12 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/build_iotivity.sh
 endif
 
-$(BIN): $(OBJS) iotivity_build
+iotjs_build:
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+	python $(IOTJS_ROOT_DIR)/tools/build.py --target-arch=arm --target-os=tizenrt --sysroot=../os --target-board=artik05x --jerry-heaplimit=$(CONFIG_IOTJS_JERRY_HEAP) --buildtype=$(IOTJS_BUILDTYPE) --no-init-submodule 
+endif 
+
+$(BIN): $(OBJS) iotivity_build iotjs_build
 	$(call ARCHIVE, $@, $(OBJS))
 
 .depend: Makefile $(SRCS)
@@ -212,7 +234,12 @@ endif
 custom_clean:
 	$(foreach OBJFILE, $(OBJS), rm -f $(OBJFILE))
 
-clean: custom_clean iotivity_clean
+iotjs_clean:
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+	$(Q) rm -rf $(IOTJS_ROOT_DIR)/build
+endif
+
+clean: custom_clean iotivity_clean iotjs_clean
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 

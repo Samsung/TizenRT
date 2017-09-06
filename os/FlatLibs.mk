@@ -108,6 +108,17 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
 endif
 endif
 
+
+# Add libraries for iotjs support
+
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libhttpparser$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libiotjs$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libjerry-core$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT)
+endif
+
 # Add libraries for power management module
 
 ifeq ($(CONFIG_PM),y)
