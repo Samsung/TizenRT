@@ -60,7 +60,7 @@ static bool find_app(TASH_CMD_CALLBACK *cb, char *name)
 	
 	for (cmd_idx = 0; cmd_idx < count; cmd_idx++) {
 		if (tash_get_cmdpair(str, cb, cmd_idx) == OK) {
-			if (!strncmp(name, str, strlen(name))) {
+			if (!strncmp(name, str, strlen(name) + 1)) {
 				flag = true;
 				break;
 			}
@@ -137,7 +137,7 @@ int kdbg_stackopt(int argc, char **args)
 		goto usage;
 	}
 	
-	if (!strncmp(args[1], "--help", strlen("--help"))) {
+	if (!strncmp(args[1], "--help", strlen("--help") + 1)) {
 		goto usage;
 	}
 	
