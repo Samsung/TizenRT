@@ -205,6 +205,6 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 	 */
 
 	*heap_start = (FAR void *)USERSPACE->us_bssend;
-	*heap_size = ubase - (uintptr_t) USERSPACE->us_bssend;
+	*heap_size = ubase - (uintptr_t)USERSPACE->us_bssend;
 }
 #endif
