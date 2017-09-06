@@ -438,11 +438,11 @@
 /* Inquiry */
 
 #define SCSICMD_INQUIRYFLAGS_EVPD                0x01  /* Bit 0: EVPD */
-						        /* Bits 5-7: Peripheral Qualifier */
+							/* Bits 5-7: Peripheral Qualifier */
 #define SCSIRESP_INQUIRYPQ_CONNECTED             0x00  /*   000: Device is connected */
 #define SCSIRESP_INQUIRYPQ_NOTCONNECTED          0x20  /*   001: Device is NOT connected */
 #define SCSIRESP_INQUIRYPQ_NOTCAPABLE            0x60  /*   011: LUN not supported */
-						        /* Bits 0-4: Peripheral Device */
+							/* Bits 0-4: Peripheral Device */
 #define SCSIRESP_INQUIRYPD_DIRECTACCESS          0x00  /*   Direct-access block device */
 #define SCSIRESP_INQUIRYPD_SEQUENTIALACCESS      0x01  /*   Sequential-access block device */
 #define SCSIRESP_INQUIRYPD_PRINTER               0x02  /*   Printer device */
