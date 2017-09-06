@@ -31,6 +31,7 @@
 #include <spawn.h>
 #include <syslog.h>
 #include <time.h>
+#include <tinyara/time.h>
 #include <sys/types.h>
 #include <math.h>
 #include <float.h>
@@ -403,6 +404,7 @@ static void tc_libc_timer_strftime(void)
 
 	/* Check with invalid param. it will returns 0. */
 	ret_chk = strftime(buffer, BUFF_SIZE, "%f", &st_time);
+	TC_ASSERT_EQ("strftime", ret_chk, 0);
 	TC_ASSERT_EQ("strftime", atoi(buffer), 0);
 
 	TC_SUCCESS_RESULT();
