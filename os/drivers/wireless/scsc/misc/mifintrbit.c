@@ -40,8 +40,8 @@ static void mifiintrman_isr(int irq, void *data)
 	do {
 		spin_lock_irqsave(&intr->spinlock, flags);
 		while ((irq_reg[0] = intr->mif->irq_get(intr->mif)) != 0) {
-			for_each_set_bit(bit, (unsigned long int *)irq_reg, MIFINTRBIT_NUM_INT) {
-				if (intr->mifintrbit_irq_handler[bit] != mifintrbit_default_handler) {
+			for (bit = 0; bit < MIFINTRBIT_NUM_INT; bit++) {
+				if ((irq_reg[0] & (1 << bit)) && (intr->mifintrbit_irq_handler[bit] != mifintrbit_default_handler)) {
 					intr->mifintrbit_irq_handler[bit](bit, intr->irq_data[bit]);
 				}
 			}
@@ -51,8 +51,8 @@ static void mifiintrman_isr(int irq, void *data)
 #else
 	spin_lock_irqsave(&intr->spinlock, flags);
 	irq_reg[0] = intr->mif->irq_get(intr->mif);
-	for_each_set_bit(bit, (unsigned long int *)irq_reg, MIFINTRBIT_NUM_INT) {
-		if (intr->mifintrbit_irq_handler[bit] != mifintrbit_default_handler) {
+	for (bit = 0; bit < MIFINTRBIT_NUM_INT; bit++) {
+		if ((irq_reg[0] & (1 << bit)) && (intr->mifintrbit_irq_handler[bit] != mifintrbit_default_handler)) {
 			intr->mifintrbit_irq_handler[bit](bit, intr->irq_data[bit]);
 		}
 	}
