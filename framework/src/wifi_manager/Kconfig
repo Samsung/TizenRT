@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config WIFI_MANAGER
+    bool "Enable Wi-Fi Manager"
+    default n
+    ---help---
+        Easy APIs for applications to use and control Wi-Fi features
+
+if WIFI_MANAGER
+source "$EXTERNALDIR/slsi_wifi/Kconfig"
+endif #WIFI_MANAGER
