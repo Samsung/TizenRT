@@ -23,6 +23,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -39,7 +40,9 @@
 #include <sys/sendfile.h>
 #include <sys/statfs.h>
 #include <sys/select.h>
+#include <sys/types.h>
 
+#include <tinyara/streams.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/fs_utils.h>
 #include <apps/shell/tash.h>
@@ -50,6 +53,7 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
+#define BUFLEN 64
 
 #define MOUNT_DIR CONFIG_MOUNT_POINT
 
@@ -1961,6 +1965,358 @@ static void libc_stdio_setvbuf_tc(void)
 #endif
 
 /**
+* @testcase         libc_stdio_meminstream_tc
+* @brief            Initializes a stream for use with a fixed-size memory buffer
+* @scenario         Initializes a stream for use with a fixed-size memory buffer
+* @apicovered       lib_meminstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_meminstream_tc(void)
+{
+	FAR char buf[BUFLEN];
+
+	struct lib_meminstream_s meminstream;
+
+	lib_meminstream((FAR struct lib_meminstream_s *)&meminstream, buf, BUFLEN);
+	TC_ASSERT_EQ("lib_meminstream", meminstream.buffer, (FAR char *)(buf));
+	TC_ASSERT_EQ("lib_meminstream", meminstream.buflen, BUFLEN);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_memoutstream_tc
+* @brief            Initializes a stream for use with a fixed-size memory buffer
+* @scenario         Initializes a stream for use with a fixed-size memory buffer
+* @apicovered       lib_memoutstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_memoutstream_tc(void)
+{
+	FAR char buf[BUFLEN];
+
+	struct lib_memoutstream_s memoutstream;
+
+	lib_memoutstream((FAR struct lib_memoutstream_s *)&memoutstream, buf, BUFLEN);
+	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buffer, (FAR char *)(buf));
+	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buflen, (BUFLEN - 1));	/* Save space for null terminator, hence checing with (BUFLEN-1)*/
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_memsistream_tc
+* @brief            Initializes a stream for use with a fixed-size memory buffer
+* @scenario         Initializes a stream for use with a fixed-size memory buffer
+* @apicovered       lib_memsistream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_memsistream_tc(void)
+{
+	FAR char buf[BUFLEN];
+
+	struct lib_memsistream_s memsistream;
+
+	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, buf, BUFLEN);
+	TC_ASSERT_EQ("lib_memsistream", memsistream.buffer, (FAR char *)(buf));
+
+	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, buf + 2, BUFLEN);
+	TC_ASSERT_EQ("lib_memsistream", (memsistream.buffer - (FAR char *)(buf)), 2);
+	TC_ASSERT_EQ("lib_memsistream", memsistream.buflen, BUFLEN);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_memsostream_tc
+* @brief            Initializes a stream for use with a fixed-size memory buffer
+* @scenario         Initializes a stream for use with a fixed-size memory buffer
+* @apicovered       lib_memsostream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_memsostream_tc(void)
+{
+	FAR char buf[BUFLEN];
+
+	struct lib_memsostream_s memsostream;
+
+	lib_memsostream((FAR struct lib_memsostream_s *)&memsostream, buf, BUFLEN);
+	TC_ASSERT_EQ("lib_memsostream", memsostream.buffer, (FAR char *)(buf));
+
+	lib_memsostream((FAR struct lib_memsostream_s *)&memsostream, buf + 4, BUFLEN);
+	TC_ASSERT_EQ("lib_memsostream", (memsostream.buffer - (FAR char *)(buf)), 4);
+	TC_ASSERT_EQ("lib_memsostream", memsostream.buflen, (BUFLEN - 1));	/* Save space for null terminator, hence checing with (BUFLEN-1)*/
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_nullinstream_tc
+* @brief            Initializes a NULL stream. The initialized stream will return only EOF
+* @scenario         Initializes a NULL stream. The initialized stream will return only EOF
+* @apicovered       lib_nullinstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_nullinstream_tc(void)
+{
+	struct lib_instream_s nullinstream;
+
+	lib_nullinstream((FAR struct lib_instream_s *)&nullinstream);
+	TC_ASSERT_EQ("lib_nullinstream", nullinstream.nget, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_nulloutstream_tc
+* @brief            Initializes a NULL stream. The initialized stream will write all data to the bit-bucket
+* @scenario         Initializes a NULL stream. The initialized stream will write all data to the bit-bucket
+* @apicovered       lib_nulloutstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_nulloutstream_tc(void)
+{
+	struct lib_outstream_s nulloutstream;
+
+	lib_nulloutstream((FAR struct lib_outstream_s *)&nulloutstream);
+	TC_ASSERT_EQ("lib_nulloutstream", nulloutstream.nput, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_rawinstream_tc
+* @brief            Initializes a stream for use with a file descriptor
+* @scenario         Initializes a stream for use with a file descriptor
+* @apicovered       lib_rawinstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_rawinstream_tc(void)
+{
+	int fd;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_rawinstream_s rawinstream;
+
+	fd = open(filename, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawinstream((FAR struct lib_rawinstream_s *)&rawinstream, fd);
+	close(fd);
+	TC_ASSERT_EQ("lib_rawinstream", rawinstream.fd, fd);
+	TC_ASSERT_EQ("lib_rawinstream", rawinstream.public.nget, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_rawoutstream_tc
+* @brief            Initializes a stream for use with a file descriptor
+* @scenario         Initializes a stream for use with a file descriptor
+* @apicovered       lib_rawoutstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_rawoutstream_tc(void)
+{
+	int fd;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_rawoutstream_s rawoutstream;
+
+	fd = open(filename, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawoutstream((FAR struct lib_rawoutstream_s *)&rawoutstream, fd);
+	close(fd);
+	TC_ASSERT_EQ("lib_rawoutstream", rawoutstream.fd, fd);
+	TC_ASSERT_EQ("lib_rawoutstream", rawoutstream.public.nput, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_rawsistream_tc
+* @brief            Initializes a stream for use with a file descriptor
+* @scenario         Initializes a stream for use with a file descriptor
+* @apicovered       lib_rawsistream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_rawsistream_tc(void)
+{
+	int fd;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_rawsistream_s rawsistream;
+
+	fd = open(filename, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawsistream((FAR struct lib_rawsistream_s *)&rawsistream, fd);
+	close(fd);
+	TC_ASSERT_EQ("lib_rawsistream", rawsistream.fd, fd);
+	TC_ASSERT_EQ("lib_rawsistream", rawsistream.public.nget, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_rawsostream_tc
+* @brief            Initializes a stream for use with a file descriptor
+* @scenario         Initializes a stream for use with a file descriptor
+* @apicovered       lib_rawsostream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_rawsostream_tc(void)
+{
+	int fd;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_rawsostream_s rawsostream;
+
+	fd = open(filename, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawsostream((FAR struct lib_rawsostream_s *)&rawsostream, fd);
+	close(fd);
+	TC_ASSERT_EQ("lib_rawsostream", rawsostream.fd, fd);
+	TC_ASSERT_EQ("lib_rawsostream", rawsostream.public.nput, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_stdinstream_tc
+* @brief            Initializes a stream for use with a FILE instance
+* @scenario         Initializes a stream for use with a FILE instance
+* @apicovered       lib_stdinstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_stdinstream_tc(void)
+{
+	FILE *stream;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_stdinstream_s stdinstream;
+
+	stream = fopen(filename, "w");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdinstream((FAR struct lib_stdinstream_s *)&stdinstream, stream);
+	fclose(stream);
+	TC_ASSERT_EQ("lib_stdinstream", stdinstream.stream, stream);
+	TC_ASSERT_EQ("lib_stdinstream", stdinstream.public.nget, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_stdoutstream_tc
+* @brief            Initializes a stream for use with a FILE instance
+* @scenario         Initializes a stream for use with a FILE instance
+* @apicovered       lib_stdoutstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_stdoutstream_tc(void)
+{
+	FILE *stream;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_stdoutstream_s stdoutstream;
+
+	stream = fopen(filename, "w");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdoutstream((FAR struct lib_stdoutstream_s *)&stdoutstream, stream);
+	fclose(stream);
+	TC_ASSERT_EQ("lib_stdoutstream", stdoutstream.stream, stream);
+	TC_ASSERT_EQ("lib_stdoutstream", stdoutstream.public.nput, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_stdsistream_tc
+* @brief            Initializes a stream for use with a FILE instance
+* @scenario         Initializes a stream for use with a FILE instance
+* @apicovered       lib_stdsistream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_stdsistream_tc(void)
+{
+	FILE *stream;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_stdsistream_s stdsistream;
+
+	stream = fopen(filename, "w");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdsistream((FAR struct lib_stdsistream_s *)&stdsistream, stream);
+	fclose(stream);
+	TC_ASSERT_EQ("lib_stdsistream", stdsistream.stream, stream);
+	TC_ASSERT_EQ("lib_stdsistream", stdsistream.public.nget, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_stdsostream_tc
+* @brief            Initializes a stream for use with a FILE instance
+* @scenario         Initializes a stream for use with a FILE instance
+* @apicovered       lib_stdsostream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_stdsostream_tc(void)
+{
+	FILE *stream;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_stdsostream_s stdsostream;
+
+	stream = fopen(filename, "w");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdsostream((FAR struct lib_stdsostream_s *)&stdsostream, stream);
+	fclose(stream);
+	TC_ASSERT_EQ("lib_stdsostream", stdsostream.stream, stream);
+	TC_ASSERT_EQ("lib_stdsostream", stdsostream.public.nput, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_zeroinstream_tc
+* @brief            Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
+* @scenario         Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
+* @apicovered       lib_zeroinstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_zeroinstream_tc(void)
+{
+	struct lib_instream_s zeroinstream;
+
+	lib_zeroinstream((FAR struct lib_instream_s *)&zeroinstream);
+	TC_ASSERT_EQ("lib_zeroinstream", zeroinstream.nget, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
 * @testcase         libc_stdio_ungetc_tc
 * @brief            Input character into file stream
 * @scenario         Get character by fgets and then input again with ungetc. after that compare both of characters
@@ -2068,7 +2424,22 @@ static int fs_sample_launcher(int argc, char **args)
 	libc_stdio_setbuf_tc();
 	libc_stdio_setvbuf_tc();
 #endif
+	libc_stdio_meminstream_tc();
+	libc_stdio_memoutstream_tc();
+	libc_stdio_memsistream_tc();
+	libc_stdio_memsostream_tc();
+	libc_stdio_nullinstream_tc();
+	libc_stdio_nulloutstream_tc();
+	libc_stdio_rawinstream_tc();
+	libc_stdio_rawoutstream_tc();
+	libc_stdio_rawsistream_tc();
+	libc_stdio_rawsostream_tc();
+	libc_stdio_stdinstream_tc();
+	libc_stdio_stdoutstream_tc();
+	libc_stdio_stdsistream_tc();
+	libc_stdio_stdsostream_tc();
 	libc_stdio_ungetc_tc();
+	libc_stdio_zeroinstream_tc();
 
 	printf("#########################################\n");
 	printf("           FS TC Result               \n");
