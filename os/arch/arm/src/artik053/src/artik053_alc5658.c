@@ -285,72 +285,28 @@ int s5j_alc5658_initialize(int minor)
 		/* Now we can use these I2C and I2S interfaces to initialize the
 		 * ALC5658 which will return an audio interface.
 		 */
+		alc5658 = alc5658_initialize(i2c, i2s, &g_alc5658info.lower);
+		if (!alc5658) {
+			auddbg("ERROR: Failed to initialize the ALC5658\n");
+			ret = -ENODEV;
+			goto errout_with_irq;
+		}
+
+		/* No we can embed the ALC5658/I2C/I2S conglomerate into a PCM decoder
+		 * instance so that we will have a PCM front end for the the ALC5658
+		 * driver.
+		 */
+
+		pcm = pcm_decode_initialize(alc5658);
+		if (!pcm) {
+			auddbg("ERROR: Failed create the PCM decoder\n");
+			ret = -ENODEV;
+			goto errout_with_alc5658;
+		}
+
 		/* Create a device name */
-#ifdef CONFIG_AUDIO_MULTI_CARD
 
-		/*Device name for capture interface of sound card */
-		snprintf(devname, 12, "pcmC%uD%u%c", minor, 0, 'c');
-
-
-		/* ALC5658 initiliased for capture device */
-		/* Now we can use these I2C and I2S interfaces to initialize the
-		 * ALC5658 which will return an audio interface.
-		 */
-		alc5658 = alc5658_initialize(i2c, i2s, &g_alc5658info.lower);
-		if (!alc5658) {
-			auddbg("ERROR: Failed to initialize the ALC5658\n");
-			ret = -ENODEV;
-			goto errout_with_irq;
-		}
-
-		/* No we can embed the ALC5658/I2C/I2S conglomerate into a PCM decoder
-		 * instance so that we will have a PCM front end for the the ALC5658
-		 * driver.
-		 */
-
-		pcm = pcm_decode_initialize(alc5658);
-		if (!pcm) {
-			auddbg("ERROR: Failed create the PCM decoder\n");
-			ret = -ENODEV;
-			goto errout_with_alc5658;
-		}
-
-		ret = audio_register(devname, pcm);
-		if (ret < 0) {
-			auddbg("ERROR: Failed to register /dev/%s device: %d\n", devname, ret);
-			goto errout_with_pcm;
-		}
-
-		/*Device name for playback interface of sound card */
-		snprintf(devname, 12, "pcmC%uD%u%c", minor, 0, 'p');
-
-#else
-		/*Device name for both playback and capture interfaces of sound card */
-		snprintf(devname, 12, "pcmC%u", minor);
-#endif
-		/* Now we can use these I2C and I2S interfaces to initialize the
-		 * ALC5658 which will return an audio interface.
-		 */
-
-		alc5658 = alc5658_initialize(i2c, i2s, &g_alc5658info.lower);
-		if (!alc5658) {
-			auddbg("ERROR: Failed to initialize the ALC5658\n");
-			ret = -ENODEV;
-			goto errout_with_irq;
-		}
-
-		/* No we can embed the ALC5658/I2C/I2S conglomerate into a PCM decoder
-		 * instance so that we will have a PCM front end for the the ALC5658
-		 * driver.
-		 */
-
-		pcm = pcm_decode_initialize(alc5658);
-		if (!pcm) {
-			auddbg("ERROR: Failed create the PCM decoder\n");
-			ret = -ENODEV;
-			goto errout_with_alc5658;
-		}
-
+		snprintf(devname, 12, "pcm%d", minor);
 
 		/* Finally, we can register the PCM/ALC5658/I2C/I2S audio device.
 		 *
