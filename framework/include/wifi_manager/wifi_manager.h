@@ -64,6 +64,8 @@ struct wifi_manager_scan_info_s {
 	char ssid[33];	// 802.11 spec defined unspecified or uint8
 	char bssid[18];	// char string e.g. xx:xx:xx:xx:xx:xx
 	int8_t rssi;		// received signal strength indication
+	uint8_t channel;	// channel/frequency
+	uint8_t phy_mode;	// 0:legacy 1: 11N HT
 	struct wifi_manager_scan_info_s *next;
 };
 

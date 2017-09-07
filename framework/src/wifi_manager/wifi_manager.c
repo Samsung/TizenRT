@@ -256,6 +256,8 @@ static wifi_manager_result_e wifi_fetch_scan_results(slsi_scan_info_t **wifi_sca
 		memset(curr_record->ssid, 0x00, SLSI_SSID_LEN + 1);
 		memset(curr_record->bssid, 0x00, SLSI_MACADDR_STR_LEN);
 		curr_record->rssi = wifi_scan_iter->rssi;
+		curr_record->channel = wifi_scan_iter->channel;
+		curr_record->phy_mode = wifi_scan_iter->phy_mode;
 		strncpy(curr_record->ssid, (char *)wifi_scan_iter->ssid, strlen((const char *)wifi_scan_iter->ssid));
 		strncpy(curr_record->bssid, (char *)wifi_scan_iter->bssid, strlen((const char *)wifi_scan_iter->bssid));
 		prev_record = curr_record;
