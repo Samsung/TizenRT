@@ -1928,11 +1928,8 @@ static OCResourcePayload* OCCopyResource(const OCResource* res, uint16_t secureP
     OCEndpointPayload *selfEp = NULL;
     if (networkInfo && infoSize && devAddr)
     {
-        if(!CreateEndpointPayloadList(res, devAddr, networkInfo, infoSize,
-                                      &(pl->eps), NULL, &selfEp))
-        {
-            return NULL;
-        }
+        CreateEndpointPayloadList(res, devAddr, networkInfo, infoSize,
+                                      &(pl->eps), NULL, &selfEp);
     }
 
     pl->uri = OICStrdup(res->uri);
