@@ -287,8 +287,15 @@ int s5j_alc5658_initialize(int minor)
 		 */
 		/* Create a device name */
 #ifdef CONFIG_AUDIO_MULTI_CARD
+
+		/*Device name for capture interface of sound card */
 		snprintf(devname, 12, "pcmC%uD%u%c", minor, 0, 'c');
 
+
+		/* ALC5658 initiliased for capture device */
+		/* Now we can use these I2C and I2S interfaces to initialize the
+		 * ALC5658 which will return an audio interface.
+		 */
 		alc5658 = alc5658_initialize(i2c, i2s, &g_alc5658info.lower);
 		if (!alc5658) {
 			auddbg("ERROR: Failed to initialize the ALC5658\n");
@@ -314,11 +321,16 @@ int s5j_alc5658_initialize(int minor)
 			goto errout_with_pcm;
 		}
 
+		/*Device name for playback interface of sound card */
 		snprintf(devname, 12, "pcmC%uD%u%c", minor, 0, 'p');
 
 #else
+		/*Device name for both playback and capture interfaces of sound card */
 		snprintf(devname, 12, "pcmC%u", minor);
 #endif
+		/* Now we can use these I2C and I2S interfaces to initialize the
+		 * ALC5658 which will return an audio interface.
+		 */
 
 		alc5658 = alc5658_initialize(i2c, i2s, &g_alc5658info.lower);
 		if (!alc5658) {
