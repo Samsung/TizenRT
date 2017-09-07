@@ -33,8 +33,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_LIBTUV),y)
-
 CSRCS += uv_unix.c
 CSRCS += uv_unix_async.c
 CSRCS += uv_unix_fs.c
@@ -45,12 +43,6 @@ CSRCS += uv_unix_stream.c
 CSRCS += uv_unix_tcp.c
 CSRCS += uv_unix_thread.c
 
-CFLAGS += -D__TINYARA__
-CFLAGS += -I$(TOPDIR)/../external/libtuv/include
-CFLAGS += -I$(TOPDIR)/../external/libtuv/source
-CFLAGS += -I$(TOPDIR)/../external/libtuv/source/unix
+DEPPATH += --dep-path source/unix
+VPATH += :source/unix
 
-DEPPATH += --dep-path libtuv/source/unix
-VPATH += :libtuv/source/unix
-
-endif

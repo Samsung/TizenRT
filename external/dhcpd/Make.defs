@@ -50,8 +50,7 @@
 #
 ############################################################################
 
-CSRCS += dhcpd.c
-
-DEPPATH += --dep-path dhcpd
-VPATH += :dhcpd
+ifeq ($(CONFIG_NETUTILS_DHCPD),y)
+CONFIGURED_EXT += dhcpd
+endif
 

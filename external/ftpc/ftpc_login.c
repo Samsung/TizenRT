@@ -60,7 +60,7 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <apps/ftpc.h>
+#include <protocols/ftpc.h>
 
 #include "ftpc_internal.h"
 

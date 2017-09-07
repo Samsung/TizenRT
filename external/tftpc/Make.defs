@@ -50,8 +50,7 @@
 #
 ############################################################################
 
-CSRCS += tftpc_get.c tftpc_put.c tftpc_packets.c
-
-DEPPATH += --dep-path tftpc
-VPATH += :tftpc
+ifeq ($(CONFIG_NETUTILS_TFTPC),y)
+CONFIGURED_EXT += tftpc
+endif
 

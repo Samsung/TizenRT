@@ -1,4 +1,21 @@
 ############################################################################
+#
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+############################################################################
+############################################################################
 # external/Makefile
 #
 #   Copyright (C) 2007, 2008, 2011-2015 Gregory Nutt. All rights reserved.
@@ -40,118 +57,29 @@ EXTDIR = ${shell pwd}
 DELIM ?= $(strip /)
 
 DEPPATH = --dep-path .
+VPATH = .
 ASRCS =
 CSRCS =
-VPATH = .
+CXXSRCS =
 
-ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
-include wakaama/core/Make.defs
-include wakaama/core/er-coap-13/Make.defs	
-endif
+# External Directories
 
-ifeq ($(CONFIG_DM),y)
-ifeq ($(CONFIG_LWM2M_CLIENT_MODE),y)
-   include wakaama/examples/shared/Make.defs
-   include wakaama/examples/client/Make.defs
-endif
-ifeq ($(CONFIG_LWM2M_SERVER_MODE),y)
-    include wakaama/examples/shared/Make.defs
-    include wakaama/examples/server/Make.defs
-endif
-  CFLAGS+=-I$(TOPDIR)/../framework/include/dm
-endif
+# BUILDIRS is the list of top-level directories containing Make.defs files
 
-ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
-IOTIVITY_BASE_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)
-endif
+BUILDIRS   := $(dir $(wildcard */Make.defs))
 
-ifeq ($(CONFIG_LIBTUV),y)
-include libtuv/source/tinyara/Make.defs
-include libtuv/source/unix/Make.defs
-include libtuv/source/Make.defs
-endif
+# CONFIGURED_EXT is the external directories that should be built in
+#   the current configuration.
 
-ifeq ($(CONFIG_AWS_SDK),y)
-include aws/Make.defs
-include aws/src/Make.defs
-endif
+CONFIGURED_EXT =
 
-ifeq ($(CONFIG_NETUTILS_WIFI),y)
-include slsi_wifi/Make.defs
-endif
+define Add_EXTLIB
+  include $(1)Make.defs
+endef
 
-ifeq ($(CONFIG_NETUTILS_DHCPD),y)
-include dhcpd/Make.defs
-endif
+$(foreach BDIR, $(BUILDIRS), $(eval $(call Add_EXTLIB,$(BDIR))))
 
-ifeq ($(CONFIG_NETUTILS_XMLRPC),y)
-include xmlrpc/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_NTPCLIENT),y)
-include ntpclient/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_WEBSERVER),y)
-include webserver/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_FTPC),y)
-include ftpc/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_MDNS),y)
-include mdns/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_WEBCLIENT),y)
-include webclient/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_MQTT),y)
-include mosquitto/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_FTPD),y)
-include ftpd/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_DHCPC),y)
-include dhcpc/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_WEBSOCKET),y)
-include websocket/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_LIBCOAP),y)
-include libcoap/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_TFTPC),y)
-include tftpc/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_TELNETD),y)
-include telnetd/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_SMTP),y)
-include smtp/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_NETLIB),y)
-include netutils/Make.defs
-endif
-
-ifeq ($(CONFIG_NETUTILS_JSON),y)
-include json/Make.defs
-endif
-
-ifeq ($(CONFIG_NET_SECURITY_TLS),y)
-include mbedtls/Make.defs
-endif
+BIN	= libexternal$(LIBEXT)
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -160,9 +88,10 @@ CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
 SRCS = $(ASRCS) $(CSRCS) $(CXXSRCS)
 OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
 
-BIN	= libexternal$(LIBEXT)
+# Build targets
 
-all:	$(BIN)
+all: $(BIN)
+.PHONY: context .depdirs depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -172,6 +101,44 @@ $(COBJS): %$(OBJEXT): %.c
 
 $(CXXOBJS): %$(OBJEXT): %.cpp
 	$(call COMPILEXX, $<, $@)
+
+define SDIR_template
+$(1)_$(2):
+	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)"
+
+endef
+
+$(foreach SDIR, $(CONFIGURED_EXT), $(eval $(call SDIR_template,$(SDIR),all)))
+$(foreach SDIR, $(CONFIGURED_EXT), $(eval $(call SDIR_template,$(SDIR),depend)))
+$(foreach SDIR, $(BUILDIRS), $(eval $(call SDIR_template,$(SDIR),clean)))
+$(foreach SDIR, $(BUILDIRS), $(eval $(call SDIR_template,$(SDIR),distclean)))
+
+$(BIN): $(OBJS) $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_all) iotivity_build
+	$(call ARCHIVE, $@, $(OBJS))
+
+.depdirs: $(foreach SDIR, $(CONFIGURED_EXT), $(SDIR)_depend)
+
+.depend: Makefile .depdirs
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(ASRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(CSRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(CXXSRCS) >Make.dep
+	$(Q) touch $@
+
+depend: .depend
+
+clean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_clean) iotivity_clean
+	$(call DELFILE, $(BIN))
+	$(call CLEAN)
+
+distclean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_distclean)
+	$(call DELFILE, .depend)
+	$(call DELFILE, $(BIN))
+	$(call CLEAN)
+
+ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
+IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
+IOTIVITY_BASE_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)
+endif
 
 iotivity_build:
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
@@ -183,17 +150,6 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
 	$(Q) echo "Launching IoTivity Build"
 	$(Q) TOPDIR="$(TOPDIR)" $(TOPDIR)/../external/iotivity/build_iotivity.sh
 endif
-
-$(BIN): $(OBJS) iotivity_build
-	$(call ARCHIVE, $@, $(OBJS))
-
-.depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(ASRCS) >Make.dep
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(CSRCS) >Make.dep
-	$(Q) $(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(CXXSRCS) >Make.dep
-	$(Q) touch $@
-
-depend: .depend
 
 iotivity_clean:
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
@@ -208,16 +164,5 @@ ifneq ("$(wildcard $(IOTIVITY_BASE_DIR)/iotivity.built)","")
 	$(Q) rm -rf $(IOTIVITY_BASE_DIR)/.sconf_temp
 endif
 endif
-
-custom_clean:
-	$(foreach OBJFILE, $(OBJS), rm -f $(OBJFILE))
-
-clean: custom_clean iotivity_clean
-	$(call DELFILE, $(BIN))
-	$(call CLEAN)
-
-distclean: clean
-	$(call DELFILE, Make.dep)
-	$(call DELFILE, .depend)
 
 -include Make.dep
