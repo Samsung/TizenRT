@@ -278,13 +278,13 @@ static wifi_manager_result_e wifi_scan_result_callback(slsi_reason_t *reason)
 		slsi_scan_info_t *wifi_scan_result;
 		WiFiGetScanResults(&wifi_scan_result);
 		if (wifi_fetch_scan_results(&wifi_scan_result, &wifi_manager_scan_info) == WIFI_MANAGER_SUCCESS) {
-			g_manager_info.wmcb->sta_scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_SUCCESS);
+			g_manager_info.wmcb->scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_SUCCESS);
 			wifi_free_scan_results(&wifi_manager_scan_info);
 		}
 		WiFiFreeScanResults(&wifi_scan_result);
 	} else {
 		ndbg("Scan failed %d\n");
-		g_manager_info.wmcb->sta_scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_FAIL);
+		g_manager_info.wmcb->scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
@@ -460,8 +460,6 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		return WIFI_MANAGER_SUCCESS;
 	}
 
-	ndbg("required config: %d %d %s\n", mode, config->channel, config->ssid);
-
 	// Wifi mode is changed to SOFT AP
 	if ((mode == SOFTAP_MODE) && (config != NULL)) {
 		wifi_utils_softap_config_s softap_config;
@@ -525,7 +523,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		nvdbg("Wifi mode is changed to station");
 	}
 	else {
-			ndbg("Invalid config: %d %d %s\n", mode, config->channel, config->ssid);
+			ndbg("Invalid config!\n");
 			return WIFI_MANAGER_FAIL;
 	}
 
@@ -549,7 +547,7 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 wifi_manager_result_e wifi_manager_scan_ap(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
-	if (g_manager_info.wmcb->sta_scan_ap_done == NULL) {
+	if (g_manager_info.wmcb->scan_ap_done == NULL) {
 		ndbg("Missing callback for WiFi scan");
 		return WIFI_MANAGER_INVALID_ARGS;
 	}

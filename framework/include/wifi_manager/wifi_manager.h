@@ -76,7 +76,7 @@ typedef struct {
 	void (*sta_disconnected)(void);		// in station mode, disconnected from ap
 	void (*softap_sta_joined)(void);	// in softap mode, a station joined
 	void (*softap_sta_left)(void);		// in softap mode, a station left
-	void (*sta_scan_ap_done)(wifi_manager_scan_info_s **, wifi_manager_scan_result_e); // in station mode, scanning ap is done
+	void (*scan_ap_done)(wifi_manager_scan_info_s **, wifi_manager_scan_result_e); // scanning ap is done
 } wifi_manager_cb_s;
 
 typedef struct {
