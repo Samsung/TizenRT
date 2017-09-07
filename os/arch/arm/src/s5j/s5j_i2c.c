@@ -1333,6 +1333,10 @@ struct i2c_dev_s *up_i2cinitialize(int port)
 	return (FAR struct i2c_dev_s *)priv;
 }
 
+int up_i2cuninitialize(FAR struct i2c_dev_s *dev) {
+    return s5j_i2cbus_uninitialize(dev);
+}
+
 /**
  * @brief    Unitialize one I2C bus
  * @param    struct i2c_master_s *dev :
