@@ -198,8 +198,8 @@ static void wifi_linkdown_event_func(void)
 	} else if (g_manager_info.mode == SOFTAP_MODE) {
 		nvdbg("DISCONNECTED FROM CLIENT - SOFT AP MODE");
 		wifi_status_set(CLIENT_DISCONNECTED);
-		if (wifi_cb != NULL && wifi_cb->softap_sta_leave) {
-			wifi_cb->softap_sta_leave();
+		if (wifi_cb != NULL && wifi_cb->softap_sta_left) {
+			wifi_cb->softap_sta_left();
 		} else {
 			ndbg("Callback wifimanager ap_disconnected failed\n");
 		}
@@ -211,6 +211,81 @@ static void wifi_linkdown_event_func(void)
 	/* TODO: Import files from source
 	 * sendStatusTrigger(TRIGGER_NETWORK_CHANGED, DAWIT_NW_CHANGED_DOWN);
 	 */
+}
+
+static wifi_manager_result_e wifi_free_scan_results(wifi_manager_scan_info_s **wifi_manager_scan_info)
+{
+	wifi_manager_scan_info_s *curr_record;
+	wifi_manager_scan_info_s *next_record;
+
+	curr_record = *wifi_manager_scan_info;
+	while (curr_record != NULL) {
+		next_record = curr_record->next;
+		free(curr_record);
+		curr_record = next_record;
+	}
+
+	*wifi_manager_scan_info = NULL;
+	return WIFI_MANAGER_SUCCESS;
+}
+
+static wifi_manager_result_e wifi_fetch_scan_results(slsi_scan_info_t **wifi_scan_info, wifi_manager_scan_info_s **wifi_manager_scan_info)
+{
+	wifi_manager_scan_info_s *curr_record;
+	wifi_manager_scan_info_s *prev_record = NULL;
+	slsi_scan_info_t *wifi_scan_iter = NULL;
+	int i = 0;
+	if (*wifi_scan_info == NULL) {
+		return WIFI_MANAGER_FAIL;
+	}
+	/* Initialize pointer */
+	wifi_scan_iter = *wifi_scan_info;
+
+	do {
+		curr_record = (wifi_manager_scan_info_s *)malloc(sizeof(wifi_manager_scan_info_s));
+		if (curr_record == NULL) {
+			wifi_free_scan_results(wifi_manager_scan_info);
+			return WIFI_MANAGER_FAIL;
+		}
+		if (!prev_record) {
+			*wifi_manager_scan_info = curr_record;
+		} else {
+			prev_record->next = curr_record;
+		}
+
+		memset(curr_record->ssid, 0x00, SLSI_SSID_LEN + 1);
+		memset(curr_record->bssid, 0x00, SLSI_MACADDR_STR_LEN);
+		curr_record->rssi = wifi_scan_iter->rssi;
+		strncpy(curr_record->ssid, (char *)wifi_scan_iter->ssid, strlen((const char *)wifi_scan_iter->ssid));
+		strncpy(curr_record->bssid, (char *)wifi_scan_iter->bssid, strlen((const char *)wifi_scan_iter->bssid));
+		prev_record = curr_record;
+		wifi_scan_iter = wifi_scan_iter->next;
+		i++;
+	} while (wifi_scan_iter != NULL);
+
+	curr_record->next = NULL;
+	printf("%d records scanned\n", i);
+
+	return WIFI_MANAGER_SUCCESS;
+}
+
+static wifi_manager_result_e wifi_scan_result_callback(slsi_reason_t *reason)
+{
+	wifi_manager_scan_info_s *wifi_manager_scan_info = 0;
+	if (reason->reason_code == 0) {
+		slsi_scan_info_t *wifi_scan_result;
+		WiFiGetScanResults(&wifi_scan_result);
+		if (wifi_fetch_scan_results(&wifi_scan_result, &wifi_manager_scan_info) == WIFI_MANAGER_SUCCESS) {
+			g_manager_info.wmcb->sta_scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_SUCCESS);
+			wifi_free_scan_results(&wifi_manager_scan_info);
+		}
+		WiFiFreeScanResults(&wifi_scan_result);
+	} else {
+		ndbg("Scan failed %d\n");
+		g_manager_info.wmcb->sta_scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_FAIL);
+		return WIFI_MANAGER_FAIL;
+	}
+	return WIFI_MANAGER_SUCCESS;
 }
 
 /**
@@ -396,7 +471,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		softap_config.ssid_length = strlen(config->ssid);
 		strncpy(softap_config.passphrase, config->passphrase, sizeof(config->passphrase));
 		softap_config.passphrase_length = strlen(config->passphrase);
-		softap_config.inform_new_sta_join = g_manager_info.wmcb->softap_sta_join;
+		softap_config.inform_new_sta_join = g_manager_info.wmcb->softap_sta_joined;
 
 		wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
 
@@ -467,4 +542,20 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 	wifi_mutex_release(w_mutex);
 
 	return WIFI_MANAGER_SUCCESS;
+}
+
+wifi_manager_result_e wifi_manager_scan_ap(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+	if (g_manager_info.wmcb->sta_scan_ap_done == NULL) {
+		ndbg("Missing callback for WiFi scan");
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+
+	WiFiRegisterScanCallback(wifi_scan_result_callback);
+	if (WiFiScanNetwork() == SLSI_STATUS_SUCCESS) {
+		ndbg("WiFI scan succeeds.");
+		ret = WIFI_MANAGER_SUCCESS;
+	}
+	return ret;
 }
