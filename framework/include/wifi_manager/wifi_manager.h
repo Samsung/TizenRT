@@ -43,13 +43,16 @@ typedef enum {
 	WIFI_MANAGER_FAIL = -1,
 	WIFI_MANAGER_SUCCESS,
 	WIFI_MANAGER_INVALID_ARGS,
+	WIFI_MANAGER_INITIALIZED,
+	WIFI_MANAGER_DEINITIALIZED,
 	WIFI_MANAGER_TIMEOUT,
 	WIFI_MANAGER_BUSY,
 } wifi_manager_result_e;
 
 typedef enum {
+	WIFI_NONE = -1,
 	STA_MODE,
-	SOFT_AP_MODE
+	SOFTAP_MODE
 } wifi_manager_mode_e;
 
 typedef struct {
@@ -138,7 +141,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 
 /**
  * @brief Retrieve current status of Wi-Fi interface including mode, connection status, ssid, received signal strengh indication, and ip address.
- * @param[out] retrieved information including  mode, connection s    tatus, ssid, received signal strengh indication, and ip address.
+ * @param[out] retrieved information including  mode, connection status, ssid, received signal strengh indication, and ip address.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
  */

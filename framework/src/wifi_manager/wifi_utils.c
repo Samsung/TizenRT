@@ -38,7 +38,7 @@ static uint8_t g_join_result;
 static link_up_handler g_linkup = NULL;
 static link_down_handler g_linkdown = NULL;
 
-void LinkUpHandlerCb(slsi_reason_t *reason)
+void linkup_handler(slsi_reason_t *reason)
 {
 	g_join_result = reason->reason_code;
 	if ((reason->reason_code == SLSI_STATUS_SUCCESS) && g_linkup) {
@@ -46,7 +46,7 @@ void LinkUpHandlerCb(slsi_reason_t *reason)
 	}
 }
 
-void LinkDownHandlerCb(slsi_reason_t *reason)
+void linkdown_handler(slsi_reason_t *reason)
 {
 	if (g_linkdown) {
 		g_linkdown(NULL);
@@ -68,7 +68,7 @@ wifi_utils_result_e wifi_utils_init(void)
 	}
 	g_mode = SLSI_WIFI_STATION_IF;
 
-	ret = WiFiRegisterLinkCallback(&LinkUpHandlerCb, &LinkDownHandlerCb);
+	ret = WiFiRegisterLinkCallback(&linkdown_handler, &linkdown_handler);
 	if (ret != SLSI_STATUS_SUCCESS) {
 		ndbg("Link callback handles: register failed !\n");
 		return WIFI_UTILS_FAIL;
@@ -99,7 +99,7 @@ wifi_utils_result_e wifi_utils_deinit(void)
 	return WIFI_UTILS_SUCCESS;
 }
 
-int8_t ScanResultHandlerCb(slsi_reason_t *reason)
+int8_t scan_result_handler(slsi_reason_t *reason)
 {
 	if (reason->reason_code == 0) {
 		/* Scan succeeded */
@@ -123,7 +123,7 @@ wifi_utils_result_e wifi_utils_scan_ap(wifi_utils_ap_scan_info_s *ap_list, unsig
 	slsi_scan_info_t *head = NULL;
 
 	// issue a scan request command and wait for the message return
-	WiFiRegisterScanCallback(ScanResultHandlerCb);
+	WiFiRegisterScanCallback(scan_result_handler);
 	ret = WiFiScanNetwork();
 	if (ret != SLSI_STATUS_SUCCESS) {
 		return WIFI_UTILS_FAIL;
@@ -208,10 +208,10 @@ wifi_utils_result_e wifi_utils_scan_ap(wifi_utils_ap_scan_info_s *ap_list, unsig
 	return WIFI_UTILS_SUCCESS;
 }
 
-wifi_utils_result_e wifi_utils_register_connection_callback(void *connect_event_func, void *disconnect_event_func)
+wifi_utils_result_e wifi_utils_register_callback(void *linkup_event_func, void *linkdown_event_func)
 {
-	g_linkup = connect_event_func;
-	g_linkdown = disconnect_event_func;
+	g_linkup = linkup_event_func;
+	g_linkdown = linkdown_event_func;
 
 	return WIFI_UTILS_SUCCESS;
 }
@@ -334,7 +334,7 @@ wifi_utils_result_e wifi_utils_get_info(wifi_utils_info *wifi_info)
 	wifi_info->rssi = (int)0;
 
 	if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
-		wifi_info->wifi_status = WIFI_UTILS_SOFT_AP_MODE;
+		wifi_info->wifi_status = WIFI_UTILS_SOFTAP_MODE;
 	} else if (g_mode == SLSI_WIFI_STATION_IF) {
 		uint8_t isConnected;
 		if (WiFiIsConnected(&isConnected, NULL) == SLSI_STATUS_SUCCESS) {
@@ -351,15 +351,10 @@ wifi_utils_result_e wifi_utils_get_info(wifi_utils_info *wifi_info)
 	return WIFI_UTILS_SUCCESS;
 }
 
-wifi_utils_result_e wifi_utils_start_soft_ap(wifi_utils_softap_config_s *soft_ap_config)
+wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_config)
 {
-	if (!soft_ap_config) {
+	if (!softap_config) {
 		return WIFI_UTILS_INVALID_ARGS;
-	}
-
-	if (g_mode != SLSI_WIFI_STATION_IF) {
-		ndbg("start softap failed: g_mode = %d\n", g_mode);
-		return WIFI_UTILS_FAIL;
 	}
 
 	wifi_utils_result_e ret = WIFI_UTILS_FAIL;
@@ -377,21 +372,21 @@ wifi_utils_result_e wifi_utils_start_soft_ap(wifi_utils_softap_config_s *soft_ap
 	ap_config->DTIM = 1;
 	ap_config->phy_mode = 1;
 
-	if (soft_ap_config->channel > 14 || soft_ap_config->channel < 1) {
+	if (softap_config->channel > 14 || softap_config->channel < 1) {
 		ndbg("Channel needs to be between 1 and 14" " (highest channel depends on regulatory of countries)\n");
 		goto start_soft_ap_fail;
 	} else {
-		ap_config->channel = soft_ap_config->channel;
+		ap_config->channel = softap_config->channel;
 	}
 
-	if (soft_ap_config->ssid == NULL) {
+	if (softap_config->ssid == NULL) {
 		goto start_soft_ap_fail;
 	} else {
-		memcpy(&ap_config->ssid, soft_ap_config->ssid, soft_ap_config->ssid_length);
-		ap_config->ssid_len = soft_ap_config->ssid_length;
+		memcpy(&ap_config->ssid, softap_config->ssid, softap_config->ssid_length);
+		ap_config->ssid_len = softap_config->ssid_length;
 	}
 
-	if (!soft_ap_config->passphrase || !soft_ap_config->passphrase_length) {
+	if (!softap_config->passphrase || !softap_config->passphrase_length) {
 		goto start_soft_ap_fail;
 	} else {
 		security_config = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
@@ -399,14 +394,14 @@ wifi_utils_result_e wifi_utils_start_soft_ap(wifi_utils_softap_config_s *soft_ap
 			ndbg("Memory allocation failed!\n");
 			goto start_soft_ap_fail;
 		}
-		memcpy(security_config->passphrase, soft_ap_config->passphrase, soft_ap_config->passphrase_length);
+		memcpy(security_config->passphrase, softap_config->passphrase, softap_config->passphrase_length);
 	}
 
-	if ((soft_ap_config->ap_auth_type == WIFI_UTILS_AUTH_WPA_PSK) && (soft_ap_config->ap_crypto_type == WIFI_UTILS_CRYPTO_TKIP)) {
+	if ((softap_config->ap_auth_type == WIFI_UTILS_AUTH_WPA_PSK) && (softap_config->ap_crypto_type == WIFI_UTILS_CRYPTO_TKIP)) {
 		security_config->secmode = SLSI_SEC_MODE_WPA_TKIP;
-	} else if ((soft_ap_config->ap_auth_type == WIFI_UTILS_AUTH_WPA2_PSK) && (soft_ap_config->ap_crypto_type == WIFI_UTILS_CRYPTO_AES)) {
+	} else if ((softap_config->ap_auth_type == WIFI_UTILS_AUTH_WPA2_PSK) && (softap_config->ap_crypto_type == WIFI_UTILS_CRYPTO_AES)) {
 		security_config->secmode = SLSI_SEC_MODE_WPA2_CCMP;
-	} else if ((soft_ap_config->ap_auth_type == WIFI_UTILS_AUTH_WPA_AND_WPA2_PSK) && (soft_ap_config->ap_crypto_type == WIFI_UTILS_CRYPTO_TKIP_AND_AES)) {
+	} else if ((softap_config->ap_auth_type == WIFI_UTILS_AUTH_WPA_AND_WPA2_PSK) && (softap_config->ap_crypto_type == WIFI_UTILS_CRYPTO_TKIP_AND_AES)) {
 		security_config->secmode = (SLSI_SEC_MODE_WPA_MIXED | SLSI_SEC_MODE_WPA2_MIXED);
 	} else {
 		// if not WPA-TKIP, WPA2-AES, WPA/WPA2 TKIP/AES/MIXED, return fail.
@@ -420,9 +415,10 @@ wifi_utils_result_e wifi_utils_start_soft_ap(wifi_utils_softap_config_s *soft_ap
 		goto start_soft_ap_fail;
 	}
 	g_mode = SLSI_WIFI_SOFT_AP_IF;
-	nvdbg("SoftAP with SSID: %s has successfully started!\n", soft_ap_config->ssid);
+	nvdbg("SoftAP with SSID: %s has successfully started!\n", softap_config->ssid);
 
 	ret = WIFI_UTILS_SUCCESS;
+
 start_soft_ap_fail:
 	if (ap_config) {
 		free(ap_config);
@@ -448,7 +444,7 @@ wifi_utils_result_e wifi_utils_start_sta(void)
 	return WIFI_UTILS_SUCCESS;
 }
 
-wifi_utils_result_e wifi_utils_stop(void)
+wifi_utils_result_e wifi_utils_stop_softap(void)
 {
 	int ret;
 
