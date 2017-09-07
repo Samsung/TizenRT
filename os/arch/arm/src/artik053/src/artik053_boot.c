@@ -126,14 +126,29 @@ static void board_gpio_initialize(void)
  ****************************************************************************/
 static void board_i2c_initialize(void)
 {
-#ifdef CONFIG_I2C
-#ifdef CONFIG_S5J_I2C
+#if defined(CONFIG_I2C) && defined(CONFIG_S5J_I2C)
 	s5j_i2c_register(0);
 	s5j_i2c_register(1);
 #endif
-#endif
 }
 
+/****************************************************************************
+ * Name: board_audio_initialize
+ *
+ * Description:
+ *  Initialize all audio related
+ ****************************************************************************/
+static void board_audio_initialize(void)
+{
+#if defined(CONFIG_AUDIO_ALC5658)
+	s5j_alc5658_initialize(0);
+#elif defined(CONFIG_AUDIO_ALC5658CHAR)
+	s5j_alc5658char_initialize(0);
+#elif defined(CONFIG_AUDIO_I2SCHAR)
+	alc5658_i2c_initialize();
+	i2schar_devinit();
+#endif
+}
 
 /*****************************************************************************
  * Public Functions
@@ -186,6 +201,19 @@ void s5j_board_initialize(void)
 #endif
 }
 
+/****************************************************************************
+ * Name: board_sensor_initialize
+ *
+ * Description:
+ *  Expose board dependent Sensors
+ ****************************************************************************/
+static void board_sensor_initialize(void)
+{
+#if defined(CONFIG_SENSOR_PPD42NS) && defined(CONFIG_S5J_SENSOR_PPD42NS)
+	s5j_ppd42ns_initialize();
+#endif
+}
+
 #ifdef CONFIG_BOARD_INITIALIZE
 /****************************************************************************
  * Name: board_initialize
@@ -216,6 +244,8 @@ void board_initialize(void)
 
 	board_gpio_initialize();
 	board_i2c_initialize();
+	board_audio_initialize();
+	board_sensor_initialize();
 
 }
 #endif /* CONFIG_BOARD_INITIALIZE */

@@ -66,7 +66,9 @@ CSRCS += artik053_alc5658_i2c.c
 endif
 endif
 
-ifeq ($(CONFIG_AUDIO_ALC5658CHAR),y)
+ifeq ($(CONFIG_AUDIO_ALC5658),y)
+CSRCS += artik053_alc5658.c
+else ifeq ($(CONFIG_AUDIO_ALC5658CHAR),y)
 CSRCS += artik053_alc5658char.c
 endif
 
