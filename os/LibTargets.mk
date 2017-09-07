@@ -216,6 +216,27 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
 endif
 endif
 
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+
+$(LIBRARIES_DIR)$(DELIM)libhttpparser$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libhttpparser$(LIBEXT)
+	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libhttpparser$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libhttpparser$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libiotjs$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libiotjs$(LIBEXT)
+	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libiotjs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libiotjs$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libjerry-core$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libjerry-core$(LIBEXT)
+	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libjerry-core$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libjerry-core$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libtuv$(LIBEXT)
+	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libtuv$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libjerry-libm$(LIBEXT)
+	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libjerry-libm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT)
+
+endif
+
+
+
 # Possible non-kernel builds
 
 libc$(DELIM)libc$(LIBEXT): context

@@ -53,6 +53,10 @@
 extern void dm_cb_register_init(void);
 #endif
 
+#ifdef CONFIG_ENABLE_IOTJS
+extern void iotjs_register_cmds(void);
+#endif 
+
 /****************************************************************************
  * Pravite Functions
  ****************************************************************************/
@@ -75,6 +79,10 @@ static void tash_register_cmds(void)
 #ifdef CONFIG_BUILTIN_APPS
 	register_examples_cmds();
 #endif
+
+#ifdef CONFIG_ENABLE_IOTJS
+	iotjs_register_cmds();
+#endif 
 }
 #endif							/* CONFIG_TASH */
 
