@@ -458,8 +458,6 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		return WIFI_MANAGER_SUCCESS;
 	}
 
-	ndbg("required config: %d %d %s\n", mode, config->channel, config->ssid);
-
 	// Wifi mode is changed to SOFT AP
 	if ((mode == SOFTAP_MODE) && (config != NULL)) {
 		wifi_utils_softap_config_s softap_config;
@@ -523,7 +521,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		nvdbg("Wifi mode is changed to station");
 	}
 	else {
-			ndbg("Invalid config: %d %d %s\n", mode, config->channel, config->ssid);
+			ndbg("Invalid config!\n");
 			return WIFI_MANAGER_FAIL;
 	}
 
