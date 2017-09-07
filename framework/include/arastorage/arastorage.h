@@ -52,9 +52,9 @@
  */
 
 /**
- * @ingroup AraStorage
- * @defgroup AraStorage AraStorage
+ * @defgroup ARASTORAGE ARASTORAGE
  * @brief Provides APIs for Lightweight Database
+ * @ingroup ARASTORAGE
  * @{
  */
 
