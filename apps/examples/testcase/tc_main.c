@@ -50,6 +50,9 @@
 #if defined(CONFIG_EXAMPLES_TESTCASE_DM_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_DM_ITC)
 #define TC_DM_STACK  20480
 #endif
+#if defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC)
+#define TC_WIFI_MANAGER_STACK  20480
+#endif
 
 sem_t tc_sem;
 int working_tc;
@@ -67,6 +70,7 @@ extern int utc_sysio_main(int argc, char *argv[]);
 extern int itc_sysio_main(int argc, char *argv[]);
 extern int utc_dm_main(int argc, char *argv[]);
 extern int itc_dm_main(int argc, char *argv[]);
+extern int utc_wifi_manager_main(int argc, char *argv[]);
 
 /* Not yet */
 extern int mpu_tc_main(int argc, char *argv[]);
@@ -142,13 +146,19 @@ int tc_main(int argc, char *argv[])
 		printf("System IO utc is not started, err = %d\n", pid);
 	}
 #endif
-
 #ifdef CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_ITC
 	pid = task_create("sysioitc", SCHED_PRIORITY_DEFAULT, TC_SYSTEMIO_STACK, itc_sysio_main, argv);
 	if (pid < 0) {
 		printf("System IO itc is not started, err = %d\n", pid);
 	}
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC
+	pid = task_create("wifimgrutc", SCHED_PRIORITY_DEFAULT, TC_WIFI_MANAGER_STACK, utc_wifi_manager_main, argv);
+	if (pid < 0) {
+		printf("Wi-Fi Manager utc is not started, err = %d\n", pid);
+	}
+#endif
+
 	do {
 		sleep(5);
 	} while (working_tc > 0);
