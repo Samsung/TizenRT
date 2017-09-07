@@ -1,5 +1,5 @@
 ############################################################################
-# apps/wpa_supplicant/Makefile
+# external/wpa_supplicant/Makefile
 #
 #   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -35,13 +35,7 @@
 
 -include $(TOPDIR)/Make.defs
 
-CONFIG_WPA_SUPPLICANT_PRIORITY ?= SCHED_PRIORITY_DEFAULT
-CONFIG_WPA_SUPPLICANT_STACKSIZE ?= 16384
-
-PRIORITY = $(CONFIG_WPA_SUPPLICANT_PRIORITY)
-STACKSIZE = $(CONFIG_WPA_SUPPLICANT_STACKSIZE)
-
-CONFIG_OS=tinyara
+CONFIG_OS = tinyara
 
 DEPPATH = --dep-path .
 
@@ -161,16 +155,14 @@ SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN = ..\libapps$(LIBEXT)
+  BIN = ..\libexternal$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN = ..\\libapps$(LIBEXT)
+  BIN = ..\\libexternal$(LIBEXT)
 else
-  BIN = ../libapps$(LIBEXT)
+  BIN = ../libexternal$(LIBEXT)
 endif
 endif
-
-ROOTDEPPATH = --dep-path .
 
 CFLAGS += -DCONFIG_DRIVER_T20
 CFLAGS += -DCONFIG_DEBUG_FILE
@@ -184,8 +176,6 @@ CFLAGS += -DIEEE8021x_EAPOL
 CFLAGS += -DCONFIG_IEEE80211N
 
 CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" src src$(DELIM)utils src$(DELIM)rsn_supp }
-CONFIG_WPA_SUPPLICANT_PROGNAME ?= wpa_supplicant$(EXEEXT)
-PROGNAME = $(CONFIG_WPA_SUPPLICANT_PROGNAME)
 
 # Common build
 VPATH = $(sort $(dir $(CSRCS_WPA_SUPPLICANT)))
@@ -202,12 +192,6 @@ $(COBJS): %$(OBJEXT): %.c
 .built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) @touch .built
-
-install:
-
-# Register application
-
-context:
 
 # Create dependencies
 
@@ -227,5 +211,3 @@ distclean: clean
 	$(call DELFILE, .depend)
 
 -include Make.dep
-.PHONY: preconfig
-preconfig:

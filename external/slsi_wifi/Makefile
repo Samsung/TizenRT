@@ -56,7 +56,7 @@
 ASRCS		=
 CSRCS		= slsi_wifi_api.c slsi_wifi_utils.c
 
-CFLAGS += -I$(TOPDIR)$(DELIM)../apps$(DELIM)wpa_supplicant$(DELIM)src
+CFLAGS += -I$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
