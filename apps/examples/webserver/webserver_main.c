@@ -69,6 +69,15 @@
 #define WEBSERVER_STACK_SIZE   (1024 * 8)
 #define WEBSERVER_SCHED_PRI    100
 #define WEBSERVER_SCHED_POLICY SCHED_RR
+#define WEBSERVER_FREE_INPUT(node, size) \
+	do { \
+		int m = 0; \
+		for (; m < size; m++) { \
+			free(node->argv[m]); \
+		} \
+		free(node->argv); \
+		free(node); \
+	} while (0)
 
 struct webserver_input {
 	int argc;
@@ -338,11 +347,11 @@ void ws_server_on_msg_cb(websocket_context_ptr ctx, const websocket_on_msg_arg *
 void print_webserver_usage(void)
 {
 	printf("\n  webserver usage:\n");
-	printf("   $ webserver [operation] [option]\n");
-	printf("\n [operation]   : %%s (webserver start or stop)\n");
-	printf("\n [option]   : %%s default:require (require, optional, none)\n");
+	printf("   $ webserver OPERATION OPTION\n");
+	printf("\n OPERATION   : %%s (webserver start or stop)\n");
+	printf("\n OPTION      : %%s default:require (require, optional, none)\n");
 	printf("\n example:\n");
-	printf("  $ webserver start\n");
+	printf("  $ webserver start none\n");
 
 }
 
@@ -385,16 +394,13 @@ pthread_addr_t httptest_cb(void *arg)
 	struct ssl_config_t ssl_config;
 	int auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
 #endif
-	int i = 0;
 	struct webserver_input *input = arg;
-
-	if (!input && (input->argc != 2 || input->argc != 3)) {
-		print_webserver_usage();
-		goto release;
-	}
-	
 	if (!strcmp(input->argv[1], "start")) {
 #ifdef CONFIG_NET_SECURITY_TLS
+		if (input->argc != 3) {
+			print_webserver_usage();
+			goto release;
+		}
 		if (strcmp(input->argv[2], "required") == 0) {
 			auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
 		} else if (strcmp(input->argv[2], "optional") == 0) {
@@ -402,11 +408,16 @@ pthread_addr_t httptest_cb(void *arg)
 		} else if (strcmp(input->argv[2], "none") == 0) {
 			auth_mode = MBEDTLS_SSL_VERIFY_NONE;
 		} else {
+			print_webserver_usage();
 			goto release;
 		}
 #endif
 		goto start;
 	} else if (!strcmp(input->argv[1], "stop")) {
+		if (input->argc != 2) {
+			print_webserver_usage();
+			goto release;
+		}
 		goto stop;
 	} else {
 		print_webserver_usage();
@@ -476,11 +487,7 @@ stop:
 	printf("webserver end\n");
 
 release:
-	for (; i < input->argc; i++) {
-		free(input->argv[i]);
-	}
-	free(input);
-	
+	WEBSERVER_FREE_INPUT(input, input->argc);
 	return NULL;
 }
 
@@ -501,6 +508,7 @@ int webserver_main(int argc, char *argv[])
 	input->argv = (char **)malloc(sizeof(char *) * argc);
 	if (!input->argv) {
 		printf(" malloc argv fail\n");
+		free(input);
 		return -1;
 	}
 
@@ -508,9 +516,12 @@ int webserver_main(int argc, char *argv[])
 	int i = 0;
 	for (; i < argc; i++) {
 		input->argv[i] = (char *)malloc(sizeof(char) * (strlen(argv[i]) + 1));
+		if (!input->argv[i]) {
+			WEBSERVER_FREE_INPUT(input, i);
+			return -1;
+		}
 		strcpy(input->argv[i], argv[i]);
 	}
-	
 	status = pthread_attr_init(&attr);
 	if (status != 0) {
 		printf("fail to start webserver\n");
@@ -525,6 +536,7 @@ int webserver_main(int argc, char *argv[])
 	status = pthread_create(&tid, &attr, httptest_cb, input);
 	if (status < 0) {
 		printf("fail to start webserver\n");
+		WEBSERVER_FREE_INPUT(input, input->argc);
 		return -1;
 	}
 	pthread_setname_np(tid, "webserver");

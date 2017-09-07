@@ -83,10 +83,21 @@
 #define WEBCLIENT_SCHED_POLICY SCHED_RR
 
 #define WEBCLIENT_BUF_SIZE     4600
+#define WEBCLIENT_FREE_INPUT(node, size) \
+	do { \
+		int m = 0; \
+		for (; m < size; m++) { \
+			free(node->argv[m]); \
+		} \
+		free(node->argv); \
+		free(node); \
+	} while (0)
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+
 
 struct webclient_input {
 	int argc;
@@ -227,6 +238,7 @@ int webclient_init_request(void *arg, struct http_client_request_t *request)
 	int argc, i;
 	char **argv;
 	char *p, *q;
+	int ret = -1;
 	struct webclient_input *input;
 
 	input = arg;
@@ -238,7 +250,7 @@ int webclient_init_request(void *arg, struct http_client_request_t *request)
 	memset(request, 0, sizeof(struct http_client_request_t));
 
 	if (argc < 3) {
-		return -1;
+		goto exit;
 	}
 
 	if (!strcmp(argv[1], "GET")) {
@@ -251,11 +263,17 @@ int webclient_init_request(void *arg, struct http_client_request_t *request)
 		request->method = WGET_MODE_DELETE;
 	} else {
 		dump_webclient_usage();
-		return -1;
+		goto exit;
 	}
 
 	/* argument2 is url. */
-	request->url = argv[2];
+	request->url = (char *)malloc(strlen(argv[2]) + 1);
+	if (!request->url) {
+		goto exit;
+	}
+	strcpy(request->url, argv[2]);
+	request->url[strlen(argv[2])] = '\0';
+
 #ifdef CONFIG_NET_SECURITY_TLS
 	if (!strncmp(request->url, "https", 5)) {
 		g_https = 1;
@@ -264,13 +282,13 @@ int webclient_init_request(void *arg, struct http_client_request_t *request)
 	if (!strncmp(request->url, "http", 4)) {
 		g_https = 0;
 	} else {
-		return -1;
+		goto exit;
 	}
 
 	for (i = 3; i < argc; i++) {
 		p = argv[i];
 		if ((q = strchr(p, '=')) == NULL) {
-			return -1;
+			goto exit;
 		}
 		*q++ = '\0';
 
@@ -285,21 +303,25 @@ int webclient_init_request(void *arg, struct http_client_request_t *request)
 			if (t > 0 && t <= WEBCLIENT_CONF_MAX_ENTITY_SIZE) {
 				request->entity = (char *)malloc(t);
 				if (request->entity == NULL) {
-					return -1;
+					goto exit;
 				}
 				g_testentity = 1;
 				memset(request->entity, '1', t);
 			} else {
 				printf("entity is too big\n");
-				return -1;
+				goto exit;
 			}
 		} else {
-			return -1;
+			goto exit;
 		}
 	}
 
 	request->buflen = WEBCLIENT_BUF_SIZE;
-	return 0;
+	ret = 0;
+exit:
+	WEBCLIENT_FREE_INPUT(input, input->argc);
+
+	return ret;
 }
 
 pthread_addr_t webclient_cb(void *arg)
@@ -411,6 +433,7 @@ int webclient_main(int argc, char *argv[])
 	}
 	input->argv = (char **)malloc(sizeof(char *) * argc);
 	if (!input->argv) {
+		free(input);
 		printf(" malloc argv fail\n");
 		return 0;
 	}
@@ -419,13 +442,18 @@ int webclient_main(int argc, char *argv[])
 	int i = 0;
 	for (; i < argc; i++) {
 		input->argv[i] = (char *)malloc(sizeof(char) * (strlen(argv[i]) + 1));
+		if (!input->argv[i]) {
+			WEBCLIENT_FREE_INPUT(input, i);
+			return -1;
+		}
 		strcpy(input->argv[i], argv[i]);
 	}
 
 	status = pthread_create(&tid, &attr, webclient_cb, input);
-
 	if (status < 0) {
 		printf("fail to start webclient\n");
+		WEBCLIENT_FREE_INPUT(input, argc);
+
 		g_running = 0;
 		return -1;
 	}

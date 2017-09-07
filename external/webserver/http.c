@@ -122,7 +122,7 @@ pthread_addr_t http_server_handler(pthread_addr_t arg)
 		sock_fd = accept(*(volatile int *)&server->listen_fd,
 						 (struct sockaddr *)&client_addr,
 						 &addrlen);
-		if (sock_fd < 0 && errno != EWOULDBLOCK) {
+		if (sock_fd < 0 && (errno != EWOULDBLOCK && errno != ETIMEDOUT)) {
 			HTTP_LOGE("Error: Accept client error!!\n");
 			continue;
 		}
@@ -130,6 +130,7 @@ pthread_addr_t http_server_handler(pthread_addr_t arg)
 		if (sock_fd > 0) {
 			tv.tv_sec = HTTP_CONF_SOCKET_TIMEOUT_MSEC / 1000;
 			tv.tv_usec = (HTTP_CONF_SOCKET_TIMEOUT_MSEC % 1000) * 1000;
+			HTTP_LOGD("Set timeout to socket (%d.%d)sec\n", tv.tv_sec, tv.tv_usec);
 			if (setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO,
 						   (struct timeval *)&tv, sizeof(struct timeval)) < 0) {
 				HTTP_LOGE("Error: Fail to setsockopt\n");
