@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2016 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# external/telnetd/Make.defs
-# Adds selected applications to external/ build
+############################################################################
+# external/mosquitto/Makefile
 #
-#   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,78 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_TELNETD),y)
-CONFIGURED_EXT += telnetd
+-include $(TOPDIR)/.config
+-include $(TOPDIR)/Make.defs
+include config.mk
+
+ASRCS		=
+CSRCS		=
+CSRCS += tls_mosq.c
+CSRCS += net_mosq.c
+CSRCS += send_client_mosq.c
+CSRCS += messages_mosq.c
+CSRCS += util_mosq.c
+CSRCS += socks_mosq.c
+CSRCS += will_mosq.c
+CSRCS += mosquitto.c
+CSRCS += logging_mosq.c
+CSRCS += send_mosq.c
+CSRCS += read_handle_shared.c
+CSRCS += srv_mosq.c
+CSRCS += thread_mosq.c
+CSRCS += read_handle_client.c
+CSRCS += read_handle.c
+CSRCS += time_mosq.c
+CSRCS += memory_mosq.c
+
+AOBJS		= $(ASRCS:.S=$(OBJEXT))
+COBJS		= $(CSRCS:.c=$(OBJEXT))
+
+SRCS		= $(ASRCS) $(CSRCS)
+OBJS		= $(AOBJS) $(COBJS)
+
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  BIN		= ..\libexternal$(LIBEXT)
+else
+ifeq ($(WINTOOL),y)
+  BIN		= ..\\libexternal$(LIBEXT)
+else
+  BIN		= ../libexternal$(LIBEXT)
 endif
+endif
+
+DEPPATH	= --dep-path .
+
+# Common build
+
+VPATH		=
+
+all: .built
+.PHONY: depend clean distclean
+
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
+
+$(COBJS): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	$(Q) touch .built
+
+.depend: Makefile $(SRCS)
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) touch $@
+
+depend: .depend
+
+clean:
+	$(call DELFILE, .built)
+	$(call CLEAN)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
+-include Make.dep
 

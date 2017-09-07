@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_AWS_SDK),y)
-CONFIGURED_EXT += aws
+ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
+CONFIGURED_EXT += wakaama
 endif

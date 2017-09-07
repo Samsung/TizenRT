@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2016 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# external/telnetd/Make.defs
-# Adds selected applications to external/ build
+############################################################################
+# external/ftpc/Makefile
 #
-#   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,96 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_TELNETD),y)
-CONFIGURED_EXT += telnetd
+-include $(TOPDIR)/.config
+-include $(TOPDIR)/Make.defs
+
+ASRCS		=
+CSRCS		=
+
+# FTP connection management
+CSRCS += ftpc_connect.c \
+	  ftpc_disconnect.c
+
+# FTP commands
+CSRCS += ftpc_cdup.c \
+	  ftpc_chdir.c \
+	  ftpc_chmod.c \
+	  ftpc_filesize.c \
+	  ftpc_filetime.c
+CSRCS += ftpc_help.c \
+	  ftpc_idle.c \
+	  ftpc_listdir.c \
+	  ftpc_login.c \
+	  ftpc_mkdir.c
+CSRCS += ftpc_noop.c \
+	  ftpc_rpwd.c \
+	  ftpc_quit.c \
+	  ftpc_rename.c \
+	  ftpc_rmdir.c \
+	  ftpc_unlink.c
+CSRCS += ftpc_cmd.c
+
+# FTP transfers
+CSRCS += ftpc_getfile.c \
+	  ftpc_putfile.c \
+	  ftpc_transfer.c
+
+# FTP responses
+CSRCS += ftpc_response.c \
+	  ftpc_getreply.c
+
+# FTP helpers
+CSRCS += ftpc_utils.c \
+	  ftpc_socket.c
+
+AOBJS		= $(ASRCS:.S=$(OBJEXT))
+COBJS		= $(CSRCS:.c=$(OBJEXT))
+
+SRCS		= $(ASRCS) $(CSRCS)
+OBJS		= $(AOBJS) $(COBJS)
+
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  BIN		= ..\libexternal$(LIBEXT)
+else
+ifeq ($(WINTOOL),y)
+  BIN		= ..\\libexternal$(LIBEXT)
+else
+  BIN		= ../libexternal$(LIBEXT)
 endif
+endif
+
+DEPPATH	= --dep-path .
+
+# Common build
+
+VPATH		=
+
+all: .built
+.PHONY: depend clean distclean
+
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
+
+$(COBJS): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	$(Q) touch .built
+
+.depend: Makefile $(SRCS)
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) touch $@
+
+depend: .depend
+
+clean:
+	$(call DELFILE, .built)
+	$(call CLEAN)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
+-include Make.dep
 

@@ -50,8 +50,7 @@
 #
 ############################################################################
 
-CSRCS	+= smtp.c
-
-DEPPATH += --dep-path smtp
-VPATH += :smtp
+ifeq ($(CONFIG_NETUTILS_SMTP),y)
+CONFIGURED_EXT += smtp
+endif
 

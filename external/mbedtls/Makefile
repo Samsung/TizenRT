@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# external/libcoap/Makefile
+# external/mbedtls/Makefile
 #
-#   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -53,46 +53,66 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-# libcoap
+ASRCS		=
+CSRCS		= 
 
-ASRCS =
-CSRCS =
+SRC_CRYPTO_CSRCS =    aes.c           aesni.c         arc4.c          \
+                      asn1parse.c     asn1write.c     base64.c        \
+                      bignum.c        blowfish.c      camellia.c      \
+                      ccm.c           cipher.c        cipher_wrap.c   \
+                      cmac.c          ctr_drbg.c      des.c           dhm.c    \
+                      ecdh.c          ecdsa.c         ecjpake.c       ecp.c \
+                      ecp_curves.c    entropy.c       entropy_poll.c  \
+                      error.c         gcm.c           havege.c        \
+                      hmac_drbg.c     md.c            md2.c           \
+                      md4.c           md5.c           md_wrap.c       \
+                      memory_buffer_alloc.c           oid.c           \
+                      padlock.c       pem.c           pk.c            \
+                      pk_wrap.c       pkcs12.c        pkcs5.c         \
+                      pkparse.c       pkwrite.c       platform.c      \
+                      ripemd160.c     rsa.c           sha1.c          \
+                      sha256.c        sha512.c        threading.c     \
+                      timing.c        version.c                       \
+                      version_features.c              xtea.c
 
-CSRCS += async.c
-CSRCS += block.c
-CSRCS += coap_list.c
-CSRCS += debug.c
-CSRCS += encode.c
-CSRCS += hashkey.c
-CSRCS += net.c
-CSRCS += option.c
-CSRCS += pdu.c
-CSRCS += resource.c
-CSRCS += str.c
-CSRCS += subscribe.c
-CSRCS += uri.c
+SRC_X509_CSRCS =      certs.c         pkcs11.c        x509.c          \
+                      x509_create.c   x509_crl.c      x509_crt.c      \
+                      x509_csr.c      x509write_crt.c x509write_csr.c
 
-AOBJS = $(ASRCS:.S=$(OBJEXT))
-COBJS = $(CSRCS:.c=$(OBJEXT))
+SRC_TLS_CSRCS =       debug.c         net.c           ssl_cache.c     \
+                      ssl_ciphersuites.c              ssl_tls.c       \
+                      ssl_cli.c       ssl_cookie.c    ssl_srv.c       \
+                      ssl_ticket.c    easy_tls.c
 
-SRCS = $(ASRCS) $(CSRCS)
-OBJS = $(AOBJS) $(COBJS)
+ifeq ($(CONFIG_TLS_WITH_SSS),y)
+SRC_SEE_CSRCS += see_api.c	see_internal.c
+endif
+
+TLS_CSRCS += $(SRC_CRYPTO_CSRCS) $(SRC_X509_CSRCS) $(SRC_TLS_CSRCS) $(SRC_SEE_CSRCS)
+
+CSRCS += $(TLS_CSRCS)
+
+AOBJS		= $(ASRCS:.S=$(OBJEXT))
+COBJS		= $(CSRCS:.c=$(OBJEXT))
+
+SRCS		= $(ASRCS) $(CSRCS)
+OBJS		= $(AOBJS) $(COBJS)
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN = ..\libexternal$(LIBEXT)
+  BIN		= ..\libexternal$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN = ..\\libexternal$(LIBEXT)
+  BIN		= ..\\libexternal$(LIBEXT)
 else
-  BIN = ../libexternal$(LIBEXT)
+  BIN		= ../libexternal$(LIBEXT)
 endif
 endif
 
-DEPPATH = --dep-path .
+DEPPATH	= --dep-path .
 
 # Common build
 
-VPATH =
+VPATH		=
 
 all: .built
 .PHONY: depend clean distclean

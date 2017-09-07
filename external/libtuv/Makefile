@@ -15,10 +15,10 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# external/telnetd/Make.defs
-# Adds selected applications to external/ build
+############################################################################
+# external/libtuv/Makefile
 #
-#   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,66 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_NETUTILS_TELNETD),y)
-CONFIGURED_EXT += telnetd
+-include $(TOPDIR)/.config
+-include $(TOPDIR)/Make.defs
+
+DEPPATH	= --dep-path .
+VPATH		=
+
+ASRCS		=
+CSRCS		=
+
+include source/Make.defs
+include source/tinyara/Make.defs
+include source/unix/Make.defs
+
+CFLAGS += -D__TINYARA__
+CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libtuv/include
+CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libtuv/source
+CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libtuv/source/tinyara
+
+AOBJS		= $(ASRCS:.S=$(OBJEXT))
+COBJS		= $(CSRCS:.c=$(OBJEXT))
+
+SRCS		= $(ASRCS) $(CSRCS)
+OBJS		= $(AOBJS) $(COBJS)
+
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  BIN		= ..\libexternal$(LIBEXT)
+else
+ifeq ($(WINTOOL),y)
+  BIN		= ..\\libexternal$(LIBEXT)
+else
+  BIN		= ../libexternal$(LIBEXT)
 endif
+endif
+
+all: .built
+.PHONY: .depend depend clean distclean
+
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
+
+$(COBJS): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	$(Q) touch .built
+
+.depend: Makefile $(SRCS)
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) touch $@
+
+depend: .depend
+
+clean:
+	$(call DELFILE, .built)
+	$(call CLEAN)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
+-include Make.dep
 

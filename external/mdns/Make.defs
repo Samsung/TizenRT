@@ -16,8 +16,7 @@
 #
 ###########################################################################
 
-CSRCS += mdns.c mdnsd.c
-
-DEPPATH += --dep-path mdns
-VPATH += :mdns
+ifeq ($(CONFIG_NETUTILS_MDNS),y)
+CONFIGURED_EXT += mdns
+endif
 

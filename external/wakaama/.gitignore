@@ -18,7 +18,6 @@
 build-*
 
 # In source build
-Makefile
 CMakeCache.txt
 CMakeFiles
 Debug

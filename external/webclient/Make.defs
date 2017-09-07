@@ -50,8 +50,7 @@
 #
 ############################################################################
 
-CSRCS	+= webclient.c
-
-DEPPATH += --dep-path webclient
-VPATH += :webclient
+ifeq ($(CONFIG_NETUTILS_WEBCLIENT),y)
+CONFIGURED_EXT += webclient
+endif
 

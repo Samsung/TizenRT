@@ -50,8 +50,7 @@
 #
 ############################################################################
 
-CSRCS		+= ftpd.c
-
-DEPPATH += --dep-path ftpd
-VPATH += :ftpd
+ifeq ($(CONFIG_NETUTILS_FTPD),y)
+CONFIGURED_EXT += ftpd
+endif
 
