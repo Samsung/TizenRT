@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# external/slsi_wifi/Makefile
+# external/wpa_supplicant/Makefile
 #
 #   Copyright (C) 2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -53,13 +53,26 @@
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
 
-ASRCS		=
-CSRCS		= slsi_wifi_api.c slsi_wifi_utils.c
+DEPPATH	= --dep-path .
+VPATH		=
 
-CFLAGS += -I$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src
+ASRCS		=
+CSRCS		=
+
+include wpa_supplicant/Make.defs
+include src/ap/Make.defs
+include src/common/Make.defs
+include src/crypto/Make.defs
+include src/drivers/Make.defs
+include src/eapol_auth/Make.defs
+include src/eap_common/Make.defs
+include src/eap_server/Make.defs
+include src/l2_packet/Make.defs
+include src/rsn_supp/Make.defs
+include src/utils/Make.defs
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
-COBJS		= $(CSRCS:.c=$(OBJEXT))
+COBJS		= $(patsubst %.c, wpa_%$(OBJEXT), $(CSRCS))
 
 SRCS		= $(ASRCS) $(CSRCS)
 OBJS		= $(AOBJS) $(COBJS)
@@ -74,20 +87,15 @@ else
 endif
 endif
 
-DEPPATH	= --dep-path .
-
-# Common build
-
-VPATH		=
-
 all: .built
 .PHONY: depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
-$(COBJS): %$(OBJEXT): %.c
+$(COBJS): wpa_%$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
+
 
 .built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))

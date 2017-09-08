@@ -11,4 +11,5 @@ config WIFI_MANAGER
 
 if WIFI_MANAGER
 source "$EXTERNALDIR/slsi_wifi/Kconfig"
+source "$EXTERNALDIR/wpa_supplicant/Kconfig"
 endif #WIFI_MANAGER
