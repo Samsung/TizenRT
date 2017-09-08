@@ -157,14 +157,6 @@ static void pcm_dump(FAR const struct wav_header_s *wav);
 #define pcm_dump(w)
 #endif
 
-#ifdef CONFIG_ENDIAN_BIG
-static uint16_t pcm_leuint16(uint16_t value);
-static uint16_t pcm_leuint32(uint32_t value);
-#else
-#define pcm_leuint16(v) (v)
-#define pcm_leuint32(v) (v)
-#endif
-
 static inline bool pcm_validwav(FAR const struct wav_header_s *wav);
 static bool pcm_parsewav(FAR struct pcm_decode_s *priv, uint8_t *data);
 
@@ -308,7 +300,7 @@ static uint16_t pcm_leuint16(uint16_t value)
  ****************************************************************************/
 
 #ifdef CONFIG_ENDIAN_BIG
-static uint16_t pcm_leuint32(uint32_t value)
+static uint32_t pcm_leuint32(uint32_t value)
 {
 	return (((value & 0x000000ff) << 24) | ((value & 0x0000ff00) << 8) | ((value & 0x00ff0000) >> 8) | ((value & 0xff000000) >> 24));
 }

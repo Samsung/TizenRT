@@ -170,6 +170,15 @@ extern "C" {
  *
  ****************************************************************************/
 
+#ifdef CONFIG_ENDIAN_BIG
+static uint16_t pcm_leuint16(uint16_t value);
+static uint32_t pcm_leuint32(uint32_t value);
+#else
+#define pcm_leuint16(v) (v)
+#define pcm_leuint32(v) (v)
+#endif
+
+
 FAR struct audio_lowerhalf_s *pcm_decode_initialize(FAR struct audio_lowerhalf_s *dev);
 
 #undef EXTERN
