@@ -69,7 +69,7 @@ if provisioning_lib_env.get('MULTIPLE_OWNER') == '1':
         'oxmpreconfpin.c'
     ]
 
-if provisioning_lib_env.get('WITH_TCP') == True:
+if provisioning_lib_env.get('WITH_TCP') == True and provisioning_lib_env.get('WITH_CLOUD') == True:
     provisioning_lib_env.AppendUnique(CPPDEFINES=['__WITH_TLS__'])
     provisioning_src = provisioning_src + [
         'cloud/utils.c',

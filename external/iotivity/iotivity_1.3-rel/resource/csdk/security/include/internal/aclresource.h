@@ -185,6 +185,7 @@ OCStackResult SetAclRownerId(const OicUuid_t* newROwner);
  */
 OCStackResult GetAclRownerId(OicUuid_t *rowneruuid);
 
+#if defined(TCP_ADAPTER) && defined(WITH_CLOUD)
 /**
  * This function converts CBOR data into ACL.
  *
@@ -194,6 +195,7 @@ OCStackResult GetAclRownerId(OicUuid_t *rowneruuid);
  * @return instance of @ref OicSecAcl_t structure or NULL if error occurs
  */
 OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size);
+#endif //defined(TCP_ADAPTER) && defined(WITH_CLOUD)
 
 #ifdef __cplusplus
 }

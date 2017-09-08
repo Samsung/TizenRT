@@ -1080,6 +1080,9 @@ exit:
 // This function converts CBOR format to ACL data.
 // Caller needs to invoke 'free' when done using
 // It parses { "aclist" : [ { ... } ] } instead of { "aclist" : { "aces" : [ ] } }
+
+#if defined(TCP_ADAPTER) && defined(WITH_CLOUD)
+
 OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size)
 {
     if (NULL == cborPayload || 0 == size)
@@ -1386,6 +1389,7 @@ exit:
 
     return acl;
 }
+#endif
 
 // This function converts CBOR format to ACL data.
 // Callers should normally invoke "CBORPayloadToAcl()" unless wishing to check

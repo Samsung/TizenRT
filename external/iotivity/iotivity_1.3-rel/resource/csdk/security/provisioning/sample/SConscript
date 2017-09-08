@@ -105,7 +105,7 @@ if provisioning_sample_env.get('MULTIPLE_OWNER') == '1':
         'sampleserver_preconfpin', 'sampleserver_preconfpin.cpp')
 
 if target_os not in ['msys_nt', 'windows']:
-    if provisioning_sample_env.get('WITH_TCP') == True:
+    if provisioning_sample_env.get('WITH_TCP') == True and provisioning_sample_env.get('WITH_CLOUD') == True:
         cloud_src = [
             'cloud/cloudAuth.c',
             'cloud/cloudCommon.c',
@@ -160,13 +160,14 @@ if target_os not in ['msys_nt', 'windows']:
         rootcert = provisioning_sample_env.Install(
             sec_provisioning_build_dir,
             sec_provisioning_src_dir + 'rootca.crt')
-        Alias("cloud", [
-            clouddat,
-            rootcert,
-            cloudClient,
-            cloudServer
-        ])
-        provisioning_sample_env.AppendTarget("cloud")
+        if provisioning_sample_env.get('WITH_TCP') == True and provisioning_sample_env.get('WITH_CLOUD') == True:
+            Alias("cloud", [
+                clouddat,
+                rootcert,
+                cloudClient,
+                cloudServer
+            ])
+            provisioning_sample_env.AppendTarget("cloud")
 
 sampleapps = [
     provisioningclient,

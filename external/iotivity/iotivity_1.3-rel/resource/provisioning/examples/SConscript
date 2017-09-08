@@ -113,7 +113,7 @@ if examples_env.get('MULTIPLE_OWNER') == '1':
     subownerclient = examples_env.Program('subownerclient',
                                           'subownerclient.cpp')
 
-if examples_env.get('WITH_TCP') == True:
+if examples_env.get('WITH_TCP') == True and examples_env.get('WITH_CLOUD') == True:
     cloudClient = examples_env.Program('cloudClient', [
         'cloudClient.cpp', 'cloudAuth.cpp', 'cloudWrapper.cpp'
     ])
@@ -134,7 +134,7 @@ if examples_env.get('MULTIPLE_OWNER') == '1':
     Alias("subowner", [subownerclientdat, subownerclient])
     examples_env.AppendTarget("subowner")
 
-if examples_env.get('WITH_TCP') == True:
+if examples_env.get('WITH_TCP') == True and examples_env.get('WITH_CLOUD') == True:
     clouddat = examples_env.Install(
         svr_db_build_dir, svr_db_src_dir + 'cloud.dat')
     rootcert = examples_env.Install(

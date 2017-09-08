@@ -95,7 +95,7 @@ if target_os in ['windows']:
 ######################################################################
 ocprovision_src = ['src/OCProvisioningManager.cpp']
 
-if ocprovision_env.get('WITH_TCP') == True:
+if ocprovision_env.get('WITH_TCP') == True and ocprovision_env.get('WITH_CLOUD') == True:
     ocprovision_src = ocprovision_src + ['src/OCCloudProvisioning.cpp']
     ocprovision_env.UserInstallTargetHeader(
         '../include/OCCloudProvisioning.hpp', 'resource', 'OCCloudProvisioning.hpp')
