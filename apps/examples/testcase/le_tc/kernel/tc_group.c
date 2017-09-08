@@ -54,13 +54,13 @@ static void tc_group_group_add_find_remove_child(void)
 	pid_t child_pid;
 
 	st_tcb = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
+	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
 
 	group = st_tcb->group;
-	TC_ASSERT_NOT_NULL("sched_self", group);
+	TC_ASSERT_NEQ("sched_self", group, NULL);
 
 	child = group_allocchild();
-	TC_ASSERT_NOT_NULL("group_allocchild", child);
+	TC_ASSERT_NEQ("group_allocchild", child, NULL);
 
 	child_pid = -1;
 	child->ch_flags = TCB_FLAG_TTYPE_TASK;
@@ -101,13 +101,13 @@ static void tc_group_group_alloc_free_child(void)
 	struct child_status_s child_dummy;
 
 	st_tcb = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
+	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
 
 	group = st_tcb->group;
-	TC_ASSERT_NOT_NULL("sched_self", group);
+	TC_ASSERT_NEQ("sched_self", group, NULL);
 
 	child = group_allocchild();
-	TC_ASSERT_NOT_NULL("group_allocchild", child);
+	TC_ASSERT_NEQ("group_allocchild", child, NULL);
 	TC_ASSERT_EQ("group_allocchild", child->flink, NULL);
 
 	child->flink = &child_dummy;
@@ -134,15 +134,15 @@ static void tc_group_group_exit_child(void)
 	pid_t child_pid;
 
 	st_tcb = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
+	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
 
 	group = st_tcb->group;
-	TC_ASSERT_NOT_NULL("sched_self", group);
+	TC_ASSERT_NEQ("sched_self", group, NULL);
 
 	child_pid = task_create("group", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, group_exitchild_func, (char *const *)NULL);
 
 	child = group_findchild(group, child_pid);
-	TC_ASSERT_NOT_NULL("group_findchild", child);
+	TC_ASSERT_NEQ("group_findchild", child, NULL);
 
 	sleep(3);
 
@@ -173,13 +173,13 @@ static void tc_group_group_removechildren(void)
 	pid_t child_pid;
 
 	st_tcb = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
+	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
 
 	group = st_tcb->group;
-	TC_ASSERT_NOT_NULL("sched_self", group);
+	TC_ASSERT_NEQ("sched_self", group, NULL);
 
 	child = group_allocchild();
-	TC_ASSERT_NOT_NULL("group_allocchild", child);
+	TC_ASSERT_NEQ("group_allocchild", child, NULL);
 
 	child_pid = -1;
 	child->ch_flags = TCB_FLAG_TTYPE_TASK;

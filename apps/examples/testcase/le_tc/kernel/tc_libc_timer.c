@@ -109,7 +109,7 @@ static void tc_libc_timer_gmtime_r(void)
 	/* verifying the structures returned and filled by comparing their parameters */
 
 	st_rettime = gmtime_r(&test_time, &st_time);
-	TC_ASSERT_NOT_NULL("gmtime_r", st_rettime);
+	TC_ASSERT_NEQ("gmtime_r", st_rettime, NULL);
 	TC_ASSERT_EQ("gmtime_r", st_rettime->tm_year, st_time.tm_year);
 	TC_ASSERT_EQ("gmtime_r", st_rettime->tm_mon, st_time.tm_mon);
 	TC_ASSERT_EQ("gmtime_r", year, st_time.tm_year);
@@ -139,10 +139,10 @@ static void tc_libc_timer_gmtime(void)
 	TC_ASSERT_NEQ("time", ret_chk, (time_t)ERROR);
 
 	st_rettime = gmtime(&time1);
-	TC_ASSERT_NOT_NULL("gmtime", st_rettime);
+	TC_ASSERT_NEQ("gmtime", st_rettime, NULL);
 
 	st_localtime = localtime(&time1);
-	TC_ASSERT_NOT_NULL("localtime", st_localtime);
+	TC_ASSERT_NEQ("localtime", st_localtime, NULL);
 	TC_ASSERT_EQ("localtime", st_rettime->tm_year, st_localtime->tm_year);
 	TC_ASSERT_EQ("localtime", st_rettime->tm_mon, st_localtime->tm_mon);
 
@@ -154,7 +154,7 @@ static void tc_libc_timer_gmtime(void)
 	/* verifying the returned structure's parameter, year should not be negative, month range is 0-11 */
 
 	st_rettime = gmtime(&time2);
-	TC_ASSERT_NOT_NULL("gmtime", st_rettime);
+	TC_ASSERT_NEQ("gmtime", st_rettime, NULL);
 	TC_ASSERT_GEQ("gtime", st_rettime->tm_year, 0);
 	TC_ASSERT_GEQ("gtime", st_rettime->tm_mon, 0);
 	TC_ASSERT_LT("gtime", st_rettime->tm_mon, 12);
@@ -214,10 +214,10 @@ static void tc_libc_timer_localtime(void)
 
 	time(&test_time);
 	st_gmtime = gmtime(&test_time);
-	TC_ASSERT_NOT_NULL("gmtime", st_gmtime);
+	TC_ASSERT_NEQ("gmtime", st_gmtime, NULL);
 
 	st_rettime = localtime(&test_time);
-	TC_ASSERT_NOT_NULL("localtime", st_gmtime);
+	TC_ASSERT_NEQ("localtime", st_gmtime, NULL);
 	TC_ASSERT_EQ("localtime", st_rettime->tm_year, st_gmtime->tm_year);
 	TC_ASSERT_EQ("localtime", st_rettime->tm_mon, st_gmtime->tm_mon);
 
@@ -252,7 +252,7 @@ static void tc_libc_timer_localtime_r(void)
 	/* verifying the structures "returned and filled" by comparing their parameters */
 
 	st_rettime = localtime_r(&test_time, &st_time);
-	TC_ASSERT_NOT_NULL("localtime_r", st_rettime);
+	TC_ASSERT_NEQ("localtime_r", st_rettime, NULL);
 	TC_ASSERT_EQ("localtime_r", st_rettime->tm_year, st_time.tm_year);
 	TC_ASSERT_EQ("localtime_r", st_rettime->tm_mon, st_time.tm_mon);
 	TC_ASSERT_EQ("localtime_r", st_gettime.tm_year, st_time.tm_year);

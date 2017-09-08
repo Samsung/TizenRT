@@ -51,7 +51,7 @@ struct iotbus_spi_config_s config = {
 static void utc_spi_open_p(void)
 {
 	iotbus_spi_context_h m_spi = iotbus_spi_open(bus, &config);
-	TC_ASSERT_NOT_NULL("iotbus_spi_open", m_spi);
+	TC_ASSERT_NEQ("iotbus_spi_open", m_spi, NULL);
 	spi = m_spi;
 	TC_SUCCESS_RESULT();
 }

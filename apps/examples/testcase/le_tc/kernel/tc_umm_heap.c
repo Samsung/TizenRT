@@ -69,7 +69,7 @@ static void tc_umm_heap_malloc_free(struct tcb_s *st_tcb)
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
 			mem_ptr[alloc_cnt] = (int *)malloc(ALLOC_SIZE_VAL * sizeof(int));
-			TC_ASSERT_NOT_NULL("malloc", mem_ptr[alloc_cnt]);
+			TC_ASSERT_NEQ("malloc", mem_ptr[alloc_cnt], NULL);
 		}
 		TC_ASSERT_EQ_ERROR_CLEANUP("malloc", st_tcb->curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
@@ -97,7 +97,7 @@ static void tc_umm_heap_calloc(struct tcb_s *st_tcb)
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
 			mem_ptr[alloc_cnt] = (int *)calloc(ALLOC_SIZE_VAL, sizeof(int));
-			TC_ASSERT_NOT_NULL("calloc", mem_ptr[alloc_cnt]);
+			TC_ASSERT_NEQ("calloc", mem_ptr[alloc_cnt], NULL);
 		}
 
 		TC_ASSERT_EQ_ERROR_CLEANUP("calloc", st_tcb->curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
@@ -129,7 +129,7 @@ static void tc_umm_heap_realloc(struct tcb_s *st_tcb)
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
 			mem_ptr[alloc_cnt] = (int *)realloc(val, ALLOC_SIZE_VAL * sizeof(int));
-			TC_ASSERT_NOT_NULL("realloc", mem_ptr[alloc_cnt]);
+			TC_ASSERT_NEQ("realloc", mem_ptr[alloc_cnt], NULL);
 		}
 		TC_ASSERT_EQ_ERROR_CLEANUP("realloc", st_tcb->curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
@@ -158,7 +158,7 @@ static void tc_umm_heap_memalign(struct tcb_s *st_tcb)
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		for (alloc_cnt = 0; alloc_cnt < ALLOC_FREE_TIMES; alloc_cnt++) {
 			mem_ptr[alloc_cnt] = (int *)memalign(sizeof(int), ALLOC_SIZE_VAL * sizeof(int));
-			TC_ASSERT_NOT_NULL("memalign", mem_ptr[alloc_cnt]);
+			TC_ASSERT_NEQ("memalign", mem_ptr[alloc_cnt], NULL);
 		}
 		TC_ASSERT_EQ_ERROR_CLEANUP("memalign", st_tcb->curr_alloc_size, TOTAL_ALLOC_SIZE, get_errno(), mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES));
 		mem_deallocate_func(mem_ptr, ALLOC_FREE_TIMES);
@@ -203,7 +203,7 @@ static void tc_umm_heap_random_malloc(struct tcb_s *st_tcb)
 			   malloc will be successful and return the pointer of memory.
 			   Else, malloc will be failed and return NULL pointer */
 			if (info.mxordblk >= MM_ALIGN_UP(allocated[alloc_cnt] + SIZEOF_MM_ALLOCNODE)) {
-				TC_ASSERT_NOT_NULL("malloc", mem_ptr[alloc_cnt]);
+				TC_ASSERT_NEQ("malloc", mem_ptr[alloc_cnt], NULL);
 			} else {
 				TC_ASSERT_EQ("malloc", mem_ptr[alloc_cnt], NULL);
 				allocated[alloc_cnt] = 0;
@@ -244,7 +244,7 @@ static void tc_umm_heap_mallinfo(void)
 
 	for (alloc_tc_cnt = 0; alloc_tc_cnt < TEST_TIMES; alloc_tc_cnt++) {
 		mem_ptr = (int *)malloc(sizeof(int));
-		TC_ASSERT_NOT_NULL("malloc", mem_ptr);
+		TC_ASSERT_NEQ("malloc", mem_ptr, NULL);
 
 		st_mallinfo = mallinfo();
 		TC_ASSERT_GT_CLEANUP("mallinfo", st_mallinfo.fordblks, 0, TC_FREE_MEMORY(mem_ptr));
@@ -258,7 +258,7 @@ static void tc_umm_heap_zalloc(void)
 	int mem_idx;
 	int *mem_ptr = NULL;
 	mem_ptr = zalloc(sizeof(int) * 5);
-	TC_ASSERT_NOT_NULL("zalloc", mem_ptr);
+	TC_ASSERT_NEQ("zalloc", mem_ptr, NULL);
 
 	for (mem_idx = 0; mem_idx < 5; mem_idx++) {
 		TC_ASSERT_EQ_ERROR_CLEANUP("zalloc", mem_ptr[mem_idx], 0, get_errno(), TC_FREE_MEMORY(mem_ptr));
