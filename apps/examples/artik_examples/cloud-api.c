@@ -25,6 +25,7 @@
 #include <string.h>
 #include <sys/boardctl.h>
 #include <shell/tash.h>
+#include <cJSON.h>
 
 #include <artik_module.h>
 #include <artik_cloud.h>
@@ -87,7 +88,23 @@ const struct command cloud_commands[] = {
 static void websocket_rx_callback(void *user_data, void *result)
 {
 	if (result) {
-		fprintf(stderr, "RX: %s\n", (char *)result);
+		cJSON *msg = NULL, *error = NULL;
+
+		fprintf(stdout, "RX: %s\n", (char *)result);
+
+		msg = cJSON_Parse((char *)result);
+		if (!msg) {
+			free(result);
+			return;
+		}
+
+		/* Check error */
+		error = cJSON_GetObjectItem(msg, "error");
+		if (error && (error->type == cJSON_Object)) {
+			fprintf(stderr, "Cloud sends an error. Close connection. %p\n", ws_handle);
+			task_create("cloud_disconnect", SCHED_PRIORITY_DEFAULT, 4096, disconnect_command, NULL);
+		}
+
 		free(result);
 	}
 }
@@ -226,6 +243,12 @@ static int connect_command(int argc, char *argv[])
 	artik_cloud_module *cloud = (artik_cloud_module *)artik_request_api_module("cloud");
 	bool use_se = false;
 
+	if (ws_handle) {
+		fprintf(stderr, "Websocket to cloud is already connected. %p", ws_handle);
+		ret = -1;
+		goto exit;
+	}
+
 	/* Check number of arguments */
 	if (argc < 5) {
 		fprintf(stderr, "Wrong number of arguments\n");
@@ -281,6 +304,7 @@ static int disconnect_command(int argc, char *argv[])
 	}
 
 	cloud->websocket_close_stream(ws_handle);
+	ws_handle = NULL;
 
 exit:
 	artik_release_api_module(cloud);
