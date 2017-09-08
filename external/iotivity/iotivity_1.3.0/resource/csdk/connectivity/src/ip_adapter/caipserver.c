@@ -721,7 +721,9 @@ static CAResult_t CAReceiveMessage(CASocketFd_t fd, CATransportFlags_t flags)
     else
 #endif
     {
-        sep.endpoint.ifindex = ((struct in_pktinfo *)pktinfo)->ipi_ifindex;
+        if((struct in_pktinfo *)pktinfo){
+            sep.endpoint.ifindex = ((struct in_pktinfo *)pktinfo)->ipi_ifindex;
+		}
 
         if ((flags & CA_MULTICAST) && pktinfo)
         {
