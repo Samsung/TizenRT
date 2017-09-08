@@ -171,7 +171,7 @@ static int s5j_pwm_start(FAR struct pwm_lowerhalf_s *dev,
 	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
 
 	tcntb = pwm_clk_freq(priv) / info->frequency - 1;
-	tcmpb = (((tcntb + 1) * info->duty) / 65536) - 1;
+	tcmpb = (((uint64_t)(tcntb + 1) * info->duty) / 65536) - 1;
 
 	pwm_putreg32(priv, S5J_PWM_TCNTB_OFFSET(priv->id), tcntb);
 	pwm_putreg32(priv, S5J_PWM_TCMPB_OFFSET(priv->id), tcmpb);
