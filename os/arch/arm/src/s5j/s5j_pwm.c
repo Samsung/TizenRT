@@ -271,6 +271,45 @@ static int s5j_pwm_ioctl(FAR struct pwm_lowerhalf_s *dev, int cmd,
 }
 
 /****************************************************************************
+ * Name: s5j_pwm_reset
+ *
+ * Description:
+ *   Reset pwm register value
+ *
+ * Input parameters:
+ *   dev - A reference to the lower half PWM driver state structure
+ *   timer - A number identifying the timer use. The number of valid timer
+ *     IDs varies with the S5J family but is somewhere in the range of
+ *     {0,...,5}.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+static void s5j_pwm_reset(FAR struct pwm_lowerhalf_s *dev, int timer)
+{
+	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
+
+	if (priv->id < 2) {
+		pwm_modifyreg32(priv, S5J_PWM_TCFG0_OFFSET,
+						PWM_TCFG0_PRESCALER0_MASK,
+						PWM_TCFG0_PRESCALER0_RESET);
+	} else {
+		pwm_modifyreg32(priv, S5J_PWM_TCFG0_OFFSET,
+						PWM_TCFG0_PRESCALER1_MASK,
+						PWM_TCFG0_PRESCALER1_RESET);
+	}
+
+	if (timer > 3) {
+		timer = timer - 4;
+	}
+
+	pwm_modifyreg32(priv, S5J_PWM_TCFG1_OFFSET,
+					PWM_TCFG1_DIVIDER_MUX_MASK(timer),
+					PWM_TCFG1_DIVIDER_MUX_DIV1(timer));
+}
+
+/****************************************************************************
  * Private Data
  ****************************************************************************/
 static const struct pwm_ops_s g_pwm_ops = {
@@ -392,6 +431,8 @@ FAR struct pwm_lowerhalf_s *s5j_pwminitialize(int timer)
 	{
 		lldbg("ERROR: invalid PWM is requested\n");
 	}
+
+	s5j_pwm_reset(lower, timer);
 
 	return lower;
 }
