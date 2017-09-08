@@ -98,7 +98,7 @@ if [ ${CONFIG_ENABLE_IOTIVITY} -eq 1 ]; then
 	if [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 0 -a ${CONFIG_ENABLE_IOTIVITY_CLOUD} -eq 0 ]; then
 		#IoTivity - D2D - No Security
 		echo "*********** Iotivity Build for TinyARA (D2D - No Security) *************"
-		scons SCURED=0 ${OPTIONS}
+		scons SECURED=0 ${OPTIONS}
 	elif [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 0 -a ${CONFIG_ENABLE_IOTIVITY_CLOUD} -eq 1 ]; then
 		#IoTivity - D2C - No Security
 		echo "*********** Iotivity Build for TinyARA (D2C - No Security *************"
