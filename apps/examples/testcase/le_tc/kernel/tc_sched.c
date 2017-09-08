@@ -332,7 +332,7 @@ static void tc_sched_sched_gettcb(void)
 	TC_ASSERT_EQ("sched_gettcb", tcb, NULL);
 
 	tcb = sched_gettcb(PID_IDLE);
-	TC_ASSERT_NOT_NULL("sched_gettcb", tcb);
+	TC_ASSERT_NEQ("sched_gettcb", tcb, NULL);
 	TC_ASSERT_EQ("sched_gettcb", tcb->pid, PID_IDLE);
 
 	TC_SUCCESS_RESULT();
@@ -356,7 +356,7 @@ static void tc_sched_sched_lock_unlock(void)
 	struct tcb_s *st_tcb = NULL;
 
 	st_tcb = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
+	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
 
 	cntlock = st_tcb->lockcount;
 
@@ -411,11 +411,11 @@ static void tc_sched_sched_self(void)
 	/* get process id */
 
 	st_tcbpid = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcbpid);
+	TC_ASSERT_NEQ("sched_self", st_tcbpid, NULL);
 
 	/* should return tcb for current process */
 	st_tcbself = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcbself);
+	TC_ASSERT_NEQ("sched_self", st_tcbself, NULL);
 	TC_ASSERT_EQ("sched_self", st_tcbself->pid, st_tcbpid->pid);
 
 	TC_SUCCESS_RESULT();
@@ -482,7 +482,7 @@ static void tc_sched_sched_lockcount(void)
 	struct tcb_s *st_tcb = NULL;
 
 	st_tcb = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
+	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
 
 	prev_cnt = sched_lockcount();
 	ret_chk = sched_lock();
@@ -519,7 +519,7 @@ static void tc_sched_sched_getstreams(void)
 	struct streamlist *stream;
 
 	stream = sched_getstreams();
-	TC_ASSERT_NOT_NULL("sched_getstreams", stream);
+	TC_ASSERT_NEQ("sched_getstreams", stream, NULL);
 
 	TC_SUCCESS_RESULT();
 }

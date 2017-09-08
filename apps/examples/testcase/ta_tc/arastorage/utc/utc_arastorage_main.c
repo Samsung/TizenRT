@@ -74,7 +74,7 @@ void check_query_result(char * query)
 {
 	db_result_t res;
 	g_cursor = db_query(query);
-	TC_ASSERT_NOT_NULL("db_query", g_cursor);
+	TC_ASSERT_NEQ("db_query", g_cursor, NULL);
 	if (DB_SUCCESS(cursor_move_first(g_cursor))) {
 		do {
 			res = db_print_tuple(g_cursor);
@@ -376,7 +376,7 @@ void utc_arastorage_db_query_tc_p(void)
 	snprintf(query, QUERY_LENGTH, "SELECT id, date, fruit, value FROM %s WHERE value < 990;", RELATION_NAME1);
 #endif
 	g_cursor = db_query(query);
-	TC_ASSERT_NOT_NULL("db_query", g_cursor);
+	TC_ASSERT_NEQ("db_query", g_cursor, NULL);
 
 	res = db_cursor_free(g_cursor);
 	TC_ASSERT("db_cursor_free", DB_SUCCESS(res));
@@ -419,7 +419,7 @@ void utc_arastorage_db_query_tc_p(void)
 	snprintf(query, QUERY_LENGTH, "SELECT id, date, fruit FROM %s WHERE id > 0;", RELATION_NAME1);
 #endif
 	g_cursor = db_query(query);
-	TC_ASSERT_NOT_NULL("db_query", g_cursor);
+	TC_ASSERT_NEQ("db_query", g_cursor, NULL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -976,7 +976,7 @@ void utc_arastorage_cursor_is_first_row_tc_n(void)
 	snprintf(query, QUERY_LENGTH, "SELECT %s, %s, %s FROM %s WHERE %s > 0;", g_attribute_set[0],
 			 g_attribute_set[1], g_attribute_set[2], RELATION_NAME1, g_attribute_set[0]);
 	g_cursor = db_query(query);
-	TC_ASSERT_NOT_NULL("db_query", g_cursor);
+	TC_ASSERT_NEQ("db_query", g_cursor, NULL);
 	res = cursor_move_last(g_cursor);
 	TC_ASSERT("cursor_move_last", DB_SUCCESS(res));
 	/* Cursor is valid, but it isn't pointing first row */
@@ -1024,7 +1024,7 @@ void utc_arastorage_cursor_is_last_row_tc_n(void)
 	snprintf(query, QUERY_LENGTH, "SELECT %s, %s, %s FROM %s WHERE %s > 0;", g_attribute_set[0],
 			 g_attribute_set[1], g_attribute_set[2], RELATION_NAME1, g_attribute_set[0]);
 	g_cursor = db_query(query);
-	TC_ASSERT_NOT_NULL("db_query", g_cursor);
+	TC_ASSERT_NEQ("db_query", g_cursor, NULL);
 	res = cursor_move_first(g_cursor);
 	TC_ASSERT("cursor_move_first", DB_SUCCESS(res));
 	/* Cursor is valid, but it isn't pointing last row */
