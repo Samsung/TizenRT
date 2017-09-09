@@ -52,7 +52,7 @@ typedef enum {
 typedef enum {
 	WIFI_UTILS_DISCONNECTED,			/**<  wifi is disconnected  */
 	WIFI_UTILS_CONNECTED,				/**<  connected             */
-	WIFI_UTILS_SOFT_AP_MODE,			/**<  soft ap mode          */
+	WIFI_UTILS_SOFTAP_MODE,			/**<  soft ap mode          */
 } wifi_utils_status_e;
 
 /**
@@ -167,14 +167,14 @@ wifi_utils_result_e wifi_utils_get_info(wifi_utils_info *wifi_info);
 /**
  * @brief register wifi connection event callback (connect/disconnect event)
  *
- * @param[in]   connect_event_func    :  when wifi connect event received, function start
- * @param[in]   disconnect_event_func :  when wifi disconnect event received, function start
+ * @param[in]   linkup_event_func    :  when wifi linkup event received, function start
+ * @param[in]   linkdown_event_func :  when wifi linkdown event received, function start
  *
  * @return WIFI_UTILS_SUCCESS       :  success
  * @return WIFI_UTILS_FAIL          :  fail
  * @return WIFI_UTILS_INVALID_ARGS  :  input parameter invalid
  */
-wifi_utils_result_e wifi_utils_register_connection_callback(void *connect_event_func, void *disconnect_event_func);
+wifi_utils_result_e wifi_utils_register_callback(void *linkup_event_func, void *linkdown_event_func);
 
 /**
  * @brief wifi start soft ap mode
@@ -185,7 +185,7 @@ wifi_utils_result_e wifi_utils_register_connection_callback(void *connect_event_
  * @return WIFI_UTILS_FAIL          :  fail
  * @return WIFI_UTILS_INVALID_ARGS  :  input parameter invalid
  */
-wifi_utils_result_e wifi_utils_start_soft_ap(wifi_utils_softap_config_s *soft_ap_config);
+wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_config);
 
 /**
  * @brief start wifi sta mode
@@ -196,11 +196,11 @@ wifi_utils_result_e wifi_utils_start_soft_ap(wifi_utils_softap_config_s *soft_ap
 wifi_utils_result_e wifi_utils_start_sta(void);
 
 /**
- * @brief stop wifi
+ * @brief stop wifi softap mode
  *
  * @return WIFI_UTILS_SUCCESS       :  success
  * @return WIFI_UTILS_FAIL          :  fail
  */
-wifi_utils_result_e wifi_utils_stop(void);
+wifi_utils_result_e wifi_utils_stop_softap(void);
 
 #endif							//WIFI_UTILS_H

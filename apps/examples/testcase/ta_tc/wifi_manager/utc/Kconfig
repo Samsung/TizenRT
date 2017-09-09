@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_TESTCASE_WIFI_MANAGER_UTC
+	bool "Wi-Fi Manager UTC TestCase Example"
+	select WIFI_MANAGER
+	default n
+	---help---
+		Enable the Wi-Fi Manager TestCase Example
