@@ -3,28 +3,49 @@ sudo: false
 dist: trusty
 group: deprecated-2017Q2
 
-
 language: c
 
 services:
-
 - docker
 
 env:
-- BUILD_CONFIG=tash
-- BUILD_CONFIG=nettest
-- BUILD_CONFIG=minimal
-- BUILD_CONFIG=tc
+  global:
+  - DOCKER_NAME="an4967/tizenrt:1.1"
 
-
-before_install:
-- docker pull an4967/tizenrt:1.1
-- echo "${TRAVIS_BUILD_DIR}"
-
-script:
-- docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os an4967/tizenrt:1.1 /bin/bash
+install:
+- docker pull ${DOCKER_NAME}
+- echo "${TRAVIS_BUILD_DIR}"      
+- docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os ${DOCKER_NAME} /bin/bash
 - docker exec tizenrt_docker make distclean
 
-- docker exec -it tizenrt_docker bash -c "cd tools; ./configure.sh artik053/${BUILD_CONFIG}"
-- docker exec -it tizenrt_docker bash -c "export PATH=/root/gcc-arm-none-eabi-4_9-2015q3/bin:$PATH;make;"
-
+jobs:
+  include:
+    - stage: Rule Check
+      install: skip
+      script: 
+      - echo "${TRAVIS_COMMIT_RANGE}"
+      - ./tools/rule_checker/lint.sh --ci ${TRAVIS_COMMIT_RANGE}
+    - stage: Build
+      env:
+      - BUILD_CONFIG=tash
+      script: 
+      - docker exec -it tizenrt_docker bash -c "cd tools; echo "CONFIG=${BUILD_CONFIG}"; ./configure.sh artik053/${BUILD_CONFIG};"
+      - docker exec -it tizenrt_docker bash -c "export PATH=/root/gcc-arm-none-eabi-4_9-2015q3/bin:$PATH;make;"
+    - stage: Build
+      env:
+      - BUILD_CONFIG=nettest
+      script: 
+      - docker exec -it tizenrt_docker bash -c "cd tools; echo "CONFIG=${BUILD_CONFIG}"; ./configure.sh artik053/${BUILD_CONFIG};"
+      - docker exec -it tizenrt_docker bash -c "export PATH=/root/gcc-arm-none-eabi-4_9-2015q3/bin:$PATH;make;"
+    - stage: Build
+      env:
+      - BUILD_CONFIG=minimal
+      script: 
+      - docker exec -it tizenrt_docker bash -c "cd tools; echo "CONFIG=${BUILD_CONFIG}"; ./configure.sh artik053/${BUILD_CONFIG};"
+      - docker exec -it tizenrt_docker bash -c "export PATH=/root/gcc-arm-none-eabi-4_9-2015q3/bin:$PATH;make;"
+    - stage: Build
+      env:
+      - BUILD_CONFIG=tc
+      script: 
+      - docker exec -it tizenrt_docker bash -c "cd tools; echo "CONFIG=${BUILD_CONFIG}"; ./configure.sh artik053/${BUILD_CONFIG};"
+      - docker exec -it tizenrt_docker bash -c "export PATH=/root/gcc-arm-none-eabi-4_9-2015q3/bin:$PATH;make;"
