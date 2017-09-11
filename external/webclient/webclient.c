@@ -860,6 +860,7 @@ static int wget_socket_connect(struct wget_s *ws)
 	/* Set send and receive timeout values */
 	tv.tv_sec = WEBCLIENT_CONF_TIMEOUT_MSEC / 1000;
 	tv.tv_usec = (WEBCLIENT_CONF_TIMEOUT_MSEC % 1000) * 1000;
+	nvdbg("webclient recv timeout(%d.%d)sec\n", tv.tv_sec, tv.tv_usec);
 	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,
 				   (struct timeval *)&tv, sizeof(struct timeval)) < 0) {
 		ndbg("ERROR: setsockopt failed\n");

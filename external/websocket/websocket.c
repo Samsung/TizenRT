@@ -131,6 +131,7 @@ websocket_return_t websocket_config_socket(int fd)
 
 	tv.tv_sec = (WEBSOCKET_SOCK_RCV_TIMEOUT / 1000);
 	tv.tv_usec = ((WEBSOCKET_SOCK_RCV_TIMEOUT % 1000) * 1000);
+	WEBSOCKET_DEBUG("set socket option(recv timeout sec:%d usec:%d)\n", tv.tv_sec, tv.tv_usec);
 	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (FAR const void *)&tv, (socklen_t) sizeof(struct timeval)) == -1) {
 		WEBSOCKET_DEBUG("setsockopt failed\n");
 		return WEBSOCKET_SOCKET_ERROR;

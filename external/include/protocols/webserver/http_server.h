@@ -90,7 +90,7 @@
 #define HTTP_CONF_MAX_CLIENT                    16
 #define HTTP_CONF_CLIENT_STACKSIZE              8192
 #define HTTP_CONF_MIN_TLS_MEMORY                80000
-#define HTTP_CONF_SOCKET_TIMEOUT_MSEC           5000
+#define HTTP_CONF_SOCKET_TIMEOUT_MSEC           50000
 #define HTTP_CONF_SERVER_MQ_MAX_MSG             10
 #define HTTP_CONF_SERVER_MQ_PRIO                50
 #define HTTP_CONF_SERVER_SIGWAKEUP              18
