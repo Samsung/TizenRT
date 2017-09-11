@@ -1,0 +1,54 @@
+###########################################################################
+#
+# Copyright 2017 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+CSRCS += \
+	main.c \
+	config.c \
+	scan.c \
+	bss.c \
+	events.c \
+	wpa_supplicant.c \
+	notify.c \
+	wpas_glue.c \
+	blacklist.c \
+	wmm_ac.c \
+	eap_register.c \
+	config_file.c \
+	ctrl_iface.c \
+	ctrl_iface_udp.c \
+	ctrl_iface_fifo.c \
+	ap.c
+
+CFLAGS += -DCONFIG_DRIVER_T20
+CFLAGS += -DCONFIG_DEBUG_FILE
+CFLAGS += -DCONFIG_NO_RANDOM_POOL
+CFLAGS += -DCONFIG_CTRL_IFACE -DCONFIG_CTRL_IFACE_FIFO -DCONFIG_ELOOP_POLL
+CFLAGS += -DNEED_AP_MLME
+
+# CONFIG AP and its related flags
+CFLAGS += -DCONFIG_AP -DCONFIG_NO_RADIUS -DCONFIG_NO_ACCOUNTING -DCONFIG_NO_VLAN -DCONFIG_CRYPTO_INTERNAL
+CFLAGS += -DIEEE8021x_EAPOL
+CFLAGS += -DCONFIG_IEEE80211N
+
+CFLAGS += -I$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src
+CFLAGS += -I$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)utils
+CFLAGS += -I$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)rsn_supp
+
+DEPPATH += --dep-path wpa_supplicant
+VPATH += :wpa_supplicant
+
