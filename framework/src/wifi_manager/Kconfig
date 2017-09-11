@@ -6,6 +6,9 @@
 config WIFI_MANAGER
     bool "Enable Wi-Fi Manager"
     default n
+	select NETUTILS_WIFI
+	select WPA_SUPPLICANT
+	select SCSC_WLAN
     ---help---
         Easy APIs for applications to use and control Wi-Fi features
 
