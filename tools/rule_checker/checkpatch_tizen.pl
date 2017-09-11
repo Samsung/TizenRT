@@ -2611,9 +2611,6 @@ sub process {
 						$allowed = 1;
 					}
 				}
-				if ($seen && !$allowed) {
-					WARN("[BRC_R_SST] braces {} are not necessary for any arm of this statement\n" . $herectx);
-				}
 			}
 		}
 		if (!defined $suppress_ifbraces{$linenr - 1} &&
