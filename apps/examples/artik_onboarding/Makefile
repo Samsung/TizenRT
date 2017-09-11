@@ -61,12 +61,13 @@ THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 ARTIK_SDK_DIR = $(TOPDIR)/../external/artik-sdk
+CFLAGS += -D__TINYARA__
 CFLAGS += -Wno-error=strict-prototypes
-CFLAGS += -I$(ARTIK_SDK_DIR)/include/base
-CFLAGS += -I$(ARTIK_SDK_DIR)/include/systemio
-CFLAGS += -I$(ARTIK_SDK_DIR)/include/connectivity
-CFLAGS += -I$(ARTIK_SDK_DIR)/include/wifi
-CFLAGS += -I$(ARTIK_SDK_DIR)/include/lwm2m
+CFLAGS += -I$(ARTIK_SDK_DIR)/inc/base
+CFLAGS += -I$(ARTIK_SDK_DIR)/inc/systemio
+CFLAGS += -I$(ARTIK_SDK_DIR)/inc/connectivity
+CFLAGS += -I$(ARTIK_SDK_DIR)/inc/wifi
+CFLAGS += -I$(ARTIK_SDK_DIR)/inc/lwm2m
 CFLAGS += -I$(TOPDIR)/net
 CFLAGS += -I$(APPDIR)/include
 CFLAGS += -I$(APPDIR)/include/netutils

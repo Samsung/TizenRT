@@ -133,7 +133,7 @@ static int device_command(int argc, char *argv[])
 		properties = (atoi(argv[5]) > 0);
 	}
 
-	err = cloud->get_device(argv[3], argv[4], properties, &response);
+	err = cloud->get_device(argv[3], argv[4], properties, &response, NULL);
 	if (err != S_OK) {
 		FAIL_AND_EXIT("Failed to get user devices\n");
 		goto exit;
@@ -182,7 +182,7 @@ static int devices_command(int argc, char *argv[])
 		}
 	}
 
-	err = cloud->get_user_devices(argv[3], count, properties, 0, argv[4], &response);
+	err = cloud->get_user_devices(argv[3], count, properties, 0, argv[4], &response, NULL);
 	if (err != S_OK) {
 		FAIL_AND_EXIT("Failed to get user devices\n");
 		goto exit;
@@ -218,7 +218,7 @@ static int message_command(int argc, char *argv[])
 		goto exit;
 	}
 
-	err = cloud->send_message(argv[3], argv[4], argv[5], &response);
+	err = cloud->send_message(argv[3], argv[4], argv[5], &response, NULL);
 	if (err != S_OK) {
 		FAIL_AND_EXIT("Failed to send message\n");
 		goto exit;
@@ -241,7 +241,7 @@ static int connect_command(int argc, char *argv[])
 	int ret = 0;
 	artik_error err = S_OK;
 	artik_cloud_module *cloud = (artik_cloud_module *)artik_request_api_module("cloud");
-	bool use_se = false;
+	artik_ssl_config ssl;
 
 	if (ws_handle) {
 		fprintf(stderr, "Websocket to cloud is already connected. %p", ws_handle);
@@ -256,8 +256,10 @@ static int connect_command(int argc, char *argv[])
 		goto exit;
 	}
 
+	memset(&ssl, 0, sizeof(ssl));
+
 	if ((argc == 6) && !strncmp(argv[5], "use_se", strlen("use_se")))
-		use_se = true;
+		ssl.use_se = true;
 
 	if (!cloud) {
 		fprintf(stderr, "Failed to request cloud module\n");
@@ -265,7 +267,7 @@ static int connect_command(int argc, char *argv[])
 		goto exit;
 	}
 
-	err = cloud->websocket_open_stream(&ws_handle, argv[3], argv[4], use_se);
+	err = cloud->websocket_open_stream(&ws_handle, argv[3], argv[4], &ssl);
 	if (err != S_OK) {
 		fprintf(stderr, "Failed to connect websocket\n");
 		ws_handle = NULL;

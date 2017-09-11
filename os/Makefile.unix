@@ -332,6 +332,12 @@ else
 iotivity_context:
 endif
 
+submodules_check:
+ifeq ($(CONFIG_ARTIK_SDK),y)
+	$(Q) if [ ! -f $(ARTIKSDKDIR)/.git ]; then git submodule init; fi
+	$(Q) git submodule update $(ARTIKSDKDIR)
+endif
+
 # Targets used to create dependencies
 
 tools/mkdeps$(HOSTEXEEXT):
@@ -396,7 +402,7 @@ dirlinks: include/arch include/arch/board include/arch/chip $(ARCH_SRC)/board $(
 # the config.h and version.h header files in the include/tinyara directory and
 # the establishment of symbolic links to configured directories.
 
-context: check_context iotivity_context include/tinyara/config.h include/tinyara/version.h include/math.h include/float.h include/stdarg.h dirlinks
+context: check_context iotivity_context submodules_check include/tinyara/config.h include/tinyara/version.h include/math.h include/float.h include/stdarg.h dirlinks
 	$(Q)if [ -e ${BIN} ]; then \
 		echo "Previous Build Outputs - $(BIN_DIR) - are deleted"; \
 		rm -rf ${BIN_DIR}/*; \

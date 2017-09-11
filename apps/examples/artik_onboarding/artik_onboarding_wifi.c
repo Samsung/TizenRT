@@ -344,7 +344,7 @@ artik_error StartSoftAP(bool start)
 
 		printf("Starting AP %s\n", g_ap_ssid);
 
-		ret = wifi->start_ap(g_ap_ssid, NULL, 2);
+		ret = wifi->start_ap(g_ap_ssid, NULL, 2, WIFI_ENCRYPTION_OPEN);
 		if (ret != S_OK) {
 			wifi->deinit();
 			printf("Failed to start Access Point (%d)\n", ret);

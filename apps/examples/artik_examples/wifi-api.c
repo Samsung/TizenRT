@@ -124,7 +124,8 @@ static int startap_command(int argc, char *argv[])
 		goto exit;
 	}
 
-	err = wifi->start_ap(argv[3], passphrase, atoi(argv[4]));
+	err = wifi->start_ap(argv[3], passphrase, atoi(argv[4]),
+			passphrase ? WIFI_ENCRYPTION_WPA2 : WIFI_ENCRYPTION_OPEN);
 	if (err != S_OK) {
 		fprintf(stderr, "Failed to start Access Point (%s)\n", error_msg(err));
 		ret = -1;

@@ -204,6 +204,7 @@ static pthread_addr_t websocket_start_cb(void *arg)
 {
 	artik_cloud_module *cloud = (artik_cloud_module *)artik_request_api_module("cloud");
 	artik_error ret = S_OK;
+	artik_ssl_config ssl;
 
 	if (!cloud) {
 		printf("Cloud module is not available\n");
@@ -214,8 +215,11 @@ static pthread_addr_t websocket_start_cb(void *arg)
 
 	printf("Start websocket to ARTIK Cloud\n");
 
+	memset(&ssl, 0, sizeof(ssl));
+	ssl.use_se = cloud_secure_dt;
+
 	ret = cloud->websocket_open_stream(&g_ws_handle, cloud_config.device_token,
-					   cloud_config.device_id, cloud_secure_dt);
+					   cloud_config.device_id, &ssl);
 	if (ret != S_OK) {
 		printf("Failed to open websocket to cloud (err=%d)\n", ret);
 		goto exit;

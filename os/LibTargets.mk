@@ -183,9 +183,6 @@ $(ARTIKSDKDIR)$(DELIM)libartik-sdk$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libartik-sdk$(LIBEXT): $(ARTIKSDKDIR)$(DELIM)libartik-sdk$(LIBEXT)
 	$(Q) install $(ARTIKSDKDIR)$(DELIM)libartik-sdk$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libartik-sdk$(LIBEXT)
 
-$(LIBRARIES_DIR)$(DELIM)libartik-sdk-a053s$(LIBEXT): $(ARTIKSDKDIR)$(DELIM)libartik-sdk-a053s$(LIBEXT)
-	$(Q) install $(ARTIKSDKDIR)$(DELIM)libartik-sdk-a053s$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libartik-sdk-a053s$(LIBEXT)
-
 #Iotivity Libs
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
