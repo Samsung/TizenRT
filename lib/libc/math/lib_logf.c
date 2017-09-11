@@ -74,7 +74,7 @@ float logf(float x)
 			y = -700.0;
 		}
 
-		epsilon = (fabs(y) > 1.0) ? fabs(y) * FLT_EPSILON : FLT_EPSILON;
+		epsilon = (fabsf(y) > 1.0) ? fabsf(y) * FLT_EPSILON : FLT_EPSILON;
 	}
 
 	if (y == 700.0) {
