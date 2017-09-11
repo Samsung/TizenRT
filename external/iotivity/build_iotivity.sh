@@ -68,7 +68,7 @@ IOTIVITY_TARGET_ARCH=$(echo "$CONFIG_ARCH_FAMILY" | sed 's/"//g')
 CONFIG_IOTIVITY_ROUTING=`extract_flags "CONFIG_IOTIVITY_ROUTING"`
 IOTIVITY_ROUTING=$(echo "$CONFIG_IOTIVITY_ROUTING" | sed 's/"//g')
 
-if [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 1]; then
+if [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 1 ]; then
 	if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls ]; then
 		mkdir -p ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include
 		ln -s ${TINYARA_BUILD_DIR}/include/tls ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include/mbedtls

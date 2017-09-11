@@ -217,14 +217,26 @@ static int x509_write_name(unsigned char **p, unsigned char *start, const char *
 	return ((int)len);
 }
 
+#if defined(MBEDTLS_OCF_PATCH)
+int mbedtls_x509_write_names(unsigned char **p, unsigned char *start, const mbedtls_asn1_named_data *first)
+#else
 int mbedtls_x509_write_names(unsigned char **p, unsigned char *start, mbedtls_asn1_named_data *first)
+#endif
 {
 	int ret;
 	size_t len = 0;
+#if defined(MBEDTLS_OCF_PATCH)
+	const mbedtls_asn1_named_data *cur = first;
+#else
 	mbedtls_asn1_named_data *cur = first;
+#endif
 
 	while (cur != NULL) {
+#if defined(MBEDTLS_OCF_PATCH)
+		MBEDTLS_ASN1_CHK_ADD(len, x509_write_name(p, start, (const char *)cur->oid.p, cur->oid.len, cur->val.p, cur->val.len));
+#else
 		MBEDTLS_ASN1_CHK_ADD(len, x509_write_name(p, start, (char *)cur->oid.p, cur->oid.len, cur->val.p, cur->val.len));
+#endif
 		cur = cur->next;
 	}
 

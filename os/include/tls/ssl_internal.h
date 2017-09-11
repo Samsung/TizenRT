@@ -442,7 +442,16 @@ static inline mbedtls_x509_crt *mbedtls_ssl_own_cert(mbedtls_ssl_context *ssl)
  *
  * Return 0 if everything is OK, -1 if not.
  */
+#if defined(MBEDTLS_OCF_PATCH)
+int mbedtls_ssl_check_cert_usage( const mbedtls_x509_crt *cert,
+                          const mbedtls_ssl_ciphersuite_t *ciphersuite,
+                          int cert_endpoint,
+                          const char *client_oid, size_t client_oid_len,
+                          const char *server_oid, size_t server_oid_len,
+                          uint32_t *flags );
+#else
 int mbedtls_ssl_check_cert_usage(const mbedtls_x509_crt *cert, const mbedtls_ssl_ciphersuite_t *ciphersuite, int cert_endpoint, uint32_t *flags);
+#endif
 #endif							/* MBEDTLS_X509_CRT_PARSE_C */
 
 void mbedtls_ssl_write_version(int major, int minor, int transport, unsigned char ver[2]);

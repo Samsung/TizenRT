@@ -47,6 +47,15 @@
 #ifndef MBEDTLS_CONFIG_H
 #define MBEDTLS_CONFIG_H
 
+/**
+ * \def MBEDTLS_OCF_PATCH
+ *
+ * Indicate the OCF specific patches.
+ */
+#if defined(CONFIG_ENABLE_IOTIVITY_SECURED)
+#define MBEDTLS_OCF_PATCH
+#endif
+
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
@@ -1393,6 +1402,23 @@
 #define MBEDTLS_X509_RSASSA_PSS_SUPPORT
 
 /**
+ * \def MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT
+ *
+ * Enable parsing of all supported subtypes of the Subject Alternative Name
+ * extension. When enabled, the subject_alt_names field of mbedtls_x509_crt
+ * is defined as an mbedtls_x509_subject_alt_name_sequence, each element of
+ * which can describe a different subtype of the GeneralName choice as defined
+ * by the standard.
+ *
+ * Comment this macro to only support dNSName subtypes, and to define the
+ * subject_alt_names field as an mbedtls_x509_sequence. Any other subtypes will
+ * be ignored. This was the behavior in earlier versions.
+ */
+#if defined(MBEDTLS_OCF_PATCH)
+#define MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT
+#endif
+
+/**
  * \def MBEDTLS_ZLIB_SUPPORT
  *
  * If set, the SSL/TLS module uses ZLIB to support compression and
@@ -1506,6 +1532,7 @@
  *      MBEDTLS_TLS_PSK_WITH_AES_128_GCM_SHA256
  *      MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256
  *      MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA
+ *      MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256
  *
  * PEM_PARSE uses AES for decrypting encrypted keys.
  */
@@ -2643,14 +2670,19 @@
 #undef MBEDTLS_CAMELLIA_C
 //#undef MBEDTLS_DEBUG_C
 #undef MBEDTLS_RIPEMD160_C
-//#undef MBEDTLS_SHA512_C
-//#undef MBEDTLS_PKCS5_C
+#undef MBEDTLS_SHA512_C
+#if ! defined(MBEDTLS_OCF_PATCH)
+#undef MBEDTLS_PKCS5_C
+#endif
 #undef MBEDTLS_PKCS12_C
-
-//#undef MBEDTLS_X509_CRL_PARSE_C
-//#undef MBEDTLS_X509_CSR_PARSE_C
+#if ! defined(MBEDTLS_OCF_PATCH)
+#undef MBEDTLS_X509_CRL_PARSE_C
+#endif
+#undef MBEDTLS_X509_CSR_PARSE_C
 //#undef MBEDTLS_X509_CREATE_C
-//#undef MBEDTLS_X509_CSR_WRITE_C
+#if ! defined(MBEDTLS_OCF_PATCH)
+#undef MBEDTLS_X509_CSR_WRITE_C
+#endif
 //#undef MBEDTLS_X509_CRT_WRITE_C
 
 #undef MBEDTLS_XTEA_C

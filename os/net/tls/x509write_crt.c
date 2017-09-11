@@ -262,6 +262,63 @@ int mbedtls_x509write_crt_set_ns_cert_type(mbedtls_x509write_cert *ctx, unsigned
 	return (0);
 }
 
+#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT)
+static int x509write_crt_set_subject_alt_name( unsigned char **c, unsigned char *buf,
+                                               const mbedtls_x509_general_name *name )
+{
+    int ret;
+    size_t len = 0;
+
+    switch ( name->name_type )
+    {
+    case MBEDTLS_X509_GENERALNAME_DNSNAME:
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_raw_buffer( c, buf, name->dns_name.p, name->dns_name.len ) );
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( c, buf, name->dns_name.len ) );
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( c, buf, MBEDTLS_ASN1_CONTEXT_SPECIFIC | 2 ) );
+        break;
+
+    case MBEDTLS_X509_GENERALNAME_DIRECTORYNAME:
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_x509_write_names( c, buf, name->directory_name ) );
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( c, buf, len ) );
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( c, buf,
+                                   MBEDTLS_ASN1_CONTEXT_SPECIFIC | MBEDTLS_ASN1_CONSTRUCTED | 4 ) );
+        break;
+
+    default:
+        return( MBEDTLS_ERR_X509_BAD_INPUT_DATA );
+    }
+
+    return( (int)len );
+}
+
+int mbedtls_x509write_crt_set_subject_alt_names( mbedtls_x509write_cert *ctx,
+                                                 const mbedtls_x509_general_names *names )
+{
+    int ret;
+    unsigned char buf[2048];
+    unsigned char *c = buf + sizeof( buf );
+    size_t len = 0;
+    const mbedtls_x509_general_names *cur;
+
+    for ( cur = names; cur != NULL; cur = cur->next )
+    {
+        MBEDTLS_ASN1_CHK_ADD( len, x509write_crt_set_subject_alt_name( &c, buf, &cur->general_name ) );
+    }
+
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( &c, buf, len ) );
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( &c, buf, MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) );
+
+    ret = mbedtls_x509write_crt_set_extension( ctx, MBEDTLS_OID_SUBJECT_ALT_NAME,
+                                               MBEDTLS_OID_SIZE( MBEDTLS_OID_SUBJECT_ALT_NAME ),
+                                               0, c, len );
+
+    if( ret != 0 )
+        return( ret );
+
+    return( 0 );
+}
+#endif /* MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT */
+
 static int x509_write_time(unsigned char **p, unsigned char *start, const char *time, size_t size)
 {
 	int ret;

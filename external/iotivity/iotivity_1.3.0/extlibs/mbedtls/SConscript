@@ -27,6 +27,7 @@ from shutil import copyfile
 
 target_os = env.get('TARGET_OS')
 root_dir = env.get('SRC_DIR')
+static_lib = env.get('WITH_MBEDTLS_STATIC_LIB');
 mbedtls_dir = os.path.join(root_dir, 'extlibs','mbedtls','mbedtls')
 start_dir = os.getcwd()
 mbedtls_config_file = 'config-iotivity.h' if target_os != 'windows' else 'config-iotivity_windows.h'
@@ -50,59 +51,60 @@ os.chdir(mbedtls_dir)
 # the mbedtls_revision tag selected is the same as in extlibs/mbedtls/prep.sh.
 # This code also assumes mbedtls_revision is a tag; if it changes to
 # a branch or an arbitrary commit, disable this check below.
-#if os.path.exists('.git/HEAD'):
-#    out = subprocess.check_output('git tag -l ' + mbedtls_revision, shell = True)
-#    if mbedtls_revision not in out:
-#        print out
-#        print '''
-#*********************************** Error: ****************************************
-#* Your mbedTLS repo is not up to date with the latest version we require. Please  *
-#* update with the following commands:                                             *
-#*     $ cd extlibs/mbedtls/mbedtls                                                *
-#*     $ git fetch                                                                 *
-#***********************************************************************************
-# '''
-#        Exit(1)
+if os.path.exists('.git/HEAD'):
+    out = subprocess.check_output('git tag -l ' + mbedtls_revision, shell = True)
+    if mbedtls_revision not in out:
+        print out
+        print '''
+*********************************** Error: ****************************************
+* Your mbedTLS repo is not up to date with the latest version we require. Please  *
+* update with the following commands:                                             *
+*     $ cd extlibs/mbedtls/mbedtls                                                *
+*     $ git fetch                                                                 *
+***********************************************************************************
+ '''
+        Exit(1)
 
-
-pattern = '#define MBEDTLS_HAVE_WINSOCK2'
-found = False
-import re
-import sys
-mbedtls_header = os.path.join('include', 'mbedtls', 'config.h')
-with open(mbedtls_header, 'r') as stream:
-    for line in stream:
-        if pattern in line:
-            found = True
-            break
-if not found:
-    if os.path.exists('.git/HEAD'):
-        # Apply ocf patch on git revision
-        cmd = 'git checkout master && git reset --hard ' + mbedtls_revision + ' && git clean -f && git apply ../ocf.patch'
-        os.system(cmd)
-    else:
-        # Fallback to regular patch command
-        cmd = 'patch -p1 -l -f < ../ocf.patch'
-        res = os.system(cmd)
-    if 0 != res:
-        raise SCons.Errors.StopError('mbedtls: issue on applying patch: %d' % res)
+if target_os != 'tizenrt':
+    pattern = '#define MBEDTLS_HAVE_WINSOCK2'
+    found = False
+    import re
+    import sys
+    mbedtls_header = os.path.join('include', 'mbedtls', 'config.h')
+    with open(mbedtls_header, 'r') as stream:
+        for line in stream:
+            if pattern in line:
+                found = True
+                break
+    if not found:
+        if os.path.exists('.git/HEAD'):
+            # Apply ocf patch on git revision
+            cmd = 'git checkout master && git reset --hard ' + mbedtls_revision + ' && git clean -f && git apply ../ocf.patch'
+            os.system(cmd)
+        else:
+                # Fallback to regular patch command
+            cmd = 'patch -p1 -l -f < ../ocf.patch'
+            res = os.system(cmd)
+        if 0 != res:
+            raise SCons.Errors.StopError('mbedtls: issue on applying patch: %d' % res)
 
 os.chdir(start_dir)
 
-# Copy IoTivity's version of the mbedtls build configuration file
-# from extlibs/mbedtls/iotivity-config.h
-# to extlibs/mbedtls/mbedtls/include/mbedtls/config.h
-iotivity_config = os.path.join(root_dir, 'extlibs', 'mbedtls', mbedtls_config_file)
-mbedtls_config = os.path.join(root_dir, 'extlibs', 'mbedtls', 'mbedtls', 'include', 'mbedtls', 'config.h')
+if target_os != 'tizenrt':
+   # Copy IoTivity's version of the mbedtls build configuration file
+   # from extlibs/mbedtls/iotivity-config.h
+   # to extlibs/mbedtls/mbedtls/include/mbedtls/config.h
+   iotivity_config = os.path.join(root_dir, 'extlibs', 'mbedtls', mbedtls_config_file)
+   mbedtls_config = os.path.join(root_dir, 'extlibs', 'mbedtls', 'mbedtls', 'include', 'mbedtls', 'config.h')
 
-try:
-    copyfile(iotivity_config, mbedtls_config)
-except:
-    print 'mbedtls SConscript: cannot copy ' + iotivity_config + ' to ' + mbedtls_config
-    print 'error: ' + str(sys.exc_info()[0])
-    Exit(1)
-else:
-    print 'Copied IoTivity version of config.h to ' + mbedtls_config
+   try:
+       copyfile(iotivity_config, mbedtls_config)
+   except:
+       print 'mbedtls SConscript: cannot copy ' + iotivity_config + ' to ' + mbedtls_config
+       print 'error: ' + str(sys.exc_info()[0])
+       Exit(1)
+   else:
+       print 'Copied IoTivity version of config.h to ' + mbedtls_config
 
 mbedtls_env = env.Clone()
 
@@ -212,6 +214,7 @@ mbex509_env.AppendUnique(LIBS = ['mbedcrypto'])
 static_libmbedx509 = mbex509_env.StaticLibrary('mbedx509', mbeX509_src)
 mbex509_env.InstallTarget(static_libmbedx509, 'mbedx509')
 
-mbedtls_env.AppendUnique(LIBS = ['mbedx509', 'mbedcrypto'])
-static_libmbedtls = mbedtls_env.StaticLibrary('mbedtls', mbedtls_src)
-mbedtls_env.InstallTarget(static_libmbedtls, 'mbedtls')
+if static_lib == '1':
+	mbedtls_env.AppendUnique(LIBS = ['mbedx509', 'mbedcrypto'])
+	static_libmbedtls = mbedtls_env.StaticLibrary('mbedtls', mbedtls_src)
+	mbedtls_env.InstallTarget(static_libmbedtls, 'mbedtls')

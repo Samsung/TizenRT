@@ -107,12 +107,6 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libroutingmanager$(LIBEXT)
 ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libresource_directory$(LIBEXT)
 endif
-ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
-# __TIZENRT__ : temporarilly added, by wonsang
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libmbedtls$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libmbedx509$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libmbedcrypto$(LIBEXT)
-endif
 ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION),1.2-rel)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtizenrt_compat$(LIBEXT)
 endif

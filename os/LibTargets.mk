@@ -220,16 +220,6 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
 #$(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libtinydtls$(LIBEXT)
 #	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libtinydtls$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtinydtls$(LIBEXT)
 
-# __TIZENRT__ : temporarilly added, by wonsang
-$(LIBRARIES_DIR)$(DELIM)libmbedtls$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedtls$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedtls$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmbedtls$(LIBEXT)
-
-$(LIBRARIES_DIR)$(DELIM)libmbedx509$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedx509$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedx509$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmbedx509$(LIBEXT)
-
-$(LIBRARIES_DIR)$(DELIM)libmbedcrypto$(LIBEXT): $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedcrypto$(LIBEXT)
-	$(Q) install $(IOTIVITY_LIBS_DIR)$(DELIM)libmbedcrypto$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmbedcrypto$(LIBEXT)
-
 endif
 
 ifneq ($(CONFIG_IOTIVITY_RELEASE_VERSION),1.2-rel)

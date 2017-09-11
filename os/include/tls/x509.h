@@ -310,7 +310,11 @@ int mbedtls_x509_key_size_helper(char *buf, size_t buf_size, const char *name);
 int mbedtls_x509_string_to_names(mbedtls_asn1_named_data **head, const char *name);
 int mbedtls_x509_set_extension(mbedtls_asn1_named_data **head, const char *oid, size_t oid_len, int critical, const unsigned char *val, size_t val_len);
 int mbedtls_x509_write_extensions(unsigned char **p, unsigned char *start, mbedtls_asn1_named_data *first);
+#if defined(MBEDTLS_OCF_PATCH)
+int mbedtls_x509_write_names(unsigned char **p, unsigned char *start, const mbedtls_asn1_named_data *first);
+#else
 int mbedtls_x509_write_names(unsigned char **p, unsigned char *start, mbedtls_asn1_named_data *first);
+#endif
 int mbedtls_x509_write_sig(unsigned char **p, unsigned char *start, const char *oid, size_t oid_len, unsigned char *sig, size_t size);
 
 #define MBEDTLS_X509_SAFE_SNPRINTF                          \

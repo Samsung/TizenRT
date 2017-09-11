@@ -8,6 +8,7 @@ Import('connectivity_env')
 ca_os = connectivity_env.get('TARGET_OS')
 ca_transport = connectivity_env.get('TARGET_TRANSPORT')
 secured = connectivity_env.get('SECURED')
+with_mbedtls_static = connectivity_env.get('WITH_MBEDTLS_STATIC_LIB');
 multiple_owner = connectivity_env.get('MULTIPLE_OWNER')
 with_ra = connectivity_env.get ('WITH_RA')
 with_ra_ibb = connectivity_env.get('WITH_RA_IBB')
@@ -60,7 +61,7 @@ if ca_os == 'tizen' and os.path.exists(root_dir + '/' + tls_path):
     connectivity_env.SConscript(os.path.join(root_dir, tls_path + '/SConscript'))
     connectivity_env.AppendUnique(CPPPATH = [os.path.join(root_dir, tls_path + '/' + tls_headers_path)])
 else:
-    if ca_os != 'android':
+    if ca_os != 'android' and connectivity_env.get('PLATFORM_TLS') == '0':
         connectivity_env.SConscript('#' + tls_path + '/SConscript')
     connectivity_env.AppendUnique(CPPPATH = ['#' + tls_path + '/' + tls_headers_path])
 
@@ -158,10 +159,12 @@ if ca_os == 'android':
     connectivity_env.AppendUnique(LINKFLAGS = ['-Wl,-soname,libconnectivity_abstraction.so'])
 
 if connectivity_env.get('SECURED') == '1':
-    connectivity_env.AppendUnique(LIBS = ['mbedtls','mbedx509'])
+    if with_mbedtls_static == '1':
+        connectivity_env.AppendUnique(LIBS = ['mbedtls','mbedx509'])
 
 # c_common calls into mbedcrypto.
-connectivity_env.AppendUnique(LIBS = ['mbedcrypto'])
+if with_mbedtls_static == '1':
+    connectivity_env.AppendUnique(LIBS = ['mbedcrypto'])
 
 calib_internal = connectivity_env.StaticLibrary('connectivity_abstraction_internal', connectivity_env.get('CA_SRC'))
 calib = Flatten(calib_internal)

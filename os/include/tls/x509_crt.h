@@ -62,6 +62,30 @@ extern "C" {
  * \name Structures and functions for parsing and writing X.509 certificates
  * \{
  */
+#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT)
+typedef enum
+{
+    /* Don't use the value zero in this enum, because we use zero to denote an unset struct. */
+    MBEDTLS_X509_GENERALNAME_DNSNAME = 1,
+    MBEDTLS_X509_GENERALNAME_DIRECTORYNAME
+} mbedtls_x509_general_name_choice;
+
+typedef struct mbedtls_x509_general_name
+{
+    mbedtls_x509_general_name_choice name_type;
+    union
+    {
+        mbedtls_x509_buf dns_name;
+        mbedtls_x509_name *directory_name;
+    };
+} mbedtls_x509_general_name;
+
+typedef struct mbedtls_x509_general_names
+{
+    mbedtls_x509_general_name general_name;
+    struct mbedtls_x509_general_names *next;
+} mbedtls_x509_general_names;
+#endif
 
 /**
  * Container for an X.509 certificate. The certificate may be chained.
@@ -88,7 +112,11 @@ typedef struct mbedtls_x509_crt {
 	mbedtls_x509_buf issuer_id;		/**< Optional X.509 v2/v3 issuer unique identifier. */
 	mbedtls_x509_buf subject_id;	/**< Optional X.509 v2/v3 subject unique identifier. */
 	mbedtls_x509_buf v3_ext;		/**< Optional X.509 v3 extensions.  */
+#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT)
+	mbedtls_x509_general_names subject_alt_names; /**< Optional list of Subject Alternative Names (Only dNSName and directoryName supported). */
+#else
 	mbedtls_x509_sequence subject_alt_names;/**< Optional list of Subject Alternative Names (Only dNSName supported). */
+#endif
 
 	int ext_types;			/**< Bit string containing detected and parsed extensions */
 	int ca_istrue;			/**< Optional Basic Constraint extension value: 1 if this certificate belongs to a CA, 0 otherwise. */
@@ -586,6 +614,20 @@ int mbedtls_x509write_crt_set_key_usage(mbedtls_x509write_cert *ctx, unsigned in
  * \return          0 if successful, or MBEDTLS_ERR_X509_ALLOC_FAILED
  */
 int mbedtls_x509write_crt_set_ns_cert_type(mbedtls_x509write_cert *ctx, unsigned char ns_cert_type);
+
+#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT)
+/**
+ * \brief           Set the subject alternative name extension
+ *
+ * \param ctx       CRT context to use
+ * \param names     subject alternative names. For each dNSName element, the tag field of the dns_name
+ *                  member does not need to be set and will be ignored.
+ *
+ * \return          0 if successful, or a specific error code
+ */
+int mbedtls_x509write_crt_set_subject_alt_names( mbedtls_x509write_cert *ctx,
+                                                 const mbedtls_x509_general_names *names );
+#endif /* MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT */
 
 /**
  * \brief           Free the contents of a CRT write context
