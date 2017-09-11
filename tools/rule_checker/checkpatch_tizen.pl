@@ -2658,16 +2658,6 @@ sub process {
 					$allowed = 1;
 				}
 			}
-			if ($level == 0 && $block =~ /^\s*\{/ && !$allowed) {
-				my $herectx = $here . "\n";;
-				my $cnt = statement_rawlines($block);
-
-				for (my $n = 0; $n < $cnt; $n++) {
-					$herectx .= raw_line($linenr, $n) . "\n";;
-				}
-
-				WARN("[BRC_R_SST] braces {} are not necessary for single statement blocks\n" . $herectx);
-			}
 		}
 
 # don't include deprecated include files (uses RAW line)
