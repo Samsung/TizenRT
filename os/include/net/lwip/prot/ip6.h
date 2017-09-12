@@ -153,6 +153,7 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define IP6_HBH_TYPE(hdr) ((hdr)->_ra_opt_type)
 
 /* Fragment header. */
 #define IP6_FRAG_HLEN    8
