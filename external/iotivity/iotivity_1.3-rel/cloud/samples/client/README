@@ -1,0 +1,26 @@
+To build cloud client samples, add WITH_TCP, TARGET_TRANSPORT=IP, WITH_CLOUD and WITH_MQ option to build command line
+
+ex) scons WITH_TCP=yes TARGET_TRANSPORT=IP WITH_CLOUD=yes WITH_MQ=PUB,SUB SECURED=0 or 1(TLS MODE)
+
+Cloud clients runs over CoAP over TCP transport. So you should declare WITH_TCP option.
+
+To run client samples io TLS mode, you should declare SECURED option to "1".
+
+Once you get samples (where the file names are 'aircon_controlee', 'aircon_controller', 'group_invite_sample', 'mq_publisher', 'mq_subscriber', and 'thin_room_light', you need 'Auth Code' to register resources on cloud with account scenario.
+
+Cloud stack has sample github and google oauth2 adaptor.
+
+So you can instantly test samples using 'Auth Code'.
+
+Paste below URL to your browser
+
+[Github] https://github.com/login?return_to=%2Flogin%2Foauth%2Fauthorize%3Fclient_id%3Dea9c18f540323b0213d0%26redirect_uri%3Dhttp%253A%252F%252Fwww.example.com%252Foauth_callback%252F
+[Google] https://accounts.google.com/o/oauth2/v2/auth?redirect_uri=http://www.example.com/oauth2callback&prompt=consent&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile&response_type=code&client_id=447649044559-f9r5sl6op3kkk0312u384o4g6hhucje1.apps.googleusercontent.com&access_type=offline
+
+And you'll see login page provided by oauth2 providers, and after logged in, you'll be redirectd to below site.
+
+http://www.example.com/oauth_callback/?code=bf9beb5db17ea476fa46
+
+You can get 'Auth Code', value of '?code' query string.
+
+The 'Auth Code' is one time token. So you need other token to run each sample.

@@ -1,0 +1,100 @@
+{
+    "cred": {
+        "creds": [
+            {
+                "credid": 1,
+                "subjectuuid": "61646d69-6e44-6576-6963-655575696430",
+                "credtype": 1,
+                "privatedata": {
+
+"data": "AAAAAAAAAAAAAAAA",
+                    "encoding": "oic.sec.encoding.raw"
+                }
+            },
+            {
+                "credid": 2,
+                "subjectuuid": "646f6f72-4465-7669-6365-555549443030",
+                "credtype": 8,
+                "publicdata": {
+                    "data": "AABBCCDDEEFFGGHH",
+                    "encoding": "oic.sec.encoding.raw"
+                },
+                "privatedata": {
+                    "data": "BBBBBBBBBBBBBBBB",
+                    "encoding": "oic.sec.encoding.raw"
+                }
+            }
+        ],
+
+"rowneruuid": "61646d69-6e44-6576-6963-655575696430"
+    },
+    "acl": {
+        "aclist2": [
+            {
+                "aceid": 1,
+                "subject": { "conntype": "anon-clear" },
+                "resources": [
+                    { "href": "/oic/res" },
+                    { "href": "/oic/d" },
+                    { "href": "/oic/p"},
+                    { "href": "/oic/presence" }
+                ],
+                "permission": 2
+            },
+            {
+                "aceid": 2,
+                "subject": { "conntype": "auth-crypt" },
+                "resources": [
+                    { "href": "/oic/res" },
+                    { "href": "/oic/d" },
+                    { "href": "/oic/p"},
+                    { "href": "/oic/presence" }
+                ],
+                "permission": 2
+            },
+            {
+                "aceid": 3,
+                "subject": { "conntype": "anon-clear" },
+                "resources": [
+                    { "href": "/oic/sec/doxm" }
+                ],
+                "permission": 14
+            },
+            {
+                "aceid": 4,
+                "subject": { "conntype": "auth-crypt" },
+                "resources": [
+                    { "href": "/oic/sec/doxm" },
+                    { "href": "/oic/sec/roles" }
+                ],
+                "permission": 14
+            }
+        ],
+        "rowneruuid": "61646d69-6e44-6576-6963-655575696430"
+    },
+    "pstat": {
+        "dos": {"s": 3, "p": false},
+        "isop": true,
+        "deviceuuid": "646f6f72-4465-7669-6365-555549443030",
+        "cm": 0,
+        "tm": 0,
+        "om": 4,
+        "sm": 4,
+        "rowneruuid": "61646d69-6e44-6576-6963-655575696430"
+    },
+    "doxm": {
+        "oxms": [0],
+        "oxmsel": 0,
+        "sct": 9,
+        "owned": true,
+        "deviceuuid": "646f6f72-4465-7669-6365-555549443030",
+        "devowneruuid": "61646d69-6e44-6576-6963-655575696430",
+        "rowneruuid": "61646d69-6e44-6576-6963-655575696430"
+    },
+    "pconf": {
+        "edp": false,
+        "pin": "00000000",
+        "deviceuuid": "646f6f72-4465-7669-6365-555549443030",
+        "rowneruuid": "61646d69-6e44-6576-6963-655575696430"
+    }
+}

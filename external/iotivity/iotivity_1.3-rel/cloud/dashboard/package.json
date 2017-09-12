@@ -1,0 +1,31 @@
+{
+  "name": "dashboard",
+  "version": "0.1.0",
+  "private": true,
+    "devDependencies": {
+        "react-scripts": "0.9.0"
+    },
+  "engines": {
+    "node": ">= 0.10"
+  },
+  "dependencies": {
+    "blob-to-buffer": "^1.2.6",
+    "material-ui": "^0.17.0",
+    "node-localstorage": "^1.3.0",
+    "react": "^15.4.2",
+    "react-dom": "^15.4.2",
+    "react-tap-event-plugin": "^2.0.1",
+    "websocket": "^1.0.24",
+    "hashmap": "^2.0.6",
+    "crypto": "0.0.3",
+    "express": "^4.14.1",
+    "json-buffer": "^2.0.11",
+    "system-sleep": "^1.3.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}

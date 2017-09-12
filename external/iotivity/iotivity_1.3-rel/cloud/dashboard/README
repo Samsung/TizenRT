@@ -1,0 +1,13 @@
+To Build and Run cloud dashboard
+
+1) Install Node.js if you don't have it
+
+    https://nodejs.org/en/download/
+
+2) Install packages that cloud dashboard depends on
+
+    $ npm install
+
+3) Run dashboard with command below, and it will be launched on your browser
+
+    $ npm start

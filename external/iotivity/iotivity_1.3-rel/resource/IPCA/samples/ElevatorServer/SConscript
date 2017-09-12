@@ -1,0 +1,106 @@
+#******************************************************************
+#
+# Copyright 2017 Microsoft
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+import os
+import os.path
+
+##
+# ElevatorServer build script
+##
+Import('ipca_env')
+target_os = ipca_env.get('TARGET_OS')
+elevator_server_env = ipca_env.Clone()
+rd_mode = elevator_server_env.get('RD_MODE')
+
+######################################################################
+# Build flags
+######################################################################
+elevator_server_env.PrependUnique(CPPPATH = [
+        '#/resource/include',
+        '#/resource/oc_logger/include',
+        '#/resource/csdk/include',
+        '#/resource/csdk/stack/include',
+        '#/resource/csdk/security/include',
+        '#/resource/csdk/security/provisioning/include',
+        '#/resource/csdk/security/provisioning/include/internal',
+        '#/resource/csdk/connectivity/api',
+        '#/resource/csdk/connectivity/external/inc',
+        '#/resource/csdk/ocsocket/include',
+        '#/resource/c_common/ocrandom/include',
+        '#/resource/csdk/logger/include',
+        '#/extlibs/boost/boost',
+        '../../inc'
+        ])
+
+elevator_server_env.AppendUnique(LIBPATH = [ipca_env.get('BUILD_DIR')])
+
+elevator_server_env.PrependUnique(LIBS = [
+        'coap',
+        'octbstack'
+        ])
+
+if target_os not in ['msys_nt', 'windows']:
+    elevator_server_env.PrependUnique(LIBS = [
+            'connectivity_abstraction'
+            ])
+
+elevator_server_env.PrependUnique(LIBS = [
+        'oc'
+        ])
+
+if elevator_server_env.get('SECURED') == '1':
+    elevator_server_env.AppendUnique(CPPDEFINES = ['SECURED'])
+    elevator_server_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509','mbedcrypto', 'ocprovision'])
+
+if target_os in ['msys_nt', 'windows']:
+    elevator_server_env.AppendUnique(LINKFLAGS = ['/subsystem:CONSOLE'])
+else:
+    elevator_server_env.PrependUnique(LIBS = ['oc_logger'])
+
+if target_os not in ['windows', 'msys_nt']:
+    elevator_server_env.AppendUnique(LIBS = ['dl'])
+
+if 'g++' in elevator_server_env.get('CXX'):
+    elevator_server_env.AppendUnique(CXXFLAGS = ['-Wall', '-std=c++0x'])
+
+if target_os in ['linux']:
+    if not elevator_server_env.get('RELEASE'):
+        elevator_server_env.PrependUnique(LIBS = ['gcov'])
+        elevator_server_env.AppendUnique(CXXFLAGS = ['--coverage'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+elevator_server_src = [
+    'ElevatorServerSample.cpp',
+    'elevatorserver.cpp'
+        ]
+
+elevator_server_src_dir = os.path.join(elevator_server_env.get('SRC_DIR'),
+                              'resource', 'IPCA', 'samples', 'ElevatorServer') + os.sep
+elevator_server_build_dir = os.path.join(elevator_server_env.get('BUILD_DIR'),
+                              'resource', 'IPCA', 'samples', 'ElevatorServer') + os.sep
+
+elevator_server_env.Install(elevator_server_build_dir,
+                            elevator_server_src_dir + 'ElevatorServerSecurityDB.json')
+elevator_server_env.Install(elevator_server_build_dir,
+                            elevator_server_src_dir + 'ElevatorServerSecurityDB.dat')
+
+elevator_app = elevator_server_env.Program('ElevatorServer', elevator_server_src)

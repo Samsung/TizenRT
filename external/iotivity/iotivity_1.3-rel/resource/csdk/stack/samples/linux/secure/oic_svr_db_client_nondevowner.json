@@ -1,0 +1,61 @@
+{
+    "acl": {
+        "aclist2": [
+            {
+                "aceid": 1,
+                "subject": { "conntype": "anon-clear" },
+                "resources": [
+                    { "href": "/oic/res" },
+                    { "href": "/oic/d" },
+                    { "href": "/oic/p" },
+                    { "href": "/oic/sec/doxm" }
+                ],
+                "permission": 2
+            },
+            {
+                "aceid": 2,
+                "subject": { "conntype": "auth-crypt" },
+                "resources": [
+                    { "href": "/oic/res" },
+                    { "href": "/oic/d" },
+                    { "href": "/oic/p" },
+                    { "href": "/oic/sec/doxm" }
+                ],
+                "permission": 2
+            }
+        ],
+        "rowneruuid" : "31393139-3139-3139-3139-313931393139"
+    },
+    "pstat": {
+        "dos": {"s": 3, "p": false},
+        "isop": true,
+        "rowneruuid": "31393139-3139-3139-3139-313931393139",
+        "cm": 0,
+        "tm": 0,
+        "om": 4,
+        "sm": 4
+        },
+    "doxm": {
+        "oxms": [0],
+        "oxmsel": 0,
+        "sct": 9,
+        "owned": true,
+        "deviceuuid": "31393139-3139-3139-3139-313931393139",
+        "devowneruuid": "31393139-3139-3139-3139-313931393139",
+        "rowneruuid": "31393139-3139-3139-3139-313931393139"
+    },
+    "cred": {
+        "creds": [
+            {
+                "credid": 1,
+                "subjectuuid": "31313131-3131-3131-3131-313131313131",
+                "credtype": 1,
+                "privatedata": {
+                    "data": "BBBBBBBBBBBBBBBB",
+                    "encoding": "oic.sec.encoding.raw"
+                }
+            }
+        ],
+        "rowneruuid": "31393139-3139-3139-3139-313931393139"
+    }
+}

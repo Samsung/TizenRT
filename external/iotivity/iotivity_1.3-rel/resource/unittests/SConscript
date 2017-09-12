@@ -1,0 +1,136 @@
+#******************************************************************
+#
+# Copyright 2014 Intel Mobile Communications GmbH All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+import os
+import os.path
+from tools.scons.RunTest import *
+
+Import('test_env')
+
+# SConscript file for Local PKI google tests
+unittests_env = test_env.Clone()
+src_dir = unittests_env.get('SRC_DIR')
+target_os = unittests_env.get('TARGET_OS')
+with_mq = unittests_env.get('WITH_MQ')
+
+######################################################################
+# Build flags
+######################################################################
+unittests_env.PrependUnique(CPPPATH = [
+        '#/resource/include',
+        '#/resource/oc_logger/include',
+        '#/resource/csdk/include',
+        '#/resource/csdk/stack/include',
+        '#/resource/csdk/security/include',
+        '#/resource/csdk/stack/include/internal',
+        '#/resource/csdk/connectivity/api',
+        '#/resource/csdk/connectivity/external/inc',
+        '#/resource/csdk/ocsocket/include',
+        '#/resource/c_common',
+        '#/resource/c_common/ocrandom/include',
+        '#/resource/c_common/octhread/include',
+        '#/resource/c_common/oic_malloc/include',
+        '#/resource/c_common/oic_string/include',
+        '#/resource/c_common/oic_time/include',
+        '#/resource/csdk/logger/include',
+        '#/extlibs/hippomocks/hippomocks',
+        ])
+
+if target_os in ['windows']:
+    # Non-Windows platforms find the boost headers under /usr/include or similar path.
+    unittests_env.AppendUnique(CPPPATH = ['#extlibs/boost/boost'])
+    unittests_env.AppendUnique(LIBS=['sqlite3', 'win_helper'])
+
+    if unittests_env['CC'] == 'cl':
+        # Fix for: resource\unittests\OCRepresentationEncodingTest.cpp "fatal error C1128:
+        # number of sections exceeded object file format limit: compile with /bigobj"
+        unittests_env.AppendUnique(CCFLAGS=['/bigobj'])
+elif target_os in ['linux', 'tizen']:
+    unittests_env.ParseConfig('pkg-config --cflags --libs sqlite3 gobject-2.0 gio-2.0 glib-2.0')
+
+unittests_env.PrependUnique(LIBS=[
+    'oc',
+    'octbstack_internal',
+    'ocsrm',
+    'routingmanager',
+    'oc_logger_internal',
+    'logger',
+    'connectivity_abstraction_internal',
+    'coap',
+    'c_common',
+])
+
+if target_os in ['linux', 'tizen']:
+    unittests_env.AppendUnique(LIBS = ['rt'])
+
+if unittests_env.get('SECURED') == '1':
+    unittests_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509'])
+
+# c_common calls into mbedcrypto.
+unittests_env.AppendUnique(LIBS = ['mbedcrypto'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+
+unittests_src = [
+    'ConstructResourceTest.cpp',
+    'OCPlatformTest.cpp',
+    'OCRepresentationTest.cpp',
+    'OCRepresentationEncodingTest.cpp',
+    'OCResourceTest.cpp',
+    'OCExceptionTest.cpp',
+    'OCResourceResponseTest.cpp',
+    'OCHeaderOptionTest.cpp',
+    ]
+
+# TODO: IOT-2039: Fix errors in the following Windows tests.
+if target_os in ['windows']:
+    if '12.0' == unittests_env['MSVC_VERSION']:
+        unittests_src.remove('OCPlatformTest.cpp')
+        unittests_src.remove('OCRepresentationEncodingTest.cpp')
+        unittests_src.remove('OCRepresentationTest.cpp')
+        unittests_src.remove('OCResourceTest.cpp')
+
+if (('SUB' in with_mq) or ('PUB' in with_mq) or ('BROKER' in with_mq)):
+    unittests_src = unittests_src + ['OCMQResourceTest.cpp']
+
+if unittests_env.get('WITH_CLOUD'):
+    unittests_src = unittests_src + ['OCAccountManagerTest.cpp']
+
+unittests = unittests_env.Program('unittests', unittests_src)
+
+Alias("unittests", [unittests])
+
+unittests_env.AppendTarget('unittests')
+if unittests_env.get('TEST') == '1':
+    if target_os in ['windows']:
+        unittests_env.AppendENVPath('PATH', unittests_env.get('BUILD_DIR'))
+    if target_os in ['linux', 'windows']:
+        run_test(unittests_env,
+        'resource_unittests_unittests.memcheck',
+        'resource/unittests/unittests',
+        unittests)
+
+src_dir = unittests_env.get('SRC_DIR')
+svr_db_src_dir = os.path.join(src_dir, 'resource/examples/')
+svr_db_build_dir = os.path.join(unittests_env.get('BUILD_DIR'), 'resource', 'unittests') + os.sep
+unittests_env.Alias("install",
+    unittests_env.Install(svr_db_build_dir, os.path.join(svr_db_src_dir, 'oic_svr_db_client.dat')))

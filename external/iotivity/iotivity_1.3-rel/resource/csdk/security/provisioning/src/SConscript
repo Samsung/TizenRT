@@ -1,0 +1,108 @@
+# -*- mode: python; python-indent-offset: 4; indent-tabs-mode: nil -*-
+# ******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+Import('provisioning_env')
+
+provisioning_lib_env = provisioning_env.Clone()
+target_os = provisioning_lib_env.get('TARGET_OS')
+
+provisioning_lib_env.PrependUnique(LIBS=['coap'])
+
+if target_os not in ['msys_nt', 'windows']:
+    # octbstack.dll is exporting connectivity_abstraction APIs on Windows.
+    provisioning_lib_env.PrependUnique(LIBS=['connectivity_abstraction'])
+
+provisioning_lib_env.PrependUnique(LIBS=['octbstack'])
+
+provisioning_lib_env.AppendUnique(LIBS=['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+if target_os in ['android']:
+    provisioning_lib_env.AppendUnique(CXXFLAGS=['-frtti', '-fexceptions'])
+    provisioning_lib_env.AppendUnique(LIBS=['gnustl_static'])
+
+if target_os in ['darwin', 'ios']:
+    provisioning_lib_env.AppendUnique(CPPDEFINES=['_DARWIN_C_SOURCE'])
+
+if provisioning_lib_env.get('LOGGING'):
+    provisioning_lib_env.AppendUnique(CPPDEFINES=['TB_LOG'])
+
+if provisioning_lib_env.get('MULTIPLE_OWNER') == '1':
+    provisioning_lib_env.AppendUnique(CPPDEFINES=['MULTIPLE_OWNER'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+provisioning_src = [
+    'pmutility.c',
+    'credentialgenerator.c',
+    'otmcontextlist.c',
+    'ownershiptransfermanager.c',
+    'secureresourceprovider.c',
+    'ocprovisioningmanager.c',
+    'oxmjustworks.c',
+    'oxmrandompin.c',
+    'oxmmanufacturercert.c',
+    'provisioningdatabasemanager.c'
+]
+
+if provisioning_lib_env.get('MULTIPLE_OWNER') == '1':
+    provisioning_src = provisioning_src + [
+        'multipleownershiptransfermanager.c',
+        'oxmpreconfpin.c'
+    ]
+
+if provisioning_lib_env.get('WITH_TCP') == True:
+    provisioning_lib_env.AppendUnique(CPPDEFINES=['__WITH_TLS__'])
+    provisioning_src = provisioning_src + [
+        'cloud/utils.c',
+        'cloud/crl.c',
+        'cloud/aclgroup.c',
+        'cloud/aclinvite.c',
+        'cloud/aclid.c',
+        'cloud/csr.c'
+    ]
+
+if target_os in ['linux', 'tizen']:
+    provisioning_lib_env.ParseConfig('pkg-config --cflags --libs sqlite3')
+else:
+    provisioning_lib_env.AppendUnique(CPPPATH=['#/extlibs/sqlite3'])
+    if target_os not in ['windows']:
+        provisioning_src = provisioning_src + ['#/extlibs/sqlite3/sqlite3.c']
+
+if target_os in ['android']:
+    provisioning_lib_env.AppendUnique(LINKFLAGS=['-Wl,-soname,libocpmapi.so'])
+
+internal_provisioning_lib = provisioning_lib_env.StaticLibrary(
+    'ocpmapi_internal', provisioning_src)
+provisioningserver = Flatten(internal_provisioning_lib)
+
+if target_os not in ['windows', 'msys_nt']:
+    static_provisioning_lib = provisioning_lib_env.StaticLibrary(
+        'ocpmapi', provisioning_src)
+    provisioningserver += Flatten(static_provisioning_lib)
+
+    if target_os not in ['ios']:
+        shared_provisioning_lib = provisioning_lib_env.SharedLibrary(
+            'ocpmapi', provisioning_src)
+        provisioningserver += Flatten(shared_provisioning_lib)
+
+provisioning_lib_env.InstallTarget(provisioningserver, 'ocpmapi')
+provisioning_lib_env.UserInstallTargetLib(provisioningserver, 'ocpmapi')

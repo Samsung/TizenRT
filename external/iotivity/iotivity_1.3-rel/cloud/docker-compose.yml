@@ -1,0 +1,22 @@
+version: '3.1'
+
+services:
+  mongodb:
+    image: mongo
+
+  kafka-zookeeper:
+    image: spotify/kafka
+
+  iotivity-messagequeue:
+    image: iotivity/messagequeue
+
+  iotivity-accountserver:
+    image: iotivity/accountserver
+
+  iotivity-resourcedirectory:
+    image: iotivity/resourcedirectory
+
+  iotivity-interface:
+    image: iotivity/interface
+    ports:
+      - "5683:5683"

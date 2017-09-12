@@ -1,0 +1,65 @@
+#******************************************************************
+#
+# Copyright 2014 Intel Mobile Communications GmbH All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+import sys
+
+Import('stacksamples_env')
+
+arduino_simplecs_env = stacksamples_env.Clone()
+transport = arduino_simplecs_env.get('TARGET_TRANSPORT')
+
+######################################################################
+# Build flags
+######################################################################
+arduino_simplecs_env.PrependUnique(CPPPATH=[
+    '../../../../../logger/include',
+    '../../../../../include',
+    '../../../../../stack/include',
+    '../../../../../../oc_logger/include'
+])
+
+arduino_simplecs_env.AppendUnique(CPPDEFINES=['TB_LOG'])
+
+arduino_simplecs_env.PrependUnique(LIBS=[
+    'octbstack',
+    'ocsrm',
+    'routingmanager',
+    'connectivity_abstraction',
+    'coap'
+])
+
+arduino_simplecs = arduino_simplecs_env.Program('SimpleClientServer', 'ocserver.cpp')
+arduino_simplecs_env.CreateBin('SimpleClientServer')
+
+i_arduino_simplecs = arduino_simplecs_env.Install(
+    arduino_simplecs_env.get('BUILD_DIR'), arduino_simplecs)
+
+#The map file is intermediate file, make sure it's removed when clean build
+arduino_simplecs_env.Clean(arduino_simplecs, 'SimpleClientServer.map')
+
+Alias('arduino_simplecs', i_arduino_simplecs)
+arduino_simplecs_env.AppendTarget('arduino_simplecs')
+
+if (arduino_simplecs_env['UPLOAD'] == True):
+    if sys.platform.startswith("linux"):
+        arduino_simplecs_env.Upload(
+            arduino_simplecs_env.get('BUILD_DIR') + '/resource/csdk/stack/samples/arduino/SimpleClientServer/ocserver/SimpleClientServer.hex')
+    else:
+        print 'Please use appropriate install method for your development machine. Linux is the only supported platform right now.'

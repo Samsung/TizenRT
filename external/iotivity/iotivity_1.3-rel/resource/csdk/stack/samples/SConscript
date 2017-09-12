@@ -1,0 +1,41 @@
+#******************************************************************
+#
+# Copyright 2017 Microsoft
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+Import('stacksamples_env')
+
+target_os = stacksamples_env.get('TARGET_OS')
+
+if target_os in ['linux', 'windows']:
+    # Build C Samples
+    SConscript('linux/OCSample/SConscript', 'stacksamples_env')
+    SConscript('linux/SimpleClientServer/SConscript', 'stacksamples_env')
+
+    if stacksamples_env.get('SECURED') == '1':
+        # Build secure samples
+        SConscript('linux/secure/SConscript', 'stacksamples_env')
+elif target_os == 'darwin':
+    # Build linux samples for now
+    SConscript('linux/SimpleClientServer/SConscript', 'stacksamples_env')
+elif target_os == 'arduino':
+    SConscript('arduino/SimpleClientServer/ocserver/SConscript',
+               'stacksamples_env')
+elif target_os == 'msys_nt':
+    # Build secure samples. Using linux samples for now.
+    SConscript('linux/secure/SConscript', 'stacksamples_env')

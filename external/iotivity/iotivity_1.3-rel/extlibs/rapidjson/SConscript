@@ -1,0 +1,31 @@
+######################################################################
+# rapidjson library fetch script
+#
+######################################################################
+
+import os, string, sys
+
+Import('env')
+
+env = env.Clone()
+rapidjson_env = env.Clone()
+
+target_os = env.get('TARGET_OS')
+target_arch = env.get('TARGET_ARCH')
+
+host_os = sys.platform
+
+######################################################################
+# Build flags
+######################################################################
+src_dir = env.get('SRC_DIR')
+path = os.path.join(src_dir, 'extlibs', 'rapidjson', 'rapidjson')
+
+# check 'rapidjson' library, if it doesn't exist, download it
+if not os.path.exists(path):
+    rapidjson_env = Environment(ENV=os.environ)
+    rapidjson_zip = env.Download(
+        'v1.0.2.zip',
+        'https://github.com/miloyip/rapidjson/archive/v1.0.2.zip')
+    rapidjson_dir = env.UnpackAll('rapidjson', rapidjson_zip)
+    os.rename("rapidjson-1.0.2", "rapidjson")

@@ -1,0 +1,139 @@
+#******************************************************************
+#
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# IoTivity Cloud project sample client build script
+##
+
+Import('env')
+
+lib_env = env.Clone()
+
+cc_sample_app_env = lib_env.Clone()
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = cc_sample_app_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+    cc_sample_app_env.AppendUnique(
+        CPPPATH=['#/extlibs/libcoap/libcoap/include'])
+else:
+    cc_sample_app_env.AppendUnique(
+        CPPPATH=['#/resource/csdk/connectivity/lib/libcoap-4.1.1/include'])
+
+cc_sample_app_env.AppendUnique(CPPPATH=[
+    '#/resource/include/',
+    '#/resource/csdk/resource-directory/include',
+    '#/resource/csdk/include',
+    '#/resource/csdk/stack/include',
+    '#/resource/c_common',
+    '#/resource/c_common/oic_malloc/include',
+    '#/resource/c_common/oic_string/include',
+    '#/resource/c_common/ocrandom/include',
+    '#/resource/csdk/logger/include',
+    '#/resource/oc_logger/include',
+    '#/resource/csdk/connectivity/inc',
+    '#/resource/csdk/connectivity/api',
+    '#/resource/csdk/connectivity/common/inc',
+    '#/resource/csdk/security/include',
+    '#/resource/csdk/security/provisioning/include',
+    '#/resource/csdk/security/provisioning/include/internal',
+    '#/extlibs/mbedtls/mbedtls/include'
+])
+
+cc_sample_app_env.AppendUnique(
+    CXXFLAGS=['-O2', '-g', '-Wall', '-Wextra', '-std=c++0x', '-pthread'])
+cc_sample_app_env.AppendUnique(RPATH=[env.get('BUILD_DIR')])
+
+cc_sample_app_env.PrependUnique(LIBS=[
+    'oc', 'octbstack', 'connectivity_abstraction', 'pthread',
+    'resource_directory'
+])
+
+cc_sample_app_env.AppendUnique(CPPDEFINES=['WITH_CLOUD', 'RD_CLIENT'])
+
+######################################################################
+# Install for rootca certificate
+######################################################################
+src_dir = cc_sample_app_env.get('SRC_DIR')
+cc_cloud_src_dir = src_dir + '/cloud/samples/client/'
+
+tlsOption = env.get('SECURED')
+if tlsOption is '1':
+    cc_sample_app_env.PrependUnique(LIBS=['ocpmapi'])
+    Command("rootca.crt", cc_cloud_src_dir + "rootca.crt",
+            Copy("$TARGET", "$SOURCE"))
+    Command("aircon_controlee.dat", cc_cloud_src_dir + "aircon_controlee.dat",
+            Copy("$TARGET", "$SOURCE"))
+    Command("aircon_controller.dat",
+            cc_cloud_src_dir + "aircon_controller.dat",
+            Copy("$TARGET", "$SOURCE"))
+    Command("group_invite.dat", cc_cloud_src_dir + "group_invite.dat",
+            Copy("$TARGET", "$SOURCE"))
+    Command("mq_publisher.dat", cc_cloud_src_dir + "mq_publisher.dat",
+            Copy("$TARGET", "$SOURCE"))
+    Command("mq_subscriber.dat", cc_cloud_src_dir + "mq_subscriber.dat",
+            Copy("$TARGET", "$SOURCE"))
+    Command("thin_room_light.dat", cc_cloud_src_dir + "thin_room_light.dat",
+            Copy("$TARGET", "$SOURCE"))
+
+######################################################################
+# Sample for the thin cloud device
+######################################################################
+thin_room_light_src = ['thin_light/thin_room_light.cpp']
+cc_sample_app_env.Program('thin_room_light', thin_room_light_src)
+
+######################################################################
+# Samples for the air conditioner
+######################################################################
+aircon_controlee_src = ['airconditioner/aircon_controlee.cpp']
+cc_sample_app_env.Program('aircon_controlee', aircon_controlee_src)
+
+aircon_controller_src = ['airconditioner/aircon_controller.cpp']
+cc_sample_app_env.Program('aircon_controller', aircon_controller_src)
+
+######################################################################
+# Samples for message queue
+######################################################################
+mqOption = env.get('WITH_MQ')
+if mqOption[0] is not 'OFF':
+    cc_sample_app_env.AppendUnique(CPPDEFINES=['WITH_MQ'])
+    if set(['PUB']) == set(mqOption):
+        cc_sample_app_env.AppendUnique(CPPDEFINES=['MQ_PUBLISHER'])
+        mq_publisher_src = ['messagequeue/mq_publisher.cpp']
+        cc_sample_app_env.Program('mq_publisher', mq_publisher_src)
+    elif set(['SUB']) == set(mqOption):
+        cc_sample_app_env.AppendUnique(CPPDEFINES=['MQ_SUBSCRIBER'])
+        mq_subscriber_src = ['messagequeue/mq_subscriber.cpp']
+        cc_sample_app_env.Program('mq_subscriber', mq_subscriber_src)
+    else:
+        cc_sample_app_env.AppendUnique(CPPDEFINES=['MQ_PUBLISHER'])
+        mq_publisher_src = ['messagequeue/mq_publisher.cpp']
+        cc_sample_app_env.Program('mq_publisher', mq_publisher_src)
+        cc_sample_app_env.AppendUnique(CPPDEFINES=['MQ_SUBSCRIBER'])
+        mq_subscriber_src = ['messagequeue/mq_subscriber.cpp']
+        cc_sample_app_env.Program('mq_subscriber', mq_subscriber_src)
+
+######################################################################
+# Samples for group and invite
+######################################################################
+group_invite_src = ['group_invite/group_invite.cpp']
+cc_sample_app_env.Program('group_invite_sample', group_invite_src)

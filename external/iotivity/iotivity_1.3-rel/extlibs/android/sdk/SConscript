@@ -1,0 +1,53 @@
+##
+# Script to download/install the Android SDK if it is not present
+# Only done if ANDROID_HOME is not set; if it is, assume just use that
+# ANDROID_HOME is set as a side effect
+##
+
+import os
+import sys
+
+Import('env')
+
+SDK_VER = 'r24.2'
+src_dir = env.get('SRC_DIR')
+
+SConscript('#/build_common/tools/UnpackAll.py')
+
+host_os = sys.platform
+
+if not env.get('ANDROID_HOME'):
+    # older IoTivity versions expected the SDK at this position.
+    # left for backwards compatibility (including hardcoded version)
+    androidlib_dir = src_dir + '/extlibs/android/sdk/android-sdk_' + SDK_VER
+
+    if not os.path.exists(androidlib_dir):
+        androidlib_bundle = os.path.join(src_dir, 'extlibs', 'android', 'sdk', 'android-sdk_' + SDK_VER)
+        androidlib_url = 'http://dl.google.com/android/android-sdk_' + SDK_VER
+        # if back-compat one didn't exist, redefine to new location
+        androidlib_dir = os.path.join(src_dir, 'extlibs', 'android', 'sdk', 'android-sdk')
+        if host_os.startswith("linux"):
+            androidlib_bundle += '-linux.tgz'
+            androidlib_url += '-linux.tgz'
+            androidlib_dir += '-linux'
+        elif host_os == "darwin":
+            androidlib_bundle += '-macosx.zip'
+            androidlib_url += '-macosx.zip'
+            androidlib_dir += '-macosx'
+        elif host_os == "win32":
+            androidlib_bundle += '-windows.zip'
+            androidlib_url += '-windows.zip'
+            androidlib_dir += '-windows'
+
+    if not os.path.exists(androidlib_dir):
+        if not os.path.exists(androidlib_bundle):
+            print "Retrieving Android SDK bundle"
+            androidlib_zip = env.Download(androidlib_bundle, androidlib_url)
+        else:
+            androidlib_zip = androidlib_bundle
+
+        print 'Unzipping Android lib...'
+        env.UnpackAll(androidlib_dir, androidlib_zip)
+        print 'Unzipping Android lib complete'
+    # export the location of the SDK
+    env.Replace(ANDROID_HOME=androidlib_dir)

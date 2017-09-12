@@ -1,0 +1,141 @@
+#******************************************************************
+#
+# Copyright 2017 Microsoft
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+import os
+import os.path
+
+# Set to 1 for the test elevator client and elevator server to communicate through IoTivity stack.
+use_iotivity = 0
+
+Import('test_env')
+ipcatest_env = test_env.Clone()
+src_dir = ipcatest_env.get('SRC_DIR')
+target_os = ipcatest_env.get('TARGET_OS')
+
+######################################################################
+# Build flags
+######################################################################
+ipcatest_env.AppendUnique(CPPPATH=[
+    '#/resource/include',
+    '#/resource/oc_logger/include',
+    '#/resource/csdk/include',
+    '#/resource/csdk/stack/include',
+    '#/resource/csdk/security/include',
+    '#/resource/csdk/security/provisioning/include',
+    '#/resource/csdk/security/provisioning/include/internal',
+    '#/resource/csdk/stack/include/internal',
+    '#/resource/csdk/connectivity/api',
+    '#/resource/csdk/connectivity/external/inc',
+    '#/resource/csdk/ocsocket/include',
+    '#/resource/csdk/logger/include',
+    '#/resource/c_common',
+    '#/resource/c_common/ocrandom/include',
+    '#/resource/c_common/octhread/include',
+    '#/resource/c_common/oic_malloc/include',
+    '#/resource/c_common/oic_string/include',
+    '#/resource/c_common/oic_time/include',
+    '#/extlibs/boost/boost',
+    '#/extlibs/libcoap/libcoap/include',
+    '../inc',
+    '../src/inc',
+])
+
+ipcatest_env.PrependUnique(LIBS=[
+        'oc_logger_internal',
+        'octbstack',
+        'ipca_static',
+        'logger',
+        'c_common',
+        ])
+
+if use_iotivity == 1:
+    ipcatest_env.PrependUnique(LIBS = [
+        'oc',
+        'connectivity_abstraction',
+        'coap',
+        ])
+
+    if ipcatest_env.get('SECURED') == '1':
+        ipcatest_env.PrependUnique(LIBS = [
+            'mbedtls',
+            'mbedx509',
+            'mbedcrypto',
+            'ocprovision'
+            ])
+
+if target_os in ['msys_nt', 'windows']:
+    ipcatest_env.AppendUnique(LINKFLAGS = ['/subsystem:CONSOLE'])
+    ipcatest_env.AppendUnique(LIBS=['win_helper'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+
+unittests_src = [
+        'ipcaunittests.cpp',
+        'IPCAElevatorClient.cpp',
+        'testelevatorserver.cpp',
+        'testelevatorclient.cpp'
+    ]
+
+if use_iotivity == 0:
+    unittests_src += [
+        'mockOC.cpp',
+        'mockInProcClientWrapper.cpp',
+        'mockInProcServerWrapper.cpp',
+        'mockOCPlatform_impl.cpp',
+        'mockOCProvision.cpp',
+        '#/resource/src/OCRepresentation.cpp'
+        ]
+
+if target_os not in ['windows', 'msys_nt']:
+    ipcatest_env.AppendUnique(LIBS = ['dl'])
+
+if 'g++' in ipcatest_env.get('CXX'):
+    ipcatest_env.AppendUnique(LIBS = ['pthread'])
+
+if target_os in ['linux']:
+    if not ipcatest_env.get('RELEASE'):
+        ipcatest_env.PrependUnique(LIBS = ['gcov'])
+        ipcatest_env.AppendUnique(CXXFLAGS = ['--coverage'])
+
+ipcatest_src_dir = os.path.join(src_dir, 'resource', 'IPCA', 'unittests') + os.sep
+ipcatest_build_dir = os.path.join(
+                         ipcatest_env.get('BUILD_DIR'), 'resource', 'IPCA', 'unittests') + os.sep
+
+ipcatest_env.Alias("install", ipcatest_env.Install( ipcatest_build_dir,
+    ipcatest_src_dir + 'IPCAUnitTest.json'))
+ipcatest_env.Alias("install", ipcatest_env.Install( ipcatest_build_dir,
+    ipcatest_src_dir + 'IPCAUnitTest.dat'))
+
+ipcatests = ipcatest_env.Program('ipcatests', unittests_src)
+
+if target_os in ['windows']:
+    #path to ipca.dll
+    ipcatest_env.AppendENVPath('PATH', ipcatest_env.get('BUILD_DIR'))
+
+if ipcatest_env.get('TEST') == '1':
+    if target_os in ['windows']:
+        from tools.scons.RunTest import *
+        run_test(ipcatest_env,
+                 'resource_ipca_unittests.memcheck',
+                 'resource/ipca/unittests/ipcatests',
+                 ipcatests)
+

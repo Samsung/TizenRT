@@ -1,0 +1,24 @@
+##
+# Make sure gradle exists
+# Note this script is only called if ANDROID_GRADLE was not set to begin with,
+# so we can safely set it here.
+
+import os
+
+Import('env')
+
+GRADLE_VER = '2.2.1'
+
+gradle_dir = 'gradle-' + GRADLE_VER
+gradle_zip_file = 'gradle-' + GRADLE_VER + '-bin.zip'
+gradle_url = 'https://services.gradle.org/distributions/' + gradle_zip_file
+
+if not os.path.exists(gradle_dir):
+    if not os.path.exists(gradle_zip_file):
+        print "Retrieving Android Gradle bundle"
+        gradle_zip = env.Download(gradle_zip_file, gradle_url)
+    gradle_unpacked = env.UnpackAll(gradle_dir, gradle_zip)
+
+# export the location of the gradle script
+android_gradle = os.path.join(Dir('.').abspath, gradle_dir, 'bin/gradle')
+env.Replace(ANDROID_GRADLE=android_gradle)

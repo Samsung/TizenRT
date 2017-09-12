@@ -1,0 +1,44 @@
+# -*- mode: python; python-indent-offset: 4; indent-tabs-mode: nil -*-
+##
+# This script set linux specific flags (GNU GCC)
+#
+##
+import os
+Import('env')
+
+# Add the default lib directory
+build_dir = env.get('BUILD_DIR')
+env.AppendUnique(LIBPATH=[build_dir])
+env.AppendENVPath('LD_LIBRARY_PATH', [build_dir])
+
+# Set release/debug flags
+if env.get('RELEASE'):
+    env.AppendUnique(CCFLAGS=['-Os'])
+else:
+    env.AppendUnique(CCFLAGS=['-g'])
+
+# Test Coverage Flags and Library (if RELEASE=0)
+if not env.get('RELEASE'):
+    env.AppendUnique(LIBS=['gcov'])
+    env.AppendUnique(CCFLAGS=['--coverage', '-fPIC', '-O0'])
+
+env.AppendUnique(CPPDEFINES=['WITH_POSIX', '__linux__'])
+env.AppendUnique(CFLAGS=['-std=gnu99'])
+env.AppendUnique(CCFLAGS=['-Wall', '-Wextra', '-fPIC'])
+env.AppendUnique(LIBS=['dl', 'pthread', 'uuid'])
+
+# Set arch flags that match best TARGET_ARCH variable
+if not env.get('WITH_ENV'):
+    target_arch = env.get('TARGET_ARCH')
+    if target_arch in ['x86']:
+        env.AppendUnique(CCFLAGS=['-m32'])
+        env.AppendUnique(LINKFLAGS=['-m32'])
+    elif target_arch in ['x86_64']:
+        env.AppendUnique(CCFLAGS=['-m64'])
+        env.AppendUnique(LINKFLAGS=['-m64'])
+    elif target_arch in ['arm']:
+        env.AppendUnique(CPPFLAGS=['-march=armv5te'])
+    elif target_arch in ['arm-v7a', 'armeabi-v7a']:
+        env.AppendUnique(CPPFLAGS=['-march=armv7-a'])
+    elif target_arch.find('arm64') > 0:
+        env.AppendUnique(CPPFLAGS=['-march=armv8-a'])

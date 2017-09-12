@@ -1,0 +1,218 @@
+##
+# This script includes windows specific config (MSVS/MSVC)
+##
+Import('env')
+import os
+import winreg
+import platform
+
+build_dir = env.get('BUILD_DIR')
+
+def OpenRegKey(env, key, sub_key, reg_view_64bit=False):
+    # Default access
+    reg_access_mask = winreg.KEY_READ
+    if reg_view_64bit:
+        # Access the 64bit Registry View
+        reg_access_mask |= winreg.KEY_WOW64_64KEY
+
+    try:
+        hkey = winreg.OpenKey(key,
+                              sub_key,
+                              0, # Reserved
+                              reg_access_mask)
+    except WindowsError, err:
+        if err.errno != os.errno.ENOENT:
+            # Couldn't open Registry Key
+            Exit('Error: Could not Open %s Registry Key. Err=%s' % (sub_key, err.errno))
+        else:
+            # Registry Key not found
+            hkey = None
+
+    return hkey
+
+def ReadRegistryStringValue(env, key, sub_key, value_name, reg_view_64bit=False):
+    hkey = env.OpenRegKey(key, sub_key, reg_view_64bit)
+    if hkey:
+        try:
+            (value, type) = winreg.QueryValueEx(hkey, value_name)
+            if type != winreg.REG_SZ:
+                Exit('Error: Registry Value \'%s\' is not a String' % value_name)
+        except WindowsError, err:
+            if err.errno != os.errno.ENOENT:
+                Exit('Error: Could not QueryValueEx for Registry Value \'%s\'. Err=%s' \
+                     % (value_name, err.errno))
+            else:
+                # Registry Value not found
+                value = None
+
+        hkey.Close()
+    else:
+        value = None
+
+    return value
+
+def SetupMSBuildEnv(env):
+    # Add MSBuild path to path
+    msbuild_reg_path = 'SOFTWARE\\Microsoft\\MSBuild\\ToolsVersions\\' + env.get('MSVC_VERSION')
+    # MSBuild executable arch needs to be the same as the python/SCons environment Arch.
+    # Open the Registry key with the same registry view as the environment (handled by the
+    # winreg.OpenKey function)
+    msbuild_path = env.ReadRegistryStringValue(winreg.HKEY_LOCAL_MACHINE,
+                                               msbuild_reg_path,
+                                               'MSBuildToolsPath')
+    if not msbuild_path:
+        Exit('Error: Could not Find the MSBuild Registry Key/Value')
+
+    env.AppendUnique(PATH = [msbuild_path])
+    # Need to update the 'ENV' dictionary PATH as that's what is used when executing
+    # commands
+    env['ENV']['PATH'] = env.get('PATH')
+
+def GetMSBuildArgs(env):
+    target_arch = env.get('TARGET_ARCH')
+    platform = target_arch
+    if target_arch in ['amd64']:
+        platform = 'x64'
+
+    # Set configuration value used by Visual Studio.
+    if env.get('RELEASE'):
+        configuration = 'Release'
+    else:
+        configuration = 'Debug /p:AppxPackageAllowDebugFrameworkReferencesInManifest=true'
+
+    # Get the MSBuildOutDir env variable for the output directory
+    # Note: This should only be set on a cloned Environment and not the global one
+    outdir = env.get('MSBuildOutDir')
+
+    return (configuration, platform, outdir)
+
+def MSBuildGenerator(source, target, env, for_signature):
+    env.SetupMSBuildEnv()
+    (configuration, platform, outdir) = env.GetMSBuildArgs()
+
+    msbuild_cmd = 'msbuild.exe %s /p:Configuration=%s /p:Platform=%s /p:OutDir="%s"' \
+                  % (source[0], configuration, platform, outdir)
+    return msbuild_cmd
+
+def MSBuildClean(env, target, solutionfile):
+    env.SetupMSBuildEnv()
+    (configuration, platform, outdir) = env.GetMSBuildArgs()
+
+    msbuild_cmd = 'msbuild.exe %s /p:Configuration=%s /p:Platform=%s /p:OutDir="%s" /t:Clean' \
+                  % (solutionfile, configuration, platform, outdir)
+    env.Execute(msbuild_cmd)
+
+if env.get('MSVC_UWP_APP') == '1':
+    # Create an MSBuilder that uses a generator to generate the MSBuild actions
+    MSBuilder = Builder(generator = MSBuildGenerator)
+    # Add the builder to the env
+    env.Append(BUILDERS = {'MSBuild' : MSBuilder})
+    # Add MSBuildClean function to env
+    env.AddMethod(MSBuildClean)
+    # Add SetupMSBuildEnv function to env
+    env.AddMethod(SetupMSBuildEnv)
+    # Add GetMSBuildArgs function to env
+    env.AddMethod(GetMSBuildArgs)
+    # Add OpenRegKey function to env
+    env.AddMethod(OpenRegKey)
+    # Add ReadRegistryStringValue function to env
+    env.AddMethod(ReadRegistryStringValue)
+
+# Set common flags
+if env['CC'] == 'cl':
+    if env.get('MSVC_UWP_APP') == '1':
+        # Currently only supports VS2015 (14.0)
+        # TODO add VS2017 (15.0)
+        supported_uwp_msvc_versions = ['14.0']
+        # If MSVC_VERSION is not supported for UWP, exit on error
+        if env.get('MSVC_VERSION') not in supported_uwp_msvc_versions:
+            msg = '\nError: Trying to Build UWP binaries with unsupported Visual Studio version\n'
+            Exit(msg)
+
+    #  - warning C4133: incompatible type conversion
+    env.AppendUnique(CCFLAGS=['/we4133'])
+
+    # Disable the following warnings:
+    #  - warning C4127: conditional expression is constant
+    #    - Disabled due to the widespread usage in IoTivity
+    #  - warning C4200: zero-sized array in struct/union.
+    #    - It is an acceptable approach for variable size structs.
+    #  - warning C4201: nameless struct/union
+    #    - Disabled due to IoTivity not being ANSI compatible
+    #  - warning C4204: nonstandard extension used: non-constant aggregate initializer
+    #    - Disabled due to IoTivity not being ANSI compatible and this is an appropriate way to intialize
+    #      structs for non-legacy compilers.
+    #  - warning C4214:  bit field types other than int
+    #    - Disabled due to IoTivity not being ANSI compatible
+    #  - warning C4221: nonstandard extension used: 'identifier' cannot be initialized using address of automatic variable
+    #    - Disabled due to IoTivity not being ANSI compatible
+    #  - warning C4232: nonstandard extension used: 'read': address of dllimport 'fread' is not static, identity not guaranteed
+    #    - fread, frwrite, etc are provided by the platform and cannot be changed.
+    #  - warning C4503: decorated name length exceeded, name was truncated.
+    #    - Might cause issues during linking and debugging.
+    #  - warning C4512: assignment operator could not be generated.
+    #    - It's an acceptable warning displayed only by Visual Studio 2013 compiler.
+    #  - warning C4706: assignment within conditional expression
+    #    - Disabled due to the widespread usage in IoTivity and low impact.
+    env.AppendUnique(CCFLAGS=[
+        '/wd4127', '/wd4200', '/wd4201', '/wd4204', '/wd4214', '/wd4221',
+        '/wd4232', '/wd4503', '/wd4512', '/wd4706'])
+
+    # Enabling /W4 warnings globally for Windows builds.
+    env.AppendUnique(CCFLAGS=['/W4', '/WX'])
+    env.AppendUnique(CCFLAGS=['/EHsc'])
+
+    # Set release/debug flags
+    if env.get('RELEASE'):
+        env.AppendUnique(CCFLAGS=['/MD', '/O2', '/GF'])
+    else:
+        env.AppendUnique(CCFLAGS=['/MDd', '/Od', '/RTC1'])
+        env.AppendUnique(LINKFLAGS=['/debug'])
+
+
+    # Work around [IOT-1986]
+    # During some Windows multi-threaded builds, SCons/Python/Pywin32 appear to try
+    # linking with these static libraries while another SCons thread started executing
+    # InstallTarget() for this static LIB, but didn't finish yet. That behavior results
+    # in linker errors. Work around this issue by linking with the source of InstallTarget(),
+    # rather than the target.
+    env.PrependUnique(LIBPATH=[
+        os.path.join(build_dir, 'resource', 'src'),
+        os.path.join(build_dir, 'resource', 'c_common', 'windows'),
+        os.path.join(build_dir, 'resource', 'oc_logger'),
+        os.path.join(build_dir, 'resource', 'csdk', 'resource-directory'),
+        '#extlibs/mbedtls',
+    ])
+
+    env['PDB'] = '${TARGET.base}.pdb'
+    env.Append(LINKFLAGS=['/PDB:${TARGET.base}.pdb'])
+
+    # Visual Studio compiler complains that functions like strncpy are unsafe. We
+    # are aware that it's possible to create a non-null terminated string using the
+    # strncpy function.  However, the str*_s functions are not standard and thus
+    # will not work on all systems supported by IoTivity. This will prevent Visual
+    # Studio from displaying unwanted warnings.
+    # See https://msdn.microsoft.com/en-us/library/ttcz0bys.aspx for more details.
+    env.AppendUnique(CPPDEFINES=['_CRT_SECURE_NO_WARNINGS', '_CRT_NONSTDC_NO_WARNINGS', '_SCL_SECURE_NO_WARNINGS'])
+
+    if env.get('MSVC_UWP_APP') != '1':
+        # Add Desktop specific libraries
+        env.AppendUnique(LIBS=[
+            'bcrypt',
+            'ws2_32',
+            'advapi32',
+            'iphlpapi',
+            'crypt32',
+            'kernel32',
+        ])
+    else:
+        # Add Windows Universal Platform specific libraries and flags
+        # Note: We technically should set WINAPI_FAMILY=WINAPI_FAMILY_APP, but cannot
+        #       due to [IOT-2312]. All APIs used are store/UWP compatible at this time.
+        env.AppendUnique(CPPDEFINES=['UWP_APP', '__WRL_NO_DEFAULT_LIB__'])
+        env.AppendUnique(LINKFLAGS=['/MANIFEST:NO', '/WINMD:NO', '/APPCONTAINER'])
+        env.AppendUnique(LIBS=['WindowsApp', 'bcrypt', 'ws2_32', 'iphlpapi', 'crypt32'])
+
+elif env['CC'] == 'gcc':
+    msg = "\nError: gcc not supported on Windows.  Use Visual Studio!\n"
+    Exit(msg)

@@ -1,0 +1,36 @@
+##
+# This script sets compiler flags for
+# MinGW in the MSYS environment.
+##
+Import('env')
+
+# Set common flags
+# Overwrite suffixes and prefixes
+if env['TARGET_OS'] == 'msys_nt':
+    env['SHLIBPREFIX'] = 'lib'
+
+# Add MinGW-specific libraries
+env.AppendUnique(
+    LIBS=['bcrypt', 'ws2_32', 'advapi32', 'iphlpapi', 'crypt32', 'kernel32'])
+
+target_arch = env.get('TARGET_ARCH')
+
+if env['CC'] == 'gcc':
+    if env.get('RELEASE'):
+        env.AppendUnique(CCFLAGS=['-Os'])
+    else:
+        env.AppendUnique(CCFLAGS=['-g'])
+    env.AppendUnique(CFLAGS=['-std=c99'])
+    env.AppendUnique(CXXFLAGS=['-std=c++11'])
+    env.AppendUnique(CCFLAGS=['-Wall', '-Wextra', '-Wa,-mbig-obj'])
+    env.AppendUnique(CPPDEFINES=[
+        'WITH_POSIX', '_GNU_SOURCE', '__msys_nt__', '_WIN32_WINNT=0x0600'
+    ])
+
+    # Set arch flags
+    if target_arch in ['x86']:
+        env.AppendUnique(CCFLAGS=['-m32'])
+        env.AppendUnique(LINKFLAGS=['-m32'])
+    elif target_arch in ['x86_64']:
+        env.AppendUnique(CCFLAGS=['-m64'])
+        env.AppendUnique(LINKFLAGS=['-m64'])

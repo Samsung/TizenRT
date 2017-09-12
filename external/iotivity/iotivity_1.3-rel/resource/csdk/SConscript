@@ -1,0 +1,50 @@
+#******************************************************************
+#
+# Copyright 2014 Intel Mobile Communications GmbH All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# liboctbstack (share library) build script
+##
+Import('env')
+
+target_os = env.get('TARGET_OS')
+rd_mode = env.get('RD_MODE')
+
+
+
+# Build liblogger
+SConscript('logger/SConscript')
+
+# Build connectivity
+SConscript('connectivity/SConscript')
+
+if env.get('ROUTING') in ['GW', 'EP']:
+    # Build Routing
+    SConscript('routing/SConscript')
+
+if 'CLIENT' in rd_mode or 'SERVER' in rd_mode:
+    SConscript('resource-directory/SConscript')
+
+# Build libocsrm
+SConscript('security/SConscript')
+
+# Build liboctbstack
+SConscript('stack/SConscript')
+
+env.UserInstallTargetHeader('include/octypes.h', 'resource', 'octypes.h')

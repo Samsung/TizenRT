@@ -1,0 +1,15 @@
+##
+# This script is for fixing Tizen RT platform compatibility problem
+##
+
+import os
+
+Import('env')
+
+tizenrt_compat_env = env.Clone()
+
+tizenrt_compat_lib = tizenrt_compat_env.StaticLibrary(env.get('BUILD_DIR') + '/tizenrt_compat',
+	env.SrcToObj(os.path.abspath('./tizenrt_compat.c'), env.get('SRC_DIR')))
+
+env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
+env.AppendUnique(LIBS = ['tizenrt_compat'])

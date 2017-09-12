@@ -1,0 +1,189 @@
+##
+# CA build script
+##
+import os.path
+
+Import('connectivity_env')
+
+ca_os = connectivity_env.get('TARGET_OS')
+ca_transport = connectivity_env.get('TARGET_TRANSPORT')
+secured = connectivity_env.get('SECURED')
+with_mbedtls_static = connectivity_env.get('WITH_MBEDTLS_STATIC_LIB');
+multiple_owner = connectivity_env.get('MULTIPLE_OWNER')
+with_ra = connectivity_env.get ('WITH_RA')
+with_ra_ibb = connectivity_env.get('WITH_RA_IBB')
+with_tcp = connectivity_env.get('WITH_TCP')
+src_dir = connectivity_env.get('SRC_DIR')
+root_dir = os.pardir
+ca_path = os.curdir
+
+#####################################################################
+# Source files and Target(s)
+######################################################################
+
+print"Reading ca script %s"%ca_transport
+
+connectivity_env.PrependUnique(CPPPATH = [ os.path.join(root_dir, 'api') ])
+
+with_upstream_libcoap = connectivity_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+    connectivity_env.AppendUnique(CPPPATH = [os.path.join('#extlibs', 'libcoap', 'libcoap', 'include')])
+else:
+    connectivity_env.AppendUnique(CPPPATH = [ os.path.join('#resource', 'csdk', 'connectivity', 'lib', 'libcoap-4.1.1', 'include')])
+
+connectivity_env.AppendUnique(CPPPATH = [
+        os.path.join(root_dir, 'inc'),
+        os.path.join(src_dir, 'resource', 'csdk', 'logger', 'include'),
+        os.path.join(root_dir, 'common', 'inc'),
+        os.path.join(root_dir, 'util', 'inc'),
+        ])
+
+if ca_os not in ['darwin', 'ios', 'windows']:
+    connectivity_env.AppendUnique(LINKFLAGS = ['-Wl,--no-undefined'])
+
+# Getting common source files
+connectivity_env.SConscript(os.path.join(root_dir, 'common', 'SConscript'), exports = 'connectivity_env')
+
+# Getting util source files
+connectivity_env.SConscript(os.path.join(root_dir, 'util', 'SConscript'), exports = 'connectivity_env')
+
+build_dir = connectivity_env.get('BUILD_DIR')
+
+connectivity_env.AppendUnique(CA_SRC = [os.path.join(ca_path,'adapter_util/caadapterutils.c')])
+
+if (('BLE' in ca_transport) or ('ALL' in ca_transport)):
+    connectivity_env.AppendUnique(CA_SRC = [os.path.join(ca_path, 'adapter_util/cafragmentation.c')])
+
+# Build mbedtls as ocstack uses hash functions from mbedcrypto.lib.
+tls_path = 'extlibs/mbedtls';
+tls_headers_path = 'mbedtls/include';
+if ca_os == 'tizen' and os.path.exists(root_dir + '/' + tls_path):
+    connectivity_env.SConscript(os.path.join(root_dir, tls_path + '/SConscript'))
+    connectivity_env.AppendUnique(CPPPATH = [os.path.join(root_dir, tls_path + '/' + tls_headers_path)])
+else:
+    if ca_os != 'android' and connectivity_env.get('PLATFORM_TLS') == '0':
+        connectivity_env.SConscript('#' + tls_path + '/SConscript')
+    connectivity_env.AppendUnique(CPPPATH = ['#' + tls_path + '/' + tls_headers_path])
+
+if connectivity_env.get('SECURED') == '1':
+    connectivity_env.AppendUnique(CPPPATH = ['#/resource/c_common/octimer/include'])
+    connectivity_env.AppendUnique(CPPPATH = [src_dir + '/resource/csdk/security/include'])
+    connectivity_env.AppendUnique(CPPPATH = [os.path.join(root_dir, 'external/inc')])
+    if ca_os != 'tizen' or os.path.exists(root_dir + '/' + tls_path) == False:
+        connectivity_env.AppendUnique(CA_SRC = [os.path.join(ca_path, 'adapter_util/ca_adapter_net_ssl.c')])
+
+ca_common_src = None
+
+if with_ra_ibb:
+    connectivity_env.SConscript('#extlibs/wksxmppxep/SConscript')
+
+if ca_os == 'arduino':
+    print "setting WITH_ARDUINO"
+    ca_common_src = [
+        'caconnectivitymanager.c',
+        'cainterfacecontroller.c',
+        'camessagehandler.c',
+        'canetworkconfigurator.c',
+        'caprotocolmessage.c',
+        'caretransmission.c',
+        ]
+else:
+    ca_common_src = [
+        'caconnectivitymanager.c',
+        'cainterfacecontroller.c',
+        'camessagehandler.c',
+        'canetworkconfigurator.c',
+        'caprotocolmessage.c',
+        'caqueueingthread.c',
+        'caretransmission.c',
+        ]
+    if (('IP' in ca_transport) or ('ALL' in ca_transport)):
+        connectivity_env.AppendUnique(CA_SRC = [os.path.join(ca_path, 'cablockwisetransfer.c') ])
+
+ca_common_src = [
+        os.path.join(ca_path, d) for d in ca_common_src ]
+
+connectivity_env.AppendUnique(CA_SRC = ca_common_src)
+
+transports = set()
+if 'ALL' in ca_transport:
+    if with_ra:
+        transports.add('ra_adapter')
+
+    if ca_os in ['linux']:
+        transports.add('ip_adapter')
+        transports.add('bt_le_adapter')
+    elif ca_os in ['tizen']:
+        transports.add('ip_adapter')
+        transports.add('bt_edr_adapter')
+        transports.add('bt_le_adapter')
+    elif ca_os in ['android']:
+        transports.add('ip_adapter')
+        transports.add('bt_edr_adapter')
+        transports.add('bt_le_adapter')
+        transports.add('nfc_adapter')
+    elif ca_os in['darwin','ios', 'msys_nt', 'windows']:
+        transports.add('ip_adapter')
+    else:
+        transports.add('ip_adapter')
+        transports.add('bt_edr_adapter')
+        transports.add('bt_le_adapter')
+
+    connectivity_env.SConscript(dirs = [
+        os.path.join(ca_path, d) for d in transports ], exports = 'connectivity_env')
+
+if 'IP' in ca_transport:
+    transports.add('ip_adapter')
+    if ca_os == 'arduino' and with_tcp:
+        transports.add('tcp_adapter')
+
+if 'BT' in ca_transport:
+    transports.add('bt_edr_adapter')
+
+if 'BLE' in ca_transport:
+    transports.add('bt_le_adapter')
+
+if 'NFC' in ca_transport:
+    transports.add('nfc_adapter')
+
+if ca_os in ['linux', 'tizen', 'android', 'ios', 'windows', 'tizenrt'] and with_tcp:
+    transports.add('tcp_adapter')
+
+SConscript(dirs = list(transports), exports='connectivity_env')
+
+# prevent unused-parameter warning from bluez-glue.c and object_manager-glue.c
+# files when building bt_le_adapter. These files are generated by a tool and
+# should not be changed. We should not be hiding the unused-parameter but in
+# this limited case a exception is made.
+if ca_os in ['linux']:
+    if 'bt_le_adapter' in transports:
+        connectivity_env.AppendUnique(CCFLAGS=['-Wno-unused-parameter'])
+
+if ca_os == 'android':
+    connectivity_env.AppendUnique(LINKFLAGS = ['-Wl,-soname,libca-interface.so'])
+    connectivity_env.AppendUnique(LINKFLAGS = ['-Wl,-soname,libconnectivity_abstraction.so'])
+
+if connectivity_env.get('SECURED') == '1':
+    if with_mbedtls_static == '1':
+        connectivity_env.AppendUnique(LIBS = ['mbedtls','mbedx509'])
+
+# c_common calls into mbedcrypto.
+if with_mbedtls_static == '1':
+    connectivity_env.AppendUnique(LIBS = ['mbedcrypto'])
+
+calib_internal = connectivity_env.StaticLibrary('connectivity_abstraction_internal', connectivity_env.get('CA_SRC'))
+calib = Flatten(calib_internal)
+
+if ca_os in ['android', 'tizen', 'linux', 'yocto']:
+    connectivity_env.AppendUnique(LIBS = ['coap'])
+    if ca_os != 'android':
+        connectivity_env.AppendUnique(LIBS = ['rt'])
+    static_calib = connectivity_env.StaticLibrary('connectivity_abstraction', connectivity_env.get('CA_SRC'))
+    shared_calib = connectivity_env.SharedLibrary('connectivity_abstraction', connectivity_env.get('CA_SRC'))
+    calib += Flatten([static_calib, shared_calib])
+elif ca_os not in ['msys_nt', 'windows']:
+    static_calib = connectivity_env.StaticLibrary('connectivity_abstraction', connectivity_env.get('CA_SRC'))
+    calib += Flatten(static_calib)
+
+connectivity_env.InstallTarget(calib, 'connectivity_abstraction')
+connectivity_env.UserInstallTargetLib(calib, 'connectivity_abstraction')

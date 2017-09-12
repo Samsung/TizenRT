@@ -1,0 +1,64 @@
+#******************************************************************
+#
+# Copyright 2014 Intel Mobile Communications GmbH All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# 'unit_tests' script for building unit tests and libs
+#
+##
+
+Import('env')
+
+target_os = env.get('TARGET_OS')
+
+build_tests = False
+
+if target_os in ['windows']:
+    # gtest has a lot of windows native/desktop only APIs. As all unit tests depend on gtest,
+    # only enable unit tests if building for Win32.
+    if env.get('MSVC_UWP_APP') != '1':
+        build_tests = True
+elif target_os in ['darwin', 'linux', 'msys_nt']:
+    build_tests = True
+
+if build_tests:
+    # Verify that 'google unit test' library is installed.  If not,
+    # get it and install it
+    test_env = SConscript('#extlibs/gtest/SConscript')
+
+    if target_os in ['linux', 'windows']:
+        # Verify that 'hippomocks' mocking code is installed.  If not,
+        # get it and install it
+        SConscript('#extlibs/hippomocks/SConscript')
+
+        # Build Common unit tests
+        SConscript('c_common/unittests/SConscript', 'test_env')
+
+        # Build C++ unit tests
+        SConscript('unittests/SConscript', 'test_env')
+
+        # Build Security Resource Manager and Provisioning API unit test
+        if env.get('SECURED') == '1':
+            SConscript('provisioning/unittests/SConscript', 'test_env')
+
+        # Build IPCA unit tests
+        SConscript('IPCA/unittests/SConscript', 'test_env')
+
+    # Build C unit tests
+    SConscript('csdk/unittests/SConscript', 'test_env')

@@ -1,0 +1,135 @@
+# -*- mode: python; python-indent-offset: 4; indent-tabs-mode: nil -*-
+##
+# This script sets darwin specific flags (GNU GCC)
+# Note this script is also called from the iOS SConscript, handle both
+#
+##
+import os
+import subprocess
+from distutils.version import StrictVersion
+
+Import('env')
+
+target_arch = env.get('TARGET_ARCH')
+target_os = env.get('TARGET_OS')
+
+# Locate an appropriate SDK to use for the iotivity build.
+# This is a bit fragile, we are parsing text output of a command,
+# output not guaranteed not to change (has already happened)
+# These two commands are used to query the xcode environment:
+tc_path = subprocess.check_output('xcode-select -p', shell=True).rstrip()
+tc_sdks = subprocess.check_output('xcodebuild -showsdks', shell=True)
+
+# 'xcodebuild -showsdks'  returns information formatted as:
+#
+# SDK category:
+#        target version -sdk sdktag
+#
+# For example:
+# macOS SDKs:
+#        macOS 10.12                     -sdk macosx10.12
+#
+# collect installed sdks for each target we might care about
+mac_sdks = []
+ios_sdks = []
+sim_sdks = []
+collecting = False
+for line in tc_sdks.split('\n'):
+    if collecting:
+        if "-sdk" in line:
+            # drop the trailing "-sdk sdktag
+            sdks.append(line.split('-sdk')[0].strip())
+        else:  # blank line signals end of this list
+            collecting = False
+    elif "SDKs:" in line:  # the start of a new list of sdks
+        collecting = True
+        if line.startswith("macOS SDKs:") or line.startswith("OS X SDKs:"):
+            sdks = mac_sdks
+        elif line.startswith("iOS SDKs:"):
+            sdks = ios_sdks
+        elif line.startswith("iOS Simulator SDKs:"):
+            sdks = sim_sdks
+        else:
+            collecting = False  # not a caregory we care about, so skip
+
+# now pick the list for the requested target
+if target_os == 'darwin':
+    sdks = mac_sdks
+elif target_os == 'ios':
+    if target_arch in ['i386', 'x86_64']:  # Simulator
+        sdks = sim_sdks
+    else:
+        sdks = ios_sdks
+else:  # no reason for this to happen, but for completeness
+    sdks = None
+
+if not sdks:
+    msg = "\nError: no usable SDK for %s found\n" % target_os
+    msg += "mac sdks found: " + str(mac_sdks)
+    msg += "ios sdks found: " + str(ios_sdks)
+    msg += "simulator sdks found: " + str(sim_sdks)
+    Exit(msg)
+
+# find the latest installed sdk
+# to help compare strings containing version, use distutils.StrictVersion
+maxsdk = '0.0'
+for sdk in sdks:
+    # want just the version code, which is now last word of the line
+    p = sdk.rsplit(' ', 1)[1]
+    if StrictVersion(p) > StrictVersion(maxsdk):
+        maxsdk = p
+
+# SYS_VERSION build option
+help_vars = Variables()
+help_vars.Add('SYS_VERSION',
+              'minimum MAC OS X SDK version / IOS SDK version',
+              os.environ.get('SYS_VERSION'))
+help_vars.Update(env)
+Help(help_vars.GenerateHelpText(env))
+
+# Figure out which SDK version to build for:
+# 1. if no version requested, use the largest auto-detected one
+# 2. if version requested and it is too large, bail with error
+# 3. if version requested is not installed, fall back to auto-detected max.
+#    cannot just use as minimum (e.g. -mmacosx-version-min=), since
+#    version also used in building sysroot path, which must exist
+sys_version = env.get('SYS_VERSION')
+if sys_version is None:
+    sys_version = maxsdk
+elif StrictVersion(sys_version) > StrictVersion(maxsdk):
+    msg = "\nError: target version %s cannot be satisfied\n" % sys_version
+    msg += "max installed SDK version is %s\n" % maxsdk
+    Exit(msg)
+elif sys_version not in sdks:
+    sys_version = maxsdk
+env['SYS_VERSION'] = sys_version  # for the benefit of ../ios/SConscript
+
+if env.get('RELEASE'):
+    env.AppendUnique(CCFLAGS=['-Os'])
+else:
+    env.AppendUnique(CCFLAGS=['-g'])
+    env.AppendUnique(LINKFLAGS=['-g'])
+
+if env.get('SECURED') == '1':
+    env.AppendUnique(LIBS=['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+sys_root = tc_path
+tmpl = '/Platforms/%s.platform/Developer/SDKs/%s%s.sdk/'
+if target_os == 'darwin':
+    sys_root += tmpl % ('MacOSX', 'MacOSX', sys_version)
+else:
+    if target_arch in ['i386', 'x86_64']:
+        sys_root += tmpl % ('iPhoneSimulator', 'iPhoneSimulator', sys_version)
+    else:
+        sys_root += tmpl % ('iPhone', 'iPhone', sys_version)
+if not os.path.exists(sys_root):
+    msg = "\nError: SDK directory not found at %s\n" % sys_root
+    Exit(msg)
+
+env.AppendUnique(CCFLAGS=['-arch', target_arch, '-isysroot', sys_root])
+env.AppendUnique(LINKFLAGS=['-arch', target_arch, '-isysroot', sys_root])
+
+if target_os == 'darwin':
+    flag = '-mmacosx-version-min=' + sys_version
+    env.AppendUnique(CCFLAGS=[flag])
+    env.AppendUnique(LINKFLAGS=[flag])

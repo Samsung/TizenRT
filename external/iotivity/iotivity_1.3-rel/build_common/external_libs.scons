@@ -1,0 +1,72 @@
+##
+# This script manages external libraries
+#
+# By default, assume the script for an exteranl library is:
+#    <src_dir>/extlibs/<libname>/SConscript
+#
+# Note: After the external library is built:
+#   Head files should be installed to <src_dir>/deps/<target_os>/include
+#   lib(e.g .so, .a) should be installed to <src_dir>/deps/<target_os>/lib/<arch>
+#
+##
+import os
+
+Import('env')
+
+target_os = env.get('TARGET_OS')
+target_arch = env.get('TARGET_ARCH')
+rd_mode = env.get('RD_MODE')
+src_dir = env.get('SRC_DIR')
+java_home = env.get('JAVA_HOME')
+
+# for android, doesn't distinguish 'armeabi-v7a-hard' and 'armeabi-v7a' library
+if target_os == 'android':
+    if target_arch == 'armeabi-v7a-hard':
+        target_arch = 'armeabi-v7a'
+    env.AppendUnique(CPPDEFINES=['__JAVA__'])
+
+if target_os == 'darwin':
+    env.AppendUnique(CPPPATH = ['/usr/local/include'])
+    env.AppendUnique(LIBPATH = ['/usr/local/lib'])
+
+if env.get('BUILD_JAVA') is True and target_os != 'android':
+    if java_home is not None:
+        env.AppendUnique(CPPDEFINES=['__JAVA__'])
+        if target_os in ['windows', 'winrt']:
+            env.AppendUnique(CPPPATH=[
+                java_home + '/include',
+                java_home + '/include/win32'
+            ])
+            env.AppendENVPath('PATH', java_home + '/bin')
+        else:
+            env.AppendUnique(CPPPATH=[
+                java_home + '/include',
+                java_home + '/include/' + target_os
+            ])
+    else:
+        msg = "Error: BUILD_JAVA requires JAVA_HOME to be set for target '%s'" % target_os
+        Exit(msg)
+
+# External library include files are in <src_dir>/deps/<target_os>/include
+# the library binaries are in <src_dir>/deps/<target_os>/lib/<arch>
+if target_os not in ['windows']:
+    env.AppendUnique(CPPPATH = [os.path.join(src_dir, 'deps', target_os, 'include')])
+    env.AppendUnique(LIBPATH = [os.path.join(src_dir, 'deps', target_os, 'lib', target_arch)])
+
+# tinycbor build/fetch
+SConscript(os.path.join(src_dir, 'extlibs', 'tinycbor', 'SConscript'))
+
+#cJSON lib
+SConscript(os.path.join(src_dir, 'extlibs', 'cjson', 'SConscript'))
+
+with_ra = env.get('WITH_RA')
+if with_ra:
+    SConscript(os.path.join(src_dir, 'extlibs', 'raxmpp', 'SConscript'))
+
+with_ra_ibb = env.get('WITH_RA_IBB')
+if with_ra_ibb:
+    SConscript(os.path.join(src_dir, 'extlibs', 'wksxmppxep', 'SConscript'))
+
+if env.get('SECURED') == '1' or 'SERVER' in rd_mode:
+    if target_os not in ['linux', 'tizen']:
+        SConscript('#extlibs/sqlite3/SConscript')

@@ -1,0 +1,38 @@
+This project contains the Account Server code.
+
+
+Build and Run
+
+1) Install Apache Maven if you don't have it
+
+	http://maven.apache.org
+
+2) Build a CloudStack. If you are building first time, then build the stack.
+
+	go to "stack" folder in root directory
+	$ mvn install -Dmaven.test.skip=true
+
+3) Build a .jar file
+
+	$ mvn install -Dmaven.test.skip=true
+
+	- The CloudAccount-0.0.1-SNAPSHOT.jar file will be placed in the "target" folder
+
+4) Copy the "properties" folder to inside the "target" folder
+
+5) Run .jar file
+
+	go to "target" folder
+	$ java -jar CloudAccount-0.0.1-SNAPSHOT.jar arg1(AccountServer CoAP Server Port) arg2(MongoDB IP Address) arg3(MongoDB Port) arg4(TLS mode required)
+	e.g. java -jar CloudAccount-0.0.1-SNAPSHOT.jar 5685 127.0.0.1 27017 0
+
+        - If you want to operate on TLS mode, "CLOUD_CERT_FILE(iotivitycloud.crt)" and "CLOUD_KEY_FILE(iotivitycloud.key)" files
+          should be placed in the "target" folder.
+        - If you want to provide a certificate of another server in the payload of a sign-up response (when the certificate is
+          needed for a client to connect to the server), a "ROOT_CERT_FILE(rootca.crt)" file should be placed in the "target" folder.
+	- Before you run a Accout server, You need to set up following steps.
+          1) Install MongoDB
+          2) Install Github certificates for github.com and *.github.com.
+6) Please download: file from http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html: Java Cryptography Extension
+         1.Extract files from zip.
+         2.Place local_policy.jar and US_export_policy.jar files in/usr/lib/jvm/PATH_TO_JDK/jre/lib/security

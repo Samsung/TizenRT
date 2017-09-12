@@ -1,0 +1,117 @@
+##
+# Add external Pseudo-Builders
+#
+# Some methods are added to manage external packages:
+#   'PrepareLib': Make a library ready to use.
+#   'Download': Download package from specify URL
+#   'UnpackAll': Unpack the package
+#   'Configure': Execute specify script (configure, bootstrap etc)
+#   'InstallHeadFile': Install head files
+#   'InstallLib': Install library binaries (.so, .a etc)
+#
+# for more on Pseudo-Builders see scons offical documentation
+# 'Pseudo-Builders: the AddMethod function'
+##
+import os
+import subprocess
+import urllib2
+import SCons.Errors
+
+Import('env')
+src_dir = env.get('SRC_DIR')
+
+# Prepare a library for use.
+# Check whether it exists
+#  if not try to download the source code and build it
+#  if not possible, give the user a hint about downloading
+# @param libname - the name of the library try to prepare
+# @param lib - the lib (.so, .a etc) to check (a library may include more then
+#      one lib, e.g. boost includes boost_thread, boost_system ...)
+# @param path - path to build script for library. Default is <src_dir>/extlibs/<libname>/
+# @param script - build script for this library. Default is SConscript
+#
+def __prepare_lib(ienv, libname, lib=None, path=None, script=None):
+    p_env = ienv.Clone(LIBS=[])
+    if p_env.GetOption('clean') or p_env.GetOption('help'):
+        return
+
+    conf = Configure(p_env)
+
+    if not lib:
+        lib = libname
+    if not conf.CheckLib(lib):
+        if path:
+            dir = path
+        else:
+            dir = os.path.join(src_dir, 'extlibs', libname)
+
+        # Execute the script to download (if required) and build source code
+        if script:
+            st = os.path.join(dir, script)
+        else:
+            st = os.path.join(dir, 'SConscript')
+
+        if os.path.exists(st):
+            SConscript(st)
+        else:
+            if target_os in ['linux', 'darwin', 'tizen']:
+                msg = 'Library (%s) not found, please intall it, exit ...' % libname
+            else:
+                msg = 'Library (%s) not found and cannot find the scons script (%s), exit ...' % (
+                    libname, st)
+            Exit(msg)
+
+    conf.Finish()
+
+
+# Run configure command (usually done before building a library)
+def __configure(env, cwd, cmd):
+    print "Configuring using [%s/%s] ..." % (cwd, cmd)
+    # build it now (we need the shell, because some programs need it)
+    devnull = open(os.devnull, "wb")
+    handle = subprocess.Popen(cmd, shell=True, cwd=cwd, stdout=devnull)
+
+    if handle.wait() <> 0:
+        raise SCons.Errors.BuildError("Run configuring script [%s]" % (cmd))
+
+
+# Download from URL 'url', will save as 'target'
+def __download(ienv, target, url):
+    if os.path.exists(target):
+        return target
+
+    try:
+        print "Download %s from %s" % (target, url)
+        print "Downloading ..."
+        stream = urllib2.urlopen(url)
+        file = open(target, 'wb')
+        file.write(stream.read())
+        file.close()
+        print "Download %s from %s complete" % (target, url)
+        return target
+    except Exception, e:
+        raise SCons.Errors.StopError('%s [%s]' % (e, url))
+
+
+# Install header file(s) to <src_dir>/deps/<target_os>/include
+def __install_head_file(ienv, file):
+    return ienv.Install(
+        os.path.join(
+            src_dir, 'dep', target_os, target_arch, 'usr', 'include'), file)
+
+
+# Install library binaries to <src_dir>/deps/<target_os>/lib/<arch>
+def __install_lib(ienv, lib):
+    return ienv.Install(
+        os.path.join(
+            src_dir, 'dep', target_os, target_arch, 'usr', 'lib'),
+        lib)
+
+
+SConscript('tools/UnpackAll.py')
+
+env.AddMethod(__prepare_lib, "PrepareLib")
+env.AddMethod(__configure, "Configure")
+env.AddMethod(__download, "Download")
+env.AddMethod(__install_head_file, "InstallHeadFile")
+env.AddMethod(__install_lib, "InstallLib")

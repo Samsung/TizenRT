@@ -1,0 +1,42 @@
+##
+# Builds Windows-specific helper library
+##
+Import('env common_env')
+import os.path
+
+# Include any headers that might be missing on Windows
+header = os.path.abspath('./include')
+env.AppendUnique(CPPPATH=[header])
+common_env.AppendUnique(CPPPATH=[header])
+
+######################################################################
+# Source files and Targets
+######################################################################
+src_dir = Dir('src').abspath
+helper_src = [
+    os.path.join(src_dir, 'getopt.c'),
+    os.path.join(src_dir, 'memmem.c'),
+    os.path.join(src_dir, 'win_sleep.c'),
+    os.path.join(src_dir, 'snprintf.c'),
+    os.path.join(src_dir, 'pthread_create.c')
+]
+
+win_helper_env = common_env.Clone()
+
+win_helper_env.AppendUnique(CPPPATH=['#resource/csdk/logger/include'])
+static_libwinhelper = win_helper_env.StaticLibrary('win_helper', helper_src)
+
+win_helper_env.InstallTarget(static_libwinhelper, 'win_helper')
+win_helper_env.UserInstallTargetLib(static_libwinhelper, 'win_helper')
+win_helper_env.UserInstallTargetHeader(
+    'include/memmem.h', 'c_common/windows/include', 'memmem.h')
+win_helper_env.UserInstallTargetHeader(
+    'include/win_sleep.h', 'c_common/windows/include', 'win_sleep.h')
+win_helper_env.UserInstallTargetHeader(
+    'include/pthread_create.h', 'c_common/windows/include', 'pthread_create.h')
+win_helper_env.UserInstallTargetHeader(
+    'include/vs12_snprintf.h', 'c_common/windows/include', 'vs12_snprintf.h')
+
+helper_lib = ['win_helper']
+env.AppendUnique(LIBS=helper_lib)
+common_env.AppendUnique(LIBS=helper_lib)

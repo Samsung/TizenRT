@@ -1,0 +1,31 @@
+#******************************************************************
+#
+# Copyright 2016 Microsoft
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+Import('env')
+
+cjson_env = env.Clone()
+
+if cjson_env.get('TARGET_OS') in ['windows', 'msys_nt']:
+    # Macro needed for Windows builds to avoid __declspec(dllexport)
+    # and __declspec(dllimport) for cJSON APIs.
+    cjson_env.AppendUnique(CPPDEFINES=['CJSON_HIDE_SYMBOLS'])
+
+libcjson = cjson_env.StaticLibrary('cjson', ['cJSON.c'], OBJPREFIX='libcjson_')
+cjson_env.InstallTarget(libcjson, 'cjson')

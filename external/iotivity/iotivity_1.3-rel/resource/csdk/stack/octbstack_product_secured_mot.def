@@ -1,0 +1,16 @@
+; Windows octbstack.dll exports that are required when building
+; with SECURED=1 and MULTIPLE_OWNER=1.
+
+GeneratePin
+
+OCAddPreconfigPin
+OCChangeMOTMode
+OCDiscoverMultipleOwnedDevices
+OCDiscoverMultipleOwnerEnabledDevices
+OCDiscoverMultipleOwnerEnabledSingleDevice
+OCDoMultipleOwnershipTransfer
+OCIsSubownerOfDevice
+OCProvisionPreconfigPin
+OCSelectMOTMethod
+
+SetPreconfigPin

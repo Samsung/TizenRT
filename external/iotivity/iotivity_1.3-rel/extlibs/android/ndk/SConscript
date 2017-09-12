@@ -1,0 +1,48 @@
+##
+# Make sure Android NDK exists
+# Note this script is only called if ANDROID_NDK was not set to begin with,
+# so we can safely set it here.
+
+import os
+import sys
+
+Import('env')
+
+NDK_VER = 'r10e'
+
+ndk_dir = 'android-ndk-' + NDK_VER
+ndk_url_base = 'http://dl.google.com/android/ndk/android-ndk-' + NDK_VER
+host_os = sys.platform
+
+if host_os.startswith('linux'):
+    ndk_url = ndk_url_base + '-linux-x86_64.bin'
+    ndk_bundle = 'android-ndk-' + NDK_VER + '.bin'
+elif host_os == 'darwin':
+    ndk_url = ndk_url_base + '-darwin-x86_64.zip'
+    ndk_bundle = 'android-ndk-' + NDK_VER + '.zip'
+else:
+    if host_arch in ['x86_64']:
+        ndk_url = ndk_url_base + '-windows-x86_64.exe'
+    else:
+        ndk_url = ndk_url_base + '-windows-x86.exe'
+    ndk_bundle = 'android-ndk-' + NDK_VER + '.exe'
+
+ndk_path = os.path.join(Dir('.').abspath, ndk_dir)
+if not os.path.exists(ndk_path):
+    if not os.path.exists(ndk_bundle):
+        print "Retrieving Android NDK bundle"
+        env.Download(ndk_bundle, ndk_url)
+    print "Unpacking Android NDK bundle"
+    if host_os.startswith('linux'):
+        # scons on Jenkins/android builder does not take 'a+x' mode, use octal
+        Execute(Chmod(ndk_bundle, 0755))
+        if Execute("./" + ndk_bundle):
+            Exit("Unpack %s failed" % ndk_bundle)
+    elif host_os == 'darwin':
+        env.UnpackAll(ndk_dir, ndk_bundle)
+    else:
+        if Execute(ndk_bundle):
+            Exit("Unpack %s failed" % ndk_bundle)
+
+# export the location of the NDK
+env.Replace(ANDROID_NDK=ndk_path)

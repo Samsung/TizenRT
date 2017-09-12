@@ -1,0 +1,103 @@
+{
+    "cred": {
+        "creds": [
+            {
+                "credid": 1,
+                "subjectuuid": "61646d69-6e44-6576-6963-655575696430",
+                "credtype": 8,
+                "publicdata": {
+                    "encoding": "oic.sec.encoding.der",
+                    "data": "308201FA3082019FA003020102020105300A06082A8648CE3D04030230683132303006035504030C29757569643A33313331333133312D333133312D333133312D333133312D333133313331333133313331310B3009060355040613024B523110300E060355040A0C0753616D73756E6731133011060355040B0C0A4F434620537562204341301E170D3136313130343134353535335A170D3336313130343134353535335A3068310B3009060355040613024B523110300E060355040A130753616D73756E6731133011060355040B130A4F4346204465766963653132303006035504031329757569643A36313634366436392D366534342D363537362D363936332D3635353537353639363433303059301306072A8648CE3D020106082A8648CE3D030107034200044310BC484A3B33F03B9BC66021B93A2BEA388D49398791C8E10E70437A40548DDA5F389FC16DA44E1A4DDC739D30C1CFD6AC82D141897129D8C162601D804323A33A303830360603551D11042F302D822B7573657269643A38646561366332642D653064392D346536342D383035632D333230316638376336633934300A06082A8648CE3D0403020349003046022100C34554A93FCF4EA1A9CC9783A7F29B6CC2B86FEBCB15495DEECD8548EAB3414B02210090CDD6731FE3BE7E2BE5F13F178B9A59E8DAC8EFBEFBFE4D9F456F629E73AA55"
+                },
+                "credusage": "oic.sec.cred.mfgcert",
+                "privatedata": {
+                    "encoding": "oic.sec.encoding.raw",
+                    "data": "3077020101042074A0348F8CB40E58FABAFAC494C4472CA04BECFEA6340276DFB4BA2F609F1A6FA00A06082A8648CE3D030107A144034200044310BC484A3B33F03B9BC66021B93A2BEA388D49398791C8E10E70437A40548DDA5F389FC16DA44E1A4DDC739D30C1CFD6AC82D141897129D8C162601D804323"
+                }
+            },
+            {
+                "credid": 2,
+                "subjectuuid": "*",
+                "credtype": 8,
+                "publicdata": {
+                    "encoding": "oic.sec.encoding.der",
+                    "data": "308201CF30820175A003020102020101300A06082A8648CE3D04030230683132303006035504030C29757569643A33313331333133312D333133312D333133312D333133312D333133313331333133313331310B3009060355040613024B523110300E060355040A0C0753616D73756E6731133011060355040B0C0A4F434620537562204341301E170D3136313130343132343933325A170D3336313130343132343933325A30683132303006035504030C29757569643A33313331333133312D333133312D333133312D333133312D333133313331333133313331310B3009060355040613024B523110300E060355040A0C0753616D73756E6731133011060355040B0C0A4F4346205375622043413059301306072A8648CE3D020106082A8648CE3D03010703420004A334EF1F497964DF840DF2F5BA2BFD6A0241FAD9C0D8E88A71821A46FD5CF800F5099627BD5473AE495678EB2D6F62474CFAC6C1C8B9DB47FA86373AB8330EBCA310300E300C0603551D13040530030101FF300A06082A8648CE3D0403020348003045022100AF5E06A44002579F13F47B19F299078A7B35FB6B2C707F7CC926319F744F2BB40220533AC74FA77F42AAFEAA2EED7E1BA2A440DEA6A99C7C3377D86AC4231B1D6D3B",
+                    "revstat": false
+                },
+                "credusage": "oic.sec.cred.mfgtrustca"
+            }
+        ],
+        "rowneruuid": "00000000-0000-0000-0000-000000000000",
+        "rt": ["oic.r.cred"],
+        "if": ["oic.if.baseline"]
+    },
+    "acl": {
+        "aclist2": [
+            {
+                "aceid": 1,
+                "subject": { "conntype": "anon-clear" },
+                "resources": [
+                    { "href": "/oic/res" },
+                    { "href": "/oic/d" },
+                    { "href": "/oic/p"}
+                ],
+                "permission": 2
+            },
+            {
+                "aceid": 2,
+                "subject": { "conntype": "auth-crypt" },
+                "resources": [
+                    { "href": "/oic/res" },
+                    { "href": "/oic/d" },
+                    { "href": "/oic/p"}
+                ],
+                "permission": 2
+            },
+            {
+                "aceid": 3,
+                "subject": { "conntype": "anon-clear" },
+                "resources": [
+                    { "href": "/oic/sec/doxm" }
+                ],
+                "permission": 14
+            },
+            {
+                "aceid": 4,
+                "subject": { "conntype": "auth-crypt" },
+                "resources": [
+                    { "href": "/oic/sec/doxm" },
+                    { "href": "/oic/sec/roles" }
+                ],
+                "permission": 14
+            }
+        ],
+        "rowneruuid": "61646d69-6e44-6576-6963-655575696430",
+        "rt": ["oic.r.acl"],
+        "if": ["oic.if.baseline"]
+    },
+    "pstat": {
+        "dos": {
+            "s": 3,
+            "p": false
+        },
+        "isop": true,
+        "cm": 0,
+        "tm": 0,
+        "om": 4,
+        "sm": 4,
+        "rowneruuid": "61646d69-6e44-6576-6963-655575696430",
+        "rt": ["oic.r.pstat"],
+        "if": ["oic.if.baseline"]
+    },
+    "doxm": {
+        "oxms": [0],
+        "oxmsel": 0,
+        "sct": 9,
+        "owned": true,
+        "deviceuuid": "61646D69-6E44-6576-6963-655575696430",
+        "devowneruuid": "61646D69-6E44-6576-6963-655575696430",
+        "rowneruuid": "61646D69-6E44-6576-6963-655575696430",
+        "rt": ["oic.r.doxm"],
+        "if": ["oic.if.baseline"]
+    }
+}

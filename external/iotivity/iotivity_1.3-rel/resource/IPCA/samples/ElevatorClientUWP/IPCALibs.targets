@@ -1,0 +1,21 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <IoTivityOutDir>$(ProjectDir)..\..\..\..\out\windows\uwp\amd64\$(Configuration)</IoTivityOutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'!='x64'">
+    <IoTivityOutDir>$(ProjectDir)..\..\..\..\out\windows\uwp\$(PlatformTarget)\$(Configuration)</IoTivityOutDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <NativeLibs Include="$(IoTivityOutDir)\ipca.dll;$(IoTivityOutDir)\octbstack.dll" />
+    <None Include="@(NativeLibs)">
+      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <ReferenceCopyLocalPaths Include="@(NativeLibs)" />
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalLibraryDirectories>$(IoTivityOutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

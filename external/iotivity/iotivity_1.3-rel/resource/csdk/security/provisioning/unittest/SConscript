@@ -1,0 +1,226 @@
+# ******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+from os import kill, path, remove
+from time import sleep
+
+try:
+    from subprocess import Popen, call, PIPE
+except ImportError:
+    raise ImportError("cannot import Popen from subprocess, exit.")
+
+try:
+    from shutil import copyfile
+except ImportError:
+    raise ImportError("cannot import copyfile from shutil, exit.")
+
+Import('test_env')
+
+# SConscript file for Local PKI google tests
+sptest_env = test_env.Clone()
+src_dir = sptest_env.get('SRC_DIR')
+target_os = sptest_env.get('TARGET_OS')
+rd_mode = sptest_env.get('RD_MODE')
+out_dir = sptest_env.get('BUILD_DIR')
+
+unittest_dir = 'resource/csdk/security/provisioning/unittest/'
+sec_provisioning_src_dir = src_dir + '/resource/csdk/security/provisioning/sample/'
+unittest_build_dir = out_dir + unittest_dir
+
+sptest_env.AppendENVPath('LD_LIBRARY_PATH', [out_dir])
+sptest_env.AppendENVPath('PATH', [out_dir, unittest_build_dir])
+
+
+######################################################################
+# Config files
+######################################################################
+cfg_client = 'oic_svr_db_client.dat'
+server_bin = 'sample_server' + sptest_env.get('PROGSUFFIX')
+unittest_bin = 'unittest' + sptest_env.get('PROGSUFFIX')
+
+
+######################################################################
+# Functions
+######################################################################
+def safe_remove(file_name):
+    if path.isfile(file_name):
+        print 'Removing: ' + file_name
+        remove(file_name)
+
+
+def clean_config():
+    print 'Clean configs'
+    safe_remove('oic_svr_db_server1.dat')
+    safe_remove('oic_svr_db_server2.dat')
+    safe_remove(cfg_client)
+    safe_remove('test.db')
+    safe_remove('PDM.db')
+    safe_remove('secureresourceprovider.dat')
+    safe_remove('device_properties.dat')
+
+
+def start_srv(num):
+    if not path.isfile(unittest_build_dir + server_bin):
+        print "no executable file"
+        return
+    cfg_srv = 'oic_svr_db_server' + num + '.dat'
+    copyfile(sec_provisioning_src_dir + 'oic_svr_db_server_justworks.dat', cfg_srv)
+    if not sptest_env.get('RELEASE'):
+        po = Popen(
+            unittest_build_dir + server_bin + ' ' + num + ' ' + cfg_srv,
+            shell=True,
+            universal_newlines=True,
+            stdout=open('srv' + num + '.log', 'w'))
+    else:
+        po = Popen([unittest_build_dir + server_bin, num, cfg_srv])
+    print "start server ", num, " pid: ", po.pid
+    return po
+
+
+def kill_all():
+    if target_os in ['msys_nt', 'windows']:
+        from signal import SIGTERM
+        ptask = 'tasklist /FI "IMAGENAME eq ' + server_bin + '" /NH'
+        for line in Popen(ptask, stdout=PIPE).stdout.readlines():
+            cmd_list = line.decode('cp866', 'ignore').split()
+            if len(cmd_list):
+                if not cmd_list[1].isdigit():
+                    continue
+                try:
+                    pid = int(cmd_list[1])
+                    print "killing: ", pid
+                    kill(pid, SIGTERM)
+                except Exception as ex:
+                    print line
+                    print "Cannot kill: ", cmd_list[1]
+                    print "exception: " + ex.message
+    else:
+        try:
+            from psutil import process_iter
+            for proc in process_iter():
+                name = None
+                if callable(getattr(proc, 'name')):
+                    name = proc.name()
+                else:
+                    name = proc.name
+                if name == server_bin:
+                    proc.kill()
+        except ImportError:
+            print "can not process check"
+
+
+def run_test(target, source, env):
+    kill_all()
+    clean_config()
+    copyfile(sec_provisioning_src_dir + 'oic_svr_db_client.dat', cfg_client)
+    po_srv1 = start_srv(str(1))
+    po_srv2 = start_srv(str(2))
+    print "Waiting for servers start"
+    sleep(3)
+    call([unittest_build_dir + unittest_bin])
+    print "Servers are stopping"
+    sleep(3)
+    po_srv1.terminate()
+    po_srv2.terminate()
+    clean_config()
+    kill_all()
+
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = sptest_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+    sptest_env.AppendUnique(CPPPATH=['#extlibs/libcoap/libcoap/include'])
+else:
+    sptest_env.AppendUnique(CPPPATH=['../../../connectivity/lib/libcoap-4.1.1/include'])
+
+sptest_env.PrependUnique(CPPPATH=[
+    '../include',
+    '../../include',
+    '../include/internal',
+    '../../../include',
+    '../../../ocrandom/include',
+    '../../../logger/include',
+    '../../../stack/include',
+    '../../../security/include',
+    '../../../security/include/internal',
+    '../../../security/provisioning/include/internal',
+    '../../../../oc_logger/include',
+    '../include/oxm',
+    '../../../../../extlibs/base64',
+    '../../../connectivity/inc',
+    '../../../connectivity/inc/pkix',
+    '../../../connectivity/common/inc',
+    '../../../connectivity/api'
+])
+
+sptest_env.PrependUnique(LIBS=[
+    'ocpmapi_internal',
+    'oc',
+    'octbstack_internal',
+    'ocsrm',
+    'routingmanager',
+    'oc_logger_internal',
+    'connectivity_abstraction_internal',
+    'coap'
+])
+
+if sptest_env.get('SECURED') == '1':
+    sptest_env.AppendUnique(LIBS=['mbedtls', 'mbedx509', 'mbedcrypto'])
+
+if not sptest_env.get('RELEASE'):
+    sptest_env.AppendUnique(CPPDEFINES=['TB_LOG'])
+
+if sptest_env.get('MULTIPLE_OWNER') == '1':
+    sptest_env.AppendUnique(CPPDEFINES=['MULTIPLE_OWNER'])
+
+sptest_env.AppendUnique(LIBS=['octbstack_internal'])
+
+if target_os in ['msys_nt', 'windows']:
+    sptest_env.AppendUnique(LIBS=['sqlite3'])
+else:
+    if target_os in ['linux', 'tizen']:
+        sptest_env.ParseConfig(
+            'pkg-config --cflags --libs sqlite3 gobject-2.0 gio-2.0 glib-2.0')
+        # TODO: remove this workaround needed for g++-4.7
+        sptest_env.Append(LIBS=['m'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+unittest_src = [
+    'pmutilitytest.cpp',
+    'secureresourceprovider.cpp',
+    'provisioningdatabasemanager.cpp',
+    'ocprovisioningmanager.cpp',
+    'credentialgeneratortest.cpp',
+    'otmunittest.cpp',
+]
+
+tests = sptest_env.Program(unittest_bin, unittest_src)
+server = sptest_env.Program(server_bin, ['sampleserver.cpp'])
+
+Alias('build', [tests, server])
+
+if sptest_env.get('TEST') == '1':
+    if target_os in ['linux', 'windows']:
+        print "Start tests"
+        sptest_env.Command('start', [server_bin, unittest_bin], Action(run_test))

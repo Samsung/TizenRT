@@ -1,0 +1,23 @@
+#######################################################
+#       Build IP adapter for Ardunino
+#######################################################
+import os
+
+Import('connectivity_env')
+
+src_dir = os.path.abspath(os.curdir)
+
+connectivity_env.PrependUnique(CPPPATH = [ src_dir ])
+
+src_files = None
+if connectivity_env.get('SHIELD') == 'WIFI':
+    src_files = [ os.path.join(src_dir, 'caipclient_wifi.cpp'),
+                  os.path.join(src_dir, 'caipserver_wifi.cpp'),
+                  os.path.join(src_dir, 'caipnwmonitor_wifi.cpp') ]
+else:
+    src_files = [ os.path.join(src_dir, 'caipadapterutils_eth.cpp'),
+                  os.path.join(src_dir, 'caipclient_eth.cpp'),
+                  os.path.join(src_dir, 'caipserver_eth.cpp'),
+                  os.path.join(src_dir, 'caipnwmonitor_eth.cpp') ]
+
+connectivity_env.AppendUnique(CA_SRC = src_files)

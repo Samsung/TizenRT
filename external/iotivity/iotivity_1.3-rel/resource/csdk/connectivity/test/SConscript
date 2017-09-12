@@ -1,0 +1,119 @@
+#******************************************************************
+#
+# Copyright 2015 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+import os
+import os.path
+from tools.scons.RunTest import *
+
+Import('test_env')
+
+# SConscript file for Local PKI google tests
+catest_env = test_env.Clone()
+target_os = catest_env.get('TARGET_OS')
+target_transport = catest_env.get('TARGET_TRANSPORT')
+rd_mode = catest_env.get('RD_MODE')
+
+######################################################################
+# Build flags
+######################################################################
+if catest_env.get('WITH_UPSTREAM_LIBCOAP') == '1':
+    catest_env.AppendUnique(CPPPATH = [os.path.join('#', 'extlibs', 'libcoap', 'libcoap', 'include')])
+else:
+    catest_env.AppendUnique(CPPPATH = [ os.path.join('#', 'resource', 'csdk', 'connectivity', 'lib', 'libcoap-4.1.1', 'include')])
+
+catest_env.PrependUnique(CPPPATH = [
+                '#/resource/c_common/octimer/include',
+                '#/extlibs/mbedtls/mbedtls/include',
+                '#/resource/csdk/connectivity/api',
+                '#/resource/csdk/connectivity/inc',
+                '#/resource/csdk/connectivity/common/inc',
+                '#/resource/csdk/logger/include',
+                '#/resource/csdk/include',
+                '#/resource/csdk/stack/include',
+                '#/resource/oc_logger/include',
+               ])
+
+catest_env.PrependUnique(LIBS = ['coap'])
+
+if target_os not in ['msys_nt', 'windows']:
+    # ssladapter_test.cpp #includes ca_adapter_net_ssl.c! That results in
+    # "multiple definition" linker errors, when trying to link with
+    # connectivity_abstraction_internal here.
+    catest_env.PrependUnique(LIBS = ['connectivity_abstraction'])
+else:
+    catest_env.PrependUnique(LIBS = ['connectivity_abstraction_internal'])
+
+catest_env.PrependUnique(LIBS = [
+                'octbstack_internal',
+                'ocsrm',
+                'routingmanager',
+                ])
+
+if target_os not in ['arduino', 'darwin', 'ios', 'msys_nt', 'windows']:
+    catest_env.AppendUnique(LIBS=['rt'])
+
+if catest_env.get('SECURED') == '1':
+    catest_env.AppendUnique(LIBS = ['mbedtls', 'mbedx509'])
+
+# c_common calls into mbedcrypto.
+catest_env.AppendUnique(LIBS = ['mbedcrypto'])
+
+if 'CLIENT' in rd_mode and target_os not in ['arduino', 'darwin', 'ios', 'windows', 'winrt']:
+    catest_env.PrependUnique(LIBS = ['oc', 'oc_logger'])
+if 'SERVER' in rd_mode:
+    if target_os in ['linux', 'tizen']:
+        catest_env.ParseConfig('pkg-config --cflags --libs sqlite3')
+    elif target_os in ['msys_nt', 'windows']:
+        catest_env.PrependUnique(LIBS = ['sqlite3'])
+
+if target_os not in ['msys_nt', 'windows']:
+    catest_env.AppendUnique(LIBS = ['m'])
+######################################################################
+# Source files and Targets
+######################################################################
+
+tests_src = [
+    'catests.cpp',
+    'caprotocolmessagetest.cpp',
+    'ca_api_unittest.cpp',
+    'octhread_tests.cpp',
+    'uarraylist_test.cpp',
+    'ulinklist_test.cpp',
+    'uqueue_test.cpp'
+]
+
+if (('IP' in target_transport) or ('ALL' in target_transport)):
+    if target_os != 'arduino':
+        tests_src = tests_src + ['cablocktransfertest.cpp']
+
+if catest_env.get('SECURED') == '1' and catest_env.get('WITH_TCP') == True:
+    tests_src = tests_src + ['ssladapter_test.cpp']
+
+catests = catest_env.Program('catests', tests_src)
+
+Alias("test", [catests])
+
+catest_env.AppendTarget('test')
+if catest_env.get('TEST') == '1':
+        if target_os in ['linux', 'windows']:
+                catest_env.AppendENVPath('PATH', catest_env.get('BUILD_DIR'))
+                run_test(catest_env,
+                         'resource_csdk_connectivity_test.memcheck',
+                         'resource/csdk/connectivity/test/catests')

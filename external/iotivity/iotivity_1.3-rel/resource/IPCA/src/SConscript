@@ -1,0 +1,119 @@
+#******************************************************************
+#
+# Copyright 2017 Microsoft
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+##
+# ipca lib (shared library) build script
+##
+Import('ipca_env')
+target_os = ipca_env.get('TARGET_OS')
+ipca_lib_env = ipca_env.Clone()
+
+######################################################################
+# Build flags
+######################################################################
+with_upstream_libcoap = ipca_lib_env.get('WITH_UPSTREAM_LIBCOAP')
+if with_upstream_libcoap == '1':
+    ipca_lib_env.PrependUnique(CPPPATH = ['#extlibs/libcoap/libcoap/include'])
+else:
+    ipca_lib_env.PrependUnique(CPPPATH = ['#resource/csdk/connectivity/lib/libcoap-4.1.1/include'])
+
+ipca_lib_env.PrependUnique(CPPPATH = [
+        '../inc',
+        'inc',
+        '#/resource/include',
+        '#/resource/oc_logger/include',
+        '#/resource/csdk/include',
+        '#/resource/csdk/stack/include',
+        '#/resource/csdk/security/include',
+        '#/resource/csdk/security/provisioning/include',
+        '#/resource/csdk/security/provisioning/include/internal',
+        '#/resource/csdk/connectivity/api',
+        '#/resource/csdk/connectivity/external/inc',
+        '#/resource/csdk/ocsocket/include',
+        '#/resource/csdk/logger/include',
+        '#/resource/c_common/ocrandom/include',
+        '#/extlibs/boost/boost',
+        '#/extlibs/cjson',
+        ])
+
+if target_os in ['windows', 'msys_nt']:
+    ipca_lib_env.Replace(WINDOWS_INSERT_DEF = ['1'])
+else:
+    ipca_lib_env.PrependUnique(LIBS = [
+        'oc_logger'
+        ])
+
+ipca_lib_env.PrependUnique(LIBS = [
+        'coap',
+        'octbstack'
+        ])
+
+if target_os not in ['windows', 'msys_nt']:
+    ipca_lib_env.PrependUnique(LIBS = [
+            'connectivity_abstraction'
+            ])
+
+ipca_lib_env.PrependUnique(LIBS = [
+        'oc'
+        ])
+
+if ipca_lib_env.get('SECURED') == '1':
+    ipca_lib_env.PrependUnique(LIBS = [
+            'mbedtls',
+            'mbedx509',
+            'ocprovision'
+            ])
+
+if target_os not in ['windows', 'msys_nt']:
+    ipca_lib_env.AppendUnique(LIBS = ['dl'])
+
+if 'g++' in ipca_lib_env.get('CXX'):
+    ipca_lib_env.AppendUnique(CXXFLAGS = ['-Wall', '-std=c++0x'])
+
+if target_os in ['linux']:
+    ipca_lib_env.AppendUnique(LIBS = ['pthread'])
+    if not ipca_lib_env.get('RELEASE'):
+        ipca_lib_env.PrependUnique(LIBS = ['gcov'])
+        ipca_lib_env.AppendUnique(CXXFLAGS = ['--coverage'])
+
+######################################################################
+# Source files and Targets
+######################################################################
+ipca_lib_src = [
+    'app.cpp',
+    'ipca.cpp',
+    'callback.cpp',
+    'ocfframework.cpp',
+    'device.cpp',
+    'ipcavariant.cpp',
+    'common.cpp'
+        ]
+
+if ipca_lib_env.get('SECURED') != '1':
+    ipca_lib_src.append('pretendocprovision.cpp')
+
+ipca_shared_lib = ipca_lib_env.SharedLibrary('ipca', ipca_lib_src)
+ipca_lib = Flatten(ipca_shared_lib)
+
+ipca_static_lib = ipca_lib_env.StaticLibrary('ipca_static', ipca_lib_src)
+
+ipca_lib_env.UserInstallTargetHeader('../inc/ipca.h', 'resource', 'ipca.h')
+ipca_lib_env.UserInstallTargetLib(ipca_lib, 'ipca')
+ipca_lib_env.UserInstallTargetLib(ipca_static_lib, 'ipca')
