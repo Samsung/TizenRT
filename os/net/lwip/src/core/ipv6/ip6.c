@@ -672,6 +672,15 @@ netif_found:
 			goto options_done;
 			break;
 		}
+
+		if (*nexth == IP6_NEXTH_HOPBYHOP) {
+			/* Hop-by-Hop header comes only as a first option */
+			icmp6_param_problem(p, ICMP6_PP_HEADER, (u32_t)nexth - (u32_t)ip6_current_header());
+			LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with Hop-by-Hop options header dropped (this option comes only as a first option)\n"));
+			pbuf_free(p);
+			IP6_STATS_INC(ip6.drop);
+			goto ip6_input_cleanup;
+		}
 	}
 options_done:
 
@@ -720,7 +729,7 @@ options_done:
 #if LWIP_ICMP6
 			/* send ICMP parameter problem unless it was a multicast or ICMPv6 */
 			if ((!ip6_addr_ismulticast(ip6_current_dest_addr())) && (IP6H_NEXTH(ip6hdr) != IP6_NEXTH_ICMP6)) {
-				icmp6_param_problem(p, ICMP6_PP_HEADER, (u32_t)nexth - (u32_t)ip_data.current_ip6_header);
+				icmp6_param_problem(p, ICMP6_PP_HEADER, (u32_t)nexth - (u32_t)ip6_current_header());
 			}
 #endif							/* LWIP_ICMP */
 			LWIP_DEBUGF(IP6_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("ip6_input: Unsupported transport protocol %" U16_F "\n", (u16_t) IP6H_NEXTH(ip6hdr)));
