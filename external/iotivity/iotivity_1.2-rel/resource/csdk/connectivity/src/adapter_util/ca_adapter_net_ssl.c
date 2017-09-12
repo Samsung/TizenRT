@@ -1504,7 +1504,7 @@ static int InitPskIdentity(mbedtls_ssl_config * config)
         OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
         return -1;
     }
-    if (0 != mbedtls_ssl_conf_psk(config, idBuf, 0, idBuf, UUID_LENGTH))
+    if (0 != mbedtls_ssl_conf_psk(config, idBuf, 1, idBuf, UUID_LENGTH))
     {
         OIC_LOG(ERROR, NET_SSL_TAG, "Identity initialization failed!");
         OIC_LOG_V(DEBUG, NET_SSL_TAG, "Out %s", __func__);
