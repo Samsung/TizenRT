@@ -123,39 +123,54 @@ PACK_STRUCT_END
 #define IP6H_NEXTH_SET(hdr, nexth) (hdr)->_nexth = (nexth)
 #define IP6H_HOPLIM_SET(hdr, hl) (hdr)->_hoplim = (u8_t)(hl)
 
-/* Hop-by-hop router alert option. */
-#define IP6_HBH_HLEN    8
-#define IP6_PAD1_OPTION         0
-#define IP6_PADN_ALERT_OPTION   1
-#define IP6_ROUTER_ALERT_OPTION 5
-#define IP6_ROUTER_ALERT_VALUE_MLD 0
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
+/* ipv6 extension options header */
 PACK_STRUCT_BEGIN
-struct ip6_hbh_hdr {
-	/* next header */
-	PACK_STRUCT_FLD_8(u8_t _nexth);
-	/* header length */
-	PACK_STRUCT_FLD_8(u8_t _hlen);
+struct ip6_opt_hdr {
 	/* router alert option type */
-	PACK_STRUCT_FLD_8(u8_t _ra_opt_type);
+	PACK_STRUCT_FLD_8(u8_t _opt_type);
 	/* router alert option data len */
-	PACK_STRUCT_FLD_8(u8_t _ra_opt_dlen);
-	/* router alert option data */
-	PACK_STRUCT_FIELD(u16_t _ra_opt_data);
-	/* PadN option type */
-	PACK_STRUCT_FLD_8(u8_t _padn_opt_type);
-	/* PadN option data len */
-	PACK_STRUCT_FLD_8(u8_t _padn_opt_dlen);
+	PACK_STRUCT_FLD_8(u8_t _opt_dlen);
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
-#define IP6_HBH_TYPE(hdr) ((hdr)->_ra_opt_type)
+#define IP6_OPT_HLEN 2
+#define IP6_OPT_TYPE_ACTION(hdr) ((((hdr)->_opt_type) >> 6) & 0x3)
+#define IP6_OPT_TYPE_CHANGE(hdr) ((((hdr)->_opt_type) >> 5) & 0x1)
+#define IP6_OPT_TYPE(hdr) ((hdr)->_opt_type)
+#define IP6_OPT_DLEN(hdr) ((hdr)->_opt_dlen)
+
+/* Hop-by-hop router alert option. */
+#define IP6_HBH_HLEN    2
+#define IP6_PAD1_OPTION         0
+#define IP6_PADN_OPTION  		1
+#define IP6_ROUTER_ALERT_OPTION 5
+#define IP6_JUMBO_OPTION 		194
+#define IP6_ROUTER_ALERT_HLEN	4
+#define IP6_ROUTER_ALERT_VALUE_MLD 0
+#ifdef PACK_STRUCT_USE_INCLUDES
+#include "arch/bpstruct.h"
+#endif
+/* ipv6 hop-by-hop header */
+PACK_STRUCT_BEGIN
+struct ip6_hbh_hdr {
+	/* next header */
+	PACK_STRUCT_FLD_8(u8_t _nexth);
+	/* header length in 8-octet units */
+	PACK_STRUCT_FLD_8(u8_t _hlen);
+} PACK_STRUCT_STRUCT;
+PACK_STRUCT_END
+#ifdef PACK_STRUCT_USE_INCLUDES
+#include "arch/epstruct.h"
+#endif
+#define IP6_HBH_NEXTH(hdr) ((hdr)->_nexth)
 
 /* Destination header. */
+#define IP6_DEST_HLEN	2
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
@@ -163,24 +178,14 @@ PACK_STRUCT_BEGIN
 struct ip6_dest_hdr {
 	/* next header */
 	PACK_STRUCT_FLD_8(u8_t _nexth);
-	/* header length */
+	/* header length in 8-octet units */
 	PACK_STRUCT_FLD_8(u8_t _hlen);
-	/* destination alert option type */
-	PACK_STRUCT_FLD_8(u8_t _da_opt_type);
-	/* destination alert option data len */
-	PACK_STRUCT_FLD_8(u8_t _da_opt_dlen);
-	/* destination alert option data */
-	PACK_STRUCT_FIELD(u16_t _da_opt_data);
-	/* PadN option type */
-	PACK_STRUCT_FLD_8(u8_t _padn_opt_type);
-	/* PadN option data len */
-	PACK_STRUCT_FLD_8(u8_t _padn_opt_dlen);
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
-#define IP6_DEST_TYPE(hdr) ((hdr)->_da_opt_type)
+#define IP6_DEST_NEXTH(hdr) ((hdr)->_nexth)
 
 /* Fragment header. */
 #define IP6_FRAG_HLEN    8
@@ -204,6 +209,7 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define IP6_FRAG_NEXTH(hdr) ((hdr)->_nexth)
 #define IP6_FRAG_MBIT(hdr) (lwip_ntohs((hdr)->_fragment_offset) & 0x1)
 #define IP6_FRAG_ID(hdr) (lwip_ntohl((hdr)->_identification))
 
