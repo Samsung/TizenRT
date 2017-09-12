@@ -30,9 +30,7 @@
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/ioctl.h>
 
-#include "isp_driver_ecdsa_securekey.h"
-#include "isp_driver_secure_storage.h"
-#include "isp_oid.h"
+#include "isp_custom.h"
 /*
  * Definition for handling pthread
  */
