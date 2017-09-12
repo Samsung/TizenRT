@@ -57,7 +57,7 @@ float modff(float x, float *iptr)
 	if (fabsf(x) >= 8388608.0) {
 		*iptr = x;
 		return 0.0;
-	} else if (fabs(x) < 1.0) {
+	} else if (fabsf(x) < 1.0) {
 		*iptr = (x * 0.0);
 		return x;
 	} else {
