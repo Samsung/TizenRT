@@ -418,7 +418,7 @@ static void usage(void)
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int wifi_main(int argc, char *argv[])
+int wifictl_main(int argc, char *argv[])
 #endif
 {
 	const struct wifi_command *cmd = commands;

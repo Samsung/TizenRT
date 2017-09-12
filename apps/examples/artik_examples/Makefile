@@ -105,7 +105,7 @@ ifeq ($(CONFIG_EXAMPLES_ARTIK_WEBSOCKET), y)
   MAINSRC += websocket-api.c
 endif
 ifeq ($(CONFIG_EXAMPLES_ARTIK_WIFI), y)
-  TASH_APPS += wifi
+  TASH_APPS += wifictl
   MAINSRC += wifi-api.c
 endif
 
