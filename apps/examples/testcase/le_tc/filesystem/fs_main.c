@@ -961,7 +961,9 @@ static void fs_vfs_mkfifo_tc(void)
 	g_thread_result = true;
 
 	ret = mkfifo(FIFO_FILE_PATH, 0666);
-	TC_ASSERT("mkfifo", (ret >= 0) || (ret == -EEXIST));
+	if (ret < 0) {
+		TC_ASSERT_EQ("mkfifo", ret, -EEXIST);
+	}
 
 	fd = open(FIFO_FILE_PATH, O_WRONLY);
 	TC_ASSERT_GEQ("open", fd, 0);
@@ -983,7 +985,7 @@ static void fs_vfs_mkfifo_tc(void)
 	}
 	close(fd);
 	pthread_kill(tid, SIGUSR1);
-	TC_ASSERT("mkfifo", g_thread_result);
+	TC_ASSERT_EQ("mkfifo", g_thread_result, true);
 	TC_SUCCESS_RESULT();
 errout:
 	pthread_kill(tid, SIGUSR1);
