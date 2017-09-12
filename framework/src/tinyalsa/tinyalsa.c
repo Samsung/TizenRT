@@ -275,7 +275,11 @@ int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 	cap_desc.session = pcm->session;
 #endif
 	cap_desc.caps.ac_len = sizeof(struct audio_caps_s);
-	cap_desc.caps.ac_type = AUDIO_TYPE_OUTPUT;
+	if (pcm->flags & PCM_IN) {
+		cap_desc.caps.ac_type = AUDIO_TYPE_INPUT;
+	} else {
+		cap_desc.caps.ac_type = AUDIO_TYPE_OUTPUT;
+	}
 	cap_desc.caps.ac_channels = config->channels;
 	cap_desc.caps.ac_controls.hw[0] = config->rate;
 	cap_desc.caps.ac_controls.b[2] = pcm_format_to_bits(config->format);
