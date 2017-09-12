@@ -24,23 +24,26 @@ AWS_CERT_DIR = certs
 AWS_PLATFORM_DIR = platform/TizenRT
 AWS_EXTLIB_DIR = external_libs
 
+DEPPATH = --dep-path .
+VPATH =
+
 ASRCS =
 CSRCS =
-MAINSRC =
+CXXSRCS =
 
-CSRCS += $(AWS_SAMPLE_DIR)/subscribe_publish_sample/subscribe_publish_sample.c \
-		 $(AWS_SAMPLE_DIR)/subscribe_publish_library_sample/subscribe_publish_library_sample.c \
-		 $(AWS_SAMPLE_DIR)/shadow_sample_console_echo/shadow_console_echo.c \
-		 $(AWS_SAMPLE_DIR)/shadow_sample/shadow_sample.c
-CSRCS += $(AWS_PLATFORM_DIR)/mbedtls/network_mbedtls_wrapper.c
-CSRCS += $(AWS_PLATFORM_DIR)/common/timer.c
-CSRCS += $(AWS_CERT_DIR)/certData.c
-CSRCS += $(AWS_EXTLIB_DIR)/jsmn/jsmn.c
+include src/Make.defs
+include $(AWS_SAMPLE_DIR)/subscribe_publish_sample/Make.defs
+include $(AWS_SAMPLE_DIR)/subscribe_publish_library_sample/Make.defs
+include $(AWS_SAMPLE_DIR)/shadow_sample_console_echo/Make.defs
+include $(AWS_SAMPLE_DIR)/shadow_sample/Make.defs
+include $(AWS_SAMPLE_DIR)/subscribe_publish_cpp_sample/Make.defs
+include $(AWS_PLATFORM_DIR)/mbedtls/Make.defs
+include $(AWS_PLATFORM_DIR)/common/Make.defs
+include $(AWS_CERT_DIR)/Make.defs
+include $(AWS_EXTLIB_DIR)/jsmn/Make.defs
 
-CXXSRCS += $(AWS_SAMPLE_DIR)/subscribe_publish_cpp_sample/subscribe_publish_cpp_sample.cpp
-
-CFLAGS += -Iaws/include
-CFLAGS += -Iaws/external_libs/jsmn
+CFLAGS += -Iinclude
+CFLAGS += -Iexternal_libs/jsmn
 CFLAGS += -I$(AWS_PLATFORM_DIR)/common
 CFLAGS += -I$(AWS_CERT_DIR)
 CFLAGS += -I$(AWS_PLATFORM_DIR)/mbedtls
@@ -56,8 +59,8 @@ CFLAGS += -I$(AWS_SAMPLE_DIR)/shadow_sample
 CFLAGS += -DENABLE_IOT_INFO
 CFLAGS += -DENABLE_IOT_ERROR
 
-CXXFLAGS += -Iaws/include
-CXXFLAGS += -Iaws/external_libs/jsmn
+CXXFLAGS += -Iinclude
+CXXFLAGS += -Iexternal_libs/jsmn
 CXXFLAGS += -I$(AWS_PLATFORM_DIR)/common
 CXXFLAGS += -I$(AWS_CERT_DIR)
 CXXFLAGS += -I$(AWS_PLATFORM_DIR)/mbedtls
@@ -65,15 +68,10 @@ CXXFLAGS += -I$(AWS_SAMPLE_DIR)/subscribe_publish_cpp_sample
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
-MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
 CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
 
-SRCS = $(ASRCS) $(CSRCS) $(MAINSRC) $(CXXSRCS)
+SRCS = $(ASRCS) $(CSRCS) $(CXXSRCS)
 OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
-
-ifneq ($(CONFIG_BUILD_KERNEL),y)
-  OBJS += $(MAINOBJ)
-endif
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
   BIN = ..\libexternal$(LIBEXT)
@@ -85,19 +83,13 @@ else
 endif
 endif
 
-DEPPATH = --dep-path .
-
-# Common build
-
-VPATH =
-
 all: .built
-.PHONY: clean depend distclean
+.PHONY: .depend clean depend distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
-$(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
+$(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
 $(CXXOBJS): %$(OBJEXT): %.cpp
@@ -108,7 +100,8 @@ $(CXXOBJS): %$(OBJEXT): %.cpp
 	$(Q) touch .built
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(ASRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(CSRCS) >Make.dep
 	$(Q) $(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(CXXSRCS) >Make.dep
 	$(Q) touch $@
 
