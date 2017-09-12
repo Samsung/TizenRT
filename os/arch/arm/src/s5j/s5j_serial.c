@@ -320,19 +320,6 @@ static void up_configure(struct up_dev_s *priv)
 
 	/* Ensure that UART clock is supplied... */
 
-	/* Configure pinmux to set function for RXD/TXD/RTS/CTS pins */
-	s5j_configgpio(priv->rxd);
-	s5j_configgpio(priv->txd);
-#if defined(CONFIG_S5J_UART_FLOWCONTROL)
-	if (priv->rts) {
-		s5j_configgpio(priv->rts);
-	}
-
-	if (priv->cts) {
-		s5j_configgpio(priv->cts);
-	}
-#endif
-
 	/* UMCON */
 	if (priv->rts || priv->cts) {
 		/* nRTS and nCTS are controlled by hardware */
@@ -400,6 +387,19 @@ static int up_setup(struct uart_dev_s *dev)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 
+	/* Configure pinmux to set function for RXD/TXD/RTS/CTS pins */
+	s5j_configgpio(priv->rxd);
+	s5j_configgpio(priv->txd);
+#if defined(CONFIG_S5J_UART_FLOWCONTROL)
+	if (priv->rts) {
+		s5j_configgpio(priv->rts);
+	}
+
+	if (priv->cts) {
+		s5j_configgpio(priv->cts);
+	}
+#endif
+
 	s5j_clk_enable(priv->pclk);
 	s5j_clk_enable(priv->extclk);
 
@@ -438,6 +438,9 @@ static void up_shutdown(struct uart_dev_s *dev)
 	uart_modifyreg32(priv, S5J_UART_UINTM_OFFSET, 0,
 					UART_UINTM_TXD_MASK | UART_UINTM_RXD_MASK);
 
+	s5j_clk_disable(priv->pclk);
+	s5j_clk_disable(priv->extclk);
+
 	s5j_unconfiggpio(priv->rxd);
 	s5j_unconfiggpio(priv->txd);
 
@@ -450,9 +453,6 @@ static void up_shutdown(struct uart_dev_s *dev)
 		s5j_unconfiggpio(priv->cts);
 	}
 #endif
-
-	s5j_clk_disable(priv->pclk);
-	s5j_clk_disable(priv->extclk);
 }
 
 /****************************************************************************
