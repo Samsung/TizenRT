@@ -345,6 +345,12 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	goto errout_with_semaphore;
 
 errout_with_buffer:
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	if (sf->buffer != NULL) {
+		kmm_free(sf->buffer);
+		sf->buffer = NULL;
+	}
+#endif
 	if (sf->entry.name != NULL) {
 		/* Free the space for the name too */
 
@@ -972,7 +978,7 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 				readwrite.count = sizeof(uint16_t);
 #ifdef CONFIG_SMARTFS_JOURNALING
 				ret = smartfs_create_journalentry(fs, T_WRITE, readwrite.logsector,
-					readwrite.offset, readwrite.count, 0, 0, readwrite.buffer, &t_sector, &t_offset);
+												  readwrite.offset, readwrite.count, 0, 0, readwrite.buffer, &t_sector, &t_offset);
 				if (ret != OK) {
 					fdbg("Journal entry creation failed.\n");
 					goto errout_with_semaphore;
@@ -1526,23 +1532,33 @@ static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **ha
 
 	ret = smartfs_mount(fs, true);
 	if (ret != 0) {
-		smartfs_semgive(fs);
-		kmm_free(fs);
-		return ret;
+		goto error_with_semaphore;
 	}
 
 	*handle = (void *)fs;
 #ifdef CONFIG_SMARTFS_JOURNALING
 	ret = smartfs_journal_init(fs);
 	if (ret != 0) {
-		smartfs_semgive(fs);
-		kmm_free(fs);
-		return ret;
+		fdbg("init failed!!\n");
+		goto error_with_semaphore;
 	}
 #endif
-	smartfs_semgive(fs);
 
-	return OK;
+#ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
+	ret = smartfs_recover(fs);
+	if (ret != 0) {
+		fdbg("recovery failed!!\n");
+		goto error_with_semaphore;
+	}
+#endif
+
+	smartfs_semgive(fs);
+	return ret;
+
+error_with_semaphore:
+	smartfs_semgive(fs);
+	kmm_free(fs);
+	return ret;
 }
 
 /****************************************************************************

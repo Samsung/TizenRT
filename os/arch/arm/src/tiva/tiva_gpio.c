@@ -492,8 +492,10 @@ static inline void tiva_gpiopadtype(uint32_t base, uint32_t pin, uint32_t pinset
 	uint32_t pdrclr = 0;
 	uint32_t denset = 0;
 	uint32_t denclr = 0;
+#if defined(LM4F) || defined(TM4C)
 	uint32_t amselset = 0;
 	uint32_t amselclr = 0;
+#endif
 
 	/* Set the pin type. */
 
@@ -503,7 +505,9 @@ static inline void tiva_gpiopadtype(uint32_t base, uint32_t pin, uint32_t pinset
 		purclr = pin;
 		pdrclr = pin;
 		denset = pin;
+#if defined(LM4F) || defined(TM4C)
 		amselclr = pin;
+#endif
 	}
 	break;
 
@@ -512,7 +516,9 @@ static inline void tiva_gpiopadtype(uint32_t base, uint32_t pin, uint32_t pinset
 		purset = pin;
 		pdrclr = pin;
 		denset = pin;
+#if defined(LM4F) || defined(TM4C)
 		amselclr = pin;
+#endif
 	}
 	break;
 
@@ -521,7 +527,9 @@ static inline void tiva_gpiopadtype(uint32_t base, uint32_t pin, uint32_t pinset
 		purclr = pin;
 		pdrset = pin;
 		denset = pin;
+#if defined(LM4F) || defined(TM4C)
 		amselclr = pin;
+#endif
 	}
 	break;
 
@@ -530,7 +538,9 @@ static inline void tiva_gpiopadtype(uint32_t base, uint32_t pin, uint32_t pinset
 		purclr = pin;
 		pdrclr = pin;
 		denset = pin;
+#if defined(LM4F) || defined(TM4C)
 		amselclr = pin;
+#endif
 	}
 	break;
 
@@ -539,7 +549,9 @@ static inline void tiva_gpiopadtype(uint32_t base, uint32_t pin, uint32_t pinset
 		purset = pin;
 		pdrclr = pin;
 		denclr = pin;
+#if defined(LM4F) || defined(TM4C)
 		amselclr = pin;
+#endif
 	}
 	break;
 
@@ -548,7 +560,9 @@ static inline void tiva_gpiopadtype(uint32_t base, uint32_t pin, uint32_t pinset
 		purclr = pin;
 		pdrset = pin;
 		denclr = pin;
+#if defined(LM4F) || defined(TM4C)
 		amselclr = pin;
+#endif
 	}
 	break;
 
@@ -557,7 +571,9 @@ static inline void tiva_gpiopadtype(uint32_t base, uint32_t pin, uint32_t pinset
 		purclr = pin;
 		pdrclr = pin;
 		denclr = pin;
+#if defined(LM4F) || defined(TM4C)
 		amselset = pin;
+#endif
 	}
 	break;
 

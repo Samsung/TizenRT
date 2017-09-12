@@ -50,12 +50,6 @@
 #
 ############################################################################
 
-CSRCS += slsi_wifi_api.c
-CSRCS += slsi_wifi_utils.c
-
-CFLAGS += -I$(TOPDIR)$(DELIM)../apps$(DELIM)wpa_supplicant$(DELIM)src
-CFLAGS += -I$(TOPDIR)$(DELIM)../apps$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)utils
-CFLAGS += -I$(TOPDIR)$(DELIM)../apps$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)common
-
-DEPPATH += --dep-path slsi_wifi
-VPATH += :slsi_wifi
+ifeq ($(CONFIG_NETUTILS_WIFI),y)
+CONFIGURED_EXT += slsi_wifi
+endif

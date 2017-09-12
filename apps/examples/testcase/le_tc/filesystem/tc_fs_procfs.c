@@ -100,7 +100,9 @@ void tc_fs_procfs_main(void)
 	int ret;
 
 	ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
-	TC_ASSERT("mount", ret == OK || errno == EEXIST);
+	if (ret < 0) {
+		TC_ASSERT_EQ("mount", errno, EEXIST);
+	}
 
 	ret = read_dir_entries(PROC_MOUNTPOINT);
 	TC_ASSERT_EQ("read_dir_entries", ret, OK);

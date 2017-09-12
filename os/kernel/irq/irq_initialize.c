@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
+#include <string.h>
 
 #include "irq/irq.h"
 

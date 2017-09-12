@@ -8,14 +8,14 @@ config NETUTILS_MDNS
 	default n
 	---help---
 		Enables support for Multicast DNS. The multicast Domain Name System (mDNS)
-                resolves host names to IP addresses within small networks that do not include
-	        a local name server.
+		resolves host names to IP addresses within small networks that do not include
+		a local name server.
 
 if NETUTILS_MDNS
 
 config NETUTILS_MDNS_RESPONDER_SUPPORT
-        bool "mDNS Responder"
-        default n
+	bool "mDNS Responder"
+	default n
 	---help---
 		Enable mDNS Responder
 

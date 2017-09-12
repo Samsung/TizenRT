@@ -231,7 +231,7 @@ void itc_arastorage_db_print_header_p(void)
 
 	snprintf(g_query, QUERY_LENGTH, "SELECT %s, %s, %s FROM %s WHERE %s > 5;", g_attribute_set[0], g_attribute_set[1], g_attribute_set[2], RELATION_NAME, g_attribute_set[0]);
 	g_cursor = db_query(g_query);
-	TC_ASSERT_NOT_NULL("db_query", g_cursor);
+	TC_ASSERT_NEQ("db_query", g_cursor, NULL);
 	ret = db_print_header(g_cursor);
 	TC_ASSERT_EQ_CLEANUP("db_print_header", DB_ERROR(ret), 0, db_cursor_free(g_cursor));
 	db_cursor_free(g_cursor);
@@ -257,7 +257,7 @@ void itc_arastorage_db_print_tuple_p(void)
 	snprintf(g_query, QUERY_LENGTH, "SELECT %s, %s, %s FROM %s WHERE %s > 5;", g_attribute_set[0], g_attribute_set[1], g_attribute_set[2], RELATION_NAME, g_attribute_set[0]);
 #endif
 	g_cursor = db_query(g_query);
-	TC_ASSERT_NOT_NULL("db_query", g_cursor);
+	TC_ASSERT_NEQ("db_query", g_cursor, NULL);
 
 	if (DB_SUCCESS(cursor_move_first(g_cursor))) {
 		do {

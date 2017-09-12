@@ -61,6 +61,10 @@ endif
 # VI-Workalike Editor
 
 APPNAME = vi
+FUNCNAME = vi_main
+PRIORITY = SCHED_PRIORITY_DEFAULT
+STACKSIZE = 16384
+THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 CSRCS =
@@ -128,7 +132,16 @@ install:
 
 endif
 
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_SYSTEM_VI),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+
+else
 context:
+
+endif
 
 # Create dependencies
 

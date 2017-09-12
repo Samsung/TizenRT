@@ -127,15 +127,6 @@ int total_fail;
 
 #define TC_ASSERT_LEQ(api_name, var, ref) TC_ASSERT_LEQ_CLEANUP(api_name, var, ref, )
 
-#define TC_ASSERT_NOT_NULL(api_name, handle) \
-{\
-	if ((handle) == NULL) {\
-		printf("\n[%s][Line : %d] FAIL , %s : API returned NULL ", __func__, __LINE__, api_name); \
-		total_fail++; \
-		return; \
-	} \
-}
-
 #define TC_SUCCESS_RESULT() \
 {\
 	printf("\n[%s] PASS \n", __func__); \

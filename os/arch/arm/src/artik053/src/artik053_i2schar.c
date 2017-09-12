@@ -97,7 +97,7 @@ int i2schar_devinit(void)
 	if (!initialized) {
 		/* Call s5j_i2s_initialize() to get an instance of the I2S interface */
 
-		i2s = s5j_i2s_initialize();
+		i2s = s5j_i2s_initialize(0);
 		if (!i2s) {
 			auddbg("ERROR: Failed to get the S5J I2S driver\n");
 			return -ENODEV;

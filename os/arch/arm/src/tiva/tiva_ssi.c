@@ -181,14 +181,14 @@
 /* Configuration settings */
 
 #ifndef CONFIG_SSI_TXLIMIT
-#define CONFIG_SSI_TXLIMIT (TIVA_TXFIFO_WORDS/2)
+#define CONFIG_SSI_TXLIMIT (TIVA_TXFIFO_WORDS / 2)
 #endif
 
 #if CONFIG_SSI_TXLIMIT < 1 || CONFIG_SSI_TXLIMIT > TIVA_TXFIFO_WORDS
 #error "Invalid range for CONFIG_SSI_TXLIMIT"
 #endif
 
-#if CONFIG_SSI_TXLIMIT && CONFIG_SSI_TXLIMIT < (TIVA_TXFIFO_WORDS/2)
+#if CONFIG_SSI_TXLIMIT && CONFIG_SSI_TXLIMIT < (TIVA_TXFIFO_WORDS / 2)
 #error "CONFIG_SSI_TXLIMIT must be at least half the TX FIFO size"
 #endif
 
@@ -549,7 +549,7 @@ static void ssi_txnull(struct tiva_ssidev_s *priv)
 
 static void ssi_txuint16(struct tiva_ssidev_s *priv)
 {
-	uint16_t *ptr = (uint16_t *) priv->txbuffer;
+	uint16_t *ptr = (uint16_t *)priv->txbuffer;
 	ssivdbg("TX: %p->%04x\n", ptr, *ptr);
 	ssi_putreg(priv, TIVA_SSI_DR_OFFSET, (uint32_t)(*ptr++));
 	priv->txbuffer = (void *)ptr;
@@ -557,7 +557,7 @@ static void ssi_txuint16(struct tiva_ssidev_s *priv)
 
 static void ssi_txuint8(struct tiva_ssidev_s *priv)
 {
-	uint8_t *ptr = (uint8_t *) priv->txbuffer;
+	uint8_t *ptr = (uint8_t *)priv->txbuffer;
 	ssivdbg("TX: %p->%02x\n", ptr, *ptr);
 	ssi_putreg(priv, TIVA_SSI_DR_OFFSET, (uint32_t)(*ptr++));
 	priv->txbuffer = (void *)ptr;
@@ -592,16 +592,16 @@ static void ssi_rxnull(struct tiva_ssidev_s *priv)
 
 static void ssi_rxuint16(struct tiva_ssidev_s *priv)
 {
-	uint16_t *ptr = (uint16_t *) priv->rxbuffer;
-	*ptr = (uint16_t) ssi_getreg(priv, TIVA_SSI_DR_OFFSET);
+	uint16_t *ptr = (uint16_t *)priv->rxbuffer;
+	*ptr = (uint16_t)ssi_getreg(priv, TIVA_SSI_DR_OFFSET);
 	ssivdbg("RX: %p<-%04x\n", ptr, *ptr);
 	priv->rxbuffer = (void *)(++ptr);
 }
 
 static void ssi_rxuint8(struct tiva_ssidev_s *priv)
 {
-	uint8_t *ptr = (uint8_t *) priv->rxbuffer;
-	*ptr = (uint8_t) ssi_getreg(priv, TIVA_SSI_DR_OFFSET);
+	uint8_t *ptr = (uint8_t *)priv->rxbuffer;
+	*ptr = (uint8_t)ssi_getreg(priv, TIVA_SSI_DR_OFFSET);
 	ssivdbg("RX: %p<-%02x\n", ptr, *ptr);
 	priv->rxbuffer = (void *)(++ptr);
 }
@@ -838,8 +838,8 @@ static int ssi_transfer(struct tiva_ssidev_s *priv, const void *txbuffer, void *
 
 	/* Set up to perform the transfer */
 
-	priv->txbuffer = (uint8_t *) txbuffer;	/* Source buffer */
-	priv->rxbuffer = (uint8_t *) rxbuffer;	/* Destination buffer */
+	priv->txbuffer = (uint8_t *)txbuffer;	/* Source buffer */
+	priv->rxbuffer = (uint8_t *)rxbuffer;	/* Destination buffer */
 	priv->ntxwords = nwords;	/* Number of words left to send */
 	priv->nrxwords = 0;			/* Number of words received */
 	priv->nwords = nwords;		/* Total number of exchanges */
@@ -1651,9 +1651,9 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 
 #ifndef CONFIG_SSI_POLLWAIT
 #if NSSI_ENABLED > 1
-	irq_attach(priv->irq, (xcpt_t) ssi_interrupt, NULL);
+	irq_attach(priv->irq, (xcpt_t)ssi_interrupt, NULL);
 #else
-	irq_attach(SSI_IRQ, (xcpt_t) ssi_interrupt, NULL);
+	irq_attach(SSI_IRQ, (xcpt_t)ssi_interrupt, NULL);
 #endif
 #endif							/* CONFIG_SSI_POLLWAIT */
 

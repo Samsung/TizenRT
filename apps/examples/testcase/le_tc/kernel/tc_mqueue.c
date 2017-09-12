@@ -503,11 +503,10 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 		TC_ASSERT_GEQ("mq_close", mq_close(g_recv_mqfd), 0);
 	} else if (result != PTHREAD_CANCELED && g_recv_mqfd) {
 		TC_ASSERT_EQ("mq_close", mq_close(g_recv_mqfd), 0);
-		TC_ASSERT("pthread_join", false);
 	}
 
 	/* Make sure that the receive queue is closed as well */
-	TC_ASSERT("mq_close", !g_send_mqfd);
+	TC_ASSERT_EQ("mq_close", g_send_mqfd, NULL);
 
 	/* Destroy the message queue */
 	TC_ASSERT_GEQ("mq_unlink", mq_unlink("mqueue"), 0);
@@ -543,7 +542,7 @@ static void tc_mqueue_mq_notify(void)
 						 );
 
 	sleep(1);
-	TC_ASSERT("mq_notify", enter_notify_handler);
+	TC_ASSERT_EQ("mq_notify", enter_notify_handler, true);
 
 	TC_SUCCESS_RESULT();
 cleanup:

@@ -207,11 +207,11 @@ static void tc_sched_sched_yield(void)
 
 	ret_chk = pthread_create(&thread1, NULL, threadfunc_callback, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
-	TC_ASSERT("sched_yield", g_pthread_callback);
+	TC_ASSERT_EQ("sched_yield", g_pthread_callback, true);
 
 	ret_chk = pthread_create(&thread2, NULL, threadfunc_callback, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
-	TC_ASSERT("sched_yield", g_pthread_callback);
+	TC_ASSERT_EQ("sched_yield", g_pthread_callback, true);
 
 	/* wait for threads to exit */
 	pthread_join(thread1, 0);
@@ -252,8 +252,7 @@ static void tc_sched_wait(void)
 	/* wait for child to exit, and store child's exit status */
 	ret_chk = wait(&status);
 	TC_ASSERT_NEQ("wait", ret_chk, ERROR);
-
-	TC_ASSERT("wait", child1_pid == (pid_t)ret_chk || child2_pid == (pid_t)ret_chk);
+	TC_ASSERT_EQ("wait", (child1_pid == (pid_t)ret_chk || child2_pid == (pid_t)ret_chk), true);
 
 	/* wait for second child to exit */
 	sleep(SEC_2);
@@ -332,7 +331,7 @@ static void tc_sched_sched_gettcb(void)
 	TC_ASSERT_EQ("sched_gettcb", tcb, NULL);
 
 	tcb = sched_gettcb(PID_IDLE);
-	TC_ASSERT_NOT_NULL("sched_gettcb", tcb);
+	TC_ASSERT_NEQ("sched_gettcb", tcb, NULL);
 	TC_ASSERT_EQ("sched_gettcb", tcb->pid, PID_IDLE);
 
 	TC_SUCCESS_RESULT();
@@ -356,7 +355,7 @@ static void tc_sched_sched_lock_unlock(void)
 	struct tcb_s *st_tcb = NULL;
 
 	st_tcb = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
+	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
 
 	cntlock = st_tcb->lockcount;
 
@@ -411,11 +410,11 @@ static void tc_sched_sched_self(void)
 	/* get process id */
 
 	st_tcbpid = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcbpid);
+	TC_ASSERT_NEQ("sched_self", st_tcbpid, NULL);
 
 	/* should return tcb for current process */
 	st_tcbself = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcbself);
+	TC_ASSERT_NEQ("sched_self", st_tcbself, NULL);
 	TC_ASSERT_EQ("sched_self", st_tcbself->pid, st_tcbpid->pid);
 
 	TC_SUCCESS_RESULT();
@@ -436,7 +435,7 @@ static void tc_sched_sched_verifytcb(void)
 	struct tcb_s *st_tcb;
 	st_tcb = sched_self();
 	ret_chk = sched_verifytcb(st_tcb);
-	TC_ASSERT("verfiytcb fail", ret_chk);
+	TC_ASSERT_EQ("sched_verifytcb", ret_chk, true);
 
 	TC_SUCCESS_RESULT();
 }
@@ -459,7 +458,7 @@ static void tc_sched_sched_foreach(void)
 
 	/* provides TCB to user callback function "sched_foreach_callback" */
 	sched_foreach(sched_foreach_callback, NULL);
-	TC_ASSERT("sched_foreach", g_callback);
+	TC_ASSERT_EQ("sched_foreach", g_callback, true);
 
 	TC_SUCCESS_RESULT();
 }
@@ -482,7 +481,7 @@ static void tc_sched_sched_lockcount(void)
 	struct tcb_s *st_tcb = NULL;
 
 	st_tcb = sched_self();
-	TC_ASSERT_NOT_NULL("sched_self", st_tcb);
+	TC_ASSERT_NEQ("sched_self", st_tcb, NULL);
 
 	prev_cnt = sched_lockcount();
 	ret_chk = sched_lock();
@@ -519,7 +518,7 @@ static void tc_sched_sched_getstreams(void)
 	struct streamlist *stream;
 
 	stream = sched_getstreams();
-	TC_ASSERT_NOT_NULL("sched_getstreams", stream);
+	TC_ASSERT_NEQ("sched_getstreams", stream, NULL);
 
 	TC_SUCCESS_RESULT();
 }

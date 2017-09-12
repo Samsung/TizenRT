@@ -50,8 +50,7 @@
 #
 ############################################################################
 
-CSRCS		+= telnetd_daemon.c
-
-DEPPATH += --dep-path telnetd
-VPATH += :telnetd
+ifeq ($(CONFIG_NETUTILS_TELNETD),y)
+CONFIGURED_EXT += telnetd
+endif
 

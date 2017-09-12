@@ -50,8 +50,6 @@
 #
 ############################################################################
 
-CSRCS += dhcpc.c
-
-DEPPATH += --dep-path dhcpc
-VPATH += :dhcpc
-
+ifeq ($(CONFIG_NETUTILS_DHCPC),y)
+CONFIGURED_EXT += dhcpc
+endif
