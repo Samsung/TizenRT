@@ -25,6 +25,12 @@
 
 #include <stdio.h>
 
+struct launch_command_params {
+	const struct command *cmd;
+	int argc;
+	char **argv;
+};
+
 void usage(const char *command_base, const struct command *commands)
 {
 	const struct command *cmd = commands;
@@ -37,6 +43,26 @@ void usage(const char *command_base, const struct command *commands)
 	}
 }
 
+static pthread_addr_t launch_command(void *arg)
+{
+	struct launch_command_params *params = (struct launch_command_params *)arg;
+	int i = 0;
+	int argc = params->argc + 1;
+	char **argv = (char **)malloc(argc * sizeof(char *));
+
+	if (!argv)
+		return NULL;
+
+	argv[0] = (char *)params->cmd->name;
+	for (i = 1; i < argc; i++)
+		argv[i] = params->argv[i - 1];
+
+	params->cmd->fn(argc, argv);
+
+	free(argv);
+
+	return NULL;
+}
 
 int commands_parser(int argc, char **argv, const struct command *commands)
 {
@@ -50,10 +76,24 @@ int commands_parser(int argc, char **argv, const struct command *commands)
 	while (cmd->fn) {
 		if (!strcmp(argv[1], cmd->name)) {
 			if (cmd->fn) {
-				char tname[32];
+				pthread_t tid;
+				pthread_attr_t attr;
+				struct sched_param sparam;
+				struct launch_command_params tparams;
 
-				snprintf(tname, 32, "%s_command", cmd->name);
-				task_create(tname, SCHED_PRIORITY_DEFAULT, 16384, cmd->fn, argv);
+				tparams.cmd = cmd;
+				tparams.argc = argc;
+				tparams.argv = argv;
+
+				pthread_attr_init(&attr);
+				sparam.sched_priority = SCHED_PRIORITY_DEFAULT;
+				pthread_attr_setschedparam(&attr, &sparam);
+				pthread_attr_setschedpolicy(&attr, SCHED_RR);
+				pthread_attr_setstacksize(&attr, 16384);
+				pthread_create(&tid, &attr, launch_command, (void *)&tparams);
+				pthread_attr_destroy(&attr);
+				pthread_setname_np(tid, "launch-command");
+				pthread_join(tid, NULL);
 			}
 			break;
 		}
