@@ -635,6 +635,16 @@ netif_found:
 				goto ip6_input_cleanup;
 			}
 
+			/* check payload length is multiple of 8 octets when mbit is set */
+			if (IP6_FRAG_MBIT(frag_hdr) && (IP6H_PLEN(ip6hdr) & 0x7)) {
+				/* ipv6 payload length is not multiple of 8 octets */
+				icmp6_param_problem(p, ICMP6_PP_FIELD, (u32_t)&ip6hdr->_plen - (u32_t)ip6_current_header());
+				LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with invalid payload length dropped\n"));
+				pbuf_free(p);
+				IP6_STATS_INC(ip6.drop);
+				goto ip6_input_cleanup;
+			}
+
 			/* Offset == 0 and more_fragments == 0? */
 			if ((frag_hdr->_fragment_offset & PP_HTONS(IP6_FRAG_OFFSET_MASK | IP6_FRAG_MORE_FLAG)) == 0) {
 				/* This is a 1-fragment packet, usually a packet that we have

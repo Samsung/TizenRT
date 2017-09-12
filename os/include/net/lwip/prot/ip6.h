@@ -111,6 +111,18 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+#define IP6H_V(hdr)  ((lwip_ntohl((hdr)->_v_tc_fl) >> 28) & 0x0f)
+#define IP6H_TC(hdr) ((lwip_ntohl((hdr)->_v_tc_fl) >> 20) & 0xff)
+#define IP6H_FL(hdr) (lwip_ntohl((hdr)->_v_tc_fl) & 0x000fffff)
+#define IP6H_PLEN(hdr) (lwip_ntohs((hdr)->_plen))
+#define IP6H_NEXTH(hdr) ((hdr)->_nexth)
+#define IP6H_NEXTH_P(hdr) ((u8_t *)(hdr) + 6)
+#define IP6H_HOPLIM(hdr) ((hdr)->_hoplim)
+#define IP6H_VTCFL_SET(hdr, v, tc, fl) (hdr)->_v_tc_fl = (lwip_htonl((((u32_t)(v)) << 28) | (((u32_t)(tc)) << 20) | (fl)))
+#define IP6H_PLEN_SET(hdr, plen) (hdr)->_plen = lwip_htons(plen)
+#define IP6H_NEXTH_SET(hdr, nexth) (hdr)->_nexth = (nexth)
+#define IP6H_HOPLIM_SET(hdr, hl) (hdr)->_hoplim = (u8_t)(hl)
+
 /* Hop-by-hop router alert option. */
 #define IP6_HBH_HLEN    8
 #define IP6_PAD1_OPTION         0
@@ -141,6 +153,7 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
+
 /* Fragment header. */
 #define IP6_FRAG_HLEN    8
 #define IP6_FRAG_OFFSET_MASK    0xfff8
@@ -163,17 +176,9 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
-#define IP6H_V(hdr)  ((lwip_ntohl((hdr)->_v_tc_fl) >> 28) & 0x0f)
-#define IP6H_TC(hdr) ((lwip_ntohl((hdr)->_v_tc_fl) >> 20) & 0xff)
-#define IP6H_FL(hdr) (lwip_ntohl((hdr)->_v_tc_fl) & 0x000fffff)
-#define IP6H_PLEN(hdr) (lwip_ntohs((hdr)->_plen))
-#define IP6H_NEXTH(hdr) ((hdr)->_nexth)
-#define IP6H_NEXTH_P(hdr) ((u8_t *)(hdr) + 6)
-#define IP6H_HOPLIM(hdr) ((hdr)->_hoplim)
-#define IP6H_VTCFL_SET(hdr, v, tc, fl) (hdr)->_v_tc_fl = (lwip_htonl((((u32_t)(v)) << 28) | (((u32_t)(tc)) << 20) | (fl)))
-#define IP6H_PLEN_SET(hdr, plen) (hdr)->_plen = lwip_htons(plen)
-#define IP6H_NEXTH_SET(hdr, nexth) (hdr)->_nexth = (nexth)
-#define IP6H_HOPLIM_SET(hdr, hl) (hdr)->_hoplim = (u8_t)(hl)
+#define IP6_FRAG_MBIT(hdr) (lwip_ntohs((hdr)->_fragment_offset) & 0x1)
+#define IP6_FRAG_ID(hdr) (lwip_ntohl((hdr)->_identification))
+
 #ifdef __cplusplus
 }
 #endif
