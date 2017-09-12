@@ -112,6 +112,10 @@ ifeq ($(CONFIG_EXAMPLES_ARTIK_WIFI), y)
   TASH_APPS += wifictl
   MAINSRC += wifi-api.c
 endif
+ifeq ($(CONFIG_EXAMPLES_ARTIK_MQTT), y)
+  TASH_APPS += mqtt
+  MAINSRC += mqtt-api.c
+endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
