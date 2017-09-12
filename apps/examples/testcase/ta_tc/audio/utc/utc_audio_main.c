@@ -88,7 +88,7 @@ static void utc_audio_pcm_open_tc_p(void)
 static void utc_audio_pcm_open_tc_n(void)
 {
 	struct pcm *pcm;
-	pcm = pcm_open(-1, -1, PCM_IN, NULL);
+	pcm = pcm_open(999, 999, PCM_IN, NULL);
 	TC_ASSERT_LEQ("pcm_open", pcm_get_file_descriptor(pcm), 0)
 	pcm_close(pcm);
 	TC_SUCCESS_RESULT();
@@ -218,7 +218,7 @@ static void utc_audio_pcm_get_channels_tc_p(void)
 static void utc_audio_pcm_get_channels_tc_n(void)
 {
 	int ch;
-	ch = pcm_get_channels(g_pcm);
+	ch = pcm_get_channels(NULL);
 	TC_ASSERT_EQ("pcm_get_channels", ch, 0);
 	TC_SUCCESS_RESULT();
 }
@@ -250,7 +250,7 @@ static void utc_audio_pcm_get_rate_tc_p(void)
 static void utc_audio_pcm_get_rate_tc_n(void)
 {
 	int rate;
-	rate = pcm_get_rate(g_pcm);
+	rate = pcm_get_rate(NULL);
 	TC_ASSERT_EQ("pcm_get_channels", rate, 0);
 	TC_SUCCESS_RESULT();
 }
@@ -281,9 +281,9 @@ static void utc_audio_pcm_get_format_tc_p(void)
 */
 static void utc_audio_pcm_get_format_tc_n(void)
 {
-	int format;
-	format = pcm_get_format(g_pcm);
-	TC_ASSERT_EQ("pcm_get_format", format, -1);
+	int pcm_format;
+	pcm_format = pcm_get_format(NULL);
+	TC_ASSERT_EQ("pcm_get_format", pcm_format, -1);
 	TC_SUCCESS_RESULT();
 }
 
@@ -350,7 +350,7 @@ static void utc_audio_pcm_get_error_tc_p(void)
 */
 static void utc_audio_pcm_get_error_tc_n(void)
 {
-	TC_ASSERT_NEQ("pcm_get_error", pcm_get_error(NULL), NULL);
+	TC_ASSERT_EQ("pcm_get_error", pcm_get_error(NULL), NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -485,7 +485,7 @@ static void utc_audio_pcm_frames_to_bytes_n(void)
 {
 	unsigned int bytes;
 	bytes = pcm_frames_to_bytes(NULL, pcm_get_buffer_size(g_pcm));
-	TC_ASSERT_LEQ("pcm_frames_to_bytes", bytes, 0);
+	TC_ASSERT_EQ("pcm_frames_to_bytes", bytes, 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -709,8 +709,7 @@ static int audio_tc_launcher(int argc, char **args)
 	utc_audio_pcm_get_config_tc_n();
 	utc_audio_pcm_get_channels_tc_p();
 	utc_audio_pcm_get_channels_tc_n();
-	utc_audio_pcm_get_file_descriptor_tc_p();
-	utc_audio_pcm_get_file_descriptor_tc_n();
+	utc_audio_pcm_get_rate_tc_p();
 	utc_audio_pcm_get_rate_tc_n();
 	utc_audio_pcm_get_format_tc_p();
 	utc_audio_pcm_get_format_tc_n();
