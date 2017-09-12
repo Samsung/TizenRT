@@ -155,6 +155,33 @@ PACK_STRUCT_END
 #endif
 #define IP6_HBH_TYPE(hdr) ((hdr)->_ra_opt_type)
 
+/* Destination header. */
+#ifdef PACK_STRUCT_USE_INCLUDES
+#include "arch/bpstruct.h"
+#endif
+PACK_STRUCT_BEGIN
+struct ip6_dest_hdr {
+	/* next header */
+	PACK_STRUCT_FLD_8(u8_t _nexth);
+	/* header length */
+	PACK_STRUCT_FLD_8(u8_t _hlen);
+	/* destination alert option type */
+	PACK_STRUCT_FLD_8(u8_t _da_opt_type);
+	/* destination alert option data len */
+	PACK_STRUCT_FLD_8(u8_t _da_opt_dlen);
+	/* destination alert option data */
+	PACK_STRUCT_FIELD(u16_t _da_opt_data);
+	/* PadN option type */
+	PACK_STRUCT_FLD_8(u8_t _padn_opt_type);
+	/* PadN option data len */
+	PACK_STRUCT_FLD_8(u8_t _padn_opt_dlen);
+} PACK_STRUCT_STRUCT;
+PACK_STRUCT_END
+#ifdef PACK_STRUCT_USE_INCLUDES
+#include "arch/epstruct.h"
+#endif
+#define IP6_DEST_TYPE(hdr) ((hdr)->_da_opt_type)
+
 /* Fragment header. */
 #define IP6_FRAG_HLEN    8
 #define IP6_FRAG_OFFSET_MASK    0xfff8
