@@ -1,21 +1,24 @@
-# ARTIK 053
+# ARTIK05x
 
-The ARTIK 053 is a SOC for Wi-Fi™ IoT solutions. The ARTIK 053 has a Wi-Fi subsystem, security subsystem, and application subsystem.
+The ARTIK05x is a SOC for Wi-Fi™ IoT solutions. The ARTIK05x has a Wi-Fi subsystem, security subsystem, and application subsystem.
 
 ## Contents
 
 > [Information](#information)  
+> [Configuration Sets](#configuration-sets)  
 > [Environment Set-up](#environment-set-up)  
 > [How to program a binary](#how-to-program-a-binary)  
-> [ROMFS](#romfs)  
-> [Configuration Sets](#configuration-sets)
+> [ROMFS](#romfs)
+
 
 ## Information
 
-The Samsung ARTIK™ 053 Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
-Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK 053 Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
+The Samsung ARTIK™ 05x Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
+Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK05x Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
 
-Here is a [memory map](scripts/README.md).
+### MemoryMap
+
+8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM. See [[here]](scripts/README.md) for the physical memory address.
 
 ### ARTIK053 Starter Kit PinOut
 #### CON710 CON711 CON708 CON709
@@ -79,6 +82,17 @@ Here is a [memory map](scripts/README.md).
              XGPIO2(gpio31) <- 19 | 20 -> XGPIO6(gpio35)/XSPI2_MISO
              XGPIO1(gpio30) <- 21 | 22 -> XGPIO7(gpio36)/XSPI2_MOSI
              XGPIO3(gpio32) <- 23 | 24 -> GND
+```
+
+## Configuration Sets
+
+#### nettest
+
+This is the basic configuration of ARTIK05x products. You can set and build the following:
+
+```bash
+cd os/tools
+./configure.sh artik053/nettest
 ```
 
 ## Environment Set-up
@@ -149,7 +163,7 @@ openocd -f artik053.cfg -c ' \
     exit'
 ```
 
-If you have an 'ARTIK053S' device, please do the following.
+Please do the following for 'ARTIK05xS' device.
 
 ```bash
 ../build/configs/artik053/tools/codesigner/artik053_codesigner -sign ../build/output/bin/tinyara_head.bin
@@ -164,9 +178,47 @@ openocd -f artik053.cfg -c ' \
 ```
 
 Once the complete binaries are successfully programmed, each partition can be updated seperately with new one.
+
+In normal model (ARTIK05x products),
 ```bash
 openocd -f artik053.cfg -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin; exit'
+```
+
+In secure model (ARTIK05xS products),
+```bash
+openocd -f artik053.cfg -c ' \
+    flash_write os ../build/output/bin/tinyara_head.bin-signed; exit'
+```
+
+### Factory Reset
+Changing os to the initial version is a method to solve an issue of not booted device. This is possible if there is an initialization binary in memory.
+
+#### How to Download the Initialization Binaries
+Compress the compiled firmware and download it to the board through OpenOCD.
+
+```bash
+gzip -c tinyara_head.bin > factoryimage.gz
+openocd -f artik053.cfg -c ' \
+    flash_write factory    ../build/configs/artik053/bin/factoryimage.gz;      \
+    exit'
+```
+
+#### How to enter initialization mode
+Press the RESET button (SW700) to reboot the Starter Kit, and then press and hold the 'ARDUINO RESET' button (SW701) for 10 seconds. The device will enter initialization mode as follows.
+```
+.....
+Factory reset.
+Erasing boot partitions...
+....................................e
+Erased 600 sectors
+Flashing factory image...
+Uncompressed size: 1258496 = 0x133400
+resetting ...
+
+........ <RESET>.....................
+U-Boot 2017
+.....
 ```
 
 ## ROMFS
@@ -207,16 +259,4 @@ you must modify partition_map.cfg matching the sizes in ARTIK053_FLASH_PART_LIST
     ```bash
     mount -t romfs /dev/smart4rom9 /rom
     ```
-
-## Configuration Sets
-
-
-#### nettest
-
-This is the basic configuration of ARTIK05x products. You can set and build the following:
-
-```bash
-cd os/tools
-./configure.sh artik053/nettest
-```
 
