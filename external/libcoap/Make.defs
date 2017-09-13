@@ -50,20 +50,7 @@
 #
 ############################################################################
 
-CSRCS += libcoap/async.c
-CSRCS += libcoap/block.c
-CSRCS += libcoap/coap_list.c
-CSRCS += libcoap/debug.c
-CSRCS += libcoap/encode.c
-CSRCS += libcoap/hashkey.c
-CSRCS += libcoap/net.c
-CSRCS += libcoap/option.c
-CSRCS += libcoap/pdu.c
-CSRCS += libcoap/resource.c
-CSRCS += libcoap/str.c
-CSRCS += libcoap/subscribe.c
-CSRCS += libcoap/uri.c
-
-DEPPATH += --dep-path libcoap
-VPATH += :libcoap
+ifeq ($(CONFIG_NETUTILS_LIBCOAP),y)
+CONFIGURED_EXT += libcoap
+endif
 

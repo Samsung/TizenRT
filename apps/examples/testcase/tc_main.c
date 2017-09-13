@@ -53,6 +53,9 @@
 #ifdef CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC
 #define TC_WIFI_MANAGER_STACK  2048
 #endif
+#if defined(CONFIG_EXAMPLES_TESTCASE_MQTT_UTC)
+#define TC_MQTT_STACK 4096
+#endif
 
 sem_t tc_sem;
 int working_tc;
@@ -71,6 +74,7 @@ extern int itc_sysio_main(int argc, char *argv[]);
 extern int utc_dm_main(int argc, char *argv[]);
 extern int itc_dm_main(int argc, char *argv[]);
 extern int utc_wifi_manager_main(int argc, char *argv[]);
+extern int utc_mqtt_main(int argc, char *argv[]);
 
 /* Not yet */
 extern int mpu_tc_main(int argc, char *argv[]);
@@ -158,7 +162,12 @@ int tc_main(int argc, char *argv[])
 		printf("Wi-Fi Manager utc is not started, err = %d\n", pid);
 	}
 #endif
-
+#ifdef CONFIG_EXAMPLES_TESTCASE_MQTT_UTC
+	pid = task_create("mqttutc", SCHED_PRIORITY_DEFAULT, TC_MQTT_STACK, utc_mqtt_main, argv);
+	if (pid < 0) {
+		printf("MQTT utc is not started, err = %d\n", pid);
+	}
+#endif
 	do {
 		sleep(5);
 	} while (working_tc > 0);

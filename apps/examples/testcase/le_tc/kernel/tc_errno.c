@@ -66,12 +66,12 @@ static void tc_errno_set_get_errno_and_ptr(void)
 #endif
 
 			ret_err = (char *)strerror(ret_chk);
-			TC_ASSERT_NOT_NULL("strerror", ret_err);
+			TC_ASSERT_NEQ("strerror", ret_err, NULL);
 			TC_ASSERT_EQ("strerror", strncmp(ret_err, errstr_arr[err_index - 1], strlen(ret_err)), 0);
 
 #if !defined(CONFIG_BUILD_PROTECTED)
 			ret_err = (char *)strerror(ret_ptr_chk);
-			TC_ASSERT_NOT_NULL("strerror", ret_err);
+			TC_ASSERT_NEQ("strerror", ret_err, NULL);
 			TC_ASSERT_EQ("strerror", strncmp(ret_err, errstr_arr[err_index - 1], strlen(ret_err)), 0);
 #endif
 		}

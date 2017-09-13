@@ -33,8 +33,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_LIBTUV),y)
-
 CSRCS += uv_handle.c
 CSRCS += uv_loop.c
 CSRCS += uv_poll.c
@@ -51,11 +49,6 @@ CSRCS += uv_error.c
 CSRCS += uv_dir.c
 CSRCS += uv_inet.c
 
-CFLAGS += -D__TINYARA__
-CFLAGS += -I$(TOPDIR)/../external/libtuv/include
-CFLAGS += -I$(TOPDIR)/../external/libtuv/source
+DEPPATH += --dep-path source
+VPATH += :source
 
-DEPPATH += --dep-path libtuv/source
-VPATH += :libtuv/source
-
-endif

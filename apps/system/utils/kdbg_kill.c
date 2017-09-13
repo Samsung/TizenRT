@@ -203,7 +203,7 @@ int kdbg_kill(int argc, char **args)
 		goto usage;
 	}
 
-	if (!strcmp(args[1], "--help")) {
+	if (!strncmp(args[1], "--help", strlen("--help") + 1)) {
 		goto usage;
 	}
 
@@ -211,7 +211,7 @@ int kdbg_kill(int argc, char **args)
 		/* For a case that no signal is specified or '-l' option */
 		/* 'kill PID' or 'kill -l' */
 		ptr = args[1];
-		if (!strcmp(ptr, "-l")) {
+		if (!strncmp(ptr, "-l", strlen("-l") + 1)) {
 			/* List signal numbers and it's name */
 			for (sigidx = 0; kdbg_sig[sigidx].signame != NULL; sigidx++) {
 				printf("%2d) %-15s\n", kdbg_sig[sigidx].signo, kdbg_sig[sigidx].signame);
@@ -285,7 +285,7 @@ int kdbg_killall(int argc, char **args)
 		goto usage;
 	}
 
-	if (!strcmp(args[1], "--help")) {
+	if (!strncmp(args[1], "--help", strlen("--help") + 1)) {
 		goto usage;
 	}
 
@@ -293,7 +293,7 @@ int kdbg_killall(int argc, char **args)
 		/* For a case that no signal is specified or '-l' option */
 		/* 'killall NAME' or 'killall -l' */
 		ptr = args[1];
-		if (!strcmp(ptr, "-l")) {
+		if (!strncmp(ptr, "-l", strlen("-l") + 1)) {
 			/* List signal numbers and it's name */
 			for (sigidx = 0; kdbg_sig[sigidx].signame != NULL; sigidx++) {
 				printf("%2d) %-15s\n", kdbg_sig[sigidx].signo, kdbg_sig[sigidx].signame);

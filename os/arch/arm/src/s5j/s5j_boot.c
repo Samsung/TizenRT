@@ -109,7 +109,8 @@ static inline void up_idlestack_color(void *pv, unsigned int nbytes)
 						 "\tbne  1b\n"	/* Bottom of the loop */
 						 "2:\n" "\tmov  r14, #0\n"	/* LR = return address (none) */
 						 "\tb    os_start\n"	/* Branch to os_start */
-						:: "r"(r0), "r"(r1)
+						: /* No Output */
+						: "r"(r0), "r"(r1)
 						);
 
 	__builtin_unreachable();
@@ -139,8 +140,8 @@ int s5j_mpu_initialize(void)
 	 * Reserved		0x02021000	0x020217FF	2
 	 * BL1			0x02021800	0x020237FF	8
 	 * TinyARA		0x02023800	0x020E7FFF	786(WBWA)
-	 * Reserved		0x020E8000	0x020FFFFF	96 (WBWA)
-	 * Reserved		0x02100000	0x021FFFFF	64 (NCNB)
+	 * Shared mem		0x020E8000	0x020E9FFF	8 (WBWA)
+	 * cm0			0x020EA000	0x0210FFFF	152 (NCNB)
 	 * WIFI			0x02110000	0x0215FFFF	320(NCNB)
 	 */
 

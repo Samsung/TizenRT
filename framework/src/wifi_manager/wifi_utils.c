@@ -286,7 +286,7 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 		}
 	} else {
 		result = WIFI_UTILS_SUCCESS;
-		nvdbg("Successfully joined the network: %s\n", ap_connect_config->ssid);
+		nvdbg("Successfully joined the network: %s(%d)\n", ap_connect_config->ssid, ap_connect_config->ssid_length);
 	}
 
 connect_ap_fail:
@@ -304,6 +304,7 @@ wifi_utils_result_e wifi_utils_disconnect_ap(void)
 
 	ret = WiFiNetworkLeave();
 	if (ret != SLSI_STATUS_SUCCESS) {
+		ndbg("WiFiNetworkLeave fail because of %d\n", ret);
 		return WIFI_UTILS_FAIL;
 	}
 

@@ -55,7 +55,7 @@ static void tc_timer_timer_create_delete(void)
 
 	ret_chk = timer_create(clockid, &st_sigevent, &timer_id);
 	TC_ASSERT_NEQ("timer_create", ret_chk, ERROR);
-	TC_ASSERT_NOT_NULL("timer_create", timer_id);
+	TC_ASSERT_NEQ("timer_create", timer_id, NULL);
 
 	st_ret_prt = (struct posix_timer_s *)timer_id;
 	TC_ASSERT_EQ_CLEANUP("timer_create", st_ret_prt->pt_value.sival_ptr, st_sigevent.sigev_value.sival_ptr, timer_delete(timer_id));
@@ -115,7 +115,7 @@ static void tc_timer_timer_set_get_time(void)
 	st_sigevent.sigev_value.sival_ptr = &timer_id;
 	ret_chk = timer_create(clockid, &st_sigevent, &timer_id);
 	TC_ASSERT_NEQ("timer_create", ret_chk, ERROR);
-	TC_ASSERT_NOT_NULL("timer_create", timer_id);
+	TC_ASSERT_NEQ("timer_create", timer_id, NULL);
 
 	st_timer_spec_set.it_interval.tv_sec = 1;
 	st_timer_spec_set.it_interval.tv_nsec = 0;	/* interval; */

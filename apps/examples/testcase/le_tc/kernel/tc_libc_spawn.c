@@ -354,7 +354,7 @@ static void tc_libc_spawn_posix_spawn_file_actions_destroy(void)
 
 	ret_chk = posix_spawn_file_actions_addopen(&st_fileactions, 1, szfilepath, O_WRONLY, 0644);
 	TC_ASSERT_EQ("posix_spawn_file_actions_addopen", ret_chk, OK);
-	TC_ASSERT_NOT_NULL("posix_spawn_file_actions_addopen", st_fileactions);
+	TC_ASSERT_NEQ("posix_spawn_file_actions_addopen", st_fileactions, NULL);
 
 	ret_chk = posix_spawn_file_actions_destroy(&st_fileactions);
 	TC_ASSERT_EQ("posix_spawn_file_actions_destroy", ret_chk, OK);
@@ -425,14 +425,14 @@ static void tc_libc_spawn_add_file_action(void)
 	/* Allocate the action list entry of this size */
 
 	entry1 = (struct spawn_open_file_action_s *)zalloc(alloc_num);
-	TC_ASSERT_NOT_NULL("zalloc", entry1);
+	TC_ASSERT_NEQ("zalloc", entry1, NULL);
 
 	/* And add it to the file action list */
 
 	add_file_action(st_fileactions, (struct spawn_general_file_action_s *)entry1);
 
 	entry2 = (struct spawn_open_file_action_s *)zalloc(alloc_num);
-	TC_ASSERT_NOT_NULL("zalloc", entry2);
+	TC_ASSERT_NEQ("zalloc", entry2, NULL);
 
 	/* And add it to the file action list */
 

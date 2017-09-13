@@ -52,7 +52,6 @@
 
 -include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
-include $(APPDIR)/Make.defs
 
 # libcoap
 
@@ -80,23 +79,23 @@ SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN = ..\..\libapps$(LIBEXT)
+  BIN = ..\libexternal$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN = ..\\..\\libapps$(LIBEXT)
+  BIN = ..\\libexternal$(LIBEXT)
 else
-  BIN = ../../libapps$(LIBEXT)
+  BIN = ../libexternal$(LIBEXT)
 endif
 endif
 
-ROOTDEPPATH = --dep-path .
+DEPPATH = --dep-path .
 
 # Common build
 
 VPATH =
 
 all: .built
-.PHONY: context depend clean distclean
+.PHONY: depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -108,12 +107,8 @@ $(COBJS): %$(OBJEXT): %.c
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) touch .built
 
-install:
-
-context:
-
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend
@@ -127,5 +122,4 @@ distclean: clean
 	$(call DELFILE, .depend)
 
 -include Make.dep
-.PHONY: preconfig
-preconfig:
+

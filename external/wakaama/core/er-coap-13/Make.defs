@@ -37,5 +37,5 @@
 
 CSRCS += er-coap-13.c
 
-DEPPATH += --dep-path wakaama/core/er-coap-13
-VPATH += :wakaama/core/er-coap-13
+DEPPATH += --dep-path core/er-coap-13
+VPATH += :core/er-coap-13

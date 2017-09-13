@@ -752,7 +752,7 @@ static void tiva_receive(struct tiva_driver_s *priv)
 			 * buffer may be un-aligned.
 			 */
 
-			*(uint32_t *) dbuf = tiva_ethin(priv, TIVA_MAC_DATA_OFFSET);
+			*(uint32_t *)dbuf = tiva_ethin(priv, TIVA_MAC_DATA_OFFSET);
 		}
 
 		/* Handle the last, partial word in the FIFO (0-3 bytes) and discard
@@ -1210,15 +1210,15 @@ static int tiva_ifup(struct net_driver_s *dev)
 
 	/* Program the hardware with it's MAC address (for filtering) */
 
-	regval = (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[3] << 24 | (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[2] << 16 | (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[1] << 8 | (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[0];
+	regval = (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[3] << 24 | (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[2] << 16 | (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[1] << 8 | (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[0];
 	tiva_ethout(priv, TIVA_MAC_IA0_OFFSET, regval);
 
-	regval = (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[5] << 8 | (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[4];
+	regval = (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[5] << 8 | (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[4];
 	tiva_ethout(priv, TIVA_MAC_IA1_OFFSET, regval);
 
 	/* Set and activate a timer process */
 
-	(void)wd_start(priv->ld_txpoll, TIVA_WDDELAY, tiva_polltimer, 1, (uint32_t) priv);
+	(void)wd_start(priv->ld_txpoll, TIVA_WDDELAY, tiva_polltimer, 1, (uint32_t)priv);
 
 	priv->ld_bifup = true;
 	irqrestore(flags);

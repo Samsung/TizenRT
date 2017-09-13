@@ -1,7 +1,8 @@
 #
 # For a description of the syntax of this configuration file,
-# see misc/tools/kconfig-language.txt.
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
+
 config NETUTILS_WIFI
 	bool "SLSI Wi-Fi API"
 	default n

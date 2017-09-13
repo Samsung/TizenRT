@@ -51,9 +51,6 @@
 #
 ############################################################################
 
-CSRCS += xmlparser.c \
-	  response.c
-
-DEPPATH += --dep-path xmlrpc
-VPATH += :xmlrpc
-
+ifeq ($(CONFIG_NETUTILS_XMLRPC),y)
+CONFIGURED_EXT += xmlrpc
+endif

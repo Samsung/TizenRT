@@ -88,7 +88,7 @@ void wifi_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_r
 	}
 	wifi_manager_scan_info_s *wifi_scan_iter = *scan_info;
 	while (wifi_scan_iter != NULL) {
-		printf("SSID: %-20s, BSSID: %-20s, RSSI: %d, CH: %d, Phy_type: %d\n", \
+  	printf("SSID: %-20s, BSSID: %-20s, RSSI: %d, CH: %d, Phy_type: %d\n", \
 						wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi, \
 						wifi_scan_iter->channel, wifi_scan_iter->phy_mode);
 		wifi_scan_iter = wifi_scan_iter->next;

@@ -43,43 +43,31 @@ CONFIG_SAMSUNG_NS2=y
 # CONFIG_ARCH_MATH_H is not set
 # CONFIG_ARCH_FLOAT_H is not set
 # CONFIG_ARCH_STDARG_H is not set
-
-#
-# Debug Options
-#
-# CONFIG_DEBUG is not set
-
-#
-# Stack Debug Options
-#
-CONFIG_ARCH_HAVE_STACKCHECK=y
-CONFIG_STACK_COLORATION=y
-
-#
-# Build Debug Options
-#
-CONFIG_DEBUG_SYMBOLS=y
-# CONFIG_FRAME_POINTER is not set
 CONFIG_ARCH_HAVE_CUSTOMOPT=y
 # CONFIG_DEBUG_NOOPT is not set
 # CONFIG_DEBUG_CUSTOMOPT is not set
 CONFIG_DEBUG_FULLOPT=y
 
 #
+# Hardware Configuration
+#
+
+#
 # Chip Selection
 #
 CONFIG_ARCH_ARM=y
 CONFIG_ARCH="arm"
+# CONFIG_ARCH_CHIP_LM is not set
+CONFIG_ARCH_CHIP_S5J=y
+CONFIG_ARCH_CHIP="s5j"
 
 #
 # ARM Options
 #
-CONFIG_ARCH_CHIP_S5J=y
 # CONFIG_ARCH_CORTEXM3 is not set
 # CONFIG_ARCH_CORTEXM4 is not set
 CONFIG_ARCH_CORTEXR4=y
 CONFIG_ARCH_FAMILY="armv7-r"
-CONFIG_ARCH_CHIP="s5j"
 # CONFIG_ARCH_HAVE_FPU is not set
 CONFIG_ARMV7M_MPU=y
 CONFIG_ARMV7M_MPU_NREGIONS=12
@@ -117,7 +105,9 @@ CONFIG_S5J_S5JT200=y
 # S5J Peripheral Support
 #
 CONFIG_S5J_HAVE_ADC=y
+CONFIG_S5J_HAVE_DMA=y
 CONFIG_S5J_HAVE_I2C=y
+CONFIG_S5J_HAVE_I2S=y
 CONFIG_S5J_HAVE_MCT=y
 CONFIG_S5J_HAVE_PWM0=y
 CONFIG_S5J_HAVE_PWM1=y
@@ -137,7 +127,9 @@ CONFIG_S5J_HAVE_UART3=y
 CONFIG_S5J_HAVE_UART4=y
 CONFIG_S5J_HAVE_WATCHDOG=y
 # CONFIG_S5J_ADC is not set
+# CONFIG_S5J_DMA is not set
 # CONFIG_S5J_I2C is not set
+# CONFIG_S5J_I2S is not set
 # CONFIG_S5J_MCT is not set
 # CONFIG_S5J_TIMER0 is not set
 # CONFIG_S5J_TIMER1 is not set
@@ -167,6 +159,7 @@ CONFIG_S5J_PWR=y
 #
 # CONFIG_S5J_PWR_DSTOP is not set
 # CONFIG_S5J_PWR_SLEEP is not set
+# CONFIG_S5J_SENSOR_PPD42NS is not set
 
 #
 # Architecture Options
@@ -219,7 +212,7 @@ CONFIG_BOOT_RUNFROMFLASH=y
 # Boot Memory Configuration
 #
 CONFIG_RAM_START=0x02020000
-CONFIG_RAM_SIZE=1310720
+CONFIG_RAM_SIZE=968704
 # CONFIG_ARCH_HAVE_SDRAM is not set
 
 #
@@ -248,7 +241,7 @@ CONFIG_ARTIK053_BOOT_FAILURE_DETECTION=y
 CONFIG_ARTIK053_BOOT_COUNTS_ADDR=0x80090810
 
 #
-# RTOS Features
+# Kernel Features
 #
 CONFIG_DISABLE_OS_API=y
 CONFIG_DISABLE_POSIX_TIMERS=y
@@ -278,7 +271,6 @@ CONFIG_PREALLOC_TIMERS=8
 # Tasks and Scheduling
 #
 CONFIG_INIT_ENTRYPOINT=y
-# CONFIG_SCHED_STATIC is not set
 CONFIG_RR_INTERVAL=100
 CONFIG_TASK_NAME_SIZE=31
 CONFIG_MAX_TASKS=8
@@ -333,21 +325,9 @@ CONFIG_PTHREAD_STACK_MIN=256
 CONFIG_PTHREAD_STACK_DEFAULT=1024
 
 #
-# System Call
-#
-# CONFIG_LIB_SYSCALL is not set
-
-#
 # Device Drivers
 #
 CONFIG_DISABLE_POLL=y
-CONFIG_DEV_NULL=y
-# CONFIG_DEV_ZERO is not set
-
-#
-# Buffering
-#
-# CONFIG_DRVR_WRITEBUFFER is not set
 # CONFIG_DRVR_READAHEAD is not set
 # CONFIG_CAN is not set
 # CONFIG_ARCH_HAVE_PWM_PULSECOUNT is not set
@@ -356,8 +336,8 @@ CONFIG_DEV_NULL=y
 # CONFIG_ARCH_HAVE_I2CRESET is not set
 # CONFIG_I2C is not set
 # CONFIG_SPI is not set
-# CONFIG_GPIO is not set
 # CONFIG_I2S is not set
+# CONFIG_AUDIO_DEVICES is not set
 # CONFIG_BCH is not set
 # CONFIG_RTC is not set
 # CONFIG_WATCHDOG is not set
@@ -420,19 +400,19 @@ CONFIG_UART4_2STOP=0
 # CONFIG_FOTA_DRIVER is not set
 
 #
-# System Logging Device Options
-#
-
-#
 # System Logging
 #
 # CONFIG_RAMLOG is not set
-# CONFIG_DRIVERS_WIRELESS is not set
 
 #
 # T-trace
 #
 # CONFIG_TTRACE is not set
+
+#
+# Wireless Device Options
+#
+# CONFIG_DRIVERS_WIRELESS is not set
 # CONFIG_SENSOR is not set
 
 #
@@ -443,18 +423,18 @@ CONFIG_UART4_2STOP=0
 # CONFIG_NET is not set
 
 #
-# File Systems
+# Audio Support
 #
+# CONFIG_AUDIO is not set
 
 #
-# File system configuration
+# File Systems
 #
 CONFIG_DISABLE_MOUNTPOINT=y
 CONFIG_DISABLE_PSEUDOFS_OPERATIONS=y
 CONFIG_FS_READABLE=y
 CONFIG_FS_WRITABLE=y
 # CONFIG_FS_NAMED_SEMAPHORES is not set
-# CONFIG_FS_PROCFS is not set
 
 #
 # Block Driver Configurations
@@ -465,18 +445,6 @@ CONFIG_FS_WRITABLE=y
 # MTD Configuration
 #
 # CONFIG_MTD is not set
-# CONFIG_MTD_PARTITION is not set
-# CONFIG_MTD_PROGMEM is not set
-# CONFIG_MTD_FTL is not set
-# CONFIG_MTD_CONFIG is not set
-# CONFIG_MTD_BYTE_WRITE is not set
-
-#
-# MTD Device Drivers
-#
-# CONFIG_MTD_M25P is not set
-# CONFIG_RAMMTD is not set
-# CONFIG_MTD_SMART is not set
 
 #
 # System Logging
@@ -485,11 +453,7 @@ CONFIG_FS_WRITABLE=y
 # CONFIG_SYSLOG_TIMESTAMP is not set
 
 #
-# Arastorage
-#
-
-#
-# AraStorage database configuration
+# Database
 #
 # CONFIG_ARASTORAGE is not set
 
@@ -505,7 +469,23 @@ CONFIG_MM_REGIONS=1
 #
 # Power Management
 #
-# CONFIG_PM is not set
+
+#
+# Debug Options
+#
+# CONFIG_DEBUG is not set
+
+#
+# Stack Debug Options
+#
+CONFIG_ARCH_HAVE_STACKCHECK=y
+CONFIG_STACK_COLORATION=y
+
+#
+# Build Debug Options
+#
+CONFIG_DEBUG_SYMBOLS=y
+# CONFIG_FRAME_POINTER is not set
 
 #
 # Logger Module
@@ -513,7 +493,7 @@ CONFIG_MM_REGIONS=1
 # CONFIG_LOGM is not set
 
 #
-# Library Routines
+# Built-in Libraries
 #
 
 #
@@ -541,7 +521,6 @@ CONFIG_LIBC_MAX_TMPFILE=32
 CONFIG_ARCH_LOWPUTC=y
 # CONFIG_TIME_EXTENDED is not set
 CONFIG_LIB_SENDFILE_BUFSIZE=512
-# CONFIG_ARCH_ROMGETC is not set
 # CONFIG_ARCH_OPTIMIZED_FUNCTIONS is not set
 # CONFIG_LIBC_NETDB is not set
 # CONFIG_NETDB_HOSTFILE is not set
@@ -557,31 +536,35 @@ CONFIG_LIB_SENDFILE_BUFSIZE=512
 # CONFIG_HAVE_CXX is not set
 
 #
-# External Functions
+# External Libraries
 #
-# CONFIG_LWM2M_WAKAAMA is not set
 # CONFIG_ENABLE_IOTIVITY is not set
 # CONFIG_LIBTUV is not set
+# CONFIG_AWS_SDK is not set
+# CONFIG_NETUTILS_JSON is not set
+# CONFIG_NETUTILS_CODECS is not set
 
 #
 # Application Configuration
 #
-# CONFIG_ENTRY_MANUAL is not set
 
 #
 # Application entry point list
 #
+# CONFIG_ENTRY_MANUAL is not set
 CONFIG_ENTRY_HELLO=y
 CONFIG_USER_ENTRYPOINT="hello_main"
 
 #
 # Examples
 #
-# CONFIG_EXAMPLES_ARTIK_DEMO is not set
+# CONFIG_EXAMPLES_AWS is not set
 # CONFIG_EXAMPLES_EEPROM_TEST is not set
 # CONFIG_EXAMPLES_FOTA_SAMPLE is not set
+# CONFIG_FILESYSTEM_HELPER_ENABLE is not set
 CONFIG_EXAMPLES_HELLO=y
 # CONFIG_EXAMPLES_HELLOXX is not set
+# CONFIG_EXAMPLES_IOTBUS_TEST is not set
 # CONFIG_EXAMPLES_KERNEL_SAMPLE is not set
 # CONFIG_EXAMPLES_LIBTUV is not set
 # CONFIG_EXAMPLES_NETTEST is not set
@@ -594,31 +577,12 @@ CONFIG_EXAMPLES_HELLO=y
 # CONFIG_EXAMPLES_WIFI_TEST is not set
 
 #
-# Network Utilities
-#
-# CONFIG_NETUTILS_CODECS is not set
-# CONFIG_NETUTILS_DHCPC is not set
-# CONFIG_NETUTILS_FTPC is not set
-# CONFIG_NETUTILS_FTPD is not set
-# CONFIG_NETUTILS_JSON is not set
-# CONFIG_NETUTILS_LIBCOAP is not set
-# CONFIG_NETUTILS_MDNS is not set
-# CONFIG_NETUTILS_MQTT is not set
-# CONFIG_NETUTILS_NETLIB is not set
-# CONFIG_NETUTILS_NTPCLIENT is not set
-# CONFIG_NETUTILS_SMTP is not set
-# CONFIG_NETUTILS_TELNETD is not set
-# CONFIG_NETUTILS_TFTPC is not set
-# CONFIG_NETUTILS_WIFI is not set
-# CONFIG_NETUTILS_XMLRPC is not set
-
-#
 # Platform-specific Support
 #
 # CONFIG_PLATFORM_CONFIGDATA is not set
 
 #
-# Enable Shell
+# Shell
 #
 # CONFIG_TASH is not set
 
@@ -634,7 +598,6 @@ CONFIG_SYSTEM_PREAPP_STACKSIZE=2048
 # CONFIG_SYSTEM_INSTALL is not set
 # CONFIG_SYSTEM_POWEROFF is not set
 # CONFIG_SYSTEM_RAMTEST is not set
-# CONFIG_SYSTEM_RAMTRON is not set
 # CONFIG_SYSTEM_READLINE is not set
 # CONFIG_SYSTEM_INFORMATION is not set
 # CONFIG_ENABLE_DATE is not set
@@ -644,8 +607,3 @@ CONFIG_SYSTEM_PREAPP_STACKSIZE=2048
 # CONFIG_ENABLE_STACKMONITOR is not set
 CONFIG_ENABLE_UPTIME=y
 # CONFIG_SYSTEM_VI is not set
-
-#
-# wpa_supplicant
-#
-# CONFIG_WPA_SUPPLICANT is not set
