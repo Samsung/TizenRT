@@ -44,7 +44,7 @@
 
 #define AUDIO_DEFAULT_CHANNELS 2
 
-#define AUDIO_DEFAULT_RATE 48000
+#define AUDIO_DEFAULT_RATE 16000
 
 #define AUDIO_DEFAULT_FORMAT PCM_FORMAT_S16_LE
 
@@ -54,11 +54,15 @@
  ****************************************************************************/
 
 extern sem_t tc_sem;
+
 extern int working_tc;
 
 struct pcm *g_pcm;
 
 unsigned int g_byte_size;
+
+char *g_record_buffer;
+
 
 /**
 * @testcase         audio_pcm_open_p
@@ -71,8 +75,6 @@ unsigned int g_byte_size;
 static void utc_audio_pcm_open_tc_p(void)
 {
 	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
-	printf("g_pcm = %u\n", g_pcm);
-	printf("fd = %d\n", pcm_get_file_descriptor(g_pcm));
 	TC_ASSERT_GT("pcm_open", pcm_get_file_descriptor(g_pcm), 0)
 	TC_SUCCESS_RESULT();
 }
@@ -89,8 +91,64 @@ static void utc_audio_pcm_open_tc_n(void)
 {
 	struct pcm *pcm;
 	pcm = pcm_open(999, 999, PCM_IN, NULL);
-	TC_ASSERT_LEQ("pcm_open", pcm_get_file_descriptor(pcm), 0)
+	TC_ASSERT_LEQ("pcm_open", pcm_get_file_descriptor(pcm), 0);
 	pcm_close(pcm);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         audio_pcm_is_ready_p
+* @brief            open and check pcm is ready or not
+* @scenario         Open pcm and check its state
+* @apicovered       pcm_is_ready
+* @precondition     pcm_open should be called
+* @postcondition    NA
+*/
+static void utc_audio_pcm_is_ready_tc_p(void)
+{
+	TC_ASSERT("pcm_is_ready", pcm_is_ready(g_pcm));
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         audio_pcm_is_ready_n
+* @brief            open and check pcm is ready or not
+* @scenario         Open pcm and check its state with NULL pcm
+* @apicovered       pcm_is_ready
+* @precondition     pcm_open should be called
+* @postcondition    NA
+*/
+static void utc_audio_pcm_is_ready_tc_n(void)
+{
+	TC_ASSERT_LEQ("pcm_is_ready", pcm_is_ready(NULL), 0);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         audio_pcm_prepare_p
+* @brief            open and prepare pcm
+* @scenario         Open pcm and prepare
+* @apicovered       pcm_prepare
+* @precondition     pcm_open should be called
+* @postcondition    NA
+*/
+static void utc_audio_pcm_prepare_tc_p(void)
+{
+	TC_ASSERT_EQ("pcm_prepare", pcm_prepare(g_pcm), 0);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         audio_pcm_prepare_n
+* @brief            open and prepare pcm
+* @scenario         Open pcm and prepare with NULL pcm
+* @apicovered       pcm_prepare
+* @precondition     pcm_open should be called
+* @postcondition    NA
+*/
+static void utc_audio_pcm_prepare_tc_n(void)
+{
+	TC_ASSERT_LT("pcm_prepare", pcm_prepare(NULL), 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -122,7 +180,6 @@ static void utc_audio_pcm_close_tc_n(void)
 {
 	int ret;
 	ret = pcm_close(NULL);
-	printf("ret = %d\n", ret);
 	TC_ASSERT_NEQ("pcm_close", ret, 0);
 	TC_SUCCESS_RESULT();
 }
@@ -467,7 +524,6 @@ static void utc_audio_pcm_frames_to_bytes_p(void)
 	ssize_t size;
 	/* set basic configuration values for next test*/
 	pcm_set_config(g_pcm, NULL);
-
 	size = pcm_get_buffer_size(g_pcm);
 	g_byte_size = pcm_frames_to_bytes(g_pcm, size);
 	TC_ASSERT_GT("pcm_frames_to_bytes", g_byte_size, 0);
@@ -564,46 +620,44 @@ static void utc_audio_pcm_format_to_bits_n(void)
 */
 static void utc_audio_pcm_readi_p(void)
 {
-	FILE *fp;
-	char *buffer;
+	int fd;
 	char input_str[16];
 	ssize_t size;
-	uint32_t frames_read = 0;
+	ssize_t bytes;
+	unsigned int frames_read = 0;
 	unsigned int total_frames_read = 0;
-	unsigned int frame_count;
+	unsigned int rate;
 	int capturing;
 	int ret;
 
-	fp = fopen(AUDIO_TEST_FILE, "w+");
-	TC_ASSERT("pcm_readi", fp);
-	TC_ASSERT("pcm_readi", pcm_is_ready(g_pcm));
-
 	size = pcm_get_buffer_size(g_pcm);
-	frame_count = pcm_bytes_to_frames(g_pcm, g_byte_size);
-	buffer = malloc(frame_count);
-	TC_ASSERT_CLEANUP("pcm_readi", buffer, fclose(fp));
+	rate = pcm_get_rate(g_pcm);
+	bytes = rate * (pcm_format_to_bits(pcm_get_format(g_pcm)) / 8) * pcm_get_channels(g_pcm) * AUDIO_RECORD_DURATION;
+
+	g_record_buffer = (char *)malloc(bytes); //rate * bit * channels * duration
+	TC_ASSERT("pcm_readi_p", g_record_buffer);
+
 	printf("Record will be start for 3s, press any key to start\n");
 	fflush(stdout);
+	if (gets(input_str) == NULL) {
+		TC_ASSERT("audio_pcm_readi", gets(input_str));
+		free(g_record_buffer);
+		return;
+	}
 
-	gets(input_str);
 	capturing = 1;
 	while (capturing) {
-		frames_read = pcm_readi(g_pcm, buffer, frame_count);
+		frames_read = pcm_readi(g_pcm, (void *) &g_record_buffer[total_frames_read], size);
 		total_frames_read += frames_read;
-
-		if (frames_read > 0) {
-			ret = fwrite(buffer, frames_read, 1, fp);
-			if (ret != frames_read) {
-				TC_ASSERT_EQ("pcm_readi", ret, frames_read);
-				free(buffer);
-				fclose(fp);
-			}
-		} else {
+		if ((total_frames_read / rate) >= AUDIO_RECORD_DURATION) {
 			capturing = 0;
 		}
 	}
-	free(buffer);
-	fclose(fp);
+	pcm_close(g_pcm);
+	fd = open(AUDIO_TEST_FILE, O_RDWR | O_CREAT);
+	ret = write(fd, g_record_buffer, bytes);
+	TC_ASSERT_GT_CLEANUP("pcm_reaid_p", ret, 0, close(fd));
+	close(fd);
 	TC_SUCCESS_RESULT();
 }
 
@@ -619,23 +673,22 @@ static void utc_audio_pcm_readi_n(void)
 {
 	int ret;
 	ssize_t size;
-	ssize_t bytes;
-	char *buffer;
+	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
+	TC_ASSERT_GT("pcm_readi", pcm_get_file_descriptor(g_pcm), 0);
 
 	size = pcm_get_buffer_size(g_pcm);
-	bytes = pcm_frames_to_bytes(g_pcm, size);
-	buffer = (char *)malloc(sizeof(bytes));
-	TC_ASSERT("pcm_readi", buffer);
 
-	ret = pcm_readi(NULL, buffer, size);
+	ret = pcm_readi(NULL, g_record_buffer, size);
 	TC_ASSERT_LT("pcm_readi", ret, 0);
 
 	ret = pcm_readi(g_pcm, NULL, size);
 	TC_ASSERT_LT("pcm_readi", ret, 0);
 
-	ret = pcm_readi(g_pcm, buffer, 0);
+	ret = pcm_readi(g_pcm, g_record_buffer, 0);
 	TC_ASSERT_LT("pcm_readi", ret, 0);
 
+	pcm_close(g_pcm);
+	free(g_record_buffer);
 	TC_SUCCESS_RESULT();
 }
 
@@ -649,41 +702,44 @@ static void utc_audio_pcm_readi_n(void)
 */
 static void utc_audio_pcm_writei_p(void)
 {
-	FILE *fp;
-	char *buffer;
+	int fd;
 	ssize_t size;
 	ssize_t bytes;
 	int ret;
+	unsigned int total_frames_write = 0;
+	unsigned int rate;
+	int play;
 
-	fp = fopen(AUDIO_TEST_FILE, "r");
-	TC_ASSERT("pcm_writei", fp);
+	fd = open(AUDIO_TEST_FILE, O_RDONLY);
+	TC_ASSERT_GEQ("pcm_writei", fd, 0);
 
 	/* use default config here */
 	g_pcm = pcm_open(0, 0, PCM_OUT, NULL);
-	TC_ASSERT("pcm_writei", pcm_is_ready(g_pcm));
+	TC_ASSERT_GT("pcm_writei", pcm_get_file_descriptor(g_pcm), 0);
 
 	size = pcm_get_buffer_size(g_pcm);
-	bytes = pcm_frames_to_bytes(g_pcm, size);
-	buffer = (char *)malloc(sizeof(bytes));
-	TC_ASSERT_CLEANUP("pcm_writei", buffer, fclose(fp));
+	rate = pcm_get_rate(g_pcm);
+	bytes = rate * (pcm_format_to_bits(pcm_get_format(g_pcm)) / 8) * pcm_get_channels(g_pcm) * AUDIO_RECORD_DURATION;
+
+	g_record_buffer = (char *)malloc(bytes); //rate * bit * channels * duration
+	TC_ASSERT_CLEANUP("pcm_readi_p", g_record_buffer, close(fd));
 
 	printf("playback start!!\n");
 
-	do {
-		ret = fread(buffer, 1, size, fp);
-		if (ret > 0) {
-			ret = pcm_writei(g_pcm, buffer, pcm_bytes_to_frames(g_pcm, ret));
+	ret = read(fd, g_record_buffer, bytes);
+	TC_ASSERT_GEQ_CLEANUP("pcm_writei", ret, 0, close(fd));
+	close(fd);
 
-			if (ret < 0) {
-				printf("error!! : %d\n", ret);
-				break;
-			}
+	play = 1;
+	while (play) {
+		ret = pcm_writei(g_pcm, (void *) &g_record_buffer[total_frames_write], size);
+		total_frames_write += ret;
+		if ((total_frames_write / rate) >= AUDIO_RECORD_DURATION) {
+			play = 0;
 		}
-	} while (ret > 0);
-	free(buffer);
-	fclose(fp);
+	}
+
 	pcm_close(g_pcm);
-	TC_ASSERT_GEQ("pcm_writei", ret, 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -697,33 +753,24 @@ static void utc_audio_pcm_writei_p(void)
 */
 static void utc_audio_pcm_writei_n(void)
 {
-	FILE *fp;
-	char *buffer;
-	ssize_t size;
-	ssize_t bytes;
 	int ret;
-
-	fp = fopen(AUDIO_TEST_FILE, "r");
-	TC_ASSERT("audio_pcm_writei", fp);
-
-	/* use default config here */
-	g_pcm = pcm_open(0, 0, PCM_OUT, NULL);
-	TC_ASSERT("pcm_writei", pcm_is_ready(g_pcm));
+	ssize_t size;
+	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
+	TC_ASSERT_GT("pcm_writei", pcm_get_file_descriptor(g_pcm), 0);
 
 	size = pcm_get_buffer_size(g_pcm);
-	bytes = pcm_frames_to_bytes(g_pcm, size);
-	buffer = malloc(bytes);
-	TC_ASSERT_CLEANUP("pcm_writei", buffer, fclose(fp));
 
-	ret = pcm_writei(NULL, buffer, size);
+	ret = pcm_writei(NULL, g_record_buffer, size);
 	TC_ASSERT_LT("pcm_writei", ret, 0);
 
 	ret = pcm_writei(g_pcm, NULL, size);
 	TC_ASSERT_LT("pcm_writei", ret, 0);
 
-	ret = pcm_writei(g_pcm, buffer, 0);
+	ret = pcm_writei(g_pcm, g_record_buffer, 0);
 	TC_ASSERT_LT("pcm_writei", ret, 0);
 
+	pcm_close(g_pcm);
+	free(g_record_buffer);
 	TC_SUCCESS_RESULT();
 }
 
@@ -731,8 +778,13 @@ static int audio_tc_launcher(int argc, char **args)
 {
 	total_pass = 0;
 	total_fail = 0;
+
 	utc_audio_pcm_open_tc_p();
 	utc_audio_pcm_open_tc_n();
+	utc_audio_pcm_is_ready_tc_p();
+	utc_audio_pcm_is_ready_tc_n();
+	utc_audio_pcm_prepare_tc_p();
+	utc_audio_pcm_prepare_tc_n();
 	utc_audio_pcm_close_tc_p();
 	utc_audio_pcm_close_tc_n();
 	utc_audio_pcm_open_by_name_tc_p();
