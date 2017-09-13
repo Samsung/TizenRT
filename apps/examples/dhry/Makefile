@@ -57,7 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = dhry
-THREADEXEC = TASH_EXECMD_SYNC
+THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 CSRCS =
