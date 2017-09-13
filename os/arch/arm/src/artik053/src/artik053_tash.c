@@ -274,6 +274,16 @@ int board_app_initialize(void)
 
 	artik053_configure_partitions();
 
+#ifdef CONFIG_ARTIK053_AUTOMOUNT_ROMFS
+	ret = mount(CONFIG_ARTIK053_AUTOMOUNT_ROMFS_DEVNAME,
+			CONFIG_ARTIK053_AUTOMOUNT_ROMFS_MOUNTPOINT,
+			"romfs", 0, NULL);
+	if (ret != OK) {
+		lldbg("ERROR: mounting '%s'(ROMFS) failed\n",
+			CONFIG_ARTIK053_AUTOMOUNT_ROMFS_DEVNAME);
+	}
+#endif
+
 #ifdef CONFIG_ARTIK053_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 	ret = mksmartfs(CONFIG_ARTIK053_AUTOMOUNT_USERFS_DEVNAME, false);
