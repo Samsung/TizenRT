@@ -631,8 +631,8 @@ static bool up_rxavailable(struct uart_dev_s *dev)
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 	uint32_t ufstat = uart_getreg32(priv, S5J_UART_UFSTAT_OFFSET);
 
-	return !!(ufstat & UART_UFSTAT_RX_FIFO_COUNT_MASK) ||
-				(ufstat & UART_UFSTAT_RX_FIFO_FULL_MASK);
+	return !!(ufstat & (UART_UFSTAT_RX_FIFO_COUNT_MASK |
+						UART_UFSTAT_RX_FIFO_FULL_MASK));
 }
 
 /****************************************************************************
