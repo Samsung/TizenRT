@@ -113,17 +113,17 @@ static void print_measure_result(pid_t pid, int argc, char **args)
 	int stkmon_idx;
 	for (stkmon_idx = 0; stkmon_idx < CONFIG_MAX_TASKS * 2; stkmon_idx++) {
 		if (stkmon_arr[stkmon_idx].chk_pid == pid) {
-			break;
+			printf("---------------------------------------------------------------\n");
+			printf(">> Stack Size Measure Finish\n");
+			printf("APP Name : %s\n", stkmon_arr[stkmon_idx].chk_name);
+			printf("Allocate %d stack size for measure\n",  stkmon_arr[stkmon_idx].chk_stksize);
+			printf("Optimal Stack Size is %d\n", stkmon_arr[stkmon_idx].chk_peaksize + get_frame_size(argc, args));
+			printf("If the arguments are changed, optimal stack size can be changed\n");
+			printf("---------------------------------------------------------------\n");
+			return;
 		}
 	}
-
-	printf("---------------------------------------------------------------\n");
-	printf(">> Stack Size Measure Finish\n");
-	printf("APP Name : %s\n", stkmon_arr[stkmon_idx].chk_name);
-	printf("Allocate %d stack size for measure\n",  stkmon_arr[stkmon_idx].chk_stksize);
-	printf("Optimal Stack Size is %d\n", stkmon_arr[stkmon_idx].chk_peaksize + get_frame_size(argc, args));
-	printf("If the arguments are changed, optimal stack size can be changed\n");
-	printf("---------------------------------------------------------------\n");
+	printf("[ERROR] Cannot find the app\n");
 	return;
 }
 
