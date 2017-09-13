@@ -110,6 +110,30 @@ config ARTIK053_AUTOMOUNT_USERFS_MOUNTPOINT
 		Specifies the mount point where user r/w file system
 		will be mounted at.
 
+config ARTIK053_AUTOMOUNT_ROMFS
+	bool "Automount romfs partiton"
+	default y
+	depends on ARTIK053_AUTOMOUNT
+	---help---
+		If enabled, romfs partition will be mounted automatically
+		at boot.
+
+config ARTIK053_AUTOMOUNT_ROMFS_DEVNAME
+	string "Device name of the partition for romfs file system"
+	default "/dev/smart4rom9"
+	depends on ARTIK053_AUTOMOUNT_ROMFS
+	---help---
+		Specifies the device name (/dev/smart4rom9) of the partition
+		for romfs file system.
+
+config ARTIK053_AUTOMOUNT_ROMFS_MOUNTPOINT
+	string "Mountpoint of the partition for romfs file system"
+	default "/rom"
+	depends on ARTIK053_AUTOMOUNT_ROMFS
+	---help---
+		Specifies the mount point where romfs file system
+		will be mounted at.
+
 if RAMMTD
 config ARTIK053_RAMMTD_NEBLOCKS
 	int "RAM MTD erase block count"

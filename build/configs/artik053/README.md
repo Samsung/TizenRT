@@ -93,7 +93,9 @@ openocd -f artik053.cfg -c ' \
 
 ## ROMFS
 
-Before executing below steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.
+Before executing below steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.  
+When you use artik053/iotivity config, you can execute only step 4.  
+But note that if you want to change the size of ROMFS partition, you have to modify sizes in partition_map_romfs.cfg matching the sizes in ARTIK053_FLASH_PART_LIST.
 
 3. Modify partition configs.  
     Below steps creates ROMFS partition with size 400KB at next of user partition.  
