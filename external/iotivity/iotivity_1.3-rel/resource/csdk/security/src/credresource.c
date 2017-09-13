@@ -1338,7 +1338,6 @@ OicSecCred_t * GenerateCredential(const OicUuid_t * subject, OicSecCredType_t cr
 {
     OIC_LOG(DEBUG, TAG, "IN GenerateCredential");
 
-    OC_UNUSED(rownerID);
     (void)publicData;
     OCStackResult ret = OC_STACK_ERROR;
 
@@ -1377,6 +1376,8 @@ OicSecCred_t * GenerateCredential(const OicUuid_t * subject, OicSecCredType_t cr
         cred->privateData.encoding = privateData->encoding;
     }
 
+    VERIFY_NOT_NULL(TAG, rownerID, ERROR);
+    memcpy(&cred->rownerID, rownerID, sizeof(OicUuid_t));
 
 #ifdef MULTIPLE_OWNER
     if(eownerID)
@@ -1734,6 +1735,12 @@ OCStackResult AddCredential(OicSecCred_t * newCred)
     OIC_LOG(DEBUG, TAG, "Adding New Cred");
     LL_APPEND(gCred, newCred);
 
+
+    OicUuid_t emptyOwner = { .id = {0} };
+    if (memcmp(&(newCred->rownerID), &emptyOwner, sizeof(OicUuid_t)) != 0)
+    {
+        memcpy(&(gRownerId), &(newCred->rownerID), sizeof(OicUuid_t));
+    }
 
 saveToDB:
 

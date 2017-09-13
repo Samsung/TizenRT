@@ -562,8 +562,9 @@ struct OicSecCred
 #endif /* __WITH_DTLS__  or __WITH_TLS__*/
     OicSecKey_t         privateData;    // 6:R:S:N:oic.sec.key
     char                *period;        // 7:R:S:N:String
+    OicUuid_t            rownerID;      // 8:R:S:Y:oic.uuid
 #ifdef MULTIPLE_OWNER
-    OicUuid_t           *eownerID;      //8:R:S:N:oic.uuid
+    OicUuid_t            *eownerID;     //9:R:S:N:oic.uuid
 #endif //MULTIPLE_OWNER
     OicSecCred_t        *next;
 };
