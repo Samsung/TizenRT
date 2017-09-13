@@ -480,6 +480,9 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	bufdesc.session = pcm->session;
 #endif
+	apb->nbytes = nbytes;
+	apb->curbyte = 0;
+	apb->flags = 0;
 	bufdesc.numbytes = apb->nbytes;
 	bufdesc.u.pBuffer = apb;
 	if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
@@ -559,6 +562,10 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 		/* Copy data to user buffer */
 		memcpy(data, apb->samp, apb->nbytes);
 		/* Enque buffer for next read opertion */
+		nbytes = apb->nbytes;
+		apb->nbytes = 0;
+		apb->curbyte = 0;
+		apb->flags = 0;
 		bufdesc.u.pBuffer = apb;
 		if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 			return oops(pcm, errno, "failed to enque buffer after read");
@@ -567,7 +574,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 		return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
 	}
 
-	return pcm_bytes_to_frames(pcm, apb->nbytes);
+	return pcm_bytes_to_frames(pcm, nbytes);
 }
 
 /** Writes audio samples to PCM.
@@ -1056,6 +1063,7 @@ int pcm_prepare(struct pcm *pcm)
 int pcm_start(struct pcm *pcm)
 {
 	struct audio_buf_desc_s bufdesc;
+	struct ap_buffer_s *apb;
 
 	if (pcm == NULL) {
 		return -EINVAL;
@@ -1078,7 +1086,11 @@ int pcm_start(struct pcm *pcm)
 		for (pcm->bufPtr = 0; pcm->bufPtr < CONFIG_AUDIO_NUM_BUFFERS; pcm->bufPtr++)
 #endif
 		{
-			bufdesc.u.pBuffer = pcm->pBuffers[pcm->bufPtr];
+			apb = pcm->pBuffers[pcm->bufPtr];
+			apb->nbytes = 0;
+			apb->curbyte = 0;
+			apb->flags = 0;
+			bufdesc.u.pBuffer = apb;
 			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 			}
