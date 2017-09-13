@@ -47,14 +47,14 @@ void wifi_sta_connected(void);		// in station mode, connected to ap
 void wifi_sta_disconnected(void);	// in station mode, disconnected from ap
 void wifi_softap_sta_joined(void);	// in softap mode, a station joined
 void wifi_softap_sta_left(void);		// in softap mode, a station left
-void wifi_sta_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res); // in station mode, scanning ap is done
+void wifi_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res); // called when scanning ap is done
 
 static wifi_manager_cb_s wifi_callbacks = {
 	wifi_sta_connected,
 	wifi_sta_disconnected,
 	NULL,	//wifi_softap_sta_joined,
 	NULL,	//wifi_softap_sta_left,
-	wifi_sta_scan_ap_done,	// in station mode, this callback function is called when scanning ap is done.
+	wifi_scan_ap_done,	// this callback function is called when scanning ap is done.
 };
 
 static wifi_manager_cb_s wifi_null_callbacks = {
@@ -77,7 +77,7 @@ void wifi_sta_disconnected(void)
 	WIFITEST_SIGNAL;
 }
 
-void wifi_sta_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res)
+void wifi_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res)
 {
 	/* Make sure you copy the scan results onto a local data structure.
 	 * It will be deleted soon eventually as you exit this function.
@@ -88,7 +88,9 @@ void wifi_sta_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_sc
 	}
 	wifi_manager_scan_info_s *wifi_scan_iter = *scan_info;
 	while (wifi_scan_iter != NULL) {
-		printf("WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d\n", wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi);
+  	printf("SSID: %-20s, BSSID: %-20s, RSSI: %d, CH: %d, Phy_type: %d\n", \
+						wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi, \
+						wifi_scan_iter->channel, wifi_scan_iter->phy_mode);
 		wifi_scan_iter = wifi_scan_iter->next;
 	}
 }
@@ -389,7 +391,7 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	utc_wifi_manager_scan_ap_n(); // Get failed becasue there is no callback hander for scan results
 	utc_wifi_manager_scan_ap_p(); // Reinitialized wifi manager with the callback hander for scan results
 
-  printf("\n=== TINYARA WIFI_MANAGER TC COMPLETE ===\n");
+	printf("\n=== TINYARA WIFI_MANAGER TC COMPLETE ===\n");
 	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
 
 	working_tc--;

@@ -256,6 +256,8 @@ static wifi_manager_result_e wifi_fetch_scan_results(slsi_scan_info_t **wifi_sca
 		memset(curr_record->ssid, 0x00, SLSI_SSID_LEN + 1);
 		memset(curr_record->bssid, 0x00, SLSI_MACADDR_STR_LEN);
 		curr_record->rssi = wifi_scan_iter->rssi;
+		curr_record->channel = wifi_scan_iter->channel;
+		curr_record->phy_mode = wifi_scan_iter->phy_mode;
 		strncpy(curr_record->ssid, (char *)wifi_scan_iter->ssid, strlen((const char *)wifi_scan_iter->ssid));
 		strncpy(curr_record->bssid, (char *)wifi_scan_iter->bssid, strlen((const char *)wifi_scan_iter->bssid));
 		prev_record = curr_record;
@@ -276,13 +278,13 @@ static wifi_manager_result_e wifi_scan_result_callback(slsi_reason_t *reason)
 		slsi_scan_info_t *wifi_scan_result;
 		WiFiGetScanResults(&wifi_scan_result);
 		if (wifi_fetch_scan_results(&wifi_scan_result, &wifi_manager_scan_info) == WIFI_MANAGER_SUCCESS) {
-			g_manager_info.wmcb->sta_scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_SUCCESS);
+			g_manager_info.wmcb->scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_SUCCESS);
 			wifi_free_scan_results(&wifi_manager_scan_info);
 		}
 		WiFiFreeScanResults(&wifi_scan_result);
 	} else {
 		ndbg("Scan failed %d\n");
-		g_manager_info.wmcb->sta_scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_FAIL);
+		g_manager_info.wmcb->scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
@@ -545,7 +547,7 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 wifi_manager_result_e wifi_manager_scan_ap(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
-	if (g_manager_info.wmcb->sta_scan_ap_done == NULL) {
+	if (g_manager_info.wmcb->scan_ap_done == NULL) {
 		ndbg("Missing callback for WiFi scan");
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
