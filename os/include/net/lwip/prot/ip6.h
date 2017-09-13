@@ -129,7 +129,7 @@ PACK_STRUCT_END
 #define IP6_ROUTER_ALERT_OPTION 5
 #define IP6_JUMBO_OPTION 		194
 #define IP6_HOME_ADDRESS_OPTION	201
-#define IP6_ROUTER_ALERT_HLEN	4
+#define IP6_ROUTER_ALERT_DLEN	2
 #define IP6_ROUTER_ALERT_VALUE_MLD 0
 
 #ifdef PACK_STRUCT_USE_INCLUDES
@@ -189,6 +189,32 @@ PACK_STRUCT_END
 #include "arch/epstruct.h"
 #endif
 #define IP6_DEST_NEXTH(hdr) ((hdr)->_nexth)
+
+/* Routing header */
+#define IP6_ROUT_TYPE2	2
+#define IP6_ROUT_RPL	3
+
+#ifdef PACK_STRUCT_USE_INCLUDES
+#include "arch/bpstruct.h"
+#endif
+PACK_STRUCT_BEGIN
+struct ip6_rout_hdr {
+	/* next header */
+	PACK_STRUCT_FLD_8(u8_t _nexth);
+	/* reserved */
+	PACK_STRUCT_FLD_8(u8_t _hlen);
+	/* fragment offset */
+	PACK_STRUCT_FIELD(u8_t _routing_type);
+	/* fragmented packet identification */
+	PACK_STRUCT_FIELD(u8_t _segments_left);
+} PACK_STRUCT_STRUCT;
+PACK_STRUCT_END
+#ifdef PACK_STRUCT_USE_INCLUDES
+#include "arch/epstruct.h"
+#endif
+#define IP6_ROUT_NEXTH(hdr) ((hdr)->_nexth)
+#define IP6_ROUT_TYPE(hdr) ((hdr)->_routing_type)
+#define IP6_ROUT_SEG_LEFT(hdr) ((hdr)->_segments_left)
 
 /* Fragment header. */
 #define IP6_FRAG_HLEN    8
