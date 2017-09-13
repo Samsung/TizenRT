@@ -1,11 +1,55 @@
-# ARTIK 053
+# ARTIK05x
 
-The ARTIK 053 is a SOC for Wi-Fi™ IoT solutions. The ARTIK 053 has a Wi-Fi subsystem, security subsystem, and application subsystem.
+The ARTIK05x is a SOC for Wi-Fi™ IoT solutions. The ARTIK05x has a Wi-Fi subsystem, security subsystem, and application subsystem.
 
 ## Information
 
-The Samsung ARTIK™ 053 Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
-Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK 053 Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
+The Samsung ARTIK™ 05x Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
+Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK05x Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
+
+## MemoryMap
+
+8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM. If you want to know the physical memory address, see [[here]](scripts/README.md).
+
+## Configuration Sets
+
+After configuration, you can add / remove the configuration you want via menuconfig. If you want to run menuconfig, you need to install `kconfig-frontends`. kconfig-frontends was set at [[kconfig-frontends]](../../../README.md#set-kconfig-frontends) tab of Quick Start.
+
+#### nettest
+
+This is the basic configuration of ARTIK05x products. You can set and build the following:
+
+```bash
+~/TizenRT$ cd os/tools
+~/TizenRT/os/tools$ ./configure.sh artik053/nettest
+```
+
+#### nettestsecure
+
+This is the basic configuration of ARTIK05xS products. It is the same as 'nettest', and has a function related to secureboot. If you have an ARTIK05xS product, use this config.
+
+```bash
+~/TizenRT$ cd os/tools
+~/TizenRT/os/tools$ ./configure.sh artik053/nettestsecure
+```
+
+#### onboard
+
+This is the configuration for the production phase of ARTIK05x product. When you download it to the board, the 'onboard' app will start automatically when it boots.
+
+```bash
+~/TizenRT$ cd os/tools
+~/TizenRT/os/tools$ ./configure.sh artik053/onboard
+```
+
+#### onboardsecure
+
+This is the configuration for the production phase of ARTIK05xS product. It is the same as 'onboard', and has a function related to secureboot. If you have an ARTIK05xS product, use this config.
+
+```bash
+~/TizenRT$ cd os/tools
+~/TizenRT/os/tools$ ./configure.sh artik053/onboardsecure
+```
 
 ## Environment Set-up
 ### On Chip Debugger installation
@@ -61,7 +105,7 @@ openocd -f artik053.cfg -c ' \
     exit'
 ```
 
-If you have an 'ARTIK053S' device, please do the following.
+If you have an 'ARTIK05xS' device, please do the following.
 
 ```bash
 ../build/configs/artik053/tools/codesigner/artik053_codesigner -sign ../build/output/bin/tinyara_head.bin
@@ -76,29 +120,45 @@ openocd -f artik053.cfg -c ' \
 ```
 
 Once the complete binaries are successfully programmed, each partition can be updated seperately with new one.
+
+In normal model (ARTIK05x products),
 ```bash
 openocd -f artik053.cfg -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin; exit'
 ```
 
-## Configuration Sets
-
-After configuration, you can add / remove the configuration you want via menuconfig. If you want to run menuconfig, you need to install `kconfig-frontends`. kconfig-frontends was set at [[kconfig-frontends]](../../../README.md#set-kconfig-frontends) tab of Quick Start.
-
-#### nettest
-
-This is the basic configuration of ARTIK05x products. You can set and build the following:
-
+In secure model (ARTIK05xS products),
 ```bash
-~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik053/nettest
+openocd -f artik053.cfg -c ' \
+    flash_write os ../build/output/bin/tinyara_head.bin-signed; exit'
 ```
 
-#### nettestsecure
+### Factory Reset
+If you can not boot normally, you can change os to the initial version. This is possible if there is an initialization binary in memory.
 
-This is the basic configuration of ARTIK05xS products. It is the same as 'nettest', and has a function related to secureboot. If you have an ARTIK05xS product, use this config.
+#### How to Download the Initialization Binaries
+You can download it using OpenOCD. You compress the compiled firmware and download it to the board.
 
 ```bash
-~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik053/nettestsecure
+gzip -c tinyara_head.bin > factoryimage.gz
+openocd -f artik053.cfg -c ' \
+    flash_write factory    ../build/configs/artik053/bin/factoryimage.gz;      \
+    exit'
+```
+
+#### How to enter initialization mode
+When you press the RESET button (SW700) to reboot the Starter Kit, press and hold the 'ARDUINO RESET' button (SW701) for 10 seconds. Enter initialization mode as follows.
+```
+.....
+Factory reset.
+Erasing boot partitions...
+....................................e
+Erased 600 sectors
+Flashing factory image...
+Uncompressed size: 1258496 = 0x133400
+resetting ...
+
+........ <RESET>.....................
+U-Boot 2017
+.....
 ```
