@@ -926,7 +926,12 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 			oops(pcm, ENOMEM, "Could not allocate buffer %d\n", x);
 			goto fail_cleanup_buffers;
 		}
+		pcm->pBuffers[x]->nbytes = 0;
+		pcm->pBuffers[x]->curbyte = 0;
+		pcm->pBuffers[x]->flags = 0;
 	}
+
+#ifdef CONFIG_AUDIO_FORMAT_PCM
 	if (pcm->flags & PCM_IN) {
 		struct ap_buffer_s *apb = (struct ap_buffer_s *)pcm->pBuffers[0];
 		if (apb->nmaxbytes - apb->nbytes >= sizeof(struct wav_header_s)) {
@@ -957,6 +962,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 			goto fail_cleanup_buffers;
 		}
 	}
+#endif
 	pcm->underruns = 0;
 	return pcm;
 
@@ -1063,7 +1069,6 @@ int pcm_prepare(struct pcm *pcm)
 int pcm_start(struct pcm *pcm)
 {
 	struct audio_buf_desc_s bufdesc;
-	struct ap_buffer_s *apb;
 
 	if (pcm == NULL) {
 		return -EINVAL;
@@ -1086,11 +1091,7 @@ int pcm_start(struct pcm *pcm)
 		for (pcm->bufPtr = 0; pcm->bufPtr < CONFIG_AUDIO_NUM_BUFFERS; pcm->bufPtr++)
 #endif
 		{
-			apb = pcm->pBuffers[pcm->bufPtr];
-			apb->nbytes = 0;
-			apb->curbyte = 0;
-			apb->flags = 0;
-			bufdesc.u.pBuffer = apb;
+			bufdesc.u.pBuffer = pcm->pBuffers[pcm->bufPtr];
 			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 			}
