@@ -51,8 +51,8 @@
  * @{
  */
 
-#ifndef TINYALSA_PCM_H
-#define TINYALSA_PCM_H
+#ifndef __AUDIO_TINYALSA_H
+#define __AUDIO_TINYALSA_H
 
 #include <sys/time.h>
 #include <stddef.h>
