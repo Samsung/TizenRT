@@ -22,6 +22,8 @@
 
 # Remember, make is invoked from "os" directory
 
+# Include the configuration file
+source .config
 OS_DIR_PATH=${PWD}
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
 OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
@@ -63,16 +65,40 @@ main()
 				echo "Firmware binaries for ARTIK 053 are not existed"
 				exit 1
 			fi
-
+			# Prepare for ROMFS
+			ROMFS_FLASHING_CFG=${OPENOCD_DIR_PATH}/romfs_flashing.cfg
+			echo "set romfs_partition_enable 0" > ${ROMFS_FLASHING_CFG}
+			if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
+				echo "set romfs_partition_enable 1" > ${ROMFS_FLASHING_CFG}
+				pushd ${OS_DIR_PATH}
+				sh ../tools/fs/mkromfsimg.sh
+				if [ ! -f "../build/output/bin/romfs.img" ]; then
+					echo "ROMFS image is not present"
+					exit 1
+				fi
+				popd
+			fi
 			# Download all binaries using openocd script
 			pushd ${OPENOCD_DIR_PATH}
-			${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' 	\
+			if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
+				${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' 	\
 				flash_write bl1 ../../bin/bl1.bin; 		\
 				flash_write bl2 ../../bin/bl2.bin; 		\
 				flash_write sssfw ../../bin/sssfw.bin; 		\
 				flash_write wlanfw ../../bin/wlanfw.bin;	\
 				flash_write os ../../../../output/bin/tinyara_head.bin;	\
-			exit'
+				flash_write rom ../../../../output/bin/romfs.img; \
+				exit'
+				rm ${ROMFS_FLASHING_CFG}
+			else
+				${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' 	\
+				flash_write bl1 ../../bin/bl1.bin; 		\
+				flash_write bl2 ../../bin/bl2.bin; 		\
+				flash_write sssfw ../../bin/sssfw.bin; 		\
+				flash_write wlanfw ../../bin/wlanfw.bin;	\
+				flash_write os ../../../../output/bin/tinyara_head.bin;	\
+				exit'
+			fi
 			popd
 			;;
 
