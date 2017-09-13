@@ -91,7 +91,7 @@
  *
  ****************************************************************************/
 
-#define I2S_RXSAMPLERATE(d,f) ((d)->ops->i2s_rxsamplerate(d,r))
+#define I2S_RXSAMPLERATE(d,f) ((d)->ops->i2s_rxsamplerate(d,f))
 
 /****************************************************************************
  * Name: I2S_RXDATAWIDTH
@@ -161,7 +161,7 @@
  *
  ****************************************************************************/
 
-#define I2S_TXSAMPLERATE(d,f) ((d)->ops->i2s_txsamplerate(d,r))
+#define I2S_TXSAMPLERATE(d,f) ((d)->ops->i2s_txsamplerate(d,f))
 
 /****************************************************************************
  * Name: I2S_TXDATAWIDTH

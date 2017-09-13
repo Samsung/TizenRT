@@ -33,7 +33,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 	
-#define ALC5658_DEFAULT_SAMPRATE	48000
+#define ALC5658_DEFAULT_SAMPRATE	16000
 #define ALC5658_DEFAULT_NCHANNELS	2
 #define ALC5658_DEFAULT_BPSAMP		16
 #define FAIL				0xFFFF
@@ -51,6 +51,8 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+/* This should be put under hammer to strip size 
+by for status variables */
 
 struct alc5658_dev_s {
 	/* We are an audio lower half driver (We are also the upper "half" of
@@ -71,11 +73,8 @@ struct alc5658_dev_s {
 	FAR struct i2s_dev_s *i2s;	/* I2S driver to use */
 	struct dq_queue_s pendq;	/* Queue of pending buffers to be sent */
 	struct dq_queue_s doneq;	/* Queue of sent buffers to be returned */
-	mqd_t mq;					/* Message queue for receiving messages */
-	char mqname[16];			/* Our message queue name */
-	pthread_t threadid;			/* ID of our thread */
-	uint32_t bitrate;			/* Actual programmed bit rate */
-	sem_t pendsem;				/* Protect pendq */
+	sem_t devsem;				/* Protection for both pendq & dev*/
+
 #ifdef ALC5658_USE_FFLOCK_INT
 	struct work_s work;			/* Interrupt work */
 #endif
@@ -100,6 +99,7 @@ struct alc5658_dev_s {
 #endif
 	bool reserved;				/* True: Device is reserved */
 	volatile int result;		/* The result of the last transfer */
+	bool inout;					/* True: IN device */
 };
 
 /****************************************************************************
@@ -129,8 +129,8 @@ static void alc5658_setbass(FAR struct alc5658_dev_s *priv, uint8_t bass);
 static void alc5658_settreble(FAR struct alc5658_dev_s *priv, uint8_t treble);
 #endif
 
-static void alc5658_setdatawidth(FAR struct alc5658_dev_s *priv);
-static void alc5658_setbitrate(FAR struct alc5658_dev_s *priv);
+static void alc5658_set_i2s_datawidth(FAR struct alc5658_dev_s *priv);
+static void alc5658_set_i2s_samplerate(FAR struct alc5658_dev_s *priv);
 
 /* Audio lower half methods (and close friends) */
 
@@ -141,9 +141,6 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR void *sessio
 static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct audio_caps_s *caps);
 #endif
 static int alc5658_shutdown(FAR struct audio_lowerhalf_s *dev);
-static void alc5658_senddone(FAR struct i2s_dev_s *i2s, FAR struct ap_buffer_s *apb, FAR void *arg, int result);
-static void alc5658_returnbuffers(FAR struct alc5658_dev_s *priv);
-static int alc5658_sendbuffer(FAR struct alc5658_dev_s *priv);
 
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 static int alc5658_start(FAR struct audio_lowerhalf_s *dev, FAR void *session);
@@ -187,10 +184,8 @@ static void alc5658_interrupt_work(FAR void *arg);
 static int alc5658_interrupt(FAR const struct alc5658_lower_s *lower, FAR void *arg);
 #endif
 
-static void *alc5658_workerthread(pthread_addr_t pvarg);
 
 /* Initialization */
-
 static void alc5658_audio_output(FAR struct alc5658_dev_s *priv);
 static void alc5658_audio_input(FAR struct alc5658_dev_s *priv);
 #ifdef ALC5658_USE_FFLOCK_INT
@@ -199,11 +194,8 @@ static void alc5658_configure_ints(FAR struct alc5658_dev_s *priv);
 #define       alc5658_configure_ints(p)
 #endif
 static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv);
+uint16_t alc5658_readreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr);
 
-#if defined(CONFIG_ALC5658_REGDUMP) || defined(CONFIG_ALC5658_CLKDEBUG)
-struct alc5658_dev_s;
-uint16_t alc5658_readreg(FAR struct alc5658_dev_s *priv, uint8_t regaddr);
-#endif
 
 #endif							/* CONFIG_AUDIO */
 #endif							/* __DRIVERS_AUDIO_ALC5658_H */
