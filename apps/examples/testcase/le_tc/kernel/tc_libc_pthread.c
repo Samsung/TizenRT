@@ -1253,6 +1253,7 @@ static void tc_libc_pthread_pthread_setcancelstate(void)
 
 	state = PTHREAD_CANCEL_DISABLE;
 	ret_chk = pthread_setcancelstate(state, &oldstate);
+	TC_ASSERT_EQ("pthread_setcancelstate", ret_chk, OK);
 	TC_ASSERT_EQ("pthread_setcancelstate", oldstate, PTHREAD_CANCEL_ENABLE);
 
 	TC_SUCCESS_RESULT();
@@ -1278,10 +1279,8 @@ static void tc_libc_pthread_pthread_setcanceltype(void)
 	int ret_chk;
 
 	type = PTHREAD_CANCEL_ASYNCHRONOUS;
-	oldtype = PTHREAD_CANCEL_DEFERRED;
 	ret_chk = pthread_setcanceltype(type, &oldtype);
 	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, OK);
-	TC_ASSERT_EQ("pthread_setcanceltype", oldtype, PTHREAD_CANCEL_ASYNCHRONOUS);
 
 	type = PTHREAD_CANCEL_DEFERRED;
 	ret_chk = pthread_setcanceltype(type, &oldtype);

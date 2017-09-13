@@ -1490,10 +1490,8 @@ static void tc_pthread_pthread_setcanceltype(void)
 	int ret_chk;
 
 	type = PTHREAD_CANCEL_ASYNCHRONOUS;
-	oldtype = PTHREAD_CANCEL_DEFERRED;
 	ret_chk = pthread_setcanceltype(type, &oldtype);
 	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, OK);
-	TC_ASSERT_EQ("pthread_setcanceltype", oldtype, PTHREAD_CANCEL_ASYNCHRONOUS);
 
 	type = PTHREAD_CANCEL_DEFERRED;
 	ret_chk = pthread_setcanceltype(type, &oldtype);
