@@ -43,17 +43,26 @@ do {										\
 	pthread_cond_wait(&g_wifi_manager_test_cond, &g_wifi_manager_test_mutex);	\
 	pthread_mutex_unlock(&g_wifi_manager_test_mutex);			\
 } while(0)
-
-void wifi_sta_connected(void);
-void wifi_sta_disconnected(void);
-void wifi_softap_sta_join(void);
-void wifi_softap_sta_leave(void);
+void wifi_sta_connected(void);		// in station mode, connected to ap
+void wifi_sta_disconnected(void);	// in station mode, disconnected from ap
+void wifi_softap_sta_joined(void);	// in softap mode, a station joined
+void wifi_softap_sta_left(void);		// in softap mode, a station left
+void wifi_sta_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res); // in station mode, scanning ap is done
 
 static wifi_manager_cb_s wifi_callbacks = {
 	wifi_sta_connected,
 	wifi_sta_disconnected,
-	NULL,	//wifi_softap_sta_join,
-	NULL,	//wifi_softap_sta_leave,
+	NULL,	//wifi_softap_sta_joined,
+	NULL,	//wifi_softap_sta_left,
+	wifi_sta_scan_ap_done,	// in station mode, this callback function is called when scanning ap is done.
+};
+
+static wifi_manager_cb_s wifi_null_callbacks = {
+	NULL,	//wifi_sta_connected,
+	NULL,	//wifi_sta_disconnected,
+	NULL,	//wifi_softap_sta_joined,
+	NULL,	//wifi_softap_sta_left,
+	NULL,	// in station mode, this callback function is called when scanning ap is done.
 };
 
 void wifi_sta_connected(void)
@@ -66,6 +75,22 @@ void wifi_sta_disconnected(void)
 {
 	printf("wifi_sta_disconnected: send signal!!! \n");
 	WIFITEST_SIGNAL;
+}
+
+void wifi_sta_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_result_e res)
+{
+	/* Make sure you copy the scan results onto a local data structure.
+	 * It will be deleted soon eventually as you exit this function.
+	 */
+	if (res == WIFI_SCAN_FAIL) {
+		printf("WiFi scan failed\n");
+		return;
+	}
+	wifi_manager_scan_info_s *wifi_scan_iter = *scan_info;
+	while (wifi_scan_iter != NULL) {
+		printf("WiFi AP SSID: %-20s, WiFi AP BSSID: %-20s, WiFi Rssi: %d\n", wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi);
+		wifi_scan_iter = wifi_scan_iter->next;
+	}
 }
 
 static int wifi_test_signal_init(void)
@@ -280,6 +305,9 @@ static void utc_wifi_manager_deinit_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+/* Initialize wifi manager without callback for scan results
+ * this leads to failure.
+ */
 static void utc_wifi_manager_deinit_n(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
@@ -287,6 +315,35 @@ static void utc_wifi_manager_deinit_n(void)
 	ret = wifi_manager_deinit();
 
 	TC_ASSERT_EQ("wifi_manager_deinit_n", ret, WIFI_MANAGER_DEINITIALIZED);
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifi_manager_scan_ap_n(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+
+	ret = wifi_manager_init(&wifi_null_callbacks);
+	TC_ASSERT_EQ("wifi_manager_scan_ap_n", ret, WIFI_MANAGER_SUCCESS);
+
+	ret = wifi_manager_scan_ap();
+	TC_ASSERT_EQ("wifi_manager_scan_ap_n", ret, WIFI_MANAGER_INVALID_ARGS);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_wifi_manager_scan_ap_p(void)
+{
+	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
+
+	ret = wifi_manager_deinit();
+	TC_ASSERT_EQ("wifi_manager_scan_ap_p", ret, WIFI_MANAGER_SUCCESS);
+
+	ret = wifi_manager_init(&wifi_callbacks);
+	TC_ASSERT_EQ("wifi_manager_scan_ap_p", ret, WIFI_MANAGER_SUCCESS);
+
+	ret = wifi_manager_scan_ap();
+	TC_ASSERT_EQ("wifi_manager_scan_ap_p", ret, WIFI_MANAGER_SUCCESS);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -329,7 +386,10 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	utc_wifi_manager_deinit_p();
 	utc_wifi_manager_deinit_n(); // Should be run after positive tc, that is, the second deinit gets failed.
 
-	printf("\n=== TINYARA WIFI_MANAGER TC COMPLETE ===\n");
+	utc_wifi_manager_scan_ap_n(); // Get failed becasue there is no callback hander for scan results
+	utc_wifi_manager_scan_ap_p(); // Reinitialized wifi manager with the callback hander for scan results
+
+  printf("\n=== TINYARA WIFI_MANAGER TC COMPLETE ===\n");
 	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
 
 	working_tc--;
