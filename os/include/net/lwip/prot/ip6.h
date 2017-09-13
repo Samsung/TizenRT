@@ -123,10 +123,18 @@ PACK_STRUCT_END
 #define IP6H_NEXTH_SET(hdr, nexth) (hdr)->_nexth = (nexth)
 #define IP6H_HOPLIM_SET(hdr, hl) (hdr)->_hoplim = (u8_t)(hl)
 
+/* ipv6 extended options header */
+#define IP6_PAD1_OPTION         0
+#define IP6_PADN_OPTION  		1
+#define IP6_ROUTER_ALERT_OPTION 5
+#define IP6_JUMBO_OPTION 		194
+#define IP6_HOME_ADDRESS_OPTION	201
+#define IP6_ROUTER_ALERT_HLEN	4
+#define IP6_ROUTER_ALERT_VALUE_MLD 0
+
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
-/* ipv6 extension options header */
 PACK_STRUCT_BEGIN
 struct ip6_opt_hdr {
 	/* router alert option type */
@@ -144,18 +152,12 @@ PACK_STRUCT_END
 #define IP6_OPT_TYPE(hdr) ((hdr)->_opt_type)
 #define IP6_OPT_DLEN(hdr) ((hdr)->_opt_dlen)
 
-/* Hop-by-hop router alert option. */
+/* Hop-by-Hop header. */
 #define IP6_HBH_HLEN    2
-#define IP6_PAD1_OPTION         0
-#define IP6_PADN_OPTION  		1
-#define IP6_ROUTER_ALERT_OPTION 5
-#define IP6_JUMBO_OPTION 		194
-#define IP6_ROUTER_ALERT_HLEN	4
-#define IP6_ROUTER_ALERT_VALUE_MLD 0
+
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
-/* ipv6 hop-by-hop header */
 PACK_STRUCT_BEGIN
 struct ip6_hbh_hdr {
 	/* next header */
@@ -171,6 +173,7 @@ PACK_STRUCT_END
 
 /* Destination header. */
 #define IP6_DEST_HLEN	2
+
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
@@ -191,6 +194,7 @@ PACK_STRUCT_END
 #define IP6_FRAG_HLEN    8
 #define IP6_FRAG_OFFSET_MASK    0xfff8
 #define IP6_FRAG_MORE_FLAG      0x0001
+
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif

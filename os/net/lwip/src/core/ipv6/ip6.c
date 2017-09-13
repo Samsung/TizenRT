@@ -707,6 +707,9 @@ netif_found:
 				case IP6_JUMBO_OPTION:
 					opt_dlen = IP6_OPT_DLEN(opt_hdr);
 					break;
+				case IP6_HOME_ADDRESS_OPTION:
+					opt_dlen = IP6_OPT_DLEN(opt_hdr);
+					break;
 				default:
 					break;
 				}
