@@ -15,48 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/****************************************************************************
- * drivers/audio/alc5658.c
- *
- * Audio device driver for Wolfson Microelectronics ALC5658 Audio codec.
- *
- *   Copyright (C) 2014, 2016 Gregory Nutt. All rights reserved.
- *   Author:  Gregory Nutt <gnutt@nuttx.org>
- *
- * References:
- * - "ALC5658 Ultra Low Power CODEC for Portable Audio Applications, Pre-
- *    Production", September 2012, Rev 3.3, Wolfson Microelectronics
- *
- * -  The framework for this driver is based on Ken Pettit's VS1053 driver.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
- ****************************************************************************/
 
 /****************************************************************************
  * Included Files
@@ -90,109 +48,11 @@
 #include <tinyara/i2c.h>
 
 #include "alc5658.h"
+#include "alc5658scripts.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
-#define ALC5658_DEFAULT_SAMPRATE	48000
-#define ALC5658_DEFAULT_NCHANNELS	2
-#define ALC5658_DEFAULT_BPSAMP		16
-#define FAIL				0xFFFF
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-#if !defined(CONFIG_ALC5658_REGDUMP) && !defined(CONFIG_ALC5658_CLKDEBUG)
-static
-#endif
-uint16_t alc5658_readreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr);
-static void alc5658_writereg(FAR struct alc5658_dev_s *priv, uint16_t regaddr, uint16_t regval);
-static void alc5658_takesem(sem_t *sem);
-static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr, uint16_t set, uint16_t clear);
-
-#define         alc5658_givesem(s) sem_post(s)
-
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-static inline uint16_t alc5658_scalevolume(uint16_t volume, b16_t scale);
-static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, bool mute);
-#endif
-#ifndef CONFIG_AUDIO_EXCLUDE_TONE
-static void alc5658_setbass(FAR struct alc5658_dev_s *priv, uint8_t bass);
-static void alc5658_settreble(FAR struct alc5658_dev_s *priv, uint8_t treble);
-#endif
-
-static void alc5658_setdatawidth(FAR struct alc5658_dev_s *priv);
-static void alc5658_setbitrate(FAR struct alc5658_dev_s *priv);
-
-/* Audio lower half methods (and close friends) */
-
-static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct audio_caps_s *caps);
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR void *session, FAR const struct audio_caps_s *caps);
-#else
-static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct audio_caps_s *caps);
-#endif
-static int alc5658_shutdown(FAR struct audio_lowerhalf_s *dev);
-static void alc5658_senddone(FAR struct i2s_dev_s *i2s, FAR struct ap_buffer_s *apb, FAR void *arg, int result);
-static void alc5658_returnbuffers(FAR struct alc5658_dev_s *priv);
-static int alc5658_sendbuffer(FAR struct alc5658_dev_s *priv);
-
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-static int alc5658_start(FAR struct audio_lowerhalf_s *dev, FAR void *session);
-#else
-static int alc5658_start(FAR struct audio_lowerhalf_s *dev);
-#endif
-#ifndef CONFIG_AUDIO_EXCLUDE_STOP
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-static int alc5658_stop(FAR struct audio_lowerhalf_s *dev, FAR void *session);
-#else
-static int alc5658_stop(FAR struct audio_lowerhalf_s *dev);
-#endif
-#endif
-#ifndef CONFIG_AUDIO_EXCLUDE_PAUSE_RESUME
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-static int alc5658_pause(FAR struct audio_lowerhalf_s *dev, FAR void *session);
-static int alc5658_resume(FAR struct audio_lowerhalf_s *dev, FAR void *session);
-#else
-static int alc5658_pause(FAR struct audio_lowerhalf_s *dev);
-static int alc5658_resume(FAR struct audio_lowerhalf_s *dev);
-#endif
-#endif
-static int alc5658_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_buffer_s *apb);
-static int alc5658_cancelbuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_buffer_s *apb);
-static int alc5658_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long arg);
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-static int alc5658_reserve(FAR struct audio_lowerhalf_s *dev, FAR void **session);
-#else
-static int alc5658_reserve(FAR struct audio_lowerhalf_s *dev);
-#endif
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-static int alc5658_release(FAR struct audio_lowerhalf_s *dev, FAR void *session);
-#else
-static int alc5658_release(FAR struct audio_lowerhalf_s *dev);
-#endif
-
-/* Interrupt handling an worker thread */
-
-#ifdef ALC5658_USE_FFLOCK_INT
-static void alc5658_interrupt_work(FAR void *arg);
-static int alc5658_interrupt(FAR const struct alc5658_lower_s *lower, FAR void *arg);
-#endif
-
-static void *alc5658_workerthread(pthread_addr_t pvarg);
-
-/* Initialization */
-
-static void alc5658_audio_output(FAR struct alc5658_dev_s *priv);
-static void alc5658_audio_input(FAR struct alc5658_dev_s *priv);
-#ifdef ALC5658_USE_FFLOCK_INT
-static void alc5658_configure_ints(FAR struct alc5658_dev_s *priv);
-#else
-#define       alc5658_configure_ints(p)
-#endif
-static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv);
 
 /****************************************************************************
  * Private Data
