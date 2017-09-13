@@ -1,0 +1,80 @@
+#######################################################################
+# Copyright 2016 Samsung Electronics All Rights Reserved.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+######################################################################
+# Build script for Linux Enrollee Sample App
+######################################################################
+
+Import('env')
+
+enrollee_env = env.Clone()
+transport = enrollee_env.get('TARGET_TRANSPORT')
+secured = enrollee_env.get('SECURED')
+print "[EasySetup] SECURED %s"% secured
+
+######################################################################
+# Build flags
+######################################################################
+if secured  == '0':
+    enrollee_env.AppendUnique(LIBPATH = [enrollee_env.get('SRC_DIR') + '/lib/linux/' + enrollee_env.get('TARGET_ARCH'),
+                          enrollee_env.get('SRC_DIR') + '/out/linux/' + enrollee_env.get('TARGET_ARCH') + "/release",
+                          enrollee_env.get('SRC_DIR') + './../../dev/iotivity/extlibs/uuid-mips/lib'])
+else:
+    enrollee_env.AppendUnique(LIBPATH = [enrollee_env.get('SRC_DIR') + '/lib/linux/' + enrollee_env.get('TARGET_ARCH') + '/Secured/',
+                          enrollee_env.get('SRC_DIR') + '/out/linux/' + enrollee_env.get('TARGET_ARCH') + "/release",
+                          enrollee_env.get('SRC_DIR') + './../../dev/iotivity/extlibs/uuid-mips/lib'])
+
+enrollee_env.AppendUnique(RPATH = [enrollee_env.get('SRC_DIR') + '/lib/linux/' + enrollee_env.get('TARGET_ARCH'),
+                          enrollee_env.get('SRC_DIR') + './../../dev/iotivity/extlibs/uuid-mips/lib'])
+enrollee_env.AppendUnique(CXXFLAGS = ['-Wall', '-std=c++0x','-pthread'])
+
+if enrollee_env.get('RELEASE'):
+    enrollee_env.AppendUnique(CCFLAGS = ['-Os'])
+    enrollee_env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+else:
+    enrollee_env.AppendUnique(CCFLAGS = ['-g'])
+
+if enrollee_env.get('LOGGING'):
+    enrollee_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+enrollee_env.PrependUnique(CPPPATH = [
+        enrollee_env.get('SRC_DIR') + '/../iotivity/resource/c_common',
+        enrollee_env.get('SRC_DIR') + '/../iotivity/resource/include',
+        enrollee_env.get('SRC_DIR') + '/../iotivity/resource/csdk/stack/include',
+        enrollee_env.get('SRC_DIR') + '/../iotivity/resource/oc_logger/include',
+        enrollee_env.get('SRC_DIR') + '/../iotivity/resource/csdk/logger/include',
+        enrollee_env.get('SRC_DIR') + '/../iotivity/extlibs/cjson',
+        enrollee_env.get('SRC_DIR') + '/../iotivity/service/easy-setup/inc',
+        enrollee_env.get('SRC_DIR') + '/src/common/framework/inc',
+        enrollee_env.get('SRC_DIR') + '/src/common/memory/inc',
+        enrollee_env.get('SRC_DIR') + '/src/common/easy-setup/inc',
+        enrollee_env.get('SRC_DIR') + '/src/common/easy-setup',
+        enrollee_env.get('SRC_DIR') + '/inc'])
+
+enrollee_env.PrependUnique(LIBS = ['pthread','octbstack','thingsstack'])
+
+if secured  == '1':
+    enrollee_env.PrependUnique(LIBS = ['ocsrm'])
+
+enrollee = enrollee_env.Program('enrollee', 'enrolleewifi.c')
+
+i_enrollee = enrollee_env.Install(enrollee_env.get('BUILD_DIR'), enrollee)
+
+Alias('enrollee', i_enrollee)
+enrollee_env.AppendTarget('enrollee')

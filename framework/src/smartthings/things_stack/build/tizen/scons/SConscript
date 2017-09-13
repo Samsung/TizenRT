@@ -1,0 +1,36 @@
+##
+# 'resource' sub-project main build script
+#
+##
+
+Import('env')
+
+target_os = env.get('TARGET_OS')
+transport = env.get('TARGET_TRANSPORT')
+da_device = env.get('TARGET_DEVICE')
+
+
+print "Target device  %s" % da_device
+
+print "Given Transport is %s" % transport
+
+if env.get('RELEASE'):
+	env.AppendUnique(CFLAGS = ['-std=c99', '-fPIC', '-D__TIZEN__','-DWITH_POSIX', '-Wall','-D_GNU_SOURCE','-DTIZEN_DEBUG_ENABLE'])
+else:
+	env.AppendUnique(CFLAGS = ['-std=c99', '-fPIC', '-D__TIZEN__','-DWITH_POSIX', '-Wall', '-DSLP_SDK_LOG', '-g','-D_GNU_SOURCE','-DTIZEN_DEBUG_ENABLE'])
+	env.AppendUnique(CPPDEFINES = ['-DTB_LOG'])
+	
+env.AppendUnique(CPPDEFINES = ['-DROUTING_EP'])
+env.ParseConfig("pkg-config --cflags --libs capi-network-wifi dlog glib-2.0")
+
+SConscript('../src/stack/SConscript')
+
+
+if 'all'  in da_device:
+	SConscript('../src/bundle/airconditioner/SConscript')
+	SConscript('../src/bundle/airpurifier/SConscript')
+	SConscript('../src/bundle/oven/SConscript')
+	SConscript('../src/bundle/refrigerator/SConscript')
+	SConscript('../src/bundle/robotcleaner/SConscript')
+	SConscript('../src/bundle/washer/SConscript')
+

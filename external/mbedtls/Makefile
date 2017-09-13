@@ -98,6 +98,10 @@ COBJS		= $(CSRCS:.c=$(OBJEXT))
 SRCS		= $(ASRCS) $(CSRCS)
 OBJS		= $(AOBJS) $(COBJS)
 
+ifeq ($(CONFIG_TLS_WITH_SSS),y)
+CFLAGS+=-I$(TOPDIR)/arch/arm/src/s5j/sss
+endif
+
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
   BIN		= ..\libexternal$(LIBEXT)
 else

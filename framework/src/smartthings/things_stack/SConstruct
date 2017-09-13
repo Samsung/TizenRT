@@ -1,0 +1,82 @@
+##
+# The main build script
+#
+##
+
+# Load common build config
+SConscript('build/SConscript')
+
+print "Main SConstruct - Common for all platforms"
+
+Import('env')
+da_device = env.get('TARGET_DEVICE')
+target_os = env.get('TARGET_OS')
+transport = env.get('TARGET_TRANSPORT')
+buildsample = env.get('BUILD_SAMPLE')
+release_mode = env.get('RELEASE')
+secured = env.get('SECURED')
+svr_enc = env.get('SVR_ENC')
+logging = env.get('LOGGING')
+build_dir = env.get('BUILD_DIR')
+src_dir = env.get('SRC_DIR')
+device_version = env.get('DEVICE_VERSION')
+easysetup_mode = env.get('ES_SOFTAP_MODE')
+
+#print "Given Transport is\t %s" % transport
+#print "Given OS is\t\t %s" % target_os
+#print "Given TARGET_DEVICE\t is %s" % da_device
+#print "Given build dir is\t %s" % build_dir
+#print "Given src_dir is\t %s" % src_dir
+#print "Given device_version is\t %s" % device_version
+
+if target_os == 'tizen':
+	command = "sh build/tizen/gbsbuild.sh %s %s %s %s %s %s" % (transport, secured, buildsample, release_mode, logging, da_device)
+	print "Created Command is %s" % command
+	gbs_script = env.Command('gbs_build', None, command)
+	AlwaysBuild ('gbs_script')
+else:
+	SConscript(build_dir + 'samples/linux/all/SConscript')
+	SConscript(build_dir + 'src/stack/SConscript')
+	#if 'ENROLLEE_SOFTAP' in easysetup_mode:
+    #        print ">>>>>>>>> Creating Easy-setup library."
+    #        SConscript(build_dir + 'src/common/easy-setup/sampleapp/linux/SConscript')
+            #print "\n"
+	if 'ac' in da_device:
+            print ">>>>>>>>> Creating air conditioner Bundle"
+            SConscript(build_dir + 'src/bundle/airconditioner/SConscript')
+            #print "\n"
+	if 'robotcleaner' in da_device:
+            print ">>>>>>>>> Creating robot cleaner Bundle"
+            SConscript(build_dir + 'src/bundle/robotcleaner/SConscript')
+            #print "\n"
+	if 'washer' in da_device:
+            print ">>>>>>>>> Creating washer Bundle"
+            SConscript(build_dir + 'src/bundle/washer/SConscript')
+            #print "\n"
+	if 'refrigerator' in da_device:
+            print ">>>>>>>>> Creating refrigerator Bundle"
+            SConscript(build_dir + 'src/bundle/refrigerator/SConscript')
+	     #print "\n"
+	if 'aircleaner' in da_device:
+            print ">>>>>>>>> Creating air purifier Bundle"
+            SConscript(build_dir + 'src/bundle/airpurifier/SConscript')
+            #print "\n"
+	if 'oven' in da_device:
+            	print ">>>>>>>>> Creating oven Bundle"
+		SConscript(build_dir + 'src/bundle/oven/SConscript')
+		#print "\n"
+	if 'all' in da_device:
+		SConscript(build_dir + 'src/bundle/airconditioner/SConscript')
+		SConscript(build_dir + 'src/bundle/airpurifier/SConscript')
+		SConscript(build_dir + 'src/bundle/oven/SConscript')
+		SConscript(build_dir + 'src/bundle/refrigerator/SConscript')
+		SConscript(build_dir + 'src/bundle/robotcleaner/SConscript')
+		SConscript(build_dir + 'src/bundle/washer/SConscript')
+	if 'controller' in da_device:
+		if env.get('TARGET_ARCH') not in ['mips', 'fsl', 'arm', 'armeabi', 'armgnueabi']:
+			#SConscript(build_dir + 'samples/linux/cloud/SConscript')
+			SConscript(build_dir + 'samples/linux/controller/SConscript')
+			SConscript(build_dir + 'samples/linux/refrigerator/SConscript')
+			SConscript(build_dir + 'samples/linux/aircon/SConscript')
+			SConscript(build_dir + 'samples/linux/oven/SConscript')
+			SConscript(build_dir + 'samples/linux/robotcleaner/SConscript')

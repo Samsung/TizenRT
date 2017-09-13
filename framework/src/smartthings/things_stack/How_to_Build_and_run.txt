@@ -1,0 +1,23 @@
+
+Linux
+--------
+
+A. Building DA Server with File Transfer on Linux With default options :
+
+i) Change directory to path  -> "<PROJECT_HOME>/dev/controllee"
+
+ii) Execute command -> "scons FT_ON=True TARGET_DEVICE=all"
+
+    This will start the build (with default options) and generate the libraries and sample at appropriate locations.
+
+    * To build in debug mode build with RELEASE=0 build option.
+
+B. Executing Sample Application :
+
+i) Change directory to path to following as per build mode (release / debug) :
+
+    release -> "<PROJECT_HOME>/dev/controllee/out/linux/x86/[release / debug]"
+
+ii) Execute command -> "./da_sample_server -0 1"
+
+iii) Follow on screen options / logs.

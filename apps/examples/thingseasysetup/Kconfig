@@ -1,0 +1,26 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_THINGSEASYSETUP
+	bool "Things Easysetup example"
+	default n
+	---help---
+		Enable the THINGS Easysetup example
+
+if EXAMPLES_THINGSEASYSETUP
+
+config EXAMPLES_THINGSEASYSETUP_PROGNAME
+	string "Program name"
+	default "thingseasysetup"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "thingseasysetup_main" if ENTRY_THINGSEASYSETUP

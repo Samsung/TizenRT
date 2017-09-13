@@ -1,0 +1,4 @@
+scons -c
+scons DEVICE_VERSION=LITE SECURED=0 RELEASE=0 TARGET_DEVICE=all
+rm -rf ./out/linux/x86/debug/ocf_info.json
+

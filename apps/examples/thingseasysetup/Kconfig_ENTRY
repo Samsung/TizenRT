@@ -1,0 +1,3 @@
+config ENTRY_OCFEASYSETUP
+	bool "OCF Easysetup example"
+	depends on EXAMPLES_OCFEASYSETUP

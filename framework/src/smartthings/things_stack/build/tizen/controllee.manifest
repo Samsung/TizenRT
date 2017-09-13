@@ -1,0 +1,19 @@
+<manifest>
+	<define>
+		<domain name="controllee" />
+			<permit>
+				<smack permit="system::use_internet" type="rwx" />
+			</permit>
+			<request>
+				<smack request="system::use_internet" type="rwx" />
+				<smack request="connman" type="rw"/>
+                <smack request="connman::set" type="rw"/>
+                <smack request="connman::get" type="rw"/>
+    	        <smack request="connman::profile" type="rw"/>
+            	<smack request="net-config" type="rw"/>
+			</request>
+	</define>
+	<request>
+		<domain name="controllee" />
+	</request>
+</manifest>

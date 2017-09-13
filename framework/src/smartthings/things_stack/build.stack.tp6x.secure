@@ -1,0 +1,2 @@
+scons -c
+scons TARGET_OS=linux TARGET_ARCH=mips TARGET_TRANSPORT=IP SECURED=1 SVR_ENC=0 RELEASE=1 TARGET_DEVICE=all TC_PREFIX=//PATH_TO_YOUR_TOOL_CHAIN/toolchain-mips_r2_gcc-4.6-linaro_eglibc-2.15/bin/mips-openwrt-linux-gnu- TC_PATH=//PATH_TO_YOUR_TOOL_CHAIN/toolchain-mips_r2_gcc-4.6-linaro_eglibc-2.15/bin/
