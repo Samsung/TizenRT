@@ -1076,7 +1076,7 @@ static void tiva_i2c_startxfr(struct tiva_i2c_priv_s *priv)
 
 	/* Set the Master Slave Address */
 
-	regval = (uint32_t) msg->addr << I2CM_SA_SA_SHIFT;
+	regval = (uint32_t)msg->addr << I2CM_SA_SA_SHIFT;
 	if ((msg->flags & I2C_M_READ) != 0) {
 		regval |= I2CM_SA_RS;
 	}
@@ -1159,7 +1159,7 @@ static void tiva_i2c_nextxfr(struct tiva_i2c_priv_s *priv, uint32_t cmd)
 
 		/* We are sending data.  Write the data to be sent to the DR register. */
 
-		dr = (uint32_t) * priv->mptr++;
+		dr = (uint32_t)*priv->mptr++;
 		tiva_i2c_putreg(priv, TIVA_I2CM_DR_OFFSET, dr << I2CM_DR_SHIFT);
 
 		/* Write the command to the control register to send the byte in the DR
@@ -1284,7 +1284,7 @@ static int tiva_i2c_interrupt(struct tiva_i2c_priv_s *priv, uint32_t status)
 						 * the user buffer
 						 */
 
-						*priv->mptr++ = (uint8_t) dr;
+						*priv->mptr++ = (uint8_t)dr;
 					}
 
 					/* Decrement the count of bytes remaining to be sent */
@@ -2008,7 +2008,7 @@ static int tiva_i2c_write(struct i2c_dev_s *dev, const uint8_t *buffer, int bufl
 	struct i2c_msg_s msgv = {
 		.addr = inst->address,
 		.flags = inst->flags,
-		.buffer = (uint8_t *) buffer,
+		.buffer = (uint8_t *)buffer,
 		.length = buflen
 	};
 
@@ -2060,7 +2060,7 @@ static int tiva_i2c_writeread(struct i2c_dev_s *dev, const uint8_t *wbuffer, int
 		{
 			.addr = inst->address,
 			.flags = inst->flags,
-			.buffer = (uint8_t *) wbuffer,	/* This is really ugly, sorry const ... */
+			.buffer = (uint8_t *)wbuffer,	/* This is really ugly, sorry const ... */
 			.length = wbuflen
 		},
 		{

@@ -69,6 +69,15 @@
 #define WEBSERVER_STACK_SIZE   (1024 * 8)
 #define WEBSERVER_SCHED_PRI    100
 #define WEBSERVER_SCHED_POLICY SCHED_RR
+#define WEBSERVER_FREE_INPUT(node, size) \
+	do { \
+		int m = 0; \
+		for (; m < size; m++) { \
+			free(node->argv[m]); \
+		} \
+		free(node->argv); \
+		free(node); \
+	} while (0)
 
 struct webserver_input {
 	int argc;
@@ -83,7 +92,20 @@ const char ca_crt_rsa[] =
 	"A1UEChMIUG9sYXJTU0wxGTAXBgNVBAMTEFBvbGFyU1NMIFRlc3QgQ0EwggEiMA0G\r\n"
 	"CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDA3zf8F7vglp0/ht6WMn1EpRagzSHx\r\n"
 	"mdTs6st8GFgIlKXsm8WL3xoemTiZhx57wI053zhdcHgH057Zk+i5clHFzqMwUqny\r\n"
-	"50BwFMtEonILwuVA+T7lpg6z+exKY8C4KQB0nFc7qKUEkHHxvYPZP9al4jwqj+8n\r\n" "YMPGn8u67GB9t+aEMr5P+1gmIgNb1LTV+/Xjli5wwOQuvfwu7uJBVcA0Ln0kcmnL\r\n" "R7EUQIN9Z/SG9jGr8XmksrUuEvmEF/Bibyc+E1ixVA0hmnM3oTDPb5Lc9un8rNsu\r\n" "KNF+AksjoBXyOGVkCeoMbo4bF6BxyLObyavpw/LPh5aPgAIynplYb6LVAgMBAAGj\r\n" "gZUwgZIwDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQUtFrkpbPe0lL2udWmlQ/rPrzH\r\n" "/f8wYwYDVR0jBFwwWoAUtFrkpbPe0lL2udWmlQ/rPrzH/f+hP6Q9MDsxCzAJBgNV\r\n" "BAYTAk5MMREwDwYDVQQKEwhQb2xhclNTTDEZMBcGA1UEAxMQUG9sYXJTU0wgVGVz\r\n" "dCBDQYIBADANBgkqhkiG9w0BAQUFAAOCAQEAuP1U2ABUkIslsCfdlc2i94QHHYeJ\r\n" "SsR4EdgHtdciUI5I62J6Mom+Y0dT/7a+8S6MVMCZP6C5NyNyXw1GWY/YR82XTJ8H\r\n" "DBJiCTok5DbZ6SzaONBzdWHXwWwmi5vg1dxn7YxrM9d0IjxM27WNKs4sDQhZBQkF\r\n" "pjmfs2cb4oPl4Y9T9meTx/lvdkRYEug61Jfn6cA+qHpyPYdTH+UshITnmp5/Ztkf\r\n" "m/UTSLBNFNHesiTZeH31NcxYGdHSme9Nc/gfidRa0FLOCfWxRlFqAI47zG9jAQCZ\r\n" "7Z2mCGDNMhjQc+BYcdnl0lPXjdDK6V0qCg1dVewhUBcW5gZKzV7e9+DpVA==\r\n" "-----END CERTIFICATE-----\r\n";
+	"50BwFMtEonILwuVA+T7lpg6z+exKY8C4KQB0nFc7qKUEkHHxvYPZP9al4jwqj+8n\r\n"
+	"YMPGn8u67GB9t+aEMr5P+1gmIgNb1LTV+/Xjli5wwOQuvfwu7uJBVcA0Ln0kcmnL\r\n"
+	"R7EUQIN9Z/SG9jGr8XmksrUuEvmEF/Bibyc+E1ixVA0hmnM3oTDPb5Lc9un8rNsu\r\n"
+	"KNF+AksjoBXyOGVkCeoMbo4bF6BxyLObyavpw/LPh5aPgAIynplYb6LVAgMBAAGj\r\n"
+	"gZUwgZIwDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQUtFrkpbPe0lL2udWmlQ/rPrzH\r\n"
+	"/f8wYwYDVR0jBFwwWoAUtFrkpbPe0lL2udWmlQ/rPrzH/f+hP6Q9MDsxCzAJBgNV\r\n"
+	"BAYTAk5MMREwDwYDVQQKEwhQb2xhclNTTDEZMBcGA1UEAxMQUG9sYXJTU0wgVGVz\r\n"
+	"dCBDQYIBADANBgkqhkiG9w0BAQUFAAOCAQEAuP1U2ABUkIslsCfdlc2i94QHHYeJ\r\n"
+	"SsR4EdgHtdciUI5I62J6Mom+Y0dT/7a+8S6MVMCZP6C5NyNyXw1GWY/YR82XTJ8H\r\n"
+	"DBJiCTok5DbZ6SzaONBzdWHXwWwmi5vg1dxn7YxrM9d0IjxM27WNKs4sDQhZBQkF\r\n"
+	"pjmfs2cb4oPl4Y9T9meTx/lvdkRYEug61Jfn6cA+qHpyPYdTH+UshITnmp5/Ztkf\r\n"
+	"m/UTSLBNFNHesiTZeH31NcxYGdHSme9Nc/gfidRa0FLOCfWxRlFqAI47zG9jAQCZ\r\n"
+	"7Z2mCGDNMhjQc+BYcdnl0lPXjdDK6V0qCg1dVewhUBcW5gZKzV7e9+DpVA==\r\n"
+	"-----END CERTIFICATE-----\r\n";
 
 const char srv_crt_rsa[] =
 	"-----BEGIN CERTIFICATE-----\r\n"
@@ -91,7 +113,21 @@ const char srv_crt_rsa[] =
 	"MA8GA1UEChMIUG9sYXJTU0wxGTAXBgNVBAMTEFBvbGFyU1NMIFRlc3QgQ0EwHhcN\r\n"
 	"MTEwMjEyMTQ0NDA2WhcNMjEwMjEyMTQ0NDA2WjA0MQswCQYDVQQGEwJOTDERMA8G\r\n"
 	"A1UEChMIUG9sYXJTU0wxEjAQBgNVBAMTCWxvY2FsaG9zdDCCASIwDQYJKoZIhvcN\r\n"
-	"AQEBBQADggEPADCCAQoCggEBAMFNo93nzR3RBNdJcriZrA545Do8Ss86ExbQWuTN\r\n" "owCIp+4ea5anUrSQ7y1yej4kmvy2NKwk9XfgJmSMnLAofaHa6ozmyRyWvP7BBFKz\r\n" "NtSj+uGxdtiQwWG0ZlI2oiZTqqt0Xgd9GYLbKtgfoNkNHC1JZvdbJXNG6AuKT2kM\r\n" "tQCQ4dqCEGZ9rlQri2V5kaHiYcPNQEkI7mgM8YuG0ka/0LiqEQMef1aoGh5EGA8P\r\n" "hYvai0Re4hjGYi/HZo36Xdh98yeJKQHFkA4/J/EwyEoO79bex8cna8cFPXrEAjya\r\n" "HT4P6DSYW8tzS1KW2BGiLICIaTla0w+w3lkvEcf36hIBMJcCAwEAAaNNMEswCQYD\r\n" "VR0TBAIwADAdBgNVHQ4EFgQUpQXoZLjc32APUBJNYKhkr02LQ5MwHwYDVR0jBBgw\r\n" "FoAUtFrkpbPe0lL2udWmlQ/rPrzH/f8wDQYJKoZIhvcNAQEFBQADggEBAJxnXClY\r\n" "oHkbp70cqBrsGXLybA74czbO5RdLEgFs7rHVS9r+c293luS/KdliLScZqAzYVylw\r\n" "UfRWvKMoWhHYKp3dEIS4xTXk6/5zXxhv9Rw8SGc8qn6vITHk1S1mPevtekgasY5Y\r\n" "iWQuM3h4YVlRH3HHEMAD1TnAexfXHHDFQGe+Bd1iAbz1/sH9H8l4StwX6egvTK3M\r\n" "wXRwkKkvjKaEDA9ATbZx0mI8LGsxSuCqe9r9dyjmttd47J1p1Rulz3CLzaRcVIuS\r\n" "RRQfaD8neM9c1S/iJ/amTVqJxA1KOdOS5780WhPfSArA+g4qAmSjelc3p4wWpha8\r\n" "zhuYwjVuX6JHG0c=\r\n" "-----END CERTIFICATE-----\r\n";
+	"AQEBBQADggEPADCCAQoCggEBAMFNo93nzR3RBNdJcriZrA545Do8Ss86ExbQWuTN\r\n"
+	"owCIp+4ea5anUrSQ7y1yej4kmvy2NKwk9XfgJmSMnLAofaHa6ozmyRyWvP7BBFKz\r\n"
+	"NtSj+uGxdtiQwWG0ZlI2oiZTqqt0Xgd9GYLbKtgfoNkNHC1JZvdbJXNG6AuKT2kM\r\n"
+	"tQCQ4dqCEGZ9rlQri2V5kaHiYcPNQEkI7mgM8YuG0ka/0LiqEQMef1aoGh5EGA8P\r\n"
+	"hYvai0Re4hjGYi/HZo36Xdh98yeJKQHFkA4/J/EwyEoO79bex8cna8cFPXrEAjya\r\n"
+	"HT4P6DSYW8tzS1KW2BGiLICIaTla0w+w3lkvEcf36hIBMJcCAwEAAaNNMEswCQYD\r\n"
+	"VR0TBAIwADAdBgNVHQ4EFgQUpQXoZLjc32APUBJNYKhkr02LQ5MwHwYDVR0jBBgw\r\n"
+	"FoAUtFrkpbPe0lL2udWmlQ/rPrzH/f8wDQYJKoZIhvcNAQEFBQADggEBAJxnXClY\r\n"
+	"oHkbp70cqBrsGXLybA74czbO5RdLEgFs7rHVS9r+c293luS/KdliLScZqAzYVylw\r\n"
+	"UfRWvKMoWhHYKp3dEIS4xTXk6/5zXxhv9Rw8SGc8qn6vITHk1S1mPevtekgasY5Y\r\n"
+	"iWQuM3h4YVlRH3HHEMAD1TnAexfXHHDFQGe+Bd1iAbz1/sH9H8l4StwX6egvTK3M\r\n"
+	"wXRwkKkvjKaEDA9ATbZx0mI8LGsxSuCqe9r9dyjmttd47J1p1Rulz3CLzaRcVIuS\r\n"
+	"RRQfaD8neM9c1S/iJ/amTVqJxA1KOdOS5780WhPfSArA+g4qAmSjelc3p4wWpha8\r\n"
+	"zhuYwjVuX6JHG0c=\r\n"
+	"-----END CERTIFICATE-----\r\n";
 
 const char srv_key_rsa[] =
 	"-----BEGIN RSA PRIVATE KEY-----\r\n"
@@ -107,7 +143,20 @@ const char srv_key_rsa[] =
 	"WYI5wxO+bvRELR2Mcz5DmVnL8jRyml6l6582bSv5oufReFIbyPZbQWlXgYnpu6He\r\n"
 	"GTc7E1zKYQGG/9+DQUl/1vQuCPqQwny0tQoX2w5tdYpdMdVm+zkLtbajzdTviJJa\r\n"
 	"TWzL6lt5AoGBAN86+SVeJDcmQJcv4Eq6UhtRr4QGMiQMz0Sod6ettYxYzMgxtw28\r\n"
-	"CIrgpozCc+UaZJLo7UxvC6an85r1b2nKPCLQFaggJ0H4Q0J/sZOhBIXaoBzWxveK\r\n" "nupceKdVxGsFi8CDy86DBfiyFivfBj+47BbaQzPBj7C4rK7UlLjab2rDAoGBAN2u\r\n" "AM2gchoFiu4v1HFL8D7lweEpi6ZnMJjnEu/dEgGQJFjwdpLnPbsj4c75odQ4Gz8g\r\n" "sw9lao9VVzbusoRE/JGI4aTdO0pATXyG7eG1Qu+5Yc1YGXcCrliA2xM9xx+d7f+s\r\n" "mPzN+WIEg5GJDYZDjAzHG5BNvi/FfM1C9dOtjv2dAoGAF0t5KmwbjWHBhcVqO4Ic\r\n" "BVvN3BIlc1ue2YRXEDlxY5b0r8N4XceMgKmW18OHApZxfl8uPDauWZLXOgl4uepv\r\n" "whZC3EuWrSyyICNhLY21Ah7hbIEBPF3L3ZsOwC+UErL+dXWLdB56Jgy3gZaBeW7b\r\n" "vDrEnocJbqCm7IukhXHOBK8CgYEAwqdHB0hqyNSzIOGY7v9abzB6pUdA3BZiQvEs\r\n" "3LjHVd4HPJ2x0N8CgrBIWOE0q8+0hSMmeE96WW/7jD3fPWwCR5zlXknxBQsfv0gP\r\n" "3BC5PR0Qdypz+d+9zfMf625kyit4T/hzwhDveZUzHnk1Cf+IG7Q+TOEnLnWAWBED\r\n" "ISOWmrUCgYAFEmRxgwAc/u+D6t0syCwAYh6POtscq9Y0i9GyWk89NzgC4NdwwbBH\r\n" "4AgahOxIxXx2gxJnq3yfkJfIjwf0s2DyP0kY2y6Ua1OeomPeY9mrIS4tCuDQ6LrE\r\n" "TB6l9VGoxJL4fyHnZb8L5gGvnB1bbD8cL6YPaDiOhcRseC9vBiEuVg==\r\n" "-----END RSA PRIVATE KEY-----\r\n";
+	"CIrgpozCc+UaZJLo7UxvC6an85r1b2nKPCLQFaggJ0H4Q0J/sZOhBIXaoBzWxveK\r\n"
+	"nupceKdVxGsFi8CDy86DBfiyFivfBj+47BbaQzPBj7C4rK7UlLjab2rDAoGBAN2u\r\n"
+	"AM2gchoFiu4v1HFL8D7lweEpi6ZnMJjnEu/dEgGQJFjwdpLnPbsj4c75odQ4Gz8g\r\n"
+	"sw9lao9VVzbusoRE/JGI4aTdO0pATXyG7eG1Qu+5Yc1YGXcCrliA2xM9xx+d7f+s\r\n"
+	"mPzN+WIEg5GJDYZDjAzHG5BNvi/FfM1C9dOtjv2dAoGAF0t5KmwbjWHBhcVqO4Ic\r\n"
+	"BVvN3BIlc1ue2YRXEDlxY5b0r8N4XceMgKmW18OHApZxfl8uPDauWZLXOgl4uepv\r\n"
+	"whZC3EuWrSyyICNhLY21Ah7hbIEBPF3L3ZsOwC+UErL+dXWLdB56Jgy3gZaBeW7b\r\n"
+	"vDrEnocJbqCm7IukhXHOBK8CgYEAwqdHB0hqyNSzIOGY7v9abzB6pUdA3BZiQvEs\r\n"
+	"3LjHVd4HPJ2x0N8CgrBIWOE0q8+0hSMmeE96WW/7jD3fPWwCR5zlXknxBQsfv0gP\r\n"
+	"3BC5PR0Qdypz+d+9zfMf625kyit4T/hzwhDveZUzHnk1Cf+IG7Q+TOEnLnWAWBED\r\n"
+	"ISOWmrUCgYAFEmRxgwAc/u+D6t0syCwAYh6POtscq9Y0i9GyWk89NzgC4NdwwbBH\r\n"
+	"4AgahOxIxXx2gxJnq3yfkJfIjwf0s2DyP0kY2y6Ua1OeomPeY9mrIS4tCuDQ6LrE\r\n"
+	"TB6l9VGoxJL4fyHnZb8L5gGvnB1bbD8cL6YPaDiOhcRseC9vBiEuVg==\r\n"
+	"-----END RSA PRIVATE KEY-----\r\n";
 
 static const char *root_url = "/";
 static const char *busy_url = "/busy";
@@ -298,10 +347,12 @@ void ws_server_on_msg_cb(websocket_context_ptr ctx, const websocket_on_msg_arg *
 void print_webserver_usage(void)
 {
 	printf("\n  webserver usage:\n");
-	printf("   $ webserver [operation]\n");
-	printf("\n [operation]   : %%s (webserver start or stop)\n");
+	printf("   $ webserver OPERATION OPTION\n");
+	printf("\n OPERATION   : %%s (webserver start or stop)\n");
+	printf("\n OPTION      : %%s default:require (require, optional, none)\n");
 	printf("\n example:\n");
-	printf("  $ webserver start\n");
+	printf("  $ webserver start none\n");
+
 }
 
 void register_callbacks(struct http_server_t *server)
@@ -337,41 +388,56 @@ void deregister_callbacks(struct http_server_t *server)
 pthread_addr_t httptest_cb(void *arg)
 {
 	int http_port = 80;
+
 #ifdef CONFIG_NET_SECURITY_TLS
 	int https_port = 443;
 	struct ssl_config_t ssl_config;
+	int auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
 #endif
-	struct webserver_input *input;
-
-	input = arg;
-	if (input->argc != 2) {
-		print_webserver_usage();
-		return NULL;
-	}
-
+	struct webserver_input *input = arg;
 	if (!strcmp(input->argv[1], "start")) {
+#ifdef CONFIG_NET_SECURITY_TLS
+		if (input->argc != 3) {
+			print_webserver_usage();
+			goto release;
+		}
+		if (strcmp(input->argv[2], "required") == 0) {
+			auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
+		} else if (strcmp(input->argv[2], "optional") == 0) {
+			auth_mode = MBEDTLS_SSL_VERIFY_OPTIONAL;
+		} else if (strcmp(input->argv[2], "none") == 0) {
+			auth_mode = MBEDTLS_SSL_VERIFY_NONE;
+		} else {
+			print_webserver_usage();
+			goto release;
+		}
+#endif
 		goto start;
 	} else if (!strcmp(input->argv[1], "stop")) {
+		if (input->argc != 2) {
+			print_webserver_usage();
+			goto release;
+		}
 		goto stop;
 	} else {
 		print_webserver_usage();
-		return NULL;
+		goto release;
 	}
 
 start:
 	if (http_server != NULL) {
 		printf("Error: HTTP server is already run\n");
-		return NULL;
+		goto release;
 	}
 #ifdef CONFIG_NET_SECURITY_TLS
 	if (https_server != NULL) {
 		printf("Error: HTTPS server is already run\n");
-		return NULL;
+		goto release;
 	}
 	https_server = http_server_init(https_port);
 	if (https_server == NULL) {
 		printf("Error: Cannot allocate server structure!!\n");
-		return NULL;
+		goto release;
 	}
 	ssl_config.root_ca = (char *)ca_crt_rsa;
 	ssl_config.root_ca_len = sizeof(ca_crt_rsa);
@@ -379,18 +445,18 @@ start:
 	ssl_config.dev_cert_len = sizeof(srv_crt_rsa);
 	ssl_config.private_key = (char *)srv_key_rsa;
 	ssl_config.private_key_len = sizeof(srv_key_rsa);
-	ssl_config.auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
+	ssl_config.auth_mode = auth_mode;
 
 	if (http_tls_init(https_server, &ssl_config) != 0) {
 		printf("ssl config Error\n");
-		return NULL;
+		goto release;
 	}
 #endif
 	http_server = http_server_init(http_port);
 
 	if (http_server == NULL) {
 		printf("Error: Cannot allocate server structure!!\n");
-		return NULL;
+		goto release;
 	}
 
 	register_callbacks(http_server);
@@ -407,7 +473,7 @@ start:
 	if (http_server_start(http_server) < 0) {
 		printf("Fail to start HTTP server\n");
 	}
-	return NULL;
+	goto release;
 
 stop:
 	http_server_stop(http_server);
@@ -420,6 +486,8 @@ stop:
 #endif
 	printf("webserver end\n");
 
+release:
+	WEBSERVER_FREE_INPUT(input, input->argc);
 	return NULL;
 }
 
@@ -429,8 +497,31 @@ int webserver_main(int argc, char *argv[])
 	int status;
 	struct sched_param sparam;
 	pthread_t tid;
-	struct webserver_input arg;
+	struct webserver_input *input;
 
+	input = (struct webserver_input *)malloc(sizeof(struct webserver_input));
+	if (!input) {
+		printf(" malloc fail\n");
+		return -1;
+	}
+
+	input->argv = (char **)malloc(sizeof(char *) * argc);
+	if (!input->argv) {
+		printf(" malloc argv fail\n");
+		free(input);
+		return -1;
+	}
+
+	input->argc = argc;
+	int i = 0;
+	for (; i < argc; i++) {
+		input->argv[i] = (char *)malloc(sizeof(char) * (strlen(argv[i]) + 1));
+		if (!input->argv[i]) {
+			WEBSERVER_FREE_INPUT(input, i);
+			return -1;
+		}
+		strcpy(input->argv[i], argv[i]);
+	}
 	status = pthread_attr_init(&attr);
 	if (status != 0) {
 		printf("fail to start webserver\n");
@@ -442,12 +533,10 @@ int webserver_main(int argc, char *argv[])
 	status = pthread_attr_setschedpolicy(&attr, WEBSERVER_SCHED_POLICY);
 	status = pthread_attr_setstacksize(&attr, WEBSERVER_STACK_SIZE);
 
-	arg.argc = argc;
-	arg.argv = argv;
-
-	status = pthread_create(&tid, &attr, httptest_cb, &arg);
+	status = pthread_create(&tid, &attr, httptest_cb, input);
 	if (status < 0) {
 		printf("fail to start webserver\n");
+		WEBSERVER_FREE_INPUT(input, input->argc);
 		return -1;
 	}
 	pthread_setname_np(tid, "webserver");

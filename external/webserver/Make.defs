@@ -50,17 +50,7 @@
 #
 ############################################################################
 
-CSRCS	+= http.c
-CSRCS   += http_server.c
-CSRCS   += http_client.c
-ifeq ($(CONFIG_NET_SECURITY_TLS),y)
-CSRCS   += http_client_tls.c
-CSRCS   += http_server_tls.c
+ifeq ($(CONFIG_NETUTILS_WEBSERVER),y)
+CONFIGURED_EXT += webserver
 endif
-CSRCS   += http_string_util.c
-CSRCS   += http_keyvalue_list.c
-CSRCS   += http_query.c
-
-DEPPATH += --dep-path webserver
-VPATH += :webserver
 

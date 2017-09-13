@@ -15,7 +15,6 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-
 ############################################################################
 # external/mbedtls/make.defs
 #
@@ -51,42 +50,7 @@
 #
 ############################################################################
 
-SRC_CRYPTO_CSRCS =    aes.c           aesni.c         arc4.c          \
-                      asn1parse.c     asn1write.c     base64.c        \
-                      bignum.c        blowfish.c      camellia.c      \
-                      ccm.c           cipher.c        cipher_wrap.c   \
-                      cmac.c          ctr_drbg.c      des.c           dhm.c    \
-                      ecdh.c          ecdsa.c         ecjpake.c       ecp.c \
-                      ecp_curves.c    entropy.c       entropy_poll.c  \
-                      error.c         gcm.c           havege.c        \
-                      hmac_drbg.c     md.c            md2.c           \
-                      md4.c           md5.c           md_wrap.c       \
-                      memory_buffer_alloc.c           oid.c           \
-                      padlock.c       pem.c           pk.c            \
-                      pk_wrap.c       pkcs12.c        pkcs5.c         \
-                      pkparse.c       pkwrite.c       platform.c      \
-                      ripemd160.c     rsa.c           sha1.c          \
-                      sha256.c        sha512.c        threading.c     \
-                      timing.c        version.c                       \
-                      version_features.c              xtea.c
-
-SRC_X509_CSRCS =      certs.c         pkcs11.c        x509.c          \
-                      x509_create.c   x509_crl.c      x509_crt.c      \
-                      x509_csr.c      x509write_crt.c x509write_csr.c
-
-SRC_TLS_CSRCS =       debug.c         net.c           ssl_cache.c     \
-                      ssl_ciphersuites.c              ssl_tls.c       \
-                      ssl_cli.c       ssl_cookie.c    ssl_srv.c       \
-                      ssl_ticket.c    easy_tls.c
-
-ifeq ($(CONFIG_TLS_WITH_SSS),y)
-SRC_SEE_CSRCS += see_api.c	see_internal.c
+ifeq ($(CONFIG_NET_SECURITY_TLS),y)
+CONFIGURED_EXT += mbedtls
 endif
-
-TLS_CSRCS += $(SRC_CRYPTO_CSRCS) $(SRC_X509_CSRCS) $(SRC_TLS_CSRCS) $(SRC_SEE_CSRCS)
-
-CSRCS += $(TLS_CSRCS)
-
-DEPPATH += --dep-path mbedtls
-VPATH += :mbedtls
 

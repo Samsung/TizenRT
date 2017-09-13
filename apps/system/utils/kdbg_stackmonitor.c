@@ -221,7 +221,7 @@ int kdbg_stackmonitor(int argc, char **args)
 	pthread_attr_t stkmon_attr;
 
 	if (argc > 1) {
-		if (!strcmp(args[1], "stop")) {
+		if (!strncmp(args[1], "stop", strlen("stop") + 1)) {
 			/* stop the stackmonitor */
 			stackmonitor_stop();
 			return OK;

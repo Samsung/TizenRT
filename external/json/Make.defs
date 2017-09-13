@@ -50,8 +50,7 @@
 #
 ############################################################################
 
-CSRCS += cJSON.c
-
-DEPPATH += --dep-path json
-VPATH += :json
+ifeq ($(CONFIG_NETUTILS_JSON),y)
+CONFIGURED_EXT += json
+endif
 

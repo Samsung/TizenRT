@@ -90,7 +90,7 @@
 #error No initialization mechanism selected (CONFIG_INIT_NONE)
 
 #else
-#if !defined(CONFIG_INIT_ENTRYPOINT) && !defined(CONFIG_INIT_FILEPATH)
+#if !defined(CONFIG_INIT_ENTRYPOINT)
 /* For backward compatibility with older defconfig files when this was
  * the way things were done.
  */
@@ -105,32 +105,6 @@
 /* Entry point name must have been provided */
 
 #error CONFIG_USER_ENTRYPOINT must be defined
-#endif
-
-#elif defined(CONFIG_INIT_FILEPATH)
-/* Initialize by running an initialization program in the file system.
- * Presumably the user has configured a board initialization function
- * that will mount the file system containing the initialization
- * program.
- */
-
-#ifndef CONFIG_BOARD_INITIALIZE
-#warning You probably need CONFIG_BOARD_INITIALIZE to mount the file system
-#endif
-
-#ifndef CONFIG_USER_INITPATH
-/* Path to the initialization program must have been provided */
-
-#error CONFIG_USER_INITPATH must be defined
-#endif
-
-#if !defined(CONFIG_INIT_SYMTAB) || !defined(CONFIG_INIT_NEXPORTS)
-/* No symbol information... assume no symbol table is available */
-
-#undef CONFIG_INIT_SYMTAB
-#undef CONFIG_INIT_NEXPORTS
-#define CONFIG_INIT_SYMTAB NULL
-#define CONFIG_INIT_NEXPORTS 0
 #endif
 #endif
 #endif
@@ -293,36 +267,6 @@ static inline void os_do_appstart(void)
 	ASSERT(pid > 0);
 }
 
-#elif defined(CONFIG_INIT_FILEPATH)
-static inline void os_do_appstart(void)
-{
-	int ret;
-
-#ifdef CONFIG_BOARD_INITIALIZE
-	/* Perform any last-minute, board-specific initialization, if so
-	 * configured.
-	 */
-
-	board_initialize();
-#endif
-
-#ifdef CONFIG_NET
-	/* Initialize the network system & Create network task if required */
-
-	net_initialize();
-#endif
-
-	/* Start the application initialization program from a program in a
-	 * mounted file system.  Presumably the file system was mounted as part
-	 * of the board_initialize() operation.
-	 */
-
-	svdbg("Starting init task: %s\n", CONFIG_USER_INITPATH);
-
-	ret = exec(CONFIG_USER_INITPATH, NULL, CONFIG_INIT_SYMTAB, CONFIG_INIT_NEXPORTS);
-	ASSERT(ret >= 0);
-}
-
 #elif defined(CONFIG_INIT_NONE)
 #define os_do_appstart()
 
@@ -418,12 +362,7 @@ static inline void os_start_application(void)
  *   symbols, either:
  *
  *   - CONFIG_USER_ENTRYPOINT: This is the default user application entry
- *                 point, or
- *   - CONFIG_USER_INITPATH: The full path to the location in a mounted
- *                 file system where we can expect to find the
- *                 initialization program.  Presumably, this file system
- *                 was mounted by board-specific logic when
- *                 board_initialize() was called.
+ *                 point
  *
  * Input Parameters:
  *   None

@@ -50,46 +50,7 @@
 #
 ############################################################################
 
-CSRCS += netlib.c
-CSRCS += netlib_parsehttpurl.c
-CSRCS += netlib_setifstatus.c \
-	netlib_getifstatus.c
-
-
-ifeq ($(CONFIG_NET_IPv4),y)
-CSRCS += netlib_setipv4addr.c \
-	netlib_getipv4addr.c \
-	netlib_getdripv4addr.c \
-	netlib_setdripv4addr.c \
-	netlib_setipv4netmask.c
+ifeq ($(CONFIG_NETUTILS_NETLIB),y)
+CONFIGURED_EXT += netutils
 endif
-
-ifeq ($(CONFIG_NET_IPv6),y)
-CSRCS += netlib_setipv6addr.c \
-	netlib_getipv6addr.c \
-	netlib_getdripv6addr.c \
-	netlib_setdripv6addr.c \
-	netlib_setipv6netmask.c \
-	netlib_prefix2ipv6netmask.c \
-	netlib_ipv6netmask2prefix.c
-endif
-
-
-# No MAC address support for SLIP (Ethernet only)
-
-ifeq ($(CONFIG_NET_ETHERNET),y)
-CSRCS += netlib_setmacaddr.c \
-	netlib_getmacaddr.c
-endif
-
-# IGMP support
-
-ifeq ($(CONFIG_NET_IGMP),y)
-ifeq ($(CONFIG_NET_IPv4),y) # Not yet available for IPv6
-CSRCS += netlib_ipmsfilter.c
-endif
-endif
-
-DEPPATH += --dep-path netutils
-VPATH += :netutils
 

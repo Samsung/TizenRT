@@ -295,7 +295,7 @@
 /* Audio driver ioctl definitions *************************************/
 /* (see tinyara/audio/audio.h) */
 
-#define _AUDIOIOCVALID(c) (_IOC_TYPE(c) ==_AUDIOIOCBASE)
+#define _AUDIOIOCVALID(c) (_IOC_TYPE(c) == _AUDIOIOCBASE)
 #define _AUDIOIOC(nr)     _IOC(_AUDIOIOCBASE, nr)
 
 /* Application Config Data driver ioctl definitions *************************/

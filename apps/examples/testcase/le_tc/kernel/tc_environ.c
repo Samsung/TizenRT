@@ -148,7 +148,7 @@ static void tc_environ_putenv(void)
 	TC_ASSERT_EQ("putenv", ret_chk, OK);
 
 	psz_getvalue = getenv("PATH");
-	TC_ASSERT_NOT_NULL("getenv", psz_getvalue);
+	TC_ASSERT_NEQ("getenv", psz_getvalue, NULL);
 	TC_ASSERT_EQ("getenv", strcmp(psz_getvalue, "C:"), 0);
 
 	/* Changing the value of already existing PATH variable */
@@ -194,7 +194,7 @@ static void tc_environ_get_environ_ptr(void)
 	}
 
 	env_ptr = get_environ_ptr(&env_size);
-	TC_ASSERT_NOT_NULL("get_environ_ptr", env_ptr);
+	TC_ASSERT_NEQ("get_environ_ptr", env_ptr, NULL);
 
 	/* env_size is set to length of all env name and val pair */
 

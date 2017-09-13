@@ -58,7 +58,5 @@ endif
 
 CFLAGS+=-D__TINYARA__
 
-CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
-
-DEPPATH += --dep-path wakaama/core
-VPATH += :wakaama/core
+DEPPATH += --dep-path core
+VPATH += :core

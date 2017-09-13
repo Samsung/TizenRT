@@ -50,8 +50,7 @@
 #
 ############################################################################
 
-CSRCS += ntpclient.c
-
-DEPPATH += --dep-path ntpclient
-VPATH += :ntpclient
+ifeq ($(CONFIG_NETUTILS_NTPCLIENT),y)
+CONFIGURED_EXT += ntpclient
+endif
 

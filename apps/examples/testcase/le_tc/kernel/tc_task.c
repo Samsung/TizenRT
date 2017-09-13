@@ -29,6 +29,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include "tc_internal.h"
 

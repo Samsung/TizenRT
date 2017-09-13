@@ -51,18 +51,6 @@
 ############################################################################
 
 ifeq ($(CONFIG_NETUTILS_CODECS),y)
-
-ifeq ($(CONFIG_CODECS_BASE64),y)
-CSRCS		+= codecs/base64.c
-endif
-ifeq ($(CONFIG_CODECS_HASH_MD5),y)
-CSRCS		+= codecs/md5.c
-endif
-ifeq ($(CONFIG_CODECS_URLCODE),y)
-CSRCS		+= codecs/urldecode.c
-endif
-
-DEPPATH += --dep-path codecs
-VPATH += :codecs
+CONFIGURED_EXT += codecs
 endif
 

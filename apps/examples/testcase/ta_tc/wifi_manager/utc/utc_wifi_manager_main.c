@@ -389,7 +389,7 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	utc_wifi_manager_scan_ap_n(); // Get failed becasue there is no callback hander for scan results
 	utc_wifi_manager_scan_ap_p(); // Reinitialized wifi manager with the callback hander for scan results
 
-	printf("\n=== TINYARA WIFI_MANAGER TC COMPLETE ===\n");
+  printf("\n=== TINYARA WIFI_MANAGER TC COMPLETE ===\n");
 	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
 
 	working_tc--;
