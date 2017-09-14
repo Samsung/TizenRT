@@ -27,23 +27,23 @@
 
 #include <stdio.h>
 
-#include "../../arch/arm/src/s5j/sss/mb_cmd_dh.h"
-#include "../../arch/arm/src/s5j/sss/mb_cmd_hash.h"
-#include "../../arch/arm/src/s5j/sss/mb_cmd_rsa.h"
+#include "mb_cmd_dh.h"
+#include "mb_cmd_hash.h"
+#include "mb_cmd_rsa.h"
 
-#include "../../arch/arm/src/s5j/sss/isp_define.h"
-#include "../../arch/arm/src/s5j/sss/isp_driver_hash.h"
-#include "../../arch/arm/src/s5j/sss/isp_driver_rng.h"
-#include "../../arch/arm/src/s5j/sss/isp_driver_secure_storage_factorykey.h"
-#include "../../arch/arm/src/s5j/sss/isp_driver_secure_storage.h"
-#include "../../arch/arm/src/s5j/sss/isp_driver_secure_storage_key.h"
-#include "../../arch/arm/src/s5j/sss/isp_driver_dh_securekey.h"
-#include "../../arch/arm/src/s5j/sss/isp_driver_rsa_securekey.h"
-#include "../../arch/arm/src/s5j/sss/isp_driver_hmac_securekey.h"
-#include "../../arch/arm/src/s5j/sss/isp_driver_ecdsa_securekey.h"
-#include "../../arch/arm/src/s5j/sss/mb_cmd_secure_storage_data.h"
-#include "../../arch/arm/src/s5j/sss/isp_driver_error.h"
-#include "../../arch/arm/src/s5j/sss/isp_oid.h"
+#include "isp_define.h"
+#include "isp_driver_hash.h"
+#include "isp_driver_rng.h"
+#include "isp_driver_secure_storage_factorykey.h"
+#include "isp_driver_secure_storage.h"
+#include "isp_driver_secure_storage_key.h"
+#include "isp_driver_dh_securekey.h"
+#include "isp_driver_rsa_securekey.h"
+#include "isp_driver_hmac_securekey.h"
+#include "isp_driver_ecdsa_securekey.h"
+#include "mb_cmd_secure_storage_data.h"
+#include "isp_driver_error.h"
+#include "isp_oid.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -91,6 +91,17 @@ typedef enum {
 #define SEE_MAX_KEY_INDEX		(0x08)
 #define SEE_MAX_CERT_INDEX		(0x08)
 #define ECC_KEY				(0x040000)
+
+#define SEE_IOTIVITY_MAXSIZE       (SEE_IOTIVITY_MAX_SLOT_SIZE * SEE_IOTIVITY_SLOT_NUM)
+#define SEE_IOTIVITY_MAX_SLOT_SIZE (SEE_MAX_BUF_SIZE - 8)
+#define SEE_IOTIVITY_SLOT_NUM      (2)
+#define SEE_IOTIVITY_SLOT_START    (6)
+#define SEE_IOTIVITY_SLOT_END      (7)
+#define SEE_IOTIVITY_DATAMASK      (0xFFFFFFFF)
+
+/* cert type */
+#define CERT_DER      0x01
+#define CERT_PEM      0x02
 
 #if defined(SEE_API_DEBUG)
 #define SEE_DEBUG printf
