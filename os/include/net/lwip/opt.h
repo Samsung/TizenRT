@@ -2200,6 +2200,15 @@
 #ifndef LWIP_IPV6_DUP_DETECT_ATTEMPTS
 #define LWIP_IPV6_DUP_DETECT_ATTEMPTS   1
 #endif
+
+/**
+ * LWIP_IPV6_REASS_MAXAGE: Maximum time (in multiples of IP6_REASS_TMR_INTERVAL - so seconds, normally) a fragmented IP packet waits for all fragments to arrive.
+ * If not all fragments arrived in this time, the whole packet is discarded.
+ */
+#ifndef LWIP_IPV6_REASS_MAXAGE
+#define LWIP_IPV6_REASS_MAXAGE    60
+#endif
+
 /**
  * @}
  */
