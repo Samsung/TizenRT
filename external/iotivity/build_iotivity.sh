@@ -27,6 +27,11 @@ export IOTIVITY_PATCH_DIR="${IOTIVITY_BASE}/patches/${IOTIVITY_RELEASE_VERSION}"
 #	git clone https://github.com/01org/tinycbor.git ${IOTIVITY_BUILD_DIR}/extlibs/tinycbor/tinycbor
 #fi
 
+if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls ]; then
+	mkdir -p ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include
+	ln -s ${TINYARA_BUILD_DIR}/include/tls ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include/mbedtls
+fi
+
 #if [ ! -f ${IOTIVITY_BUILD_DIR}/tinyara_patch.lock ]; then
 #	cd ${IOTIVITY_BUILD_DIR}
 #	touch ${IOTIVITY_BUILD_DIR}/tinyara_patch.lock
@@ -67,13 +72,6 @@ CONFIG_ARCH_FAMILY=`extract_flags "CONFIG_ARCH_FAMILY"`
 IOTIVITY_TARGET_ARCH=$(echo "$CONFIG_ARCH_FAMILY" | sed 's/"//g')
 CONFIG_IOTIVITY_ROUTING=`extract_flags "CONFIG_IOTIVITY_ROUTING"`
 IOTIVITY_ROUTING=$(echo "$CONFIG_IOTIVITY_ROUTING" | sed 's/"//g')
-
-if [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 1 ]; then
-	if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls ]; then
-		mkdir -p ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include
-		ln -s ${TINYARA_BUILD_DIR}/include/tls ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include/mbedtls
-	fi
-fi
 
 PLATFORM_TLS=`extract_flags "CONFIG_NET_SECURITY_TLS"`
 if [ -z ${PLATFORM_TLS} ]; then PLATFORM_TLS=0; fi
