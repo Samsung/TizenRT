@@ -144,6 +144,8 @@ ifeq ($(CONFIG_S5J_I2C),y)
 CHIP_CSRCS += s5j_i2c.c
 endif
 
+CHIP_CSRCS += s5j_clock.c
+
 ifeq ($(CONFIG_S5J_MCT),y)
 CHIP_CSRCS += s5j_mct.c
 ifeq ($(CONFIG_TIMER),y)
