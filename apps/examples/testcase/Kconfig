@@ -20,6 +20,8 @@ source "$APPSDIR/examples/testcase/ta_tc/systemio/utc/Kconfig"
 source "$APPSDIR/examples/testcase/ta_tc/systemio/itc/Kconfig"
 source "$APPSDIR/examples/testcase/ta_tc/device_management/utc/Kconfig"
 source "$APPSDIR/examples/testcase/ta_tc/device_management/itc/Kconfig"
+source "$APPSDIR/examples/testcase/ta_tc/wifi_manager/utc/Kconfig"
+source "$APPSDIR/examples/testcase/ta_tc/mqtt/utc/Kconfig"
 endif #EXAMPLES_TESTCASE
 
 config USER_ENTRYPOINT

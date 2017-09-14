@@ -29,7 +29,7 @@ export IOTIVITY_PATCH_DIR="${IOTIVITY_BASE}/patches/${IOTIVITY_RELEASE_VERSION}"
 
 if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls ]; then
 	mkdir -p ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include
-	ln -s ${TINYARA_BUILD_DIR}/include/tls ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include/mbedtls
+	ln -s ${TINYARA_BUILD_DIR}/../external/include/mbedtls ${IOTIVITY_BUILD_DIR}/extlibs/mbedtls/mbedtls/include/mbedtls
 fi
 
 #if [ ! -f ${IOTIVITY_BUILD_DIR}/tinyara_patch.lock ]; then

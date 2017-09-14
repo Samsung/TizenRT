@@ -15,6 +15,8 @@ The ARTIK 053 is a SOC for Wi-Fi™ IoT solutions. The ARTIK 053 has a Wi-Fi sub
 The Samsung ARTIK™ 053 Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
 Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK 053 Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
 
+Here is a [memory map](scripts/README.md).
+
 ## Environment Set-up
 ### On Chip Debugger installation
 
@@ -91,7 +93,9 @@ openocd -f artik053.cfg -c ' \
 
 ## ROMFS
 
-Before executing below steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.
+Before executing below steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.  
+When you use artik053/iotivity config, you can execute only step 4.  
+But note that if you want to change the size of ROMFS partition, you have to modify sizes in partition_map_romfs.cfg matching the sizes in ARTIK053_FLASH_PART_LIST.
 
 3. Modify partition configs.  
     Below steps creates ROMFS partition with size 400KB at next of user partition.  

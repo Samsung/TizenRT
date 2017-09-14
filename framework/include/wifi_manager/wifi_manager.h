@@ -43,20 +43,40 @@ typedef enum {
 	WIFI_MANAGER_FAIL = -1,
 	WIFI_MANAGER_SUCCESS,
 	WIFI_MANAGER_INVALID_ARGS,
+	WIFI_MANAGER_INITIALIZED,
+	WIFI_MANAGER_DEINITIALIZED,
 	WIFI_MANAGER_TIMEOUT,
 	WIFI_MANAGER_BUSY,
 } wifi_manager_result_e;
 
 typedef enum {
+	WIFI_NONE = -1,
 	STA_MODE,
-	SOFT_AP_MODE
+	SOFTAP_MODE
 } wifi_manager_mode_e;
 
+typedef enum {
+	WIFI_SCAN_FAIL = -1,
+	WIFI_SCAN_SUCCESS,
+} wifi_manager_scan_result_e;
+
+struct wifi_manager_scan_info_s {
+	char ssid[33];	// 802.11 spec defined unspecified or uint8
+	char bssid[18];	// char string e.g. xx:xx:xx:xx:xx:xx
+	int8_t rssi;		// received signal strength indication
+	uint8_t channel;	// channel/frequency
+	uint8_t phy_mode;	// 0:legacy 1: 11N HT
+	struct wifi_manager_scan_info_s *next;
+};
+
+typedef struct wifi_manager_scan_info_s wifi_manager_scan_info_s;
+
 typedef struct {
-	void (*sta_connected)(void);
-	void (*sta_disconnected)(void);
-	void (*softap_sta_join)(void);
-	void (*softap_sta_leave)(void);
+	void (*sta_connected)(void);		// in station mode, connected to ap
+	void (*sta_disconnected)(void);		// in station mode, disconnected from ap
+	void (*softap_sta_joined)(void);	// in softap mode, a station joined
+	void (*softap_sta_left)(void);		// in softap mode, a station left
+	void (*scan_ap_done)(wifi_manager_scan_info_s **, wifi_manager_scan_result_e); // scanning ap is done
 } wifi_manager_cb_s;
 
 typedef struct {
@@ -138,7 +158,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 
 /**
  * @brief Retrieve current status of Wi-Fi interface including mode, connection status, ssid, received signal strengh indication, and ip address.
- * @param[out] retrieved information including  mode, connection s    tatus, ssid, received signal strengh indication, and ip address.
+ * @param[out] retrieved information including  mode, connection status, ssid, received signal strengh indication, and ip address.
  * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
  * @since Tizen RT v1.1
  */
@@ -159,6 +179,14 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config);
  * @since Tizen RT v1.1
  */
 wifi_manager_result_e wifi_manager_disconnect_ap(void);
+
+/**
+ * @brief Scan nearby access points
+ * @param[in] none
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since Tizen RT v1.1
+ */
+wifi_manager_result_e wifi_manager_scan_ap(void);
 
 #endif
 

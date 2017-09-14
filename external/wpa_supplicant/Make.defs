@@ -1,5 +1,5 @@
 ############################################################################
-# apps/wpa_supplicant/Make.defs
+# external/wpa_supplicant/Make.defs
 # Make defs - wpa_supplicant
 #
 #   Copyright (C) 2015 Gregory Nutt. All rights reserved.
@@ -35,5 +35,5 @@
 ############################################################################
 
 ifeq ($(CONFIG_WPA_SUPPLICANT),y)
-CONFIGURED_APPS += wpa_supplicant
+CONFIGURED_EXT += wpa_supplicant
 endif

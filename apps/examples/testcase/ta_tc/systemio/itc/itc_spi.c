@@ -53,7 +53,7 @@ void itc_iotbus_spi_open_close_p(void)
 {
     int ret = IOTBUS_ERROR_NONE;
     iotbus_spi_context_h h_spi = iotbus_spi_open(gBus, &_g_st_config);
-    TC_ASSERT_NOT_NULL("iotbus_spi_open", h_spi);
+    TC_ASSERT_NEQ("iotbus_spi_open", h_spi, NULL);
 
     ret = iotbus_spi_close(h_spi);
     TC_ASSERT_EQ("iotbus_spi_close", ret, IOTBUS_ERROR_NONE);
@@ -75,7 +75,7 @@ void itc_iotbus_spi_write_recv_trasfer_p(void)
     unsigned char sz_rxbuf[64] = { 0, };
     int ret = IOTBUS_ERROR_NONE;
     iotbus_spi_context_h h_spi = iotbus_spi_open(gBus, &_g_st_config);
-    TC_ASSERT_NOT_NULL("iotbus_spi_open", h_spi);
+    TC_ASSERT_NEQ("iotbus_spi_open", h_spi, NULL);
 
 	ret = iotbus_spi_write(h_spi, sz_txbuf, 8);
 	TC_ASSERT_EQ_CLEANUP("iotbus_spi_write", ret, IOTBUS_ERROR_NONE, iotbus_spi_close(h_spi));

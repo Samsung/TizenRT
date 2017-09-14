@@ -628,7 +628,7 @@ static void fs_vfs_opendir_tc(void)
 	DIR *dirp;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 	closedir(dirp);
 	TC_SUCCESS_RESULT();
 }
@@ -648,7 +648,7 @@ static void fs_vfs_readdir_tc(void)
 	struct dirent *dirent;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	count = 0;
 	while (1) {
@@ -679,7 +679,7 @@ static void fs_vfs_rewinddir_tc(void)
 	struct dirent *dirent;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	count = 0;
 	while (1) {
@@ -716,13 +716,13 @@ static void fs_vfs_seekdir_tc(void)
 	char filename[1];
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	offset = 2;
 	seekdir(dirp, offset);
-	TC_ASSERT_CLEANUP("seekdir", dirp, closedir(dirp));
+	TC_ASSERT_NEQ_CLEANUP("seekdir", dirp, NULL, closedir(dirp));
 	dirent = readdir(dirp);
-	TC_ASSERT_CLEANUP("readdir", dirent, closedir(dirp));
+	TC_ASSERT_NEQ_CLEANUP("readdir", dirent, NULL, closedir(dirp));
 	TC_ASSERT_EQ_CLEANUP("readdir", dirent->d_type, DTYPE_DIRECTORY, closedir(dirp));
 
 	ret = closedir(dirp);
@@ -750,7 +750,7 @@ static void fs_libc_dirent_readdir_r_tc(void)
 	struct dirent *result;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	count = 0;
 	while (1) {
@@ -781,11 +781,11 @@ static void fs_libc_dirent_telldir_tc(void)
 	int ret;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	offset = 2;
 	seekdir(dirp, offset);
-	TC_ASSERT_CLEANUP("seekdir", dirp, closedir(dirp));
+	TC_ASSERT_NEQ_CLEANUP("seekdir", dirp, NULL, closedir(dirp));
 	res = telldir(dirp);
 	TC_ASSERT_EQ_CLEANUP("telldir", res, offset, closedir(dirp));
 	ret = closedir(dirp);
@@ -812,7 +812,7 @@ static void fs_vfs_closedir_tc(void)
 	DIR *dirp;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	ret = closedir(dirp);
 	TC_ASSERT_EQ("closedir", ret, OK);
@@ -961,7 +961,9 @@ static void fs_vfs_mkfifo_tc(void)
 	g_thread_result = true;
 
 	ret = mkfifo(FIFO_FILE_PATH, 0666);
-	TC_ASSERT("mkfifo", (ret >= 0) || (ret == -EEXIST));
+	if (ret < 0) {
+		TC_ASSERT_EQ("mkfifo", ret, -EEXIST);
+	}
 
 	fd = open(FIFO_FILE_PATH, O_WRONLY);
 	TC_ASSERT_GEQ("open", fd, 0);
@@ -983,7 +985,7 @@ static void fs_vfs_mkfifo_tc(void)
 	}
 	close(fd);
 	pthread_kill(tid, SIGUSR1);
-	TC_ASSERT("mkfifo", g_thread_result);
+	TC_ASSERT_EQ("mkfifo", g_thread_result, true);
 	TC_SUCCESS_RESULT();
 errout:
 	pthread_kill(tid, SIGUSR1);
@@ -1220,7 +1222,7 @@ static void libc_stdio_fdopen_tc(void)
 
 	fp = fdopen(fd, "r");
 	close(fd);
-	TC_ASSERT("fdopen", fp);
+	TC_ASSERT_NEQ("fdopen", fp, NULL);
 	TC_ASSERT_EQ_CLEANUP("fdopen", fp->fs_oflags, O_RDONLY, fclose(fp));
 	fclose(fp);
 
@@ -1245,19 +1247,19 @@ static void libc_stdio_fopen_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	fclose(fp);
 
 	fp = fopen(filename, "r+");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	fclose(fp);
 
 	fp = fopen(filename, "rb");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	fclose(fp);
 
 	fp = fopen(filename, "rx");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	fclose(fp);
 
 	/* Nagative cases with invalid mode. It will return NULL */
@@ -1300,7 +1302,7 @@ static void libc_stdio_fclose_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	ret = fclose(fp);
 	TC_ASSERT_EQ("fclose", ret, OK);
 	TC_SUCCESS_RESULT();
@@ -1321,7 +1323,7 @@ static void libc_stdio_fputs_tc(void)
 	char *str = VFS_TEST_CONTENTS_1;
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	TC_ASSERT_EQ_CLEANUP("fputs", fputs(str, fp), strlen(str), fclose(fp));
 
 	/* Nagative case with invalid argument, NULL stream. It will return EOF */
@@ -1346,10 +1348,10 @@ static void libc_stdio_fgets_tc(void)
 	char buf[20];
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	memset(buf, 0, sizeof(buf));
-	TC_ASSERT_CLEANUP("fgets", fgets(buf, 20, fp), fclose(fp));
+	TC_ASSERT_NEQ_CLEANUP("fgets", fgets(buf, 20, fp), NULL, fclose(fp));
 	TC_ASSERT_EQ_CLEANUP("fgets", strcmp(buf, VFS_TEST_CONTENTS_1), 0, fclose(fp));
 
 	/* Nagative case with invalid argument, negative buffer size. It will return NULL */
@@ -1374,13 +1376,13 @@ static void libc_stdio_fseek_tc(void)
 	char buf[20];
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fseek(fp, 5, SEEK_SET);
 	TC_ASSERT_EQ_CLEANUP("fseek", ret, OK, fclose(fp));
 
 	memset(buf, 0, sizeof(buf));
-	TC_ASSERT_CLEANUP("fgets", fgets(buf, 20, fp), fclose(fp));
+	TC_ASSERT_NEQ_CLEANUP("fgets", fgets(buf, 20, fp), NULL, fclose(fp));
 	fclose(fp);
 	TC_ASSERT_EQ("fgets", strcmp(buf, "IS VFS TEST 1"), 0);
 
@@ -1406,7 +1408,7 @@ static void libc_stdio_ftell_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fseek(fp, 5, SEEK_SET);
 	TC_ASSERT_EQ_CLEANUP("fseek", ret, OK, fclose(fp));
@@ -1439,7 +1441,7 @@ static void libc_stdio_feof_tc(void)
 	TC_ASSERT_NEQ("make_long_file", make_long_file(), ERROR);
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	/* Print contents of long file, if below became infinite loop, it means failed */
 	while (!feof(fp)) {
@@ -1468,7 +1470,7 @@ static void libc_stdio_fprintf_tc(void)
 	int ret;
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fprintf(fp, "%s", str);
 	fclose(fp);
@@ -1492,7 +1494,7 @@ static void libc_stdio_fsetpos_tc(void)
 	int ch, ret;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fsetpos(fp, &pos);
 	TC_ASSERT_EQ_CLEANUP("fsetpos", ret, OK, fclose(fp));
@@ -1527,7 +1529,7 @@ static void libc_stdio_fgetpos_tc(void)
 	int ret;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fsetpos(fp, &pos);
 	TC_ASSERT_EQ_CLEANUP("fsetpos", ret, OK, fclose(fp));
@@ -1558,7 +1560,7 @@ static void libc_stdio_fputc_tc(void)
 	int ret;
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fputc('S', fp);
 	fclose(fp);
@@ -1581,7 +1583,7 @@ static void libc_stdio_fgetc_tc(void)
 	int ch;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ch = fgetc(fp);
 	fclose(fp);
@@ -1605,7 +1607,7 @@ static void libc_stdio_fwrite_tc(void)
 	int len, ret;
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	len = strlen(VFS_TEST_CONTENTS_1);
 	ret = fwrite(VFS_TEST_CONTENTS_1, 1, len, fp);
@@ -1639,7 +1641,7 @@ static void libc_stdio_fread_tc(void)
 	int len, ret;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	len = strlen(VFS_TEST_CONTENTS_1);
 	memset(buf, 0, sizeof(buf));
@@ -1677,23 +1679,23 @@ static void libc_stdio_freopen_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = freopen(filename, "w", NULL);
-	TC_ASSERT("freopen", fp);
+	TC_ASSERT_NEQ("freopen", fp, NULL);
 	fclose(fp);
 
 	fp = freopen(filename, "w", fp);
-	TC_ASSERT("freopen", fp);
+	TC_ASSERT_NEQ("freopen", fp, NULL);
 	fclose(fp);
 
 	fp = freopen(filename, "r+", fp);
-	TC_ASSERT("freopen", fp);
+	TC_ASSERT_NEQ("freopen", fp, NULL);
 	fclose(fp);
 
 	fp = freopen(filename, "rb", fp);
-	TC_ASSERT("freopen", fp);
+	TC_ASSERT_NEQ("freopen", fp, NULL);
 	fclose(fp);
 
 	fp = freopen(filename, "rx", fp);
-	TC_ASSERT("freopen", fp);
+	TC_ASSERT_NEQ("freopen", fp, NULL);
 	fclose(fp);
 
 	/* Nagative cases with invalid mode. It will return NULL */
@@ -1743,7 +1745,7 @@ static void libc_stdio_ferror_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fputc(32, fp);
 	TC_ASSERT_EQ_CLEANUP("fputc", ret, EOF, fclose(fp));
@@ -1771,7 +1773,7 @@ static void libc_stdio_clearerr_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fputc(32, fp);
 	TC_ASSERT_EQ_CLEANUP("fputc", ret, EOF, fclose(fp));
@@ -1801,7 +1803,7 @@ static void libc_stdio_gets_tc(void)
 
 	printf("Enter text here : \n");
 	fflush(stdout);
-	TC_ASSERT("gets", gets(input_str));
+	TC_ASSERT_NEQ("gets", gets(input_str), NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1819,7 +1821,7 @@ static void libc_stdio_gets_s_tc(void)
 
 	printf("Enter text here : \n");
 	fflush(stdout);
-	TC_ASSERT("gets_s", gets_s(input_str, sizeof(input_str)));
+	TC_ASSERT_NEQ("gets_s", gets_s(input_str, sizeof(input_str)), NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1838,7 +1840,7 @@ static void libc_stdio_fileno_tc(void)
 	int fd;
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	fd = fileno(fp);
 	fclose(fp);
@@ -1888,7 +1890,7 @@ static void libc_stdio_setbuf_tc(void)
 	/* setbuf_test: DEFAULT buffering */
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	/* setbuf_test: NO buffering */
 
@@ -1927,7 +1929,7 @@ static void libc_stdio_setvbuf_tc(void)
 	/* setvbuf_test: DEFAULT buffering */
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	/* setvbuf_test: NO buffering */
 
@@ -1976,14 +1978,14 @@ static void libc_stdio_ungetc_tc(void)
 	int ch1, ch2;
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fputc(32, fp);
 	fclose(fp);
 	TC_ASSERT_NEQ("fputc", ret, EOF);
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ch1 = fgetc(fp);
 	TC_ASSERT_NEQ_CLEANUP("fgetc", ch1, EOF, fclose(fp));

@@ -866,7 +866,7 @@ static void tc_pthread_pthread_cancel_setcancelstate(void)
 	TC_ASSERT_EQ_CLEANUP("pthread_cancel", ret_chk, OK, pthread_detach(g_thread1));
 
 	sleep(SEC_3);
-	TC_ASSERT("pthread_cancel", g_bpthreadcallback);
+	TC_ASSERT_EQ("pthread_cancel", g_bpthreadcallback, true);
 
 	ret_chk = pthread_detach(g_thread1);
 	TC_ASSERT_EQ("pthread_detach", ret_chk, OK);
@@ -953,7 +953,7 @@ static void tc_pthread_pthread_timed_wait(void)
 	ret_chk = pthread_create(&waiter, &attr, thread_waiter, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	TC_ASSERT("pthread_create", g_bpthreadcallback);
+	TC_ASSERT_EQ("pthread_create", g_bpthreadcallback, true);
 
 	ret_chk = pthread_join(waiter, &result);
 	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
@@ -1060,7 +1060,7 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 	pthread_join(g_thread1, NULL);
 	pthread_join(g_thread2, NULL);
 
-	TC_ASSERT("pthread_mutex_lock_unlock", g_bpthreadcallback);
+	TC_ASSERT_EQ("pthread_mutex_lock_unlock", g_bpthreadcallback, true);
 
 	pthread_mutex_destroy(&g_mutex);
 
@@ -1378,7 +1378,7 @@ static void tc_pthread_pthread_sigmask(void)
 	TC_ASSERT_GEQ("sigpending", ret_chk, 0);
 
 	nanosleep(&st_timespec, NULL);
-	TC_ASSERT("pthread_sigmask", g_sig_handle);
+	TC_ASSERT_EQ("pthread_sigmask", g_sig_handle, true);
 
 	ret_chk = sigaction(SIGQUIT, &st_oact, NULL);
 	TC_ASSERT_EQ("signaction", ret_chk, OK);
@@ -1490,10 +1490,8 @@ static void tc_pthread_pthread_setcanceltype(void)
 	int ret_chk;
 
 	type = PTHREAD_CANCEL_ASYNCHRONOUS;
-	oldtype = PTHREAD_CANCEL_DEFERRED;
 	ret_chk = pthread_setcanceltype(type, &oldtype);
 	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, OK);
-	TC_ASSERT_EQ("pthread_setcanceltype", oldtype, PTHREAD_CANCEL_ASYNCHRONOUS);
 
 	type = PTHREAD_CANCEL_DEFERRED;
 	ret_chk = pthread_setcanceltype(type, &oldtype);

@@ -132,6 +132,7 @@ clean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_clean) iotivity_clean
 
 distclean: $(foreach SDIR, $(BUILDIRS), $(SDIR)_distclean)
 	$(call DELFILE, .depend)
+	$(call DELFILE, Make.dep)
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 

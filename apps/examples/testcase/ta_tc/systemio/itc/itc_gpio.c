@@ -73,7 +73,7 @@ void itc_gpio_open_close_p(void)
     int gpiopin = 12;
     int ret;
     g_gpio = iotbus_gpio_open(gpiopin);
-    TC_ASSERT_NOT_NULL ("iotbus_gpio_open" , g_gpio);
+    TC_ASSERT_NEQ ("iotbus_gpio_open" , g_gpio, NULL);
 
 	gpiopin = 14;
 	g_gpio2 = iotbus_gpio_open(gpiopin);
@@ -104,7 +104,7 @@ void itc_gpio_set_get_direction_p(void)
 	bool check = true;
 	gpiopin = 12;
 	g_gpio = iotbus_gpio_open(gpiopin);
-	TC_ASSERT_NOT_NULL("iotbus_gpio_open" , g_gpio);
+	TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
 
 	for (index = 0; index < ncount; index++) {
 		ret = iotbus_gpio_set_direction(g_gpio, setDirection[index]);
@@ -150,7 +150,7 @@ void itc_gpio_set_get_edge_mode_p(void)
 	bool check = true;
 	gpiopin = 12;
 	g_gpio = iotbus_gpio_open(gpiopin);
-	TC_ASSERT_NOT_NULL("iotbus_gpio_open" , g_gpio);
+	TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
 
 	for (index = 0; index < ncount; index++) {
 		ret = iotbus_gpio_set_edge_mode(g_gpio, setEdge[index]);
@@ -194,7 +194,7 @@ void itc_gpio_set_get_drive_mode_p(void)
 	bool check = true;
 
 	g_gpio = iotbus_gpio_open(gpiopin);
-	TC_ASSERT_NOT_NULL("iotbus_gpio_open" , g_gpio);
+	TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
 
 	for (index = 0; index < ncount; index++) {
 		ret = iotbus_gpio_set_drive_mode(g_gpio, setDrive[index]);
@@ -233,7 +233,7 @@ void itc_gpio_get_pin_p(void)
     int gpioSetpin = 12;
     int gpioGetpin;
     iotbus_gpio_context_h m_gpio = iotbus_gpio_open(gpioSetpin);
-    TC_ASSERT_NOT_NULL("iotbus_gpio_open" , m_gpio);
+    TC_ASSERT_NEQ("iotbus_gpio_open" , m_gpio, NULL);
 
 	gpioGetpin = iotbus_gpio_get_pin(m_gpio);
 	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_get_pin", gpioGetpin, gpioSetpin, iotbus_gpio_close(m_gpio));
@@ -254,7 +254,7 @@ void itc_gpio_read_write_p(void)
 {
     int ret, gpiopin = 12;
     g_gpio = iotbus_gpio_open(gpiopin);
-    TC_ASSERT_NOT_NULL("iotbus_gpio_open" , g_gpio);
+    TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
 
 	ret = iotbus_gpio_read(g_gpio);
 	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_read", (ret < 0), false, iotbus_gpio_close(g_gpio));
@@ -281,7 +281,7 @@ void itc_gpio_register_unregister_callback_p(void)
     int data = 0, gpio_pin2 = 57, gpio_pin1 = 41;
 
     g_gpio = iotbus_gpio_open(gpio_pin1);
-    TC_ASSERT_NOT_NULL ("iotbus_gpio_open" , g_gpio);
+    TC_ASSERT_NEQ ("iotbus_gpio_open" , g_gpio, NULL);
 
 	g_gpio2 = iotbus_gpio_open(gpio_pin2);
 	TC_ASSERT_NEQ_CLEANUP("iotbus_gpio_open", g_gpio2 , NULL , iotbus_gpio_close(g_gpio));

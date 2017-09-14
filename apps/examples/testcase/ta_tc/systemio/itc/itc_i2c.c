@@ -44,7 +44,7 @@ void itc_iotbus_i2c_init_stop_p(void)
 {
     int ret = IOTBUS_ERROR_NONE;
     iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
-    TC_ASSERT_NOT_NULL("iotbus_i2c_init", h_i2c);
+    TC_ASSERT_NEQ("iotbus_i2c_init", h_i2c, NULL);
 
     ret = iotbus_i2c_stop(h_i2c);
     TC_ASSERT_EQ("iotbus_i2c_stop", ret, IOTBUS_ERROR_NONE);
@@ -67,7 +67,7 @@ void itc_iotbus_i2c_set_frequency_p(void)
 	int numModes = sizeof(szFreqMode) / sizeof(int);
 	int index = 0;
 	iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
-	TC_ASSERT_NOT_NULL("iotbus_i2c_init", h_i2c);
+	TC_ASSERT_NEQ("iotbus_i2c_init", h_i2c, NULL);
 
 	for (index = 0; index < numModes; index++) {
 		ret = iotbus_i2c_set_frequency(h_i2c, szFreqMode[index]);
@@ -93,7 +93,7 @@ void itc_iotbus_i2c_set_address_p(void)
     int ret = IOTBUS_ERROR_NONE;
     uint8_t address = 0x08;
     iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
-    TC_ASSERT_NOT_NULL("iotbus_i2c_init", h_i2c);
+    TC_ASSERT_NEQ("iotbus_i2c_init", h_i2c, NULL);
 
 	ret = iotbus_i2c_set_address(h_i2c, address);
 	TC_ASSERT_EQ_CLEANUP("iotbus_i2c_set_address", ret, IOTBUS_ERROR_NONE, iotbus_i2c_stop(h_i2c));
@@ -118,7 +118,7 @@ void itc_iotbus_i2c_write_read_p(void)
     uint8_t szCmd[2] = { 0x01, 0x02 };
     uint8_t szReadBuf[10];
     iotbus_i2c_context_h h_i2c = iotbus_i2c_init(g_bus);
-    TC_ASSERT_NOT_NULL("iotbus_i2c_init", h_i2c);
+    TC_ASSERT_NEQ("iotbus_i2c_init", h_i2c, NULL);
 
 	ret = iotbus_i2c_write(h_i2c, szCmd, 1);
 	TC_ASSERT_EQ_CLEANUP("iotbus_i2c_write", (ret < 0), false, iotbus_i2c_stop(h_i2c));
