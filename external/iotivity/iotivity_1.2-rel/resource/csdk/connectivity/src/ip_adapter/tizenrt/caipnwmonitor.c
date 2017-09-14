@@ -324,8 +324,6 @@ u_arraylist_t *CAFindInterfaceChange()
 
 	if(buf[0] == 'd' && buf[1] == 'e' && buf[2] == 'l') {
 		printf("Receive the event(IF is down)\n");
-		CARemoveNetworkMonitorList(0);
-		CAIPPassNetworkChangesToAdapter(CA_INTERFACE_DOWN);
 	}
 	else if(buf[0] == 'g' && buf[1] == 'e' && buf[2] == 'n') {
 		printf("Receive the event(IF is UP)\n");
