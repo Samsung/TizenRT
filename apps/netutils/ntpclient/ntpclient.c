@@ -607,13 +607,14 @@ int ntpc_start(struct ntpc_server_conn_s *server_list, uint32_t num_of_servers, 
 
 	sched_lock();
 	if (g_ntpc_daemon.state == NTP_NOT_RUNNING || g_ntpc_daemon.state == NTP_STOPPED) {
-		/* Is this the first time that the NTP daemon has been started? */
 
-		if (g_ntpc_daemon.state == NTP_NOT_RUNNING) {
-			/* Yes... then we will need to initialize the state structure */
-
-			sem_init(&g_ntpc_daemon.interlock, 0, 0);
+		/* When ntp daemon restarts, interlock semaphore should be initialized after it is destroyed first. */
+		if (g_ntpc_daemon.state == NTP_STOPPED) {
+			sem_destroy(&g_ntpc_daemon.interlock);
 		}
+
+		/* we will need to initialize the state structure */
+		sem_init(&g_ntpc_daemon.interlock, 0, 0);
 
 		/* Start the NTP daemon */
 
