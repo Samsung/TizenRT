@@ -326,6 +326,8 @@ unsigned int pcm_format_to_bits(enum pcm_format format)
 		return 16;
 	case PCM_FORMAT_S8:
 		return 8;
+	case PCM_FORMAT_NONE:
+		return 0;
 	};
 }
 

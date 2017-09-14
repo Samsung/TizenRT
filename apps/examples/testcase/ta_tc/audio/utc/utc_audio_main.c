@@ -523,6 +523,37 @@ static void utc_audio_pcm_bytes_to_frames_n(void)
 }
 
 /**
+* @testcase         utc_audio_pcm_format_to_bits_p
+* @brief            get bits information based on pcm's format
+* @scenario         get bits of format value of pcm
+* @apicovered       pcm_format_to_bits
+* @precondition     pcm should be opened before.
+* @postcondition    NA
+*/
+static void utc_audio_pcm_format_to_bits_p(void)
+{
+	enum pcm_format format;
+	format = pcm_get_format(g_pcm);
+	TC_ASSERT_NEQ("pcm_format_to_bits", format, PCM_FORMAT_NONE);
+	TC_ASSERT_NEQ("pcm_format_to_bits", pcm_format_to_bits(format), 0);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         utc_audio_pcm_format_to_bits_n
+* @brief            get bits information based on pcm's format
+* @scenario        get bits of format value with invalid format
+* @apicovered       pcm_format_to_bits
+* @precondition     NA
+* @postcondition    NA
+*/
+static void utc_audio_pcm_format_to_bits_n(void)
+{
+	TC_ASSERT_EQ("pcm_format_to_bits", pcm_format_to_bits(PCM_FORMAT_NONE), 0);
+	TC_SUCCESS_RESULT();
+}
+
+/**
 * @testcase         audio_pcm_readi_p
 * @brief            read captured data from chip
 * @scenario         record voice and write data in specific file
@@ -727,6 +758,8 @@ static int audio_tc_launcher(int argc, char **args)
 	utc_audio_pcm_frames_to_bytes_n();
 	utc_audio_pcm_bytes_to_frames_p();
 	utc_audio_pcm_bytes_to_frames_n();
+	utc_audio_pcm_format_to_bits_p();
+	utc_audio_pcm_format_to_bits_n();
 	utc_audio_pcm_readi_p();
 	utc_audio_pcm_readi_n();
 	utc_audio_pcm_writei_p();

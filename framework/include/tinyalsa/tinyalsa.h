@@ -44,12 +44,12 @@
 ** DAMAGE.
 */
 
- /**
- * @ingroup TinyAlsa
- * @defgroup TinyAlsa TinyAlsa
- * @brief All macros, structures and functions that make up the PCM interface.
- * @{
- */
+/**
+* @ingroup TinyAlsa
+* @defgroup TinyAlsa TinyAlsa
+* @brief All macros, structures and functions that make up the PCM interface.
+* @{
+*/
 
 #ifndef __AUDIO_TINYALSA_H
 #define __AUDIO_TINYALSA_H
@@ -144,97 +144,96 @@ extern "C" {
  * @ingroup libtinyalsa-pcm
  */
 enum pcm_format {
-    /** Error Case */
-    PCM_FORMAT_NONE = -1,
-    /** Signed, 8-bit */
-    PCM_FORMAT_S8 = 1,
-    /** Signed 16-bit, little endian */
-    PCM_FORMAT_S16_LE = 0,
-    /** Signed, 16-bit, big endian */
-    PCM_FORMAT_S16_BE = 2,
-    /** Signed, 24-bit (32-bit in memory), little endian */
-    PCM_FORMAT_S24_LE,
-    /** Signed, 24-bit (32-bit in memory), big endian */
-    PCM_FORMAT_S24_BE,
-    /** Signed, 24-bit, little endian */
-    PCM_FORMAT_S24_3LE,
-    /** Signed, 24-bit, big endian */
-    PCM_FORMAT_S24_3BE,
-    /** Signed, 32-bit, little endian */
-    PCM_FORMAT_S32_LE,
-    /** Signed, 32-bit, big endian */
-    PCM_FORMAT_S32_BE,
-    /** Max of the enumeration list, not an actual format. */
-    PCM_FORMAT_MAX
+	/** Error Case */
+	PCM_FORMAT_NONE = -1,
+	/** Signed, 8-bit */
+	PCM_FORMAT_S8 = 1,
+	/** Signed 16-bit, little endian */
+	PCM_FORMAT_S16_LE = 0,
+	/** Signed, 16-bit, big endian */
+	PCM_FORMAT_S16_BE = 2,
+	/** Signed, 24-bit (32-bit in memory), little endian */
+	PCM_FORMAT_S24_LE,
+	/** Signed, 24-bit (32-bit in memory), big endian */
+	PCM_FORMAT_S24_BE,
+	/** Signed, 24-bit, little endian */
+	PCM_FORMAT_S24_3LE,
+	/** Signed, 24-bit, big endian */
+	PCM_FORMAT_S24_3BE,
+	/** Signed, 32-bit, little endian */
+	PCM_FORMAT_S32_LE,
+	/** Signed, 32-bit, big endian */
+	PCM_FORMAT_S32_BE,
+	/** Max of the enumeration list, not an actual format. */
+	PCM_FORMAT_MAX
 };
 
 /** A bit mask of 256 bits (32 bytes) that describes some hardware parameters of a PCM */
 struct pcm_mask {
-    /** bits of the bit mask */
-    unsigned int bits[32 / sizeof(unsigned int)];
+	/** bits of the bit mask */
+	unsigned int bits[32 / sizeof(unsigned int)];
 };
 
 /** Encapsulates the hardware and software parameters of a PCM.
  * @ingroup libtinyalsa-pcm
  */
 struct pcm_config {
-    /** The number of channels in a frame */
-    unsigned int channels;
-    /** The number of frames per second */
-    unsigned int rate;
-    /** The number of frames in a period */
-    unsigned int period_size;
-    /** The number of periods in a PCM */
-    unsigned int period_count;
-    /** The sample format of a PCM */
-    enum pcm_format format;
-    /* Values to use for the ALSA start, stop and silence thresholds.  Setting
-     * any one of these values to 0 will cause the default tinyalsa values to be
-     * used instead.  Tinyalsa defaults are as follows.
-     *
-     * start_threshold   : period_count * period_size
-     * stop_threshold    : period_count * period_size
-     * silence_threshold : 0
-     */
-    /** The minimum number of frames required to start the PCM */
-    unsigned int start_threshold;
-    /** The minimum number of frames required to stop the PCM */
-    unsigned int stop_threshold;
-    /** The minimum number of frames to silence the PCM */
-    unsigned int silence_threshold;
+	/** The number of channels in a frame */
+	unsigned int channels;
+	/** The number of frames per second */
+	unsigned int rate;
+	/** The number of frames in a period */
+	unsigned int period_size;
+	/** The number of periods in a PCM */
+	unsigned int period_count;
+	/** The sample format of a PCM */
+	enum pcm_format format;
+	/* Values to use for the ALSA start, stop and silence thresholds.  Setting
+	 * any one of these values to 0 will cause the default tinyalsa values to be
+	 * used instead.  Tinyalsa defaults are as follows.
+	 *
+	 * start_threshold   : period_count * period_size
+	 * stop_threshold    : period_count * period_size
+	 * silence_threshold : 0
+	 */
+	/** The minimum number of frames required to start the PCM */
+	unsigned int start_threshold;
+	/** The minimum number of frames required to stop the PCM */
+	unsigned int stop_threshold;
+	/** The minimum number of frames to silence the PCM */
+	unsigned int silence_threshold;
 };
 
 /** Enumeration of a PCM's hardware parameters.
  * Each of these parameters is either a mask or an interval.
  * @ingroup libtinyalsa-pcm
  */
-enum pcm_param
-{
-    /** A mask that represents the type of read or write method available (e.g. interleaved, mmap). */
-    PCM_PARAM_ACCESS,
-    /** A mask that represents the @ref pcm_format available (e.g. @ref PCM_FORMAT_S32_LE) */
-    PCM_PARAM_FORMAT,
-    /** A mask that represents the subformat available */
-    PCM_PARAM_SUBFORMAT,
-    /** An interval representing the range of sample bits available (e.g. 8 to 32) */
-    PCM_PARAM_SAMPLE_BITS,
-    /** An interval representing the range of frame bits available (e.g. 8 to 64) */
-    PCM_PARAM_FRAME_BITS,
-    /** An interval representing the range of channels available (e.g. 1 to 2) */
-    PCM_PARAM_CHANNELS,
-    /** An interval representing the range of rates available (e.g. 44100 to 192000) */
-    PCM_PARAM_RATE,
-    PCM_PARAM_PERIOD_TIME,
-    /** The number of frames in a period */
-    PCM_PARAM_PERIOD_SIZE,
-    /** The number of bytes in a period */
-    PCM_PARAM_PERIOD_BYTES,
-    /** The number of periods for a PCM */
-    PCM_PARAM_PERIODS,
-    PCM_PARAM_BUFFER_TIME,
-    PCM_PARAM_BUFFER_SIZE,
-    PCM_PARAM_BUFFER_BYTES,
-    PCM_PARAM_TICK_TIME,
+enum pcm_param {
+	/** A mask that represents the type of read or write method available (e.g. interleaved, mmap). */
+	PCM_PARAM_ACCESS,
+	/** A mask that represents the @ref pcm_format available (e.g. @ref PCM_FORMAT_S32_LE) */
+	PCM_PARAM_FORMAT,
+	/** A mask that represents the subformat available */
+	PCM_PARAM_SUBFORMAT,
+	/** An interval representing the range of sample bits available (e.g. 8 to 32) */
+	PCM_PARAM_SAMPLE_BITS,
+	/** An interval representing the range of frame bits available (e.g. 8 to 64) */
+	PCM_PARAM_FRAME_BITS,
+	/** An interval representing the range of channels available (e.g. 1 to 2) */
+	PCM_PARAM_CHANNELS,
+	/** An interval representing the range of rates available (e.g. 44100 to 192000) */
+	PCM_PARAM_RATE,
+	PCM_PARAM_PERIOD_TIME,
+	/** The number of frames in a period */
+	PCM_PARAM_PERIOD_SIZE,
+	/** The number of bytes in a period */
+	PCM_PARAM_PERIOD_BYTES,
+	/** The number of periods for a PCM */
+	PCM_PARAM_PERIODS,
+	PCM_PARAM_BUFFER_TIME,
+	PCM_PARAM_BUFFER_SIZE,
+	PCM_PARAM_BUFFER_BYTES,
+	PCM_PARAM_TICK_TIME,
 }; /* enum pcm_param */
 
 
@@ -242,7 +241,7 @@ struct pcm;
 
 
 /**
-* @brief Opens a PCM for playback or recording. 
+* @brief Opens a PCM for playback or recording.
 *
 * @param[in] The card that the pcm belongs to.
 * @param[in] The device that the pcm belongs to.
@@ -251,10 +250,7 @@ struct pcm;
 * @returns On success, A PCM structure returned. On failure, invalid PCM structure returned.
 * @since Tizen RT v1.1
 */
-struct pcm *pcm_open(unsigned int card,
-                     unsigned int device,
-                     unsigned int flags,
-                     const struct pcm_config *config);
+struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags, const struct pcm_config *config);
 
 /**
 * @brief Opens a PCM by it's name.
@@ -265,9 +261,7 @@ struct pcm *pcm_open(unsigned int card,
 * @returns On success, A PCM structure returned. On failure, NULL or invalid PCM structure returned.
 * @since Tizen RT v1.1
 */
-struct pcm *pcm_open_by_name(const char *name,
-                             unsigned int flags,
-                             const struct pcm_config *config);
+struct pcm *pcm_open_by_name(const char *name, unsigned int flags, const struct pcm_config *config);
 
 /**
 * @brief Closes a PCM returned by @ref pcm_open.
@@ -303,7 +297,7 @@ unsigned int pcm_get_channels(const struct pcm *pcm);
 * @return On success, The PCM configuration returned. On failure, NULL returned.
 * @since Tizen RT v1.1
 */
-const struct pcm_config * pcm_get_config(const struct pcm *pcm);
+const struct pcm_config *pcm_get_config(const struct pcm *pcm);
 
 /**
 * @brief Gets the sample rate of the PCM.
@@ -325,7 +319,7 @@ enum pcm_format pcm_get_format(const struct pcm *pcm);
 
 /**
 * @brief Gets the file descriptor of the PCM.
-* 
+*
 * @param[in] A PCM handle.
 * @return The file descriptor of the PCM.
 * @since Tizen RT v1.1
@@ -421,25 +415,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count);
 int pcm_prepare(struct pcm *pcm);
 
 /**
-* @brief Starts a PCM.
-*
-* @param[out] A PCM handle.
-* @return On success, 0 returned. On failure, a negative number returned.
-* @since Tizen RT v1.1
-*/
-int pcm_start(struct pcm *pcm);
-
-/**
-* @brief Stops a PCM.
-*
-* @param[out] A PCM handle.
-* @return On success, 0 returned. On failure, a negative number returned.
-* @since Tizen RT v1.1
-*/
-int pcm_stop(struct pcm *pcm);
-
-/**
-* @brief Determines the number of bits occupied by a @ref pcm_format. 
+* @brief Determines the number of bits occupied by a @ref pcm_format.
 *
 * @param[in] format A PCM format
 * @return The number of bits associated with @p format
