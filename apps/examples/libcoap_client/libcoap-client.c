@@ -37,7 +37,7 @@
 #define COAP_STANDARD_PORT "5683"
 #define COAP_SECURITY_PORT "5684"
 
-#if defined (__TINYARA__)
+#if defined(__TINYARA__)
 #define COAP_CLIENT_SCHED_PRI    100
 #define COAP_CLIENT_SCHED_POLICY SCHED_RR
 #define COAP_CLIENT_STACK_SIZE   (1024 * 16)
@@ -86,7 +86,7 @@ coap_tick_t max_wait;			/* global timeout (changed by set_timeout()) */
 unsigned int obs_seconds = 30;	/* default observe time */
 coap_tick_t obs_wait = 0;		/* timeout for current subscription */
 
-#define min(a,b) ((a) < (b) ? (a) : (b))
+#define min(a, b) ((a) < (b) ? (a) : (b))
 
 static inline void set_timeout(coap_tick_t *timer, const unsigned int seconds)
 {
@@ -119,7 +119,7 @@ int append_to_output(const unsigned char *data, size_t len)
 	return 0;
 }
 
-#if defined (__TINYARA__)
+#if defined(__TINYARA__)
 /*
  * separate close_output function
  * to prevent data abort when file descriptor is either stdout or stderr
@@ -363,11 +363,11 @@ static inline coap_opt_t *get_block(coap_pdu_t *pdu, coap_opt_iterator_t *opt_it
 	return coap_option_next(opt_iter);
 }
 
-#define HANDLE_BLOCK1(Pdu)						\
-  ((method == COAP_REQUEST_PUT || method == COAP_REQUEST_POST) &&	\
-   ((flags & FLAGS_BLOCK) == 0) &&					\
-   ((Pdu)->hdr->code == COAP_RESPONSE_CODE(201) ||			\
-    (Pdu)->hdr->code == COAP_RESPONSE_CODE(204)))
+#define HANDLE_BLOCK1(Pdu)											\
+	((method == COAP_REQUEST_PUT || method == COAP_REQUEST_POST) &&	\
+	 ((flags & FLAGS_BLOCK) == 0) &&								\
+	 ((Pdu)->hdr->code == COAP_RESPONSE_CODE(201) ||				\
+	  (Pdu)->hdr->code == COAP_RESPONSE_CODE(204)))
 
 inline int check_token(coap_pdu_t *received)
 {
@@ -585,7 +585,7 @@ void usage(const char *program, const char *version)
 
 	fprintf(stderr, "%s v%s -- a small CoAP implementation\n"
 			"(c) 2010-2013 Olaf Bergmann <bergmann@tzi.org>\n\n"
-#if defined (__TINYARA__)
+#if defined(__TINYARA__)
 			"usage: %s [-A type...] [-t type] [-B seconds] [-e text]\n"
 			"\t\t[-m method] [-N] [-p port] [-T string] [-v num] URI\n\n"
 			"\tURI can be an absolute or relative coap URI,\n"
@@ -636,7 +636,7 @@ void usage(const char *program, const char *version)
 			, program, version, program, wait_seconds);
 }
 
-#if !defined (__TINYARA__)
+#if !defined(__TINYARA__)
 int join(coap_context_t *ctx, char *group_name)
 {
 	struct ipv6_mreq mreq;
@@ -1038,7 +1038,7 @@ method_t cmdline_method(char *arg)
 	return i;					/* note that we do not prevent illegal methods */
 }
 
-#if defined (__TINYARA__)
+#if defined(__TINYARA__)
 int coap_client_test_run(void *arg)
 #else
 int main(int argc, char **argv)
@@ -1068,7 +1068,7 @@ int main(int argc, char **argv)
 
 	coap_protocol_t protocol = COAP_PROTO_UDP;
 
-#if defined (__TINYARA__)
+#if defined(__TINYARA__)
 	int argc;
 	char **argv;
 
@@ -1321,7 +1321,7 @@ int main(int argc, char **argv)
 #endif
 
 
-	switch(protocol) {
+	switch (protocol) {
 	case COAP_PROTO_UDP:
 	case COAP_PROTO_DTLS:
 		if (pdu->transport_hdr->udp.type == COAP_MESSAGE_CON) {
@@ -1339,7 +1339,7 @@ int main(int argc, char **argv)
 		tid = coap_send(ctx, &dst, pdu);
 		coap_delete_pdu(pdu);
 		break;
-	default :
+	default:
 		/* should not enter here */
 		break;
 	}
@@ -1465,7 +1465,7 @@ error_exit:
 	return 0;
 }
 
-#if defined (__TINYARA__)
+#if defined(__TINYARA__)
 int coap_client_test_main(int argc, char **argv)
 {
 	int status;

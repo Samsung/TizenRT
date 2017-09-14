@@ -154,17 +154,16 @@ do {														\
 	fflush(stdout);											\
 															\
 	count_time(1);											\
-	for(ii = 1; sleep_time; ii++)							\
-	{														\
+	for (ii = 1; sleep_time; ii++) {						\
 		CODE;												\
 	}														\
 	mbedtls_printf("%9lu Kb/s\n", ii * BUFSIZE / 1024);		\
-} while( 0 )
+} while (0)
 
 #if defined(MBEDTLS_ERROR_C)
-#define PRINT_ERROR												\
-        mbedtls_strerror(ret, (char *)tmp, sizeof(tmp));		\
-        mbedtls_printf("FAILED: %s\n", tmp);
+#define PRINT_ERROR											\
+	mbedtls_strerror(ret, (char *)tmp, sizeof(tmp));		\
+	mbedtls_printf("FAILED: %s\n", tmp);
 #else
 #define PRINT_ERROR		mbedtls_printf("FAILED: -0x%04x\n", -ret);
 #endif
@@ -179,7 +178,7 @@ do {														\
 
 #define MEMORY_MEASURE_PRINT(title_len)									\
 	mbedtls_memory_buffer_alloc_max_get(&max_used, &max_blocks);		\
-	for(ii = 12 - title_len; ii != 0; ii--) mbedtls_printf("");			\
+	for (ii = 12 - title_len; ii != 0; ii--) mbedtls_printf("");		\
 	max_used -= prv_used;												\
 	max_blocks -= prv_blocks;											\
 	max_bytes = max_used + MEM_BLOCK_OVERHEAD * max_blocks;				\
@@ -201,17 +200,13 @@ do {																	\
 	count_time(3);														\
 																		\
 	ret = 0;															\
-	for(ii = 1; sleep_time && ! ret ; ii++)								\
-	{																	\
+	for (ii = 1; sleep_time && ! ret ; ii++) {							\
 		CODE;															\
 	}																	\
 																		\
-	if(ret != 0)														\
-	{																	\
+	if (ret != 0) {														\
 		PRINT_ERROR;													\
-	}																	\
-	else																\
-	{																	\
+	} else {															\
 		mbedtls_printf("%6lu " TYPE "/3s", ii);							\
 		MEMORY_MEASURE_PRINT(sizeof(TYPE) + 1);							\
 		mbedtls_printf("\n");											\

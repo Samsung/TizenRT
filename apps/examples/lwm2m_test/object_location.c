@@ -74,7 +74,7 @@ typedef struct {
 	float    longitude;
 	float    altitude;
 	float    radius;
-	uint8_t  velocity   [VELOCITY_OCTETS];        //3GPP notation 1st step: HORIZONTAL_VELOCITY_WITH_UNCERTAINTY
+	uint8_t  velocity[VELOCITY_OCTETS];        //3GPP notation 1st step: HORIZONTAL_VELOCITY_WITH_UNCERTAINTY
 	unsigned long timestamp;
 	float    speed;
 } location_data_t;

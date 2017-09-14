@@ -28,7 +28,7 @@
 #define COAP_RESOURCE_CHECK_TIME 2
 
 #ifndef min
-#define min(a,b) ((a) < (b) ? (a) : (b))
+#define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 #ifndef NI_MAXHOST
@@ -78,7 +78,7 @@ struct coap_resource_t *time_resource = NULL;
 static coap_async_state_t *async = NULL;
 #endif							/* WITHOUT_ASYNC */
 
-#if !defined (__TINYARA__)
+#if !defined(__TINYARA__)
 /* SIGINT handler: set quit to 1 for graceful termination */
 static void handle_sigint(int signum)
 {
@@ -86,8 +86,9 @@ static void handle_sigint(int signum)
 }
 #endif
 
-#define INDEX "This is a test server made with libcoap (see http://libcoap.sf.net)\n" \
-   	      "Copyright (C) 2010--2013 Olaf Bergmann <bergmann@tzi.org>\n\n"
+#define INDEX \
+	"This is a test server made with libcoap (see http://libcoap.sf.net)\n" \
+	"Copyright (C) 2010--2013 Olaf Bergmann <bergmann@tzi.org>\n\n"
 
 void hnd_get_index(coap_context_t *ctx, struct coap_resource_t *resource, coap_address_t *peer, coap_pdu_t *request, str *token, coap_pdu_t *response)
 {
@@ -119,7 +120,7 @@ void hnd_get_time(coap_context_t *ctx, struct coap_resource_t *resource, coap_ad
 
 	/* if my_clock_base was deleted, we pretend to have no such resource */
 
-	switch(ctx->protocol) {
+	switch (ctx->protocol) {
 	case COAP_PROTO_UDP:
 	case COAP_PROTO_DTLS:
 		transport = COAP_UDP;
@@ -239,7 +240,7 @@ void hnd_get_async(coap_context_t *ctx, struct coap_resource_t *resource, coap_a
 	coap_opt_filter_t f;
 	coap_transport_t transport = COAP_UDP;
 
-	switch(ctx->protocol) {
+	switch (ctx->protocol) {
 	case COAP_PROTO_UDP:
 	case COAP_PROTO_DTLS:
 		transport = COAP_UDP;
@@ -396,7 +397,7 @@ static void usage(const char *program, const char *version)
 					, program, version, program);
 }
 
-#if defined (__TINYARA__)
+#if defined(__TINYARA__)
 int coap_server_test_run(void *arg)
 #else
 int main(int argc, char **argv)
@@ -417,7 +418,7 @@ int main(int argc, char **argv)
 	coap_log_t log_level = LOG_WARNING;
 	coap_protocol_t protocol = COAP_PROTO_UDP;
 
-#if defined (__TINYARA__)
+#if defined(__TINYARA__)
 	int argc;
 	char **argv;
 
@@ -585,7 +586,7 @@ int main(int argc, char **argv)
 
 	init_resources(ctx);
 
-#if !defined (__TINYARA__)
+#if !defined(__TINYARA__)
 	signal(SIGINT, handle_sigint);
 #endif
 
@@ -677,7 +678,7 @@ exit:
 	return 0;
 }
 
-#if defined (__TINYARA__)
+#if defined(__TINYARA__)
 int coap_server_test_main(int argc, char **argv)
 {
 	int status;

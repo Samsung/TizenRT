@@ -145,7 +145,7 @@ int check_end_of_args(char *buffer)
 {
 	buffer = prv_end_of_space(buffer);
 
-	return ((buffer[0] == 0)?(1):(0));
+	return ((buffer[0] == 0) ? (1) : (0));
 }
 
 /**********************************************************
