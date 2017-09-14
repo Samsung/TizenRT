@@ -286,10 +286,10 @@ static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
 	/* Enable/disable GPIO interrupts */
 	DEBUGASSERT(lower->ops->enable);
 	if (rising || falling) {
-		lower->ops->enable(lower, rising, falling, gpio_interrupt);
+		lower->ops->enable(lower, true, true, gpio_interrupt);
 	} else {
 		/* Disable further interrupts */
-		lower->ops->enable(lower, 0, 0, NULL);
+		lower->ops->enable(lower, false, false, NULL);
 	}
 
 	irqrestore(flags);
