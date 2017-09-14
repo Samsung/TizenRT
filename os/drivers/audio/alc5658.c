@@ -655,25 +655,28 @@ static int alc5658_start(FAR struct audio_lowerhalf_s *dev, FAR void *session)
 static int alc5658_start(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
-	audvdbg(" alc5658_start Entry\n");
+
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
 	if (priv->running)
 		return OK;
+
+	audvdbg(" alc5658_start Entry\n");
 	
 	/* Fix me -- Need to support multiple samplerate */
 	alc5658_exec_i2c_script(priv, codec_init_pll_16K, sizeof(codec_init_pll_16K) / sizeof(t_codec_init_script_entry));
 	alc5658_exec_i2c_script(priv, codec_init_inout_script2, sizeof(codec_init_inout_script2) / sizeof(t_codec_init_script_entry));
+
+	alc5658_takesem(&priv->devsem);
 	
 	priv->running = 1;
-	
 	dq_entry_t *tmp = NULL;
 	dq_queue_t * q = &priv->pendq;
-	
-	alc5658_takesem(&priv->devsem);
+
 	for (tmp = dq_peek(q); tmp; tmp = dq_next(tmp)) {
 		alc5658_enqueuebuffer(dev, (struct ap_buffer_s *) tmp);
 	}
+
 	alc5658_givesem(&priv->devsem);
 	
 	/* Exit reduced power modes of operation */
@@ -784,16 +787,15 @@ static void alc5658_rxtxcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
 
 	alc5658_takesem(&priv->devsem);
-	
 	dq_entry_t *tmp;
 	for (tmp = (dq_entry_t*)dq_peek(&priv->pendq); tmp; tmp = dq_next(tmp)) {
 		if (tmp == (dq_entry_t*)apb) {
 			dq_rem(tmp, &priv->pendq);
+			apb_free(apb); /* let the reference gained in enqueue */
 			audvdbg("found the apb to remove 0x%x\n", tmp);
 			break;
 		}
 	}
-
 	alc5658_givesem(&priv->devsem);
 }
 
@@ -817,6 +819,7 @@ static int alc5658_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 		/* Add the new buffer to the tail of pending audio buffers */
 		alc5658_takesem(&priv->devsem);
 		dq_addlast(&apb->dq_entry, &priv->pendq);
+		audvdbg("enqueue added buf 0x%x\n", apb);
 		alc5658_givesem(&priv->devsem);
 		return OK;
 	}
@@ -1139,6 +1142,10 @@ static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv)
 	/* Configure the FLL and the LRCLK */
 
 	alc5658_set_i2s_samplerate(priv);
+
+	/* NOt sure if htis is needed */
+	alc5658_writereg(priv, ALC5658_IN1_CTRL, (10 + 16) << 8);
+	audvdbg("MIC GAIN 0x%x\n", (uint32_t) alc5658_readreg(priv, ALC5658_IN1_CTRL));
 
 	/* Dump some information and return the device instance */
 

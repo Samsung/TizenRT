@@ -262,7 +262,7 @@ int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 	} else if (config == NULL) {
 		config = &pcm->config;
 		pcm->config.channels = 2;
-		pcm->config.rate = 48000;
+		pcm->config.rate = 16000;
 		pcm->config.format = PCM_FORMAT_S16_LE;
 		pcm->config.start_threshold = 0;
 		pcm->config.stop_threshold = 0;
