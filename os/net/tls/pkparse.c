@@ -760,32 +760,38 @@ static int pk_parse_key_sec1_der(mbedtls_ecp_keypair *eck, const unsigned char *
 		 * Is 'publickey' present? If not, or if we can't read it (eg because it
 		 * is compressed), create it from the private key.
 		 */
-		if ((ret = mbedtls_asn1_get_tag(&p, end, &len, MBEDTLS_ASN1_CONTEXT_SPECIFIC | MBEDTLS_ASN1_CONSTRUCTED | 1)) == 0) {
-			end2 = p + len;
+#if defined(MBEDTLS_OCF_PATCH)
+		 if( p != end ) {
+#endif
+			if ((ret = mbedtls_asn1_get_tag(&p, end, &len, MBEDTLS_ASN1_CONTEXT_SPECIFIC | MBEDTLS_ASN1_CONSTRUCTED | 1)) == 0) {
+				end2 = p + len;
 
-			if ((ret = mbedtls_asn1_get_bitstring_null(&p, end2, &len)) != 0) {
+				if ((ret = mbedtls_asn1_get_bitstring_null(&p, end2, &len)) != 0) {
+					return (MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret);
+				}
+
+				if (p + len != end2) {
+					return (MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + MBEDTLS_ERR_ASN1_LENGTH_MISMATCH);
+				}
+
+				if ((ret = pk_get_ecpubkey(&p, end2, eck)) == 0) {
+					pubkey_done = 1;
+				} else {
+					/*
+					 * The only acceptable failure mode of pk_get_ecpubkey() above
+					 * is if the point format is not recognized.
+					 */
+					if (ret != MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE) {
+						return (MBEDTLS_ERR_PK_KEY_INVALID_FORMAT);
+					}
+				}
+			} else if (ret != MBEDTLS_ERR_ASN1_UNEXPECTED_TAG) {
+				mbedtls_ecp_keypair_free(eck);
 				return (MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret);
 			}
-
-			if (p + len != end2) {
-				return (MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + MBEDTLS_ERR_ASN1_LENGTH_MISMATCH);
-			}
-
-			if ((ret = pk_get_ecpubkey(&p, end2, eck)) == 0) {
-				pubkey_done = 1;
-			} else {
-				/*
-				 * The only acceptable failure mode of pk_get_ecpubkey() above
-				 * is if the point format is not recognized.
-				 */
-				if (ret != MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE) {
-					return (MBEDTLS_ERR_PK_KEY_INVALID_FORMAT);
-				}
-			}
-		} else if (ret != MBEDTLS_ERR_ASN1_UNEXPECTED_TAG) {
-			mbedtls_ecp_keypair_free(eck);
-			return (MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret);
-		}
+#if defined(MBEDTLS_OCF_PATCH)
+		 }
+#endif
 	}
 
 	if (!pubkey_done && (ret = mbedtls_ecp_mul(&eck->grp, &eck->Q, &eck->d, &eck->grp.G, NULL, NULL)) != 0) {
