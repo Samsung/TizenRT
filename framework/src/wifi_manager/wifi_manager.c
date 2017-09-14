@@ -185,8 +185,8 @@ static void wifi_linkdown_event_func(void)
 	wifi_manager_cb_s *wifi_cb = g_manager_info.wmcb;
 	if (g_manager_info.mode == STA_MODE) {
 		nvdbg("WIFI DISCONNECTED AP - STA MODE");
-		strncpy(g_manager_info.ssid, "", 32);
-		strcpy(g_manager_info.ip4_address, "");
+		g_manager_info.ssid[0] = '\0';
+		g_manager_info.ip4_address[0] = '\0';
 		g_manager_info.rssi = 0;
 		wifi_status_set(AP_DISCONNECTED);
 
@@ -258,8 +258,8 @@ static wifi_manager_result_e wifi_fetch_scan_results(slsi_scan_info_t **wifi_sca
 		curr_record->rssi = wifi_scan_iter->rssi;
 		curr_record->channel = wifi_scan_iter->channel;
 		curr_record->phy_mode = wifi_scan_iter->phy_mode;
-		strncpy(curr_record->ssid, (char *)wifi_scan_iter->ssid, strlen((const char *)wifi_scan_iter->ssid));
-		strncpy(curr_record->bssid, (char *)wifi_scan_iter->bssid, strlen((const char *)wifi_scan_iter->bssid));
+		strncpy(curr_record->ssid, (char *)wifi_scan_iter->ssid, SLSI_SSID_LEN + 1);
+		strncpy(curr_record->bssid, (char *)wifi_scan_iter->bssid, SLSI_MACADDR_STR_LEN);
 		prev_record = curr_record;
 		wifi_scan_iter = wifi_scan_iter->next;
 		i++;
@@ -332,7 +332,7 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 	char ip4_add_str[18] = { 0, };
 	wifi_net_ip4_addr_to_ip4_str(info.ip4_address, ip4_add_str);
 	strncpy(g_manager_info.ssid, config->ssid, 32);
-	strcpy(g_manager_info.ip4_address, ip4_add_str);
+	strncpy(g_manager_info.ip4_address, ip4_add_str, 18);
 	g_manager_info.rssi = info.rssi;
 
 	wifi_mutex_release(w_mutex);
@@ -385,8 +385,8 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 	}
 
 	wifi_utils_register_callback(wifi_linkup_event_func, wifi_linkdown_event_func);
-	strncpy(g_manager_info.ip4_address, "", 18);
-	strcpy(g_manager_info.ssid, "");
+	g_manager_info.ssid[0] = '\0';
+	g_manager_info.ip4_address[0] = '\0';
 	g_manager_info.rssi = 0;
 	g_manager_info.mode = STA_MODE;
 	wifi_status_set(AP_DISCONNECTED);
@@ -490,7 +490,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		}
 
 		g_manager_info.mode = SOFTAP_MODE;
-		strncpy(g_manager_info.ssid, config->ssid, softap_config.ssid_length);
+		strncpy(g_manager_info.ssid, config->ssid, 32);
 		wifi_status_set(CLIENT_DISCONNECTED);
 		wifi_mutex_release(w_mutex);
 
