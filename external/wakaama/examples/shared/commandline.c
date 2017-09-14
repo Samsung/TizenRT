@@ -22,7 +22,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <inttypes.h>
-#include <protocols/libl2mwm.h>
+#include <protocols/liblwm2m.h>
 
 #include "commandline.h"
 

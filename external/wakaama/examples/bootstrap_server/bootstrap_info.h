@@ -16,7 +16,7 @@
  *******************************************************************************/
 
 #include <stdio.h>
-#include <protocols/libl2mwm.h>
+#include <protocols/liblwm2m.h>
 
 typedef enum
 {
