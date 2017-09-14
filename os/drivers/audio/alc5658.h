@@ -36,7 +36,7 @@
 #define ALC5658_DEFAULT_NCHANNELS	2
 #define ALC5658_DEFAULT_BPSAMP		16
 #define FAIL				0xFFFF
-#define         alc5658_givesem(s) sem_post(s)
+#define alc5658_givesem(s) sem_post(s)
 
 /* Commonly defined and redefined macros */
 
@@ -122,6 +122,7 @@ static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regad
 static inline uint16_t alc5658_scalevolume(uint16_t volume, b16_t scale);
 static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, bool mute);
 #endif
+
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE
 static void alc5658_setbass(FAR struct alc5658_dev_s *priv, uint8_t bass);
 static void alc5658_settreble(FAR struct alc5658_dev_s *priv, uint8_t treble);

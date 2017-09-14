@@ -980,7 +980,8 @@ static int pcm_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_bu
 	DEBUGASSERT(lower && lower->ops->enqueuebuffer && lower->ops->configure);
 
 	/* Are we streaming yet? */
-
+	priv->streaming =1;
+	
 	if (priv->streaming) {
 		/* Yes, we are streaming */
 		/* Check for the last audio buffer in the stream */

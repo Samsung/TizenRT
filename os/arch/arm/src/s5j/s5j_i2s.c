@@ -158,9 +158,7 @@
 #define CONFIG_I2S_TXP_DMACH	0
 #define CONFIG_I2S_TXS_DMACH	1
 #define CONFIG_I2S_RX_DMACH	2
-#define CONFIG_I2S_TXP_DMACH	0
-#define CONFIG_I2S_TXS_DMACH	1
-#define CONFIG_I2S_RX_DMACH	2
+
 #endif
 
 #if defined(I2S_HAVE_RX) || defined(I2S_HAVE_TX_P) || defined(I2S_HAVE_TX_S)
@@ -237,6 +235,7 @@ struct s5j_i2s_s {
  ****************************************************************************/
 
 /* Register helpers */
+//#define CONFIG_S5J_I2S_DUMPBUFFERS
 
 #ifdef CONFIG_S5J_I2S_DUMPBUFFERS
 #define       i2s_init_buffer(b, s)   memset(b, 0x55, s);
@@ -1722,6 +1721,7 @@ static int i2s_rx_configure(struct s5j_i2s_s *priv)
 	}
 
 	priv->rxenab = 1;
+	lldbg("i2s_rx_configure success with i2s dev addr 0x%x\n");
 	return OK;
 
 err:
