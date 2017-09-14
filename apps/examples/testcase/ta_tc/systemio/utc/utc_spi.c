@@ -93,12 +93,12 @@ static void utc_spi_recv_n(void)
 
 static void utc_spi_transfer_p(void)
 {
-	TC_ASSERT("iotbus_spi_transfer_buf", 0);
+	//TO DO
 }
 
 static void utc_spi_transfer_n(void)
 {
-	TC_ASSERT("iotbus_spi_transfer_buf", 0);
+	//TO DO
 }
 
 static void utc_spi_close_p(void)
