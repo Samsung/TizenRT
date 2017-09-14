@@ -186,8 +186,8 @@ static void gpio_sample(FAR struct gpio_upperhalf_s *priv)
 
 #if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
 	change  = sample ^ priv->gu_sample;
-	rising  = (change && priv->gu_sample);
-	falling = (change && ~priv->gu_sample);
+	rising  = (change && sample);
+	falling = (change && !sample);
 
 	/* Visit each opened reference to the device */
 	for (opriv = priv->gu_open; opriv; opriv = opriv->go_flink) {
