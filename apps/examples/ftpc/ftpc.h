@@ -59,7 +59,7 @@
 #include <stdio.h>
 #include <tinyara/config.h>
 #include <sys/types.h>
-#include <apps/ftpc.h>
+#include <protocols/ftpc.h>
 
 /****************************************************************************
  * Definitions

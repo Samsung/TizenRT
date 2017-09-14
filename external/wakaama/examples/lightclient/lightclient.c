@@ -55,7 +55,7 @@
 
 */
 
-#include "liblwm2m.h"
+#include <protocols/libl2mwm.h>
 #include "connection.h"
 
 #include <string.h>

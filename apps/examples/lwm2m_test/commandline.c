@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <inttypes.h>
 
+#include <protocols/liblwm2m.h>
 #include "lwm2mclient.h"
 #include "commandline.h"
 

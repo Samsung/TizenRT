@@ -36,7 +36,7 @@
  *
  */
 
-#include "liblwm2m.h"
+#include <protocols/libl2mwm.h>
 #include "dm_connectivity.h"
 #include "dm_error.h"
 #include <stdio.h>

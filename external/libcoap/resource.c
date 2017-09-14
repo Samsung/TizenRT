@@ -28,6 +28,7 @@
 #include <protocols/libcoap/debug.h>
 #include <protocols/libcoap/resource.h>
 #include <protocols/libcoap/subscribe.h>
+#include <protocols/libcoap/uri.h>
 
 #ifdef WITH_LWIP
 #include "utlist.h"

@@ -72,7 +72,7 @@
 #include <signal.h>
 #include <inttypes.h>
 
-#include "../../../external/wakaama/core/liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include "commandline.h"
 #include "connection.h"

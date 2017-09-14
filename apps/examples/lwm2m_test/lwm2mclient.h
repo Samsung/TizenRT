@@ -28,7 +28,7 @@
 #define LWM2MCLIENT_H_
 #include <pthread.h>
 
-#include "../../../external/wakaama/core/liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 extern int g_reboot;
 

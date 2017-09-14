@@ -34,7 +34,7 @@
  * 5 update result             read
  */
 
-#include "liblwm2m.h"
+#include <protocols/libl2mwm.h>
 
 #include <stdio.h>
 #include <stdlib.h>
