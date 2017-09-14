@@ -70,9 +70,9 @@
  ****************************************************************************/
 
 struct cmdmap_s {
- 	const char *cmd;	/* Name of the command */
- 	cmd_t handler;		/* Function that handles the command */
- 	uint8_t minargs;	/* Minimum number of arguments */
+	const char *cmd;	/* Name of the command */
+	cmd_t handler;		/* Function that handles the command */
+	uint8_t minargs;	/* Minimum number of arguments */
 	uint8_t maxargs;	/* Maximum number of arguments */
 	const char *usage;	/* Usage instructions for 'help' command */
 };
@@ -90,8 +90,7 @@ static pthread_t pth = -1;
 static mqd_t g_send_mqfd;
 static mqd_t g_recv_mqfd;
 
-static const struct cmdmap_s g_cmdmap[] =
-{
+static const struct cmdmap_s g_cmdmap[] = {
 	{ "cd",       cmd_rchdir,  2, 2, "<directory>" },
 	{ "chmod",    cmd_rchmod,  3, 3, "<permissions> <path>" },
 	{ "get",      cmd_rget,    2, 4, "[-a|b] <rname> [<lname>]" },
@@ -237,8 +236,7 @@ static int ftpc_execute(SESSION handle, int argc, char *argv[])
 
 	/* See if the command is one that we understand */
 
-	for (cmdmap = g_cmdmap; cmdmap->cmd; cmdmap++)
-	{
+	for (cmdmap = g_cmdmap; cmdmap->cmd; cmdmap++) {
 		if (strcmp(cmdmap->cmd, cmd) == 0) {
 			/* Check if a valid number of arguments was provided.  We
 			* do this simple, imperfect checking here so that it does

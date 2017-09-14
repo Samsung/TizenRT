@@ -521,8 +521,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		wifi_mutex_release(w_mutex);
 
 		nvdbg("Wifi mode is changed to station");
-	}
-	else {
+	} else {
 			ndbg("Invalid config!\n");
 			return WIFI_MANAGER_FAIL;
 	}

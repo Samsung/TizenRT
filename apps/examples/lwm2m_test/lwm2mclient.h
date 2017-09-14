@@ -83,10 +83,8 @@ extern void conn_s_updateRxStatistic(lwm2m_object_t * objectP, uint16_t rxDataBy
  */
 lwm2m_object_t* acc_ctrl_create_object(void);
 void acl_ctrl_free_object(lwm2m_object_t * objectP);
-bool  acc_ctrl_obj_add_inst (lwm2m_object_t* accCtrlObjP, uint16_t instId,
-                 uint16_t acObjectId, uint16_t acObjInstId, uint16_t acOwner);
-bool  acc_ctrl_oi_add_ac_val(lwm2m_object_t* accCtrlObjP, uint16_t instId,
-                 uint16_t aclResId, uint16_t acValue);
+bool acc_ctrl_obj_add_inst(lwm2m_object_t* accCtrlObjP, uint16_t instId, uint16_t acObjectId, uint16_t acObjInstId, uint16_t acOwner);
+bool acc_ctrl_oi_add_ac_val(lwm2m_object_t* accCtrlObjP, uint16_t instId, uint16_t aclResId, uint16_t acValue);
 /*
  * lwm2mclient.c
  */

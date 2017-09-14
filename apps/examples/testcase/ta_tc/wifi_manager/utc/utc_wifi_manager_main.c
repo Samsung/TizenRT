@@ -35,14 +35,14 @@ do {										\
 	pthread_mutex_lock(&g_wifi_manager_test_mutex);			\
 	pthread_cond_signal(&g_wifi_manager_test_cond);			\
 	pthread_mutex_unlock(&g_wifi_manager_test_mutex);			\
-} while(0)
+} while (0)
 
 #define WIFITEST_WAIT						\
 do {										\
 	pthread_mutex_lock(&g_wifi_manager_test_mutex);			\
 	pthread_cond_wait(&g_wifi_manager_test_cond, &g_wifi_manager_test_mutex);	\
 	pthread_mutex_unlock(&g_wifi_manager_test_mutex);			\
-} while(0)
+} while (0)
 void wifi_sta_connected(void);		// in station mode, connected to ap
 void wifi_sta_disconnected(void);	// in station mode, disconnected from ap
 void wifi_softap_sta_joined(void);	// in softap mode, a station joined
@@ -88,7 +88,7 @@ void wifi_scan_ap_done(wifi_manager_scan_info_s **scan_info, wifi_manager_scan_r
 	}
 	wifi_manager_scan_info_s *wifi_scan_iter = *scan_info;
 	while (wifi_scan_iter != NULL) {
-  	printf("SSID: %-20s, BSSID: %-20s, RSSI: %d, CH: %d, Phy_type: %d\n", \
+	printf("SSID: %-20s, BSSID: %-20s, RSSI: %d, CH: %d, Phy_type: %d\n", \
 						wifi_scan_iter->ssid, wifi_scan_iter->bssid, wifi_scan_iter->rssi, \
 						wifi_scan_iter->channel, wifi_scan_iter->phy_mode);
 		wifi_scan_iter = wifi_scan_iter->next;

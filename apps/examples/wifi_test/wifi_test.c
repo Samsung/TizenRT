@@ -30,12 +30,12 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#define DEVICE_NAME 	"ATK/002"	// "ATK" or "STA"
+#define DEVICE_NAME	"ATK/002"	// "ATK" or "STA"
 #define SERVER_IP	"192.168.1.117"
-#define SERVER_PORT 	5987
+#define SERVER_PORT	5987
 
 #define WIFI_BSSID_SIZE	17
-#define BUF_MAX_SIZE 	128
+#define BUF_MAX_SIZE	128
 
 char aps_list[] = {
 #include "ap_check_list.txt"
@@ -240,7 +240,8 @@ error_out:
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-int wifi_init_task(int argc, char *argv[]) {
+int wifi_init_task(int argc, char *argv[])
+{
 	/* Create Task For async job */
 	if (task_create("wifi_test_proc", SCHED_PRIORITY_DEFAULT, 16840, wifi_test_proc, argv) < 0) {
 		/* Error : Can't Create task */
