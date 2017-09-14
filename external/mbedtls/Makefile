@@ -86,6 +86,7 @@ SRC_TLS_CSRCS =       debug.c         net.c           ssl_cache.c     \
 
 ifeq ($(CONFIG_TLS_WITH_SSS),y)
 SRC_SEE_CSRCS += see_api.c	see_internal.c
+CFLAGS+=-I$(TOPDIR)/arch/arm/src/s5j/sss
 endif
 
 TLS_CSRCS += $(SRC_CRYPTO_CSRCS) $(SRC_X509_CSRCS) $(SRC_TLS_CSRCS) $(SRC_SEE_CSRCS)
