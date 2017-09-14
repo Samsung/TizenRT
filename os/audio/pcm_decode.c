@@ -872,7 +872,6 @@ static int pcm_resume(FAR struct audio_lowerhalf_s *dev, FAR void *session)
 #else
 static int pcm_resume(FAR struct audio_lowerhalf_s *dev)
 #endif
-#endif
 {
 	FAR struct pcm_decode_s *priv = (FAR struct pcm_decode_s *)dev;
 	FAR struct audio_lowerhalf_s *lower;
@@ -891,6 +890,7 @@ static int pcm_resume(FAR struct audio_lowerhalf_s *dev)
 	return lower->ops->resume(lower);
 #endif
 }
+#endif
 
 /****************************************************************************
  * Name: pcm_allocbuffer
@@ -1027,7 +1027,11 @@ static int pcm_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_bu
 			DEBUGASSERT(priv->samprate < 65535);
 
 			caps.ac_len = sizeof(struct audio_caps_s);
-			caps.ac_type = AUDIO_TYPE_OUTPUT;
+			if (apb->flags & AUDIO_APB_TYPE_INPUT) {
+				caps.ac_type = AUDIO_TYPE_INPUT;
+			} else {
+				caps.ac_type = AUDIO_TYPE_OUTPUT;
+			}
 			caps.ac_channels = priv->nchannels;
 
 			caps.ac_controls.hw[0] = (uint16_t) priv->samprate;

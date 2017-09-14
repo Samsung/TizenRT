@@ -534,7 +534,7 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 		}
 		break; /* Break for inner switch case */
 	case AUDIO_TYPE_INPUT: {
-		audvdbg("  AUDIO_TYPE_OUTPUT:\n");
+		audvdbg("  AUDIO_TYPE_INPUT:\n");
 		/* Verify that all of the requested values are supported */
 
 		ret = -ERANGE;

@@ -934,6 +934,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 #ifdef CONFIG_AUDIO_FORMAT_PCM
 	if (pcm->flags & PCM_IN) {
 		struct ap_buffer_s *apb = (struct ap_buffer_s *)pcm->pBuffers[0];
+		apb->flags = AUDIO_APB_TYPE_INPUT;
 		if (apb->nmaxbytes - apb->nbytes >= sizeof(struct wav_header_s)) {
 			struct wav_header_s *wav = (struct wav_header_s *)(&apb->samp[0]);
 			
