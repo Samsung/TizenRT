@@ -153,9 +153,7 @@ static void alc5658_writereg(FAR struct alc5658_dev_s *priv, uint16_t regaddr, u
 	ret = i2c_write(dev, alc5658_i2c_config, (uint8_t *) reg, 4);
 	if (ret < 0) {
 		auddbg("Error, cannot write reg %x\n", regaddr);
-		return;
 	}
-
 	return;
 }
 
@@ -581,6 +579,7 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 		priv->inout = true;
 		ret = OK;
 	}
+	break;
 	case AUDIO_TYPE_OUTPUT: {
 		audvdbg("  AUDIO_TYPE_OUTPUT:\n");
 		/* Verify that all of the requested values are supported */
@@ -667,6 +666,7 @@ static int alc5658_start(FAR struct audio_lowerhalf_s *dev)
 		return OK;
 
 	audvdbg(" alc5658_start Entry\n");
+	alc5658_exec_i2c_script(priv, codec_init_inout_script1, sizeof(codec_init_inout_script1) / sizeof(t_codec_init_script_entry));
 	
 	/* Fix me -- Need to support multiple samplerate */
 	alc5658_exec_i2c_script(priv, codec_init_pll_16K, sizeof(codec_init_pll_16K) / sizeof(t_codec_init_script_entry));
@@ -1143,13 +1143,13 @@ static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv)
 
 	alc5658_exec_i2c_script(priv, codec_reset_script, sizeof(codec_reset_script) / sizeof(t_codec_init_script_entry));
 
-	alc5658_audio_output(priv);
+	//alc5658_audio_output(priv);
 
 	/* Configure interrupts */
 
 	/* Configure the FLL and the LRCLK */
 
-	alc5658_set_i2s_samplerate(priv);
+	//alc5658_set_i2s_samplerate(priv);
 
 	/* NOt sure if htis is needed */
 	alc5658_writereg(priv, ALC5658_IN1_CTRL, (10 + 16) << 8);
