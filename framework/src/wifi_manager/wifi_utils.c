@@ -226,7 +226,7 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 	wifi_utils_result_e result = WIFI_UTILS_FAIL;
 	slsi_security_config_t *config = NULL;
 
-	if (ap_connect_config->passphrase && ap_connect_config->passphrase_length) {
+	if (ap_connect_config->passphrase_length > 0) {
 		config = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
 		if (!config) {
 			ndbg("Memory allocation failed!\n");
@@ -273,6 +273,9 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 			ndbg("Wrong security type\n");
 			goto connect_ap_fail;
 		}
+	} else {
+		ndbg("No passphrase!\n");
+		goto connect_ap_fail;
 	}
 
 	ret = WiFiNetworkJoin((uint8_t *)ap_connect_config->ssid, ap_connect_config->ssid_length, NULL, config);
@@ -380,14 +383,14 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 		ap_config->channel = softap_config->channel;
 	}
 
-	if (softap_config->ssid == NULL) {
+	if (softap_config->ssid_length < 1) {
 		goto start_soft_ap_fail;
 	} else {
 		memcpy(&ap_config->ssid, softap_config->ssid, softap_config->ssid_length);
 		ap_config->ssid_len = softap_config->ssid_length;
 	}
 
-	if (!softap_config->passphrase || !softap_config->passphrase_length) {
+	if (softap_config->passphrase_length < 1) {
 		goto start_soft_ap_fail;
 	} else {
 		security_config = (slsi_security_config_t *)zalloc(sizeof(slsi_security_config_t));
