@@ -114,6 +114,7 @@ config ARTIK053_AUTOMOUNT_ROMFS
 	bool "Automount romfs partiton"
 	default y
 	depends on ARTIK053_AUTOMOUNT
+	depends on FS_ROMFS
 	---help---
 		If enabled, romfs partition will be mounted automatically
 		at boot.
