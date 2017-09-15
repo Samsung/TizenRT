@@ -1,6 +1,6 @@
-# ARTIK05x
+# ARTIK053
 
-The ARTIK05x is a SOC for Wi-Fi™ IoT solutions. The ARTIK05x has a Wi-Fi subsystem, security subsystem, and application subsystem.
+The ARTIK053 is a SOC for Wi-Fi™ IoT solutions. The ARTIK053 has a Wi-Fi subsystem, security subsystem, and application subsystem.
 
 ## Contents
 
@@ -10,15 +10,10 @@ The ARTIK05x is a SOC for Wi-Fi™ IoT solutions. The ARTIK05x has a Wi-Fi subsy
 > [How to program a binary](#how-to-program-a-binary)  
 > [ROMFS](#romfs)
 
-
 ## Information
 
-The Samsung ARTIK™ 05x Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
-Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK05x Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
-
-### MemoryMap
-
-8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM. See [[here]](scripts/README.md) for the physical memory address.
+The Samsung ARTIK™ 053 Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
+Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK053 Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
 
 ### ARTIK053 Starter Kit PinOut
 #### CON710 CON711 CON708 CON709
@@ -84,11 +79,15 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK05x Module
              XGPIO3(gpio32) <- 23 | 24 -> GND
 ```
 
+### MemoryMap
+
+8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM. See [[here]](scripts/README.md) for the physical memory address.
+
 ## Configuration Sets
 
 #### nettest
 
-This is the basic configuration of ARTIK05x products. You can set and build the following:
+This is the basic configuration of ARTIK053x products. You can set and build the following:
 
 ```bash
 cd os/tools
@@ -148,10 +147,12 @@ This is used to program a partial binary.
 Export 'OPENOCD_SCRIPTS' to environment variable.
 
 ```bash
-export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/configs/artik053/tools/openocd
+export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/configs/tools/openocd
 ```
 
 At first, programming the complete set of binaries are needed.
+
+#### ARTIK053
 
 ```bash
 openocd -f artik053.cfg -c ' \
@@ -163,10 +164,10 @@ openocd -f artik053.cfg -c ' \
     exit'
 ```
 
-Please do the following for 'ARTIK05xS' device.
+#### ARTIK053S
 
 ```bash
-../build/configs/artik053/tools/codesigner/artik053_codesigner -sign ../build/output/bin/tinyara_head.bin
+../build/configs/tools/codesigner/artik053_codesigner -sign ../build/output/bin/tinyara_head.bin
 
 openocd -f artik053.cfg -c ' \
     flash_write bl1    ../build/configs/artik053/bin/bl1.secure.bin;  \
@@ -177,15 +178,15 @@ openocd -f artik053.cfg -c ' \
     exit'
 ```
 
-Once the complete binaries are successfully programmed, each partition can be updated seperately with new one.
+Once the complete binaries are successfully programmed, each partition can be updated separately with new one.
 
-In normal model (ARTIK05x products),
+In normal model (ARTIK053),
 ```bash
 openocd -f artik053.cfg -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin; exit'
 ```
 
-In secure model (ARTIK05xS products),
+In secure model (ARTIK053S),
 ```bash
 openocd -f artik053.cfg -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin-signed; exit'

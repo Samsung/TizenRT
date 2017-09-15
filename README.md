@@ -60,11 +60,9 @@ Built binaries are in *$TIZENRT_BASEDIR/build/output/bin*.
 
 ARTIK053 [[details]](build/configs/artik053/README.md)
 
-sidk_s5jt200 [[details]](build/configs/sidk_s5jt200/README.md)
+ARTIK055 [[details]](build/configs/artik055/README.md)
 
-Tizen RT currently supports only two boards called artik053 and sidk_s5jt200.
-However, those are not available in public markets till now.
-sidk_s5jt200 or other boards for Tizen RT will be coming soon.
+sidk_s5jt200 [[details]](build/configs/sidk_s5jt200/README.md)
 
 ## Configuration Sets
 
