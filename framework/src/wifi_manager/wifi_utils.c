@@ -68,7 +68,7 @@ wifi_utils_result_e wifi_utils_init(void)
 	}
 	g_mode = SLSI_WIFI_STATION_IF;
 
-	ret = WiFiRegisterLinkCallback(&linkdown_handler, &linkdown_handler);
+	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 	if (ret != SLSI_STATUS_SUCCESS) {
 		ndbg("Link callback handles: register failed !\n");
 		return WIFI_UTILS_FAIL;
