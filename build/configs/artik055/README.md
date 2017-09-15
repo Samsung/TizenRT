@@ -1,11 +1,11 @@
-# ARTIK05x
+# ARTIK055S
 
-The ARTIK05x is a SOC for Wi-Fi™ IoT solutions. The ARTIK05x has a Wi-Fi subsystem, security subsystem, and application subsystem.
+The ARTIK055S is a SOC for Wi-Fi™ IoT solutions. The ARTIK055S has a Wi-Fi subsystem, security subsystem, and application subsystem.
 
 ## Information
 
-The Samsung ARTIK™ 05x Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
-Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK05x Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
+The Samsung ARTIK™ 055 Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
+Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK055S Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
 
 ## MemoryMap
 
@@ -15,40 +15,13 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK05x Module
 
 After configuration, you can add / remove the configuration you want via menuconfig. If you want to run menuconfig, you need to install `kconfig-frontends`. kconfig-frontends was set at [[kconfig-frontends]](../../../README.md#set-kconfig-frontends) tab of Quick Start.
 
-#### nettest
-
-This is the basic configuration of ARTIK05x products. You can set and build the following:
-
-```bash
-~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik053/nettest
-```
-
 #### nettestsecure
 
-This is the basic configuration of ARTIK05xS products. It is the same as 'nettest', and has a function related to secureboot. If you have an ARTIK05xS product, use this config.
+This is the basic configuration of ARTIK055S products. If you have an ARTIK055S product, use this config.
 
 ```bash
 ~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik053/nettestsecure
-```
-
-#### onboard
-
-This is the configuration for the production phase of ARTIK05x product. When you download it to the board, the 'onboard' app will start automatically when it boots.
-
-```bash
-~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik053/onboard
-```
-
-#### onboardsecure
-
-This is the configuration for the production phase of ARTIK05xS product. It is the same as 'onboard', and has a function related to secureboot. If you have an ARTIK05xS product, use this config.
-
-```bash
-~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik053/onboardsecure
+~/TizenRT/os/tools$ ./configure.sh artik055/nettestsecure
 ```
 
 ## Environment Set-up
@@ -90,44 +63,27 @@ This is used to program a partial binary.
 Export 'OPENOCD_SCRIPTS' to environment variable.
 
 ```bash
-export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/configs/artik053/tools/openocd
+export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/configs/tools/openocd
 ```
 
 At first, programming the complete set of binaries are needed.
 
+#### ARTIK055S
 ```bash
-openocd -f artik053.cfg -c ' \
-    flash_write bl1    ../build/configs/artik053/bin/bl1.bin;      \
-    flash_write bl2    ../build/configs/artik053/bin/bl2.bin;      \
-    flash_write sssfw  ../build/configs/artik053/bin/sssfw.bin;    \
-    flash_write wlanfw ../build/configs/artik053/bin/wlanfw.bin;   \
-    flash_write os     ../build/output/bin/tinyara_head.bin;       \
-    exit'
-```
-
-If you have an 'ARTIK05xS' device, please do the following.
-
-```bash
-../build/configs/artik053/tools/codesigner/artik053_codesigner -sign ../build/output/bin/tinyara_head.bin
+../build/configs/tools/codesigner/artik053_codesigner -sign ../build/output/bin/tinyara_head.bin
 
 openocd -f artik053.cfg -c ' \
-    flash_write bl1    ../build/configs/artik053/bin/bl1.secure.bin;  \
-    flash_write bl2    ../build/configs/artik053/bin/bl2.bin;         \
-    flash_write sssfw  ../build/configs/artik053/bin/sssfw.bin;       \
-    flash_write wlanfw ../build/configs/artik053/bin/wlanfw.bin;      \
+    flash_write bl1    ../build/configs/artik055/bin/bl1.secure.bin;  \
+    flash_write bl2    ../build/configs/artik055/bin/bl2.bin;         \
+    flash_write sssfw  ../build/configs/artik055/bin/sssfw.bin;       \
+    flash_write wlanfw ../build/configs/artik055/bin/wlanfw.bin;      \
     flash_write os     ../build/output/bin/tinyara_head.bin-signed;   \
     exit'
 ```
 
 Once the complete binaries are successfully programmed, each partition can be updated separately with new one.
 
-In normal model (ARTIK05x products),
-```bash
-openocd -f artik053.cfg -c ' \
-    flash_write os ../build/output/bin/tinyara_head.bin; exit'
-```
-
-In secure model (ARTIK05xS products),
+In secure model (ARTIK055S),
 ```bash
 openocd -f artik053.cfg -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin-signed; exit'
@@ -142,7 +98,7 @@ You can download it using OpenOCD. You compress the compiled firmware and downlo
 ```bash
 gzip -c tinyara_head.bin > factoryimage.gz
 openocd -f artik053.cfg -c ' \
-    flash_write factory    ../build/configs/artik053/bin/factoryimage.gz;      \
+    flash_write factory    ../build/configs/artik055/bin/factoryimage.gz;      \
     exit'
 ```
 

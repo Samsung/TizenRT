@@ -59,6 +59,8 @@ Built binaries are in *$TIZENRT_BASEDIR/build/output/bin*.
 
 ARTIK053 [[details]](build/configs/artik053/README.md)
 
+ARTIK055 [[details]](build/configs/artik055/README.md)
+
 SIDK_S5JT200 [[details]](build/configs/sidk_s5jt200/README.md)
 
 QEMU [[details]](build/configs/qemu/README.md)
