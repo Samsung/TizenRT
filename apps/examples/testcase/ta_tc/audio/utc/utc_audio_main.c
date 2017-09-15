@@ -140,6 +140,7 @@ static void utc_audio_pcm_open_by_name_tc_p(void)
 	g_pcm = pcm_open_by_name("hw:0,0", PCM_IN, NULL);
 	TC_ASSERT_GT("pcm_open_by_name", pcm_get_file_descriptor(g_pcm), 0)
 	TC_SUCCESS_RESULT();
+	pcm_close(g_pcm);
 }
 
 /**
