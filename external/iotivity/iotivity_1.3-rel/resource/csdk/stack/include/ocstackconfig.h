@@ -86,7 +86,9 @@
  *  Maximum number of vendor specific header options an application can set or receive
  *  in PDU
  */
-#if defined(ARDUINO) || defined(__TIZENRT__)
+#ifdef ARDUINO
+#define MAX_HEADER_OPTIONS (2)
+#elif defined(__TIZENRT__)
 #define MAX_HEADER_OPTIONS (3)
 #else
 #define MAX_HEADER_OPTIONS (50)
