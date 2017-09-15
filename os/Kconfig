@@ -501,3 +501,11 @@ endmenu
 menu "Application Configuration"
 source "$APPSDIR/Kconfig"
 endmenu
+
+menu "Runtime Environment"
+source Kconfig.runtime
+endmenu
+
+menu "Device Management"
+source Kconfig.devmng
+endmenu

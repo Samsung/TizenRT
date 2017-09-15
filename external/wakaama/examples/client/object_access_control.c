@@ -29,7 +29,7 @@
  *  Access Control Owner |  3 |   RW  | Single|  Yes | Integer |0-65535|       |
  */
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include <stdio.h>
 #include <stdlib.h>

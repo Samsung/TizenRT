@@ -45,7 +45,7 @@
 
 #include "er-coap-13.h"
 
-#include "liblwm2m.h"			/* for lwm2m_malloc() and lwm2m_free() */
+#include <protocols/liblwm2m.h>			/* for lwm2m_malloc() and lwm2m_free() */
 
 #define DEBUG 0
 #if DEBUG
