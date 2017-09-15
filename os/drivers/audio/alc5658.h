@@ -21,7 +21,6 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
 #include <tinyara/fs/ioctl.h>
@@ -32,20 +31,21 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-	
+
 #define ALC5658_DEFAULT_SAMPRATE	16000
 #define ALC5658_DEFAULT_NCHANNELS	2
 #define ALC5658_DEFAULT_BPSAMP		16
 #define FAIL				0xFFFF
+#define         alc5658_givesem(s) sem_post(s)
 
 /* Commonly defined and redefined macros */
 
 #ifndef MIN
-#define MIN(a,b)                   (((a) < (b)) ? (a) : (b))
+#define MIN(a, b)                   (((a) < (b)) ? (a) : (b))
 #endif
 
 #ifndef MAX
-#define MAX(a,b)                   (((a) > (b)) ? (a) : (b))
+#define MAX(a, b)                   (((a) > (b)) ? (a) : (b))
 #endif
 
 /****************************************************************************
@@ -118,8 +118,6 @@ static void alc5658_writereg(FAR struct alc5658_dev_s *priv, uint16_t regaddr, u
 static void alc5658_takesem(sem_t *sem);
 static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr, uint16_t set, uint16_t clear);
 
-#define         alc5658_givesem(s) sem_post(s)
-
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 static inline uint16_t alc5658_scalevolume(uint16_t volume, b16_t scale);
 static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, bool mute);
@@ -128,7 +126,6 @@ static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, b
 static void alc5658_setbass(FAR struct alc5658_dev_s *priv, uint8_t bass);
 static void alc5658_settreble(FAR struct alc5658_dev_s *priv, uint8_t treble);
 #endif
-
 static void alc5658_set_i2s_datawidth(FAR struct alc5658_dev_s *priv);
 static void alc5658_set_i2s_samplerate(FAR struct alc5658_dev_s *priv);
 
@@ -184,7 +181,6 @@ static void alc5658_interrupt_work(FAR void *arg);
 static int alc5658_interrupt(FAR const struct alc5658_lower_s *lower, FAR void *arg);
 #endif
 
-
 /* Initialization */
 static void alc5658_audio_output(FAR struct alc5658_dev_s *priv);
 static void alc5658_audio_input(FAR struct alc5658_dev_s *priv);
@@ -195,7 +191,6 @@ static void alc5658_configure_ints(FAR struct alc5658_dev_s *priv);
 #endif
 static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv);
 uint16_t alc5658_readreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr);
-
 
 #endif							/* CONFIG_AUDIO */
 #endif							/* __DRIVERS_AUDIO_ALC5658_H */

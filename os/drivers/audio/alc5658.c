@@ -178,6 +178,22 @@ static uint16_t alc5658_modifyreg(FAR struct alc5658_dev_s *priv, uint16_t regad
 	return alc5658_readreg(priv, regaddr);
 }
 
+static void alc5658_setregs(struct alc5658_dev_s *priv)
+{
+	alc5658_writereg(priv, ALC5658_IN1_CTRL, (0 + 16) << 8);
+	alc5658_writereg(priv, ALC5658_HPOUT_MUTE, 0);
+	alc5658_writereg(priv, ALC5658_HPOUT_VLML, 0xd00);
+	alc5658_writereg(priv, ALC5658_HPOUT_VLMR, 0x700);
+}
+
+static void alc5658_getregs(struct alc5658_dev_s *priv)
+{
+	audvdbg("MIC GAIN 0x%x\n", (uint32_t) alc5658_readreg(priv, ALC5658_IN1_CTRL));
+	audvdbg("MUTE HPOUT MUTE %x\n", (uint32_t) alc5658_readreg(priv, ALC5658_HPOUT_MUTE));
+	audvdbg("VOLL 0x%x\n", (uint32_t) alc5658_readreg(priv, ALC5658_HPOUT_VLML));
+	audvdbg("VOLR 0x%x\n", (uint32_t) alc5658_readreg(priv, ALC5658_HPOUT_VLMR));
+}
+
 /************************************************************************************
  * Name: alc5658_exec_i2c_script
  *
@@ -214,6 +230,7 @@ static void alc5658_takesem(sem_t *sem)
 	} while (ret < 0);
 }
 
+
 /************************************************************************************
  * Name: alc5658_scalevolume
  *
@@ -227,7 +244,7 @@ static inline uint16_t alc5658_scalevolume(uint16_t volume, b16_t scale)
 {
 	return b16toi((b16_t) volume * scale);
 }
-#endif
+#endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 
 /************************************************************************************
  * Name: alc5658_setvolume
@@ -561,12 +578,6 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 		/* Reconfigure the FLL to support the resulting number or channels,
 		 * bits per sample, and bitrate.
 		 */
-#if 0
-		alc5658_set_i2s_datawidth(priv);
-		alc5658_set_i2s_samplerate(priv);
-
-		alc5658_clock_analysis(&priv->dev, "AUDIO_TYPE_OUTPUT");
-#endif
 		priv->inout = true;
 		ret = OK;
 	}
@@ -598,12 +609,6 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 		/* Reconfigure the FLL to support the resulting number or channels,
 		 * bits per sample, and bitrate.
 		 */
-#if 0
-		alc5658_set_i2s_datawidth(priv);
-		alc5658_set_i2s_samplerate(priv);
-
-		alc5658_clock_analysis(&priv->dev, "AUDIO_TYPE_OUTPUT");
-#endif
 		ret = OK;
 		priv->inout = false;
 	}
@@ -796,6 +801,10 @@ static void alc5658_rxtxcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer
 			break;
 		}
 	}
+	
+	/* Call upper callback, let it post msg to user q */
+	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
+
 	alc5658_givesem(&priv->devsem);
 }
 
@@ -823,7 +832,6 @@ static int alc5658_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 		alc5658_givesem(&priv->devsem);
 		return OK;
 	}
-	
 	if (priv->inout) /* record */
 	ret = I2S_RECEIVE(priv->i2s, apb, alc5658_rxtxcallback, priv, 0);
 	else			/* playback */
@@ -1149,8 +1157,6 @@ static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv)
 
 	/* Dump some information and return the device instance */
 
-	alc5658_dump_registers(&priv->dev, "After configuration");
-	alc5658_clock_analysis(&priv->dev, "After configuration");
 }
 
 /****************************************************************************
