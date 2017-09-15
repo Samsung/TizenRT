@@ -48,7 +48,7 @@
 
 #define AUDIO_DEFAULT_FORMAT PCM_FORMAT_S16_LE
 
-#define AUDIO_RECORD_DURATION 1 //3sec
+#define AUDIO_RECORD_DURATION 3 //3sec
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -780,8 +780,6 @@ static int audio_tc_launcher(int argc, char **args)
 	total_fail = 0;
 
 	utc_audio_pcm_open_tc_p();
-	utc_audio_pcm_readi_p();
-	utc_audio_pcm_writei_p();
 	utc_audio_pcm_open_tc_n();
 	utc_audio_pcm_is_ready_tc_p();
 	utc_audio_pcm_is_ready_tc_n();
@@ -819,7 +817,6 @@ static int audio_tc_launcher(int argc, char **args)
 	utc_audio_pcm_readi_n();
 	utc_audio_pcm_writei_p();
 	utc_audio_pcm_writei_n();
-
 	unlink(AUDIO_TEST_FILE);
 
 	printf("#########################################\n");
