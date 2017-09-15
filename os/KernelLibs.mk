@@ -79,6 +79,12 @@ ifeq ($(CONFIG_HAVE_CXX),y)
 USERLIBS += $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT)
 endif
 
+# Add libraries for audio support
+
+ifeq ($(CONFIG_AUDIO),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
+endif
+
 # Add libraries for network support
 
 ifeq ($(CONFIG_NET),y)

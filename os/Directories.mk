@@ -187,7 +187,12 @@ else
 KERNDEPDIRS += $(FSDIRS)
 endif
 
+# Add Audio Module
 
+ifeq ($(CONFIG_AUDIO),y)
+KERNDEPDIRS += audio
+endif
+CLEANDIRS += audio
 
 # Add networking directories to KERNDEPDIRS and CLEANDIRS
 

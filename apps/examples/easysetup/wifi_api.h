@@ -3,8 +3,8 @@
 #include <slsi_wifi/slsi_wifi_api.h>
 
 enum wifi_state {
-    WIFI_CONNECTED,
-    WIFI_DISCONNECTED,
+	WIFI_CONNECTED,
+	WIFI_DISCONNECTED,
 };
 
 int get_wifiState(void);

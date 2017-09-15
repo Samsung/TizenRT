@@ -35,7 +35,7 @@
 int g_logm_head;
 int g_logm_tail;
 int g_logm_dropmsg_count;
-int g_logm_overflow_offset;
+int g_logm_overflow_offset = -1;
 
 static void logm_putc(FAR struct lib_outstream_s *this, int ch)
 {

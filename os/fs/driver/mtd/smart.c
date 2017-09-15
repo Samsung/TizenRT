@@ -3566,7 +3566,7 @@ retry:
 #endif
 				ret = MTD_READ(dev->mtd, readaddr, dev->mtdBlksPerSector * dev->geo.blocksize, sector_buff);
 				if (ret != dev->mtdBlksPerSector * dev->geo.blocksize) {
-					fdbg("Error reading physical sector %d\n",physicalsector);
+					fdbg("Error reading physical sector %d\n", physicalsector);
 					kmm_free(sector_buff);
 					return -1;
 				}

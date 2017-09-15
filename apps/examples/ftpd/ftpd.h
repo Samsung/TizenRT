@@ -109,14 +109,14 @@ struct fptd_account_s {
 
 struct ftpd_globals_s {
 	bool          initialized; /* True: Networking is initialized.  The
-                              * network must be initialized only once.
-                              */
+								* network must be initialized only once.
+								*/
 	volatile bool stop;        /* True: Request daemon to exit */
 	volatile bool running;     /* True: The daemon is running */
 	pid_t         pid;         /* Task ID of the FTPD daemon.  The value
-                              * -1 is a redundant indication that the
-                              * daemon is not running.
-                              */
+								* -1 is a redundant indication that the
+								* daemon is not running.
+								*/
 };
 
 /****************************************************************************

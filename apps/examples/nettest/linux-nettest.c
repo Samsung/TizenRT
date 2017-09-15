@@ -272,7 +272,7 @@ void udp_client_thread(int num_packets, int ipver)
 	snprintf(sbuf, sizeof("hello, UDP_VX"), "hello, UDP%s", NETTEST_IPV(ipver));
 	memset(rbuf, 0, BUF_SIZE);
 
-	while(1) {
+	while (1) {
 		if (ipver == 1) {
 
 			nbytes = write(fd, sbuf, BUF_SIZE);
@@ -293,12 +293,12 @@ void udp_client_thread(int num_packets, int ipver)
 			nbytes = recvfrom(fd, rbuf, BUF_SIZE, 0, (struct sockaddr *)&cliaddr, &addrlen);
 		}
 		if (nbytes <= 0) {
-			printf("[UDPCLI%s] %s err: %d\n", NETTEST_IPV(ipver), ipver ? "read": "recvfrom", errno);
+			printf("[UDPCLI%s] %s err: %d\n", NETTEST_IPV(ipver), ipver ? "read" : "recvfrom", errno);
 			break;
 		} else {
 			if (num_packets == 0) {
 				/* infinite test */
-				if(!(count % 1000)) {
+				if (!(count % 1000)) {
 					printf("[UDPCLI%s infinite test #%d] msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, rbuf, nbytes);
 				}
 			} else {
@@ -418,7 +418,7 @@ void udp_server_thread(int num_packets, int ipver)
 							printf("[UDPSERV%s infinite test #%d] echoback msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, msg, nbytes);
 						}
 					} else {
-						printf("[UDPSERV%s test #%d] echoback msg(%s) len(%d)\n", NETTEST_IPV(ipver),count, msg, nbytes);
+						printf("[UDPSERV%s test #%d] echoback msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, msg, nbytes);
 						if (count >= num_packets) {
 							printf("[UDPSERV%s test done #%d]\n", NETTEST_IPV(ipver), count);
 							break;
@@ -538,7 +538,7 @@ void tcp_client_thread(int num_packets, int ipver)
 	snprintf(sbuf, sizeof("hello, TCP_VX"), "hello, TCP%s", NETTEST_IPV(ipver));
 	memset(rbuf, 0, BUF_SIZE);
 
-	while(1) {
+	while (1) {
 		nbytes = send(fd, sbuf, BUF_SIZE, 0);
 		if (nbytes <= 0) {
 			printf("[TCPCLI%s] send err: %d\n", NETTEST_IPV(ipver), errno);
@@ -552,7 +552,7 @@ void tcp_client_thread(int num_packets, int ipver)
 		}
 
 		if (num_packets == 0) {
-			if(!(count % 1000)) {
+			if (!(count % 1000)) {
 				printf("[TCPCLI%s infinite test #%d] msg(%s) len(%d)\n", NETTEST_IPV(ipver), count, rbuf, nbytes);
 			}
 		} else {
@@ -675,7 +675,7 @@ void tcp_server_thread(int num_packets, int ipver)
 
 		nbytes = send(connfd, msg, BUF_SIZE, 0);
 		if (nbytes <= 0) {
-			printf("[TCPSERV%s] send err: %d\n", NETTEST_IPV(ipver),errno);
+			printf("[TCPSERV%s] send err: %d\n", NETTEST_IPV(ipver), errno);
 			break;
 		}
 

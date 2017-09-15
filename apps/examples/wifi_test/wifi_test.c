@@ -30,12 +30,12 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#define DEVICE_NAME 	"ATK/002"	// "ATK" or "STA"
+#define DEVICE_NAME	"ATK/002"	// "ATK" or "STA"
 #define SERVER_IP	"192.168.1.117"
-#define SERVER_PORT 	5987
+#define SERVER_PORT	5987
 
 #define WIFI_BSSID_SIZE	17
-#define BUF_MAX_SIZE 	128
+#define BUF_MAX_SIZE	128
 
 char aps_list[] = {
 #include "ap_check_list.txt"
@@ -204,15 +204,16 @@ int wifi_test_proc(int argc, char *argv[])
 		memset(payload, 0, BUF_MAX_SIZE);
 
 		printScanResult(scan_info);
-		sprintf(payload, "/%s|", DEVICE_NAME);
+		snprintf(payload, BUF_MAX_SIZE, "/%s|", DEVICE_NAME);
 		for (i = 0; i < aps_cnt; i++) {
 			sprintf(buf, "%02d:%d/", g_aps[i].id, g_aps[i].rssi);
-			strcat(payload, buf);
+			strncat(payload, buf, strlen(buf));
 		}
 		printf("[WiFi] PAYLOAD : %s\n", payload);
 		if (sendto(fd, payload, strlen(payload), 0, (struct sockaddr *)&dest, sizeof(struct sockaddr_in)) == -1) {
 			printf("[WiFi] Failed to sendto UDP.\n");
 			ret = -1;
+			closesocket(fd);
 			goto error_out;
 		}
 		/* Type in code to free WiFi scan data. Do check and
@@ -240,7 +241,8 @@ error_out:
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-int wifi_init_task(int argc, char *argv[]) {
+int wifi_init_task(int argc, char *argv[])
+{
 	/* Create Task For async job */
 	if (task_create("wifi_test_proc", SCHED_PRIORITY_DEFAULT, 16840, wifi_test_proc, argv) < 0) {
 		/* Error : Can't Create task */

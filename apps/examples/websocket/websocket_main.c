@@ -163,7 +163,7 @@
 	"   $ websocket server 1\n"								\
 	"   $ websocket client 127.0.0.1 443 0 1 100 10\n"
 
-struct options_s{
+struct options_s {
 	int mode;
 	int tls_mode;
 	char server_port[8];
@@ -742,8 +742,7 @@ int websocket_main(int argc, char *argv[])
 			goto error_with_input;
 		}
 		input->tls_mode = atoi(argv[2]);
-	}
-	else if(strncmp(argv[1], "client", strlen("client") + 1) == 0) {
+	} else if (strncmp(argv[1], "client", strlen("client") + 1) == 0) {
 		if (argc != 8) {
 			goto error_with_input;
 		}
@@ -754,8 +753,7 @@ int websocket_main(int argc, char *argv[])
 		input->tls_mode = atoi(argv[5]);
 		input->size = atoi(argv[6]);
 		input->num = atoi(argv[7]);
-	}
-	else {
+	} else {
 		goto error_with_input;
 	}
 
