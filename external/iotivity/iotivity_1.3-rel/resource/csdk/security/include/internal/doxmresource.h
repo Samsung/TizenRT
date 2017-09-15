@@ -115,6 +115,19 @@ OCStackResult CBORPayloadToDoxm(const uint8_t *cborPayload, size_t size,
 OCStackResult DoxmToCBORPayload(const OicSecDoxm_t *doxm,
 	uint8_t **payload, size_t *size);
 
+#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
+/**
+ * Enables Anon DH ciphersuite if device unowned and Just Works OTM is selected.
+ * Otherwise, does nothing.
+ *
+ * @param[out] enabled TRUE if Anon DH ciphersuite enabled, else FALSE
+ *
+ * @retval  ::OC_STACK_OK No errors.
+ * @retval  ::OC_STACK_ERROR An error occured.
+ */
+OCStackResult EnableAnonCipherSuiteIfUnOwnedAndJustWorksSelected(bool *enabled);
+#endif // __WITH_DTLS__ or __WITH_TLS__
+
 #if defined(__WITH_DTLS__) || defined (__WITH_TLS__)
 /**
  * API to save the seed value to generate device UUID.

@@ -413,6 +413,16 @@ static bool EnterRESET()
         EnterStateGeneric(false, true, false, false, true, DOS_RESET),
         ERROR);
 
+#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
+    // Enable Anon DH cipher suite if appropriate
+    bool isAnonEnabled = false;
+    VERIFY_SUCCESS(TAG,
+        OC_STACK_OK == EnableAnonCipherSuiteIfUnOwnedAndJustWorksSelected(&isAnonEnabled),
+        ERROR);
+    OIC_LOG_V(INFO, TAG, "%s: Anon Ciphersuite %sENABLED.", __func__,
+        isAnonEnabled ? "" : "NOT ");
+#endif // __WITH_DTLS__ or __WITH_TLS__
+
     ret = true;
 
 exit:
