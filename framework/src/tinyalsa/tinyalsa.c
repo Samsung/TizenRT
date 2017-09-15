@@ -734,7 +734,6 @@ int pcm_close(struct pcm *pcm)
 		}
 	}
 #endif
-	mq_close(pcm->mq);			/* Close the message queue */
 	mq_unlink(pcm->mqname);
 
 	if (pcm->fd >= 0) {
