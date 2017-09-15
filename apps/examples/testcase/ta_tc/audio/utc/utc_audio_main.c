@@ -764,12 +764,9 @@ static int audio_tc_launcher(int argc, char **args)
 	utc_audio_pcm_readi_n();
 	utc_audio_pcm_writei_p();
 	utc_audio_pcm_writei_n();
-#if 0
-	utc_audio_pcm_start_p();
-	utc_audio_pcm_start_n();
-	utc_audio_pcm_stop_p();
-	utc_audio_pcm_stop_n();
-#endif
+
+	unlink(AUDIO_TEST_FILE);
+
 	printf("#########################################\n");
 	printf("           FS TC Result               \n");
 	printf("           PASS : %d FAIL : %d        \n", total_pass, total_fail);
