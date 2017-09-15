@@ -323,6 +323,7 @@ config S5J_SPI
 config S5J_WATCHDOG
 	bool "Watchdog"
 	depends on S5J_HAVE_WATCHDOG
+	select WATCHDOG
 	default n
 
 menu "Watchdog driver configuration"
