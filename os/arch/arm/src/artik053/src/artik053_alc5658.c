@@ -352,7 +352,6 @@ int s5j_alc5658_initialize(int minor)
 		}
 
 
-
 		/* Finally, we can register the PCM/ALC5658/I2C/I2S audio device.
 		 *
 		 * Is anyone young enough to remember Rube Goldberg?

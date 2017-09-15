@@ -119,14 +119,14 @@ static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, siz
  ****************************************************************************/
 
 static const struct file_operations i2schar_fops = {
-	NULL,						/* open  */
-	NULL,						/* close */
+	NULL,					/* open  */
+	NULL,					/* close */
 	i2schar_read,				/* read  */
 	i2schar_write,				/* write */
-	NULL,						/* seek  */
-	NULL,						/* ioctl */
+	NULL,					/* seek  */
+	NULL,					/* ioctl */
 #ifndef CONFIG_DISABLE_POLL
-	NULL,						/* poll  */
+	NULL,					/* poll  */
 #endif
 };
 
@@ -386,28 +386,28 @@ int i2schar_register(FAR struct i2s_dev_s *i2s, int minor)
 	/* Allocate a I2S character device structure */
 
 	priv = (FAR struct i2schar_dev_s *)kmm_zalloc(sizeof(struct i2schar_dev_s));
-	if (priv) {
-		/* Initialize the I2S character device structure */
-
-		priv->i2s = i2s;
-		sem_init(&priv->exclsem, 0, 1);
-
-		/* Create the character device name */
-
-		snprintf(devname, DEVNAME_FMTLEN, DEVNAME_FMT, minor);
-		ret = register_driver(devname, &i2schar_fops, 0666, priv);
-		if (ret < 0) {
-			/* Free the device structure if we failed to create the character
-			 * device.
-			 */
-
-			kmm_free(priv);
-		}
-
-		/* Return the result of the registration */
-
-		return OK;
+	if (priv == NULL) {
+		return -ENOMEM;
 	}
 
-	return -ENOMEM;
+	/* Initialize the I2S character device structure */
+
+	priv->i2s = i2s;
+	sem_init(&priv->exclsem, 0, 1);
+
+	/* Create the character device name */
+
+	snprintf(devname, DEVNAME_FMTLEN, DEVNAME_FMT, minor);
+	ret = register_driver(devname, &i2schar_fops, 0666, priv);
+	if (ret < 0) {
+		/* Free the device structure if we failed to create the character
+		 * device.
+		 */
+
+		kmm_free(priv);
+	}
+
+	/* Return the result of the registration */
+
+	return OK;
 }
