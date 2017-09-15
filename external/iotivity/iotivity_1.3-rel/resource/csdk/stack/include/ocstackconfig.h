@@ -87,7 +87,7 @@
  *  in PDU
  */
 #if defined(ARDUINO) || defined(__TIZENRT__)
-#define MAX_HEADER_OPTIONS (2)
+#define MAX_HEADER_OPTIONS (3)
 #else
 #define MAX_HEADER_OPTIONS (50)
 #endif
