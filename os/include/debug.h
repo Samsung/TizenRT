@@ -1011,24 +1011,24 @@ Once LOGM is approved, each module should have its own index
 #define auddbg		dbg
 #define audlldbg	lldbg
 #else
-#define auddbg		(void)
-#define audlldbg	(void)
+#define auddbg(...)
+#define audlldbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_AUDIO_WARN
 #define audwdbg		wdbg
 #define audllwdbg	llwdbg
 #else
-#define audwdbg		(void)
-#define audllwdbg	(void)
+#define audwdbg(...)
+#define audllwdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_AUDIO_INFO
 #define audvdbg		vdbg
 #define audllvdbg	llvdbg
 #else
-#define audvdbg		(void)
-#define audllvdbg	(void)
+#define audvdbg(...)
+#define audllvdbg(...)
 #endif
 
 /* Buffer dumping macros do not depend on varargs */
