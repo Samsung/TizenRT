@@ -1,0 +1,35 @@
+{
+   "model": "ARTIK053S"
+   "binaries": [
+      {
+         "name" : "BL1",
+         "binaryPath" : "053S/bl1.bin",
+         "baseAddr" : "0x04000000",
+         "size" : "0x00004000"
+      },
+      {
+         "name" : "BL2",
+         "binaryPath" : "053S/bl2.bin",
+         "baseAddr" : "0x04010000",
+         "size" : "0x00030000"
+      },
+      {
+         "name" : "SSS",
+         "binaryPath" : "053S/sssfw.bin",
+         "baseAddr" : "0x04040000",
+         "size" : "0x00008000"
+      },
+      {
+         "name" : "WLAN",
+         "binaryPath" : "053S/wlanfw.bin",
+         "baseAddr" : "0x04048000",
+         "size" : "0x00080000"
+      },
+      {
+         "name" : "OS",
+         "binaryPath" : "053S/tinyara_head.bin",
+         "baseAddr" : "0x040C8000",
+         "size" : "0x00258000"
+      }
+   ]
+}
