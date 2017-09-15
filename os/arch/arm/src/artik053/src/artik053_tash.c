@@ -179,21 +179,20 @@ static void artik053_configure_partitions(void)
 		} else
 #endif
 #if defined(CONFIG_MTD_SMART) && defined(CONFIG_FS_SMARTFS)
-			if (!strncmp(types, "smartfs,", 8)) {
-				char partref[4];
-				snprintf(partref, sizeof(partref), "p%d", partno);
-				smart_initialize(CONFIG_ARTIK053_FLASH_MINOR, mtd_part, partref);
-			} else
+		if (!strncmp(types, "smartfs,", 8)) {
+			char partref[4];
+			snprintf(partref, sizeof(partref), "p%d", partno);
+			smart_initialize(CONFIG_ARTIK053_FLASH_MINOR, mtd_part, partref);
+		} else
 #endif
 #if defined(CONFIG_FS_ROMFS) && defined(CONFIG_FS_SMARTFS)
-			if (!strncmp(types, "romfs,", 6)) {
-				char partref[6];
-				snprintf(partref, sizeof(partref), "rom%d", partno);
-				smart_initialize(MTD_ROMFS, mtd_part, partref);
-			} else
+		if (!strncmp(types, "romfs,", 6)) {
+			ftl_initialize(partno, mtd_part);
+		} else
+
 #endif
-			{
-			}
+		{
+		}
 
 #if defined(CONFIG_MTD_PARTITION_NAMES)
 		if (strcmp(names, "")) {
@@ -275,12 +274,11 @@ int board_app_initialize(void)
 	artik053_configure_partitions();
 
 #ifdef CONFIG_ARTIK053_AUTOMOUNT_ROMFS
-	ret = mount(CONFIG_ARTIK053_AUTOMOUNT_ROMFS_DEVNAME,
-			CONFIG_ARTIK053_AUTOMOUNT_ROMFS_MOUNTPOINT,
-			"romfs", 0, NULL);
+	ret = mount(CONFIG_ARTIK053_AUTOMOUNT_ROMFS_DEVNAME, CONFIG_ARTIK053_AUTOMOUNT_ROMFS_MOUNTPOINT, "romfs", 0, NULL);
+
 	if (ret != OK) {
 		lldbg("ERROR: mounting '%s'(ROMFS) failed\n",
-			CONFIG_ARTIK053_AUTOMOUNT_ROMFS_DEVNAME);
+			  CONFIG_ARTIK053_AUTOMOUNT_ROMFS_DEVNAME);
 	}
 #endif
 
@@ -320,7 +318,7 @@ int board_app_initialize(void)
 			(void)mksmartfs(CONFIG_ARTIK053_RAMMTD_DEV_POINT, false);
 
 			ret = mount(CONFIG_ARTIK053_RAMMTD_DEV_POINT, CONFIG_ARTIK053_RAMMTD_MOUNT_POINT,
-					"smartfs", 0, NULL);
+						"smartfs", 0, NULL);
 			if (ret < 0) {
 				lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
 				free(rambuf);

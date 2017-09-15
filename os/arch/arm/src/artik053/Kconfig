@@ -121,10 +121,10 @@ config ARTIK053_AUTOMOUNT_ROMFS
 
 config ARTIK053_AUTOMOUNT_ROMFS_DEVNAME
 	string "Device name of the partition for romfs file system"
-	default "/dev/smart4rom9"
+	default "/dev/mtdblock9"
 	depends on ARTIK053_AUTOMOUNT_ROMFS
 	---help---
-		Specifies the device name (/dev/smart4rom9) of the partition
+		Specifies the device name (/dev/mtdblock9) of the partition
 		for romfs file system.
 
 config ARTIK053_AUTOMOUNT_ROMFS_MOUNTPOINT
