@@ -547,40 +547,9 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			break;
 		}
 		break; /* Break for inner switch case */
-	case AUDIO_TYPE_INPUT: {
-		audvdbg("  AUDIO_TYPE_INPUT:\n");
-		/* Verify that all of the requested values are supported */
-
-		ret = -ERANGE;
-		if (caps->ac_channels != 1 && caps->ac_channels != 2) {
-			auddbg("ERROR: Unsupported number of channels: %d\n", caps->ac_channels);
-			break;
-		}
-
-		if (caps->ac_controls.b[2] != 8 && caps->ac_controls.b[2] != 16) {
-			auddbg("ERROR: Unsupported bits per sample: %d\n", caps->ac_controls.b[2]);
-			break;
-		}
-
-		/* Save the current stream configuration */
-
-		priv->samprate = caps->ac_controls.hw[0];
-		priv->nchannels = caps->ac_channels;
-		priv->bpsamp = caps->ac_controls.b[2];
-
-		audvdbg("    Number of channels: 0x%x\n", priv->nchannels);
-		audvdbg("    Sample rate:        0x%x\n", priv->samprate);
-		audvdbg("    Sample width:       0x%x\n", priv->bpsamp);
-
-		/* Reconfigure the FLL to support the resulting number or channels,
-		 * bits per sample, and bitrate.
-		 */
-		priv->inout = true;
-		ret = OK;
-	}
-	break;
-	case AUDIO_TYPE_OUTPUT: {
-		audvdbg("  AUDIO_TYPE_OUTPUT:\n");
+	case AUDIO_TYPE_INPUT:
+	case AUDIO_TYPE_OUTPUT:
+		audvdbg("  AUDIO_TYPE :%s\n", caps->ac_type == AUDIO_TYPE_INPUT ? "INPUT" : "OUTPUT");
 		/* Verify that all of the requested values are supported */
 
 		ret = -ERANGE;
@@ -608,9 +577,12 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 		 * bits per sample, and bitrate.
 		 */
 		ret = OK;
-		priv->inout = false;
-	}
-	break;
+		if (caps->ac_type == AUDIO_TYPE_INPUT) {
+			priv->inout = true;
+		} else {
+			priv->inout = false;
+		}
+		break;
 
 	case AUDIO_TYPE_PROCESSING:
 		break;
