@@ -51,7 +51,7 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-/* This should be put under hammer to strip size 
+/* This should be put under hammer to strip size
 by for status variables */
 
 struct alc5658_dev_s {
@@ -73,7 +73,7 @@ struct alc5658_dev_s {
 	FAR struct i2s_dev_s *i2s;	/* I2S driver to use */
 	struct dq_queue_s pendq;	/* Queue of pending buffers to be sent */
 	struct dq_queue_s doneq;	/* Queue of sent buffers to be returned */
-	sem_t devsem;				/* Protection for both pendq & dev*/
+	sem_t devsem;				/* Protection for both pendq & dev */
 
 #ifdef ALC5658_USE_FFLOCK_INT
 	struct work_s work;			/* Interrupt work */
@@ -103,7 +103,7 @@ struct alc5658_dev_s {
 };
 
 /****************************************************************************
- * Private Declarations 
+ * Private Declarations
  ****************************************************************************/
 
 #ifdef CONFIG_ALC5658_CLKDEBUG

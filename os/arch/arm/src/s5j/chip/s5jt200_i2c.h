@@ -57,8 +57,8 @@
  * Pre-processor Definitions
  ****************************************************************************/
 /* Register Offset **********************************************************/
-#define S5J_I2C_CTL					0x0000
-#define S5J_I2C_TRAILING_CTL		0x0008
+#define S5J_I2C_CTL				0x0000
+#define S5J_I2C_TRAILING_CTL			0x0008
 #define S5J_I2C_INT_EN				0x0020
 #define S5J_I2C_INT_STAT			0x0024
 #define S5J_I2C_FIFO_STAT			0x0030
@@ -68,7 +68,7 @@
 #define S5J_I2C_AUTO_CONF			0x0044
 #define S5J_I2C_TIMEOUT				0x0048
 #define S5J_I2C_MANUAL_CMD			0x004C
-#define S5J_I2C_TRANS_STATUS		0x0050
+#define S5J_I2C_TRANS_STATUS			0x0050
 #define S5J_I2C_TIMING_HS1			0x0054
 #define S5J_I2C_TIMING_HS2			0x0058
 #define S5J_I2C_TIMING_HS3			0x005C
@@ -81,33 +81,33 @@
 /* Register Bitfield Definitions ********************************************/
 
 /* I2C_CTL register */
-#define I2C_CTL_RESET_VALUE						0x0
-#define I2C_CTL_CS_ENB							(1 << 0)
-#define I2C_CTL_MASTER							(1 << 3)
-#define I2C_CTL_RXCHON							(1 << 6)
-#define I2C_CTL_TXCHON							(1 << 7)
-#define I2C_CTL_SW_RST							(1 << 31)
+#define I2C_CTL_RESET_VALUE			0x0
+#define I2C_CTL_CS_ENB				(1 << 0)
+#define I2C_CTL_MASTER				(1 << 3)
+#define I2C_CTL_RXCHON				(1 << 6)
+#define I2C_CTL_TXCHON				(1 << 7)
+#define I2C_CTL_SW_RST				(1 << 31)
 
 /* I2C_INT_EN & I2C_INT_STAT register */
-#define I2C_INT_TX_ALMOSTEMPTY_EN				(1 << 0)
-#define I2C_INT_RX_ALMOSTFULL_EN				(1 << 1)
-#define I2C_INT_TX_UNDERRUN_EN					(1 << 2)
-#define I2C_INT_RX_OVERRUN_EN					(1 << 5)
-#define I2C_INT_TRANSFER_DONE_AUTO_EN			(1 << 7)
+#define I2C_INT_TX_ALMOSTEMPTY_EN		(1 << 0)
+#define I2C_INT_RX_ALMOSTFULL_EN		(1 << 1)
+#define I2C_INT_TX_UNDERRUN_EN			(1 << 2)
+#define I2C_INT_RX_OVERRUN_EN			(1 << 5)
+#define I2C_INT_TRANSFER_DONE_AUTO_EN		(1 << 7)
 #define I2C_INT_TRANSFER_DONE_NOACK_MANUAL_EN	(1 << 12)
-#define I2C_INT_TRANSFER_DONE_MANUAL_EN			(1 << 13)
-#define I2C_INT_SLAVE_ADDR_MATCH_EN				(1 << 15)
-#define I2C_INT_ALL								0xFFFF
+#define I2C_INT_TRANSFER_DONE_MANUAL_EN		(1 << 13)
+#define I2C_INT_SLAVE_ADDR_MATCH_EN		(1 << 15)
+#define I2C_INT_ALL				0xFFFF
 
 /* I2C_CONF register */
-#define I2C_CONF_HS_MODE						(1 << 29)
-#define I2C_CONF_ADDRMODE						(1 << 30)
-#define I2C_CONF_AUTO_MODE						(1 << 31)
+#define I2C_CONF_HS_MODE			(1 << 29)
+#define I2C_CONF_ADDRMODE			(1 << 30)
+#define I2C_CONF_AUTO_MODE			(1 << 31)
 
 /* I2C_AUTO_CONF register */
 #define I2C_AUTO_CONF_TRANS_LEN_ALL				0xFFFF
 #define I2C_AUTO_CONF_READ_WRITE				(1 << 16)
-#define I2C_AUTO_CONF_STOP_AFTER_TRANS			(1 << 17)
+#define I2C_AUTO_CONF_STOP_AFTER_TRANS				(1 << 17)
 #define I2C_AUTO_CONF_MASTER_RUN				(1 << 31)
 
 /* I2C_MANUAL_CMD register */

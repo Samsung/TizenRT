@@ -109,8 +109,8 @@ static inline void up_idlestack_color(void *pv, unsigned int nbytes)
 						 "\tbne  1b\n"	/* Bottom of the loop */
 						 "2:\n" "\tmov  r14, #0\n"	/* LR = return address (none) */
 						 "\tb    os_start\n"	/* Branch to os_start */
-						: /* No Output */
-						: "r"(r0), "r"(r1)
+						 :		/* No Output */
+						 :"r"(r0), "r"(r1)
 						);
 
 	__builtin_unreachable();
@@ -136,13 +136,13 @@ int s5j_mpu_initialize(void)
 {
 #ifdef CONFIG_ARCH_CHIP_S5JT200
 	/*
-	 * Vector Table	0x02020000	0x02020FFF	4
-	 * Reserved		0x02021000	0x020217FF	2
-	 * BL1			0x02021800	0x020237FF	8
-	 * TinyARA		0x02023800	0x020E7FFF	786(WBWA)
-	 * Shared mem		0x020E8000	0x020E9FFF	8 (WBWA)
-	 * cm0			0x020EA000	0x0210FFFF	152 (NCNB)
-	 * WIFI			0x02110000	0x0215FFFF	320(NCNB)
+	 * Vector Table 0x02020000  0x02020FFF  4
+	 * Reserved     0x02021000  0x020217FF  2
+	 * BL1          0x02021800  0x020237FF  8
+	 * TinyARA      0x02023800  0x020E7FFF  786(WBWA)
+	 * Shared mem       0x020E8000  0x020E9FFF  8 (WBWA)
+	 * cm0          0x020EA000  0x0210FFFF  152 (NCNB)
+	 * WIFI         0x02110000  0x0215FFFF  320(NCNB)
 	 */
 
 	/* Region 0, Set read only for memory area */

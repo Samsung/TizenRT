@@ -89,7 +89,7 @@ typedef struct d_dma_task_priv {
  ****************************************************************************/
 static int s5j_dma_priv_setup(DMA_HANDLE handle, dma_task *task)
 {
-	t_dma_task_priv *priv_task = (t_dma_task_priv *) task;
+	t_dma_task_priv *priv_task = (t_dma_task_priv *)task;
 	DMA_CH_CONTEXT *ch;
 	ch = handle;
 	unsigned int rx_num = (task->size / 4) & (~0xFF);
@@ -119,7 +119,7 @@ static int s5j_dma_priv_setup(DMA_HANDLE handle, dma_task *task)
 		memset(priv_task->finish_1, DMA_NOP, priv_task->finish_size);
 	}
 
-	arch_clean_dcache((uintptr_t) task->microcode, (uintptr_t)(task->microcode + priv_task->mc_size));
+	arch_clean_dcache((uintptr_t)task->microcode, (uintptr_t)(task->microcode + priv_task->mc_size));
 
 	return OK;
 }
@@ -163,7 +163,7 @@ dma_task *dma_task_p2m_sb_4B_x256_alloc(DMA_REQ_MAP s_ph_ch)
 		return NULL;
 	}
 
-	priv_task = (t_dma_task_priv *) task;
+	priv_task = (t_dma_task_priv *)task;
 	priv_task->mc_array_size = 128;
 
 	mc_base = task->microcode;

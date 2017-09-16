@@ -51,14 +51,14 @@
 #define DMAC_FSRC                    (0x034)
 #define DMAC_FTRD                    (0x038)
 
-#define DMAC_CH_FTR(n)               0x040 + 0x04*(n)
-#define DMAC_CH_CSR(n)               (u32)(0x100 + 0x08*(n))
-#define DMAC_CH_CPC(n)               0x104 + 0x08*(n)
-#define DMAC_CH_SAR(n)               0x400 + 0x20*(n)
-#define DMAC_CH_DAR(n)               0x404 + 0x20*(n)
-#define DMAC_CH_CCR(n)               0x408 + 0x20*(n)
-#define DMAC_CH_LC0(n)               0x40C + 0x20*(n)
-#define DMAC_CH_LC1(n)               0x410 + 0x20*(n)
+#define DMAC_CH_FTR(n)               0x040 + 0x04 * (n)
+#define DMAC_CH_CSR(n)               (u32)(0x100 + 0x08 * (n))
+#define DMAC_CH_CPC(n)               0x104 + 0x08 * (n)
+#define DMAC_CH_SAR(n)               0x400 + 0x20 * (n)
+#define DMAC_CH_DAR(n)               0x404 + 0x20 * (n)
+#define DMAC_CH_CCR(n)               0x408 + 0x20 * (n)
+#define DMAC_CH_LC0(n)               0x40C + 0x20 * (n)
+#define DMAC_CH_LC1(n)               0x410 + 0x20 * (n)
 
 #define DMAC_DBG_STATUS              0xD00
 #define DMAC_DBG_CMD                 0xD04
@@ -78,61 +78,61 @@
 
 /* CCR BITFIELDS */
 
-#define NOSWAP 			(0)
-#define ENDIAN_SWAP_SIZE_MASK 	(7 << 28)
-#define ENDIAN_SWAP_SIZE(x) 	((x & 7) << 28)
+#define NOSWAP                  (0)
+#define ENDIAN_SWAP_SIZE_MASK   (7 << 28)
+#define ENDIAN_SWAP_SIZE(x)     ((x & 7) << 28)
 
-#define AWCACHE0 		(1)
-#define AWCACHE1 		(2)
-#define AWCACHE2 		(4)
-#define DST_CACHE_CTRL_MASK 	(7 << 25)
-#define DST_CACHE_CTRL(x) 	((x & 7) << 25)
+#define AWCACHE0            (1)
+#define AWCACHE1            (2)
+#define AWCACHE2            (4)
+#define DST_CACHE_CTRL_MASK (7 << 25)
+#define DST_CACHE_CTRL(x)   ((x & 7) << 25)
 
-#define AWPROT0 		(1)
-#define AWPROT1 		(2)
-#define AWPROT2 		(4)
-#define DST_PROT_CTRL_MASK 	(7 << 22)
-#define DST_PROT_CTRL(x) 	((x & 7) << 22)
-
-/* Burst Len absolute value */
-#define DST_BURST_LEN_MASK 	(0xf << 18)
-#define DST_BURST_LEN(x) 	(((x - 1) & 0xf) << 18)
-
-#define BS_1 			0
-#define BS_2 			1
-#define BS_4 			2
-#define BS_8 			3
-#define DST_BURST_SIZE_MASK 	(7 << 15)
-#define DST_BURST_SIZE(x) 	((x & 7) << 15)
-
-#define DST_INC 		(1 << 14)
-
-#define ARCACHE0 		(1)
-#define ARCACHE1 		(2)
-#define ARCACHE2 		(4)
-#define SRC_CACHE_CTRL_MASK 	(7 << 11)
-#define SRC_CACHE_CTRL(x) 	((x & 7) << 11)
-
-#define ARPROT0 		(1)
-#define ARPROT1 		(2)
-#define ARPROT2 		(4)
-#define SRC_PROT_CTRL_MASK 	(7 << 8)
-#define SRC_PROT_CTRL(x) 	((x & 7) << 8)
+#define AWPROT0             (1)
+#define AWPROT1             (2)
+#define AWPROT2             (4)
+#define DST_PROT_CTRL_MASK  (7 << 22)
+#define DST_PROT_CTRL(x)    ((x & 7) << 22)
 
 /* Burst Len absolute value */
-#define SRC_BURST_LENGTH_MASK 	(0xf << 4)
-#define SRC_BURST_LENGTH(x) 	(((x - 1) & 0xf) << 4)
+#define DST_BURST_LEN_MASK  (0xf << 18)
+#define DST_BURST_LEN(x)    (((x - 1) & 0xf) << 18)
+
+#define BS_1                0
+#define BS_2                1
+#define BS_4                2
+#define BS_8                3
+#define DST_BURST_SIZE_MASK (7 << 15)
+#define DST_BURST_SIZE(x)   ((x & 7) << 15)
+
+#define DST_INC             (1 << 14)
+
+#define ARCACHE0            (1)
+#define ARCACHE1            (2)
+#define ARCACHE2            (4)
+#define SRC_CACHE_CTRL_MASK (7 << 11)
+#define SRC_CACHE_CTRL(x)   ((x & 7) << 11)
+
+#define ARPROT0             (1)
+#define ARPROT1             (2)
+#define ARPROT2             (4)
+#define SRC_PROT_CTRL_MASK  (7 << 8)
+#define SRC_PROT_CTRL(x)    ((x & 7) << 8)
+
+/* Burst Len absolute value */
+#define SRC_BURST_LENGTH_MASK   (0xf << 4)
+#define SRC_BURST_LENGTH(x)     (((x - 1) & 0xf) << 4)
 
 /* Burst Size absolute value */
-#define SRC_BURST_SIZE_MASK 	(7 << 1)
-#define SRC_BURST_SIZE(x) 	((x & 7) << 1)
+#define SRC_BURST_SIZE_MASK     (7 << 1)
+#define SRC_BURST_SIZE(x)       ((x & 7) << 1)
 
-#define SRC_INC 		(1 << 0)
+#define SRC_INC     (1 << 0)
 
-#define LC0 		0x0
-#define LC0_END		0x10
-#define LC1 		0x2
-#define LC1_END		0x14
+#define LC0         0x0
+#define LC0_END     0x10
+#define LC1         0x2
+#define LC1_END     0x14
 
 #define CCR_M2M_DFLT (ENDIAN_SWAP_SIZE(NOSWAP) | \
 			DST_CACHE_CTRL(AWCACHE1) | \
@@ -166,9 +166,9 @@
 			SRC_PROT_CTRL(2) | \
 			DST_PROT_CTRL(2))
 
-#define DMA_MC_4B_SET(a, b) 	(*(unsigned int *)(a) = (unsigned int)(b))
-#define DMA_MC_1B_SET(a, b) 	(*(char *)(a) = (char)(b))
-#define DMA_MC_EV_SET(a, b) 	(*(char *)(a) = (char)(b << 3))
+#define DMA_MC_4B_SET(a, b)     (*(unsigned int *)(a) = (unsigned int)(b))
+#define DMA_MC_1B_SET(a, b)     (*(char *)(a) = (char)(b))
+#define DMA_MC_EV_SET(a, b)     (*(char *)(a) = (char)(b << 3))
 
 #define DMA_NOP		(0x18)
 
@@ -237,7 +237,7 @@ typedef enum {
  ************************************************************************************/
 
 /* Microcode functions */
-inline static int DMA_Encode_DMAMOV(char *base, void **reg_addr, DMA_INST_REG rd)
+static inline int DMA_Encode_DMAMOV(char *base, void **reg_addr, DMA_INST_REG rd)
 {
 	rd &= 0x07;
 
@@ -262,47 +262,47 @@ static inline int DMA_Encode_DMALP(char *base, DMA_LC lc, void **iter)
 	return 2;
 }
 
-inline static int DMA_Encode_DMALPEND(char *base, u8 CTRL, char backwards_jump)
+static inline int DMA_Encode_DMALPEND(char *base, u8 CTRL, char backwards_jump)
 {
 	base[0] = 0x28 | CTRL;
 	base[1] = backwards_jump;
 	return 2;
 }
 
-inline static int DMA_Encode_DMALD(char *base, u8 CTRL)
+static inline int DMA_Encode_DMALD(char *base, u8 CTRL)
 {
 	base[0] = 0x04 | CTRL;
 	return 1;
 }
 
-inline static int DMA_Encode_DMALDP(char *base, u8 CTRL, DMA_REQ_MAP periph)
+static inline int DMA_Encode_DMALDP(char *base, u8 CTRL, DMA_REQ_MAP periph)
 {
 	base[0] = 0x25 | CTRL;
 	base[1] = periph << 3;
 	return 2;
 }
 
-inline static int DMA_Encode_DMAST(char *base, u8 CTRL)
+static inline int DMA_Encode_DMAST(char *base, u8 CTRL)
 {
 	base[0] = 0x08 | CTRL;
 	return 1;
 }
 
-inline static int DMA_Encode_DMASTP(char *base, u8 CTRL, DMA_REQ_MAP periph)
+static inline int DMA_Encode_DMASTP(char *base, u8 CTRL, DMA_REQ_MAP periph)
 {
 	base[0] = 0x29 | CTRL;
 	base[1] = periph << 3;
 	return 2;
 }
 
-inline static int DMA_Encode_DMAWFP(char *base, u8 CTRL, DMA_REQ_MAP periph)
+static inline int DMA_Encode_DMAWFP(char *base, u8 CTRL, DMA_REQ_MAP periph)
 {
 	base[0] = 0x30 | CTRL;
 	base[1] = periph << 3;
 	return 2;
 }
 
-inline static int DMA_Encode_DMASEV(char *base, void **event_num)
+static inline int DMA_Encode_DMASEV(char *base, void **event_num)
 {
 	base[0] = 0x34;
 	base[1] = 0xe;
@@ -310,20 +310,20 @@ inline static int DMA_Encode_DMASEV(char *base, void **event_num)
 	return 2;
 }
 
-inline static int DMA_Encode_DMAEND(char *base)
+static inline int DMA_Encode_DMAEND(char *base)
 {
 	base[0] = 0x00;
 	return 1;
 }
 
-inline static int DMA_Encode_DMAFLUSHP(char *base, u8 periph)
+static inline int DMA_Encode_DMAFLUSHP(char *base, u8 periph)
 {
 	base[0] = 0x35;
 	base[1] = periph << 3;
 	return 2;
 }
 
-inline static int DMA_Encode_DMAWMB(char *base)
+static inline int DMA_Encode_DMAWMB(char *base)
 {
 	base[0] = 0x13;
 	return 1;

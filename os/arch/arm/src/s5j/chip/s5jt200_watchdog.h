@@ -58,12 +58,12 @@
  ****************************************************************************/
 
 /* Register Address *********************************************************/
-#define S5J_WDT_WTCON			0x80030000
-#define S5J_WDT_WTDAT			0x80030004
-#define S5J_WDT_WTCNT			0x80030008
-#define S5J_WDT_WTCLRINT		0x8003000C
+#define S5J_WDT_WTCON							0x80030000
+#define S5J_WDT_WTDAT							0x80030004
+#define S5J_WDT_WTCNT							0x80030008
+#define S5J_WDT_WTCLRINT						0x8003000C
 
-#define S5J_WDT_OSC				(26*1000*1000)
+#define S5J_WDT_OSC							(26*1000*1000)
 
 /* Register Bitfield Definitions ********************************************/
 

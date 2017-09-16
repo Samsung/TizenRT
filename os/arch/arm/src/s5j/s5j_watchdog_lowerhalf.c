@@ -361,7 +361,6 @@ static int s5j_wdg_settimeout(FAR struct watchdog_lowerhalf_s *lower, uint32_t t
 		freq = S5J_WDT_OSC / (priv->prescaler + 1) / (16 << priv->divider);
 		reload = timeout * ((freq / 1000)) - 1;
 	}
-
 #ifdef CONFIG_S5J_WATCHDOG_DEBUG
 	lldbg("timeout %d, reload %d, s5j clk_wdt %12ld, wdt freq= %12ld\n", timeout, reload, S5J_WDT_OSC, freq);
 #endif

@@ -234,11 +234,9 @@ enum pcm_param {
 	PCM_PARAM_BUFFER_SIZE,
 	PCM_PARAM_BUFFER_BYTES,
 	PCM_PARAM_TICK_TIME,
-}; /* enum pcm_param */
-
+};							/* enum pcm_param */
 
 struct pcm;
-
 
 /**
 * @brief Opens a PCM for playback or recording.
@@ -424,10 +422,7 @@ int pcm_prepare(struct pcm *pcm);
 unsigned int pcm_format_to_bits(enum pcm_format format);
 
 #if defined(__cplusplus)
-}  /* extern "C" */
+}								/* extern "C" */
 #endif
-
-/** @} */ // end of TinyAlsa group
-
+/** @} */// end of TinyAlsa group
 #endif
-

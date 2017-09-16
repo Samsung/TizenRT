@@ -170,6 +170,7 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("mqttutc", SCHED_PRIORITY_DEFAULT, TC_MQTT_STACK, utc_mqtt_main, argv);
 	if (pid < 0) {
 		printf("MQTT utc is not started, err = %d\n", pid);
+	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_AUDIO_UTC
 	pid = task_create("audioutc", SCHED_PRIORITY_DEFAULT, TC_AUDIO_STACK, utc_audio_main, argv);

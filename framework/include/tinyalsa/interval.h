@@ -68,4 +68,4 @@ struct tinyalsa_unsigned_interval {
 	size_t min;
 };
 
-#endif /* TINYALSA_INTERVAL_H */
+#endif							/* TINYALSA_INTERVAL_H */

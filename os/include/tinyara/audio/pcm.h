@@ -158,7 +158,6 @@ static uint32_t pcm_leuint32(uint32_t value);
 #define pcm_leuint32(v) (v)
 #endif
 
-
 /****************************************************************************
  * Name: pcm_decode_initialize
  *

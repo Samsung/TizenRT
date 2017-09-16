@@ -138,11 +138,11 @@
 
 /* Helper macros ************************************************************/
 
-#define ALC5658_ATTACH(s,isr,arg) ((s)->attach(s,isr,arg))
-#define ALC5658_DETACH(s)         ((s)->attach(s,NULL,NULL))
-#define ALC5658_ENABLE(s)         ((s)->enable(s,true))
-#define ALC5658_DISABLE(s)        ((s)->enable(s,false))
-#define ALC5658_RESTORE(s,e)      ((s)->enable(s,e))
+#define ALC5658_ATTACH(s, isr, arg) ((s)->attach(s, isr, arg))
+#define ALC5658_DETACH(s)         ((s)->attach(s, NULL, NULL))
+#define ALC5658_ENABLE(s)         ((s)->enable(s, true))
+#define ALC5658_DISABLE(s)        ((s)->enable(s, false))
+#define ALC5658_RESTORE(s, e)      ((s)->enable(s, e))
 
 /****************************************************************************
  * Public Types
@@ -248,7 +248,7 @@ void alc5658_dump_registers(FAR struct audio_lowerhalf_s *dev, FAR const char *m
  * including file.
  */
 
-#define alc5658_dump_registers(d,m)
+#define alc5658_dump_registers(d, m)
 #endif
 
 /****************************************************************************
@@ -272,7 +272,7 @@ void alc5658_clock_analysis(FAR struct audio_lowerhalf_s *dev, FAR const char *m
  * including file.
  */
 
-#define alc5658_clock_analysis(d,m)
+#define alc5658_clock_analysis(d, m)
 #endif
 
 #undef EXTERN

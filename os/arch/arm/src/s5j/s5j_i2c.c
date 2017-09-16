@@ -84,7 +84,7 @@
 #define S5J_DEFAULT_I2CSLAVE_ADDR	0x22
 #define S5J_DEFAULT_I2C_TIMEOUT		10000
 #define S5J_DEFAULT_HS_CLOCK		400000	/* 400Khz */
-#define S5J_DEFAULT_HS_CLOCK		400000			/* 400Khz */
+#define S5J_DEFAULT_HS_CLOCK		400000	/* 400Khz */
 
 /****************************************************************************
  * Private Types
@@ -805,7 +805,7 @@ int s5j_i2c_read(FAR struct i2c_dev_s *dev, FAR uint8_t *buffer, int buflen)
 
 	/* Setup for the transfer */
 	msg.addr = priv->slave_addr, msg.flags = (flags | I2C_M_READ);
-	msg.buffer = (FAR uint8_t *) buffer;
+	msg.buffer = (FAR uint8_t *)buffer;
 	msg.length = buflen;
 
 	/*
@@ -826,7 +826,7 @@ int s5j_i2c_write(FAR struct i2c_dev_s *dev, FAR const uint8_t *buffer, int bufl
 	/* Setup for the transfer */
 	msg.addr = priv->slave_addr;
 	msg.flags = 0;
-	msg.buffer = (FAR uint8_t *) buffer;	/* Override const */
+	msg.buffer = (FAR uint8_t *)buffer;	/* Override const */
 	msg.length = buflen;
 
 	/*

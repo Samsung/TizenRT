@@ -89,8 +89,9 @@ static void delay(unsigned int mS)
 	mS = mS / MSEC_PER_TICK + 1;
 
 	while (1) {
-		if ((start + mS) < clock_systimer())
+		if ((start + mS) < clock_systimer()) {
 			return;
+		}
 	}
 }
 
@@ -186,10 +187,10 @@ static void alc5658_setregs(struct alc5658_dev_s *priv)
 
 static void alc5658_getregs(struct alc5658_dev_s *priv)
 {
-	audvdbg("MIC GAIN 0x%x\n", (uint32_t) alc5658_readreg(priv, ALC5658_IN1_CTRL));
-	audvdbg("MUTE HPOUT MUTE %x\n", (uint32_t) alc5658_readreg(priv, ALC5658_HPOUT_MUTE));
-	audvdbg("VOLL 0x%x\n", (uint32_t) alc5658_readreg(priv, ALC5658_HPOUT_VLML));
-	audvdbg("VOLR 0x%x\n", (uint32_t) alc5658_readreg(priv, ALC5658_HPOUT_VLMR));
+	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1_CTRL));
+	audvdbg("MUTE HPOUT MUTE %x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_MUTE));
+	audvdbg("VOLL 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_VLML));
+	audvdbg("VOLR 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_HPOUT_VLMR));
 }
 
 /************************************************************************************
@@ -228,7 +229,6 @@ static void alc5658_takesem(sem_t *sem)
 	} while (ret < 0);
 }
 
-
 /************************************************************************************
  * Name: alc5658_setvolume
  *
@@ -260,7 +260,7 @@ static void alc5658_setvolume(FAR struct alc5658_dev_s *priv, uint16_t volume, b
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 static inline uint16_t alc5658_scalevolume(uint16_t volume, b16_t scale)
 {
-	return b16toi((b16_t) volume * scale);
+	return b16toi((b16_t)volume * scale);
 }
 #endif
 
@@ -305,10 +305,11 @@ static void alc5658_settreble(FAR struct alc5658_dev_s *priv, uint8_t treble)
  ****************************************************************************/
 static void alc5658_set_i2s_datawidth(FAR struct alc5658_dev_s *priv)
 {
-	if (priv->inout)
+	if (priv->inout) {
 		I2S_RXDATAWIDTH(priv->i2s, priv->bpsamp);
-	else
+	} else {
 		I2S_TXDATAWIDTH(priv->i2s, priv->bpsamp);
+	}
 }
 
 /****************************************************************************
@@ -319,10 +320,11 @@ static void alc5658_set_i2s_datawidth(FAR struct alc5658_dev_s *priv)
  ****************************************************************************/
 static void alc5658_set_i2s_samplerate(FAR struct alc5658_dev_s *priv)
 {
-	if (priv->inout)
+	if (priv->inout) {
 		I2S_RXSAMPLERATE(priv->i2s, priv->samprate);
-	else
+	} else {
 		I2S_TXSAMPLERATE(priv->i2s, priv->samprate);
+	}
 }
 
 /****************************************************************************
@@ -488,13 +490,11 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 #endif
 	int ret = OK;
 
-
-
 	DEBUGASSERT(priv && caps);
 	audvdbg("ac_type: %d\n", caps->ac_type);
 
 	/* ALC5658 supports on the fly changes for almost all changes
-	so no need to do anything. But if any issue, worth looking here */
+	   so no need to do anything. But if any issue, worth looking here */
 
 	switch (caps->ac_type) {
 	case AUDIO_TYPE_FEATURE:
@@ -521,24 +521,26 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE
-		case AUDIO_FU_BASS:
-		{	/* Set the bass.  The percentage level (0-100) is in the
+		case AUDIO_FU_BASS: {
+			/* Set the bass.  The percentage level (0-100) is in the
 			 * ac_controls.b[0] parameter. */
 
 			uint8_t bass = caps->ac_controls.b[0];
 			audvdbg("    Bass: %d\n", bass);
-			if (bass <= 100)
+			if (bass <= 100) {
 				alc5658_setbass(priv, bass);
+			}
 		}
 		break;
-		case AUDIO_FU_TREBLE:
-		{	/* Set the treble.  The percentage level (0-100) is in the
+		case AUDIO_FU_TREBLE: {
+			/* Set the treble.  The percentage level (0-100) is in the
 			 * ac_controls.b[0] parameter. */
 
 			uint8_t treble = caps->ac_controls.b[0];
 			audvdbg("    Treble: %d\n", treble);
-			if (treble <= 100)
+			if (treble <= 100) {
 				alc5658_settreble(priv, treble);
+			}
 		}
 		break;
 #endif							/* CONFIG_AUDIO_EXCLUDE_TONE */
@@ -546,7 +548,7 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			auddbg("    ERROR: Unrecognized feature unit\n");
 			break;
 		}
-		break; /* Break for inner switch case */
+		break;					/* Break for inner switch case */
 	case AUDIO_TYPE_INPUT:
 	case AUDIO_TYPE_OUTPUT:
 		audvdbg("  AUDIO_TYPE :%s\n", caps->ac_type == AUDIO_TYPE_INPUT ? "INPUT" : "OUTPUT");
@@ -636,37 +638,36 @@ static int alc5658_start(FAR struct audio_lowerhalf_s *dev)
 
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
 
-	if (priv->running)
+	if (priv->running) {
 		return OK;
+	}
 
 	audvdbg(" alc5658_start Entry\n");
 	alc5658_exec_i2c_script(priv, codec_init_inout_script1, sizeof(codec_init_inout_script1) / sizeof(t_codec_init_script_entry));
-	
+
 	/* Fix me -- Need to support multiple samplerate */
 	alc5658_exec_i2c_script(priv, codec_init_pll_16K, sizeof(codec_init_pll_16K) / sizeof(t_codec_init_script_entry));
 	alc5658_exec_i2c_script(priv, codec_init_inout_script2, sizeof(codec_init_inout_script2) / sizeof(t_codec_init_script_entry));
 
-
 	alc5658_setregs(priv);
 	alc5658_getregs(priv);
-	
+
 	alc5658_takesem(&priv->devsem);
-	
+
 	priv->running = true;
 	dq_entry_t *tmp = NULL;
-	dq_queue_t * q = &priv->pendq;
+	dq_queue_t *q = &priv->pendq;
 
 	for (tmp = dq_peek(q); tmp; tmp = dq_next(tmp)) {
-		alc5658_enqueuebuffer(dev, (struct ap_buffer_s *) tmp);
+		alc5658_enqueuebuffer(dev, (struct ap_buffer_s *)tmp);
 	}
 
 	alc5658_givesem(&priv->devsem);
 
-	
 	/* Exit reduced power modes of operation */
 	/* REVISIT */
 
-	return OK; /* Fix this -- always returns OK */
+	return OK;					/* Fix this -- always returns OK */
 }
 
 /****************************************************************************
@@ -720,10 +721,10 @@ static int alc5658_pause(FAR struct audio_lowerhalf_s *dev)
 
 		priv->paused = true;
 		alc5658_setvolume(priv, priv->volume, true);
-		ALC5658_DISABLE(priv->lower); /* Need inputs from REALTEK */
+		ALC5658_DISABLE(priv->lower);	/* Need inputs from REALTEK */
 	}
 
-return OK;
+	return OK;
 }
 #endif							/* CONFIG_AUDIO_EXCLUDE_PAUSE_RESUME */
 
@@ -768,21 +769,20 @@ static void alc5658_rxtxcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer
 {
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)arg;
 
-	DEBUGASSERT(priv &&  apb);
+	DEBUGASSERT(priv && apb);
 	audvdbg("alc5658_rxcallback, devaddr= 0x%x, apbaddr  =0x%x\n", dev, apb);
-	
-	
+
 	alc5658_takesem(&priv->devsem);
 	dq_entry_t *tmp;
-	for (tmp = (dq_entry_t*)dq_peek(&priv->pendq); tmp; tmp = dq_next(tmp)) {
-		if (tmp == (dq_entry_t*)apb) {
+	for (tmp = (dq_entry_t *)dq_peek(&priv->pendq); tmp; tmp = dq_next(tmp)) {
+		if (tmp == (dq_entry_t *)apb) {
 			dq_rem(tmp, &priv->pendq);
-			apb_free(apb); /* let the reference gained in enqueue */
+			apb_free(apb);		/* let the reference gained in enqueue */
 			audvdbg("found the apb to remove 0x%x\n", tmp);
 			break;
 		}
 	}
-	
+
 	/* Call upper callback, let it post msg to user q */
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
 
@@ -814,13 +814,14 @@ static int alc5658_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 		return OK;
 	}
 
-	if (priv->inout) /* record */
-	ret = I2S_RECEIVE(priv->i2s, apb, alc5658_rxtxcallback, priv, 100);
-	else			/* playback */
-	ret = I2S_SEND(priv->i2s, apb, alc5658_rxtxcallback, priv, 100);
+	if (priv->inout) {		/* record */
+		ret = I2S_RECEIVE(priv->i2s, apb, alc5658_rxtxcallback, priv, 100);
+	} else {					/* playback */
+		ret = I2S_SEND(priv->i2s, apb, alc5658_rxtxcallback, priv, 100);
+	}
 
 	audvdbg("I2s  returned 0x%x\n", ret);
-	
+
 	return ret;
 }
 
@@ -1126,7 +1127,7 @@ static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv)
 	alc5658_exec_i2c_script(priv, codec_reset_script, sizeof(codec_reset_script) / sizeof(t_codec_init_script_entry));
 
 	alc5658_writereg(priv, ALC5658_IN1_CTRL, (10 + 16) << 8);
-	audvdbg("MIC GAIN 0x%x\n", (uint32_t) alc5658_readreg(priv, ALC5658_IN1_CTRL));
+	audvdbg("MIC GAIN 0x%x\n", (uint32_t)alc5658_readreg(priv, ALC5658_IN1_CTRL));
 
 	/* Dump some information and return the device instance */
 

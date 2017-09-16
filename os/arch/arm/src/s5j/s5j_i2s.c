@@ -171,11 +171,11 @@
 struct s5j_buffer_s {
 	struct s5j_buffer_s *flink;	/* Supports a singly linked list */
 	i2s_callback_t callback;	/* Function to call when the transfer completes */
-	dma_task *dmatask;			/* DMA transfer task structure */
-	uint32_t timeout;			/* The timeout value to use with DMA transfers */
-	void *arg;					/* The argument to be returned with the callback */
+	dma_task *dmatask;		/* DMA transfer task structure */
+	uint32_t timeout;		/* The timeout value to use with DMA transfers */
+	void *arg;			/* The argument to be returned with the callback */
 	struct ap_buffer_s *apb;	/* The audio buffer */
-	int result;					/* The result of the transfer */
+	int result;			/* The result of the transfer */
 };
 
 /* This structure describes the state of one receiver or transmitter transport */
@@ -192,7 +192,7 @@ struct s5j_transport_s {
 /* The state of the one I2S peripheral */
 
 struct s5j_i2s_s {
-	struct i2s_dev_s dev;		/* Externally visible I2S interface */
+	struct i2s_dev_s dev;			/* Externally visible I2S interface */
 	uintptr_t base;				/* I2S controller register base address */
 	int isr_num;				/* isr number */
 	xcpt_t isr_handler;			/* irs handler */
@@ -200,23 +200,23 @@ struct s5j_i2s_s {
 	sem_t exclsem;				/* Assures mutually exclusive acess to I2S */
 	uint8_t datalen;			/* Data width (8, 16, or 32) */
 	uint8_t rx_datalen;			/* Data width (8, 16, or 32) */
-	uint8_t txp_datalen;		/* Data width (8, 16, or 32) */
-	uint8_t txs_datalen;		/* Data width (8, 16, or 32) */
+	uint8_t txp_datalen;			/* Data width (8, 16, or 32) */
+	uint8_t txs_datalen;			/* Data width (8, 16, or 32) */
 
 	uint8_t rxenab:1;			/* True: RX transfers enabled */
 	uint8_t txpenab:1;			/* True: TX primary transfers enabled */
 	uint8_t txsenab:1;			/* True: TX secondary transfers enabled */
 
-	uint32_t samplerate;		/* Not actually needed in slave mode */
+	uint32_t samplerate;			/* Not actually needed in slave mode */
 
 #ifdef I2S_HAVE_RX
-	struct s5j_transport_s rx;	/* RX transport state */
+	struct s5j_transport_s rx;		/* RX transport state */
 #endif
 #ifdef I2S_HAVE_TX_P
-	struct s5j_transport_s txp;	/* TX primary transport state */
+	struct s5j_transport_s txp;		/* TX primary transport state */
 #endif
 #ifdef I2S_HAVE_TX_S
-	struct s5j_transport_s txs;	/* TX secodary transport state */
+	struct s5j_transport_s txs;		/* TX secodary transport state */
 #endif
 
 	/* Pre-allocated pool of buffer containers */

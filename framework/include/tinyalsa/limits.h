@@ -75,4 +75,4 @@ extern const struct tinyalsa_unsigned_interval tinyalsa_channels_limit;
 
 extern const struct tinyalsa_unsigned_interval tinyalsa_frames_limit;
 
-#endif /* TINYALSA_LIMITS_H */
+#endif							/* TINYALSA_LIMITS_H */

@@ -67,35 +67,35 @@
 
 /* multiplexer */
 struct clk_mux {
-	unsigned int select: 1;
-	unsigned int res0: 15;
-	unsigned int busy: 1;
-	unsigned int res1: 11;
-	unsigned int enable_automatic_clkgating: 1;
-	unsigned int res2: 1;
-	unsigned int override_by_hch: 1;
-	unsigned int res3: 1;
+	unsigned int select:1;
+	unsigned int res0:15;
+	unsigned int busy:1;
+	unsigned int res1:11;
+	unsigned int enable_automatic_clkgating:1;
+	unsigned int res2:1;
+	unsigned int override_by_hch:1;
+	unsigned int res3:1;
 };
 
 /* clock divider */
 struct clk_div {
-	unsigned int divratio: 16;
-	unsigned int busy: 1;
-	unsigned int res0: 11;
-	unsigned int enable_automatic_clkgating: 1;
-	unsigned int res1: 1;
-	unsigned int override_by_hch: 1;
-	unsigned int res2: 1;
+	unsigned int divratio:16;
+	unsigned int busy:1;
+	unsigned int res0:11;
+	unsigned int enable_automatic_clkgating:1;
+	unsigned int res1:1;
+	unsigned int override_by_hch:1;
+	unsigned int res2:1;
 };
 
 /* clock gating control register */
 struct clk_gate {
-	unsigned int res0: 20;
-	unsigned int mode: 1;
-	unsigned int cg: 1;
-	unsigned int res1: 6;
-	unsigned int enable_automatic_clkgating: 1;
-	unsigned int res2: 3;
+	unsigned int res0:20;
+	unsigned int mode:1;
+	unsigned int cg:1;
+	unsigned int res1:6;
+	unsigned int enable_automatic_clkgating:1;
+	unsigned int res2:3;
 };
 
 enum clk_mux_source {
@@ -243,11 +243,11 @@ enum clk_id {
 
 /* Q-Channel control register */
 struct clk_qch {
-	unsigned int res0: 6;
-	unsigned int expire_val: 10;
-	unsigned int res1: 14;
-	unsigned int clock_req: 1;
-	unsigned int enable: 1;
+	unsigned int res0:6;
+	unsigned int expire_val:10;
+	unsigned int res1:14;
+	unsigned int clock_req:1;
+	unsigned int enable:1;
 };
 
 /* Clock management unit - MCU part */
@@ -263,25 +263,25 @@ struct mcu_clk {
 	unsigned char res0[0x0164];
 
 	struct {
-		unsigned int res0: 4;
-		unsigned int mux_sel: 1;
-		unsigned int res1: 2;
-		unsigned int busy: 1;
-		unsigned int res2: 24;
+		unsigned int res0:4;
+		unsigned int mux_sel:1;
+		unsigned int res1:2;
+		unsigned int busy:1;
+		unsigned int res2:24;
 	} pll_con0;
 
 	struct {
-		unsigned int res0: 5;
-		unsigned int ignore_req_sysclk: 1;
-		unsigned int res1: 26;
+		unsigned int res0:5;
+		unsigned int ignore_req_sysclk:1;
+		unsigned int res1:26;
 	} pll_con1;
 
 	struct {
-		unsigned int res0: 28;
-		unsigned int enable_automatic_clkgating: 1;
-		unsigned int res1: 1;
-		unsigned int override_by_hch: 1;
-		unsigned int res2: 1;
+		unsigned int res0:28;
+		unsigned int enable_automatic_clkgating:1;
+		unsigned int res1:1;
+		unsigned int override_by_hch:1;
+		unsigned int res2:1;
 	} pll_con2;
 
 	unsigned char res1[0x674];

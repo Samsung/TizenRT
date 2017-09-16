@@ -452,4 +452,4 @@
 #define CMU_QCH_CON_MCU_CLOCK_REQ			(1 << 1)
 #define CMU_QCH_CON_MCU_ENABLE				(1 << 0)
 
-#endif /* _ARCH_ARM_SRC_S5J_CHIP_S5JT200_CLOCK_H */
+#endif							/* _ARCH_ARM_SRC_S5J_CHIP_S5JT200_CLOCK_H */

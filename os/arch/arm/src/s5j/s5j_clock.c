@@ -107,10 +107,11 @@ static unsigned long clk_wpll_get_rate(enum clk_id id)
 	unsigned long sclk, div;
 	struct mcu_clk *cmu = (struct mcu_clk *)S5J_CMU_BASE;
 
-	if (cmu->pll_con0.mux_sel)
+	if (cmu->pll_con0.mux_sel) {
 		sclk = FIXED_RATE_WPLL_CLK960M;
-	else
+	} else {
 		sclk = FIXED_RATE_OSCCLK_MCU;
+	}
 
 	div = 1;
 

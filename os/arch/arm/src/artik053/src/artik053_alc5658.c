@@ -210,8 +210,9 @@ static int alc5658_interrupt(int irq, FAR void *context)
 	/* Just forward the interrupt to the ALC5658 driver */
 
 	audvdbg("handler %p\n", g_alc5658info.handler);
-	if (g_alc5658info.handler)
+	if (g_alc5658info.handler) {
 		return g_alc5658info.handler(&g_alc5658info.lower, g_alc5658info.arg);
+	}
 
 	/* We got an interrupt with no handler.  This should not
 	 * happen.
@@ -339,8 +340,6 @@ int s5j_alc5658_initialize(int minor)
 			goto errout_with_alc5658;
 		}
 
-
-
 		/* Finally, we can register the PCM/ALC5658/I2C/I2S audio device.
 		 *
 		 * Is anyone young enough to remember Rube Goldberg?
@@ -370,4 +369,3 @@ errout_with_i2c:
 errout:
 	return ret;
 }
-
