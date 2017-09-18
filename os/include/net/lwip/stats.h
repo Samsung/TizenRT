@@ -50,7 +50,7 @@
 #define __LWIP_STATS_H__
 
 #include <net/lwip/opt.h>
-
+#include <net/lwip/debug.h>
 #include <net/lwip/mem.h>
 #include <net/lwip/memp.h>
 
