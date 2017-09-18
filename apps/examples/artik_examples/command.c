@@ -38,7 +38,12 @@ void usage(const char *command_base, const struct command *commands)
 	fprintf(stderr, "usage:\n");
 
 	while (cmd->fn) {
-		fprintf(stderr, "\t%s %s - %s\n", command_base, cmd->name, cmd->usage);
+		if (strlen(cmd->usage))
+			fprintf(stderr, "\t%s %s - %s\n", command_base, cmd->name,
+					cmd->usage);
+		else
+			fprintf(stderr, "\t%s %s\n", command_base, cmd->name);
+
 		cmd++;
 	}
 }

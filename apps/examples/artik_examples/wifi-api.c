@@ -30,26 +30,37 @@
 #include <artik_wifi.h>
 #include <artik_network.h>
 
+#include "command.h"
+
 #define WIFI_SCAN_TIMEOUT       15
 #define WIFI_CONNECT_TIMEOUT    30
 #define WIFI_DISCONNECT_TIMEOUT 10
 
 static artik_network_dhcp_client_handle g_dhcp_handle;
 
-static void usage(void);
-
-typedef int (*command_fn)(int argc, char *argv[]);
-
-struct wifi_command {
-	const char name[16];
-	const char usage[64];
-	command_fn fn;
-};
-
 struct callback_result {
 	sem_t sem;
 	artik_wifi_connection_info info;
 	artik_error error;
+};
+
+static int startsta_command(int argc, char *argv[]);
+static int startap_command(int argc, char *argv[]);
+static int scan_command(int argc, char *argv[]);
+static int connect_command(int argc, char *argv[]);
+static int disconnect_command(int argc, char *argv[]);
+static int stop_command(int argc, char *argv[]);
+static int dhcp_command(int argc, char *argv[]);
+
+static const struct command wifi_commands[] = {
+	{ "startsta", "", startsta_command },
+	{ "startap", "<ssid> <channel> [<passphrase>]", startap_command },
+	{ "scan", "", scan_command },
+	{ "connect", "<ssid> <passphrase> [persistent]", connect_command },
+	{ "disconnect", "", disconnect_command },
+	{ "stop", "", stop_command },
+	{ "dhcp", "", dhcp_command },
+	{ "", "", NULL }
 };
 
 static void wifi_scan_callback(void *result, void *user_data)
@@ -109,7 +120,7 @@ static int startap_command(int argc, char *argv[])
 	/* Check number of arguments */
 	if (argc < 5) {
 		fprintf(stderr, "Wrong number of arguments\n");
-		usage();
+		usage(argv[1], wifi_commands);
 		ret = -1;
 		goto exit;
 	}
@@ -229,7 +240,7 @@ static int connect_command(int argc, char *argv[])
 	/* Check number of arguments */
 	if (argc < 5) {
 		fprintf(stderr, "Wrong number of arguments\n");
-		usage();
+		usage(argv[1], wifi_commands);
 		ret = -1;
 		goto exit;
 	}
@@ -393,28 +404,6 @@ exit:
 	return ret;
 }
 
-static const struct wifi_command commands[] = {
-	{ "startsta", "", startsta_command },
-	{ "startap", "<ssid> <channel> [<passphrase>]", startap_command },
-	{ "scan", "", scan_command },
-	{ "connect", "<ssid> <passphrase> [persistent]", connect_command },
-	{ "disconnect", "", disconnect_command },
-	{ "stop", "", stop_command },
-	{ "dhcp", "", dhcp_command },
-	{ "", "", NULL }
-};
-
-static void usage(void)
-{
-	const struct wifi_command *cmd = commands;
-
-	fprintf(stderr, "usage:\n");
-
-	while (cmd->fn) {
-		fprintf(stderr, "\twifi %s %s\n", cmd->name, cmd->usage);
-		cmd++;
-	}
-}
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -422,32 +411,5 @@ int main(int argc, FAR char *argv[])
 int wifictl_main(int argc, char *argv[])
 #endif
 {
-	const struct wifi_command *cmd = commands;
-
-	if (argc < 2) {
-		usage();
-		return -1;
-	}
-
-	while (cmd->fn) {
-		if (!strcmp(argv[1], cmd->name)) {
-			if (cmd->fn) {
-				char tname[32];
-
-				snprintf(tname, 32, "%s_command", cmd->name);
-				task_create(tname, SCHED_PRIORITY_DEFAULT, 8192, cmd->fn, argv);
-			}
-			break;
-		}
-
-		cmd++;
-	}
-
-	if (!cmd->fn) {
-		fprintf(stderr, "Unknown command\n");
-		usage();
-		return -1;
-	}
-
-	return 0;
+	return commands_parser(argc, argv, wifi_commands);
 }
