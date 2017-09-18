@@ -163,6 +163,7 @@ static void utc_wifi_manager_set_mode_p(void)
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 
 	wifi_manager_softap_config_s ap_config;
+	memset(ap_config.ssid, 0x00, sizeof(ap_config.ssid));
 	strncpy(ap_config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID, \
 					strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID));
 	ap_config.channel = CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_CHANNEL;
