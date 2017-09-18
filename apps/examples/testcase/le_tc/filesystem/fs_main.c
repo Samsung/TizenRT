@@ -1739,51 +1739,21 @@ static void libc_stdio_freopen_tc(void)
 
 	fp = freopen(filename, "w", NULL);
 	TC_ASSERT_NEQ("freopen", fp, NULL);
-	fclose(fp);
 
+	/* A case with non-NULL filename and valid stream */
 	fp = freopen(filename, "w", fp);
 	TC_ASSERT_NEQ("freopen", fp, NULL);
-	fclose(fp);
 
-	fp = freopen(filename, "r+", fp);
+	/* A case with NULL filename, valid stream and mode flag */
+	fp = freopen(NULL, "r", fp);
 	TC_ASSERT_NEQ("freopen", fp, NULL);
-	fclose(fp);
 
-	fp = freopen(filename, "rb", fp);
-	TC_ASSERT_NEQ("freopen", fp, NULL);
-	fclose(fp);
+	/* A negative case with NULL path, valid stream and invalid mode. It will return NULL */
+	fp = freopen(NULL, "z", fp);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
 
-	fp = freopen(filename, "rx", fp);
-	TC_ASSERT_NEQ("freopen", fp, NULL);
-	fclose(fp);
-
-	/* Nagative cases with invalid mode. It will return NULL */
-
+	/* A negative case with NULL path and stream. It will return NULL */
 	fp = freopen(NULL, "w", NULL);
-	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
-
-	fp = freopen(NULL, "b", fp);
-	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
-
-	fp = freopen(filename, "b", fp);
-	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
-
-	fp = freopen(filename, "x", fp);
-	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
-
-	fp = freopen(filename, "z", fp);
-	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
-
-	fp = freopen(filename, "+", fp);
-	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
-
-	fp = freopen(filename, "rw", fp);
-	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
-
-	fp = freopen(filename, "wr", fp);
-	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
-
-	fp = freopen(filename, "wa", fp);
 	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
 
 	TC_SUCCESS_RESULT();
