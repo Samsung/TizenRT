@@ -70,9 +70,15 @@ extern "C" {
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-
+/**
+ * @cond
+ * @internal
+ */
 void longjmp(jmp_buf env, int savesigs) noreturn_function;
 int setjmp(jmp_buf env);
+/**
+ * @endcond
+ */
 
 #ifdef __cplusplus
 }
