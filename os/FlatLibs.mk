@@ -142,6 +142,15 @@ endif
 # Add library for Framework
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT)
 
+# Add libraries for iotjs support
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libhttpparser$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libiotjs$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libjerry-core$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT)
+endif
+
 # Export all libraries
 
 EXPORTLIBS = $(TINYARALIBS)
