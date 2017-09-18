@@ -63,6 +63,16 @@ extern "C"
         goto exit;\
     } \
 
+#define VERIFY_CBOR_NOT_OUTOFMEMORY(log_tag, err, log_message) \
+    if (CborErrorOutOfMemory == (err)) \
+    { \
+        if ((log_tag) && (log_message)) \
+        { \
+            OIC_LOG_V(ERROR, (log_tag), "%s with cbor error: \'%s\'.", \
+                    (log_message), (cbor_error_string(err))); \
+        } \
+        goto exit; \
+    } \
 
 typedef struct OCResource OCResource;
 

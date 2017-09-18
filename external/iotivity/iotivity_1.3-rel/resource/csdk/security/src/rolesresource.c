@@ -464,6 +464,7 @@ OCStackResult RolesToCBORPayload(const RoleCertChain_t *roles, uint8_t **cborPay
     // Roles array
     cborEncoderResult = cbor_encode_text_string(&rolesRootMap, OIC_JSON_ROLES_NAME, strlen(OIC_JSON_ROLES_NAME));
     VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding roles name tag");
+    VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for roles name tag")
 
     // If roles is NULL, the "roles" array will be empty
     for (currChain = roles; NULL != currChain; currChain = currChain->next)
@@ -485,25 +486,32 @@ OCStackResult RolesToCBORPayload(const RoleCertChain_t *roles, uint8_t **cborPay
         // credId - mandatory
         cborEncoderResult = cbor_encode_text_string(&roleMap, OIC_JSON_CREDID_NAME, strlen(OIC_JSON_CREDID_NAME));
         VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding credId tag");
+        VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for credId tag")
         cborEncoderResult = cbor_encode_int(&roleMap, currChain->credId);
         VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding credId value");
+        VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for credId value")
 
         // subjectuuid - mandatory - always zero for role certificates
         cborEncoderResult = cbor_encode_text_string(&roleMap, OIC_JSON_SUBJECTID_NAME, strlen(OIC_JSON_SUBJECTID_NAME));
         VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding subject tag");
+        VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for subject tag")
         cborEncoderResult = cbor_encode_text_string(&roleMap, EMPTY_UUID, sizeof(EMPTY_UUID) - 1);
         VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding subject value");
+        VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for subject value")
 
         // publicData - mandatory
         cborEncoderResult = SerializeEncodingToCbor(&roleMap, OIC_JSON_PUBLICDATA_NAME, &currChain->certificate);
         VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding publicData");
+        VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for publicData")
 
         // credType - mandatory
         cborEncoderResult = cbor_encode_text_string(&roleMap, OIC_JSON_CREDTYPE_NAME, strlen(OIC_JSON_CREDTYPE_NAME));
         VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding credType tag");
+        VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for  credType tag")
         // Per security spec, only SIGNED_ASYMMETRIC_KEY is supported here.
         cborEncoderResult = cbor_encode_int(&roleMap, SIGNED_ASYMMETRIC_KEY);
         VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding credType value");
+        VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for credType value")
 
         cborEncoderResult = cbor_encoder_close_container(&rolesArray, &roleMap);
         VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed closing role map");
@@ -517,6 +525,7 @@ OCStackResult RolesToCBORPayload(const RoleCertChain_t *roles, uint8_t **cborPay
     cborEncoderResult = cbor_encode_text_string(&rolesRootMap, OIC_JSON_RT_NAME,
         strlen(OIC_JSON_RT_NAME));
     VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding RT Name Tag.");
+    VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for RT Name Tag")
     cborEncoderResult = cbor_encoder_create_array(&rolesRootMap, &rtArray, 1);
     VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding RT Value.");
     for (size_t i = 0; i < 1; i++)
@@ -524,6 +533,7 @@ OCStackResult RolesToCBORPayload(const RoleCertChain_t *roles, uint8_t **cborPay
         cborEncoderResult = cbor_encode_text_string(&rtArray, OIC_RSRC_TYPE_SEC_ROLES,
             strlen(OIC_RSRC_TYPE_SEC_ROLES));
         VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding RT Value.");
+        VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for RT Value")
     }
     cborEncoderResult = cbor_encoder_close_container(&rolesRootMap, &rtArray);
     VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing RT.");
@@ -533,6 +543,7 @@ OCStackResult RolesToCBORPayload(const RoleCertChain_t *roles, uint8_t **cborPay
     cborEncoderResult = cbor_encode_text_string(&rolesRootMap, OIC_JSON_IF_NAME,
         strlen(OIC_JSON_IF_NAME));
     VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding IF Name Tag.");
+    VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for IF Name Tag")
     cborEncoderResult = cbor_encoder_create_array(&rolesRootMap, &ifArray, 1);
     VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding IF Value.");
     for (size_t i = 0; i < 1; i++)
@@ -540,6 +551,7 @@ OCStackResult RolesToCBORPayload(const RoleCertChain_t *roles, uint8_t **cborPay
         cborEncoderResult = cbor_encode_text_string(&ifArray, OC_RSRVD_INTERFACE_DEFAULT,
             strlen(OC_RSRVD_INTERFACE_DEFAULT));
         VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding IF Value.");
+        VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for IF Value")
     }
     cborEncoderResult = cbor_encoder_close_container(&rolesRootMap, &ifArray);
     VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing IF.");
@@ -559,8 +571,9 @@ exit:
         // reallocate and try again!
         OICFree(outPayload);
         // Since the initially-allocated memory failed, double the memory.
-        cborLen += cbor_encoder_get_buffer_size(&encoder, encoder.end);
-        ret = RolesToCBORPayload(roles, cborPayload, cborSize);
+        cborLen *= 2;
+        OIC_LOG_V(DEBUG, TAG, "Roles reallocation size: %" PRIuPTR ".", cborLen);
+        ret = RolesToCBORPayload(roles, cborPayload, &cborLen);
         *cborSize = cborLen;
     }
     else if (cborEncoderResult != CborNoError)
@@ -1271,9 +1284,9 @@ OCStackResult GetEndpointRoles(const CAEndpoint_t *endpoint, OicSecRole_t **role
                 OICFree(publicKey);
                 return OC_STACK_NO_MEMORY;
             }
-            memcpy(rolesToReturn + (rolesToReturnCount * sizeof(rolesToReturn[0])),
-                currCertRoles,
-                currCertRolesCount * sizeof(currCertRoles[0]));
+            memcpy((rolesToReturn + rolesToReturnCount),
+                   currCertRoles,
+                   (currCertRolesCount * sizeof(currCertRoles[0])));
             rolesToReturnCount += currCertRolesCount;
             OICFree(currCertRoles);
         }
