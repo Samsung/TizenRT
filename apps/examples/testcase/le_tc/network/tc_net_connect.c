@@ -30,6 +30,7 @@
 #include <sys/socket.h>
 
 #include "tc_internal.h"
+#define PORTNUM 1100
 
 /**
 * @testcase				: tc_net_connect_fd_n
@@ -41,11 +42,12 @@
 */
 static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 {
-	inet_pton(AF_INET, "192.168.1.3", &(sa->sin_addr));
+	int ret;
+	inet_pton(AF_INET, (const char *)INADDR_LOOPBACK, &(sa->sin_addr));
 
-	int ret = connect(0, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
+	ret = connect(NEG_VAL, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
 
-	TC_ASSERT_EQ("connect", ret, -1);
+	TC_ASSERT_EQ("connect", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -82,16 +84,19 @@ static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 */
 static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 {
+	int ret;
+
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
+
 	struct in_addr ad;
 	ad.s_addr = INADDR_LOOPBACK;
 	sa->sin_addr = ad;
-	int ret = connect(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
+	ret = connect(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
 	close(fd);
 
-	TC_ASSERT_EQ("connect", ret, -1);
+	TC_ASSERT_EQ("connect", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -104,34 +109,40 @@ static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 */
 static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 {
+	int ret;
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
 	struct in_addr ad;
 	ad.s_addr = INADDR_LOOPBACK;
 	sa->sin_addr = ad;
-	int ret = connect(fd, (struct sockaddr *)sa, -1);
+	ret = connect(fd, (struct sockaddr *)sa, NEG_VAL);
 	close(fd);
 
-	TC_ASSERT_EQ("connect", ret, -1);
+	TC_ASSERT_EQ("connect", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
-/****************************************************************************
- * Name: connect()
- ****************************************************************************/
-
-int net_connect_main(void)
+void tc_net_connect(void)
 {
 	struct sockaddr_in sa;
 
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
-	sa.sin_port = htons(1100);
+	sa.sin_port = htons(PORTNUM);
 
 	tc_net_connect_fd_n(&sa);
 	tc_net_connect_broadcastaddr_n(&sa);
 	tc_net_connect_loopbackaddr_n(&sa);
 	tc_net_connect_socklen_n(&sa);
-	return 0;
+}
+
+/****************************************************************************
+ * Name: connect()
+ ****************************************************************************/
+
+void net_connect_main(void)
+{
+	tc_net_connect();
+
 }

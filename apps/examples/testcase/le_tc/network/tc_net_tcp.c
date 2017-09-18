@@ -18,7 +18,13 @@
 
 /// @file tc_net_tcp.c
 /// @brief Test Case Example for tcp API
+#include <net/lwip/api.h>
+#include <net/lwip/api_msg.h>
+#include <net/lwip/ipv4/ip_addr.h>
+#include <net/lwip/err.h>
 #include <net/lwip/tcp.h>
+#include <net/lwip/sockets.h>
+#include <net/lwip/pbuf.h>
 
 #include "tc_internal.h"
 /**
@@ -49,11 +55,13 @@ void tc_tcp_rexmit(void)
 void tc_pbuf_free_callback_p(void)
 {
 	struct pbuf *p = NULL;
-	int ret = -1;
+	int ret;
 
 	p = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	TC_ASSERT_NEQ("pbuf_alloc", p, NULL);
 	ret = pbuf_free_callback(p);
-	TC_ASSERT_EQ("pbuf_free_callback", ret, 0);
+	pbuf_free(p);
+	TC_ASSERT_EQ("tc_pbuf_free_callback_p", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -72,6 +80,7 @@ void tc_pbuf_free_callback_n(void)
 	TC_ASSERT_EQ("pbuf_free_callback", ret, 0);
 	TC_SUCCESS_RESULT();
 }
+
 /**
 * @statitcase			: tc_net_tcp_accept_null_n
 * @brief				:
@@ -104,10 +113,12 @@ static void tc_net_tcp_accept_null_p(void)
 	struct tcp_pcb *pcb = NULL;
 	err_t result;
 
-	if (!(pcb = (struct tcp_pcb *)malloc(sizeof(struct tcp_pcb))))
-		return;
+	pcb = (struct tcp_pcb *)malloc(sizeof(struct tcp_pcb));
+	TC_ASSERT_NEQ("malloc", pcb, NULL);
+
 	result = tcp_accept_null(arg, pcb, 0);
-	TC_ASSERT_EQ("tc_net_tcp_accept_null_p", result, ERR_ABRT);
+	TC_FREE_MEMORY(pcb);
+	TC_ASSERT_EQ("tc_net_tcp_accept_null_p", result, NET_ERR_ABRT);
 	TC_SUCCESS_RESULT();
 }
 
@@ -125,11 +136,12 @@ static void tc_net_tcp_process_refused_data_p(void)
 	struct pbuf *refused_data;
 	err_t result;
 
-	if (!(pcb = (struct tcp_pcb *)malloc(sizeof(struct tcp_pcb))))
-		return ;
+	pcb = (struct tcp_pcb *)malloc(sizeof(struct tcp_pcb));
+	TC_ASSERT_NEQ("malloc", pcb, NULL);
 	refused_data = pcb->refused_data;
 	result = tcp_process_refused_data(pcb);
-	TC_ASSERT_EQ("tc_net_tcp_process_refused_data_p", result, ERR_OK);
+	TC_FREE_MEMORY(pcb);
+	TC_ASSERT_EQ("tc_net_tcp_process_refused_data_p", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -145,11 +157,12 @@ static void tc_net_tcp_process_refused_data_p(void)
 static void tc_net_tcp_setprio_n(void)
 {
 	struct tcp_pcb *pcb;
-	u8_t prio = 129;
+	u8_t prio = TCP_PRIO_MAX + 1;
+	pcb = (struct tcp_pcb *)malloc(sizeof(struct tcp_pcb));
+	TC_ASSERT_NEQ("malloc", pcb, NULL);
 
-	if (!(pcb = (struct tcp_pcb *)malloc(sizeof(struct tcp_pcb))))
-		return;
 	tcp_setprio(pcb, prio);
+	TC_FREE_MEMORY(pcb);
 	TC_SUCCESS_RESULT();
 }
 
@@ -164,10 +177,12 @@ static void tc_net_tcp_setprio_n(void)
 static void tc_net_tcp_setprio_p(void)
 {
 	struct tcp_pcb *pcb;
-	u8_t prio = 5;
-	if (!(pcb = (struct tcp_pcb *)malloc(sizeof(struct tcp_pcb))))
-		return ;
+	u8_t prio = TCP_PRIO_NORMAL;
+	pcb = (struct tcp_pcb *)malloc(sizeof(struct tcp_pcb));
+	TC_ASSERT_NEQ("malloc", pcb, NULL);
+
 	tcp_setprio(pcb, prio);
+	TC_FREE_MEMORY(pcb);
 	TC_SUCCESS_RESULT();
 }
 
@@ -182,7 +197,7 @@ static void tc_net_tcp_setprio_p(void)
 static void tc_net_tcp_kill_prio_p(void)
 {
 	u8_t prio;
-	prio = 5;
+	prio = TCP_PRIO_NORMAL;
 	tcp_kill_prio(prio);
 	TC_SUCCESS_RESULT();
 }
@@ -198,7 +213,7 @@ static void tc_net_tcp_kill_prio_p(void)
 static void tc_net_tcp_kill_prio_n(void)
 {
 	u8_t prio;
-	prio = 0;
+	prio = TCP_PRIO_MIN - 1;
 	tcp_kill_prio(prio);
 	TC_SUCCESS_RESULT();
 }
@@ -216,8 +231,8 @@ static void tc_net_tcp_recv_null_n(void)
 	struct tcp_pcb *pcb = NULL;
 	struct pbuf *p = NULL;
 	err_t result;
-	result = tcp_recv_null(NULL, pcb, p, 0);
-	TC_ASSERT_EQ("tc_net_tcp_recv_null_n", result, ERR_VAL);
+	result = tcp_recv_null(NULL, pcb, p, NEG_VAL);
+	TC_ASSERT_EQ("tc_net_tcp_recv_null_n", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -234,26 +249,15 @@ static void tc_net_tcp_recv_null_p(void)
 	struct tcp_pcb *pcb = NULL;
 	struct pbuf *p = NULL;
 	err_t result;
-	if (!(pcb = (struct tcp_pcb *)malloc(sizeof(struct tcp_pcb))))
-		return;
-	if (!(p = (struct pbuf *)malloc(sizeof(struct pbuf))))
-		return;
-	result = tcp_recv_null(NULL, pcb, p, 0);
-	TC_ASSERT_EQ("tc_net_tcp_recv_null_p", result, ERR_OK);
-	TC_SUCCESS_RESULT();
-}
+	pcb = (struct tcp_pcb *)malloc(sizeof(struct tcp_pcb));
+	TC_ASSERT_NEQ("malloc", pcb, NULL);
+	p = (struct pbuf *)malloc(sizeof(struct pbuf));
+	TC_ASSERT_NEQ("malloc", p, NULL);
 
-/**
-* @statitcase			: tcp_kill_timewait_p
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_kill_timewait
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_tcp_kill_timewait_p(void)
-{
-	tcp_kill_timewait();
+	result = tcp_recv_null(NULL, pcb, p, 0);
+	TC_FREE_MEMORY(pcb);
+	TC_FREE_MEMORY(p);
+	TC_ASSERT_EQ("tc_net_tcp_recv_null_p", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -268,8 +272,10 @@ static void tc_net_tcp_kill_timewait_p(void)
 static void tc_net_tcp_debug_state_str_p(void)
 {
 	const char *result;
-	result = tcp_debug_state_str(0);
-	TC_ASSERT_EQ("tc_net_tcp_debug_state_str_p", result, "CLOSED");
+	int ret;
+	result = tcp_debug_state_str(CLOSED);
+	ret = strcmp(result, "CLOSED");
+	TC_ASSERT_EQ("tc_net_tcp_debug_state_str_p", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -284,8 +290,10 @@ static void tc_net_tcp_debug_state_str_p(void)
 static void tc_net_tcp_debug_state_str_n(void)
 {
 	const char *result;
-	result = tcp_debug_state_str(0);
-	TC_ASSERT_NEQ("tc_net_tcp_debug_state_str_n", result, "LISTEN");
+	int ret;
+	result = tcp_debug_state_str(CLOSED);
+	ret = strcmp(result, "LISTEN");
+	TC_ASSERT_NEQ("tc_net_tcp_debug_state_str_n", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -308,7 +316,6 @@ int net_tcp_main(void)
 	tc_net_tcp_kill_prio_n();
 	tc_net_tcp_recv_null_n();
 	tc_net_tcp_recv_null_p();
-	tc_net_tcp_kill_timewait_p();
 	tc_net_tcp_debug_state_str_p();
 	tc_net_tcp_debug_state_str_n();
 	tc_tcp_rexmit();

@@ -17,6 +17,9 @@
  ****************************************************************************/
 
 #include "tc_internal.h"
+#include <net/lwip/netif.h>
+#include <net/lwip/netifapi.h>
+#include <net/lwip/ipv4/ip_addr.h>
 
 /**
 * @testcase				: tc_do_netif_api_netif_add
@@ -28,8 +31,19 @@
 */
 static void tc_do_netifapi_netif_add_n(void)
 {
-	struct netifapi_msg_msg *msg = NULL;
+	struct netifapi_msg msg;
+	struct netif *netif = NULL;
 
+	ip_addr_t remote_ip, local_ip, netmask;
+	memset(netif, 0, sizeof(struct netif));
+
+	IP4_ADDR(&local_ip, 192, 168, 1, 1);
+	IP4_ADDR(&remote_ip, 192, 168, 1, 2);
+	IP4_ADDR(&netmask, 255, 255, 255, 0);
+
+	ip_addr_copy(netif->netmask, netmask);
+	ip_addr_copy(netif->ip_addr, local_ip);
+	msg.msg.netif = netif;
 	do_netifapi_netif_add(msg);
 	TC_SUCCESS_RESULT();
 }
@@ -42,4 +56,3 @@ int net_lwip_netifapi_main(void)
 	tc_do_netifapi_netif_add_n();
 	return 0;
 }
-

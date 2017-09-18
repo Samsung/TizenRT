@@ -79,12 +79,11 @@ void recv_signal(void)
 void tc_net_recv_p(int fd)
 {
 	char buffer[MAXRCVLEN];
-	int ret = recv(fd, buffer, MAXRCVLEN, 0);
+	int ret = recv(fd, buffer, MAXRCVLEN, ZERO);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_NEQ("recv", ret, -1);
+	TC_ASSERT_NEQ("recv", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -99,12 +98,11 @@ void tc_net_recv_n(int fd)
 {
 	char buffer[MAXRCVLEN];
 
-	int ret = recv(-1, buffer, MAXRCVLEN, 0);
+	int ret = recv(NEG_VAL, buffer, MAXRCVLEN, ZERO);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_EQ("recv", ret, -1);
+	TC_ASSERT_EQ("recv", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -119,12 +117,11 @@ void tc_net_recv_shutdown_n(int fd)
 {
 	char buffer[MAXRCVLEN];
 	shutdown(fd, SHUT_RD);
-	int ret = recv(fd, buffer, MAXRCVLEN, 0);
+	int ret = recv(fd, buffer, MAXRCVLEN, ZERO);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_EQ("recv", ret, -1);
+	TC_ASSERT_EQ("recv", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -139,12 +136,11 @@ void tc_net_recv_close_n(int fd)
 {
 	char buffer[MAXRCVLEN];
 	close(fd);
-	int ret = recv(fd, buffer, MAXRCVLEN, 0);
+	int ret = recv(fd, buffer, MAXRCVLEN, ZERO);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_EQ("recv", ret, -1);
+	TC_ASSERT_EQ("recv", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -158,31 +154,22 @@ void tc_net_recv_close_n(int fd)
 */
 void *recv_server(void *args)
 {
-
-	char *msg = "Hello World !\n";
+	int ConnectFD;
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-
-	listen(SocketFD, 2);
+	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	listen(sock, 2);
 	recv_signal();
-	int ConnectFD = accept(SocketFD, NULL, NULL);
-	int i;
-	for (i = 0; i < 6; i++)
-		send(ConnectFD, msg, strlen(msg), 0);
+	ConnectFD = accept(sock, NULL, NULL);
 
 	close(ConnectFD);
-
-	close(SocketFD);
-	return 0;
-
+	return NULL;
 }
 
 /**
@@ -196,28 +183,33 @@ void *recv_server(void *args)
 */
 void *recv_client(void *args)
 {
-
-	int mysocket;
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in dest;
-
-	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	int ret;
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 
 	recv_wait();
 
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	tc_net_recv_p(mysocket);
-	tc_net_recv_n(mysocket);
-	tc_net_recv_shutdown_n(mysocket);
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	tc_net_recv_close_n(mysocket);
-	close(mysocket);
-	return 0;
+	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	tc_net_recv_p(sock);
+	tc_net_recv_n(sock);
+	tc_net_recv_shutdown_n(sock);
+	tc_net_recv_close_n(NEG_VAL);
+	close(sock);
+	return NULL;
+}
 
+void tc_net_recv(void)
+{
+	pthread_t Server, Client;
+
+	pthread_create(&Server, NULL, recv_server, NULL);
+	pthread_create(&Client, NULL, recv_client, NULL);
+	pthread_join(Server, NULL);
+	pthread_join(Client, NULL);
 }
 
 /****************************************************************************
@@ -225,15 +217,6 @@ void *recv_client(void *args)
  ****************************************************************************/
 int net_recv_main(void)
 {
-
-	pthread_t Server, Client;
-
-	pthread_create(&Server, NULL, recv_server, NULL);
-	pthread_create(&Client, NULL, recv_client, NULL);
-
-	pthread_join(Server, NULL);
-
-	pthread_join(Client, NULL);
-
+	tc_net_recv();
 	return 0;
 }

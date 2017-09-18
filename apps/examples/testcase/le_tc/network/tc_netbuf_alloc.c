@@ -29,17 +29,15 @@
 */
 static void tc_netbuf_alloc_p(void)
 {
-	struct netbuf *buf = NULL;
-	int result = 0;
+	struct netbuf buf;
+	char *result;
+	result = netbuf_alloc(&buf, sizeof(struct netbuf));
 
-	buf = netbuf_alloc(buf, sizeof(struct netbuf));
-	if (buf) {
-		result = 1;
-		netbuf_free(buf);
-	}
-
-	TC_ASSERT_NEQ("netbuf_alloc", result, 0)
+	TC_ASSERT_NEQ("netbuf_alloc", result, NULL);
 	TC_SUCCESS_RESULT();
+
+	pbuf_free(buf.p);
+	buf.ptr = NULL;
 }
 
 /****************************************************************************

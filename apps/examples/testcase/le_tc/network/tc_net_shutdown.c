@@ -81,7 +81,7 @@ void tc_net_shutdown_recv_p(int fd)
 {
 	int ret = shutdown(fd, SHUT_RD);
 
-	TC_ASSERT_NEQ("shutdown", ret, -1);
+	TC_ASSERT_NEQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -98,9 +98,8 @@ void tc_net_shutdown_send_p(int fd)
 {
 	int ret = shutdown(fd, SHUT_WR);
 
-	TC_ASSERT_NEQ("shutdown", ret, -1);
+	TC_ASSERT_NEQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -115,7 +114,7 @@ void tc_net_shutdown_sendrecv_p(int fd)
 {
 	int ret = shutdown(fd, SHUT_RDWR);
 
-	TC_ASSERT_NEQ("shutdown", ret, -1);
+	TC_ASSERT_NEQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -130,9 +129,9 @@ void tc_net_shutdown_sendrecv_p(int fd)
 */
 void tc_net_shutdown_n(void)
 {
-	int ret = shutdown(-1, SHUT_RDWR);
+	int ret = shutdown(NEG_VAL, SHUT_RDWR);
 
-	TC_ASSERT_EQ("shutdown", ret, -1);
+	TC_ASSERT_EQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -149,9 +148,8 @@ void tc_net_shutdown_sock_n(int fd)
 {
 	int ret = shutdown(fd, SHUT_RD);
 
-	TC_ASSERT_EQ("shutdown", ret, -1);
+	TC_ASSERT_EQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -165,38 +163,31 @@ void tc_net_shutdown_sock_n(int fd)
 */
 void *shutdown_server(void *args)
 {
+	int ConnectFD;
 	char *msg = "Hello World !\n";
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	memset(&sa, 0, sizeof(sa));
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-
-	listen(SocketFD, 1);
-
+	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	listen(sock, 1);
 	shutdown_signal();
 
-	int ConnectFD = accept(SocketFD, NULL, NULL);
+	ConnectFD = accept(sock, NULL, NULL);
 	tc_net_shutdown_send_p(ConnectFD);
-	int val = send(ConnectFD, msg, strlen(msg), 0);
-	if (val == -1)
-		printf("\nShutdown send successful %d\n", errno);
+	send(ConnectFD, msg, strlen(msg), ZERO);
 	tc_net_shutdown_recv_p(ConnectFD);
-	val = recv(ConnectFD, msg, 1024, 0);
-	if (val == -1)
-		printf("\nShutdown recv successful %d\n", errno);
+	recv(ConnectFD, msg, 1024, 0);
 	tc_net_shutdown_n();
-	tc_net_shutdown_sock_n(SocketFD);
+	tc_net_shutdown_sock_n(sock);
 	close(ConnectFD);
-	close(SocketFD);
-
-	return 0;
-
+	close(sock);
+	return NULL;
 }
 
 /**
@@ -211,36 +202,44 @@ void *shutdown_server(void *args)
 void *shutdown_client(void *args)
 {
 	char buffer[MAXRCVLEN];
-	int len, mysocket;
+	int len;
 	struct sockaddr_in dest;
 
-	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 
 	shutdown_wait();
 
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	len = recv(mysocket, buffer, MAXRCVLEN, 0);
-	buffer[len] = '\0';
-	tc_net_shutdown_recv_p(mysocket);
-	int val = recv(mysocket, buffer, MAXRCVLEN, 0);
-	if (val == -1)
-		printf("\nShutdown recv successful %d\n", errno);
-	tc_net_shutdown_sendrecv_p(mysocket);
-	val = recv(mysocket, buffer, MAXRCVLEN, 0);
-	if (val == -1)
-		printf("\nShutdown recv successful %d\n", errno);
-	val = send(mysocket, buffer, strlen(buffer), 0);
-	if (val == -1)
-		printf("\nShutdown recv successful %d\n", errno);
-	tc_net_shutdown_n();
-	close(mysocket);
-	return 0;
+	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 
+	len = recv(sock, buffer, MAXRCVLEN, ZERO);
+	buffer[len] = '\0';
+	tc_net_shutdown_recv_p(sock);
+
+	recv(sock, buffer, MAXRCVLEN, ZERO);
+	tc_net_shutdown_sendrecv_p(sock);
+	recv(sock, buffer, MAXRCVLEN, ZERO);
+	tc_net_shutdown_sendrecv_p(sock);
+	send(sock, buffer, strlen(buffer), ZERO);
+	tc_net_shutdown_sendrecv_p(sock);
+	tc_net_shutdown_n();
+	close(sock);
+	return NULL;
+}
+
+void tc_net_shutdown(void)
+{
+	pthread_t Server, Client;
+
+	pthread_create(&Server, NULL, shutdown_server, NULL);
+	pthread_create(&Client, NULL, shutdown_client, NULL);
+
+	pthread_join(Server, NULL);
+	pthread_join(Client, NULL);
 }
 
 /****************************************************************************
@@ -249,14 +248,7 @@ void *shutdown_client(void *args)
 int net_shutdown_main(void)
 {
 
-	pthread_t Server, Client;
-
-	pthread_create(&Server, NULL, shutdown_server, NULL);
-	pthread_create(&Client, NULL, shutdown_client, NULL);
-
-	pthread_join(Server, NULL);
-
-	pthread_join(Client, NULL);
+	tc_net_shutdown();
 
 	return 0;
 }

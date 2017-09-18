@@ -33,16 +33,9 @@
 */
 void tc_net_mem_trim_p(void *buf)
 {
-	int result = 0;
-
-	if (buf) {
-		buf = (struct netbuf *)mem_trim(buf, 2 * sizeof(struct netbuf));
-		if (buf) {
-			result = 1;
-		}
-		TC_ASSERT_GEQ("mem_calloc", result, 1);
-		TC_SUCCESS_RESULT();
-	}
+	buf = (struct netbuf *)mem_trim(buf, 2 * sizeof(struct netbuf));
+	TC_ASSERT_NEQ("mem_trim", buf, NULL);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -56,16 +49,13 @@ void tc_net_mem_trim_p(void *buf)
 void tc_net_mem_calloc_p(void)
 {
 	struct netbuf *p1 = NULL;
-	int result = 0;
 
 	p1 = (struct netbuf *)mem_calloc(COUNT1, sizeof(struct netbuf));
+	TC_ASSERT_NEQ("mem_calloc", p1, NULL);
 
-	if (p1) {
-		result = 1;
-		tc_net_mem_trim_p(p1);
-		mem_free(p1);
-	}
-	TC_ASSERT_GEQ("mem_calloc", result, 1);
+	tc_net_mem_trim_p(p1);
+	mem_free(p1);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -77,4 +67,3 @@ int net_mem_allocate_main(void)
 	tc_net_mem_calloc_p();
 	return 0;
 }
-

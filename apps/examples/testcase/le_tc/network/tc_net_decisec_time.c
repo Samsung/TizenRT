@@ -22,39 +22,23 @@
 
 #include "tc_internal.h"
 
+#define DESISEC 1000
+
 /**
-* @testcase					: tc_net_decisec_dsec2tick_p
+* @testcase					: tc_net_decisec_dsec2tick
 * @brief					:
 * @scenario					:
 * @apicovered				: net_dsec2tick
 * @precondition				:
 * @postcondition			:
 */
-static void tc_net_decisec_dsec2tick_p(void)
+static void tc_net_decisec_dsec2tick(void)
 {
-	int ret = -1;
-	int dsec = 1000;
+	int ret;
+	int dsec = DESISEC;
 
 	ret = net_dsec2tick(dsec);
-	TC_ASSERT_NEQ("time", ret, -1);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase					: tc_net_decisec_dsec2tick_n
-* @brief					:
-* @scenario					:
-* @apicovered				: net_dsec2tick
-* @precondition				:
-* @postcondition			:
-*/
-static void tc_net_decisec_dsec2tick_n(void)
-{
-	int ret = -1;
-	int dsec = 0;
-
-	ret = net_dsec2tick(dsec);
-	TC_ASSERT_EQ("time", ret, -1);
+	TC_ASSERT_GEQ("time", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -68,60 +52,40 @@ static void tc_net_decisec_dsec2tick_n(void)
 */
 static void tc_net_decisec_dsec2timeval(void)
 {
-	struct timeval *tv;
-	int dsec = 1000;
-	tv = (struct timeval *)malloc(sizeof(struct timeval));
+	int val, tv_sec;
+	int dsec = DESISEC;
+	struct timeval tv;
 
-	net_dsec2timeval(dsec, tv);
+	val = dsec / DSEC_PER_SEC;
+	net_dsec2timeval(dsec, &tv);
+	tv_sec = tv.tv_sec;
+
+	TC_ASSERT_EQ("time", val, tv_sec);
 	TC_SUCCESS_RESULT();
 }
 
 /**
-* @testcase					: tc_net_decisec_timeval2dsec_p
+* @testcase					: tc_net_decisec_timeval2dsec
 * @brief					:
 * @scenario					:
 * @apicovered				: net_timeval2dsec
 * @precondition				:
 * @postcondition			:
 */
-static void tc_net_decisec_timeval2dsec_p(void)
+static void tc_net_decisec_timeval2dsec(void)
 {
+	int dsec = DESISEC;
 	unsigned int ret;
 	uint16_t remainder;
-	struct timeval *tv;
-	int dsec = 1000;
+	struct timeval tv;
 
-	tv = (struct timeval *)malloc(sizeof(struct timeval));
-	tv->tv_sec = dsec / DSEC_PER_SEC;
-	remainder = dsec - tv->tv_sec * DSEC_PER_SEC;
-	tv->tv_usec = remainder * USEC_PER_DSEC;
+	tv.tv_sec = dsec / DSEC_PER_SEC;
+	remainder = dsec - tv.tv_sec * DSEC_PER_SEC;
+	tv.tv_usec = remainder * USEC_PER_DSEC;
 
-	ret = net_timeval2dsec(tv);
-	TC_ASSERT_NEQ("time", ret, 0);
-	TC_SUCCESS_RESULT();
-}
+	ret = net_timeval2dsec(&tv);
 
-/**
-* @testcase					: tc_net_decisec_timeval2dsec_n
-* @brief					:
-* @scenario					:
-* @apicovered				: net_timeval2dsec
-* @precondition				:
-* @postcondition			:
-*/
-static void tc_net_decisec_timeval2dsec_n(void)
-{
-	unsigned int ret;
-	struct timeval *tv;
-	uint16_t remainder = 0;
-	int dsec = 1000;
-
-	tv = (struct timeval *)malloc(sizeof(struct timeval));
-	tv->tv_sec = dsec / DSEC_PER_SEC;
-	tv->tv_usec = remainder * USEC_PER_DSEC;
-
-	ret = net_timeval2dsec(tv);
-	TC_ASSERT_EQ("time", ret, 0);
+	TC_ASSERT_GEQ("time", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -130,10 +94,8 @@ static void tc_net_decisec_timeval2dsec_n(void)
  ****************************************************************************/
 int net_decisec_time_main(void)
 {
-	tc_net_decisec_dsec2tick_p();
-	tc_net_decisec_dsec2tick_n();
+	tc_net_decisec_dsec2tick();
 	tc_net_decisec_dsec2timeval();
-	tc_net_decisec_timeval2dsec_p();
-	tc_net_decisec_timeval2dsec_n();
+	tc_net_decisec_timeval2dsec();
 	return 0;
 }

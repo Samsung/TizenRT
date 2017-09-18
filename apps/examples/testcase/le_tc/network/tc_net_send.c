@@ -79,16 +79,14 @@ void signal1(void)
 */
 void tc_net_send_p(int fd)
 {
-
 	char *msg = "Hello World !\n";
 	int ConnectFD = accept(fd, NULL, NULL);
 	int ret = send(ConnectFD, msg, strlen(msg), 0);
 
-	TC_ASSERT_NEQ("send", ret, -1);
+	TC_ASSERT_NEQ("send", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 	close(ConnectFD);
-
 }
 
 /**
@@ -102,25 +100,24 @@ void tc_net_send_p(int fd)
 */
 void *server(void *args)
 {
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 
-	listen(SocketFD, 2);
+	listen(sock, 2);
 
 	signal1();
-	tc_net_send_p(SocketFD);
+	tc_net_send_p(sock);
 
-	close(SocketFD);
-	return 0;
+	close(sock);
+	return NULL;
 }
 
 /**
@@ -136,25 +133,38 @@ void *client(void *args)
 {
 
 	char buffer[MAXRCVLEN];
-	int len, mysocket;
+	int len, ret;
 	struct sockaddr_in dest;
-
-	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 
 	wait1();
 
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	len = recv(mysocket, buffer, MAXRCVLEN, 0);
+	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	len = recv(sock, buffer, MAXRCVLEN, 0);
 	buffer[len] = '\0';
 
-	close(mysocket);
-	return 0;
+	close(sock);
+	return NULL;
+}
 
+void tc_net_send(void)
+{
+	int ret;
+	pthread_t Server, Client;
+
+	ret = pthread_create(&Server, NULL, server, NULL);
+	TC_ASSERT_EQ("pthread_create", ret, ZERO);
+	ret = pthread_create(&Client, NULL, client, NULL);
+	TC_ASSERT_EQ("pthread_create", ret, ZERO);
+	ret = pthread_join(Server, NULL);
+	TC_ASSERT_EQ("pthread_join", ret, ZERO);
+	ret = pthread_join(Client, NULL);
+	TC_ASSERT_EQ("pthread_join", ret, ZERO);
 }
 
 /****************************************************************************
@@ -163,14 +173,6 @@ void *client(void *args)
 int net_send_main(void)
 {
 
-	pthread_t Server, Client;
-
-	pthread_create(&Server, NULL, server, NULL);
-	pthread_create(&Client, NULL, client, NULL);
-
-	pthread_join(Server, NULL);
-
-	pthread_join(Client, NULL);
-
+	tc_net_send();
 	return 0;
 }

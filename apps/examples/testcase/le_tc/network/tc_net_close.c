@@ -42,11 +42,10 @@
 */
 static void tc_net_close_p(void)
 {
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = close(fd);
 
-	TC_ASSERT_NEQ("close", ret, -1);
+	TC_ASSERT_NEQ("close", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -60,12 +59,10 @@ static void tc_net_close_p(void)
 */
 static void tc_net_close_n(void)
 {
-	int fd = -1;
-	int ret = close(fd);
+	int ret = close(NEG_VAL);
 
-	TC_ASSERT_NEQ("close", ret, 0);
+	TC_ASSERT_NEQ("close", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************

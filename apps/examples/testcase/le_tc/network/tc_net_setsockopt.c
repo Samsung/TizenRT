@@ -34,169 +34,6 @@
 #include "tc_internal.h"
 
 /**
-* @fn                   :tc_net_setsockopt_multicast_ttl_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-*/
-/*
-static void tc_net_setsockopt_multicast_ttl_p(int s)
-{
-  int ret = -1;
-  u8_t optval = 1;
-  ret = setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &optval, sizeof(optval));
-  if (ret < 0) {
-    printf("tc_net_setsockopt_multicast_ttl_p: SETSOCKOPT Multicast failure \n");
-    nw_total_fail++;
-    RETURN_ERR;
-  }
-
-  printf("tc_net_setsockopt_multicast_ttl_p: PASS\n");
-  nw_total_pass++;
-}
-*/
-/**
-* @fn                   :tc_net_setsockopt_multicast_ttl_loop_own_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-*/
-/*
-static void tc_net_setsockopt_multicast_ttl_loop_own_p(int s)
-{
-  int ret = -1;
-  u8_t loop = 1;
-  ret = setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-  if (ret < 0) {
-    printf("tc_net_setsockopt_multicast_ttl_loop_own_p: SETSOCKOPT Multicast failure \n");
-    nw_total_fail++;
-    RETURN_ERR;
-  }
-
-  printf("tc_net_setsockopt_multicast_ttl_loop_own_p: PASS\n");
-  nw_total_pass++;
-}
-*/
-/**
-* @fn                   :tc_net_setsockopt_multicast_ttl_loop_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-*/
-/*
-static void tc_net_setsockopt_multicast_ttl_loop_p(int s)
-{
-  int ret = -1;
-  u8_t loop = 250;
-  ret = setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-  if (ret < 0) {
-    printf("tc_net_setsockopt_multicast_ttl_loop_p: SETSOCKOPT Multicast failure \n");
-    nw_total_fail++;
-    RETURN_ERR;
-  }
-
-  printf("tc_net_setsockopt_multicast_ttl_loop_p: PASS\n");
-  nw_total_pass++;
-}
-*/
-/**
-* @fn                   :tc_net_setsockopt_multicast_if_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor, ipv4 addr
-* Postconditions        :
-* @return               :void
-*/
-/*
-static void tc_net_setsockopt_multicast_if_p(int s, const char *my_ipv4addr)
-{
-  int ret = -1;
-  struct sockaddr_in interface_addr;
-  interface_addr.sin_addr.s_addr = inet_addr(my_ipv4addr);
-
-  ret = setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, &interface_addr, sizeof(interface_addr));
-  if (ret < 0) {
-    printf("tc_net_setsockopt_multicast_if_p: SETSOCKOPT Multicast failure \n");
-    nw_total_fail++;
-    RETURN_ERR;
-  }
-
-  printf("tc_net_setsockopt_multicast_if_p: PASS\n");
-  nw_total_pass++;
-}
-*/
-/**
-* @fn                   :tc_net_setsockopt_multicast_add_group_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor, group ipv4 addr
-* Postconditions        :
-* @return               :void
-*/
-/*
-static void tc_net_setsockopt_multicast_add_group_p(int s,
-    const char *group_ipv4addr)
-{
-  int ret = -1;
-  struct ip_mreq mreq;
-
-  mreq.imr_multiaddr.s_addr = inet_addr(group_ipv4addr);
-  //mreq.imr_interface.s_addr=htonl(INADDR_ANY);
-  ret = setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
-
-  if (ret < 0) {
-    printf("tc_net_setsockopt_multicast_add_group_p: SETSOCKOPT Multicast failure \n");
-    nw_total_fail++;
-    RETURN_ERR;
-  }
-
-  printf("tc_net_setsockopt_multicast_add_group_p: PASS\n");
-  nw_total_pass++;
-}
-*/
-/**
-* @fn                   :tc_net_setsockopt_multicast_drop_group_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor, group ipv4 addr
-* Postconditions        :
-* @return               :void
-*/
-/*
-static void tc_net_setsockopt_multicast_drop_group_p(int s,
-    const char *group_ipv4addr)
-{
-  int ret = -1;
-  struct ip_mreq mreq;
-
-  mreq.imr_multiaddr.s_addr = inet_addr(group_ipv4addr);
-  mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-  ret = setsockopt(s, IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
-
-  if (ret < 0) {
-    printf("tc_net_setsockopt_multicast_add_group_p: SETSOCKOPT Multicast failure \n");
-    nw_total_fail++;
-    RETURN_ERR;
-  }
-
-  printf("tc_net_setsockopt_multicast_add_group_p: PASS\n");
-  nw_total_pass++;
-}
-*/
-
-/**
    * @testcase		   :tc_net_setsockopt_multicast_tcp_nodelay_p
    * @brief		   :
    * @scenario		   :
@@ -206,14 +43,12 @@ static void tc_net_setsockopt_multicast_drop_group_p(int s,
    */
 static void tc_net_setsockopt_multicast_tcp_nodelay_p(int s)
 {
-	int ret = -1;
+	int ret;
 	int option = 1;
 
 	ret = setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &option, sizeof(option));
-
-	TC_ASSERT_GEQ("setsockopt", ret, 0);
+	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -226,14 +61,12 @@ static void tc_net_setsockopt_multicast_tcp_nodelay_p(int s)
    */
 static void tc_net_setsockopt_multicast_tcp_keepalive_p(int s)
 {
-	int ret = -1;
+	int ret;
 	int option = 1;
 
 	ret = setsockopt(s, IPPROTO_TCP, TCP_KEEPALIVE, &option, sizeof(option));
-
-	TC_ASSERT_GEQ("setsockopt", ret, 0);
+	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -246,14 +79,12 @@ static void tc_net_setsockopt_multicast_tcp_keepalive_p(int s)
    */
 static void tc_net_setsockopt_multicast_tcp_keepidle_p(int s)
 {
-	int ret = -1;
+	int ret;
 	int keepidle = 30;
 
 	ret = setsockopt(s, IPPROTO_TCP, TCP_KEEPIDLE, &keepidle, sizeof(keepidle));
-
-	TC_ASSERT_GEQ("setsockopt", ret, 0);
+	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -266,14 +97,12 @@ static void tc_net_setsockopt_multicast_tcp_keepidle_p(int s)
    */
 static void tc_net_setsockopt_multicast_tcp_keepintvl_p(int s)
 {
-	int ret = -1;
+	int ret;
 	int keepintvl = 120;
 
 	ret = setsockopt(s, IPPROTO_TCP, TCP_KEEPINTVL, &keepintvl, sizeof(keepintvl));
-
-	TC_ASSERT_GEQ("setsockopt", ret, 0);
+	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -286,14 +115,13 @@ static void tc_net_setsockopt_multicast_tcp_keepintvl_p(int s)
    */
 static void tc_net_setsockopt_multicast_tcp_keepcnt_p(int s)
 {
-	int ret = -1;
+	int ret;
 	int keepcnt = 5;
 
 	ret = setsockopt(s, IPPROTO_TCP, TCP_KEEPCNT, &keepcnt, sizeof(keepcnt));
 
-	TC_ASSERT_GEQ("setsockopt", ret, 0);
+	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -306,68 +134,14 @@ static void tc_net_setsockopt_multicast_tcp_keepcnt_p(int s)
    */
 static void tc_net_setsockopt_ip_tos_p(int s)
 {
-	int ret = -1;
+	int ret;
 	int optval = 1;
 
 	ret = setsockopt(s, IPPROTO_IP, IP_TOS, &optval, sizeof(optval));
 
-	TC_ASSERT_GEQ("setsockopt", ret, 0);
+	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
-
-/**
-* @fn                   :tc_net_setsockopt_ip_ttl_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-*/
-/*
-static void tc_net_setsockopt_ip_ttl_p(int s)
-{
-  int ret = -1;
-  int optval = 1;
-
-  ret = setsockopt(s, IPPROTO_IP, IP_TTL, &optval, sizeof(optval));
-  if (ret < 0) {
-    printf("tc_net_setsockopt_ip_ttl_p FAIL: setopt SO_IP_TTL failure \n");
-    nw_total_fail++;
-    RETURN_ERR;
-  }
-
-  printf("tc_net_setsockopt_ip_ttl_p PASS\n");
-  nw_total_pass++;
-}
-*/
-/**
-* @fn                   :tc_net_setsockopt_no_check_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-*/
-/*
-static void tc_net_setsockopt_no_check_p(int s)
-{
-  int ret = -1;
-  int optval = 1;
-
-  ret = setsockopt(s, SOL_SOCKET, SO_NO_CHECK, &optval, sizeof(optval));
-  if (ret < 0) {
-    printf("tc_net_setsockopt_no_check_p FAIL: setopt SO_NO_CHECK failure \n");
-    nw_total_fail++;
-    RETURN_ERR;
-  }
-
-  printf("tc_net_setsockopt_no_check_p PASS\n");
-  nw_total_pass++;
-}
-*/
 
 /**
    * @testcase		   :tc_net_setsockopt_broadcast_p
@@ -379,44 +153,13 @@ static void tc_net_setsockopt_no_check_p(int s)
    */
 static void tc_net_setsockopt_broadcast_p(int s)
 {
-	int ret = 0;
+	int ret;
 	int optval = 1;				//broadcast value
 
 	ret = setsockopt(s, SOL_SOCKET, SO_BROADCAST, &optval, sizeof optval);
-
-	TC_ASSERT_GEQ("setsockopt", ret, 0);
+	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
-
-/**
-* @fn                   :tc_net_setsockopt_sndtimo_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-*/
-/*
-static void tc_net_setsockopt_sndtimo_p(int s)
-{
-  int ret = -1;
-  struct timeval timeout;
-  timeout.tv_sec = 10;
-  timeout.tv_usec = 0;
-
-  ret = setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout));
-  if (ret < 0) {
-    printf("tc_net_setsockopt_sndtimo_p FAIL: setopt SO_SNDTIMO failure \n");
-    nw_total_fail++;
-    RETURN_ERR;
-  }
-
-  printf("tc_net_setsockopt_sndtimo_p PASS\n");
-  nw_total_pass++;
-}
-*/
 
 /**
    * @testcase		   :tc_net_setsockopt_rcvtimo_p
@@ -428,16 +171,14 @@ static void tc_net_setsockopt_sndtimo_p(int s)
    */
 static void tc_net_setsockopt_rcvtimo_p(int s)
 {
-	int ret = -1;
+	int ret;
 	struct timeval tv;
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 
 	ret = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval));
-
-	TC_ASSERT_GEQ("setsockopt", ret, 0);
+	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -450,14 +191,12 @@ static void tc_net_setsockopt_rcvtimo_p(int s)
    */
 static void tc_net_setsockopt_reuseaddr_p(int s)
 {
-	int ret = -1;
+	int ret;
 	int option = 1;
 
 	ret = setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&option, sizeof option);
-
-	TC_ASSERT_GEQ("setsockopt", ret, 0);
+	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -470,42 +209,13 @@ static void tc_net_setsockopt_reuseaddr_p(int s)
    */
 static void tc_net_setsockopt_reuseport_p(int s)
 {
-	int ret = -1;
+	int ret;
 	int option = 1;
 
 	ret = setsockopt(s, SOL_SOCKET, SO_REUSEPORT, (char *)&option, sizeof option);
-
-	TC_ASSERT_GEQ("setsockopt", ret, 0);
+	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
-
-/**
-* @fn                   :tc_net_setsockopt_rcvbuf_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-*/
-/*
-static void tc_net_setsockopt_rcvbuf_p(int s)
-{
-  int ret = -1;
-  int size = 1000;
-
-  ret = setsockopt(s, SOL_SOCKET, SO_RCVBUF, &size, size);
-  if (ret < 0) {
-    printf("tc_net_setsockopt_rcvbuf_p FAIL: setopt SO_RCVBUF failure \n");
-    nw_total_fail++;
-    RETURN_ERR;
-  }
-
-  printf("tc_net_setsockopt_rcvbuf_p PASS\n");
-  nw_total_pass++;
-}
-*/
 
 /**
    * @testcase		   :tc_net_setsockopt_keepalive_p
@@ -517,65 +227,13 @@ static void tc_net_setsockopt_rcvbuf_p(int s)
    */
 static void tc_net_setsockopt_keepalive_p(int s)
 {
-	int ret = -1;
+	int ret;
 	int optval = 1;
 
 	ret = setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof optval);
-
-	TC_ASSERT_GEQ("setsockopt", ret, 0);
+	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
-
-/**
-* @fn                   :tc_net_setsockopt_ipproto_ip_ip_pktinfo_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-
-static void tc_net_setsockopt_ipproto_ip_ip_pktinfo_p(int s)
-{
-    int ret = -1;
-    int optval=1;
-
-    ret = setsockopt(s, IPPROTO_IP, IP_PKTINFO, &optval, sizeof(optval));;
-    if (ret < 0) {
-		printf("tc_net_setsockopt_ipproto_ip_ip_pktinfo_p FAIL: setopt KEEPALIVE failure\n");
-		nw_total_fail++;
-		RETURN_ERR;
-    }
-
-    printf("tc_net_setsockopt_ipproto_ip_ip_pktinfo_p PASS\n");
-    nw_total_pass++;
-}*/
-
-/**
-* @fn                   :tc_net_setsockopt_sol_socket_timestamping_p
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-
-static void tc_net_setsockopt_sol_socket_timestamping_p(fd)
-{
-    int ret = -1;
-    int optval=1;
-
-    ret = setsockopt(fd, SOL_SOCKET, SO_TIMESTAMPING, &optval, sizeof(optval));
-    if (ret < 0) {
-		printf("tc_net_setsockopt_sol_socket_timestamping_p FAIL: setopt KEEPALIVE failure\n");
-		nw_total_fail++;
-		RETURN_ERR;
-    }
-
-    printf("tc_net_setsockopt_sol_socket_timestamping_p PASS\n");
-    nw_total_pass++;
-}*/
 
 /**
    * @testcase		   :tc_net_setsockopt_bad_filedesc_n
@@ -587,14 +245,11 @@ static void tc_net_setsockopt_sol_socket_timestamping_p(fd)
    */
 static void tc_net_setsockopt_bad_filedesc_n(void)
 {
-	int ret = -1;
-	// int optval=1;
+	int ret;
 
-	ret = setsockopt(-1, SOL_SOCKET, 0, 0, 0);
-
-	TC_ASSERT_EQ("setsockopt", ret, -1);
+	ret = setsockopt(NEG_VAL, SOL_SOCKET, 0, 0, 0);
+	TC_ASSERT_EQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -607,14 +262,11 @@ static void tc_net_setsockopt_bad_filedesc_n(void)
    */
 static void tc_net_setsockopt_invalid_filedesc_n(void)
 {
-	int ret = -1;
-	// int optval=1;
+	int ret;
 
-	ret = setsockopt(0, SOL_SOCKET, 0, 0, 0);
-
-	TC_ASSERT_EQ("setsockopt", ret, -1);
+	ret = setsockopt(ZERO, SOL_SOCKET, 0, 0, 0);
+	TC_ASSERT_EQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -627,40 +279,12 @@ static void tc_net_setsockopt_invalid_filedesc_n(void)
    */
 static void tc_net_setsockopt_invalid_level_n(int s)
 {
-	int ret = -1;
-	//int optval=1;
+	int ret;
 
-	ret = setsockopt(s, -1, 0, 0, 0);
-
-	TC_ASSERT_EQ("setsockopt", ret, -1);
+	ret = setsockopt(s, NEG_VAL, 0, 0, 0);
+	TC_ASSERT_EQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
-
-/**
-* @fn                   :tc_net_setsockopt_invalid_opt_name_n
-* @brief                :
-* @Scenario             :
-* @API's covered        :setsockopt()
-* Preconditions         :socket file descriptor
-* Postconditions        :
-* @return               :void
-
-static void tc_net_setsockopt_invalid_opt_name_n(int s)
-{
-    int ret = -1;
-    //int optval=1;
-
-    ret = setsockopt(s, SOL_SOCKET, SCTP_AUTOCLOSE, 0, 0);
-    if (ret != -1) {
-		printf("tc_net_setsockopt_invalid_opt_name_n FAIL: setopt KEEPALIVE failure\n");
-		nw_total_fail++;
-		RETURN_ERR;
-    }
-
-    printf("tc_net_setsockopt_invalid_opt_name_n PASS\n");
-    nw_total_pass++;
-}*/
 
 /****************************************************************************
  * Name: setsockopt()
@@ -668,39 +292,22 @@ static void tc_net_setsockopt_invalid_opt_name_n(int s)
 
 int net_setsockopt_main(void)
 {
-	int fd = -1;
-	//char *mip = "239.255.255.255";
-	//char *ip = "192.168.1.100";
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
 
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-
-	//tc_net_setsockopt_invalid_opt_name_n(fd);
 	tc_net_setsockopt_invalid_level_n(fd);
 	tc_net_setsockopt_invalid_filedesc_n();
 	tc_net_setsockopt_bad_filedesc_n();
-	//tc_net_setsockopt_sol_socket_timestamping_p(fd);
-	//tc_net_setsockopt_ipproto_ip_ip_pktinfo_p(fd);
 	tc_net_setsockopt_keepalive_p(fd);
-	//tc_net_setsockopt_rcvbuf_p(fd);
 	tc_net_setsockopt_reuseport_p(fd);
 	tc_net_setsockopt_reuseaddr_p(fd);
 	tc_net_setsockopt_rcvtimo_p(fd);
-	//tc_net_setsockopt_sndtimo_p(fd);
 	tc_net_setsockopt_broadcast_p(fd);
-	//tc_net_setsockopt_no_check_p(fd);
-	//tc_net_setsockopt_ip_ttl_p(fd);
 	tc_net_setsockopt_ip_tos_p(fd);
 	tc_net_setsockopt_multicast_tcp_keepcnt_p(fd);
 	tc_net_setsockopt_multicast_tcp_keepintvl_p(fd);
 	tc_net_setsockopt_multicast_tcp_keepidle_p(fd);
 	tc_net_setsockopt_multicast_tcp_keepalive_p(fd);
 	tc_net_setsockopt_multicast_tcp_nodelay_p(fd);
-	//tc_net_setsockopt_multicast_drop_group_p(fd,mip);
-	//tc_net_setsockopt_multicast_add_group_p(fd,mip);
-	//tc_net_setsockopt_multicast_if_p(fd,ip);
-	//tc_net_setsockopt_multicast_ttl_loop_p(fd);
-	//tc_net_setsockopt_multicast_ttl_loop_own_p(fd);
-	//tc_net_setsockopt_multicast_ttl_p(fd);
 
 	close(fd);
 	return 0;

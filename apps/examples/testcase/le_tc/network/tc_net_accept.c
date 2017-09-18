@@ -34,10 +34,9 @@
 #include <pthread.h>
 
 #include "tc_internal.h"
-
 #define PORTNUM 1108
 #define MAXRCVLEN 20
-int s = 0;
+int s2 = 0;
 /**
 * @fn					: wait
 * @brief				: function to wait on semaphore
@@ -49,11 +48,10 @@ int s = 0;
    */
 static void wait(void)
 {
-	while (s <= 0) {
-
+	while (s2 <= 0) {
 		printf("");
 	}
-	s--;
+	s2--;
 }
 
 /**
@@ -67,7 +65,7 @@ static void wait(void)
 */
 static void nw_signal(void)
 {
-	s++;
+	s2++;
 }
 
 /**
@@ -82,10 +80,9 @@ void tc_net_accept_p(int fd)
 {
 	int ConnectFD = accept(fd, NULL, NULL);
 
+	close(ConnectFD);
 	TC_ASSERT_GEQ("accept", ConnectFD, 0);
 	TC_SUCCESS_RESULT();
-
-	close(ConnectFD);
 }
 
 /**
@@ -96,14 +93,12 @@ void tc_net_accept_p(int fd)
 * @precondition			:
 * @postcondition		:
 */
-void tc_net_accept_socket_n(int fd)
+void tc_net_accept_socket_n(void)
 {
-	int ConnectFD = accept(-1, NULL, NULL);
-
-	TC_ASSERT_NEQ("accept", ConnectFD, 0);
-	TC_SUCCESS_RESULT();
-
+	int ConnectFD = accept(NEG_VAL, NULL, NULL);
 	close(ConnectFD);
+	TC_ASSERT_NEQ("accept", ConnectFD, ZERO);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -113,29 +108,25 @@ void tc_net_accept_socket_n(int fd)
 * API's covered			: socket,bind,listen,close
 * Preconditions			:
 * Postconditions		:
-* @return				: void *
+* @return				: void*
 */
 void *Server(void *args)
 {
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	memset(&sa, 0, sizeof(sa));
-
-	sa.sin_family = PF_INET;
+	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-
-	listen(SocketFD, 1);
-
+	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	listen(sock, 1);
 	nw_signal();
-	tc_net_accept_p(SocketFD);
-	tc_net_accept_socket_n(SocketFD);
-
-	close(SocketFD);
-	return 0;
+	tc_net_accept_p(sock);
+	tc_net_accept_socket_n();
+	close(sock);
+	return NULL;
 }
 
 /**
@@ -149,23 +140,31 @@ void *Server(void *args)
 */
 void *Client(void *args)
 {
-	int mysocket;
 	struct sockaddr_in dest;
 
-	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	memset(&dest, 0, sizeof(dest));
-	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_family = AF_INET;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 
 	wait();
+	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	close(sock);
+	TC_SUCCESS_RESULT();
+	return NULL;
+}
 
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+void tc_net_accept(void)
+{
+	pthread_t server, client;
 
-	close(mysocket);
-	return 0;
+	pthread_create(&server, NULL, Server, NULL);
+	pthread_create(&client, NULL, Client, NULL);
 
+	pthread_join(server, NULL);
+	pthread_join(client, NULL);
 }
 
 /****************************************************************************
@@ -173,13 +172,6 @@ void *Client(void *args)
  ****************************************************************************/
 int net_accept_main(void)
 {
-	pthread_t server, client;
-
-	pthread_create(&server, NULL, Server, NULL);
-	pthread_create(&client, NULL, Client, NULL);
-	pthread_join(server, NULL);
-
-	pthread_join(client, NULL);
-
+	tc_net_accept();
 	return 0;
 }

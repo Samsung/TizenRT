@@ -33,6 +33,9 @@
 
 #include "tc_internal.h"
 
+#define PORTNUM		1100
+#define PORTNUM1	1101
+
 /**
 * @testcase				: tc_net_listen_p
 * @brief				:
@@ -44,21 +47,24 @@
 static void tc_net_listen_p(void)
 {
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int ret;
+	int sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
-	sa.sin_port = htons(1100);
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_port = htons(PORTNUM);
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-	int ret = (listen(SocketFD, 10));
-	close(SocketFD);
-
-	TC_ASSERT_NEQ("listen", ret, -1);
+	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
+	ret = (listen(sock, 10));
+
+	close(sock);
+	TC_ASSERT_NEQ("listen", ret, NEG_VAL);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -72,6 +78,7 @@ static void tc_net_listen_p(void)
 static void tc_net_listen_fd_n(void)
 {
 	struct sockaddr_in sa;
+	int ret;
 	int fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	memset(&sa, 0, sizeof sa);
 
@@ -79,13 +86,13 @@ static void tc_net_listen_fd_n(void)
 	sa.sin_port = htons(1101);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	bind(fd, (struct sockaddr *)&sa, sizeof(sa));
-	int ret = (listen(-1, 10));
+	ret = bind(fd, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
 
-	TC_ASSERT_NEQ("listen", ret, 0);
-	TC_SUCCESS_RESULT();
+	ret = listen(NEG_VAL, 10);
 	close(fd);
-
+	TC_ASSERT_NEQ("listen", ret, ZERO);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -100,20 +107,21 @@ static void tc_net_listen_backlog_p(void)
 {
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	int ret;
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1100);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-	int ret = (listen(SocketFD, -1));
+	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_EQ("bind", ret, ZERO);
+
+	ret = listen(SocketFD, NEG_VAL);
 	close(SocketFD);
 
-	TC_ASSERT_NEQ("listen", ret, -1);
+	TC_ASSERT_NEQ("listen", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -128,20 +136,20 @@ static void tc_net_listen_fd_backlog_n(void)
 {
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	int ret;
 	memset(&sa, 0, sizeof sa);
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1100);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-	int ret = (listen(-1, -1));
+	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_EQ("bind", ret, ZERO);
 
-	TC_ASSERT_NEQ("listen", ret, 0);
-	TC_SUCCESS_RESULT();
-
+	ret = listen(NEG_VAL, NEG_VAL);
 	close(SocketFD);
+	TC_ASSERT_NEQ("listen", ret, ZERO);
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

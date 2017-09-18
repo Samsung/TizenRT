@@ -29,16 +29,16 @@
 /**
 * @statitcase				: tc_net_checksd_p
 * @brief					:
-* @scenario					:   
+* @scenario					:
 * @apicovered				: net_checksd
 * @precondition				:
 * @postcondition			:
 */
-static void tc_net_checksd_p(void)
+static void tc_net_checksd_p(int sock)
 {
 	int result;
-	
-	result = net_checksd(3, 0666);
+
+	result = net_checksd(sock, 0666);
 	TC_ASSERT_EQ("tc_net_checksd_p", result, 0);
 	TC_SUCCESS_RESULT();
 }
@@ -46,7 +46,7 @@ static void tc_net_checksd_p(void)
 /**
 * @statitcase				: tc_net_checksd_n
 * @brief					:
-* @scenario					:   
+* @scenario					:
 * @apicovered				: net_checksd
 * @precondition				:
 * @postcondition			:
@@ -54,114 +54,74 @@ static void tc_net_checksd_p(void)
 static void tc_net_checksd_n(void)
 {
 	int result;
-	
-	result = net_checksd(-1, 0666);
-	TC_ASSERT_NEQ("tc_net_checksd_n", result, 0);
+
+	result = net_checksd(NEG_VAL, FLAGS);
+	TC_ASSERT_EQ("tc_net_checksd_n", result, NET_EBADF);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @statitcase				: tc_net_clone_p
 * @brief					:
-* @scenario					:   
+* @scenario					:
 * @apicovered				: net_clone
 * @precondition				:
 * @postcondition			:
 */
-static void tc_net_clone_p(void)
+static void tc_net_clone_p(int sockfd1, int sockfd2)
 {
-	int sockfd1;
-	int sockfd2;
 	int result;
 	struct socket *sock1 = NULL;
 	struct socket *sock2 = NULL;
-	sockfd1 = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (sockfd1 == -1) {
-		return ;
-	}
-	sockfd2 = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (sockfd2 == -1) {
-		return ;
-	}
-	sock1 = get_socket(sockfd1);
-	if (!sock1) {
-		return ;
-	}
-	sock2 = get_socket(sockfd2);
-	if (!sock2) {
-		return ;
-	}
-	
-	result = net_clone(sock1, sock2);
-	TC_ASSERT_EQ("tc_net_clone_p", result, 0);
-	TC_SUCCESS_RESULT();
-}
 
-/**
-* @statitcase				: tc_net_clone_n
-* @brief					:
-* @scenario					:   
-* @apicovered				: net_clone
-* @precondition				:
-* @postcondition			:
-*/
-static void tc_net_clone_n(void)
-{
-	struct socket *sock1 = NULL;
-	struct socket *sock2 = NULL;
-	int result;
-	
+	sock1 = get_socket(sockfd1);
+	TC_ASSERT_NEQ("get_socket", sock1, NULL);
+	sock2 = get_socket(sockfd2);
+	TC_ASSERT_NEQ("get_socket", sock2, NULL);
+
 	result = net_clone(sock1, sock2);
-	TC_ASSERT_NEQ("tc_net_clone_n", result, 0);
+	TC_ASSERT_EQ("tc_net_clone_p", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @statitcase				: tc_net_dupsd2_p
 * @brief					:
-* @scenario					:   
+* @scenario					:
 * @apicovered				: net_dupsd2
 * @precondition				:
 * @postcondition			:
 */
-static void tc_net_dupsd2_p(void)
+static void tc_net_dupsd2_p(int old_fd, int new_fd)
 {
-	int old_sockfd;
-	int new_sockfd;
 	int result;
-	old_sockfd = 3;
-	new_sockfd = 5;
 
-	result = net_dupsd2(old_sockfd, new_sockfd);
-	TC_ASSERT_EQ("tc_net_dupsd2_p", result, 0);
+	result = net_dupsd2(old_fd, new_fd);
+	TC_ASSERT_EQ("tc_net_dupsd2_p", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @statitcase				: tc_net_dupsd2_n
 * @brief					:
-* @scenario					:   
+* @scenario					:
 * @apicovered				: net_dupsd2
 * @precondition				:
 * @postcondition			:
 */
-static void tc_net_dupsd2_n(void)
+static void tc_net_dupsd2_n(int old_fd, int new_fd)
 {
-	int old_sockfd;
-	int new_sockfd;
 	int result;
-	old_sockfd = -1;
-	new_sockfd = 5;
 
-	result = net_dupsd2(old_sockfd, new_sockfd);
-	TC_ASSERT_NEQ("tc_net_dupsd2_n", result, 0);
+	result = net_dupsd2(old_fd, new_fd);
+	TC_ASSERT_EQ("tc_net_dupsd2_n", result, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @statitcase				: tc_net_ethernetif_status_callback_p
 * @brief					:
-* @scenario					:   
+* @scenario					:
 * @apicovered				: ethernetif_status_callback
 * @precondition				:
 * @postcondition			:
@@ -169,129 +129,53 @@ static void tc_net_dupsd2_n(void)
 static void tc_net_ethernetif_status_callback_p(void)
 {
 	struct netif *netif = NULL;
-	if (!(netif = (struct netif *)malloc(sizeof(struct netif))))
-		return;
+	netif = (struct netif *)malloc(sizeof(struct netif));
+	TC_ASSERT_NEQ("malloc", netif, NULL);
 
 	ethernetif_status_callback(netif);
+	TC_FREE_MEMORY(netif);
 	TC_SUCCESS_RESULT();
 }
 
 /**
-* @statitcase				: tc_net_ethernetif_status_callback_n
+* @statitcase				: tc_net_ethernetif_init
 * @brief					:
-* @scenario					:   
-* @apicovered				: ethernetif_status_callback
-* @precondition				:
-* @postcondition			:
-*/
-static void tc_net_ethernetif_status_callback_n(void)
-{
-	struct netif *netif = NULL;
-	ethernetif_status_callback(netif);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @statitcase				: tc_net_ethernetif_output_p
-* @brief					:
-* @scenario					:   
-* @apicovered				: ethernetif_output
-* @precondition				:
-* @postcondition			:
-*/
-static void tc_net_ethernetif_output_p(void)
-{
-	struct netif *netif;
-	struct pbuf *p;
-	err_t result;
-	if (!(netif = (struct netif *) malloc(sizeof(struct netif))))
-		return ;
-	if (!(p = (struct pbuf *) malloc(sizeof(struct pbuf))))
-		return ;
-	
-	result = ethernetif_output(netif, p);
-	TC_ASSERT_EQ("tc_net_ethernetif_output_p", result, 0);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @statitcase				: tc_net_ethernetif_output_n
-* @brief					:
-* @scenario					:   
-* @apicovered				: ethernetif_output
-* @precondition				:
-* @postcondition			:
-*/
-static void tc_net_ethernetif_output_n(void)
-{
-	struct netif *netif = NULL;	
-	struct pbuf *p = NULL;
-	err_t result;
-
-	result = ethernetif_output(netif, p);
-	TC_ASSERT_NEQ("tc_net_ethernetif_output_n", result, 0);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @statitcase				: tc_net_ethernetif_init_p
-* @brief					:
-* @scenario					:   
+* @scenario					:
 * @apicovered				: ethernetif_init
 * @precondition				:
 * @postcondition			:
 */
-static void tc_net_ethernetif_init_p(void)
+static void tc_net_ethernetif_init(void)
 {
 	struct netif *netif;
 	err_t result;
-	if (!(netif = (struct netif *)malloc(sizeof(struct netif))))
-		return ;
+	netif = (struct netif *)malloc(sizeof(struct netif));
+	TC_ASSERT_NEQ("malloc", netif, NULL);
 
 	result = ethernetif_init(netif);
+	TC_FREE_MEMORY(netif);
 	TC_ASSERT_EQ("tc_net_ethernetif_init_p", result, 0);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @statitcase				: tc_net_ethernetif_init_n
-* @brief					:
-* @scenario					:   
-* @apicovered				: ethernetif_init
-* @precondition				:
-* @postcondition			:
-*/
-static void tc_net_ethernetif_init_n(void)
-{
-	struct netif *netif = NULL;
-	err_t result;
-	
-	result = ethernetif_init(netif);
-	TC_ASSERT_NEQ("tc_net_ethernetif_init_n", result, 0);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @statitcase				: net_tcp_main
 * @brief					:
-* @scenario					:   
+* @scenario					:
 * @apicovered				:
 * @precondition				:
 * @postcondition			:
 */
-int net_mac_main(void)
+int net_mac_main(int sock, int sock1)
 {
-	tc_net_checksd_p();
+
+	tc_net_checksd_p(sock);
 	tc_net_checksd_n();
-	tc_net_clone_p();
-	tc_net_clone_n();
-	tc_net_dupsd2_p();
-	tc_net_dupsd2_n();
+	tc_net_clone_p(sock, sock1);
+	tc_net_dupsd2_p(sock, sock1);
+	tc_net_dupsd2_n(NEG_VAL, sock1);
 	tc_net_ethernetif_status_callback_p();
-	tc_net_ethernetif_status_callback_n();
-	tc_net_ethernetif_output_p();
-	tc_net_ethernetif_output_n();
-	tc_net_ethernetif_init_p();
-	tc_net_ethernetif_init_n();
+	tc_net_ethernetif_init();
+
 	return 0;
 }

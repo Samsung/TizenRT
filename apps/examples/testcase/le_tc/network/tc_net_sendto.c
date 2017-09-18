@@ -55,16 +55,17 @@ void tc_net_sendto_p(int fd)
 	int len = strlen(buffer) + 1;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	int ret;
+
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
-	int ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
 
-	TC_ASSERT_NEQ("sendto", ret, -1);
+	ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
+	TC_ASSERT_NEQ("sendto", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -81,16 +82,17 @@ void tc_net_sendto_n(void)
 	int len = strlen(buffer) + 1;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	int ret;
+
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
-	int ret = sendto(-1, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
 
-	TC_ASSERT_EQ("sendto", ret, -1);
+	ret = sendto(NEG_VAL, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
+	TC_ASSERT_EQ("sendto", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -107,16 +109,17 @@ void tc_net_sendto_af_unix_n(int fd)
 	int len = strlen(buffer) + 1;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	int ret;
+
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_UNIX;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
-	int ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
 
-	TC_ASSERT_EQ("sendto", ret, -1);
+	ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
+	TC_ASSERT_EQ("sendto", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -133,17 +136,18 @@ void tc_net_sendto_shutdown_n(int fd)
 	int len = strlen(buffer) + 1;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	int ret;
+
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_UNIX;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 	shutdown(fd, SHUT_WR);
-	int ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
 
-	TC_ASSERT_EQ("sendto", ret, -1);
+	ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
+	TC_ASSERT_EQ("sendto", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -158,25 +162,26 @@ void tc_net_sendto_shutdown_n(int fd)
 
 void *sendto_udpserver(void *args)
 {
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	char buffer[MAXRCVLEN];
+	struct sockaddr_storage serverStorage;
+	socklen_t addr_size;
+	int ret;
+
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-	struct sockaddr_storage serverStorage;
-	socklen_t addr_size;
+	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 
-	recvfrom(SocketFD, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
+	ret = recvfrom(sock, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 
-	close(SocketFD);
-
-	return 0;
-
+	close(sock);
+	return NULL;
 }
 
 /**
@@ -190,16 +195,14 @@ void *sendto_udpserver(void *args)
 */
 void *sendto_udpclient(void *args)
 {
-	int mysocket;
-	mysocket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	tc_net_sendto_p(mysocket);
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+	tc_net_sendto_p(sock);
 	tc_net_sendto_n();
-	tc_net_sendto_af_unix_n(mysocket);
-	tc_net_sendto_shutdown_n(mysocket);
-	close(mysocket);
-
-	return 0;
-
+	tc_net_sendto_af_unix_n(sock);
+	tc_net_sendto_shutdown_n(sock);
+	close(sock);
+	return NULL;
 }
 
 /**
@@ -247,15 +250,19 @@ void tc_net_sendto_tcp_p(int fd)
 
 	char *msg = "Hello World !\n";
 	socklen_t fromlen = 0;
-	int ConnectFD = accept(fd, NULL, NULL);
-	int ret = sendto(ConnectFD, msg, strlen(msg), 0, NULL, fromlen);
+	int ConnectFD;
+	int ret;
 
-	TC_ASSERT_NEQ("sendto", ret, -1);
+	ConnectFD = accept(fd, NULL, NULL);
+	TC_ASSERT_NEQ("accept", ConnectFD, ZERO);
+	ret = sendto(ConnectFD, msg, strlen(msg), ZERO, NULL, fromlen);
+
+	TC_ASSERT_NEQ("sendto", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 	tc_net_sendto_tcp_n(ConnectFD);
 	tc_net_sendto_tcp_shutdown_n(ConnectFD);
-
+	close(ConnectFD);
 }
 
 /**
@@ -271,14 +278,12 @@ void tc_net_sendto_tcp_n(int ConnectFD)
 
 	char *msg = "Hello World !\n";
 	socklen_t fromlen = 0;
+	int ret;
 
-	int ret = sendto(-1, msg, strlen(msg), 0, NULL, fromlen);
-
-	TC_ASSERT_EQ("sendto", ret, -1);
+	ret = sendto(NEG_VAL, msg, strlen(msg), ZERO, NULL, fromlen);
+	TC_ASSERT_EQ("sendto", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 	close(ConnectFD);
-
 }
 
 /**
@@ -291,17 +296,17 @@ void tc_net_sendto_tcp_n(int ConnectFD)
 */
 void tc_net_sendto_tcp_shutdown_n(int ConnectFD)
 {
-
 	char *msg = "Hello World !\n";
 	socklen_t fromlen = 0;
-	shutdown(ConnectFD, SHUT_WR);
-	int ret = sendto(ConnectFD, msg, strlen(msg), 0, NULL, fromlen);
+	int ret;
 
-	TC_ASSERT_EQ("sendto", ret, -1);
+	ret = shutdown(ConnectFD, SHUT_WR);
+	TC_ASSERT_NEQ("shutdown", ret, ZERO);
+
+	ret = sendto(ConnectFD, msg, strlen(msg), ZERO, NULL, fromlen);
+	TC_ASSERT_EQ("sendto", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 	close(ConnectFD);
-
 }
 
 /**
@@ -316,26 +321,21 @@ void tc_net_sendto_tcp_shutdown_n(int ConnectFD)
 
 void *sendto_tcpserver(void *args)
 {
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(TCPPORT);
-	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-
-	listen(SocketFD, 2);
-
+	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	listen(sock, 2);
 	sendto_signal();
-	tc_net_sendto_tcp_p(SocketFD);
-
-	close(SocketFD);
-	pthread_exit(NULL);
-
+	tc_net_sendto_tcp_p(sock);
+	close(sock);
+	return NULL;
 }
 
 /**
@@ -351,26 +351,49 @@ void *sendto_tcpclient(void *args)
 {
 
 	char buffer[MAXRCVLEN];
-	int len, mysocket;
+	int len;
 	struct sockaddr_in dest;
-
-	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(TCPPORT);
 
 	sendto_wait();
 
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	while ((len = recvfrom(mysocket, buffer, MAXRCVLEN, 0, NULL, NULL)) > 0) {
+	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+
+	while ((len = recvfrom(sock, buffer, MAXRCVLEN, 0, NULL, NULL)) > 0) {
 		buffer[len] = '\0';
 	}
+	close(sock);
+	return NULL;
+}
 
-	close(mysocket);
-	pthread_exit(NULL);
+/**
+* @fn                  : tc_net_sendto
+* @brief               :
+* @scenario            :
+* API's covered        :
+* Preconditions        :
+* Postconditions       :
+* @return              : void
+*/
+void tc_net_sendto(void)
+{
+	pthread_t Server, Client, tcpserver, tcpclient;
+	int ret;
+	ret = pthread_create(&Server, NULL, sendto_udpserver, NULL);
 
+	pthread_create(&Client, NULL, sendto_udpclient, NULL);
+	pthread_create(&tcpserver, NULL, sendto_tcpserver, NULL);
+	pthread_create(&tcpclient, NULL, sendto_tcpclient, NULL);
+
+	pthread_join(Server, NULL);
+	pthread_join(Client, NULL);
+	pthread_join(tcpserver, NULL);
+	pthread_join(tcpclient, NULL);
 }
 
 /****************************************************************************
@@ -379,19 +402,6 @@ void *sendto_tcpclient(void *args)
 
 int net_sendto_main(void)
 {
-
-	pthread_t Server, Client, tcpserver, tcpclient;
-
-	pthread_create(&Server, NULL, sendto_udpserver, NULL);
-	pthread_create(&Client, NULL, sendto_udpclient, NULL);
-	pthread_create(&tcpserver, NULL, sendto_tcpserver, NULL);
-	pthread_create(&tcpclient, NULL, sendto_tcpclient, NULL);
-
-	pthread_join(Server, NULL);
-
-	pthread_join(Client, NULL);
-	pthread_join(tcpserver, NULL);
-
-	pthread_join(tcpclient, NULL);
+	tc_net_sendto();
 	return 0;
 }

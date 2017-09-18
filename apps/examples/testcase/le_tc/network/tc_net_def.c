@@ -22,6 +22,11 @@
 
 #include "tc_internal.h"
 
+#define TC_VAL1 20
+#define TC_VAL2 10
+#define TC_VAL1_HEX 0x1400
+#define TC_VAL2_HEX 0xa000000
+
 /**
 * @testcase				: tc_net_def_lwip_htons
 * @brief				:
@@ -34,13 +39,13 @@ static void tc_net_def_lwip_htons(void)
 {
 	uint16_t ret;
 	uint16_t ref;
-	uint16_t var = 20;
+	uint16_t var = TC_VAL1;
 
 	ret = lwip_htons(var);
-	ref = 0x1400;
+	ref = TC_VAL1_HEX;
+
 	TC_ASSERT_EQ("htons", ret, ref);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -53,12 +58,13 @@ static void tc_net_def_lwip_htons(void)
 */
 static void tc_net_def_lwip_ntohs(void)
 {
-	uint16_t var = 0x1400;
 	uint16_t ret;
 	uint16_t ref;
+	uint16_t var = TC_VAL1_HEX;
 
 	ret = lwip_ntohs(var);
-	ref = 20;
+	ref = TC_VAL1;
+
 	TC_ASSERT_EQ("ntohs", ret, ref);
 	TC_SUCCESS_RESULT();
 }
@@ -75,10 +81,11 @@ static void tc_net_def_lwip_htonl(void)
 {
 	uint32_t ret;
 	uint32_t ref;
-	uint32_t var = 10;
+	uint32_t var = TC_VAL2;
 
 	ret = lwip_htonl(var);
-	ref = 0xa000000;
+	ref = TC_VAL2_HEX;
+
 	TC_ASSERT_EQ("htonl", ret, ref);
 	TC_SUCCESS_RESULT();
 }
@@ -95,10 +102,11 @@ static void tc_net_def_lwip_ntohl(void)
 {
 	uint32_t ret;
 	uint32_t ref;
-	uint32_t var = 0xa000000;
+	uint32_t var = TC_VAL2_HEX;
 
 	ret = lwip_ntohl(var);
-	ref = 10;
+	ref = TC_VAL2;
+
 	TC_ASSERT_EQ("ntohl", ret, ref);
 	TC_SUCCESS_RESULT();
 }

@@ -48,8 +48,9 @@ int sem = 0;
 */
 void getpeername_wait(void)
 {
-	while (sem <= 0)
+	while (sem <= 0) {
 		printf("");
+	}
 
 	sem--;
 }
@@ -76,19 +77,15 @@ void getpeername_signal(void)
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_getpeername_p1(void)
+static void tc_net_getpeername_p1(int sock)
 {
-	int sock;
 	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = getpeername(sock, &foo, (socklen_t *)&len);
 
-	TC_ASSERT_NEQ("getpeername", ret, -1);
+	TC_ASSERT_NEQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
-	close(sock);
 }
 
 /**
@@ -103,13 +100,11 @@ static void tc_net_getpeername_sock_n(void)
 {
 	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
-	int ret = getpeername(-1, &foo, (socklen_t *)&len);
+	int ret = getpeername(NEG_VAL, &foo, (socklen_t *)&len);
 
-	TC_ASSERT_EQ("getpeername", ret, -1);
+	TC_ASSERT_EQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-	
 }
-
 
 /**
 * @testcase				: tc_net_getpeername_close_n
@@ -119,18 +114,15 @@ static void tc_net_getpeername_sock_n(void)
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_getpeername_close_n(void)
+static void tc_net_getpeername_close_n(int sock)
 {
-	int sock;
-	sock = socket(AF_INET, SOCK_STREAM, 0);
 	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
-	close(sock);
+
 	int ret = getpeername(sock, &foo, (socklen_t *)&len);
 
-	TC_ASSERT_EQ("getpeername", ret, -1);
+	TC_ASSERT_EQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-	
 }
 
 /**
@@ -141,16 +133,14 @@ static void tc_net_getpeername_close_n(void)
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_getpeername_unix_p(void)
+static void tc_net_getpeername_unix_p(int sock)
 {
-	int sock;
 	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
 
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	int ret = getpeername(sock, &foo, (socklen_t *)&len);
 
-	TC_ASSERT_NEQ("getpeername", ret, -1);
+	TC_ASSERT_NEQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -163,18 +153,15 @@ static void tc_net_getpeername_unix_p(void)
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_getpeername_udp_p(void)
+static void tc_net_getpeername_udp_p(int sock)
 {
-	int sock;
 	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
 
-	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	int ret = getpeername(sock, &foo, (socklen_t *)&len);
 
-	TC_ASSERT_NEQ("getpeername", ret, -1);
+	TC_ASSERT_NEQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -193,9 +180,8 @@ static void tc_net_getpeername_p(int fd)
 
 	int ret = getpeername(fd, (struct sockaddr *)&addr, &len);
 
-	TC_ASSERT_NEQ("getpeername", ret, -1);
+	TC_ASSERT_NEQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -212,11 +198,10 @@ static void tc_net_getpeername_n(int fd)
 	struct sockaddr_storage addr;
 	len = sizeof(addr);
 
-	int ret = getpeername(-1, (struct sockaddr *)&addr, &len);
+	int ret = getpeername(NEG_VAL, (struct sockaddr *)&addr, &len);
 
-	TC_ASSERT_EQ("getpeername", ret, -1);
+	TC_ASSERT_EQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -230,26 +215,26 @@ static void tc_net_getpeername_n(int fd)
 */
 void *getpeername_server(void *args)
 {
-
+	int ConnectFD, ret;
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
+	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 
-	listen(SocketFD, 1);
+	ret = listen(sock, 1);
+
 	getpeername_signal();
-	int ConnectFD = accept(SocketFD, NULL, NULL);
+	ConnectFD = accept(sock, NULL, NULL);
 
 	close(ConnectFD);
-
-	close(SocketFD);
-	return 0;
+	close(sock);
+	return NULL;
 }
 
 /**
@@ -263,24 +248,35 @@ void *getpeername_server(void *args)
 */
 void *getpeername_client(void *args)
 {
-
-	int mysocket;
+	int ret;
 	struct sockaddr_in dest;
-	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 
 	getpeername_wait();
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 
-	tc_net_getpeername_p(mysocket);
-	tc_net_getpeername_n(mysocket);
+	tc_net_getpeername_p(sock);
+	tc_net_getpeername_n(sock);
+	close(sock);
 
-	close(mysocket);
-	return 0;
+	return NULL;
+}
+
+void tc_client_server(void)
+{
+	int ret;
+	pthread_t Server, Client;
+
+	ret = pthread_create(&Server, NULL, getpeername_server, NULL);
+	ret = pthread_create(&Client, NULL, getpeername_client, NULL);
+
+	ret = pthread_join(Server, NULL);
+
+	ret = pthread_join(Client, NULL);
 
 }
 
@@ -289,19 +285,6 @@ void *getpeername_client(void *args)
  ****************************************************************************/
 int net_getpeername_main(void)
 {
-
-	pthread_t Server, Client;
-
-	pthread_create(&Server, NULL, getpeername_server, NULL);
-	pthread_create(&Client, NULL, getpeername_client, NULL);
-
-	pthread_join(Server, NULL);
-
-	pthread_join(Client, NULL);
-	tc_net_getpeername_p1();
-	tc_net_getpeername_sock_n();
-	tc_net_getpeername_close_n();
-	tc_net_getpeername_unix_p();
-	tc_net_getpeername_udp_p();
+	tc_client_server();
 	return 0;
 }

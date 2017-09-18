@@ -40,7 +40,7 @@ void tc_net_ipaddr_ntoa_p(void)
 {
 	char *ret;
 	struct ip_addr local;
-	IP4_ADDR(&local,127,0,0,1); // Set local = "127.0.0.1"
+	IP4_ADDR(&local, 127, 0, 0, 1);	// Set local = "127.0.0.1"
 
 	ret = ipaddr_ntoa(&local);
 	TC_ASSERT_NEQ("ipaddr_ntoa", ret, NULL);
@@ -79,7 +79,7 @@ static void tc_net_ipaddr_ntoa_r_p(void)
 	struct ip_addr local;
 	static char str[16];
 
-	IP4_ADDR(&local,127,0,0,1); // Set local = "127.0.0.1"
+	IP4_ADDR(&local, 127, 0, 0, 1);	// Set local = "127.0.0.1"
 
 	ret = ipaddr_ntoa_r(&local, str, 16);
 	TC_ASSERT_NEQ("ipaddr_ntoa_r", ret, NULL);
@@ -100,7 +100,7 @@ static void tc_net_ipaddr_ntoa_r_n(void)
 	struct ip_addr local;
 	static char str[16];
 
-	IP4_ADDR(&local,127,0,0,1); // Set local = "127.0.0.1"
+	IP4_ADDR(&local, 127, 0, 0, 1);	// Set local = "127.0.0.1"
 
 	ret = ipaddr_ntoa_r(&local, str, 10);
 	TC_ASSERT_NEQ("ipaddr_ntoa_r", ret, NULL);

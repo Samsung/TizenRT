@@ -40,16 +40,12 @@
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_fcntl_nonblock_p(void)
+static void tc_net_fcntl_nonblock_p(int fd)
 {
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, O_NONBLOCK);
-	close(fd);
 
-	TC_ASSERT_NEQ("fcntl", ret, -1);
+	TC_ASSERT_NEQ("fcntl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -60,18 +56,14 @@ static void tc_net_fcntl_nonblock_p(void)
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_fcntl_p(void)
+static void tc_net_fcntl_p(int fd)
 {
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, 0);
-	close(fd);
 
-	TC_ASSERT_NEQ("fcntl", ret, -1);
+	TC_ASSERT_NEQ("fcntl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }
-
 
 /**
 * @testcase				: tc_net_fcntl_n
@@ -83,10 +75,9 @@ static void tc_net_fcntl_p(void)
 */
 static void tc_net_fcntl_n(void)
 {
-	int fd = -1;
-	int ret = fcntl(fd, F_SETFL, O_NONBLOCK);
+	int ret = fcntl(NEG_VAL, F_SETFL, O_NONBLOCK);
 
-	TC_ASSERT_NEQ("fcntl", ret, 0);
+	TC_ASSERT_NEQ("fcntl", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -98,28 +89,24 @@ static void tc_net_fcntl_n(void)
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_fcntl_ndelay_p(void)
+static void tc_net_fcntl_ndelay_p(int fd)
 {
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, O_NDELAY);
-	close(fd);
 
-	TC_ASSERT_NEQ("fcntl", ret, -1);
+	TC_ASSERT_NEQ("fcntl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
  * Name: fcntl()
  ****************************************************************************/
 
-int net_fcntl_main(void)
+int net_fcntl_main(int fd)
 {
-	tc_net_fcntl_nonblock_p();
-	tc_net_fcntl_p();
+	tc_net_fcntl_nonblock_p(fd);
+	tc_net_fcntl_p(fd);
 	tc_net_fcntl_n();
-	tc_net_fcntl_ndelay_p();
+	tc_net_fcntl_ndelay_p(fd);
 
 	return 0;
 }

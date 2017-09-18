@@ -34,7 +34,7 @@
 void tc_net_ipv4_addr_netmask_valid_p(void)
 {
 	int ret;
-	int netmask = 0x0000ffff; /* Value for checking */
+	int netmask = 0x0000ffff;	/* Value for checking */
 
 	ret = ip4_addr_netmask_valid(netmask);
 	TC_ASSERT_EQ("ip4_addr_netmask_valid", ret, 1);
@@ -52,7 +52,7 @@ void tc_net_ipv4_addr_netmask_valid_p(void)
 void tc_net_ipv4_addr_netmask_valid_n(void)
 {
 	int ret;
-	int netmask = 0xffffff90; /* Value for checking */
+	int netmask = 0xffffff90;	/* Value for checking */
 
 	ret = ip4_addr_netmask_valid(netmask);
 	TC_ASSERT_EQ("ip4_addr_netmask_valid", ret, 1);

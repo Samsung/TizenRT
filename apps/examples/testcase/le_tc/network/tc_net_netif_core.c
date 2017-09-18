@@ -25,14 +25,28 @@
 #include <net/lwip/tcp.h>
 #include <net/lwip/netif/etharp.h>
 #include <net/lwip/tcp_impl.h>
+#include <net/lwip/pbuf.h>
+
+#include <sys/select.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <string.h>
+#include <netinet/ip.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <sys/time.h>
 #include "tc_internal.h"
 
-static sys_mbox_t mbox;
+#define PORTNUM 5555
+#define MAXRCVLEN 20
+
 struct netif loop_netif;
 struct netif test_netif;
 static ip_addr_t test_ipaddr, test_netmask, test_gw;
 static int linkoutput_ctr;
-err_t netif_loopif_init(struct netif *netif);
+extern err_t netif_loopif_init(struct netif *netif);
 
 /**
 * @testcase				: tc_net_netif_remove_p
@@ -65,7 +79,7 @@ static void tc_net_netif_remove_p(void)
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_pbuf_get_at_p (void)
+static void tc_net_pbuf_get_at_p(void)
 {
 	struct pbuf *p;
 	u16_t offset = 0;
@@ -76,8 +90,8 @@ static void tc_net_pbuf_get_at_p (void)
 	p->payload = "packet";
 
 	ret = pbuf_get_at(p, offset);
-
-	TC_ASSERT_NEQ("core", ret, 0);
+	memp_free(MEMP_PBUF_POOL, p);
+	TC_ASSERT_NEQ("tc_net_pbuf_get_at_p", ret, 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -89,7 +103,7 @@ static void tc_net_pbuf_get_at_p (void)
 * @precondition			:
 * @postcondition		:
 */
-void create_packet(struct pbuf **head, char *data, u16_t len,u16_t ref)
+void create_packet(struct pbuf **head, char *data, u16_t len, u16_t ref)
 {
 	struct pbuf *node;
 	struct pbuf *q;
@@ -106,9 +120,8 @@ void create_packet(struct pbuf **head, char *data, u16_t len,u16_t ref)
 
 	if (*head == NULL) {
 		*head = node;
-	}
-	else {
-		for(q = *head; q->next != NULL; q = q->next);
+	} else {
+		for (q = *head; q->next != NULL; q = q->next) ;
 		q->next = node;
 	}
 }
@@ -121,7 +134,7 @@ void create_packet(struct pbuf **head, char *data, u16_t len,u16_t ref)
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_pbuf_memcmp_p (void)
+static void tc_net_pbuf_memcmp_p(void)
 {
 	u16_t ret;
 	struct pbuf *head = NULL;
@@ -131,13 +144,12 @@ static void tc_net_pbuf_memcmp_p (void)
 	u16_t n = 2;
 
 	for (pk_count = 0; pk_count < 2; pk_count++) {
-		switch (pk_count)
-		{
+		switch (pk_count) {
 		case 0:
-			create_packet(&head, "packet",strlen("packet"),1);
+			create_packet(&head, "packet", strlen("packet"), 1);
 			break;
 		case 1:
-			create_packet(&head, "is",(strlen("is")+strlen("packet")),2);
+			create_packet(&head, "is", (strlen("is") + strlen("packet")), 2);
 			break;
 		default:
 			printf("\n invalid parameter\n");
@@ -146,7 +158,7 @@ static void tc_net_pbuf_memcmp_p (void)
 
 	ret = pbuf_memcmp(head, offset, s2, n);
 
-	TC_ASSERT_NEQ("core", ret, 0xffff);
+	TC_ASSERT_EQ("tc_net_pbuf_memcmp_p", ret, 0xffff);
 	TC_SUCCESS_RESULT();
 }
 
@@ -161,15 +173,16 @@ static void tc_net_pbuf_memcmp_p (void)
 static void tc_net_pbuf_memfind_p(void)
 {
 	u16_t ret;
-	struct pbuf *p = (struct pbuf *)"packet buffer found";
-	const void *mem = "found";
-	u16_t mem_len = 5;
-	u16_t start_offset = 14;
-	p->tot_len = 19;
+	struct pbuf *p = (struct pbuf *)"packet not found";
+	const void *mem = "packet";
+	u16_t mem_len = 1;
+	u16_t start_offset = 0;
+	p->tot_len = 16;
+	p->len = 16;
 
 	ret = pbuf_memfind(p, mem, mem_len, start_offset);
 
-	TC_ASSERT_NEQ("core", ret, 0xffff);
+	TC_ASSERT_NEQ("tc_net_pbuf_memfind_p", ret, 0xFFFF);
 	TC_SUCCESS_RESULT();
 
 }
@@ -182,7 +195,7 @@ static void tc_net_pbuf_memfind_p(void)
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_pbuf_strstr_p(void)
+void tc_net_pbuf_strstr_p(void)
 {
 	struct pbuf *head = NULL;
 	int pk_count;
@@ -190,19 +203,18 @@ static void tc_net_pbuf_strstr_p(void)
 	u16_t ret;
 
 	for (pk_count = 0; pk_count < 4; pk_count++) {
-		switch (pk_count)
-		{
+		switch (pk_count) {
 		case 0:
-			create_packet(&head, "packet",strlen("packet"),1);
+			create_packet(&head, "packet", strlen("packet"), 1);
 			break;
 		case 1:
-			create_packet(&head, "is",strlen("is"),2);
+			create_packet(&head, "is", strlen("is"), 2);
 			break;
 		case 2:
-			create_packet(&head, "found",strlen("found"),3);
+			create_packet(&head, "found", strlen("found"), 3);
 			break;
 		case 3:
-			create_packet(&head, "end",strlen("end"),4);
+			create_packet(&head, "end", strlen("end"), 4);
 			break;
 		default:
 			printf("\n invalid parameter\n");
@@ -211,181 +223,7 @@ static void tc_net_pbuf_strstr_p(void)
 
 	ret = pbuf_strstr(head, substr);
 
-	TC_ASSERT_NEQ("core", ret, 0xffff);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_sys_untimeout_p
-* @brief				:
-* @scenario				:
-* @apicovered			: sys_timeouts_mbox_fetch(), sys_untimeout()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_sys_untimeout_p(void)
-{
-	struct tcpip_msg *msg = NULL;
-
-	sys_timeouts_mbox_fetch(&mbox, (void **)&msg);
-	sys_untimeout(msg->msg.tmo.h, msg->msg.tmo.arg);
-
-	TC_SUCCESS_RESULT();
-
-}
-
-/**
-* @testcase				: tc_net_lwip_strerr_p
-* @brief				:
-* @scenario				:
-* @apicovered			: lwip_strerr()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_lwip_strerr_p(void)
-{
-	err_t err;
-	const char *ret;
-
-	err = ERR_OK;
-	ret = lwip_strerr(err);
-
-	TC_ASSERT_EQ("core", ret, "Ok.");
-	TC_SUCCESS_RESULT();
-}
-
-/**
- * @testcase			: tc_net_lwip_strerr_n
- * @brief				:
- * @scenario			:
- * @apicovered			: lwip_strerr()
- * @precondition		:
- * @postcondition		:
- */
-static void tc_net_lwip_strerr_n(void)
-{
-	err_t err;
-	const char *ret;
-	int errCount = 1;
-	static int count = 0;
-
-	do {
-		switch (errCount)
-		{
-		case 1:
-			err = ERR_MEM;
-			ret = lwip_strerr(err);
-			break;
-		case 2:
-			err = ERR_BUF;
-			ret = lwip_strerr(err);
-			break;
-		case 3:
-			err = ERR_TIMEOUT;
-			ret = lwip_strerr(err);
-			break;
-		case 4:
-			err = ERR_RTE;
-			ret = lwip_strerr(err);
-			break;
-		case 5:
-			err = ERR_INPROGRESS;
-			ret = lwip_strerr(err);
-			break;
-		case 6:
-			err = ERR_VAL;
-			ret = lwip_strerr(err);
-			break;
-		case 7:
-			err = ERR_WOULDBLOCK;
-			ret = lwip_strerr(err);
-			break;
-		case 8:
-			err = ERR_USE;
-			ret = lwip_strerr(err);
-			break;
-		case 9:
-			err = ERR_ISCONN;
-			ret = lwip_strerr(err);
-			break;
-		case 10:
-			err = ERR_ABRT;
-			ret = lwip_strerr(err);
-			break;
-		case 11:
-			err = ERR_RST;
-			ret = lwip_strerr(err);
-			break;
-		case 12:
-			err = ERR_CLSD;
-			ret = lwip_strerr(err);
-			break;
-		case 13:
-			err = ERR_CONN;
-			ret = lwip_strerr(err);
-			break;
-		case 14:
-			err = ERR_ARG;
-			ret = lwip_strerr(err);
-			break;
-		case 15:
-			err = ERR_IF;
-			ret = lwip_strerr(err);
-			break;
-		default:
-			printf("\n invalid data\n");
-
-		}
-		count++;
-		errCount++;
-	} while(errCount <= 15);
-
-	if (count <= 15) {
-		TC_ASSERT_NEQ("core", ret, "Ok.");
-		TC_SUCCESS_RESULT();
-	}
-}
-
-/**
-* @testcase				: tc_net_lwip_write_p
-* @brief				:
-* @scenario				:
-* @apicovered			: lwip_write()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_lwip_write_p(void)
-{
-	int ret;
-	int s = 1;
-	const void *data = "packet rcv";
-	size_t size = strlen(data);
-
-	ret = lwip_write(s, data, size);
-
-	TC_ASSERT_EQ("core", ret, 0);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_lwip_read_p
-* @brief				:
-* @scenario				:
-* @apicovered			: lwip_read()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_lwip_read_p(void)
-{
-	int ret;
-	int s = 1;
-	void *mem;
-	size_t len = 10;
-
-	mem = (void *)memp_malloc(10 *sizeof(void*));
-	ret = lwip_read(s, mem, len);
-
-	TC_ASSERT_EQ("core", ret, 0);
+	TC_ASSERT_NEQ("tc_net_pbuf_strstr_p", ret, 0xFFFF);
 	TC_SUCCESS_RESULT();
 }
 
@@ -400,11 +238,11 @@ static void tc_net_lwip_read_p(void)
 static void tc_net_get_socket_struct_n(void)
 {
 	struct socket *ret;
-	int s = -1;
+	int s = NEG_VAL;
 
 	ret = (struct socket *)get_socket_struct(s);
 
-	TC_ASSERT_EQ("core", ret, NULL);
+	TC_ASSERT_EQ("tc_net_get_socket_struct_n", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -419,11 +257,11 @@ static void tc_net_get_socket_struct_n(void)
 static void tc_net_get_socket_struct_p(void)
 {
 	struct socket *ret;
-	int s = 1;
+	int s = socket(AF_INET, SOCK_STREAM, 0);
 
 	ret = (struct socket *)get_socket_struct(s);
 
-	TC_ASSERT_NEQ("core", ret, NULL);
+	TC_ASSERT_EQ("tc_net_get_socket_struct_p", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -441,61 +279,10 @@ static void tc_net_tcp_rexmit_fast_n(void)
 	pcb = (struct tcp_pcb *)memp_malloc(MEMP_TCP_PCB);
 
 	pcb->unacked = NULL;
-	pcb->flags = ((u8_t)0x04);
+	pcb->flags = ((u8_t) 0x04);
 
 	tcp_rexmit_fast(pcb);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_tcp_keepalive
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_keepalive()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_tcp_keepalive_n(void)
-{
-	struct tcp_pcb *pcb;
-
-	pcb = (struct tcp_pcb *)memp_malloc(MEMP_TCP_PCB);
-	pcb->local_port = 0;
-	pcb->remote_port = 0;
-	pcb->snd_nxt = 0;
-	pcb->rcv_nxt = 0;
-	pcb->rcv_ann_wnd = 0;
-
-	tcp_keepalive(pcb);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_tcp_keepalive_p
-* @brief				:
-* @scenario				:
-* @apicovered			:
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_tcp_keepalive_p(void)
-{
-	struct tcp_pcb *pcb;
-	u16_t port;
-	u32_t iss;
-
-	pcb = (struct tcp_pcb *)memp_malloc(MEMP_TCP_PCB);
-	port = tcp_new_port();
-	pcb->local_port = port;
-	pcb->remote_port = (u16_t)IPADDR_LOOPBACK;
-	iss = tcp_next_iss();
-	pcb->snd_nxt = iss;
-	pcb->rcv_nxt = 0;
-	pcb->rcv_ann_wnd = TCP_WND;
-
-	tcp_keepalive(pcb);
+	memp_free(MEMP_TCP_PCB, pcb);
 
 	TC_SUCCESS_RESULT();
 }
@@ -517,76 +304,8 @@ static void tc_net_tcp_zero_window_probe_n(void)
 	pcb->unsent = NULL;
 
 	tcp_zero_window_probe(pcb);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_tcp_zero_window_probe_n
-* @brief				:
-* @scenario				:
-* @apicovered			:
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_tcp_zero_window_probe_p(void)
-{
-	struct tcp_pcb *pcb;
-	u16_t port;
-	struct pbuf *p = NULL;
-	struct tcp_seg *seg = NULL;
-
-	pcb = (struct tcp_pcb *)memp_malloc(MEMP_TCP_PCB);
-
-	pcb->unacked = NULL;
-	port = tcp_new_port();
-	pcb->local_port = port;
-	pcb->remote_port = (u16_t)IPADDR_LOOPBACK;
-
-	create_packet(&p, "packet", strlen("packet"), 1);
-	seg = (struct tcp_seg *)tcp_create_segment(pcb, p, 0, 0, TF_SEG_OPTS_MSS);
-	pcb->unsent = seg;
-	TCPH_HDRLEN_SET((struct tcp_hdr *)seg->p->payload, sizeof(struct tcp_hdr) / 4);
-	tcp_zero_window_probe(pcb);
-
-	free(pcb);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_netif_loopif_ifup_p
-* @brief				:
-* @scenario				:
-* @apicovered			: netif_loopif_ifup()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_netif_loopif_ifup_p(void)
-{
-	struct netif *dev = NULL;
-	int ret;
-	ret = netif_loopif_ifup(dev);
-
-	TC_ASSERT_EQ("core", ret, 0);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_netif_loopif_ifdown_p
-* @brief				:
-* @scenario				:
-* @apicovered			: netif_loopif_ifdown()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_netif_loopif_ifdown_p(void)
-{
-	struct netif *dev = NULL;
-	int ret;
-
-	ret = netif_loopif_ifdown(dev);
-
-	TC_ASSERT_EQ("core", ret, 0);
+	memp_free(MEMP_TCP_PCB, pcb);
+	pcb = NULL;
 	TC_SUCCESS_RESULT();
 }
 
@@ -600,78 +319,9 @@ static void tc_net_netif_loopif_ifdown_p(void)
 */
 static void tc_net_netif_remove_n(void)
 {
-	struct netif *netif;
-	netif = NULL;
+	struct netif *netif = NULL;
 
 	netif_remove(netif);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_pbuf_free_ooseq_n
-* @brief				:
-* @scenario				:
-* @apicovered			: pbuf_free_ooseq()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_pbuf_free_ooseq_n(void)
-{
-	pbuf_free_ooseq();
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_pbuf_free_ooseq_callback_n
-* @brief				:
-* @scenario				:
-* @apicovered			: pbuf_free_ooseq_callback()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_pbuf_free_ooseq_callback_n(void)
-{
-	void *arg = NULL;
-
-	pbuf_free_ooseq_callback(arg);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_pbuf_free_ooseq_callback_p
-* @brief				:
-* @scenario				:
-* @apicovered			: pbuf_free_ooseq_callback()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_pbuf_free_ooseq_callback_p(void)
-{
-	int backlog;
-
-	/* limit the "backlog" parameter to fit in an u8_t */
-	backlog = LWIP_MIN(LWIP_MAX(backlog, 0), 0xff);
-
-	pbuf_free_ooseq_callback((u8_t)backlog);
-
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_pbuf_pool_is_empty_p
-* @brief				:
-* @scenario				:
-* @apicovered			: pbuf_pool_is_empty()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_pbuf_pool_is_empty_p(void)
-{
-	pbuf_pool_is_empty();
-
 	TC_SUCCESS_RESULT();
 }
 
@@ -695,7 +345,7 @@ static void tc_net_pbuf_alloced_custom_n(void)
 
 	ret = pbuf_alloced_custom(l, length, type, p, payload_mem, payload_mem_len);
 
-	TC_ASSERT_EQ("core", ret, NULL);
+	TC_ASSERT_EQ("tc_net_pbuf_alloced_custom_n", ret, NULL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -721,8 +371,7 @@ static void tc_net_pbuf_alloced_custom_p(void)
 	p = (struct pbuf_custom *)memp_malloc(sizeof(struct pbuf_custom));
 	int pbuf_layer = 0;
 	do {
-		switch (l)
-		{
+		switch (l) {
 		case 0:
 			ret = pbuf_alloced_custom(0, length, type, p, payload_mem, payload_mem_len);
 			break;
@@ -739,7 +388,7 @@ static void tc_net_pbuf_alloced_custom_p(void)
 		pbuf_layer++;
 	} while (pbuf_layer <= 3);
 
-	TC_ASSERT_NEQ("core", ret, NULL);
+	TC_ASSERT_EQ("tc_net_pbuf_alloced_custom_p", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -760,8 +409,8 @@ static void tc_net_pbuf_dechain_n(void)
 	p->next = NULL;
 
 	ret = pbuf_dechain(p);
-
-	TC_ASSERT_EQ("core", ret, NULL);
+	memp_free(MEMP_PBUF_POOL, p);
+	TC_ASSERT_EQ("tc_net_pbuf_dechain_n", ret, NULL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -774,7 +423,7 @@ static void tc_net_pbuf_dechain_n(void)
 * @precondition			:
 * @postcondition		:
 */
-void create_chain (struct pbuf **head, char *data, u16_t len, u16_t ref)
+void create_chain(struct pbuf **head, char *data, u16_t len, u16_t ref)
 {
 	struct pbuf *node;
 	struct pbuf *q;
@@ -791,11 +440,10 @@ void create_chain (struct pbuf **head, char *data, u16_t len, u16_t ref)
 
 	if (*head == NULL) {
 		*head = node;
+	} else {
+		for (q = *head; q->next != NULL; q = q->next) ;
+		q->next = node;
 	}
-	else {
-		for(q = *head; q->next != NULL; q = q->next);
-			q->next = node;
-		}
 }
 
 /**
@@ -813,8 +461,7 @@ static void tc_net_pbuf_dechain_p(void)
 	struct pbuf *ret;
 
 	for (pk_count = 0; pk_count < 2; pk_count++) {
-		switch(pk_count)
-		{
+		switch (pk_count) {
 		case 0:
 			create_chain(&head, "packet", strlen("packet"), 1);
 			break;
@@ -828,7 +475,7 @@ static void tc_net_pbuf_dechain_p(void)
 
 	ret = pbuf_dechain(head);
 
-	TC_ASSERT_EQ("core", ret, NULL);
+	TC_ASSERT_NEQ("tc_net_pbuf_dechain_p", ret, NULL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -846,12 +493,11 @@ static void tc_net_pbuf_take_n(void)
 	struct pbuf *buf = NULL;
 	const void *dataptr = NULL;
 	err_t ret;
-	u16_t len = 1 ;
-	buf->tot_len = 0;
+	u16_t len = 1;
 
 	ret = pbuf_take(buf, dataptr, len);
 
-	TC_ASSERT_NEQ("core", ret, ERR_OK);
+	TC_ASSERT_EQ("tc_net_pbuf_take_n", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -866,7 +512,7 @@ static void tc_net_pbuf_take_n(void)
 static void tc_net_pbuf_take_p(void)
 {
 	err_t ret;
-	struct pbuf *buf;
+	struct pbuf *buf = NULL;
 	void *dataptr = "data";
 
 	buf = (struct pbuf *)memp_malloc(10);
@@ -876,7 +522,7 @@ static void tc_net_pbuf_take_p(void)
 
 	ret = pbuf_take(buf, dataptr, strlen("data"));
 
-	TC_ASSERT_EQ("core", ret, ERR_OK);
+	TC_ASSERT_EQ("tc_net_pbuf_take_p", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -890,8 +536,8 @@ static void tc_net_pbuf_take_p(void)
 */
 static void tc_net_pbuf_coalesce_n(void)
 {
-	struct pbuf *ret;
-	struct pbuf *p;
+	struct pbuf *ret = NULL;
+	struct pbuf *p = NULL;
 	pbuf_layer layer;
 
 	p = (struct pbuf *)memp_malloc(MEMP_PBUF_POOL);
@@ -899,8 +545,8 @@ static void tc_net_pbuf_coalesce_n(void)
 	layer = 4;
 
 	ret = pbuf_coalesce(p, layer);
-
-	TC_ASSERT_EQ("core", ret, p);
+	memp_free(MEMP_PBUF_POOL, p);
+	TC_ASSERT_EQ("tc_net_pbuf_coalesce_n", ret, p);
 	TC_SUCCESS_RESULT();
 }
 
@@ -915,15 +561,14 @@ static void tc_net_pbuf_coalesce_n(void)
 static void tc_net_pbuf_coalesce_p(void)
 {
 	int pk_count;
-	struct pbuf *ret;
+	struct pbuf *ret = NULL;
 	pbuf_layer layer;
 	struct pbuf *head = NULL;
 
 	layer = 3;
 
 	for (pk_count = 0; pk_count < 2; pk_count++) {
-		switch (pk_count)
-		{
+		switch (pk_count) {
 		case 0:
 			create_chain(&head, "packet", strlen("packet"), 1);
 			break;
@@ -937,7 +582,7 @@ static void tc_net_pbuf_coalesce_p(void)
 
 	ret = pbuf_coalesce(head, layer);
 
-	TC_ASSERT_NEQ("core", ret, head);
+	TC_ASSERT_NEQ("tc_net_pbuf_coalesce_p", ret, head);
 	TC_SUCCESS_RESULT();
 }
 
@@ -956,8 +601,7 @@ static void tc_net_pbuf_get_at_n(void)
 	u8_t ret;
 
 	ret = pbuf_get_at(p, offset);
-
-	TC_ASSERT_EQ("core", ret, 0);
+	TC_ASSERT_EQ("tc_net_pbuf_get_at_n", ret, 0);
 	TC_SUCCESS_RESULT();
 }
 
@@ -979,7 +623,7 @@ static void tc_net_pbuf_memcmp_n(void)
 
 	ret = pbuf_memcmp(p, offset, s2, n);
 
-	TC_ASSERT_EQ("core", ret, 0xffff);
+	TC_ASSERT_EQ("tc_net_pbuf_memcmp_n", ret, 0xffff);
 	TC_SUCCESS_RESULT();
 }
 
@@ -998,13 +642,11 @@ static void tc_net_pbuf_memfind_n(void)
 	const void *mem = NULL;
 	u16_t mem_len = 1;
 	u16_t start_offset = 1;
-	p->tot_len = 0;
 
 	ret = pbuf_memfind(p, mem, mem_len, start_offset);
 
-	TC_ASSERT_EQ("core", ret, 0xffff);
+	TC_ASSERT_EQ("tc_net_pbuf_memfind_n", ret, 0xffff);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -1023,9 +665,8 @@ static void tc_net_pbuf_strstr_n(void)
 
 	ret = pbuf_strstr(p, substr);
 
-	TC_ASSERT_EQ("core", ret, 0xffff);
+	TC_ASSERT_EQ("pbuf_strstr", ret, 0xFFFF);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -1042,7 +683,7 @@ static void tc_net_sys_untimeout_n(void)
 	void *arg = NULL;
 
 	sys_untimeout(handler, arg);
-
+	arg = NULL;
 	TC_SUCCESS_RESULT();
 }
 
@@ -1063,7 +704,8 @@ static void tc_net_icmp_dest_unreach_n(void)
 	t = 0;
 
 	icmp_dest_unreach(p, t);
-	free(p);
+	memp_free(MEMP_PBUF_POOL, p);
+	p = NULL;
 	TC_SUCCESS_RESULT();
 }
 
@@ -1085,7 +727,8 @@ static void tc_net_icmp_time_exceeded_n(void)
 	t = 0;
 
 	icmp_time_exceeded(p, t);
-	free(p);
+	memp_free(MEMP_PBUF_POOL, p);
+	p = NULL;
 	TC_SUCCESS_RESULT();
 }
 
@@ -1107,6 +750,8 @@ static void tc_net_icmp_dest_unreach_p(void)
 	t = 0;
 
 	icmp_dest_unreach(p, t);
+	memp_free(MEMP_PBUF_POOL, p);
+	p = NULL;
 	TC_SUCCESS_RESULT();
 }
 
@@ -1128,29 +773,8 @@ static void tc_net_icmp_time_exceeded_p(void)
 	t = 0;
 
 	icmp_time_exceeded(p, t);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_icmp_send_response_n
-* @brief				:
-* @scenario				:
-* @apicovered			: icmp_send_response()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_icmp_send_response_n(void)
-{
-	struct pbuf *p = NULL;
-	u8_t type;
-	u8_t code;
-	p = (struct pbuf *)memp_malloc(MEMP_PBUF_POOL);
-	p->payload = NULL;
-	type = 3;
-	code = 0;
-
-	icmp_send_response(p, type, code);
-	free(p);
+	memp_free(MEMP_PBUF_POOL, p);
+	p = NULL;
 	TC_SUCCESS_RESULT();
 }
 
@@ -1164,16 +788,17 @@ static void tc_net_icmp_send_response_n(void)
 */
 static void tc_net_icmp_send_response_p(void)
 {
-        struct pbuf *p;
-        u8_t type;
-        u8_t code;
+	struct pbuf *p;
+	u8_t type;
+	u8_t code;
 
-        p->payload = "data";
-        type = 3;
-        code = 0;
+	p->payload = "data";
+	type = 3;
+	code = 0;
 
-        icmp_send_response(p, type, code);
-        TC_SUCCESS_RESULT();
+	icmp_send_response(p, type, code);
+	p = NULL;
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -1206,7 +831,7 @@ static void tc_net_igmp_stop_n(void)
 
 	ret = igmp_stop(netif);
 
-	TC_ASSERT_EQ("core", ret, ERR_OK);
+	TC_ASSERT_EQ("tc_net_igmp_stop_n", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1239,7 +864,7 @@ static err_t default_netif_init(struct netif *netif)
 	netif->mtu = 1500;
 	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
 	netif->hwaddr_len = ETHARP_HWADDR_LEN;
-        return ERR_OK;
+	return 0;
 }
 
 /**
@@ -1261,7 +886,7 @@ static void tc_net_igmp_stop_p(void)
 	netif_set_up(&test_netif);
 	ret = igmp_stop(&test_netif);
 
-	TC_ASSERT_EQ("core", ret, ERR_OK);
+	TC_ASSERT_EQ("tc_net_igmp_stop_p", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1286,7 +911,10 @@ static void tc_net_icmp_input_n(void)
 	IPH_VHL_SET(iphdr, 4, 0);
 
 	icmp_input(p, inp);
-	free(p);
+	memp_free(MEMP_PBUF_POOL, p);
+	p = NULL;
+	inp = NULL;
+	iphdr = NULL;
 	TC_SUCCESS_RESULT();
 }
 
@@ -1301,8 +929,8 @@ static void tc_net_icmp_input_n(void)
 static void tc_net_icmp_input_p(void)
 {
 	struct pbuf *p = NULL;
-	struct netif *inp;
-	struct ip_hdr *iphdr;
+	struct netif *inp = NULL;
+	struct ip_hdr *iphdr = NULL;
 	p = (struct pbuf *)memp_malloc(MEMP_PBUF_POOL);
 	p->payload = "data";
 	p->tot_len = 4;
@@ -1318,37 +946,114 @@ static void tc_net_icmp_input_p(void)
 	iphdr = (struct ip_hdr *)p;
 	IPH_VHL_SET(iphdr, 4, 2);
 	icmp_input(p, inp);
-	free(p);
+	memp_free(MEMP_PBUF_POOL, p);
+	p = NULL;
+	inp = NULL;
+	iphdr = NULL;
 	TC_SUCCESS_RESULT();
+}
+
+static void *server(void *args)
+{
+	int i;
+	int j = 0;
+	int s_fd, sock_tcp;
+	int fd[10] = { 0 };
+	char buf[20] = { 0 };
+	fd_set temp_fd;
+	fd_set rfds;
+	struct sockaddr_in serveraddr;
+	struct sockaddr_in client;
+	struct timeval t_Delay;
+	int fd_max;
+	int newfd;
+	socklen_t addrlen;
+
+	FD_ZERO(&temp_fd);
+	FD_ZERO(&rfds);
+
+	t_Delay.tv_sec = 1;
+	t_Delay.tv_usec = 0;
+
+	memset(&serveraddr, 0, sizeof(serveraddr));
+	sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
+	serveraddr.sin_family = AF_INET;
+	serveraddr.sin_port = htons(PORTNUM);
+	serveraddr.sin_addr.s_addr = IPADDR_LOOPBACK;
+
+	bind(sock_tcp, (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+	listen(sock_tcp, 2);
+
+	fd_max = sock_tcp;
+
+	while (1) {
+		rfds = temp_fd;
+		if ((s_fd = select(fd_max + 1, &rfds, NULL, NULL, &t_Delay)) == -1) {
+			printf("error\n");
+		}
+		addrlen = sizeof(client);
+
+		if (FD_ISSET(sock_tcp, &rfds)) {
+			if ((newfd = accept(sock_tcp, (struct sockaddr *)&client, &addrlen)) == -1) {
+				printf("error\n");
+			}
+
+			FD_SET(newfd, &temp_fd);
+			rfds = temp_fd;
+			fd[j++] = newfd;
+			if (newfd > fd_max) {
+				fd_max = newfd;
+			}
+		} else {
+			for (i = 0; i < j; i++) {
+				if (FD_ISSET(fd[i], &rfds)) {
+					if (!(read(fd[i], buf, 20))) {
+						FD_CLR(fd[i], &temp_fd);
+						rfds = temp_fd;
+						break;
+					}
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
+static void *client(void *args)
+{
+	char buffer[MAXRCVLEN] = "HELLOWORLD\n";
+	int len, sock_tcp;
+	struct sockaddr_in dest;
+
+	sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
+	memset(&dest, 0, sizeof(dest));
+	dest.sin_family = PF_INET;
+	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_port = htons(PORTNUM);
+
+	connect(sock_tcp, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	len = write(sock_tcp, buffer, strlen(buffer));
+	buffer[len] = '\0';
+	return NULL;
 }
 
 /****************************************************************************
  * Name: netcore_api
  ****************************************************************************/
-int net_core_main(void)
+int net_core_main(int sock_tcp)
 {
-	tc_net_netif_remove_p();
+	pthread_t Server, Client;
+
+	pthread_create(&Server, NULL, server, NULL);
+	pthread_create(&Client, NULL, client, NULL);
+
+	tc_net_pbuf_strstr_p();
 	tc_net_pbuf_get_at_p();
 	tc_net_pbuf_memcmp_p();
-	tc_net_pbuf_strstr_p();
-	tc_net_sys_untimeout_p();
-	tc_net_lwip_strerr_p();
-	tc_net_lwip_strerr_n();
-	tc_net_lwip_write_p();
-	tc_net_lwip_read_p();
 	tc_net_get_socket_struct_n();
 	tc_net_get_socket_struct_p();
-	tc_net_tcp_keepalive_n();
-	tc_net_tcp_keepalive_p();
 	tc_net_tcp_zero_window_probe_n();
-	tc_net_tcp_zero_window_probe_p();
-	tc_net_netif_loopif_ifup_p();
-	tc_net_netif_loopif_ifdown_p();
 	tc_net_netif_remove_n();
-	tc_net_pbuf_free_ooseq_n();
-	tc_net_pbuf_free_ooseq_callback_n();
-	tc_net_pbuf_free_ooseq_callback_p();
-	tc_net_pbuf_pool_is_empty_p();
 	tc_net_pbuf_alloced_custom_n();
 	tc_net_pbuf_alloced_custom_p();
 	tc_net_pbuf_dechain_n();
@@ -1368,11 +1073,13 @@ int net_core_main(void)
 	tc_net_icmp_dest_unreach_p();
 	tc_net_icmp_time_exceeded_n();
 	tc_net_icmp_time_exceeded_p();
-	tc_net_icmp_send_response_n();
 	tc_net_igmp_dump_group_list_n();
 	tc_net_igmp_stop_n();
 	tc_net_igmp_stop_p();
 	tc_net_icmp_input_n();
 	tc_net_icmp_input_p();
+
+	pthread_join(Server, NULL);
+	pthread_join(Client, NULL);
 	return 0;
 }

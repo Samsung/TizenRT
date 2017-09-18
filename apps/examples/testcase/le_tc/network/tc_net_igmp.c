@@ -19,19 +19,12 @@
 #include <net/lwip/netif/etharp.h>
 #include <net/lwip/stats.h>
 #include <net/lwip/ipv4/igmp.h>
-
+#include <stdlib.h>
 #include "tc_internal.h"
-
-#if !LWIP_STATS || !UDP_STATS || !MEMP_STATS || !ETHARP_STATS
-#error "This tests needs UDP-, MEMP- and ETHARP-statistics enabled"
-#endif
-#if !ETHARP_SUPPORT_STATIC_ENTRIES
-#error "This test needs ETHARP_SUPPORT_STATIC_ENTRIES enabled"
-#endif
 
 static struct netif test_netif;
 static ip_addr_t test_ipaddr, test_netmask, test_gw;
-struct eth_addr test_ethaddr = {{ 1, 1, 1, 1, 1, 1 }};
+struct eth_addr test_ethaddr = { {1, 1, 1, 1, 1, 1} };
 
 static int linkoutput_ctr;
 
@@ -81,7 +74,7 @@ static err_t default_netif_init(struct netif *netif)
 	netif->mtu = 1500;
 	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
 	netif->hwaddr_len = ETHARP_HWADDR_LEN;
-	return ERR_OK;
+	return 0;
 }
 
 /**
@@ -142,7 +135,6 @@ static void etharp_teardown(void)
 	default_netif_remove();
 }
 
-
 /**
 * @testcase				: tc_etharp_free_entry
 * @brief				:
@@ -159,7 +151,6 @@ static void tc_etharp_free_entry(void)
 	TC_SUCCESS_RESULT();
 }
 
-
 /**
 * @testcasu				: tc_free_etharp_q
 * @brief				:
@@ -170,8 +161,8 @@ static void tc_etharp_free_entry(void)
 */
 static void tc_free_etharp_q(void)
 {
-	struct etharp_q_entry *q;
-	q = (struct etharp_q_entry *)malloc(sizeof (struct etharp_q_entry));
+	struct etharp_q_entry *q = NULL;
+	q = (struct etharp_q_entry *)malloc(sizeof(struct etharp_q_entry));
 
 	free_etharp_q(q);
 	TC_SUCCESS_RESULT();
@@ -205,15 +196,15 @@ static void tc_etharp_find_addr_p(void)
 {
 	ip_addr_t *unused_ipaddr;
 	struct eth_addr *unused_ethaddr;
-	int ret = -1;
+	int ret;
 	ip_addr_t adrs[ARP_TABLE_SIZE + 2];
 	int i;
 
 	for (i = 0; i < ARP_TABLE_SIZE + 2; i++) {
-		IP4_ADDR(&adrs[i], 192, 168, 0, i+2);
+		IP4_ADDR(&adrs[i], 192, 168, 0, i + 2);
 	}
 
-	ret = etharp_add_static_entry(&adrs[ARP_TABLE_SIZE], &test_ethaddr); 
+	ret = etharp_add_static_entry(&adrs[ARP_TABLE_SIZE], &test_ethaddr);
 	etharp_find_addr(NULL, &adrs[ARP_TABLE_SIZE], &unused_ethaddr, &unused_ipaddr);
 	TC_ASSERT_NEQ("etharp_find_addr", ret, 1);
 	TC_SUCCESS_RESULT();
@@ -247,12 +238,11 @@ static void tc_igmp_removegroup_n(void)
 static void tc_igmp_removegroup_p(void)
 {
 	ip_addr_t *groupaddr = NULL;
-	ip_addr_t *ifaddr = NULL;
-	int ret = -1;
+	ip_addr_t ifaddr;
+	int ret;
 
 	etharp_setup();
-	ifaddr = (ip_addr_t *)malloc(sizeof(ip_addr_t));
-	groupaddr =  (ip_addr_t *)igmp_lookup_group(&test_netif, ifaddr);
+	groupaddr = (ip_addr_t *) igmp_lookup_group(&test_netif, &ifaddr);
 	ret = igmp_remove_group(groupaddr);
 	TC_ASSERT_EQ("igmp_removeroup", ret, 0);
 	TC_SUCCESS_RESULT();
@@ -267,9 +257,9 @@ static void tc_igmp_removegroup_p(void)
 * @precondition			:
 * @postcondition		:
 */
- void tc_igmp_leavegroup_n(void)
+void tc_igmp_leavegroup_n(void)
 {
-	int ret = -1;
+	int ret;
 
 	ret = igmp_leavegroup(NULL, NULL);
 	TC_ASSERT_NEQ("igmp_leavegroup", ret, 0);
@@ -288,18 +278,18 @@ void tc_igmp_leavegroup_p(void)
 {
 	ip_addr_t *ifaddr = NULL;
 	ip_addr_t *groupaddr = NULL;
-	int ret = -1;
-	
+	int ret;
+
 	etharp_setup();
 	ifaddr = (ip_addr_t *)malloc(sizeof(ip_addr_t));
-	groupaddr =  (ip_addr_t *)igmp_lookup_group(&test_netif,ifaddr);
+	groupaddr = (ip_addr_t *) igmp_lookup_group(&test_netif, ifaddr);
 	ipaddr_aton("198.51.100.4", ifaddr);
 	ret = igmp_leavegroup(ifaddr, groupaddr);
+	TC_FREE_MEMORY(ifaddr);
 	TC_ASSERT_EQ("igmp_leavegroup", ret, 0);
 	TC_SUCCESS_RESULT();
 	etharp_teardown();
 }
-
 
 /**
 * @testcase				: tc_igmp_joingroup_n
@@ -311,7 +301,7 @@ void tc_igmp_leavegroup_p(void)
 */
 static void tc_igmp_joingroup_n(void)
 {
-	int ret = -1;
+	int ret;
 
 	ret = igmp_joingroup(NULL, NULL);
 	TC_ASSERT_NEQ("igmp_joingroup", ret, 0);
@@ -330,13 +320,14 @@ static void tc_igmp_joingroup_p(void)
 {
 	ip_addr_t *ifaddr = NULL;
 	ip_addr_t *groupaddr = NULL;
-	int ret = -1;
-	
+	int ret;
+
 	etharp_setup();
 	ifaddr = (ip_addr_t *)malloc(sizeof(ip_addr_t));
-	groupaddr =  (ip_addr_t *)igmp_lookup_group(&test_netif, ifaddr);
+	groupaddr = (ip_addr_t *) igmp_lookup_group(&test_netif, ifaddr);
 	ipaddr_aton("198.51.100.4", ifaddr);
 	ret = igmp_joingroup(ifaddr, groupaddr);
+	TC_FREE_MEMORY(ifaddr);
 	TC_ASSERT_EQ("igmp_joingroup", ret, 0);
 	TC_SUCCESS_RESULT();
 	etharp_teardown();

@@ -35,9 +35,9 @@
 */
 void tc_net_core_ntohs_p(void)
 {
-	short int x; /* Value for checking */
+	short int x;				/* Value for checking */
 
-	x = ntohs(TC_VAL1); /* Observe value in network byte order */
+	x = ntohs(TC_VAL1);			/* Observe value in network byte order */
 	TC_ASSERT_NEQ("ntohs", x, TC_VAL1);
 	TC_SUCCESS_RESULT();
 }
@@ -52,12 +52,13 @@ void tc_net_core_ntohs_p(void)
 */
 void tc_net_core_ntohl_p(void)
 {
-	long int x; /* Value for checking */
+	long int x;					/* Value for checking */
 
-	x = ntohl(TC_VAL2);  /* Observe value in network byte order */
+	x = ntohl(TC_VAL2);			/* Observe value in network byte order */
 	TC_ASSERT_NEQ("ntohl", x, TC_VAL2);
 	TC_SUCCESS_RESULT();
 }
+
 /****************************************************************************
  * Name: ntohs() and ntohl()
  ****************************************************************************/

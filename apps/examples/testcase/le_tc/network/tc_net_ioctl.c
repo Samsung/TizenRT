@@ -46,16 +46,13 @@ extern int ioctlsocket(int s, long cmd, void *argp);
 static void tc_net_ioctl_p(void)
 {
 
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
 	long a = 0;
 
-	int ret = ioctlsocket(fd, FIONBIO, &a);
-	close(fd);
+	int ret = ioctlsocket(sock, FIONBIO, &a);
 
-	TC_ASSERT_NEQ("ioctl", ret, -1);
+	TC_ASSERT_NEQ("ioctl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -68,17 +65,13 @@ static void tc_net_ioctl_p(void)
 */
 static void tc_net_ioctl_fionread_n(void)
 {
-
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	int ret;
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
 	long a = 10;
 
-	int ret = ioctlsocket(fd, FIONREAD, &a);
-	close(fd);
-
-	TC_ASSERT_NEQ("ioctl", ret, 0);
+	ret = ioctlsocket(sock, FIONREAD, &a);
+	TC_ASSERT_NEQ("ioctl", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -91,20 +84,18 @@ static void tc_net_ioctl_fionread_n(void)
 */
 static void tc_net_ioctl_n(void)
 {
-
 	int fd = -1;
 	int ret = ioctlsocket(fd, FIONBIO, 0);
 
-	TC_ASSERT_NEQ("ioctl", ret, 0);
+	TC_ASSERT_EQ("ioctl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
  * Name: ioctl()
  ****************************************************************************/
 
-int net_ioctl_main(void)
+int net_ioctl_main(int s)
 {
 
 	tc_net_ioctl_p();

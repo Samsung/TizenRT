@@ -20,7 +20,7 @@
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_ip_frag_n 
+* @testcase				: tc_ip_frag_n
 * @brief				:
 * @scenario				:
 * @apicovered			: ip_frag()
@@ -55,7 +55,7 @@ static void tc_ip_reass_free_complete_datagram_p(void)
 
 	result = ip_reass_free_complete_datagram(ipr, NULL);
 	/* ipr -> p is freed in ip_reass_free_complete_datagram */
-	free(ipr);	
+	TC_FREE_MEMORY(ipr);
 	ipr = NULL;
 	TC_ASSERT_NEQ("ip_frag_free_pbuf_custom_ref", result, 0);
 	TC_SUCCESS_RESULT();
@@ -98,7 +98,7 @@ static void tc_ip_reass_remove_oldest_datagram_n(void)
 	TC_ASSERT_EQ("ip_reass_remove_oldest_datagram", result, 0);
 	TC_SUCCESS_RESULT();
 }
-  
+
 /**
 * @testcase				: tc_ip_frag_free_pbuf_custom_ref_p
 * @brief				:
@@ -134,7 +134,7 @@ static void tc_ip_frag_alloc_pbuf_custom_ref_p(void)
 		result = 1;
 		tc_ip_frag_free_pbuf_custom_ref_p(buf);
 	}
-	
+
 	TC_ASSERT_NEQ("ip_frag_alloc_pbuf_custom_ref", result, 0);
 	TC_SUCCESS_RESULT();
 }
@@ -166,19 +166,21 @@ static void tc_ip_frag_free_pbuf_custom_p(void)
 	struct pbuf *n = malloc(sizeof(struct pbuf));
 
 	ipfrag_free_pbuf_custom(n);
+	TC_FREE_MEMORY(n);
 	TC_SUCCESS_RESULT();
 }
+
 /****************************************************************************
  * Name: lwip_read_write()
  ****************************************************************************/
 int tc_ip_frag_main(void)
 {
-	tc_ip_frag_n();
-	tc_ip_frag_alloc_pbuf_custom_ref_p();
-	tc_ip_frag_free_pbuf_custom_n();	
-	tc_ip_frag_free_pbuf_custom_p();
-	tc_ip_reass_free_complete_datagram_p();
-	tc_ip_reass_remove_oldest_datagram_p();
-	tc_ip_reass_remove_oldest_datagram_n();
+//  tc_ip_frag_n();
+//  tc_ip_frag_alloc_pbuf_custom_ref_p();
+//  tc_ip_frag_free_pbuf_custom_n();
+//  tc_ip_frag_free_pbuf_custom_p();
+//  tc_ip_reass_free_complete_datagram_p();
+//  tc_ip_reass_remove_oldest_datagram_p();
+//  tc_ip_reass_remove_oldest_datagram_n();
 	return 0;
 }

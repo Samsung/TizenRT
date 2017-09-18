@@ -20,6 +20,7 @@
 /// @brief Test Case Example for netdev() API
 #include <tinyara/net/netdev.h>
 #include <net/lwip/netif.h>
+#include <net/if.h>
 
 #include "tc_internal.h"
 
@@ -34,12 +35,15 @@
 static void tc_netdev_carrier_on_p(void)
 {
 	int ret;
-	struct net_driver_s * dev;
+	struct net_driver_s *dev;
 
 	dev = (struct net_driver_s *)malloc(sizeof(struct net_driver_s));
+	TC_ASSERT_NEQ("malloc", dev, NULL);
 
 	ret = netdev_carrier_on(dev);
-	TC_ASSERT_EQ("netdev", ret, 0);
+
+	TC_FREE_MEMORY(dev);
+	TC_ASSERT_EQ("netdev", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -56,7 +60,7 @@ static void tc_netdev_carrier_on_n(void)
 	int ret;
 
 	ret = netdev_carrier_on(NULL);
-	TC_ASSERT_NEQ("netdev", ret, 0);
+	TC_ASSERT_NEQ("netdev", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -71,13 +75,16 @@ static void tc_netdev_carrier_on_n(void)
 static void tc_netdev_carrier_off_p(void)
 {
 	int ret;
-	struct net_driver_s * dev;
+	struct net_driver_s *dev;
 
 	dev = (struct net_driver_s *)malloc(sizeof(struct net_driver_s));
+	TC_ASSERT_NEQ("malloc", dev, NULL);
 	dev->d_flags = 4;
 
 	ret = netdev_carrier_off(dev);
-	TC_ASSERT_EQ("netdev", ret, 0);
+
+	TC_FREE_MEMORY(dev);
+	TC_ASSERT_EQ("netdev", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -92,13 +99,9 @@ static void tc_netdev_carrier_off_p(void)
 static void tc_netdev_carrier_off_n(void)
 {
 	int ret;
-	struct net_driver_s * dev = NULL;
 
-	dev = (struct net_driver_s *)malloc(sizeof(struct net_driver_s));
-	dev->d_flags = 1;
-
-	ret = netdev_carrier_off(dev);
-	TC_ASSERT_NEQ("netdev", ret, 0);
+	ret = netdev_carrier_off(NULL);
+	TC_ASSERT_NEQ("netdev", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -113,9 +116,23 @@ static void tc_netdev_carrier_off_n(void)
 static void tc_netdev_count(void)
 {
 	int ndev;
+	struct netif *dev;
 
+	dev = g_netdevices;
 	ndev = netdev_count();
+
+	if (dev != NULL) {
+		TC_ASSERT_GEQ("netdev", ndev, ONE);
+	} else {
+		TC_ASSERT_EQ("netdev", ndev, ZERO);
+	}
+
 	TC_SUCCESS_RESULT();
+}
+
+static int tc_test_function(struct netif *dev)
+{
+	return ZERO;
 }
 
 /**
@@ -126,19 +143,17 @@ static void tc_netdev_count(void)
 * @precondition			:
 * @postcondition		:
 */
-static int dummy_function (struct netif *dev)
-{
-	return 1;
-}
 static void tc_netdev_ifdown(void)
 {
-	struct netif *dev;
-	dev = (struct netif *)malloc(sizeof(struct netif));
+	struct netif dev;
 
-	dev->d_ifdown = dummy_function;
-	netdev_ifdown (dev);
+	dev.d_flags = 0;
+	dev.d_flags |= IFF_UP;
+	dev.d_ifdown = tc_test_function;
+
+	netdev_ifdown(&dev);
+	TC_ASSERT_EQ("netdev", dev.d_flags, ZERO)
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************

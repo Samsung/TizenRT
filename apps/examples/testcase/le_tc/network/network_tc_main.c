@@ -24,6 +24,13 @@
 #include <semaphore.h>
 #include "tc_internal.h"
 
+#include <net/if.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+
+#include "tc_internal.h"
+
 extern sem_t tc_sem;
 extern int working_tc;
 
@@ -42,6 +49,9 @@ int network_tc_main(int argc, char *argv[])
 	total_pass = 0;
 	total_fail = 0;
 
+	int sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
+	int sock_tcp1 = socket(AF_INET, SOCK_STREAM, 0);
+	int sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
 	printf("=== TINYARA Network TC START! ===\n");
 
 #ifdef CONFIG_TC_NET_SOCKET
@@ -66,13 +76,13 @@ int network_tc_main(int argc, char *argv[])
 	net_getsockname_main();
 #endif
 #ifdef CONFIG_TC_NET_GETSOCKOPT
-	net_getsockopt_main();
+	net_getsockopt_main(sock_tcp);
 #endif
 #ifdef CONFIG_TC_NET_FCNTL
-	net_fcntl_main();
+	net_fcntl_main(sock_tcp);
 #endif
 #ifdef CONFIG_TC_NET_IOCTL
-	net_ioctl_main();
+	net_ioctl_main(sock_tcp);
 #endif
 #ifdef CONFIG_TC_NET_ACCEPT
 	net_accept_main();
@@ -98,14 +108,11 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_DHCPC
 	net_dhcpc_main();
 #endif
-#ifdef CONFIG_TC_NET_SELECT
-	net_select_main();
-#endif
 #ifdef CONFIG_TC_NET_INET
 	net_inet_main();
 #endif
 #ifdef CONFIG_TC_NET_ETHER
-	net_ether_main();
+	net_ether_main(sock_udp);
 #endif
 #ifdef CONFIG_TC_NET_NETDB
 	net_netdb_main();
@@ -132,10 +139,7 @@ int network_tc_main(int argc, char *argv[])
 	net_tcpip_main();
 #endif
 #ifdef CONFIG_TC_NET_MAC
-	net_mac_main();
-#endif
-#ifdef CONFIG_TC_NET_CORE
-	net_core_main();
+	net_mac_main(sock_tcp, sock_tcp1);
 #endif
 #ifdef CONFIG_TC_NET_LWIP_READ_WRITE
 	net_lwip_read_write_main();
@@ -155,21 +159,33 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_NETBUF
 	tc_net_netbuf_main();
 #endif
-#ifdef CONFIG_TC_NET_STATS
-	net_stats_main();
-#endif
 #ifdef CONFIG_LWIP_NETIFAPI
 	net_lwip_netifapi_main();
-#endif
-#ifdef CONFIG_TC_NET_RAW
-	tc_net_raw_main();
 #endif
 #ifdef CONFIG_TC_NET_IP_FRAG
 	tc_ip_frag_main();
 #endif
+#ifdef CONFIG_TC_NET_RAW
+	tc_net_raw_main();
+#endif
+#ifdef CONFIG_TC_NET_GETPEERNAME
+	net_getpeername_main();
+#endif
+#ifdef CONFIG_TC_NET_SELECT
+	net_select_main();
+#endif
+#ifdef CONFIG_TC_NET_STATS
+	net_stats_main();
+#endif
 #ifdef CONFIG_TC_IGMP
 	net_igmp_main();
 #endif
+#ifdef CONFIG_TC_NET_CORE
+	net_core_main(sock_tcp);
+#endif
+	close(sock_tcp);
+	close(sock_tcp1);
+	close(sock_udp);
 	printf("\n=== TINYARA Network TC COMPLETE ===\n");
 	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
 
