@@ -31,7 +31,7 @@
 
 #include "tinydtls/tinydtls.h"
 #include "tinydtls/dtls.h"
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #define LWM2M_STANDARD_PORT_STR "5683"
 #define LWM2M_STANDARD_PORT      5683

@@ -57,7 +57,7 @@
 */
 
 #include "lwm2mclient.h"
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 #include "commandline.h"
 #ifdef WITH_TINYDTLS
 #include "dtlsconnection.h"

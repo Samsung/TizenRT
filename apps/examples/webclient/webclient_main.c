@@ -253,16 +253,15 @@ int webclient_init_request(void *arg, struct http_client_request_t *request)
 		goto exit;
 	}
 
-	if (!strcmp(argv[1], "GET")) {
+	if (!strncmp(argv[1], "GET", 4)) {
 		request->method = WGET_MODE_GET;
-	} else if (!strcmp(argv[1], "POST")) {
+	} else if (!strncmp(argv[1], "PUT", 4)) {
+			request->method = WGET_MODE_PUT;
+	} else if (!strncmp(argv[1], "POST", 5)) {
 		request->method = WGET_MODE_POST;
-	} else if (!strcmp(argv[1], "PUT")) {
-		request->method = WGET_MODE_PUT;
-	} else if (!strcmp(argv[1], "DELETE")) {
+	} else if (!strncmp(argv[1], "DELETE", 7)) {
 		request->method = WGET_MODE_DELETE;
 	} else {
-		dump_webclient_usage();
 		goto exit;
 	}
 
@@ -271,7 +270,7 @@ int webclient_init_request(void *arg, struct http_client_request_t *request)
 	if (!request->url) {
 		goto exit;
 	}
-	strcpy(request->url, argv[2]);
+	strncpy(request->url, argv[2], strlen(argv[2]));
 	request->url[strlen(argv[2])] = '\0';
 
 #ifdef CONFIG_NET_SECURITY_TLS
@@ -292,13 +291,13 @@ int webclient_init_request(void *arg, struct http_client_request_t *request)
 		}
 		*q++ = '\0';
 
-		if (strcmp(p, "async") == 0) {
+		if (strncmp(p, "async", 5) == 0) {
 			g_async = atoi(q);
-		} else if (strcmp(p, "chunked") == 0) {
+		} else if (strncmp(p, "entity", 6) == 0) {
+				request->entity = q;
+		} else if (strncmp(p, "chunked", 7) == 0) {
 			request->encoding = atoi(q);
-		} else if (strcmp(p, "entity") == 0) {
-			request->entity = q;
-		} else if (strcmp(p, "test_entity") == 0) {
+		} else if (strncmp(p, "test_entity", 11) == 0) {
 			int t = atoi(q);
 			if (t > 0 && t <= WEBCLIENT_CONF_MAX_ENTITY_SIZE) {
 				request->entity = (char *)malloc(t);
@@ -331,7 +330,7 @@ pthread_addr_t webclient_cb(void *arg)
 	struct http_client_response_t response;
 	struct http_client_ssl_config_t *ssl_config = NULL;
 
-	if (webclient_init_request(arg, &request)) {
+	if (webclient_init_request(arg, &request) != 0) {
 		dump_webclient_usage();
 		if (g_testentity && request.entity) {
 			free(request.entity);
@@ -446,7 +445,7 @@ int webclient_main(int argc, char *argv[])
 			WEBCLIENT_FREE_INPUT(input, i);
 			return -1;
 		}
-		strcpy(input->argv[i], argv[i]);
+		strncpy(input->argv[i], argv[i], strlen(argv[i]));
 	}
 
 	status = pthread_create(&tid, &attr, webclient_cb, input);

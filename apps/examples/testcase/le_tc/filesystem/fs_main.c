@@ -115,6 +115,8 @@
 #  define STDERR_FILENO 2
 #endif
 
+#define INV_FD -3
+
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -1012,6 +1014,7 @@ static void fs_vfs_sendfile_tc(void)
 	struct stat st;
 	int fd1, fd2, ret;
 	off_t size;
+	off_t offset;
 
 	snprintf(dest_file, sizeof(dest_file), "%s_dest", src_file);
 
@@ -1022,17 +1025,69 @@ static void fs_vfs_sendfile_tc(void)
 	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1));
 
 	size = st.st_size;
+	/* case-1: offset = 0 */
 	fd2 = open(dest_file, O_WRONLY | O_CREAT);
 	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
 
 	ret = sendfile(fd2, fd1, 0, size);
-	close(fd1);
 	close(fd2);
-	TC_ASSERT_EQ("sendfile", ret, size);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, size, close(fd1));
 
 	ret = stat(dest_file, &st);
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1));
+	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, size, close(fd1));
+
+	/* case-2: offset = 1 */
+	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
+
+	offset = 1;
+	ret = sendfile(fd2, fd1, &offset, size - 1);
+	close(fd2);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, size - 1, close(fd1));
+
+	ret = stat(dest_file, &st);
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1));
+	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, size - 1, close(fd1));
+
+	/* case-3: offset = 1, invalid input fd, returns ERROR */
+	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
+
+	offset = 1;
+	ret = sendfile(fd2, INV_FD, &offset, size - 1);
+	close(fd2);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, close(fd1));
+
+	/* case-4: invalid input fd, returns ERROR */
+	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
+
+	ret = sendfile(fd2, INV_FD, NULL, size);
+	close(fd2);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, close(fd1));
+
+	/* case-5: offset = 0, invalid output fd, returns ERROR */
+	offset = 0;
+	ret = sendfile(INV_FD, fd1, &offset, size);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, close(fd1));
+
+	/* case-6: current offset of input file is EOF, returns ERROR */
+	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
+
+	ret = lseek(fd1, 0, SEEK_END);
+	TC_ASSERT_EQ_CLEANUP("lseek", ret, size,  close(fd1);close(fd2));
+
+	ret = sendfile(fd2, fd1, NULL, size);
+	close(fd2);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, 0, close(fd1));
+
+	ret = stat(dest_file, &st);
+	close(fd1);
 	TC_ASSERT_EQ("stat", ret, OK);
-	TC_ASSERT_EQ("stat", size, st.st_size);
+	TC_ASSERT_EQ("stat", st.st_size, 0);
+
 	TC_SUCCESS_RESULT();
 }
 

@@ -602,7 +602,7 @@ WEB_CLI_EXIT:
 
 	if (tls) {
 		websocket_tls_release(1, &conf, &cert, &pkey, &entropy, &ctr_drbg, &cache);
-		if (websocket_cli->tls_ssl) {
+		if (websocket_cli && websocket_cli->tls_ssl) {
 			mbedtls_ssl_free(websocket_cli->tls_ssl);
 			free(websocket_cli->tls_ssl);
 		}
@@ -725,7 +725,7 @@ int websocket_main(int argc, char *argv[])
 	int status;
 	pthread_attr_t attr;
 	pthread_t tid;
-	struct options_s *input;
+	struct options_s *input = NULL;
 	if (argc < 3) {
 		goto error_with_input;
 	}
@@ -760,6 +760,7 @@ int websocket_main(int argc, char *argv[])
 		strncpy(input->server_ip, argv[2], addr_len + 1);
 		strncpy(input->server_port, argv[3], port_len + 1);
 		strncpy(input->path, argv[4], path_len + 1);
+
 		input->tls_mode = atoi(argv[5]);
 		input->size = atoi(argv[6]);
 		input->num = atoi(argv[7]);
@@ -769,7 +770,7 @@ int websocket_main(int argc, char *argv[])
 
 	if ((status = pthread_attr_init(&attr)) != 0) {
 		printf("fail to init thread\n");
-		return -1;
+		goto error_with_function_failure;
 	}
 
 	pthread_attr_setstacksize(&attr, WEBSOCKET_EXAMPLE_STACKSIZE);
@@ -778,24 +779,33 @@ int websocket_main(int argc, char *argv[])
 	if (memcmp(argv[1], "client", strlen("client")) == 0 && argc == 8) {
 		if ((status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_client, (void *)input)) != 0) {
 			printf("fail to create thread\n");
-			return -1;
+			goto error_with_function_failure;
 		}
 		pthread_setname_np(tid, "websocket client");
 		pthread_detach(tid);
 	} else if (memcmp(argv[1], "server", strlen("server")) == 0 && argc == 3) {
 		if ((status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_server, (void *)input)) != 0) {
 			printf("fail to create thread\n");
-			return -1;
+			goto error_with_function_failure;
 		}
 		pthread_setname_np(tid, "websocket server");
 		pthread_detach(tid);
 	} else {
 		printf("\nwrong input parameter !!!\n %s\n", WEBSOCKET_USAGE);
-		return -1;
+		goto error_with_function_failure;
 	}
+
+	if (input) {
+		free(input);
+	}
+
 	return 0;
 
 error_with_input:
 	printf("%s", WEBSOCKET_USAGE);
+error_with_function_failure:
+	if (input) {
+		free(input);
+	}
 	return -1;
 }

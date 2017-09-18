@@ -26,7 +26,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
-#include "../../../external/wakaama/core/liblwm2m.h"
+#include <protocols/liblwm2m.h>
 #ifdef WITH_MBEDTLS
 #include "mbedtls/easy_tls.h"
 #endif

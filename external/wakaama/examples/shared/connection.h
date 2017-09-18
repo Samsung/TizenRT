@@ -25,7 +25,7 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <liblwm2m.h>
+#include <protocols/liblwm2m.h>
 
 #define LWM2M_STANDARD_PORT_STR "5683"
 #define LWM2M_STANDARD_PORT      5683

@@ -51,7 +51,7 @@
 #ifndef _LWM2M_INTERNALS_H_
 #define _LWM2M_INTERNALS_H_
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include <stdlib.h>
 #include <string.h>
