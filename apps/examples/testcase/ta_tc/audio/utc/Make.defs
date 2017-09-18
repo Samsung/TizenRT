@@ -16,7 +16,11 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXAMPLES_ALC5658CHAR_TEST),y)
-CONFIGURED_APPS += examples/alc5658char_test
-endif
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_AUDIO_UTC),y)
+CSRCS += utc_audio_main.c
 
+# Include audio build support
+
+DEPPATH += --dep-path ta_tc/audio/utc
+VPATH += :ta_tc/audio/utc
+endif

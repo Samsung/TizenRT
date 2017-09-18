@@ -148,7 +148,7 @@ pthread_addr_t i2schar_transmitter(pthread_addr_t arg)
 		/* Fill the audio buffer with crap */
 
 		j = 0;
-		for (ptr = apb->samp; j < CONFIG_EXAMPLES_I2SCHAR_BUFSIZE / 2; ) {
+		for (ptr = apb->samp; j < CONFIG_EXAMPLES_I2SCHAR_BUFSIZE / 2;) {
 			((uint16_t *) ptr)[j] = j;
 			j++;
 			((uint16_t *) ptr)[j] = -j;

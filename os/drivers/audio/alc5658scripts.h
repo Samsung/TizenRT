@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,157 +15,19 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/****************************************************************************
- * drivers/audio/alc5658char.h
- *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author:  Gregory Nutt <gnutt@nuttx.org>
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
- ****************************************************************************/
+#ifndef __DRIVERS_AUDIO_ALC5658SCRIPTS_H
+#define __DRIVERS_AUDIO_ALC5658SCRIPTS_H
 
-#ifndef __DRIVERS_AUDIO_ALC5658CHAR_H
-#define __DRIVERS_AUDIO_ALC5658CHAR_H
+
+#ifdef CONFIG_AUDIO_ALC5658
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-#include <tinyara/compiler.h>
+#include "alc5658reg.h"
 
-#include <pthread.h>
-#include <mqueue.h>
-
-#include <tinyara/wqueue.h>
-#include <tinyara/fs/ioctl.h>
-
-#ifdef CONFIG_AUDIO
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/* Registers Addresses ******************************************************/
-
-typedef enum {
-	ALC5658_RESET = 0x0000,
-	ALC5658_SPO_VOL = 0x0001,
-	ALC5658_HPOUT_MUTE = 0x0002,
-	ALC5658_LOUT_CTRL1 = 0x0003,
-	ALC5658_LOUT_CTRL2 = 0x0004,
-	ALC5658_HPOUT_VLML = 0x0005,
-	ALC5658_HPOUT_VLMR = 0x0006,
-	ALC5658_SPDIF_CTRL1 = 0x0008,
-	ALC5658_SPDIF_CTRL2 = 0x0009,
-	ALC5658_SPDIF_CTRL3 = 0x0036,
-	ALC5658_IN1_CTRL = 0x000C,
-	ALC5658_INL_VLM = 0x000F,
-	ALC5658_SIDETONE = 0x0018,
-	/* DIGITAL Volume */
-	ALC5658_DAC_L1R1_VLM = 0x0019,
-	ALC5658_DAC_L2R2_VLM = 0x001A,
-	ALC5658_DAC_L2R2_MUTE = 0x001B,
-	/* DIGITAL Mixers */
-	ALC5658_ADC_STR1_MXR = 0x0026,
-	ALC5658_ADC_MONO_MXR = 0x0027,
-	ALC5658_ADC_2_DAC_MXR = 0x0029,
-	ALC5658_DAC_STR_MXR = 0x002A,
-	ALC5658_DAC_MONO_MXR = 0x002B,
-	ALC5658_DAC_LB_SDTONE = 0x002C,
-	ALC5658_COPY_MODE = 0x002F,
-	/* Analog DAC Source */
-	ALC5658_DAC_SRC = 0x002D,
-	ALC5658_RECMIX1L_CTRL_1 = 0x003B,
-	ALC5658_RECMIX1L_CTRL_2 = 0x003C,
-	ALC5658_RECMIX1R_CTRL_1 = 0x003D,
-	ALC5658_RECMIX1R_CTRL_2 = 0x003E,
-	/* ANALOG Mixers */
-	ALC5658_SPKMIXL = 0x0046,
-	ALC5658_SPKMIXR = 0x0047,
-	ALC5658_SPOMIX = 0x0048,
-	ALC5658_OUTMIXL1 = 0x004D,
-	ALC5658_OUTMIXL2 = 0x004E,
-	ALC5658_OUTMIXR1 = 0x004F,
-	ALC5658_OUTMIXR2 = 0x0050,
-	ALC5658_LOUTMIX = 0x0052,
-	/* Power management */
-	ALC5658_PWR_MNG1 = 0x0061,
-	ALC5658_PWR_MNG2 = 0x0062,
-	ALC5658_PWR_MNG3 = 0x0063,
-	ALC5658_PWR_MNG4 = 0x0064,
-	ALC5658_PWR_MNG5 = 0x0065,
-	ALC5658_PWR_MNG6 = 0x0066,
-	ALC5658_PWR_MNG7 = 0x0067,
-	/* DIGITAL ports control */
-	ALC5658_IF_DTCT = 0x006B,
-	ALC5658_006E = 0x006E,
-	ALC5658_006F = 0x006F,
-	ALC5658_I2S1_CTRL = 0x0070,
-	ALC5658_I2S2_CTRL = 0x0071,
-	ALC5658_ADDA_CLK = 0x0073,
-	ALC5658_ADDA_HPF = 0x0074,
-	ALC5658_007B = 0x007B,
-	/* TDM */
-	ALC5658_TDM_CTRL1 = 0x0077,
-	ALC5658_TDM_CTRL2 = 0x0078,
-	ALC5658_TDM_CTRL3 = 0x0079,
-	ALC5658_TDM_CTRL4 = 0x007A,
-	/* Global Clock */
-	ALC5658_GLBL_CLK = 0x0080,
-	ALC5658_GLBL_PLL1 = 0x0081,
-	ALC5658_GLBL_PLL2 = 0x0082,
-	ALC5658_GLBL_ASRC1 = 0x0083,
-	ALC5658_GLBL_ASRC2 = 0x0084,
-	ALC5658_GLBL_ASRC3 = 0x0085,
-	ALC5658_GLBL_ASRC4 = 0x008A,
-	/* Amplifiers */
-	ALC5658_HP_AMP = 0x008E,
-	ALC5658_SPK_AMP = 0x00A0,
-	ALC5658_0091 = 0x0091,
-	ALC5658_INTCLK_CTRL = 0x0094,
-	ALC5658_GNRL_CTRL = 0x00FA,
-	ALC5658_GNRL_CTRL2 = 0x00FB,
-	ALC5658_0111 = 0x0111,
-	ALC5658_0125 = 0x0125,
-	ALC5658_ADDA_RST1 = 0x013A,
-	ALC5658_ADDA_RST2 = 0x013B,
-	ALC5658_0x013C = 0x013C,
-	ALC5658_NOISE_G_M1_CTRL1 = 0x0015,
-	ALC5658_NOISE_G_M2_CTRL = 0x0160,
-	ALC5658_0x01DE = 0x01DE,
-	ALC5658_0x01DF = 0x01DF,
-	ALC5658_0x01E4 = 0x01E4,
-	ALC5658_0040 = 0x0040,
-	ALC5658_0010 = 0x0010,
-} ALC5658_REG;
-
+/* TYPEDEFS */
 typedef struct {
 	ALC5658_REG addr;
 	uint16_t val;
@@ -427,19 +289,19 @@ t_codec_init_script_entry codec_init_inout_script2[] = {
 	{ALC5658_PWR_MNG1, 0xCC98, 0},
 	{ALC5658_0091, 0x0E16, 0},
 	{ALC5658_PWR_MNG2, 0xB700, 0},
-	{ALC5658_PWR_MNG4, 0xC860, 0},		//enable mbias1
+	{ALC5658_PWR_MNG4, 0xC860, 0},	//enable mbias1
 	{ALC5658_PWR_MNG6, 0x0C00, 0},
 	{ALC5658_PWR_MNG7, 0x0300, 0},
-	{ALC5658_HPOUT_MUTE, 0x8080, 0},		// MUTE OUTPUT
+	{ALC5658_HPOUT_MUTE, 0x8080, 0},	// MUTE OUTPUT
 	{ALC5658_0091, 0x0E1E, 0},
 	{ALC5658_I2S1_CTRL, 0x0000, 0},
 	{ALC5658_DAC_STR_MXR, 0x2A8A, 0},
 	{ALC5658_DAC_SRC, 0x000F, 0},
 	{ALC5658_HP_AMP, 0x0019, 0},
-	{ALC5658_0010, 0x3040, 0},		//CRT Mbias1 path
-	{ALC5658_IN1_CTRL, 0x0000, 0},		//BST1 gain (minimal)
-	{ALC5658_RECMIX1L_CTRL_2, 0x005F, 0},		//BST1
-	{ALC5658_RECMIX1R_CTRL_2, 0x005F, 0},		//BST1
+	{ALC5658_0010, 0x3040, 0},	//CRT Mbias1 path
+	{ALC5658_IN1_CTRL, 0x0000, 0},	//BST1 gain (minimal)
+	{ALC5658_RECMIX1L_CTRL_2, 0x005F, 0},	//BST1
+	{ALC5658_RECMIX1R_CTRL_2, 0x005F, 0},	//BST1
 	{ALC5658_ADC_STR1_MXR, 0x6020, 0},
 	{ALC5658_ADC_2_DAC_MXR, 0x8080, 100},
 	{ALC5658_DAC_MONO_MXR, 0x2A8A, 0},
@@ -533,45 +395,5 @@ t_codec_dump_entry codec_dump_script[] = {
 	{ALC5658_0010, "ALC5658_0010"},
 };
 
-/* Commonly defined and redefined macros */
-
-#ifndef MIN
-#define MIN(a, b)                   (((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef MAX
-#define MAX(a, b)                   (((a) > (b)) ? (a) : (b))
-#endif
-
-/****************************************************************************
- * Public Types
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-#ifdef CONFIG_ALC5658CHAR_CLKDEBUG
-extern const uint8_t g_sysclk_scaleb1[ALC5658CHAR_BCLK_MAXDIV + 1];
-extern const uint8_t g_fllratio[ALC5658CHAR_NFLLRATIO];
-#endif
-
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Name: alc5658char_readreg
- *
- * Description
- *    Read the specified 16-bit register from the ALC5658CHAR device.
- *
- ****************************************************************************/
-
-#if defined(CONFIG_ALC5658CHAR_REGDUMP) || defined(CONFIG_ALC5658CHAR_CLKDEBUG)
-struct alc5658char_dev_s;
-uint16_t alc5658char_readreg(FAR struct alc5658char_dev_s *priv, uint16_t regaddr);
-#endif
-
-#endif							/* CONFIG_AUDIO */
-#endif							/* __DRIVERS_AUDIO_ALC5658CHAR_H */
+#endif							/* CONFIG_AUDIO_ALC5658 */
+#endif							/* __DRIVERS_AUDIO_ALC5658SCRIPTS_H */
