@@ -121,7 +121,7 @@ else:
     if target_arch in ['i386', 'x86_64']:
         sys_root += tmpl % ('iPhoneSimulator', 'iPhoneSimulator', sys_version)
     else:
-        sys_root += tmpl % ('iPhone', 'iPhone', sys_version)
+        sys_root += tmpl % ('iPhoneOS', 'iPhoneOS', sys_version)
 if not os.path.exists(sys_root):
     msg = "\nError: SDK directory not found at %s\n" % sys_root
     Exit(msg)
