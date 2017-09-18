@@ -38,13 +38,13 @@
 #define MAXRCVLEN 20
 int mutex = 0;
 /**
-* @fn					: recv_wait
-* @brief				: function to wait on semaphore
-* @scenario				:
-* API's covered			:
-* Preconditions			:
-* Postconditions		:
-* @return				: void
+* @fn                   : recv_wait
+* @brief                : function to wait on semaphore
+* @scenario             : To lock resource
+* API's covered         : none
+* Preconditions         : none
+* Postconditions        : none
+* @return               : void
 */
 void recv_wait(void)
 {
@@ -55,13 +55,13 @@ void recv_wait(void)
 }
 
 /**
-* @fn					: recv_signal
-* @brief				: function to signal semaphore
-* @scenario				:
-* API's covered			:
-* Preconditions			:
-* Postconditions		:
-* @return				: void
+* @fn                  : recv_signal
+* @brief               : function to signal semaphore
+* @scenario            : To release resource.
+* API's covered        : none
+* Preconditions        : none
+* Postconditions       : none
+* @return              : void
 */
 void recv_signal(void)
 {
@@ -69,12 +69,12 @@ void recv_signal(void)
 }
 
 /**
-* @testcase				: tc_net_recv_p
-* @brief				:
-* @scenario				:
-* @apicovered			: recv()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_recv_p
+* @brief               : To receive the data
+* @scenario            : Used for tcp connection
+* @apicovered          : recv()
+* @precondition        : none
+* @postcondition       : none
 */
 void tc_net_recv_p(int fd)
 {
@@ -87,12 +87,12 @@ void tc_net_recv_p(int fd)
 }
 
 /**
-* @testcase				: tc_net_recv_n
-* @brief				:
-* @scenario				:
-* @apicovered			: recv()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_recv_n
+* @brief               : To receive the data
+* @scenario            : used for tcp connection.
+* @apicovered          : recv()
+* @precondition        : none
+* @postcondition       : none
 */
 void tc_net_recv_n(int fd)
 {
@@ -106,12 +106,12 @@ void tc_net_recv_n(int fd)
 }
 
 /**
-* @testcase				: tc_net_recv_shutdown_n
-* @brief				:
-* @scenario				:
-* @apicovered			: recv()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_recv_shutdown_n
+* @brief               : To receive the data.
+* @scenario            : used for tcp connection.
+* @apicovered          : recv()
+* @precondition        : none
+* @postcondition       : none
 */
 void tc_net_recv_shutdown_n(int fd)
 {
@@ -125,12 +125,12 @@ void tc_net_recv_shutdown_n(int fd)
 }
 
 /**
-* @testcase				: tc_net_recv_close_n
-* @brief				:
-* @scenario				:
-* @apicovered			: recv()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_recv_close_n
+* @brief               : receives the data.
+* @scenario            : Used for tcp connection
+* @apicovered          : recv()
+* @precondition        : none
+* @postcondition       : none
 */
 void tc_net_recv_close_n(int fd)
 {
@@ -144,13 +144,13 @@ void tc_net_recv_close_n(int fd)
 }
 
 /**
-* @fn					: recv_server
-* @brief				:
-* @scenario				:
-* API's covered			:socket,bind,listen,accept,send,close
-* Preconditions			:
-* Postconditions		:
-* @return				: void *
+* @fn                   : recv_server
+* @brief                : Server thread
+* @scenario             : used for tcp connection
+* API's covered         : socket,bind,listen,accept,send,close
+* Preconditions         : Data should present in buffer
+* Postconditions        : none
+* @return               : void *
 */
 void *recv_server(void *args)
 {
@@ -173,13 +173,13 @@ void *recv_server(void *args)
 }
 
 /**
-* @fn					: recv_client
-* @brief				:
-* @scenario				:
-* API's covered			: socket,connect,close
-* Preconditions			:
-* Postconditions		:
-* @return				: void *
+* @fn                  : recv_client
+* @brief               : Client thread
+* @scenario            : used for tcp connection
+* API's covered        : socket,connect,close
+* Preconditions        : none
+* Postconditions       : Server thread must be created
+* @return              : void
 */
 void *recv_client(void *args)
 {
@@ -202,6 +202,15 @@ void *recv_client(void *args)
 	return NULL;
 }
 
+/**
+* @fn                  : tc_net_recv
+* @brief               :
+* @scenario            :
+* API's covered        :
+* Preconditions        :
+* Postconditions       :
+* @return              : void
+*/
 void tc_net_recv(void)
 {
 	pthread_t Server, Client;

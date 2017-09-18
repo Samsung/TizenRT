@@ -37,12 +37,12 @@
 
 #ifdef CONFIG_LIBC_NETDB
 /**
-* @testcase				: tc_net_netdb_p
-* @brief				: freeaddrinfo() has no way to check errors.
-* @scenario				:
-* @apicovered			: getaddrinfo() freeaddrinfo()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_netdb_p
+* @brief               : freeaddrinfo() has no way to check errors.
+* @scenario            : 
+* @apicovered          : getaddrinfo() freeaddrinfo()
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_net_netdb_p(void)
 {

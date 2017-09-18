@@ -38,14 +38,14 @@
 #define MAXRCVLEN 20
 int s2 = 0;
 /**
-* @fn					: wait
-* @brief				: function to wait on semaphore
-* @scenario				:
-* @API's covered		:
-* @Preconditions		:
-* @Postconditions		:
-* @return				: void
-   */
+* @fn                    : wait
+* @brief                 : function to wait on semaphore
+* @scenario              :
+* @API's covered         :
+* @Preconditions         :
+* @Postconditions        :
+* @return                : void
+*/
 static void wait(void)
 {
 	while (s2 <= 0) {
@@ -55,13 +55,13 @@ static void wait(void)
 }
 
 /**
-* @fn					: nw_signal
-* @brief				: function to signal semaphore
-* @scenario				:
-* @API's covered		:
-* @Preconditions		:
-* @Postconditions		:
-* @return				: void
+* @fn                    : nw_signal
+* @brief                 : function to signal semaphore
+* @scenario              : none
+* @API's covered         : none
+* @Preconditions         : none
+* @Postconditions        : none
+* @return                : void
 */
 static void nw_signal(void)
 {
@@ -69,12 +69,13 @@ static void nw_signal(void)
 }
 
 /**
-* @testcase				: tc_net_accept_p
-* @brief				:
-* @scenario				:
-* @apicovered			: accept()
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_accept_p
+* @brief                : for accepting socket connection
+* @scenario             : creates a new connected socket, and returns a new file
+                          descriptor referring to that socket
+* @apicovered           : accept()
+* @precondition         : create a socket and need sock fd
+* @postcondition        : void
 */
 void tc_net_accept_p(int fd)
 {
@@ -86,12 +87,12 @@ void tc_net_accept_p(int fd)
 }
 
 /**
-* @testcase				: tc_net_accept_socket_n
-* @brief				:
-* @scenario				:
-* @apicovered			: accept()
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_accept_socket_n
+* @brief                : for accepting socket connection 
+* @scenario             : Take an invalid sock fd and return -1 on error
+* @apicovered           : accept()
+* @precondition         : none
+* @postcondition        : void
 */
 void tc_net_accept_socket_n(void)
 {
@@ -102,13 +103,13 @@ void tc_net_accept_socket_n(void)
 }
 
 /**
-* @fn					: Server
-* @brief				:
-* @scenario				:
-* API's covered			: socket,bind,listen,close
-* Preconditions			:
-* Postconditions		:
-* @return				: void*
+* @fn                   : Server
+* @brief                : Create a Tcp server
+* @scenario             : create a tcp server for checking accept
+* @API's covered        : socket,bind,listen,close
+* @Preconditions        : none
+* @Postconditions       : none
+* @return               : void *
 */
 void *Server(void *args)
 {
@@ -130,13 +131,13 @@ void *Server(void *args)
 }
 
 /**
-* @fn					: Client
-* @brief				:
-* @scenario				:
-* API's covered			: socket,connect,close
-* Preconditions			:
-* Postconditions		:
-* @return				: void *
+* @fn                   : Client
+* @brief                : This api create client
+* @scenario             : Create tcp client 
+* API's covered         : socket,connect,close
+* Preconditions         : none
+* Postconditions        : none
+* @return               : void *
 */
 void *Client(void *args)
 {
@@ -156,6 +157,15 @@ void *Client(void *args)
 	return NULL;
 }
 
+/**
+* @fn                   : tc_net_accept
+* @brief                : This api create client and server thread
+* @scenario             : test accept, create client server 
+* API's covered         : socket,connect,close
+* Preconditions         : none
+* Postconditions        : none
+* @return               : int
+*/
 void tc_net_accept(void)
 {
 	pthread_t server, client;

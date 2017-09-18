@@ -38,13 +38,13 @@
 #define MAXRCVLEN 20
 int mut = 0;
 /**
-* @fn					: shutdown_wait
-* @brief				: function to wait on semaphore
-* @scenario				:
-* API's covered			:
-* Preconditions			:
-* Postconditions		:
-* @return				: void
+* @fn                   : shutdown_wait
+* @brief                : function to wait on semaphore
+* @scenario             : To lock resource.
+* API's covered         : none
+* Preconditions         : none
+* Postconditions        : none
+* @return               : void
 */
 void shutdown_wait(void)
 {
@@ -56,13 +56,13 @@ void shutdown_wait(void)
 }
 
 /**
-* @fn					: shutdown_signal
-* @brief				: function to signal semaphore
-* @scenario				:
-* API's covered			:
-* Preconditions			:
-* Postconditions		:
-* @return				: void
+* @fn                  : shutdown_signal
+* @brief               : function to signal semaphore
+* @scenario            : To release resource.
+* API's covered        : none
+* Preconditions        : none
+* Postconditions       : none
+* @return              : void
 */
 void shutdown_signal(void)
 {
@@ -70,13 +70,15 @@ void shutdown_signal(void)
 }
 
 /**
-* @testcase				: tc_net_shutdown_recv_p
-* @brief				:
-* @scenario				:
-* @apicovered			: shutdown()
-* @precondition			:
-* @postcondition		:
+* @fn                  : tc_net_shutdown_recv_p
+* @brief               :
+* @scenario            :
+* API's covered        : shutdown()
+* Preconditions        : none
+* Postconditions       : none
+* @return              : void
 */
+
 void tc_net_shutdown_recv_p(int fd)
 {
 	int ret = shutdown(fd, SHUT_RD);
@@ -87,12 +89,12 @@ void tc_net_shutdown_recv_p(int fd)
 }
 
 /**
-* @testcase				: tc_net_shutdown_send_p
-* @brief				:
-* @scenario				:
-* @apicovered			: shutdown()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_shutdown_send_p
+* @brief               : Close one end of a full-duplex connection.
+* @scenario            :
+* @apicovered          : shutdown()
+* @precondition        : file descriptor should be created.
+* @postcondition       : none
 */
 void tc_net_shutdown_send_p(int fd)
 {
@@ -103,12 +105,12 @@ void tc_net_shutdown_send_p(int fd)
 }
 
 /**
-* @testcase				: tc_net_shutdown_sendrecv_p
-* @brief				:
-* @scenario				:
-* @apicovered			: shutdown()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_shutdown_sendrecv_p
+* @brief               : Close one end of a full-duplex connection.
+* @scenario            :
+* @apicovered          : shutdown()
+* @precondition        : file descriptor should be created.
+* @postcondition       : none
 */
 void tc_net_shutdown_sendrecv_p(int fd)
 {
@@ -120,12 +122,12 @@ void tc_net_shutdown_sendrecv_p(int fd)
 }
 
 /**
-* @testcase				: tc_net_shutdown_n
-* @brief				:
-* @scenario				:
-* @apicovered			: shutdown()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_shutdown_n
+* @brief               : Close one end of a full-duplex connection.
+* @scenario            :
+* @apicovered          : shutdown()
+* @precondition        : file descriptor should be created.
+* @postcondition       : none
 */
 void tc_net_shutdown_n(void)
 {
@@ -137,12 +139,12 @@ void tc_net_shutdown_n(void)
 }
 
 /**
-* @testcase				: tc_net_shutdown_sock_n
-* @brief				:
-* @scenario				:
-* @apicovered			: shutdown()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_shutdown_sock_n
+* @brief               : Close one end of a full-duplex connection.
+* @scenario            : 
+* @apicovered          : shutdown()
+* @precondition        : file descriptor should be created
+* @postcondition       : none
 */
 void tc_net_shutdown_sock_n(int fd)
 {
@@ -153,15 +155,15 @@ void tc_net_shutdown_sock_n(int fd)
 }
 
 /**
-* @fn					: shutdown_server
-* @brief				:
-* @scenario				:
-* API's covered			: socket,bind,listen,send,accept,close
-* Preconditions			:
-* Postconditions		:
-* @return				: void *
+* @fn                   : shutdown_server
+* @brief                : Server thread
+* @scenario             :
+* API's covered         : socket,bind,listen,send,accept,close
+* Preconditions         : none
+* Postconditions        : none
+* @return               : void 
 */
-void *shutdown_server(void *args)
+void* shutdown_server(void *args)
 {
 	int ConnectFD;
 	char *msg = "Hello World !\n";
@@ -191,15 +193,15 @@ void *shutdown_server(void *args)
 }
 
 /**
-* @fn					: shut_client
-* @brief				:
-* @scenario				:
-* API's covered			: socket,connect,recvfrom,close
-* Preconditions			:
-* Postconditions		:
-* @return				: void *
+* @fn                   : shutdown_client
+* @brief                : client thread
+* @scenario             :
+* API's covered         : socket,connect,recvfrom,close
+* Preconditions         : 
+* Postconditions        : server must be run
+* @return               : void *
 */
-void *shutdown_client(void *args)
+void* shutdown_client(void *args)
 {
 	char buffer[MAXRCVLEN];
 	int len;
@@ -230,7 +232,15 @@ void *shutdown_client(void *args)
 	close(sock);
 	return NULL;
 }
-
+/**
+* @fn                   : tc_net_shutdown
+* @brief                :
+* @scenario             :
+* API's covered         :
+* Preconditions         :
+* Postconditions        :
+* @return               : void
+*/
 void tc_net_shutdown(void)
 {
 	pthread_t Server, Client;

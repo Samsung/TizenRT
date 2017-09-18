@@ -39,13 +39,13 @@
 #define MAXRCVLEN 20
 int s = 0;
 /**
-* @fn                   :wait1
-* @brief                :function to wait on semaphore
+* @fn                   : wait1
+* @brief                : function to wait on semaphore
 * @scenario             :
 * API's covered         :
 * Preconditions         :
 * Postconditions        :
-* @return               :void
+* @return               : void
 */
 static void wait1(void)
 {
@@ -57,13 +57,13 @@ static void wait1(void)
 }
 
 /**
-* @fn                   :server
-* @brief                :
-* @scenario             :
-* API's covered         :socket,bind,listen,select,close
+* @fn                   : server
+* @brief                : executing the server thread
+* @scenario             : server program
+* API's covered         : socket,bind,listen,select,close
 * Preconditions         :
 * Postconditions        :
-* @return               :void
+* @return               : void 
 */
 static void *server(void *args)
 {
@@ -102,13 +102,13 @@ static void *server(void *args)
 }
 
 /**
-* @fn                   :client
-* @brief                :
-* @scenario             :
-* API's covered         :socket,connect,send,close
+* @fn                   : client
+* @brief                : executing the clinet thread
+* @scenario             : clinet program
+* API's covered         : socket,connect,send,close
 * Preconditions         :
 * Postconditions        :
-* @return               :void
+* @return               : void 
 */
 static void *client(void *args)
 {

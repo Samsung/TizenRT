@@ -29,12 +29,12 @@ struct eth_addr test_ethaddr = { {1, 1, 1, 1, 1, 1} };
 static int linkoutput_ctr;
 
 /**
-* @fn					: etharp_remove_all
-* @brief				: Helper function
-* @scenario				:
-* @API's covered		:
-* @Preconditions		:
-* @Postconditions		:
+* @fn                : etharp_remove_all
+* @brief             : Helper function
+* @scenario          : call etharp_tmr often enough to have all entries cleaned
+* @API's covered     : etharp_tmr
+* @Preconditions     : none
+* @Postconditions    : none
 */
 static void etharp_remove_all(void)
 {
@@ -46,12 +46,12 @@ static void etharp_remove_all(void)
 }
 
 /**
-* @fn					: default_netif_linkoutput
-* @brief				: Helper function
-* @scenario				:
-* @API's covered		:
-* @Preconditions		:
-* @Postconditions		:
+* @fn                : default_netif_linkoutput
+* @brief             : Helper function
+* @scenario          : linkout the netif
+* @API's covered     : none
+* @Preconditions     : none
+* @Postconditions    : return 0 on success
 */
 static err_t default_netif_linkoutput(struct netif *netif, struct pbuf *p)
 {
@@ -60,12 +60,12 @@ static err_t default_netif_linkoutput(struct netif *netif, struct pbuf *p)
 }
 
 /**
-* @fn					: default_netif_init
-* @brief				: Helper function
-* @scenario				:
-* @API's covered		:
-* @Preconditions		:
-* @Postconditions		:
+* @fn                  : default_netif_init
+* @brief               : Helper function
+* @scenario            : initilize the default value of netif interface
+* @API's covered       : none
+* @Preconditions       : none
+* @Postconditions      : return 0 
 */
 static err_t default_netif_init(struct netif *netif)
 {
@@ -78,12 +78,12 @@ static err_t default_netif_init(struct netif *netif)
 }
 
 /**
-* @testcase				: default_netif_add
-* @brief				: Helper function
-* @scenario				:
-* @apicovered			: netif_set_default
-* @precondition			:
-* @postcondition		:
+* @testcase            : default_netif_add
+* @brief               : Helper function
+* @scenario            : Add a default netif interface
+* @apicovered          : netif_set_default
+* @precondition        : none
+* @postcondition       : none
 */
 static void default_netif_add(void)
 {
@@ -95,12 +95,12 @@ static void default_netif_add(void)
 }
 
 /**
-* @testcase				:
-* @brief				: Helper function
-* @scenario				:
-* @apicovered			: netif_remove
-* @precondition			:
-* @postcondition		:
+* @testcase            : default_netif_remove
+* @brief               : Helper function
+* @scenario            : Remove netif interface
+* @apicovered          : netif_remove
+* @precondition        : call to remove neif interface
+* @postcondition       : remove neif interface
 */
 static void default_netif_remove(void)
 {
@@ -108,12 +108,12 @@ static void default_netif_remove(void)
 }
 
 /**
-* @testcase				: etharp_setup
-* @brief				: Helper function
-* @scenario				:
-* @apicovered			: etharp_remove_all
-* @precondition			:
-* @postcondition		:
+* @testcase            : etharp_setup
+* @brief               : Helper function
+* @scenario            : It setup the netif interface
+* @apicovered          : etharp_remove_all
+* @precondition        : none
+* @postcondition       : add netif interface
 */
 static void etharp_setup(void)
 {
@@ -122,12 +122,12 @@ static void etharp_setup(void)
 }
 
 /**
-* @testcase				: etharp_teardown
-* @brief				: Helper function
-* @scenario				:
-* @apicovered			: etharp_remove_all
-* @precondition			:
-* @postcondition		:
+* @testcase            : etharp_teardown
+* @brief               : Helper function
+* @scenario            :
+* @apicovered          : etharp_remove_all
+* @precondition        :
+* @postcondition       :
 */
 static void etharp_teardown(void)
 {
@@ -136,12 +136,12 @@ static void etharp_teardown(void)
 }
 
 /**
-* @testcase				: tc_etharp_free_entry
-* @brief				:
-* @scenario				:
-* @apicovered			: etharp_free_entry
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_etharp_free_entry
+* @brief               : Clean up ARP table entries
+* @scenario            : ARP table preivous it check and remove them
+* @apicovered          : etharp_free_entry
+* @precondition        : Need to know Index of table
+* @postcondition       : none
 */
 static void tc_etharp_free_entry(void)
 {
@@ -152,12 +152,12 @@ static void tc_etharp_free_entry(void)
 }
 
 /**
-* @testcasu				: tc_free_etharp_q
-* @brief				:
-* @scenario				:
-* @apicovered			: free_etharp_q
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_free_etharp_q
+* @brief               : Free a complete queue of etharp entries
+* @scenario            : check the queue and remove ar ARP entries
+* @apicovered          : free_etharp_q
+* @precondition        : Should be one etharp entries
+* @postcondition       : none
 */
 static void tc_free_etharp_q(void)
 {
@@ -169,12 +169,12 @@ static void tc_free_etharp_q(void)
 }
 
 /**
-* @testcasu				: tc_etharp_add_static_n
-* @brief				:
-* @scenario				:
-* @apicovered			: etharp_add_static
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_etharp_add_static_n
+* @brief               :
+* @scenario            :
+* @apicovered          : etharp_add_static
+* @precondition        :
+* @postcondition       :
 */
 static void tc_etharp_find_addr_n(void)
 {
@@ -185,12 +185,12 @@ static void tc_etharp_find_addr_n(void)
 }
 
 /**
-* @testcase				: tc_etharp_add_static_p
-* @brief				:
-* @scenario				:
-* @apicovered			: etharp_find_addr
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_etharp_add_static_p
+* @brief               : Add one static entry to ARP table
+* @scenario            : Configure static arp.
+* @apicovered          : etharp_find_addr
+* @precondition        : ARP entry need to be know
+* @postcondition       : return 0 on success
 */
 static void tc_etharp_find_addr_p(void)
 {
@@ -211,12 +211,12 @@ static void tc_etharp_find_addr_p(void)
 }
 
 /**
-* @testcase				: tc_igmp_removegroup_n
-* @brief				:
-* @scenario				:
-* @apicovered			: igmp_removegroup_n
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_igmp_removegroup_n
+* @brief               : Remove a group in the global igmp_group_list
+* @scenario            : Checking if there is no igmp_group
+* @apicovered          : igmp_removegroup_n
+* @precondition        : none
+* @postcondition       : return error no.
 */
 static void tc_igmp_removegroup_n(void)
 {
@@ -228,12 +228,12 @@ static void tc_igmp_removegroup_n(void)
 }
 
 /**
-* @testcasu				: tc_igmp_removegroup_p
-* @brief				:
-* @scenario				:
-* @apicovered			: igmp_removegroup_p
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_igmp_removegroup_p
+* @brief               : Remove a group in the global igmp_group_list
+* @scenario            : It remmove igmp group if any have
+* @apicovered          : igmp_removegroup_p
+* @precondition        : Shold have one igmp group
+* @postcondition       : 0 on succes
 */
 static void tc_igmp_removegroup_p(void)
 {
@@ -250,12 +250,12 @@ static void tc_igmp_removegroup_p(void)
 }
 
 /**
-* @testcasu				: tc_igmp_leavegroup_n
-* @brief				:
-* @scenario				:
-* @apicovered			: igmp_leavegroup
-* @precondition			:
-* @postcondition		:
+* @testcasu            : tc_igmp_leavegroup_n
+* @brief               : Leave a group on one network interface.
+* @scenario            : If there is no networkk interface
+* @apicovered          : igmp_leavegroup
+* @precondition        : none
+* @postcondition       : erro on return
 */
 void tc_igmp_leavegroup_n(void)
 {
@@ -267,12 +267,12 @@ void tc_igmp_leavegroup_n(void)
 }
 
 /**
-* @testcase				: tc_igmp_leavegroup_p
-* @brief				:
-* @scenario				:
-* @apicovered			: igmp_leavegroup_p
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_igmp_leavegroup_p
+* @brief               : Leave a group on one network interface.
+* @scenario            : If there is igmp group is should left on netif
+* @apicovered          : igmp_leavegroup_p
+* @precondition        : should have igmp group
+* @postcondition       : return 0 on success
 */
 void tc_igmp_leavegroup_p(void)
 {
@@ -292,12 +292,12 @@ void tc_igmp_leavegroup_p(void)
 }
 
 /**
-* @testcase				: tc_igmp_joingroup_n
-* @brief				:
-* @scenario				:
-* @apicovered			: igmp_joingroup
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_igmp_joingroup_n
+* @brief               : Join one igmp group on one network interface
+* @scenario            : If it not able to join group on interface
+* @apicovered          : igmp_joingroup
+* @precondition        : nothing
+* @postcondition       : return error
 */
 static void tc_igmp_joingroup_n(void)
 {
@@ -309,12 +309,12 @@ static void tc_igmp_joingroup_n(void)
 }
 
 /**
-* @testcasu				: tc_igmp_joingroup_p
-* @brief				:
-* @scenario				:
-* @apicovered			: igmp_joingroup
-* @precondition			:
-* @postcondition		:
+* @testcasu            : tc_igmp_joingroup_p
+* @brief               : Join one igmp group on one network interface
+* @scenario            : Check for group and add the interface
+* @apicovered          : igmp_joingroup
+* @precondition        : Should have interface adder and group adder.
+* @postcondition       : return success
 */
 static void tc_igmp_joingroup_p(void)
 {

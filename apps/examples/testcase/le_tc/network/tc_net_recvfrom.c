@@ -39,12 +39,12 @@
 int mutex1 = 0;
 
 /**
-* @testcase				: tc_net_recvfrom_p
-* @brief				: positive testcase using udp
-* @scenario				:
-* @apicovered			: recvfrom()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_recvfrom_p
+* @brief               : positive testcase using udp
+* @scenario            : used for udp connection
+* @apicovered          : recvfrom()
+* @precondition        : none
+* @postcondition       : none
 */
 void tc_net_recvfrom_p(int fd)
 {
@@ -58,12 +58,12 @@ void tc_net_recvfrom_p(int fd)
 }
 
 /**
-* @testcase				: tc_net_recvfrom_sock_n
-* @brief				: negative testcase using udp
-* @scenario				:
-* @apicovered			: recvfrom()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_recvfrom_sock_n
+* @brief               : negative testcase using udp
+* @scenario            : used for udp connection
+* @apicovered          : recvfrom()
+* @precondition        : none
+* @postcondition       : none
 */
 void tc_net_recvfrom_sock_n(int sock)
 {
@@ -77,12 +77,12 @@ void tc_net_recvfrom_sock_n(int sock)
 }
 
 /**
-* @testcase				: tc_net_recvfrom_n
-* @brief				: negative testcase using udp
-* @scenario				:
-* @apicovered			: recvfrom()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_recvfrom_n
+* @brief               : negative testcase using udp
+* @scenario            : used for udp connection
+* @apicovered          : recvfrom()
+* @precondition        : none
+* @postcondition       : none
 */
 void tc_net_recvfrom_n(int fd)
 {
@@ -96,13 +96,13 @@ void tc_net_recvfrom_n(int fd)
 }
 
 /**
-* @fn					: recvfrom_server
-* @brief				: udp server
-* @scenario				:
-* API's covered			: socket,bind
-* Preconditions			:
-* Postconditions		:
-* @return				: void *
+* @fn                 : recvfrom_server
+* @brief              : udp server
+* @scenario           : used for UDP connection
+* API's covered       : socket,bind
+* Preconditions       : none
+* Postconditions      : none
+* @return             : void
 */
 
 void *recvfrom_udpserver(void *args)
@@ -126,13 +126,13 @@ void *recvfrom_udpserver(void *args)
 }
 
 /**
-* @fn					: recvfrom_client
-* @brief				: udp client
-* @scenario				:
-* API's covered			: socket,sendto
-* Preconditions			:
-* Postconditions		:
-* @return				: void *
+* @fn                   : recvfrom_client
+* @brief                : udp client
+* @scenario             : used for UDP connection
+* API's covered         : socket,sendto
+* Preconditions         : none
+* Postconditions        : none
+* @return               : void
 */
 void *recvfrom_udpclient(void *args)
 {
@@ -157,13 +157,13 @@ void *recvfrom_udpclient(void *args)
 }
 
 /**
-* @fn					: recvfrom_wait
-* @brief				: function to wait on semaphore
-* @scenario				:
-* API's covered			:
-* Preconditions			:
-* Postconditions		:
-* @return				: void
+* @fn                   : recvfrom_wait
+* @brief                : function to wait on semaphore
+* @scenario             : To aquire resource
+* API's covered         : none
+* Preconditions         : none
+* Postconditions        : none
+* @return               : void
 */
 void recvfrom_wait(void)
 {
@@ -175,13 +175,13 @@ void recvfrom_wait(void)
 }
 
 /**
-* @fn					: recvfrom_signal
-* @brief				: function to signal semaphore
-* @scenario				:
-* API's covered			:
-* Preconditions			:
-* Postconditions		:
-* @return				: void
+* @fn                   : recvfrom_signal
+* @brief                : function to signal semaphore
+* @scenario             : To release resource
+* API's covered         : none
+* Preconditions         : none
+* Postconditions        : none
+* @return               : void
 */
 void recvfrom_signal(void)
 {
@@ -189,12 +189,12 @@ void recvfrom_signal(void)
 }
 
 /**
-* @testcase				: tc_net_recvfrom_tcp_p
-* @brief				: positive testcase for recvfrom api
-* @scenario				:
-* @apicovered			: recvfrom()
-* @precondition			:
-* @postconditions		:
+* @testcase             : tc_net_recvfrom_tcp_p
+* @brief                : positive testcase for recvfrom api
+* @scenario             : used for tcp connection
+* @apicovered           : recvfrom()
+* @precondition         : none
+* @postcondition        : none
 */
 void tc_net_recvfrom_tcp_p(int fd)
 {
@@ -207,13 +207,14 @@ void tc_net_recvfrom_tcp_p(int fd)
 }
 
 /**
-* @testcase				: tc_net_recvfrom_tcp_conn_n
-* @brief				: negative testcase for recvfrom api
-* @scenario				:
-* @apicovered			: recvfrom()
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_recvfrom_tcp_conn_n
+* @brief                : negative testcase for recvfrom api
+* @scenario             : used for tcp connection
+* @apicovered           : recvfrom()
+* @precondition         : none
+* @postcondition        : none
 */
+
 void tc_net_recvfrom_tcp_conn_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -226,13 +227,14 @@ void tc_net_recvfrom_tcp_conn_n(int fd)
 }
 
 /**
-* @testcase				: tc_net_recvfrom_tcp_sock_n
-* @brief				: negative testcase for recvfrom api
-* @scenario				:
-* @apicovered			: recvfrom()
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_recvfrom_tcp_sock_n
+* @brief                : negative testcase for recvfrom api
+* @scenario             : used for tcp connection
+* @apicovered           : recvfrom()
+* @precondition         : none
+* @postcondition        : none
 */
+
 void tc_net_recvfrom_tcp_sock_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -244,12 +246,12 @@ void tc_net_recvfrom_tcp_sock_n(int fd)
 }
 
 /**
-* @testcase				: tc_net_recvfrom_tcp_n
-* @brief				: negative testcase using tcp
-* @scenario				:
-* @apicovered			: recvfrom()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_recvfrom_tcp_n
+* @brief               : negative testcase using tcp
+* @scenario            : used for tcp connection
+* @apicovered          : recvfrom()
+* @precondition        : none
+* @postcondition       : none
 */
 void tc_net_recvfrom_tcp_n(void)
 {
@@ -262,17 +264,17 @@ void tc_net_recvfrom_tcp_n(void)
 }
 
 /**
-* @fn					: recvfrom_server
-* @brief				:
-* @scenario				:
-* API's covered			: socket,bind,listen,accept,sendto,close
-* Preconditions			:
-* Postconditions		:
-* @return				: void
+* @fn                   : recvfrom_server
+* @brief                : TCP server thread
+* @scenario             : used for TCP connection
+* API's covered         : socket,bind,listen,accept,sendto,close
+* Preconditions         : none
+* Postconditions        : noen
+* @return               : void
 */
-void *recvfrom_tcpserver(void *args)
+void* recvfrom_tcpserver(void* args)
 {
-	int i, ret;
+	int i;
 	int ConnectFD;
 	char *msg = "Hello World !\n";
 	struct sockaddr_in sa;
@@ -284,15 +286,14 @@ void *recvfrom_tcpserver(void *args)
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-
-	ret = listen(sock, 1);
+	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	listen(sock, 1);
 
 	recvfrom_signal();
 	ConnectFD = accept(sock, NULL, NULL);
 
 	for (i = 0; i < 4; i++) {
-		ret = sendto(ConnectFD, msg, strlen(msg), 0, (struct sockaddr *)&sa, sizeof(sa));
+		sendto(ConnectFD, msg, strlen(msg), 0, (struct sockaddr *)&sa, sizeof(sa));
 
 	}
 	close(ConnectFD);
@@ -301,18 +302,17 @@ void *recvfrom_tcpserver(void *args)
 }
 
 /**
-* @fn					: recvfrom_client
-* @brief				:
-* @scenario				:
-* API's covered			: socket,connect,close
-* Preconditions			:
-* Postconditions		:
-* @return				: void *
+* @fn                   : recvfrom_client
+* @brief                : TCP client thread
+* @scenario             : Used for TCP connection
+* API's covered         : socket,connect,close
+* Preconditions         : none
+* Postconditions        : none
+* @return               : void
 */
-void *recvfrom_tcpclient(void *args)
+void* recvfrom_tcpclient(void *args)
 {
 	int newsoc = 0;
-	int ret;
 	struct sockaddr_in dest;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -323,7 +323,7 @@ void *recvfrom_tcpclient(void *args)
 	dest.sin_port = htons(PORTNUM);
 
 	recvfrom_wait();
-	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 
 	tc_net_recvfrom_tcp_p(sock);
 
@@ -335,10 +335,20 @@ void *recvfrom_tcpclient(void *args)
 	return NULL;
 }
 
+/**
+* @fn                  : tc_net_recvfrom
+* @brief               :
+* @scenario            :
+* API's covered        :
+* Preconditions        :
+* Postconditions       :
+* @return              : void
+*/
 void tc_net_recvfrom(int sock)
 {
 	pthread_t Server, Client, tcpserver, tcpclient;
 	int ret;
+
 	ret = pthread_create(&Server, NULL, recvfrom_udpserver, &sock);
 	TC_ASSERT_EQ("pthread_create", ret, ZERO);
 

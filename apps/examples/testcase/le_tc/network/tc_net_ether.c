@@ -34,12 +34,12 @@
 #include "tc_internal.h"
 
 /**
-* @testcase             : tc_net_ether_ntoa_p
-* @brief                :
-* @scenario             :
-* @apicovered           : ether_ntoa()
-* @precondition         :
-* @postcondition        :
+* @testcase            : tc_net_ether_ntoa_p
+* @brief               : converts the Ethernet host address addr given in network byte order to a string into dotted decimal.
+* @scenario            : none
+* @apicovered          : ether_ntoa(), ioctl()
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_net_ether_ntoa_p(int sock_udp)
 {

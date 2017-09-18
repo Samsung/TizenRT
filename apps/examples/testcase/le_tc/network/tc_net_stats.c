@@ -25,12 +25,12 @@
 struct stats_ *proto;
 
 /**
-* @statitcase			: tc_net_stats_display
-* @brief				:
-* @scenario				:
-* @apicovered			: stats_display
-* @precondition			:
-* @postcondition		:
+* @statitcase            : tc_net_stats_display
+* @brief                 : display the current stats of lwip protocol
+* @scenario              : Its display stats
+* @apicovered            : stats_display
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_stats_display(void)
 {
@@ -39,12 +39,12 @@ static void tc_net_stats_display(void)
 }
 
 /**
-* @statitcase			: tc_net_stats_display_proto_n
-* @brief				:
-* @scenario				:
-* @apicovered			: stats_display_proto
-* @precondition			:
-* @postcondition		:
+* @statitcase            : tc_net_stats_display_proto_n
+* @brief                 : display all member of proto
+* @scenario              : no return value
+* @apicovered            : stats_display_proto
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_stats_display_proto_n(void)
 {
@@ -60,12 +60,12 @@ static void tc_net_stats_display_proto_n(void)
 }
 
 /**
-* @testcase				: tc_net_stats_sys_n
-* @brief				:
-* @scenario				:
-* @apicovered			: stats_display_sys
-* @precondition			:
-* @postcondition		:
+* @testcase              : tc_net_stats_sys_n
+* @brief                 : display  the sys stats
+* @scenario              : show all stats of sys member
+* @apicovered            : stats_display_sys
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_stats_sys_n(void)
 {
@@ -74,12 +74,12 @@ static void tc_net_stats_sys_n(void)
 }
 
 /**
-* @testcase				: tc_net_stats_sys_p
-* @brief				:
-* @scenario				:
-* @apicovered			: stats_display_sys
-* @precondition			:
-* @postcondition		:
+* @testcase              : tc_net_stats_sys_p
+* @brief                 : display the sys stats
+* @scenario              : show all stats 
+* @apicovered            : stats_display_sys
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_stats_sys_p(void)
 {
@@ -103,12 +103,12 @@ static void tc_net_stats_sys_p(void)
 }
 
 /**
-* @testcase				: tc_net_stats_display_igmp_n
-* @brief				:
-* @scenario				:
-* @apicovered			: stats_display_igmp
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_stats_display_igmp_n
+* @brief                : display all states of igmp members
+* @scenario             : Diplay stats
+* @apicovered           : stats_display_igmp
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_stats_display_igmp_n(void)
 {
@@ -118,12 +118,12 @@ static void tc_net_stats_display_igmp_n(void)
 }
 
 /**
-* @testcase				: tc_net_stats_display_igmp_p
-* @brief				:
-* @scenario				:
-* @apicovered			: stats_display_igmp
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_stats_display_igmp_p
+* @brief                : display all stats of igmp memebes
+* @scenario             : Display stats
+* @apicovered           : stats_display_igmp
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_stats_display_igmp_p(void)
 {
@@ -152,12 +152,12 @@ static void tc_net_stats_display_igmp_p(void)
 }
 
 /**
-* @statitcase			: tc_net_stats_display_proto_p
-* @brief				:
-* @scenario				:
-* @apicovered			: stats_display_proto
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_stats_display_proto_p
+* @brief                : Display the counter of proto members
+* @scenario             : Display stats of proto members
+* @apicovered           : stats_display_proto
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_stats_display_proto_p(void)
 {
@@ -180,12 +180,12 @@ static void tc_net_stats_display_proto_p(void)
 }
 
 /**
-* @statitcase			: net_core_main
-* @brief				:
-* @scenario				:
-* @apicovered			:
-* @precondition			:
-* @postcondition		:
+* @statitcase           : net_core_main
+* @brief                : none
+* @scenario             : none
+* @apicovered           : none
+* @precondition         : none
+* @postcondition        : none
 */
 int net_stats_main(void)
 {

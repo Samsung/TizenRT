@@ -20,12 +20,12 @@
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_netbuf_alloc_p
-* @brief				:
-* @scenario				:
-* @apicovered			: netbuf_alloc()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_netbuf_alloc_p
+* @brief               : allocate memory to the given netbuf
+* @scenario            :
+* @apicovered          : netbuf_alloc()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_netbuf_alloc_p(void)
 {

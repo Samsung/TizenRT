@@ -28,12 +28,12 @@
 #define TC_VAL2_HEX 0xa000000
 
 /**
-* @testcase				: tc_net_def_lwip_htons
-* @brief				:
-* @scenario				:
-* @apicovered			: lwip_htons()
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_def_lwip_htons
+* @brief                : Convert host bytes to network bytes order
+* @scenario             : Converts host bytes to network bytes for short integer
+* @apicovered           : lwip_htons()
+* @precondition         :
+* @postcondition        :
 */
 static void tc_net_def_lwip_htons(void)
 {
@@ -49,12 +49,12 @@ static void tc_net_def_lwip_htons(void)
 }
 
 /**
-* @testcase				: tc_net_def_lwip_ntohs
-* @brief				:
-* @scenario				:
-* @apicovered			: lwip_ntohs()
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_def_lwip_ntohs
+* @brief                : Convert network bytes to hosst bytes order
+* @scenario             : Convert network bytes to hosst bytes for short integer
+* @apicovered           : lwip_ntohs()
+* @precondition         :
+* @postcondition        :
 */
 static void tc_net_def_lwip_ntohs(void)
 {
@@ -70,12 +70,12 @@ static void tc_net_def_lwip_ntohs(void)
 }
 
 /**
-* @testcase				: tc_net_def_lwip_htonl
-* @brief				:
-* @scenario				:
-* @apicovered			: lwip_htonl()
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_def_lwip_htonl
+* @brief                : Convert host bytes to network bytes order
+* @scenario             : Convert host bytes to network bytes order for long integer
+* @apicovered           : lwip_htonl()
+* @precondition         :
+* @postcondition        :
 */
 static void tc_net_def_lwip_htonl(void)
 {
@@ -91,12 +91,12 @@ static void tc_net_def_lwip_htonl(void)
 }
 
 /**
-* @testcase				: tc_net_def_lwip_ntohl
-* @brief				:
-* @scenario				:
-* @apicovered			: lwip_ntohl()
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_def_lwip_ntohl
+* @brief                : Convert network bytes to hosst bytes order
+* @scenario             : Convert network bytes to hosst bytes order for long integer
+* @apicovered           : lwip_ntohl()
+* @precondition         :
+* @postcondition        :
 */
 static void tc_net_def_lwip_ntohl(void)
 {

@@ -34,13 +34,13 @@
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_setsockopt_multicast_tcp_nodelay_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_multicast_tcp_nodelay_p
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor
+* @postcondition       :
+*/
 static void tc_net_setsockopt_multicast_tcp_nodelay_p(int s)
 {
 	int ret;
@@ -52,13 +52,13 @@ static void tc_net_setsockopt_multicast_tcp_nodelay_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_multicast_tcp_keepalive_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_multicast_tcp_keepalive_p
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor
+* @postcondition       :
+*/
 static void tc_net_setsockopt_multicast_tcp_keepalive_p(int s)
 {
 	int ret;
@@ -70,13 +70,13 @@ static void tc_net_setsockopt_multicast_tcp_keepalive_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_multicast_tcp_keepidle_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_multicast_tcp_keepidle_p
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor
+* @postcondition       :
+*/
 static void tc_net_setsockopt_multicast_tcp_keepidle_p(int s)
 {
 	int ret;
@@ -88,13 +88,13 @@ static void tc_net_setsockopt_multicast_tcp_keepidle_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_multicast_tcp_keepintvl_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_multicast_tcp_keepintvl_p
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor
+* @postcondition       :
+*/
 static void tc_net_setsockopt_multicast_tcp_keepintvl_p(int s)
 {
 	int ret;
@@ -106,13 +106,13 @@ static void tc_net_setsockopt_multicast_tcp_keepintvl_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_multicast_tcp_keepcnt_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_multicast_tcp_keepcnt_p
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor
+* @postcondition       :
+*/
 static void tc_net_setsockopt_multicast_tcp_keepcnt_p(int s)
 {
 	int ret;
@@ -125,13 +125,13 @@ static void tc_net_setsockopt_multicast_tcp_keepcnt_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_ip_tos_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_ip_tos_p
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor
+* @postcondition       :
+*/
 static void tc_net_setsockopt_ip_tos_p(int s)
 {
 	int ret;
@@ -144,13 +144,13 @@ static void tc_net_setsockopt_ip_tos_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_broadcast_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_broadcast_p
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor
+* @postcondition       :
+*/
 static void tc_net_setsockopt_broadcast_p(int s)
 {
 	int ret;
@@ -162,13 +162,13 @@ static void tc_net_setsockopt_broadcast_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_rcvtimo_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_rcvtimo_p
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor
+* @postcondition       :
+*/
 static void tc_net_setsockopt_rcvtimo_p(int s)
 {
 	int ret;
@@ -182,13 +182,13 @@ static void tc_net_setsockopt_rcvtimo_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_reuseaddr_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_reuseaddr_p
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor
+* @postcondition       :
+*/
 static void tc_net_setsockopt_reuseaddr_p(int s)
 {
 	int ret;
@@ -200,13 +200,13 @@ static void tc_net_setsockopt_reuseaddr_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_reuseport_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_reuseport_p
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor
+* @postcondition       :
+*/
 static void tc_net_setsockopt_reuseport_p(int s)
 {
 	int ret;
@@ -236,13 +236,13 @@ static void tc_net_setsockopt_keepalive_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_bad_filedesc_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_bad_filedesc_n
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        :
+* @postcondition       :
+*/
 static void tc_net_setsockopt_bad_filedesc_n(void)
 {
 	int ret;
@@ -253,13 +253,13 @@ static void tc_net_setsockopt_bad_filedesc_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_invalid_filedesc_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase           : tc_net_setsockopt_invalid_filedesc_n
+* @brief              : to set socket options
+* @scenario           :
+* @apicovered         : setsockopt()
+* @precondition       :
+* @postcondition      :
+*/
 static void tc_net_setsockopt_invalid_filedesc_n(void)
 {
 	int ret;
@@ -270,13 +270,13 @@ static void tc_net_setsockopt_invalid_filedesc_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_invalid_level_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_invalid_level_n
+* @brief               : to set socket options
+* @scenario            :
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor
+* @postcondition       :
+*/
 static void tc_net_setsockopt_invalid_level_n(int s)
 {
 	int ret;

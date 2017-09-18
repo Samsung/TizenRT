@@ -27,12 +27,12 @@
 #include <tinyara/net/ethernet.h>
 
 /**
-* @statitcase				: tc_net_checksd_p
-* @brief					:
-* @scenario					:
-* @apicovered				: net_checksd
-* @precondition				:
-* @postcondition			:
+* @statitcase            : tc_net_checksd_p
+* @brief                 : Check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
+* @scenario              :   
+* @apicovered            : net_checksd
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_checksd_p(int sock)
 {
@@ -44,12 +44,12 @@ static void tc_net_checksd_p(int sock)
 }
 
 /**
-* @statitcase				: tc_net_checksd_n
-* @brief					:
-* @scenario					:
-* @apicovered				: net_checksd
-* @precondition				:
-* @postcondition			:
+* @statitcase            : tc_net_checksd_n
+* @brief                 : Check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
+* @scenario              : 
+* @apicovered            : net_checksd
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_checksd_n(void)
 {
@@ -61,12 +61,12 @@ static void tc_net_checksd_n(void)
 }
 
 /**
-* @statitcase				: tc_net_clone_p
-* @brief					:
-* @scenario					:
-* @apicovered				: net_clone
-* @precondition				:
-* @postcondition			:
+* @statitcase            : tc_net_clone_p
+* @brief                 : Performs the low level, common portion of net_dupsd() and net_dupsd2().
+* @scenario              :   
+* @apicovered            : net_clone, socket, get_socket
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_clone_p(int sockfd1, int sockfd2)
 {
@@ -85,12 +85,12 @@ static void tc_net_clone_p(int sockfd1, int sockfd2)
 }
 
 /**
-* @statitcase				: tc_net_dupsd2_p
-* @brief					:
-* @scenario					:
-* @apicovered				: net_dupsd2
-* @precondition				:
-* @postcondition			:
+* @statitcase            : tc_net_dupsd2_p
+* @brief                 : Clone a socket descriptor to an arbitray descriptor number.
+* @scenario              :   
+* @apicovered            : net_dupsd2
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_dupsd2_p(int old_fd, int new_fd)
 {
@@ -102,12 +102,12 @@ static void tc_net_dupsd2_p(int old_fd, int new_fd)
 }
 
 /**
-* @statitcase				: tc_net_dupsd2_n
-* @brief					:
-* @scenario					:
-* @apicovered				: net_dupsd2
-* @precondition				:
-* @postcondition			:
+* @statitcase            : tc_net_dupsd2_n
+* @brief                 : Clone a socket descriptor to an arbitray descriptor number.
+* @scenario              :   
+* @apicovered            : net_dupsd2
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_dupsd2_n(int old_fd, int new_fd)
 {
@@ -119,12 +119,12 @@ static void tc_net_dupsd2_n(int old_fd, int new_fd)
 }
 
 /**
-* @statitcase				: tc_net_ethernetif_status_callback_p
-* @brief					:
-* @scenario					:
-* @apicovered				: ethernetif_status_callback
-* @precondition				:
-* @postcondition			:
+* @statitcase            : tc_net_ethernetif_status_callback_p
+* @brief                 : prints the IP address in dotted decimal format
+* @scenario              :   
+* @apicovered            : ethernetif_status_callback
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_ethernetif_status_callback_p(void)
 {
@@ -138,12 +138,12 @@ static void tc_net_ethernetif_status_callback_p(void)
 }
 
 /**
-* @statitcase				: tc_net_ethernetif_init
-* @brief					:
-* @scenario					:
-* @apicovered				: ethernetif_init
-* @precondition				:
-* @postcondition			:
+* @statitcase            : tc_net_ethernetif_init
+* @brief                 : Should be called at the beginning of the program to set up the network interface.
+* @scenario              :   
+* @apicovered            : ethernetif_init
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_ethernetif_init(void)
 {
@@ -159,12 +159,12 @@ static void tc_net_ethernetif_init(void)
 }
 
 /**
-* @statitcase				: net_tcp_main
-* @brief					:
-* @scenario					:
-* @apicovered				:
-* @precondition				:
-* @postcondition			:
+* @statitcase            : net_mac_main
+* @brief                 :
+* @scenario              :   
+* @apicovered            :
+* @precondition          :
+* @postcondition         :
 */
 int net_mac_main(int sock, int sock1)
 {

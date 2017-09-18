@@ -24,12 +24,13 @@
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_net_ipv4_addr_netmask_valid_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ip4_addr_netmask_valid
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_ipv4_addr_netmask_valid_p
+* @brief                : Checks if a netmask is valid (starting with ones, then only zeros)
+* @scenario             : netmask the IPv4 netmask to check (in network byte order!)
+* @apicovered           : ip4_addr_netmask_valid
+* @precondition         :
+* @postcondition        :
+* @return               : void
 */
 void tc_net_ipv4_addr_netmask_valid_p(void)
 {
@@ -42,12 +43,13 @@ void tc_net_ipv4_addr_netmask_valid_p(void)
 }
 
 /**
-* @testcase				: tc_net_ipv4_addr_netmask_valid_n
-* @brief				:
-* @scenario				:
-* @apicovered			: ip4_addr_netmask_valid
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_ipv4_addr_netmask_valid_n
+* @brief                : Checks if a netmask is valid (starting with ones, then only zeros)
+* @scenario             : netmask the IPv4 netmask to check (in network byte order!)
+* @apicovered           : ip4_addr_netmask_valid
+* @precondition         :
+* @postcondition        :
+* @return               : void
 */
 void tc_net_ipv4_addr_netmask_valid_n(void)
 {

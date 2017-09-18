@@ -42,12 +42,12 @@ void tc_net_sendto_tcp_n(int ConnectFD);
 void tc_net_sendto_tcp_shutdown_n(int ConnectFD);
 
 /**
-* @testcase				: tc_net_sendto_p
-* @brief				: positive testcase for sendto api using udp
-* @scenario				:
-* @apicovered			: sendto()
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_net_sendto_p
+* @brief              : positive testcase for sendto api using udp
+* @scenario           : used for udp connection
+* @apicovered         : sendto()
+* @precondition       : valid file descriptor
+* @postcondition      : none
 */
 void tc_net_sendto_p(int fd)
 {
@@ -68,12 +68,12 @@ void tc_net_sendto_p(int fd)
 }
 
 /**
-* @testcase				: tc_net_sendto_n
-* @brief				: negative testcase for sendto api using udp
-* @scenario				:
-* @apicovered			: sendto()
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_net_sendto_n
+* @brief              : negative testcase for sendto api using udp
+* @scenario           : used for udp connection
+* @apicovered         : sendto()
+* @precondition       : valid file descriptor
+* @postcondition      : none
 */
 void tc_net_sendto_n(void)
 {
@@ -92,14 +92,13 @@ void tc_net_sendto_n(void)
 	TC_SUCCESS_RESULT();
 
 }
-
 /**
-* @testcase				: tc_net_sendto_af_unix_n
-* @brief				: negative testcase for sendto api using udp
-* @scenario				:
-* @apicovered			: sendto()
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_net_sendto_af_unix_n
+* @brief              : negative testcase for sendto api using AF_UNIX
+* @scenario           : used for udp connection
+* @apicovered         : sendto()
+* @precondition       : valid file descriptor
+* @postcondition      : none
 */
 void tc_net_sendto_af_unix_n(int fd)
 {
@@ -120,13 +119,12 @@ void tc_net_sendto_af_unix_n(int fd)
 }
 
 /**
-* @fn					: sendto_server
-* @brief				: udp server
-* @scenario				:
-* API's covered			: socket,bind,recvfrom
-* Preconditions			:
-* Postconditions		:
-* @return				: void *
+* @testcase           : sendto_udpserver
+* @brief              : udpserver
+* @scenario           : used for udp connection
+* @apicovered         : socket, bind, recvfrom
+* @precondition       : valid file descriptor
+* @postcondition      : none
 */
 
 void *sendto_udpserver(void *args)
@@ -151,7 +149,14 @@ void *sendto_udpserver(void *args)
 	return 0;
 
 }
-
+/**
+* @testcase           : sendto_udpclient
+* @brief              : udp client
+* @scenario           : used for udp connection
+* @apicovered         : socket
+* @precondition       : valid file descriptor
+* @postcondition      : none
+*/
 /**
 * @fn					: sendto_client
 * @brief				: udp client

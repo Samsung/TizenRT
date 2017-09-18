@@ -33,12 +33,12 @@
 #define PORTNUM 1100
 
 /**
-* @testcase				: tc_net_connect_fd_n
-* @brief				:
-* @scenario				:
-* @apicovered			: connect()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_connect_fd_n
+* @brief               : connect to the given socket descriptor
+* @scenario            : used in client to connect to server
+* @apicovered          : connect()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 {
@@ -53,12 +53,12 @@ static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 }
 
 /**
-* @testcase				: tc_net_connect_broadcastaddr_n
-* @brief				:
-* @scenario				:
-* @apicovered			: connect()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_connect_broadcastaddr_n
+* @brief               : connect to the given socket descriptor
+* @scenario            : used in client to connect to server
+* @apicovered          : connect()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 {
@@ -75,12 +75,12 @@ static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 }
 
 /**
-* @testcase				: tc_net_connect_loopbackaddr_n
-* @brief				:
-* @scenario				:
-* @apicovered			: connect()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_connect_loopbackaddr_n
+* @brief               : connect to the given socket descriptor
+* @scenario            : used in client to connect to server
+* @apicovered          : connect()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 {
@@ -100,12 +100,12 @@ static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 }
 
 /**
-* @testcase				: tc_net_connect_socklen_n
-* @brief				:
-* @scenario				:
-* @apicovered			: connect()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_connect_socklen_n
+* @brief               :
+* @scenario            : used in client to connect to server
+* @apicovered          : connect()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 {
@@ -122,6 +122,14 @@ static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @testcase            : tc_net_connect
+* @brief               :
+* @scenario            :
+* @apicovered          :
+* @precondition        :
+* @postcondition       :
+*/
 void tc_net_connect(void)
 {
 	struct sockaddr_in sa;

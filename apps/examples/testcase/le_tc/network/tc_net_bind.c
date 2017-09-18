@@ -39,12 +39,12 @@
 #define PORTNO5 5123
 
 /**
-* @testcase				: tc_net_bind_p
-* @brief				:
-* @scenario				:
-* @apicovered			: bind()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_bind_p
+* @brief               : bind the given address
+* @scenario            : giving an address to socket
+* @apicovered          : bind()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_bind_p(void)
 {
@@ -64,16 +64,15 @@ static void tc_net_bind_p(void)
 
 	TC_ASSERT_EQ("bind", ret, ZERO);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-* @testcase				: tc_net_bind_udp_p
-* @brief				:
-* @scenario				:
-* @apicovered			: bind()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_bind_udp_p
+* @brief               : bind the given address
+* @scenario            : giving an address to socket
+* @apicovered          : bind()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_bind_udp_p(void)
 {
@@ -96,12 +95,12 @@ static void tc_net_bind_udp_p(void)
 }
 
 /**
-* @testcase				: tc_net_bind_broadcast_p
-* @brief				:
-* @scenario				:
-* @apicovered			: bind()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_bind_broadcast_p
+* @brief               : bind the given address
+* @scenario            : giving an address to socket
+* @apicovered          : bind()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_bind_broadcast_p(void)
 {
@@ -124,12 +123,12 @@ static void tc_net_bind_broadcast_p(void)
 }
 
 /**
-* @testcase				: tc_net_bind_fd_n
-* @brief				:
-* @scenario				:
-* @apicovered			: bind()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_bind_fd_n
+* @brief               : bind the given address
+* @scenario            :
+* @apicovered          : bind()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_bind_fd_n(void)
 {
@@ -147,12 +146,12 @@ static void tc_net_bind_fd_n(void)
 }
 
 /**
-* @testcase				: tc_net_bind_addrfamily_n
-* @brief				:
-* @scenario				:
-* @apicovered			: bind()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_bind_addrfamily_n
+* @brief               : bind the given address
+* @scenario            :
+* @apicovered          : bind()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_bind_addrfamily_n(void)
 {
@@ -172,14 +171,13 @@ static void tc_net_bind_addrfamily_n(void)
 	TC_ASSERT_NEQ("bind", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
-
 /**
-* @testcase				: tc_net_bind_size_n
-* @brief				:
-* @scenario				:
-* @apicovered			: bind()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_bind_size_n
+* @brief               : bind the given address
+* @scenario            :
+* @apicovered          : bind()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_bind_size_n(void)
 {
@@ -201,12 +199,12 @@ static void tc_net_bind_size_n(void)
 }
 
 /**
-* @testcase				: tc_net_bind_fd_size_n
-* @brief				:
-* @scenario				:
-* @apicovered			: bind()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_bind_fd_size_n
+* @brief               : bind the given address
+* @scenario            :
+* @apicovered          : bind()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_bind_fd_size_n(void)
 {

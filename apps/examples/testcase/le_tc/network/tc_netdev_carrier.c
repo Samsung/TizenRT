@@ -25,12 +25,12 @@
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_netdev_carrier_on_p
-* @brief				:
-* @scenario				:
-* @apicovered			: netdev_carrier_on
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_netdev_carrier_on_p
+* @brief                : Notifies the networking layer about an available carrier
+* @scenario             : Get the inforamation about available carrier
+* @apicovered           : netdev_carrier_on
+* @precondition         :
+* @postcondition        :
 */
 static void tc_netdev_carrier_on_p(void)
 {
@@ -48,12 +48,12 @@ static void tc_netdev_carrier_on_p(void)
 }
 
 /**
-* @testcase				: tc_netdev_carrier_on_n
-* @brief				:
-* @scenario				:
-* @apicovered			: netdev_carrier_on
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_netdev_carrier_on_n
+* @brief                : Notifies the networking layer about an available carrier
+* @scenario             : Get the inforamation about available carrier
+* @apicovered           : netdev_carrier_on
+* @precondition         :
+* @postcondition        :
 */
 static void tc_netdev_carrier_on_n(void)
 {
@@ -65,12 +65,12 @@ static void tc_netdev_carrier_on_n(void)
 }
 
 /**
-* @testcase				: tc_netdev_carrier_off_p
-* @brief				:
-* @scenario				:
-* @apicovered			: netdev_carrier_off
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_netdev_carrier_off_p
+* @brief                : Notifies the networking layer about an disappeared carrier
+* @scenario             : Get the inforamation about disappeared carrier
+* @apicovered           : netdev_carrier_off
+* @precondition         :
+* @postcondition        :
 */
 static void tc_netdev_carrier_off_p(void)
 {
@@ -89,12 +89,12 @@ static void tc_netdev_carrier_off_p(void)
 }
 
 /**
-* @testcase				: tc_netdev_carrier_off_n
-* @brief				:
-* @scenario				:
-* @apicovered			: netdev_carrier_off
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_netdev_carrier_off_n
+* @brief                : Notifies the networking layer about an disappeared carrier
+* @scenario             : Get the inforamation about disappeared carrier
+* @apicovered           : netdev_carrier_off
+* @precondition         :
+* @postcondition        :
 */
 static void tc_netdev_carrier_off_n(void)
 {
@@ -106,12 +106,12 @@ static void tc_netdev_carrier_off_n(void)
 }
 
 /**
-* @testcase				: tc_netdev_count
-* @brief				:
-* @scenario				:
-* @apicovered			: netdev_count
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_netdev_count
+* @brief                : Get number of network devices
+* @scenario             : Get number of network devices count
+* @apicovered           : netdev_count
+* @precondition         :
+* @postcondition        :
 */
 static void tc_netdev_count(void)
 {
@@ -136,12 +136,12 @@ static int tc_test_function(struct netif *dev)
 }
 
 /**
-* @testcase				: tc_netdev_ifdown
-* @brief				:
-* @scenario				:
-* @apicovered			: netdev_ifdown
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_netdev_ifdown
+* @brief                : Bring the interface down
+* @scenario             : Bring the interface down
+* @apicovered           : netdev_ifdown
+* @precondition         :
+* @postcondition        :
 */
 static void tc_netdev_ifdown(void)
 {

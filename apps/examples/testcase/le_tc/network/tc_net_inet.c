@@ -35,12 +35,12 @@
 #define INVAL_SOCKSIZE  7
 
 /**
-* @testcases			: tc_inet_chksum_pbuf_p
-* @brief				:
-* @scenario				:
-* @apicovered			: inet_chksum_pbuf
-* @precondition			:
-* @postcondition		:
+* @testcases          : tc_inet_chksum_pbuf_p
+* @brief              : checking the checksum
+* @scenario           :
+* @apicovered         : inet_chksum_pbuf
+* @precondition       :
+* @postcondition      :
 */
 static void tc_inet_chksum_pbuf_p(void)
 {
@@ -65,12 +65,12 @@ static void tc_inet_chksum_pbuf_p(void)
 }
 
 /**
-* @testcase				: tc_inet_chksum_pseudo_partial_p
-* @brief				:
-* @scenario				:
-* @apicovered			: tc_inet_chksum_pseudo_partial_p
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_inet_chksum_pseudo_partial_p
+* @brief              : checking the checksum
+* @scenario           :
+* @apicovered         : tc_inet_chksum_pseudo_partial_p
+* @precondition       :
+* @postcondition      :
 */
 static void tc_inet_chksum_pseudo_partial_p(void)
 {
@@ -103,12 +103,12 @@ static void tc_inet_chksum_pseudo_partial_p(void)
 }
 
 /**
-* @testcase				: tc_net_inet_addr_p
-* @brief				:
-* @scenario				:
-* @apicovered			: inet_addr()
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_net_inet_addr_p
+* @brief              : converts from standard notation to binary data
+* @scenario           :
+* @apicovered         : inet_addr()
+* @precondition       :
+* @postcondition      :
 */
 static void tc_net_inet_addr_p(void)
 {
@@ -121,12 +121,12 @@ static void tc_net_inet_addr_p(void)
 }
 
 /**
-* @testcase				: tc_net_inet_aton_p
-* @brief				:
-* @scenario				:
-* @apicovered			: inet_aton()
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_net_inet_aton_p
+* @brief              : converts from standard notation to binary data result is stored in second argument
+* @scenario           :
+* @apicovered         : inet_aton()
+* @precondition       :
+* @postcondition      :
 */
 static void tc_net_inet_aton_p(void)
 {
@@ -140,12 +140,12 @@ static void tc_net_inet_aton_p(void)
 }
 
 /**
-* @testcase				: tc_net_inet_ntoa_p
-* @brief				:
-* @scenario				:
-* @apicovered			: inet_ntoa()
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_net_inet_ntoa_p
+* @brief              : converts network byte order address to standard notation
+* @scenario           :
+* @apicovered         : inet_ntoa()
+* @precondition       :
+* @postcondition      :
 */
 static void tc_net_inet_ntoa_p(void)
 {
@@ -160,12 +160,12 @@ static void tc_net_inet_ntoa_p(void)
 }
 
 /**
-* @testcase     tc_net_inet_ntop
-* @brief
-* @scenario
-* @apicovered       inet_ntop()
-* @precondition
-* @postcondition
+* @testcase           : tc_net_inet_ntop
+* @brief              : converts numeric address to text format
+* @scenario           :
+* @apicovered         : inet_ntop
+* @precondition       :
+* @postcondition      :
 */
 static void tc_net_inet_ntop(void)
 {
@@ -195,12 +195,12 @@ static void tc_net_inet_ntop(void)
 }
 
 /**
-* @testcase		tc_net_inet_pton
-* @brief
-* @scenario
-* @apicovered		inet_pton()
-* @precondition
-* @postcondition
+* @testcase           : tc_net_inet_pton
+* @brief              : converts text address to numeric format
+* @scenario           :
+* @apicovered         : inet_pton() 
+* @precondition       :
+* @postcondition      :
 */
 static void tc_net_inet_pton(void)
 {
@@ -227,12 +227,12 @@ static void tc_net_inet_pton(void)
 }
 
 /**
-* @testcase				: tc_net_htons
-* @brief				:
-* @scenario				:
-* @apicovered			: htons()
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_net_htons
+* @brief              : to convert from host order to network order
+* @scenario           :
+* @apicovered         : htons()
+* @precondition       :
+* @postcondition      :
 */
 static void tc_net_htons(void)
 {
@@ -248,12 +248,12 @@ static void tc_net_htons(void)
 }
 
 /**
-* @testcase				: tc_net_ntohs
-* @brief				:
-* @scenario				:
-* @apicovered			: ntohs()
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_net_ntohs
+* @brief              : to convert network to host order
+* @scenario           :
+* @apicovered         : ntohs()
+* @precondition       :
+* @postcondition      :
 */
 static void tc_net_ntohs(void)
 {
@@ -269,12 +269,12 @@ static void tc_net_ntohs(void)
 }
 
 /**
-* @testcase				: tc_net_htonl
-* @brief				:
-* @scenario				:
-* @apicovered			: htonl()
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_net_htonl
+* @brief              :
+* @scenario           :
+* @apicovered         : htonl()
+* @precondition       :
+* @postcondition      :
 */
 static void tc_net_htonl(void)
 {
@@ -290,12 +290,12 @@ static void tc_net_htonl(void)
 }
 
 /**
-* @testcase				: tc_net_ntohl
-* @brief				:
-* @scenario				:
-* @apicovered			: ntohl()
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_net_ntohl
+* @brief              :
+* @scenario           :
+* @apicovered         : ntohl()
+* @precondition       :
+* @postcondition      :
 */
 static void tc_net_ntohl(void)
 {

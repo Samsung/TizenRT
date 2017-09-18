@@ -26,12 +26,12 @@
 #define  TC_VAL2 0x112A380
 
 /**
-* @testcase				: tc_net_core_htonl_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ntohs()
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_core_htonl_p
+* @brief                : function converts the unsigned short integer from host byte order to network byte order.
+* @scenario             : none
+* @apicovered           : ntohs()
+* @precondition         : Valid unsigned integer
+* @postcondition        : none
 */
 void tc_net_core_ntohs_p(void)
 {
@@ -43,12 +43,12 @@ void tc_net_core_ntohs_p(void)
 }
 
 /**
-* @testcase				: tc_net_core_ntohl_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ntohl()
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_core_ntohl_p
+* @brief                : function converts the unsigned integer netlong from network byte order to host byte order.
+* @scenario             : none
+* @apicovered           : ntohl()
+* @precondition         : valid unsigned integer
+* @postcondition        : none
 */
 void tc_net_core_ntohl_p(void)
 {

@@ -20,12 +20,12 @@
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_net_raw_send_n
-* @brief				:
-* @scenario				:
-* @apicovered			: raw_send
-* @precondition			:
-* @postcondition		:
+* @testcase          : tc_net_raw_send_n
+* @brief             : Send the raw IP packet to the address given by raw_connect().
+* @scenario          : none
+* @apicovered        : raw_send, raw_new, raw_remove
+* @precondition      : none
+* @postcondition     : none
 */
 static void tc_net_raw_send_n(void)
 {
@@ -44,12 +44,12 @@ static void tc_net_raw_send_n(void)
 }
 
 /**
-* @testcase				: tc_net_raw_connect_n
-* @brief				:
-* @scenario				:
-* @apicovered			: raw_connect
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_raw_connect_n
+* @brief               : Connect an RAW PCB.
+* @scenario            : none
+* @apicovered          : raw_connect, raw_new, raw_remove
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_net_raw_connect_n(void)
 {
@@ -65,12 +65,12 @@ static void tc_net_raw_connect_n(void)
 }
 
 /**
-* @testcase				: tc_net_raw_connect_p
-* @brief				:
-* @scenario				:
-* @apicovered			: raw_connect
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_raw_connect_p
+* @brief               : Connect an RAW PCB.
+* @scenario            : none
+* @apicovered          : raw_connect, raw_new, raw_remove
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_net_raw_connect_p(void)
 {
@@ -88,12 +88,12 @@ static void tc_net_raw_connect_p(void)
 }
 
 /**
-* @testcase				: tc_net_raw_bind_n
-* @brief				:
-* @scenario				:
-* @apicovered			: raw_bind
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_raw_bind_n
+* @brief               : Bind a RAW PCB
+* @scenario            : none
+* @apicovered          : raw_bind, raw_new, raw_remove
+* @precondition        : nonne
+* @postcondition       : none
 */
 static void tc_net_raw_bind_n(void)
 {
@@ -105,12 +105,12 @@ static void tc_net_raw_bind_n(void)
 }
 
 /**
-* @testcase				: tc_net_raw_bind_p
-* @brief				:
-* @scenario				:
-* @apicovered			: raw_bind
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_raw_bind_p
+* @brief               : Bind a RAW PCB
+* @scenario            : none
+* @apicovered          : raw_bind, raw_new, raw_remove
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_net_raw_bind_p(void)
 {

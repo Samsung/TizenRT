@@ -28,12 +28,12 @@
 
 #include "tc_internal.h"
 /**
-* @testcase				: tc_tcp_rexmit
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_rexmit
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_tcp_rexmit
+* @brief                : Requeue the first unacked segment for retransmission.
+* @scenario             :
+* @apicovered           : tcp_rexmit, tcp_new
+* @precondition         : none
+* @postcondition        : none
 */
 void tc_tcp_rexmit(void)
 {
@@ -45,12 +45,12 @@ void tc_tcp_rexmit(void)
 }
 
 /**
-* @testcase				: tc_pbuf_free_callback_p
-* @brief				:
-* @scenario				:
-* @apicovered			: pbuf_free_callback_p
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_pbuf_free_callback_p
+* @brief                : Function that allows you to free a pbuf from interrupt context.
+* @scenario             :
+* @apicovered           : pbuf_free_callback, pbuf_alloc, pbuf_free
+* @precondition         : none
+* @postcondition        : none
 */
 void tc_pbuf_free_callback_p(void)
 {
@@ -66,12 +66,12 @@ void tc_pbuf_free_callback_p(void)
 }
 
 /**
-* @testcase				: tc_pbuf_free_callback_n
-* @brief				:
-* @scenario				:
-* @apicovered			: tc_pbuf_free_callback_n
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_pbuf_free_callback_n
+* @brief                : Function that allows you to free a pbuf from interrupt context.
+* @scenario             :
+* @apicovered           : tc_pbuf_free_callback, pbuf_alloc, pbuf_free
+* @precondition         : none
+* @postcondition        : none
 */
 void tc_pbuf_free_callback_n(void)
 {
@@ -100,12 +100,12 @@ static void tc_net_tcp_accept_null_n(void)
 }
 
 /**
-* @statitcase			: tc_net_tcp_accept_null_p
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_accept_null
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_tcp_accept_null_p
+* @brief                :
+* @scenario             :
+* @apicovered           : tcp_accept_null, malloc, free
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_tcp_accept_null_p(void)
 {
@@ -123,12 +123,12 @@ static void tc_net_tcp_accept_null_p(void)
 }
 
 /**
-* @statitcase			: tc_net_tcp_process_refused_data_p
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_process_refused_data
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_tcp_process_refused_data_p
+* @brief                :
+* @scenario             :
+* @apicovered           : tcp_process_refused_data, malloc, free
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_tcp_process_refused_data_p(void)
 {
@@ -146,12 +146,12 @@ static void tc_net_tcp_process_refused_data_p(void)
 }
 
 /**
-* @statitcase			: tc_net_tcp_setprio_n
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_setprio
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_tcp_setprio_n
+* @brief                : Sets the priority of a connection.
+* @scenario             :
+* @apicovered           : tcp_setprio, malloc, free
+* @precondition         : none
+* @postcondition        : none
 */
 
 static void tc_net_tcp_setprio_n(void)
@@ -167,12 +167,12 @@ static void tc_net_tcp_setprio_n(void)
 }
 
 /**
-* @statitcase			: tc_net_tcp_setprio_p
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_setprio
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_tcp_setprio_p
+* @brief                : Sets the priority of a connection.
+* @scenario             :
+* @apicovered           : tcp_setprio, malloc, free
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_tcp_setprio_p(void)
 {
@@ -187,12 +187,12 @@ static void tc_net_tcp_setprio_p(void)
 }
 
 /**
-* @statitcase			: tc_net_tcp_kill_prio_p
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_kill_prio
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_tcp_kill_prio_p
+* @brief                : Kills the oldest active connection that has the same or lower priority than prio.
+* @scenario             :
+* @apicovered           : tcp_kill_prio
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_tcp_kill_prio_p(void)
 {
@@ -203,12 +203,12 @@ static void tc_net_tcp_kill_prio_p(void)
 }
 
 /**
-* @statitcase			: tc_net_tcp_kill_prio_n
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_kill_prio
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_tcp_kill_prio_n
+* @brief                : Kills the oldest active connection that has the same or lower priority than prio.
+* @scenario             :
+* @apicovered           : tcp_kill_prio
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_tcp_kill_prio_n(void)
 {
@@ -219,12 +219,12 @@ static void tc_net_tcp_kill_prio_n(void)
 }
 
 /**
-* @statitcase			: tc_net_tcp_recv_null_n
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_recv_null
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_tcp_recv_null_n
+* @brief                : Default receive callback that is called if the user didn't register a recv callback for the pcb.
+* @scenario             :
+* @apicovered           : tcp_recv_null
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_tcp_recv_null_n(void)
 {
@@ -237,12 +237,12 @@ static void tc_net_tcp_recv_null_n(void)
 }
 
 /**
-* @statitcase			: tc_net_tcp_recv_null_p
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_recv_null
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_tcp_recv_null_p
+* @brief                : Default receive callback that is called if the user didn't register a recv callback for the pcb.
+* @scenario             :
+* @apicovered           : tcp_recv_null
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_tcp_recv_null_p(void)
 {
@@ -262,12 +262,12 @@ static void tc_net_tcp_recv_null_p(void)
 }
 
 /**
-* @statitcase			: tcp_debug_state_str_p
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_debug_state_str
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tcp_debug_state_str_p
+* @brief                : Tells the connection state.
+* @scenario             :
+* @apicovered           : tcp_debug_state_str, strcmp
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_tcp_debug_state_str_p(void)
 {
@@ -280,12 +280,12 @@ static void tc_net_tcp_debug_state_str_p(void)
 }
 
 /**
-* @statitcase			: tc_net_tcp_debug_state_str_n
-* @brief				:
-* @scenario				:
-* @apicovered			: tcp_debug_state_str
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_tcp_debug_state_str_n
+* @brief                : Tells the connection state.
+* @scenario             :
+* @apicovered           : tcp_debug_state_str, strcmp
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_tcp_debug_state_str_n(void)
 {
@@ -298,12 +298,12 @@ static void tc_net_tcp_debug_state_str_n(void)
 }
 
 /**
-* @statitcase			: net_tcp_main
-* @brief				:
-* @scenario				:
-* @apicovered			:
-* @precondition			:
-* @postcondition		:
+* @statitcase           : net_tcp_main
+* @brief                :
+* @scenario             :
+* @apicovered           :
+* @precondition         :
+* @postcondition        :
 */
 int net_tcp_main(void)
 {

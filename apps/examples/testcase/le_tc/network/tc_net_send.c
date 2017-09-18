@@ -38,13 +38,13 @@
 #define MAXRCVLEN 20
 int s1 = 0;
 /**
-* @fn					: wait1
-* @brief				: function to wait on semaphore
-* @scenario				:
-* API's covered			:
-* Preconditions			:
-* Postconditions		:
-* @return				: void
+* @fn                   : wait1
+* @brief                : function to wait on semaphore
+* @scenario             : To aquire the resource
+* API's covered         : none
+* Preconditions         : none
+* Postconditions        : none
+* @return               : void
 */
 void wait1(void)
 {
@@ -56,13 +56,13 @@ void wait1(void)
 }
 
 /**
-* @fn					: signal1
-* @brief				: function to signal semaphore
-* @scenario				:
-* API's covered			:
-* Preconditions			:
-* Postconditions		:
-* @return				: void
+* @fn                   : signal1
+* @brief                : function to signal semaphore
+* @scenario             : To release the resource
+* API's covered         : none
+* Preconditions         : none
+* Postconditions        : none
+* @return               : void
 */
 void signal1(void)
 {
@@ -70,12 +70,12 @@ void signal1(void)
 }
 
 /**
-* @testcase				: tc_net_send_p
-* @brief				:
-* @scenario				:
-* @apicovered			: accept(),send()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_send_p
+* @brief               : +ve test case for send api
+* @scenario            : used for tcp connection
+* @apicovered          : accept(),send()
+* @precondition        : Valid file descriptor
+* @postcondition       : none
 */
 void tc_net_send_p(int fd)
 {
@@ -90,13 +90,13 @@ void tc_net_send_p(int fd)
 }
 
 /**
-* @fn					: server
-* @brief				:
-* @scenario				:
-* API's covered			: socket,bind,listen,close
-* Preconditions			:
-* Postconditions		:
-* @return				: void *
+* @fn                   : server
+* @brief                : Server thread
+* @scenario             : used for tcp connection
+* API's covered         : socket,bind,listen,close
+* Preconditions         : Valid file descriptor
+* Postconditions        : none
+* @return               : void *
 */
 void *server(void *args)
 {
@@ -121,13 +121,13 @@ void *server(void *args)
 }
 
 /**
-* @fn					: client
-* @brief				:
-* @scenario				:
-* API's covered			: socket,connect,recv,close
-* Preconditions			:
-* Postconditions		:
-* @return				: void *
+* @fn                   : client
+* @brief                : Client thread
+* @scenario             : used for tcp connection
+* API's covered         : socket,connect,recv,close
+* Preconditions         : Valid file descriptor
+* Postconditions        : none
+* @return               : void *
 */
 void *client(void *args)
 {
@@ -152,6 +152,15 @@ void *client(void *args)
 	return NULL;
 }
 
+/**
+* @fn                  : tc_net_send
+* @brief               :
+* @scenario            :
+* API's covered        :
+* Preconditions        :
+* Postconditions       :
+* @return              : void
+*/
 void tc_net_send(void)
 {
 	int ret;

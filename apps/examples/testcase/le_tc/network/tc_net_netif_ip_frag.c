@@ -20,12 +20,12 @@
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_ip_frag_n
-* @brief				:
-* @scenario				:
-* @apicovered			: ip_frag()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_ip_frag_n
+* @brief               : Fragment IP datagram if too large
+* @scenario            : If there is no ip packets
+* @apicovered          : ip_frag()
+* @precondition        : none
+* @postcondition       : return error if it not sent successfully 
 */
 static void tc_ip_frag_n(void)
 {
@@ -40,12 +40,12 @@ static void tc_ip_frag_n(void)
 }
 
 /**
-* @testcase				: tc_ip_reass_free_complete_datagram_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ip_reass_free_complete_datagram()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_ip_reass_free_complete_datagram_p
+* @brief               : Free a datagram and all its pbuf
+* @scenario            : Sending a datagram.
+* @apicovered          : ip_reass_free_complete_datagram()
+* @precondition        : Need datagram packets 
+* @postcondition       : return freed pbuf.
 */
 static void tc_ip_reass_free_complete_datagram_p(void)
 {
@@ -62,12 +62,12 @@ static void tc_ip_reass_free_complete_datagram_p(void)
 }
 
 /**
-* @testcase				: tc_ip_reass_remove_oldest_datagram_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ip_reass_remove_oldest_datagram()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_ip_reass_remove_oldest_datagram_p
+* @brief               : Free the oldest datagram
+* @scenario            : take data gram and take no. pbuf if no space it remove old datagram
+* @apicovered          : ip_reass_remove_oldest_datagram()
+* @precondition        : datagrams 
+* @postcondition       : return no. pbufs
 */
 static void tc_ip_reass_remove_oldest_datagram_p(void)
 {
@@ -82,12 +82,12 @@ static void tc_ip_reass_remove_oldest_datagram_p(void)
 }
 
 /**
-* @testcase				: tc_ip_reass_remove_oldest_datagram_n
-* @brief				:
-* @scenario				:
-* @apicovered			: ip_reass_remove_oldest_datagram()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_ip_reass_remove_oldest_datagram_n
+* @brief               : Free the oldest datagram
+* @scenario            : Sending no datagram
+* @apicovered          : ip_reass_remove_oldest_datagram()
+* @precondition        : none
+* @postcondition       : return 0.
 */
 static void tc_ip_reass_remove_oldest_datagram_n(void)
 {
@@ -100,12 +100,12 @@ static void tc_ip_reass_remove_oldest_datagram_n(void)
 }
 
 /**
-* @testcase				: tc_ip_frag_free_pbuf_custom_ref_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ip_frag_free_pbuf_custom_ref()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_ip_frag_free_pbuf_custom_ref_p
+* @brief               : free a pbuf custom
+* @scenario            : none
+* @apicovered          : ip_frag_free_pbuf_custom_ref()
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_ip_frag_free_pbuf_custom_ref_p(struct pbuf_custom_ref *p)
 {
@@ -117,12 +117,12 @@ static void tc_ip_frag_free_pbuf_custom_ref_p(struct pbuf_custom_ref *p)
 }
 
 /**
-* @testcase				: tc_ip_frag_alloc_pbuf_custom_ref_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ip_frag_alloc_pbuf_custom_ref()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_ip_frag_alloc_pbuf_custom_ref_p
+* @brief               : Allocate a pbuf custom
+* @scenario            : none
+* @apicovered          : ip_frag_alloc_pbuf_custom_ref()
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_ip_frag_alloc_pbuf_custom_ref_p(void)
 {
@@ -140,12 +140,12 @@ static void tc_ip_frag_alloc_pbuf_custom_ref_p(void)
 }
 
 /**
-* @testcase				: tc_ip_frag_free_pbuf_custom_n
-* @brief				:
-* @scenario				:
-* @apicovered			: ipfrag_free_pbuf_custom()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_ip_frag_free_pbuf_custom_n
+* @brief               : Allocate a pbuf custom
+* @scenario            : If there is no custom pbuf
+* @apicovered          : ipfrag_free_pbuf_custom()
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_ip_frag_free_pbuf_custom_n(void)
 {
@@ -154,12 +154,12 @@ static void tc_ip_frag_free_pbuf_custom_n(void)
 }
 
 /**
-* @testcase				: tc_ip_frag_free_pbuf_custom_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ipfrag_free_pbuf_custom()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_ip_frag_free_pbuf_custom_p
+* @brief               : Free the custom pbuf
+* @scenario            : free the allocated custom pbuf
+* @apicovered          : ipfrag_free_pbuf_custom()
+* @precondition        : need custom pbuf
+* @postcondition       : free the custom pbuf
 */
 static void tc_ip_frag_free_pbuf_custom_p(void)
 {

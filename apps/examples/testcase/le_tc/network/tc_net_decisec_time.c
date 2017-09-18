@@ -25,12 +25,12 @@
 #define DESISEC 1000
 
 /**
-* @testcase					: tc_net_decisec_dsec2tick
-* @brief					:
-* @scenario					:
-* @apicovered				: net_dsec2tick
-* @precondition				:
-* @postcondition			:
+* @testcase                 : tc_net_decisec_dsec2tick
+* @brief                    : Convert a decisecond value to a system clock ticks
+* @scenario                 : Convert a decisecond value to a system clock ticks
+* @apicovered               : net_dsec2tick
+* @precondition             :
+* @postcondition            :
 */
 static void tc_net_decisec_dsec2tick(void)
 {
@@ -43,12 +43,12 @@ static void tc_net_decisec_dsec2tick(void)
 }
 
 /**
-* @testcase					: tc_net_decisec_dsec2timeval
-* @brief					:
-* @scenario					:
-* @apicovered				: net_dsec2timeval
-* @precondition				:
-* @postcondition			:
+* @testcase                 : tc_net_decisec_dsec2timeval
+* @brief                    : Convert a decisecond timeout value to a struct timeval
+* @scenario                 :
+* @apicovered               : net_dsec2timeval
+* @precondition             :
+* @postcondition            :
 */
 static void tc_net_decisec_dsec2timeval(void)
 {
@@ -65,12 +65,12 @@ static void tc_net_decisec_dsec2timeval(void)
 }
 
 /**
-* @testcase					: tc_net_decisec_timeval2dsec
-* @brief					:
-* @scenario					:
-* @apicovered				: net_timeval2dsec
-* @precondition				:
-* @postcondition			:
+* @testcase                 : tc_net_decisec_timeval2dsec
+* @brief                    : Convert a struct timeval to deciseconds
+* @scenario                 : Needed by setsockopt() to save new timeout values
+* @apicovered               : net_timeval2dsec
+* @precondition             :
+* @postcondition            :
 */
 static void tc_net_decisec_timeval2dsec(void)
 {

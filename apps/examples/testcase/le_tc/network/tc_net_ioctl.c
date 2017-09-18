@@ -36,12 +36,12 @@
 extern int ioctlsocket(int s, long cmd, void *argp);
 
 /**
-* @testcase				: tc_net_ioctl_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ioctl()
-* @precondition			:
-* @postcondition		:
+* @testcase           : tc_net_ioctl_p
+* @brief              : this function manipulates the underlying device parameters of special files
+* @scenario           :
+* @apicovered         : ioctl()
+* @precondition       : none
+* @postcondition      : none
 */
 static void tc_net_ioctl_p(void)
 {
@@ -56,12 +56,12 @@ static void tc_net_ioctl_p(void)
 }
 
 /**
-* @testcase				: tc_net_ioctl_fionread_n
-* @brief				:
-* @scenario				:
-* @apicovered			: ioctl()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_ioctl_fionread_n
+* @brief               : this function manipulates the underlying device parameters of special files
+* @scenario            :
+* @apicovered          : ioctl()
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_net_ioctl_fionread_n(void)
 {
@@ -75,12 +75,12 @@ static void tc_net_ioctl_fionread_n(void)
 }
 
 /**
-* @testcase				: tc_net_ioctl_n
-* @brief				:
-* @scenario				:
-* @apicovered			: ioctl()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_ioctl_n
+* @brief               : this function manipulates the underlying device parameters of special files
+* @scenario            :
+* @apicovered          : ioctl()
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_net_ioctl_n(void)
 {

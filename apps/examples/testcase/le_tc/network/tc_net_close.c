@@ -33,12 +33,12 @@
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_net_close_p
-* @brief				:
-* @scenario				:
-* @apicovered			: close()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_close_p
+* @brief               : close the created socket file descriptor
+* @scenario            :
+* @apicovered          : close()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_close_p(void)
 {
@@ -50,12 +50,12 @@ static void tc_net_close_p(void)
 }
 
 /**
-* @testcase				: tc_net_close_n
-* @brief				:
-* @scenario				:
-* @apicovered			: close()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_close_n
+* @brief               : close the created socket file descriptor
+* @scenario            :
+* @apicovered          : close()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_close_n(void)
 {

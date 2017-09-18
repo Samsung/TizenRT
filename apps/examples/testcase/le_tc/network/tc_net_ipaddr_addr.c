@@ -29,12 +29,12 @@
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_net_ipaddr_ntoa_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ipaddr_ntoa
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_ipaddr_ntoa_p
+* @brief               : Ascii internet address interpretation routine
+* @scenario            : none
+* @apicovered          : ipaddr_ntoa
+* @precondition        : none
+* @postcondition       : none
 */
 void tc_net_ipaddr_ntoa_p(void)
 {
@@ -48,12 +48,12 @@ void tc_net_ipaddr_ntoa_p(void)
 }
 
 /**
-* @testcase				: tc_net_ipaddr_addr_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ipaddr_addr
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_ipaddr_addr_p
+* @brief               : Ascii internet address interpretation routine
+* @scenario            : none
+* @apicovered          : ipaddr_addr
+* @precondition        : none
+* @postcondition       : none
 */
 void tc_net_ipaddr_addr_p(void)
 {
@@ -66,12 +66,12 @@ void tc_net_ipaddr_addr_p(void)
 }
 
 /**
-* @testcase				: tc_net_ipaddr_ntoa_r_p
-* @brief				:
-* @scenario				:
-* @apicovered			: ipaddr_ntoa_r
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_ipaddr_ntoa_r_p
+* @brief               : Convert numeric IP address into decimal dotted ASCII representation.
+* @scenario            : when user supplied buffer is using
+* @apicovered          : ipaddr_ntoa_r
+* @precondition        : valid buffer
+* @postcondition       : none
 */
 static void tc_net_ipaddr_ntoa_r_p(void)
 {
@@ -87,12 +87,12 @@ static void tc_net_ipaddr_ntoa_r_p(void)
 }
 
 /**
-* @testcase				: tc_net_ipaddr_ntoa_r_n
-* @brief				:
-* @scenario				:
-* @apicovered			: ipaddr_ntoa_r
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_ipaddr_ntoa_r_n
+* @brief               : Convert numeric IP address into decimal dotted ASCII representation.
+* @scenario            : when user supplied buffer is using
+* @apicovered          : ipaddr_ntoa_r
+* @precondition        : Valid buffer
+* @postcondition       : none
 */
 static void tc_net_ipaddr_ntoa_r_n(void)
 {

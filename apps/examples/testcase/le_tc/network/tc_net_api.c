@@ -30,12 +30,12 @@
 #define PORT_NUMBER		2000
 
 /**
-* @statitcase			: tc_net_netconn_sendto_n
-* @brief				:
-* @scenario				:
-* @apicovered			: netconn_sendto
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_netconn_sendto_n
+* @brief                : Send data to a specific remote IP address and port.
+* @scenario             : Only to be used for UDP and RAW netconns (not TCP).
+* @apicovered           : netconn_sendto
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_netconn_sendto_n(void)
 {
@@ -52,12 +52,12 @@ static void tc_net_netconn_sendto_n(void)
 }
 
 /**
-* @statitcase			: tc_net_netconn_close_n
-* @brief				:
-* @scenario				:
-* @apicovered			: netconn_close
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_netconn_close_n
+* @brief                : Close a TCP netconn (doesn't delete it).
+* @scenario             : 
+* @apicovered           : netconn_close
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_netconn_close_n(void)
 {
@@ -70,12 +70,12 @@ static void tc_net_netconn_close_n(void)
 }
 
 /**
-* @statitcase			: tc_net_netconn_close_p
-* @brief				:
-* @scenario				:
-* @apicovered			: netconn_close
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_netconn_close_p
+* @brief                : Close a TCP netconn (doesn't delete it).
+* @scenario             :
+* @apicovered           : netconn_close
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_netconn_close_p(void)
 {
@@ -92,12 +92,12 @@ static void tc_net_netconn_close_p(void)
 }
 
 /**
-* @statitcase			: tc_net_netconn_disconnect_n
-* @brief				:
-* @scenario				:
-* @apicovered			: netconn_disconnect
-* @precondition			:
-* @postcondition		:
+* @statitcase           : tc_net_netconn_disconnect_n
+* @brief                : Disconnect a netconn from its current peer.
+* @scenario             : only valid for UDP netconns.
+* @apicovered           : netconn_disconnect
+* @precondition         : none
+* @postcondition        : none
 */
 static void tc_net_netconn_disconnect_n(void)
 {
@@ -110,12 +110,12 @@ static void tc_net_netconn_disconnect_n(void)
 }
 
 /**
-* @statitcase			: tc_net_netconn_join_leave_group_n
-* @brief				:
-* @scenario				:
-* @apicovered			: netconn_join_leave_group
-* @precondition			:
-* @postcondition		:
+* @statitcase            : tc_net_netconn_join_leave_group_n
+* @brief                 : Join multicast groups for UDP netconns.
+* @scenario              :
+* @apicovered            : netconn_join_leave_group
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_netconn_join_leave_group_n(void)
 {
@@ -139,12 +139,12 @@ static void tc_net_netconn_join_leave_group_n(void)
 }
 
 /**
-* @statitcase			: tc_net_do_disconnect_p
-* @brief				:
-* @scenario				:
-* @apicovered			: do_disconnect
-* @precondition			:
-* @postcondition		:
+* @statitcase            : tc_net_do_disconnect_p
+* @brief                 : Connect a pcb contained inside a netconn
+* @scenario              : Only used for UDP netconns.
+* @apicovered            : do_disconnect
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_do_disconnect_p(void)
 {
@@ -162,12 +162,12 @@ static void tc_net_do_disconnect_p(void)
 }
 
 /**
-* @statitcase			: tc_net_do_disconnect_n
-* @brief				:
-* @scenario				:
-* @apicovered			: do_disconnect
-* @precondition			:
-* @postcondition		:
+* @statitcase            : tc_net_do_disconnect_n
+* @brief                 : Connect a pcb contained inside a netconn
+* @scenario              : Only used for UDP netconns.
+* @apicovered            : do_disconnect
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_do_disconnect_n(void)
 {
@@ -185,12 +185,12 @@ static void tc_net_do_disconnect_n(void)
 }
 
 /**
-* @statitcase			: tc_net_recv_raw
-* @brief				:
-* @scenario				:
-* @apicovered			: recv_raw
-* @precondition			:
-* @postcondition		:
+* @statitcase            : tc_net_recv_raw
+* @brief                 : Receive callback function for RAW netconns.
+* @scenario              :
+* @apicovered            : recv_raw
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_recv_raw(void)
 {
@@ -213,12 +213,12 @@ static void tc_net_recv_raw(void)
 }
 
 /**
-* @statitcase			: tc_net_do_join_leave_group_n
-* @brief				:
-* @scenario				:
-* @apicovered			: do_join_leave_group
-* @precondition			:
-* @postcondition		:
+* @statitcase            : tc_net_do_join_leave_group_n
+* @brief                 : Join multicast groups for UDP netconns.
+* @scenario              : Only used for UDP netconns.
+* @apicovered            : do_join_leave_group
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_do_join_leave_group_n(void)
 {
@@ -237,12 +237,12 @@ static void tc_net_do_join_leave_group_n(void)
 }
 
 /**
-* @statitcase			: tc_net_do_join_leave_group_p
-* @brief				:
-* @scenario				:
-* @apicovered			: do_join_leave_group
-* @precondition			:
-* @postcondition		:
+* @statitcase            : tc_net_do_join_leave_group_p
+* @brief                 : Join multicast groups for UDP netconns.
+* @scenario              : Only used for UDP netconns.
+* @apicovered            : do_join_leave_group
+* @precondition          : none
+* @postcondition         : none
 */
 static void tc_net_do_join_leave_group_p(void)
 {
@@ -266,12 +266,12 @@ static void tc_net_do_join_leave_group_p(void)
 }
 
 /**
-* @statitcase			: net_api_main
-* @brief				:
-* @scenario				:
-* @apicovered			:
-* @precondition			:
-* @postcondition		:
+* @testcase              : net_api_main
+* @brief                 :
+* @scenario              :
+* @apicovered            :
+* @precondition          :
+* @postcondition         :
 */
 int net_api_main(void)
 {

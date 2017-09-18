@@ -33,12 +33,12 @@
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_net_getsockname_p
-* @brief				:
-* @scenario				:
-* @apicovered			: getsockname()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_getsockname_p
+* @brief               : to get the name of socket
+* @scenario            :
+* @apicovered          : getsockname()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_getsockname_p(int sock)
 {
@@ -52,12 +52,12 @@ static void tc_net_getsockname_p(int sock)
 }
 
 /**
-* @testcase				: tc_net_getsockname_unix_p
-* @brief				:
-* @scenario				:
-* @apicovered			: getsockname()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_getsockname_unix_p
+* @brief               : to get the name of socket
+* @scenario            :
+* @apicovered          : getsockname()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_getsockname_unix_p(int sock)
 {
@@ -71,12 +71,12 @@ static void tc_net_getsockname_unix_p(int sock)
 }
 
 /**
-* @testcase				: tc_net_getsockname_n
-* @brief				:
-* @scenario				:
-* @apicovered			: getsockname()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_getsockname_n
+* @brief               : to get the name of socket
+* @scenario            :
+* @apicovered          : getsockname()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_getsockname_n(void)
 {
@@ -90,12 +90,12 @@ static void tc_net_getsockname_n(void)
 }
 
 /**
-* @testcase				: tc_net_getsockname_close_n
-* @brief				:
-* @scenario				:
-* @apicovered			: getsockname()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_getsockname_close_n
+* @brief               : to get the name of socket
+* @scenario            :
+* @apicovered          : getsockname()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_getsockname_close_n(void)
 {
@@ -109,12 +109,12 @@ static void tc_net_getsockname_close_n(void)
 }
 
 /**
-* @testcase				: tc_net_getsockname_udp_p
-* @brief				:
-* @scenario				:
-* @apicovered			: getsockname()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_getsockname_udp_p
+* @brief               : to get the name of socket
+* @scenario            :
+* @apicovered          : getsockname()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_getsockname_udp_p(int sock)
 {
@@ -128,12 +128,12 @@ static void tc_net_getsockname_udp_p(int sock)
 }
 
 /**
-* @testcase				: tc_net_getsockname_icmp_p
-* @brief				:
-* @scenario				:
-* @apicovered			: getsockname()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_getsockname_icmp_p
+* @brief               : to get the name of socket
+* @scenario            :
+* @apicovered          : getsockname()
+* @precondition        :
+* @postcondition       :
 */
 static void tc_net_getsockname_icmp_p(int sock)
 {
@@ -147,12 +147,12 @@ static void tc_net_getsockname_icmp_p(int sock)
 }
 
 /**
-* @testcase				: tc_net_getsockname_len_sock_n
-* @brief				:
-* @scenario				:
-* @apicovered			: getsockname()
-* @precondition			:
-* @postcondition		:
+* @testcase             : tc_net_getsockname_len_sock_n
+* @brief                : to get the name of socket
+* @scenario             :
+* @apicovered           : getsockname()
+* @precondition         :
+* @postcondition        :
 */
 static void tc_net_getsockname_len_sock_n(void)
 {

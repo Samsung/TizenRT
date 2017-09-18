@@ -37,12 +37,12 @@
 #define PORTNUM1	1101
 
 /**
-* @testcase				: tc_net_listen_p
-* @brief				:
-* @scenario				:
-* @apicovered			: listen()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_listen_p
+* @brief               : maintain a connection request queue
+* @scenario            :
+* @apicovered          : listen(), bind()
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_net_listen_p(void)
 {
@@ -68,12 +68,12 @@ static void tc_net_listen_p(void)
 }
 
 /**
-* @testcase				: tc_net_listen_fd_n
-* @brief				:
-* @scenario				:
-* @apicovered			: listen()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_listen_fd_n
+* @brief               : maintain a connection request queue
+* @scenario            :
+* @apicovered          : listen(), bind()
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_net_listen_fd_n(void)
 {
@@ -96,12 +96,12 @@ static void tc_net_listen_fd_n(void)
 }
 
 /**
-* @testcase				: tc_net_listen_backlog_p
-* @brief				:
-* @scenario				:
-* @apicovered			: listen()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_listen_backlog_p
+* @brief               : maintain a connection request queue
+* @scenario            :
+* @apicovered          : listen(), bind()
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_net_listen_backlog_p(void)
 {
@@ -125,12 +125,12 @@ static void tc_net_listen_backlog_p(void)
 }
 
 /**
-* @testcase				: tc_net_listen_fd_backlog_n
-* @brief				:
-* @scenario				:
-* @apicovered			: listen()
-* @precondition			:
-* @postcondition		:
+* @testcase            : tc_net_listen_fd_backlog_n
+* @brief               : maintain a connection request queue
+* @scenario            : 
+* @apicovered          : listen(), bind()
+* @precondition        : none
+* @postcondition       : none
 */
 static void tc_net_listen_fd_backlog_n(void)
 {
