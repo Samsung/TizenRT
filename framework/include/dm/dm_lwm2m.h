@@ -34,7 +34,7 @@
 #include <tinyara/config.h>
 
 #ifdef CONFIG_LWM2M_WAKAAMA
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 #include "er-coap-13/er-coap-13.h"
 #else
 #include <stdbool.h>
