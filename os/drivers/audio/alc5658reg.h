@@ -18,13 +18,14 @@
 #ifndef __DRIVERS_AUDIO_ALC5658REG_H
 #define __DRIVERS_AUDIO_ALC5658REG_H
 
+#ifdef CONFIG_AUDIO_ALC5658
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
-#ifdef CONFIG_AUDIO
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -123,5 +124,5 @@ typedef enum {
 	ALC5658_0010 = 0x0010,
 } ALC5658_REG;
 
-#endif							/* CONFIG_AUDIO */
+#endif							/* CONFIG_AUDIO_ALC5658 */
 #endif							/* __DRIVERS_AUDIO_ALC5658REG_H */

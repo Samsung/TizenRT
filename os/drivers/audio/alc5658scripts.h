@@ -18,13 +18,14 @@
 #ifndef __DRIVERS_AUDIO_ALC5658SCRIPTS_H
 #define __DRIVERS_AUDIO_ALC5658SCRIPTS_H
 
+
+#ifdef CONFIG_AUDIO_ALC5658
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include "alc5658reg.h"
-
-#ifdef CONFIG_AUDIO
 
 /* TYPEDEFS */
 typedef struct {
@@ -394,5 +395,5 @@ t_codec_dump_entry codec_dump_script[] = {
 	{ALC5658_0010, "ALC5658_0010"},
 };
 
-#endif							/* CONFIG_AUDIO */
+#endif							/* CONFIG_AUDIO_ALC5658 */
 #endif							/* __DRIVERS_AUDIO_ALC5658SCRIPTS_H */

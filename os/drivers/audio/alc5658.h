@@ -55,6 +55,8 @@
 #ifndef __DRIVERS_AUDIO_ALC5658_H
 #define __DRIVERS_AUDIO_ALC5658_H
 
+#ifdef CONFIG_AUDIO_ALC5658
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -62,8 +64,6 @@
 #include <tinyara/compiler.h>
 #include <tinyara/fs/ioctl.h>
 #include <stdint.h>
-
-#ifdef CONFIG_AUDIO
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -230,5 +230,5 @@ static void alc5658_configure_ints(FAR struct alc5658_dev_s *priv);
 static void alc5658_hw_reset(FAR struct alc5658_dev_s *priv);
 uint16_t alc5658_readreg(FAR struct alc5658_dev_s *priv, uint16_t regaddr);
 
-#endif							/* CONFIG_AUDIO */
+#endif							/* CONFIG_AUDIO_ALC5658 */
 #endif							/* __DRIVERS_AUDIO_ALC5658_H */
