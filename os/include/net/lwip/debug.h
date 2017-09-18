@@ -51,7 +51,6 @@
 
 #include <net/lwip/arch.h>
 #include <net/lwip/opt.h>
-
 /** lower two bits indicate debug level
  * - 0 all
  * - 1 warning
@@ -103,7 +102,6 @@
 	} while (0)
 #endif							/* LWIP_ERROR */
 
-#define LWIP_DEBUG      1
 #ifdef LWIP_DEBUG
 /** print debug message only if debug message type is enabled...
  *  AND is of correct type AND is at least LWIP_DBG_LEVEL
