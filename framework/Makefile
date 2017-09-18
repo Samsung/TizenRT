@@ -46,6 +46,11 @@ ifeq ($(CONFIG_WIFI_MANAGER), y)
 include src$(DELIM)wifi_manager$(DELIM)Make.defs
 endif
 
+ifeq ($(CONFIG_ST_THINGS), y)
+CFLAGS += -I$(TOPDIR)$(DELIM)..$(DELIM)framework$(DELIM)src$(DELIM)wifi_manager
+include src$(DELIM)st_things$(DELIM)Make.defs
+endif
+
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
