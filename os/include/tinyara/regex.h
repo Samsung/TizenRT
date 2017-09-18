@@ -49,6 +49,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+/**
+ * @defgroup REGEX_KERNEL REGEX
+ * @brief regular-expression-matching types
+ * @ingroup KERNEL
+ *
+ * @{
+ */
 
 #ifndef __INCLUDE_REGEX_H
 #define __INCLUDE_REGEX_H
@@ -75,19 +82,14 @@ extern "C" {
 #define EXTERN extern
 #endif
 
-/****************************************************************************
- * Name: match
- *
- * Description:
- *   Simple shell-style filename pattern matcher written by Jef Poskanzer
- *   (See copyright notice in lib/lib_match.c).  This pattern matcher only
- *   handles '?', '*' and '**', and  multiple patterns separated by '|'.
- *
- * Returned Value:
- *   Returns 1 (match) or 0 (no-match).
- *
- ****************************************************************************/
-
+/**
+ * @ingroup REGEX_KERNEL
+ * @brief  Simple shell-style filename pattern matcher
+ * @param[in] pattern, only '?', '*' and '**', and multiple patterns separated by '|'.
+ * @param[in] string to match pattern
+ * @return Returns 1 (match) or 0 (no-match)
+ * @since Tizen RT v1.1
+ */
 EXTERN int match(const char *pattern, const char *string);
 
 #undef EXTERN
@@ -96,3 +98,6 @@ EXTERN int match(const char *pattern, const char *string);
 #endif
 
 #endif							/* __INCLUDE_REGEX_H */
+/**
+ * @}
+ */

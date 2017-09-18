@@ -1132,17 +1132,18 @@ Once LOGM is approved, each module should have its own index
 extern "C" {
 #endif
 
-/* Dump a buffer of data */
 /**
- * @cond
- * @internal
+ * @ingroup DEBUG_KERNEL
+ * @brief  Dump a buffer of data
+ *
+ * @param[in] message for buffer dump
+ * @param[in] buffer
+ * @param[in] length for buffer
+ * @return void
+ * @since Tizen RT v1.1
  */
 
 void lib_dumpbuffer(FAR const char *msg, FAR const uint8_t *buffer, unsigned int buflen);
-
-/**
- * @endcond
- */
 
 /* The system logging interfaces are normally accessed via the macros
  * provided above.  If the cross-compiler's C pre-processor supports a
