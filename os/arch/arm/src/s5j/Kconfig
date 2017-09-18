@@ -196,6 +196,11 @@ config S5J_I2S_MAXINFLIGHT
 		determines the number certain queue data structures that will be
 		pre-allocated.
 
+config I2C_ARTIK_EXTENSIONS
+	bool "Support for incomplete I2C transactions for Artik (S5J) chips"
+	depends on S5J_I2C
+	default n
+
 config S5J_MCT
 	bool
 	default n

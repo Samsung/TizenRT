@@ -115,6 +115,9 @@ static const struct i2c_ops_s s5j_i2c_ops = {
 	.setownaddress = NULL,
 	.registercallback = NULL,
 #endif
+#ifdef CONFIG_I2C_ARTIK_EXTENSIONS
+	.setatomic = s5j_i2c_setatomic,
+#endif
 };
 
 static const struct s5j_i2c_config_s s5j_i2c0_config = {
@@ -1081,6 +1084,7 @@ unsigned int s5j_i2c_setclock(FAR struct i2c_dev_s *dev, unsigned int frequency)
 	return 0;
 }
 
+
 /**
  * @brief    Setting Slave Address for slave mode
  * @param    struct i2c_dev_s *dev : pointer to i2c_dev_s
@@ -1101,6 +1105,39 @@ int s5j_i2c_setownaddress(FAR struct i2c_dev_s *dev, int addr, int nbits)
 	hsi2c_set_slave_addr(priv->config->base, addr, 0);
 	return 0;
 }
+
+#ifdef CONFIG_I2C_ARTIK_EXTENSIONS
+/**
+ * @brief    Set I2C operations (red & write) to follow I2C protocol. Or not.
+ *           TizenRT default is to violate I2C protocol on certain transfers.
+ *           To restore the standard behavior invoke this on a device with
+ * @param    struct i2c_dev_s *dev : pointer to i2c_dev_s
+ * @param    int atomic : 1 -> I2C transactions are atomic (standard mandated)
+ * @return    = 0
+ * @note
+ */
+int s5j_i2c_setatomic(struct i2c_dev_s *dev, int atomic)
+{
+	struct s5j_i2c_priv_s *priv = (struct s5j_i2c_priv_s *)dev;
+
+	if (!priv->atomic && atomic) {
+	  // TODO: there might be an in-flight transaction, close it.
+	}
+	priv->atomic = !!atomic;
+	return 0;
+}
+
+static void s5j_i2c_compute_startstop(struct i2c_msg_s *msgv, int msgc, int *start, int *stop) {
+	if (((msgv->flags & I2C_M_READ) != 1) &&
+		 (msgv->length == 1) &&
+		 (msgc == 1)) {
+		*stop = 0;
+	}
+	if ((msgv->flags & I2C_M_READ) && (msgc == 1)) {
+		*start = 0;
+	}
+}
+#endif
 
 /**
  * @brief    Generic I2C transfer function
@@ -1123,19 +1160,16 @@ int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc)
 
 	/* Ensure that address or flags don't change meanwhile */
 	s5j_i2c_sem_wait(priv);
-
+#ifdef CONFIG_I2C_ARTIK_EXTENSIONS
+	if (!priv->atomic) {
+		s5j_i2c_compute_startstop(msgv, msgc, &start, &stop);
+	}
+#endif
 	/*
 	 * register address write for read, write with count 1,
 	 * i2c_read is expected from writing with count '1',
 	 * no stop for next transfer
 	 */
-	if (((msgv->flags & I2C_M_READ) != 1) && (msgv->length == 1) && (msgc == 1)) {
-		stop = 0;
-	}
-
-	if ((msgv->flags & I2C_M_READ) && (msgc == 1)) {
-		start = 0;
-	}
 
 	priv->mcnt = 0;
 	priv->mptr = NULL;

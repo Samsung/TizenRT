@@ -222,44 +222,13 @@ static ssize_t i2c_uiowrite(FAR struct file *filep, FAR const char *buffer, size
 
 static int i2c_uioctrl(FAR struct file *filep, int cmd, unsigned long arg)
 {
-	int32_t ret;
-	int addr;
-	int32_t freq;
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct i2c_dev_s *dev = inode->i_private;
-	FAR struct i2c_rdwr_ioctl_data_s *rdwr;
-
-	switch (cmd) {
-	case I2C_SLAVE:
-	case I2C_SLAVE_FORCE:
-		addr = *((int *)arg);
-		ret = I2C_SETADDRESS(dev, addr, -1);
-		break;
-	case I2C_TENBIT:
-		/* 0 for 7 bit addrs, != 0 for 10 bit */
-		if (arg == 0) {
-			ret = I2C_SETADDRESS(dev, -1, 7);
-		} else {
-			ret = I2C_SETADDRESS(dev, -1, 10);
-		}
-		break;
-	case I2C_RDWR:
-		rdwr = (struct i2c_rdwr_ioctl_data_s *)(arg);
-		ret = I2C_TRANSFER(dev, rdwr->msgs, rdwr->nmsgs);
-		break;
-
-	case I2C_FREQUENCY:
-		freq = *((uint32_t *)arg);
-		ret = I2C_SETFREQUENCY(dev, freq);
-		break;
-
-	default:
-		dbg("Unknown cmd(%x)\n", cmd);
-		ret = -EINVAL;
-		break;
+	FAR struct inode *inode = filep ? filep->f_inode  : NULL;
+	FAR struct i2c_dev_s *dev = inode ? inode->i_private : NULL;
+	if (dev) {
+		return i2c_ioctrl(dev, cmd, arg);
+	} else {
+		return -EINVAL;
 	}
-
-	return ret;
 }
 
 /****************************************************************************

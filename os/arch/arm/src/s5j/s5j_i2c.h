@@ -189,6 +189,9 @@ struct s5j_i2c_priv_s {
 	unsigned int slave_addr;
 	unsigned int addrlen;
 	unsigned int timeout;
+#ifdef CONFIG_I2C_ARTIK_EXTENSIONS
+	unsigned int atomic;
+#endif
 	char name[16];
 
 	unsigned int initialized;
@@ -272,6 +275,7 @@ static int s5j_i2c_uninitialize(struct s5j_i2c_priv_s *priv);
  * Public Function Prototypes
  ****************************************************************************/
 unsigned int s5j_i2c_setclock(struct i2c_dev_s *dev, unsigned int frequency);
+int s5j_i2c_setatomic(struct i2c_dev_s *dev, int atomic);
 int s5j_i2c_setownaddress(FAR struct i2c_dev_s *dev, int addr, int nbits);
 int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc);
 int s5j_i2c_read(FAR struct i2c_dev_s *dev, FAR uint8_t *buffer, int buflen);

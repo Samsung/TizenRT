@@ -58,6 +58,10 @@ ifeq ($(CONFIG_I2C_TRANSFER),y)
   CSRCS += i2c_read.c i2c_write.c i2c_writeread.c
 endif
 
+ifeq ($(CONFIG_I2C_USERIO),y)
+  CSRCS += i2c_ioctrl.c
+endif
+
 ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
   ifeq ($(CONFIG_I2C_USERIO),y)
     CSRCS += i2c_uio.c
