@@ -203,14 +203,18 @@ ssize_t recvfrom(int sockfd, FAR void *buf, size_t len, int flags, FAR struct so
 */
 int shutdown(int sockfd, int how);
 
+// @cond
 /**
 * @brief   close a socket
 *
 * @param[in] s the file descriptor of the socket
 * @return On success, 0 is returned. On failure, -1 is returned.
 * @since Tizen RT v1.0
+* @internal
 */
 int closesocket(int s);
+// @endcond
+
 /**
 * @brief   set the socket options
 *
