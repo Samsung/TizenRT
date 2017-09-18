@@ -35,10 +35,10 @@ iotbus_spi_context_h spi;
 unsigned int gBus = 0;
 
 struct iotbus_spi_config_s _g_st_config = {
-    (char)8,
-    0,
-    12000000,
-    IOTBUS_SPI_MODE0,
+	(char)8,
+	0,
+	12000000,
+	IOTBUS_SPI_MODE0,
 };
 
 /**
@@ -51,14 +51,14 @@ struct iotbus_spi_config_s _g_st_config = {
 */
 void itc_iotbus_spi_open_close_p(void)
 {
-    int ret = IOTBUS_ERROR_NONE;
-    iotbus_spi_context_h h_spi = iotbus_spi_open(gBus, &_g_st_config);
-    TC_ASSERT_NEQ("iotbus_spi_open", h_spi, NULL);
+	int ret = IOTBUS_ERROR_NONE;
+	iotbus_spi_context_h h_spi = iotbus_spi_open(gBus, &_g_st_config);
+	TC_ASSERT_NEQ("iotbus_spi_open", h_spi, NULL);
 
-    ret = iotbus_spi_close(h_spi);
-    TC_ASSERT_EQ("iotbus_spi_close", ret, IOTBUS_ERROR_NONE);
+	ret = iotbus_spi_close(h_spi);
+	TC_ASSERT_EQ("iotbus_spi_close", ret, IOTBUS_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -71,11 +71,11 @@ void itc_iotbus_spi_open_close_p(void)
 */
 void itc_iotbus_spi_write_recv_trasfer_p(void)
 {
-    unsigned char sz_txbuf[64] = { 0, };
-    unsigned char sz_rxbuf[64] = { 0, };
-    int ret = IOTBUS_ERROR_NONE;
-    iotbus_spi_context_h h_spi = iotbus_spi_open(gBus, &_g_st_config);
-    TC_ASSERT_NEQ("iotbus_spi_open", h_spi, NULL);
+	unsigned char sz_txbuf[64] = { 0, };
+	unsigned char sz_rxbuf[64] = { 0, };
+	int ret = IOTBUS_ERROR_NONE;
+	iotbus_spi_context_h h_spi = iotbus_spi_open(gBus, &_g_st_config);
+	TC_ASSERT_NEQ("iotbus_spi_open", h_spi, NULL);
 
 	ret = iotbus_spi_write(h_spi, sz_txbuf, 8);
 	TC_ASSERT_EQ_CLEANUP("iotbus_spi_write", ret, IOTBUS_ERROR_NONE, iotbus_spi_close(h_spi));
@@ -83,22 +83,22 @@ void itc_iotbus_spi_write_recv_trasfer_p(void)
 	ret = iotbus_spi_recv(h_spi, sz_rxbuf, 8);
 	TC_ASSERT_EQ_CLEANUP("iotbus_spi_recv", ret, IOTBUS_ERROR_NONE, iotbus_spi_close(h_spi));
 
-    ret = iotbus_spi_transfer_buf(h_spi, sz_txbuf, sz_rxbuf, 16);
+	ret = iotbus_spi_transfer_buf(h_spi, sz_txbuf, sz_rxbuf, 16);
 #ifdef CONFIG_SPI_EXCHANGE
 	TC_ASSERT_EQ_CLEANUP("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_NONE, iotbus_spi_close(h_spi));
 #else
 	TC_ASSERT_EQ_CLEANUP("iotbus_spi_transfer_buf", ret, IOTBUS_ERROR_NOT_SUPPORTED, iotbus_spi_close(h_spi));
 #endif
 
-    ret = iotbus_spi_close(h_spi);
-    TC_ASSERT_EQ("iotbus_spi_close", ret, IOTBUS_ERROR_NONE);
+	ret = iotbus_spi_close(h_spi);
+	TC_ASSERT_EQ("iotbus_spi_close", ret, IOTBUS_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 int itc_spi_main(void)
 {
-    itc_iotbus_spi_open_close_p();
-    itc_iotbus_spi_write_recv_trasfer_p();
-    return 0;
+	itc_iotbus_spi_open_close_p();
+	itc_iotbus_spi_write_recv_trasfer_p();
+	return 0;
 }

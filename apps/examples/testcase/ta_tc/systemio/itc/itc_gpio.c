@@ -48,16 +48,16 @@ int gpio_flag_callback = 0;
 */
 void gpio_event_callback(void *user_data)
 {
-    SYSIO_ITC_PRINT("\n inside the function %s \n", __func__);
-    iotbus_gpio_context_h hnd = (iotbus_gpio_context_h) user_data;
-    int value = iotbus_gpio_read(hnd);
-    if (value < 0) {
-        gpio_flag_callback = 0;
-        return;
-    }
-    gpio_flag_callback = 1;
+	SYSIO_ITC_PRINT("\n inside the function %s \n", __func__);
+	iotbus_gpio_context_h hnd = (iotbus_gpio_context_h) user_data;
+	int value = iotbus_gpio_read(hnd);
+	if (value < 0) {
+		gpio_flag_callback = 0;
+		return;
+	}
+	gpio_flag_callback = 1;
 
-    return;
+	return;
 }
 
 /**
@@ -70,10 +70,10 @@ void gpio_event_callback(void *user_data)
 */
 void itc_gpio_open_close_p(void)
 {
-    int gpiopin = 12;
-    int ret;
-    g_gpio = iotbus_gpio_open(gpiopin);
-    TC_ASSERT_NEQ ("iotbus_gpio_open" , g_gpio, NULL);
+	int gpiopin = 12;
+	int ret;
+	g_gpio = iotbus_gpio_open(gpiopin);
+	TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
 
 	gpiopin = 14;
 	g_gpio2 = iotbus_gpio_open(gpiopin);
@@ -84,7 +84,7 @@ void itc_gpio_open_close_p(void)
 	ret = iotbus_gpio_close(g_gpio2);
 	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -230,16 +230,16 @@ void itc_gpio_set_get_drive_mode_p(void)
 */
 void itc_gpio_get_pin_p(void)
 {
-    int gpioSetpin = 12;
-    int gpioGetpin;
-    iotbus_gpio_context_h m_gpio = iotbus_gpio_open(gpioSetpin);
-    TC_ASSERT_NEQ("iotbus_gpio_open" , m_gpio, NULL);
+	int gpioSetpin = 12;
+	int gpioGetpin;
+	iotbus_gpio_context_h m_gpio = iotbus_gpio_open(gpioSetpin);
+	TC_ASSERT_NEQ("iotbus_gpio_open" , m_gpio, NULL);
 
 	gpioGetpin = iotbus_gpio_get_pin(m_gpio);
 	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_get_pin", gpioGetpin, gpioSetpin, iotbus_gpio_close(m_gpio));
 
-    iotbus_gpio_close(m_gpio);
-    TC_SUCCESS_RESULT();
+	iotbus_gpio_close(m_gpio);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -252,9 +252,9 @@ void itc_gpio_get_pin_p(void)
 */
 void itc_gpio_read_write_p(void)
 {
-    int ret, gpiopin = 12;
-    g_gpio = iotbus_gpio_open(gpiopin);
-    TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
+	int ret, gpiopin = 12;
+	g_gpio = iotbus_gpio_open(gpiopin);
+	TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
 
 	ret = iotbus_gpio_read(g_gpio);
 	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_read", (ret < 0), false, iotbus_gpio_close(g_gpio));
@@ -262,8 +262,8 @@ void itc_gpio_read_write_p(void)
 	ret = iotbus_gpio_write(g_gpio, 1);
 	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_write", (ret < 0), false, iotbus_gpio_close(g_gpio));
 
-    iotbus_gpio_close(g_gpio);
-    TC_SUCCESS_RESULT();
+	iotbus_gpio_close(g_gpio);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -276,28 +276,28 @@ void itc_gpio_read_write_p(void)
 */
 void itc_gpio_register_unregister_callback_p(void)
 {
-    gpio_flag_callback = 0;
-    int ret;
-    int data = 0, gpio_pin2 = 57, gpio_pin1 = 41;
+	gpio_flag_callback = 0;
+	int ret;
+	int data = 0, gpio_pin2 = 57, gpio_pin1 = 41;
 
-    g_gpio = iotbus_gpio_open(gpio_pin1);
-    TC_ASSERT_NEQ ("iotbus_gpio_open" , g_gpio, NULL);
+	g_gpio = iotbus_gpio_open(gpio_pin1);
+	TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
 
 	g_gpio2 = iotbus_gpio_open(gpio_pin2);
 	TC_ASSERT_NEQ_CLEANUP("iotbus_gpio_open", g_gpio2 , NULL , iotbus_gpio_close(g_gpio));
 
-    iotbus_gpio_set_direction(g_gpio, IOTBUS_GPIO_DIRECTION_OUT);
-    iotbus_gpio_set_direction(g_gpio2, IOTBUS_GPIO_DIRECTION_IN);
+	iotbus_gpio_set_direction(g_gpio, IOTBUS_GPIO_DIRECTION_OUT);
+	iotbus_gpio_set_direction(g_gpio2, IOTBUS_GPIO_DIRECTION_IN);
 
 	ret = iotbus_gpio_register_cb(g_gpio2, IOTBUS_GPIO_EDGE_RISING, gpio_event_callback, (void *)g_gpio2);
 	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", ret , 0, iotbus_gpio_close(g_gpio2); iotbus_gpio_close(g_gpio));
 
-    // To trigger event for callback
-    iotbus_gpio_write(g_gpio, data);
-    sleep(1);
-    data = 1;
-    iotbus_gpio_write(g_gpio, data);
-    sleep(2);
+	// To trigger event for callback
+	iotbus_gpio_write(g_gpio, data);
+	sleep(1);
+	data = 1;
+	iotbus_gpio_write(g_gpio, data);
+	sleep(2);
 
 	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_register_cb", gpio_flag_callback, 1, iotbus_gpio_unregister_cb(g_gpio); iotbus_gpio_close(g_gpio2); iotbus_gpio_close(g_gpio));
 
@@ -307,23 +307,23 @@ void itc_gpio_register_unregister_callback_p(void)
 	ret = iotbus_gpio_close(g_gpio2);
 	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_close", ret, 0 , iotbus_gpio_close(g_gpio));
 
-    ret = iotbus_gpio_close(g_gpio);
-    TC_ASSERT_EQ(iotbus_gpio_close, ret, 0)
+	ret = iotbus_gpio_close(g_gpio);
+	TC_ASSERT_EQ(iotbus_gpio_close, ret, 0)
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 int itc_gpio_main(void)
 {
-    iotapi_initialize();
+	iotapi_initialize();
 
-    itc_gpio_open_close_p();
-    itc_gpio_get_pin_p();
-    itc_gpio_set_get_direction_p();
-    itc_gpio_set_get_edge_mode_p();
-    itc_gpio_set_get_drive_mode_p();
-    itc_gpio_read_write_p();
-    itc_gpio_register_unregister_callback_p();
+	itc_gpio_open_close_p();
+	itc_gpio_get_pin_p();
+	itc_gpio_set_get_direction_p();
+	itc_gpio_set_get_edge_mode_p();
+	itc_gpio_set_get_drive_mode_p();
+	itc_gpio_read_write_p();
+	itc_gpio_register_unregister_callback_p();
 
-    return 0;
+	return 0;
 }

@@ -1077,7 +1077,7 @@ static void fs_vfs_sendfile_tc(void)
 	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
 
 	ret = lseek(fd1, 0, SEEK_END);
-	TC_ASSERT_EQ_CLEANUP("lseek", ret, size,  close(fd1);close(fd2));
+	TC_ASSERT_EQ_CLEANUP("lseek", ret, size, close(fd1); close(fd2));
 
 	ret = sendfile(fd2, fd1, NULL, size);
 	close(fd2);

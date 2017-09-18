@@ -211,7 +211,7 @@ do {																	\
 		MEMORY_MEASURE_PRINT(sizeof(TYPE) + 1);							\
 		mbedtls_printf("\n");											\
 	}																	\
-} while(0)
+} while (0)
 
 struct pthread_arg {
 	int argc;
