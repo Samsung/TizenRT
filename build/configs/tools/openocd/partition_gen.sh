@@ -28,9 +28,8 @@ source .config
 # Path ENV
 BOARD_NAME=${CONFIG_ARCH_BOARD}
 OS_DIR_PATH=${PWD}
-BUILD_DIR_PATH=${OS_DIR_PATH}/../build
-BOARD_DIR_PATH=${BUILD_DIR_PATH}/configs/${BOARD_NAME}
-OPENOCD_DIR_PATH=${BOARD_DIR_PATH}/tools/openocd
+CONFIG_DIR_PATH=${OS_DIR_PATH}/../build/configs
+OPENOCD_DIR_PATH=${CONFIG_DIR_PATH}/tools/openocd
 BOARD_KCONFIG=${OS_DIR_PATH}/arch/arm/src/${BOARD_NAME}/Kconfig
 
 # FLASH BASE ADDRESS (Can it be made to read dynamically from .config?)
