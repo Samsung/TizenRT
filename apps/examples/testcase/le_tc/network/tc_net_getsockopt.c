@@ -21,7 +21,6 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -34,13 +33,13 @@
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_getsockopt_multicast_ttl_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getsockopt_multicast_ttl_p
+* @brief				:
+* @scenario				:
+* @apicovered			: getsockopt()
+* @precondition			: socket file descriptor
+* @postcondition		:
+*/
 static void tc_net_getsockopt_multicast_ttl_p(int s)
 {
 	int ret = -1;
@@ -55,13 +54,13 @@ static void tc_net_getsockopt_multicast_ttl_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_multicast_ttl_loop_own_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getsockopt_multicast_ttl_loop_own_p
+* @brief				:
+* @scenario				:
+* @apicovered			: getsockopt()
+* @precondition			: socket file descriptor
+* @postcondition		:
+*/
 static void tc_net_getsockopt_multicast_ttl_loop_own_p(int s)
 {
 	int ret = -1;
@@ -76,13 +75,13 @@ static void tc_net_getsockopt_multicast_ttl_loop_own_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_multicast_ttl_loop_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getsockopt_multicast_ttl_loop_p
+* @brief				:
+* @scenario				:
+* @apicovered			: getsockopt()
+* @precondition			: socket file descriptor
+* @postcondition		:
+*/
 static void tc_net_getsockopt_multicast_ttl_loop_p(int s)
 {
 	int ret = -1;
@@ -97,13 +96,13 @@ static void tc_net_getsockopt_multicast_ttl_loop_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_invalid_filedesc_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getsockopt_invalid_filedesc_n
+* @brief				:
+* @scenario				:
+* @apicovered			: getsockopt()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_getsockopt_invalid_filedesc_n(void)
 {
 	int ret = -1;
@@ -119,13 +118,13 @@ static void tc_net_getsockopt_invalid_filedesc_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_optval_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getsockopt_optval_n
+* @brief				:
+* @scenario				:
+* @apicovered			: getsockopt()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_getsockopt_optval_n(int s)
 {
 	int ret = -1;
@@ -141,13 +140,13 @@ static void tc_net_getsockopt_optval_n(int s)
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_sol_socket_so_acceptconn_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getsockopt_sol_socket_so_acceptconn_p
+* @brief				:
+* @scenario				:
+* @apicovered			: getsockopt()
+* @precondition			: socket file descriptor
+* @postcondition		:
+*/
 static void tc_net_getsockopt_sol_socket_so_acceptconn_p(int s)
 {
 	int ret = -1;
@@ -162,13 +161,13 @@ static void tc_net_getsockopt_sol_socket_so_acceptconn_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_sol_socket_so_broadcast_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getsockopt_sol_socket_so_broadcast_p
+* @brief				:
+* @scenario				:
+* @apicovered			: getsockopt()
+* @precondition			: socket file descriptor
+* @postcondition		:
+*/
 static void tc_net_getsockopt_sol_socket_so_broadcast_p(int s)
 {
 	int ret = -1;
@@ -183,13 +182,13 @@ static void tc_net_getsockopt_sol_socket_so_broadcast_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_sol_socket_so_keepalive_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getsockopt_sol_socket_so_keepalive_p
+* @brief				:
+* @scenario				:
+* @apicovered			: getsockopt()
+* @precondition			: socket file descriptor
+* @postcondition		:
+*/
 static void tc_net_getsockopt_sol_socket_so_keepalive_p(int s)
 {
 	int ret = -1;

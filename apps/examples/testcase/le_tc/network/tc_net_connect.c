@@ -21,7 +21,6 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -33,13 +32,13 @@
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_connect_fd_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :connect()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_connect_fd_n
+* @brief				:
+* @scenario				:
+* @apicovered			: connect()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 {
 	inet_pton(AF_INET, "192.168.1.3", &(sa->sin_addr));
@@ -52,13 +51,13 @@ static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 }
 
 /**
-   * @testcase		   :tc_net_connect_broadcastaddr_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :connect()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_connect_broadcastaddr_n
+* @brief				:
+* @scenario				:
+* @apicovered			: connect()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 {
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -74,13 +73,13 @@ static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 }
 
 /**
-   * @testcase		   :tc_net_connect_loopbackaddr_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :connect()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_connect_loopbackaddr_n
+* @brief				:
+* @scenario				:
+* @apicovered			: connect()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 {
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -96,13 +95,13 @@ static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 }
 
 /**
-   * @testcase		   :tc_net_connect_socklen_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :connect()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_connect_socklen_n
+* @brief				:
+* @scenario				:
+* @apicovered			: connect()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 {
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);

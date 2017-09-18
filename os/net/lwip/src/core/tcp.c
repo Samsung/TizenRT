@@ -139,7 +139,7 @@ u8_t tcp_active_pcbs_changed;
 /** Timer counter to handle calling slow-timer from tcp_tmr() */
 static u8_t tcp_timer;
 static u8_t tcp_timer_ctr;
-static u16_t tcp_new_port(void);
+u16_t tcp_new_port(void);
 
 /**
  * Initialize this module.
@@ -496,7 +496,7 @@ err_t tcp_bind(struct tcp_pcb *pcb, ip_addr_t *ipaddr, u16_t port)
 /**
  * Default accept callback if no accept callback is specified by the user.
  */
-static err_t tcp_accept_null(void *arg, struct tcp_pcb *pcb, err_t err)
+err_t tcp_accept_null(void *arg, struct tcp_pcb *pcb, err_t err)
 {
 	LWIP_UNUSED_ARG(arg);
 	LWIP_UNUSED_ARG(pcb);
@@ -644,7 +644,7 @@ void tcp_recved(struct tcp_pcb *pcb, u16_t len)
  *
  * @return a new (free) local TCP port number
  */
-static u16_t tcp_new_port(void)
+u16_t tcp_new_port(void)
 {
 	u8_t i;
 	u16_t n = 0;
@@ -1179,7 +1179,7 @@ err_t tcp_recv_null(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
  *
  * @param prio minimum priority
  */
-static void tcp_kill_prio(u8_t prio)
+void tcp_kill_prio(u8_t prio)
 {
 	struct tcp_pcb *pcb, *inactive;
 	u32_t inactivity;
@@ -1207,7 +1207,7 @@ static void tcp_kill_prio(u8_t prio)
  * Kills the oldest connection that is in TIME_WAIT state.
  * Called from tcp_alloc() if no more connections are available.
  */
-static void tcp_kill_timewait(void)
+void tcp_kill_timewait(void)
 {
 	struct tcp_pcb *pcb, *inactive;
 	u32_t inactivity;

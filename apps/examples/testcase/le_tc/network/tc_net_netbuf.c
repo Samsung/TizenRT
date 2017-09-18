@@ -1,0 +1,290 @@
+/****************************************************************************
+ *
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+
+#include <sys/socket.h>
+
+#include "tc_internal.h"
+
+/**
+* @testcase				: tc_net_netbuf_data_n
+* @brief				:
+* @scenario				:
+* @apicovered			: tc_netbuf_data
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_net_netbuf_data_n(void)
+{
+	int ret = -1;
+
+	ret = netbuf_data(NULL, NULL, PBUF_RAM);
+	TC_ASSERT_EQ("netbuf_data", ret, 0);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase				: tc_net_netbuf_data_p
+* @brief				:
+* @scenario				:
+* @apicovered			: tc_netbuf_data
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_net_netbuf_data_p(void)
+{
+	struct netbuf *buf = NULL;
+	char *data = NULL;
+	int ret = -1;
+
+	buf = netbuf_new();
+	netbuf_alloc(buf, 6);
+	ret = netbuf_data(buf, (void *)&data, PBUF_RAM);
+	TC_ASSERT_EQ("netbuf_data", ret, 0);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase				: tc_net_netbuf_start_n
+* @brief				:
+* @scenario				:
+* @apicovered			: netbuf_first
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_net_netbuf_start_n(void)
+{
+	netbuf_first(NULL);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase				: tc_net_netbuf_cha
+* @brief				:
+* @scenario				:
+* @apicovered			: tc_net_netbuf_start_p
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_net_netbuf_start_p(void)
+{
+	struct netbuf *buf1 = NULL;
+	u16_t smallsize = 0;
+
+	buf1 = netbuf_new();
+	netbuf_alloc(buf1, smallsize);
+	netbuf_alloc(buf1, smallsize);
+
+	netbuf_first(buf1);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase				: tc_netbuf_next_more_buff
+* @brief				:
+* @scenario				:
+* @apicovered			:
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_netbuf_next_more_buff(void)
+{
+	struct netbuf *buf1 = NULL;
+	struct netbuf *buf2 = NULL;
+	struct netbuf *buf3 = NULL;
+	struct netbuf *buf4 = NULL;
+	struct netbuf *buf5 = NULL;
+	int res = -1;
+	buf1 = netbuf_new();
+	buf2 = netbuf_new();
+	buf3 = netbuf_new();
+	buf4 = netbuf_new();
+	buf5 = netbuf_new();
+	res = netbuf_next(buf1);
+	netbuf_delete(buf1);
+	buf1 = NULL;
+	netbuf_delete(buf2);
+	buf2 = NULL;
+	netbuf_delete(buf3);
+	buf3 = NULL;
+	netbuf_delete(buf4);
+	buf4 = NULL;
+	netbuf_delete(buf5);
+	buf5 = NULL;
+	TC_ASSERT_NEQ("netbuf_next", res, 1);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase				: tc_netbuf_next_move_no_next
+* @brief				:
+* @scenario				:
+* @apicovered			: netbuf_delete
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_netbuf_next_move_no_next(void)
+{
+	struct netbuf *buf1 = NULL;
+	int ret;
+
+	buf1 = netbuf_new();
+	ret = netbuf_next(buf1);
+	netbuf_delete(buf1);
+	TC_ASSERT_NEQ("netbuf_next", ret, 0);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase				: tc_netbuf_next_no_next
+* @brief				:
+* @scenario				:
+* @apicovered			: netbuf_delete
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_netbuf_next_no_next(void)
+{
+        struct netbuf *buf = NULL;
+	int ret;
+	buf = netbuf_new();
+
+	ret = netbuf_next(buf);
+	netbuf_delete(buf);
+	TC_ASSERT_EQ("netbuf_next", ret, 0);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase				: tc_net_netbuf_next_n
+* @brief				:
+* @scenario				:
+* @apicovered			: netbuf_next
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_net_netbuf_next_n(void)
+{
+	netbuf_next(NULL);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase				: tc_net_netbuf_next_p
+* @brief				:
+* @scenario				:
+* @apicovered			: netbuf_chain
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_net_netbuf_next_p(void)
+{
+	tc_netbuf_next_no_next();
+	tc_netbuf_next_move_no_next();
+	tc_netbuf_next_more_buff();
+}
+
+/**
+* @testcase				: tc_net_netbuf_chain_n
+* @brief				:
+* @scenario				:
+* @apicovered			: netbuf_chain
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_net_netbuf_chain_n(void)
+{
+	netbuf_chain(NULL, NULL);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase				: tc_net_netbuf_chain_p
+* @brief				:
+* @scenario				:
+* @apicovered			: netbuf_chain
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_net_netbuf_chain_p(void)
+{
+	struct netbuf *buf1 = NULL;
+	struct netbuf *buf2 = NULL;
+	struct netbuf *buf3 = NULL;
+	struct netbuf *buf4 = NULL;
+	struct netbuf *buf5 = NULL;
+	struct netbuf *check = NULL;
+	buf1 = netbuf_new();
+	buf2 = netbuf_new();
+	buf3 = netbuf_new();
+	buf4 = netbuf_new();
+	buf5 = netbuf_new();
+	check = buf1;
+	netbuf_chain(buf1, buf5);
+	netbuf_delete(buf1);
+	buf1 = NULL;
+	netbuf_delete(buf2);
+	buf2 = NULL;
+	netbuf_delete(buf3);
+	buf3 = NULL;
+	netbuf_delete(buf4);
+	buf4 = NULL;
+	netbuf_delete(buf5);
+	buf5 = NULL;
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase				: tc_net_netbuf_new_p
+* @brief				:
+* @scenario				:
+* @apicovered			: netbuf_new
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_net_netbuf_new_p(void)
+{
+	struct netbuf *buf = NULL;
+	int result = -1;
+	buf = netbuf_new();
+
+	if (buf) {
+		result = 1;
+	}
+	TC_ASSERT_EQ("netbuf_new", result, 1);
+	netbuf_delete(buf);
+	buf = NULL;
+	TC_SUCCESS_RESULT();
+}
+
+/****************************************************************************
+ * Name: netbuf_api
+ ****************************************************************************/
+int tc_net_netbuf_main(void)
+{
+	tc_net_netbuf_new_p();
+	tc_net_netbuf_chain_p();
+	tc_net_netbuf_chain_n();
+	tc_net_netbuf_next_p();
+	tc_net_netbuf_next_n();
+	tc_net_netbuf_start_p();
+	tc_net_netbuf_start_n();
+	tc_net_netbuf_data_n();
+	tc_net_netbuf_data_p();
+	return 0;
+}
+

@@ -167,7 +167,11 @@ err_t tcp_send_fin(struct tcp_pcb *pcb)
  * The TCP header is filled in except ackno and wnd.
  * p is freed on failure.
  */
+#ifndef CONFIG_TC_NET_CORE
 static struct tcp_seg *tcp_create_segment(struct tcp_pcb *pcb, struct pbuf *p, u8_t flags, u32_t seqno, u8_t optflags)
+#else
+struct tcp_seg *tcp_create_segment(struct tcp_pcb *pcb, struct pbuf *p, u8_t flags, u32_t seqno, u8_t optflags)
+#endif
 {
 	struct tcp_seg *seg;
 	u8_t optlen = LWIP_TCP_OPT_LENGTH(optflags);

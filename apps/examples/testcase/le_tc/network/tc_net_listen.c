@@ -34,13 +34,13 @@
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_listen_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :listen()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_listen_p
+* @brief				:
+* @scenario				:
+* @apicovered			: listen()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_listen_p(void)
 {
 	struct sockaddr_in sa;
@@ -62,13 +62,13 @@ static void tc_net_listen_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_listen_fd_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :listen()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_listen_fd_n
+* @brief				:
+* @scenario				:
+* @apicovered			: listen()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_listen_fd_n(void)
 {
 	struct sockaddr_in sa;
@@ -89,13 +89,13 @@ static void tc_net_listen_fd_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_listen_backlog_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :listen()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_listen_backlog_p
+* @brief				:
+* @scenario				:
+* @apicovered			: listen()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_listen_backlog_p(void)
 {
 	struct sockaddr_in sa;
@@ -117,13 +117,13 @@ static void tc_net_listen_backlog_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_listen_fd_backlog_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :listen()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_listen_fd_backlog_n
+* @brief				:
+* @scenario				:
+* @apicovered			: listen()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_listen_fd_backlog_n(void)
 {
 	struct sockaddr_in sa;

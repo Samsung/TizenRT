@@ -39,13 +39,13 @@
 int mutex1 = 0;
 
 /**
-   * @testcase		   :tc_net_recvfrom_p
-   * @brief		   :positive testcase using udp
-   * @scenario		   :
-   * @apicovered	   :recvfrom()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_recvfrom_p
+* @brief				: positive testcase using udp
+* @scenario				:
+* @apicovered			: recvfrom()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_recvfrom_p(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -59,13 +59,13 @@ void tc_net_recvfrom_p(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_recvfrom_sock_n
-   * @brief		   :negative testcase using udp
-   * @scenario		   :
-   * @apicovered	   :recvfrom()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_recvfrom_sock_n
+* @brief				: negative testcase using udp
+* @scenario				:
+* @apicovered			: recvfrom()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_recvfrom_sock_n(void)
 {
 	char buffer[MAXRCVLEN];
@@ -80,13 +80,13 @@ void tc_net_recvfrom_sock_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_recvfrom_n
-   * @brief		   :negative testcase using udp
-   * @scenario		   :
-   * @apicovered	   :recvfrom()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_recvfrom_n
+* @brief				: negative testcase using udp
+* @scenario				:
+* @apicovered			: recvfrom()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_recvfrom_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -100,14 +100,14 @@ void tc_net_recvfrom_n(int fd)
 }
 
 /**
-   * @fn                   :recvfrom_server
-   * @brief                :udp server
-   * @scenario             :
-   * API's covered         :socket,bind
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: recvfrom_server
+* @brief				: udp server
+* @scenario				:
+* API's covered			: socket,bind
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 
 void *recvfrom_udpserver(void *args)
 {
@@ -131,14 +131,14 @@ void *recvfrom_udpserver(void *args)
 }
 
 /**
-   * @fn                   :recvfrom_client
-   * @brief                :udp client
-   * @scenario             :
-   * API's covered         :socket,sendto
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: recvfrom_client
+* @brief				: udp client
+* @scenario				:
+* API's covered			: socket,sendto
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *recvfrom_udpclient(void *args)
 {
 
@@ -160,14 +160,14 @@ void *recvfrom_udpclient(void *args)
 }
 
 /**
-   * @fn                   :recvfrom_wait
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn					: recvfrom_wait
+* @brief				: function to wait on semaphore
+* @scenario				:
+* API's covered			:
+* Preconditions			:
+* Postconditions		:
+* @return				: void
+*/
 void recvfrom_wait(void)
 {
 	while (mutex1 <= 0) {
@@ -178,27 +178,27 @@ void recvfrom_wait(void)
 }
 
 /**
-   * @fn                   :recvfrom_signal
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn					: recvfrom_signal
+* @brief				: function to signal semaphore
+* @scenario				:
+* API's covered			:
+* Preconditions			:
+* Postconditions		:
+* @return				: void
+*/
 void recvfrom_signal(void)
 {
 	mutex1++;
 }
 
 /**
-   * @testcase		   :tc_net_recvfrom_tcp_p
-   * @brief		   :positive testcase for recvfrom api
-   * @scenario		   :
-   * @apicovered	   :recvfrom()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_recvfrom_tcp_p
+* @brief				: positive testcase for recvfrom api
+* @scenario				:
+* @apicovered			: recvfrom()
+* @precondition			:
+* @postconditions		:
+*/
 void tc_net_recvfrom_tcp_p(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -211,13 +211,13 @@ void tc_net_recvfrom_tcp_p(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_recvfrom_tcp_conn_n
-   * @brief		   :negative testcase for recvfrom api
-   * @scenario		   :
-   * @apicovered	   :recvfrom()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_recvfrom_tcp_conn_n
+* @brief				: negative testcase for recvfrom api
+* @scenario				:
+* @apicovered			: recvfrom()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_recvfrom_tcp_conn_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -231,13 +231,13 @@ void tc_net_recvfrom_tcp_conn_n(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_recvfrom_tcp_sock_n
-   * @brief		   :negative testcase for recvfrom api
-   * @scenario		   :
-   * @apicovered	   :recvfrom()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_recvfrom_tcp_sock_n
+* @brief				: negative testcase for recvfrom api
+* @scenario				:
+* @apicovered			: recvfrom()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_recvfrom_tcp_sock_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -250,13 +250,13 @@ void tc_net_recvfrom_tcp_sock_n(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_recvfrom_tcp_n
-   * @brief		   :negative testcase using tcp
-   * @scenario		   :
-   * @apicovered	   :recvfrom()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_recvfrom_tcp_n
+* @brief				: negative testcase using tcp
+* @scenario				:
+* @apicovered			: recvfrom()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_recvfrom_tcp_n(void)
 {
 	char buffer[MAXRCVLEN];
@@ -269,14 +269,14 @@ void tc_net_recvfrom_tcp_n(void)
 }
 
 /**
-   * @fn                   :recvfrom_server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,accept,sendto,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: recvfrom_server
+* @brief				:
+* @scenario				:
+* API's covered			: socket,bind,listen,accept,sendto,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *recvfrom_tcpserver(void *args)
 {
 
@@ -306,14 +306,14 @@ void *recvfrom_tcpserver(void *args)
 }
 
 /**
-   * @fn                   :recvfrom_client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: recvfrom_client
+* @brief				:
+* @scenario				:
+* API's covered			: socket,connect,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *recvfrom_tcpclient(void *args)
 {
 	int mysocket = 0;

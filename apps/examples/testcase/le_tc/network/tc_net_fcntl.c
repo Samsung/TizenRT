@@ -21,7 +21,6 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -34,16 +33,15 @@
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_fcntl_nonblock_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_fcntl_nonblock_p
+* @brief				:
+* @scenario				:
+* @apicovered			: fcntl()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_fcntl_nonblock_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, O_NONBLOCK);
@@ -55,16 +53,15 @@ static void tc_net_fcntl_nonblock_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_fcntl_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_fcntl_p
+* @brief				:
+* @scenario				:
+* @apicovered			: fcntl()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_fcntl_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, 0);
@@ -77,35 +74,32 @@ static void tc_net_fcntl_p(void)
 
 
 /**
-   * @testcase		   :tc_net_fcntl_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_fcntl_n
+* @brief				:
+* @scenario				:
+* @apicovered			: fcntl()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_fcntl_n(void)
 {
-
 	int fd = -1;
 	int ret = fcntl(fd, F_SETFL, O_NONBLOCK);
 
 	TC_ASSERT_NEQ("fcntl", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_fcntl_ndelay_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :fcntl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_fcntl_ndelay_p
+* @brief				:
+* @scenario				:
+* @apicovered			: fcntl()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_fcntl_ndelay_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, O_NDELAY);
@@ -122,10 +116,10 @@ static void tc_net_fcntl_ndelay_p(void)
 
 int net_fcntl_main(void)
 {
-
 	tc_net_fcntl_nonblock_p();
 	tc_net_fcntl_p();
 	tc_net_fcntl_n();
 	tc_net_fcntl_ndelay_p();
+
 	return 0;
 }

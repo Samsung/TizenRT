@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,65 +16,65 @@
  *
  ****************************************************************************/
 
-/// @file tc_net_socket.c
-/// @brief Test Case Example for close() API
-#include <tinyara/config.h>
-#include <stdio.h>
-#include <errno.h>
-
-#include <sys/stat.h>
 #include <net/if.h>
-#include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
-#include <netutils/netlib.h>
-#include <sys/socket.h>
 
 #include "tc_internal.h"
 
+#define COUNT1 5
+
 /**
-* @testcase				: tc_net_close_p
+* @testcase				: tc_net_mem_trim_p
 * @brief				:
 * @scenario				:
-* @apicovered			: close()
+* @apicovered			: mem_trim()
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_close_p(void)
+void tc_net_mem_trim_p(void *buf)
 {
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	int ret = close(fd);
+	int result = 0;
 
-	TC_ASSERT_NEQ("close", ret, -1);
-	TC_SUCCESS_RESULT();
+	if (buf) {
+		buf = (struct netbuf *)mem_trim(buf, 2 * sizeof(struct netbuf));
+		if (buf) {
+			result = 1;
+		}
+		TC_ASSERT_GEQ("mem_calloc", result, 1);
+		TC_SUCCESS_RESULT();
+	}
 }
 
 /**
-* @testcase				: tc_net_close_n
+* @testcase				: tc_net_mem_calloc_p
 * @brief				:
 * @scenario				:
-* @apicovered			: close()
+* @apicovered			: mem_calloc()
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_close_n(void)
+void tc_net_mem_calloc_p(void)
 {
-	int fd = -1;
-	int ret = close(fd);
+	struct netbuf *p1 = NULL;
+	int result = 0;
 
-	TC_ASSERT_NEQ("close", ret, 0);
+	p1 = (struct netbuf *)mem_calloc(COUNT1, sizeof(struct netbuf));
+
+	if (p1) {
+		result = 1;
+		tc_net_mem_trim_p(p1);
+		mem_free(p1);
+	}
+	TC_ASSERT_GEQ("mem_calloc", result, 1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
- * Name: close()
+ * Name: mem_calloc
  ****************************************************************************/
-int net_close_main(void)
+int net_mem_allocate_main(void)
 {
-	tc_net_close_p();
-	tc_net_close_n();
-
+	tc_net_mem_calloc_p();
 	return 0;
 }
+

@@ -99,12 +99,12 @@ static u8_t netif_num;
 #if LWIP_HAVE_LOOPIF
 static struct netif loop_netif;
 
-static int netif_loopif_ifup(struct netif *dev)
+int netif_loopif_ifup(struct netif *dev)
 {
 	return 0;
 }
 
-static int netif_loopif_ifdown(struct netif *dev)
+int netif_loopif_ifdown(struct netif *dev)
 {
 	return 0;
 }
@@ -116,7 +116,7 @@ static int netif_loopif_ifdown(struct netif *dev)
  * @return ERR_OK if the loopif is initialized
  *         ERR_MEM if private data couldn't be allocated
  */
-static err_t netif_loopif_init(struct netif *netif)
+err_t netif_loopif_init(struct netif *netif)
 {
 	/* initialize the snmp variables and counters inside the struct netif
 	 * ifSpeed: no assumption can be made!

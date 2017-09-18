@@ -36,13 +36,13 @@
 extern int ioctlsocket(int s, long cmd, void *argp);
 
 /**
-   * @testcase		   :tc_net_ioctl_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :ioctl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_ioctl_p
+* @brief				:
+* @scenario				:
+* @apicovered			: ioctl()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_ioctl_p(void)
 {
 
@@ -59,13 +59,13 @@ static void tc_net_ioctl_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_ioctl_fionread_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :ioctl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_ioctl_fionread_n
+* @brief				:
+* @scenario				:
+* @apicovered			: ioctl()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_ioctl_fionread_n(void)
 {
 
@@ -82,13 +82,13 @@ static void tc_net_ioctl_fionread_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_ioctl_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :ioctl()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_ioctl_n
+* @brief				:
+* @scenario				:
+* @apicovered			: ioctl()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_ioctl_n(void)
 {
 
@@ -109,7 +109,6 @@ int net_ioctl_main(void)
 
 	tc_net_ioctl_p();
 	tc_net_ioctl_fionread_n();
-
 	tc_net_ioctl_n();
 
 	return 0;

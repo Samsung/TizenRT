@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,66 +15,38 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
-/// @file tc_net_socket.c
-/// @brief Test Case Example for close() API
-#include <tinyara/config.h>
-#include <stdio.h>
-#include <errno.h>
-
-#include <sys/stat.h>
 #include <net/if.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-//#include <arch/board/board.h>
-#include <netutils/netlib.h>
-#include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_net_close_p
+* @testcase				: tc_netbuf_alloc_p
 * @brief				:
 * @scenario				:
-* @apicovered			: close()
+* @apicovered			: netbuf_alloc()
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_close_p(void)
+static void tc_netbuf_alloc_p(void)
 {
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	int ret = close(fd);
+	struct netbuf *buf = NULL;
+	int result = 0;
 
-	TC_ASSERT_NEQ("close", ret, -1);
+	buf = netbuf_alloc(buf, sizeof(struct netbuf));
+	if (buf) {
+		result = 1;
+		netbuf_free(buf);
+	}
+
+	TC_ASSERT_NEQ("netbuf_alloc", result, 0)
 	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase				: tc_net_close_n
-* @brief				:
-* @scenario				:
-* @apicovered			: close()
-* @precondition			:
-* @postcondition		:
-*/
-static void tc_net_close_n(void)
-{
-	int fd = -1;
-	int ret = close(fd);
-
-	TC_ASSERT_NEQ("close", ret, 0);
-	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
- * Name: close()
+ * Name: lwip_read_write()
  ****************************************************************************/
-int net_close_main(void)
+int netbuf_alloc_main(void)
 {
-	tc_net_close_p();
-	tc_net_close_n();
-
+	tc_netbuf_alloc_p();
 	return 0;
 }

@@ -38,14 +38,14 @@
 #define MAXRCVLEN 20
 int mut = 0;
 /**
-   * @fn                   :shutdown_wait
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn					: shutdown_wait
+* @brief				: function to wait on semaphore
+* @scenario				:
+* API's covered			:
+* Preconditions			:
+* Postconditions		:
+* @return				: void
+*/
 void shutdown_wait(void)
 {
 	while (mut <= 0) {
@@ -56,27 +56,27 @@ void shutdown_wait(void)
 }
 
 /**
-   * @fn                   :shutdown_signal
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn					: shutdown_signal
+* @brief				: function to signal semaphore
+* @scenario				:
+* API's covered			:
+* Preconditions			:
+* Postconditions		:
+* @return				: void
+*/
 void shutdown_signal(void)
 {
 	mut++;
 }
 
 /**
-   * @testcase		   :tc_net_shutdown_recv_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :shutdown()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_shutdown_recv_p
+* @brief				:
+* @scenario				:
+* @apicovered			: shutdown()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_shutdown_recv_p(int fd)
 {
 	int ret = shutdown(fd, SHUT_RD);
@@ -87,13 +87,13 @@ void tc_net_shutdown_recv_p(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_shutdown_send_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :shutdown()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_shutdown_send_p
+* @brief				:
+* @scenario				:
+* @apicovered			: shutdown()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_shutdown_send_p(int fd)
 {
 	int ret = shutdown(fd, SHUT_WR);
@@ -104,13 +104,13 @@ void tc_net_shutdown_send_p(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_shutdown_sendrecv_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :shutdown()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_shutdown_sendrecv_p
+* @brief				:
+* @scenario				:
+* @apicovered			: shutdown()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_shutdown_sendrecv_p(int fd)
 {
 	int ret = shutdown(fd, SHUT_RDWR);
@@ -121,13 +121,13 @@ void tc_net_shutdown_sendrecv_p(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_shutdown_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :shutdown()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_shutdown_n
+* @brief				:
+* @scenario				:
+* @apicovered			: shutdown()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_shutdown_n(void)
 {
 	int ret = shutdown(-1, SHUT_RDWR);
@@ -138,13 +138,13 @@ void tc_net_shutdown_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_shutdown_sock_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :shutdown()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_shutdown_sock_n
+* @brief				:
+* @scenario				:
+* @apicovered			: shutdown()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_shutdown_sock_n(int fd)
 {
 	int ret = shutdown(fd, SHUT_RD);
@@ -155,14 +155,14 @@ void tc_net_shutdown_sock_n(int fd)
 }
 
 /**
-   * @fn                   :shutdown_server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,send,accept,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: shutdown_server
+* @brief				:
+* @scenario				:
+* API's covered			: socket,bind,listen,send,accept,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *shutdown_server(void *args)
 {
 	char *msg = "Hello World !\n";
@@ -200,14 +200,14 @@ void *shutdown_server(void *args)
 }
 
 /**
-   * @fn                   :shut_client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,recvfrom,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: shut_client
+* @brief				:
+* @scenario				:
+* API's covered			: socket,connect,recvfrom,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *shutdown_client(void *args)
 {
 	char buffer[MAXRCVLEN];

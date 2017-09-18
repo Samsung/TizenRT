@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,65 +16,56 @@
  *
  ****************************************************************************/
 
-/// @file tc_net_socket.c
-/// @brief Test Case Example for close() API
-#include <tinyara/config.h>
-#include <stdio.h>
-#include <errno.h>
-
-#include <sys/stat.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-//#include <arch/board/board.h>
-#include <netutils/netlib.h>
-#include <sys/socket.h>
+/// @file tc_net_lwip_strerr.c
+/// @brief Test Case Example for lwip_strerr() API
+#include <net/lwip/err.h>
 
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_net_close_p
+* @testcase				: tc_net_lwip_strerr_p
 * @brief				:
 * @scenario				:
-* @apicovered			: close()
+* @apicovered			: lwip_strerr
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_close_p(void)
+static void tc_net_lwip_strerr_p(void)
 {
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	int ret = close(fd);
+	s8_t err = 0;
+	int ret;
+	char comp[] = "Ok.";
 
-	TC_ASSERT_NEQ("close", ret, -1);
+	ret = strcmp (comp, lwip_strerr(err));
+	TC_ASSERT_EQ("strerr", ret, 0);
 	TC_SUCCESS_RESULT();
 }
 
 /**
-* @testcase				: tc_net_close_n
+* @testcase				: tc_net_lwip_strerr_n
 * @brief				:
 * @scenario				:
-* @apicovered			: close()
+* @apicovered			: lwip_strerr
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_close_n(void)
+static void tc_net_lwip_strerr_n(void)
 {
-	int fd = -1;
-	int ret = close(fd);
+	s8_t err = -1;
+	int ret;
+	char comp[] = "Ok.";
 
-	TC_ASSERT_NEQ("close", ret, 0);
+	ret = strcmp (comp, lwip_strerr(err));
+	TC_ASSERT_NEQ("strerr", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
- * Name: close()
+ * Name: lwip_strerr()
  ****************************************************************************/
-int net_close_main(void)
+int net_lwip_strerr_main(void)
 {
-	tc_net_close_p();
-	tc_net_close_n();
-
+	tc_net_lwip_strerr_p();
+	tc_net_lwip_strerr_n();
 	return 0;
 }

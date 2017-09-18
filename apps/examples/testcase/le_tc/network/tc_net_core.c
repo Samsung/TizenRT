@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,65 +16,54 @@
  *
  ****************************************************************************/
 
-/// @file tc_net_socket.c
-/// @brief Test Case Example for close() API
-#include <tinyara/config.h>
-#include <stdio.h>
-#include <errno.h>
-
-#include <sys/stat.h>
-#include <net/if.h>
+/// @file tc_net_core.c
+/// @brief Test Case Example for lwip_htonl() API
 #include <arpa/inet.h>
-#include <netinet/in.h>
-//#include <arch/board/board.h>
-#include <netutils/netlib.h>
-#include <sys/socket.h>
 
 #include "tc_internal.h"
 
+#define  TC_VAL1 0x1012
+#define  TC_VAL2 0x112A380
+
 /**
-* @testcase				: tc_net_close_p
+* @testcase				: tc_net_core_htonl_p
 * @brief				:
 * @scenario				:
-* @apicovered			: close()
+* @apicovered			: ntohs()
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_close_p(void)
+void tc_net_core_ntohs_p(void)
 {
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	int ret = close(fd);
+	short int x; /* Value for checking */
 
-	TC_ASSERT_NEQ("close", ret, -1);
+	x = ntohs(TC_VAL1); /* Observe value in network byte order */
+	TC_ASSERT_NEQ("ntohs", x, TC_VAL1);
 	TC_SUCCESS_RESULT();
 }
 
 /**
-* @testcase				: tc_net_close_n
+* @testcase				: tc_net_core_ntohl_p
 * @brief				:
 * @scenario				:
-* @apicovered			: close()
+* @apicovered			: ntohl()
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_close_n(void)
+void tc_net_core_ntohl_p(void)
 {
-	int fd = -1;
-	int ret = close(fd);
+	long int x; /* Value for checking */
 
-	TC_ASSERT_NEQ("close", ret, 0);
+	x = ntohl(TC_VAL2);  /* Observe value in network byte order */
+	TC_ASSERT_NEQ("ntohl", x, TC_VAL2);
 	TC_SUCCESS_RESULT();
-
 }
-
 /****************************************************************************
- * Name: close()
+ * Name: ntohs() and ntohl()
  ****************************************************************************/
-int net_close_main(void)
+int net_core_ntohs_main(void)
 {
-	tc_net_close_p();
-	tc_net_close_n();
-
+	tc_net_core_ntohs_p();
+	tc_net_core_ntohl_p();
 	return 0;
 }

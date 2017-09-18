@@ -38,45 +38,44 @@
 #define MAXRCVLEN 20
 int mutex = 0;
 /**
-   * @fn                   :recv_wait
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn					: recv_wait
+* @brief				: function to wait on semaphore
+* @scenario				:
+* API's covered			:
+* Preconditions			:
+* Postconditions		:
+* @return				: void
+*/
 void recv_wait(void)
 {
 	while (mutex <= 0) {
-
 		printf("");
 	}
 	mutex--;
 }
 
 /**
-   * @fn                   :recv_signal
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn					: recv_signal
+* @brief				: function to signal semaphore
+* @scenario				:
+* API's covered			:
+* Preconditions			:
+* Postconditions		:
+* @return				: void
+*/
 void recv_signal(void)
 {
 	mutex++;
 }
 
 /**
-   * @testcase		   :tc_net_recv_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :recv()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_recv_p
+* @brief				:
+* @scenario				:
+* @apicovered			: recv()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_recv_p(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -89,13 +88,13 @@ void tc_net_recv_p(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_recv_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :recv()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_recv_n
+* @brief				:
+* @scenario				:
+* @apicovered			: recv()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_recv_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -109,13 +108,13 @@ void tc_net_recv_n(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_recv_shutdown_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :recv()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_recv_shutdown_n
+* @brief				:
+* @scenario				:
+* @apicovered			: recv()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_recv_shutdown_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -129,13 +128,13 @@ void tc_net_recv_shutdown_n(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_recv_close_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :recv()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_recv_close_n
+* @brief				:
+* @scenario				:
+* @apicovered			: recv()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_recv_close_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -149,14 +148,14 @@ void tc_net_recv_close_n(int fd)
 }
 
 /**
-   * @fn                   :recv_server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,accept,send,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: recv_server
+* @brief				:
+* @scenario				:
+* API's covered			:socket,bind,listen,accept,send,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *recv_server(void *args)
 {
 
@@ -187,14 +186,14 @@ void *recv_server(void *args)
 }
 
 /**
-   * @fn                   :recv_client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: recv_client
+* @brief				:
+* @scenario				:
+* API's covered			: socket,connect,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *recv_client(void *args)
 {
 

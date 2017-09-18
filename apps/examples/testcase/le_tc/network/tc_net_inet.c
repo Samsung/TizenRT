@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,14 +31,112 @@
 
 #include "tc_internal.h"
 
+/**
+* @testcase				: tc_inet_chksum_pbuf_p
+* @brief				:
+* @scenario				:
+* @apicovered			: inet_chksum_pbuf
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_inet_chksum_pbuf_n(void)
+{
+	int checksum=0;
+
+	checksum = inet_chksum_pbuf(NULL);
+	TC_ASSERT_EQ("inet_chksum_pbuf", checksum, 0);
+	TC_SUCCESS_RESULT();
+}
 
 /**
-* @testcase		tc_net_inet_addr_p
-* @brief
-* @scenario
-* @apicovered		inet_addr()
-* @precondition
-* @postcondition
+* @testcases			: tc_inet_chksum_pbuf_p
+* @brief				:
+* @scenario				:
+* @apicovered			: inet_chksum_pbuf
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_inet_chksum_pbuf_p(void)
+{
+	struct pbuf *p1 = NULL;
+	struct pbuf *p2 = NULL;
+	struct pbuf *p3 = NULL;
+	struct pbuf *p4 = NULL;
+	int checksum=0;
+
+	p1 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	p2 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	p3 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	p4 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	pbuf_chain(p1, p4);
+	checksum = inet_chksum_pbuf(p1);
+	TC_ASSERT_NEQ("inet_chksum_pbuf", checksum, 0);
+	TC_SUCCESS_RESULT();
+	pbuf_free(p1);
+	pbuf_free(p2);
+	pbuf_free(p3);
+	pbuf_free(p4);
+}
+
+/**
+* @testcasu				: tc_inet_chksum_pseudo_partial_n
+* @brief				:
+* @scenario				:
+* @apicovered			: tc_inet_chksum_pseudo_partial
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_inet_chksum_pseudo_partial_n(void)
+{
+	int checksum = 0;
+	checksum = inet_chksum_pseudo_partial(0, NULL, NULL, 0, 0, 6);
+	TC_ASSERT_EQ("inet_chksum_pseudo_partial", checksum, 0);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase				: tc_inet_chksum_pseudo_partial_p
+* @brief				:
+* @scenario				:
+* @apicovered			: tc_inet_chksum_pseudo_partial_p
+* @precondition			:
+* @postcondition		:
+*/
+static void tc_inet_chksum_pseudo_partial_p(void)
+{
+	struct pbuf *p1 = NULL;
+	struct pbuf *p2 = NULL;
+	struct pbuf *p3 = NULL;
+	struct pbuf *p4 = NULL;
+	ip_addr_t *source = NULL;
+	ip_addr_t *dest = NULL;
+	int checksum = 0;
+
+	source =  (ip_addr_t *)malloc(sizeof(ip_addr_t));
+	dest =  (ip_addr_t *)malloc(sizeof(ip_addr_t));
+	ipaddr_aton("198.51.100.4", source);
+	ipaddr_aton("198.52.100.5", dest);
+	p1 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	p2 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	p3 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	p4 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	pbuf_chain(p1, p4);
+	checksum = inet_chksum_pseudo_partial(p1, source, dest, 6, PBUF_RAM, 6);
+	TC_ASSERT_NEQ("inet_chksum_pseudo_partial", checksum, 0);
+	TC_SUCCESS_RESULT();
+	pbuf_free(p1);
+	pbuf_free(p2);
+	pbuf_free(p3);
+	pbuf_free(p4);
+}
+
+/**
+* @testcase				: tc_net_inet_addr_p
+* @brief				:
+* @scenario				:
+* @apicovered			: inet_addr()
+* @precondition			:
+* @postcondition		:
 */
 static void tc_net_inet_addr_p(void)
 {
@@ -52,12 +150,12 @@ static void tc_net_inet_addr_p(void)
 
 
 /**
-* @testcase		tc_net_inet_aton_p
-* @brief
-* @scenario
-* @apicovered		inet_aton()
-* @precondition
-* @postcondition
+* @testcase				: tc_net_inet_aton_p
+* @brief				:
+* @scenario				:
+* @apicovered			: inet_aton()
+* @precondition			:
+* @postcondition		:
 */
 static void tc_net_inet_aton_p(void)
 {
@@ -70,14 +168,13 @@ static void tc_net_inet_aton_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-
 /**
-* @testcase		tc_net_inet_ntoa_p
-* @brief
-* @scenario
-* @apicovered		inet_ntoa()
-* @precondition
-* @postcondition
+* @testcase				: tc_net_inet_ntoa_p
+* @brief				:
+* @scenario				:
+* @apicovered			: inet_ntoa()
+* @precondition			:
+* @postcondition		:
 */
 static void tc_net_inet_ntoa_p(void)
 {
@@ -160,12 +257,12 @@ static void tc_net_inet_pton(void)
 }
 
 /**
-* @testcase		tc_net_htons
-* @brief
-* @scenario
-* @apicovered		htons()
-* @precondition
-* @postcondition
+* @testcase				: tc_net_htons
+* @brief				:
+* @scenario				:
+* @apicovered			: htons()
+* @precondition			:
+* @postcondition		:
 */
 static void tc_net_htons(void)
 {
@@ -181,12 +278,12 @@ static void tc_net_htons(void)
 }
 
 /**
-* @testcase		tc_net_ntohs
-* @brief
-* @scenario
-* @apicovered		ntohs()
-* @precondition
-* @postcondition
+* @testcase				: tc_net_ntohs
+* @brief				:
+* @scenario				:
+* @apicovered			: ntohs()
+* @precondition			:
+* @postcondition		:
 */
 static void tc_net_ntohs(void)
 {
@@ -202,12 +299,12 @@ static void tc_net_ntohs(void)
 }
 
 /**
-* @testcase		tc_net_htonl
-* @brief
-* @scenario
-* @apicovered		htonl()
-* @precondition
-* @postcondition
+* @testcase				: tc_net_htonl
+* @brief				:
+* @scenario				:
+* @apicovered			: htonl()
+* @precondition			:
+* @postcondition		:
 */
 static void tc_net_htonl(void)
 {
@@ -223,12 +320,12 @@ static void tc_net_htonl(void)
 }
 
 /**
-* @testcase		tc_net_ntohl
-* @brief
-* @scenario
-* @apicovered		ntohl()
-* @precondition
-* @postcondition
+* @testcase				: tc_net_ntohl
+* @brief				:
+* @scenario				:
+* @apicovered			: ntohl()
+* @precondition			:
+* @postcondition		:
 */
 static void tc_net_ntohl(void)
 {
@@ -261,6 +358,9 @@ int net_inet_main(void)
 	tc_net_inet_pton();
 	tc_net_ntohl();
 	tc_net_ntohs();
-
+	tc_inet_chksum_pseudo_partial_p();
+	tc_inet_chksum_pseudo_partial_n();
+	tc_inet_chksum_pbuf_p();
+	tc_inet_chksum_pbuf_n();
 	return 0;
 }

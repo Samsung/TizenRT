@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,65 +16,56 @@
  *
  ****************************************************************************/
 
-/// @file tc_net_socket.c
-/// @brief Test Case Example for close() API
-#include <tinyara/config.h>
-#include <stdio.h>
-#include <errno.h>
+/// @file tc_net_ipv4_netmask_valid.c
+/// @brief Test Case Example for ip4_addr_netmask_valid() API
 
-#include <sys/stat.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-//#include <arch/board/board.h>
-#include <netutils/netlib.h>
-#include <sys/socket.h>
+#include <net/lwip/ipv4/ip_addr.h>
 
 #include "tc_internal.h"
 
 /**
-* @testcase				: tc_net_close_p
+* @testcase				: tc_net_ipv4_addr_netmask_valid_p
 * @brief				:
 * @scenario				:
-* @apicovered			: close()
+* @apicovered			: ip4_addr_netmask_valid
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_close_p(void)
+void tc_net_ipv4_addr_netmask_valid_p(void)
 {
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	int ret = close(fd);
+	int ret;
+	int netmask = 0x0000ffff; /* Value for checking */
 
-	TC_ASSERT_NEQ("close", ret, -1);
+	ret = ip4_addr_netmask_valid(netmask);
+	TC_ASSERT_EQ("ip4_addr_netmask_valid", ret, 1);
 	TC_SUCCESS_RESULT();
 }
 
 /**
-* @testcase				: tc_net_close_n
+* @testcase				: tc_net_ipv4_addr_netmask_valid_n
 * @brief				:
 * @scenario				:
-* @apicovered			: close()
+* @apicovered			: ip4_addr_netmask_valid
 * @precondition			:
 * @postcondition		:
 */
-static void tc_net_close_n(void)
+void tc_net_ipv4_addr_netmask_valid_n(void)
 {
-	int fd = -1;
-	int ret = close(fd);
+	int ret;
+	int netmask = 0xffffff90; /* Value for checking */
 
-	TC_ASSERT_NEQ("close", ret, 0);
+	ret = ip4_addr_netmask_valid(netmask);
+	TC_ASSERT_EQ("ip4_addr_netmask_valid", ret, 1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
- * Name: close()
+ * Name: ip4_addr_netmask_valid()
  ****************************************************************************/
-int net_close_main(void)
+int net_ipv4_addr_netmask_valid_main(void)
 {
-	tc_net_close_p();
-	tc_net_close_n();
+	tc_net_ipv4_addr_netmask_valid_p();
+	tc_net_ipv4_addr_netmask_valid_n();
 
 	return 0;
 }

@@ -84,5 +84,8 @@
 
 unsigned int net_timeval2dsec(struct timeval *tv)
 {
-	return (unsigned int)(tv->tv_sec * DSEC_PER_SEC + tv->tv_usec / USEC_PER_DSEC);
+	if (tv->tv_sec && tv->tv_usec)
+		return (unsigned int)(tv->tv_sec * DSEC_PER_SEC + tv->tv_usec / USEC_PER_DSEC);
+	else
+		return 0;
 }

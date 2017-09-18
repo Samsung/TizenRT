@@ -110,7 +110,66 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_NETDB
 	net_netdb_main();
 #endif
-
+#ifdef CONFIG_TC_NET_CORE_NTOHS
+	net_core_ntohs_main();
+#endif
+#ifdef CONFIG_TC_NET_IPV4_NETMASK_VALID
+	net_ipv4_addr_netmask_valid_main();
+#endif
+#ifdef CONFIG_TC_NETDEV_CARRIER
+	netdev_carrier_main();
+#endif
+#ifdef CONFIG_TC_NET_DECISEC_TIME
+	net_decisec_time_main();
+#endif
+#ifdef CONFIG_TC_NET_API
+	net_api_main();
+#endif
+#ifdef CONFIG_TC_NET_TCP
+	net_tcp_main();
+#endif
+#ifdef CONFIG_TC_NET_TCPIP
+	net_tcpip_main();
+#endif
+#ifdef CONFIG_TC_NET_MAC
+	net_mac_main();
+#endif
+#ifdef CONFIG_TC_NET_CORE
+	net_core_main();
+#endif
+#ifdef CONFIG_TC_NET_LWIP_READ_WRITE
+	net_lwip_read_write_main();
+#endif
+#ifdef CONFIG_TC_NETBUF_ALLOC
+	netbuf_alloc_main();
+#endif
+#ifdef CONFIG_TC_MEM_ALLOC
+	net_mem_allocate_main();
+#endif
+#ifdef CONFIG_TC_LWIP_STRERR
+	net_lwip_strerr_main();
+#endif
+#ifdef CONFIG_TC_NET_DEF
+	net_def_main();
+#endif
+#ifdef CONFIG_TC_NET_NETBUF
+	tc_net_netbuf_main();
+#endif
+#ifdef CONFIG_TC_NET_STATS
+	net_stats_main();
+#endif
+#ifdef CONFIG_LWIP_NETIFAPI
+	net_lwip_netifapi_main();
+#endif
+#ifdef CONFIG_TC_NET_RAW
+	tc_net_raw_main();
+#endif
+#ifdef CONFIG_TC_NET_IP_FRAG
+	tc_ip_frag_main();
+#endif
+#ifdef CONFIG_TC_IGMP
+	net_igmp_main();
+#endif
 	printf("\n=== TINYARA Network TC COMPLETE ===\n");
 	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
 

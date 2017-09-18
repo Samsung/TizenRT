@@ -38,14 +38,14 @@
 #define MAXRCVLEN 20
 int s1 = 0;
 /**
-   * @fn                   :wait1
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn					: wait1
+* @brief				: function to wait on semaphore
+* @scenario				:
+* API's covered			:
+* Preconditions			:
+* Postconditions		:
+* @return				: void
+*/
 void wait1(void)
 {
 	while (s1 <= 0) {
@@ -56,27 +56,27 @@ void wait1(void)
 }
 
 /**
-   * @fn                   :signal1
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn					: signal1
+* @brief				: function to signal semaphore
+* @scenario				:
+* API's covered			:
+* Preconditions			:
+* Postconditions		:
+* @return				: void
+*/
 void signal1(void)
 {
 	s1++;
 }
 
 /**
-   * @testcase		   :tc_net_send_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :accept(),send()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_send_p
+* @brief				:
+* @scenario				:
+* @apicovered			: accept(),send()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_send_p(int fd)
 {
 
@@ -92,14 +92,14 @@ void tc_net_send_p(int fd)
 }
 
 /**
-   * @fn                   :server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: server
+* @brief				:
+* @scenario				:
+* API's covered			: socket,bind,listen,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *server(void *args)
 {
 
@@ -124,14 +124,14 @@ void *server(void *args)
 }
 
 /**
-   * @fn                   :client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,recv,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: client
+* @brief				:
+* @scenario				:
+* API's covered			: socket,connect,recv,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *client(void *args)
 {
 

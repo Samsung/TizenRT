@@ -21,7 +21,6 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -30,22 +29,23 @@
 #include <netutils/netlib.h>
 
 #include <sys/socket.h>
+#include <pthread.h>
 
 #include "tc_internal.h"
-#include <pthread.h>
 
 #define PORTNUM 1115
 #define MAXRCVLEN 20
 int sem = 0;
+
 /**
-   * @fn                   :getpeername_wait
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn					: getpeername_wait
+* @brief				: function to wait on semaphore
+* @scenario				:
+* API's covered			:
+* Preconditions			:
+* Postconditions		:
+* @return				: void
+*/
 void getpeername_wait(void)
 {
 	while (sem <= 0)
@@ -55,27 +55,27 @@ void getpeername_wait(void)
 }
 
 /**
-   * @fn                   :getpeername_signal
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn					: getpeername_signal
+* @brief				: function to signal semaphore
+* @scenario				:
+* API's covered			:
+* Preconditions			:
+* Postconditions		:
+* @return				: void
+*/
 void getpeername_signal(void)
 {
 	sem++;
 }
 
 /**
-   * @testcase		   :tc_net_getpeername_p1
-   * @brief		   :positive test cases without client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getpeername_p1
+* @brief				: positive test cases without client server model
+* @scenario				:
+* @apicovered			: getpeername()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_getpeername_p1(void)
 {
 	int sock;
@@ -92,13 +92,13 @@ static void tc_net_getpeername_p1(void)
 }
 
 /**
-   * @testcase		   :tc_net_getpeername_sock_n
-   * @brief		   :negative test case wthout client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getpeername_sock_n
+* @brief				: negative test case wthout client server model
+* @scenario				:
+* @apicovered			: getpeername()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_getpeername_sock_n(void)
 {
 	int len = sizeof(struct sockaddr);
@@ -112,13 +112,13 @@ static void tc_net_getpeername_sock_n(void)
 
 
 /**
-   * @testcase		   :tc_net_getpeername_close_n
-   * @brief		   :negative test case without client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getpeername_close_n
+* @brief				: negative test case without client server model
+* @scenario				:
+* @apicovered			: getpeername()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_getpeername_close_n(void)
 {
 	int sock;
@@ -134,13 +134,13 @@ static void tc_net_getpeername_close_n(void)
 }
 
 /**
-   * @testcase		   :tc_net_getpeername_unix_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getpeername_unix_p
+* @brief				:
+* @scenario				:
+* @apicovered			: getpeername()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_getpeername_unix_p(void)
 {
 	int sock;
@@ -156,13 +156,13 @@ static void tc_net_getpeername_unix_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_getpeername_udp_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getpeername_udp_p
+* @brief				:
+* @scenario				:
+* @apicovered			: getpeername()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_getpeername_udp_p(void)
 {
 	int sock;
@@ -178,13 +178,13 @@ static void tc_net_getpeername_udp_p(void)
 }
 
 /**
-   * @testcase		   :tc_net_getpeername_p
-   * @brief		   :positive testcase for  getpeername api with client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getpeername_p
+* @brief				: positive testcase for  getpeername api with client server model
+* @scenario				:
+* @apicovered			: getpeername()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_getpeername_p(int fd)
 {
 	socklen_t len;
@@ -199,13 +199,13 @@ static void tc_net_getpeername_p(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_getpeername_n
-   * @brief		   :negative testcase for  getpeername api with client server model
-   * @scenario		   :
-   * @apicovered	   :getpeername()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase				: tc_net_getpeername_n
+* @brief				: negative testcase for  getpeername api with client server model
+* @scenario				:
+* @apicovered			: getpeername()
+* @precondition			:
+* @postcondition		:
+*/
 static void tc_net_getpeername_n(int fd)
 {
 	socklen_t len;
@@ -220,14 +220,14 @@ static void tc_net_getpeername_n(int fd)
 }
 
 /**
-   * @fn                   :getpeername_server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,accept,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: getpeername_server
+* @brief				:
+* @scenario				:
+* API's covered			: socket,bind,listen,accept,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *getpeername_server(void *args)
 {
 
@@ -253,14 +253,14 @@ void *getpeername_server(void *args)
 }
 
 /**
-   * @fn                   :getpeername_client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: getpeername_client
+* @brief				:
+* @scenario				:
+* API's covered			: socket,connect,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *getpeername_client(void *args)
 {
 

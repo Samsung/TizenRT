@@ -39,13 +39,13 @@
 #define MAXRCVLEN 20
 int s = 0;
 /**
-   * @fn                   :wait
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
+* @fn					: wait
+* @brief				: function to wait on semaphore
+* @scenario				:
+* @API's covered		:
+* @Preconditions		:
+* @Postconditions		:
+* @return				: void
    */
 static void wait(void)
 {
@@ -57,28 +57,27 @@ static void wait(void)
 }
 
 /**
-   * @fn                   :nw_signal
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn					: nw_signal
+* @brief				: function to signal semaphore
+* @scenario				:
+* @API's covered		:
+* @Preconditions		:
+* @Postconditions		:
+* @return				: void
+*/
 static void nw_signal(void)
 {
 	s++;
 }
 
 /**
-   * @testcase		   :tc_net_accept_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :accept()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-
+* @testcase				: tc_net_accept_p
+* @brief				:
+* @scenario				:
+* @apicovered			: accept()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_accept_p(int fd)
 {
 	int ConnectFD = accept(fd, NULL, NULL);
@@ -90,14 +89,13 @@ void tc_net_accept_p(int fd)
 }
 
 /**
-   * @testcase		   :tc_net_accept_socket_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :accept()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-
+* @testcase				: tc_net_accept_socket_n
+* @brief				:
+* @scenario				:
+* @apicovered			: accept()
+* @precondition			:
+* @postcondition		:
+*/
 void tc_net_accept_socket_n(int fd)
 {
 	int ConnectFD = accept(-1, NULL, NULL);
@@ -109,17 +107,16 @@ void tc_net_accept_socket_n(int fd)
 }
 
 /**
-   * @fn                   :Server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: Server
+* @brief				:
+* @scenario				:
+* API's covered			: socket,bind,listen,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *Server(void *args)
 {
-
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -142,17 +139,16 @@ void *Server(void *args)
 }
 
 /**
-   * @fn                   :Client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
+* @fn					: Client
+* @brief				:
+* @scenario				:
+* API's covered			: socket,connect,close
+* Preconditions			:
+* Postconditions		:
+* @return				: void *
+*/
 void *Client(void *args)
 {
-
 	int mysocket;
 	struct sockaddr_in dest;
 
@@ -177,7 +173,6 @@ void *Client(void *args)
  ****************************************************************************/
 int net_accept_main(void)
 {
-
 	pthread_t server, client;
 
 	pthread_create(&server, NULL, Server, NULL);
