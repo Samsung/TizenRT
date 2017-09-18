@@ -82,6 +82,34 @@ static void tc_libc_sched_sched_get_priority_min(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_libc_sched_task_setcanceltype
+ * @brief                :This tc tests tc_libc_sched_task_setcanceltype()
+ * @Scenario             :The task_setcanceltype() function atomically both sets the calling
+ *                        task's cancelability type to the indicated type and returns the
+ *                        previous cancelability type at the location referenced by oldtype
+ *                        If successful pthread_setcanceltype() function shall return zero;
+ *                        otherwise, an error number shall be returned to indicate the error.
+ * @API'scovered         :task_setcanceltype
+ * @Preconditions        :none
+ * @Postconditions       :none
+ * @return               :void
+ */
+#ifndef CONFIG_CANCELLATION_POINTS
+static void tc_libc_sched_task_setcanceltype(void)
+{
+	int type;
+	int oldtype;
+	int ret_chk;
+
+	type = TASK_CANCEL_ASYNCHRONOUS;
+	ret_chk = task_setcanceltype(type, &oldtype);
+	TC_ASSERT_EQ("task_setcanceltype", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
 /****************************************************************************
  * Name: libc_sched
  ****************************************************************************/
@@ -90,6 +118,8 @@ int libc_sched_main(void)
 {
 	tc_libc_sched_sched_get_priority_max();
 	tc_libc_sched_sched_get_priority_min();
-
+#ifndef CONFIG_CANCELLATION_POINTS
+	tc_libc_sched_task_setcanceltype();
+#endif
 	return 0;
 }
