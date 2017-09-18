@@ -94,7 +94,7 @@ ifeq ($(CONFIG_NET_IPv4),y) # Not yet available for IPv6
 CSRCS += netlib_ipmsfilter.c
 endif
 endif
-
+CFLAGS += -I$(TOPDIR)/../external/include
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
 

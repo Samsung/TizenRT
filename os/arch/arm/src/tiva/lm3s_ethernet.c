@@ -67,10 +67,18 @@
 #include <arpa/inet.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/net/ethernet.h>
 #include <tinyara/wdog.h>
 #include <tinyara/irq.h>
 #include <arch/board/board.h>
+#include <netinet/arp.h>
 #include <tinyara/net/netdev.h>
+
+#include <net/lwip/netif/etharp.h>
+
+#ifdef CONFIG_NET_PKT
+#include <tinyara/net/pkt.h>
+#endif
 
 #include "chip.h"
 #include "up_arch.h"
@@ -232,7 +240,8 @@ struct tiva_driver_s {
 
 	/* This holds the information visible to uIP/NuttX */
 
-	struct net_driver_s ld_dev;	/* Interface understood by uIP */
+	//struct net_driver_s ld_dev;   /* Interface understood by uIP */
+	struct netif ld_dev;		/* Interface understood by uIP */
 };
 
 /****************************************************************************
@@ -263,7 +272,7 @@ static uint16_t tiva_phyread(struct tiva_driver_s *priv, int regaddr);
 /* Common TX logic */
 
 static int tiva_transmit(struct tiva_driver_s *priv);
-static int tiva_txpoll(struct net_driver_s *dev);
+static int tiva_txpoll(struct netif *dev);
 
 /* Interrupt handling */
 
@@ -278,9 +287,13 @@ static void tiva_txtimeout(int argc, uint32_t arg, ...);
 
 /* NuttX callback functions */
 
-static int tiva_ifup(struct net_driver_s *dev);
-static int tiva_ifdown(struct net_driver_s *dev);
-static int tiva_txavail(struct net_driver_s *dev);
+static int tiva_ifup(struct netif *dev);
+static int tiva_ifdown(struct netif *dev);
+static int tiva_txavail(struct netif *dev);
+#ifdef CONFIG_NET_IGMP
+static int tiva_addmac(struct netif *dev, FAR const uint8_t *mac);
+static int tiva_rmmac(struct netif *dev, FAR const uint8_t *mac);
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -373,16 +386,6 @@ static void tiva_ethreset(struct tiva_driver_s *priv)
 	regval |= (SYSCON_RCGC2_EMAC0 | SYSCON_RCGC2_EPHY0);
 	putreg32(regval, TIVA_SYSCON_RCGC2);
 	nllvdbg("RCGC2: %08x\n", regval);
-
-	/* Put the Ethernet controller into the reset state */
-
-	regval = getreg32(TIVA_SYSCON_SRCR2);
-	regval |= (SYSCON_SRCR2_EMAC0 | SYSCON_SRCR2_EPHY0);
-	putreg32(regval, TIVA_SYSCON_SRCR2);
-
-	/* Wait just a bit.  This is a much longer delay than necessary */
-
-	up_mdelay(2);
 
 	/* Then take the Ethernet controller out of the reset state */
 
@@ -610,7 +613,7 @@ static int tiva_transmit(struct tiva_driver_s *priv)
  *
  ****************************************************************************/
 
-static int tiva_txpoll(struct net_driver_s *dev)
+static int tiva_txpoll(struct netif *dev)
 {
 	struct tiva_driver_s *priv = (struct tiva_driver_s *)dev->d_private;
 	int ret = OK;
@@ -631,7 +634,7 @@ static int tiva_txpoll(struct net_driver_s *dev)
 		if (IFF_IS_IPv4(priv->ld_dev.d_flags))
 #endif
 		{
-			arp_out(&priv->ld_dev);
+//          arp_out(&priv->ld_dev);
 		}
 #endif							/* CONFIG_NET_IPv4 */
 
@@ -752,7 +755,7 @@ static void tiva_receive(struct tiva_driver_s *priv)
 			 * buffer may be un-aligned.
 			 */
 
-			*(uint32_t *)dbuf = tiva_ethin(priv, TIVA_MAC_DATA_OFFSET);
+			*(uint32_t *) dbuf = tiva_ethin(priv, TIVA_MAC_DATA_OFFSET);
 		}
 
 		/* Handle the last, partial word in the FIFO (0-3 bytes) and discard
@@ -786,6 +789,12 @@ static void tiva_receive(struct tiva_driver_s *priv)
 		priv->ld_dev.d_len = pktlen - 6;
 		tiva_dumppacket("Received packet", priv->ld_dev.d_buf, priv->ld_dev.d_len);
 
+#ifdef CONFIG_NET_PKT
+		/* When packet sockets are enabled, feed the frame into the packet tap */
+
+		pkt_input(&priv->ld_dev);
+#endif
+
 		/* We only accept IP packets of the configured type and ARP packets */
 
 #ifdef CONFIG_NET_IPv4
@@ -797,8 +806,8 @@ static void tiva_receive(struct tiva_driver_s *priv)
 			 */
 
 			EMAC_STAT(priv, rx_ip);
-			arp_ipin(&priv->ld_dev);
-			ipv4_input(&priv->ld_dev);
+			//arp_ipin(&priv->ld_dev);
+			//ip_input(&priv->ld_dev);
 
 			/* If the above function invocation resulted in data that should be
 			 * sent out on the network, the field  d_len will set to a value > 0.
@@ -811,7 +820,7 @@ static void tiva_receive(struct tiva_driver_s *priv)
 				if (IFF_IS_IPv4(priv->ld_dev.d_flags))
 #endif
 				{
-					arp_out(&priv->ld_dev);
+//                  arp_out(&priv->ld_dev);
 				}
 #ifdef CONFIG_NET_IPv6
 				else {
@@ -844,7 +853,7 @@ static void tiva_receive(struct tiva_driver_s *priv)
 
 #ifdef CONFIG_NET_IPv4
 					if (IFF_IS_IPv4(priv->ld_dev.d_flags)) {
-						arp_out(&priv->ld_dev);
+						//etharp_output(&priv->ld_dev);
 					} else
 #endif
 #ifdef CONFIG_NET_IPv6
@@ -915,7 +924,7 @@ static void tiva_txdone(struct tiva_driver_s *priv)
 	DEBUGASSERT((tiva_ethin(priv, TIVA_MAC_TR_OFFSET) & MAC_TR_NEWTX) == 0)
 
 	/* Then poll uIP for new XMIT data */
-	(void)devif_poll(&priv->ld_dev, tiva_txpoll);
+//  (void)devif_poll(&priv->ld_dev, tiva_txpoll);
 }
 
 /****************************************************************************
@@ -1034,7 +1043,7 @@ static void tiva_txtimeout(int argc, uint32_t arg, ...)
 
 	/* Then poll uIP for new XMIT data */
 
-	(void)devif_poll(&priv->ld_dev, tiva_txpoll);
+//  (void)devif_poll(&priv->ld_dev, tiva_txpoll);
 }
 
 /****************************************************************************
@@ -1069,7 +1078,7 @@ static void tiva_polltimer(int argc, uint32_t arg, ...)
 	if ((tiva_ethin(priv, TIVA_MAC_TR_OFFSET) & MAC_TR_NEWTX) == 0) {
 		/* If so, update TCP timing states and poll uIP for new XMIT data */
 
-		(void)devif_timer(&priv->ld_dev, tiva_txpoll, TIVA_POLLHSEC);
+//      (void)devif_timer(&priv->ld_dev, tiva_txpoll, TIVA_POLLHSEC);
 
 		/* Setup the watchdog poll timer again */
 
@@ -1094,7 +1103,7 @@ static void tiva_polltimer(int argc, uint32_t arg, ...)
  *
  ****************************************************************************/
 
-static int tiva_ifup(struct net_driver_s *dev)
+static int tiva_ifup(struct netif *dev)
 {
 	struct tiva_driver_s *priv = (struct tiva_driver_s *)dev->d_private;
 	irqstate_t flags;
@@ -1165,9 +1174,7 @@ static int tiva_ifup(struct net_driver_s *dev)
 	 */
 
 	nlldbg("Waiting for link\n");
-	do {
-		phyreg = tiva_phyread(priv, MII_MSR);
-	} while ((phyreg & MII_MSR_LINKSTATUS) == 0);
+
 	nlldbg("Link established\n");
 
 	/* Reset the receive FIFO */
@@ -1210,15 +1217,15 @@ static int tiva_ifup(struct net_driver_s *dev)
 
 	/* Program the hardware with it's MAC address (for filtering) */
 
-	regval = (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[3] << 24 | (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[2] << 16 | (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[1] << 8 | (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[0];
+	regval = (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[3] << 24 | (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[2] << 16 | (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[1] << 8 | (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[0];
 	tiva_ethout(priv, TIVA_MAC_IA0_OFFSET, regval);
 
-	regval = (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[5] << 8 | (uint32_t)priv->ld_dev.d_mac.ether_addr_octet[4];
+	regval = (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[5] << 8 | (uint32_t) priv->ld_dev.d_mac.ether_addr_octet[4];
 	tiva_ethout(priv, TIVA_MAC_IA1_OFFSET, regval);
 
 	/* Set and activate a timer process */
 
-	(void)wd_start(priv->ld_txpoll, TIVA_WDDELAY, tiva_polltimer, 1, (uint32_t)priv);
+	(void)wd_start(priv->ld_txpoll, TIVA_WDDELAY, tiva_polltimer, 1, (uint32_t) priv);
 
 	priv->ld_bifup = true;
 	irqrestore(flags);
@@ -1242,7 +1249,7 @@ static int tiva_ifup(struct net_driver_s *dev)
  *
  ****************************************************************************/
 
-static int tiva_ifdown(struct net_driver_s *dev)
+static int tiva_ifdown(struct netif *dev)
 {
 	struct tiva_driver_s *priv = (struct tiva_driver_s *)dev->d_private;
 	irqstate_t flags;
@@ -1325,7 +1332,7 @@ static int tiva_ifdown(struct net_driver_s *dev)
  *
  ****************************************************************************/
 
-static int tiva_txavail(struct net_driver_s *dev)
+static int tiva_txavail(struct netif *dev)
 {
 	struct tiva_driver_s *priv = (struct tiva_driver_s *)dev->d_private;
 	irqstate_t flags;
@@ -1344,31 +1351,12 @@ static int tiva_txavail(struct net_driver_s *dev)
 		 * for new Tx data
 		 */
 
-		(void)devif_poll(&priv->ld_dev, tiva_txpoll);
+//      (void)devif_poll(&priv->ld_dev, tiva_txpoll);
 	}
 
 	irqrestore(flags);
 	return OK;
 }
-
-/****************************************************************************
- * Function: tiva_addmac
- *
- * Description:
- *   NuttX Callback: Add the specified MAC address to the hardware multicast
- *   address filtering
- *
- * Parameters:
- *   dev  - Reference to the NuttX driver state structure
- *   mac  - The MAC address to be added
- *
- * Returned Value:
- *   None
- *
- * Assumptions:
- *
- ****************************************************************************/
-
 
 /****************************************************************************
  * Function: tiva_rmmac
@@ -1388,6 +1376,17 @@ static int tiva_txavail(struct net_driver_s *dev)
  *
  ****************************************************************************/
 
+#ifdef CONFIG_NET_IGMP
+static int tiva_rmmac(struct netif *dev, FAR const uint8_t *mac)
+{
+	FAR struct tiva_driver_s *priv = (FAR struct tiva_driver_s *)dev->d_private;
+
+	/* Add the MAC address to the hardware multicast routing table */
+
+#warning "Multicast MAC support not implemented"
+	return OK;
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -1435,14 +1434,17 @@ static inline int tiva_ethinitialize(int intf)
 	priv->ld_dev.d_ifup = tiva_ifup;	/* I/F down callback */
 	priv->ld_dev.d_ifdown = tiva_ifdown;	/* I/F up (new IP address) callback */
 	priv->ld_dev.d_txavail = tiva_txavail;	/* New TX data callback */
+#ifdef CONFIG_NET_IGMP
+	priv->ld_dev.d_rmmac = tiva_rmmac;	/* Remove multicast MAC address */
+#endif
 	priv->ld_dev.d_private = (void *)priv;	/* Used to recover private state from dev */
 
 	/* Create a watchdog for timing polling for and timing of transmissions */
 
 #if TIVA_NETHCONTROLLERS > 1
 #error "A mechanism to associate base address an IRQ with an interface is needed"
-//	priv->ld_base = ? ?;		/* Ethernet controller base address */
-//	priv->ld_irq = ? ?;			/* Ethernet controller IRQ number */
+	priv->ld_base = ? ?;		/* Ethernet controller base address */
+	priv->ld_irq = ? ?;			/* Ethernet controller IRQ number */
 #endif
 	priv->ld_txpoll = wd_create();	/* Create periodic poll timer */
 	priv->ld_txtimeout = wd_create();	/* Create TX timeout timer */
@@ -1479,7 +1481,8 @@ static inline int tiva_ethinitialize(int intf)
 
 	/* Register the device with the OS so that socket IOCTLs can be performed */
 
-	(void)netdev_register(&priv->ld_dev, NET_LL_ETHERNET);
+	netif_register_with_initial_ip(&priv->ld_dev, ethernetif_init);
+	//(void)netif_register(&priv->ld_dev, NET_LL_ETHERNET);
 	return OK;
 }
 

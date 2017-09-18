@@ -90,7 +90,7 @@ include ta_tc/wifi_manager/utc/Make.defs
 include ta_tc/mqtt/utc/Make.defs
 
 endif
-
+CFLAGS += -I$(TOPDIR)/../external/include
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
 
