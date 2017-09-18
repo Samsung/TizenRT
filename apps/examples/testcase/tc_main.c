@@ -57,7 +57,7 @@
 #define TC_MQTT_STACK 4096
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_AUDIO_UTC
-#define TC_AUDIO_STACK  20480
+#define TC_AUDIO_STACK  2048
 #endif
 
 sem_t tc_sem;
