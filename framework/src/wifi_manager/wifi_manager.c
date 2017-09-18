@@ -300,6 +300,12 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
+	if ((config->ssid_length > 31) || (config->passphrase_length > 63)) {
+		ndbg("AP configuration fails: too long ssid or passphrase\n");
+		ndbg("Make sure that length of SSID < 32 and length of passphrase < 64\n");
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+
 	wifi_utils_info info;
 	wifi_utils_ap_config_s util_config;
 
@@ -312,9 +318,9 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 
 	wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
 
-	strncpy(util_config.ssid, config->ssid, config->ssid_length);
+	strncpy(util_config.ssid, config->ssid, config->ssid_length + 1);
 	util_config.ssid_length = config->ssid_length;
-	strncpy(util_config.passphrase, config->passphrase, config->passphrase_length);
+	strncpy(util_config.passphrase, config->passphrase, config->passphrase_length + 1);
 	util_config.passphrase_length = config->passphrase_length;
 	util_config.ap_auth_type = config->ap_auth_type;
 	util_config.ap_crypto_type = config->ap_crypto_type;
@@ -331,7 +337,7 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 
 	char ip4_add_str[18] = { 0, };
 	wifi_net_ip4_addr_to_ip4_str(info.ip4_address, ip4_add_str);
-	strncpy(g_manager_info.ssid, config->ssid, 32);
+	strncpy(g_manager_info.ssid, config->ssid, config->ssid_length + 1);
 	strncpy(g_manager_info.ip4_address, ip4_add_str, 18);
 	g_manager_info.rssi = info.rssi;
 
@@ -455,6 +461,12 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
+	if ((mode != SOFTAP_MODE) && ((strlen(config->ssid) > 31) || (strlen(config->passphrase) > 63))) {
+		ndbg("SoftAP configuration fails: too long ssid or passphrase\n");
+		ndbg("Make sure that length of SSID < 32 and length of passphrase < 64\n");
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+
 	if (g_manager_info.mode == mode) {
 		ndbg("wifi manager set mode failed: current mode is the same as requested.\n");
 		return WIFI_MANAGER_SUCCESS;
@@ -467,10 +479,10 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		softap_config.channel = config->channel;
 		softap_config.ap_crypto_type = WIFI_UTILS_CRYPTO_AES;
 		softap_config.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
-		strncpy(softap_config.ssid, config->ssid, sizeof(config->ssid));
 		softap_config.ssid_length = strlen(config->ssid);
-		strncpy(softap_config.passphrase, config->passphrase, sizeof(config->passphrase));
 		softap_config.passphrase_length = strlen(config->passphrase);
+		strncpy(softap_config.ssid, config->ssid, softap_config.ssid_length + 1);
+		strncpy(softap_config.passphrase, config->passphrase, softap_config.passphrase_length + 1);
 		softap_config.inform_new_sta_join = g_manager_info.wmcb->softap_sta_joined;
 
 		wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
@@ -490,7 +502,7 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		}
 
 		g_manager_info.mode = SOFTAP_MODE;
-		strncpy(g_manager_info.ssid, config->ssid, 32);
+		strncpy(g_manager_info.ssid, config->ssid, softap_config.ssid_length + 1);
 		wifi_status_set(CLIENT_DISCONNECTED);
 		wifi_mutex_release(w_mutex);
 
