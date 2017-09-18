@@ -42,6 +42,7 @@
 #define TASK_STACKSIZE 2048
 #define PID_INVAL       -1
 #define PID_IDLE        0
+#define TASK_CANCEL_INVALID  -1
 
 pthread_t thread1, thread2;
 
@@ -523,6 +524,130 @@ static void tc_sched_sched_getstreams(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                   :tc_sched_task_setcancelstate
+ * @brief                :This tc tests sched_task_setcancelstate()
+ * @scenario             :If state is invalid, it will return ERROR and set errno to EINVAL
+ *                        Else it will return OK and set canclestate to TASK_CANCEL_DISABLE or TASK_CANCEL_ENABLE
+ * API's covered         :task_setcancelstate
+ * Preconditions         :none
+ * Postconditions        :none
+ * @return               :void
+ */
+
+static void tc_sched_task_setcancelstate(void)
+{
+	int noncancelable_flag;
+	int originstate;
+	int oldstate;
+	struct tcb_s *tcb = this_task();
+	int ret_chk;
+
+	noncancelable_flag = tcb->flags & TCB_FLAG_NONCANCELABLE;
+	originstate = noncancelable_flag == TCB_FLAG_NONCANCELABLE ? TASK_CANCEL_DISABLE : TASK_CANCEL_ENABLE;
+
+	/* Negative case with invalid mode. It will return ERROR & set errno EINVAL */
+	ret_chk = task_setcancelstate(TASK_CANCEL_INVALID, &oldstate);
+	TC_ASSERT_EQ_CLEANUP("task_setcancelstate", ret_chk, ERROR, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcancelstate", get_errno(), EINVAL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcancelstate", oldstate, originstate, goto errout);
+
+	/* Positive cases with valid mode. It will return OK */
+
+	ret_chk = task_setcancelstate(TASK_CANCEL_DISABLE, &oldstate);
+	TC_ASSERT_EQ_CLEANUP("task_setcancelstate", ret_chk, OK, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcancelstate", tcb->flags & TCB_FLAG_NONCANCELABLE, TCB_FLAG_NONCANCELABLE, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcancelstate", oldstate, originstate, goto errout);
+
+	ret_chk = task_setcancelstate(TASK_CANCEL_ENABLE, &oldstate);
+	TC_ASSERT_EQ_CLEANUP("task_setcancelstate", ret_chk, OK, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcancelstate", tcb->flags & TCB_FLAG_NONCANCELABLE, 0, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcancelstate", oldstate, TASK_CANCEL_DISABLE, goto errout);
+
+	/* restore the cancestate */
+
+	ret_chk = task_setcancelstate(originstate, NULL);
+	TC_ASSERT_EQ_CLEANUP("task_setcancelstate", ret_chk, OK, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcancelstate", tcb->flags & TCB_FLAG_NONCANCELABLE, noncancelable_flag, goto errout);
+
+	TC_SUCCESS_RESULT();
+
+errout:
+	tcb->flags |= noncancelable_flag;
+}
+
+/**
+ * @fn                   :tc_sched_task_setcanceltype
+ * @brief                :This tc tests tc_sched_task_setcanceltype()
+ * @Scenario             :The task_setcanceltype() function atomically both sets the calling
+ *                        task's cancelability type to the indicated type and returns the
+ *                        previous cancelability type at the location referenced by oldtype
+ *                        If successful pthread_setcanceltype() function shall return zero;
+ *                        otherwise, an error number shall be returned to indicate the error.
+ * @API'scovered         :task_setcanceltype
+ * @Preconditions        :none
+ * @Postconditions       :none
+ * @return               :void
+ */
+#ifdef CONFIG_CANCELLATION_POINTS
+static void tc_sched_task_setcanceltype(void)
+{
+	int defferred_flag;
+	int origintype;
+	int oldtype;
+	struct tcb_s *tcb = this_task();
+	int ret_chk;
+
+	defferred_flag = tcb->flags & TCB_FLAG_CANCEL_DEFERRED;
+	origintype = defferred_flag == TCB_FLAG_CANCEL_DEFERRED ? TASK_CANCEL_DEFERRED : TASK_CANCEL_ASYNCHRONOUS;
+
+	/* Negative case with invalid mode. It will return EINVAL */
+	ret_chk = task_setcanceltype(TASK_CANCEL_INVALID, &oldtype);
+	TC_ASSERT_EQ_CLEANUP("task_setcanceltype", ret_chk, EINVAL, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcanceltype", oldtype, origintype, goto errout);
+
+	/* Positive cases with valid mode. It will return OK */
+
+	ret_chk = task_setcanceltype(TASK_CANCEL_DEFERRED, &oldtype);
+	TC_ASSERT_EQ_CLEANUP("task_setcanceltype", ret_chk, OK, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcanceltype", tcb->flags & TCB_FLAG_CANCEL_DEFERRED, TCB_FLAG_CANCEL_DEFERRED, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcanceltype", oldtype, origintype, goto errout);
+
+	ret_chk = task_setcanceltype(TASK_CANCEL_ASYNCHRONOUS, &oldtype);
+	TC_ASSERT_EQ_CLEANUP("task_setcanceltype", ret_chk, OK, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcanceltype", tcb->flags & TCB_FLAG_CANCEL_DEFERRED, 0, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcanceltype", oldtype, TASK_CANCEL_DEFERRED, goto errout);
+
+	/* restore the canceltype */
+
+	ret_chk = task_setcanceltype(origintype, NULL);
+	TC_ASSERT_EQ_CLEANUP("task_setcanceltype", ret_chk, OK, goto errout);
+	TC_ASSERT_EQ_CLEANUP("task_setcanceltype", tcb->flags & TCB_FLAG_CANCEL_DEFERRED, defferred_flag, goto errout);
+
+	TC_SUCCESS_RESULT();
+
+errout:
+	tcb->flags |= defferred_flag;
+}
+
+/**
+ * @fn                   :tc_sched_task_testcancel
+ * @brief                :This tc tests tc_sched_task_testcancel()
+ * @Scenario             :The task_testcancel() function creates a cancellation point in the calling thread.
+ *                        It has no effect if cancelability is disabled
+ * @API'scovered         :task_testcancel
+ * @Preconditions        :none
+ * @Postconditions       :none
+ * @return               :void
+ */
+static void tc_sched_task_testcancel(void)
+{
+	task_testcancel();
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
 /****************************************************************************
  * Name: sched
  ****************************************************************************/
@@ -545,6 +670,11 @@ int sched_main(void)
 	tc_sched_sched_foreach();
 	tc_sched_sched_lockcount();
 	tc_sched_sched_getstreams();
+	tc_sched_task_setcancelstate();
+#ifdef CONFIG_CANCELLATION_POINTS
+	tc_sched_task_setcanceltype();
+	tc_sched_task_testcancel();
+#endif
 
 	return 0;
 }
