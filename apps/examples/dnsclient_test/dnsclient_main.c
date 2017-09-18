@@ -159,8 +159,8 @@ int dnsclient_main(int argc, FAR char *argv[])
 
 	memset(hostname, 0x00, CONFIG_NETDB_DNSCLIENT_NAMESIZE);
 
-	if (strlen(argv[1]) > CONFIG_NETDB_DNSCLIENT_NAMESIZE) {
-		printf("dnsclient : length of hostname has to lower than %d\n", CONFIG_NETDB_DNSCLIENT_NAMESIZE);
+	if (strlen(argv[1]) > CONFIG_NETDB_DNSCLIENT_NAMESIZE - 1) {
+		printf("dnsclient : length of hostname has to lower than or equal to %d\n", CONFIG_NETDB_DNSCLIENT_NAMESIZE - 1);
 		return -1;
 	}
 
