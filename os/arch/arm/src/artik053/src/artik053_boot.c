@@ -202,9 +202,11 @@ static void board_audio_initialize(void)
 
 static void board_wdt_initialize(void)
 {
+#ifdef CONFIG_S5J_WATCHDOG
 #ifdef CONFIG_WATCHDOG
 	s5j_wdg_initialize(CONFIG_WATCHDOG_DEVPATH);
 	putreg32(0x40C, 0x80090000);
+#endif
 #endif
 }
 

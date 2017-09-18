@@ -180,7 +180,9 @@ void arm_boot(void)
 	up_copyvectorblock();
 
 	/* Disable the watchdog timer */
+#ifdef CONFIG_S5J_WATCHDOG
 	s5j_watchdog_disable();
+#endif
 
 #ifdef CONFIG_ARMV7R_MEMINIT
 	/* Initialize the .bss and .data sections as well as RAM functions

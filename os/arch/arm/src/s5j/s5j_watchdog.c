@@ -101,7 +101,6 @@ void s5j_watchdog_disable(void)
 	putreg32(wtcon, S5J_WDT_WTCON);
 }
 
-#ifdef CONFIG_S5J_WATCHDOG
 /****************************************************************************
  * Name: s5j_watchdog_enable
  *
@@ -250,4 +249,3 @@ void s5j_watchdog_clear_int(void)
 {
 	putreg32(0xffffffff, S5J_WDT_WTCLRINT);
 }
-#endif
