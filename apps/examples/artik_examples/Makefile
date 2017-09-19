@@ -57,6 +57,8 @@ include $(APPDIR)/Make.defs
 APPNAME = artik_examples
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
+THREADEXEC = TASH_EXECMD_ASYNC
+
 ASRCS =
 ARTIK_SDK_DIR = $(TOPDIR)/../external/artik-sdk
 API_DIR = api
