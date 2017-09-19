@@ -44,6 +44,7 @@
                "-DTARGET_BOARD=RP2"],
       "artik05x": ["-mcpu=cortex-r4",
                    "-mfpu=vfp3",
+                   "-fshort-enums",
                    "-DTARGET_BOARD=artik05x"],
       "artik10": ["-mcpu=cortex-a7",
                   "-mfpu=neon-vfpv4",
