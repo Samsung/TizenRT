@@ -89,7 +89,6 @@ main()
 				flash_write os ../../../../output/bin/tinyara_head.bin;	\
 				flash_write rom ../../../../output/bin/romfs.img; \
 				exit'
-				rm ${ROMFS_FLASHING_CFG}
 			else
 				${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' 	\
 				flash_write bl1 ../../bin/bl1.bin; 		\
@@ -99,6 +98,7 @@ main()
 				flash_write os ../../../../output/bin/tinyara_head.bin;	\
 				exit'
 			fi
+			rm ${ROMFS_FLASHING_CFG}
 			popd
 			;;
 
