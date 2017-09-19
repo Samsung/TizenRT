@@ -640,10 +640,10 @@ static void utc_audio_pcm_readi_p(void)
 	char input_str[16];
 	ssize_t size;
 	ssize_t bytes;
-	unsigned int frames_read = 0;
+	int frames_read = 0;
 	unsigned int total_frames_read = 0;
 	unsigned int rate;
-	int capturing;
+	int remain;
 	int ret;
 	char *str;
 
@@ -654,24 +654,27 @@ static void utc_audio_pcm_readi_p(void)
 	g_record_buffer = (char *)malloc(bytes);	//rate * bit * channels * duration
 	TC_ASSERT_NEQ("pcm_readi_p", g_record_buffer, NULL);
 
-	printf("Record will be start for 3s, press any key to start\n");
+	remain = pcm_bytes_to_frames(g_pcm, bytes);
+	printf("Record will be start for 3s, press any key to start(Total frame: %d, %d bytes)\n", remain, bytes);
 	fflush(stdout);
 	str = gets(input_str);
 	TC_ASSERT_NEQ_CLEANUP("pcm_readi", str, NULL, free(g_record_buffer));
 
-	capturing = 1;
-	while (capturing) {
-		frames_read = pcm_readi(g_pcm, (void *)&g_record_buffer[total_frames_read], size);
+	while (remain > 0) {
+		frames_read = pcm_readi(g_pcm, (void *)&g_record_buffer[pcm_frames_to_bytes(g_pcm, total_frames_read)], remain);
 		total_frames_read += frames_read;
-		if ((total_frames_read / rate) >= AUDIO_RECORD_DURATION) {
-			capturing = 0;
-		}
+		remain -= frames_read;
 	}
+	printf("Record done. Writing file...\n");
+
 	pcm_close(g_pcm);
 	fd = open(AUDIO_TEST_FILE, O_RDWR | O_CREAT);
 	ret = write(fd, g_record_buffer, bytes);
 	TC_ASSERT_GT_CLEANUP("pcm_reaid_p", ret, 0, close(fd));
 	close(fd);
+
+	printf("Writing done. Playback will start.\n");
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -716,12 +719,10 @@ static void utc_audio_pcm_readi_n(void)
 static void utc_audio_pcm_writei_p(void)
 {
 	int fd;
-	ssize_t size;
 	ssize_t bytes;
 	int ret;
-	unsigned int total_frames_write = 0;
-	unsigned int rate;
-	int play;
+	int total_frames_write = 0;
+	int remain;
 
 	fd = open(AUDIO_TEST_FILE, O_RDONLY);
 	TC_ASSERT_GEQ("pcm_writei", fd, 0);
@@ -730,26 +731,24 @@ static void utc_audio_pcm_writei_p(void)
 	g_pcm = pcm_open(0, 0, PCM_OUT, NULL);
 	TC_ASSERT_GT_CLEANUP("pcm_writei", pcm_is_ready(g_pcm), 0, close(fd));
 
-	size = pcm_get_buffer_size(g_pcm);
-	rate = pcm_get_rate(g_pcm);
-	bytes = rate * (pcm_format_to_bits(pcm_get_format(g_pcm)) / 8) * pcm_get_channels(g_pcm) * AUDIO_RECORD_DURATION;
+	bytes = lseek(fd, 0, SEEK_END);
+	lseek(fd, 0, SEEK_SET);
 
 	g_record_buffer = (char *)malloc(bytes);	//rate * bit * channels * duration
 	TC_ASSERT_NEQ_CLEANUP("pcm_readi_p", g_record_buffer, NULL, clean_all_data(fd));
 
-	printf("playback start!!\n");
+	remain = pcm_bytes_to_frames(g_pcm, bytes);
+
+	printf("playback start!! Total frames: %d\n", remain);
 
 	ret = read(fd, g_record_buffer, bytes);
 	TC_ASSERT_GEQ_CLEANUP("pcm_writei", ret, 0, clean_all_data(fd));
 	close(fd);
 
-	play = 1;
-	while (play) {
-		ret = pcm_writei(g_pcm, (void *)&g_record_buffer[total_frames_write], size);
+	while (remain > 0) {
+		ret = pcm_writei(g_pcm, (void *)&g_record_buffer[pcm_frames_to_bytes(g_pcm, total_frames_write)], remain);
 		total_frames_write += ret;
-		if ((total_frames_write / rate) >= AUDIO_RECORD_DURATION) {
-			play = 0;
-		}
+		remain -= ret;
 	}
 
 	pcm_close(g_pcm);
