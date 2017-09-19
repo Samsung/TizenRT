@@ -91,7 +91,7 @@ typedef struct {
 typedef struct {
 	char ssid[32];
 	uint16_t channel;
-	char passphrase[32];
+	char passphrase[64];
 } wifi_manager_softap_config_s;
 
 /**
