@@ -1,63 +1,34 @@
 {
     "acl": {
-        "aclist": {
-            "aces": [
-                {
-                    "subjectuuid": "*",
-                    "resources": [
-                        {
-                            "href": "/oic/res",
-                            "rel": "",
-                            "rt": ["oic.wk.res"],
-                            "if": ["oic.if.ll"]
-                        },
-                        {
-                            "href": "/oic/d",
-                            "rel": "",
-                            "rt": ["oic.wk.d"],
-                            "if": ["oic.if.baseline", "oic.if.r"]
-                        },
-                        {
-                            "href": "/oic/p",
-                            "rel": "",
-                            "rt": ["oic.wk.p"],
-                            "if": ["oic.if.baseline", "oic.if.r"]
-                        },
-                        {
-                            "href": "/oic/sec/acl",
-                            "rel": "",
-                            "rt": ["oic.r.acl"],
-                            "if": ["oic.if.baseline"]
-                        }
-                    ],
-                    "permission": 2
-                },
-                {
-                    "subjectuuid": "*",
-                    "resources": [
-                        {
-                            "href": "/oic/sec/doxm",
-                            "rel": "",
-                            "rt": ["oic.r.doxm"],
-                            "if": ["oic.if.baseline"]
-                        },
-                        {
-                            "href": "/oic/sec/pstat",
-                            "rel": "",
-                            "rt": ["oic.r.pstat"],
-                            "if": ["oic.if.baseline"]
-                        }
-                    ],
-                    "permission": 2
-                }
-            ]
-        },
+        "aclist2": [
+            {
+                "aceid": 1,
+                "subject": { "conntype": "anon-clear" },
+                "resources": [
+                    { "href": "/oic/res" },
+                    { "href": "/oic/d" },
+                    { "href": "/oic/p" },
+                    { "href": "/oic/sec/doxm" }
+                ],
+                "permission": 2
+            },
+            {
+                "aceid": 2,
+                "subject": { "conntype": "auth-crypt" },
+                "resources": [
+                    { "href": "/oic/res" },
+                    { "href": "/oic/d" },
+                    { "href": "/oic/p" },
+                    { "href": "/oic/sec/doxm" }
+                ],
+                "permission": 2
+            }
+        ],
         "rowneruuid" : "32323232-3232-3232-3232-323232323232"
     },
     "pstat": {
         "dos": {"s": 3, "p": false},
         "isop": true,
-        "deviceuuid": "32323232-3232-3232-3232-323232323232",
         "rowneruuid": "32323232-3232-3232-3232-323232323232",
         "cm": 0,
         "tm": 0,
