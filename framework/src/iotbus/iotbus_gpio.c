@@ -127,6 +127,8 @@ int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
 		ret = ioctl(dev->fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_OUT);
 		break;
 	case IOTBUS_GPIO_DIRECTION_NONE:
+		ret = ioctl(dev->fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_NONE);
+				break;
 	default:
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}

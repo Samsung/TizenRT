@@ -192,8 +192,7 @@ int iotbus_pwm_get_duty_cycle(iotbus_pwm_context_h pwm)
 		zdbg("ioctl(PWMIOC_GETCHARACTERISTICS) failed: %d\n", errno);
 		return IOTBUS_ERROR_UNKNOWN;
 	}
-
-	return (int)(info->duty);
+	return (int)((info->duty * 100.0 / 65536) + 0.5);
 }
 
 int iotbus_pwm_get_period(iotbus_pwm_context_h pwm)
