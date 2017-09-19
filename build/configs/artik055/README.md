@@ -63,17 +63,17 @@ This is used to program a partial binary.
 Export 'OPENOCD_SCRIPTS' to environment variable.
 
 ```bash
-export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/configs/tools/openocd
+export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/tools/openocd
 ```
 
 At first, programming the complete set of binaries are needed.
 
 #### ARTIK055S
 ```bash
-../build/configs/tools/codesigner/artik053_codesigner -sign ../build/output/bin/tinyara_head.bin
+../build/configs/artik05x/tools/codesigner/artik05x_codesigner -sign ../build/output/bin/tinyara_head.bin
 
-openocd -f artik053.cfg -c ' \
-    flash_write bl1    ../build/configs/artik055/bin/bl1.secure.bin;  \
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
+    flash_write bl1    ../build/configs/artik055/bin/bl1.bin;  \
     flash_write bl2    ../build/configs/artik055/bin/bl2.bin;         \
     flash_write sssfw  ../build/configs/artik055/bin/sssfw.bin;       \
     flash_write wlanfw ../build/configs/artik055/bin/wlanfw.bin;      \
@@ -83,9 +83,8 @@ openocd -f artik053.cfg -c ' \
 
 Once the complete binaries are successfully programmed, each partition can be updated separately with new one.
 
-In secure model (ARTIK055S),
 ```bash
-openocd -f artik053.cfg -c ' \
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin-signed; exit'
 ```
 
@@ -97,7 +96,7 @@ You can download it using OpenOCD. You compress the compiled firmware and downlo
 
 ```bash
 gzip -c tinyara_head.bin > factoryimage.gz
-openocd -f artik053.cfg -c ' \
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write factory    ../build/configs/artik055/bin/factoryimage.gz;      \
     exit'
 ```

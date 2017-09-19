@@ -28,8 +28,7 @@ source .config
 # Path ENV
 BOARD_NAME=${CONFIG_ARCH_BOARD}
 OS_DIR_PATH=${PWD}
-CONFIG_DIR_PATH=${OS_DIR_PATH}/../build/configs
-OPENOCD_DIR_PATH=${CONFIG_DIR_PATH}/tools/openocd
+PARTMAP_DIR_PATH=${OS_DIR_PATH}/../build/configs/artik05x/scripts
 BOARD_KCONFIG=${OS_DIR_PATH}/arch/arm/src/${BOARD_NAME}/Kconfig
 
 # FLASH BASE ADDRESS (Can it be made to read dynamically from .config?)
@@ -42,7 +41,7 @@ partname_list_default=`grep -A 2 'config ARTIK053_FLASH_PART_NAME' ${BOARD_KCONF
 partname_list=${CONFIG_ARTIK053_FLASH_PART_NAME:=${partname_list_default}}
 
 # OpenOCD cfg file to be created for flashing
-PARTITION_MAP_CFG=${OPENOCD_DIR_PATH}/partition_map.cfg
+PARTITION_MAP_CFG=${PARTMAP_DIR_PATH}/partition_map.cfg
 
 # Partition map text for auto generation
 PARTITION_MAP_HEADER="#

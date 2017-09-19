@@ -25,14 +25,14 @@
     <debug name="openocd debug" type="openocd">
         <!-- path attribute value must be relative path from project root -->
         <!-- usage : openocd -f debug_all.cfg -->
-        <options name="scriptfile" type="file" path="${PROJECT_PATH}/build/configs/tools/openocd" filter="artik053.cfg"/>
-        <execute name="debug" os="linux" bit="32" command="${PROJECT_PATH}/build/configs/tools/openocd/linux32/openocd">
+        <options name="scriptfile" type="file" path="${PROJECT_PATH}/build/configs/artik05x/scripts" filter="artik05x.cfg"/>
+        <execute name="debug" os="linux" bit="32" command="${PROJECT_PATH}/build/tools/openocd/linux32/openocd">
             <params>
                 <param prefix="-s" value="${SCRIPT_PATH}"/>
                 <param prefix="-f" value="${SCRIPT_FILE}"/>
             </params>
         </execute>
-        <execute name="debug" os="linux" bit="64" command="${PROJECT_PATH}/build/configs/tools/openocd/linux64/openocd">
+        <execute name="debug" os="linux" bit="64" command="${PROJECT_PATH}/build/tools/openocd/linux64/openocd">
             <params>
                 <param prefix="-s" value="${SCRIPT_PATH}"/>
                 <param prefix="-f" value="${SCRIPT_FILE}"/>

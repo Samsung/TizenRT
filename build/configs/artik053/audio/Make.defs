@@ -155,6 +155,6 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-       @$(TOPDIR)/../build/configs/artik053/artik053_download.sh $(1)
+  @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik053 $(1)
 endef
 

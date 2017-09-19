@@ -136,13 +136,13 @@ This is used to program a partial binary.
 Export 'OPENOCD_SCRIPTS' to environment variable.
 
 ```bash
-export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/configs/artik053/tools/openocd
+export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/tools/openocd
 ```
 
 At first, programming the complete set of binaries are needed.
 
 ```bash
-openocd -f artik053.cfg -c ' \
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write bl1    ../build/configs/artik053/bin/bl1.bin;      \
     flash_write bl2    ../build/configs/artik053/bin/bl2.bin;      \
     flash_write sssfw  ../build/configs/artik053/bin/sssfw.bin;    \
@@ -154,9 +154,9 @@ openocd -f artik053.cfg -c ' \
 If you have an 'ARTIK053S' device, please do the following.
 
 ```bash
-../build/configs/artik053/tools/codesigner/artik053_codesigner -sign ../build/output/bin/tinyara_head.bin
+../build/configs/artik05x/tools/codesigner/artik05x_codesigner -sign ../build/output/bin/tinyara_head.bin
 
-openocd -f artik053.cfg -c ' \
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write bl1    ../build/configs/artik053/bin/bl1.secure.bin;  \
     flash_write bl2    ../build/configs/artik053/bin/bl2.bin;         \
     flash_write sssfw  ../build/configs/artik053/bin/sssfw.bin;       \
@@ -167,8 +167,14 @@ openocd -f artik053.cfg -c ' \
 
 Once the complete binaries are successfully programmed, each partition can be updated seperately with new one.
 ```bash
-openocd -f artik053.cfg -c ' \
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin; exit'
+```
+
+In secure model (ARTIK053S),
+```bash
+openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
+    flash_write os ../build/output/bin/tinyara_head.bin-signed; exit'
 ```
 
 ### Factory Reset
