@@ -86,8 +86,7 @@ int wifiAutoConnectInit(void)
 	dm_conn_register_linkup_cb(linkUpEvent);
 
 	if (WiFiIsConnected(&result, NULL) != SLSI_STATUS_SUCCESS) {
-		printf("failed to WifiIsConnected\n");
-		return -1;
+		printf("Wifi Is not Connected\n");
 	}
 
 	if (result > 0) {
