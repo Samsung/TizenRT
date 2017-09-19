@@ -1,11 +1,11 @@
-# ARTIK053
+# ARTIK053S
 
-The ARTIK053 is a SOC for Wi-Fi™ IoT solutions. The ARTIK053 has a Wi-Fi subsystem, security subsystem, and application subsystem.
+The ARTIK053S is a SOC for Wi-Fi™ IoT solutions. The ARTIK053S has a Wi-Fi subsystem, security subsystem, and application subsystem.
 
 ## Information
 
-The Samsung ARTIK™ 053 Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
-Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK053 Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
+The Samsung ARTIK™ 053S Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
+Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK053S Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
 
 ## MemoryMap
 
@@ -17,20 +17,20 @@ After configuration, you can add / remove the configuration you want via menucon
 
 #### nettest
 
-This is the basic configuration of ARTIK053 products. You can set and build the following:
+This is the basic configuration of ARTIK053S products. If you have an ARTIK053S product, use this config.
 
 ```bash
 ~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik053/nettest
+~/TizenRT/os/tools$ ./configure.sh artik053s/nettest
 ```
 
 #### onboard
 
-This is the configuration for the production phase of ARTIK053 product. When you download it to the board, the 'onboard' app will start automatically when it boots.
+This is the configuration for the production phase of ARTIK053S product. If you have an ARTIK053S product, use this config.
 
 ```bash
 ~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik053/onboard
+~/TizenRT/os/tools$ ./configure.sh artik053s/onboard
 ```
 
 ## Environment Set-up
@@ -77,23 +77,24 @@ export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/tools/openocd
 
 At first, programming the complete set of binaries are needed.
 
-#### ARTIK053
+#### ARTIK053S
 ```bash
+../build/configs/artik053s/tools/codesigner/artik053_codesigner -sign ../build/output/bin/tinyara_head.bin
+
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
-    flash_write bl1    ../build/configs/artik053/bin/bl1.bin;      \
-    flash_write bl2    ../build/configs/artik053/bin/bl2.bin;      \
-    flash_write sssfw  ../build/configs/artik053/bin/sssfw.bin;    \
-    flash_write wlanfw ../build/configs/artik053/bin/wlanfw.bin;   \
-    flash_write os     ../build/output/bin/tinyara_head.bin;       \
+    flash_write bl1    ../build/configs/artik053s/bin/bl1.bin;  \
+    flash_write bl2    ../build/configs/artik053s/bin/bl2.bin;         \
+    flash_write sssfw  ../build/configs/artik053s/bin/sssfw.bin;       \
+    flash_write wlanfw ../build/configs/artik053s/bin/wlanfw.bin;      \
+    flash_write os     ../build/output/bin/tinyara_head.bin-signed;   \
     exit'
 ```
 
 Once the complete binaries are successfully programmed, each partition can be updated separately with new one.
 
-In normal model (ARTIK053),
 ```bash
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
-    flash_write os ../build/output/bin/tinyara_head.bin; exit'
+    flash_write os ../build/output/bin/tinyara_head.bin-signed; exit'
 ```
 
 ### Factory Reset
