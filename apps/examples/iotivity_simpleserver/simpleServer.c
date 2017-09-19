@@ -187,12 +187,14 @@ OCRepPayload *constructResponse(OCEntityHandlerRequest *ehRequest)
 	if (OC_REST_PUT == ehRequest->method) {
 		// Get pointer to query
 		int64_t pow;
-		if (OCRepPayloadGetPropInt(input, "power", &pow))
+		if (OCRepPayloadGetPropInt(input, "power", &pow)) {
 			currLightResource->power = pow;
+		}
 
 		bool state;
-		if (OCRepPayloadGetPropBool(input, "state", &state))
+		if (OCRepPayloadGetPropBool(input, "state", &state)) {
 			currLightResource->state = state;
+		}
 	}
 
 	return getPayload(gResourceUri, currLightResource->power, currLightResource->state);
@@ -398,18 +400,27 @@ OCEntityHandlerResult ProcessNonExistingResourceRequest(OCEntityHandlerRequest *
 
 void ProcessObserveRegister(OCEntityHandlerRequest *ehRequest)
 {
+	int ret;
 	OIC_LOG_V(INFO, TAG, "Received observation registration request with observation Id %d", ehRequest->obsInfo.obsId);
 
 	if (!observeThreadStarted) {
 		pthread_attr_t attr;
+		struct sched_param sparam;
 		pthread_attr_init(&attr);
-		(void)pthread_attr_setschedparam(&attr, PTHREAD_DEFAULT_PRIORITY);
+		sparam.sched_priority = PTHREAD_DEFAULT_PRIORITY;
+		(void)pthread_attr_setschedparam(&attr, &sparam);
 #ifdef CONFIG_IOTIVITY_PTHREAD_STACKSIZE
 		(void)pthread_attr_setstacksize(&attr, CONFIG_IOTIVITY_PTHREAD_STACKSIZE);
 #else
 		(void)pthread_attr_setstacksize(&attr, PTHREAD_STACK_DEFAULT);
 #endif
 		pthread_create(&threadId_observe, &attr, ChangeLightRepresentation, (void *)NULL);
+		ret = pthread_create(&threadId_observe, &attr, ChangeLightRepresentation, (void *)NULL);
+		if (ret != 0) {
+			printf("%s: pthread_create failed[%d]\n", __func__, ret);
+			return;
+		}
+		pthread_setname_np(threadId_observe, "ChangeLightRepresentation");
 		observeThreadStarted = 1;
 	}
 	for (uint8_t i = 0; i < SAMPLE_MAX_NUM_OBSERVATIONS; i++) {
@@ -428,14 +439,18 @@ void ProcessObserveDeregister(OCEntityHandlerRequest *ehRequest)
 
 	OIC_LOG_V(INFO, TAG, "Received observation deregistration request for observation Id %d", ehRequest->obsInfo.obsId);
 	for (uint8_t i = 0; i < SAMPLE_MAX_NUM_OBSERVATIONS; i++) {
-		if (interestedObservers[i].observationId == ehRequest->obsInfo.obsId)
+		if (interestedObservers[i].observationId == ehRequest->obsInfo.obsId) {
 			interestedObservers[i].valid = false;
+		}
 		if (interestedObservers[i].valid == true)
 			// Even if there is one single client observing we continue notifying entity handler
+		{
 			clientStillObserving = true;
+		}
 	}
-	if (clientStillObserving == false)
+	if (clientStillObserving == false) {
 		gLightUnderObservation = 0;
+	}
 }
 
 OCEntityHandlerResult OCDeviceEntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHandlerRequest *entityHandlerRequest, char *uri, void *callbackParam)
@@ -494,10 +509,11 @@ OCEntityHandlerResult OCDeviceEntityHandlerCb(OCEntityHandlerFlag flag, OCEntity
 	}
 	if (flag & OC_OBSERVE_FLAG) {
 		OIC_LOG(INFO, TAG, "Flag includes OC_OBSERVE_FLAG");
-		if (OC_OBSERVE_REGISTER == entityHandlerRequest->obsInfo.action)
+		if (OC_OBSERVE_REGISTER == entityHandlerRequest->obsInfo.action) {
 			OIC_LOG(INFO, TAG, "Received OC_OBSERVE_REGISTER from client");
-		else if (OC_OBSERVE_DEREGISTER == entityHandlerRequest->obsInfo.action)
+		} else if (OC_OBSERVE_DEREGISTER == entityHandlerRequest->obsInfo.action) {
 			OIC_LOG(INFO, TAG, "Received OC_OBSERVE_DEREGISTER from client");
+		}
 	}
 
 	return ehResult;
@@ -563,8 +579,9 @@ OCEntityHandlerResult OCEntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHandle
 				uint8_t i = 0;
 				OCHeaderOption *rcvdOptions = entityHandlerRequest->rcvdVendorSpecificHeaderOptions;
 				for (i = 0; i < entityHandlerRequest->numRcvdVendorSpecificHeaderOptions; i++) {
-					if (((OCHeaderOption) rcvdOptions[i]).protocolID == OC_COAP_ID)
+					if (((OCHeaderOption) rcvdOptions[i]).protocolID == OC_COAP_ID) {
 						OIC_LOG_V(INFO, TAG, "Received option with OC_COAP_ID and ID %u with", ((OCHeaderOption) rcvdOptions[i]).optionID);
+					}
 				}
 				OCHeaderOption *sendOptions = response.sendVendorSpecificHeaderOptions;
 				uint8_t option2[] = { 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 };
@@ -676,8 +693,9 @@ void *presenceNotificationGenerator(void *param)
 	}
 	sleep(5);
 	for (int i = 0; i < numPresenceResources; i++) {
-		if (res == OC_STACK_OK)
+		if (res == OC_STACK_OK) {
 			res = OCDeleteResource(presenceNotificationHandles[i]);
+		}
 		if (res != OC_STACK_OK) {
 			OIC_LOG_V(ERROR, TAG, "\"Presence Notification Generator\" failed to delete " "resource %s.", presenceNotificationResources[i]);
 			break;
@@ -793,47 +811,61 @@ OCStackResult SetPlatformInfo(const char *platformID, const char *manufacturerNa
 
 	bool success = true;
 
-	if (manufacturerName != NULL && (strlen(manufacturerName) > MAX_MANUFACTURER_NAME_LENGTH))
+	if (manufacturerName != NULL && (strlen(manufacturerName) > MAX_MANUFACTURER_NAME_LENGTH)) {
 		return OC_STACK_INVALID_PARAM;
+	}
 
-	if (manufacturerUrl != NULL && (strlen(manufacturerUrl) > MAX_MANUFACTURER_URL_LENGTH))
+	if (manufacturerUrl != NULL && (strlen(manufacturerUrl) > MAX_MANUFACTURER_URL_LENGTH)) {
 		return OC_STACK_INVALID_PARAM;
+	}
 
-	if (!DuplicateString(&platformInfo.platformID, platformID))
+	if (!DuplicateString(&platformInfo.platformID, platformID)) {
 		success = false;
+	}
 
-	if (!DuplicateString(&platformInfo.manufacturerName, manufacturerName))
+	if (!DuplicateString(&platformInfo.manufacturerName, manufacturerName)) {
 		success = false;
+	}
 
-	if (!DuplicateString(&platformInfo.manufacturerUrl, manufacturerUrl))
+	if (!DuplicateString(&platformInfo.manufacturerUrl, manufacturerUrl)) {
 		success = false;
+	}
 
-	if (!DuplicateString(&platformInfo.modelNumber, modelNumber))
+	if (!DuplicateString(&platformInfo.modelNumber, modelNumber)) {
 		success = false;
+	}
 
-	if (!DuplicateString(&platformInfo.dateOfManufacture, dateOfManufacture))
+	if (!DuplicateString(&platformInfo.dateOfManufacture, dateOfManufacture)) {
 		success = false;
+	}
 
-	if (!DuplicateString(&platformInfo.platformVersion, platformVersion))
+	if (!DuplicateString(&platformInfo.platformVersion, platformVersion)) {
 		success = false;
+	}
 
-	if (!DuplicateString(&platformInfo.operatingSystemVersion, operatingSystemVersion))
+	if (!DuplicateString(&platformInfo.operatingSystemVersion, operatingSystemVersion)) {
 		success = false;
+	}
 
-	if (!DuplicateString(&platformInfo.hardwareVersion, hardwareVersion))
+	if (!DuplicateString(&platformInfo.hardwareVersion, hardwareVersion)) {
 		success = false;
+	}
 
-	if (!DuplicateString(&platformInfo.firmwareVersion, firmwareVersion))
+	if (!DuplicateString(&platformInfo.firmwareVersion, firmwareVersion)) {
 		success = false;
+	}
 
-	if (!DuplicateString(&platformInfo.supportUrl, supportUrl))
+	if (!DuplicateString(&platformInfo.supportUrl, supportUrl)) {
 		success = false;
+	}
 
-	if (!DuplicateString(&platformInfo.systemTime, systemTime))
+	if (!DuplicateString(&platformInfo.systemTime, systemTime)) {
 		success = false;
+	}
 
-	if (success)
+	if (success) {
 		return OC_STACK_OK;
+	}
 
 	DeletePlatformInfo();
 	return OC_STACK_ERROR;
@@ -841,14 +873,17 @@ OCStackResult SetPlatformInfo(const char *platformID, const char *manufacturerNa
 
 OCStackResult SetDeviceInfoLocal(const char *deviceName, const char *specVersion, const char *dataModelVersions)
 {
-	if (!DuplicateString(&deviceInfo.deviceName, deviceName))
+	if (!DuplicateString(&deviceInfo.deviceName, deviceName)) {
 		return OC_STACK_ERROR;
-	if (!DuplicateString(&deviceInfo.specVersion, specVersion))
+	}
+	if (!DuplicateString(&deviceInfo.specVersion, specVersion)) {
 		return OC_STACK_ERROR;
+	}
 	OCFreeOCStringLL(deviceInfo.dataModelVersions);
 	deviceInfo.dataModelVersions = OCCreateOCStringLL(dataModelVersions);
-	if (!deviceInfo.dataModelVersions)
+	if (!deviceInfo.dataModelVersions) {
 		return OC_STACK_ERROR;
+	}
 	return OC_STACK_OK;
 }
 
@@ -901,7 +936,6 @@ int simpleServer_cb(int argc, char *argv[])
 		printf("OCStack init error\n");
 		return 0;
 	}
-
 #ifdef WITH_PRESENCE
 	if (OCStartPresence(0) != OC_STACK_OK) {
 		OIC_LOG(ERROR, TAG, "OCStack presence/discovery error");
@@ -945,8 +979,9 @@ int simpleServer_cb(int argc, char *argv[])
 	createLightResource(gResourceUri, &Light);
 
 	// Initialize observations data structure for the resource
-	for (uint8_t i = 0; i < SAMPLE_MAX_NUM_OBSERVATIONS; i++)
+	for (uint8_t i = 0; i < SAMPLE_MAX_NUM_OBSERVATIONS; i++) {
 		interestedObservers[i].valid = false;
+	}
 
 	/*
 	 * Create a thread for generating changes that cause presence notifications
@@ -997,15 +1032,15 @@ int simpleServer_cb(int argc, char *argv[])
 
 	printf("Exiting ocserver main loop...");
 
-	if (OCStop() != OC_STACK_OK)
+	if (OCStop() != OC_STACK_OK) {
 		printf("OCStack process error");
+	}
 
 	return 0;
 }
 
-
 int simpleServer_main(int argc, char *argv[])
 {
-	task_create("iotivity_simpleserver", IOTIVITY_TEST_PRI, IOTIVITY_TEST_STACKSIZE, simpleServer_cb, (FAR char * const *)NULL);
+	task_create("iotivity_simpleserver", IOTIVITY_TEST_PRI, IOTIVITY_TEST_STACKSIZE, simpleServer_cb, (FAR char *const *)NULL);
 	return 0;
 }
