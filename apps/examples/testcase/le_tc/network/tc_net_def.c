@@ -28,20 +28,20 @@
 #define TC_VAL2_HEX 0xa000000
 
 /**
-* @testcase             : tc_net_def_lwip_htons
+* @testcase             : tc_net_def_htons
 * @brief                : Convert host bytes to network bytes order
 * @scenario             : Converts host bytes to network bytes for short integer
-* @apicovered           : lwip_htons()
+* @apicovered           : htons()
 * @precondition         :
 * @postcondition        :
 */
-static void tc_net_def_lwip_htons(void)
+static void tc_net_def_htons(void)
 {
 	uint16_t ret;
 	uint16_t ref;
 	uint16_t var = TC_VAL1;
 
-	ret = lwip_htons(var);
+	ret = htons(var);
 	ref = TC_VAL1_HEX;
 
 	TC_ASSERT_EQ("htons", ret, ref);
@@ -49,20 +49,20 @@ static void tc_net_def_lwip_htons(void)
 }
 
 /**
-* @testcase             : tc_net_def_lwip_ntohs
+* @testcase             : tc_net_def_ntohs
 * @brief                : Convert network bytes to hosst bytes order
 * @scenario             : Convert network bytes to hosst bytes for short integer
-* @apicovered           : lwip_ntohs()
+* @apicovered           : ntohs()
 * @precondition         :
 * @postcondition        :
 */
-static void tc_net_def_lwip_ntohs(void)
+static void tc_net_def_ntohs(void)
 {
 	uint16_t ret;
 	uint16_t ref;
 	uint16_t var = TC_VAL1_HEX;
 
-	ret = lwip_ntohs(var);
+	ret = ntohs(var);
 	ref = TC_VAL1;
 
 	TC_ASSERT_EQ("ntohs", ret, ref);
@@ -70,20 +70,20 @@ static void tc_net_def_lwip_ntohs(void)
 }
 
 /**
-* @testcase             : tc_net_def_lwip_htonl
+* @testcase             : tc_net_def_htonl
 * @brief                : Convert host bytes to network bytes order
 * @scenario             : Convert host bytes to network bytes order for long integer
-* @apicovered           : lwip_htonl()
+* @apicovered           : htonl()
 * @precondition         :
 * @postcondition        :
 */
-static void tc_net_def_lwip_htonl(void)
+static void tc_net_def_htonl(void)
 {
 	uint32_t ret;
 	uint32_t ref;
 	uint32_t var = TC_VAL2;
 
-	ret = lwip_htonl(var);
+	ret = htonl(var);
 	ref = TC_VAL2_HEX;
 
 	TC_ASSERT_EQ("htonl", ret, ref);
@@ -91,20 +91,20 @@ static void tc_net_def_lwip_htonl(void)
 }
 
 /**
-* @testcase             : tc_net_def_lwip_ntohl
+* @testcase             : tc_net_def_ntohl
 * @brief                : Convert network bytes to hosst bytes order
 * @scenario             : Convert network bytes to hosst bytes order for long integer
-* @apicovered           : lwip_ntohl()
+* @apicovered           : ntohl()
 * @precondition         :
 * @postcondition        :
 */
-static void tc_net_def_lwip_ntohl(void)
+static void tc_net_def_ntohl(void)
 {
 	uint32_t ret;
 	uint32_t ref;
 	uint32_t var = TC_VAL2_HEX;
 
-	ret = lwip_ntohl(var);
+	ret = ntohl(var);
 	ref = TC_VAL2;
 
 	TC_ASSERT_EQ("ntohl", ret, ref);
@@ -116,9 +116,9 @@ static void tc_net_def_lwip_ntohl(void)
  ****************************************************************************/
 int net_def_main(void)
 {
-	tc_net_def_lwip_htons();
-	tc_net_def_lwip_ntohs();
-	tc_net_def_lwip_htonl();
-	tc_net_def_lwip_ntohl();
+	tc_net_def_htons();
+	tc_net_def_ntohs();
+	tc_net_def_htonl();
+	tc_net_def_ntohl();
 	return 0;
 }

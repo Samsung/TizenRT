@@ -36,7 +36,7 @@
 
 #define PORTNUM 1109
 #define MAXRCVLEN 20
-int mutex = 0;
+static int count_wait = 0;
 /**
 * @fn                   : recv_wait
 * @brief                : function to wait on semaphore
@@ -48,10 +48,10 @@ int mutex = 0;
 */
 void recv_wait(void)
 {
-	while (mutex <= 0) {
+	while (count_wait <= 0) {
 		printf("");
 	}
-	mutex--;
+	count_wait--;
 }
 
 /**
@@ -65,7 +65,7 @@ void recv_wait(void)
 */
 void recv_signal(void)
 {
-	mutex++;
+	count_wait++;
 }
 
 /**
@@ -82,7 +82,7 @@ void tc_net_recv_p(int fd)
 	int ret = recv(fd, buffer, MAXRCVLEN, ZERO);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_NEQ("recv", ret, NEG_VAL);
+	TC_ASSERT_NEQ("tc_net_recv_p", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -101,7 +101,7 @@ void tc_net_recv_n(int fd)
 	int ret = recv(NEG_VAL, buffer, MAXRCVLEN, ZERO);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_EQ("recv", ret, NEG_VAL);
+	TC_ASSERT_EQ("tc_net_recv_n", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -120,7 +120,7 @@ void tc_net_recv_shutdown_n(int fd)
 	int ret = recv(fd, buffer, MAXRCVLEN, ZERO);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_EQ("recv", ret, NEG_VAL);
+	TC_ASSERT_EQ("tc_net_recv_shutdown_n", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -139,7 +139,7 @@ void tc_net_recv_close_n(int fd)
 	int ret = recv(fd, buffer, MAXRCVLEN, ZERO);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_EQ("recv", ret, NEG_VAL);
+	TC_ASSERT_EQ("tc_net_recv_close_n", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -157,8 +157,8 @@ void *recv_server(void *args)
 	int ConnectFD;
 	struct sockaddr_in sa;
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
-	memset(&sa, 0, sizeof(sa));
 
+	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -183,9 +183,10 @@ void *recv_server(void *args)
 */
 void *recv_client(void *args)
 {
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in dest;
 	int ret;
+
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -203,7 +204,7 @@ void *recv_client(void *args)
 }
 
 /**
-* @fn                  : tc_net_recv
+* @fn                  : net_recv
 * @brief               :
 * @scenario            :
 * API's covered        :
@@ -211,7 +212,7 @@ void *recv_client(void *args)
 * Postconditions       :
 * @return              : void
 */
-void tc_net_recv(void)
+void net_recv(void)
 {
 	pthread_t Server, Client;
 
@@ -226,6 +227,6 @@ void tc_net_recv(void)
  ****************************************************************************/
 int net_recv_main(void)
 {
-	tc_net_recv();
+	net_recv();
 	return 0;
 }

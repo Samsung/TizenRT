@@ -39,7 +39,7 @@
 /**
 * @testcase            : tc_net_netdb_p
 * @brief               : freeaddrinfo() has no way to check errors.
-* @scenario            : 
+* @scenario            :
 * @apicovered          : getaddrinfo() freeaddrinfo()
 * @precondition        : none
 * @postcondition       : none

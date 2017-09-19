@@ -59,11 +59,11 @@ static void tc_net_ether_ntoa_p(int sock_udp)
 	ifr = ifcfg.ifc_req;
 
 	ret = ioctl(sock_udp, SIOCGIFCONF, (unsigned long)&ifcfg);
-	TC_ASSERT_GEQ("ether_ntoa", ret, ZERO);
+	TC_ASSERT_EQ_CLEANUP("ioctl", ret, ZERO, TC_FREE_MEMORY(ifcfg.ifc_buf));
 
 	strncpy(tmp.ifr_name, ifr->ifr_name, 6);
 	ret = ioctl(sock_udp, SIOCGIFHWADDR, (unsigned long)&tmp);
-	TC_ASSERT_GEQ("ether_ntoa", ret, ZERO);
+	TC_ASSERT_GEQ_CLEANUP("ioctl", ret, ZERO, TC_FREE_MEMORY(ifcfg.ifc_buf));
 
 	sa = &tmp.ifr_hwaddr;
 	buffer = (FAR char *)ether_ntoa((struct ether_addr *)sa->sa_data);

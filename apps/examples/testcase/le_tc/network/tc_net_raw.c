@@ -39,7 +39,7 @@ static void tc_net_raw_send_n(void)
 	ret = raw_bind(raw, &loop_ipaddr);
 	TC_ASSERT_EQ("raw_bind", ret, ZERO);
 	ret = raw_send(raw, pbuf);
-	TC_ASSERT_NEQ("raw_connect", ret, 0);
+	TC_ASSERT_NEQ("raw_connect", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -59,8 +59,7 @@ static void tc_net_raw_connect_n(void)
 	raw = (struct raw_pcb *)raw_new(IP_PROTO_TCP);
 	ret = raw_connect(raw, NULL);
 	raw_remove(raw);
-
-	TC_ASSERT_EQ("raw_connect", ret, 0);
+	TC_ASSERT_EQ("raw_connect", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -83,7 +82,7 @@ static void tc_net_raw_connect_p(void)
 	ret = raw_connect(raw, loop_ipaddr);
 
 	raw_remove(raw);
-	TC_ASSERT_EQ("raw_connect", ret, 0);
+	TC_ASSERT_EQ("raw_connect", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -97,7 +96,7 @@ static void tc_net_raw_connect_p(void)
 */
 static void tc_net_raw_bind_n(void)
 {
-	int ret = -1;
+	int ret;
 
 	ret = raw_bind(NULL, NULL);
 	TC_ASSERT_NEQ("raw_bind", ret, ZERO);
@@ -123,7 +122,7 @@ static void tc_net_raw_bind_p(void)
 	ret = raw_bind(raw, &loop_ipaddr);
 
 	raw_remove(raw);
-	TC_ASSERT_EQ("raw_bind", ret, 0);
+	TC_ASSERT_EQ("raw_bind", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 

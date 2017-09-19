@@ -25,7 +25,6 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
 
 #include <sys/socket.h>

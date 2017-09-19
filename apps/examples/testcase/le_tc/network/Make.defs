@@ -176,9 +176,6 @@ endif
 ifeq ($(CONFIG_TC_NET_RAW),y)
 CSRCS +=tc_net_raw.c
 endif
-ifeq ($(CONFIG_TC_NET_IP_FRAG),y)
-CSRCS +=tc_net_netif_ip_frag.c
-endif
 ifeq ($(CONFIG_TC_IGMP),y)
 CSRCS +=tc_net_igmp.c
 endif

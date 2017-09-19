@@ -76,7 +76,7 @@ int network_tc_main(int argc, char *argv[])
 	net_getsockname_main();
 #endif
 #ifdef CONFIG_TC_NET_GETSOCKOPT
-	net_getsockopt_main(sock_tcp);
+	net_getsockopt_main();
 #endif
 #ifdef CONFIG_TC_NET_FCNTL
 	net_fcntl_main(sock_tcp);
@@ -161,9 +161,6 @@ int network_tc_main(int argc, char *argv[])
 #endif
 #ifdef CONFIG_LWIP_NETIFAPI
 	net_lwip_netifapi_main();
-#endif
-#ifdef CONFIG_TC_NET_IP_FRAG
-	tc_ip_frag_main();
 #endif
 #ifdef CONFIG_TC_NET_RAW
 	tc_net_raw_main();

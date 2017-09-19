@@ -54,8 +54,8 @@ static void tc_net_stats_display_proto_n(void)
 		stats_display_proto(&proto->tcp, "TCP");
 		ret = 0;
 	}
-	TC_ASSERT_NEQ("stats_display_proto", ret, 0)
-	free(proto);
+	TC_ASSERT_NEQ("stats_display_proto", ret, ZERO)
+	TC_FREE_MEMORY(proto);
 	TC_SUCCESS_RESULT()
 }
 
@@ -76,7 +76,7 @@ static void tc_net_stats_sys_n(void)
 /**
 * @testcase              : tc_net_stats_sys_p
 * @brief                 : display the sys stats
-* @scenario              : show all stats 
+* @scenario              : show all stats
 * @apicovered            : stats_display_sys
 * @precondition          : none
 * @postcondition         : none

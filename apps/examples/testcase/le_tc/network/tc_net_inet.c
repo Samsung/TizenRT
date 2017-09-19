@@ -83,21 +83,37 @@ static void tc_inet_chksum_pseudo_partial_p(void)
 	int checksum = 0;
 
 	source = (ip_addr_t *)malloc(sizeof(ip_addr_t));
+	TC_ASSERT_NEQ("malloc", source, NULL);
+
 	dest = (ip_addr_t *)malloc(sizeof(ip_addr_t));
+	TC_ASSERT_NEQ_CLEANUP("malloc", dest, NULL, TC_FREE_MEMORY(source));
+
 	ipaddr_aton("198.51.100.4", source);
 	ipaddr_aton("198.52.100.5", dest);
 	p1 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_malloc", p1, NULL, goto cleanup1);
+
 	p2 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_malloc", p2, NULL, goto cleanup2);
+
 	p3 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_malloc", p3, NULL, goto cleanup3);
+
 	p4 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_malloc", p4, NULL, goto cleanup4);
+
 	pbuf_chain(p1, p4);
 	checksum = inet_chksum_pseudo_partial(p1, source, dest, 6, PBUF_RAM, 6);
+	pbuf_free(p4);
+cleanup4:
+	pbuf_free(p3);
+cleanup3:
+	pbuf_free(p2);
+cleanup2:
+	pbuf_free(p1);
+cleanup1:
 	TC_FREE_MEMORY(source);
 	TC_FREE_MEMORY(dest);
-	pbuf_free(p1);
-	pbuf_free(p2);
-	pbuf_free(p3);
-	pbuf_free(p4);
 	TC_ASSERT_NEQ("inet_chksum_pseudo_partial", checksum, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -115,7 +131,6 @@ static void tc_net_inet_addr_p(void)
 	unsigned int ret;
 
 	ret = inet_addr("127.0.0.1");
-
 	TC_ASSERT_NEQ("inet", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -134,7 +149,6 @@ static void tc_net_inet_aton_p(void)
 	unsigned long ret;
 
 	ret = inet_aton("127.0.0.1", &addr_inet.sin_addr);
-
 	TC_ASSERT_NEQ("inet", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -155,7 +169,7 @@ static void tc_net_inet_ntoa_p(void)
 	addr_inet.sin_addr.s_addr = 0x6601a8c0;
 	ret = inet_ntoa(addr_inet.sin_addr);
 
-	TC_ASSERT_NEQ("inet", *ret, -1);
+	TC_ASSERT_NEQ("inet", *ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -198,7 +212,7 @@ static void tc_net_inet_ntop(void)
 * @testcase           : tc_net_inet_pton
 * @brief              : converts text address to numeric format
 * @scenario           :
-* @apicovered         : inet_pton() 
+* @apicovered         : inet_pton()
 * @precondition       :
 * @postcondition      :
 */
@@ -238,11 +252,9 @@ static void tc_net_htons(void)
 {
 	uint16_t var = 20;
 	uint16_t ret;
-	uint16_t ref;
+	uint16_t ref = 0x1400;
 
 	ret = htons(var);
-	ref = 0x1400;
-
 	TC_ASSERT_EQ("inet", ret, ref);
 	TC_SUCCESS_RESULT();
 }
@@ -259,11 +271,9 @@ static void tc_net_ntohs(void)
 {
 	uint16_t var = 0x1400;
 	uint16_t ret;
-	uint16_t ref;
+	uint16_t ref = 20;
 
 	ret = ntohs(var);
-	ref = 20;
-
 	TC_ASSERT_EQ("inet", ret, ref);
 	TC_SUCCESS_RESULT();
 }
@@ -280,11 +290,9 @@ static void tc_net_htonl(void)
 {
 	uint32_t var = 10;
 	uint32_t ret;
-	uint32_t ref;
+	uint32_t ref = 0xa000000;
 
 	ret = htonl(var);
-	ref = 0xa000000;
-
 	TC_ASSERT_EQ("inet", ret, ref);
 	TC_SUCCESS_RESULT();
 }
@@ -301,11 +309,9 @@ static void tc_net_ntohl(void)
 {
 	uint32_t var = 0xa000000;
 	uint32_t ret;
-	uint32_t ref;
+	uint32_t ref = 10;
 
 	ret = ntohl(var);
-	ref = 10;
-
 	TC_ASSERT_EQ("inet", ret, ref);
 	TC_SUCCESS_RESULT();
 }

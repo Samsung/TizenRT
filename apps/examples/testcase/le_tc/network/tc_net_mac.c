@@ -29,7 +29,7 @@
 /**
 * @statitcase            : tc_net_checksd_p
 * @brief                 : Check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
-* @scenario              :   
+* @scenario              :
 * @apicovered            : net_checksd
 * @precondition          : none
 * @postcondition         : none
@@ -39,14 +39,14 @@ static void tc_net_checksd_p(int sock)
 	int result;
 
 	result = net_checksd(sock, 0666);
-	TC_ASSERT_EQ("tc_net_checksd_p", result, 0);
+	TC_ASSERT_EQ("tc_net_checksd_p", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @statitcase            : tc_net_checksd_n
 * @brief                 : Check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
-* @scenario              : 
+* @scenario              :
 * @apicovered            : net_checksd
 * @precondition          : none
 * @postcondition         : none
@@ -63,7 +63,7 @@ static void tc_net_checksd_n(void)
 /**
 * @statitcase            : tc_net_clone_p
 * @brief                 : Performs the low level, common portion of net_dupsd() and net_dupsd2().
-* @scenario              :   
+* @scenario              :
 * @apicovered            : net_clone, socket, get_socket
 * @precondition          : none
 * @postcondition         : none
@@ -87,7 +87,7 @@ static void tc_net_clone_p(int sockfd1, int sockfd2)
 /**
 * @statitcase            : tc_net_dupsd2_p
 * @brief                 : Clone a socket descriptor to an arbitray descriptor number.
-* @scenario              :   
+* @scenario              :
 * @apicovered            : net_dupsd2
 * @precondition          : none
 * @postcondition         : none
@@ -104,7 +104,7 @@ static void tc_net_dupsd2_p(int old_fd, int new_fd)
 /**
 * @statitcase            : tc_net_dupsd2_n
 * @brief                 : Clone a socket descriptor to an arbitray descriptor number.
-* @scenario              :   
+* @scenario              :
 * @apicovered            : net_dupsd2
 * @precondition          : none
 * @postcondition         : none
@@ -121,7 +121,7 @@ static void tc_net_dupsd2_n(int old_fd, int new_fd)
 /**
 * @statitcase            : tc_net_ethernetif_status_callback_p
 * @brief                 : prints the IP address in dotted decimal format
-* @scenario              :   
+* @scenario              :
 * @apicovered            : ethernetif_status_callback
 * @precondition          : none
 * @postcondition         : none
@@ -140,7 +140,7 @@ static void tc_net_ethernetif_status_callback_p(void)
 /**
 * @statitcase            : tc_net_ethernetif_init
 * @brief                 : Should be called at the beginning of the program to set up the network interface.
-* @scenario              :   
+* @scenario              :
 * @apicovered            : ethernetif_init
 * @precondition          : none
 * @postcondition         : none
@@ -154,21 +154,20 @@ static void tc_net_ethernetif_init(void)
 
 	result = ethernetif_init(netif);
 	TC_FREE_MEMORY(netif);
-	TC_ASSERT_EQ("tc_net_ethernetif_init_p", result, 0);
+	TC_ASSERT_EQ("tc_net_ethernetif_init", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @statitcase            : net_mac_main
 * @brief                 :
-* @scenario              :   
+* @scenario              :
 * @apicovered            :
 * @precondition          :
 * @postcondition         :
 */
 int net_mac_main(int sock, int sock1)
 {
-
 	tc_net_checksd_p(sock);
 	tc_net_checksd_n();
 	tc_net_clone_p(sock, sock1);
@@ -176,6 +175,5 @@ int net_mac_main(int sock, int sock1)
 	tc_net_dupsd2_n(NEG_VAL, sock1);
 	tc_net_ethernetif_status_callback_p();
 	tc_net_ethernetif_init();
-
 	return 0;
 }

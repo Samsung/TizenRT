@@ -69,7 +69,7 @@ static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 	int ret = connect(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
 	close(fd);
 
-	TC_ASSERT_EQ("connect", ret, -1);
+	TC_ASSERT_EQ("connect", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }

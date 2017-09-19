@@ -26,9 +26,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
@@ -46,12 +44,13 @@
 */
 static void tc_net_listen_p(void)
 {
-	struct sockaddr_in sa;
 	int ret;
+	struct sockaddr_in sa;
+
 	int sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	memset(&sa, 0, sizeof sa);
-
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -61,7 +60,6 @@ static void tc_net_listen_p(void)
 	TC_SUCCESS_RESULT();
 
 	ret = (listen(sock, 10));
-
 	close(sock);
 	TC_ASSERT_NEQ("listen", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
@@ -77,11 +75,13 @@ static void tc_net_listen_p(void)
 */
 static void tc_net_listen_fd_n(void)
 {
-	struct sockaddr_in sa;
 	int ret;
-	int fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	memset(&sa, 0, sizeof sa);
+	struct sockaddr_in sa;
 
+	int fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
+
+	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1101);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -105,11 +105,13 @@ static void tc_net_listen_fd_n(void)
 */
 static void tc_net_listen_backlog_p(void)
 {
-	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	int ret;
-	memset(&sa, 0, sizeof sa);
+	struct sockaddr_in sa;
 
+	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	TC_ASSERT_NEQ("socket", SocketFD, NEG_VAL);
+
+	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1100);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -127,18 +129,20 @@ static void tc_net_listen_backlog_p(void)
 /**
 * @testcase            : tc_net_listen_fd_backlog_n
 * @brief               : maintain a connection request queue
-* @scenario            : 
+* @scenario            :
 * @apicovered          : listen(), bind()
 * @precondition        : none
 * @postcondition       : none
 */
 static void tc_net_listen_fd_backlog_n(void)
 {
-	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	int ret;
-	memset(&sa, 0, sizeof sa);
+	struct sockaddr_in sa;
 
+	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	TC_ASSERT_NEQ("socket", SocketFD, NEG_VAL);
+
+	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1100);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);

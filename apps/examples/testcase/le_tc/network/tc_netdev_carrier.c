@@ -106,30 +106,13 @@ static void tc_netdev_carrier_off_n(void)
 }
 
 /**
-* @testcase             : tc_netdev_count
-* @brief                : Get number of network devices
-* @scenario             : Get number of network devices count
-* @apicovered           : netdev_count
+* @testcase             : tc_test_function
+* @brief                : helper func
+* @scenario             :
+* @apicovered           :
 * @precondition         :
 * @postcondition        :
 */
-static void tc_netdev_count(void)
-{
-	int ndev;
-	struct netif *dev;
-
-	dev = g_netdevices;
-	ndev = netdev_count();
-
-	if (dev != NULL) {
-		TC_ASSERT_GEQ("netdev", ndev, ONE);
-	} else {
-		TC_ASSERT_EQ("netdev", ndev, ZERO);
-	}
-
-	TC_SUCCESS_RESULT();
-}
-
 static int tc_test_function(struct netif *dev)
 {
 	return ZERO;
@@ -165,7 +148,6 @@ int netdev_carrier_main(void)
 	tc_netdev_carrier_on_n();
 	tc_netdev_carrier_off_p();
 	tc_netdev_carrier_off_n();
-	tc_netdev_count();
 	tc_netdev_ifdown();
 	return 0;
 }

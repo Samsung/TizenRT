@@ -25,7 +25,6 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
 
 #include <sys/socket.h>
@@ -35,7 +34,7 @@
 /**
 * @testcase            : tc_net_fcntl_nonblock_p
 * @brief               : to set or clear file control parameters
-* @scenario            : 
+* @scenario            :
 * @apicovered          : fcntl()
 * @precondition        :
 * @postcondition       :

@@ -55,7 +55,6 @@ void tc_net_mem_calloc_p(void)
 
 	tc_net_mem_trim_p(p1);
 	mem_free(p1);
-
 	TC_SUCCESS_RESULT();
 }
 

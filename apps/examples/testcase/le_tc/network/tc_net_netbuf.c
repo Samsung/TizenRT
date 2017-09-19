@@ -21,22 +21,8 @@
 #include "tc_internal.h"
 
 /**
-* @testcase             : tc_net_netbuf_start_n
-* @brief                : Move the current data pointer of a packet buffer contained in a netbuf to frist
-* @scenario             : the netbuf to modify
-* @apicovered           : netbuf_first
-* @precondition         :
-* @postcondition        :
-*/
-static void tc_net_netbuf_start_n(void)
-{
-	netbuf_first(NULL);
-	TC_SUCCESS_RESULT();
-}
-
-/**
 * @testcase             : tc_net_netbuf_start_p
-* @brief                : Move the current data pointer of a packet buffer contained in a netbuf to frist 
+* @brief                : Move the current data pointer of a packet buffer contained in a netbuf to frist
 * @scenario             : the netbuf to modify
 * @apicovered           : tc_net_netbuf_start_p
 * @precondition         :
@@ -48,6 +34,7 @@ static void tc_net_netbuf_start_p(void)
 	u16_t smallsize = 0;
 
 	buf1 = netbuf_new();
+	TC_ASSERT_EQ("netbuf_new", buf1, NULL);
 	netbuf_alloc(buf1, smallsize);
 	netbuf_alloc(buf1, smallsize);
 
@@ -88,7 +75,7 @@ static void tc_netbuf_next_more_buff(void)
 	buf4 = NULL;
 	netbuf_delete(buf5);
 	buf5 = NULL;
-	TC_ASSERT_NEQ("netbuf_next", res, 1);
+	TC_ASSERT_NEQ("netbuf_next", res, ONE);
 	TC_SUCCESS_RESULT();
 }
 
@@ -108,7 +95,7 @@ static void tc_netbuf_next_move_no_next(void)
 	buf1 = netbuf_new();
 	ret = netbuf_next(buf1);
 	netbuf_delete(buf1);
-	TC_ASSERT_NEQ("netbuf_next", ret, 0);
+	TC_ASSERT_NEQ("netbuf_next", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -128,7 +115,7 @@ static void tc_netbuf_next_no_next(void)
 
 	ret = netbuf_next(buf);
 	netbuf_delete(buf);
-	TC_ASSERT_EQ("netbuf_next", ret, 0);
+	TC_ASSERT_EQ("netbuf_next", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -207,11 +194,11 @@ static void tc_net_netbuf_chain_p(void)
 static void tc_net_netbuf_new_p(void)
 {
 	struct netbuf *buf = NULL;
-	buf = netbuf_new();
 
+	buf = netbuf_new();
 	TC_ASSERT_NEQ("netbuf_new", buf, NULL);
 	netbuf_delete(buf);
-	buf = NULL;
+	TC_ASSERT_EQ("tc_net_netbuf_new_p", buf->p, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -225,6 +212,5 @@ int tc_net_netbuf_main(void)
 	tc_net_netbuf_chain_n();
 	tc_net_netbuf_next_n();
 	tc_net_netbuf_start_p();
-	tc_net_netbuf_start_n();
 	return 0;
 }

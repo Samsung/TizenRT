@@ -36,7 +36,7 @@
 
 #define PORTNUM 1111
 #define MAXRCVLEN 20
-int mutex1 = 0;
+static int count_wait = 0;
 
 /**
 * @testcase            : tc_net_recvfrom_p
@@ -96,7 +96,7 @@ void tc_net_recvfrom_n(int fd)
 }
 
 /**
-* @fn                 : recvfrom_server
+* @fn                 : recvfrom_udpserver
 * @brief              : udp server
 * @scenario           : used for UDP connection
 * API's covered       : socket,bind
@@ -104,14 +104,13 @@ void tc_net_recvfrom_n(int fd)
 * Postconditions      : none
 * @return             : void
 */
-
 void *recvfrom_udpserver(void *args)
 {
 	struct sockaddr_in sa;
+
 	int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
 	memset(&sa, 0, sizeof(sa));
-
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -126,7 +125,7 @@ void *recvfrom_udpserver(void *args)
 }
 
 /**
-* @fn                   : recvfrom_client
+* @fn                   : recvfrom_udpclient
 * @brief                : udp client
 * @scenario             : used for UDP connection
 * API's covered         : socket,sendto
@@ -167,11 +166,11 @@ void *recvfrom_udpclient(void *args)
 */
 void recvfrom_wait(void)
 {
-	while (mutex1 <= 0) {
+	while (count_wait <= 0) {
 
 		printf("");
 	}
-	mutex1--;
+	count_wait--;
 }
 
 /**
@@ -185,7 +184,7 @@ void recvfrom_wait(void)
 */
 void recvfrom_signal(void)
 {
-	mutex1++;
+	count_wait++;
 }
 
 /**
@@ -214,7 +213,6 @@ void tc_net_recvfrom_tcp_p(int fd)
 * @precondition         : none
 * @postcondition        : none
 */
-
 void tc_net_recvfrom_tcp_conn_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -234,7 +232,6 @@ void tc_net_recvfrom_tcp_conn_n(int fd)
 * @precondition         : none
 * @postcondition        : none
 */
-
 void tc_net_recvfrom_tcp_sock_n(int fd)
 {
 	char buffer[MAXRCVLEN];
@@ -272,7 +269,7 @@ void tc_net_recvfrom_tcp_n(void)
 * Postconditions        : noen
 * @return               : void
 */
-void* recvfrom_tcpserver(void* args)
+void *recvfrom_tcpserver(void *args)
 {
 	int i;
 	int ConnectFD;
@@ -281,7 +278,6 @@ void* recvfrom_tcpserver(void* args)
 	int sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	memset(&sa, 0, sizeof(sa));
-
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -302,7 +298,7 @@ void* recvfrom_tcpserver(void* args)
 }
 
 /**
-* @fn                   : recvfrom_client
+* @fn                   : recvfrom_tcpclient
 * @brief                : TCP client thread
 * @scenario             : Used for TCP connection
 * API's covered         : socket,connect,close
@@ -310,7 +306,7 @@ void* recvfrom_tcpserver(void* args)
 * Postconditions        : none
 * @return               : void
 */
-void* recvfrom_tcpclient(void *args)
+void *recvfrom_tcpclient(void *args)
 {
 	int newsoc = 0;
 	struct sockaddr_in dest;
@@ -326,7 +322,6 @@ void* recvfrom_tcpclient(void *args)
 	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 
 	tc_net_recvfrom_tcp_p(sock);
-
 	tc_net_recvfrom_tcp_n();
 	tc_net_recvfrom_tcp_sock_n(newsoc);
 	tc_net_recvfrom_tcp_conn_n(sock);
@@ -336,36 +331,26 @@ void* recvfrom_tcpclient(void *args)
 }
 
 /**
-* @fn                  : tc_net_recvfrom
-* @brief               :
+* @fn                  : net_recvfrom
+* @brief               : creating thread for client and server
 * @scenario            :
 * API's covered        :
 * Preconditions        :
 * Postconditions       :
 * @return              : void
 */
-void tc_net_recvfrom(int sock)
+void net_recvfrom(void)
 {
 	pthread_t Server, Client, tcpserver, tcpclient;
-	int ret;
 
-	ret = pthread_create(&Server, NULL, recvfrom_udpserver, &sock);
-	TC_ASSERT_EQ("pthread_create", ret, ZERO);
-
-	ret = pthread_create(&Client, NULL, recvfrom_udpclient, NULL);
-	TC_ASSERT_EQ("pthread_create", ret, ZERO);
-	ret = pthread_join(Server, NULL);
-	TC_ASSERT_EQ("pthread_join", ret, ZERO);
-	ret = pthread_join(Client, NULL);
-	TC_ASSERT_EQ("pthread_join", ret, ZERO);
-	ret = pthread_create(&tcpserver, NULL, recvfrom_tcpserver, NULL);
-	TC_ASSERT_EQ("pthread_create", ret, ZERO);
-	ret = pthread_create(&tcpclient, NULL, recvfrom_tcpclient, NULL);
-	TC_ASSERT_EQ("pthread_create", ret, ZERO);
-	ret = pthread_join(tcpserver, NULL);
-	TC_ASSERT_EQ("pthread_join", ret, ZERO);
-	ret = pthread_join(tcpclient, NULL);
-	TC_ASSERT_EQ("pthread_join", ret, ZERO);
+	pthread_create(&Server, NULL, recvfrom_udpserver, NULL);
+	pthread_create(&Client, NULL, recvfrom_udpclient, NULL);
+	pthread_join(Server, NULL);
+	pthread_join(Client, NULL);
+	pthread_create(&tcpserver, NULL, recvfrom_tcpserver, NULL);
+	pthread_create(&tcpclient, NULL, recvfrom_tcpclient, NULL);
+	pthread_join(tcpserver, NULL);
+	pthread_join(tcpclient, NULL);
 }
 
 /****************************************************************************
@@ -373,6 +358,6 @@ void tc_net_recvfrom(int sock)
  ****************************************************************************/
 int net_recvfrom_main(void)
 {
-	tc_client_server();
+	net_recvfrom();
 	return 0;
 }

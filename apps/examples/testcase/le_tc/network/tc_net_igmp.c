@@ -65,7 +65,7 @@ static err_t default_netif_linkoutput(struct netif *netif, struct pbuf *p)
 * @scenario            : initilize the default value of netif interface
 * @API's covered       : none
 * @Preconditions       : none
-* @Postconditions      : return 0 
+* @Postconditions      : return 0
 */
 static err_t default_netif_init(struct netif *netif)
 {
@@ -136,39 +136,6 @@ static void etharp_teardown(void)
 }
 
 /**
-* @testcase            : tc_etharp_free_entry
-* @brief               : Clean up ARP table entries
-* @scenario            : ARP table preivous it check and remove them
-* @apicovered          : etharp_free_entry
-* @precondition        : Need to know Index of table
-* @postcondition       : none
-*/
-static void tc_etharp_free_entry(void)
-{
-	int i = 1;
-
-	etharp_free_entry(i);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase            : tc_free_etharp_q
-* @brief               : Free a complete queue of etharp entries
-* @scenario            : check the queue and remove ar ARP entries
-* @apicovered          : free_etharp_q
-* @precondition        : Should be one etharp entries
-* @postcondition       : none
-*/
-static void tc_free_etharp_q(void)
-{
-	struct etharp_q_entry *q = NULL;
-	q = (struct etharp_q_entry *)malloc(sizeof(struct etharp_q_entry));
-
-	free_etharp_q(q);
-	TC_SUCCESS_RESULT();
-}
-
-/**
 * @testcase            : tc_etharp_add_static_n
 * @brief               :
 * @scenario            :
@@ -180,7 +147,7 @@ static void tc_etharp_find_addr_n(void)
 {
 	int ret = 0;
 	etharp_find_addr(NULL, NULL, NULL, NULL);
-	TC_ASSERT_EQ("etharp_find_addr", ret, -1);
+	TC_ASSERT_EQ("etharp_find_addr", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -206,7 +173,7 @@ static void tc_etharp_find_addr_p(void)
 
 	ret = etharp_add_static_entry(&adrs[ARP_TABLE_SIZE], &test_ethaddr);
 	etharp_find_addr(NULL, &adrs[ARP_TABLE_SIZE], &unused_ethaddr, &unused_ipaddr);
-	TC_ASSERT_NEQ("etharp_find_addr", ret, 1);
+	TC_ASSERT_NEQ("etharp_find_addr", ret, ONE);
 	TC_SUCCESS_RESULT();
 }
 
@@ -220,10 +187,10 @@ static void tc_etharp_find_addr_p(void)
 */
 static void tc_igmp_removegroup_n(void)
 {
-	int ret = -1;
+	int ret;
 
 	ret = igmp_remove_group(NULL);
-	TC_ASSERT_EQ("igmp_removegroup", ret, 0);
+	TC_ASSERT_EQ("igmp_removegroup", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -244,9 +211,9 @@ static void tc_igmp_removegroup_p(void)
 	etharp_setup();
 	groupaddr = (ip_addr_t *) igmp_lookup_group(&test_netif, &ifaddr);
 	ret = igmp_remove_group(groupaddr);
-	TC_ASSERT_EQ("igmp_removeroup", ret, 0);
-	TC_SUCCESS_RESULT();
 	etharp_teardown();
+	TC_ASSERT_EQ("igmp_removeroup", ret, ZERO);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -262,7 +229,7 @@ void tc_igmp_leavegroup_n(void)
 	int ret;
 
 	ret = igmp_leavegroup(NULL, NULL);
-	TC_ASSERT_NEQ("igmp_leavegroup", ret, 0);
+	TC_ASSERT_NEQ("igmp_leavegroup", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -285,10 +252,10 @@ void tc_igmp_leavegroup_p(void)
 	groupaddr = (ip_addr_t *) igmp_lookup_group(&test_netif, ifaddr);
 	ipaddr_aton("198.51.100.4", ifaddr);
 	ret = igmp_leavegroup(ifaddr, groupaddr);
-	TC_FREE_MEMORY(ifaddr);
-	TC_ASSERT_EQ("igmp_leavegroup", ret, 0);
-	TC_SUCCESS_RESULT();
 	etharp_teardown();
+	TC_FREE_MEMORY(ifaddr);
+	TC_ASSERT_EQ("igmp_leavegroup", ret, ZERO);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -304,7 +271,7 @@ static void tc_igmp_joingroup_n(void)
 	int ret;
 
 	ret = igmp_joingroup(NULL, NULL);
-	TC_ASSERT_NEQ("igmp_joingroup", ret, 0);
+	TC_ASSERT_NEQ("igmp_joingroup", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -327,10 +294,10 @@ static void tc_igmp_joingroup_p(void)
 	groupaddr = (ip_addr_t *) igmp_lookup_group(&test_netif, ifaddr);
 	ipaddr_aton("198.51.100.4", ifaddr);
 	ret = igmp_joingroup(ifaddr, groupaddr);
-	TC_FREE_MEMORY(ifaddr);
-	TC_ASSERT_EQ("igmp_joingroup", ret, 0);
-	TC_SUCCESS_RESULT();
 	etharp_teardown();
+	TC_FREE_MEMORY(ifaddr);
+	TC_ASSERT_EQ("igmp_joingroup", ret, ZERO);
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
@@ -346,8 +313,5 @@ int net_igmp_main(void)
 	tc_igmp_removegroup_n();
 	tc_etharp_find_addr_p();
 	tc_etharp_find_addr_n();
-	tc_etharp_free_entry();
-	tc_free_etharp_q();
-
 	return 0;
 }

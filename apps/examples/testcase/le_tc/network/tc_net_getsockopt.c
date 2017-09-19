@@ -25,7 +25,6 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
 
 #include <sys/socket.h>
@@ -39,15 +38,20 @@
 * @precondition         : socket file descriptor
 * @postcondition        :
 */
-static void tc_net_getsockopt_multicast_ttl_p(int sock)
+static void tc_net_getsockopt_multicast_ttl_p(void)
 {
 	int ret;
 	socklen_t optval = 1;
 	socklen_t optlen = sizeof(optval);
+
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
 	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &optval, optlen);
 	TC_ASSERT_EQ("setsockopt", ret, ZERO);
 
 	ret = getsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &optval, &optlen);
+	close(sock);
 	TC_ASSERT_GEQ("getsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -60,14 +64,19 @@ static void tc_net_getsockopt_multicast_ttl_p(int sock)
 * @precondition         : socket file descriptor
 * @postcondition        :
 */
-static void tc_net_getsockopt_multicast_ttl_loop_own_p(int sock)
+static void tc_net_getsockopt_multicast_ttl_loop_own_p(void)
 {
-	int ret = NEG_VAL;
+	int ret;
 	socklen_t loop = ONE;
 	socklen_t looplen = sizeof(loop);
+
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
 	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
 	TC_ASSERT_EQ("setsockopt", ret, ZERO);
 	ret = getsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &loop, &looplen);
+	close(sock);
 	TC_ASSERT_GEQ("getsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -80,15 +89,20 @@ static void tc_net_getsockopt_multicast_ttl_loop_own_p(int sock)
 * @precondition         : socket file descriptor
 * @postcondition        :
 */
-static void tc_net_getsockopt_multicast_ttl_loop_p(int sock)
+static void tc_net_getsockopt_multicast_ttl_loop_p(void)
 {
 	int ret;
-	socklen_t loop = 250;
+	socklen_t loop = 1;
 	socklen_t looplen = sizeof(loop);
+
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
 	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
 	TC_ASSERT_EQ("setsockopt", ret, ZERO);
 
 	ret = getsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &loop, &looplen);
+	close(sock);
 	TC_ASSERT_GEQ("getsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -123,12 +137,14 @@ static void tc_net_getsockopt_invalid_filedesc_n(void)
 * @precondition         : socket file descriptor
 * @postcondition        :
 */
-static void tc_net_getsockopt_optval_n(int sock)
+static void tc_net_getsockopt_optval_n(void)
 {
 	int ret;
-
 	socklen_t optval = 1;
 	socklen_t optlen = sizeof(optval);
+
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	ret = setsockopt(sock, SOL_SOCKET, 0, 0, 0);
 	TC_ASSERT_NEQ("setsockopt", ret, ZERO);
@@ -136,6 +152,7 @@ static void tc_net_getsockopt_optval_n(int sock)
 	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &optval, optlen);
 	TC_ASSERT_EQ("setsockopt", ret, NEG_VAL);
 	ret = getsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, NULL, NULL);
+	close(sock);
 	TC_ASSERT_EQ("getsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -148,16 +165,20 @@ static void tc_net_getsockopt_optval_n(int sock)
 * @precondition         : socket file descriptor
 * @postcondition        :
 */
-static void tc_net_getsockopt_sol_socket_so_acceptconn_p(int sock)
+static void tc_net_getsockopt_sol_socket_so_acceptconn_p(void)
 {
 	int ret;
 	socklen_t optval = 1;
 	socklen_t optlen = sizeof(optval);
-	ret = setsockopt(sock, SOL_SOCKET, SO_ACCEPTCONN, &optval, optlen);
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
-	ret = getsockopt(sock, SOL_SOCKET, SO_ACCEPTCONN, &optval, &optlen);
 
-	TC_ASSERT_GEQ("getsockopt", ret, ZERO);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	ret = setsockopt(sock, SOL_SOCKET, SO_ACCEPTCONN, &optval, optlen);
+	TC_ASSERT_EQ("setsockopt", ret, ZERO);
+	ret = getsockopt(sock, SOL_SOCKET, SO_ACCEPTCONN, &optval, &optlen);
+	close(sock);
+	TC_ASSERT_EQ("getsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -169,15 +190,20 @@ static void tc_net_getsockopt_sol_socket_so_acceptconn_p(int sock)
 * @precondition         : socket file descriptor
 * @postcondition        :
 */
-static void tc_net_getsockopt_sol_socket_so_broadcast_p(int sock)
+static void tc_net_getsockopt_sol_socket_so_broadcast_p(void)
 {
 	int ret;
 	socklen_t optval = 1;
 	socklen_t optlen = sizeof(optval);
+
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
 	ret = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &optval, optlen);
 	TC_ASSERT_EQ("getsockopt", ret, ZERO);
 
 	ret = getsockopt(sock, SOL_SOCKET, SO_BROADCAST, &optval, &optlen);
+	close(sock);
 	TC_ASSERT_GEQ("getsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -190,15 +216,20 @@ static void tc_net_getsockopt_sol_socket_so_broadcast_p(int sock)
 * @precondition         : socket file descriptor
 * @postcondition        :
 */
-static void tc_net_getsockopt_sol_socket_so_keepalive_p(int sock)
+static void tc_net_getsockopt_sol_socket_so_keepalive_p(void)
 {
 	int ret;
 	socklen_t optval = 1;
 	socklen_t optlen = sizeof(optval);
+
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
 	ret = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen);
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_EQ("setsockopt", ret, ZERO);
 
 	ret = getsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, &optlen);
+	close(sock);
 	TC_ASSERT_GEQ("getsockopt", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -207,16 +238,16 @@ static void tc_net_getsockopt_sol_socket_so_keepalive_p(int sock)
  * Name: getsockopt()
  ****************************************************************************/
 
-void net_getsockopt_main(int s)
+void net_getsockopt_main()
 {
 	tc_net_getsockopt_invalid_filedesc_n();
-	tc_net_getsockopt_optval_n(s);
-	tc_net_getsockopt_multicast_ttl_loop_p(s);
-	tc_net_getsockopt_multicast_ttl_loop_own_p(s);
-	tc_net_getsockopt_multicast_ttl_p(s);
-	tc_net_getsockopt_sol_socket_so_acceptconn_p(s);
+	tc_net_getsockopt_optval_n();
+	tc_net_getsockopt_multicast_ttl_loop_p();
+	tc_net_getsockopt_multicast_ttl_loop_own_p();
+	tc_net_getsockopt_multicast_ttl_p();
 #ifndef CONFIG_QEMU_COVERAGE
-	tc_net_getsockopt_sol_socket_so_broadcast_p(s);
-	tc_net_getsockopt_sol_socket_so_keepalive_p(s);
+	tc_net_getsockopt_sol_socket_so_broadcast_p();
+	tc_net_getsockopt_sol_socket_so_keepalive_p();
 #endif
+	tc_net_getsockopt_sol_socket_so_acceptconn_p();
 }

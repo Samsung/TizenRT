@@ -26,9 +26,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
@@ -45,13 +43,15 @@ extern int ioctlsocket(int s, long cmd, void *argp);
 */
 static void tc_net_ioctl_p(void)
 {
+	long val = 0;
+	int fd;
 
 	int sock = socket(AF_INET, SOCK_DGRAM, 0);
-	long a = 0;
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
-	int ret = ioctlsocket(sock, FIONBIO, &a);
-
-	TC_ASSERT_NEQ("ioctl", ret, NEG_VAL);
+	fd = ioctlsocket(sock, FIONBIO, &val);
+	close(sock);
+	TC_ASSERT_NEQ("tc_net_ioctl_p", fd, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -65,12 +65,14 @@ static void tc_net_ioctl_p(void)
 */
 static void tc_net_ioctl_fionread_n(void)
 {
-	int ret;
+	long val = 10;
+	int fd;
 	int sock = socket(AF_INET, SOCK_DGRAM, 0);
-	long a = 10;
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
-	ret = ioctlsocket(sock, FIONREAD, &a);
-	TC_ASSERT_NEQ("ioctl", ret, ZERO);
+	fd = ioctlsocket(sock, FIONREAD, &val);
+	close(sock);
+	TC_ASSERT_NEQ("tc_net_ioctl_fionread_n", fd, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -84,10 +86,9 @@ static void tc_net_ioctl_fionread_n(void)
 */
 static void tc_net_ioctl_n(void)
 {
-	int fd = -1;
-	int ret = ioctlsocket(fd, FIONBIO, 0);
+	int ret = ioctlsocket(NEG_VAL, FIONBIO, 0);
 
-	TC_ASSERT_EQ("ioctl", ret, NEG_VAL);
+	TC_ASSERT_EQ("tc_net_ioctl_n", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -97,10 +98,8 @@ static void tc_net_ioctl_n(void)
 
 int net_ioctl_main(int s)
 {
-
 	tc_net_ioctl_p();
 	tc_net_ioctl_fionread_n();
 	tc_net_ioctl_n();
-
 	return 0;
 }

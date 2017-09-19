@@ -23,7 +23,7 @@
 
 /**
 * @testcase             : tc_do_netif_api_netif_add
-* @brief                : call netif_api_add inside 
+* @brief                : call netif_api_add inside
 * @scenario             : take argument as struct netifapi_msg and send it to netif_api_add
 * @apicovered           : do_netifapi_netif_add and netifapi_netif_add
 * @precondition         : none
@@ -45,6 +45,7 @@ static void tc_do_netifapi_netif_add_n(void)
 	ip_addr_copy(netif->ip_addr, local_ip);
 	msg.msg.netif = netif;
 	do_netifapi_netif_add(msg);
+	TC_ASSERT_EQ("tc_do_netifapi_netif_add_n", msg.msg.err, ZERO);
 	TC_SUCCESS_RESULT();
 }
 

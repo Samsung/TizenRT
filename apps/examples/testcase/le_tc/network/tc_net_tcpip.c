@@ -61,7 +61,6 @@ static void tc_net_tcpip_timeout_n(void)
 	err_t result;
 
 	result = tcpip_timeout(TIME_MS, NULL, arg);
-	TC_ASSERT_EQ("tc_net_tcpip_timeout_n", result, NET_ERR_VAL);
 	TC_ASSERT_EQ("tc_net_tcpip_timeout_n", result, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -98,7 +97,6 @@ static void tc_net_tcpip_untimeout_n(void)
 	err_t result;
 
 	result = tcpip_untimeout(NULL, arg);
-	TC_ASSERT_EQ("tc_net_tcpip_untimeout_n", result, NET_ERR_VAL);
 	TC_ASSERT_EQ("tc_net_tcpip_untimeout_n", result, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -156,7 +154,6 @@ static void tc_mem_free_callback_n(void)
 
 	result = mem_free_callback(p);
 	TC_ASSERT_NEQ("mem_free_callback_n", result, NEG_VAL);
-	TC_ASSERT_NEQ("mem_free_callback_n", result, NET_ERR_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -194,7 +191,6 @@ void tc_pbuf_free_int_p(void)
 
 	p = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
 	pbuf_free_int(p);
-	pbuf_free(p);
 	TC_SUCCESS_RESULT();
 }
 

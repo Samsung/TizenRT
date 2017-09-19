@@ -74,10 +74,10 @@ static void tc_net_netif_remove_p(void)
 
 /**
 * @testcase             : tc_net_pbuf_get_at_p
-* @brief                : get one byte from specified 
+* @brief                : get one byte from specified
 * @scenario             : take the pbuf and offset
 * @apicovered           : pbuf_get_at()
-* @precondition         : none 
+* @precondition         : none
 * @postcondition        : none
 */
 static void tc_net_pbuf_get_at_p(void)
@@ -92,7 +92,7 @@ static void tc_net_pbuf_get_at_p(void)
 
 	ret = pbuf_get_at(p, offset);
 	memp_free(MEMP_PBUF_POOL, p);
-	TC_ASSERT_NEQ("tc_net_pbuf_get_at_p", ret, 0);
+	TC_ASSERT_NEQ("tc_net_pbuf_get_at_p", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -129,8 +129,8 @@ void create_packet(struct pbuf **head, char *data, u16_t len, u16_t ref)
 
 /**
 * @testcase             : tc_net_pbuf_memcmp_p
-* @brief                : 
-* @scenario             : 
+* @brief                :
+* @scenario             :
 * @apicovered           : create_packet pbuf_memcmp
 * @precondition         : none
 * @postcondition        : none
@@ -165,8 +165,8 @@ static void tc_net_pbuf_memcmp_p(void)
 
 /**
 * @testcase             : tc_net_pbuf_memfind_p
-* @brief                : 
-* @scenario             : 
+* @brief                :
+* @scenario             :
 * @apicovered           : pbuf_memfind
 * @precondition         : none
 * @postcondition        : none
@@ -190,8 +190,8 @@ static void tc_net_pbuf_memfind_p(void)
 
 /**
 * @testcase             : tc_net_pbuf_strstr_p
-* @brief                : 
-* @scenario             : 
+* @brief                :
+* @scenario             :
 * @apicovered           : create_packet pbuf_strstr
 * @precondition         : none
 * @postcondition        : none
@@ -414,7 +414,6 @@ static void tc_net_pbuf_dechain_n(void)
 	memp_free(MEMP_PBUF_POOL, p);
 	TC_ASSERT_EQ("tc_net_pbuf_dechain_n", ret, NULL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -603,7 +602,7 @@ static void tc_net_pbuf_get_at_n(void)
 	u8_t ret;
 
 	ret = pbuf_get_at(p, offset);
-	TC_ASSERT_EQ("tc_net_pbuf_get_at_n", ret, 0);
+	TC_ASSERT_EQ("tc_net_pbuf_get_at_n", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -716,7 +715,7 @@ static void tc_net_icmp_dest_unreach_n(void)
 * @testcase             : tc_net_icmp_time_exceeded_n
 * @brief                : Send an icmp destination unreachable packet
 * @scenario             : none
-* @apicovered           : icmp_time_exceeded, memp_malloc, memp_free 
+* @apicovered           : icmp_time_exceeded, memp_malloc, memp_free
 * @precondition         : none
 * @postcondition        : none
 */

@@ -26,17 +26,17 @@
 
 #include "tc_common.h"
 
-#define NEG_VAL		-1
-#define ZERO 		0
-#define ONE		1
-#define NEG_SIX		-6
-#define NET_EBADF	-9
-#define FLAGS		0666
-#define NET_ERR_ABRT	-10
-#define NET_ERR_VAL	-6
-#define TIME_MS		10
-#define	NEG_FOURTEEN	-14
-#define NET_ERR_CONN	-13
+#define FLAGS            0666
+#define ZERO             0
+#define ONE              1
+#define TIME_MS          10
+#define NEG_VAL          -1
+#define NEG_SIX          -6
+#define NET_EBADF        -9
+#define NET_ERR_ABRT     -10
+#define NET_ERR_VAL      -6
+#define NEG_FOURTEEN     -14
+#define NET_ERR_CONN     -13
 
 extern int total_pass;
 extern int total_fail;
@@ -47,12 +47,6 @@ extern int total_fail;
 
 #ifdef CONFIG_TC_NET_SOCKET
 int net_socket_main(void);
-#endif
-#ifdef CONFIG_TC_NET_GETSOCKOPT
-void net_getsockopt_main(int fd);
-#endif
-#ifdef CONFIG_TC_NET_SETSOCKOPT
-int net_setsockopt_main(void);
 #endif
 #ifdef CONFIG_TC_NET_CONNECT
 void net_connect_main(void);
@@ -156,13 +150,16 @@ int net_stats_main(void);
 #ifdef CONFIG_LWIP_NETIFAPI
 int net_lwip_netifapi_main(void);
 #endif
+#ifdef CONFIG_TC_NET_GETSOCKOPT
+void net_getsockopt_main(void);
+#endif
+#ifdef CONFIG_TC_NET_SETSOCKOPT
+int net_setsockopt_main(void);
+#endif
 #ifdef CONFIG_TC_NET_RAW
 int tc_net_raw_main(void);
 #endif
-#ifdef CONFIG_TC_NET_IP_FRAG
-int tc_ip_frag_main(void);
 #endif
 #ifdef CONFIG_TC_IGMP
 int net_igmp_main(void);
 #endif
-#endif							/* __EXAMPLES_TESTCASE_NETWORK_TC_INTERNAL_H */

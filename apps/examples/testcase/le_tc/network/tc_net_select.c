@@ -37,7 +37,7 @@
 
 #define PORTNUM 1110
 #define MAXRCVLEN 20
-int s = 0;
+static int count_wait = 0;
 /**
 * @fn                   : wait1
 * @brief                : function to wait on semaphore
@@ -49,11 +49,11 @@ int s = 0;
 */
 static void wait1(void)
 {
-	while (s <= 0) {
+	while (count_wait <= 0) {
 
 		printf("");
 	}
-	s--;
+	count_wait--;
 }
 
 /**
@@ -63,7 +63,7 @@ static void wait1(void)
 * API's covered         : socket,bind,listen,select,close
 * Preconditions         :
 * Postconditions        :
-* @return               : void 
+* @return               : void
 */
 static void *server(void *args)
 {
@@ -108,7 +108,7 @@ static void *server(void *args)
 * API's covered         : socket,connect,send,close
 * Preconditions         :
 * Postconditions        :
-* @return               : void 
+* @return               : void
 */
 static void *client(void *args)
 {
@@ -129,12 +129,17 @@ static void *client(void *args)
 	return NULL;
 }
 
-/****************************************************************************
- * Name: send()
- ****************************************************************************/
-int net_select_main()
+/**
+* @fn                   : tc_net_select
+* @brief                : created client and server threads
+* @scenario             :
+* API's covered         :
+* Preconditions         :
+* Postconditions        :
+* @return               : void
+*/
+void tc_net_select()
 {
-
 	pthread_t Server, Client;
 
 	pthread_create(&Server, NULL, &server, NULL);
@@ -144,4 +149,12 @@ int net_select_main()
 	pthread_join(Client, NULL);
 
 	return 0;
+}
+
+/****************************************************************************
+ * Name: select()
+ ****************************************************************************/
+int net_select_main()
+{
+	tc_net_select();
 }

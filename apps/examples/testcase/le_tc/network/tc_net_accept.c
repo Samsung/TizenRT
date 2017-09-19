@@ -36,7 +36,7 @@
 #include "tc_internal.h"
 #define PORTNUM 1108
 #define MAXRCVLEN 20
-int s2 = 0;
+static int count_wait = 0;
 /**
 * @fn                    : wait
 * @brief                 : function to wait on semaphore
@@ -48,10 +48,10 @@ int s2 = 0;
 */
 static void wait(void)
 {
-	while (s2 <= 0) {
+	while (count_wait <= 0) {
 		printf("");
 	}
-	s2--;
+	count_wait--;
 }
 
 /**
@@ -65,7 +65,7 @@ static void wait(void)
 */
 static void nw_signal(void)
 {
-	s2++;
+	count_wait++;
 }
 
 /**
@@ -88,7 +88,7 @@ void tc_net_accept_p(int fd)
 
 /**
 * @testcase             : tc_net_accept_socket_n
-* @brief                : for accepting socket connection 
+* @brief                : for accepting socket connection
 * @scenario             : Take an invalid sock fd and return -1 on error
 * @apicovered           : accept()
 * @precondition         : none
@@ -133,7 +133,7 @@ void *Server(void *args)
 /**
 * @fn                   : Client
 * @brief                : This api create client
-* @scenario             : Create tcp client 
+* @scenario             : Create tcp client
 * API's covered         : socket,connect,close
 * Preconditions         : none
 * Postconditions        : none
@@ -160,7 +160,7 @@ void *Client(void *args)
 /**
 * @fn                   : tc_net_accept
 * @brief                : This api create client and server thread
-* @scenario             : test accept, create client server 
+* @scenario             : test accept, create client server
 * API's covered         : socket,connect,close
 * Preconditions         : none
 * Postconditions        : none

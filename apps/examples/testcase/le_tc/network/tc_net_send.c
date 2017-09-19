@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <net/if.h>
 #include <netutils/netlib.h>
-#include "tc_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,12 +32,13 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <pthread.h>
+#include "tc_internal.h"
 
 #define PORTNUM 1110
 #define MAXRCVLEN 20
-int s1 = 0;
+static int count_wait = 0;
 /**
-* @fn                   : wait1
+* @fn                   : sig_wait
 * @brief                : function to wait on semaphore
 * @scenario             : To aquire the resource
 * API's covered         : none
@@ -46,17 +46,17 @@ int s1 = 0;
 * Postconditions        : none
 * @return               : void
 */
-void wait1(void)
+void sig_wait(void)
 {
-	while (s1 <= 0) {
+	while (count_wait <= 0) {
 
 		printf("");
 	}
-	s1--;
+	count_wait--;
 }
 
 /**
-* @fn                   : signal1
+* @fn                   : sig_call
 * @brief                : function to signal semaphore
 * @scenario             : To release the resource
 * API's covered         : none
@@ -64,9 +64,9 @@ void wait1(void)
 * Postconditions        : none
 * @return               : void
 */
-void signal1(void)
+void sig_call(void)
 {
-	s1++;
+	count_wait++;
 }
 
 /**
@@ -113,7 +113,7 @@ void *server(void *args)
 
 	listen(sock, 2);
 
-	signal1();
+	sig_call();
 	tc_net_send_p(sock);
 
 	close(sock);
@@ -142,7 +142,7 @@ void *client(void *args)
 	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 
-	wait1();
+	sig_wait();
 
 	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 	len = recv(sock, buffer, MAXRCVLEN, 0);
@@ -154,26 +154,21 @@ void *client(void *args)
 
 /**
 * @fn                  : tc_net_send
-* @brief               :
+* @brief               : creating client and server threads
 * @scenario            :
 * API's covered        :
 * Preconditions        :
 * Postconditions       :
 * @return              : void
 */
-void tc_net_send(void)
+static void tc_net_send(void)
 {
-	int ret;
 	pthread_t Server, Client;
 
-	ret = pthread_create(&Server, NULL, server, NULL);
-	TC_ASSERT_EQ("pthread_create", ret, ZERO);
-	ret = pthread_create(&Client, NULL, client, NULL);
-	TC_ASSERT_EQ("pthread_create", ret, ZERO);
-	ret = pthread_join(Server, NULL);
-	TC_ASSERT_EQ("pthread_join", ret, ZERO);
-	ret = pthread_join(Client, NULL);
-	TC_ASSERT_EQ("pthread_join", ret, ZERO);
+	pthread_create(&Server, NULL, server, NULL);
+	pthread_create(&Client, NULL, client, NULL);
+	pthread_join(Server, NULL);
+	pthread_join(Client, NULL);
 }
 
 /****************************************************************************

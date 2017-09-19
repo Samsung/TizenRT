@@ -171,6 +171,7 @@ static void tc_net_bind_addrfamily_n(void)
 	TC_ASSERT_NEQ("bind", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
+
 /**
 * @testcase            : tc_net_bind_size_n
 * @brief               : bind the given address

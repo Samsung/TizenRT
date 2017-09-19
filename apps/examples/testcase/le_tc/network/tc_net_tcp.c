@@ -75,9 +75,9 @@ void tc_pbuf_free_callback_p(void)
 */
 void tc_pbuf_free_callback_n(void)
 {
-	int ret = -1;
+	int ret;
 	ret = pbuf_free_callback(NULL);
-	TC_ASSERT_EQ("pbuf_free_callback", ret, 0);
+	TC_ASSERT_EQ("pbuf_free_callback", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 

@@ -26,243 +26,149 @@
 #include <net/lwip/raw.h>
 #include <net/lwip/sockets.h>
 #include <net/lwip/tcp.h>
+#define SERVER_PORT  5000
 
-#define PORT_NUMBER		2000
+#define TRUE             1
+#define FALSE            0
 
+static int count_wait;
 /**
-* @statitcase           : tc_net_netconn_sendto_n
-* @brief                : Send data to a specific remote IP address and port.
-* @scenario             : Only to be used for UDP and RAW netconns (not TCP).
-* @apicovered           : netconn_sendto
-* @precondition         : none
-* @postcondition        : none
-*/
-static void tc_net_netconn_sendto_n(void)
-{
-	struct netconn *conn = NULL;
-	struct netbuf *buf = NULL;
-	ip_addr_t addr;
-	u16_t port = PORT_NUMBER;
-	IP4_ADDR(&addr, 127, 0, 0, 1);
-	err_t result;
-
-	result = netconn_sendto(conn, buf, &addr, port);
-	TC_ASSERT_EQ("tc_net_netconn_sendto_n", result, NEG_SIX);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @statitcase           : tc_net_netconn_close_n
-* @brief                : Close a TCP netconn (doesn't delete it).
-* @scenario             : 
-* @apicovered           : netconn_close
-* @precondition         : none
-* @postcondition        : none
-*/
-static void tc_net_netconn_close_n(void)
-{
-	struct netconn *conn = NULL;
-	err_t result;
-
-	result = netconn_close(conn);
-	TC_ASSERT_EQ("tc_net_netconn_close_n", result, NEG_SIX);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @statitcase           : tc_net_netconn_close_p
-* @brief                : Close a TCP netconn (doesn't delete it).
-* @scenario             :
-* @apicovered           : netconn_close
-* @precondition         : none
-* @postcondition        : none
-*/
-static void tc_net_netconn_close_p(void)
-{
-	int sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
-	struct socket *sock;
-	err_t result;
-	sock = get_socket(sock_tcp);
-	TC_ASSERT_NEQ("get_socket", sock, NULL);
-
-	result = netconn_close(sock->conn);
-	TC_ASSERT_EQ("tc_net_netconn_close_p", result, ZERO);
-	close(sock_tcp);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @statitcase           : tc_net_netconn_disconnect_n
-* @brief                : Disconnect a netconn from its current peer.
-* @scenario             : only valid for UDP netconns.
-* @apicovered           : netconn_disconnect
-* @precondition         : none
-* @postcondition        : none
-*/
-static void tc_net_netconn_disconnect_n(void)
-{
-	struct netconn *conn = NULL;
-	err_t result;
-
-	result = netconn_disconnect(conn);
-	TC_ASSERT_EQ("tc_net_netconn_disconnect_n", result, NEG_SIX);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @statitcase            : tc_net_netconn_join_leave_group_n
-* @brief                 : Join multicast groups for UDP netconns.
+* @fn                    : sig_wait
+* @brief                 : function to wait on semaphore
 * @scenario              :
-* @apicovered            : netconn_join_leave_group
-* @precondition          : none
-* @postcondition         : none
+* @API's covered         :
+* @Preconditions         :
+* @Postconditions        :
+* @return                : void
 */
-static void tc_net_netconn_join_leave_group_n(void)
+static void sig_wait(void)
 {
-	struct netconn *conn = NULL;
-	err_t result;
-	int ret;
+	while (count_wait <= 0) {
+		printf("");
+	}
+	count_wait--;
+}
 
-	ip_addr_t multiaddr;
-	ip_addr_t netif_addr;
+/**
+* @fn                    : sig_call
+* @brief                 : function to signal semaphore
+* @scenario              : none
+* @API's covered         : none
+* @Preconditions         : none
+* @Postconditions        : none
+* @return                : void
+*/
+static void sig_call(void)
+{
+	count_wait++;
+}
 
-	ret = ipaddr_aton("239.255.255.255", &multiaddr);
-	TC_ASSERT_NEQ("ipaddr_aton", ret, ONE);
+/**
+* @fn                    : tc_netconn_server
+* @brief                 : function to signal semaphore
+* @scenario              : none
+* @API's covered         : none
+* @Preconditions         : none
+* @Postconditions        : none
+* @return                : void
+*/
+void tc_netconn_server(void)
+{
+	int i = ZERO, rc = ZERO, flags, ret;
+	int new_sd;
+	char buffer[80];
+	struct sockaddr_in addr;
 
-	ret = ipaddr_aton("127.0.0.1", &netif_addr);
-	TC_ASSERT_NEQ("ipaddr_aton", ret, ONE);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_EQ("socket", sock, ZERO);
 
-	result = netconn_join_leave_group(conn, &multiaddr, &netif_addr, NETCONN_JOIN);	// 0 -> join, 1 -> leave
+	flags = fcntl(sock, F_GETFL, 0);
+	TC_ASSERT_NEQ("fcntl", flags, NEG_VAL);
 
-	TC_ASSERT_EQ("tc_net_netconn_join_leave_group_n", result, NEG_FOURTEEN);
+	flags = fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+	TC_ASSERT_NEQ("fcntl", flags, NEG_VAL);
+
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	addr.sin_port = htons(SERVER_PORT);
+
+	ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
+
+	ret = listen(sock, 3);
+	TC_ASSERT_NEQ("listen", ret, NEG_VAL);
+
+	sig_call();
+	new_sd = accept(sock, NULL, NULL);
+	TC_ASSERT_NEQ("accept", new_sd, NEG_VAL);
+
+	while (i++ < 10 && rc < 0) {
+		rc = recv(new_sd, buffer, sizeof(buffer), 0);
+	}
+	TC_ASSERT_NEQ("recv", rc, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
-* @statitcase            : tc_net_do_disconnect_p
-* @brief                 : Connect a pcb contained inside a netconn
-* @scenario              : Only used for UDP netconns.
-* @apicovered            : do_disconnect
-* @precondition          : none
-* @postcondition         : none
+* @fn                    : tc_netconn_client
+* @brief                 :
+* @scenario              : none
+* @API's covered         : none
+* @Preconditions         : none
+* @Postconditions        : none
+* @return                : void
 */
-static void tc_net_do_disconnect_p(void)
+void tc_netconn_client(void)
 {
-	err_t result;
-	struct api_msg_msg *msg = NULL;
-	msg = (struct api_msg_msg *)malloc(sizeof(struct api_msg_msg));
-	TC_ASSERT_NEQ("malloc", msg, NULL);
-	msg->conn->type = NETCONN_UDP;
+	int ret, len;
+	char buffer[200] = "HELLOWORLD\n";
+	struct sockaddr_in dest;
 
-	do_disconnect(msg);
-	result = msg->err;
-	TC_FREE_MEMORY(msg);
-	TC_ASSERT_EQ("tc_net_do_disconnect_p", result, ZERO);
-	TC_SUCCESS_RESULT();
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_EQ("socket", sock, ZERO);
+
+	memset(&dest, 0, sizeof(dest));
+	dest.sin_family = AF_INET;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	dest.sin_port = htons(5000);
+
+	sig_wait();
+	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	TC_ASSERT_EQ("connect", ret, ZERO);
+
+	len = write(sock, buffer, strlen(buffer));
+	TC_ASSERT_NEQ("write", len, ZERO);
 }
 
 /**
-* @statitcase            : tc_net_do_disconnect_n
-* @brief                 : Connect a pcb contained inside a netconn
-* @scenario              : Only used for UDP netconns.
-* @apicovered            : do_disconnect
-* @precondition          : none
-* @postcondition         : none
+* @fn                    : netconn_api_server
+* @brief                 :
+* @scenario              : none
+* @API's covered         : none
+* @Preconditions         : none
+* @Postconditions        : none
+* @return                : void*
 */
-static void tc_net_do_disconnect_n(void)
+void *netconn_api_server(void *args)
 {
-	err_t result;
-	struct api_msg_msg *msg;
-	msg = (struct api_msg_msg *)malloc(sizeof(struct api_msg_msg));
-	TC_ASSERT_NEQ("malloc", msg, NULL);
-	msg->conn->type = NETCONN_TCP;
-
-	do_disconnect(msg);
-	result = msg->err;
-	TC_FREE_MEMORY(msg);
-	TC_ASSERT_EQ("tc_net_do_disconnect_n", result, NET_ERR_VAL);
-	TC_SUCCESS_RESULT();
+	tc_netconn_server();
+	return NULL;
 }
 
 /**
-* @statitcase            : tc_net_recv_raw
-* @brief                 : Receive callback function for RAW netconns.
-* @scenario              :
-* @apicovered            : recv_raw
-* @precondition          : none
-* @postcondition         : none
+* @fn                    : netconn_api_client
+* @brief                 :
+* @scenario              : none
+* @API's covered         : none
+* @Preconditions         : none
+* @Postconditions        : none
+* @return                : void*
 */
-static void tc_net_recv_raw(void)
+void *netconn_api_client(void *args)
 {
-	struct pbuf *p = NULL;
-	struct raw_pcb *pcb = NULL;
-	ip_addr_t addr;
-	u8_t result;
-	void *arg = NULL;
-	IP4_ADDR(&addr, 127, 0, 0, 1);
-	p = (struct pbuf *)malloc(sizeof(struct pbuf));
-	TC_ASSERT_NEQ("malloc", p, NULL);
-	pcb = (struct raw_pcb *)malloc(sizeof(struct raw_pcb));
-	TC_ASSERT_NEQ("malloc", pcb, NULL);
-
-	result = recv_raw(arg, pcb, p, &addr);
-	TC_FREE_MEMORY(p);
-	TC_FREE_MEMORY(pcb);
-	TC_ASSERT_EQ("tc_net_recv_raw", result, ZERO);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @statitcase            : tc_net_do_join_leave_group_n
-* @brief                 : Join multicast groups for UDP netconns.
-* @scenario              : Only used for UDP netconns.
-* @apicovered            : do_join_leave_group
-* @precondition          : none
-* @postcondition         : none
-*/
-static void tc_net_do_join_leave_group_n(void)
-{
-	struct api_msg_msg *msg;
-	err_t result;
-	msg = (struct api_msg_msg *)malloc(sizeof(struct api_msg_msg));
-	TC_ASSERT_NEQ("malloc", msg, NULL);
-	msg->conn->last_err = 0;
-	msg->conn->pcb.tcp = NULL;
-
-	do_join_leave_group(msg);
-	result = msg->err;
-	TC_FREE_MEMORY(msg);
-	TC_ASSERT_EQ("tc_net_do_join_leave_group_n", result, NET_ERR_CONN);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @statitcase            : tc_net_do_join_leave_group_p
-* @brief                 : Join multicast groups for UDP netconns.
-* @scenario              : Only used for UDP netconns.
-* @apicovered            : do_join_leave_group
-* @precondition          : none
-* @postcondition         : none
-*/
-static void tc_net_do_join_leave_group_p(void)
-{
-	struct api_msg_msg *msg;
-	err_t result;
-
-	msg = (struct api_msg_msg *)malloc(sizeof(struct api_msg_msg));
-	TC_ASSERT_NEQ("malloc", msg, NULL);
-	msg->conn->last_err = 0;
-	msg->conn->pcb.tcp = (struct tcp_pcb *)malloc(sizeof(struct tcp_pcb));
-	TC_ASSERT_NEQ("malloc", msg->conn->pcb.tcp, NULL);
-	msg->conn->type = NETCONN_UDP;
-	msg->msg.jl.join_or_leave = NETCONN_JOIN;
-
-	do_join_leave_group(msg);
-	result = msg->err;
-	TC_FREE_MEMORY(msg->conn->pcb.tcp);
-	TC_FREE_MEMORY(msg);
-	TC_ASSERT_EQ("tc_net_do_join_leave_group_p", result, ZERO);
-	TC_SUCCESS_RESULT();
+	tc_netconn_client();
+	return NULL;
 }
 
 /**
@@ -275,15 +181,10 @@ static void tc_net_do_join_leave_group_p(void)
 */
 int net_api_main(void)
 {
-	tc_net_netconn_close_n();
-	tc_net_netconn_close_p();
-	tc_net_netconn_sendto_n();
-	tc_net_netconn_disconnect_n();
-	tc_net_netconn_join_leave_group_n();
-	tc_net_do_disconnect_n();
-	tc_net_do_disconnect_p();
-	tc_net_recv_raw();
-	tc_net_do_join_leave_group_n();
-	tc_net_do_join_leave_group_p();
+	pthread_t Server, Client;
+	pthread_create(&Server, NULL, netconn_api_server, NULL);
+	pthread_create(&Client, NULL, netconn_api_client, NULL);
+	pthread_join(Server, NULL);
+	pthread_join(Client, NULL);
 	return 0;
 }

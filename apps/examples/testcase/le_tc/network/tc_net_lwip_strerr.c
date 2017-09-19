@@ -27,7 +27,7 @@
 /**
 * @testcase            : tc_net_lwip_strerr
 * @brief               : to print error messages
-* @scenario            : for debugging 
+* @scenario            : for debugging
 * @apicovered          : lwip_strerr
 * @precondition        :
 * @postcondition       :

@@ -36,7 +36,7 @@
 
 #define PORTNUM 1112
 #define MAXRCVLEN 20
-int mut = 0;
+static int count_wait = 0;
 /**
 * @fn                   : shutdown_wait
 * @brief                : function to wait on semaphore
@@ -48,11 +48,11 @@ int mut = 0;
 */
 void shutdown_wait(void)
 {
-	while (mut <= 0) {
+	while (count_wait <= 0) {
 
 		printf("");
 	}
-	mut--;
+	count_wait--;
 }
 
 /**
@@ -66,7 +66,7 @@ void shutdown_wait(void)
 */
 void shutdown_signal(void)
 {
-	mut++;
+	count_wait++;
 }
 
 /**
@@ -85,7 +85,6 @@ void tc_net_shutdown_recv_p(int fd)
 
 	TC_ASSERT_NEQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -118,7 +117,6 @@ void tc_net_shutdown_sendrecv_p(int fd)
 
 	TC_ASSERT_NEQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -141,7 +139,7 @@ void tc_net_shutdown_n(void)
 /**
 * @testcase            : tc_net_shutdown_sock_n
 * @brief               : Close one end of a full-duplex connection.
-* @scenario            : 
+* @scenario            :
 * @apicovered          : shutdown()
 * @precondition        : file descriptor should be created
 * @postcondition       : none
@@ -161,9 +159,9 @@ void tc_net_shutdown_sock_n(int fd)
 * API's covered         : socket,bind,listen,send,accept,close
 * Preconditions         : none
 * Postconditions        : none
-* @return               : void 
+* @return               : void
 */
-void* shutdown_server(void *args)
+void *shutdown_server(void *args)
 {
 	int ConnectFD;
 	char *msg = "Hello World !\n";
@@ -171,7 +169,6 @@ void* shutdown_server(void *args)
 
 	memset(&sa, 0, sizeof(sa));
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
-
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -197,14 +194,14 @@ void* shutdown_server(void *args)
 * @brief                : client thread
 * @scenario             :
 * API's covered         : socket,connect,recvfrom,close
-* Preconditions         : 
+* Preconditions         :
 * Postconditions        : server must be run
 * @return               : void *
 */
-void* shutdown_client(void *args)
+void *shutdown_client(void *args)
 {
-	char buffer[MAXRCVLEN];
 	int len;
+	char buffer[MAXRCVLEN];
 	struct sockaddr_in dest;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -215,7 +212,6 @@ void* shutdown_client(void *args)
 	dest.sin_port = htons(PORTNUM);
 
 	shutdown_wait();
-
 	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 
 	len = recv(sock, buffer, MAXRCVLEN, ZERO);
@@ -232,8 +228,9 @@ void* shutdown_client(void *args)
 	close(sock);
 	return NULL;
 }
+
 /**
-* @fn                   : tc_net_shutdown
+* @fn                   : net_shutdown
 * @brief                :
 * @scenario             :
 * API's covered         :
@@ -241,7 +238,7 @@ void* shutdown_client(void *args)
 * Postconditions        :
 * @return               : void
 */
-void tc_net_shutdown(void)
+void net_shutdown(void)
 {
 	pthread_t Server, Client;
 
@@ -258,7 +255,6 @@ void tc_net_shutdown(void)
 int net_shutdown_main(void)
 {
 
-	tc_net_shutdown();
-
+	net_shutdown();
 	return 0;
 }

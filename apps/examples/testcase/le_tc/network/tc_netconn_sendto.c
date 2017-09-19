@@ -37,7 +37,7 @@
 #define PORTNUM 7891
 #define TCPPORT 7890
 #define MAXRCVLEN 20
-int sp = 0;
+
 void tc_net_sendto_tcp_n(int ConnectFD);
 void tc_net_sendto_tcp_shutdown_n(int ConnectFD);
 
@@ -62,9 +62,8 @@ void tc_net_sendto_p(int fd)
 	fromlen = sizeof(dest);
 	int ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
 
-	TC_ASSERT_NEQ("sendto", ret, -1);
+	TC_ASSERT_NEQ("sendto", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -77,21 +76,24 @@ void tc_net_sendto_p(int fd)
 */
 void tc_net_sendto_n(void)
 {
+	int ret;
 	char *buffer = "hello";
 	int len = strlen(buffer) + 1;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
-	int ret = sendto(-1, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
 
-	TC_ASSERT_EQ("sendto", ret, -1);
+	ret = sendto(NEG_VAL, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
+	TC_ASSERT_EQ("sendto", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }
+
 /**
 * @testcase           : tc_net_sendto_af_unix_n
 * @brief              : negative testcase for sendto api using AF_UNIX
@@ -113,7 +115,7 @@ void tc_net_sendto_af_unix_n(int fd)
 	fromlen = sizeof(dest);
 	int ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
 
-	TC_ASSERT_EQ("sendto", ret, -1);
+	TC_ASSERT_EQ("sendto", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -149,6 +151,7 @@ void *sendto_udpserver(void *args)
 	return 0;
 
 }
+
 /**
 * @testcase           : sendto_udpclient
 * @brief              : udp client
