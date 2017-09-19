@@ -102,9 +102,26 @@ main()
 			popd
 			;;
 
+		ERASE_USERFS|erase_userfs)
+			echo "USERFS :"
+
+			ROMFS_FLASHING_CFG=${OPENOCD_DIR_PATH}/romfs_flashing.cfg
+			echo "set romfs_partition_enable 0" > ${ROMFS_FLASHING_CFG}
+			if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
+				echo "set romfs_partition_enable 1" > ${ROMFS_FLASHING_CFG}
+			fi
+
+			pushd ${OPENOCD_DIR_PATH}
+			${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' 	\
+			flash_erase_part user;	\
+			exit'
+			rm ${ROMFS_FLASHING_CFG}
+			popd
+			;;
+
 		*)
 			echo "${arg} is not suppported in artik053"
-			echo "Usage : make download [ ALL ]"
+			echo "Usage : make download [ ALL | ERASE_USERFS ]"
 			exit 1
 			;;
 		esac
