@@ -28,7 +28,7 @@
 #include <tinyara/board.h>
 #include <arch/board/board.h>
 #include <tinyara/i2c.h>
-#include <arch/board/artik053_alc5658_i2c.h>
+#include <arch/board/artik055_alc5658_i2c.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -147,7 +147,7 @@ static int alc5658_write(uint16_t addr, uint16_t data)
 	reg[2] = ((char *)&data)[1];
 	reg[3] = ((char *)&data)[0];
 
-	ret = i2c_write(i2c_dev, &configs, (uint8_t *) reg, 4);
+	ret = i2c_write(i2c_dev, &configs, (uint8_t *)reg, 4);
 
 	return ret;
 }

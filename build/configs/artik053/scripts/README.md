@@ -1,9 +1,9 @@
-# Memory Map (ARTIK05x)
+# Memory Map (ARTIK053)
 
 ### Physical Address Space
 
-The following is the memory map of ARTIK05x.
- 
+The following is the memory map of ARTIK053.
+
 ```
              ADDRESS      CONTENTS       NOTE
            0xFFFFFFFF +---------------+

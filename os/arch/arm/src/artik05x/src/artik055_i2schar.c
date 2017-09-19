@@ -15,8 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************************
- * arch/arm/src/artik055/src/artik055_alc5658char.c
+/****************************************************************************
+ * arch/arm/src/artik055/src/artik055_i2schar.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -48,12 +48,11 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
-
+ ****************************************************************************/
 #include <tinyara/config.h>
 
 #include <sys/types.h>
@@ -61,83 +60,52 @@
 #include <debug.h>
 #include <tinyara/clock.h>
 
-#if defined(CONFIG_AUDIO_ALC5658CHAR) && defined(CONFIG_S5J_I2S) && defined(CONFIG_S5J_I2C)
+#if defined(CONFIG_AUDIO_I2SCHAR) && defined(CONFIG_S5J_I2S)
 
-#include <tinyara/i2c.h>
-
-#include "s5j_i2s.h"
-#include "s5j_i2c.h"
 #include <tinyara/audio/i2s.h>
+#include "s5j_i2s.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#ifndef CONFIG_ALC5658_I2C_PORT
-#define CONFIG_ALC5658_I2C_PORT 1
+
+#ifndef CONFIG_S5JT200_I2SCHAR_MINOR
+#define CONFIG_S5JT200_I2SCHAR_MINOR 0
 #endif
 
-#define ALC5658_I2C_ADDR 0x1A
-#define ALC5658_I2C_FREQ 100000
-#define ALC5658_I2C_ADDRLEN 7
-
-int alc5658char_register(FAR struct i2s_dev_s *i2s, FAR struct i2c_dev_s *i2c, FAR struct i2c_config_s *i2c_config, int minor);
-
-/************************************************************************************
- * Private Types
- ************************************************************************************/
-
-/************************************************************************************
- * Private Data
- ************************************************************************************/
-static struct i2c_config_s g_i2c_config = {
-	.frequency = ALC5658_I2C_FREQ,
-	.address = ALC5658_I2C_ADDR,
-	.addrlen = ALC5658_I2C_ADDRLEN,
-};
-
-/************************************************************************************
- * Private Functions
- ************************************************************************************/
-
-/************************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
- * Name: s5j_alc5658char_initialize
+/****************************************************************************
+ * Name: i2schar_devinit
  *
  * Description:
- *   All architectures must provide the following interface in order to work with
- *   apps/examples/alc5658char_test
+ *   All architectures must provide the following interface in order to
+ *   work with apps/examples/i2schar.
  *
- ************************************************************************************/
-int s5j_alc5658char_initialize(int minor)
+ ****************************************************************************/
+
+int i2schar_devinit(void)
 {
 	static bool initialized;
-	struct i2c_dev_s *i2c;
 	struct i2s_dev_s *i2s;
 	int ret;
 
 	/* Have we already initialized? */
 
 	if (!initialized) {
-
-		i2c = up_i2cinitialize(CONFIG_ALC5658_I2C_PORT);
-		if (!i2c) {
-			auddbg("ERROR: Failed to initialize CODEC I2C%d\n");
-			return -ENODEV;
-		}
-
 		/* Call s5j_i2s_initialize() to get an instance of the I2S interface */
-		i2s = s5j_i2s_initialize();
+
+		i2s = s5j_i2s_initialize(0);
 		if (!i2s) {
 			auddbg("ERROR: Failed to get the S5J I2S driver\n");
 			return -ENODEV;
 		}
 
-		/* Register the ALC5658 character driver at "/dev/alc5658charN" */
+		/* Register the I2S character driver at "/dev/i2schar0" */
 
-		ret = alc5658char_register(i2s, i2c, &g_i2c_config, minor);
+		ret = i2schar_register(i2s, CONFIG_S5JT200_I2SCHAR_MINOR);
 		if (ret < 0) {
 			auddbg("ERROR: i2schar_register failed: %d\n", ret);
 			return ret;
@@ -150,4 +118,5 @@ int s5j_alc5658char_initialize(int minor)
 
 	return OK;
 }
-#endif
+
+#endif							/* CONFIG_AUDIO_I2SCHAR && CONFIG_S5J_I2S */
