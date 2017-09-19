@@ -125,10 +125,15 @@ ifneq ("$(wildcard $(IOTIVITY_BASE_DIR)/iotivity.built)","")
 endif
 endif
 
+artiksdk_clean:
+ifeq ($(CONFIG_ARTIK_SDK),y)
+	$(Q) $(MAKE) -C artik-sdk clean
+endif
+
 custom_clean:
 	$(foreach OBJFILE, $(OBJS), rm -f $(OBJFILE))
 
-clean: custom_clean iotivity_clean
+clean: custom_clean iotivity_clean artiksdk_clean
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 
