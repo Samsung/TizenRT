@@ -665,12 +665,10 @@ static int i2s_rxdma_setup(struct s5j_i2s_s *priv)
 	dmatask = bfcontainer->dmatask;
 	/* No data received yet */
 
-	apb->nbytes = 0;
-	apb->curbyte = 0;
 
-	dmatask->dst = (void *)apb->samp;
+	dmatask->dst = (void *)((uintptr_t)apb->samp + apb->curbyte);
 	dmatask->src = (void *)(priv->base + S5J_I2S_RXD);
-	dmatask->size = apb->nmaxbytes;
+	dmatask->size = apb->nmaxbytes - apb->curbyte;
 	dmatask->callback = i2s_rxdma_callback;
 	dmatask->arg = priv;
 
