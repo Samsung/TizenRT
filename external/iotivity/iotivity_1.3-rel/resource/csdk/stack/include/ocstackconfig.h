@@ -89,7 +89,7 @@
 #ifdef ARDUINO
 #define MAX_HEADER_OPTIONS (2)
 #elif defined(__TIZENRT__)
-#define MAX_HEADER_OPTIONS (3)
+#define MAX_HEADER_OPTIONS (4)
 #else
 #define MAX_HEADER_OPTIONS (50)
 #endif
