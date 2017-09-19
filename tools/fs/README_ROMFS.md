@@ -1,6 +1,11 @@
 
 # Contents for ROMFS
 
+### Pre-condition
+```bash
+sudo apt-get install genromfs
+```
+### Steps
 1. Enable ROMFS config through menuconfig at *os* folder.
 ```bash
 cd $TIZENRT_BASEDIR
