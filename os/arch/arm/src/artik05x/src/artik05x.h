@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2017 Samsung Electronics Co., LTD. All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/artik055/artik055_progmem.c
+ * arch/arm/src/artik05x/src/artik05x.h
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
+ *   Authors: Gregory Nutt <gnutt@nuttx.org>
+ *            Laurent Latil <laurent@latil.nom.fr>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,7 +32,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name tinyara nor the names of its contributors may be
+ * 3. Neither the name NuttX nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -49,33 +50,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-
-#include <tinyara/config.h>
-#include <stdbool.h>
-#include <tinyara/progmem.h>
-
-/* mtd_smart sector size cannot be less than this */
-#define INTERNAL_SECTOR_SIZE 256
+#ifndef __ARCH_ARM_SRC_ARTIK05X_SRC_ARTIK05X_H__
+#define __ARCH_ARM_SRC_ARTIK05X_SRC_ARTIK05X_H__
 
 /****************************************************************************
- * Public Functions
+ * Included Files
  ****************************************************************************/
-size_t up_progmem_npages(void)
-{
-	return CONFIG_ARTIK055_FLASH_CAPACITY / INTERNAL_SECTOR_SIZE;
-}
 
-bool up_progmem_isuniform(void)
-{
-	return true;
-}
+#ifdef CONFIG_FS_PROCFS
+#define ARTIK05X_PROCFS_MOUNTPOINT "/proc"
+#endif
 
-size_t up_progmem_pagesize(size_t page)
-{
-	return INTERNAL_SECTOR_SIZE;
-}
+#ifdef CONFIG_MTD_CONFIG
+enum configdata_id {
+	/* Application-specific */
+	ARTIK05X_CONFIGDATA_APPLICATION = 0x0000,
 
-size_t up_progmem_blocksize(void)
-{
-	return CONFIG_ARTIK055_FLASH_PAGE_SIZE;
-}
+	/* Platform-specific */
+	ARTIK05X_CONFIGDATA_PLATFORM = 0xff00,
+	ARTIK05X_CONFIGDATA_WIFI_NVRAM,
+};
+#endif
+
+#endif /* __ARCH_ARM_SRC_ARTIK05X_SRC_ARTIK05X_H__ */

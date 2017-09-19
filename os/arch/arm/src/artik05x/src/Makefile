@@ -16,7 +16,7 @@
 #
 ############################################################################
 ############################################################################
-# arch/arm/src/artik055/src/Makefile
+# arch/arm/src/artik05x/src/Makefile
 #
 #   Copyright (C) 2009-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -55,9 +55,9 @@
 
 DEPPATH = --dep-path .
 ASRCS =
-CSRCS = artik055_boot.c \
-	artik055_tash.c \
-	artik055_pwm.c
+CSRCS = artik05x_boot.c \
+	artik05x_tash.c \
+	artik05x_pwm.c
 
 ifeq ($(CONFIG_AUDIO_I2SCHAR),y)
 ifeq ($(CONFIG_S5J_I2S),y)
@@ -70,11 +70,11 @@ CSRCS += artik055_alc5658char.c
 endif
 
 ifeq ($(CONFIG_MTD_PROGMEM),y)
-CSRCS += artik055_progmem.c
+CSRCS += artik05x_progmem.c
 endif
 
 ifeq ($(CONFIG_SCSC_WLAN),y)
-CSRCS += artik055_wlan.c
+CSRCS += artik05x_wlan.c
 endif
 
 # boardctl support

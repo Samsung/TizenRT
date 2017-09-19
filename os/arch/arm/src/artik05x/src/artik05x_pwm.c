@@ -15,12 +15,17 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*****************************************************************************
- * arch/arm/src/artik055/include/board.h
+/****************************************************************************
+ * arch/arm/src/artik05x/src/artik05x_pwm.c
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
- *   Authors: Gregory Nutt <gnutt@nuttx.org>
- *            Laurent Latil <laurent@latil.nom.fr>
+ *   Copyright (C) 2013-2014 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *
+ * The Samsung sample code has a BSD compatible license that requires this
+ * copyright notice:
+ *
+ *   Copyright (c) 2016 Samsung Electronics, Inc.
+ *   All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,10 +54,46 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
+ */
+/****************************************************************************
+ * Included Files
  ****************************************************************************/
-#ifndef __ARCH_ARM_SRC_ARTIK055_INCLUDE_BOARD_H__
-#define __ARCH_ARM_SRC_ARTIK055_INCLUDE_BOARD_H__
+#include <tinyara/config.h>
 
-#define SYSCLK_FREQUENCY	32768	/* RTC clock at 32768Hz */
+#include <sys/types.h>
+#include <string.h>
+#include <errno.h>
+#include <debug.h>
 
-#endif /* __ARCH_ARM_SRC_ARTIK055_INCLUDE_BOARD_H__ */
+#include <tinyara/pwm.h>
+
+#include "chip.h"
+#include "s5j_pwm.h"
+
+int board_pwm_setup(void)
+{
+#ifdef CONFIG_S5J_PWM
+	struct pwm_lowerhalf_s *pwm;
+	char path[10];
+	int ret;
+	int i;
+
+	for (i = 0; i < 6; i++) {
+		pwm = s5j_pwminitialize(i);
+		if (!pwm) {
+			lldbg("Failed to get the S5J PWM lower half\n");
+			return -ENODEV;
+		}
+
+		/* Register the PWM driver at "/dev/pwmx" */
+		snprintf(path, sizeof(path), "/dev/pwm%d", i);
+		ret = pwm_register(path, pwm);
+		if (ret < 0) {
+			lldbg("pwm_register failed: %d\n", ret);
+			return ret;
+		}
+	}
+#endif
+
+	return OK;
+}

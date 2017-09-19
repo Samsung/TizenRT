@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/artik055/src/artik055_tash.c
+ * arch/arm/src/artik05x/src/artik05x_tash.c
  *
  *   Copyright (C) 2010 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -71,7 +71,7 @@
 
 #include <apps/shell/tash.h>
 
-#include "artik055.h"
+#include "artik05x.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -82,13 +82,13 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: artik055_adc_setup
+ * Name: artik05x_adc_setup
  *
  * Description:
  *   Initialize ADC and register the ADC driver.
  *
  ****************************************************************************/
-int artik055_adc_setup(void)
+int artik05x_adc_setup(void)
 {
 #ifdef CONFIG_S5J_ADC
 	int ret;
@@ -116,15 +116,15 @@ int artik055_adc_setup(void)
 	return OK;
 }
 
-static void artik055_configure_partitions(void)
+static void artik05x_configure_partitions(void)
 {
-#if defined(CONFIG_ARTIK055_FLASH_PART)
+#if defined(CONFIG_ARTIK05X_FLASH_PART)
 	int partno;
 	int partoffset;
-	const char *parts = CONFIG_ARTIK055_FLASH_PART_LIST;
-	const char *types = CONFIG_ARTIK055_FLASH_PART_TYPE;
+	const char *parts = CONFIG_ARTIK05X_FLASH_PART_LIST;
+	const char *types = CONFIG_ARTIK05X_FLASH_PART_TYPE;
 #if defined(CONFIG_MTD_PARTITION_NAMES)
-	const char *names = CONFIG_ARTIK055_FLASH_PART_NAME;
+	const char *names = CONFIG_ARTIK05X_FLASH_PART_NAME;
 #endif
 	FAR struct mtd_dev_s *mtd;
 	FAR struct mtd_geometry_s geo;
@@ -183,7 +183,7 @@ static void artik055_configure_partitions(void)
 				char partref[4];
 
 				sprintf(partref, "p%d", partno);
-				smart_initialize(CONFIG_ARTIK055_FLASH_MINOR, mtd_part, partref);
+				smart_initialize(CONFIG_ARTIK05X_FLASH_MINOR, mtd_part, partref);
 			} else
 #endif
 			{
@@ -218,7 +218,7 @@ static void artik055_configure_partitions(void)
 
 		partno++;
 	}
-#endif /* CONFIG_ARTIK055_FLASH_PART */
+#endif /* CONFIG_ARTIK05X_FLASH_PART */
 }
 
 static void scsc_wpa_ctrl_iface_init(void)
@@ -261,44 +261,53 @@ int board_app_initialize(void)
 {
 	int ret;
 #if defined(CONFIG_RAMMTD) && defined(CONFIG_FS_SMARTFS)
-	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_ARTIK055_RAMMTD_NEBLOCKS;
+	int bufsize = CONFIG_RAMMTD_ERASESIZE * CONFIG_ARTIK05X_RAMMTD_NEBLOCKS;
 	static uint8_t *rambuf;
 	struct mtd_dev_s *mtd;
 #endif /* CONFIG_RAMMTD */
 
-	artik055_configure_partitions();
+	artik05x_configure_partitions();
 
-#ifdef CONFIG_ARTIK055_AUTOMOUNT_USERFS_DEVNAME
+#ifdef CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
 	/* Initialize and mount user partition (if we have) */
-	ret = mksmartfs(CONFIG_ARTIK055_AUTOMOUNT_USERFS_DEVNAME, false);
+	ret = mksmartfs(CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME, false);
 	if (ret != OK) {
-		lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_ARTIK055_AUTOMOUNT_USERFS_DEVNAME);
+		lldbg("ERROR: mksmartfs on %s failed\n",
+				CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
 	} else {
-		ret = mount(CONFIG_ARTIK055_AUTOMOUNT_USERFS_DEVNAME, CONFIG_ARTIK055_AUTOMOUNT_USERFS_MOUNTPOINT, "smartfs", 0, NULL);
+		ret = mount(CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME,
+				CONFIG_ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT,
+				"smartfs", 0, NULL);
 		if (ret != OK) {
-			lldbg("ERROR: mounting '%s' failed\n", CONFIG_ARTIK055_AUTOMOUNT_USERFS_DEVNAME);
+			lldbg("ERROR: mounting '%s' failed\n",
+					CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME);
 		}
 	}
-#endif /* CONFIG_ARTIK055_AUTOMOUNT_USERFS_DEVNAME */
+#endif /* CONFIG_ARTIK05X_AUTOMOUNT_USERFS_DEVNAME */
 
-#ifdef CONFIG_ARTIK055_AUTOMOUNT_SSSRW_DEVNAME
+#ifdef CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME
 	/* Initialize and mount secure storage partition (if we have) */
-	ret = mksmartfs(CONFIG_ARTIK055_AUTOMOUNT_SSSRW_DEVNAME, false);
+	ret = mksmartfs(CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME, false);
 	if (ret != OK) {
-		lldbg("ERROR: mksmartfs on %s failed\n", CONFIG_ARTIK055_AUTOMOUNT_SSSRW_DEVNAME);
+		lldbg("ERROR: mksmartfs on %s failed\n",
+				CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME);
 	} else {
-		ret = mount(CONFIG_ARTIK055_AUTOMOUNT_SSSRW_DEVNAME, CONFIG_ARTIK055_AUTOMOUNT_SSSRW_MOUNTPOINT, "smartfs", 0, NULL);
+		ret = mount(CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME,
+				CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_MOUNTPOINT,
+				"smartfs", 0, NULL);
 		if (ret != OK) {
-			lldbg("ERROR: mounting '%s' failed\n", CONFIG_ARTIK055_AUTOMOUNT_SSSRW_DEVNAME);
+			lldbg("ERROR: mounting '%s' failed\n",
+					CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME);
 		}
 	}
-#endif /* CONFIG_ARTIK055_AUTOMOUNT_SSSRW_DEVNAME */
+#endif /* CONFIG_ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME */
 
 #ifdef CONFIG_FS_PROCFS
 	/* Mount the procfs file system */
-	ret = mount(NULL, ARTIK055_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
+	ret = mount(NULL, ARTIK05X_PROCFS_MOUNTPOINT, "procfs", 0, NULL);
 	if (ret < 0) {
-		lldbg("Failed to mount procfs at %s: %d\n", ARTIK055_PROCFS_MOUNTPOINT, ret);
+		lldbg("Failed to mount procfs at %s: %d\n",
+				ARTIK05X_PROCFS_MOUNTPOINT, ret);
 	}
 #endif
 
@@ -310,13 +319,15 @@ int board_app_initialize(void)
 		lldbg("ERROR: FAILED TO CREATE RAM MTD INSTANCE\n");
 		free(rambuf);
 	} else {
-		if (smart_initialize(CONFIG_ARTIK055_RAMMTD_DEV_NUMBER, mtd, NULL) < 0) {
+		ret = smart_initialize(CONFIG_ARTIK05X_RAMMTD_DEV_NUMBER, mtd, NULL);
+		if (ret < 0) {
 			lldbg("ERROR: FAILED TO smart_initialize\n");
 			free(rambuf);
 		} else {
-			(void)mksmartfs(CONFIG_ARTIK055_RAMMTD_DEV_POINT, false);
+			(void)mksmartfs(CONFIG_ARTIK05X_RAMMTD_DEV_POINT, false);
 
-			ret = mount(CONFIG_ARTIK055_RAMMTD_DEV_POINT, CONFIG_ARTIK055_RAMMTD_MOUNT_POINT,
+			ret = mount(CONFIG_ARTIK05X_RAMMTD_DEV_POINT,
+					CONFIG_ARTIK05X_RAMMTD_MOUNT_POINT,
 					"smartfs", 0, NULL);
 			if (ret < 0) {
 				lldbg("ERROR: Failed to mount the SMART volume: %d\n", errno);
@@ -352,7 +363,7 @@ int board_app_initialize(void)
 	}
 #endif
 
-	artik055_adc_setup();
+	artik05x_adc_setup();
 
 	scsc_wpa_ctrl_iface_init();
 

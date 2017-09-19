@@ -30,7 +30,7 @@
 #include <tinyara/configdata.h>
 
 #include "up_arch.h"
-#include "artik055.h"
+#include "artik05x.h"
 
 struct netif *wlan_netif;
 
@@ -72,7 +72,7 @@ unsigned int up_wlan_write_config(void *buf, unsigned int bufsize)
 		return false;
 	}
 
-	config.id = ARTIK055_CONFIGDATA_WIFI_NVRAM;
+	config.id = ARTIK05X_CONFIGDATA_WIFI_NVRAM;
 	config.instance = 0;
 	config.configdata = (unsigned char *)buf;
 	config.len = bufsize;
@@ -98,7 +98,7 @@ unsigned int up_wlan_read_config(void *buf, unsigned int bufsize)
 		return false;
 	}
 
-	config.id = ARTIK055_CONFIGDATA_WIFI_NVRAM;
+	config.id = ARTIK05X_CONFIGDATA_WIFI_NVRAM;
 	config.instance = 0;
 	config.configdata = (unsigned char *)buf;
 	config.len = bufsize;

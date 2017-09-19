@@ -15,8 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*****************************************************************************
- * arch/arm/src/artik055/src/artik055_boot.c
+/****************************************************************************
+ * arch/arm/src/artik05x/src/artik05x_boot.c
  *
  *   Copyright (C) 2009, 2011, 2013, 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -41,7 +41,7 @@
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
  * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
  * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUEN	TIAL DAMAGES (INCLUDING,
  * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
  * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
  * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
@@ -51,7 +51,7 @@
  *
  ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
@@ -64,11 +64,11 @@
 #include "up_arch.h"
 #include "s5j_gpio.h"
 
-/*****************************************************************************
+/****************************************************************************
  * Private Functions
  ****************************************************************************/
 
-/****************************************************************************
+/***************************************************************************
  * Name: board_gpio_initialize
  *
  * Description:
@@ -141,12 +141,12 @@ static void board_wdt_initialize(void)
 #endif
 }
 
-/*****************************************************************************
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
-static void artik055_clear_bootcount(void)
+static void artik05x_clear_bootcount(void)
 {
-#ifdef CONFIG_ARTIK055_BOOT_COUNTS_ADDR
+#ifdef CONFIG_ARTIK05X_BOOT_COUNTS_ADDR
 	/*
 	 * As BL2 sets up a watchdog before it jumps to secondary OS,
 	 * we should disable the watchdog to prevent it from barking.
@@ -156,7 +156,7 @@ static void artik055_clear_bootcount(void)
 	putreg32(0, 0x80030000);
 
 	/* then, clear the boot count */
-	putreg32(0, CONFIG_ARTIK055_BOOT_COUNTS_ADDR);
+	putreg32(0, CONFIG_ARTIK05X_BOOT_COUNTS_ADDR);
 #endif
 }
 
@@ -207,7 +207,7 @@ void s5j_board_initialize(void)
  ****************************************************************************/
 void board_initialize(void)
 {
-	artik055_clear_bootcount();
+	artik05x_clear_bootcount();
 
 	/* Perform app-specific initialization here instaed of from the TASH. */
 	board_app_initialize();
