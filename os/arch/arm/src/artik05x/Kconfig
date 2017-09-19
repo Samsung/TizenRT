@@ -1,4 +1,9 @@
-config ARTIK055_BOOT_FAILURE_DETECTION
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config ARTIK05X_BOOT_FAILURE_DETECTION
 	bool "Clear bootcount when boot completes"
 	default y
 	---help---
@@ -8,145 +13,172 @@ config ARTIK055_BOOT_FAILURE_DETECTION
 		stores the number of tries to boot. Otherwise, the watchdog
 		will bark and BL2 may go into recovery mode.
 
-config ARTIK055_BOOT_COUNTS_ADDR
+config ARTIK05X_BOOT_COUNTS_ADDR
 	hex "Address of scratch pad register to store the bootcount"
 	default 0x80090810
-	depends on ARTIK055_BOOT_FAILURE_DETECTION
+	depends on ARTIK05X_BOOT_FAILURE_DETECTION
 	---help---
 		The number of tries to boot will be stored in this address.
 		On successful boot, it is cleared to zero. The register should
 		be kept intact even on watchdog resets.
 
-config ARTIK055_FLASH_CAPACITY
+config ARTIK05X_FLASH_CAPACITY
 	int "Size of external flash memory (in bytes)"
 	default 8388608
 	depends on S5J_SFLASH
 	---help---
 		Sets the capacity of the external flash memory
-		on the ARTIK-053 Starter Kit board.
+		on the ARTIK-05x Series Starter Kit board.
 
-config ARTIK055_FLASH_PAGE_SIZE
+config ARTIK05X_FLASH_PAGE_SIZE
 	int "Page size of external flash memory (in bytes)"
 	default 4096
 	depends on S5J_SFLASH
 	---help---
 		Sets the page size of the external flash memory on the
-		ARTIK-053 Starter Kit board. It can be the size of erase
+		ARTIK-05x Series Starter Kit board. It can be the size of erase
 		unit flash memory supports.
 
-config ARTIK055_FLASH_PART
+config ARTIK05X_FLASH_PART
 	bool "Enable partition support on FLASH"
 	default n
+	select MTD
 	select MTD_PARTITION
 	select MTD_PROGMEM
 	depends on S5J_SFLASH
 	---help---
 		Enables creation of partitions on the FLASH
 
-config ARTIK055_FLASH_MINOR
+config ARTIK05X_FLASH_MINOR
 	int "Minor number for the FLASH device"
 	default 0
-	depends on ARTIK055_FLASH_PART
+	depends on ARTIK05X_FLASH_PART
 	---help---
 		Sets the minor number for /dev node of the external flash
 		device.
 
-config ARTIK055_FLASH_PART_LIST
+config ARTIK05X_FLASH_PART_LIST
 	string "Flash partition size list (in KBytes)"
 	default "16,48,192,32,512,2400,1536,1536,1400,8,512,"
-	depends on ARTIK055_FLASH_PART
+	depends on ARTIK05X_FLASH_PART
 	---help---
 		Comma separated list of partition sizes in KB.
 
-config ARTIK055_FLASH_PART_TYPE
+config ARTIK05X_FLASH_PART_TYPE
 	string "Flash partition type list"
 	default "none,none,none,none,none,none,none,none,smartfs,config,none,"
-	depends on ARTIK055_FLASH_PART
+	depends on ARTIK05X_FLASH_PART
 	---help---
 		Comma separated list of partition types that can be one of
 		followings: none, smartfs, config
 
-config ARTIK055_FLASH_PART_NAME
+config ARTIK05X_FLASH_PART_NAME
 	string "Flash partition name list"
 	default "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,user,nvram,sssrw,"
 	depends on MTD_PARTITION_NAMES
-	depends on ARTIK055_FLASH_PART
+	depends on ARTIK05X_FLASH_PART
 	---help---
 		Comma separated list of partition names.
 
-config ARTIK055_AUTOMOUNT
-       bool "Automount partitions"
-       default n
-       depends on ARTIK055_FLASH_PART
-       ---help---
+config ARTIK05X_AUTOMOUNT
+	bool "Automount partitions"
+	default n
+	depends on ARTIK05X_FLASH_PART
+	depends on !DISABLE_MOUNTPOINT
+	---help---
 		If enabled, mount userrw and sssrw partitions at boot.
 
-config ARTIK055_AUTOMOUNT_USERFS
+config ARTIK05X_AUTOMOUNT_USERFS
 	bool "Automount user r/w partiton"
 	default n
-	depends on ARTIK055_AUTOMOUNT
+	depends on ARTIK05X_AUTOMOUNT
+	depends on FS_SMARTFS
 	---help---
 		If enabled, user r/w partition will be mounted automatically
 		at boot.
 
-config ARTIK055_AUTOMOUNT_USERFS_DEVNAME
+config ARTIK05X_AUTOMOUNT_USERFS_DEVNAME
 	string "Device name of the partition for user r/w file system"
 	default "/dev/smart0p8"
-	depends on ARTIK055_AUTOMOUNT_USERFS
+	depends on ARTIK05X_AUTOMOUNT_USERFS
 	---help---
 		Specifies the device name (/dev/smart0pX) of the partition
 		for user r/w file system.
 
-config ARTIK055_AUTOMOUNT_USERFS_MOUNTPOINT
+config ARTIK05X_AUTOMOUNT_USERFS_MOUNTPOINT
 	string "Mountpoint of the partition for user r/w file system"
 	default "/mnt"
-	depends on ARTIK055_AUTOMOUNT_USERFS
+	depends on ARTIK05X_AUTOMOUNT_USERFS
 	---help---
 		Specifies the mount point where user r/w file system
 		will be mounted at.
 
-config ARTIK055_AUTOMOUNT_SSSRW
+config ARTIK05X_AUTOMOUNT_SSSRW
 	bool "Automount secure storage partiton"
 	default n
-	depends on ARTIK055_AUTOMOUNT
-	depends on ARCH_BOARD_ARTIK055S
+	depends on ARTIK05X_AUTOMOUNT
 	---help---
 		If enabled, secure storage partition will be mounted
 		automatically at boot.
 
-config ARTIK055_AUTOMOUNT_SSSRW_DEVNAME
+config ARTIK05X_AUTOMOUNT_SSSRW_DEVNAME
 	string "Device name of the partition for secure storage"
 	default "/dev/smart0p10"
-	depends on ARTIK055_AUTOMOUNT_SSSRW
+	depends on ARTIK05X_AUTOMOUNT_SSSRW
 	---help---
 		Specifies the device name (/dev/smart0pX) of the partition
 		for secure storage.
 
-config ARTIK055_AUTOMOUNT_SSSRW_MOUNTPOINT
+config ARTIK05X_AUTOMOUNT_SSSRW_MOUNTPOINT
 	string "Mountpoint of the partition for secure storage"
 	default "/sss"
-	depends on ARTIK055_AUTOMOUNT_SSSRW
+	depends on ARTIK05X_AUTOMOUNT_SSSRW
 	---help---
 		Specifies the mount point where secure storage
 		will be mounted at.
 
+config ARTIK05X_AUTOMOUNT_ROMFS
+	bool "Automount romfs partiton"
+	default y
+	depends on ARTIK05X_AUTOMOUNT
+	depends on FS_ROMFS
+	---help---
+		If enabled, romfs partition will be mounted automatically
+		at boot.
+
+config ARTIK05X_AUTOMOUNT_ROMFS_DEVNAME
+	string "Device name of the partition for romfs file system"
+	default "/dev/mtdblock9"
+	depends on ARTIK05X_AUTOMOUNT_ROMFS
+	---help---
+		Specifies the device name (/dev/mtdblock9) of the partition
+		for romfs file system.
+
+config ARTIK05X_AUTOMOUNT_ROMFS_MOUNTPOINT
+	string "Mountpoint of the partition for romfs file system"
+	default "/rom"
+	depends on ARTIK05X_AUTOMOUNT_ROMFS
+	---help---
+		Specifies the mount point where romfs file system
+		will be mounted at.
+
 if RAMMTD
-config ARTIK055_RAMMTD_NEBLOCKS
+config ARTIK05X_RAMMTD_NEBLOCKS
 	int "RAM MTD erase block count"
 	default 64
 	---help---
-		Ramfs size will be RAMMTD_ERASESIZE * SIDK_ARTIK055_RAMMTD_NEBLOCKS.
+		Ramfs size will be RAMMTD_ERASESIZE * ARTIK05X_RAMMTD_NEBLOCKS.
 		You have to consider total ramsize to alloc ramfs size.
 
-config ARTIK055_RAMMTD_DEV_NUMBER
+config ARTIK05X_RAMMTD_DEV_NUMBER
 	int "device number for mtd of smartfs"
 	default 3
 
-config ARTIK055_RAMMTD_DEV_POINT
+config ARTIK05X_RAMMTD_DEV_POINT
 	string "Device name of the partition for ramfs r/w file system"
 	default "/dev/smart3"
 
-config ARTIK055_RAMMTD_MOUNT_POINT
+config ARTIK05X_RAMMTD_MOUNT_POINT
 	string "Mountpoint of the partition for ramfs r/w file system"
 	default "/ramfs"
 endif

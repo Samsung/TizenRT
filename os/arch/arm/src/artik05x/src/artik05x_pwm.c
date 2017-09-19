@@ -1,4 +1,4 @@
-/*****************************************************************************
+/****************************************************************************
  *
  * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
@@ -15,11 +15,17 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*****************************************************************************
- * arch/arm/src/artik053/src/artik053_i2schar.c
+/****************************************************************************
+ * arch/arm/src/artik05x/src/artik05x_pwm.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2013-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *
+ * The Samsung sample code has a BSD compatible license that requires this
+ * copyright notice:
+ *
+ *   Copyright (c) 2016 Samsung Electronics, Inc.
+ *   All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,75 +54,46 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ****************************************************************************/
-
-/*****************************************************************************
+ */
+/****************************************************************************
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
 
 #include <sys/types.h>
+#include <string.h>
 #include <errno.h>
 #include <debug.h>
-#include <tinyara/clock.h>
 
-#if defined(CONFIG_AUDIO_I2SCHAR) && defined(CONFIG_S5J_I2S)
+#include <tinyara/pwm.h>
 
-#include <tinyara/audio/i2s.h>
-#include "s5j_i2s.h"
+#include "chip.h"
+#include "s5j_pwm.h"
 
-/*****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-#ifndef CONFIG_S5JT200_I2SCHAR_MINOR
-#define CONFIG_S5JT200_I2SCHAR_MINOR 0
-#endif
-
-/*****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/*****************************************************************************
- * Name: i2schar_devinit
- *
- * Description:
- *   All architectures must provide the following interface in order to
- *   work with apps/examples/i2schar.
- *
- ****************************************************************************/
-
-int i2schar_devinit(void)
+int board_pwm_setup(void)
 {
-	static bool initialized;
-	struct i2s_dev_s *i2s;
+#ifdef CONFIG_S5J_PWM
+	struct pwm_lowerhalf_s *pwm;
+	char path[10];
 	int ret;
+	int i;
 
-	/* Have we already initialized? */
-
-	if (!initialized) {
-		/* Call s5j_i2s_initialize() to get an instance of the I2S interface */
-
-		i2s = s5j_i2s_initialize(0);
-		if (!i2s) {
-			auddbg("ERROR: Failed to get the S5J I2S driver\n");
+	for (i = 0; i < 6; i++) {
+		pwm = s5j_pwminitialize(i);
+		if (!pwm) {
+			lldbg("Failed to get the S5J PWM lower half\n");
 			return -ENODEV;
 		}
 
-		/* Register the I2S character driver at "/dev/i2schar0" */
-
-		ret = i2schar_register(i2s, CONFIG_S5JT200_I2SCHAR_MINOR);
+		/* Register the PWM driver at "/dev/pwmx" */
+		snprintf(path, sizeof(path), "/dev/pwm%d", i);
+		ret = pwm_register(path, pwm);
 		if (ret < 0) {
-			auddbg("ERROR: i2schar_register failed: %d\n", ret);
+			lldbg("pwm_register failed: %d\n", ret);
 			return ret;
 		}
-
-		/* Now we are initialized */
-
-		initialized = true;
 	}
+#endif
 
 	return OK;
 }
-
-#endif							/* CONFIG_AUDIO_I2SCHAR && CONFIG_S5J_I2S */

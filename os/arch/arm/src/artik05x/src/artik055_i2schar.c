@@ -16,11 +16,10 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/artik055/src/artik055.h
+ * arch/arm/src/artik05x/src/artik055_i2schar.c
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
- *   Authors: Gregory Nutt <gnutt@nuttx.org>
- *            Laurent Latil <laurent@latil.nom.fr>
+ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,26 +49,74 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-#ifndef __ARCH_ARM_SRC_ARTIK055_SRC_ARTIK055_H__
-#define __ARCH_ARM_SRC_ARTIK055_SRC_ARTIK055_H__
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+#include <tinyara/config.h>
 
-#ifdef CONFIG_FS_PROCFS
-#define ARTIK055_PROCFS_MOUNTPOINT "/proc"
+#include <sys/types.h>
+#include <errno.h>
+#include <debug.h>
+#include <tinyara/clock.h>
+
+#if defined(CONFIG_AUDIO_I2SCHAR) && defined(CONFIG_S5J_I2S)
+
+#include <tinyara/audio/i2s.h>
+#include "s5j_i2s.h"
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#ifndef CONFIG_S5JT200_I2SCHAR_MINOR
+#define CONFIG_S5JT200_I2SCHAR_MINOR 0
 #endif
 
-#ifdef CONFIG_MTD_CONFIG
-enum configdata_id {
-	/* Application-specific */
-	ARTIK055_CONFIGDATA_APPLICATION = 0x0000,
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
-	/* Platform-specific */
-	ARTIK055_CONFIGDATA_PLATFORM = 0xff00,
-	ARTIK055_CONFIGDATA_WIFI_NVRAM,
-};
-#endif
+/****************************************************************************
+ * Name: i2schar_devinit
+ *
+ * Description:
+ *   All architectures must provide the following interface in order to
+ *   work with apps/examples/i2schar.
+ *
+ ****************************************************************************/
 
-#endif /* __ARCH_ARM_SRC_ARTIK055_SRC_ARTIK055_H__ */
+int i2schar_devinit(void)
+{
+	static bool initialized;
+	struct i2s_dev_s *i2s;
+	int ret;
+
+	/* Have we already initialized? */
+
+	if (!initialized) {
+		/* Call s5j_i2s_initialize() to get an instance of the I2S interface */
+
+		i2s = s5j_i2s_initialize(0);
+		if (!i2s) {
+			auddbg("ERROR: Failed to get the S5J I2S driver\n");
+			return -ENODEV;
+		}
+
+		/* Register the I2S character driver at "/dev/i2schar0" */
+
+		ret = i2schar_register(i2s, CONFIG_S5JT200_I2SCHAR_MINOR);
+		if (ret < 0) {
+			auddbg("ERROR: i2schar_register failed: %d\n", ret);
+			return ret;
+		}
+
+		/* Now we are initialized */
+
+		initialized = true;
+	}
+
+	return OK;
+}
+
+#endif							/* CONFIG_AUDIO_I2SCHAR && CONFIG_S5J_I2S */

@@ -15,8 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*****************************************************************************
- * arch/arm/src/artik055/include/board.h
+/****************************************************************************
+ * arch/arm/src/artik05x/src/artik05x.h
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Authors: Gregory Nutt <gnutt@nuttx.org>
@@ -50,9 +50,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-#ifndef __ARCH_ARM_SRC_ARTIK055_INCLUDE_BOARD_H__
-#define __ARCH_ARM_SRC_ARTIK055_INCLUDE_BOARD_H__
+#ifndef __ARCH_ARM_SRC_ARTIK05X_SRC_ARTIK05X_H__
+#define __ARCH_ARM_SRC_ARTIK05X_SRC_ARTIK05X_H__
 
-#define SYSCLK_FREQUENCY	32768	/* RTC clock at 32768Hz */
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
-#endif /* __ARCH_ARM_SRC_ARTIK055_INCLUDE_BOARD_H__ */
+#ifdef CONFIG_FS_PROCFS
+#define ARTIK05X_PROCFS_MOUNTPOINT "/proc"
+#endif
+
+#ifdef CONFIG_MTD_CONFIG
+enum configdata_id {
+	/* Application-specific */
+	ARTIK05X_CONFIGDATA_APPLICATION = 0x0000,
+
+	/* Platform-specific */
+	ARTIK05X_CONFIGDATA_PLATFORM = 0xff00,
+	ARTIK05X_CONFIGDATA_WIFI_NVRAM,
+};
+#endif
+
+#endif /* __ARCH_ARM_SRC_ARTIK05X_SRC_ARTIK05X_H__ */

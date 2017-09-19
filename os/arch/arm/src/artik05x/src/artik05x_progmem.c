@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/artik055/artik055_progmem.c
+ * arch/arm/src/artik05x/artik05x_progmem.c
  *
  *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -55,6 +55,7 @@
 #include <tinyara/progmem.h>
 
 /* mtd_smart sector size cannot be less than this */
+
 #define INTERNAL_SECTOR_SIZE 256
 
 /****************************************************************************
@@ -62,7 +63,7 @@
  ****************************************************************************/
 size_t up_progmem_npages(void)
 {
-	return CONFIG_ARTIK055_FLASH_CAPACITY / INTERNAL_SECTOR_SIZE;
+	return CONFIG_ARTIK05X_FLASH_CAPACITY / INTERNAL_SECTOR_SIZE;
 }
 
 bool up_progmem_isuniform(void)
@@ -77,5 +78,5 @@ size_t up_progmem_pagesize(size_t page)
 
 size_t up_progmem_blocksize(void)
 {
-	return CONFIG_ARTIK055_FLASH_PAGE_SIZE;
+	return CONFIG_ARTIK05X_FLASH_PAGE_SIZE;
 }

@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /************************************************************************************
- *   arch/arm/src/artik053/src/artik053_alc5658.c
+ *   arch/arm/src/artik05x/src/artik055_alc5658.c
  *
  *   Copyright (C) 2014, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

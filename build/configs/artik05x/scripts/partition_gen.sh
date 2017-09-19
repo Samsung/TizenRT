@@ -35,10 +35,10 @@ BOARD_KCONFIG=${OS_DIR_PATH}/arch/arm/src/${BOARD_NAME}/Kconfig
 FLASH_BASE=0x04000000
 
 # Partition information
-partsize_list_default=`grep -A 2 'config ARTIK053_FLASH_PART_LIST' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
-partsize_list=${CONFIG_ARTIK053_FLASH_PART_LIST:=${partsize_list_default}}
-partname_list_default=`grep -A 2 'config ARTIK053_FLASH_PART_NAME' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
-partname_list=${CONFIG_ARTIK053_FLASH_PART_NAME:=${partname_list_default}}
+partsize_list_default=`grep -A 2 'config ARTIK05X_FLASH_PART_LIST' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+partsize_list=${CONFIG_ARTIK05X_FLASH_PART_LIST:=${partsize_list_default}}
+partname_list_default=`grep -A 2 'config ARTIK05X_FLASH_PART_NAME' ${BOARD_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+partname_list=${CONFIG_ARTIK05X_FLASH_PART_NAME:=${partname_list_default}}
 
 # OpenOCD cfg file to be created for flashing
 PARTITION_MAP_CFG=${PARTMAP_DIR_PATH}/partition_map.cfg

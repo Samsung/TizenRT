@@ -28,7 +28,7 @@
 #include <tinyara/board.h>
 #include <arch/board/board.h>
 #include <tinyara/i2c.h>
-#include <arch/board/artik053_alc5658_i2c.h>
+#include <arch/board/artik055_alc5658_i2c.h>
 
 /****************************************************************************
  * Pre-processor Definitions
