@@ -1,6 +1,7 @@
-# ARTIK 053
+# ARTIK053S
 
-The ARTIK 053 is a SOC for Wi-Fi™ IoT solutions. The ARTIK 053 has a Wi-Fi subsystem, security subsystem, and application subsystem.
+The ARTIK053S is a SOC for Wi-Fi™ IoT solutions. The ARTIK053S has a Wi-Fi subsystem, security subsystem, and application subsystem.
+
 
 ## Contents
 
@@ -12,10 +13,10 @@ The ARTIK 053 is a SOC for Wi-Fi™ IoT solutions. The ARTIK 053 has a Wi-Fi sub
 
 ## Information
 
-The Samsung ARTIK™ 053 Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
-Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK 053 Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
+The Samsung ARTIK™ 053S Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
+Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK053S Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
 
-### ARTIK053 Starter Kit PinOut
+### ARTIK053S Starter Kit PinOut
 #### CON710 CON711 CON708 CON709
 ```
                  XGPIO13(gpio42) <- SW702 | SW703 -> XGPIO15(gpio44)
@@ -28,7 +29,7 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK 053 Modul
                NC <- *     |           |    13 -> XSPI1_CLK
                NC <- *     |           |    12 -> XSPI1_MISO
             RESET <- *     |           |    11 -> XSPI1_MOSI
-             3.3V <- *     | ARTIK053  |    10 -> XSPI1_CSN
+             3.3V <- *     | ARTIK053S |    10 -> XSPI1_CSN
                NC <- *     |           |     9 -> XPWMTOUT_4
               GND <- *     |           |     8 -> XGPIO21(gpio50)
               GND <- *     |           |     [CON709]
@@ -113,7 +114,6 @@ SUBSYSTEMS=="usb",ATTRS{idVendor}=="0403",ATTRS{idProduct}=="6010",MODE="0666" R
 3. Place the above file in /etc/udev/rules.d folder with sudo permission.
 4. Reboot your system.
 
-
 ## How to program a binary
 
 There are two methods, using OpenOCD or script.
@@ -141,13 +141,16 @@ export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/tools/openocd
 
 At first, programming the complete set of binaries are needed.
 
+#### ARTIK053S
 ```bash
+../build/configs/artik05x/tools/codesigner/artik05x_codesigner -sign ../build/output/bin/tinyara_head.bin
+
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
-    flash_write bl1    ../build/configs/artik053/bin/bl1.bin;      \
-    flash_write bl2    ../build/configs/artik053/bin/bl2.bin;      \
-    flash_write sssfw  ../build/configs/artik053/bin/sssfw.bin;    \
-    flash_write wlanfw ../build/configs/artik053/bin/wlanfw.bin;   \
-    flash_write os     ../build/output/bin/tinyara_head.bin;       \
+    flash_write bl1    ../build/configs/artik053s/bin/bl1.bin;  \
+    flash_write bl2    ../build/configs/artik053s/bin/bl2.bin;         \
+    flash_write sssfw  ../build/configs/artik053s/bin/sssfw.bin;       \
+    flash_write wlanfw ../build/configs/artik053s/bin/wlanfw.bin;      \
+    flash_write os     ../build/output/bin/tinyara_head.bin-signed;   \
     exit'
 ```
 
@@ -155,15 +158,13 @@ Once the complete binaries are successfully programmed, each partition can be up
 
 ```bash
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
-    flash_write os ../build/output/bin/tinyara_head.bin; exit'
+    flash_write os ../build/output/bin/tinyara_head.bin-signed; exit'
 ```
 
 ### Factory Reset
-
 If you can not boot normally, you can change os to the initial version. This is possible if there is an initialization binary in memory.
 
 #### How to Download the Initialization Binaries
-
 You can download it using OpenOCD. You compress the compiled firmware and download it to the board.
 
 ```bash
@@ -174,7 +175,6 @@ openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
 ```
 
 #### How to enter initialization mode
-
 When you press the RESET button (SW700) to reboot the Starter Kit, press and hold the 'ARDUINO RESET' button (SW701) for 10 seconds. Enter initialization mode as follows.
 ```
 .....
@@ -232,27 +232,6 @@ you must modify partition_map.cfg matching the sizes in ARTIK053_FLASH_PART_LIST
 
 ## Configuration Sets
 
-#### [extra](extra/README.md)
-This can be used to use full functionality of Tizen RT on ARTIK053.
-#### [hello](hello/README.md)
-This provides simple hello world application including kernel.
-#### [iotivity](iotivity/README.md)
-This can be used to use Iotivity (OCF).
-#### [iotjs](iotjs/README.md)
-This can be used to use IoT.js
-#### [kernel_sample](kernel_sample/README.md)
-This can be used to test kernel functionality.
-#### [minimal](minimal/README.md)
-This can be used to use the minimal functionality of Tizen RT on ARTIK053.
 #### [nettest](nettest/README.md)
 This can be used to test network functionality.
-#### [st_things](st_things/README.md)
-This can be used to test Smart Things Things SDK functionality.
-#### [tash](tash/README.md)
-This can be used to use Tizen RT Shell(TASH).
-#### [tc](tc/README.md)
-This can be used to test database, file system, kernel, network functionality of Tizen RT on ARTIK053.
-#### [typical](typical/README.md)
-This can be used to use typical functionality of Tizen RT on ARTIK053.
-#### [wifi_test](wifi_test/README.md)
-This can be used to test wifi functionality of Tizen RT on ARTIK053.
+
