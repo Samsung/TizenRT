@@ -134,7 +134,9 @@
  ****************************************************************************/
 
 #define WEBSOCKET_EXAMPLE_STACKSIZE (1024 * 10)
-
+#define WEBSOCKET_EXAMPLE_PORT_LEN 7
+#define WEBSOCKET_EXAMPLE_ADDR_LEN 19
+#define WEBSOCKET_EXAMPLE_PATH_LEN 31
 /*
  * TLS debug configure (0 ~ 5)
  *
@@ -166,9 +168,9 @@
 struct options_s {
 	int mode;
 	int tls_mode;
-	char server_port[8];
-	char server_ip[20];
-	char path[32];
+	char server_port[WEBSOCKET_EXAMPLE_PORT_LEN + 1];
+	char server_ip[WEBSOCKET_EXAMPLE_ADDR_LEN + 1];
+	char path[WEBSOCKET_EXAMPLE_PATH_LEN + 1];
 	int size;
 	int num;
 };
@@ -747,9 +749,18 @@ int websocket_main(int argc, char *argv[])
 			goto error_with_input;
 		}
 
-		strncpy(input->server_ip, argv[2], 19);
-		strncpy(input->server_port, argv[3], 7);
-		strncpy(input->path, argv[4], 31);
+		int addr_len = strlen(argv[2]);
+		int port_len = strlen(argv[3]);
+		int path_len = strlen(argv[4]);
+
+		if (addr_len > WEBSOCKET_EXAMPLE_ADDR_LEN || port_len > WEBSOCKET_EXAMPLE_PORT_LEN
+			|| path_len > WEBSOCKET_EXAMPLE_PATH_LEN) {
+			goto error_with_input;
+		}
+		strncpy(input->server_ip, argv[2], addr_len + 1);
+		strncpy(input->server_port, argv[3], port_len + 1);
+		strncpy(input->path, argv[4], path_len + 1);
+
 		input->tls_mode = atoi(argv[5]);
 		input->size = atoi(argv[6]);
 		input->num = atoi(argv[7]);
