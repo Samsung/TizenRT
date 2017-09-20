@@ -172,8 +172,6 @@ ifeq ($(CONFIG_S5J_PWR),y)
 CHIP_CSRCS += s5j_pwr.c
 endif
 
-CHIP_CSRCS += s5j_clock.c
-
 ifeq ($(CONFIG_S5J_PWM),y)
 CHIP_CSRCS += s5j_pwm.c
 endif
