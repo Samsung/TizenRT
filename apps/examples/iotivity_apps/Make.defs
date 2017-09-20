@@ -17,5 +17,5 @@
 ###########################################################################
 
 ifeq ($(CONFIG_EXAMPLES_IOTIVITY),y)
-CONFIGURED_APPS += examples/iotivity_simpleserver
+CONFIGURED_APPS += examples/iotivity_apps
 endif

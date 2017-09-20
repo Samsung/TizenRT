@@ -16,7 +16,7 @@
 #
 ############################################################################
 ############################################################################
-# apps/examples/iotivity_simpleserver/Makefile
+# apps/examples/iotivity_apps/Makefile
 #
 #   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -147,9 +147,6 @@ $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
 $(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
-ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
-	$(Q) ./mkfsdata.pl
-endif
 	$(call COMPILE, $<, $@)
 
 .built: $(OBJS)
@@ -195,6 +192,13 @@ context:
 endif
 
 .depend: Makefile $(SRCS)
+ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
+	$(Q) ./mkfsdata.pl
+else
+ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
+	$(Q) ./mkfsdata.pl
+endif
+endif
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	@touch $@
 
@@ -202,6 +206,7 @@ depend: .depend
 
 clean:
 	$(call DELFILE, .built)
+	$(call DELFILE, file_data.c)
 	$(call CLEAN)
 
 distclean: clean
