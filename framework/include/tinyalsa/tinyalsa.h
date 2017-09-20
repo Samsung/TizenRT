@@ -261,6 +261,7 @@ struct pcm;
  */
 struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags, const struct pcm_config *config);
 
+
 /**
  * @brief Opens a PCM by it's name.
  *
