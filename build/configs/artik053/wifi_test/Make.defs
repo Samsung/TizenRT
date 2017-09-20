@@ -34,7 +34,7 @@ ifeq ($(WINTOOL),y)
   MKDEP = $(TOPDIR)/tools/mkwindeps.sh
   ARCHINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../framework/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include}"
   ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/include/cxx}" -isystem "${shell cygpath -w $(TOPDIR)/include/uClibc++}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include}"
-  ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)}"
+  ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
@@ -107,9 +107,6 @@ OBJEXT = .o
 LIBEXT = .a
 EXEEXT =
 
-ifneq ($(CROSSDEV),arm-nuttx-elf-)
-  LDFLAGS += -nostartfiles -nodefaultlibs
-endif
 ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   LDFLAGS += -g
 endif
