@@ -54,8 +54,6 @@ case $OSTYPE in
 esac
 
 # Openocd
-SCRIPTPATH=$WD
-CFGFILE=artik053.cfg
 
 opt="init;reset halt"
 
@@ -77,13 +75,14 @@ Options:
 	[--flash]
 	[--list[=file]]
         [--set[="partition file"]]
+    [--board[=<board-name>]
 
 For examples:
     `basename $0` --write
-    `basename $0` --write \
+    `basename $0` --board=artik053 --write \
                   --set= "bl1 ../bl1.bin" --set="os tinyara_head.bin" \
                   --flash
-    `basename $0` --list=serial.txt --set="os tinyara_head.bin" --flash
+    `basename $0` --board=artik053s --list=serial.txt --set="os tinyara_head.bin" --flash
 
 Options:
    --write                Write FTDI serial into EEPROM.
@@ -91,6 +90,7 @@ Options:
                           devices.
    --list[=file]          Read the list of target devices from input file.
    --set[=partition file] Choose the partition what do you want.
+   --board[=<board-name>] Choose the config of target board what do you want.
 
 EOF
   exit $1
@@ -157,6 +157,12 @@ __EOF__
 }
 
 download() {
+  CFGFILE=$BOARD_NAME.cfg
+  SCRIPTPATH=$WD/../$BOARD_NAME/scripts
+  if [ ! -e $CFGFILE ]; then
+    echo "No such as board name: $BOARD_NAME" 1>&2
+    exit 1
+  fi
   for _dev in "${seriallist[@]}"; do
     echo "DOWNLOAD: $_dev($opt)"
     $OPENOCDEXE -f $CFGFILE -s $SCRIPTPATH \
@@ -200,6 +206,9 @@ while test $# -gt 0; do
   esac
 
   case $1 in
+    --board=*)
+      BOARD_NAME=$optarg
+      ;;
     --write)
       search_device
       write_serial
