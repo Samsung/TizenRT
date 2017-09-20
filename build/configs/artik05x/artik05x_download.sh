@@ -80,7 +80,7 @@ download()
         flash_write bl2 ${FW_DIR_PATH}/bl2.bin; 		\
         flash_write sssfw ${FW_DIR_PATH}/sssfw.bin; 		\
         flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin;	\
-        flash_write os ../../../../output/bin/tinyara_head.bin;	\
+        flash_write os ../../../output/bin/tinyara_head.bin;	\
         exit"
     popd > /dev/null
 }
