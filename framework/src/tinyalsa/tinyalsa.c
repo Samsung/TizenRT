@@ -109,20 +109,30 @@ struct pcm {
 	unsigned int subdevice;
 
 #ifdef CONFIG_AUDIO_MULTI_SESSION
+	/* Session pointer to be managed by driver */
 	void *session;
 #endif
-	mqd_t mq;					/* Message queue for the playthread */
-	char mqname[16];			/* Name of our message queue */
+	/* Message queue for the playthread */
+	mqd_t mq;
+	/* Name of our message queue */
+	char mqname[16];
+
+	/* Pointers to apb buffers */
 #ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 	struct ap_buffer_info_s buf_info;
 	struct ap_buffer_s **pBuffers;
 #else
 	struct ap_buffer_s *pBuffers[CONFIG_AUDIO_NUM_BUFFERS];
 #endif
-	unsigned int bufPtr;
-	struct ap_buffer_s *nextBuf;
-	unsigned int nextSize;
-	unsigned int nextOffset;
+
+	/* Index into the array of apb's */
+	unsigned int buf_ptr;
+	/* Pointer to next apb for read / write */
+	struct ap_buffer_s *next_buf;
+	/* Size of data in bytes in the next buffer */
+	unsigned int next_size;
+	/* Offset of data in next buffer */
+	unsigned int next_offset;
 };
 
 static int oops(struct pcm *pcm, int e, const char *fmt, ...)
@@ -369,9 +379,9 @@ static int pcm_areas_copy(struct pcm *pcm, unsigned int pcm_offset, char *buf, u
 
 	/* interleaved only atm */
 	if (pcm->flags & PCM_IN) {
-		memcpy(buf + src_offset_bytes, (char *)pcm->nextBuf + pcm_offset_bytes, size_bytes);
+		memcpy(buf + src_offset_bytes, (char *)pcm->next_buf + pcm_offset_bytes, size_bytes);
 	} else {
-		memcpy((char *)pcm->nextBuf + pcm_offset_bytes, buf + src_offset_bytes, size_bytes);
+		memcpy((char *)pcm->next_buf + pcm_offset_bytes, buf + src_offset_bytes, size_bytes);
 	}
 	return 0;
 }
@@ -445,24 +455,15 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 
 	nbytes = pcm_frames_to_bytes(pcm, frame_count);
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 	if (nbytes > pcm->config.period_size) {
 		nbytes = pcm->config.period_size;
 	}
 
-	if (pcm->bufPtr < pcm->config.period_count)
-#else
-	if (nbytes > CONFIG_AUDIO_BUFFER_NUMBYTES) {
-		nbytes = CONFIG_AUDIO_BUFFER_NUMBYTES;
-	}
-
-	if (pcm->bufPtr < CONFIG_AUDIO_NUM_BUFFERS)
-#endif
-	{
+	if (pcm->buf_ptr < pcm->config.period_count) {
 		/* If we have empty buffers, fill them first */
-		memcpy(pcm->pBuffers[pcm->bufPtr]->samp, data, nbytes);
-		apb = pcm->pBuffers[pcm->bufPtr];
-		pcm->bufPtr++;
+		memcpy(pcm->pBuffers[pcm->buf_ptr]->samp, data, nbytes);
+		apb = pcm->pBuffers[pcm->buf_ptr];
+		pcm->buf_ptr++;
 	} else {
 		/* We dont have any empty buffers. wait for deque message from kernel */
 		size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
@@ -521,7 +522,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 	unsigned int size;
 	int prio;
 
-	if (pcm == NULL || data == NULL) {
+	if (pcm == NULL || data == NULL || frame_count == 0) {
 		return -EINVAL;
 	}
 
@@ -531,17 +532,8 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 
 	nbytes = pcm_frames_to_bytes(pcm, frame_count);
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-	if (nbytes < pcm->config.period_size) {
-		return -EINVAL;
-	}
 	bufdesc.numbytes = pcm->config.period_size;
-#else
-	if (nbytes < CONFIG_AUDIO_BUFFER_NUMBYTES) {
-		return -EINVAL;
-	}
-	bufdesc.numbytes = CONFIG_AUDIO_BUFFER_NUMBYTES;
-#endif
+
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	bufdesc.session = pcm->session;
 #endif
@@ -549,31 +541,76 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 	/* If device is not yet started, start now! */
 	if ((!pcm->running) && (pcm_start(pcm) < 0)) {
 		return -errno;
-	} else {
-		pcm->running = 1;
 	}
 
-	/* Wait for deque message from kernel */
-	size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
-	if (size != sizeof(msg)) {
-		/* Interrupted by a signal? What to do? */
-		return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel");
-	}
-	if (msg.msgId == AUDIO_MSG_DEQUEUE) {
-		apb = (struct ap_buffer_s *)msg.u.pPtr;
-		/* Copy data to user buffer */
-		memcpy(data, apb->samp, apb->nbytes);
-		/* Enque buffer for next read opertion */
-		nbytes = apb->nbytes;
-		apb->nbytes = 0;
-		apb->curbyte = 0;
-		apb->flags = 0;
-		bufdesc.u.pBuffer = apb;
-		if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
-			return oops(pcm, errno, "failed to enque buffer after read");
+	/* Read data */
+	if (pcm->next_buf != NULL) {
+		/* We have a pending buffer with some data in it. */
+		apb = pcm->next_buf;
+
+		if (nbytes < pcm->next_size) {
+			/* User wants less data than we have in buffer.
+			   Copy the requested amount of data to user buffer and return */
+			memcpy(data, apb->samp + pcm->next_offset, nbytes);
+			pcm->next_size -= nbytes;
+			pcm->next_offset += nbytes;
+		} else {
+			/* User wants more data than we have in buffer.
+			   Copy available data to user buffer, enqueue buffer and return */
+			memcpy(data, apb->samp + pcm->next_offset, pcm->next_size);
+
+			nbytes = pcm->next_size;
+			pcm->next_size = 0;
+			pcm->next_offset = 0;
+			pcm->next_buf = NULL;
+
+			apb->nbytes = 0;
+			apb->curbyte = 0;
+			apb->flags = 0;
+			bufdesc.u.pBuffer = apb;
+			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
+				return oops(pcm, errno, "failed to enque buffer after read");
+			}
 		}
+
 	} else {
-		return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
+		/* We got here because we dont have any pending buffers */
+		/* Wait for deque message from kernel */
+		size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
+		if (size != sizeof(msg)) {
+			/* Interrupted by a signal? What to do? */
+			return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel");
+		}
+		if (msg.msgId == AUDIO_MSG_DEQUEUE) {
+			apb = (struct ap_buffer_s *)msg.u.pPtr;
+
+			if (nbytes < apb->nbytes) {
+				/* User wants less data than we have in buffer.
+				   Copy the requested amount of data and keep the buffer as pending buffer */
+				memcpy(data, apb->samp, nbytes);
+
+				pcm->next_buf = apb;
+				pcm->next_offset = nbytes;
+				pcm->next_size = apb->nbytes - nbytes;
+			} else {
+				/* User wants more data than we have in buffer.
+				   Copy available data to user buffer, enqueue buffer and return */
+				memcpy(data, apb->samp, apb->nbytes);
+
+				nbytes = apb->nbytes;
+
+				apb->nbytes = 0;
+				apb->curbyte = 0;
+				apb->flags = 0;
+				bufdesc.u.pBuffer = apb;
+				if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
+					return oops(pcm, errno, "failed to enque buffer after read");
+				}
+			}
+
+		} else {
+			return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
+		}
 	}
 
 	return pcm_bytes_to_frames(pcm, nbytes);
@@ -739,6 +776,10 @@ int pcm_close(struct pcm *pcm)
 	if (pcm->fd >= 0) {
 		close(pcm->fd);
 	}
+
+	pcm->next_size = 0;
+	pcm->next_offset = 0;
+	pcm->next_buf = NULL;
 	pcm->prepared = 0;
 	pcm->running = 0;
 	pcm->buffer_size = 0;
@@ -913,11 +954,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 		buf_desc.session = pcm->session;
 #endif
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-		buf_desc.numbytes = buf_info.buffer_size;
-#else
-		buf_desc.numbytes = CONFIG_AUDIO_BUFFER_NUMBYTES;
-#endif
+		buf_desc.numbytes = pcm->config.period_size;
 		buf_desc.u.ppBuffer = &pcm->pBuffers[x];
 
 		ret = ioctl(pcm->fd, AUDIOIOC_ALLOCBUFFER, (unsigned long)&buf_desc);
@@ -965,6 +1002,12 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 		}
 	}
 #endif
+	pcm->prepared = 0;
+	pcm->running = 0;
+	pcm->buf_ptr = 0;
+	pcm->next_size = 0;
+	pcm->next_offset = 0;
+	pcm->next_buf = NULL;
 	pcm->underruns = 0;
 	return pcm;
 
@@ -991,7 +1034,7 @@ fail_cleanup_buffers:
 	}
 #endif
 
-	pcm->bufPtr = 0;
+	pcm->buf_ptr = 0;
 
 #ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 fail_after_mq:
@@ -1075,25 +1118,24 @@ int pcm_start(struct pcm *pcm)
 	if (pcm == NULL) {
 		return -EINVAL;
 	}
+
+	if (pcm->running) {
+		return 0;
+	}
+
 	int prepare_error = pcm_prepare(pcm);
 	if (prepare_error) {
 		return prepare_error;
 	}
 
+	/* If the device is opened for read and Our buffers are not enqued. Enque them now. */
 	if (pcm->flags & PCM_IN) {
-		/* If the device is opened for read and Our buffers are not enqued. Enque them now. */
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 		bufdesc.session = pcm->session;
 #endif
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 		bufdesc.numbytes = pcm->config.period_size;
-		for (pcm->bufPtr = 0; pcm->bufPtr < buf_info.nbuffers; pcm->bufPtr++)
-#else
-		bufdesc.numbytes = CONFIG_AUDIO_BUFFER_NUMBYTES;
-		for (pcm->bufPtr = 0; pcm->bufPtr < CONFIG_AUDIO_NUM_BUFFERS; pcm->bufPtr++)
-#endif
-		{
-			bufdesc.u.pBuffer = pcm->pBuffers[pcm->bufPtr];
+		while (pcm->buf_ptr < pcm->config.period_count) {
+			bufdesc.u.pBuffer = pcm->pBuffers[pcm->buf_ptr++];
 			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 			}
@@ -1108,9 +1150,6 @@ int pcm_start(struct pcm *pcm)
 		return oops(pcm, errno, "cannot start channel");
 	}
 
-	pcm->nextSize = 0;
-	pcm->nextOffset = 0;
-	pcm->nextBuf = NULL;
 	pcm->running = 1;
 	return 0;
 }
@@ -1126,18 +1165,31 @@ int pcm_stop(struct pcm *pcm)
 		return -EINVAL;
 	}
 #ifdef CONFIG_AUDIO_MULTI_SESSION
-	if (ioctl(pcm->fd, AUDIOIOC_STOP, (unsigned long)pcm->session) < 0)
+	if (!pcm->running && ioctl(pcm->fd, AUDIOIOC_STOP, (unsigned long)pcm->session) < 0)
 #else
-	if (ioctl(pcm->fd, AUDIOIOC_STOP, 0) < 0)
+	if (!pcm->running && ioctl(pcm->fd, AUDIOIOC_STOP, 0) < 0)
 #endif
 		return oops(pcm, errno, "cannot stop channel");
 
+	/* Remove any pending messages from the message queue */
+	struct timespec st_time;
+	struct audio_msg_s msg;
+	unsigned int size;
+	int prio;
+	while (1) {
+		clock_gettime(CLOCK_REALTIME, &st_time);
+		size = mq_timedreceive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
+		if (size != sizeof(msg)) {
+			break;
+		}
+	}
+
 	pcm->prepared = 0;
 	pcm->running = 0;
-	pcm->bufPtr = 0;
-	pcm->nextSize = 0;
-	pcm->nextOffset = 0;
-	pcm->nextBuf = NULL;
+	pcm->buf_ptr = 0;
+	pcm->next_size = 0;
+	pcm->next_offset = 0;
+	pcm->next_buf = NULL;
 
 	return 0;
 }
@@ -1147,7 +1199,7 @@ static inline int pcm_mmap_avail(struct pcm *pcm)
 	if (pcm == NULL) {
 		return 0;
 	}
-	return pcm_bytes_to_frames(pcm, pcm->nextSize);
+	return pcm_bytes_to_frames(pcm, pcm->next_size);
 }
 
 int pcm_mmap_begin(struct pcm *pcm, void **areas, unsigned int *offset, unsigned int *frames)
@@ -1155,7 +1207,7 @@ int pcm_mmap_begin(struct pcm *pcm, void **areas, unsigned int *offset, unsigned
 	if (pcm == NULL || *areas == NULL || offset == NULL || frames == NULL) {
 		return -EINVAL;
 	}
-	int nframes = pcm_bytes_to_frames(pcm, pcm->nextSize);
+	int nframes = pcm_bytes_to_frames(pcm, pcm->next_size);
 
 	/* If data is not available, return -1 */
 	if (nframes == 0) {
@@ -1163,16 +1215,16 @@ int pcm_mmap_begin(struct pcm *pcm, void **areas, unsigned int *offset, unsigned
 		return -1;
 	}
 
-	*areas = pcm->nextBuf->samp;
-	*offset = pcm->nextOffset;
+	*areas = pcm->next_buf->samp;
+	*offset = pcm->next_offset;
 
 	if (*frames < nframes) {
-		pcm->nextSize -= pcm_frames_to_bytes(pcm, *frames);
-		pcm->nextOffset += pcm_frames_to_bytes(pcm, *frames);
+		pcm->next_size -= pcm_frames_to_bytes(pcm, *frames);
+		pcm->next_offset += pcm_frames_to_bytes(pcm, *frames);
 	} else {
-		*frames = pcm_bytes_to_frames(pcm, pcm->nextSize);
-		pcm->nextSize = 0;
-		pcm->nextOffset = 0;
+		*frames = pcm_bytes_to_frames(pcm, pcm->next_size);
+		pcm->next_size = 0;
+		pcm->next_offset = 0;
 	}
 
 	return 0;
@@ -1188,16 +1240,16 @@ int pcm_mmap_commit(struct pcm *pcm, unsigned int offset, unsigned int frames)
 	}
 	struct audio_buf_desc_s bufdesc;
 
-	if (pcm->nextSize == 0) {
+	if (pcm->next_size == 0) {
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 		bufdesc.session = pcm->session;
 #endif
-		bufdesc.numbytes = pcm->nextBuf->nmaxbytes;
-		bufdesc.u.pBuffer = pcm->nextBuf;
+		bufdesc.numbytes = pcm->next_buf->nmaxbytes;
+		bufdesc.u.pBuffer = pcm->next_buf;
 		if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 			return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
 		}
-		pcm->nextBuf = NULL;
+		pcm->next_buf = NULL;
 	}
 
 	return frames;
@@ -1227,16 +1279,11 @@ int pcm_wait(struct pcm *pcm, int timeout)
 	if (pcm == NULL) {
 		return -EINVAL;
 	}
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-	if ((pcm->flags & PCM_OUT) && pcm->bufPtr < pcm->config.period_count)
-#else
-	if ((pcm->flags & PCM_OUT) && pcm->bufPtr < CONFIG_AUDIO_NUM_BUFFERS)
-#endif
-	{
+	if ((pcm->flags & PCM_OUT) && pcm->buf_ptr < pcm->config.period_count) {
 		/* In playback scenario, if audio buffers are available, return immediately */
-		pcm->nextBuf = pcm->pBuffers[pcm->bufPtr];
-		pcm->nextSize = pcm->pBuffers[pcm->bufPtr]->nmaxbytes;
-		pcm->bufPtr++;
+		pcm->next_buf = pcm->pBuffers[pcm->buf_ptr];
+		pcm->next_size = pcm->pBuffers[pcm->buf_ptr]->nmaxbytes;
+		pcm->buf_ptr++;
 		return 1;
 	} else {
 		/* We dont have any empty buffers. wait for deque message from kernel */
@@ -1258,8 +1305,8 @@ int pcm_wait(struct pcm *pcm, int timeout)
 		}
 		if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 			apb = (struct ap_buffer_s *)msg.u.pPtr;
-			pcm->nextBuf = apb;
-			pcm->nextSize = apb->nbytes;
+			pcm->next_buf = apb;
+			pcm->next_size = apb->nbytes;
 			return 1;
 		} else {
 			return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
