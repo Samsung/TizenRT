@@ -579,6 +579,7 @@ static int audio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	case AUDIOIOC_UNREGISTERMQ: {
 		audvdbg("AUDIOIOC_UNREGISTERMQ\n");
+		mq_close(upper->usermq);	/* Close the message queue */
 
 		upper->usermq = NULL;
 		ret = OK;

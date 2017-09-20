@@ -395,25 +395,25 @@ pthread_addr_t httptest_cb(void *arg)
 	int auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
 #endif
 	struct webserver_input *input = arg;
-	if (!strcmp(input->argv[1], "start")) {
+	if (!strncmp(input->argv[1], "start", 5)) {
 #ifdef CONFIG_NET_SECURITY_TLS
 		if (input->argc != 3) {
 			print_webserver_usage();
 			goto release;
 		}
-		if (strcmp(input->argv[2], "required") == 0) {
-			auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
-		} else if (strcmp(input->argv[2], "optional") == 0) {
-			auth_mode = MBEDTLS_SSL_VERIFY_OPTIONAL;
-		} else if (strcmp(input->argv[2], "none") == 0) {
+		if (strncmp(input->argv[2], "none", 4) == 0) {
 			auth_mode = MBEDTLS_SSL_VERIFY_NONE;
+		} else if (strncmp(input->argv[2], "required", 8) == 0) {
+			auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
+		} else if (strncmp(input->argv[2], "optional", 8) == 0) {
+			auth_mode = MBEDTLS_SSL_VERIFY_OPTIONAL;
 		} else {
 			print_webserver_usage();
 			goto release;
 		}
 #endif
 		goto start;
-	} else if (!strcmp(input->argv[1], "stop")) {
+	} else if (!strncmp(input->argv[1], "stop", 4)) {
 		if (input->argc != 2) {
 			print_webserver_usage();
 			goto release;
@@ -520,7 +520,7 @@ int webserver_main(int argc, char *argv[])
 			WEBSERVER_FREE_INPUT(input, i);
 			return -1;
 		}
-		strcpy(input->argv[i], argv[i]);
+		strncpy(input->argv[i], argv[i], strlen(argv[i]));
 	}
 	status = pthread_attr_init(&attr);
 	if (status != 0) {

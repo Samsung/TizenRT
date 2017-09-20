@@ -48,6 +48,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+ /**
+  * @defgroup STREAMS_LIBC STREAMS
+  * @brief Provides APIs for Streams
+  * @ingroup KERNEL
+  */
 
 #ifndef _INCLUDE_STREAMS_H
 #define _INCLUDE_STREAMS_H
@@ -76,12 +81,20 @@ struct lib_outstream_s;
 typedef void (*lib_putc_t)(FAR struct lib_outstream_s *this, int ch);
 typedef int (*lib_flush_t)(FAR struct lib_outstream_s *this);
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for getting character from the instream
+ */
 struct lib_instream_s {
 	lib_getc_t get;				/* Get one character from the instream */
 	int nget;					/* Total number of characters gotten.  Written
 								 * by get method, readable by user */
 };
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for putting character to the outstream
+ */
 struct lib_outstream_s {
 	lib_putc_t put;				/* Put one character to the outstream */
 #ifdef CONFIG_STDIO_LINEBUFFER
@@ -102,6 +115,10 @@ typedef void (*lib_soputc_t)(FAR struct lib_sostream_s *this, int ch);
 typedef int (*lib_soflush_t)(FAR struct lib_sostream_s *this);
 typedef off_t (*lib_soseek_t)(FAR struct lib_sostream_s *this, off_t offset, int whence);
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for getting character from the instream with seek operation support
+ */
 struct lib_sistream_s {
 	lib_sigetc_t get;			/* Get one character from the instream */
 	lib_siseek_t seek;			/* Seek to a position in the instream */
@@ -109,6 +126,10 @@ struct lib_sistream_s {
 								 * by get method, readable by user */
 };
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for putting character to the outstream with seek operation support
+ */
 struct lib_sostream_s {
 	lib_soputc_t put;			/* Put one character to the outstream */
 #ifdef CONFIG_STDIO_LINEBUFFER
@@ -121,18 +142,30 @@ struct lib_sostream_s {
 
 /* These are streams that operate on a fixed-sized block of memory */
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a fixed-sized block of memory with lib_instream_s
+ */
 struct lib_meminstream_s {
 	struct lib_instream_s public;
 	FAR const char *buffer;		/* Address of first byte in the buffer */
 	size_t buflen;				/* Size of the buffer in bytes */
 };
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a fixed-sized block of memory with lib_outstream_s
+ */
 struct lib_memoutstream_s {
 	struct lib_outstream_s public;
 	FAR char *buffer;			/* Address of first byte in the buffer */
 	size_t buflen;				/* Size of the buffer in bytes */
 };
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a fixed-sized block of memory with lib_sistream_s
+ */
 struct lib_memsistream_s {
 	struct lib_sistream_s public;
 	FAR const char *buffer;		/* Address of first byte in the buffer */
@@ -140,6 +173,10 @@ struct lib_memsistream_s {
 	size_t buflen;				/* Size of the buffer in bytes */
 };
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a fixed-sized block of memory with lib_sostream_s
+ */
 struct lib_memsostream_s {
 	struct lib_sostream_s public;
 	FAR char *buffer;			/* Address of first byte in the buffer */
@@ -149,21 +186,37 @@ struct lib_memsostream_s {
 
 /* These are streams that operate on a FILE */
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a FILE with lib_instream_s
+ */
 struct lib_stdinstream_s {
 	struct lib_instream_s public;
 	FAR FILE *stream;
 };
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a FILE with lib_outstream_s
+ */
 struct lib_stdoutstream_s {
 	struct lib_outstream_s public;
 	FAR FILE *stream;
 };
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a FILE with lib_sistream_s
+ */
 struct lib_stdsistream_s {
 	struct lib_sistream_s public;
 	FAR FILE *stream;
 };
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a FILE with lib_sostream_s
+ */
 struct lib_stdsostream_s {
 	struct lib_sostream_s public;
 	FAR FILE *stream;
@@ -171,21 +224,37 @@ struct lib_stdsostream_s {
 
 /* These are streams that operate on a file descriptor */
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a fd with lib_instream_s
+ */
 struct lib_rawinstream_s {
 	struct lib_instream_s public;
 	int fd;
 };
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a fd with lib_outstream_s
+ */
 struct lib_rawoutstream_s {
 	struct lib_outstream_s public;
 	int fd;
 };
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a fd with lib_sistream_s
+ */
 struct lib_rawsistream_s {
 	struct lib_sistream_s public;
 	int fd;
 };
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Structure for operation on a fd with lib_sostream_s
+ */
 struct lib_rawsostream_s {
 	struct lib_sostream_s public;
 	int fd;
@@ -229,9 +298,45 @@ extern "C" {
  *
  ****************************************************************************/
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a fixed-size memory buffer
+ * @param[in] User allocated, uninitialized instance of struct lib_meminstream_s
+ * @param[in] Address of the beginning of the fixed-size memory buffer
+ * @param[in] Size of the fixed-sized memory buffer in bytes
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_meminstream(FAR struct lib_meminstream_s *instream, FAR const char *bufstart, int buflen);
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a fixed-size memory buffer
+ * @param[in] User allocated, uninitialized instance of struct lib_memoutstream_s
+ * @param[in] Address of the beginning of the fixed-size memory buffer
+ * @param[in] Size of the fixed-sized memory buffer in bytes
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_memoutstream(FAR struct lib_memoutstream_s *outstream, FAR char *bufstart, int buflen);
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a fixed-size memory buffer
+ * @param[in] User allocated, uninitialized instance of struct lib_memsistream_s
+ * @param[in] Address of the beginning of the fixed-size memory buffer
+ * @param[in] Size of the fixed-sized memory buffer in bytes
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_memsistream(FAR struct lib_memsistream_s *instream, FAR const char *bufstart, int buflen);
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a fixed-size memory buffer
+ * @param[in] User allocated, uninitialized instance of struct lib_memsostream_s
+ * @param[in] Address of the beginning of the fixed-size memory buffer
+ * @param[in] Size of the fixed-sized memory buffer in bytes
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_memsostream(FAR struct lib_memsostream_s *outstream, FAR char *bufstart, int buflen);
 
 /****************************************************************************
@@ -254,9 +359,41 @@ void lib_memsostream(FAR struct lib_memsostream_s *outstream, FAR char *bufstart
  *
  ****************************************************************************/
 
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a FILE instance
+ * @param[in] User allocated, uninitialized instance of struct lib_stdinstream_s
+ * @param[in] Stream provided by user
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_stdinstream(FAR struct lib_stdinstream_s *instream, FAR FILE *stream);
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a FILE instance
+ * @param[in] User allocated, uninitialized instance of struct lib_stdoutstream_s
+ * @param[in] Stream provided by user
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_stdoutstream(FAR struct lib_stdoutstream_s *outstream, FAR FILE *stream);
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a FILE instance
+ * @param[in] User allocated, uninitialized instance of struct lib_stdsistream_s
+ * @param[in] Stream provided by user
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_stdsistream(FAR struct lib_stdsistream_s *instream, FAR FILE *stream);
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a FILE instance
+ * @param[in] User allocated, uninitialized instance of struct lib_stdsostream_s
+ * @param[in] Stream provided by user
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_stdsostream(FAR struct lib_stdsostream_s *outstream, FAR FILE *stream);
 
 /****************************************************************************
@@ -281,10 +418,41 @@ void lib_stdsostream(FAR struct lib_stdsostream_s *outstream, FAR FILE *stream);
  *   None (User allocated instance initialized).
  *
  ****************************************************************************/
-
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a file descriptor
+ * @param[in] User allocated, uninitialized instance of struct lib_rawinstream_s
+ * @param[in] file/socket descriptor provided by user
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_rawinstream(FAR struct lib_rawinstream_s *instream, int fd);
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a file descriptor
+ * @param[in] User allocated, uninitialized instance of struct lib_rawoutstream_s
+ * @param[in] file/socket descriptor provided by user
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_rawoutstream(FAR struct lib_rawoutstream_s *outstream, int fd);
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a file descriptor
+ * @param[in] User allocated, uninitialized instance of struct lib_rawsistream_s
+ * @param[in] file/socket descriptor provided by user
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_rawsistream(FAR struct lib_rawsistream_s *instream, int fd);
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with a file descriptor
+ * @param[in] User allocated, uninitialized instance of struct lib_rawsostream_s
+ * @param[in] file/socket descriptor provided by user
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_rawsostream(FAR struct lib_rawsostream_s *outstream, int fd);
 
 /****************************************************************************
@@ -306,9 +474,23 @@ void lib_rawsostream(FAR struct lib_rawsostream_s *outstream, int fd);
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_LOWGETC
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with low-level, architecture-specific I/O
+ * @param[in] User allocated, uninitialized instance of struct lib_lowinstream_s
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_lowinstream(FAR struct lib_instream_s *lowinstream);
 #endif
 #ifdef CONFIG_ARCH_LOWPUTC
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes a stream for use with low-level, architecture-specific I/O
+ * @param[in] User allocated, uninitialized instance of struct lib_lowoutstream_s
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_lowoutstream(FAR struct lib_outstream_s *lowoutstream);
 #endif
 
@@ -337,9 +519,29 @@ void lib_lowoutstream(FAR struct lib_outstream_s *lowoutstream);
  *   None (User allocated instance initialized).
  *
  ****************************************************************************/
-
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes NULL stream
+ * @param[in] User allocated, uninitialized instance of struct lib_instream_s
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_zeroinstream(FAR struct lib_instream_s *zeroinstream);
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes NULL stream
+ * @param[in] User allocated, uninitialized instance of struct lib_instream_s
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_nullinstream(FAR struct lib_instream_s *nullinstream);
+/**
+ * @ingroup STREAMS_LIBC
+ * @brief Initializes NULL stream
+ * @param[in] User allocated, uninitialized instance of struct lib_outstream_s
+ * @return None
+ * @since Tizen RT v1.1
+ */
 void lib_nulloutstream(FAR struct lib_outstream_s *nulloutstream);
 
 /****************************************************************************
@@ -357,7 +559,13 @@ void lib_nulloutstream(FAR struct lib_outstream_s *nulloutstream);
  *
  ****************************************************************************/
 
+/**
+ * @cond
+ */
 #ifdef CONFIG_SYSLOG
+/**
+ * @internal
+ */
 void lib_syslogstream(FAR struct lib_outstream_s *stream);
 #endif
 
@@ -374,6 +582,9 @@ void lib_syslogstream(FAR struct lib_outstream_s *stream);
  ****************************************************************************/
 
 #ifdef CONFIG_STDIO_LINEBUFFER
+/**
+ * @internal
+ */
 int lib_noflush(FAR struct lib_outstream_s *stream);
 #endif
 
@@ -391,6 +602,9 @@ int lib_noflush(FAR struct lib_outstream_s *stream);
  ****************************************************************************/
 
 #ifdef CONFIG_STDIO_LINEBUFFER
+/**
+ * @internal
+ */
 int lib_snoflush(FAR struct lib_sostream_s *this);
 #endif
 
@@ -401,13 +615,23 @@ int lib_snoflush(FAR struct lib_sostream_s *this);
  *  Stream-oriented versions of sprintf and vsprintf.
  *
  ****************************************************************************/
-
+/**
+ * @internal
+ */
 int lib_sprintf(FAR struct lib_outstream_s *obj, FAR const char *fmt, ...);
+/**
+ * @internal
+ */
 int lib_vsprintf(FAR struct lib_outstream_s *obj, FAR const char *src, va_list ap);
-
+/**
+ * @endcond
+ */
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
 #endif							/* _INCLUDE_STREAMS_H */
+/**
+ * @}
+ */

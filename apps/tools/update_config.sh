@@ -29,7 +29,13 @@ function write_config(){
 	UPDATED_ENTRYPOINT=`sed -n '/USER_ENTRYPOINT/p' $file_path | sed -n 's/.*=//p'`
 	sed -i "s/CONFIG_USER_ENTRYPOINT.*/CONFIG_USER_ENTRYPOINT=$UPDATED_ENTRYPOINT/" $config_path
 
-	# update .config' use config from metafile;
+	CONFIG_ENTRY_LIST=`sed -n '/^CONFIG_ENTRY_/p' $config_path`
+	if [ "$CONFIG_ENTRY_LIST" != "CONFIG_ENTRY_MANUAL" ]; then
+		sed -i '/^CONFIG_ENTRY_/{ s/CONFIG/# CONFIG/g; s/=y/ is not set/g }' $config_path
+		sed -i '/CONFIG_ENTRY_MANUAL/{ s/# //g ; s/ is not set/=y/g }' $config_path
+	fi
+
+	# update .config use config from metafile;
 	# if OLD_CONFIG_USE is not updated => maintain origin CONFIG_USE;
 	# else OLD_CONFIG and NEW_CONFIG are not equal => change CONFIG_USE;
 

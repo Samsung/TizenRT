@@ -415,7 +415,7 @@ static void utc_mqtt_deinit_client_n(void)
  * @postcondition    none
  */
 static void utc_mqtt_deinit_client_p(void)
-{p
+{
 	int res = mqtt_deinit_client(g_mqtt_pub_handle);
 	if (res < 0) {
 		UTC_MQTT_LOGE;

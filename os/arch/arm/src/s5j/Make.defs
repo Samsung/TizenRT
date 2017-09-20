@@ -74,7 +74,7 @@ CMN_ASRCS += arm_vectors.S arm_fullcontextrestore.S
 CMN_ASRCS += arm_saveusercontext.S arm_vectoraddrexcptn.S arm_vfork.S
 CMN_ASRCS += cp15_coherent_dcache.S cp15_invalidate_dcache.S
 CMN_ASRCS += cp15_clean_dcache.S cp15_flush_dcache.S cp15_invalidate_dcache_all.S
-CMN_ASRCS += arm_savefpu.S arm_restorefpu.S
+CMN_ASRCS += arm_savefpu.S arm_restorefpu.S setjmp.S
 
 # Configuration dependent assembly language files
 
@@ -117,8 +117,14 @@ endif
 CHIP_CSRCS += s5j_boot.c s5j_irq.c
 CHIP_CSRCS += s5j_serial.c
 CHIP_CSRCS += s5j_mac.c
-CHIP_CSRCS += s5j_watchdog.c
 CHIP_CSRCS += s5j_systemreset.c
+
+ifeq ($(CONFIG_S5J_WATCHDOG),y)
+CHIP_CSRCS += s5j_watchdog.c
+ifeq ($(CONFIG_WATCHDOG),y)
+CHIP_CSRCS += s5j_watchdog_lowerhalf.c
+endif
+endif
 
 CHIP_CSRCS += s5j_gpio.c
 ifeq ($(CONFIG_GPIO),y)
@@ -144,6 +150,8 @@ ifeq ($(CONFIG_S5J_I2C),y)
 CHIP_CSRCS += s5j_i2c.c
 endif
 
+CHIP_CSRCS += s5j_clock.c
+
 ifeq ($(CONFIG_S5J_MCT),y)
 CHIP_CSRCS += s5j_mct.c
 ifeq ($(CONFIG_TIMER),y)
@@ -162,8 +170,9 @@ endif
 
 ifeq ($(CONFIG_S5J_PWR),y)
 CHIP_CSRCS += s5j_pwr.c
-CHIP_CSRCS += s5j_pwrcal.c
 endif
+
+CHIP_CSRCS += s5j_clock.c
 
 ifeq ($(CONFIG_S5J_PWM),y)
 CHIP_CSRCS += s5j_pwm.c

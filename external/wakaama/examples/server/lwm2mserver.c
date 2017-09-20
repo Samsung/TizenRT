@@ -52,7 +52,7 @@
 */
 
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include <string.h>
 #include <stdlib.h>

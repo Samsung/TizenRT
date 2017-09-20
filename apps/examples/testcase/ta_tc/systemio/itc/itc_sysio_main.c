@@ -45,37 +45,37 @@ extern sem_t tc_sem;
 
 int itc_sysio_launcher(int argc, FAR char *argv[])
 {
-    total_pass = 0;
-    total_fail = 0;
+	total_pass = 0;
+	total_fail = 0;
 
-    sem_wait(&tc_sem);
+	sem_wait(&tc_sem);
 
 #ifdef CONFIG_SYSIO_ITC_PWM
-    itc_pwm_main();
+	itc_pwm_main();
 #endif
 
 #ifdef CONFIG_SYSIO_ITC_UART
-    itc_uart_main();
+	itc_uart_main();
 #endif
 
 #ifdef CONFIG_SYSIO_ITC_SPI
-    itc_spi_main();
+	itc_spi_main();
 #endif
 
 #ifdef CONFIG_SYSIO_ITC_I2C
-    itc_i2c_main();
+	itc_i2c_main();
 #endif
 
 #ifdef CONFIG_SYSIO_ITC_GPIO
-    itc_gpio_main();
+	itc_gpio_main();
 #endif
 
-    SYSIO_ITC_PRINT("\n=== TINYARA SYSIO TC COMPLETE ===\n");
-    SYSIO_ITC_PRINT("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
+	SYSIO_ITC_PRINT("\n=== TINYARA SYSIO TC COMPLETE ===\n");
+	SYSIO_ITC_PRINT("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
 
-    sem_post(&tc_sem);
+	sem_post(&tc_sem);
 
-    return 0;
+	return 0;
 }
 
 #ifdef CONFIG_BUILD_KERNEL
@@ -85,9 +85,9 @@ int itc_sysio_main(int argc, char *argv[])
 #endif
 {
 #ifdef CONFIG_TASH
-    tash_cmd_install("sysio_itc", itc_sysio_launcher, 0);
+	tash_cmd_install("sysio_itc", itc_sysio_launcher, 0);
 #else
-    itc_sysio_launcher(argc, argv);
+	itc_sysio_launcher(argc, argv);
 #endif
-    return 0;
+	return 0;
 }

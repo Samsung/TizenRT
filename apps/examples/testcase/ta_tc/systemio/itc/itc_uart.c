@@ -51,14 +51,14 @@
 */
 void itc_iotbus_uart_init_stop_p(void)
 {
-    int ret = IOTBUS_ERROR_NONE;
-    iotbus_uart_context_h h_uart = iotbus_uart_init(DEVPATH);
-    TC_ASSERT_NEQ("iotbus_uart_init", h_uart, NULL);
+	int ret = IOTBUS_ERROR_NONE;
+	iotbus_uart_context_h h_uart = iotbus_uart_init(DEVPATH);
+	TC_ASSERT_NEQ("iotbus_uart_init", h_uart, NULL);
 
-    ret = iotbus_uart_stop(h_uart);
-    TC_ASSERT_EQ("iotbus_uart_stop", ret, IOTBUS_ERROR_NONE);
+	ret = iotbus_uart_stop(h_uart);
+	TC_ASSERT_EQ("iotbus_uart_stop", ret, IOTBUS_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -71,18 +71,18 @@ void itc_iotbus_uart_init_stop_p(void)
 */
 void itc_iotbus_uart_set_baudrate_p(void)
 {
-    int i_baudrate = 115200;
-    int ret = IOTBUS_ERROR_NONE;
-    iotbus_uart_context_h h_uart = iotbus_uart_init(DEVPATH);
-    TC_ASSERT_NEQ("iotbus_uart_init", h_uart, NULL);
+	int i_baudrate = 115200;
+	int ret = IOTBUS_ERROR_NONE;
+	iotbus_uart_context_h h_uart = iotbus_uart_init(DEVPATH);
+	TC_ASSERT_NEQ("iotbus_uart_init", h_uart, NULL);
 
 	ret = iotbus_uart_set_baudrate(h_uart, i_baudrate);
 	TC_ASSERT_EQ_CLEANUP("iotbus_uart_set_baudrate", ret, IOTBUS_ERROR_NONE, iotbus_uart_stop(h_uart));
 
-    ret = iotbus_uart_stop(h_uart);
-    TC_ASSERT_EQ("iotbus_uart_stop", ret, IOTBUS_ERROR_NONE);
+	ret = iotbus_uart_stop(h_uart);
+	TC_ASSERT_EQ("iotbus_uart_stop", ret, IOTBUS_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();;
+	TC_SUCCESS_RESULT();;
 }
 
 /**
@@ -153,26 +153,26 @@ void itc_iotbus_uart_set_flowcontrol_p(void)
 */
 void itc_iotbus_uart_write_read_p(void)
 {
-    int ret = IOTBUS_ERROR_NONE;
-    char szInputText[32] = "UART READ/WRITE ITC TESTING!";
-    char szOutputText[32];
-    iotbus_uart_context_h h_uart = iotbus_uart_init(DEVPATH);
-    TC_ASSERT_NEQ("iotbus_uart_init", h_uart, NULL);
+	int ret = IOTBUS_ERROR_NONE;
+	char szInputText[32] = "UART READ/WRITE ITC TESTING!";
+	char szOutputText[32];
+	iotbus_uart_context_h h_uart = iotbus_uart_init(DEVPATH);
+	TC_ASSERT_NEQ("iotbus_uart_init", h_uart, NULL);
 
 	ret = iotbus_uart_write(h_uart, szInputText, sizeof(szInputText));
 	TC_ASSERT_EQ_CLEANUP("iotbus_uart_write", ret < 0, false, iotbus_uart_stop(h_uart));
 
-    usleep(MICROSECOND);
+	usleep(MICROSECOND);
 
 	ret = iotbus_uart_read(h_uart, szOutputText, sizeof(szOutputText));
 	TC_ASSERT_EQ_CLEANUP("iotbus_uart_read", ret < 0, false, iotbus_uart_stop(h_uart));
 
 	TC_ASSERT_EQ_CLEANUP("iotbus_uart_read", strcmp(szInputText, szOutputText), 0, iotbus_uart_stop(h_uart));
 
-    ret = iotbus_uart_stop(h_uart);
-    TC_ASSERT_EQ("iotbus_uart_stop", ret, IOTBUS_ERROR_NONE);
+	ret = iotbus_uart_stop(h_uart);
+	TC_ASSERT_EQ("iotbus_uart_stop", ret, IOTBUS_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -185,17 +185,17 @@ void itc_iotbus_uart_write_read_p(void)
 */
 void itc_iotbus_uart_flush_p(void)
 {
-    int ret = IOTBUS_ERROR_NONE;
-    iotbus_uart_context_h h_uart = iotbus_uart_init(DEVPATH);
-    TC_ASSERT_NEQ("iotbus_uart_init", h_uart, NULL);
+	int ret = IOTBUS_ERROR_NONE;
+	iotbus_uart_context_h h_uart = iotbus_uart_init(DEVPATH);
+	TC_ASSERT_NEQ("iotbus_uart_init", h_uart, NULL);
 
 	ret = iotbus_uart_flush(h_uart);
 	TC_ASSERT_EQ_CLEANUP("iotbus_uart_flush", ret, IOTBUS_ERROR_NONE, iotbus_uart_stop(h_uart));
 
-    ret = iotbus_uart_stop(h_uart);
-    TC_ASSERT_EQ("iotbus_uart_stop", ret, IOTBUS_ERROR_NONE);
+	ret = iotbus_uart_stop(h_uart);
+	TC_ASSERT_EQ("iotbus_uart_stop", ret, IOTBUS_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
@@ -205,16 +205,15 @@ void itc_iotbus_uart_flush_p(void)
 int itc_uart_main(void)
 {
 #ifndef CONFIG_SERIAL_TERMIOS
-    SYSIO_ITC_UART_PRINT("IOTBUS Not Supported\n");
+	SYSIO_ITC_UART_PRINT("IOTBUS Not Supported\n");
 #else
-    itc_iotbus_uart_init_stop_p();
-    itc_iotbus_uart_set_baudrate_p();
-    itc_iotbus_uart_set_mode_p();
-    itc_iotbus_uart_set_flowcontrol_p();
-    itc_iotbus_uart_write_read_p();
-    itc_iotbus_uart_flush_p();
-
+	itc_iotbus_uart_init_stop_p();
+	itc_iotbus_uart_set_baudrate_p();
+	itc_iotbus_uart_set_mode_p();
+	itc_iotbus_uart_set_flowcontrol_p();
+	itc_iotbus_uart_write_read_p();
+	itc_iotbus_uart_flush_p();
 #endif
 
-    return 0;
+	return 0;
 }

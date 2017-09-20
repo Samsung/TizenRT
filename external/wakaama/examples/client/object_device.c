@@ -55,7 +55,7 @@
  * manufacturer, model, etc...
  */
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 #include "lwm2mclient.h"
 
 #include <stdio.h>

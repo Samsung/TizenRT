@@ -64,20 +64,6 @@ config AUDIO_MULTI_CARD
 	bool "Registering audio device as different devices for capture and playback"
 	default n
 
-
-config DEBUG_AUDIO_ERROR
-	bool "Output AUDIO Error Debug Messages"
-	default n
-
-config DEBUG_AUDIO_WARN
-	bool "Output AUDIO Warning Debug Messages"
-	default n
-
-config DEBUG_AUDIO_INFO
-	bool "Output AUDIO Info Debug Messages"
-	default n
-
-
 menu "Supported Audio Formats"
 
 config AUDIO_FORMAT_AC3

@@ -138,11 +138,11 @@
 
 /* Helper macros ************************************************************/
 
-#define ALC5658_ATTACH(s, isr, arg)	((s)->attach(s, isr, arg))
-#define ALC5658_DETACH(s)		((s)->attach(s, NULL, NULL))
-#define ALC5658_ENABLE(s)		((s)->enable(s, true))
-#define ALC5658_DISABLE(s)		((s)->enable(s, false))
-#define ALC5658_RESTORE(s, e)		((s)->enable(s, e))
+#define ALC5658_ATTACH(s, isr, arg) ((s)->attach(s, isr, arg))
+#define ALC5658_DETACH(s)         ((s)->attach(s, NULL, NULL))
+#define ALC5658_ENABLE(s)         ((s)->enable(s, true))
+#define ALC5658_DISABLE(s)        ((s)->enable(s, false))
+#define ALC5658_RESTORE(s, e)      ((s)->enable(s, e))
 
 /****************************************************************************
  * Public Types

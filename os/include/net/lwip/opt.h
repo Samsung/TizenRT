@@ -54,13 +54,11 @@
 
 #ifndef __LWIP_OPT_H__
 #define __LWIP_OPT_H__
-
 /*
  * Include user defined options first. Anything not defined in these files
  * will be set to standard values. Override anything you don't like!
  */
 #include <net/lwip/lwipopts.h>
-#include <net/lwip/debug.h>
 
 /*
    -----------------------------------------------

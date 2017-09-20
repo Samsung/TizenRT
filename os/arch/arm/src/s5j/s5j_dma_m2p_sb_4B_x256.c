@@ -89,15 +89,13 @@ typedef struct d_dma_task_priv {
  ****************************************************************************/
 static int s5j_dma_priv_setup(DMA_HANDLE handle, dma_task *task)
 {
-	t_dma_task_priv *priv_task = (t_dma_task_priv *) task;
+	t_dma_task_priv *priv_task = (t_dma_task_priv *)task;
 	DMA_CH_CONTEXT *ch;
 	ch = handle;
 	unsigned int tx_num = (task->size / 4) & (~0xFF);
 	unsigned int tx_num_residual = (task->size / 4) & 0xFF;
 
-	priv_task->chflags = CCR_M2P_DFLT |
-						 SRC_BURST_SIZE(BS_1) |
-						 DST_BURST_SIZE(BS_4);
+	priv_task->chflags = CCR_M2P_DFLT | SRC_BURST_SIZE(BS_1) | DST_BURST_SIZE(BS_4);
 
 	DMA_MC_4B_SET(priv_task->SAR, task->src);
 	DMA_MC_4B_SET(priv_task->DAR, task->dst);
@@ -121,8 +119,7 @@ static int s5j_dma_priv_setup(DMA_HANDLE handle, dma_task *task)
 		memset(priv_task->finish_1, DMA_NOP, priv_task->finish_size);
 	}
 
-	arch_clean_dcache((uintptr_t)task->microcode,
-					  (uintptr_t)(task->microcode + priv_task->mc_size));
+	arch_clean_dcache((uintptr_t)task->microcode, (uintptr_t)(task->microcode + priv_task->mc_size));
 
 	return OK;
 }
@@ -166,7 +163,7 @@ dma_task *dma_task_m2p_sb_4B_x256_alloc(DMA_REQ_MAP d_ph_ch)
 		return NULL;
 	}
 
-	priv_task = (t_dma_task_priv *) task;
+	priv_task = (t_dma_task_priv *)task;
 	priv_task->mc_array_size = 128;
 
 	mc_base = task->microcode;

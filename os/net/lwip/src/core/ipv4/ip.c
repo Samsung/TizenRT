@@ -56,6 +56,7 @@
  */
 
 #include <net/lwip/opt.h>
+#include <net/lwip/debug.h>
 #include <net/lwip/ipv4/ip.h>
 #include <net/lwip/def.h>
 #include <net/lwip/mem.h>

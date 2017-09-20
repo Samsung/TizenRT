@@ -200,14 +200,18 @@ int wifi_test_proc(int argc, char *argv[])
 		 * handle appropriately
 		 */
 
-		memset(buf, 0, BUF_MAX_SIZE);
 		memset(payload, 0, BUF_MAX_SIZE);
 
 		printScanResult(scan_info);
-		snprintf(payload, BUF_MAX_SIZE, "/%s|", DEVICE_NAME);
+		snprintf(payload, BUF_MAX_SIZE - 1, "/%s|", DEVICE_NAME);
 		for (i = 0; i < aps_cnt; i++) {
-			sprintf(buf, "%02d:%d/", g_aps[i].id, g_aps[i].rssi);
-			strncat(payload, buf, strlen(buf));
+			memset(buf, 0, BUF_MAX_SIZE);
+			snprintf(buf, BUF_MAX_SIZE - 1, "%02d:%d/", g_aps[i].id, g_aps[i].rssi);
+			if (BUF_MAX_SIZE - strlen(payload) > strlen(buf)) {
+				strncat(payload, buf, strlen(buf) + 1);
+			} else {
+				break;
+			}
 		}
 		printf("[WiFi] PAYLOAD : %s\n", payload);
 		if (sendto(fd, payload, strlen(payload), 0, (struct sockaddr *)&dest, sizeof(struct sockaddr_in)) == -1) {

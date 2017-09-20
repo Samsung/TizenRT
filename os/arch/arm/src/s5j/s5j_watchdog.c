@@ -79,28 +79,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define WTCON		0x0000
-#define WTDAT		0x0004
-#define WTCNT		0x0008
-#define WTCLRINT	0x000C
-
-#define WTCON_RESET_MASK	(1 << 0)
-#define WTCON_RESET_DIS		(0 << 0)
-#define WTCON_RESET_EN		(1 << 0)
-
-#define WTCON_IRQ_MASK		(1 << 2)
-#define WTCON_IRQ_DIS		(0 << 2)
-#define WTCON_IRQ_EN		(1 << 2)
-
-#define WTCON_CLK_DIV_MASK	(3 << 3)
-#define WTCON_CLK_DIV(x)	((x & 3) << 3)
-
-#define WTCON_EN_MASK		(1 << 5)
-#define WTCON_DIS		(0 << 5)
-#define WTCON_EN		(1 << 5)
-
-#define WTCON_PRESCALER_MASK	(0xF << 8)
-#define WTCON_PRESCALER(x)	((x & 0xF) << 8)
 
 /****************************************************************************
  * Public Functions
@@ -118,11 +96,11 @@
  ****************************************************************************/
 void s5j_watchdog_disable(void)
 {
-	unsigned int wtcon = (getreg32(S5J_WDT_BASE + WTCON) & ~WTCON_EN_MASK) | WTCON_DIS;
-	putreg32(wtcon, S5J_WDT_BASE + WTCON);
+	unsigned int wtcon = (getreg32(S5J_WDT_WTCON) & ~WTCON_WATCHDOG_EN) | WTCON_WATCHDOG_DIS;
+
+	putreg32(wtcon, S5J_WDT_WTCON);
 }
 
-#ifdef CONFIG_S5J_WATCHDOG
 /****************************************************************************
  * Name: s5j_watchdog_enable
  *
@@ -133,8 +111,9 @@ void s5j_watchdog_disable(void)
  ****************************************************************************/
 void s5j_watchdog_enable(void)
 {
-	unsigned int wtcon = (getreg32(S5J_WDT_BASE + WTCON) & ~WTCON_EN_MASK) | WTCON_EN;
-	putreg32(wtcon, S5J_WDT_BASE + WTCON);
+	unsigned int wtcon = (getreg32(S5J_WDT_WTCON) & ~WTCON_WATCHDOG_EN) | WTCON_WATCHDOG_EN;
+
+	putreg32(wtcon, S5J_WDT_WTCON);
 }
 
 /****************************************************************************
@@ -149,8 +128,9 @@ void s5j_watchdog_enable(void)
  ****************************************************************************/
 void s5j_watchdog_reset_disable(void)
 {
-	unsigned int wtcon = (getreg32(S5J_WDT_BASE + WTCON) & ~WTCON_RESET_MASK) | WTCON_RESET_DIS;
-	putreg32(wtcon, S5J_WDT_BASE + WTCON);
+	unsigned int wtcon = (getreg32(S5J_WDT_WTCON) & ~WTCON_RESET_EN) | WTCON_RESET_DIS;
+
+	putreg32(wtcon, S5J_WDT_WTCON);
 }
 
 /****************************************************************************
@@ -163,8 +143,9 @@ void s5j_watchdog_reset_disable(void)
  ****************************************************************************/
 void s5j_watchdog_reset_enable(void)
 {
-	unsigned int wtcon = (getreg32(S5J_WDT_BASE + WTCON) & ~WTCON_RESET_MASK) | WTCON_RESET_EN;
-	putreg32(wtcon, S5J_WDT_BASE + WTCON);
+	unsigned int wtcon = (getreg32(S5J_WDT_WTCON) & ~WTCON_RESET_EN) | WTCON_RESET_EN;
+
+	putreg32(wtcon, S5J_WDT_WTCON);
 }
 
 /****************************************************************************
@@ -177,8 +158,9 @@ void s5j_watchdog_reset_enable(void)
  ****************************************************************************/
 void s5j_watchdog_irq_disable(void)
 {
-	unsigned int wtcon = (getreg32(S5J_WDT_BASE + WTCON) & ~WTCON_IRQ_MASK) | WTCON_IRQ_DIS;
-	putreg32(wtcon, S5J_WDT_BASE + WTCON);
+	unsigned int wtcon = (getreg32(S5J_WDT_WTCON) & ~WTCON_IRQ_EN) | WTCON_IRQ_DIS;
+
+	putreg32(wtcon, S5J_WDT_WTCON);
 }
 
 /****************************************************************************
@@ -191,8 +173,9 @@ void s5j_watchdog_irq_disable(void)
  ****************************************************************************/
 void s5j_watchdog_irq_enable(void)
 {
-	unsigned int wtcon = (getreg32(S5J_WDT_BASE + WTCON) & ~WTCON_IRQ_MASK) | WTCON_IRQ_EN;
-	putreg32(wtcon, S5J_WDT_BASE + WTCON);
+	unsigned int wtcon = (getreg32(S5J_WDT_WTCON) & ~WTCON_IRQ_EN) | WTCON_IRQ_EN;
+
+	putreg32(wtcon, S5J_WDT_WTCON);
 }
 
 /****************************************************************************
@@ -211,12 +194,12 @@ void s5j_watchdog_irq_enable(void)
  ****************************************************************************/
 void s5j_watchdog_clk_set(unsigned int prescaler, unsigned int divider)
 {
-	unsigned int wtcon = getreg32(S5J_WDT_BASE + WTCON);
+	unsigned int wtcon = getreg32(S5J_WDT_WTCON);
 
-	wtcon &= ~(WTCON_PRESCALER_MASK | WTCON_CLK_DIV_MASK);
-	wtcon |= WTCON_CLK_DIV(divider) | WTCON_PRESCALER(prescaler);
+	wtcon &= ~(WTCON_PRESCALER(0xFF) | WTCON_CLOCK(3));
+	wtcon |= WTCON_CLOCK(divider) | WTCON_PRESCALER(prescaler);
 
-	putreg32(wtcon, S5J_WDT_BASE + WTCON);
+	putreg32(wtcon, S5J_WDT_WTCON);
 }
 
 /****************************************************************************
@@ -229,7 +212,7 @@ void s5j_watchdog_clk_set(unsigned int prescaler, unsigned int divider)
  ****************************************************************************/
 void s5j_watchdog_set_reload_val(unsigned int reload_val)
 {
-	putreg32(reload_val, S5J_WDT_BASE + WTDAT);
+	putreg32(reload_val, S5J_WDT_WTDAT);
 }
 
 /****************************************************************************
@@ -240,7 +223,7 @@ void s5j_watchdog_set_reload_val(unsigned int reload_val)
  ****************************************************************************/
 unsigned int s5j_watchdog_get_curr(void)
 {
-	return getreg32(S5J_WDT_BASE + WTCNT);
+	return getreg32(S5J_WDT_WTCNT);
 }
 
 /****************************************************************************
@@ -252,7 +235,7 @@ unsigned int s5j_watchdog_get_curr(void)
  ****************************************************************************/
 void s5j_watchdog_set_curr(unsigned int curr_val)
 {
-	putreg32(curr_val, S5J_WDT_BASE + WTCNT);
+	putreg32(curr_val, S5J_WDT_WTCNT);
 }
 
 /****************************************************************************
@@ -264,6 +247,5 @@ void s5j_watchdog_set_curr(unsigned int curr_val)
  ****************************************************************************/
 void s5j_watchdog_clear_int(void)
 {
-	putreg32(0xffffffff, S5J_WDT_BASE + WTCLRINT);
+	putreg32(0xffffffff, S5J_WDT_WTCLRINT);
 }
-#endif

@@ -52,7 +52,7 @@
 #include <net/lwip/opt.h>
 
 #if LWIP_UDP					/* don't build if not configured for use in lwipopts.h */
-
+#include <net/lwip/debug.h>
 #include <net/lwip/pbuf.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/ipv4/ip_addr.h>

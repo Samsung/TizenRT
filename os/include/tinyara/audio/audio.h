@@ -313,6 +313,8 @@
 #define AUDIO_APB_DEQUEUED          (1 << 2)
 #define AUDIO_APB_FINAL             (1 << 3)	/* Last buffer in the stream */
 
+#define AUDIO_APB_TYPE_INPUT	    (1 << 4)
+#define AUDIO_APB_TYPE_OUTPUT	    (1 << 5)
 /****************************************************************************
  * Public Types
  ****************************************************************************/

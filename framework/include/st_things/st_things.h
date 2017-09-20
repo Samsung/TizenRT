@@ -136,7 +136,7 @@ typedef void (*st_things_reset_result_cb)(bool is_success);
  * @brief Callback registration function for Reset-Confirmation and Reset-Result functions.
  * @remarks Only one callback function can be set with this API.\n
  *          If multiple callbacks are set, the last one is registered only.\n
-            And the callbacks are called in the internal thread, which is not detached,\n
+ *          And the callbacks are called in the internal thread, which is not detached,\n
  *          so application should return it to get the next callbacks.
  * @param[in] confirm_cb Callback function that will be called to get the user's input when reset is triggered.
  * @param[in] result_cb Callback function that will be called after the reset process is done.

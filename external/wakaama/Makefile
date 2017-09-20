@@ -27,8 +27,9 @@ DEPPATH = --dep-path .
 VPATH =
 
 ifeq ($(CONFIG_LWM2M_WAKAAMA),y)
+CFLAGS += -I$(TOPDIR)/../external/wakaama/core
 include core/Make.defs
-include core/er-coap-13/Make.defs	
+include core/er-coap-13/Make.defs
 endif
 
 ifeq ($(CONFIG_DM),y)

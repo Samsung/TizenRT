@@ -64,7 +64,7 @@
 #include "cache.h"
 #include "chip.h"
 
-#include "s5j_vclk.h"
+#include "s5j_clock.h"
 #include "s5j_gpio.h"
 #include "chip/s5jt200_sflash.h"
 
@@ -76,14 +76,12 @@ static void s5j_sflash_disable_wp(void)
 	/* someone has been disabled wp, we should wait until it's released */
 	while (getreg32(S5J_SFLASH_SFCON) & SFLASH_SFCON_WP_DISABLE) ;
 
-	modifyreg32(S5J_SFLASH_SFCON,
-				SFLASH_SFCON_WP_ENABLE, SFLASH_SFCON_WP_DISABLE);
+	modifyreg32(S5J_SFLASH_SFCON, SFLASH_SFCON_WP_ENABLE, SFLASH_SFCON_WP_DISABLE);
 }
 
 static void s5j_sflash_enable_wp(void)
 {
-	modifyreg32(S5J_SFLASH_SFCON,
-				SFLASH_SFCON_WP_DISABLE, SFLASH_SFCON_WP_ENABLE);
+	modifyreg32(S5J_SFLASH_SFCON, SFLASH_SFCON_WP_DISABLE, SFLASH_SFCON_WP_ENABLE);
 }
 
 static uint8_t s5j_sflash_read_status(void)
@@ -126,7 +124,7 @@ ssize_t up_progmem_erasepage(size_t page)
 	putreg8(0xff, S5J_SFLASH_SE);
 
 	/* Wait for the completion */
-	while (s5j_sflash_read_status() & 0x1);
+	while (s5j_sflash_read_status() & 0x1) ;
 
 	s5j_sflash_enable_wp();
 
@@ -198,14 +196,14 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 		/* Restore IRQs */
 		irqrestore(irqs);
 
-		buf    += tmp;
-		addr   += tmp;
+		buf += tmp;
+		addr += tmp;
 		remain -= tmp;
 	}
 
 	return count;
 }
-#endif /* CONFIG_MTD_PROGMEM */
+#endif							/* CONFIG_MTD_PROGMEM */
 
 /**
  * @brief	initialize FLASH for QUAD IO in 80Mhz
@@ -228,5 +226,5 @@ void s5j_sflash_init(void)
 	s5j_sflash_enable_wp();
 
 	/* Set FLASH clk 80Mhz for Max performance */
-	cal_clk_setrate(d1_serialflash, 80000000);
+	s5j_clk_set_rate(CLK_SPL_SFLASH, 80000000);
 }
