@@ -1746,6 +1746,7 @@ static void libc_stdio_freopen_tc(void)
 
 	/* A case with NULL filename, valid stream and mode flag */
 	fp = freopen(NULL, "r", fp);
+	fclose(fp);
 	TC_ASSERT_NEQ("freopen", fp, NULL);
 
 	/* A negative case with NULL path, valid stream and invalid mode. It will return NULL */
