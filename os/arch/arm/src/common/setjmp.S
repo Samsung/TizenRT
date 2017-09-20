@@ -151,12 +151,19 @@ longjmp:
 	ldr	r14, [r0, #((_JB_REG_R14 - _JB_REG_R4) * 4)]
 #endif
 
+#ifndef __thumb__
 	/* Validate sp and r14 */
 	teq	sp, #0
 	it	ne
 	teqne	r14, #0
 	it	eq
 	beq	botch
+#else
+	cmp sp, #0
+	beq botch
+	cmp lr, #0
+	beq botch
+#endif
 
 	/* Set return value */
 	movs	r0, r1
