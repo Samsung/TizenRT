@@ -35,11 +35,12 @@
 
 /**
 * @testcase            : tc_net_ether_ntoa_p
-* @brief               : converts the Ethernet host address addr given in network byte order to a string into dotted decimal.
-* @scenario            : none
+* @brief               : Ethernet address manipulation routines.
+* @scenario            : Converts the Ethernet host address addr given in network byte order to a string into dotted decimal.
 * @apicovered          : ether_ntoa(), ioctl()
-* @precondition        : none
+* @precondition        : socket file descriptor.
 * @postcondition       : none
+* @return              : void
 */
 static void tc_net_ether_ntoa_p(int sock_udp)
 {

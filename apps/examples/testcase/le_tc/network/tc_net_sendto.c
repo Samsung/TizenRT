@@ -42,12 +42,13 @@ void tc_net_sendto_tcp_n(int ConnectFD);
 void tc_net_sendto_tcp_shutdown_n(int ConnectFD);
 
 /**
-* @testcase           : tc_net_sendto_p
-* @brief              : positive testcase for sendto api using udp
-* @scenario           : used for udp connection
-* @apicovered         : sendto()
-* @precondition       : valid file descriptor
-* @postcondition      : none
+* @testcase            : tc_net_sendto_p
+* @brief               : positive testcase for sendto api using udp
+* @scenario            : used for udp connection
+* @apicovered          : sendto()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 void tc_net_sendto_p(int fd)
 {
@@ -73,8 +74,9 @@ void tc_net_sendto_p(int fd)
 * @brief               : negative testcase for sendto api using udp
 * @scenario            : used for udp connection
 * @apicovered          : sendto()
-* @precondition        : Invalid file descriptor
+* @precondition        : none
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_sendto_n(void)
 {
@@ -100,8 +102,9 @@ void tc_net_sendto_n(void)
 * @brief               : negative testcase for sendto api using udp
 * @scenario            : used to communicate between processes on the same machine efficiently
 * @apicovered          : sendto()
-* @precondition        : none
+* @precondition        : socket file descriptor.
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_sendto_af_unix_n(int fd)
 {
@@ -127,8 +130,9 @@ void tc_net_sendto_af_unix_n(int fd)
 * @brief               : negative testcase for sendto api using udp
 * @scenario            :
 * @apicovered          : sendto(), shutdown()
-* @precondition        : Invalid file descriptor
+* @precondition        : socket file descriptor.
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_sendto_shutdown_n(int fd)
 {
@@ -154,10 +158,10 @@ void tc_net_sendto_shutdown_n(int fd)
 * @fn                   : sendto_udpserver
 * @brief                : udp server
 * @scenario             : none
-* API's covered         : socket,bind,recvfrom
-* Preconditions         : none
-* Postconditions        : none
-* @return               : void*
+* @API's covered        : socket,bind,recvfrom
+* @Preconditions        : socket file descriptor.
+* @Postconditions       : none
+* @return               : void
 */
 
 void *sendto_udpserver(void *args)
@@ -183,10 +187,10 @@ void *sendto_udpserver(void *args)
 * @fn                   : sendto_udpclient
 * @brief                : udp client
 * @scenario             : none
-* API's covered         : socket
-* Preconditions         : none
-* Postconditions        : none
-* @return               : void *
+* @API's covered        : socket
+* @Preconditions        : none
+* @Postconditions       : none
+* @return               : void
 */
 void *sendto_udpclient(void *args)
 {
@@ -204,9 +208,9 @@ void *sendto_udpclient(void *args)
 * @fn                   : sendto_wait
 * @brief                : function to wait on semaphore
 * @scenario             : used to lock the resource
-* API's covered         : none
-* Preconditions         : none
-* Postconditions        : none
+* @API's covered        : none
+* @Preconditions        : none
+* @Postconditions       : none
 * @return               : void
 */
 void sendto_wait(void)
@@ -222,9 +226,9 @@ void sendto_wait(void)
 * @fn                   : sendto_signal
 * @brief                : function to signal semaphore
 * @scenario             : used to release the resource
-* API's covered         : none
-* Preconditions         : none
-* Postconditions        : none
+* @API's covered        : none
+* @Preconditions        : none
+* @Postconditions       : none
 * @return               : void
 */
 void sendto_signal(void)
@@ -233,12 +237,14 @@ void sendto_signal(void)
 }
 
 /**
-* @testcase            : tc_net_sendto_tcp_p
-* @brief               : positive testcase for sendto api using tcp
-* @scenario            : none
-* @apicovered          : accept(), sendto()
-* @precondition        : valid file descriptor
-* @postcondition       : none
+* @testcase             : tc_net_sendto_tcp_p
+* @brief                : This sendto API send a message on a socket.
+* @scenario             : The sendto() function shall send a message through a connection-mode or
+                          connectionless-mode socket.
+* @apicovered           : accept(), sendto()
+* @precondition         : socket file descriptor.
+* @postcondition        : none
+* @return               : void
 */
 void tc_net_sendto_tcp_p(int fd)
 {
@@ -261,11 +267,13 @@ void tc_net_sendto_tcp_p(int fd)
 
 /**
 * @testcase             : tc_net_sendto_tcp_n
-* @brief                : negative testcase for sendto api using tcp
-* @scenario             : none
+* @brief                : This sendto API send a message on a socket.
+* @scenario             : The sendto() function shall send a message through a connection-mode or
+                          connectionless-mode socket, test with invalid socket fd.
 * @apicovered           : sendto(), close()
-* @precondition         : Invalid file descriptor
+* @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 void tc_net_sendto_tcp_n(int ConnectFD)
 {
@@ -280,12 +288,14 @@ void tc_net_sendto_tcp_n(int ConnectFD)
 }
 
 /**
-* @testcase            : tc_net_sendto_tcp_shutdown_n
-* @brief               : negative testcase for sendto api using tcp
-* @scenario            : none
-* @apicovered          : sendto(), close()
-* @precondition        : Invalid file descriptor
-* @postcondition       : none
+* @testcase             : tc_net_sendto_tcp_shutdown_n
+* @brief                : This sendto API send a message on a socket.
+* @scenario             : The sendto() function shall send a message through a connection-mode or
+                          connectionless-mode socket, test after shutdown.
+* @apicovered           : sendto(), close()
+* @precondition         : socket file descriptor.
+* @postcondition        : none
+* @return               : void
 */
 void tc_net_sendto_tcp_shutdown_n(int ConnectFD)
 {
@@ -304,11 +314,11 @@ void tc_net_sendto_tcp_shutdown_n(int ConnectFD)
 
 /**
 * @fn                   : sendto_server
-* @brief                : tcp server
-* @scenario             : used for tcp connection
-* API's covered         : socket,bind,listen,close
-* Preconditions         : none
-* Postconditions        : none
+* @brief                : Create a Tcp server.
+* @scenario             : Create a tcp server for checking sendto api.
+* @API's covered        : socket,bind,listen,close
+* @Preconditions        : socket file descriptor.
+* @Postconditions       : none
 * @return               : void
 */
 
@@ -332,11 +342,11 @@ void *sendto_tcpserver(void *args)
 
 /**
 * @fn                   : sendto_client
-* @brief                : tcp client
-* @scenario             : used for tcp connection.
-* API's covered         : socket,connect,recvfrom,close
-* Preconditions         : none
-* Postconditions        : none
+* @brief                : This api create client.
+* @scenario             : Create tcp client.
+* @API's covered        : socket,connect,recvfrom,close
+* @Preconditions        : socket file descriptor.
+* @Postconditions       : none
 * @return               : void
 */
 void *sendto_tcpclient(void *args)
@@ -363,11 +373,11 @@ void *sendto_tcpclient(void *args)
 
 /**
 * @fn                  : net_sendto
-* @brief               :
-* @scenario            :
-* API's covered        :
-* Preconditions        :
-* Postconditions       :
+* @brief               : This api create client and server thread.
+* @scenario            : Create client and server thread to test sendto api.
+* @API's covered       : none
+* @Preconditions       : none
+* @Postconditions      : none
 * @return              : void
 */
 void net_sendto(void)

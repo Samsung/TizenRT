@@ -30,12 +30,13 @@
 #include "tc_internal.h"
 
 /**
-* @statitcase               : tc_net_tcpip_timeout_p
-* @brief                    : call sys_timeout in tcpip_thread.
-* @scenario                 :
-* @apicovered               : tcpip_timeout
-* @precondition             : none
-* @postcondition            : none
+* @testcase              : tc_net_tcpip_timeout_p
+* @brief                 : call sys_timeout in tcpip_thread.
+* @scenario              : none
+* @apicovered            : tcpip_timeout
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_tcpip_timeout_p(void)
 {
@@ -48,12 +49,13 @@ static void tc_net_tcpip_timeout_p(void)
 }
 
 /**
-* @statitcase               : tc_net_tcpip_timeout_n
-* @brief                    : call sys_timeout in tcpip_thread.
-* @scenario                 :
-* @apicovered               : tcpip_timeout
-* @precondition             : none
-* @postcondition            : none
+* @testcase              : tc_net_tcpip_timeout_n
+* @brief                 : call sys_timeout in tcpip_thread.
+* @scenario              : none
+* @apicovered            : tcpip_timeout
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_tcpip_timeout_n(void)
 {
@@ -66,12 +68,13 @@ static void tc_net_tcpip_timeout_n(void)
 }
 
 /**
-* @statitcase               : tc_net_tcpip_untimeout_p
-* @brief                    : call sys_untimeout in tcpip_thread
-* @scenario                 :
-* @apicovered               : tcpip_untimeout
-* @precondition             : none
-* @postcondition            : none
+* @testcase              : tc_net_tcpip_untimeout_p
+* @brief                 : call sys_untimeout in tcpip_thread
+* @scenario              : none
+* @apicovered            : tcpip_untimeout
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_tcpip_untimeout_p(void)
 {
@@ -84,12 +87,13 @@ static void tc_net_tcpip_untimeout_p(void)
 }
 
 /**
-* @statitcase               : tc_net_tcpip_untimeout_n
-* @brief                    : call sys_untimeout in tcpip_thread
-* @scenario                 :
-* @apicovered               : tcpip_untimeout
-* @precondition             : none
-* @postcondition            : none
+* @testcase              : tc_net_tcpip_untimeout_n
+* @brief                 : call sys_untimeout in tcpip_thread
+* @scenario              : none
+* @apicovered            : tcpip_untimeout
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_tcpip_untimeout_n(void)
 {
@@ -102,18 +106,28 @@ static void tc_net_tcpip_untimeout_n(void)
 }
 
 /**
-* @statitcase               : tc_net_tcpip_callbackmsg_new_p
-* @brief                    : Allocate a structure for a static callback message and initialize it.
-* @scenario                 : used to send "static" messages from interrupt context.
-* @apicovered               : tcpip_callbackmsg_new
-* @precondition             : none
-* @postcondition            : none
+* @testcase              : dummy_function
+* @brief                 : none
+* @scenario              : none
+* @apicovered            : none
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 void dummy_function(void *ctx)
 {
 	printf("This is dummy function\n");
 }
 
+/**
+* @testcase              : tc_net_tcpip_callbackmsg_new_p
+* @brief                 : Allocate a structure for a static callback message and initialize it.
+* @scenario              : used to send "static" messages from interrupt context.
+* @apicovered            : tcpip_callbackmsg_new
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
+*/
 static void tc_net_tcpip_callbackmsg_new_p(void)
 {
 	struct tcpip_callback_msg *result;
@@ -123,12 +137,13 @@ static void tc_net_tcpip_callbackmsg_new_p(void)
 }
 
 /**
-* @statitcase               : tc_net_tcpip_callbackmsg_delete_p
-* @brief                    : Free a callback message allocated by tcpip_callbackmsg_new().
-* @scenario                 :
-* @apicovered               : tcpip_callbackmsg_delete, tcpip_callbackmsg_new
-* @precondition             : none
-* @postcondition            : none
+* @statitcase            : tc_net_tcpip_callbackmsg_delete_p
+* @brief                 : Free a callback message allocated by tcpip_callbackmsg_new().
+* @scenario              : none
+* @apicovered            : tcpip_callbackmsg_delete, tcpip_callbackmsg_new
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_tcpip_callbackmsg_delete_p(void)
 {
@@ -140,12 +155,13 @@ static void tc_net_tcpip_callbackmsg_delete_p(void)
 }
 
 /**
-* @testcase                 : tc_mem_free_callback_n
-* @brief                    : allows you to free heap memory from interrupt context.
-* @scenario                 :
-* @apicovered               : mem_free_callback
-* @precondition             : none
-* @postcondition            : none
+* @testcase              : tc_mem_free_callback_n
+* @brief                 : allows you to free heap memory from interrupt context.
+* @scenario              : none
+* @apicovered            : mem_free_callback
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_mem_free_callback_n(void)
 {
@@ -158,12 +174,13 @@ static void tc_mem_free_callback_n(void)
 }
 
 /**
-* @testcase                 : tc_mem_free_callback_p
-* @brief                    : allows you to free heap memory from interrupt context.
-* @scenario                 :
-* @apicovered               : mem_free_callback, malloc, free
-* @precondition             : none
-* @postcondition            : none
+* @testcase              : tc_mem_free_callback_p
+* @brief                 : allows you to free heap memory from interrupt context.
+* @scenario              : none
+* @apicovered            : mem_free_callback, malloc, free
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_mem_free_callback_p(void)
 {
@@ -178,12 +195,13 @@ static void tc_mem_free_callback_p(void)
 }
 
 /**
-* @testcase                 : tc_pbuf_free_int_p
-* @brief                    : Allocates a pbuf of the given type
-* @scenario                 :
-* @apicovered               : pbuf_free_int, pbuf_alloc, pbuf_free
-* @precondition             : none
-* @postcondition            : none
+* @testcase              : tc_pbuf_free_int_p
+* @brief                 : Allocates a pbuf of the given type
+* @scenario              : none
+* @apicovered            : pbuf_free_int, pbuf_alloc, pbuf_free
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 void tc_pbuf_free_int_p(void)
 {
@@ -208,6 +226,15 @@ void dummy1_function(void *arg)
 	return;
 }
 
+/**
+* @testcase              : tc_tcpip_trycallback
+* @brief                 : Try to post a callback-message to the tcpip_thread mbox.
+* @scenario              : used to send "static" messages from interrupt context.
+* @apicovered            : tcpip_trycallback
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
+*/
 void tc_tcpip_trycallback(void)
 {
 	int ret;
@@ -218,14 +245,9 @@ void tc_tcpip_trycallback(void)
 	TC_SUCCESS_RESULT();
 }
 
-/**
-* @statitcase               : net_api_tcpip_main
-* @brief                    :
-* @scenario                 :
-* @apicovered               :
-* @precondition             :
-* @postcondition            :
-*/
+/****************************************************************************
+ * Name: net_tcpip()
+ ****************************************************************************/
 int net_tcpip_main(void)
 {
 	tc_net_tcpip_timeout_p();

@@ -34,11 +34,13 @@
 
 /**
 * @testcase            : tc_net_connect_fd_n
-* @brief               : connect to the given socket descriptor
-* @scenario            : used in client to connect to server
+* @brief               : This connect API initiate a connection on a socket.
+* @scenario            : The connect() system call connects the socket referred to by the file
+                         descriptor to the specified address.
 * @apicovered          : connect()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 {
@@ -54,11 +56,13 @@ static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 
 /**
 * @testcase            : tc_net_connect_broadcastaddr_n
-* @brief               : connect to the given socket descriptor
-* @scenario            : used in client to connect to server
+* @brief               : This connect API initiate a connection on a socket.
+* @scenario            : The connect() system call connects the socket referred to by the file
+                         descriptor to the specified broadcast address.
 * @apicovered          : connect()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 {
@@ -76,11 +80,13 @@ static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 
 /**
 * @testcase            : tc_net_connect_loopbackaddr_n
-* @brief               : connect to the given socket descriptor
-* @scenario            : used in client to connect to server
+* @brief               : This connect API initiate a connection on a socket.
+* @scenario            : The connect() system call connects the socket referred to by the file
+                         descriptor to the specified  loopback address.
 * @apicovered          : connect()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 {
@@ -101,11 +107,13 @@ static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 
 /**
 * @testcase            : tc_net_connect_socklen_n
-* @brief               :
-* @scenario            : used in client to connect to server
+* @brief               : This connect API initiate a connection on a socket.
+* @scenario            : The connect() system call connects the socket referred to by the file
+                         descriptor to the specified address and socklen.
 * @apicovered          : connect()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 {
@@ -124,11 +132,12 @@ static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 
 /**
 * @testcase            : tc_net_connect
-* @brief               :
-* @scenario            :
-* @apicovered          :
-* @precondition        :
-* @postcondition       :
+* @brief               : This connect API initiate a connection on a socket.
+* @scenario            : This TC test the different arguments for the connect api.
+* @apicovered          : connect()
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 void tc_net_connect(void)
 {

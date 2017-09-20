@@ -25,7 +25,6 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
 
 #include <sys/socket.h>
@@ -40,11 +39,12 @@
 
 /**
 * @testcase            : tc_net_bind_p
-* @brief               : bind the given address
-* @scenario            : giving an address to socket
+* @brief               : This bind API bind a name to a socket.
+* @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_bind_p(void)
 {
@@ -68,11 +68,12 @@ static void tc_net_bind_p(void)
 
 /**
 * @testcase            : tc_net_bind_udp_p
-* @brief               : bind the given address
-* @scenario            : giving an address to socket
+* @brief               : This bind API bind a name to a socket.
+* @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_bind_udp_p(void)
 {
@@ -96,11 +97,12 @@ static void tc_net_bind_udp_p(void)
 
 /**
 * @testcase            : tc_net_bind_broadcast_p
-* @brief               : bind the given address
-* @scenario            : giving an address to socket
+* @brief               : This bind API bind a name to a socket.
+* @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_bind_broadcast_p(void)
 {
@@ -124,11 +126,12 @@ static void tc_net_bind_broadcast_p(void)
 
 /**
 * @testcase            : tc_net_bind_fd_n
-* @brief               : bind the given address
-* @scenario            :
+* @brief               : This bind API bind a name to a socket.
+* @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_bind_fd_n(void)
 {
@@ -147,11 +150,12 @@ static void tc_net_bind_fd_n(void)
 
 /**
 * @testcase            : tc_net_bind_addrfamily_n
-* @brief               : bind the given address
-* @scenario            :
+* @brief               : This bind API bind a name to a socket.
+* @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_bind_addrfamily_n(void)
 {
@@ -174,11 +178,12 @@ static void tc_net_bind_addrfamily_n(void)
 
 /**
 * @testcase            : tc_net_bind_size_n
-* @brief               : bind the given address
-* @scenario            :
+* @brief               : This bind API bind a name to a socket.
+* @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_bind_size_n(void)
 {
@@ -201,11 +206,12 @@ static void tc_net_bind_size_n(void)
 
 /**
 * @testcase            : tc_net_bind_fd_size_n
-* @brief               : bind the given address
-* @scenario            :
+* @brief               : This bind API bind a name to a socket.
+* @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_bind_fd_size_n(void)
 {

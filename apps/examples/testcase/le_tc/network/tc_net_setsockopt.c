@@ -34,11 +34,13 @@
 
 /**
 * @testcase            : tc_net_setsockopt_multicast_tcp_nodelay_p
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options and option as tcp nodelay.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        : socket file descriptor
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_multicast_tcp_nodelay_p(int s)
 {
@@ -52,11 +54,13 @@ static void tc_net_setsockopt_multicast_tcp_nodelay_p(int s)
 
 /**
 * @testcase            : tc_net_setsockopt_multicast_tcp_keepalive_p
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options and option as tcp keepalive.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        : socket file descriptor
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_multicast_tcp_keepalive_p(int s)
 {
@@ -70,11 +74,13 @@ static void tc_net_setsockopt_multicast_tcp_keepalive_p(int s)
 
 /**
 * @testcase            : tc_net_setsockopt_multicast_tcp_keepidle_p
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options and option as tcp keepidle.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        : socket file descriptor
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_multicast_tcp_keepidle_p(int s)
 {
@@ -88,11 +94,13 @@ static void tc_net_setsockopt_multicast_tcp_keepidle_p(int s)
 
 /**
 * @testcase            : tc_net_setsockopt_multicast_tcp_keepintvl_p
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options and option as tcp keepintvl.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        : socket file descriptor
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_multicast_tcp_keepintvl_p(int s)
 {
@@ -106,11 +114,13 @@ static void tc_net_setsockopt_multicast_tcp_keepintvl_p(int s)
 
 /**
 * @testcase            : tc_net_setsockopt_multicast_tcp_keepcnt_p
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options and option as keepcnt.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        : socket file descriptor
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_multicast_tcp_keepcnt_p(int s)
 {
@@ -125,11 +135,13 @@ static void tc_net_setsockopt_multicast_tcp_keepcnt_p(int s)
 
 /**
 * @testcase            : tc_net_setsockopt_ip_tos_p
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options and option as ip tos.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        : socket file descriptor
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_ip_tos_p(int s)
 {
@@ -144,11 +156,13 @@ static void tc_net_setsockopt_ip_tos_p(int s)
 
 /**
 * @testcase            : tc_net_setsockopt_broadcast_p
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options and option as broadcast.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        : socket file descriptor
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_broadcast_p(int s)
 {
@@ -162,11 +176,13 @@ static void tc_net_setsockopt_broadcast_p(int s)
 
 /**
 * @testcase            : tc_net_setsockopt_rcvtimo_p
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options and option as rcvtimeo.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        : socket file descriptor
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_rcvtimo_p(int s)
 {
@@ -182,11 +198,13 @@ static void tc_net_setsockopt_rcvtimo_p(int s)
 
 /**
 * @testcase            : tc_net_setsockopt_reuseaddr_p
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options and option as reuseaddr.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        : socket file descriptor
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_reuseaddr_p(int s)
 {
@@ -200,11 +218,13 @@ static void tc_net_setsockopt_reuseaddr_p(int s)
 
 /**
 * @testcase            : tc_net_setsockopt_reuseport_p
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options and option as reuseport.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        : socket file descriptor
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_reuseport_p(int s)
 {
@@ -217,13 +237,15 @@ static void tc_net_setsockopt_reuseport_p(int s)
 }
 
 /**
-   * @testcase		   :tc_net_setsockopt_keepalive_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :setsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_setsockopt_keepalive_p
+* @brief               : This setsockopt API set socket options and option as keepalive.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
+* @apicovered          : setsockopt()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
 static void tc_net_setsockopt_keepalive_p(int s)
 {
 	int ret;
@@ -236,11 +258,13 @@ static void tc_net_setsockopt_keepalive_p(int s)
 
 /**
 * @testcase            : tc_net_setsockopt_bad_filedesc_n
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_bad_filedesc_n(void)
 {
@@ -252,12 +276,14 @@ static void tc_net_setsockopt_bad_filedesc_n(void)
 }
 
 /**
-* @testcase           : tc_net_setsockopt_invalid_filedesc_n
-* @brief              : to set socket options
-* @scenario           :
-* @apicovered         : setsockopt()
-* @precondition       :
-* @postcondition      :
+* @testcase            : tc_net_setsockopt_invalid_filedesc_n
+* @brief               : This setsockopt API set socket options.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
+* @apicovered          : setsockopt()
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_invalid_filedesc_n(void)
 {
@@ -270,11 +296,13 @@ static void tc_net_setsockopt_invalid_filedesc_n(void)
 
 /**
 * @testcase            : tc_net_setsockopt_invalid_level_n
-* @brief               : to set socket options
-* @scenario            :
+* @brief               : This setsockopt API set socket options.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
-* @precondition        : socket file descriptor
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_setsockopt_invalid_level_n(int s)
 {

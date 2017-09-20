@@ -38,11 +38,11 @@ int sem = 0;
 
 /**
 * @fn                   : getpeername_wait
-* @brief                : function to wait on semaphore
-* @scenario             :
-* API's covered         :
-* Preconditions         :
-* Postconditions        :
+* @brief                : Function to wait on semaphore
+* @scenario             : use wait function to decrement sem value.
+* API's covered         : none
+* Preconditions         : none
+* Postconditions        : none
 * @return               : void
 */
 void getpeername_wait(void)
@@ -56,11 +56,11 @@ void getpeername_wait(void)
 
 /**
 * @fn                   : getpeername_signal
-* @brief                : function to signal semaphore
-* @scenario             :
-* API's covered         :
-* Preconditions         :
-* Postconditions        :
+* @brief                : Function to signal semaphore
+* @scenario             : use to increase the sem value.
+* API's covered         : none
+* Preconditions         : none
+* Postconditions        : none
 * @return               : void
 */
 void getpeername_signal(void)
@@ -70,11 +70,12 @@ void getpeername_signal(void)
 
 /**
 * @testcase            : tc_net_getpeername_p1
-* @brief               : positive test cases without client server model
-* @scenario            :
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket.
 * @apicovered          : getpeername()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getpeername_p1(int sock)
 {
@@ -88,11 +89,12 @@ static void tc_net_getpeername_p1(int sock)
 
 /**
 * @testcase            : tc_net_getpeername_sock_n
-* @brief               : negative test case without client server model
-* @scenario            :
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket, with invalid socket fd.
 * @apicovered          : getpeername()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getpeername_sock_n(void)
 {
@@ -105,11 +107,12 @@ static void tc_net_getpeername_sock_n(void)
 
 /**
 * @testcase            : tc_net_getpeername_close_n
-* @brief               : negative test case without client server model
-* @scenario            :
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket.
 * @apicovered          : getpeername()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getpeername_close_n(int sock)
 {
@@ -122,12 +125,13 @@ static void tc_net_getpeername_close_n(int sock)
 }
 
 /**
-* @testcase           : tc_net_getpeername_unix_p
-* @brief              :
-* @scenario           :
-* @apicovered         : getpeername()
-* @precondition       :
-* @postcondition      :
+* @testcase            : tc_net_getpeername_unix_p
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket.
+* @apicovered          : getpeername()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getpeername_unix_p(int sock)
 {
@@ -142,11 +146,12 @@ static void tc_net_getpeername_unix_p(int sock)
 
 /**
 * @testcase            : tc_net_getpeername_udp_p
-* @brief               : positive test case with client server model
-* @scenario            :
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket.
 * @apicovered          : getpeername()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getpeername_udp_p(int sock)
 {
@@ -160,11 +165,12 @@ static void tc_net_getpeername_udp_p(int sock)
 
 /**
 * @testcase            : tc_net_getpeername_p
-* @brief               : positive testcase for getpeername api with client
-* @scenario            :
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket.
 * @apicovered          : getpeername()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getpeername_p(int fd)
 {
@@ -179,11 +185,12 @@ static void tc_net_getpeername_p(int fd)
 
 /**
 * @testcase            : tc_net_getpeername_n
-* @brief               : negative testcase for getpeername api with client
-* @scenario            :
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket, with invalid socket fd.
 * @apicovered          : getpeername()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getpeername_n(int fd)
 {
@@ -198,11 +205,12 @@ static void tc_net_getpeername_n(int fd)
 
 /**
 * @testcase            : getpeername_server
-* @brief               : server
-* @scenario            :
+* @brief               : Create a Tcp server.
+* @scenario            : Create a tcp server for checking getpeername api.
 * @apicovered          : socket,bind,listen,accept,close
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 void *getpeername_server(void *args)
 {
@@ -228,11 +236,12 @@ void *getpeername_server(void *args)
 
 /**
 * @testcase            : getpeername_client
-* @brief               : client
-* @scenario            :
+* @brief               : This api create client.
+* @scenario            : Create tcp client.
 * @apicovered          : socket,connect,close
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 void *getpeername_client(void *args)
 {
@@ -252,6 +261,15 @@ void *getpeername_client(void *args)
 	return NULL;
 }
 
+/**
+* @testcase            : client_server
+* @brief               : This api create client and server thread.
+* @scenario            : Create client and server thread to test getpeername api.
+* @apicovered          : none
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
+*/
 static void client_server(void)
 {
 	pthread_t Server, Client;

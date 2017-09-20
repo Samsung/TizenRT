@@ -41,10 +41,10 @@ static int count_wait = 0;
 /**
 * @fn                   : wait1
 * @brief                : function to wait on semaphore
-* @scenario             :
-* API's covered         :
-* Preconditions         :
-* Postconditions        :
+* @scenario             : waiting
+* API's covered         : none
+* Preconditions         : none
+* Postconditions        : none
 * @return               : void
 */
 static void wait1(void)
@@ -61,8 +61,8 @@ static void wait1(void)
 * @brief                : executing the server thread
 * @scenario             : server program
 * API's covered         : socket,bind,listen,select,close
-* Preconditions         :
-* Postconditions        :
+* Preconditions         : socket file descriptor.
+* Postconditions        : none
 * @return               : void
 */
 static void *server(void *args)
@@ -106,8 +106,8 @@ static void *server(void *args)
 * @brief                : executing the clinet thread
 * @scenario             : clinet program
 * API's covered         : socket,connect,send,close
-* Preconditions         :
-* Postconditions        :
+* Preconditions         : socket file descriptor.
+* Postconditions        : none
 * @return               : void
 */
 static void *client(void *args)
@@ -132,10 +132,10 @@ static void *client(void *args)
 /**
 * @fn                   : tc_net_select
 * @brief                : created client and server threads
-* @scenario             :
-* API's covered         :
-* Preconditions         :
-* Postconditions        :
+* @scenario             : handling two threads for server and client
+* API's covered         : none
+* Preconditions         : create server and client thread.
+* Postconditions        : none
 * @return               : void
 */
 void tc_net_select()

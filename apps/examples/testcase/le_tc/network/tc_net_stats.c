@@ -31,6 +31,7 @@ struct stats_ *proto;
 * @apicovered            : stats_display
 * @precondition          : none
 * @postcondition         : none
+* @return                : void
 */
 static void tc_net_stats_display(void)
 {
@@ -45,6 +46,7 @@ static void tc_net_stats_display(void)
 * @apicovered            : stats_display_proto
 * @precondition          : none
 * @postcondition         : none
+* @return                : void
 */
 static void tc_net_stats_display_proto_n(void)
 {
@@ -66,6 +68,7 @@ static void tc_net_stats_display_proto_n(void)
 * @apicovered            : stats_display_sys
 * @precondition          : none
 * @postcondition         : none
+* @return                : void
 */
 static void tc_net_stats_sys_n(void)
 {
@@ -80,6 +83,7 @@ static void tc_net_stats_sys_n(void)
 * @apicovered            : stats_display_sys
 * @precondition          : none
 * @postcondition         : none
+* @return                : void
 */
 static void tc_net_stats_sys_p(void)
 {
@@ -109,6 +113,7 @@ static void tc_net_stats_sys_p(void)
 * @apicovered           : stats_display_igmp
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_stats_display_igmp_n(void)
 {
@@ -124,6 +129,7 @@ static void tc_net_stats_display_igmp_n(void)
 * @apicovered           : stats_display_igmp
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_stats_display_igmp_p(void)
 {
@@ -158,6 +164,7 @@ static void tc_net_stats_display_igmp_p(void)
 * @apicovered           : stats_display_proto
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_stats_display_proto_p(void)
 {
@@ -179,14 +186,9 @@ static void tc_net_stats_display_proto_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-/**
-* @statitcase           : net_core_main
-* @brief                : none
-* @scenario             : none
-* @apicovered           : none
-* @precondition         : none
-* @postcondition        : none
-*/
+/****************************************************************************
+ * Name: stats()
+ ****************************************************************************/
 int net_stats_main(void)
 {
 	//tc_net_stats_display();

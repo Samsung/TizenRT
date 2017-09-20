@@ -39,11 +39,11 @@
 static int count_wait = 0;
 /**
 * @fn                   : shutdown_wait
-* @brief                : function to wait on semaphore
-* @scenario             : To lock resource.
-* API's covered         : none
-* Preconditions         : none
-* Postconditions        : none
+* @brief                : Function to wait on semaphore.
+* @scenario             : use wait function to decrement count value.
+* @API's covered        : none
+* @Preconditions        : none
+* @Postconditions       : none
 * @return               : void
 */
 void shutdown_wait(void)
@@ -57,11 +57,11 @@ void shutdown_wait(void)
 
 /**
 * @fn                  : shutdown_signal
-* @brief               : function to signal semaphore
-* @scenario            : To release resource.
-* API's covered        : none
-* Preconditions        : none
-* Postconditions       : none
+* @brief               : Function to signal semaphore.
+* @scenario            : use to increase the count value.
+* @API's covered       : none
+* @Preconditions       : none
+* @Postconditions      : none
 * @return              : void
 */
 void shutdown_signal(void)
@@ -71,11 +71,11 @@ void shutdown_signal(void)
 
 /**
 * @fn                  : tc_net_shutdown_recv_p
-* @brief               :
-* @scenario            :
-* API's covered        : shutdown()
-* Preconditions        : none
-* Postconditions       : none
+* @brief               : Close one end of a full-duplex connection.
+* @scenario            : Close one end of a full-duplex connection with disables further receive operations.
+* @API's covered       : shutdown()
+* @Preconditions       : socket file descriptor.
+* @Postconditions      : none
 * @return              : void
 */
 
@@ -90,10 +90,11 @@ void tc_net_shutdown_recv_p(int fd)
 /**
 * @testcase            : tc_net_shutdown_send_p
 * @brief               : Close one end of a full-duplex connection.
-* @scenario            :
+* @scenario            : Close one end of a full-duplex connection with disables further send operations.
 * @apicovered          : shutdown()
-* @precondition        : file descriptor should be created.
+* @precondition        : socket file descriptor.
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_shutdown_send_p(int fd)
 {
@@ -106,10 +107,11 @@ void tc_net_shutdown_send_p(int fd)
 /**
 * @testcase            : tc_net_shutdown_sendrecv_p
 * @brief               : Close one end of a full-duplex connection.
-* @scenario            :
+* @scenario            : Close one end of a full-duplex connection with disables further send and receive operations.
 * @apicovered          : shutdown()
-* @precondition        : file descriptor should be created.
+* @precondition        : socket file descriptor.
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_shutdown_sendrecv_p(int fd)
 {
@@ -122,10 +124,11 @@ void tc_net_shutdown_sendrecv_p(int fd)
 /**
 * @testcase            : tc_net_shutdown_n
 * @brief               : Close one end of a full-duplex connection.
-* @scenario            :
+* @scenario            : Close one end of a full-duplex connection with invalid socket fd.
 * @apicovered          : shutdown()
-* @precondition        : file descriptor should be created.
+* @precondition        : none
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_shutdown_n(void)
 {
@@ -139,10 +142,11 @@ void tc_net_shutdown_n(void)
 /**
 * @testcase            : tc_net_shutdown_sock_n
 * @brief               : Close one end of a full-duplex connection.
-* @scenario            :
+* @scenario            : Close one end of a full-duplex connection with given socket fd.
 * @apicovered          : shutdown()
-* @precondition        : file descriptor should be created
+* @precondition        : none
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_shutdown_sock_n(int fd)
 {
@@ -154,11 +158,11 @@ void tc_net_shutdown_sock_n(int fd)
 
 /**
 * @fn                   : shutdown_server
-* @brief                : Server thread
-* @scenario             :
-* API's covered         : socket,bind,listen,send,accept,close
-* Preconditions         : none
-* Postconditions        : none
+* @brief                : Create a Tcp server.
+* @scenario             : Create a tcp server for checking shutdown api.
+* @API's covered        : socket,bind,listen,send,accept,close
+* @Preconditions        : socket file descriptor.
+* @Postconditions       : none
 * @return               : void
 */
 void *shutdown_server(void *args)
@@ -191,12 +195,12 @@ void *shutdown_server(void *args)
 
 /**
 * @fn                   : shutdown_client
-* @brief                : client thread
-* @scenario             :
-* API's covered         : socket,connect,recvfrom,close
-* Preconditions         :
-* Postconditions        : server must be run
-* @return               : void *
+* @brief                : This api create client.
+* @scenario             : Create tcp client.
+* @API's covered        : socket,connect,recvfrom,close
+* @Preconditions        : socket file descriptor.
+* @Postconditions       : none
+* @return               : void
 */
 void *shutdown_client(void *args)
 {
@@ -231,11 +235,11 @@ void *shutdown_client(void *args)
 
 /**
 * @fn                   : net_shutdown
-* @brief                :
-* @scenario             :
-* API's covered         :
-* Preconditions         :
-* Postconditions        :
+* @brief                : This api create client and server thread.
+* @scenario             : Create client and server thread to test shutdown api.
+* API's covered         : none
+* Preconditions         : none
+* Postconditions        : none
 * @return               : void
 */
 void net_shutdown(void)

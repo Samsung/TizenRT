@@ -163,3 +163,15 @@ int tc_net_raw_main(void);
 #ifdef CONFIG_TC_IGMP
 int net_igmp_main(void);
 #endif
+#ifdef CONFIG_TC_NET_DHCPC
+int net_dhcpc_main(void);
+#endif
+#ifdef CONFIG_TC_NET_INET
+int net_inet_main(void);
+#endif
+#ifdef CONFIG_TC_MEM_ALLOC
+int net_mem_allocate_main(void);
+#endif
+#ifdef CONFIG_TC_NET_CORE_NTOHS
+int net_core_ntohs_main(void);
+#endif

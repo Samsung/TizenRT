@@ -35,10 +35,10 @@ static int count_wait;
 /**
 * @fn                    : sig_wait
 * @brief                 : function to wait on semaphore
-* @scenario              :
-* @API's covered         :
-* @Preconditions         :
-* @Postconditions        :
+* @scenario              : none
+* @API's covered         : none
+* @Preconditions         : none
+* @Postconditions        : none
 * @return                : void
 */
 static void sig_wait(void)
@@ -112,7 +112,7 @@ void tc_netconn_server(void)
 
 /**
 * @fn                    : tc_netconn_client
-* @brief                 :
+* @brief                 : client thread
 * @scenario              : none
 * @API's covered         : none
 * @Preconditions         : none
@@ -143,14 +143,14 @@ void tc_netconn_client(void)
 
 /**
 * @fn                    : netconn_api_server
-* @brief                 :
+* @brief                 : server thread
 * @scenario              : none
 * @API's covered         : none
 * @Preconditions         : none
 * @Postconditions        : none
 * @return                : void*
 */
-void *netconn_api_server(void *args)
+void* netconn_api_server(void *args)
 {
 	tc_netconn_server();
 	return NULL;
@@ -158,27 +158,22 @@ void *netconn_api_server(void *args)
 
 /**
 * @fn                    : netconn_api_client
-* @brief                 :
+* @brief                 : client thread
 * @scenario              : none
 * @API's covered         : none
 * @Preconditions         : none
 * @Postconditions        : none
 * @return                : void*
 */
-void *netconn_api_client(void *args)
+void* netconn_api_client(void *args)
 {
 	tc_netconn_client();
 	return NULL;
 }
 
-/**
-* @testcase              : net_api_main
-* @brief                 :
-* @scenario              :
-* @apicovered            :
-* @precondition          :
-* @postcondition         :
-*/
+/****************************************************************************
+ * Name: netconn()
+ ****************************************************************************/
 int net_api_main(void)
 {
 	pthread_t Server, Client;

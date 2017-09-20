@@ -20,12 +20,13 @@
 #include "tc_internal.h"
 
 /**
-* @testcase            : tc_netbuf_alloc_p
-* @brief               : allocate memory to the given netbuf
-* @scenario            :
-* @apicovered          : netbuf_alloc()
-* @precondition        :
-* @postcondition       :
+* @testcase              : tc_netbuf_alloc_p
+* @brief                 : allocate memory to the given netbuf
+* @scenario              : memory allocation
+* @apicovered            : netbuf_alloc()
+* @precondition          : allocate memory
+* @postcondition         : none
+* @return                : void
 */
 static void tc_netbuf_alloc_p(void)
 {
@@ -41,7 +42,7 @@ static void tc_netbuf_alloc_p(void)
 }
 
 /****************************************************************************
- * Name: lwip_read_write()
+ * Name: netbuf_alloc_main()
  ****************************************************************************/
 int netbuf_alloc_main(void)
 {

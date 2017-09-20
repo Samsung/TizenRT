@@ -26,7 +26,6 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
 #include <sys/socket.h>
 
@@ -34,11 +33,12 @@
 
 /**
 * @testcase            : tc_net_close_p
-* @brief               : close the created socket file descriptor
-* @scenario            :
+* @brief               : This close API close a file descriptor.
+* @scenario            : Closes a file descriptor, so that it no longer refers to any file and may be reused.
 * @apicovered          : close()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_close_p(void)
 {
@@ -51,11 +51,12 @@ static void tc_net_close_p(void)
 
 /**
 * @testcase            : tc_net_close_n
-* @brief               : close the created socket file descriptor
-* @scenario            :
+* @brief               : This close API close a file descriptor.
+* @scenario            : Closes a file descriptor, so that it no longer refers to any file and may be reused.
 * @apicovered          : close()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_close_n(void)
 {

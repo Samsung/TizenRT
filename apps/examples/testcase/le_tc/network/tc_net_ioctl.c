@@ -34,12 +34,13 @@
 extern int ioctlsocket(int s, long cmd, void *argp);
 
 /**
-* @testcase           : tc_net_ioctl_p
-* @brief              : this function manipulates the underlying device parameters of special files
-* @scenario           :
-* @apicovered         : ioctl()
-* @precondition       : none
-* @postcondition      : none
+* @testcase            : tc_net_ioctl_p
+* @brief               : This function manipulates the underlying device parameters of special files.
+* @scenario            : ioctlsocket api control files with device-dependent request code.
+* @apicovered          : ioctl()
+* @precondition        : fd must be an open file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_ioctl_p(void)
 {
@@ -57,11 +58,12 @@ static void tc_net_ioctl_p(void)
 
 /**
 * @testcase            : tc_net_ioctl_fionread_n
-* @brief               : this function manipulates the underlying device parameters of special files
-* @scenario            :
+* @brief               : This function manipulates the underlying device parameters of special files.
+* @scenario            : ioctlsocket api control files with device-dependent request code.
 * @apicovered          : ioctl()
-* @precondition        : none
+* @precondition        : fd must be an open file descriptor.
 * @postcondition       : none
+* @return              : void
 */
 static void tc_net_ioctl_fionread_n(void)
 {
@@ -78,11 +80,12 @@ static void tc_net_ioctl_fionread_n(void)
 
 /**
 * @testcase            : tc_net_ioctl_n
-* @brief               : this function manipulates the underlying device parameters of special files
-* @scenario            :
+* @brief               : This function manipulates the underlying device parameters of special files
+* @scenario            : ioctlsocket api control files with device-dependent request code.
 * @apicovered          : ioctl()
 * @precondition        : none
 * @postcondition       : none
+* @return              : void
 */
 static void tc_net_ioctl_n(void)
 {

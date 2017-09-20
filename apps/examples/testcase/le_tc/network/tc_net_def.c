@@ -28,12 +28,13 @@
 #define TC_VAL2_HEX 0xa000000
 
 /**
-* @testcase             : tc_net_def_htons
-* @brief                : Convert host bytes to network bytes order
-* @scenario             : Converts host bytes to network bytes for short integer
-* @apicovered           : htons()
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_net_def_htons
+* @brief                 : Convert host bytes to network bytes order
+* @scenario              : Converts host bytes to network bytes for short integer
+* @apicovered            : htons()
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_def_htons(void)
 {
@@ -49,12 +50,13 @@ static void tc_net_def_htons(void)
 }
 
 /**
-* @testcase             : tc_net_def_ntohs
-* @brief                : Convert network bytes to hosst bytes order
-* @scenario             : Convert network bytes to hosst bytes for short integer
-* @apicovered           : ntohs()
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_net_def_ntohs
+* @brief                 : Convert network bytes to hosst bytes order
+* @scenario              : Convert network bytes to hosst bytes for short integer
+* @apicovered            : ntohs()
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_def_ntohs(void)
 {
@@ -70,12 +72,13 @@ static void tc_net_def_ntohs(void)
 }
 
 /**
-* @testcase             : tc_net_def_htonl
-* @brief                : Convert host bytes to network bytes order
-* @scenario             : Convert host bytes to network bytes order for long integer
-* @apicovered           : htonl()
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_net_def_htonl
+* @brief                 : Convert host bytes to network bytes order
+* @scenario              : Convert host bytes to network bytes order for long integer
+* @apicovered            : htonl()
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_def_htonl(void)
 {
@@ -91,12 +94,13 @@ static void tc_net_def_htonl(void)
 }
 
 /**
-* @testcase             : tc_net_def_ntohl
-* @brief                : Convert network bytes to hosst bytes order
-* @scenario             : Convert network bytes to hosst bytes order for long integer
-* @apicovered           : ntohl()
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_net_def_ntohl
+* @brief                 : Convert network bytes to hosst bytes order
+* @scenario              : Convert network bytes to hosst bytes order for long integer
+* @apicovered            : ntohl()
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_def_ntohl(void)
 {

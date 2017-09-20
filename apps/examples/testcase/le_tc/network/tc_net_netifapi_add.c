@@ -22,12 +22,13 @@
 #include <net/lwip/ipv4/ip_addr.h>
 
 /**
-* @testcase             : tc_do_netif_api_netif_add
-* @brief                : call netif_api_add inside
-* @scenario             : take argument as struct netifapi_msg and send it to netif_api_add
-* @apicovered           : do_netifapi_netif_add and netifapi_netif_add
-* @precondition         : none
-* @postcondition        : none
+* @testcase              : tc_do_netif_api_netif_add
+* @brief                 : call netif_api_add inside
+* @scenario              : take argument as struct netifapi_msg and send it to netif_api_add
+* @apicovered            : do_netifapi_netif_add and netifapi_netif_add
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_do_netifapi_netif_add_n(void)
 {

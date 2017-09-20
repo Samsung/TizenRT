@@ -39,12 +39,13 @@
 static int count_wait = 0;
 
 /**
-* @testcase            : tc_net_recvfrom_p
-* @brief               : positive testcase using udp
-* @scenario            : used for udp connection
-* @apicovered          : recvfrom()
-* @precondition        : none
-* @postcondition       : none
+* @testcase             : tc_net_recvfrom_p
+* @brief                : This recvfrom API receive a message from a socket.
+* @scenario             : The recvfrom() function receive a message from a connectionless-mode socket.
+* @apicovered           : recvfrom()
+* @precondition         : socket file descriptor.
+* @postcondition        : none
+* @return               : void
 */
 void tc_net_recvfrom_p(int fd)
 {
@@ -58,12 +59,13 @@ void tc_net_recvfrom_p(int fd)
 }
 
 /**
-* @testcase            : tc_net_recvfrom_sock_n
-* @brief               : negative testcase using udp
-* @scenario            : used for udp connection
-* @apicovered          : recvfrom()
-* @precondition        : none
-* @postcondition       : none
+* @testcase             : tc_net_recvfrom_sock_n
+* @brief                : This recvfrom API receive a message from a socket.
+* @scenario             : The recvfrom() function receive a message from a connectionless-mode socket.
+* @apicovered           : recvfrom()
+* @precondition         : socket file descriptor.
+* @postcondition        : none
+* @return               : void
 */
 void tc_net_recvfrom_sock_n(int sock)
 {
@@ -77,12 +79,14 @@ void tc_net_recvfrom_sock_n(int sock)
 }
 
 /**
-* @testcase            : tc_net_recvfrom_n
-* @brief               : negative testcase using udp
-* @scenario            : used for udp connection
-* @apicovered          : recvfrom()
-* @precondition        : none
-* @postcondition       : none
+* @testcase             : tc_net_recvfrom_n
+* @brief                : This recvfrom API receive a message from a udp socket.
+* @scenario             : The recvfrom() function receive a message from a connectionless-mode socket,
+                          test with invalid socket fd.
+* @apicovered           : recvfrom()
+* @precondition         : socket file descriptor.
+* @postcondition        : none
+* @return               : void
 */
 void tc_net_recvfrom_n(int fd)
 {
@@ -97,11 +101,11 @@ void tc_net_recvfrom_n(int fd)
 
 /**
 * @fn                 : recvfrom_udpserver
-* @brief              : udp server
-* @scenario           : used for UDP connection
-* API's covered       : socket,bind
-* Preconditions       : none
-* Postconditions      : none
+* @brief              : Create a Udp server.
+* @scenario           : Create a udp server for checking recvfrom api.
+* @API's covered      : socket,bind
+* @Preconditions      : socket file descriptor.
+* @Postconditions     : none
 * @return             : void
 */
 void *recvfrom_udpserver(void *args)
@@ -126,11 +130,11 @@ void *recvfrom_udpserver(void *args)
 
 /**
 * @fn                   : recvfrom_udpclient
-* @brief                : udp client
-* @scenario             : used for UDP connection
-* API's covered         : socket,sendto
-* Preconditions         : none
-* Postconditions        : none
+* @brief                : This api create udp client.
+* @scenario             : Create udp client.
+* @API's covered        : socket,sendto
+* @Preconditions        : socket file descriptor.
+* @Postconditions       : none
 * @return               : void
 */
 void *recvfrom_udpclient(void *args)
@@ -157,11 +161,11 @@ void *recvfrom_udpclient(void *args)
 
 /**
 * @fn                   : recvfrom_wait
-* @brief                : function to wait on semaphore
-* @scenario             : To aquire resource
-* API's covered         : none
-* Preconditions         : none
-* Postconditions        : none
+* @brief                : Function to wait on semaphore
+* @scenario             : use wait function to decrement count value.
+* @API's covered        : none
+* @Preconditions        : none
+* @Postconditions       : none
 * @return               : void
 */
 void recvfrom_wait(void)
@@ -175,11 +179,11 @@ void recvfrom_wait(void)
 
 /**
 * @fn                   : recvfrom_signal
-* @brief                : function to signal semaphore
-* @scenario             : To release resource
-* API's covered         : none
-* Preconditions         : none
-* Postconditions        : none
+* @brief                : Function to signal semaphore
+* @scenario             : use to increase the count value.
+* @API's covered        : none
+* @Preconditions        : none
+* @Postconditions       : none
 * @return               : void
 */
 void recvfrom_signal(void)
@@ -192,8 +196,9 @@ void recvfrom_signal(void)
 * @brief                : positive testcase for recvfrom api
 * @scenario             : used for tcp connection
 * @apicovered           : recvfrom()
-* @precondition         : none
+* @precondition         : socket file descriptor.
 * @postcondition        : none
+* @return               : void
 */
 void tc_net_recvfrom_tcp_p(int fd)
 {
@@ -212,6 +217,7 @@ void tc_net_recvfrom_tcp_p(int fd)
 * @apicovered           : recvfrom()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 void tc_net_recvfrom_tcp_conn_n(int fd)
 {
@@ -231,6 +237,7 @@ void tc_net_recvfrom_tcp_conn_n(int fd)
 * @apicovered           : recvfrom()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 void tc_net_recvfrom_tcp_sock_n(int fd)
 {
@@ -249,6 +256,7 @@ void tc_net_recvfrom_tcp_sock_n(int fd)
 * @apicovered          : recvfrom()
 * @precondition        : none
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_recvfrom_tcp_n(void)
 {
@@ -262,11 +270,11 @@ void tc_net_recvfrom_tcp_n(void)
 
 /**
 * @fn                   : recvfrom_server
-* @brief                : TCP server thread
-* @scenario             : used for TCP connection
-* API's covered         : socket,bind,listen,accept,sendto,close
-* Preconditions         : none
-* Postconditions        : noen
+* @brief                : Create a Tcp server.
+* @scenario             : Create a tcp server for checking recvfrom api.
+* @API's covered        : socket,bind,listen,accept,sendto,close
+* @Preconditions        : socket file descriptor.
+* @Postconditions       : none
 * @return               : void
 */
 void *recvfrom_tcpserver(void *args)
@@ -299,11 +307,11 @@ void *recvfrom_tcpserver(void *args)
 
 /**
 * @fn                   : recvfrom_tcpclient
-* @brief                : TCP client thread
-* @scenario             : Used for TCP connection
-* API's covered         : socket,connect,close
-* Preconditions         : none
-* Postconditions        : none
+* @brief                : This api create tcp client.
+* @scenario             : Create tcp client.
+* @API's covered        : socket,connect,close
+* @Preconditions        : socket file descriptor.
+* @Postconditions       : none
 * @return               : void
 */
 void *recvfrom_tcpclient(void *args)
@@ -332,11 +340,11 @@ void *recvfrom_tcpclient(void *args)
 
 /**
 * @fn                  : net_recvfrom
-* @brief               : creating thread for client and server
-* @scenario            :
-* API's covered        :
-* Preconditions        :
-* Postconditions       :
+* @brief               : This api create client and server thread.
+* @scenario            : Create client and server thread to test recvfrom api.
+* @API's covered       : none
+* @Preconditions       : none
+* @Postconditions      : none
 * @return              : void
 */
 void net_recvfrom(void)

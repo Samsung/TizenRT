@@ -24,12 +24,13 @@
 #define COUNT1 5
 
 /**
-* @testcase            : tc_net_mem_trim_p
-* @brief               : Shrink memory returned by mem_malloc().
-* @scenario            : To increase or decrease the memory size
-* @apicovered          : mem_trim()
-* @precondition        : none
-* @postcondition       : should free memory after using
+* @testcase              : tc_net_mem_trim_p
+* @brief                 : Shrink memory returned by mem_malloc().
+* @scenario              : To increase or decrease the memory size
+* @apicovered            : mem_trim()
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 void tc_net_mem_trim_p(void *buf)
 {
@@ -39,12 +40,13 @@ void tc_net_mem_trim_p(void *buf)
 }
 
 /**
-* @testcase            : tc_net_mem_calloc_p
-* @brief               : Contiguously allocates enough space for count objects that are size bytes.
-* @scenario            : when you need contiguous memory, then you can use it.
-* @apicovered          : mem_calloc()
-* @precondition        : none
-* @postcondition       : should free memory after using
+* @testcase              : tc_net_mem_calloc_p
+* @brief                 : Contiguously allocates enough space for count objects that are size bytes.
+* @scenario              : when you need contiguous memory, then you can use it.
+* @apicovered            : mem_calloc()
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 void tc_net_mem_calloc_p(void)
 {

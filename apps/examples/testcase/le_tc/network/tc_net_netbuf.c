@@ -21,12 +21,13 @@
 #include "tc_internal.h"
 
 /**
-* @testcase             : tc_net_netbuf_start_p
-* @brief                : Move the current data pointer of a packet buffer contained in a netbuf to frist
-* @scenario             : the netbuf to modify
-* @apicovered           : tc_net_netbuf_start_p
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_net_netbuf_start_p
+* @brief                 : Move the current data pointer of a packet buffer contained in a netbuf to frist
+* @scenario              : the netbuf to modify
+* @apicovered            : tc_net_netbuf_start_p
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_netbuf_start_p(void)
 {
@@ -43,12 +44,13 @@ static void tc_net_netbuf_start_p(void)
 }
 
 /**
-* @testcase             : tc_netbuf_next_more_buff
-* @brief                : Move the current data pointer of a packet buffer contained in a netbuf to next
-* @scenario             : the netbuf to modify
-* @apicovered           : netbuf_next
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_netbuf_next_more_buff
+* @brief                 : Move the current data pointer of a packet buffer contained in a netbuf to next
+* @scenario              : the netbuf to modify
+* @apicovered            : netbuf_next
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_netbuf_next_more_buff(void)
 {
@@ -80,12 +82,13 @@ static void tc_netbuf_next_more_buff(void)
 }
 
 /**
-* @testcase             : tc_netbuf_next_move_no_next
-* @brief                : Deallocate a netbuf allocated by netbuf_new()
-* @scenario             : Deallocating the created netbuff
-* @apicovered           : netbuf_delete
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_netbuf_next_move_no_next
+* @brief                 : Deallocate a netbuf allocated by netbuf_new()
+* @scenario              : Deallocating the created netbuff
+* @apicovered            : netbuf_delete
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_netbuf_next_move_no_next(void)
 {
@@ -100,12 +103,13 @@ static void tc_netbuf_next_move_no_next(void)
 }
 
 /**
-* @testcase             : tc_netbuf_next_no_next
-* @brief                : Deallocate a netbuf allocated by netbuf_new()
-* @scenario             : Deallocating the created netbuff
-* @apicovered           : netbuf_delete
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_netbuf_next_no_next
+* @brief                 : Deallocate a netbuf allocated by netbuf_new()
+* @scenario              : Deallocating the created netbuff
+* @apicovered            : netbuf_delete
+* @precondition          : create netbuf.
+* @postcondition         : none
+* @return                : void
 */
 static void tc_netbuf_next_no_next(void)
 {
@@ -120,12 +124,13 @@ static void tc_netbuf_next_no_next(void)
 }
 
 /**
-* @testcase             : tc_net_netbuf_next_n
-* @brief                : Move the current data pointer of a packet buffer contained in a netbuf to next
-* @scenario             : the netbuff to modify
-* @apicovered           : netbuf_next
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_net_netbuf_next_n
+* @brief                 : Move the current data pointer of a packet buffer contained in a netbuf to next
+* @scenario              : the netbuff to modify
+* @apicovered            : netbuf_next
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_netbuf_next_n(void)
 {
@@ -134,12 +139,13 @@ static void tc_net_netbuf_next_n(void)
 }
 
 /**
-* @testcase             : tc_net_netbuf_chain_n
-* @brief                : Chain one netbuf to another
-* @scenario             :
-* @apicovered           : netbuf_chain
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_net_netbuf_chain_n
+* @brief                 : Chain one netbuf to another
+* @scenario              : none
+* @apicovered            : netbuf_chain
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_netbuf_chain_n(void)
 {
@@ -148,12 +154,13 @@ static void tc_net_netbuf_chain_n(void)
 }
 
 /**
-* @testcase             : tc_net_netbuf_chain_p
-* @brief                : Chain one netbuf to another
-* @scenario             :
-* @apicovered           : netbuf_chain
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_net_netbuf_chain_p
+* @brief                 : Chain one netbuf to another
+* @scenario              : none
+* @apicovered            : netbuf_chain
+* @precondition          : none
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_netbuf_chain_p(void)
 {
@@ -184,12 +191,13 @@ static void tc_net_netbuf_chain_p(void)
 }
 
 /**
-* @testcase             : tc_net_netbuf_new_p
-* @brief                : Create (allocate) and initialize a new netbuf
-* @scenario             : to create the new netbuf
-* @apicovered           : netbuf_new
-* @precondition         :
-* @postcondition        :
+* @testcase              : tc_net_netbuf_new_p
+* @brief                 : Create (allocate) and initialize a new netbuf
+* @scenario              : to create the new netbuf
+* @apicovered            : netbuf_new
+* @precondition          : new
+* @postcondition         : new
+* @return                : void
 */
 static void tc_net_netbuf_new_p(void)
 {

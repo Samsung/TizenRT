@@ -24,13 +24,15 @@
 
 #define ERR_NO_TEST1	0
 #define ERR_NO_TEST2	20
+
 /**
-* @testcase            : tc_net_lwip_strerr
-* @brief               : to print error messages
-* @scenario            : for debugging
-* @apicovered          : lwip_strerr
-* @precondition        :
-* @postcondition       :
+* @testcase              : tc_net_lwip_strerr
+* @brief                 : to print error messages
+* @scenario              : for debugging
+* @apicovered            : lwip_strerr
+* @precondition          : error value.
+* @postcondition         : none
+* @return                : void
 */
 static void tc_net_lwip_strerr(int errCount)
 {

@@ -39,11 +39,11 @@
 static int count_wait = 0;
 /**
 * @fn                   : recv_wait
-* @brief                : function to wait on semaphore
-* @scenario             : To lock resource
-* API's covered         : none
-* Preconditions         : none
-* Postconditions        : none
+* @brief                : Function to wait on semaphore
+* @scenario             : use wait function to decrement count value.
+* @API's covered        : none
+* @Preconditions        : none
+* @Postconditions       : none
 * @return               : void
 */
 void recv_wait(void)
@@ -56,11 +56,11 @@ void recv_wait(void)
 
 /**
 * @fn                  : recv_signal
-* @brief               : function to signal semaphore
-* @scenario            : To release resource.
-* API's covered        : none
-* Preconditions        : none
-* Postconditions       : none
+* @brief               : Function to signal semaphore
+* @scenario            : use to increase the count value.
+* @API's covered       : none
+* @Preconditions       : none
+* @Postconditions      : none
 * @return              : void
 */
 void recv_signal(void)
@@ -70,11 +70,12 @@ void recv_signal(void)
 
 /**
 * @testcase            : tc_net_recv_p
-* @brief               : To receive the data
-* @scenario            : Used for tcp connection
+* @brief               : This recv API receive a message from a socket.
+* @scenario            : recv is used to receive messages from a socket.
 * @apicovered          : recv()
-* @precondition        : none
+* @precondition        : socket file descriptor.
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_recv_p(int fd)
 {
@@ -88,11 +89,13 @@ void tc_net_recv_p(int fd)
 
 /**
 * @testcase            : tc_net_recv_n
-* @brief               : To receive the data
-* @scenario            : used for tcp connection.
+* @brief               : This recv API receive a message from a socket.
+* @scenario            : recv is used to receive messages from a socket,
+                         with invalid fd.
 * @apicovered          : recv()
-* @precondition        : none
+* @precondition        : socket file descriptor.
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_recv_n(int fd)
 {
@@ -107,11 +110,13 @@ void tc_net_recv_n(int fd)
 
 /**
 * @testcase            : tc_net_recv_shutdown_n
-* @brief               : To receive the data.
-* @scenario            : used for tcp connection.
+* @brief               : This recv API receive a message from a socket.
+* @scenario            : recv is used to receive messages from a socket,
+                         test after shutdown.
 * @apicovered          : recv()
-* @precondition        : none
+* @precondition        : socket file descriptor.
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_recv_shutdown_n(int fd)
 {
@@ -126,11 +131,13 @@ void tc_net_recv_shutdown_n(int fd)
 
 /**
 * @testcase            : tc_net_recv_close_n
-* @brief               : receives the data.
-* @scenario            : Used for tcp connection
+* @brief               : This recv API receive a message from a socket.
+* @scenario            : recv is used to receive messages from a socket,
+                         test after close.
 * @apicovered          : recv()
-* @precondition        : none
+* @precondition        : socket file descriptor.
 * @postcondition       : none
+* @return              : void
 */
 void tc_net_recv_close_n(int fd)
 {
@@ -145,14 +152,14 @@ void tc_net_recv_close_n(int fd)
 
 /**
 * @fn                   : recv_server
-* @brief                : Server thread
-* @scenario             : used for tcp connection
-* API's covered         : socket,bind,listen,accept,send,close
-* Preconditions         : Data should present in buffer
-* Postconditions        : none
-* @return               : void *
+* @brief                : Create a Tcp server.
+* @scenario             : Create a tcp server for checking receive api.
+* @API's covered        : socket,bind,listen,accept,send,close
+* @Preconditions        : socket file descriptor.
+* @Postconditions       : none
+* @return               : void
 */
-void *recv_server(void *args)
+void* recv_server(void *args)
 {
 	int ConnectFD;
 	struct sockaddr_in sa;
@@ -174,14 +181,14 @@ void *recv_server(void *args)
 
 /**
 * @fn                  : recv_client
-* @brief               : Client thread
-* @scenario            : used for tcp connection
-* API's covered        : socket,connect,close
-* Preconditions        : none
-* Postconditions       : Server thread must be created
+* @brief               : This api create client.
+* @scenario            : Create tcp client.
+* @API's covered       : socket,connect,close
+* @Preconditions       : socket file descriptor.
+* @Postconditions      : none
 * @return              : void
 */
-void *recv_client(void *args)
+void* recv_client(void *args)
 {
 	struct sockaddr_in dest;
 	int ret;
@@ -205,11 +212,11 @@ void *recv_client(void *args)
 
 /**
 * @fn                  : net_recv
-* @brief               :
-* @scenario            :
-* API's covered        :
-* Preconditions        :
-* Postconditions       :
+* @brief               : This api create client and server thread.
+* @scenario            : Create client and server thread to test accept api.
+* API's covered        : none
+* Preconditions        : none
+* Postconditions       : none
 * @return              : void
 */
 void net_recv(void)

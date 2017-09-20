@@ -28,8 +28,8 @@
 * @brief                : Checks if a netmask is valid (starting with ones, then only zeros)
 * @scenario             : netmask the IPv4 netmask to check (in network byte order!)
 * @apicovered           : ip4_addr_netmask_valid
-* @precondition         :
-* @postcondition        :
+* @precondition         : none
+* @postcondition        : none
 * @return               : void
 */
 void tc_net_ipv4_addr_netmask_valid_p(void)
@@ -47,8 +47,8 @@ void tc_net_ipv4_addr_netmask_valid_p(void)
 * @brief                : Checks if a netmask is valid (starting with ones, then only zeros)
 * @scenario             : netmask the IPv4 netmask to check (in network byte order!)
 * @apicovered           : ip4_addr_netmask_valid
-* @precondition         :
-* @postcondition        :
+* @precondition         : none
+* @postcondition        : none
 * @return               : void
 */
 void tc_net_ipv4_addr_netmask_valid_n(void)

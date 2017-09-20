@@ -25,12 +25,13 @@
 #include "tc_internal.h"
 
 /**
-* @testcase             : tc_netdev_carrier_on_p
-* @brief                : Notifies the networking layer about an available carrier
-* @scenario             : Get the inforamation about available carrier
-* @apicovered           : netdev_carrier_on
-* @precondition         :
-* @postcondition        :
+* @testcase            : tc_netdev_carrier_on_p
+* @brief               : Notifies the networking layer about an available carrier.
+* @scenario            : Get the inforamation about available carrier.
+* @apicovered          : netdev_carrier_on
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_netdev_carrier_on_p(void)
 {
@@ -48,12 +49,13 @@ static void tc_netdev_carrier_on_p(void)
 }
 
 /**
-* @testcase             : tc_netdev_carrier_on_n
-* @brief                : Notifies the networking layer about an available carrier
-* @scenario             : Get the inforamation about available carrier
-* @apicovered           : netdev_carrier_on
-* @precondition         :
-* @postcondition        :
+* @testcase            : tc_netdev_carrier_on_n
+* @brief               : Notifies the networking layer about an available carrier.
+* @scenario            : Get the inforamation about available carrier.
+* @apicovered          : netdev_carrier_on
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_netdev_carrier_on_n(void)
 {
@@ -65,12 +67,13 @@ static void tc_netdev_carrier_on_n(void)
 }
 
 /**
-* @testcase             : tc_netdev_carrier_off_p
-* @brief                : Notifies the networking layer about an disappeared carrier
-* @scenario             : Get the inforamation about disappeared carrier
-* @apicovered           : netdev_carrier_off
-* @precondition         :
-* @postcondition        :
+* @testcase            : tc_netdev_carrier_off_p
+* @brief               : Notifies the networking layer about an disappeared carrier.
+* @scenario            : Get the inforamation about disappeared carrier.
+* @apicovered          : netdev_carrier_off
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_netdev_carrier_off_p(void)
 {
@@ -89,12 +92,13 @@ static void tc_netdev_carrier_off_p(void)
 }
 
 /**
-* @testcase             : tc_netdev_carrier_off_n
-* @brief                : Notifies the networking layer about an disappeared carrier
-* @scenario             : Get the inforamation about disappeared carrier
-* @apicovered           : netdev_carrier_off
-* @precondition         :
-* @postcondition        :
+* @testcase            : tc_netdev_carrier_off_n
+* @brief               : Notifies the networking layer about an disappeared carrier.
+* @scenario            : Get the inforamation about disappeared carrier.
+* @apicovered          : netdev_carrier_off
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_netdev_carrier_off_n(void)
 {
@@ -106,12 +110,13 @@ static void tc_netdev_carrier_off_n(void)
 }
 
 /**
-* @testcase             : tc_test_function
-* @brief                : helper func
-* @scenario             :
-* @apicovered           :
-* @precondition         :
-* @postcondition        :
+* @testcase            : tc_test_function
+* @brief               : Helper function.
+* @scenario            : none
+* @apicovered          : none
+* @precondition        : none
+* @postcondition       : none
+* @return              : int
 */
 static int tc_test_function(struct netif *dev)
 {
@@ -119,12 +124,13 @@ static int tc_test_function(struct netif *dev)
 }
 
 /**
-* @testcase             : tc_netdev_ifdown
-* @brief                : Bring the interface down
-* @scenario             : Bring the interface down
-* @apicovered           : netdev_ifdown
-* @precondition         :
-* @postcondition        :
+* @testcase            : tc_netdev_ifdown
+* @brief               : Bring the interface down.
+* @scenario            : Bring the interface down.
+* @apicovered          : netdev_ifdown
+* @precondition        : up the interface
+* @postcondition       : none
+* @return              : void
 */
 static void tc_netdev_ifdown(void)
 {

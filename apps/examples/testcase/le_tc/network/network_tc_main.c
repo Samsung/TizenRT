@@ -19,6 +19,7 @@
 /// @file network_tc_main.c
 
 /// @brief Main Function for Network TestCase Example
+
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <semaphore.h>

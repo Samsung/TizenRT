@@ -33,11 +33,12 @@
 
 /**
 * @testcase            : tc_net_fcntl_nonblock_p
-* @brief               : to set or clear file control parameters
-* @scenario            :
+* @brief               : This fcntl API manipulate file descriptor.
+* @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg.
 * @apicovered          : fcntl()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_fcntl_nonblock_p(int fd)
 {
@@ -49,11 +50,12 @@ static void tc_net_fcntl_nonblock_p(int fd)
 
 /**
 * @testcase            : tc_net_fcntl_p
-* @brief               : to set or clear file control parameters
-* @scenario            :
+* @brief               : This fcntl API manipulate file descriptor.
+* @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg as zero.
 * @apicovered          : fcntl()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_fcntl_p(int fd)
 {
@@ -65,11 +67,12 @@ static void tc_net_fcntl_p(int fd)
 
 /**
 * @testcase            : tc_net_fcntl_n
-* @brief               : to set or clear file control parameters
-* @scenario            :
+* @brief               : This fcntl API manipulate file descriptor.
+* @scenario            : fcntl use setfl command to set the file status flags with invalid fd.
 * @apicovered          : fcntl()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_fcntl_n(void)
 {
@@ -81,11 +84,12 @@ static void tc_net_fcntl_n(void)
 
 /**
 * @testcase            : tc_net_fcntl_ndelay_p
-* @brief               : to set or clear file control parameters
-* @scenario            :
+* @brief               : This fcntl API manipulate file descriptor.
+* @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg as ndelay.
 * @apicovered          : fcntl()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_fcntl_ndelay_p(int fd)
 {

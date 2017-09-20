@@ -33,11 +33,12 @@
 
 /**
 * @testcase            : tc_net_getsockname_p
-* @brief               : to get the name of socket
-* @scenario            :
+* @brief               : The getsockname API get socket name.
+* @scenario            : getsockname gives the current address to which the socket is bound.
 * @apicovered          : getsockname()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getsockname_p(int sock)
 {
@@ -52,11 +53,12 @@ static void tc_net_getsockname_p(int sock)
 
 /**
 * @testcase            : tc_net_getsockname_unix_p
-* @brief               : to get the name of socket
-* @scenario            :
+* @brief               : The getsockname API get socket name.
+* @scenario            : getsockname gives the current address to which the socket is bound.
 * @apicovered          : getsockname()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getsockname_unix_p(int sock)
 {
@@ -71,11 +73,13 @@ static void tc_net_getsockname_unix_p(int sock)
 
 /**
 * @testcase            : tc_net_getsockname_n
-* @brief               : to get the name of socket
-* @scenario            :
+* @brief               : The getsockname API get socket name.
+* @scenario            : getsockname gives the current address to which the socket is bound,
+                         with zero addrlen.
 * @apicovered          : getsockname()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getsockname_n(void)
 {
@@ -90,11 +94,13 @@ static void tc_net_getsockname_n(void)
 
 /**
 * @testcase            : tc_net_getsockname_close_n
-* @brief               : to get the name of socket
-* @scenario            :
+* @brief               : The getsockname API get socket name.
+* @scenario            : getsockname gives the current address to which the socket is bound,
+                         with invalid addrlen.
 * @apicovered          : getsockname()
-* @precondition        :
-* @postcondition       :
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getsockname_close_n(void)
 {
@@ -109,11 +115,12 @@ static void tc_net_getsockname_close_n(void)
 
 /**
 * @testcase            : tc_net_getsockname_udp_p
-* @brief               : to get the name of socket
-* @scenario            :
+* @brief               : The getsockname API get socket name.
+* @scenario            : getsockname gives the current address to which the socket is bound.
 * @apicovered          : getsockname()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getsockname_udp_p(int sock)
 {
@@ -128,11 +135,12 @@ static void tc_net_getsockname_udp_p(int sock)
 
 /**
 * @testcase            : tc_net_getsockname_icmp_p
-* @brief               : to get the name of socket
-* @scenario            :
+* @brief               : The getsockname API get socket name.
+* @scenario            : getsockname gives the current address to which the socket is bound.
 * @apicovered          : getsockname()
-* @precondition        :
-* @postcondition       :
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getsockname_icmp_p(int sock)
 {
@@ -146,12 +154,13 @@ static void tc_net_getsockname_icmp_p(int sock)
 }
 
 /**
-* @testcase             : tc_net_getsockname_len_sock_n
-* @brief                : to get the name of socket
-* @scenario             :
-* @apicovered           : getsockname()
-* @precondition         :
-* @postcondition        :
+* @testcase            : tc_net_getsockname_len_sock_n
+* @brief               : The getsockname API get socket name.
+* @scenario            : getsockname gives the current address to which the socket is bound.
+* @apicovered          : getsockname()
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
 */
 static void tc_net_getsockname_len_sock_n(void)
 {
@@ -169,7 +178,6 @@ static void tc_net_getsockname_len_sock_n(void)
 /****************************************************************************
  * Name: getsockname()
  ****************************************************************************/
-
 int net_getsockname_main(void)
 {
 	int s = socket(AF_INET, SOCK_STREAM, ZERO);

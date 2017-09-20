@@ -39,11 +39,11 @@
 static int count_wait = 0;
 /**
 * @fn                   : sig_wait
-* @brief                : function to wait on semaphore
-* @scenario             : To aquire the resource
-* API's covered         : none
-* Preconditions         : none
-* Postconditions        : none
+* @brief                : Function to wait on semaphore
+* @scenario             : use wait function to decrement count value.
+* @API's covered        : none
+* @Preconditions        : none
+* @Postconditions       : none
 * @return               : void
 */
 void sig_wait(void)
@@ -57,11 +57,11 @@ void sig_wait(void)
 
 /**
 * @fn                   : sig_call
-* @brief                : function to signal semaphore
-* @scenario             : To release the resource
-* API's covered         : none
-* Preconditions         : none
-* Postconditions        : none
+* @brief                : Function to signal semaphore
+* @scenario             : use to increase the count value.
+* @API's covered        : none
+* @Preconditions        : none
+* @Postconditions       : none
 * @return               : void
 */
 void sig_call(void)
@@ -70,12 +70,13 @@ void sig_call(void)
 }
 
 /**
-* @testcase            : tc_net_send_p
-* @brief               : +ve test case for send api
-* @scenario            : used for tcp connection
-* @apicovered          : accept(),send()
-* @precondition        : Valid file descriptor
-* @postcondition       : none
+* @testcase             : tc_net_send_p
+* @brief                : This send API send a message on a socket.
+* @scenario             : used to transmit a message to another socket.
+* @apicovered           : accept(),send()
+* @precondition         : socket file descriptor.
+* @postcondition        : none
+* @return               : void
 */
 void tc_net_send_p(int fd)
 {
@@ -91,12 +92,12 @@ void tc_net_send_p(int fd)
 
 /**
 * @fn                   : server
-* @brief                : Server thread
-* @scenario             : used for tcp connection
+* @brief                : Create a Tcp server.
+* @scenario             : Create a tcp server for checking send api.
 * API's covered         : socket,bind,listen,close
-* Preconditions         : Valid file descriptor
+* Preconditions         : socket file descriptor.
 * Postconditions        : none
-* @return               : void *
+* @return               : void
 */
 void *server(void *args)
 {
@@ -122,12 +123,12 @@ void *server(void *args)
 
 /**
 * @fn                   : client
-* @brief                : Client thread
-* @scenario             : used for tcp connection
+* @brief                : This api create client.
+* @scenario             : Create tcp client.
 * API's covered         : socket,connect,recv,close
-* Preconditions         : Valid file descriptor
+* Preconditions         : socket file descriptor.
 * Postconditions        : none
-* @return               : void *
+* @return               : void
 */
 void *client(void *args)
 {
@@ -154,11 +155,11 @@ void *client(void *args)
 
 /**
 * @fn                  : tc_net_send
-* @brief               : creating client and server threads
-* @scenario            :
-* API's covered        :
-* Preconditions        :
-* Postconditions       :
+* @brief               : This api create client and server thread.
+* @scenario            : Create client and server thread to test send api.
+* API's covered        : none
+* Preconditions        : none
+* Postconditions       : none
 * @return              : void
 */
 static void tc_net_send(void)

@@ -52,10 +52,10 @@ extern err_t netif_loopif_init(struct netif *netif);
 * @testcase             : tc_net_netif_remove_p
 * @brief                : Remove netif interface
 * @scenario             : Remove the added netif interface
-
 * @apicovered           : netif_remove(), netif_add()
 * @precondition         : netif interface should be present
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_netif_remove_p(void)
 {
@@ -79,6 +79,7 @@ static void tc_net_netif_remove_p(void)
 * @apicovered           : pbuf_get_at()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_get_at_p(void)
 {
@@ -103,6 +104,7 @@ static void tc_net_pbuf_get_at_p(void)
 * @apicovered           : none
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 void create_packet(struct pbuf **head, char *data, u16_t len, u16_t ref)
 {
@@ -129,11 +131,12 @@ void create_packet(struct pbuf **head, char *data, u16_t len, u16_t ref)
 
 /**
 * @testcase             : tc_net_pbuf_memcmp_p
-* @brief                :
-* @scenario             :
+* @brief                : Compare pbuf contents at specified offset with memory
+* @scenario             : positive scenario for pbuf_memcmp
 * @apicovered           : create_packet pbuf_memcmp
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_memcmp_p(void)
 {
@@ -165,11 +168,12 @@ static void tc_net_pbuf_memcmp_p(void)
 
 /**
 * @testcase             : tc_net_pbuf_memfind_p
-* @brief                :
-* @scenario             :
+* @brief                : Find occurrence of mem in pbuf p, starting at offset
+* @scenario             : positive scenario for pbuf_memfind
 * @apicovered           : pbuf_memfind
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_memfind_p(void)
 {
@@ -190,11 +194,12 @@ static void tc_net_pbuf_memfind_p(void)
 
 /**
 * @testcase             : tc_net_pbuf_strstr_p
-* @brief                :
-* @scenario             :
+* @brief                : Finding occurrence of substr with length substr_len in pbuf
+* @scenario             : positive scenario of pbuf_strstr
 * @apicovered           : create_packet pbuf_strstr
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 void tc_net_pbuf_strstr_p(void)
 {
@@ -235,6 +240,7 @@ void tc_net_pbuf_strstr_p(void)
 * @apicovered           : get_socket_struct()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_get_socket_struct_n(void)
 {
@@ -254,6 +260,7 @@ static void tc_net_get_socket_struct_n(void)
 * @apicovered           : get_socket_struct()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_get_socket_struct_p(void)
 {
@@ -271,8 +278,9 @@ static void tc_net_get_socket_struct_p(void)
 * @brief                : Handle retransmission after three dupacks received
 * @scenario             : it not going to return anyting.
 * @apicovered           : tcp_rexmit_fast()
-* @precondition         :
-* @postcondition        :
+* @precondition         : none
+* @postcondition        : none
+* @return               : void
 */
 static void tc_net_tcp_rexmit_fast_n(void)
 {
@@ -296,6 +304,7 @@ static void tc_net_tcp_rexmit_fast_n(void)
 * @apicovered           : tcp_zero_window_probe()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_tcp_zero_window_probe_n(void)
 {
@@ -318,6 +327,7 @@ static void tc_net_tcp_zero_window_probe_n(void)
 * @apicovered           : netif_remove()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_netif_remove_n(void)
 {
@@ -330,10 +340,11 @@ static void tc_net_netif_remove_n(void)
 /**
 * @testcase             : tc_net_pbuf_alloced_custom_n
 * @brief                : Initialize a custom pbuf
-* @scenario             : return pbuf
+* @scenario             : none
 * @apicovered           : pbuf_alloced_custom()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_alloced_custom_n(void)
 {
@@ -355,10 +366,11 @@ static void tc_net_pbuf_alloced_custom_n(void)
 /**
 * @testcase             : tc_net_pbuf_alloced_custom_p
 * @brief                : Initialize a custom pbuf
-* @scenario             : returning same pbuf
+* @scenario             : none
 * @apicovered           : pbuf_alloced_custom()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_alloced_custom_p(void)
 {
@@ -398,9 +410,10 @@ static void tc_net_pbuf_alloced_custom_p(void)
 * @testcase             : tc_net_pbuf_dechain_n
 * @brief                : Dechains the first pbuf from its succeeding pbufs in the chain
 * @scenario             : detching the pbuf
-* @apicovered           : return remainder of the pbuf chain, or NULL if it was de-allocated
+* @apicovered           : memp_malloc, pbuf_dechain
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_dechain_n(void)
 {
@@ -423,6 +436,7 @@ static void tc_net_pbuf_dechain_n(void)
 * @apicovered           : none
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 void create_chain(struct pbuf **head, char *data, u16_t len, u16_t ref)
 {
@@ -450,10 +464,11 @@ void create_chain(struct pbuf **head, char *data, u16_t len, u16_t ref)
 /**
 * @testcase             : tc_net_pbuf_dechain_p
 * @brief                : Dechains the first pbuf from its succeeding pbufs in the chain
-* @scenario             : return remainder of the pbuf chain, or NULL if it was de-allocated
-* @apicovered           : pbuf_dechain()
+* @scenario             : none
+* @apicovered           : create_chain, pbuf_dechain()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_dechain_p(void)
 {
@@ -484,10 +499,11 @@ static void tc_net_pbuf_dechain_p(void)
 /**
 * @testcase             : tc_net_pbuf_take_n
 * @brief                : Create PBUF_RAM copies of pbufs
-* @scenario             : 0 if pbuf was copied else error no.
+* @scenario             : none
 * @apicovered           : pbuf_take()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_take_n(void)
 {
@@ -505,10 +521,11 @@ static void tc_net_pbuf_take_n(void)
 /**
 * @testcase             : tc_net_pbuf_take_p
 * @brief                : Create PBUF_RAM copies of pbufs
-* @scenario             : 0 if pbuf was copied else error no.
+* @scenario             : none
 * @apicovered           : pbuf_take()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_take_p(void)
 {
@@ -530,10 +547,11 @@ static void tc_net_pbuf_take_p(void)
 /**
 * @testcase             : tc_net_pbuf_coalesce_n
 * @brief                : Creates a single pbuf out of a queue of pbufs
-* @scenario             : return new single pbuf or old pbuf is failed to allocated
+* @scenario             : none
 * @apicovered           : pbuf_coalesce()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_coalesce_n(void)
 {
@@ -554,10 +572,11 @@ static void tc_net_pbuf_coalesce_n(void)
 /**
 * @testcase             : tc_net_pbuf_coalesce_p
 * @brief                : Creates a single pbuf out of a queue of pbufs
-* @scenario             : return new single pbuf or old pbuf is failed to allocated
+* @scenario             : none
 * @apicovered           : pbuf_coalesce()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_coalesce_p(void)
 {
@@ -590,10 +609,11 @@ static void tc_net_pbuf_coalesce_p(void)
 /**
 * @testcase             : tc_net_pbuf_get_at_n
 * @brief                : Get one byte from the specified position in a pbuf
-* @scenario             : return byte at an offset into p OR ZERO IF 'offset' >= p->tot_len
+* @scenario             : none
 * @apicovered           : pbuf_get_at()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_get_at_n(void)
 {
@@ -609,10 +629,11 @@ static void tc_net_pbuf_get_at_n(void)
 /**
 * @testcase             : tc_net_pbuf_memcmp_n
 * @brief                : Get one byte from the specified position in a pbuf
-* @scenario             : return byte at an offset into p OR ZERO IF 'offset' >= p->tot_len
+* @scenario             : negative scenario for pbuf_memcmp
 * @apicovered           : pbuf_memcmp()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_memcmp_n(void)
 {
@@ -630,12 +651,12 @@ static void tc_net_pbuf_memcmp_n(void)
 
 /**
 * @testcase             : tc_net_pbuf_memfind_n
-* @brief                : Find occurrence of mem (with length mem_len) in pbuf p, starting at offset
-                          start_offset
-* @scenario             : return 0xFFFF if substr was not found in p or the index where it was found
+* @brief                : Find occurrence of mem in pbuf p, starting at offset
+* @scenario             : none
 * @apicovered           : pbuf_memfind()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_memfind_n(void)
 {
@@ -653,11 +674,12 @@ static void tc_net_pbuf_memfind_n(void)
 
 /**
 * @testcase             : tc_net_pbuf_strstr_n
-* @brief                :
-* @scenario             :
+* @brief                : Finding occurrence of substr with length substr_len in pbuf
+* @scenario             : negative scenario for pbuf_strstr
 * @apicovered           : pbuf_strstr()
-* @precondition         :
-* @postcondition        :
+* @precondition         : none
+* @postcondition        : none
+* @return               : void
 */
 static void tc_net_pbuf_strstr_n(void)
 {
@@ -674,10 +696,11 @@ static void tc_net_pbuf_strstr_n(void)
 /**
 * @testcase             : tc_net_sys_untimeout_n
 * @brief                : Go through timeout list and remove the first matching entry
-* @scenario             :
+* @scenario             : negative scenario for sys_untimeout
 * @apicovered           : sys_untimeout()
-* @precondition         :
-* @postcondition        :
+* @precondition         : none
+* @postcondition        : none
+* @return               : void
 */
 static void tc_net_sys_untimeout_n(void)
 {
@@ -692,10 +715,11 @@ static void tc_net_sys_untimeout_n(void)
 /**
 * @testcase             : tc_net_icmp_dest_unreach_n
 * @brief                : Send an icmp destination unreachable packet
-* @scenario             : none
+* @scenario             : negative scenario for icmp dest unreachable
 * @apicovered           : icmp_dest_unreach(), memp_malloc, memp_free
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_icmp_dest_unreach_n(void)
 {
@@ -714,10 +738,11 @@ static void tc_net_icmp_dest_unreach_n(void)
 /**
 * @testcase             : tc_net_icmp_time_exceeded_n
 * @brief                : Send an icmp destination unreachable packet
-* @scenario             : none
+* @scenario             : negative scenario of icmp time exceeded
 * @apicovered           : icmp_time_exceeded, memp_malloc, memp_free
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_icmp_time_exceeded_n(void)
 {
@@ -737,10 +762,11 @@ static void tc_net_icmp_time_exceeded_n(void)
 /**
 * @testcase             : tc_net_icmp_dest_unreach_p
 * @brief                : Send an icmp destination unreachable packet
-* @scenario             : none
+* @scenario             : positive scenario of icmp destination unreachable
 * @apicovered           : icmp_dest_unreach, memp_malloc, memp_free
 * @precondition         : valid pbuf packet
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_icmp_dest_unreach_p(void)
 {
@@ -760,10 +786,11 @@ static void tc_net_icmp_dest_unreach_p(void)
 /**
 * @testcase             : tc_net_icmp_time_exceeded_p
 * @brief                : Send a time exceeded packet
-* @scenario             : none
+* @scenario             : positive scenario of icmp time exceeded
 * @apicovered           : icmp_time_exceeded, memp_malloc, memp_free
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_icmp_time_exceeded_p(void)
 {
@@ -783,10 +810,11 @@ static void tc_net_icmp_time_exceeded_p(void)
 /**
 * @testcase             : tc_net_icmp_send_response_n
 * @brief                : Send an icmp packet in response to an incoming packet.
-* @scenario             : none
+* @scenario             : positive scenario for icmp request to send response
 * @apicovered           : icmp_send_response()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_icmp_send_response_p(void)
 {
@@ -806,10 +834,11 @@ static void tc_net_icmp_send_response_p(void)
 /**
 * @testcase             : tc_net_igmp_dump_group_list_n
 * @brief                : Dump global IGMP groups list
-* @scenario             : none
+* @scenario             : negative scenario of igmp_dump_group
 * @apicovered           : igmp_dump_group_list()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_igmp_dump_group_list_n(void)
 {
@@ -820,10 +849,11 @@ static void tc_net_igmp_dump_group_list_n(void)
 /**
 * @testcase             : tc_net_igmp_stop_n
 * @brief                : Stop IGMP processing on interface
-* @scenario             : none
+* @scenario             : negative scenario of igmp_stop
 * @apicovered           : igmp_stop()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_igmp_stop_n(void)
 {
@@ -844,6 +874,7 @@ static void tc_net_igmp_stop_n(void)
 * @apicovered           : default_netif_linkoutput
 * @precondition         : network interface must be created
 * @postcondition        : none
+* @return               : void
 */
 static err_t default_netif_linkoutput(struct netif *netif, struct pbuf *p)
 {
@@ -854,10 +885,11 @@ static err_t default_netif_linkoutput(struct netif *netif, struct pbuf *p)
 /**
 * @testcase             : default_netif_init
 * @brief                : initialize the network interface
-* @scenario             : none
+* @scenario             : initialization
 * @apicovered           : default_netif_linkoutput, etharp_output
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static err_t default_netif_init(struct netif *netif)
 {
@@ -872,10 +904,11 @@ static err_t default_netif_init(struct netif *netif)
 /**
 * @testcase             : tc_net_igmp_stop_p
 * @brief                : Stop IGMP processing on interface
-* @scenario             : none
+* @scenario             : stop unnecessary processing of igmp on interface
 * @apicovered           : igmp_stop()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_igmp_stop_p(void)
 {
@@ -895,10 +928,11 @@ static void tc_net_igmp_stop_p(void)
 /**
 * @testcase             : tc_net_icmp_input_n
 * @brief                : Processes ICMP input packets, called from ip_input().
-* @scenario             : none
+* @scenario             : negative scenario of icmp protocol
 * @apicovered           : icmp_input(), memp_free()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_icmp_input_n(void)
 {
@@ -923,10 +957,11 @@ static void tc_net_icmp_input_n(void)
 /**
 * @testcase             : tc_net_icmp_input_p
 * @brief                : Processes ICMP input packets, called from ip_input().
-* @scenario             : none
+* @scenario             : positive scenario of icmp protocol
 * @apicovered           : icmp_input(), memp_free()
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void tc_net_icmp_input_p(void)
 {
@@ -958,10 +993,11 @@ static void tc_net_icmp_input_p(void)
 /**
 * @testcase             : server
 * @brief                : Serever thread
-* @scenario             :
+* @scenario             : server to connect to client
 * @apicovered           : lwip_read, bind, listen, accept, select
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void *server(void *args)
 {
@@ -1032,10 +1068,11 @@ static void *server(void *args)
 /**
 * @testcase             : client
 * @brief                : client thread
-* @scenario             :
-* @apicovered           :
+* @scenario             : client to connect to server
+* @apicovered           : socket, connect, write
 * @precondition         : none
 * @postcondition        : none
+* @return               : void
 */
 static void *client(void *args)
 {

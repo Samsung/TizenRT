@@ -26,6 +26,7 @@
 * @apicovered        : raw_send, raw_new, raw_remove
 * @precondition      : none
 * @postcondition     : none
+* @return            : void
 */
 static void tc_net_raw_send_n(void)
 {
@@ -39,7 +40,7 @@ static void tc_net_raw_send_n(void)
 	ret = raw_bind(raw, &loop_ipaddr);
 	TC_ASSERT_EQ("raw_bind", ret, ZERO);
 	ret = raw_send(raw, pbuf);
-	TC_ASSERT_NEQ("raw_connect", ret, ZERO);
+	TC_ASSERT_NEQ("raw_send", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -50,6 +51,7 @@ static void tc_net_raw_send_n(void)
 * @apicovered          : raw_connect, raw_new, raw_remove
 * @precondition        : none
 * @postcondition       : none
+* @return              : void
 */
 static void tc_net_raw_connect_n(void)
 {
@@ -70,6 +72,7 @@ static void tc_net_raw_connect_n(void)
 * @apicovered          : raw_connect, raw_new, raw_remove
 * @precondition        : none
 * @postcondition       : none
+* @return              : void
 */
 static void tc_net_raw_connect_p(void)
 {
@@ -93,6 +96,7 @@ static void tc_net_raw_connect_p(void)
 * @apicovered          : raw_bind, raw_new, raw_remove
 * @precondition        : nonne
 * @postcondition       : none
+* @return              : void
 */
 static void tc_net_raw_bind_n(void)
 {
@@ -110,6 +114,7 @@ static void tc_net_raw_bind_n(void)
 * @apicovered          : raw_bind, raw_new, raw_remove
 * @precondition        : none
 * @postcondition       : none
+* @return              : void
 */
 static void tc_net_raw_bind_p(void)
 {
