@@ -24,14 +24,18 @@
 
 OS_DIR_PATH=${PWD}
 BUILD_DIR_PATH=${OS_DIR_PATH}/../build
+CONFIGS_PATH=${BUILD_DIR_PATH}/configs
 OUTPUT_BINARY_PATH=${BUILD_DIR_PATH}/output/bin
 OPENOCD_DIR_PATH=${BUILD_DIR_PATH}/tools/openocd
+
+TIZENRT_BIN=$OUTPUT_BINARY_PATH/tinyara_head.bin
 
 usage() {
     cat <<EOF
 USAGE: `basename $0` [OPTIONS]
 OPTIONS:
     [--board[="<board-name>"]]
+    [--secure]
     [ALL | BOOTLOADER | RESOURCE | KERNEL | THIRDPARTY]
 
 For examples:
@@ -40,6 +44,7 @@ For examples:
 
 Options:
     --board[="<board-name>"]      select target board-name
+    --secure                      choose secure mode
     ALL                           write each firmware image into FLASH
     BOOTLOADER                    not supported yet
     RESOURCE                      not supported yet
@@ -76,13 +81,20 @@ download()
     # Download all binaries using openocd script
     pushd ${OPENOCD_DIR_PATH} > /dev/null
     ${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -s "$BOARD_DIR_PATH/../artik05x/scripts" -c " 	\
+        flash_protect off;\
         flash_write bl1 ${FW_DIR_PATH}/bl1.bin; 		\
+        flash_protect on; \
         flash_write bl2 ${FW_DIR_PATH}/bl2.bin; 		\
         flash_write sssfw ${FW_DIR_PATH}/sssfw.bin; 		\
         flash_write wlanfw ${FW_DIR_PATH}/wlanfw.bin;	\
-        flash_write os ../../../output/bin/tinyara_head.bin;	\
+        flash_write os ${TIZENRT_BIN};	\
         exit"
     popd > /dev/null
+}
+
+signing() {
+    $CONFIGS_PATH/artik05x/tools/codesigner/artik05x_codesigner -sign $TIZENRT_BIN
+    TIZENRT_BIN=${TIZENRT_BIN}-signed
 }
 
 if test $# -eq 0; then
@@ -106,7 +118,7 @@ while test $# -gt 0; do
                 exit 1
             fi
             ;;
-
+        --secure) signing ;;
         ALL)
             download
             ;;
