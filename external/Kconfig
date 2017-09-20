@@ -149,6 +149,7 @@ config ENABLE_IOTIVITY_SECURED
 	bool "enable iotivity security"
 	default n
 	depends on ENABLE_IOTIVITY
+	select NET_SECURITY_TLS
 	---help---
 		select to enable the security for iotivity stack in tinyara
 
