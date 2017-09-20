@@ -61,7 +61,7 @@ ARTIK053 [[details]](build/configs/artik053/README.md)
 
 ARTIK053S [[details]](build/configs/artik053s/README.md)
 
-ARTIK055 [[details]](build/configs/artik055/README.md)
+ARTIK055S [[details]](build/configs/artik055s/README.md)
 
 SIDK_S5JT200 [[details]](build/configs/sidk_s5jt200/README.md)
 
