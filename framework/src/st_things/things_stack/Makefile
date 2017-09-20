@@ -89,7 +89,6 @@ CFLAGS += -I$(THINGS_STACK_DIR)/src/common/utils/inc
 
 CFLAGS += -I$(THINGS_STACK_DIR)/src/common/stack
 CFLAGS += -I$(THINGS_STACK_DIR)/inc
-CFLAGS += -I$(THINGS_STACK_DIR)/src/common/security/sss_security
 CFLAGS += -I$(THINGS_STACK_DIR)/src/common/security/ssCrypto/include
 
 
@@ -128,7 +127,6 @@ CSRCS += $(wildcard src/common/utils/*.c)
 CSRCS += $(wildcard src/common/framework/*.c)
 CSRCS += $(wildcard src/common/easy-setup/*.c)
 CSRCS += $(wildcard src/common/cloud/*.c)
-CSRCS += $(wildcard src/common/security/sss_security/*.c)
 CSRCS += $(wildcard src/common/security/ssCrypto/src/*.c)
 
 CSRCS += $(wildcard src/stack/*.c)

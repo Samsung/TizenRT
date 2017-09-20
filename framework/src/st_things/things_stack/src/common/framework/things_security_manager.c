@@ -22,9 +22,7 @@
 #include <netpacket/packet.h>
 
 #ifdef _SVR_ENC_
-#ifdef __ST_THINGS_RTOS__
-#include "sss_storage_server.h"
-#else
+#ifndef __ST_THINGS_RTOS__
 #include "ssAPI.h"
 #include "ssDevice.h"
 #endif
@@ -623,12 +621,6 @@ int sm_init_things_security(int auth_type, const char *db_path)
 		THINGS_LOG_D(THINGS_WARNING, TAG, "SVR DB[%s] is inconsistent or not exist : %d", SVR_DB_PATH, oc_res);
 		THINGS_LOG_D(THINGS_WARNING, TAG, "SVR DB will be reinstalled as default SVR DB.");
 
-		//Remove previous SVR DB, if exist.
-		int remove_ret = secure_remove(SVR_DB_PATH);
-		if (0 != remove_ret) {
-			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "Failed to remove [%s] : %d", SVR_DB_PATH, remove_ret);
-			return OIC_SEC_ERROR;
-		}
 		//re-generate and re-install SVR DB
 		g_is_svr_db_exist = false;
 		res = SM_InitSvrDb();

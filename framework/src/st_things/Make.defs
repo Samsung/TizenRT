@@ -43,7 +43,6 @@ CFLAGS += -I$(THINGS_STACK_DIR)/src/common/security/inc
 CFLAGS += -I$(THINGS_STACK_DIR)/src/common/utils/inc
 CFLAGS += -I$(THINGS_STACK_DIR)/src/common/stack
 CFLAGS += -I$(THINGS_STACK_DIR)/inc
-CFLAGS += -I$(THINGS_STACK_DIR)/src/common/security/sss_security
 CFLAGS += -I$(THINGS_STACK_DIR)/src/common/security/ssCrypto/include
 CFLAGS += -I$(THINGS_STACK_DIR)/src/common/framework/inc
 
@@ -61,7 +60,6 @@ include $(THINGS_STACK_DIR)/src/common/utils/Make.defs
 include $(THINGS_STACK_DIR)/src/common/framework/Make.defs
 include $(THINGS_STACK_DIR)/src/common/easy-setup/Make.defs
 include $(THINGS_STACK_DIR)/src/common/cloud/Make.defs
-include $(THINGS_STACK_DIR)/src/common/security/sss_security/Make.defs
 include $(THINGS_STACK_DIR)/src/common/security/ssCrypto/src/Make.defs
 include $(THINGS_STACK_DIR)/src/common/logging/Make.defs
 include $(THINGS_STACK_DIR)/src/common/memory/Make.defs
