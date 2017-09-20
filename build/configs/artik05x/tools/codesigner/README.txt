@@ -1,6 +1,6 @@
 CONTENTS
 
-This tool is used for bl2 and os image signing of ARTIK053s models.
+This tool is used for bl2 and os image signing of ARTIK055s models.
 But, Please caution about below contents.
 
 1. If you don't build a bl2 newly, you don't need a signing process.
@@ -10,4 +10,4 @@ But, Please caution about below contents.
    you will use KMS system better than code signer.
 
 USAGE
- : ./artik053_codesigner -sign [input file]
+ : ./artik05x_codesigner -sign [input file]
