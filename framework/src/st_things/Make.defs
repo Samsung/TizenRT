@@ -25,12 +25,10 @@ CSRCS += st_things.c st_things_util.c st_things_request_handler.c st_things_repr
 
 CFLAGS += -D__TIZENRT__
 CFLAGS += -D__TINYARA__
-CFLAGS += -DOCF_RTOS
+CFLAGS += -D__ST_THINGS_RTOS__
 CFLAGS += -DUSE_LOG_NO_NEWLINE
 CFLAGS += -std=c99
 CFLAGS += -w
-
-
 
 ####################################
 # LIBS
@@ -53,8 +51,6 @@ CFLAGS += -I$(THINGS_STACK_DIR)/src/common/framework/inc
 #
 # THINGS STACK
 #
-
-
 CFLAGS += -DWITH_POSIX -DIP_ADAPTER
 CFLAGS += -DWITH_BWT
 #CFLAGS += -D_EXCLUDE_TEST_KEY_
@@ -69,15 +65,6 @@ include $(THINGS_STACK_DIR)/src/common/security/sss_security/Make.defs
 include $(THINGS_STACK_DIR)/src/common/security/ssCrypto/src/Make.defs
 include $(THINGS_STACK_DIR)/src/common/logging/Make.defs
 include $(THINGS_STACK_DIR)/src/common/memory/Make.defs
-
-#
-# things_utils
-#
-CFLAGS += -D__TINYARA__
-CFLAGS += -DOCF_RTOS
-CFLAGS += -DUSE_LOG_NO_NEWLINE
-CFLAGS += -std=c99
-CFLAGS += -w
 
 ####################################
 # IOTIVITY
@@ -111,7 +98,7 @@ endif
 
 ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
 CFLAGS += -D__WITH_DTLS__
-CFLAGS += -DOCF_RTOS_LOCAL_SECURED
+CFLAGS += -D__ST_THINGS_RTOS_LOCAL_SECURED__
 #CFLAGS += -D_SVR_ENC_ #pkes
 endif
 
@@ -120,7 +107,7 @@ CFLAGS += -DWITH_CLOUD
 CFLAGS += -D__WITH_TLS__
 CFLAGS += -D__SECURED__
 CFLAGS += -DTCP_ADAPTER
-CFLAGS += -DOCF_RTOS_CLOUD
+CFLAGS += -D__ST_THINGS_RTOS_CLOUD__
 endif
 
 DEPPATH += --dep-path src/st_things

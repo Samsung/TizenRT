@@ -26,7 +26,7 @@
 #include "things_wait_handler.h"
 
 #include "things_thread.h"
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 #include "things_rtos_util.h"
 #endif
 
@@ -233,7 +233,7 @@ unsigned long int create_time_out_process(OCDoHandle hadler, check_time_out_call
 		pTimeOutManager->timeout.cur_num = timeOut->cur_num;
 	}
 
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 	if (pthread_create_rtos(&pTimeOutManager->gthreadId, NULL, (PthreadFunc) HandleBaseTimeOutLoop, (void *)pTimeOutManager, THINGS_STACK_WAITHANDLER_THREAD) != 0)
 #else
 	if (things_thread_create(&pTimeOutManager->gthreadId, NULL, (PthreadFunc) HandleBaseTimeOutLoop, (void *)pTimeOutManager) != 0)

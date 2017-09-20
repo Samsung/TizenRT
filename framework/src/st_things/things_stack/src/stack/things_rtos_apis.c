@@ -28,7 +28,7 @@
 #include "oic_string.h"
 #include "things_server_builder.h"
 
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 
 #define TAG "[thingsstacknew]"
 

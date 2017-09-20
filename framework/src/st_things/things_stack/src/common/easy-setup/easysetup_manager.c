@@ -59,7 +59,7 @@ static pin_close_func_type g_pin_close_cb = NULL;
 static user_confirm_result_func_type g_user_confirm_cb = NULL;
 
 int esm_continue = 0;
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 int ci_token_expire_fds[2] = { -1, -1 };
 #endif
 static pthread_t gthread_id_network_status_check = 0;
@@ -236,7 +236,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 		THINGS_LOG_D(THINGS_INFO, TAG, "Restart EasySetup");
 		esm_continue = 0;
 		if (gthread_id_cloud_refresh_check) {
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 			if (ci_token_expire_fds[1] != -1) {
 				ssize_t len = 0;
 				do {
@@ -350,7 +350,7 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 		}
 		esm_continue = 1;
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Create cloud_refresh_check_loop thread");
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 		pthread_create_rtos(&gthread_id_cloud_refresh_check, NULL, cloud_refresh_check_loop, (void *)&esm_continue, THINGS_STACK_CLOUD_REFRESH_THREAD);
 #else
 		things_thread_create(&gthread_id_cloud_refresh_check, NULL, cloud_refresh_check_loop, (void *)&esm_continue);
@@ -365,7 +365,7 @@ esm_result_e esm_terminate_easysetup()
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate EasySetup");
 	esm_continue = 0;
 	if (gthread_id_cloud_refresh_check) {
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 		if (ci_token_expire_fds[1] != -1) {
 			ssize_t len = 0;
 			do {
@@ -447,7 +447,7 @@ static int checkRefresh(int *hour_cnt_24)
 
 static void *cloud_refresh_check_loop(void *param)
 {
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "cloud_refresh_check_loop Close Loop Enter.");
 	int i_failed_cnt = 0;
 	int *i_continue = (int *)param;
@@ -800,7 +800,7 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 		del_all_request_handle();	// clear time-out thread.
 		set_wifi_prov_state(WIFI_INIT);
 
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 		pthread_create_rtos(&gthread_id_network_status_check, NULL, wifi_prov_set_loop, (void *)p_info, THINGS_STACK_CLOUD_REFRESH_THREAD);
 #else
 		things_thread_create(&gthread_id_network_status_check, NULL, wifi_prov_set_loop, (void *)p_info);

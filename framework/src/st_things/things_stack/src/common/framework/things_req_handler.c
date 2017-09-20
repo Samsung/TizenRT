@@ -46,7 +46,7 @@
 #include "things_hashmap.h"
 
 #include "things_thread.h"
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 #include "ctype.h"
 #include "things_rtos_util.h"
 #endif
@@ -569,7 +569,7 @@ static OCEntityHandlerResult process_post_request(things_resource_s **target_res
 		// 1. Post request for the Easy-Setup reset
 		eh_result = set_provisioning_info(target_resource);
 	}
-#ifndef OCF_RTOS
+#ifndef __ST_THINGS_RTOS__
 	else if (strstr(target_resource->uri, URI_INFORMATION) != NULL) {
 		// X. Get request for the Access point list(Will be deprecated!!!!)
 		eh_result = SetDeviceInfoResult(target_resource);
@@ -592,7 +592,7 @@ static OCEntityHandlerResult process_post_request(things_resource_s **target_res
 	}
 #endif
 	else {
-#ifndef OCF_RTOS
+#ifndef __ST_THINGS_RTOS__
 		// 7. Post request on the other reosurce(s)
 		int handled = 0;
 		if (NULL != g_handle_res_list) {
@@ -654,7 +654,7 @@ static OCEntityHandlerResult process_get_request(things_resource_s *target_resou
 		// 1. Get request for the Access point list
 		eh_result = get_provisioning_info(target_resource);
 	}
-#ifndef OCF_RTOS
+#ifndef __ST_THINGS_RTOS__
 	else if (strstr(target_resource->uri, URI_INFORMATION) != NULL) {
 		// X. Get request for the Access point list(Will be deprecated!!!!)
 		eh_result = GetDeviceInfoResult(target_resource);
@@ -687,7 +687,7 @@ static OCEntityHandlerResult process_get_request(things_resource_s *target_resou
 		// 9. Get request for the device maintenance information
 		eh_result = get_device_or_platform_info_result(target_resource, device_id);
 	} else {
-#ifndef OCF_RTOS
+#ifndef __ST_THINGS_RTOS__
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "HELLO WORLD");
 		// 10. Get request on the other resources
 		int handled = 0;
@@ -928,7 +928,7 @@ int notify_things_observers(const char *uri, const char *query)
 			}
 		}
 
-#ifndef OCF_RTOS
+#ifndef __ST_THINGS_RTOS__
 		// if(res)
 		{
 			// Need to refactor later support the number bigger then 9
@@ -1118,7 +1118,7 @@ void init_handler()
 {
 	g_quit_flag = false;
 
-//#ifdef OCF_RTOS
+//#ifdef __ST_THINGS_RTOS__
 //    pthread_create_rtos(&g_req_handle, NULL, message_handling_loop, (void *)NULL, THINGS_STACK_MESSAGE_HANDLING_THREAD);
 //#else
 //   things_thread_create (&g_req_handle, NULL, message_handling_loop, (void *)NULL);

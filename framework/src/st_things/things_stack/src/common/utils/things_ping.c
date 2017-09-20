@@ -29,7 +29,7 @@
 #include "things_list.h"
 #include "things_ping.h"
 
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 #include "things_rtos_util.h"
 #endif
 
@@ -309,7 +309,7 @@ static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 		}
 
 		if (sleepMinute) {
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 			int sleepCount = PING_UNIT - NET_TROUBLE_DELAY - sleepDelay;
 			sleepDelay = 0;
 			int cCount = 0;
@@ -1064,7 +1064,7 @@ static bool things_ping_create_thread(things_ping_s *ping)
 
 	pthread_mutex_lock(&ping->mutex_thread);
 	if (ping->handle_thread == 0) {
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 		if (pthread_create_rtos(&ping->handle_thread, NULL, (pthread_func_type) thd_ping_loop, ping, THINGS_STACK_PING_THREAD) != 0)
 #else
 		if (things_thread_create(&ping->handle_thread, NULL, (pthread_func_type) thd_ping_loop, ping) != 0)
@@ -1098,7 +1098,7 @@ static bool things_ping_destroy_thread(things_ping_s *ping)
 
 	pthread_mutex_lock(&ping->mutex_thread);
 	if (ping->handle_thread) {
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 		ping->continue_thread = false;
 		sleep(2);				/* wait till thread exit */
 		pthread_detach(ping->handle_thread);

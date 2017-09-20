@@ -50,7 +50,7 @@
 #include <wifi_manager/wifi_manager.h>
 
 #include "things_thread.h"
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 #include "things_rtos_util.h"
 #endif
 
@@ -478,7 +478,6 @@ int things_initialize_stack(const char *json_path, bool *easysetup_completed)
 	}
 	is_things_module_inited = 1;
 
-	/* If ocf_cloud.json exists and has mandatory elements for cloud, then it returns true. */
 	*easysetup_completed = dm_is_there_things_cloud();
 
 	return 1;
@@ -658,7 +657,7 @@ int things_reset(void *remote_owner, es_enrollee_reset_e resetType)
 		args->resetType = resetType;
 
 		b_reset_continue_flag = true;
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 		if (pthread_create_rtos(&h_thread_things_reset, NULL, (pthread_func_type) t_things_reset_loop, args, THINGS_STACK_RESETLOOP_THREAD) != 0)
 #else
 		if (things_thread_create(&h_thread_things_reset, NULL, (pthread_func_type) t_things_reset_loop, args) != 0)
@@ -784,7 +783,7 @@ int things_wifi_changed_call_func(int state, char *ap_name, char *ip_addr)
 	}
 
 	pthread_mutex_lock(&g_app_cb_mutex);
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 	pthread_mutex_lock(&m_thread_oic_reset);
 	ret = things_wifi_state_changed_cb(state, ap_name, ip_addr);
 	pthread_mutex_unlock(&m_thread_oic_reset);
@@ -1017,8 +1016,8 @@ static void *__attribute__((optimize("O0"))) t_things_reset_loop(reset_args_s *a
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Easy-Setup Module termination failed");
 		goto GOTO_OUT;
 	}
-	// 7. Delete Cloud data in "ocf_cloud.json"
-	THINGS_LOG(THINGS_DEBUG, TAG, "Delete Cloud-Data in ocf_cloud.json file.");
+	// 7. Delete Cloud data in "provisioning.json"
+	THINGS_LOG(THINGS_DEBUG, TAG, "Delete Cloud-Data in provisioning.json file.");
 	if (dm_del_things_cloud_data() == 0) {
 		THINGS_LOG(THINGS_DEBUG, TAG, "It's failed to delete information about Cloud-Data in \"ocf_infoX.json\" file.");
 		goto GOTO_OUT;
@@ -1107,8 +1106,7 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, es_enrollee_abort_
 		ARGs->level = level;
 
 		eh_result = OC_EH_OK;
-#ifdef OCF_RTOS
-
+#ifdef __ST_THINGS_RTOS__
 		if (pthread_create_rtos(h_thread_abort, NULL, (pthread_func_type) t_things_abort_loop, ARGs, THINGS_STACK_OICABORT_THREAD) != 0)
 #else
 		if (things_thread_create(h_thread_abort, NULL, (pthread_func_type) t_things_abort_loop, ARGs) != 0)

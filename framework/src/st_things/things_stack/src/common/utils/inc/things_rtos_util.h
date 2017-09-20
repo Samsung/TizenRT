@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef OCFRTOS_UTIL_H_
-#define OCFRTOS_UTIL_H_
+#ifndef THINGS_RTOS_UTIL_H_
+#define THINGS_RTOS_UTIL_H_
 #include "pthread.h"
 typedef enum {
 	THINGS_STACK_PING_THREAD = 0,
@@ -38,4 +38,4 @@ typedef enum {
 
 int pthread_create_rtos(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg, things_stack_thread_name eThreadname);
 
-#endif							/* OCFRTOS_UTIL_H_ */
+#endif							/* THINGS_RTOS_UTIL_H_ */

@@ -30,7 +30,7 @@ int things_thread_create(pthread_t *__newthread, pthread_attr_t *__attr, void *(
 {
 	THINGS_LOG(THINGS_DEBUG, TAG, "Enter.");
 	int ret = 0;
-#ifndef OCF_RTOS
+#ifndef __ST_THINGS_RTOS__
 	int ret = -1;
 	pthread_attr_t attr;
 	pthread_attr_t *pAttr;

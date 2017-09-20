@@ -181,7 +181,7 @@ typedef enum {
 	ER_ERRCODE_INVALID_PROV_PAYLOAD = 100,
 
 	/**
-	 * Cloud Data invalid in ocf_info.json file.
+	 * Cloud Data invalid in provisioning.json file.
 	 */
 	ER_ERRCODE_INVALID_SAVED_CLOUD_DATA = 101,
 

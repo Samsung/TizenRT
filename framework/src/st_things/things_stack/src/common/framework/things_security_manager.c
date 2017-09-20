@@ -22,7 +22,7 @@
 #include <netpacket/packet.h>
 
 #ifdef _SVR_ENC_
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 #include "sss_storage_server.h"
 #else
 #include "ssAPI.h"
@@ -81,7 +81,7 @@ static char SVR_DB_PATH[MAX_PATH_LEN] = { 0 };
 static things_auth_type_e g_auth_type = AUTH_JUST_WORKS;
 static bool g_is_svr_db_exist = false;
 static bool g_is_mfg_cert_required = false;
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 #define USER_CONFIRM 1
 #define SetVerifyOption(x) {}
 #define sync() {}
@@ -443,7 +443,7 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
 
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 	wifi_utils_info st_wifi_info;
 	wifi_utils_get_info(&st_wifi_info);
 
@@ -605,7 +605,7 @@ int sm_init_things_security(int auth_type, const char *db_path)
 									  secure_fclose,
 									  unlink
 									};
-#ifndef OCF_RTOS
+#ifndef __ST_THINGS_RTOS__
 	if (SS_SUCCESS != init_secure_storage()) {
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "init_secure_storage error!");
 		return OIC_SEC_ERROR;
@@ -656,7 +656,7 @@ void SM_TerminateOICSecurity()
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
 #ifdef _SVR_ENC_
-#ifndef OCF_RTOS
+#ifndef __ST_THINGS_RTOS__
 	if (SS_SUCCESS != deinit_secure_storage()) {
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "deinit_secure_storage error!");
 	}

@@ -304,8 +304,6 @@ if 'LITE' in things_device_version:
 	shared_thingsstack = stack_env.SharedLibrary('libthingsstack', libthingsstack_src)
 	stack_env.InstallTarget([static_thingsstack, shared_thingsstack], 'libthingsstack')
 	stack_env.UserInstallTargetLib([static_thingsstack, shared_thingsstack], 'libthingsstack')
-	stack_env.Alias("install", stack_env.Install( build_dir, './ocf_resource.json'))
-	stack_env.Alias("install", stack_env.Install( build_dir, './ocf_info.json'))
 else:
 #TODO for RICH device
 	print "No files included for rich device version"

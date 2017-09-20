@@ -90,7 +90,7 @@ void set_error(struct things_resource_s *res, double error)
 
 void things_set_value(struct things_representation_s *rep, char *key, char *value)
 {
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 	if (value != NULL && key != NULL) {
 		OCRepPayloadSetPropString(rep->payload, key, value);
 	}

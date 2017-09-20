@@ -35,7 +35,7 @@
 #include "resource_handler.h"
 
 #include "things_thread.h"
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 #include "things_rtos_util.h"
 #endif
 #define TAG "[things_svrbldr]"
@@ -431,7 +431,7 @@ int broadcast_presence(things_server_builder_s *builder, int max_cnt)
 		is_presence = true;
 		g_presence_flag = 0;
 		g_presence_duration = max_cnt;
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 		pthread_create_rtos(&g_thread_id_presence, NULL, presence_noti_loop, (void *)NULL, THINGS_STACK_PRESENCE_NOTI_THREAD);
 #else
 		things_thread_create(&g_thread_id_presence, NULL, presence_noti_loop, (void *)NULL);
@@ -458,7 +458,7 @@ void init_builder(struct things_server_builder_s *builder, request_handler_cb cb
 
 	g_quit_flag = 0;
 
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 	pthread_create_rtos(&g_thread_id_server, NULL, server_execute_loop, (void *)NULL, THINGS_STACK_SERVEREXCETUE_LOOP_THREAD);
 #else
 	things_thread_create(&g_thread_id_server, NULL, server_execute_loop, (void *)NULL);

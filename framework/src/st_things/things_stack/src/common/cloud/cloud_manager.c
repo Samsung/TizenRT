@@ -91,7 +91,7 @@ static char g_cloud_ip[IP_PORT] = { 0, };	//!< Current Connected Cloud Ipv4 addr
 static char g_cloud_port[IP_PORT] = { 0, };	//!< Current Connected Cloud Port number.
 static char g_cloud_address[MAX_CI_ADDRESS] = { 0, };	//!< Current Connected Cloud Address.
 
-static es_cloud_signup_s *signed_up_data = NULL;	//!< Variable for Loading/Saving components to "ocf_infoX.json" file.
+static es_cloud_signup_s *signed_up_data = NULL;	
 
 static things_server_builder_s *g_server_builder = NULL;	//!< Server-Builder pointer to get Resource List.
 static things_resource_s **g_resource_lists = NULL;	//!< Resource List pointer to be publishing resources to Cloud.
@@ -1794,7 +1794,7 @@ void *cloud_data_cb_esm(es_cloud_prov_data_s *event_data)
 		g_qis_cloud_thread_running = CISESS_BUSY;
 
 		if ((cloned_data = clone_data_add_timeout(event_data, NULL)) != NULL) {
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 			int retp = pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD);
 #else
 
@@ -1855,7 +1855,7 @@ int cloud_retry_sign_in(timeout_s *timeout)
 		init_es_cloud_prov_data(&dummy_data);
 
 		if ((cloned_data = clone_data_add_timeout(&dummy_data, timeout)) == NULL ||
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 			pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD) != 0)
 #else
 			things_thread_create(&cthread_handler, NULL, (pthread_func_type) ci_connection_init_loop, (void *)cloned_data) != 0)
@@ -1890,7 +1890,7 @@ static int cloud_retry_sign_up(es_cloud_prov_data_s *event_data, timeout_s *time
 	esm_get_network_status();	// State return
 
 	if ((cloned_data = clone_data_add_timeout(event_data, timeout)) == NULL ||
-#ifdef OCF_RTOS
+#ifdef __ST_THINGS_RTOS__
 		pthread_create_rtos(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data, THINGS_STACK_CICONNETION_INIT_THREAD) != 0)
 #else
 		things_thread_create(&cthread_handler, NULL, (pthread_func_type) ci_connection_waiting_loop, (void *)cloned_data) != 0)

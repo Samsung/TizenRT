@@ -49,10 +49,8 @@ ASRCS =
 
 CFLAGS += -DUSE_LOG_NO_NEWLINE
 CFLAGS += -D__TIZENRT__
-
-CFLAGS += -D__TIZENRT__
 CFLAGS += -D__TINYARA__
-CFLAGS += -DOCF_RTOS
+CFLAGS += -D__ST_THINGS_RTOS__
 CFLAGS += -std=c99
 CFLAGS += -w
 
@@ -112,7 +110,7 @@ CFLAGS += -DWITH_CLOUD
 CFLAGS += -D__WITH_TLS__
 CFLAGS +=-D__SECURED__
 CFLAGS += -DTCP_ADAPTER
-CFLAGS += -DOCF_RTOS_CLOUD
+CFLAGS += -D__ST_THINGS_RTOS_CLOUD__
 endif
 
 
@@ -123,11 +121,6 @@ CFLAGS += -DROUTING_EP
 else
 CFLAGS += -DROUTING_GW
 endif
-
-CFLAGS += -D__TIZENRT__
-CFLAGS += -DOCF_RTOS
-CFLAGS += -std=c99
-CFLAGS += -w
 
 #------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------
