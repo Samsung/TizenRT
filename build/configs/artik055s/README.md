@@ -15,22 +15,22 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK055S Modul
 
 After configuration, you can add / remove the configuration you want via menuconfig. If you want to run menuconfig, you need to install `kconfig-frontends`. kconfig-frontends was set at [[kconfig-frontends]](../../../README.md#set-kconfig-frontends) tab of Quick Start.
 
-#### nettestsecure
+#### nettest
 
 This is the basic configuration of ARTIK055S products. If you have an ARTIK055S product, use this config.
 
 ```bash
 ~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik055/nettestsecure
+~/TizenRT/os/tools$ ./configure.sh artik055s/nettest
 ```
 
-#### onboardsecure
+#### onboard
 
 This is the configuration for the production phase of ARTIK055S product. If you have an ARTIK055S product, use this config.
 
 ```bash
 ~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik055/onboardsecure
+~/TizenRT/os/tools$ ./configure.sh artik055s/onboard
 ```
 
 ## Environment Set-up
@@ -82,10 +82,10 @@ At first, programming the complete set of binaries are needed.
 ../build/configs/artik05x/tools/codesigner/artik05x_codesigner -sign ../build/output/bin/tinyara_head.bin
 
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
-    flash_write bl1    ../build/configs/artik055/bin/bl1.bin;  \
-    flash_write bl2    ../build/configs/artik055/bin/bl2.bin;         \
-    flash_write sssfw  ../build/configs/artik055/bin/sssfw.bin;       \
-    flash_write wlanfw ../build/configs/artik055/bin/wlanfw.bin;      \
+    flash_write bl1    ../build/configs/artik055s/bin/bl1.bin;  \
+    flash_write bl2    ../build/configs/artik055s/bin/bl2.bin;         \
+    flash_write sssfw  ../build/configs/artik055s/bin/sssfw.bin;       \
+    flash_write wlanfw ../build/configs/artik055s/bin/wlanfw.bin;      \
     flash_write os     ../build/output/bin/tinyara_head.bin-signed;   \
     exit'
 ```
@@ -106,7 +106,7 @@ You can download it using OpenOCD. You compress the compiled firmware and downlo
 ```bash
 gzip -c tinyara_head.bin > factoryimage.gz
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
-    flash_write factory    ../build/configs/artik055/bin/factoryimage.gz;      \
+    flash_write factory    ../build/configs/artik055s/bin/factoryimage.gz;      \
     exit'
 ```
 

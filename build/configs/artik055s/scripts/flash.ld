@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * configs/artik055/scripts/flash.ld
+ * configs/artik055s/scripts/flash.ld
  *
  *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

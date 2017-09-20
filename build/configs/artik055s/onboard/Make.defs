@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# configs/artik055/onboardsecure/Make.defs
+# configs/artik055s/onboard/Make.defs
 #
 #   Copyright (C) 2011, 2012-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -69,13 +69,13 @@ ifeq ($(WINTOOL),y)
   MKDEP = $(TOPDIR)/tools/mkwindeps.sh
   ARCHINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../framework/include}"
   ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/include/cxx}" -isystem "${shell cygpath -w $(TOPDIR)/include/uClibc++}"
-  ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/artik055/scripts/$(LDSCRIPT)}"
+  ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/artik055s/scripts/$(LDSCRIPT)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
   ARCHINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include
   ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/include/cxx -isystem $(TOPDIR)/include/uClibc++
-  ARCHSCRIPT = -T$(TOPDIR)/../build/configs/artik055/scripts/$(LDSCRIPT)
+  ARCHSCRIPT = -T$(TOPDIR)/../build/configs/artik055s/scripts/$(LDSCRIPT)
 
 endif
 
@@ -152,6 +152,6 @@ HOSTCFLAGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -g -pipe
 HOSTLDFLAGS =
 
 define DOWNLOAD
-       @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik055 $(1)
+       @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik055s $(1)
 endef
 
