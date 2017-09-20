@@ -110,6 +110,9 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_NETDB
 	net_netdb_main();
 #endif
+#ifdef CONFIG_TC_NET_DUP
+	net_dup_main();
+#endif
 
 	printf("\n=== TINYARA Network TC COMPLETE ===\n");
 	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
