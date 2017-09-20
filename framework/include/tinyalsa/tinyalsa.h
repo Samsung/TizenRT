@@ -45,11 +45,16 @@
 */
 
 /**
-* @ingroup TinyAlsa
 * @defgroup TinyAlsa TinyAlsa
-* @brief All macros, structures and functions that make up the PCM interface.
+* @ingroup TinyAlsa
+* @brief Provides APIs for Audio Framework
 * @{
-*/
+ */
+
+/**
+ * @file tinyalsa.h
+ * @brief All macros, structures and functions that make up the PCM interface.
+ */
 
 #ifndef __AUDIO_TINYALSA_H
 #define __AUDIO_TINYALSA_H
