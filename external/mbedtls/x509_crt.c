@@ -1904,8 +1904,8 @@ static int x509_crt_verify_child(mbedtls_x509_crt *child, mbedtls_x509_crt *pare
 
 	/* path_cnt is 0 for the first intermediate CA */
 	if (1 + path_cnt > MBEDTLS_X509_MAX_INTERMEDIATE_CA) {
-		*flags |= MBEDTLS_X509_BADCERT_NOT_TRUSTED;
-		return (MBEDTLS_ERR_X509_CERT_VERIFY_FAILED);
+		/* return immediately as the goal is to avoid unbounded recursion */
+		return MBEDTLS_ERR_X509_FATAL_ERROR;
 	}
 
 	if (mbedtls_x509_time_is_past(&child->valid_to)) {
@@ -2020,11 +2020,12 @@ int mbedtls_x509_crt_verify_with_profile(mbedtls_x509_crt *crt, mbedtls_x509_crt
 	mbedtls_x509_sequence *cur = NULL;
 	mbedtls_pk_type_t pk_type;
 
-	if (profile == NULL) {
-		return (MBEDTLS_ERR_X509_BAD_INPUT_DATA);
-	}
-
 	*flags = 0;
+
+	if (profile == NULL) {
+		ret = MBEDTLS_ERR_X509_BAD_INPUT_DATA;
+		goto exit;
+	}
 
 	if (cn != NULL) {
 		name = &crt->subject;
@@ -2090,7 +2091,7 @@ int mbedtls_x509_crt_verify_with_profile(mbedtls_x509_crt *crt, mbedtls_x509_crt
 	if (parent != NULL) {
 		ret = x509_crt_verify_top(crt, parent, ca_crl, profile, pathlen, selfsigned, flags, f_vrfy, p_vrfy);
 		if (ret != 0) {
-			return (ret);
+			goto exit;
 		}
 	} else {
 		/* Look for a parent upwards the chain */
@@ -2103,15 +2104,28 @@ int mbedtls_x509_crt_verify_with_profile(mbedtls_x509_crt *crt, mbedtls_x509_crt
 		if (parent != NULL) {
 			ret = x509_crt_verify_child(crt, parent, trust_ca, ca_crl, profile, pathlen, selfsigned, flags, f_vrfy, p_vrfy);
 			if (ret != 0) {
-				return (ret);
+				goto exit;
 			}
 		} else {
 			ret = x509_crt_verify_top(crt, trust_ca, ca_crl, profile, pathlen, selfsigned, flags, f_vrfy, p_vrfy);
 			if (ret != 0) {
-				return (ret);
+				goto exit;
 			}
 		}
 	}
+exit:
+	/* prevent misuse of the vrfy callback - VERIFY_FAILED would be ignored by
+	 * the SSL module for authmode optional, but non-zero return from the
+	 * callback means a fatal error so it shouldn't be ignored
+	 */
+	if (ret == MBEDTLS_ERR_X509_CERT_VERIFY_FAILED) {
+		ret = MBEDTLS_ERR_X509_FATAL_ERROR;
+	}
+
+	if (ret != 0) {
+		*flags = (uint32_t) -1;
+		return ret;
+	}	
 
 	if (*flags != 0) {
 		return (MBEDTLS_ERR_X509_CERT_VERIFY_FAILED);
