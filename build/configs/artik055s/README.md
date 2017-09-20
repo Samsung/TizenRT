@@ -2,43 +2,38 @@
 
 The ARTIK055S is a SOC for Wi-Fi™ IoT solutions. The ARTIK055S has a Wi-Fi subsystem, security subsystem, and application subsystem.
 
+## Contents
+
+> [Information](#information)  
+> [Configuration Sets](#configuration-sets)  
+> [Environment Set-up](#environment-set-up)  
+> [How to program a binary](#how-to-program-a-binary)
+
 ## Information
 
 The Samsung ARTIK™ 055 Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
 Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK055S Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
 
-## MemoryMap
+### MemoryMap
 
 8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM. If you want to know the physical memory address, see [[here]](scripts/README.md).
 
 ## Configuration Sets
 
-After configuration, you can add / remove the configuration you want via menuconfig. If you want to run menuconfig, you need to install `kconfig-frontends`. kconfig-frontends was set at [[kconfig-frontends]](../../../README.md#set-kconfig-frontends) tab of Quick Start.
-
-#### nettestsecure
+#### nettest
 
 This is the basic configuration of ARTIK055S products. If you have an ARTIK055S product, use this config.
 
 ```bash
-~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik055/nettestsecure
-```
-
-#### onboardsecure
-
-This is the configuration for the production phase of ARTIK055S product. If you have an ARTIK055S product, use this config.
-
-```bash
-~/TizenRT$ cd os/tools
-~/TizenRT/os/tools$ ./configure.sh artik055/onboardsecure
+cd os/tools
+./configure.sh artik055s/nettest
 ```
 
 ## Environment Set-up
 ### On Chip Debugger installation
 
-OpenOCD is used to program and debug.
-
-OpenOCD v0.10.0 is recommended and can be installed like below,
+OpenOCD is used to program and debug.  
+OpenOCD v0.10.0 is recommended and can be installed like below,  
 but pre-built OpenOCD binaray on tools/openocd/linux64(or 32) can be used without installing.
 ```bash
 sudo apt-get build-dep openocd
@@ -52,10 +47,8 @@ sudo make install
 
 ## How to program a binary
 
-There are two methods, using OpenOCD or script.
-
-After building Tizen RT, follow below steps at $TIZENRT_BASEDIR/os folder.
-
+There are two methods, using OpenOCD or script.  
+After building Tizen RT, follow below steps at $TIZENRT_BASEDIR/os folder.  
 TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-the-sources) tab of Quick Start.
 
 ### Using download script
@@ -67,8 +60,7 @@ This makes complete set of binaries programmed.
 
 ### Using OpenOCD
 
-This is used to program a partial binary.
-
+This is used to program a partial binary.  
 Export 'OPENOCD_SCRIPTS' to environment variable.
 
 ```bash
@@ -82,10 +74,10 @@ At first, programming the complete set of binaries are needed.
 ../build/configs/artik05x/tools/codesigner/artik05x_codesigner -sign ../build/output/bin/tinyara_head.bin
 
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
-    flash_write bl1    ../build/configs/artik055/bin/bl1.bin;  \
-    flash_write bl2    ../build/configs/artik055/bin/bl2.bin;         \
-    flash_write sssfw  ../build/configs/artik055/bin/sssfw.bin;       \
-    flash_write wlanfw ../build/configs/artik055/bin/wlanfw.bin;      \
+    flash_write bl1    ../build/configs/artik055s/bin/bl1.bin;  \
+    flash_write bl2    ../build/configs/artik055s/bin/bl2.bin;         \
+    flash_write sssfw  ../build/configs/artik055s/bin/sssfw.bin;       \
+    flash_write wlanfw ../build/configs/artik055s/bin/wlanfw.bin;      \
     flash_write os     ../build/output/bin/tinyara_head.bin-signed;   \
     exit'
 ```
@@ -106,7 +98,7 @@ You can download it using OpenOCD. You compress the compiled firmware and downlo
 ```bash
 gzip -c tinyara_head.bin > factoryimage.gz
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
-    flash_write factory    ../build/configs/artik055/bin/factoryimage.gz;      \
+    flash_write factory    ../build/configs/artik055s/bin/factoryimage.gz;      \
     exit'
 ```
 
