@@ -92,4 +92,3 @@ const char *gai_strerror(int errcode)
 	static const char *n_str = "null";
 	return n_str;
 }
-

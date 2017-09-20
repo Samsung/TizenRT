@@ -1,4 +1,4 @@
-############################################################################
+###########################################################################
 #
 # Copyright 2017 Samsung Electronics All Rights Reserved.
 #
@@ -54,20 +54,26 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# built-in application info
+THREADEXEC = TASH_EXECMD_ASYNC
 
-APPNAME = simpleServer
-FUNCNAME = simpleServer_main
-THREADEXEC = TASH_EXECMD_SYNC
+# built-in application info
 
 # iotivitySimServ example
 IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
 IOTIVITY_BASE_DIR = $(APPDIR)/../external/iotivity/iotivity_$(IOTIVITY_RELEASE)
 
-ASRCS =
+CSRCS += simpleServer.c
+ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
+CSRCS += secureServer.c
+endif
+ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
+CSRCS += cloudServer.c
+endif
+
 
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/c_common
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk
+CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/resource-directory/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/include
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/api
 CFLAGS += -I$(IOTIVITY_BASE_DIR)/resource/csdk/connectivity/common/inc
@@ -97,8 +103,6 @@ else
 CSRCS += port_tinyara.c
 endif
 
-MAINSRC = simpleServer.c
-
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
@@ -126,7 +130,7 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_IOTIVITY_PROGNAME ?= iotivitySimServ$(EXEEXT)
+CONFIG_EXAMPLES_IOTIVITY_PROGNAME ?= iotivityApp$(EXEEXT)
 PROGNAME = $(CONFIG_EXAMPLES_IOTIVITY_PROGNAME)
 
 
@@ -143,6 +147,9 @@ $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
 $(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
+ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
+	$(Q) ./mkfsdata.pl
+endif
 	$(call COMPILE, $<, $@)
 
 .built: $(OBJS)
@@ -163,10 +170,24 @@ install:
 endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_IOTIVITY),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(Q) $(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+# simpleServer
+$(BUILTIN_REGISTRY)$(DELIM)simpleServer_main.bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,simpleServer,simpleServer_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+context: $(BUILTIN_REGISTRY)$(DELIM)simpleServer_main.bdat
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+# secureServer
+ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
+$(BUILTIN_REGISTRY)$(DELIM)secureServer_main.bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,secureServer,secureServer_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+context: $(BUILTIN_REGISTRY)$(DELIM)secureServer_main.bdat
+endif
+
+# cloudServer
+ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
+$(BUILTIN_REGISTRY)$(DELIM)cloudServer_main.bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,cloudServer,cloudServer_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+context: $(BUILTIN_REGISTRY)$(DELIM)cloudServer_main.bdat
+endif
 
 else
 context:
