@@ -58,21 +58,7 @@
 #include <stdbool.h>
 
 #include "up_arch.h"
-#include "s5j_pwr.h"
 #include "s5j_pm.h"
-#include "cache.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
@@ -94,22 +80,10 @@
  *   failure.
  *
  ****************************************************************************/
-int s5j_pmstandby(void)
+void s5j_pmstandby(void)
 {
-	SetBits(0x80401000, 0, 0x1, 0);
-	SetBits(0x80401000, 1, 0x1, 0);
-	s5j_pwr_mode(PWR_DSTOP);
-
-	arch_flush_dcache((uintptr_t)S5J_SRAMA_START_ADDR, (uintptr_t)S5J_SRAMA_END_ADDR);
-	arch_disable_icache();
-	arch_disable_dcache();
-
+	/* FIXME: implement me */
 	asm("wfi");
 
-	arch_enable_icache();
-	arch_enable_dcache();
-	SetBits(0x80401000, 0, 0x1, 1);
-	SetBits(0x80401000, 1, 0x1, 1);
-
-	return OK; /* Won't get here */
+	/* won't get here */
 }

@@ -95,7 +95,6 @@ CMN_CSRCS += arm_schedulesigaction.c arm_sigdeliver.c arm_syscall.c
 CMN_CSRCS += arm_unblocktask.c arm_undefinedinsn.c
 CMN_CSRCS += arm_copyarmstate.c
 CMN_CSRCS += up_checkstack.c
-CMN_CSRCS += up_idle.c
 
 # Configuration dependent C files
 ifeq ($(CONFIG_ARMV7M_MPU),y)
@@ -114,6 +113,7 @@ ifneq ($(CONFIG_SCHED_TICKLESS),y)
 CHIP_CSRCS += s5j_timerisr.c
 endif
 
+CHIP_CSRCS += s5j_idle.c
 CHIP_CSRCS += s5j_boot.c s5j_irq.c
 CHIP_CSRCS += s5j_serial.c
 CHIP_CSRCS += s5j_mac.c
@@ -163,13 +163,9 @@ ifeq ($(CONFIG_S5J_SFLASH),y)
 CHIP_CSRCS += s5j_sflash.c
 endif
 
-ifeq ($(CONFIG_ARCH_CUSTOM_PMINIT),y)
+ifeq ($(CONFIG_PM),y)
 CHIP_CSRCS += s5j_pminitialize.c
-CHIP_CSRCS += s5j_pmstandby.c s5j_pmstop.c
-endif
-
-ifeq ($(CONFIG_S5J_PWR),y)
-CHIP_CSRCS += s5j_pwr.c
+CHIP_CSRCS += s5j_pmnormal.c s5j_pmstandby.c s5j_pmstop.c
 endif
 
 ifeq ($(CONFIG_S5J_PWM),y)

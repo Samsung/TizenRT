@@ -5,21 +5,16 @@
 
 config EXAMPLES_SYSIO_TEST
 	bool "\"System I/O Test (GPIO,PWM,I2C,SPI,UART) \" example"
+	select GPIO
+	select SPI
+	select SPI_EXCHANGE
+	select SERIAL
+	select I2C
+	select I2C_USERIO
+	select PWM
 	default n
 	---help---
 		Enable the \"System I/O Test\" example
-
-if EXAMPLES_SYSIO_TEST
-
-config EXAMPLES_SYSIO_TEST_PROGNAME
-	string "Program name"
-	default "sysio"
-	depends on BUILD_KERNEL
-	---help---
-		This is the name of the program that will be use when the NSH ELF
-		program is installed.
-
-endif
 
 config USER_ENTRYPOINT
 	string

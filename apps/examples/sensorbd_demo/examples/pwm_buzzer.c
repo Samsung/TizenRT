@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,10 @@ void pwmbuzzer_main(int argc, char *argv[])
 
 	/* device 0 channel 1 */
 	fd = open("/dev/pwm1", O_RDWR);
+	if (fd < 0) {
+		printf("fd open fail\n");
+		return;
+	}
 
 	for (i = 0; i < 8; i++) {
 		pwm_info.frequency = octavef1[i];
@@ -97,6 +101,10 @@ void pwmbuzzer_main(int argc, char *argv[])
 
 	/* device 0 channel 2 */
 	fd = open("/dev/pwm2", O_RDWR);
+	if (fd < 0) {
+		printf("fd open fail\n");
+		return;
+	}
 
 	for (i = 0; i < 8; i++) {
 		pwm_info.frequency = octavef2[i];

@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * examples/examples/sensorbd/examples/adc_test.c
+ * arch/arm/src/s5j/s5j_pmnormal.c
  *
  *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,55 +50,28 @@
  *
  ****************************************************************************/
 
-#include <errno.h>
-#include <fcntl.h>
-#include <tinyara/analog/adc.h>
-#include <tinyara/analog/ioctl.h>
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+#include <tinyara/config.h>
 
-#define ADC_MAX_SAMPLES	4
+#include <stdbool.h>
 
-void adctest_main(int argc, char *argv[])
+#include "up_arch.h"
+#include "s5j_clock.h"
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: s5j_pmnormal
+ *
+ * Description:
+ *   Enter NORMAL mode.
+ *
+ ****************************************************************************/
+void s5j_pmnormal(void)
 {
-	int fd, ret;
-	struct adc_msg_s samples[ADC_MAX_SAMPLES];
-	ssize_t nbytes;
-
-	fd = open("/dev/adc0", O_RDONLY);
-	if (fd < 0) {
-		printf("%s: open failed: %d\n", __func__, errno);
-		return;
-	}
-
-	for (;;) {
-		ret = ioctl(fd, ANIOC_TRIGGER, 0);
-		if (ret < 0) {
-			printf("%s: ioctl failed: %d\n", __func__, errno);
-			close(fd);
-			return;
-		}
-
-		nbytes = read(fd, samples, sizeof(samples));
-		if (nbytes < 0) {
-			if (errno != EINTR) {
-				printf("%s: read failed: %d\n", __func__, errno);
-				close(fd);
-				return;
-			}
-		} else if (nbytes == 0) {
-			printf("%s: No data read, Ignoring\n", __func__);
-		} else {
-			int nsamples = nbytes / sizeof(struct adc_msg_s);
-			if (nsamples * sizeof(struct adc_msg_s) != nbytes) {
-				printf("%s: read size=%ld is not a multiple of sample size=%d, Ignoring\n", __func__, (long)nbytes, sizeof(struct adc_msg_s));
-			} else {
-				printf("Sample:\n");
-				int i;
-				for (i = 0; i < nsamples; i++) {
-					printf("%d: channel: %d, value: %d\n", i + 1, samples[i].am_channel, samples[i].am_data);
-				}
-			}
-		}
-	}
-
-	close(fd);
+	s5j_clk_pll_select_mux(true);
 }

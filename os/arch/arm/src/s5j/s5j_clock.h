@@ -99,9 +99,9 @@ struct clk_gate {
 };
 
 enum clk_mux_source {
-	CLK_MUX_SELECT_OSCCLK = 0,
-	CLK_MUX_SELECT_BCLK = 1,
-	CLK_MUX_SELECT_WPLL_DIV12 = 1,
+	CLK_MUX_SELECT_OSCCLK		= 0,
+	CLK_MUX_SELECT_BCLK			= 1,
+	CLK_MUX_SELECT_WPLL_DIV12	= 1,
 };
 
 enum clk_mux_id {
@@ -320,4 +320,4 @@ struct mcu_clk {
 	/* Q-state controls */
 	unsigned int queue_ctrl;
 };
-#endif							/* _ARCH_ARM_SRC_S5J_S5J_CLOCK_H */
+#endif /* _ARCH_ARM_SRC_S5J_S5J_CLOCK_H */

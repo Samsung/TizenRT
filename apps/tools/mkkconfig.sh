@@ -102,7 +102,7 @@ fi
 
 echo mkkconfig in $PWD
 
-KCONFIG_LIST=`ls -1 $PWD/*/${KCONFIG}`
+KCONFIG_LIST=`find $PWD -mindepth 2 -maxdepth 2 -name ${KCONFIG} | sort -n`
 
 echo "#" > ${KCONFIG}
 echo "# For a description of the syntax of this configuration file," >> ${KCONFIG}
