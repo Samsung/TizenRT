@@ -23,6 +23,11 @@
  * @{
  */
 
+/**
+ * @file wifi_manager.h
+ * @brief Provides APIs for Wi-Fi Manager
+ */
+
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
