@@ -462,7 +462,7 @@ int tls_client_cb(void *args)
 	int tail_len;
 	int i;
 	int written;
-	int frags = 0;
+	int frags;
 	int retry_left;
 	mbedtls_net_context server_fd;
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
