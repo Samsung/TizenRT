@@ -71,6 +71,7 @@ static void clean_all_data(int fd)
 
 	if (g_pcm) {
 		pcm_close(g_pcm);
+		g_pcm = NULL;
 	}
 
 	if (g_record_buffer) {
