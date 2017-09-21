@@ -15,6 +15,17 @@
  * limitations under the License.
  *
  ******************************************************************/
+/**
+ * @defgroup SmartThings SmartThings
+ * @brief Provides APIs for SmartThings Things SDK
+ * @ingroup SmartThings
+ * @{
+ */
+
+/**
+ * @file st_things.h
+ * @brief Provides APIs for SmartThings Things SDK
+ */
 
 #ifndef __ST_THINGS_H__
 #define __ST_THINGS_H__
@@ -276,3 +287,4 @@ void st_things_destroy_representation_inst(st_things_representation_s *rep);
 }
 #endif							/* __cplusplus */
 #endif							/* __ST_THINGS_H__ */
+/** @} */// end of SmartThings group

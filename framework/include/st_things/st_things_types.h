@@ -15,6 +15,15 @@
  * limitations under the License.
  *
  ******************************************************************/
+/**
+ * @ingroup SmartThings
+ * @{
+ */
+
+/**
+ * @file st_things_types.h
+ * @brief Provides structure definition for SmartThings Things SDK
+ */
 
 #ifndef __ST_THINGS_TYPES_H__
 #define __ST_THINGS_TYPES_H__
@@ -341,3 +350,4 @@ typedef struct _st_things_set_request_message {
 } st_things_set_request_message_s;
 
 #endif							/* __ST_THINGS_TYPES_H__ */
+/** @} */// end of SmartThings group
