@@ -795,6 +795,10 @@ int websocket_main(int argc, char *argv[])
 		goto error_with_function_failure;
 	}
 
+	if (input) {
+		free(input);
+	}
+
 	return 0;
 
 error_with_input:
