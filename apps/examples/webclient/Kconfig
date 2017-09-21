@@ -4,7 +4,7 @@
 #
 
 config EXAMPLES_WEBCLIENT
-	bool "TinyAra Webclient example"
+	bool "Webclient example"
 	depends on NETUTILS_WEBCLIENT
 	default n
 	---help---
