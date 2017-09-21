@@ -36,6 +36,7 @@
 #endif
 
 #define TAG "SECURESERVER_JUSTWORKS"
+#define STORAGE_MOUNT_POINT "/mnt/"
 
 int sec_gQuitFlag = 0;
 
@@ -59,7 +60,7 @@ char *sec_gResourceUri = (char *)"/a/led";
 //It contains Server's Identity and the PSK credentials
 //of other devices which the server trusts
 
-static char *CRED_FILE = "/mnt/oic_svr_db_server_justworks.dat";
+static char *CRED_FILE = "/mnt/oic_svr_db.dat";
 
 /* Function that creates a new LED resource by calling the
  * OCCreateResource() method.
@@ -394,8 +395,13 @@ int init_oic_svr_db_server_justworks_file()
 
 FILE *secureserver_fopen(const char *path, const char *mode)
 {
+	char path_buf[CONFIG_SMARTFS_MAXNAMLEN+sizeof(STORAGE_MOUNT_POINT)];
+	memset(path_buf, 0, sizeof(path_buf));
+	strcat(path_buf, STORAGE_MOUNT_POINT);
+	strcat(path_buf, path);
+	printf("%s\n", path_buf);
 	(void)path;
-	return fopen(CRED_FILE, mode);
+	return fopen(path_buf, mode);
 }
 
 OCStackResult initSecureServerPersistentStorage()
@@ -413,7 +419,6 @@ int secureServer_main_cb(int argc, char *argv[])
 #if defined(CONFIG_TLS_WITH_SSS)
 	see_init();
 #endif
-
 	printf("[%s] OCServer is starting...\n", TAG);
 	/* Intialize Persistent Storage */
 	if (OC_STACK_OK != initSecureServerPersistentStorage()) {
