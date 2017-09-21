@@ -33,7 +33,10 @@ typedef enum {
 
 	// SOFT AP mode status
 	CLIENT_CONNECTED,
-	CLIENT_DISCONNECTED
+	CLIENT_DISCONNECTED,
+
+	// Unkown
+	STATUS_UNKNOWN
 } connect_status_e;
 
 /**
@@ -82,10 +85,10 @@ typedef struct {
 typedef struct {
 	char ip4_address[18];
 	char ssid[32];
+	char mac_address[6];	   /**<  MAC address of wifi interface             */
 	int rssi;
 	connect_status_e status;
 	wifi_manager_mode_e mode;
-	wifi_manager_cb_s *wmcb;
 } wifi_manager_info_s;
 
 typedef struct {

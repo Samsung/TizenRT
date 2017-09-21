@@ -111,7 +111,7 @@ static int wifi_test_signal_init(void)
 	return 0;
 }
 
-void wifi_test_signal_deinit(void)
+static void wifi_test_signal_deinit(void)
 {
 	pthread_mutex_destroy(&g_wifi_manager_test_mutex);
 	pthread_cond_destroy(&g_wifi_manager_test_cond);
@@ -198,6 +198,7 @@ static void utc_wifi_manager_get_mode_p(void)
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
 	wifi_manager_info_s info;
 	int ret_cmp = 0;
+	int i;
 
 	ret = wifi_manager_get_info(&info);
 
@@ -218,6 +219,11 @@ static void utc_wifi_manager_get_mode_p(void)
 
 	TC_ASSERT_EQ("wifi_manager_get_mode_p", ret, WIFI_MANAGER_SUCCESS);
 	TC_ASSERT_EQ("wifi_manager_get_mode_p", info.mode, SOFTAP_MODE);
+	printf("\nMAC Address: ");
+	for (i = 0; i < 5; i++) {
+		printf("%x:", info.mac_address[i]);
+	}
+	printf("%x\n", info.mac_address[5]);
 	ret_cmp = strncmp(info.ssid, ap_config.ssid, strlen(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID));
 	TC_ASSERT_EQ("wifi_manager_get_mode_p", ret_cmp, 0);
 
