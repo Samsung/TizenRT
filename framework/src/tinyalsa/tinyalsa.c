@@ -541,18 +541,12 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 	bufdesc.session = pcm->session;
 #endif
 
-	/* If device is not yet started, start now! */
-	if (!pcm->running) {
-		pcm->enqueuedBytes = 0;
+	/* If no pending buffers ,then enqueue some buffers*/
+	if (pcm->enqueuedBytes==0) {
 		/* If the device is opened for read and Our buffers are not enqued. Enque them now. */
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-		bufdesc.session = pcm->session;
-#endif
 #ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-		bufdesc.numbytes = pcm->config.period_size;
 		for (pcm->bufPtr = 0; pcm->bufPtr < buf_info.nbuffers; pcm->bufPtr++)
 #else
-		bufdesc.numbytes = CONFIG_AUDIO_BUFFER_NUMBYTES;
 		for (pcm->bufPtr = 0; pcm->bufPtr < CONFIG_AUDIO_NUM_BUFFERS; pcm->bufPtr++)
 #endif
 		{
@@ -572,7 +566,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 			}
 			pcm->enqueuedBytes += bufdesc.numbytes;
 		}
-		if (pcm_start(pcm) < 0) {
+		if ((!pcm->running) && pcm_start(pcm) < 0) {
 			return -errno;
 		}
 	}
@@ -585,7 +579,6 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 	if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 		apb = (struct ap_buffer_s *)msg.u.pPtr;
 		pcm->enqueuedBytes -= apb->nmaxbytes;
-		pcm->enqueuedBytes -= apb->nmaxbytes - apb->nbytes;
 
 		memcpy(data, apb->samp, apb->nbytes);
 		if (nbytes - apb->nbytes > pcm->enqueuedBytes) {
@@ -605,11 +598,9 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 		} else {
 			nbytes = apb->nbytes;
 		}
-
-	} else {
-		return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);
+		return pcm_bytes_to_frames(pcm, nbytes);
 	}
-	return pcm_bytes_to_frames(pcm, nbytes);
+	return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel", msg.msgId);	
 }
 
 /** Writes audio samples to PCM.
@@ -966,6 +957,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 		pcm->pBuffers[x]->flags = 0;
 	}
 
+	pcm->enqueuedBytes = 0;
 #ifdef CONFIG_AUDIO_FORMAT_PCM
 	if (pcm->flags & PCM_IN) {
 		struct ap_buffer_s *apb = (struct ap_buffer_s *)pcm->pBuffers[0];
