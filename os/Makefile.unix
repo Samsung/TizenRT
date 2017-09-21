@@ -544,6 +544,13 @@ endif
 download:
 	$(call DOWNLOAD, $(DOWNLOAD_ARGS))
 
+#
+# package
+#
+
+package:
+	$(Q) $(call PACKAGE)
+
 # pass1dep: Create pass1 build dependencies
 # pass2dep: Create pass2 build dependencies
 

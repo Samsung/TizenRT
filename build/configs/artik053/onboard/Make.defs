@@ -155,3 +155,13 @@ define DOWNLOAD
        @$(TOPDIR)/../build/configs/artik05x/artik05x_download.sh --board=artik053 $(1)
 endef
 
+ifeq ($(WINTOOL),y)
+# Windows-native toolchains
+define PACKAGE
+	${shell cygpath -w $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=artik053}
+endef
+else
+define PACKAGE
+	$(Q) $(TOPDIR)/../build/configs/artik05x/artik05x_user_binary.sh --topdir=$(TOPDIR) --board=artik053
+endef
+endif
