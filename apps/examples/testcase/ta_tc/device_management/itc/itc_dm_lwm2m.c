@@ -44,7 +44,7 @@ static struct work_s itc_dm_wq;
 * @precondition         DM LWM2M client has been started
 * @postcondition        DM LWM2M client has been stopped
 */
-static int display_resource(FAR void *arg)
+static void display_resource(FAR void *arg)
 {
 	int ret;
 	char argbuffer[10];
@@ -160,7 +160,7 @@ static void itc_dm_lwm2m_get_server_port_p(void)
 */
 static void itc_dm_lwm2m_get_client_state_p(void)
 {
-	int8_t state = -1;
+	dm_lwm2m_client_state_e state;
 	int ret = dm_lwm2m_start_client(&test_data_itc);
 	TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
 
