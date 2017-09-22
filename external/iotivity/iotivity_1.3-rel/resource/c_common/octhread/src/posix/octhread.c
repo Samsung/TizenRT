@@ -319,10 +319,12 @@ bool oc_mutex_free(oc_mutex mutex)
             OIC_LOG_V(ERROR, TAG, "%s Failed to free mutex !", __func__);
         }
     }
+#ifdef __TIZENRT__
     else
     {
         OIC_LOG_V(ERROR, TAG, "%s Invalid mutex !", __func__);
     }
+#endif
 
     return bRet;
 }

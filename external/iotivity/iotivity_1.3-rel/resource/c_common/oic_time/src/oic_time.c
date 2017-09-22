@@ -80,11 +80,11 @@ uint64_t OICGetCurrentTime(OICTimePrecision precision)
     // run time.
 #     if _POSIX_MONOTONIC_CLOCK == 0
     static const clockid_t clockId =
-#ifndef __TIZENRT__
+#      ifndef __TIZENRT__
         sysconf(_SC_MONOTONIC_CLOCK) > 0 ? CLOCK_MONOTONIC : CLOCK_REALTIME;
-#     else
+#      else
         CLOCK_MONOTONIC;
-#endif
+#      endif
 #     else
     static const clockid_t clockId = CLOCK_MONOTONIC;
 #     endif  // _POSIX_MONOTONIC_CLOCK == 0

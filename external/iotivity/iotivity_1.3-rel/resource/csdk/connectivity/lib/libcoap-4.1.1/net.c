@@ -41,9 +41,15 @@
 #endif
 
 #ifdef WITH_LWIP
+#ifndef __TIZENRT__
+#include <lwip/pbuf.h>
+#include <lwip/udp.h>
+#include <lwip/timers.h>
+#else
 #include <net/lwip/pbuf.h>
 #include <net/lwip/udp.h>
 #include <net/lwip/timers.h>
+#endif
 #endif
 
 #include "include/coap/debug.h"

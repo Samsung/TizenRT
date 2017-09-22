@@ -32,6 +32,7 @@ src_dir = env.get('SRC_DIR')
 config_h_file_path = os.path.join(src_dir, 'resource', 'c_common',
                                   'iotivity_config.h')
 
+# __TIZENRT__ modification : if (os.path.exists(config_h_file_path)) and (env.GetOption('clean')):
 if (os.path.exists(config_h_file_path)):
     os.remove(config_h_file_path)
 
