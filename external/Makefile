@@ -168,6 +168,7 @@ endif
 
 ifeq ($(CONFIG_ENABLE_IOTJS),y)
 IOTJS_ROOT_DIR ?= $(EXTDIR)/iotjs
+IOTJS_BUILD_OPTION ?=
 ifeq ($(CONFIG_DEBUG),y)
   IOTJS_BUILDTYPE = debug
   IOTJS_LIB_DIR = $(IOTJS_ROOT_DIR)/build/arm-tizenrt/debug/lib
@@ -181,7 +182,7 @@ iotjs_build:
 ifeq ($(CONFIG_ENABLE_IOTJS),y)
 	python $(IOTJS_ROOT_DIR)/tools/build.py --target-arch=arm --target-os=tizenrt \
 	--sysroot=../os --target-board=artik05x --jerry-heaplimit=$(CONFIG_IOTJS_JERRY_HEAP) \
-	--buildtype=$(IOTJS_BUILDTYPE) --no-init-submodule
+	--buildtype=$(IOTJS_BUILDTYPE) --no-init-submodule $(IOTJS_BUILD_OPTION)
 endif
 
 iotjs_clean:
