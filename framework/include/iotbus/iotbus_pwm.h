@@ -53,6 +53,13 @@ typedef enum {
 	IOTBUS_PWM_ENABLE,
 } iotbus_pwm_state_e;
 
+/**
+ *@brief Type of pwm duty cycle
+ *@details Duty cycle is measured in terms of percentage
+ *so uint8_t is enough to hold percentage values.
+ */
+typedef uint8_t percent_t;
+
 /*
  * Public Function
  */
@@ -87,7 +94,7 @@ int iotbus_pwm_close(iotbus_pwm_context_h pwm);
  * @return On success, 0 is returned. On failure, a negative value is returned.
  * @since Tizen RT v1.0
  */
-int iotbus_pwm_set_duty_cycle(iotbus_pwm_context_h pwm, uint32_t duty_cycle);
+int iotbus_pwm_set_duty_cycle(iotbus_pwm_context_h pwm, percent_t duty_cycle);
 
 /**
  * @brief sets the pwm period.
