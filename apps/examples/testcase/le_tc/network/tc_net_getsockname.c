@@ -32,7 +32,7 @@
 
 /**
 * @testcase            : tc_net_getsockname_p
-* @brief               : The getsockname API get socket name.
+* @brief               : get the socket name.
 * @scenario            : getsockname gives the current address to which the socket is bound.
 * @apicovered          : getsockname()
 * @precondition        : socket file descriptor.
@@ -52,7 +52,7 @@ static void tc_net_getsockname_p(int sock)
 
 /**
 * @testcase            : tc_net_getsockname_unix_p
-* @brief               : The getsockname API get socket name.
+* @brief               : get the socket name.
 * @scenario            : getsockname gives the current address to which the socket is bound.
 * @apicovered          : getsockname()
 * @precondition        : socket file descriptor.
@@ -72,9 +72,9 @@ static void tc_net_getsockname_unix_p(int sock)
 
 /**
 * @testcase            : tc_net_getsockname_n
-* @brief               : The getsockname API get socket name.
+* @brief               : get the socket name.
 * @scenario            : getsockname gives the current address to which the socket is bound,
-                         with zero addrlen.
+                         with invalid socket fd.
 * @apicovered          : getsockname()
 * @precondition        : none
 * @postcondition       : none
@@ -93,9 +93,8 @@ static void tc_net_getsockname_n(void)
 
 /**
 * @testcase            : tc_net_getsockname_close_n
-* @brief               : The getsockname API get socket name.
-* @scenario            : getsockname gives the current address to which the socket is bound,
-                         with invalid addrlen.
+* @brief               : get the socket name.
+* @scenario            : getsockname gives the current address to which the socket is bound.
 * @apicovered          : getsockname()
 * @precondition        : none
 * @postcondition       : none
@@ -114,7 +113,7 @@ static void tc_net_getsockname_close_n(void)
 
 /**
 * @testcase            : tc_net_getsockname_udp_p
-* @brief               : The getsockname API get socket name.
+* @brief               : get the socket name.
 * @scenario            : getsockname gives the current address to which the socket is bound.
 * @apicovered          : getsockname()
 * @precondition        : socket file descriptor.
@@ -134,7 +133,7 @@ static void tc_net_getsockname_udp_p(int sock)
 
 /**
 * @testcase            : tc_net_getsockname_icmp_p
-* @brief               : The getsockname API get socket name.
+* @brief               : get the socket name.
 * @scenario            : getsockname gives the current address to which the socket is bound.
 * @apicovered          : getsockname()
 * @precondition        : socket file descriptor.
@@ -154,8 +153,9 @@ static void tc_net_getsockname_icmp_p(int sock)
 
 /**
 * @testcase            : tc_net_getsockname_len_sock_n
-* @brief               : The getsockname API get socket name.
-* @scenario            : getsockname gives the current address to which the socket is bound.
+* @brief               : get the socket name.
+* @scenario            : getsockname gives the current address to which the socket is bound,
+                         with invalid length argument.
 * @apicovered          : getsockname()
 * @precondition        : none
 * @postcondition       : none

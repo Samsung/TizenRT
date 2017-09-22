@@ -22,9 +22,9 @@
 /**
 * @testcase              : tc_netbuf_alloc_p
 * @brief                 : allocate memory to the given netbuf
-* @scenario              : memory allocation
+* @scenario              : none
 * @apicovered            : netbuf_alloc()
-* @precondition          : allocate memory
+* @precondition          : none
 * @postcondition         : none
 * @return                : void
 */

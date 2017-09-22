@@ -42,7 +42,7 @@ static int count_wait;
 
 /**
 * @fn                   : sig_wait
-* @brief                : Function to wait on semaphore
+* @brief                : function to wait on semaphore
 * @scenario             : use wait function to decrement count value.
 * @API's covered        : none
 * @Preconditions        : none
@@ -59,7 +59,7 @@ void sig_wait(void)
 
 /**
 * @fn                   : sig_call
-* @brief                : Function to signal semaphore
+* @brief                : function to signal semaphore
 * @scenario             : use to increase the count value.
 * @API's covered        : none
 * @Preconditions        : none
@@ -73,7 +73,7 @@ void sig_call(void)
 
 /**
 * @testcase             : tc_net_send_p
-* @brief                : This send API send a message on a socket.
+* @brief                : send a message on a socket.
 * @scenario             : used to transmit a message to another socket.
 * @apicovered           : accept(),send()
 * @precondition         : socket file descriptor.
@@ -94,14 +94,14 @@ void tc_net_send_p(int fd)
 
 /**
 * @fn                   : server
-* @brief                : Create a Tcp server.
-* @scenario             : Create a tcp server for checking send api.
+* @brief                : create a tcp server.
+* @scenario             : create a tcp server to check send api.
 * API's covered         : socket,bind,listen,close
 * Preconditions         : socket file descriptor.
 * Postconditions        : none
 * @return               : void*
 */
-void *server(void *args)
+void* server(void *args)
 {
 	struct sockaddr_in sa;
 
@@ -123,14 +123,14 @@ void *server(void *args)
 
 /**
 * @fn                   : client
-* @brief                : This api create client.
-* @scenario             : Create tcp client.
+* @brief                : create client.
+* @scenario             : create tcp client.
 * API's covered         : socket,connect,recv,close
 * Preconditions         : socket file descriptor.
 * Postconditions        : none
 * @return               : void*
 */
-void *client(void *args)
+void* client(void *args)
 {
 	int len, ret;
 	char buffer[MAXRCVLEN];
@@ -153,8 +153,8 @@ void *client(void *args)
 
 /**
 * @fn                  : net_send
-* @brief               : This api create client and server thread.
-* @scenario            : Create client and server thread to test send api.
+* @brief               : create client and server thread.
+* @scenario            : create client and server thread to test send api.
 * API's covered        : none
 * Preconditions        : none
 * Postconditions       : none

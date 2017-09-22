@@ -44,8 +44,8 @@ static int count_wait;
 
 /**
 * @fn                   : wait1
-* @brief                : function to wait on semaphore
-* @scenario             : waiting
+* @brief                : function to wait on semaphore.
+* @scenario             : waitine wait function to decrement count value.
 * API's covered         : none
 * Preconditions         : none
 * Postconditions        : none
@@ -59,6 +59,15 @@ static void wait1(void)
 	count_wait--;
 }
 
+/**
+* @fn                   : tc_net_select_server
+* @brief                : server thread.
+* @scenario             : server thread.
+* API's covered         : socket,bind,listen,select,close
+* Preconditions         : socket file descriptor.
+* Postconditions        : none
+* @return               : void
+*/
 static void tc_net_select_server(void)
 {
 	int newfd, yes = 1, addrlen, result, ret;
@@ -96,6 +105,15 @@ static void tc_net_select_server(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @fn                   : tc_net_select_client
+* @brief                : clinet thread.
+* @scenario             : clinet thread.
+* API's covered         : socket,connect,send,close
+* Preconditions         : socket file descriptor.
+* Postconditions        : none
+* @return               : void
+*/
 static void tc_net_select_client(void)
 {
 	int ret;
@@ -133,7 +151,7 @@ static void* server(void *args)
 
 /**
 * @fn                   : client
-* @brief                : executing the clinet thread
+* @brief                : executing the client thread
 * @scenario             : clinet program
 * API's covered         : socket,connect,send,close
 * Preconditions         : socket file descriptor.
@@ -148,10 +166,10 @@ static void* client(void *args)
 
 /**
 * @fn                   : tc_net_select
-* @brief                : created client and server threads
-* @scenario             : handling two threads for server and client
+* @brief                : created client and server threads.
+* @scenario             : create client and server thread to test select api.
 * API's covered         : none
-* Preconditions         : create server and client thread.
+* Preconditions         : none
 * Postconditions        : none
 * @return               : void
 */

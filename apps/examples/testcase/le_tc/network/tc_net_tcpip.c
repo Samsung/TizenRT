@@ -107,7 +107,7 @@ static void tc_net_tcpip_untimeout_n(void)
 
 /**
 * @testcase              : dummy_function
-* @brief                 : none
+* @brief                 : helper function
 * @scenario              : none
 * @apicovered            : none
 * @precondition          : none
@@ -121,7 +121,7 @@ void dummy_function(void *ctx)
 
 /**
 * @testcase              : tc_net_tcpip_callbackmsg_new_p
-* @brief                 : Allocate a structure for a static callback message and initialize it.
+* @brief                 : allocate a structure for a static callback message and initialize it.
 * @scenario              : used to send "static" messages from interrupt context.
 * @apicovered            : tcpip_callbackmsg_new
 * @precondition          : none
@@ -138,7 +138,7 @@ static void tc_net_tcpip_callbackmsg_new_p(void)
 
 /**
 * @statitcase            : tc_net_tcpip_callbackmsg_delete_p
-* @brief                 : Free a callback message allocated by tcpip_callbackmsg_new().
+* @brief                 : free a callback message allocated by tcpip_callbackmsg_new().
 * @scenario              : none
 * @apicovered            : tcpip_callbackmsg_delete, tcpip_callbackmsg_new
 * @precondition          : none
@@ -194,28 +194,9 @@ static void tc_mem_free_callback_p(void)
 	TC_SUCCESS_RESULT();
 }
 
-#if 0
-/**
-* @testcase              : tc_pbuf_free_int_p
-* @brief                 : Allocates a pbuf of the given type
-* @scenario              : none
-* @apicovered            : pbuf_free_int, pbuf_alloc, pbuf_free
-* @precondition          : none
-* @postcondition         : none
-* @return                : void
-*/
-void tc_pbuf_free_int_p(void)
-{
-	struct pbuf *p = NULL;
-
-	p = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
-	pbuf_free_int(p);
-	TC_SUCCESS_RESULT();
-}
-#endif
 /**
 * @testcase                 : tc_tcpip_trycallback
-* @brief                    : Try to post a callback-message to the tcpip_thread mbox.
+* @brief                    : try to post a callback-message to the tcpip_thread mbox.
 * @scenario                 : used to send "static" messages from interrupt context.
 * @apicovered               : tcpip_trycallback
 * @precondition             : none
@@ -229,7 +210,7 @@ void dummy1_function(void *arg)
 
 /**
 * @testcase              : tc_tcpip_trycallback
-* @brief                 : Try to post a callback-message to the tcpip_thread mbox.
+* @brief                 : try to post a callback-message to the tcpip_thread mbox.
 * @scenario              : used to send "static" messages from interrupt context.
 * @apicovered            : tcpip_trycallback
 * @precondition          : none
@@ -257,7 +238,6 @@ int net_tcpip_main(void)
 	tc_net_tcpip_untimeout_n();
 	tc_net_tcpip_callbackmsg_new_p();
 	tc_net_tcpip_callbackmsg_delete_p();
-	//tc_pbuf_free_int_p();
 	tc_mem_free_callback_p();
 	tc_mem_free_callback_n();
 	tc_tcpip_trycallback();

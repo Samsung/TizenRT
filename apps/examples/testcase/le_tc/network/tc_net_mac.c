@@ -28,7 +28,7 @@
 
 /**
 * @statitcase            : tc_net_checksd_p
-* @brief                 : Check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
+* @brief                 : check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
 * @scenario              : none
 * @apicovered            : net_checksd
 * @precondition          : none
@@ -46,7 +46,7 @@ static void tc_net_checksd_p(int sock)
 
 /**
 * @statitcase            : tc_net_checksd_n
-* @brief                 : Check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
+* @brief                 : check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
 * @scenario              : none
 * @apicovered            : net_checksd
 * @precondition          : none
@@ -64,7 +64,7 @@ static void tc_net_checksd_n(void)
 
 /**
 * @statitcase            : tc_net_clone_p
-* @brief                 : Performs the low level, common portion of net_dupsd() and net_dupsd2().
+* @brief                 : performs the low level, common portion of net_dupsd() and net_dupsd2().
 * @scenario              : none
 * @apicovered            : net_clone, socket, get_socket
 * @precondition          : socket file descriptor.
@@ -89,7 +89,7 @@ static void tc_net_clone_p(int sockfd1, int sockfd2)
 
 /**
 * @statitcase            : tc_net_dupsd2_p
-* @brief                 : Clone a socket descriptor to an arbitray descriptor number.
+* @brief                 : clone a socket descriptor to an arbitray descriptor number.
 * @scenario              : none
 * @apicovered            : net_dupsd2
 * @precondition          : socket file descriptor.
@@ -107,7 +107,7 @@ static void tc_net_dupsd2_p(int old_fd, int new_fd)
 
 /**
 * @statitcase            : tc_net_dupsd2_n
-* @brief                 : Clone a socket descriptor to an arbitray descriptor number.
+* @brief                 : clone a socket descriptor to an arbitray descriptor number.
 * @scenario              : none
 * @apicovered            : net_dupsd2
 * @precondition          : socket file descriptors.
@@ -146,7 +146,7 @@ static void tc_net_ethernetif_status_callback_p(void)
 
 /**
 * @statitcase            : tc_net_ethernetif_init
-* @brief                 : Should be called at the beginning of the program to set up the network interface.
+* @brief                 : set up the network interface at the beginning.
 * @scenario              : none
 * @apicovered            : ethernetif_init
 * @precondition          : none

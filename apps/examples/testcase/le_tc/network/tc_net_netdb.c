@@ -38,8 +38,8 @@
 #ifdef CONFIG_LIBC_NETDB
 /**
 * @testcase            : tc_net_netdb_p
-* @brief               : The freeaddrinfo() API frees the memory.
-* @scenario            : It frees the memory that was allocated for the dynamically allocated linked list res.
+* @brief               : frees the memory.
+* @scenario            : it frees the memory that was allocated for the dynamically allocated linked list res.
 * @apicovered          : getaddrinfo() freeaddrinfo()
 * @precondition        : none
 * @postcondition       : none

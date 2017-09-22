@@ -45,7 +45,7 @@ static void tc_net_def_htons(void)
 {
 	uint16_t ret = htons(HTONS_VAL);
 
-	TC_ASSERT_NEQ("htons", ret, HTONS_CONVAL);
+	TC_ASSERT_EQ("htons", ret, HTONS_CONVAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -62,7 +62,7 @@ static void tc_net_def_ntohs(void)
 {
 	uint16_t ret = ntohs(NTOHS_VAL);
 
-	TC_ASSERT_NEQ("ntohs", ret, NTOHS_CONVAL);
+	TC_ASSERT_EQ("ntohs", ret, NTOHS_CONVAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -79,7 +79,7 @@ static void tc_net_def_htonl(void)
 {
 	uint32_t ret = htonl(HTONL_VAL);
 
-	TC_ASSERT_NEQ("htonl", ret, HTONL_CONVAL);
+	TC_ASSERT_EQ("htonl", ret, HTONL_CONVAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -96,7 +96,7 @@ static void tc_net_def_ntohl(void)
 {
 	uint32_t ret = ntohl(NTOHL_VAL);
 
-	TC_ASSERT_NEQ("ntohl", ret, NTOHL_CONVAL);
+	TC_ASSERT_EQ("ntohl", ret, NTOHL_CONVAL);
 	TC_SUCCESS_RESULT();
 }
 

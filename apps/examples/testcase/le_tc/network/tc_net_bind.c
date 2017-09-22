@@ -39,7 +39,7 @@
 
 /**
 * @testcase            : tc_net_bind_p
-* @brief               : This bind API bind a name to a socket.
+* @brief               : bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : socket file descriptor.
@@ -68,7 +68,7 @@ static void tc_net_bind_p(void)
 
 /**
 * @testcase            : tc_net_bind_udp_p
-* @brief               : This bind API bind a name to a socket.
+* @brief               : bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : socket file descriptor.
@@ -97,7 +97,7 @@ static void tc_net_bind_udp_p(void)
 
 /**
 * @testcase            : tc_net_bind_broadcast_p
-* @brief               : This bind API bind a name to a socket.
+* @brief               : bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : socket file descriptor.
@@ -126,7 +126,7 @@ static void tc_net_bind_broadcast_p(void)
 
 /**
 * @testcase            : tc_net_bind_fd_n
-* @brief               : This bind API bind a name to a socket.
+* @brief               : bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : none
@@ -150,7 +150,7 @@ static void tc_net_bind_fd_n(void)
 
 /**
 * @testcase            : tc_net_bind_addrfamily_n
-* @brief               : This bind API bind a name to a socket.
+* @brief               : bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : none
@@ -178,7 +178,7 @@ static void tc_net_bind_addrfamily_n(void)
 
 /**
 * @testcase            : tc_net_bind_size_n
-* @brief               : This bind API bind a name to a socket.
+* @brief               : bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : socket file descriptor.

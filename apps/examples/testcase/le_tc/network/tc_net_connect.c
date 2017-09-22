@@ -33,8 +33,8 @@
 
 /**
 * @testcase            : tc_net_connect_fd_n
-* @brief               : This connect API initiate a connection on a socket.
-* @scenario            : The connect() system call connects the socket referred to by the file
+* @brief               : initiate a connection on a socket.
+* @scenario            : connect() system call connects the socket referred to by the file
                          descriptor to the specified address.
 * @apicovered          : connect()
 * @precondition        : none
@@ -55,8 +55,8 @@ static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 
 /**
 * @testcase            : tc_net_connect_broadcastaddr_n
-* @brief               : This connect API initiate a connection on a socket.
-* @scenario            : The connect() system call connects the socket referred to by the file
+* @brief               : initiate a connection on a socket.
+* @scenario            : connect() system call connects the socket referred to by the file
                          descriptor to the specified broadcast address.
 * @apicovered          : connect()
 * @precondition        : none
@@ -80,9 +80,9 @@ static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 
 /**
 * @testcase            : tc_net_connect_loopbackaddr_n
-* @brief               : This connect API initiate a connection on a socket.
-* @scenario            : The connect() system call connects the socket referred to by the file
-                         descriptor to the specified  loopback address.
+* @brief               : initiate a connection on a socket.
+* @scenario            : connect() system call connects the socket referred to by the file
+                         descriptor to the specified loopback address.
 * @apicovered          : connect()
 * @precondition        : none
 * @postcondition       : none
@@ -107,8 +107,8 @@ static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 
 /**
 * @testcase            : tc_net_connect_socklen_n
-* @brief               : This connect API initiate a connection on a socket.
-* @scenario            : The connect() system call connects the socket referred to by the file
+* @brief               : initiate a connection on a socket.
+* @scenario            : connect() system call connects the socket referred to by the file
                          descriptor to the specified address and socklen.
 * @apicovered          : connect()
 * @precondition        : none
@@ -133,8 +133,8 @@ static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 
 /**
 * @testcase            : tc_net_connect
-* @brief               : This connect API initiate a connection on a socket.
-* @scenario            : This TC test the different arguments for the connect api.
+* @brief               : initiate a connection on a socket.
+* @scenario            : test the different arguments of the connect api.
 * @apicovered          : connect()
 * @precondition        : none
 * @postcondition       : none

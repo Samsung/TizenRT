@@ -45,8 +45,8 @@ void tc_net_sendto_tcp_shutdown_n(int ConnectFD);
 
 /**
 * @testcase            : tc_net_sendto_p
-* @brief               : positive testcase for sendto api using udp
-* @scenario            : used for udp connection
+* @brief               : send a message on a socket.
+* @scenario            : sendto() function send a message through a connectionless-mode socket.
 * @apicovered          : sendto()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -73,8 +73,9 @@ void tc_net_sendto_p(int fd)
 
 /**
 * @testcase            : tc_net_sendto_n
-* @brief               : negative testcase for sendto api using udp
-* @scenario            : used for udp connection
+* @brief               : send a message on a socket.
+* @scenario            : sendto() function send a message through a connectionless-mode socket,
+                         test with invalid socket fd.
 * @apicovered          : sendto()
 * @precondition        : none
 * @postcondition       : none
@@ -101,8 +102,8 @@ void tc_net_sendto_n(void)
 
 /**
 * @testcase            : tc_net_sendto_af_unix_n
-* @brief               : negative testcase for sendto api using udp
-* @scenario            : used to communicate between processes on the same machine efficiently
+* @brief               : send a message on a socket.
+* @scenario            : sendto() function send a message through a connectionless-mode socket.
 * @apicovered          : sendto()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -129,8 +130,9 @@ void tc_net_sendto_af_unix_n(int fd)
 
 /**
 * @testcase            : tc_net_sendto_shutdown_n
-* @brief               : negative testcase for sendto api using udp
-* @scenario            :
+* @brief               : send a message on a socket.
+* @scenario            : sendto() function send a message through a connectionless-mode socket,
+                         test after shutdown.
 * @apicovered          : sendto(), shutdown()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -158,15 +160,15 @@ void tc_net_sendto_shutdown_n(int fd)
 
 /**
 * @fn                   : sendto_udpserver
-* @brief                : udp server
-* @scenario             : none
+* @brief                : create a udp server.
+* @scenario             : create a tcp server to test sendto api.
 * @API's covered        : socket,bind,recvfrom
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
-* @return               : void
+* @return               : void*
 */
 
-void *sendto_udpserver(void *args)
+void* sendto_udpserver(void *args)
 {
 	struct sockaddr_in sa;
 	char buffer[MAXRCVLEN];
@@ -187,14 +189,14 @@ void *sendto_udpserver(void *args)
 
 /**
 * @fn                   : sendto_udpclient
-* @brief                : udp client
-* @scenario             : none
-* @API's covered        : socket
+* @brief                : create client.
+* @scenario             : create tcp client.
+* @API's covered        : socket()
 * @Preconditions        : none
 * @Postconditions       : none
-* @return               : void
+* @return               : void*
 */
-void *sendto_udpclient(void *args)
+void* sendto_udpclient(void *args)
 {
 	int sock = socket(AF_INET, SOCK_DGRAM, ZERO);
 
@@ -240,9 +242,8 @@ void sendto_signal(void)
 
 /**
 * @testcase             : tc_net_sendto_tcp_p
-* @brief                : This sendto API send a message on a socket.
-* @scenario             : The sendto() function shall send a message through a connection-mode or
-                          connectionless-mode socket.
+* @brief                : send a message on a socket.
+* @scenario             : sendto() function send a message through a connection-mode socket.
 * @apicovered           : accept(), sendto()
 * @precondition         : socket file descriptor.
 * @postcondition        : none
@@ -269,9 +270,9 @@ void tc_net_sendto_tcp_p(int fd)
 
 /**
 * @testcase             : tc_net_sendto_tcp_n
-* @brief                : This sendto API send a message on a socket.
-* @scenario             : The sendto() function shall send a message through a connection-mode or
-                          connectionless-mode socket, test with invalid socket fd.
+* @brief                : send a message on a socket.
+* @scenario             : sendto() function send a message through a connection-mode socket,
+                          test with invalid socket fd.
 * @apicovered           : sendto(), close()
 * @precondition         : none
 * @postcondition        : none
@@ -291,9 +292,9 @@ void tc_net_sendto_tcp_n(int ConnectFD)
 
 /**
 * @testcase             : tc_net_sendto_tcp_shutdown_n
-* @brief                : This sendto API send a message on a socket.
-* @scenario             : The sendto() function shall send a message through a connection-mode or
-                          connectionless-mode socket, test after shutdown.
+* @brief                : send a message on a socket.
+* @scenario             : sendto() function send a message through a connection-mode socket,
+                          test after shutdown.
 * @apicovered           : sendto(), close()
 * @precondition         : socket file descriptor.
 * @postcondition        : none
@@ -316,15 +317,15 @@ void tc_net_sendto_tcp_shutdown_n(int ConnectFD)
 
 /**
 * @fn                   : sendto_server
-* @brief                : Create a Tcp server.
-* @scenario             : Create a tcp server for checking sendto api.
+* @brief                : create a tcp server.
+* @scenario             : create a tcp server to test sendto api.
 * @API's covered        : socket,bind,listen,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
 * @return               : void*
 */
 
-void *sendto_tcpserver(void *args)
+void* sendto_tcpserver(void *args)
 {
 	struct sockaddr_in sa;
 
@@ -344,14 +345,14 @@ void *sendto_tcpserver(void *args)
 
 /**
 * @fn                   : sendto_client
-* @brief                : This api create client.
-* @scenario             : Create tcp client.
+* @brief                : create client.
+* @scenario             : create tcp client.
 * @API's covered        : socket,connect,recvfrom,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
 * @return               : void*
 */
-void *sendto_tcpclient(void *args)
+void* sendto_tcpclient(void *args)
 {
 	char buffer[MAXRCVLEN];
 	int len;
@@ -375,8 +376,8 @@ void *sendto_tcpclient(void *args)
 
 /**
 * @fn                  : net_sendto
-* @brief               : This api create client and server thread.
-* @scenario            : Create client and server thread to test sendto api.
+* @brief               : create client and server thread.
+* @scenario            : create client and server thread to test sendto api.
 * @API's covered       : none
 * @Preconditions       : none
 * @Postconditions      : none

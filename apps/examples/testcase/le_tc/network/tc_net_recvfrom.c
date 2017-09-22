@@ -41,8 +41,8 @@ static int count_wait;
 
 /**
 * @testcase             : tc_net_recvfrom_p
-* @brief                : This recvfrom API receive a message from a socket.
-* @scenario             : The recvfrom() function receive a message from a connectionless-mode socket.
+* @brief                : receive a message from a socket.
+* @scenario             : recvfrom() function receive a message from a connectionless-mode socket.
 * @apicovered           : recvfrom()
 * @precondition         : socket file descriptor.
 * @postcondition        : none
@@ -61,10 +61,10 @@ void tc_net_recvfrom_p(int fd)
 
 /**
 * @testcase             : tc_net_recvfrom_sock_n
-* @brief                : This recvfrom API receive a message from a socket.
-* @scenario             : The recvfrom() function receive a message from a connectionless-mode socket.
+* @brief                : receive a message from a socket.
+* @scenario             : recvfrom() function receive a message from a connectionless-mode socket.
 * @apicovered           : recvfrom()
-* @precondition         :
+* @precondition         : socket file descriptor.
 * @postcondition        : none
 * @return               : void
 */
@@ -81,8 +81,8 @@ void tc_net_recvfrom_sock_n(void)
 
 /**
 * @testcase             : tc_net_recvfrom_n
-* @brief                : This recvfrom API receive a message from a udp socket.
-* @scenario             : The recvfrom() function receive a message from a connectionless-mode socket,
+* @brief                : receive a message from a socket.
+* @scenario             : recvfrom() function receive a message from a connectionless-mode socket,
                           test with invalid socket fd.
 * @apicovered           : recvfrom()
 * @precondition         : socket file descriptor.
@@ -102,8 +102,8 @@ void tc_net_recvfrom_n(int fd)
 
 /**
 * @fn                 : recvfrom_udpserver
-* @brief              : Create a Udp server.
-* @scenario           : Create a udp server for checking recvfrom api.
+* @brief              : create a Udp server.
+* @scenario           : create a udp server to test recvfrom api.
 * @API's covered      : socket,bind
 * @Preconditions      : socket file descriptor.
 * @Postconditions     : none
@@ -131,8 +131,8 @@ void *recvfrom_udpserver(void *args)
 
 /**
 * @fn                   : recvfrom_udpclient
-* @brief                : This api create udp client.
-* @scenario             : Create udp client.
+* @brief                : create client.
+* @scenario             : create udp client.
 * @API's covered        : socket,sendto
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
@@ -162,7 +162,7 @@ void *recvfrom_udpclient(void *args)
 
 /**
 * @fn                   : recvfrom_wait
-* @brief                : Function to wait on semaphore
+* @brief                : function to wait on semaphore
 * @scenario             : use wait function to decrement count value.
 * @API's covered        : none
 * @Preconditions        : none
@@ -179,7 +179,7 @@ void recvfrom_wait(void)
 
 /**
 * @fn                   : recvfrom_signal
-* @brief                : Function to signal semaphore
+* @brief                : function to signal semaphore
 * @scenario             : use to increase the count value.
 * @API's covered        : none
 * @Preconditions        : none
@@ -193,8 +193,8 @@ void recvfrom_signal(void)
 
 /**
 * @testcase             : tc_net_recvfrom_tcp_p
-* @brief                : positive testcase for recvfrom api
-* @scenario             : used for tcp connection
+* @brief                : receive a message from a socket.
+* @scenario             : recvfrom() function receive a message from a connection-mode socket.
 * @apicovered           : recvfrom()
 * @precondition         : socket file descriptor.
 * @postcondition        : none
@@ -211,8 +211,9 @@ void tc_net_recvfrom_tcp_p(int fd)
 
 /**
 * @testcase             : tc_net_recvfrom_tcp_conn_n
-* @brief                : negative testcase for recvfrom api
-* @scenario             : used for tcp connection
+* @brief                : receive a message from a socket.
+* @scenario             : recvfrom() function receive a message from a connection-mode socket.
+                          test after shutdown.
 * @apicovered           : recvfrom()
 * @precondition         : none
 * @postcondition        : none
@@ -250,8 +251,9 @@ void tc_net_recvfrom_tcp_sock_n(int fd)
 
 /**
 * @testcase            : tc_net_recvfrom_tcp_n
-* @brief               : negative testcase using tcp
-* @scenario            : used for tcp connection
+* @brief               : receive a message from a socket.
+* @scenario            : recvfrom() function receive a message from a connection-mode socket,
+                         test with invalid socket fd.
 * @apicovered          : recvfrom()
 * @precondition        : none
 * @postcondition       : none
@@ -268,14 +270,14 @@ void tc_net_recvfrom_tcp_n(void)
 
 /**
 * @fn                   : recvfrom_server
-* @brief                : Create a Tcp server.
-* @scenario             : Create a tcp server for checking recvfrom api.
+* @brief                : create a tcp server.
+* @scenario             : create a tcp server to test recvfrom api.
 * @API's covered        : socket,bind,listen,accept,sendto,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
 * @return               : void
 */
-void *recvfrom_tcpserver(void *args)
+void* recvfrom_tcpserver(void *args)
 {
 	int i;
 	int ConnectFD;
@@ -305,14 +307,14 @@ void *recvfrom_tcpserver(void *args)
 
 /**
 * @fn                   : recvfrom_tcpclient
-* @brief                : This api create tcp client.
-* @scenario             : Create tcp client.
+* @brief                : create client.
+* @scenario             : create tcp client.
 * @API's covered        : socket,connect,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
 * @return               : void
 */
-void *recvfrom_tcpclient(void *args)
+void* recvfrom_tcpclient(void *args)
 {
 	struct sockaddr_in dest;
 
@@ -336,8 +338,8 @@ void *recvfrom_tcpclient(void *args)
 
 /**
 * @fn                  : net_recvfrom
-* @brief               : This api create client and server thread.
-* @scenario            : Create client and server thread to test recvfrom api.
+* @brief               : create client and server thread.
+* @scenario            : create client and server thread to test recvfrom api.
 * @API's covered       : none
 * @Preconditions       : none
 * @Postconditions      : none

@@ -121,6 +121,14 @@ void tc_net_sendto_af_unix_n(int fd)
 
 }
 
+/**
+* @testcase           : tc_sendto_udpserver
+* @brief              : udpserver
+* @scenario           : used for udp connection
+* @apicovered         : socket, bind, recvfrom
+* @precondition       : valid file descriptor
+* @postcondition      : none
+*/
 void tc_sendto_udpserver(void)
 {
 	int ret;
@@ -148,6 +156,14 @@ void tc_sendto_udpserver(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @testcase           : tc_sendto_udpclient
+* @brief              : udp client
+* @scenario           : used for udp connection
+* @apicovered         : socket
+* @precondition       : valid file descriptor
+* @postcondition      : none
+*/
 void tc_sendto_udpclient(void)
 {
 	int ret;
@@ -179,8 +195,7 @@ void tc_sendto_udpclient(void)
 * @precondition       : valid file descriptor
 * @postcondition      : none
 */
-
-void *sendto_udpserver(void *args)
+void* sendto_udpserver(void *args)
 {
 	tc_sendto_udpserver();
 	return NULL;
@@ -195,7 +210,7 @@ void *sendto_udpserver(void *args)
 * @precondition       : valid file descriptor
 * @postcondition      : none
 */
-void *sendto_udpclient(void *args)
+void* sendto_udpclient(void *args)
 {
 	tc_sendto_udpclient();
 	return NULL;
