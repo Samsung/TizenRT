@@ -163,16 +163,17 @@ openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
 
 Once the complete binaries are successfully programmed, each partition can be updated separately with new one.
 
-In normal model (ARTIK053),
 ```bash
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin; exit'
 ```
 
 ### Factory Reset
+
 Changing os to the initial version is a method to solve an issue of not booted device. This is possible if there is an initialization binary in memory.
 
 #### How to Download the Initialization Binaries
+
 Compress the compiled firmware and download it to the board through OpenOCD.
 
 ```bash
@@ -183,7 +184,9 @@ openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
 ```
 
 #### How to enter initialization mode
+
 Press the RESET button (SW700) to reboot the Starter Kit, and then press and hold the 'ARDUINO RESET' button (SW701) for 10 seconds. The device will enter initialization mode as follows.
+
 ```
 .....
 Factory reset.
