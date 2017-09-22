@@ -4,7 +4,7 @@ The ARTIK055S is a SOC for Wi-Fi™ IoT solutions. The ARTIK055S has a Wi-Fi sub
 
 ## Information
 
-The Samsung ARTIK™ 055 Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
+The Samsung ARTIK™ 055S Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
 Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK055S Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
 
 ## MemoryMap
@@ -78,6 +78,7 @@ export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/tools/openocd
 At first, programming the complete set of binaries are needed.
 
 #### ARTIK055S
+
 ```bash
 ../build/configs/artik05x/tools/codesigner/artik05x_codesigner -sign ../build/output/bin/tinyara_head.bin
 
@@ -98,9 +99,11 @@ openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
 ```
 
 ### Factory Reset
+
 If you can not boot normally, you can change os to the initial version. This is possible if there is an initialization binary in memory.
 
 #### How to Download the Initialization Binaries
+
 You can download it using OpenOCD. You compress the compiled firmware and download it to the board.
 
 ```bash
@@ -111,6 +114,7 @@ openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
 ```
 
 #### How to enter initialization mode
+
 When you press the RESET button (SW700) to reboot the Starter Kit, press and hold the 'ARDUINO RESET' button (SW701) for 10 seconds. Enter initialization mode as follows.
 ```
 .....

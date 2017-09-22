@@ -78,6 +78,7 @@ export OPENOCD_SCRIPTS=$TIZENRT_BASEDIR/build/tools/openocd
 At first, programming the complete set of binaries are needed.
 
 #### ARTIK053
+
 ```bash
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write bl1    ../build/configs/artik053/bin/bl1.bin;      \
@@ -90,16 +91,17 @@ openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
 
 Once the complete binaries are successfully programmed, each partition can be updated separately with new one.
 
-In normal model (ARTIK053),
 ```bash
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin; exit'
 ```
 
 ### Factory Reset
+
 If you can not boot normally, you can change os to the initial version. This is possible if there is an initialization binary in memory.
 
 #### How to Download the Initialization Binaries
+
 You can download it using OpenOCD. You compress the compiled firmware and download it to the board.
 
 ```bash
@@ -110,6 +112,7 @@ openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
 ```
 
 #### How to enter initialization mode
+
 When you press the RESET button (SW700) to reboot the Starter Kit, press and hold the 'ARDUINO RESET' button (SW701) for 10 seconds. Enter initialization mode as follows.
 ```
 .....
