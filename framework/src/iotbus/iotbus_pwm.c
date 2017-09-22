@@ -101,7 +101,7 @@ int iotbus_pwm_close(iotbus_pwm_context_h pwm)
 	return 0;
 }
 
-int iotbus_pwm_set_duty_cycle(iotbus_pwm_context_h pwm, uint32_t duty_cycle)
+int iotbus_pwm_set_duty_cycle(iotbus_pwm_context_h pwm, percent_t duty_cycle)
 {
 	if (!pwm)
 		return IOTBUS_ERROR_INVALID_PARAMETER;
@@ -225,7 +225,7 @@ iotbus_pwm_close(iotbus_pwm_context_h pwm)
 	return IOTBUS_ERROR_NOT_SUPPORTED;
 }
 int
-iotbus_pwm_set_duty_cycle(iotbus_pwm_context_h pwm, uint32_t duty_cycle)
+iotbus_pwm_set_duty_cycle(iotbus_pwm_context_h pwm, percent_t duty_cycle)
 {
 	zdbg("pwm is not supported\n");
 	return IOTBUS_ERROR_NOT_SUPPORTED;
