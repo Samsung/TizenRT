@@ -720,39 +720,6 @@ namespace OC
          */
         OCStackResult sendResponse(const std::shared_ptr<OCResourceResponse> pResponse);
 
-        /**
-         * Find all the Direct Pairing capable devices.
-         *
-         * @param waittime timeoutbefore the callback is called
-         * @param callback function to callback with discovered devices after timeout
-         *
-         * @return Returns ::OC_STACK_OK if success
-         */
-        OCStackResult findDirectPairingDevices(unsigned short waittime,
-                                     GetDirectPairedCallback callback);
-
-        /**
-         * Get all the Direct paired devices.
-         *
-         * @param callback function to callback with the list of paired devices
-         *
-         * @return Returns ::OC_STACK_OK if success
-         */
-        OCStackResult getDirectPairedDevices(GetDirectPairedCallback callback);
-
-        /**
-         * Perform the Direct Pairing with the selected peer device
-         *
-         * @param peer device to direct pair with
-         * @param pmSel Selected pairing method
-         * @param pinNumber pin to validate peer & perform the direct pairing
-         * @param resultCallback callback function that will get the result of the operation
-         *
-         * @return Returns ::OC_STACK_OK if success
-         */
-        OCStackResult doDirectPairing(std::shared_ptr<OCDirectPairing> peer, OCPrm_t pmSel,
-                                     const std::string& pinNumber,
-                                     DirectPairingCallback resultCallback);
 #ifdef WITH_CLOUD
         /**
          * Create an account manager object that can be used for doing request to account server.

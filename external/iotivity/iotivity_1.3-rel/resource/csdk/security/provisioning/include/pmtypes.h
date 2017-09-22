@@ -79,22 +79,6 @@ typedef struct OCProvisionDev
 }OCProvisionDev_t;
 
 /**
- * Device Information of discoverd direct pairing device(s).
- */
-typedef struct OCDirectPairingDev
-{
-    OCDevAddr               endpoint;
-    OCConnectivityType   connType;
-    uint16_t                     securePort;
-    bool              edp;
-    OicSecPrm_t  *prm;
-    size_t            prmLen;
-    OicUuid_t       deviceID;
-    OicUuid_t       rowner;
-    struct OCDirectPairingDev *next;
-} OCDirectPairingDev_t;
-
-/**
  * Result information for each target device.
  */
 typedef struct OCPMResult{
@@ -188,17 +172,6 @@ typedef void (*OCGetCSRResultCB)(void* ctx, size_t nOfRes, OCPMGetCsrResult_t *a
  *                        be true. Examine the elements of arr to discover which failed.
  */
 typedef void (*OCGetRolesResultCB)(void* ctx, size_t nOfRes, OCPMGetRolesResult_t *arr, bool hasError);
-
-/**
- * Callback function definition of direct-pairing
- *
- * @param[in] ctx - User context which will be returned wth callback
- * @param[in] peer - pairing device info.
- * @param[in] result - It's returned with 'OC_STACK_XXX'. It will return 'OC_STACK_OK'
- *                                   if D2D pairing is success without error
- */
-typedef void (*OCDirectPairingResultCB)(void *ctx, OCDirectPairingDev_t *peer, OCStackResult result);
-
 
 #ifdef __cplusplus
 }

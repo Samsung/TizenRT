@@ -653,17 +653,6 @@ namespace OC
             OCStackResult removeDevice(unsigned short waitTimeForOwnedDeviceDiscovery,
                     ResultCallBack resultCallback);
 
-            /**
-             * API to provision DirectPairing to devices.
-             *
-             * @param pconf pointer to PCONF (Pairing Configuration).
-             * @param resultCallback Callback will be called when provisioning request receives
-             *                           a response from first resource server.
-             * @return  ::OC_STACK_OK in case of success and other value otherwise.
-             */
-            OCStackResult provisionDirectPairing(const OicSecPconf_t *pconf,
-                    ResultCallBack resultCallback);
-
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
             /**
              * API to provision cert.

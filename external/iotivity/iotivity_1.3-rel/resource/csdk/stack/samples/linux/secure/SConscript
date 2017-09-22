@@ -76,10 +76,6 @@ occlientbasicops = samples_env.Program(
 ocamsservice = samples_env.Program(
     'ocamsservice', ['common.cpp', 'ocamsservice.cpp'])
 ocsamples = [ocserverbasicops, occlientbasicops, ocamsservice]
-if samples_env.get('SECURED') == '1':
-    occlientdirectpairing = samples_env.Program(
-        'occlientdirectpairing', 'occlientdirectpairing.cpp')
-    ocsamples.append(occlientdirectpairing)
 Alias("samples", ocsamples)
 samples_env.AppendTarget('samples')
 
@@ -104,17 +100,6 @@ samples_env.Alias(
     "install",
     samples_env.Install(sec_samples_build_dir,
                         sec_samples_src_dir + 'oic_amss_db.json'))
-if samples_env.get('SECURED') == '1':
-    samples_env.Alias(
-        "install",
-        samples_env.Install(
-            sec_samples_build_dir,
-            sec_samples_src_dir + 'oic_svr_db_client_directpairing.json'))
-    samples_env.Alias(
-        "install",
-        samples_env.Install(
-            sec_samples_build_dir,
-            sec_samples_src_dir + 'oic_svr_db_client_directpairing.dat'))
 
 samples_env.Alias(
     "install",

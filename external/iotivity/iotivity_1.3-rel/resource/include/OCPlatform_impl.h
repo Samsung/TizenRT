@@ -37,7 +37,6 @@
 #include "OCResourceRequest.h"
 #include "OCResourceResponse.h"
 #include "OCRepresentation.h"
-#include "OCDirectPairing.h"
 
 #ifdef WITH_CLOUD
 #include "OCAccountManager.h"
@@ -320,14 +319,6 @@ namespace OC
         OCStackResult sendResponse(const std::shared_ptr<OCResourceResponse> pResponse);
         std::weak_ptr<std::recursive_mutex> csdkLock();
 
-        OCStackResult findDirectPairingDevices(unsigned short waittime,
-                                         GetDirectPairedCallback callback);
-
-        OCStackResult getDirectPairedDevices(GetDirectPairedCallback callback);
-
-        OCStackResult doDirectPairing(std::shared_ptr<OCDirectPairing> peer, OCPrm_t pmSel,
-                                         const std::string& pinNumber,
-                                         DirectPairingCallback resultCallback);
 #ifdef WITH_CLOUD
         OCAccountManager::Ptr constructAccountManagerObject(const std::string& host,
                                                             OCConnectivityType connectivityType);

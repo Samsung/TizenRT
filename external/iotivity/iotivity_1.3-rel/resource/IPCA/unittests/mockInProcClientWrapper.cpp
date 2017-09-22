@@ -289,35 +289,6 @@ namespace OC
         return OC_STACK_OK;
     }
 
-
-    OCStackResult InProcClientWrapper::FindDirectPairingDevices(
-                                                unsigned short waittime,
-                                                GetDirectPairedCallback& callback)
-    {
-        OC_UNUSED(waittime);
-        OC_UNUSED(callback);
-        return OC_STACK_OK;
-    }
-
-    OCStackResult InProcClientWrapper::GetDirectPairedDevices(GetDirectPairedCallback& callback)
-    {
-        OC_UNUSED(callback);
-        return OC_STACK_OK;
-    }
-
-    OCStackResult InProcClientWrapper::DoDirectPairing(
-                                                std::shared_ptr<OCDirectPairing> peer,
-                                                const OCPrm_t& pmSel,
-                                                const std::string& pinNumber,
-                                                DirectPairingCallback& callback)
-    {
-        OC_UNUSED(peer);
-        OC_UNUSED(pmSel);
-        OC_UNUSED(pinNumber);
-        OC_UNUSED(callback);
-        return OC_STACK_OK;
-    }
-
 #ifdef WITH_CLOUD
     OCStackResult InProcClientWrapper::SubscribeDevicePresence(
                                                 OCDoHandle* handle,

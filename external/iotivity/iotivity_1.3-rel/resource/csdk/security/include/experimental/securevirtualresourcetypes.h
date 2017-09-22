@@ -639,10 +639,6 @@ typedef struct OicPin OicDpPin_t;
 
 typedef struct OicSecPdAcl OicSecPdAcl_t;
 
-typedef struct OicSecPconf OicSecPconf_t;
-
-typedef struct OicSecDpairing OicSecDpairing_t;
-
 #define DP_PIN_LENGTH 8 // temporary length
 
 /**
@@ -679,34 +675,6 @@ struct OicSecPdAcl
     char                  **recurrences;    // 3:R:M:N:String
     size_t                prdRecrLen;         // the number of elts in Periods/Recurrences
     OicSecPdAcl_t    *next;
-};
-
-/**
- * @brief   /oic/sec/pconf (Pairing Configuration) data type
- */
-struct OicSecPconf
-{
-    // <Attribute ID>:<Read/Write>:<Multiple/Single>:<Mandatory?>:<Type>
-    bool                  edp;                // 0:W:S:M:Boolean
-    OicSecPrm_t      *prm;              // 1:R:M:N:UINT16
-    size_t                prmLen;          // the number of elts in Prm
-    OicDpPin_t          pin;               // 2:R:S:Y:String
-    OicSecPdAcl_t    *pdacls;         // 3:R:M:Y:oic.sec.pdacltype
-    OicUuid_t           *pddevs;        // 4:R:M:Y:oic.uuid
-    size_t                 pddevLen;     // the number of elts in pddev
-    OicUuid_t           deviceID;       // 5:R:S:Y:oic.uuid
-    OicUuid_t           rownerID;          // 6:R:S:Y:oic.uuid
-};
-
-/**
- * @brief   /oic/sec/dpairing (Device Pairing) data type
- */
-struct OicSecDpairing
-{
-    // <Attribute ID>:<Read/Write>:<Multiple/Single>:<Mandatory?>:<Type>
-    OicSecPrm_t      spm;               // 0:R/W:S:Y:UINT16
-    OicUuid_t           pdeviceID;     // 1:R:S:Y:oic.uuid
-    OicUuid_t           rownerID;          // 2:R:S:Y:oic.uuid
 };
 
 #define SPEC_MAX_VER_LEN (sizeof("core.x.x.x") + 1) // Spec Version length.

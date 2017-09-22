@@ -99,13 +99,6 @@ extern "C"  OCStackApplicationResult asyncDoResourcesCallback(void* ctx,
     return OC_STACK_KEEP_TRANSACTION;
 }
 
-static void resultCallback(void *UNUSED1, OCDPDev_t *UNUSED2, OCStackResult UNUSED3)
-{
-    (void) (UNUSED1);
-    (void) (UNUSED2);
-    (void) (UNUSED3);
-}
-
 extern "C" OCStackApplicationResult discoveryCallback(void* ctx,
         OCDoHandle /*handle*/, OCClientResponse * clientResponse)
 {
@@ -2348,21 +2341,6 @@ TEST(PODTests, OCCallbackData)
     EXPECT_TRUE(std::is_pod<OCCallbackData>::value);
 }
 #endif
-
-TEST(OCDoDirectPairingTests, Nullpeer)
-{
-    EXPECT_EQ(OC_STACK_INVALID_PARAM,OCDoDirectPairing(NULL, NULL, pmSel, &pinNumber, &resultCallback));
-}
-
-TEST(OCDoDirectPairingTests, NullCallback)
-{
-    EXPECT_EQ(OC_STACK_INVALID_CALLBACK,OCDoDirectPairing(NULL, &peer, pmSel, &pinNumber, NULL));
-}
-
-TEST(OCDoDirectPairingTests, NullpinNumber)
-{
-    EXPECT_EQ(OC_STACK_INVALID_PARAM,OCDoDirectPairing(NULL, &peer, pmSel, NULL, &resultCallback));
-}
 
 TEST(StackResource, MultipleResourcesDiscovery)
 {

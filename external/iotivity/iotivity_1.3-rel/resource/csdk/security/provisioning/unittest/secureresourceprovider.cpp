@@ -25,7 +25,6 @@ static OCProvisionDev_t pDev1;
 static OCProvisionDev_t pDev2;
 static OicSecCredType_t credType = SYMMETRIC_PAIR_WISE_KEY;
 static OCProvisionDev_t selectedDeviceInfo;
-static OicSecPconf_t pconf;
 static OicSecOxm_t oicSecDoxmJustWorks = OIC_JUST_WORKS;
 static OicSecOxm_t oicSecDoxmRandomPin = OIC_RANDOM_DEVICE_PIN;
 static unsigned short timeout = 60;
@@ -160,21 +159,6 @@ TEST(SRPRemoveDeviceTest, ZeroWaitTime)
 {
     OCProvisionDev_t dev1;
     EXPECT_EQ(OC_STACK_INVALID_PARAM, SRPRemoveDevice(NULL, 0, &dev1, NULL));
-}
-
-TEST(SRPProvisionDirectPairingTest, NullselectedDeviceInfo)
-{
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, SRPProvisionDirectPairing(NULL, NULL, &pconf, &provisioningCB));
-}
-
-TEST(SRPProvisionDirectPairingTest, Nullpconf)
-{
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, SRPProvisionDirectPairing(NULL, &selectedDeviceInfo, NULL, &provisioningCB));
-}
-
-TEST(SRPProvisionDirectPairingTest, Nullcallback)
-{
-    EXPECT_EQ(OC_STACK_INVALID_CALLBACK, SRPProvisionDirectPairing(NULL, &selectedDeviceInfo, &pconf, NULL));
 }
 
 const char *SECURE_RESOURCE_PROVIDER_TEST_FILE_NAME = "secureresourceprovider.dat";

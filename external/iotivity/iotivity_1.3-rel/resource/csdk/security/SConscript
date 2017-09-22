@@ -107,15 +107,12 @@ libocsrm_src = [
     OCSRM_SRC + 'pstatresource.c',
     OCSRM_SRC + 'doxmresource.c',
     OCSRM_SRC + 'credresource.c',
-    OCSRM_SRC + 'pconfresource.c',
-    OCSRM_SRC + 'dpairingresource.c',
     OCSRM_SRC + 'policyengine.c',
     OCSRM_SRC + 'psinterface.c',
     OCSRM_SRC + 'srmresourcestrings.c',
     OCSRM_SRC + 'srmutility.c',
     OCSRM_SRC + 'iotvticalendar.c',
     OCSRM_SRC + 'base64.c',
-    OCSRM_SRC + 'directpairing.c',
     OCSRM_SRC + 'deviceonboardingstate.c'
 ]
 

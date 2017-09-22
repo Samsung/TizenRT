@@ -249,7 +249,6 @@ OCStackResult UpdateResourceInPS(const char *databaseName, const char *resourceN
     uint8_t *doxmCbor = NULL;
     uint8_t *amaclCbor = NULL;
     uint8_t *credCbor = NULL;
-    uint8_t *pconfCbor = NULL;
     uint8_t *resetPfCbor = NULL;
     uint8_t *crlCbor = NULL;
     uint8_t *dpCbor = NULL;
@@ -265,7 +264,6 @@ OCStackResult UpdateResourceInPS(const char *databaseName, const char *resourceN
         size_t doxmCborLen = 0;
         size_t amaclCborLen = 0;
         size_t credCborLen = 0;
-        size_t pconfCborLen = 0;
         size_t resetPfCborLen = 0;
         size_t crlCborLen = 0;
         size_t dpCborLen = 0;
@@ -319,12 +317,6 @@ OCStackResult UpdateResourceInPS(const char *databaseName, const char *resourceN
                     cborFindResult = cbor_value_dup_byte_string(&curVal, &credCbor, &credCborLen, NULL);
                     VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding CRED Name Value.");
                 }
-                cborFindResult = cbor_value_map_find_value(&cbor, OIC_JSON_PCONF_NAME, &curVal);
-                if ((CborNoError == cborFindResult) && cbor_value_is_byte_string(&curVal))
-                {
-                    cborFindResult = cbor_value_dup_byte_string(&curVal, &pconfCbor, &pconfCborLen, NULL);
-                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding PCONF Name Value.");
-                }
                 cborFindResult = cbor_value_map_find_value(&cbor, OIC_JSON_RESET_PF_NAME, &curVal);
                 if ((CborNoError == cborFindResult) && cbor_value_is_byte_string(&curVal))
                 {
@@ -363,7 +355,7 @@ OCStackResult UpdateResourceInPS(const char *databaseName, const char *resourceN
             if (PS_DATABASE_SECURITY == database)
             {
                 allocSize = aclCborLen + pstatCborLen + doxmCborLen + amaclCborLen
-                          + credCborLen + pconfCborLen + resetPfCborLen + crlCborLen
+                          + credCborLen + /* pconfCborLen + */ resetPfCborLen + crlCborLen
                           + size + CBOR_ENCODING_SIZE_ADDITION;
             }
             else
@@ -430,13 +422,6 @@ OCStackResult UpdateResourceInPS(const char *databaseName, const char *resourceN
                     VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Cred Name.");
                     cborEncoderResult |= cbor_encode_byte_string(&resource, credCbor, credCborLen);
                     VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Cred Value.");
-                }
-                if (strcmp(OIC_JSON_PCONF_NAME, resourceName) && pconfCborLen)
-                {
-                    cborEncoderResult |= cbor_encode_text_string(&resource, OIC_JSON_PCONF_NAME, strlen(OIC_JSON_PCONF_NAME));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Pconf Name.");
-                    cborEncoderResult |= cbor_encode_byte_string(&resource, pconfCbor, pconfCborLen);
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Pconf Value.");
                 }
                 if (strcmp(OIC_JSON_RESET_PF_NAME, resourceName) && resetPfCborLen)
                 {
@@ -505,7 +490,6 @@ exit:
     OICFree(doxmCbor);
     OICFree(amaclCbor);
     OICFree(credCbor);
-    OICFree(pconfCbor);
     OICFree(resetPfCbor);
     OICFree(crlCbor);
     OICFree(dpCbor);

@@ -117,18 +117,17 @@ if 'BROKER' in with_mq:
 # Source files and Targets
 ######################################################################
 oclib_src = [
-    'OCPlatform.cpp',
-    'OCPlatform_impl.cpp',
-    'OCResource.cpp',
-    'OCUtilities.cpp',
-    'OCException.cpp',
-    'OCRepresentation.cpp',
-    'InProcServerWrapper.cpp',
-    'InProcClientWrapper.cpp',
-    'OCResourceRequest.cpp',
-    'CAManager.cpp',
-    'OCDirectPairing.cpp'
-]
+		'OCPlatform.cpp',
+		'OCPlatform_impl.cpp',
+		'OCResource.cpp',
+		'OCUtilities.cpp',
+		'OCException.cpp',
+		'OCRepresentation.cpp',
+		'InProcServerWrapper.cpp',
+		'InProcClientWrapper.cpp',
+		'OCResourceRequest.cpp',
+		'CAManager.cpp',
+	]
 
 if with_cloud:
     oclib_src = oclib_src + ['OCAccountManager.cpp']
@@ -191,10 +190,7 @@ oclib_env.UserInstallTargetHeader(
 oclib_env.UserInstallTargetHeader(
     header_dir + 'OCUtilities.h', 'resource', 'OCUtilities.h')
 
-oclib_env.UserInstallTargetHeader(
-    header_dir + 'CAManager.h', 'resource', 'CAManager.h')
-oclib_env.UserInstallTargetHeader(
-    header_dir + 'OCDirectPairing.h', 'resource', 'OCDirectPairing.h')
+oclib_env.UserInstallTargetHeader(header_dir + 'CAManager.h', 'resource', 'CAManager.h')
 
 if with_cloud:
     oclib_env.UserInstallTargetHeader(

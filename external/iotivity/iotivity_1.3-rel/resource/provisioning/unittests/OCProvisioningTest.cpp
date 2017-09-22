@@ -236,25 +236,6 @@ namespace OCProvisioningTest
         OICFree(acl2);
     }
 
-    TEST(ProvisionDirectPairingTest, ProvisionDirectPairingTestNullPconf)
-    {
-        OCSecureResource device;
-        EXPECT_EQ(OC_STACK_INVALID_PARAM, device.provisionDirectPairing(nullptr, resultCallback));
-    }
-
-    TEST(ProvisionDirectPairingTest, ProvisionDirectPairingTestNullCallback)
-    {
-        OCSecureResource device;
-        OicSecPconf_t *pconf = (OicSecPconf_t *)OICCalloc(1,sizeof(OicSecPconf_t));
-        EXPECT_EQ(OC_STACK_INVALID_CALLBACK, device.provisionDirectPairing(pconf, nullptr));
-        OICFree(pconf);
-    }
-
-    TEST(ProvisionDirectPairingTest, ProvisionDirectPairingTestNullCallbackNUllPconf)
-    {
-        OCSecureResource device;
-        EXPECT_EQ(OC_STACK_INVALID_PARAM, device.provisionDirectPairing(nullptr, nullptr));
-    }
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
     TEST(setDeviceIdSeed, NullParam)
     {

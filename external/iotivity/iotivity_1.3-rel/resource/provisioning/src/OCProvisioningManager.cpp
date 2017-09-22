@@ -1442,40 +1442,6 @@ namespace OC
         return result;
     }
 
-    OCStackResult OCSecureResource::provisionDirectPairing( const OicSecPconf_t* pconf,
-            ResultCallBack resultCallback)
-    {
-        if (!pconf)
-        {
-            oclog() <<"PCONF can't be null";
-            return OC_STACK_INVALID_PARAM;
-        }
-        if (!resultCallback)
-        {
-            oclog() <<"result callback can not be null";
-            return OC_STACK_INVALID_CALLBACK;
-        }
-
-        OCStackResult result;
-        auto cLock = m_csdkLock.lock();
-
-        if (cLock)
-        {
-            ProvisionContext* context = new ProvisionContext(resultCallback);
-
-            std::lock_guard<std::recursive_mutex> lock(*cLock);
-            result = OCProvisionDirectPairing(static_cast<void*>(context),
-                    devPtr, const_cast<OicSecPconf_t*>(pconf),
-                    &OCSecureResource::callbackWrapper);
-        }
-        else
-        {
-            oclog() <<"Mutex not found";
-            result = OC_STACK_ERROR;
-        }
-        return result;
-    }
-
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
     OCStackResult OCSecureResource::provisionTrustCertChain(OicSecCredType_t type, uint16_t credId,
                     ResultCallBack resultCallback)

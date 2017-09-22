@@ -643,42 +643,6 @@ OCStackResult OC_CALL OCNotifyListOfObservers (OCResourceHandle handle,
  */
 OCStackResult OC_CALL OCDoResponse(OCEntityHandlerResponse *response);
 
-//#ifdef DIRECT_PAIRING
-/**
- * The function is responsible for discovery of direct-pairing device is current subnet. It will list
- * all the device in subnet which support direct-pairing.
- * Caller must NOT free returned constant pointer
- *
- * @param[in] waittime Timeout in seconds, value till which function will listen to responses from
- *                     client before returning the list of devices.
- * @return OCDirectPairingDev_t pointer in case of success and NULL otherwise.
- */
-const OCDPDev_t* OC_CALL OCDiscoverDirectPairingDevices(unsigned short waittime);
-
-/**
- * The function is responsible for return of paired device list via direct-pairing. It will list
- * all the device which is previousely paired with client.
- * Caller must NOT free returned constant pointer
- *
- * @return OCDirectPairingDev_t pointer in case of success and NULL otherwise.
- */
-const OCDPDev_t* OC_CALL OCGetDirectPairedDevices();
-
-/**
- * The function is responsible for establishment of direct-pairing. It will proceed mode negotiation
- * and connect PIN based dtls session.
- *
- * @param[in] ctx user context passed back with resultCallback.
- * @param[in] peer Target device to establish direct-pairing.
- * @param[in] pmSel Selected mode of pairing.
- * @param[in] pinNumber PIN number for authentication, pin lenght is defined DP_PIN_LENGTH(8).
- * @param[in] resultCallback Callback fucntion to event status of process.
- * @return OTM_SUCCESS in case of success and other value otherwise.
- */
-OCStackResult OC_CALL OCDoDirectPairing(void *ctx, OCDPDev_t* peer, OCPrm_t pmSel, char *pinNumber,
-                                OCDirectPairingCB resultCallback);
-//#endif // DIRECT_PAIRING
-
 /**
  * This function sets uri being used for proxy.
  *

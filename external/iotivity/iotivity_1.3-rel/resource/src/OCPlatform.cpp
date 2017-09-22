@@ -356,25 +356,6 @@ namespace OC
             return OCPlatform_impl::Instance().sendResponse(pResponse);
         }
 
-        OCStackResult findDirectPairingDevices(unsigned short waittime,
-                                         GetDirectPairedCallback directPairingHandler)
-        {
-            return OCPlatform_impl::Instance().findDirectPairingDevices(waittime,
-                                         directPairingHandler);
-        }
-
-        OCStackResult getDirectPairedDevices(GetDirectPairedCallback directPairingHandler)
-        {
-            return OCPlatform_impl::Instance().getDirectPairedDevices(directPairingHandler);
-        }
-
-        OCStackResult doDirectPairing(std::shared_ptr<OCDirectPairing> peer, OCPrm_t pmSel,
-                                 const std::string& pinNumber,
-                                 DirectPairingCallback resultCallback)
-        {
-            return OCPlatform_impl::Instance().doDirectPairing(peer, pmSel,
-                                             pinNumber, resultCallback);
-        }
 #ifdef WITH_CLOUD
         OCAccountManager::Ptr constructAccountManagerObject(const std::string& host,
                                                             OCConnectivityType connectivityType)

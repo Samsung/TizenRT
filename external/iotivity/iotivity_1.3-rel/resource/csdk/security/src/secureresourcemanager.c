@@ -464,8 +464,6 @@ bool SRMIsSecurityResourceURI(const char* uri)
         OIC_RSRC_ACL2_URI,
         OIC_RSRC_DOXM_URI,
         OIC_RSRC_PSTAT_URI,
-        OIC_RSRC_PCONF_URI,
-        OIC_RSRC_DPAIRING_URI,
         OIC_RSRC_VER_URI,
         OIC_RSRC_ROLES_URI,
         OC_RSRVD_PROV_CRL_URL
@@ -581,24 +579,6 @@ OicSecSvrType_t GetSvrTypeFromUri(const char* uri)
         if (0 == strncmp(uri, OIC_RSRC_DOXM_URI, svrLen))
         {
             return OIC_R_DOXM_TYPE;
-        }
-    }
-
-    svrLen = strlen(OIC_RSRC_DPAIRING_URI);
-    if (uriLen == svrLen)
-    {
-        if (0 == strncmp(uri, OIC_RSRC_DPAIRING_URI, svrLen))
-        {
-            return OIC_R_DPAIRING_TYPE;
-        }
-    }
-
-    svrLen = strlen(OIC_RSRC_PCONF_URI);
-    if (uriLen == svrLen)
-    {
-        if (0 == strncmp(uri, OIC_RSRC_PCONF_URI, svrLen))
-        {
-            return OIC_R_PCONF_TYPE;
         }
     }
 

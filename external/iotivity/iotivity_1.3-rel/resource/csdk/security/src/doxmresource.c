@@ -41,8 +41,6 @@
 #include "deviceonboardingstate.h"
 #include "aclresource.h"
 #include "amaclresource.h"
-#include "pconfresource.h"
-#include "dpairingresource.h"
 #include "psinterface.h"
 #include "srmresourcestrings.h"
 #include "credresource.h"
@@ -1284,19 +1282,6 @@ int HandleDoxmPostRequestSVR()
         OIC_LOG_V(ERROR, TAG, "%s: set pstat RownerId", __func__);
         return 1;
     }
-    ownerRes = SetDpairingRownerId(&gDoxm->owner);
-    if (OC_STACK_OK != ownerRes && OC_STACK_NO_RESOURCE != ownerRes)
-    {
-        OIC_LOG_V(ERROR, TAG, "%s: set dpairing RownerId", __func__);
-        return 1;
-    }
-    ownerRes = SetPconfRownerId(&gDoxm->owner);
-    if (OC_STACK_OK != ownerRes && OC_STACK_NO_RESOURCE != ownerRes)
-    {
-        OIC_LOG_V(ERROR, TAG, "%s: set pconf RownerId", __func__);
-        return 1;
-    }
-
     return 0;
 }
 

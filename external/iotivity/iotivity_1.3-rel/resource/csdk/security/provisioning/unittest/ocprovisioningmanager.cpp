@@ -213,12 +213,6 @@ TEST(OCDeleteACLListTest, NullACLList)
     EXPECT_EQ(1, 1);
 }
 
-TEST(OCDeletePdAclListTest, NullPdACLList)
-{
-    OCDeletePdAclList(NULL);
-    EXPECT_EQ(1, 1);
-}
-
 TEST(OCDeleteDiscoveredDevicesTest, NullProvisionDevList)
 {
     OCDeleteDiscoveredDevices(NULL);

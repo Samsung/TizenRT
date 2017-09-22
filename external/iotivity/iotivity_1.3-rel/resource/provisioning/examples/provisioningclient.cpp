@@ -67,7 +67,6 @@ using namespace OC;
 
 DeviceList_t pUnownedDevList, pOwnedDevList, pMOTEnabledDeviceList;
 static int transferDevIdx, ask = 1;
-static OicSecPconf_t g_pconf;
 static uint16_t g_credId = 0;
 
 static FILE* client_open(const char *path, const char *mode)
@@ -96,20 +95,19 @@ void printMenu()
     std::cout << "   9. Remove Device using UUID"<<std::endl;
     std::cout << "  10. Get Linked Devices"<<std::endl;
     std::cout << "  11. Get Device Status"<<std::endl;
-    std::cout << "  12. Provision Direct-Pairing Configuration"<<std::endl;
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-    std::cout << "  13. Save the Trust Cert. Chain into Cred of SVR"<<std::endl;
-    std::cout << "  14. Provision the Trust Cert. Chain"<<std::endl;
-    std::cout << "  15. Read trust cert chain"<<std::endl;
+    std::cout << "  12. Save the Trust Cert. Chain into Cred of SVR"<<std::endl;
+    std::cout << "  13. Provision the Trust Cert. Chain"<<std::endl;
+    std::cout << "  14. Read trust cert chain"<<std::endl;
 #endif // __WITH_DTLS__ || __WITH_TLS__
 #ifdef MULTIPLE_OWNER
-    std::cout << "  16. Change Multiple Ownership Transfer Mode"<<std::endl;
-    std::cout << "  17. Select OxM method for Multiple Ownership Transfer"<<std::endl;
-    std::cout << "  18. Multiple Ownership Transfer Enabled Devices Discovery"<<std::endl;
-    std::cout << "  19. Provision pre configure PIN for Multiple Ownership Transfer Mode"<<std::endl;
-    std::cout << "  20. Add pre configure PIN for Multiple Ownership Transfer Mode"<<std::endl;
+    std::cout << "  15. Change Multiple Ownership Transfer Mode"<<std::endl;
+    std::cout << "  16. Select OxM method for Multiple Ownership Transfer"<<std::endl;
+    std::cout << "  17. Multiple Ownership Transfer Enabled Devices Discovery"<<std::endl;
+    std::cout << "  18. Provision pre configure PIN for Multiple Ownership Transfer Mode"<<std::endl;
+    std::cout << "  19. Add pre configure PIN for Multiple Ownership Transfer Mode"<<std::endl;
 #endif
-    std::cout << "  21. Configure SVRdb as Self-OwnerShip"<<std::endl;
+    std::cout << "  20. Configure SVRdb as Self-OwnerShip"<<std::endl;
     std::cout << "  99. Exit loop"<<std::endl;
 }
 
@@ -626,27 +624,6 @@ static int InputCredentials(Credential &cred)
    return 0;
 }
 
-static void deletePconf()
-{
-    OICFree(g_pconf.prm);
-    //free pdacl
-    OicSecPdAcl_t* acl = g_pconf.pdacls;
-    if (acl)
-    {
-        /* Clean Resources */
-        for (unsigned int i = 0; i < (acl)->resourcesLen; i++)
-        {
-            OICFree((acl)->resources[i]);
-        }
-        OICFree((acl)->resources);
-
-        /* Clean ACL node itself */
-        /* Required only if acl was created in heap */
-        OICFree((acl));
-    }
-    memset(&g_pconf, 0, sizeof(OicSecPconf_t));
-}
-
 static OicSecPdAcl_t* InputPdACL()
 {
     int ret;
@@ -723,97 +700,6 @@ static OicSecPdAcl_t* InputPdACL()
     } while (0 != ret );
 
     return acl;
-}
-
-void provisionDirectPairingCB(PMResultList_t *result, int hasError)
-{
-    if (hasError)
-    {
-        std::cout << "Error in provisioning operation!"<<std::endl;
-    }
-    else
-    {
-        std::cout<< "\nReceived provisioning results: Direct Pairing is successful ";
-        for (unsigned int i = 0; i < result->size(); i++)
-        {
-            std::cout << "Result is = " << result->at(i).res <<" for device ";
-            printUuid(result->at(i).deviceId);
-        }
-
-        delete result;
-    }
-    deletePconf();
-    printMenu();
-    ask = 1;
-}
-
-static void provisionDP(int dev_num)
-{
-    OCStackResult rst;
-    std::string pin("");
-
-    // set enable dp
-    g_pconf.edp = true;
-
-    // set default supported PRM types
-    g_pconf.prmLen = sizeof(SUPPORTED_PRMS)/sizeof(OicSecPrm_t);
-    g_pconf.prm = (OicSecPrm_t *)OICCalloc(g_pconf.prmLen, sizeof(OicSecPrm_t));
-    if(g_pconf.prm)
-    {
-        for (size_t i=0; i < g_pconf.prmLen; i++)
-        {
-            g_pconf.prm[i] = SUPPORTED_PRMS[i];
-        }
-    }
-    else
-    {
-        OIC_LOG(ERROR, TAG, "create prm error return");
-        goto PVDP_ERROR;
-    }
-
-    std::cout << "Enter PIN to be configured: ";
-    while (1)
-    {
-        std::cin >> pin;
-        if (pin.length() == DP_PIN_LENGTH)
-        {
-            break;
-        }
-        else
-        {
-            std::cout << "PIN length should be 8, Enter again: ";
-        }
-    }
-
-    memcpy(g_pconf.pin.val, pin.c_str(), DP_PIN_LENGTH);
-
-    // set default pdacl
-
-    g_pconf.pdacls = InputPdACL();
-    if(!g_pconf.pdacls)
-    {
-        OIC_LOG(ERROR, TAG, "InputPdACL error return");
-        goto PVDP_ERROR;
-    }
-
-    // call |OCProvisionDirectPairing| API actually
-    // calling this API with callback actually acts like blocking
-    // for error checking, the return value saved and printed
-    rst = pOwnedDevList[dev_num-1]->provisionDirectPairing(&g_pconf, provisionDirectPairingCB);
-    if(OC_STACK_OK != rst)
-    {
-        OIC_LOG_V(ERROR, TAG, "OCProvisionDirectPairing API error: %d", rst);
-        if (OC_STACK_UNAUTHORIZED_REQ == rst)
-        {
-            OIC_LOG(ERROR, TAG, "Target Server NOT Support Direct-Pairing !!! (DPC == false)");
-        }
-        goto PVDP_ERROR;
-    }
-    return;
-
-PVDP_ERROR:
-    deletePconf();  // after here |acl| points nothing
-    ask = 1;
 }
 
 OCStackResult displayMutualVerifNumCB(uint8_t mutualVerifNum[MUTUAL_VERIF_NUM_LEN])
@@ -1324,38 +1210,8 @@ int main(void)
                         break;
                     }
 
-                case 12:
-                    {
-                        unsigned int devNum;
-
-                        if (!pOwnedDevList.size())
-                        {
-                            std::cout <<"There are no Owned devices yet,"
-                                " may need to discover"<<std::endl;
-                            break;
-                        }
-
-                        for (unsigned int i = 0; i < pOwnedDevList.size(); i++ )
-                        {
-                            std::cout << i+1 << ": "<< pOwnedDevList[i]->getDeviceID() <<" From IP:";
-                            std::cout << pOwnedDevList[i]->getDevAddr() <<std::endl;
-                        }
-
-                        std::cout <<"Select device number: "<<std::endl;
-                        std::cin >> devNum;
-                        if (devNum > pOwnedDevList.size())
-                        {
-                            std::cout <<"Invalid device number"<<std::endl;
-                            break;
-                        }
-
-                        ask = 0;
-                        provisionDP(devNum);
-
-                        break;
-                    }
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-                case 13:
+                case 12:
                     {
                         std::cout<< "registering cert chain change notifier"<<std::endl;
                         OCSecure::registerTrustCertChangeNotifier(certChainCallBack);
@@ -1367,7 +1223,7 @@ int main(void)
                         OCSecure::removeTrustCertChangeNotifier();
                         break;
                     }
-                case 14:
+                case 13:
                     {
                         int index;
 
@@ -1386,7 +1242,7 @@ int main(void)
                         }
                         break;
                     }
-                case 15:
+                case 14:
                     {
                         if (0==g_credId)
                         {
@@ -1409,7 +1265,7 @@ int main(void)
                     }
 #endif //__WITH_DTLS__ || __WITH_TLS__
 #ifdef MULTIPLE_OWNER
-                 case 16:
+                 case 15:
                     {
                         if (!pOwnedDevList.size() && !pMOTEnabledDeviceList.size())
                         {
@@ -1505,7 +1361,7 @@ int main(void)
                         }
                          break;
                     }
-                case 17:
+                case 16:
                     {
                         if (!pMOTEnabledDeviceList.size())
                         {
@@ -1556,7 +1412,7 @@ int main(void)
                         }
                          break;
                     }
-                case 18:
+                case 17:
                     {
                         pMOTEnabledDeviceList.clear();
                         std::cout << "Started MOT Enabled device discovery..." <<std::endl;
@@ -1578,7 +1434,7 @@ int main(void)
                         }
                         break;
                     }
-                case 19:
+                case 18:
                     {
                         if (!pMOTEnabledDeviceList.size())
                         {
@@ -1616,7 +1472,7 @@ int main(void)
                         }
                         break;
                     }
-                    case 20:
+                    case 19:
                     {
                         if (!pMOTEnabledDeviceList.size())
                         {
@@ -1655,7 +1511,7 @@ int main(void)
                         break;
                     }
 #endif //MULTIPLE_OWNER
-                case 21:
+                case 20:
                     {
                         OCStackResult result;
                         result = OCSecure::configSelfOwnership();

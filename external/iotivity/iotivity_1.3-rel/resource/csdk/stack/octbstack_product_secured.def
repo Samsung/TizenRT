@@ -6,7 +6,6 @@ OCConfigSelfOwnership
 OCConvertDerCSRToPem
 OCDeleteACLList
 OCDeleteDiscoveredDevices
-OCDeletePdAclList
 OCDeleteRoleCertificateByCredId
 OCDeleteUuidList
 OCDiscoverOwnedDevices
@@ -35,7 +34,6 @@ OCProvisionACL
 OCSaveACL
 OCProvisionCertificate
 OCProvisionCredentials
-OCProvisionDirectPairing
 OCProvisionPairwiseDevices
 OCProvisionSymmetricRoleCredentials
 OCProvisionTrustCertChain

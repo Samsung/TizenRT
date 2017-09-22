@@ -91,16 +91,6 @@ extern const char * OIC_RSRC_TYPE_SEC_SVC;
 extern const char * OIC_RSRC_SVC_URI;
 extern const char * OIC_JSON_SVC_NAME;
 
-//PCONF
-extern const char * OIC_RSRC_TYPE_SEC_PCONF;
-extern const char * OIC_RSRC_PCONF_URI;
-extern const char * OIC_JSON_PCONF_NAME;
-
-//DPAIRING
-extern const char * OIC_RSRC_TYPE_SEC_DPAIRING;
-extern const char * OIC_RSRC_DPAIRING_URI;
-extern const char * OIC_JSON_DPAIRING_NAME;
-
 //version
 extern const char * OIC_RSRC_TYPE_SEC_VER;
 extern const char * OIC_RSRC_VER_URI;

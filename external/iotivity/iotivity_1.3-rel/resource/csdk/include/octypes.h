@@ -1879,17 +1879,6 @@ typedef OCEntityHandlerResult (*OCEntityHandler)
 typedef OCEntityHandlerResult (*OCDeviceEntityHandler)
 (OCEntityHandlerFlag flag, OCEntityHandlerRequest * entityHandlerRequest, char* uri, void* callbackParam);
 
-//#ifdef DIRECT_PAIRING
-/**
- * Callback function definition of direct-pairing
- *
- * @param[OUT] ctx - user context returned in the callback.
- * @param[OUT] peer - pairing device info.
- * @param[OUT] result - It's returned with 'OC_STACK_XXX'. It will return 'OC_STACK_OK'
- *                                   if D2D pairing is success without error
- */
-typedef void (*OCDirectPairingCB)(void *ctx, OCDPDev_t *peer, OCStackResult result);
-//#endif // DIRECT_PAIRING
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
 /**
  * Callback function definition for Change in TrustCertChain

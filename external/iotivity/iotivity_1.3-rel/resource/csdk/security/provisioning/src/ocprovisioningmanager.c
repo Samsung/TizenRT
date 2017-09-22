@@ -34,7 +34,6 @@
 #include "credresource.h"
 #include "utlist.h"
 #include "aclresource.h" //Note: SRM internal header
-#include "pconfresource.h"
 #include "psinterface.h"
 
 #define TAG "OIC_OCPMAPI"
@@ -550,22 +549,6 @@ OCStackResult OC_CALL OCProvisionCertificate(void *ctx,
     return SRPProvisionCertificate(ctx, pDev, pemCert, resultCallback);
 }
 #endif
-
-/**
- * this function sends Direct-Pairing Configuration to a device.
- *
- * @param[in] ctx Application context would be returned in result callback.
- * @param[in] selectedDeviceInfo Selected target device.
- * @param[in] pconf PCONF pointer.
- * @param[in] resultCallback callback provided by API user, callback will be called when provisioning
-              request recieves a response from resource server.
- * @return  OC_STACK_OK in case of success and other value otherwise.
- */
-OCStackResult OC_CALL OCProvisionDirectPairing(void* ctx, const OCProvisionDev_t *selectedDeviceInfo, OicSecPconf_t *pconf,
-                             OCProvisionResultCB resultCallback)
-{
-    return SRPProvisionDirectPairing(ctx, selectedDeviceInfo, pconf, resultCallback);
-}
 
 #ifdef MULTIPLE_OWNER
 static void AddPreconfPinOxMCB(void* ctx, size_t nOfRes, OCProvisionResult_t *arr, bool hasError)
@@ -1453,16 +1436,6 @@ void OC_CALL OCDeleteUuidList(OCUuidList_t* pList)
 void OC_CALL OCDeleteACLList(OicSecAcl_t* pAcl)
 {
     DeleteACLList(pAcl);
-}
-
-/**
- * This function deletes PDACL data.
- *
- * @param pPdAcl Pointer to OicSecPdAcl_t structure.
- */
-void OC_CALL OCDeletePdAclList(OicSecPdAcl_t* pPdAcl)
-{
-    FreePdAclList(pPdAcl);
 }
 
 #ifdef MULTIPLE_OWNER

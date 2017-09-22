@@ -202,30 +202,6 @@ OCStackResult SRPRegisterTrustCertChainNotifier(void *ctx, TrustCertChainChangeC
 void SRPRemoveTrustCertChainNotifier(void);
 
 #endif // __WITH_DTLS__ || __WITH_TLS__
-/**
- * API to send Direct-Pairing Configuration to a device.
- *
- * @param[in] ctx Application context to be returned in result callback.
- * @param[in] selectedDeviceInfo Selected target device.
- * @param[in] pconf PCONF pointer.
- * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from resource server.
- * @return OC_STACK_OK in case of success and other value otherwise.
- */
-OCStackResult SRPProvisionDirectPairing(void *ctx, const OCProvisionDev_t *selectedDeviceInfo,
-                                        OicSecPconf_t *pconf, OCProvisionResultCB resultCallback);
-
-/**
- * API to send Direct-Pairing Configuration to a device.
- *
- * @param[in] selectedDeviceInfo Selected target device.
- * @param[in] pconf PCONF pointer.
- * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from resource server.
- * @return OC_STACK_OK in case of success and other value otherwise.
- */
-OCStackResult SRPProvisionDirectPairing(void *ctx, const OCProvisionDev_t *selectedDeviceInfo,
-                                        OicSecPconf_t *pconf, OCProvisionResultCB resultCallback);
 
 /**
  * API to provision credential to devices.

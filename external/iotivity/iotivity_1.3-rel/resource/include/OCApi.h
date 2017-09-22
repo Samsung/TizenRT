@@ -45,7 +45,6 @@ namespace OC
     class OCResource;
     class OCResourceRequest;
     class OCResourceResponse;
-    class OCDirectPairing;
 } // namespace OC
 
 namespace OC
@@ -355,7 +354,6 @@ namespace OC
     const std::string GROUP_INTERFACE = "oic.mi.grp";
 
     //Typedef for list direct paired devices
-    typedef std::vector<std::shared_ptr<OCDirectPairing>> PairedDevices;
 
     typedef std::function<void(std::shared_ptr<OCResource>)> FindCallback;
 
@@ -386,10 +384,6 @@ namespace OC
 
     typedef std::function<void(const HeaderOptions&,
                                 const OCRepresentation&, const int, const int)> ObserveCallback;
-
-    typedef std::function<void(std::shared_ptr<OCDirectPairing>, OCStackResult)> DirectPairingCallback;
-
-    typedef std::function<void(const PairedDevices&)> GetDirectPairedCallback;
 
     typedef std::function<void(const int, const std::string&,
                                std::shared_ptr<OCResource>)> MQTopicCallback;

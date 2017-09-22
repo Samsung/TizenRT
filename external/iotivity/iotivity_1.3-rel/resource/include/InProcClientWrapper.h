@@ -113,13 +113,6 @@ namespace OC
             ObserveContext(ObserveCallback cb) : callback(cb){}
         };
 
-        struct DirectPairingContext
-        {
-            DirectPairingCallback callback;
-            DirectPairingContext(DirectPairingCallback cb) : callback(cb){}
-
-        };
-
 #ifdef WITH_MQ
         struct MQTopicContext
         {
@@ -220,14 +213,6 @@ namespace OC
 
         OCStackResult GetDefaultQos(QualityOfService& QoS);
 
-        virtual OCStackResult FindDirectPairingDevices(unsigned short waittime,
-                       GetDirectPairedCallback& callback);
-
-        virtual OCStackResult GetDirectPairedDevices(GetDirectPairedCallback& callback);
-
-        virtual OCStackResult DoDirectPairing(std::shared_ptr<OCDirectPairing> peer, const OCPrm_t& pmSel,
-                const std::string& pinNumber, DirectPairingCallback& resultCallback);
-
 #ifdef WITH_MQ
         virtual OCStackResult ListenForMQTopic(
             const OCDevAddr& devAddr,
@@ -253,7 +238,6 @@ namespace OC
         OCPayload* assembleSetResourcePayload(const OCRepresentation& attributes);
         OCHeaderOption* assembleHeaderOptions(OCHeaderOption options[],
            const HeaderOptions& headerOptions);
-        void convert(const OCDPDev_t *list, PairedDevices& dpList);
         std::thread m_listeningThread;
         bool m_threadRun;
         std::weak_ptr<std::recursive_mutex> m_csdkLock;

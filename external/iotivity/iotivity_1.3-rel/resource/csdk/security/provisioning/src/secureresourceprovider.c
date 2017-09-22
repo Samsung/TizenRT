@@ -37,7 +37,6 @@
 #include "csrresource.h"
 #include "rolesresource.h"
 #include "doxmresource.h"
-#include "pconfresource.h"
 #include "credentialgenerator.h"
 #include "cainterface.h"
 #include "oic_string.h"
@@ -147,19 +146,6 @@ struct GetRolesData {
     OCGetRolesResultCB resultCallback;          /**< Pointer to result callback.**/
     OCPMGetRolesResult_t *resArr;               /**< Result array.**/
     size_t numOfResults;                        /**< Number of results in result array.**/
-};
-
-/**
- * Structure to carry PCONF provision API data to callback.
- */
-typedef struct PconfData PconfData_t;
-struct PconfData
-{
-    void *ctx;                                  /**< Pointer to user context.**/
-    const OCProvisionDev_t *deviceInfo;         /**< Pointer to PMDevInfo_t.**/
-    OCProvisionResultCB resultCallback;         /**< Pointer to result callback.**/
-    OCProvisionResult_t *resArr;                /**< Result array.**/
-    int numOfResults;                           /**< Number of results in result array.**/
 };
 
 // Enum type index for unlink callback.
@@ -1876,153 +1862,6 @@ OCStackResult SRPSaveACL(const OicSecAcl_t *acl)
 
     OIC_LOG(DEBUG, TAG, "OUT SRPSaveACL");
     return res;
-}
-
-/**
- * Internal Function to store results in result array during Direct-Pairing provisioning.
- */
-static void registerResultForDirectPairingProvisioning(PconfData_t *pconfData,
-                                             OCStackResult stackresult)
-{
-   OIC_LOG_V(INFO, TAG, "Inside registerResultForDirectPairingProvisioning "
-           "pconfData->numOfResults is %d", pconfData->numOfResults);
-   memcpy(pconfData->resArr[(pconfData->numOfResults)].deviceId.id,
-          pconfData->deviceInfo->doxm->deviceID.id, UUID_LENGTH);
-   pconfData->resArr[(pconfData->numOfResults)].res = stackresult;
-   ++(pconfData->numOfResults);
-}
-
-/**
- * Callback handler of SRPProvisionDirectPairing.
- *
- * @param[in] ctx             ctx value passed to callback from calling function.
- * @param[in] UNUSED          handle to an invocation
- * @param[in] clientResponse  Response from queries to remote servers.
- * @return  OC_STACK_DELETE_TRANSACTION to delete the transaction
- *          and  OC_STACK_KEEP_TRANSACTION to keep it.
- */
-static OCStackApplicationResult SRPProvisionDirectPairingCB(void *ctx, OCDoHandle UNUSED,
-                                                  OCClientResponse *clientResponse)
-{
-    OIC_LOG_V(INFO, TAG, "Inside SRPProvisionDirectPairingCB.");
-    (void)UNUSED;
-    VERIFY_NOT_NULL_RETURN(TAG, ctx, ERROR, OC_STACK_DELETE_TRANSACTION);
-    PconfData_t *pconfData = (PconfData_t*)ctx;
-    OCProvisionResultCB resultCallback = pconfData->resultCallback;
-
-    if (clientResponse)
-    {
-        if(OC_STACK_RESOURCE_CHANGED == clientResponse->result)
-        {
-            registerResultForDirectPairingProvisioning(pconfData, OC_STACK_OK);
-            ((OCProvisionResultCB)(resultCallback))(pconfData->ctx, pconfData->numOfResults,
-                                                    pconfData->resArr,
-                                                    false);
-             OICFree(pconfData->resArr);
-             OICFree(pconfData);
-             return OC_STACK_DELETE_TRANSACTION;
-        }
-    }
-    registerResultForDirectPairingProvisioning(pconfData, OC_STACK_ERROR);
-    ((OCProvisionResultCB)(resultCallback))(pconfData->ctx, pconfData->numOfResults,
-                                            pconfData->resArr,
-                                            true);
-    OIC_LOG_V(ERROR, TAG, "SRPProvisionDirectPairingCB received Null clientResponse");
-    OICFree(pconfData->resArr);
-    OICFree(pconfData);
-    return OC_STACK_DELETE_TRANSACTION;
-}
-
-OCStackResult SRPProvisionDirectPairing(void *ctx, const OCProvisionDev_t *selectedDeviceInfo,
-        OicSecPconf_t *pconf, OCProvisionResultCB resultCallback)
-{
-    VERIFY_NOT_NULL_RETURN(TAG, selectedDeviceInfo, ERROR,  OC_STACK_INVALID_PARAM);
-    VERIFY_NOT_NULL_RETURN(TAG, pconf, ERROR,  OC_STACK_INVALID_PARAM);
-    VERIFY_NOT_NULL_RETURN(TAG, resultCallback, ERROR,  OC_STACK_INVALID_CALLBACK);
-
-    // check direct-pairing capability
-    if (true != selectedDeviceInfo->doxm->dpc)
-    {
-        OIC_LOG(ERROR, TAG, "Resouce server does not have Direct-Pairing Capability ");
-        return OC_STACK_UNAUTHORIZED_REQ;
-    }
-
-    OicUuid_t provTooldeviceID =   {.id={0}};
-    if (OC_STACK_OK != GetDoxmDeviceID(&provTooldeviceID))
-    {
-        OIC_LOG(ERROR, TAG, "Error while retrieving provisioning tool's device ID");
-        return OC_STACK_ERROR;
-    }
-    memcpy(&pconf->rownerID, &provTooldeviceID, sizeof(OicUuid_t));
-
-    OCSecurityPayload* secPayload = (OCSecurityPayload*)OICCalloc(1, sizeof(OCSecurityPayload));
-    if(!secPayload)
-    {
-        OIC_LOG(ERROR, TAG, "Failed to allocate memory");
-        return OC_STACK_NO_MEMORY;
-    }
-    secPayload->base.type = PAYLOAD_TYPE_SECURITY;
-
-    if (OC_STACK_OK != PconfToCBORPayload(pconf, &(secPayload->securityData),
-                &(secPayload->payloadSize)))
-    {
-        OCPayloadDestroy((OCPayload*)secPayload);
-        OIC_LOG(ERROR, TAG, "Failed to PconfToCborPayload");
-        return OC_STACK_NO_MEMORY;
-    }
-    OIC_LOG(DEBUG, TAG, "Created payload for pconf set");
-    OIC_LOG_BUFFER(DEBUG, TAG, secPayload->securityData, secPayload->payloadSize);
-
-    char query[MAX_URI_LENGTH + MAX_QUERY_LENGTH] = {0};
-    if(!PMGenerateQuery(true,
-                selectedDeviceInfo->endpoint.addr,
-                selectedDeviceInfo->securePort,
-                selectedDeviceInfo->connType,
-                query, sizeof(query), OIC_RSRC_PCONF_URI))
-    {
-        OIC_LOG(ERROR, TAG, "SRPProvisionDirectPairing : Failed to generate query");
-        return OC_STACK_ERROR;
-    }
-    OIC_LOG_V(DEBUG, TAG, "Query=%s", query);
-
-    OCCallbackData cbData =  {.context=NULL, .cb=NULL, .cd=NULL};
-    cbData.cb = &SRPProvisionDirectPairingCB;
-    PconfData_t *pconfData = (PconfData_t *) OICCalloc(1, sizeof(PconfData_t));
-    if (NULL == pconfData)
-    {
-        OCPayloadDestroy((OCPayload*)secPayload);
-        OIC_LOG(ERROR, TAG, "Unable to allocate memory");
-        return OC_STACK_NO_MEMORY;
-    }
-    pconfData->deviceInfo = selectedDeviceInfo;
-    pconfData->resultCallback = resultCallback;
-    pconfData->numOfResults=0;
-    pconfData->ctx = ctx;
-    // call to provision PCONF to device1.
-    int noOfRiCalls = 1;
-    pconfData->resArr = (OCProvisionResult_t*)OICCalloc(noOfRiCalls, sizeof(OCProvisionResult_t));
-    if (NULL == pconfData->resArr)
-    {
-        OICFree(pconfData);
-        OCPayloadDestroy((OCPayload*)secPayload);
-        OIC_LOG(ERROR, TAG, "Unable to allocate memory");
-        return OC_STACK_NO_MEMORY;
-    }
-    cbData.context = (void *)pconfData;
-    cbData.cd = NULL;
-    OCMethod method = OC_REST_POST;
-    OCDoHandle handle = NULL;
-    OIC_LOG(DEBUG, TAG, "Sending PCONF info to resource server");
-    OCStackResult ret = OCDoResource(&handle, method, query,
-            &selectedDeviceInfo->endpoint, (OCPayload*)secPayload,
-            selectedDeviceInfo->connType, OC_HIGH_QOS, &cbData, NULL, 0);
-    if (OC_STACK_OK != ret)
-    {
-        OICFree(pconfData->resArr);
-        OICFree(pconfData);
-    }
-    VERIFY_SUCCESS_RETURN(TAG, (OC_STACK_OK == ret), ERROR, OC_STACK_ERROR);
-    return OC_STACK_OK;
 }
 
 static void DeleteUnlinkData_t(UnlinkData_t *unlinkData)
