@@ -510,3 +510,7 @@ menu "Device Management"
 source Kconfig.devmng
 endmenu
 
+menu "Things Management"
+source Kconfig.things
+endmenu
+
