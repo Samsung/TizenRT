@@ -38,11 +38,22 @@ extern "C" {
  * TODO: In addition, if there is a device(s) which has not up-to-date credentials, this function will
  * automatically try to update the deivce(s).
  *
+ * @see OCClosePM()
+ *
  * @param[in] dbPath file path of the sqlite3 db
  *
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OC_CALL OCInitPM(const char* dbPath);
+
+/**
+ * This method is used by provisioning manager to close provisioning database.
+ *
+ * @see OCInitPM()
+ *
+ * @return  OC_STACK_OK in case of success and other value otherwise.
+ */
+OCStackResult OC_CALL OCClosePM();
 
 /**
  * API to cleanup PDM in case of timeout.

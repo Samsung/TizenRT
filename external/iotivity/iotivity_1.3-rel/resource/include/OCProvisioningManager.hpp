@@ -190,11 +190,22 @@ namespace OC
              * The API is responsible for initialization of the provisioning manager. It will load
              * provisioning database which have owned device's list and their linked status.
              *
+             * @see OCSecure::provisionClose()
+             *
              * @param dbPath file path of the sqlite3 database.
              *
              * @return ::OC_STACK_OK in case of success and other value otherwise.
              */
             static OCStackResult provisionInit(const std::string& dbPath);
+
+            /**
+             * This method is used by provisioning manager to close provisioning database.
+             *
+             * @see OCSecure::provisionInit()
+             *
+             * @return  OC_STACK_OK in case of success and other value otherwise.
+             */
+            static OCStackResult provisionClose();
 
             /**
              * API is responsible for discovery of devices in it's subnet. It will list

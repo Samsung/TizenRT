@@ -44,12 +44,14 @@ namespace OCProvisioningTest
     {
         std::string dbPath("");
         EXPECT_EQ(OC_STACK_OK, OCSecure::provisionInit(dbPath));
+        EXPECT_EQ(OC_STACK_OK, OCSecure::provisionClose());
     }
 
     TEST(ProvisionInitTest, TestValidPath)
     {
         std::string dbPath("./dbPath");
         EXPECT_EQ(OC_STACK_OK, OCSecure::provisionInit(dbPath));
+        EXPECT_EQ(OC_STACK_OK, OCSecure::provisionClose());
     }
 
     TEST(DiscoveryTest, SecureResource)
@@ -182,9 +184,12 @@ namespace OCProvisioningTest
 
     TEST(DeviceInfoTest, DevInfoFromNetwork)
     {
+        std::string dbPath("./dbPath");
+        EXPECT_EQ(OC_STACK_OK, OCSecure::provisionInit(dbPath));
         DeviceList_t owned, unowned;
         EXPECT_EQ(OC_STACK_OK, OCSecure::getDevInfoFromNetwork(TIMEOUT,
                     owned, unowned));
+        EXPECT_EQ(OC_STACK_OK, OCSecure::provisionClose());
     }
 
     TEST(SetDisplayPinCBTest, SetDisplayPinCBTestNullCB)

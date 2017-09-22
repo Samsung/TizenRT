@@ -38,6 +38,11 @@ OCStackResult OCSecure::provisionInit(const std::string& dbPath)
     return OC_STACK_OK;
 }
 
+OCStackResult OCSecure::provisionClose()
+{
+    return OC_STACK_OK;
+}
+
 OCStackResult OCSecure::registerInputPinCallback(InputPinCB inputPinCB,
                             InputPinCallbackHandle* inputPinCallbackHandle)
 {

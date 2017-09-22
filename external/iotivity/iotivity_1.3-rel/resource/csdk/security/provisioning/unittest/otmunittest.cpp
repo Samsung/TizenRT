@@ -303,6 +303,8 @@ TEST(InitForOTM, NullParam)
 
     gNumOfUnownDevice = 0;
     gNumOfOwnDevice = 0;
+    // close Provisioning DB
+    EXPECT_EQ(OC_STACK_OK, OCClosePM());
 }
 /*
 TEST(OCDiscoverSingleDeviceInUnicast, Simple)
@@ -331,6 +333,8 @@ TEST(OCDiscoverSingleDeviceInUnicast, Simple)
 */
 TEST(OCDiscoverUnownedDevices, Simple)
 {
+    //initialize Provisioning DB Manager
+    EXPECT_EQ(OC_STACK_OK, OCInitPM(PM_DB_FILE_NAME));
     EXPECT_EQ(OC_STACK_OK, OCDiscoverUnownedDevices(DISCOVERY_TIMEOUT, &g_unownedDevices));
 
     RemoveUnknownDeviceFromDevList(g_unownedDevices);
@@ -353,10 +357,14 @@ TEST(OCDiscoverUnownedDevices, Simple)
     }
 
     EXPECT_EQ(true, gNumOfUnownDevice > 0);
+    // close Provisioning DB
+    EXPECT_EQ(OC_STACK_OK, OCClosePM());
 }
 
 TEST(OCDoOwnershipTransfer, Simple)
 {
+    //initialize Provisioning DB Manager
+    EXPECT_EQ(OC_STACK_OK, OCInitPM(PM_DB_FILE_NAME));
     ASSERT_EQ(true, gNumOfUnownDevice > 0);
 
     g_doneCB = false;
@@ -370,10 +378,14 @@ TEST(OCDoOwnershipTransfer, Simple)
 
     EXPECT_EQ(true, g_callbackResult);
     EXPECT_EQ(true, g_doneCB);
+    // close Provisioning DB
+    EXPECT_EQ(OC_STACK_OK, OCClosePM());
 }
 
 TEST(OCDiscoverOwnedDevices, Simple)
 {
+    //initialize Provisioning DB Manager
+    EXPECT_EQ(OC_STACK_OK, OCInitPM(PM_DB_FILE_NAME));
     OCStackResult result = OC_STACK_ERROR;
     gNumOfOwnDevice = 0;
 
@@ -427,6 +439,8 @@ TEST(OCDiscoverOwnedDevices, Simple)
     }
 
     EXPECT_EQ(true, gNumOfOwnDevice > 0);
+    // close Provisioning DB
+    EXPECT_EQ(OC_STACK_OK, OCClosePM());
 }
 
 TEST(PerformLinkDevices, NullParam)
@@ -639,6 +653,8 @@ TEST(DiscoverMultipleOwnedDevices, NullParam)
 
 TEST(OCRemoveDevice, Simple)
 {
+    //initialize Provisioning DB Manager
+    EXPECT_EQ(OC_STACK_OK, OCInitPM(PM_DB_FILE_NAME));
     ASSERT_EQ(true, gNumOfUnownDevice > 0);
 
     OicUuid_t myUuid;
@@ -665,6 +681,8 @@ TEST(OCRemoveDevice, Simple)
     EXPECT_EQ(OC_STACK_OK, result);
     EXPECT_EQ(true, g_callbackResult);
     EXPECT_EQ(true, g_doneCB);
+    // close Provisioning DB
+    EXPECT_EQ(OC_STACK_OK, OCClosePM());
 }
 
 TEST(FinalizeOTMTest, NullParam)

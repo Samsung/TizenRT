@@ -65,21 +65,27 @@ TEST(CallPDMAPIbeforeInit, BeforeInit)
 TEST(PDMInitTest, PDMInitWithNULL)
 {
     EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMAddDeviceTest, NullUUID)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMAddDevice(NULL));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMIsDuplicateDeviceTest, NullUUID)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMIsDuplicateDevice(NULL,NULL));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 
 TEST(PDMIsDuplicateDeviceTest, ValidUUID)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid1 = {{0,}};
     memcpy(&uid1.id, ID_1, sizeof(uid1.id));
     EXPECT_EQ(OC_STACK_OK, PDMAddDevice(&uid1));
@@ -96,10 +102,12 @@ TEST(PDMIsDuplicateDeviceTest, ValidUUID)
 
     EXPECT_EQ(OC_STACK_OK, PDMIsDuplicateDevice(&uid3, &isDuplicate));
     EXPECT_FALSE(isDuplicate);
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMAddDeviceTest, ValidUUID)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid = {{0,}};
 
     uint8_t id[UUID_LENGTH] = {0,};
@@ -114,24 +122,30 @@ TEST(PDMAddDeviceTest, ValidUUID)
 
     EXPECT_EQ(OC_STACK_OK, PDMAddDevice(&uid));
     EXPECT_EQ(OC_STACK_OK, PDMDeleteDevice(&uid));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMLinkDevicesTest, NULLDevice1)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid = {{0,}};
     memcpy(&uid.id, ID_2, sizeof(uid.id));
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMLinkDevices(NULL, &uid));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMLinkDevicesTest, NULLDevice2)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid = {{0,}};
     memcpy(&uid.id, ID_3, sizeof(uid.id));
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMLinkDevices(&uid, NULL));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMLinkDevicesTest, ValidCase)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid1 = {{0,}};
     memcpy(&uid1.id, ID_4, sizeof(uid1.id));
     EXPECT_EQ(OC_STACK_OK, PDMAddDevice(&uid1));
@@ -143,40 +157,49 @@ TEST(PDMLinkDevicesTest, ValidCase)
     EXPECT_EQ(OC_STACK_OK, PDMSetDeviceState(&uid2, PDM_DEVICE_ACTIVE));
 
     EXPECT_EQ(OC_STACK_OK, PDMLinkDevices(&uid1, &uid2));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMUnlinkDevicesTest, NULLDevice1)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid = {{0,}};
     memcpy(&uid.id, ID_3, sizeof(uid.id));
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMUnlinkDevices(NULL, &uid));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMUnlinkDevicesTest, NULLDevice2)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid = {{0,}};
     memcpy(&uid.id, ID_3, sizeof(uid.id));
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMUnlinkDevices(&uid, NULL));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMUnlinkDevices, ValidCase)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid1 = {{0,}};
     memcpy(&uid1.id, ID_4, sizeof(uid1.id));
     OicUuid_t uid2 = {{0,}};
     memcpy(&uid2.id, ID_5, sizeof(uid2.id));
     EXPECT_EQ(OC_STACK_OK, PDMUnlinkDevices(&uid1, &uid2));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 
 TEST (PDMDeleteDevice, NULLDeviceID)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMDeleteDevice(NULL));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST (PDMDeleteDevice, ValidButNonExistDeviceID)
 {
-
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid = {{0,}};
     uint8_t id[UUID_LENGTH] = {0,};
     for (size_t i = 0 ; i < sizeof(id) ; i++)
@@ -188,56 +211,70 @@ TEST (PDMDeleteDevice, ValidButNonExistDeviceID)
 
     memcpy(&uid.id, &id, sizeof(uid.id));
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMDeleteDevice(&uid));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMGetOwnedDevices, ValidCase)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OCUuidList_t *list = NULL;
     size_t noOfDevcies = 0;
     EXPECT_EQ(OC_STACK_OK, PDMGetOwnedDevices(&list, &noOfDevcies));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMGetLinkedDevices, NULLDeviceID)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OCUuidList_t *list = NULL;
     size_t noOfDevices = 0;
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMGetLinkedDevices(NULL, &list, &noOfDevices));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMGetLinkedDevices, ValidCase)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid = {{0,}};
     memcpy(&uid.id, ID_1, sizeof(uid.id));
     OCUuidList_t *list = NULL;
     size_t noOfDevices = 0;
     EXPECT_EQ(OC_STACK_OK, PDMGetLinkedDevices(&uid, &list, &noOfDevices));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMGetLinkedDevices, InvalidCase)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid = {{0,}};
     memcpy(&uid.id, ID_6, sizeof(uid.id));
     OCUuidList_t *list = NULL;
     size_t noOfDevices = 0;
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMGetLinkedDevices(&uid, &list, &noOfDevices));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMSetLinkStale, NULLDeviceID1)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid = {{0,}};
     memcpy(&uid.id, ID_1, sizeof(uid.id));
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMSetLinkStale(NULL, &uid));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMSetLinkStale, NULLDeviceID2)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid = {{0,}};
     memcpy(&uid.id, ID_1, sizeof(uid.id));
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMSetLinkStale(&uid, NULL));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMSetLinkStale, ValidCase)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OicUuid_t uid1 = {{0,}};
     memcpy(&uid1.id, ID_6, sizeof(uid1.id));
     OicUuid_t uid2 = {{0,}};
@@ -252,17 +289,21 @@ TEST(PDMSetLinkStale, ValidCase)
     EXPECT_EQ(OC_STACK_OK, PDMLinkDevices(&uid1, &uid2));
 
     EXPECT_EQ(OC_STACK_OK, PDMSetLinkStale(&uid1, &uid2));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMGetToBeUnlinkedDevices, ValidCase)
 {
+    EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     OCPairList_t *list = NULL;
     size_t noOfDevices = 0;
     EXPECT_EQ(OC_STACK_OK, PDMGetToBeUnlinkedDevices(&list, &noOfDevices));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMClose, ValidCase)
 {
+   EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
@@ -293,12 +334,14 @@ TEST(PDMIsLinkExistsTest, DuplicateID)
     OCStackResult res = PDMIsLinkExists(&uid1, &uid2, &linkExisits);
     EXPECT_EQ(OC_STACK_OK, res);
     EXPECT_FALSE(linkExisits);
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMSetDeviceStaleTest, NULLUUID)
 {
     EXPECT_EQ(OC_STACK_OK, PDMInit(NULL));
     EXPECT_EQ(OC_STACK_INVALID_PARAM, PDMSetDeviceState(NULL, PDM_DEVICE_STALE));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMSetDeviceStaleTest, VALIDUUID)
@@ -308,6 +351,7 @@ TEST(PDMSetDeviceStaleTest, VALIDUUID)
     memcpy(&uid1.id, ID_9, sizeof(uid1.id));
     EXPECT_EQ(OC_STACK_OK, PDMAddDevice(&uid1));
     EXPECT_EQ(OC_STACK_OK,PDMSetDeviceState(&uid1, PDM_DEVICE_STALE));
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMSetDeviceStaleTest, StaleDeviceNotinDeviceList)
@@ -327,6 +371,7 @@ TEST(PDMSetDeviceStaleTest, StaleDeviceNotinDeviceList)
         EXPECT_FALSE(0 == memcmp(list->dev.id, uid1.id,sizeof(uid1.id)));
         list = list->next;
     }
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }
 
 TEST(PDMSetDeviceStaleTest, StaleDeviceNotinLinkedDevice)
@@ -390,4 +435,5 @@ TEST(PDMSetDeviceStaleTest, StaleDeviceNotinLinkedDevice)
         EXPECT_TRUE(0 == memcmp(ptr->dev.id, uid2.id,sizeof(uid2.id)));
         ptr = ptr->next;
     }
+    EXPECT_EQ(OC_STACK_OK, PDMClose());
 }

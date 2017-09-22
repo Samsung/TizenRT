@@ -376,6 +376,7 @@ IPCAStatus OCFFramework::Stop(InputPinCallbackHandle passwordInputCallbackHandle
 
     OCSecure::deregisterInputPinCallback(passwordInputCallbackHandle);
     OCSecure::deregisterDisplayPinCallback(passwordDisplayCallbackHandle);
+    OCSecure::provisionClose();
 
     m_isStopping = true;
 

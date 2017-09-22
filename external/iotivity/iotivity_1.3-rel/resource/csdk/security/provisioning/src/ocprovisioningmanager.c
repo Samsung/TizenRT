@@ -70,7 +70,7 @@ struct ProvPreconfPINCtx
  * The function is responsible for initializaton of the provisioning manager. It will load
  * provisioning database which have owned device's list and their linked status.
  * TODO: In addition, if there is a device(s) which has not up-to-date credentials, this function will
- * automatically try to update the deivce(s).
+ * automatically try to update the device(s).
  *
  * @param[in] dbPath file path of the sqlite3 db
  *
@@ -79,6 +79,18 @@ struct ProvPreconfPINCtx
 OCStackResult OC_CALL OCInitPM(const char* dbPath)
 {
     return PDMInit(dbPath);
+}
+
+/**
+ * This method is used by provisioning manager to close provisioning database.
+ *
+ * @see OCInitPM()
+ *
+ * @return  OC_STACK_OK in case of success and other value otherwise.
+ */
+OCStackResult OC_CALL OCClosePM()
+{
+    return PDMClose();
 }
 
 OCStackResult OC_CALL OCPDMCleanupForTimeout()

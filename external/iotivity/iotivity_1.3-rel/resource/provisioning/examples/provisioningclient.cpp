@@ -1678,6 +1678,8 @@ int main(void)
 
         // Unregister the input pin callback
         OCSecure::deregisterInputPinCallback(callbackHandle);
+        // close database
+        OCSecure::provisionClose();
     }
     catch(OCException& e)
     {
