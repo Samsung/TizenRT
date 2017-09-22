@@ -26,9 +26,10 @@
 #include <tinyara/net/net.h>
 #include <tinyara/net/ethernet.h>
 
+#define FLAGS     0666
 /**
 * @statitcase            : tc_net_checksd_p
-* @brief                 : check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
+* @brief                 : Check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
 * @scenario              : none
 * @apicovered            : net_checksd
 * @precondition          : none
@@ -39,14 +40,14 @@ static void tc_net_checksd_p(int sock)
 {
 	int result;
 
-	result = net_checksd(sock, 0666);
-	TC_ASSERT_EQ("net_checksd_p", result, ZERO);
+	result = net_checksd(sock, FLAGS);
+	TC_ASSERT_EQ("net_checksd", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @statitcase            : tc_net_checksd_n
-* @brief                 : check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
+* @brief                 : Check if the socket descriptor is valid for the provided TCB and if it supports the requested access.
 * @scenario              : none
 * @apicovered            : net_checksd
 * @precondition          : none
@@ -57,14 +58,14 @@ static void tc_net_checksd_n(void)
 {
 	int result;
 
-	result = net_checksd(NEG_VAL, FLAGS);
-	TC_ASSERT_EQ("tc_net_checksd_n", result, NET_EBADF);
+	result = net_checksd(-1, FLAGS);
+	TC_ASSERT_NEQ("net_checksd", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @statitcase            : tc_net_clone_p
-* @brief                 : performs the low level, common portion of net_dupsd() and net_dupsd2().
+* @brief                 : Performs the low level, common portion of net_dupsd() and net_dupsd2().
 * @scenario              : none
 * @apicovered            : net_clone, socket, get_socket
 * @precondition          : socket file descriptor.
@@ -83,13 +84,13 @@ static void tc_net_clone_p(int sockfd1, int sockfd2)
 	TC_ASSERT_NEQ("get_socket", sock2, NULL);
 
 	result = net_clone(sock1, sock2);
-	TC_ASSERT_EQ("tc_net_clone_p", result, ZERO);
+	TC_ASSERT_EQ("net_clone", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @statitcase            : tc_net_dupsd2_p
-* @brief                 : clone a socket descriptor to an arbitray descriptor number.
+* @brief                 : Clone a socket descriptor to an arbitray descriptor number.
 * @scenario              : none
 * @apicovered            : net_dupsd2
 * @precondition          : socket file descriptor.
@@ -107,7 +108,7 @@ static void tc_net_dupsd2_p(int old_fd, int new_fd)
 
 /**
 * @statitcase            : tc_net_dupsd2_n
-* @brief                 : clone a socket descriptor to an arbitray descriptor number.
+* @brief                 : Clone a socket descriptor to an arbitray descriptor number.
 * @scenario              : none
 * @apicovered            : net_dupsd2
 * @precondition          : socket file descriptors.
@@ -118,8 +119,8 @@ static void tc_net_dupsd2_n(int new_fd)
 {
 	int result;
 
-	result = net_dupsd2(NEG_VAL, new_fd);
-	TC_ASSERT_EQ("tc_net_dupsd2_n", result, NEG_VAL);
+	result = net_dupsd2(-1, new_fd);
+	TC_ASSERT_EQ("net_dupsd2", result, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -146,7 +147,7 @@ static void tc_net_ethernetif_status_callback_p(void)
 
 /**
 * @statitcase            : tc_net_ethernetif_init
-* @brief                 : set up the network interface at the beginning.
+* @brief                 : Should be called at the beginning of the program to set up the network interface.
 * @scenario              : none
 * @apicovered            : ethernetif_init
 * @precondition          : none
@@ -162,8 +163,8 @@ static void tc_net_ethernetif_init(void)
 	TC_ASSERT_NEQ("malloc", netif, NULL);
 
 	result = ethernetif_init(netif);
+	TC_ASSERT_EQ_CLEANUP("tc_net_ethernetif_init", result, ZERO, TC_FREE_MEMORY(netif));
 	TC_FREE_MEMORY(netif);
-	TC_ASSERT_EQ("tc_net_ethernetif_init", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 

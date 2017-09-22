@@ -46,15 +46,15 @@ static void tc_net_setsockopt_multicast_tcp_nodelay_p(int s)
 	int option = 1;
 
 	ret = setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &option, sizeof(option));
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_multicast_tcp_keepalive_p
-* @brief               : set the socket options with option name as tcp keepalive.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options and option as tcp keepalive.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -66,15 +66,15 @@ static void tc_net_setsockopt_multicast_tcp_keepalive_p(int s)
 	int option = 1;
 
 	ret = setsockopt(s, IPPROTO_TCP, TCP_KEEPALIVE, &option, sizeof(option));
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_multicast_tcp_keepidle_p
-* @brief               : set the socket options with option name as tcp keepidle.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options and option as tcp keepidle.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -86,15 +86,15 @@ static void tc_net_setsockopt_multicast_tcp_keepidle_p(int s)
 	int keepidle = 30;
 
 	ret = setsockopt(s, IPPROTO_TCP, TCP_KEEPIDLE, &keepidle, sizeof(keepidle));
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_multicast_tcp_keepintvl_p
-* @brief               : set socket options with option name as tcp keepintvl.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options and option as tcp keepintvl.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -106,15 +106,15 @@ static void tc_net_setsockopt_multicast_tcp_keepintvl_p(int s)
 	int keepintvl = 120;
 
 	ret = setsockopt(s, IPPROTO_TCP, TCP_KEEPINTVL, &keepintvl, sizeof(keepintvl));
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_multicast_tcp_keepcnt_p
-* @brief               : set socket options with option name as tcp keepcnt.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options and option as keepcnt.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -127,15 +127,15 @@ static void tc_net_setsockopt_multicast_tcp_keepcnt_p(int s)
 
 	ret = setsockopt(s, IPPROTO_TCP, TCP_KEEPCNT, &keepcnt, sizeof(keepcnt));
 
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_ip_tos_p
-* @brief               : set socket options with option name as ip tos.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options and option as ip tos.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -148,15 +148,15 @@ static void tc_net_setsockopt_ip_tos_p(int s)
 
 	ret = setsockopt(s, IPPROTO_IP, IP_TOS, &optval, sizeof(optval));
 
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_broadcast_p
-* @brief               : set socket options with option name as broadcast.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options and option as broadcast.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -168,15 +168,15 @@ static void tc_net_setsockopt_broadcast_p(int s)
 	int optval = 1;				//broadcast value
 
 	ret = setsockopt(s, SOL_SOCKET, SO_BROADCAST, &optval, sizeof optval);
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_rcvtimo_p
-* @brief               : set socket options with option name as rcvtimeo.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options and option as rcvtimeo.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -190,15 +190,15 @@ static void tc_net_setsockopt_rcvtimo_p(int s)
 	tv.tv_usec = 0;
 
 	ret = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval));
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_reuseaddr_p
-* @brief               : set socket options with option name as reuseaddr.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options and option as reuseaddr.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -210,15 +210,15 @@ static void tc_net_setsockopt_reuseaddr_p(int s)
 	int option = 1;
 
 	ret = setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&option, sizeof option);
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_reuseport_p
-* @brief               : set socket options with option name as reuseport.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options and option as reuseport.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -230,15 +230,15 @@ static void tc_net_setsockopt_reuseport_p(int s)
 	int option = 1;
 
 	ret = setsockopt(s, SOL_SOCKET, SO_REUSEPORT, (char *)&option, sizeof option);
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_keepalive_p
-* @brief               : set socket options with option name as keepalive.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options and option as keepalive.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -250,15 +250,15 @@ static void tc_net_setsockopt_keepalive_p(int s)
 	int optval = 1;
 
 	ret = setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof optval);
-	TC_ASSERT_GEQ("setsockopt", ret, ZERO);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_bad_filedesc_n
-* @brief               : set the socket options.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : none
 * @postcondition       : none
@@ -275,9 +275,9 @@ static void tc_net_setsockopt_bad_filedesc_n(void)
 
 /**
 * @testcase            : tc_net_setsockopt_invalid_filedesc_n
-* @brief               : set the socket options.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : none
 * @postcondition       : none
@@ -287,16 +287,16 @@ static void tc_net_setsockopt_invalid_filedesc_n(void)
 {
 	int ret;
 
-	ret = setsockopt(ZERO, SOL_SOCKET, 0, 0, 0);
+	ret = setsockopt(0, SOL_SOCKET, 0, 0, 0);
 	TC_ASSERT_EQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_setsockopt_invalid_level_n
-* @brief               : set the socket options.
-* @scenario            : setsockopt() function set the option specified by the option name argument, at the protocol
-                         level specified by the level argument, to the value pointed to by the option value argument.
+* @brief               : This setsockopt API set socket options.
+* @scenario            : The setsockopt() function set the option specified by the option_name argument, at the protocol
+                         level specified by the level argument, to the value pointed to by the option_value argument.
 * @apicovered          : setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -306,7 +306,7 @@ static void tc_net_setsockopt_invalid_level_n(int s)
 {
 	int ret;
 
-	ret = setsockopt(s, NEG_VAL, ZERO, ZERO, ZERO);
+	ret = setsockopt(s, NEG_VAL, 0, 0, 0);
 	TC_ASSERT_EQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -317,7 +317,7 @@ static void tc_net_setsockopt_invalid_level_n(int s)
 
 int net_setsockopt_main(void)
 {
-	int fd = socket(AF_INET, SOCK_STREAM, ZERO);
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
 
 	tc_net_setsockopt_invalid_level_n(fd);
 	tc_net_setsockopt_invalid_filedesc_n();

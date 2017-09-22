@@ -40,8 +40,11 @@
 
 #include "tc_internal.h"
 
-#define	PORTNUM		5555
-#define	MAXRCVLEN	20
+#define TWO             2
+#define CNT             2
+#define VAL             6
+#define MTUSIZE         1500
+#define TOTLEN          16
 
 struct netif loop_netif;
 struct netif test_netif;
@@ -92,8 +95,8 @@ static void tc_net_pbuf_get_at_p(void)
 	p->payload = "packet";
 
 	ret = pbuf_get_at(p, offset);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_get_at", ret, ZERO, memp_free(MEMP_PBUF_POOL, p));
 	memp_free(MEMP_PBUF_POOL, p);
-	TC_ASSERT_NEQ("tc_net_pbuf_get_at_p", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -144,17 +147,17 @@ static void tc_net_pbuf_memcmp_p(void)
 	struct pbuf *head = NULL;
 	struct pbuf *temp = NULL;
 	int pk_count;
-	u16_t offset = 6;
+	u16_t offset = VAL;
 	const void *s2 = "is";
-	u16_t n = 2;
+	u16_t n = TWO;
 
-	for (pk_count = 0; pk_count < 2; pk_count++) {
+	for (pk_count = 0; pk_count < CNT; pk_count++) {
 		switch (pk_count) {
 		case 0:
-			create_packet(&head, "packet", strlen("packet"), 1);
+			create_packet(&head, "packet", strlen("packet"), ONE);
 			break;
 		case 1:
-			create_packet(&head, "is", (strlen("is") + strlen("packet")), 2);
+			create_packet(&head, "is", (strlen("is") + strlen("packet")), TWO);
 			break;
 		default:
 			printf("\n invalid parameter\n");
@@ -167,7 +170,7 @@ static void tc_net_pbuf_memcmp_p(void)
 		head = head->next;
 		mem_free(temp);
 	}
-	TC_ASSERT_EQ("tc_net_pbuf_memcmp_p", ret, ZERO);
+	TC_ASSERT_EQ("pbuf_memcmp", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -182,7 +185,7 @@ static void tc_net_pbuf_memcmp_p(void)
 */
 static void tc_net_pbuf_memfind_p(void)
 {
-	u16_t ret;
+	int ret;
 	struct pbuf *p = (struct pbuf *)"packet not found";
 	const void *mem = "packet";
 	u16_t mem_len = 1;
@@ -192,7 +195,7 @@ static void tc_net_pbuf_memfind_p(void)
 
 	ret = pbuf_memfind(p, mem, mem_len, start_offset);
 
-	TC_ASSERT_NEQ("tc_net_pbuf_memfind_p", ret, 0xFFFF);
+	TC_ASSERT_NEQ("pbuf_memfind", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -210,7 +213,7 @@ static void tc_net_get_socket_struct_n(void)
 {
 	struct socket *ret = (struct socket *)get_socket_struct(NEG_VAL);
 
-	TC_ASSERT_EQ("tc_net_get_socket_struct_n", ret, NULL);
+	TC_ASSERT_EQ("net_get_socket_struct_n", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -228,7 +231,7 @@ static void tc_net_get_socket_struct_p(void)
 	int s = socket(AF_INET, SOCK_STREAM, 0);
 	struct socket *ret = (struct socket *)get_socket_struct(s);
 
-	TC_ASSERT_NEQ("tc_net_get_socket_struct_p", ret, NULL);
+	TC_ASSERT_NEQ("net_get_socket_struct_p", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -267,15 +270,15 @@ static void tc_net_pbuf_alloced_custom_n(void)
 {
 	struct pbuf *ret;
 	pbuf_layer l = 4;
-	u16_t length = 2;
+	u16_t length = TWO;
 	pbuf_type type = 4;
 	struct pbuf_custom *p = NULL;
 	void *payload_mem = NULL;
-	u16_t payload_mem_len = 1;
+	u16_t payload_mem_len = ONE;
 
 	ret = pbuf_alloced_custom(l, length, type, p, payload_mem, payload_mem_len);
 
-	TC_ASSERT_EQ("tc_net_pbuf_alloced_custom_n", ret, NULL);
+	TC_ASSERT_EQ("net_pbuf_alloced_custom", ret, NULL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -303,7 +306,7 @@ static void tc_net_pbuf_alloced_custom_p(void)
 	ret = pbuf_alloced_custom(0, length, type, p, payload_mem, payload_mem_len);
 	mem_free(p);
 
-	TC_ASSERT_EQ("tc_net_pbuf_alloced_custom_p", ret, NULL);
+	TC_ASSERT_EQ("net_pbuf_alloced_custom", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -326,7 +329,7 @@ static void tc_net_pbuf_dechain_n(void)
 
 	ret = pbuf_dechain(p);
 	memp_free(MEMP_PBUF_POOL, p);
-	TC_ASSERT_EQ("tc_net_pbuf_dechain_n", ret, NULL);
+	TC_ASSERT_EQ("net_pbuf_dechain_n", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -351,7 +354,7 @@ void create_chain(struct pbuf **head, char *data, u16_t len, u16_t ref)
 	node->next = NULL;
 	node->flags = 0;
 	node->len = len;
-	node->tot_len = 16;
+	node->tot_len = TOTLEN;
 	node->type = PBUF_RAM;
 	node->ref = ref;
 
@@ -382,10 +385,10 @@ static void tc_net_pbuf_dechain_p(void)
 	for (pk_count = 0; pk_count < 2; pk_count++) {
 		switch (pk_count) {
 		case 0:
-			create_chain(&head, "packet", strlen("packet"), 1);
+			create_chain(&head, "packet", strlen("packet"), ONE);
 			break;
 		case 1:
-			create_chain(&head, "is", strlen("is"), 2);
+			create_chain(&head, "is", strlen("is"), TWO);
 			break;
 		default:
 			printf("\n invalid parameter\n");
@@ -399,7 +402,7 @@ static void tc_net_pbuf_dechain_p(void)
 		mem_free(temp);
 	}
 
-	TC_ASSERT_NEQ("tc_net_pbuf_dechain_p", ret, NULL);
+	TC_ASSERT_NEQ("net_pbuf_dechain", ret, NULL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -422,7 +425,7 @@ static void tc_net_pbuf_take_n(void)
 
 	ret = pbuf_take(buf, dataptr, len);
 
-	TC_ASSERT_EQ("tc_net_pbuf_take_n", ret, ZERO);
+	TC_ASSERT_EQ("net_pbuf_take", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -448,7 +451,7 @@ static void tc_net_pbuf_take_p(void)
 
 	ret = pbuf_take(buf, dataptr, strlen("data"));
 
-	TC_ASSERT_EQ("tc_net_pbuf_take_p", ret, ZERO);
+	TC_ASSERT_EQ("net_pbuf_take", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -474,7 +477,7 @@ static void tc_net_pbuf_coalesce_n(void)
 
 	ret = pbuf_coalesce(p, layer);
 	memp_free(MEMP_PBUF_POOL, p);
-	TC_ASSERT_EQ("tc_net_pbuf_coalesce_n", ret, p);
+	TC_ASSERT_EQ("net_pbuf_coalesce", ret, p);
 	TC_SUCCESS_RESULT();
 }
 
@@ -497,13 +500,13 @@ static void tc_net_pbuf_coalesce_p(void)
 
 	layer = 3;
 
-	for (pk_count = 0; pk_count < 2; pk_count++) {
+	for (pk_count = 0; pk_count < CNT; pk_count++) {
 		switch (pk_count) {
 		case 0:
-			create_chain(&head, "packet", strlen("packet"), 1);
+			create_chain(&head, "packet", strlen("packet"), ONE);
 			break;
 		case 1:
-			create_chain(&head, "is", strlen("is"), 2);
+			create_chain(&head, "is", strlen("is"), TWO);
 			break;
 		default:
 			printf("\n invalid parameter\n");
@@ -517,7 +520,7 @@ static void tc_net_pbuf_coalesce_p(void)
 		mem_free(temp);
 	}
 
-	TC_ASSERT_NEQ_CLEANUP("tc_net_pbuf_coalesce_p", ret, head, pbuf_free(head));
+	TC_ASSERT_NEQ_CLEANUP("net_pbuf_coalesce", ret, head, pbuf_free(head));
 	TC_SUCCESS_RESULT();
 }
 
@@ -537,7 +540,7 @@ static void tc_net_pbuf_get_at_n(void)
 	u8_t ret;
 
 	ret = pbuf_get_at(p, offset);
-	TC_ASSERT_EQ("tc_net_pbuf_get_at_n", ret, ZERO);
+	TC_ASSERT_EQ("net_pbuf_get_at", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -554,13 +557,13 @@ static void tc_net_pbuf_memcmp_n(void)
 {
 	u16_t ret;
 	struct pbuf *p = NULL;
-	u16_t offset = 0;
+	u16_t offset = ZERO;
 	const void *s2 = NULL;
-	u16_t n = 0;
+	u16_t n = ZERO;
 
 	ret = pbuf_memcmp(p, offset, s2, n);
 
-	TC_ASSERT_NEQ("tc_net_pbuf_memcmp_n", ret, ZERO);
+	TC_ASSERT_NEQ("net_pbuf_memcmp", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -578,12 +581,12 @@ static void tc_net_pbuf_memfind_n(void)
 	u16_t ret;
 	struct pbuf *p = NULL;
 	const void *mem = NULL;
-	u16_t mem_len = 1;
-	u16_t start_offset = 1;
+	u16_t mem_len = ONE;
+	u16_t start_offset = ONE;
 
 	ret = pbuf_memfind(p, mem, mem_len, start_offset);
 
-	TC_ASSERT_EQ("tc_net_pbuf_memfind_n", ret, 0xffff);
+	TC_ASSERT_EQ("net_pbuf_memfind", ret, 0xffff);
 	TC_SUCCESS_RESULT();
 }
 
@@ -615,7 +618,7 @@ static err_t default_netif_init(struct netif *netif)
 {
 	netif->linkoutput = default_netif_linkoutput;
 	netif->output = etharp_output;
-	netif->mtu = 1500;
+	netif->mtu = MTUSIZE;
 	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
 	netif->hwaddr_len = ETHARP_HWADDR_LEN;
 	return 0;

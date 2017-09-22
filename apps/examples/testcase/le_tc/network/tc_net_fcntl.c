@@ -26,14 +26,13 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
 * @testcase            : tc_net_fcntl_nonblock_p
-* @brief               : manipulate file descriptor.
+* @brief               : This fcntl API manipulate file descriptor.
 * @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg.
 * @apicovered          : fcntl()
 * @precondition        : socket file descriptor.
@@ -50,7 +49,7 @@ static void tc_net_fcntl_nonblock_p(int fd)
 
 /**
 * @testcase            : tc_net_fcntl_p
-* @brief               : manipulate file descriptor.
+* @brief               : This fcntl API manipulate file descriptor.
 * @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg as zero.
 * @apicovered          : fcntl()
 * @precondition        : socket file descriptor.
@@ -59,7 +58,7 @@ static void tc_net_fcntl_nonblock_p(int fd)
 */
 static void tc_net_fcntl_p(int fd)
 {
-	int ret = fcntl(fd, F_SETFL, ZERO);
+	int ret = fcntl(fd, F_SETFL, 0);
 
 	TC_ASSERT_NEQ("fcntl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
@@ -67,7 +66,7 @@ static void tc_net_fcntl_p(int fd)
 
 /**
 * @testcase            : tc_net_fcntl_n
-* @brief               : manipulate file descriptor.
+* @brief               : This fcntl API manipulate file descriptor.
 * @scenario            : fcntl use setfl command to set the file status flags with invalid fd.
 * @apicovered          : fcntl()
 * @precondition        : none
@@ -78,13 +77,13 @@ static void tc_net_fcntl_n(void)
 {
 	int ret = fcntl(NEG_VAL, F_SETFL, O_NONBLOCK);
 
-	TC_ASSERT_NEQ("fcntl", ret, ZERO);
+	TC_ASSERT_EQ("fcntl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_fcntl_ndelay_p
-* @brief               : manipulate file descriptor.
+* @brief               : This fcntl API manipulate file descriptor.
 * @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg as ndelay.
 * @apicovered          : fcntl()
 * @precondition        : socket file descriptor.

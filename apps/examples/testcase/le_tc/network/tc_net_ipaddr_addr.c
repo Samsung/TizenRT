@@ -103,7 +103,7 @@ static void tc_net_ipaddr_ntoa_r_n(void)
 	IP4_ADDR(&local, 127, 0, 0, 1);	// Set local = "127.0.0.1"
 
 	ret = ipaddr_ntoa_r(&local, str, 10);
-	TC_ASSERT_NEQ("ipaddr_ntoa_r", ret, NULL);
+	TC_ASSERT_EQ("ipaddr_ntoa_r", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 

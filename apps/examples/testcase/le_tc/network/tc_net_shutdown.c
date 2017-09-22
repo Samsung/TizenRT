@@ -35,12 +35,15 @@
 
 #include "tc_internal.h"
 
-#define PORTNUM 5010
-#define MAXRCVLEN 20
+#define PORTNUM        5010
+#define MAXRCVLEN      20
+#define BACKLOG        1
+
 static int count_wait;
+
 /**
 * @fn                   : shutdown_wait
-* @brief                : function to wait on semaphore.
+* @brief                : Function to wait on semaphore.
 * @scenario             : use wait function to decrement count value.
 * @API's covered        : none
 * @Preconditions        : none
@@ -58,7 +61,7 @@ void shutdown_wait(void)
 
 /**
 * @fn                  : shutdown_signal
-* @brief               : function to signal semaphore.
+* @brief               : Function to signal semaphore.
 * @scenario            : use to increase the count value.
 * @API's covered       : none
 * @Preconditions       : none
@@ -72,8 +75,8 @@ void shutdown_signal(void)
 
 /**
 * @fn                  : tc_net_shutdown_recv_p
-* @brief               : close one end of a full-duplex connection.
-* @scenario            : close one end of a full-duplex connection with disables receive operations.
+* @brief               : Close one end of a full-duplex connection.
+* @scenario            : Close one end of a full-duplex connection with disables further receive operations.
 * @API's covered       : shutdown()
 * @Preconditions       : socket file descriptor.
 * @Postconditions      : none
@@ -90,8 +93,8 @@ void tc_net_shutdown_recv_p(int fd)
 
 /**
 * @testcase            : tc_net_shutdown_send_p
-* @brief               : close one end of a full-duplex connection.
-* @scenario            : close one end of a full-duplex connection with disables send operations.
+* @brief               : Close one end of a full-duplex connection.
+* @scenario            : Close one end of a full-duplex connection with disables further send operations.
 * @apicovered          : shutdown()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -107,8 +110,8 @@ void tc_net_shutdown_send_p(int fd)
 
 /**
 * @testcase            : tc_net_shutdown_sendrecv_p
-* @brief               : close one end of a full-duplex connection.
-* @scenario            : close one end of a full-duplex connection with disables send and receive operations.
+* @brief               : Close one end of a full-duplex connection.
+* @scenario            : Close one end of a full-duplex connection with disables further send and receive operations.
 * @apicovered          : shutdown()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -124,8 +127,8 @@ void tc_net_shutdown_sendrecv_p(int fd)
 
 /**
 * @testcase            : tc_net_shutdown_n
-* @brief               : close one end of a full-duplex connection.
-* @scenario            : close one end of a full-duplex connection with invalid socket fd.
+* @brief               : Close one end of a full-duplex connection.
+* @scenario            : Close one end of a full-duplex connection with invalid socket fd.
 * @apicovered          : shutdown()
 * @precondition        : none
 * @postcondition       : none
@@ -142,8 +145,8 @@ void tc_net_shutdown_n(void)
 
 /**
 * @testcase            : tc_net_shutdown_sock_n
-* @brief               : close one end of a full-duplex connection.
-* @scenario            : close one end of a full-duplex connection with given socket fd.
+* @brief               : Close one end of a full-duplex connection.
+* @scenario            : Close one end of a full-duplex connection with given socket fd.
 * @apicovered          : shutdown()
 * @precondition        : none
 * @postcondition       : none
@@ -159,35 +162,40 @@ void tc_net_shutdown_sock_n(int fd)
 
 /**
 * @fn                   : shutdown_server
-* @brief                : create a tcp server.
-* @scenario             : create a tcp server to test shutdown api.
+* @brief                : Create a Tcp server.
+* @scenario             : Create a tcp server for checking shutdown api.
 * @API's covered        : socket,bind,listen,send,accept,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
-* @return               : void*
+* @return               : void
 */
 void* shutdown_server(void *args)
 {
 	int ConnectFD;
 	char *msg = "Hello World !\n";
+	char buf[MAXRCVLEN];
 	struct sockaddr_in sa;
 
-	memset(&sa, ZERO, sizeof(sa));
-	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+
+	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, ONE);
+	listen(sock, BACKLOG);
 	shutdown_signal();
 
 	ConnectFD = accept(sock, NULL, NULL);
 	tc_net_shutdown_send_p(ConnectFD);
-	send(ConnectFD, msg, strlen(msg), ZERO);
+
+	send(ConnectFD, msg, sizeof(msg), 0);
 	tc_net_shutdown_recv_p(ConnectFD);
-	recv(ConnectFD, msg, 1024, ZERO);
+
+	recv(ConnectFD, buf, sizeof(buf), 0);
 	tc_net_shutdown_n();
+
 	tc_net_shutdown_sock_n(sock);
 	close(ConnectFD);
 	close(sock);
@@ -196,12 +204,12 @@ void* shutdown_server(void *args)
 
 /**
 * @fn                   : shutdown_client
-* @brief                : create client.
-* @scenario             : create tcp client.
+* @brief                : This api create client.
+* @scenario             : Create tcp client.
 * @API's covered        : socket,connect,recvfrom,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
-* @return               : void*
+* @return               : void
 */
 void* shutdown_client(void *args)
 {
@@ -209,26 +217,29 @@ void* shutdown_client(void *args)
 	char buffer[MAXRCVLEN];
 	struct sockaddr_in dest;
 
-	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
-	memset(&dest, ZERO, sizeof(dest));
+	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	dest.sin_addr.s_addr = INADDR_LOOPBACK;
 	dest.sin_port = htons(PORTNUM);
 
 	shutdown_wait();
 	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 
-	len = recv(sock, buffer, MAXRCVLEN, ZERO);
+	len = recv(sock, buffer, MAXRCVLEN, 0);
 	buffer[len] = '\0';
 	tc_net_shutdown_recv_p(sock);
 
-	recv(sock, buffer, MAXRCVLEN, ZERO);
+	recv(sock, buffer, MAXRCVLEN, 0);
 	tc_net_shutdown_sendrecv_p(sock);
-	recv(sock, buffer, MAXRCVLEN, ZERO);
+
+	recv(sock, buffer, MAXRCVLEN, 0);
 	tc_net_shutdown_sendrecv_p(sock);
-	send(sock, buffer, strlen(buffer), ZERO);
+
+	send(sock, buffer, sizeof(buffer), 0);
 	tc_net_shutdown_sendrecv_p(sock);
+
 	tc_net_shutdown_n();
 	close(sock);
 	return NULL;
@@ -236,8 +247,8 @@ void* shutdown_client(void *args)
 
 /**
 * @fn                   : net_shutdown
-* @brief                : create client and server thread.
-* @scenario             : create client and server thread to test shutdown api.
+* @brief                : This api create client and server thread.
+* @scenario             : Create client and server thread to test shutdown api.
 * API's covered         : none
 * Preconditions         : none
 * Postconditions        : none

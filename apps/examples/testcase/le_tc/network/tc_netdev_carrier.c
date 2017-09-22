@@ -26,8 +26,8 @@
 
 /**
 * @testcase            : tc_netdev_carrier_on_p
-* @brief               : notifies the networking layer about an available carrier.
-* @scenario            : get the inforamation about available carrier.
+* @brief               : Notifies the networking layer about an available carrier.
+* @scenario            : Get the inforamation about available carrier.
 * @apicovered          : netdev_carrier_on
 * @precondition        : none
 * @postcondition       : none
@@ -42,16 +42,15 @@ static void tc_netdev_carrier_on_p(void)
 	TC_ASSERT_NEQ("malloc", dev, NULL);
 
 	ret = netdev_carrier_on(dev);
-
+	TC_ASSERT_EQ_CLEANUP("netdev_carrier_on", ret, ZERO, TC_FREE_MEMORY(dev));
 	TC_FREE_MEMORY(dev);
-	TC_ASSERT_EQ("netdev", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_netdev_carrier_on_n
-* @brief               : notifies the networking layer about an available carrier.
-* @scenario            : get the inforamation about available carrier.
+* @brief               : Notifies the networking layer about an available carrier.
+* @scenario            : Get the inforamation about available carrier.
 * @apicovered          : netdev_carrier_on
 * @precondition        : none
 * @postcondition       : none
@@ -60,14 +59,14 @@ static void tc_netdev_carrier_on_p(void)
 static void tc_netdev_carrier_on_n(void)
 {
 	int ret = netdev_carrier_on(NULL);
-	TC_ASSERT_NEQ("netdev", ret, ZERO);
+	TC_ASSERT_NEQ("netdev_carrier_on", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_netdev_carrier_off_p
-* @brief               : notifies the networking layer about an disappeared carrier.
-* @scenario            : get the inforamation about disappeared carrier.
+* @brief               : Notifies the networking layer about an disappeared carrier.
+* @scenario            : Get the inforamation about disappeared carrier.
 * @apicovered          : netdev_carrier_off
 * @precondition        : none
 * @postcondition       : none
@@ -83,15 +82,15 @@ static void tc_netdev_carrier_off_p(void)
 	dev->d_flags = 4;
 
 	ret = netdev_carrier_off(dev);
+	TC_ASSERT_EQ_CLEANUP("netdev_carrier_off", ret, ZERO, TC_FREE_MEMORY(dev));
 	TC_FREE_MEMORY(dev);
-	TC_ASSERT_EQ("netdev", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_netdev_carrier_off_n
-* @brief               : notifies the networking layer about an disappeared carrier.
-* @scenario            : get the inforamation about disappeared carrier.
+* @brief               : Notifies the networking layer about an disappeared carrier.
+* @scenario            : Get the inforamation about disappeared carrier.
 * @apicovered          : netdev_carrier_off
 * @precondition        : none
 * @postcondition       : none
@@ -100,7 +99,7 @@ static void tc_netdev_carrier_off_p(void)
 static void tc_netdev_carrier_off_n(void)
 {
 	int ret = netdev_carrier_off(NULL);
-	TC_ASSERT_NEQ("netdev", ret, ZERO);
+	TC_ASSERT_NEQ("netdev_carrier_off", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -120,8 +119,8 @@ static int tc_test_function(struct netif *dev)
 
 /**
 * @testcase            : tc_netdev_ifdown
-* @brief               : bring the interface down.
-* @scenario            : bring the interface down.
+* @brief               : Bring the interface down.
+* @scenario            : Bring the interface down.
 * @apicovered          : netdev_ifdown
 * @precondition        : up the interface
 * @postcondition       : none
@@ -136,7 +135,7 @@ static void tc_netdev_ifdown(void)
 	dev.d_ifdown = tc_test_function;
 
 	netdev_ifdown(&dev);
-	TC_ASSERT_EQ("netdev", dev.d_flags, ZERO)
+	TC_ASSERT_EQ("netdev_ifdown", dev.d_flags, ZERO)
 	TC_SUCCESS_RESULT();
 }
 

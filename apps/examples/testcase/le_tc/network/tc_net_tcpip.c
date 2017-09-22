@@ -44,7 +44,7 @@ static void tc_net_tcpip_timeout_p(void)
 	err_t result;
 
 	result = tcpip_timeout(TIME_MS, (sys_timeout_handler) sys_timeout, arg);
-	TC_ASSERT_EQ("tc_net_tcpip_timeout_p", result, ZERO);
+	TC_ASSERT_EQ("tcpip_timeout", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -63,7 +63,7 @@ static void tc_net_tcpip_timeout_n(void)
 	err_t result;
 
 	result = tcpip_timeout(TIME_MS, NULL, arg);
-	TC_ASSERT_EQ("tc_net_tcpip_timeout_n", result, NEG_VAL);
+	TC_ASSERT_NEQ("tcpip_timeout", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -82,7 +82,7 @@ static void tc_net_tcpip_untimeout_p(void)
 	err_t result;
 
 	result = tcpip_untimeout((sys_timeout_handler) sys_untimeout, arg);
-	TC_ASSERT_EQ("tc_net_tcpip_untimeout_p", result, ZERO);
+	TC_ASSERT_EQ("tcpip_untimeout", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -101,13 +101,13 @@ static void tc_net_tcpip_untimeout_n(void)
 	err_t result;
 
 	result = tcpip_untimeout(NULL, arg);
-	TC_ASSERT_EQ("tc_net_tcpip_untimeout_n", result, NEG_VAL);
+	TC_ASSERT_NEQ("tcpip_untimeout", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase              : dummy_function
-* @brief                 : helper function
+* @brief                 : none
 * @scenario              : none
 * @apicovered            : none
 * @precondition          : none
@@ -132,13 +132,13 @@ static void tc_net_tcpip_callbackmsg_new_p(void)
 {
 	struct tcpip_callback_msg *result;
 	result = (struct tcpip_callback_msg *)tcpip_callbackmsg_new(dummy_function, NULL);
-	TC_ASSERT_NEQ("tc_net_tcpip_callbackmsg_new_p", result, NULL);
+	TC_ASSERT_NEQ("tcpip_callbackmsg_new", result, NULL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @statitcase            : tc_net_tcpip_callbackmsg_delete_p
-* @brief                 : free a callback message allocated by tcpip_callbackmsg_new().
+* @brief                 : Free a callback message allocated by tcpip_callbackmsg_new().
 * @scenario              : none
 * @apicovered            : tcpip_callbackmsg_delete, tcpip_callbackmsg_new
 * @precondition          : none
@@ -169,7 +169,7 @@ static void tc_mem_free_callback_n(void)
 	int result;
 
 	result = mem_free_callback(p);
-	TC_ASSERT_NEQ("mem_free_callback_n", result, NEG_VAL);
+	TC_ASSERT_NEQ("mem_free_callback", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -190,13 +190,13 @@ static void tc_mem_free_callback_p(void)
 
 	result = mem_free_callback(p);
 	TC_FREE_MEMORY(p);
-	TC_ASSERT_EQ("mem_free_callback_p", result, ZERO);
+	TC_ASSERT_EQ("mem_free_callback", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase                 : tc_tcpip_trycallback
-* @brief                    : try to post a callback-message to the tcpip_thread mbox.
+* @brief                    : Try to post a callback-message to the tcpip_thread mbox.
 * @scenario                 : used to send "static" messages from interrupt context.
 * @apicovered               : tcpip_trycallback
 * @precondition             : none
@@ -210,7 +210,7 @@ void dummy1_function(void *arg)
 
 /**
 * @testcase              : tc_tcpip_trycallback
-* @brief                 : try to post a callback-message to the tcpip_thread mbox.
+* @brief                 : Try to post a callback-message to the tcpip_thread mbox.
 * @scenario              : used to send "static" messages from interrupt context.
 * @apicovered            : tcpip_trycallback
 * @precondition          : none

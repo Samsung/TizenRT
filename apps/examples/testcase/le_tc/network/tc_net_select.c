@@ -36,16 +36,16 @@
 
 #include "tc_internal.h"
 
-#define	PORTNUM		5004
-#define	MAXRCVLEN	20
-#define	BUFSIZE		20
+#define PORTNUM        5004
+#define MAXRCVLEN      20
+#define BUFSIZE        20
 
 static int count_wait;
 
 /**
 * @fn                   : wait1
-* @brief                : function to wait on semaphore.
-* @scenario             : waitine wait function to decrement count value.
+* @brief                : function to wait on semaphore
+* @scenario             : waiting
 * API's covered         : none
 * Preconditions         : none
 * Postconditions        : none
@@ -80,8 +80,8 @@ static void tc_net_select_server(void)
 	TC_ASSERT_NEQ("socket", sock_tcp, NEG_VAL);
 
 	FD_ZERO(&master);
-	ret = setsockopt(sock_tcp, SOL_SOCKET, ZERO, &yes, sizeof(int));
-	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
+	ret = setsockopt(sock_tcp, SOL_SOCKET, 0, &yes, sizeof(int));
+	TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(sock_tcp));
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
@@ -100,8 +100,8 @@ static void tc_net_select_server(void)
 	FD_SET(newfd, &read_fds);
 
 	result = select(newfd + 1, &read_fds, NULL, NULL, NULL);
+	TC_ASSERT_NEQ_CLEANUP("select", result, NEG_VAL, close(newfd));
 	close(newfd);
-	TC_ASSERT_NEQ("select", result, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -129,8 +129,8 @@ static void tc_net_select_client(void)
 
 	wait1();
 	ret = connect(sock_tcp, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	TC_ASSERT_NEQ_CLEANUP("connect", ret, NEG_VAL, close(sock_tcp));
 	close(sock_tcp);
-	TC_ASSERT_NEQ("connect", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -151,7 +151,7 @@ static void* server(void *args)
 
 /**
 * @fn                   : client
-* @brief                : executing the client thread
+* @brief                : executing the clinet thread
 * @scenario             : clinet program
 * API's covered         : socket,connect,send,close
 * Preconditions         : socket file descriptor.
@@ -165,11 +165,11 @@ static void* client(void *args)
 }
 
 /**
-* @fn                   : tc_net_select
-* @brief                : created client and server threads.
-* @scenario             : create client and server thread to test select api.
+* @fn                   : net_select
+* @brief                : created client and server threads
+* @scenario             : handling two threads for server and client
 * API's covered         : none
-* Preconditions         : none
+* Preconditions         : create server and client thread.
 * Postconditions        : none
 * @return               : void
 */

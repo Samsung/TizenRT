@@ -18,14 +18,15 @@
 
 #include <net/if.h>
 #include <netinet/in.h>
+
 #include "tc_internal.h"
 
-#define COUNT1 5
+#define COUNT1    5
 
 /**
 * @testcase              : tc_net_mem_trim_p
-* @brief                 : shrink memory returned by mem_malloc().
-* @scenario              : to increase or decrease the memory size.
+* @brief                 : Shrink memory returned by mem_malloc().
+* @scenario              : To increase or decrease the memory size
 * @apicovered            : mem_trim()
 * @precondition          : none
 * @postcondition         : none
@@ -40,8 +41,8 @@ void tc_net_mem_trim_p(void *buf)
 
 /**
 * @testcase              : tc_net_mem_calloc_p
-* @brief                 : contiguously allocates enough space for count objects that are size bytes.
-* @scenario              : contiguous memory allocation.
+* @brief                 : Contiguously allocates enough space for count objects that are size bytes.
+* @scenario              : when you need contiguous memory, then you can use it.
 * @apicovered            : mem_calloc()
 * @precondition          : none
 * @postcondition         : none

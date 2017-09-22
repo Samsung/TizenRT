@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <net/if.h>
 #include <netutils/netlib.h>
-#include "tc_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,15 +33,19 @@
 #include <sys/socket.h>
 #include <pthread.h>
 
-#define	PORTNUM		5001
-#define	MAXRCVLEN	20
+#include "tc_internal.h"
+
+#define PORTNUM        5001
+#define MAXRCVLEN      20
+#define CNT            4
+#define BACKLOG        1
 
 static int count_wait;
 
 /**
 * @testcase             : tc_net_recvfrom_p
-* @brief                : receive a message from a socket.
-* @scenario             : recvfrom() function receive a message from a connectionless-mode socket.
+* @brief                : This recvfrom API receive a message from a socket.
+* @scenario             : The recvfrom() function receive a message from a connectionless-mode socket.
 * @apicovered           : recvfrom()
 * @precondition         : socket file descriptor.
 * @postcondition        : none
@@ -61,8 +64,8 @@ void tc_net_recvfrom_p(int fd)
 
 /**
 * @testcase             : tc_net_recvfrom_sock_n
-* @brief                : receive a message from a socket.
-* @scenario             : recvfrom() function receive a message from a connectionless-mode socket.
+* @brief                : This recvfrom API receive a message from a socket.
+* @scenario             : The recvfrom() function receive a message from a connectionless-mode socket.
 * @apicovered           : recvfrom()
 * @precondition         : socket file descriptor.
 * @postcondition        : none
@@ -81,8 +84,8 @@ void tc_net_recvfrom_sock_n(void)
 
 /**
 * @testcase             : tc_net_recvfrom_n
-* @brief                : receive a message from a socket.
-* @scenario             : recvfrom() function receive a message from a connectionless-mode socket,
+* @brief                : This recvfrom API receive a message from a udp socket.
+* @scenario             : The recvfrom() function receive a message from a connectionless-mode socket,
                           test with invalid socket fd.
 * @apicovered           : recvfrom()
 * @precondition         : socket file descriptor.
@@ -102,8 +105,8 @@ void tc_net_recvfrom_n(int fd)
 
 /**
 * @fn                 : recvfrom_udpserver
-* @brief              : create a Udp server.
-* @scenario           : create a udp server to test recvfrom api.
+* @brief              : Create a Udp server.
+* @scenario           : Create a udp server for checking recvfrom api.
 * @API's covered      : socket,bind
 * @Preconditions      : socket file descriptor.
 * @Postconditions     : none
@@ -113,7 +116,7 @@ void *recvfrom_udpserver(void *args)
 {
 	struct sockaddr_in sa;
 
-	int sock = socket(AF_INET, SOCK_DGRAM, ZERO);
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
@@ -131,8 +134,8 @@ void *recvfrom_udpserver(void *args)
 
 /**
 * @fn                   : recvfrom_udpclient
-* @brief                : create client.
-* @scenario             : create udp client.
+* @brief                : This api create udp client.
+* @scenario             : Create udp client.
 * @API's covered        : socket,sendto
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
@@ -141,7 +144,7 @@ void *recvfrom_udpserver(void *args)
 void *recvfrom_udpclient(void *args)
 {
 	int ret;
-	int sock = socket(AF_INET, SOCK_DGRAM, ZERO);
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
 	char *buffer = "hello";
 
@@ -149,7 +152,7 @@ void *recvfrom_udpclient(void *args)
 	struct sockaddr_in dest;
 	socklen_t fromlen;
 
-	memset(&dest, ZERO, sizeof(dest));
+	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = INADDR_LOOPBACK;
 	dest.sin_port = htons(PORTNUM);
@@ -162,7 +165,7 @@ void *recvfrom_udpclient(void *args)
 
 /**
 * @fn                   : recvfrom_wait
-* @brief                : function to wait on semaphore
+* @brief                : Function to wait on semaphore
 * @scenario             : use wait function to decrement count value.
 * @API's covered        : none
 * @Preconditions        : none
@@ -179,7 +182,7 @@ void recvfrom_wait(void)
 
 /**
 * @fn                   : recvfrom_signal
-* @brief                : function to signal semaphore
+* @brief                : Function to signal semaphore
 * @scenario             : use to increase the count value.
 * @API's covered        : none
 * @Preconditions        : none
@@ -193,8 +196,8 @@ void recvfrom_signal(void)
 
 /**
 * @testcase             : tc_net_recvfrom_tcp_p
-* @brief                : receive a message from a socket.
-* @scenario             : recvfrom() function receive a message from a connection-mode socket.
+* @brief                : positive testcase for recvfrom api
+* @scenario             : used for tcp connection
 * @apicovered           : recvfrom()
 * @precondition         : socket file descriptor.
 * @postcondition        : none
@@ -204,16 +207,15 @@ void tc_net_recvfrom_tcp_p(int fd)
 {
 	char buffer[MAXRCVLEN];
 
-	int ret = recvfrom(fd, buffer, MAXRCVLEN, ZERO, NULL, NULL);
+	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, NULL, NULL);
 	TC_ASSERT_NEQ("recvfrom", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase             : tc_net_recvfrom_tcp_conn_n
-* @brief                : receive a message from a socket.
-* @scenario             : recvfrom() function receive a message from a connection-mode socket.
-                          test after shutdown.
+* @brief                : negative testcase for recvfrom api
+* @scenario             : used for tcp connection
 * @apicovered           : recvfrom()
 * @precondition         : none
 * @postcondition        : none
@@ -225,7 +227,7 @@ void tc_net_recvfrom_tcp_conn_n(int fd)
 
 	shutdown(fd, SHUT_RD);
 
-	int ret = recvfrom(fd, buffer, MAXRCVLEN, ZERO, NULL, NULL);
+	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, NULL, NULL);
 	TC_ASSERT_EQ("recvfrom", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -243,7 +245,7 @@ void tc_net_recvfrom_tcp_sock_n(int fd)
 {
 	char buffer[MAXRCVLEN];
 
-	int ret = recvfrom(fd, buffer, MAXRCVLEN, ZERO, NULL, NULL);
+	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, NULL, NULL);
 
 	TC_ASSERT_EQ("recvfrom", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
@@ -251,9 +253,8 @@ void tc_net_recvfrom_tcp_sock_n(int fd)
 
 /**
 * @testcase            : tc_net_recvfrom_tcp_n
-* @brief               : receive a message from a socket.
-* @scenario            : recvfrom() function receive a message from a connection-mode socket,
-                         test with invalid socket fd.
+* @brief               : negative testcase using tcp
+* @scenario            : used for tcp connection
 * @apicovered          : recvfrom()
 * @precondition        : none
 * @postcondition       : none
@@ -263,15 +264,15 @@ void tc_net_recvfrom_tcp_n(void)
 {
 	char buffer[MAXRCVLEN];
 
-	int ret = recvfrom(NEG_VAL, buffer, MAXRCVLEN, ZERO, NULL, NULL);
+	int ret = recvfrom(NEG_VAL, buffer, MAXRCVLEN, 0, NULL, NULL);
 	TC_ASSERT_EQ("recvfrom", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @fn                   : recvfrom_server
-* @brief                : create a tcp server.
-* @scenario             : create a tcp server to test recvfrom api.
+* @brief                : Create a Tcp server.
+* @scenario             : Create a tcp server for checking recvfrom api.
 * @API's covered        : socket,bind,listen,accept,sendto,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
@@ -286,18 +287,18 @@ void* recvfrom_tcpserver(void *args)
 
 	int sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	memset(&sa, ZERO, sizeof(sa));
+	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, 1);
+	listen(sock, BACKLOG);
 
 	recvfrom_signal();
 	ConnectFD = accept(sock, NULL, NULL);
 
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < CNT; i++) {
 		sendto(ConnectFD, msg, strlen(msg), 0, (struct sockaddr *)&sa, sizeof(sa));
 	}
 	close(ConnectFD);
@@ -307,8 +308,8 @@ void* recvfrom_tcpserver(void *args)
 
 /**
 * @fn                   : recvfrom_tcpclient
-* @brief                : create client.
-* @scenario             : create tcp client.
+* @brief                : This api create tcp client.
+* @scenario             : Create tcp client.
 * @API's covered        : socket,connect,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
@@ -318,7 +319,7 @@ void* recvfrom_tcpclient(void *args)
 {
 	struct sockaddr_in dest;
 
-	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
@@ -338,8 +339,8 @@ void* recvfrom_tcpclient(void *args)
 
 /**
 * @fn                  : net_recvfrom
-* @brief               : create client and server thread.
-* @scenario            : create client and server thread to test recvfrom api.
+* @brief               : This api create client and server thread.
+* @scenario            : Create client and server thread to test recvfrom api.
 * @API's covered       : none
 * @Preconditions       : none
 * @Postconditions      : none

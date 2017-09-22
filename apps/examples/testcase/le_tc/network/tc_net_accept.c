@@ -34,12 +34,16 @@
 #include <pthread.h>
 
 #include "tc_internal.h"
-#define PORTNUM 5001
-#define MAXRCVLEN 20
+
+#define PORTNUM        5001
+#define MAXRCVLEN      20
+#define BACKLOG        1
+
 static int count_wait;
+
 /**
 * @fn                    : wait
-* @brief                 : function to wait on semaphore.
+* @brief                 : Function to wait on semaphore.
 * @scenario              : use wait function to decrement count value.
 * @API's covered         : none
 * @Preconditions         : none
@@ -56,7 +60,7 @@ static void wait(void)
 
 /**
 * @fn                    : nw_signal
-* @brief                 : function to signal semaphore.
+* @brief                 : Function to signal semaphore.
 * @scenario              : use to increase the count value.
 * @API's covered         : none
 * @Preconditions         : none
@@ -70,8 +74,8 @@ static void nw_signal(void)
 
 /**
 * @testcase             : tc_net_accept_p
-* @brief                : accept a connection on a socket.
-* @scenario             : extracts the first connection request on the queue of pending connections
+* @brief                : This accept API accept a connection on a socket.
+* @scenario             : It extracts the first connection request on the queue of pending connections
                           for the listening socke and creates a new connected socket.
 * @apicovered           : accept()
 * @precondition         : socket file descriptor.
@@ -83,14 +87,14 @@ void tc_net_accept_p(int fd)
 	int ConnectFD = accept(fd, NULL, NULL);
 
 	close(ConnectFD);
-	TC_ASSERT_GEQ("accept", ConnectFD, ZERO);
+	TC_ASSERT_NEQ("accept", ConnectFD, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase             : tc_net_accept_socket_n
-* @brief                : accept a connection on a socket.
-* @scenario             : extracts the first connection request on the queue of pending connections
+* @brief                : This accept API accept a connection on a socket.
+* @scenario             : It extracts the first connection request on the queue of pending connections
                           for the listening socke and creates a new connected socket, with invalid fd.
 * @apicovered           : accept()
 * @precondition         : none
@@ -100,15 +104,14 @@ void tc_net_accept_p(int fd)
 void tc_net_accept_socket_n(void)
 {
 	int ConnectFD = accept(NEG_VAL, NULL, NULL);
-	close(ConnectFD);
-	TC_ASSERT_NEQ("accept", ConnectFD, ZERO);
+	TC_ASSERT_EQ("accept", ConnectFD, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @fn                   : Server
-* @brief                : create a tcp server.
-* @scenario             : create a tcp server to test accept api.
+* @brief                : Create a Tcp server.
+* @scenario             : Create a tcp server for checking accept api.
 * @API's covered        : socket,bind,listen,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
@@ -118,14 +121,14 @@ void* Server(void *args)
 {
 	struct sockaddr_in sa;
 
-	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
-	memset(&sa, ZERO, sizeof(sa));
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, ONE);
+	listen(sock, BACKLOG);
 	nw_signal();
 	tc_net_accept_p(sock);
 	tc_net_accept_socket_n();
@@ -135,8 +138,8 @@ void* Server(void *args)
 
 /**
 * @fn                   : Client
-* @brief                : create the client.
-* @scenario             : create tcp client.
+* @brief                : This api create client.
+* @scenario             : Create tcp client.
 * @API's covered        : socket,connect,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
@@ -148,22 +151,21 @@ void* Client(void *args)
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
-	memset(&dest, ZERO, sizeof(dest));
+	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_INET;
-	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	dest.sin_addr.s_addr = INADDR_LOOPBACK;
 	dest.sin_port = htons(PORTNUM);
 
 	wait();
 	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 	close(sock);
-	TC_SUCCESS_RESULT();
 	return NULL;
 }
 
 /**
 * @fn                   : tc_net_accept
-* @brief                : create client and server thread.
-* @scenario             : create client and server thread to test accept api.
+* @brief                : This api create client and server thread.
+* @scenario             : Create client and server thread to test accept api.
 * @API's covered        : none
 * @Preconditions        : none
 * @Postconditions       : none

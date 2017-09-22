@@ -116,9 +116,6 @@ endif
 ifeq ($(CONFIG_TC_NET_NETDB),y)
 CSRCS +=tc_net_netdb.c
 endif
-ifeq ($(CONFIG_TC_NET_CORE_NTOHS),y)
-CSRCS +=tc_net_core.c
-endif
 ifeq ($(CONFIG_TC_NET_IPV4_NETMASK_VALID),y)
 CSRCS +=tc_net_ipv4_netmask_valid.c
 endif
@@ -148,9 +145,6 @@ CSRCS +=tc_netbuf_alloc.c
 endif
 ifeq ($(CONFIG_TC_MEM_ALLOC),y)
 CSRCS +=tc_net_mem_allocate.c
-endif
-ifeq ($(CONFIG_TC_NET_DEF),y)
-CSRCS +=tc_net_def.c
 endif
 ifeq ($(CONFIG_TC_NET_NETBUF),y)
 CSRCS +=tc_net_netbuf.c

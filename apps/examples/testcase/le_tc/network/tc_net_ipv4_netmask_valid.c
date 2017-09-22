@@ -27,8 +27,8 @@
 #define NETMASK2         0xffffff90
 /**
 * @testcase             : tc_net_ipv4_addr_netmask_valid_p
-* @brief                : checks netmask is valid or not.
-* @scenario             : IPv4 netmask to check.
+* @brief                : Checks if a netmask is valid (starting with ones, then only zeros)
+* @scenario             : netmask the IPv4 netmask to check (in network byte order!)
 * @apicovered           : ip4_addr_netmask_valid
 * @precondition         : none
 * @postcondition        : none
@@ -43,8 +43,8 @@ void tc_net_ipv4_addr_netmask_valid_p(void)
 
 /**
 * @testcase             : tc_net_ipv4_addr_netmask_valid_n
-* @brief                : checks netmask is valid or not.
-* @scenario             : IPv4 netmask to check.
+* @brief                : Checks if a netmask is valid (starting with ones, then only zeros)
+* @scenario             : netmask the IPv4 netmask to check (in network byte order!)
 * @apicovered           : ip4_addr_netmask_valid
 * @precondition         : none
 * @postcondition        : none
@@ -53,7 +53,7 @@ void tc_net_ipv4_addr_netmask_valid_p(void)
 void tc_net_ipv4_addr_netmask_valid_n(void)
 {
 	int ret = ip4_addr_netmask_valid(NETMASK2);
-	TC_ASSERT_EQ("ip4_addr_netmask_valid", ret, ONE);
+	TC_ASSERT_NEQ("ip4_addr_netmask_valid", ret, ONE);
 	TC_SUCCESS_RESULT();
 }
 

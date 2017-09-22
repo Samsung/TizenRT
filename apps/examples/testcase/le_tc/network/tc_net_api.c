@@ -22,17 +22,17 @@
 #include <net/lwip/api.h>
 #include <net/lwip/sockets.h>
 
-#define PORT_NUM	5000
-#define MAXBUF		80
-#define	COUNT		10
-#define	BACKLOG		3
+#define PORT_NUM        5000
+#define MAXBUF          80
+#define COUNT           10
+#define BACKLOG         3
 
 static int count_wait;
 
 /**
 * @fn                    : sig_wait
 * @brief                 : function to wait on semaphore
-* @scenario              : use wait function to decrement count value.
+* @scenario              : none
 * @API's covered         : none
 * @Preconditions         : none
 * @Postconditions        : none
@@ -48,8 +48,8 @@ static void sig_wait(void)
 
 /**
 * @fn                    : sig_call
-* @brief                 : function to signal semaphore.
-* @scenario              : use to increase the count value.
+* @brief                 : function to signal semaphore
+* @scenario              : none
 * @API's covered         : none
 * @Preconditions         : none
 * @Postconditions        : none
@@ -62,10 +62,10 @@ static void sig_call(void)
 
 /**
 * @fn                    : tc_net_server
-* @brief                 : create the server.
-* @scenario              : create the server.
-* @API's covered         : socket,bind,listen,accept,recv
-* @Preconditions         : socket file descriptor.
+* @brief                 : function to signal semaphore
+* @scenario              : none
+* @API's covered         : none
+* @Preconditions         : none
 * @Postconditions        : none
 * @return                : void
 */
@@ -77,7 +77,7 @@ static void tc_net_server(void)
 	struct sockaddr_in addr;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
-	TC_ASSERT_EQ("socket", sock, ZERO);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	flags = fcntl(sock, F_GETFL, 0);
 	TC_ASSERT_NEQ("fcntl", flags, NEG_VAL);
@@ -87,7 +87,7 @@ static void tc_net_server(void)
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	addr.sin_addr.s_addr = INADDR_LOOPBACK;
 	addr.sin_port = htons(PORT_NUM);
 
 	ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
@@ -109,10 +109,10 @@ static void tc_net_server(void)
 
 /**
 * @fn                    : tc_net_client
-* @brief                 : client thread.
-* @scenario              : client thread.
-* @API's covered         : socket,connect,close
-* @Preconditions         : socket file descriptor.
+* @brief                 : client thread
+* @scenario              : none
+* @API's covered         : none
+* @Preconditions         : none
 * @Postconditions        : none
 * @return                : void
 */
@@ -123,25 +123,25 @@ static void tc_net_client(void)
 	struct sockaddr_in dest;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
-	TC_ASSERT_EQ("socket", sock, ZERO);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_INET;
-	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	dest.sin_addr.s_addr = INADDR_LOOPBACK;
 	dest.sin_port = htons(PORT_NUM);
 
 	sig_wait();
 	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	TC_ASSERT_EQ("connect", ret, ZERO);
+	TC_ASSERT_NEQ("connect", ret, NEG_VAL);
 
 	len = write(sock, buffer, strlen(buffer));
-	TC_ASSERT_NEQ("write", len, ZERO);
+	TC_ASSERT_NEQ("write", len, NEG_VAL);
 }
 
 /**
 * @fn                    : net_api_server
-* @brief                 : server thread.
-* @scenario              : server thread.
+* @brief                 : server thread
+* @scenario              : none
 * @API's covered         : none
 * @Preconditions         : none
 * @Postconditions        : none
@@ -155,8 +155,8 @@ void* net_api_server(void *args)
 
 /**
 * @fn                    : net_api_client
-* @brief                 : client thread.
-* @scenario              : client thread.
+* @brief                 : client thread
+* @scenario              : none
 * @API's covered         : none
 * @Preconditions         : none
 * @Postconditions        : none

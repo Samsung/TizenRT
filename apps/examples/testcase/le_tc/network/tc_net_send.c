@@ -35,14 +35,15 @@
 
 #include "tc_internal.h"
 
-#define PORTNUM		5007
-#define MAXRCVLEN	20
+#define PORTNUM        5007
+#define MAXRCVLEN      20
+#define BACKLOG        2
 
 static int count_wait;
 
 /**
 * @fn                   : sig_wait
-* @brief                : function to wait on semaphore
+* @brief                : Function to wait on semaphore
 * @scenario             : use wait function to decrement count value.
 * @API's covered        : none
 * @Preconditions        : none
@@ -59,7 +60,7 @@ void sig_wait(void)
 
 /**
 * @fn                   : sig_call
-* @brief                : function to signal semaphore
+* @brief                : Function to signal semaphore
 * @scenario             : use to increase the count value.
 * @API's covered        : none
 * @Preconditions        : none
@@ -73,7 +74,7 @@ void sig_call(void)
 
 /**
 * @testcase             : tc_net_send_p
-* @brief                : send a message on a socket.
+* @brief                : This send API send a message on a socket.
 * @scenario             : used to transmit a message to another socket.
 * @apicovered           : accept(),send()
 * @precondition         : socket file descriptor.
@@ -86,16 +87,16 @@ void tc_net_send_p(int fd)
 
 	int ConnectFD = accept(fd, NULL, NULL);
 
-	int ret = send(ConnectFD, msg, strlen(msg), ZERO);
+	int ret = send(ConnectFD, msg, strlen(msg), 0);
+	TC_ASSERT_NEQ_CLEANUP("send", ret, NEG_VAL, close(ConnectFD));
 	close(ConnectFD);
-	TC_ASSERT_NEQ("send", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @fn                   : server
-* @brief                : create a tcp server.
-* @scenario             : create a tcp server to check send api.
+* @brief                : Create a Tcp server.
+* @scenario             : Create a tcp server for checking send api.
 * API's covered         : socket,bind,listen,close
 * Preconditions         : socket file descriptor.
 * Postconditions        : none
@@ -105,15 +106,15 @@ void* server(void *args)
 {
 	struct sockaddr_in sa;
 
-	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, 2);
+	listen(sock, BACKLOG);
 
 	sig_call();
 	tc_net_send_p(sock);
@@ -123,8 +124,8 @@ void* server(void *args)
 
 /**
 * @fn                   : client
-* @brief                : create client.
-* @scenario             : create tcp client.
+* @brief                : This api create client.
+* @scenario             : Create tcp client.
 * API's covered         : socket,connect,recv,close
 * Preconditions         : socket file descriptor.
 * Postconditions        : none
@@ -140,21 +141,21 @@ void* client(void *args)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	dest.sin_addr.s_addr = INADDR_LOOPBACK;
 	dest.sin_port = htons(PORTNUM);
 
 	sig_wait();
 	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	len = recv(sock, buffer, MAXRCVLEN, ZERO);
+	len = recv(sock, buffer, MAXRCVLEN, 0);
 	buffer[len] = '\0';
 	close(sock);
 	return NULL;
 }
 
 /**
-* @fn                  : net_send
-* @brief               : create client and server thread.
-* @scenario            : create client and server thread to test send api.
+* @fn                  : tc_net_send
+* @brief               : This api create client and server thread.
+* @scenario            : Create client and server thread to test send api.
 * API's covered        : none
 * Preconditions        : none
 * Postconditions       : none

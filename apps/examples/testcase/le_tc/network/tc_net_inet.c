@@ -30,22 +30,23 @@
 #include <sys/ioctl.h>
 
 #include "tc_internal.h"
+
 #define SOURCEIP        "198.51.100.4"
 #define DESTIP          "198.51.100.5"
 #define INVAL_AF        33
 #define VAL             6
 #define INVAL_SOCKSIZE  7
-#define ADDR            0x6601a8c0
-#define ADDR1           0x17071994
-#define VAL1            0x1400
-#define VAL2            20
-#define VAL3            0xa000000
+#define ADDR            11223344
+#define ADDR1           55667788
+#define VAL1            1122
+#define VAL2            33
+#define VAL3            123456780
 #define VAL4            10
 #define LOOPBACK        "127.0.0.1"
 
 /**
 * @testcases           : tc_inet_chksum_pbuf_p
-* @brief               : calculate a checksum over a chain of pbufs.
+* @brief               : Calculate a checksum over a chain of pbufs.
 * @scenario            : pbuf chain over that the checksum should be calculated.
 * @apicovered          : inet_chksum_pbuf()
 * @precondition        : allocate pbuf and chain pbuf.
@@ -83,8 +84,8 @@ cleanup1:
 
 /**
 * @testcase            : tc_inet_chksum_pseudo_partial_p
-* @brief               : calculates the pseudo checksum used by TCP and UDP for a pbuf chain.
-* @scenario            : chain the pbuf and check the pseudo checksum with IP address.
+* @brief               : Calculates the pseudo checksum used by TCP and UDP for a pbuf chain.
+* @scenario            : Chain the pbuf and check the pseudo checksum with IP address.
 * @apicovered          : inet_chksum_pseudo_partial()
 * @precondition        : allocate pbuf and chain pbuf.
 * @postcondition       : none
@@ -98,7 +99,7 @@ static void tc_inet_chksum_pseudo_partial_p(void)
 	struct pbuf *p4 = NULL;
 	ip_addr_t *source = NULL;
 	ip_addr_t *dest = NULL;
-	int checksum = 0;
+	int checksum = ZERO;
 
 	source = (ip_addr_t *)malloc(sizeof(ip_addr_t));
 	TC_ASSERT_NEQ("malloc", source, NULL);
@@ -138,8 +139,8 @@ cleanup1:
 
 /**
 * @testcase            : tc_net_inet_addr_p
-* @brief               : internet address manipulation routines.
-* @scenario            : converts the Internet host address from IPv4 numbers-and-dots notation into binary data in network byte order.
+* @brief               : Internet address manipulation routines.
+* @scenario            : Converts the Internet host address from IPv4 numbers-and-dots notation into binary data in network byte order.
 * @apicovered          : inet_addr()
 * @precondition        : none
 * @postcondition       : none
@@ -150,14 +151,14 @@ static void tc_net_inet_addr_p(void)
 	unsigned int ret;
 
 	ret = inet_addr(LOOPBACK);
-	TC_ASSERT_NEQ("inet", ret, NEG_VAL);
+	TC_ASSERT_NEQ("inet_addr", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_inet_aton_p
-* @brief               : internet address manipulation routines.
-* @scenario            : converts the Internet host address from the IPv4 numbers-and-dots notation into binary form.
+* @brief               : Internet address manipulation routines.
+* @scenario            : Converts the Internet host address from the IPv4 numbers-and-dots notation into binary form.
 * @apicovered          : inet_aton()
 * @precondition        : none
 * @postcondition       : none
@@ -169,14 +170,14 @@ static void tc_net_inet_aton_p(void)
 	struct sockaddr_in addr_inet;
 
 	ret = inet_aton(LOOPBACK, &addr_inet.sin_addr);
-	TC_ASSERT_NEQ("inet", ret, ZERO);
+	TC_ASSERT_NEQ("inet_aton", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_inet_ntoa_p
-* @brief               : internet address manipulation routines.
-* @scenario            : converts the Internet host address in, given in network byte order, to a string in IPv4 dotted-decimal notation.
+* @brief               : Internet address manipulation routines.
+* @scenario            : Converts the Internet host address in, given in network byte order, to a string in IPv4 dotted-decimal notation.
 * @apicovered          : inet_ntoa()
 * @precondition        : none
 * @postcondition       : none
@@ -190,13 +191,13 @@ static void tc_net_inet_ntoa_p(void)
 	addr_inet.sin_addr.s_addr = ADDR;
 	ret = inet_ntoa(addr_inet.sin_addr);
 
-	TC_ASSERT_NEQ("tc_net_inet_ntoa_p", ret, NULL);
+	TC_ASSERT_NEQ("inet_ntoa", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_inet_ntop
-* @brief               : convert IPv4 and IPv6 addresses from binary to text form.
+* @brief               : Convert IPv4 and IPv6 addresses from binary to text form.
 * @scenario            : converts a numeric address into a text string suitable for presentation.
 * @apicovered          : inet_ntop()
 * @precondition        : none
@@ -232,8 +233,8 @@ static void tc_net_inet_ntop(void)
 
 /**
 * @testcase            : tc_net_inet_pton
-* @brief               : convert IPv4 and IPv6 addresses from text to binary form.
-* @scenario            : converts an address in its standard text presentation form into its numeric binary form. 
+* @brief               : Convert IPv4 and IPv6 addresses from text to binary form.
+* @scenario            : Converts an address in its standard text presentation form into its numeric binary form. 
 * @apicovered          : inet_pton()
 * @precondition        : none
 * @postcondition       : none
@@ -265,8 +266,8 @@ static void tc_net_inet_pton(void)
 
 /**
 * @testcase            : tc_net_htons
-* @brief               : to convert from host order to network order.
-* @scenario            : htons() converts the unsigned short integer hostshort from host byte order to network byte order.
+* @brief               : To convert from host order to network order.
+* @scenario            : The htons() converts the unsigned short integer hostshort from host byte order to network byte order.
 * @apicovered          : htons()
 * @precondition        : none
 * @postcondition       : none
@@ -274,16 +275,15 @@ static void tc_net_inet_pton(void)
 */
 static void tc_net_htons(void)
 {
-	uint16_t var = VAL2;
-	uint16_t ret = htons(var);
-	TC_ASSERT_EQ("tc_net_htons", ret, VAL1);
+	uint16_t ret = htons(VAL2);
+	TC_ASSERT_EQ("htons", ret, VAL1);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_ntohs
-* @brief               : to convert network to host order.
-* @scenario            : ntohs() converts the unsigned short integer netshort from network byte order to host byte order.
+* @brief               : To convert network to host order.
+* @scenario            : The ntohs() converts the unsigned short integer netshort from network byte order to host byte order.
 * @apicovered          : ntohs()
 * @precondition        : none
 * @postcondition       : none
@@ -291,16 +291,15 @@ static void tc_net_htons(void)
 */
 static void tc_net_ntohs(void)
 {
-	uint16_t var = VAL1;
-	uint16_t ret = ntohs(var);
-	TC_ASSERT_EQ("tc_net_ntohs", ret, VAL2);
+	uint16_t ret = ntohs(VAL1);
+	TC_ASSERT_EQ("ntohs", ret, VAL2);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_htonl
-* @brief               : to convert from host order to network order.
-* @scenario            : htonl() converts the unsigned integer hostlong from host byte order to network byte order.
+* @brief               : To convert from host order to network order.
+* @scenario            : The htonl() converts the unsigned integer hostlong from host byte order to network byte order.
 * @apicovered          : htonl()
 * @precondition        : none
 * @postcondition       : none
@@ -308,16 +307,15 @@ static void tc_net_ntohs(void)
 */
 static void tc_net_htonl(void)
 {
-	uint32_t var = VAL4;
-	uint32_t ret = htonl(var);
-	TC_ASSERT_EQ("tc_net_htonl", ret, VAL3);
+	uint32_t ret = htonl(VAL4);
+	TC_ASSERT_EQ("htonl", ret, VAL3);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_ntohl
-* @brief               : to convert network to host byte order
-* @scenario            : ntohl() converts the unsigned integer netlong from network byte order to host byte order.
+* @brief               : To convert network to host byte order
+* @scenario            : The ntohl() converts the unsigned integer netlong from network byte order to host byte order.
 * @apicovered          : ntohl()
 * @precondition        : none
 * @postcondition       : none
@@ -325,9 +323,8 @@ static void tc_net_htonl(void)
 */
 static void tc_net_ntohl(void)
 {
-	uint32_t var = VAL3;
-	uint32_t ret = ntohl(var);
-	TC_ASSERT_EQ("tc_net_ntohl", ret, VAL4);
+	uint32_t ret = ntohl(VAL3);
+	TC_ASSERT_EQ("ntohl", ret, VAL4);
 	TC_SUCCESS_RESULT();
 }
 

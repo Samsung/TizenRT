@@ -30,16 +30,16 @@
 
 #include "tc_internal.h"
 
-#define PORTNO	5001
-#define PORTNO1 5002
-#define PORTNO2 5003
-#define PORTNO3 5004
-#define PORTNO4 5005
-#define PORTNO5 5123
+#define PORTNO        5001
+#define PORTNO1       5002
+#define PORTNO2       5003
+#define PORTNO3       5004
+#define PORTNO4       5005
+#define PORTNO5       5123
 
 /**
 * @testcase            : tc_net_bind_p
-* @brief               : bind a name to a socket.
+* @brief               : This bind API bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : socket file descriptor.
@@ -52,23 +52,23 @@ static void tc_net_bind_p(void)
 	int ret;
 
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	TC_ASSERT_NEQ("socket", SocketFD, ZERO);
+	TC_ASSERT_NEQ("socket", SocketFD, NEG_VAL);
 
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO);
-	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
 	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
 	close(SocketFD);
 
-	TC_ASSERT_EQ("bind", ret, ZERO);
+	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_bind_udp_p
-* @brief               : bind a name to a socket.
+* @brief               : This bind API bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : socket file descriptor.
@@ -86,7 +86,7 @@ static void tc_net_bind_udp_p(void)
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO);
-	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
 	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
 	close(SocketFD);
@@ -97,7 +97,7 @@ static void tc_net_bind_udp_p(void)
 
 /**
 * @testcase            : tc_net_bind_broadcast_p
-* @brief               : bind a name to a socket.
+* @brief               : This bind API bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : socket file descriptor.
@@ -110,12 +110,12 @@ static void tc_net_bind_broadcast_p(void)
 	int ret;
 
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	TC_ASSERT_NEQ("socket", SocketFD, ZERO);
+	TC_ASSERT_NEQ("socket", SocketFD, NEG_VAL);
 
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO1);
-	sa.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+	sa.sin_addr.s_addr = INADDR_BROADCAST;
 
 	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
 	close(SocketFD);
@@ -126,7 +126,7 @@ static void tc_net_bind_broadcast_p(void)
 
 /**
 * @testcase            : tc_net_bind_fd_n
-* @brief               : bind a name to a socket.
+* @brief               : This bind API bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : none
@@ -141,16 +141,16 @@ static void tc_net_bind_fd_n(void)
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO4);
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_addr.s_addr = INADDR_ANY;
 
 	ret = bind(NEG_VAL, (struct sockaddr *)&sa, sizeof(sa));
-	TC_ASSERT_NEQ("bind", ret, ZERO);
+	TC_ASSERT_EQ("bind", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_bind_addrfamily_n
-* @brief               : bind a name to a socket.
+* @brief               : This bind API bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : none
@@ -163,22 +163,22 @@ static void tc_net_bind_addrfamily_n(void)
 	int ret;
 
 	int fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	TC_ASSERT_EQ("socket", fd, ZERO);
+	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
 
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_UNIX;
 	sa.sin_port = htons(PORTNO5);
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_addr.s_addr = INADDR_ANY;
 
 	ret = bind(fd, (struct sockaddr *)&sa, sizeof(sa));
 	close(fd);
-	TC_ASSERT_NEQ("bind", ret, ZERO);
+	TC_ASSERT_EQ("bind", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_bind_size_n
-* @brief               : bind a name to a socket.
+* @brief               : This bind API bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : socket file descriptor.
@@ -191,23 +191,23 @@ static void tc_net_bind_size_n(void)
 	int ret;
 
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	TC_ASSERT_EQ("socket", SocketFD, ZERO);
+	TC_ASSERT_NEQ("socket", SocketFD, NEG_VAL);
 
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO3);
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_addr.s_addr = INADDR_ANY;
 
 	ret = bind(SocketFD, (struct sockaddr *)&sa, NEG_VAL);
 	close(SocketFD);
 
-	TC_ASSERT_NEQ("bind", ret, ZERO);
+	TC_ASSERT_EQ("bind", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_bind_fd_size_n
-* @brief               : bind a name to a socket.
+* @brief               : This bind API bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : none
@@ -222,11 +222,11 @@ static void tc_net_bind_fd_size_n(void)
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO2);
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_addr.s_addr = INADDR_ANY;
 
-	ret = bind(NEG_VAL, (struct sockaddr *)&sa, ZERO);
+	ret = bind(NEG_VAL, (struct sockaddr *)&sa, 0);
 
-	TC_ASSERT_NEQ("bind", ret, ZERO);
+	TC_ASSERT_EQ("bind", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 

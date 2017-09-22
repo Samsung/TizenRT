@@ -34,8 +34,8 @@ extern int ioctlsocket(int s, long cmd, void *argp);
 
 /**
 * @testcase            : tc_net_ioctl_p
-* @brief               : manipulates the set/clear non-blocking i/o for socket files.
-* @scenario            : ioctlsocket api control files with request code.
+* @brief               : This function manipulates the underlying device parameters of special files.
+* @scenario            : ioctlsocket api control files with device-dependent request code.
 * @apicovered          : ioctl()
 * @precondition        : fd must be an open file descriptor.
 * @postcondition       : none
@@ -50,21 +50,21 @@ static void tc_net_ioctl_p(void)
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	fd = ioctlsocket(sock, FIONBIO, &val);
+	TC_ASSERT_NEQ_CLEANUP("ioctlsocket", fd, NEG_VAL, close(sock));
 	close(sock);
-	TC_ASSERT_NEQ("tc_net_ioctl_p", fd, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_ioctl_fionread_n
-* @brief               : manipulates the set/clear non-blocking i/o for socket files.
-* @scenario            : ioctlsocket api control files with request code.
+* @brief               : This function manipulates the underlying device parameters of special files.
+* @scenario            : ioctlsocket api control files with device-dependent request code.
 * @apicovered          : ioctl()
 * @precondition        : fd must be an open file descriptor.
 * @postcondition       : none
 * @return              : void
 */
-static void tc_net_ioctl_fionread_n(void)
+static void tc_net_ioctl_fionread_p(void)
 {
 	long val = 10;
 	int fd;
@@ -72,15 +72,15 @@ static void tc_net_ioctl_fionread_n(void)
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	fd = ioctlsocket(sock, FIONREAD, &val);
+	TC_ASSERT_NEQ_CLEANUP("ioctlsocket", fd, NEG_VAL, close(sock));
 	close(sock);
-	TC_ASSERT_NEQ("tc_net_ioctl_fionread_n", fd, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_ioctl_n
-* @brief               : manipulates the set/clear non-blocking i/o for socket files.
-* @scenario            : ioctlsocket api control files with request code.
+* @brief               : This function manipulates the underlying device parameters of special files
+* @scenario            : ioctlsocket api control files with device-dependent request code.
 * @apicovered          : ioctl()
 * @precondition        : none
 * @postcondition       : none
@@ -88,9 +88,9 @@ static void tc_net_ioctl_fionread_n(void)
 */
 static void tc_net_ioctl_n(void)
 {
-	int ret = ioctlsocket(NEG_VAL, FIONBIO, ZERO);
+	int ret = ioctlsocket(-1, FIONBIO, 0);
 
-	TC_ASSERT_EQ("tc_net_ioctl_n", ret, NEG_VAL);
+	TC_ASSERT_EQ("ioctlsocket", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -101,7 +101,7 @@ static void tc_net_ioctl_n(void)
 int net_ioctl_main(int s)
 {
 	tc_net_ioctl_p();
-	tc_net_ioctl_fionread_n();
+	tc_net_ioctl_fionread_p();
 	tc_net_ioctl_n();
 	return 0;
 }

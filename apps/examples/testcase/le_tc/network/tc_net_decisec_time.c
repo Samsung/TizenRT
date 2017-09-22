@@ -22,12 +22,12 @@
 
 #include "tc_internal.h"
 
-#define DESISEC 1000
+#define DESISEC    1000
 
 /**
 * @testcase            : tc_net_decisec_dsec2tick
-* @brief               : convert a decisecond value to a system clock ticks.
-* @scenario            : convert a decisecond value to a system clock ticks with dsec value.
+* @brief               : Convert a decisecond value to a system clock ticks
+* @scenario            : Convert a decisecond value to a system clock ticks with some dsec value.
 * @apicovered          : net_dsec2tick
 * @precondition        : none
 * @postcondition       : none
@@ -43,8 +43,8 @@ static void tc_net_decisec_dsec2tick(void)
 
 /**
 * @testcase            : tc_net_decisec_dsec2timeval
-* @brief               : convert a decisecond timeout value to a struct timeval
-* @scenario            : convert a decisecond timeout value to a struct timeval with dsec value.
+* @brief               : Convert a decisecond timeout value to a struct timeval
+* @scenario            : Convert a decisecond timeout value to a struct timeval with some dsec value.
 * @apicovered          : net_dsec2timeval
 * @precondition        : none
 * @postcondition       : none
@@ -65,8 +65,8 @@ static void tc_net_decisec_dsec2timeval(void)
 
 /**
 * @testcase            : tc_net_decisec_timeval2dsec
-* @brief               : convert a struct timeval to deciseconds.
-* @scenario            : needed by setsockopt() to save new timeout values.
+* @brief               : Convert a struct timeval to deciseconds.
+* @scenario            : Needed by setsockopt() to save new timeout values.
 * @apicovered          : net_timeval2dsec
 * @precondition        : set the timeval structure value.
 * @postcondition       : none

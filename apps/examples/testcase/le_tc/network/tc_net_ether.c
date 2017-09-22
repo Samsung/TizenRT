@@ -30,12 +30,13 @@
 #include <sys/ioctl.h>
 
 #include "tc_internal.h"
-#define	NUMREQS	3
+
+#define NUMREQS    3
 
 /**
 * @testcase            : tc_net_ether_ntoa_p
-* @brief               : ethernet address manipulation routines.
-* @scenario            : converts the Ethernet host address addr given in network byte order to a string into dotted decimal.
+* @brief               : Ethernet address manipulation routines.
+* @scenario            : Converts the Ethernet host address addr given in network byte order to a string into dotted decimal.
 * @apicovered          : ether_ntoa(), ioctl()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -57,16 +58,16 @@ static void tc_net_ether_ntoa_p(int sock_udp)
 	ifr = ifcfg.ifc_req;
 
 	ret = ioctl(sock_udp, SIOCGIFCONF, (unsigned long)&ifcfg);
-	TC_ASSERT_EQ_CLEANUP("ioctl", ret, ZERO, TC_FREE_MEMORY(ifcfg.ifc_buf));
+	TC_ASSERT_NEQ_CLEANUP("ioctl", ret, NEG_VAL, TC_FREE_MEMORY(ifcfg.ifc_buf));
 
 	strncpy(tmp.ifr_name, ifr->ifr_name, sizeof(tmp.ifr_name));
 	ret = ioctl(sock_udp, SIOCGIFHWADDR, (unsigned long)&tmp);
-	TC_ASSERT_GEQ_CLEANUP("ioctl", ret, ZERO, TC_FREE_MEMORY(ifcfg.ifc_buf));
+	TC_ASSERT_NEQ_CLEANUP("ioctl", ret, NEG_VAL, TC_FREE_MEMORY(ifcfg.ifc_buf));
 
 	sa = &tmp.ifr_hwaddr;
 	buffer = (FAR char *)ether_ntoa((struct ether_addr *)sa->sa_data);
+	TC_ASSERT_NEQ_CLEANUP("ether_ntoa", buffer, NULL, TC_FREE_MEMORY(ifcfg.ifc_buf););
 	TC_FREE_MEMORY(ifcfg.ifc_buf);
-	TC_ASSERT_NEQ("ether_ntoa", buffer, NULL);
 	TC_SUCCESS_RESULT();
 }
 

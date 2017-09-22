@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <net/if.h>
 #include <netutils/netlib.h>
-#include "tc_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,15 +33,17 @@
 #include <sys/socket.h>
 #include <pthread.h>
 
-#define	PORTNUM		5010
-#define	MAXRCVLEN	20
-#define	BACKLOG		2
+#include "tc_internal.h"
+
+#define PORTNUM        5010
+#define MAXRCVLEN      20
+#define BACKLOG        2
 
 static int count_wait;
 
 /**
 * @fn                   : recv_wait
-* @brief                : function to wait on semaphore
+* @brief                : Function to wait on semaphore
 * @scenario             : use wait function to decrement count value.
 * @API's covered        : none
 * @Preconditions        : none
@@ -59,7 +60,7 @@ void recv_wait(void)
 
 /**
 * @fn                  : recv_signal
-* @brief               : function to signal semaphore
+* @brief               : Function to signal semaphore
 * @scenario            : use to increase the count value.
 * @API's covered       : none
 * @Preconditions       : none
@@ -73,7 +74,7 @@ void recv_signal(void)
 
 /**
 * @testcase            : tc_net_recv_p
-* @brief               : receive a message from a socket.
+* @brief               : This recv API receive a message from a socket.
 * @scenario            : recv is used to receive messages from a socket.
 * @apicovered          : recv()
 * @precondition        : socket file descriptor.
@@ -86,13 +87,13 @@ void tc_net_recv_p(int fd)
 	int ret = recv(fd, buffer, MAXRCVLEN, 0);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_NEQ("tc_net_recv_p", ret, NEG_VAL);
+	TC_ASSERT_NEQ("recv", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_recv_n
-* @brief               : receive a message from a socket.
+* @brief               : This recv API receive a message from a socket.
 * @scenario            : recv is used to receive messages from a socket,
                          with invalid fd.
 * @apicovered          : recv()
@@ -104,16 +105,16 @@ void tc_net_recv_n(int fd)
 {
 	char buffer[MAXRCVLEN];
 
-	int ret = recv(NEG_VAL, buffer, MAXRCVLEN, 0);
+	int ret = recv(-1, buffer, MAXRCVLEN, 0);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_EQ("tc_net_recv_n", ret, NEG_VAL);
+	TC_ASSERT_EQ("recv", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_recv_shutdown_n
-* @brief               : receive a message from a socket.
+* @brief               : This recv API receive a message from a socket.
 * @scenario            : recv is used to receive messages from a socket,
                          test after shutdown.
 * @apicovered          : recv()
@@ -128,15 +129,15 @@ void tc_net_recv_shutdown_n(int fd)
 	int ret = recv(fd, buffer, MAXRCVLEN, 0);
 	buffer[ret] = '\0';
 
-	TC_ASSERT_EQ("tc_net_recv_shutdown_n", ret, NEG_VAL);
+	TC_ASSERT_EQ("net_recv_shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_recv_close_n
-* @brief               : receive a message from a socket.
+* @brief               : This recv API receive a message from a socket.
 * @scenario            : recv is used to receive messages from a socket,
-                         test after close fd.
+                         test after close.
 * @apicovered          : recv()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -147,16 +148,15 @@ void tc_net_recv_close_n(int fd)
 	char buffer[MAXRCVLEN];
 	close(fd);
 	int ret = recv(fd, buffer, MAXRCVLEN, 0);
-	buffer[ret] = '\0';
 
-	TC_ASSERT_EQ("tc_net_recv_close_n", ret, NEG_VAL);
+	TC_ASSERT_EQ("recv_close", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @fn                   : recv_server
-* @brief                : create a Tcp server.
-* @scenario             : create a tcp server to test receive api.
+* @brief                : Create a Tcp server.
+* @scenario             : Create a tcp server for checking receive api.
 * @API's covered        : socket,bind,listen,accept,send,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
@@ -171,7 +171,7 @@ void* recv_server(void *args)
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 	listen(sock, BACKLOG);
@@ -184,8 +184,8 @@ void* recv_server(void *args)
 
 /**
 * @fn                  : recv_client
-* @brief               : create client.
-* @scenario            : create tcp client.
+* @brief               : This api create client.
+* @scenario            : Create tcp client.
 * @API's covered       : socket,connect,close
 * @Preconditions       : socket file descriptor.
 * @Postconditions      : none
@@ -196,14 +196,13 @@ void* recv_client(void *args)
 	struct sockaddr_in dest;
 	int ret;
 
-	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	dest.sin_addr.s_addr = INADDR_LOOPBACK;
 	dest.sin_port = htons(PORTNUM);
 
 	recv_wait();
-
 	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
 	tc_net_recv_p(sock);
 	tc_net_recv_n(sock);
@@ -215,8 +214,8 @@ void* recv_client(void *args)
 
 /**
 * @fn                  : net_recv
-* @brief               : create client and server thread.
-* @scenario            : create client and server thread to test recv api.
+* @brief               : This api create client and server thread.
+* @scenario            : Create client and server thread to test accept api.
 * API's covered        : none
 * Preconditions        : none
 * Postconditions       : none

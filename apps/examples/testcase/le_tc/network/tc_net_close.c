@@ -32,8 +32,8 @@
 
 /**
 * @testcase            : tc_net_close_p
-* @brief               : close a file descriptor.
-* @scenario            : closes a file descriptor, so that it no longer refers to any file and may be reused.
+* @brief               : This close API close a file descriptor.
+* @scenario            : Closes a file descriptor, so that it no longer refers to any file and may be reused.
 * @apicovered          : close()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -42,6 +42,7 @@
 static void tc_net_close_p(void)
 {
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
 	int ret = close(fd);
 
 	TC_ASSERT_NEQ("close", ret, NEG_VAL);
@@ -50,8 +51,8 @@ static void tc_net_close_p(void)
 
 /**
 * @testcase            : tc_net_close_n
-* @brief               : close a file descriptor.
-* @scenario            : closes a file descriptor, so that it no longer refers to any file and may be reused.
+* @brief               : This close API close a file descriptor.
+* @scenario            : Closes a file descriptor, so that it no longer refers to any file and may be reused.
 * @apicovered          : close()
 * @precondition        : none
 * @postcondition       : none
@@ -61,7 +62,7 @@ static void tc_net_close_n(void)
 {
 	int ret = close(NEG_VAL);
 
-	TC_ASSERT_NEQ("close", ret, ZERO);
+	TC_ASSERT_EQ("close", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 

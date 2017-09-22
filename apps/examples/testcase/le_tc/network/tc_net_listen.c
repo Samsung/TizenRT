@@ -36,7 +36,7 @@
 
 /**
 * @testcase            : tc_net_listen_p
-* @brief               : listen for connections on a socket.
+* @brief               : This listen API listen for connections on a socket.
 * @scenario            : listen for socket connections and limit the queue of incoming connections.
 * @apicovered          : listen(), bind()
 * @precondition        : none
@@ -54,20 +54,20 @@ static void tc_net_listen_p(void)
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM1);
-	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
 	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
+	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(sock));
 
-	ret = (listen(sock, BACKLOG));
+	ret = listen(sock, BACKLOG);
+	TC_ASSERT_NEQ_CLEANUP("listen", ret, NEG_VAL, close(sock));
 	close(sock);
-	TC_ASSERT_NEQ("listen", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_listen_fd_n
-* @brief               : listen for connections on a socket.
+* @brief               : This listen API listen for connections on a socket.
 * @scenario            : listen for socket connections and limit the queue of incoming connections,
                          test with invalid socket fd.
 * @apicovered          : listen(), bind()
@@ -86,20 +86,19 @@ static void tc_net_listen_fd_n(void)
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM2);
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_addr.s_addr = INADDR_ANY;
 
 	ret = bind(fd, (struct sockaddr *)&sa, sizeof(sa));
-	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
+	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(fd));
 
-	ret = listen(NEG_VAL, BACKLOG);
+	ret = listen(-1, BACKLOG);
 	close(fd);
-	TC_ASSERT_NEQ("listen", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_listen_backlog_p
-* @brief               : listen for connections on a socket.
+* @brief               : This listen API listen for connections on a socket.
 * @scenario            : listen for socket connections and limit the queue of incoming connections,
                          test with invalid backlog value.
 * @apicovered          : listen(), bind()
@@ -118,21 +117,20 @@ static void tc_net_listen_backlog_p(void)
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM1);
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_addr.s_addr = INADDR_ANY;
 
 	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-	TC_ASSERT_EQ("bind", ret, ZERO);
+	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(SocketFD));
 
-	ret = listen(SocketFD, NEG_VAL);
+	ret = listen(SocketFD, BACKLOG);
+	TC_ASSERT_NEQ_CLEANUP("listen", ret, NEG_VAL, close(SocketFD));
 	close(SocketFD);
-
-	TC_ASSERT_NEQ("listen", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_listen_fd_backlog_n
-* @brief               : listen for connections on a socket.
+* @brief               : This listen API listen for connections on a socket.
 * @scenario            : listen for socket connections and limit the queue of incoming connections,
                          test with invalid socket fd and backlog value.
 * @apicovered          : listen(), bind()
@@ -151,14 +149,14 @@ static void tc_net_listen_fd_backlog_n(void)
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM1);
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_addr.s_addr = INADDR_ANY;
 
 	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-	TC_ASSERT_EQ("bind", ret, ZERO);
+	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(SocketFD));
 
-	ret = listen(NEG_VAL, NEG_VAL);
+	ret = listen(-1, -1);
+	TC_ASSERT_EQ_CLEANUP("listen", ret, NEG_VAL, close(SocketFD));
 	close(SocketFD);
-	TC_ASSERT_NEQ("listen", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 

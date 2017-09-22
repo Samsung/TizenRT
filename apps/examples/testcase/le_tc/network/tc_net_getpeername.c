@@ -31,14 +31,16 @@
 
 #include "tc_internal.h"
 
-#define PORTNUM 5002
-#define MAXRCVLEN 20
-int sem = 0;
+#define PORTNUM        5002
+#define MAXRCVLEN      20
+#define BACKLOG        1
+
+static int count_wait;
 
 /**
 * @fn                   : getpeername_wait
-* @brief                : function to wait on semaphore
-* @scenario             : use wait function to decrement sem value.
+* @brief                : Function to wait on semaphore
+* @scenario             : use wait function to decrement count_wait value.
 * API's covered         : none
 * Preconditions         : none
 * Postconditions        : none
@@ -46,17 +48,17 @@ int sem = 0;
 */
 void getpeername_wait(void)
 {
-	while (sem <= ZERO) {
+	while (count_wait <= ZERO) {
 		printf("");
 	}
 
-	sem--;
+	count_wait--;
 }
 
 /**
 * @fn                   : getpeername_signal
-* @brief                : function to signal semaphore
-* @scenario             : use to increase the sem value.
+* @brief                : Function to signal semaphore
+* @scenario             : use to increase the count_wait value.
 * API's covered         : none
 * Preconditions         : none
 * Postconditions        : none
@@ -64,13 +66,13 @@ void getpeername_wait(void)
 */
 void getpeername_signal(void)
 {
-	sem++;
+	count_wait++;
 }
 
 /**
 * @testcase            : tc_net_getpeername_p1
-* @brief               : get name of connected peer socket.
-* @scenario            : get the peer address of the specified socket.
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket.
 * @apicovered          : getpeername()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -78,18 +80,19 @@ void getpeername_signal(void)
 */
 static void tc_net_getpeername_p1(int sock)
 {
-	int len = sizeof(struct sockaddr);
+	int len, ret;
 	struct sockaddr foo;
 
-	int ret = getpeername(sock, &foo, (socklen_t *)&len);
+	len = sizeof(struct sockaddr);
+	ret = getpeername(sock, &foo, (socklen_t *)&len);
 	TC_ASSERT_NEQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_getpeername_sock_n
-* @brief               : get name of connected peer socket.
-* @scenario            : get the peer address of the specified socket, with invalid socket fd.
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket, with invalid socket fd.
 * @apicovered          : getpeername()
 * @precondition        : none
 * @postcondition       : none
@@ -97,18 +100,19 @@ static void tc_net_getpeername_p1(int sock)
 */
 static void tc_net_getpeername_sock_n(void)
 {
-	int len = sizeof(struct sockaddr);
+	int len, ret;
 	struct sockaddr foo;
 
-	int ret = getpeername(NEG_VAL, &foo, (socklen_t *)&len);
+	len = sizeof(struct sockaddr);
+	ret = getpeername(NEG_VAL, &foo, (socklen_t *)&len);
 	TC_ASSERT_EQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_getpeername_close_n
-* @brief               : get name of connected peer socket.
-* @scenario            : get the peer address of the specified socket.
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket.
 * @apicovered          : getpeername()
 * @precondition        : none
 * @postcondition       : none
@@ -116,18 +120,19 @@ static void tc_net_getpeername_sock_n(void)
 */
 static void tc_net_getpeername_close_n(int sock)
 {
-	int len = sizeof(struct sockaddr);
+	int len, ret;
 	struct sockaddr foo;
 
-	int ret = getpeername(sock, &foo, (socklen_t *)&len);
+	len = sizeof(struct sockaddr);
+	ret = getpeername(sock, &foo, (socklen_t *)&len);
 	TC_ASSERT_EQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_getpeername_unix_p
-* @brief               : get name of connected peer socket.
-* @scenario            : get the peer address of the specified socket.
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket.
 * @apicovered          : getpeername()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -135,10 +140,11 @@ static void tc_net_getpeername_close_n(int sock)
 */
 static void tc_net_getpeername_unix_p(int sock)
 {
-	int len = sizeof(struct sockaddr);
+	int len, ret;
 	struct sockaddr foo;
 
-	int ret = getpeername(sock, &foo, (socklen_t *)&len);
+	len = sizeof(struct sockaddr);
+	ret = getpeername(sock, &foo, (socklen_t *)&len);
 	TC_ASSERT_NEQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
@@ -146,8 +152,8 @@ static void tc_net_getpeername_unix_p(int sock)
 
 /**
 * @testcase            : tc_net_getpeername_udp_p
-* @brief               : get name of connected peer socket.
-* @scenario            : get the peer address of the specified socket.
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket.
 * @apicovered          : getpeername()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -155,18 +161,19 @@ static void tc_net_getpeername_unix_p(int sock)
 */
 static void tc_net_getpeername_udp_p(int sock)
 {
-	int len = sizeof(struct sockaddr);
+	int ret, len;
 	struct sockaddr foo;
 
-	int ret = getpeername(sock, &foo, (socklen_t *)&len);
+	len = sizeof(struct sockaddr);
+	ret = getpeername(sock, &foo, (socklen_t *)&len);
 	TC_ASSERT_NEQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_getpeername_p
-* @brief               : get name of connected peer socket.
-* @scenario            : get the peer address of the specified socket.
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket.
 * @apicovered          : getpeername()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -174,19 +181,20 @@ static void tc_net_getpeername_udp_p(int sock)
 */
 static void tc_net_getpeername_p(int fd)
 {
+	int ret;
 	socklen_t len;
 	struct sockaddr_storage addr;
-	len = sizeof(addr);
 
-	int ret = getpeername(fd, (struct sockaddr *)&addr, &len);
+	len = sizeof(addr);
+	ret = getpeername(fd, (struct sockaddr *)&addr, &len);
 	TC_ASSERT_NEQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
 * @testcase            : tc_net_getpeername_n
-* @brief               : get name of connected peer socket.
-* @scenario            : get the peer address of the specified socket, with invalid socket fd.
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket, with invalid socket fd.
 * @apicovered          : getpeername()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -194,19 +202,88 @@ static void tc_net_getpeername_p(int fd)
 */
 static void tc_net_getpeername_n(int fd)
 {
+	int ret;
 	socklen_t len;
 	struct sockaddr_storage addr;
+
 	len = sizeof(addr);
 
-	int ret = getpeername(NEG_VAL, (struct sockaddr *)&addr, &len);
+	ret = getpeername(NEG_VAL, (struct sockaddr *)&addr, &len);
 	TC_ASSERT_EQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
 /**
+* @testcase            : net_getpeername_server
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket, with invalid socket fd.
+* @apicovered          : getpeername()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+void net_getpeername_server(void)
+{
+	int ConnectFD;
+	int ret;
+	struct sockaddr_in sa;
+
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sin_family = PF_INET;
+	sa.sin_port = htons(PORTNUM);
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+
+	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
+
+	ret = listen(sock, BACKLOG);
+	TC_ASSERT_NEQ("listen", ret, NEG_VAL);
+
+	getpeername_signal();
+	ConnectFD = accept(sock, NULL, NULL);
+	close(sock);
+	TC_ASSERT_NEQ("accept", ret, NEG_VAL);
+	close(ConnectFD);
+}
+
+/**
+* @testcase            : net_getpeername_client
+* @brief               : This getpeername API get name of connected peer socket.
+* @scenario            : Get the peer address of the specified socket, with invalid socket fd.
+* @apicovered          : getpeername()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+void net_getpeername_client(void)
+{
+	int ret;
+	struct sockaddr_in dest;
+
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	memset(&dest, 0, sizeof(dest));
+	dest.sin_family = PF_INET;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	dest.sin_port = htons(PORTNUM);
+
+	getpeername_wait();
+	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	TC_ASSERT_NEQ("connect", ret, NEG_VAL);
+
+	tc_net_getpeername_p(sock);
+	tc_net_getpeername_n(sock);
+	close(sock);
+}
+
+/**
 * @testcase            : getpeername_server
-* @brief               : create a tcp server.
-* @scenario            : create a tcp server to test getpeername api.
+* @brief               : Create a Tcp server.
+* @scenario            : Create a tcp server for checking getpeername api.
 * @apicovered          : socket,bind,listen,accept,close
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -214,30 +291,14 @@ static void tc_net_getpeername_n(int fd)
 */
 void* getpeername_server(void *args)
 {
-	int ConnectFD;
-	struct sockaddr_in sa;
-
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
-	memset(&sa, 0, sizeof(sa));
-
-	sa.sin_family = PF_INET;
-	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-
-	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, ONE);
-
-	getpeername_signal();
-	ConnectFD = accept(sock, NULL, NULL);
-	close(ConnectFD);
-	close(sock);
+	net_getpeername_server();
 	return NULL;
 }
 
 /**
 * @testcase            : getpeername_client
-* @brief               : create client.
-* @scenario            : create tcp client.
+* @brief               : This api create client.
+* @scenario            : Create tcp client.
 * @apicovered          : socket,connect,close
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -245,19 +306,7 @@ void* getpeername_server(void *args)
 */
 void* getpeername_client(void *args)
 {
-	struct sockaddr_in dest;
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
-	memset(&dest, 0, sizeof(dest));
-	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	dest.sin_port = htons(PORTNUM);
-
-	getpeername_wait();
-	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-
-	tc_net_getpeername_p(sock);
-	tc_net_getpeername_n(sock);
-	close(sock);
+	net_getpeername_client();
 	return NULL;
 }
 

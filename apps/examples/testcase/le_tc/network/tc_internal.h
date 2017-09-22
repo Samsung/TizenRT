@@ -93,9 +93,6 @@ int net_shutdown_main(void);
 #ifdef CONFIG_TC_NET_SELECT
 int net_select_main(void);
 #endif
-#ifdef CONFIG_TC_NET_CORE_NTOHS
-int net_ntohs_main(void);
-#endif
 #ifdef CONFIG_TC_NET_IPV4_NETMASK_VALID
 int net_ipv4_addr_netmask_valid_main(void);
 #endif
@@ -128,9 +125,6 @@ int net_netdb_main(void);
 #endif
 #ifdef CONFIG_TC_NET_ETHER
 int net_ether_main(int sock_udp);
-#endif
-#ifdef CONFIG_TC_NET_DEF
-int net_def_main(void);
 #endif
 #ifdef CONFIG_TC_NET_NETBUF
 int tc_net_netbuf_main(void);
