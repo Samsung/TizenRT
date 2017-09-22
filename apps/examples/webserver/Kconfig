@@ -4,7 +4,7 @@
 #
 
 config EXAMPLES_WEBSERVER
-	bool "TinyAra Webserver example"
+	bool "Webserver example"
 	depends on NETUTILS_WEBSERVER
 	default n
 	---help---
