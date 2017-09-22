@@ -39,7 +39,7 @@
  */
 #define DEFAULT_PWM_DEVICE_NUM 0
 #define IOTBUS_PWM_MAX_PERIOD 1000000 // 1s
-#define IOTBUS_USEC_2_SEC 1000000
+#define IOTBUS_PWM_MAX_RESOLUTION 65536 // b16ONE
 
 struct _iotbus_pwm_s {
 	int fd;
@@ -117,7 +117,7 @@ int iotbus_pwm_set_duty_cycle(iotbus_pwm_context_h pwm, uint32_t duty_cycle)
 		return IOTBUS_ERROR_UNKNOWN;
 	}
 
-	info->duty = (duty_cycle * 65536) / 100;
+	info->duty = (duty_cycle * IOTBUS_PWM_MAX_RESOLUTION) / 100;
 	ret = ioctl(fd, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)info));
 	if (ret < 0) {
 		zdbg("ioctl(PWMIOC_SETCHARACTERISTICS) failed: %d\n", errno);
@@ -143,7 +143,7 @@ int iotbus_pwm_set_period(iotbus_pwm_context_h pwm, uint32_t period)
 		return IOTBUS_ERROR_UNKNOWN;
 	}
 
-	info->frequency = 1000000 / period;
+	info->frequency = IOTBUS_PWM_MAX_PERIOD / period;
 	ret = ioctl(fd, PWMIOC_SETCHARACTERISTICS, (unsigned long)((uintptr_t)info));
 	if (ret < 0) {
 		zdbg("ioctl(PWMIOC_SETCHARACTERISTICS) failed: %d\n", errno);
@@ -192,7 +192,7 @@ int iotbus_pwm_get_duty_cycle(iotbus_pwm_context_h pwm)
 		zdbg("ioctl(PWMIOC_GETCHARACTERISTICS) failed: %d\n", errno);
 		return IOTBUS_ERROR_UNKNOWN;
 	}
-	return (int)((info->duty * 100.0 / 65536) + 0.5);
+	return (int)((info->duty * 100.0 / IOTBUS_PWM_MAX_RESOLUTION) + 0.5);
 }
 
 int iotbus_pwm_get_period(iotbus_pwm_context_h pwm)
@@ -208,7 +208,7 @@ int iotbus_pwm_get_period(iotbus_pwm_context_h pwm)
 		return IOTBUS_ERROR_UNKNOWN;
 	}
 
-	return (int)(1000000 / info->frequency);
+	return (int)(IOTBUS_PWM_MAX_PERIOD / info->frequency);
 }
 
 #else // CONFIG_PWM
