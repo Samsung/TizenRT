@@ -623,9 +623,6 @@ WEB_CLI_EXIT:
 	if (test_message) {
 		free(test_message);
 	}
-	if (opt) {
-		free(opt);
-	}
 
 	g_wcenabled = 0;
 
@@ -648,9 +645,6 @@ int websocket_server(void *arg)
 		echoback_on_msg_cb		/* recv message callback */
 	};
 
-	if (opt) {
-		free(opt); // it is not used anymore
-	}
 	if (tls != 0 && tls != 1) {
 		printf("wrong tls option\n %s\n", WEBSOCKET_USAGE);
 		return WEBSOCKET_INIT_ERROR;
@@ -782,18 +776,21 @@ int websocket_main(int argc, char *argv[])
 			goto error_with_function_failure;
 		}
 		pthread_setname_np(tid, "websocket client");
-		pthread_detach(tid);
+		pthread_join(tid, NULL);
 	} else if (memcmp(argv[1], "server", strlen("server")) == 0 && argc == 3) {
 		if ((status = pthread_create(&tid, &attr, (pthread_startroutine_t)websocket_server, (void *)input)) != 0) {
 			printf("fail to create thread\n");
 			goto error_with_function_failure;
 		}
 		pthread_setname_np(tid, "websocket server");
-		pthread_detach(tid);
+		pthread_join(tid, NULL);
 	} else {
 		printf("\nwrong input parameter !!!\n %s\n", WEBSOCKET_USAGE);
 		goto error_with_function_failure;
 	}
+
+	/* Release the allocated memory */
+	free(input);
 
 	return 0;
 
