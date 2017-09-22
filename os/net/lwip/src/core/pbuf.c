@@ -129,8 +129,8 @@ volatile u8_t pbuf_free_ooseq_pending;
  * can only be used with NO_SYS=0 and through tcpip_callback.
  */
 #if !NO_SYS
-//static
-#endif							/* !NO_SYS */
+static
+#endif
 void pbuf_free_ooseq(void)
 {
 	struct tcp_pcb *pcb;
@@ -155,8 +155,7 @@ void pbuf_free_ooseq(void)
 /**
  * Just a callback function for tcpip_timeout() that calls pbuf_free_ooseq().
  */
-//static 
-void pbuf_free_ooseq_callback(void *arg)
+static void pbuf_free_ooseq_callback(void *arg)
 {
 	LWIP_UNUSED_ARG(arg);
 	pbuf_free_ooseq();
@@ -164,8 +163,7 @@ void pbuf_free_ooseq_callback(void *arg)
 #endif							/* !NO_SYS */
 
 /** Queue a call to pbuf_free_ooseq if not already queued. */
-//static 
-void pbuf_pool_is_empty(void)
+static void pbuf_pool_is_empty(void)
 {
 #ifndef PBUF_POOL_FREE_OOSEQ_QUEUE_CALL
 	SYS_ARCH_DECL_PROTECT(old_level);

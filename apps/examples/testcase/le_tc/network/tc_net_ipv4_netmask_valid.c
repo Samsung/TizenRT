@@ -22,7 +22,9 @@
 #include <net/lwip/ipv4/ip_addr.h>
 
 #include "tc_internal.h"
-
+/* Value for checking */
+#define NETMASK1         0x0000ffff
+#define NETMASK2         0xffffff90
 /**
 * @testcase             : tc_net_ipv4_addr_netmask_valid_p
 * @brief                : Checks if a netmask is valid (starting with ones, then only zeros)
@@ -34,10 +36,7 @@
 */
 void tc_net_ipv4_addr_netmask_valid_p(void)
 {
-	int ret;
-	int netmask = 0x0000ffff;	/* Value for checking */
-
-	ret = ip4_addr_netmask_valid(netmask);
+	int ret = ip4_addr_netmask_valid(NETMASK1);
 	TC_ASSERT_EQ("ip4_addr_netmask_valid", ret, ONE);
 	TC_SUCCESS_RESULT();
 }
@@ -53,10 +52,7 @@ void tc_net_ipv4_addr_netmask_valid_p(void)
 */
 void tc_net_ipv4_addr_netmask_valid_n(void)
 {
-	int ret;
-	int netmask = 0xffffff90;	/* Value for checking */
-
-	ret = ip4_addr_netmask_valid(netmask);
+	int ret = ip4_addr_netmask_valid(NETMASK2);
 	TC_ASSERT_EQ("ip4_addr_netmask_valid", ret, ONE);
 	TC_SUCCESS_RESULT();
 }

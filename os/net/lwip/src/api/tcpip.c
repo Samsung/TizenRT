@@ -505,7 +505,7 @@ void tcpip_init(tcpip_init_done_fn initfunc, void *arg)
  *
  * @param p The pbuf (chain) to be dereferenced.
  */
-void pbuf_free_int(void *p)
+static void pbuf_free_int(void *p)
 {
 	struct pbuf *q = (struct pbuf *)p;
 	pbuf_free(q);

@@ -35,10 +35,8 @@
 */
 static void tc_net_decisec_dsec2tick(void)
 {
-	int ret;
-	int dsec = DESISEC;
+	int ret = net_dsec2tick(DESISEC);
 
-	ret = net_dsec2tick(dsec);
 	TC_ASSERT_GEQ("time", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -54,15 +52,14 @@ static void tc_net_decisec_dsec2tick(void)
 */
 static void tc_net_decisec_dsec2timeval(void)
 {
-	int val, tv_sec;
-	int dsec = DESISEC;
+	int ret, tv_sec;
 	struct timeval tv;
 
-	val = dsec / DSEC_PER_SEC;
-	net_dsec2timeval(dsec, &tv);
+	ret = DESISEC / DSEC_PER_SEC;
+	net_dsec2timeval(DESISEC, &tv);
 	tv_sec = tv.tv_sec;
 
-	TC_ASSERT_EQ("time", val, tv_sec);
+	TC_ASSERT_EQ("time", ret, tv_sec);
 	TC_SUCCESS_RESULT();
 }
 
@@ -77,13 +74,12 @@ static void tc_net_decisec_dsec2timeval(void)
 */
 static void tc_net_decisec_timeval2dsec(void)
 {
-	int dsec = DESISEC;
 	unsigned int ret;
 	uint16_t remainder;
 	struct timeval tv;
 
-	tv.tv_sec = dsec / DSEC_PER_SEC;
-	remainder = dsec - tv.tv_sec * DSEC_PER_SEC;
+	tv.tv_sec = DESISEC / DSEC_PER_SEC;
+	remainder = DESISEC - tv.tv_sec * DSEC_PER_SEC;
 	tv.tv_usec = remainder * USEC_PER_DSEC;
 
 	ret = net_timeval2dsec(&tv);

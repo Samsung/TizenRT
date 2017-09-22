@@ -21,7 +21,6 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -73,6 +72,5 @@ int net_close_main(void)
 {
 	tc_net_close_p();
 	tc_net_close_n();
-
 	return 0;
 }

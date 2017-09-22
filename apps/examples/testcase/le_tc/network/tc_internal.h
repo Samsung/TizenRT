@@ -94,7 +94,7 @@ int net_shutdown_main(void);
 int net_select_main(void);
 #endif
 #ifdef CONFIG_TC_NET_CORE_NTOHS
-int net_lwip_ntohs_main(void);
+int net_ntohs_main(void);
 #endif
 #ifdef CONFIG_TC_NET_IPV4_NETMASK_VALID
 int net_ipv4_addr_netmask_valid_main(void);
@@ -111,20 +111,11 @@ int net_api_main(void);
 #ifdef CONFIG_TC_NET_CORE
 int net_core_main(int sock_tcp);
 #endif
-#ifdef CONFIG_TC_NET_LWIP_READ_WRITE
-int net_lwip_read_write_main(void);
-#endif
 #ifdef CONFIG_TC_NETBUF_ALLOC
 int netbuf_alloc_main(void);
 #endif
 #ifdef CONFIG_TC_MEM_ALLOC
 int mem_allocate_main(void);
-#endif
-#ifdef CONFIG_TC_LWIP_STRERR
-int net_lwip_strerr_main(void);
-#endif
-#ifdef CONFIG_TC_NET_TCP
-int net_tcp_main(void);
 #endif
 #ifdef CONFIG_TC_NET_TCPIP
 int net_tcpip_main(void);
@@ -144,11 +135,8 @@ int net_def_main(void);
 #ifdef CONFIG_TC_NET_NETBUF
 int tc_net_netbuf_main(void);
 #endif
-#ifdef CONFIG_TC_NET_STATS
-int net_stats_main(void);
-#endif
-#ifdef CONFIG_LWIP_NETIFAPI
-int net_lwip_netifapi_main(void);
+#ifdef CONFIG_NET_NETIFAPI
+int net_netifapi_main(void);
 #endif
 #ifdef CONFIG_TC_NET_GETSOCKOPT
 void net_getsockopt_main(void);
@@ -156,22 +144,4 @@ void net_getsockopt_main(void);
 #ifdef CONFIG_TC_NET_SETSOCKOPT
 int net_setsockopt_main(void);
 #endif
-#ifdef CONFIG_TC_NET_RAW
-int tc_net_raw_main(void);
-#endif
-#endif
-#ifdef CONFIG_TC_IGMP
-int net_igmp_main(void);
-#endif
-#ifdef CONFIG_TC_NET_DHCPC
-int net_dhcpc_main(void);
-#endif
-#ifdef CONFIG_TC_NET_INET
-int net_inet_main(void);
-#endif
-#ifdef CONFIG_TC_MEM_ALLOC
-int net_mem_allocate_main(void);
-#endif
-#ifdef CONFIG_TC_NET_CORE_NTOHS
-int net_core_ntohs_main(void);
 #endif

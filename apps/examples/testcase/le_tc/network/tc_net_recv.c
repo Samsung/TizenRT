@@ -34,9 +34,12 @@
 #include <sys/socket.h>
 #include <pthread.h>
 
-#define PORTNUM 1109
-#define MAXRCVLEN 20
-static int count_wait = 0;
+#define	PORTNUM		5010
+#define	MAXRCVLEN	20
+#define	BACKLOG		2
+
+static int count_wait;
+
 /**
 * @fn                   : recv_wait
 * @brief                : Function to wait on semaphore
@@ -48,7 +51,7 @@ static int count_wait = 0;
 */
 void recv_wait(void)
 {
-	while (count_wait <= 0) {
+	while (count_wait <= ZERO) {
 		printf("");
 	}
 	count_wait--;
@@ -80,7 +83,7 @@ void recv_signal(void)
 void tc_net_recv_p(int fd)
 {
 	char buffer[MAXRCVLEN];
-	int ret = recv(fd, buffer, MAXRCVLEN, ZERO);
+	int ret = recv(fd, buffer, MAXRCVLEN, 0);
 	buffer[ret] = '\0';
 
 	TC_ASSERT_NEQ("tc_net_recv_p", ret, NEG_VAL);
@@ -101,7 +104,7 @@ void tc_net_recv_n(int fd)
 {
 	char buffer[MAXRCVLEN];
 
-	int ret = recv(NEG_VAL, buffer, MAXRCVLEN, ZERO);
+	int ret = recv(NEG_VAL, buffer, MAXRCVLEN, 0);
 	buffer[ret] = '\0';
 
 	TC_ASSERT_EQ("tc_net_recv_n", ret, NEG_VAL);
@@ -122,7 +125,7 @@ void tc_net_recv_shutdown_n(int fd)
 {
 	char buffer[MAXRCVLEN];
 	shutdown(fd, SHUT_RD);
-	int ret = recv(fd, buffer, MAXRCVLEN, ZERO);
+	int ret = recv(fd, buffer, MAXRCVLEN, 0);
 	buffer[ret] = '\0';
 
 	TC_ASSERT_EQ("tc_net_recv_shutdown_n", ret, NEG_VAL);
@@ -143,7 +146,7 @@ void tc_net_recv_close_n(int fd)
 {
 	char buffer[MAXRCVLEN];
 	close(fd);
-	int ret = recv(fd, buffer, MAXRCVLEN, ZERO);
+	int ret = recv(fd, buffer, MAXRCVLEN, 0);
 	buffer[ret] = '\0';
 
 	TC_ASSERT_EQ("tc_net_recv_close_n", ret, NEG_VAL);
@@ -159,7 +162,7 @@ void tc_net_recv_close_n(int fd)
 * @Postconditions       : none
 * @return               : void
 */
-void* recv_server(void *args)
+void *recv_server(void *args)
 {
 	int ConnectFD;
 	struct sockaddr_in sa;
@@ -171,7 +174,7 @@ void* recv_server(void *args)
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, 2);
+	listen(sock, BACKLOG);
 	recv_signal();
 	ConnectFD = accept(sock, NULL, NULL);
 
@@ -188,12 +191,12 @@ void* recv_server(void *args)
 * @Postconditions      : none
 * @return              : void
 */
-void* recv_client(void *args)
+void *recv_client(void *args)
 {
 	struct sockaddr_in dest;
 	int ret;
 
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);

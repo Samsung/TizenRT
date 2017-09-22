@@ -90,7 +90,7 @@ static void do_close_internal(struct netconn *conn);
  *
  * @see raw.h (struct raw_pcb.recv) for parameters and return value
  */
-u8_t recv_raw(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *addr)
+static u8_t recv_raw(void *arg, struct raw_pcb *pcb, struct pbuf *p, ip_addr_t *addr)
 {
 	struct pbuf *q;
 	struct netbuf *buf;

@@ -23,8 +23,6 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <semaphore.h>
-#include "tc_internal.h"
-
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -94,9 +92,6 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_RECV
 	net_recv_main();
 #endif
-#ifdef CONFIG_TC_NET_GETPEERNAME
-	net_getpeername_main();
-#endif
 #ifdef CONFIG_TC_NET_SENDTO
 	net_sendto_main();
 #endif
@@ -105,9 +100,6 @@ int network_tc_main(int argc, char *argv[])
 #endif
 #ifdef CONFIG_TC_NET_SHUTDOWN
 	net_shutdown_main();
-#endif
-#ifdef CONFIG_TC_NET_DHCPC
-	net_dhcpc_main();
 #endif
 #ifdef CONFIG_TC_NET_INET
 	net_inet_main();
@@ -133,17 +125,11 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_API
 	net_api_main();
 #endif
-#ifdef CONFIG_TC_NET_TCP
-	net_tcp_main();
-#endif
 #ifdef CONFIG_TC_NET_TCPIP
 	net_tcpip_main();
 #endif
 #ifdef CONFIG_TC_NET_MAC
 	net_mac_main(sock_tcp, sock_tcp1);
-#endif
-#ifdef CONFIG_TC_NET_LWIP_READ_WRITE
-	net_lwip_read_write_main();
 #endif
 #ifdef CONFIG_TC_NETBUF_ALLOC
 	netbuf_alloc_main();
@@ -151,32 +137,20 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_MEM_ALLOC
 	net_mem_allocate_main();
 #endif
-#ifdef CONFIG_TC_LWIP_STRERR
-	net_lwip_strerr_main();
-#endif
 #ifdef CONFIG_TC_NET_DEF
 	net_def_main();
 #endif
 #ifdef CONFIG_TC_NET_NETBUF
 	tc_net_netbuf_main();
 #endif
-#ifdef CONFIG_LWIP_NETIFAPI
-	net_lwip_netifapi_main();
-#endif
-#ifdef CONFIG_TC_NET_RAW
-	tc_net_raw_main();
+#ifdef CONFIG_NET_NETIFAPI
+	net_netifapi_main();
 #endif
 #ifdef CONFIG_TC_NET_GETPEERNAME
 	net_getpeername_main();
 #endif
 #ifdef CONFIG_TC_NET_SELECT
 	net_select_main();
-#endif
-#ifdef CONFIG_TC_NET_STATS
-	net_stats_main();
-#endif
-#ifdef CONFIG_TC_IGMP
-	net_igmp_main();
 #endif
 #ifdef CONFIG_TC_NET_CORE
 	net_core_main(sock_tcp);
@@ -189,6 +163,5 @@ int network_tc_main(int argc, char *argv[])
 
 	working_tc--;
 	sem_post(&tc_sem);
-
 	return 0;
 }

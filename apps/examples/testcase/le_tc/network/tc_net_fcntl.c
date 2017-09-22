@@ -59,7 +59,7 @@ static void tc_net_fcntl_nonblock_p(int fd)
 */
 static void tc_net_fcntl_p(int fd)
 {
-	int ret = fcntl(fd, F_SETFL, 0);
+	int ret = fcntl(fd, F_SETFL, ZERO);
 
 	TC_ASSERT_NEQ("fcntl", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();

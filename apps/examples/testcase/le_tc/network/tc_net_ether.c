@@ -21,17 +21,16 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
 #include "tc_internal.h"
+#define	NUMREQS	3
 
 /**
 * @testcase            : tc_net_ether_ntoa_p
@@ -44,17 +43,15 @@
 */
 static void tc_net_ether_ntoa_p(int sock_udp)
 {
-
+	int ret;
 	struct sockaddr *sa = NULL;
 	struct ifreq *ifr = NULL;
 	struct ifreq tmp;
 	struct ifconf ifcfg;
-	int numreqs = 3;
-	int ret;
 	FAR char *buffer = NULL;
 
 	ifcfg.ifc_buf = NULL;
-	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
+	ifcfg.ifc_len = sizeof(struct ifreq) * NUMREQS;
 	ifcfg.ifc_buf = malloc(ifcfg.ifc_len);
 	TC_ASSERT_NEQ("malloc", ifcfg.ifc_buf, NULL);
 	ifr = ifcfg.ifc_req;
@@ -62,7 +59,7 @@ static void tc_net_ether_ntoa_p(int sock_udp)
 	ret = ioctl(sock_udp, SIOCGIFCONF, (unsigned long)&ifcfg);
 	TC_ASSERT_EQ_CLEANUP("ioctl", ret, ZERO, TC_FREE_MEMORY(ifcfg.ifc_buf));
 
-	strncpy(tmp.ifr_name, ifr->ifr_name, 6);
+	strncpy(tmp.ifr_name, ifr->ifr_name, sizeof(tmp.ifr_name));
 	ret = ioctl(sock_udp, SIOCGIFHWADDR, (unsigned long)&tmp);
 	TC_ASSERT_GEQ_CLEANUP("ioctl", ret, ZERO, TC_FREE_MEMORY(ifcfg.ifc_buf));
 
@@ -70,7 +67,6 @@ static void tc_net_ether_ntoa_p(int sock_udp)
 	buffer = (FAR char *)ether_ntoa((struct ether_addr *)sa->sa_data);
 	TC_FREE_MEMORY(ifcfg.ifc_buf);
 	TC_ASSERT_NEQ("ether_ntoa", buffer, NULL);
-
 	TC_SUCCESS_RESULT();
 }
 

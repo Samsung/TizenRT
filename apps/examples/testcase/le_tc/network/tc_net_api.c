@@ -20,18 +20,15 @@
 /// @brief Test Case Example for api() API
 #include "tc_internal.h"
 #include <net/lwip/api.h>
-#include <net/lwip/api_msg.h>
-#include <net/lwip/ipv4/ip_addr.h>
-#include <net/lwip/err.h>
-#include <net/lwip/raw.h>
 #include <net/lwip/sockets.h>
-#include <net/lwip/tcp.h>
-#define SERVER_PORT  5000
 
-#define TRUE             1
-#define FALSE            0
+#define PORT_NUM	5000
+#define MAXBUF		80
+#define	COUNT		10
+#define	BACKLOG		3
 
 static int count_wait;
+
 /**
 * @fn                    : sig_wait
 * @brief                 : function to wait on semaphore
@@ -43,7 +40,7 @@ static int count_wait;
 */
 static void sig_wait(void)
 {
-	while (count_wait <= 0) {
+	while (count_wait <= ZERO) {
 		printf("");
 	}
 	count_wait--;
@@ -64,7 +61,7 @@ static void sig_call(void)
 }
 
 /**
-* @fn                    : tc_netconn_server
+* @fn                    : tc_net_server
 * @brief                 : function to signal semaphore
 * @scenario              : none
 * @API's covered         : none
@@ -72,11 +69,11 @@ static void sig_call(void)
 * @Postconditions        : none
 * @return                : void
 */
-void tc_netconn_server(void)
+static void tc_net_server(void)
 {
-	int i = ZERO, rc = ZERO, flags, ret;
+	int i = 0, rc = 0, flags, ret;
 	int new_sd;
-	char buffer[80];
+	char buffer[MAXBUF];
 	struct sockaddr_in addr;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -91,19 +88,19 @@ void tc_netconn_server(void)
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	addr.sin_port = htons(SERVER_PORT);
+	addr.sin_port = htons(PORT_NUM);
 
 	ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
 	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
 
-	ret = listen(sock, 3);
+	ret = listen(sock, BACKLOG);
 	TC_ASSERT_NEQ("listen", ret, NEG_VAL);
 
 	sig_call();
 	new_sd = accept(sock, NULL, NULL);
 	TC_ASSERT_NEQ("accept", new_sd, NEG_VAL);
 
-	while (i++ < 10 && rc < 0) {
+	while (i++ < COUNT && rc < ZERO) {
 		rc = recv(new_sd, buffer, sizeof(buffer), 0);
 	}
 	TC_ASSERT_NEQ("recv", rc, NEG_VAL);
@@ -111,7 +108,7 @@ void tc_netconn_server(void)
 }
 
 /**
-* @fn                    : tc_netconn_client
+* @fn                    : tc_net_client
 * @brief                 : client thread
 * @scenario              : none
 * @API's covered         : none
@@ -119,10 +116,10 @@ void tc_netconn_server(void)
 * @Postconditions        : none
 * @return                : void
 */
-void tc_netconn_client(void)
+static void tc_net_client(void)
 {
 	int ret, len;
-	char buffer[200] = "HELLOWORLD\n";
+	char buffer[MAXBUF] = "HELLOWORLD\n";
 	struct sockaddr_in dest;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -131,7 +128,7 @@ void tc_netconn_client(void)
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_INET;
 	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	dest.sin_port = htons(5000);
+	dest.sin_port = htons(PORT_NUM);
 
 	sig_wait();
 	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
@@ -142,7 +139,7 @@ void tc_netconn_client(void)
 }
 
 /**
-* @fn                    : netconn_api_server
+* @fn                    : net_api_server
 * @brief                 : server thread
 * @scenario              : none
 * @API's covered         : none
@@ -150,9 +147,9 @@ void tc_netconn_client(void)
 * @Postconditions        : none
 * @return                : void*
 */
-void* netconn_api_server(void *args)
+void *net_api_server(void *args)
 {
-	tc_netconn_server();
+	tc_net_server();
 	return NULL;
 }
 
@@ -165,20 +162,22 @@ void* netconn_api_server(void *args)
 * @Postconditions        : none
 * @return                : void*
 */
-void* netconn_api_client(void *args)
+void *net_api_client(void *args)
 {
-	tc_netconn_client();
+	tc_net_client();
 	return NULL;
 }
 
 /****************************************************************************
- * Name: netconn()
+ * Name: net_api_main()
  ****************************************************************************/
 int net_api_main(void)
 {
 	pthread_t Server, Client;
-	pthread_create(&Server, NULL, netconn_api_server, NULL);
-	pthread_create(&Client, NULL, netconn_api_client, NULL);
+
+	pthread_create(&Server, NULL, net_api_server, NULL);
+	pthread_create(&Client, NULL, net_api_client, NULL);
+
 	pthread_join(Server, NULL);
 	pthread_join(Client, NULL);
 	return 0;

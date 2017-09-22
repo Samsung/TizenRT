@@ -170,11 +170,7 @@ static err_t etharp_request_dst(struct netif *netif, const ip_addr_t *ipaddr, co
  *
  * @param q a qeueue of etharp_q_entry's to free
  */
-#ifdef CONFIG_TC_IGMP
-void free_etharp_q(struct etharp_q_entry *q)
-#else
-static void free_ethap_q(struct etharp_q_entry *q)
-#endif
+static void free_etharp_q(struct etharp_q_entry *q)
 {
 	struct etharp_q_entry *r;
 	LWIP_ASSERT("q != NULL", q != NULL);
@@ -195,11 +191,7 @@ static void free_ethap_q(struct etharp_q_entry *q)
 #endif							/* ARP_QUEUEING */
 
 /** Clean up ARP table entries */
-#ifdef CONFIG_TC_IGMP
-void etharp_free_entry(int i)
-#else
 static void etharp_free_entry(int i)
-#endif
 {
 	/* remove from SNMP ARP index tree */
 	snmp_delete_arpidx_tree(arp_table[i].netif, &arp_table[i].ipaddr);

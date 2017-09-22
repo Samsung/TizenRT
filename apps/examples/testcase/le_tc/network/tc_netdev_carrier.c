@@ -59,9 +59,7 @@ static void tc_netdev_carrier_on_p(void)
 */
 static void tc_netdev_carrier_on_n(void)
 {
-	int ret;
-
-	ret = netdev_carrier_on(NULL);
+	int ret = netdev_carrier_on(NULL);
 	TC_ASSERT_NEQ("netdev", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -85,7 +83,6 @@ static void tc_netdev_carrier_off_p(void)
 	dev->d_flags = 4;
 
 	ret = netdev_carrier_off(dev);
-
 	TC_FREE_MEMORY(dev);
 	TC_ASSERT_EQ("netdev", ret, ZERO);
 	TC_SUCCESS_RESULT();
@@ -102,9 +99,7 @@ static void tc_netdev_carrier_off_p(void)
 */
 static void tc_netdev_carrier_off_n(void)
 {
-	int ret;
-
-	ret = netdev_carrier_off(NULL);
+	int ret = netdev_carrier_off(NULL);
 	TC_ASSERT_NEQ("netdev", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -136,7 +131,7 @@ static void tc_netdev_ifdown(void)
 {
 	struct netif dev;
 
-	dev.d_flags = 0;
+	dev.d_flags = ZERO;
 	dev.d_flags |= IFF_UP;
 	dev.d_ifdown = tc_test_function;
 

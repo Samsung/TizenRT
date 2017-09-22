@@ -194,6 +194,7 @@ static void tc_mem_free_callback_p(void)
 	TC_SUCCESS_RESULT();
 }
 
+#if 0
 /**
 * @testcase              : tc_pbuf_free_int_p
 * @brief                 : Allocates a pbuf of the given type
@@ -211,7 +212,7 @@ void tc_pbuf_free_int_p(void)
 	pbuf_free_int(p);
 	TC_SUCCESS_RESULT();
 }
-
+#endif
 /**
 * @testcase                 : tc_tcpip_trycallback
 * @brief                    : Try to post a callback-message to the tcpip_thread mbox.
@@ -256,7 +257,7 @@ int net_tcpip_main(void)
 	tc_net_tcpip_untimeout_n();
 	tc_net_tcpip_callbackmsg_new_p();
 	tc_net_tcpip_callbackmsg_delete_p();
-	tc_pbuf_free_int_p();
+	//tc_pbuf_free_int_p();
 	tc_mem_free_callback_p();
 	tc_mem_free_callback_n();
 	tc_tcpip_trycallback();

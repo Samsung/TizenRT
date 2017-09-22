@@ -52,7 +52,7 @@ static void tc_net_netdb_p(void)
 	struct addrinfo *res;
 	char *port = "9099";
 
-	memset(&hints, 0, sizeof(hints));
+	memset(&hints, ZERO, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
 

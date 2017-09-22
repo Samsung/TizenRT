@@ -34,9 +34,10 @@
 #include <sys/socket.h>
 #include <pthread.h>
 
-#define PORTNUM 1111
-#define MAXRCVLEN 20
-static int count_wait = 0;
+#define	PORTNUM		5001
+#define	MAXRCVLEN	20
+
+static int count_wait;
 
 /**
 * @testcase             : tc_net_recvfrom_p
@@ -52,8 +53,8 @@ void tc_net_recvfrom_p(int fd)
 	char buffer[MAXRCVLEN];
 	struct sockaddr_storage serverStorage;
 	socklen_t addr_size;
-	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 
+	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 	TC_ASSERT_NEQ("recvfrom", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -63,17 +64,17 @@ void tc_net_recvfrom_p(int fd)
 * @brief                : This recvfrom API receive a message from a socket.
 * @scenario             : The recvfrom() function receive a message from a connectionless-mode socket.
 * @apicovered           : recvfrom()
-* @precondition         : socket file descriptor.
+* @precondition         :
 * @postcondition        : none
 * @return               : void
 */
-void tc_net_recvfrom_sock_n(int sock)
+void tc_net_recvfrom_sock_n(void)
 {
 	char buffer[MAXRCVLEN];
 	struct sockaddr_storage serverStorage;
 	socklen_t addr_size;
-	int ret = recvfrom(NEG_VAL, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 
+	int ret = recvfrom(NEG_VAL, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 	TC_ASSERT_EQ("recvfrom", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -93,8 +94,8 @@ void tc_net_recvfrom_n(int fd)
 	char buffer[MAXRCVLEN];
 	struct sockaddr_storage serverStorage;
 	socklen_t addr_size;
-	int ret = recvfrom(NEG_VAL, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 
+	int ret = recvfrom(NEG_VAL, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 	TC_ASSERT_EQ("recvfrom", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -112,17 +113,17 @@ void *recvfrom_udpserver(void *args)
 {
 	struct sockaddr_in sa;
 
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	int sock = socket(AF_INET, SOCK_DGRAM, ZERO);
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 
 	tc_net_recvfrom_p(sock);
-	tc_net_recvfrom_sock_n(sock);
+	tc_net_recvfrom_sock_n();
 	tc_net_recvfrom_n(sock);
 	close(sock);
 	return NULL;
@@ -140,17 +141,17 @@ void *recvfrom_udpserver(void *args)
 void *recvfrom_udpclient(void *args)
 {
 	int ret;
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	int sock = socket(AF_INET, SOCK_DGRAM, ZERO);
 
 	char *buffer = "hello";
 
-	int len = strlen(buffer) + 1;
+	int len = strlen(buffer) + ONE;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
 
-	memset(&dest, 0, sizeof(dest));
+	memset(&dest, ZERO, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	dest.sin_addr.s_addr = INADDR_LOOPBACK;
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 
@@ -170,8 +171,7 @@ void *recvfrom_udpclient(void *args)
 */
 void recvfrom_wait(void)
 {
-	while (count_wait <= 0) {
-
+	while (count_wait <= ZERO) {
 		printf("");
 	}
 	count_wait--;
@@ -204,8 +204,7 @@ void tc_net_recvfrom_tcp_p(int fd)
 {
 	char buffer[MAXRCVLEN];
 
-	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, NULL, NULL);
-
+	int ret = recvfrom(fd, buffer, MAXRCVLEN, ZERO, NULL, NULL);
 	TC_ASSERT_NEQ("recvfrom", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -224,8 +223,8 @@ void tc_net_recvfrom_tcp_conn_n(int fd)
 	char buffer[MAXRCVLEN];
 
 	shutdown(fd, SHUT_RD);
-	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, NULL, NULL);
 
+	int ret = recvfrom(fd, buffer, MAXRCVLEN, ZERO, NULL, NULL);
 	TC_ASSERT_EQ("recvfrom", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -243,7 +242,7 @@ void tc_net_recvfrom_tcp_sock_n(int fd)
 {
 	char buffer[MAXRCVLEN];
 
-	int ret = recvfrom(fd, buffer, MAXRCVLEN, 0, NULL, NULL);
+	int ret = recvfrom(fd, buffer, MAXRCVLEN, ZERO, NULL, NULL);
 
 	TC_ASSERT_EQ("recvfrom", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
@@ -262,8 +261,7 @@ void tc_net_recvfrom_tcp_n(void)
 {
 	char buffer[MAXRCVLEN];
 
-	int ret = recvfrom(NEG_VAL, buffer, MAXRCVLEN, 0, NULL, NULL);
-
+	int ret = recvfrom(NEG_VAL, buffer, MAXRCVLEN, ZERO, NULL, NULL);
 	TC_ASSERT_EQ("recvfrom", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -283,12 +281,13 @@ void *recvfrom_tcpserver(void *args)
 	int ConnectFD;
 	char *msg = "Hello World !\n";
 	struct sockaddr_in sa;
+
 	int sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	memset(&sa, 0, sizeof(sa));
+	memset(&sa, ZERO, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 	listen(sock, 1);
@@ -298,7 +297,6 @@ void *recvfrom_tcpserver(void *args)
 
 	for (i = 0; i < 4; i++) {
 		sendto(ConnectFD, msg, strlen(msg), 0, (struct sockaddr *)&sa, sizeof(sa));
-
 	}
 	close(ConnectFD);
 	close(sock);
@@ -316,14 +314,13 @@ void *recvfrom_tcpserver(void *args)
 */
 void *recvfrom_tcpclient(void *args)
 {
-	int newsoc = 0;
 	struct sockaddr_in dest;
 
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	dest.sin_addr.s_addr = INADDR_LOOPBACK;
 	dest.sin_port = htons(PORTNUM);
 
 	recvfrom_wait();
@@ -331,9 +328,8 @@ void *recvfrom_tcpclient(void *args)
 
 	tc_net_recvfrom_tcp_p(sock);
 	tc_net_recvfrom_tcp_n();
-	tc_net_recvfrom_tcp_sock_n(newsoc);
+	tc_net_recvfrom_tcp_sock_n(sock);
 	tc_net_recvfrom_tcp_conn_n(sock);
-
 	close(sock);
 	return NULL;
 }
@@ -353,10 +349,13 @@ void net_recvfrom(void)
 
 	pthread_create(&Server, NULL, recvfrom_udpserver, NULL);
 	pthread_create(&Client, NULL, recvfrom_udpclient, NULL);
+
 	pthread_join(Server, NULL);
 	pthread_join(Client, NULL);
+
 	pthread_create(&tcpserver, NULL, recvfrom_tcpserver, NULL);
 	pthread_create(&tcpclient, NULL, recvfrom_tcpclient, NULL);
+
 	pthread_join(tcpserver, NULL);
 	pthread_join(tcpclient, NULL);
 }

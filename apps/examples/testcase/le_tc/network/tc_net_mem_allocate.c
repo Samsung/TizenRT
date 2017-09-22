@@ -18,7 +18,6 @@
 
 #include <net/if.h>
 #include <netinet/in.h>
-
 #include "tc_internal.h"
 
 #define COUNT1 5

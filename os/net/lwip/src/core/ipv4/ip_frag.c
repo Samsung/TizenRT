@@ -124,11 +124,7 @@ static u16_t ip_reass_pbufcount;
 
 /* function prototypes */
 static void ip_reass_dequeue_datagram(struct ip_reassdata *ipr, struct ip_reassdata *prev);
-#ifndef CONFIG_TC_NET_IP_FRAG
 static int ip_reass_free_complete_datagram(struct ip_reassdata *ipr, struct ip_reassdata *prev);
-#else
-int ip_reass_free_complete_datagram(struct ip_reassdata *ipr, struct ip_reassdata *prev);
-#endif
 
 /**
  * Reassembly timer base function
@@ -171,12 +167,7 @@ void ip_reass_tmr(void)
  * @param prev the previous datagram in the linked list
  * @return the number of pbufs freed
  */
-#ifndef CONFIG_TC_NET_IP_FRAG
 static int ip_reass_free_complete_datagram(struct ip_reassdata *ipr, struct ip_reassdata *prev)
-#else
-int ip_reass_free_complete_datagram(struct ip_reassdata *ipr, struct ip_reassdata *prev)
-#endif
-
 {
 	u16_t pbufs_freed = 0;
 	u8_t clen;
@@ -238,11 +229,7 @@ int ip_reass_free_complete_datagram(struct ip_reassdata *ipr, struct ip_reassdat
  *        (used for freeing other datagrams if not enough space)
  * @return the number of pbufs freed
  */
-#ifndef CONFIG_TC_NET_IP_FRAG
 static int ip_reass_remove_oldest_datagram(struct ip_hdr *fraghdr, int pbufs_needed)
-#else
-int ip_reass_remove_oldest_datagram(struct ip_hdr *fraghdr, int pbufs_needed)
-#endif
 {
 	/* @todo Can't we simply remove the last datagram in the
 	 *       linked list behind reassdatagrams?
@@ -640,21 +627,13 @@ static u8_t buf[LWIP_MEM_ALIGN_SIZE(IP_FRAG_MAX_MTU + MEM_ALIGNMENT - 1)];
 
 #if !LWIP_NETIF_TX_SINGLE_PBUF
 /** Allocate a new struct pbuf_custom_ref */
-#ifndef CONFIG_TC_NET_IP_FRAG
 static struct pbuf_custom_ref *ip_frag_alloc_pbuf_custom_ref(void)
-#else
-struct pbuf_custom_ref *ip_frag_alloc_pbuf_custom_ref(void)
-#endif
 {
 	return (struct pbuf_custom_ref *)memp_malloc(MEMP_FRAG_PBUF);
 }
 
 /** Free a struct pbuf_custom_ref */
-#ifndef CONFIG_TC_NET_IP_FRAG
 static void ip_frag_free_pbuf_custom_ref(struct pbuf_custom_ref *p)
-#else
-void ip_frag_free_pbuf_custom_ref(struct pbuf_custom_ref *p)
-#endif
 {
 	LWIP_ASSERT("p != NULL", p != NULL);
 	memp_free(MEMP_FRAG_PBUF, p);
@@ -662,11 +641,7 @@ void ip_frag_free_pbuf_custom_ref(struct pbuf_custom_ref *p)
 
 /** Free-callback function to free a 'struct pbuf_custom_ref', called by
  * pbuf_free. */
- #ifndef CONFIG_TC_NET_IP_FRAG
 static void ipfrag_free_pbuf_custom(struct pbuf *p)
-#else
-void ipfrag_free_pbuf_custom(struct pbuf *p)
-#endif
 {
 	struct pbuf_custom_ref *pcr = (struct pbuf_custom_ref *)p;
 	LWIP_ASSERT("pcr != NULL", pcr != NULL);

@@ -149,13 +149,8 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include <net/lwip/arch/epstruct.h>
 #endif
-#ifdef CONFIG_TC_IGMP
-struct igmp_group *igmp_lookup_group(struct netif *ifp, ip_addr_t *addr);
-err_t igmp_remove_group(struct igmp_group *group);
-#else
 static struct igmp_group *igmp_lookup_group(struct netif *ifp, ip_addr_t *addr);
-err_t igmp_remove_group(struct igmp_group *group);
-#endif
+static err_t igmp_remove_group(struct igmp_group *group);
 static void igmp_timeout(struct igmp_group *group);
 static void igmp_start_timer(struct igmp_group *group, u8_t max_time);
 static void igmp_delaying_member(struct igmp_group *group, u8_t maxresp);
@@ -361,11 +356,7 @@ struct igmp_group *igmp_lookup_group(struct netif *ifp, ip_addr_t *addr)
  * @param group the group to remove from the global igmp_group_list
  * @return ERR_OK if group was removed from the list, an err_t otherwise
  */
-#ifdef CONFIG_TC_IGMP
-err_t igmp_remove_group(struct igmp_group *group)
-#else
 static err_t igmp_remove_group(struct igmp_group *group)
-#endif
 {
 	err_t err = ERR_OK;
 

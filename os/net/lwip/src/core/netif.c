@@ -63,7 +63,6 @@
 #include <net/lwip/ipv4/igmp.h>
 #include <net/lwip/netif/etharp.h>
 #include <net/lwip/stats.h>
-#include <net/lwip/tcpip.h>
 #if ENABLE_LOOPBACK
 #include <net/lwip/sys.h>
 #if LWIP_NETIF_LOOPBACK_MULTITHREADING

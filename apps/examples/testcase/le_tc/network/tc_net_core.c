@@ -19,14 +19,15 @@
 /// @file tc_net_core.c
 /// @brief Test Case Example for lwip_htonl() API
 #include <arpa/inet.h>
-
 #include "tc_internal.h"
 
-#define  TC_VAL1 0x1012
-#define  TC_VAL2 0x112A380
+#define	NTOHS_VAL		0x1012
+#define	NTOHS_CONVAL	0x1210
+#define	NTOHL_VAL		0x112A380
+#define NTOHL_CONVAL	0X80A31201
 
 /**
-* @testcase            : tc_net_core_htonl_p
+* @testcase            : tc_net_core_ntohs_p
 * @brief               : The ntohs API converts network to host byte order.
 * @scenario            : Function converts the unsigned short integer from host byte order to network byte order.
 * @apicovered          : ntohs()
@@ -36,10 +37,8 @@
 */
 void tc_net_core_ntohs_p(void)
 {
-	short int x;				/* Value for checking */
-
-	x = ntohs(TC_VAL1);			/* Observe value in network byte order */
-	TC_ASSERT_NEQ("tc_net_core_ntohs_p", x, TC_VAL1);
+	int ret = ntohs(NTOHS_VAL);	/* Observe value in network byte order */
+	TC_ASSERT_NEQ("tc_net_core_ntohs_p", ret, NTOHS_CONVAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -54,10 +53,8 @@ void tc_net_core_ntohs_p(void)
 */
 void tc_net_core_ntohl_p(void)
 {
-	long int x;					/* Value for checking */
-
-	x = ntohl(TC_VAL2);			/* Observe value in network byte order */
-	TC_ASSERT_NEQ("tc_net_core_ntohl_p", x, TC_VAL2);
+	int ret = ntohl(NTOHL_VAL);	/* Observe value in network byte order */
+	TC_ASSERT_NEQ("tc_net_core_ntohl_p", ret, NTOHL_CONVAL);
 	TC_SUCCESS_RESULT();
 }
 

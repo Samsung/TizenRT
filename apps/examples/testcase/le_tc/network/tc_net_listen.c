@@ -21,7 +21,6 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -31,8 +30,9 @@
 
 #include "tc_internal.h"
 
-#define PORTNUM		1100
-#define PORTNUM1	1101
+#define PORTNUM1        5000
+#define PORTNUM2        5001
+#define BACKLOG         10
 
 /**
 * @testcase            : tc_net_listen_p
@@ -53,14 +53,13 @@ static void tc_net_listen_p(void)
 
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
-	sa.sin_port = htons(PORTNUM);
+	sa.sin_port = htons(PORTNUM1);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
-	TC_SUCCESS_RESULT();
 
-	ret = (listen(sock, 10));
+	ret = (listen(sock, BACKLOG));
 	close(sock);
 	TC_ASSERT_NEQ("listen", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
@@ -86,13 +85,13 @@ static void tc_net_listen_fd_n(void)
 
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
-	sa.sin_port = htons(1101);
+	sa.sin_port = htons(PORTNUM2);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	ret = bind(fd, (struct sockaddr *)&sa, sizeof(sa));
 	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
 
-	ret = listen(NEG_VAL, 10);
+	ret = listen(NEG_VAL, BACKLOG);
 	close(fd);
 	TC_ASSERT_NEQ("listen", ret, ZERO);
 	TC_SUCCESS_RESULT();
@@ -118,7 +117,7 @@ static void tc_net_listen_backlog_p(void)
 
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
-	sa.sin_port = htons(1100);
+	sa.sin_port = htons(PORTNUM1);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
@@ -151,7 +150,7 @@ static void tc_net_listen_fd_backlog_n(void)
 
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
-	sa.sin_port = htons(1100);
+	sa.sin_port = htons(PORTNUM1);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));

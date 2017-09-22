@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <net/if.h>
 #include <netutils/netlib.h>
-#include "tc_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,9 +34,14 @@
 #include <sys/select.h>
 #include <pthread.h>
 
-#define PORTNUM 1110
-#define MAXRCVLEN 20
-static int count_wait = 0;
+#include "tc_internal.h"
+
+#define	PORTNUM		5004
+#define	MAXRCVLEN	20
+#define	BUFSIZE		20
+
+static int count_wait;
+
 /**
 * @fn                   : wait1
 * @brief                : function to wait on semaphore
@@ -49,11 +53,67 @@ static int count_wait = 0;
 */
 static void wait1(void)
 {
-	while (count_wait <= 0) {
-
+	while (count_wait <= ZERO) {
 		printf("");
 	}
 	count_wait--;
+}
+
+static void tc_net_select_server(void)
+{
+	int newfd, yes = 1, addrlen, result, ret;
+	fd_set master;
+	fd_set read_fds;
+	struct sockaddr_in sa;
+	struct sockaddr_in ca;
+
+	int sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock_tcp, NEG_VAL);
+
+	FD_ZERO(&master);
+	ret = setsockopt(sock_tcp, SOL_SOCKET, ZERO, &yes, sizeof(int));
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sin_family = PF_INET;
+	sa.sin_port = htons(PORTNUM);
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+
+	ret = bind(sock_tcp, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
+
+	listen(sock_tcp, 2);
+	newfd = accept(sock_tcp, (struct sockaddr *)&ca, (socklen_t *)&addrlen);
+	close(sock_tcp);
+	TC_ASSERT_GEQ("accept", ret, ZERO);
+
+	FD_ZERO(&read_fds);
+	FD_SET(newfd, &read_fds);
+
+	result = select(newfd + 1, &read_fds, NULL, NULL, NULL);
+	close(newfd);
+	TC_ASSERT_NEQ("select", result, NEG_VAL);
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_net_select_client(void)
+{
+	int ret;
+	struct sockaddr_in dest;
+
+	int sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock_tcp, NEG_VAL);
+
+	memset(&dest, 0, sizeof(dest));
+	dest.sin_family = PF_INET;
+	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_port = htons(PORTNUM);
+
+	wait1();
+	ret = connect(sock_tcp, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	close(sock_tcp);
+	TC_ASSERT_NEQ("connect", ret, NEG_VAL);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -63,41 +123,11 @@ static void wait1(void)
 * API's covered         : socket,bind,listen,select,close
 * Preconditions         : socket file descriptor.
 * Postconditions        : none
-* @return               : void
+* @return               : void*
 */
-static void *server(void *args)
+static void* server(void *args)
 {
-	fd_set master;
-	fd_set read_fds;
-	struct sockaddr_in sa;
-	struct sockaddr_in ca;
-	int newfd;
-	int yes = 1;
-	int addrlen;
-	int result;
-	int sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
-
-	FD_ZERO(&master);
-	if (setsockopt(sock_tcp, SOL_SOCKET, 0, &yes, sizeof(int)) == -1) {
-		perror("setsockopt error\n");
-		return 0;
-	}
-	memset(&sa, 0, sizeof(sa));
-
-	sa.sin_family = PF_INET;
-	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-
-	bind(sock_tcp, (struct sockaddr *)&sa, sizeof(sa));
-
-	listen(sock_tcp, 2);
-	newfd = accept(sock_tcp, (struct sockaddr *)&ca, (socklen_t *)&addrlen);
-	do {
-		FD_ZERO(&read_fds);
-		FD_SET(newfd, &read_fds);
-		result = select(newfd + 1, &read_fds, NULL, NULL, NULL);
-	} while (result == -1);
-	close(sock_tcp);
+	tc_net_select_server();
 	return NULL;
 }
 
@@ -108,24 +138,11 @@ static void *server(void *args)
 * API's covered         : socket,connect,send,close
 * Preconditions         : socket file descriptor.
 * Postconditions        : none
-* @return               : void
+* @return               : void*
 */
-static void *client(void *args)
+static void* client(void *args)
 {
-	int len;
-	struct sockaddr_in dest;
-	char buf[10] = "samsung";
-
-	int sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
-	memset(&dest, 0, sizeof(dest));
-	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
-	dest.sin_port = htons(PORTNUM);
-
-	wait1();
-	connect(sock_tcp, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	len = send(sock_tcp, buf, sizeof(buf), 0);
-	close(sock_tcp);
+	tc_net_select_client();
 	return NULL;
 }
 
@@ -138,7 +155,7 @@ static void *client(void *args)
 * Postconditions        : none
 * @return               : void
 */
-void tc_net_select()
+void net_select(void)
 {
 	pthread_t Server, Client;
 
@@ -147,14 +164,13 @@ void tc_net_select()
 
 	pthread_join(Server, NULL);
 	pthread_join(Client, NULL);
-
-	return 0;
 }
 
 /****************************************************************************
  * Name: select()
  ****************************************************************************/
-int net_select_main()
+int net_select_main(void)
 {
-	tc_net_select();
+	net_select();
+	return 0;
 }

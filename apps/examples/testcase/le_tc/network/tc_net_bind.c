@@ -26,15 +26,15 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
-#define PORTNO	1100
-#define PORTNO1 1105
-#define PORTNO2 1108
-#define PORTNO3 1109
-#define PORTNO4 1110
+
+#define PORTNO	5001
+#define PORTNO1 5002
+#define PORTNO2 5003
+#define PORTNO3 5004
+#define PORTNO4 5005
 #define PORTNO5 5123
 
 /**
@@ -50,11 +50,11 @@ static void tc_net_bind_p(void)
 {
 	struct sockaddr_in sa;
 	int ret;
+
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	TC_ASSERT_NEQ("socket", SocketFD, ZERO);
 
 	memset(&sa, 0, sizeof sa);
-
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -79,11 +79,11 @@ static void tc_net_bind_udp_p(void)
 {
 	struct sockaddr_in sa;
 	int ret;
+
 	int SocketFD = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	TC_ASSERT_NEQ("socket", SocketFD, NEG_VAL);
 
 	memset(&sa, 0, sizeof sa);
-
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -108,11 +108,11 @@ static void tc_net_bind_broadcast_p(void)
 {
 	struct sockaddr_in sa;
 	int ret;
+
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	TC_ASSERT_NEQ("socket", SocketFD, ZERO);
 
 	memset(&sa, 0, sizeof sa);
-
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO1);
 	sa.sin_addr.s_addr = htonl(INADDR_BROADCAST);
@@ -137,8 +137,8 @@ static void tc_net_bind_fd_n(void)
 {
 	struct sockaddr_in sa;
 	int ret;
-	memset(&sa, 0, sizeof sa);
 
+	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO4);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -161,11 +161,11 @@ static void tc_net_bind_addrfamily_n(void)
 {
 	struct sockaddr_in sa;
 	int ret;
+
 	int fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	TC_ASSERT_EQ("bind", fd, ZERO);
+	TC_ASSERT_EQ("socket", fd, ZERO);
 
 	memset(&sa, 0, sizeof sa);
-
 	sa.sin_family = AF_UNIX;
 	sa.sin_port = htons(PORTNO5);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -189,10 +189,11 @@ static void tc_net_bind_size_n(void)
 {
 	struct sockaddr_in sa;
 	int ret;
+
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	TC_ASSERT_EQ("socket", SocketFD, ZERO);
 
 	memset(&sa, 0, sizeof sa);
-
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO3);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -206,7 +207,7 @@ static void tc_net_bind_size_n(void)
 
 /**
 * @testcase            : tc_net_bind_fd_size_n
-* @brief               : This bind API bind a name to a socket.
+* @brief               : bind a name to a socket.
 * @scenario            : bind() assigns the address specified by addr to the socket.
 * @apicovered          : bind()
 * @precondition        : none
@@ -217,8 +218,8 @@ static void tc_net_bind_fd_size_n(void)
 {
 	struct sockaddr_in sa;
 	int ret;
-	memset(&sa, 0, sizeof sa);
 
+	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO2);
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);

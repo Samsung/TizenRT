@@ -32,11 +32,14 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <pthread.h>
+
 #include "tc_internal.h"
 
-#define PORTNUM 1110
-#define MAXRCVLEN 20
-static int count_wait = 0;
+#define PORTNUM		5007
+#define MAXRCVLEN	20
+
+static int count_wait;
+
 /**
 * @fn                   : sig_wait
 * @brief                : Function to wait on semaphore
@@ -48,8 +51,7 @@ static int count_wait = 0;
 */
 void sig_wait(void)
 {
-	while (count_wait <= 0) {
-
+	while (count_wait <= ZERO) {
 		printf("");
 	}
 	count_wait--;
@@ -81,13 +83,13 @@ void sig_call(void)
 void tc_net_send_p(int fd)
 {
 	char *msg = "Hello World !\n";
-	int ConnectFD = accept(fd, NULL, NULL);
-	int ret = send(ConnectFD, msg, strlen(msg), 0);
 
+	int ConnectFD = accept(fd, NULL, NULL);
+
+	int ret = send(ConnectFD, msg, strlen(msg), ZERO);
+	close(ConnectFD);
 	TC_ASSERT_NEQ("send", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
-	close(ConnectFD);
 }
 
 /**
@@ -97,26 +99,24 @@ void tc_net_send_p(int fd)
 * API's covered         : socket,bind,listen,close
 * Preconditions         : socket file descriptor.
 * Postconditions        : none
-* @return               : void
+* @return               : void*
 */
 void *server(void *args)
 {
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
-
 	struct sockaddr_in sa;
-	memset(&sa, 0, sizeof(sa));
 
+	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
+
+	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-
 	listen(sock, 2);
 
 	sig_call();
 	tc_net_send_p(sock);
-
 	close(sock);
 	return NULL;
 }
@@ -128,14 +128,14 @@ void *server(void *args)
 * API's covered         : socket,connect,recv,close
 * Preconditions         : socket file descriptor.
 * Postconditions        : none
-* @return               : void
+* @return               : void*
 */
 void *client(void *args)
 {
-
-	char buffer[MAXRCVLEN];
 	int len, ret;
+	char buffer[MAXRCVLEN];
 	struct sockaddr_in dest;
+
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	memset(&dest, 0, sizeof(dest));
@@ -144,17 +144,15 @@ void *client(void *args)
 	dest.sin_port = htons(PORTNUM);
 
 	sig_wait();
-
 	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	len = recv(sock, buffer, MAXRCVLEN, 0);
+	len = recv(sock, buffer, MAXRCVLEN, ZERO);
 	buffer[len] = '\0';
-
 	close(sock);
 	return NULL;
 }
 
 /**
-* @fn                  : tc_net_send
+* @fn                  : net_send
 * @brief               : This api create client and server thread.
 * @scenario            : Create client and server thread to test send api.
 * API's covered        : none
@@ -162,12 +160,13 @@ void *client(void *args)
 * Postconditions       : none
 * @return              : void
 */
-static void tc_net_send(void)
+static void net_send(void)
 {
 	pthread_t Server, Client;
 
 	pthread_create(&Server, NULL, server, NULL);
 	pthread_create(&Client, NULL, client, NULL);
+
 	pthread_join(Server, NULL);
 	pthread_join(Client, NULL);
 }
@@ -177,7 +176,6 @@ static void tc_net_send(void)
  ****************************************************************************/
 int net_send_main(void)
 {
-
-	tc_net_send();
+	net_send();
 	return 0;
 }

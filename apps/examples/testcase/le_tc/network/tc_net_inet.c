@@ -30,9 +30,18 @@
 #include <sys/ioctl.h>
 
 #include "tc_internal.h"
-
+#define SOURCEIP		"198.51.100.4"
+#define DESTIP			"198.51.100.5"
 #define INVAL_AF        33
+#define VAL				6
 #define INVAL_SOCKSIZE  7
+#define ADDR            0x6601a8c0
+#define ADDR1           0x17071994
+#define VAL1            0x1400
+#define VAL2            20
+#define VAL3            0xa000000
+#define VAL4            10
+#define LOOPBACK        "127.0.0.1"
 
 /**
 * @testcases           : tc_inet_chksum_pbuf_p
@@ -49,18 +58,25 @@ static void tc_inet_chksum_pbuf_p(void)
 	struct pbuf *p2 = NULL;
 	struct pbuf *p3 = NULL;
 	struct pbuf *p4 = NULL;
-	int checksum = 0;
+	int checksum = ZERO;
 
-	p1 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
-	p2 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
-	p3 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
-	p4 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
+	p1 = pbuf_alloc(PBUF_TRANSPORT, VAL, PBUF_RAM);
+	TC_ASSERT_NEQ("pbuf_alloc", p1, NULL);
+	p2 = pbuf_alloc(PBUF_TRANSPORT, VAL, PBUF_RAM);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_alloc", p2, NULL, goto cleanup1);
+	p3 = pbuf_alloc(PBUF_TRANSPORT, VAL, PBUF_RAM);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_alloc", p3, NULL, goto cleanup2);
+	p4 = pbuf_alloc(PBUF_TRANSPORT, VAL, PBUF_RAM);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_alloc", p4, NULL, goto cleanup3);
 	pbuf_chain(p1, p4);
 	checksum = inet_chksum_pbuf(p1);
-	pbuf_free(p1);
-	pbuf_free(p2);
-	pbuf_free(p3);
 	pbuf_free(p4);
+cleanup3:
+	pbuf_free(p3);
+cleanup2:
+	pbuf_free(p2);
+cleanup1:
+	pbuf_free(p1);
 	TC_ASSERT_NEQ("inet_chksum_pbuf", checksum, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -90,22 +106,22 @@ static void tc_inet_chksum_pseudo_partial_p(void)
 	dest = (ip_addr_t *)malloc(sizeof(ip_addr_t));
 	TC_ASSERT_NEQ_CLEANUP("malloc", dest, NULL, TC_FREE_MEMORY(source));
 
-	ipaddr_aton("198.51.100.4", source);
-	ipaddr_aton("198.52.100.5", dest);
-	p1 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
-	TC_ASSERT_NEQ_CLEANUP("pbuf_malloc", p1, NULL, goto cleanup1);
+	ipaddr_aton(SOURCEIP, source);
+	ipaddr_aton(DESTIP, dest);
+	p1 = pbuf_alloc(PBUF_TRANSPORT, VAL, PBUF_RAM);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_alloc", p1, NULL, goto cleanup1);
 
-	p2 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
-	TC_ASSERT_NEQ_CLEANUP("pbuf_malloc", p2, NULL, goto cleanup2);
+	p2 = pbuf_alloc(PBUF_TRANSPORT, VAL, PBUF_RAM);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_alloc", p2, NULL, goto cleanup2);
 
-	p3 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
-	TC_ASSERT_NEQ_CLEANUP("pbuf_malloc", p3, NULL, goto cleanup3);
+	p3 = pbuf_alloc(PBUF_TRANSPORT, VAL, PBUF_RAM);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_alloc", p3, NULL, goto cleanup3);
 
-	p4 = pbuf_alloc(PBUF_TRANSPORT, 6, PBUF_RAM);
-	TC_ASSERT_NEQ_CLEANUP("pbuf_malloc", p4, NULL, goto cleanup4);
+	p4 = pbuf_alloc(PBUF_TRANSPORT, VAL, PBUF_RAM);
+	TC_ASSERT_NEQ_CLEANUP("pbuf_alloc", p4, NULL, goto cleanup4);
 
 	pbuf_chain(p1, p4);
-	checksum = inet_chksum_pseudo_partial(p1, source, dest, 6, PBUF_RAM, 6);
+	checksum = inet_chksum_pseudo_partial(p1, source, dest, VAL, PBUF_RAM, 6);
 	pbuf_free(p4);
 cleanup4:
 	pbuf_free(p3);
@@ -133,7 +149,7 @@ static void tc_net_inet_addr_p(void)
 {
 	unsigned int ret;
 
-	ret = inet_addr("127.0.0.1");
+	ret = inet_addr(LOOPBACK);
 	TC_ASSERT_NEQ("inet", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -149,10 +165,10 @@ static void tc_net_inet_addr_p(void)
 */
 static void tc_net_inet_aton_p(void)
 {
-	struct sockaddr_in addr_inet;
 	unsigned long ret;
+	struct sockaddr_in addr_inet;
 
-	ret = inet_aton("127.0.0.1", &addr_inet.sin_addr);
+	ret = inet_aton(LOOPBACK, &addr_inet.sin_addr);
 	TC_ASSERT_NEQ("inet", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -168,13 +184,13 @@ static void tc_net_inet_aton_p(void)
 */
 static void tc_net_inet_ntoa_p(void)
 {
-	struct sockaddr_in addr_inet;
 	char *ret;
+	struct sockaddr_in addr_inet;
 
-	addr_inet.sin_addr.s_addr = 0x6601a8c0;
+	addr_inet.sin_addr.s_addr = ADDR;
 	ret = inet_ntoa(addr_inet.sin_addr);
 
-	TC_ASSERT_NEQ("inet", *ret, NEG_VAL);
+	TC_ASSERT_NEQ("tc_net_inet_ntoa_p", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -193,7 +209,7 @@ static void tc_net_inet_ntop(void)
 	char dst[INET_ADDRSTRLEN];
 	const char *ret;
 
-	in_addr.s_addr = 0x17071994;
+	in_addr.s_addr = ADDR1;
 
 #ifdef CONFIG_NET_IPv4
 	ret = inet_ntop(AF_INET, &in_addr, dst, INET_ADDRSTRLEN);
@@ -217,7 +233,7 @@ static void tc_net_inet_ntop(void)
 /**
 * @testcase            : tc_net_inet_pton
 * @brief               : Convert IPv4 and IPv6 addresses from text to binary form.
-* @scenario            : Converts an address in its standard text presentation form into its numeric binary form. 
+* @scenario            : Converts an address in its standard text presentation form into its numeric binary form.
 * @apicovered          : inet_pton()
 * @precondition        : none
 * @postcondition       : none
@@ -258,12 +274,9 @@ static void tc_net_inet_pton(void)
 */
 static void tc_net_htons(void)
 {
-	uint16_t var = 20;
-	uint16_t ret;
-	uint16_t ref = 0x1400;
-
-	ret = htons(var);
-	TC_ASSERT_EQ("inet", ret, ref);
+	uint16_t var = VAL2;
+	uint16_t ret = htons(var);
+	TC_ASSERT_EQ("tc_net_htons", ret, VAL1);
 	TC_SUCCESS_RESULT();
 }
 
@@ -278,12 +291,9 @@ static void tc_net_htons(void)
 */
 static void tc_net_ntohs(void)
 {
-	uint16_t var = 0x1400;
-	uint16_t ret;
-	uint16_t ref = 20;
-
-	ret = ntohs(var);
-	TC_ASSERT_EQ("inet", ret, ref);
+	uint16_t var = VAL1;
+	uint16_t ret = ntohs(var);
+	TC_ASSERT_EQ("tc_net_ntohs", ret, VAL2);
 	TC_SUCCESS_RESULT();
 }
 
@@ -298,12 +308,9 @@ static void tc_net_ntohs(void)
 */
 static void tc_net_htonl(void)
 {
-	uint32_t var = 10;
-	uint32_t ret;
-	uint32_t ref = 0xa000000;
-
-	ret = htonl(var);
-	TC_ASSERT_EQ("inet", ret, ref);
+	uint32_t var = VAL4;
+	uint32_t ret = htonl(var);
+	TC_ASSERT_EQ("tc_net_htonl", ret, VAL3);
 	TC_SUCCESS_RESULT();
 }
 
@@ -318,12 +325,9 @@ static void tc_net_htonl(void)
 */
 static void tc_net_ntohl(void)
 {
-	uint32_t var = 0xa000000;
-	uint32_t ret;
-	uint32_t ref = 10;
-
-	ret = ntohl(var);
-	TC_ASSERT_EQ("inet", ret, ref);
+	uint32_t var = VAL3;
+	uint32_t ret = ntohl(var);
+	TC_ASSERT_EQ("tc_net_ntohl", ret, VAL4);
 	TC_SUCCESS_RESULT();
 }
 

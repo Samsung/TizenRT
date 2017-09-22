@@ -21,7 +21,6 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -89,7 +88,7 @@ static void tc_net_ioctl_fionread_n(void)
 */
 static void tc_net_ioctl_n(void)
 {
-	int ret = ioctlsocket(NEG_VAL, FIONBIO, 0);
+	int ret = ioctlsocket(NEG_VAL, FIONBIO, ZERO);
 
 	TC_ASSERT_EQ("tc_net_ioctl_n", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();

@@ -40,7 +40,7 @@ static void tc_net_checksd_p(int sock)
 	int result;
 
 	result = net_checksd(sock, 0666);
-	TC_ASSERT_EQ("tc_net_checksd_p", result, ZERO);
+	TC_ASSERT_EQ("net_checksd_p", result, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -114,11 +114,11 @@ static void tc_net_dupsd2_p(int old_fd, int new_fd)
 * @postcondition         : none
 * @return                : void
 */
-static void tc_net_dupsd2_n(int old_fd, int new_fd)
+static void tc_net_dupsd2_n(int new_fd)
 {
 	int result;
 
-	result = net_dupsd2(old_fd, new_fd);
+	result = net_dupsd2(NEG_VAL, new_fd);
 	TC_ASSERT_EQ("tc_net_dupsd2_n", result, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -135,6 +135,7 @@ static void tc_net_dupsd2_n(int old_fd, int new_fd)
 static void tc_net_ethernetif_status_callback_p(void)
 {
 	struct netif *netif = NULL;
+
 	netif = (struct netif *)malloc(sizeof(struct netif));
 	TC_ASSERT_NEQ("malloc", netif, NULL);
 
@@ -156,6 +157,7 @@ static void tc_net_ethernetif_init(void)
 {
 	struct netif *netif;
 	err_t result;
+
 	netif = (struct netif *)malloc(sizeof(struct netif));
 	TC_ASSERT_NEQ("malloc", netif, NULL);
 
@@ -174,7 +176,7 @@ int net_mac_main(int sock, int sock1)
 	tc_net_checksd_n();
 	tc_net_clone_p(sock, sock1);
 	tc_net_dupsd2_p(sock, sock1);
-	tc_net_dupsd2_n(NEG_VAL, sock1);
+	tc_net_dupsd2_n(sock1);
 	tc_net_ethernetif_status_callback_p();
 	tc_net_ethernetif_init();
 	return 0;

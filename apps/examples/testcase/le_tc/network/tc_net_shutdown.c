@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <net/if.h>
 #include <netutils/netlib.h>
-#include "tc_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,9 +33,11 @@
 #include <sys/socket.h>
 #include <pthread.h>
 
-#define PORTNUM 1112
+#include "tc_internal.h"
+
+#define PORTNUM 5010
 #define MAXRCVLEN 20
-static int count_wait = 0;
+static int count_wait;
 /**
 * @fn                   : shutdown_wait
 * @brief                : Function to wait on semaphore.
@@ -48,7 +49,7 @@ static int count_wait = 0;
 */
 void shutdown_wait(void)
 {
-	while (count_wait <= 0) {
+	while (count_wait <= ZERO) {
 
 		printf("");
 	}
@@ -171,21 +172,21 @@ void *shutdown_server(void *args)
 	char *msg = "Hello World !\n";
 	struct sockaddr_in sa;
 
-	memset(&sa, 0, sizeof(sa));
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	memset(&sa, ZERO, sizeof(sa));
+	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, 1);
+	listen(sock, ONE);
 	shutdown_signal();
 
 	ConnectFD = accept(sock, NULL, NULL);
 	tc_net_shutdown_send_p(ConnectFD);
 	send(ConnectFD, msg, strlen(msg), ZERO);
 	tc_net_shutdown_recv_p(ConnectFD);
-	recv(ConnectFD, msg, 1024, 0);
+	recv(ConnectFD, msg, 1024, ZERO);
 	tc_net_shutdown_n();
 	tc_net_shutdown_sock_n(sock);
 	close(ConnectFD);
@@ -208,9 +209,9 @@ void *shutdown_client(void *args)
 	char buffer[MAXRCVLEN];
 	struct sockaddr_in dest;
 
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
 
-	memset(&dest, 0, sizeof(dest));
+	memset(&dest, ZERO, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
@@ -258,7 +259,6 @@ void net_shutdown(void)
  ****************************************************************************/
 int net_shutdown_main(void)
 {
-
 	net_shutdown();
 	return 0;
 }

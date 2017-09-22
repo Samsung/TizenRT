@@ -51,9 +51,9 @@ static void tc_do_netifapi_netif_add_n(void)
 }
 
 /****************************************************************************
- * Name lwip_netifapi
+ * Name netifapi
  ****************************************************************************/
-int net_lwip_netifapi_main(void)
+int net_netifapi_main(void)
 {
 	tc_do_netifapi_netif_add_n();
 	return 0;

@@ -34,9 +34,9 @@
 #include <pthread.h>
 
 #include "tc_internal.h"
-#define PORTNUM 1108
+#define PORTNUM 5001
 #define MAXRCVLEN 20
-static int count_wait = 0;
+static int count_wait;
 /**
 * @fn                    : wait
 * @brief                 : Function to wait on semaphore.
@@ -48,7 +48,7 @@ static int count_wait = 0;
 */
 static void wait(void)
 {
-	while (count_wait <= 0) {
+	while (count_wait <= ZERO) {
 		printf("");
 	}
 	count_wait--;
@@ -83,7 +83,7 @@ void tc_net_accept_p(int fd)
 	int ConnectFD = accept(fd, NULL, NULL);
 
 	close(ConnectFD);
-	TC_ASSERT_GEQ("accept", ConnectFD, 0);
+	TC_ASSERT_GEQ("accept", ConnectFD, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -112,20 +112,20 @@ void tc_net_accept_socket_n(void)
 * @API's covered        : socket,bind,listen,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
-* @return               : void *
+* @return               : void*
 */
 void *Server(void *args)
 {
 	struct sockaddr_in sa;
 
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
-	memset(&sa, 0, sizeof(sa));
+	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
+	memset(&sa, ZERO, sizeof(sa));
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, 1);
+	listen(sock, ONE);
 	nw_signal();
 	tc_net_accept_p(sock);
 	tc_net_accept_socket_n();
@@ -148,7 +148,7 @@ void *Client(void *args)
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
-	memset(&dest, 0, sizeof(dest));
+	memset(&dest, ZERO, sizeof(dest));
 	dest.sin_family = AF_INET;
 	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);

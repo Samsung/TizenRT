@@ -26,13 +26,12 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 #include <pthread.h>
 
 #include "tc_internal.h"
 
-#define PORTNUM 1115
+#define PORTNUM 5002
 #define MAXRCVLEN 20
 int sem = 0;
 
@@ -47,7 +46,7 @@ int sem = 0;
 */
 void getpeername_wait(void)
 {
-	while (sem <= 0) {
+	while (sem <= ZERO) {
 		printf("");
 	}
 
@@ -100,6 +99,7 @@ static void tc_net_getpeername_sock_n(void)
 {
 	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
+
 	int ret = getpeername(NEG_VAL, &foo, (socklen_t *)&len);
 	TC_ASSERT_EQ("getpeername", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
@@ -210,7 +210,7 @@ static void tc_net_getpeername_n(int fd)
 * @apicovered          : socket,bind,listen,accept,close
 * @precondition        : socket file descriptor.
 * @postcondition       : none
-* @return              : void
+* @return              : void*
 */
 void *getpeername_server(void *args)
 {
@@ -225,7 +225,7 @@ void *getpeername_server(void *args)
 	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, 1);
+	listen(sock, ONE);
 
 	getpeername_signal();
 	ConnectFD = accept(sock, NULL, NULL);
@@ -241,7 +241,7 @@ void *getpeername_server(void *args)
 * @apicovered          : socket,connect,close
 * @precondition        : socket file descriptor.
 * @postcondition       : none
-* @return              : void
+* @return              : void*
 */
 void *getpeername_client(void *args)
 {

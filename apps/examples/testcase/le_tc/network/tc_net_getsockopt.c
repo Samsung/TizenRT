@@ -26,10 +26,10 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
+
 /**
 * @testcase            : tc_net_getsockopt_multicast_ttl_p
 * @brief               : This getsockopt API get options on sockets.
@@ -42,10 +42,10 @@
 static void tc_net_getsockopt_multicast_ttl_p(void)
 {
 	int ret;
-	socklen_t optval = 1;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
 
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	int sock = socket(AF_INET, SOCK_DGRAM, ZERO);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &optval, optlen);
@@ -73,7 +73,7 @@ static void tc_net_getsockopt_multicast_ttl_loop_own_p(void)
 	socklen_t loop = ONE;
 	socklen_t looplen = sizeof(loop);
 
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	int sock = socket(AF_INET, SOCK_DGRAM, ZERO);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
@@ -100,7 +100,7 @@ static void tc_net_getsockopt_multicast_ttl_loop_p(void)
 	socklen_t loop = 1;
 	socklen_t looplen = sizeof(loop);
 
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	int sock = socket(AF_INET, SOCK_DGRAM, ZERO);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
@@ -125,10 +125,10 @@ static void tc_net_getsockopt_multicast_ttl_loop_p(void)
 static void tc_net_getsockopt_invalid_filedesc_n(void)
 {
 	int ret;
-	socklen_t optval = 1;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
 
-	ret = setsockopt(NEG_VAL, SOL_SOCKET, 0, 0, 0);
+	ret = setsockopt(NEG_VAL, SOL_SOCKET, ZERO, ZERO, ZERO);
 	TC_ASSERT_NEQ("setsockopt", ret, ZERO);
 
 	ret = getsockopt(NEG_VAL, IPPROTO_IP, IP_MULTICAST_TTL, &optval, &optlen);
@@ -149,13 +149,13 @@ static void tc_net_getsockopt_invalid_filedesc_n(void)
 static void tc_net_getsockopt_optval_n(void)
 {
 	int ret;
-	socklen_t optval = 1;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
 
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
-	ret = setsockopt(sock, SOL_SOCKET, 0, 0, 0);
+	ret = setsockopt(sock, SOL_SOCKET, ZERO, ZERO, ZERO);
 	TC_ASSERT_NEQ("setsockopt", ret, ZERO);
 
 	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &optval, optlen);
@@ -179,10 +179,10 @@ static void tc_net_getsockopt_optval_n(void)
 static void tc_net_getsockopt_sol_socket_so_acceptconn_p(void)
 {
 	int ret;
-	socklen_t optval = 1;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
 
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	int sock = socket(AF_INET, SOCK_STREAM, ONE);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	ret = setsockopt(sock, SOL_SOCKET, SO_ACCEPTCONN, &optval, optlen);
@@ -206,10 +206,10 @@ static void tc_net_getsockopt_sol_socket_so_acceptconn_p(void)
 static void tc_net_getsockopt_sol_socket_so_broadcast_p(void)
 {
 	int ret;
-	socklen_t optval = 1;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
 
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	int sock = socket(AF_INET, SOCK_DGRAM, ZERO);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	ret = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &optval, optlen);
@@ -234,10 +234,10 @@ static void tc_net_getsockopt_sol_socket_so_broadcast_p(void)
 static void tc_net_getsockopt_sol_socket_so_keepalive_p(void)
 {
 	int ret;
-	socklen_t optval = 1;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
 
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	int sock = socket(AF_INET, SOCK_STREAM, ZERO);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	ret = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen);

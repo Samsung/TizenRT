@@ -21,13 +21,11 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
@@ -308,7 +306,7 @@ static void tc_net_setsockopt_invalid_level_n(int s)
 {
 	int ret;
 
-	ret = setsockopt(s, NEG_VAL, 0, 0, 0);
+	ret = setsockopt(s, NEG_VAL, ZERO, ZERO, ZERO);
 	TC_ASSERT_EQ("setsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -319,7 +317,7 @@ static void tc_net_setsockopt_invalid_level_n(int s)
 
 int net_setsockopt_main(void)
 {
-	int fd = socket(AF_INET, SOCK_STREAM, 0);
+	int fd = socket(AF_INET, SOCK_STREAM, ZERO);
 
 	tc_net_setsockopt_invalid_level_n(fd);
 	tc_net_setsockopt_invalid_filedesc_n();
@@ -335,7 +333,6 @@ int net_setsockopt_main(void)
 	tc_net_setsockopt_multicast_tcp_keepidle_p(fd);
 	tc_net_setsockopt_multicast_tcp_keepalive_p(fd);
 	tc_net_setsockopt_multicast_tcp_nodelay_p(fd);
-
 	close(fd);
 	return 0;
 }

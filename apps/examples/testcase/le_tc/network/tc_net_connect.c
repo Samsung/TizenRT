@@ -26,11 +26,10 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
-#define PORTNUM 1100
+#define PORTNUM 5010
 
 /**
 * @testcase            : tc_net_connect_fd_n
@@ -66,14 +65,15 @@ static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 */
 static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 {
-	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	struct in_addr ad;
+
+	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	ad.s_addr = INADDR_BROADCAST;
 	sa->sin_addr = ad;
 	int ret = connect(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
 	close(fd);
 
-	TC_ASSERT_EQ("connect", ret, NEG_VAL);
+	TC_ASSERT_NEQ("connect", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }
@@ -101,7 +101,7 @@ static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 	ret = connect(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
 	close(fd);
 
-	TC_ASSERT_EQ("connect", ret, NEG_VAL);
+	TC_ASSERT_NEQ("connect", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -118,6 +118,7 @@ static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 {
 	int ret;
+
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
 	struct in_addr ad;
@@ -126,7 +127,7 @@ static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 	ret = connect(fd, (struct sockaddr *)sa, NEG_VAL);
 	close(fd);
 
-	TC_ASSERT_EQ("connect", ret, NEG_VAL);
+	TC_ASSERT_NEQ("connect", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -143,8 +144,7 @@ void tc_net_connect(void)
 {
 	struct sockaddr_in sa;
 
-	memset(&sa, 0, sizeof sa);
-
+	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM);
 

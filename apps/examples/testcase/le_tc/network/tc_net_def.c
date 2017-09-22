@@ -22,10 +22,15 @@
 
 #include "tc_internal.h"
 
-#define TC_VAL1 20
-#define TC_VAL2 10
-#define TC_VAL1_HEX 0x1400
-#define TC_VAL2_HEX 0xa000000
+#define	NTOHS_VAL		0x1400
+#define	NTOHS_CONVAL	0x0014
+#define	HTONS_VAL		0x0a00
+#define	HTONS_CONVAL	0x000a
+
+#define	NTOHL_VAL		0xaa140000
+#define	NTOHL_CONVAL	0x000014aa
+#define	HTONL_VAL		0xaa140000
+#define	HTONL_CONVAL	0x000014aa
 
 /**
 * @testcase              : tc_net_def_htons
@@ -38,14 +43,9 @@
 */
 static void tc_net_def_htons(void)
 {
-	uint16_t ret;
-	uint16_t ref;
-	uint16_t var = TC_VAL1;
+	uint16_t ret = htons(HTONS_VAL);
 
-	ret = htons(var);
-	ref = TC_VAL1_HEX;
-
-	TC_ASSERT_EQ("htons", ret, ref);
+	TC_ASSERT_NEQ("htons", ret, HTONS_CONVAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -60,14 +60,9 @@ static void tc_net_def_htons(void)
 */
 static void tc_net_def_ntohs(void)
 {
-	uint16_t ret;
-	uint16_t ref;
-	uint16_t var = TC_VAL1_HEX;
+	uint16_t ret = ntohs(NTOHS_VAL);
 
-	ret = ntohs(var);
-	ref = TC_VAL1;
-
-	TC_ASSERT_EQ("ntohs", ret, ref);
+	TC_ASSERT_NEQ("ntohs", ret, NTOHS_CONVAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -82,14 +77,9 @@ static void tc_net_def_ntohs(void)
 */
 static void tc_net_def_htonl(void)
 {
-	uint32_t ret;
-	uint32_t ref;
-	uint32_t var = TC_VAL2;
+	uint32_t ret = htonl(HTONL_VAL);
 
-	ret = htonl(var);
-	ref = TC_VAL2_HEX;
-
-	TC_ASSERT_EQ("htonl", ret, ref);
+	TC_ASSERT_NEQ("htonl", ret, HTONL_CONVAL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -104,14 +94,9 @@ static void tc_net_def_htonl(void)
 */
 static void tc_net_def_ntohl(void)
 {
-	uint32_t ret;
-	uint32_t ref;
-	uint32_t var = TC_VAL2_HEX;
+	uint32_t ret = ntohl(NTOHL_VAL);
 
-	ret = ntohl(var);
-	ref = TC_VAL2;
-
-	TC_ASSERT_EQ("ntohl", ret, ref);
+	TC_ASSERT_NEQ("ntohl", ret, NTOHL_CONVAL);
 	TC_SUCCESS_RESULT();
 }
 

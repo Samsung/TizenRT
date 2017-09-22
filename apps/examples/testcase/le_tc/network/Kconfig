@@ -39,7 +39,6 @@ config TC_NET_ALL
 	select TC_NETDEV_CARRIER
 	select TC_NET_DECISEC_TIME
 	select TC_NET_CORE
-	select TC_NET_LWIP_READ_WRITE
 	select TC_NETBUF_ALLOC
 	select TC_MEM_ALLOC
 	select TC_NET_API
@@ -129,10 +128,6 @@ config TC_NET_NETDB
 
 config TC_NET_API
 	bool "api() api"
-	default n
-
-config TC_NET_LWIP_READ_WRITE
-	bool "lwip() api"
 	default n
 
 config TC_NET_CORE
