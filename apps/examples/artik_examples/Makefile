@@ -69,6 +69,7 @@ CFLAGS += -I$(ARTIK_SDK_DIR)/inc/systemio
 CFLAGS += -I$(ARTIK_SDK_DIR)/inc/connectivity
 CFLAGS += -I$(ARTIK_SDK_DIR)/inc/wifi
 CFLAGS += -I$(ARTIK_SDK_DIR)/inc/lwm2m
+CFLAGS += -I$(ARTIK_SDK_DIR)/inc/mqtt
 CFLAGS += -I$(TOPDIR)/net
 CFLAGS += -I$(APPDIR)/include
 CFLAGS += -I$(APPDIR)/include/netutils
