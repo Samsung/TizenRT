@@ -77,21 +77,7 @@ void *presence_noti_loop(void *param)
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
 	if (OCStartPresence(0) == OC_STACK_OK) {
-		/*        while (!g_quit_flag)
-		   {
-		   g_presence_flag++;
-		   //THINGS_LOG_D(THINGS_DEBUG, TAG, "COUNT : %d", g_presence_flag);
-		   if (g_presence_flag > g_presence_duration)
-		   {
-		   g_presence_flag = 0;
-		   OCStopPresence();
-		   THINGS_LOG(THINGS_INFO, TAG, "Stop Sending Presence Packet");
-		   is_presence = false;
-		   break;
-		   }
-		   sleep(1);
-		   }
-		 */
+		THINGS_LOG_D(THINGS_DEBUG, TAG, "OC Stack is available");
 	} else {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "OCStartPresence Error");
 	}
@@ -128,8 +114,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 	if (1 == isObserable) {
 		rsc_properties |= OC_OBSERVABLE;
 	}
-	// if( strstr(uri, URI_ACCESSPOINTLIST) == 0
-	//     && strstr(uri, URI_PROVINFO) == 0 )
+
 	if (1 == isSecure) {
 #ifdef __SECURED__
 		rsc_properties |= OC_SECURE;
@@ -321,8 +306,6 @@ int broadcast_presence(things_server_builder_s *builder, int max_cnt)
 
 void init_builder(struct things_server_builder_s *builder, request_handler_cb cb)
 {
-	//if (OCInit(NULL, 0, OC_SERVER) != OC_STACK_OK)
-	//if(OC_STACK_OK != OCInit1 (OC_CLIENT_SERVER,OC_IP_USE_V4, OC_IP_USE_V4) )
 	OCTransportAdapter m_transport = (OC_ADAPTER_IP | OC_ADAPTER_TCP);
 	if (OC_STACK_OK != OCInit2(OC_CLIENT_SERVER, OC_IP_USE_V4, OC_IP_USE_V4, m_transport)) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "RESOURCE SERVER START FAILED");

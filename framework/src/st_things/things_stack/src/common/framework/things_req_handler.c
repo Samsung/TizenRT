@@ -115,12 +115,6 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 		// the result of additional verification
 		result = 0;
 
-		// if(gValidator == NULL )
-		// {s
-		//     THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Validator not registered");
-		//     goto EXIT_VALIDATION;
-		// }
-
 		//  If the given resource does not have sensor nor read interface type..
 		if (!(resource->things_is_supporting_interface_type(resource, OIC_INTERFACE_SENSOR))
 			&& !(resource->things_is_supporting_interface_type(resource, OC_RSRVD_INTERFACE_READ))) {
@@ -1116,12 +1110,6 @@ RESPONSE_ERROR:
 void init_handler()
 {
 	g_quit_flag = false;
-
-//#ifdef __ST_THINGS_RTOS__
-//    pthread_create_rtos(&g_req_handle, NULL, message_handling_loop, (void *)NULL, THINGS_STACK_MESSAGE_HANDLING_THREAD);
-//#else
-//   things_thread_create (&g_req_handle, NULL, message_handling_loop, (void *)NULL);
-//#endif
 
 }
 

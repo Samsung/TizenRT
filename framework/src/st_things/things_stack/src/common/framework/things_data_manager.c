@@ -1545,7 +1545,6 @@ static things_resource_s *register_resource(things_server_builder_s *p_builder, 
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "RESOURCE TO REGISTER : %s", resource->uri);
 
 		memset(res_uri, 0, (size_t) MAX_URI_LENGTH);
-		/*SVACE warning fix */
 		strncat(res_uri, resource->uri, MAX_URI_LENGTH);
 
 		ret = p_builder->create_resource(p_builder, res_uri, resource->resource_types[0], resource->interface_types[0], CHECK_DISCOVERABLE(resource->policy), CHECK_OBSERVABLE(resource->policy), CHECK_SECURE(resource->policy));
@@ -1803,7 +1802,6 @@ int dm_register_resource(things_server_builder_s *p_builder)
 		device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)device_num);
 
 		if (NULL != device) {
-			/*SVACE warning fix */
 			snprintf(id, sizeof(id), "%d", device->no);
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "==================== Device (%s) ====================", id);
 
@@ -2259,8 +2257,6 @@ int dm_init_module(const char *devJsonPath)
 
 	return Parse_things_files(devJsonPath);
 }
-
-//
 
 int dm_termiate_module()
 {

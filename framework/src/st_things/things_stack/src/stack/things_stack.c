@@ -498,7 +498,6 @@ int things_start_stack()
 
 	if (0 != sm_init_things_security(auty_type, dm_get_svrdb_file_path())) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize OICSecurity features");
-		things_stop();
 		return 0;
 	}
 	sm_set_otm_event_handler(otm_event_cb);
@@ -506,7 +505,6 @@ int things_start_stack()
 	g_req_handler = get_handler_instance();
 	if (NULL == g_req_handler) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize Request Handler");
-		things_stop();
 		return 0;
 	}
 	// Will be refactored to received callbacks for GET/PUT/POST/DELETE/OBSERVE ..
@@ -516,7 +514,6 @@ int things_start_stack()
 	g_server_builder = get_builder_instance();
 	if (NULL == g_server_builder) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize Resource Server");
-		things_stop();
 		return 0;
 	}
 
@@ -526,7 +523,6 @@ int things_start_stack()
 	//5. Generate MAC based device UUID
 	if (0 != sm_generate_mac_based_device_id(false)) {
 		THINGS_LOG(THINGS_WARNING, TAG, "Failed to generate MAC based device_id");
-		things_stop();
 		return 0;
 	}
 #endif
@@ -534,19 +530,16 @@ int things_start_stack()
 	// 6. Register Device-ID & Resources
 	if (dm_register_device_id() == false) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to register Device ID");
-		things_stop();
 		return 0;
 	}
 
 	if (!dm_register_resource(g_server_builder)) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to register Resource");
-		things_stop();
 		return 0;
 	}
 	// 7. Initiate Easy-Setup & Login to Cloud
 	if (ESM_OK != esm_init_easysetup(0, g_server_builder)) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize Easy-Setup Module");
-		things_stop();
 		return 0;
 	}
 	// Register Callback
@@ -554,7 +547,6 @@ int things_start_stack()
 
 	if (es_cloud_init(g_server_builder) == NULL) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Failed to initialize Cloud");
-		things_stop();
 		return 0;
 	}
 
@@ -632,45 +624,6 @@ GOTO_OUT:
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
 
 	return res;
-}
-
-int things_stop(void)
-{
-	pthread_mutex_lock(&g_things_stop_mutex);
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
-	g_quit_flag = 1;
-	is_things_module_inited = 0;
-
-	pthread_mutex_lock(&m_thread_oic_reset);
-	if (b_thread_things_reset == true) {
-		b_reset_continue_flag = false;
-		h_thread_things_reset = 0;
-		b_thread_things_reset = false;
-	}
-	pthread_mutex_unlock(&m_thread_oic_reset);
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate Cloud Session Managing");
-	es_cloud_terminate();
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Terminate EasySetup");
-	esm_terminate_easysetup();
-
-	if (g_server_builder != NULL) {
-		g_server_builder->deinit_module(g_server_builder);
-		release_builder_instance(g_server_builder);
-		g_server_builder = NULL;
-	}
-	if (g_req_handler != NULL) {
-		g_req_handler->deinit_module();
-		release_handler_instance(g_req_handler);
-		g_req_handler = NULL;
-	}
-	// Need to add memory release for the Queue..
-	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_EXIT);
-
-	pthread_mutex_unlock(&g_things_stop_mutex);
-	return 1;
 }
 
 int things_register_confirm_reset_start_func(things_reset_confirm_func_type func)

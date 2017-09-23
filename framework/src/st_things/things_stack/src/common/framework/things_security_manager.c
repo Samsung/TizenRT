@@ -445,7 +445,7 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 	return OIC_SEC_OK;
 }
 
-// ++ Added by Chul Lee : To support MAC based UUID
+// To support MAC based UUID
 int sm_generate_mac_based_device_id(bool is_forced)
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "In %s", __func__);
@@ -492,7 +492,7 @@ int sm_generate_mac_based_device_id(bool is_forced)
 	return res;
 }
 
-// ++ Added by Chul Lee : To support MAC based UUID
+// To support MAC based UUID
 //
 
 int sm_init_things_security(int auth_type, const char *db_path)
@@ -591,7 +591,7 @@ int sm_reset_svrdb()
 }
 
 //
-// ++ Added by Chul Lee : to test certificate based (D)TLS connection for  D2D & D2S
+// To test certificate based (D)TLS connection for  D2D & D2S
 
 #ifndef _EXCLUDE_TEST_KEY_
 static OicSecKey_t primary_cert;

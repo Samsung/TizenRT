@@ -54,8 +54,6 @@ int things_return_user_opinion_for_reset(int b_reset_start);
 
 int things_reset(void *remote_owner, things_es_enrollee_reset_e reset_type);
 
-int things_stop(void);
-
 typedef int (*things_handle_request_func_type)(struct things_resource_s *p_resource);
 int things_register_handle_request_func(things_handle_request_func_type get_func, things_handle_request_func_type set_func);
 

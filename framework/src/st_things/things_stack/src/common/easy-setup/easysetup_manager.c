@@ -291,9 +291,6 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Easy Setup Memory allocation is failed.");
 		return ESM_ERROR;
 	}
-//    es_device_property device_property = {
-//        {{WiFi_11G, WiFi_11N, WiFi_11AC, WiFi_EOF}, WiFi_5G}, {"Test Device"}
-//    };
 
 	if (server_builder != NULL) {
 		g_server_builder = server_builder;
@@ -632,7 +629,6 @@ static void *wifi_prov_timeout_handler(timeout_s *param)
 
 	if (ESM_OK != esm_init_easysetup(1, NULL)) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Easy-Setup Module Initialization failed");
-		things_stop();
 		return NULL;
 	}
 
@@ -896,8 +892,6 @@ void cloud_data_prov_cb_in_app(es_cloud_prov_data_s *event_data)
 
 bool esm_get_network_status(void)
 {
-	//THINGS_LOG_D(THINGS_DEBUG, TAG, "Enter.");
-
 	bool is_ok = false;
 
 	if (things_is_net_initialize() != 1) {
@@ -924,7 +918,6 @@ bool esm_get_network_status(void)
 		es_set_state(ES_STATE_INIT);
 	}
 
-	//THINGS_LOG_D(THINGS_DEBUG, TAG, "Exit.");
 	return is_ok;
 }
 
@@ -945,7 +938,6 @@ int esm_register_pin_generated_cb(pin_generated_func_type func)
 {
 	if (func) {
 		g_pin_generated_cb = func;
-		// SetGeneratePinCB(generate_pin_cb);
 		return 1;
 	} else {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid PINGeneratedCB function");
@@ -957,7 +949,6 @@ int esm_register_pin_close_cb(pin_close_func_type func)
 {
 	if (func) {
 		g_pin_close_cb = func;
-		// SetGeneratePinCB(generate_pin_cb);
 		return 1;
 	} else {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid PINGeneratedCB function");
@@ -969,8 +960,6 @@ int esm_register_user_confirm_cb(user_confirm_result_func_type func)
 {
 	if (func) {
 		g_user_confirm_cb = func;
-
-		// SetUserConfirmCB(NULL, get_user_confirmation);
 		return 1;
 	} else {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Invalid UserConformCB function");

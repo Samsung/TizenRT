@@ -385,46 +385,6 @@ int st_things_start(void)
 	return ST_THINGS_ERROR_OPERATION_FAILED;
 }
 
-int st_things_stop(void)
-{
-	ST_LOG_ENTRY(ST_INFO);
-
-	if (STACK_STARTED != g_stack_status) {
-		int ret_val = ST_THINGS_ERROR_OPERATION_FAILED;
-		switch (g_stack_status) {
-		case STACK_NOT_INITIALIZED:
-			ST_LOG(ST_ERROR, "Stack is not initialized.");
-			ret_val = ST_THINGS_ERROR_STACK_NOT_INITIALIZED;
-			break;
-		case STACK_INITIALIZED:
-			ST_LOG(ST_ERROR, "Stack is not started.");
-			ret_val = ST_THINGS_ERROR_STACK_NOT_STARTED;
-			break;
-		default:
-			ST_LOG_V(ST_ERROR, "Invalid stack state: %d.", g_stack_status);
-			break;
-		}
-
-		ST_LOG_EXIT(ST_INFO);
-		return ret_val;
-	}
-
-	int result = 0;
-
-	// Terminate DA Stack.
-	if (1 != (result = things_stop())) {
-		ST_LOG_V(ST_ERROR, "things_stop failed (result:%d)", result);
-		ST_LOG_EXIT(ST_INFO);
-		return ST_THINGS_ERROR_OPERATION_FAILED;
-	}
-
-	g_stack_status = STACK_INITIALIZED;
-
-	ST_LOG_EXIT(ST_INFO);
-	ST_LOG_DEINIT();
-	return ST_THINGS_ERROR_NONE;
-}
-
 int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set_request_cb set_cb)
 {
 	ST_LOG_ENTRY(ST_INFO);

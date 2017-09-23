@@ -823,7 +823,6 @@ things_resource_s *things_create_resource_inst(OCRequestHandle requesthd, OCReso
 	return res;
 }
 
-// BTD
 things_resource_s *clone_resource_inst(things_resource_s *pori)
 {
 	if (pori == NULL) {

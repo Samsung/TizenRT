@@ -110,7 +110,6 @@ int get_id_value_from_query(char idvalue[], char *inputQuery, int size)
 		return 0;
 	}
 
-	/*[Jaehong] (Need to consider trim to remove space in query) */
 	// Remove empty space
 	char queries[MAX_INPUT_QUERY_LEN + 1] = { 0, };
 	int index = 0;

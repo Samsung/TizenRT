@@ -69,7 +69,6 @@ typedef struct things_ping_s {
 static list_s *list = NULL;
 static const char INTERVAL_ARRAY[] = "inarray";
 static const char INTERVAL[] = "in";
-things_ping_s *pPing = NULL;	//SKKIM for ping command
 
 static void *thd_ping_loop(things_ping_s *ping);
 static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHandle handle, OCClientResponse *client_response);
@@ -114,7 +113,6 @@ bool oic_ping_init(void)
 		res = true;
 	}
 
-	pPing = NULL;
 	THINGS_LOG(THINGS_DEBUG, TAG, "Exit.");
 	return res;
 }
@@ -291,7 +289,6 @@ static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 		sleep(sleepTime);
 	} while (!ping->continue_thread);
 
-	pPing = ping;
 	int sleepDelay = 10;
 
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "Start common-Ping request for /oic/ping to Cloud(%s)", ping->addr);
@@ -337,17 +334,9 @@ static void *__attribute__((optimize("O0"))) thd_ping_loop(things_ping_s *ping)
 	unset_mask(ping, PING_ST_STARTTHREAD | PING_ST_DISCOVERY | PING_ST_REQUEST | PING_ST_INTUPDATE | PING_ST_TIMEOUT);
 	ping->continue_thread = false;
 	set_def_interval(ping);
-	pPing = NULL;
 	THINGS_LOG(THINGS_DEBUG, TAG, "Exit.");
 	return (void *)1;
 }
-
-//void CommandPing()                //SKKIM for ping command
-//{
-//  if (pPing != NULL) {
-//      send_things_ping_request(pPing);
-//  }
-//}
 
 static OCStackApplicationResult discover_ping_resource_handler(void *ctx, OCDoHandle handle, OCClientResponse *client_response)
 {
