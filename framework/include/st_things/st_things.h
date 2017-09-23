@@ -140,21 +140,6 @@ int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set
 int st_things_start(void);
 
 /**
- * @brief Stops things stack.
- *            Removes all the data being used internally and releases all the memory allocated for the stack.
- *            Stack should have been initialized and started before calling this API.
- * @return @c 0 on success, otherwise a negative error value
- * @retval #ST_THINGS_ERROR_NONE Successful
- * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
- * @retval #ST_THINGS_ERROR_STACK_NOT_INITIALIZED Stack is not initialized.
- *         Initialize the stack by calling st_things_initialize().
- * @retval #ST_THINGS_ERROR_STACK_NOT_STARTED Stack is not started.
- *         Start the stack by calling st_things_start().
- * @since Tizen RT v1.1
- */
-int st_things_stop(void);
-
-/**
  * @brief Callback for getting user's opinion regarding device reset.
  * @return @c true to confirm, otherwise @c to deny
  * @since Tizen RT v1.1

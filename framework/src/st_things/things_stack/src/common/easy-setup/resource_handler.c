@@ -405,7 +405,7 @@ void set_ssid_in_wifi_resource(const char *ssid)
 		g_wifi_resource.auth_type = NONE_AUTH;
 		g_wifi_resource.enc_type = NONE_ENC;
 		g_wifi_resource.discovery_channel = 0;
-	} else if (strncmp(ssid, g_wifi_data.ssid, strlen(g_wifi_data.ssid)) == 0) {
+	} else if (strncmp(ssid, g_wifi_data.ssid, strlen(ssid)) == 0) {
 		things_strncpy(g_wifi_resource.ssid, g_wifi_data.ssid, sizeof(char) *MAX_SSIDLEN);
 		things_strncpy(g_wifi_resource.cred, g_wifi_data.pwd, sizeof(char) *MAX_CREDLEN);
 		g_wifi_resource.auth_type = g_wifi_data.authtype;
@@ -487,7 +487,7 @@ void update_wifi_resource(OCRepPayload *input)
 	}
 
 	THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Current AP SSID: %s", g_wifi_resource.ssid);
-	if (strncmp(ssid, g_wifi_resource.ssid, strlen(g_wifi_resource.ssid)) == 0) {
+	if (strncmp(ssid, g_wifi_resource.ssid, strlen(ssid)) == 0) {
 		THINGS_LOG_D(THINGS_DEBUG, ES_RH_TAG, "Already connected SSID(%s).", ssid);
 		free(ssid);
 		return;
@@ -1032,7 +1032,7 @@ OCRepPayload *construct_response_of_prov(OCEntityHandlerRequest *eh_request)
 		return NULL;
 	}
 	// Requested interface is Link list interface
-	if (!eh_request->query || (eh_request->query && !strncmp(eh_request->query, "", strlen(""))) || (eh_request->query && compare_resource_interface(eh_request->query, OC_RSRVD_INTERFACE_LL)) || (eh_request->query && compare_resource_interface(eh_request->query, OC_RSRVD_INTERFACE_DEFAULT))) {
+	if (!eh_request->query || (eh_request->query && !strncmp(eh_request->query, "", strlen(eh_request->query))) || (eh_request->query && compare_resource_interface(eh_request->query, OC_RSRVD_INTERFACE_LL)) || (eh_request->query && compare_resource_interface(eh_request->query, OC_RSRVD_INTERFACE_DEFAULT))) {
 		if ((arrayPayload[childResCnt] = make_rep_payload(g_wifi_resource.handle, &eh_request->devAddr)) == NULL) {
 			THINGS_LOG_ERROR(THINGS_ERROR, ES_RH_TAG, "It's failed making payload of wifi_resource_s-Representation");
 			goto GOTO_FAILED;
