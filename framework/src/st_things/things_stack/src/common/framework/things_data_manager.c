@@ -38,6 +38,7 @@
 #include "cloud_manager.h"
 #include "cloud_connector.h"
 #include "things_types.h"
+#include <wifi_manager/wifi_manager.h>
 
 #define TAG "[things_datamgr]"
 
@@ -140,6 +141,8 @@
 
 #define MAX_SUBDEVICE_EA            (100)
 
+#define MAX_SOFTAP_SSID				(64)
+
 static bool is_support_user_def_dev_list = true;	// It's allow to apply user-defined device-ID only when start Stack.
 static char *user_def_dev_list[MAX_SUBDEVICE_EA + 1] = { 0, };
 
@@ -156,6 +159,10 @@ static char g_cloud_address[MAX_CLOUD_ADDRESS] = { 0 };
 static char *g_manufacturer_name;
 static char *g_setup_id;
 static bool is_artik;
+static char g_easysetup_softap_ssid[MAX_SOFTAP_SSID + 1];
+static char *g_easysetup_softap_passphrase = "1111122222";
+static char *g_easysetup_tag = "E1";
+static int g_easysetup_softap_channel = 1;
 
 static int g_wifi_interface;
 static wifi_freq_e g_wifi_freq;
@@ -647,14 +654,21 @@ easysetup_connectivity_type_e dm_get_easysetup_connectivity_type(void)
 
 wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 {
-	// TO DO : need to make softap SSID by security
-	char *temp_ssid = "samsung_E1";
-	char *temp_passphrase = "1111122222";
-	int temp_channel = 1;
+	st_device_s *device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)(0));
+	int ssid_type = (is_artik == true ? 1 : 0);
+	unsigned char mac_id[16] = {0, };
 
-	strncpy(ap_config.ssid, temp_ssid, strlen(temp_ssid) + 1);
-	strncpy(ap_config.passphrase, temp_passphrase, strlen(temp_passphrase) + 1);
-	ap_config.channel = temp_channel;
+	wifi_manager_info_s st_wifi_info;
+	wifi_manager_get_info(&st_wifi_info);
+
+	snprintf(mac_id, sizeof(mac_id), "%02X%02X", st_wifi_info.mac_address[4], st_wifi_info.mac_address[5]);
+
+	snprintf(g_easysetup_softap_ssid, sizeof(g_easysetup_softap_ssid), "%s_%s%s%s%d%s", device->name, g_easysetup_tag, g_manufacturer_name, g_setup_id, 0, mac_id);
+	THINGS_LOG_V(THINGS_INFO, TAG, "SoftAP SSID : %s", g_easysetup_softap_ssid);
+
+	strncpy(ap_config.ssid, g_easysetup_softap_ssid, strlen(g_easysetup_softap_ssid) + 1);
+	strncpy(ap_config.passphrase, g_easysetup_softap_passphrase, strlen(g_easysetup_softap_passphrase) + 1);
+	ap_config.channel = g_easysetup_softap_channel;
 
 	return &ap_config;
 }
@@ -1148,11 +1162,9 @@ static int parse_things_info_json(const char *filename)
 							cJSON *artik = cJSON_GetObjectItem(softap, KEY_CONFIGURATION_EASYSETUP_CONNECTIVITY_SOFTAP_ARTIK);
 
 							if (NULL != manufature_id && NULL != setup_id) {
-								bool is_artik = false;
+								is_artik = false;
 								if (artik->type == cJSON_True) {
 									is_artik = true;
-								} else {
-									is_artik = false;
 								}
 
 								THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] manufature_id : %s / setup_id : %s / artik : %d", manufature_id->valuestring, setup_id->valuestring, is_artik);
