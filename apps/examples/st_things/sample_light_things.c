@@ -16,6 +16,8 @@
  *
  ******************************************************************/
 
+#include <tinyara/config.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -102,6 +104,7 @@ int ess_process(void)
 		printf("Error : Invalid pin number.\n");
 		return 0;
 	}
+	iotapi_initialize();
 
 	iotbus_gpio_context_h m_gpio = iotbus_gpio_open(CONFIG_RESET_BUTTON_PIN_NUMBER);
 	iotbus_gpio_register_cb(m_gpio, IOTBUS_GPIO_EDGE_RISING, gpio_callback_event, (void *)m_gpio);
@@ -109,7 +112,6 @@ int ess_process(void)
 
 	bool easysetup_complete = false;
 	st_things_initialize("/rom/sampleDevice.json", &easysetup_complete);
-	iotapi_initialize();
 
 	st_things_register_request_cb(handle_get_request, handle_set_request);
 	st_things_register_reset_cb(handle_reset_request, handle_reset_result);
