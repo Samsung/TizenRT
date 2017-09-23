@@ -137,10 +137,11 @@ fi
 
 if [ ! -z $SECUREMODE ]; then
     signing
-    factory-image ${TIZENRT_IMAGE}-signed
-else
-    factory-image ${TIZENRT_IMAGE}
+    TIZENRT_IMAGE=${TIZENRT_IMAGE}-signed
 fi
+
+# make factory image
+factory-image ${TIZENRT_IMAGE}
 
 # Packaging
 
@@ -154,7 +155,7 @@ cp -f $CONFIGS_PATH/artik05x/scripts/* user_binary/openocd/share/openocd/scripts
 cp -rf $CONFIGS_PATH/$BOARD_NAME/bin/. user_binary/boot_bin
 
 ## tizenrt images
-cp -rf $OUTPUT_PATH/bin/tinyara_head* user_binary/boot_bin
+cp -rf ${TIZENRT_IMAGE} user_binary/boot_bin
 
 ## factory image
 cp -rf $OUTPUT_PATH/bin/factoryimage.gz user_binary/boot_bin
@@ -162,30 +163,50 @@ cp -rf $OUTPUT_PATH/bin/factoryimage.gz user_binary/boot_bin
 ## system map
 cp -rf $OUTPUT_PATH/bin/System.map user_binary/boot_bin
 
-##
+## download script
+tee user_binary/openocd/fusing_a05x.sh << __EOF__
+#! /bin/bash
+#
 
-if [ ! -z $SECUREMODE ]; then
-    echo "win32\openocd.exe -f artik05x.cfg -c \"init;reset halt;flash_protect off;\
+if [ "\$(uname -s)" == "Linux" ]; then
+    if [ "\$(getconf LONG_BIT)" == "64" ]; then
+        OPENOCD_BIN_PATH=linux64
+    else
+        OPENOCD_BIN_PATH=linux32
+    fi
+else
+    OPENOCD_BIN_PATH=macos
+fi
+
+# Download all binaries using openocd script
+\${OPENOCD_BIN_PATH}/openocd -f artik05x.cfg -c \
+    "init; reset halt; \
+    flash_protect off;\
+    flash_write bl1 ../boot_bin/bl1.bin; 		\
+    flash_protect on; \
+    flash_write bl2 ../boot_bin/bl2.bin; 		\
+    flash_write sssfw ../boot_bin/sssfw.bin; 		\
+    flash_write wlanfw ../boot_bin/wlanfw.bin;	\
+    flash_write os ../boot_bin/$(basename ${TIZENRT_IMAGE});	\
+    flash_write factory ../boot_bin/factoryimage.gz;\
+    flash_erase_part user; exit"
+__EOF__
+
+tee user_binary/openocd/fusing_a05x.bat << __EOF__
+    win32\openocd.exe -f artik05x.cfg -c \
+        "init;reset halt; \
+        flash_protect off;\
         flash_write bl1 ../boot_bin/bl1.bin;\
         flash_protect on; \
         flash_write bl2 ../boot_bin/bl2.bin;\
         flash_write sssfw ../boot_bin/sssfw.bin;\
         flash_write wlanfw ../boot_bin/wlanfw.bin;\
-        flash_write os ../boot_bin/tinyara_head.bin-signed;\
+        flash_write os ../boot_bin/$(basename ${TIZENRT_IMAGE});	\
         flash_write factory ../boot_bin/factoryimage.gz;\
-        flash_erase_part user; exit\"" > user_binary/openocd/fusing_a05xs.bat
-else
-    echo "win32\openocd.exe -f artik05x.cfg -c \"init;reset halt;flash_protect off;\
-        flash_write bl1 ../boot_bin/bl1.bin;\
-        flash_protect on;\
-        flash_write bl2 ../boot_bin/bl2.bin;\
-        flash_write sssfw ../boot_bin/sssfw.bin;\
-        flash_write wlanfw ../boot_bin/wlanfw.bin;\
-        flash_write os ../boot_bin/tinyara_head.bin;\
-        flash_write factory ../boot_bin/factoryimage.gz;\
-        flash_erase_part user; exit\"" > user_binary/openocd/fusing_a05x.bat
-fi
-chmod +x user_binary/openocd/fusing_a05x*.bat
+        flash_erase_part user; exit"
+__EOF__
+
+chmod +x user_binary/openocd/fusing_a05x.*
 
 # Archive
 zip -r $OUTPUT_PATH/bin/$(date '+%Y%m%d-%H%M')_tizenRT100_User.zip user_binary/boot_bin/* user_binary/openocd/*
