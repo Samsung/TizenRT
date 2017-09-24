@@ -198,6 +198,7 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 		}
 	}
 
+	free(registerPayload);
 	return result;
 
 no_memory:
@@ -290,6 +291,7 @@ OCStackResult things_cloud_session(const char *host, const char *uId, const char
 		things_free(coreVer);
 		coreVer = NULL;
 	}
+	free(loginoutPayload);
 	return result;
 
 no_memory:
