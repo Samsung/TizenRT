@@ -32,7 +32,7 @@ static int count_wait;
 /**
 * @fn                    : sig_wait
 * @brief                 : function to wait on semaphore
-* @scenario              : none
+* @scenario              : use wait function to decrement count value.
 * @API's covered         : none
 * @Preconditions         : none
 * @Postconditions        : none
@@ -48,8 +48,8 @@ static void sig_wait(void)
 
 /**
 * @fn                    : sig_call
-* @brief                 : function to signal semaphore
-* @scenario              : none
+* @brief                 : function to signal semaphore.
+* @scenario              : use to increase the count value.
 * @API's covered         : none
 * @Preconditions         : none
 * @Postconditions        : none
@@ -62,10 +62,10 @@ static void sig_call(void)
 
 /**
 * @fn                    : tc_net_server
-* @brief                 : function to signal semaphore
-* @scenario              : none
-* @API's covered         : none
-* @Preconditions         : none
+* @brief                 : create the server.
+* @scenario              : create the server.
+* @API's covered         : socket,bind,listen,accept,recv
+* @Preconditions         : socket file descriptor.
 * @Postconditions        : none
 * @return                : void
 */
@@ -109,10 +109,10 @@ static void tc_net_server(void)
 
 /**
 * @fn                    : tc_net_client
-* @brief                 : client thread
-* @scenario              : none
-* @API's covered         : none
-* @Preconditions         : none
+* @brief                 : client thread.
+* @scenario              : client thread.
+* @API's covered         : socket,connect,close
+* @Preconditions         : socket file descriptor.
 * @Postconditions        : none
 * @return                : void
 */
@@ -140,8 +140,8 @@ static void tc_net_client(void)
 
 /**
 * @fn                    : net_api_server
-* @brief                 : server thread
-* @scenario              : none
+* @brief                 : server thread.
+* @scenario              : server thread.
 * @API's covered         : none
 * @Preconditions         : none
 * @Postconditions        : none
@@ -155,8 +155,8 @@ void* net_api_server(void *args)
 
 /**
 * @fn                    : net_api_client
-* @brief                 : client thread
-* @scenario              : none
+* @brief                 : client thread.
+* @scenario              : client thread.
 * @API's covered         : none
 * @Preconditions         : none
 * @Postconditions        : none

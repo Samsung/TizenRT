@@ -43,7 +43,7 @@ static int count_wait;
 
 /**
 * @fn                   : recv_wait
-* @brief                : Function to wait on semaphore
+* @brief                : function to wait on semaphore
 * @scenario             : use wait function to decrement count value.
 * @API's covered        : none
 * @Preconditions        : none
@@ -60,7 +60,7 @@ void recv_wait(void)
 
 /**
 * @fn                  : recv_signal
-* @brief               : Function to signal semaphore
+* @brief               : function to signal semaphore
 * @scenario            : use to increase the count value.
 * @API's covered       : none
 * @Preconditions       : none
@@ -74,7 +74,7 @@ void recv_signal(void)
 
 /**
 * @testcase            : tc_net_recv_p
-* @brief               : This recv API receive a message from a socket.
+* @brief               : receive a message from a socket.
 * @scenario            : recv is used to receive messages from a socket.
 * @apicovered          : recv()
 * @precondition        : socket file descriptor.
@@ -93,7 +93,7 @@ void tc_net_recv_p(int fd)
 
 /**
 * @testcase            : tc_net_recv_n
-* @brief               : This recv API receive a message from a socket.
+* @brief               : receive a message from a socket.
 * @scenario            : recv is used to receive messages from a socket,
                          with invalid fd.
 * @apicovered          : recv()
@@ -114,7 +114,7 @@ void tc_net_recv_n(int fd)
 
 /**
 * @testcase            : tc_net_recv_shutdown_n
-* @brief               : This recv API receive a message from a socket.
+* @brief               : receive a message from a socket.
 * @scenario            : recv is used to receive messages from a socket,
                          test after shutdown.
 * @apicovered          : recv()
@@ -135,9 +135,9 @@ void tc_net_recv_shutdown_n(int fd)
 
 /**
 * @testcase            : tc_net_recv_close_n
-* @brief               : This recv API receive a message from a socket.
+* @brief               : receive a message from a socket.
 * @scenario            : recv is used to receive messages from a socket,
-                         test after close.
+                         test after close fd.
 * @apicovered          : recv()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -155,8 +155,8 @@ void tc_net_recv_close_n(int fd)
 
 /**
 * @fn                   : recv_server
-* @brief                : Create a Tcp server.
-* @scenario             : Create a tcp server for checking receive api.
+* @brief                : create a Tcp server.
+* @scenario             : create a tcp server to test receive api.
 * @API's covered        : socket,bind,listen,accept,send,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
@@ -184,8 +184,8 @@ void* recv_server(void *args)
 
 /**
 * @fn                  : recv_client
-* @brief               : This api create client.
-* @scenario            : Create tcp client.
+* @brief               : create client.
+* @scenario            : create tcp client.
 * @API's covered       : socket,connect,close
 * @Preconditions       : socket file descriptor.
 * @Postconditions      : none
@@ -214,8 +214,8 @@ void* recv_client(void *args)
 
 /**
 * @fn                  : net_recv
-* @brief               : This api create client and server thread.
-* @scenario            : Create client and server thread to test accept api.
+* @brief               : create client and server thread.
+* @scenario            : create client and server thread to test recv api.
 * API's covered        : none
 * Preconditions        : none
 * Postconditions       : none

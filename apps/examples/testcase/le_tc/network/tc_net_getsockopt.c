@@ -32,7 +32,7 @@
 
 /**
 * @testcase            : tc_net_getsockopt_multicast_ttl_p
-* @brief               : This getsockopt API get options on sockets.
+* @brief               : get the options on sockets.
 * @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
 * @apicovered          : getsockopt(), setsockopt()
 * @precondition        : socket file descriptor.
@@ -59,9 +59,8 @@ static void tc_net_getsockopt_multicast_ttl_p(void)
 
 /**
 * @testcase            : tc_net_getsockopt_multicast_ttl_loop_own_p
-* @brief               : This getsockopt API get options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd,
-                         with ip multicast ttl option.
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
 * @apicovered          : getsockopt(), setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -86,9 +85,8 @@ static void tc_net_getsockopt_multicast_ttl_loop_own_p(void)
 
 /**
 * @testcase            : tc_net_getsockopt_multicast_ttl_loop_p
-* @brief               : This getsockopt API get options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd,
-                         with ip multicase loop option.
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
 * @apicovered          : getsockopt(), setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -114,11 +112,11 @@ static void tc_net_getsockopt_multicast_ttl_loop_p(void)
 
 /**
 * @testcase            : tc_net_getsockopt_invalid_filedesc_n
-* @brief               : This getsockopt API get options on sockets.
+* @brief               : get the options on sockets.
 * @scenario            : getsockopt manipulate options for the socket referred to by the sock fd,
                          with invalid socket fd.
 * @apicovered          : getsockopt(), setsockopt()
-* @precondition        : socket file descriptor.
+* @precondition        : none
 * @postcondition       : none
 * @return              : void
 */
@@ -138,7 +136,7 @@ static void tc_net_getsockopt_invalid_filedesc_n(void)
 
 /**
 * @testcase            : tc_net_getsockopt_optval_n
-* @brief               : This getsockopt API get options on sockets.
+* @brief               : get the options on sockets.
 * @scenario            : getsockopt manipulate options for the socket referred to by the sock fd,
                          with null optval.
 * @apicovered          : getsockopt(), setsockopt()
@@ -168,9 +166,8 @@ static void tc_net_getsockopt_optval_n(void)
 
 /**
 * @testcase            : tc_net_getsockopt_sol_socket_so_acceptconn_p
-* @brief               : This getsockopt API get options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd,
-                         with acceptconn option.
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
 * @apicovered          : getsockopt(), setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -195,9 +192,8 @@ static void tc_net_getsockopt_sol_socket_so_acceptconn_p(void)
 
 /**
 * @testcase            : tc_net_getsockopt_sol_socket_so_broadcast_p
-* @brief               : This getsockopt API get options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd,
-                         with broadcast option.
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
 * @apicovered          : getsockopt(), setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -223,9 +219,8 @@ static void tc_net_getsockopt_sol_socket_so_broadcast_p(void)
 
 /**
 * @testcase            : tc_net_getsockopt_sol_socket_so_keepalive_p
-* @brief               : This getsockopt API get options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd,
-                         with keepalive option.
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
 * @apicovered          : getsockopt(), setsockopt()
 * @precondition        : socket file descriptor.
 * @postcondition       : none

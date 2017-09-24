@@ -46,7 +46,7 @@
 
 /**
 * @testcases           : tc_inet_chksum_pbuf_p
-* @brief               : Calculate a checksum over a chain of pbufs.
+* @brief               : calculate a checksum over a chain of pbufs.
 * @scenario            : pbuf chain over that the checksum should be calculated.
 * @apicovered          : inet_chksum_pbuf()
 * @precondition        : allocate pbuf and chain pbuf.
@@ -84,8 +84,8 @@ cleanup1:
 
 /**
 * @testcase            : tc_inet_chksum_pseudo_partial_p
-* @brief               : Calculates the pseudo checksum used by TCP and UDP for a pbuf chain.
-* @scenario            : Chain the pbuf and check the pseudo checksum with IP address.
+* @brief               : calculates the pseudo checksum used by TCP and UDP for a pbuf chain.
+* @scenario            : chain the pbuf and check the pseudo checksum with IP address.
 * @apicovered          : inet_chksum_pseudo_partial()
 * @precondition        : allocate pbuf and chain pbuf.
 * @postcondition       : none
@@ -139,8 +139,8 @@ cleanup1:
 
 /**
 * @testcase            : tc_net_inet_addr_p
-* @brief               : Internet address manipulation routines.
-* @scenario            : Converts the Internet host address from IPv4 numbers-and-dots notation into binary data in network byte order.
+* @brief               : internet address manipulation routines.
+* @scenario            : converts the Internet host address from IPv4 numbers-and-dots notation into binary data in network byte order.
 * @apicovered          : inet_addr()
 * @precondition        : none
 * @postcondition       : none
@@ -157,8 +157,8 @@ static void tc_net_inet_addr_p(void)
 
 /**
 * @testcase            : tc_net_inet_aton_p
-* @brief               : Internet address manipulation routines.
-* @scenario            : Converts the Internet host address from the IPv4 numbers-and-dots notation into binary form.
+* @brief               : internet address manipulation routines.
+* @scenario            : converts the Internet host address from the IPv4 numbers-and-dots notation into binary form.
 * @apicovered          : inet_aton()
 * @precondition        : none
 * @postcondition       : none
@@ -176,8 +176,8 @@ static void tc_net_inet_aton_p(void)
 
 /**
 * @testcase            : tc_net_inet_ntoa_p
-* @brief               : Internet address manipulation routines.
-* @scenario            : Converts the Internet host address in, given in network byte order, to a string in IPv4 dotted-decimal notation.
+* @brief               : internet address manipulation routines.
+* @scenario            : converts the Internet host address in, given in network byte order, to a string in IPv4 dotted-decimal notation.
 * @apicovered          : inet_ntoa()
 * @precondition        : none
 * @postcondition       : none
@@ -197,7 +197,7 @@ static void tc_net_inet_ntoa_p(void)
 
 /**
 * @testcase            : tc_net_inet_ntop
-* @brief               : Convert IPv4 and IPv6 addresses from binary to text form.
+* @brief               : convert IPv4 and IPv6 addresses from binary to text form.
 * @scenario            : converts a numeric address into a text string suitable for presentation.
 * @apicovered          : inet_ntop()
 * @precondition        : none
@@ -233,8 +233,8 @@ static void tc_net_inet_ntop(void)
 
 /**
 * @testcase            : tc_net_inet_pton
-* @brief               : Convert IPv4 and IPv6 addresses from text to binary form.
-* @scenario            : Converts an address in its standard text presentation form into its numeric binary form. 
+* @brief               : convert IPv4 and IPv6 addresses from text to binary form.
+* @scenario            : converts an address in its standard text presentation form into its numeric binary form. 
 * @apicovered          : inet_pton()
 * @precondition        : none
 * @postcondition       : none
@@ -266,8 +266,8 @@ static void tc_net_inet_pton(void)
 
 /**
 * @testcase            : tc_net_htons
-* @brief               : To convert from host order to network order.
-* @scenario            : The htons() converts the unsigned short integer hostshort from host byte order to network byte order.
+* @brief               : to convert from host order to network order.
+* @scenario            : htons() converts the unsigned short integer hostshort from host byte order to network byte order.
 * @apicovered          : htons()
 * @precondition        : none
 * @postcondition       : none
@@ -282,8 +282,8 @@ static void tc_net_htons(void)
 
 /**
 * @testcase            : tc_net_ntohs
-* @brief               : To convert network to host order.
-* @scenario            : The ntohs() converts the unsigned short integer netshort from network byte order to host byte order.
+* @brief               : to convert network to host order.
+* @scenario            : ntohs() converts the unsigned short integer netshort from network byte order to host byte order.
 * @apicovered          : ntohs()
 * @precondition        : none
 * @postcondition       : none
@@ -298,8 +298,8 @@ static void tc_net_ntohs(void)
 
 /**
 * @testcase            : tc_net_htonl
-* @brief               : To convert from host order to network order.
-* @scenario            : The htonl() converts the unsigned integer hostlong from host byte order to network byte order.
+* @brief               : to convert from host order to network order.
+* @scenario            : htonl() converts the unsigned integer hostlong from host byte order to network byte order.
 * @apicovered          : htonl()
 * @precondition        : none
 * @postcondition       : none
@@ -314,8 +314,8 @@ static void tc_net_htonl(void)
 
 /**
 * @testcase            : tc_net_ntohl
-* @brief               : To convert network to host byte order
-* @scenario            : The ntohl() converts the unsigned integer netlong from network byte order to host byte order.
+* @brief               : to convert network to host byte order
+* @scenario            : ntohl() converts the unsigned integer netlong from network byte order to host byte order.
 * @apicovered          : ntohl()
 * @precondition        : none
 * @postcondition       : none

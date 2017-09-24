@@ -32,8 +32,8 @@
 
 /**
 * @testcase            : tc_net_close_p
-* @brief               : This close API close a file descriptor.
-* @scenario            : Closes a file descriptor, so that it no longer refers to any file and may be reused.
+* @brief               : close a file descriptor.
+* @scenario            : closes a file descriptor, so that it no longer refers to any file and may be reused.
 * @apicovered          : close()
 * @precondition        : socket file descriptor.
 * @postcondition       : none
@@ -51,8 +51,8 @@ static void tc_net_close_p(void)
 
 /**
 * @testcase            : tc_net_close_n
-* @brief               : This close API close a file descriptor.
-* @scenario            : Closes a file descriptor, so that it no longer refers to any file and may be reused.
+* @brief               : close a file descriptor.
+* @scenario            : closes a file descriptor, so that it no longer refers to any file and may be reused.
 * @apicovered          : close()
 * @precondition        : none
 * @postcondition       : none

@@ -53,8 +53,8 @@ extern err_t netif_loopif_init(struct netif *netif);
 
 /**
 * @testcase             : tc_net_netif_remove_p
-* @brief                : Remove netif interface
-* @scenario             : Remove the added netif interface
+* @brief                : remove netif interface
+* @scenario             : remove the added netif interface
 * @apicovered           : netif_remove(), netif_add()
 * @precondition         : netif interface should be present
 * @postcondition        : none
@@ -103,7 +103,7 @@ static void tc_net_pbuf_get_at_p(void)
 /**
 * @testcase             : create_packet
 * @brief                : helper function
-* @scenario             : Initealize the default packet
+* @scenario             : initealize the default packet
 * @apicovered           : none
 * @precondition         : none
 * @postcondition        : none
@@ -134,7 +134,7 @@ void create_packet(struct pbuf **head, char *data, u16_t len, u16_t ref)
 
 /**
 * @testcase             : tc_net_pbuf_memcmp_p
-* @brief                : Compare pbuf contents at specified offset with memory
+* @brief                : compare pbuf contents at specified offset with memory
 * @scenario             : positive scenario for pbuf_memcmp
 * @apicovered           : create_packet pbuf_memcmp
 * @precondition         : none
@@ -176,7 +176,7 @@ static void tc_net_pbuf_memcmp_p(void)
 
 /**
 * @testcase             : tc_net_pbuf_memfind_p
-* @brief                : Find occurrence of mem in pbuf p, starting at offset
+* @brief                : find occurrence of mem in pbuf p, starting at offset
 * @scenario             : positive scenario for pbuf_memfind
 * @apicovered           : pbuf_memfind
 * @precondition         : none
@@ -203,7 +203,7 @@ static void tc_net_pbuf_memfind_p(void)
 /**
 * @testcase             : tc_net_get_socket_struct_n
 * @brief                : finding the socket through sockfd.
-* @scenario             : If there is no wrong sockfd.
+* @scenario             : if there is no wrong sockfd.
 * @apicovered           : get_socket_struct()
 * @precondition         : none
 * @postcondition        : none
@@ -219,7 +219,7 @@ static void tc_net_get_socket_struct_n(void)
 
 /**
 * @testcase             : tc_net_get_socket_struct_p
-* @brief                : Finding the socket through sockfd
+* @brief                : finding the socket through sockfd
 * @scenario             : sending fd and geting structure
 * @apicovered           : get_socket_struct()
 * @precondition         : none
@@ -237,7 +237,7 @@ static void tc_net_get_socket_struct_p(void)
 
 /**
 * @testcase             : tc_net_tcp_rexmit_fast_n
-* @brief                : Handle retransmission after three dupacks received
+* @brief                : handle retransmission after three dupacks received
 * @scenario             : it not going to return anyting.
 * @apicovered           : tcp_rexmit_fast()
 * @precondition         : none
@@ -259,7 +259,7 @@ static void tc_net_tcp_rexmit_fast_n(void)
 
 /**
 * @testcase             : tc_net_pbuf_alloced_custom_n
-* @brief                : Initialize a custom pbuf
+* @brief                : initialize a custom pbuf
 * @scenario             : none
 * @apicovered           : pbuf_alloced_custom()
 * @precondition         : none
@@ -285,7 +285,7 @@ static void tc_net_pbuf_alloced_custom_n(void)
 
 /**
 * @testcase             : tc_net_pbuf_alloced_custom_p
-* @brief                : Initialize a custom pbuf
+* @brief                : initialize a custom pbuf
 * @scenario             : none
 * @apicovered           : pbuf_alloced_custom()
 * @precondition         : none
@@ -312,7 +312,7 @@ static void tc_net_pbuf_alloced_custom_p(void)
 
 /**
 * @testcase             : tc_net_pbuf_dechain_n
-* @brief                : Dechains the first pbuf from its succeeding pbufs in the chain
+* @brief                : dechains the first pbuf from its succeeding pbufs in the chain
 * @scenario             : detching the pbuf
 * @apicovered           : memp_malloc, pbuf_dechain
 * @precondition         : none
@@ -368,7 +368,7 @@ void create_chain(struct pbuf **head, char *data, u16_t len, u16_t ref)
 
 /**
 * @testcase             : tc_net_pbuf_dechain_p
-* @brief                : Dechains the first pbuf from its succeeding pbufs in the chain
+* @brief                : dechains the first pbuf from its succeeding pbufs in the chain
 * @scenario             : none
 * @apicovered           : create_chain, pbuf_dechain()
 * @precondition         : none
@@ -409,7 +409,7 @@ static void tc_net_pbuf_dechain_p(void)
 
 /**
 * @testcase             : tc_net_pbuf_take_n
-* @brief                : Create PBUF_RAM copies of pbufs
+* @brief                : create PBUF_RAM copies of pbufs
 * @scenario             : none
 * @apicovered           : pbuf_take()
 * @precondition         : none
@@ -431,7 +431,7 @@ static void tc_net_pbuf_take_n(void)
 
 /**
 * @testcase             : tc_net_pbuf_take_p
-* @brief                : Create PBUF_RAM copies of pbufs
+* @brief                : create PBUF_RAM copies of pbufs
 * @scenario             : none
 * @apicovered           : pbuf_take()
 * @precondition         : none
@@ -457,7 +457,7 @@ static void tc_net_pbuf_take_p(void)
 
 /**
 * @testcase             : tc_net_pbuf_coalesce_n
-* @brief                : Creates a single pbuf out of a queue of pbufs
+* @brief                : creates a single pbuf out of a queue of pbufs
 * @scenario             : none
 * @apicovered           : pbuf_coalesce()
 * @precondition         : none
@@ -483,7 +483,7 @@ static void tc_net_pbuf_coalesce_n(void)
 
 /**
 * @testcase             : tc_net_pbuf_coalesce_p
-* @brief                : Creates a single pbuf out of a queue of pbufs
+* @brief                : creates a single pbuf out of a queue of pbufs
 * @scenario             : none
 * @apicovered           : pbuf_coalesce()
 * @precondition         : none
@@ -526,7 +526,7 @@ static void tc_net_pbuf_coalesce_p(void)
 
 /**
 * @testcase             : tc_net_pbuf_get_at_n
-* @brief                : Get one byte from the specified position in a pbuf
+* @brief                : get one byte from the specified position in a pbuf
 * @scenario             : none
 * @apicovered           : pbuf_get_at()
 * @precondition         : none
@@ -546,7 +546,7 @@ static void tc_net_pbuf_get_at_n(void)
 
 /**
 * @testcase             : tc_net_pbuf_memcmp_n
-* @brief                : Get one byte from the specified position in a pbuf
+* @brief                : get one byte from the specified position in a pbuf
 * @scenario             : negative scenario for pbuf_memcmp
 * @apicovered           : pbuf_memcmp()
 * @precondition         : none
@@ -569,7 +569,7 @@ static void tc_net_pbuf_memcmp_n(void)
 
 /**
 * @testcase             : tc_net_pbuf_memfind_n
-* @brief                : Find occurrence of mem in pbuf p, starting at offset
+* @brief                : find occurrence of mem in pbuf p, starting at offset
 * @scenario             : none
 * @apicovered           : pbuf_memfind()
 * @precondition         : none

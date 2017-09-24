@@ -36,7 +36,7 @@
 
 /**
 * @testcase            : tc_net_listen_p
-* @brief               : This listen API listen for connections on a socket.
+* @brief               : listen for connections on a socket.
 * @scenario            : listen for socket connections and limit the queue of incoming connections.
 * @apicovered          : listen(), bind()
 * @precondition        : none
@@ -67,7 +67,7 @@ static void tc_net_listen_p(void)
 
 /**
 * @testcase            : tc_net_listen_fd_n
-* @brief               : This listen API listen for connections on a socket.
+* @brief               : listen for connections on a socket.
 * @scenario            : listen for socket connections and limit the queue of incoming connections,
                          test with invalid socket fd.
 * @apicovered          : listen(), bind()
@@ -98,7 +98,7 @@ static void tc_net_listen_fd_n(void)
 
 /**
 * @testcase            : tc_net_listen_backlog_p
-* @brief               : This listen API listen for connections on a socket.
+* @brief               : listen for connections on a socket.
 * @scenario            : listen for socket connections and limit the queue of incoming connections,
                          test with invalid backlog value.
 * @apicovered          : listen(), bind()
@@ -130,7 +130,7 @@ static void tc_net_listen_backlog_p(void)
 
 /**
 * @testcase            : tc_net_listen_fd_backlog_n
-* @brief               : This listen API listen for connections on a socket.
+* @brief               : listen for connections on a socket.
 * @scenario            : listen for socket connections and limit the queue of incoming connections,
                          test with invalid socket fd and backlog value.
 * @apicovered          : listen(), bind()

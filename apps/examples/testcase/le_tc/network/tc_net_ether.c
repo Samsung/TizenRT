@@ -35,8 +35,8 @@
 
 /**
 * @testcase            : tc_net_ether_ntoa_p
-* @brief               : Ethernet address manipulation routines.
-* @scenario            : Converts the Ethernet host address addr given in network byte order to a string into dotted decimal.
+* @brief               : ethernet address manipulation routines.
+* @scenario            : converts the Ethernet host address addr given in network byte order to a string into dotted decimal.
 * @apicovered          : ether_ntoa(), ioctl()
 * @precondition        : socket file descriptor.
 * @postcondition       : none

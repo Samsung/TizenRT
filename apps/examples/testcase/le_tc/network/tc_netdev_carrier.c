@@ -26,8 +26,8 @@
 
 /**
 * @testcase            : tc_netdev_carrier_on_p
-* @brief               : Notifies the networking layer about an available carrier.
-* @scenario            : Get the inforamation about available carrier.
+* @brief               : notifies the networking layer about an available carrier.
+* @scenario            : get the inforamation about available carrier.
 * @apicovered          : netdev_carrier_on
 * @precondition        : none
 * @postcondition       : none
@@ -49,8 +49,8 @@ static void tc_netdev_carrier_on_p(void)
 
 /**
 * @testcase            : tc_netdev_carrier_on_n
-* @brief               : Notifies the networking layer about an available carrier.
-* @scenario            : Get the inforamation about available carrier.
+* @brief               : notifies the networking layer about an available carrier.
+* @scenario            : get the inforamation about available carrier.
 * @apicovered          : netdev_carrier_on
 * @precondition        : none
 * @postcondition       : none
@@ -65,8 +65,8 @@ static void tc_netdev_carrier_on_n(void)
 
 /**
 * @testcase            : tc_netdev_carrier_off_p
-* @brief               : Notifies the networking layer about an disappeared carrier.
-* @scenario            : Get the inforamation about disappeared carrier.
+* @brief               : notifies the networking layer about an disappeared carrier.
+* @scenario            : get the inforamation about disappeared carrier.
 * @apicovered          : netdev_carrier_off
 * @precondition        : none
 * @postcondition       : none
@@ -89,8 +89,8 @@ static void tc_netdev_carrier_off_p(void)
 
 /**
 * @testcase            : tc_netdev_carrier_off_n
-* @brief               : Notifies the networking layer about an disappeared carrier.
-* @scenario            : Get the inforamation about disappeared carrier.
+* @brief               : notifies the networking layer about an disappeared carrier.
+* @scenario            : get the inforamation about disappeared carrier.
 * @apicovered          : netdev_carrier_off
 * @precondition        : none
 * @postcondition       : none
@@ -119,8 +119,8 @@ static int tc_test_function(struct netif *dev)
 
 /**
 * @testcase            : tc_netdev_ifdown
-* @brief               : Bring the interface down.
-* @scenario            : Bring the interface down.
+* @brief               : bring the interface down.
+* @scenario            : bring the interface down.
 * @apicovered          : netdev_ifdown
 * @precondition        : up the interface
 * @postcondition       : none

@@ -43,7 +43,7 @@ static int count_wait;
 
 /**
 * @fn                    : wait
-* @brief                 : Function to wait on semaphore.
+* @brief                 : function to wait on semaphore.
 * @scenario              : use wait function to decrement count value.
 * @API's covered         : none
 * @Preconditions         : none
@@ -60,7 +60,7 @@ static void wait(void)
 
 /**
 * @fn                    : nw_signal
-* @brief                 : Function to signal semaphore.
+* @brief                 : function to signal semaphore.
 * @scenario              : use to increase the count value.
 * @API's covered         : none
 * @Preconditions         : none
@@ -74,8 +74,8 @@ static void nw_signal(void)
 
 /**
 * @testcase             : tc_net_accept_p
-* @brief                : This accept API accept a connection on a socket.
-* @scenario             : It extracts the first connection request on the queue of pending connections
+* @brief                : accept a connection on a socket.
+* @scenario             : extracts the first connection request on the queue of pending connections
                           for the listening socke and creates a new connected socket.
 * @apicovered           : accept()
 * @precondition         : socket file descriptor.
@@ -93,8 +93,8 @@ void tc_net_accept_p(int fd)
 
 /**
 * @testcase             : tc_net_accept_socket_n
-* @brief                : This accept API accept a connection on a socket.
-* @scenario             : It extracts the first connection request on the queue of pending connections
+* @brief                : accept a connection on a socket.
+* @scenario             : extracts the first connection request on the queue of pending connections
                           for the listening socke and creates a new connected socket, with invalid fd.
 * @apicovered           : accept()
 * @precondition         : none
@@ -110,8 +110,8 @@ void tc_net_accept_socket_n(void)
 
 /**
 * @fn                   : Server
-* @brief                : Create a Tcp server.
-* @scenario             : Create a tcp server for checking accept api.
+* @brief                : create a tcp server.
+* @scenario             : create a tcp server to test accept api.
 * @API's covered        : socket,bind,listen,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
@@ -138,8 +138,8 @@ void* Server(void *args)
 
 /**
 * @fn                   : Client
-* @brief                : This api create client.
-* @scenario             : Create tcp client.
+* @brief                : create the client.
+* @scenario             : create tcp client.
 * @API's covered        : socket,connect,close
 * @Preconditions        : socket file descriptor.
 * @Postconditions       : none
@@ -164,8 +164,8 @@ void* Client(void *args)
 
 /**
 * @fn                   : tc_net_accept
-* @brief                : This api create client and server thread.
-* @scenario             : Create client and server thread to test accept api.
+* @brief                : create client and server thread.
+* @scenario             : create client and server thread to test accept api.
 * @API's covered        : none
 * @Preconditions        : none
 * @Postconditions       : none

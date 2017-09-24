@@ -32,7 +32,7 @@
 
 /**
 * @testcase            : tc_net_fcntl_nonblock_p
-* @brief               : This fcntl API manipulate file descriptor.
+* @brief               : manipulate file descriptor.
 * @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg.
 * @apicovered          : fcntl()
 * @precondition        : socket file descriptor.
@@ -49,7 +49,7 @@ static void tc_net_fcntl_nonblock_p(int fd)
 
 /**
 * @testcase            : tc_net_fcntl_p
-* @brief               : This fcntl API manipulate file descriptor.
+* @brief               : manipulate file descriptor.
 * @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg as zero.
 * @apicovered          : fcntl()
 * @precondition        : socket file descriptor.
@@ -66,7 +66,7 @@ static void tc_net_fcntl_p(int fd)
 
 /**
 * @testcase            : tc_net_fcntl_n
-* @brief               : This fcntl API manipulate file descriptor.
+* @brief               : manipulate file descriptor.
 * @scenario            : fcntl use setfl command to set the file status flags with invalid fd.
 * @apicovered          : fcntl()
 * @precondition        : none
@@ -83,7 +83,7 @@ static void tc_net_fcntl_n(void)
 
 /**
 * @testcase            : tc_net_fcntl_ndelay_p
-* @brief               : This fcntl API manipulate file descriptor.
+* @brief               : manipulate file descriptor.
 * @scenario            : fcntl use setfl command to set the file status flags to the value specified by arg as ndelay.
 * @apicovered          : fcntl()
 * @precondition        : socket file descriptor.

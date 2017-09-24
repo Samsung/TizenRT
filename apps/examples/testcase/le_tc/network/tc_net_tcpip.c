@@ -107,7 +107,7 @@ static void tc_net_tcpip_untimeout_n(void)
 
 /**
 * @testcase              : dummy_function
-* @brief                 : none
+* @brief                 : helper function
 * @scenario              : none
 * @apicovered            : none
 * @precondition          : none
@@ -138,7 +138,7 @@ static void tc_net_tcpip_callbackmsg_new_p(void)
 
 /**
 * @statitcase            : tc_net_tcpip_callbackmsg_delete_p
-* @brief                 : Free a callback message allocated by tcpip_callbackmsg_new().
+* @brief                 : free a callback message allocated by tcpip_callbackmsg_new().
 * @scenario              : none
 * @apicovered            : tcpip_callbackmsg_delete, tcpip_callbackmsg_new
 * @precondition          : none
@@ -196,7 +196,7 @@ static void tc_mem_free_callback_p(void)
 
 /**
 * @testcase                 : tc_tcpip_trycallback
-* @brief                    : Try to post a callback-message to the tcpip_thread mbox.
+* @brief                    : try to post a callback-message to the tcpip_thread mbox.
 * @scenario                 : used to send "static" messages from interrupt context.
 * @apicovered               : tcpip_trycallback
 * @precondition             : none
@@ -210,7 +210,7 @@ void dummy1_function(void *arg)
 
 /**
 * @testcase              : tc_tcpip_trycallback
-* @brief                 : Try to post a callback-message to the tcpip_thread mbox.
+* @brief                 : try to post a callback-message to the tcpip_thread mbox.
 * @scenario              : used to send "static" messages from interrupt context.
 * @apicovered            : tcpip_trycallback
 * @precondition          : none
