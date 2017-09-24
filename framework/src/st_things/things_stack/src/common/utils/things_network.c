@@ -61,9 +61,7 @@ static int check_cb_skip(int state, char *ap_name, char *ip_addr)
 	if (app_state == -1) {
 		app_state = 0;
 		app_ap_name = (char *)things_malloc(sizeof(char) * 1);
-		app_ap_name[0] = 0;
 		app_ip_addr = (char *)things_malloc(sizeof(char) * 1);
-		app_ip_addr[0] = 0;
 	}
 	// Process skip checking.
 	if ((state == 1 && ((ap_name == NULL || strlen(ap_name) == 0) || (ip_addr == NULL || strlen(ip_addr) == 0 || strncmp(ip_addr, IP_NULL_VAL, strlen(IP_NULL_VAL)) == 0))) || (state != 1 && state != 0)) {
@@ -99,9 +97,7 @@ void things_wifi_state_changed_cb_init(void)	// when Soft-AP on, Not called Disc
 	if (app_state == -1) {
 		app_state = 0;
 		app_ap_name = (char *)things_malloc(sizeof(char) * 1);
-		app_ap_name[0] = 0;
 		app_ip_addr = (char *)things_malloc(sizeof(char) * 1);
-		app_ip_addr[0] = 0;
 	} else {
 		app_ap_name[0] = 0;
 		app_ip_addr[0] = 0;

@@ -64,7 +64,7 @@ void st_things_log_set_version(char *version)
 		return;
 	}
 	memset(p_version, 0, strlen(version) + 1);
-	strncpy(p_version, version, strlen(version));
+	strncpy(p_version, version, strlen(version) + 1);
 }
 
 /**
