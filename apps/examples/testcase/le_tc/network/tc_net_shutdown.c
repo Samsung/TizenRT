@@ -22,8 +22,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <net/if.h>
-#include <apps/netutils/netlib.h>
-#include "tc_internal.h"
+#include <netutils/netlib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,229 +33,277 @@
 #include <sys/socket.h>
 #include <pthread.h>
 
-#define PORTNUM 1112
-#define MAXRCVLEN 20
-int mut = 0;
+#include "tc_internal.h"
+
+#define PORTNUM        5010
+#define MAXRCVLEN      20
+#define BACKLOG        1
+
+static int count_wait;
+
 /**
-   * @fn                   :shutdown_wait
-   * @brief                :function to wait on semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn                   :shutdown_wait
+* @brief                :function to wait on semaphore.
+* @scenario             :use wait function to decrement count value.
+* @API's covered        :none
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
 void shutdown_wait(void)
 {
-	while (mut <= 0) {
+	while (count_wait <= ZERO) {
 
 		printf("");
 	}
-	mut--;
+	count_wait--;
 }
 
 /**
-   * @fn                   :shutdown_signal
-   * @brief                :function to signal semaphore
-   * @scenario             :
-   * API's covered         :
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void
-   */
+* @fn                  :shutdown_signal
+* @brief               :function to signal semaphore.
+* @scenario            :use to increase the count value.
+* @API's covered       :none
+* @Preconditions       :none
+* @Postconditions      :none
+* @return              :void
+*/
 void shutdown_signal(void)
 {
-	mut++;
+	count_wait++;
 }
 
 /**
-   * @testcase		   :tc_net_shutdown_recv_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :shutdown()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @fn                  :tc_net_shutdown_recv_p
+* @brief               :close one end of a full-duplex connection.
+* @scenario            :close one end of a full-duplex connection with disables receive operations.
+* @API's covered       :shutdown
+* @Preconditions       :socket file descriptor.
+* @Postconditions      :none
+* @return              :void
+*/
+
 void tc_net_shutdown_recv_p(int fd)
 {
 	int ret = shutdown(fd, SHUT_RD);
 
-	TC_ASSERT_NEQ("shutdown", ret, -1);
+	TC_ASSERT_NEQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_shutdown_send_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :shutdown()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            :tc_net_shutdown_send_p
+* @brief               :close one end of a full-duplex connection.
+* @scenario            :close one end of a full-duplex connection with disables send operations.
+* @apicovered          :shutdown
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
+*/
 void tc_net_shutdown_send_p(int fd)
 {
 	int ret = shutdown(fd, SHUT_WR);
 
-	TC_ASSERT_NEQ("shutdown", ret, -1);
+	TC_ASSERT_NEQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_shutdown_sendrecv_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :shutdown()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            :tc_net_shutdown_sendrecv_p
+* @brief               :close one end of a full-duplex connection.
+* @scenario            :close one end of a full-duplex connection with disables send and receive operations.
+* @apicovered          :shutdown
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
+*/
 void tc_net_shutdown_sendrecv_p(int fd)
 {
 	int ret = shutdown(fd, SHUT_RDWR);
 
-	TC_ASSERT_NEQ("shutdown", ret, -1);
+	TC_ASSERT_NEQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_shutdown_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :shutdown()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            :tc_net_shutdown_n
+* @brief               :close one end of a full-duplex connection.
+* @scenario            :close one end of a full-duplex connection with invalid socket fd.
+* @apicovered          :shutdown
+* @precondition        :none
+* @postcondition       :none
+* @return              :void
+*/
 void tc_net_shutdown_n(void)
 {
-	int ret = shutdown(-1, SHUT_RDWR);
+	int ret = shutdown(NEG_VAL, SHUT_RDWR);
 
-	TC_ASSERT_EQ("shutdown", ret, -1);
+	TC_ASSERT_EQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
 }
 
 /**
-   * @testcase		   :tc_net_shutdown_sock_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :shutdown()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            :tc_net_shutdown_sock_n
+* @brief               :close one end of a full-duplex connection.
+* @scenario            :close one end of a full-duplex connection with given socket fd.
+* @apicovered          :shutdown
+* @precondition        :none
+* @postcondition       :none
+* @return              :void
+*/
 void tc_net_shutdown_sock_n(int fd)
 {
 	int ret = shutdown(fd, SHUT_RD);
 
-	TC_ASSERT_EQ("shutdown", ret, -1);
+	TC_ASSERT_EQ("shutdown", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @fn                   :shutdown_server
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,bind,listen,send,accept,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
-void *shutdown_server(void *args)
+* @fn                   :net_shutdown_server
+* @brief                :create a tcp server.
+* @scenario             :create a tcp server to test shutdown api.
+* @API's covered        :socket,bind,listen,send,accept,close
+* @Preconditions        :socket file descriptor.
+* @Postconditions       :none
+* @return               :void
+*/
+static void net_shutdown_server(void)
 {
+	int ConnectFD;
+	int ret;
 	char *msg = "Hello World !\n";
+	char buf[MAXRCVLEN];
 	struct sockaddr_in sa;
-	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 	memset(&sa, 0, sizeof(sa));
-
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
-	bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
-
-	listen(SocketFD, 1);
-
+	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(sock));
+	ret = listen(sock, BACKLOG);
+	TC_ASSERT_NEQ_CLEANUP("listen", ret, NEG_VAL, close(sock));
 	shutdown_signal();
 
-	int ConnectFD = accept(SocketFD, NULL, NULL);
+	ConnectFD = accept(sock, NULL, NULL);
+	TC_ASSERT_NEQ_CLEANUP("accept", ConnectFD, NEG_VAL, close(sock));
 	tc_net_shutdown_send_p(ConnectFD);
-	int val = send(ConnectFD, msg, strlen(msg), 0);
-	if (val == -1)
-		printf("\nShutdown send successful %d\n", errno);
+
+	send(ConnectFD, msg, sizeof(msg), 0);
 	tc_net_shutdown_recv_p(ConnectFD);
-	val = recv(ConnectFD, msg, 1024, 0);
-	if (val == -1)
-		printf("\nShutdown recv successful %d\n", errno);
+
+	recv(ConnectFD, buf, sizeof(buf), 0);
 	tc_net_shutdown_n();
-	tc_net_shutdown_sock_n(SocketFD);
+
+	tc_net_shutdown_sock_n(sock);
 	close(ConnectFD);
-	close(SocketFD);
-
-	return 0;
-
+	close(sock);
 }
 
 /**
-   * @fn                   :shut_client
-   * @brief                :
-   * @scenario             :
-   * API's covered         :socket,connect,recvfrom,close
-   * Preconditions         :
-   * Postconditions        :
-   * @return               :void *
-   */
-void *shutdown_client(void *args)
+* @fn                   :shutdown_server
+* @brief                :create a tcp server.
+* @scenario             :create a tcp server to test shutdown api.
+* @API's covered        :none.
+* @Preconditions        :none.
+* @Postconditions       :none
+* @return               :void*
+*/
+void* shutdown_server(void *args)
 {
+	net_shutdown_server();
+	return NULL;
+}
+
+/**
+* @fn                   :net_shutdown_client
+* @brief                :create client.
+* @scenario             :create tcp client.
+* @API's covered        :socket,connect,recvfrom,close
+* @Preconditions        :socket file descriptor.
+* @Postconditions       :none
+* @return               :void
+*/
+static void net_shutdown_client(void)
+{
+	int len;
 	char buffer[MAXRCVLEN];
-	int len, mysocket;
 	struct sockaddr_in dest;
 
-	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = inet_addr("127.0.0.1");
+	dest.sin_addr.s_addr = INADDR_LOOPBACK;
 	dest.sin_port = htons(PORTNUM);
 
 	shutdown_wait();
+	int ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	TC_ASSERT_NEQ_CLEANUP("connect", ret, NEG_VAL, close(sock));
 
-	connect(mysocket, (struct sockaddr *)&dest, sizeof(struct sockaddr));
-	len = recv(mysocket, buffer, MAXRCVLEN, 0);
+	len = recv(sock, buffer, MAXRCVLEN, 0);
 	buffer[len] = '\0';
-	tc_net_shutdown_recv_p(mysocket);
-	int val = recv(mysocket, buffer, MAXRCVLEN, 0);
-	if (val == -1)
-		printf("\nShutdown recv successful %d\n", errno);
-	tc_net_shutdown_sendrecv_p(mysocket);
-	val = recv(mysocket, buffer, MAXRCVLEN, 0);
-	if (val == -1)
-		printf("\nShutdown recv successful %d\n", errno);
-	val = send(mysocket, buffer, strlen(buffer), 0);
-	if (val == -1)
-		printf("\nShutdown recv successful %d\n", errno);
-	tc_net_shutdown_n();
-	close(mysocket);
-	return 0;
+	tc_net_shutdown_recv_p(sock);
 
+	recv(sock, buffer, MAXRCVLEN, 0);
+	tc_net_shutdown_sendrecv_p(sock);
+
+	recv(sock, buffer, MAXRCVLEN, 0);
+	tc_net_shutdown_sendrecv_p(sock);
+
+	send(sock, buffer, sizeof(buffer), 0);
+	tc_net_shutdown_sendrecv_p(sock);
+
+	tc_net_shutdown_n();
+	close(sock);
 }
 
-/****************************************************************************
- * Name: shutdown()
- ****************************************************************************/
-int net_shutdown_main(void)
+/**
+* @fn                   :shutdown_client
+* @brief                :create client.
+* @scenario             :create tcp client.
+* @API's covered        :none.
+* @Preconditions        :none.
+* @Postconditions       :none
+* @return               :void*
+*/
+void* shutdown_client(void *args)
 {
+	net_shutdown_client();
+	return NULL;
+}
 
+/**
+* @fn                   :net_shutdown
+* @brief                :create client and server thread.
+* @scenario             :create client and server thread to test shutdown api.
+* API's covered         :none
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+void net_shutdown(void)
+{
 	pthread_t Server, Client;
 
 	pthread_create(&Server, NULL, shutdown_server, NULL);
 	pthread_create(&Client, NULL, shutdown_client, NULL);
 
 	pthread_join(Server, NULL);
-
 	pthread_join(Client, NULL);
+}
 
+/****************************************************************************
+ * Name:net_shutdown_main
+ ****************************************************************************/
+int net_shutdown_main(void)
+{
+	net_shutdown();
 	return 0;
 }

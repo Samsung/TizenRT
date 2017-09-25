@@ -104,9 +104,6 @@ endif
 ifeq ($(CONFIG_TC_NET_SHUTDOWN),y)
 CSRCS +=tc_net_shutdown.c
 endif
-ifeq ($(CONFIG_TC_NET_DHCPC),y)
-CSRCS +=tc_net_dhcpc.c
-endif
 ifeq ($(CONFIG_TC_NET_SELECT),y)
 CSRCS +=tc_net_select.c
 endif
@@ -118,9 +115,6 @@ CSRCS +=tc_net_ether.c
 endif
 ifeq ($(CONFIG_TC_NET_NETDB),y)
 CSRCS +=tc_net_netdb.c
-endif
-ifeq ($(CONFIG_TC_NET_CORE_NTOHS),y)
-CSRCS +=tc_net_core.c
 endif
 ifeq ($(CONFIG_TC_NET_IPV4_NETMASK_VALID),y)
 CSRCS +=tc_net_ipv4_netmask_valid.c
@@ -140,9 +134,35 @@ endif
 ifeq ($(CONFIG_TC_NET_CORE),y)
 CSRCS +=tc_net_netif_core.c
 endif
-
+ifeq ($(CONFIG_TC_NET_TCPIP),y)
+CSRCS +=tc_net_tcpip.c
+endif
+ifeq ($(CONFIG_TC_NET_MAC),y)
+CSRCS +=tc_net_mac.c
+endif
+ifeq ($(CONFIG_TC_NETBUF_ALLOC),y)
+CSRCS +=tc_netbuf_alloc.c
+endif
+ifeq ($(CONFIG_TC_MEM_ALLOC),y)
+CSRCS +=tc_net_mem_allocate.c
+endif
+ifeq ($(CONFIG_TC_NET_NETBUF),y)
+CSRCS +=tc_net_netbuf.c
+endif
+ifeq ($(CONFIG_NET_NETIFAPI),y)
+CSRCS +=tc_net_netifapi_add.c
+endif
+ifeq ($(CONFIG_TC_NET_RAW),y)
+CSRCS +=tc_net_raw.c
+endif
+ifeq ($(CONFIG_TC_NET_SENDTO),y)
+CSRCS +=tc_netconn_sendto.c
+endif
+ifeq ($(CONFIG_TC_NET_IGMP),y)
+CSRCS +=tc_net_igmp.c
+endif
 # Include network build support
 
 DEPPATH += --dep-path le_tc/network
-VPATH += :le_tc/network
+VPATH += le_tc/network
 endif

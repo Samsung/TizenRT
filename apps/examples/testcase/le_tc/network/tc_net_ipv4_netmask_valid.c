@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,49 +19,51 @@
 /// @file tc_net_ipv4_netmask_valid.c
 /// @brief Test Case Example for ip4_addr_netmask_valid() API
 
-#include <tinyara/config.h>
-#include <stdio.h>
-
-#include <sys/stat.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <apps/netutils/netlib.h>
 #include <net/lwip/ipv4/ip_addr.h>
 
-#include <sys/socket.h>
-
 #include "tc_internal.h"
-
+/* Value for checking */
+#define NETMASK1         0x0000ffff
+#define NETMASK2         0xffffff90
 /**
- * @testcase         : tc_net_ipv4_addr_netmask_valid_p
- * @brief            :
- * @scenario         :
- * @apicovered       : ip4_addr_netmask_valid
- * @precondition     :
- * @postcondition    :
- **/
+* @testcase             :tc_net_ipv4_addr_netmask_valid_p
+* @brief                :checks netmask is valid or not.
+* @scenario             :IPv4 netmask to check.
+* @apicovered           :ip4_addr_netmask_valid
+* @precondition         :none
+* @postcondition        :none
+* @return               :void
+*/
 void tc_net_ipv4_addr_netmask_valid_p(void)
 {
-    int ret;
-    int netmask = 0x0000ffff; /* Value for checking */
+	int ret = ip4_addr_netmask_valid(NETMASK1);
+	TC_ASSERT_EQ("ip4_addr_netmask_valid", ret, ONE);
+	TC_SUCCESS_RESULT();
+}
 
-    ret = ip4_addr_netmask_valid(netmask);
-
-    if (ret)
-        printf("the netmask is valid\n");
-    else
-        printf("the netmask is not valid\n");
-
+/**
+* @testcase             :tc_net_ipv4_addr_netmask_valid_n
+* @brief                :checks netmask is valid or not.
+* @scenario             :IPv4 netmask to check.
+* @apicovered           :ip4_addr_netmask_valid
+* @precondition         :none
+* @postcondition        :none
+* @return               :void
+*/
+void tc_net_ipv4_addr_netmask_valid_n(void)
+{
+	int ret = ip4_addr_netmask_valid(NETMASK2);
+	TC_ASSERT_NEQ("ip4_addr_netmask_valid", ret, ONE);
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
- * Name: ip4_addr_netmask_valid()
+ * Name:ip4_addr_netmask_valid()
  ****************************************************************************/
-
 int net_ipv4_addr_netmask_valid_main(void)
 {
-  tc_net_ipv4_addr_netmask_valid_p();
+	tc_net_ipv4_addr_netmask_valid_p();
+	tc_net_ipv4_addr_netmask_valid_n();
 
-  return 0;
+	return 0;
 }

@@ -16,63 +16,60 @@
  *
  ****************************************************************************/
 
-/// @file tc_net_core.c
-/// @brief Test Case Example for lwip_htonl() API
+// @file tc_net_send.c
+// @brief Test Case Example for send() API
 #include <tinyara/config.h>
-#include <stdio.h>
-
+#include <errno.h>
 #include <sys/stat.h>
 #include <net/if.h>
+#include <netutils/netlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
 #include <netinet/in.h>
-#include <apps/netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
-void tc_net_core_ntohs_p(void);
-void tc_net_core_ntohl_p(void);
+
+#define PORTNUM    5020
 
 /**
- * @testcase		       : tc_net_core_htonl_p
- * @brief		          :
- * @scenario		       :
- * @apicovered	      : ntohs()
- * @precondition	    :
- * @postcondition	   :
- */
-void tc_net_core_ntohs_p(void)
+* @fn                   :tc_net_raw_client
+* @brief                :creates raw socket
+* @scenario             :creating raw socket and bind it 
+* API's covered         :socket, bind
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+void tc_net_raw_client(void)
 {
-  short int x = 0x1012; /* Value for checking */
+	int ret;
+	struct sockaddr_in sa;
 
-  x = ntohs(x); /* Observe value in network byte order */
+	int sock = socket(AF_INET, SOCK_RAW, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
+	memset(&sa, 0, sizeof(sa));
+        sa.sin_family = PF_INET;
+        sa.sin_port = htons(PORTNUM);
+        sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(sock));
+	close(sock);
+        TC_SUCCESS_RESULT();
 }
 
-/**
- * @testcase         : tc_net_core_ntohl_p
- * @brief            :
- * @scenario         :
- * @apicovered       : ntohl()
- * @precondition     :
- * @postcondition    :
- **/
-void tc_net_core_ntohl_p(void)
-{
-  long int x = 0x112A380; /* Value for checking */
-
-  x = ntohl(x);  /* Observe value in network byte order */
-
-}
 
 /****************************************************************************
- * Name: ntohs() and ntohl()
+ * Name: net_raw_main()
  ****************************************************************************/
-
-int net_lwip_ntohs_main(void)
+int net_raw_main(void)
 {
-  tc_net_core_ntohs_p();
-  tc_net_core_ntohl_p();
-
-  return 0;
+	tc_net_raw_client();
+	return 0;
 }

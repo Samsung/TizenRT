@@ -21,204 +21,243 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
-#include <apps/netutils/netlib.h>
-
+#include <netutils/netlib.h>
 #include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_getsockopt_multicast_ttl_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
-static void tc_net_getsockopt_multicast_ttl_p(int s)
+* @testcase            : tc_net_getsockopt_multicast_ttl_p
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          : getsockopt(), setsockopt()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+static void tc_net_getsockopt_multicast_ttl_p(void)
 {
-	int ret = -1;
-	socklen_t optval = 1;
+	int ret;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
-	setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &optval, optlen);
-	ret = getsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &optval, &optlen);
 
-	TC_ASSERT_GEQ("getsockopt", ret, 0);
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &optval, optlen);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
+
+	ret = getsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &optval, &optlen);
+	TC_ASSERT_NEQ_CLEANUP("getsockopt", ret, NEG_VAL, close(sock));
+	close(sock);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_multicast_ttl_loop_own_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
-static void tc_net_getsockopt_multicast_ttl_loop_own_p(int s)
+* @testcase            : tc_net_getsockopt_multicast_ttl_loop_own_p
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          : getsockopt(), setsockopt()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+static void tc_net_getsockopt_multicast_ttl_loop_own_p(void)
 {
-	int ret = -1;
+	int ret;
+	socklen_t loop = ONE;
+	socklen_t looplen = sizeof(loop);
+
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
+	ret = getsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &loop, &looplen);
+	TC_ASSERT_NEQ_CLEANUP("getsockopt", ret, NEG_VAL, close(sock));
+	close(sock);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase            : tc_net_getsockopt_multicast_ttl_loop_p
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          : getsockopt(), setsockopt()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+static void tc_net_getsockopt_multicast_ttl_loop_p(void)
+{
+	int ret;
 	socklen_t loop = 1;
 	socklen_t looplen = sizeof(loop);
-	setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
-	ret = getsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &loop, &looplen);
 
-	TC_ASSERT_GEQ("getsockopt", ret, 0);
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
+	TC_ASSERT_NEQ("setsockopt", ret, NEG_VAL);
+
+	ret = getsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &loop, &looplen);
+	TC_ASSERT_NEQ_CLEANUP("getsockopt", ret, NEG_VAL, close(sock));
+	close(sock);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_multicast_ttl_loop_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
-static void tc_net_getsockopt_multicast_ttl_loop_p(int s)
-{
-	int ret = -1;
-	socklen_t loop = 250;
-	socklen_t looplen = sizeof(loop);
-	setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, looplen);
-	ret = getsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &loop, &looplen);
-
-	TC_ASSERT_GEQ("getsockopt", ret, 0);
-	TC_SUCCESS_RESULT();
-
-}
-
-/**
-   * @testcase		   :tc_net_getsockopt_invalid_filedesc_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_getsockopt_invalid_filedesc_n
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd,
+                         with invalid socket fd.
+* @apicovered          : getsockopt(), setsockopt()
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
+*/
 static void tc_net_getsockopt_invalid_filedesc_n(void)
 {
-	int ret = -1;
-	socklen_t optval = 1;
+	int ret;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
 
-	setsockopt(0, SOL_SOCKET, 0, 0, 0);
-	ret = getsockopt(0, IPPROTO_IP, IP_MULTICAST_TTL, &optval, &optlen);
+	ret = setsockopt(NEG_VAL, SOL_SOCKET, 0, NULL, 0);
+	TC_ASSERT_EQ("setsockopt", ret, NEG_VAL);
 
-	TC_ASSERT_EQ("getsockopt", ret, -1);
+	ret = getsockopt(NEG_VAL, IPPROTO_IP, IP_MULTICAST_TTL, &optval, &optlen);
+	TC_ASSERT_EQ("getsockopt", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_optval_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :
-   * @postcondition	   :
-   */
-static void tc_net_getsockopt_optval_n(int s)
+* @testcase            : tc_net_getsockopt_optval_n
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd,
+                         with null optval.
+* @apicovered          : getsockopt(), setsockopt()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+static void tc_net_getsockopt_optval_n(void)
 {
-	int ret = -1;
-	socklen_t optval = 1;
+	int ret;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
 
-	setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &optval, optlen);
-	ret = getsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, NULL, &optlen);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
-	TC_ASSERT_EQ("getsockopt", ret, -1);
+	ret = setsockopt(sock, SOL_SOCKET, ZERO, ZERO, ZERO);
+	TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(sock));
+
+	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &optval, optlen);
+	TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(sock));
+	ret = getsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, NULL, NULL);
+	TC_ASSERT_EQ_CLEANUP("getsockopt", ret, NEG_VAL, close(sock));
+	close(sock);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_sol_socket_so_acceptconn_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
-static void tc_net_getsockopt_sol_socket_so_acceptconn_p(int s)
+* @testcase            : tc_net_getsockopt_sol_socket_so_acceptconn_p
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          : getsockopt(), setsockopt()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+static void tc_net_getsockopt_sol_socket_so_acceptconn_p(void)
 {
-	int ret = -1;
-	socklen_t optval = 1;
+	int ret;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
-	setsockopt(s, SOL_SOCKET, SO_ACCEPTCONN, &optval, optlen);
-	ret = getsockopt(s, SOL_SOCKET, SO_ACCEPTCONN, &optval, &optlen);
 
-	TC_ASSERT_GEQ("getsockopt", ret, 0);
+	int sock = socket(AF_INET, SOCK_STREAM, ONE);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	ret = setsockopt(sock, SOL_SOCKET, SO_ACCEPTCONN, &optval, optlen);
+	TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(sock));
+	ret = getsockopt(sock, SOL_SOCKET, SO_ACCEPTCONN, &optval, &optlen);
+	TC_ASSERT_NEQ_CLEANUP("getsockopt", ret, NEG_VAL, close(sock));
+	close(sock);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_sol_socket_so_broadcast_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
-static void tc_net_getsockopt_sol_socket_so_broadcast_p(int s)
+* @testcase            : tc_net_getsockopt_sol_socket_so_broadcast_p
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          : getsockopt(), setsockopt()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+static void tc_net_getsockopt_sol_socket_so_broadcast_p(void)
 {
-	int ret = -1;
-	socklen_t optval = 1;
+	int ret;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
-	setsockopt(s, SOL_SOCKET, SO_BROADCAST, &optval, optlen);
-	ret = getsockopt(s, SOL_SOCKET, SO_BROADCAST, &optval, &optlen);
 
-	TC_ASSERT_GEQ("getsockopt", ret, 0);
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	ret = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &optval, optlen);
+	TC_ASSERT_NEQ_CLEANUP("getsockopt", ret, NEG_VAL, close(sock));
+
+	ret = getsockopt(sock, SOL_SOCKET, SO_BROADCAST, &optval, &optlen);
+	TC_ASSERT_NEQ_CLEANUP("getsockopt", ret, NEG_VAL, close(sock));
+	close(sock);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_getsockopt_sol_socket_so_keepalive_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :getsockopt()
-   * @precondition	   :socket file descriptor
-   * @postcondition	   :
-   */
-static void tc_net_getsockopt_sol_socket_so_keepalive_p(int s)
+* @testcase            : tc_net_getsockopt_sol_socket_so_keepalive_p
+* @brief               : get the options on sockets.
+* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          : getsockopt(), setsockopt()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
+static void tc_net_getsockopt_sol_socket_so_keepalive_p(void)
 {
-	int ret = -1;
-	socklen_t optval = 1;
+	int ret;
+	socklen_t optval = ONE;
 	socklen_t optlen = sizeof(optval);
-	setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen);
-	ret = getsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &optval, &optlen);
 
-	TC_ASSERT_GEQ("getsockopt", ret, 0);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	ret = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen);
+	TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(sock));
+
+	ret = getsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, &optlen);
+	TC_ASSERT_NEQ_CLEANUP("getsockopt", ret, NEG_VAL, close(sock));
+	close(sock);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
  * Name: getsockopt()
  ****************************************************************************/
 
-void net_getsockopt_main(void)
+void net_getsockopt_main()
 {
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
 	tc_net_getsockopt_invalid_filedesc_n();
-	tc_net_getsockopt_optval_n(fd);
-	tc_net_getsockopt_multicast_ttl_loop_p(fd);
-	tc_net_getsockopt_multicast_ttl_loop_own_p(fd);
-	tc_net_getsockopt_multicast_ttl_p(fd);
-	tc_net_getsockopt_sol_socket_so_acceptconn_p(fd);
-	tc_net_getsockopt_sol_socket_so_broadcast_p(fd);
-	tc_net_getsockopt_sol_socket_so_keepalive_p(fd);
-
-	close(fd);
+	tc_net_getsockopt_optval_n();
+	tc_net_getsockopt_multicast_ttl_loop_p();
+	tc_net_getsockopt_multicast_ttl_loop_own_p();
+	tc_net_getsockopt_multicast_ttl_p();
+#ifndef CONFIG_QEMU_COVERAGE
+	tc_net_getsockopt_sol_socket_so_broadcast_p();
+	tc_net_getsockopt_sol_socket_so_keepalive_p();
+#endif
+	tc_net_getsockopt_sol_socket_so_acceptconn_p();
 }
