@@ -297,7 +297,9 @@
 void lwip_init(void)
 {
 	/* Modules initialization */
+#if LWIP_STATS
 	stats_init();
+#endif
 #if !NO_SYS
 	sys_init();
 #endif							/* !NO_SYS */

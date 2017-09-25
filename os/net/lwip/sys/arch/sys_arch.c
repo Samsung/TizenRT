@@ -50,7 +50,7 @@
 #define SYS_THREAD_MAX 6
 
 static u16_t s_nextthread = 0;
-
+static u32_t g_mbox_id = 0;
 /*---------------------------------------------------------------------------*
  * Routine:  sys_mbox_new
  *---------------------------------------------------------------------------*
@@ -64,10 +64,9 @@ static u16_t s_nextthread = 0;
  *---------------------------------------------------------------------------*/
 err_t sys_mbox_new(sys_mbox_t *mbox, int queue_sz)
 {
-
 	err_t err = ERR_OK;
 	mbox->is_valid = 1;
-	mbox->id = lwip_stats.sys.mbox.used + 1;
+	mbox->id = g_mbox_id++;
 	mbox->queue_size = queue_sz;
 	mbox->wait_send = 0;
 	mbox->wait_fetch = 0;
