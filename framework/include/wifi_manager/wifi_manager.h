@@ -60,7 +60,11 @@ typedef enum {
 typedef enum {
 	WIFI_NONE = -1,
 	STA_MODE,
-	SOFTAP_MODE
+	SOFTAP_MODE,
+	WIFI_MODE_CHANGING,
+	WIFI_INITIALIZING,
+	WIFI_DEINITIALIZING,
+	WIFI_FAILURE
 } wifi_manager_mode_e;
 
 typedef enum {

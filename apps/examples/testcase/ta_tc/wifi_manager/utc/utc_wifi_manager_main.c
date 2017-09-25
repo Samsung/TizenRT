@@ -143,7 +143,7 @@ static void utc_wifi_manager_set_mode_n(void)
 
 	ret = wifi_manager_set_mode(SOFTAP_MODE, NULL);
 
-	TC_ASSERT_EQ("wifi_manager_set_mode_n", ret, WIFI_MANAGER_FAIL);
+	TC_ASSERT_EQ("wifi_manager_set_mode_n", ret, WIFI_MANAGER_INVALID_ARGS);
 
 	wifi_manager_softap_config_s ap_config;
 	strncpy(ap_config.ssid, CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC_SOFTAP_SSID, \
@@ -388,7 +388,7 @@ int wifi_manager_utc(int argc, FAR char *argv[])
 	utc_wifi_utils_disconnect_ap_p();
 
 	WIFITEST_WAIT;
-	
+
 	utc_wifi_utils_disconnect_ap_n();	//  Should be run after positive tc, that is, the second disconnect gets failed.
 
 	utc_wifi_manager_deinit_p();
