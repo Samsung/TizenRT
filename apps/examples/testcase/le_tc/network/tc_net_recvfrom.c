@@ -270,56 +270,64 @@ void tc_net_recvfrom_tcp_n(void)
 }
 
 /**
-* @fn                   : recvfrom_server
-* @brief                : Create a Tcp server.
-* @scenario             : Create a tcp server for checking recvfrom api.
-* @API's covered        : socket,bind,listen,accept,sendto,close
-* @Preconditions        : socket file descriptor.
-* @Postconditions       : none
-* @return               : void
+* @fn                   :net_recvfrom_tcpserver
+* @brief                :create a tcp server.
+* @scenario             :create a tcp server to test recvfrom api.
+* @API's covered        :socket,bind,listen,accept,sendto,close
+* @Preconditions        :socket file descriptor.
+* @Postconditions       :none
+* @return               :void
 */
-void* recvfrom_tcpserver(void *args)
+static void net_recvfrom_tcpserver(void)
 {
 	int i;
+	int ret;
 	int ConnectFD;
 	char *msg = "Hello World !\n";
 	struct sockaddr_in sa;
 
 	int sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
-	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, BACKLOG);
+	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(sock));
+
+	ret = listen(sock, BACKLOG);
+	TC_ASSERT_NEQ_CLEANUP("listen", ret, NEG_VAL, close(sock));
 
 	recvfrom_signal();
 	ConnectFD = accept(sock, NULL, NULL);
+	TC_ASSERT_NEQ_CLEANUP("accept", ConnectFD, NEG_VAL, close(sock));
 
 	for (i = 0; i < CNT; i++) {
 		sendto(ConnectFD, msg, strlen(msg), 0, (struct sockaddr *)&sa, sizeof(sa));
 	}
 	close(ConnectFD);
 	close(sock);
-	return NULL;
 }
 
+
 /**
-* @fn                   : recvfrom_tcpclient
-* @brief                : This api create tcp client.
-* @scenario             : Create tcp client.
-* @API's covered        : socket,connect,close
-* @Preconditions        : socket file descriptor.
-* @Postconditions       : none
-* @return               : void
+* @fn                   :net_recvfrom_tcpclient
+* @brief                :create client.
+* @scenario             :create tcp client.
+* @API's covered        :socket,connect,close
+* @Preconditions        :socket file descriptor.
+* @Postconditions       :none
+* @return               :void
 */
-void* recvfrom_tcpclient(void *args)
+static void net_recvfrom_tcpclient(void)
 {
+	int ret;
 	struct sockaddr_in dest;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
@@ -327,13 +335,43 @@ void* recvfrom_tcpclient(void *args)
 	dest.sin_port = htons(PORTNUM);
 
 	recvfrom_wait();
-	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	TC_ASSERT_NEQ("connect", sock, NEG_VAL);
 
 	tc_net_recvfrom_tcp_p(sock);
 	tc_net_recvfrom_tcp_n();
 	tc_net_recvfrom_tcp_sock_n(sock);
 	tc_net_recvfrom_tcp_conn_n(sock);
 	close(sock);
+}
+
+/**
+* @fn                   :recvfrom_tcpserver
+* @brief                :create a tcp server.
+* @scenario             :create a tcp server to test recvfrom api.
+* @API's covered        :none.
+* @Preconditions        :none.
+* @Postconditions       :none
+* @return               :void*
+*/
+void* recvfrom_tcpserver(void *args)
+{
+	net_recvfrom_tcpserver();
+	return NULL;
+}
+
+/**
+* @fn                   :recvfrom_tcpclient
+* @brief                :create client.
+* @scenario             :create tcp client.
+* @API's covered        :none.
+* @Preconditions        :none.
+* @Postconditions       :none
+* @return               :void*
+*/
+void* recvfrom_tcpclient(void *args)
+{
+	net_recvfrom_tcpclient();
 	return NULL;
 }
 

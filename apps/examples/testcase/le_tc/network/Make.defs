@@ -152,10 +152,15 @@ endif
 ifeq ($(CONFIG_NET_NETIFAPI),y)
 CSRCS +=tc_net_netifapi_add.c
 endif
+ifeq ($(CONFIG_TC_NET_RAW),y)
+CSRCS +=tc_net_raw.c
+endif
 ifeq ($(CONFIG_TC_NET_SENDTO),y)
 CSRCS +=tc_netconn_sendto.c
 endif
-
+ifeq ($(CONFIG_TC_NET_IGMP),y)
+CSRCS +=tc_net_igmp.c
+endif
 # Include network build support
 
 DEPPATH += --dep-path le_tc/network

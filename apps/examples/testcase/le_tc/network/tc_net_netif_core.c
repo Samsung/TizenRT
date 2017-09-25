@@ -45,35 +45,12 @@
 #define VAL             6
 #define MTUSIZE         1500
 #define TOTLEN          16
+#define PBUF_SIZE       10
 
 struct netif loop_netif;
 struct netif test_netif;
 static int linkoutput_ctr;
 extern err_t netif_loopif_init(struct netif *netif);
-
-/**
-* @testcase             : tc_net_netif_remove_p
-* @brief                : Remove netif interface
-* @scenario             : Remove the added netif interface
-* @apicovered           : netif_remove(), netif_add()
-* @precondition         : netif interface should be present
-* @postcondition        : none
-* @return               : void
-*/
-static void tc_net_netif_remove_p(void)
-{
-	struct netif *ret;
-
-	ip_addr_t loop_ipaddr, loop_netmask, loop_gw;
-	IP4_ADDR(&loop_gw, 127, 0, 0, 1);
-	IP4_ADDR(&loop_ipaddr, 127, 0, 0, 1);
-	IP4_ADDR(&loop_netmask, 255, 0, 0, 0);
-
-	ret = netif_add(&loop_netif, &loop_ipaddr, &loop_netmask, &loop_gw, NULL, netif_loopif_init, ip_input);
-	netif_remove(ret);
-
-	TC_SUCCESS_RESULT();
-}
 
 /**
 * @testcase             : tc_net_pbuf_get_at_p
@@ -232,28 +209,6 @@ static void tc_net_get_socket_struct_p(void)
 	struct socket *ret = (struct socket *)get_socket_struct(s);
 
 	TC_ASSERT_NEQ("net_get_socket_struct_p", ret, NULL);
-	TC_SUCCESS_RESULT();
-}
-
-/**
-* @testcase             : tc_net_tcp_rexmit_fast_n
-* @brief                : Handle retransmission after three dupacks received
-* @scenario             : it not going to return anyting.
-* @apicovered           : tcp_rexmit_fast()
-* @precondition         : none
-* @postcondition        : none
-* @return               : void
-*/
-static void tc_net_tcp_rexmit_fast_n(void)
-{
-	struct tcp_pcb *pcb;
-	pcb = (struct tcp_pcb *)memp_malloc(MEMP_TCP_PCB);
-
-	pcb->unacked = NULL;
-	pcb->flags = ((u8_t) 0x04);
-
-	tcp_rexmit_fast(pcb);
-	memp_free(MEMP_TCP_PCB, pcb);
 	TC_SUCCESS_RESULT();
 }
 
@@ -444,13 +399,13 @@ static void tc_net_pbuf_take_p(void)
 	struct pbuf *buf = NULL;
 	void *dataptr = "data";
 
-	buf = (struct pbuf *)memp_malloc(10);
+	buf = (struct pbuf *)memp_malloc(PBUF_SIZE);
 	buf->next = NULL;
 	buf->len = 8;
 	buf->tot_len = 10;
 
 	ret = pbuf_take(buf, dataptr, strlen("data"));
-
+	memp_free(MEMP_PBUF_POOL, buf);
 	TC_ASSERT_EQ("net_pbuf_take", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -603,25 +558,6 @@ static err_t default_netif_linkoutput(struct netif *netif, struct pbuf *p)
 {
 	linkoutput_ctr++;
 	return ERR_OK;
-}
-
-/**
-* @testcase             : default_netif_init
-* @brief                : initialize the network interface
-* @scenario             : initialization
-* @apicovered           : default_netif_linkoutput, etharp_output
-* @precondition         : none
-* @postcondition        : none
-* @return               : void
-*/
-static err_t default_netif_init(struct netif *netif)
-{
-	netif->linkoutput = default_netif_linkoutput;
-	netif->output = etharp_output;
-	netif->mtu = MTUSIZE;
-	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
-	netif->hwaddr_len = ETHARP_HWADDR_LEN;
-	return 0;
 }
 
 /****************************************************************************

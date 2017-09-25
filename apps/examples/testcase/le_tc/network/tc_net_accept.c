@@ -109,47 +109,55 @@ void tc_net_accept_socket_n(void)
 }
 
 /**
-* @fn                   : Server
-* @brief                : Create a Tcp server.
-* @scenario             : Create a tcp server for checking accept api.
-* @API's covered        : socket,bind,listen,close
-* @Preconditions        : socket file descriptor.
-* @Postconditions       : none
-* @return               : void*
+* @fn                   :net_accept_server
+* @brief                :create a tcp server.
+* @scenario             :create a tcp server to test accept api.
+* @API's covered        :socket,bind,listen,close
+* @Preconditions        :socket file descriptor.
+* @Postconditions       :none
+* @return               :void
 */
-void* Server(void *args)
+static void net_accept_server(void)
 {
+	int ret;
 	struct sockaddr_in sa;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
-	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, BACKLOG);
+	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(sock));
+
+	ret = listen(sock, BACKLOG);
+	TC_ASSERT_NEQ_CLEANUP("listen", ret, NEG_VAL, close(sock));
+
 	nw_signal();
 	tc_net_accept_p(sock);
 	tc_net_accept_socket_n();
 	close(sock);
-	return NULL;
 }
 
 /**
-* @fn                   : Client
-* @brief                : This api create client.
-* @scenario             : Create tcp client.
-* @API's covered        : socket,connect,close
-* @Preconditions        : socket file descriptor.
-* @Postconditions       : none
-* @return               : void*
+* @fn                   :net_accept_client
+* @brief                :create the client.
+* @scenario             :create tcp client.
+* @API's covered        :socket,connect,close
+* @Preconditions        :socket file descriptor.
+* @Postconditions       :none
+* @return               :void
 */
-void* Client(void *args)
+static void net_accept_client(void)
 {
+	int ret;
 	struct sockaddr_in dest;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_INET;
@@ -157,21 +165,51 @@ void* Client(void *args)
 	dest.sin_port = htons(PORTNUM);
 
 	wait();
-	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	TC_ASSERT_NEQ_CLEANUP("connect", ret, NEG_VAL, close(sock));
 	close(sock);
+}
+
+/**
+* @fn                   :Server
+* @brief                :create a tcp server thread.
+* @scenario             :create a tcp server to test accept api.
+* @API's covered        :none
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void*
+*/
+void* Server(void *args)
+{
+	net_accept_server();
 	return NULL;
 }
 
 /**
-* @fn                   : tc_net_accept
-* @brief                : This api create client and server thread.
-* @scenario             : Create client and server thread to test accept api.
-* @API's covered        : none
-* @Preconditions        : none
-* @Postconditions       : none
-* @return               : void
+* @fn                   :Client
+* @brief                :create client thread.
+* @scenario             :create tcp client.
+* @API's covered        :none
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void*
 */
-void tc_net_accept(void)
+void* Client(void *args)
+{
+	net_accept_client();
+	return NULL;
+}
+
+/**
+* @fn                   :net_accept
+* @brief                :create client and server thread.
+* @scenario             :create client and server thread to test accept api.
+* @API's covered        :none
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+void net_accept(void)
 {
 	pthread_t server, client;
 
@@ -183,10 +221,10 @@ void tc_net_accept(void)
 }
 
 /****************************************************************************
- * Name: accept()
+ * Name: accept
  ****************************************************************************/
 int net_accept_main(void)
 {
-	tc_net_accept();
+	net_accept();
 	return 0;
 }

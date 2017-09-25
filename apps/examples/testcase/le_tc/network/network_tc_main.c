@@ -140,6 +140,9 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_NET_NETIFAPI
 	net_netifapi_main();
 #endif
+#ifdef CONFIG_TC_NET_RAW
+	net_raw_main();
+#endif
 #ifdef CONFIG_TC_NET_GETPEERNAME
 	net_getpeername_main();
 #endif
@@ -148,6 +151,9 @@ int network_tc_main(int argc, char *argv[])
 #endif
 #ifdef CONFIG_TC_NET_CORE
 	net_core_main(sock_tcp);
+#endif
+#ifdef CONFIG_TC_NET_IGMP
+	net_igmp_main();
 #endif
 	close(sock_tcp);
 	close(sock_tcp1);

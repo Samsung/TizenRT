@@ -173,18 +173,22 @@ static void tc_net_getsockname_len_sock_n(void)
 }
 
 /****************************************************************************
- * Name: getsockname()
+ * Name:net_getsockname_main
  ****************************************************************************/
 int net_getsockname_main(void)
 {
-	int s = socket(AF_INET, SOCK_STREAM, ZERO);
-	tc_net_getsockname_p(s);
+	int tcp_sock = socket(AF_INET, SOCK_STREAM, ZERO);
+	int udp_sock = socket(AF_INET, SOCK_DGRAM, ZERO);
+	int unix_sock = socket(AF_UNIX, SOCK_STREAM, ZERO);
+	tc_net_getsockname_p(tcp_sock);
 	tc_net_getsockname_n();
 	tc_net_getsockname_len_sock_n();
-	tc_net_getsockname_udp_p(s);
-	tc_net_getsockname_icmp_p(s);
+	tc_net_getsockname_udp_p(udp_sock);
+	tc_net_getsockname_icmp_p(tcp_sock);
 	tc_net_getsockname_close_n();
-	tc_net_getsockname_unix_p(s);
-	close(s);
+	tc_net_getsockname_unix_p(unix_sock);
+	close(tcp_sock);
+	close(udp_sock);
+	close(unix_sock);
 	return 0;
 }

@@ -161,33 +161,37 @@ void tc_net_shutdown_sock_n(int fd)
 }
 
 /**
-* @fn                   : shutdown_server
-* @brief                : Create a Tcp server.
-* @scenario             : Create a tcp server for checking shutdown api.
-* @API's covered        : socket,bind,listen,send,accept,close
-* @Preconditions        : socket file descriptor.
-* @Postconditions       : none
-* @return               : void
+* @fn                   :net_shutdown_server
+* @brief                :create a tcp server.
+* @scenario             :create a tcp server to test shutdown api.
+* @API's covered        :socket,bind,listen,send,accept,close
+* @Preconditions        :socket file descriptor.
+* @Postconditions       :none
+* @return               :void
 */
-void* shutdown_server(void *args)
+static void net_shutdown_server(void)
 {
 	int ConnectFD;
+	int ret;
 	char *msg = "Hello World !\n";
 	char buf[MAXRCVLEN];
 	struct sockaddr_in sa;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
-
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = INADDR_LOOPBACK;
 
-	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
-	listen(sock, BACKLOG);
+	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
+	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(sock));
+	ret = listen(sock, BACKLOG);
+	TC_ASSERT_NEQ_CLEANUP("listen", ret, NEG_VAL, close(sock));
 	shutdown_signal();
 
 	ConnectFD = accept(sock, NULL, NULL);
+	TC_ASSERT_NEQ_CLEANUP("accept", ConnectFD, NEG_VAL, close(sock));
 	tc_net_shutdown_send_p(ConnectFD);
 
 	send(ConnectFD, msg, sizeof(msg), 0);
@@ -199,25 +203,25 @@ void* shutdown_server(void *args)
 	tc_net_shutdown_sock_n(sock);
 	close(ConnectFD);
 	close(sock);
-	return NULL;
 }
 
 /**
-* @fn                   : shutdown_client
-* @brief                : This api create client.
-* @scenario             : Create tcp client.
-* @API's covered        : socket,connect,recvfrom,close
-* @Preconditions        : socket file descriptor.
-* @Postconditions       : none
-* @return               : void
+* @fn                   :net_shutdown_client
+* @brief                :create client.
+* @scenario             :create tcp client.
+* @API's covered        :socket,connect,recvfrom,close
+* @Preconditions        :socket file descriptor.
+* @Postconditions       :none
+* @return               :void
 */
-void* shutdown_client(void *args)
+static void net_shutdown_client(void)
 {
 	int len;
 	char buffer[MAXRCVLEN];
 	struct sockaddr_in dest;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
@@ -225,7 +229,8 @@ void* shutdown_client(void *args)
 	dest.sin_port = htons(PORTNUM);
 
 	shutdown_wait();
-	connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	int ret = connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+	TC_ASSERT_NEQ_CLEANUP("connect", ret, NEG_VAL, close(sock));
 
 	len = recv(sock, buffer, MAXRCVLEN, 0);
 	buffer[len] = '\0';
@@ -242,6 +247,35 @@ void* shutdown_client(void *args)
 
 	tc_net_shutdown_n();
 	close(sock);
+}
+
+/**
+* @fn                   :shutdown_server
+* @brief                :create a tcp server.
+* @scenario             :create a tcp server to test shutdown api.
+* @API's covered        :none.
+* @Preconditions        :none.
+* @Postconditions       :none
+* @return               :void*
+*/
+void* shutdown_server(void *args)
+{
+	net_shutdown_server();
+	return NULL;
+}
+
+/**
+* @fn                   :shutdown_client
+* @brief                :create client.
+* @scenario             :create tcp client.
+* @API's covered        :none.
+* @Preconditions        :none.
+* @Postconditions       :none
+* @return               :void*
+*/
+void* shutdown_client(void *args)
+{
+	net_shutdown_client();
 	return NULL;
 }
 
