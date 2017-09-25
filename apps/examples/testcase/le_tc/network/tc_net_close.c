@@ -21,63 +21,56 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-//#include <arch/board/board.h>
 #include <netutils/netlib.h>
 #include <sys/socket.h>
 
 #include "tc_internal.h"
 
 /**
-   * @testcase		   :tc_net_close_p
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :close()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_close_p
+* @brief               : close a file descriptor.
+* @scenario            : closes a file descriptor, so that it no longer refers to any file and may be reused.
+* @apicovered          : close()
+* @precondition        : socket file descriptor.
+* @postcondition       : none
+* @return              : void
+*/
 static void tc_net_close_p(void)
 {
-
-	int fd = -1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
+	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
 	int ret = close(fd);
 
-	TC_ASSERT_NEQ("close", ret, -1);
+	TC_ASSERT_NEQ("close", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
-   * @testcase		   :tc_net_close_n
-   * @brief		   :
-   * @scenario		   :
-   * @apicovered	   :close()
-   * @precondition	   :
-   * @postcondition	   :
-   */
+* @testcase            : tc_net_close_n
+* @brief               : close a file descriptor.
+* @scenario            : closes a file descriptor, so that it no longer refers to any file and may be reused.
+* @apicovered          : close()
+* @precondition        : none
+* @postcondition       : none
+* @return              : void
+*/
 static void tc_net_close_n(void)
 {
+	int ret = close(NEG_VAL);
 
-	int fd = -1;
-	int ret = close(fd);
-
-	TC_ASSERT_NEQ("close", ret, 0);
+	TC_ASSERT_EQ("close", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
  * Name: close()
  ****************************************************************************/
-
 int net_close_main(void)
 {
-
 	tc_net_close_p();
 	tc_net_close_n();
 	return 0;

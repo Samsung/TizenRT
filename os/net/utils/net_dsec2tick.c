@@ -91,6 +91,5 @@ int net_dsec2tick(int dsec)
 	 * maximum delay in 100's of milliseconds.  CLK_TCK/10 is then the number
 	 * of clock ticks in 100 milliseconds.
 	 */
-
 	return CLK_TCK * dsec / 10;
 }
