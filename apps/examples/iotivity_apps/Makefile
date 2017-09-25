@@ -192,13 +192,7 @@ context:
 endif
 
 .depend: Makefile $(SRCS)
-ifeq ($(CONFIG_ENABLE_IOTIVITY_CLOUD),y)
 	$(Q) ./mkfsdata.pl
-else
-ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
-	$(Q) ./mkfsdata.pl
-endif
-endif
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	@touch $@
 

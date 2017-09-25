@@ -90,6 +90,8 @@ OCEntityHandlerResult sec_OCEntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHa
 #define NET_DEVNAME "en"
 #elif defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
 #define NET_DEVNAME "wl"
+#elif defined(CONFIG_ARCH_BOARD_ARTIK053)
+#define NET_DEVNAME "wl"
 #else
 #error "undefined CONFIG_NET_<type>, check your .config"
 #endif
@@ -150,7 +152,7 @@ OCRepPayload *sec_getPayload(const char *uri, int64_t power, bool state)
 {
 	OCRepPayload *payload = OCRepPayloadCreate();
 	if (!payload) {
-		OIC_LOG(ERROR, TAG, "Failed to allocate Payload");
+		printf("Failed to allocate Payload\n");
 		return NULL;
 	}
 
@@ -165,7 +167,7 @@ OCRepPayload *sec_getPayload(const char *uri, int64_t power, bool state)
 OCRepPayload *sec_constructResponse(OCEntityHandlerRequest *ehRequest)
 {
 	if (ehRequest->payload && ehRequest->payload->type != PAYLOAD_TYPE_REPRESENTATION) {
-		OIC_LOG(ERROR, TAG, "Incoming payload not a representation");
+		printf("Incoming payload not a representation\n");
 		return NULL;
 	}
 
@@ -257,7 +259,7 @@ OCEntityHandlerResult sec_ProcessPostRequest(OCEntityHandlerRequest *ehRequest, 
 			OCRepPayloadSetPropString(respPLPost_led, "createduri", newLedUri);
 
 			if (0 == createLEDResource(newLedUri, &gLedInstance[gCurrLedInstance], false, 0)) {
-				OIC_LOG(INFO, TAG, "Created new LED instance");
+				printf("Created new LED instance\n");
 				gLedInstance[gCurrLedInstance].state = 0;
 				gLedInstance[gCurrLedInstance].power = 0;
 				gCurrLedInstance++;
@@ -284,7 +286,7 @@ OCEntityHandlerResult sec_ProcessPostRequest(OCEntityHandlerRequest *ehRequest, 
 		*payload = respPLPost_led;
 		ehResult = OC_EH_OK;
 	} else {
-		OIC_LOG_V(INFO, TAG, "Payload was NULL");
+		printf("Payload was NULL\n");
 		ehResult = OC_EH_ERROR;
 	}
 
@@ -293,7 +295,7 @@ OCEntityHandlerResult sec_ProcessPostRequest(OCEntityHandlerRequest *ehRequest, 
 
 OCEntityHandlerResult sec_OCEntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHandlerRequest *entityHandlerRequest, void *callbackParam)
 {
-	OIC_LOG_V(INFO, TAG, "Inside entity handler - flags: 0x%x", flag);
+	printf("Inside entity handler - flags: 0x%x\n", flag);
 	(void)callbackParam;
 	OCEntityHandlerResult ehResult = OC_EH_ERROR;
 
@@ -302,26 +304,26 @@ OCEntityHandlerResult sec_OCEntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHa
 
 	// Validate pointer
 	if (!entityHandlerRequest) {
-		OIC_LOG(ERROR, TAG, "Invalid request pointer");
+		printf("Invalid request pointer\n");
 		return OC_EH_ERROR;
 	}
 
 	OCRepPayload *payload = NULL;
 
 	if (flag & OC_REQUEST_FLAG) {
-		OIC_LOG(INFO, TAG, "Flag includes OC_REQUEST_FLAG");
+		printf("Flag includes OC_REQUEST_FLAG\n");
 		if (entityHandlerRequest) {
 			if (OC_REST_GET == entityHandlerRequest->method) {
-				OIC_LOG(INFO, TAG, "Received OC_REST_GET from client");
+				printf("Received OC_REST_GET from client\n");
 				ehResult = sec_ProcessGetRequest(entityHandlerRequest, &payload);
 			} else if (OC_REST_PUT == entityHandlerRequest->method) {
-				OIC_LOG(INFO, TAG, "Received OC_REST_PUT from client");
+				printf("Received OC_REST_PUT from client\n");
 				ehResult = sec_ProcessPutRequest(entityHandlerRequest, &payload);
 			} else if (OC_REST_POST == entityHandlerRequest->method) {
-				OIC_LOG(INFO, TAG, "Received OC_REST_POST from client");
+				printf("Received OC_REST_POST from client\n");
 				ehResult = sec_ProcessPostRequest(entityHandlerRequest, &response, &payload);
 			} else {
-				OIC_LOG_V(INFO, TAG, "Received unsupported method %d from client", entityHandlerRequest->method);
+				printf("Received unsupported method %d from client\n", entityHandlerRequest->method);
 				ehResult = OC_EH_ERROR;
 			}
 
@@ -339,7 +341,7 @@ OCEntityHandlerResult sec_OCEntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHa
 
 				// Send the response
 				if (OCDoResponse(&response) != OC_STACK_OK) {
-					OIC_LOG(ERROR, TAG, "Error sending response");
+					printf("Error sending response\n");
 					ehResult = OC_EH_ERROR;
 				}
 			}
@@ -399,7 +401,6 @@ FILE *secureserver_fopen(const char *path, const char *mode)
 	memset(path_buf, 0, sizeof(path_buf));
 	strcat(path_buf, STORAGE_MOUNT_POINT);
 	strcat(path_buf, path);
-	printf("%s\n", path_buf);
 	(void)path;
 	return fopen(path_buf, mode);
 }

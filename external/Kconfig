@@ -167,7 +167,7 @@ config IOTIVITY_RELEASE
 	---help---
 		select to build IoTivity in Release mode. Code will be optimized.
 
-config IOTIVITY_DEBUG
+config IOTIVITY_LOGGING
         bool "enable iotivity stack logs"
         default n
         depends on ENABLE_IOTIVITY
