@@ -652,6 +652,18 @@
 
 
 /* ---------- Debug options ---------- */
+#ifdef CONFIG_NET_LWIP_ASSERT
+#define LWIP_NOASSERT 0
+#else
+#define LWIP_NOASSERT 1
+#endif
+
+#ifdef CONFIG_NET_LWIP_ERROR
+#define LWIP_NOERROR 0
+#else
+#define LWIP_NOERROR 1
+#endif
+
 #ifdef CONFIG_NET_LWIP_DEBUG
 #define LWIP_DEBUG 1
 
