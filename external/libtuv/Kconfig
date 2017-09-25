@@ -3,4 +3,9 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-source "$EXTERNALDIR/iotjs/Kconfig.runtime"
+config LIBTUV
+	bool "libtuv"
+	default n
+	---help---
+		enable libtuv
+

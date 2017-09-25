@@ -3,4 +3,9 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-source "$EXTERNALDIR/iotjs/Kconfig.runtime"
+config AWS_SDK
+	bool "AWS IoT SDK"
+	default n
+	---help---
+		enable AWS IoT Device SDK
+
