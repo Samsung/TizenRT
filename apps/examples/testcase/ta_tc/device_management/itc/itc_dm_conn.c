@@ -117,7 +117,7 @@ static void itc_dm_conn_get_rssi_p(void)
 static void itc_dm_conn_set_get_tx_power_p(void)
 {
 	int ret;
-	int setVal = 1, getVal, defaultvalue;
+	int setVal = 20, getVal, defaultvalue;
 	// To get default value    dm_conn_get_tx_power(&defaultvalue);
 	ret = dm_conn_set_tx_power(&setVal);
 	TC_ASSERT_EQ("dm_conn_set_tx_power" , ret , DM_ERROR_NONE);
@@ -136,7 +136,7 @@ static void itc_dm_conn_set_get_tx_power_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static conn_cb linkEvent()
+static void linkEvent(void)
 {
 	printf("Set link event\n");
 }
