@@ -75,8 +75,10 @@ static void tc_net_ether_ntoa_p(int sock_udp)
  * Name: ether_ntoa()
  ****************************************************************************/
 
-int net_ether_main(int sock_udp)
+int net_ether_main(void)
 {
+	int sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
 	tc_net_ether_ntoa_p(sock_udp);
+	close(sock_udp);
 	return 0;
 }

@@ -102,12 +102,13 @@ static void tc_net_fcntl_ndelay_p(int fd)
  * Name: fcntl()
  ****************************************************************************/
 
-int net_fcntl_main(int fd)
+int net_fcntl_main()
 {
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	tc_net_fcntl_nonblock_p(fd);
 	tc_net_fcntl_p(fd);
 	tc_net_fcntl_n();
 	tc_net_fcntl_ndelay_p(fd);
-
+	close(fd);
 	return 0;
 }

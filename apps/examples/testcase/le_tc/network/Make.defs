@@ -104,6 +104,9 @@ endif
 ifeq ($(CONFIG_TC_NET_SHUTDOWN),y)
 CSRCS +=tc_net_shutdown.c
 endif
+ifeq ($(CONFIG_TC_NET_DHCPC),y)
+CSRCS +=tc_net_dhcpc.c
+endif
 ifeq ($(CONFIG_TC_NET_SELECT),y)
 CSRCS +=tc_net_select.c
 endif
@@ -164,5 +167,5 @@ endif
 # Include network build support
 
 DEPPATH += --dep-path le_tc/network
-VPATH += le_tc/network
+VPATH += :le_tc/network
 endif

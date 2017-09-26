@@ -48,8 +48,14 @@ extern int total_fail;
 #ifdef CONFIG_TC_NET_SOCKET
 int net_socket_main(void);
 #endif
+#ifdef CONFIG_TC_NET_GETSOCKOPT
+void net_getsockopt_main(void);
+#endif
+#ifdef CONFIG_TC_NET_SETSOCKOPT
+int net_setsockopt_main(void);
+#endif
 #ifdef CONFIG_TC_NET_CONNECT
-void net_connect_main(void);
+int net_connect_main(void);
 #endif
 #ifdef CONFIG_TC_NET_CLOSE
 int net_close_main(void);
@@ -64,10 +70,10 @@ int net_listen_main(void);
 int net_getsockname_main(void);
 #endif
 #ifdef CONFIG_TC_NET_FCNTL
-int net_fcntl_main(int fd);
+int net_fcntl_main(void);
 #endif
 #ifdef CONFIG_TC_NET_IOCTL
-int net_ioctl_main(int fd);
+int net_ioctl_main(void);
 #endif
 #ifdef CONFIG_TC_NET_ACCEPT
 int net_accept_main(void);
@@ -124,7 +130,7 @@ int net_mac_main(int sock, int sock1);
 int net_netdb_main(void);
 #endif
 #ifdef CONFIG_TC_NET_ETHER
-int net_ether_main(int sock_udp);
+int net_ether_main(void);
 #endif
 #ifdef CONFIG_TC_NET_NETBUF
 int tc_net_netbuf_main(void);
@@ -134,12 +140,6 @@ int net_netifapi_main(void);
 #endif
 #ifdef CONFIG_TC_NET_RAW
 int net_raw_main(void);
-#endif
-#ifdef CONFIG_TC_NET_GETSOCKOPT
-void net_getsockopt_main(void);
-#endif
-#ifdef CONFIG_TC_NET_SETSOCKOPT
-int net_setsockopt_main(void);
 #endif
 #ifdef CONFIG_TC_NET_IGMP
 int net_igmp_main(void);

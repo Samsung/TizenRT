@@ -161,8 +161,8 @@ void tc_net_connect(void)
  * Name: connect()
  ****************************************************************************/
 
-void net_connect_main(void)
+int net_connect_main(void)
 {
 	tc_net_connect();
-
+	return 0;
 }
