@@ -119,9 +119,6 @@ endif
 ifeq ($(CONFIG_TC_NET_NETDB),y)
 CSRCS +=tc_net_netdb.c
 endif
-ifeq ($(CONFIG_TC_NET_DUP),y)
-CSRCS +=tc_net_dup.c
-endif
 
 # Include network build support
 
