@@ -113,6 +113,21 @@ static const struct audio_ops_s g_audioops = {
 	alc5658_release				/* release        */
 };
 
+struct sample_rate_entry_s {
+	uint16_t samprate;
+	t_codec_init_script_entry *script;
+};
+
+static const struct sample_rate_entry_s g_sample_entry[] = {
+	{AUDIO_SAMP_RATE_8K, codec_init_pll_8K},
+	{AUDIO_SAMP_RATE_11K, codec_init_pll_11K},
+	{AUDIO_SAMP_RATE_16K, codec_init_pll_16K},
+	{AUDIO_SAMP_RATE_22K, codec_init_pll_22K},
+	{AUDIO_SAMP_RATE_32K, codec_init_pll_32K},
+	{AUDIO_SAMP_RATE_44K, codec_init_pll_44K},
+	{AUDIO_SAMP_RATE_48K, codec_init_pll_48K},
+};
+
 /****************************************************************************
  * Name: delay
  *
@@ -245,6 +260,25 @@ static void alc5658_exec_i2c_script(FAR struct alc5658_dev_s *priv, t_codec_init
 		ret = alc5658_modifyreg(priv, script[i].addr, script[i].val, 0xFFFF);
 		delay(script[i].delay);
 	}
+}
+
+/************************************************************************************
+ * Name: alc5658_get_sample_rate_script
+ *
+ * Description:
+ *  Check the given sample rate's valididation with alc5658 and return specific script
+ *
+ ************************************************************************************/
+static t_codec_init_script_entry *alc5658_get_sample_rate_script(uint16_t sample_rate)
+{
+	int count = sizeof(g_sample_entry) / sizeof(struct sample_rate_entry_s);
+	int i;
+	for (i = 0; i < count; i++) {
+		if (sample_rate == g_sample_entry[i].samprate) {
+			return g_sample_entry[i].script;
+		}
+	}
+	return NULL;
 }
 
 /************************************************************************************
@@ -400,7 +434,7 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 			 */
 
 			/* The types of audio units we implement */
-			caps->ac_controls.b[0] = AUDIO_TYPE_OUTPUT | AUDIO_TYPE_OUTPUT | AUDIO_TYPE_FEATURE | AUDIO_TYPE_PROCESSING;
+			caps->ac_controls.b[0] = AUDIO_TYPE_INPUT | AUDIO_TYPE_OUTPUT | AUDIO_TYPE_FEATURE | AUDIO_TYPE_PROCESSING;
 
 			break;
 
@@ -417,8 +451,8 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 
 		break;
 
-	/* Provide capabilities of our OUTPUT unit */
-
+	/* Provide capabilities of our INPUT & OUTPUT unit */
+	case AUDIO_TYPE_INPUT:
 	case AUDIO_TYPE_OUTPUT:
 
 		caps->ac_channels = 2;
@@ -428,7 +462,7 @@ static int alc5658_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 
 			/* Report the Sample rates we support */
 
-			caps->ac_controls.b[0] = AUDIO_SAMP_RATE_8K | AUDIO_SAMP_RATE_11K | AUDIO_SAMP_RATE_16K | AUDIO_SAMP_RATE_22K | AUDIO_SAMP_RATE_32K | AUDIO_SAMP_RATE_44K | AUDIO_SAMP_RATE_48K;
+			caps->ac_controls.b[0] = AUDIO_SAMP_RATE_TYPE_8K | AUDIO_SAMP_RATE_TYPE_11K | AUDIO_SAMP_RATE_TYPE_16K | AUDIO_SAMP_RATE_TYPE_22K | AUDIO_SAMP_RATE_TYPE_32K | AUDIO_SAMP_RATE_TYPE_44K | AUDIO_SAMP_RATE_TYPE_48K;
 			break;
 
 		case AUDIO_FMT_MP3:
@@ -601,6 +635,12 @@ static int alc5658_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			break;
 		}
 
+		/* Check validation of sample rate first */
+		if (alc5658_get_sample_rate_script(caps->ac_controls.hw[0]) == NULL) {
+			auddbg("ERROR: Not supported Format: %lld\n", caps->ac_controls.hw[0]);
+			return -EINVAL;
+		}
+
 		/* Save the current stream configuration */
 
 		priv->samprate = caps->ac_controls.hw[0];
@@ -673,7 +713,7 @@ static int alc5658_start(FAR struct audio_lowerhalf_s *dev)
 {
 
 	FAR struct alc5658_dev_s *priv = (FAR struct alc5658_dev_s *)dev;
-
+	t_codec_init_script_entry *sample;
 	if (priv->running) {
 		return OK;
 	}
@@ -681,8 +721,11 @@ static int alc5658_start(FAR struct audio_lowerhalf_s *dev)
 	audvdbg(" alc5658_start Entry\n");
 	alc5658_exec_i2c_script(priv, codec_init_inout_script1, sizeof(codec_init_inout_script1) / sizeof(t_codec_init_script_entry));
 
-	/* Fix me -- Need to support multiple samplerate */
-	alc5658_exec_i2c_script(priv, codec_init_pll_16K, sizeof(codec_init_pll_16K) / sizeof(t_codec_init_script_entry));
+	sample = alc5658_get_sample_rate_script(priv->samprate);
+	if (sample == NULL) {
+		return -EINVAL;
+	}
+	alc5658_exec_i2c_script(priv, sample, sizeof(sample) / sizeof(t_codec_init_script_entry));
 	alc5658_exec_i2c_script(priv, codec_init_inout_script2, sizeof(codec_init_inout_script2) / sizeof(t_codec_init_script_entry));
 
 	alc5658_setregs(priv);

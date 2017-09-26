@@ -196,20 +196,28 @@
 #define AUDIO_SUBFMT_MIDI_1         0x0d
 #define AUDIO_SUBFMT_MIDI_2         0x0e
 
-/* Supported Sampling Rates *************************************************/
+/* Supported Sampling Rates Type  *************************************************/
 
-#define AUDIO_SAMP_RATE_8K          0x0001
-#define AUDIO_SAMP_RATE_11K         0x0002
-#define AUDIO_SAMP_RATE_16K         0x0004
-#define AUDIO_SAMP_RATE_22K         0x0008
-#define AUDIO_SAMP_RATE_32K         0x0010
-#define AUDIO_SAMP_RATE_44K         0x0020
-#define AUDIO_SAMP_RATE_48K         0x0040
-#define AUDIO_SAMP_RATE_96K         0x0080
-#define AUDIO_SAMP_RATE_128K        0x0100
-#define AUDIO_SAMP_RATE_160K        0x0200
-#define AUDIO_SAMP_RATE_172K        0x0400
-#define AUDIO_SAMP_RATE_192K        0x0800
+#define AUDIO_SAMP_RATE_TYPE_NONE   0x0000
+#define AUDIO_SAMP_RATE_TYPE_8K     0x0001
+#define AUDIO_SAMP_RATE_TYPE_11K    0x0002
+#define AUDIO_SAMP_RATE_TYPE_16K    0x0004
+#define AUDIO_SAMP_RATE_TYPE_22K    0x0008
+#define AUDIO_SAMP_RATE_TYPE_32K    0x0010
+#define AUDIO_SAMP_RATE_TYPE_44K    0x0020
+#define AUDIO_SAMP_RATE_TYPE_48K    0x0040
+#define AUDIO_SAMP_RATE_TYPE_96K    0x0080
+
+/* Supported Sampling Rates value  *************************************************/
+
+#define AUDIO_SAMP_RATE_8K          8000
+#define AUDIO_SAMP_RATE_11K         11025
+#define AUDIO_SAMP_RATE_16K         16000
+#define AUDIO_SAMP_RATE_22K         22050
+#define AUDIO_SAMP_RATE_32K         32000
+#define AUDIO_SAMP_RATE_44K         44100
+#define AUDIO_SAMP_RATE_48K         48000
+#define AUDIO_SAMP_RATE_96K         96000
 
 /* Audio Sub-sampling Ratios  ***********************************************/
 
