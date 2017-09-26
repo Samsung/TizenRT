@@ -71,14 +71,14 @@ extern "C" {
  * Used in @ref pcm_open.
  * @ingroup libtinyalsa-pcm
  */
-#define PCM_OUT 0x00000000
+#define PCM_OUT 0x00000010
 
 /** Specifies that the PCM is an input.
  * May not be bitwise AND'd with @ref PCM_OUT.
  * Used in @ref pcm_open.
  * @ingroup libtinyalsa-pcm
  */
-#define PCM_IN 0x10000000
+#define PCM_IN 0x00000020
 
 /** Specifies that the PCM will use mmap read and write methods.
  * Used in @ref pcm_open.
@@ -261,6 +261,25 @@ struct pcm;
  */
 struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags, const struct pcm_config *config);
 
+/**
+* @brief Stops a PCM. Any data present in the buffers will be dropped.
+*
+* @details @b #include <tinyalsa/tinyalsa.h>
+* @param[in] pcm A PCM handle.
+* @returns On success, zero; on failure, a negative number.
+* @since Tizen RT v1.x
+*/
+int pcm_drop(struct pcm *pcm);
+
+/**
+* @brief Stop a PCM preserving pending frames.
+*
+* @details @b #include <tinyalsa/tinyalsa.h>
+* @param[in] pcm A PCM handle.
+* @returns On success, zero; on failure, a negative number.
+* @since Tizen RT v1.x
+*/
+int pcm_drain(struct pcm *pcm);
 
 /**
  * @brief Opens a PCM by it's name.
@@ -390,7 +409,7 @@ unsigned int pcm_bytes_to_frames(const struct pcm *pcm, unsigned int bytes);
  * @brief Gets the subdevice on which the pcm has been opened.
  *
  * @details @b #include <tinyalsa/tinyalsa.h>
- * @param[in] A PCM handle.
+ * @param[in] pcm A PCM handle.
  * @return The subdevice on which the pcm has been opened.
  * @since Tizen RT v1.1
  */
