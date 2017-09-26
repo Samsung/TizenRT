@@ -34,7 +34,7 @@
 #include "mosquitto_internal.h"
 #include "memory_mosq.h"
 
-#include <mqtt/mqtt_api.h>
+#include <network/mqtt/mqtt_api.h>
 
 /****************************************************************************
  * Pre-processor Definitions

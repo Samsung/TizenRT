@@ -28,7 +28,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <apps/shell/tash.h>
-#include <mqtt/mqtt_api.h>
+#include <network/mqtt/mqtt_api.h>
 #include "tc_common.h"
 
 #define UTC_MQTT_TOPIC "topic_utc"

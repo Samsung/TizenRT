@@ -58,8 +58,8 @@ CSRCS += mqtt_api.c
 
 CFLAGS += -I../external/mosquitto
 
-DEPPATH += --dep-path src/mqtt
-VPATH += :src/mqtt
+DEPPATH += --dep-path src/network/mqtt
+VPATH += :src/network/mqtt
 
 endif
 
