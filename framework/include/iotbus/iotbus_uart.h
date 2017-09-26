@@ -24,7 +24,7 @@
  */
 
 /**
- * @file iotbus_uart.h
+ * @file iotbus/iotbus_uart.h
  * @brief Iotbus APIs for UART
  */
 

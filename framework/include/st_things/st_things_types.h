@@ -21,7 +21,7 @@
  */
 
 /**
- * @file st_things_types.h
+ * @file st_things/st_things_types.h
  * @brief Provides structure definition for SmartThings Things SDK
  */
 

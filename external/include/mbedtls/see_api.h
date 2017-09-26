@@ -15,7 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/// @file see/see_api.h
+/// @file mbedtls/see_api.h
 /// @brief SEE api is supporting security api for using secure storage.
 
 #ifndef __SEE_API_H

@@ -57,7 +57,7 @@
  * @{
  */
 
-/// @file select.h
+/// @file sys/select.h
 /// @brief synchronous I/O multiplexing APIs
 
 #ifndef __INCLUDE_SYS_SELECT_H

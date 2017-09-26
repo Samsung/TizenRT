@@ -24,7 +24,7 @@
  */
 
 /**
- * @file iotbus_gpio.h
+ * @file iotbus/iotbus_gpio.h
  * @brief Iotbus APIs for GPIO
  */
 

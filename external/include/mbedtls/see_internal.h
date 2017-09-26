@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file see/see_internal.h
+/// @file mbedtls/see_internal.h
 /// @brief SEE api for using in TLS internal.
 
 #ifndef __SEE_INTERNAL_H

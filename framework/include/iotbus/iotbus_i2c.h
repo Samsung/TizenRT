@@ -24,7 +24,7 @@
  */
 
 /**
- * @file iotbus_i2c.h
+ * @file iotbus/iotbus_i2c.h
  * @brief Iotbus APIs for I2C
  */
 
