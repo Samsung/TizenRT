@@ -120,7 +120,7 @@ main()
 			;;
 
 		OS|os)
-			echo "OS only :"
+			echo "OS :"
 
 			# check existence of os binary
 			if [ ! -f "${OUTPUT_BINARY_PATH}/tinyara_head.bin" ]; then
