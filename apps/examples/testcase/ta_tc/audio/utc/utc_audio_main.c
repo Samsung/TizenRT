@@ -653,7 +653,7 @@ static void utc_audio_pcm_readi_p(void)
 	int frames_read;
 	int remain;
 
-	buffer = malloc(pcm_get_buffer_size(g_pcm));
+	buffer = malloc(pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm)));
 	TC_ASSERT_NEQ_CLEANUP("pcm_readi", buffer, NULL, clean_all_data(0, 0));
 
 	fd = open(AUDIO_TEST_FILE, O_RDWR | O_CREAT);
@@ -699,7 +699,7 @@ static void utc_audio_pcm_readi_n(void)
 	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
 	TC_ASSERT_GT("pcm_readi", pcm_get_file_descriptor(g_pcm), 0);
 
-	size = pcm_get_buffer_size(g_pcm);
+	size = pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm));
 	buffer = (char *)malloc(size);
 	TC_ASSERT_GT_CLEANUP("pcm_readi", buffer, 0, clean_all_data(0, NULL));
 
@@ -738,7 +738,7 @@ static void utc_audio_pcm_writei_p(void)
 	g_pcm = pcm_open(0, 0, PCM_OUT, NULL);
 	TC_ASSERT_GT("pcm_writei", pcm_is_ready(g_pcm), 0);
 
-	size = pcm_get_buffer_size(g_pcm);
+	size = pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm));
 	buffer = malloc(size);
 	TC_ASSERT_NEQ_CLEANUP("pcm_writei", buffer, NULL, clean_all_data(0, NULL));
 
@@ -780,7 +780,7 @@ static void utc_audio_pcm_writei_n(void)
 	g_pcm = pcm_open(0, 0, PCM_IN, NULL);
 	TC_ASSERT_GT("pcm_writei", pcm_get_file_descriptor(g_pcm), 0);
 
-	size = pcm_get_buffer_size(g_pcm);
+	size = pcm_frames_to_bytes(g_pcm, pcm_get_buffer_size(g_pcm));
 	buffer = (char *)malloc(size);
 	TC_ASSERT_NEQ_CLEANUP("pcm_writei", buffer, 0, clean_all_data(0, NULL));
 

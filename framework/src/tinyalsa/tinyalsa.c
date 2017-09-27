@@ -111,11 +111,11 @@
 #define MILLI_TO_NANO	1000000
 
 #ifndef CONFIG_AUDIO_NUM_BUFFERS
-#define CONFIG_AUDIO_NUM_BUFFERS  2
+#define CONFIG_AUDIO_NUM_BUFFERS  8
 #endif
 
-#ifndef CONFIG_AUDIO_BUFFER_NUMBYTES
-#define CONFIG_AUDIO_BUFFER_NUMBYTES  8192
+#ifndef CONFIG_AUDIO_BUFSIZE
+#define CONFIG_AUDIO_BUFSIZE  2048
 #endif
 
 #define PCM_ERROR_MAX 128
@@ -153,12 +153,7 @@ struct pcm {
 #endif
 	mqd_t mq;					/* Message queue for the playthread */
 	char mqname[16];			/* Name of our message queue */
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-	struct ap_buffer_info_s buf_info;
 	struct ap_buffer_s **pBuffers;
-#else
-	struct ap_buffer_s *pBuffers[CONFIG_AUDIO_NUM_BUFFERS];
-#endif
 	unsigned int bufPtr;
 	struct ap_buffer_s *nextBuf;
 	unsigned int nextSize;
@@ -295,6 +290,7 @@ const char *pcm_get_error(const struct pcm *pcm)
 int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 {
 	struct audio_caps_desc_s cap_desc;
+	struct ap_buffer_info_s buf_info;
 	int ret;
 
 	if (pcm == NULL) {
@@ -303,6 +299,8 @@ int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 		config = &pcm->config;
 		pcm->config.channels = 2;
 		pcm->config.rate = 16000;
+		pcm->config.period_size = 1024;
+		pcm->config.period_count = 8;
 		pcm->config.format = PCM_FORMAT_S16_LE;
 		pcm->config.start_threshold = 0;
 		pcm->config.stop_threshold = 0;
@@ -310,6 +308,7 @@ int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 	} else {
 		pcm->config = *config;
 	}
+
 
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	cap_desc.session = pcm->session;
@@ -328,6 +327,19 @@ int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 	if (ret < 0) {
 		return oops(pcm, -errno, "AUDIOIOC_CONFIGURE ioctl failed");
 	}
+
+	/* Gain buffer size and count through the ioctl */
+	buf_info.buffer_size = config->period_size;
+	buf_info.nbuffers = config->period_count;
+	if (ioctl(pcm->fd, AUDIOIOC_GETBUFFERINFO, (unsigned long)&buf_info) < 0) {
+		/* Driver doesn't report it's buffer size.  Use our default. */
+		buf_info.buffer_size = CONFIG_AUDIO_BUFSIZE;
+		buf_info.nbuffers = CONFIG_AUDIO_NUM_BUFFERS;
+	}
+
+	pcm->config.period_size = buf_info.buffer_size;
+	pcm->config.period_count = buf_info.nbuffers;
+	pcm->buffer_size = pcm->config.period_size;
 
 	return 0;
 }
@@ -468,7 +480,7 @@ int pcm_get_htimestamp(struct pcm *pcm, unsigned int *avail, struct timespec *ts
  */
 int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 {
-	int nbytes;
+	unsigned int nbytes;
 	struct audio_buf_desc_s bufdesc;
 	struct ap_buffer_s *apb;
 	struct audio_msg_s msg;
@@ -483,22 +495,13 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 		return -EINVAL;
 	}
 
+	if (frame_count > pcm->config.period_size) {
+		frame_count = pcm->config.period_size;
+	}
+
 	nbytes = pcm_frames_to_bytes(pcm, frame_count);
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-	if (nbytes > pcm->config.period_size) {
-		nbytes = pcm->config.period_size;
-	}
-
-	if (pcm->bufPtr < pcm->config.period_count)
-#else
-	if (nbytes > CONFIG_AUDIO_BUFFER_NUMBYTES) {
-		nbytes = CONFIG_AUDIO_BUFFER_NUMBYTES;
-	}
-
-	if (pcm->bufPtr < CONFIG_AUDIO_NUM_BUFFERS)
-#endif
-	{
+	if (pcm->bufPtr < pcm->config.period_count)	{
 		/* If we have empty buffers, fill them first */
 		memcpy(pcm->pBuffers[pcm->bufPtr]->samp, data, nbytes);
 		apb = pcm->pBuffers[pcm->bufPtr];
@@ -561,7 +564,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 	unsigned int size;
 	int prio;
 
-	if (pcm == NULL || data == NULL) {
+	if (pcm == NULL || data == NULL || frame_count == 0) {
 		return -EINVAL;
 	}
 
@@ -569,19 +572,14 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 		return -EINVAL;
 	}
 
+	if (frame_count < pcm->config.period_size) {
+		return -EINVAL;
+	}
+
 	nbytes = pcm_frames_to_bytes(pcm, frame_count);
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-	if (nbytes < pcm->config.period_size) {
-		return -EINVAL;
-	}
-	bufdesc.numbytes = pcm->config.period_size;
-#else
-	if (nbytes < CONFIG_AUDIO_BUFFER_NUMBYTES) {
-		return -EINVAL;
-	}
-	bufdesc.numbytes = CONFIG_AUDIO_BUFFER_NUMBYTES;
-#endif
+	bufdesc.numbytes = pcm_frames_to_bytes(pcm, (pcm->buffer_size));
+
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	bufdesc.session = pcm->session;
 #endif
@@ -756,24 +754,17 @@ int pcm_close(struct pcm *pcm)
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	buf_desc.session = pcm->session;
 #endif
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-	if (pBuffers != NULL) {
+
+	if (pcm->pBuffers != NULL) {
 		for (x = 0; x < pcm->config.period_count; x++) {
 			if (pcm->pBuffers[x] != NULL) {
 				buf_desc.u.pBuffer = pcm->pBuffers[x];
-				ioctl(pPlayer->devFd, AUDIOIOC_FREEBUFFER, (unsigned long)&buf_desc);
+				ioctl(pcm->fd, AUDIOIOC_FREEBUFFER, (unsigned long)&buf_desc);
 			}
 		}
-		free(pBuffers);
+		free(pcm->pBuffers);
 	}
-#else
-	for (x = 0; x < CONFIG_AUDIO_NUM_BUFFERS; x++) {
-		if (pcm->pBuffers[x] != NULL) {
-			buf_desc.u.pBuffer = pcm->pBuffers[x];
-			ioctl(pcm->fd, AUDIOIOC_FREEBUFFER, (unsigned long)&buf_desc);
-		}
-	}
-#endif
+
 	mq_unlink(pcm->mqname);
 
 	if (pcm->fd >= 0) {
@@ -890,7 +881,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 		goto fail_close;
 	}
 
-	/* Create a message queue for the playthread */
+	/* Create a message queue */
 	attr.mq_maxmsg = 16;
 	attr.mq_msgsize = sizeof(struct audio_msg_s);
 	attr.mq_curmsgs = 0;
@@ -909,19 +900,8 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	/* Register our message queue with the audio device */
 	ioctl(pcm->fd, AUDIOIOC_REGISTERMQ, (unsigned long)pcm->mq);
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-	if (ioctl(pcm->fd, AUDIOIOC_GETBUFFERINFO, (unsigned long)&buf_info) < 0) {
-		/* Driver doesn't report it's buffer size.  Use our default. */
-		buf_info.buffer_size = CONFIG_AUDIO_BUFFER_NUMBYTES;
-		buf_info.nbuffers = CONFIG_AUDIO_NUM_BUFFERS;
-	}
-
-	pcm->config.period_size = buf_info.buffer_size;
-	pcm->config.period_count = buf_info.nbuffers;
-	pcm->buffer_size = pcm->config.period_size;
-
 	/* Create array of pointers to buffers */
-	pcm->pBuffers = (FAR struct ap_buffer_s **)malloc(buf_info.nbuffers * sizeof(FAR void *));
+	pcm->pBuffers = (FAR struct ap_buffer_s **)malloc(pcm->config.period_count * sizeof(FAR void *));
 	if (pcm->pBuffers == NULL) {
 		/* Error allocating memory for buffer storage! */
 		ret = -ENOMEM;
@@ -930,34 +910,15 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 
 	/* Create our audio pipeline buffers to use for queueing up data */
 
-	for (x = 0; x < buf_info.nbuffers; x++) {
+	for (x = 0; x < pcm->config.period_count; x++) {
 		pcm->pBuffers[x] = NULL;
-	}
-
-	for (x = 0; x < buf_info.nbuffers; x++)
-#else							/* CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFER */
-
-	pcm->config.period_size = CONFIG_AUDIO_BUFFER_NUMBYTES;
-	pcm->config.period_count = CONFIG_AUDIO_NUM_BUFFERS;
-	pcm->buffer_size = pcm->config.period_size;
-
-	for (x = 0; x < CONFIG_AUDIO_NUM_BUFFERS; x++) {
-		pcm->pBuffers[x] = NULL;
-	}
-
-	for (x = 0; x < CONFIG_AUDIO_NUM_BUFFERS; x++)
-#endif							/* CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFER */
-	{
 		/* Fill in the buffer descriptor struct to issue an alloc request */
 
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 		buf_desc.session = pcm->session;
 #endif
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-		buf_desc.numbytes = buf_info.buffer_size;
-#else
-		buf_desc.numbytes = CONFIG_AUDIO_BUFFER_NUMBYTES;
-#endif
+
+		buf_desc.numbytes = pcm_frames_to_bytes(pcm, (pcm->buffer_size));
 		buf_desc.u.ppBuffer = &pcm->pBuffers[x];
 
 		ret = ioctl(pcm->fd, AUDIOIOC_ALLOCBUFFER, (unsigned long)&buf_desc);
@@ -1009,35 +970,23 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 	return pcm;
 
 fail_cleanup_buffers:
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 	if (pcm->pBuffers != NULL) {
-		for (x = 0; x < buf_info.nbuffers; x++) {
+		for (x = 0; x < pcm->config.period_count; x++) {
 			/* Fill in the buffer descriptor struct to issue a free request */
 			if (pcm->pBuffers[x] != NULL) {
-				buf_desc.u.pBuffer = pBuffers[x];
-				ioctl(pPlayer->devFd, AUDIOIOC_FREEBUFFER, (unsigned long)&buf_desc);
+				buf_desc.u.pBuffer = pcm->pBuffers[x];
+				ioctl(pcm->fd, AUDIOIOC_FREEBUFFER, (unsigned long)&buf_desc);
 			}
 		}
 		/* Free the pointers to the buffers */
 		free(pcm->pBuffers);
 	}
-#else
-	for (x = 0; x < CONFIG_AUDIO_NUM_BUFFERS; x++) {
-		/* Fill in the buffer descriptor struct to issue a free request */
-		if (pcm->pBuffers[x] != NULL) {
-			buf_desc.u.pBuffer = pcm->pBuffers[x];
-			ioctl(pcm->fd, AUDIOIOC_FREEBUFFER, (unsigned long)&buf_desc);
-		}
-	}
-#endif
-
 	pcm->bufPtr = 0;
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 fail_after_mq:
 	mq_close(pcm->mq);			/* Close the message queue */
 	mq_unlink(pcm->mqname);		/* Unlink the message queue */
-#endif
+
 fail_close:
 	close(pcm->fd);
 	pcm->fd = -1;
@@ -1125,14 +1074,8 @@ int pcm_start(struct pcm *pcm)
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 		bufdesc.session = pcm->session;
 #endif
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-		bufdesc.numbytes = pcm->config.period_size;
-		for (pcm->bufPtr = 0; pcm->bufPtr < buf_info.nbuffers; pcm->bufPtr++)
-#else
-		bufdesc.numbytes = CONFIG_AUDIO_BUFFER_NUMBYTES;
-		for (pcm->bufPtr = 0; pcm->bufPtr < CONFIG_AUDIO_NUM_BUFFERS; pcm->bufPtr++)
-#endif
-		{
+		bufdesc.numbytes = pcm_frames_to_bytes(pcm, pcm->buffer_size);
+		for (pcm->bufPtr = 0; pcm->bufPtr < pcm->config.period_count; pcm->bufPtr++) {
 			bufdesc.u.pBuffer = pcm->pBuffers[pcm->bufPtr];
 			if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
 				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed");
@@ -1267,12 +1210,8 @@ int pcm_wait(struct pcm *pcm, int timeout)
 	if (pcm == NULL) {
 		return -EINVAL;
 	}
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
-	if ((pcm->flags & PCM_OUT) && pcm->bufPtr < pcm->config.period_count)
-#else
-	if ((pcm->flags & PCM_OUT) && pcm->bufPtr < CONFIG_AUDIO_NUM_BUFFERS)
-#endif
-	{
+
+	if ((pcm->flags & PCM_OUT) && pcm->bufPtr < pcm->config.period_count) {
 		/* In playback scenario, if audio buffers are available, return immediately */
 		pcm->nextBuf = pcm->pBuffers[pcm->bufPtr];
 		pcm->nextSize = pcm->pBuffers[pcm->bufPtr]->nmaxbytes;

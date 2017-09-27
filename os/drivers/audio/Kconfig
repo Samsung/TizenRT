@@ -52,6 +52,10 @@ config AUDIO_ALC5658
 
 if AUDIO_ALC5658
 
+config ALC5658_I2S_TIMEOUT
+	int "Timeout values for I2S send & receive"
+	default 100
+	
 config ALC5658_INITVOLUME
 	int "ALC5658 initial volume setting"
 	default 250
@@ -63,7 +67,7 @@ config ALC5658_INFLIGHT
 
 config ALC5658_BUFFER_SIZE
 	int "ALC5658 preferred buffer size"
-	default 8192
+	default 2048
 	depends on AUDIO_DRIVER_SPECIFIC_BUFFERS
 
 config ALC5658_NUM_BUFFERS

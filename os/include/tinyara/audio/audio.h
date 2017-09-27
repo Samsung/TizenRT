@@ -373,17 +373,16 @@ struct audio_info_s {
 };
 
 /* This structure describes the preferred number and size of
- * audio pipeline buffers for the audio device.  Each device
- * may have unique needs regarding size and qty of buffers,
+ * audio pipeline buffers based on framesize for the audio device.
+ * Each device may have unique needs regarding size and qty of buffers,
  * so this info is queried from the lower-half driver.
  */
 
-#ifdef CONFIG_AUDIO_DRIVER_SPECIFIC_BUFFERS
 struct ap_buffer_info_s {
 	apb_samp_t nbuffers;		/* Preferred qty of buffers */
 	apb_samp_t buffer_size;		/* Preferred size of the buffers */
 };
-#endif
+
 
 /* This structure describes an Audio Pipeline Buffer */
 
