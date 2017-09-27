@@ -782,7 +782,7 @@ int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc)
 			ret = readbytes(priv, pmsg);
 			if (ret < pmsg->length) {
 				if (ret >= 0) {
-					return -EIO;
+					ret = -EIO;
 				}
 				goto fail;
 			}
