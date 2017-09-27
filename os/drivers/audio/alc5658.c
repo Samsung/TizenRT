@@ -678,11 +678,34 @@ static int alc5658_start(FAR struct audio_lowerhalf_s *dev)
 		return OK;
 	}
 
-	audvdbg(" alc5658_start Entry\n");
+	audvdbg(" alc5658_start with samp rate 0x%x\n", priv->samprate);
 	alc5658_exec_i2c_script(priv, codec_init_inout_script1, sizeof(codec_init_inout_script1) / sizeof(t_codec_init_script_entry));
 
-	/* Fix me -- Need to support multiple samplerate */
-	alc5658_exec_i2c_script(priv, codec_init_pll_16K, sizeof(codec_init_pll_16K) / sizeof(t_codec_init_script_entry));
+	switch (priv->samprate) {
+	case AUDIO_SAMP_RATE_8K:
+		alc5658_exec_i2c_script(priv, codec_init_pll_8K, sizeof(codec_init_pll_8K) / sizeof(t_codec_init_script_entry));
+		break;
+	case AUDIO_SAMP_RATE_11K:
+		alc5658_exec_i2c_script(priv, codec_init_pll_11K, sizeof(codec_init_pll_11K) / sizeof(t_codec_init_script_entry));
+		break;
+	case AUDIO_SAMP_RATE_16K:
+		alc5658_exec_i2c_script(priv, codec_init_pll_16K, sizeof(codec_init_pll_16K) / sizeof(t_codec_init_script_entry));
+		break;
+	case AUDIO_SAMP_RATE_22K:
+		alc5658_exec_i2c_script(priv, codec_init_pll_22K, sizeof(codec_init_pll_22K) / sizeof(t_codec_init_script_entry));
+		break;
+	case AUDIO_SAMP_RATE_32K:
+		alc5658_exec_i2c_script(priv, codec_init_pll_32K, sizeof(codec_init_pll_32K) / sizeof(t_codec_init_script_entry));
+		break;
+	case AUDIO_SAMP_RATE_44K:
+		alc5658_exec_i2c_script(priv, codec_init_pll_44K, sizeof(codec_init_pll_44K) / sizeof(t_codec_init_script_entry));
+		break;
+	case AUDIO_SAMP_RATE_48K:
+		alc5658_exec_i2c_script(priv, codec_init_pll_48K, sizeof(codec_init_pll_48K) / sizeof(t_codec_init_script_entry));
+	default:
+		alc5658_exec_i2c_script(priv, codec_init_pll_16K, sizeof(codec_init_pll_16K) / sizeof(t_codec_init_script_entry));
+	};
+
 	alc5658_exec_i2c_script(priv, codec_init_inout_script2, sizeof(codec_init_inout_script2) / sizeof(t_codec_init_script_entry));
 
 	alc5658_setregs(priv);
