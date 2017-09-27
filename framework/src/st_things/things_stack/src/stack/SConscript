@@ -1,0 +1,309 @@
+Import('env')
+
+stack_env = env.Clone()
+
+target_os = env.get('TARGET_OS')
+things_device = env.get('TARGET_DEVICE')
+arch = env.get('TARGET_ARCH')
+src_dir = env.get('SRC_DIR')
+rel = env.get('RELEASE')
+build_dir = env.get('BUILD_DIR')
+things_device_version = env.get('DEVICE_VERSION')
+secured = env.get('SECURED')
+svr_enc = env.get('SVR_ENC')
+ft = env.get('FT_ON')
+
+print "[THINGSSTACK] Start Building Stack"
+if 0 == rel:
+	BUILD_MODE = "debug"
+else:
+	BUILD_MODE = "release"
+
+print "[THINGSSTACK] BUILD_MODE %s"% BUILD_MODE
+
+if target_os not in ['arduino', 'windows', 'winrt']:
+	stack_env.AppendUnique(CPPDEFINES  = ['WITH_POSIX'])
+	stack_env.AppendUnique(CFLAGS = ['-std=gnu99'])
+
+if target_os not in ['windows', 'winrt']:
+	stack_env.AppendUnique(CFLAGS = ['-Wall'])
+
+if 'LITE' in things_device_version:
+	if target_os in ['tizen']:
+		print "[THINGSSTACK] build for tizen"
+		stack_env.AppendUnique(CFLAGS = [ '-D__TIZEN__'])
+		stack_env.AppendUnique(CXXFLAGS = ['-D__TIZEN__'])
+
+	if env.get('RELEASE'):
+		print "[THINGSSTACK] without logging"
+		env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+	else:
+		print "[THINGSSTACK] include logging"
+		env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+	if env.get('LOGGING'):
+		print "[THINGSSTACK] include logging"
+		env.AppendUnique(CPPDEFINES = ['TB_LOG'])
+
+
+	if arch in ['x86', 'x86_64']:
+		print "[THINGSSTACK] build for x86/x86_64"
+	elif 'mips' == arch:
+		print "[THINGSSTACK] build for mips"
+		stack_env.AppendUnique(CXXFLAGS = ['-D__MIPS__'])
+		stack_env.AppendUnique(CFLAGS = [ '-D__MIPS__'])
+
+	if svr_enc == '1':
+		stack_env.AppendUnique(CFLAGS = [ '-D_SVR_ENC_'])
+		stack_env.AppendUnique(CXXFLAGS = ['-D_SVR_ENC_'])
+
+	if secured not in ['1', '2']:
+		print "[THINGSSTACK] SECURED MODE = 0"
+		# if 'tizen' in target_os:
+		# 	stack_env.AppendUnique(LIBS = ['dl', 'pthread', 'octbstack', 'connectivity_abstraction','resource_directory'])
+		stack_env.AppendUnique(CPPDEFINES = ['ESWIFI','ENROLLEE_SOFTAP'])
+		stack_env.AppendUnique(LIBPATH = [build_dir, src_dir + '/lib/' + target_os + "/" + arch ])
+		stack_env.AppendUnique(CPPPATH = [
+			src_dir + '/../iotivity/resource/oc_logger/include/targets',
+			src_dir + '/../iotivity/resource/oc_logger/include',
+			src_dir + '/../iotivity/resource/include',
+			src_dir + '/../iotivity/resource/csdk/stack/include',
+			src_dir + '/../iotivity/resource/csdk/logger/include',
+			src_dir + '/../iotivity/resource/csdk/connectivity/api',
+			src_dir + '/../iotivity/resource/csdk/connectivity/inc',
+			src_dir + '/../iotivity/resource/csdk/connectivity/common/inc',
+			src_dir + '/../iotivity/resource/csdk/connectivity/util/inc',
+			src_dir + '/../iotivity/resource/csdk/resource-directory/include',
+			src_dir + '/../iotivity/resource/csdk/connectivity/lib/libcoap-4.1.1/include/coap',
+			src_dir + '/../iotivity/resource/c_common',
+			src_dir + '/../iotivity/resource/c_common/oic_malloc/include',
+			src_dir + '/../iotivity/resource/c_common/oic_string/include',
+			src_dir + '/../iotivity/resource/c_common/oic_time/include',
+			src_dir + '/../iotivity/resource/c_common/ocrandom/include',
+			src_dir + '/../iotivity/extlibs/cjson',
+			src_dir + '/../iotivity/extlibs/tinycbor/tinycbor/src',
+			src_dir + '/../iotivity/extlibs/cjson',
+			src_dir + '/../iotivity/service/notification/include',
+			src_dir + '/../iotivity/service/notification/src/common',
+			src_dir + '/../iotivity/service/notification/src/provider',
+			src_dir + '/src/common/notification/inc',
+			src_dir + '/src/common/logging/inc',
+			src_dir + '/src/common/memory/inc',
+			src_dir + '/src/common/utils/inc',
+			src_dir + '/src/common/framework/inc',
+			src_dir + '/src/common/inc',
+			src_dir + '/src/common/easy-setup',
+			src_dir + '/src/common/easy-setup/inc',
+			src_dir + '/src/common/cloud/inc',
+			src_dir + '/inc',
+			src_dir + '/inc/iotivity',
+			src_dir + '/inc/iotivity/tinycbor/tinycbor/src',
+			src_dir + '/inc/iotivity/cjson'
+		])
+		libthingsstack_src = [
+			src_dir + '/src/common/utils/oiclist.c',
+			src_dir + '/src/common/utils/oicqueue.c',
+			src_dir + '/src/common/utils/oichashmap.c',
+			src_dir + '/src/common/utils/oicstringutil.c',
+			src_dir + '/src/common/utils/oicnetwork.c',
+			src_dir + '/src/common/utils/oicping.c',
+			src_dir + '/src/common/utils/oicthread.c',
+			src_dir + '/src/common/utils/oicwaithandler.c',
+			src_dir + '/src/common/logging/thingslogger.c',
+			src_dir + '/src/common/memory/thingsmalloc.c',
+			src_dir + '/src/common/framework/things_resource.c',
+			src_dir + '/src/common/framework/things_server_builder.c',
+			src_dir + '/src/common/framework/things_req_handler.c',
+			src_dir + '/src/common/framework/oicrmbundleloader.c',
+			src_dir + '/src/common/framework/things_data_manager.c',
+			src_dir + '/src/common/easy-setup/easysetup.c',
+			src_dir + '/src/common/easy-setup/resourcehandler.c',
+			src_dir + '/src/common/easy-setup/easysetup_manager.c',
+			src_dir + '/src/common/cloud/cloud_connector.c',
+			src_dir + '/src/common/cloud/cloud_manager.c',
+			src_dir + '/src/common/cloud/cloud_evtpend.c',
+			src_dir + '/src/common/notification/notification_manager.c',
+			src_dir + '/src/stack/things_stack.c'
+		]
+	else:
+		print "[THINGSSTACK] SECURED MODE = 1"
+		stack_env.AppendUnique(CXXFLAGS = ['-D__SECURED__','-D__WITH_DTLS__','-D__WITH_TLS__','-DTB_LOG'])
+		stack_env.AppendUnique(CFLAGS = [ '-D__SECURED__','-D__WITH_DTLS__','-D__WITH_TLS__','-DTB_LOG'])
+		if 'tizen' in target_os:
+			stack_env.AppendUnique(LIBS = ['connectivity_abstraction', 'notification_provider'])
+		#stack_env.AppendUnique(LIBS = ['ocpmapi'])
+		stack_env.AppendUnique(CPPDEFINES = ['ESWIFI','ENROLLEE_SOFTAP'])
+		stack_env.AppendUnique(LIBPATH = [build_dir, src_dir + '/lib/' + target_os + "/" + arch + '/Secured'])
+
+		# if SVR DB file encryption is enabled
+		if svr_enc == '1':
+			print "[THINGSSTACK] SVR DB encryption = 1"
+			stack_env.AppendUnique(CPPPATH = [
+				src_dir + '/../iotivity/resource/oc_logger/include',
+				src_dir + '/../iotivity/resource/include',
+				src_dir + '/../iotivity/resource/csdk/stack/include',
+				src_dir + '/../iotivity/resource/csdk/logger/include',
+				src_dir + '/../iotivity/resource/csdk/connectivity/api',
+				src_dir + '/../iotivity/resource/csdk/connectivity/inc',
+				src_dir + '/../iotivity/resource/csdk/connectivity/inc/pkix',
+				src_dir + '/../iotivity/resource/csdk/connectivity/common/inc',
+				src_dir + '/../iotivity/resource/csdk/connectivity/util/inc',
+				src_dir + '/../iotivity/resource/csdk/resource-directory/include',
+				src_dir + '/../iotivity/resource/csdk/connectivity/lib/libcoap-4.1.1/include',
+				src_dir + '/../iotivity/resource/c_common',
+				src_dir + '/../iotivity/resource/c_common/oic_malloc/include',
+				src_dir + '/../iotivity/resource/c_common/oic_string/include',
+				src_dir + '/../iotivity/resource/c_common/oic_time/include',
+				src_dir + '/../iotivity/resource/c_common/ocrandom/include',
+				src_dir + '/../iotivity/resource/csdk/security/include',
+				src_dir + '/../iotivity/resource/csdk/security/include/internal',
+				src_dir + '/../iotivity/resource/csdk/security/provisioning/include',
+				src_dir + '/../iotivity/resource/csdk/security/provisioning/include/internal',
+				src_dir + '/../iotivity/resource/csdk/security/provisioning/include/oxm',
+				src_dir + '/../iotivity/extlibs/cjson',
+				src_dir + '/../iotivity/extlibs/mbedtls/mbedtls/include',
+				src_dir + '/../iotivity/extlibs/tinycbor/tinycbor/src',
+				src_dir + '/../iotivity/extlibs/cjson',
+				src_dir + '/../iotivity/service/notification/include',
+				src_dir + '/../iotivity/service/notification/src/common',
+				src_dir + '/../iotivity/service/notification/src/provider',
+				src_dir + '/src/common/notification/inc',
+				src_dir + '/src/common/logging/inc',
+				src_dir + '/src/common/memory/inc',
+				src_dir + '/src/common/utils/inc',
+				src_dir + '/src/common/framework/inc',
+				src_dir + '/src/common/security/securestorage/include/internal',
+				src_dir + '/src/common/security/securestorage/include',
+				src_dir + '/src/common/security/ssMutex/include',
+				src_dir + '/src/common/security/ssCrypto/include',
+				src_dir + '/src/common/inc',
+				src_dir + '/src/common/easy-setup',
+				src_dir + '/src/common/easy-setup/inc',
+				src_dir + '/src/common/cloud/inc',
+				src_dir + '/inc',
+				src_dir + '/inc/iotivity',
+				src_dir + '/inc/iotivity/tinycbor/tinycbor/src',
+				src_dir + '/inc/iotivity/cjson',
+                                src_dir + '/inc/iotivity/include'
+			])
+			libthingsstack_src = [
+				src_dir + '/src/common/utils/oiclist.c',
+				src_dir + '/src/common/utils/oicqueue.c',
+				src_dir + '/src/common/utils/oichashmap.c',
+				src_dir + '/src/common/utils/oicstringutil.c',
+				src_dir + '/src/common/utils/oicnetwork.c',
+				src_dir + '/src/common/utils/oicping.c',
+				src_dir + '/src/common/utils/oicthread.c',
+				src_dir + '/src/common/utils/oicwaithandler.c',
+				src_dir + '/src/common/logging/thingslogger.c',
+				src_dir + '/src/common/memory/thingsmalloc.c',
+				src_dir + '/src/common/framework/things_resource.c',
+				src_dir + '/src/common/framework/things_security_manager.c',
+				src_dir + '/src/common/framework/things_server_builder.c',
+				src_dir + '/src/common/framework/things_req_handler.c',
+				src_dir + '/src/common/framework/oicrmbundleloader.c',
+				src_dir + '/src/common/framework/things_data_manager.c',
+				src_dir + '/src/common/security/securestorage/src/ssAPI.c' ,
+				src_dir + '/src/common/security/securestorage/src/ssDevice.c' ,
+				src_dir + '/src/common/security/securestorage/src/internal/SWAPv2.c' ,
+				src_dir + '/src/common/security/securestorage/src/internal/wbaes_cmac.c' ,
+				src_dir + '/src/common/security/ssMutex/src/ssMutex.c',
+				src_dir + '/src/common/security/ssCrypto/src/ssAes.c',
+				src_dir + '/src/common/security/ssCrypto/src/ssSha2.c',
+				src_dir + '/src/common/easy-setup/easysetup.c',
+				src_dir + '/src/common/easy-setup/resourcehandler.c',
+				src_dir + '/src/common/easy-setup/easysetup_manager.c',
+				src_dir + '/src/common/cloud/cloud_connector.c',
+				src_dir + '/src/common/cloud/cloud_manager.c',
+				src_dir + '/src/common/cloud/cloud_evtpend.c',
+				src_dir + '/src/common/notification/notification_manager.c',
+				src_dir + '/src/stack/things_stack.c'
+			]
+		# if SVR DB file encryption is disabled
+		else:
+			print "[THINGSSTACK] SVR DB encryption = 0"
+			stack_env.AppendUnique(CPPPATH = [
+				src_dir + '/../iotivity/resource/oc_logger/include',
+				src_dir + '/../iotivity/resource/include',
+				src_dir + '/../iotivity/resource/csdk/stack/include',
+				src_dir + '/../iotivity/resource/csdk/logger/include',
+				src_dir + '/../iotivity/resource/csdk/connectivity/api',
+				src_dir + '/../iotivity/resource/csdk/connectivity/inc',
+				src_dir + '/../iotivity/resource/csdk/connectivity/inc/pkix',
+				src_dir + '/../iotivity/resource/csdk/connectivity/common/inc',
+				src_dir + '/../iotivity/resource/csdk/connectivity/util/inc',
+				src_dir + '/../iotivity/resource/csdk/resource-directory/include',
+				src_dir + '/../iotivity/resource/csdk/connectivity/lib/libcoap-4.1.1/include',
+				src_dir + '/../iotivity/resource/c_common',
+				src_dir + '/../iotivity/resource/c_common/oic_malloc/include',
+				src_dir + '/../iotivity/resource/c_common/oic_string/include',
+				src_dir + '/../iotivity/resource/c_common/oic_time/include',
+				src_dir + '/../iotivity/resource/c_common/ocrandom/include',
+				src_dir + '/../iotivity/resource/csdk/security/include',
+				src_dir + '/../iotivity/resource/csdk/security/include/internal',
+				src_dir + '/../iotivity/resource/csdk/security/provisioning/include',
+				src_dir + '/../iotivity/resource/csdk/security/provisioning/include/internal',
+				src_dir + '/../iotivity/resource/csdk/security/provisioning/include/oxm',
+				src_dir + '/../iotivity/extlibs/cjson',
+				src_dir + '/../iotivity/extlibs/mbedtls/mbedtls/include',
+				src_dir + '/../iotivity/extlibs/tinycbor/tinycbor/src',
+				src_dir + '/../iotivity/extlibs/cjson',
+				src_dir + '/../iotivity/service/notification/include',
+				src_dir + '/../iotivity/service/notification/src/common',
+				src_dir + '/../iotivity/service/notification/src/provider',
+				src_dir + '/src/common/notification/inc',
+				src_dir + '/src/common/logging/inc',
+				src_dir + '/src/common/memory/inc',
+				src_dir + '/src/common/utils/inc',
+				src_dir + '/src/common/security/ssCrypto/include',
+				src_dir + '/src/common/framework/inc',
+				src_dir + '/src/common/inc',
+				src_dir + '/src/common/easy-setup',
+				src_dir + '/src/common/easy-setup/inc',
+				src_dir + '/src/common/cloud/inc',
+				src_dir + '/inc',
+				src_dir + '/inc/iotivity',
+				src_dir + '/inc/iotivity/tinycbor/tinycbor/src',
+				src_dir + '/inc/iotivity/cjson',
+				src_dir + '/inc/iotivity/include'
+			])
+			libthingsstack_src = [
+				src_dir + '/src/common/utils/oiclist.c',
+				src_dir + '/src/common/utils/oicqueue.c',
+				src_dir + '/src/common/utils/oichashmap.c',
+				src_dir + '/src/common/utils/oicstringutil.c',
+				src_dir + '/src/common/utils/oicnetwork.c',
+				src_dir + '/src/common/utils/oicping.c',
+				src_dir + '/src/common/utils/oicthread.c',
+				src_dir + '/src/common/utils/oicwaithandler.c',
+				src_dir + '/src/common/logging/thingslogger.c',
+				src_dir + '/src/common/memory/thingsmalloc.c',
+				src_dir + '/src/common/security/ssCrypto/src/ssSha2.c',
+				src_dir + '/src/common/framework/things_resource.c',
+				src_dir + '/src/common/framework/things_security_manager.c',
+				src_dir + '/src/common/framework/things_server_builder.c',
+				src_dir + '/src/common/framework/things_req_handler.c',
+				src_dir + '/src/common/framework/oicrmbundleloader.c',
+				src_dir + '/src/common/framework/things_data_manager.c',
+				src_dir + '/src/common/easy-setup/easysetup.c',
+				src_dir + '/src/common/easy-setup/resourcehandler.c',
+				src_dir + '/src/common/easy-setup/easysetup_manager.c',
+				src_dir + '/src/common/cloud/cloud_connector.c',
+				src_dir + '/src/common/cloud/cloud_manager.c',
+				src_dir + '/src/common/cloud/cloud_evtpend.c',
+				src_dir + '/src/common/notification/notification_manager.c',
+				src_dir + '/src/stack/THINGSSTACK.c'
+			]
+
+	if target_os in ['tizen']:
+		stack_env.AppendUnique(LIBS = ['dl', 'pthread', 'c_common', 'coap', 'connectivity_abstraction', 'logger', 'ocsrm', 'octbstack', 'resource_directory', 'routingmanager', 'notification_provider'])
+	else:
+		stack_env.AppendUnique(LIBS = ['dl', 'pthread', 'connectivity_abstraction', 'octbstack', 'resource_directory', 'notification_provider'])
+
+	static_thingsstack = stack_env.StaticLibrary('libthingsstack', libthingsstack_src)
+	shared_thingsstack = stack_env.SharedLibrary('libthingsstack', libthingsstack_src)
+	stack_env.InstallTarget([static_thingsstack, shared_thingsstack], 'libthingsstack')
+	stack_env.UserInstallTargetLib([static_thingsstack, shared_thingsstack], 'libthingsstack')
+else:
+#TODO for RICH device
+	print "No files included for rich device version"

@@ -33,7 +33,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "st_things_types.h"
+#include <st_things/st_things_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,7 +76,7 @@ int st_things_deinitialize(void);
  * @return @c true in case of success, otherwise @c false
  * @since Tizen RT v1.1
  */
-typedef bool (*st_things_get_request_cb)(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
+typedef bool(*st_things_get_request_cb)(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
 
 /**
  * @brief Callback for handling SET(POST) request.
@@ -85,7 +85,7 @@ typedef bool (*st_things_get_request_cb)(st_things_get_request_message_s *req_ms
  * @return @c true in case of success, otherwise @c false
  * @since Tizen RT v1.1
  */
-typedef bool (*st_things_set_request_cb)(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
+typedef bool(*st_things_set_request_cb)(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
 
 /**
  * @brief Callback registration function for handling request messages.
@@ -134,7 +134,7 @@ int st_things_stop(void);
  * @return @c true to confirm, otherwise @c to deny
  * @since Tizen RT v1.1
  */
-typedef bool (*st_things_reset_confirm_cb)(void);
+typedef bool(*st_things_reset_confirm_cb)(void);
 
 /**
  * @brief Callback for carrying the result of reset.
@@ -206,7 +206,7 @@ int st_things_register_pin_handling_cb(st_things_pin_generated_cb generated_cb, 
  * @return @c true true in cse of confirmed, otherwise @c false
  * @since Tizen RT v1.1
  */
-typedef bool (*st_things_user_confirm_cb)(void);
+typedef bool(*st_things_user_confirm_cb)(void);
 
 /**
  * @brief Callback registration function for getting user confirmation for MUTUAL VERIFICATION BASED JUST WORK Ownership transfer.
