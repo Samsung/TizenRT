@@ -168,7 +168,7 @@ If you can not boot normally, you can change os to the initial version. This is 
 You can download it using OpenOCD. You compress the compiled firmware and download it to the board.
 
 ```bash
-gzip -c tinyara_head.bin > factoryimage.gz
+gzip -c tinyara_head.bin-signed > factoryimage.gz
 openocd -f artik05x.cfg -s ../build/configs/artik05x/scripts -c ' \
     flash_write factory    ../build/configs/artik053/bin/factoryimage.gz;      \
     exit'
