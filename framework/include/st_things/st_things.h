@@ -23,7 +23,7 @@
  */
 
 /**
- * @file st_things.h
+ * @file st_things/st_things.h
  * @brief Provides APIs for SmartThings Things SDK
  */
 

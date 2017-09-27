@@ -24,7 +24,7 @@
  */
 
 /**
- * @file dm_connectivity.h
+ * @file dm/dm_connectivity.h
  * @brief DM Connectivity APIs
  */
 

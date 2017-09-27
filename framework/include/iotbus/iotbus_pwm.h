@@ -24,7 +24,7 @@
  */
 
 /**
- * @file iotbus_pwm.h
+ * @file iotbus/iotbus_pwm.h
  * @brief Iotbus APIs for PWM
  */
 

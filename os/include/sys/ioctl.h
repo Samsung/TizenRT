@@ -57,7 +57,7 @@
  * @{
  */
 
-/// @file ioctl.h
+/// @file sys/ioctl.h
 /// @brief I/O control APIs
 
 #ifndef __INCLUDE_SYS_IOCTL_H

@@ -24,7 +24,7 @@
  */
 
 /**
- * @file coap_time.h
+ * @file protocols/libcoap/coap_time.h
  * @brief Clock Handling
  */
 

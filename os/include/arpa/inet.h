@@ -57,7 +57,7 @@
   */
 
 /**
- * @file inet.h
+ * @file arpa/inet.h
  * @brief inet API
  */
 

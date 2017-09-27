@@ -58,7 +58,7 @@
  * @{
  */
 
-/// @file socket.h
+/// @file sys/socket.h
 /// @brief Socket APIs
 #ifndef __INCLUDE_SYS_SOCKET_H
 #define __INCLUDE_SYS_SOCKET_H
