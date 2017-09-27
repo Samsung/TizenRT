@@ -58,7 +58,7 @@
   */
 
 /**
- * @file netif.h
+ * @file protocols/dhcpd.h
  * @brief netif API (to be used from lwIP TCPIP thread)
  */
 

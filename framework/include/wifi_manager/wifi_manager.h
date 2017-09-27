@@ -24,7 +24,7 @@
  */
 
 /**
- * @file wifi_manager.h
+ * @file wifi_manager/wifi_manager.h
  * @brief Provides APIs for Wi-Fi Manager
  */
 

@@ -49,7 +49,7 @@
  * @{
  */
 /**
- * @file mdnsd.h
+ * @file protocols/mdnsd.h
  * @brief APIs for Multicast DNS
  */
 

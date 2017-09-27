@@ -59,7 +59,7 @@
  */
 
 /**
- * @file dns.h
+ * @file tinyara/net/dns.h
  * @brief DNS client API
  */
 

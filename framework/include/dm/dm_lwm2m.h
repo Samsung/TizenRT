@@ -24,7 +24,7 @@
  */
 
 /**
- * @file dm_lwm2m.h
+ * @file dm/dm_lwm2m.h
  * @brief device management APIs for DM
  */
 

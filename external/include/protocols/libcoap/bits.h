@@ -25,7 +25,7 @@
  */
 
 /**
- * @file bits.h
+ * @file protocols/libcoap/bits.h
  * @brief bit vector manipulation
  */
 

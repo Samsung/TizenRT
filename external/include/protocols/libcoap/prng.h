@@ -24,7 +24,7 @@
  */
 
 /**
- * @file prng.h
+ * @file protocols/libcoap/prng.h
  * @brief Pseudo Random Numbers
  */
 

@@ -56,7 +56,7 @@
  * @{
  */
 
-/// @file ntpclient.h
+/// @file protocols/ntpclient.h
 /// @brief APIs for NTP Client
 
 #ifndef __APPS_INCLUDE_NETUTILS_NTPCLIENT_H

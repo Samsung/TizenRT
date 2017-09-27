@@ -24,7 +24,7 @@
  */
 
 /**
- * @file iotbus_spi.h
+ * @file iotbus/iotbus_spi.h
  * @brief Iotbus APIs for SPI
  */
 

@@ -59,7 +59,7 @@
  * @{
  */
 /**
- * @file dhcpc.h
+ * @file protocols/dhcpc.h
  * @brief APIs for DHCP client
  */
 

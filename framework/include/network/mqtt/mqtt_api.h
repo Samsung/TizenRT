@@ -21,7 +21,7 @@
  * @{
  */
 /**
- * @file mqtt_api.h
+ * @file network/mqtt/mqtt_api.h
  * @brief APIs for MQTT Client(Subscriber/Publisher)
  */
 

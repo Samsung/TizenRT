@@ -41,7 +41,7 @@
  */
 
 /**
- * @file t_list.h
+ * @file protocols/libcoap/t_list.h
  * @brief Wrappers for list structures and functions
  */
 
