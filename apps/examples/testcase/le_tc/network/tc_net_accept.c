@@ -128,7 +128,7 @@ static void net_accept_server(void)
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(sock));
@@ -161,7 +161,7 @@ static void net_accept_client(void)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_INET;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 
 	wait();

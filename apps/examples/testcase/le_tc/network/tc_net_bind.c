@@ -57,7 +57,7 @@ static void tc_net_bind_p(void)
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO);
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
 	close(SocketFD);
@@ -86,7 +86,7 @@ static void tc_net_bind_udp_p(void)
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNO);
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
 	close(SocketFD);

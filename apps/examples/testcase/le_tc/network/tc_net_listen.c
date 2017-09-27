@@ -54,7 +54,7 @@ static void tc_net_listen_p(void)
 	memset(&sa, 0, sizeof sa);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORTNUM1);
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(sock));

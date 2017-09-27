@@ -59,7 +59,7 @@ void tc_net_sendto_p(int fd)
 	socklen_t fromlen;
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 
@@ -86,7 +86,7 @@ void tc_net_sendto_n(void)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 
@@ -111,7 +111,7 @@ void tc_net_sendto_af_unix_n(int fd)
 	socklen_t fromlen;
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_UNIX;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 
@@ -141,7 +141,7 @@ void tc_sendto_udpserver(void)
 
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
 	TC_ASSERT_NEQ("bind", SocketFD, NEG_VAL);
@@ -176,7 +176,7 @@ void tc_sendto_udpclient(void)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 

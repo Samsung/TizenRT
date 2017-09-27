@@ -86,7 +86,7 @@ static void tc_net_select_server(void)
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	ret = bind(sock_tcp, (struct sockaddr *)&sa, sizeof(sa));
 	TC_ASSERT_NEQ("bind", ret, NEG_VAL);
@@ -124,7 +124,7 @@ static void tc_net_select_client(void)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 
 	wait1();

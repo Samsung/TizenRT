@@ -99,7 +99,7 @@ static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
 
 	struct in_addr ad;
-	ad.s_addr = INADDR_LOOPBACK;
+	ad.s_addr = htonl(INADDR_LOOPBACK);
 	sa->sin_addr = ad;
 	ret = connect(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
 	close(fd);
@@ -125,7 +125,7 @@ static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
 	struct in_addr ad;
-	ad.s_addr = INADDR_LOOPBACK;
+	ad.s_addr = htonl(INADDR_LOOPBACK);
 	sa->sin_addr = ad;
 	ret = connect(fd, (struct sockaddr *)sa, -1);
 	close(fd);

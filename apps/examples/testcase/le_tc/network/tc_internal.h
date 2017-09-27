@@ -141,6 +141,9 @@ int net_netifapi_main(void);
 #ifdef CONFIG_TC_NET_RAW
 int net_raw_main(void);
 #endif
+#ifdef CONFIG_TC_NET_STATS
+int net_stats_main(void);
+#endif
 #ifdef CONFIG_TC_NET_IGMP
 int net_igmp_main(void);
 #endif

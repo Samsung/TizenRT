@@ -121,7 +121,7 @@ void *recvfrom_udpserver(void *args)
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 
@@ -154,7 +154,7 @@ void *recvfrom_udpclient(void *args)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 
@@ -292,7 +292,7 @@ static void net_recvfrom_tcpserver(void)
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(sock));
@@ -331,7 +331,7 @@ static void net_recvfrom_tcpclient(void)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 
 	recvfrom_wait();

@@ -87,7 +87,7 @@ static void tc_net_server(void)
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_LOOPBACK;
+	addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	addr.sin_port = htons(PORT_NUM);
 
 	ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
@@ -127,7 +127,7 @@ static void tc_net_client(void)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_INET;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORT_NUM);
 
 	sig_wait();

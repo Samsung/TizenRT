@@ -123,7 +123,7 @@ static void tc_net_raw_server(void)
 static void tc_net_raw_client(void)
 {
 	int len, ret;
-	char buffer[] = "Hello World!";
+	char buffer[MAXRCVLEN];
 	struct sockaddr_in dest;
 	struct ip_addr dst;
 	struct ip_addr src;
@@ -131,7 +131,7 @@ static void tc_net_raw_client(void)
 	struct udp_hdr udp;
 	int one = 1;
 
-	int sock = socket(AF_INET, SOCK_RAW, IP_PROTO_UDP);
+	int sock = socket(AF_INET, SOCK_RAW, 0);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	len = sizeof(struct ip_hdr) + sizeof(struct udp_hdr);
@@ -157,14 +157,14 @@ static void tc_net_raw_client(void)
 
 	ret = setsockopt(sock, IPPROTO_IP, 0, &one, sizeof(one));
 	TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(sock));
-	ret = sendto(sock, buffer, len, 0, (struct sockaddr *)&dest, sizeof(dest));
-	TC_ASSERT_NEQ_CLEANUP("sendto", ret, ZERO, close(sock));
+	ret = recv(sock, buffer, MAXRCVLEN, 0);
+	TC_ASSERT_NEQ_CLEANUP("recv", ret, NEG_VAL, close(sock));
 	close(sock);
 }
 
 /**
 * @fn                   : server
-* @brief                : Create a Tcp server.
+* @brief                : Create a server.
 * @scenario             : Create a tcp server for checking send api.
 * API's covered         : socket,bind,listen,close
 * Preconditions         : socket file descriptor.
@@ -173,13 +173,14 @@ static void tc_net_raw_client(void)
 */
 static void* server(void *args)
 {
+	tc_net_raw_server();
 	return NULL;
 }
 
 /**
 * @fn                   : client
 * @brief                : This api create client.
-* @scenario             : Create tcp client.
+* @scenario             : Create client.
 * API's covered         : socket,connect,recv,close
 * Preconditions         : socket file descriptor.
 * Postconditions        : none

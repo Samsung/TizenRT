@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <net/lwip/stats.h>
 
 #include "tc_internal.h"
 
@@ -51,7 +52,6 @@ int network_tc_main(int argc, char *argv[])
 	int sock_tcp1 = socket(AF_INET, SOCK_STREAM, 0);
 	int sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
 	printf("=== TINYARA Network TC START! ===\n");
-
 #ifdef CONFIG_TC_NET_SOCKET
 	net_socket_main();
 #endif
@@ -153,6 +153,9 @@ int network_tc_main(int argc, char *argv[])
 #endif
 #ifdef CONFIG_TC_NET_CORE
 	net_core_main(sock_tcp);
+#endif
+#ifdef CONFIG_TC_NET_STATS
+	net_stats_main();
 #endif
 #ifdef CONFIG_TC_NET_IGMP
 	net_igmp_main();

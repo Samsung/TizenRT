@@ -133,7 +133,7 @@ void net_getpeername_server(void)
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 	TC_ASSERT_NEQ("bind", ret, NEG_VAL);

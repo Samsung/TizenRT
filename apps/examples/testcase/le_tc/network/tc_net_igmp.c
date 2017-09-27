@@ -36,6 +36,10 @@
 #include <netdb.h>
 #include <ifaddrs.h>
 #include <sys/ioctl.h>
+#include <netutils/ipmsfilter.h>
+#include <sys/sockio.h>
+#include <netutils/ipmsfilter.h>
+
 #include "tc_internal.h"
 
 #define PORTNUM        5001
@@ -130,7 +134,7 @@ int getif_addrs(struct ifaddrs **ifap)
 void gethost_addr(void)
 {
 	int family, n, ret;
-    char host[LEN];
+	char host[LEN];
 	struct ifaddrs *ifaddr, *ifa;
 
 	ret = getif_addrs(&ifaddr);
@@ -170,6 +174,33 @@ void gethost_addr(void)
 			}
 		}
 	}
+}
+
+/**
+* @fn                   :tc_net_igmp_sourcefilter
+* @brief                :to set or modify the source filter content
+* @scenario             :source filter
+* @API's covered        :socket,inet_addr,ioctl,close
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+void tc_net_igmp_sourcefilter(void)
+{
+	int ret;
+	struct ip_msfilter imsf;
+
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	imsf.imsf_multiaddr.s_addr = inet_addr("239.255.255.20");
+	strncpy(imsf.imsf_name, host_ip, IMSFNAMSIZ);
+	imsf.imsf_fmode = MCAST_INCLUDE;
+
+	ret = ioctl(sock, SIOCSIPMSFILTER, (unsigned long)&imsf);
+	TC_ASSERT_NEQ_CLEANUP("ioctl", ret, NEG_VAL, close(sock));
+	close(sock);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -230,5 +261,6 @@ int net_igmp_main(void)
 	gethost_addr();
 	tc_net_igmp_join();
 	tc_net_igmp_leave();
+	tc_net_igmp_sourcefilter();
 	return 0;
 }

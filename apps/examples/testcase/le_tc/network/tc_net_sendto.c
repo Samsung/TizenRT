@@ -63,7 +63,7 @@ void tc_net_sendto_p(int fd)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 
@@ -91,7 +91,7 @@ void tc_net_sendto_n(void)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 
@@ -119,7 +119,7 @@ void tc_net_sendto_af_unix_n(int fd)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_UNIX;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 
@@ -147,7 +147,7 @@ void tc_net_sendto_shutdown_n(int fd)
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_UNIX;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 	shutdown(fd, SHUT_WR);
@@ -178,7 +178,7 @@ void* sendto_udpserver(void *args)
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 	recvfrom(sock, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
@@ -333,7 +333,7 @@ void* sendto_tcpserver(void *args)
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(TCPPORT);
-	sa.sin_addr.s_addr = INADDR_LOOPBACK;
+	sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 	listen(sock, BACKLOG);
@@ -361,7 +361,7 @@ void* sendto_tcpclient(void *args)
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
-	dest.sin_addr.s_addr = INADDR_LOOPBACK;
+	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	dest.sin_port = htons(TCPPORT);
 
 	sendto_wait();

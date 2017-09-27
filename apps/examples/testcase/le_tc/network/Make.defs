@@ -161,6 +161,9 @@ endif
 ifeq ($(CONFIG_TC_NET_SENDTO),y)
 CSRCS +=tc_netconn_sendto.c
 endif
+ifeq ($(CONFIG_TC_NET_STATS),y)
+CSRCS +=tc_net_stats.c
+endif
 ifeq ($(CONFIG_TC_NET_IGMP),y)
 CSRCS +=tc_net_igmp.c
 endif
