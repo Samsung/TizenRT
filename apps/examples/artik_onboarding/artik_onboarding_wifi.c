@@ -133,7 +133,7 @@ static void wifi_scan_callback(void *result, void *user_data)
 		cJSON_AddStringToObject(ap, "ssid", list[i].name);
 		cJSON_AddStringToObject(ap, "bssid", list[i].bssid);
 		cJSON_AddStringToObject(ap, "security",
-					(list[i].encryption_flags & WIFI_ENCRYPTION_OPEN) ? "Open" : "Secure");
+				(list[i].encryption_flags == WIFI_ENCRYPTION_OPEN) ? "Open" : "Secure");
 		cJSON_AddNumberToObject(ap, "signal", list[i].signal_level);
 
 		if (i == 0) {
@@ -417,7 +417,7 @@ static void wifi_find_ap_callback(void *result, void *user_data)
 		if (!strncmp(list[i].name, wifi_config.ssid, strlen(wifi_config.ssid))) {
 
 			/* Check if AP is secure as expected */
-			if (!(list[i].encryption_flags & WIFI_ENCRYPTION_OPEN) && !wifi_config.secure) {
+			if (!(list[i].encryption_flags == WIFI_ENCRYPTION_OPEN) && !wifi_config.secure) {
 				printf("AP connection is secure but no passphrase was provided\n");
 				free(list);
 				g_join_result = -1;
