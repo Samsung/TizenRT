@@ -74,7 +74,7 @@ void concat_string(char **target, char *attach)
 		*target = NULL;
 	}
 
-	if (MAX_BUF_LEN >= (strlen(buf) + strlen(attach))) {
+	if (MAX_BUF_LEN >= (strlen(buf) + strlen(attach) + 1)) {
 		strncat(buf, attach, MAX_BUF_LEN);
 	} else {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Something went wrong");

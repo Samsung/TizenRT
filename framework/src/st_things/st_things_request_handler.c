@@ -90,6 +90,7 @@ bool get_query_value_internal(const char *query, const char *key, char **value, 
 			if (NULL == *value) {
 				ST_LOG(ST_ERROR, "Failed to clone the query value.");
 				util_free(p_origin);
+				return false;
 			} else {
 				res = true;
 			}
@@ -638,7 +639,7 @@ static bool add_property_in_post_req_msg(st_things_set_request_message_s *req_ms
 		ST_LOG_V(ST_ERROR, "Invalid property type (%d).", prop->type);
 		break;
 	}
-
+	free(value);
 	return result;
 }
 

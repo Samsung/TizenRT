@@ -233,13 +233,13 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 		if (key->data == NULL) {
 			THINGS_LOG_D(THINGS_ERROR, TAG, "Memory Full");
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT[FAIL]: %s", __func__);
+			fclose(fp);
 			return OC_STACK_NO_MEMORY;
 		}
 		fread(key->data, 1, size, fp);
 		key->len = size;
 		key->encoding = encoding;
 	}
-
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT: %s", __func__);
 	return OC_STACK_OK;
 }
@@ -1078,6 +1078,7 @@ int sm_save_cloud_acl(const char *cloud_uuid)
 	OicSecAce_t *ace = (OicSecAce_t *) things_calloc(1, sizeof(OicSecAce_t));
 	if (!ace) {
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "%s : things_calloc error return", __func__);
+		free(acl);
 		return OIC_SEC_ERROR;
 	}
 	LL_APPEND(acl->aces, ace);

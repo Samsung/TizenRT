@@ -248,8 +248,8 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 			}
 			pthread_join(gthread_id_cloud_refresh_check, NULL);
 			close(ci_token_expire_fds[0]);
-			close(ci_token_expire_fds[1]);
 			ci_token_expire_fds[0] = -1;
+			close(ci_token_expire_fds[1]);
 			ci_token_expire_fds[1] = -1;
 #else
 			pthread_join(gthread_id_cloud_refresh_check, NULL);
@@ -338,8 +338,8 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 		int ret = pipe(ci_token_expire_fds);
 		if (-1 == ret) {
 			close(ci_token_expire_fds[0]);
-			close(ci_token_expire_fds[1]);
 			ci_token_expire_fds[0] = -1;
+			close(ci_token_expire_fds[1]);
 			ci_token_expire_fds[1] = -1;
 			THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "pipe failed: %s", strerror(errno));
 			return ESM_ERROR;
