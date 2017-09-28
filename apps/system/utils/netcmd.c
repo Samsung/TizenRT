@@ -273,6 +273,32 @@ int cmd_ifconfig(int argc, char **argv)
 
 			ndbg("DHCPC Mode\n");
 			gip = addr.s_addr = 0;
+			netlib_set_ipv4addr(intf, &addr);
+#ifdef CONFIG_NET_IPv6
+		} else if (!strcmp(hostip, "auto")) {
+			/* IPV6 auto configuration : Link-Local address */
+
+			ndbg("IPV6 link local address auto config\n");
+			netif = netif_find(intf);
+
+			if (netif) {
+				netif_set_ip6_autoconfig_enabled(netif, 1);
+
+				/* To auto-config linklocal address, netif should have mac address already */
+				netif_create_ip6_linklocal_address(netif, 1);
+				ndbg("generated IPV6 linklocal address - %X : %X : %X : %X\n", PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[0]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[1]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[2]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[3]));
+#ifdef CONFIG_NET_IPv6_MLD
+				ip6_addr_t solicit_addr;
+
+				/* set MLD6 group to receive solicit multicast message */
+				ip6_addr_set_solicitednode(&solicit_addr, ip_2_ip6(&netif->ip6_addr[0])->addr[3]);
+				mld6_joingroup_netif(netif, &solicit_addr);
+				ndbg("MLD6 group added - %X : %X : %X : %X\n", PP_HTONL(solicit_addr.addr[0]), PP_HTONL(solicit_addr.addr[1]), PP_HTONL(solicit_addr.addr[2]), PP_HTONL(solicit_addr.addr[3]));
+#endif /* CONFIG_NET_IPv6_MLD */
+			}
+
+			return OK;
+#endif /* CONFIG_NET_IPv6 */
 		} else {
 			/* Set host IP address */
 			ndbg("Host IP: %s\n", hostip);
