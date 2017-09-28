@@ -73,15 +73,22 @@ iotbus_spi_context_h iotbus_spi_open(unsigned int bus, const struct iotbus_spi_c
 		return NULL;
 	}
 
-	struct spi_dev_s *dev = up_spiinitialize(bus);
-	if (!dev)
-		return NULL;
+	struct _iotbus_spi_s *handle = NULL;
 
-	struct _iotbus_spi_s *handle = (struct _iotbus_spi_s *)malloc(sizeof(struct _iotbus_spi_s));
+	handle = (struct _iotbus_spi_s *)malloc(sizeof(struct _iotbus_spi_s));
+	if (handle == NULL) {
+		return NULL;
+	}
 	handle->bpw = config->bits_per_word;
 	handle->freq = config->frequency;
 	handle->cs = config->chip_select;
 	handle->mode = config->mode;
+	struct spi_dev_s *dev = up_spiinitialize(bus);
+
+	if (!dev) {
+		free(handle);
+		return NULL;
+	}
 
 	handle->sdev = dev;
 

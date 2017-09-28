@@ -51,7 +51,13 @@ iotbus_i2c_context_h iotbus_i2c_init(int bus)
 	if (fd < 0)
 		return NULL;
 
-	struct _iotbus_i2c_s *handle = (struct _iotbus_i2c_s *)malloc(sizeof(struct _iotbus_i2c_s));
+	struct _iotbus_i2c_s *handle = NULL;
+
+	handle = (struct _iotbus_i2c_s *)malloc(sizeof(struct _iotbus_i2c_s));
+	if (handle == NULL) {
+		close(fd);
+		return NULL;
+	}
 	handle->fd = fd;
 
 	return handle;

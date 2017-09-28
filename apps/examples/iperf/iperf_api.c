@@ -1348,7 +1348,7 @@ static int get_parameters(struct iperf_test *test)
 			test->settings->bytes = j_p->valueint;
 		}
 		if ((j_p = cJSON_GetObjectItem(j, "blockcount")) != NULL) {
-			test->settings->blocks = j_p->valueint;
+			test->settings->blocks = (j_p->valueint > 0 ? j_p->valueint : 0);
 		}
 		if ((j_p = cJSON_GetObjectItem(j, "MSS")) != NULL) {
 			test->settings->mss = j_p->valueint;
@@ -3127,7 +3127,12 @@ int iprintf(struct iperf_test *test, const char *format, ...)
 		fprintf(test->outfile, "%s", linebuffer);
 
 		if (test->role == 's' && iperf_get_test_get_server_output(test)) {
-			struct iperf_textline *l = (struct iperf_textline *)malloc(sizeof(struct iperf_textline));
+			struct iperf_textline *l = NULL;
+
+			l = (struct iperf_textline *)malloc(sizeof(struct iperf_textline));
+			if (l == NULL) {
+				return -1;
+			}
 			l->line = strdup(linebuffer);
 			TAILQ_INSERT_TAIL(&(test->server_output_list), l, textlineentries);
 		}
