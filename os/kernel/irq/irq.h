@@ -66,6 +66,9 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
+#ifdef CONFIG_DEBUG_IRQ_INFO
+#define MAX_IRQNAME_SIZE 31
+#endif
 
 /****************************************************************************
  * Public Type Declarations
@@ -74,6 +77,10 @@
 struct irq {
 	xcpt_t handler;
 	FAR void *arg;
+#ifdef CONFIG_DEBUG_IRQ_INFO
+	char irq_name[MAX_IRQNAME_SIZE + 1]; /* Includes the terminating Null */
+	size_t count;
+#endif
 };
 
 extern struct irq g_irqvector[NR_IRQS];

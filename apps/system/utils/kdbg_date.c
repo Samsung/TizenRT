@@ -73,6 +73,12 @@ static FAR const char *const g_datemontab[] = {
 	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
+static FAR const char *const g_dayofweek[] = {
+	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+};
+#endif
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -90,9 +96,28 @@ static inline int date_month(FAR const char *abbrev)
 	return ERROR;
 }
 
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
+static inline int day_of_week(FAR const char *abbrev)
+{
+	int wday;
+
+	for (wday = 0; wday < 7; wday++) {
+		if (strncasecmp(g_dayofweek[wday], abbrev, 3) == 0) {
+			return wday;
+		}
+	}
+
+	return ERROR;
+}
+#endif
+
 static inline int date_showtime(void)
 {
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
+	static const char format[] = "%b %d %H:%M:%S %Y %a";
+#else
 	static const char format[] = "%b %d %H:%M:%S %Y";
+#endif
 	struct timespec ts;
 	struct tm tm;
 	char timbuf[MAX_TIME_STRING];
@@ -122,7 +147,7 @@ static inline int date_showtime(void)
 static inline int date_settime(int argc, char **args)
 {
 	struct timespec ts;
-	struct tm tm;
+	struct tm tm = {0};
 	FAR char *token;
 	FAR char *saveptr;
 	long result;
@@ -205,6 +230,49 @@ static inline int date_settime(int argc, char **args)
 	}
 	tm.tm_year = (int)result - 1900;
 
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
+	/* Get the day of the week.  NOTE: Accepts day-of-week from sunday to saturday */
+
+	token = args[6];
+	if (token == NULL) {
+		goto errout_bad_parm;
+	}
+
+	tm.tm_wday = day_of_week(token);
+	if (tm.tm_wday < 0) {
+		goto errout_bad_parm;
+	}
+
+	/* Get the day of the year.  NOTE: Accepts day-of-year from 0 to 365 */
+
+	token = args[7];
+	if (token == NULL) {
+		tm.tm_yday = 0;
+	} else {
+		result = strtol(token, NULL, 10);
+
+		if (result < 0 || result > 365) {
+			goto errout_bad_parm;
+		}
+		tm.tm_yday = (int)result;
+	}
+
+	/* Set the daylight savings flag value */
+
+	token = args[8];
+	if (token == NULL) {
+		tm.tm_isdst = 0;
+	} else {
+		result = strtol(token, NULL, 10);
+
+		if (result < 0 || result > 1) {
+			goto errout_bad_parm;
+		}
+		tm.tm_isdst = (int)result;
+	}
+
+#endif
+
 	/* Convert this to the right form, then set the timer */
 
 	ts.tv_sec = mktime(&tm);
@@ -235,9 +303,14 @@ int kdbg_date(int argc, char **args)
 
 	if (argc == 1) {
 		ret = date_showtime();
-	} else if (!strcmp(args[1], "-s") && argc == 6) {
+#if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
+	} else if (!strncmp(args[1], "-s", strlen("-s") + 1) && argc == 6) {
+#else
+	} else if (!strncmp(args[1], "-s", strlen("-s") + 1) && (argc >= 7 && argc <= 9)) {
+#endif
 		ret = date_settime(argc, args);
 	} else {
+#if !(defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED))
 		printf("\nUsage: date\n");
 		printf("   or: date [-s FORMAT]\n");
 		printf("Display, or Set system time and date information\n");
@@ -247,6 +320,20 @@ int kdbg_date(int argc, char **args)
 		printf("                'month', 'day', 'hour':'minute':'second' 'year'\n");
 		printf("                Example: Apr 21 10:35:22 1991\n");
 		ret = ERROR;
+#else
+		printf("\nUsage: date\n");
+		printf("   or: date [-s FORMAT]\n");
+		printf("Display, or Set system time and date information\n");
+		printf("\nOptions:\n");
+		printf(" -s FORMAT     Set system time in the given FORMAT\n");
+		printf("               FORMAT: MMM DD HH:MM:SS YYYY DWR DYR D\n");
+		printf("                Day of Week Range(DWR) = [Sunday = Sun, Monday = Mon, and so on...]\n");
+		printf("                Day of Year Range(DYR) = [0,365], \n");
+		printf("                daylight_savings_flag: +ve(in effect), 0(low), -ve(information unavailable)\n");
+		printf("                'month', 'day', 'hour':'minute':'second' 'year' 'day_of_week' 'day_of_year' 'daylight_savings_flag'\n");
+		printf("                Example: Apr 21 10:35:22 1991 Sun 175 1\n");
+		ret = ERROR;
+#endif
 	}
 	return ret;
 }

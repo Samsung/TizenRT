@@ -1,7 +1,9 @@
 
 config DISABLE_POLL
-	bool "Disable driver poll interfaces"
-	default n
+	bool
+	prompt "Disable driver poll interfaces" if NFILE_DESCRIPTORS != 0
+	default n if NFILE_DESCRIPTORS != 0
+	default y if NFILE_DESCRIPTORS = 0
 	---help---
 		The sizes of drivers can be reduced if the poll() method is not
 		supported.  If you do not use poll() or select(), then you can
@@ -10,15 +12,16 @@ config DISABLE_POLL
 config DEV_NULL
 	bool "Enable /dev/null"
 	default y
+	depends on NFILE_DESCRIPTORS != 0
 
 config DEV_ZERO
 	bool "Enable /dev/zero"
 	default n
+	depends on NFILE_DESCRIPTORS != 0
 
-menu "Buffering"
-
-config DRVR_WRITEBUFFER
+menuconfig DRVR_WRITEBUFFER
 	bool "Enable write buffer support"
+	depends on SCHED_WORKQUEUE
 	default n
 	---help---
 		Enable generic write buffering support that can be used by a variety
@@ -60,8 +63,6 @@ config DRVR_INVALIDATE
 	default n
 
 endif # DRVR_WRITEBUFFER || DRVR_READAHEAD
-
-endmenu # Buffering
 
 menuconfig CAN
 	bool "CAN Driver Support"
@@ -178,6 +179,7 @@ endif
 config GPIO
 	bool "GPIO Driver Support"
 	default n
+	depends on NFILE_DESCRIPTORS != 0
 	---help---
 		This selection enables building of the "upper-half" GPIO
 		driver. See include/tinyara/gpio.h for further GPIO driver
@@ -194,6 +196,21 @@ menuconfig I2S
 if I2S
 endif # I2S
 
+menuconfig AUDIO_DEVICES
+        bool "Audio Device Support"
+        default n
+        ---help---
+                Enable support for audio device drivers.  This includes drivers for
+                MP3, WMA and Ogg Vorbis encoding, decoding, as well as drivers for
+                interfacing with external DSP chips to perform custom audio functions.
+
+                NOTE: All of these drivers depend on support from the audio subsystem
+                enabled with the AUDIO selection.
+
+if AUDIO_DEVICES
+source drivers/audio/Kconfig
+endif # AUDIO_DEVICES
+
 menuconfig BCH
 	bool "Block-to-Character (BCH) Support"
 	default n
@@ -202,9 +219,6 @@ menuconfig BCH
 		a character driver. This is the complementary conversion as
 		that performed by loop.c. See include/tinyara/fs/fs.h for
 		registration information.
-
-if BCH
-endif # BCH
 
 menuconfig RTC
 	bool "RTC Driver Support"
@@ -330,17 +344,6 @@ config TIMER
 		driver. See include/tinyara/timer.h for further timer driver
 		information.
 
-menuconfig I2S
-        bool "I2S Driver Support"
-        default n
-        ---help---
-                This selection enables selection of common I2S options.  This option
-                should be enabled by all platforms that support I2S interfaces.
-                See include/tinyara/audio/i2s.h for further I2S driver information.
-
-if I2S
-endif # I2S
-
 menuconfig ANALOG
 	bool "Analog Device(ADC/DAC) Support"
 	default n
@@ -353,38 +356,6 @@ menuconfig ANALOG
 if ANALOG
 source drivers/analog/Kconfig
 endif # ANALOG
-
-menuconfig AUDIO_DEVICES
-        bool "Audio Device Support"
-        default n
-        ---help---
-                Enable support for audio device drivers.  This includes drivers for
-                MP3, WMA and Ogg Vorbis encoding, decoding, as well as drivers for
-                interfacing with external DSP chips to perform custom audio functions.
-
-                NOTE: All of these drivers depend on support from the audio subsystem
-                enabled with the AUDIO selection.
-
-if AUDIO_DEVICES
-source drivers/audio/Kconfig
-endif # AUDIO_DEVICES
-
-
-menuconfig LCD
-	bool "LCD Driver Support"
-	default n
-	select NX_LCDDRIVER
-	---help---
-		Drivers for parallel and serial LCD and OLED type devices.  These
-		drivers support interfaces as defined in include/tinyara/lcd/lcd.h
-
-		This selection is necessary to enable support for LCD drivers in
-		drivers/lcd as well as for board-specific LCD drivers in the configs/
-		subdirectories.
-
-if LCD
-source drivers/lcd/Kconfig
-endif # LCD
 
 menuconfig NETDEVICES
 	bool "Network Device/PHY Support"
@@ -447,6 +418,17 @@ menuconfig SERIAL
 if SERIAL
 source drivers/serial/Kconfig
 endif # SERIAL
+
+menuconfig SENSOR
+	bool "Sensor Driver Support"
+	default n
+	---help---
+		This selection enables building of the sensor driver.
+
+if SENSOR
+source drivers/sensors/Kconfig
+endif # SENSOR
+
 
 menuconfig USBDEV
 	bool "USB Device Driver Support"

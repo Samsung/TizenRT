@@ -15,7 +15,7 @@
  *    Julien Vermillard, Sierra Wireless
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -34,7 +34,7 @@
  *
  */
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include <stdio.h>
 #include <stdlib.h>

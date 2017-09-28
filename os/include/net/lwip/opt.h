@@ -54,14 +54,12 @@
 
 #ifndef __LWIP_OPT_H__
 #define __LWIP_OPT_H__
-
 /*
  * Include user defined options first. Anything not defined in these files
  * will be set to standard values. Override anything you don't like!
  */
 #include <net/lwip/lwipopts.h>
 #include <net/lwip/debug.h>
-
 /*
    -----------------------------------------------
    ---------- Platform specific locking ----------
@@ -1487,7 +1485,7 @@
  * LWIP_STATS==1: Enable statistics collection in lwip_stats.
  */
 #ifndef LWIP_STATS
-#define LWIP_STATS                      1
+#define LWIP_STATS                      0
 #endif
 
 #if LWIP_STATS

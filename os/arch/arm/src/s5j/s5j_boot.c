@@ -85,6 +85,12 @@ extern uint32_t _vector_end;
 #ifdef CONFIG_STACK_COLORATION
 static inline void up_idlestack_color(void *pv, unsigned int nbytes)
 {
+	register void *r0 __asm__("r0");
+	register unsigned int r1 __asm__("r1");
+
+	r0 = pv;
+	r1 = nbytes;
+
 	/* Set the IDLE stack to the stack coloration value then jump to
 	 * os_start().  We take extreme care here because were currently
 	 * executing on this stack.
@@ -103,7 +109,11 @@ static inline void up_idlestack_color(void *pv, unsigned int nbytes)
 						 "\tbne  1b\n"	/* Bottom of the loop */
 						 "2:\n" "\tmov  r14, #0\n"	/* LR = return address (none) */
 						 "\tb    os_start\n"	/* Branch to os_start */
+						 :		/* No Output */
+						 :"r"(r0), "r"(r1)
 						);
+
+	__builtin_unreachable();
 }
 #endif
 
@@ -126,13 +136,13 @@ int s5j_mpu_initialize(void)
 {
 #ifdef CONFIG_ARCH_CHIP_S5JT200
 	/*
-	 * Vector Table	0x02020000	0x02020FFF	4
-	 * Reserved		0x02021000	0x020217FF	2
-	 * BL1			0x02021800	0x020237FF	8
-	 * TinyARA		0x02023800	0x020E7FFF	786(WBWA)
-	 * Reserved		0x020E8000	0x020FFFFF	96 (WBWA)
-	 * Reserved		0x02100000	0x021FFFFF	64 (NCNB)
-	 * WIFI			0x02110000	0x0215FFFF	320(NCNB)
+	 * Vector Table 0x02020000  0x02020FFF  4
+	 * Reserved     0x02021000  0x020217FF  2
+	 * BL1          0x02021800  0x020237FF  8
+	 * TinyARA      0x02023800  0x020E7FFF  786(WBWA)
+	 * Shared mem       0x020E8000  0x020E9FFF  8 (WBWA)
+	 * cm0          0x020EA000  0x0210FFFF  152 (NCNB)
+	 * WIFI         0x02110000  0x0215FFFF  320(NCNB)
 	 */
 
 	/* Region 0, Set read only for memory area */
@@ -170,7 +180,9 @@ void arm_boot(void)
 	up_copyvectorblock();
 
 	/* Disable the watchdog timer */
+#ifdef CONFIG_S5J_WATCHDOG
 	s5j_watchdog_disable();
+#endif
 
 #ifdef CONFIG_ARMV7R_MEMINIT
 	/* Initialize the .bss and .data sections as well as RAM functions
@@ -188,7 +200,7 @@ void arm_boot(void)
 	arch_enable_dcache();
 #endif
 
-	cal_init();
+	s5j_clkinit();
 
 #ifdef USE_EARLYSERIALINIT
 	up_earlyserialinit();

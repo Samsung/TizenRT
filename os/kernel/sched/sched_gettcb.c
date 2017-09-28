@@ -101,7 +101,7 @@ FAR struct tcb_s *sched_gettcb(pid_t pid)
 
 	/* Verify that the PID is within range */
 
-	if (pid >= 0 && pid <= g_lastpid) {
+	if (pid >= 0) {
 		/* Get the hash_ndx associated with the pid */
 
 		hash_ndx = PIDHASH(pid);

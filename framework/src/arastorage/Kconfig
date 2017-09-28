@@ -3,8 +3,6 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-comment "AraStorage database configuration"
-
 config ARASTORAGE
 	bool "AraStorage database Support"
 	default n

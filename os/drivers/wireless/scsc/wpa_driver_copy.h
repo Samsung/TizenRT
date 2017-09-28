@@ -347,10 +347,10 @@ struct wpa_driver_capa {
 #define WPA_DRIVER_SMPS_MODE_DYNAMIC			0x00000002
 	unsigned int smps_modes;
 
-	unsigned int wmm_ac_supported: 1;
+	unsigned int wmm_ac_supported:1;
 
-	unsigned int mac_addr_rand_scan_supported: 1;
-	unsigned int mac_addr_rand_sched_scan_supported: 1;
+	unsigned int mac_addr_rand_scan_supported:1;
+	unsigned int mac_addr_rand_sched_scan_supported:1;
 
 	/** Maximum number of supported active probe SSIDs */
 	int max_scan_ssids;
@@ -513,7 +513,7 @@ struct wpa_driver_scan_params {
 	 * Mbps from the support rates element(s) in the Probe Request frames
 	 * and not to transmit the frames at any of those rates.
 	 */
-	unsigned int p2p_probe: 1;
+	unsigned int p2p_probe:1;
 
 	/**
 	 * only_new_results - Request driver to report only new results
@@ -522,7 +522,7 @@ struct wpa_driver_scan_params {
 	 * been detected after this scan request has been started, i.e., to
 	 * flush old cached BSS entries.
 	 */
-	unsigned int only_new_results: 1;
+	unsigned int only_new_results:1;
 
 	/**
 	 * low_priority - Requests driver to use a lower scan priority
@@ -530,12 +530,12 @@ struct wpa_driver_scan_params {
 	 * This is used to request the driver to use a lower scan priority
 	 * if it supports such a thing.
 	 */
-	unsigned int low_priority: 1;
+	unsigned int low_priority:1;
 
 	/**
 	 * mac_addr_rand - Requests driver to randomize MAC address
 	 */
-	unsigned int mac_addr_rand: 1;
+	unsigned int mac_addr_rand:1;
 
 	/**
 	 * mac_addr - MAC address used with randomization. The address cannot be

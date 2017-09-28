@@ -4,6 +4,7 @@
 #
 
 if INIT_ENTRYPOINT
+comment "Application entry point list"
 choice
 	prompt "Application entry point"
 config ENTRY_MANUAL
@@ -12,7 +13,6 @@ config ENTRY_MANUAL
 		If you select this, you should add a function name as an application entry point
 		at "Entry point function name".
 
-comment "Application entry point list"
 source "$APPSDIR/Kconfig_ENTRY"
 endchoice
 

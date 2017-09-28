@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # mtdpart built-in application info
 
 APPNAME = mtdpart
+FUNCNAME = mtdpart_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # mtdpart Example
@@ -128,10 +129,10 @@ install:
 endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_MTDPART),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(Q) $(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
 
 else
 context:

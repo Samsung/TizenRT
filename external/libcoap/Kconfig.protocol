@@ -1,0 +1,19 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NETUTILS_LIBCOAP
+	bool "libcoap 4.1.1"
+	default n
+	depends on LIBC_NETDB
+	---help---
+		Enable support for the libcoap library 
+
+if NETUTILS_LIBCOAP
+config NETUTILS_LIBCOAP_DEBUG
+	bool "Enable CoAP Debugging Log"
+	default y
+    ---help---
+		Enables CoAP logs
+endif

@@ -18,6 +18,14 @@ config EXAMPLES_SENSOR_TEST_PPD42NS
 	---help---
 		Enable PPD42NS Dust Sensor Example Application
 
+config EXAMPLES_SENSOR_TEST_PPD42NS_MQTT_TRANSMISSION
+	bool "Support MQTT transmission for sending sensor data"
+	default n
+	depends on EXAMPLES_SENSOR_TEST_PPD42NS
+	depends on EXAMPLES_MQTT_TEST
+	---help---
+		Enable to dust send sensor data using MQTT transmission
+
 endif # EXAMPLES_SENSOR_TEST
 
 config USER_ENTRYPOINT

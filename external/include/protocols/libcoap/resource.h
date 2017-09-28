@@ -24,7 +24,7 @@
  */
 
 /**
- * @file resource.h
+ * @file protocols/libcoap/resource.h
  * @brief generic resource handling
  */
 

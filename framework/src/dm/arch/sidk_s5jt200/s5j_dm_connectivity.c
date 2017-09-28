@@ -40,9 +40,9 @@
 #include <dm/dm_error.h>
 #include <dm/dm_connectivity.h>
 
-#include <apps/netutils/dhcpc.h>
-#include <apps/netutils/wifi/slsi_wifi_api.h>
-#include <apps/netutils/wifi/slsi_wifi_utils.h>
+#include <protocols/dhcpc.h>
+#include <slsi_wifi/slsi_wifi_api.h>
+#include <slsi_wifi/slsi_wifi_utils.h>
 #include <arpa/inet.h>
 
 #define DM_GET_INTERFACE_INFO 0

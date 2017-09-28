@@ -58,8 +58,8 @@
 #include <stdbool.h>
 
 #include "up_arch.h"
-#include "s5j_pwr.h"
 #include "s5j_pm.h"
+#include "s5j_clock.h"
 
 /****************************************************************************
  * Public Functions
@@ -71,27 +71,8 @@
  * Description:
  *   Enter STOP mode.
  *
- * Input Parameters:
- *   lpds - true: To further reduce power consumption in Stop mode, put the
- *          internal voltage regulator in low-power mode using the LPDS bit
- *          of the Power control register (PWR_CR).
- *
- * Returned Value:
- *   Zero means that the STOP was successfully entered and the system has
- *   been re-awakened.  The internal volatage regulator is back to its
- *   original state.  Otherwise, STOP mode did not occur and a negated
- *   errno value is returned to indicate the cause of the failure.
- *
  ****************************************************************************/
-int s5j_pmstop(bool lpds)
+void s5j_pmstop(void)
 {
-#ifdef CONFIG_PM_WFE
-	/* Mode: SLEEP + Entry with WFE */
-	asm("wfe");
-#else
-	/* Mode: SLEEP + Entry with WFI */
-	asm("wfi");
-#endif
-
-	return OK;
+	s5j_clk_pll_select_mux(false);
 }

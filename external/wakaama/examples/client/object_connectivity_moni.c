@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright (c) 2014 Bosch Software Innovations GmbH Germany. 
+ * Copyright (c) 2014 Bosch Software Innovations GmbH Germany.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * and Eclipse Distribution License v1.0 which accompany this distribution.
@@ -13,12 +13,12 @@
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
  *  This Connectivity Monitoring object is optional and has a single instance
- * 
+ *
  *  Resources:
  *
  *          Name             | ID | Oper. | Inst. | Mand.|  Type   | Range | Units |
@@ -36,7 +36,7 @@
  *
  */
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 #include "dm_connectivity.h"
 #include "dm_error.h"
 #include <stdio.h>
@@ -57,7 +57,7 @@
 #define RES_O_SMNC                      9
 #define RES_O_SMCC                      10
 
-#define VALUE_NETWORK_BEARER_GSM    0   //GSM see 
+#define VALUE_NETWORK_BEARER_GSM    0   //GSM see
 #define VALUE_AVL_NETWORK_BEARER_1  0   //GSM
 #define VALUE_AVL_NETWORK_BEARER_2  21  //WLAN
 #define VALUE_AVL_NETWORK_BEARER_3  41  //Ethernet
@@ -71,7 +71,7 @@
 #define VALUE_APN_2                     "cda.vodafone.de"
 #define VALUE_CELL_ID                   69696969
 #define VALUE_RADIO_SIGNAL_STRENGTH     80                  //dBm
-#define VALUE_LINK_QUALITY              98     
+#define VALUE_LINK_QUALITY              98
 #define VALUE_LINK_UTILIZATION          666
 #define VALUE_SMNC                      33
 #define VALUE_SMCC                      44
@@ -250,7 +250,7 @@ lwm2m_object_t * get_object_conn_m(void)
          * It assigns his unique ID
          */
         connObj->objID = LWM2M_CONN_MONITOR_OBJECT_ID;
-        
+
         /*
          * and its unique instance
          *
@@ -265,7 +265,7 @@ lwm2m_object_t * get_object_conn_m(void)
             lwm2m_free(connObj);
             return NULL;
         }
-        
+
         /*
          * And the private function that will access the object.
          * Those function will be called when a read/write/execute query is made by the server. In fact the library don't need to

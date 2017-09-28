@@ -1,0 +1,61 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NETUTILS_WIFI
+	bool "SLSI Wi-Fi API"
+	default n
+	select SCSC_WLAN
+	select WPA_SUPPLICANT
+	---help---
+		Enable support for the SLSI WI-Fi Networking API.
+
+if NETUTILS_WIFI
+config SLSI_WIFI_DEFAULT_WLAN_COUNTRY_CODE
+	string "Country code (2 chars)"
+	default "00"
+	---help---
+		The country code to use for the board when starting the first time.
+		The country code is a two char upper-case value, e.g. DK, KR, JP, US.
+		Use "00" for multi-country international.
+
+config SLSI_WIFI_DEFAULT_WLAN_TX_POWER
+	int "TX power in dBm (12-30)"
+	range 12 30
+	default 30
+	---help---
+		The default tx power value in dBm to use for the board when starting the first time.
+		The tx power value is in the range 0-30 and is of the type dBm.
+
+config SLSI_WIFI_FILESYSTEM_SUPPORT
+	bool "Support filesystem"
+	default n
+	---help---
+		The API can utilize the filesystem for configuration files and log files if needed.
+		This is the default behavior but can be disabled on systems without filesystems.
+		If filesystem support is disabled then functionality like auto-reconnect will not work as
+		this uses the config file to store the relevant info across reboots.
+
+if SLSI_WIFI_FILESYSTEM_SUPPORT
+
+config SLSI_WIFI_DIR
+	string "Path to where wifi can store the config files (ommit the trailing /)"
+	default "/mnt/wifi"
+	---help---
+		The path where the wifi system can store the config and log files if needed. The path must be
+		without the trailing /.
+
+config SLSI_WIFI_LOG_FILE_NAME
+	string "Name of the log file to use"
+	default "slsiwifi.log"
+	---help---
+		The name of the file used to store logs from the wifi system.
+
+config SLSI_WIFI_CONFIG_FILE_NAME
+	string "name of the configuration file to use"
+	default "slsiwifi.conf"
+	---help---
+		The name of the file used to store information about the wifi system.
+endif
+endif

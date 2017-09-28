@@ -155,20 +155,19 @@ static const int err_to_errno_table[] = {
 	0,							/* ERR_OK          0      No error, everything OK. */
 	ENOMEM,						/* ERR_MEM        -1      Out of memory error.     */
 	ENOBUFS,					/* ERR_BUF        -2      Buffer error.            */
-	EWOULDBLOCK,				/* ERR_TIMEOUT    -3      Timeout                  */
+	ETIMEDOUT,					/* ERR_TIMEOUT    -3      Timeout                  */
 	EHOSTUNREACH,				/* ERR_RTE        -4      Routing problem.         */
 	EINPROGRESS,				/* ERR_INPROGRESS -5      Operation in progress    */
 	EINVAL,						/* ERR_VAL        -6      Illegal value.           */
 	EWOULDBLOCK,				/* ERR_WOULDBLOCK -7      Operation would block.   */
 	EADDRINUSE,					/* ERR_USE        -8      Address in use.          */
-	EALREADY,					/* ERR_ALREADY    -9      Already connecting.      */
-	EISCONN,					/* ERR_ISCONN     -10     Conn already established. */
-	ENOTCONN,					/* ERR_CONN       -11     Not connected.           */
-	ECONNABORTED,				/* ERR_ABRT       -12     Connection aborted.      */
-	ECONNRESET,					/* ERR_RST        -13     Connection reset.        */
-	ENOTCONN,					/* ERR_CLSD       -14     Connection closed.       */
-	EIO,						/* ERR_ARG        -15     Illegal argument.        */
-	-1,							/* ERR_IF         -16     Low-level netif error    */
+	EISCONN,					/* ERR_ISCONN     -9      Conn already established.*/
+	ECONNABORTED,				/* ERR_ABRT       -10     Connection aborted.      */
+	ECONNRESET,					/* ERR_RST        -11     Connection reset.        */
+	ESHUTDOWN,					/* ERR_CLSD       -12     Connection closed.       */
+	ENOTCONN,					/* ERR_CONN       -13     Not connected.           */
+	EIO,						/* ERR_ARG        -14     Illegal argument.        */
+	-1,							/* ERR_IF         -15     Low-level netif error    */
 };
 
 #define ERR_TO_ERRNO_TABLE_SIZE \
@@ -701,6 +700,9 @@ int lwip_recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from
 				LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_recvfrom(%d): buf == NULL, error is \"%s\"!\n", s, lwip_strerr(err)));
 				sock_set_errno(sock, err_to_errno(err));
 				if (err == ERR_CLSD) {
+					// Normal operation, peer ended
+					// TODO: should call lwip_shutdown(s, SHUT_RD)?
+					sock->conn->last_err = ERR_OK;
 					return 0;
 				} else {
 					return -1;

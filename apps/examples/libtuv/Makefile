@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = libtuv
+FUNCNAME = libtuv_main
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
 THREADEXEC = TASH_EXECMD_SYNC
@@ -132,11 +133,11 @@ install:
 
 endif
 
-ifeq ($(CONFIG_EXAMPLES_LIBTUV),y)
-$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(Q) $(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_LIBTUV),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
 
 else
 context:

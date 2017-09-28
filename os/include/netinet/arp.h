@@ -58,7 +58,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <net/if.h>
+
 #include <stdint.h>
 #include <tinyara/fs/ioctl.h>
 

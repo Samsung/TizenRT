@@ -12,6 +12,14 @@ menuconfig EXAMPLES_TESTCASE_DM_UTC
 
 if EXAMPLES_TESTCASE_DM_UTC
 
+config UTC_DM_SERVER_IPADDR
+	string "Server IP address"
+	default "192.168.1.7"
+
+config UTC_DM_SERVER_PORT
+	string "Server Port"
+	default "5683"
+
 config TC_DM_START
 	bool "Start API"
 	default n

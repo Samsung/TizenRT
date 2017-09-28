@@ -54,7 +54,7 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mtd.h>
 #if defined(CONFIG_FTL_READAHEAD) || defined(CONFIG_FTL_WRITEBUFFER)
-#include <tinyara/drivers/rwbuffer.h>
+#include <tinyara/rwbuffer.h>
 #endif
 
 /****************************************************************************

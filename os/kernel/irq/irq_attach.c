@@ -93,7 +93,11 @@
  *
  ****************************************************************************/
 
+#ifdef CONFIG_DEBUG_IRQ_INFO
+int irq_attach_withname(int irq, xcpt_t isr, FAR void *arg, const char *name)
+#else
 int irq_attach(int irq, xcpt_t isr, FAR void *arg)
+#endif
 {
 #if NR_IRQS > 0
 	int ret = ERROR;
@@ -133,6 +137,17 @@ int irq_attach(int irq, xcpt_t isr, FAR void *arg)
 
 		g_irqvector[irq].handler = isr;
 		g_irqvector[irq].arg     = arg;
+#ifdef CONFIG_DEBUG_IRQ_INFO
+		/* Reset the irq counter to 0 and it's applicable for both irq_attach and irq_detach */
+		g_irqvector[irq].count   = 0;
+		if (name != NULL) {
+			strncpy(g_irqvector[irq].irq_name, name, MAX_IRQNAME_SIZE);
+			g_irqvector[irq].irq_name[MAX_IRQNAME_SIZE] = '\0';
+		} else {
+			/* irq_detach will set isr as NULL, thus name would be passed as NULL. Set the irq_name to Null */
+			g_irqvector[irq].irq_name[0] = '\0';
+		}
+#endif
 		irqrestore(state);
 		ret = OK;
 	}

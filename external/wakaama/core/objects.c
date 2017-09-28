@@ -17,7 +17,7 @@
  *    Benjamin Cabé - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -798,7 +798,7 @@ coap_status_t object_createInstance(lwm2m_context_t * contextP,
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-    if (NULL == targetP->createFunc) 
+    if (NULL == targetP->createFunc)
     {
         return COAP_405_METHOD_NOT_ALLOWED;
     }
@@ -816,7 +816,7 @@ coap_status_t object_writeInstance(lwm2m_context_t * contextP,
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, uriP->objectId);
     if (NULL == targetP) return COAP_404_NOT_FOUND;
 
-    if (NULL == targetP->writeFunc) 
+    if (NULL == targetP->writeFunc)
     {
         return COAP_405_METHOD_NOT_ALLOWED;
     }

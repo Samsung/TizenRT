@@ -179,7 +179,7 @@ int setenv(FAR const char *name, FAR const char *value, int overwrite)
 		pvar = &newenvp[group->tg_envsize];
 	} else {
 		newsize = varlen;
-		newenvp = (FAR char *)kumm_malloc(varlen);
+		newenvp = (FAR char *)kumm_malloc(newsize);
 		if (!newenvp) {
 			ret = ENOMEM;
 			goto errout_with_lock;
@@ -195,7 +195,7 @@ int setenv(FAR const char *name, FAR const char *value, int overwrite)
 
 	/* Now, put the new name=value string into the environment buffer */
 
-	sprintf(pvar, "%s=%s", name, value);
+	snprintf(pvar, varlen, "%s=%s", name, value);
 	sched_unlock();
 	return OK;
 

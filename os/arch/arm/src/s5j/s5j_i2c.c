@@ -63,40 +63,99 @@
 
 #include <sys/types.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
 #include <semaphore.h>
 #include <errno.h>
 #include <assert.h>
 #include <debug.h>
-
 #include <tinyara/arch.h>
-#include <tinyara/irq.h>
 #include <tinyara/i2c.h>
-#include <tinyara/clock.h>
-
-#include <arch/serial.h>
 #include <arch/board/board.h>
 
 #include "up_arch.h"
 #include "s5j_gpio.h"
 #include "s5j_i2c.h"
-#include "s5j_vclk.h"
+#include "s5j_clock.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 #define S5J_DEFAULT_I2CXFER_CLOCK	(100 * 1000)	/* 100Khz */
 #define S5J_DEFAULT_I2CSLAVE_ADDR	0x22
 #define S5J_DEFAULT_I2C_TIMEOUT		10000
-
-#define HSI2C_INT_XFER_DONE (HSI2C_INT_XFER_DONE_NOACK_MANUAL | HSI2C_INT_XFER_DONE_MANUAL)
+#define S5J_DEFAULT_HS_CLOCK		400000	/* 400Khz */
+#define S5J_DEFAULT_HS_CLOCK		400000	/* 400Khz */
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+
 struct s5j_i2c_priv_s *g_s5j_i2c_priv[4] = { NULL };
+
+/* I2C Device hardware configuration */
+struct s5j_i2c_config_s {
+	uintptr_t base;				/* I2C base address */
+	unsigned int scl_pin;		/* GPIO configuration for SCL as SCL */
+	unsigned int sda_pin;		/* GPIO configuration for SDA as SDA */
+};
+
+/* I2C Device Private Data */
+struct s5j_i2c_priv_s {
+	const struct i2c_ops_s *ops;	/* Standard I2C operations */
+	const struct s5j_i2c_config_s *config;	/* Port configuration */
+	sem_t sem_excl;				/* Mutual exclusion semaphore */
+#ifndef CONFIG_I2C_POLLED
+	sem_t sem_isr;				/* Interrupt wait semaphore */
+#endif
+	uint8_t refs;				/* Reference count */
+
+	int clock;
+	int xfer_speed;
+	unsigned int slave_addr;
+	unsigned int timeout;
+
+	unsigned int initialized;
+	unsigned int retries;
+	/*  master data  */
+	uint8_t msgc;				/* Message count */
+	struct i2c_msg_s *msgv;		/* Message list */
+	uint8_t *ptr;				/* Current message buffer */
+	int mcnt;					/* Current message length */
+	uint16_t mflags;			/* Current message flags */
+
+	struct i2c_msg_s *msg;
+};
+
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+
+static void hsi2c_set_hs_timing(struct s5j_i2c_priv_s *priv, unsigned int nClkDiv, unsigned int tSTART_SU, unsigned int tSTART_HD, unsigned int tSTOP_SU, unsigned int tDATA_SU, unsigned int tDATA_HD, unsigned int tSCL_L, unsigned int tSCL_H, unsigned int tSR_RELEASE);
+static void hsi2c_set_fs_timing(struct s5j_i2c_priv_s *priv, unsigned int nClkDiv, unsigned int tSTART_SU, unsigned int tSTART_HD, unsigned int tSTOP_SU, unsigned int tDATA_SU, unsigned int tDATA_HD, unsigned int tSCL_L, unsigned int tSCL_H, unsigned int tSR_RELEASE);
+static void hsi2c_calculate_timing(struct s5j_i2c_priv_s *priv, unsigned int nOpClk);
+static void hsi2c_conf(struct s5j_i2c_priv_s *priv, unsigned int nOpClk);
+static void hsi2c_enable_int(struct s5j_i2c_priv_s *priv, unsigned int bit);
+static void hsi2c_set_slave_addr(struct s5j_i2c_priv_s *priv, u16 addr);
+static int hsi2c_manual_fast_init(struct s5j_i2c_priv_s *priv);
+static int hsi2c_wait_xfer_done(struct s5j_i2c_priv_s *priv);
+static int hsi2c_wait_xfer_noack(struct s5j_i2c_priv_s *priv);
+static void hsi2c_start(struct s5j_i2c_priv_s *priv);
+static void hsi2c_stop(struct s5j_i2c_priv_s *priv);
+static void hsi2c_repstart(struct s5j_i2c_priv_s *priv);
+static int hsi2c_outb(struct s5j_i2c_priv_s *priv, u8 data);
+static int hsi2c_inb(struct s5j_i2c_priv_s *priv, bool is_ack);
+static int sendbytes(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg);
+static int readbytes(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg);
+static int try_address(struct s5j_i2c_priv_s *priv, u8 addr, int retries);
+static int do_address(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg);
+static int hsi2c_setup(struct s5j_i2c_priv_s *priv);
+static int hsi2c_cleanup(struct s5j_i2c_priv_s *priv);
+static inline void s5j_i2c_sem_wait(struct s5j_i2c_priv_s *priv);
+static inline void s5j_i2c_sem_post(struct s5j_i2c_priv_s *priv);
+static inline void s5j_i2c_sem_init(struct s5j_i2c_priv_s *priv);
+static inline void s5j_i2c_sem_destroy(struct s5j_i2c_priv_s *priv);
+static int s5j_i2c_initialize(struct s5j_i2c_priv_s *priv);
+static int s5j_i2c_uninitialize(struct s5j_i2c_priv_s *priv);
 
 /****************************************************************************
  * Private Data
@@ -105,7 +164,7 @@ struct s5j_i2c_priv_s *g_s5j_i2c_priv[4] = { NULL };
 /* I2C Interface */
 static const struct i2c_ops_s s5j_i2c_ops = {
 	.setfrequency = s5j_i2c_setclock,
-	.setaddress = s5j_i2c_setownaddress,
+	.setaddress = s5j_i2c_setaddress,
 	.write = s5j_i2c_write,
 	.read = s5j_i2c_read,
 #ifdef CONFIG_I2C_TRANSFER
@@ -121,19 +180,12 @@ static const struct s5j_i2c_config_s s5j_i2c0_config = {
 	.base = S5J_HSI2C0_BASE,
 	.scl_pin = GPIO_I2C0_SCL,
 	.sda_pin = GPIO_I2C0_SDA,
-	.isr = s5j_i2c0_interrupt,
-	.irq = IRQ_HSI2C_0,
-	.devno = 0,
 };
 
 static struct s5j_i2c_priv_s s5j_i2c0_priv = {
 	.xfer_speed = S5J_DEFAULT_I2CXFER_CLOCK,
-	.master = I2C_MASTER,
-	.mode = I2C_POLLING,
 	.slave_addr = S5J_DEFAULT_I2CSLAVE_ADDR,
-	.addrlen = 7,
 	.timeout = S5J_DEFAULT_I2C_TIMEOUT,
-	.name = "s5j_i2c0",
 	.initialized = 0,
 	.retries = 3,
 };
@@ -142,19 +194,12 @@ static const struct s5j_i2c_config_s s5j_i2c1_config = {
 	.base = S5J_HSI2C1_BASE,
 	.scl_pin = GPIO_I2C1_SCL,
 	.sda_pin = GPIO_I2C1_SDA,
-	.isr = s5j_i2c1_interrupt,
-	.irq = IRQ_HSI2C_1,
-	.devno = 1,
 };
 
 static struct s5j_i2c_priv_s s5j_i2c1_priv = {
 	.xfer_speed = S5J_DEFAULT_I2CXFER_CLOCK,
-	.master = I2C_MASTER,
-	.mode = I2C_POLLING,
 	.slave_addr = S5J_DEFAULT_I2CSLAVE_ADDR,
-	.addrlen = 7,
 	.timeout = S5J_DEFAULT_I2C_TIMEOUT,
-	.name = "s5j_i2c1",
 	.initialized = 0,
 	.retries = 3,
 };
@@ -163,19 +208,12 @@ static const struct s5j_i2c_config_s s5j_i2c2_config = {
 	.base = S5J_HSI2C2_BASE,
 	.scl_pin = GPIO_I2C2_SCL,
 	.sda_pin = GPIO_I2C2_SDA,
-	.isr = s5j_i2c2_interrupt,
-	.irq = IRQ_HSI2C_2,
-	.devno = 2,
 };
 
 static struct s5j_i2c_priv_s s5j_i2c2_priv = {
 	.xfer_speed = S5J_DEFAULT_I2CXFER_CLOCK,
-	.master = I2C_MASTER,
-	.mode = I2C_POLLING,
 	.slave_addr = S5J_DEFAULT_I2CSLAVE_ADDR,
-	.addrlen = 7,
 	.timeout = S5J_DEFAULT_I2C_TIMEOUT,
-	.name = "s5j_i2c2",
 	.initialized = 0,
 	.retries = 3,
 };
@@ -184,19 +222,12 @@ static const struct s5j_i2c_config_s s5j_i2c3_config = {
 	.base = S5J_HSI2C3_BASE,
 	.scl_pin = GPIO_I2C3_SCL,
 	.sda_pin = GPIO_I2C3_SDA,
-	.isr = s5j_i2c3_interrupt,
-	.irq = IRQ_HSI2C_3,
-	.devno = 3,
 };
 
 static struct s5j_i2c_priv_s s5j_i2c3_priv = {
 	.xfer_speed = S5J_DEFAULT_I2CXFER_CLOCK,
-	.master = I2C_MASTER,
-	.mode = I2C_POLLING,
 	.slave_addr = S5J_DEFAULT_I2CSLAVE_ADDR,
-	.addrlen = 7,
 	.timeout = S5J_DEFAULT_I2C_TIMEOUT,
-	.name = "s5j_i2c3",
 	.initialized = 0,
 	.retries = 3,
 };
@@ -204,81 +235,62 @@ static struct s5j_i2c_priv_s s5j_i2c3_priv = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void hsi2c_set_hs_timing(unsigned int base, unsigned int nClkDiv,
-				unsigned int tSTART_SU, unsigned int tSTART_HD,
-				unsigned int tSTOP_SU, unsigned int tSDA_SU,
-				unsigned int tDATA_SU, unsigned int tDATA_HD,
-				unsigned int tSCL_L, unsigned int tSCL_H,
-				unsigned int tSR_RELEASE)
+static uint32_t i2c_getreg32(struct s5j_i2c_priv_s *priv, int offset)
 {
-	tSTART_SU &= 0xFF;
-	tSTART_HD &= 0xFF;
-	tSTOP_SU &= 0xFF;
-	putreg32(((tSTART_SU << 24) | (tSTART_HD << 16) | (tSTOP_SU << 8)), base + I2C_TIMING_HS1);
-
-	tDATA_SU &= 0xFF;
-	tSCL_L &= 0xFF;
-	tSCL_H &= 0xFF;
-	putreg32(((tDATA_SU << 24) | (tSCL_L << 8) | (tSCL_H << 0)), base + I2C_TIMING_HS2);
-
-	nClkDiv &= 0xFF;
-	tSR_RELEASE &= 0xFF;
-	putreg32(((nClkDiv << 16) | (tSR_RELEASE << 0)), base + I2C_TIMING_HS3);
-
-	tDATA_HD &= 0xFFFF;
-	putreg32(tDATA_HD, base + I2C_TIMING_SLA);
-
+	return getreg32(priv->config->base + offset);
 }
 
-static void hsi2c_set_fs_timing(unsigned int base, unsigned int nClkDiv,
-				unsigned int tSTART_SU, unsigned int tSTART_HD,
-				unsigned int tSTOP_SU, unsigned int tDATA_SU,
-				unsigned int tDATA_HD, unsigned int tSCL_L,
-				unsigned int tSCL_H, unsigned int tSR_RELEASE)
+static void i2c_putreg32(struct s5j_i2c_priv_s *priv, int offset, uint32_t value)
 {
-	tSTART_SU &= 0xFF;
-	tSTART_HD &= 0xFF;
-	tSTOP_SU &= 0xFF;
-	putreg32(((tSTART_SU << 24) | (tSTART_HD << 16) | (tSTOP_SU << 8)), base + I2C_TIMING_FS1);
-
-	tDATA_SU &= 0xFF;
-	tSCL_L &= 0xFF;
-	tSCL_H &= 0xFF;
-	putreg32(((tDATA_SU << 24) | (tSCL_L << 8) | (tSCL_H << 0)), base + I2C_TIMING_FS2);
-
-	nClkDiv &= 0xFF;
-	tSR_RELEASE &= 0xFF;
-	putreg32(((nClkDiv << 16) | (tSR_RELEASE << 0)), base + I2C_TIMING_FS3);
-
-	tDATA_HD &= 0xFFFF;
-	putreg32(tDATA_HD, base + I2C_TIMING_SLA);
+	putreg32(value, priv->config->base + offset);
 }
 
-static void hsi2c_calculate_timing(unsigned int base, unsigned int nPclk,
-				unsigned int nOpClk)
+static void hsi2c_set_hs_timing(struct s5j_i2c_priv_s *priv, unsigned int nClkDiv, unsigned int tSTART_SU, unsigned int tSTART_HD, unsigned int tSTOP_SU, unsigned int tDATA_SU, unsigned int tDATA_HD, unsigned int tSCL_L, unsigned int tSCL_H, unsigned int tSR_RELEASE)
+{
+	i2c_putreg32(priv, S5J_I2C_TIMING_HS1, I2C_TIMING_TSTART_SU(tSTART_SU) | I2C_TIMING_TSTART_HD(tSTART_HD) | I2C_TIMING_TSTOP_SU(tSTOP_SU));
+
+	i2c_putreg32(priv, S5J_I2C_TIMING_HS2, I2C_TIMING_TDATA_SU(tDATA_SU) | I2C_TIMING_TSCL_L(tSCL_L) | I2C_TIMING_TSCL_H(tSCL_H));
+
+	i2c_putreg32(priv, S5J_I2C_TIMING_HS3, I2C_TIMING_CLK_DIV(nClkDiv) | I2C_TIMING_TSR_RELEASE(tSR_RELEASE));
+
+	i2c_putreg32(priv, S5J_I2C_TIMING_SLA, I2C_TIMING_TDATA_HD_SLA(tDATA_HD));
+}
+
+static void hsi2c_set_fs_timing(struct s5j_i2c_priv_s *priv, unsigned int nClkDiv, unsigned int tSTART_SU, unsigned int tSTART_HD, unsigned int tSTOP_SU, unsigned int tDATA_SU, unsigned int tDATA_HD, unsigned int tSCL_L, unsigned int tSCL_H, unsigned int tSR_RELEASE)
+{
+	i2c_putreg32(priv, S5J_I2C_TIMING_FS1, I2C_TIMING_TSTART_SU(tSTART_SU) | I2C_TIMING_TSTART_HD(tSTART_HD) | I2C_TIMING_TSTOP_SU(tSTOP_SU));
+
+	i2c_putreg32(priv, S5J_I2C_TIMING_FS2, I2C_TIMING_TDATA_SU(tDATA_SU) | I2C_TIMING_TSCL_L(tSCL_L) | I2C_TIMING_TSCL_H(tSCL_H));
+
+	i2c_putreg32(priv, S5J_I2C_TIMING_FS3, I2C_TIMING_CLK_DIV(nClkDiv) | I2C_TIMING_TSR_RELEASE(tSR_RELEASE));
+
+	i2c_putreg32(priv, S5J_I2C_TIMING_SLA, I2C_TIMING_TDATA_HD_SLA(tDATA_HD));
+}
+
+static void hsi2c_calculate_timing(struct s5j_i2c_priv_s *priv, unsigned int nOpClk)
 {
 	unsigned int reg;
 	unsigned int nClkDiv;
 	unsigned int tFTL_CYCLE_SCL;
 	s32 i;
-	s32 uTemp0;
+	float uTemp0;
 	s32 uTemp1;
 	s32 uTemp2 = 0;
 
-	reg = getreg32(base + I2C_CONF);
+	reg = i2c_getreg32(priv, S5J_I2C_CONF);
 	reg &= ~(0x7 << 13);
-	putreg32(reg, base + I2C_CONF);
+	i2c_putreg32(priv, S5J_I2C_CONF, reg);
 
-	reg = getreg32(base + I2C_CONF);
+	reg = i2c_getreg32(priv, S5J_I2C_CONF);
 	reg &= ~(0x7 << 16);
-	putreg32(reg, base + I2C_CONF);
+	i2c_putreg32(priv, S5J_I2C_CONF, reg);
 
-	tFTL_CYCLE_SCL = getreg32((base + I2C_CONF) >> 16) & 0x7;
+	tFTL_CYCLE_SCL = (i2c_getreg32(priv, S5J_I2C_CONF) >> 16) & 0x7;
 
-	uTemp0 = (float)(nPclk / nOpClk) - (tFTL_CYCLE_SCL + 3) * 2;
+	uTemp0 = (priv->clock / nOpClk) - (tFTL_CYCLE_SCL + 3) * 2;
 
 	for (i = 0; i < 256; i++) {
-		uTemp1 = (uTemp0 + ((tFTL_CYCLE_SCL + 3) % (i + 1)) * 2) / (i + 1);
+		uTemp1 = ((int)uTemp0 + ((tFTL_CYCLE_SCL + 3) % (i + 1)) * 2) / (i + 1);
 		if (uTemp1 < 512) {		/*  TSCL_L/H max is 512 / 2 */
 			uTemp2 = uTemp1 - 2;
 			break;
@@ -287,7 +299,7 @@ static void hsi2c_calculate_timing(unsigned int base, unsigned int nPclk,
 
 	unsigned int tSCL_H;
 	nClkDiv = i;
-	if (nOpClk > I2C_SPEED_400KHZ) {
+	if (nOpClk > S5J_DEFAULT_HS_CLOCK) {
 		tSCL_H = ((uTemp2 + 10) / 3) - 5;
 	} else {
 		tSCL_H = uTemp2 / 2;
@@ -297,113 +309,79 @@ static void hsi2c_calculate_timing(unsigned int base, unsigned int nPclk,
 	unsigned int tSTART_SU = tSCL_L;
 	unsigned int tSTART_HD = tSCL_L;
 	unsigned int tSTOP_SU = tSCL_L;
-	unsigned int tSDA_SU = tSCL_L;
 	unsigned int tDATA_SU = tSCL_L;
 	unsigned int tDATA_HD = tSCL_L / 2;
 	unsigned int tSR_RELEASE = uTemp2;
 
-	if (nOpClk > I2C_SPEED_400KHZ) {
+	if (nOpClk > S5J_DEFAULT_HS_CLOCK) {
 		/* 400Khz setting for Extended ID */
-		hsi2c_set_fs_timing(base, 1, 38, 38, 38, 19, 19, 38, 38, 76);
-		hsi2c_set_hs_timing(base, nClkDiv, tSTART_SU, tSTART_HD, tSTOP_SU,
-					tSDA_SU, tDATA_SU, tDATA_HD, tSCL_L, tSCL_H, tSR_RELEASE);
+		hsi2c_set_fs_timing(priv, 1, 38, 38, 38, 19, 19, 38, 38, 76);
+		hsi2c_set_hs_timing(priv, nClkDiv, tSTART_SU, tSTART_HD, tSTOP_SU, tDATA_SU, tDATA_HD, tSCL_L, tSCL_H, tSR_RELEASE);
 	} else {
-		hsi2c_set_fs_timing(base, nClkDiv, tSTART_SU, tSTART_HD, tSTOP_SU,
-					tDATA_SU, tDATA_HD, tSCL_L, tSCL_H, tSR_RELEASE);
+		hsi2c_set_fs_timing(priv, nClkDiv, tSTART_SU, tSTART_HD, tSTOP_SU, tDATA_SU, tDATA_HD, tSCL_L, tSCL_H, tSR_RELEASE);
 	}
 }
 
-static void hsi2c_conf(unsigned int base, unsigned int nOpClk)
+static void hsi2c_conf(struct s5j_i2c_priv_s *priv, unsigned int nOpClk)
 {
 	unsigned int val;
 
-	val = getreg32(base + I2C_CONF);
-	val &= ~(3 << 30);
-	if (nOpClk > I2C_SPEED_400KHZ) {
-		val |= (1 << 29);
+	val = i2c_getreg32(priv, S5J_I2C_CONF);
+	val &= ~(I2C_CONF_ADDRMODE | I2C_CONF_AUTO_MODE);
+
+	if (nOpClk > S5J_DEFAULT_HS_CLOCK) {
+		val |= I2C_CONF_HS_MODE;
 	} else {
-		val &= ~(1 << 29);
+		val &= ~I2C_CONF_HS_MODE;
 	}
-	putreg32(val, base + I2C_CONF);
+
+	i2c_putreg32(priv, S5J_I2C_CONF, val);
 }
 
-static void hsi2c_enable_int(unsigned int base, unsigned int bit)
+static void hsi2c_enable_int(struct s5j_i2c_priv_s *priv, unsigned int bit)
 {
 	unsigned int val;
-	val = getreg32(base + INT_EN);
+
+	val = i2c_getreg32(priv, S5J_I2C_INT_EN);
 	val |= bit;
-	putreg32(val, base + INT_EN);
+
+	i2c_putreg32(priv, S5J_I2C_INT_EN, val);
 }
 
-static void hsi2c_disable_int(unsigned int base, unsigned int bit)
+static void hsi2c_set_slave_addr(struct s5j_i2c_priv_s *priv, u16 addr)
 {
-	unsigned int val;
-
-	val = getreg32(base + INT_EN);
-	val &= ~bit;
-	putreg32(val, base + INT_EN);
-}
-
-static void hsi2c_clear_int(unsigned int base, unsigned int bit)
-{
-	putreg32(bit, base + INT_STAT);
-}
-
-static unsigned int hsi2c_read_int_status(unsigned int base)
-{
-	return getreg32(base + INT_STAT) & getreg32(base + INT_EN);
-}
-
-static void hsi2c_set_slave_addr(unsigned int base, u16 addr,
-				unsigned int is_master)
-{
-	unsigned int val;
-
-	addr &= 0x3FF;
-
-	val = getreg32(base + I2C_ADDR);
-
-	if (is_master == 0) {
-		val &= ~0x3ff;
-		val |= addr;
-	} else {
-		val &= ~(0x3FF << 10);
-		val |= (addr << 10);
-	}
-	putreg32(val, base + I2C_ADDR);
+	i2c_putreg32(priv, S5J_I2C_ADDR, I2C_ADDR_SLAVE_ADDR_SLA(addr));
 }
 
 static int hsi2c_manual_fast_init(struct s5j_i2c_priv_s *priv)
 {
 	unsigned int val;
-	unsigned int base = priv->config->base;
 
-	hsi2c_conf(base, priv->xfer_speed);
-	hsi2c_calculate_timing(base, priv->clock, priv->xfer_speed);
-	hsi2c_enable_int(base, HSI2C_INT_XFER_DONE_MANUAL | HSI2C_INT_XFER_DONE_NOACK_MANUAL);
+	hsi2c_conf(priv, priv->xfer_speed);
+	hsi2c_calculate_timing(priv, priv->xfer_speed);
+	hsi2c_enable_int(priv, I2C_INT_TRANSFER_DONE_MANUAL_EN | I2C_INT_TRANSFER_DONE_NOACK_MANUAL_EN);
 
 	priv->initialized = 1;
 
-	val = getreg32(base + I2C_CONF);
-	val &= ~((1 << 31) | (1 << 29));
-	putreg32(val, base + I2C_CONF);
+	val = i2c_getreg32(priv, S5J_I2C_CONF);
+	val &= ~(I2C_CONF_AUTO_MODE | I2C_CONF_HS_MODE);
+	i2c_putreg32(priv, S5J_I2C_CONF, val);
 
-	hsi2c_enable_int(base, HSI2C_INT_XFER_DONE);
+	hsi2c_enable_int(priv, I2C_INT_TRANSFER_DONE_NOACK_MANUAL_EN | I2C_INT_TRANSFER_DONE_MANUAL_EN);
 
-	return 0;
+	return OK;
 }
 
 static int hsi2c_wait_xfer_done(struct s5j_i2c_priv_s *priv)
 {
 	int val;
 	int timeout = priv->timeout;
-	unsigned int base = priv->config->base;
 
 	while (timeout-- > 0) {
-		val = getreg32(base + INT_STAT) & HSI2C_INT_XFER_DONE_MANUAL;
+		val = i2c_getreg32(priv, S5J_I2C_INT_STAT) & I2C_INT_TRANSFER_DONE_MANUAL_EN;
 		if (val) {
-			putreg32(val, base + INT_STAT);
-			return (val == HSI2C_INT_XFER_DONE_MANUAL);
+			i2c_putreg32(priv, S5J_I2C_INT_STAT, val);
+			return (val == I2C_INT_TRANSFER_DONE_MANUAL_EN);
 		}
 	}
 
@@ -414,13 +392,12 @@ static int hsi2c_wait_xfer_noack(struct s5j_i2c_priv_s *priv)
 {
 	int val;
 	int timeout = priv->timeout;
-	unsigned int base = priv->config->base;
 
 	while (timeout-- > 0) {
-		val = getreg32(base + INT_STAT) & HSI2C_INT_XFER_DONE_NOACK_MANUAL;
+		val = i2c_getreg32(priv, S5J_I2C_INT_STAT) & I2C_INT_TRANSFER_DONE_NOACK_MANUAL_EN;
 		if (val) {
-			putreg32(val, base + INT_STAT);
-			return (val == HSI2C_INT_XFER_DONE_NOACK_MANUAL);
+			i2c_putreg32(priv, S5J_I2C_INT_STAT, val);
+			return (val == I2C_INT_TRANSFER_DONE_NOACK_MANUAL_EN);
 		}
 	}
 
@@ -429,25 +406,23 @@ static int hsi2c_wait_xfer_noack(struct s5j_i2c_priv_s *priv)
 
 static void hsi2c_start(struct s5j_i2c_priv_s *priv)
 {
-	int debug_msg;
+	i2c_putreg32(priv, S5J_I2C_CTL, I2C_CTL_MASTER | I2C_CTL_TXCHON);	/* 0x88 */
 
-	putreg32(0x88, priv->config->base + CTL);
+	i2c_putreg32(priv, S5J_I2C_MANUAL_CMD, I2C_MANUAL_CMD_SEND_START);
 
-	putreg32(I2C_START, priv->config->base + I2C_MANUAL_CMD);
-
-	debug_msg = hsi2c_wait_xfer_done(priv);
+	hsi2c_wait_xfer_done(priv);
 }
 
 static void hsi2c_stop(struct s5j_i2c_priv_s *priv)
 {
-	putreg32(I2C_STOP, priv->config->base + I2C_MANUAL_CMD);
+	i2c_putreg32(priv, S5J_I2C_MANUAL_CMD, I2C_MANUAL_CMD_SEND_STOP);
 
 	hsi2c_wait_xfer_done(priv);
 }
 
 static void hsi2c_repstart(struct s5j_i2c_priv_s *priv)
 {
-	putreg32(I2C_RESTART, priv->config->base + I2C_MANUAL_CMD);
+	i2c_putreg32(priv, S5J_I2C_MANUAL_CMD, I2C_MANUAL_CMD_SEND_RESTART);
 }
 
 static int hsi2c_outb(struct s5j_i2c_priv_s *priv, u8 data)
@@ -455,8 +430,8 @@ static int hsi2c_outb(struct s5j_i2c_priv_s *priv, u8 data)
 	unsigned int val;
 	int ret;
 
-	val = ((unsigned int)data) << 24 | I2C_SEND_DATA;
-	putreg32(val, priv->config->base + I2C_MANUAL_CMD);
+	val = I2C_MANUAL_CMD_TX_DATA(data) | I2C_MANUAL_CMD_SEND_DATA;
+	i2c_putreg32(priv, S5J_I2C_MANUAL_CMD, val);
 
 	ret = hsi2c_wait_xfer_done(priv);
 
@@ -465,23 +440,22 @@ static int hsi2c_outb(struct s5j_i2c_priv_s *priv, u8 data)
 
 static int hsi2c_inb(struct s5j_i2c_priv_s *priv, bool is_ack)
 {
-	unsigned int val = I2C_READ_DATA;
+	unsigned int val = I2C_MANUAL_CMD_READ_DATA;
 	u8 data;
 	int ret;
-	unsigned int base = priv->config->base;
 
-	/* Looks awkward, but if I2C_RX_ACK is set, ACK is NOT generated */
+	/* Looks awkward, but if I2C_MANUAL_CMD_RX_ACK is set, ACK is NOT generated */
 	if (!is_ack) {
-		val |= I2C_RX_ACK;
+		val |= I2C_MANUAL_CMD_RX_ACK;
 	}
-	putreg32(val, base + I2C_MANUAL_CMD);
+	i2c_putreg32(priv, S5J_I2C_MANUAL_CMD, val);
 
 	ret = hsi2c_wait_xfer_done(priv);
 	if (ret < 0) {
-		return ret; /* timeout */
+		return ret;				/* timeout */
 	}
 
-	data = (getreg32(base + I2C_MANUAL_CMD) >> 16) & 0xff;
+	data = (i2c_getreg32(priv, S5J_I2C_MANUAL_CMD) >> 16) & 0xFF;
 
 	return data;
 }
@@ -569,7 +543,7 @@ static int do_address(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg)
 		}
 
 		/* the remaining 8 bit address */
-		ret = hsi2c_outb(priv, msg->addr & 0xff);
+		ret = hsi2c_outb(priv, msg->addr);
 		if ((ret != 1) && !nak_ok) {
 			return -ENXIO;
 		}
@@ -596,435 +570,68 @@ static int do_address(struct s5j_i2c_priv_s *priv, struct i2c_msg_s *msg)
 		}
 	}
 
-	return 0;
+	return OK;
 }
 
-static void hsi2c_run_auto_mode(unsigned int base, int on)
+static int hsi2c_setup(struct s5j_i2c_priv_s *priv)
 {
-	unsigned int val = getreg32(base + I2C_AUTO_CONF);
-
-	if (on) {
-		val |= (1 << 31);
-	} else {
-		val &= ~(1 << 31);
-	}
-
-	putreg32(val, base + I2C_AUTO_CONF);
-}
-
-static void hsi2c_tx_fifo_reset(unsigned int base, int resetb)
-{
-	unsigned int val = getreg32(base + FIFO_CTL);
-
-	if (resetb) {
-		val |= (1 << 3);
-	} else {
-		val &= ~(1 << 3);
-	}
-
-	putreg32(val, base + FIFO_CTL);
-}
-
-static void hsi2c_set_auto_config(unsigned int base, unsigned int stop,
-				unsigned int tx, unsigned int len)
-{
-	unsigned int val = getreg32(base + I2C_AUTO_CONF);
-
-	if (stop) {
-		val |= (1 << 17);
-	} else {
-		val &= ~(1 << 17);
-	}
-	if (tx) {
-		val &= ~(1 << 16);
-	} else {
-		val |= (1 << 16);
-	}
-
-	val &= ~0xFFFF;
-	val |= len;
-	putreg32(val, base + I2C_AUTO_CONF);
-}
-
-static void hsi2c_set_trans_mode(unsigned int base, unsigned int master,
-				unsigned int tx)
-{
-	unsigned int val = getreg32(base + CTL);
-
-	val |= (1 << 0); /* ctrl 0 bit write 1 */
-
-	if (master) {
-		val |= (1 << 3);
-	} else {
-		val &= ~(1 << 3);
-	}
-
-	val &= ~(3 << 6);
-	if (tx) {
-		val |= (1 << 7);
-	} else {
-		val |= (1 << 6);
-	}
-
-	putreg32(val, base + CTL);
-}
-
-static void hsi2c_set_hwacg_mode(unsigned int base, unsigned int slave)
-{
-	unsigned int val = getreg32(base + CTL);
-
-	val &= ~(0x3 << 24);
-
-	if (slave) {
-		val |= (0x1 << 24);
-	} else {
-		val &= ~(0x1 << 24);
-	}
-
-	putreg32(val, base + CTL);
-}
-
-static int hsi2c_master_handler(void *args)
-{
-	struct s5j_i2c_priv_s *priv = args;
-	unsigned int int_status;
-	int off = priv->master_test_data->cur_msg, buf_off = priv->master_test_data->buf_count;
-	int trans_count = priv->master_test_data->num;
-	struct i2c_msg_s *msg = &priv->master_test_data->msg[off];
-	unsigned int base = priv->config->base;
-
-	int_status = hsi2c_read_int_status(base);
-	if (int_status & HSI2C_INT_TX_ALMOST_EMPTY) {
-		if (buf_off < msg->length) {
-			putreg32(msg->buffer[buf_off], base + TXDATA);
-			priv->master_test_data->buf_count++;
-		} else {
-			hsi2c_disable_int(base, HSI2C_INT_TX_ALMOST_EMPTY);
-		}
-		hsi2c_clear_int(base, HSI2C_INT_TX_ALMOST_EMPTY);
-	}
-	if (int_status & HSI2C_INT_RX_ALMOST_FULL) {
-		msg->buffer[buf_off] = (u8)getreg32(base + RXDATA);
-		priv->master_test_data->buf_count++;
-		hsi2c_clear_int(base, HSI2C_INT_RX_ALMOST_FULL);
-	}
-	if (int_status & HSI2C_INT_TRANSFER_DONE_AUTO) {
-		if ((off + 1) == trans_count) {
-			/* complete(&priv->master_test_data->done); ?? */
-		} else {
-			off = ++priv->master_test_data->cur_msg;
-			priv->master_test_data->buf_count = 0;
-			msg++;
-
-			if ((off + 1) == trans_count) {
-				if (msg->flags & I2C_M_READ) {
-					hsi2c_set_auto_config(base, 1, 0, msg->length);
-				} else {
-					hsi2c_set_auto_config(base, 1, 1, msg->length);
-				}
-			} else {
-				if (msg->flags & I2C_M_READ) {
-					hsi2c_set_auto_config(base, 0, 0, msg->length);
-				} else {
-					hsi2c_set_auto_config(base, 0, 1, msg->length);
-				}
-			}
-
-			if (msg->flags & I2C_M_READ) {
-				hsi2c_set_trans_mode(base, 1, 0);
-			} else {
-				hsi2c_set_trans_mode(base, 1, 1);
-			}
-
-			hsi2c_run_auto_mode(base, 1);
-
-		}
-		hsi2c_clear_int(base, HSI2C_INT_TRANSFER_DONE_AUTO);
-	}
-
-	return 0;
-}
-
-static int hsi2c_slave_handler(void *args)
-{
-	struct s5j_i2c_priv_s *priv = args;
-	unsigned int int_status;
-	unsigned int val;
-	unsigned int base = priv->config->base;
-
-	int_status = hsi2c_read_int_status(base);
-	if (int_status & HSI2C_INT_SLAVE_ADDR_MATCH) {
-		val = getreg32(base + I2C_TRANS_STATUS);
-		if (val & SLAVE_TX_MODE) {
-			priv->slave_test_data->status = SLAVE_SET_DATA;
-			hsi2c_enable_int(base, HSI2C_INT_TX_ALMOST_EMPTY);
-		} else {
-			priv->slave_test_data->status = SLAVE_GET_REG;
-		}
-
-		hsi2c_clear_int(base, HSI2C_INT_SLAVE_ADDR_MATCH);
-	} else if (int_status & HSI2C_INT_RX_ALMOST_FULL) {
-		if (priv->slave_test_data->status == SLAVE_GET_REG) {
-			priv->slave_test_data->current_reg = getreg32(base + RXDATA);
-			priv->slave_test_data->status = SLAVE_GET_DATA;
-		} else if (priv->slave_test_data->status == SLAVE_GET_DATA) {
-			priv->slave_test_data->data[priv->slave_test_data->current_reg] = getreg32(base + RXDATA);
-			priv->slave_test_data->current_reg++;
-		}
-		hsi2c_clear_int(base, HSI2C_INT_RX_ALMOST_FULL);
-	} else if (int_status & HSI2C_INT_TX_ALMOST_EMPTY) {
-		if (getreg32(base + I2C_TRANS_STATUS) & STOP_COND) {
-			hsi2c_disable_int(base, HSI2C_INT_TX_ALMOST_EMPTY);
-		} else {
-			if (priv->slave_test_data->status == SLAVE_SET_DATA) {
-				putreg32(priv->slave_test_data->data[priv->slave_test_data->current_reg], base + TXDATA);
-				priv->slave_test_data->current_reg++;
-			}
-		}
-		hsi2c_clear_int(base, HSI2C_INT_TX_ALMOST_EMPTY);
-	}
-	if (int_status & HSI2C_INT_RX_OVERRUN) {
-		/* for Rx_overrun test */
-		hsi2c_clear_int(base, HSI2C_INT_RX_OVERRUN);
-	}
-	if (int_status & HSI2C_INT_TX_UNDERRUN) {
-		/* for Tx_underrun test */
-		hsi2c_clear_int(base, HSI2C_INT_RX_OVERRUN);
-	}
-
-	return 0;
-}
-
-static void hsi2c_set_auto_mode(unsigned int base)
-{
-	unsigned int val;
-
-	val = getreg32(base + I2C_CONF);
-	val |= (1 << 31);
-	putreg32(val, base + I2C_CONF);
-}
-
-static void hsi2c_set_fifo_level(unsigned int base)
-{
-	putreg32(0x10013, base + FIFO_CTL);
-}
-
-static void hsi2c_master_setup(struct s5j_i2c_priv_s *priv, unsigned int mode,
-				unsigned int speed, unsigned int slave_addr)
-{
-	if (priv->mode == I2C_POLLING) {
-		priv->xfer_speed = speed;
-		hsi2c_calculate_timing(priv->config->base, priv->clock, speed);
-	}
-#ifdef CONFIG_S5J_I2C_INTERRUPT_MODE
-	else if (priv->mode == I2C_INTERRUPT) {
-		priv->master_test_data = (struct master_data *)malloc(sizeof(struct master_data));
-		/* complete_init(&priv->master_test_data->done); */
-		hsi2c_set_trans_mode(priv->config->base, 1, 1);	/* set master mode */
-		hsi2c_conf(priv->config->base, speed);
-		hsi2c_calculate_timing(priv->config->base, priv->clock, speed);
-		hsi2c_set_slave_addr(priv->config->base, slave_addr, 1);
-		hsi2c_set_auto_mode(priv->config->base);
-		hsi2c_set_fifo_level(priv->config->base);
-	}
-#endif
-}
-
-static void hsi2c_slave_setup(struct s5j_i2c_priv_s *priv, unsigned int mode,
-				unsigned int speed, unsigned int slave_addr)
-{
-	priv->slave_test_data = (struct slave_data *)malloc(sizeof(struct slave_data));
-
-	/* slave mode is only support slave mode */
-	hsi2c_set_trans_mode(priv->config->base, 0, 0);	/* set slave mode */
-
-	/*set hwacg for slave mode */
-	hsi2c_set_hwacg_mode(priv->config->base, 1);
-
-	hsi2c_conf(priv->config->base, speed);
-	hsi2c_calculate_timing(priv->config->base, priv->clock, speed);
-	hsi2c_set_slave_addr(priv->config->base, slave_addr, 0);
-
-	hsi2c_disable_int(priv->config->base, HSI2C_INT_ALL);
-	hsi2c_enable_int(priv->config->base, HSI2C_INT_SLAVE_ADDR_MATCH | HSI2C_INT_RX_ALMOST_FULL);
-
-	hsi2c_set_fifo_level(priv->config->base);
-	hsi2c_set_auto_config(priv->config->base, 0, 0, 0);
-
-	hsi2c_set_trans_mode(priv->config->base, 0, 0);
-
-#ifdef CONFIG_S5J_I2C_INTERRUPT_MODE
-	if ((priv->master == I2C_SLAVE_MODE) || (priv->mode == I2C_INTERRUPT)) {
-		irq_attach(priv->config->irq, priv->config->isr, NULL);
-	}
-#endif
-}
-
-static void hsi2c_master_cleanup(struct s5j_i2c_priv_s *priv)
-{
-#ifdef CONFIG_S5J_I2C_INTERRUPT_MODE
-	if (priv->mode == I2C_INTERRUPT) {
-		free(priv->master_test_data);
-		priv->master_test_data = NULL;
-		irq_detach(priv->config->irq);
-	}
-#endif
-}
-
-static void hsi2c_slave_cleanup(struct s5j_i2c_priv_s *priv)
-{
-	/*  FreeHwMemP(priv->slave_test_data); */
-	free(priv->slave_test_data);
-	priv->slave_test_data = NULL;
-#ifdef CONFIG_S5J_I2C_INTERRUPT_MODE
-	if ((priv->master == I2C_SLAVE_MODE) || (priv->mode = I2C_INTERRUPT)) {
-		irq_detach(priv->config->irq);
-	}
-#endif
-}
-
-static int hsi2c_setup(struct s5j_i2c_priv_s *priv, unsigned int master,
-				unsigned int mode, unsigned int speed, unsigned int slave_addr)
-{
-	priv->master = master;
-	priv->mode = mode;
-	priv->xfer_speed = speed;
-	priv->slave_addr = slave_addr;
-
 	hsi2c_manual_fast_init(priv);
 
-	if (master == I2C_MASTER) {
-		hsi2c_master_setup(priv, mode, speed, slave_addr);
-	} else if (master == I2C_SLAVE_MODE) {
-		hsi2c_slave_setup(priv, mode, speed, slave_addr);
-	}
+	hsi2c_calculate_timing(priv, priv->xfer_speed);
 
-	return 0;
+	return OK;
 }
 
 static int hsi2c_cleanup(struct s5j_i2c_priv_s *priv)
 {
-	if (priv->master == I2C_MASTER) {
-		hsi2c_master_cleanup(priv);
-	} else if (priv->master == I2C_SLAVE_MODE) {
-		hsi2c_slave_cleanup(priv);
-	}
+	priv->xfer_speed = S5J_DEFAULT_HS_CLOCK;
 
-	priv->master = I2C_MASTER;
-	priv->mode = I2C_POLLING;
-	priv->xfer_speed = I2C_SPEED_400KHZ;
-
-	putreg32(0x80000000, priv->config->base + CTL);
+	i2c_putreg32(priv, S5J_I2C_CTL, I2C_CTL_SW_RST);
 	up_udelay(10);
 
-	putreg32(0x0, priv->config->base + CTL);
+	i2c_putreg32(priv, S5J_I2C_CTL, I2C_CTL_RESET_VALUE);
 	up_udelay(100);
 
-	return 0;
+	return OK;
 }
 
 static inline void s5j_i2c_sem_wait(struct s5j_i2c_priv_s *priv)
 {
-	while (sem_wait(&priv->exclsem) != 0) {
+	while (sem_wait(&priv->sem_excl) != 0) {
 		ASSERT(errno == EINTR);
 	}
 }
 
 static inline void s5j_i2c_sem_post(struct s5j_i2c_priv_s *priv)
 {
-	sem_post(&priv->exclsem);
+	sem_post(&priv->sem_excl);
 }
 
 static inline void s5j_i2c_sem_init(struct s5j_i2c_priv_s *priv)
 {
-	sem_init(&priv->exclsem, 0, 1);
+	sem_init(&priv->sem_excl, 0, 1);
 #ifndef CONFIG_I2C_POLLED
-	sem_init(&priv->waitsem, 0, 0);
+	sem_init(&priv->sem_isr, 0, 0);
+	sem_setprotocol(&priv->sem_isr, SEM_PRIO_NONE);
 #endif
 }
 
 static inline void s5j_i2c_sem_destroy(struct s5j_i2c_priv_s *priv)
 {
-	sem_destroy(&priv->exclsem);
+	sem_destroy(&priv->sem_excl);
 #ifndef CONFIG_I2C_POLLED
-	sem_destroy(&priv->waitsem);
+	sem_destroy(&priv->sem_isr);
 #endif
 }
 
-static int s5j_i2c0_interrupt(int irq, void *context, void *arg)
+static int s5j_i2c_initialize(struct s5j_i2c_priv_s *priv)
 {
-	struct s5j_i2c_priv_s *priv;
+	/* Configure GPIO pins */
+	s5j_configgpio(priv->config->scl_pin);
+	s5j_configgpio(priv->config->sda_pin);
 
-	/* Read the masked interrupt status */
-	priv = &s5j_i2c0_priv;
-
-	/* Let the common interrupt handler do the rest of the work */
-	return hsi2c_master_handler(priv);
-}
-
-static int s5j_i2c1_interrupt(int irq, void *context, void *arg)
-{
-	struct s5j_i2c_priv_s *priv;
-
-	/* Read the masked interrupt status */
-	priv = &s5j_i2c1_priv;
-
-	/* Let the common interrupt handler do the rest of the work */
-	return hsi2c_master_handler(priv);
-}
-
-static int s5j_i2c2_interrupt(int irq, void *context, void *arg)
-{
-	struct s5j_i2c_priv_s *priv;
-
-	/* Read the masked interrupt status */
-	priv = &s5j_i2c2_priv;
-
-	/* Let the common interrupt handler do the rest of the work */
-	return hsi2c_master_handler(priv);
-}
-
-static int s5j_i2c3_interrupt(int irq, void *context, void *arg)
-{
-	struct s5j_i2c_priv_s *priv;
-
-	/* Read the masked interrupt status */
-	priv = &s5j_i2c3_priv;
-
-	/* Let the common interrupt handler do the rest of the work */
-	return hsi2c_master_handler(priv);
-}
-
-static int s5j_i2c_initialize(struct s5j_i2c_priv_s *priv, unsigned int frequency)
-{
-	const struct s5j_i2c_config_s *config = priv->config;
-	int ret;
-
-	ret = s5j_configgpio(config->scl_pin);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = s5j_configgpio(config->sda_pin);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Enable the I2C master block */
-	/* Configure the the initial I2C clock frequency. */
-	priv->xfer_speed = frequency;
-	hsi2c_setup(priv, priv->master, priv->mode, priv->xfer_speed, priv->slave_addr);
-
-	/*
-	 * Attach interrupt handlers and enable interrupts at the NVIC (still
-	 * disabled at the source).
-	 */
-#ifdef CONFIG_S5J_I2C_INTERRUPT_MODE
-	if ((priv->master == I2C_SLAVE_MODE) || (priv->mode == I2C_INTERRUPT)) {
-		irq_attach(config->irq, config->isr, NULL);
-		up_enable_irq(config->irq);
-	}
-#endif
+	/* Enable I2C */
+	hsi2c_setup(priv);
 
 	return OK;
 }
@@ -1037,14 +644,6 @@ static int s5j_i2c_uninitialize(struct s5j_i2c_priv_s *priv)
 	/* Unconfigure GPIO pins */
 	s5j_unconfiggpio(priv->config->scl_pin);
 	s5j_unconfiggpio(priv->config->sda_pin);
-
-	/* Disable and detach interrupts */
-#ifdef CONFIG_S5J_I2C_INTERRUPT_MODE
-	if ((priv->master == I2C_SLAVE_MODE) || (priv->mode == I2C_INTERRUPT)) {
-		up_disable_irq(priv->config->irq);
-		irq_detach(priv->config->irq);
-	}
-#endif
 
 	return OK;
 }
@@ -1065,20 +664,12 @@ unsigned int s5j_i2c_setclock(FAR struct i2c_dev_s *dev, unsigned int frequency)
 
 	/* Has the I2C bus frequency changed? */
 	if (frequency != priv->xfer_speed) {
-		/*
-		 * Calculate the clock divider that results in the highest frequency
-		 * that is than or equal to the desired speed.
-		 */
-		if (priv->mode != I2C_POLLING) {
-			hsi2c_conf(priv->config->base, frequency);
-		}
-
-		hsi2c_calculate_timing(priv->config->base, priv->clock, frequency);
+		hsi2c_calculate_timing(priv, frequency);
 	}
 
 	/* Save the new I2C frequency */
 	priv->xfer_speed = frequency;
-	return 0;
+	return OK;
 }
 
 /**
@@ -1090,7 +681,7 @@ unsigned int s5j_i2c_setclock(FAR struct i2c_dev_s *dev, unsigned int frequency)
  * @return    = 0
  * @note
  */
-int s5j_i2c_setownaddress(FAR struct i2c_dev_s *dev, int addr, int nbits)
+int s5j_i2c_setaddress(FAR struct i2c_dev_s *dev, int addr, int nbits)
 {
 	struct s5j_i2c_priv_s *priv = (struct s5j_i2c_priv_s *)dev;
 
@@ -1098,8 +689,8 @@ int s5j_i2c_setownaddress(FAR struct i2c_dev_s *dev, int addr, int nbits)
 	if (nbits == 1) {
 		priv->msgv->flags |= I2C_M_TEN;
 	}
-	hsi2c_set_slave_addr(priv->config->base, addr, 0);
-	return 0;
+	hsi2c_set_slave_addr(priv, addr);
+	return OK;
 }
 
 /**
@@ -1119,7 +710,6 @@ int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc)
 	int nak_ok;
 	int start = 1;
 	int stop = 1;
-	unsigned int base = priv->config->base;
 
 	/* Ensure that address or flags don't change meanwhile */
 	s5j_i2c_sem_wait(priv);
@@ -1138,7 +728,7 @@ int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc)
 	}
 
 	priv->mcnt = 0;
-	priv->mptr = NULL;
+	priv->ptr = NULL;
 	priv->msgv = msgv;
 	priv->msgc = msgc;
 
@@ -1147,12 +737,12 @@ int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc)
 		hsi2c_start(priv);
 	}
 
-	if (priv->xfer_speed > I2C_SPEED_400KHZ) {
-		hsi2c_conf(base, I2C_SPEED_400KHZ);
-		putreg32((0xF << 24 | I2C_SEND_DATA), base + I2C_MANUAL_CMD);
+	if (priv->xfer_speed > S5J_DEFAULT_HS_CLOCK) {
+		hsi2c_conf(priv, S5J_DEFAULT_HS_CLOCK);
+		i2c_putreg32(priv, S5J_I2C_MANUAL_CMD, I2C_MANUAL_CMD_TX_DATA(0xF) | I2C_MANUAL_CMD_SEND_DATA);
 		hsi2c_wait_xfer_noack(priv);
 
-		hsi2c_conf(base, priv->xfer_speed);
+		hsi2c_conf(priv, priv->xfer_speed);
 		hsi2c_repstart(priv);
 		hsi2c_wait_xfer_noack(priv);
 	}
@@ -1175,7 +765,7 @@ int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc)
 			ret = readbytes(priv, pmsg);
 			if (ret < pmsg->length) {
 				if (ret >= 0) {
-					return -EIO;
+					ret = -EIO;
 				}
 				goto fail;
 			}
@@ -1194,7 +784,7 @@ int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc)
 
 fail:
 	priv->mcnt = 0;
-	priv->mptr = NULL;
+	priv->ptr = NULL;
 	if (stop) {
 		hsi2c_stop(priv);
 	}
@@ -1211,8 +801,7 @@ int s5j_i2c_read(FAR struct i2c_dev_s *dev, FAR uint8_t *buffer, int buflen)
 	struct i2c_msg_s msg;
 	unsigned int flags;
 
-	/* 7- or 10-bit? */
-	flags = (priv->addrlen == 10) ? I2C_M_TEN : 0;
+	flags = 0;
 
 	/* Setup for the transfer */
 	msg.addr = priv->slave_addr, msg.flags = (flags | I2C_M_READ);
@@ -1229,16 +818,15 @@ int s5j_i2c_read(FAR struct i2c_dev_s *dev, FAR uint8_t *buffer, int buflen)
 	return s5j_i2c_transfer(dev, &msg, 1);
 }
 
-int s5j_i2c_write(FAR struct i2c_dev_s *dev, FAR const uint8_t *buffer,
-				int buflen)
+int s5j_i2c_write(FAR struct i2c_dev_s *dev, FAR const uint8_t *buffer, int buflen)
 {
 	struct s5j_i2c_priv_s *priv = (struct s5j_i2c_priv_s *)dev;
 	struct i2c_msg_s msg;
 
 	/* Setup for the transfer */
 	msg.addr = priv->slave_addr;
-	msg.flags = (priv->addrlen == 10) ? I2C_M_TEN : 0;
-	msg.buffer = (FAR uint8_t *)buffer; /* Override const */
+	msg.flags = 0;
+	msg.buffer = (FAR uint8_t *)buffer;	/* Override const */
 	msg.length = buflen;
 
 	/*
@@ -1261,39 +849,43 @@ struct i2c_dev_s *up_i2cinitialize(int port)
 	struct s5j_i2c_priv_s *priv = NULL;
 	const struct s5j_i2c_config_s *config;
 	int flags;
+	int total_ports = sizeof(g_s5j_i2c_priv) / sizeof(g_s5j_i2c_priv[0]);
+
+	/* check if port is valid */
+	if (port < 0 || port >= total_ports) {
+		return NULL;
+	}
 
 	/* Get I2C private structure */
 	if (g_s5j_i2c_priv[port] != NULL) {
-		return (FAR struct i2c_dev_s *)g_s5j_i2c_priv[port];
+		priv = g_s5j_i2c_priv[port];
+		priv->refs++;
+		return (FAR struct i2c_dev_s *)priv;
 	}
 
 	switch (port) {
 	case 0:
 		priv = &s5j_i2c0_priv;
 		config = &s5j_i2c0_config;
-		cal_clk_enable(gate_hsi2c0);
-		priv->clock = cal_clk_getrate(gate_hsi2c0);
+		priv->clock = s5j_clk_get_rate(CLK_SPL_BUS_P0);
 		break;
 
 	case 1:
 		priv = &s5j_i2c1_priv;
 		config = &s5j_i2c1_config;
-		cal_clk_enable(gate_hsi2c1);
-		priv->clock = cal_clk_getrate(gate_hsi2c1);
+		priv->clock = s5j_clk_get_rate(CLK_SPL_BUS_P0);
 		break;
 
 	case 2:
 		priv = &s5j_i2c2_priv;
 		config = &s5j_i2c2_config;
-		cal_clk_enable(gate_hsi2c2);
-		priv->clock = cal_clk_getrate(gate_hsi2c2);
+		priv->clock = s5j_clk_get_rate(CLK_SPL_BUS_P0);
 		break;
 
 	case 3:
 		priv = &s5j_i2c3_priv;
 		config = &s5j_i2c3_config;
-		cal_clk_enable(gate_hsi2c3);
-		priv->clock = cal_clk_getrate(gate_hsi2c3);
+		priv->clock = s5j_clk_get_rate(CLK_SPL_BUS_P0);
 		break;
 
 	default:
@@ -1316,13 +908,18 @@ struct i2c_dev_s *up_i2cinitialize(int port)
 		s5j_i2c_sem_init(priv);
 
 		/* Initialize the I2C hardware */
-		s5j_i2c_initialize(priv, priv->xfer_speed);
+		s5j_i2c_initialize(priv);
 	}
 
 	g_s5j_i2c_priv[port] = priv;
 	irqrestore(flags);
 
 	return (FAR struct i2c_dev_s *)priv;
+}
+
+int up_i2cuninitialize(FAR struct i2c_dev_s *dev)
+{
+	return s5j_i2cbus_uninitialize(dev);
 }
 
 /**
@@ -1369,13 +966,11 @@ void s5j_i2c_register(int bus)
 {
 	FAR struct i2c_dev_s *i2c;
 	char path[16];
-	int ret;
 
 	i2c = up_i2cinitialize(bus);
 	if (i2c != NULL) {
 		snprintf(path, 16, "/dev/i2c-%d", bus);
-		ret = i2c_uioregister(path, i2c);
-		if (ret < 0) {
+		if (i2c_uioregister(path, i2c) < 0) {
 			s5j_i2cbus_uninitialize(i2c);
 		}
 	}

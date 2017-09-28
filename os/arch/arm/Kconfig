@@ -4,8 +4,6 @@
 #
 
 if ARCH_ARM
-comment "ARM Options"
-
 choice
 	prompt "ARM chip selection"
 	default ARCH_CHIP_S5J
@@ -28,6 +26,13 @@ config ARCH_CHIP_S5J
 	---help---
 		Samsung IoT SoC architectures (ARM Cortex R)
 endchoice
+
+config ARCH_CHIP
+	string
+	default "s5j"       if ARCH_CHIP_S5J
+	default "tiva"      if ARCH_CHIP_LM
+
+comment "ARM Options"
 
 config ARCH_CORTEXM3
 	bool
@@ -54,11 +59,6 @@ config ARCH_FAMILY
 	string
 	default "armv7-m"	if ARCH_CORTEXM3 || ARCH_CORTEXM4
 	default "armv7-r"	if ARCH_CORTEXR4
-
-config ARCH_CHIP
-	string
-	default "s5j"       if ARCH_CHIP_S5J
-	default "tiva"      if ARCH_CHIP_LM
 
 config ARMV7M_USEBASEPRI
 	bool "Use BASEPRI Register"

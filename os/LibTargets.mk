@@ -105,6 +105,12 @@ fs$(DELIM)libfs$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT): fs$(DELIM)libfs$(LIBEXT)
 	$(Q) install fs$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT)
 
+audio$(DELIM)libaudio$(LIBEXT): context
+	$(Q) $(MAKE) -C audio TOPDIR="$(TOPDIR)" libaudio$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+
+$(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT): audio$(DELIM)libaudio$(LIBEXT)
+	$(Q) install audio$(DELIM)libaudio$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
+
 drivers$(DELIM)libdrivers$(LIBEXT): context
 	$(Q) $(MAKE) -C drivers TOPDIR="$(TOPDIR)" libdrivers$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
@@ -146,7 +152,7 @@ $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT): libxx$(DELIM)libcxx$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libxx$(DELIM)libcxx$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT)
 
 $(APPDIR)$(DELIM)libapps$(LIBEXT): context
-	$(Q) $(MAKE) -C $(APPDIR) TOPDIR="$(TOPDIR)" libapps$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) -C $(APPDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" libapps$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT): $(APPDIR)$(DELIM)libapps$(LIBEXT)
 	$(Q) install $(APPDIR)$(DELIM)libapps$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
@@ -164,7 +170,7 @@ $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT): $(FRAMEWORK_LIB_DIR)$(DELIM)libfr
 	$(Q) install $(FRAMEWORK_LIB_DIR)$(DELIM)libframework$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT)
 
 $(EXTDIR)$(DELIM)libexternal$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" libexternal$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" libexternal$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBEXT)
 	$(Q) install $(EXTDIR)$(DELIM)libexternal$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT)
@@ -208,6 +214,25 @@ ifeq ($(CONFIG_ENABLE_IOTIVITY_SECURED),y)
 
 
 endif
+endif
+
+#IoTjs Libs
+
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+$(LIBRARIES_DIR)$(DELIM)libhttpparser$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libhttpparser$(LIBEXT)
+	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libhttpparser$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libhttpparser$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libiotjs$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libiotjs$(LIBEXT)
+	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libiotjs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libiotjs$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libjerry-core$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libjerry-core$(LIBEXT)
+	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libjerry-core$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libjerry-core$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libtuv$(LIBEXT)
+	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libtuv$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT): $(IOTJS_LIB_DIR)$(DELIM)libjerry-libm$(LIBEXT)
+	$(Q) install $(IOTJS_LIB_DIR)$(DELIM)libjerry-libm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT)
 endif
 
 # Possible non-kernel builds

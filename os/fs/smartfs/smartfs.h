@@ -245,20 +245,6 @@
 #undef  CONFIG_SMARTFS_DYNAMIC_HEADER
 #endif
 
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-#define ENTRY_VALID(e) ((smartfs_rdle16(&e->flags) & SMARTFS_DIRENT_EMPTY) != \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
-						((smartfs_rdle16(&e->flags) & SMARTFS_DIRENT_ACTIVE) == \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
-
-#else
-#define ENTRY_VALID(e) ((e->flags & SMARTFS_DIRENT_EMPTY) != \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) && \
-						((e->flags & SMARTFS_DIRENT_ACTIVE) == \
-						(SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))
-
-#endif
-
 #ifdef CONFIG_SMARTFS_JOURNALING
 
 /*
@@ -438,6 +424,10 @@ struct smartfs_logging_entry_s {
 								 *      transactions for a sector in case of power failure.
 								 */
 
+	uint8_t crc16[2];			/*      For CRC value to check validation of journal entry
+							     *      First 8bits for entry, next 8bits for entry + data
+							     */
+
 	uint16_t curr_sector;		/*      Transaction type : Use
 								 *        1) T_WRITE  : sector number of sector to be written.
 								 *        2) T_CREATE : sector number of parent sector of new entry.
@@ -544,7 +534,7 @@ int set_used_byte_count(uint8_t *used, uint16_t count);
 uint16_t get_used_byte_count(uint8_t *used);
 #endif
 #ifdef CONFIG_SMARTFS_SECTOR_RECOVERY
-int smartfs_recover(struct inode *mountpt);
+int smartfs_recover(struct smartfs_mountpt_s *fs);
 int smart_validatesector(FAR struct inode *inode, uint16_t logsector, char *validsectors);
 int smart_recoversectors(FAR struct inode *inode, char *validsectors, int *nobsolete, int *nrecovered);
 

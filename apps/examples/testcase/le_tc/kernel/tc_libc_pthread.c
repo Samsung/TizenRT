@@ -766,11 +766,13 @@ static void tc_libc_pthread_pthread_mutexattr_getprotocol(void)
 	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
+	attr.proto = PTHREAD_PRIO_INHERIT;
 	ret_chk = pthread_mutexattr_getprotocol(&attr, &mutexattr_protocol);
-	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", ret_chk, PTHREAD_PRIO_INHERIT);
+	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", mutexattr_protocol, attr.proto);
 #else
 	ret_chk = pthread_mutexattr_getprotocol(&attr, &mutexattr_protocol);
-	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", ret_chk, PTHREAD_PRIO_NONE);
+	TC_ASSERT_EQ("pthread_mutexattr_getprotocol", ret_chk, OK);
 #endif
 	TC_SUCCESS_RESULT();
 }
@@ -1084,7 +1086,7 @@ static void tc_libc_pthread_pthread_rwlock_rdlock_wrlock(void)
 }
 
 /**
-* @fn                   :tc_libc_pthread_pthread_rwlock_test_timeout
+* @fn                   :tc_libc_pthread_pthread_rwlock_timedwrlock_timedrdlock
 * @Description          :creates and initializes a new read-write lock object with specified attributes and \
 *                        tries acquiring timed read & write lock referenced rwlock multple times and checks whether it times out correctly \
 *                        destroys the read-write lock object referenced by rwlock and release any resources used by the lock started with pthread_rwlock_init.
@@ -1094,7 +1096,7 @@ static void tc_libc_pthread_pthread_rwlock_rdlock_wrlock(void)
 * @return               :void
 */
 
-static void tc_libc_pthread_pthread_rwlock_test_timeout(void)
+static void tc_libc_pthread_pthread_rwlock_timedwrlock_timedrdlock(void)
 {
 
 	pthread_rwlock_t rw_lock;
@@ -1227,6 +1229,87 @@ static void tc_libc_pthread_pthread_rwlock_trywrlock(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @fn                   :tc_libc_pthread_pthread_setcancelstate
+* @brief                :This tc tests pthread_setcancelstate()
+* @Scenario             :The function shall atomically both set the calling thread's cancelability state to the indicated state
+*                        and return the previous cancelability state at the location referenced by oldstate
+*                        If successful pthread_setcancelstate() function shall return zero;
+*                        otherwise, an error number shall be returned to indicate the error.
+* @API'scovered         :pthread_setcancelstate
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+static void tc_libc_pthread_pthread_setcancelstate(void)
+{
+	int state;
+	int oldstate;
+	int ret_chk;
+
+	state = PTHREAD_CANCEL_ENABLE;
+	ret_chk = pthread_setcancelstate(state, &oldstate);
+	TC_ASSERT_EQ("pthread_setcancelstate", ret_chk, OK);
+
+	state = PTHREAD_CANCEL_DISABLE;
+	ret_chk = pthread_setcancelstate(state, &oldstate);
+	TC_ASSERT_EQ("pthread_setcancelstate", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_setcancelstate", oldstate, PTHREAD_CANCEL_ENABLE);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_libc_pthread_pthread_setcanceltype
+* @brief                :This tc tests pthread_setcanceltype()
+* @Scenario             :The function shall atomically both set the calling thread's cancelability type to the indicated type
+*                        and return the previous cancelability type at the location referenced by oldtype
+*                        If successful pthread_setcanceltype() function shall return zero;
+*                        otherwise, an error number shall be returned to indicate the error.
+* @API'scovered         :pthread_setcanceltype
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+#ifndef CONFIG_CANCELLATION_POINTS
+static void tc_libc_pthread_pthread_setcanceltype(void)
+{
+	int type;
+	int oldtype;
+	int ret_chk;
+
+	type = PTHREAD_CANCEL_ASYNCHRONOUS;
+	ret_chk = pthread_setcanceltype(type, &oldtype);
+	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, OK);
+
+	type = PTHREAD_CANCEL_DEFERRED;
+	ret_chk = pthread_setcanceltype(type, &oldtype);
+	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, ENOSYS);
+	TC_ASSERT_EQ("pthread_setcanceltype", oldtype, PTHREAD_CANCEL_ASYNCHRONOUS);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/**
+* @fn                   :tc_libc_pthread_pthread_testcancel
+* @brief                :This tc tests pthread_testcancel()
+* @Scenario             :The function shall create a cancellation point in the calling thread
+*                        It has no effect if cancelability is disabled.
+* @API'scovered         :pthread_testcancel
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+#ifndef CONFIG_CANCELLATION_POINTS
+static void tc_libc_pthread_pthread_testcancel(void)
+{
+	pthread_testcancel();
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
 /****************************************************************************
  * Name: libc_pthread
  ****************************************************************************/
@@ -1263,7 +1346,12 @@ int libc_pthread_main(void)
 	tc_libc_pthread_pthread_rwlock_tryrdlock();
 	tc_libc_pthread_pthread_rwlock_trywrlock();
 	tc_libc_pthread_pthread_rwlock_rdlock_wrlock();
-	tc_libc_pthread_pthread_rwlock_test_timeout();
+	tc_libc_pthread_pthread_rwlock_timedwrlock_timedrdlock();
+	tc_libc_pthread_pthread_setcancelstate();
+#ifndef CONFIG_CANCELLATION_POINTS
+	tc_libc_pthread_pthread_setcanceltype();
+	tc_libc_pthread_pthread_testcancel();
+#endif
 
 	return 0;
 }

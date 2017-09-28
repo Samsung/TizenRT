@@ -64,14 +64,17 @@
 #include <string.h>
 #include <time.h>
 
-#include <apps/netutils/ntpclient.h>
+#include <protocols/ntpclient.h>
 
 /****************************************************************************
  * Definitions
  ****************************************************************************/
 #define TIME_STRING_LEN         16
 #define DATE_STRING_LEN         16
-#define NTP_SERVER_PORT         123
+
+#ifndef CONFIG_EXAMPLES_NTPCLIENT_TEST_SERVER_PORT
+#define CONFIG_EXAMPLES_NTPCLIENT_TEST_SERVER_PORT	123
+#endif
 
 /****************************************************************************
  * Enumeration
@@ -272,7 +275,7 @@ int ntpclient_main(int argc, char *argv[])
 		memset(&g_server_conn, 0x0, sizeof(g_server_conn));
 		for (i = 0; i < num_of_servers; i++) {
 			g_server_conn[i].hostname = argv[3 + i];
-			g_server_conn[i].port = NTP_SERVER_PORT;
+			g_server_conn[i].port = CONFIG_EXAMPLES_NTPCLIENT_TEST_SERVER_PORT;
 		}
 		if (test_ntpclient_start(g_server_conn, interval_secs, num_of_servers) != 0) {
 			goto errout;

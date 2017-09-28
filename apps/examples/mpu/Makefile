@@ -57,6 +57,7 @@ include $(APPDIR)/Make.defs
 # mpu test! built-in application info
 
 APPNAME = mpu_test
+FUNCNAME = mpu_tc_main
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
 

@@ -106,7 +106,7 @@
 int g_reboot = 0;
 static int g_quit = 0;
 
-static char coap_uri_prefix [COAP_PROTOCOL_MAX][COAP_MAX_URI_PREFIX_SIZE] = {
+static char coap_uri_prefix[COAP_PROTOCOL_MAX][COAP_MAX_URI_PREFIX_SIZE] = {
 	"coap://",
 	"coaps://",
 	"coap+tcp://",

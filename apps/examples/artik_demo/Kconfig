@@ -5,6 +5,7 @@
 
 menuconfig EXAMPLES_ARTIK_DEMO
 	bool "Artik API Demo Example"
+	depends on DM
 	default n
 	---help---
 		Enable the artik demo example

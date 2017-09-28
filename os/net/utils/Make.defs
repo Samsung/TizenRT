@@ -53,9 +53,10 @@
 
 # Common utilities
 
-NET_CSRCS += net_dsec2tick.c net_dsec2timeval.c net_timeval2dsec.c
 NET_CSRCS += net_lock.c
-
+NET_CSRCS += net_dsec2tick.c
+NET_CSRCS += net_dsec2timeval.c
+NET_CSRCS += net_timeval2dsec.c
 # Include utility build support
 
 DEPPATH += --dep-path utils

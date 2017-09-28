@@ -109,6 +109,9 @@ void irq_dispatch(int irq, FAR void *context)
 	} else {
 		vector = g_irqvector[irq].handler;
 		arg    = g_irqvector[irq].arg;
+#ifdef CONFIG_DEBUG_IRQ_INFO
+		g_irqvector[irq].count++;
+#endif
 	}
 #else
 	vector = irq_unexpected_isr;

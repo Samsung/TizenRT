@@ -33,20 +33,12 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_LIBTUV),y)
-
 CSRCS += uv_tinyara.c
 CSRCS += uv_tinyara_clock.c
 CSRCS += uv_tinyara_io.c
 CSRCS += uv_tinyara_loop.c
 CSRCS += uv_tinyara_thread.c
 
-CFLAGS += -D__TINYARA__
-CFLAGS += -I$(TOPDIR)/../external/libtuv/include
-CFLAGS += -I$(TOPDIR)/../external/libtuv/source
-CFLAGS += -I$(TOPDIR)/../external/libtuv/source/tinyara
+DEPPATH += --dep-path source/tinyara
+VPATH += :source/tinyara
 
-DEPPATH += --dep-path libtuv/source/tinyara
-VPATH += :libtuv/source/tinyara
-
-endif

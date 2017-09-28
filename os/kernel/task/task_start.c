@@ -62,10 +62,10 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "task/task.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions

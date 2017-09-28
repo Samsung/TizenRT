@@ -23,16 +23,18 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-#include <ttrace.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <tinyara/clock.h>
-#include <tinyara/ttrace_internal.h>
+#include <tinyara/ttrace.h>
 #include <tinyara/sched.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define TTRACE_EVENT_TYPE_BEGIN    'b'
+#define TTRACE_EVENT_TYPE_END      'e'
+#define TTRACE_EVENT_TYPE_SCHED    's'
 
 /****************************************************************************
  * Private Type Declarations
@@ -66,7 +68,7 @@ int fd = -1;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-int is_fd_available(void)
+static int is_fd_available(void)
 {
 	if (fd < 0) {
 		fd = open("/dev/ttrace", O_WRONLY);
@@ -75,28 +77,74 @@ int is_fd_available(void)
 	return fd;
 }
 
-int is_tag_available(int tag)
+static bool is_tag_available(int tag)
 {
-	return ioctl(fd, TTRACE_FUNC_TAG, tag);
+	int ret;
+
+	ret = ioctl(fd, TTRACE_FUNC_TAG, tag);
+	if (!(ret & tag)) {
+		return false;
+	}
+
+	return true;
 }
 
-int send_packet_sched(struct trace_packet *packet)
+#ifdef CONFIG_DEBUG_TTRACE
+static void show_packet(struct trace_packet *packet)
+{
+	int uid;
+	int size;
+
+	if (packet->event_type == TTRACE_EVENT_TYPE_SCHED) {
+		ttdbg("[%06d:%06d] %03d: %c|prev_comm=%s prev_pid=%u prev_prio=%u prev_state=%u ==> next_comm=%s next_pid=%u next_prio=%u\r\n",
+			packet->ts.tv_sec, packet->ts.tv_usec,
+			packet->pid,
+			(char)packet->event_type,
+			packet->msg.sched_msg.prev_comm,
+			packet->msg.sched_msg.prev_pid,
+			packet->msg.sched_msg.prev_prio,
+			packet->msg.sched_msg.prev_state,
+			packet->msg.sched_msg.next_comm,
+			packet->msg.sched_msg.next_pid,
+			packet->msg.sched_msg.next_prio);
+		size = sizeof(struct trace_packet);
+	} else {
+		ttdbg("time: %06d.%06d\r\n", packet->ts.tv_sec, packet->ts.tv_usec);
+		ttdbg("event_type: %c, %d\r\n", packet->event_type, packet->event_type);
+		ttdbg("pid: %d\r\n", packet->pid);
+		ttdbg("codelen: %d\r\n", packet->codelen);
+
+		uid = (packet->codelen & TTRACE_CODE_UNIQUE) >> 7;
+		ttdbg("unique code? %d\r\n", uid);
+		if (uid == TRUE) {
+			ttdbg("uid: %d\r\n", (packet->codelen & ~TTRACE_CODE_UNIQUE));
+			size = sizeof(struct trace_packet) - TTRACE_MSG_BYTES;
+		} else {
+			ttdbg("message: %s\r\n", packet->msg.message);
+			size = sizeof(struct trace_packet);
+		}
+	}
+
+	ttdbg("packet size: %d\r\n", size);
+}
+#endif
+
+static int send_packet_sched(struct trace_packet *packet)
 {
 	int ret = 0;
 	ret = write(fd, packet, sizeof(struct trace_packet));
 	return ret;
 }
 
-int create_packet_sched(struct trace_packet *packet, struct tcb_s *prev, struct tcb_s *next)
+static int create_packet_sched(struct trace_packet *packet, struct tcb_s *prev, struct tcb_s *next)
 {
 	int ret = TTRACE_VALID;
 	int msg_len = sizeof(struct sched_message);
 
 	gettimeofday(&(packet->ts), NULL);
-	packet->event_type = (int8_t)'s';
+	packet->event_type = TTRACE_EVENT_TYPE_SCHED;
 	packet->pid = getpid();
 	packet->codelen = TTRACE_CODE_VARIABLE | msg_len;
-	packet->pad = -1;
 
 	packet->msg.sched_msg.pad = -1;
 
@@ -122,10 +170,13 @@ int create_packet_sched(struct trace_packet *packet, struct tcb_s *prev, struct 
 		packet->msg.sched_msg.next_prio = 0;
 	}
 
+	packet->msg.sched_msg.prev_comm[TTRACE_COMM_BYTES - 1] = '\0';
+	packet->msg.sched_msg.next_comm[TTRACE_COMM_BYTES - 1] = '\0';
+
 	return ret;
 }
 
-int send_packet(struct trace_packet *packet)
+static int send_packet(struct trace_packet *packet)
 {
 	int ret = 0;
 
@@ -138,7 +189,7 @@ int send_packet(struct trace_packet *packet)
 	return ret;
 }
 
-int create_packet(struct trace_packet *packet, char type, char *str, va_list valist)
+static int create_packet(struct trace_packet *packet, char type, char *str, va_list valist)
 {
 	int ret = TTRACE_VALID;
 	int msg_len = strlen(str);
@@ -152,21 +203,19 @@ int create_packet(struct trace_packet *packet, char type, char *str, va_list val
 	packet->event_type = (int8_t)type;
 	packet->pid = getpid();
 	packet->codelen = TTRACE_CODE_VARIABLE | msg_len;
-	packet->pad = -1;
 
 	vsnprintf(packet->msg.message, msg_len, str, valist);
 
 	return ret;
 }
 
-int create_packet_u(struct trace_packet *packet, char type, int8_t uid)
+static int create_packet_uid(struct trace_packet *packet, char type, int8_t uniqueid)
 {
 	int ret = 0;
 	gettimeofday(&(packet->ts), NULL);
 	packet->event_type = type;
 	packet->pid = getpid();
-	packet->codelen = TTRACE_CODE_UNIQUE | uid;
-	packet->pad = -1;
+	packet->codelen = TTRACE_CODE_UNIQUE | uniqueid;
 
 	return ret;
 }
@@ -174,18 +223,13 @@ int create_packet_u(struct trace_packet *packet, char type, int8_t uid)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
 int trace_sched(struct tcb_s *prev_tcb, struct tcb_s *next_tcb)
 {
 	int ret = TTRACE_VALID;
 	int tag = TTRACE_TAG_TASK;
 	struct trace_packet packet;
 
-	if (is_fd_available() < 0) {
-		return TTRACE_INVALID;
-	}
-
-	if (is_tag_available(tag) == TTRACE_INVALID) {
+	if (is_fd_available() < 0 || !is_tag_available(tag)) {
 		return TTRACE_INVALID;
 	}
 
@@ -194,12 +238,16 @@ int trace_sched(struct tcb_s *prev_tcb, struct tcb_s *next_tcb)
 		assert(0);
 	}
 
-	//show_sched_packet(&packet);
+#ifdef CONFIG_DEBUG_TTRACE
+	show_packet(&packet);
+#endif
 
 	ret = send_packet_sched(&packet);
+
 	return ret;
 
 }
+
 /****************************************************************************
  * Name: trace_begin
  *
@@ -215,11 +263,7 @@ int trace_begin(int tag, char *str, ...)
 	struct trace_packet packet;
 	va_list ap;
 
-	if (is_fd_available() < 0) {
-		return TTRACE_INVALID;
-	}
-
-	if (is_tag_available(tag) == TTRACE_INVALID) {
+	if (is_fd_available() < 0 || !is_tag_available(tag)) {
 		return TTRACE_INVALID;
 	}
 
@@ -230,33 +274,35 @@ int trace_begin(int tag, char *str, ...)
 		assert(0);
 	}
 
-	//show_packet(&packet);
+#ifdef CONFIG_DEBUG_TTRACE
+	show_packet(&packet);
+#endif
 
 	ret = send_packet(&packet);
+
 	return ret;
 }
 
-int trace_begin_u(int tag, int8_t uid)
+int trace_begin_uid(int tag, int8_t uniqueid)
 {
 	int ret = TTRACE_VALID;
 	struct trace_packet packet;
 
-	if (is_fd_available() < 0) {
+	if (is_fd_available() < 0 || !is_tag_available(tag)) {
 		return TTRACE_INVALID;
 	}
 
-	if (is_tag_available(tag) == TTRACE_INVALID) {
-		return TTRACE_INVALID;
-	}
-
-	ret = create_packet_u(&packet, TTRACE_EVENT_TYPE_BEGIN, uid);
+	ret = create_packet_uid(&packet, TTRACE_EVENT_TYPE_BEGIN, uniqueid);
 	if (ret == TTRACE_INVALID) {
 		assert(0);
 	}
 
-	//show_packet(&packet);
+#ifdef CONFIG_DEBUG_TTRACE
+	show_packet(&packet);
+#endif
 
 	ret = send_packet(&packet);
+
 	return ret;
 }
 
@@ -275,26 +321,25 @@ int trace_end(int tag)
 	int ret = TTRACE_VALID;
 	struct trace_packet packet;
 
-	if (is_fd_available() < 0) {
+	if (is_fd_available() < 0 || !is_tag_available(tag)) {
 		return TTRACE_INVALID;
 	}
 
-	if (is_tag_available(tag) == TTRACE_INVALID) {
-		return TTRACE_INVALID;
-	}
-
-	ret = create_packet_u(&packet, TTRACE_EVENT_TYPE_END, 0);
+	ret = create_packet_uid(&packet, TTRACE_EVENT_TYPE_END, 0);
 	if (ret == TTRACE_INVALID) {
 		assert(0);
 	}
 
-	//show_packet(&packet);
+#ifdef CONFIG_DEBUG_TTRACE
+	show_packet(&packet);
+#endif
 
 	ret = send_packet(&packet);
+
 	return ret;
 }
 
-int trace_end_u(int tag)
+int trace_end_uid(int tag)
 {
 	return trace_end(tag);
 }

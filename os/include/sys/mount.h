@@ -57,7 +57,7 @@
  * @{
  */
 
-/// @file mount.h
+/// @file sys/mount.h
 /// @brief mount APIs
 
 #ifndef __INCLUDE_SYS_MOUNT_H

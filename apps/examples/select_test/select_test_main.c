@@ -74,7 +74,7 @@ static int write_pipe(int s, char *buf, int len)
 
 static int close_pipe(int *handles)
 {
-	if (handles[0 > 0]) {
+	if (handles[0] > 0) {
 		close(handles[0]);
 	}
 

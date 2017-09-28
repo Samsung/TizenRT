@@ -30,9 +30,9 @@
 #define CTRL_FIELD(val)					(*(volatile u32 *)(CTRL_FIELD_ADDR(val)))
 #define DATA_FIELD(val)					(*(volatile u32 *)(DATA_FIELD_ADDR(val)))
 
-#define ISP_DATA_FIELD_SET(index, value) 	DATA_FIELD(index) = value
-#define ISP_DATA_FIELD_GET(index, value) 	value = DATA_FIELD(index)
-#define ISP_CTRL_FIELD_SET(index, value) 	CTRL_FIELD(index) = value
-#define ISP_CTRL_FIELD_GET(index, value) 	value = CTRL_FIELD(index)
+#define ISP_DATA_FIELD_SET(index, value)	DATA_FIELD(index) = value
+#define ISP_DATA_FIELD_GET(index, value)	value = DATA_FIELD(index)
+#define ISP_CTRL_FIELD_SET(index, value)	CTRL_FIELD(index) = value
+#define ISP_CTRL_FIELD_GET(index, value)	value = CTRL_FIELD(index)
 
 #endif							/* ISP_SSS_MAP_H_ */

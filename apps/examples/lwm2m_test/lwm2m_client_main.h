@@ -81,8 +81,8 @@
 #include "connection.h"
 
 #ifdef WITH_MBEDTLS
-#include "tls/certs.h"
-#include "tls/easy_tls.h"
+#include "mbedtls/certs.h"
+#include "mbedtls/easy_tls.h"
 #define LWM2M_CIPHERSUIT "TLS-PSK-WITH-AES-128-CBC-SHA"
 #endif
 

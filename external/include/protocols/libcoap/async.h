@@ -24,7 +24,7 @@
  */
 
 /**
- * @file async.h
+ * @file protocols/libcoap/async.h
  * @brief state management for asynchronous messages
  */
 

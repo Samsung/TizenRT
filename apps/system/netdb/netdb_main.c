@@ -51,28 +51,28 @@
  ****************************************************************************/
 
 /**
-   * @testcase		   :gethostbyaddr
-   * @brief		   :To get hostname by IP address
-   * @scenario		   :
-   * @apicovered	   :
-   * @precondition	   : 1. Connect to Wi-Fi
-   *			   : 2. Get an IP address
-   *			   : 3. Run netdb
-   *			   :TASH> netdb --ipv4 127.0.0.1
-   * @postcondition	   :
-   */
+ * @testcase		:gethostbyaddr
+ * @brief		:To get hostname by IP address
+ * @scenario		:
+ * @apicovered		:
+ * @precondition	: 1. Connect to Wi-Fi
+ *			: 2. Get an IP address
+ *			: 3. Run netdb
+ *			:TASH> netdb --ipv4 127.0.0.1
+ * @postcondition	:
+ */
 
 /**
-   * @testcase		   :dns_client
-   * @brief		   :To resolve hostname to IP address through DNS server
-   * @scenario		   :
-   * @apicovered	   :
-   * @precondition	   : 1. Connect to Wi-Fi
-   *			   : 2. Get an IP address
-   *			   : 3. Run netdb
-   *			   :TASH> netdb --host <URL>
-   * @postcondition	   :
-   */
+ * @testcase		:dns_client
+ * @brief		:To resolve hostname to IP address through DNS server
+ * @scenario		:
+ * @apicovered		:
+ * @precondition	: 1. Connect to Wi-Fi
+ *			: 2. Get an IP address
+ *			: 3. Run netdb
+ *			:TASH> netdb --host <URL>
+ * @postcondition	:
+ */
 
 /****************************************************************************
  * Included Files
@@ -120,43 +120,45 @@
  * Private Functions
  ****************************************************************************/
 
-static void show_usage(FAR const char *progname, int exitcode) noreturn_function;
-static void show_usage(FAR const char *progname, int exitcode)
+static void show_usage(FAR const char *progname)
 {
-	fprintf(stderr, "USAGE: %s --ipv4 <ipv4-addr>\n", progname);
+	fprintf(stderr, "USAGE: %s --host <host-name>\n", progname);
 #ifdef HAVE_GETHOSTBYADDR
+	fprintf(stderr, "       %s --ipv4 <ipv4-addr>\n", progname);
 	fprintf(stderr, "       %s --ipv6 <ipv6-addr>\n", progname);
-	fprintf(stderr, "       %s --host <host-name>\n", progname);
 #endif
 	fprintf(stderr, "       %s --help\n", progname);
-	exit(exitcode);
 }
 
 /****************************************************************************
-* Public Functions
-****************************************************************************/
+ * Public Functions
+ ****************************************************************************/
 
 int netdb_main(int argc, char *argv[])
 {
 	FAR struct hostent *host;
 	FAR const char *addrtype;
 	char buffer[48];
+#ifdef HAVE_GETHOSTBYADDR
 	int ret;
-
+#endif
 	/* Handle: netdb --help */
 
 	if (argc == 2 && strcmp(argv[1], "--help") == 0) {
-		show_usage(argv[0], EXIT_SUCCESS);
+		show_usage(argv[0]);
+		return EXIT_FAILURE;
 	}
 
 	/* Otherwise there must be exactly two arguments following the program name */
 
 	else if (argc < 3) {
 		fprintf(stderr, "ERROR -- Missing arguments\n\n");
-		show_usage(argv[0], EXIT_FAILURE);
+		show_usage(argv[0]);
+		return EXIT_FAILURE;
 	} else if (argc > 3) {
 		fprintf(stderr, "ERROR -- Too many arguments\n\n");
-		show_usage(argv[0], EXIT_FAILURE);
+		show_usage(argv[0]);
+		return EXIT_FAILURE;
 	}
 #ifdef HAVE_GETHOSTBYADDR
 	/* Handle: netdb --ipv4 <ipv4-addr>  */
@@ -169,7 +171,8 @@ int netdb_main(int argc, char *argv[])
 		ret = inet_pton(AF_INET, argv[2], &addr);
 		if (ret < 0) {
 			fprintf(stderr, "ERROR -- Bad IPv4 address\n\n");
-			show_usage(argv[0], EXIT_FAILURE);
+			show_usage(argv[0]);
+			return EXIT_FAILURE;
 		}
 
 		/* Get the matching host name + any aliases */
@@ -191,7 +194,8 @@ int netdb_main(int argc, char *argv[])
 		ret = inet_pton(AF_INET6, argv[2], &addr);
 		if (ret < 0) {
 			fprintf(stderr, "ERROR -- Bad IPv6 address\n\n");
-			show_usage(argv[0], EXIT_FAILURE);
+			show_usage(argv[0]);
+			return EXIT_FAILURE;
 		}
 
 		/* Get the matching host name + any aliases */
@@ -220,7 +224,8 @@ int netdb_main(int argc, char *argv[])
 
 	else {
 		fprintf(stderr, "ERROR -- Unrecognized option: %s\n\n", argv[1]);
-		show_usage(argv[0], EXIT_FAILURE);
+		show_usage(argv[0]);
+		return EXIT_FAILURE;
 	}
 
 	/* If we get here, then gethostbyname() or gethostbyaddr() was

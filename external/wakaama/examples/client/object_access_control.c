@@ -13,12 +13,12 @@
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - please refer to git log
- *    
+ *
  ******************************************************************************/
 
 /*
  * This "Access Control" object is optional and multiple instantiated
- * 
+ *
  *  Resources:
  *
  *          Name         | ID | Oper. | Inst. | Mand.|  Type   | Range | Units |
@@ -29,7 +29,7 @@
  *  Access Control Owner |  3 |   RW  | Single|  Yes | Integer |0-65535|       |
  */
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include <stdio.h>
 #include <stdlib.h>

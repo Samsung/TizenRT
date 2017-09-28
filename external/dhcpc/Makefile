@@ -61,7 +61,7 @@ COBJS		= $(CSRCS:.c=$(OBJEXT))
 
 SRCS		= $(ASRCS) $(CSRCS)
 OBJS		= $(AOBJS) $(COBJS)
-CFLAGS += -I$(TOPDIR)/../external/include
+
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
   BIN		= ..\libexternal$(LIBEXT)
 else

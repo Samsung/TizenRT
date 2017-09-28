@@ -100,7 +100,7 @@ endif
 # will be built if APPDIR is defined.  APPDIR will be defined if a directory containing
 # a Makefile is found at the path provided by CONFIG_APPS_DIR
 
-ifeq ($(CONFIG_APPS_DIR),y)
+ifeq ($(CONFIG_APPS_DIR),)
 CONFIG_APPS_DIR = ../apps
 endif
 APPDIR := ${shell if [ -r $(CONFIG_APPS_DIR)/Makefile ]; then echo "$(CONFIG_APPS_DIR)"; fi}
@@ -237,7 +237,9 @@ endif
 BIN_EXE = tinyara$(EXEEXT)
 BIN = $(BIN_DIR)/$(BIN_EXE)
 
-all: $(BIN) memstat
+memstat: $(BIN)
+
+all: memstat
 .PHONY: context clean_context check_context export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build applist appupdate
 
 # Target used to copy include/tinyara/math.h.  If CONFIG_ARCH_MATH_H is
@@ -583,7 +585,7 @@ gconfig: apps_preconfig
 # that the archiver is 'ar'
 
 export: pass2deps
-	$(Q) $(MKEXPORT) $(MKEXPORT_ARGS) -l "$(EXPORTLIBS)"
+	$(Q) MAKE=${MAKE} $(MKEXPORT) $(MKEXPORT_ARGS) -l "$(EXPORTLIBS)"
 
 # General housekeeping targets:  dependencies, cleaning, etc.
 #

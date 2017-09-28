@@ -44,7 +44,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "tls/config.h"
+#include "mbedtls/config.h"
 
 #if !defined(MBEDTLS_SSL_SRV_C) || !defined(MBEDTLS_SSL_PROTO_DTLS) ||	\
 	!defined(MBEDTLS_SSL_COOKIE_C) || !defined(MBEDTLS_NET_C) ||		\
@@ -67,19 +67,19 @@ int dtls_server_main(int argc, char **argv)
 
 #define mbedtls_printf     printf
 #define mbedtls_fprintf    fprintf
-#include "tls/entropy.h"
-#include "tls/ctr_drbg.h"
-#include "tls/certs.h"
-#include "tls/x509.h"
-#include "tls/ssl.h"
-#include "tls/ssl_cookie.h"
-#include "tls/net.h"
-#include "tls/error.h"
-#include "tls/debug.h"
-#include "tls/timing.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/certs.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/ssl_cookie.h"
+#include "mbedtls/net.h"
+#include "mbedtls/error.h"
+#include "mbedtls/debug.h"
+#include "mbedtls/timing.h"
 
 #if defined(MBEDTLS_SSL_CACHE_C)
-#include "tls/ssl_cache.h"
+#include "mbedtls/ssl_cache.h"
 #endif
 
 #define READ_TIMEOUT_MS 10000	/* 5 seconds */

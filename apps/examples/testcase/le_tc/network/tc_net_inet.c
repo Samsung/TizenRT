@@ -199,13 +199,12 @@ static void tc_net_inet_ntoa_p(void)
 }
 
 /**
-* @testcase            :tc_net_inet_ntop
-* @brief               :convert IPv4 and IPv6 addresses from binary to text form.
-* @scenario            :converts a numeric address into a text string suitable for presentation.
-* @apicovered          :inet_ntop
-* @precondition        :none
-* @postcondition       :none
-* @return              :void
+* @testcase     tc_net_inet_ntop
+* @brief
+* @scenario
+* @apicovered       inet_ntop()
+* @precondition
+* @postcondition
 */
 static void tc_net_inet_ntop(void)
 {
@@ -213,35 +212,34 @@ static void tc_net_inet_ntop(void)
 	char dst[INET_ADDRSTRLEN];
 	const char *ret;
 
-	in_addr.s_addr = ADDR1;
+	in_addr.s_addr = 0x17071994;
 
 #ifdef CONFIG_NET_IPv4
 	ret = inet_ntop(AF_INET, &in_addr, dst, INET_ADDRSTRLEN);
 	TC_ASSERT_NEQ("inet_ntop", ret, NULL);
 
-	/* Failure case:size of destination buffer less than INET_ADDRSTRLEN bytes */
-	ret = inet_ntop(AF_INET, &in_addr, dst, INVAL_SOCKSIZE);
+	/* Failure case: size of destination buffer less than INET_ADDRSTRLEN bytes */
+	ret = inet_ntop(AF_INET, &in_addr, dst, 7);
 	TC_ASSERT_EQ("inet_ntop", ret, NULL);
 #endif
 #ifdef CONFIG_NET_IPv6
 	ret = inet_ntop(AF_INET6, &in_addr, dst, INET_ADDRSTRLEN);
 	TC_ASSERT_NEQ("inet_ntop", ret, NULL);
 #endif
-	/* Failure case:invalid address family */
-	ret = inet_ntop(INVAL_AF, &in_addr, dst, INET_ADDRSTRLEN);
+	/* Failure case: invalid address family */
+	ret = inet_ntop(33, &in_addr, dst, INET_ADDRSTRLEN);
 	TC_ASSERT_EQ("inet_ntop", ret, NULL);
+
 	TC_SUCCESS_RESULT();
 }
 
 /**
-* @testcase            :tc_net_inet_pton
-* @brief               :convert IPv4 and IPv6 addresses from text to binary form.
-* @scenario            :converts an address in its standard text presentation
-*                       form into its numeric binary form
-* @apicovered          :inet_pton
-* @precondition        :none
-* @postcondition       :none
-* @return              :void
+* @testcase		tc_net_inet_pton
+* @brief
+* @scenario
+* @apicovered		inet_pton()
+* @precondition
+* @postcondition
 */
 static void tc_net_inet_pton(void)
 {
@@ -250,9 +248,9 @@ static void tc_net_inet_pton(void)
 
 #ifdef CONFIG_NET_IPv4
 	ret = inet_pton(AF_INET, "107.108.218.83", &(addr_inet.sin_addr));
-	TC_ASSERT_EQ("inet_pton", ret, ONE);
+	TC_ASSERT_EQ("inet_pton", ret, 1);
 
-	/* Failure case:invalid network address */
+	/* Failure case: invalid network address */
 	ret = inet_pton(AF_INET, "30051995", &(addr_inet.sin_addr));
 	TC_ASSERT_EQ("inet_pton", ret, ZERO);
 #endif

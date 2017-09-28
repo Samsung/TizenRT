@@ -250,8 +250,8 @@ static void tc_libc_spawn_posix_spawnattr_setgetsigmask(void)
 * @fn                   :tc_libc_spawn_posix_spawnattr_dump
 * @brief                :Show the current attributes
 * @scenario             :It dumps the spawn attributes whose address is passed
-* @API's covered        :posix_spawnattr_init,posix_spawnattr_setschedparam, posix_spawnattr_setflags,posix_spawnattr_setschedpolicy, posix_spawnattr_dump
-* @Preconditions        :posix_spawnattr_init, posix_spawnattr_setschedparam, posix_spawnattr_setflags,posix_spawnattr_setschedpolicy
+* @API's covered        :posix_spawnattr_init, posix_spawnattr_setschedparam, posix_spawnattr_setflags, posix_spawnattr_setschedpolicy, posix_spawnattr_dump
+* @Preconditions        :posix_spawnattr_init, posix_spawnattr_setschedparam, posix_spawnattr_setflags, posix_spawnattr_setschedpolicy
 * @Postconditions       :none
 * @Return               :void
 */
@@ -260,6 +260,8 @@ static void tc_libc_spawn_posix_spawnattr_dump(void)
 	int ret_chk = ERROR;
 	pid_t pid;
 	posix_spawnattr_t st_attr;
+
+	posix_spawnattr_dump(&st_attr);
 
 	ret_chk = posix_spawnattr_init(&st_attr);
 	TC_ASSERT_EQ("posix_spawnattr_init", ret_chk, OK);
@@ -272,6 +274,35 @@ static void tc_libc_spawn_posix_spawnattr_dump(void)
 	TC_ASSERT_EQ("task_spawn", ret_chk, OK);
 
 	posix_spawnattr_dump(&st_attr);
+
+	ret_chk = posix_spawnattr_setschedpolicy(&st_attr, SCHED_FIFO);
+	TC_ASSERT_EQ("posix_spawnattr_setschedpolicy", ret_chk, OK);
+	posix_spawnattr_dump(&st_attr);
+
+	ret_chk = posix_spawnattr_setflags(&st_attr, POSIX_SPAWN_SETSCHEDPARAM);
+	TC_ASSERT_EQ("posix_spawnattr_setflags", ret_chk, OK);
+	posix_spawnattr_dump(&st_attr);
+
+	ret_chk = posix_spawnattr_setflags(&st_attr, POSIX_SPAWN_RESETIDS);
+	TC_ASSERT_EQ("posix_spawnattr_setflags", ret_chk, OK);
+	posix_spawnattr_dump(&st_attr);
+
+	ret_chk = posix_spawnattr_setflags(&st_attr, POSIX_SPAWN_SETPGROUP);
+	TC_ASSERT_EQ("posix_spawnattr_setflags", ret_chk, OK);
+	posix_spawnattr_dump(&st_attr);
+
+	ret_chk = posix_spawnattr_setflags(&st_attr, POSIX_SPAWN_SETSCHEDULER);
+	TC_ASSERT_EQ("posix_spawnattr_setflags", ret_chk, OK);
+	posix_spawnattr_dump(&st_attr);
+
+	ret_chk = posix_spawnattr_setflags(&st_attr, POSIX_SPAWN_SETSIGDEF);
+	TC_ASSERT_EQ("posix_spawnattr_setflags", ret_chk, OK);
+	posix_spawnattr_dump(&st_attr);
+
+	ret_chk = posix_spawnattr_setflags(&st_attr, POSIX_SPAWN_SETSIGMASK);
+	TC_ASSERT_EQ("posix_spawnattr_setflags", ret_chk, OK);
+	posix_spawnattr_dump(&st_attr);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -300,12 +331,39 @@ static void tc_libc_spawn_posix_spawn_file_actions_init(void)
 }
 
 /**
+ * @fn                   : tc_libc_spawn_posix_spawn_file_actions_adddup2()
+ * @brief                : adds a dup2 operation to the object referenced by file_actions, for subsequent use in a call to posix_spawn()/posix_spawnp()
+ * @scenario             : The descriptor referred to by fd2 is created as if dup2() had been called on fd1 prior to the new child process starting execution.
+ *                         On success, these functions return 0; on failure they return an error
+ * @API's covered        : posix_spawn_file_actions_adddup2
+ * @Preconditions        : posix_spawn_file_actions_init
+ * @Postconditions       : posix_spawn_file_actions_destroy
+ * @Return               : void
+ */
+static void tc_libc_spawn_posix_spawn_file_actions_adddup2(void)
+{
+	posix_spawn_file_actions_t st_fileactions;
+	int ret_chk = ERROR;
+
+	ret_chk = posix_spawn_file_actions_init(&st_fileactions);
+	TC_ASSERT_EQ("posix_spawn_file_actions_init", ret_chk, OK);
+
+	ret_chk = posix_spawn_file_actions_adddup2(&st_fileactions, 1, 2);
+	TC_ASSERT_EQ("posix_spawn_file_actions_adddup2", ret_chk, OK);
+
+	ret_chk = posix_spawn_file_actions_destroy(&st_fileactions);
+	TC_ASSERT_EQ("posix_spawn_file_actions_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
 * @fn                   : tc_libc_spawn_posix_spawn_file_actions_addOpenClose
 * @brief                : adds an open action to the object referenced by fact_p that causes the file named by path to be opened
 * @scenario             : Files that need to be opened for use by the spawned process can alternatively be handled either by having the
 *                         calling process open or by passing filenames to the spawned process
-* @API's covered        : posix_spawnattr_init,posix_spawn_file_actions_init,posix_spawn_file_actions_addopen
-* @Preconditions        : posix_spawnattr_init,posix_spawn_file_actions_init
+* @API's covered        : posix_spawn_file_actions_init,posix_spawn_file_actions_addopen
+* @Preconditions        : posix_spawn_file_actions_init
 * @Postconditions       : posix_spawn_file_actions_destroy
 * @Return               : void
 */
@@ -313,11 +371,7 @@ static void tc_libc_spawn_posix_spawn_file_actions_addopenclose(void)
 {
 	const char szfilepath[] = "./testdata.txt";
 	posix_spawn_file_actions_t st_fileactions;
-	posix_spawnattr_t st_attr;
 	int ret_chk = ERROR;
-
-	ret_chk = posix_spawnattr_init(&st_attr);
-	TC_ASSERT_EQ("posix_spawnattr_init", ret_chk, OK);
 
 	ret_chk = posix_spawn_file_actions_init(&st_fileactions);
 	TC_ASSERT_EQ("posix_spawn_file_actions_init", ret_chk, OK);
@@ -354,7 +408,7 @@ static void tc_libc_spawn_posix_spawn_file_actions_destroy(void)
 
 	ret_chk = posix_spawn_file_actions_addopen(&st_fileactions, 1, szfilepath, O_WRONLY, 0644);
 	TC_ASSERT_EQ("posix_spawn_file_actions_addopen", ret_chk, OK);
-	TC_ASSERT_NOT_NULL("posix_spawn_file_actions_addopen", st_fileactions);
+	TC_ASSERT_NEQ("posix_spawn_file_actions_addopen", st_fileactions, NULL);
 
 	ret_chk = posix_spawn_file_actions_destroy(&st_fileactions);
 	TC_ASSERT_EQ("posix_spawn_file_actions_destroy", ret_chk, OK);
@@ -381,17 +435,35 @@ static void tc_libc_spawn_posix_spawn_file_actions_dump(void)
 	ret_chk = posix_spawn_file_actions_init(&st_fileactions);
 	TC_ASSERT_EQ("posix_spawn_file_actions_init", ret_chk, OK);
 
+	posix_spawn_file_actions_dump(&st_fileactions);
+
 	ret_chk = posix_spawn_file_actions_addopen(&st_fileactions, 1, szfilepath, O_WRONLY, 0644);
-	TC_ASSERT_EQ("posix_spawn_file_actions_addopen", ret_chk, OK);
+	TC_ASSERT_EQ_CLEANUP("posix_spawn_file_actions_addopen", ret_chk, OK, goto errout);
 
 	/* posix_spawn_file_actions_dump returns (void) */
 
 	posix_spawn_file_actions_dump(&st_fileactions);
 
+	ret_chk = posix_spawn_file_actions_adddup2(&st_fileactions, 1, 2);
+	TC_ASSERT_EQ_CLEANUP("posix_spawn_file_actions_adddup2", ret_chk, OK, goto errout);
+
+	posix_spawn_file_actions_dump(&st_fileactions);
+
+	ret_chk = posix_spawn_file_actions_addclose(&st_fileactions, 1);
+	TC_ASSERT_EQ_CLEANUP("posix_spawn_file_actions_addclose", ret_chk, OK, goto errout);
+
+	posix_spawn_file_actions_dump(&st_fileactions);
+
+	/* Destroy each file action, one at a time */
+
 	ret_chk = posix_spawn_file_actions_destroy(&st_fileactions);
 	TC_ASSERT_EQ("posix_spawn_file_actions_destroy", ret_chk, OK);
 
 	TC_SUCCESS_RESULT();
+
+errout:
+	posix_spawn_file_actions_destroy(&st_fileactions);
+
 }
 
 /**
@@ -425,14 +497,14 @@ static void tc_libc_spawn_add_file_action(void)
 	/* Allocate the action list entry of this size */
 
 	entry1 = (struct spawn_open_file_action_s *)zalloc(alloc_num);
-	TC_ASSERT_NOT_NULL("zalloc", entry1);
+	TC_ASSERT_NEQ("zalloc", entry1, NULL);
 
 	/* And add it to the file action list */
 
 	add_file_action(st_fileactions, (struct spawn_general_file_action_s *)entry1);
 
 	entry2 = (struct spawn_open_file_action_s *)zalloc(alloc_num);
-	TC_ASSERT_NOT_NULL("zalloc", entry2);
+	TC_ASSERT_NEQ("zalloc", entry2, NULL);
 
 	/* And add it to the file action list */
 
@@ -451,6 +523,7 @@ static void tc_libc_spawn_add_file_action(void)
 
 int libc_spawn_main(void)
 {
+	tc_libc_spawn_posix_spawnattr_dump();
 	tc_libc_spawn_posix_spawnattr_init();
 	tc_libc_spawn_posix_spawnattr_setgetflags();
 	tc_libc_spawn_posix_spawnattr_setgetschedparam();
@@ -459,10 +532,10 @@ int libc_spawn_main(void)
 	tc_libc_spawn_task_spawnattr_setgetstacksize();
 	tc_libc_spawn_posix_spawn_file_actions_init();
 	tc_libc_spawn_add_file_action();
+	tc_libc_spawn_posix_spawn_file_actions_adddup2();
 	tc_libc_spawn_posix_spawn_file_actions_addopenclose();
 	tc_libc_spawn_posix_spawn_file_actions_destroy();
 	tc_libc_spawn_posix_spawn_file_actions_dump();
-	tc_libc_spawn_posix_spawnattr_dump();
 
 	return 0;
 }

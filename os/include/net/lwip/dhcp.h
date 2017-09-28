@@ -22,7 +22,7 @@
  */
 
 /**
- * @file dhcp.h
+ * @file net/dhcp.h
  * @brief APIs for DHCP client
  */
 #ifndef __LWIP_DHCP_H__

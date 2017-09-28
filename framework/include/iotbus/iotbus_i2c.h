@@ -24,14 +24,15 @@
  */
 
 /**
- * @file iotbus_i2c.h
+ * @file iotbus/iotbus_i2c.h
  * @brief Iotbus APIs for I2C
  */
 
-#include <stdint.h>
-
 #ifndef IOTBUS_I2C_H_
 #define IOTBUS_I2C_H_
+
+#include <stdint.h>
+#include <sys/types.h>
 
 struct _iotbus_i2c_s;
 
@@ -49,14 +50,13 @@ typedef struct _iotbus_i2c_s *iotbus_i2c_context_h;
  * IOTBUS_I2C_HIGH = 2, < up to 3.4Mhz\n
  */
 typedef enum {
-	IOTBUS_I2C_STD = 0, /**< up to 100Khz */
+	IOTBUS_I2C_STD  = 0, /**< up to 100Khz */
 	IOTBUS_I2C_FAST = 1, /**< up to 400Khz */
-	IOTBUS_I2C_HIGH = 2 /**< up to 3.4Mhz */
+	IOTBUS_I2C_HIGH = 2  /**< up to 3.4Mhz */
 } iotbus_i2c_mode_e;
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /**

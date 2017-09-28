@@ -168,7 +168,7 @@ db_result_t db_exec(char *format)
 	}
 
 	optype = AQL_GET_EXEC_TYPE(AQL_GET_TYPE(&adt));
-	if (optype != AQL_TYPE_CREATE_RELATION && optype != AQL_TYPE_REMOVE_RELATION) {
+	if (optype != AQL_TYPE_CREATE_RELATION) {
 		rel = aql_get_relation(&adt);
 		if (rel == NULL) {
 			DB_LOG_E("DB : get relation Failed\n");
@@ -225,7 +225,7 @@ db_result_t db_exec(char *format)
 		}
 		break;
 	case AQL_TYPE_REMOVE_RELATION:
-		res = relation_remove(adt.relations[0], 1);
+		res = relation_remove(rel, 1);
 		break;
 	default:
 		break;
@@ -311,10 +311,6 @@ db_cursor_t *db_query(char *format)
 errout:
 	if (rel != NULL) {
 		relation_release(rel);
-	}
-
-	if (cursor != NULL) {
-		cursor_deinit(cursor);
 	}
 
 	aql_deinit_handle(&handler);

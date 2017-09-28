@@ -64,11 +64,11 @@
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/kthread.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
 #include "task/task.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Preprocessor Definitions
@@ -133,7 +133,7 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 	/* Check whether we are allowed to create new task ? */
 	if (g_alive_taskcount == CONFIG_MAX_TASKS) {
-		sdbg("ERROR: CONFIG_MAX_TASKS(%d) count reached\n",CONFIG_MAX_TASKS);
+		sdbg("ERROR: CONFIG_MAX_TASKS(%d) count reached\n", CONFIG_MAX_TASKS);
 		errcode = EBUSY;
 		goto errout;
 	}
@@ -205,15 +205,8 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 	/* Activate the task */
 
-	ret = task_activate((FAR struct tcb_s *)tcb);
-	if (ret < OK) {
-		errcode = get_errno();
+	(void)task_activate((FAR struct tcb_s *)tcb);
 
-		/* The TCB was added to the active task list by task_schedsetup() */
-
-		dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)&g_inactivetasks);
-		goto errout_with_tcb;
-	}
 	trace_end(TTRACE_TAG_TASK);
 	return pid;
 

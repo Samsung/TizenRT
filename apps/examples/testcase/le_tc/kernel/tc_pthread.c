@@ -48,6 +48,7 @@
 #define INTHREAD                0
 #define INMAIN                  1
 #define SIGQUIT                 3
+#define NOSIG                   333
 
 struct mallinfo mem;
 
@@ -58,7 +59,7 @@ pthread_t thread[PTHREAD_CNT];
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t g_cond;
 pthread_key_t g_tlskey;
-static pthread_once_t g_once = PTHREAD_ONCE_INIT;
+static pthread_once_t g_once;
 static bool g_bpthreadcallback = false;
 
 static int g_cnt;
@@ -865,7 +866,7 @@ static void tc_pthread_pthread_cancel_setcancelstate(void)
 	TC_ASSERT_EQ_CLEANUP("pthread_cancel", ret_chk, OK, pthread_detach(g_thread1));
 
 	sleep(SEC_3);
-	TC_ASSERT("pthread_cancel", g_bpthreadcallback);
+	TC_ASSERT_EQ("pthread_cancel", g_bpthreadcallback, true);
 
 	ret_chk = pthread_detach(g_thread1);
 	TC_ASSERT_EQ("pthread_detach", ret_chk, OK);
@@ -894,7 +895,8 @@ static void tc_pthread_pthread_sem_take_give(void)
 	TC_ASSERT_EQ("pthread_sem_take", ret_chk, OK);
 
 	sem_getvalue(&sem, &get_value);
-	TC_ASSERT_EQ("sem_getvalue", get_value, VAL_TWO);
+	/* if get_value is not matched with VAL_TWO, then TC fails. but we will not use sem anymore, so destroy it */
+	TC_ASSERT_EQ_CLEANUP("sem_getvalue", get_value, VAL_TWO, sem_destroy(&sem));
 
 	ret_chk = pthread_sem_give(&sem);
 	TC_ASSERT_EQ("pthread_sem_give", ret_chk, OK);
@@ -951,7 +953,7 @@ static void tc_pthread_pthread_timed_wait(void)
 	ret_chk = pthread_create(&waiter, &attr, thread_waiter, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	TC_ASSERT("pthread_create", g_bpthreadcallback);
+	TC_ASSERT_EQ("pthread_create", g_bpthreadcallback, true);
 
 	ret_chk = pthread_join(waiter, &result);
 	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
@@ -1027,6 +1029,7 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 
 	sleep(SEC_2);
 
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
 	/* initalize mutex with PTHREAD_MUTEX_RECURSIVE attribute */
 	pthread_mutex_init(&g_mutex, &attr);
 
@@ -1041,6 +1044,7 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 
 	ret_chk = pthread_mutex_unlock(&g_mutex);
 	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
+#endif
 
 	/* mutex_lock mutex_unlock check through multi threads */
 	g_mutex_cnt = 0;
@@ -1056,7 +1060,7 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 	pthread_join(g_thread1, NULL);
 	pthread_join(g_thread2, NULL);
 
-	TC_ASSERT("pthread_mutex_lock_unlock", g_bpthreadcallback);
+	TC_ASSERT_EQ("pthread_mutex_lock_unlock", g_bpthreadcallback, true);
 
 	pthread_mutex_destroy(&g_mutex);
 
@@ -1179,6 +1183,10 @@ static void tc_pthread_pthread_once(void)
 {
 	int ret_chk;
 
+	/* Initialize g_once */
+
+	g_once = PTHREAD_ONCE_INIT;
+
 	/* Test NULL case */
 
 	g_bpthreadcallback = false;
@@ -1274,7 +1282,8 @@ static void tc_pthread_pthread_cond_signal_wait(void)
 	ret_chk = pthread_create(&pthread_waiter, NULL, thread_cond_signal, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	TC_ASSERT_EQ("pthread_mutex_lock", g_cond_sig_val, VAL_ONE);
+	/* if g_cond_sig_val is not matched with VAL_ONE, then TC fails. but we will not use g_mutex anymore, so destroy it */
+	TC_ASSERT_EQ_CLEANUP("pthread_mutex_lock", g_cond_sig_val, VAL_ONE, pthread_mutex_destroy(&g_mutex));
 
 	ret_chk = pthread_mutex_unlock(&g_mutex);
 	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
@@ -1345,6 +1354,9 @@ static void tc_pthread_pthread_sigmask(void)
 	sigemptyset(&st_newmask);
 	sigaddset(&st_newmask, SIGQUIT);
 
+	ret_chk = pthread_sigmask(NOSIG, &st_newmask, &st_oldmask);
+	TC_ASSERT_EQ("pthread_sigmask", ret_chk, EINVAL);
+
 	ret_chk = pthread_sigmask(SIG_BLOCK, &st_newmask, &st_oldmask);
 	TC_ASSERT_GEQ("pthread_sigmask", ret_chk, 0);
 
@@ -1366,7 +1378,7 @@ static void tc_pthread_pthread_sigmask(void)
 	TC_ASSERT_GEQ("sigpending", ret_chk, 0);
 
 	nanosleep(&st_timespec, NULL);
-	TC_ASSERT("pthread_sigmask", g_sig_handle);
+	TC_ASSERT_EQ("pthread_sigmask", g_sig_handle, true);
 
 	ret_chk = sigaction(SIGQUIT, &st_oact, NULL);
 	TC_ASSERT_EQ("signaction", ret_chk, OK);
@@ -1458,6 +1470,57 @@ static void tc_pthread_pthread_setgetname_np(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @fn                   :tc_pthread_pthread_setcanceltype
+* @brief                :This tc tests pthread_setcanceltype()
+* @Scenario             :The function shall atomically both set the calling thread's cancelability type to the indicated type
+*                        and return the previous cancelability type at the location referenced by oldtype
+*                        If successful pthread_setcanceltype() function shall return zero;
+*                        otherwise, an error number shall be returned to indicate the error.
+* @API'scovered         :pthread_setcanceltype
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+#ifdef CONFIG_CANCELLATION_POINTS
+static void tc_pthread_pthread_setcanceltype(void)
+{
+	int type;
+	int oldtype;
+	int ret_chk;
+
+	type = PTHREAD_CANCEL_ASYNCHRONOUS;
+	ret_chk = pthread_setcanceltype(type, &oldtype);
+	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, OK);
+
+	type = PTHREAD_CANCEL_DEFERRED;
+	ret_chk = pthread_setcanceltype(type, &oldtype);
+	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, ENOSYS);
+	TC_ASSERT_EQ("pthread_setcanceltype", oldtype, PTHREAD_CANCEL_ASYNCHRONOUS);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/**
+* @fn                   :tc_libc_pthread_pthread_testcancel
+* @brief                :This tc tests pthread_testcancel()
+* @Scenario             :The function shall create a cancellation point in the calling thread
+*                        It has no effect if cancelability is disabled.
+* @API'scovered         :pthread_testcancel
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+#ifdef CONFIG_CANCELLATION_POINTS
+static void tc_pthread_pthread_testcancel(void)
+{
+	pthread_testcancel();
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
 /****************************************************************************
  * Name: pthread
  ****************************************************************************/
@@ -1489,6 +1552,10 @@ int pthread_main(void)
 	tc_pthread_pthread_self();
 	tc_pthread_pthread_equal();
 	tc_pthread_pthread_setgetname_np();
+#ifdef CONFIG_CANCELLATION_POINTS
+	tc_pthread_pthread_setcanceltype();
+	tc_pthread_pthread_testcancel();
+#endif
 
 	return 0;
 }

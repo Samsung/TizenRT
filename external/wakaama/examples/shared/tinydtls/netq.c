@@ -57,7 +57,7 @@ netq_init() {
 }
 #endif /* WITH_CONTIKI */
 
-int 
+int
 netq_insert_node(list_t queue, netq_t *node) {
   netq_t *p;
 
@@ -120,21 +120,21 @@ netq_node_new(size_t size) {
   if (node)
     memset(node, 0, sizeof(netq_t));
 
-  return node;  
+  return node;
 }
 
-void 
+void
 netq_node_free(netq_t *node) {
   if (node)
     netq_free_node(node);
 }
 
-void 
+void
 netq_delete_all(list_t queue) {
   netq_t *p;
   if (queue) {
     while((p = list_pop(queue)))
-      netq_free_node(p); 
+      netq_free_node(p);
   }
 }
 

@@ -46,19 +46,19 @@
 #include <net/lwip/dhcp.h>
 #include <net/lwip/stats.h>
 #include <tinyara/net/ip.h>
-#include <apps/netutils/dhcpc.h>
+#include <protocols/dhcpc.h>
 
 #ifdef CONFIG_NETUTILS_NETLIB
-#include <apps/netutils/netlib.h>
+#include <netutils/netlib.h>
 #endif
 
-#include <apps/netutils/netlib.h>
-#include <apps/netutils/tftp.h>
+#include <netutils/netlib.h>
+#include <protocols/tftp.h>
 
 #ifdef CONFIG_HAVE_GETHOSTBYNAME
 #include <netdb.h>
 #endif
-#include <apps/netutils/dhcpc.h>
+#include <protocols/dhcpc.h>
 #ifndef DNS_DEFAULT_PORT
 #define DNS_DEFAULT_PORT   53
 #endif
@@ -67,6 +67,9 @@
 #include "netcmd_ping.h"
 #ifdef CONFIG_NETUTILS_DHCPD
 #include "netcmd_dhcpd.h"
+#endif
+#ifdef CONFIG_NETUTILS_TFTPC
+#include "netcmd_tftpc.h"
 #endif
 
 #undef HAVE_PING
@@ -80,20 +83,7 @@
 extern int netdb_main(int argc, char *argv[]);
 #endif
 
-#if defined(CONFIG_NETUTILS_TFTPC)
-struct tftpc_args_s {
-	bool binary;				/* true:binary ("octet") false:text ("netascii") */
-	bool allocated;				/* true: destpath is allocated */
-	char *destpath;				/* Path at destination */
-	const char *srcpath;		/* Path at src */
-	in_addr_t ipaddr;			/* Host IP address */
-};
-#endif
-
-
-
-static void
-nic_display_state(void)
+static void nic_display_state(void)
 {
 	struct ifreq *ifr;
 	struct sockaddr_in *sin;
@@ -142,183 +132,6 @@ DONE:
 	free(ifcfg.ifc_buf);
 	close(fd);
 }
-
-
-#if defined(CONFIG_NETUTILS_TFTPC)
-int tftpc_parseargs(int argc, char **argv, struct tftpc_args_s *args)
-{
-	FAR const char *fmt = fmtarginvalid;
-	bool badarg = false;
-	int option;
-
-	/* Get the ping options */
-
-	memset(args, 0, sizeof(struct tftpc_args_s));
-	optind = -1;
-	while ((option = getopt(argc, argv, ":bnf:h:")) != ERROR) {
-		switch (option) {
-		case 'b':
-			args->binary = true;
-			break;
-
-		case 'n':
-			args->binary = false;
-			break;
-
-		case 'f':
-			args->destpath = optarg;
-			break;
-
-		case 'h':
-			if (!netlib_ipaddrconv(optarg, (FAR unsigned char *)&args->ipaddr)) {
-				printf(fmtarginvalid, argv[0]);
-				badarg = true;
-			}
-			break;
-
-		case ':':
-			printf(fmtargrequired, argv[0]);
-			badarg = true;
-			break;
-
-		case '?':
-		default:
-			printf(fmtarginvalid, argv[0]);
-			badarg = true;
-			break;
-		}
-	}
-
-	/* If a bad argument was encountered, then return without processing the command */
-
-	if (badarg) {
-		return ERROR;
-	}
-
-	/* There should be exactly one parameter left on the command-line */
-
-	if (optind == argc - 1) {
-		args->srcpath = argv[optind];
-	}
-
-	/* optind == argc means that there is nothing left on the command-line */
-
-	else if (optind >= argc) {
-		fmt = fmtargrequired;
-		goto errout;
-	}
-
-	/* optind < argc-1 means that there are too many arguments on the
-	 * command-line
-	 */
-
-	else {
-		fmt = fmttoomanyargs;
-		goto errout;
-	}
-
-	/* The HOST IP address is also required */
-
-	if (!args->ipaddr) {
-		fmt = fmtargrequired;
-		goto errout;
-	}
-
-	/* If the destpath was not provided, then we have do a little work. */
-
-	if (!args->destpath) {
-		char *tmp1;
-		char *tmp2;
-
-		/* Copy the srcpath... baseanme might modify it */
-
-		fmt = fmtcmdoutofmemory;
-		tmp1 = strdup(args->srcpath);
-		if (!tmp1) {
-			goto errout;
-		}
-
-		/* Get the basename of the srcpath */
-
-		tmp2 = basename(tmp1);
-		if (!tmp2) {
-			free(tmp1);
-			goto errout;
-		}
-
-		/* Use that basename as the destpath */
-
-		args->destpath = strdup(tmp2);
-		free(tmp1);
-		if (!args->destpath) {
-			goto errout;
-		}
-
-		args->allocated = true;
-	}
-
-	return OK;
-
-errout:
-	printf(fmt, argv[0]);
-	return ERROR;
-}
-#endif
-
-#if defined(CONFIG_NETUTILS_TFTPC) && !defined(CONFIG_DISABLE_ENVIRON)
-int cmd_get(int argc, char **argv)
-{
-	struct tftpc_args_s args;
-	char *fullpath;
-
-	int i = 0;
-	int fd;
-	int ret = -1;
-	char seek_rbuffer[101];
-
-	/* Parse the input parameter list */
-	if (tftpc_parseargs(argc, argv, &args) != OK) {
-		return ERROR;
-	}
-
-	/* Get the full path to the local file */
-
-	fullpath = (char *)get_fullpath(args.destpath);
-
-	/* Then perform the TFTP get operation */
-
-	printf("src: %s full: %s addr: %d bin: %d\n", args.srcpath, fullpath, args.ipaddr, args.binary);
-	if (tftpget(args.srcpath, fullpath, args.ipaddr, args.binary) != OK) {
-		printf(fmtcmdfailed, argv[0], "tftpget");
-	}
-
-	fd = open("/mnt/test.txt", O_RDONLY);
-	if (fd < 0) {
-		printf("Open failed: %d\n", errno);
-	}
-	printf("Opened\n");
-
-	ret = read(fd, seek_rbuffer, 100);
-	if (ret < 0) {
-		printf("Seek read failed %d\n", ret);
-		return ERROR;
-	} else {
-		printf("Read done\n");
-	}
-
-	for (i = 0; i < 101; i++) {
-		printf("%c", seek_rbuffer[i]);
-	}
-
-	/* Release any allocated memory */
-	if (args.allocated) {
-		free(args.destpath);
-	}
-
-	free(fullpath);
-	return OK;
-}
-#endif
 
 int cmd_ifup(int argc, char **argv)
 {
@@ -556,11 +369,9 @@ int cmd_ifconfig(int argc, char **argv)
 	return OK;
 }
 
-
-
 const static tash_cmdlist_t net_utilcmds[] = {
-#if defined(CONFIG_NETUTILS_TFTPC) && !defined(CONFIG_DISABLE_ENVIRON)
-	{"ftp_get", cmd_get, TASH_EXECMD_SYNC},
+#ifdef CONFIG_NETUTILS_DHCPD
+	{"dhcpd", cmd_dhcpd, TASH_EXECMD_SYNC},
 #endif
 	{"ifconfig", cmd_ifconfig, TASH_EXECMD_SYNC},
 	{"ifdown", cmd_ifdown, TASH_EXECMD_SYNC},
@@ -569,8 +380,8 @@ const static tash_cmdlist_t net_utilcmds[] = {
 	{"lwip_stats", stats_display, TASH_EXECMD_ASYNC},
 #endif
 	{"ping", cmd_ping, TASH_EXECMD_SYNC},
-#ifdef CONFIG_NETUTILS_DHCPD
-	{"dhcpd", cmd_dhcpd, TASH_EXECMD_SYNC},
+#ifdef CONFIG_NETUTILS_TFTPC
+	{"tftpc", cmd_tftpc, TASH_EXECMD_SYNC},
 #endif
 	{NULL, NULL, 0}
 };

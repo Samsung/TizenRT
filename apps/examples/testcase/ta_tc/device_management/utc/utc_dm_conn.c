@@ -24,7 +24,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <apps/netutils/netlib.h>
+#include <netutils/netlib.h>
 
 #include <sys/socket.h>
 
@@ -235,7 +235,10 @@ static void utc_dm_conn_set_tx_power_n(void)
 static void utc_dm_conn_set_tx_power_p(void)
 {
 	int ret;
-	int val;
+	int val = 20;
+	/* Please make sure you provide a valid tx power value within
+	 * the range of 13 to 29. Here, we provide a valid value of 20.
+	 */
 	ret = dm_conn_set_tx_power(&val);
 
 	TC_ASSERT_EQ("dm_conn_set_tx_power", ret, DM_ERROR_NONE);

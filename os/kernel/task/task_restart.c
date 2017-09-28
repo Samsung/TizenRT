@@ -61,12 +61,12 @@
 #include <errno.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
 #include "signal/signal.h"
 #include "task/task.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Definitions
@@ -123,7 +123,6 @@ int task_restart(pid_t pid)
 	FAR struct tcb_s *rtcb;
 	FAR struct task_tcb_s *tcb;
 	irqstate_t state;
-	int status;
 
 	trace_begin(TTRACE_TAG_TASK, "task_restart");
 
@@ -214,13 +213,7 @@ int task_restart(pid_t pid)
 
 		/* Activate the task */
 
-		status = task_activate((FAR struct tcb_s *)tcb);
-		if (status != OK) {
-			(void)task_terminate(pid, true);
-			set_errno(-status);
-			trace_end(TTRACE_TAG_TASK);
-			return ERROR;
-		}
+		(void)task_activate((FAR struct tcb_s *)tcb);
 	}
 
 	sched_unlock();

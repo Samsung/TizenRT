@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
-#include "slsi_wifi_api.h"
+#include <slsi_wifi/slsi_wifi_api.h>
 #include "nettest_functions.h"
 
 void sw_linkUpHandler(slsi_reason_t *reason);

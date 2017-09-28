@@ -26,10 +26,9 @@
 #include "connection.h"
 #include <tinyara/wqueue.h>
 #include <tinyara/clock.h>
+#include <protocols/dhcpc.h>
+#include <slsi_wifi/slsi_wifi_api.h>
 
-#include <apps/netutils/dhcpc.h>
-
-#include <apps/netutils/wifi/slsi_wifi_api.h>
 
 #define NET_DEVNAME "wl1"
 
@@ -109,7 +108,7 @@ void app_print_usage(void)
 }
 
 static void prv_wakaama_start(void)
-{	
+{
 	if (dm_lwm2m_start_client(&dm_context) != DM_ERROR_NONE) {
 		fprintf(stderr, "Error creating wakaama thread\n");
 	} else {
@@ -295,7 +294,7 @@ int wakaamaclient_main(int argc, char *argv[])
 				}
 				sleep(10);
 				if (dm_conn_get_scan_result(&appwifiscan_result) ==  DM_ERROR_NONE) {
-					wifi_iterator = appwifiscan_result; 
+					wifi_iterator = appwifiscan_result;
 					while (wifi_iterator != NULL) {
 						for (i = 0; i < sizeof(wifi_aps) / sizeof(char *); i++) {
 							if (!strncmp(wifi_iterator->ssid, wifi_aps[i], strlen(wifi_aps[i]))) {

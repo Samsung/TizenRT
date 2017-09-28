@@ -207,8 +207,7 @@
  * structure be cast compatible with struct tm!  They must be interchangeable.
  */
 
-struct rtc_time
-{
+struct rtc_time {
 	int tm_sec;   /* Seconds (0-61, allows for leap seconds) */
 	int tm_min;   /* Minutes (0-59) */
 	int tm_hour;  /* Hours (0-23) */
@@ -227,8 +226,7 @@ struct rtc_time
  * rdalarm() method.
  */
 
-struct rtc_rdalarm_s
-{
+struct rtc_rdalarm_s {
 	uint8_t id;		/* Indicates the alarm being queried */
 	bool active;		/* Alarm actively timing or disabled */
 	struct rtc_time time;	/* Current RTC time (if enabled) */
@@ -236,8 +234,7 @@ struct rtc_rdalarm_s
 
 /* Structure used with the RTC_SET_ALARM IOCTL command. */
 
-struct rtc_setalarm_s
-{
+struct rtc_setalarm_s {
 	uint8_t id;		/* Indicates the alarm to be set */
 	uint8_t signo;		/* Signal number for alarm notification */
 	pid_t pid;		/* Identifies task to be notified (0=caller) */
@@ -247,8 +244,7 @@ struct rtc_setalarm_s
 
 /* Structure used with the RTC_SET_RELATIVE IOCTL command. */
 
-struct rtc_setrelative_s
-{
+struct rtc_setrelative_s {
 	uint8_t id;		/* Indicates the alarm to be set */
 	uint8_t signo;		/* Signal number for alarm notification */
 	pid_t pid;		/* Identifies task to be notified (0=caller) */
@@ -265,8 +261,7 @@ typedef CODE void (*rtc_alarm_callback_t)(FAR void *priv, int alarmid);
 
 /* Structure used with the setalarm method */
 
-struct lower_setalarm_s
-{
+struct lower_setalarm_s {
 	uint8_t id;		 /* Indicates the alarm to be set */
 	rtc_alarm_callback_t cb; /* Callback when the alarm expires */
 	FAR void *priv;		 /* Private argurment to accompany callback */
@@ -275,8 +270,7 @@ struct lower_setalarm_s
 
 /* Structure used with the setrelative method */
 
-struct lower_setrelative_s
-{
+struct lower_setrelative_s {
 	uint8_t id;		 /* Indicates the alarm to be set */
 	rtc_alarm_callback_t cb; /* Callback when the alarm expires */
 	FAR void *priv;		 /* Private argurment to accompany callback */
@@ -298,8 +292,7 @@ struct lower_setrelative_s
  */
 
 struct rtc_lowerhalf_s;
-struct rtc_ops_s
-{
+struct rtc_ops_s {
 	/* rdtime() returns the current RTC time. */
 
 	CODE int (*rdtime)(FAR struct rtc_lowerhalf_s *lower,
@@ -352,8 +345,7 @@ struct rtc_ops_s
  * struct rtc_lowerhalf_s that is understood by the upper half driver.
  */
 
-struct rtc_lowerhalf_s
-{
+struct rtc_lowerhalf_s {
 	/*
 	 * This is the contained reference to the read-only, lower-half
 	 * operations vtable (which may lie in FLASH or ROM)

@@ -12,12 +12,12 @@
  *
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
  * This connectivity statistics object is optional and single instance only
- * 
+ *
  *  Resources:
  *
  *          Name         | ID | Oper. | Inst. | Mand.|  Type   | Range | Units | Description |
@@ -30,7 +30,7 @@
  *  StartOrReset         |  6 |   E   | Single|  Yes | Integer |       |       |             |
  */
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include <stdio.h>
 #include <stdlib.h>

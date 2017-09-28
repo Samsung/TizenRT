@@ -56,7 +56,7 @@
 #include <net/lwip/opt.h>
 
 #if LWIP_NETCONN				/* don't build if not configured for use in lwipopts.h */
-
+#include <net/lwip/debug.h>
 #include <net/lwip/netbuf.h>
 #include <net/lwip/memp.h>
 

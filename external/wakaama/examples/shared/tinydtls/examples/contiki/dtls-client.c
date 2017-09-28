@@ -97,7 +97,7 @@ try_send(struct dtls_context_t *ctx, session_t *dst) {
 }
 
 static int
-read_from_peer(struct dtls_context_t *ctx, 
+read_from_peer(struct dtls_context_t *ctx,
 	       session_t *session, uint8 *data, size_t len) {
   size_t i;
   for (i = 0; i < len; i++)
@@ -106,7 +106,7 @@ read_from_peer(struct dtls_context_t *ctx,
 }
 
 static int
-send_to_peer(struct dtls_context_t *ctx, 
+send_to_peer(struct dtls_context_t *ctx,
 	     session_t *session, uint8 *data, size_t len) {
 
   struct uip_udp_conn *conn = (struct uip_udp_conn *)dtls_get_app_data(ctx);
@@ -327,11 +327,11 @@ PROCESS_THREAD(udp_server_process, ev, data)
     if (buflen) {
       if (!connected)
 	connected = dtls_connect(dtls_context, &dst) >= 0;
-      
+
       try_send(dtls_context, &dst);
     }
   }
-  
+
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/

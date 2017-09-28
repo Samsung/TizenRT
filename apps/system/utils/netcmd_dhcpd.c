@@ -64,7 +64,7 @@
 
 #include <net/if.h>
 
-#include <apps/netutils/dhcpd.h>
+#include <protocols/dhcpd.h>
 
 /****************************************************************************
  * Preprocessor Definitions
@@ -148,7 +148,7 @@ int cmd_dhcpd(int argc, char *argv[])
 			}
 		}
 
-		if (dhcpd_start(argv[2]) != 0) {
+		if (dhcpd_start(argv[2], NULL) != 0) {
 			printf("%s : failed to start dhcpd\n", __FUNCTION__);
 			goto done;
 		}

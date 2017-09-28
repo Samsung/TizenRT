@@ -46,7 +46,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tls/config.h"
+#include "mbedtls/config.h"
 
 #if !defined(MBEDTLS_ENTROPY_C) || \
 	!defined(MBEDTLS_SSL_TLS_C) || !defined(MBEDTLS_SSL_SRV_C) || \
@@ -65,30 +65,30 @@ int tls_server_main(int argc, char **argv)
 #define mbedtls_fprintf    fprintf
 #define mbedtls_printf     printf
 
-#include "tls/net.h"
-#include "tls/ssl.h"
-#include "tls/entropy.h"
-#include "tls/ctr_drbg.h"
-#include "tls/certs.h"
-#include "tls/x509.h"
-#include "tls/error.h"
-#include "tls/debug.h"
-#include "tls/timing.h"
+#include "mbedtls/net.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/certs.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/error.h"
+#include "mbedtls/debug.h"
+#include "mbedtls/timing.h"
 
 #if defined(MBEDTLS_SSL_CACHE_C)
-#include "tls/ssl_cache.h"
+#include "mbedtls/ssl_cache.h"
 #endif
 
 #if defined(MBEDTLS_SSL_TICKET_C)
-#include "tls/ssl_ticket.h"
+#include "mbedtls/ssl_ticket.h"
 #endif
 
 #if defined(MBEDTLS_SSL_COOKIE_C)
-#include "tls/ssl_cookie.h"
+#include "mbedtls/ssl_cookie.h"
 #endif
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
-#include "tls/memory_buffer_alloc.h"
+#include "mbedtls/memory_buffer_alloc.h"
 #endif
 
 #if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION) && defined(MBEDTLS_FS_IO)
@@ -320,6 +320,9 @@ struct pthread_arg {
 #define USAGE_ECJPAKE ""
 #endif
 
+#define USAGE_LARGEDATA \
+	"    aging=%%s       default: false (disabled, receive a http request)\n"
+
 #define USAGE \
 	"\n usage: ssl_server2 param=<>...\n"                   \
 	"\n acceptable parameters:\n"                           \
@@ -354,6 +357,7 @@ struct pthread_arg {
 	USAGE_ALPN                                              \
 	USAGE_EMS                                               \
 	USAGE_ETM                                               \
+	USAGE_LARGEDATA                                         \
 	"\n"                                                    \
 	"    arc4=%%d             default: (library default: 0)\n" \
 	"    min_version=%%s      default: (library default: tls1)\n"       \
@@ -367,6 +371,7 @@ struct pthread_arg {
 	"    force_ciphersuite=<name>    default: all enabled\n"            \
 	" acceptable ciphersuite names:\n"
 
+#define MAX_DATA_SIZE 100 * 1024 * 1024 /* Maximum data size for aging test 100MB */
 /*
  * global options
  */
@@ -416,6 +421,7 @@ struct options {
 	uint32_t hs_to_max;			/* Max value of DTLS handshake timer        */
 	int badmac_limit;			/* Limit of records with bad MAC            */
 	int retry;					/* Server retry count                       */
+	int aging;                  /* enable large data transfer test          */
 };
 
 static struct options opt;
@@ -478,13 +484,13 @@ static int my_send(void *ctx, const unsigned char *buf, size_t len)
  */
 static int get_auth_mode(const char *s)
 {
-	if (strcmp(s, "none") == 0) {
+	if (strncmp(s, "none", strlen("none") + 1) == 0) {
 		return (MBEDTLS_SSL_VERIFY_NONE);
 	}
-	if (strcmp(s, "optional") == 0) {
+	if (strncmp(s, "optional", strlen("optional") + 1) == 0) {
 		return (MBEDTLS_SSL_VERIFY_OPTIONAL);
 	}
-	if (strcmp(s, "required") == 0) {
+	if (strncmp(s, "required", strlen("required") + 1) == 0) {
 		return (MBEDTLS_SSL_VERIFY_REQUIRED);
 	}
 
@@ -586,7 +592,7 @@ sni_entry *sni_parse(char *sni_string)
 			goto error;
 		}
 
-		if (strcmp(ca_file, "-") != 0) {
+		if (strncmp(ca_file, "-", strlen("-") + 1) != 0) {
 			if ((new->ca = mbedtls_calloc(1, sizeof(mbedtls_x509_crt))) == NULL) {
 				goto error;
 			}
@@ -598,7 +604,7 @@ sni_entry *sni_parse(char *sni_string)
 			}
 		}
 
-		if (strcmp(crl_file, "-") != 0) {
+		if (strncmp(crl_file, "-", strlen("-") + 1) != 0) {
 			if ((new->crl = mbedtls_calloc(1, sizeof(mbedtls_x509_crl))) == NULL) {
 				goto error;
 			}
@@ -610,7 +616,7 @@ sni_entry *sni_parse(char *sni_string)
 			}
 		}
 
-		if (strcmp(auth_str, "-") != 0) {
+		if (strncmp(auth_str, "-", strlen("-") + 1) != 0) {
 			if ((new->authmode = get_auth_mode(auth_str)) < 0) {
 				goto error;
 			}
@@ -785,6 +791,7 @@ int psk_callback(void *p_info, mbedtls_ssl_context *ssl, const unsigned char *na
 }
 #endif							/* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED */
 
+#if 0
 static mbedtls_net_context listen_fd, client_fd;
 
 /* Interruption handler to ensure clean exit (for valgrind testing) */
@@ -797,6 +804,7 @@ void term_handler(int sig)
 	mbedtls_net_free(&listen_fd);	/* causes mbedtls_net_accept() to abort */
 	mbedtls_net_free(&client_fd);	/* causes net_read() to abort */
 }
+#endif
 #endif
 
 /****************************************************************************
@@ -876,6 +884,9 @@ int tls_server_cb(void *args)
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 	mbedtls_memory_buffer_alloc_init(alloc_buf, sizeof(alloc_buf));
 #endif
+
+	mbedtls_net_context listen_fd;
+	mbedtls_net_context client_fd;
 
 	/*
 	 * Make sure memory references are valid in case we exit early.
@@ -984,11 +995,11 @@ usage:
 		}
 		*q++ = '\0';
 
-		if (strcmp(p, "server_port") == 0) {
+		if (strncmp(p, "server_port", strlen("server_port") + 1) == 0) {
 			opt.server_port = q;
-		} else if (strcmp(p, "server_addr") == 0) {
+		} else if (strncmp(p, "server_addr", strlen("server_addr") + 1) == 0) {
 			opt.server_addr = q;
-		} else if (strcmp(p, "dtls") == 0) {
+		} else if (strncmp(p, "dtls", strlen("dtls") + 1) == 0) {
 			int t = atoi(q);
 			if (t == 0) {
 				opt.transport = MBEDTLS_SSL_TRANSPORT_STREAM;
@@ -997,41 +1008,41 @@ usage:
 			} else {
 				goto usage;
 			}
-		} else if (strcmp(p, "debug_level") == 0) {
+		} else if (strncmp(p, "debug_level", strlen("debug_level") + 1) == 0) {
 			opt.debug_level = atoi(q);
 			if (opt.debug_level < 0 || opt.debug_level > 65535) {
 				goto usage;
 			}
-		} else if (strcmp(p, "nbio") == 0) {
+		} else if (strncmp(p, "nbio", strlen("nbio") + 1) == 0) {
 			opt.nbio = atoi(q);
 			if (opt.nbio < 0 || opt.nbio > 2) {
 				goto usage;
 			}
-		} else if (strcmp(p, "read_timeout") == 0) {
+		} else if (strncmp(p, "read_timeout", strlen("read_timeout") + 1) == 0) {
 			opt.read_timeout = atoi(q);
-		} else if (strcmp(p, "ca_file") == 0) {
+		} else if (strncmp(p, "ca_file", strlen("ca_file") + 1) == 0) {
 			opt.ca_file = q;
-		} else if (strcmp(p, "ca_path") == 0) {
+		} else if (strncmp(p, "ca_path", strlen("ca_path") + 1) == 0) {
 			opt.ca_path = q;
-		} else if (strcmp(p, "crt_file") == 0) {
+		} else if (strncmp(p, "crt_file", strlen("crt_file") + 1) == 0) {
 			opt.crt_file = q;
-		} else if (strcmp(p, "key_file") == 0) {
+		} else if (strncmp(p, "key_file", strlen("key_file") + 1) == 0) {
 			opt.key_file = q;
-		} else if (strcmp(p, "crt_file2") == 0) {
+		} else if (strncmp(p, "crt_file2", strlen("crt_file2") + 1) == 0) {
 			opt.crt_file2 = q;
-		} else if (strcmp(p, "key_file2") == 0) {
+		} else if (strncmp(p, "key_file2", strlen("key_file2") + 1) == 0) {
 			opt.key_file2 = q;
-		} else if (strcmp(p, "dhm_file") == 0) {
+		} else if (strncmp(p, "dhm_file", strlen("dhm_file") + 1) == 0) {
 			opt.dhm_file = q;
-		} else if (strcmp(p, "psk") == 0) {
+		} else if (strncmp(p, "psk", strlen("psk") + 1) == 0) {
 			opt.psk = q;
-		} else if (strcmp(p, "psk_identity") == 0) {
+		} else if (strncmp(p, "psk_identity", strlen("psk_identity") + 1) == 0) {
 			opt.psk_identity = q;
-		} else if (strcmp(p, "psk_list") == 0) {
+		} else if (strncmp(p, "psk_list", strlen("psk_list") + 1) == 0) {
 			opt.psk_list = q;
-		} else if (strcmp(p, "ecjpake_pw") == 0) {
+		} else if (strncmp(p, "ecjpake_pw", strlen("ecjpake_pw") + 1) == 0) {
 			opt.ecjpake_pw = q;
-		} else if (strcmp(p, "force_ciphersuite") == 0) {
+		} else if (strncmp(p, "force_ciphersuite", strlen("force_ciphersuite") + 1) == 0) {
 			opt.force_ciphersuite[0] = mbedtls_ssl_get_ciphersuite_id(q);
 
 			if (opt.force_ciphersuite[0] == 0) {
@@ -1039,11 +1050,11 @@ usage:
 				goto usage;
 			}
 			opt.force_ciphersuite[1] = 0;
-		} else if (strcmp(p, "version_suites") == 0) {
+		} else if (strncmp(p, "version_suites", strlen("version_suites") + 1) == 0) {
 			opt.version_suites = q;
-		} else if (strcmp(p, "renegotiation") == 0) {
+		} else if (strncmp(p, "renegotiation", strlen("renegotiation") + 1) == 0) {
 			opt.renegotiation = (atoi(q)) ? MBEDTLS_SSL_RENEGOTIATION_ENABLED : MBEDTLS_SSL_RENEGOTIATION_DISABLED;
-		} else if (strcmp(p, "allow_legacy") == 0) {
+		} else if (strncmp(p, "allow_legacy", strlen("allow_legacy") + 1) == 0) {
 			switch (atoi(q)) {
 			case -1:
 				opt.allow_legacy = MBEDTLS_SSL_LEGACY_BREAK_HANDSHAKE;
@@ -1057,48 +1068,48 @@ usage:
 			default:
 				goto usage;
 			}
-		} else if (strcmp(p, "renegotiate") == 0) {
+		} else if (strncmp(p, "renegotiate", strlen("renegotiate") + 1) == 0) {
 			opt.renegotiate = atoi(q);
 			if (opt.renegotiate < 0 || opt.renegotiate > 1) {
 				goto usage;
 			}
-		} else if (strcmp(p, "renego_delay") == 0) {
+		} else if (strncmp(p, "renego_delay", strlen("renego_delay") + 1) == 0) {
 			opt.renego_delay = atoi(q);
-		} else if (strcmp(p, "renego_period") == 0) {
+		} else if (strncmp(p, "renego_period", strlen("renego_period") + 1) == 0) {
 			opt.renego_period = atoi(q);
 			if (opt.renego_period < 2 || opt.renego_period > 255) {
 				goto usage;
 			}
-		} else if (strcmp(p, "exchanges") == 0) {
+		} else if (strncmp(p, "exchanges", strlen("exchanges") + 1) == 0) {
 			opt.exchanges = atoi(q);
 			if (opt.exchanges < 0) {
 				goto usage;
 			}
-		} else if (strcmp(p, "min_version") == 0) {
-			if (strcmp(q, "ssl3") == 0) {
+		} else if (strncmp(p, "min_version", strlen("min_version") + 1) == 0) {
+			if (strncmp(q, "ssl3", strlen("ssl3") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_0;
-			} else if (strcmp(q, "tls1") == 0) {
+			} else if (strncmp(q, "tls1", strlen("tls1") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_1;
-			} else if (strcmp(q, "tls1_1") == 0 || strcmp(q, "dtls1") == 0) {
+			} else if (strncmp(q, "tls1_1", strlen("tls1_1") + 1) == 0 || strncmp(q, "dtls1", strlen("dtls1") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_2;
-			} else if (strcmp(q, "tls1_2") == 0 || strcmp(q, "dtls1_2") == 0) {
+			} else if (strncmp(q, "tls1_2", strlen("tls1_2") + 1) == 0 || strncmp(q, "dtls1_2", strlen("dtls1_2") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_3;
 			} else {
 				goto usage;
 			}
-		} else if (strcmp(p, "max_version") == 0) {
-			if (strcmp(q, "ssl3") == 0) {
+		} else if (strncmp(p, "max_version", strlen("max_version") + 1) == 0) {
+			if (strncmp(q, "ssl3", strlen("ssl3") + 1) == 0) {
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_0;
-			} else if (strcmp(q, "tls1") == 0) {
+			} else if (strncmp(q, "tls1", strlen("tls1") + 1) == 0) {
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_1;
-			} else if (strcmp(q, "tls1_1") == 0 || strcmp(q, "dtls1") == 0) {
+			} else if (strncmp(q, "tls1_1", strlen("tls1_1") + 1) == 0 || strncmp(q, "dtls1", strlen("dtls1") + 1) == 0) {
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_2;
-			} else if (strcmp(q, "tls1_2") == 0 || strcmp(q, "dtls1_2") == 0) {
+			} else if (strncmp(q, "tls1_2", strlen("tls1_2") + 1) == 0 || strncmp(q, "dtls1_2", strlen("dtls1_2") + 1) == 0) {
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_3;
 			} else {
 				goto usage;
 			}
-		} else if (strcmp(p, "arc4") == 0) {
+		} else if (strncmp(p, "arc4", strlen("arc4") + 1) == 0) {
 			switch (atoi(q)) {
 			case 0:
 				opt.arc4 = MBEDTLS_SSL_ARC4_DISABLED;
@@ -1109,49 +1120,49 @@ usage:
 			default:
 				goto usage;
 			}
-		} else if (strcmp(p, "force_version") == 0) {
-			if (strcmp(q, "ssl3") == 0) {
+		} else if (strncmp(p, "force_version", strlen("force_version") + 1) == 0) {
+			if (strncmp(q, "ssl3", strlen("ssl3") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_0;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_0;
-			} else if (strcmp(q, "tls1") == 0) {
+			} else if (strncmp(q, "tls1", strlen("tls1") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_1;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_1;
-			} else if (strcmp(q, "tls1_1") == 0) {
+			} else if (strncmp(q, "tls1_1", strlen("tls1_1") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_2;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_2;
-			} else if (strcmp(q, "tls1_2") == 0) {
+			} else if (strncmp(q, "tls1_2", strlen("tls1_2") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_3;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_3;
-			} else if (strcmp(q, "dtls1") == 0) {
+			} else if (strncmp(q, "dtls1", strlen("dtls1") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_2;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_2;
 				opt.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
-			} else if (strcmp(q, "dtls1_2") == 0) {
+			} else if (strncmp(q, "dtls1_2", strlen("dtls1_2") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_3;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_3;
 				opt.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
 			} else {
 				goto usage;
 			}
-		} else if (strcmp(p, "auth_mode") == 0) {
+		} else if (strncmp(p, "auth_mode", strlen("auth_mode") + 1) == 0) {
 			if ((opt.auth_mode = get_auth_mode(q)) < 0) {
 				goto usage;
 			}
-		} else if (strcmp(p, "max_frag_len") == 0) {
-			if (strcmp(q, "512") == 0) {
+		} else if (strncmp(p, "max_frag_len", strlen("max_frag_len") + 1) == 0) {
+			if (strncmp(q, "512", strlen("512") + 1) == 0) {
 				opt.mfl_code = MBEDTLS_SSL_MAX_FRAG_LEN_512;
-			} else if (strcmp(q, "1024") == 0) {
+			} else if (strncmp(q, "1024", strlen("1024") + 1) == 0) {
 				opt.mfl_code = MBEDTLS_SSL_MAX_FRAG_LEN_1024;
-			} else if (strcmp(q, "2048") == 0) {
+			} else if (strncmp(q, "2048", strlen("2048") + 1) == 0) {
 				opt.mfl_code = MBEDTLS_SSL_MAX_FRAG_LEN_2048;
-			} else if (strcmp(q, "4096") == 0) {
+			} else if (strncmp(q, "4096", strlen("4096") + 1) == 0) {
 				opt.mfl_code = MBEDTLS_SSL_MAX_FRAG_LEN_4096;
 			} else {
 				goto usage;
 			}
-		} else if (strcmp(p, "alpn") == 0) {
+		} else if (strncmp(p, "alpn", strlen("alpn") + 1) == 0) {
 			opt.alpn_string = q;
-		} else if (strcmp(p, "trunc_hmac") == 0) {
+		} else if (strncmp(p, "trunc_hmac", strlen("trunc_hmac") + 1) == 0) {
 			switch (atoi(q)) {
 			case 0:
 				opt.trunc_hmac = MBEDTLS_SSL_TRUNC_HMAC_DISABLED;
@@ -1162,7 +1173,7 @@ usage:
 			default:
 				goto usage;
 			}
-		} else if (strcmp(p, "extended_ms") == 0) {
+		} else if (strncmp(p, "extended_ms", strlen("extended_ms") + 1) == 0) {
 			switch (atoi(q)) {
 			case 0:
 				opt.extended_ms = MBEDTLS_SSL_EXTENDED_MS_DISABLED;
@@ -1173,7 +1184,7 @@ usage:
 			default:
 				goto usage;
 			}
-		} else if (strcmp(p, "etm") == 0) {
+		} else if (strncmp(p, "etm", strlen("etm") + 1) == 0) {
 			switch (atoi(q)) {
 			case 0:
 				opt.etm = MBEDTLS_SSL_ETM_DISABLED;
@@ -1184,42 +1195,42 @@ usage:
 			default:
 				goto usage;
 			}
-		} else if (strcmp(p, "tickets") == 0) {
+		} else if (strncmp(p, "tickets", strlen("tickets") + 1) == 0) {
 			opt.tickets = atoi(q);
 			if (opt.tickets < 0 || opt.tickets > 1) {
 				goto usage;
 			}
-		} else if (strcmp(p, "ticket_timeout") == 0) {
+		} else if (strncmp(p, "ticket_timeout", strlen("ticket_timeout") + 1) == 0) {
 			opt.ticket_timeout = atoi(q);
 			if (opt.ticket_timeout < 0) {
 				goto usage;
 			}
-		} else if (strcmp(p, "cache_max") == 0) {
+		} else if (strncmp(p, "cache_max", strlen("cache_max") + 1) == 0) {
 			opt.cache_max = atoi(q);
 			if (opt.cache_max < 0) {
 				goto usage;
 			}
-		} else if (strcmp(p, "cache_timeout") == 0) {
+		} else if (strncmp(p, "cache_timeout", strlen("cache_timeout") + 1) == 0) {
 			opt.cache_timeout = atoi(q);
 			if (opt.cache_timeout < 0) {
 				goto usage;
 			}
-		} else if (strcmp(p, "cookies") == 0) {
+		} else if (strncmp(p, "cookies", strlen("cookies") + 1) == 0) {
 			opt.cookies = atoi(q);
 			if (opt.cookies < -1 || opt.cookies > 1) {
 				goto usage;
 			}
-		} else if (strcmp(p, "anti_replay") == 0) {
+		} else if (strncmp(p, "anti_replay", strlen("anti_replay") + 1) == 0) {
 			opt.anti_replay = atoi(q);
 			if (opt.anti_replay < 0 || opt.anti_replay > 1) {
 				goto usage;
 			}
-		} else if (strcmp(p, "badmac_limit") == 0) {
+		} else if (strncmp(p, "badmac_limit", strlen("badmac_limit") + 1) == 0) {
 			opt.badmac_limit = atoi(q);
 			if (opt.badmac_limit < 0) {
 				goto usage;
 			}
-		} else if (strcmp(p, "hs_timeout") == 0) {
+		} else if (strncmp(p, "hs_timeout", strlen("hs_timeout") + 1) == 0) {
 			if ((p = strchr(q, '-')) == NULL) {
 				goto usage;
 			}
@@ -1229,10 +1240,18 @@ usage:
 			if (opt.hs_to_min == 0 || opt.hs_to_max < opt.hs_to_min) {
 				goto usage;
 			}
-		} else if (strcmp(p, "sni") == 0) {
+		} else if (strncmp(p, "sni", strlen("sni") + 1) == 0) {
 			opt.sni = q;
-		} else if (strcmp(p, "retry") == 0) {
+		} else if (strncmp(p, "retry", strlen("retry") + 1) == 0) {
 			opt.retry = atoi(q);
+		} else if (strncmp(p, "aging", strlen("aging") + 1) == 0) {
+			if (strncmp(q, "true", strlen("true") + 1) == 0) {
+				opt.aging = 1;
+			} else if (strncmp(q, "false", strlen("false") + 1) == 0) {
+				opt.aging = -1;
+			} else {
+				goto usage;
+			}
 		} else {
 			goto usage;
 		}
@@ -1376,13 +1395,13 @@ usage:
 
 #if defined(MBEDTLS_FS_IO)
 	if (strlen(opt.ca_path))
-		if (strcmp(opt.ca_path, "none") == 0) {
+		if (strncmp(opt.ca_path, "none", strlen("none") + 1) == 0) {
 			ret = 0;
 		} else {
 			ret = mbedtls_x509_crt_parse_path(&cacert, opt.ca_path);
 		}
 	else if (strlen(opt.ca_file))
-		if (strcmp(opt.ca_file, "none") == 0) {
+		if (strncmp(opt.ca_file, "none", strlen("none") + 1) == 0) {
 			ret = 0;
 		} else {
 			ret = mbedtls_x509_crt_parse_file(&cacert, opt.ca_file);
@@ -1416,14 +1435,14 @@ usage:
 	fflush(stdout);
 
 #if defined(MBEDTLS_FS_IO)
-	if (strlen(opt.crt_file) && strcmp(opt.crt_file, "none") != 0) {
+	if (strlen(opt.crt_file) && strncmp(opt.crt_file, "none", strlen("none") + 1) != 0) {
 		key_cert_init++;
 		if ((ret = mbedtls_x509_crt_parse_file(&srvcert, opt.crt_file)) != 0) {
 			mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse_file returned -0x%x\n\n", -ret);
 			goto exit;
 		}
 	}
-	if (strlen(opt.key_file) && strcmp(opt.key_file, "none") != 0) {
+	if (strlen(opt.key_file) && strncmp(opt.key_file, "none", strlen("none") + 1) != 0) {
 		key_cert_init++;
 		if ((ret = mbedtls_pk_parse_keyfile(&pkey, opt.key_file, "")) != 0) {
 			mbedtls_printf(" failed\n  !  mbedtls_pk_parse_keyfile returned -0x%x\n\n", -ret);
@@ -1435,14 +1454,14 @@ usage:
 		goto exit;
 	}
 
-	if (strlen(opt.crt_file2) && strcmp(opt.crt_file2, "none") != 0) {
+	if (strlen(opt.crt_file2) && strncmp(opt.crt_file2, "none", strlen("none") + 1) != 0) {
 		key_cert_init2++;
 		if ((ret = mbedtls_x509_crt_parse_file(&srvcert2, opt.crt_file2)) != 0) {
 			mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse_file(2) returned -0x%x\n\n", -ret);
 			goto exit;
 		}
 	}
-	if (strlen(opt.key_file2) && strcmp(opt.key_file2, "none") != 0) {
+	if (strlen(opt.key_file2) && strncmp(opt.key_file2, "none", strlen("none") + 1) != 0) {
 		key_cert_init2++;
 		if ((ret = mbedtls_pk_parse_keyfile(&pkey2, opt.key_file2, "")) != 0) {
 			mbedtls_printf(" failed\n  !  mbedtls_pk_parse_keyfile(2) returned -0x%x\n\n", -ret);
@@ -1454,7 +1473,7 @@ usage:
 		goto exit;
 	}
 #endif
-	if (key_cert_init == 0 && strcmp(opt.crt_file, "none") != 0 && strcmp(opt.key_file, "none") != 0 && key_cert_init2 == 0 && strcmp(opt.crt_file2, "none") != 0 && strcmp(opt.key_file2, "none") != 0) {
+	if (key_cert_init == 0 && strncmp(opt.crt_file, "none", strlen("none") + 1) != 0 && strncmp(opt.key_file, "none", strlen("none") + 1) != 0 && key_cert_init2 == 0 && strncmp(opt.crt_file2, "none", strlen("none") + 1) != 0 && strncmp(opt.key_file2, "none", strlen("none") + 1) != 0) {
 #if !defined(MBEDTLS_CERTS_C)
 		mbedtls_printf("Not certificated or key provided, and \n" "MBEDTLS_CERTS_C not defined!\n");
 		goto exit;
@@ -1675,7 +1694,7 @@ usage:
 #endif
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
-	if (strcmp(opt.ca_path, "none") != 0 && strcmp(opt.ca_file, "none") != 0) {
+	if (strncmp(opt.ca_path, "none", strlen("none") + 1) != 0 && strncmp(opt.ca_file, "none", strlen("none") + 1) != 0) {
 		mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
 	}
 	if (key_cert_init)
@@ -1717,12 +1736,12 @@ usage:
 #if defined(MBEDTLS_FS_IO)
 	if (opt.dhm_file != NULL) {
 		ret = mbedtls_ssl_conf_dh_param_ctx(&conf, &dhm);
+		if (ret != 0) {
+			mbedtls_printf("  failed\n  mbedtls_ssl_conf_dh_param returned -0x%04X\n\n", -ret);
+			goto exit;
+		}
 	}
 #endif
-	if (ret != 0) {
-		mbedtls_printf("  failed\n  mbedtls_ssl_conf_dh_param returned -0x%04X\n\n", -ret);
-		goto exit;
-	}
 #endif
 
 	if (opt.min_version != DFL_MIN_VERSION) {
@@ -1754,12 +1773,14 @@ reset:
 	if (!(opt.retry--)) {
 		goto exit;
 	}
+#if 0
 #if !defined(_WIN32)
 	if (received_sigterm) {
 		mbedtls_printf(" interrupted by SIGTERM\n");
 		ret = 0;
 		goto exit;
 	}
+#endif
 #endif
 
 	if (ret == MBEDTLS_ERR_SSL_CLIENT_RECONNECT) {
@@ -1788,6 +1809,7 @@ reset:
 		goto exit;
 	}
 	if ((ret = mbedtls_net_accept(&listen_fd, &client_fd, client_ip, sizeof(client_ip), &cliip_len)) != 0) {
+#if 0
 #if !defined(_WIN32)
 		if (received_sigterm) {
 			mbedtls_printf(" interrupted by signal\n");
@@ -1795,7 +1817,7 @@ reset:
 			goto exit;
 		}
 #endif
-
+#endif
 		mbedtls_printf(" failed\n  ! mbedtls_net_accept returned -0x%x\n\n", -ret);
 		goto exit;
 	}
@@ -1916,6 +1938,48 @@ handshake:
 
 	exchanges_left = opt.exchanges;
 data_exchange:
+
+	if (opt.aging > 0) {
+		/*
+		 * 6. Read the large data from client
+		 */
+		unsigned char big_buf[1024];
+		int received = 0;
+
+		// read transfer size from the client
+		unsigned int datasize;
+		ret = mbedtls_ssl_read(&ssl, (void *)&datasize, sizeof(unsigned int));
+
+		if (ret <= 0 &&
+			ret != MBEDTLS_ERR_SSL_WANT_READ &&
+			ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+			mbedtls_printf(" read the data size error(%d)\n", ret);
+			goto exit;
+		}
+		datasize = ntohl(datasize);
+		mbedtls_printf(" < Read the large data from the client (%d)B\n", datasize);
+
+		struct timeval start_time, end_time;
+		gettimeofday(&start_time, NULL);
+
+		do {
+			ret = mbedtls_ssl_read(&ssl, big_buf, sizeof(big_buf));
+			if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
+				ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+				mbedtls_printf(" read error(%d)\n", ret);
+				continue;
+			}
+			received += ret;
+			mbedtls_printf(" read(%d) progress(%d/%d)\n", ret, received, datasize);
+		} while (datasize - received > 0);
+		gettimeofday(&end_time, NULL);
+		int duration = (end_time.tv_sec - start_time.tv_sec) * 1000000 +
+			(end_time.tv_usec - start_time.tv_usec);
+		mbedtls_printf(" Transfer is done %dKB %lfmbps\n", datasize / 1024,
+					   (double)datasize / (double)duration / (1024 * 1024) * 1000000);
+		goto close_notify;
+	}
+
 	/*
 	 * 6. Read the HTTP Request
 	 */

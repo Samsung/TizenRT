@@ -198,16 +198,16 @@
 #define SSE_PROC_TRIG(n)  (1 << (n))
 #define SSE_PROC_TRIG_ALL (0xF)
 
-#define SSE_IDX(a, s)     (((a)*SSE_PER_BASE) + (s))
+#define SSE_IDX(a, s)     (((a) * SSE_PER_BASE) + (s))
 
 #define MAX_NORMAL_CHN 15
 #define BASE_PER_ADC   2
 #define SSE_PER_BASE   4
 #define SSE_MAX_STEP   8
-#define NUM_SSE(n)     (sizeof(n)/sizeof(n[0]))
+#define NUM_SSE(n)     (sizeof(n) / sizeof(n[0]))
 
 #define GET_AIN(a, s, c) \
-(uint8_t)((getreg32(TIVA_ADC_BASE(a)+TIVA_ADC_SSMUX(s)) & ADC_SSMUX_MUX_MASK(c)) >> ADC_SSMUX_MUX_SHIFT(c))
+(uint8_t)((getreg32(TIVA_ADC_BASE(a) + TIVA_ADC_SSMUX(s)) & ADC_SSMUX_MUX_MASK(c)) >> ADC_SSMUX_MUX_SHIFT(c))
 
 #define ADC_SSE_STEP_NULL 0xFF
 

@@ -120,6 +120,10 @@ struct part_procfs_file_s {
 };
 #endif
 
+#ifdef CONFIG_MTD_PARTITION_NAMES
+#define MTD_PARTNAME_LEN 11
+#endif
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -519,7 +523,7 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 	ssize_t blkpererase;
 	ssize_t ret;
 #ifdef CONFIG_MTD_PARTITION_NAMES
-	char partname[11];
+	char partname[MTD_PARTNAME_LEN];
 	FAR const char *ptr;
 	uint8_t x;
 #endif
@@ -569,7 +573,7 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 
 #ifdef CONFIG_MTD_PARTITION_NAMES
 		if (attr->nextpart->name == NULL) {
-			strcpy(partname, "(noname)  ");
+			strncpy(partname, "(noname)  ", MTD_PARTNAME_LEN);
 		} else {
 			ptr = attr->nextpart->name;
 			for (x = 0; x < sizeof(partname) - 1; x++) {

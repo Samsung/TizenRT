@@ -24,14 +24,15 @@
  */
 
 /**
- * @file iotbus_spi.h
+ * @file iotbus/iotbus_spi.h
  * @brief Iotbus APIs for SPI
  */
 
-#include <stdint.h>
-
 #ifndef IOTBUS_SPI_H_
 #define IOTBUS_SPI_H_
+
+#include <stdint.h>
+#include <sys/types.h>
 
 /**
  * @brief Enumeration of SPI mode
@@ -43,7 +44,10 @@
  * IOTBUS_SPI_MODE3\n
  */
 typedef enum {
-	IOTBUS_SPI_MODE0 = 0, IOTBUS_SPI_MODE1, IOTBUS_SPI_MODE2, IOTBUS_SPI_MODE3,
+	IOTBUS_SPI_MODE0 = 0,
+	IOTBUS_SPI_MODE1,
+	IOTBUS_SPI_MODE2,
+	IOTBUS_SPI_MODE3,
 } iotbus_spi_mode_e;
 
 /**
@@ -64,8 +68,7 @@ struct _iotbus_spi_s;
 typedef struct _iotbus_spi_s *iotbus_spi_context_h;
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /**

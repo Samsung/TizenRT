@@ -37,10 +37,9 @@ ifeq ($(CONFIG_DM),y)
 
 # Routing table support
 
-CSRCS =
-MAINSRC = lwm2mserver.c
+CSRCS += lwm2mserver.c
 
-DEPPATH += --dep-path wakaama/examples/server
-VPATH += :wakaama/examples/server
+DEPPATH += --dep-path examples/server
+VPATH += :examples/server
 
 endif

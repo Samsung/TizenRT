@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config AWS_SDK
+	bool "AWS IoT SDK"
+	default n
+	---help---
+		enable AWS IoT Device SDK
+

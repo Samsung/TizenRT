@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * configs/sidk_s5jt200/scripts/ld_s5jt200_flash.script
+ * configs/artik053/scripts/flash.ld
  *
  *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -54,7 +54,7 @@
 MEMORY
 {
 	FLASH	(rx)	: ORIGIN = 0x040C8000, LENGTH = 2400K
-	SRAM	(rwx)	: ORIGIN = 0x02023800, LENGTH = 722K
+	SRAM	(rwx)	: ORIGIN = 0x02023800, LENGTH = 946K
 }
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")

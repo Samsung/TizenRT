@@ -22,18 +22,35 @@
 #include <getopt.h>
 #include <string.h>
 #include <debug.h>
-#include <ttrace.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <tinyara/config.h>
+#include <tinyara/ttrace.h>
 #include <tinyara/clock.h>
-#include <tinyara/ttrace_internal.h>
+
+#define MAX_TAG_NAMESIZE 4
+
+struct tag_list {
+	const char *name;
+	const char *longname;
+	const int tags;
+};
+
+static const struct tag_list ttrace_tags[] = {
+	{"none",    "None",          TTRACE_TAG_OFF},
+	{"apps",    "Applications",  TTRACE_TAG_APPS},
+	{"libs",    "Libraries",     TTRACE_TAG_LIBS},
+	{"lock",    "Lock",          TTRACE_TAG_LOCK},
+	{"task",    "TASK",          TTRACE_TAG_TASK},
+	{"ipc",     "IPC",           TTRACE_TAG_IPC},
+};
 
 int param = 0;
 int selected_tags = 0;
+int is_overwritable = 0;
 
 static void show_help(void);
-static void wait_ttrace_dump(void);
+void wait_ttrace_dump(void);
 
 static int print_uid_packet(struct trace_packet *packet)
 {
@@ -90,10 +107,11 @@ static void show_help()
 	printf("usage: ttrace [opions] [tags...]\r\n");
 	printf("options include:\r\n");
 	printf("    -s     Start tracing, You should specify tags at tail\r\n");
+	printf("    -o     Enable overwrite buffer, This should be used with -s\r\n");
 	printf("    -f     Finish tracing and print result\r\n");
 	printf("    -i     Show information(state, available/selected/TP used tags, bufsize)\r\n");
 	printf("    -d     Dump trace buffer, It should be run after finish\r\n");
-	printf("    -p     Print trace buffer, It should be run after finish)\r\n");
+	printf("    -p     Print trace buffer, It should be run after finish\r\n");
 }
 
 static int assign_tag(char *name)
@@ -101,8 +119,8 @@ static int assign_tag(char *name)
 	int i = 0;
 	int tags = 0;
 	int len_tags = sizeof(ttrace_tags) / sizeof(struct tag_list);
-	for (i = 0 ; i < len_tags ; i++)
-		if (strcmp(name, ttrace_tags[i].name) == 0) {
+	for (i = 0; i < len_tags; i++)
+		if (strncmp(name, ttrace_tags[i].name, MAX_TAG_NAMESIZE) == 0) {
 			tags = ttrace_tags[i].tags;
 		}
 	return tags;
@@ -113,9 +131,11 @@ static int parse_args(int argc, char **args)
 	int cmd = 0;
 	int ret = 0;
 	int i = 0;
+	is_overwritable = 0;
 
 	/* options:
 	 * -s : TTRACE_START, start tracing
+	 * -o : TTRACE_OVERWRITE, enable overwrite buffer
 	 * -f : TTRACE_FINISH, finish tracing
 	 * -i : TTRACE_INFO, print information(state, bufsize, available tags)
 	 * -b : TTRACE_BUFFER, set buf size with argument
@@ -126,7 +146,7 @@ static int parse_args(int argc, char **args)
 	 */
 	while (1) {
 		optarg = NULL;
-		ret = getopt(argc, args, "sfidpb:");
+		ret = getopt(argc, args, "sofidpb:");
 		if (ret == '?') {
 			show_help();
 			return TTRACE_INVALID;
@@ -136,6 +156,11 @@ static int parse_args(int argc, char **args)
 			break;
 		}
 
+		if (ret == 'o') {
+			is_overwritable = 1;
+			continue;
+		}
+
 		cmd = ret;
 		printf("cmd: %d, %c, optarg: %d, %c, %s\r\n", cmd, cmd, optarg, optarg, optarg);
 
@@ -143,7 +168,7 @@ static int parse_args(int argc, char **args)
 			param = atoi(optarg);
 		}
 	}
-	for (i = optind ; i < argc ; i++) {
+	for (i = optind; i < argc; i++) {
 		printf("args[%d], %s\r\n", i, args[i]);
 		// Add args[i] to tag list
 		selected_tags |= assign_tag(args[i]);
@@ -155,7 +180,7 @@ static int parse_args(int argc, char **args)
 static int check_args_validation(int argc, char **args)
 {
 	ttdbg("argc: %d, args[1]: %s\r\n", argc, args[1]);
-	if (argc == 1 || (strcmp(args[1], "--help") == 0)) {
+	if (argc == 1 || (strncmp(args[1], "--help", strlen("--help") + 1) == 0)) {
 		show_help();
 		return TTRACE_INVALID;
 	}
@@ -230,7 +255,7 @@ static int read_tracebuffer(FILE *file, int bufsize)
 	return TTRACE_VALID;
 }
 
-static void wait_ttrace_dump()
+void wait_ttrace_dump()
 {
 	int i = 0;
 	/* Actually, gdb set breakpoints wait_ttrace_dump,
@@ -249,10 +274,16 @@ static int send_cmds(FILE *file, int cmd)
 
 	if (cmd == TTRACE_START) {
 		ret = run_cmd(file, TTRACE_SELECTED_TAG, selected_tags);
+		ret = run_cmd(file, TTRACE_OVERWRITE, is_overwritable);
+		ret = run_cmd(file, TTRACE_SET_BUFSIZE, (unsigned long)sizeof(struct trace_packet));
 	} else if (cmd == TTRACE_FINISH) {
+		ret = run_cmd(file, TTRACE_OVERWRITE, 0);
 		bufsize = run_cmd(file, TTRACE_USED_BUFSIZE, param);
 	} else if (cmd == TTRACE_PRINT) {
 		bufsize = run_cmd(file, TTRACE_USED_BUFSIZE, param);
+		if (bufsize <= 0) {
+			return TTRACE_NODATA;
+		}
 		ret = read_tracebuffer(file, bufsize);
 		return ret;
 	}
@@ -268,6 +299,7 @@ int kdbg_ttrace(int argc, char **args)
 {
 	FILE *file = NULL;
 	int cmd = 0;
+	int ret = 0;
 
 	if (TTRACE_INVALID == check_args_validation(argc, args)) {
 		return TTRACE_INVALID;
@@ -284,11 +316,18 @@ int kdbg_ttrace(int argc, char **args)
 	}
 
 	if (cmd == TTRACE_DUMP) {
-		printf("Dump mode(target hanged), Please run 'ttrace_tinyara.py -d' at host pc.\r\n");
-		printf("Connect GDB to dump for T-trace dump");
+		printf("Dump mode(target hanged),\r\n");
+		printf("To dump ttrace logs,\r\n");
+		printf("1.connect target\r\n");
+		printf("2.run 'ttrace_ttraceDump.py' at host pc.\r\n");
+		printf("3.start tracing at target($ ttrace -s <tags>)\r\n");
+		printf("4.stop tracing and run dumpmode($ ttrace -f; ttrace -d)\r\n");
 		wait_ttrace_dump();
 	} else {
-		send_cmds(file, cmd);
+		ret = send_cmds(file, cmd);
+		if (ret == TTRACE_NODATA) {
+			printf("There are no data in buffer.\r\n");
+		}
 	}
 
 	close_ttrace(file);
