@@ -139,20 +139,18 @@ int s5j_mpu_initialize(void)
 	 * Vector Table 0x02020000  0x02020FFF  4
 	 * Reserved     0x02021000  0x020217FF  2
 	 * BL1          0x02021800  0x020237FF  8
-	 * TinyARA      0x02023800  0x020E7FFF  786(WBWA)
-	 * Shared mem       0x020E8000  0x020E9FFF  8 (WBWA)
-	 * cm0          0x020EA000  0x0210FFFF  152 (NCNB)
+	 * TizenRT      0x02023800  0x0210FFFF  946(WBWA)
 	 * WIFI         0x02110000  0x0215FFFF  320(NCNB)
 	 */
 
 	/* Region 0, Set read only for memory area */
 	mpu_priv_flash(0x0, 0x80000000);
 
-	/* Region 1, for ISRAM(0x0200_0000++2048KB, RW-WBWA */
-	mpu_user_intsram_wb(0x02000000, 0x200000);
+	/* Region 1, for ISRAM(0x02020000++1280KB, RW-WBWA */
+	mpu_user_intsram_wb(S5J_IRAM_PADDR, S5J_IRAM_SIZE);
 
-	/* Region 2, wifi driver needs non-$(0x0211_0000++320KB, RW-NCNB */
-	mpu_priv_noncache(0x02100000, 0x80000);
+	/* Region 2, wifi driver needs non-$(0x02110000++320KB, RW-NCNB */
+	mpu_priv_noncache(S5J_IRAM_PADDR + ((4 + 2 + 8 + 946) * 1024), (320 * 1024));
 
 	/* Region 3, for FLASH area, default to set WBWA */
 	mpu_user_intsram_wb(S5J_FLASH_PADDR, S5J_FLASH_SIZE);
