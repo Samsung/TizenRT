@@ -44,12 +44,7 @@
 
 #include <netdb.h>
 
-/* FIXME: This is workaround for strange TizenRT headers... */
-struct iovec
-{
-  void *iov_base;
-  size_t    iov_len;
-};
+#include <uio.h>
 
 #ifndef TUV_POLL_EVENTS_SIZE
 #define TUV_POLL_EVENTS_SIZE  32
