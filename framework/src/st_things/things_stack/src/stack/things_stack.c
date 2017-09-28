@@ -1002,14 +1002,16 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee
 		{
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.(for abort Thread)");
 			*h_thread_abort = 0;
+			things_free(ARGs);
+			ARGs = NULL;
 			eh_result = OC_EH_ERROR;
 		}
+		pthread_detach(h_thread_abort);
 	} else {
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Already called Thread. So, OC_EH_NOT_ACCEPTABLE");
 		eh_result = OC_EH_NOT_ACCEPTABLE;
 	}
 
-	pthread_detach(h_thread_abort);
 	return eh_result;
 }
 
