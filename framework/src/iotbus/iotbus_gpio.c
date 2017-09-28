@@ -69,8 +69,13 @@ void gpio_async_handler(void *data)
  */
 iotbus_gpio_context_h iotbus_gpio_open(int gpiopin)
 {
-	struct _iotbus_gpio_s *dev = (struct _iotbus_gpio_s *)malloc(sizeof(struct _iotbus_gpio_s));
+	struct _iotbus_gpio_s *dev = NULL;
+	dev = (struct _iotbus_gpio_s *)malloc(sizeof(struct _iotbus_gpio_s));
 
+	if (dev == NULL) {
+		zdbg("malloc failed: %d\n", errno);
+		return NULL;
+	}
 	char gpio_dev[16] = { 0, };
 	snprintf(gpio_dev, 16, "/dev/gpio%d", gpiopin);
 

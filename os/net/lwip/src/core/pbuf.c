@@ -832,6 +832,7 @@ err_t pbuf_copy(struct pbuf *p_to, struct pbuf *p_from)
 {
 	u16_t offset_to = 0, offset_from = 0, len;
 
+	LWIP_ASSERT("p_to != NULL", (p_to != NULL));
 	LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_copy(%p, %p)\n", (void *)p_to, (void *)p_from));
 
 	/* is the target big enough to hold the source? */
