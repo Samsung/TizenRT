@@ -24,14 +24,14 @@
  */
 
 /**
- * @file iotbus_uart.h
+ * @file iotbus/iotbus_uart.h
  * @brief Iotbus APIs for UART
  */
 
-#include <stdint.h>
-
 #ifndef IOTBUS_UART_H_
 #define IOTBUS_UART_H_
+
+#include <stdint.h>
 
 /**
  * @brief Enumeration of UART parity type
@@ -42,7 +42,9 @@
  * IOTBUS_UART_PARITY_ODD\n
  */
 typedef enum {
-	IOTBUS_UART_PARITY_NONE = 0, IOTBUS_UART_PARITY_EVEN, IOTBUS_UART_PARITY_ODD,
+	IOTBUS_UART_PARITY_NONE = 0,
+	IOTBUS_UART_PARITY_EVEN,
+	IOTBUS_UART_PARITY_ODD,
 } iotbus_uart_parity_e;
 
 struct _iotbus_uart_s;
@@ -53,8 +55,7 @@ struct _iotbus_uart_s;
 typedef struct _iotbus_uart_s *iotbus_uart_context_h;
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /**

@@ -154,10 +154,10 @@ static const uint16_t gpio_mosi = (GPIO_OUTPUT|GPIO_FLOAT|GPIO_PORTP4|GPIO_PIN3)
 /* Device geometry description, compact form (2 bytes per entry) */
 
 struct ee_geom_s {
-	uint8_t bytes : 4;		/* Power of two of 128 bytes (0:128 1:256 2:512 etc) */
-	uint8_t org : 4;		/* Organization, bytes */
-	uint8_t addrlen : 4;	/* Number of bytes in command address field */
-	uint8_t flags : 4;		/* Special Features ??? */
+	uint8_t bytes:4;		/* Power of two of 128 bytes (0:128 1:256 2:512 etc) */
+	uint8_t org:4;			/* Organization, bytes */
+	uint8_t addrlen:4;		/* Number of bytes in command address field */
+	uint8_t flags:4;		/* Special Features ??? */
 };
 
 static const struct ee_geom_s g_ee_devices[] = {

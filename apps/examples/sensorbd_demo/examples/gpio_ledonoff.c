@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,9 +59,16 @@ static void gpio_write(int port, int value)
 	static char devpath[16];
 	snprintf(devpath, 16, "/dev/gpio%d", port);
 	int fd = open(devpath, O_RDWR);
+	if (fd < 0) {
+		printf("fd open fail\n");
+		return;
+	}
 
 	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_OUT);
-	write(fd, str, snprintf(str, 4, "%d", value != 0) + 1);
+	if (write(fd, str, snprintf(str, 4, "%d", value != 0) + 1) < 0) {
+		printf("write error\n");
+		return;
+	}
 
 	close(fd);
 }

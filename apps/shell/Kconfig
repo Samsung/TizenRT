@@ -18,11 +18,11 @@ config DEBUG_TASH
 	---help---
 		Enable debugging message in TASH.
 
-config TASH_TELNET_INTERFACE
-	bool "enable telnet interface to TASH"
+config TASH_COMMAND_INTERFACE
+	bool "enable command interface to TASH"
 	default n
 	---help---
-		Enable TASH commands to be executed in TELNET shell.
+		Enable to use TASH commands APIs
 
 config TASH_CMDTASK_STACKSIZE
 	int "TASH task stack size to run command with ASYNC type"

@@ -409,7 +409,7 @@ uint8_t registration_start(lwm2m_context_t * contextP)
     uint8_t result;
 
     LOG_ARG("State: %s", STR_STATE(contextP->state));
-	
+
     result = COAP_NO_ERROR;
 
     targetP = contextP->serverList;
@@ -788,7 +788,7 @@ static int prv_getId(uint8_t * data,
     {
         data += 1;
         length -= 2;
-    } 
+    }
     else
     {
         return 0;

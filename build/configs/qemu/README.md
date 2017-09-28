@@ -10,12 +10,15 @@ QEMU uses lm3s6963-ek machine.
 ### QEMU installation
 
 ```
-wget http://download.qemu-project.org/qemu-2.0.0.tar.xz
-tar xvjf qemu-2.0.0.tar.xz
-cd qemu-2.0.0
+wget http://download.qemu-project.org/qemu-2.10.0-rc2.tar.xz
+tar xvJf qemu-2.10.0-rc2.tar.xz
+cd qemu-2.10.0-rc2
+/* Copy qemu-2.10.0-rc2_increase_ram_size.patch from TizenRT/build/configs/qemu */
+patch -p1 < qemu-2.10.0-rc2_increase_ram_size.patch
 ./configure --target-list=arm-softmmu
 make -j 4
-Check executable in "arm-softmmu/qemu-system-arm" 
+cd arm-softmmu/
+sudo ln qemu-system-arm /usr/local/bin/qemu-system-arm
 ```
 ## How to program a binary
 
@@ -26,13 +29,23 @@ TIZENRT_BASEDIR was set at [[Getting the sources]](../../../README.md#getting-th
 ### Using QEMU command
 
 ```
-qemu-system-arm -M lm3s6965evb -kernel ../build/output/bin/tinyara -nographic
+qemu-system-arm -M lm3s6965evb -kernel ../build/output/bin/tinyara -nographic -gdb tcp::3333
 ```
 
 ### Using make command
 
 ```
 make download
+```
+
+## How to debug
+
+To debug Tizen RT on QEMU, GDB should be connected through below commands.
+
+```
+arm-none-eabi-gdb
+(gdb) file ../build/output/bin/tinyara
+(gdb) target remote:3333
 ```
 
 ## Configuration Sets

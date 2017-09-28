@@ -64,13 +64,13 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "pthread/pthread.h"
 #include "group/group.h"
 #include "task/task.h"
 #include "clock/clock.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions

@@ -99,6 +99,9 @@ struct netconn *netconn_new_with_proto_and_callback(enum netconn_type t, u8_t pr
 			LWIP_ASSERT("conn->acceptmbox shouldn't exist", !sys_mbox_valid(&conn->acceptmbox));
 #endif							/* LWIP_TCP */
 			sys_sem_free(&conn->op_completed);
+			sys_sem_set_invalid(&conn->op_completed);
+			sys_sem_free(&conn->op_sync);
+			sys_sem_set_invalid(&conn->op_sync);
 			sys_mbox_free(&conn->recvmbox);
 			memp_free(MEMP_NETCONN, conn);
 			return NULL;

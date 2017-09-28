@@ -17,22 +17,22 @@
 
 /********** types **********/
 
-typedef unsigned int u32;
-typedef signed int s32;
+typedef unsigned int  u32;
+typedef signed int    s32;
 typedef unsigned char u8;
-typedef signed char s8;
+typedef signed char   s8;
 
 /********** Macro Function for SFR access **********/
-#define BIT(nbit)					(0x1u << (nbit))
+#define BIT(nbit)                   (0x1u << (nbit))
 
-#define SFR_BIT_CLR(val, bit)			((val) &= (~(bit)))	///<bit clear by bit value
-#define SFR_BIT_SET(val, bit)			((val) |= (bit))	///<bit set by bit value
+#define SFR_BIT_CLR(val, bit)       ((val) &= (~(bit))) ///<bit clear by bit value
+#define SFR_BIT_SET(val, bit)       ((val) |= (bit))    ///<bit set by bit value
 
-#define SFR_SET(sfr, val)			((sfr) = (val))
-#define	SFR_GET(sfr, val)			((val) = (sfr))
+#define SFR_SET(sfr, val)           ((sfr) = (val))
+#define SFR_GET(sfr, val)           ((val) = (sfr))
 
-#define WAIT_SFR_BIT_CLR(sfr, bit)	while((sfr) & (bit))	///<wait until bit is cleared
-#define WAIT_SFR_BIT_SET(sfr, bit)	while(!((sfr) & (bit)))	///<wait until bit is set
+#define WAIT_SFR_BIT_CLR(sfr, bit)  while ((sfr) & (bit))    ///<wait until bit is cleared
+#define WAIT_SFR_BIT_SET(sfr, bit)  while (!((sfr) & (bit))) ///<wait until bit is set
 
 #define SET_DWORD_TO_BBUF(buf, dword)			\
 	((u8 *)(buf))[3] = ((u8)((dword) >> 0));	\
@@ -54,15 +54,15 @@ typedef signed char s8;
 		(((val) & 0xff000000) >> 24)		\
 	)
 
-#define CEIL_BY_WORD(val) (val&0x3) ? (1+(val>>2)) : (val>>2)
-#define CEIL_BY_16BYTE(val) (val&0xF) ? ((val&0xFFFFFFF0)+0x10) : (val)
+#define CEIL_BY_WORD(val)   (val & 0x3) ? (1 + (val >> 2)) : (val >> 2)
+#define CEIL_BY_16BYTE(val) (val & 0xF) ? ((val & 0xFFFFFFF0) + 0x10) : (val)
 
 /********** Defines  **********/
-#define SUCCESS 		(0x00)
-#define FAIL			(0x01)
+#define SUCCESS (0x00)
+#define FAIL    (0x01)
 
 #ifndef NULL
-#define NULL   ((void *) 0)
+#define NULL    ((void *) 0)
 #endif
 
 #endif							/* ISP_TYPE_H_ */

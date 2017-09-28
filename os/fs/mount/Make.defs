@@ -57,10 +57,6 @@ ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
 
 CSRCS += fs_mount.c fs_umount.c fs_foreachmountpoint.c
 
-ifeq ($(CONFIG_FS_AUTOMOUNTER),y)
-CSRCS += fs_automount.c
-endif
-
 # Include mount build support
 
 DEPPATH += --dep-path mount

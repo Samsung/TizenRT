@@ -19,6 +19,7 @@ menuconfig MTD
 		logic is unrelated; I just used the name MTD because I am not
 		aware of any other common way to refer to this class of devices).
 
+if MTD
 config MTD_PARTITION
 	bool "Support MTD partitions"
 	default n
@@ -248,3 +249,4 @@ config MTD_SMART_ALLOC_DEBUG
 endmenu
 
 endif # MTD_SMART
+endif # MTD

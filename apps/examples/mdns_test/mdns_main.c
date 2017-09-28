@@ -62,7 +62,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <apps/netutils/mdnsd.h>
+#include <protocols/mdnsd.h>
 
 #include <netinet/in.h>
 #include <netdb.h>
@@ -98,19 +98,25 @@
  ****************************************************************************/
 static void show_usage(FAR const char *progname)
 {
-	printf("\nUsage: %s <command>\n", progname);
-	printf("\nWhere:\n");
 #if defined(CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT)
-	printf(" <command>   command string (start | stop | hostname | resolve | discover) [2nd param] [3rd param]\n");
-	printf("              - start    : start mdns daemon. 2nd param should be hostname.\n");
-	printf("              - stop     : terminate mdns daemon\n");
-	printf("              - hostname : get current host name as mdns style\n");
+	printf("\nUsage: %s <command> [2nd param] [3rd param] [4th param] [5th param]\n", progname);
+	printf("\nWhere:\n");
+	printf(" <command>   start | stop | hostname | resolve | discover | register\n");
+	printf("              - mdns start <hostname>   : start mdns daemon.\n");
+	printf("              - mdns stop               : terminate mdns daemon\n");
+	printf("              - mdns hostname           : get current host name as mdns style\n");
+	printf("              - mdns register <service_name> <service_type> <port_num> [description]\n");
+	printf("                                        : register service.\n");
+	printf("                                          [desciprtion] is optional.\n");
 #else
-	printf(" <command>   command string (resolve | discover) [2nd param] [3rd param]\n");
+	printf("\nUsage: %s <command> [2nd param] [3rd param]\n", progname);
+	printf("\nWhere:\n");
+	printf(" <command>   resolve | discover\n");
 #endif
-	printf("              - resolve  : resolve hostname to ipaddr. 2nd param should be hostname.\n");
-	printf("              - discover : discover service. 2nd param should be service type string.\n");
-	printf("                          3rd param is discovery time in ms. (default=3000ms)\n");
+	printf("              - mdns resolve <hostname> : resolve hostname to ipaddr.\n");
+	printf("              - mdns discover <service_type> [discovery_time_in_ms]\n");
+	printf("                                        : discover service.\n");
+	printf("                                          [discovery_time_in_ms] is optional (default=3000ms)\n");
 	printf("\n");
 }
 
@@ -149,6 +155,19 @@ static int test_mdns_get_hostname(void)
 
 	return 0;
 }
+
+static int test_mdns_register_service(char *service_name, char *service_type, int port, char *txt)
+{
+	const char *text[2] = { txt, NULL };
+
+	if (mdnsd_register_service(service_name, service_type, port, NULL, text) == 0) {
+		printf("registered service : name:%s , type:%s , port:%d , txt:%s \n", service_name, service_type, port, text[0] ? text[0] : "N/A");
+	} else {
+		printf("cannot register service : name:%s , type:%s , port:%d , txt:%s \n", service_name, service_type, port, text[0] ? text[0] : "N/A");
+	}
+
+	return 0;
+}
 #endif							/* CONFIG_NETUTILS_MDNS_RESPONDER_SUPPORT */
 
 static int test_mdns_resolve(char *hostname)
@@ -164,7 +183,7 @@ static int test_mdns_resolve(char *hostname)
 	return 0;
 }
 
-static int test_mdns_discover(char *service_type, int discovery_time_ms)
+static int test_mdns_discover_service(char *service_type, int discovery_time_ms)
 {
 	struct mdns_service_info *sd_result = NULL;
 	int num_of_result = 0;
@@ -201,7 +220,7 @@ int mdns_main(int argc, char *argv[])
 			goto errout;
 		}
 	} else if ((argc >= 3 && argc <= 4) && !strcmp(argv[1], "discover")) {
-		if (test_mdns_discover(argv[2], argc == 4 ? atoi(argv[3]) : 3000) != 0) {
+		if (test_mdns_discover_service(argv[2], argc == 4 ? atoi(argv[3]) : 3000) != 0) {
 			goto errout;
 		}
 	}
@@ -216,6 +235,10 @@ int mdns_main(int argc, char *argv[])
 		}
 	} else if ((argc == 2) && !strcmp(argv[1], "hostname")) {
 		if (test_mdns_get_hostname() != 0) {
+			goto errout;
+		}
+	} else if ((argc >= 5 && argc <= 6) && !strcmp(argv[1], "register")) {
+		if (test_mdns_register_service(argv[2], argv[3], atoi(argv[4]), argc == 6 ? argv[5] : NULL) != 0) {
 			goto errout;
 		}
 	}

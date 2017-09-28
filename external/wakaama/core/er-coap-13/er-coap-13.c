@@ -45,7 +45,7 @@
 
 #include "er-coap-13.h"
 
-#include "liblwm2m.h"			/* for lwm2m_malloc() and lwm2m_free() */
+#include <protocols/liblwm2m.h>			/* for lwm2m_malloc() and lwm2m_free() */
 
 #define DEBUG 0
 #if DEBUG
@@ -388,7 +388,7 @@ size_t coap_serialize_get_size_tcp(void *packet)
 {
 	coap_packet_t *coap_pkt = (coap_packet_t *) packet;
 
-	uint16_t len = 0;
+	uint32_t len = 0;
 	uint16_t options_len = 0;
 
 	size_t length = 0;

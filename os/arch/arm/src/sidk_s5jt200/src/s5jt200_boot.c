@@ -71,6 +71,7 @@
 
 #include "sidk_s5jt200.h"
 #include "s5j_gpio.h"
+#include "s5j_ppd42ns.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -131,6 +132,19 @@ static void board_gpio_initialize(void)
 		gpio_register(pins[i].minor, lower);
 	}
 #endif /* CONFIG_GPIO */
+}
+
+/****************************************************************************
+ * Name: board_sensor_initialize
+ *
+ * Description:
+ *  initialize board dependent sensor driver code
+ ****************************************************************************/
+static void board_sensor_initialize(void)
+{
+#if defined(CONFIG_SENSOR_PPD42NS) && defined(CONFIG_S5J_SENSOR_PPD42NS)
+	s5j_ppd42ns_initialize();
+#endif
 }
 
 /****************************************************************************
@@ -224,5 +238,7 @@ void board_initialize(void)
 #ifdef CONFIG_SIDK_S5JT200_EEPROM
 	sidk_s5jt200_eeprom_init();
 #endif
+
+	board_sensor_initialize();
 }
 #endif /* CONFIG_BOARD_INITIALIZE */

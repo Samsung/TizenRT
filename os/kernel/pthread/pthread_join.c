@@ -58,14 +58,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <tinyara/cancelpt.h>
 #include <errno.h>
 #include <debug.h>
+
+#include <tinyara/cancelpt.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
 #include "pthread/pthread.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions

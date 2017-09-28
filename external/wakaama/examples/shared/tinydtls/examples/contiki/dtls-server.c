@@ -79,7 +79,7 @@ static const unsigned char ecdsa_pub_key_y[] = {
 			0x17, 0xDE, 0x43, 0xF9, 0xF9, 0xAD, 0xEE, 0x70};
 
 static int
-read_from_peer(struct dtls_context_t *ctx, 
+read_from_peer(struct dtls_context_t *ctx,
 	       session_t *session, uint8 *data, size_t len) {
   size_t i;
   for (i = 0; i < len; i++)
@@ -91,7 +91,7 @@ read_from_peer(struct dtls_context_t *ctx,
 }
 
 static int
-send_to_peer(struct dtls_context_t *ctx, 
+send_to_peer(struct dtls_context_t *ctx,
 	     session_t *session, uint8 *data, size_t len) {
 
   struct uip_udp_conn *conn = (struct uip_udp_conn *)dtls_get_app_data(ctx);
@@ -196,7 +196,7 @@ dtls_handle_read(dtls_context_t *ctx) {
     uip_ipaddr_copy(&session.addr, &UIP_IP_BUF->srcipaddr);
     session.port = UIP_UDP_BUF->srcport;
     session.size = sizeof(session.addr) + sizeof(session.port);
-    
+
     dtls_handle_message(ctx, &session, uip_appdata, uip_datalen());
   }
 }
@@ -228,7 +228,7 @@ create_rpl_dag(uip_ipaddr_t *ipaddr)
   if(root_if != NULL) {
     rpl_dag_t *dag;
     uip_ipaddr_t prefix;
-    
+
     rpl_set_root(RPL_DEFAULT_INSTANCE, ipaddr);
     dag = rpl_get_any_dag();
     uip_ip6addr(&prefix, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);
@@ -310,7 +310,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
   }
 
 #ifdef ENABLE_POWERTRACE
-  powertrace_start(CLOCK_SECOND * 2); 
+  powertrace_start(CLOCK_SECOND * 2);
 #endif
 
   while(1) {

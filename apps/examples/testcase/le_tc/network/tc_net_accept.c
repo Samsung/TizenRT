@@ -22,7 +22,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <net/if.h>
-#include <apps/netutils/netlib.h>
+#include <netutils/netlib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

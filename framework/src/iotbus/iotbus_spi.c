@@ -23,6 +23,7 @@
 
 #include <tinyara/config.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <tinyara/spi/spi.h>
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_spi.h>

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,8 +57,10 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double ceill(long double x)
 {
+	long double x1 = x;
+
 	modfl(x, &x);
-	if (x > 0.0) {
+	if (x1 > 0.0 && fabsl(x1 - x) > 0.0) {
 		x += 1.0;
 	}
 

@@ -1,5 +1,3 @@
-if ARCH_BOARD_ARTIK053
-
 config ARTIK053_BOOT_FAILURE_DETECTION
 	bool "Clear bootcount when boot completes"
 	default y
@@ -39,6 +37,7 @@ config ARTIK053_FLASH_PAGE_SIZE
 config ARTIK053_FLASH_PART
 	bool "Enable partition support on FLASH"
 	default n
+	select MTD
 	select MTD_PARTITION
 	select MTD_PROGMEM
 	depends on S5J_SFLASH
@@ -77,16 +76,18 @@ config ARTIK053_FLASH_PART_NAME
 		Comma separated list of partition names.
 
 config ARTIK053_AUTOMOUNT
-       bool "Automount partitions"
-       default n
-       depends on ARTIK053_FLASH_PART
-       ---help---
+	bool "Automount partitions"
+	default n
+	depends on ARTIK053_FLASH_PART
+	depends on !DISABLE_MOUNTPOINT
+	---help---
 		If enabled, mount userrw and sssrw partitions at boot.
 
 config ARTIK053_AUTOMOUNT_USERFS
 	bool "Automount user r/w partiton"
 	default n
 	depends on ARTIK053_AUTOMOUNT
+	depends on FS_SMARTFS
 	---help---
 		If enabled, user r/w partition will be mounted automatically
 		at boot.
@@ -107,24 +108,48 @@ config ARTIK053_AUTOMOUNT_USERFS_MOUNTPOINT
 		Specifies the mount point where user r/w file system
 		will be mounted at.
 
+config ARTIK053_AUTOMOUNT_ROMFS
+	bool "Automount romfs partiton"
+	default y
+	depends on ARTIK053_AUTOMOUNT
+	depends on FS_ROMFS
+	---help---
+		If enabled, romfs partition will be mounted automatically
+		at boot.
+
+config ARTIK053_AUTOMOUNT_ROMFS_DEVNAME
+	string "Device name of the partition for romfs file system"
+	default "/dev/mtdblock9"
+	depends on ARTIK053_AUTOMOUNT_ROMFS
+	---help---
+		Specifies the device name (/dev/mtdblock9) of the partition
+		for romfs file system.
+
+config ARTIK053_AUTOMOUNT_ROMFS_MOUNTPOINT
+	string "Mountpoint of the partition for romfs file system"
+	default "/rom"
+	depends on ARTIK053_AUTOMOUNT_ROMFS
+	---help---
+		Specifies the mount point where romfs file system
+		will be mounted at.
+
 if RAMMTD
 config ARTIK053_RAMMTD_NEBLOCKS
-		int "RAM MTD erase block count"
-		default 64
-		---help---
-				Ramfs size will be RAMMTD_ERASESIZE * SIDK_ARTIK053_RAMMTD_NEBLOCKS.
-				You have to consider total ramsize to alloc ramfs size.
+	int "RAM MTD erase block count"
+	default 64
+	---help---
+		Ramfs size will be RAMMTD_ERASESIZE * SIDK_ARTIK053_RAMMTD_NEBLOCKS.
+		You have to consider total ramsize to alloc ramfs size.
 
 config ARTIK053_RAMMTD_DEV_NUMBER
-		int "device number for mtd of smartfs"
-		default 3
+	int "device number for mtd of smartfs"
+	default 3
 
 config ARTIK053_RAMMTD_DEV_POINT
-		string "Device name of the partition for ramfs r/w file system"
-		default "/dev/smart3"
+	string "Device name of the partition for ramfs r/w file system"
+	default "/dev/smart3"
 
 config ARTIK053_RAMMTD_MOUNT_POINT
-		string "Mountpoint of the partition for ramfs r/w file system"
-		default "/ramfs"
-endif
+	string "Mountpoint of the partition for ramfs r/w file system"
+	default "/ramfs"
 endif

@@ -15,18 +15,18 @@
 
 #ifndef IOTSDKC_NETWORK_MBEDTLS_PLATFORM_H_H
 
-#include "tls/config.h"
+#include "mbedtls/config.h"
 
-#include "tls/platform.h"
-#include "tls/net.h"
-#include "tls/ssl.h"
-#include "tls/entropy.h"
-#include "tls/ctr_drbg.h"
-#include "tls/certs.h"
-#include "tls/x509.h"
-#include "tls/error.h"
-#include "tls/debug.h"
-#include "tls/timing.h"
+#include "mbedtls/platform.h"
+#include "mbedtls/net.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/certs.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/error.h"
+#include "mbedtls/debug.h"
+#include "mbedtls/timing.h"
 
 #ifdef __cplusplus
 extern "C" {

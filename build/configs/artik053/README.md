@@ -2,10 +2,20 @@
 
 The ARTIK 053 is a SOC for Wi-Fi™ IoT solutions. The ARTIK 053 has a Wi-Fi subsystem, security subsystem, and application subsystem.
 
+## Contents
+
+> [Information](#information)  
+> [Environment Set-up](#environment-set-up)  
+> [How to program a binary](#how-to-program-a-binary)  
+> [ROMFS](#romfs)  
+> [Configuration Sets](#configuration-sets)
+
 ## Information
 
 The Samsung ARTIK™ 053 Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
 Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK 053 Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
+
+Here is a [memory map](scripts/README.md).
 
 ## Environment Set-up
 ### On Chip Debugger installation
@@ -23,6 +33,20 @@ cd openocd-code
 make
 sudo make install
 ```
+
+### Add USB device Rules
+
+This is an optional environment.  
+But as ARTIK is connected through USB, some operation like programming of binary can't be worked without this configuration.
+
+1. Make a file named 99-\<anyname\>.rules.
+2. Add below contents at above file.
+```
+SUBSYSTEMS=="usb",ATTRS{idVendor}=="0403",ATTRS{idProduct}=="6010",MODE="0666" RUN+="/sbin/modprobe ftdi_sio" RUN+="/bin/sh -c 'echo 0403 6010 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'"
+```
+3. Place the above file in /etc/udev/rules.d folder with sudo permission.
+4. Reboot your system.
+
 
 ## How to program a binary
 
@@ -66,6 +90,45 @@ Once the complete binaries are successfully programmed, each partition can be up
 openocd -f artik053.cfg -c ' \
     flash_write os ../build/output/bin/tinyara_head.bin; exit'
 ```
+
+## ROMFS
+
+Before executing below steps, execute [generic steps](../../../tools/fs/README_ROMFS.md), step 1 and step 2.  
+When you use artik053/iotivity config, you can execute only step 4. But note that if you want to resize the rom partition,  
+you must modify partition_map.cfg matching the sizes in ARTIK053_FLASH_PART_LIST.
+
+3. Modify partition configs  
+    Below steps creates ROMFS partition with size 400KB at next of user partition.  
+    1. Split user partition size from (1400) to (1000, 400) in ARTIK053_FLASH_PART_LIST
+        ```bash
+        Board Selection -> change values at Flash partition size list (in KBytes)
+        ```
+    2. Append "romfs" at next of *smartfs* to ARTIK053_FLASH_PART_TYPE
+        ```bash
+        Board Selection -> append string at Flash partition type list
+        ```
+    3. Append "rom" at next of *user* to ARTIK053_FLASH_PART_NAME
+        ```bash
+        Board Selection -> append string at FLash partition name list
+        ```
+4. Build Tizen RT  
+5. Prepare ROM image
+    ```bash
+    sh $TIZENRT_BASEDIR/../tools/fs/mkromfsimg.sh
+    ```
+6. Modify partition map to *$TIZENRT_BASEDIR/../build/configs/artik053/tools/openocd/partition_map.cfg*
+    ```bash
+    user	{ "USER R/W"		0x04620000	0x000FA000  0 }
+    rom  	{ "ROM FS"  		0x0471A000	0x00064000  0 }
+    ```
+7. Program a ROM image
+    ```bash
+    flash_write rom ../bin/romfs.img;    \
+    ```
+8. Mount on device
+    ```bash
+    mount -t romfs /dev/smart4rom9 /rom
+    ```
 
 ## Configuration Sets
 

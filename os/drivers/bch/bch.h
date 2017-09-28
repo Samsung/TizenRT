@@ -72,8 +72,7 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-struct bchlib_s
-{
+struct bchlib_s {
 	FAR struct inode *inode;	/* I-node of the block driver */
 	uint32_t sectsize;			/* The size of one sector on the device */
 	size_t nsectors;			/* Number of sectors supported by the device */

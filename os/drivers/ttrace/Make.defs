@@ -18,7 +18,7 @@
 
 ifeq ($(CONFIG_TTRACE),y)
 
-CSRCS += ttrace.c
+CSRCS += ttrace.c ringbuf.c
 DEPPATH += --dep-path ttrace
 VPATH += :ttrace
 

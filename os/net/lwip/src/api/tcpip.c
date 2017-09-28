@@ -53,12 +53,10 @@
  *
  */
 
-#include <debug.h>
-#include <stdio.h>
 #include <net/lwip/opt.h>
 
 #if !NO_SYS						/* don't build if not configured for use in lwipopts.h */
-
+#include <net/lwip/debug.h>
 #include <net/lwip/sys.h>
 #include <net/lwip/memp.h>
 #include <net/lwip/mem.h>
@@ -340,11 +338,13 @@ err_t tcpip_apimsg(struct api_msg *apimsg)
 #endif
 
 	if (sys_mbox_valid(&mbox)) {
+		sys_arch_sem_wait(&apimsg->msg.conn->op_sync, 0);
 		msg.type = TCPIP_MSG_API;
 		msg.msg.apimsg = apimsg;
 		sys_mbox_post(&mbox, &msg);
 		sys_arch_sem_wait(&apimsg->msg.conn->op_completed, 0);
 		LWIP_DEBUGF(TCPIP_DEBUG, ("Exit Success"));
+		sys_sem_signal(&apimsg->msg.conn->op_sync);
 		return apimsg->msg.err;
 	}
 	//LWIP_DEBUGF(TCPIP_DEBUG, ("Exit Fail"));

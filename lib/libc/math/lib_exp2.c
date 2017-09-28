@@ -83,12 +83,12 @@
  * Private Data
  ************************************************************************/
 
-static const double redux =0x1.8p52 / TBLSIZE;
-static const double P1 =0x1.62e42fefa39efp-1;
-static const double P2 =0x1.ebfbdff82c575p-3;
-static const double P3 =0x1.c6b08d704a0a6p-5;
-static const double P4 =0x1.3b2ab88f70400p-7;
-static const double P5 =0x1.5d88003875c74p-10;
+static const double redux = 0x1.8p52 / TBLSIZE;
+static const double P1 = 0x1.62e42fefa39efp-1;
+static const double P2 = 0x1.ebfbdff82c575p-3;
+static const double P3 = 0x1.c6b08d704a0a6p-5;
+static const double P4 = 0x1.3b2ab88f70400p-7;
+static const double P5 = 0x1.5d88003875c74p-10;
 
 static const double tbl[TBLSIZE * 2] = {
 	/* exp2(z +eps)         eps     */

@@ -71,11 +71,11 @@
 #include <net/ethernet.h>
 #include <arpa/inet.h>
 
-#ifdef CONFIG_NET_IGMP
-#include <tinyara/net/igmp.h>
-#endif
-
 #include <tinyara/net/ip.h>
+
+#ifndef CONFIG_NET_MULTIBUFFER
+#include <net/lwip/netif.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -183,12 +183,6 @@ struct net_driver_s {
 
 	uint16_t d_sndlen;
 
-#ifdef CONFIG_NET_IGMP
-	/* IGMP group list */
-
-	sq_queue_t grplist;
-#endif
-
 	/* Driver callbacks */
 
 	int (*d_ifup)(FAR struct net_driver_s *dev);
@@ -200,10 +194,7 @@ struct net_driver_s {
 #ifdef CONFIG_NET_RXAVAIL
 	int (*d_rxavail)(FAR struct net_driver_s *dev);
 #endif
-#ifdef CONFIG_NET_IGMP
-	int (*d_addmac)(FAR struct net_driver_s *dev, FAR const uint8_t *mac);
-	int (*d_rmmac)(FAR struct net_driver_s *dev, FAR const uint8_t *mac);
-#endif
+
 #ifdef CONFIG_NETDEV_PHY_IOCTL
 	int (*d_ioctl)(FAR struct net_driver_s *dev, int cmd, long arg);
 #endif

@@ -133,7 +133,7 @@ int pthread_mutex_trytake(FAR struct pthread_mutex_s *mutex);
 int pthread_mutex_give(FAR struct pthread_mutex_s *mutex);
 void pthread_mutex_inconsistent(FAR struct pthread_tcb_s *tcb);
 #else
-#define pthread_mutex_take(m,i) pthread_sem_take(&(m)->sem,(i))
+#define pthread_mutex_take(m, i) pthread_sem_take(&(m)->sem, (i))
 #define pthread_mutex_trytake(m) pthread_sem_trytake(&(m)->sem)
 #define pthread_mutex_give(m)   pthread_sem_give(&(m)->sem)
 #endif

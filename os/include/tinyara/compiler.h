@@ -138,6 +138,9 @@
 #define DSEG
 #define CODE
 
+
+#define STRUCT_PACKED __attribute__ ((packed))
+
 /* Handle cases where sizeof(int) is 16-bits, sizeof(long) is 32-bits, and
  * pointers are 16-bits.
  */

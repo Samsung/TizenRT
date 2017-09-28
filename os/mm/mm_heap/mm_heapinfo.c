@@ -274,6 +274,7 @@ void heapinfo_exclude_stacksize(void *stack_ptr)
 	node = (struct mm_allocnode_s *)(stack_ptr - SIZEOF_MM_ALLOCNODE);
 	rtcb = sched_gettcb(node->pid);
 
+	ASSERT(rtcb);
 	rtcb->curr_alloc_size -= node->size;
 	node->pid = HEAPINFO_STACK;
 }

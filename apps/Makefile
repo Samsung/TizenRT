@@ -93,16 +93,16 @@ BIN = libapps$(LIBEXT)
 # Build targets
 
 all: $(BIN)
-.PHONY: import install context context_serialize context_rest .depdirs preconfig depend clean distclean
+.PHONY: import install context context_serialize context_rest .depdirs preconfig depend clean distclean applist appupdate
 
 define MAKE_template
-	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" BIN_DIR="$(BIN_DIR)"
+	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" EXTDIR="$(EXTDIR)" BIN_DIR="$(BIN_DIR)"
 
 endef
 
 define SDIR_template
 $(1)_$(2):
-	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" BIN_DIR="$(BIN_DIR)"
+	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" EXTDIR="$(EXTDIR)" BIN_DIR="$(BIN_DIR)"
 
 endef
 
@@ -151,6 +151,13 @@ clean: $(foreach SDIR, $(CLEANDIRS), $(SDIR)_clean)
 	$(call DELFILE, $(BIN))
 	$(call DELDIR, $(BIN_DIR))
 	$(call CLEAN)
+
+applist:
+	$(Q) ./tools/create_appspec.sh
+
+appupdate:
+	$(Q) ./tools/update_config.sh -sw
+	$(Q) rm ../os/.appSpec
 
 distclean: $(foreach SDIR, $(CLEANDIRS), $(SDIR)_distclean)
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)

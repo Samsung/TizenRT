@@ -26,9 +26,9 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
-#include "../../../external/wakaama/core/liblwm2m.h"
+#include <protocols/liblwm2m.h>
 #ifdef WITH_MBEDTLS
-#include <tls/easy_tls.h>
+#include "mbedtls/easy_tls.h"
 #endif
 
 #define LWM2M_STANDARD_PORT_STR "5683"

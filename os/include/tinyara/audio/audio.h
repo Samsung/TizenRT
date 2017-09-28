@@ -1,4 +1,3 @@
-
 /****************************************************************************
  *
  * Copyright 2017 Samsung Electronics All Rights Reserved.
@@ -17,8 +16,8 @@
  *
  ****************************************************************************/
 /****************************************************************************
+ * include/tinyara/audio/audio.h
  *
- *   Copyright (C) 2017 Gregory Nutt. All rights reserved.
  *   Copyright (C) 2013 Ken Pettit. All rights reserved.
  *   Author: Ken Pettit <pettitkd@gmail.com>
  *
@@ -71,8 +70,10 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/compiler.h>
 
 #include <tinyara/fs/ioctl.h>
+#include <tinyara/spi/spi.h>
 #include <queue.h>
 #include <semaphore.h>
 
@@ -137,9 +138,10 @@
 #define AUDIOIOC_REGISTERMQ         _AUDIOIOC(14)
 #define AUDIOIOC_UNREGISTERMQ       _AUDIOIOC(15)
 #define AUDIOIOC_HWRESET            _AUDIOIOC(16)
+#define AUDIOIOC_DEQUEUEBUFFER      _AUDIOIOC(17)
 
 /* Audio Device Types *******************************************************/
-/* The Tinyara audio interface support different types of audio devices for
+/* The NuttX audio interface support different types of audio devices for
  * input, output, synthesis, and manipulation of audio data.  A given driver/
  * device could support a combination of these device type.  The following
  * is a list of bit-field definitions for defining the device type.
@@ -156,7 +158,7 @@
 #define AUDIO_TYPE_EXTENSION        0x80
 
 /* Audio Format Types *******************************************************/
-/* The following defines the audio data format types in Tinyara.  During a
+/* The following defines the audio data format types in NuttX.  During a
  * format query, these will be converted to bit positions within the
  * ac_format field, meaning we currently only support up to 16 formats. To
  * support more than that, we will use the FMT_OTHER entry, and the
@@ -194,20 +196,28 @@
 #define AUDIO_SUBFMT_MIDI_1         0x0d
 #define AUDIO_SUBFMT_MIDI_2         0x0e
 
-/* Supported Sampling Rates *************************************************/
+/* Supported Sampling Rates Type  *************************************************/
 
-#define AUDIO_SAMP_RATE_8K          0x0001
-#define AUDIO_SAMP_RATE_11K         0x0002
-#define AUDIO_SAMP_RATE_16K         0x0004
-#define AUDIO_SAMP_RATE_22K         0x0008
-#define AUDIO_SAMP_RATE_32K         0x0010
-#define AUDIO_SAMP_RATE_44K         0x0020
-#define AUDIO_SAMP_RATE_48K         0x0040
-#define AUDIO_SAMP_RATE_96K         0x0080
-#define AUDIO_SAMP_RATE_128K        0x0100
-#define AUDIO_SAMP_RATE_160K        0x0200
-#define AUDIO_SAMP_RATE_172K        0x0400
-#define AUDIO_SAMP_RATE_192K        0x0800
+#define AUDIO_SAMP_RATE_TYPE_NONE   0x0000
+#define AUDIO_SAMP_RATE_TYPE_8K     0x0001
+#define AUDIO_SAMP_RATE_TYPE_11K    0x0002
+#define AUDIO_SAMP_RATE_TYPE_16K    0x0004
+#define AUDIO_SAMP_RATE_TYPE_22K    0x0008
+#define AUDIO_SAMP_RATE_TYPE_32K    0x0010
+#define AUDIO_SAMP_RATE_TYPE_44K    0x0020
+#define AUDIO_SAMP_RATE_TYPE_48K    0x0040
+#define AUDIO_SAMP_RATE_TYPE_96K    0x0080
+
+/* Supported Sampling Rates value  *************************************************/
+
+#define AUDIO_SAMP_RATE_8K          8000
+#define AUDIO_SAMP_RATE_11K         11025
+#define AUDIO_SAMP_RATE_16K         16000
+#define AUDIO_SAMP_RATE_22K         22050
+#define AUDIO_SAMP_RATE_32K         32000
+#define AUDIO_SAMP_RATE_44K         44100
+#define AUDIO_SAMP_RATE_48K         48000
+#define AUDIO_SAMP_RATE_96K         96000
 
 /* Audio Sub-sampling Ratios  ***********************************************/
 
@@ -250,6 +260,7 @@
 #define AUDIO_FU_UNDERFLOW          0x2000
 #define AUDIO_FU_OVERFLOW           0x4000
 #define AUDIO_FU_LATENCY            0x8000
+#define AUDIO_FU_MICGAIN            0x8001
 
 /* Processing Unit controls *************************************************/
 
@@ -282,13 +293,13 @@
 #define AUDIO_ABP_CANDMA            0x0010	/* Set if the data is DMA'able */
 #define AUDIO_ABP_STATIC            0x0020	/* Set if statically allocated */
 #define AUDIO_ABP_ACTIVE            0x0040	/* Set if this buffer is still active.
-                                                *   A buffer could become inactive
-						*   if it is processed by an output
-						*   device or a processing device
-						*   that replaces it with an alternate
-						*   buffer as a result of some DSP
-						*   operation, etc.
-						*/
+											 *   A buffer could become inactive
+											 *   if it is processed by an output
+											 *   device or a processing device
+											 *   that replaces it with an alternate
+											 *   buffer as a result of some DSP
+											 *   operation, etc.
+											 */
 
 /* Standard Audio Message Queue message IDs */
 
@@ -310,6 +321,8 @@
 #define AUDIO_APB_DEQUEUED          (1 << 2)
 #define AUDIO_APB_FINAL             (1 << 3)	/* Last buffer in the stream */
 
+#define AUDIO_APB_TYPE_INPUT	    (1 << 4)
+#define AUDIO_APB_TYPE_OUTPUT	    (1 << 5)
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -325,19 +338,19 @@ typedef uint16_t apb_samp_t;
 /* This structure is used to describe the audio device capabilities */
 
 struct audio_caps_s {
-	uint8_t ac_len;			/* Length of the structure */
-	uint8_t ac_type;		/* Capabilities (device) type */
-	uint8_t ac_subtype;		/* Capabilities sub-type, if needed */
+	uint8_t ac_len;				/* Length of the structure */
+	uint8_t ac_type;			/* Capabilities (device) type */
+	uint8_t ac_subtype;			/* Capabilities sub-type, if needed */
 	uint8_t ac_channels;		/* Number of channels (1, 2, 5, 7) */
 
-	union {				/* Audio data format(s) for this device */
+	union {						/* Audio data format(s) for this device */
 		uint8_t b[2];
 		uint16_t hw;
 	} ac_format;
 
 	union {
 		/* Device specific controls. For AUDIO_DEVICE_QUERY, *//*   this field reports the device type supported */
-		uint8_t b[4];		/*   by this lower-half driver. */
+		uint8_t b[4];			/*   by this lower-half driver. */
 		uint16_t hw[2];
 		uint32_t w;
 	} ac_controls;
@@ -345,7 +358,7 @@ struct audio_caps_s {
 
 struct audio_caps_desc_s {
 #ifdef CONFIG_AUDIO_MULTI_SESSION
-	FAR void *session;		/* Associated session */
+	FAR void *session;			/* Associated session */
 #endif
 	struct audio_caps_s caps;	/* The capabilities struct */
 };
@@ -353,10 +366,10 @@ struct audio_caps_desc_s {
 /* This structure describes the characteristics of the Audio samples */
 
 struct audio_info_s {
-	uint8_t samplerate;		/* Sample Rate of the audio data */
-	uint8_t channels;		/* Number of channels (1, 2, 5, 7) */
-	uint8_t format;			/* Audio data format */
-	uint8_t subformat;		/* Audio subformat (maybe should be combined with format? */
+	uint8_t samplerate;			/* Sample Rate of the audio data */
+	uint8_t channels;			/* Number of channels (1, 2, 5, 7) */
+	uint8_t format;				/* Audio data format */
+	uint8_t subformat;			/* Audio subformat (maybe should be combined with format? */
 };
 
 /* This structure describes the preferred number and size of
@@ -374,20 +387,20 @@ struct ap_buffer_info_s {
 
 /* This structure describes an Audio Pipeline Buffer */
 
-begin_packed_struct struct ap_buffer_s {
+struct ap_buffer_s {
 	struct dq_entry_s dq_entry;	/* Double linked queue entry */
 	struct audio_info_s i;		/* The info for samples in this buffer */
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	FAR void *session;			/* Associated session */
 #endif
 	apb_samp_t nmaxbytes;		/* The maximum number of bytes */
-	apb_samp_t nbytes;		/* The number of bytes used */
-	apb_samp_t curbyte;		/* Next byte to be processed */
-	sem_t sem;			/* Reference locking semaphore */
-	uint16_t flags;			/* Buffer flags */
-	uint16_t crefs;			/* Number of reference counts */
-	uint8_t samp[0];		/* Offset of the first sample */
-} end_packed_struct;
+	apb_samp_t nbytes;			/* The number of bytes used */
+	apb_samp_t curbyte;			/* Next byte to be processed */
+	sem_t sem;					/* Reference locking semaphore */
+	uint16_t flags;				/* Buffer flags */
+	uint16_t crefs;				/* Number of reference counts */
+	uint8_t samp[0];			/* Offset of the first sample */
+} packed_struct;
 
 /* Structure defining the messages passed to a listening audio thread
  * for dequeuing buffers and other operations.  Also used to allocate
@@ -397,12 +410,12 @@ begin_packed_struct struct ap_buffer_s {
 
 struct audio_msg_s {
 #ifdef CONFIG_AUDIO_MULTI_SESSION
-	FAR void *session;		/* Associated channel */
+	FAR void *session;			/* Associated channel */
 #endif
-	uint16_t msgId;			/* Message ID */
+	uint16_t msgId;				/* Message ID */
 	union {
-		FAR void *pPtr;		/* Buffer being dequeued */
-		uint32_t data;		/* Message data */
+		FAR void *pPtr;			/* Buffer being dequeued */
+		uint32_t data;			/* Message data */
 	} u;
 };
 
@@ -410,10 +423,10 @@ struct audio_msg_s {
 
 #ifdef CONFIG_AUDIO_BUILTIN_SOUNDS
 struct audio_sound_s {
-	const char *name;		/* Name of the sound */
-	uint32_t id;			/* ID of the sound */
-	uint32_t type;			/* Type of sound */
-	uint32_t size;			/* Number of bytes in the sound */
+	const char *name;			/* Name of the sound */
+	uint32_t id;				/* ID of the sound */
+	uint32_t type;				/* Type of sound */
+	uint32_t size;				/* Number of bytes in the sound */
 	const uint8_t *data;		/* Pointer to the data */
 };
 
@@ -426,9 +439,9 @@ struct audio_sound_s {
 
 struct audio_buf_desc_s {
 #ifdef CONFIG_AUDIO_MULTI_SESSION
-	FAR void *session;		/* Associated channel */
+	FAR void *session;			/* Associated channel */
 #endif
-	uint16_t numbytes;		/* Number of bytes to allocate */
+	uint16_t numbytes;			/* Number of bytes to allocate */
 	union {
 		FAR struct ap_buffer_s *pBuffer;	/* Buffer to free / enqueue */
 		FAR struct ap_buffer_s **ppBuffer;	/* Pointer to receive allocated buffer */
@@ -525,7 +538,7 @@ struct audio_ops_s {
 #else
 	CODE int (*resume)(FAR struct audio_lowerhalf_s *dev);
 #endif
-#endif	/* CONFIG_AUDIO_EXCLUDE_PAUSE_RESUME */
+#endif							/* CONFIG_AUDIO_EXCLUDE_PAUSE_RESUME */
 
 	/* Allocate an audio pipeline buffer.  This routine provides the
 	 * lower-half driver with the opportunity to perform special buffer
@@ -661,7 +674,7 @@ extern "C" {
  *
  * Input parameters:
  *   name - The name of the audio device.  This name will be used to generate
- *     a full path to the driver in the format "/dev/audio/[name]" in the Tinyara
+ *     a full path to the driver in the format "/dev/audio/[name]" in the NuttX
  *     filesystem (i.e. the path "/dev/audio" will be prepended to the supplied
  *     device name.  The recommended convention is to name Audio drivers
  *     based on the type of functionality they provide, such as "/dev/audio/pcm0",
@@ -723,5 +736,5 @@ void apb_reference(FAR struct ap_buffer_s *apb);
 }
 #endif
 
-#endif	/* CONFIG_AUDIO */
-#endif	/* __INCLUDE_TINYARA_AUDIO_AUDIO_H */
+#endif							/* CONFIG_AUDIO */
+#endif							/* __INCLUDE_TINYARA_AUDIO_AUDIO_H */

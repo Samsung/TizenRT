@@ -328,15 +328,12 @@ int chdir(FAR const char *path);
 FAR char *getcwd(FAR char *buf, size_t size);
 
 /* File path operations */
-
 /**
-* @cond
-* @internal
-*/
-int access(FAR const char *path, int amode);
-/**
- * @endcond
+ * @ingroup STDLIB_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
  */
+int access(FAR const char *path, int amode);
 /**
  * @ingroup UNISTD_KERNEL
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)

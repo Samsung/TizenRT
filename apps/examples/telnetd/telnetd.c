@@ -64,14 +64,14 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <tinyara/config.h>
-#include <apps/netutils/telnetd.h>
-#include <apps/netutils/netlib.h>
+#include <protocols/telnetd.h>
+#include <netutils/netlib.h>
 #include "telnetd.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#ifdef CONFIG_TASH_TELNET_INTERFACE
+#ifdef CONFIG_TASH_COMMAND_INTERFACE
 #define MAX_TELNET_CMDS CONFIG_TASH_MAX_COMMANDS
 #else
 #define MAX_TELNET_CMDS (4)
@@ -166,7 +166,7 @@ static void telnetd_parse(FAR char *line, int len)
  ****************************************************************************/
 static void telnetd_install_commands(void)
 {
-#ifdef CONFIG_TASH_TELNET_INTERFACE
+#ifdef CONFIG_TASH_COMMAND_INTERFACE
 	int i = 0;
 	int count = 0;
 	count = tash_get_cmdscount();

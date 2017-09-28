@@ -1,3 +1,0 @@
-config ENTRY_IPERF
-	bool "iperf App"
-	depends on EXAMPLES_IPERF

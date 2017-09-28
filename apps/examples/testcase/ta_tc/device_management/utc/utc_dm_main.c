@@ -27,8 +27,8 @@
 #include <dm/dm_error.h>
 #include <dm/dm_connectivity.h>
 
-#include <apps/netutils/dhcpc.h>
-#include <apps/netutils/wifi/slsi_wifi_api.h>
+#include <protocols/dhcpc.h>
+#include <slsi_wifi/slsi_wifi_api.h>
 
 #define NET_DEVNAME "wl1"
 
@@ -86,8 +86,7 @@ int wifiAutoConnectInit(void)
 	dm_conn_register_linkup_cb(linkUpEvent);
 
 	if (WiFiIsConnected(&result, NULL) != SLSI_STATUS_SUCCESS) {
-		printf("failed to WifiIsConnected\n");
-		return -1;
+		printf("Wifi Is not Connected\n");
 	}
 
 	if (result > 0) {
@@ -145,7 +144,7 @@ static int wifiAutoConnect(void)
 		if (waitTime <= 0) {
 			printf("[AutoConnect]WiFi is not working. Test Canceled\n");
 			return 0;
-		} 
+		}
 		return 1;
 	}
 	return ret;

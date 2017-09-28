@@ -23,7 +23,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <apps/netutils/netlib.h>
+#include <netutils/netlib.h>
 #include <sys/socket.h>
 #include "itc_internal.h"
 #include "dm_lwm2m.h"
@@ -44,17 +44,17 @@ static struct work_s itc_dm_wq;
 * @precondition         DM LWM2M client has been started
 * @postcondition        DM LWM2M client has been stopped
 */
-static int display_resource(FAR void *arg)
+static void display_resource(FAR void *arg)
 {
-    int ret;
-    char argbuffer[10];
-    memset(argbuffer, 0x00, sizeof(argbuffer));
-    strcpy(argbuffer, "/8/0");
+	int ret;
+	char argbuffer[10];
+	memset(argbuffer, 0x00, sizeof(argbuffer));
+	strcpy(argbuffer, "/8/0");
 
-    ret = dm_lwm2m_display_client_resource(argbuffer);
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_display_client_resource", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
-    ret = dm_lwm2m_stop_client();
-    TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
+	ret = dm_lwm2m_display_client_resource(argbuffer);
+	TC_ASSERT_EQ_CLEANUP("dm_lwm2m_display_client_resource", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
+	ret = dm_lwm2m_stop_client();
+	TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
 }
 
 /**
@@ -67,14 +67,14 @@ static int display_resource(FAR void *arg)
 */
 static void itc_dm_lwm2m_start_stop_client_p(void)
 {
-    int ret;
-    ret = dm_lwm2m_start_client(&test_data_itc);
-    TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
+	int ret;
+	ret = dm_lwm2m_start_client(&test_data_itc);
+	TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
 
-    ret = dm_lwm2m_stop_client();
-    TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
+	ret = dm_lwm2m_stop_client();
+	TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -87,19 +87,19 @@ static void itc_dm_lwm2m_start_stop_client_p(void)
 */
 static void itc_dm_lwm2m_get_client_lifetime_p(void)
 {
-    int life = -1;
-    int ret = -1;
-    ret = dm_lwm2m_start_client(&test_data_itc);
-    TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
+	int life = -1;
+	int ret = -1;
+	ret = dm_lwm2m_start_client(&test_data_itc);
+	TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
 
-    ret = dm_lwm2m_get_client_lifetime(&life);
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_lifetime", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_lifetime", (life < 0), false, dm_lwm2m_stop_client());
+	ret = dm_lwm2m_get_client_lifetime(&life);
+	TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_lifetime", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
+	TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_lifetime", (life < 0), false, dm_lwm2m_stop_client());
 
-    ret = dm_lwm2m_stop_client();
-    TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
+	ret = dm_lwm2m_stop_client();
+	TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -112,18 +112,18 @@ static void itc_dm_lwm2m_get_client_lifetime_p(void)
 */
 static void itc_dm_lwm2m_get_server_address_p(void)
 {
-    int ret = dm_lwm2m_start_client(&test_data_itc);
-    TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
+	int ret = dm_lwm2m_start_client(&test_data_itc);
+	TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
 
-    char ipAddr[ITC_DM_IPADDR_LEN];
-    ret = dm_lwm2m_get_server_address(ipAddr);
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_address", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_address" , ipAddr[3] , '.', dm_lwm2m_stop_client());
+	char ipAddr[ITC_DM_IPADDR_LEN];
+	ret = dm_lwm2m_get_server_address(ipAddr);
+	TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_address", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
+	TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_address" , ipAddr[3] , '.', dm_lwm2m_stop_client());
 
-    ret = dm_lwm2m_stop_client();
-    TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
+	ret = dm_lwm2m_stop_client();
+	TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -136,18 +136,18 @@ static void itc_dm_lwm2m_get_server_address_p(void)
 */
 static void itc_dm_lwm2m_get_server_port_p(void)
 {
-    char port[ITC_DM_SERVER_PORT];
-    int ret = dm_lwm2m_start_client(&test_data_itc);
-    TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
+	char port[ITC_DM_SERVER_PORT];
+	int ret = dm_lwm2m_start_client(&test_data_itc);
+	TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
 
-    ret = dm_lwm2m_get_server_port(port);
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_port", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_port", (port[0] < 0), false, dm_lwm2m_stop_client());
+	ret = dm_lwm2m_get_server_port(port);
+	TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_port", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
+	TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_server_port", (port[0] < 0), false, dm_lwm2m_stop_client());
 
-    ret = dm_lwm2m_stop_client();
-    TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
+	ret = dm_lwm2m_stop_client();
+	TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -160,18 +160,18 @@ static void itc_dm_lwm2m_get_server_port_p(void)
 */
 static void itc_dm_lwm2m_get_client_state_p(void)
 {
-    int8_t state = -1;
-    int ret = dm_lwm2m_start_client(&test_data_itc);
-    TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
+	dm_lwm2m_client_state_e state;
+	int ret = dm_lwm2m_start_client(&test_data_itc);
+	TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
 
-    ret = dm_lwm2m_get_client_state(&state);
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_state", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
-    TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_state", (state < 0), false, dm_lwm2m_stop_client());
+	ret = dm_lwm2m_get_client_state(&state);
+	TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_state", ret, DM_ERROR_NONE, dm_lwm2m_stop_client());
+	TC_ASSERT_EQ_CLEANUP("dm_lwm2m_get_client_state", (state < 0), false, dm_lwm2m_stop_client());
 
-    ret = dm_lwm2m_stop_client();
-    TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
+	ret = dm_lwm2m_stop_client();
+	TC_ASSERT_EQ("dm_lwm2m_stop_client" , ret , DM_ERROR_NONE);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -184,10 +184,10 @@ static void itc_dm_lwm2m_get_client_state_p(void)
 */
 static void itc_dm_lwm2m_display_client_resource_p(void)
 {
-    int ret = dm_lwm2m_start_client(&test_data_itc);
-    TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
-    work_queue(HPWORK, &itc_dm_wq, display_resource, NULL, MSEC2TICK(6000));
-    TC_SUCCESS_RESULT();
+	int ret = dm_lwm2m_start_client(&test_data_itc);
+	TC_ASSERT_EQ("dm_lwm2m_start_client" , ret , DM_ERROR_NONE);
+	work_queue(HPWORK, &itc_dm_wq, display_resource, NULL, MSEC2TICK(6000));
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
@@ -197,29 +197,29 @@ int itc_dm_lwm2m_testcase_main(void)
 {
 #ifdef CONFIG_ITC_DM_START
 #ifdef CONFIG_ITC_DM_CLOSE
-    itc_dm_lwm2m_start_stop_client_p();
-    sleep(1);
+	itc_dm_lwm2m_start_stop_client_p();
+	sleep(1);
 #ifdef CONFIG_ITC_DM_GET_CLIENT_LIFETIME
-    itc_dm_lwm2m_get_client_lifetime_p();
-    sleep(1);
+	itc_dm_lwm2m_get_client_lifetime_p();
+	sleep(1);
 #endif
 #ifdef CONFIG_ITC_DM_GET_SERVER_ADDR
-    itc_dm_lwm2m_get_server_address_p();
-    sleep(1);
+	itc_dm_lwm2m_get_server_address_p();
+	sleep(1);
 #endif
 #ifdef CONFIG_ITC_DM_GET_SERVER_PORT
-    itc_dm_lwm2m_get_server_port_p();
-    sleep(1);
+	itc_dm_lwm2m_get_server_port_p();
+	sleep(1);
 #endif
 #ifdef CONFIG_ITC_DM_GET_CLIENT_STATE
-    itc_dm_lwm2m_get_client_state_p();
-    sleep(1);
+	itc_dm_lwm2m_get_client_state_p();
+	sleep(1);
 #endif
 #ifdef CONFIG_ITC_DM_DISPLAY_CLIENT_RESOURCE
-    itc_dm_lwm2m_display_client_resource_p();
-    sleep(1);
+	itc_dm_lwm2m_display_client_resource_p();
+	sleep(1);
 #endif
 #endif
 #endif
-    return 0;
+	return 0;
 }

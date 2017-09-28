@@ -95,8 +95,6 @@
 #include "mqueue/mqueue.h"
 #include "task/task.h"
 
-#ifdef CONFIG_CANCELLATION_POINTS
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -323,4 +321,3 @@ void notify_cancellation(FAR struct tcb_s *tcb)
 	irqrestore(flags);
 }
 
-#endif /* CONFIG_CANCELLATION_POINTS */

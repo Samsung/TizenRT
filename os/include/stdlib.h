@@ -190,6 +190,8 @@ int rand(void);
 /**
  * @ingroup STDLIB_LIBC
  * @brief Return a pointer to the thread specific environ variable
+ * @details This API is not a standard API. But another APIs which are related to ENV are in Stdlib,
+ *         so this API is in Stdlib for ease.
  * @param[in] A pointer to notify a size of environ variable
  * @return A pointer to the current thread environ variable
  * @since Tizen RT v1.0
@@ -425,11 +427,13 @@ long long int llabs(long long int j);
 
 #ifdef CONFIG_CAN_PASS_STRUCTS
 /**
- * @cond
- * @internal
+ * @ingroup STDLIB_LIBC
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
  */
 div_t div(int numer, int denom);
 /**
+ * @cond
  * @internal
  */
 ldiv_t ldiv(long numer, long denom);
@@ -469,7 +473,7 @@ void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, co
 /**
  * @ingroup STDLIB_LIBC
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 FAR void *bsearch(FAR const void *key, FAR const void *base, size_t nel, size_t width, CODE int (*compar)(FAR const void *, FAR const void *));
 

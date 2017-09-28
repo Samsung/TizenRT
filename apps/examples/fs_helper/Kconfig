@@ -1,0 +1,49 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FILESYSTEM_HELPER_ENABLE
+    bool "enable filesystem helper application"
+    default n
+        ---help---
+        enable filesystem helper application
+
+if FILESYSTEM_HELPER_ENABLE
+
+config WRITE_REMOVE_TEST
+	bool "repeat write & remove test"
+	default n
+	---help---
+		Enable "rw_test" application
+
+config ROMFS_TEST
+	bool "romfs test"
+	default n
+	select FS_ROMFS
+	---help---
+		Enable "romfs_test" application
+
+config RAMFS_TEST
+	bool "ramfs test"
+	default n
+	select RAMMTD
+	---help---
+		Enable "ramfs_test" application
+
+if RAMFS_TEST
+
+config RAMFS_TEST_RAMFS_NEBLOCKS
+	int "nblocks of ramfs test"
+        default 32
+
+endif #RAMFS_TEST
+
+config PROCFS_TEST
+	bool "procfs test"
+	default n
+	---help---
+		Enable "procfs_test" application
+
+endif #FILESYSTEM_HELPER_ENABLE
+

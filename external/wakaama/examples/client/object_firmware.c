@@ -16,7 +16,7 @@
  *    David Navarro, Intel Corporation - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -34,7 +34,7 @@
  * 5 update result             read
  */
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include <stdio.h>
 #include <stdlib.h>

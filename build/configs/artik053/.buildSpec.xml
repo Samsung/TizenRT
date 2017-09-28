@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright 2017 Samsung Electronics All Rights Reserved.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ either express or implied. See the License for the specific
+ language governing permissions and limitations under the License.
+-->
+<!--
+    predefined macro values:
+    * BOARD - selected board name by UI
+    * BUILD_OPTION - selected build option by UI
+    * TOOLCHAIN_PATH - user defined toolchain path by UI
+-->
+<build name="artik053">
+    <!-- path attribute value must be relative path from project root -->
+    <!-- Don't touch command name. IDE use command with name -->
+    <commands>
+        <command name="config" command="./configure.sh" path="${PROJECT_PATH}/os/tools" shellcmd="true">
+            <param name="buildOption" value="${BOARD}/${BUILD_OPTION}"/>
+        </command>
+        <command name="build" command="make" path="${PROJECT_PATH}/os" shellcmd="true">
+            <param name="V" value="V=1"/>
+        </command>
+        <command name="buildWithToolchain" command=". ./setenv.sh ${TOOLCHAIN_PATH};make V=1" path="${PROJECT_PATH}/os" shellcmd="true" shell="/bin/bash"/>
+        <command name="clean" command="make clean" path="${PROJECT_PATH}/os" shellcmd="true">
+            <param name="clean" value="clean"/>
+        </command>
+        <command name="distclean" command="make distclean" path="${PROJECT_PATH}/os" shellcmd="true">
+            <param name="distclean" value="distclean"/>
+        </command>
+    </commands>
+    <executors> <!-- execute command sequentially on build -->
+        <executor name="linux default executor" os="linux" bit="all">
+            <commandref name="config"/>
+            <commandref name="build"/>
+        </executor>
+    </executors>
+</build>

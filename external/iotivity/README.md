@@ -5,6 +5,14 @@ IoTivity is an open source software framework enabling seamless device-to-device
 Official page: https://www.iotivity.org/
 
 ## How to build with IoTivity
+
+### Prerequisites
+You need to install scons to build Iotivity with TizenRT.
+Please refer to the following page to install scons.
+
+http://www.scons.org/doc/production/HTML/scons-user.html#chap-build-install
+
+### Build Iotivity
 Configure the build from $TIZENRT_BASEDIR/os/tools directory.
 ```bash
 cd os/tools

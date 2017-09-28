@@ -58,6 +58,10 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 
+#if defined(CONFIG_S5J_S5JT200)
+#include "chip/s5jt200_watchdog.h"
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -90,10 +94,12 @@ void s5j_watchdog_set_curr(unsigned int curr_val);
 void s5j_watchdog_clear_int(void);
 #endif
 
+int s5j_wdg_initialize(FAR const char *devpath);
+
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif /* __ASSEMBLY__ */
-#endif /* __ARCH_ARM_SRC_S5J_S5J_WATCHDOG_H */
+#endif							/* __ASSEMBLY__ */
+#endif							/* __ARCH_ARM_SRC_S5J_S5J_WATCHDOG_H */

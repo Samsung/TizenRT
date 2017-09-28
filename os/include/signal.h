@@ -336,17 +336,17 @@ int sigismember(FAR const sigset_t *set, int signo);
 int sighold(int sig);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int sigignore(int sig);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int sigpause(int sig);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int raise(int sig);
 /**
@@ -356,16 +356,17 @@ int raise(int sig);
 int sigrelse(int sig);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 CODE void (*sigset(int sig, CODE void (*func)(int sig)))(int sig);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 CODE void (*signal(int sig, CODE void (*func)(int sig)))(int sig);
 /**
- * @} */
+ * @}
+ */
 
 /**
  * @ingroup SIGNAL_KERNEL

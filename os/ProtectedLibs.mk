@@ -114,6 +114,12 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libmbedcrypto$(LIBEXT)
 endif
 endif
 
+# Add libraries for audio module
+
+ifeq ($(CONFIG_AUDIO),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
+endif
+
 # Add libraries for power management module
 
 ifeq ($(CONFIG_PM),y)
@@ -131,6 +137,16 @@ TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
 endif
 else
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
+endif
+
+# Add libraries for iotjs support
+
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+USERLIBS += $(LIBRARIES_DIR)$(DELIM)libhttpparser$(LIBEXT)
+USERLIBS += $(LIBRARIES_DIR)$(DELIM)libiotjs$(LIBEXT)
+USERLIBS += $(LIBRARIES_DIR)$(DELIM)libjerry-core$(LIBEXT)
+USERLIBS += $(LIBRARIES_DIR)$(DELIM)libtuv$(LIBEXT)
+USERLIBS += $(LIBRARIES_DIR)$(DELIM)libjerry-libm$(LIBEXT)
 endif
 
 EXPORTLIBS = $(USERLIBS)

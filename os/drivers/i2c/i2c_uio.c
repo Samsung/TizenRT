@@ -18,8 +18,8 @@
 /****************************************************************************
  * drivers/i2c/i2c_uio.c
  *
- *   Copyright (C) 2016 SAMSUNG ELECTRONICS CO., LTD. All rights reserved.
- *   Author: ByoungTae Cho <bt.cho@samsung.com>
+ *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

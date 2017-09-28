@@ -27,7 +27,6 @@
 #include <tinyara/net/netdev.h>
 #include <tinyara/net/ethernet.h>
 #include <tinyara/net/ip.h>
-//#include <tinyara/net/udp.h>
 
 #define SUPPORTED_VERSION       13
 #define SUPPORTED_OLD_VERSION   0

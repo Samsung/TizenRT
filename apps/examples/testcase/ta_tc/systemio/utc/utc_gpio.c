@@ -51,12 +51,12 @@ static void utc_gpio_open_p(void)
 {
 #ifdef CONFIG_ARCH_CHIP_STM32
 	iotbus_gpio_context_h m_gpio = iotbus_gpio_open(GPIO_PORTA_PIN5);
-	TC_ASSERT_NOT_NULL("iotbus_gpio_open", m_gpio);
+	TC_ASSERT_NEQ("iotbus_gpio_open", m_gpio, NULL);
 	gpio = m_gpio;
 	TC_SUCCESS_RESULT();
 #elif CONFIG_ARCH_CHIP_S5J
 	iotbus_gpio_context_h m_gpio = iotbus_gpio_open(41);
-	TC_ASSERT_NOT_NULL("iotbus_gpio_open", m_gpio);
+	TC_ASSERT_NEQ("iotbus_gpio_open", m_gpio, NULL);
 	gpio = m_gpio;
 	TC_SUCCESS_RESULT();
 #endif

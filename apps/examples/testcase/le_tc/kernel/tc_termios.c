@@ -45,6 +45,19 @@ static void tc_termios_tcsetattr_tcgetattr(void)
 	}
 
 	sleep(1);
+	/* isatty() returns 1 if fd is an open file descriptor referring to a terminal */
+	ret_chk = isatty(fileno(stdin));
+	TC_ASSERT_EQ("isatty", ret_chk, 1);
+
+	ret_chk = cfgetspeed(&prev_tio);
+	TC_ASSERT_GEQ("cfgetspeed", ret_chk, 0);
+
+	/* Failure case: invalid option */
+	sleep(1);
+	ret_chk = tcsetattr(fileno(stdin), 33, &prev_tio);
+	TC_ASSERT_LT("tcsetattr", ret_chk, 0);
+
+	sleep(1);
 	prev_tio.c_oflag &= ~ONLCR;
 	ret_chk = tcsetattr(fileno(stdin), TCSANOW, &prev_tio);
 	TC_ASSERT_EQ("tcsetattr", ret_chk, 0);
@@ -68,6 +81,8 @@ static void tc_termios_tcsetattr_tcgetattr(void)
 	printf("\n");
 	printf("<< Enable (NL) to (CR-NL) >>\n");
 	printf("-> This line is adapted to Carriage-return\n");
+
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************

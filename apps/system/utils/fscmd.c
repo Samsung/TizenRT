@@ -1178,6 +1178,7 @@ static int df_man_readable_handler(FAR const char *mountpoint, FAR struct statfs
  * Name: tash_df
  ****************************************************************************/
 
+#ifndef CONFIG_DISABLE_MOUNTPOINT
 static int tash_df(int argc, char **args)
 {
 	if (argc > 1 && strcmp(args[1], "-h") == 0) {
@@ -1191,6 +1192,7 @@ static int tash_df(int argc, char **args)
 
 	return 0;
 }
+#endif
 
 const static tash_cmdlist_t fs_utilcmds[] = {
 #ifndef CONFIG_DISABLE_ENVIRON
@@ -1228,7 +1230,9 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"rmdir",     tash_rmdir,     TASH_EXECMD_SYNC},
 #endif
+#ifndef CONFIG_DISABLE_MOUNTPOINT
 	{"df",        tash_df,        TASH_EXECMD_SYNC},
+#endif
 	{NULL,        NULL,           0}
 };
 

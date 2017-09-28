@@ -94,8 +94,10 @@ ROOTDEPPATH = --dep-path .
 VPATH =
 
 APPNAME = i2c
+FUNCNAME = i2c_main
 PRIORITY = SCHED_PRIORITY_DEFAULT
 STACKSIZE = 2048
+THREADEXEC = TASH_EXECMD_ASYNC
 
 # Build targets
 
@@ -125,7 +127,16 @@ install:
 
 endif
 
+ifeq ($CONFIG_BUILTIN_APPS)$(CONFIG_SYSTEM_I2CTOOL),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+
+else
 context:
+
+endif
 
 .depend: Makefile $(SRCS)
 	$(Q) $(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep

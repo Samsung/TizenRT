@@ -60,6 +60,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/types.h>
 #include <tinyara/config.h>
 #include "aql.h"
 #include "db_options.h"
@@ -180,7 +181,7 @@ db_result_t storage_get_relation(relation_t *rel, char *name)
 		return DB_STORAGE_ERROR;
 	}
 
-	strncpy(rel->name, name, sizeof(rel->name));
+	strncpy(rel->name, name, sizeof(rel->name) - 1);
 
 	r = storage_read(fd, rel->tuple_filename, sizeof(rel->tuple_filename));
 	if (r != sizeof(rel->tuple_filename)) {
@@ -413,7 +414,7 @@ db_result_t storage_remove_index(relation_t *rel, attribute_t *attr)
 	offset = storage_seek(fd, 0, SEEK_END);
 	storage_close(fd);
 
-	if (sizeof(record) >= offset) {
+	if (sizeof(record) > offset) {
 		res = storage_remove(filename);
 		if (DB_ERROR(res)) {
 			free(filename);
@@ -441,7 +442,7 @@ db_result_t storage_remove_index(relation_t *rel, attribute_t *attr)
 			storage_close(fd);
 			return res;
 		}
-		fd_tmp = storage_open(new_filename, O_RDWR);
+		fd_tmp = storage_open(new_filename, O_WROK | O_APPEND | O_CREAT);
 		if (fd_tmp < 0) {
 			free(filename);
 			free(new_filename);
@@ -464,6 +465,7 @@ db_result_t storage_remove_index(relation_t *rel, attribute_t *attr)
 					free(new_filename);
 					return DB_STORAGE_ERROR;
 				}
+
 			}
 		}
 		storage_close(fd_tmp);
@@ -552,7 +554,7 @@ db_result_t storage_write_row(db_storage_id_t fd, storage_row_t row, unsigned le
 	}
 	memcpy(g_storage_write_buffer.buffer + g_storage_write_buffer.data_size, row, length);
 	g_storage_write_buffer.data_size += length;
-	memcpy(g_storage_write_buffer.file_name, filename, strlen(filename));
+	memcpy(g_storage_write_buffer.file_name, filename, strlen(filename) + 1);
 #else
 	if (storage_write(fd, row, length) < 0) {
 		DB_LOG_D("DB: Failed to store %u bytes\n", length);

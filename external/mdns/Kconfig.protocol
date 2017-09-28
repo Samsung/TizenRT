@@ -1,0 +1,44 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NETUTILS_MDNS
+	bool "Multicast DNS"
+	default n
+	---help---
+		Enables support for Multicast DNS. The multicast Domain Name System (mDNS)
+		resolves host names to IP addresses within small networks that do not include
+		a local name server.
+
+if NETUTILS_MDNS
+
+config NETUTILS_MDNS_RESPONDER_SUPPORT
+	bool "mDNS Responder"
+	default n
+	---help---
+		Enable mDNS Responder
+
+config NETUTILS_MDNS_XMDNS
+	bool "xmDNS for supporting site domain"
+	default n
+	---help---
+		Enable xmDNS for supporting site domain
+
+if NETUTILS_MDNS_XMDNS
+config NETUTILS_MDNS_XMDNS_MULTICAST_ADDR
+	string "xmDNS Multicast Address"
+	default "224.0.0.251"
+	---help---
+		xmDNS Multicast Address
+
+config NETUTILS_MDNS_XMDNS_PORT_NUM
+	int "xmDNS Port Number"
+	default 5353
+	---help---
+		xmDNS Port Number
+
+endif # NETUTILS_MDNS_XMDNS
+
+endif # NETUTILS_MDNS
+

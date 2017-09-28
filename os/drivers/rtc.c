@@ -276,8 +276,7 @@ static int rtc_close(FAR struct file *filep)
 	 * unlinked, then commit Hara-Kiri now.
 	 */
 
-	if (upper->crefs == 0 && upper->unlinked)
-	{
+	if (upper->crefs == 0 && upper->unlinked) {
 		rtc_destroy(upper);
 	}
 

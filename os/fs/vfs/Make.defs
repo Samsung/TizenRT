@@ -54,7 +54,7 @@
 # logic in this directory may still apply to socket descriptors
 
 ifeq ($(CONFIG_NFILE_DESCRIPTORS),0)
-ifneq ($(CONFIG_NSOCKET_DESCRIPTORS),0)
+ifeq ($(CONFIG_NET),y)
 
 # Socket descriptor support
 

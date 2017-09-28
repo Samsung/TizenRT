@@ -59,6 +59,7 @@
  ****************************************************************************/
 #include <stdint.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <arastorage/arastorage.h>
 #include "db_options.h"
 #include "list.h"
@@ -75,19 +76,19 @@
 #define GET_POS(a) ((a) % (sizeof(uint32_t) * 8))
 
 /* This decides int array size to present all tuples in relation */
-#define GET_CURSOR_DATA_ARR_SIZE(a) (((a) / (sizeof(uint32_t)*8)) + 1)
+#define GET_CURSOR_DATA_ARR_SIZE(a) (((a) / (sizeof(uint32_t) * 8)) + 1)
 
 /* Set a bit to 1 */
-#define BIT_SET(a, b) ((a) |= (1u<<(b)))
+#define BIT_SET(a, b) ((a) |= (1u << (b)))
 
 /* Clear a bit to 0 */
-#define BIT_CLEAR(a, b) ((a) &= ~(1u<<(b)))
+#define BIT_CLEAR(a, b) ((a) &= ~(1u << (b)))
 
 /* Reverse a bit */
-#define BIT_FLIP(a, b) ((a) ^= (1u<<(b)))
+#define BIT_FLIP(a, b) ((a) ^= (1u << (b)))
 
 /* Check a bit whether 1 or 0 */
-#define BIT_CHECK(a, b) ((a) & (1u<<(b)))
+#define BIT_CHECK(a, b) ((a) & (1u << (b)))
 
 /* Check cursor is empty or not */
 #define IS_EMPTY_CURSOR(a) ((a) == NULL || (a)->total_rows <= 0 || (a)->cursor_rows <= 0)
@@ -189,7 +190,7 @@ attribute_t *relation_attribute_get(relation_t *, char *);
 db_result_t relation_get_value(relation_t *, attribute_t *, unsigned char *, attribute_value_t *);
 db_result_t relation_attribute_remove(relation_t *, char *);
 db_result_t relation_set_primary_key(relation_t *, char *);
-db_result_t relation_remove(char *, int);
+db_result_t relation_remove(relation_t *, int);
 db_result_t relation_insert(relation_t *, attribute_value_t *);
 db_result_t relation_select(db_handle_t **, relation_t *, void *);
 tuple_id_t relation_cardinality(relation_t *);

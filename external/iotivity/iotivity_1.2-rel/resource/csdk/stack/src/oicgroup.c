@@ -26,7 +26,7 @@
 
 #include "oicgroup.h"
 #if defined (__TIZENRT__)
-#include <apps/netutils/cJSON.h>
+#include <json/cJSON.h>
 #else
 #include "cJSON.h"
 #endif

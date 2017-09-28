@@ -43,7 +43,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "tls/config.h"
+#include "mbedtls/config.h"
 
 #if !defined(MBEDTLS_SSL_CLI_C) || !defined(MBEDTLS_SSL_PROTO_DTLS) ||	\
 	!defined(MBEDTLS_NET_C) || !defined(MBEDTLS_TIMING_C) ||			\
@@ -64,14 +64,14 @@ int dtls_client_main(int argc, char **argv)
 #define mbedtls_printf     printf
 #define mbedtls_fprintf    fprintf
 
-#include "tls/net.h"
-#include "tls/debug.h"
-#include "tls/ssl.h"
-#include "tls/entropy.h"
-#include "tls/ctr_drbg.h"
-#include "tls/error.h"
-#include "tls/certs.h"
-#include "tls/timing.h"
+#include "mbedtls/net.h"
+#include "mbedtls/debug.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/error.h"
+#include "mbedtls/certs.h"
+#include "mbedtls/timing.h"
 
 #define SERVER_PORT "4433"
 #define SERVER_NAME "localhost"

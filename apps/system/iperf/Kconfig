@@ -1,0 +1,24 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config SYSTEM_IPERF
+	bool "iperf App"
+	default n
+  	depends on NET_LWIP && NETUTILS_JSON && LIBC_FLOATINGPOINT
+	depends on LIBC_NETDB
+	---help---
+		Enable the \"IPERF App\" example
+
+if SYSTEM_IPERF
+
+config SYSTEM_IPERF_PROGNAME
+	string "Program name"
+	default "iperf"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the TASH ELF
+		program is installed.
+
+endif

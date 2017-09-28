@@ -50,7 +50,7 @@ static uint32_t add( const uint32_t *x, const uint32_t *y, uint32_t *result, uin
 		result[v] = d;
 		d = d>>32; //save carry
 	}
-	
+
 	return (uint32_t)d;
 }
 
@@ -62,7 +62,7 @@ static uint32_t sub( const uint32_t *x, const uint32_t *y, uint32_t *result, uin
 		result[v] = d & 0xFFFFFFFF;
 		d = d>>32;
 		d &= 0x1;
-	}	
+	}
 	return (uint32_t)d;
 }
 
@@ -80,7 +80,7 @@ static void rshiftby(const uint32_t *in, uint8_t in_size, uint32_t *out, uint8_t
 static const uint32_t ecc_prime_m[8] = {0xffffffff, 0xffffffff, 0xffffffff, 0x00000000,
 					0x00000000, 0x00000000, 0x00000001, 0xffffffff};
 
-							
+
 /* This is added after an static byte addition if the answer has a carry in MSB*/
 static const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff,
 					0xffffffff, 0xffffffff, 0xfffffffe, 0x00000000};
@@ -163,7 +163,7 @@ static int fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uin
 	uint8_t k, n;
 	uint64_t l;
 	for (k = 0; k < length; k++){
-		for (n = 0; n < length; n++){ 
+		for (n = 0; n < length; n++){
 			l = (uint64_t)x[n]*(uint64_t)y[k];
 			temp[n+k] = l&0xFFFFFFFF;
 			temp[n+k+1] = l>>32;
@@ -184,66 +184,66 @@ static void fieldModP(uint32_t *A, const uint32_t *B)
 	uint8_t n;
 	setZero(tempm, 8);
 	setZero(tempm2, 8);
-	/* A = T */ 
+	/* A = T */
 	copy(B,A,arrayLength);
 
-	/* Form S1 */ 
-	for(n=0;n<3;n++) tempm[n]=0; 
+	/* Form S1 */
+	for(n=0;n<3;n++) tempm[n]=0;
 	for(n=3;n<8;n++) tempm[n]=B[n+8];
 
-	/* tempm2=T+S1 */ 
+	/* tempm2=T+S1 */
 	fieldAdd(A,tempm,ecc_prime_r,tempm2);
-	/* A=T+S1+S1 */ 
+	/* A=T+S1+S1 */
 	fieldAdd(tempm2,tempm,ecc_prime_r,A);
-	/* Form S2 */ 
-	for(n=0;n<3;n++) tempm[n]=0; 
-	for(n=3;n<7;n++) tempm[n]=B[n+9]; 
+	/* Form S2 */
+	for(n=0;n<3;n++) tempm[n]=0;
+	for(n=3;n<7;n++) tempm[n]=B[n+9];
 	for(n=7;n<8;n++) tempm[n]=0;
-	/* tempm2=T+S1+S1+S2 */ 
+	/* tempm2=T+S1+S1+S2 */
 	fieldAdd(A,tempm,ecc_prime_r,tempm2);
-	/* A=T+S1+S1+S2+S2 */ 
+	/* A=T+S1+S1+S2+S2 */
 	fieldAdd(tempm2,tempm,ecc_prime_r,A);
-	/* Form S3 */ 
-	for(n=0;n<3;n++) tempm[n]=B[n+8]; 
-	for(n=3;n<6;n++) tempm[n]=0; 
+	/* Form S3 */
+	for(n=0;n<3;n++) tempm[n]=B[n+8];
+	for(n=3;n<6;n++) tempm[n]=0;
 	for(n=6;n<8;n++) tempm[n]=B[n+8];
-	/* tempm2=T+S1+S1+S2+S2+S3 */ 
+	/* tempm2=T+S1+S1+S2+S2+S3 */
 	fieldAdd(A,tempm,ecc_prime_r,tempm2);
-	/* Form S4 */ 
-	for(n=0;n<3;n++) tempm[n]=B[n+9]; 
-	for(n=3;n<6;n++) tempm[n]=B[n+10]; 
-	for(n=6;n<7;n++) tempm[n]=B[n+7]; 
+	/* Form S4 */
+	for(n=0;n<3;n++) tempm[n]=B[n+9];
+	for(n=3;n<6;n++) tempm[n]=B[n+10];
+	for(n=6;n<7;n++) tempm[n]=B[n+7];
 	for(n=7;n<8;n++) tempm[n]=B[n+1];
-	/* A=T+S1+S1+S2+S2+S3+S4 */ 
+	/* A=T+S1+S1+S2+S2+S3+S4 */
 	fieldAdd(tempm2,tempm,ecc_prime_r,A);
-	/* Form D1 */ 
-	for(n=0;n<3;n++) tempm[n]=B[n+11]; 
-	for(n=3;n<6;n++) tempm[n]=0; 
-	for(n=6;n<7;n++) tempm[n]=B[n+2]; 
+	/* Form D1 */
+	for(n=0;n<3;n++) tempm[n]=B[n+11];
+	for(n=3;n<6;n++) tempm[n]=0;
+	for(n=6;n<7;n++) tempm[n]=B[n+2];
 	for(n=7;n<8;n++) tempm[n]=B[n+3];
-	/* tempm2=T+S1+S1+S2+S2+S3+S4-D1 */ 
+	/* tempm2=T+S1+S1+S2+S2+S3+S4-D1 */
 	fieldSub(A,tempm,ecc_prime_m,tempm2);
-	/* Form D2 */ 
-	for(n=0;n<4;n++) tempm[n]=B[n+12]; 
-	for(n=4;n<6;n++) tempm[n]=0; 
-	for(n=6;n<7;n++) tempm[n]=B[n+3]; 
+	/* Form D2 */
+	for(n=0;n<4;n++) tempm[n]=B[n+12];
+	for(n=4;n<6;n++) tempm[n]=0;
+	for(n=6;n<7;n++) tempm[n]=B[n+3];
 	for(n=7;n<8;n++) tempm[n]=B[n+4];
-	/* A=T+S1+S1+S2+S2+S3+S4-D1-D2 */ 
+	/* A=T+S1+S1+S2+S2+S3+S4-D1-D2 */
 	fieldSub(tempm2,tempm,ecc_prime_m,A);
-	/* Form D3 */ 
-	for(n=0;n<3;n++) tempm[n]=B[n+13]; 
-	for(n=3;n<6;n++) tempm[n]=B[n+5]; 
-	for(n=6;n<7;n++) tempm[n]=0; 
+	/* Form D3 */
+	for(n=0;n<3;n++) tempm[n]=B[n+13];
+	for(n=3;n<6;n++) tempm[n]=B[n+5];
+	for(n=6;n<7;n++) tempm[n]=0;
 	for(n=7;n<8;n++) tempm[n]=B[n+5];
-	/* tempm2=T+S1+S1+S2+S2+S3+S4-D1-D2-D3 */ 
+	/* tempm2=T+S1+S1+S2+S2+S3+S4-D1-D2-D3 */
 	fieldSub(A,tempm,ecc_prime_m,tempm2);
-	/* Form D4 */ 
-	for(n=0;n<2;n++) tempm[n]=B[n+14]; 
-	for(n=2;n<3;n++) tempm[n]=0; 
-	for(n=3;n<6;n++) tempm[n]=B[n+6]; 
-	for(n=6;n<7;n++) tempm[n]=0; 
+	/* Form D4 */
+	for(n=0;n<2;n++) tempm[n]=B[n+14];
+	for(n=2;n<3;n++) tempm[n]=0;
+	for(n=3;n<6;n++) tempm[n]=B[n+6];
+	for(n=6;n<7;n++) tempm[n]=0;
 	for(n=7;n<8;n++) tempm[n]=B[n+6];
-	/* A=T+S1+S1+S2+S2+S3+S4-D1-D2-D3-D4 */ 
+	/* A=T+S1+S1+S2+S2+S3+S4-D1-D2-D3-D4 */
 	fieldSub(tempm2,tempm,ecc_prime_m,A);
 	if(isGreater(A, ecc_prime_m, arrayLength) >= 0){
 		fieldSub(A, ecc_prime_m, ecc_prime_m, tempm);
@@ -260,9 +260,9 @@ static void fieldModP(uint32_t *A, const uint32_t *B)
  * result: result of modulo calculation (max 36 bytes)
  * size: size of A
  *
- * This uses the Barrett modular reduction as described in the Handbook 
- * of Applied Cryptography 14.42 Algorithm Barrett modular reduction, 
- * see http://cacr.uwaterloo.ca/hac/about/chap14.pdf and 
+ * This uses the Barrett modular reduction as described in the Handbook
+ * of Applied Cryptography 14.42 Algorithm Barrett modular reduction,
+ * see http://cacr.uwaterloo.ca/hac/about/chap14.pdf and
  * http://everything2.com/title/Barrett+Reduction
  *
  * b = 32 (bite size of the processor architecture)
@@ -300,14 +300,14 @@ static void fieldModO(const uint32_t *A, uint32_t *result, uint8_t length) {
 }
 
 static int isOne(const uint32_t* A){
-	uint8_t n; 
-	for(n=1;n<8;n++) 
-		if (A[n]!=0) 
+	uint8_t n;
+	for(n=1;n<8;n++)
+		if (A[n]!=0)
 			break;
 
-	if ((n==8)&&(A[0]==1)) 
+	if ((n==8)&&(A[0]==1))
 		return 1;
-	else 
+	else
 		return 0;
 }
 
@@ -342,7 +342,7 @@ static int fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, const u
 			add(result, reducer, tempas, 8);
 			copy(tempas, result, arrayLength);
 		}
-		
+
 	}
 	return 0;
 }
@@ -360,12 +360,12 @@ static void fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t 
 	setZero(v, 8);
 
 	uint8_t t;
-	copy(A,u,arrayLength); 
-	copy(modulus,v,arrayLength); 
+	copy(A,u,arrayLength);
+	copy(modulus,v,arrayLength);
 	setZero(x1, 8);
 	setZero(x2, 8);
-	x1[0]=1; 
-	/* While u !=1 and v !=1 */ 
+	x1[0]=1;
+	/* While u !=1 and v !=1 */
 	while ((isOne(u) || isOne(v))==0) {
 		while(!(u[0]&1)) { 					/* While u is even */
 			rshift(u); 						/* divide by 2 */
@@ -376,19 +376,19 @@ static void fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t 
 				copy(tempm,x1,arrayLength); 		/* x1=tempm */
 				//rshift(x1);					/* Divide by 2 */
 			}
-		} 
+		}
 		while(!(v[0]&1)) {					/* While v is even */
-			rshift(v); 						/* divide by 2 */ 
+			rshift(v); 						/* divide by 2 */
 			if (!(x2[0]&1))					/*ifx1iseven*/
 				rshift(x2); 				/* Divide by 2 */
 			else
 			{
 				fieldAddAndDivide(x2,modulus,reducer,tempm);	/* tempm=x1+p */
-				copy(tempm,x2,arrayLength); 			/* x1=tempm */ 
+				copy(tempm,x2,arrayLength); 			/* x1=tempm */
 				//rshift(x2);					/* Divide by 2 */
 			}
-			
-		} 
+
+		}
 		t=sub(u,v,tempm,arrayLength); 				/* tempm=u-v */
 		if (t==0) {							/* If u > 0 */
 			copy(tempm,u,arrayLength); 					/* u=u-v */
@@ -400,9 +400,9 @@ static void fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t 
 			fieldSub(x2,x1,modulus,tempm); 			/* tempm=x2-x1 */
 			copy(tempm,x2,arrayLength);					/* x2=x2-x1 */
 		}
-	} 
+	}
 	if (isOne(u)) {
-		copy(x1,B,arrayLength); 
+		copy(x1,B,arrayLength);
 	} else {
 		copy(x2,B,arrayLength);
 	}
@@ -474,7 +474,7 @@ void static ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, c
 	fieldSub(py, qy, ecc_prime_m, tempA);
 	fieldSub(px, qx, ecc_prime_m, tempB);
 	fieldInv(tempB, ecc_prime_m, ecc_prime_r, tempB);
-	fieldMult(tempA, tempB, tempD, arrayLength); 
+	fieldMult(tempA, tempB, tempD, arrayLength);
 	fieldModP(tempC, tempD); //tempC = lambda
 
 	fieldMult(tempC, tempC, tempD, arrayLength); //tempA = lambda^2

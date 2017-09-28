@@ -35,7 +35,7 @@ iotbus_pwm_context_h pwm;
 static void utc_pwm_open_p(void)
 {
 	iotbus_pwm_context_h m_pwm = iotbus_pwm_open(0, 1);
-	TC_ASSERT_NOT_NULL("iotbus_pwm_open", m_pwm);
+	TC_ASSERT_NEQ("iotbus_pwm_open", m_pwm, NULL);
 	pwm = m_pwm;
 	TC_SUCCESS_RESULT();
 }

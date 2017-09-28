@@ -213,7 +213,7 @@ static int lib_localhost(FAR const void *addr, socklen_t len, int type, FAR stru
 	/* And copy localhost host name */
 
 	namelen = strlen(g_lo_hostname);
-	if (addrlen + namelen + 1 > buflen) {
+	if ((namelen + 1) > buflen) {
 		herrnocode = ERANGE;
 		goto errorout_with_herrnocode;
 	}

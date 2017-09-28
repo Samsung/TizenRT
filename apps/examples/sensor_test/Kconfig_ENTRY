@@ -1,3 +1,0 @@
-config ENTRY_SENSOR_TEST
-	bool "sensor_test"
-	depends on EXAMPLES_SENSOR_TEST

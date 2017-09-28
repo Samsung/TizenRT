@@ -1,0 +1,4 @@
+config ENTRY_SMTPCLIENT
+	bool "SMTP client example"
+	depends on EXAMPLES_SMTPCLIENT
+

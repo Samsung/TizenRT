@@ -40,12 +40,12 @@ static void utc_uart_initialize_p(void)
 {
 #ifdef CONFIG_ARCH_CHIP_STM32
 	iotbus_uart_context_h m_uart = iotbus_uart_init("/dev/ttyS1");
-	TC_ASSERT_NOT_NULL("iotbus_uart_init", m_uart);
+	TC_ASSERT_NEQ("iotbus_uart_init", m_uart, NULL);
 	uart = m_uart;
 	TC_SUCCESS_RESULT();
 #elif CONFIG_ARCH_CHIP_S5J
 	iotbus_uart_context_h m_uart = iotbus_uart_init("/dev/ttyS2");
-	TC_ASSERT_NOT_NULL("iotbus_uart_init", m_uart);
+	TC_ASSERT_NEQ("iotbus_uart_init", m_uart, NULL);
 	uart = m_uart;
 	TC_SUCCESS_RESULT();
 #endif

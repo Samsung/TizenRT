@@ -78,6 +78,7 @@ static int *g_lineLen;
 static int g_seekCount;
 static int g_writeCount;
 static int g_circCount;
+static int g_appendCount;
 
 static int g_lineCount = 2000;
 static int g_recordLen = 64;
@@ -101,6 +102,8 @@ static int smart_create_test_file(char *filename)
 	FILE *fd;
 	int x;
 	char string[80];
+	int sum;
+	int ret;
 
 	/* Try to open the file */
 
@@ -119,12 +122,20 @@ static int smart_create_test_file(char *filename)
 	 */
 
 	printf("Writing test data.  %d lines to write\n", g_lineCount);
-	for (x = 0; x < g_lineCount; x++) {
+	for (sum = 0, x = 0; x < g_lineCount; x++) {
 		g_linePos[x] = ftell(fd);
 
 		sprintf(string, "This is line %d at offset %d\n", x, g_linePos[x]);
 		g_lineLen[x] = strlen(string);
-		fprintf(fd, "%s", string);
+		ret = fprintf(fd, "%s", string);
+
+		if (ret) {
+			sum += ret;
+		} else {
+			printf("\n");
+			printf("%s is failed.(%d)", string, ret);
+			break;
+		}
 
 		printf("\r%d", x);
 		fflush(stdout);
@@ -132,7 +143,14 @@ static int smart_create_test_file(char *filename)
 
 	/* Close the file */
 
-	printf("\r\nDone.\n");
+	if (x != g_lineCount) {
+		printf("\n");
+		printf("WARNING: Writing is failed. Only %d lines %d bytes was written\n", x - 1, sum);
+		printf("Maybe disk has been fulled.\n");
+		printf("Please check 'df' command to verify the filesystem usage.\n");
+	} else {
+		printf("\r\nDone.\n");
+	}
 
 	fclose(fd);
 
@@ -218,6 +236,11 @@ static int smart_append_test(char *filename)
 	/* Now write some data to the end of the file */
 
 	fprintf(fd, "This is a test of the append.\n");
+	if (ferror(fd) != OK) {
+		printf("Error appending message... Maybe disk has been fulled\n");
+		fclose(fd);
+		return ERROR;
+	}
 	pos = ftell(fd);
 
 	/* Now seek to the end of the file and ensure that is where
@@ -231,7 +254,7 @@ static int smart_append_test(char *filename)
 
 	/* Now seek to that position and read the data back */
 
-	fseek(fd, 30, SEEK_END);
+	fseek(fd, -30, SEEK_END);
 	fread(readstring, 1, 30, fd);
 	readstring[30] = '\0';
 	if (strcmp(readstring, "This is a test of the append.\n") != 0) {
@@ -572,7 +595,7 @@ int smart_test_main(int argc, char *argv[])
 	/* Argument given? */
 
 	optind = -1;
-	while ((opt = getopt(argc, argv, "c:e:l:r:s:t:w:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:e:l:r:s:a:t:w:")) != -1) {
 		switch (opt) {
 		case 'c':
 			g_circCount = atoi(optarg);
@@ -602,13 +625,17 @@ int smart_test_main(int argc, char *argv[])
 			g_writeCount = atoi(optarg);
 			break;
 
+		case 'a':
+			g_appendCount = atoi(optarg);
+			break;
+
 		default:				/* '?' */
 			smart_usage();
 			exit(EXIT_FAILURE);
 		}
 	}
 
-	if (argc < 2 || (g_seekCount + g_writeCount + g_circCount == 0)) {
+	if (argc < 2) {
 		smart_usage();
 		return -1;
 	}
@@ -628,13 +655,14 @@ int smart_test_main(int argc, char *argv[])
 
 	/* Test if performing seek test or write test */
 
-	if (g_seekCount > 0 || g_writeCount > 0) {
-		/* Create a test file */
+	/* Create a test file */
 
-		ret = smart_create_test_file(argv[optind]);
-		if (ret < 0) {
-			goto err_out_with_mem;
-		}
+	ret = smart_create_test_file(argv[optind]);
+	if (ret < 0) {
+		goto err_out_with_mem;
+	}
+
+	if (g_seekCount > 0 || g_writeCount > 0 || g_appendCount > 0) {
 
 		/* Conduct a seek test? */
 
@@ -647,9 +675,11 @@ int smart_test_main(int argc, char *argv[])
 
 		/* Conduct an append test */
 
-		ret = smart_append_test(argv[optind]);
-		if (ret < 0) {
-			goto err_out_with_mem;
+		if (g_appendCount > 0) {
+			ret = smart_append_test(argv[optind]);
+			if (ret < 0) {
+				goto err_out_with_mem;
+			}
 		}
 
 		/* Conduct a seek with write test? */
@@ -664,9 +694,11 @@ int smart_test_main(int argc, char *argv[])
 
 	/* Perform a "circular log" test */
 
-	ret = smart_circular_log_test(argv[optind]);
-	if (ret < 0) {
-		goto err_out_with_mem;
+	if (g_circCount > 0) {
+		ret = smart_circular_log_test(argv[optind]);
+		if (ret < 0) {
+			goto err_out_with_mem;
+		}
 	}
 
 err_out_with_mem:

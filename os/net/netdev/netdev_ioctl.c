@@ -84,7 +84,6 @@
 
 #include "socket/socket.h"
 #include "netdev/netdev.h"
-#include "route/route.h"
 
 /****************************************************************************
  * Pre-processor Definitions

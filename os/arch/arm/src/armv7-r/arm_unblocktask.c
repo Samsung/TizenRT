@@ -58,7 +58,7 @@
 
 #include <sched.h>
 #include <debug.h>
-#include <ttrace.h>
+#include <tinyara/ttrace.h>
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 
