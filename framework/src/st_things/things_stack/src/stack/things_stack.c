@@ -605,7 +605,6 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Failed to create thread");
 			h_thread_things_reset = 0;
 			things_free(args);
-			args = NULL;
 			b_thread_things_reset = false;
 			res = -1;
 			goto GOTO_OUT;
@@ -1002,6 +1001,8 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee
 		{
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.(for abort Thread)");
 			*h_thread_abort = 0;
+			things_free(ARGs);
+			pthread_detach(h_thread_abort);
 			eh_result = OC_EH_ERROR;
 		}
 	} else {
@@ -1009,7 +1010,6 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee
 		eh_result = OC_EH_NOT_ACCEPTABLE;
 	}
 
-	pthread_detach(h_thread_abort);
 	return eh_result;
 }
 
