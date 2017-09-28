@@ -310,7 +310,9 @@ static int set_def_cloud_info(es_cloud_signup_s *cloud_info, const char *cloud_a
 
 		if (strchr(t_domain, ':') != NULL) {
 			ip_port = strchr(t_domain, ':');
-			*ip_port = NULL;
+			if (ip_port) {
+				*ip_port = NULL;
+			}
 			ip_port++;
 		} else {
 			if ((ip_port = strchr(ip_port, ':')) == NULL) {

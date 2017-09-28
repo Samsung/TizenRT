@@ -185,6 +185,8 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 	wifi_net_ip4_addr_to_ip4_str(wifi_info.ip4_address, cur_device_ip_address);
 
 	things_wifi_changed_call_func(1, wifi_info.ssid, cur_device_ip_address);
+
+	return NULL;
 }
 
 void things_wifi_sta_connected(void)
@@ -572,7 +574,7 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 		return 0;
 	}
 
-	if (resetType >= RST_ENUM_EOF || resetType < RST_NEED_CONFIRM) {
+	if (resetType >= RST_ENUM_EOF) {
 		THINGS_LOG_D(THINGS_INFO, TAG, "Not support things_es_enrollee_reset_e value(%d). So, Set value with RST_NEED_CONFIRM", resetType);
 		resetType = RST_NEED_CONFIRM;
 	}
