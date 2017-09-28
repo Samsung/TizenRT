@@ -224,7 +224,7 @@ void s5j_clk_set_rate(unsigned int id, unsigned long rate)
 	case CLK_SPL_SPI1:
 	case CLK_SPL_SPI2:
 	case CLK_SPL_SPI3:
-		clk_spi_set_rate(id, rate);
+		clk_spi_set_rate(id, rate * 2);
 		break;
 
 	default:
