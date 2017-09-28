@@ -33,7 +33,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef __ST_THINGS_RTOS__
+#include <st_things/st_things_types.h>
+#else
 #include "st_things_types.h"
+#endif							// __ST_THINGS_RTOS__
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +53,8 @@ extern "C" {
  *            If easy-setup is not done, app can either wait for the user interaction before starting the things stack or
  *            start the things stack directly without waiting for any events(This case is for those things which doesn't
  *            support input capability and for all other unknown cases).
+ *            To use a new json file after initialization, stack should be deinitialized
+ *            and stopped(if its started already).
  * @param[in] json_path Path to Json file which defines a thing. Definition includes the device information,
  *                                       resources and their properties, configuration info for connectivity and easy-setup, etc.
  * @param[out] easysetup_complete Indicates whether easysetup is completed already or not.
@@ -56,15 +62,25 @@ extern "C" {
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
+ * @retval #ST_THINGS_ERROR_STACK_ALREADY_INITIALIZED Stack already initialized.
+ *         To initialize again, stack should be deinitilized first by calling st_things_deinitialize().
+ * @retval #ST_THINGS_ERROR_STACK_RUNNING Stack is currently running.
+ *         To initialize again, stack should be stopped first by calling st_things_stop()
+ *         and then deinitialized by calling st_things_deinitialize().
  * @since Tizen RT v1.1
  */
 int st_things_initialize(const char *json_path, bool *easysetup_complete);
 
 /**
  * @brief Deinitializes things stack.
+ *        Stack should have been initialized before calling this API.
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
+ * @retval #ST_THINGS_ERROR_STACK_NOT_INITIALIZED Stack is not initialized.
+ *         Initialize the stack by calling st_things_initialize().
+ * @retval #ST_THINGS_ERROR_STACK_RUNNING Stack is currently running.
+ *         Before deinitialize, stack needs to be stopped by calling st_things_stop().
  * @since Tizen RT v1.1
  */
 int st_things_deinitialize(void);
@@ -112,9 +128,13 @@ int st_things_register_request_cb(st_things_get_request_cb get_cb, st_things_set
  *                Onboarding creates an ad-hoc network between the thing and the client for performing easy-setup.
  *            If easy-setup is already done, thing will be connected with the cloud.
  *            Application can know whether easy-setup is done or not through st_things_initialize API.
+ *            Stack should have been initialized before calling this API.
  * @return @c 0 on success, otherwise a negative error value
- * @retval #ST_THINGS_ERROR_NONE Successful
+ * @retval #ST_THINGS_ERROR_NONE Successful.
+ *         It is also used for the case that the stack is started already.
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
+ * @retval #ST_THINGS_ERROR_STACK_NOT_INITIALIZED Stack is not initialized.
+ *         Initialize the stack by calling st_things_initialize().
  * @since Tizen RT v1.1
  */
 int st_things_start(void);
@@ -122,9 +142,14 @@ int st_things_start(void);
 /**
  * @brief Stops things stack.
  *            Removes all the data being used internally and releases all the memory allocated for the stack.
+ *            Stack should have been initialized and started before calling this API.
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
+ * @retval #ST_THINGS_ERROR_STACK_NOT_INITIALIZED Stack is not initialized.
+ *         Initialize the stack by calling st_things_initialize().
+ * @retval #ST_THINGS_ERROR_STACK_NOT_STARTED Stack is not started.
+ *         Start the stack by calling st_things_start().
  * @since Tizen RT v1.1
  */
 int st_things_stop(void);
@@ -134,14 +159,14 @@ int st_things_stop(void);
  * @return @c true to confirm, otherwise @c to deny
  * @since Tizen RT v1.1
  */
-typedef bool (*st_things_reset_confirm_cb)(void);
+typedef bool(*st_things_reset_confirm_cb) (void);
 
 /**
  * @brief Callback for carrying the result of reset.
  * @param[in] is_success Result of Stack-reset. (true : success, false : failure)
  * @since Tizen RT v1.1
  */
-typedef void (*st_things_reset_result_cb)(bool is_success);
+typedef void (*st_things_reset_result_cb) (bool is_success);
 
 /**
  * @brief Callback registration function for Reset-Confirmation and Reset-Result functions.
@@ -162,9 +187,14 @@ int st_things_register_reset_cb(st_things_reset_confirm_cb confirm_cb, st_things
 
 /**
  * @brief Reset all the data related to security and cloud being used in the stack.
+ *        Stack should have been initialized and started before calling this API.
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
+ * @retval #ST_THINGS_ERROR_STACK_NOT_INITIALIZED Stack is not intialized.
+ *         Initialize the stack by calling st_things_initialize().
+ * @retval #ST_THINGS_ERROR_STACK_NOT_STARTED Stack is not started.
+ *         Start the stack by calling st_things_start().
  * @since Tizen RT v1.1
  */
 int st_things_reset(void);
@@ -176,13 +206,13 @@ int st_things_reset(void);
  * @param[in] pin_size Length of the PIN String.
  * @since Tizen RT v1.1
  */
-typedef void (*st_things_pin_generated_cb)(const char *pin_data, const size_t pin_size);
+typedef void (*st_things_pin_generated_cb) (const char *pin_data, const size_t pin_size);
 
 /**
  * @brief Callback for informing the application to close the PIN display.
  * @since Tizen RT v1.1
  */
-typedef void (*st_things_pin_display_close_cb)(void);
+typedef void (*st_things_pin_display_close_cb) (void);
 
 /**
  * @brief Callback registration function for getting randomly generated PIN for the PIN-Based Ownership Transfer Request.
@@ -206,7 +236,7 @@ int st_things_register_pin_handling_cb(st_things_pin_generated_cb generated_cb, 
  * @return @c true true in cse of confirmed, otherwise @c false
  * @since Tizen RT v1.1
  */
-typedef bool (*st_things_user_confirm_cb)(void);
+typedef bool(*st_things_user_confirm_cb) (void);
 
 /**
  * @brief Callback registration function for getting user confirmation for MUTUAL VERIFICATION BASED JUST WORK Ownership transfer.
@@ -228,7 +258,7 @@ int st_things_register_user_confirm_cb(st_things_user_confirm_cb confirm_cb);
  * @param[in]  things_status ST Things State
  * @since Tizen RT v1.1
  */
-typedef void (*st_things_status_change_cb)(st_things_status_e things_status);
+typedef void (*st_things_status_change_cb) (st_things_status_e things_status);
 
 /**
  * @brief Callback registration function for getting notified when ST Things state changes.
@@ -247,26 +277,19 @@ int st_things_register_things_status_change_cb(st_things_status_change_cb status
 
 /**
  * @brief Notify the observers of a specific resource.
+ *        Stack should have been initialized and started before calling this API.
  * @param[in]  resource_uri Resource URI of the resource which will be notified to observers.
  * @return @c 0 on success, otherwise a negative error value
  * @retval #ST_THINGS_ERROR_NONE Successful
  * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
  * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
+  * @retval #ST_THINGS_ERROR_STACK_NOT_INITIALIZED Stack is not intialized.
+ *         Initialize the stack by calling st_things_initialize().
+ * @retval #ST_THINGS_ERROR_STACK_NOT_STARTED Stack is not started.
+ *         Start the stack by calling st_things_start().
  * @since Tizen RT v1.1
  */
 int st_things_notify_observers(const char *resource_uri);
-
-/**
- * @brief Send Representation of a specific resource through push service to Samsung Connect client.
- * @param[in]  resource_uri Resource uri for which we want to send push message.
- * @param[in]  rep Representation for resource uri.
- * @return @c 0 on success, otherwise a negative error value
- * @retval #ST_THINGS_ERROR_NONE Successful
- * @retval #ST_THINGS_ERROR_INVALID_PARAMETER Invalid parameter
- * @retval #ST_THINGS_ERROR_OPERATION_FAILED Operation failed
- * @since Tizen RT v1.1
- */
-int st_things_send_push_message(const char *resource_uri, st_things_representation_s *rep);
 
 /**
  * @brief Create an instance of representation.
@@ -287,4 +310,4 @@ void st_things_destroy_representation_inst(st_things_representation_s *rep);
 }
 #endif							/* __cplusplus */
 #endif							/* __ST_THINGS_H__ */
-/** @} */// end of SmartThings group
+		 /** @} */// end of SmartThings group

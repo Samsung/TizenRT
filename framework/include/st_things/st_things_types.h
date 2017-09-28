@@ -18,13 +18,12 @@
 /**
  * @ingroup SmartThings
  * @{
- */
+*/
 
 /**
  * @file st_things/st_things_types.h
  * @brief Provides structure definition for SmartThings Things SDK
  */
-
 #ifndef __ST_THINGS_TYPES_H__
 #define __ST_THINGS_TYPES_H__
 
@@ -37,9 +36,13 @@
  * @since Tizen RT v1.1
  */
 typedef enum {
-	ST_THINGS_ERROR_NONE = 0,				  /**< Successful */
-	ST_THINGS_ERROR_INVALID_PARAMETER = -1,	  /**< Invalid parameter (If parameter is null or empty)*/
-	ST_THINGS_ERROR_OPERATION_FAILED = -2,	  /**< Operation Failed */
+	ST_THINGS_ERROR_NONE = 0,						   /**< Successful */
+	ST_THINGS_ERROR_INVALID_PARAMETER = -1,			   /**< Invalid parameter (If parameter is null or empty)*/
+	ST_THINGS_ERROR_OPERATION_FAILED = -2,			   /**< Operation Failed */
+	ST_THINGS_ERROR_STACK_NOT_INITIALIZED = -3,		   /**< Stack is not yet initialized*/
+	ST_THINGS_ERROR_STACK_ALREADY_INITIALIZED = -4,	   /**< Stack is already initialized*/
+	ST_THINGS_ERROR_STACK_NOT_STARTED = -5,			   /**< Stack is not yet started*/
+	ST_THINGS_ERROR_STACK_RUNNING = -6,				   /**< Stack is currently running*/
 } st_things_error_e;
 
 /**
@@ -58,9 +61,6 @@ typedef enum {
 	ST_THINGS_STATUS_REGISTERED_TO_CLOUD,			   /**< Publish resource(s) to cloud is complete. Now the Thing is ready to be controlled via Cloud */
 	ST_THINGS_STATUS_REGISTERING_FAILED_ON_SIGN_IN,	   /**< Failed to sign-in to Cloud */
 	ST_THINGS_STATUS_REGISTERING_FAILED_ON_PUB_RES	   /**< Failed to publish resources to Cloud */
-	/**
-     * @todo More status needs to be added, especially for failure cases like 'incorrect password to connect to target AP'
-     */
 } st_things_status_e;
 
 /**
@@ -79,7 +79,7 @@ typedef struct _st_things_representation {
      * @return @c true if value exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_str_value)(struct _st_things_representation *rep, const char *key, char **value);
+	 bool(*get_str_value) (struct _st_things_representation *rep, const char *key, char **value);
 
 	/**
      * @brief API for getting the value of boolean type property with a key.
@@ -89,7 +89,7 @@ typedef struct _st_things_representation {
      * @return @c true if value exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_bool_value)(struct _st_things_representation *rep, const char *key, bool *value);
+	 bool(*get_bool_value) (struct _st_things_representation *rep, const char *key, bool *value);
 
 	/**
      * @brief API for getting the value of integer type property with a key.
@@ -99,7 +99,7 @@ typedef struct _st_things_representation {
      * @return @c true if value exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_int_value)(struct _st_things_representation *rep, const char *key, int64_t *value);
+	 bool(*get_int_value) (struct _st_things_representation *rep, const char *key, int64_t *value);
 
 	/**
      * @brief API for getting the value of double type property with a key.
@@ -109,7 +109,7 @@ typedef struct _st_things_representation {
      * @return @c true if value exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_double_value)(struct _st_things_representation *rep, const char *key, double *value);
+	 bool(*get_double_value) (struct _st_things_representation *rep, const char *key, double *value);
 
 	/**
      * @brief API for getting the value of byte array type property with a key.
@@ -121,7 +121,7 @@ typedef struct _st_things_representation {
      * @return @c true if value exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_byte_value)(struct _st_things_representation *rep, const char *key, uint8_t **value, size_t *size);
+	 bool(*get_byte_value) (struct _st_things_representation *rep, const char *key, uint8_t **value, size_t *size);
 
 	/**
      * @brief API for getting the value of object type property with a key.
@@ -133,7 +133,7 @@ typedef struct _st_things_representation {
      * @return @c true if value exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_object_value)(struct _st_things_representation *rep, const char *key, struct _st_things_representation **value);
+	 bool(*get_object_value) (struct _st_things_representation *rep, const char *key, struct _st_things_representation **value);
 
 	/**
      * @brief API for setting the value of string type property with a key.
@@ -144,7 +144,7 @@ typedef struct _st_things_representation {
      * @return @c true if setting value is successful, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*set_str_value)(struct _st_things_representation *rep, const char *key, const char *value);
+	 bool(*set_str_value) (struct _st_things_representation *rep, const char *key, const char *value);
 
 	/**
      * @brief API for setting the value of boolean type property with a key.
@@ -154,7 +154,7 @@ typedef struct _st_things_representation {
      * @return @c true if setting value is successful, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*set_bool_value)(struct _st_things_representation *rep, const char *key, bool value);
+	 bool(*set_bool_value) (struct _st_things_representation *rep, const char *key, bool value);
 
 	/**
      * @brief API for setting the value of integer type property with a key.
@@ -164,7 +164,7 @@ typedef struct _st_things_representation {
      * @return @c true if setting value is successful, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*set_int_value)(struct _st_things_representation *rep, const char *key, int64_t value);
+	 bool(*set_int_value) (struct _st_things_representation *rep, const char *key, int64_t value);
 
 	/**
      * @brief API for setting the value of double type property with a key.
@@ -174,7 +174,7 @@ typedef struct _st_things_representation {
      * @return @c true if setting value is successful, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*set_double_value)(struct _st_things_representation *rep, const char *key, double value);
+	 bool(*set_double_value) (struct _st_things_representation *rep, const char *key, double value);
 
 	/**
      * @brief API for setting the value of byte array type property with a key.
@@ -186,7 +186,7 @@ typedef struct _st_things_representation {
      * @return @c true if setting value is successful, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*set_byte_value)(struct _st_things_representation *rep, const char *key, const uint8_t *value, size_t size);
+	 bool(*set_byte_value) (struct _st_things_representation *rep, const char *key, const uint8_t *value, size_t size);
 
 	/**
      * @brief API for setting the value of object type property with a key.
@@ -197,7 +197,7 @@ typedef struct _st_things_representation {
      * @return @c true if value exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*set_object_value)(struct _st_things_representation *rep, const char *key, const struct _st_things_representation *value);
+	 bool(*set_object_value) (struct _st_things_representation *rep, const char *key, const struct _st_things_representation *value);
 
 	/**
      * @brief API for getting the value of string array type property with a key.
@@ -209,7 +209,7 @@ typedef struct _st_things_representation {
      * @return @c true if value exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_str_array_value)(struct _st_things_representation *rep, const char *key, char ***array, size_t *length);
+	 bool(*get_str_array_value) (struct _st_things_representation *rep, const char *key, char ***array, size_t *length);
 
 	/**
      * @brief API for getting the value of integer array type property with a key.
@@ -221,7 +221,7 @@ typedef struct _st_things_representation {
      * @return @c true if value exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_int_array_value)(struct _st_things_representation *rep, const char *key, int64_t **array, size_t *length);
+	 bool(*get_int_array_value) (struct _st_things_representation *rep, const char *key, int64_t **array, size_t *length);
 
 	/**
      * @brief API for getting the value of double array type property with a key.
@@ -233,7 +233,7 @@ typedef struct _st_things_representation {
      * @return @c true if value exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_double_array_value)(struct _st_things_representation *rep, const char *key, double **array, size_t *length);
+	 bool(*get_double_array_value) (struct _st_things_representation *rep, const char *key, double **array, size_t *length);
 
 	/**
      * @brief API for getting the value of object array type property with a key.
@@ -246,7 +246,7 @@ typedef struct _st_things_representation {
      * @return @c true if value exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_object_array_value)(struct _st_things_representation *rep, const char *key, struct _st_things_representation ***array, size_t *length);
+	 bool(*get_object_array_value) (struct _st_things_representation *rep, const char *key, struct _st_things_representation ***array, size_t *length);
 
 	/**
      * @brief API for setting the value of string array type property with a key.
@@ -258,7 +258,7 @@ typedef struct _st_things_representation {
      * @return @c true if setting value is successful, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*set_str_array_value)(struct _st_things_representation *rep, const char *key, const char **array, size_t length);
+	 bool(*set_str_array_value) (struct _st_things_representation *rep, const char *key, const char **array, size_t length);
 
 	/**
      * @brief API for setting the value of integer array type property with a key.
@@ -270,7 +270,7 @@ typedef struct _st_things_representation {
      * @return @c true if setting value is successful, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*set_int_array_value)(struct _st_things_representation *rep, const char *key, const int64_t *array, size_t length);
+	 bool(*set_int_array_value) (struct _st_things_representation *rep, const char *key, const int64_t *array, size_t length);
 
 	/**
      * @brief API for setting the value of double array type property with a key.
@@ -282,7 +282,7 @@ typedef struct _st_things_representation {
      * @return @c true if setting value is successful, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*set_double_array_value)(struct _st_things_representation *rep, const char *key, const double *array, size_t length);
+	 bool(*set_double_array_value) (struct _st_things_representation *rep, const char *key, const double *array, size_t length);
 
 	/**
      * @brief API for setting the value of object array type property with a key.
@@ -294,7 +294,7 @@ typedef struct _st_things_representation {
      * @return @c true if setting value is successful, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*set_object_array_value)(struct _st_things_representation *rep, const char *key, const struct _st_things_representation **array, size_t length);
+	 bool(*set_object_array_value) (struct _st_things_representation *rep, const char *key, const struct _st_things_representation **array, size_t length);
 
 } st_things_representation_s;
 
@@ -315,7 +315,7 @@ typedef struct _st_things_get_request_message {
      * @return @c true if query exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_query_value)(struct _st_things_get_request_message *req_msg, const char *key, char **value);
+	 bool(*get_query_value) (struct _st_things_get_request_message *req_msg, const char *key, char **value);
 
 	/**
      * @brief API for checking whether the request has a specific property key or not.
@@ -324,7 +324,7 @@ typedef struct _st_things_get_request_message {
      * @return @c true if the property key exists, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*has_property_key)(struct _st_things_get_request_message *req_msg, const char *key);
+	 bool(*has_property_key) (struct _st_things_get_request_message *req_msg, const char *key);
 
 } st_things_get_request_message_s;
 
@@ -345,7 +345,7 @@ typedef struct _st_things_set_request_message {
      * @return @c true if query exist, otherwise @c false
      * @since Tizen RT v1.1
      */
-	bool (*get_query_value)(struct _st_things_set_request_message *req_msg, const char *key, char **value);
+	 bool(*get_query_value) (struct _st_things_set_request_message *req_msg, const char *key, char **value);
 
 } st_things_set_request_message_s;
 
