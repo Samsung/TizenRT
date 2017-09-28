@@ -72,7 +72,8 @@ static void utc_i2c_set_frequency_n(void)
 
 static void utc_i2c_set_address_p(void)
 {
-	TC_ASSERT_EQ("iotbus_i2c_set_address", iotbus_i2c_set_address(i2c, 0x23), IOTBUS_ERROR_NONE);	TC_SUCCESS_RESULT();
+	TC_ASSERT_EQ("iotbus_i2c_set_address", iotbus_i2c_set_address(i2c, 0x23), IOTBUS_ERROR_NONE);	
+	TC_SUCCESS_RESULT();
 }
 
 static void utc_i2c_set_address_n(void)
