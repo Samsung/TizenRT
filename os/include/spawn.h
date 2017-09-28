@@ -197,13 +197,10 @@ int posix_spawn_file_actions_destroy(FAR posix_spawn_file_actions_t *file_action
  */
 int posix_spawn_file_actions_addclose(FAR posix_spawn_file_actions_t *file_actions, int fd);
 /**
- * @cond
- * @internal
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
  */
 int posix_spawn_file_actions_adddup2(FAR posix_spawn_file_actions_t *file_actions, int fd1, int fd2);
-/**
- * @endcond
- */
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
