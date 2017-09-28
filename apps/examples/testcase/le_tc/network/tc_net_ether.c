@@ -36,7 +36,7 @@
 /**
 * @testcase            :tc_net_ether_ntoa_p
 * @brief               :ethernet address manipulation routines.
-* @scenario            :converts the Ethernet host address addr given in network byte 
+* @scenario            :converts the Ethernet host address addr given in network byte
 *                       order to a string into dotted decimal.
 * @apicovered          :ether_ntoa, ioctl
 * @precondition        :socket file descriptor.
@@ -75,8 +75,11 @@ static void tc_net_ether_ntoa_p(int sock_udp)
 /****************************************************************************
  * Name: net_ether_main
  ****************************************************************************/
-int net_ether_main(int sock_udp)
+
+int net_ether_main(void)
 {
+	int sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
 	tc_net_ether_ntoa_p(sock_udp);
+	close(sock_udp);
 	return 0;
 }

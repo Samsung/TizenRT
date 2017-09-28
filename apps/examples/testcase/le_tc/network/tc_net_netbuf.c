@@ -44,13 +44,13 @@ static void tc_net_netbuf_start_p(void)
 }
 
 /**
-* @testcase              : tc_net_netbuf_next_n
-* @brief                 : move the current data pointer of a packet buffer contained in a netbuf to next.
-* @scenario              : the netbuff to modify.
-* @apicovered            : netbuf_next
-* @precondition          : none
-* @postcondition         : none
-* @return                : void
+* @testcase              :tc_net_netbuf_next_n
+* @brief                 :move the current data pointer of a packet buffer contained in a netbuf to next.
+* @scenario              :the netbuff to modify.
+* @apicovered            :netbuf_next
+* @precondition          :none
+* @postcondition         :none
+* @return                :void
 */
 static void tc_net_netbuf_next_n(void)
 {

@@ -26,7 +26,6 @@
 #include <net/lwip/netif/etharp.h>
 #include <net/lwip/tcp_impl.h>
 #include <net/lwip/pbuf.h>
-
 #include <sys/select.h>
 #include <stdio.h>
 #include <sys/types.h>

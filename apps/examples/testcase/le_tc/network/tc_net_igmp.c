@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <net/if.h>
+#include <net/lwip/netif.h>
 #include <netutils/netlib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +34,11 @@
 #include <sys/socket.h>
 #include <pthread.h>
 #include <netdb.h>
+#include <ifaddrs.h>
+#include <sys/ioctl.h>
+#include <netutils/ipmsfilter.h>
+#include <sys/sockio.h>
+#include <netutils/ipmsfilter.h>
 
 #include "tc_internal.h"
 
@@ -41,10 +47,15 @@
 #define BACKLOG        1
 #define HOST_NAME_MAX  20
 #define DSIZE          30
+#define LEN            20
 
+#if CONFIG_NSOCKET_DESCRIPTORS > 0
+extern struct netif *g_netdevices;
+#endif
 static int count_wait;
 struct sockaddr_in groupSock;
 struct sockaddr_in localSock;
+char interface_name[LEN], host_ip[LEN];
 
 /**
 * @fn                    :wait
@@ -78,161 +89,168 @@ static void nw_signal(void)
 }
 
 /**
-* @fn                   :tc_net_igmp_server
-* @brief                :create a udp server for igmp
-* @scenario             :create a udp server to test igmp api
-* @API's covered        :socket,bind,listen,close
+* @fn                   :getif_addrs
+* @brief                :function creates a linked list of structures describing the network interfaces of the local system
+* @scenario             :get the interface
+* @API's covered        :netlib_get_ipv4addr,netlib_get_dripv4addr,netlib_getifstatus
 * @Preconditions        :none
 * @Postconditions       :none
-* @return               :void
+* @return               :int
 */
-static void tc_net_igmp_server(void)
+int getif_addrs(struct ifaddrs **ifap)
 {
-	int fd, ret;
-	struct in_addr localInterface;
-	struct ip_mreq group;
-	struct hostent *thehost, *retGethost;
-	char databuf[DSIZE] = "Multicast test message";
-	int datalen = sizeof(databuf);
-	char *clientHostName = malloc(HOST_NAME_MAX);
+	uint8_t flags;
+	static struct ifaddrs ifa;
+	static struct sockaddr_in addr, netmask;
+	struct netif *curr = g_netdevices;
 
-	/* Create a datagram socket on which to send. */
-	fd = socket(AF_INET, SOCK_DGRAM, 0);
-	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
+	memset(&ifa, 0, sizeof(ifa));
+	memset(&addr, 0, sizeof(addr));
+	memset(&netmask, 0, sizeof(netmask));
 
-	/* Initialize the group sockaddr structure with a */
-	/* group address of 225.1.1.1 and port 5555. */
-	memset((char *)&groupSock, 0, sizeof(groupSock));
-	groupSock.sin_family = AF_INET;
-	groupSock.sin_addr.s_addr = inet_addr("226.1.1.1");
-	groupSock.sin_port = htons(5555);
+	netlib_get_ipv4addr(curr->d_ifname, &addr.sin_addr);
+	netlib_get_dripv4addr(curr->d_ifname, &netmask.sin_addr);
+	netlib_getifstatus(curr->d_ifname, &flags);
 
-	/* Set local interface for outbound multicast datagrams. */
-	/* The IP address specified must be associated with a local, */
-	/* multicast capable interface. */
-	retGethost = (struct hostent*)gethostbyname(clientHostName);
-	TC_ASSERT_NEQ_CLEANUP("gethostbyname", retGethost, NULL, close(fd));
-	thehost = (struct hostent*)gethostbyname(clientHostName);
-	memcpy(&group.imr_interface.s_addr, thehost->h_addr_list[ZERO], thehost->h_length);
-
-	ret = setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&localInterface, sizeof(localInterface));
-	TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(fd));
-
-	/* Send a message to the multicast group specified by the */
-	/* groupSock sockaddr structure. */
-	ret = sendto(fd, databuf, datalen, 0, (struct sockaddr *)&groupSock, sizeof(groupSock));
-	TC_ASSERT_NEQ_CLEANUP("sendto", ret, NEG_VAL, close(fd));
-	TC_SUCCESS_RESULT();
+	ifa.ifa_next = NULL;
+	ifa.ifa_name = curr->d_ifname;
+	ifa.ifa_flags = flags | IFF_RUNNING;
+	addr.sin_family = netmask.sin_family = AF_INET;
+	ifa.ifa_addr = (struct sockaddr *)&addr;
+	ifa.ifa_netmask = (struct sockaddr *)&netmask;
+	*ifap = &ifa;
+	return 0;
 }
 
 /**
-* @fn                   :tc_net_igmp_client
-* @brief                :create the client for igmp
-* @scenario             :create udp client
-* @API's covered        :socket,connect,close
+* @fn                   :gethost_addr
+* @brief                :function get the host interface and IP addr
+* @scenario             :get the interface and IP
+* @API's covered        :socket
 * @Preconditions        :none
 * @Postconditions       :none
 * @return               :void
 */
-static void tc_net_igmp_client(void)
+void gethost_addr(void)
 {
-	int fd, ret;
-	int datalen;
-	char databuf[DSIZE];
-	struct ip_mreq group;
-	struct hostent *thehost, *retGethost;
-	char *clientHostName = malloc(HOST_NAME_MAX);
+	int family, n, ret;
+	char host[LEN];
+	struct ifaddrs *ifaddr, *ifa;
 
-	retGethost = (struct hostent*)gethostbyname(clientHostName);
-	TC_ASSERT_NEQ("gethostbyname", retGethost, NULL);
-	thehost = (struct hostent*)gethostbyname(clientHostName);
+	ret = getif_addrs(&ifaddr);
+	TC_ASSERT_NEQ("getifaddrs", ret, NEG_VAL);
 
-	/* Create a datagram socket on which to receive. */
-	fd = socket(AF_INET, SOCK_DGRAM, 0);
-	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
-
-	/* Enable SO_REUSEADDR to allow multiple instances of this */
-	/* application to receive copies of the multicast datagrams. */
+	for (ifa = ifaddr, n = 0; ifa != NULL; ifa = ifa->ifa_next, n++)
 	{
-		int reuse = 1;
-		ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
-		TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(fd));
+		if ((struct ifaddrs *)ifa->ifa_addr == NULL)
+			continue;
+		family = ifa->ifa_addr->sa_family;
+		if (family == AF_INET)
+		{
+			ret = getnameinfo(ifa->ifa_addr, (family == AF_INET) ? sizeof(struct sockaddr_in) :sizeof(struct sockaddr_in6), host, LEN, NULL, 0, NI_NUMERICHOST);
+			TC_ASSERT_NEQ("getnameinfo", ret, ZERO);
+		}
+		else if (family == AF_PACKET && ifa->ifa_data != NULL)
+		{
+			if (strcmp(ifa->ifa_name, "lo") != ZERO)
+			{
+				struct ifreq ifr;
+
+				int fd = socket(AF_INET, SOCK_DGRAM, 0);
+				TC_ASSERT_NEQ("socket", fd, NEG_VAL);
+
+				ifr.ifr_addr.sa_family = AF_INET;
+				strcpy(interface_name, ifa->ifa_name);
+				strncpy(ifr.ifr_name, ifa->ifa_name, IFNAMSIZ-1);
+				ret = ioctl(fd, SIOCGIFADDR, &ifr);
+				TC_ASSERT_NEQ("ioctl", fd, NEG_VAL);
+
+				close(fd);
+				if (ifr.ifr_addr.sa_data) {
+					strcpy(host_ip, (FAR char *)ether_ntoa((struct ether_addr *)ifr.ifr_addr.sa_data));
+				} else {
+					continue;
+				}
+			}
+		}
 	}
-
-	/* Bind to the proper port number with the IP address */
-	/* specified as INADDR_ANY. */
-	memset((char *)&localSock, 0, sizeof(localSock));
-	localSock.sin_family = AF_INET;
-	localSock.sin_port = htons(5555);
-	localSock.sin_addr.s_addr = INADDR_ANY;
-	ret = bind(fd, (struct sockaddr *)&localSock, sizeof(localSock));
-	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(fd));
-
-	/* Join the multicast group 226.1.1.1 on the local 203.106.93.94 */
-	/* interface. Note that this IP_ADD_MEMBERSHIP option must be */
-	/* called for each local interface over which the multicast */
-	/* datagrams are to be received. */
-	group.imr_multiaddr.s_addr = inet_addr("226.1.1.1");
-	memcpy(&group.imr_interface.s_addr, thehost->h_addr_list[ZERO], thehost->h_length);
-	ret = setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group));
-	TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(fd));
-
-	/* Read from the socket. */
-	datalen = sizeof(databuf);
-	ret = read(fd, databuf, datalen);
-	TC_ASSERT_NEQ_CLEANUP("read", ret, ZERO, close(fd));
-	close(fd);
-	TC_SUCCESS_RESULT();
 }
 
 /**
-* @fn                   :Server
-* @brief                :invokes igmp server
-* @scenario             :invokes igmp server
-* @API's covered        :none
-* @Preconditions        :none
-* @Postconditions       :none
-* @return               :void*
-*/
-static void* server(void *args)
-{
-	tc_net_igmp_server();
-	return NULL;
-}
-
-/**
-* @fn                   :Client
-* @brief                :invokes igmp client.
-* @scenario             :invokes igmp client
-* @API's covered        :none
-* @Preconditions        :none
-* @Postconditions       :none
-* @return               :void*
-*/
-static void* client(void *args)
-{
-	tc_net_igmp_client();
-	return NULL;
-}
-
-/**
-* @fn                   :net_igmp
-* @brief                :create client and server thread.
-* @scenario             :create client and server thread to test igmp api.
-* @API's covered        :none
+* @fn                   :tc_net_igmp_sourcefilter
+* @brief                :to set or modify the source filter content
+* @scenario             :source filter
+* @API's covered        :socket,inet_addr,ioctl,close
 * @Preconditions        :none
 * @Postconditions       :none
 * @return               :void
 */
-void net_igmp(void)
+void tc_net_igmp_sourcefilter(void)
 {
-	pthread_t Server, Client;
+	int ret;
+	struct ip_msfilter imsf;
 
-	pthread_create(&Server, NULL, server, NULL);
-	pthread_create(&Client, NULL, client, NULL);
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
-	pthread_join(Server, NULL);
-	pthread_join(Client, NULL);
+	imsf.imsf_multiaddr.s_addr = inet_addr("239.255.255.20");
+	strncpy(imsf.imsf_name, host_ip, IMSFNAMSIZ);
+	imsf.imsf_fmode = MCAST_INCLUDE;
+
+	ret = ioctl(sock, SIOCSIPMSFILTER, (unsigned long)&imsf);
+	TC_ASSERT_NEQ_CLEANUP("ioctl", ret, NEG_VAL, close(sock));
+	close(sock);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_net_igmp_join
+* @brief                :function to join IGMP group
+* @scenario             :to join IGMP group
+* @API's covered        :socket,inet_addr,setsockopt,close
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+void tc_net_igmp_join(void)
+{
+	int ret;
+	struct ip_mreq imr;
+
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	imr.imr_multiaddr.s_addr = inet_addr("239.255.255.20");
+	imr.imr_interface.s_addr = inet_addr(host_ip);
+	ret = setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &imr, sizeof(struct ip_mreq));
+	TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(sock));
+	close(sock);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :tc_net_igmp_leave
+* @brief                :function to leave IGMP group
+* @scenario             :to leave IGMP group
+* @API's covered        :socket,inet_addr,setsockopt,close
+* @Preconditions        :none
+* @Postconditions       :none
+* @return               :void
+*/
+void tc_net_igmp_leave(void)
+{
+	int ret;
+	struct ip_mreq imr;
+
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
+	imr.imr_multiaddr.s_addr = inet_addr("239.255.255.20");
+	imr.imr_interface.s_addr = inet_addr(host_ip);
+	ret = setsockopt(sock, IPPROTO_IP, IP_DROP_MEMBERSHIP, &imr, sizeof(struct ip_mreq));
+	TC_ASSERT_NEQ_CLEANUP("setsockopt", ret, NEG_VAL, close(sock));
+	close(sock);
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
@@ -241,6 +259,9 @@ void net_igmp(void)
 
 int net_igmp_main(void)
 {
-	net_igmp();
+	gethost_addr();
+	tc_net_igmp_join();
+	tc_net_igmp_leave();
+	tc_net_igmp_sourcefilter();
 	return 0;
 }

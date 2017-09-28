@@ -110,6 +110,7 @@ static void tc_net_ipaddr_ntoa_r_n(void)
 /****************************************************************************
  * Name:net_ipaddr_addr_main
  ****************************************************************************/
+
 int net_ipaddr_addr_main(void)
 {
 	tc_net_ipaddr_addr_p();

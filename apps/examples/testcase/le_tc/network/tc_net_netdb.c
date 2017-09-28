@@ -21,13 +21,11 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 #ifdef CONFIG_LIBC_NETDB
 #include <netdb.h>
@@ -69,6 +67,7 @@ static void tc_net_netdb_p(void)
 /****************************************************************************
  * Name:net_netdb_main
  ****************************************************************************/
+
 int net_netdb_main(void)
 {
 #ifdef CONFIG_LIBC_NETDB

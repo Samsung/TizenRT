@@ -31,13 +31,13 @@
 #include "tc_internal.h"
 
 /**
-* @testcase            : tc_net_getsockopt_multicast_ttl_p
-* @brief               : get the options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
-* @apicovered          : getsockopt(), setsockopt()
-* @precondition        : socket file descriptor.
-* @postcondition       : none
-* @return              : void
+* @testcase            :tc_net_getsockopt_multicast_ttl_p
+* @brief               :get the options on sockets.
+* @scenario            :getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          :getsockopt(), setsockopt()
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
 */
 static void tc_net_getsockopt_multicast_ttl_p(void)
 {
@@ -58,13 +58,13 @@ static void tc_net_getsockopt_multicast_ttl_p(void)
 }
 
 /**
-* @testcase            : tc_net_getsockopt_multicast_ttl_loop_own_p
-* @brief               : get the options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
-* @apicovered          : getsockopt(), setsockopt()
-* @precondition        : socket file descriptor.
-* @postcondition       : none
-* @return              : void
+* @testcase            :tc_net_getsockopt_multicast_ttl_loop_own_p
+* @brief               :get the options on sockets.
+* @scenario            :getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          :getsockopt(), setsockopt()
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
 */
 static void tc_net_getsockopt_multicast_ttl_loop_own_p(void)
 {
@@ -84,13 +84,13 @@ static void tc_net_getsockopt_multicast_ttl_loop_own_p(void)
 }
 
 /**
-* @testcase            : tc_net_getsockopt_multicast_ttl_loop_p
-* @brief               : get the options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
-* @apicovered          : getsockopt(), setsockopt()
-* @precondition        : socket file descriptor.
-* @postcondition       : none
-* @return              : void
+* @testcase            :tc_net_getsockopt_multicast_ttl_loop_p
+* @brief               :get the options on sockets.
+* @scenario            :getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          :getsockopt(), setsockopt()
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
 */
 static void tc_net_getsockopt_multicast_ttl_loop_p(void)
 {
@@ -111,14 +111,14 @@ static void tc_net_getsockopt_multicast_ttl_loop_p(void)
 }
 
 /**
-* @testcase            : tc_net_getsockopt_invalid_filedesc_n
-* @brief               : get the options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd,
-                         with invalid socket fd.
-* @apicovered          : getsockopt(), setsockopt()
-* @precondition        : none
-* @postcondition       : none
-* @return              : void
+* @testcase            :tc_net_getsockopt_invalid_filedesc_n
+* @brief               :get the options on sockets.
+* @scenario            :getsockopt manipulate options for the socket referred to by the sock fd,
+*                       with invalid socket fd.
+* @apicovered          :getsockopt(), setsockopt()
+* @precondition        :none
+* @postcondition       :none
+* @return              :void
 */
 static void tc_net_getsockopt_invalid_filedesc_n(void)
 {
@@ -135,14 +135,14 @@ static void tc_net_getsockopt_invalid_filedesc_n(void)
 }
 
 /**
-* @testcase            : tc_net_getsockopt_optval_n
-* @brief               : get the options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd,
-                         with null optval.
-* @apicovered          : getsockopt(), setsockopt()
-* @precondition        : socket file descriptor.
-* @postcondition       : none
-* @return              : void
+* @testcase            :tc_net_getsockopt_optval_n
+* @brief               :get the options on sockets.
+* @scenario            :getsockopt manipulate options for the socket referred to by the sock fd,
+*                       with null optval.
+* @apicovered          :getsockopt(), setsockopt()
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
 */
 static void tc_net_getsockopt_optval_n(void)
 {
@@ -165,13 +165,13 @@ static void tc_net_getsockopt_optval_n(void)
 }
 
 /**
-* @testcase            : tc_net_getsockopt_sol_socket_so_acceptconn_p
-* @brief               : get the options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
-* @apicovered          : getsockopt(), setsockopt()
-* @precondition        : socket file descriptor.
-* @postcondition       : none
-* @return              : void
+* @testcase            :tc_net_getsockopt_sol_socket_so_acceptconn_p
+* @brief               :get the options on sockets.
+* @scenario            :getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          :getsockopt(), setsockopt()
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
 */
 static void tc_net_getsockopt_sol_socket_so_acceptconn_p(void)
 {
@@ -191,13 +191,13 @@ static void tc_net_getsockopt_sol_socket_so_acceptconn_p(void)
 }
 
 /**
-* @testcase            : tc_net_getsockopt_sol_socket_so_broadcast_p
-* @brief               : get the options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
-* @apicovered          : getsockopt(), setsockopt()
-* @precondition        : socket file descriptor.
-* @postcondition       : none
-* @return              : void
+* @testcase            :tc_net_getsockopt_sol_socket_so_broadcast_p
+* @brief               :get the options on sockets.
+* @scenario            :getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          :getsockopt(), setsockopt()
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
 */
 static void tc_net_getsockopt_sol_socket_so_broadcast_p(void)
 {
@@ -218,13 +218,13 @@ static void tc_net_getsockopt_sol_socket_so_broadcast_p(void)
 }
 
 /**
-* @testcase            : tc_net_getsockopt_sol_socket_so_keepalive_p
-* @brief               : get the options on sockets.
-* @scenario            : getsockopt manipulate options for the socket referred to by the sock fd.
-* @apicovered          : getsockopt(), setsockopt()
-* @precondition        : socket file descriptor.
-* @postcondition       : none
-* @return              : void
+* @testcase            :tc_net_getsockopt_sol_socket_so_keepalive_p
+* @brief               :get the options on sockets.
+* @scenario            :getsockopt manipulate options for the socket referred to by the sock fd.
+* @apicovered          :getsockopt(), setsockopt()
+* @precondition        :socket file descriptor.
+* @postcondition       :none
+* @return              :void
 */
 static void tc_net_getsockopt_sol_socket_so_keepalive_p(void)
 {

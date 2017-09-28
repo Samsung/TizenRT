@@ -236,8 +236,8 @@ static void tc_net_inet_ntop(void)
 /**
 * @testcase            :tc_net_inet_pton
 * @brief               :convert IPv4 and IPv6 addresses from text to binary form.
-* @scenario            :converts an address in its standard text presentation 
-*                       form into its numeric binary form. 
+* @scenario            :converts an address in its standard text presentation
+*                       form into its numeric binary form
 * @apicovered          :inet_pton
 * @precondition        :none
 * @postcondition       :none
@@ -338,6 +338,7 @@ static void tc_net_ntohl(void)
 /****************************************************************************
  * Name:inet()
  ****************************************************************************/
+
 int net_inet_main(void)
 {
 	tc_net_htonl();

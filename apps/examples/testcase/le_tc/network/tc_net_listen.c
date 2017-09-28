@@ -162,6 +162,7 @@ static void tc_net_listen_fd_backlog_n(void)
 /****************************************************************************
  * Name:net_listen_main
  ****************************************************************************/
+
 int net_listen_main(void)
 {
 	tc_net_listen_p();

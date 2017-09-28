@@ -206,21 +206,6 @@ static void net_shutdown_server(void)
 }
 
 /**
-* @fn                   :shutdown_server
-* @brief                :create a tcp server.
-* @scenario             :create a tcp server to test shutdown api.
-* @API's covered        :none.
-* @Preconditions        :none.
-* @Postconditions       :none
-* @return               :void*
-*/
-void* shutdown_server(void *args)
-{
-	net_shutdown_server();
-	return NULL;
-}
-
-/**
 * @fn                   :net_shutdown_client
 * @brief                :create client.
 * @scenario             :create tcp client.
@@ -262,6 +247,21 @@ static void net_shutdown_client(void)
 
 	tc_net_shutdown_n();
 	close(sock);
+}
+
+/**
+* @fn                   :shutdown_server
+* @brief                :create a tcp server.
+* @scenario             :create a tcp server to test shutdown api.
+* @API's covered        :none.
+* @Preconditions        :none.
+* @Postconditions       :none
+* @return               :void*
+*/
+void* shutdown_server(void *args)
+{
+	net_shutdown_server();
+	return NULL;
 }
 
 /**

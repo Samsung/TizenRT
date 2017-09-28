@@ -97,7 +97,8 @@ static void tc_net_ioctl_n(void)
 /****************************************************************************
  * Name:ioctl()
  ****************************************************************************/
-int net_ioctl_main(int s)
+
+int net_ioctl_main()
 {
 	tc_net_ioctl_p();
 	tc_net_ioctl_fionread_p();

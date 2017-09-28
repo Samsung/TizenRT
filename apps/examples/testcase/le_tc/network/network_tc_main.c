@@ -78,10 +78,10 @@ int network_tc_main(int argc, char *argv[])
 	net_getsockopt_main();
 #endif
 #ifdef CONFIG_TC_NET_FCNTL
-	net_fcntl_main(sock_tcp);
+	net_fcntl_main();
 #endif
 #ifdef CONFIG_TC_NET_IOCTL
-	net_ioctl_main(sock_tcp);
+	net_ioctl_main();
 #endif
 #ifdef CONFIG_TC_NET_ACCEPT
 	net_accept_main();
@@ -92,6 +92,9 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_RECV
 	net_recv_main();
 #endif
+#ifdef CONFIG_TC_NET_GETPEERNAME
+	net_getpeername_main();
+#endif
 #ifdef CONFIG_TC_NET_SENDTO
 	net_sendto_main();
 #endif
@@ -101,11 +104,17 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_SHUTDOWN
 	net_shutdown_main();
 #endif
+#ifdef CONFIG_TC_NET_DHCPC
+	net_dhcpc_main();
+#endif
+#ifdef CONFIG_TC_NET_SELECT
+	net_select_main();
+#endif
 #ifdef CONFIG_TC_NET_INET
 	net_inet_main();
 #endif
 #ifdef CONFIG_TC_NET_ETHER
-	net_ether_main(sock_udp);
+	net_ether_main();
 #endif
 #ifdef CONFIG_TC_NET_NETDB
 	net_netdb_main();
@@ -143,14 +152,11 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_RAW
 	net_raw_main();
 #endif
-#ifdef CONFIG_TC_NET_GETPEERNAME
-	net_getpeername_main();
-#endif
-#ifdef CONFIG_TC_NET_SELECT
-	net_select_main();
-#endif
 #ifdef CONFIG_TC_NET_CORE
 	net_core_main(sock_tcp);
+#endif
+#ifdef CONFIG_TC_NET_STATS
+	net_stats_main();
 #endif
 #ifdef CONFIG_TC_NET_IGMP
 	net_igmp_main();
@@ -158,6 +164,7 @@ int network_tc_main(int argc, char *argv[])
 	close(sock_tcp);
 	close(sock_tcp1);
 	close(sock_udp);
+
 	printf("\n=== TINYARA Network TC COMPLETE ===\n");
 	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
 

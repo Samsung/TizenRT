@@ -1402,6 +1402,7 @@ static void tc_get_socket_struct_n(void)
 /****************************************************************************
  * Name:net_socket_main
  ****************************************************************************/
+
 int net_socket_main(void)
 {
 	tc_net_socket_af_inet_sock_stream_p();

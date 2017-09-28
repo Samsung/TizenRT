@@ -58,6 +58,7 @@ include $(APPDIR)/Make.defs
 # built-in application info
 
 APPNAME = tc
+FUNCNAME = tc_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # testcase example
@@ -85,6 +86,8 @@ include ta_tc/arastorage/utc/Make.defs
 include ta_tc/arastorage/itc/Make.defs
 include ta_tc/device_management/utc/Make.defs
 include ta_tc/device_management/itc/Make.defs
+#include ta_tc/wifi_manager/utc/Make.defs
+#include ta_tc/mqtt/utc/Make.defs
 
 endif
 
@@ -98,9 +101,9 @@ ifeq ($(CONFIG_WINDOWS_NATIVE),y)
   BIN		= ..\..\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN		= ..\\..\\libapps$(LIBEXT)
+  BIN = ..\\..\\libapps$(LIBEXT)
 else
-  BIN		= ../../libapps$(LIBEXT)
+  BIN = ../../libapps$(LIBEXT)
 endif
 endif
 
@@ -127,10 +130,10 @@ endif
 install:
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_TESTCASE),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(Q) $(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
 
 else
 context:

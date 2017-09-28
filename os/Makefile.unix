@@ -100,7 +100,7 @@ endif
 # will be built if APPDIR is defined.  APPDIR will be defined if a directory containing
 # a Makefile is found at the path provided by CONFIG_APPS_DIR
 
-ifeq ($(CONFIG_APPS_DIR),)
+ifeq ($(CONFIG_APPS_DIR),y)
 CONFIG_APPS_DIR = ../apps
 endif
 APPDIR := ${shell if [ -r $(CONFIG_APPS_DIR)/Makefile ]; then echo "$(CONFIG_APPS_DIR)"; fi}
@@ -136,6 +136,15 @@ IOTIVITY_RELEASE=${shell echo $(CONFIG_IOTIVITY_RELEASE_VERSION) | sed 's/"//g'}
 IOTIVITY_TARGET_ARCH := ${shell echo $(CONFIG_ARCH_FAMILY) | sed 's/"//g'}
 IOTIVITY_LIBS_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/out/tizenrt/$(IOTIVITY_TARGET_ARCH)/$(IOTIVITY_LIBS)
 IOTIVITY_CONFIG_DIR=$(EXTDIR)/iotivity/iotivity_$(IOTIVITY_RELEASE)/resource/c_common
+endif
+
+ifeq ($(CONFIG_ENABLE_IOTJS),y)
+IOTJS_ROOT_DIR ?= $(EXTDIR)/iotjs
+ifeq ($(CONFIG_DEBUG),y)
+IOTJS_LIB_DIR = $(IOTJS_ROOT_DIR)/build/arm-tizenrt/debug/lib
+else
+IOTJS_LIB_DIR = $(IOTJS_ROOT_DIR)/build/arm-tizenrt/release/lib
+endif
 endif
 
 # Add-on directories.  These may or may not be in place in the
@@ -229,7 +238,7 @@ BIN_EXE = tinyara$(EXEEXT)
 BIN = $(BIN_DIR)/$(BIN_EXE)
 
 all: $(BIN) memstat
-.PHONY: context clean_context check_context export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build
+.PHONY: context clean_context check_context export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build applist appupdate
 
 # Target used to copy include/tinyara/math.h.  If CONFIG_ARCH_MATH_H is
 # defined, then there is an architecture specific math.h header file
@@ -536,12 +545,12 @@ download:
 
 pass1dep: context tools/mkdeps$(HOSTEXEEXT)
 	$(Q) for dir in $(USERDEPDIRS) ; do \
-		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" depend ; \
+		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" depend ; \
 	done
 
 pass2dep: context tools/mkdeps$(HOSTEXEEXT)
 	$(Q) for dir in $(KERNDEPDIRS) ; do \
-		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTRADEFINES=$(KDEFINE) depend; \
+		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" EXTRADEFINES=$(KDEFINE) depend; \
 	done
 
 # Configuration targets
@@ -629,6 +638,7 @@ endif
 	$(call DELFILE, .config)
 	$(call DELFILE, .config.old)
 	$(call DELFILE, .version)
+	$(call DELFILE, .appSpec)
 
 # Application housekeeping targets.  The APPDIR variable refers to the user
 # application directory.  A sample apps/ directory is included with TinyAra,
@@ -643,6 +653,8 @@ endif
 #                 directory
 # apps_distclean: Perform the distclean operation only in the user application
 #                 directory.
+# applist:        Make applist metafile(appSpec) using application config information.
+# appupdate:      Update .config file using metafile(appSpec) and remove .appSpec.
 
 apps_preconfig:
 ifneq ($(APPDIR),)
@@ -659,3 +671,12 @@ ifneq ($(APPDIR),)
 	$(Q) $(MAKE) -C "$(TOPDIR)/$(APPDIR)" TOPDIR="$(TOPDIR)" distclean
 endif
 
+applist:
+ifneq ($(APPDIR),)
+	$(Q) $(MAKE) -C "$(TOPDIR)/$(APPDIR)" TOPDIR="$(TOPDIR)" applist
+endif
+
+appupdate:
+ifneq ($(APPDIR),)
+	$(Q) $(MAKE) -C "$(TOPDIR)/$(APPDIR)" TOPDIR="$(TOPDIR)" appupdate
+endif

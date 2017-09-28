@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NETUTILS_NETLIB
+	bool "Network support library"
+	default n
+	---help---
+		Enable support for the network support library.

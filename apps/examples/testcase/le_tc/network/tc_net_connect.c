@@ -56,14 +56,14 @@ static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 }
 
 /**
-* @testcase            : tc_net_connect_broadcastaddr_n
-* @brief               : initiate a connection on a socket.
-* @scenario            : connect() system call connects the socket referred to by the file
-                         descriptor to the specified broadcast address.
-* @apicovered          : connect()
-* @precondition        : none
-* @postcondition       : none
-* @return              : void
+* @testcase            :tc_net_connect_broadcastaddr_n
+* @brief               :initiate a connection on a socket.
+* @scenario            :connect() system call connects the socket referred to by the file
+*                       descriptor to the specified broadcast address.
+* @apicovered          :connect()
+* @precondition        :none
+* @postcondition       :none
+* @return              :void
 */
 static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 {
@@ -82,14 +82,14 @@ static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 }
 
 /**
-* @testcase            : tc_net_connect_loopbackaddr_n
-* @brief               : initiate a connection on a socket.
-* @scenario            : connect() system call connects the socket referred to by the file
-                         descriptor to the specified loopback address.
-* @apicovered          : connect()
-* @precondition        : none
-* @postcondition       : none
-* @return              : void
+* @testcase            :tc_net_connect_loopbackaddr_n
+* @brief               :initiate a connection on a socket.
+* @scenario            :connect() system call connects the socket referred to by the file
+*                       descriptor to the specified loopback address.
+* @apicovered          :connect()
+* @precondition        :none
+* @postcondition       :none
+* @return              :void
 */
 static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 {
@@ -160,8 +160,9 @@ void tc_net_connect(void)
 /****************************************************************************
  * Name: connect
  ****************************************************************************/
-void net_connect_main(void)
+
+int net_connect_main(void)
 {
 	tc_net_connect();
-
+	return 0;
 }
