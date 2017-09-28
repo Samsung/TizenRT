@@ -74,3 +74,8 @@ size_t up_progmem_pagesize(size_t page)
 {
 	return CONFIG_SIDK_S5JT200_FLASH_PAGE_SIZE;
 }
+
+size_t up_progmem_blocksize(void)
+{
+	return CONFIG_SIDK_S5JT200_FLASH_PAGE_SIZE;
+}

@@ -295,6 +295,19 @@ int board_app_initialize(void)
 	}
 #endif /* CONFIG_ARTIK053_AUTOMOUNT_USERFS */
 
+#ifdef CONFIG_ARTIK053_AUTOMOUNT_SSSRW
+	/* Initialize and mount secure storage partition (if we have) */
+	ret = mksmartfs(CONFIG_ARTIK053_AUTOMOUNT_SSSRW_DEVNAME, false);
+	if (ret != OK) {
+		lldbg("ERROR: mksmartfs on %s failed", CONFIG_ARTIK053_AUTOMOUNT_SSSRW_DEVNAME);
+	} else {
+		ret = mount(CONFIG_ARTIK053_AUTOMOUNT_SSSRW_DEVNAME, CONFIG_ARTIK053_AUTOMOUNT_SSSRW_MOUNTPOINT, "smartfs", 0, NULL);
+		if (ret != OK) {
+			lldbg("ERROR: mounting '%s' failed\n", CONFIG_ARTIK053_AUTOMOUNT_SSSRW_DEVNAME);
+		}
+	}
+#endif /* CONFIG_ARTIK053_AUTOMOUNT_SSSRW */
+
 #ifdef CONFIG_FS_PROCFS
 	/* Mount the procfs file system */
 	ret = mount(NULL, ARTIK053_PROCFS_MOUNTPOINT, "procfs", 0, NULL);

@@ -2657,12 +2657,9 @@
 
 #endif							/* MBEDTLS_LIGHT_DEVICE */
 
-// #if defined(CONFIG_HW_ECDH_PARAM)
-// #undef MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
-// #endif
-
-// #undef MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
-// #undef MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+#if defined(CONFIG_HW_ECDH_PARAM)
+#undef MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+#endif
 
 /**
  * Complete list of ciphersuites to use, in order of preference.
