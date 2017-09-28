@@ -91,6 +91,7 @@ include ta_tc/wifi_manager/itc/Make.defs
 include ta_tc/mqtt/utc/Make.defs
 include ta_tc/mqtt/itc/Make.defs
 include ta_tc/audio/utc/Make.defs
+include ta_tc/audio/itc/Make.defs
 
 endif
 
