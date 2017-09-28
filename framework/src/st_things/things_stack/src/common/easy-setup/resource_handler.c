@@ -1032,7 +1032,7 @@ OCRepPayload *construct_response_of_prov(OCEntityHandlerRequest *eh_request)
 		return NULL;
 	}
 	// Requested interface is Link list interface
-	if (!eh_request->query || (eh_request->query && !strncmp(eh_request->query, "", strlen(eh_request->query))) || (eh_request->query && compare_resource_interface(eh_request->query, OC_RSRVD_INTERFACE_LL)) || (eh_request->query && compare_resource_interface(eh_request->query, OC_RSRVD_INTERFACE_DEFAULT))) {
+	if (!eh_request->query || (eh_request->query && (strlen(eh_request->query) > 0)) || (eh_request->query && compare_resource_interface(eh_request->query, OC_RSRVD_INTERFACE_LL)) || (eh_request->query && compare_resource_interface(eh_request->query, OC_RSRVD_INTERFACE_DEFAULT))) {
 		if ((arrayPayload[childResCnt] = make_rep_payload(g_wifi_resource.handle, &eh_request->devAddr)) == NULL) {
 			THINGS_LOG_ERROR(THINGS_ERROR, ES_RH_TAG, "It's failed making payload of wifi_resource_s-Representation");
 			goto GOTO_FAILED;
