@@ -312,6 +312,11 @@ static struct st_resource_type_s *create_resource_type()
 {
 	struct st_resource_type_s *type = things_malloc(sizeof(st_resource_type_s));
 
+	if (type == NULL) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "Failed to create_resource_type");
+		return NULL;
+	}
+
 	memset(type->rt, 0, (size_t) MAX_ATTRIBUTE_LENGTH);
 	memset(type->prop, 0, (size_t) MAX_PROPERTY_CNT);
 	type->prop_cnt = 0;
@@ -322,6 +327,11 @@ static struct st_resource_type_s *create_resource_type()
 static struct things_resource_info_s *create_resource()
 {
 	struct things_resource_info_s *resource = things_malloc(sizeof(things_resource_info_s));
+
+	if (resource == NULL) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "Failed to create_resource");
+		return NULL;
+	}
 
 	memset(resource->uri, 0, sizeof(resource->uri));
 	memset(resource->interface_types, 0, sizeof(resource->interface_types));
@@ -336,6 +346,11 @@ static struct things_resource_info_s *create_resource()
 static st_device_s *create_device()
 {
 	st_device_s *device = things_malloc(sizeof(st_device_s));
+
+	if (device == NULL) {
+		THINGS_LOG_D(THINGS_ERROR, TAG, "Failed to create_device");
+		return NULL;
+	}
 
 	memset(device->type, 0, (size_t) MAX_DEVICE_TYPE_LENGTH);
 	memset(device->name, 0, (size_t) MAX_DEVICE_NAME_LENGTH);
