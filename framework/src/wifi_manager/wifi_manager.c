@@ -207,7 +207,6 @@ static void wifi_linkdown_event_func(void)
 // wifi_manager_init() creates the callback handler and deinit() joins the callback handler.
 	wifi_manager_cb_s *wifi_cb = g_manager_callback;
 
-	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
 
 	if (g_manager_info.mode == STA_MODE) {
 		nvdbg("WIFI DISCONNECTED AP - STA MODE");
@@ -215,7 +214,6 @@ static void wifi_linkdown_event_func(void)
 		g_manager_info.ip4_address[0] = '\0';
 		g_manager_info.rssi = 0;
 		wifi_status_set(AP_DISCONNECTED);
-		wifi_mutex_release(w_info_mutex);
 
 		if (wifi_cb != NULL && wifi_cb->sta_disconnected != NULL) {
 			wifi_cb->sta_disconnected();
@@ -225,7 +223,6 @@ static void wifi_linkdown_event_func(void)
 	} else if (g_manager_info.mode == SOFTAP_MODE) {
 		nvdbg("DISCONNECTED FROM CLIENT - SOFT AP MODE");
 		wifi_status_set(CLIENT_DISCONNECTED);
-		wifi_mutex_release(w_info_mutex);
 
 		if (wifi_cb != NULL && wifi_cb->softap_sta_left != NULL) {
 			wifi_cb->softap_sta_left();
