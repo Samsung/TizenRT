@@ -16,6 +16,7 @@ The Samsung ARTIK™ 053 Module is a highly integrated module for secure Interne
 Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK053 Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
 
 ### ARTIK053 Starter Kit PinOut
+
 #### CON710 CON711 CON708 CON709
 ```
                  XGPIO13(gpio42) <- SW702 | SW703 -> XGPIO15(gpio44)
