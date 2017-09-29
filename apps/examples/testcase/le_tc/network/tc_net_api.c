@@ -71,10 +71,13 @@ static void sig_call(void)
 */
 static void tc_net_server(void)
 {
-	int i = 0, rc = 0, flags, ret;
+	int flags;
+	int ret;
 	int new_sd;
 	char buffer[MAXBUF];
 	struct sockaddr_in addr;
+	int i = 0;
+	int rc = 0;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
@@ -118,9 +121,10 @@ static void tc_net_server(void)
 */
 static void tc_net_client(void)
 {
-	int ret, len;
-	char buffer[MAXBUF] = "HELLOWORLD\n";
+	int ret;
+	int len;
 	struct sockaddr_in dest;
+	char buffer[MAXBUF] = "HELLOWORLD\n";
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
@@ -173,7 +177,8 @@ void* net_api_client(void *args)
  ****************************************************************************/
 int net_api_main(void)
 {
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, net_api_server, NULL);
 	pthread_create(&Client, NULL, net_api_client, NULL);

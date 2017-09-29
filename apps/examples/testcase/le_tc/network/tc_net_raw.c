@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-// @file tc_net_send.c
-// @brief Test Case Example for send() API
+// @file tc_net_raw.c
+// @brief Test Case Example for raw API's
 #include <tinyara/config.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -140,7 +140,8 @@ static void tc_net_raw_server(void)
 */
 static void tc_net_raw_client(void)
 {
-	int len, ret;
+	int len;
+	int ret;
 	char buffer[MAXRCVLEN];
 	struct sockaddr_in dest;
 	struct ip_addr dst;
@@ -156,7 +157,6 @@ static void tc_net_raw_client(void)
 
 	IP4_ADDR(&dst, 127, 0, 0, 1);
 	IP4_ADDR(&src, 127, 0, 0, 1);
-
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -222,7 +222,8 @@ static void* client(void *args)
 */
 static void net_raw_client_server(void)
 {
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, server, NULL);
 	pthread_create(&Client, NULL, client, NULL);

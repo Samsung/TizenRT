@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /// @file tc_net_decisec_time.c
-/// @brief Test Case Example for decisec() API
+/// @brief Test Case Example for net_dsec2tick() net_dsec2timeval API's;
 #include <tinyara/clock.h>
 
 #include "tc_internal.h"
@@ -52,7 +52,8 @@ static void tc_net_decisec_dsec2tick(void)
 */
 static void tc_net_decisec_dsec2timeval(void)
 {
-	int ret, tv_sec;
+	int ret;
+	int tv_sec;
 	struct timeval tv;
 
 	ret = DESISEC / DSEC_PER_SEC;

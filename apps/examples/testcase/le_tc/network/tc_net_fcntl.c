@@ -105,6 +105,7 @@ static void tc_net_fcntl_ndelay_p(int fd)
 int net_fcntl_main()
 {
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
+
 	tc_net_fcntl_nonblock_p(fd);
 	tc_net_fcntl_p(fd);
 	tc_net_fcntl_n();

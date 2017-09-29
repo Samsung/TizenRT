@@ -15,7 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
+/// @file tc_net_mem_allocate.c
+/// @brief Test Case Example for mem_calloc API
 #include <net/if.h>
 #include <netinet/in.h>
 

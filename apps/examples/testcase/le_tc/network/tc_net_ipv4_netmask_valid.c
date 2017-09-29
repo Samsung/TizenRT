@@ -18,13 +18,13 @@
 
 /// @file tc_net_ipv4_netmask_valid.c
 /// @brief Test Case Example for ip4_addr_netmask_valid() API
-
 #include <net/lwip/ipv4/ip_addr.h>
 
 #include "tc_internal.h"
-/* Value for checking */
+
 #define NETMASK1         0x0000ffff
 #define NETMASK2         0xffffff90
+
 /**
 * @testcase             :tc_net_ipv4_addr_netmask_valid_p
 * @brief                :checks netmask is valid or not.

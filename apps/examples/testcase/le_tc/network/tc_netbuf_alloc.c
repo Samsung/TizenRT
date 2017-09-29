@@ -15,6 +15,9 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+
+/// @file tc_netbuf_alloc.c
+/// @brief Test Case Example for netbuf_alloc API
 #include <net/if.h>
 
 #include "tc_internal.h"
@@ -32,8 +35,8 @@ static void tc_netbuf_alloc_p(void)
 {
 	struct netbuf buf;
 	char *result;
-	result = netbuf_alloc(&buf, sizeof(struct netbuf));
 
+	result = netbuf_alloc(&buf, sizeof(struct netbuf));
 	TC_ASSERT_NEQ("netbuf_alloc", result, NULL);
 	TC_SUCCESS_RESULT();
 

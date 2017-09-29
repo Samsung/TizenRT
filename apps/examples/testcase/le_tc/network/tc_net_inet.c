@@ -72,6 +72,7 @@ static void tc_inet_chksum_pbuf_p(void)
 	pbuf_chain(p1, p4);
 	checksum = inet_chksum_pbuf(p1);
 	pbuf_free(p4);
+
 cleanup3:
 	pbuf_free(p3);
 cleanup2:
@@ -109,6 +110,7 @@ static void tc_inet_chksum_pseudo_partial_p(void)
 
 	ipaddr_aton(SOURCEIP, source);
 	ipaddr_aton(DESTIP, dest);
+
 	p1 = pbuf_alloc(PBUF_TRANSPORT, VAL, PBUF_RAM);
 	TC_ASSERT_NEQ_CLEANUP("pbuf_alloc", p1, NULL, goto cleanup1);
 
@@ -124,6 +126,7 @@ static void tc_inet_chksum_pseudo_partial_p(void)
 	pbuf_chain(p1, p4);
 	checksum = inet_chksum_pseudo_partial(p1, source, dest, VAL, PBUF_RAM, 6);
 	pbuf_free(p4);
+
 cleanup4:
 	pbuf_free(p3);
 cleanup3:
@@ -334,7 +337,7 @@ static void tc_net_ntohl(void)
 }
 
 /****************************************************************************
- * Name:inet()
+ * Name:net_inet_main()
  ****************************************************************************/
 
 int net_inet_main(void)

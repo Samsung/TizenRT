@@ -161,6 +161,7 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_IGMP
 	net_igmp_main();
 #endif
+
 	close(sock_tcp);
 	close(sock_tcp1);
 	close(sock_udp);

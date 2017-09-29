@@ -43,8 +43,8 @@ extern int ioctlsocket(int s, long cmd, void *argp);
 */
 static void tc_net_ioctl_p(void)
 {
-	long val = 0;
 	int fd;
+	long val = 0;
 
 	int sock = socket(AF_INET, SOCK_DGRAM, 0);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
@@ -66,8 +66,9 @@ static void tc_net_ioctl_p(void)
 */
 static void tc_net_ioctl_fionread_p(void)
 {
-	long val = 10;
 	int fd;
+	long val = 10;
+
 	int sock = socket(AF_INET, SOCK_DGRAM, 0);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 

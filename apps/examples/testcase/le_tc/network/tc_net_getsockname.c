@@ -41,10 +41,11 @@
 */
 static void tc_net_getsockname_p(int sock)
 {
-	int len = sizeof(struct sockaddr);
+	int ret;
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
-	int ret = getsockname(sock, &foo, (socklen_t *)&len);
+	ret = getsockname(sock, &foo, (socklen_t *)&len);
 
 	TC_ASSERT_NEQ("getsockname", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
@@ -61,8 +62,8 @@ static void tc_net_getsockname_p(int sock)
 */
 static void tc_net_getsockname_unix_p(int sock)
 {
-	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
 
@@ -82,8 +83,8 @@ static void tc_net_getsockname_unix_p(int sock)
 */
 static void tc_net_getsockname_n(void)
 {
-	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
 	int ret = getsockname(NEG_VAL, &foo, (socklen_t *)&len);
 
@@ -102,8 +103,8 @@ static void tc_net_getsockname_n(void)
 */
 static void tc_net_getsockname_close_n(void)
 {
-	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
 	int ret = getsockname(NEG_VAL, &foo, (socklen_t *)&len);
 
@@ -122,8 +123,8 @@ static void tc_net_getsockname_close_n(void)
 */
 static void tc_net_getsockname_udp_p(int sock)
 {
-	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
 
@@ -142,8 +143,8 @@ static void tc_net_getsockname_udp_p(int sock)
 */
 static void tc_net_getsockname_icmp_p(int sock)
 {
-	int len = sizeof(struct sockaddr);
 	struct sockaddr foo;
+	int len = sizeof(struct sockaddr);
 
 	int ret = getsockname(sock, &foo, (socklen_t *)&len);
 
@@ -180,6 +181,7 @@ int net_getsockname_main(void)
 	int tcp_sock = socket(AF_INET, SOCK_STREAM, ZERO);
 	int udp_sock = socket(AF_INET, SOCK_DGRAM, ZERO);
 	int unix_sock = socket(AF_UNIX, SOCK_STREAM, ZERO);
+
 	tc_net_getsockname_p(tcp_sock);
 	tc_net_getsockname_n();
 	tc_net_getsockname_len_sock_n();
@@ -187,6 +189,7 @@ int net_getsockname_main(void)
 	tc_net_getsockname_icmp_p(tcp_sock);
 	tc_net_getsockname_close_n();
 	tc_net_getsockname_unix_p(unix_sock);
+
 	close(tcp_sock);
 	close(udp_sock);
 	close(unix_sock);

@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file tc_net_socket.c
+/// @file tc_net_close.c
 /// @brief Test Case Example for close() API
 #include <tinyara/config.h>
 #include <stdio.h>
@@ -41,9 +41,12 @@
 */
 static void tc_net_close_p(void)
 {
+	int ret;
+
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
-	int ret = close(fd);
+
+	ret = close(fd);
 
 	TC_ASSERT_NEQ("close", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();

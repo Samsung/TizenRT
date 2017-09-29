@@ -46,8 +46,8 @@ static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 {
 	int ret;
 	int fd = NEG_VAL;
-	inet_pton(AF_INET, (const char *)INADDR_LOOPBACK, &(sa->sin_addr));
 
+	inet_pton(AF_INET, (const char *)INADDR_LOOPBACK, &(sa->sin_addr));
 	ret = connect(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
 
 	TC_ASSERT_EQ("connect", ret, NEG_VAL);
@@ -67,15 +67,17 @@ static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 */
 static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 {
+	int ret;
 	struct in_addr ad;
 
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
+
 	ad.s_addr = INADDR_BROADCAST;
 	sa->sin_addr = ad;
-	int ret = connect(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
-	close(fd);
 
+	ret = connect(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
+	close(fd);
 	TC_ASSERT_EQ("connect", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 
@@ -94,16 +96,16 @@ static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 {
 	int ret;
+	struct in_addr ad;
 
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
 
-	struct in_addr ad;
 	ad.s_addr = INADDR_LOOPBACK;
 	sa->sin_addr = ad;
+
 	ret = connect(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in));
 	close(fd);
-
 	TC_ASSERT_NEQ("connect", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -121,15 +123,15 @@ static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 {
 	int ret;
+	struct in_addr ad;
 
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	TC_ASSERT_NEQ("socket", fd, NEG_VAL);
-	struct in_addr ad;
 	ad.s_addr = INADDR_LOOPBACK;
 	sa->sin_addr = ad;
+
 	ret = connect(fd, (struct sockaddr *)sa, -1);
 	close(fd);
-
 	TC_ASSERT_EQ("connect", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }

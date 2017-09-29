@@ -220,7 +220,8 @@ void* getpeername_client(void *args)
 */
 static void client_server(void)
 {
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, getpeername_server, NULL);
 	pthread_create(&Client, NULL, getpeername_client, NULL);
@@ -230,7 +231,7 @@ static void client_server(void)
 }
 
 /****************************************************************************
- * Name: getpeername()
+ * Name: net_getpeername_main
  ****************************************************************************/
 int net_getpeername_main(void)
 {

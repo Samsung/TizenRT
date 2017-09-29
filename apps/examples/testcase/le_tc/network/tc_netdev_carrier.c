@@ -59,6 +59,7 @@ static void tc_netdev_carrier_on_p(void)
 static void tc_netdev_carrier_on_n(void)
 {
 	int ret = netdev_carrier_on(NULL);
+
 	TC_ASSERT_NEQ("netdev_carrier_on", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -79,9 +80,10 @@ static void tc_netdev_carrier_off_p(void)
 
 	dev = (struct net_driver_s *)malloc(sizeof(struct net_driver_s));
 	TC_ASSERT_NEQ("malloc", dev, NULL);
-	dev->d_flags = 4;
 
+	dev->d_flags = 4;
 	ret = netdev_carrier_off(dev);
+
 	TC_ASSERT_EQ_CLEANUP("netdev_carrier_off", ret, ZERO, TC_FREE_MEMORY(dev));
 	TC_FREE_MEMORY(dev);
 	TC_SUCCESS_RESULT();
@@ -99,6 +101,7 @@ static void tc_netdev_carrier_off_p(void)
 static void tc_netdev_carrier_off_n(void)
 {
 	int ret = netdev_carrier_off(NULL);
+
 	TC_ASSERT_NEQ("netdev_carrier_off", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
@@ -135,7 +138,7 @@ static void tc_netdev_ifdown(void)
 	dev.d_ifdown = tc_test_function;
 
 	netdev_ifdown(&dev);
-	TC_ASSERT_EQ("netdev_ifdown", dev.d_flags, ZERO)
+	TC_ASSERT_EQ("netdev_ifdown", dev.d_flags, ZERO);
 	TC_SUCCESS_RESULT();
 }
 

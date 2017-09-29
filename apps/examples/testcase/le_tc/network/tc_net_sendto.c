@@ -41,6 +41,7 @@
 #define BACKLOG        2
 
 static int count_wait;
+
 void tc_net_sendto_tcp_n(int ConnectFD);
 void tc_net_sendto_tcp_shutdown_n(int ConnectFD);
 
@@ -56,10 +57,10 @@ void tc_net_sendto_tcp_shutdown_n(int ConnectFD);
 void tc_net_sendto_p(int fd)
 {
 	int ret;
-	char *buffer = "hello";
-	int len = strlen(buffer) + ONE;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	char *buffer = "hello";
+	int len = strlen(buffer) + ONE;
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
@@ -85,10 +86,10 @@ void tc_net_sendto_p(int fd)
 void tc_net_sendto_n(void)
 {
 	int ret;
-	char *buffer = "hello";
-	int len = strlen(buffer) + ONE;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	char *buffer = "hello";
+	int len = strlen(buffer) + ONE;
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
@@ -113,10 +114,10 @@ void tc_net_sendto_n(void)
 void tc_net_sendto_af_unix_n(int fd)
 {
 	int ret;
-	char *buffer = "hello";
-	int len = strlen(buffer) + ONE;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	char *buffer = "hello";
+	int len = strlen(buffer) + ONE;
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_UNIX;
@@ -142,10 +143,10 @@ void tc_net_sendto_af_unix_n(int fd)
 void tc_net_sendto_shutdown_n(int fd)
 {
 	int ret;
-	char *buffer = "hello";
-	int len = strlen(buffer) + ONE;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	char *buffer = "hello";
+	int len = strlen(buffer) + ONE;
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_UNIX;
@@ -176,6 +177,7 @@ void* sendto_udpserver(void *args)
 	socklen_t addr_size;
 
 	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
@@ -251,9 +253,9 @@ void sendto_signal(void)
 void tc_net_sendto_tcp_p(int fd)
 {
 	int ret;
+	int ConnectFD;
 	char *msg = "Hello World !\n";
 	socklen_t fromlen = ZERO;
-	int ConnectFD;
 
 	ConnectFD = accept(fd, NULL, NULL);
 	TC_ASSERT_NEQ("accept", ConnectFD, ZERO);
@@ -353,11 +355,12 @@ void* sendto_tcpserver(void *args)
 */
 void* sendto_tcpclient(void *args)
 {
-	char buffer[MAXRCVLEN];
 	int len;
+	char buffer[MAXRCVLEN];
 	struct sockaddr_in dest;
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
+
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = INADDR_LOOPBACK;
@@ -384,15 +387,20 @@ void* sendto_tcpclient(void *args)
 */
 void net_sendto(void)
 {
-	pthread_t Server, Client, tcpserver, tcpclient;
-	pthread_create(&Server, NULL, sendto_udpserver, NULL);
+	pthread_t Server;
+	pthread_t Client;
+	pthread_t tcpserver;
+	pthread_t tcpclient;
 
+	pthread_create(&Server, NULL, sendto_udpserver, NULL);
 	pthread_create(&Client, NULL, sendto_udpclient, NULL);
+
 	pthread_create(&tcpserver, NULL, sendto_tcpserver, NULL);
 	pthread_create(&tcpclient, NULL, sendto_tcpclient, NULL);
 
 	pthread_join(Server, NULL);
 	pthread_join(Client, NULL);
+
 	pthread_join(tcpserver, NULL);
 	pthread_join(tcpclient, NULL);
 }

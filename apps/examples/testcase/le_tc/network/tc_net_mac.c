@@ -18,7 +18,6 @@
 
 /// @file tc_net_mac.c
 /// @brief Test Case Example for ethernet and socket APIs
-
 #include "tc_internal.h"
 #include <stdio.h>
 #include <net/lwip/err.h>
@@ -27,6 +26,7 @@
 #include <tinyara/net/ethernet.h>
 
 #define FLAGS     0666
+
 /**
 * @statitcase            :tc_net_checksd_p
 * @brief                 :check the socket descriptor is valid for the provided TCB

@@ -84,6 +84,7 @@ void recv_signal(void)
 void tc_net_recv_p(int fd)
 {
 	char buffer[MAXRCVLEN];
+
 	int ret = recv(fd, buffer, MAXRCVLEN, 0);
 	buffer[ret] = '\0';
 
@@ -124,9 +125,11 @@ void tc_net_recv_n(int fd)
 */
 void tc_net_recv_shutdown_n(int fd)
 {
+	int ret;
 	char buffer[MAXRCVLEN];
+
 	shutdown(fd, SHUT_RD);
-	int ret = recv(fd, buffer, MAXRCVLEN, 0);
+	ret = recv(fd, buffer, MAXRCVLEN, 0);
 	buffer[ret] = '\0';
 
 	TC_ASSERT_EQ("net_recv_shutdown", ret, NEG_VAL);
@@ -145,9 +148,11 @@ void tc_net_recv_shutdown_n(int fd)
 */
 void tc_net_recv_close_n(int fd)
 {
+	int ret;
 	char buffer[MAXRCVLEN];
+
 	close(fd);
-	int ret = recv(fd, buffer, MAXRCVLEN, 0);
+	ret = recv(fd, buffer, MAXRCVLEN, 0);
 
 	TC_ASSERT_EQ("recv_close", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
@@ -167,6 +172,7 @@ static void net_recv_server(void)
 	int ConnectFD;
 	int ret;
 	struct sockaddr_in sa;
+
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
@@ -260,16 +266,18 @@ void* recv_server(void *args)
 */
 void net_recv(void)
 {
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, recv_server, NULL);
 	pthread_create(&Client, NULL, recv_client, NULL);
+
 	pthread_join(Server, NULL);
 	pthread_join(Client, NULL);
 }
 
 /****************************************************************************
- * Name:recv()
+ * Name:net_recv_main()
  ****************************************************************************/
 int net_recv_main(void)
 {

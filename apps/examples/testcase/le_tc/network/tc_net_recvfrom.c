@@ -144,13 +144,12 @@ void *recvfrom_udpserver(void *args)
 void *recvfrom_udpclient(void *args)
 {
 	int ret;
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
-
-	char *buffer = "hello";
-
-	int len = strlen(buffer) + ONE;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	char *buffer = "hello";
+	int len = strlen(buffer) + ONE;
+
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
@@ -285,8 +284,8 @@ static void net_recvfrom_tcpserver(void)
 	int i;
 	int ret;
 	int ConnectFD;
-	char *msg = "Hello World !\n";
 	struct sockaddr_in sa;
+	char *msg = "Hello World !\n";
 
 	int sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
@@ -388,7 +387,10 @@ void* recvfrom_tcpclient(void *args)
 */
 void net_recvfrom(void)
 {
-	pthread_t Server, Client, tcpserver, tcpclient;
+	pthread_t Server;
+	pthread_t Client;
+	pthread_t tcpserver;
+	pthread_t tcpclient;
 
 	pthread_create(&Server, NULL, recvfrom_udpserver, NULL);
 	pthread_create(&Client, NULL, recvfrom_udpclient, NULL);

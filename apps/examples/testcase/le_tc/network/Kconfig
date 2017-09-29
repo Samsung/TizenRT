@@ -42,6 +42,7 @@ config TC_NET_ALL
 	select TC_NETBUF_ALLOC
 	select TC_MEM_ALLOC
 	select TC_NET_API
+
 config TC_NET_SOCKET
 	bool "socket() api"
 	default n
@@ -139,12 +140,12 @@ config TC_NET_ETHERNETIF_STATUS
 	default n
 
 config TC_NET_API
-        bool "api() api"
-        default n
+	bool "api() api"
+	default n
 
 config TC_NET_CORE
-        bool "core() api"
-        default n
+	bool "core() api"
+	default n
 
 config TC_NETBUF_ALLOC
 	bool "netbuf() api"

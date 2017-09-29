@@ -22,10 +22,9 @@
 #ifndef __EXAMPLES_TESTCASE_NETWORK_TC_INTERNAL_H
 #define __EXAMPLES_TESTCASE_NETWORK_TC_INTERNAL_H
 
-#define RETURN_ERR return
-
 #include "tc_common.h"
 
+#define RETURN_ERR       return
 #define FLAGS            0666
 #define ZERO             0
 #define ONE              1

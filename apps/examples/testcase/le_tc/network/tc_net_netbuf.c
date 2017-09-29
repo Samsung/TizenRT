@@ -15,7 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
+/// @file tc_net_netbuf.c
+/// @brief Test Case Example for netbuf_new, netbuf_next, netbuf_chain API
 #include <sys/socket.h>
 
 #include "tc_internal.h"
@@ -90,11 +91,13 @@ static void tc_net_netbuf_chain_p(void)
 	struct netbuf *buf4 = NULL;
 	struct netbuf *buf5 = NULL;
 	struct netbuf *check = NULL;
+
 	buf1 = netbuf_new();
 	buf2 = netbuf_new();
 	buf3 = netbuf_new();
 	buf4 = netbuf_new();
 	buf5 = netbuf_new();
+
 	check = buf1;
 	netbuf_chain(buf1, buf5);
 	netbuf_delete(buf1);

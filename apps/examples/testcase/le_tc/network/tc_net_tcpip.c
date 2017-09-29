@@ -131,6 +131,7 @@ void dummy_function(void *ctx)
 static void tc_net_tcpip_callbackmsg_new_p(void)
 {
 	struct tcpip_callback_msg *result;
+
 	result = (struct tcpip_callback_msg *)tcpip_callbackmsg_new(dummy_function, NULL);
 	TC_ASSERT_NEQ("tcpip_callbackmsg_new", result, NULL);
 	TC_SUCCESS_RESULT();
@@ -165,8 +166,8 @@ static void tc_net_tcpip_callbackmsg_delete_p(void)
 */
 static void tc_mem_free_callback_n(void)
 {
-	int *p = NULL;
 	int result;
+	int *p = NULL;
 
 	result = mem_free_callback(p);
 	TC_ASSERT_NEQ("mem_free_callback", result, ZERO);
@@ -184,8 +185,9 @@ static void tc_mem_free_callback_n(void)
 */
 static void tc_mem_free_callback_p(void)
 {
-	int *p = NULL;
 	err_t result;
+	int *p = NULL;
+
 	p = (int *)malloc(sizeof(int));
 
 	result = mem_free_callback(p);
@@ -220,6 +222,7 @@ void dummy1_function(void *arg)
 void tc_tcpip_trycallback(void)
 {
 	int ret;
+
 	struct tcpip_callback_msg *msg = (struct tcpip_callback_msg *)tcpip_callbackmsg_new(dummy1_function, NULL);
 
 	ret = tcpip_trycallback(msg);

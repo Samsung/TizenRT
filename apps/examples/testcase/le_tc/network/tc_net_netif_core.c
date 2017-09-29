@@ -49,6 +49,7 @@
 struct netif loop_netif;
 struct netif test_netif;
 static int linkoutput_ctr;
+
 extern err_t netif_loopif_init(struct netif *netif);
 
 /**
@@ -92,6 +93,7 @@ void create_packet(struct pbuf **head, char *data, u16_t len, u16_t ref)
 
 	node = (struct pbuf *)mem_malloc(sizeof(struct pbuf));
 	TC_ASSERT_NEQ("mem_malloc", node, NULL);
+
 	node->payload = data;
 	node->next = NULL;
 	node->flags = 0;
@@ -120,9 +122,9 @@ void create_packet(struct pbuf **head, char *data, u16_t len, u16_t ref)
 static void tc_net_pbuf_memcmp_p(void)
 {
 	u16_t ret;
+	int pk_count;
 	struct pbuf *head = NULL;
 	struct pbuf *temp = NULL;
-	int pk_count;
 	u16_t offset = VAL;
 	const void *s2 = "is";
 	u16_t n = TWO;
@@ -315,7 +317,7 @@ void create_chain(struct pbuf **head, char *data, u16_t len, u16_t ref)
 	if (*head == NULL) {
 		*head = node;
 	} else {
-		for (q = *head; q->next != NULL; q = q->next) ;
+		for (q = *head; q->next != NULL; q = q->next);
 		q->next = node;
 	}
 }
@@ -350,6 +352,7 @@ static void tc_net_pbuf_dechain_p(void)
 	}
 
 	ret = pbuf_dechain(head);
+
 	while (head) {
 		temp = head;
 		head = head->next;
@@ -447,8 +450,8 @@ static void tc_net_pbuf_coalesce_n(void)
 static void tc_net_pbuf_coalesce_p(void)
 {
 	int pk_count;
-	struct pbuf *ret = NULL;
 	pbuf_layer layer;
+	struct pbuf *ret = NULL;
 	struct pbuf *head = NULL;
 	struct pbuf *temp = NULL;
 
@@ -468,6 +471,7 @@ static void tc_net_pbuf_coalesce_p(void)
 	}
 
 	ret = pbuf_coalesce(head, layer);
+
 	while (head) {
 		temp = head;
 		head = head->next;

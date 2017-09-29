@@ -182,6 +182,7 @@ static void net_accept_client(void)
 void* Server(void *args)
 {
 	net_accept_server();
+
 	return NULL;
 }
 
@@ -197,6 +198,7 @@ void* Server(void *args)
 void* Client(void *args)
 {
 	net_accept_client();
+
 	return NULL;
 }
 
@@ -211,7 +213,8 @@ void* Client(void *args)
 */
 void net_accept(void)
 {
-	pthread_t server, client;
+	pthread_t server;
+	pthread_t client;
 
 	pthread_create(&server, NULL, Server, NULL);
 	pthread_create(&client, NULL, Client, NULL);
@@ -223,8 +226,10 @@ void net_accept(void)
 /****************************************************************************
  * Name: accept
  ****************************************************************************/
+
 int net_accept_main(void)
 {
 	net_accept();
+
 	return 0;
 }

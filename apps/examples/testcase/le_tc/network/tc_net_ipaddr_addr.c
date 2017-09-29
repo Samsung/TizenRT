@@ -18,7 +18,6 @@
 
 /// @file tc_net_ipaddr_addr.c
 /// @brief Test Case Example for ipaddr_addr() API
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>

@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-// @file tc_net_send.c
-// @brief Test Case Example for send() API
+// @file tc_net_select.c
+// @brief Test Case Example for select() API
 #include <tinyara/config.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -70,11 +70,15 @@ static void wait1(void)
 */
 static void tc_net_select_server(void)
 {
-	int newfd, yes = 1, addrlen, result, ret;
+	int newfd;
+	int addrlen;
+	int result;
+	int ret;
 	fd_set master;
 	fd_set read_fds;
 	struct sockaddr_in sa;
 	struct sockaddr_in ca;
+	int yes = 1;
 
 	int sock_tcp = socket(AF_INET, SOCK_STREAM, 0);
 	TC_ASSERT_NEQ("socket", sock_tcp, NEG_VAL);
@@ -175,7 +179,8 @@ static void* client(void *args)
 */
 void net_select(void)
 {
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, &server, NULL);
 	pthread_create(&Client, NULL, &client, NULL);

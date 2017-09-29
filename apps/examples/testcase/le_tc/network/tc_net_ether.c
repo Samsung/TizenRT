@@ -31,7 +31,7 @@
 
 #include "tc_internal.h"
 
-#define NUMREQS    3
+#define NUMREQS 3
 
 /**
 * @testcase            :tc_net_ether_ntoa_p
@@ -54,6 +54,7 @@ static void tc_net_ether_ntoa_p(int sock_udp)
 
 	ifcfg.ifc_buf = NULL;
 	ifcfg.ifc_len = sizeof(struct ifreq) * NUMREQS;
+
 	ifcfg.ifc_buf = malloc(ifcfg.ifc_len);
 	TC_ASSERT_NEQ("malloc", ifcfg.ifc_buf, NULL);
 	ifr = ifcfg.ifc_req;
@@ -79,6 +80,7 @@ static void tc_net_ether_ntoa_p(int sock_udp)
 int net_ether_main(void)
 {
 	int sock_udp = socket(AF_INET, SOCK_DGRAM, 0);
+
 	tc_net_ether_ntoa_p(sock_udp);
 	close(sock_udp);
 	return 0;

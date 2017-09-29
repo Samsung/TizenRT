@@ -53,7 +53,6 @@ static int count_wait;
 void shutdown_wait(void)
 {
 	while (count_wait <= ZERO) {
-
 		printf("");
 	}
 	count_wait--;
@@ -173,12 +172,13 @@ static void net_shutdown_server(void)
 {
 	int ConnectFD;
 	int ret;
-	char *msg = "Hello World !\n";
 	char buf[MAXRCVLEN];
 	struct sockaddr_in sa;
+	char *msg = "Hello World !\n";
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
+
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
@@ -186,6 +186,7 @@ static void net_shutdown_server(void)
 
 	ret = bind(sock, (struct sockaddr *)&sa, sizeof(sa));
 	TC_ASSERT_NEQ_CLEANUP("bind", ret, NEG_VAL, close(sock));
+
 	ret = listen(sock, BACKLOG);
 	TC_ASSERT_NEQ_CLEANUP("listen", ret, NEG_VAL, close(sock));
 	shutdown_signal();
@@ -199,7 +200,6 @@ static void net_shutdown_server(void)
 
 	recv(ConnectFD, buf, sizeof(buf), 0);
 	tc_net_shutdown_n();
-
 	tc_net_shutdown_sock_n(sock);
 	close(ConnectFD);
 	close(sock);
@@ -244,7 +244,6 @@ static void net_shutdown_client(void)
 
 	send(sock, buffer, sizeof(buffer), 0);
 	tc_net_shutdown_sendrecv_p(sock);
-
 	tc_net_shutdown_n();
 	close(sock);
 }
@@ -290,7 +289,8 @@ void* shutdown_client(void *args)
 */
 void net_shutdown(void)
 {
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, shutdown_server, NULL);
 	pthread_create(&Client, NULL, shutdown_client, NULL);

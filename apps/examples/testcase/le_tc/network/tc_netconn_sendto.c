@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-// @file tc_net_sendto.c
+// @file tc_netconn_sendto.c
 // @brief Test Case Example for sendto() API
 #include <tinyara/config.h>
 #include <errno.h>
@@ -53,11 +53,11 @@ void tc_net_sendto_tcp_shutdown_n(int ConnectFD);
 void tc_net_sendto_p(int fd)
 {
 	int ret;
+	struct sockaddr_in dest;
+	socklen_t fromlen;
 	char *buffer = "hello";
 	int len = strlen(buffer) + ONE;
 
-	struct sockaddr_in dest;
-	socklen_t fromlen;
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
 	dest.sin_addr.s_addr = INADDR_LOOPBACK;
@@ -81,10 +81,10 @@ void tc_net_sendto_p(int fd)
 void tc_net_sendto_n(void)
 {
 	int ret;
-	char *buffer = "hello";
-	int len = strlen(buffer) + ONE;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	char *buffer = "hello";
+	int len = strlen(buffer) + ONE;
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
@@ -108,17 +108,19 @@ void tc_net_sendto_n(void)
 */
 void tc_net_sendto_af_unix_n(int fd)
 {
-	char *buffer = "hello";
-	int len = strlen(buffer) + ONE;
+	int ret;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	char *buffer = "hello";
+	int len = strlen(buffer) + ONE;
+
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = AF_UNIX;
 	dest.sin_addr.s_addr = INADDR_LOOPBACK;
 	dest.sin_port = htons(PORTNUM);
 	fromlen = sizeof(dest);
 
-	int ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
+	ret = sendto(fd, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
 	TC_ASSERT_EQ("sendto", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
 }
@@ -136,13 +138,14 @@ void tc_sendto_udpserver(void)
 {
 	int ret;
 	struct sockaddr_in sa;
-	
+	struct sockaddr_storage serverStorage;
+	socklen_t addr_size;
+	char buffer[MAXRCVLEN];
+
 	int SocketFD = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	TC_ASSERT_EQ("socket", SocketFD, ZERO);
 
-	char buffer[MAXRCVLEN];
 	memset(&sa, 0, sizeof(sa));
-
 	sa.sin_family = PF_INET;
 	sa.sin_port = htons(PORTNUM);
 	sa.sin_addr.s_addr = INADDR_LOOPBACK;
@@ -150,8 +153,6 @@ void tc_sendto_udpserver(void)
 	ret = bind(SocketFD, (struct sockaddr *)&sa, sizeof(sa));
 	TC_ASSERT_NEQ("bind", SocketFD, NEG_VAL);
 
-	struct sockaddr_storage serverStorage;
-	socklen_t addr_size;
 
 	ret = recvfrom(SocketFD, buffer, MAXRCVLEN, 0, (struct sockaddr *)&serverStorage, &addr_size);
 	close(SocketFD);
@@ -171,13 +172,13 @@ void tc_sendto_udpserver(void)
 void tc_sendto_udpclient(void)
 {
 	int ret;
-	int sock = socket(AF_INET, SOCK_DGRAM, ZERO);
-	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
-
-   	char *buffer = "hello";
-	int len = strlen(buffer) + ONE;
 	struct sockaddr_in dest;
 	socklen_t fromlen;
+	char *buffer = "hello";
+	int len = strlen(buffer) + ONE;
+
+	int sock = socket(AF_INET, SOCK_DGRAM, ZERO);
+	TC_ASSERT_NEQ("socket", sock, NEG_VAL);
 
 	memset(&dest, 0, sizeof(dest));
 	dest.sin_family = PF_INET;
@@ -223,12 +224,13 @@ void* sendto_udpclient(void *args)
 }
 
 /****************************************************************************
- * Name: sendto
+ * Name: net_sendto_main
  ****************************************************************************/
 
 int net_sendto_main(void)
 {
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, sendto_udpserver, NULL);
 	pthread_create(&Client, NULL, sendto_udpclient, NULL);

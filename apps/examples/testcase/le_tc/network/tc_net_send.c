@@ -133,7 +133,8 @@ void* server(void *args)
 */
 void* client(void *args)
 {
-	int len, ret;
+	int len;
+	int ret;
 	char buffer[MAXRCVLEN];
 	struct sockaddr_in dest;
 
@@ -163,7 +164,8 @@ void* client(void *args)
 */
 static void net_send(void)
 {
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, server, NULL);
 	pthread_create(&Client, NULL, client, NULL);

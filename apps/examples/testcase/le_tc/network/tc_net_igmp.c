@@ -55,7 +55,8 @@ extern struct netif *g_netdevices;
 static int count_wait;
 struct sockaddr_in groupSock;
 struct sockaddr_in localSock;
-char interface_name[LEN], host_ip[LEN];
+char interface_name[LEN];
+char host_ip[LEN];
 
 /**
 * @fn                    :wait
@@ -101,7 +102,8 @@ int getif_addrs(struct ifaddrs **ifap)
 {
 	uint8_t flags;
 	static struct ifaddrs ifa;
-	static struct sockaddr_in addr, netmask;
+	static struct sockaddr_in addr;
+	static struct netmask;
 	struct netif *curr = g_netdevices;
 
 	memset(&ifa, 0, sizeof(ifa));
@@ -133,27 +135,25 @@ int getif_addrs(struct ifaddrs **ifap)
 */
 void gethost_addr(void)
 {
-	int family, n, ret;
+	int family;
+	int n;
+	int ret;
 	char host[LEN];
-	struct ifaddrs *ifaddr, *ifa;
+	struct ifaddrs *ifaddr;
+	struct ifaddrs *ifa;
 
 	ret = getif_addrs(&ifaddr);
 	TC_ASSERT_NEQ("getifaddrs", ret, NEG_VAL);
 
-	for (ifa = ifaddr, n = 0; ifa != NULL; ifa = ifa->ifa_next, n++)
-	{
+	for (ifa = ifaddr, n = 0; ifa != NULL; ifa = ifa->ifa_next, n++) {
 		if ((struct ifaddrs *)ifa->ifa_addr == NULL)
 			continue;
 		family = ifa->ifa_addr->sa_family;
-		if (family == AF_INET)
-		{
-			ret = getnameinfo(ifa->ifa_addr, (family == AF_INET) ? sizeof(struct sockaddr_in) :sizeof(struct sockaddr_in6), host, LEN, NULL, 0, NI_NUMERICHOST);
+		if (family == AF_INET) {
+			ret = getnameinfo(ifa->ifa_addr, (family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6), host, LEN, NULL, 0, NI_NUMERICHOST);
 			TC_ASSERT_NEQ("getnameinfo", ret, ZERO);
-		}
-		else if (family == AF_PACKET && ifa->ifa_data != NULL)
-		{
-			if (strcmp(ifa->ifa_name, "lo") != ZERO)
-			{
+		} else if (family == AF_PACKET && ifa->ifa_data != NULL) {
+			if (strcmp(ifa->ifa_name, "lo") != ZERO) {
 				struct ifreq ifr;
 
 				int fd = socket(AF_INET, SOCK_DGRAM, 0);
