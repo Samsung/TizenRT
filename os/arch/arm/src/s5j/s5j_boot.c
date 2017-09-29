@@ -110,7 +110,7 @@ static inline void up_idlestack_color(void *pv, unsigned int nbytes)
 						 "2:\n" "\tmov  r14, #0\n"	/* LR = return address (none) */
 						 "\tb    os_start\n"	/* Branch to os_start */
 						 :		/* No Output */
-						 :"r"(r0), "r"(r1)
+						 : "r"(r0), "r"(r1)
 						);
 
 	__builtin_unreachable();
