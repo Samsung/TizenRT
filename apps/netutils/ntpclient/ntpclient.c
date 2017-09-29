@@ -408,7 +408,7 @@ static int ntpc_daemon(int argc, char **argv)
 					ntp_link_err_cb();
 				}
 			}
-
+			sleep(1); /* 1 second delay */
 			continue;
 		}
 
