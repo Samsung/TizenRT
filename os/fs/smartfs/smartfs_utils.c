@@ -3426,11 +3426,11 @@ static int smartfs_verify_transaction(struct smartfs_mountpt_s *fs, uint16_t sec
 	return OK;
 
 
-error_with_dumpret :
+error_with_dumpret:
 	for (i = 0; i < entry->datalen + sizeof(struct smartfs_logging_entry_s); i++) {
 		fdbg("offset : %d write : 0x%x read : 0x%x\n", i, j_mgr->buffer[i], buff[i]);
 	}
-error_with_ret :
+error_with_ret:
 	free(buff);
 	return ERROR;
 }
