@@ -87,10 +87,7 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 		goto EXIT_VALIDATION;
 	}
 
-	things_resource_s *resource = things_create_resource_inst(eh_request->requestHandle,
-								  eh_request->resource,
-								  eh_request->query,
-								  eh_request->payload);	//g_builder->get_resource(g_builder, uri);
+	things_resource_s *resource = things_create_resource_inst(eh_request->requestHandle, eh_request->resource, eh_request->query, eh_request->payload);
 	things_resource_s *child = NULL;
 	/*! Added by st_things for memory Leak fix
 	 */
@@ -281,15 +278,6 @@ static OCEntityHandlerResult convert_ap_infor(things_resource_s *target_resource
 		things_representation_s **child_rep = (things_representation_s **) things_malloc(list_cnt * sizeof(things_representation_s *));
 
 		for (int iter = 0; iter < list_cnt; iter++) {
-
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "e_ssid : %s", p_list[iter]->e_ssid);
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "security_key : %s", p_list[iter]->security_key);
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "auth_type : %s", p_list[iter]->auth_type);
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "enc_type : %s", p_list[iter]->enc_type);
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "channel : %s", p_list[iter]->channel);
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "signal_level : %s", p_list[iter]->signal_level);
-			THINGS_LOG_D(THINGS_DEBUG, TAG, "bss_id : %s", p_list[iter]->bss_id);
-
 			child_rep[iter] = things_create_representation_inst(NULL);
 			child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_CHANNAL, p_list[iter]->channel);
 			child_rep[iter]->things_set_value(child_rep[iter], SEC_ATTRIBUTE_AP_ENCTYPE, p_list[iter]->enc_type);
@@ -812,9 +800,7 @@ static void *message_handling_loop(void *param)
 				} else {
 					OCRepPayload *rep_payload = target_resource->things_get_rep_payload(target_resource);
 
-					eh_result = send_response(target_resource->request_handle,	// reqInfo->reqHandle,
-											  target_resource->resource_handle,	// reqInfo->resHandle,
-											  target_resource->error, target_resource->uri, rep_payload);
+					eh_result = send_response(target_resource->request_handle, target_resource->resource_handle, target_resource->error, target_resource->uri, rep_payload);
 
 					/*! Added by st_things for memory Leak fix
 					 */
@@ -854,9 +840,7 @@ void notify_result_of_reset(things_resource_s *target_resource, bool result)
 	if (result == true) {		// reset Success.
 		OCRepPayload *rep_payload = target_resource->things_get_rep_payload(target_resource);
 
-		eh_result = send_response(target_resource->request_handle,	// reqInfo->reqHandle,
-								  target_resource->resource_handle,	// reqInfo->resHandle,
-								  target_resource->error, target_resource->uri, rep_payload);
+		eh_result = send_response(target_resource->request_handle, target_resource->resource_handle, target_resource->error, target_resource->uri, rep_payload);
 
 		/*! Added by st_things for memory Leak fix
 		 */

@@ -1245,13 +1245,7 @@ OCStackResult publish_resource_into_cloud(rp_target_e target, timeout_s *timeout
 						continue;
 					}
 
-					OCStackResult result = things_cloud_rsc_publish_with_device_id(g_cloud_address,
-										   device_id,
-										   dList[index]->pchild_resources,
-										   dList[index]->capa_cnt,
-										   handle_sub_dev_publish_cb,
-										   handle_publish_timeout,
-										   timeout);
+					OCStackResult result = things_cloud_rsc_publish_with_device_id(g_cloud_address, device_id, dList[index]->pchild_resources, dList[index]->capa_cnt, handle_sub_dev_publish_cb, handle_publish_timeout, timeout);
 					if (result != OC_STACK_OK) {
 						sub_dev_pub_fail = 1;
 					}
@@ -1352,17 +1346,6 @@ OCStackResult log_in_out_to_cloud(bool value, timeout_s *timeout)
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "g_cloud_address is invalid.(0x%X)", g_cloud_address);
 			goto GOTO_OUT;
 		}
-
-		THINGS_LOG_D(THINGS_INFO, TAG, "Cloud Addr : %s", g_cloud_address);
-		THINGS_LOG_D(THINGS_INFO, TAG, "device ID : %s", OCGetServerInstanceIDString());
-		THINGS_LOG_D(THINGS_INFO, TAG, "access_token : %s", signed_up_data->access_token);
-		THINGS_LOG_D(THINGS_INFO, TAG, "refresh token : %s", signed_up_data->refresh_token);
-		THINGS_LOG_D(THINGS_INFO, TAG, "user ID : %s", signed_up_data->uid);
-		THINGS_LOG_D(THINGS_INFO, TAG, "toke type : %s", signed_up_data->token_type);
-		THINGS_LOG_D(THINGS_INFO, TAG, "expire Time : %lld", signed_up_data->expire_time);
-		THINGS_LOG_D(THINGS_INFO, TAG, "certificate : %s", signed_up_data->certificate);
-		THINGS_LOG_D(THINGS_INFO, TAG, "redirect URI : %s", signed_up_data->redirect_uri);
-		THINGS_LOG_D(THINGS_INFO, TAG, "sid : %s", signed_up_data->sid);
 
 		if (value == true) {
 			oic_ping_set_mask(g_cloud_ip, port, PING_ST_ISCLOUD);
@@ -1596,19 +1579,6 @@ static int start_ci_connection(const char *cloud_adress, es_cloud_prov_data_s *e
 	if (make_cloud_address(NULL, NULL, cloud_adress) == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Making Cloud Address is failed.");
 		result = OC_STACK_NO_MEMORY;
-	}
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr Addr         : %s", g_cloud_address);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr AuthCode     : %s", event_data->auth_code);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr Accesstoken  : %s", event_data->accesstoken);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr Uid          : %s", event_data->uid);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr AuthProvider : %s", event_data->auth_provider);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr client_id     : %s", event_data->client_id);
-
-	if (timeout != NULL) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr timeout_cnt     : %d", timeout->cur_counter);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr timeout_cur_num : %d", timeout->cur_num);
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "CI Svr timeout_ori_num : %d", timeout->ori_num);
 	}
 
 	if (result != OC_STACK_NO_MEMORY) {
