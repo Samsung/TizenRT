@@ -456,7 +456,7 @@ bool get_query(struct things_resource_s *res, char *key, char **value)
 
 	memset(p_buff, 0, strlen(res->query) + 1);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "p_buff is initialized by 0.");
-	memcpy(p_buff, res->query, strlen(res->query));
+	memcpy(p_buff, res->query, strlen(res->query) + 1);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "p_buff is Initialized as", res->query);
 
 	p_ptr = strtok(p_buff, QUERY_DELIMITER);
