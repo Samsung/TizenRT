@@ -123,13 +123,7 @@ struct things_resource_s *create_resource(struct things_server_builder_s *builde
 #endif
 	}
 
-	OCStackResult ret = OCCreateResource(&hd,
-										 type,
-										 interface,
-										 uri,
-										 builder->handler,
-										 NULL,
-										 rsc_properties);
+	OCStackResult ret = OCCreateResource(&hd, type, interface, uri, builder->handler, NULL, rsc_properties);
 
 	if (ret != OC_STACK_OK) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Resource Creation Failed - ret = %d, %s", ret, uri);
@@ -170,13 +164,7 @@ struct things_resource_s *create_collection_resource(struct things_server_builde
 
 #endif							//#ifdef __SECURED__
 
-	OCStackResult ret = OCCreateResource(&hd,
-										 uri,
-										 type,
-										 uri,
-										 builder->handler,
-										 NULL,
-										 rsc_properties);
+	OCStackResult ret = OCCreateResource(&hd, uri, type, uri, builder->handler, NULL, rsc_properties);
 
 	if (ret != OC_STACK_OK) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Resource Creation Failed - ret = %d, %s", ret, uri);
@@ -248,8 +236,7 @@ void things_bind(struct things_resource_s *res, struct things_resource_s *bind)
 		return;
 	}
 
-	OCStackResult ret = OCBindResource((OCResourceHandle)(res->resource_handle),
-									   (OCResourceHandle)(bind->resource_handle));
+	OCStackResult ret = OCBindResource((OCResourceHandle)(res->resource_handle), (OCResourceHandle)(bind->resource_handle));
 	if (ret != OC_STACK_OK) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "bind Failed ");
 	}
@@ -358,8 +345,7 @@ void set_device_info(things_server_builder_s *builder, char *device_name, char *
 {
 	THINGS_LOG_D(THINGS_DEBUG, TAG, THINGS_FUNC_ENTRY);
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/d] name :%s", device_name);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/d] type :%s", device_type);
+	THINGS_LOG_D(THINGS_DEBUG, TAG, "[/oic/d] name :%s / type :%s", device_name, device_type);
 
 	OCDeviceInfo device_info;
 	device_info.deviceName = NULL;

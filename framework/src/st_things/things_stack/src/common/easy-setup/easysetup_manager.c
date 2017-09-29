@@ -790,17 +790,6 @@ void wifi_prov_cb_in_app(es_wifi_prov_data_s *event_data)
 		snprintf(p_info->channel, MAX_CHANNEL, "%d", event_data->discovery_channel);
 	}
 
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "e_ssid : %s", p_info->e_ssid);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "security_key : %s", p_info->security_key);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "auth_type : %s", p_info->auth_type);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "enc_type : %s", p_info->enc_type);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "channel : %s", p_info->channel);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Copied ssid = %s", g_wifi_prov_data->ssid);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Copied pwd = %s", g_wifi_prov_data->pwd);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Copied enctype = %d", g_wifi_prov_data->enctype);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Copied discovery_channel = %d", g_wifi_prov_data->discovery_channel);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "Copied authtype = %d", g_wifi_prov_data->authtype);
-
 	// Connect to AP
 	if (gthread_id_network_status_check == 0) {
 		THINGS_LOG(THINGS_DEBUG, TAG, "Create NetworkStatusCheck thread");

@@ -1968,44 +1968,6 @@ int dm_get_device_information(int *cnt, st_device_s ***list)
 	return ret;
 }
 
-const int dm_get_num_of_children(int device_num)
-{
-	int ret = 0;
-
-	st_device_s *device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)device_num);
-	if (NULL != device) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "DEVICE CHILDREN RESOURCE(S) : %d", device->col_cnt);
-		ret = device->col_cnt;
-	}
-
-	return ret;
-}
-
-const char *dm_get_resource_uri(int device_num, int index)
-{
-	st_device_s *device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)device_num);
-	if (NULL != device) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "DEVICE CHILDREN RESOURCE(S) : %d", device->col_cnt);
-		if ((index) >= device->col_cnt) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Index : %d", index);
-		} else {
-
-			return device->collection[0].links[index]->uri;
-		}
-	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Device Num to Search : %d", device_num);
-	}
-
-	return NULL;
-}
-
-int dm_update_device_iInfo_list(st_device_s **dev_list, int devCnt)
-{
-	int ret = 1;
-	update_and_save_device_info(dev_list, devCnt);
-	return ret;
-}
-
 int dm_update_things_cloud(es_cloud_signup_s *cl_data)
 {
 	int ret = 1;

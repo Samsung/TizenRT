@@ -566,13 +566,6 @@ OCStackResult things_cloud_refresh(const char *host, const char *uId, const char
 	OCRepPayloadSetPropString(refreshPayload, KEY_ID_DEVICE, device_id);
 	OCRepPayloadSetPropString(refreshPayload, KEY_TYPE_GRANT, VALUE_TYPE_GRANT_TOKEN);
 	OCRepPayloadSetPropString(refreshPayload, KEY_TOKEN_ACCESS_REFRESH, refreshtoken);
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "targetURI    =%s", targetUri);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "uid          =%s", uId);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "di           =%s", device_id);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "granttype    =%s", VALUE_TYPE_GRANT_TOKEN);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "refreshtoken =%s", refreshtoken);
-
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
 	//CASelectCipherSuite(0x35, (1 << 4));
 #endif
@@ -654,19 +647,6 @@ static OCRepPayload *make_dev_profile_payload(const st_device_s *dev_info)
 	OCRepPayloadSetPropString(payload, "mnhw", dev_info->ver_hw);
 	OCRepPayloadSetPropString(payload, "mnfv", dev_info->ver_fw);
 	OCRepPayloadSetPropString(payload, "vid", dev_info->vender_id);
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "di   = %s", dev_info->device_id);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "n    = %s", dev_info->name);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "icv  = %s", coreVer);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "dmv  = %s", IoTivityVer);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "rt   = %s", dev_info->type);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "mnmn = %s", manuFactory);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "mnmo = %s", dev_info->model_num);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "mnpv = %s", dev_info->ver_p);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "mnos = %s", dev_info->ver_os);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "mnhw = %s", dev_info->ver_hw);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "mnfv = %s", dev_info->ver_fw);
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "vid  = %s", dev_info->vender_id);
 
 	res = true;
 

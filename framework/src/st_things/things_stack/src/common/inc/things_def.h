@@ -150,26 +150,4 @@
 #define URI_OVEN_PROBE                  "/prob"
 #define URI_ACCESSPOINTLIST             "/accesspointlist"
 
-/* Notification */
-#define URI_PUSHSERVICE                 "/service/pushservice"
-#define KEY_MESSAGE                     "message"
-#define KEY_EXTRA                       "x.com.samsung.da.notification"
-#define KEY_PUSH_CODE                   "x.com.samsung.code"
-#define KEY_PUSH_DATA                   "x.com.samsung.data"
-#define KEY_PUSH_DATA_ET                "et"
-#define KEY_PUSH_DATA_DT                "dt"	//Device Type
-#define KEY_PUSH_DATA_RT                "rt"	//Resource Type
-#define KEY_PUSH_DATA_DNAME             "dname"	//Device Name
-#define KEY_PUSH_DATA_REP               "rep"	//Representation
-#define KEY_PUSH_NS_MESSAGE_ID          "x.org.iotivity.ns.messageid"
-#define KEY_PUSH_NS_PROVIDER_ID         "x.org.iotivity.ns.providerid"
-
-#define MAX_LEN_FILE_ID                  (10)
-#define MAX_NUM_OICINFO                 (200)
-#define MAX_NUM_OICFILE                  (10)
-#define MAX_NUM_OICCONTENT              (100)
-#define MAX_NUM_SCHEDULE                 (15)
-#define MAX_NUM_AP                       (50)
-#define MAX_NUM_AP                      50
-
 #endif							// _THINGS_DEF_
