@@ -168,7 +168,7 @@ int esm_set_device_property_by_app(char *name, const wifi_mode_e *mode, int ea_m
 
 	int i = 0;
 
-	if (mode == NULL || ea_mode < 1 || WiFi_24G > freq || freq >= WiFi_FREQ_EOF) {
+	if (mode == NULL || ea_mode < 1 || freq >= WiFi_FREQ_EOF) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Input Arguments.(mode=0x%X, ea_mode=%d, freq=%d)", mode, ea_mode, freq);
 		return 0;
 	}
@@ -381,10 +381,14 @@ esm_result_e esm_terminate_easysetup()
 			}
 		}
 		pthread_join(gthread_id_cloud_refresh_check, NULL);
-		close(ci_token_expire_fds[0]);
-		close(ci_token_expire_fds[1]);
-		ci_token_expire_fds[0] = -1;
-		ci_token_expire_fds[1] = -1;
+		if (ci_token_expire_fds[0] != -1) {
+			close(ci_token_expire_fds[0]);
+			ci_token_expire_fds[0] = -1;
+		}
+		if (ci_token_expire_fds[1] != -1) {
+			close(ci_token_expire_fds[1]);
+			ci_token_expire_fds[1] = -1;
+		}
 #else
 		pthread_join(gthread_id_cloud_refresh_check, NULL);
 #endif
