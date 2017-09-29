@@ -988,8 +988,12 @@ static int parse_things_info_json(const char *filename)
 										return 0;
 									}
 									cJSON *policy = cJSON_GetObjectItem(link, KEY_DEVICE_RESOURCE_POLICY);
-									link_resource->policy = policy->valueint;
-									node->collection[iter].links[linkiter] = link_resource;
+									if (policy) {
+										link_resource->policy = policy->valueint;
+										node->collection[iter].links[linkiter] = link_resource;
+									} else {
+										return 0;
+									}
 								}
 							} else {
 								return 0;

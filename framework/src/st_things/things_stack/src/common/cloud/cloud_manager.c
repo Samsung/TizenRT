@@ -2058,7 +2058,7 @@ GOTO_OUT:
 bool es_cloud_session_stop_trigger(things_es_enrollee_state_e es_state)
 {
 	if (g_qis_cloud_thread_running != CISESS_APDISCON) {
-		if ((g_qis_cloud_thread_running == CISESS_STOP_TRIGGER || (ES_STATE_INIT <= es_state && es_state <= ES_STATE_CONNECTED_TO_ENROLLER))
+		if ((g_qis_cloud_thread_running == CISESS_STOP_TRIGGER || es_state <= ES_STATE_CONNECTED_TO_ENROLLER)
 			&& g_qis_cloud_thread_running != CISESS_SIGNOUT && es_get_cloud_login_state() == true) {
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "Sign-Out Start.");
 			log_in_out_to_cloud(false, NULL);
