@@ -90,6 +90,7 @@ bool get_query_value_internal(const char *query, const char *key, char **value, 
 			if (NULL == *value) {
 				ST_LOG(ST_ERROR, "Failed to clone the query value.");
 				util_free(p_origin);
+				return false;
 			} else {
 				res = true;
 			}

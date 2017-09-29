@@ -80,6 +80,7 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee
 static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, int req_type)
 {
 	int result = 0;
+	things_resource_s *pst_temp_resource = NULL;
 
 	if (g_builder == NULL) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Server Builder is not registered..");
@@ -93,7 +94,7 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 	things_resource_s *child = NULL;
 	/*! Added by st_things for memory Leak fix
 	 */
-	things_resource_s *pst_temp_resource = resource;
+	pst_temp_resource = resource;
 	if (resource == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Resource Not found : %s ", uri);
 		goto EXIT_VALIDATION;
