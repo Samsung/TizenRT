@@ -239,9 +239,9 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 		fread(key->data, 1, size, fp);
 		key->len = size;
 		key->encoding = encoding;
-		fclose(fp);
 	}
-
+	
+	fclose(fp);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT: %s", __func__);
 	return OC_STACK_OK;
 }

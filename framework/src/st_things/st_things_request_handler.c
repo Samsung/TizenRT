@@ -349,7 +349,7 @@ static bool get_supported_properties(const char *res_type, const char *res_uri, 
 			return false;
 		}
 		prop_count = (int *)util_calloc(type_count, sizeof(int));
-		if (NULL == props) {
+		if (NULL == prop_count) {
 			ST_LOG(ST_ERROR, "Failed to allocate memory for resource properties.");
 			util_free(props);
 			return false;
