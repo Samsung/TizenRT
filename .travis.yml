@@ -12,15 +12,16 @@ env:
 - BUILD_CONFIG=artik053/nettest
 - BUILD_CONFIG=artik053/minimal
 - BUILD_CONFIG=artik053/tc
+- BUILD_CONFIG=artik053/st_things
 - BUILD_CONFIG=qemu/tc_64k
 
 
 before_install:
-- docker pull an4967/tizenrt:1.1
+- docker pull tizenrt/tizenrt:1.2
 - echo "${TRAVIS_BUILD_DIR}"
 
 script:
-- docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os an4967/tizenrt:1.1 /bin/bash
+- docker run -d -it --name tizenrt_docker -v ${TRAVIS_BUILD_DIR}:/root/tizenrt -w /root/tizenrt/os tizenrt/tizenrt:1.2 /bin/bash
 - docker exec tizenrt_docker make distclean
 
 - docker exec -it tizenrt_docker bash -c "cd tools; ./configure.sh ${BUILD_CONFIG}"
