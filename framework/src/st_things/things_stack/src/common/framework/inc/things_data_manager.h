@@ -36,6 +36,9 @@
 #define MAX_DEVICE_DESCRIPTION_LENGTH  (255)
 #define MAX_DEVICE_CAPABILTY_CNT       (50)
 #define MAX_DEVICE_MODEL_ID_LENGTH     (64)
+#define MAX_DEVICE_MANUFACTURER_NAME_LENGTH     (255)
+#define MAX_DEVICE_MANUFACTURER_URL_LENGTH      (255)
+#define MAX_DEVICE_MANUFACTURER_DATE_LENGTH     (32)
 #define MAX_FILE_ACCESS_CNT             (10)
 #define MAX_URI_LENGTH_OCF              (128)
 #define MAX_PROPERTY_CNT                (20)
@@ -64,6 +67,9 @@ typedef struct st_device_s {
 	int no;
 	char type[MAX_DEVICE_TYPE_LENGTH];
 	char name[MAX_DEVICE_NAME_LENGTH];
+	char manufacturer_name[MAX_DEVICE_MANUFACTURER_NAME_LENGTH];
+	char manufacturer_url[MAX_DEVICE_MANUFACTURER_URL_LENGTH];
+	char manufacturing_date[MAX_DEVICE_MANUFACTURER_DATE_LENGTH];
 	char model_num[MAX_DEVICE_MODEL_ID_LENGTH];
 	char ver_p[MAX_DEVICE_VER_P];	// mnpv
 	char ver_os[MAX_DEVICE_VER_OS];	// mnhw
