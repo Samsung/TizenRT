@@ -26,7 +26,6 @@
 #include <net/lwip/netif/etharp.h>
 #include <net/lwip/tcp_impl.h>
 #include <net/lwip/pbuf.h>
-
 #include <sys/select.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -49,7 +48,6 @@
 
 struct netif loop_netif;
 struct netif test_netif;
-static int linkoutput_ctr;
 extern err_t netif_loopif_init(struct netif *netif);
 
 /**
@@ -68,6 +66,7 @@ static void tc_net_pbuf_get_at_p(void)
 	u8_t ret;
 
 	p = (struct pbuf *)memp_malloc(MEMP_PBUF_POOL);
+	TC_ASSERT_NEQ("memp_malloc", p, NULL);
 	p->len = 6;
 	p->payload = "packet";
 
@@ -97,14 +96,14 @@ void create_packet(struct pbuf **head, char *data, u16_t len, u16_t ref)
 	node->next = NULL;
 	node->flags = 0;
 	node->len = len;
-	node->tot_len = 16;
+	node->tot_len = len + ONE;
 	node->type = PBUF_RAM;
 	node->ref = ref;
 
 	if (*head == NULL) {
 		*head = node;
 	} else {
-		for (q = *head; q->next != NULL; q = q->next) ;
+		for (q = *head; q->next != NULL; q = q->next);
 		q->next = node;
 	}
 }
@@ -163,18 +162,22 @@ static void tc_net_pbuf_memcmp_p(void)
 static void tc_net_pbuf_memfind_p(void)
 {
 	int ret;
-	struct pbuf *p = (struct pbuf *)"packet not found";
+	struct pbuf *p;
+
+	p  = (struct pbuf *)mem_malloc(sizeof(struct pbuf));
+	TC_ASSERT_NEQ("mem_malloc", p, NULL);
+
 	const void *mem = "packet";
-	u16_t mem_len = 1;
-	u16_t start_offset = 0;
-	p->tot_len = 16;
-	p->len = 16;
+
+	u16_t mem_len = strlen((char *)mem);
+	u16_t start_offset = ZERO;
+	p->tot_len = mem_len + ONE;
+	p->len = mem_len;
 
 	ret = pbuf_memfind(p, mem, mem_len, start_offset);
-
+	mem_free(p);
 	TC_ASSERT_NEQ("pbuf_memfind", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -190,7 +193,7 @@ static void tc_net_get_socket_struct_n(void)
 {
 	struct socket *ret = (struct socket *)get_socket_struct(NEG_VAL);
 
-	TC_ASSERT_EQ("net_get_socket_struct_n", ret, NULL);
+	TC_ASSERT_EQ("get_socket_struct", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -205,10 +208,12 @@ static void tc_net_get_socket_struct_n(void)
 */
 static void tc_net_get_socket_struct_p(void)
 {
+	struct socket *ret;
 	int s = socket(AF_INET, SOCK_STREAM, 0);
-	struct socket *ret = (struct socket *)get_socket_struct(s);
+	TC_ASSERT_NEQ("socket", s, NEG_VAL);
 
-	TC_ASSERT_NEQ("net_get_socket_struct_p", ret, NULL);
+	ret = (struct socket *)get_socket_struct(s);
+	TC_ASSERT_NEQ("get_socket_struct", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -224,7 +229,7 @@ static void tc_net_get_socket_struct_p(void)
 static void tc_net_pbuf_alloced_custom_n(void)
 {
 	struct pbuf *ret;
-	pbuf_layer l = 4;
+	pbuf_layer l = ONE;
 	u16_t length = TWO;
 	pbuf_type type = 4;
 	struct pbuf_custom *p = NULL;
@@ -232,10 +237,8 @@ static void tc_net_pbuf_alloced_custom_n(void)
 	u16_t payload_mem_len = ONE;
 
 	ret = pbuf_alloced_custom(l, length, type, p, payload_mem, payload_mem_len);
-
-	TC_ASSERT_EQ("net_pbuf_alloced_custom", ret, NULL);
+	TC_ASSERT_EQ("pbuf_alloced_custom", ret, NULL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -254,14 +257,15 @@ static void tc_net_pbuf_alloced_custom_p(void)
 	u16_t length = 5;
 	pbuf_type type = 0;
 	void *payload_mem = "payload big";
-	u16_t payload_mem_len = 11;
+	u16_t payload_mem_len = strlen((char*)payload_mem) + 1;
 
 	p = (struct pbuf_custom *)mem_malloc(sizeof(struct pbuf_custom));
 	TC_ASSERT_NEQ("mem_malloc", p, NULL);
-	ret = pbuf_alloced_custom(0, length, type, p, payload_mem, payload_mem_len);
-	mem_free(p);
 
-	TC_ASSERT_EQ("net_pbuf_alloced_custom", ret, NULL);
+	ret = pbuf_alloced_custom(0, length, type, p, payload_mem, payload_mem_len);
+
+	mem_free(p);
+	TC_ASSERT_EQ("pbuf_alloced_custom", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -280,11 +284,14 @@ static void tc_net_pbuf_dechain_n(void)
 	struct pbuf *p;
 
 	p = (struct pbuf *)memp_malloc(MEMP_PBUF_POOL);
+	TC_ASSERT_NEQ("memp_malloc", p, NULL);
+	p->tot_len = TOTLEN;
+	p->len = TOTLEN;
 	p->next = NULL;
 
 	ret = pbuf_dechain(p);
 	memp_free(MEMP_PBUF_POOL, p);
-	TC_ASSERT_EQ("net_pbuf_dechain_n", ret, NULL);
+	TC_ASSERT_EQ("pbuf_dechain", ret, NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -301,6 +308,8 @@ void create_chain(struct pbuf **head, char *data, u16_t len, u16_t ref)
 {
 	struct pbuf *node;
 	struct pbuf *q;
+	struct pbuf *r;
+	struct pbuf *s;
 
 	node = (struct pbuf *)mem_malloc(sizeof(struct pbuf));
 	TC_ASSERT_NEQ("mem_malloc", node, NULL);
@@ -309,14 +318,19 @@ void create_chain(struct pbuf **head, char *data, u16_t len, u16_t ref)
 	node->next = NULL;
 	node->flags = 0;
 	node->len = len;
-	node->tot_len = TOTLEN;
+	node->tot_len = len;
 	node->type = PBUF_RAM;
 	node->ref = ref;
 
 	if (*head == NULL) {
 		*head = node;
 	} else {
-		for (q = *head; q->next != NULL; q = q->next) ;
+		(*head)->tot_len += node->tot_len;
+		for (q = *head; q->next != NULL; q = q->next) {
+			s = q->next;
+			for(r = s; r->next != NULL; r = r->next)
+				s->tot_len += r->next->tot_len;
+		}
 		q->next = node;
 	}
 }
@@ -340,10 +354,10 @@ static void tc_net_pbuf_dechain_p(void)
 	for (pk_count = 0; pk_count < 2; pk_count++) {
 		switch (pk_count) {
 		case 0:
-			create_chain(&head, "packet", strlen("packet"), ONE);
+			create_chain(&head, "packetis", strlen("packetis"), ONE);
 			break;
 		case 1:
-			create_chain(&head, "is", strlen("is"), TWO);
+			create_chain(&head, "packetis", strlen("packetis"), TWO);
 			break;
 		default:
 			printf("\n invalid parameter\n");
@@ -357,9 +371,8 @@ static void tc_net_pbuf_dechain_p(void)
 		mem_free(temp);
 	}
 
-	TC_ASSERT_NEQ("net_pbuf_dechain", ret, NULL);
+	TC_ASSERT_NEQ("pbuf_dechain", ret, NULL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -380,7 +393,7 @@ static void tc_net_pbuf_take_n(void)
 
 	ret = pbuf_take(buf, dataptr, len);
 
-	TC_ASSERT_EQ("net_pbuf_take", ret, ZERO);
+	TC_ASSERT_EQ("pbuf_take", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -400,13 +413,14 @@ static void tc_net_pbuf_take_p(void)
 	void *dataptr = "data";
 
 	buf = (struct pbuf *)memp_malloc(PBUF_SIZE);
+	TC_ASSERT_NEQ("memp_malloc", buf, NULL);
 	buf->next = NULL;
 	buf->len = 8;
 	buf->tot_len = 10;
 
 	ret = pbuf_take(buf, dataptr, strlen("data"));
 	memp_free(MEMP_PBUF_POOL, buf);
-	TC_ASSERT_EQ("net_pbuf_take", ret, ZERO);
+	TC_ASSERT_EQ("pbuf_take", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -432,7 +446,7 @@ static void tc_net_pbuf_coalesce_n(void)
 
 	ret = pbuf_coalesce(p, layer);
 	memp_free(MEMP_PBUF_POOL, p);
-	TC_ASSERT_EQ("net_pbuf_coalesce", ret, p);
+	TC_ASSERT_EQ("pbuf_coalesce", ret, p);
 	TC_SUCCESS_RESULT();
 }
 
@@ -475,7 +489,7 @@ static void tc_net_pbuf_coalesce_p(void)
 		mem_free(temp);
 	}
 
-	TC_ASSERT_NEQ_CLEANUP("net_pbuf_coalesce", ret, head, pbuf_free(head));
+	TC_ASSERT_NEQ("pbuf_coalesce", ret, head); 
 	TC_SUCCESS_RESULT();
 }
 
@@ -495,7 +509,8 @@ static void tc_net_pbuf_get_at_n(void)
 	u8_t ret;
 
 	ret = pbuf_get_at(p, offset);
-	TC_ASSERT_EQ("net_pbuf_get_at", ret, ZERO);
+
+	TC_ASSERT_EQ("pbuf_get_at", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -518,7 +533,7 @@ static void tc_net_pbuf_memcmp_n(void)
 
 	ret = pbuf_memcmp(p, offset, s2, n);
 
-	TC_ASSERT_NEQ("net_pbuf_memcmp", ret, ZERO);
+	TC_ASSERT_NEQ("pbuf_memcmp", ret, ZERO);
 	TC_SUCCESS_RESULT();
 }
 
@@ -541,24 +556,56 @@ static void tc_net_pbuf_memfind_n(void)
 
 	ret = pbuf_memfind(p, mem, mem_len, start_offset);
 
-	TC_ASSERT_EQ("net_pbuf_memfind", ret, 0xffff);
+	TC_ASSERT_EQ("pbuf_memfind", ret, 0xffff);
 	TC_SUCCESS_RESULT();
 }
 
 /**
-* @testcase             : default_netif_linkoutput
-* @brief                : none
-* @scenario             : none
-* @apicovered           : default_netif_linkoutput
-* @precondition         : network interface must be created
-* @postcondition        : none
-* @return               : void
+* @testcase             :tc_net_pbuf_strstr_p
+* @brief                :find occurrence of substr with length substr_len in pbuf
+* @scenario             :positive scenario for pbuf_strstr
+* @apicovered           :pbuf_strstr
+* @precondition         :none
+* @postcondition        :none
+* @return               :void
 */
-static err_t default_netif_linkoutput(struct netif *netif, struct pbuf *p)
+static void tc_net_pbuf_strstr_p(void)
 {
-	linkoutput_ctr++;
-	return ERR_OK;
+	u16_t ret;
+	struct pbuf *head = NULL;
+	const void *s2 = "pack";
+
+	create_packet(&head, "packet", strlen("packet"), ONE);
+	ret = pbuf_strstr(head, s2);
+	mem_free(head);
+
+	TC_ASSERT_EQ("pbuf_strstr", ret, ZERO);
+	TC_SUCCESS_RESULT();
 }
+
+/**
+* @testcase             :tc_net_pbuf_strstr_n
+* @brief                :find occurrence of substr with length substr_len in pbuf
+* @scenario             :negative scenario for pbuf_strstr
+* @apicovered           :pbuf_strstr
+* @precondition         :none
+* @postcondition        :none
+* @return               :void
+*/
+static void tc_net_pbuf_strstr_n(void)
+{
+	u16_t ret;
+	struct pbuf *head = NULL;
+	const void *s2 = "test";
+
+	create_packet(&head, "packet", strlen("packet"), ONE);
+	ret = pbuf_strstr(head, s2);
+	mem_free(head);
+
+	TC_ASSERT_NEQ("pbuf_strstr", ret, ZERO);
+	TC_SUCCESS_RESULT();
+}
+
 
 /****************************************************************************
  * Name: netcore_api
@@ -581,5 +628,7 @@ int net_core_main(int sock_tcp)
 	tc_net_pbuf_coalesce_p();
 	tc_net_pbuf_memfind_n();
 	tc_net_pbuf_memfind_p();
+	tc_net_pbuf_strstr_p();
+	tc_net_pbuf_strstr_n();
 	return 0;
 }

@@ -147,4 +147,7 @@ int net_stats_main(void);
 #ifdef CONFIG_TC_NET_IGMP
 int net_igmp_main(void);
 #endif
+#ifdef CONFIG_TC_NET_DHCPC
+int net_dhcpc_main(void);
+#endif
 #endif
