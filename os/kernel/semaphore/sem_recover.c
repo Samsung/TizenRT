@@ -134,8 +134,12 @@ void sem_recover(FAR struct tcb_s *tcb)
 
 	flags = irqsave();
 	if (tcb->task_state == TSTATE_WAIT_SEM) {
+
 		sem_t *sem = tcb->waitsem;
 		DEBUGASSERT(sem != NULL && sem->semcount < 0);
+
+		/* Remove this task from the semaphore */
+		dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)&sem->waiting_tasklist);
 
 		/* Restore the correct priority of all threads that hold references
 		 * to this semaphore.

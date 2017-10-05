@@ -135,36 +135,46 @@ int sem_post(FAR sem_t *sem)
 		/* Perform the semaphore unlock operation. */
 
 		ASSERT(sem->semcount < SEM_VALUE_MAX);
-		sem_releaseholder(sem);
+
 		sem->semcount++;
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
-		/* Don't let any unblocked tasks run until we complete any priority
-		 * restoration steps.  Interrupts are disabled, but we do not want
-		 * the head of the read-to-run list to be modified yet.
-		 *
-		 * NOTE: If this sched_lock is called from an interrupt handler, it
-		 * will do nothing.
-		 */
-
-		sched_lock();
+		if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) != PRIOINHERIT_FLAGS_DISABLE) {
+			sem_releaseholder(sem);
+			/* Don't let any unblocked tasks run until we complete any priority
+			 * restoration steps.  Interrupts are disabled, but we do not want
+			 * the head of the read-to-run list to be modified yet.
+			 *
+			 * NOTE: If this sched_lock is called from an interrupt handler, it
+			 * will do nothing.
+			 */
+			sched_lock();
+		}
 #endif
+
 		/* If the result of of semaphore unlock is non-positive, then
 		 * there must be some task waiting for the semaphore.
 		 */
 
 		if (sem->semcount <= 0) {
-			/* Check if there are any tasks in the waiting for semaphore
-			 * task list that are waiting for this semaphore. This is a
-			 * prioritized list so the first one we encounter is the one
-			 * that we want.
+			/* Check if there are any tasks waiting on this semaphore
+			 * Since its a prioritized list, just pick the head of it.
 			 */
 
-			for (stcb = (FAR struct tcb_s *)g_waitingforsemaphore.head; (stcb && stcb->waitsem != sem); stcb = stcb->flink) ;
+			stcb = (FAR struct tcb_s *)sem->waiting_tasklist.head;
+
+			/* There must be atleast one valid task waiting */
+			DEBUGASSERT(stcb);
 
 			if (stcb) {
-				sem_addholder_tcb(stcb, sem);
+				/* Remove the entry from the semaphore waiting task list */
+				dq_rem((FAR dq_entry_t *)stcb, (dq_queue_t *)&sem->waiting_tasklist.head);
 
+#ifdef CONFIG_PRIORITY_INHERITANCE
+				if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) != PRIOINHERIT_FLAGS_DISABLE) {
+					sem_addholder_tcb(stcb, sem);
+				}
+#endif
 				/* It is, let the task take the semaphore */
 
 				stcb->waitsem = NULL;
@@ -181,8 +191,10 @@ int sem_post(FAR sem_t *sem)
 		 */
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
-		sem_restorebaseprio(stcb, sem);
-		sched_unlock();
+		if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) != PRIOINHERIT_FLAGS_DISABLE) {
+			sem_restorebaseprio(stcb, sem);
+			sched_unlock();
+		}
 #endif
 		ret = OK;
 

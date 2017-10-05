@@ -105,8 +105,9 @@ void up_unblock_task(struct tcb_s *tcb)
 	ASSERT((tcb->task_state >= FIRST_BLOCKED_STATE) && (tcb->task_state <= LAST_BLOCKED_STATE));
 
 	/* Remove the task from the blocked task list */
-
-	sched_removeblocked(tcb);
+	if (tcb->task_state != TSTATE_WAIT_SEM) {
+		sched_removeblocked(tcb);
+	}
 
 	/* Reset its timeslice.  This is only meaningful for round
 	 * robin tasks but it doesn't here to do it for everything

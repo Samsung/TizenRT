@@ -101,6 +101,9 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 
 		sem->semcount = (int16_t)value;
 
+		/* Initialize the waiting task list */
+		dq_init(&(sem->waiting_tasklist));
+
 		/* Initialize to support priority inheritance */
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
