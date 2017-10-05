@@ -23,7 +23,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <apps/netutils/netlib.h>
+#include <netutils/netlib.h>
 #include <sys/socket.h>
 
 #include "utc_internal.h"
@@ -36,8 +36,8 @@
 
 extern dm_lwm2m_client_state_e dm_state;
 
-struct dm_lwm2m_context_s test_data1 = { {"192.168.1.152", "5683", false}, {300} };
-struct dm_lwm2m_context_s test_data2 = { {"192.168.1.152", "123AB", false}, {300} };
+struct dm_lwm2m_context_s test_data1 = { {CONFIG_UTC_DM_SERVER_IPADDR, CONFIG_UTC_DM_SERVER_PORT, false}, {300} };
+struct dm_lwm2m_context_s test_data2 = { {CONFIG_UTC_DM_SERVER_IPADDR, "123AB", false}, {300} };
 
 /**
 * @testcase             utc_dm_lwm2m_start_client_p

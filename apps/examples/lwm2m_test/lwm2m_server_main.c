@@ -921,14 +921,14 @@ static void prv_monitor_callback(uint16_t clientID,
 #ifdef WITH_MBEDTLS
 
 #define HEX2NUM(c)                    \
-    if (c >= '0' && c <= '9')      \
-        c -= '0';                   \
-    else if (c >= 'a' && c <= 'f') \
-        c -= 'a' - 10;              \
-    else if (c >= 'A' && c <= 'F') \
-        c -= 'A' - 10;              \
-    else                            \
-        return(-1);
+	if (c >= '0' && c <= '9')      \
+		c -= '0';                   \
+	else if (c >= 'a' && c <= 'f') \
+		c -= 'a' - 10;              \
+	else if (c >= 'A' && c <= 'F') \
+		c -= 'A' - 10;              \
+	else                            \
+		return(-1);
 
 int lwm2m_unhexify(unsigned char *output, const char *input, size_t *olen)
 {

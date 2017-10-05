@@ -80,12 +80,12 @@
 
 #define SLSI_REG_RULE(start, end, bw, gain, eirp, reg_flags)    \
 {                                   \
-    .start_freq_khz = SLSI_MHZ_TO_KHZ(start),           \
-    .end_freq_khz = SLSI_MHZ_TO_KHZ(end),           \
-    .max_bandwidth_khz = SLSI_MHZ_TO_KHZ(bw),           \
-    .max_antenna_gain = SLSI_DBI_TO_MBI(gain),      \
-    .max_eirp = SLSI_DBM_TO_MBM(eirp),          \
-    .flags = reg_flags,                     \
+	.start_freq_khz = SLSI_MHZ_TO_KHZ(start),           \
+	.end_freq_khz = SLSI_MHZ_TO_KHZ(end),           \
+	.max_bandwidth_khz = SLSI_MHZ_TO_KHZ(bw),           \
+	.max_antenna_gain = SLSI_DBI_TO_MBI(gain),      \
+	.max_eirp = SLSI_DBM_TO_MBM(eirp),          \
+	.flags = reg_flags,                     \
 }
 
 enum slsi_80211_eid {

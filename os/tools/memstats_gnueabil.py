@@ -261,6 +261,7 @@ for line in infile:
                 lsplit = line.split()
                 if (line[0] == '.'):
                         currentSymbol = lsplit[0]
+                        subSymbol = 0;
                         if currentSymbol == ".comment":
                                 action = 0
                         level1[currentSymbol] = {}

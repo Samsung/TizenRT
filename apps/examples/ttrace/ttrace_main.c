@@ -21,7 +21,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <ttrace.h>
+#include <tinyara/ttrace.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -147,17 +147,17 @@ int ttrace_main(int argc, char *argv[])
 #endif
 {
 	while (1) {
-		trace_begin_u(TTRACE_TAG_APPS, 1);
-		trace_begin_u(TTRACE_TAG_LIBS, 2);
-		trace_begin_u(TTRACE_TAG_IPC, 5);
+		trace_begin_uid(TTRACE_TAG_APPS, 1);
+		trace_begin_uid(TTRACE_TAG_LIBS, 2);
+		trace_begin_uid(TTRACE_TAG_IPC, 5);
 
 		outer_apps_func();
 		outer_libs_func();
 		outer_lock_func();
 
-		trace_end_u(TTRACE_TAG_IPC);
-		trace_end_u(TTRACE_TAG_LIBS);
-		trace_end_u(TTRACE_TAG_APPS);
+		trace_end_uid(TTRACE_TAG_IPC);
+		trace_end_uid(TTRACE_TAG_LIBS);
+		trace_end_uid(TTRACE_TAG_APPS);
 	}
 	return 0;
 }

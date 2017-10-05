@@ -327,6 +327,10 @@ static err_t sent_tcp(void *arg, struct tcp_pcb *pcb, u16_t len)
 	LWIP_UNUSED_ARG(pcb);
 	LWIP_ASSERT("conn != NULL", (conn != NULL));
 
+	if (conn == NULL) {
+		return ERR_ARG;
+	}
+
 	if (conn->state == NETCONN_WRITE) {
 		do_writemore(conn);
 	} else if (conn->state == NETCONN_CLOSE) {
@@ -617,8 +621,16 @@ struct netconn *netconn_alloc(enum netconn_type t, netconn_callback callback)
 	if (sys_sem_new(&conn->op_completed, 0) != ERR_OK) {
 		goto free_and_return;
 	}
+	if (sys_sem_new(&conn->op_sync, 1) != ERR_OK) {
+		sys_sem_free(&conn->op_completed);
+		sys_sem_set_invalid(&conn->op_completed);
+		goto free_and_return;
+	}
 	if (sys_mbox_new(&conn->recvmbox, size) != ERR_OK) {
 		sys_sem_free(&conn->op_completed);
+		sys_sem_set_invalid(&conn->op_completed);
+		sys_sem_free(&conn->op_sync);
+		sys_sem_set_invalid(&conn->op_sync);
 		goto free_and_return;
 	}
 #if LWIP_TCP
@@ -672,6 +684,8 @@ void netconn_free(struct netconn *conn)
 
 	sys_sem_free(&conn->op_completed);
 	sys_sem_set_invalid(&conn->op_completed);
+	sys_sem_free(&conn->op_sync);
+	sys_sem_set_invalid(&conn->op_sync);
 
 	memp_free(MEMP_NETCONN, conn);
 	//LWIP_DEBUGF(API_MSG_DEBUG,("Exit"));
@@ -1079,7 +1093,12 @@ void do_listen(struct api_msg_msg *msg)
 #endif							/* TCP_LISTEN_BACKLOG */
 					if (lpcb == NULL) {
 						/* in this case, the old pcb is still allocated */
-						msg->err = ERR_MEM;
+						/* tcp_listen_with_backlog will return null in case of addr in use too */
+						if (get_errno() == EADDRINUSE) {
+							msg->err = ERR_USE;
+						} else {
+							msg->err = ERR_MEM;
+						}
 					} else {
 						/* delete the recvmbox and allocate the acceptmbox */
 						if (sys_mbox_valid(&msg->conn->recvmbox)) {

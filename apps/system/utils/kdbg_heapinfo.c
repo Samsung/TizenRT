@@ -64,7 +64,7 @@ int kdbg_heapinfo(int argc, char **args)
 	int mode = HEAPINFO_SIMPLE;
 	int pid = HEAPINFO_PID_NOTNEEDED;
 
-	if (argc >= 2 && !strcmp(args[1], "--help")) {
+	if (argc >= 2 && !strncmp(args[1], "--help", strlen("--help") + 1)) {
 		goto usage;
 	}
 

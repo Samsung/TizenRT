@@ -141,10 +141,6 @@ int pthread_setschedparam(pthread_t thread, int policy, FAR const struct sched_p
 
 	svdbg("thread ID=%d policy=%d param=0x%p\n", thread, policy, param);
 
-	/* Set the errno to some non-zero value (failsafe) */
-
-	set_errno(EINVAL);
-
 	/* Let sched_setscheduler do all of the work */
 
 	ret = sched_setscheduler((pid_t)thread, policy, param);

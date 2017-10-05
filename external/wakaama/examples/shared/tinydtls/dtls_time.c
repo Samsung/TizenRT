@@ -56,8 +56,8 @@ dtls_clock_init(void) {
   dtls_clock_offset = time(NULL);
 #else
 #  ifdef __GNUC__
-  /* Issue a warning when using gcc. Other prepropressors do 
-   *  not seem to have a similar feature. */ 
+  /* Issue a warning when using gcc. Other prepropressors do
+   *  not seem to have a similar feature. */
 #   warning "cannot initialize clock"
 #  endif
   dtls_clock_offset = 0;
@@ -68,7 +68,7 @@ void dtls_ticks(dtls_tick_t *t) {
 #ifdef HAVE_SYS_TIME_H
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  *t = (tv.tv_sec - dtls_clock_offset) * DTLS_TICKS_PER_SECOND 
+  *t = (tv.tv_sec - dtls_clock_offset) * DTLS_TICKS_PER_SECOND
     + (tv.tv_usec * DTLS_TICKS_PER_SECOND / 1000000);
 #else
 #error "clock not implemented"

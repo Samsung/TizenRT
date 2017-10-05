@@ -3,10 +3,10 @@ examples/tls_client
 
   This is an example to test tls client.
   For more information, see the examples/tls_client/tls_client_main.c
-  or type the command "tlsc help" on TASH.
+  or type the command "tls_client help" on TASH.
 
   usage:
-    ex) tlsc help
+    ex) tls_client help
 
   Configs (see the details on Kconfig):
   * CONFIG_EXAMPLES_TLS_CLIENT

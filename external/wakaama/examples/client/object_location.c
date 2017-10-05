@@ -1,5 +1,5 @@
 /*******************************************************************************
- * 
+ *
  * Copyright (c) 2014 Bosch Software Innovations GmbH, Germany.
  *
  * All rights reserved. This program and the accompanying materials
@@ -14,7 +14,7 @@
  * Contributors:
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  ******************************************************************************/
 /*! \file
   LWM2M object "Location" implementation
@@ -44,7 +44,7 @@
  *              |     |      |         |     |         |       |       | for direction: the scalar component of velocity.                                 |
  */
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,7 +69,7 @@
 #define HORIZONTAL_VELOCITY_VERTICAL         1  // set vertical direction bit!
 #define HORIZONTAL_VELOCITY_WITH_UNCERTAINTY 2
 
-#define VELOCITY_OCTETS                      5  // for HORIZONTAL_VELOCITY_WITH_UNCERTAINTY 
+#define VELOCITY_OCTETS                      5  // for HORIZONTAL_VELOCITY_WITH_UNCERTAINTY
 
 typedef struct
 {
@@ -89,7 +89,7 @@ static uint8_t prv_res2tlv(lwm2m_data_t* dataP,
                            location_data_t* locDataP)
 {
     //-------------------------------------------------------------------- JH --
-    uint8_t ret = COAP_205_CONTENT;  
+    uint8_t ret = COAP_205_CONTENT;
     switch (dataP->id)     // location resourceId
     {
     case RES_M_LATITUDE:
@@ -117,7 +117,7 @@ static uint8_t prv_res2tlv(lwm2m_data_t* dataP,
         ret = COAP_404_NOT_FOUND;
         break;
     }
-  
+
     return ret;
 }
 
@@ -137,7 +137,7 @@ static uint8_t prv_location_read(uint16_t objInstId,
                                  int*  numDataP,
                                  lwm2m_data_t** tlvArrayP,
                                  lwm2m_object_t*  objectP)
-{   
+{
     //-------------------------------------------------------------------- JH --
     int     i;
     uint8_t result = COAP_500_INTERNAL_SERVER_ERROR;
@@ -157,24 +157,24 @@ static uint8_t prv_location_read(uint16_t objInstId,
                 RES_M_TIMESTAMP,
                 RES_O_SPEED
         }; // readable resources!
-        
+
         *numDataP  = sizeof(readResIds)/sizeof(uint16_t);
         *tlvArrayP = lwm2m_data_new(*numDataP);
         if (*tlvArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
-        
+
         // init readable resource id's
         for (i = 0 ; i < *numDataP ; i++)
         {
             (*tlvArrayP)[i].id = readResIds[i];
         }
     }
-    
+
     for (i = 0 ; i < *numDataP ; i++)
     {
         result = prv_res2tlv ((*tlvArrayP)+i, locDataP);
         if (result!=COAP_205_CONTENT) break;
     }
-    
+
     return result;
 }
 
@@ -240,8 +240,8 @@ void location_setLocationAtTime(lwm2m_object_t* locationObj,
 }
 
 /**
-  * This function creates the LWM2M Location. 
-  * @return gives back allocated LWM2M data object structure pointer. On error, 
+  * This function creates the LWM2M Location.
+  * @return gives back allocated LWM2M data object structure pointer. On error,
   * NULL value is returned.
   */
 lwm2m_object_t * get_object_location(void)
@@ -257,7 +257,7 @@ lwm2m_object_t * get_object_location(void)
         // It assigns its unique ID
         // The 6 is the standard ID for the optional object "Location".
         locationObj->objID = LWM2M_LOCATION_OBJECT_ID;
-        
+
         // and its unique instance
         locationObj->instanceList = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
         if (NULL != locationObj->instanceList)
@@ -295,7 +295,7 @@ lwm2m_object_t * get_object_location(void)
             locationObj = NULL;
         }
     }
-    
+
     return locationObj;
 }
 

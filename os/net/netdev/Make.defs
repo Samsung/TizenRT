@@ -53,9 +53,10 @@
 
 # Support for operations on network devices
 NETDEV_CSRCS += netdev_ioctl.c
-NETDEV_CSRCS += netdev_findbyname.c netdev_count.c
-NETDEV_CSRCS += netdev_foreach.c netdev_sem.c
-NETDEV_CSRCS += netdev_carrier.c netdev_default.c
+NETDEV_CSRCS += netdev_findbyname.c
+NETDEV_CSRCS += netdev_count.c
+NETDEV_CSRCS += netdev_foreach.c
+NETDEV_CSRCS += netdev_sem.c
 
 # Include netdev build support
 

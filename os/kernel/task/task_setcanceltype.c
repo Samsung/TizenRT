@@ -112,13 +112,11 @@ int task_setcanceltype(int type, FAR int *oldtype)
 
 		tcb->flags &= ~TCB_FLAG_CANCEL_DEFERRED;
 
-#ifdef CONFIG_CANCELLATION_POINTS
 		/* If we just switched from deferred to asynchronous type and if a
 		 * cancellation is pending, then exit now.
 		 */
 
-		if ((tcb->flags & TCB_FLAG_CANCEL_PENDING) != 0 &&
-		(tcb->flags & TCB_FLAG_NONCANCELABLE) == 0) {
+		if ((tcb->flags & TCB_FLAG_CANCEL_PENDING) != 0 && (tcb->flags & TCB_FLAG_NONCANCELABLE) == 0) {
 			tcb->flags &= ~TCB_FLAG_CANCEL_PENDING;
 
 			/* Exit according to the type of the thread */
@@ -132,16 +130,11 @@ int task_setcanceltype(int type, FAR int *oldtype)
 				exit(EXIT_FAILURE);
 			}
 		}
-#endif
-	}
-#ifdef CONFIG_CANCELLATION_POINTS
-	else if (type == TASK_CANCEL_DEFERRED) {
+	} else if (type == TASK_CANCEL_DEFERRED) {
 		/* Set the deferred cancellation type */
 
 		tcb->flags |= TCB_FLAG_CANCEL_DEFERRED;
-	}
-#endif
-	else {
+	} else {
 		ret = EINVAL;
 	}
 

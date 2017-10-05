@@ -267,7 +267,7 @@ int dns_find_answer(FAR const char *hostname, FAR struct sockaddr *addr, FAR soc
 			 */
 
 			if (strncmp(hostname, entry->name, CONFIG_NETDB_DNSCLIENT_NAMESIZE) == 0) {
-				socklen_t inlen;
+				socklen_t inlen = 0;
 
 				/* We have a match.  Return the resolved host address */
 

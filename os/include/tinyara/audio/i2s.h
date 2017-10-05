@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
+ * include/tinyara/audio/i2s.h
  *
  *   Copyright(C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -69,9 +70,10 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Access macros ************************************************************/
 
 /****************************************************************************
+ * Access macros
+*****************************************************************************
  * Name: I2S_RXSAMPLERATE
  *
  * Description:
@@ -89,7 +91,7 @@
  *
  ****************************************************************************/
 
-#define I2S_RXSAMPLERATE(d, f) ((d)->ops->i2s_rxsamplerate(d, r))
+#define I2S_RXSAMPLERATE(d, f) ((d)->ops->i2s_rxsamplerate(d, f))
 
 /****************************************************************************
  * Name: I2S_RXDATAWIDTH
@@ -159,7 +161,7 @@
  *
  ****************************************************************************/
 
-#define I2S_TXSAMPLERATE(d, f) ((d)->ops->i2s_txsamplerate(d, r))
+#define I2S_TXSAMPLERATE(d, f) ((d)->ops->i2s_txsamplerate(d, f))
 
 /****************************************************************************
  * Name: I2S_TXDATAWIDTH
@@ -224,14 +226,14 @@ typedef CODE void (*i2s_callback_t)(FAR struct i2s_dev_s *dev, FAR struct ap_buf
 struct i2s_ops_s {
 	/* Receiver methods */
 
-	CODE uint32_t (*i2s_rxsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
-	CODE uint32_t (*i2s_rxdatawidth)(FAR struct i2s_dev_s *dev, int bits);
+	CODE uint32_t(*i2s_rxsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
+	CODE uint32_t(*i2s_rxdatawidth)(FAR struct i2s_dev_s *dev, int bits);
 	CODE int (*i2s_receive)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, i2s_callback_t callback, FAR void *arg, uint32_t timeout);
 
 	/* Transmitter methods */
 
-	CODE uint32_t (*i2s_txsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
-	CODE uint32_t (*i2s_txdatawidth)(FAR struct i2s_dev_s *dev, int bits);
+	CODE uint32_t(*i2s_txsamplerate)(FAR struct i2s_dev_s *dev, uint32_t rate);
+	CODE uint32_t(*i2s_txdatawidth)(FAR struct i2s_dev_s *dev, int bits);
 	CODE int (*i2s_send)(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, i2s_callback_t callback, FAR void *arg, uint32_t timeout);
 };
 
@@ -290,5 +292,5 @@ int i2schar_register(FAR struct i2s_dev_s *i2s, int minor);
 }
 #endif
 
-#endif	/* CONFIG_I2S */
-#endif	/* __INCLUDE_TINYARA_AUDIO_I2S_H */
+#endif							/* CONFIG_I2S */
+#endif							/* __INCLUDE_TINYARA_AUDIO_I2S_H */

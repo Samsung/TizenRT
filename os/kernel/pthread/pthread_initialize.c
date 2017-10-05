@@ -61,10 +61,9 @@
 #include <semaphore.h>
 #include <assert.h>
 #include <errno.h>
+#include <tinyara/ttrace.h>
 
 #include "pthread/pthread.h"
-#include <ttrace.h>
-
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -112,8 +111,7 @@ void pthread_initialize(void)
 }
 
 /****************************************************************************
- * Name: pthread_sem_take, pthread_sem_trytake, and
- * 	pthread_sem_give
+ * Name: pthread_sem_take, pthread_sem_trytake, and pthread_sem_give
  *
  * Description:
  *   Support managed access to the private data sets.

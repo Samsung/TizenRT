@@ -167,7 +167,7 @@ ub16_t ub16mulub16(ub16_t m1, ub16_t m2)
 	 */
 
 	uint32_t m1i = ((uint32_t)m1 >> 16);
-	uint32_t m2i = ((uint32_t)m1 >> 16);
+	uint32_t m2i = ((uint32_t)m2 >> 16);
 	uint32_t m1f = ((uint32_t)m1 & 0x0000ffff);
 	uint32_t m2f = ((uint32_t)m2 & 0x0000ffff);
 

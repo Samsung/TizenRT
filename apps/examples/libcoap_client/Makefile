@@ -39,11 +39,11 @@ include $(APPDIR)/Make.defs
 
 # built-in application info
 
-CLIENT_APPNAME = libcoap-client
-CLIENT_FUNCNAME = coap_client_test_main
+APPNAME = libcoap-client
+FUNCNAME = coap_client_test_main
 THREADEXEC = TASH_EXECMD_SYNC
 
-# mqtt test example
+# libcoap-client test example
 
 ASRCS =
 CSRCS =
@@ -56,14 +56,6 @@ MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
 OBJS = $(AOBJS) $(COBJS)
-
-# libcoap flags
-CFLAGS += -DWITH_POSIX
-CFLAGS += -D__TINYARA__
-ifeq ($(CONFIG_NETUTILS_LIBCOAP_DEBUG),n)
-CFLAGS += -DNDEBUG
-endif
-CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(APPDIR)$(DELIM)include$(DELIM)netutils$(DELIM)libcoap}
 
 ifneq ($(CONFIG_BUILD_KERNEL),y)
   OBJS += $(MAINOBJ)
@@ -119,10 +111,10 @@ install:
 endif
 
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_LIBCOAP_CLIENT_TEST),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(CLIENT_APPNAME)_main.bdat: $(DEPCONFIG) Makefile
-	$(call REGISTER,$(CLIENT_APPNAME),$(CLIENT_FUNCNAME),$(THREADEXEC))
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC))
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(CLIENT_APPNAME)_main.bdat
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
 else
 context:
 endif

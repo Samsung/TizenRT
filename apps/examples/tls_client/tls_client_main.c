@@ -60,7 +60,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tls/config.h"
+#include "mbedtls/config.h"
 
 #if !defined(MBEDTLS_ENTROPY_C) || \
 	!defined(MBEDTLS_SSL_TLS_C) || !defined(MBEDTLS_SSL_CLI_C) || \
@@ -78,18 +78,18 @@ int tls_client_main(int argc, char **argv)
 #define mbedtls_fprintf    fprintf
 #define mbedtls_snprintf   snprintf
 
-#include "tls/net.h"
-#include "tls/ssl.h"
-#include "tls/entropy.h"
-#include "tls/ctr_drbg.h"
-#include "tls/certs.h"
-#include "tls/x509.h"
-#include "tls/error.h"
-#include "tls/debug.h"
-#include "tls/timing.h"
+#include "mbedtls/net.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/certs.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/error.h"
+#include "mbedtls/debug.h"
+#include "mbedtls/timing.h"
 
 #ifdef CONFIG_EXAMPLES_TLS_ARTIK_KEY
-#include "tls/see_api.h"
+#include "mbedtls/see_api.h"
 #endif
 
 /*
@@ -267,6 +267,9 @@ struct pthread_arg {
 #define USAGE_ECJPAKE ""
 #endif
 
+#define USAGE_LARGEDATA \
+	"    aging=%%s       default: 0 (disabled, receive a http request)\n"
+
 #define USAGE \
 	"\n usage: ssl_client2 param=<>...\n"                   \
 	"\n acceptable parameters:\n"                           \
@@ -306,6 +309,7 @@ struct pthread_arg {
 	USAGE_ETM                                               \
 	USAGE_RECSPLIT                                          \
 	USAGE_DHMLEN                                            \
+	USAGE_LARGEDATA                                         \
 	"\n"                                                    \
 	"    arc4=%%d             default: (library default: 0)\n" \
 	"    min_version=%%s      default: (library default: tls1)\n"       \
@@ -315,6 +319,8 @@ struct pthread_arg {
 	"\n"                                                    \
 	"    force_ciphersuite=<name>    default: all enabled\n"\
 	" acceptable ciphersuite names:\n"
+
+#define MAX_DATA_SIZE 100 * 1024 * 1024 /* Maximum transfer size is 100MB */
 
 struct options {
 	const char *server_name;	/* hostname of the server (client only)     */
@@ -358,7 +364,10 @@ struct options {
 	int fallback;				/* is this a fallback connection?           */
 	int extended_ms;			/* negotiate extended master secret?        */
 	int etm;					/* negotiate encrypt then mac?              */
+	int aging;                  /* enable the aging test when value is larger than 0*/
 };
+
+
 
 static struct options opt;
 
@@ -453,7 +462,7 @@ int tls_client_cb(void *args)
 	int tail_len;
 	int i;
 	int written;
-	int frags;
+	int frags = 0;
 	int retry_left;
 	mbedtls_net_context server_fd;
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
@@ -568,6 +577,7 @@ usage:
 	opt.fallback = DFL_FALLBACK;
 	opt.extended_ms = DFL_EXTENDED_MS;
 	opt.etm = DFL_ETM;
+	opt.aging = -1;
 
 	for (i = 1; i < argc; i++) {
 		p = argv[i];
@@ -576,13 +586,13 @@ usage:
 		}
 		*q++ = '\0';
 
-		if (strcmp(p, "server_name") == 0) {
+		if (strncmp(p, "server_name", strlen("server_name") + 1) == 0) {
 			opt.server_name = q;
-		} else if (strcmp(p, "server_addr") == 0) {
+		} else if (strncmp(p, "server_addr", strlen("server_addr") + 1) == 0) {
 			opt.server_addr = q;
-		} else if (strcmp(p, "server_port") == 0) {
+		} else if (strncmp(p, "server_port", strlen("server_port") + 1) == 0) {
 			opt.server_port = q;
-		} else if (strcmp(p, "dtls") == 0) {
+		} else if (strncmp(p, "dtls", strlen("dtls") + 1) == 0) {
 			int t = atoi(q);
 			if (t == 0) {
 				opt.transport = MBEDTLS_SSL_TRANSPORT_STREAM;
@@ -591,45 +601,45 @@ usage:
 			} else {
 				goto usage;
 			}
-		} else if (strcmp(p, "debug_level") == 0) {
+		} else if (strncmp(p, "debug_level", strlen("debug_level") + 1) == 0) {
 			opt.debug_level = atoi(q);
 			if (opt.debug_level < 0 || opt.debug_level > 65535) {
 				goto usage;
 			}
-		} else if (strcmp(p, "nbio") == 0) {
+		} else if (strncmp(p, "nbio", strlen("nbio") + 1) == 0) {
 			opt.nbio = atoi(q);
 			if (opt.nbio < 0 || opt.nbio > 2) {
 				goto usage;
 			}
-		} else if (strcmp(p, "read_timeout") == 0) {
+		} else if (strncmp(p, "read_timeout", strlen("read_timeout") + 1) == 0) {
 			opt.read_timeout = atoi(q);
-		} else if (strcmp(p, "max_resend") == 0) {
+		} else if (strncmp(p, "max_resend", strlen("max_resend") + 1) == 0) {
 			opt.max_resend = atoi(q);
 			if (opt.max_resend < 0) {
 				goto usage;
 			}
-		} else if (strcmp(p, "request_page") == 0) {
+		} else if (strncmp(p, "request_page", strlen("request_page") + 1) == 0) {
 			opt.request_page = q;
-		} else if (strcmp(p, "request_size") == 0) {
+		} else if (strncmp(p, "request_size", strlen("request_size") + 1) == 0) {
 			opt.request_size = atoi(q);
 			if (opt.request_size < 0 || opt.request_size > MBEDTLS_SSL_MAX_CONTENT_LEN) {
 				goto usage;
 			}
-		} else if (strcmp(p, "ca_file") == 0) {
+		} else if (strncmp(p, "ca_file", strlen("ca_file") + 1) == 0) {
 			opt.ca_file = q;
-		} else if (strcmp(p, "ca_path") == 0) {
+		} else if (strncmp(p, "ca_path", strlen("ca_path") + 1) == 0) {
 			opt.ca_path = q;
-		} else if (strcmp(p, "crt_file") == 0) {
+		} else if (strncmp(p, "crt_file", strlen("crt_file") + 1) == 0) {
 			opt.crt_file = q;
-		} else if (strcmp(p, "key_file") == 0) {
+		} else if (strncmp(p, "key_file", strlen("key_file") + 1) == 0) {
 			opt.key_file = q;
-		} else if (strcmp(p, "psk") == 0) {
+		} else if (strncmp(p, "psk", strlen("psk") + 1) == 0) {
 			opt.psk = q;
-		} else if (strcmp(p, "psk_identity") == 0) {
+		} else if (strncmp(p, "psk_identity", strlen("psk_identity") + 1) == 0) {
 			opt.psk_identity = q;
-		} else if (strcmp(p, "ecjpake_pw") == 0) {
+		} else if (strncmp(p, "ecjpake_pw", strlen("ecjpake_pw") + 1) == 0) {
 			opt.ecjpake_pw = q;
-		} else if (strcmp(p, "force_ciphersuite") == 0) {
+		} else if (strncmp(p, "force_ciphersuite", strlen("force_ciphersuite") + 1) == 0) {
 			opt.force_ciphersuite[0] = mbedtls_ssl_get_ciphersuite_id(q);
 
 			if (opt.force_ciphersuite[0] == 0) {
@@ -637,9 +647,9 @@ usage:
 				goto usage;
 			}
 			opt.force_ciphersuite[1] = 0;
-		} else if (strcmp(p, "renegotiation") == 0) {
+		} else if (strncmp(p, "renegotiation", strlen("renegotiation") + 1) == 0) {
 			opt.renegotiation = (atoi(q)) ? MBEDTLS_SSL_RENEGOTIATION_ENABLED : MBEDTLS_SSL_RENEGOTIATION_DISABLED;
-		} else if (strcmp(p, "allow_legacy") == 0) {
+		} else if (strncmp(p, "allow_legacy", strlen("allow_legacy") + 1) == 0) {
 			switch (atoi(q)) {
 			case -1:
 				opt.allow_legacy = MBEDTLS_SSL_LEGACY_BREAK_HANDSHAKE;
@@ -653,39 +663,39 @@ usage:
 			default:
 				goto usage;
 			}
-		} else if (strcmp(p, "renegotiate") == 0) {
+		} else if (strncmp(p, "renegotiate", strlen("renegotiate") + 1) == 0) {
 			opt.renegotiate = atoi(q);
 			if (opt.renegotiate < 0 || opt.renegotiate > 1) {
 				goto usage;
 			}
-		} else if (strcmp(p, "exchanges") == 0) {
+		} else if (strncmp(p, "exchanges", strlen("exchanges") + 1) == 0) {
 			opt.exchanges = atoi(q);
 			if (opt.exchanges < 1) {
 				goto usage;
 			}
-		} else if (strcmp(p, "reconnect") == 0) {
+		} else if (strncmp(p, "reconnect", strlen("reconnect") + 1) == 0) {
 			opt.reconnect = atoi(q);
 			if (opt.reconnect < 0 || opt.reconnect > 2) {
 				goto usage;
 			}
-		} else if (strcmp(p, "reco_delay") == 0) {
+		} else if (strncmp(p, "reco_delay", strlen("reco_delay") + 1) == 0) {
 			opt.reco_delay = atoi(q);
 			if (opt.reco_delay < 0) {
 				goto usage;
 			}
-		} else if (strcmp(p, "reconnect_hard") == 0) {
+		} else if (strncmp(p, "reconnect_hard", strlen("reconnect_hard") + 1) == 0) {
 			opt.reconnect_hard = atoi(q);
 			if (opt.reconnect_hard < 0 || opt.reconnect_hard > 1) {
 				goto usage;
 			}
-		} else if (strcmp(p, "tickets") == 0) {
+		} else if (strncmp(p, "tickets", strlen("tickets") + 1) == 0) {
 			opt.tickets = atoi(q);
 			if (opt.tickets < 0 || opt.tickets > 2) {
 				goto usage;
 			}
-		} else if (strcmp(p, "alpn") == 0) {
+		} else if (strncmp(p, "alpn", strlen("alpn") + 1) == 0) {
 			opt.alpn_string = q;
-		} else if (strcmp(p, "fallback") == 0) {
+		} else if (strncmp(p, "fallback", strlen("fallback") + 1) == 0) {
 			switch (atoi(q)) {
 			case 0:
 				opt.fallback = MBEDTLS_SSL_IS_NOT_FALLBACK;
@@ -696,7 +706,7 @@ usage:
 			default:
 				goto usage;
 			}
-		} else if (strcmp(p, "extended_ms") == 0) {
+		} else if (strncmp(p, "extended_ms", strlen("extended_ms") + 1) == 0) {
 			switch (atoi(q)) {
 			case 0:
 				opt.extended_ms = MBEDTLS_SSL_EXTENDED_MS_DISABLED;
@@ -707,7 +717,7 @@ usage:
 			default:
 				goto usage;
 			}
-		} else if (strcmp(p, "etm") == 0) {
+		} else if (strncmp(p, "etm", strlen("etm") + 1) == 0) {
 			switch (atoi(q)) {
 			case 0:
 				opt.etm = MBEDTLS_SSL_ETM_DISABLED;
@@ -718,31 +728,31 @@ usage:
 			default:
 				goto usage;
 			}
-		} else if (strcmp(p, "min_version") == 0) {
-			if (strcmp(q, "ssl3") == 0) {
+		} else if (strncmp(p, "min_version", strlen("min_version") + 1) == 0) {
+			if (strncmp(q, "ssl3", strlen("ssl3") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_0;
-			} else if (strcmp(q, "tls1") == 0) {
+			} else if (strncmp(q, "tls1", strlen("tls1") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_1;
-			} else if (strcmp(q, "tls1_1") == 0 || strcmp(q, "dtls1") == 0) {
+			} else if (strncmp(q, "tls1_1", strlen("tls1_1") + 1) == 0 || strncmp(q, "dtls1", strlen("dtls1") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_2;
-			} else if (strcmp(q, "tls1_2") == 0 || strcmp(q, "dtls1_2") == 0) {
+			} else if (strncmp(q, "tls1_2", strlen("tls1_2") + 1) == 0 || strncmp(q, "dtls1_2", strlen("dtls1_2") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_3;
 			} else {
 				goto usage;
 			}
-		} else if (strcmp(p, "max_version") == 0) {
-			if (strcmp(q, "ssl3") == 0) {
+		} else if (strncmp(p, "max_version", strlen("max_version") + 1) == 0) {
+			if (strncmp(q, "ssl3", strlen("ssl3") + 1) == 0) {
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_0;
-			} else if (strcmp(q, "tls1") == 0) {
+			} else if (strncmp(q, "tls1", strlen("tls1") + 1) == 0) {
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_1;
-			} else if (strcmp(q, "tls1_1") == 0 || strcmp(q, "dtls1") == 0) {
+			} else if (strncmp(q, "tls1_1", strlen("tls1_1") + 1) == 0 || strncmp(q, "dtls1", strlen("dtls1") + 1) == 0) {
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_2;
-			} else if (strcmp(q, "tls1_2") == 0 || strcmp(q, "dtls1_2") == 0) {
+			} else if (strncmp(q, "tls1_2", strlen("tls1_2") + 1) == 0 || strncmp(q, "dtls1_2", strlen("dtls1_2") + 1) == 0) {
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_3;
 			} else {
 				goto usage;
 			}
-		} else if (strcmp(p, "arc4") == 0) {
+		} else if (strncmp(p, "arc4", strlen("arc4") + 1) == 0) {
 			switch (atoi(q)) {
 			case 0:
 				opt.arc4 = MBEDTLS_SSL_ARC4_DISABLED;
@@ -753,54 +763,54 @@ usage:
 			default:
 				goto usage;
 			}
-		} else if (strcmp(p, "force_version") == 0) {
-			if (strcmp(q, "ssl3") == 0) {
+		} else if (strncmp(p, "force_version", strlen("force_version") + 1) == 0) {
+			if (strncmp(q, "ssl3", strlen("ssl3") + 1) == 0) {
 
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_0;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_0;
-			} else if (strcmp(q, "tls1") == 0) {
+			} else if (strncmp(q, "tls1", strlen("tls1") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_1;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_1;
-			} else if (strcmp(q, "tls1_1") == 0) {
+			} else if (strncmp(q, "tls1_1", strlen("tls1_1") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_2;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_2;
-			} else if (strcmp(q, "tls1_2") == 0) {
+			} else if (strncmp(q, "tls1_2", strlen("tls1_2") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_3;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_3;
-			} else if (strcmp(q, "dtls1") == 0) {
+			} else if (strncmp(q, "dtls1", strlen("dtls1") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_2;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_2;
 				opt.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
-			} else if (strcmp(q, "dtls1_2") == 0) {
+			} else if (strncmp(q, "dtls1_2", strlen("dtls1_2") + 1) == 0) {
 				opt.min_version = MBEDTLS_SSL_MINOR_VERSION_3;
 				opt.max_version = MBEDTLS_SSL_MINOR_VERSION_3;
 				opt.transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
 			} else {
 				goto usage;
 			}
-		} else if (strcmp(p, "auth_mode") == 0) {
-			if (strcmp(q, "none") == 0) {
+		} else if (strncmp(p, "auth_mode", strlen("auth_mode") + 1) == 0) {
+			if (strncmp(q, "none", strlen("none") + 1) == 0) {
 				opt.auth_mode = MBEDTLS_SSL_VERIFY_NONE;
-			} else if (strcmp(q, "optional") == 0) {
+			} else if (strncmp(q, "optional", strlen("optional") + 1) == 0) {
 				opt.auth_mode = MBEDTLS_SSL_VERIFY_OPTIONAL;
-			} else if (strcmp(q, "required") == 0) {
+			} else if (strncmp(q, "required", strlen("required") + 1) == 0) {
 				opt.auth_mode = MBEDTLS_SSL_VERIFY_REQUIRED;
 			} else {
 				goto usage;
 			}
-		} else if (strcmp(p, "max_frag_len") == 0) {
-			if (strcmp(q, "512") == 0) {
+		} else if (strncmp(p, "max_frag_len", strlen("max_frag_len") + 1) == 0) {
+			if (strncmp(q, "512", strlen("512") + 1) == 0) {
 				opt.mfl_code = MBEDTLS_SSL_MAX_FRAG_LEN_512;
-			} else if (strcmp(q, "1024") == 0) {
+			} else if (strncmp(q, "1024", strlen("1024") + 1) == 0) {
 				opt.mfl_code = MBEDTLS_SSL_MAX_FRAG_LEN_1024;
-			} else if (strcmp(q, "2048") == 0) {
+			} else if (strncmp(q, "2048", strlen("2048") + 1) == 0) {
 				opt.mfl_code = MBEDTLS_SSL_MAX_FRAG_LEN_2048;
-			} else if (strcmp(q, "4096") == 0) {
+			} else if (strncmp(q, "4096", strlen("4096") + 1) == 0) {
 				opt.mfl_code = MBEDTLS_SSL_MAX_FRAG_LEN_4096;
 			} else {
 				goto usage;
 			}
-		} else if (strcmp(p, "trunc_hmac") == 0) {
+		} else if (strncmp(p, "trunc_hmac", strlen("trunc_hmac") + 1) == 0) {
 			switch (atoi(q)) {
 			case 0:
 				opt.trunc_hmac = MBEDTLS_SSL_TRUNC_HMAC_DISABLED;
@@ -811,7 +821,7 @@ usage:
 			default:
 				goto usage;
 			}
-		} else if (strcmp(p, "hs_timeout") == 0) {
+		} else if (strncmp(p, "hs_timeout", strlen("hs_timeout") + 1) == 0) {
 			if ((p = strchr(q, '-')) == NULL) {
 				goto usage;
 			}
@@ -821,14 +831,19 @@ usage:
 			if (opt.hs_to_min == 0 || opt.hs_to_max < opt.hs_to_min) {
 				goto usage;
 			}
-		} else if (strcmp(p, "recsplit") == 0) {
+		} else if (strncmp(p, "recsplit", strlen("recsplit") + 1) == 0) {
 			opt.recsplit = atoi(q);
 			if (opt.recsplit < 0 || opt.recsplit > 1) {
 				goto usage;
 			}
-		} else if (strcmp(p, "dhmlen") == 0) {
+		} else if (strncmp(p, "dhmlen", strlen("dhmlen") + 1) == 0) {
 			opt.dhmlen = atoi(q);
 			if (opt.dhmlen < 0) {
+				goto usage;
+			}
+		} else if (strncmp(p, "aging", strlen("aging") + 1) == 0) {
+			opt.aging = atoi(q);
+			if (opt.aging <= 0 && opt.aging > MAX_DATA_SIZE) {
 				goto usage;
 			}
 		} else {
@@ -1339,6 +1354,40 @@ usage:
 	 */
 	retry_left = opt.max_resend;
 send_request:
+	if (opt.aging > 0) {
+		mbedtls_printf("   start the aging test (%d)B sendbuf size(%d)B\n", opt.aging, sizeof(buf));
+		int send_left = opt.aging;
+
+		// send buf size
+		unsigned int aging_size = htonl(opt.aging);
+		ret = mbedtls_ssl_write(&ssl, (void *)&aging_size, sizeof(unsigned int));
+		if (ret <= 0 && ret != MBEDTLS_ERR_SSL_WANT_READ &&
+			ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+			mbedtls_printf(" failed to send transfer size to the tls server(%x)\n", -ret);
+			goto exit;
+		}
+		
+		while (send_left > 0) {
+			int datasize = send_left < MBEDTLS_SSL_MAX_CONTENT_LEN ? send_left : MBEDTLS_SSL_MAX_CONTENT_LEN;
+			for (written = 0, frags = 0; written < datasize; written += ret, frags++) {
+				int bufsize = datasize - written;
+				while ((ret = mbedtls_ssl_write(&ssl, buf + written, bufsize)) <= 0) {
+					if (ret != MBEDTLS_ERR_SSL_WANT_READ &&
+						ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+
+						mbedtls_printf(" failed\n  ! mbedtls_ssl_write returned -0x%x\n\n", -ret);
+						goto exit;
+					}
+				}
+				mbedtls_printf(" sent (%d/%d)\n", ret, send_left);
+			}
+			send_left -= MBEDTLS_SSL_MAX_CONTENT_LEN;
+		}
+		mbedtls_printf(" transfer is done frags(%d)\n", frags);
+		ret = 0;
+		goto exit;
+	}
+		
 	mbedtls_printf("  > Write to server:");
 	fflush(stdout);
 

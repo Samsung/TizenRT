@@ -289,15 +289,15 @@ typedef struct pthread_cond_s pthread_cond_t;
  * @brief Structure of pthread mutex attr configuration
  */
 struct pthread_mutexattr_s {
-	uint8_t pshared : 1; /* PTHREAD_PROCESS_PRIVATE or PTHREAD_PROCESS_SHARED */
+	uint8_t pshared:1; /* PTHREAD_PROCESS_PRIVATE or PTHREAD_PROCESS_SHARED */
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	uint8_t proto   : 2; /* See PTHREAD_PRIO_* definitions */
+	uint8_t proto:2; /* See PTHREAD_PRIO_* definitions */
 #endif
 #ifdef CONFIG_PTHREAD_MUTEX_TYPES
-	uint8_t type    : 2; /* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
+	uint8_t type:2; /* Type of the mutex.  See PTHREAD_MUTEX_* definitions */
 #endif
-#ifdef CONFIG_PTHREAD_MUTEX_BOTH
-	uint8_t robust  : 1; /* PTHREAD_MUTEX_STALLED or PTHREAD_MUTEX_ROBUST */
+#if defined(CONFIG_PTHREAD_MUTEX_BOTH) || defined(CONFIG_PTHREAD_MUTEX_ROBUST)
+	uint8_t robust:1; /* PTHREAD_MUTEX_STALLED or PTHREAD_MUTEX_ROBUST */
 #endif
 };
 typedef struct pthread_mutexattr_s pthread_mutexattr_t;
@@ -339,14 +339,14 @@ typedef struct pthread_mutex_s pthread_mutex_t;
 
 #if defined(CONFIG_PTHREAD_MUTEX_TYPES) && !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
 #define PTHREAD_MUTEX_INITIALIZER {NULL, SEM_INITIALIZER(1), -1, \
-                                     __PTHREAD_MUTEX_DEFAULT_FLAGS, \
-                                     PTHREAD_MUTEX_DEFAULT, 0}
+				   __PTHREAD_MUTEX_DEFAULT_FLAGS, \
+				   PTHREAD_MUTEX_DEFAULT, 0}
 #elif defined(CONFIG_PTHREAD_MUTEX_TYPES)
 #define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1, \
-                                     PTHREAD_MUTEX_DEFAULT, 0}
+				   PTHREAD_MUTEX_DEFAULT, 0}
 #elif !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
 #define PTHREAD_MUTEX_INITIALIZER {NULL, SEM_INITIALIZER(1), -1,\
-                                     __PTHREAD_MUTEX_DEFAULT_FLAGS}
+				   __PTHREAD_MUTEX_DEFAULT_FLAGS}
 #else
 #define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1}
 #endif
@@ -378,6 +378,10 @@ typedef bool pthread_once_t;
 typedef CODE void (*pthread_cleanup_t)(FAR void *arg);
 #endif
 
+/**
+ * @ingroup PTHREAD_KERNEL
+ * @brief Structure of pthread rwlock
+ */
 struct pthread_rwlock_s {
 	pthread_mutex_t lock;
 	pthread_cond_t cv;
@@ -390,9 +394,9 @@ typedef struct pthread_rwlock_s pthread_rwlock_t;
 
 typedef int pthread_rwlockattr_t;
 
-#define PTHREAD_RWLOCK_INITIALIZER  {PTHREAD_MUTEX_INITIALIZER, \
-                                     PTHREAD_COND_INITIALIZER, \
-                                     0, 0, false}
+#define PTHREAD_RWLOCK_INITIALIZER {PTHREAD_MUTEX_INITIALIZER, \
+				    PTHREAD_COND_INITIALIZER, \
+				    0, 0, false}
 
 /* Forware references */
 
@@ -460,17 +464,19 @@ int pthread_cancel(pthread_t thread);
  * @since Tizen RT v1.0
  */
 int pthread_setcancelstate(int state, FAR int *oldstate);
-
+/**
+ * @ingroup PTHREAD_KERNEL
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
+ */
 int pthread_setcanceltype(int type, FAR int *oldtype);
 
 /**
- * @cond
- * @internal
+ * @ingroup PTHREAD_KERNEL
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
  */
 void pthread_testcancel(void);
-/**
- * @endcond
- */
 
 /* A thread may set up cleanup functions to execut when the thread exits or is canceled. */
 #ifdef CONFIG_PTHREAD_CLEANUP
@@ -801,13 +807,28 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
  * @since Tizen RT v1.0
  */
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
-
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
+ */
 int pthread_mutexattr_getprotocol(FAR const pthread_mutexattr_t *attr,
 				  FAR int *protocol);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
+ */
 int pthread_mutexattr_setprotocol(FAR pthread_mutexattr_t *attr,
 				  int protocol);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
+ */
 int pthread_mutexattr_getrobust(FAR const pthread_mutexattr_t *attr,
 				FAR int *robust);
+/**
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
+ */
 int pthread_mutexattr_setrobust(FAR pthread_mutexattr_t *attr,
 				int robust);
 
@@ -849,47 +870,47 @@ int pthread_barrierattr_setpshared(FAR pthread_barrierattr_t *attr, int pshared)
 
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_destroy(FAR pthread_rwlock_t *rw_lock);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_init(FAR pthread_rwlock_t *rw_lock, FAR const pthread_rwlockattr_t *attr);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_rdlock(pthread_rwlock_t *lock);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_timedrdlock(FAR pthread_rwlock_t *lock, FAR const struct timespec *abstime);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_timedwrlock(FAR pthread_rwlock_t *lock, FAR const struct timespec *abstime);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_tryrdlock(FAR pthread_rwlock_t *lock);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_trywrlock(FAR pthread_rwlock_t *lock);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_unlock(FAR pthread_rwlock_t *lock);
 /**
  * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since Tizen RT v1.0
+ * @since Tizen RT v1.1
  */
 int pthread_rwlock_wrlock(FAR pthread_rwlock_t *lock);
 

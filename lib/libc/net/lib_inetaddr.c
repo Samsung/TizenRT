@@ -92,7 +92,30 @@ in_addr_t inet_addr(FAR const char *cp)
 
 int inet_aton(const char *cp, struct in_addr *inp)
 {
+	int idx = 0;
+	int dot_count = 0;
+	int check_range[4] = { -1, -1, -1, -1 };
+	while (cp[idx] != '\0') {
+		if (idx > 14) {
+			return 0;
+		}
+		if (cp[idx] != '.' && (cp[idx] < '0' || cp[idx] > '9')) {
+			return 0;
+		}
+		if (cp[idx] == '.') {
+			dot_count++;
+		}
+		idx++;
+	}
+	if (dot_count != 3) {
+		return 0;
+	}
+	sscanf(cp, "%d.%d.%d.%d", &check_range[0], &check_range[1], &check_range[2], &check_range[3]);
+	for (idx = 0; idx < 4; idx++) {
+		if (check_range[idx] < 0 || check_range[idx] > 255) {
+			return 0;
+		}
+	}
 	inp->s_addr = inet_addr(cp);
 	return 1;
 }
-

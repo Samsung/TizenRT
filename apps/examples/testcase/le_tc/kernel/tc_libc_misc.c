@@ -26,6 +26,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <string.h>
+#include <tinyara/regex.h>
 #include <unistd.h>
 #include <errno.h>
 #include <libgen.h>
@@ -34,6 +35,7 @@
 #include <crc32.h>
 #include "tc_internal.h"
 
+#define BUFF_SIZE 256
 #define USEC_100 100
 #define VAL_50 50
 #define VAL_71 71
@@ -347,6 +349,73 @@ static void tc_libc_misc_vdbg(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @fn                  :tc_libc_misc_lib_dumpbuffer
+ * @brief               :Do a pretty buffer dump
+ * @scenario            :Do a pretty buffer dump
+ * @API's covered       :lib_dumpbuffer
+ * @Preconditions       :None
+ * @Postconditions      :None
+ * @Return              :void
+ */
+static void tc_libc_misc_lib_dumpbuffer(void)
+{
+	const char *msg = "tc_libc_misc_lib_dumpbuffer";
+	unsigned char buffer[] = { 'S', 'A', 'M', 'S', 'U', 'N', 'G', '-', 'T', 'i', 'z', 'e', 'n', 'R', 'T' };
+	unsigned char *buf = NULL;
+	int idx;
+
+	/**
+	 * As lib_dumpbuffer returns void, there in no way to check the success or failure case
+	 * we need to manually check the dump output
+	 * Case-1: output: 53414d53554e472d54697a656e5254 SAMSUNG-TizenRT
+	 * Case-2: output: 0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a ...............	(i.e, 256 "0a")
+	 */
+
+	/* Case-1 */
+	lib_dumpbuffer(msg, buffer, sizeof(buffer));
+
+	/* Case-2 */
+	buf = (unsigned char *)malloc(BUFF_SIZE);
+	TC_ASSERT_NEQ("malloc", buf, NULL);
+
+	for (idx = 0; idx < BUFF_SIZE; idx++) {
+		buf[idx] = 0xA;
+	}
+	lib_dumpbuffer(msg, buf, BUFF_SIZE);
+
+	free(buf);
+	buf = NULL;
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                  :tc_libc_misc_match
+ * @brief               :Simple shell-style filename pattern matcher
+ * @scenario            :Returns 1 (match) or 0 (no-match)
+ * @API's covered       :match
+ * @Preconditions       :None
+ * @Postconditions      :None
+ * @Return              :void
+ */
+static void tc_libc_misc_match(void)
+{
+	const char *pattern = "?|";
+	const char *string = "S";
+	int ret;
+
+	ret = match(pattern, string);
+	TC_ASSERT_EQ("match", ret, 1);
+
+	pattern = "somepattern";
+	string = "nomatch";
+	ret = match(pattern, string);
+	TC_ASSERT_EQ("match", ret, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: libc_misc
  ****************************************************************************/
@@ -362,6 +431,7 @@ int libc_misc_main(void)
 #ifdef CONFIG_DEBUG
 #ifdef CONFIG_DEBUG_ERROR
 	tc_libc_misc_dbg();
+	tc_libc_misc_lib_dumpbuffer();
 #ifdef CONFIG_ARCH_LOWPUTC
 	tc_libc_misc_lldbg();
 #endif
@@ -374,6 +444,7 @@ int libc_misc_main(void)
 #endif
 #endif
 #endif /* CONFIG_DEBUG */
+	tc_libc_misc_match();
 
 	return 0;
 }

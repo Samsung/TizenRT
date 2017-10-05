@@ -40,6 +40,9 @@ const static tash_cmdlist_t kdbg_cmds[] = {
 #if defined(CONFIG_ENABLE_HEAPINFO)
 	{"heapinfo", kdbg_heapinfo,     TASH_EXECMD_SYNC},
 #endif
+#if defined(CONFIG_ENABLE_IRQINFO)
+	{"irqinfo",   kdbg_irqinfo,      TASH_EXECMD_SYNC},
+#endif
 #if defined(CONFIG_ENABLE_KILL)
 	{"kill",     kdbg_kill,         TASH_EXECMD_SYNC},
 #endif
@@ -54,6 +57,9 @@ const static tash_cmdlist_t kdbg_cmds[] = {
 #endif
 #if defined(CONFIG_ENABLE_STACKMONITOR)
 	{"stkmon",   kdbg_stackmonitor, TASH_EXECMD_SYNC},
+#endif
+#if defined(CONFIG_ENABLE_STACKOPT)
+	{"stkopt",   kdbg_stackopt,    TASH_EXECMD_ASYNC},
 #endif
 #if defined(CONFIG_TTRACE)
 	{"ttrace",   kdbg_ttrace,       TASH_EXECMD_SYNC},

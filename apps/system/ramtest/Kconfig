@@ -8,3 +8,15 @@ config SYSTEM_RAMTEST
 	default n
 	---help---
 		Enable a simple RAM test.
+
+if SYSTEM_RAMTEST
+
+config SYSTEM_RAMTEST_PRIORITY
+	int "RAM test task priority"
+	default 100
+
+config SYSTEM_RAMTEST_STACKSIZE
+	int "RAM test stack size"
+	default 1024
+
+endif

@@ -70,7 +70,6 @@
 #endif
 
 #include "netdev/netdev.h"
-#include "route/route.h"
 #include "utils/utils.h"
 
 /****************************************************************************

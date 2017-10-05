@@ -1,0 +1,37 @@
+###########################################################################
+#
+# Copyright 2017 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+CSRCS += \
+	aes-wrap.c \
+	aes-unwrap.c \
+	aes-internal-enc.c \
+	aes-internal.c \
+	aes-internal-dec.c \
+	aes-cbc.c \
+	sha1.c \
+	md5-internal.c \
+	sha1-pbkdf2.c \
+	rc4.c \
+	md5.c \
+	sha1-prf.c \
+	sha1-internal.c \
+	crypto_internal.c
+
+DEPPATH += --dep-path src/crypto
+VPATH += :src/crypto
+

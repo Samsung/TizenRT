@@ -69,7 +69,7 @@
 #include <debug.h>
 
 #include <tinyara/fs/ioctl.h>
-#include <tinyara/mtd/mtd.h>
+#include <tinyara/fs/mtd.h>
 
 #include "up_arch.h"
 #include "chip.h"

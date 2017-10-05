@@ -50,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_INCLUDE_INIFILE_H
-#define __APPS_INCLUDE_INIFILE_H
+#ifndef __APPS_INCLUDE_HEX2BIN_H
+#define __APPS_INCLUDE_HEX2BIN_H
 
 /****************************************************************************
  * Included Files
@@ -284,4 +284,4 @@ int hex2mem_main(int argc, char **argv);
 #endif
 
 #endif							/* CONFIG_SYSTEM_HEX2BIN */
-#endif							/* __APPS_INCLUDE_INIFILE_H */
+#endif							/* __APPS_INCLUDE_HEX2BIN_H */

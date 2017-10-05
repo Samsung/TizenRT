@@ -18,9 +18,12 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 #include <apps/shell/tash.h>
 #include <tinyara/logm.h>
 #include "logm.h"
+
+static int logm_tash(int argc, char **args);
 
 const static tash_cmdlist_t logm_tashmds[] = {
 	{"logm", logm_tash, TASH_EXECMD_SYNC},

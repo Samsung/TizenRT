@@ -27,9 +27,10 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <pthread.h>
 #include "tc_internal.h"
 
-#define ARG_3 3
+#define ARG_COUNT 6
 #define SEC_3 3
 
 #define USLEEP_INTERVAL 3000000
@@ -42,18 +43,23 @@ int pipe_fd[2];
 const char msg[MSG_SIZE + 1] = "012345678901234567890123456789";
 char pipe_buf[MSG_SIZE + 1];
 
-static int pipe_tx_func(int argc, char *argv[])
+static void *pipe_tx_func(void *arg)
 {
 	int tx_iter;
+
 	for (tx_iter = 0; tx_iter < 10; tx_iter++) {
 		write(pipe_fd[1], msg, MSG_SIZE);
 	}
-	return 0;
+	sem_post(&pipe_sem);
+
+	return NULL;
 }
 
-static int pipe_rx_func(int argc, char *argv[])
+static void *pipe_rx_func(void *arg)
 {
 	int rx_iter;
+
+	sem_wait(&pipe_sem);
 	for (rx_iter = 0; rx_iter < 10; rx_iter++) {
 		read(pipe_fd[0], pipe_buf, MSG_SIZE);
 		if (strcmp(pipe_buf, msg) != 0) {
@@ -62,7 +68,7 @@ static int pipe_rx_func(int argc, char *argv[])
 	}
 	sem_post(&pipe_sem);
 
-	return 0;
+	return NULL;
 }
 
 /**
@@ -90,6 +96,24 @@ static void tc_libc_unistd_chdir_getcwd(void)
 	cwd = getcwd(buff, BUFFSIZE);
 	TC_ASSERT_EQ("getcwd", strcmp(directory, cwd), 0);
 
+	/* Failure case: size less than strlen(buff) or invalid size */
+	cwd = getcwd(buff, 1);
+	TC_ASSERT_EQ("getcwd", cwd, NULL);
+
+	/* Failure case: when "PWD" is not defined*/
+	unsetenv("PWD");
+	cwd = getcwd(buff, BUFFSIZE);
+	TC_ASSERT_EQ("getcwd", strcmp(cwd, CONFIG_LIB_HOMEDIR), 0);
+
+	directory = NULL;
+	ret_chk = chdir(directory);
+	TC_ASSERT_EQ("chdir", ret_chk, ERROR);
+
+	/* Failure case: path is not a directory */
+	directory = "NOTDIR";
+	ret_chk = chdir(directory);
+	TC_ASSERT_EQ("chdir", ret_chk, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -108,23 +132,39 @@ static void tc_libc_unistd_getopt(void)
 	int flag_a = 0;
 	int flag_b = 0;
 	int ret = -1;
-	int argc = ARG_3;
-	char *sz_argv[] = { "-a", "-a", "-b" };
+	int argc = ARG_COUNT;
+	char *sz_argv[] = { "arg0", "-a2", "-b", "-c", "-a", "-:" };
+	char **arg;
+	int *opt;
+	int *idx;
 
 	optind = -1;
-	while ((ret = getopt(argc, sz_argv, "ab")) != ERROR)
+	while ((ret = getopt(argc, sz_argv, ":a:b")) != ERROR)
 		switch (ret) {
 		case 'a':
 			flag_a = 1;
+			arg = getoptargp();
+			vdbg("getoptargp: optarg = %s\n", *arg);
 			break;
 		case 'b':
 			flag_b = 1;
+			idx = getoptindp();
+			vdbg("getoptindp: optind = %d\n", *idx);
 			break;
 		default:
+			opt = getoptoptp();
+			vdbg("getoptoptp: optopt = %c\n", *opt);
 			break;
 		}
 	TC_ASSERT_EQ("getopt", flag_a, 1);
 	TC_ASSERT_EQ("getopt", flag_b, 1);
+
+	ret = getopt(argc, sz_argv, NULL);
+	TC_ASSERT_EQ("getopt", ret, ERROR);
+
+	sz_argv[1] = "a";
+	ret = getopt(argc, sz_argv, ":a:b");
+	TC_ASSERT_EQ("getopt", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -193,19 +233,24 @@ static void tc_libc_unistd_usleep(void)
 static void tc_libc_unistd_pipe(void)
 {
 	int ret_chk;
-	int pid[2];
+	pthread_t th_id[2];
 
 	ret_chk = pipe(pipe_fd);
 	TC_ASSERT_NEQ("pipe", ret_chk, ERROR);
 
 	sem_init(&pipe_sem, 0, 0);
-	pid[0] = task_create("tx", 99, 1024, pipe_tx_func, NULL);
-	TC_ASSERT_GEQ_CLEANUP("task_create", pid[0], 0, goto cleanup_pipe);
 
-	pid[1] = task_create("rx", 99, 1024, pipe_rx_func, NULL);
-	TC_ASSERT_GEQ_CLEANUP("task_create", pid[1], 0, goto cleanup_pipe);
+	ret_chk = pthread_create(&th_id[0], NULL, pipe_tx_func, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, goto cleanup_pipe);
 
-	sem_wait(&pipe_sem);
+	ret_chk = pthread_create(&th_id[1], NULL, pipe_rx_func, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_create", ret_chk, OK, goto cleanup_pipe);
+
+	ret_chk = pthread_join(th_id[0], NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+
+	ret_chk = pthread_join(th_id[1], NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
 
 	TC_ASSERT_EQ_CLEANUP("pipe", pipe_tc_chk, OK, goto cleanup_pipe);
 
@@ -216,17 +261,41 @@ cleanup_pipe:
 	close(pipe_fd[1]);
 }
 
+/**
+* @fn                   :tc_libc_unistd_access
+* @brief                :check real user's permissions for a file
+* @Scenario             :checks whether the calling process can access the file path‐name
+* API's covered         :access
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_libc_unistd_access(void)
+{
+	int ret_chk;
+	char path[BUFFSIZE + 1];
+
+	getcwd(path, BUFFSIZE);
+	snprintf(path, BUFFSIZE, "%s/%s", path, __FILE__);
+
+	ret_chk = access(path, F_OK);
+	TC_ASSERT_EQ("access", ret_chk, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: libc_unistd
  ****************************************************************************/
 
 int libc_unistd_main(void)
 {
+	tc_libc_unistd_access();
 	tc_libc_unistd_chdir_getcwd();
 	tc_libc_unistd_getopt();
+	tc_libc_unistd_pipe();
 	tc_libc_unistd_sleep();
 	tc_libc_unistd_usleep();
-	tc_libc_unistd_pipe();
 
 	return 0;
 }

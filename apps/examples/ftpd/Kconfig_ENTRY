@@ -1,0 +1,3 @@
+config ENTRY_FTPD
+	bool "FTP Server example"
+	depends on EXAMPLES_FTPD

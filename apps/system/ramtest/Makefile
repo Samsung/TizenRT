@@ -18,7 +18,7 @@
 ############################################################################
 # apps/system/ramtest/Makefile
 #
-#   Copyright (C) 2013 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2013, 2017 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -54,14 +54,16 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-ifeq ($(WINTOOL),y)
-INCDIROPT = -w
-endif
+# RAM test
 
-# USB Monitor Application
+CONFIG_SYSTEM_RAMTEST_PRIORITY ?= SCHED_PRIORITY_DEFAULT
+CONFIG_SYSTEM_RAMTEST_STACKSIZE ?= 1024
 
-PRIORITY = SCHED_PRIORITY_DEFAULT
-STACKSIZE = 768
+APPNAME = ramtest
+FUNCNAME = ramtest_main
+THREADEXEC = TASH_EXECMD_ASYNC
+PRIORITY = $(CONFIG_SYSTEM_RAMTEST_PRIORITY)
+STACKSIZE = $(CONFIG_SYSTEM_RAMTEST_STACKSIZE)
 
 ASRCS =
 CSRCS =
@@ -93,9 +95,6 @@ ifeq ($(WINTOOL),y)
 else
   INSTALL_DIR = $(BIN_DIR)
 endif
-
-CONFIG_XYZ_PROGNAME ?= ramtest$(EXEEXT)
-PROGNAME = $(CONFIG_XYZ_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
@@ -131,7 +130,16 @@ endif
 
 # Register application
 
+ifeq ($(CONFIG_BUILTIN_APPS),y)
+$(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
+
+else
 context:
+
+endif
 
 # Create dependencies
 

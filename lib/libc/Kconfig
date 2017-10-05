@@ -45,10 +45,18 @@ config NOPRINTF_FIELDWIDTH
 
 config LIBC_FLOATINGPOINT
 	bool "Enable floating point in printf"
+	depends on LIBM
 	default n
 	---help---
 		By default, floating point
 		support in printf, sscanf, etc. is disabled.
+
+config NOPRINTF_LONGLONG_TO_ASCII
+	bool "Disable long long type in printf"
+	default n
+	---help---
+		sprintf-related logic is a little smaller if we do not support long long type
+		conversion
 
 config LIBC_IOCTL_VARIADIC
 	bool "Enable variadic ioctl()"
@@ -235,9 +243,13 @@ config LIB_SENDFILE_BUFSIZE
 	---help---
 		Size of the I/O buffer to allocate in sendfile().  Default: 512b
 
+config ARCH_HAVE_ROMGETC
+	bool
+
 config ARCH_ROMGETC
 	bool "Support for ROM string access"
 	default n
+	depends on ARCH_HAVE_ROMGETC
 	---help---
 		In Harvard architectures, data accesses and instruction accesses
 		occur on different buses, perhaps concurrently.  All data accesses
@@ -337,8 +349,8 @@ config MEMSET_OPTSPEED
 	default n
 	depends on !ARCH_MEMSET
 	---help---
-		Select this option to use a version of memcpy() optimized for speed.
-		Default: memcpy() is optimized for size.
+		Select this option to use a version of memset() optimized for speed.
+		Default: memset() is optimized for size.
 
 config MEMSET_64BIT
 	bool "64-bit memset()"

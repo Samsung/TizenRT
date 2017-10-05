@@ -51,7 +51,6 @@
 
 #include <net/lwip/arch.h>
 #include <net/lwip/opt.h>
-
 /** lower two bits indicate debug level
  * - 0 all
  * - 1 warning
@@ -79,7 +78,9 @@
 /** flag for LWIP_DEBUGF to halt after printing this debug message */
 #define LWIP_DBG_HALT          0x08U
 
-#ifndef LWIP_NOASSERT
+#if LWIP_NOASSERT
+#define LWIP_ASSERT(message, assertion)
+#else
 #define LWIP_ASSERT(message, assertion) \
 	do { \
 		if (!(assertion)) { \
@@ -87,12 +88,12 @@
 			LWIP_PLATFORM_ASSERT(assertion);\
 		} \
 	} while (0)
-#else							/* LWIP_NOASSERT */
-#define LWIP_ASSERT(message, assertion)
 #endif							/* LWIP_NOASSERT */
 
 /** if "expression" isn't true, then print "message" and execute "handler" expression */
-#ifndef LWIP_ERROR
+#if LWIP_NOERROR
+#define LWIP_ERROR(message, expression, handler)
+#else
 #define LWIP_ERROR(message, expression, handler) \
 	do { \
 		if (!(expression)) { \
@@ -101,9 +102,8 @@
 			handler;\
 		} \
 	} while (0)
-#endif							/* LWIP_ERROR */
+#endif							/* LWIP_NOERROR */
 
-#define LWIP_DEBUG      1
 #ifdef LWIP_DEBUG
 /** print debug message only if debug message type is enabled...
  *  AND is of correct type AND is at least LWIP_DBG_LEVEL

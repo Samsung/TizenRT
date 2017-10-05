@@ -592,6 +592,54 @@ Once LOGM is approved, each module should have its own index
 #define lllvdbg(x...)
 #endif
 
+#ifdef CONFIG_DEBUG_AUDIO_ERROR
+#define auddbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define audlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define auddbg(x...)
+#define audlldbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_AUDIO_WARN
+#define audwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define audllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define audwdbg(x...)
+#define audllwdbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_AUDIO_INFO
+#define audvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define audllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define audvdbg(x...)
+#define audllvdbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_I2C_ERROR
+#define i2cerr(format, ...)    dbg(format, ##__VA_ARGS__)
+#define i2clldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define i2cerr(x...)
+#define i2clldbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_I2C_WARN
+#define i2cwarn(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define i2cllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define i2cwarn(x...)
+#define i2cllwdbg(x...)
+#endif
+
+#ifdef CONFIG_DEBUG_I2C_INFO
+#define i2cinfo(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define i2cllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define i2cinfo(x...)
+#define i2cllvdbg(x...)
+#endif
+
 #ifdef CONFIG_NET_LWIP_DEBUG
 #define lwipdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define lwiplldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -934,6 +982,29 @@ Once LOGM is approved, each module should have its own index
 #define lllvdbg     (void)
 #endif
 
+#ifdef CONFIG_DEBUG_AUDIO_ERROR
+#define auddbg		dbg
+#define audlldbg	lldbg
+#else
+#define auddbg		(void)
+#define audlldbg	(void)
+#endif
+
+#ifdef CONFIG_DEBUG_AUDIO_WARN
+#define audwdbg		wdbg
+#define audllwdbg	llwdbg
+#else
+#define audwdbg		(void)
+#define audllwdbg	(void)
+#endif
+
+#ifdef CONFIG_DEBUG_AUDIO_INFO
+#define audvdbg		vdbg
+#define audllvdbg	llvdbg
+#else
+#define audvdbg		(void)
+#define audllvdbg	(void)
+#endif
 #endif							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Buffer dumping macros do not depend on varargs */
@@ -1058,17 +1129,18 @@ Once LOGM is approved, each module should have its own index
 extern "C" {
 #endif
 
-/* Dump a buffer of data */
 /**
- * @cond
- * @internal
+ * @ingroup DEBUG_KERNEL
+ * @brief  Dump a buffer of data
+ *
+ * @param[in] message for buffer dump
+ * @param[in] buffer
+ * @param[in] length for buffer
+ * @return void
+ * @since Tizen RT v1.1
  */
 
 void lib_dumpbuffer(FAR const char *msg, FAR const uint8_t *buffer, unsigned int buflen);
-
-/**
- * @endcond
- */
 
 /* The system logging interfaces are normally accessed via the macros
  * provided above.  If the cross-compiler's C pre-processor supports a

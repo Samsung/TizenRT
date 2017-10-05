@@ -1,7 +1,7 @@
 /*
  * FILE:	sha2speed.c
  * AUTHOR:	Aaron D. Gifford - http://www.aarongifford.com/
- * 
+ *
  * Copyright (c) 2000-2001, Aaron D. Gifford
  * All rights reserved.
  *
@@ -16,7 +16,7 @@
  * 3. Neither the name of the copyright holder nor the names of contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTOR(S) ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 		SHA256_Init(&c256);
 		SHA384_Init(&c384);
 		SHA512_Init(&c512);
-	
+
 		gettimeofday(&start, (struct timezone*)0);
 		for (j = 0; j < blocks; j++) {
 			SHA256_Update(&c256, (unsigned char*)buf, BUFSIZE);

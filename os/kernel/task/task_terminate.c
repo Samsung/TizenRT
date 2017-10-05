@@ -62,6 +62,8 @@
 #include <errno.h>
 
 #include <tinyara/sched.h>
+#include <tinyara/ttrace.h>
+
 #include <arch/irq.h>
 
 #include "sched/sched.h"
@@ -69,7 +71,6 @@
 #include "signal/signal.h"
 #endif
 #include "task/task.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Definitions

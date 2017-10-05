@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016-2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@
 #include <libgen.h>
 #include "tc_internal.h"
 
+#define MAX_PATH_LEN 18
+
 /**
  * @fn                  :tc_libc_libgen_basename
  * @brief               :The basename command strips any "path" name components from a filename, leaving you with a "pure" filename.
@@ -41,30 +43,25 @@
  */
 static void tc_libc_libgen_basename(void)
 {
-	char *path;
+	char path[MAX_PATH_LEN + 1] = { '\0' };
 	char *ret_chk;
 
-	path = NULL;
 	ret_chk = basename(path);
 	TC_ASSERT_EQ("basename", strncmp(ret_chk, ".", strlen(".")), 0);
 
-	path = "\0";
-	ret_chk = basename(path);
-	TC_ASSERT_EQ("basename", strncmp(ret_chk, ".", strlen(".")), 0);
-
-	path = "/";
+	strncpy(path, "/", MAX_PATH_LEN);
 	ret_chk = basename(path);
 	TC_ASSERT_EQ("basename", strncmp(ret_chk, "/", strlen("/")), 0);
 
-	path = "//";
+	strncpy(path, "//", MAX_PATH_LEN);
 	ret_chk = basename(path);
 	TC_ASSERT_EQ("basename", strncmp(ret_chk, "/", strlen("/")), 0);
 
-	path = "/dirname/basename";
+	strncpy(path, "/dirname/basename", MAX_PATH_LEN);
 	ret_chk = basename(path);
 	TC_ASSERT_EQ("basename", strncmp(ret_chk, "basename", strlen("basename")), 0);
 
-	path = "basename";
+	strncpy(path, "basename", MAX_PATH_LEN);
 	ret_chk = basename(path);
 	TC_ASSERT_EQ("basename", strncmp(ret_chk, "basename", strlen("basename")), 0);
 
@@ -81,34 +78,34 @@ static void tc_libc_libgen_basename(void)
  * @Postonditions       :None
  * @return              :void
  */
+
 static void tc_libc_libgen_dirname(void)
 {
-	char *path;
+	char path[MAX_PATH_LEN + 1] = { '\0' };
 	char *ret_chk;
 
-	path = NULL;
 	ret_chk = dirname(path);
 	TC_ASSERT_EQ("dirname", strncmp(ret_chk, ".", strlen(".")), 0);
 
-	path = "\0";
-	ret_chk = dirname(path);
-	TC_ASSERT_EQ("dirname", strncmp(ret_chk, ".", strlen(".")), 0);
-
-	path = "/";
+	strncpy(path, "/", MAX_PATH_LEN);
 	ret_chk = dirname(path);
 	TC_ASSERT_EQ("dirname", strncmp(ret_chk, "/", strlen("/")), 0);
 
-	path = "//";
+	strncpy(path, "//", MAX_PATH_LEN);
 	ret_chk = dirname(path);
 	TC_ASSERT_EQ("dirname", strncmp(ret_chk, "/", strlen("/")), 0);
 
-	path = "/dirname/basename";
+	strncpy(path, "/dirname/basename", MAX_PATH_LEN);
 	ret_chk = dirname(path);
 	TC_ASSERT_EQ("dirname", strncmp(ret_chk, "/dirname", strlen("/dirname")), 0);
 
-	path = "basename";
+	strncpy(path, "basename", MAX_PATH_LEN);
 	ret_chk = dirname(path);
 	TC_ASSERT_EQ("dirname", strncmp(ret_chk, ".", strlen(".")), 0);
+
+	strncpy(path, "/dirname ", MAX_PATH_LEN);
+	ret_chk = dirname(path);
+	TC_ASSERT_EQ("dirname", strncmp(ret_chk, "/", strlen("/")), 0);
 
 	TC_SUCCESS_RESULT();
 }

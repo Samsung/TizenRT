@@ -29,7 +29,7 @@
 
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
 #ifdef __TIZENRT__
-#include "tls/ssl.h"
+#include "mbedtls/ssl.h"
 #else
 #include "mbedtls/ssl.h"
 #endif

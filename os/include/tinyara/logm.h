@@ -15,6 +15,13 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+ /**
+  * @defgroup LOGM_KERNEL LOGM
+  * @ingroup KERNEL
+  */
+
+///@file tinyara/logm.h
+///@brief logm APIs
 
 #ifndef __OS_INCLUDE_TINYARA_LOGM_H
 #define __OS_INCLUDE_TINYARA_LOGM_H
@@ -63,13 +70,30 @@ extern "C"
 #else
 #  define EXTERN extern
 #endif
-
+/**
+ * @cond
+ * @internal
+ */
 void logm_start(void);
+/**
+ * @internal
+ */
 int logm_internal(int flag, int indx, int priority, const char *fmt, va_list valst);
+/**
+ * @internal
+ */
 int logm(int flag, int indx, int priority, const char *fmt, ...);
+/**
+ * @internal
+ */
 int logm_set_values(enum logm_param_type_e type, int value);
+/**
+ * @internal
+ */
 int logm_get_values(enum logm_param_type_e type, int* value);
-
+/**
+ * @endcond
+ */
 #undef EXTERN
 #if defined(__cplusplus)
 }

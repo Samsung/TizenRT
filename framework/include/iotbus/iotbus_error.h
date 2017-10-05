@@ -23,7 +23,7 @@
  */
 
 /**
- * @file iotbus_error.h
+ * @file iotbus/iotbus_error.h
  * @brief Definition of iotbus_error
  */
 

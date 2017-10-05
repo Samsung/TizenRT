@@ -1,7 +1,6 @@
 /****************************************************************************
  *
  * Copyright 2017 Samsung Electronics All Rights Reserved.
- * Author: Jihun Ahn <jhun.ahn@samsung.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +74,7 @@
 
 #include "chip/s5jt200_mct.h"
 #include "s5j_mct.h"
+#include "s5j_clock.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -92,12 +92,6 @@ struct s5j_mct_priv_s {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static unsigned int s5j_mct_getoscclock(void)
-{
-	/* TODO: get TCLKB from CLK DRIVER */
-	return 26000000;
-}
-
 static uint32_t mct_getreg32(FAR struct s5j_mct_priv_s *priv, uint32_t offset)
 {
 	return getreg32(priv->base_addr + offset);
@@ -111,7 +105,7 @@ static void mct_putreg32(FAR struct s5j_mct_priv_s *priv, uint32_t offset,
 
 static int s5j_mct_setclock(uint32_t freq)
 {
-	uint32_t tclkb = s5j_mct_getoscclock();
+	uint32_t tclkb = s5j_clk_get_rate(CLK_DFT_OSCCLK);
 	uint32_t cfg = getreg32(S5J_MCT_CFG) & 0xFFFFF800;
 	uint32_t prescaler = (tclkb / freq - 1);
 

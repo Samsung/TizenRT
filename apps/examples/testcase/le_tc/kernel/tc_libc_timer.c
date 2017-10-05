@@ -30,8 +30,11 @@
 #include <signal.h>
 #include <spawn.h>
 #include <syslog.h>
+#include <time.h>
 #include <tinyara/time.h>
 #include <sys/types.h>
+#include <math.h>
+#include <float.h>
 #include "tc_internal.h"
 
 #define BUFF_SIZE 64
@@ -106,7 +109,7 @@ static void tc_libc_timer_gmtime_r(void)
 	/* verifying the structures returned and filled by comparing their parameters */
 
 	st_rettime = gmtime_r(&test_time, &st_time);
-	TC_ASSERT_NOT_NULL("gmtime_r", st_rettime);
+	TC_ASSERT_NEQ("gmtime_r", st_rettime, NULL);
 	TC_ASSERT_EQ("gmtime_r", st_rettime->tm_year, st_time.tm_year);
 	TC_ASSERT_EQ("gmtime_r", st_rettime->tm_mon, st_time.tm_mon);
 	TC_ASSERT_EQ("gmtime_r", year, st_time.tm_year);
@@ -136,10 +139,10 @@ static void tc_libc_timer_gmtime(void)
 	TC_ASSERT_NEQ("time", ret_chk, (time_t)ERROR);
 
 	st_rettime = gmtime(&time1);
-	TC_ASSERT_NOT_NULL("gmtime", st_rettime);
+	TC_ASSERT_NEQ("gmtime", st_rettime, NULL);
 
 	st_localtime = localtime(&time1);
-	TC_ASSERT_NOT_NULL("localtime", st_localtime);
+	TC_ASSERT_NEQ("localtime", st_localtime, NULL);
 	TC_ASSERT_EQ("localtime", st_rettime->tm_year, st_localtime->tm_year);
 	TC_ASSERT_EQ("localtime", st_rettime->tm_mon, st_localtime->tm_mon);
 
@@ -151,7 +154,7 @@ static void tc_libc_timer_gmtime(void)
 	/* verifying the returned structure's parameter, year should not be negative, month range is 0-11 */
 
 	st_rettime = gmtime(&time2);
-	TC_ASSERT_NOT_NULL("gmtime", st_rettime);
+	TC_ASSERT_NEQ("gmtime", st_rettime, NULL);
 	TC_ASSERT_GEQ("gtime", st_rettime->tm_year, 0);
 	TC_ASSERT_GEQ("gtime", st_rettime->tm_mon, 0);
 	TC_ASSERT_LT("gtime", st_rettime->tm_mon, 12);
@@ -211,10 +214,10 @@ static void tc_libc_timer_localtime(void)
 
 	time(&test_time);
 	st_gmtime = gmtime(&test_time);
-	TC_ASSERT_NOT_NULL("gmtime", st_gmtime);
+	TC_ASSERT_NEQ("gmtime", st_gmtime, NULL);
 
 	st_rettime = localtime(&test_time);
-	TC_ASSERT_NOT_NULL("localtime", st_gmtime);
+	TC_ASSERT_NEQ("localtime", st_gmtime, NULL);
 	TC_ASSERT_EQ("localtime", st_rettime->tm_year, st_gmtime->tm_year);
 	TC_ASSERT_EQ("localtime", st_rettime->tm_mon, st_gmtime->tm_mon);
 
@@ -249,7 +252,7 @@ static void tc_libc_timer_localtime_r(void)
 	/* verifying the structures "returned and filled" by comparing their parameters */
 
 	st_rettime = localtime_r(&test_time, &st_time);
-	TC_ASSERT_NOT_NULL("localtime_r", st_rettime);
+	TC_ASSERT_NEQ("localtime_r", st_rettime, NULL);
 	TC_ASSERT_EQ("localtime_r", st_rettime->tm_year, st_time.tm_year);
 	TC_ASSERT_EQ("localtime_r", st_rettime->tm_mon, st_time.tm_mon);
 	TC_ASSERT_EQ("localtime_r", st_gettime.tm_year, st_time.tm_year);
@@ -325,7 +328,7 @@ static void tc_libc_timer_strftime(void)
 	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_mon + 1);
 
 	/* Check the abbreviated month name */
-	strftime(buffer, BUFF_SIZE, "%b", &st_time);
+	strftime(buffer, BUFF_SIZE, "%h", &st_time);
 	TC_ASSERT_EQ("strftime", strcmp(buffer, "Jun"), 0);
 
 	/* Check the full month name */
@@ -340,6 +343,12 @@ static void tc_libc_timer_strftime(void)
 	strftime(buffer, BUFF_SIZE, "%d", &st_time);
 	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_mday);
 
+	/* Check the day of month as a decimal number but a leading zero
+	 * is replaced by a space. (range 1 to 31)
+	 */
+	strftime(buffer, BUFF_SIZE, "%e", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_mday);
+
 	/* Check the hour as a decimal number using a 24-hour clock (range 00 to 23) */
 	strftime(buffer, BUFF_SIZE, "%H", &st_time);
 	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_hour);
@@ -352,6 +361,18 @@ static void tc_libc_timer_strftime(void)
 	strftime(buffer, BUFF_SIZE, "%j", &st_time);
 	TC_ASSERT_EQ("strftime", atoi(buffer), clock_daysbeforemonth(st_time.tm_mon, false) + st_time.tm_mday);
 
+	/* Check the hour as a decimal number using a 24-hour clock (range 0 to 23)
+	 * single digits are preceded by a blank.
+	 */
+	strftime(buffer, BUFF_SIZE, "%k", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_hour);
+
+	/* Check the hour as a decimal number using a 12-hour clock (range 01 to 12)
+	 * single digits are preceded by a blank.
+	 */
+	strftime(buffer, BUFF_SIZE, "%l", &st_time);
+	TC_ASSERT_EQ("strftime", atoi(buffer), st_time.tm_hour - 12);
+
 	/* Check either "AM" or "PM" according to the given time value, Noon is treated as "PM" and midnight as "AM" */
 	strftime(buffer, BUFF_SIZE, "%p", &st_time);
 	TC_ASSERT_EQ("strftime", strcmp(buffer, "PM"), 0);
@@ -359,6 +380,15 @@ static void tc_libc_timer_strftime(void)
 	/* Check either "am" or "pm" according to the given time value, Noon is treated as "pm" and midnight as "am" */
 	strftime(buffer, BUFF_SIZE, "%P", &st_time);
 	TC_ASSERT_EQ("strftime", strcmp(buffer, "pm"), 0);
+
+	st_time.tm_hour = 3;
+	/* Check either "AM" or "PM" according to the given time value, Noon is treated as "PM" and midnight as "AM" */
+	strftime(buffer, BUFF_SIZE, "%p", &st_time);
+	TC_ASSERT_EQ("strftime", strcmp(buffer, "AM"), 0);
+
+	/* Check either "am" or "pm" according to the given time value, Noon is treated as "pm" and midnight as "am" */
+	strftime(buffer, BUFF_SIZE, "%P", &st_time);
+	TC_ASSERT_EQ("strftime", strcmp(buffer, "am"), 0);
 
 	/* Check the second as a decimal number (range 00 to 60) */
 	strftime(buffer, BUFF_SIZE, "%S", &st_time);
@@ -374,6 +404,7 @@ static void tc_libc_timer_strftime(void)
 
 	/* Check with invalid param. it will returns 0. */
 	ret_chk = strftime(buffer, BUFF_SIZE, "%f", &st_time);
+	TC_ASSERT_EQ("strftime", ret_chk, 0);
 	TC_ASSERT_EQ("strftime", atoi(buffer), 0);
 
 	TC_SUCCESS_RESULT();

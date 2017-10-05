@@ -69,7 +69,6 @@
 #include <net/lwip/tcp_impl.h>
 #include <net/lwip/debug.h>
 #include <net/lwip/stats.h>
-
 #include <string.h>
 
 #ifndef TCP_LOCAL_PORT_RANGE_START
@@ -540,6 +539,7 @@ struct tcp_pcb *tcp_listen_with_backlog(struct tcp_pcb *pcb, u8_t backlog)
 			if (lpcb->local_port == pcb->local_port) {
 				if (ip_addr_cmp(&lpcb->local_ip, &pcb->local_ip)) {
 					/* this address/port is already used */
+					set_errno(EADDRINUSE);
 					return NULL;
 				}
 			}

@@ -96,7 +96,7 @@ static void tc_libc_stdio_avsprintf(const char *format, ...)
 	va_start(args, format);
 	ret_chk = avsprintf(&buffer, format, args);
 	va_end(args);
-	TC_ASSERT_NOT_NULL("avsprintf", buffer);
+	TC_ASSERT_NEQ("avsprintf", buffer, NULL);
 	TC_ASSERT_EQ_CLEANUP("avsprintf",
 						 ret_chk, strlen(printable_chars),
 						 TC_FREE_MEMORY(buffer));
@@ -547,7 +547,7 @@ static void tc_libc_stdio_asprintf(void)
 
 	ret_chk = asprintf(&buffer, "%s", printable_chars);
 
-	TC_ASSERT_NOT_NULL("asprintf", buffer);
+	TC_ASSERT_NEQ("asprintf", buffer, NULL);
 	TC_ASSERT_EQ_CLEANUP("asprintf",
 						 ret_chk, strlen(printable_chars),
 						 TC_FREE_MEMORY(buffer));

@@ -1,5 +1,17 @@
 menu "Debug Options for Network"
 
+config NET_LWIP_ASSERT
+	bool "Enable Assert Features"
+	default n
+	---help---
+		Enable ASSERT options for each layers
+
+config NET_LWIP_ERROR
+	bool "Enable Error Features"
+	default n
+	---help---
+		Enable ERROR options for each layers
+
 config NET_LWIP_DEBUG
 	bool "Enable Debug Features"
 	default n

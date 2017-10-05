@@ -23,6 +23,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -39,7 +40,9 @@
 #include <sys/sendfile.h>
 #include <sys/statfs.h>
 #include <sys/select.h>
+#include <sys/types.h>
 
+#include <tinyara/streams.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/fs_utils.h>
 #include <apps/shell/tash.h>
@@ -50,6 +53,8 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
+#define STDIO_BUFLEN 		64
+#define VFS_CONTENTS_LEN	20
 
 #define MOUNT_DIR CONFIG_MOUNT_POINT
 
@@ -110,6 +115,8 @@
 #ifndef STDERR_FILENO
 #  define STDERR_FILENO 2
 #endif
+
+#define INV_FD -3
 
 /****************************************************************************
  * Global Variables
@@ -302,8 +309,8 @@ static void fs_vfs_read_tc(void)
 	TC_ASSERT_GEQ("open", fd, 0);
 	memset(buf, 0, sizeof(buf));
 	ret = read(fd, buf, sizeof(buf));
-	TC_ASSERT_LT_CLEANUP("read", ret, 0, close(fd));
 	close(fd);
+	TC_ASSERT_LT("read", ret, 0);
 
 	/* Nagative case with invalid argument, fd. It will return ERROR */
 	ret = read(CONFIG_NFILE_DESCRIPTORS, buf, sizeof(buf));
@@ -357,11 +364,11 @@ static void fs_vfs_dup_tc(void)
 	TC_ASSERT_EQ_CLEANUP("write", ret, len, close(fd1));
 
 	fd2 = dup(fd1);
-	TC_ASSERT_GEQ_CLEANUP("dup", fd2, 0,  close(fd1));
+	close(fd1);
+	TC_ASSERT_GEQ("dup", fd2, 0);
 
 	len = strlen(str2);
 	ret = write(fd2, str2, strlen(str2));
-	close(fd1);
 	close(fd2);
 	TC_ASSERT_EQ("write", ret, len);
 
@@ -384,13 +391,13 @@ static void fs_vfs_dup_tc(void)
 
 	/* Nagative case with invalid argument, invalid fd. It will return ERROR */
 #if CONFIG_NFILE_DESCRIPTORS > 0
-	ret = dup(CONFIG_NFILE_DESCRIPTORS);
-	TC_ASSERT_EQ("dup", ret, ERROR);
+	fd1 = dup(CONFIG_NFILE_DESCRIPTORS);
+	TC_ASSERT_LT_CLEANUP("dup", fd1, 0, close(fd1));
 #endif
 
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
-	ret = dup(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS);
-	TC_ASSERT_EQ("dup", ret, ERROR);
+	fd1 = dup(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS);
+	TC_ASSERT_LT_CLEANUP("dup", fd1, 0, close(fd1));
 #endif
 
 	TC_SUCCESS_RESULT();
@@ -425,26 +432,28 @@ static void fs_vfs_dup2_tc(void)
 
 	/* now fd1 points fd2 */
 	ret = dup2(fd2, fd1);
-	TC_ASSERT_GEQ_CLEANUP("dup2", ret, 0, close(fd2));
+	close(fd2);
+	TC_ASSERT_NEQ("dup2", ret, ERROR);
+	TC_ASSERT_GEQ("dup2", fd1, 0);
 
 	len = strlen(VFS_TEST_CONTENTS_3);
 	ret = write(fd1, str, len);
 	close(fd1);
-	TC_ASSERT_EQ_CLEANUP("write", ret, len, close(fd2));
-	close(fd2);
+	TC_ASSERT_EQ("write", ret, len);
 
 	fd2 = open(filename2, O_RDONLY);
 	TC_ASSERT_GEQ("open", fd2, 0);
 
 	ret = read(fd2, buf, len);
 	close(fd2);
-
 	TC_ASSERT_GT("read", ret, 0);
 	TC_ASSERT_EQ("read", strcmp(buf, VFS_TEST_CONTENTS_3), 0);
 
 	/* Nagative case with invalid argument, invalid fd. It will return ERROR */
+	fd1 = -1;
 	ret = dup2(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS, fd1);
-	TC_ASSERT_LT_CLEANUP("dup2", fd1, 0, close(fd1));
+	close(fd1);
+	TC_ASSERT_LT("dup2", fd1, 0);
 	TC_ASSERT_EQ("dup2", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
@@ -472,20 +481,20 @@ static void fs_vfs_fsync_tc(void)
 	TC_ASSERT_EQ_CLEANUP("write", ret, len, close(fd));
 
 	ret = fsync(fd);
-	TC_ASSERT_GEQ_CLEANUP("fsync", ret, 0, close(fd));
 	close(fd);
+	TC_ASSERT_GEQ("fsync", ret, 0);
 
 	/* Nagative case with invalid argument, no write access. It will return ERROR */
 	fd = open(filename, O_RDOK);
 	TC_ASSERT_GEQ("open", fd, 0);
 
 	ret = fsync(fd);
-	TC_ASSERT_EQ_CLEANUP("fsync", ret, ERROR, close(fd));
 	close(fd);
+	TC_ASSERT_EQ("fsync", ret, ERROR);
 
 	/* Nagative case with invalid argument, fd. It will return ERROR */
 	ret = fsync(CONFIG_NFILE_DESCRIPTORS);
-	TC_ASSERT_EQ_CLEANUP("fsync", ret, ERROR, close(fd));
+	TC_ASSERT_EQ("fsync", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -626,7 +635,8 @@ static void fs_vfs_opendir_tc(void)
 	DIR *dirp;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
+	closedir(dirp);
 	TC_SUCCESS_RESULT();
 }
 
@@ -645,7 +655,7 @@ static void fs_vfs_readdir_tc(void)
 	struct dirent *dirent;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	count = 0;
 	while (1) {
@@ -676,7 +686,7 @@ static void fs_vfs_rewinddir_tc(void)
 	struct dirent *dirent;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	count = 0;
 	while (1) {
@@ -713,13 +723,13 @@ static void fs_vfs_seekdir_tc(void)
 	char filename[1];
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	offset = 2;
 	seekdir(dirp, offset);
-	TC_ASSERT_CLEANUP("seekdir", dirp, closedir(dirp));
+	TC_ASSERT_NEQ_CLEANUP("seekdir", dirp, NULL, closedir(dirp));
 	dirent = readdir(dirp);
-	TC_ASSERT_CLEANUP("readdir", dirent, closedir(dirp));
+	TC_ASSERT_NEQ_CLEANUP("readdir", dirent, NULL, closedir(dirp));
 	TC_ASSERT_EQ_CLEANUP("readdir", dirent->d_type, DTYPE_DIRECTORY, closedir(dirp));
 
 	ret = closedir(dirp);
@@ -747,7 +757,7 @@ static void fs_libc_dirent_readdir_r_tc(void)
 	struct dirent *result;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	count = 0;
 	while (1) {
@@ -778,11 +788,11 @@ static void fs_libc_dirent_telldir_tc(void)
 	int ret;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	offset = 2;
 	seekdir(dirp, offset);
-	TC_ASSERT_CLEANUP("seekdir", dirp, closedir(dirp));
+	TC_ASSERT_NEQ_CLEANUP("seekdir", dirp, NULL, closedir(dirp));
 	res = telldir(dirp);
 	TC_ASSERT_EQ_CLEANUP("telldir", res, offset, closedir(dirp));
 	ret = closedir(dirp);
@@ -809,10 +819,17 @@ static void fs_vfs_closedir_tc(void)
 	DIR *dirp;
 
 	dirp = opendir(VFS_FOLDER_PATH);
-	TC_ASSERT("opendir", dirp);
+	TC_ASSERT_NEQ("opendir", dirp, NULL);
 
 	ret = closedir(dirp);
 	TC_ASSERT_EQ("closedir", ret, OK);
+
+	dirp = opendir("nodir");
+	TC_ASSERT_EQ_CLEANUP("opendir", dirp, NULL, closedir(dirp));
+
+	ret = closedir(NULL);
+	TC_ASSERT_EQ("closedir", ret, ERROR);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -951,7 +968,9 @@ static void fs_vfs_mkfifo_tc(void)
 	g_thread_result = true;
 
 	ret = mkfifo(FIFO_FILE_PATH, 0666);
-	TC_ASSERT("mkfifo", (ret >= 0) || (ret == -EEXIST));
+	if (ret < 0) {
+		TC_ASSERT_EQ("mkfifo", ret, -EEXIST);
+	}
 
 	fd = open(FIFO_FILE_PATH, O_WRONLY);
 	TC_ASSERT_GEQ("open", fd, 0);
@@ -973,7 +992,7 @@ static void fs_vfs_mkfifo_tc(void)
 	}
 	close(fd);
 	pthread_kill(tid, SIGUSR1);
-	TC_ASSERT("mkfifo", g_thread_result);
+	TC_ASSERT_EQ("mkfifo", g_thread_result, true);
 	TC_SUCCESS_RESULT();
 errout:
 	pthread_kill(tid, SIGUSR1);
@@ -996,6 +1015,7 @@ static void fs_vfs_sendfile_tc(void)
 	struct stat st;
 	int fd1, fd2, ret;
 	off_t size;
+	off_t offset;
 
 	snprintf(dest_file, sizeof(dest_file), "%s_dest", src_file);
 
@@ -1006,17 +1026,69 @@ static void fs_vfs_sendfile_tc(void)
 	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1));
 
 	size = st.st_size;
+	/* case-1: offset = 0 */
 	fd2 = open(dest_file, O_WRONLY | O_CREAT);
 	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
 
 	ret = sendfile(fd2, fd1, 0, size);
-	close(fd1);
 	close(fd2);
-	TC_ASSERT_EQ("sendfile", ret, size);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, size, close(fd1));
 
 	ret = stat(dest_file, &st);
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1));
+	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, size, close(fd1));
+
+	/* case-2: offset = 1 */
+	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
+
+	offset = 1;
+	ret = sendfile(fd2, fd1, &offset, size - 1);
+	close(fd2);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, size - 1, close(fd1));
+
+	ret = stat(dest_file, &st);
+	TC_ASSERT_EQ_CLEANUP("stat", ret, OK, close(fd1));
+	TC_ASSERT_EQ_CLEANUP("stat", st.st_size, size - 1, close(fd1));
+
+	/* case-3: offset = 1, invalid input fd, returns ERROR */
+	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
+
+	offset = 1;
+	ret = sendfile(fd2, INV_FD, &offset, size - 1);
+	close(fd2);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, close(fd1));
+
+	/* case-4: invalid input fd, returns ERROR */
+	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
+
+	ret = sendfile(fd2, INV_FD, NULL, size);
+	close(fd2);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, close(fd1));
+
+	/* case-5: offset = 0, invalid output fd, returns ERROR */
+	offset = 0;
+	ret = sendfile(INV_FD, fd1, &offset, size);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, ERROR, close(fd1));
+
+	/* case-6: current offset of input file is EOF, returns ERROR */
+	fd2 = open(dest_file, O_WRONLY | O_CREAT);
+	TC_ASSERT_GEQ_CLEANUP("open", fd2, 0, close(fd1));
+
+	ret = lseek(fd1, 0, SEEK_END);
+	TC_ASSERT_EQ_CLEANUP("lseek", ret, size, close(fd1); close(fd2));
+
+	ret = sendfile(fd2, fd1, NULL, size);
+	close(fd2);
+	TC_ASSERT_EQ_CLEANUP("sendfile", ret, 0, close(fd1));
+
+	ret = stat(dest_file, &st);
+	close(fd1);
 	TC_ASSERT_EQ("stat", ret, OK);
-	TC_ASSERT_EQ("stat", size, st.st_size);
+	TC_ASSERT_EQ("stat", st.st_size, 0);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1192,6 +1264,31 @@ static void fs_vfs_ioctl_tc(void)
 }
 
 /**
+* @testcase         libc_stdio_dprintf_tc
+* @brief            Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
+* @scenario         Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
+* @apicovered       dprintf
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_dprintf_tc(void)
+{
+	char *filename = VFS_FILE_PATH;
+	char *str = VFS_TEST_CONTENTS_1;
+	int fd;
+	int ret;
+
+	fd = open(filename, O_RDWR);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = dprintf(fd, "%s", str);
+	close(fd);
+	TC_ASSERT_EQ("dprintf", ret, strnlen(str, VFS_CONTENTS_LEN));
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
 * @testcase         libc_stdio_fdopen_tc
 * @brief            fdopen with available fd value
 * @scenario         Open file with specific flags, and then fdopen with diffrent flag. Then check flag is changed properly
@@ -1209,8 +1306,8 @@ static void libc_stdio_fdopen_tc(void)
 	TC_ASSERT_GEQ("open", fd, 0);
 
 	fp = fdopen(fd, "r");
-	TC_ASSERT_CLEANUP("fdopen", fp, close(fd));
 	close(fd);
+	TC_ASSERT_NEQ("fdopen", fp, NULL);
 	TC_ASSERT_EQ_CLEANUP("fdopen", fp->fs_oflags, O_RDONLY, fclose(fp));
 	fclose(fp);
 
@@ -1235,19 +1332,19 @@ static void libc_stdio_fopen_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	fclose(fp);
 
 	fp = fopen(filename, "r+");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	fclose(fp);
 
 	fp = fopen(filename, "rb");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	fclose(fp);
 
 	fp = fopen(filename, "rx");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	fclose(fp);
 
 	/* Nagative cases with invalid mode. It will return NULL */
@@ -1290,7 +1387,7 @@ static void libc_stdio_fclose_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	ret = fclose(fp);
 	TC_ASSERT_EQ("fclose", ret, OK);
 	TC_SUCCESS_RESULT();
@@ -1311,7 +1408,7 @@ static void libc_stdio_fputs_tc(void)
 	char *str = VFS_TEST_CONTENTS_1;
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 	TC_ASSERT_EQ_CLEANUP("fputs", fputs(str, fp), strlen(str), fclose(fp));
 
 	/* Nagative case with invalid argument, NULL stream. It will return EOF */
@@ -1336,10 +1433,10 @@ static void libc_stdio_fgets_tc(void)
 	char buf[20];
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	memset(buf, 0, sizeof(buf));
-	TC_ASSERT_CLEANUP("fgets", fgets(buf, 20, fp), fclose(fp));
+	TC_ASSERT_NEQ_CLEANUP("fgets", fgets(buf, 20, fp), NULL, fclose(fp));
 	TC_ASSERT_EQ_CLEANUP("fgets", strcmp(buf, VFS_TEST_CONTENTS_1), 0, fclose(fp));
 
 	/* Nagative case with invalid argument, negative buffer size. It will return NULL */
@@ -1364,13 +1461,13 @@ static void libc_stdio_fseek_tc(void)
 	char buf[20];
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fseek(fp, 5, SEEK_SET);
 	TC_ASSERT_EQ_CLEANUP("fseek", ret, OK, fclose(fp));
 
 	memset(buf, 0, sizeof(buf));
-	TC_ASSERT_CLEANUP("fgets", fgets(buf, 20, fp), fclose(fp));
+	TC_ASSERT_NEQ_CLEANUP("fgets", fgets(buf, 20, fp), NULL, fclose(fp));
 	fclose(fp);
 	TC_ASSERT_EQ("fgets", strcmp(buf, "IS VFS TEST 1"), 0);
 
@@ -1396,7 +1493,7 @@ static void libc_stdio_ftell_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fseek(fp, 5, SEEK_SET);
 	TC_ASSERT_EQ_CLEANUP("fseek", ret, OK, fclose(fp));
@@ -1429,7 +1526,7 @@ static void libc_stdio_feof_tc(void)
 	TC_ASSERT_NEQ("make_long_file", make_long_file(), ERROR);
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	/* Print contents of long file, if below became infinite loop, it means failed */
 	while (!feof(fp)) {
@@ -1458,7 +1555,7 @@ static void libc_stdio_fprintf_tc(void)
 	int ret;
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fprintf(fp, "%s", str);
 	fclose(fp);
@@ -1482,7 +1579,7 @@ static void libc_stdio_fsetpos_tc(void)
 	int ch, ret;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fsetpos(fp, &pos);
 	TC_ASSERT_EQ_CLEANUP("fsetpos", ret, OK, fclose(fp));
@@ -1495,8 +1592,8 @@ static void libc_stdio_fsetpos_tc(void)
 
 	/* Nagative case with invalid arguments, NULL position. It will return ERROR */
 	ret = fsetpos(fp, NULL);
-	TC_ASSERT_EQ_CLEANUP("fsetpos", ret, ERROR, fclose(fp));
 	fclose(fp);
+	TC_ASSERT_EQ("fsetpos", ret, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1517,7 +1614,7 @@ static void libc_stdio_fgetpos_tc(void)
 	int ret;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fsetpos(fp, &pos);
 	TC_ASSERT_EQ_CLEANUP("fsetpos", ret, OK, fclose(fp));
@@ -1548,7 +1645,7 @@ static void libc_stdio_fputc_tc(void)
 	int ret;
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fputc('S', fp);
 	fclose(fp);
@@ -1571,7 +1668,7 @@ static void libc_stdio_fgetc_tc(void)
 	int ch;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fgetc", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ch = fgetc(fp);
 	fclose(fp);
@@ -1595,7 +1692,7 @@ static void libc_stdio_fwrite_tc(void)
 	int len, ret;
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	len = strlen(VFS_TEST_CONTENTS_1);
 	ret = fwrite(VFS_TEST_CONTENTS_1, 1, len, fp);
@@ -1607,9 +1704,9 @@ static void libc_stdio_fwrite_tc(void)
 
 	len = strlen(VFS_TEST_CONTENTS_3);
 	ret = fwrite(VFS_TEST_CONTENTS_3, 1, len, fp);
-	TC_ASSERT_EQ_CLEANUP("fwrite", ret, len, fclose(fp));
-
 	fclose(fp);
+	TC_ASSERT_EQ("fwrite", ret, len);
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1629,7 +1726,7 @@ static void libc_stdio_fread_tc(void)
 	int len, ret;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	len = strlen(VFS_TEST_CONTENTS_1);
 	memset(buf, 0, sizeof(buf));
@@ -1646,10 +1743,46 @@ static void libc_stdio_fread_tc(void)
 	len = strlen(VFS_TEST_CONTENTS_3);
 	memset(buf, 0, sizeof(buf));
 	ret = fread(buf, 1, len, fp);
-	TC_ASSERT_EQ_CLEANUP("fread", ret, len, fclose(fp));
-	TC_ASSERT_EQ_CLEANUP("fread", strcmp(buf, VFS_TEST_CONTENTS_3), 0, fclose(fp));
-
 	fclose(fp);
+	TC_ASSERT_EQ("fread", ret, len);
+	TC_ASSERT_EQ("fread", strcmp(buf, VFS_TEST_CONTENTS_3), 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_freopen_tc
+* @brief            Open file by freopen
+* @scenario         Open file
+* @apicovered       freopen
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_freopen_tc(void)
+{
+	FILE *fp;
+	char *filename = VFS_FILE_PATH;
+
+	fp = freopen(filename, "w", NULL);
+	TC_ASSERT_NEQ("freopen", fp, NULL);
+
+	/* A case with non-NULL filename and valid stream */
+	fp = freopen(filename, "w", fp);
+	TC_ASSERT_NEQ("freopen", fp, NULL);
+
+	/* A case with NULL filename, valid stream and mode flag */
+	fp = freopen(NULL, "r", fp);
+	fclose(fp);
+	TC_ASSERT_NEQ("freopen", fp, NULL);
+
+	/* A negative case with NULL path, valid stream and invalid mode. It will return NULL */
+	fp = freopen(NULL, "z", fp);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
+
+	/* A negative case with NULL path and stream. It will return NULL */
+	fp = freopen(NULL, "w", NULL);
+	TC_ASSERT_EQ_CLEANUP("freopen", fp, NULL, fclose(fp));
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -1668,7 +1801,7 @@ static void libc_stdio_ferror_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fputc(32, fp);
 	TC_ASSERT_EQ_CLEANUP("fputc", ret, EOF, fclose(fp));
@@ -1696,7 +1829,7 @@ static void libc_stdio_clearerr_tc(void)
 	char *filename = VFS_FILE_PATH;
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fputc(32, fp);
 	TC_ASSERT_EQ_CLEANUP("fputc", ret, EOF, fclose(fp));
@@ -1726,7 +1859,7 @@ static void libc_stdio_gets_tc(void)
 
 	printf("Enter text here : \n");
 	fflush(stdout);
-	TC_ASSERT("gets", gets(input_str));
+	TC_ASSERT_NEQ("gets", gets(input_str), NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1744,7 +1877,7 @@ static void libc_stdio_gets_s_tc(void)
 
 	printf("Enter text here : \n");
 	fflush(stdout);
-	TC_ASSERT("gets_s", gets_s(input_str, sizeof(input_str)));
+	TC_ASSERT_NEQ("gets_s", gets_s(input_str, sizeof(input_str)), NULL);
 	TC_SUCCESS_RESULT();
 }
 
@@ -1763,7 +1896,7 @@ static void libc_stdio_fileno_tc(void)
 	int fd;
 
 	fp = fopen(filename, "w");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	fd = fileno(fp);
 	fclose(fp);
@@ -1772,6 +1905,559 @@ static void libc_stdio_fileno_tc(void)
 	/* Nagative case with invalid argument, NULL stream. It will return ERROR */
 	fd = fileno(NULL);
 	TC_ASSERT_EQ("fileno", fd, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
+#if CONFIG_STDIO_BUFFER_SIZE > 0
+/**
+* @testcase         libc_stdio_lib_rdflush_tc
+* @brief            Flush read data from the I/O buffer and adjust the file pointer to account for the unread data.
+* @scenario         Flush read data from the I/O buffer and adjust the file pointer to account for the unread data.
+* @apicovered       lib_rdflush
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_lib_rdflush_tc(void)
+{
+	char *filename = VFS_FILE_PATH;
+	FILE *stream;
+	int ret;
+
+	stream = fopen(filename, "r");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	ret = lib_rdflush(stream);
+	fclose(stream);
+	TC_ASSERT_EQ("lib_rdflush", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+#ifdef CONFIG_STDIO_LINEBUFFER
+/**
+* @testcase         libc_stdio_lib_snoflush_tc
+* @brief            provides a common, dummy flush method for seekable output streams that are not flushable.
+* @scenario         Only used if CONFIG_STDIO_LINEBUFFER is selected.
+* @apicovered       lib_snoflush
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_lib_snoflush_tc(void)
+{
+	int ret;
+
+	ret = lib_snoflush((FAR struct lib_sostream_s *)stdout);
+	TC_ASSERT_EQ("lib_snoflush", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/**
+* @testcase         libc_stdio_lib_sprintf_tc
+* @brief            Composes a string with the same text that would be printed if format was used on printf
+*                   But instead of being printed the content is stored as a C string in the buffer pointed by str
+* @scenario         A terminating null character is automatically appended after the content.
+* @apicovered       lib_sprintf
+* @precondition     The size of the buffer should be large enough to contain the entire resulting string
+* @postcondition    NA
+*/
+static void libc_stdio_lib_sprintf_tc(void)
+{
+	struct lib_memoutstream_s memoutstream;
+	char *str = VFS_TEST_CONTENTS_1;
+	char buf[STDIO_BUFLEN];
+	int ret;
+
+	lib_memoutstream((FAR struct lib_memoutstream_s *)&memoutstream, buf, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buffer, (FAR char *)(buf));
+
+	ret = lib_sprintf((FAR struct lib_outstream_s *)&memoutstream, "%s", str);
+	TC_ASSERT_EQ("lib_sprintf", ret, strnlen(str, VFS_CONTENTS_LEN));
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_remove_tc
+* @brief            Deletes the file whose name is specified in filename.
+* @scenario         Open file
+* @apicovered       remove
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_remove_tc(void)
+{
+	char *filename = VFS_FILE_PATH;
+	int ret = NULL;
+
+	ret = remove(filename);
+	TC_ASSERT_EQ("remove", ret, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_setbuf_tc
+* @brief            Set stream buffer
+* @scenario         Open file
+* @apicovered       setbuf, setvbuf
+* @precondition     NA
+* @postcondition    NA
+*/
+#if CONFIG_STDIO_BUFFER_SIZE > 0
+static void libc_stdio_setbuf_tc(void)
+{
+	FILE *fp;
+	char buffer[64];
+	char *filename = VFS_FILE_PATH;
+
+	/* setbuf_test: DEFAULT buffering */
+
+	fp = fopen(filename, "w");
+	TC_ASSERT_NEQ("fopen", fp, NULL);
+
+	/* setbuf_test: NO buffering */
+
+	setbuf(fp, NULL);
+	TC_ASSERT_EQ_CLEANUP("setbuf", fp->fs_bufstart, NULL, fclose(fp));
+
+	/* setbuf_test: pre-allocated buffer */
+
+	setbuf(fp, buffer);
+	TC_ASSERT_EQ_CLEANUP("setbuf", fp->fs_bufstart, (FAR unsigned char *)buffer, fclose(fp));
+	setbuf(fp, NULL);
+	TC_ASSERT_EQ_CLEANUP("setbuf", fp->fs_bufstart, NULL, fclose(fp));
+
+	fclose(fp);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/**
+* @testcase         libc_stdio_setvbuf_tc
+* @brief            Change stream buffering
+* @scenario         Open file
+* @apicovered       setbuf, setvbuf
+* @precondition     NA
+* @postcondition    NA
+*/
+#if CONFIG_STDIO_BUFFER_SIZE > 0
+static void libc_stdio_setvbuf_tc(void)
+{
+	FILE *fp;
+	char buffer[64];
+	char *filename = VFS_FILE_PATH;
+	int ret = NULL;
+
+	/* setvbuf_test: DEFAULT buffering */
+
+	fp = fopen(filename, "w");
+	TC_ASSERT_NEQ("fopen", fp, NULL);
+
+	/* setvbuf_test: NO buffering */
+
+	ret = setvbuf(fp, NULL, _IONBF, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+
+	/* setvbuf_test: FULL buffering */
+
+	ret = setvbuf(fp, NULL, _IOFBF, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+	ret = setvbuf(fp, NULL, _IONBF, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+
+	/* setvbuf_test: LINE buffering */
+
+	ret = setvbuf(fp, NULL, _IOLBF, 64);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+	ret = setvbuf(fp, NULL, _IONBF, 0);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+
+	/* setvbuf_test: FULL buffering, pre-allocated buffer */
+
+	ret = setvbuf(fp, buffer, _IOFBF, 64);
+	TC_ASSERT_LEQ_CLEANUP("setvbuf", ret, 0, fclose(fp));
+	ret = setvbuf(fp, NULL, _IONBF, 0);
+	fclose(fp);
+	TC_ASSERT_LEQ("setvbuf", ret, 0);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/**
+* @testcase         libc_stdio_meminstream_tc
+* @brief            Initializes a stream for use with a fixed-size memory buffer
+* @scenario         Initializes a stream for use with a fixed-size memory buffer
+* @apicovered       lib_meminstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_meminstream_tc(void)
+{
+	FAR char buf[STDIO_BUFLEN];
+
+	struct lib_meminstream_s meminstream;
+
+	lib_meminstream((FAR struct lib_meminstream_s *)&meminstream, buf, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_meminstream", meminstream.buffer, (FAR char *)(buf));
+	TC_ASSERT_EQ("lib_meminstream", meminstream.buflen, STDIO_BUFLEN);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_memoutstream_tc
+* @brief            Initializes a stream for use with a fixed-size memory buffer
+* @scenario         Initializes a stream for use with a fixed-size memory buffer
+* @apicovered       lib_memoutstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_memoutstream_tc(void)
+{
+	FAR char buf[STDIO_BUFLEN];
+
+	struct lib_memoutstream_s memoutstream;
+
+	lib_memoutstream((FAR struct lib_memoutstream_s *)&memoutstream, buf, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buffer, (FAR char *)(buf));
+	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buflen, (STDIO_BUFLEN - 1));	/* Save space for null terminator, hence checing with (STDIO_BUFLEN-1)*/
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_memsistream_tc
+* @brief            Initializes a stream for use with a fixed-size memory buffer
+* @scenario         Initializes a stream for use with a fixed-size memory buffer
+* @apicovered       lib_memsistream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_memsistream_tc(void)
+{
+	FAR char buf[STDIO_BUFLEN];
+
+	struct lib_memsistream_s memsistream;
+
+	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, buf, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_memsistream", memsistream.buffer, (FAR char *)(buf));
+
+	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, buf + 2, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_memsistream", (memsistream.buffer - (FAR char *)(buf)), 2);
+	TC_ASSERT_EQ("lib_memsistream", memsistream.buflen, STDIO_BUFLEN);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_memsostream_tc
+* @brief            Initializes a stream for use with a fixed-size memory buffer
+* @scenario         Initializes a stream for use with a fixed-size memory buffer
+* @apicovered       lib_memsostream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_memsostream_tc(void)
+{
+	FAR char buf[STDIO_BUFLEN];
+
+	struct lib_memsostream_s memsostream;
+
+	lib_memsostream((FAR struct lib_memsostream_s *)&memsostream, buf, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_memsostream", memsostream.buffer, (FAR char *)(buf));
+
+	lib_memsostream((FAR struct lib_memsostream_s *)&memsostream, buf + 4, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_memsostream", (memsostream.buffer - (FAR char *)(buf)), 4);
+	TC_ASSERT_EQ("lib_memsostream", memsostream.buflen, (STDIO_BUFLEN - 1));	/* Save space for null terminator, hence checing with (STDIO_BUFLEN-1)*/
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_nullinstream_tc
+* @brief            Initializes a NULL stream. The initialized stream will return only EOF
+* @scenario         Initializes a NULL stream. The initialized stream will return only EOF
+* @apicovered       lib_nullinstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_nullinstream_tc(void)
+{
+	struct lib_instream_s nullinstream;
+
+	lib_nullinstream((FAR struct lib_instream_s *)&nullinstream);
+	TC_ASSERT_EQ("lib_nullinstream", nullinstream.nget, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_nulloutstream_tc
+* @brief            Initializes a NULL stream. The initialized stream will write all data to the bit-bucket
+* @scenario         Initializes a NULL stream. The initialized stream will write all data to the bit-bucket
+* @apicovered       lib_nulloutstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_nulloutstream_tc(void)
+{
+	struct lib_outstream_s nulloutstream;
+
+	lib_nulloutstream((FAR struct lib_outstream_s *)&nulloutstream);
+	TC_ASSERT_EQ("lib_nulloutstream", nulloutstream.nput, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_rawinstream_tc
+* @brief            Initializes a stream for use with a file descriptor
+* @scenario         Initializes a stream for use with a file descriptor
+* @apicovered       lib_rawinstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_rawinstream_tc(void)
+{
+	int fd;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_rawinstream_s rawinstream;
+
+	fd = open(filename, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawinstream((FAR struct lib_rawinstream_s *)&rawinstream, fd);
+	close(fd);
+	TC_ASSERT_EQ("lib_rawinstream", rawinstream.fd, fd);
+	TC_ASSERT_EQ("lib_rawinstream", rawinstream.public.nget, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_rawoutstream_tc
+* @brief            Initializes a stream for use with a file descriptor
+* @scenario         Initializes a stream for use with a file descriptor
+* @apicovered       lib_rawoutstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_rawoutstream_tc(void)
+{
+	int fd;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_rawoutstream_s rawoutstream;
+
+	fd = open(filename, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawoutstream((FAR struct lib_rawoutstream_s *)&rawoutstream, fd);
+	close(fd);
+	TC_ASSERT_EQ("lib_rawoutstream", rawoutstream.fd, fd);
+	TC_ASSERT_EQ("lib_rawoutstream", rawoutstream.public.nput, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_rawsistream_tc
+* @brief            Initializes a stream for use with a file descriptor
+* @scenario         Initializes a stream for use with a file descriptor
+* @apicovered       lib_rawsistream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_rawsistream_tc(void)
+{
+	int fd;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_rawsistream_s rawsistream;
+
+	fd = open(filename, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawsistream((FAR struct lib_rawsistream_s *)&rawsistream, fd);
+	close(fd);
+	TC_ASSERT_EQ("lib_rawsistream", rawsistream.fd, fd);
+	TC_ASSERT_EQ("lib_rawsistream", rawsistream.public.nget, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_rawsostream_tc
+* @brief            Initializes a stream for use with a file descriptor
+* @scenario         Initializes a stream for use with a file descriptor
+* @apicovered       lib_rawsostream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_rawsostream_tc(void)
+{
+	int fd;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_rawsostream_s rawsostream;
+
+	fd = open(filename, O_RDONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	lib_rawsostream((FAR struct lib_rawsostream_s *)&rawsostream, fd);
+	close(fd);
+	TC_ASSERT_EQ("lib_rawsostream", rawsostream.fd, fd);
+	TC_ASSERT_EQ("lib_rawsostream", rawsostream.public.nput, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_sprintf_tc
+* @brief            Composes a string with the same text that would be printed if format was used on printf
+*                   But instead of being printed the content is stored as a C string in the buffer pointed by str
+* @scenario         A terminating null character is automatically appended after the content.
+* @apicovered       sprintf
+* @precondition     The size of the buffer should be large enough to contain the entire resulting string
+* @postcondition    NA
+*/
+static void libc_stdio_sprintf_tc(void)
+{
+	char buf[STDIO_BUFLEN];
+	char *str = VFS_TEST_CONTENTS_1;
+	int ret;
+
+	ret = sprintf((FAR char *)&buf, "%s", str);
+	TC_ASSERT_EQ("sprintf", ret, strnlen(str, VFS_CONTENTS_LEN));
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_stdinstream_tc
+* @brief            Initializes a stream for use with a FILE instance
+* @scenario         Initializes a stream for use with a FILE instance
+* @apicovered       lib_stdinstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_stdinstream_tc(void)
+{
+	FILE *stream;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_stdinstream_s stdinstream;
+
+	stream = fopen(filename, "w");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdinstream((FAR struct lib_stdinstream_s *)&stdinstream, stream);
+	fclose(stream);
+	TC_ASSERT_EQ("lib_stdinstream", stdinstream.stream, stream);
+	TC_ASSERT_EQ("lib_stdinstream", stdinstream.public.nget, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_stdoutstream_tc
+* @brief            Initializes a stream for use with a FILE instance
+* @scenario         Initializes a stream for use with a FILE instance
+* @apicovered       lib_stdoutstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_stdoutstream_tc(void)
+{
+	FILE *stream;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_stdoutstream_s stdoutstream;
+
+	stream = fopen(filename, "w");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdoutstream((FAR struct lib_stdoutstream_s *)&stdoutstream, stream);
+	fclose(stream);
+	TC_ASSERT_EQ("lib_stdoutstream", stdoutstream.stream, stream);
+	TC_ASSERT_EQ("lib_stdoutstream", stdoutstream.public.nput, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_stdsistream_tc
+* @brief            Initializes a stream for use with a FILE instance
+* @scenario         Initializes a stream for use with a FILE instance
+* @apicovered       lib_stdsistream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_stdsistream_tc(void)
+{
+	FILE *stream;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_stdsistream_s stdsistream;
+
+	stream = fopen(filename, "w");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdsistream((FAR struct lib_stdsistream_s *)&stdsistream, stream);
+	fclose(stream);
+	TC_ASSERT_EQ("lib_stdsistream", stdsistream.stream, stream);
+	TC_ASSERT_EQ("lib_stdsistream", stdsistream.public.nget, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_stdsostream_tc
+* @brief            Initializes a stream for use with a FILE instance
+* @scenario         Initializes a stream for use with a FILE instance
+* @apicovered       lib_stdsostream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_stdsostream_tc(void)
+{
+	FILE *stream;
+	char *filename = VFS_FILE_PATH;
+
+	struct lib_stdsostream_s stdsostream;
+
+	stream = fopen(filename, "w");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	lib_stdsostream((FAR struct lib_stdsostream_s *)&stdsostream, stream);
+	fclose(stream);
+	TC_ASSERT_EQ("lib_stdsostream", stdsostream.stream, stream);
+	TC_ASSERT_EQ("lib_stdsostream", stdsostream.public.nput, 0);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase         libc_stdio_zeroinstream_tc
+* @brief            Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
+* @scenario         Initializes a NULL stream.  The initialized stream will return an infinitely long stream of zeroes.
+* @apicovered       lib_zeroinstream
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_zeroinstream_tc(void)
+{
+	struct lib_instream_s zeroinstream;
+
+	lib_zeroinstream((FAR struct lib_instream_s *)&zeroinstream);
+	TC_ASSERT_EQ("lib_zeroinstream", zeroinstream.nget, 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -1790,23 +2476,40 @@ static void libc_stdio_ungetc_tc(void)
 	char *filename = VFS_FILE_PATH;
 	int ret;
 	int ch1, ch2;
+#if CONFIG_NUNGET_CHARS > 0
+	int num;
+#endif
 
 	fp = fopen(filename, "w+");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ret = fputc(32, fp);
 	fclose(fp);
 	TC_ASSERT_NEQ("fputc", ret, EOF);
 
 	fp = fopen(filename, "r");
-	TC_ASSERT("fopen", fp);
+	TC_ASSERT_NEQ("fopen", fp, NULL);
 
 	ch1 = fgetc(fp);
 	TC_ASSERT_NEQ_CLEANUP("fgetc", ch1, EOF, fclose(fp));
 
-	ret = ungetc(64, fp);
+	/* Negative case with invalid argument, NULL stream. It will return EOF */
+
+	ret = ungetc(STDIO_BUFLEN, NULL);
+	TC_ASSERT_EQ_CLEANUP("ungetc", ret, EOF, fclose(fp));
+
+	ret = ungetc(STDIO_BUFLEN, fp);
 	TC_ASSERT_NEQ_CLEANUP("ungetc", ret, EOF, fclose(fp));
 
+	/* Negative case with invalid argument. It will return EOF */
+
+#if CONFIG_NUNGET_CHARS > 0
+	num = fp->fs_nungotten;
+	fp->fs_nungotten = 4;
+	ret = ungetc(STDIO_BUFLEN, fp);
+	fp->fs_nungotten = num;
+	TC_ASSERT_EQ_CLEANUP("ungetc", ret, EOF, fclose(fp));
+#endif
 	ch2 = fgetc(fp);
 	fclose(fp);
 	TC_ASSERT_NEQ("fgetc", ch2, EOF);
@@ -1858,6 +2561,7 @@ static int fs_sample_launcher(int argc, char **args)
 #ifdef CONFIG_TC_FS_PROCFS
 	tc_fs_procfs_main();
 #endif
+	libc_stdio_dprintf_tc();
 	libc_stdio_fdopen_tc();
 	libc_stdio_fopen_tc();
 	libc_stdio_fclose_tc();
@@ -1873,12 +2577,41 @@ static int fs_sample_launcher(int argc, char **args)
 	libc_stdio_fgetc_tc();
 	libc_stdio_fwrite_tc();
 	libc_stdio_fread_tc();
+	libc_stdio_freopen_tc();
 	libc_stdio_ferror_tc();
 	libc_stdio_clearerr_tc();
 	libc_stdio_gets_tc();
 	libc_stdio_gets_s_tc();
 	libc_stdio_fileno_tc();
+#if CONFIG_STDIO_BUFFER_SIZE > 0
+	libc_stdio_lib_rdflush_tc();
+#endif
+#ifdef CONFIG_STDIO_LINEBUFFER
+	libc_stdio_lib_snoflush_tc();
+#endif
+	libc_stdio_lib_sprintf_tc();
+	libc_stdio_remove_tc();
+#if CONFIG_STDIO_BUFFER_SIZE > 0
+	libc_stdio_setbuf_tc();
+	libc_stdio_setvbuf_tc();
+#endif
+	libc_stdio_meminstream_tc();
+	libc_stdio_memoutstream_tc();
+	libc_stdio_memsistream_tc();
+	libc_stdio_memsostream_tc();
+	libc_stdio_nullinstream_tc();
+	libc_stdio_nulloutstream_tc();
+	libc_stdio_rawinstream_tc();
+	libc_stdio_rawoutstream_tc();
+	libc_stdio_rawsistream_tc();
+	libc_stdio_rawsostream_tc();
+	libc_stdio_sprintf_tc();
+	libc_stdio_stdinstream_tc();
+	libc_stdio_stdoutstream_tc();
+	libc_stdio_stdsistream_tc();
+	libc_stdio_stdsostream_tc();
 	libc_stdio_ungetc_tc();
+	libc_stdio_zeroinstream_tc();
 
 	printf("#########################################\n");
 	printf("           FS TC Result               \n");

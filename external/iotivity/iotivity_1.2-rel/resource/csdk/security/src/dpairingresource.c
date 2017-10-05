@@ -26,7 +26,7 @@
 #include "oic_malloc.h"
 #include "oic_string.h"
 #if defined (__TIZENRT__)
-#include <apps/netutils/cJSON.h>
+#include <json/cJSON.h>
 #else
 #include "cJSON.h"
 #endif

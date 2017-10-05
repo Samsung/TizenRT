@@ -94,6 +94,20 @@ config SMARTFS_JOURNALING
                 of file descriptors allowed and sector size defined. Thus, to
                 minimize the area reserved for journaling, it is advised to keep
                 sector size small.
+                
+if SMARTFS_JOURNALING
+
+config SMARTFS_JOURNAL_VERIFY
+	bool "Verify Journal logging"
+	default n
+	---help---
+		The read & verify joural value after right
+		Sometimes electronic power grow up after power off, in this case
+		FS decide write finished properly, but it doesn't finished properly.
+		To prevent this, verifying needed.
+		On the other hands, it takes more time for most of file operation that
+		using journal Logging.
+endif
 
 config SMARTFS_SECTOR_RECOVERY
 	bool "Enable recovery of lost sectors in Filesystem"

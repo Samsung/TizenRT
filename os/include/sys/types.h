@@ -125,10 +125,11 @@
 
 #ifndef __ASSEMBLY__
 
+typedef unsigned long __kernel_size_t;
+
 #ifdef CONFIG_ENABLE_IOTIVITY
 
 typedef int wint_t;
-typedef unsigned long __kernel_size_t;
 typedef unsigned short __kernel_sa_family_t;
 typedef unsigned short __u16;
 

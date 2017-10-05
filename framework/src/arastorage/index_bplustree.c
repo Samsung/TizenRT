@@ -55,6 +55,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <time.h>
+#include <sys/types.h>
 
 #include "result.h"
 #include "db_options.h"
@@ -523,6 +524,7 @@ static db_result_t destroy(index_t *index)
 		return DB_STORAGE_ERROR;
 	}
 	if (DB_ERROR(storage_read_from(fd, bucket_file, sizeof(tree_t), sizeof(bucket_file)))) {
+		storage_close(fd);
 		return DB_STORAGE_ERROR;
 	}
 	storage_close(fd);
@@ -550,18 +552,21 @@ static db_result_t load(index_t *index)
 	DB_LOG_D("load index : descriptor file name : %s\n", index->descriptor_file);
 	fd = storage_open(index->descriptor_file, O_RDWR);
 	if (fd < 0) {
-		DB_LOG_E("Failed opening index descriptor file\n");
-		goto storage_error;
+		DB_LOG_E("Failed opening index descriptor file :%s Error Code %d", index->descriptor_file);
+		free(tree);
+		return DB_STORAGE_ERROR;
 	}
 	if (DB_ERROR(storage_read_from(fd, bucket_file, sizeof(tree_t), sizeof(bucket_file)))) {
 		DB_LOG_E("Failed reading bucket file\n");
 		storage_close(fd);
-		goto storage_error;
+		free(tree);
+		return DB_STORAGE_ERROR;
 	}
 	if (DB_ERROR(storage_read_from(fd, tree, 0, sizeof(tree_t)))) {
 		DB_LOG_E("Failed  reading tree structure from descriptor file\n");
 		storage_close(fd);
-		goto storage_error;
+		free(tree);
+		return DB_STORAGE_ERROR;
 	}
 	storage_close(fd);
 
@@ -641,17 +646,6 @@ static db_result_t load(index_t *index)
 	DB_LOG_D("DB: Loaded btree index from file %s and bucket file %s\n", index->descriptor_file, bucket_file);
 
 	return DB_OK;
-
-storage_error:
-	DB_LOG_E("DB: Storage error while loading index\n");
-	free(tree->node_cache->in_cache.head);
-	free(tree->node_cache->in_cache.tail);
-	free(tree->buck_cache->in_cache.head);
-	free(tree->buck_cache->in_cache.tail);
-	free(tree->buck_cache);
-	free(tree->node_cache);
-	free(tree);
-	return DB_STORAGE_ERROR;
 
 }
 
@@ -1093,7 +1087,7 @@ static cache_result_t cache_write_node(tree_t *tree, int id, tree_node_t *node)
 	} else {
 		qnode_t *iter_node;
 		iter_node = tree->node_cache->in_cache.head->next;
-		while ((iter_node->node_state | NODE_STATE_LOCK) && iter_node != tree->node_cache->in_cache.tail) {
+		while ((iter_node->node_state & NODE_STATE_LOCK) && iter_node != tree->node_cache->in_cache.tail) {
 			iter_node = iter_node->next;
 		}
 		if (iter_node == tree->node_cache->in_cache.tail) {
@@ -1395,6 +1389,7 @@ static pair_t *tree_find(tree_t *tree, int key)
 		 */
 		node = tree_read(tree, id);
 		if (node == NULL) {
+			free(path);
 			return NULL;
 		}
 		index = id;
@@ -1418,6 +1413,7 @@ static pair_t *tree_find(tree_t *tree, int key)
 			if (tree->lock_buckets[node->id[index]]) {
 				pthread_mutex_unlock(&(tree->bucket_lock));
 				modify_cache(tree, id, NODE, UNLOCK);
+				free(path);
 				return NULL;
 			} else {
 				tree->lock_buckets[node->id[index]] = 1;
@@ -1442,6 +1438,7 @@ static pair_t *tree_find(tree_t *tree, int key)
 			modify_cache(tree, index, NODE, UNLOCK);
 		}
 	}
+	free(path);
 	return NULL;
 }
 

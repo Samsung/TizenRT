@@ -56,7 +56,7 @@
  */
 
 #include <net/lwip/opt.h>
-
+#include <net/lwip/debug.h>
 #include <net/lwip/memp.h>
 #include <net/lwip/pbuf.h>
 #include <net/lwip/udp.h>

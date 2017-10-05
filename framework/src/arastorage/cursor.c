@@ -77,18 +77,30 @@ db_result_t cursor_move_first(db_cursor_t *cursor)
 /* Search the last set tuple id and update storage id corresponding it. */
 db_result_t cursor_move_last(db_cursor_t *cursor)
 {
+	if (!cursor) {
+		return DB_CURSOR_ERROR;
+	}
+
 	return cursor_move_to(cursor, cursor->cursor_rows - 1);
 }
 
 /* Search next set tuple id and update storage id corresponding it. */
 db_result_t cursor_move_next(db_cursor_t *cursor)
 {
+	if (!cursor) {
+		return DB_CURSOR_ERROR;
+	}
+
 	return cursor_move_to(cursor, cursor->current_cursor_row + 1);
 }
 
 /* Search previous set tuple id and update storage id corresponding it. */
 db_result_t cursor_move_prev(db_cursor_t *cursor)
 {
+	if (!cursor) {
+		return DB_CURSOR_ERROR;
+	}
+
 	return cursor_move_to(cursor, cursor->current_cursor_row - 1);
 }
 

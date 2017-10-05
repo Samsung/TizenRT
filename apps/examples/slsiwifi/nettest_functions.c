@@ -26,7 +26,7 @@
 
 #include <tinyara/net/dns.h>
 #include <netdb.h>
-#include <slsi_wifi_api.h>
+#include <slsi_wifi/slsi_wifi_api.h>
 #include "slsiwifi_main.h"
 
 #ifdef CONFIG_NET_LWIP
@@ -36,7 +36,7 @@
 #include <net/lwip/ipv4/inet.h>
 #include <net/lwip/dhcp.h>
 #include <net/lwip/sys.h>
-#include <apps/netutils/netlib.h>
+#include <netutils/netlib.h>
 #include <net/lwip/tcpip.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/arch/sys_arch.h>

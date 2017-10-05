@@ -13,7 +13,7 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Fabien Fleutot - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 #include <string.h>
@@ -22,7 +22,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <inttypes.h>
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include "commandline.h"
 

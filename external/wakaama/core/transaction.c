@@ -322,14 +322,14 @@ bool transaction_handleResponse(lwm2m_context_t * contextP,
                         coap_init_message(response, proto, COAP_TYPE_ACK, 0, message->mid);
                         message_send(contextP, response, fromSessionH);
                     }
-                
+
 	                if ((COAP_401_UNAUTHORIZED == message->code) && (COAP_MAX_RETRANSMIT > transacP->retrans_counter))
     	            {
         	            transacP->ack_received = false;
             	        transacP->retrans_time += COAP_RESPONSE_TIMEOUT;
                 	    return true;
                 	}
-				}       
+				}
                 if (transacP->callback != NULL)
                 {
                     transacP->callback(transacP, message);

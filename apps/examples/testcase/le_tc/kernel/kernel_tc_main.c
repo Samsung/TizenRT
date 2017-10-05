@@ -75,6 +75,10 @@ int kernel_tc_main(int argc, char *argv[])
 	group_main();
 #endif
 
+#ifdef CONFIG_TC_KERNEL_LIBC_FIXEDMATH
+	libc_fixedmath_main();
+#endif
+
 #ifdef CONFIG_TC_KERNEL_LIBC_LIBGEN
 	libc_libgen_main();
 #endif
@@ -90,10 +94,11 @@ int kernel_tc_main(int argc, char *argv[])
 	libc_misc_main();
 #endif
 
-#ifdef CONFIG_TC_KERNEL_LIBC_PTHREAD
-#if (!defined CONFIG_PTHREAD_MUTEX_TYPES)
-#error CONFIG_PTHREAD_MUTEX_TYPES is needed for testing LIBC_PTHREAD TC
+#ifdef CONFIG_TC_KERNEL_LIBC_MQUEUE
+	libc_mqueue_main();
 #endif
+
+#ifdef CONFIG_TC_KERNEL_LIBC_PTHREAD
 	libc_pthread_main();
 #endif
 
@@ -152,9 +157,6 @@ int kernel_tc_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_KERNEL_PTHREAD
-#if (!defined CONFIG_PTHREAD_MUTEX_TYPES)
-#error CONFIG_PTHREAD_MUTEX_TYPES is needed for testing PTHREAD TC
-#endif
 	pthread_main();
 #endif
 

@@ -22,7 +22,7 @@
 #define IOTVT_SRM_PSI_H
 
 #if defined (__TIZENRT__)
-#include <apps/netutils/cJSON.h>
+#include <json/cJSON.h>
 #else
 #include "cJSON.h"
 #endif

@@ -8,7 +8,7 @@
 #ifndef MB_CMD_HMAC_H_
 #define MB_CMD_HMAC_H_
 
-#define MAX_HMAC_BLOCK_BLEN 	(128)
+#define MAX_HMAC_BLOCK_BLEN	(128)
 
 //! @struct sHMAC_MSG
 //! @brief struct of message for HMAC

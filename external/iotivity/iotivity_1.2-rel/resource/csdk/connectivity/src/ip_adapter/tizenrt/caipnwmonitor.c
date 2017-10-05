@@ -33,7 +33,7 @@
 #include <net/if.h>
 #include <netdb.h>
 #include <errno.h>
-#include <apps/netutils/wifi/slsi_wifi_api.h>
+#include <slsi_wifi/slsi_wifi_api.h>
 
 #include "octhread.h"
 #include "caipnwmonitor.h"
@@ -323,12 +323,10 @@ u_arraylist_t *CAFindInterfaceChange()
 	if(len <= 0) return NULL;
 
 	if(buf[0] == 'd' && buf[1] == 'e' && buf[2] == 'l') {
-		printf("[pkbuild] call if to adapter (down)\n\n\n\n\n\n");
-		CARemoveNetworkMonitorList(0);
-		CAIPPassNetworkChangesToAdapter(CA_INTERFACE_DOWN);
+		printf("Receive the event(IF is down)\n");
 	}
 	else if(buf[0] == 'g' && buf[1] == 'e' && buf[2] == 'n') {
-		printf("[pkbuild] call if to adapter (up)\n\n\n\n\n\n\n");
+		printf("Receive the event(IF is UP)\n");
 		iflist = CAIPGetInterfaceInformation(0);
         if (!iflist) {
             OIC_LOG_V(ERROR, TAG, "get interface info failed: %s", strerror(errno));

@@ -27,7 +27,6 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/clock.h>
 #include <tinyara/net/net.h>
-//#include <tinyara/net/arp.h>
 #include <arpa/inet.h>
 #include <net/lwip/netif/etharp.h>
 #include <net/lwip/ipv4/igmp.h>

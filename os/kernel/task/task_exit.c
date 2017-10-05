@@ -64,7 +64,7 @@
 #include "signal/signal.h"
 #endif
 #include "task/task.h"
-#include <ttrace.h>
+#include <tinyara/ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions

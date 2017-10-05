@@ -56,7 +56,7 @@
 #define RES_O_SMNC                      9
 #define RES_O_SMCC                      10
 
-#define VALUE_NETWORK_BEARER_GSM    0   //GSM see 
+#define VALUE_NETWORK_BEARER_GSM    0   //GSM see
 #define VALUE_AVL_NETWORK_BEARER_1  0   //GSM
 #define VALUE_AVL_NETWORK_BEARER_2  21  //WLAN
 #define VALUE_AVL_NETWORK_BEARER_3  41  //Ethernet

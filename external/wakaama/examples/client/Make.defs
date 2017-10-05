@@ -51,10 +51,9 @@ CSRCS += test_object.c
 CSRCS += common_monitor_interface.c
 CSRCS += connectivity_interface.c
 
-CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
 CFLAGS+=-I$(TOPDIR)/../external/wakaama/examples/shared
 
-DEPPATH += --dep-path wakaama/examples/client
-VPATH += :wakaama/examples/client
+DEPPATH += --dep-path examples/client
+VPATH += :examples/client
 
 endif

@@ -17,9 +17,9 @@ config TTRACE
 if TTRACE
 config TTRACE_BUFSIZE
 	int "Trace buffer size"
-	default 10240
+	default 13200
 	---help---
-		Size of the trace buffer size at kernel.  Default: 10240
+		Size of the trace buffer size at kernel.  Default: 13200
 config TTRACE_DEVPATH
 	string "T-trace device node path"
 	default "/dev/ttrace"

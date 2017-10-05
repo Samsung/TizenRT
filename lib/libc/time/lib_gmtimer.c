@@ -362,8 +362,7 @@ FAR struct tm *gmtime_r(FAR const time_t *timer, FAR struct tm *result)
 	result->tm_hour = (int)hour;
 	result->tm_min = (int)min;
 	result->tm_sec = (int)sec;
-
-#if defined(CONFIG_TIME_EXTENDED)
+#if defined(CONFIG_LIBC_LOCALTIME) || defined(CONFIG_TIME_EXTENDED)
 	result->tm_wday = clock_dayoftheweek(day, month, year);
 	result->tm_yday = day + clock_daysbeforemonth(result->tm_mon, clock_isleapyear(year));
 	result->tm_isdst = 0;

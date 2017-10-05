@@ -82,7 +82,9 @@ struct tash_cmd_info_s {
 
 static int tash_help(int argc, char **args);
 static int tash_exit(int argc, char **args);
+#if defined(CONFIG_BOARDCTL_RESET)
 static int tash_reboot(int argc, char **argv);
+#endif
 
 extern tash_taskinfo_t tash_taskinfo_list[];
 /****************************************************************************
@@ -334,7 +336,7 @@ void tash_register_basic_cmds(void)
 	tash_cmdlist_install(tash_basic_cmds);
 }
 
-#if defined(CONFIG_TASH_TELNET_INTERFACE)
+#if defined(CONFIG_TASH_COMMAND_INTERFACE)
 /** @name tash_get_cmdscount
  * @brief API to get the number of registered tash commands.
  * In protected build, it returns the count of user context commands only.

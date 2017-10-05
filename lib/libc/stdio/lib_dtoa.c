@@ -160,6 +160,9 @@ static Bigint *Balloc(int k)
 	} else {
 		x = 1 << k;
 		rv = (Bigint *)lib_malloc(sizeof(Bigint) + (x - 1) * sizeof(long));
+		if (rv == NULL) {
+			return NULL;
+		}
 		rv->k = k;
 		rv->maxwds = x;
 	}
@@ -735,12 +738,10 @@ static const double tens[] = {
 
 #ifdef IEEE_Arith
 static const double bigtens[] = { 1e16, 1e32, 1e64, 1e128, 1e256 };
-static const double tinytens[] = { 1e-16, 1e-32, 1e-64, 1e-128, 1e-256 };
 
 #define n_bigtens 5
 #else
 static const double bigtens[] = { 1e16, 1e32 };
-static const double tinytens[] = { 1e-16, 1e-32 };
 
 #define n_bigtens 2
 #endif

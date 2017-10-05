@@ -41,10 +41,6 @@ extern struct pm_global_s g_pmglobals;
 
 void pm_get_domainmetrics(int indx, struct pm_time_in_each_s *mtrics);
 void pm_prune_history(sq_queue_t *q);
-
-#else
-#define pm_get_domainmetrics(indx, mtrics)
-#define pm_prune_history(q)
 #endif
 
 #endif

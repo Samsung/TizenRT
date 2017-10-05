@@ -94,10 +94,6 @@
 #define net_driver_s netif
 #endif
 
-#ifdef CONFIG_NET_PKT
-#include <tinyara/net/pkt.h>
-#endif
-
 #include "enc28j60.h"
 
 /****************************************************************************
@@ -323,10 +319,6 @@ static void enc_polltimer(int argc, uint32_t arg, ...);
 static int enc_ifup(struct net_driver_s *dev);
 static int enc_ifdown(struct net_driver_s *dev);
 static int enc_txavail(struct net_driver_s *dev);
-#ifdef CONFIG_NET_IGMP
-static int enc_addmac(struct net_driver_s *dev, FAR const uint8_t *mac);
-static int enc_rmmac(struct net_driver_s *dev, FAR const uint8_t *mac);
-#endif
 
 /* Initialization */
 
@@ -1301,12 +1293,6 @@ static void enc_rxerif(FAR struct enc_driver_s *priv)
 #ifndef CONFIG_NET_LWIP
 static void enc_rxdispatch(FAR struct enc_driver_s *priv)
 {
-#ifdef CONFIG_NET_PKT
-	/* When packet sockets are enabled, feed the frame into the packet tap */
-
-	pkt_input(&priv->dev);
-#endif
-
 	/* We only accept IP packets of the configured type and ARP packets */
 
 #ifdef CONFIG_NET_IPv4
@@ -2152,81 +2138,7 @@ static int enc_txavail(struct net_driver_s *dev)
 	return OK;
 }
 
-/****************************************************************************
- * Function: enc_addmac
- *
- * Description:
- *   TinyAra Callback: Add the specified MAC address to the hardware multicast
- *   address filtering
- *
- * Parameters:
- *   dev  - Reference to the TinyAra driver state structure
- *   mac  - The MAC address to be added
- *
- * Returned Value:
- *   None
- *
- * Assumptions:
- *
- ****************************************************************************/
 
-#ifdef CONFIG_NET_IGMP
-static int enc_addmac(struct net_driver_s *dev, FAR const uint8_t *mac)
-{
-	FAR struct enc_driver_s *priv = (FAR struct enc_driver_s *)dev->d_private;
-
-	/* Lock the SPI bus so that we have exclusive access */
-
-	enc_lock(priv);
-
-	/* Add the MAC address to the hardware multicast routing table */
-
-#warning "Multicast MAC support not implemented"
-
-	/* Un-lock the SPI bus */
-
-	enc_unlock(priv);
-	return OK;
-}
-#endif
-
-/****************************************************************************
- * Function: enc_rmmac
- *
- * Description:
- *   TinyAraCallback: Remove the specified MAC address from the hardware multicast
- *   address filtering
- *
- * Parameters:
- *   dev  - Reference to the TinyAra driver state structure
- *   mac  - The MAC address to be removed
- *
- * Returned Value:
- *   None
- *
- * Assumptions:
- *
- ****************************************************************************/
-
-#ifdef CONFIG_NET_IGMP
-static int enc_rmmac(struct net_driver_s *dev, FAR const uint8_t *mac)
-{
-	FAR struct enc_driver_s *priv = (FAR struct enc_driver_s *)dev->d_private;
-
-	/* Lock the SPI bus so that we have exclusive access */
-
-	enc_lock(priv);
-
-	/* Add the MAC address to the hardware multicast routing table */
-
-#warning "Multicast MAC support not implemented"
-
-	/* Un-lock the SPI bus */
-
-	enc_unlock(priv);
-	return OK;
-}
-#endif
 
 /****************************************************************************
  * Function: enc_pwrsave
@@ -2551,10 +2463,6 @@ int enc_initialize(FAR struct spi_dev_s *spi, FAR const struct enc_lower_s *lowe
 	priv->dev.d_ifup = enc_ifup;	/* I/F down callback */
 	priv->dev.d_ifdown = enc_ifdown;	/* I/F up (new IP address) callback */
 	priv->dev.d_txavail = enc_txavail;	/* New TX data callback */
-#ifdef CONFIG_NET_IGMP
-	priv->dev.d_addmac = enc_addmac;	/* Add multicast MAC address */
-	priv->dev.d_rmmac = enc_rmmac;	/* Remove multicast MAC address */
-#endif
 	priv->dev.d_private = priv;	/* Used to recover private state from dev */
 
 	/* Create a watchdog for timing polling for and timing of transmisstions */

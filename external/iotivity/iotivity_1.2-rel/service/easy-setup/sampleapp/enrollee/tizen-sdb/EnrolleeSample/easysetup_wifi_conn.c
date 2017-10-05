@@ -108,10 +108,10 @@ static void WiFiActivateCallback(wifi_error_e result, void* user_data)
 static void ConnectedCallback(wifi_error_e err, void* data)
 {
     if(err == WIFI_ERROR_NONE) {
-        OIC_LOG(DEBUG, ES_WIFICONN_TAG, "Success to Connect AP");        
+        OIC_LOG(DEBUG, ES_WIFICONN_TAG, "Success to Connect AP");
     }
     else {
-        OIC_LOG(ERROR, ES_WIFICONN_TAG, "Fail to Connect AP");        
+        OIC_LOG(ERROR, ES_WIFICONN_TAG, "Fail to Connect AP");
     }
 }
 
@@ -152,13 +152,13 @@ static bool WiFiFoundCallback(wifi_ap_h ap, void *data)
                 OIC_LOG(ERROR, ES_WIFICONN_TAG, "Fail to connect wifi");
                 OIC_LOG_V(INFO, ES_WIFICONN_TAG, "Connect Fail Status : %s", PrintWifiErr((wifi_error_e) ret));
                 g_free(foundAP);
-                return false;                
+                return false;
             }
             else {
                 OIC_LOG_V(INFO, ES_WIFICONN_TAG, "Success to connect wifi : %s", PrintWifiErr((wifi_error_e) ret));
                 gWiFiConnFlag = true;
                 g_free(foundAP);
-                return false;                
+                return false;
             }
 
 

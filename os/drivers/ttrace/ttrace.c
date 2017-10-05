@@ -40,19 +40,21 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/arch.h>
+#include <tinyara/ringbuf.h>
 
 #include <arch/irq.h>
-
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
 
 #define TTRACE_START           's'
+#define TTRACE_OVERWRITE       'o'
 #define TTRACE_FINISH          'f'
 #define TTRACE_INFO            'i'
 #define TTRACE_SELECTED_TAG    't'
 #define TTRACE_FUNC_TAG        'g'
+#define TTRACE_SET_BUFSIZE     'z'
 #define TTRACE_USED_BUFSIZE    'u'
 #define TTRACE_BUFFER          'b'
 
@@ -97,7 +99,14 @@ static const struct file_operations g_ttracefops = {
 };
 
 /* This is the pre-allocated buffer used for the T-trace */
-static char g_packets[CONFIG_TTRACE_BUFSIZE];
+static struct ringbuf g_ringbuf = {
+	{0,},
+	CONFIG_TTRACE_BUFSIZE,
+	0,
+	0,
+	0
+};
+
 static uint32_t g_state = TTRACE_STATE_IDLE;
 static uint32_t g_selected_tag = 0;
 
@@ -109,7 +118,7 @@ static uint32_t g_selected_tag = 0;
 static struct ttrace_dev_s g_sysdev = {
 	0,                        /* ttrace_head */
 	CONFIG_TTRACE_BUFSIZE,    /* ttrace_bufsize */
-	g_packets                 /* ttrace_packets_buffer */
+	g_ringbuf.buffer          /* ttrace_packets_buffer */
 };
 
 /****************************************************************************
@@ -132,14 +141,15 @@ static ssize_t ttrace_read(FAR struct file *filep, FAR char *buffer, size_t len)
 	DEBUGASSERT(priv);
 	sched_lock();
 
-	ttdbg("buffer: %p, g_packets: %p, g_packets_size: %d\r\n", buffer, g_packets, priv->ttrace_head);
-	memcpy(buffer, g_packets, priv->ttrace_head);
-
-	memset((void *)g_packets, 0, priv->ttrace_head);
-	priv->ttrace_head = 0;
+	ttdbg("buffer: %p, ringbuf: %p\r\n", buffer, g_ringbuf.buffer);
+	ttdbg("ringbuf_index: %d\r\n", priv->ttrace_head);
+	ttdbg("ringbuf_is_overwritten: %d\r\n", g_ringbuf.is_overwritten);
+	ttdbg("ringbuf_is_overwritable: %d\r\n", g_ringbuf.is_overwritable);
+	ringbuf_read(buffer, len, &g_ringbuf);
+	priv->ttrace_head = g_ringbuf.index;
 
 	sched_unlock();
-	return len;
+	return (ssize_t)len;
 }
 
 /****************************************************************************
@@ -155,26 +165,21 @@ static ssize_t ttrace_write(FAR struct file *filep, FAR const char *buffer, size
 		return TTRACE_INVALID;
 	}
 
-	if (priv->ttrace_head + len > sizeof(g_packets)) {
-		return TTRACE_OVERFLOW;
-	}
-
 	DEBUGASSERT(priv);
 	sched_lock();
 
-	memcpy((void *)(g_packets + priv->ttrace_head), (void *)buffer, len);
-
-	priv->ttrace_head += len;
+	ringbuf_write(buffer, len, &g_ringbuf);
+	priv->ttrace_head = g_ringbuf.index;
 
 	sched_unlock();
-	return len;
+	return (ssize_t)len;
 }
 
 /****************************************************************************
  * Name: ttrace_ioctl
  ****************************************************************************/
 
-static ssize_t ttrace_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
+static int ttrace_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	FAR struct inode *inode = filep->f_inode;
 	struct ttrace_dev_s *priv = inode->i_private;
@@ -188,34 +193,43 @@ static ssize_t ttrace_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		g_state = TTRACE_STATE_RUNNING;
 		priv->ttrace_head = 0;
 		break;
+	case TTRACE_OVERWRITE:
+		g_ringbuf.is_overwritable = arg;
+		break;
 	case TTRACE_FINISH:
 		g_selected_tag = 0;
 		g_state = TTRACE_STATE_IDLE;
 		break;
 	case TTRACE_INFO:
-		ttdbg("state: %d\r\n", g_state);
-		ttdbg("selected tags: %d\r\n", g_selected_tag);
-		/* TODO
-		ttdbg("available tags: \r\n");
-		ttdbg("buffer size: \r\n");
-		*/
+		ttdbg("Available tags: apps libs lock ipc task\r\n");
+		ttdbg("State: %d\r\n", g_state);
+		ttdbg("Selected tags: %d\r\n", g_selected_tag);
+		ttdbg("Buffer index: %d\r\n", g_ringbuf.index);
+		ttdbg("Real Buffer size: %d\r\n", g_ringbuf.bufsize);
+		ttdbg("Given buffer size: %d\r\n", CONFIG_TTRACE_BUFSIZE);
+		ttdbg("Buffer is_overwritten: %d\r\n", g_ringbuf.is_overwritten);
+		ttdbg("Buffer is_overwritable: %d\r\n", g_ringbuf.is_overwritable);
 		break;
 	case TTRACE_SELECTED_TAG:
 		g_selected_tag |= arg;
 		break;
 	case TTRACE_FUNC_TAG:
-		if ((g_selected_tag & arg) > TTRACE_VALID) {
-			ret = TTRACE_VALID;
-		} else {
-			ret = TTRACE_INVALID;
-		}
+		ret = g_selected_tag;
+		break;
+	case TTRACE_SET_BUFSIZE:
+		g_ringbuf.bufsize = CONFIG_TTRACE_BUFSIZE - (CONFIG_TTRACE_BUFSIZE % arg);
 		break;
 	case TTRACE_USED_BUFSIZE:
-		ttdbg("used bufsize: %d\r\n", priv->ttrace_head);
-		ret = priv->ttrace_head;
+		if (g_ringbuf.is_overwritten == 0) {
+			ret = priv->ttrace_head;
+		} else {
+			ret = CONFIG_TTRACE_BUFSIZE;
+		}
+		ttdbg("used bufsize: %d\r\n", ret);
 		break;
 	case TTRACE_BUFFER:
 		ttdbg("Resize of trace buffer is not supported yet.\r\n");
+		ttdbg("Trace buffer size should be defined by menuconfig.\r\n");
 		break;
 	default:
 		ttdbg("Invalid commands, cmd: %c, arg: %d\r\n", cmd, arg);
@@ -244,4 +258,3 @@ int ttrace_init(void)
 	/* Register the syslog character driver */
 	return register_driver(CONFIG_TTRACE_DEVPATH, &g_ttracefops, 0666, &g_sysdev);
 }
-

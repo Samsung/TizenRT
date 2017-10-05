@@ -15,7 +15,7 @@
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Ville Skytta - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -42,7 +42,7 @@
  * Here we implement a very basic LWM2M Security Object which only knows NoSec security mode.
  */
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -53,7 +53,7 @@ typedef struct _security_instance_
     struct _security_instance_ * next;        // matches lwm2m_list_t::next
     uint16_t                     instanceId;  // matches lwm2m_list_t::id
     char *                       uri;
-    bool                         isBootstrap;    
+    bool                         isBootstrap;
     uint8_t                      securityMode;
     char *                       publicIdentity;
     uint16_t                     publicIdLen;
@@ -543,7 +543,7 @@ lwm2m_object_t * get_security_object(int serverId,
 
         memset(targetP, 0, sizeof(security_instance_t));
         targetP->instanceId = 0;
-        targetP->uri = (char*)lwm2m_malloc(strlen(serverUri)+1); 
+        targetP->uri = (char*)lwm2m_malloc(strlen(serverUri)+1);
         strcpy(targetP->uri, serverUri);
 
         targetP->securityMode = LWM2M_SECURITY_MODE_NONE;

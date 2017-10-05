@@ -17,7 +17,7 @@
  *    Axel Lorente - Please refer to git log
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -58,7 +58,7 @@
  *
  */
 
-#include "liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -110,7 +110,7 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP)
 
     case RES_M_REBOOT:
         return COAP_405_METHOD_NOT_ALLOWED;
-      
+
     case RES_M_BINDING_MODES:
         lwm2m_data_encode_string(PRV_BINDING_MODE, dataP);
         return COAP_205_CONTENT;
@@ -275,7 +275,7 @@ lwm2m_object_t * get_object_device()
             lwm2m_free(deviceObj);
             return NULL;
         }
-        
+
         /*
          * And the private function that will access the object.
          * Those function will be called when a read/write/execute query is made by the server. In fact the library don't need to

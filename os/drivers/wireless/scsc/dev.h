@@ -115,7 +115,7 @@ struct slsi_cm_ctx {
 
 /* Only one wlan service instance is assumed for now. */
 
-struct slsi_cm_ctx cm_ctx;
+extern struct slsi_cm_ctx cm_ctx;
 
 static inline void slsi_sig_send_init(struct slsi_sig_send *sig_send)
 {

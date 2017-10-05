@@ -70,12 +70,12 @@
 #include <tinyara/semaphore.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/pthread.h>
+#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
 #include "clock/clock.h"
 #include "pthread/pthread.h"
-#include <ttrace.h>
 
 /****************************************************************************
  * Public Data

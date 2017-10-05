@@ -78,7 +78,7 @@ echo "# Partition Map (Auto generated)" > ${PARTITION_MAP_CFG}
 echo "set FLASH_START $FLASH_BASE" >> ${PARTITION_MAP_CFG}
 for pname in $partname_list
 do
-	if [ "$pname" == "romfs" ]; then
+	if [ "$pname" == "rom" ]; then
 		romfs_part_exist=1
 	fi
 

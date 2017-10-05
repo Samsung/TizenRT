@@ -1,24 +1,24 @@
-//******************************************************************
-//
-// Copyright 2016 Samsung Electronics All Rights Reserved.
-//
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-/// @file dnsclient_main.c
-/// @brief the program for testing dnsclient
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/**
+ * @file dnsclient_main.c
+ * @brief the program for testing dnsclient
+ */
 
 /****************************************************************************
  * examples/dnsclient_test/dnsclient_main.c
@@ -80,6 +80,10 @@
  ****************************************************************************/
 #ifndef DNS_DEFAULT_PORT
 #define DNS_DEFAULT_PORT   53
+#endif
+
+#ifndef CONFIG_EXAMPLES_DNSCLIENT_TEST_SERVER_PORT
+#define CONFIG_EXAMPLES_DNSCLIENT_TEST_SERVER_PORT	DNS_DEFAULT_PORT
 #endif
 
 #ifndef CONFIG_NETDB_DNSCLIENT_NAMESIZE
@@ -144,7 +148,7 @@ int dnsclient_main(int argc, FAR char *argv[])
 #ifdef CONFIG_NETDB_DNSSERVER_IPv4
 		printf("dnsclient : dns_add_nameserver : %s\n", argv[2]);
 		dns.sin_family = AF_INET;
-		dns.sin_port = htons(DNS_DEFAULT_PORT);
+		dns.sin_port = htons(CONFIG_EXAMPLES_DNSCLIENT_TEST_SERVER_PORT);
 		dns.sin_addr.s_addr = inet_addr(argv[2]);
 		dns_add_nameserver((FAR struct sockaddr *)&dns, sizeof(struct sockaddr_in));
 #endif
@@ -155,8 +159,8 @@ int dnsclient_main(int argc, FAR char *argv[])
 
 	memset(hostname, 0x00, CONFIG_NETDB_DNSCLIENT_NAMESIZE);
 
-	if (strlen(argv[1]) > CONFIG_NETDB_DNSCLIENT_NAMESIZE) {
-		printf("dnsclient : length of hostname has to lower than %d\n", CONFIG_NETDB_DNSCLIENT_NAMESIZE);
+	if (strlen(argv[1]) > CONFIG_NETDB_DNSCLIENT_NAMESIZE - 1) {
+		printf("dnsclient : length of hostname has to lower than or equal to %d\n", CONFIG_NETDB_DNSCLIENT_NAMESIZE - 1);
 		return -1;
 	}
 

@@ -170,10 +170,10 @@
  */
 
 enum tiva_timer32mode_e {
-	TIMER16_MODE = 0, 			/* Use 16-bit timers, not 32-bit timer */
-	TIMER32_MODE_ONESHOT, 		/* 32-bit programmable one-shot timer */
-	TIMER32_MODE_PERIODIC, 		/* 32-bit programmable periodic timer */
-	TIMER32_MODE_RTC			/* 32-bit RTC with external 32.768-KHz input */
+	TIMER16_MODE = 0,           /* Use 16-bit timers, not 32-bit timer */
+	TIMER32_MODE_ONESHOT,       /* 32-bit programmable one-shot timer */
+	TIMER32_MODE_PERIODIC,      /* 32-bit programmable periodic timer */
+	TIMER32_MODE_RTC            /* 32-bit RTC with external 32.768-KHz input */
 };
 
 /* This enumeration identifies all supported 16-bit timer A/B modes of
@@ -181,12 +181,12 @@ enum tiva_timer32mode_e {
  */
 
 enum tiva_timer16mode_e {
-	TIMER16_MODE_NONE = 0, 		/* 16-bit timer not used */
-	TIMER16_MODE_ONESHOT, 		/* 16-bit programmable one-shot timer */
-	TIMER16_MODE_PERIODIC, 		/* 16-bit programmable periodic timer */
-	TIMER16_MODE_COUNT_CAPTURE, 	/* 16-bit input edge-count capture mode w/8-bit prescaler */
-	TIMER16_MODE_TIME_CAPTURE, 	/* 16-bit input time capture mode w/8-bit prescaler */
-	TIMER16_MODE_PWM			/* 16-bit PWM output mode w/8-bit prescaler */
+	TIMER16_MODE_NONE = 0,      /* 16-bit timer not used */
+	TIMER16_MODE_ONESHOT,       /* 16-bit programmable one-shot timer */
+	TIMER16_MODE_PERIODIC,      /* 16-bit programmable periodic timer */
+	TIMER16_MODE_COUNT_CAPTURE, /* 16-bit input edge-count capture mode w/8-bit prescaler */
+	TIMER16_MODE_TIME_CAPTURE,  /* 16-bit input time capture mode w/8-bit prescaler */
+	TIMER16_MODE_PWM            /* 16-bit PWM output mode w/8-bit prescaler */
 };
 
 /* This type represents the opaque handler returned by tiva_gptm_configure() */

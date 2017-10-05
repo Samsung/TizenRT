@@ -401,11 +401,7 @@ pid_t task_vforkstart(FAR struct task_tcb_s *child)
 
 	/* Activate the task */
 
-	ret = task_activate((FAR struct tcb_s *)child);
-	if (ret < OK) {
-		task_vforkabort(child, -ret);
-		return ERROR;
-	}
+	(void)task_activate((FAR struct tcb_s *)child);
 
 	/* Since the child task has the same priority as the parent task, it is
 	 * now ready to run, but has not yet ran.  It is a requirement that

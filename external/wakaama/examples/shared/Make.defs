@@ -38,9 +38,8 @@ ifeq ($(CONFIG_DM),y)
 # Routing table support
 
 CSRCS += commandline.c connection.c platform.c memtrace.c
-CFLAGS+=-I$(TOPDIR)/../external/wakaama/core
 
-DEPPATH += --dep-path wakaama/examples/shared
-VPATH += :wakaama/examples/shared
+DEPPATH += --dep-path examples/shared
+VPATH += :examples/shared
 
 endif

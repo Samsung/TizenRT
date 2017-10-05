@@ -107,12 +107,16 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 #endif
 {
 	FAR struct mm_allocnode_s *oldnode;
+#ifndef CONFIG_DISABLE_REALLOC_NEIGHBOR_EXTENSION
 	FAR struct mm_freenode_s  *prev;
 	FAR struct mm_freenode_s  *next;
+#endif
 	size_t newsize;
 	size_t oldsize;
+#ifndef CONFIG_DISABLE_REALLOC_NEIGHBOR_EXTENSION
 	size_t prevsize = 0;
 	size_t nextsize = 0;
+#endif
 	FAR void *newmem;
 
 	/* If oldmem is NULL, then realloc is equivalent to malloc */
@@ -150,7 +154,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 
 	oldsize = oldnode->size;
 
-#ifndef CONFIG_DISABLE_REALLOC_NEIGHBOR_EXTENTION
+#ifndef CONFIG_DISABLE_REALLOC_NEIGHBOR_EXTENSION
 	if (newsize <= oldsize) {
 		/* Handle the special case where we are not going to change the size
 		 * of the allocation.

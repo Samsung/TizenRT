@@ -54,7 +54,7 @@
  */
 
 /**
- * @file netif.h
+ * @file net/lwip/netif.h
  * @brief netif API (to be used from lwIP TCPIP thread)
  */
 

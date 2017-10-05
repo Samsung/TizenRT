@@ -72,7 +72,7 @@
 #include <signal.h>
 #include <inttypes.h>
 
-#include "../../../external/wakaama/core/liblwm2m.h"
+#include <protocols/liblwm2m.h>
 
 #include "commandline.h"
 #include "connection.h"
@@ -80,8 +80,8 @@
 #include <tinyara/ascii.h>
 
 #ifdef WITH_MBEDTLS
-#include "tls/certs.h"
-#include "tls/easy_tls.h"
+#include "mbedtls/certs.h"
+#include "mbedtls/easy_tls.h"
 #endif
 
 #define MAX_PACKET_SIZE 1024
