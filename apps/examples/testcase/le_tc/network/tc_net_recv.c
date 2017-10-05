@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <net/if.h>
 #include <netutils/netlib.h>
-#include "tc_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +32,8 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <pthread.h>
+
+#include "tc_internal.h"
 
 #define PORTNUM 1109
 #define MAXRCVLEN 20
@@ -85,7 +86,6 @@ void tc_net_recv_p(int fd)
 
 	TC_ASSERT_NEQ("recv", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -105,7 +105,6 @@ void tc_net_recv_n(int fd)
 
 	TC_ASSERT_EQ("recv", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -125,7 +124,6 @@ void tc_net_recv_shutdown_n(int fd)
 
 	TC_ASSERT_EQ("recv", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -145,7 +143,6 @@ void tc_net_recv_close_n(int fd)
 
 	TC_ASSERT_EQ("recv", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -159,7 +156,6 @@ void tc_net_recv_close_n(int fd)
    */
 void *recv_server(void *args)
 {
-
 	char *msg = "Hello World !\n";
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -183,7 +179,6 @@ void *recv_server(void *args)
 
 	close(SocketFD);
 	return 0;
-
 }
 
 /**
@@ -197,7 +192,6 @@ void *recv_server(void *args)
    */
 void *recv_client(void *args)
 {
-
 	int mysocket;
 	struct sockaddr_in dest;
 
@@ -218,7 +212,6 @@ void *recv_client(void *args)
 	tc_net_recv_close_n(mysocket);
 	close(mysocket);
 	return 0;
-
 }
 
 /****************************************************************************
@@ -226,8 +219,8 @@ void *recv_client(void *args)
  ****************************************************************************/
 int net_recv_main(void)
 {
-
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, recv_server, NULL);
 	pthread_create(&Client, NULL, recv_client, NULL);

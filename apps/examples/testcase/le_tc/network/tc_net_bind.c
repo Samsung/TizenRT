@@ -21,14 +21,12 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 //#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
@@ -46,7 +44,7 @@ static void tc_net_bind_p(void)
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	memset(&sa, 0, sizeof sa);
+	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1100);
@@ -57,7 +55,6 @@ static void tc_net_bind_p(void)
 
 	TC_ASSERT_NEQ("bind", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -73,7 +70,7 @@ static void tc_net_bind_udp_p(void)
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-	memset(&sa, 0, sizeof sa);
+	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1100);
@@ -96,11 +93,10 @@ static void tc_net_bind_udp_p(void)
    */
 static void tc_net_bind_broadcast_p(void)
 {
-
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	memset(&sa, 0, sizeof sa);
+	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1105);
@@ -111,7 +107,6 @@ static void tc_net_bind_broadcast_p(void)
 
 	TC_ASSERT_NEQ("bind", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -126,7 +121,7 @@ static void tc_net_bind_fd_n(void)
 {
 	struct sockaddr_in sa;
 	int fd = -1;
-	memset(&sa, 0, sizeof sa);
+	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1110);
@@ -136,7 +131,6 @@ static void tc_net_bind_fd_n(void)
 
 	TC_ASSERT_NEQ("bind", ret, 0);
 	TC_SUCCESS_RESULT();
-	
 }
 
 /**
@@ -151,7 +145,7 @@ static void tc_net_bind_addrfamily_n(void)
 {
 	struct sockaddr_in sa;
 	int fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	memset(&sa, 0, sizeof sa);
+	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = AF_UNIX;
 	sa.sin_port = htons(5123);
@@ -162,7 +156,6 @@ static void tc_net_bind_addrfamily_n(void)
 
 	TC_ASSERT_NEQ("bind", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -178,7 +171,7 @@ static void tc_net_bind_size_n(void)
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	memset(&sa, 0, sizeof sa);
+	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1109);
@@ -189,9 +182,7 @@ static void tc_net_bind_size_n(void)
 
 	TC_ASSERT_NEQ("bind", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
-
 
 /**
    * @testcase		   :tc_net_bind_fd_size_n
@@ -205,7 +196,7 @@ static void tc_net_bind_fd_size_n(void)
 {
 	struct sockaddr_in sa;
 
-	memset(&sa, 0, sizeof sa);
+	memset(&sa, 0, sizeof(sa));
 
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(1108);
@@ -215,16 +206,13 @@ static void tc_net_bind_fd_size_n(void)
 
 	TC_ASSERT_NEQ("bind", ret, 0);
 	TC_SUCCESS_RESULT();
-	
 }
 
 /****************************************************************************
  * Name: bind()
  ****************************************************************************/
-
 int net_bind_main(void)
 {
-
 	tc_net_bind_p();
 	tc_net_bind_fd_n();
 	tc_net_bind_fd_size_n();

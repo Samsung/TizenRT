@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <net/if.h>
 #include <netutils/netlib.h>
-#include "tc_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +32,8 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <pthread.h>
+
+#include "tc_internal.h"
 
 #define PORTNUM 1111
 #define MAXRCVLEN 20
@@ -55,7 +56,6 @@ void tc_net_recvfrom_p(int fd)
 
 	TC_ASSERT_NEQ("recvfrom", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -76,7 +76,6 @@ void tc_net_recvfrom_sock_n(void)
 
 	TC_ASSERT_EQ("recvfrom", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -96,7 +95,6 @@ void tc_net_recvfrom_n(int fd)
 
 	TC_ASSERT_EQ("recvfrom", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -108,7 +106,6 @@ void tc_net_recvfrom_n(int fd)
    * Postconditions        :
    * @return               :void *
    */
-
 void *recvfrom_udpserver(void *args)
 {
 	struct sockaddr_in sa;
@@ -127,7 +124,6 @@ void *recvfrom_udpserver(void *args)
 	tc_net_recvfrom_n(SocketFD);
 
 	return 0;
-
 }
 
 /**
@@ -141,7 +137,6 @@ void *recvfrom_udpserver(void *args)
    */
 void *recvfrom_udpclient(void *args)
 {
-
 	int mysocket;
 	mysocket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	char *buffer = "hello";
@@ -156,7 +151,6 @@ void *recvfrom_udpclient(void *args)
 	sendto(mysocket, buffer, len, 0, (struct sockaddr *)&dest, fromlen);
 
 	return 0;
-
 }
 
 /**
@@ -207,7 +201,6 @@ void tc_net_recvfrom_tcp_p(int fd)
 
 	TC_ASSERT_NEQ("recvfrom", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -227,7 +220,6 @@ void tc_net_recvfrom_tcp_conn_n(int fd)
 
 	TC_ASSERT_EQ("recvfrom", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -246,7 +238,6 @@ void tc_net_recvfrom_tcp_sock_n(int fd)
 
 	TC_ASSERT_EQ("recvfrom", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -265,7 +256,6 @@ void tc_net_recvfrom_tcp_n(void)
 
 	TC_ASSERT_EQ("recvfrom", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -279,7 +269,6 @@ void tc_net_recvfrom_tcp_n(void)
    */
 void *recvfrom_tcpserver(void *args)
 {
-
 	char *msg = "Hello World !\n";
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -300,7 +289,6 @@ void *recvfrom_tcpserver(void *args)
 		sendto(ConnectFD, msg, strlen(msg), 0, (struct sockaddr *)&sa, sizeof(sa));
 
 	close(ConnectFD);
-
 	close(SocketFD);
 	return 0;
 }
@@ -345,21 +333,21 @@ void *recvfrom_tcpclient(void *args)
  ****************************************************************************/
 int net_recvfrom_main(void)
 {
-
-	pthread_t Server, Client, tcpserver, tcpclient;
+	pthread_t Server;
+	pthread_t Client;
+	pthread_t tcpserver;
+	pthread_t tcpclient;
 
 	pthread_create(&Server, NULL, recvfrom_udpserver, NULL);
 	pthread_create(&Client, NULL, recvfrom_udpclient, NULL);
 
 	pthread_join(Server, NULL);
-
 	pthread_join(Client, NULL);
 
 	pthread_create(&tcpserver, NULL, recvfrom_tcpserver, NULL);
 	pthread_create(&tcpclient, NULL, recvfrom_tcpclient, NULL);
 
 	pthread_join(tcpserver, NULL);
-
 	pthread_join(tcpclient, NULL);
 
 	return 0;

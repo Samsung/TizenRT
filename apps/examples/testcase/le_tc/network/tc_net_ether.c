@@ -21,13 +21,11 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
@@ -43,7 +41,6 @@
 */
 static void tc_net_ether_ntoa_p(void)
 {
-
 	struct sockaddr *sa;
 	struct ifreq *ifr;
 	struct ifreq tmp;

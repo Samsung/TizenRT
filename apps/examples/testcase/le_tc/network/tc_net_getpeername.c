@@ -21,18 +21,16 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 //#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
+#include <pthread.h>
 
 #include "tc_internal.h"
-#include <pthread.h>
 
 #define PORTNUM 1115
 #define MAXRCVLEN 20
@@ -107,9 +105,7 @@ static void tc_net_getpeername_sock_n(void)
 
 	TC_ASSERT_EQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-	
 }
-
 
 /**
    * @testcase		   :tc_net_getpeername_close_n
@@ -130,7 +126,6 @@ static void tc_net_getpeername_close_n(void)
 
 	TC_ASSERT_EQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-	
 }
 
 /**
@@ -152,7 +147,6 @@ static void tc_net_getpeername_unix_p(void)
 
 	TC_ASSERT_NEQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -174,7 +168,6 @@ static void tc_net_getpeername_udp_p(void)
 
 	TC_ASSERT_NEQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -195,7 +188,6 @@ static void tc_net_getpeername_p(int fd)
 
 	TC_ASSERT_NEQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -216,7 +208,6 @@ static void tc_net_getpeername_n(int fd)
 
 	TC_ASSERT_EQ("getpeername", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -230,7 +221,6 @@ static void tc_net_getpeername_n(int fd)
    */
 void *getpeername_server(void *args)
 {
-
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -247,7 +237,6 @@ void *getpeername_server(void *args)
 	int ConnectFD = accept(SocketFD, NULL, NULL);
 
 	close(ConnectFD);
-
 	close(SocketFD);
 	return 0;
 }
@@ -263,7 +252,6 @@ void *getpeername_server(void *args)
    */
 void *getpeername_client(void *args)
 {
-
 	int mysocket;
 	struct sockaddr_in dest;
 	mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -281,7 +269,6 @@ void *getpeername_client(void *args)
 
 	close(mysocket);
 	return 0;
-
 }
 
 /****************************************************************************
@@ -289,8 +276,8 @@ void *getpeername_client(void *args)
  ****************************************************************************/
 int net_getpeername_main(void)
 {
-
-	pthread_t Server, Client;
+	pthread_t Server;
+	pthread_t Client;
 
 	pthread_create(&Server, NULL, getpeername_server, NULL);
 	pthread_create(&Client, NULL, getpeername_client, NULL);

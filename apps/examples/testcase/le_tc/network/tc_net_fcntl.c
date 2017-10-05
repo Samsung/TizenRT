@@ -21,14 +21,12 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 //#include <arch/board/board.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
@@ -43,7 +41,6 @@
    */
 static void tc_net_fcntl_nonblock_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, O_NONBLOCK);
@@ -51,7 +48,6 @@ static void tc_net_fcntl_nonblock_p(void)
 
 	TC_ASSERT_NEQ("fcntl", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -64,7 +60,6 @@ static void tc_net_fcntl_nonblock_p(void)
    */
 static void tc_net_fcntl_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, 0);
@@ -72,9 +67,7 @@ static void tc_net_fcntl_p(void)
 
 	TC_ASSERT_NEQ("fcntl", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
-
 
 /**
    * @testcase		   :tc_net_fcntl_n
@@ -86,13 +79,11 @@ static void tc_net_fcntl_p(void)
    */
 static void tc_net_fcntl_n(void)
 {
-
 	int fd = -1;
 	int ret = fcntl(fd, F_SETFL, O_NONBLOCK);
 
 	TC_ASSERT_NEQ("fcntl", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -105,7 +96,6 @@ static void tc_net_fcntl_n(void)
    */
 static void tc_net_fcntl_ndelay_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = fcntl(fd, F_SETFL, O_NDELAY);
@@ -113,16 +103,13 @@ static void tc_net_fcntl_ndelay_p(void)
 
 	TC_ASSERT_NEQ("fcntl", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
  * Name: fcntl()
  ****************************************************************************/
-
 int net_fcntl_main(void)
 {
-
 	tc_net_fcntl_nonblock_p();
 	tc_net_fcntl_p();
 	tc_net_fcntl_n();

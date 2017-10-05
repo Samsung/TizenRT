@@ -119,7 +119,6 @@ void tc_net_accept_socket_n(int fd)
    */
 void *Server(void *args)
 {
-
 	struct sockaddr_in sa;
 	int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -152,7 +151,6 @@ void *Server(void *args)
    */
 void *Client(void *args)
 {
-
 	int mysocket;
 	struct sockaddr_in dest;
 
@@ -177,7 +175,6 @@ void *Client(void *args)
  ****************************************************************************/
 int net_accept_main(void)
 {
-
 	pthread_t server, client;
 
 	pthread_create(&server, NULL, Server, NULL);

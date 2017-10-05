@@ -31,7 +31,6 @@
 
 #include "tc_internal.h"
 
-
 /**
 * @testcase		tc_net_inet_addr_p
 * @brief
@@ -49,7 +48,6 @@ static void tc_net_inet_addr_p(void)
 	TC_ASSERT_NEQ("inet", ret, -1);
 	TC_SUCCESS_RESULT();
 }
-
 
 /**
 * @testcase		tc_net_inet_aton_p
@@ -69,7 +67,6 @@ static void tc_net_inet_aton_p(void)
 	TC_ASSERT_NEQ("inet", ret, 0);
 	TC_SUCCESS_RESULT();
 }
-
 
 /**
 * @testcase		tc_net_inet_ntoa_p
@@ -122,8 +119,6 @@ static void tc_net_inet_ntop(void)
 	/* Failure case: invalid address family */
 	ret = inet_ntop(33, &in_addr, dst, INET_ADDRSTRLEN);
 	TC_ASSERT_EQ("inet_ntop", ret, NULL);
-
-
 	TC_SUCCESS_RESULT();
 }
 
@@ -155,7 +150,6 @@ static void tc_net_inet_pton(void)
 	/* Failure case: invalid address family */
 	ret = inet_pton(33, "107.108.218.83", &(addr_inet.sin_addr));
 	TC_ASSERT_EQ("inet_pton", ret, -1);
-
 	TC_SUCCESS_RESULT();
 }
 
@@ -243,11 +237,9 @@ static void tc_net_ntohl(void)
 	TC_SUCCESS_RESULT();
 }
 
-
 /****************************************************************************
  * Name: inet()
  ****************************************************************************/
-
 int net_inet_main(void)
 {
 	tc_net_htonl();

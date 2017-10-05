@@ -21,7 +21,6 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -42,14 +41,12 @@
    */
 static void tc_net_close_p(void)
 {
-
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	int ret = close(fd);
 
 	TC_ASSERT_NEQ("close", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -62,22 +59,18 @@ static void tc_net_close_p(void)
    */
 static void tc_net_close_n(void)
 {
-
 	int fd = -1;
 	int ret = close(fd);
 
 	TC_ASSERT_NEQ("close", ret, 0);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
  * Name: close()
  ****************************************************************************/
-
 int net_close_main(void)
 {
-
 	tc_net_close_p();
 	tc_net_close_n();
 	return 0;

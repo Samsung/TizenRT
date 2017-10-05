@@ -21,13 +21,11 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-
 #include <sys/stat.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netutils/netlib.h>
-
 #include <sys/socket.h>
 
 #include "tc_internal.h"
@@ -48,7 +46,6 @@ static void tc_net_connect_fd_n(struct sockaddr_in *sa)
 
 	TC_ASSERT_EQ("connect", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -70,7 +67,6 @@ static void tc_net_connect_broadcastaddr_n(struct sockaddr_in *sa)
 
 	TC_ASSERT_EQ("connect", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -92,7 +88,6 @@ static void tc_net_connect_loopbackaddr_n(struct sockaddr_in *sa)
 
 	TC_ASSERT_EQ("connect", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -114,13 +109,11 @@ static void tc_net_connect_socklen_n(struct sockaddr_in *sa)
 
 	TC_ASSERT_EQ("connect", ret, -1);
 	TC_SUCCESS_RESULT();
-
 }
 
 /****************************************************************************
  * Name: connect()
  ****************************************************************************/
-
 int net_connect_main(void)
 {
 	struct sockaddr_in sa;
