@@ -76,6 +76,37 @@ config DEBUG_FS_INFO
 
 endif #DEBUG_FS
 
+config DEBUG_AUDIO
+	bool "Audio Debug Output"
+	default n
+	---help---
+		Enable Audio debug SYSLOG output (disabled by default)
+
+if DEBUG_AUDIO
+
+config DEBUG_AUDIO_ERROR
+	bool "Audio Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable audio error debug SYSLOG output.
+
+config DEBUG_AUDIO_WARN
+	bool "Audio Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable audio warning debug SYSLOG output.
+
+config DEBUG_AUDIO_INFO
+	bool "Audio Infomational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable audio informational debug SYSLOG output.
+
+endif #DEBUG_AUDIO
+
 config DEBUG_LIB
 	bool "C Library Debug Output"
 	default n

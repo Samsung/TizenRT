@@ -39,16 +39,16 @@
 */
 void itc_pwm_open_close_p(void)
 {
-    int device = 0;
-    int channel = 1;
-    int ret = 0;
-    iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
-    TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
+	int device = 0;
+	int channel = 1;
+	int ret = 0;
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
-    ret = iotbus_pwm_close(h_pwm);
-    TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
+	ret = iotbus_pwm_close(h_pwm);
+	TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -61,12 +61,12 @@ void itc_pwm_open_close_p(void)
 */
 void itc_pwm_set_get_duty_cycle_p(void)
 {
-    int device = 0;
-    int channel = 1;
-    int cycle = 20;
-    int ret = 0;
-    iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
-    TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
+	int device = 0;
+	int channel = 1;
+	int cycle = 20;
+	int ret = 0;
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
 	ret = iotbus_pwm_set_duty_cycle(h_pwm, cycle);
 	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_duty_cycle", ret, OK, iotbus_pwm_close(h_pwm));
@@ -74,10 +74,10 @@ void itc_pwm_set_get_duty_cycle_p(void)
 	ret = iotbus_pwm_get_duty_cycle(h_pwm);
 	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_duty_cycle", ret, cycle, iotbus_pwm_close(h_pwm));
 
-    ret = iotbus_pwm_close(h_pwm);
-    TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
+	ret = iotbus_pwm_close(h_pwm);
+	TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -90,12 +90,12 @@ void itc_pwm_set_get_duty_cycle_p(void)
 */
 void itc_pwm_set_get_period_p(void)
 {
-    int device = 0;
-    int channel = 1;
-    int period = 1000;
-    int ret = 0;
-    iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
-    TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
+	int device = 0;
+	int channel = 1;
+	int period = 1000;
+	int ret = 0;
+	iotbus_pwm_context_h h_pwm = iotbus_pwm_open(device, channel);
+	TC_ASSERT_NEQ("iotbus_pwm_open", h_pwm, NULL);
 
 	ret = iotbus_pwm_set_period(h_pwm, period);
 	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_set_period", ret, OK, iotbus_pwm_close(h_pwm));
@@ -103,10 +103,10 @@ void itc_pwm_set_get_period_p(void)
 	ret = iotbus_pwm_get_period(h_pwm);
 	TC_ASSERT_EQ_CLEANUP("iotbus_pwm_get_period", ret, period, iotbus_pwm_close(h_pwm));
 
-    ret = iotbus_pwm_close(h_pwm);
-    TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
+	ret = iotbus_pwm_close(h_pwm);
+	TC_ASSERT_EQ("iotbus_pwm_close", ret, OK);
 
-    TC_SUCCESS_RESULT();
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -167,10 +167,10 @@ void itc_pwm_set_enabled_is_enabled_p(void)
 
 int itc_pwm_main(void)
 {
-    itc_pwm_open_close_p();
-    itc_pwm_set_get_duty_cycle_p();
-    itc_pwm_set_get_period_p();
-    itc_pwm_set_enabled_is_enabled_p();
+	itc_pwm_open_close_p();
+	itc_pwm_set_get_duty_cycle_p();
+	itc_pwm_set_get_period_p();
+	itc_pwm_set_enabled_is_enabled_p();
 
-    return 0;
+	return 0;
 }

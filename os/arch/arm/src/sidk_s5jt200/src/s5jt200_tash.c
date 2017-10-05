@@ -81,6 +81,14 @@
  ****************************************************************************/
 
 /****************************************************************************
+ * Private Variables
+ ****************************************************************************/
+#if defined(CONFIG_FS_ROMFS)
+static uint16_t	rommtd_partno;
+static bool	rommtd_device_exist = false;
+#endif
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 extern void s5j_i2c_register(int bus);
@@ -163,8 +171,8 @@ static void sidk_s5jt200_configure_partitions(void)
 		}
 
 		mtd_part = mtd_partition(mtd, partoffset,
-					partsize / geo.erasesize, partno);
-		partoffset += partsize / geo.erasesize;
+					partsize / geo.blocksize, partno);
+		partoffset += partsize / geo.blocksize;
 
 		if (!mtd_part) {
 			lldbg("ERROR: failed to create partition.\n");
@@ -189,6 +197,16 @@ static void sidk_s5jt200_configure_partitions(void)
 			snprintf(partref, sizeof(partref), "p%d", partno);
 			smart_initialize(CONFIG_SIDK_S5JT200_FLASH_MINOR,
 					mtd_part, partref);
+		} else
+#endif
+#if defined(CONFIG_MTD_FTL) && defined(CONFIG_FS_ROMFS)
+		if (!strncmp(types, "romfs,", 6)) {
+			if (ftl_initialize(partno, mtd_part)) {
+				lldbg("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+			} else {
+				rommtd_partno = partno;
+				rommtd_device_exist = true;
+			}
 		} else
 #endif
 		{
@@ -270,17 +288,24 @@ int board_app_initialize(void)
 	static uint8_t *rambuf;
 	struct mtd_dev_s *mtd;
 #endif /* CONFIG_RAMMTD */
+#if defined(CONFIG_FS_ROMFS)
+	char rommtd_devname[16];
+#endif
 
 	sidk_s5jt200_configure_partitions();
 
 #if defined(CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS)
-	ret = mount(CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME,
-			CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_MOUNTPOINT,
-			"romfs", 0, NULL);
+	if (rommtd_device_exist) {
+		snprintf(rommtd_devname, 16, "/dev/mtdblock%d", rommtd_partno);
 
-	if (ret != OK) {
-		lldbg("ERROR: mounting '%s'(ROMFS) failed\n",
-			CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME);
+		ret = mount(rommtd_devname,
+				CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS_MOUNTPOINT,
+				"romfs", 0, NULL);
+
+		if (ret != OK) {
+			lldbg("ERROR: mounting '%s'(ROMFS) failed\n",
+				rommtd_devname);
+		}
 	}
 #endif /* CONFIG_SIDK_S5JT200_AUTOMOUNT_ROMFS */
 

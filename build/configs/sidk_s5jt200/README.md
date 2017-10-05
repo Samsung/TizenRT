@@ -115,16 +115,16 @@ Before executing below steps, execute [generic steps](../../../tools/fs/README_R
 
 3. Modify partition configs.  
     Below steps creates ROMFS partition with size 256KB at the end,  
-    where romfs device is a smart device and romfs filesystem will be mounted on smartdevice "/dev/smart0p15"  
+    where romfs device is a ftl mtd block device and romfs filesystem will be mounted on ftl mtd device "/dev/mtdblockX"
     1. Split last partition size to (256, 256) in SIDK_S5JT200_FLASH_PART_LIST
         ```bash
         Board Selection -> change values at Flash partition size list (in KBytes)
         ```
-    2. Append "smartfs," at end to SIDK_S5JT200_FLASH_PART_TYPE
+    2. Append "romfs," at end to SIDK_S5JT200_FLASH_PART_TYPE
         ```bash
         Board Selection -> append string at Flash partition type list
         ```
-    3. Append "romfs," at end to SIDK_S5JT200_FLASH_PART_NAME
+    3. Append "rom," at end to SIDK_S5JT200_FLASH_PART_NAME
         ```bash
         Board Selection -> append string at FLash partition name list
         ```

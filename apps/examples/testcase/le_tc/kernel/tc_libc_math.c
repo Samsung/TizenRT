@@ -186,7 +186,7 @@ static void tc_libc_math_acosl(void)
 
 	/* Returns the nonnegative area hyperbolic cosine of x */
 
-	for (acosl_idx = 0; acosl_idx < SIZE(in_val, long double); acosl_idx++) {
+	for (acosl_idx = 0; acosl_idx < SIZE(sol_val, long double); acosl_idx++) {
 		ret_val[acosl_idx] = acosl(in_val[acosl_idx]);
 		TC_ASSERT_LEQ("acosl", fabsl(sol_val[acosl_idx] - ret_val[acosl_idx]), FLT_EPSILON);
 	}
@@ -212,7 +212,7 @@ static void tc_libc_math_asin(void)
 
 	/* Returns the principal value of the arc sine of x */
 
-	for (asin_idx = 0; asin_idx < SIZE(in_val, double); asin_idx++) {
+	for (asin_idx = 0; asin_idx < SIZE(sol_val, double); asin_idx++) {
 		ret_val[asin_idx] = asin(in_val[asin_idx]);
 		TC_ASSERT_LEQ("asin", fabs(sol_val[asin_idx] - ret_val[asin_idx]), FLT_EPSILON);
 	}
@@ -238,7 +238,7 @@ static void tc_libc_math_asinf(void)
 
 	/* Returns the principal value of the arc sine of x */
 
-	for (asinf_idx = 0; asinf_idx < SIZE(in_val, float); asinf_idx++) {
+	for (asinf_idx = 0; asinf_idx < SIZE(sol_val, float); asinf_idx++) {
 		ret_val[asinf_idx] = asinf(in_val[asinf_idx]);
 		TC_ASSERT_LEQ("asinf", fabsf(sol_val[asinf_idx] - ret_val[asinf_idx]), FLT_EPSILON);
 	}
@@ -264,7 +264,7 @@ static void tc_libc_math_asinh(void)
 
 	/* Returns the area hyperbolic sine of x */
 
-	for (asinh_idx = 0; asinh_idx < SIZE(in_val, double); asinh_idx++) {
+	for (asinh_idx = 0; asinh_idx < SIZE(sol_val, double); asinh_idx++) {
 		ret_val[asinh_idx] = asinh(in_val[asinh_idx]);
 		TC_ASSERT_LEQ("asinh", fabs(sol_val[asinh_idx] - ret_val[asinh_idx]), FLT_EPSILON);
 	}
@@ -290,7 +290,7 @@ static void tc_libc_math_asinhf(void)
 
 	/* Returns the area hyperbolic sine of x */
 
-	for (asinhf_idx = 0; asinhf_idx < SIZE(in_val, float); asinhf_idx++) {
+	for (asinhf_idx = 0; asinhf_idx < SIZE(sol_val, float); asinhf_idx++) {
 		ret_val[asinhf_idx] = asinhf(in_val[asinhf_idx]);
 		TC_ASSERT_LEQ("asinhf", fabsf(sol_val[asinhf_idx] - ret_val[asinhf_idx]), FLT_EPSILON);
 	}
@@ -316,7 +316,7 @@ static void tc_libc_math_asinhl(void)
 
 	/* Returns the area hyperbolic sine of x */
 
-	for (asinhl_idx = 0; asinhl_idx < SIZE(in_val, long double); asinhl_idx++) {
+	for (asinhl_idx = 0; asinhl_idx < SIZE(sol_val, long double); asinhl_idx++) {
 		ret_val[asinhl_idx] = asinhl(in_val[asinhl_idx]);
 		TC_ASSERT_LEQ("asinhl", fabsl(sol_val[asinhl_idx] - ret_val[asinhl_idx]), FLT_EPSILON);
 	}
@@ -342,7 +342,7 @@ static void tc_libc_math_asinl(void)
 
 	/* Returns the principal value of the arc sine of x */
 
-	for (asinl_idx = 0; asinl_idx < SIZE(in_val, long double); asinl_idx++) {
+	for (asinl_idx = 0; asinl_idx < SIZE(sol_val, long double); asinl_idx++) {
 		ret_val[asinl_idx] = asinl(in_val[asinl_idx]);
 		TC_ASSERT_LEQ("asinl", fabsl(sol_val[asinl_idx] - ret_val[asinl_idx]), FLT_EPSILON);
 	}
@@ -368,7 +368,7 @@ static void tc_libc_math_atan(void)
 
 	/* Returns the principal value of the arc tangent of x */
 
-	for (atan_idx = 0; atan_idx < SIZE(in_val, double); atan_idx++) {
+	for (atan_idx = 0; atan_idx < SIZE(sol_val, double); atan_idx++) {
 		ret_val[atan_idx] = atan(in_val[atan_idx]);
 		TC_ASSERT_LEQ("atan", fabs(sol_val[atan_idx] - ret_val[atan_idx]), FLT_EPSILON);
 	}
@@ -394,7 +394,7 @@ static void tc_libc_math_atanf(void)
 
 	/* Returns the principal value of the arc tangent of x */
 
-	for (atanf_idx = 0; atanf_idx < SIZE(in_val, float); atanf_idx++) {
+	for (atanf_idx = 0; atanf_idx < SIZE(sol_val, float); atanf_idx++) {
 		ret_val[atanf_idx] = atanf(in_val[atanf_idx]);
 		TC_ASSERT_LEQ("atanf", fabsf(sol_val[atanf_idx] - ret_val[atanf_idx]), FLT_EPSILON);
 	}
@@ -420,7 +420,7 @@ static void tc_libc_math_atanh(void)
 
 	/* Returns the area hyperbolic tangent of x */
 
-	for (atanh_idx = 0; atanh_idx < SIZE(in_val, double); atanh_idx++) {
+	for (atanh_idx = 0; atanh_idx < SIZE(sol_val, double); atanh_idx++) {
 		ret_val[atanh_idx] = atanh(in_val[atanh_idx]);
 		TC_ASSERT_LEQ("atanh", fabs(sol_val[atanh_idx] - ret_val[atanh_idx]), FLT_EPSILON);
 	}
@@ -446,7 +446,7 @@ static void tc_libc_math_atanhf(void)
 
 	/* Returns the area hyperbolic tangent of x */
 
-	for (atanhf_idx = 0; atanhf_idx < SIZE(in_val, float); atanhf_idx++) {
+	for (atanhf_idx = 0; atanhf_idx < SIZE(sol_val, float); atanhf_idx++) {
 		ret_val[atanhf_idx] = atanhf(in_val[atanhf_idx]);
 		TC_ASSERT_LEQ("atanhf", fabsf(sol_val[atanhf_idx] - ret_val[atanhf_idx]), FLT_EPSILON);
 	}
@@ -472,7 +472,7 @@ static void tc_libc_math_atanhl(void)
 
 	/* Returns the area hyperbolic tangent of x */
 
-	for (atanhl_idx = 0; atanhl_idx < SIZE(in_val, long double); atanhl_idx++) {
+	for (atanhl_idx = 0; atanhl_idx < SIZE(sol_val, long double); atanhl_idx++) {
 		ret_val[atanhl_idx] = atanhl(in_val[atanhl_idx]);
 		TC_ASSERT_LEQ("atanhl", fabsl(sol_val[atanhl_idx] - ret_val[atanhl_idx]), FLT_EPSILON);
 	}
@@ -498,7 +498,7 @@ static void tc_libc_math_atanl(void)
 
 	/* Returns the principal value of the arc tangent of x */
 
-	for (atanl_idx = 0; atanl_idx < SIZE(in_val, long double); atanl_idx++) {
+	for (atanl_idx = 0; atanl_idx < SIZE(sol_val, long double); atanl_idx++) {
 		ret_val[atanl_idx] = atanl(in_val[atanl_idx]);
 		TC_ASSERT_LEQ("atanl", fabsl(sol_val[atanl_idx] - ret_val[atanl_idx]), FLT_EPSILON);
 	}
@@ -603,7 +603,7 @@ static void tc_libc_math_cbrt(void)
 	double ret_val[SIZE(sol_val, double)];
 	int cbrt_idx;
 
-	for (cbrt_idx = 0; cbrt_idx < SIZE(in_val, double); cbrt_idx++) {
+	for (cbrt_idx = 0; cbrt_idx < SIZE(sol_val, double); cbrt_idx++) {
 		ret_val[cbrt_idx] = cbrt(in_val[cbrt_idx]);
 		if (!(isnan(sol_val[cbrt_idx]) && isnan(ret_val[cbrt_idx]))) {
 			TC_ASSERT_LEQ("cbrt", fabs(sol_val[cbrt_idx] - ret_val[cbrt_idx]), FLT_EPSILON);
@@ -629,7 +629,7 @@ static void tc_libc_math_cbrtf(void)
 	float ret_val[SIZE(sol_val, float)];
 	int cbrtf_idx;
 
-	for (cbrtf_idx = 0; cbrtf_idx < SIZE(in_val, float); cbrtf_idx++) {
+	for (cbrtf_idx = 0; cbrtf_idx < SIZE(sol_val, float); cbrtf_idx++) {
 		ret_val[cbrtf_idx] = cbrtf(in_val[cbrtf_idx]);
 		if (!(isnan(sol_val[cbrtf_idx]) && isnan(ret_val[cbrtf_idx]))) {
 			TC_ASSERT_LEQ("cbrtf", fabsf((float)sol_val[cbrtf_idx] - ret_val[cbrtf_idx]), FLT_EPSILON);
@@ -655,7 +655,7 @@ static void tc_libc_math_cbrtl(void)
 	long double ret_val[SIZE(sol_val, long double)];
 	int cbrtl_idx;
 
-	for (cbrtl_idx = 0; cbrtl_idx < SIZE(in_val, long double); cbrtl_idx++) {
+	for (cbrtl_idx = 0; cbrtl_idx < SIZE(sol_val, long double); cbrtl_idx++) {
 		ret_val[cbrtl_idx] = cbrtl(in_val[cbrtl_idx]);
 		if (!(isnan(sol_val[cbrtl_idx]) && isnan(ret_val[cbrtl_idx]))) {
 			TC_ASSERT_LEQ("cbrtl", fabsl(sol_val[cbrtl_idx] - ret_val[cbrtl_idx]), FLT_EPSILON);
@@ -683,7 +683,7 @@ static void tc_libc_math_ceil(void)
 
 	/* Rounds x upward, returning the smallest integral value that is not less than x */
 
-	for (ceil_idx = 0; ceil_idx < SIZE(in_val, long double); ceil_idx++) {
+	for (ceil_idx = 0; ceil_idx < SIZE(sol_val, long double); ceil_idx++) {
 		ret_val[ceil_idx] = ceil(in_val[ceil_idx]);
 		TC_ASSERT_LEQ("ceil", fabs(sol_val[ceil_idx] - ret_val[ceil_idx]), FLT_EPSILON);
 	}
@@ -709,7 +709,7 @@ static void tc_libc_math_ceilf(void)
 
 	/* Rounds x upward, returning the smallest integral value that is not less than x */
 
-	for (ceilf_idx = 0; ceilf_idx < SIZE(in_val, float); ceilf_idx++) {
+	for (ceilf_idx = 0; ceilf_idx < SIZE(sol_val, float); ceilf_idx++) {
 		ret_val[ceilf_idx] = ceilf(in_val[ceilf_idx]);
 		TC_ASSERT_LEQ("ceilf", fabsf(sol_val[ceilf_idx] - ret_val[ceilf_idx]), FLT_EPSILON);
 	}
@@ -735,7 +735,7 @@ static void tc_libc_math_ceill(void)
 
 	/* Rounds x upward, returning the smallest integral value that is not less than x */
 
-	for (ceill_idx = 0; ceill_idx < SIZE(in_val, long double); ceill_idx++) {
+	for (ceill_idx = 0; ceill_idx < SIZE(sol_val, long double); ceill_idx++) {
 		ret_val[ceill_idx] = ceill(in_val[ceill_idx]);
 		TC_ASSERT_LEQ("ceill", fabsl(sol_val[ceill_idx] - ret_val[ceill_idx]), FLT_EPSILON);
 	}
@@ -842,7 +842,7 @@ static void tc_libc_math_cos(void)
 
 	/* Returns the cosine of an angle of x radians */
 
-	for (cos_idx = 0; cos_idx < SIZE(in_val, double); cos_idx++) {
+	for (cos_idx = 0; cos_idx < SIZE(sol_val, double); cos_idx++) {
 		ret_val[cos_idx] = cos(in_val[cos_idx]);
 		TC_ASSERT_LEQ("cos", fabs(sol_val[cos_idx] - ret_val[cos_idx]), FLT_EPSILON);
 	}
@@ -868,7 +868,7 @@ static void tc_libc_math_cosf(void)
 
 	/* Returns the cosine of an angle of x radians */
 
-	for (cosf_idx = 0; cosf_idx < SIZE(in_val, float); cosf_idx++) {
+	for (cosf_idx = 0; cosf_idx < SIZE(sol_val, float); cosf_idx++) {
 		ret_val[cosf_idx] = cosf(in_val[cosf_idx]);
 		TC_ASSERT_LEQ("cosf", fabsf(sol_val[cosf_idx] - ret_val[cosf_idx]), FLT_EPSILON);
 	}
@@ -894,7 +894,7 @@ static void tc_libc_math_cosh(void)
 
 	/* Returns the hyperbolic cosine of x */
 
-	for (cosh_idx = 0; cosh_idx < SIZE(in_val, double); cosh_idx++) {
+	for (cosh_idx = 0; cosh_idx < SIZE(sol_val, double); cosh_idx++) {
 		ret_val[cosh_idx] = cosh(in_val[cosh_idx]);
 		TC_ASSERT_LEQ("cosh", fabs(sol_val[cosh_idx] - ret_val[cosh_idx]), FLT_EPSILON);
 	}
@@ -920,7 +920,7 @@ static void tc_libc_math_coshf(void)
 
 	/* Returns the hyperbolic cosine of x */
 
-	for (coshf_idx = 0; coshf_idx < SIZE(in_val, float); coshf_idx++) {
+	for (coshf_idx = 0; coshf_idx < SIZE(sol_val, float); coshf_idx++) {
 		ret_val[coshf_idx] = coshf(in_val[coshf_idx]);
 		TC_ASSERT_LEQ("coshf", fabsf(sol_val[coshf_idx] - ret_val[coshf_idx]), FLT_EPSILON);
 	}
@@ -946,7 +946,7 @@ static void tc_libc_math_coshl(void)
 
 	/* Returns the hyperbolic cosine of x */
 
-	for (coshl_idx = 0; coshl_idx < SIZE(in_val, long double); coshl_idx++) {
+	for (coshl_idx = 0; coshl_idx < SIZE(sol_val, long double); coshl_idx++) {
 		ret_val[coshl_idx] = coshl(in_val[coshl_idx]);
 		TC_ASSERT_LEQ("coshl", fabsl(sol_val[coshl_idx] - ret_val[coshl_idx]), FLT_EPSILON);
 	}
@@ -972,7 +972,7 @@ static void tc_libc_math_cosl(void)
 
 	/* Returns the cosine of an angle of x radians */
 
-	for (cosl_idx = 0; cosl_idx < SIZE(in_val, long double); cosl_idx++) {
+	for (cosl_idx = 0; cosl_idx < SIZE(sol_val, long double); cosl_idx++) {
 		ret_val[cosl_idx] = cosl(in_val[cosl_idx]);
 		TC_ASSERT_LEQ("cosl", fabsl(sol_val[cosl_idx] - ret_val[cosl_idx]), FLT_EPSILON);
 	}
@@ -998,7 +998,7 @@ static void tc_libc_math_erf(void)
 
 	/* Returns the error function value for x */
 
-	for (erf_idx = 0; erf_idx < SIZE(in_val, double); erf_idx++) {
+	for (erf_idx = 0; erf_idx < SIZE(sol_val, double); erf_idx++) {
 		ret_val[erf_idx] = erf(in_val[erf_idx]);
 		TC_ASSERT_LEQ("erf", fabs(sol_val[erf_idx] - ret_val[erf_idx]), FLT_EPSILON);
 	}
@@ -1024,7 +1024,7 @@ static void tc_libc_math_erff(void)
 
 	/* Returns the error function value for x */
 
-	for (erff_idx = 0; erff_idx < SIZE(in_val, float); erff_idx++) {
+	for (erff_idx = 0; erff_idx < SIZE(sol_val, float); erff_idx++) {
 		ret_val[erff_idx] = erff(in_val[erff_idx]);
 		TC_ASSERT_LEQ("erff", fabsf(sol_val[erff_idx] - ret_val[erff_idx]), FLT_EPSILON);
 	}
@@ -1050,7 +1050,7 @@ static void tc_libc_math_erfl(void)
 
 	/* Returns the error function value for x */
 
-	for (erfl_idx = 0; erfl_idx < SIZE(in_val, long double); erfl_idx++) {
+	for (erfl_idx = 0; erfl_idx < SIZE(sol_val, long double); erfl_idx++) {
 		ret_val[erfl_idx] = erfl(in_val[erfl_idx]);
 		TC_ASSERT_LEQ("erfl", fabsl(sol_val[erfl_idx] - ret_val[erfl_idx]), FLT_EPSILON);
 	}
@@ -1074,7 +1074,7 @@ static void tc_libc_math_exp(void)
 	double ret_val[SIZE(sol_val, double)];
 	int exp_idx;
 
-	for (exp_idx = 0; exp_idx < SIZE(in_val, double); exp_idx++) {
+	for (exp_idx = 0; exp_idx < SIZE(sol_val, double); exp_idx++) {
 		ret_val[exp_idx] = exp(in_val[exp_idx]);
 		if (!(isnan(sol_val[exp_idx]) && isnan(ret_val[exp_idx]))) {
 			TC_ASSERT_LEQ("exp", fabs(sol_val[exp_idx] - ret_val[exp_idx]), FLT_EPSILON);
@@ -1100,7 +1100,7 @@ static void tc_libc_math_expf(void)
 	float ret_val[SIZE(sol_val, float)];
 	int expf_idx;
 
-	for (expf_idx = 0; expf_idx < SIZE(in_val, float); expf_idx++) {
+	for (expf_idx = 0; expf_idx < SIZE(sol_val, float); expf_idx++) {
 		ret_val[expf_idx] = expf(in_val[expf_idx]);
 		if (!(isnan(sol_val[expf_idx]) && isnan(ret_val[expf_idx]))) {
 			TC_ASSERT_LEQ("expf", fabsf(sol_val[expf_idx] - ret_val[expf_idx]), FLT_EPSILON);
@@ -1126,7 +1126,7 @@ static void tc_libc_math_expl(void)
 	long double ret_val[SIZE(sol_val, long double)];
 	int expl_idx;
 
-	for (expl_idx = 0; expl_idx < SIZE(in_val, long double); expl_idx++) {
+	for (expl_idx = 0; expl_idx < SIZE(sol_val, long double); expl_idx++) {
 		ret_val[expl_idx] = expl(in_val[expl_idx]);
 		if (!(isnan(sol_val[expl_idx]) && isnan(ret_val[expl_idx]))) {
 			TC_ASSERT_LEQ("expl", fabsl(sol_val[expl_idx] - ret_val[expl_idx]), FLT_EPSILON);
@@ -1147,12 +1147,12 @@ static void tc_libc_math_expl(void)
  */
 static void tc_libc_math_exp2(void)
 {
-	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const double sol_val[] = { 1.0, INFINITY, ZERO, INFINITY, ZERO, INFINITY, ZERO, NAN };
+	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-20 };
+	const double sol_val[] = { 1.0, INFINITY, ZERO, INFINITY, ZERO, INFINITY, ZERO, NAN, 1.0000007 };
 	double ret_val[SIZE(sol_val, double)];
 	int exp2_idx;
 
-	for (exp2_idx = 0; exp2_idx < SIZE(in_val, double); exp2_idx++) {
+	for (exp2_idx = 0; exp2_idx < SIZE(sol_val, double); exp2_idx++) {
 		ret_val[exp2_idx] = exp2(in_val[exp2_idx]);
 		if (!(isnan(sol_val[exp2_idx]) && isnan(ret_val[exp2_idx]))) {
 			TC_ASSERT_LEQ("exp2", fabs(sol_val[exp2_idx] - ret_val[exp2_idx]), FLT_EPSILON);
@@ -1173,12 +1173,12 @@ static void tc_libc_math_exp2(void)
  */
 static void tc_libc_math_exp2f(void)
 {
-	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const float sol_val[] = { 1.0, INFINITY, ZERO, INFINITY, ZERO, INFINITY, ZERO, NAN };
+	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-20 };
+	const float sol_val[] = { 1.0, INFINITY, ZERO, INFINITY, ZERO, INFINITY, ZERO, NAN, 1.0000007 };
 	float ret_val[SIZE(sol_val, float)];
 	int exp2f_idx;
 
-	for (exp2f_idx = 0; exp2f_idx < SIZE(in_val, float); exp2f_idx++) {
+	for (exp2f_idx = 0; exp2f_idx < SIZE(sol_val, float); exp2f_idx++) {
 		ret_val[exp2f_idx] = exp2f(in_val[exp2f_idx]);
 		if (!(isnan(sol_val[exp2f_idx]) && isnan(ret_val[exp2f_idx]))) {
 			TC_ASSERT_LEQ("exp2f", fabsf(sol_val[exp2f_idx] - ret_val[exp2f_idx]), FLT_EPSILON);
@@ -1199,12 +1199,12 @@ static void tc_libc_math_exp2f(void)
  */
 static void tc_libc_math_exp2l(void)
 {
-	const long double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const long double sol_val[] = { 1.0, INFINITY, ZERO, INFINITY, ZERO, INFINITY, ZERO, NAN };
+	const long double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-20 };
+	const long double sol_val[] = { 1.0, INFINITY, ZERO, INFINITY, ZERO, INFINITY, ZERO, NAN, 1.0000007 };
 	long double ret_val[SIZE(sol_val, long double)];
 	int exp2l_idx;
 
-	for (exp2l_idx = 0; exp2l_idx < SIZE(in_val, long double); exp2l_idx++) {
+	for (exp2l_idx = 0; exp2l_idx < SIZE(sol_val, long double); exp2l_idx++) {
 		ret_val[exp2l_idx] = exp2l(in_val[exp2l_idx]);
 		if (!(isnan(sol_val[exp2l_idx]) && isnan(ret_val[exp2l_idx]))) {
 			TC_ASSERT_LEQ("exp2l", fabsl(sol_val[exp2l_idx] - ret_val[exp2l_idx]), FLT_EPSILON);
@@ -1230,7 +1230,7 @@ static void tc_libc_math_fabs(void)
 	double ret_val[SIZE(sol_val, double)];
 	int fabs_idx;
 
-	for (fabs_idx = 0; fabs_idx < SIZE(in_val, double); fabs_idx++) {
+	for (fabs_idx = 0; fabs_idx < SIZE(sol_val, double); fabs_idx++) {
 		ret_val[fabs_idx] = fabs(in_val[fabs_idx]);
 		if (!(isnan(sol_val[fabs_idx]) && isnan(ret_val[fabs_idx]))) {
 			TC_ASSERT_EQ("fabs", sol_val[fabs_idx], ret_val[fabs_idx]);
@@ -1255,7 +1255,7 @@ static void tc_libc_math_fabsf(void)
 	const float sol_val[] = { ZERO, ZERO, 2251799813685248.5, 2251799813685248.5, INFINITY, INFINITY, NAN };
 	float ret_val[SIZE(sol_val, float)];
 	int fabsf_idx;
-	for (fabsf_idx = 0; fabsf_idx < SIZE(in_val, float); fabsf_idx++) {
+	for (fabsf_idx = 0; fabsf_idx < SIZE(sol_val, float); fabsf_idx++) {
 		ret_val[fabsf_idx] = fabsf(in_val[fabsf_idx]);
 		if (!(isnan(sol_val[fabsf_idx]) && isnan(ret_val[fabsf_idx]))) {
 			TC_ASSERT_EQ("fabsf", sol_val[fabsf_idx], ret_val[fabsf_idx]);
@@ -1280,7 +1280,7 @@ static void tc_libc_math_fabsl(void)
 	const long double sol_val[] = { ZERO, ZERO, 2251799813685248.5, 2251799813685248.5, INFINITY, INFINITY, NAN };
 	long double ret_val[SIZE(sol_val, long double)];
 	int fabsl_idx;
-	for (fabsl_idx = 0; fabsl_idx < SIZE(in_val, long double); fabsl_idx++) {
+	for (fabsl_idx = 0; fabsl_idx < SIZE(sol_val, long double); fabsl_idx++) {
 		ret_val[fabsl_idx] = fabsl(in_val[fabsl_idx]);
 		if (!(isnan(sol_val[fabsl_idx]) && isnan(ret_val[fabsl_idx]))) {
 			TC_ASSERT_EQ("fabsl", sol_val[fabsl_idx], ret_val[fabsl_idx]);
@@ -1387,7 +1387,7 @@ static void tc_libc_math_floor(void)
 	double ret_val[SIZE(sol_val, double)] = { ZERO };
 	int floor_idx;
 
-	for (floor_idx = 0; floor_idx < SIZE(in_val, double); floor_idx++) {
+	for (floor_idx = 0; floor_idx < SIZE(sol_val, double); floor_idx++) {
 		ret_val[floor_idx] = floor(in_val[floor_idx]);
 		if (!(isnan(sol_val[floor_idx]) && isnan(ret_val[floor_idx]))) {
 			TC_ASSERT_EQ("floor", sol_val[floor_idx], ret_val[floor_idx]);
@@ -1413,7 +1413,7 @@ static void tc_libc_math_floorf(void)
 	float ret_val[SIZE(sol_val, float)] = { ZERO };
 	int floorf_idx;
 
-	for (floorf_idx = 0; floorf_idx < SIZE(in_val, float); floorf_idx++) {
+	for (floorf_idx = 0; floorf_idx < SIZE(sol_val, float); floorf_idx++) {
 		ret_val[floorf_idx] = floorf(in_val[floorf_idx]);
 		if (!(isnan(sol_val[floorf_idx]) && isnan(ret_val[floorf_idx]))) {
 			TC_ASSERT_EQ("floorf", sol_val[floorf_idx], ret_val[floorf_idx]);
@@ -1438,7 +1438,7 @@ static void tc_libc_math_floorl(void)
 	const long double sol_val[] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685249.0, 4503599627370496.0, -4503599627370497.0, INFINITY, -INFINITY };
 	long double ret_val[SIZE(sol_val, long double)] = { ZERO };
 	int floorl_idx;
-	for (floorl_idx = 0; floorl_idx < SIZE(in_val, long double); floorl_idx++) {
+	for (floorl_idx = 0; floorl_idx < SIZE(sol_val, long double); floorl_idx++) {
 		ret_val[floorl_idx] = floorl(in_val[floorl_idx]);
 		if (!(isnan(sol_val[floorl_idx]) && isnan(ret_val[floorl_idx]))) {
 			TC_ASSERT_EQ("floorl", sol_val[floorl_idx], ret_val[floorl_idx]);
@@ -1625,12 +1625,12 @@ static void tc_libc_math_frexp(void)
 	const double sol_val[] = { 0.5, 0.575, -10 };
 	const double n_val[] = { 4, 2, 0 };
 	double ret_val[SIZE(sol_val, double)];
-	int n[SIZE(in_val, double)];
+	int n[SIZE(sol_val, double)];
 	int frexp_idx;
 
 	/* Breaks the floating point number x into its binary significand and an integral exponent for 2 */
 
-	for (frexp_idx = 0; frexp_idx < SIZE(in_val, double); frexp_idx++) {
+	for (frexp_idx = 0; frexp_idx < SIZE(sol_val, double); frexp_idx++) {
 		ret_val[frexp_idx] = frexp(in_val[frexp_idx], &n[frexp_idx]);
 		TC_ASSERT_LEQ("frexp", fabs(sol_val[frexp_idx] - ret_val[frexp_idx]), FLT_EPSILON);
 		TC_ASSERT_LEQ("frexp", fabs(n[frexp_idx] - n_val[frexp_idx]), FLT_EPSILON);
@@ -1654,12 +1654,12 @@ static void tc_libc_math_frexpf(void)
 	const float sol_val[] = { 1, 0.575, 0 };
 	const float n_val[] = { 3, 2, 2147483647 };
 	float ret_val[SIZE(sol_val, float)];
-	int n[SIZE(in_val, float)];
+	int n[SIZE(sol_val, float)];
 	int frexpf_idx;
 
 	/* Breaks the floating point number x into its binary significand and an integral exponent for 2 */
 
-	for (frexpf_idx = 0; frexpf_idx < SIZE(in_val, float); frexpf_idx++) {
+	for (frexpf_idx = 0; frexpf_idx < SIZE(sol_val, float); frexpf_idx++) {
 		ret_val[frexpf_idx] = frexpf(in_val[frexpf_idx], &n[frexpf_idx]);
 		TC_ASSERT_LEQ("frexp", fabsf(sol_val[frexpf_idx] - ret_val[frexpf_idx]), FLT_EPSILON);
 		TC_ASSERT_LEQ("frexp", fabsf(n[frexpf_idx] - n_val[frexpf_idx]), FLT_EPSILON);
@@ -1683,12 +1683,12 @@ static void tc_libc_math_frexpl(void)
 	const long double sol_val[] = { 0.5, 0.575, -10 };
 	const long double n_val[] = { 4, 2, 0 };
 	long double ret_val[SIZE(sol_val, long double)];
-	int n[SIZE(in_val, long double)];
+	int n[SIZE(sol_val, long double)];
 	int frexpl_idx;
 
 	/* Breaks the floating point number x into its binary significand and an integral exponent for 2 */
 
-	for (frexpl_idx = 0; frexpl_idx < SIZE(in_val, long double); frexpl_idx++) {
+	for (frexpl_idx = 0; frexpl_idx < SIZE(sol_val, long double); frexpl_idx++) {
 		ret_val[frexpl_idx] = frexpl(in_val[frexpl_idx], &n[frexpl_idx]);
 		TC_ASSERT_LEQ("frexp", fabsl(sol_val[frexpl_idx] - ret_val[frexpl_idx]), FLT_EPSILON);
 		TC_ASSERT_LEQ("frexp", fabsl(n[frexpl_idx] - n_val[frexpl_idx]), FLT_EPSILON);
@@ -1793,12 +1793,12 @@ static void tc_libc_math_hypotl(void)
  */
 static void tc_libc_math_j0(void)
 {
-	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const double sol_val[] = { 1.0, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, NAN };
+	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-13, 0x1p-127 };
+	const double sol_val[] = { 1.0, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, NAN, 0.99999999627, 1.0 };
 	double ret_val[SIZE(sol_val, double)] = { ZERO };
 	int j0_idx;
 
-	for (j0_idx = 0; j0_idx < SIZE(in_val, double); j0_idx++) {
+	for (j0_idx = 0; j0_idx < SIZE(sol_val, double); j0_idx++) {
 		ret_val[j0_idx] = j0(in_val[j0_idx]);
 		if (!(isnan(sol_val[j0_idx]) && isnan(ret_val[j0_idx]))) {
 			TC_ASSERT_LEQ("j0", fabs(sol_val[j0_idx] - ret_val[j0_idx]), FLT_EPSILON);
@@ -1819,12 +1819,12 @@ static void tc_libc_math_j0(void)
  */
 static void tc_libc_math_j0f(void)
 {
-	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const float sol_val[] = { 1.0, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, NAN };
+	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-11 };
+	const float sol_val[] = { 1.0, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, NAN, 0.999999940395 };
 	float ret_val[SIZE(sol_val, float)] = { ZERO };
 	int j0f_idx;
 
-	for (j0f_idx = 0; j0f_idx < SIZE(in_val, float); j0f_idx++) {
+	for (j0f_idx = 0; j0f_idx < SIZE(sol_val, float); j0f_idx++) {
 		ret_val[j0f_idx] = j0f(in_val[j0f_idx]);
 		if (!(isnan(sol_val[j0f_idx]) && isnan(ret_val[j0f_idx]))) {
 			TC_ASSERT_LEQ("j0f", fabsf(sol_val[j0f_idx] - ret_val[j0f_idx]), FLT_EPSILON);
@@ -1845,12 +1845,12 @@ static void tc_libc_math_j0f(void)
  */
 static void tc_libc_math_j1(void)
 {
-	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const double sol_val[] = { ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO, NAN };
+	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-127 };
+	const double sol_val[] = { ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO, NAN, ZERO };
 	double ret_val[SIZE(sol_val, double)] = { ZERO };
 	int j1_idx;
 
-	for (j1_idx = 0; j1_idx < SIZE(in_val, double); j1_idx++) {
+	for (j1_idx = 0; j1_idx < SIZE(sol_val, double); j1_idx++) {
 		ret_val[j1_idx] = j1(in_val[j1_idx]);
 		if (!(isnan(sol_val[j1_idx]) && isnan(ret_val[j1_idx]))) {
 			TC_ASSERT_LEQ("j1", fabs(sol_val[j1_idx] - ret_val[j1_idx]), FLT_EPSILON);
@@ -1871,12 +1871,12 @@ static void tc_libc_math_j1(void)
  */
 static void tc_libc_math_j1f(void)
 {
-	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const float sol_val[] = { ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO, NAN };
+	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-27 };
+	const float sol_val[] = { ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO, NAN, ZERO };
 	float ret_val[SIZE(sol_val, float)] = { ZERO };
 	int j1f_idx;
 
-	for (j1f_idx = 0; j1f_idx < SIZE(in_val, float); j1f_idx++) {
+	for (j1f_idx = 0; j1f_idx < SIZE(sol_val, float); j1f_idx++) {
 		ret_val[j1f_idx] = j1f(in_val[j1f_idx]);
 		if (!(isnan(sol_val[j1f_idx]) && isnan(ret_val[j1f_idx]))) {
 			TC_ASSERT_LEQ("j1f", fabsf(sol_val[j1f_idx] - ret_val[j1f_idx]), FLT_EPSILON);
@@ -1897,16 +1897,18 @@ static void tc_libc_math_j1f(void)
  */
 static void tc_libc_math_jn(void)
 {
-	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const double sol_val[] = { ZERO, -ZERO, -ZERO, -ZERO, -ZERO, ZERO, ZERO, NAN };
-	double ret_val[SIZE(sol_val, double)];
+	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p302, 0x1p-29, 0x1p-30 };
+	const double sol_val[][7] = { { ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO }, { -ZERO, ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO }, { ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO }, { -ZERO, ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO }, {  ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO }, { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO }, { NAN, NAN, NAN, NAN, NAN, NAN, NAN }, { ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO, -ZERO }, { -ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO }, { -ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO } };
+	double ret_val[SIZE(sol_val, double)][7];
 	int jn_idx;
-	int order = 2;
+	int order_idx;
 
 	for (jn_idx = 0; jn_idx < SIZE(in_val, double); jn_idx++) {
-		ret_val[jn_idx] = jn(order, in_val[jn_idx]);
-		if (!(isnan(sol_val[jn_idx]) && isnan(ret_val[jn_idx]))) {
-			TC_ASSERT_LEQ("jn", fabs(sol_val[jn_idx] - ret_val[jn_idx]), FLT_EPSILON);
+		for (order_idx = 0; order_idx < 7; order_idx++) {
+			ret_val[jn_idx][order_idx] = jn(order_idx - 1, in_val[jn_idx]);
+			if (!(isnan(sol_val[jn_idx][order_idx]) && isnan(ret_val[jn_idx][order_idx]))) {
+				TC_ASSERT_LEQ("jn", fabs(sol_val[jn_idx][order_idx] - ret_val[jn_idx][order_idx]), FLT_EPSILON);
+			}
 		}
 	}
 
@@ -1924,16 +1926,19 @@ static void tc_libc_math_jn(void)
  */
 static void tc_libc_math_jnf(void)
 {
-	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const float sol_val[] = { ZERO, -ZERO, -ZERO, -ZERO, -ZERO, ZERO, ZERO, NAN };
-	float ret_val[SIZE(sol_val, float)];
+	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-10, 0x1p-20 };
+	int order[] = { -1, 0, 1, 2, 9 };
+	const float sol_val[][SIZE(order, int)] = { { -ZERO, 1.0, ZERO, ZERO, ZERO }, { -ZERO, ZERO, ZERO, -ZERO, ZERO }, { ZERO, ZERO, -ZERO, -ZERO, -ZERO }, { -ZERO, ZERO, ZERO, -ZERO, ZERO }, { ZERO, ZERO, -ZERO, -ZERO, -ZERO }, { -ZERO, ZERO, ZERO, ZERO, ZERO }, { ZERO, ZERO, -ZERO, ZERO, -ZERO }, { NAN, NAN, NAN, NAN, NAN }, { -0.0004883, 0.9999998, 0.0004883, 0.0000001, ZERO }, { -0.0000005, 1.0, 0.0000005, ZERO, ZERO } };
+	float ret_val[SIZE(sol_val, float)][SIZE(order, int)];
 	int jnf_idx;
-	int order = 2;
+	int order_idx;
 
 	for (jnf_idx = 0; jnf_idx < SIZE(in_val, float); jnf_idx++) {
-		ret_val[jnf_idx] = jnf(order, in_val[jnf_idx]);
-		if (!(isnan(sol_val[jnf_idx]) && isnan(ret_val[jnf_idx]))) {
-			TC_ASSERT_LEQ("jnf", fabsf(sol_val[jnf_idx] - ret_val[jnf_idx]), FLT_EPSILON);
+		for (order_idx = 0; order_idx < 5; order_idx++) {
+			ret_val[jnf_idx][order_idx] = jnf(order[order_idx], in_val[jnf_idx]);
+			if (!(isnan(sol_val[jnf_idx][order_idx]) && isnan(ret_val[jnf_idx][order_idx]))) {
+				TC_ASSERT_LEQ("jnf", fabsf(sol_val[jnf_idx][order_idx] - ret_val[jnf_idx][order_idx]), FLT_EPSILON);
+			}
 		}
 	}
 
@@ -1959,7 +1964,7 @@ static void tc_libc_math_ldexp(void)
 
 	/* Breaks the floating point number x into its binary significand and an integral exponent for 2 */
 
-	for (ldexp_idx = 0; ldexp_idx < SIZE(in_val, double); ldexp_idx++) {
+	for (ldexp_idx = 0; ldexp_idx < SIZE(sol_val, double); ldexp_idx++) {
 		ret_val[ldexp_idx] = ldexp(in_val[ldexp_idx], n[ldexp_idx]);
 		TC_ASSERT_LEQ("ldexp", fabs(sol_val[ldexp_idx] - ret_val[ldexp_idx]), FLT_EPSILON);
 	}
@@ -1986,7 +1991,7 @@ static void tc_libc_math_ldexpf(void)
 
 	/* Breaks the floating point number x into its binary significand and an integral exponent for 2 */
 
-	for (ldexpf_idx = 0; ldexpf_idx < SIZE(in_val, float); ldexpf_idx++) {
+	for (ldexpf_idx = 0; ldexpf_idx < SIZE(sol_val, float); ldexpf_idx++) {
 		ret_val[ldexpf_idx] = ldexpf(in_val[ldexpf_idx], n[ldexpf_idx]);
 		TC_ASSERT_LEQ("ldexpf", fabsf(sol_val[ldexpf_idx] - ret_val[ldexpf_idx]), FLT_EPSILON);
 	}
@@ -2013,7 +2018,7 @@ static void tc_libc_math_ldexpl(void)
 
 	/* Breaks the floating point number x into its binary significand and an integral exponent for 2 */
 
-	for (ldexpl_idx = 0; ldexpl_idx < SIZE(in_val, long double); ldexpl_idx++) {
+	for (ldexpl_idx = 0; ldexpl_idx < SIZE(sol_val, long double); ldexpl_idx++) {
 		ret_val[ldexpl_idx] = ldexpl(in_val[ldexpl_idx], n[ldexpl_idx]);
 		TC_ASSERT_LEQ("ldexpl", fabsl(sol_val[ldexpl_idx] - ret_val[ldexpl_idx]), FLT_EPSILON);
 	}
@@ -2039,7 +2044,7 @@ static void tc_libc_math_log2(void)
 
 	/* Returns the binary (base-2) logarithm of x */
 
-	for (log2_idx = 0; log2_idx < SIZE(in_val, double); log2_idx++) {
+	for (log2_idx = 0; log2_idx < SIZE(sol_val, double); log2_idx++) {
 		ret_val[log2_idx] = log2(in_val[log2_idx]);
 		TC_ASSERT_LEQ("log2", fabs(sol_val[log2_idx] - ret_val[log2_idx]), FLT_EPSILON);
 	}
@@ -2065,7 +2070,7 @@ static void tc_libc_math_log2f(void)
 
 	/* Returns the binary (base-2) logarithm of x */
 
-	for (log2f_idx = 0; log2f_idx < SIZE(in_val, float); log2f_idx++) {
+	for (log2f_idx = 0; log2f_idx < SIZE(sol_val, float); log2f_idx++) {
 		ret_val[log2f_idx] = log2f(in_val[log2f_idx]);
 		TC_ASSERT_LEQ("log2f", fabsf(sol_val[log2f_idx] - ret_val[log2f_idx]), FLT_EPSILON);
 	}
@@ -2091,9 +2096,81 @@ static void tc_libc_math_log2l(void)
 
 	/* Returns the binary (base-2) logarithm of x */
 
-	for (log2l_idx = 0; log2l_idx < SIZE(in_val, long double); log2l_idx++) {
+	for (log2l_idx = 0; log2l_idx < SIZE(sol_val, long double); log2l_idx++) {
 		ret_val[log2l_idx] = log2l(in_val[log2l_idx]);
 		TC_ASSERT_LEQ("log2l", fabsl(sol_val[log2l_idx] - ret_val[log2l_idx]), FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_log10
+ * @brief                :Returns the binary (base-10) logarithm of x
+ * @Scenario             :Returns the binary (base-10) logarithm of x
+ * API's covered         :log10
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_log10(void)
+{
+	const double in_val[] = { 1.0, INFINITY, NAN, -1.0, 10.0 };
+	const double sol_val[] = { ZERO, INFINITY, NAN, NAN, 1.0 };
+	double ret_val[SIZE(sol_val, double)];
+	int log10_idx;
+
+	for (log10_idx = 0; log10_idx < SIZE(sol_val, double); log10_idx++) {
+		ret_val[log10_idx] = log10(in_val[log10_idx]);
+		TC_ASSERT_LEQ("log10", fabs(sol_val[log10_idx] - ret_val[log10_idx]), FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_log10f
+ * @brief                :Returns the binary (base-10) logarithm of x
+ * @Scenario             :Returns the binary (base-10) logarithm of x
+ * API's covered         :log10f
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_log10f(void)
+{
+	const float in_val[] = { 1.0, INFINITY, NAN, -1.0, 10.0 };
+	const float sol_val[] = { ZERO, INFINITY, NAN, NAN, 1.0 };
+	float ret_val[SIZE(sol_val, float)];
+	int log10f_idx;
+
+	for (log10f_idx = 0; log10f_idx < SIZE(sol_val, float); log10f_idx++) {
+		ret_val[log10f_idx] = log10f(in_val[log10f_idx]);
+		TC_ASSERT_LEQ("log10f", fabsf(sol_val[log10f_idx] - ret_val[log10f_idx]), FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_log10l
+ * @brief                :Returns the binary (base-10) logarithm of x
+ * @Scenario             :Returns the binary (base-10) logarithm of x
+ * API's covered         :log10l
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_log10l(void)
+{
+	const long double in_val[] = { 1.0, INFINITY, NAN, -1.0, 10.0 };
+	const long double sol_val[] = { ZERO, INFINITY, NAN, NAN, 1.0 };
+	long double ret_val[SIZE(sol_val, long double)];
+	int log10l_idx;
+
+	for (log10l_idx = 0; log10l_idx < SIZE(sol_val, long double); log10l_idx++) {
+		ret_val[log10l_idx] = log10l(in_val[log10l_idx]);
+		TC_ASSERT_LEQ("log10l", fabsl(sol_val[log10l_idx] - ret_val[log10l_idx]), FLT_EPSILON);
 	}
 
 	TC_SUCCESS_RESULT();
@@ -2479,12 +2556,12 @@ static void tc_libc_math_remquol(void)
  */
 static void tc_libc_math_rint(void)
 {
-	const double in_val[] = { ZERO, -ZERO, 1073741823.5, -1073741820.5, 2147483645.5, -2147483642.5 };
-	const double sol_val[] = { ZERO, -ZERO, 1073741824.0, -1073741820.0, 2147483646.0, -2147483642.0 };
+	const double in_val[] = { ZERO, -ZERO, 1073741823.5, -1073741820.5, 2147483645.5, -2147483642.5, INFINITY, -INFINITY, NAN, INFINITY };
+	const double sol_val[] = { ZERO, -ZERO, 1073741824.0, -1073741820.0, 2147483646.0, -2147483642.0, -NAN, -NAN, NAN, -NAN };
 	double ret_val[SIZE(sol_val, double)];
 	int rint_idx;
 
-	for (rint_idx = 0; rint_idx < SIZE(in_val, double); rint_idx++) {
+	for (rint_idx = 0; rint_idx < SIZE(sol_val, double); rint_idx++) {
 		ret_val[rint_idx] = rint(in_val[rint_idx]);
 		if (!(isnan(sol_val[rint_idx]) && isnan(ret_val[rint_idx]))) {
 			TC_ASSERT_LEQ("rint", fabs(sol_val[rint_idx] - ret_val[rint_idx]), FLT_EPSILON);
@@ -2505,12 +2582,12 @@ static void tc_libc_math_rint(void)
  */
 static void tc_libc_math_rintf(void)
 {
-	const float in_val[] = { ZERO, -ZERO, 1073741823.5, -1073741820.5, 2147483645.5, -2147483642.5 };
-	const float sol_val[] = { ZERO, -ZERO, 1073741824.0, -1073741820.0, 2147483646.0, -2147483642.0 };
+	const float in_val[] = { ZERO, -ZERO, 1073741823.5, -1073741820.5, 2147483645.5, -2147483642.5, INFINITY, -INFINITY, NAN, INFINITY };
+	const float sol_val[] = { ZERO, -ZERO, 1073741824.0, -1073741820.0, 2147483646.0, -2147483642.0, -NAN, -NAN, NAN, -NAN };
 	float ret_val[SIZE(sol_val, float)];
 	int rintf_idx;
 
-	for (rintf_idx = 0; rintf_idx < SIZE(in_val, float); rintf_idx++) {
+	for (rintf_idx = 0; rintf_idx < SIZE(sol_val, float); rintf_idx++) {
 		ret_val[rintf_idx] = rintf(in_val[rintf_idx]);
 		if (!(isnan(sol_val[rintf_idx]) && isnan(ret_val[rintf_idx]))) {
 			TC_ASSERT_LEQ("rintf", fabsf(sol_val[rintf_idx] - ret_val[rintf_idx]), FLT_EPSILON);
@@ -2531,12 +2608,12 @@ static void tc_libc_math_rintf(void)
  */
 static void tc_libc_math_rintl(void)
 {
-	const long double in_val[] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2 };
-	const long double sol_val[] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685248.0, 4503599627370496.0, -4503599627370496.0 };
+	const long double in_val[] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
+	const long double sol_val[] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685248.0, 4503599627370496.0, -4503599627370496.0, -NAN, -NAN, NAN, -NAN };
 	long double ret_val[SIZE(sol_val, long double)];
 	int rintl_idx;
 
-	for (rintl_idx = 0; rintl_idx < SIZE(in_val, long double); rintl_idx++) {
+	for (rintl_idx = 0; rintl_idx < SIZE(sol_val, long double); rintl_idx++) {
 		ret_val[rintl_idx] = rintl(in_val[rintl_idx]);
 		if (!(isnan(sol_val[rintl_idx]) && isnan(ret_val[rintl_idx]))) {
 			TC_ASSERT_LEQ("rintl", fabsl(sol_val[rintl_idx] - ret_val[rintl_idx]), FLT_EPSILON);
@@ -2562,7 +2639,7 @@ static void tc_libc_math_round(void)
 	double ret_val[SIZE(sol_val, double)];
 	int round_idx;
 
-	for (round_idx = 0; round_idx < SIZE(in_val, double); round_idx++) {
+	for (round_idx = 0; round_idx < SIZE(sol_val, double); round_idx++) {
 		ret_val[round_idx] = round(in_val[round_idx]);
 		if (!(isnan(sol_val[round_idx]) && isnan(ret_val[round_idx]))) {
 			TC_ASSERT_LEQ("round", fabs(sol_val[round_idx] - ret_val[round_idx]), FLT_EPSILON);
@@ -2583,12 +2660,12 @@ static void tc_libc_math_round(void)
  */
 static void tc_libc_math_roundf(void)
 {
-	const float in_val[] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY };
-	const float sol_val[] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685248.0, 4503599627370496.0, -4503599627370496.0, INFINITY, -INFINITY, NAN, INFINITY };
+	const float in_val[] = { ZERO, -ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, INFINITY, 0.5f, -0.5f };
+	const float sol_val[] = { ZERO, -ZERO, 2251799813685248.0, -2251799813685248.0, 4503599627370496.0, -4503599627370496.0, INFINITY, -INFINITY, NAN, INFINITY, 1.0f, -1.0f };
 	float ret_val[SIZE(sol_val, float)];
 	int roundf_idx;
 
-	for (roundf_idx = 0; roundf_idx < SIZE(in_val, float); roundf_idx++) {
+	for (roundf_idx = 0; roundf_idx < SIZE(sol_val, float); roundf_idx++) {
 		ret_val[roundf_idx] = roundf(in_val[roundf_idx]);
 		if (!(isnan(sol_val[roundf_idx]) && isnan(ret_val[roundf_idx]))) {
 			TC_ASSERT_LEQ("roundf", fabsf(sol_val[roundf_idx] - ret_val[roundf_idx]), FLT_EPSILON);
@@ -2614,7 +2691,7 @@ static void tc_libc_math_roundl(void)
 	long double ret_val[SIZE(sol_val, long double)];
 	int roundl_idx;
 
-	for (roundl_idx = 0; roundl_idx < SIZE(in_val, long double); roundl_idx++) {
+	for (roundl_idx = 0; roundl_idx < SIZE(sol_val, long double); roundl_idx++) {
 		ret_val[roundl_idx] = roundl(in_val[roundl_idx]);
 		if (!(isnan(sol_val[roundl_idx]) && isnan(ret_val[roundl_idx]))) {
 			TC_ASSERT_LEQ("roundl", fabsl(sol_val[roundl_idx] - ret_val[roundl_idx]), FLT_EPSILON);
@@ -2636,9 +2713,9 @@ static void tc_libc_math_roundl(void)
 static void tc_libc_math_scalbn(void)
 {
 	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const double sol_val[][6] = { { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { 9007199254740994.0, 17592186044416.003906250, ZERO, INFINITY, INFINITY, ZERO }, { -9007199254740994.0, -17592186044416.003906250, -ZERO, -INFINITY, -INFINITY, -ZERO }, { 18014398509481984.0, 35184372088832.0, ZERO, INFINITY, INFINITY, ZERO }, { -18014398509481984.0, -35184372088832.0, -ZERO, -INFINITY, -INFINITY, -ZERO }, { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY }, { -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { NAN, NAN, NAN, NAN, NAN, NAN } };
 	const int exp[] = { 2, -7, -1024, 1024, 3072, -3072 };
-	double ret_val[SIZE(in_val, double)][6];
+	const double sol_val[][SIZE(exp, int)] = { { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { 9007199254740994.0, 17592186044416.003906250, ZERO, INFINITY, INFINITY, ZERO }, { -9007199254740994.0, -17592186044416.003906250, -ZERO, -INFINITY, -INFINITY, -ZERO }, { 18014398509481984.0, 35184372088832.0, ZERO, INFINITY, INFINITY, ZERO }, { -18014398509481984.0, -35184372088832.0, -ZERO, -INFINITY, -INFINITY, -ZERO }, { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY }, { -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { NAN, NAN, NAN, NAN, NAN, NAN } };
+	double ret_val[SIZE(in_val, double)][SIZE(exp, int)];
 	int scalbn_idx;
 	int exp_idx;
 
@@ -2666,9 +2743,9 @@ static void tc_libc_math_scalbn(void)
 static void tc_libc_math_scalbnf(void)
 {
 	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const float sol_val[][6] = { { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { 9007199254740994.0, 17592186044416.003906250, ZERO, INFINITY, INFINITY, ZERO }, { -9007199254740994.0, -17592186044416.003906250, -ZERO, -INFINITY, -INFINITY, -ZERO }, { 18014398509481984.0, 35184372088832.0, ZERO, INFINITY, INFINITY, ZERO }, { -18014398509481984.0, -35184372088832.0, -ZERO, -INFINITY, -INFINITY, -ZERO }, { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY }, { -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { NAN, NAN, NAN, NAN, NAN, NAN } };
 	const int exp[] = { 2, -7, -1024, 1024, 3072, -3072 };
-	float ret_val[SIZE(in_val, float)][6];
+	const float sol_val[][SIZE(exp, int)] = { { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { 9007199254740994.0, 17592186044416.003906250, ZERO, INFINITY, INFINITY, ZERO }, { -9007199254740994.0, -17592186044416.003906250, -ZERO, -INFINITY, -INFINITY, -ZERO }, { 18014398509481984.0, 35184372088832.0, ZERO, INFINITY, INFINITY, ZERO }, { -18014398509481984.0, -35184372088832.0, -ZERO, -INFINITY, -INFINITY, -ZERO }, { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY }, { -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { NAN, NAN, NAN, NAN, NAN, NAN } };
+	float ret_val[SIZE(in_val, float)][SIZE(exp, int)];
 	int scalbnf_idx;
 	int exp_idx;
 
@@ -2696,9 +2773,9 @@ static void tc_libc_math_scalbnf(void)
 static void tc_libc_math_scalbnl(void)
 {
 	const long double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const long double sol_val[][6] = { { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { 9007199254740994.0, 17592186044416.003906250, ZERO, INFINITY, INFINITY, ZERO }, { -9007199254740994.0, -17592186044416.003906250, -ZERO, -INFINITY, -INFINITY, -ZERO }, { 18014398509481984.0, 35184372088832.0, ZERO, INFINITY, INFINITY, ZERO }, { -18014398509481984.0, -35184372088832.0, -ZERO, -INFINITY, -INFINITY, -ZERO }, { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY }, { -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { NAN, NAN, NAN, NAN, NAN, NAN } };
 	const int exp[] = { 2, -7, -1024, 1024, 3072, -3072 };
-	long double ret_val[SIZE(in_val, long double)][6];
+	const long double sol_val[][SIZE(exp, int)] = { { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { 9007199254740994.0, 17592186044416.003906250, ZERO, INFINITY, INFINITY, ZERO }, { -9007199254740994.0, -17592186044416.003906250, -ZERO, -INFINITY, -INFINITY, -ZERO }, { 18014398509481984.0, 35184372088832.0, ZERO, INFINITY, INFINITY, ZERO }, { -18014398509481984.0, -35184372088832.0, -ZERO, -INFINITY, -INFINITY, -ZERO }, { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY }, { -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { NAN, NAN, NAN, NAN, NAN, NAN } };
+	long double ret_val[SIZE(in_val, long double)][SIZE(exp, int)];
 	int scalbnl_idx;
 	int exp_idx;
 
@@ -2732,7 +2809,7 @@ static void tc_libc_math_sin(void)
 
 	/* Returns the sine of an angle of x radians */
 
-	for (sin_idx = 0; sin_idx < SIZE(in_val, double); sin_idx++) {
+	for (sin_idx = 0; sin_idx < SIZE(sol_val, double); sin_idx++) {
 		ret_val[sin_idx] = sin(in_val[sin_idx]);
 		TC_ASSERT_LEQ("sin", fabs(sol_val[sin_idx] - ret_val[sin_idx]), FLT_EPSILON);
 	}
@@ -2758,7 +2835,7 @@ static void tc_libc_math_sinf(void)
 
 	/* Returns the sine of an angle of x radians */
 
-	for (sinf_idx = 0; sinf_idx < SIZE(in_val, float); sinf_idx++) {
+	for (sinf_idx = 0; sinf_idx < SIZE(sol_val, float); sinf_idx++) {
 		ret_val[sinf_idx] = sinf(in_val[sinf_idx]);
 		TC_ASSERT_LEQ("sinf", fabsf(sol_val[sinf_idx] - ret_val[sinf_idx]), FLT_EPSILON);
 	}
@@ -2784,7 +2861,7 @@ static void tc_libc_math_sinh(void)
 
 	/* Returns the hyperbolic sine of x */
 
-	for (sinh_idx = 0; sinh_idx < SIZE(in_val, double); sinh_idx++) {
+	for (sinh_idx = 0; sinh_idx < SIZE(sol_val, double); sinh_idx++) {
 		ret_val[sinh_idx] = sinh(in_val[sinh_idx]);
 		TC_ASSERT_LEQ("sinh", fabs(sol_val[sinh_idx] - ret_val[sinh_idx]), FLT_EPSILON);
 	}
@@ -2810,7 +2887,7 @@ static void tc_libc_math_sinhf(void)
 
 	/* Returns the hyperbolic sine of x */
 
-	for (sinhf_idx = 0; sinhf_idx < SIZE(in_val, float); sinhf_idx++) {
+	for (sinhf_idx = 0; sinhf_idx < SIZE(sol_val, float); sinhf_idx++) {
 		ret_val[sinhf_idx] = sinhf(in_val[sinhf_idx]);
 		TC_ASSERT_LEQ("sinhf", fabsf(sol_val[sinhf_idx] - ret_val[sinhf_idx]), FLT_EPSILON);
 	}
@@ -2836,7 +2913,7 @@ static void tc_libc_math_sinhl(void)
 
 	/* Returns the hyperbolic sine of x */
 
-	for (sinhl_idx = 0; sinhl_idx < SIZE(in_val, long double); sinhl_idx++) {
+	for (sinhl_idx = 0; sinhl_idx < SIZE(sol_val, long double); sinhl_idx++) {
 		ret_val[sinhl_idx] = sinhl(in_val[sinhl_idx]);
 		TC_ASSERT_LEQ("sinhl", fabsl(sol_val[sinhl_idx] - ret_val[sinhl_idx]), FLT_EPSILON);
 	}
@@ -2862,7 +2939,7 @@ static void tc_libc_math_sinl(void)
 
 	/* Returns the sine of an angle of x radians */
 
-	for (sinl_idx = 0; sinl_idx < SIZE(in_val, long double); sinl_idx++) {
+	for (sinl_idx = 0; sinl_idx < SIZE(sol_val, long double); sinl_idx++) {
 		ret_val[sinl_idx] = sinl(in_val[sinl_idx]);
 		TC_ASSERT_LEQ("sinl", fabsl(sol_val[sinl_idx] - ret_val[sinl_idx]), FLT_EPSILON);
 	}
@@ -2886,7 +2963,7 @@ static void tc_libc_math_sqrt(void)
 	double ret_val[SIZE(sol_val, double)];
 	int sqrt_idx;
 
-	for (sqrt_idx = 0; sqrt_idx < SIZE(in_val, double); sqrt_idx++) {
+	for (sqrt_idx = 0; sqrt_idx < SIZE(sol_val, double); sqrt_idx++) {
 		ret_val[sqrt_idx] = sqrt(in_val[sqrt_idx]);
 		if (!(isnan(sol_val[sqrt_idx]) && isnan(ret_val[sqrt_idx]))) {
 			TC_ASSERT_LEQ("sqrt", fabs(sol_val[sqrt_idx] - ret_val[sqrt_idx]), FLT_EPSILON);
@@ -2912,7 +2989,7 @@ static void tc_libc_math_sqrtf(void)
 	float ret_val[SIZE(sol_val, float)];
 	int sqrtf_idx;
 
-	for (sqrtf_idx = 0; sqrtf_idx < SIZE(in_val, float); sqrtf_idx++) {
+	for (sqrtf_idx = 0; sqrtf_idx < SIZE(sol_val, float); sqrtf_idx++) {
 		ret_val[sqrtf_idx] = sqrtf(in_val[sqrtf_idx]);
 		if (!(isnan(sol_val[sqrtf_idx]) && isnan(ret_val[sqrtf_idx]))) {
 			TC_ASSERT_LEQ("sqrtf", fabsf(sol_val[sqrtf_idx] - ret_val[sqrtf_idx]), FLT_EPSILON);
@@ -2938,7 +3015,7 @@ static void tc_libc_math_sqrtl(void)
 	long double ret_val[SIZE(sol_val, long double)];
 	int sqrtl_idx;
 
-	for (sqrtl_idx = 0; sqrtl_idx < SIZE(in_val, long double); sqrtl_idx++) {
+	for (sqrtl_idx = 0; sqrtl_idx < SIZE(sol_val, long double); sqrtl_idx++) {
 		ret_val[sqrtl_idx] = sqrtl(in_val[sqrtl_idx]);
 		if (!(isnan(sol_val[sqrtl_idx]) && isnan(ret_val[sqrtl_idx]))) {
 			TC_ASSERT_LEQ("sqrtl", fabsl(sol_val[sqrtl_idx] - ret_val[sqrtl_idx]), FLT_EPSILON);
@@ -3122,7 +3199,7 @@ static void tc_libc_math_trunc(void)
 
 	/* Round to truncated integer value */
 
-	for (trunc_idx = 0; trunc_idx < SIZE(in_val, double); trunc_idx++) {
+	for (trunc_idx = 0; trunc_idx < SIZE(sol_val, double); trunc_idx++) {
 		ret_val[trunc_idx] = trunc(in_val[trunc_idx]);
 		TC_ASSERT_LEQ("trunc", fabs(sol_val[trunc_idx] - ret_val[trunc_idx]), FLT_EPSILON);
 	}
@@ -3148,7 +3225,7 @@ static void tc_libc_math_truncf(void)
 
 	/* Round to truncated integer value */
 
-	for (truncf_idx = 0; truncf_idx < SIZE(in_val, float); truncf_idx++) {
+	for (truncf_idx = 0; truncf_idx < SIZE(sol_val, float); truncf_idx++) {
 		ret_val[truncf_idx] = truncf(in_val[truncf_idx]);
 		TC_ASSERT_LEQ("truncf", fabs(sol_val[truncf_idx] - ret_val[truncf_idx]), FLT_EPSILON);
 	}
@@ -3167,12 +3244,12 @@ static void tc_libc_math_truncf(void)
  */
 static void tc_libc_math_y0(void)
 {
-	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const double sol_val[] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN };
+	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-27, 0x1p-30 };
+	const double sol_val[] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN, -11.9881267033518, -13.3119403042677 };
 	double ret_val[SIZE(sol_val, double)];
 	int y0_idx;
 
-	for (y0_idx = 0; y0_idx < SIZE(in_val, double); y0_idx++) {
+	for (y0_idx = 0; y0_idx < SIZE(sol_val, double); y0_idx++) {
 		ret_val[y0_idx] = y0(in_val[y0_idx]);
 		if (!(isnan(sol_val[y0_idx]) && isnan(ret_val[y0_idx]))) {
 			TC_ASSERT_LEQ("y0", fabs(sol_val[y0_idx] - ret_val[y0_idx]), FLT_EPSILON);
@@ -3193,12 +3270,12 @@ static void tc_libc_math_y0(void)
  */
 static void tc_libc_math_y0f(void)
 {
-	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const float sol_val[] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN };
+	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-13, 0x1p-15 };
+	const float sol_val[] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN, -5.810329437255859, -6.692872047424316 };
 	float ret_val[SIZE(sol_val, float)];
 	int y0f_idx;
 
-	for (y0f_idx = 0; y0f_idx < SIZE(in_val, float); y0f_idx++) {
+	for (y0f_idx = 0; y0f_idx < SIZE(sol_val, float); y0f_idx++) {
 		ret_val[y0f_idx] = y0f(in_val[y0f_idx]);
 		if (!(isnan(sol_val[y0f_idx]) && isnan(ret_val[y0f_idx]))) {
 			TC_ASSERT_LEQ("y0f", fabsf(sol_val[y0f_idx] - ret_val[y0f_idx]), FLT_EPSILON);
@@ -3219,12 +3296,12 @@ static void tc_libc_math_y0f(void)
  */
 static void tc_libc_math_y1(void)
 {
-	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const double sol_val[] = { -INFINITY, -ZERO, NAN, -ZERO, NAN, ZERO, NAN, NAN };
+	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-60, 0x1p-54 };
+	const double sol_val[] = { -INFINITY, -ZERO, NAN, -ZERO, NAN, ZERO, NAN, NAN, -733972625820500352.0, -11468322278445318.0 };
 	double ret_val[SIZE(sol_val, double)];
 	int y1_idx;
 
-	for (y1_idx = 0; y1_idx < SIZE(in_val, double); y1_idx++) {
+	for (y1_idx = 0; y1_idx < SIZE(sol_val, double); y1_idx++) {
 		ret_val[y1_idx] = y1(in_val[y1_idx]);
 		if (!(isnan(sol_val[y1_idx]) && isnan(ret_val[y1_idx]))) {
 			TC_ASSERT_LEQ("y1", fabs(sol_val[y1_idx] - ret_val[y1_idx]), FLT_EPSILON);
@@ -3245,12 +3322,12 @@ static void tc_libc_math_y1(void)
  */
 static void tc_libc_math_y1f(void)
 {
-	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const float sol_val[] = { -INFINITY, -ZERO, NAN, -ZERO, NAN, ZERO, NAN, NAN };
+	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-30, 0x1p-27 };
+	const float sol_val[] = { -INFINITY, -ZERO, NAN, -ZERO, NAN, ZERO, NAN, NAN, -683565248.0, -85445656.0 };
 	float ret_val[SIZE(sol_val, float)];
 	int y1f_idx;
 
-	for (y1f_idx = 0; y1f_idx < SIZE(in_val, float); y1f_idx++) {
+	for (y1f_idx = 0; y1f_idx < SIZE(sol_val, float); y1f_idx++) {
 		ret_val[y1f_idx] = y1f(in_val[y1f_idx]);
 		if (!(isnan(sol_val[y1f_idx]) && isnan(ret_val[y1f_idx]))) {
 			TC_ASSERT_LEQ("y1f", fabsf(sol_val[y1f_idx] - ret_val[y1f_idx]), FLT_EPSILON);
@@ -3271,16 +3348,18 @@ static void tc_libc_math_y1f(void)
  */
 static void tc_libc_math_yn(void)
 {
-	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const double sol_val[] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN };
-	double ret_val[SIZE(sol_val, double)];
+	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p302 };
+	const double sol_val[][7] = { { INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO }, { NAN, NAN, NAN, NAN, NAN, NAN, NAN }, { ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO }, { NAN, NAN, NAN, NAN, NAN, NAN, NAN }, { -ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO }, { NAN, NAN, NAN, NAN, NAN, NAN, NAN }, { NAN, NAN, NAN, NAN, NAN, NAN, NAN }, { -ZERO, -ZERO, ZERO, ZERO, -ZERO, -ZERO, ZERO } };
+	double ret_val[SIZE(in_val, double)][7];
 	int yn_idx;
-	int order = 3;
+	int order_idx;
 
 	for (yn_idx = 0; yn_idx < SIZE(in_val, double); yn_idx++) {
-		ret_val[yn_idx] = yn(order, in_val[yn_idx]);
-		if (!(isnan(sol_val[yn_idx]) && isnan(ret_val[yn_idx]))) {
-			TC_ASSERT_LEQ("yn", fabs(sol_val[yn_idx] - ret_val[yn_idx]), FLT_EPSILON);
+		for (order_idx = 0; order_idx < 7; order_idx++) {
+			ret_val[yn_idx][order_idx] = yn(order_idx - 1, in_val[yn_idx]);
+			if (!(isnan(sol_val[yn_idx][order_idx]) && isnan(ret_val[yn_idx][order_idx]))) {
+				TC_ASSERT_LEQ("yn", fabs(sol_val[yn_idx][order_idx] - ret_val[yn_idx][order_idx]), FLT_EPSILON);
+			}
 		}
 	}
 
@@ -3299,15 +3378,17 @@ static void tc_libc_math_yn(void)
 static void tc_libc_math_ynf(void)
 {
 	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN };
-	const float sol_val[] = { -INFINITY, ZERO, NAN, ZERO, NAN, ZERO, NAN, NAN };
-	float ret_val[SIZE(in_val, float)];
+	const float sol_val[][5] = { { INFINITY, -INFINITY, -INFINITY, -INFINITY, -INFINITY }, { ZERO, ZERO, -ZERO, -ZERO, ZERO }, { NAN, NAN, NAN, NAN, NAN }, { ZERO, ZERO, -ZERO, -ZERO, ZERO }, { NAN, NAN, NAN, NAN, NAN }, { -ZERO, ZERO, ZERO, ZERO, ZERO }, { NAN, NAN, NAN, NAN, NAN }, { NAN, NAN, NAN, NAN, NAN } };
+	float ret_val[SIZE(in_val, float)][5];
 	int ynf_idx;
-	int order = 3;
+	int order_idx;
 
 	for (ynf_idx = 0; ynf_idx < SIZE(in_val, float); ynf_idx++) {
-		ret_val[ynf_idx] = ynf(order, in_val[ynf_idx]);
-		if (!(isnan(sol_val[ynf_idx]) && isnan(ret_val[ynf_idx]))) {
-			TC_ASSERT_LEQ("ynf", fabsf(sol_val[ynf_idx] - ret_val[ynf_idx]), FLT_EPSILON);
+		for (order_idx = 0; order_idx < 5; order_idx++) {
+			ret_val[ynf_idx][order_idx] = ynf(order_idx - 1, in_val[ynf_idx]);
+			if (!(isnan(sol_val[ynf_idx][order_idx]) && isnan(ret_val[ynf_idx][order_idx]))) {
+				TC_ASSERT_LEQ("ynf", fabsf(sol_val[ynf_idx][order_idx] - ret_val[ynf_idx][order_idx]), FLT_EPSILON);
+			}
 		}
 	}
 
@@ -3400,6 +3481,9 @@ int libc_math_main(void)
 	tc_libc_math_log2();
 	tc_libc_math_log2f();
 	tc_libc_math_log2l();
+	tc_libc_math_log10();
+	tc_libc_math_log10f();
+	tc_libc_math_log10l();
 	tc_libc_math_nextafter();
 	tc_libc_math_nextafterf();
 	tc_libc_math_nextafterl();

@@ -69,8 +69,13 @@ void gpio_async_handler(void *data)
  */
 iotbus_gpio_context_h iotbus_gpio_open(int gpiopin)
 {
-	struct _iotbus_gpio_s *dev = (struct _iotbus_gpio_s *)malloc(sizeof(struct _iotbus_gpio_s));
+	struct _iotbus_gpio_s *dev = NULL;
+	dev = (struct _iotbus_gpio_s *)malloc(sizeof(struct _iotbus_gpio_s));
 
+	if (dev == NULL) {
+		zdbg("malloc failed: %d\n", errno);
+		return NULL;
+	}
 	char gpio_dev[16] = { 0, };
 	snprintf(gpio_dev, 16, "/dev/gpio%d", gpiopin);
 
@@ -127,6 +132,8 @@ int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
 		ret = ioctl(dev->fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_OUT);
 		break;
 	case IOTBUS_GPIO_DIRECTION_NONE:
+		ret = ioctl(dev->fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_NONE);
+				break;
 	default:
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}

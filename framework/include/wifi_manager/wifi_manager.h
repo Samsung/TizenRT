@@ -23,6 +23,11 @@
  * @{
  */
 
+/**
+ * @file wifi_manager/wifi_manager.h
+ * @brief Provides APIs for Wi-Fi Manager
+ */
+
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
@@ -33,7 +38,10 @@ typedef enum {
 
 	// SOFT AP mode status
 	CLIENT_CONNECTED,
-	CLIENT_DISCONNECTED
+	CLIENT_DISCONNECTED,
+
+	// Unkown
+	STATUS_UNKNOWN
 } connect_status_e;
 
 /**
@@ -52,7 +60,11 @@ typedef enum {
 typedef enum {
 	WIFI_NONE = -1,
 	STA_MODE,
-	SOFTAP_MODE
+	SOFTAP_MODE,
+	WIFI_MODE_CHANGING,
+	WIFI_INITIALIZING,
+	WIFI_DEINITIALIZING,
+	WIFI_FAILURE
 } wifi_manager_mode_e;
 
 typedef enum {
@@ -82,16 +94,16 @@ typedef struct {
 typedef struct {
 	char ip4_address[18];
 	char ssid[32];
+	char mac_address[6];	   /**<  MAC address of wifi interface             */
 	int rssi;
 	connect_status_e status;
 	wifi_manager_mode_e mode;
-	wifi_manager_cb_s *wmcb;
 } wifi_manager_info_s;
 
 typedef struct {
 	char ssid[32];
 	uint16_t channel;
-	char passphrase[32];
+	char passphrase[64];
 } wifi_manager_softap_config_s;
 
 /**

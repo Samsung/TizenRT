@@ -77,6 +77,10 @@ iotbus_uart_context_h iotbus_uart_init(const char *path)
 		return handle;
 
 	handle = (struct _iotbus_uart_s *)malloc(sizeof(struct _iotbus_uart_s));
+	if (handle == NULL) {
+		close(fd);
+		return NULL;
+	}
 	handle->fd = fd;
 
 	return handle;

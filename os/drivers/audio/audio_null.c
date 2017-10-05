@@ -227,8 +227,9 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 
 		break;
 
-	/* Provide capabilities of our OUTPUT unit */
-
+	/* Provide capabilities of our INPUT & OUTPUT unit */
+	
+	case AUDIO_TYPE_INPUT:
 	case AUDIO_TYPE_OUTPUT:
 
 		caps->ac_channels = 2;
@@ -238,7 +239,7 @@ static int null_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct 
 
 			/* Report the Sample rates we support */
 
-			caps->ac_controls.b[0] = AUDIO_SAMP_RATE_8K | AUDIO_SAMP_RATE_11K | AUDIO_SAMP_RATE_16K | AUDIO_SAMP_RATE_22K | AUDIO_SAMP_RATE_32K | AUDIO_SAMP_RATE_44K | AUDIO_SAMP_RATE_48K;
+			caps->ac_controls.b[0] = AUDIO_SAMP_RATE_TYPE_8K | AUDIO_SAMP_RATE_TYPE_11K | AUDIO_SAMP_RATE_TYPE_16K | AUDIO_SAMP_RATE_TYPE_22K |	AUDIO_SAMP_RATE_TYPE_32K | AUDIO_SAMP_RATE_TYPE_44K | AUDIO_SAMP_RATE_TYPE_48K;
 			break;
 
 		case AUDIO_FMT_MP3:

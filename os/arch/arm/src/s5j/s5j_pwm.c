@@ -65,6 +65,7 @@
 #include "up_arch.h"
 #include "s5j_pwm.h"
 #include "s5j_gpio.h"
+#include "s5j_clock.h"
 
 /****************************************************************************
  * Private Types
@@ -80,11 +81,6 @@ struct s5j_pwmtimer_s {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static unsigned int s5j_get_oscclk(void)
-{
-	return 26000000;
-}
-
 static uint32_t pwm_getreg32(struct s5j_pwmtimer_s *priv, int offset)
 {
 	return getreg32(priv->base + offset);
@@ -121,7 +117,8 @@ static unsigned int pwm_get_divider(struct s5j_pwmtimer_s *priv)
 
 static unsigned int pwm_clk_freq(struct s5j_pwmtimer_s *priv)
 {
-	return (s5j_get_oscclk() / (pwm_get_prescaler(priv) + 1)) >> pwm_get_divider(priv);
+	return (s5j_clk_get_rate(CLK_DFT_OSCCLK) / (pwm_get_prescaler(priv) + 1))
+						>> pwm_get_divider(priv);
 }
 
 /****************************************************************************
@@ -147,7 +144,9 @@ static int s5j_pwm_setup(FAR struct pwm_lowerhalf_s *dev)
 {
 	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
 
-	return s5j_configgpio(priv->pincfg);
+	VERIFY(s5j_configgpio(priv->pincfg) == OK);
+
+	return OK;
 }
 
 /****************************************************************************
@@ -172,7 +171,7 @@ static int s5j_pwm_start(FAR struct pwm_lowerhalf_s *dev,
 	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
 
 	tcntb = pwm_clk_freq(priv) / info->frequency - 1;
-	tcmpb = (((tcntb + 1) * info->duty) / 65536) - 1;
+	tcmpb = (((uint64_t)(tcntb + 1) * info->duty) / 65536) - 1;
 
 	pwm_putreg32(priv, S5J_PWM_TCNTB_OFFSET(priv->id), tcntb);
 	pwm_putreg32(priv, S5J_PWM_TCMPB_OFFSET(priv->id), tcmpb);
@@ -245,7 +244,9 @@ static int s5j_pwm_shutdown(FAR struct pwm_lowerhalf_s *dev)
 	s5j_pwm_stop(dev);
 
 	/* Then put the GPIO pins back to the default state */
-	return s5j_unconfiggpio(priv->pincfg);
+	VERIFY(s5j_unconfiggpio(priv->pincfg) == OK);
+
+	return OK;
 }
 
 /****************************************************************************
@@ -267,6 +268,45 @@ static int s5j_pwm_ioctl(FAR struct pwm_lowerhalf_s *dev, int cmd,
 						 unsigned long arg)
 {
 	return -ENOTTY;
+}
+
+/****************************************************************************
+ * Name: s5j_pwm_reset
+ *
+ * Description:
+ *   Reset pwm register value
+ *
+ * Input parameters:
+ *   dev - A reference to the lower half PWM driver state structure
+ *   timer - A number identifying the timer use. The number of valid timer
+ *     IDs varies with the S5J family but is somewhere in the range of
+ *     {0,...,5}.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+static void s5j_pwm_reset(FAR struct pwm_lowerhalf_s *dev, int timer)
+{
+	FAR struct s5j_pwmtimer_s *priv = (FAR struct s5j_pwmtimer_s *)dev;
+
+	if (priv->id < 2) {
+		pwm_modifyreg32(priv, S5J_PWM_TCFG0_OFFSET,
+						PWM_TCFG0_PRESCALER0_MASK,
+						PWM_TCFG0_PRESCALER0_RESET);
+	} else {
+		pwm_modifyreg32(priv, S5J_PWM_TCFG0_OFFSET,
+						PWM_TCFG0_PRESCALER1_MASK,
+						PWM_TCFG0_PRESCALER1_RESET);
+	}
+
+	if (timer > 3) {
+		timer = timer - 4;
+	}
+
+	pwm_modifyreg32(priv, S5J_PWM_TCFG1_OFFSET,
+					PWM_TCFG1_DIVIDER_MUX_MASK(timer),
+					PWM_TCFG1_DIVIDER_MUX_DIV1(timer));
 }
 
 /****************************************************************************
@@ -391,6 +431,8 @@ FAR struct pwm_lowerhalf_s *s5j_pwminitialize(int timer)
 	{
 		lldbg("ERROR: invalid PWM is requested\n");
 	}
+
+	s5j_pwm_reset(lower, timer);
 
 	return lower;
 }

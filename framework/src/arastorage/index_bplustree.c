@@ -1087,7 +1087,7 @@ static cache_result_t cache_write_node(tree_t *tree, int id, tree_node_t *node)
 	} else {
 		qnode_t *iter_node;
 		iter_node = tree->node_cache->in_cache.head->next;
-		while ((iter_node->node_state | NODE_STATE_LOCK) && iter_node != tree->node_cache->in_cache.tail) {
+		while ((iter_node->node_state & NODE_STATE_LOCK) && iter_node != tree->node_cache->in_cache.tail) {
 			iter_node = iter_node->next;
 		}
 		if (iter_node == tree->node_cache->in_cache.tail) {

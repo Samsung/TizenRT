@@ -836,7 +836,7 @@ struct wpa_scan_results *slsi_get_scan_results(void *priv)
 		goto exit_with_lock;
 	}
 
-	num_scan_ind = ndev_vif->scan[scan_id].scan_results.qlen;
+	num_scan_ind = ndev_vif->scan[scan_id].scan_results.queue_len;
 
 	SLSI_NET_DBG3(dev, SLSI_T20_80211, "slsi_get_scan_results(interface:%d, scan_id:%d, num_scan_ind: %d)\n", ndev_vif->ifnum, scan_id, num_scan_ind);
 	if (num_scan_ind == 0) {

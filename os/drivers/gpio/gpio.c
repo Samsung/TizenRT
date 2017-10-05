@@ -186,8 +186,8 @@ static void gpio_sample(FAR struct gpio_upperhalf_s *priv)
 
 #if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
 	change  = sample ^ priv->gu_sample;
-	rising  = (change && priv->gu_sample);
-	falling = (change && ~priv->gu_sample);
+	rising  = (change && sample);
+	falling = (change && !sample);
 
 	/* Visit each opened reference to the device */
 	for (opriv = priv->gu_open; opriv; opriv = opriv->go_flink) {
@@ -286,10 +286,10 @@ static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
 	/* Enable/disable GPIO interrupts */
 	DEBUGASSERT(lower->ops->enable);
 	if (rising || falling) {
-		lower->ops->enable(lower, rising, falling, gpio_interrupt);
+		lower->ops->enable(lower, true, true, gpio_interrupt);
 	} else {
 		/* Disable further interrupts */
-		lower->ops->enable(lower, 0, 0, NULL);
+		lower->ops->enable(lower, false, false, NULL);
 	}
 
 	irqrestore(flags);

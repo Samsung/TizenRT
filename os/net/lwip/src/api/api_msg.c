@@ -327,6 +327,10 @@ static err_t sent_tcp(void *arg, struct tcp_pcb *pcb, u16_t len)
 	LWIP_UNUSED_ARG(pcb);
 	LWIP_ASSERT("conn != NULL", (conn != NULL));
 
+	if (conn == NULL) {
+		return ERR_ARG;
+	}
+
 	if (conn->state == NETCONN_WRITE) {
 		do_writemore(conn);
 	} else if (conn->state == NETCONN_CLOSE) {

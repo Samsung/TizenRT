@@ -177,6 +177,9 @@ int clear_journal_sectors(struct smartfs_mountpt_s *fs, struct journal_transacti
 static int set_area_id_bits(struct smartfs_mountpt_s *fs, uint8_t id_bits);
 static int smartfs_write_transaction(struct smartfs_mountpt_s *fs, struct journal_transaction_manager_s
 									 *j_mgr, uint16_t *sector, uint16_t *offset);
+#ifdef CONFIG_SMARTFS_JOURNAL_VERIFY
+static int smartfs_verify_transaction(struct smartfs_mountpt_s *fs, uint16_t sector, uint16_t offset);
+#endif
 static uint8_t smartfs_calc_crc_entry(struct journal_transaction_manager_s *j_mgr);
 static uint8_t smartfs_calc_crc_data(struct journal_transaction_manager_s *j_mgr);
 #endif
@@ -3327,11 +3330,111 @@ int smartfs_create_journalentry(struct smartfs_mountpt_s *fs, enum logging_trans
 			fdbg("smartfs_write_transaction failed type : %d ret : %d\n", type, ret);
 			return ret;
 		}
+#ifdef CONFIG_SMARTFS_JOURNAL_VERIFY
+		if (type != T_DELETE) {
+			fdbg("write transaction %d %d %d \n", type, *t_sector, *t_offset);
+			ret = smartfs_verify_transaction(fs, *t_sector, *t_offset);
+			if (ret != OK) {
+				fdbg("smartfs_verify_transaction failed: %d ret : %d\n", type, ret);
+				return ret;
+			}
+		}
+#endif
 		break;
 	}
-	fvdbg("Create journalentry : %d\n", *t_sector);
+
+	fvdbg("Create journalentry : %d %d\n", *t_sector, *t_offset);
 	return OK;
 }
+
+#ifdef CONFIG_SMARTFS_JOURNAL_VERIFY
+/****************************************************************************
+ * Name: smartfs_verify_transaction
+ *
+ * Description: verify after write transaction
+ *
+ ****************************************************************************/
+static int smartfs_verify_transaction(struct smartfs_mountpt_s *fs, uint16_t sector, uint16_t offset)
+{
+	struct smart_read_write_s req;
+	struct journal_transaction_manager_s *j_mgr;
+	struct smartfs_logging_entry_s *entry;
+	uint8_t *buff;
+	int i;
+	int ret;
+
+	j_mgr = fs->journal;
+	entry = (struct smartfs_logging_entry_s *)(j_mgr->buffer);
+
+	buff = (uint8_t *)malloc(entry->datalen + sizeof(struct smartfs_logging_entry_s));
+
+	if (!buff) {
+		fdbg("mem alloc fail\n");
+		return ERROR;
+	}
+
+	req.logsector = sector;
+	req.offset = offset;
+	req.count = sizeof(struct smartfs_logging_entry_s);
+	req.buffer = buff;
+	/* read entry first */
+	fvdbg("read entry :: sector : %d offset :%d cnt: %d\n", req.logsector, req.offset, req.count);
+	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
+	if (ret < 0) {
+		fdbg("read fail %d\n", ret);
+		goto error_with_ret;
+	}
+
+
+	req.buffer += req.count;
+	req.offset += req.count;
+	req.count = entry->datalen;
+	if (req.offset + entry->datalen > j_mgr->availbytes) {
+		req.count = j_mgr->availbytes - req.offset;
+	}
+	if (req.count > 0) {
+		fvdbg("read data sector :: %d offset :%d cnt: %d\n", req.logsector, req.offset, req.count);
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
+		if (ret < 0) {
+			fdbg("read fail %d\n", ret);
+			goto error_with_ret;
+		}
+		req.buffer += req.count;
+		req.offset += req.count;
+	}
+
+	if (req.count < entry->datalen) {
+		req.logsector++;
+		req.offset = 0;
+		req.count = entry->datalen - req.count;
+		fvdbg("read remain data:: sector : %d offset :%d cnt: %d\n", req.logsector, req.offset, req.count);
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&req);
+		if (ret < 0) {
+			fdbg("read fail %d\n", ret);
+			goto error_with_ret;
+		}
+	}
+
+	for (i = 0; i < entry->datalen + sizeof(struct smartfs_logging_entry_s); i++) {
+		if (buff[i] != j_mgr->buffer[i]) {
+			fdbg("journal data write fail :: offset : %d write : 0x%x read : 0x%x\n", i, j_mgr->buffer[i], buff[i]);
+			goto error_with_dumpret;
+		}
+	}
+
+	free(buff);
+	return OK;
+
+
+error_with_dumpret:
+	for (i = 0; i < entry->datalen + sizeof(struct smartfs_logging_entry_s); i++) {
+		fdbg("offset : %d write : 0x%x read : 0x%x\n", i, j_mgr->buffer[i], buff[i]);
+	}
+error_with_ret:
+	free(buff);
+	return ERROR;
+}
+#endif
 
 /****************************************************************************
  * Name: smartfs_calc_crc_entry

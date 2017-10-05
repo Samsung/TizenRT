@@ -39,11 +39,19 @@ include src$(DELIM)arastorage$(DELIM)Make.defs
 endif
 
 ifeq ($(CONFIG_NETUTILS_MQTT), y)
-include src$(DELIM)mqtt$(DELIM)Make.defs
+include src$(DELIM)network$(DELIM)mqtt$(DELIM)Make.defs
 endif
 
 ifeq ($(CONFIG_WIFI_MANAGER), y)
 include src$(DELIM)wifi_manager$(DELIM)Make.defs
+endif
+
+ifeq ($(CONFIG_ST_THINGS), y)
+include src$(DELIM)st_things$(DELIM)Make.defs
+endif
+
+ifeq ($(CONFIG_AUDIO), y)
+include src$(DELIM)tinyalsa$(DELIM)Make.defs
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

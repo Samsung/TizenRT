@@ -1,0 +1,41 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_ST_THINGS
+	bool "SmartThings Things example"
+	default n
+	---help---
+		Enable the SmartThings Things example
+
+if EXAMPLES_ST_THINGS
+
+config EXAMPLES_THINGSEASYSETUP_PROGNAME
+	string "Program name"
+	default "st_things_sample"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+config RESET_BUTTON
+	bool "Reset_Button"
+	default y
+	depends on EXAMPLES_ST_THINGS
+	---help---
+		Decide whether to use the button to reset the connection on your board.
+
+config RESET_BUTTON_PIN_NUMBER
+	int "Pin Number"
+	default 44
+	depends on RESET_BUTTON
+	---help---
+		The default is the reset button pin number 44 for the ARTIK 053.
+		If you use another board, you can set the pin number for the board.
+
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "st_things_sample_main" if EXAMPLES_ST_THINGS

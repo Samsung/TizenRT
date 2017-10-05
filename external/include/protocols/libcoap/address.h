@@ -24,7 +24,7 @@
  */
 
 /**
- * @file address.h
+ * @file protocols/libcoap/address.h
  * @brief representation of network addresses
  */
 

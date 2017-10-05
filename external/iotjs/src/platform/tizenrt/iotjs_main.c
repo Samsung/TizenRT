@@ -116,7 +116,12 @@
  pthread_addr_t iotjs_thread(void *thread_arg) {
    struct iotjs_thread_arg *arg = thread_arg;
 
+#ifdef CONFIG_DEBUG_VERBOSE
+   int ret = iotjs_entry(arg->argc, arg->argv);
+   printf("IoT.js Result: %d\n", ret);
+#else
    iotjs_entry(arg->argc, arg->argv);
+#endif
    tuv_cleanup();
 
    sleep(1);
@@ -127,7 +132,7 @@
    pthread_attr_t attr;
    int status;
    struct sched_param sparam;
-   pthread_t tid;
+   pthread_t tid = (pthread_t)0;
    struct iotjs_thread_arg arg;
 
    status = pthread_attr_init(&attr);
@@ -160,6 +165,9 @@
  static int iotjs(int argc, char *argv[]) {
    int ret = 0;
    ret = iotjs_entry(argc, argv);
+#ifdef CONFIG_DEBUG_VERBOSE
+   printf("IoT.js Result: %d\n", ret);
+#endif
    tuv_cleanup();
    return ret;
  }

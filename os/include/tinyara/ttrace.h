@@ -22,7 +22,7 @@
  * @{
  */
 
-///@file ttrace.h
+///@file tinyara/ttrace.h
 ///@brief ttrace APIs
 
 #ifndef __INCLUDE_TINYARA_TTRACE_H

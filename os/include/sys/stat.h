@@ -58,7 +58,7 @@
  * @{
  */
 
-/// @file stat.h
+/// @file sys/stat.h
 /// @brief Status APIs
 
 #ifndef __INCLUDE_SYS_STAT_H

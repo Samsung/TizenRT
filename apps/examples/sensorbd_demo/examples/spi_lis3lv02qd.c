@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,17 +69,19 @@ static char spi_read(int port, int addr, int frequency, int bits, int conf)
 	unsigned char buf[2];
 	buf[0] = addr | 0x80;
 
-	SPI_LOCK(spi_dev, true);
+	if (spi_dev != 0x0) {
+		SPI_LOCK(spi_dev, true);
 
-	SPI_SETFREQUENCY(spi_dev, frequency);
-	SPI_SETBITS(spi_dev, bits);
-	SPI_SETMODE(spi_dev, conf);
+		SPI_SETFREQUENCY(spi_dev, frequency);
+		SPI_SETBITS(spi_dev, bits);
+		SPI_SETMODE(spi_dev, conf);
 
-	SPI_SELECT(spi_dev, port, true);
-	SPI_RECVBLOCK(spi_dev, buf, 2);
-	SPI_SELECT(spi_dev, port, false);
+		SPI_SELECT(spi_dev, port, true);
+		SPI_RECVBLOCK(spi_dev, buf, 2);
+		SPI_SELECT(spi_dev, port, false);
 
-	SPI_LOCK(spi_dev, false);
+		SPI_LOCK(spi_dev, false);
+	}
 
 	return buf[1];
 }
@@ -90,17 +92,19 @@ static void spi_write(int port, int addr, int frequency, int bits, int conf, cha
 	buf[0] = addr;
 	buf[1] = value;
 
-	SPI_LOCK(spi_dev, true);
+	if (spi_dev != 0x0) {
+		SPI_LOCK(spi_dev, true);
 
-	SPI_SETFREQUENCY(spi_dev, frequency);
-	SPI_SETBITS(spi_dev, bits);
-	SPI_SETMODE(spi_dev, conf);
+		SPI_SETFREQUENCY(spi_dev, frequency);
+		SPI_SETBITS(spi_dev, bits);
+		SPI_SETMODE(spi_dev, conf);
 
-	SPI_SELECT(spi_dev, port, true);
-	SPI_SNDBLOCK(spi_dev, buf, 2);
-	SPI_SELECT(spi_dev, port, false);
+		SPI_SELECT(spi_dev, port, true);
+		SPI_SNDBLOCK(spi_dev, buf, 2);
+		SPI_SELECT(spi_dev, port, false);
 
-	SPI_LOCK(spi_dev, false);
+		SPI_LOCK(spi_dev, false);
+	}
 }
 
 void lis3lv02qd_main(int argc, char *argv[])

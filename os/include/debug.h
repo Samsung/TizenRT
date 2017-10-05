@@ -640,8 +640,6 @@ Once LOGM is approved, each module should have its own index
 #define i2cllvdbg(x...)
 #endif
 
-
-
 #ifdef CONFIG_NET_LWIP_DEBUG
 #define lwipdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define lwiplldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -1007,7 +1005,6 @@ Once LOGM is approved, each module should have its own index
 #define audvdbg		(void)
 #define audllvdbg	(void)
 #endif
-
 #endif							/* CONFIG_CPP_HAVE_VARARGS */
 
 /* Buffer dumping macros do not depend on varargs */

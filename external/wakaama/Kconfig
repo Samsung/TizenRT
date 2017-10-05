@@ -1,0 +1,38 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config LWM2M_WAKAAMA
+	bool "LWM2M_WAKAAMA"
+	default n
+	depends on LIBC_NETDB
+	---help---
+		enable LWM2M WAKAAMA external feature
+
+if LWM2M_WAKAAMA
+
+choice
+	prompt "LWM2M WAKAAMA modes"
+	default LWM2M_CLIENT_MODE
+
+config LWM2M_CLIENT_MODE
+	bool "CLIENT_MODE"
+	---help---
+		enable LWM2M WAKAAMA client mode
+
+config LWM2M_SERVER_MODE
+	bool "SERVER_MODE"
+	---help---
+		enable LWM2M WAKAAMA server mode
+endchoice
+
+config LWM2M_LITTLE_ENDIAN
+	bool "LITTLE_ENDIAN"
+	default y
+	---help---
+		LWM2M supports LITTLE_ENDIAN and BIG_ENDIAN mode.
+		according to server configuration, LWM2M client should match it.
+		default value is LITTLE_ENDIAN and if you do not select as LITTLE_ENDIAN,
+		BIG_ENDIAN will be used instead of it
+endif

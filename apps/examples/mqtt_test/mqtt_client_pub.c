@@ -34,7 +34,7 @@
 #include <tinyara/clock.h>
 #include <errno.h>
 
-#include <mqtt/mqtt_api.h>
+#include <network/mqtt/mqtt_api.h>
 
 #if defined(CONFIG_NETUTILS_MQTT_SECURITY)
 #include "mbedtls/x509_crt.h"

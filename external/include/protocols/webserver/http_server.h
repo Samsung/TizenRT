@@ -29,7 +29,7 @@
  */
 
 /**
- * @file http_server.h
+ * @file protocols/webserver/http_server.h
  * @brief APIs for HTTP Server.
  */
 

@@ -1,20 +1,8 @@
-/*****************************************************************************
+/******************************************************************************
  *
- * Copyright 2017 Samsung Electronics All Rights Reserved.
+ * Copyright (c) 2012 - 2016 Samsung Electronics Co., Ltd. All rights reserved
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
+ *****************************************************************************/
 
 #ifndef SLSI_UTILS_MISC_H__
 #define SLSI_UTILS_MISC_H__
@@ -39,10 +27,6 @@
 #include <tinyara/kmalloc.h>
 #include "utils_scsc.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define __bitwise
 #define __force         __attribute__((force))
 #define __aligned(x)    __attribute__((aligned(x)))
@@ -63,15 +47,6 @@ extern "C" {
 #define ETH_P_ARP  0x0806
 
 #define SSID_MAX_LEN 32
-
-struct firmware {
-	size_t size;
-	const u8 *data;
-	//struct page **pages;
-
-	/* firmware loader private fields */
-	void *priv;
-};
 
 static inline void *ERR_PTR(long error)
 {
@@ -98,9 +73,6 @@ static inline int test_bit(int nr, const long unsigned int *addr)
 {
 	return 1 & (addr[BIT_BYTE(nr)] >> (nr & (BITS_PER_BYTE - 1)));
 }
-
-/*We can use ndbg,nlldbg,... defined under CONFIG_DEBUG_NET.
- * face compiler errors when we enable the CONFIG.*/
 
 #define pr_err(_msg, args ...)   \
 	lldbg(_msg, ## args)
@@ -181,131 +153,20 @@ static inline void bitmap_copy_le(void *dst, const unsigned long *src, int nbits
 }
 #define __round_mask(x, y) ((__typeof__(x))((y) - 1))
 #define round_up(x, y) ((((x) - 1) | __round_mask(x, y)) + 1)
-#define round_down(x, y) ((x) & ~__round_mask(x, y))
-/**
- * get_first_bit - find first set bit in word
- * @word: The word to search
- *
- * Undefined if no bit exists, so code should check against 0 first.
- */
-static inline unsigned long get_first_bit(unsigned long elem)
-{
-	int num = 0;
 
-#if BITS_PER_LONG == 64
-	if ((elem & 0xffffffff) == 0) {
-		elem >>= 32;
-		num += 32;
-	}
-#endif
-	if ((elem & 0xffff) == 0) {
-		elem >>= 16;
-		num += 16;
-	}
-	if ((elem & 0xff) == 0) {
-		elem >>= 8;
-		num += 8;
-	}
-	if ((elem & 0xf) == 0) {
-		elem >>= 4;
-		num += 4;
-	}
-	if ((elem & 0x3) == 0) {
-		elem >>= 2;
-		num += 2;
-	}
-	if ((elem & 0x1) == 0) {
-		num += 1;
-	}
-
-	return num;
-}
-
-#define min(x, y) ({ \
-		typeof(x) _x = (x);     \
-		typeof(y) _y = (y);     \
-		(void) (&_x == &_y);    \
-		_x < _y ? _x : _y; })
-
-#define max(x, y) ({ \
-		typeof(x) _x = (x);     \
-		typeof(y) _y = (y);     \
-		(void) (&_x == &_y);    \
-		_x > _y ? _x : _y; })
-
-static unsigned long find_first_bit(const unsigned long *addr, unsigned long size)
-{
-	unsigned long idx;
-
-	for (idx = 0; idx * BITS_PER_LONG < size; idx++) {
-		if (addr[idx]) {
-			return min(idx * BITS_PER_LONG + get_first_bit(addr[idx]), size);
-		}
-	}
-
-	return size;
-}
-#define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) & (BITS_PER_LONG - 1)))
-/*
- * This is a common helper function for find_next_bit and
- * find_next_zero_bit.  The difference is the "invert" argument, which
- * is XORed with each fetched word before searching it for one bits.
- */
-static unsigned long _find_next_bit(const unsigned long *addr, unsigned long nbits, unsigned long start, unsigned long invert)
-{
-	unsigned long tmp;
-
-	if (!nbits || start >= nbits) {
-		return nbits;
-	}
-
-	tmp = addr[start / BITS_PER_LONG] ^ invert;
-
-	/* Handle 1st word. */
-	tmp &= BITMAP_FIRST_WORD_MASK(start);
-	start = round_down(start, BITS_PER_LONG);
-
-	while (!tmp) {
-		start += BITS_PER_LONG;
-		if (start >= nbits) {
-			return nbits;
-		}
-
-		tmp = addr[start / BITS_PER_LONG] ^ invert;
-	}
-
-	return min(start + get_first_bit(tmp), nbits);
-}
-
-/*
- * Find the next set bit in a memory region.
- */
-static unsigned long find_next_bit(const unsigned long *addr, unsigned long size, unsigned long offset)
-{
-	return _find_next_bit(addr, size, offset, 0UL);
-}
-
-#define for_each_set_bit(bit, addr, size) \
-	for ((bit) = find_first_bit((addr), (size));            \
-	     (bit) < (size);                                    \
-	     (bit) = find_next_bit((addr), (size), (bit) + 1))
-#define ffz(x)  get_first_bit(~(x))
+/* This API finds the first non zero bit in the given address. This API checks only one address */
 static inline unsigned long find_first_zero_bit(const unsigned long *addr, unsigned long size)
 {
-	unsigned long idx;
+	int i;
 
-	for (idx = 0; idx * BITS_PER_LONG < size; idx++) {
-		if (addr[idx] != ~0UL) {
-			return min(idx * BITS_PER_LONG + ffz(addr[idx]), size);
-		}
+	for (i = 0; i < size; i++) {
+		if (!(addr[0] & (1 << i)))
+			return i;
 	}
 
 	return size;
 }
 
-#ifdef __cplusplus
-}
-#endif
 /*
  * SLSI doubly linked llist implementation.
  *
@@ -445,3 +306,5 @@ static inline void prefetch(__attribute__((unused))
 } while (0)
 
 #endif							/* SLSI_UTILS_MISC_H__ */
+
+

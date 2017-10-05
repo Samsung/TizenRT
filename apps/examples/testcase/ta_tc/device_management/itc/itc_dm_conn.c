@@ -44,13 +44,13 @@
 */
 static void itc_dm_conn_get_address_p(void)
 {
-    int ret;
-    char ipAddr[BUF_SIZE];
-    ret = dm_conn_get_address(ipAddr);
-    TC_ASSERT_EQ("dm_conn_get_address" , ret , DM_ERROR_NONE);
-    printf("itc_dm_conn_get_address_p : %s \n", ipAddr);
-    TC_ASSERT_EQ("dm_conn_get_address" , ipAddr[3] , '.');
-    TC_SUCCESS_RESULT();
+	int ret;
+	char ipAddr[BUF_SIZE];
+	ret = dm_conn_get_address(ipAddr);
+	TC_ASSERT_EQ("dm_conn_get_address" , ret , DM_ERROR_NONE);
+	printf("itc_dm_conn_get_address_p : %s \n", ipAddr);
+	TC_ASSERT_EQ("dm_conn_get_address" , ipAddr[3] , '.');
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -63,12 +63,12 @@ static void itc_dm_conn_get_address_p(void)
 */
 static void itc_dm_conn_get_channel_p(void)
 {
-    int ret;
-    int val = -1;
-    ret = dm_conn_get_channel(&val);
-    TC_ASSERT_EQ("dm_conn_get_channel" , ret , DM_ERROR_NONE);
-    TC_ASSERT_GEQ("dm_conn_get_channel" , val , 0 );
-    TC_SUCCESS_RESULT();
+	int ret;
+	int val = -1;
+	ret = dm_conn_get_channel(&val);
+	TC_ASSERT_EQ("dm_conn_get_channel" , ret , DM_ERROR_NONE);
+	TC_ASSERT_GEQ("dm_conn_get_channel" , val , 0);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -81,11 +81,11 @@ static void itc_dm_conn_get_channel_p(void)
 */
 static void itc_dm_conn_get_interface_p(void)
 {
-    int ret;
-    char interface[BUF_SIZE];
-    ret = dm_conn_get_interface(interface);
-    TC_ASSERT_EQ("dm_conn_get_interface" , ret , DM_ERROR_NONE);
-    TC_SUCCESS_RESULT();
+	int ret;
+	char interface[BUF_SIZE];
+	ret = dm_conn_get_interface(interface);
+	TC_ASSERT_EQ("dm_conn_get_interface" , ret , DM_ERROR_NONE);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -98,12 +98,12 @@ static void itc_dm_conn_get_interface_p(void)
 */
 static void itc_dm_conn_get_rssi_p(void)
 {
-    int ret;
-    int val = -1;
-    ret = dm_conn_get_rssi(&val);
-    TC_ASSERT_EQ("dm_conn_get_rssi" , ret , DM_ERROR_NONE);
-    TC_ASSERT_LEQ("dm_conn_get_rssi" , val , 0 );
-    TC_SUCCESS_RESULT();
+	int ret;
+	int val = -1;
+	ret = dm_conn_get_rssi(&val);
+	TC_ASSERT_EQ("dm_conn_get_rssi" , ret , DM_ERROR_NONE);
+	TC_ASSERT_LEQ("dm_conn_get_rssi" , val , 0);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -116,16 +116,16 @@ static void itc_dm_conn_get_rssi_p(void)
 */
 static void itc_dm_conn_set_get_tx_power_p(void)
 {
-    int ret;
-    int setVal = 1, getVal, defaultvalue;
-    // To get default value    dm_conn_get_tx_power(&defaultvalue);
-    ret = dm_conn_set_tx_power(&setVal);
-    TC_ASSERT_EQ("dm_conn_set_tx_power" , ret , DM_ERROR_NONE);
-    ret = dm_conn_get_tx_power(&getVal);
-    TC_ASSERT_EQ("dm_conn_get_tx_power" , ret, DM_ERROR_NONE);
-    TC_ASSERT_EQ_CLEANUP("itc_dm_conn_set_get_power" , setVal , getVal, dm_conn_set_tx_power(&defaultvalue));
-    dm_conn_set_tx_power(&defaultvalue);
-    TC_SUCCESS_RESULT();
+	int ret;
+	int setVal = 20, getVal, defaultvalue;
+	// To get default value    dm_conn_get_tx_power(&defaultvalue);
+	ret = dm_conn_set_tx_power(&setVal);
+	TC_ASSERT_EQ("dm_conn_set_tx_power" , ret , DM_ERROR_NONE);
+	ret = dm_conn_get_tx_power(&getVal);
+	TC_ASSERT_EQ("dm_conn_get_tx_power" , ret, DM_ERROR_NONE);
+	TC_ASSERT_EQ_CLEANUP("itc_dm_conn_set_get_power" , setVal , getVal, dm_conn_set_tx_power(&defaultvalue));
+	dm_conn_set_tx_power(&defaultvalue);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -136,9 +136,9 @@ static void itc_dm_conn_set_get_tx_power_p(void)
 * @precondition     NA
 * @postcondition    NA
 */
-static conn_cb linkEvent()
+static void linkEvent(void)
 {
-    printf("Set link event\n");
+	printf("Set link event\n");
 }
 
 /**
@@ -151,12 +151,12 @@ static conn_cb linkEvent()
 */
 static void itc_dm_conn_register_unregister_linkup_p(void)
 {
-    int ret;
-    ret = dm_conn_register_linkup_cb(linkEvent);
-    TC_ASSERT_EQ("dm_conn_register_linkup_cb" , ret, DM_ERROR_NONE);
-    ret = dm_conn_unregister_linkup_cb(linkEvent);
-    TC_ASSERT_EQ("dm_conn_unregister_linkup_cb" , ret, DM_ERROR_NONE);
-    TC_SUCCESS_RESULT();
+	int ret;
+	ret = dm_conn_register_linkup_cb(linkEvent);
+	TC_ASSERT_EQ("dm_conn_register_linkup_cb" , ret, DM_ERROR_NONE);
+	ret = dm_conn_unregister_linkup_cb(linkEvent);
+	TC_ASSERT_EQ("dm_conn_unregister_linkup_cb" , ret, DM_ERROR_NONE);
+	TC_SUCCESS_RESULT();
 }
 
 /**
@@ -169,12 +169,12 @@ static void itc_dm_conn_register_unregister_linkup_p(void)
 */
 static void itc_dm_conn_register_unregister_linkdown_p(void)
 {
-    int ret;
-    ret = dm_conn_register_linkdown_cb(linkEvent);
-    TC_ASSERT_EQ("dm_conn_register_linkdown_cb" , ret, DM_ERROR_NONE);
-    ret = dm_conn_unregister_linkup_cb(linkEvent);
-    TC_ASSERT_EQ("dm_conn_unregister_linkup_cb" , ret, DM_ERROR_NONE);
-    TC_SUCCESS_RESULT();
+	int ret;
+	ret = dm_conn_register_linkdown_cb(linkEvent);
+	TC_ASSERT_EQ("dm_conn_register_linkdown_cb" , ret, DM_ERROR_NONE);
+	ret = dm_conn_unregister_linkup_cb(linkEvent);
+	TC_ASSERT_EQ("dm_conn_unregister_linkup_cb" , ret, DM_ERROR_NONE);
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
@@ -183,8 +183,8 @@ static void itc_dm_conn_register_unregister_linkdown_p(void)
 
 int itc_dm_conn_get_address_main(void)
 {
-    itc_dm_conn_get_address_p();
-    return 0;
+	itc_dm_conn_get_address_p();
+	return 0;
 }
 
 /****************************************************************************
@@ -193,8 +193,8 @@ int itc_dm_conn_get_address_main(void)
 
 int itc_dm_conn_get_channel_main(void)
 {
-    itc_dm_conn_get_channel_p();
-    return 0;
+	itc_dm_conn_get_channel_p();
+	return 0;
 }
 
 /****************************************************************************
@@ -203,8 +203,8 @@ int itc_dm_conn_get_channel_main(void)
 
 int itc_dm_conn_get_interface_main(void)
 {
-    itc_dm_conn_get_interface_p();
-    return 0;
+	itc_dm_conn_get_interface_p();
+	return 0;
 }
 
 /****************************************************************************
@@ -213,8 +213,8 @@ int itc_dm_conn_get_interface_main(void)
 
 int itc_dm_conn_get_rssi_main(void)
 {
-    itc_dm_conn_get_rssi_p();
-    return 0;
+	itc_dm_conn_get_rssi_p();
+	return 0;
 }
 
 /****************************************************************************
@@ -223,8 +223,8 @@ int itc_dm_conn_get_rssi_main(void)
 
 int itc_dm_conn_set_get_tx_power_main(void)
 {
-    itc_dm_conn_set_get_tx_power_p();
-    return 0;
+	itc_dm_conn_set_get_tx_power_p();
+	return 0;
 }
 
 /****************************************************************************
@@ -233,8 +233,8 @@ int itc_dm_conn_set_get_tx_power_main(void)
 
 int itc_dm_conn_regi_unreg_linkup_main(void)
 {
-    itc_dm_conn_register_unregister_linkup_p();
-    return 0;
+	itc_dm_conn_register_unregister_linkup_p();
+	return 0;
 }
 
 /****************************************************************************
@@ -243,6 +243,6 @@ int itc_dm_conn_regi_unreg_linkup_main(void)
 
 int itc_dm_conn_regi_unreg_linkdown_main(void)
 {
-    itc_dm_conn_register_unregister_linkdown_p();
-    return 0;
+	itc_dm_conn_register_unregister_linkdown_p();
+	return 0;
 }

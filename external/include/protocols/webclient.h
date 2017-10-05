@@ -26,7 +26,7 @@
  */
 
 /**
- * @file webclient.h
+ * @file protocols/webclient.h
  * @brief APIs for HTTP Client.
  */
 

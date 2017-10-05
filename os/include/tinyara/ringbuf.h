@@ -22,7 +22,7 @@
  * @{
  */
 
-///@file ringbuf.h
+///@file tinyara/ringbuf.h
 ///@brief ttrace ringbuffer APIs
 
 #ifndef __INCLUDE_TINYARA_TTRACE_RINGBUF_H

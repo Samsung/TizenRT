@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,13 +55,12 @@
 #include <tinyara/analog/adc.h>
 #include <tinyara/analog/ioctl.h>
 
-#define S5J_ADC_MAX_CHANNELS	4
+#define ADC_MAX_SAMPLES	4
 
 void adctest_main(int argc, char *argv[])
 {
 	int fd, ret;
-	struct adc_msg_s sample[S5J_ADC_MAX_CHANNELS];
-	size_t readsize;
+	struct adc_msg_s samples[ADC_MAX_SAMPLES];
 	ssize_t nbytes;
 
 	fd = open("/dev/adc0", O_RDONLY);
@@ -78,8 +77,7 @@ void adctest_main(int argc, char *argv[])
 			return;
 		}
 
-		readsize = S5J_ADC_MAX_CHANNELS * sizeof(struct adc_msg_s);
-		nbytes = read(fd, sample, readsize);
+		nbytes = read(fd, samples, sizeof(samples));
 		if (nbytes < 0) {
 			if (errno != EINTR) {
 				printf("%s: read failed: %d\n", __func__, errno);
@@ -96,7 +94,7 @@ void adctest_main(int argc, char *argv[])
 				printf("Sample:\n");
 				int i;
 				for (i = 0; i < nsamples; i++) {
-					printf("%d: channel: %d, value: %d\n", i + 1, sample[i].am_channel, sample[i].am_data);
+					printf("%d: channel: %d, value: %d\n", i + 1, samples[i].am_channel, samples[i].am_data);
 				}
 			}
 		}

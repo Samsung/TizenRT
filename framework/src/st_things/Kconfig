@@ -1,0 +1,19 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config ST_THINGS
+	bool "SmartThings Things Management"
+	default n
+	select ENABLE_IOTIVITY
+	select ENABLE_IOTIVITY_SECURED
+	select ENABLE_IOTIVITY_CLOUD
+	select NETUTILS_WIFI
+	select WIFI_MANAGER
+	select WPA_SUPPLICANT
+	select SCSC_WLAN
+	select NETUTILS_JSON
+	depends on FS_ROMFS
+	---help---
+		SmartThings Things Management for applications to use and control devices

@@ -35,7 +35,6 @@ config S5J_S5JT200
 	select S5J_HAVE_PWM3
 	select S5J_HAVE_PWM4
 	select S5J_HAVE_PWM5
-	select S5J_HAVE_PWR
 	select S5J_HAVE_RTC
 	select S5J_HAVE_SFLASH
 	select S5J_HAVE_SPI
@@ -93,10 +92,6 @@ config S5J_HAVE_PWM4
 	default n
 
 config S5J_HAVE_PWM5
-	bool
-	default n
-
-config S5J_HAVE_PWR
 	bool
 	default n
 
@@ -253,6 +248,7 @@ config S5J_UART2_FLOWCONTROL
 	bool "UART2 Flow Control"
 	default n
 	depends on S5J_UART2
+	depends on !S5J_UART1
 	select S5J_UART_FLOWCONTROL
 
 config S5J_UART3
@@ -266,6 +262,8 @@ config S5J_UART3_FLOWCONTROL
 	bool "UART3 Flow Control"
 	default n
 	depends on S5J_UART3
+	depends on !S5J_PWM0
+	depends on !S5J_PWM1
 	select S5J_UART_FLOWCONTROL
 
 config S5J_UART4
@@ -359,24 +357,6 @@ config S5J_SFLASH
 	bool "SFLASH"
 	default y
 	depends on S5J_HAVE_SFLASH
-
-config S5J_PWR
-	bool "PMU"
-	default n
-	depends on S5J_HAVE_PWR
-
-menu "PMU Configuration"
-	depends on S5J_PWR
-
-config S5J_PWR_DSTOP
-	bool "S5J DSTOP Power Mode"
-	default n
-
-config S5J_PWR_SLEEP
-	bool "S5J SLEEP Power Mode"
-	default n
-
-endmenu
 
 config S5J_SENSOR_PPD42NS
 	bool "PPD42NS Dust Sensor"

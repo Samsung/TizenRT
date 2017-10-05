@@ -24,7 +24,7 @@
  */
 
 /**
- * @file hashkey.h
+ * @file protocols/libcoap/hashkey.h
  * @brief definition of hash key type and helper functions
  */
 

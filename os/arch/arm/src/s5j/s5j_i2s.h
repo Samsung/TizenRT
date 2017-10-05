@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /************************************************************************************
- * arch/arm/src/sama5/sam_ssc.h
+ * arch/arm/src/s5j/s5j_i2s.h
  *
  *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -50,8 +50,8 @@
  *
  ************************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_S5JT200_S5J_I2S_H
-#define __ARCH_ARM_SRC_S5JT200_S5J_I2S_H
+#ifndef __ARCH_ARM_SRC_S5J_I2S_H
+#define __ARCH_ARM_SRC_S5J_I2S_H
 
 /************************************************************************************
  * Included Files
@@ -119,4 +119,4 @@ FAR struct i2s_dev_s *s5j_i2s_initialize(uint16_t port);
 #endif
 
 #endif							/* __ASSEMBLY__ */
-#endif							/* __ARCH_ARM_SRC_S5JT200_S5J_I2S_H */
+#endif							/* __ARCH_ARM_SRC_S5J_I2S_H */

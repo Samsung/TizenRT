@@ -59,7 +59,6 @@
  * will be set to standard values. Override anything you don't like!
  */
 #include <net/lwip/lwipopts.h>
-#include <net/lwip/debug.h>
 
 /*
    -----------------------------------------------
@@ -1486,7 +1485,7 @@
  * LWIP_STATS==1: Enable statistics collection in lwip_stats.
  */
 #ifndef LWIP_STATS
-#define LWIP_STATS                      1
+#define LWIP_STATS                      0
 #endif
 
 #if LWIP_STATS

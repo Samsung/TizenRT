@@ -69,7 +69,6 @@
 #include <net/lwip/tcp_impl.h>
 #include <net/lwip/debug.h>
 #include <net/lwip/stats.h>
-
 #include <string.h>
 
 #ifndef TCP_LOCAL_PORT_RANGE_START

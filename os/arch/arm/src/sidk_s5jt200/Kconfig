@@ -112,14 +112,6 @@ config SIDK_S5JT200_AUTOMOUNT_ROMFS
 		If enabled, rom readonly partition will be mounted automatically
 		at boot.
 
-config SIDK_S5JT200_AUTOMOUNT_ROMFS_DEVNAME
-	string "Device name of the partition for rom readonly file system"
-	default "/dev/smart0p15"
-	depends on SIDK_S5JT200_AUTOMOUNT_ROMFS
-	---help---
-		Specifies the device name (/dev/smart0pX) of the partition
-		for rom readonly file system.
-
 config SIDK_S5JT200_AUTOMOUNT_ROMFS_MOUNTPOINT
 	string "Mountpoint of the partition for rom read only file system"
 	default "/rom"

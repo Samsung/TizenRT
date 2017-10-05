@@ -62,12 +62,14 @@
 
 #include <tinyara/irq.h>
 #include <tinyara/serial/serial.h>
+#include <tinyara/pm/pm.h>
 
 #ifdef CONFIG_SERIAL_TERMIOS
 #include <termios.h>
 #endif
 
 #include "s5j_gpio.h"
+#include "s5j_clock.h"
 #include "up_arch.h"
 #include "up_internal.h"
 
@@ -207,6 +209,12 @@
 #define UART4_ASSIGNED	1
 #endif
 
+/* Power management definitions */
+#if defined(CONFIG_PM) && !defined(CONFIG_PM_SERIAL_ACTIVITY)
+#define CONFIG_PM_SERIAL_ACTIVITY	10
+#define PM_IDLE_DOMAIN				0	/* Revisit */
+#endif
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -221,16 +229,13 @@ struct up_dev_s {
 	uint16_t	txd;
 	uint16_t	rts;
 	uint16_t	cts;
+	uint32_t	pclk;
+	uint32_t	extclk;
 };
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static uint32_t s5j_get_sclk_uclk(void)
-{
-		return 26000000;
-}
-
 static inline uint32_t uart_getreg8(struct up_dev_s *priv, int offset)
 {
 	return getreg8(priv->uartbase + offset);
@@ -276,6 +281,11 @@ static int up_interrupt(int irq, void *context, void *arg)
 	uart_dev_t *dev = (uart_dev_t *)arg;
 	uint32_t uintp = uart_getreg32(dev->priv, S5J_UART_UINTP_OFFSET);
 
+#if defined(CONFIG_PM) && CONFIG_PM_SERIAL_ACTIVITY > 0
+	/* Report serial activity to the power management logic */
+	pm_activity(PM_IDLE_DOMAIN, CONFIG_PM_SERIAL_ACTIVITY);
+#endif
+
 	if (uintp & UART_UINTP_TXD) {
 		uart_xmitchars(dev);
 	}
@@ -291,21 +301,17 @@ static int up_interrupt(int irq, void *context, void *arg)
 }
 
 /****************************************************************************
- * Name: up_setup
+ * Name: up_configure
  *
  * Description:
- *   Configure the UART baud, bits, parity, fifos, etc. This
- *   method is called the first time that the serial port is
- *   opened.
+ *   Configure the UART baud, bits, parity, etc.
  *
  ****************************************************************************/
-static int up_setup(struct uart_dev_s *dev)
+static void up_configure(struct up_dev_s *priv)
 {
-	uint32_t regval;
-	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-
 #if !defined(CONFIG_SUPPRESS_UART_CONFIG)
 	float div;
+	uint32_t regval;
 
 	/* wait until Tx FIFO gets empty not to disturb on-going transmission */
 	do {
@@ -313,19 +319,6 @@ static int up_setup(struct uart_dev_s *dev)
 	} while ((regval & UART_UTRSTAT_TX_BUF_EMPTY) == 0);
 
 	/* Ensure that UART clock is supplied... */
-
-	/* Configure pinmux to set function for RXD/TXD/RTS/CTS pins */
-	s5j_configgpio(priv->rxd);
-	s5j_configgpio(priv->txd);
-#if defined(CONFIG_S5J_UART_FLOWCONTROL)
-	if (priv->rts) {
-		s5j_configgpio(priv->rts);
-	}
-
-	if (priv->cts) {
-		s5j_configgpio(priv->cts);
-	}
-#endif
 
 	/* UMCON */
 	if (priv->rts || priv->cts) {
@@ -373,11 +366,45 @@ static int up_setup(struct uart_dev_s *dev)
 	uart_putreg32(priv, S5J_UART_UCON_OFFSET, regval);
 
 	/* UBRDIV and UFRACVAL */
-	div = ((float)s5j_get_sclk_uclk() / (priv->baud * 16)) - 1;
+	div = ((float)s5j_clk_get_rate(CLK_SPL_UART) / (priv->baud * 16)) - 1;
 
 	uart_putreg32(priv, S5J_UART_UBRDIV_OFFSET, (uint32_t)div);
 	uart_putreg32(priv, S5J_UART_UFRACVAL_OFFSET, ((div - (uint32_t)div) * 16));
 #endif /* CONFIG_SUPPRESS_UART_CONFIG */
+}
+
+/****************************************************************************
+ * Name: up_setup
+ *
+ * Description:
+ *   Configure the UART baud, bits, parity, etc.
+ *   This also disables all interrupts and initializes FIFO mode.
+ *   This method is called the first time that the serial port is
+ *   opened.
+ *
+ ****************************************************************************/
+static int up_setup(struct uart_dev_s *dev)
+{
+	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+
+	/* Configure pinmux to set function for RXD/TXD/RTS/CTS pins */
+	s5j_configgpio(priv->rxd);
+	s5j_configgpio(priv->txd);
+#if defined(CONFIG_S5J_UART_FLOWCONTROL)
+	if (priv->rts) {
+		s5j_configgpio(priv->rts);
+	}
+
+	if (priv->cts) {
+		s5j_configgpio(priv->cts);
+	}
+#endif
+
+	s5j_clk_enable(priv->pclk);
+	s5j_clk_enable(priv->extclk);
+
+	/* Configure the UART baud, bits, parity, etc. */
+	up_configure(priv);
 
 	/* Mask all interrupts; will be enabled by upper-half */
 	uart_putreg32(priv, S5J_UART_UINTM_OFFSET,
@@ -385,11 +412,12 @@ static int up_setup(struct uart_dev_s *dev)
 					UART_UINTM_ERROR_MASK | UART_UINTM_RXD_MASK);
 
 	/* Reset TX and RX FIFO and enable FIFO mode */
-	regval = UART_UFCON_FIFO_ENABLE |
-			UART_UFCON_TX_FIFO_RESET | UART_UFCON_RX_FIFO_RESET |
-			UART_UFCON_TX_FIFO_TRIG_4BYTES | UART_UFCON_RX_FIFO_TRIG_4BYTES;
-
-	uart_putreg32(priv, S5J_UART_UFCON_OFFSET, regval);
+	uart_putreg32(priv, S5J_UART_UFCON_OFFSET,
+					UART_UFCON_FIFO_ENABLE |
+					UART_UFCON_TX_FIFO_RESET |
+					UART_UFCON_RX_FIFO_RESET |
+					UART_UFCON_TX_FIFO_TRIG_4BYTES |
+					UART_UFCON_RX_FIFO_TRIG_4BYTES);
 
 	return OK;
 }
@@ -409,6 +437,9 @@ static void up_shutdown(struct uart_dev_s *dev)
 	/* Disable all interrupts */
 	uart_modifyreg32(priv, S5J_UART_UINTM_OFFSET, 0,
 					UART_UINTM_TXD_MASK | UART_UINTM_RXD_MASK);
+
+	s5j_clk_disable(priv->pclk);
+	s5j_clk_disable(priv->extclk);
 
 	s5j_unconfiggpio(priv->rxd);
 	s5j_unconfiggpio(priv->txd);
@@ -534,7 +565,7 @@ static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
 
 		priv->baud = cfgetispeed(termiosp);
 
-		dev->ops->setup(dev);
+		up_configure(priv);
 		break;
 
 	default:
@@ -600,7 +631,8 @@ static bool up_rxavailable(struct uart_dev_s *dev)
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 	uint32_t ufstat = uart_getreg32(priv, S5J_UART_UFSTAT_OFFSET);
 
-	return !!(ufstat & UART_UFSTAT_RX_FIFO_COUNT_MASK);
+	return !!(ufstat & (UART_UFSTAT_RX_FIFO_COUNT_MASK |
+						UART_UFSTAT_RX_FIFO_FULL_MASK));
 }
 
 /****************************************************************************
@@ -674,6 +706,93 @@ static bool up_txempty(struct uart_dev_s *dev)
 	return !!(utrstat & UART_UTRSTAT_TX_BUF_EMPTY);
 }
 
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: up_pm_notify
+ *
+ * Description:
+ *   Notify the driver of new power state. This callback is called after
+ *   all drivers have had the opportunity to prepare for the new power state.
+ *
+ * Input Parameters:
+ *
+ *    cb - Returned to the driver. The driver version of the callback
+ *         structure may include additional, driver-specific state data at
+ *         the end of the structure.
+ *
+ *    pmstate - Identifies the new PM state
+ *
+ * Returned Value:
+ *   None - The driver already agreed to transition to the low power
+ *   consumption state when it returned OK to the prepare() call.
+ *
+ ****************************************************************************/
+static void up_pm_notify(struct pm_callback_s *cb, int domain,
+				enum pm_state_e pmstate)
+{
+	switch (pmstate) {
+	case PM_NORMAL:
+		/* Logic for PM_NORMAL goes here */
+		break;
+
+	case PM_IDLE:
+		/* Logic for PM_IDLE goes here */
+		break;
+
+	case PM_STANDBY:
+		/* Logic for PM_STANDBY goes here */
+		break;
+
+	case PM_SLEEP:
+		/* Logic for PM_SLEEP goes here */
+		break;
+
+	default:
+		/* Should not get here */
+		break;
+	}
+}
+
+/****************************************************************************
+ * Name: up_pm_prepare
+ *
+ * Description:
+ *   Request the driver to prepare for a new power state. This is a warning
+ *   that the system is about to enter into a new power state. The driver
+ *   should begin whatever operations that may be required to enter power
+ *   state. The driver may abort the state change mode by returning a
+ *   non-zero value from the callback function.
+ *
+ * Input Parameters:
+ *
+ *    cb - Returned to the driver. The driver version of the callback
+ *         structure may include additional, driver-specific state data at
+ *         the end of the structure.
+ *
+ *    pmstate - Identifies the new PM state
+ *
+ * Returned Value:
+ *   Zero - (OK) means the event was successfully processed and that the
+ *          driver is prepared for the PM state change.
+ *
+ *   Non-zero - means that the driver is not prepared to perform the tasks
+ *              needed achieve this power setting and will cause the state
+ *              change to be aborted. NOTE: The prepare() method will also
+ *              be called when reverting from lower back to higher power
+ *              consumption modes (say because another driver refused a
+ *              lower power state change). Drivers are not permitted to
+ *              return non-zero values when reverting back to higher power
+ *              consumption modes!
+ *
+ ****************************************************************************/
+static int up_pm_prepare(struct pm_callback_s *cb, int domain,
+		enum pm_state_e pmstate)
+{
+	/* Logic to prepare for a reduced power state goes here. */
+	return OK;
+}
+#endif /* CONFIG_PM */
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -733,6 +852,8 @@ static struct up_dev_s g_uart0priv = {
 	.stopbits2	= CONFIG_UART0_2STOP,
 	.rxd		= GPIO_UART0_RXD,
 	.txd		= GPIO_UART0_TXD,
+	.pclk		= CLK_GATE_UART0_PCLK,
+	.extclk		= CLK_GATE_UART0_EXTCLK,
 };
 
 static uart_dev_t g_uart0port = {
@@ -759,6 +880,8 @@ static struct up_dev_s g_uart1priv = {
 	.stopbits2	= CONFIG_UART1_2STOP,
 	.rxd		= GPIO_UART1_RXD,
 	.txd		= GPIO_UART1_TXD,
+	.pclk		= CLK_GATE_UART1_PCLK,
+	.extclk		= CLK_GATE_UART1_EXTCLK,
 };
 
 static uart_dev_t g_uart1port = {
@@ -789,6 +912,8 @@ static struct up_dev_s g_uart2priv = {
 	.rts		= GPIO_UART2_RTS,
 	.cts		= GPIO_UART2_CTS,
 #endif
+	.pclk		= CLK_GATE_UART2_PCLK,
+	.extclk		= CLK_GATE_UART2_EXTCLK,
 };
 
 static uart_dev_t g_uart2port = {
@@ -819,6 +944,8 @@ static struct up_dev_s g_uart3priv = {
 	.rts		= GPIO_UART3_RTS,
 	.cts		= GPIO_UART3_CTS,
 #endif
+	.pclk		= CLK_GATE_UART3_PCLK,
+	.extclk		= CLK_GATE_UART3_EXTCLK,
 };
 
 static uart_dev_t g_uart3port = {
@@ -845,6 +972,8 @@ static struct up_dev_s g_uart4priv = {
 	.stopbits2	= CONFIG_UART4_2STOP,
 	.rxd		= GPIO_UART4_RXD,
 	.txd		= GPIO_UART4_TXD,
+	.pclk		= CLK_GATE_UARTDBG_PCLK,
+	.extclk		= CLK_GATE_UARTDBG_EXTCLK,
 };
 
 static uart_dev_t g_uart4port = {
@@ -858,6 +987,13 @@ static uart_dev_t g_uart4port = {
 	},
 	.ops		= &g_uart_ops,
 	.priv		= &g_uart4priv,
+};
+#endif
+
+#ifdef CONFIG_PM
+static struct pm_callback_s g_serialcb = {
+	.notify  = up_pm_notify,
+	.prepare = up_pm_prepare,
 };
 #endif
 
@@ -877,6 +1013,16 @@ static uart_dev_t g_uart4port = {
 #if defined(USE_EARLYSERIALINIT)
 void up_earlyserialinit(void)
 {
+	/* Disable clocks on UARTs by default except UARTDBG */
+	s5j_clk_disable(CLK_GATE_UART0_EXTCLK);
+	s5j_clk_disable(CLK_GATE_UART0_PCLK);
+	s5j_clk_disable(CLK_GATE_UART1_EXTCLK);
+	s5j_clk_disable(CLK_GATE_UART1_PCLK);
+	s5j_clk_disable(CLK_GATE_UART2_EXTCLK);
+	s5j_clk_disable(CLK_GATE_UART2_PCLK);
+	s5j_clk_disable(CLK_GATE_UART3_EXTCLK);
+	s5j_clk_disable(CLK_GATE_UART3_PCLK);
+
 #if defined(HAVE_SERIAL_CONSOLE)
 	CONSOLE_DEV.isconsole = true;
 	CONSOLE_DEV.ops->setup(&CONSOLE_DEV);
@@ -896,6 +1042,12 @@ void up_earlyserialinit(void)
 void up_serialinit(void)
 {
 #if CONFIG_NFILE_DESCRIPTORS > 0
+
+	/* Register to receive power management callbacks */
+#ifdef CONFIG_PM
+	DEBUGVERIFY(pm_register(0, &g_serialcb) == OK);
+#endif
+
 	/* Register the console */
 #if defined(HAVE_SERIAL_CONSOLE)
 	uart_register("/dev/console", &CONSOLE_DEV);

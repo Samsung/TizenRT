@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_S5J_PDMA_H
-#define __ARCH_ARM_SRC_S5J_PDMA_H
+#ifndef __ARCH_ARM_SRC_S5J_DMA_H
+#define __ARCH_ARM_SRC_S5J_DMA_H
 
 /****************************************************************************
  * Included Files
@@ -329,4 +329,4 @@ static inline int DMA_Encode_DMAWMB(char *base)
 	return 1;
 }
 
-#endif
+#endif							/* __ARCH_ARM_SRC_S5J_DMA_H */

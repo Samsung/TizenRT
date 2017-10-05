@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/sama5/s5j_i2s.c
+ * arch/arm/src/s5j/s5j_i2s.c
  *
  *   Copyright (C) 2013-2014, 2016 Gregory Nutt. All rights reserved.
  *   Authors: Gregory Nutt <gnutt@nuttx.org>
@@ -85,7 +85,7 @@
 #include "chip/s5jt200_i2s.h"
 #include "s5j_dma.h"
 #include "s5j_i2s.h"
-#include "s5j_vclk.h"
+#include "s5j_clock.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -155,9 +155,10 @@
 #undef CONFIG_I2S_TXS_DMACH
 #undef CONFIG_I2S_RX_DMACH
 
-#define CONFIG_I2S_TXP_DMACH    0
-#define CONFIG_I2S_TXS_DMACH    1
-#define CONFIG_I2S_RX_DMACH     2
+#define CONFIG_I2S_TXP_DMACH	0
+#define CONFIG_I2S_TXS_DMACH	1
+#define CONFIG_I2S_RX_DMACH	2
+
 #endif
 
 #if defined(I2S_HAVE_RX) || defined(I2S_HAVE_TX_P) || defined(I2S_HAVE_TX_S)
@@ -170,11 +171,11 @@
 struct s5j_buffer_s {
 	struct s5j_buffer_s *flink;	/* Supports a singly linked list */
 	i2s_callback_t callback;	/* Function to call when the transfer completes */
-	dma_task *dmatask;			/* DMA transfer task structure */
-	uint32_t timeout;			/* The timeout value to use with DMA transfers */
-	void *arg;					/* The argument to be returned with the callback */
+	dma_task *dmatask;		/* DMA transfer task structure */
+	uint32_t timeout;		/* The timeout value to use with DMA transfers */
+	void *arg;			/* The argument to be returned with the callback */
 	struct ap_buffer_s *apb;	/* The audio buffer */
-	int result;					/* The result of the transfer */
+	int result;			/* The result of the transfer */
 };
 
 /* This structure describes the state of one receiver or transmitter transport */
@@ -191,31 +192,31 @@ struct s5j_transport_s {
 /* The state of the one I2S peripheral */
 
 struct s5j_i2s_s {
-	struct i2s_dev_s dev;		/* Externally visible I2S interface */
-	uintptr_t base;			/* I2S controller register base address */
-	int isr_num;			/* isr number */
-	xcpt_t isr_handler;		/* irs handler */
+	struct i2s_dev_s dev;			/* Externally visible I2S interface */
+	uintptr_t base;				/* I2S controller register base address */
+	int isr_num;				/* isr number */
+	xcpt_t isr_handler;			/* irs handler */
 
 	sem_t exclsem;				/* Assures mutually exclusive acess to I2S */
 	uint8_t datalen;			/* Data width (8, 16, or 32) */
 	uint8_t rx_datalen;			/* Data width (8, 16, or 32) */
-	uint8_t txp_datalen;		/* Data width (8, 16, or 32) */
-	uint8_t txs_datalen;		/* Data width (8, 16, or 32) */
+	uint8_t txp_datalen;			/* Data width (8, 16, or 32) */
+	uint8_t txs_datalen;			/* Data width (8, 16, or 32) */
 
 	uint8_t rxenab:1;			/* True: RX transfers enabled */
 	uint8_t txpenab:1;			/* True: TX primary transfers enabled */
 	uint8_t txsenab:1;			/* True: TX secondary transfers enabled */
 
-	uint32_t samplerate;		/* Not actually needed in slave mode */
+	uint32_t samplerate;			/* Not actually needed in slave mode */
 
 #ifdef I2S_HAVE_RX
-	struct s5j_transport_s rx;	/* RX transport state */
+	struct s5j_transport_s rx;		/* RX transport state */
 #endif
 #ifdef I2S_HAVE_TX_P
-	struct s5j_transport_s txp;	/* TX primary transport state */
+	struct s5j_transport_s txp;		/* TX primary transport state */
 #endif
 #ifdef I2S_HAVE_TX_S
-	struct s5j_transport_s txs;	/* TX secodary transport state */
+	struct s5j_transport_s txs;		/* TX secodary transport state */
 #endif
 
 	/* Pre-allocated pool of buffer containers */
@@ -234,9 +235,10 @@ struct s5j_i2s_s {
  ****************************************************************************/
 
 /* Register helpers */
+//#define CONFIG_S5J_I2S_DUMPBUFFERS
 
 #ifdef CONFIG_S5J_I2S_DUMPBUFFERS
-#define       i2s_init_buffer(b, s)    memset(b, 0x55, s);
+#define       i2s_init_buffer(b, s)   memset(b, 0x55, s);
 #define       i2s_dump_buffer(m, b, s) lib_dumpbuffer(m, b, s)
 #else
 #define       i2s_init_buffer(b, s)
@@ -284,14 +286,12 @@ static void i2s_txpdma_callback(DMA_HANDLE handle, void *arg, int result);
 static int i2s_checkwidth(struct s5j_i2s_s *priv, int bits);
 
 static uint32_t i2s_rxdatawidth(struct i2s_dev_s *dev, int bits);
-static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb,
-				       i2s_callback_t callback, void *arg, uint32_t timeout);
+static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout);
 
 static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate);
 
 static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits);
-static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb,
-				    i2s_callback_t callback, void *arg, uint32_t timeout);
+static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout);
 
 /* Initialization */
 
@@ -681,9 +681,9 @@ static int i2s_rxdma_setup(struct s5j_i2s_s *priv)
 	/* Increment the DMA timeout */
 
 	if (bfcontainer->timeout > 0) {
-			timeout += bfcontainer->timeout;
+		timeout += bfcontainer->timeout;
 	} else {
-			notimeout = true;
+		notimeout = true;
 	}
 
 	/* Add the container to the list of active DMAs */
@@ -1039,9 +1039,9 @@ static int i2s_txpdma_setup(struct s5j_i2s_s *priv)
 	/* Increment the DMA timeout */
 
 	if (bfcontainer->timeout > 0) {
-			timeout += bfcontainer->timeout;
+		timeout += bfcontainer->timeout;
 	} else {
-			notimeout = true;
+		notimeout = true;
 	}
 
 	/* Add the container to the list of active DMAs */
@@ -1721,6 +1721,7 @@ static int i2s_rx_configure(struct s5j_i2s_s *priv)
 	}
 
 	priv->rxenab = 1;
+	lldbg("i2s_rx_configure success with i2s dev addr 0x%x\n");
 	return OK;
 
 err:
@@ -1938,13 +1939,10 @@ static int i2s_configure(struct s5j_i2s_s *priv)
 
 	/* Reset I2S */
 	putreg32(0, priv->base + S5J_I2S_CON);
-	modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_SW_RST_MASK,
-				I2S_CR_SW_RST_RELEASE);
+	modifyreg32(priv->base + S5J_I2S_CON, I2S_CR_SW_RST_MASK, I2S_CR_SW_RST_RELEASE);
 
 	/* Set Mode */
-	reg = I2S_MOD_OP_CLK_PCLK | I2S_MOD_CDCLKCON_IN | I2S_MOD_MSS_SLAVE |
-		  I2S_MOD_RCLKSRC | I2S_MOD_TXR(TXR_TXRX) | I2S_MOD_RFS(RFS_256) |
-		  I2S_MOD_BFS(BFS_64);
+	reg = I2S_MOD_OP_CLK_PCLK | I2S_MOD_CDCLKCON_IN | I2S_MOD_MSS_SLAVE | I2S_MOD_RCLKSRC | I2S_MOD_TXR(TXR_TXRX) | I2S_MOD_RFS(RFS_256) | I2S_MOD_BFS(BFS_64);
 	putreg32(reg, priv->base + S5J_I2S_MOD);
 
 	ret = s5j_configgpio(GPIO_I2S0_BCLK);
@@ -1964,7 +1962,7 @@ static int i2s_configure(struct s5j_i2s_s *priv)
 		return ret;
 	}
 
-	cal_clk_mux(i2s_mux, i2s_bclk);
+	s5j_clk_mux_select(CLK_MUX_I2SB, CLK_MUX_SELECT_BCLK);
 
 	/* We are always slave here ... Below code should set priv structure */
 	/* Set priv structure here */
@@ -2001,7 +1999,6 @@ static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
 
 	return 0;
 }
-
 
 /****************************************************************************
  * Public Functions

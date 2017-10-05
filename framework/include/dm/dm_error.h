@@ -23,7 +23,7 @@
  */
 
 /**
- * @file dm_error.h
+ * @file dm/dm_error.h
  * @brief Definition of dm_error
  */
 

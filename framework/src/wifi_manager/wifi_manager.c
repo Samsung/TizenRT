@@ -53,8 +53,9 @@ void __tizenrt_manual_linkset(const char *msg)
 #endif
 
 static wifi_manager_info_s g_manager_info;
-
+static wifi_manager_cb_s *g_manager_callback = NULL;
 static wifi_mutex *w_mutex = NULL;
+static wifi_mutex *w_info_mutex = NULL;
 
 static wifi_utils_result_e start_dhcp_client(void)
 {
@@ -69,6 +70,7 @@ static wifi_utils_result_e start_dhcp_client(void)
 	ret = dhcpc_request(g_dhcp_handle, &state);
 	if (ret != OK) {
 		dhcpc_close(g_dhcp_handle);
+		g_dhcp_handle = NULL;
 		return WIFI_UTILS_FAIL;
 	}
 
@@ -145,7 +147,10 @@ static void wifi_status_set(connect_status_e status)
 
 static void wifi_linkup_event_func(void)
 {
-	wifi_manager_cb_s *wifi_cb = g_manager_info.wmcb;
+	wifi_manager_cb_s *wifi_cb = g_manager_callback;
+	wifi_utils_info info;
+
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
 	if (g_manager_info.mode == STA_MODE) {
 		nvdbg("WIFI CONNECTED AP - STA MODE");
 		wifi_status_set(AP_CONNECTED);
@@ -153,13 +158,27 @@ static void wifi_linkup_event_func(void)
 		/* Perform DHCP client */
 		if (start_dhcp_client() != WIFI_UTILS_SUCCESS) {
 			ndbg("DHCP client start failed\n");
+			g_manager_info.mode = WIFI_FAILURE;
+			wifi_mutex_release(w_info_mutex);
 			return;
 		}
 		if (stop_dhcp_client() != WIFI_UTILS_SUCCESS) {
 			ndbg("DHCP client stop failed\n");
 		}
 
-		if (wifi_cb != NULL && wifi_cb->sta_connected) {
+		char ip4_add_str[18] = { 0, };
+		if (wifi_utils_get_info(&info) == WIFI_UTILS_SUCCESS) {
+			wifi_net_ip4_addr_to_ip4_str(info.ip4_address, ip4_add_str);
+			g_manager_info.rssi = info.rssi;
+			g_manager_info.status = info.wifi_status;
+		} else {
+			g_manager_info.rssi = 0;
+			g_manager_info.status = STATUS_UNKNOWN;
+		}
+		strncpy(g_manager_info.ip4_address, ip4_add_str, 18);
+		wifi_mutex_release(w_info_mutex);
+
+		if (wifi_cb != NULL && wifi_cb->sta_connected != NULL) {
 			wifi_cb->sta_connected();
 		} else {
 			ndbg("Callback wifimanager ap_connect failed\n");
@@ -167,11 +186,13 @@ static void wifi_linkup_event_func(void)
 	} else if (g_manager_info.mode == SOFTAP_MODE) {
 		nvdbg("CONNECTED FROM CLIENT - SOFT AP MODE");
 		wifi_status_set(CLIENT_CONNECTED);
+		wifi_mutex_release(w_info_mutex);
 
 		/* No callbacks here, in case new client joins, we invoke callback
 		 * from DHCP server instead
 		 */
 	}
+
 #ifdef CONFIG_ENABLE_IOTIVITY
 	__tizenrt_manual_linkset("gen");
 #endif
@@ -182,7 +203,11 @@ static void wifi_linkup_event_func(void)
 
 static void wifi_linkdown_event_func(void)
 {
-	wifi_manager_cb_s *wifi_cb = g_manager_info.wmcb;
+// here, send a message to callback handler and rest of this function should be done by the callback handler.
+// wifi_manager_init() creates the callback handler and deinit() joins the callback handler.
+	wifi_manager_cb_s *wifi_cb = g_manager_callback;
+
+
 	if (g_manager_info.mode == STA_MODE) {
 		nvdbg("WIFI DISCONNECTED AP - STA MODE");
 		g_manager_info.ssid[0] = '\0';
@@ -190,7 +215,7 @@ static void wifi_linkdown_event_func(void)
 		g_manager_info.rssi = 0;
 		wifi_status_set(AP_DISCONNECTED);
 
-		if (wifi_cb != NULL && wifi_cb->sta_disconnected) {
+		if (wifi_cb != NULL && wifi_cb->sta_disconnected != NULL) {
 			wifi_cb->sta_disconnected();
 		} else {
 			ndbg("Callback wifimanager ap_disconnected failed\n");
@@ -198,12 +223,14 @@ static void wifi_linkdown_event_func(void)
 	} else if (g_manager_info.mode == SOFTAP_MODE) {
 		nvdbg("DISCONNECTED FROM CLIENT - SOFT AP MODE");
 		wifi_status_set(CLIENT_DISCONNECTED);
-		if (wifi_cb != NULL && wifi_cb->softap_sta_left) {
+
+		if (wifi_cb != NULL && wifi_cb->softap_sta_left != NULL) {
 			wifi_cb->softap_sta_left();
 		} else {
 			ndbg("Callback wifimanager ap_disconnected failed\n");
 		}
 	}
+
 #ifdef CONFIG_ENABLE_IOTIVITY
 	__tizenrt_manual_linkset("del");
 #endif
@@ -274,17 +301,18 @@ static wifi_manager_result_e wifi_fetch_scan_results(slsi_scan_info_t **wifi_sca
 static wifi_manager_result_e wifi_scan_result_callback(slsi_reason_t *reason)
 {
 	wifi_manager_scan_info_s *wifi_manager_scan_info = 0;
+	wifi_manager_cb_s *wifi_cb = g_manager_callback;
 	if (reason->reason_code == 0) {
 		slsi_scan_info_t *wifi_scan_result;
 		WiFiGetScanResults(&wifi_scan_result);
 		if (wifi_fetch_scan_results(&wifi_scan_result, &wifi_manager_scan_info) == WIFI_MANAGER_SUCCESS) {
-			g_manager_info.wmcb->scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_SUCCESS);
+			wifi_cb->scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_SUCCESS);
 			wifi_free_scan_results(&wifi_manager_scan_info);
 		}
 		WiFiFreeScanResults(&wifi_scan_result);
 	} else {
 		ndbg("Scan failed %d\n");
-		g_manager_info.wmcb->scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_FAIL);
+		wifi_cb->scan_ap_done(&wifi_manager_scan_info, WIFI_SCAN_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}
 	return WIFI_MANAGER_SUCCESS;
@@ -300,21 +328,31 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
+	if ((config->ssid_length > 31) || (config->passphrase_length > 63)) {
+		ndbg("AP configuration fails: too long ssid or passphrase\n");
+		ndbg("Make sure that length of SSID < 32 and length of passphrase < 64\n");
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+
 	wifi_utils_info info;
 	wifi_utils_ap_config_s util_config;
 
-	wifi_utils_get_info(&info);
-
-	if (info.wifi_status == WIFI_UTILS_SOFTAP_MODE) {
-		ndbg("Current mode soft ap mode, can not connect ap");
+	wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
+	if (wifi_utils_get_info(&info) != WIFI_UTILS_SUCCESS) {
+		ndbg("Wi-Fi info retrival fails.\n");
+		wifi_mutex_release(w_mutex);
 		return WIFI_MANAGER_FAIL;
 	}
 
-	wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
+	if (info.wifi_status == WIFI_UTILS_SOFTAP_MODE) {
+		ndbg("Current mode soft ap mode, can not connect ap");
+		wifi_mutex_release(w_mutex);
+		return WIFI_MANAGER_FAIL;
+	}
 
-	strncpy(util_config.ssid, config->ssid, config->ssid_length);
+	strncpy(util_config.ssid, config->ssid, config->ssid_length + 1);
 	util_config.ssid_length = config->ssid_length;
-	strncpy(util_config.passphrase, config->passphrase, config->passphrase_length);
+	strncpy(util_config.passphrase, config->passphrase, config->passphrase_length + 1);
 	util_config.passphrase_length = config->passphrase_length;
 	util_config.ap_auth_type = config->ap_auth_type;
 	util_config.ap_crypto_type = config->ap_crypto_type;
@@ -325,17 +363,11 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 		wifi_mutex_release(w_mutex);
 		return WIFI_MANAGER_FAIL;
 	}
-
-	/* g_manager_info.wmcb->sta_connected(); */
-	wifi_utils_get_info(&info);
-
-	char ip4_add_str[18] = { 0, };
-	wifi_net_ip4_addr_to_ip4_str(info.ip4_address, ip4_add_str);
-	strncpy(g_manager_info.ssid, config->ssid, 32);
-	strncpy(g_manager_info.ip4_address, ip4_add_str, 18);
-	g_manager_info.rssi = info.rssi;
-
 	wifi_mutex_release(w_mutex);
+
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
+	strncpy(g_manager_info.ssid, config->ssid, config->ssid_length + 1);
+	wifi_mutex_release(w_info_mutex);
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -354,43 +386,50 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void)
 wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 {
 	wifi_utils_result_e result = WIFI_UTILS_SUCCESS;
+	wifi_utils_info info;
 
 	if (wmcb == NULL) {
 			ndbg("Wi-Fi Manager init fail because of no callbacks");
 			return WIFI_MANAGER_FAIL;
 	}
 
+	if (w_info_mutex == NULL) {
+		w_info_mutex = (wifi_mutex *)malloc(sizeof(wifi_mutex));
+		if (w_info_mutex == NULL) {
+			ndbg("w_info_mutex malloc fails.\n");
+			return WIFI_MANAGER_FAIL;
+		}
+		result = wifi_mutex_create(w_info_mutex);
+		if (result != WIFI_UTILS_SUCCESS) {
+			ndbg("w_info_mutex_create fail");
+			goto error_without_mutex_release;
+		}
+	}
+
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
 	if (w_mutex != NULL) {
 		ndbg("WI-FI is already initialized.\n");
+		wifi_mutex_release(w_info_mutex);
 		return WIFI_MANAGER_INITIALIZED;
 	}
 
 	w_mutex = (wifi_mutex *)malloc(sizeof(wifi_mutex));
+	if (w_mutex == NULL) {
+		ndbg("w_mutex malloc fails.\n");
+		wifi_mutex_release(w_info_mutex);
+		goto error_with_mutex_destory;
+	}
 
 	result = wifi_mutex_create(w_mutex);
 	if (result != WIFI_UTILS_SUCCESS) {
 		ndbg("wifi_mutex_create fail");
-		free(w_mutex);
-		w_mutex = NULL;
-		return WIFI_MANAGER_FAIL;
+		wifi_mutex_release(w_info_mutex);
+		goto error_with_mutex_destory;
 	}
 
-	result = wifi_utils_init();
-
-	if (result != WIFI_UTILS_SUCCESS) {
-		ndbg("wifi_utils_init fail");
-		free(w_mutex);
-		w_mutex = NULL;
-		return WIFI_MANAGER_FAIL;
-	}
-
-	wifi_utils_register_callback(wifi_linkup_event_func, wifi_linkdown_event_func);
-	g_manager_info.ssid[0] = '\0';
-	g_manager_info.ip4_address[0] = '\0';
-	g_manager_info.rssi = 0;
-	g_manager_info.mode = STA_MODE;
-	wifi_status_set(AP_DISCONNECTED);
-	g_manager_info.wmcb = wmcb;
+	/* wifi_manager mode is switched to wifi_initializing */
+	g_manager_info.mode = WIFI_INITIALIZING;
+	wifi_mutex_release(w_info_mutex);
 
 #ifdef CONFIG_ENABLE_IOTIVITY
 	struct mq_attr lq_attr;
@@ -401,49 +440,137 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 
 	if (g_dw_nwevent_mqfd == (mqd_t)ERROR) {
 		ndbg("iotivity connect event message queue init fail");
-		free(w_mutex);
-		w_mutex = NULL;
-		return WIFI_MANAGER_FAIL;
+		goto error_with_mutex_destory_all;
 	}
 #endif
 
+	wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
+	result = wifi_utils_init();
+	if (result != WIFI_UTILS_SUCCESS) {
+		ndbg("wifi_utils_init fail");
+		goto error_with_mutex_release;
+	}
+
+	wifi_utils_register_callback(wifi_linkup_event_func, wifi_linkdown_event_func);
+
+	if (wifi_utils_get_info(&info) != WIFI_UTILS_SUCCESS) {
+		ndbg("wifi_utils_get_info fail");
+		goto error_with_mutex_release;
+	}
+	wifi_mutex_release(w_mutex);
+
+	/* update wifi_manager info by being protected by w_info_mutex */
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
+	g_manager_info.ssid[0] = '\0';
+	g_manager_info.ip4_address[0] = '\0';
+	g_manager_info.rssi = 0;
+	g_manager_info.mode = STA_MODE;
+	g_manager_callback = wmcb;
+	wifi_status_set(AP_DISCONNECTED);
+	strncpy(g_manager_info.mac_address, info.mac_address, 6);
+	wifi_mutex_release(w_info_mutex);
+
 	return WIFI_MANAGER_SUCCESS;
+
+error_with_mutex_release:
+	wifi_mutex_release(w_mutex);
+
+#ifdef CONFIG_ENABLE_IOTIVITY
+error_with_mutex_destory_all:
+#endif
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
+	g_manager_info.mode = WIFI_NONE;
+
+	result = wifi_mutex_destroy(w_mutex);
+	if (result != WIFI_UTILS_SUCCESS) {
+		ndbg("wifi_mutex_destroy fail %d", result);
+	}
+	wifi_mutex_release(w_info_mutex);
+
+error_with_mutex_destory:
+	result = wifi_mutex_destroy(w_info_mutex);
+	if (result != WIFI_UTILS_SUCCESS) {
+		ndbg("w_info_mutex_destroy fail %d", result);
+	}
+
+error_without_mutex_release:
+	if (w_mutex != NULL) {
+		free(w_mutex);
+		w_mutex = NULL;
+	}
+	if (w_info_mutex != NULL) {
+		free(w_info_mutex);
+		w_info_mutex = NULL;
+	}
+
+	return WIFI_MANAGER_FAIL;
 }
 
 wifi_manager_result_e wifi_manager_deinit()
 {
 	wifi_utils_result_e result = WIFI_UTILS_SUCCESS;
+	wifi_manager_result_e ret = WIFI_MANAGER_SUCCESS;
 
-	if (g_manager_info.mode == WIFI_NONE) {
+	if ((g_manager_info.mode == WIFI_NONE) || (w_mutex == NULL)) {
 		ndbg("WI-FI is already deinitialized.\n");
 		return WIFI_MANAGER_DEINITIALIZED;
 	}
 
-	if ((g_manager_info.mode == SOFTAP_MODE) && (stop_dhcp_server() != WIFI_UTILS_SUCCESS)) {
-		ndbg("dhcp server stop fail\n");
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
+	/* wifi_manager mode is switched to wifi_deinitializing */
+	if ((g_manager_info.mode != WIFI_INITIALIZING) && (g_manager_info.mode != WIFI_MODE_CHANGING) && \
+			(g_manager_info.mode != WIFI_DEINITIALIZING)) {
+		g_manager_info.mode = WIFI_DEINITIALIZING;
+	} else {
+		ndbg("Can't deinitilize wifi_manager from the current wifi mode %d\n", g_manager_info.mode);
+		wifi_mutex_release(w_info_mutex);
 		return WIFI_MANAGER_FAIL;
 	}
 
+	if ((g_manager_info.mode == SOFTAP_MODE) || (g_manager_info.mode == WIFI_FAILURE)) {
+		stop_dhcp_server();
+	}
+	wifi_mutex_release(w_info_mutex);
+
+	wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
+	result = wifi_utils_deinit();
+	if (result != WIFI_UTILS_SUCCESS) {
+		ndbg("wifi_utils_deinit fail");
+		ret = WIFI_MANAGER_FAIL;
+	}
+	wifi_mutex_release(w_mutex);
+
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
 	ndbg("w_mutex->semcount: %d, w_mutex->flags: %d\n", w_mutex->semcount, w_mutex->flags);
 
 	result = wifi_mutex_destroy(w_mutex);
 	if (result != WIFI_UTILS_SUCCESS) {
 		ndbg("wifi_mutex_destroy fail %d", result);
-		return WIFI_MANAGER_FAIL;
+		ret = WIFI_MANAGER_FAIL;
 	}
-	free(w_mutex);
-	w_mutex = NULL;
 
-	result = wifi_utils_deinit();
+	if (ret != WIFI_MANAGER_FAIL) {
+		g_manager_info.mode = WIFI_NONE;
+	} else {
+		g_manager_info.mode = WIFI_FAILURE;
+	}
 
+	if (w_mutex != NULL) {
+		free(w_mutex);
+		w_mutex = NULL;
+	}
+	wifi_mutex_release(w_info_mutex);
+
+	result = wifi_mutex_destroy(w_info_mutex);
 	if (result != WIFI_UTILS_SUCCESS) {
-		ndbg("wifi_utils_deinit fail");
-		return WIFI_MANAGER_FAIL;
+		ndbg("w_info_mutex_destroy fail %d", result);
+	}
+	if (w_info_mutex != NULL) {
+		free(w_info_mutex);
+		w_info_mutex = NULL;
 	}
 
-	g_manager_info.mode = WIFI_NONE;
-
-	return WIFI_MANAGER_SUCCESS;
+	return ret;
 }
 
 wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manager_softap_config_s *config)
@@ -455,78 +582,101 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
+	if ((mode == SOFTAP_MODE) && ((config == NULL) || (strlen(config->ssid) > 31) || (strlen(config->passphrase) > 63))) {
+		ndbg("SoftAP configuration fails: no config or too long ssid or passphrase\n");
+		ndbg("Make sure that length of SSID < 32 and length of passphrase < 64\n");
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
 	if (g_manager_info.mode == mode) {
 		ndbg("wifi manager set mode failed: current mode is the same as requested.\n");
+		wifi_mutex_release(w_info_mutex);
 		return WIFI_MANAGER_SUCCESS;
 	}
 
+	/* wifi mode is switched to WIFI_MODE_CHANGING */
+	if ((g_manager_info.mode != STA_MODE) && (g_manager_info.mode != SOFTAP_MODE)) {
+		ndbg("Can't change wifi mode from current mode %d.\n", g_manager_info.mode);
+		wifi_mutex_release(w_info_mutex);
+		return WIFI_MANAGER_FAIL;
+	}
+
+	g_manager_info.mode = WIFI_MODE_CHANGING;
+	wifi_mutex_release(w_info_mutex);
+
 	// Wifi mode is changed to SOFT AP
-	if ((mode == SOFTAP_MODE) && (config != NULL)) {
+	if (mode == SOFTAP_MODE) {
 		wifi_utils_softap_config_s softap_config;
 
 		softap_config.channel = config->channel;
 		softap_config.ap_crypto_type = WIFI_UTILS_CRYPTO_AES;
 		softap_config.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
-		strncpy(softap_config.ssid, config->ssid, sizeof(config->ssid));
 		softap_config.ssid_length = strlen(config->ssid);
-		strncpy(softap_config.passphrase, config->passphrase, sizeof(config->passphrase));
 		softap_config.passphrase_length = strlen(config->passphrase);
-		softap_config.inform_new_sta_join = g_manager_info.wmcb->softap_sta_joined;
+		strncpy(softap_config.ssid, config->ssid, softap_config.ssid_length + 1);
+		strncpy(softap_config.passphrase, config->passphrase, softap_config.passphrase_length + 1);
+		softap_config.inform_new_sta_join = g_manager_callback->softap_sta_joined;
 
 		wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
-
 		g_new_sta_join = softap_config.inform_new_sta_join;
 		result = wifi_utils_start_softap(&softap_config);
-
 		if (result != WIFI_UTILS_SUCCESS) {
-			ndbg("Start softap mode fail");
-			wifi_mutex_release(w_mutex);
-			return WIFI_MANAGER_FAIL;
+			ndbg("Starting softap mode failed.");
+			goto error_with_failure;
 		}
 
 		if (start_dhcp_server() != WIFI_UTILS_SUCCESS) {
-			ndbg("start DHCP server Failed\n");
-			return WIFI_MANAGER_FAIL;
+			ndbg("Starting DHCP server failed.\n");
+			goto error_with_failure;
 		}
-
-		g_manager_info.mode = SOFTAP_MODE;
-		strncpy(g_manager_info.ssid, config->ssid, 32);
-		wifi_status_set(CLIENT_DISCONNECTED);
 		wifi_mutex_release(w_mutex);
+
+		/* update wifi_manager_info */
+		wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
+		g_manager_info.mode = SOFTAP_MODE;
+		strncpy(g_manager_info.ssid, config->ssid, softap_config.ssid_length + 1);
+		wifi_status_set(CLIENT_DISCONNECTED);
+		wifi_mutex_release(w_info_mutex);
 
 		nvdbg("Wifi mode is changed to SOFT AP");
 	}
 	// Wifi mode is changed to station
-	else if (mode == STA_MODE) {
+	else {
 		wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
-
 		result = wifi_utils_stop_softap();
 		if (result != WIFI_UTILS_SUCCESS) {
-			ndbg("Wifi stop fail");
-			wifi_mutex_release(w_mutex);
-			return WIFI_MANAGER_FAIL;
+			ndbg("Stoping softap failed.");
+			goto error_with_failure;
 		}
 
 		stop_dhcp_server();
 
 		result = wifi_utils_start_sta();
 		if (result != WIFI_UTILS_SUCCESS) {
-			ndbg("start STA fail (change STA mode fail)");
-			wifi_mutex_release(w_mutex);
-			return WIFI_MANAGER_FAIL;
+			ndbg("Starting STA failed.");
+			goto error_with_failure;
 		}
-
-		g_manager_info.mode = STA_MODE;
-		wifi_status_set(AP_DISCONNECTED);
 		wifi_mutex_release(w_mutex);
 
+		/* update wifi_manager_info */
+		wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
+		g_manager_info.mode = STA_MODE;
+		wifi_status_set(AP_DISCONNECTED);
+		wifi_mutex_release(w_info_mutex);
+
 		nvdbg("Wifi mode is changed to station");
-	} else {
-			ndbg("Invalid config!\n");
-			return WIFI_MANAGER_FAIL;
 	}
 
 	return WIFI_MANAGER_SUCCESS;
+
+error_with_failure:
+	wifi_mutex_release(w_mutex);
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
+	g_manager_info.mode = WIFI_FAILURE;
+	wifi_mutex_release(w_info_mutex);
+
+	return WIFI_MANAGER_FAIL;
 }
 
 wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
@@ -536,9 +686,9 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 		return WIFI_MANAGER_FAIL;
 	}
 
-	wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
 	*info = g_manager_info;
-	wifi_mutex_release(w_mutex);
+	wifi_mutex_release(w_info_mutex);
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -546,15 +696,21 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 wifi_manager_result_e wifi_manager_scan_ap(void)
 {
 	wifi_manager_result_e ret = WIFI_MANAGER_FAIL;
-	if (g_manager_info.wmcb->scan_ap_done == NULL) {
+
+	if (g_manager_callback->scan_ap_done == NULL) {
 		ndbg("Missing callback for WiFi scan");
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
+
+	wifi_mutex_acquire(w_mutex, WIFI_UTILS_FOREVER);
 
 	WiFiRegisterScanCallback(wifi_scan_result_callback);
 	if (WiFiScanNetwork() == SLSI_STATUS_SUCCESS) {
 		ndbg("WiFI scan succeeds.");
 		ret = WIFI_MANAGER_SUCCESS;
 	}
+
+	wifi_mutex_release(w_mutex);
+
 	return ret;
 }

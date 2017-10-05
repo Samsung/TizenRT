@@ -16,10 +16,6 @@
  *
  ****************************************************************************/
 /**
- * @file websocket.h
- * @brief websocket header to support WS/WSS server and client.
- */
-/**
  * @defgroup Websocket Websocket
  * @brief Provides APIs for Websocket
  * @ingroup NETWORK
@@ -27,8 +23,10 @@
  * @{
  */
 
-/// @file app/include/netutils/websocket.h
-/// @brief websocket api header.
+/**
+ * @file protocols/websocket.h
+ * @brief websocket header to support WS/WSS server and client.
+ */
 
 #ifndef __APPS_INCLUDE_NETUTILS_WEBSOCKET_H
 #define __APPS_INCLUDE_NETUTILS_WEBSOCKET_H

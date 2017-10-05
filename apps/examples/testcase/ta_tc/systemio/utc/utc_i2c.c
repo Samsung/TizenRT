@@ -34,7 +34,7 @@ iotbus_i2c_context_h i2c;
 
 static void utc_i2c_init_p(void)
 {
-	iotbus_i2c_context_h m_i2c = iotbus_i2c_init(1);
+	iotbus_i2c_context_h m_i2c = iotbus_i2c_init(0);
 	TC_ASSERT_NEQ("iotbus_i2c_init", m_i2c, NULL);
 	i2c = m_i2c;
 	TC_SUCCESS_RESULT();
@@ -72,7 +72,7 @@ static void utc_i2c_set_frequency_n(void)
 
 static void utc_i2c_set_address_p(void)
 {
-	TC_ASSERT_EQ("iotbus_i2c_set_address", iotbus_i2c_set_address(i2c, 0x08), IOTBUS_ERROR_NONE);
+	TC_ASSERT_EQ("iotbus_i2c_set_address", iotbus_i2c_set_address(i2c, 0x23), IOTBUS_ERROR_NONE);	
 	TC_SUCCESS_RESULT();
 }
 
@@ -84,27 +84,27 @@ static void utc_i2c_set_address_n(void)
 
 static void utc_i2c_write_p(void)
 {
-	uint8_t cmd[2] = { 0x01, 0x02 };
-	TC_ASSERT_EQ("iotbus_i2c_write", iotbus_i2c_write(i2c, cmd, 2), IOTBUS_ERROR_NONE);
+	uint8_t cmd[1] = { 0x01};
+	TC_ASSERT_GT("iotbus_i2c_write", iotbus_i2c_write(i2c, cmd, 1), IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_i2c_write_n(void)
 {
-	TC_ASSERT_EQ("iotbus_i2c_write", iotbus_i2c_write(i2c, NULL, 2), IOTBUS_ERROR_INVALID_PARAMETER);
+	TC_ASSERT_EQ("iotbus_i2c_write", iotbus_i2c_write(i2c, NULL, 1), IOTBUS_ERROR_INVALID_PARAMETER);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_i2c_read_p(void)
 {
-	uint8_t buf[10];
-	TC_ASSERT_EQ("iotbus_i2c_read", iotbus_i2c_read(i2c, buf, 10), IOTBUS_ERROR_INVALID_PARAMETER);
+	uint8_t buf[1];
+	TC_ASSERT_GT("iotbus_i2c_read", iotbus_i2c_read(i2c, buf, 1), IOTBUS_ERROR_NONE);
 	TC_SUCCESS_RESULT();
 }
 
 static void utc_i2c_read_n(void)
 {
-	TC_ASSERT_EQ("iotbus_i2c_read", iotbus_i2c_read(i2c, NULL, 10), IOTBUS_ERROR_INVALID_PARAMETER);
+	TC_ASSERT_EQ("iotbus_i2c_read", iotbus_i2c_read(i2c, NULL, 1), IOTBUS_ERROR_INVALID_PARAMETER);
 	TC_SUCCESS_RESULT();
 }
 
