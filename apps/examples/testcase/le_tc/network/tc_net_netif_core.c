@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 
-/// @file tc_net_core.c
+/// @file tc_net_netif_core.c
 /// @brief Test Case Example for api() API
 #include <net/lwip/stats.h>
 #include <net/lwip/tcpip.h>
@@ -48,7 +48,6 @@
 
 struct netif loop_netif;
 struct netif test_netif;
-static int linkoutput_ctr;
 
 extern err_t netif_loopif_init(struct netif *netif);
 
@@ -175,7 +174,6 @@ static void tc_net_pbuf_memfind_p(void)
 
 	TC_ASSERT_NEQ("pbuf_memfind", ret, NEG_VAL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -361,7 +359,6 @@ static void tc_net_pbuf_dechain_p(void)
 
 	TC_ASSERT_NEQ("net_pbuf_dechain", ret, NULL);
 	TC_SUCCESS_RESULT();
-
 }
 
 /**
@@ -549,18 +546,49 @@ static void tc_net_pbuf_memfind_n(void)
 }
 
 /**
-* @testcase             :default_netif_linkoutput
-* @brief                :none
-* @scenario             :none
-* @apicovered           :default_netif_linkoutput
-* @precondition         :network interface must be created
+* @testcase             :tc_net_pbuf_strstr_p
+* @brief                :find occurrence of substr with length substr_len in pbuf
+* @scenario             :positive scenario for pbuf_strstr
+* @apicovered           :pbuf_strstr
+* @precondition         :none
 * @postcondition        :none
 * @return               :void
 */
-static err_t default_netif_linkoutput(struct netif *netif, struct pbuf *p)
+static void tc_net_pbuf_strstr_p(void)
 {
-	linkoutput_ctr++;
-	return ERR_OK;
+	u16_t ret;
+	struct pbuf *head = NULL;
+	const void *s2 = "pack";
+
+	create_packet(&head, "packet", strlen("packet"), ONE);
+	ret = pbuf_strstr(head, s2);
+	mem_free(head);
+
+	TC_ASSERT_EQ("pbuf_strstr", ret, ZERO);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @testcase             :tc_net_pbuf_strstr_n
+* @brief                :find occurrence of substr with length substr_len in pbuf
+* @scenario             :negative scenario for pbuf_strstr
+* @apicovered           :pbuf_strstr
+* @precondition         :none
+* @postcondition        :none
+* @return               :void
+*/
+static void tc_net_pbuf_strstr_n(void)
+{
+	u16_t ret;
+	struct pbuf *head = NULL;
+	const void *s2 = "test";
+
+	create_packet(&head, "packet", strlen("packet"), ONE);
+	ret = pbuf_strstr(head, s2);
+	mem_free(head);
+
+	TC_ASSERT_NEQ("pbuf_strstr", ret, ZERO);
+	TC_SUCCESS_RESULT();
 }
 
 /****************************************************************************
@@ -584,5 +612,7 @@ int net_core_main(int sock_tcp)
 	tc_net_pbuf_coalesce_p();
 	tc_net_pbuf_memfind_n();
 	tc_net_pbuf_memfind_p();
+	tc_net_pbuf_strstr_p();
+	tc_net_pbuf_strstr_n();
 	return 0;
 }

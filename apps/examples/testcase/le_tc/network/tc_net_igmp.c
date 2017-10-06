@@ -103,7 +103,7 @@ int getif_addrs(struct ifaddrs **ifap)
 	uint8_t flags;
 	static struct ifaddrs ifa;
 	static struct sockaddr_in addr;
-	static struct netmask;
+	static struct sockaddr_in netmask;
 	struct netif *curr = g_netdevices;
 
 	memset(&ifa, 0, sizeof(ifa));
