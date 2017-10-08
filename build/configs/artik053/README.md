@@ -82,7 +82,7 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK053 Module
 
 ### MemoryMap
 
-8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM. See [[here]](scripts/README.md) for the physical memory address.
+8MB is allocated to the SPI Flash area. 1280 KB is prepared for operation in SRAM. See [[here]](../artik05x/README.md#memory-map-artik05x) for the physical memory address.
 
 ## Configuration Sets
 
