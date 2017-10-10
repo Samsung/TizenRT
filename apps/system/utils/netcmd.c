@@ -282,8 +282,10 @@ int cmd_ifconfig(int argc, char **argv)
 			netif = netif_find(intf);
 
 			if (netif) {
+#ifdef CONFIG_NET_IPv6_AUTOCONFIG
+				/* enable IPv6 address stateless autoconfiguration */
 				netif_set_ip6_autoconfig_enabled(netif, 1);
-
+#endif
 				/* To auto-config linklocal address, netif should have mac address already */
 				netif_create_ip6_linklocal_address(netif, 1);
 				ndbg("generated IPV6 linklocal address - %X : %X : %X : %X\n", PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[0]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[1]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[2]), PP_HTONL(ip_2_ip6(&netif->ip6_addr[0])->addr[3]));
