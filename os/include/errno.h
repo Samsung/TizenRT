@@ -443,7 +443,7 @@ FAR int *get_errno_ptr(void);
 #ifndef __DIRECT_ERRNO_ACCESS
 /**
  * @brief Set the value of the thread specific errno.
- * @details [SYSTEM CALL API]
+ * @details SYSTEM CALL API
  * @param[in] errcode The thread specific errno will be set to this error code value.
  * @return none
  * @since Tizen RT v1.0
@@ -452,7 +452,7 @@ void set_errno(int errcode);
 
 /**
  * @brief Return the value of the thread specific errno.
- * @details [SYSTEM CALL API]
+ * @details SYSTEM CALL API
  * @return The current value of the thread specific errno is returned.
  * @since Tizen RT v1.0
  */

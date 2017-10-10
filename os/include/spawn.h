@@ -180,29 +180,29 @@ int task_spawn(FAR pid_t *pid, FAR const char *name, main_t entry, FAR const pos
 /* File action interfaces ***************************************************/
 /* File action initialization and destruction */
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawn_file_actions_init(FAR posix_spawn_file_actions_t *file_actions);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawn_file_actions_destroy(FAR posix_spawn_file_actions_t *file_actions);
 
 /* Add file action interfaces */
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawn_file_actions_addclose(FAR posix_spawn_file_actions_t *file_actions, int fd);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 int posix_spawn_file_actions_adddup2(FAR posix_spawn_file_actions_t *file_actions, int fd1, int fd2);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawn_file_actions_addopen(FAR posix_spawn_file_actions_t *file_actions, int fd, FAR const char *path, int oflags, mode_t mode);
@@ -210,7 +210,7 @@ int posix_spawn_file_actions_addopen(FAR posix_spawn_file_actions_t *file_action
 /* Spawn attributes interfaces **********************************************/
 /* Spawn attributes initialization and destruction */
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawnattr_init(FAR posix_spawnattr_t *attr);
@@ -224,25 +224,25 @@ int posix_spawnattr_init(FAR posix_spawnattr_t *attr);
 
 /* Get spawn attributes interfaces */
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawnattr_getflags(FAR const posix_spawnattr_t *attr, FAR short *flags);
 #define posix_spawnattr_getpgroup(attr, group) (ENOSYS)
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawnattr_getschedparam(FAR const posix_spawnattr_t *attr, FAR struct sched_param *param);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawnattr_getschedpolicy(FAR const posix_spawnattr_t *attr, FAR int *policy);
 #define posix_spawnattr_getsigdefault(attr, sigdefault) (ENOSYS)
 #ifndef CONFIG_DISABLE_SIGNALS
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawnattr_getsigmask(FAR const posix_spawnattr_t *attr, FAR sigset_t *sigmask);
@@ -252,25 +252,25 @@ int posix_spawnattr_getsigmask(FAR const posix_spawnattr_t *attr, FAR sigset_t *
 
 /* Set spawn attributes interfaces */
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawnattr_setflags(FAR posix_spawnattr_t *attr, short flags);
 #define posix_spawnattr_setpgroup(attr, group) (ENOSYS)
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawnattr_setschedparam(FAR posix_spawnattr_t *attr, FAR const struct sched_param *param);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawnattr_setschedpolicy(FAR posix_spawnattr_t *attr, int policy);
 #define posix_spawnattr_setsigdefault(attr, sigdefault) (ENOSYS)
 #ifndef CONFIG_DISABLE_SIGNALS
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int posix_spawnattr_setsigmask(FAR posix_spawnattr_t *attr, FAR const sigset_t *sigmask);
@@ -308,12 +308,12 @@ int task_spawnattr_setstacksize(FAR posix_spawnattr_t *attr, size_t stacksize);
 
 #ifdef CONFIG_DEBUG
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 void posix_spawn_file_actions_dump(FAR posix_spawn_file_actions_t *file_actions);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 void posix_spawnattr_dump(FAR posix_spawnattr_t *attr);

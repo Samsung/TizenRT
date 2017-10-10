@@ -193,7 +193,7 @@ void closelog(void);
  *
  ****************************************************************************/
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int syslog(int priority, FAR const char *format, ...);
@@ -294,7 +294,7 @@ int lowvsyslog(int priority, FAR const char *format, va_list ap);
  *
  ****************************************************************************/
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int setlogmask(int mask);
