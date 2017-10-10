@@ -281,7 +281,6 @@ See run.bat for more example usage parameters
  * BUILD_SAMPLE=ON or OFF (Build with sample)
  * ROUTING=GW or EP (Enable routing)
  * WITH_TCP=true or false (Enable CoAP over TCP Transport, arduino is not supported)
- * WITH_RA=true or false (Build with Remote Access module)
  * RD_MODE=CLIENT or SERVER (Build including Resource Directory)
  * SIMULATOR=true or false (Build with simulator module)
  * Possible values for <WITH_MQ> are: PUB,SUB,BROKER (Build including Message Queue)

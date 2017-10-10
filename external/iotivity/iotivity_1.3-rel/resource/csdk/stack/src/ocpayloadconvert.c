@@ -827,7 +827,7 @@ static int64_t OCConvertRepMap(CborEncoder *map, const OCRepPayload *payload)
     arrayLength = 0;
     for (value = payload->values; value; value = value->next)
     {
-        char *endp;
+        char *endp = NULL;
         long i = strtol(value->name, &endp, 0);
         if (*endp != '\0' || i < 0 || arrayLength != (size_t)i)
         {

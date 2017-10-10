@@ -332,7 +332,7 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
                 VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find port tag");
                 if (cbor_value_is_integer(&curVal))
                 {
-                    int port;
+                    int port = 0;
 
                     err = cbor_value_get_int(&curVal, &port);
                     VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find port value");
@@ -344,7 +344,7 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
                 err = cbor_value_map_find_value(&policyMap, OC_RSRVD_TCP_PORT, &curVal);
                 if (cbor_value_is_integer(&curVal))
                 {
-                    int tcpPort;
+                    int tcpPort = 0;
 
                     err = cbor_value_get_int(&curVal, &tcpPort);
                     VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find tcp port value");
@@ -356,7 +356,7 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
                 err = cbor_value_map_find_value(&policyMap, OC_RSRVD_TLS_PORT, &curVal);
                 if (cbor_value_is_integer(&curVal))
                 {
-                    int tlsPort;
+                    int tlsPort = 0;
 
                     err = cbor_value_get_int(&curVal, &tlsPort);
                     VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find tcp tls port value");
@@ -419,7 +419,7 @@ static CborError ParseResources(OCDiscoveryPayload **outPayload, CborValue *reso
     // Iterate through the array processing each resource which shows up as a map.
     while (cbor_value_is_map(resourceMap))
     {
-        int bitmap;
+        int bitmap = 0;
 
         resource = (OCResourcePayload *)OICCalloc(1, sizeof(OCResourcePayload));
         VERIFY_PARAM_NON_NULL(TAG, resource, "Failed allocating resource payload");
@@ -552,15 +552,16 @@ static CborError ParseResources(OCDiscoveryPayload **outPayload, CborValue *reso
         err = cbor_value_advance(resourceMap);
         VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to advance resource map");
 
+        char* anchorPrefix =  "ocf://";
         // Parse di from anchor
-        if (!resource->anchor || strncmp(resource->anchor, "ocf://", 6))
+        if (!resource->anchor || strncmp(resource->anchor, anchorPrefix, strlen(anchorPrefix)))
         {
             OIC_LOG_V(ERROR, TAG, "Ignore unrecognized anchor %s", resource->anchor);
             OCDiscoveryResourceDestroy(resource);
         }
         else
         {
-            char *di = OICStrdup(resource->anchor + 6);
+            char *di = OICStrdup(resource->anchor + strlen(anchorPrefix));
             VERIFY_PARAM_NON_NULL(TAG, di, "Failed to duplicating di");
 
             char *slash = strchr(di, '/');
@@ -1228,7 +1229,8 @@ static OCStackResult OCParseRepPayload(OCPayload **outPayload, CborValue *root)
         ret = OC_STACK_MALFORMED_RESPONSE;
 
         // temporary fix to check for malformed cbor payload
-        if (!cbor_value_is_map(&rootMap) && !cbor_value_is_array(&rootMap)){
+        if (!cbor_value_is_map(&rootMap) && !cbor_value_is_array(&rootMap))
+        {
             goto exit;
         }
 

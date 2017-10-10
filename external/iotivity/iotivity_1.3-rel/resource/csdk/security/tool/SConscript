@@ -36,6 +36,7 @@ else:
 
 tools_env.PrependUnique(CPPPATH=[
     '#/extlibs/cjson',
+    '#/extlibs/tinycbor/tinycbor/src',
     '#/resource/csdk/include',
     '#/resource/csdk/stack/include',
     '#/resource/csdk/stack/include/internal',

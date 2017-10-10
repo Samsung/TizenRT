@@ -1285,10 +1285,6 @@ namespace OC
         {
             method = OC_REST_OBSERVE;
         }
-        else if (observeType == ObserveType::ObserveAll)
-        {
-            method = OC_REST_OBSERVE_ALL;
-        }
         else
         {
             method = OC_REST_OBSERVE_ALL;

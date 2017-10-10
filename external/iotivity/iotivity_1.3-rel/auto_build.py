@@ -12,9 +12,9 @@ def helpmsg(script):
 Usage:
     build:
         python %s <targetbuild>
-        Allowed values for <target_build>: all, linux_unsecured, linux_secured, linux_unsecured_with_ra, linux_secured_with_ra, linux_unsecured_with_rd, linux_secured_with_rd,
+        Allowed values for <target_build>: all, linux_unsecured, linux_secured, linux_unsecured_with_rd, linux_secured_with_rd,
         android, android_unsecured, android_secured, arduino, tizen, tizen_unsecured, tizen_secured, simulator, darwin, windows, msys
-        Note: \"linux\" will build \"linux_unsecured\", \"linux_secured\", \"linux_unsecured_with_ra\", \"linux_secured_with_ra\", \"linux_secured_with_rd\", \"linux_unsecured_with_mq\", \"linux_secured_with_tcp\" & \"linux_unsecured_with_tcp\" & \"linux_unsecured_with_rd\".
+        Note: \"linux\" will build \"linux_unsecured\", \"linux_secured\", \"linux_secured_with_rd\", \"linux_unsecured_with_mq\", \"linux_secured_with_tcp\" & \"linux_unsecured_with_tcp\" & \"linux_unsecured_with_rd\".
         Any selection will build both debug and release versions of all available targets in the scope you've selected.
         To choose any specific command, please use the SCons commandline directly. Please refer to [IOTIVITY_REPO]/Readme.scons.txt.
     clean:
@@ -49,8 +49,6 @@ def build_all(flag, extra_option_str):
     if platform.system() == "Linux":
         build_linux_unsecured(flag, extra_option_str)
         build_linux_secured(flag, extra_option_str)
-        build_linux_unsecured_with_ra(flag, extra_option_str)
-        build_linux_secured_with_ra(flag, extra_option_str)
         build_linux_unsecured_with_rm(flag, extra_option_str)
         build_linux_unsecured_with_rd(flag, extra_option_str)
         build_linux_secured_with_rd(flag, extra_option_str)
@@ -135,25 +133,6 @@ def build_linux_secured(flag, extra_option_str):
     print ("*********** Build for linux with Security *************")
     build_options = {
                         'RELEASE':flag,
-                    }
-    call_scons(build_options, extra_option_str)
-
-def build_linux_unsecured_with_ra(flag, extra_option_str):
-    print ("*********** Build for linux With Remote Access *************")
-    build_options = {
-                        'RELEASE':flag,
-                        'WITH_RA':1,
-                        'WITH_RA_IBB':1,
-                        'SECURED':0,
-                    }
-    call_scons(build_options, extra_option_str)
-
-def build_linux_secured_with_ra(flag, extra_option_str):
-    print ("*********** Build for linux With Remote Access & Security ************")
-    build_options = {
-                        'RELEASE':flag,
-                        'WITH_RA':1,
-                        'WITH_RA_IBB':1,
                     }
     call_scons(build_options, extra_option_str)
 
@@ -474,7 +453,6 @@ def build_windows(flag, extra_option_str):
                         'TARGET_OS':'windows',
                         'TARGET_ARCH':'amd64',
                         'RELEASE':flag,
-                        'WITH_RA':0,
                         'TARGET_TRANSPORT':'IP',
                         'WITH_TCP':0,
                         'BUILD_SAMPLE':'ON',
@@ -492,7 +470,6 @@ def build_msys(flag, extra_option_str):
                         'TARGET_OS':'msys_nt',
                         'TARGET_ARCH':'x86_64',
                         'RELEASE':flag,
-                        'WITH_RA':0,
                         'TARGET_TRANSPORT':'IP',
                         'WITH_TCP':0,
                         'BUILD_SAMPLE':'ON',
@@ -578,14 +555,6 @@ elif arg_num == 2:
     elif str(sys.argv[1]) == "linux_secured":
         build_linux_secured("true", "")
         build_linux_secured("false", "")
-
-    elif str(sys.argv[1]) == "linux_unsecured_with_ra":
-        build_linux_unsecured_with_ra("true", "")
-        build_linux_unsecured_with_ra("false", "")
-
-    elif str(sys.argv[1]) == "linux_secured_with_ra":
-        build_linux_secured_with_ra("true", "")
-        build_linux_secured_with_ra("false", "")
 
     elif str(sys.argv[1]) == "linux_unsecured_with_rd":
         build_linux_unsecured_with_rd("true", "")

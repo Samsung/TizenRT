@@ -1098,7 +1098,7 @@ exit:
 }
 
 OCStackResult BuildIntrospectionResponseRepresentation(const OCResource *resourcePtr,
-    OCRepPayload** payload, OCDevAddr *devAddr)
+    OCRepPayload** payload, OCDevAddr *devAddr, bool includeBaselineProps)
 {
     size_t dimensions[MAX_REP_ARRAY_DEPTH] = { 0 };
     OCRepPayload *tempPayload = NULL;
@@ -1130,36 +1130,33 @@ OCStackResult BuildIntrospectionResponseRepresentation(const OCResource *resourc
         goto exit;
     }
 
-    if (!OCRepPayloadSetUri(tempPayload, resourcePtr->uri))
+    if(includeBaselineProps)
     {
-        OIC_LOG(ERROR, TAG, "Failed to set payload URI");
-        ret = OC_STACK_ERROR;
-        goto exit;
+        resType = resourcePtr->rsrcType;
+        while (resType)
+        {
+            if (!OCRepPayloadAddResourceType(tempPayload, resType->resourcetypename))
+            {
+                OIC_LOG(ERROR, TAG, "Failed at add resource type");
+                ret = OC_STACK_ERROR;
+                goto exit;
+            }
+            resType = resType->next;
+        }
+
+        resInterface = resourcePtr->rsrcInterface;
+        while (resInterface)
+        {
+            if (!OCRepPayloadAddInterface(tempPayload, resInterface->name))
+            {
+                OIC_LOG(ERROR, TAG, "Failed to add interface");
+                ret = OC_STACK_ERROR;
+                goto exit;
+            }
+            resInterface = resInterface->next;
+        }
     }
 
-    resType = resourcePtr->rsrcType;
-    while (resType)
-    {
-        if (!OCRepPayloadAddResourceType(tempPayload, resType->resourcetypename))
-        {
-            OIC_LOG(ERROR, TAG, "Failed at add resource type");
-            ret = OC_STACK_ERROR;
-            goto exit;
-        }
-        resType = resType->next;
-    }
-
-    resInterface = resourcePtr->rsrcInterface;
-    while (resInterface)
-    {
-        if (!OCRepPayloadAddInterface(tempPayload, resInterface->name))
-        {
-            OIC_LOG(ERROR, TAG, "Failed to add interface");
-            ret = OC_STACK_ERROR;
-            goto exit;
-        }
-        resInterface = resInterface->next;
-    }
     if (!OCRepPayloadSetPropString(tempPayload, OC_RSRVD_INTROSPECTION_NAME, OC_RSRVD_INTROSPECTION_NAME_VALUE))
     {
         OIC_LOG(ERROR, TAG, "Failed to set Name property.");
@@ -1478,6 +1475,30 @@ OCStackResult EntityHandlerCodeToOCStackCode(OCEntityHandlerResult ehResult)
             break;
         case OC_EH_RESOURCE_NOT_FOUND:
             result = OC_STACK_NO_RESOURCE;
+            break;
+        case OC_EH_BAD_REQ:
+            result = OC_STACK_INVALID_QUERY;
+            break;
+        case OC_EH_UNAUTHORIZED_REQ:
+            result = OC_STACK_UNAUTHORIZED_REQ;
+            break;
+        case OC_EH_BAD_OPT:
+            result = OC_STACK_INVALID_OPTION;
+            break;
+        case OC_EH_METHOD_NOT_ALLOWED:
+            result = OC_STACK_INVALID_METHOD;
+            break;
+        case OC_EH_NOT_ACCEPTABLE:
+            result = OC_STACK_NOT_ACCEPTABLE;
+            break;
+        case OC_EH_TOO_LARGE:
+            result = OC_STACK_TOO_LARGE_REQ;
+            break;
+        case OC_EH_SERVICE_UNAVAILABLE:
+            result = OC_STACK_SERVICE_UNAVAILABLE;
+            break;
+        case OC_EH_RETRANSMIT_TIMEOUT:
+            result = OC_STACK_COMM_ERROR;
             break;
         default:
             result = OC_STACK_ERROR;
@@ -1916,8 +1937,13 @@ static OCStackResult HandleVirtualResource (OCServerRequest *request, OCResource
     {
         // Received request for introspection
         OCResource *resourcePtr = FindResourceByUri(OC_RSRVD_INTROSPECTION_URI_PATH);
+        bool includeBaselineProps = interfaceQuery
+                                    && (0 == strcmp(interfaceQuery, OC_RSRVD_INTERFACE_DEFAULT));
         VERIFY_PARAM_NON_NULL(TAG, resourcePtr, "Introspection URI not found.");
-        discoveryResult = BuildIntrospectionResponseRepresentation(resourcePtr, (OCRepPayload **)&payload, &request->devAddr);
+        discoveryResult = BuildIntrospectionResponseRepresentation(resourcePtr,
+                                                                   (OCRepPayload **)&payload,
+                                                                   &request->devAddr,
+                                                                   includeBaselineProps);
         OIC_LOG(INFO, TAG, "Request is for Introspection");
     }
     else if (OC_INTROSPECTION_PAYLOAD_URI == virtualUriInRequest)

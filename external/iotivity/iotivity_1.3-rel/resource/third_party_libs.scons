@@ -36,8 +36,9 @@ src_dir = env.get('SRC_DIR')
 # Check dependent packages (Linux only)
 ######################################################################
 if target_os in ['linux']:
-    if not env.GetOption('help'):
-        if not target_arch == platform.machine():
+    if not env.GetOption('help') and not env.GetOption('clean'):
+        if target_arch != platform.machine() and \
+           not (target_arch == 'x86' and platform.machine() in ('i586', 'i686')):
             print '''
 *********************************** Warning **********************************
 * You are trying cross build, please make sure cross (%s) libraries are
@@ -45,8 +46,8 @@ if target_os in ['linux']:
 ******************************************************************************
 ''' % target_arch
 
-        conf = Configure(lib_env)
-        conf.Finish()
+    conf = Configure(lib_env)
+    conf.Finish()
 
 ######################################################################
 # The path of third party libraries binary
@@ -63,7 +64,7 @@ if target_os == 'android':
 *******************************************************************************
 '''
     else:
-        # Too much boost warning, suppress the warning
+        # Boost warnings too noisy, suppress
         lib_env.AppendUnique(CCFLAGS=['-w'])
 
 elif target_os in ['windows']:

@@ -62,12 +62,15 @@ if target_os not in host_target_map[host]:
     msg += "\n\tchoices: %s\n" % host_target_map[host]
     Exit(msg)
 
+# work out a reasonable default for target_arch if not specified by user
 if target_os == 'android':
     default_arch = 'x86'
 else:
     default_arch = platform.machine()
     if target_os == 'windows':
         default_arch = default_arch.lower()
+    if target_os == 'linux' and default_arch in ('i586', 'i686'):
+        default_arch = 'x86'
 
 target_arch = ARGUMENTS.get('TARGET_ARCH', default_arch)  # target arch
 
@@ -122,9 +125,6 @@ help_vars.AddVariables(
                  'Target platform',
                  default=host,
                  allowed_values=targetlist),
-    BoolVariable('WITH_RA',
-                 'Build with Remote Access module',
-                 default=False),
     BoolVariable('WITH_TCP',
                  'Build with TCP adapter',
                  default=False),
@@ -144,9 +144,6 @@ help_vars.AddVariables(
                  names=('CLIENT', 'SERVER')),
     BoolVariable('SIMULATOR',
                  'Build with simulator module',
-                 default=False),
-    BoolVariable('WITH_RA_IBB',
-                 'Build with Remote Access module(workssys)',
                  default=False),
     EnumVariable('TARGET_ARCH',
                  'Target architecture',

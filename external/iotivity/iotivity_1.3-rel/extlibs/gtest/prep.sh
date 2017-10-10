@@ -23,7 +23,7 @@ package="gtest"
 packageRevision='1.7.0'
 packageUrl='https://github.com/google/googletest/archive/release-1.7.0.zip'
 packageArchive=$(basename -- "${packageUrl}")
-packageDir="extlibs/${package}/${package}-${packageRevision}"
+packageDir="extlibs/${package}/googletest-release-${packageRevision}"
 packageSourceFile="${packageDir}/CMakeLists.txt"
 
 

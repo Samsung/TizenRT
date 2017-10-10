@@ -2263,8 +2263,10 @@ OCRepPayload** OC_CALL OCLinksPayloadArrayCreate(const char* resourceUri,
         if (!OCRequestIsOCFContentFormat(ehRequest, &isOCFContentFormat))
             return NULL;
 
-        if (linksRepPayloadArray = BuildCollectionLinksPayloadArray(resourceUri, 
-                              isOCFContentFormat, &ehRequest->devAddr, createdArraySize))
+        linksRepPayloadArray = BuildCollectionLinksPayloadArray(resourceUri,
+                                                                isOCFContentFormat,
+                                                                &ehRequest->devAddr,
+                                                                createdArraySize);
 
         OIC_LOG_V(DEBUG, TAG, "return value of BuildCollectionLinksPayloadArray() = %s",
                  (linksRepPayloadArray != NULL) ? "true" : "false");

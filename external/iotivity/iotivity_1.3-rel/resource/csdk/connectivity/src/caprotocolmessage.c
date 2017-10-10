@@ -750,17 +750,13 @@ CAResult_t CAGetInfoFromPDU(const coap_pdu_t *pdu, const CAEndpoint_t *endpoint,
     VERIFY_NON_NULL(outCode, TAG, "outCode");
     VERIFY_NON_NULL(outInfo, TAG, "outInfo");
 
-    coap_transport_t transport;
+    coap_transport_t transport = COAP_UDP;
 #ifdef WITH_TCP
     if (CAIsSupportedCoAPOverTCP(endpoint->adapter))
     {
         transport = coap_get_tcp_header_type_from_initbyte(((unsigned char *)pdu->transport_hdr)[0] >> 4);
     }
-    else
 #endif
-    {
-        transport = COAP_UDP;
-    }
 
     coap_opt_iterator_t opt_iter;
     coap_option_iterator_init2((coap_pdu_t *) pdu, &opt_iter, COAP_OPT_ALL, transport);

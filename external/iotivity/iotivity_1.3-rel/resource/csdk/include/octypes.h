@@ -1067,7 +1067,7 @@ typedef enum
     OC_STACK_INVALID_IP,
     OC_STACK_INVALID_PORT,
     OC_STACK_INVALID_CALLBACK,
-    OC_STACK_INVALID_METHOD,
+    OC_STACK_INVALID_METHOD,        /** 405 */
 
     /** Invalid parameter.*/
     OC_STACK_INVALID_PARAM,
@@ -1128,7 +1128,7 @@ typedef enum
 
     /** Request is denied by the user*/
     OC_STACK_USER_DENIED_REQ,
-    OC_STACK_NOT_ACCEPTABLE,
+    OC_STACK_NOT_ACCEPTABLE,         /** 406 */
 
     /** ERROR code from server */
     OC_STACK_FORBIDDEN_REQ,          /** 403*/

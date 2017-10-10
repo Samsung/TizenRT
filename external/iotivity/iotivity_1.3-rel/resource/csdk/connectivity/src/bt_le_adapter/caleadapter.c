@@ -1243,7 +1243,10 @@ static void CALEServerSendDataThread(void *threadData)
     {
         OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                   "CAGenerateVariableForFragmentation failed, result [%d]", result);
-        g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        if (g_errorHandler)
+        {
+            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        }
         return;
     }
 
@@ -1284,7 +1287,10 @@ static void CALEServerSendDataThread(void *threadData)
     {
         OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                   "CAGenerateHeader failed, result [%d]", result);
-        g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        if (g_errorHandler)
+        {
+            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        }
         return;
     }
 
@@ -1297,7 +1303,10 @@ static void CALEServerSendDataThread(void *threadData)
     {
         OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                   "CAGenerateHeaderPayloadLength failed, result [%d]", result);
-        g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        if (g_errorHandler)
+        {
+            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        }
         return;
     }
 
@@ -1322,7 +1331,10 @@ static void CALEServerSendDataThread(void *threadData)
     {
         OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                   "Making data segment failed, result [%d]", result);
-        g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        if (g_errorHandler)
+        {
+            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        }
         return;
     }
 
@@ -1343,11 +1355,13 @@ static void CALEServerSendDataThread(void *threadData)
                       CALEADAPTER_TAG,
                       "Update characteristics failed, result [%d]",
                       result);
-
-            g_errorHandler(bleData->remoteEndpoint,
-                           bleData->data,
-                           bleData->dataLen,
-                           result);
+            if (g_errorHandler)
+            {
+                g_errorHandler(bleData->remoteEndpoint,
+                               bleData->data,
+                               bleData->dataLen,
+                               result);
+            }
             return;
         }
 
@@ -1366,7 +1380,10 @@ static void CALEServerSendDataThread(void *threadData)
         {
             OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                       "CAGenerateHeader failed, result [%d]", result);
-            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+            if (g_errorHandler)
+            {
+                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+            }
             return;
         }
 
@@ -1385,7 +1402,10 @@ static void CALEServerSendDataThread(void *threadData)
             {
                 OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                             "Making data segment failed, result [%d]", result);
-                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                }
                 return;
             }
 
@@ -1399,7 +1419,10 @@ static void CALEServerSendDataThread(void *threadData)
             {
                 OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                             "Update characteristics failed, result [%d]", result);
-                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                }
                 return;
             }
             OIC_LOG_V(DEBUG, CALEADAPTER_TAG, "Server Sent data length [%d]",
@@ -1422,7 +1445,10 @@ static void CALEServerSendDataThread(void *threadData)
             {
                 OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                             "Making data segment failed, result [%d]", result);
-                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                }
                 return;
             }
 
@@ -1437,10 +1463,13 @@ static void CALEServerSendDataThread(void *threadData)
                           CALEADAPTER_TAG,
                           "Update characteristics failed, result [%d]",
                           result);
-                g_errorHandler(bleData->remoteEndpoint,
-                               bleData->data,
-                               bleData->dataLen,
-                               result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint,
+                                   bleData->data,
+                                   bleData->dataLen,
+                                   result);
+                }
                 return;
             }
             OIC_LOG_V(DEBUG,
@@ -1474,7 +1503,10 @@ static void CALEServerSendDataThread(void *threadData)
         {
             OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                       "CAGenerateHeader failed, result [%d]", result);
-            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+            if (g_errorHandler)
+            {
+                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+            }
             return;
         }
         OIC_LOG_V(DEBUG,
@@ -1496,7 +1528,10 @@ static void CALEServerSendDataThread(void *threadData)
             {
                 OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                             "Making data segment failed, result [%d]", result);
-                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                }
                 return;
             }
 
@@ -1533,7 +1568,10 @@ static void CALEServerSendDataThread(void *threadData)
             {
                 OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                             "Making data segment failed, result [%d]", result);
-                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                }
                 return;
             }
 
@@ -1592,11 +1630,13 @@ static void CALEClientSendDataThread(void *threadData)
                       CALEADAPTER_TAG,
                       "CALEClientSendNegotiationMessage has failed, result [%d]",
                       res);
-
-            g_errorHandler(bleData->remoteEndpoint,
-                           bleData->data,
-                           bleData->dataLen,
-                           res);
+            if (g_errorHandler)
+            {
+                g_errorHandler(bleData->remoteEndpoint,
+                               bleData->data,
+                               bleData->dataLen,
+                               res);
+            }
             return;
         }
     }
@@ -1619,7 +1659,10 @@ static void CALEClientSendDataThread(void *threadData)
     {
         OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                   "CAGenerateVariableForFragmentation failed, result [%d]", result);
-        g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        if (g_errorHandler)
+        {
+            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        }
         return;
     }
 
@@ -1655,7 +1698,10 @@ static void CALEClientSendDataThread(void *threadData)
     {
         OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                   "CAGenerateHeader failed, result [%d]", result);
-        g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        if (g_errorHandler)
+        {
+            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        }
         return;
     }
 
@@ -1668,7 +1714,10 @@ static void CALEClientSendDataThread(void *threadData)
     {
         OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                   "CAGenerateHeaderPayloadLength failed, result [%d]", result);
-        g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        if (g_errorHandler)
+        {
+            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        }
         return;
     }
 
@@ -1693,7 +1742,10 @@ static void CALEClientSendDataThread(void *threadData)
     {
         OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                   "Making data segment failed, result [%d]", result);
-        g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        if (g_errorHandler)
+        {
+            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+        }
         return;
     }
 
@@ -1717,10 +1769,13 @@ static void CALEClientSendDataThread(void *threadData)
                       CALEADAPTER_TAG,
                       "Update characteristics failed, result [%d]",
                       result);
-            g_errorHandler(bleData->remoteEndpoint,
-                           bleData->data,
-                           bleData->dataLen,
-                           result);
+            if (g_errorHandler)
+            {
+                g_errorHandler(bleData->remoteEndpoint,
+                               bleData->data,
+                               bleData->dataLen,
+                               result);
+            }
             return;
         }
         OIC_LOG_V(DEBUG,
@@ -1738,7 +1793,10 @@ static void CALEClientSendDataThread(void *threadData)
         {
             OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                       "CAGenerateHeader failed, result [%d]", result);
-            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+            if (g_errorHandler)
+            {
+                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+            }
             return;
         }
 
@@ -1756,7 +1814,10 @@ static void CALEClientSendDataThread(void *threadData)
             {
                 OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                             "Making data segment failed, result [%d]", result);
-                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                }
                 return;
             }
 
@@ -1773,7 +1834,10 @@ static void CALEClientSendDataThread(void *threadData)
                           CALEADAPTER_TAG,
                           "Update characteristics failed, result [%d]",
                           result);
-                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                }
                 return;
             }
             OIC_LOG_V(DEBUG,
@@ -1799,7 +1863,10 @@ static void CALEClientSendDataThread(void *threadData)
             {
                 OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                             "Making data segment failed, result [%d]", result);
-                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                }
                 return;
             }
 
@@ -1813,7 +1880,10 @@ static void CALEClientSendDataThread(void *threadData)
             {
                 OIC_LOG_V(ERROR, CALEADAPTER_TAG, "Update characteristics failed, result [%d]",
                                                    result);
-                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                }
                 return;
             }
             OIC_LOG_V(DEBUG,
@@ -1849,7 +1919,10 @@ static void CALEClientSendDataThread(void *threadData)
         {
             OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                       "CAGenerateHeader failed, result [%d]", result);
-            g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+            if (g_errorHandler)
+            {
+                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+            }
             return;
         }
         OIC_LOG_V(DEBUG,
@@ -1871,7 +1944,10 @@ static void CALEClientSendDataThread(void *threadData)
             {
                 OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                             "Making data segment failed, result [%d]", result);
-                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                }
                 return;
             }
 
@@ -1908,7 +1984,10 @@ static void CALEClientSendDataThread(void *threadData)
             {
                 OIC_LOG_V(ERROR, CALEADAPTER_TAG,
                             "Making data segment failed, result [%d]", result);
-                g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                if (g_errorHandler)
+                {
+                    g_errorHandler(bleData->remoteEndpoint, bleData->data, bleData->dataLen, result);
+                }
                 return;
             }
 
@@ -3756,7 +3835,6 @@ static void CALEErrorHandler(const char *remoteAddress,
                                                0);
 
     CALEErrorHandlerInternal(rep, data, dataLen, result);
-
     CAFreeEndpoint(rep);
 
     OIC_LOG(DEBUG, CALEADAPTER_TAG, "CALEErrorHandler OUT");

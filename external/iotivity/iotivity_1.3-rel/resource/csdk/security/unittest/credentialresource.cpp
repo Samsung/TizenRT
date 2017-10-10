@@ -213,10 +213,15 @@ TEST(CredResourceTest, CredToCBORPayloadNULL)
     }
     ASSERT_TRUE(NULL != cborPayload);
     EXPECT_EQ(OC_STACK_INVALID_PARAM, CredToCBORPayload(cred, &cborPayload, &size, secureFlag));
+    /* CredToCBORPayload allocates mem if payload is non-NULL, clean up before proceeding */
     OICFree(cborPayload);
     cborPayload = NULL;
     EXPECT_EQ(OC_STACK_OK, CredToCBORPayload(NULL, &cborPayload, &size,secureFlag));
+    OICFree(cborPayload);
+    cborPayload = NULL;
     EXPECT_EQ(OC_STACK_INVALID_PARAM, CredToCBORPayload(cred, &cborPayload, 0, secureFlag));
+    OICFree(cborPayload);
+    cborPayload = NULL;
     EXPECT_EQ(OC_STACK_INVALID_PARAM, CredToCBORPayload(cred, NULL, &size, secureFlag));
     DeleteCredList(cred);
 }

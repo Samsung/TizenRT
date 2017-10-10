@@ -1169,7 +1169,7 @@ CAResult_t CAInitializeMessageHandler(CATransportAdapter_t transportType)
 void CATerminateMessageHandler()
 {
 #ifndef SINGLE_THREAD
-    CATransportAdapter_t connType;
+    CATransportAdapter_t connType = CA_DEFAULT_ADAPTER;
     u_arraylist_t *list = CAGetSelectedNetworkList();
     size_t length = u_arraylist_length(list);
 
