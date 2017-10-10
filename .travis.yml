@@ -12,6 +12,7 @@ env:
 - BUILD_CONFIG=artik053/nettest
 - BUILD_CONFIG=artik053/minimal
 - BUILD_CONFIG=artik053/tc
+- BUILD_CONFIG=artik053/iotjs
 - BUILD_CONFIG=qemu/tc_64k
 
 
