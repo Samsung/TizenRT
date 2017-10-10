@@ -524,6 +524,11 @@ static int ntpc_init_server_info(struct ntpc_server_conn_s *server_list, uint32_
 	memset(&g_ntps, 0x0, sizeof(g_ntps));
 
 	for (i = 0; i < num_of_servers; i++) {
+		if (server_list[i].hostname == NULL) {
+			ndbg("ERROR: invalid hostname\n");
+			goto done;
+		}
+
 		he = gethostbyname(server_list[i].hostname);
 		if (!he) {
 			continue;
