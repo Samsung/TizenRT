@@ -289,7 +289,7 @@ char *get_cloud_server_address(char *pch_current_server)
 		memset(g_ci_cloud_address, 0, MAX_CI_CLOUD_ADDRESS);
 		memcpy(g_ci_cloud_address, gpst_cloud_data->address, strlen(gpst_cloud_data->address) + 1);
 	} else {
-		memcpy(g_ci_cloud_address, STD_CI_CLOUD_ADDRESS, strlen(STD_CI_CLOUD_ADDRESS));
+		memcpy(g_ci_cloud_address, STD_CI_CLOUD_ADDRESS, strlen(STD_CI_CLOUD_ADDRESS) + 1);
 	}
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "CLOUD CI Address : %s", g_ci_cloud_address);
 
@@ -533,11 +533,6 @@ static int get_json_string(cJSON *json, char **variable)
 		if (variable != NULL) {
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "variable value is not NULL.(*variable = %d)", *variable);
 		}
-		return 0;
-	}
-
-	if (json->type != json->type) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "json-value Type is Not String value.");
 		return 0;
 	}
 
@@ -993,8 +988,12 @@ static int parse_things_info_json(const char *filename)
 										return 0;
 									}
 									cJSON *policy = cJSON_GetObjectItem(link, KEY_DEVICE_RESOURCE_POLICY);
-									link_resource->policy = policy->valueint;
-									node->collection[iter].links[linkiter] = link_resource;
+									if (policy) {
+										link_resource->policy = policy->valueint;
+										node->collection[iter].links[linkiter] = link_resource;
+									} else {
+										return 0;
+									}
 								}
 							} else {
 								return 0;
@@ -1027,7 +1026,9 @@ static int parse_things_info_json(const char *filename)
 						cJSON *res = cJSON_GetArrayItem(single, iter);
 						if (res->type != NULL) {
 							cJSON *uri = cJSON_GetObjectItem(res, KEY_DEVICE_RESOURCE_URI);
-							memcpy(node->single[iter].uri, uri->valuestring, strlen(uri->valuestring) + 1);
+							if (uri) {
+								memcpy(node->single[iter].uri, uri->valuestring, strlen(uri->valuestring) + 1);
+							}
 
 							cJSON *types = cJSON_GetObjectItem(res, KEY_DEVICE_RESOURCE_TYPES);
 							if (types) {
