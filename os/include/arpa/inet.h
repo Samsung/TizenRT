@@ -113,37 +113,6 @@
 #define NTOHS(hs) HTONS(hs)
 #define NTOHL(hl) HTONL(hl)
 
-#ifdef CONFIG_NET_LWIP
-
-#ifdef htons
-#undef htons
-#endif /* htons */
-#ifdef htonl
-#undef htonl
-#endif /* htonl */
-#ifdef ntohs
-#undef ntohs
-#endif /* ntohs */
-#ifdef ntohl
-#undef ntohl
-#endif /* ntohl */
-#ifdef inet_aton
-#undef inet_aton
-#endif /* inet_aton */
-#ifdef inet_ntoa
-#undef inet_ntoa
-#endif /* inet_ntoa */
-#ifdef inet_pton
-#undef inet_pton
-#endif /* inet_pton */
-#ifdef inet_ntop
-#undef inet_ntop
-#endif /* inet_ntop */
-#ifdef inet_addr
-#undef inet_addr
-#endif /* inet_addr */
-
-#endif /*CONFIG_NET_LWIP*/
 
 /****************************************************************************
  * Public Function Prototypes

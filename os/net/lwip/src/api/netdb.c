@@ -419,4 +419,99 @@ int lwip_getaddrinfo(const char *nodename, const char *servname, const struct ad
 	return 0;
 }
 
+/**
+ * Translates the socket addresses and returns the string.
+ * This is the dummy function to support compatibility for iotivity
+ *
+ * @param sa socket address to translate
+ * @param salen length of the socket address
+ * @param host host string pointer to be returned
+ * @param hostlen length of the host name buffer
+ * @param serv service string pointer to be returned.
+ * @param servlen length of the service name buffer.
+ * @param flags takes NI_NUMERICHOST and NI_NUMERICSERV
+ * @return 0 on success, non-zero on failure
+ */
+int lwip_getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen, char *serv, size_t servlen, int flags)
+{
+	int tmpaddrlen;
+	int tmpservlen;
+	char tmpaddr[256];
+	char tmpserv[64];
+
+	if (sa == NULL) {
+		return EAI_FAIL;
+	}
+
+	if (host != NULL) {
+		if (flags & NI_NUMERICHOST) {
+			switch (sa->sa_family) {
+#if LWIP_IPV4
+			case AF_INET: {
+				struct sockaddr_in *sin = (struct sockaddr_in *)sa;
+				if (!(ip4addr_ntoa_r((const ip4_addr_t *)&sin->sin_addr, tmpaddr, sizeof(tmpaddr)))) {
+					return EAI_FAIL;
+				}
+				break;
+			}
+#endif
+#if LWIP_IPV6
+			case AF_INET6: {
+				struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)sa;
+				if (!(ip6addr_ntoa_r((const ip6_addr_t *)&sin6->sin6_addr, tmpaddr, sizeof(tmpaddr)))) {
+					return EAI_FAIL;
+				}
+				break;
+			}
+#endif
+			default:
+				return EAI_FAMILY;
+			}
+
+			tmpaddrlen = strlen(tmpaddr) + 1;
+			if (hostlen < tmpaddrlen) {
+				return EAI_MEMORY;
+			}
+			strncpy(host, tmpaddr, tmpaddrlen);
+		} else {
+			/* other flags are not supported */
+			return EAI_FAIL;
+		}
+	}
+
+	if (serv != NULL) {
+		if (flags & NI_NUMERICSERV) {
+			switch (sa->sa_family) {
+#if LWIP_IPV4
+			case AF_INET: {
+				struct sockaddr_in *sin = (struct sockaddr_in *)sa;
+				tmpservlen = snprintf(tmpserv, sizeof(tmpserv), "%d", ntohs(sin->sin_port));
+				break;
+			}
+#endif
+#if LWIP_IPV6
+			case AF_INET6: {
+				struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)sa;
+				tmpservlen = snprintf(tmpserv, sizeof(tmpserv), "%d", ntohs(sin6->sin6_port));
+				break;
+                        }
+#endif
+			default:
+				return EAI_FAMILY;
+			}
+
+			tmpserv[tmpservlen] = '\0';
+			if (tmpservlen == -1 || servlen < tmpservlen + 1) {
+				return EAI_MEMORY;
+			}
+			strncpy(serv, tmpserv, tmpservlen + 1);
+		} else {
+			/* other flags are not supported */
+			return EAI_FAIL;
+		}
+	}
+
+	return 0;
+}
+
 #endif							/* LWIP_DNS && LWIP_SOCKET */
