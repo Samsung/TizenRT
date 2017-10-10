@@ -67,7 +67,7 @@ static int app_dhcp_main(void)
 	return 1;
 }
 
-void linkUpEvent(void)
+static void linkUpEvent(void)
 {
 	isConnected = 1;
 }
