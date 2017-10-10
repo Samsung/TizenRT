@@ -41,16 +41,15 @@ fi
 prepare_download()
 {
 	# Prepare for ROMFS
-	ROMFS_FLASHING_CFG=${OPENOCD_DIR_PATH}/romfs_flashing.cfg
-	echo "set romfs_partition_enable 0" > ${ROMFS_FLASHING_CFG}
 	if [ "${CONFIG_FS_ROMFS}" == "y" ]; then
-		echo "set romfs_partition_enable 1" > ${ROMFS_FLASHING_CFG}
+		OPENOCD_ROMFS="set romfs_partition_enable 1; echo \"romfs is enabled\""
+	else
+		OPENOCD_ROMFS="set romfs_partition_enable 0; echo \"romfs is disabled\""
 	fi
 }
 
 finish_download()
 {
-	rm ${ROMFS_FLASHING_CFG}
 	exit $1
 }
 
@@ -67,7 +66,7 @@ romfs()
 		popd
 
 		pushd ${OPENOCD_DIR_PATH}
-		${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' 	\
+		${OPENOCD_BIN_PATH}/openocd -c "${OPENOCD_ROMFS}" -f artik053.cfg -c ' 	\
 		flash_write rom ../../../../output/bin/romfs.img; \
 		exit'
 		popd
@@ -106,7 +105,7 @@ main()
 
 			# Download all binaries using openocd script
 			pushd ${OPENOCD_DIR_PATH}
-			${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' 	\
+			${OPENOCD_BIN_PATH}/openocd -c "${OPENOCD_ROMFS}" -f artik053.cfg -c ' 	\
 			flash_write bl1 ../../bin/bl1.bin; 		\
 			flash_write bl2 ../../bin/bl2.bin; 		\
 			flash_write sssfw ../../bin/sssfw.bin; 		\
@@ -123,7 +122,7 @@ main()
 			echo "USERFS :"
 
 			pushd ${OPENOCD_DIR_PATH}
-			${OPENOCD_BIN_PATH}/openocd -f artik053.cfg -c ' 	\
+			${OPENOCD_BIN_PATH}/openocd -c "${OPENOCD_ROMFS}" -f artik053.cfg -c ' 	\
 			flash_erase_part user;	\
 			exit'
 			popd
