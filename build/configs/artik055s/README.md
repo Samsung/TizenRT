@@ -53,14 +53,14 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK055S Modul
             XGPIO24(gpio53) <- 17 | 18 -> XSPI0_CSN
   XGPIO27(gpio56)/XI2S0_SDI <- 19 | 20 -> XSPI0_MISO
             XGPIO22(gpio51) <- 21 | 22 -> XSPI0_MOSI
-                     XEINT0 <- 23 | 24 -> GND
+             XEINT0(gpio57) <- 23 | 24 -> GND
 ```
 #### CON704
 ```
                  XPWMTOUT_4 <-  1 |  2 -> VCC_EXT3P3
                  XPWMTOUT_5 <-  3 |  4 -> XUART2_RXD
-                     XEINT2 <-  5 |  6 -> XUART2_TXD
-                     XEINT1 <-  7 |  8 -> XUART3_RXD
+             XEINT2(gpio59) <-  5 |  6 -> XUART2_TXD
+             XEINT1(gpio58) <-  7 |  8 -> XUART3_RXD
             XGPIO12(gpio41) <-  9 | 10 -> XUART3_TXD
             XGPIO10(gpio39) <- 11 | 12 -> GND
              XGPIO9(gpio38) <- 13 | 14 -> VCC_EXT3P3
