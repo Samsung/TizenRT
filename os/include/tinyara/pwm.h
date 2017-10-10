@@ -162,7 +162,7 @@ struct pwm_info_s {
 
 #else
 	ub16_t duty;				/* Duty of the pulse train, "1"-to-"0" duration.
-								 * Maximum value is b16ONE. (PWM makes always high)
+								 * Maximum value is (b16ONE - 1). (PWM makes always high)
 								 * Minimum value is 0. (PWM makes always low)
 								 * pulse width (duty cycle) 50% is b16HALF. (PWM repeats half high, half low)
 								 */
