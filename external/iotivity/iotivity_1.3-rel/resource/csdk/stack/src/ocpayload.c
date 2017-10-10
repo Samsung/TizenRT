@@ -1803,21 +1803,21 @@ void OC_CALL OCResourcePayloadAddNewEndpoint(OCResourcePayload* payload, OCEndpo
     }
 }
 
-OCEndpointPayload* CreateEndpointPayloadList(const OCResource* colResource, const OCDevAddr *devAddr,
+OCEndpointPayload* CreateEndpointPayloadList(const OCResource *resource, const OCDevAddr *devAddr,
                                             CAEndpoint_t *networkInfo, size_t infoSize,
                          OCEndpointPayload **listHead, size_t* epSize, OCEndpointPayload** selfEp)
 {
     OCEndpointPayload *headNode = NULL;
     OCEndpointPayload *lastNode = NULL;
 
-    VERIFY_PARAM_NON_NULL(TAG, colResource, "Invalid colResource parameter");
+    VERIFY_PARAM_NON_NULL(TAG, resource, "Invalid resource parameter");
     VERIFY_PARAM_NON_NULL(TAG, devAddr, "Invalid devAddr parameter");
     VERIFY_PARAM_NON_NULL(TAG, networkInfo, "Invalid networkInfo parameter");
     VERIFY_PARAM_NON_NULL(TAG, listHead, "Invalid listHead parameter");
     if (epSize != NULL) *epSize = 0;
 
-    bool includeSecure = colResource->resourceProperties & OC_SECURE;
-    bool includeNonsecure = colResource->resourceProperties & OC_NONSECURE;
+    bool includeSecure = resource->resourceProperties & OC_SECURE;
+    bool includeNonsecure = resource->resourceProperties & OC_NONSECURE;
 
     if ((OC_ADAPTER_IP | OC_ADAPTER_TCP) & (devAddr->adapter))
     {
@@ -1839,7 +1839,7 @@ OCEndpointPayload* CreateEndpointPayloadList(const OCResource* colResource, cons
                 }
 
                 bool isSecure = (info->flags & OC_FLAG_SECURE);
-                if (((colResource->endpointType) & matchedTps) &&
+                if (((resource->endpointType) & matchedTps) &&
                         ((isSecure && includeSecure) || (!isSecure && includeNonsecure)))
                 {
                     // create payload

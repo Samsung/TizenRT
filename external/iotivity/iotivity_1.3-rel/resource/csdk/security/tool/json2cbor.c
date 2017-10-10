@@ -472,54 +472,54 @@ static OCStackResult ConvertOCJSONStringToCBORFile(const char *jsonStr, const ch
     cbor_encoder_init(&encoder, outPayload, cborSize, 0);
     CborEncoder map;
     CborError cborEncoderResult = cbor_encoder_create_map(&encoder, &map, CborIndefiniteLength);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Creating Main Map.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Creating Main Map.");
     if ((aclCborSize > 0) && aclCbor)
     {
         cborEncoderResult = cbor_encode_text_string(&map, OIC_JSON_ACL_NAME, strlen(OIC_JSON_ACL_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding ACL Name.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding ACL Name.");
         cborEncoderResult = cbor_encode_byte_string(&map, aclCbor, aclCborSize);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding ACL Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding ACL Value.");
     }
 
     if ((pstatCborSize > 0) && pstatCbor)
     {
         cborEncoderResult = cbor_encode_text_string(&map, OIC_JSON_PSTAT_NAME, strlen(OIC_JSON_PSTAT_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding PSTAT Name.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding PSTAT Name.");
         cborEncoderResult = cbor_encode_byte_string(&map, pstatCbor, pstatCborSize);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding PSTAT Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding PSTAT Value.");
     }
     if ((doxmCborSize > 0) && doxmCbor)
     {
         cborEncoderResult = cbor_encode_text_string(&map, OIC_JSON_DOXM_NAME, strlen(OIC_JSON_DOXM_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding DOXM Name.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding DOXM Name.");
         cborEncoderResult = cbor_encode_byte_string(&map, doxmCbor, doxmCborSize);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding DOXM Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding DOXM Value.");
     }
     if ((amaclCborSize > 0) && amaclCbor)
     {
         cborEncoderResult = cbor_encode_text_string(&map, OIC_JSON_AMACL_NAME, strlen(OIC_JSON_AMACL_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding AMACL Name.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding AMACL Name.");
         cborEncoderResult = cbor_encode_byte_string(&map, amaclCbor, amaclCborSize);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding AMACL Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding AMACL Value.");
     }
     if ((credCborSize > 0) && credCbor)
     {
         cborEncoderResult = cbor_encode_text_string(&map, OIC_JSON_CRED_NAME, strlen(OIC_JSON_CRED_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding CRED Name.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding CRED Name.");
         cborEncoderResult = cbor_encode_byte_string(&map, credCbor, credCborSize);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding CRED Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding CRED Value.");
     }
     if ((dpCborSize > 0) && dpCbor)
     {
         cborEncoderResult = cbor_encode_text_string(&map, OC_JSON_DEVICE_PROPS_NAME,
                             strlen(OC_JSON_DEVICE_PROPS_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Device Properties Name.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Device Properties Name.");
         cborEncoderResult = cbor_encode_byte_string(&map, dpCbor, dpCborSize);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Device Properties Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Device Properties Value.");
     }
 
     cborEncoderResult = cbor_encoder_close_container(&encoder, &map);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing Container.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing Container.");
 
     size_t s = cbor_encoder_get_buffer_size(&encoder, outPayload);
     OIC_LOG_V(DEBUG, TAG, "Payload size %" PRIuPTR, s);

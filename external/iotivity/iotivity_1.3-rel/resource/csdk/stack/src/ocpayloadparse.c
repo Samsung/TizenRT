@@ -69,7 +69,7 @@ OCStackResult OCParsePayload(OCPayload **outPayload, OCPayloadFormat payloadForm
     CborValue rootValue;
 
     err = cbor_parser_init(payload, payloadSize, 0, &parser, &rootValue);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed initializing init value")
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed initializing init value")
 
     switch(payloadType)
     {
@@ -136,19 +136,19 @@ static CborError OCParseStringLL(CborValue *map, char *type, OCStringLL **resour
 {
     CborValue val;
     CborError err = cbor_value_map_find_value(map, type, &val);
-    VERIFY_CBOR_SUCCESS(TAG, err, "to find StringLL TAG");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find StringLL TAG");
 
     if (cbor_value_is_array(&val))
     {
         CborValue txtStr;
         err = cbor_value_enter_container(&val, &txtStr);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to enter container");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to enter container");
         while (cbor_value_is_text_string(&txtStr))
         {
             size_t len = 0;
             char *input = NULL;
             err = cbor_value_dup_text_string(&txtStr, &input, &len, NULL);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to find StringLL value.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find StringLL value.");
             if (input)
             {
                 char *savePtr = NULL;
@@ -170,7 +170,7 @@ static CborError OCParseStringLL(CborValue *map, char *type, OCStringLL **resour
             if (cbor_value_is_text_string(&txtStr))
             {
                 err = cbor_value_advance(&txtStr);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to advance string value");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to advance string value");
             }
         }
     }
@@ -200,7 +200,7 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
         // Enter the main root map
         ret = OC_STACK_MALFORMED_RESPONSE;
         err = cbor_value_enter_container(rootValue, &rootMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to enter root map container");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to enter root map container");
         while (cbor_value_is_map(&rootMap))
         {
             ret = OC_STACK_NO_MEMORY;
@@ -210,18 +210,18 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
             // Look for DI
             CborValue curVal;
             err = cbor_value_map_find_value(&rootMap, OC_RSRVD_DEVICE_ID, &curVal);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to find device id tag");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find device id tag");
             if (cbor_value_is_valid(&curVal))
             {
                 if (cbor_value_is_byte_string(&curVal))
                 {
                     err = cbor_value_dup_byte_string(&curVal, (uint8_t **)&(temp->sid), &len, NULL);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "to copy device id value");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to copy device id value");
                 }
                 else if (cbor_value_is_text_string(&curVal))
                 {
                     err = cbor_value_dup_text_string(&curVal, &(temp->sid), &len, NULL);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "to copy device id value");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to copy device id value");
                 }
             }
 
@@ -230,7 +230,7 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
             if (cbor_value_is_valid(&curVal))
             {
                 err = OCParseStringLL(&rootMap, OC_RSRVD_RESOURCE_TYPE, &temp->type);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find resource type");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find resource type");
             }
 
             // IF - Not a mandatory field
@@ -238,7 +238,7 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
             if (cbor_value_is_valid(&curVal))
             {
                 err =  OCParseStringLL(&rootMap, OC_RSRVD_INTERFACE, &temp->iface);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find interface");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find interface");
             }
 
             // Name - Not a mandatory field
@@ -246,21 +246,21 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
             if (cbor_value_is_text_string(&curVal))
             {
                 err = cbor_value_dup_text_string(&curVal, &temp->name, &len, NULL);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find device name");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find device name");
             }
 
             // Look for Links which will have an array as the value
             CborValue linkMap;
             err = cbor_value_map_find_value(&rootMap, OC_RSRVD_LINKS, &linkMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to find links tag");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find links tag");
             err = cbor_value_is_valid(&linkMap) ? CborNoError : CborUnknownError;
-            VERIFY_CBOR_SUCCESS(TAG, err, "to find links tag");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find links tag");
 
             // Enter the links array and start iterating through the array processing
             // each resource which shows up as a map.
             CborValue resourceMap;
             err = cbor_value_enter_container(&linkMap, &resourceMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to enter link map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to enter link map");
 
             while (cbor_value_is_map(&resourceMap))
             {
@@ -271,24 +271,24 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
 
                 // Uri
                 err = cbor_value_map_find_value(&resourceMap, OC_RSRVD_HREF, &curVal);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find href tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find href tag");
                 err = cbor_value_is_valid(&curVal) ? CborNoError : CborUnknownError;
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find href tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find href tag");
                 err = cbor_value_dup_text_string(&curVal, &(resource->uri), &len, NULL);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find href value");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find href value");
 
                 // Rel - Not a mandatory field
                 err = cbor_value_map_find_value(&resourceMap, OC_RSRVD_REL, &curVal);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find rel tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find rel tag");
                 if (cbor_value_is_valid(&curVal))
                 {
                     err = cbor_value_dup_text_string(&curVal, &(resource->rel), &len, NULL);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "to find rel value");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find rel value");
                 }
 
                 // Resource Types
                 err =  OCParseStringLL(&resourceMap, OC_RSRVD_RESOURCE_TYPE, &resource->types);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find resource type tag/value");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find resource type tag/value");
 
                 // Interface Types
                 err =  OCParseStringLL(&resourceMap, OC_RSRVD_INTERFACE, &resource->interfaces);
@@ -305,37 +305,37 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
                 // Policy
                 CborValue policyMap;
                 err = cbor_value_map_find_value(&resourceMap, OC_RSRVD_POLICY, &policyMap);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find policy tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find policy tag");
                 err = cbor_value_is_valid(&policyMap) ? CborNoError : CborUnknownError;
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find policy tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find policy tag");
 
                 // Bitmap
                 err = cbor_value_map_find_value(&policyMap, OC_RSRVD_BITMAP, &curVal);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find bitmap tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find bitmap tag");
                 err = cbor_value_is_valid(&curVal) ? CborNoError : CborUnknownError;
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find bitmap tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find bitmap tag");
                 err = cbor_value_get_int(&curVal, &bitmap);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find bitmap value");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find bitmap value");
                 resource->bitmap = (uint8_t)bitmap;
 
                 // Secure Flag
                 err = cbor_value_map_find_value(&policyMap, OC_RSRVD_SECURE, &curVal);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find secure tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find secure tag");
                 if (cbor_value_is_boolean(&curVal))
                 {
                     err = cbor_value_get_boolean(&curVal, &(resource->secure));
-                    VERIFY_CBOR_SUCCESS(TAG, err, "to find secure value");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find secure value");
                 }
 
                 // Port
                 err = cbor_value_map_find_value(&policyMap, OC_RSRVD_HOSTING_PORT, &curVal);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find port tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find port tag");
                 if (cbor_value_is_integer(&curVal))
                 {
                     int port;
 
                     err = cbor_value_get_int(&curVal, &port);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "to find port value");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find port value");
                     resource->port = (uint16_t)port;
                 }
 
@@ -347,7 +347,7 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
                     int tcpPort;
 
                     err = cbor_value_get_int(&curVal, &tcpPort);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "to find tcp port value");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find tcp port value");
                     resource->tcpPort = (uint16_t)tcpPort;
                 }
 
@@ -359,22 +359,22 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
                     int tlsPort;
 
                     err = cbor_value_get_int(&curVal, &tlsPort);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "to find tcp tls port value");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find tcp tls port value");
                     resource->tcpPort = (uint16_t)tlsPort;
                 }
 #endif
 #endif
                 err = cbor_value_advance(&resourceMap);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to advance resource map");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to advance resource map");
 
                 OCDiscoveryPayloadAddNewResource(temp, resource);
             }
 
             err = cbor_value_leave_container(&linkMap, &resourceMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to leave resource map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to leave resource map");
 
             err = cbor_value_advance(&rootMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to advance root map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to advance root map");
 
             if(rootPayload == NULL)
             {
@@ -389,7 +389,7 @@ static OCStackResult OCParseDiscoveryPayloadCbor(OCPayload **outPayload,
         }
 
         err = cbor_value_leave_container(rootValue, &rootMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to leave root map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to leave root map");
 
     }
     else
@@ -427,33 +427,33 @@ static CborError ParseResources(OCDiscoveryPayload **outPayload, CborValue *reso
         // Uri
         CborValue curVal;
         err = cbor_value_map_find_value(resourceMap, OC_RSRVD_HREF, &curVal);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find href tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find href tag");
         err = cbor_value_is_valid(&curVal) ? CborNoError : CborUnknownError;
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find href tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find href tag");
         err = cbor_value_dup_text_string(&curVal, &(resource->uri), &len, NULL);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find href value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find href value");
 
         // Rel - Not a mandatory field
         err = cbor_value_map_find_value(resourceMap, OC_RSRVD_REL, &curVal);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find rel tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find rel tag");
         if (cbor_value_is_valid(&curVal))
         {
             err = cbor_value_dup_text_string(&curVal, &(resource->rel), &len, NULL);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to find rel value");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find rel value");
         }
 
         // Anchor - Not a mandatory field
         err = cbor_value_map_find_value(resourceMap, OC_RSRVD_URI, &curVal);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find anchor tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find anchor tag");
         if (cbor_value_is_text_string(&curVal))
         {
             err = cbor_value_dup_text_string(&curVal, &(resource->anchor), &len, NULL);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to find anchor value");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find anchor value");
         }
 
         // Resource Types
         err =  OCParseStringLL(resourceMap, OC_RSRVD_RESOURCE_TYPE, &resource->types);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find resource type tag/value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find resource type tag/value");
 
         // Interface Types
         err =  OCParseStringLL(resourceMap, OC_RSRVD_INTERFACE, &resource->interfaces);
@@ -469,29 +469,29 @@ static CborError ParseResources(OCDiscoveryPayload **outPayload, CborValue *reso
         // Policy
         CborValue policyMap;
         err = cbor_value_map_find_value(resourceMap, OC_RSRVD_POLICY, &policyMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find policy tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find policy tag");
         err = cbor_value_is_valid(&policyMap) ? CborNoError : CborUnknownError;
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find policy tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find policy tag");
 
         // Bitmap
         err = cbor_value_map_find_value(&policyMap, OC_RSRVD_BITMAP, &curVal);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find bitmap tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find bitmap tag");
         err = cbor_value_is_valid(&curVal) ? CborNoError : CborUnknownError;
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find bitmap tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find bitmap tag");
         err = cbor_value_get_int(&curVal, &bitmap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find bitmap value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find bitmap value");
         resource->bitmap = (uint8_t)bitmap;
 
         // Endpoints
         CborValue epsMap;
         err = cbor_value_map_find_value(resourceMap, OC_RSRVD_ENDPOINTS, &epsMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find eps tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find eps tag");
 
         if (cbor_value_is_array(&epsMap))
         {
             CborValue epMap;
             err = cbor_value_enter_container(&epsMap, &epMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to enter endpoint map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to enter endpoint map");
 
             while (cbor_value_is_map(&epMap))
             {
@@ -503,11 +503,11 @@ static CborError ParseResources(OCDiscoveryPayload **outPayload, CborValue *reso
 
                 // ep
                 err = cbor_value_map_find_value(&epMap, OC_RSRVD_ENDPOINT, &curVal);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find endpoint tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find endpoint tag");
                 err = cbor_value_is_valid(&curVal) ? CborNoError : CborUnknownError;
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find endpoint tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find endpoint tag");
                 err = cbor_value_dup_text_string(&curVal, &endpointStr, &len, NULL);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find endpoint value");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find endpoint value");
 
                 OCStackResult parseResult = OCParseEndpointString(endpointStr, endpoint);
                 OICFree(endpointStr);
@@ -516,11 +516,11 @@ static CborError ParseResources(OCDiscoveryPayload **outPayload, CborValue *reso
                 {
                     // pri - optional
                     err = cbor_value_map_find_value(&epMap, OC_RSRVD_PRIORITY, &curVal);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "to find priority tag");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find priority tag");
                     if (cbor_value_is_valid(&curVal))
                     {
                         err = cbor_value_get_int(&curVal, &pri);
-                        VERIFY_CBOR_SUCCESS(TAG, err, "to find priority value");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find priority value");
                     }
                     else
                     {
@@ -542,15 +542,15 @@ static CborError ParseResources(OCDiscoveryPayload **outPayload, CborValue *reso
                 }
 
                 err = cbor_value_advance(&epMap);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to advance endpoint map");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to advance endpoint map");
             }
 
             err = cbor_value_leave_container(&epsMap, &epMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to leave eps map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to leave eps map");
         }
 
         err = cbor_value_advance(resourceMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to advance resource map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to advance resource map");
 
         // Parse di from anchor
         if (!resource->anchor || strncmp(resource->anchor, "ocf://", 6))
@@ -619,12 +619,12 @@ static OCStackResult OCParseDiscoveryPayloadVndOcfCbor(OCPayload **outPayload, C
 
         CborValue rootMap;
         err = cbor_value_enter_container(rootValue, &rootMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to enter root array");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to enter root array");
 
         // Look for Links which will have an array as the value
         CborValue linkVal;
         err = cbor_value_map_find_value(&rootMap, OC_RSRVD_LINKS, &linkVal);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find links tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find links tag");
         if (cbor_value_is_array(&linkVal))
         {
             rootPayload = OCDiscoveryPayloadCreate();
@@ -632,11 +632,11 @@ static OCStackResult OCParseDiscoveryPayloadVndOcfCbor(OCPayload **outPayload, C
 
             // RT
             err = OCParseStringLL(&rootMap, OC_RSRVD_RESOURCE_TYPE, &rootPayload->type);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to find resource type");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find resource type");
 
             // IF
             err =  OCParseStringLL(&rootMap, OC_RSRVD_INTERFACE, &rootPayload->iface);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to find interface");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find interface");
 
             // Name - Not a mandatory field
             CborValue curVal;
@@ -644,31 +644,31 @@ static OCStackResult OCParseDiscoveryPayloadVndOcfCbor(OCPayload **outPayload, C
             if (cbor_value_is_text_string(&curVal))
             {
                 err = cbor_value_dup_text_string(&curVal, &rootPayload->name, &len, NULL);
-                VERIFY_CBOR_SUCCESS(TAG, err, "to find device name");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find device name");
             }
 
             // Links
             CborValue linkMap;
             err = cbor_value_enter_container(&linkVal, &linkMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to enter resource map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to enter resource map");
 
             err = ParseResources(&rootPayload, &linkMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to parse resources");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to parse resources");
 
             err = cbor_value_leave_container(&linkVal, &linkMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to leave resource map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to leave resource map");
 
             err = cbor_value_advance(&rootMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to advance resource map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to advance resource map");
         }
         else
         {
             err = ParseResources(&rootPayload, &rootMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to parse resources");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to parse resources");
         }
 
         err = cbor_value_leave_container(rootValue, &rootMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to leave resource map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to leave resource map");
     }
     else
     {
@@ -733,7 +733,7 @@ static CborError OCParseArrayFindDimensionsAndType(const CborValue *parent,
     dimensions[0] = dimensions[1] = dimensions[2] = 0;
 
     CborError err = cbor_value_enter_container(parent, &insideArray);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed to enter container");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed to enter container");
 
     while (cbor_value_is_valid(&insideArray))
     {
@@ -744,7 +744,7 @@ static CborError OCParseArrayFindDimensionsAndType(const CborValue *parent,
             size_t subdim[MAX_REP_ARRAY_DEPTH];
             tempType = OCREP_PROP_NULL;
             err = OCParseArrayFindDimensionsAndType(&insideArray, subdim, &tempType);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed to parse array");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed to parse array");
 
             if (subdim[2] != 0)
             {
@@ -780,7 +780,7 @@ static CborError OCParseArrayFindDimensionsAndType(const CborValue *parent,
 
         ++dimensions[0];
         err = cbor_value_advance(&insideArray);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed to advance array");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed to advance array");
     }
 
 exit:
@@ -833,7 +833,7 @@ static CborError OCParseArrayFillArray(const CborValue *parent,
     newdim[2] = 0;
 
     CborError err = cbor_value_enter_container(parent, &insideArray);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed to enter container");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed to enter container");
 
     while (!err && i < dimensions[0] && cbor_value_is_valid(&insideArray))
     {
@@ -932,13 +932,13 @@ static CborError OCParseArrayFillArray(const CborValue *parent,
                     err = CborErrorUnknownType;
                     break;
             }
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting repPayload");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting repPayload");
         }
         ++i;
         if (!noAdvance && cbor_value_is_valid(&insideArray))
         {
             err = cbor_value_advance(&insideArray);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed advnce insideArray");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed advnce insideArray");
         }
     }
 
@@ -957,13 +957,13 @@ static CborError OCParseArray(OCRepPayload *out, const char *name, CborValue *co
     size_t allocSize = 0;
     bool res = true;
     CborError err = OCParseArrayFindDimensionsAndType(container, dimensions, &type);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Array details weren't clear");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Array details weren't clear");
 
     if (type == OCREP_PROP_NULL)
     {
         res = OCRepPayloadSetNull(out, name);
         err = (CborError) !res;
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting value");
         return err;
     }
 
@@ -973,7 +973,7 @@ static CborError OCParseArray(OCRepPayload *out, const char *name, CborValue *co
     VERIFY_PARAM_NON_NULL(TAG, arr, "Array Parse allocation failed");
 
     res = OCParseArrayFillArray(container, dimensions, type, arr);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed parse array");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed parse array");
 
     switch (type)
     {
@@ -1000,7 +1000,7 @@ static CborError OCParseArray(OCRepPayload *out, const char *name, CborValue *co
             break;
     }
     err = (CborError) !res;
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting array parameter");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting array parameter");
     return CborNoError;
 exit:
     if (type == OCREP_PROP_STRING)
@@ -1053,16 +1053,16 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
         size_t len = 0;
         CborValue repMap;
         err = cbor_value_enter_container(objMap, &repMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed entering repMap");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed entering repMap");
 
         while (!err && cbor_value_is_valid(&repMap))
         {
             if (cbor_value_is_map(objMap) && cbor_value_is_text_string(&repMap))
             {
                 err = cbor_value_dup_text_string(&repMap, &name, &len, NULL);
-                VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding tag name in the map");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding tag name in the map");
                 err = cbor_value_advance(&repMap);
-                VERIFY_CBOR_SUCCESS(TAG, err, "Failed advancing rootMap");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed advancing rootMap");
                 if (name &&
                     isRoot &&
                     ((0 == strcmp(OC_RSRVD_HREF, name)) ||
@@ -1109,7 +1109,7 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                     {
                         int64_t intval = 0;
                         err = cbor_value_get_int64(&repMap, &intval);
-                        VERIFY_CBOR_SUCCESS(TAG, err, "Failed getting int value");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed getting int value");
                         res = OCRepPayloadSetPropInt(curPayload, name, intval);
                     }
                     break;
@@ -1117,7 +1117,7 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                     {
                         double doubleval = 0;
                         err = cbor_value_get_double(&repMap, &doubleval);
-                        VERIFY_CBOR_SUCCESS(TAG, err, "Failed getting double value");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed getting double value");
                         res = OCRepPayloadSetPropDouble(curPayload, name, doubleval);
                     }
                     break;
@@ -1125,7 +1125,7 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                     {
                         bool boolval = false;
                         err = cbor_value_get_boolean(&repMap, &boolval);
-                        VERIFY_CBOR_SUCCESS(TAG, err, "Failed getting boolean value");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed getting boolean value");
                         res = OCRepPayloadSetPropBool(curPayload, name, boolval);
                     }
                     break;
@@ -1133,7 +1133,7 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                     {
                         char *strval = NULL;
                         err = cbor_value_dup_text_string(&repMap, &strval, &len, NULL);
-                        VERIFY_CBOR_SUCCESS(TAG, err, "Failed getting string value");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed getting string value");
                         res = OCRepPayloadSetPropStringAsOwner(curPayload, name, strval);
                     }
                     break;
@@ -1141,7 +1141,7 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                     {
                         uint8_t* bytestrval = NULL;
                         err = cbor_value_dup_byte_string(&repMap, &bytestrval, &len, NULL);
-                        VERIFY_CBOR_SUCCESS(TAG, err, "Failed getting byte string value");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed getting byte string value");
                         OCByteString tmp = {.bytes = bytestrval, .len = len};
                         res = OCRepPayloadSetPropByteStringAsOwner(curPayload, name, &tmp);
                     }
@@ -1150,7 +1150,7 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                     {
                         OCRepPayload *pl = NULL;
                         err = OCParseSingleRepPayload(&pl, &repMap, false);
-                        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting parse single rep");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting parse single rep");
                         res = OCRepPayloadSetPropObjectAsOwner(curPayload, name, pl);
                     }
                     break;
@@ -1162,7 +1162,7 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
                         // to parse as payload with non-negative integer value names
                         OCRepPayload *pl = NULL;
                         err = OCParseSingleRepPayload(&pl, &repMap, false);
-                        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting parse single rep");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting parse single rep");
                         res = OCRepPayloadSetPropObjectAsOwner(curPayload, name, pl);
                     }
                     break;
@@ -1174,12 +1174,12 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
             {
                 err = (CborError) !res;
             }
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting value");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting value");
 
             if (type != CborMapType && cbor_value_is_valid(&repMap))
             {
                 err = cbor_value_advance(&repMap);
-                VERIFY_CBOR_SUCCESS(TAG, err, "Failed advance repMap");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed advance repMap");
             }
             OICFree(name);
             name = NULL;
@@ -1188,7 +1188,7 @@ static CborError OCParseSingleRepPayload(OCRepPayload **outPayload, CborValue *o
         if (cbor_value_is_container(objMap))
         {
             err = cbor_value_leave_container(objMap, &repMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed to leave container");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed to leave container");
         }
         return err;
     }
@@ -1216,7 +1216,7 @@ static OCStackResult OCParseRepPayload(OCPayload **outPayload, CborValue *root)
     if (cbor_value_is_array(root))
     {
         err = cbor_value_enter_container(root, &rootMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed entering repMap");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed entering repMap");
     }
     while (cbor_value_is_valid(&rootMap))
     {
@@ -1235,12 +1235,12 @@ static OCStackResult OCParseRepPayload(OCPayload **outPayload, CborValue *root)
         if (cbor_value_is_map(&rootMap))
         {
             err = cbor_value_map_find_value(&rootMap, OC_RSRVD_HREF, &curVal);
-            VERIFY_CBOR_SUCCESS(TAG, err, "to find href tag");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find href tag");
             if (cbor_value_is_text_string(&curVal))
             {
                 size_t len = 0;
                 err = cbor_value_dup_text_string(&curVal, &temp->uri, &len, NULL);
-                VERIFY_CBOR_SUCCESS(TAG, err, "Failed to find uri");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed to find uri");
             }
         }
 
@@ -1250,7 +1250,7 @@ static OCStackResult OCParseRepPayload(OCPayload **outPayload, CborValue *root)
             if (CborNoError == cbor_value_map_find_value(&rootMap, OC_RSRVD_RESOURCE_TYPE, &curVal))
             {
                 err =  OCParseStringLL(&rootMap, OC_RSRVD_RESOURCE_TYPE, &temp->types);
-                VERIFY_CBOR_SUCCESS(TAG, err, "Failed to find rt type tag/value");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed to find rt type tag/value");
             }
         }
 
@@ -1260,14 +1260,14 @@ static OCStackResult OCParseRepPayload(OCPayload **outPayload, CborValue *root)
             if (CborNoError == cbor_value_map_find_value(&rootMap, OC_RSRVD_INTERFACE, &curVal))
             {
                 err =  OCParseStringLL(&rootMap, OC_RSRVD_INTERFACE, &temp->interfaces);
-                VERIFY_CBOR_SUCCESS(TAG, err, "Failed to find interfaces tag/value");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed to find interfaces tag/value");
             }
         }
 
         if (cbor_value_is_map(&rootMap))
         {
             err = OCParseSingleRepPayload(&temp, &rootMap, true);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed to parse single rep payload");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed to parse single rep payload");
         }
 
         if(rootPayload == NULL)
@@ -1284,7 +1284,7 @@ static OCStackResult OCParseRepPayload(OCPayload **outPayload, CborValue *root)
         if (cbor_value_is_array(&rootMap))
         {
             err = cbor_value_advance(&rootMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed to advance single rep payload");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed to advance single rep payload");
         }
     }
     *outPayload = (OCPayload *)rootPayload;
@@ -1319,44 +1319,44 @@ static OCStackResult OCParsePresencePayload(OCPayload **outPayload, CborValue *r
 
         // Sequence Number
         CborError err = cbor_value_map_find_value(rootValue, OC_RSRVD_NONCE, &curVal);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding nonce tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding nonce tag");
         err = cbor_value_is_valid(&curVal) ? CborNoError : CborUnknownError;
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding nonce tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding nonce tag");
         err = cbor_value_get_uint64(&curVal, &temp);
         payload->sequenceNumber = (uint32_t)temp;
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding nonce value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding nonce value");
 
         // Max Age
         err = cbor_value_map_find_value(rootValue, OC_RSRVD_TTL, &curVal);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding ttl tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding ttl tag");
         err = cbor_value_is_valid(&curVal) ? CborNoError : CborUnknownError;
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding ttl tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding ttl tag");
         temp = 0;
         err = cbor_value_get_uint64(&curVal, &temp);
         payload->maxAge = (uint32_t)temp;
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding ttl value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding ttl value");
 
         // Trigger
         err = cbor_value_map_find_value(rootValue, OC_RSRVD_TRIGGER, &curVal);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding trigger tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding trigger tag");
         err = cbor_value_is_valid(&curVal) ? CborNoError : CborUnknownError;
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding trigger tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding trigger tag");
         err = cbor_value_get_simple_type(&curVal, &trigger);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding trigger value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding trigger value");
         payload->trigger = (OCPresenceTrigger)trigger;
 
         // Resource type name
         err = cbor_value_map_find_value(rootValue, OC_RSRVD_RESOURCE_TYPE, &curVal);
-        VERIFY_CBOR_SUCCESS(TAG, err, "to find res type tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "to find res type tag");
         if (cbor_value_is_text_string(&curVal))
         {
             size_t len = 0;
             err = cbor_value_dup_text_string(&curVal, &payload->resourceType, &len, NULL);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding resource type value");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding resource type value");
         }
 
         err = cbor_value_advance(rootValue);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed advancing root value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed advancing root value");
 
         *outPayload = (OCPayload *)payload;
         return OC_STACK_OK;
@@ -1385,7 +1385,7 @@ static OCStackResult OCParseDiagnosticPayload(OCPayload **outPayload, CborValue 
     {
         size_t len = 0;
         CborError err = cbor_value_dup_text_string(rootValue, &payload->message, &len, NULL);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed finding message value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed finding message value");
     }
 
     *outPayload = (OCPayload *)payload;

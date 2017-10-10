@@ -56,7 +56,7 @@ if env.get('DEBUGSYM') == 'True':
 	env.AppendUnique(CCFLAGS = ['-g'])
 
 arch_board = ARGUMENTS.get('ARCH_BOARD')
-if arch_board == 'sidk_s5jt200':
+if arch_board in ['sidk_s5jt200', 'artik053']:
 	env.AppendUnique(CCFLAGS = ['-mcpu=cortex-r4', '-mfpu=vfpv3', '-Wall',
 		'-Wstrict-prototypes', '-Wshadow', '-Wundef', '-Wno-implicit-function-declaration',
 		'-Wno-unused-function', '-Wno-unused-but-set-variable', '-fno-strict-aliasing',

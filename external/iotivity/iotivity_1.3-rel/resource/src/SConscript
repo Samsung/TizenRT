@@ -83,7 +83,7 @@ if target_os in ['linux', 'tizen']:
     oclib_env.ParseConfig('pkg-config --cflags --libs sqlite3')
 
 if target_os in ['linux'] and oclib_env.get('SIMULATOR', False):
-    oclib_env.Append(RPATH=oclib_env.Literal('\\$$ORIGIN'))
+    oclib_env['RPATH']=oclib_env.Literal('\\$$ORIGIN')
 
 if target_os in ['msys_nt', 'windows']:
     oclib_env.AppendUnique(LIBS=[

@@ -248,7 +248,7 @@ static int64_t OCConvertResourcePayloadCbor(CborEncoder *linkArray, OCResourcePa
     }
     CborEncoder linkMap;
     err |= cbor_encoder_create_map(linkArray, &linkMap, linkMapLen);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating links map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating links map");
 
     // Below are insertions of the resource properties into the map.
 
@@ -260,13 +260,13 @@ static int64_t OCConvertResourcePayloadCbor(CborEncoder *linkArray, OCResourcePa
         {
             err = CborErrorInternalError;
         }
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating endpoint string");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating endpoint string");
         char uri[MAX_URI_LENGTH];
         int snRet = snprintf(uri, MAX_URI_LENGTH, "%s%s", endpointStr, resource->uri);
         if(0 > snRet || snRet >= MAX_URI_LENGTH)
         {
             OICFree(endpointStr);
-            VERIFY_CBOR_SUCCESS(TAG, CborErrorInternalError, "Error (snprintf)");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, CborErrorInternalError, "Error (snprintf)");
         }
 
         OICFree(endpointStr);
@@ -279,54 +279,54 @@ static int64_t OCConvertResourcePayloadCbor(CborEncoder *linkArray, OCResourcePa
         err |= AddTextStringToMap(&linkMap, OC_RSRVD_HREF, sizeof(OC_RSRVD_HREF) - 1,
                                   resource->uri);
     }
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding uri to links map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding uri to links map");
 
     // Rel - Not a mandatory field
     err |= ConditionalAddTextStringToMap(&linkMap, OC_RSRVD_REL, sizeof(OC_RSRVD_REL) - 1,
                                          resource->rel);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding rel to links map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding rel to links map");
 
     // Resource Type
     err |= OCStringLLJoin(&linkMap, OC_RSRVD_RESOURCE_TYPE, resource->types);
-    VERIFY_CBOR_SUCCESS(TAG, err,
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err,
                         "Failed adding resourceType tag/value to links map");
 
     // Interface Types
     err |= OCStringLLJoin(&linkMap, OC_RSRVD_INTERFACE, resource->interfaces);
-    VERIFY_CBOR_SUCCESS(TAG, err,
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err,
                         "Failed adding interfaces tag/value to links map");
 
     // Policy
     CborEncoder policyMap;
     err |= cbor_encode_text_string(&linkMap, OC_RSRVD_POLICY,
                                    sizeof(OC_RSRVD_POLICY) - 1);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding policy tag to links map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding policy tag to links map");
     err |= cbor_encoder_create_map(&linkMap, &policyMap, CborIndefiniteLength);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding policy map to links map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding policy map to links map");
 
     // Bitmap
     err |=  cbor_encode_text_string(&policyMap, OC_RSRVD_BITMAP,
                                     sizeof(OC_RSRVD_BITMAP) - 1);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding bitmap tag to policy map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding bitmap tag to policy map");
     err |= cbor_encode_uint(&policyMap, resource->bitmap);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding bitmap value to policy map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding bitmap value to policy map");
 
     // Secure
     bool isSecure;
     isSecure = endpoint ? (endpoint->family & OC_FLAG_SECURE) : resource->secure;
     err |= cbor_encode_text_string(&policyMap, OC_RSRVD_SECURE,
                                    sizeof(OC_RSRVD_SECURE) - 1);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding secure tag to policy map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding secure tag to policy map");
     err |= cbor_encode_boolean(&policyMap, isSecure);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding secure value to policy map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding secure value to policy map");
 
     if (isSecure)
     {
         err |= cbor_encode_text_string(&policyMap, OC_RSRVD_HOSTING_PORT,
                                        sizeof(OC_RSRVD_HOSTING_PORT) - 1);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding secure port tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding secure port tag");
         err |= cbor_encode_uint(&policyMap, endpoint ? endpoint->port : resource->port);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding secure port value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding secure port value");
     }
 
 #ifdef TCP_ADAPTER
@@ -336,9 +336,9 @@ static int64_t OCConvertResourcePayloadCbor(CborEncoder *linkArray, OCResourcePa
     {
         err |= cbor_encode_text_string(&policyMap, OC_RSRVD_TLS_PORT,
                                        sizeof(OC_RSRVD_TLS_PORT) - 1);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding tcp secure port tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding tcp secure port tag");
         err |= cbor_encode_uint(&policyMap, endpoint ? endpoint->port : resource->tcpPort);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding tcp secure port value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding tcp secure port value");
     }
 
     // tcp
@@ -347,17 +347,17 @@ static int64_t OCConvertResourcePayloadCbor(CborEncoder *linkArray, OCResourcePa
     {
         err |= cbor_encode_text_string(&policyMap, OC_RSRVD_TCP_PORT,
                                        sizeof(OC_RSRVD_TCP_PORT) - 1);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding tcp port tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding tcp port tag");
         err |= cbor_encode_uint(&policyMap, endpoint ? endpoint->port : resource->tcpPort);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding tcp port value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding tcp port value");
     }
 #endif
     err |= cbor_encoder_close_container(&linkMap, &policyMap);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing policy map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing policy map");
 
     // Finished encoding a resource, close the map.
     err |= cbor_encoder_close_container(linkArray, &linkMap);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing link map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing link map");
 
 exit:
     return err;
@@ -407,40 +407,40 @@ static int64_t OCConvertDiscoveryPayloadCbor(OCDiscoveryPayload *payload,
     }
     CborEncoder rootArray;
     err |= cbor_encoder_create_array(&encoder, &rootArray, arrayCount);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating discovery root array");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating discovery root array");
 
     while (payload && payload->resources)
     {
         // Open the root map in the root array
         CborEncoder rootMap;
         err |= cbor_encoder_create_map(&rootArray, &rootMap, CborIndefiniteLength);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating discovery map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating discovery map");
 
         // Insert Name
         err |= ConditionalAddTextStringToMap(&rootMap, OC_RSRVD_DEVICE_NAME,
                 sizeof(OC_RSRVD_DEVICE_NAME) - 1, payload->name);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting name");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting name");
 
         // Insert Device ID into the root map
         err |= AddTextStringToMap(&rootMap, OC_RSRVD_DEVICE_ID, sizeof(OC_RSRVD_DEVICE_ID) - 1,
                 payload->sid);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting device id");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting device id");
 
         // Insert Resource Type
         err |= OCStringLLJoin(&rootMap, OC_RSRVD_RESOURCE_TYPE, payload->type);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting RT");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting RT");
 
         // Insert interfaces
         err |= OCStringLLJoin(&rootMap, OC_RSRVD_INTERFACE, payload->iface);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding interface types tag/value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding interface types tag/value");
 
         // Insert Links into the root map.
         CborEncoder linkArray;
         err |= cbor_encode_text_string(&rootMap, OC_RSRVD_LINKS, sizeof(OC_RSRVD_LINKS) - 1);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting links array tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting links array tag");
         size_t resourceCount =  OCDiscoveryPayloadGetResourceCount(payload);
         err |= cbor_encoder_create_array(&rootMap, &linkArray, CborIndefiniteLength);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting links array");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting links array");
 
         bool isSelf = false;
         const char *deviceId = OCGetServerInstanceIDString();
@@ -457,7 +457,7 @@ static int64_t OCConvertDiscoveryPayloadCbor(OCDiscoveryPayload *payload,
             if (isSelf || !resource->eps)
             {
                 err |= OCConvertResourcePayloadCbor(&linkArray, resource, NULL);
-                VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting links array");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting links array");
             }
             else
             {
@@ -466,24 +466,24 @@ static int64_t OCConvertDiscoveryPayloadCbor(OCDiscoveryPayload *payload,
                 {
                     OCEndpointPayload* ep = OCEndpointPayloadGetEndpoint(resource->eps, j);
                     err |= OCConvertResourcePayloadCbor(&linkArray, resource, ep);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting links array");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting links array");
                 }
             }
         }
 
         // Close links array inside the root map.
         err |= cbor_encoder_close_container(&rootMap, &linkArray);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing link array");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing link array");
         // close root map inside the root array.
         err |= cbor_encoder_close_container(&rootArray, &rootMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing root map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing root map");
 
         payload = payload->next;
     }
 
     // Close the final root array.
     err |= cbor_encoder_close_container(&encoder, &rootArray);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing root array");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing root array");
 
 exit:
     return checkError(err, &encoder, outPayload, size);
@@ -521,36 +521,36 @@ static int64_t OCConvertDiscoveryPayloadVndOcfCbor(OCDiscoveryPayload *payload,
     {
         // Open the root array
         err |= cbor_encoder_create_array(&encoder, &rootArray, 1);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating discovery root array");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating discovery root array");
 
         // Open the root map
         err |= cbor_encoder_create_map(&rootArray, &rootMap, CborIndefiniteLength);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating discovery map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating discovery map");
 
         // Insert Name
         err |= ConditionalAddTextStringToMap(&rootMap, OC_RSRVD_DEVICE_NAME,
                 sizeof(OC_RSRVD_DEVICE_NAME) - 1, payload->name);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting name");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting name");
 
         // Insert Resource Type
         err |= OCStringLLJoin(&rootMap, OC_RSRVD_RESOURCE_TYPE, payload->type);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting RT");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting RT");
 
         // Insert interfaces
         err |= OCStringLLJoin(&rootMap, OC_RSRVD_INTERFACE, payload->iface);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding interface types tag/value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding interface types tag/value");
 
         // Insert Links into the root map.
         err |= cbor_encode_text_string(&rootMap, OC_RSRVD_LINKS, sizeof(OC_RSRVD_LINKS) - 1);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting links array tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting links array tag");
 
         err |= cbor_encoder_create_array(&rootMap, &linkArray, CborIndefiniteLength);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting links array");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting links array");
     }
     else
     {
         err |= cbor_encoder_create_array(&encoder, &linkArray, CborIndefiniteLength);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating discovery root array");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating discovery root array");
     }
 
     while (payload && payload->resources)
@@ -563,56 +563,56 @@ static int64_t OCConvertDiscoveryPayloadVndOcfCbor(OCDiscoveryPayload *payload,
             // Open a link map in the root array
             CborEncoder linkMap;
             err |= cbor_encoder_create_map(&linkArray, &linkMap, CborIndefiniteLength);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating discovery map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating discovery map");
 
             // Uri
             err |= AddTextStringToMap(&linkMap, OC_RSRVD_HREF, sizeof(OC_RSRVD_HREF) - 1,
                                       resource->uri);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding uri to links map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding uri to links map");
 
             // Rel - Not a mandatory field
             err |= ConditionalAddTextStringToMap(&linkMap, OC_RSRVD_REL, sizeof(OC_RSRVD_REL) - 1,
                                                  resource->rel);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding rel to links map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding rel to links map");
 
             // Anchor
             char anchor[MAX_URI_LENGTH];
             int snRet = snprintf(anchor, MAX_URI_LENGTH, "ocf://%s", payload->sid);
             if(0 > snRet || snRet >= MAX_URI_LENGTH)
             {
-                VERIFY_CBOR_SUCCESS(TAG, CborErrorInternalError, "Error (snprintf)");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, CborErrorInternalError, "Error (snprintf)");
             }
 
             err |= AddTextStringToMap(&linkMap, OC_RSRVD_URI, sizeof(OC_RSRVD_URI) - 1, anchor);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding anchor to links map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding anchor to links map");
 
             // Resource Type
             err |= OCStringLLJoin(&linkMap, OC_RSRVD_RESOURCE_TYPE, resource->types);
-            VERIFY_CBOR_SUCCESS(TAG, err,
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err,
                                 "Failed adding resourceType tag/value to links map");
 
             // Interface Types
             err |= OCStringLLJoin(&linkMap, OC_RSRVD_INTERFACE, resource->interfaces);
-            VERIFY_CBOR_SUCCESS(TAG, err,
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err,
                                 "Failed adding interfaces tag/value to links map");
 
             // Policy
             CborEncoder policyMap;
             err |= cbor_encode_text_string(&linkMap, OC_RSRVD_POLICY,
                                            sizeof(OC_RSRVD_POLICY) - 1);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding policy tag to links map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding policy tag to links map");
             err |= cbor_encoder_create_map(&linkMap, &policyMap, CborIndefiniteLength);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding policy map to links map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding policy map to links map");
 
             // Bitmap
             err |=  cbor_encode_text_string(&policyMap, OC_RSRVD_BITMAP,
                                             sizeof(OC_RSRVD_BITMAP) - 1);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding bitmap tag to policy map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding bitmap tag to policy map");
             err |= cbor_encode_uint(&policyMap, resource->bitmap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding bitmap value to policy map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding bitmap value to policy map");
 
             err |= cbor_encoder_close_container(&linkMap, &policyMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing policy map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing policy map");
 
             // Endpoints
             size_t epsCount = OCEndpointPayloadGetEndpointCount(resource->eps);
@@ -623,10 +623,10 @@ static int64_t OCConvertDiscoveryPayloadVndOcfCbor(OCDiscoveryPayload *payload,
                 CborEncoder epsArray;
                 err |= cbor_encode_text_string(&linkMap, OC_RSRVD_ENDPOINTS,
                                                sizeof(OC_RSRVD_ENDPOINTS) - 1);
-                VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting endpoints array tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting endpoints array tag");
 
                 err |= cbor_encoder_create_array(&linkMap, &epsArray, epsCount);
-                VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting endpoints array");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting endpoints array");
 
                 for (size_t j = 0; j < epsCount; ++j)
                 {
@@ -638,30 +638,30 @@ static int64_t OCConvertDiscoveryPayloadVndOcfCbor(OCDiscoveryPayload *payload,
                     VERIFY_PARAM_NON_NULL(TAG, endpointStr, "Failed creating endpoint string");
 
                     err |= cbor_encoder_create_map(&epsArray, &endpointMap, EP_MAP_LEN);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating endpoint map");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating endpoint map");
 
                     err |= AddTextStringToMap(&endpointMap, OC_RSRVD_ENDPOINT,
                                               sizeof(OC_RSRVD_ENDPOINT) - 1, endpointStr);
                     OICFree(endpointStr);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding endpoint to endpoint map");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding endpoint to endpoint map");
 
                     err |= cbor_encode_text_string(&endpointMap, OC_RSRVD_PRIORITY,
                                                    sizeof(OC_RSRVD_PRIORITY) - 1);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding priority tag to endpoint map");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding priority tag to endpoint map");
                     err |= cbor_encode_uint(&endpointMap, endpoint->pri);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding priority value to endpoint map");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding priority value to endpoint map");
 
                     err |= cbor_encoder_close_container(&epsArray, &endpointMap);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing endpoint map");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing endpoint map");
                 }
 
                 err |= cbor_encoder_close_container(&linkMap, &epsArray);
-                VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing endpoints map");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing endpoints map");
             }
 
             // Finished encoding a resource, close the map.
             err |= cbor_encoder_close_container(&linkArray, &linkMap);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing link map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing link map");
         }
 
         payload = payload->next;
@@ -671,21 +671,21 @@ static int64_t OCConvertDiscoveryPayloadVndOcfCbor(OCDiscoveryPayload *payload,
     {
         // Close the link array instead the root map.
         err |= cbor_encoder_close_container(&rootMap, &linkArray);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing root array");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing root array");
 
         // Close root map inside the root array.
         err |= cbor_encoder_close_container(&rootArray, &rootMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing root map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing root map");
 
         // Close the final root array.
         err |= cbor_encoder_close_container(&encoder, &rootArray);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing root map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing root map");
     }
     else
     {
         // Close the final root array.
         err |= cbor_encoder_close_container(&encoder, &linkArray);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing root array");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing root array");
     }
 
 exit:
@@ -765,14 +765,14 @@ static int64_t OCConvertArray(CborEncoder *parent, const OCRepPayloadValueArray 
     int64_t err = CborNoError;
     CborEncoder array;
     err |= cbor_encoder_create_array(parent, &array, valArray->dimensions[0]);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating rep array");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating rep array");
     for (size_t i = 0; i < valArray->dimensions[0]; ++i)
     {
         if (0 != valArray->dimensions[1])
         {
             CborEncoder array2;
             err |= cbor_encoder_create_array(&array, &array2, valArray->dimensions[1]);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating rep array2");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating rep array2");
 
             for (size_t j = 0; j < valArray->dimensions[1]; ++j)
             {
@@ -780,7 +780,7 @@ static int64_t OCConvertArray(CborEncoder *parent, const OCRepPayloadValueArray 
                 {
                     CborEncoder array3;
                     err |= cbor_encoder_create_array(&array2, &array3, valArray->dimensions[2]);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating rep array3");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating rep array3");
 
                     for(size_t k = 0; k < valArray->dimensions[2]; ++k)
                     {
@@ -788,28 +788,28 @@ static int64_t OCConvertArray(CborEncoder *parent, const OCRepPayloadValueArray 
                                 j * valArray->dimensions[2] +
                                 i * valArray->dimensions[2] * valArray->dimensions[1] +
                                 k);
-                        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding rep array3 value");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding rep array3 value");
                     }
                     err |= cbor_encoder_close_container(&array2, &array3);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing rep array3");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing rep array3");
                 }
                 else
                 {
                     err |= OCConvertArrayItem(&array2, valArray, i * valArray->dimensions[1] + j);
-                    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding rep array2 value");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding rep array2 value");
                 }
             }
             err |= cbor_encoder_close_container(&array, &array2);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing rep array2");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing rep array2");
         }
         else
         {
             err |= OCConvertArrayItem(&array, valArray, i);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding rep array value");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding rep array value");
         }
     }
     err |= cbor_encoder_close_container(parent, &array);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing rep array");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing rep array");
 
 exit:
     return err;
@@ -839,23 +839,23 @@ static int64_t OCConvertRepMap(CborEncoder *map, const OCRepPayload *payload)
     if (value)
     {
         err |= cbor_encoder_create_map(map, &encoder, CborIndefiniteLength);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating rep map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating rep map");
         err |= OCConvertSingleRepPayload(&encoder, payload);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed converting single rep payload");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed converting single rep payload");
         err |= cbor_encoder_close_container(map, &encoder);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing rep map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing rep map");
     }
     else
     {
         err |= cbor_encoder_create_array(map, &encoder, arrayLength);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating rep map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating rep map");
         for (value = payload->values; value; value = value->next)
         {
             err |= OCConvertSingleRepPayloadValue(&encoder, value);
-            VERIFY_CBOR_SUCCESS(TAG, err, "Failed converting single rep value");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed converting single rep value");
         }
         err |= cbor_encoder_close_container(map, &encoder);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing rep map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing rep map");
     }
 
 exit:
@@ -908,30 +908,30 @@ static int64_t OCConvertSingleRepPayload(CborEncoder *repMap, const OCRepPayload
     {
         OIC_LOG(INFO, TAG, "Payload has uri");
         err |= cbor_encode_text_string(repMap, OC_RSRVD_HREF, strlen(OC_RSRVD_HREF));
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding rep href tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding rep href tag");
         err |= cbor_encode_text_string(repMap, payload->uri, strlen(payload->uri));
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding rep href value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding rep href value");
     }
     if (payload->types)
     {
         OIC_LOG(INFO, TAG, "Payload has types");
         err |= OCStringLLJoin(repMap, OC_RSRVD_RESOURCE_TYPE, payload->types);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding resource type.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding resource type.");
     }
     if (payload->interfaces)
     {
         OIC_LOG(INFO, TAG, "Payload has interfaces");
         err |= OCStringLLJoin(repMap, OC_RSRVD_INTERFACE, payload->interfaces);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding platform interface type.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding platform interface type.");
     }
     OCRepPayloadValue *value = payload->values;
     while (value)
     {
         err |= cbor_encode_text_string(repMap, value->name, strlen(value->name));
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding tag name");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding tag name");
 
         err |= OCConvertSingleRepPayloadValue(repMap, value);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding single rep value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding single rep value");
         value = value->next;
     }
 
@@ -955,7 +955,7 @@ static int64_t OCConvertRepPayload(OCRepPayload *payload, uint8_t *outPayload, s
     if (arrayCount > 1)
     {
         err |= cbor_encoder_create_array(&encoder, &rootArray, arrayCount);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding rep root map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding rep root map");
     }
 
     while (payload != NULL && (err == CborNoError))
@@ -963,21 +963,21 @@ static int64_t OCConvertRepPayload(OCRepPayload *payload, uint8_t *outPayload, s
         CborEncoder rootMap;
         err |= cbor_encoder_create_map(((arrayCount == 1)? &encoder: &rootArray),
                                             &rootMap, CborIndefiniteLength);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating root map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating root map");
 
         err |= OCConvertSingleRepPayload(&rootMap, payload);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed setting rep payload");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed setting rep payload");
 
         // Close main array
         err |= cbor_encoder_close_container(((arrayCount == 1) ? &encoder: &rootArray),
                 &rootMap);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing root map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing root map");
         payload = payload->next;
     }
     if (arrayCount > 1)
     {
         err |= cbor_encoder_close_container(&encoder, &rootArray);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing root array");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing root array");
     }
 
 exit:
@@ -993,37 +993,37 @@ static int64_t OCConvertPresencePayload(OCPresencePayload *payload, uint8_t *out
     cbor_encoder_init(&encoder, outPayload, *size, 0);
     CborEncoder map;
     err |= cbor_encoder_create_map(&encoder, &map, CborIndefiniteLength);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed creating presence map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed creating presence map");
 
     // Sequence Number
     err |= cbor_encode_text_string(&map, OC_RSRVD_NONCE, sizeof(OC_RSRVD_NONCE) - 1);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding nonce tag to presence map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding nonce tag to presence map");
     err |= cbor_encode_uint(&map, payload->sequenceNumber);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding nonce value to presence map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding nonce value to presence map");
 
     // Max Age
     err |= cbor_encode_text_string(&map, OC_RSRVD_TTL, sizeof(OC_RSRVD_TTL) - 1);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding ttl tag to presence map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding ttl tag to presence map");
     err |= cbor_encode_uint(&map, payload->maxAge);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding ttl value to presence map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding ttl value to presence map");
 
     // Trigger
     err |= cbor_encode_text_string(&map, OC_RSRVD_TRIGGER, sizeof(OC_RSRVD_TRIGGER) - 1);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding trigger tag to presence map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding trigger tag to presence map");
     err |= cbor_encode_simple_value(&map, payload->trigger);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding trigger value to presence map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding trigger value to presence map");
 
     // Resource type name
     if (payload->trigger != OC_PRESENCE_TRIGGER_DELETE)
     {
         err |= ConditionalAddTextStringToMap(&map, OC_RSRVD_RESOURCE_TYPE,
                 sizeof(OC_RSRVD_RESOURCE_TYPE) - 1, payload->resourceType);
-        VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding resource type to presence map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding resource type to presence map");
     }
 
     // Close Map
     err |= cbor_encoder_close_container(&encoder, &map);
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed closing presence map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed closing presence map");
 
 exit:
     return checkError(err, &encoder, outPayload, size);
@@ -1039,7 +1039,7 @@ static int64_t OCConvertDiagnosticPayload(OCDiagnosticPayload *payload, uint8_t 
 
     // Message
     err |= cbor_encode_text_string(&encoder, payload->message, strlen(payload->message));
-    VERIFY_CBOR_SUCCESS(TAG, err, "Failed adding message");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, err, "Failed adding message");
 
 exit:
     return checkError(err, &encoder, outPayload, size);

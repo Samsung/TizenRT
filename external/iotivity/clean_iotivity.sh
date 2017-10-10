@@ -1,4 +1,4 @@
-# Assumed to run from tinyara/os/ directory
+# Assumed to run from tinyara/os directory
 # TODO:
 #   1. Get the code from the git repo
 #   2. Patch the code using the additional changes
@@ -21,13 +21,13 @@ export IOTIVITY_PATCH_DIR="${IOTIVITY_BASE}/patches/${IOTIVITY_RELEASE_VERSION}"
 
 echo "iotivity BUILD DIR : ${IOTIVITY_BUILD_DIR}"
 
-if [ ! -d ${IOTIVITY_BUILD_DIR} ]; then
-	git clone https://gerrit.iotivity.org/gerrit/iotivity ${IOTIVITY_BUILD_DIR}
-fi
+#if [ ! -d ${IOTIVITY_BUILD_DIR} ]; then
+#	git clone https://gerrit.iotivity.org/gerrit/iotivity ${IOTIVITY_BUILD_DIR}
+#fi
 
-if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/tinycbor/tinycbor ]; then
-	git clone https://github.com/01org/tinycbor.git ${IOTIVITY_BUILD_DIR}/extlibs/tinycbor/tinycbor
-fi
+#if [ ! -d ${IOTIVITY_BUILD_DIR}/extlibs/tinycbor/tinycbor ]; then
+#	git clone https://github.com/01org/tinycbor.git ${IOTIVITY_BUILD_DIR}/extlibs/tinycbor/tinycbor
+#fi
 
 #if [ ! -f ${IOTIVITY_BUILD_DIR}/tinyara_patch.lock ]; then
 #	cd ${IOTIVITY_BUILD_DIR}
@@ -40,41 +40,71 @@ fi
 	cd ${TINYARA_BUILD_DIR}
 #fi
 
-
+# Set build parameters
 CONFIG_ENABLE_IOTIVITY=`extract_flags "CONFIG_ENABLE_IOTIVITY"`
 if [ -z ${CONFIG_ENABLE_IOTIVITY} ]; then CONFIG_ENABLE_IOTIVITY=0; fi
+
 CONFIG_IOTIVITY_RELEASE=`extract_flags "CONFIG_IOTIVITY_RELEASE"`
 if [ -z ${CONFIG_IOTIVITY_RELEASE} ]; then CONFIG_IOTIVITY_RELEASE=0; fi
+
 CONFIG_IOTIVITY_LOGGING=`extract_flags "CONFIG_IOTIVITY_LOGGING"`
 if [ -z ${CONFIG_IOTIVITY_LOGGING} ]; then CONFIG_IOTIVITY_LOGGING=0; fi
+
 CONFIG_ENABLE_IOTIVITY_SECURED=`extract_flags "CONFIG_ENABLE_IOTIVITY_SECURED"`
 if [ -z ${CONFIG_ENABLE_IOTIVITY_SECURED} ]; then CONFIG_ENABLE_IOTIVITY_SECURED=0; fi
+
 CONFIG_ENABLE_IOTIVITY_CLOUD=`extract_flags "CONFIG_ENABLE_IOTIVITY_CLOUD"`
 if [ -z ${CONFIG_ENABLE_IOTIVITY_CLOUD} ]; then CONFIG_ENABLE_IOTIVITY_CLOUD=0; fi
+
+CONFIG_EXAMPLES_IOTIVITY=`extract_flags "CONFIG_EXAMPLES_IOTIVITY"`
+if [ -z ${CONFIG_EXAMPLES_IOTIVITY} ]; then CONFIG_EXAMPLES_IOTIVITY=0; fi
+
+CONFIG_DEBUG_SYMBOLS=`extract_flags "CONFIG_DEBUG_SYMBOLS"`
+if [-z ${CONFIG_DEBUG_SYMBOLS} ]; then CONFIG_DEBUG_SYMBOLS=0; fi
+
+CONFIG_IOTIVITY_NS_PROVIDER=`extract_flags "CONFIG_IOTIVITY_NS_PROVIDER"`
+if [ -z ${CONFIG_IOTIVITY_NS_PROVIDER} ]; then CONFIG_IOTIVITY_NS_PROVIDER=0; fi
+
 CONFIG_ARCH_FAMILY=`extract_flags "CONFIG_ARCH_FAMILY"`
 IOTIVITY_TARGET_ARCH=$(echo "$CONFIG_ARCH_FAMILY" | sed 's/"//g')
 CONFIG_IOTIVITY_ROUTING=`extract_flags "CONFIG_IOTIVITY_ROUTING"`
 IOTIVITY_ROUTING=$(echo "$CONFIG_IOTIVITY_ROUTING" | sed 's/"//g')
 
+PLATFORM_TLS=`extract_flags "CONFIG_NET_SECURITY_TLS"`
+if [ -z ${PLATFORM_TLS} ]; then PLATFORM_TLS=0; fi
+
+CONFIG_ARCH_BOARD=`extract_flags "CONFIG_ARCH_BOARD"`
+if [ -z ${CONFIG_ARCH_BOARD} ]; then
+	ARCH_BOARD=sidk_s5jt200
+else
+	ARCH_BOARD=$(echo "$CONFIG_ARCH_BOARD" | sed 's/"//g')
+fi
+
 if [ ${CONFIG_ENABLE_IOTIVITY} -eq 1 ]; then
 	cd ${IOTIVITY_BUILD_DIR}
 
-	OPTIONS="TARGET_OS=tizenrt TARGET_ARCH=${IOTIVITY_TARGET_ARCH} TARGET_TRANSPORT=IP ROUTING=${IOTIVITY_ROUTING} TC_PREFIX=arm-none-eabi- VERBOSE=no TIZENRT_OS_DIR=${TOPDIR}"
+	OPTIONS="TARGET_OS=tizenrt TARGET_ARCH=${IOTIVITY_TARGET_ARCH} TARGET_TRANSPORT=IP ROUTING=${IOTIVITY_ROUTING} TC_PREFIX=arm-none-eabi- VERBOSE=no TIZENRT_OS_DIR=${TOPDIR} PLATFORM_TLS=${PLATFORM_TLS} ARCH_BOARD=${ARCH_BOARD} -j 8"
 
 	if [ ${CONFIG_IOTIVITY_RELEASE} -eq 0 ]; then OPTIONS="${OPTIONS} RELEASE=false LOGGING=true" ; fi
 
+	if [ ${CONFIG_IOTIVITY_NS_PROVIDER} -eq 1 ]; then OPTIONS="${OPTIONS} NOTI_SRV=True " ; fi
+
 	if [ ${CONFIG_IOTIVITY_LOGGING} -eq 1 ]; then OPTIONS="${OPTIONS} LOGGING=true " ; fi
 
-	echo "Cleaning Iotivity Old build with options = ${OPTIONS}"
+	if [ ${CONFIG_DEBUG_SYMBOLS} -eq 1 ]; then OPTIONS="${OPTIONS} DEBUGSYM=True" ; fi
+
+	if [ ${CONFIG_EXAMPLES_IOTIVITY} -eq 1 ]; then OPTIONS="${OPTIONS} BUILD_SAMPLE=ON" ; fi
+
+	echo "Clean Iotivity : Build Options = ${OPTIONS}"
 
 	if [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 0 -a ${CONFIG_ENABLE_IOTIVITY_CLOUD} -eq 0 ]; then
 		#IoTivity - D2D - No Security
 		echo "*********** Iotivity Build for TinyARA (D2D - No Security) *************"
-		scons -c ${OPTIONS}
+		scons -c SECURED=0 ${OPTIONS}
 	elif [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 0 -a ${CONFIG_ENABLE_IOTIVITY_CLOUD} -eq 1 ]; then
 		#IoTivity - D2C - No Security
 		echo "*********** Iotivity Build for TinyARA (D2C - No Security *************"
-		scons -c WITH_CLOUD=yes WITH_TCP=yes RD_MODE=CLIENT ${OPTIONS}
+		scons -c SECURED=0 WITH_CLOUD=yes WITH_TCP=yes RD_MODE=CLIENT ${OPTIONS}
 	elif [ ${CONFIG_ENABLE_IOTIVITY_SECURED} -eq 1 -a ${CONFIG_ENABLE_IOTIVITY_CLOUD} -eq 0 ]; then
 		#IoTivity - D2D - Security
 		echo "*********** Iotivity Build for TinyARA (D2D - Security *************"

@@ -48,7 +48,7 @@ extern "C" {
 //-----------------------------------------------------------------------------
 
 /** Version of IoTivity. */
-#define IOTIVITY_VERSION                      "1.3.0"
+#define IOTIVITY_VERSION                      "1.3.1"
 
 /**
  * OIC Virtual resources supported by every OIC device.

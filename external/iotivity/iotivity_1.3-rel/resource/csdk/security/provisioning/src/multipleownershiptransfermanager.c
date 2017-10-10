@@ -216,7 +216,7 @@ static OCStackApplicationResult MOTSendPostDoxmCB(void *ctx, OCDoHandle handle,
     cbData.context = ctx;
     cbData.cd = NULL;
 
-    postMomRes = OCDoResource(NULL, OC_REST_POST, query,
+    postMomRes = OCDoRequest(NULL, OC_REST_POST, query,
                               &(motCtx->selectedDeviceInfo->endpoint), (OCPayload *)secPayload,
                               motCtx->selectedDeviceInfo->connType, OC_HIGH_QOS, &cbData, NULL, 0);
     VERIFY_SUCCESS(TAG, (OC_STACK_OK == postMomRes), ERROR);

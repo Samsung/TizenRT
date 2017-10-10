@@ -73,7 +73,6 @@ rd_test_env.AppendUnique(CPPPATH=[
     src_dir + '/resource/oc_logger/include',
 ])
 
-rd_test_env.AppendUnique(RPATH=[lib_env.get('BUILD_DIR')])
 rd_test_env.PrependUnique(LIBS=['octbstack'])
 
 if rd_test_env.get('RD_MODE'):

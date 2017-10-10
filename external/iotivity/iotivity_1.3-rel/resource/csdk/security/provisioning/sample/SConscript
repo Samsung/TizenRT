@@ -35,7 +35,6 @@ provisioning_sample_env.AppendUnique(CPPPATH=[
 ])
 
 target_os = env.get('TARGET_OS')
-provisioning_sample_env.AppendUnique(RPATH=[env.get('BUILD_DIR')])
 provisioning_sample_env.AppendUnique(CPPDEFINES=['__WITH_DTLS__'])
 
 if target_os not in ['windows']:

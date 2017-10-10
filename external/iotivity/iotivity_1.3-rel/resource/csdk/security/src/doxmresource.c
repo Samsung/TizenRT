@@ -214,7 +214,7 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
     cbor_encoder_init(&encoder, outPayload, cborLen, 0);
 
     cborEncoderResult = cbor_encoder_create_map(&encoder, &doxmMap, CborIndefiniteLength);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Doxm Map.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Doxm Map.");
 
     // oxms Property
     if (propertiesToInclude[DOXM_OXMS] && doxm->oxmLen > 0)
@@ -223,17 +223,17 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
         CborEncoder oxm;
         cborEncoderResult = cbor_encode_text_string(&doxmMap, OIC_JSON_OXMS_NAME,
             strlen(OIC_JSON_OXMS_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding oxms Tag.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding oxms Tag.");
         cborEncoderResult = cbor_encoder_create_array(&doxmMap, &oxm, doxm->oxmLen);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding oxms Array.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding oxms Array.");
 
         for (size_t i = 0; i < doxm->oxmLen; i++)
         {
             cborEncoderResult = cbor_encode_int(&oxm, doxm->oxm[i]);
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding oxms Value");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding oxms Value");
         }
         cborEncoderResult = cbor_encoder_close_container(&doxmMap, &oxm);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing oxms.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing oxms.");
     }
 
     // oxmsel Property
@@ -242,9 +242,9 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
         OIC_LOG_V(DEBUG, TAG, "%s: including %s Property.", __func__, OIC_JSON_OXM_SEL_NAME);
         cborEncoderResult = cbor_encode_text_string(&doxmMap, OIC_JSON_OXM_SEL_NAME,
             strlen(OIC_JSON_OXM_SEL_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding oxmsel Tag.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding oxmsel Tag.");
         cborEncoderResult = cbor_encode_int(&doxmMap, doxm->oxmSel);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding oxmsel Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding oxmsel Value.");
     }
 
     // sct Property
@@ -253,9 +253,9 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
         OIC_LOG_V(DEBUG, TAG, "%s: including %s Property.", __func__, OIC_JSON_SUPPORTED_CRED_TYPE_NAME);
         cborEncoderResult = cbor_encode_text_string(&doxmMap, OIC_JSON_SUPPORTED_CRED_TYPE_NAME,
             strlen(OIC_JSON_SUPPORTED_CRED_TYPE_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding sct Tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding sct Tag");
         cborEncoderResult = cbor_encode_int(&doxmMap, doxm->sct);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding sct Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding sct Value.");
     }
 
     // owned Property
@@ -264,9 +264,9 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
         OIC_LOG_V(DEBUG, TAG, "%s: including %s Property.", __func__, OIC_JSON_OWNED_NAME);
         cborEncoderResult = cbor_encode_text_string(&doxmMap, OIC_JSON_OWNED_NAME,
             strlen(OIC_JSON_OWNED_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding owned Tag.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding owned Tag.");
         cborEncoderResult = cbor_encode_boolean(&doxmMap, doxm->owned);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding owned Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding owned Value.");
     }
 
     // deviceuuid Property
@@ -275,11 +275,11 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
         OIC_LOG_V(DEBUG, TAG, "%s: including %s Property.", __func__, OIC_JSON_DEVICE_ID_NAME);
         cborEncoderResult = cbor_encode_text_string(&doxmMap, OIC_JSON_DEVICE_ID_NAME,
             strlen(OIC_JSON_DEVICE_ID_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding deviceuuid Tag.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding deviceuuid Tag.");
         ret = ConvertUuidToStr(&doxm->deviceID, &strUuid);
         VERIFY_SUCCESS(TAG, OC_STACK_OK == ret , ERROR);
         cborEncoderResult = cbor_encode_text_string(&doxmMap, strUuid, strlen(strUuid));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding deviceuuid Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding deviceuuid Value.");
         OICFree(strUuid);
         strUuid = NULL;
     }
@@ -299,9 +299,9 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
         CborEncoder subOwners;
         cborEncoderResult = cbor_encode_text_string(&doxmMap, OIC_JSON_SUBOWNERID_NAME,
             strlen(OIC_JSON_SUBOWNERID_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding SubOwnerId Tag.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding SubOwnerId Tag.");
         cborEncoderResult = cbor_encoder_create_array(&doxmMap, &subOwners, subOwnerLen);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding SubOwner Array.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding SubOwner Array.");
 
         subOwner = NULL;
         LL_FOREACH(doxm->subOwners, subOwner)
@@ -311,10 +311,10 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
             VERIFY_SUCCESS(TAG, OC_STACK_OK == ret , ERROR);
             cborEncoderResult = cbor_encode_text_string(&subOwners, strSubOwnerUuid, strlen(strSubOwnerUuid));
             OICFree(strSubOwnerUuid);
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding SubOwnerId Value");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding SubOwnerId Value");
         }
         cborEncoderResult = cbor_encoder_close_container(&doxmMap, &subOwners);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing SubOwnerId.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing SubOwnerId.");
     }
 
     //Multiple Owner Mode -- Not Mandatory
@@ -323,9 +323,9 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
         OIC_LOG_V(DEBUG, TAG, "%s: including %s Property.", __func__, OIC_JSON_MOM_NAME);
         cborEncoderResult = cbor_encode_text_string(&doxmMap, OIC_JSON_MOM_NAME,
             strlen(OIC_JSON_MOM_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding mom Tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding mom Tag");
         cborEncoderResult = cbor_encode_int(&doxmMap, (int64_t)doxm->mom->mode);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding mom Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding mom Value.");
     }
 #endif //MULTIPLE_OWNER
 
@@ -335,11 +335,11 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
         OIC_LOG_V(DEBUG, TAG, "%s: including %s Property.", __func__, OIC_JSON_DEVOWNERID_NAME);
         cborEncoderResult = cbor_encode_text_string(&doxmMap, OIC_JSON_DEVOWNERID_NAME,
             strlen(OIC_JSON_DEVOWNERID_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding devowneruuid Tag.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding devowneruuid Tag.");
         ret = ConvertUuidToStr(&doxm->owner, &strUuid);
         VERIFY_SUCCESS(TAG, OC_STACK_OK == ret , ERROR);
         cborEncoderResult = cbor_encode_text_string(&doxmMap, strUuid, strlen(strUuid));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding devowneruuid Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding devowneruuid Value.");
         OICFree(strUuid);
         strUuid = NULL;
     }
@@ -350,11 +350,11 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
         OIC_LOG_V(DEBUG, TAG, "%s: including %s Property.", __func__, OIC_JSON_ROWNERID_NAME);
         cborEncoderResult = cbor_encode_text_string(&doxmMap, OIC_JSON_ROWNERID_NAME,
             strlen(OIC_JSON_ROWNERID_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding rowneruuid Tag.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding rowneruuid Tag.");
         ret = ConvertUuidToStr(&doxm->rownerID, &strUuid);
         VERIFY_SUCCESS(TAG, OC_STACK_OK == ret , ERROR);
         cborEncoderResult = cbor_encode_text_string(&doxmMap, strUuid, strlen(strUuid));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding rowneruuid Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding rowneruuid Value.");
         OICFree(strUuid);
         strUuid = NULL;
     }
@@ -363,36 +363,36 @@ OCStackResult DoxmToCBORPayloadPartial(const OicSecDoxm_t *doxm,
     CborEncoder rtArray;
     cborEncoderResult = cbor_encode_text_string(&doxmMap, OIC_JSON_RT_NAME,
             strlen(OIC_JSON_RT_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding RT Name Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding RT Name Tag.");
     cborEncoderResult = cbor_encoder_create_array(&doxmMap, &rtArray, 1);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding RT Value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding RT Value.");
     for (size_t i = 0; i < 1; i++)
     {
         cborEncoderResult = cbor_encode_text_string(&rtArray, OIC_RSRC_TYPE_SEC_DOXM,
                 strlen(OIC_RSRC_TYPE_SEC_DOXM));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding RT Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding RT Value.");
     }
     cborEncoderResult = cbor_encoder_close_container(&doxmMap, &rtArray);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing RT.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing RT.");
 
     //IF-- Mandatory
     CborEncoder ifArray;
     cborEncoderResult = cbor_encode_text_string(&doxmMap, OIC_JSON_IF_NAME,
        strlen(OIC_JSON_IF_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding IF Name Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding IF Name Tag.");
     cborEncoderResult = cbor_encoder_create_array(&doxmMap, &ifArray, 1);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding IF Value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding IF Value.");
     for (size_t i = 0; i < 1; i++)
     {
         cborEncoderResult = cbor_encode_text_string(&ifArray, OC_RSRVD_INTERFACE_DEFAULT,
                 strlen(OC_RSRVD_INTERFACE_DEFAULT));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding IF Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding IF Value.");
     }
     cborEncoderResult = cbor_encoder_close_container(&doxmMap, &ifArray);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing IF.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing IF.");
 
     cborEncoderResult = cbor_encoder_close_container(&encoder, &doxmMap);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing DoxmMap.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing DoxmMap.");
 
     if (CborNoError == cborEncoderResult)
     {
@@ -477,14 +477,14 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
         OIC_LOG(DEBUG, TAG, "Found doxm.oxms tag in doxmMap.");
         CborValue oxm;
         cborFindResult = cbor_value_get_array_length(&doxmMap, &doxm->oxmLen);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding oxms array Length.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding oxms array Length.");
         VERIFY_SUCCESS(TAG, doxm->oxmLen != 0, ERROR);
 
         doxm->oxm = (OicSecOxm_t *)OICCalloc(doxm->oxmLen, sizeof(*doxm->oxm));
         VERIFY_NOT_NULL(TAG, doxm->oxm, ERROR);
 
         cborFindResult = cbor_value_enter_container(&doxmMap, &oxm);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering oxms Array.")
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering oxms Array.")
 
         int i = 0;
         while (cbor_value_is_valid(&oxm) && cbor_value_is_integer(&oxm))
@@ -492,11 +492,11 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
             int tmp;
 
             cborFindResult = cbor_value_get_int(&oxm, &tmp);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding oxms Value")
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding oxms Value")
             OIC_LOG_V(DEBUG, TAG, "Read doxm.oxms value = %d", tmp);
             doxm->oxm[i++] = (OicSecOxm_t)tmp;
             cborFindResult = cbor_value_advance(&oxm);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing oxms.")
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing oxms.")
         }
 
         if (roParsed)
@@ -528,7 +528,7 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
         int oxmSel;
 
         cborFindResult = cbor_value_get_int(&doxmMap, &oxmSel);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Sel Name Value.")
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Sel Name Value.")
         OIC_LOG_V(DEBUG, TAG, "Read doxm.oxmsel value = %d", oxmSel);
         doxm->oxmSel = (OicSecOxm_t)oxmSel;
         if (roParsed)
@@ -553,7 +553,7 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
         int sct;
 
         cborFindResult = cbor_value_get_int(&doxmMap, &sct);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Sct Name Value.")
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Sct Name Value.")
         OIC_LOG_V(DEBUG, TAG, "Read doxm.sct value = %d", sct);
         doxm->sct = (OicSecCredType_t)sct;
 
@@ -577,7 +577,7 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
     {
         OIC_LOG(DEBUG, TAG, "Found doxm.owned tag in doxmMap.");
         cborFindResult = cbor_value_get_boolean(&doxmMap, &doxm->owned);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Owned Value.")
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Owned Value.")
         OIC_LOG_V(DEBUG, TAG, "Read doxm.owned value = %s", doxm->owned?"true":"false");
 
         if (roParsed)
@@ -600,7 +600,7 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
     {
         OIC_LOG(DEBUG, TAG, "Found doxm.deviceuuid tag in doxmMap.");
         cborFindResult = cbor_value_dup_text_string(&doxmMap, &strUuid , &len, NULL);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Device Id Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Device Id Value.");
         OIC_LOG_V(DEBUG, TAG, "Read doxm.deviceuuid value = %s", strUuid);
         ret = ConvertStrToUuid(strUuid, &doxm->deviceID);
         VERIFY_SUCCESS(TAG, OC_STACK_OK == ret, ERROR);
@@ -627,7 +627,7 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
     {
         OIC_LOG(DEBUG, TAG, "Found doxm.devowneruuid tag in doxmMap.");
         cborFindResult = cbor_value_dup_text_string(&doxmMap, &strUuid , &len, NULL);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding devowneruuid Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding devowneruuid Value.");
         OIC_LOG_V(DEBUG, TAG, "Read doxm.devowneruuid value = %s", strUuid);
         ret = ConvertStrToUuid(strUuid , &doxm->owner);
         VERIFY_SUCCESS(TAG, OC_STACK_OK == ret, ERROR);
@@ -655,7 +655,7 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
         OIC_LOG(DEBUG, TAG, "Found doxm.mom tag in doxmMap.");
         int mode = 0;
         cborFindResult = cbor_value_get_int(&doxmMap, &mode);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding mom Name Value.")
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding mom Name Value.")
         if(NULL == doxm->mom)
         {
             doxm->mom = (OicSecMom_t*)OICCalloc(1, sizeof(OicSecMom_t));
@@ -688,11 +688,11 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
         size_t subOwnerLen = 0;
         CborValue subOwnerCbor;
         cborFindResult = cbor_value_get_array_length(&doxmMap, &subOwnerLen);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding SubOwner array Length.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding SubOwner array Length.");
         VERIFY_SUCCESS(TAG, 0 != subOwnerLen, ERROR);
 
         cborFindResult = cbor_value_enter_container(&doxmMap, &subOwnerCbor);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering SubOwner Array.")
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering SubOwner Array.")
 
         while (cbor_value_is_valid(&subOwnerCbor) && cbor_value_is_text_string(&subOwnerCbor))
         {
@@ -702,7 +702,7 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
             size_t uuidLen = 0;
 
             cborFindResult = cbor_value_dup_text_string(&subOwnerCbor, &strSubOwnerUuid, &uuidLen, NULL);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding SubOwnerId Value");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding SubOwnerId Value");
 
             subOwner = (OicSecSubOwner_t*)OICCalloc(1, sizeof(OicSecSubOwner_t));
             VERIFY_NOT_NULL(TAG, subOwner, ERROR);
@@ -713,7 +713,7 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
             LL_APPEND(doxm->subOwners, subOwner);
 
             cborFindResult = cbor_value_advance(&subOwnerCbor);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing SubOwnerId.")
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing SubOwnerId.")
         }
         if (roParsed)
         {
@@ -746,7 +746,7 @@ static OCStackResult CBORPayloadToDoxmBin(const uint8_t *cborPayload, size_t siz
     {
         OIC_LOG(DEBUG, TAG, "Found doxm.rowneruuid tag in doxmMap.");
         cborFindResult = cbor_value_dup_text_string(&doxmMap, &strUuid , &len, NULL);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding rowneruuid Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding rowneruuid Value.");
         OIC_LOG_V(DEBUG, TAG, "Read doxm.rowneruuid value = %s", strUuid);
         ret = ConvertStrToUuid(strUuid , &doxm->rownerID);
         VERIFY_SUCCESS(TAG, OC_STACK_OK == ret, ERROR);

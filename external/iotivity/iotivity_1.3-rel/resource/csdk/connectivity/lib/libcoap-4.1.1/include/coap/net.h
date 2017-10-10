@@ -45,6 +45,12 @@ extern "C"
 #include <lwip/ip_addr.h>
 #endif
 
+#ifdef __TIZENRT__
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+#endif
+
 #include "option.h"
 #include "address.h"
 #include "prng.h"

@@ -192,6 +192,7 @@ static OCStackResult provisionCredentials(OicSecCred_t *cred,
         OCClientResponseHandler responseHandler);
 static OCStackApplicationResult  ProvisionPskCB(void *ctx, OCDoHandle UNUSED,
         OCClientResponse *clientResponse);
+static OCStackResult ProvisionLocalCredential(void *ctx, OicSecCred_t *cred);
 
 typedef enum {
     DEVICE_1_FINISHED,
@@ -489,7 +490,10 @@ static OCStackApplicationResult ProvisionCredentialDosCB1(void *ctx, OCDoHandle 
     OIC_LOG_V(DEBUG, TAG, "IN %s", __func__);
     VERIFY_NOT_NULL_RETURN(TAG, ctx, ERROR, OC_STACK_DELETE_TRANSACTION);
     (void) UNUSED;
+    OCStackResult res = OC_STACK_OK;
     CredentialData_t *credData = (CredentialData_t *) ((Data_t *) ctx)->ctx;
+    const OCProvisionDev_t *deviceInfo = credData->deviceInfo[1];
+    OicSecCred_t *credInfo = credData->credInfo[1];
     const OCProvisionResultCB resultCallback = credData->resultCallback;
     if (clientResponse)
     {
@@ -497,10 +501,25 @@ static OCStackApplicationResult ProvisionCredentialDosCB1(void *ctx, OCDoHandle 
         {
             // send credentials to second device
             registerResultForCredProvisioning(credData, OC_STACK_RESOURCE_CHANGED, DEVICE_1_FINISHED);
-            OCStackResult res = SetDOS((Data_t *) ctx, DOS_RFPRO, ProvisionPskCB);
+
             // If deviceInfo is NULL, this device is the second device. Don't delete the cred
             // because provisionCredentials added it to the local cred store and it now owns
             // the memory.
+            if (NULL != deviceInfo)
+            {
+                // A second device was specifed. Set the device into RFPRO and send it the cred.
+                res = SetDOS((Data_t *)ctx, DOS_RFPRO, ProvisionPskCB);
+            }
+            else
+            {
+                // A second device was not specified. Add the cred to the local cred store.
+                res = ProvisionLocalCredential(ctx, credInfo);
+            }
+            
+            if ((NULL != deviceInfo) || (OC_STACK_OK != res))
+            {
+                DeleteCredList(credInfo);
+            }
             if (OC_STACK_OK != res)
             {
                 registerResultForCredProvisioning(credData, res, 2);
@@ -620,7 +639,6 @@ static OCStackResult ProvisionCredentialsDos(void *ctx, OicSecCred_t *cred,
         const OCProvisionDev_t *deviceInfo, OCClientResponseHandler responseHandler)
 {
     OCStackResult res = OC_STACK_OK;
-    CredentialData_t *credData = (CredentialData_t *) ((Data_t *) ctx)->ctx;
 
     if (NULL != deviceInfo)
     {
@@ -674,15 +692,27 @@ static OCStackResult ProvisionCredentialsDos(void *ctx, OicSecCred_t *cred,
     }
     else
     {
-        /* Provision this credential to the local cred store. On success, the cred resource takes
-         * ownership of the memory. On failure, ProvisionCredentialDosCB1 will delete the cred object.
-         */
-        res = AddCredential(cred);
-        /* Call the result callback directly. */
-        registerResultForCredProvisioning(credData, OC_STACK_RESOURCE_CHANGED, DEVICE_LOCAL_FINISHED);
-        (credData->resultCallback)(credData->ctx, credData->numOfResults, credData->resArr, false);
-        return res;
+        /* Provision this credential to the local cred store. */
+        return ProvisionLocalCredential(ctx, cred);
     }
+}
+
+/**
+ * Internal function for adding credentials to the local cred store
+ *
+ * @param[in] cred Instance of cred resource.
+ * @return  OC_STACK_OK in case of success and other value otherwise.
+ */
+static OCStackResult ProvisionLocalCredential(void *ctx, OicSecCred_t *cred)
+{
+    CredentialData_t *credData = (CredentialData_t *)((Data_t *)ctx)->ctx;
+
+    OCStackResult res = AddCredential(cred);
+    
+    /* Call the result callback directly. */
+    registerResultForCredProvisioning(credData, OC_STACK_RESOURCE_CHANGED, DEVICE_LOCAL_FINISHED);
+    (credData->resultCallback)(credData->ctx, credData->numOfResults, credData->resArr, false);
+    return res;
 }
 
 /**
@@ -1665,9 +1695,11 @@ OCStackResult SRPProvisionCredentials(void *ctx, OicSecCredType_t type, size_t k
 }
 
 OCStackResult SRPProvisionCredentialsDos(void *ctx, OicSecCredType_t type, size_t keySize,
-                                      const OCProvisionDev_t *pDev1,
-                                      const OCProvisionDev_t *pDev2,
-                                      OCProvisionResultCB resultCallback)
+                                         const OCProvisionDev_t *pDev1,
+                                         const OCProvisionDev_t *pDev2,
+                                         const OicSecRole_t *role1,
+                                         const OicSecRole_t *role2,
+                                         OCProvisionResultCB resultCallback)
 {
     VERIFY_NOT_NULL_RETURN(TAG, pDev1, ERROR,  OC_STACK_INVALID_PARAM);
     if (!resultCallback)
@@ -1680,11 +1712,6 @@ OCStackResult SRPProvisionCredentialsDos(void *ctx, OicSecCredType_t type, size_
         (0 == memcmp(&pDev1->doxm->deviceID, &pDev2->doxm->deviceID, sizeof(OicUuid_t))))
     {
         OIC_LOG(INFO, TAG, "SRPProvisionCredentialsDos : Same device ID");
-        return OC_STACK_INVALID_PARAM;
-    }
-    if (SYMMETRIC_PAIR_WISE_KEY == type && NULL == pDev2)
-    {
-        OIC_LOG(INFO, TAG, "SRPProvisionCredentialsDos : NULL device");
         return OC_STACK_INVALID_PARAM;
     }
 
@@ -1745,9 +1772,9 @@ OCStackResult SRPProvisionCredentialsDos(void *ctx, OicSecCredType_t type, size_
             OCStackResult res = PMGeneratePairWiseCredentials(type, keySize, &provTooldeviceID,
                                 &pDev1->doxm->deviceID, (NULL != pDev2) ? &pDev2->doxm->deviceID :
                                 &provTooldeviceID,
-                                NULL, NULL,
+                                role1, role2,
                                 &firstCred, &secondCred);
-            VERIFY_SUCCESS_RETURN(TAG, (res == OC_STACK_OK), ERROR, OC_STACK_ERROR);
+            VERIFY_SUCCESS_RETURN(TAG, (OC_STACK_OK == res), ERROR, OC_STACK_ERROR);
             OIC_LOG(INFO, TAG, "Credentials generated successfully");
 
             credData->deviceInfo[0] = pDev1;
@@ -1773,7 +1800,6 @@ OCStackResult SRPProvisionCredentialsDos(void *ctx, OicSecCredType_t type, size_
             }
 
             res = SetDOS(data, DOS_RFPRO, ProvisionPskCB);
-
             if (OC_STACK_OK != res)
             {
                 DeleteCredList(firstCred);

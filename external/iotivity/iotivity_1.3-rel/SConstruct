@@ -84,9 +84,6 @@ if target_os not in ['tizenrt']:
         build_dir + 'bridging',
     ])
 
-if target_os == 'tizenrt':
-	SConscript('../../../apps/examples/iotivity_simpleserver' + '/SConscript')
-
 # Append target information to the help information (if needed)
 # To see help info, execute:
 #     $ scons [options] -h

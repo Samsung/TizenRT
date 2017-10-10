@@ -196,22 +196,6 @@ OCThreadResult_t oc_thread_wait(oc_thread t)
     return res;
 }
 
-#ifdef __TIZEN__
-OCThreadResult_t oc_thread_cancel(oc_thread t)
-{
-    OCThreadResult_t res = OC_THREAD_SUCCESS;
-    oc_thread_internal *threadInfo = (oc_thread_internal*) t;
-    int ret = pthread_cancel(threadInfo->thread);
-    if (0 != ret)
-    {
-        OIC_LOG_V(ERROR, TAG, "Failed to cancel thread with error %d", ret);
-        res = OC_THREAD_CANCEL_FAILURE;
-    }
-
-    return res;
-}
-#endif
-
 oc_mutex oc_mutex_new(void)
 {
     oc_mutex retVal = NULL;

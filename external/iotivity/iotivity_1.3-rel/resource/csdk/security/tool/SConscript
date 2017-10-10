@@ -49,7 +49,6 @@ tools_env.PrependUnique(CPPPATH=[
     '#/resource/csdk/security/provisioning/include/internal'
 ])
 tools_env.AppendUnique(CXXFLAGS=['-O2', '-g', '-Wall', '-Wextra', '-std=c++0x'])
-tools_env.AppendUnique(RPATH=[tools_env.get('BUILD_DIR')])
 
 if target_os in ['windows', 'msys_nt']:
     # Macro needed for Windows builds to avoid __declspec(dllexport) and

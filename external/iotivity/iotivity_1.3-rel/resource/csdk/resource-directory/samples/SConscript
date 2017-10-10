@@ -47,7 +47,6 @@ rd_sample_app_env.AppendUnique(CPPPATH=[
 if target_os not in ['windows']:
     rd_sample_app_env.AppendUnique(
         CXXFLAGS=['-O2', '-g', '-Wall', '-Wextra', '-std=c++0x'])
-rd_sample_app_env.AppendUnique(RPATH=[env.get('BUILD_DIR')])
 rd_sample_app_env.PrependUnique(LIBS=['resource_directory', 'octbstack'])
 
 if env.get('SECURED') == '1':

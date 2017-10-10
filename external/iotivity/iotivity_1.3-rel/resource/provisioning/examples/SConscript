@@ -56,7 +56,6 @@ examples_env.AppendUnique(CPPPATH=[
     '../../csdk/security/provisioning/include/internal'
 ])
 
-examples_env.AppendUnique(RPATH=[examples_env.get('BUILD_DIR')])
 examples_env.PrependUnique(LIBS=[
     'ocprovision',
     'oc',

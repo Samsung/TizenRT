@@ -515,6 +515,7 @@ OCStackResult OCInternalVerifyRoleCertificate(const OicSecKey_t *certificateChai
             if (MBEDTLS_X509_GENERALNAME_DIRECTORYNAME == nameCur->general_name.name_type)
             {
                 bool advanceCount = false;
+                bool addAuthority = true;
                 for (const mbedtls_x509_name *dirName = nameCur->general_name.directory_name;
                      NULL != dirName;
                      dirName = dirName->next)
@@ -537,12 +538,32 @@ OCStackResult OCInternalVerifyRoleCertificate(const OicSecKey_t *certificateChai
                     {
                         assert(dirName->val.len < ROLEID_LENGTH);
                         memcpy(rolesTmp[rolesTmpCount].authority, dirName->val.p, dirName->val.len);
+                        addAuthority = false;
                     }
-
                 }
 
                 if (advanceCount)
                 {
+                    /* If the authority was absent in the subject alternative name we know that the certificate
+                     * issuer defined the role. We add the issuer as the authority here so that access checks
+                     * function properly when invoked.
+                     */
+                    if (addAuthority)
+                    {
+                        for (const mbedtls_x509_name *issuerName = &certChain.issuer;
+                             NULL != issuerName;
+                             issuerName = issuerName->next)
+                        {
+                            if ((MBEDTLS_OID_SIZE(MBEDTLS_OID_AT_CN) == issuerName->oid.len) &&
+                                (0 == memcmp(MBEDTLS_OID_AT_CN, issuerName->oid.p, MBEDTLS_OID_SIZE(MBEDTLS_OID_AT_CN))))
+                            {
+                                assert(issuerName->val.len < ROLEID_LENGTH);
+                                memcpy(rolesTmp[rolesTmpCount].authority, issuerName->val.p, issuerName->val.len);
+                                OIC_LOG_V(DEBUG, TAG, "Adding authority %s to role", rolesTmp[rolesTmpCount].authority);
+                            }
+                        }
+                    }
+
                     rolesTmpCount++;
                 }
             }

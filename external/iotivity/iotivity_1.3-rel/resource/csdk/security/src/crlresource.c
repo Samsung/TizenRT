@@ -138,10 +138,10 @@ static CborError setCrlData(CborEncoder *out, const char *name, const OicSecKey_
     VERIFY_SUCCESS(TAG, (B64_OK == b64result), ERROR);
 
     result = cbor_encode_text_string(out, name, strlen(name));
-    VERIFY_CBOR_SUCCESS(TAG, result, "Failed Adding name Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, result, "Failed Adding name Tag.");
 
     result = cbor_encode_text_string(out, (const char *)encodeBuffer, len);
-    VERIFY_CBOR_SUCCESS(TAG, result, "Failed Adding data Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, result, "Failed Adding data Tag.");
 
 exit:
     OICFree(encodeBuffer);
@@ -167,7 +167,7 @@ static CborError getCrlData(CborValue *in, const char *name, OicSecKey_t *value)
     {
         result = cbor_value_dup_text_string(&crlNode,
                 (char **)&decodeBuffer, &decodeBufferSize, NULL);
-        VERIFY_CBOR_SUCCESS(TAG, result, "Failed Advancing Byte Array.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, result, "Failed Advancing Byte Array.");
 
         value->len = B64DECODE_OUT_SAFESIZE(decodeBufferSize + 1);
         value->data = OICCalloc(1, value->len);
@@ -224,65 +224,65 @@ OCStackResult CrlToCBORPayload(const OicSecCrl_t *crl, uint8_t **payload, size_t
     cbor_encoder_init(&encoder, outPayload, cborLen, 0);
 
     cborEncoderResult = cbor_encoder_create_map(&encoder, &crlMap, mapSize);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed to create CRL Map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed to create CRL Map");
 
     //CRLId -- Mandatory
     cborEncoderResult = cbor_encode_text_string(&crlMap, OC_RSRVD_CRL_ID,
         strlen(OC_RSRVD_CRL_ID));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed to add CRL ID");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed to add CRL ID");
     cborEncoderResult = cbor_encode_int(&crlMap, crl->CrlId);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed to add CRL Id value");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed to add CRL Id value");
 
     //ThisUpdate -- Mandatory
     cborEncoderResult = cbor_encode_text_string(&crlMap, OC_RSRVD_THIS_UPDATE,
         strlen(OC_RSRVD_THIS_UPDATE));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed to add Crl update");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed to add Crl update");
     cborEncoderResult = cbor_encode_text_string(&crlMap, (const char *)crl->ThisUpdate.data,
                                                 crl->ThisUpdate.len);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed to add Crl Update value");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed to add Crl Update value");
 
     //CRLData -- Mandatory
     cborEncoderResult = setCrlData(&crlMap, OC_RSRVD_CRL, &crl->CrlData);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed to add CRLData object");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed to add CRLData object");
 
     //lastUpdate - internal field
     if (lastUpdate)
     {
         cborEncoderResult = cbor_encode_text_string(&crlMap, OC_RSRVD_LAST_UPDATE,
             strlen(OC_RSRVD_LAST_UPDATE));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed to add last Update tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed to add last Update tag");
         cborEncoderResult = cbor_encode_text_string(&crlMap, lastUpdate, strlen(lastUpdate));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed to add last Update value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed to add last Update value");
     }
 
     //RT -- Mandatory
     CborEncoder rtArray;
     cborEncoderResult = cbor_encode_text_string(&crlMap, OIC_JSON_RT_NAME,
             strlen(OIC_JSON_RT_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding RT Name Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding RT Name Tag.");
     cborEncoderResult = cbor_encoder_create_array(&crlMap, &rtArray, 1);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding RT Value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding RT Value.");
     cborEncoderResult = cbor_encode_text_string(&rtArray, OIC_RSRC_TYPE_SEC_CRL,
             strlen(OIC_RSRC_TYPE_SEC_CRL));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding RT Value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding RT Value.");
     cborEncoderResult = cbor_encoder_close_container(&crlMap, &rtArray);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing RT.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing RT.");
 
     //IF-- Mandatory
     CborEncoder ifArray;
     cborEncoderResult = cbor_encode_text_string(&crlMap, OIC_JSON_IF_NAME,
        strlen(OIC_JSON_IF_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding IF Name Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding IF Name Tag.");
     cborEncoderResult = cbor_encoder_create_array(&crlMap, &ifArray, 1);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding IF Value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding IF Value.");
     cborEncoderResult = cbor_encode_text_string(&ifArray, OC_RSRVD_INTERFACE_DEFAULT,
             strlen(OC_RSRVD_INTERFACE_DEFAULT));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding IF Value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding IF Value.");
     cborEncoderResult = cbor_encoder_close_container(&crlMap, &ifArray);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing IF.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing IF.");
 
     cborEncoderResult = cbor_encoder_close_container(&encoder, &crlMap);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed to add close Crl map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed to add close Crl map");
 
     *size = cbor_encoder_get_buffer_size(&encoder, outPayload);
     *payload = outPayload;
@@ -336,7 +336,7 @@ OCStackResult CBORPayloadToCrl(const uint8_t *cborPayload, const size_t size,
     cbor_parser_init(cborPayload, size, 0, &parser, &crlCbor);
     CborValue crlMap = { .parser = NULL};
     cborFindResult = cbor_value_enter_container(&crlCbor, &crlMap);
-    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed to enter Crl map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed to enter Crl map");
 
     crl = (OicSecCrl_t *)OICCalloc(1, sizeof(OicSecCrl_t));
     VERIFY_NOT_NULL(TAG, crl, ERROR);
@@ -347,7 +347,7 @@ OCStackResult CBORPayloadToCrl(const uint8_t *cborPayload, const size_t size,
         int CrlId;
 
         cborFindResult = cbor_value_get_int(&crlMap, &CrlId);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding CrlId.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding CrlId.");
         crl->CrlId = (uint16_t)CrlId;
     }
 
@@ -356,11 +356,11 @@ OCStackResult CBORPayloadToCrl(const uint8_t *cborPayload, const size_t size,
     {
         cborFindResult = cbor_value_dup_text_string(&crlMap,
                 (char **)&crl->ThisUpdate.data, &crl->ThisUpdate.len, NULL);
-        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing Byte Array.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Byte Array.");
     }
 
     cborFindResult = getCrlData(&crlCbor, OC_RSRVD_CRL, &crl->CrlData);
-    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed to read CRL.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed to read CRL.");
 
     OIC_LOG_CRL(INFO, crl);
 

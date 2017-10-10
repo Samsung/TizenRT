@@ -239,14 +239,22 @@ OCStackResult SRPProvisionCredentials(void *ctx,OicSecCredType_t type, size_t ke
  * @param[in] keySize size of key
  * @param[in] pDev1 Pointer to PMOwnedDeviceInfo_t instance, representing the resource to be provisioned.
  * @param[in] pDev2 Pointer to PMOwnedDeviceInfo_t instance, representing the resource to be provisioned.
+ * @param[in] role1 When provisioning a PSK (type is SYMMETRIC_PAIR_WISE_KEY), this is the role which
+ *                  the device indicated by pDev1 will also have when communicating with pDev2. Use NULL
+ *                  to associate no role with this credential.
+ * @param[in] role2 When provisioning a PSK (type is SYMMETRIC_PAIR_WISE_KEY), this is the role which
+ *                  the device indicated by pDev1 will also have when communicating with pDev2. Use NULL
+ *                  to associate no role with this credential.
  * @param[in] resultCallback callback provided by API user, callback will be called when
  *            provisioning request recieves a response from first resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult SRPProvisionCredentialsDos(void *ctx,OicSecCredType_t type, size_t keySize,
-                                      const OCProvisionDev_t *pDev1,
-                                      const OCProvisionDev_t *pDev2,
-                                      OCProvisionResultCB resultCallback);
+                                         const OCProvisionDev_t *pDev1,
+                                         const OCProvisionDev_t *pDev2,
+                                         const OicSecRole_t *role1,
+                                         const OicSecRole_t *role2,
+                                         OCProvisionResultCB resultCallback);
 
 /**
  * Function to unlink devices.

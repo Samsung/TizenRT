@@ -92,8 +92,8 @@ stacktest_env.AppendTarget('test')
 if stacktest_env.get('TEST') == '1':
     if target_os in ['linux', 'windows']:
         run_test(stacktest_env,
-                 'resource_csdk_stack_test.memcheck',
+                 'resource_csdk_stack_test_stacktests.memcheck',
                  'resource/csdk/stack/test/stacktests')
         run_test(stacktest_env,
-                 'resource_csdk_stack_test.memcheck',
+                 'resource_csdk_stack_test_cbortests.memcheck',
                  'resource/csdk/stack/test/cbortests')

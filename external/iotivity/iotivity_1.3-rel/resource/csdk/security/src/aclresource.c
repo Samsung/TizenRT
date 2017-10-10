@@ -413,7 +413,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
 
     // Create ACL Map which contains aclist or aclist2, rowneruuid, rt and if
     cborEncoderResult = cbor_encoder_create_map(&encoder, &aclMap, ACL_MAP_SIZE);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Creating ACL Map.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Creating ACL Map.");
     OIC_LOG_V(DEBUG, TAG, "%s starting encoding of %s resource.",
         __func__, (OIC_SEC_ACL_V1 == aclVersion)?"v1 acl":"v2 acl2");
 
@@ -422,7 +422,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
     {
         cborEncoderResult = cbor_encode_text_string(&aclMap, OIC_JSON_ACLIST_NAME,
             strlen(OIC_JSON_ACLIST_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding aclist Tag.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding aclist Tag.");
         OIC_LOG_V(DEBUG, TAG, "%s encoded v1 %s tag.", __func__, OIC_JSON_ACLIST_NAME);
     }
     // v2 uses "aclist2" as the top-level tag, containing an array of ace2 objects
@@ -430,7 +430,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
     {
         cborEncoderResult = cbor_encode_text_string(&aclMap, OIC_JSON_ACLIST2_NAME,
             strlen(OIC_JSON_ACLIST2_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding aclist2 Tag.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding aclist2 Tag.");
         OIC_LOG_V(DEBUG, TAG, "%s encoded v2 %s tag.", __func__, OIC_JSON_ACLIST2_NAME);
     }
 
@@ -438,13 +438,13 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
     if (OIC_SEC_ACL_V1 == aclVersion)
     {
         cborEncoderResult = cbor_encoder_create_map(&aclMap, &aclListMap, ACL_ACLIST_MAP_SIZE);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Creating aclist Map.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Creating aclist Map.");
         OIC_LOG_V(DEBUG, TAG, "%s created v1 %s map.", __func__, OIC_JSON_ACLIST_NAME);
 
         // v1 precedes ACE object array with "ace" tag
         cborEncoderResult = cbor_encode_text_string(&aclListMap, OIC_JSON_ACES_NAME,
             strlen(OIC_JSON_ACES_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding ACES Name Tag.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding ACES Name Tag.");
         OIC_LOG_V(DEBUG, TAG, "%s encoded v1 %s tag.", __func__, OIC_JSON_ACES_NAME);
     }
 
@@ -452,14 +452,14 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
     if (OIC_SEC_ACL_V1 == aclVersion)
     {
         cborEncoderResult = cbor_encoder_create_array(&aclListMap, &acesArray, OicSecAclSize(secAcl));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Creating ACE Array.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Creating ACE Array.");
         OIC_LOG_V(DEBUG, TAG, "%s created v1 ACE array.", __func__);
     }
     else
     // v2 create ACE2 array in acl map
     {
         cborEncoderResult = cbor_encoder_create_array(&aclMap, &acesArray, OicSecAclSize(secAcl));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Creating ACE2 Array.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Creating ACE2 Array.");
         OIC_LOG_V(DEBUG, TAG, "%s created v2 ACE2 array.", __func__);
     }
 
@@ -484,7 +484,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
         if ((OIC_SEC_ACL_V2 > aclVersion) && (OicSecAceRoleSubject == ace->subjectType))
         {
             cborEncoderResult = CborUnknownError;
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "ACE has a role subject; can't create a V1 ACL payload for this ACL.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "ACE has a role subject; can't create a V1 ACL payload for this ACL.");
         }
 
         OicSecValidity_t* validityElts = ace->validities;
@@ -508,7 +508,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
 #endif //MULTIPLE_OWNER
 
         cborEncoderResult = cbor_encoder_create_map(&acesArray, &oicSecAclMap, aceMapSize);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Creating ACES Map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Creating ACES Map");
         OIC_LOG_V(DEBUG, TAG, "%s created %s map.",
             __func__, OIC_SEC_ACL_V1 == aclVersion?"v1 ACE":"v2 ACE2");
 
@@ -517,10 +517,10 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
         {
             cborEncoderResult = cbor_encode_text_string(&oicSecAclMap, OIC_JSON_ACEID_NAME,
                 strlen(OIC_JSON_ACEID_NAME));
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding aceid Tag.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding aceid Tag.");
             OIC_LOG_V(DEBUG, TAG, "%s encoded v2 %s tag.", __func__, OIC_JSON_ACEID_NAME);
             cborEncoderResult = cbor_encode_int(&oicSecAclMap, ace->aceid);
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding aceid Value.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding aceid Value.");
             OIC_LOG_V(DEBUG, TAG, "%s encoded v2 aceid value %d.", __func__, ace->aceid);
         }
 
@@ -529,7 +529,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
         {
             cborEncoderResult = cbor_encode_text_string(&oicSecAclMap, OIC_JSON_SUBJECTID_NAME,
                 strlen(OIC_JSON_SUBJECTID_NAME));
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding subjectuuid Tag.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding subjectuuid Tag.");
             OIC_LOG_V(DEBUG, TAG, "%s encoded v1 %s tag.", __func__, OIC_JSON_SUBJECTID_NAME);
         }
         // v2 has a "subject" tag, and then one of three different subject types: UUID, roletype or conntype
@@ -537,7 +537,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
         {
             cborEncoderResult = cbor_encode_text_string(&oicSecAclMap, OIC_JSON_SUBJECT_NAME,
                 strlen(OIC_JSON_SUBJECT_NAME));
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding subject Tag.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding subject Tag.");
             OIC_LOG_V(DEBUG, TAG, "%s encoded v2 %s tag.", __func__, OIC_JSON_SUBJECT_NAME);
         }
 
@@ -552,13 +552,13 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                 {
                     cborEncoderResult = cbor_encode_text_string(&oicSecAclMap, WILDCARD_RESOURCE_URI,
                         strlen(WILDCARD_RESOURCE_URI));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding subjectuud wildcard URI value.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding subjectuud wildcard URI value.");
                     OIC_LOG_V(DEBUG, TAG, "%s encoded subjectuuid wildcard value %s.", __func__, WILDCARD_RESOURCE_URI);
                 }
                 else // v2
                 {
                     cborEncoderResult = CborUnknownError;
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "ACE has wildcard subjectuuid; cannot encode into oic.sec.ace2 object.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "ACE has wildcard subjectuuid; cannot encode into oic.sec.ace2 object.");
                 }
             }
             else
@@ -570,14 +570,14 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                 }
                 ret = ConvertUuidToStr(&ace->subjectuuid, &subjectuuidstring);
                 cborEncoderResult = (OC_STACK_OK == ret) ? CborNoError : CborUnknownError;
-                VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed to convert subject UUID to string");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed to convert subject UUID to string");
                 OIC_LOG_V(DEBUG, TAG, "%s converted UUID to %s", __func__, subjectuuidstring);
 
                 // v1 encodes the UUID immediately after the "subjectuuid" tag encoded above
                 if (OIC_SEC_ACL_V1 == aclVersion)
                 {
                     cborEncoderResult = cbor_encode_text_string(&oicSecAclMap, subjectuuidstring, strlen(subjectuuidstring));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding subjectuuid Value");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding subjectuuid Value");
                     OIC_LOG_V(DEBUG, TAG, "%s encoded v1 UUID value %s.", __func__, subjectuuidstring);
                 }
                 // v2 encodes another tag and then the value, depending on the type (UUID, role or conn)
@@ -587,15 +587,15 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                     CborEncoder didMap;
 
                     cborEncoderResult = cbor_encoder_create_map(&oicSecAclMap, &didMap, ACE_DID_MAP_SIZE);
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed creating did map");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed creating did map");
                     OIC_LOG_V(DEBUG, TAG, "%s created v2 did map.", __func__);
 
                     cborEncoderResult = cbor_encode_text_string(&didMap, OIC_JSON_UUID_NAME, strlen(OIC_JSON_UUID_NAME));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding uuid tag");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding uuid tag");
                     OIC_LOG_V(DEBUG, TAG, "%s encoded v2 %s tag.", __func__, OIC_JSON_UUID_NAME);
 
                     cborEncoderResult = cbor_encode_text_string(&didMap, subjectuuidstring, strlen(subjectuuidstring));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding Subject UUID Value");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding Subject UUID Value");
                     OIC_LOG_V(DEBUG, TAG, "%s encoded v2 UUID value %s.", __func__, subjectuuidstring);
                     if (NULL != subjectuuidstring)
                     {
@@ -604,7 +604,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                     }
 
                     cborEncoderResult = cbor_encoder_close_container(&oicSecAclMap, &didMap);
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed closing did map");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed closing did map");
                     OIC_LOG_V(DEBUG, TAG, "%s closed v2 did map.", __func__);
                 }
             }
@@ -618,30 +618,30 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
             bool includeAuthority = (0 != memcmp(&ace->subjectRole.authority, &EMPTY_ROLE.authority, sizeof(EMPTY_ROLE.authority)));
 
             cborEncoderResult = cbor_encoder_create_map(&oicSecAclMap, &roleMap, ACE_ROLE_MAP_SIZE + (includeAuthority ? 1 : 0));
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed creating role map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed creating role map");
             OIC_LOG_V(DEBUG, TAG, "%s created v2 role map.", __func__);
 
             cborEncoderResult = cbor_encode_text_string(&roleMap, OIC_JSON_ROLE_NAME, strlen(OIC_JSON_ROLE_NAME));
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding roleid tag");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding roleid tag");
             OIC_LOG_V(DEBUG, TAG, "%s encoded v2 %s tag.", __func__, OIC_JSON_ROLE_NAME);
 
             cborEncoderResult = cbor_encode_text_string(&roleMap, ace->subjectRole.id, strlen(ace->subjectRole.id));
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding roleid value");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding roleid value");
             OIC_LOG_V(DEBUG, TAG, "%s encoded v2 roleid value %s.", __func__, ace->subjectRole.id);
 
             if (includeAuthority)
             {
                 cborEncoderResult = cbor_encode_text_string(&roleMap, OIC_JSON_AUTHORITY_NAME, strlen(OIC_JSON_AUTHORITY_NAME));
-                VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding authority tag");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding authority tag");
                 OIC_LOG_V(DEBUG, TAG, "%s encoded v2 %s tag.", __func__, OIC_JSON_AUTHORITY_NAME);
 
                 cborEncoderResult = cbor_encode_text_string(&roleMap, ace->subjectRole.authority, strlen(ace->subjectRole.authority));
-                VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding authority value");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding authority value");
                 OIC_LOG_V(DEBUG, TAG, "%s encoded v2 authority value %s.", __func__, ace->subjectRole.authority);
             }
 
             cborEncoderResult = cbor_encoder_close_container(&oicSecAclMap, &roleMap);
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed closing role map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed closing role map");
             OIC_LOG_V(DEBUG, TAG, "%s closed v2 role map.", __func__);
         }
         // v2 conntype
@@ -651,23 +651,23 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
             CborEncoder connMap;
 
             cborEncoderResult = cbor_encoder_create_map(&oicSecAclMap, &connMap, ACE_CONN_MAP_SIZE);
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed creating conn map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed creating conn map");
             OIC_LOG_V(DEBUG, TAG, "%s encoded v2 conn map.", __func__);
 
             cborEncoderResult = cbor_encode_text_string(&connMap, OIC_JSON_CONNTYPE_NAME, strlen(OIC_JSON_CONNTYPE_NAME));
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding conntype tag");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding conntype tag");
             OIC_LOG_V(DEBUG, TAG, "%s encoded v2 %s tag.", __func__, OIC_JSON_CONNTYPE_NAME);
 
             if (AUTH_CRYPT == ace->subjectConn)
             {
                 cborEncoderResult = cbor_encode_text_string(&connMap, OIC_JSON_AUTHCRYPT_NAME, strlen(OIC_JSON_AUTHCRYPT_NAME));
-                VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding auth-crypt value");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding auth-crypt value");
                 OIC_LOG_V(DEBUG, TAG, "%s encoded v2 conntype value %s.", __func__, OIC_JSON_AUTHCRYPT_NAME);
             }
             else if (ANON_CLEAR == ace->subjectConn)
             {
                 cborEncoderResult = cbor_encode_text_string(&connMap, OIC_JSON_ANONCLEAR_NAME, strlen(OIC_JSON_AUTHCRYPT_NAME));
-                VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding anon-clear value");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding anon-clear value");
                 OIC_LOG_V(DEBUG, TAG, "%s encoded v2 conntype value %s.", __func__, OIC_JSON_ANONCLEAR_NAME);
             }
             else
@@ -676,11 +676,11 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                 assert(!"unknown conntype value");
                 cborEncoderResult = CborUnknownError;
                 ret = OC_STACK_ERROR;
-                VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "unknown conntype value");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "unknown conntype value");
             }
 
             cborEncoderResult = cbor_encoder_close_container(&oicSecAclMap, &connMap);
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed closing conn map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed closing conn map");
             ret = OC_STACK_ERROR;
             OIC_LOG_V(DEBUG, TAG, "%s closed v2 conn map.", __func__);
         }
@@ -689,7 +689,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
             assert(!"Unknown ACE subject type");
             cborEncoderResult = CborUnknownError;
             ret = OC_STACK_ERROR;
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Unknown ACE subject type");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Unknown ACE subject type");
         }
 
         // Resources
@@ -697,7 +697,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
             CborEncoder resources;
             cborEncoderResult = cbor_encode_text_string(&oicSecAclMap, OIC_JSON_RESOURCES_NAME,
                 strlen(OIC_JSON_RESOURCES_NAME));
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Resource Name Tag.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Resource Name Tag.");
             OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 %s tag.", __func__, OIC_JSON_RESOURCES_NAME);
 
             size_t rsrcLen = 0;
@@ -708,7 +708,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
             }
 
             cborEncoderResult = cbor_encoder_create_array(&oicSecAclMap, &resources, rsrcLen);
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed creating resources Array.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed creating resources Array.");
             OIC_LOG_V(DEBUG, TAG, "%s created v1/v2 resources array.", __func__);
 
             OicSecRsrc_t* rsrc = NULL;
@@ -740,7 +740,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                 OIC_LOG_V(DEBUG, TAG, "%s resource map size = %"PRIuPTR, __func__, rsrcMapSize);
 
                 cborEncoderResult = cbor_encoder_create_map(&resources, &rMap, rsrcMapSize);
-                VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Resource Map.");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Resource Map.");
                 OIC_LOG_V(DEBUG, TAG, "%s created v1/v2 resource map.", __func__);
 
                 // href
@@ -748,10 +748,10 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                 {
                     cborEncoderResult = cbor_encode_text_string(&rMap, OIC_JSON_HREF_NAME,
                         strlen(OIC_JSON_HREF_NAME));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding HREF Name Tag.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding HREF Name Tag.");
                     OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 %s tag.", __func__, OIC_JSON_HREF_NAME);
                     cborEncoderResult = cbor_encode_text_string(&rMap, rsrc->href, strlen(rsrc->href));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding HREF Value in Map.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding HREF Value in Map.");
                     OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 href value %s.", __func__, rsrc->href);
                 }
 
@@ -760,21 +760,21 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                 {
                     cborEncoderResult = cbor_encode_text_string(&rMap, OIC_JSON_RT_NAME,
                         strlen(OIC_JSON_RT_NAME));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding RT Name Tag.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding RT Name Tag.");
                     OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 %s tag.", __func__, OIC_JSON_RT_NAME);
 
                     CborEncoder resourceTypes;
                     cborEncoderResult = cbor_encoder_create_array(&rMap, &resourceTypes, rsrc->typeLen);
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed creating RT Array.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed creating RT Array.");
                     OIC_LOG_V(DEBUG, TAG, "%s created v1/v2 rt array.", __func__);
                     for(size_t i = 0; i < rsrc->typeLen; i++)
                     {
                         cborEncoderResult = cbor_encode_text_string(&resourceTypes, rsrc->types[i], strlen(rsrc->types[i]));
-                        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding RT Value.");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding RT Value.");
                         OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 rt value %s.", __func__, rsrc->types[i]);
                     }
                     cborEncoderResult = cbor_encoder_close_container(&rMap, &resourceTypes);
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing resourceTypes.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing resourceTypes.");
                     OIC_LOG_V(DEBUG, TAG, "%s closed v1/v2 resource map.", __func__);
                 }
 
@@ -783,21 +783,21 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                 {
                     cborEncoderResult = cbor_encode_text_string(&rMap, OIC_JSON_IF_NAME,
                         strlen(OIC_JSON_IF_NAME));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding IF Name Tag.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding IF Name Tag.");
                     OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 %s tag.", __func__, OIC_JSON_IF_NAME);
 
                     CborEncoder interfaces;
                     cborEncoderResult = cbor_encoder_create_array(&rMap, &interfaces, rsrc->interfaceLen);
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed creating IF Array.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed creating IF Array.");
                     OIC_LOG_V(DEBUG, TAG, "%s created v1/v2 IF array.", __func__);
                     for(size_t i = 0; i < rsrc->interfaceLen; i++)
                     {
                         cborEncoderResult = cbor_encode_text_string(&interfaces, rsrc->interfaces[i], strlen(rsrc->interfaces[i]));
-                        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding IF Value.");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding IF Value.");
                         OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 IF value %s.", __func__, rsrc->interfaces[i]);
                     }
                     cborEncoderResult = cbor_encoder_close_container(&rMap, &interfaces);
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing interfaces.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing interfaces.");
                 }
 
                 // rel
@@ -805,10 +805,10 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                 {
                     cborEncoderResult = cbor_encode_text_string(&rMap, OIC_JSON_REL_NAME,
                             strlen(OIC_JSON_REL_NAME));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding REL Name Tag.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding REL Name Tag.");
                     OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 %s tag.", __func__, OIC_JSON_REL_NAME);
                     cborEncoderResult = cbor_encode_text_string(&rMap, rsrc->rel, strlen(rsrc->rel));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding REL Value.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding REL Value.");
                     OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 rel value %s.", __func__, rsrc->rel);
                 }
 
@@ -819,7 +819,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                     {
                         cborEncoderResult = cbor_encode_text_string(&rMap, OIC_JSON_WC_NAME,
                             strlen(OIC_JSON_WC_NAME));
-                        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding WC Name Tag.");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding WC Name Tag.");
                         OIC_LOG_V(DEBUG, TAG, "%s encoded v2 %s tag.", __func__, OIC_JSON_WC_NAME);
                         switch(rsrc->wildcard)
                         {
@@ -834,32 +834,32 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                             break;
                             default:
                             OIC_LOG_V(ERROR, TAG, "%s: unknown ACE2 wildcard type.", __func__);
-                            VERIFY_CBOR_SUCCESS(TAG, CborUnknownError, "unknown ACE2 wildcard type");
+                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, CborUnknownError, "unknown ACE2 wildcard type");
                             break;
                         }
                         cborEncoderResult = cbor_encode_text_string(&rMap, wcstring, strlen(wcstring));
-                        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding WC Value.");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding WC Value.");
                         OIC_LOG_V(DEBUG, TAG, "%s encoded v2 wc value %s.", __func__, wcstring);
                         wcstring = NULL;
                     }
                 }
 
                 cborEncoderResult = cbor_encoder_close_container(&resources, &rMap);
-                VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing Resource Map.");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing Resource Map.");
                 OIC_LOG_V(DEBUG, TAG, "%s closed v1/v2 resource map.", __func__);
             }
             cborEncoderResult = cbor_encoder_close_container(&oicSecAclMap, &resources);
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing Resource Name Array.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing Resource Name Array.");
             OIC_LOG_V(DEBUG, TAG, "%s closed v1/v2 resources array.", __func__);
         }
 
         // Permissions -- Mandatory
         cborEncoderResult = cbor_encode_text_string(&oicSecAclMap, OIC_JSON_PERMISSION_NAME,
             strlen(OIC_JSON_PERMISSION_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Permission Name Tag.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Permission Name Tag.");
         OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 %s tag.", __func__, OIC_JSON_PERMISSION_NAME);
         cborEncoderResult = cbor_encode_int(&oicSecAclMap, ace->permission);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Permission Name Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Permission Name Value.");
         OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 permission value %d.", __func__, ace->permission);
 
         // TODO: Need to verfication for validity
@@ -876,9 +876,9 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
             CborEncoder validities;
             cborEncoderResult = cbor_encode_text_string(&oicSecAclMap, OIC_JSON_VALIDITY_NAME,
                 strlen(OIC_JSON_VALIDITY_NAME));
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Validity Tag.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Validity Tag.");
             cborEncoderResult = cbor_encoder_create_array(&oicSecAclMap, &validities, validityLen);
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Validities Array.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Validities Array.");
 
             //How to add the value w/o "title" using tinycobr...? :(
 
@@ -897,14 +897,14 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                 }
 
                 cborEncoderResult = cbor_encoder_create_array(&validities, &validity, validitySize);
-                VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Validity Array.");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Validity Array.");
 
                 // Period
                 if (validityElts->period)
                 {
                     cborEncoderResult = cbor_encode_text_string(&validity, validityElts->period,
                         strlen(validityElts->period));
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Period Value.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Period Value.");
                 }
 
                 // Recurrence
@@ -912,24 +912,24 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
                 {
                     CborEncoder recurrences;
                     cborEncoderResult = cbor_encoder_create_array(&validity, &recurrences, validityElts->recurrenceLen);
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Recurrence Array.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Recurrence Array.");
 
                     for (size_t i = 0; i < validityElts->recurrenceLen; i++)
                     {
                         cborEncoderResult = cbor_encode_text_string(&recurrences, validityElts->recurrences[i],
                             strlen(validityElts->recurrences[i]));
-                        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding Recurrence Array Value.");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding Recurrence Array Value.");
                     }
                     cborEncoderResult = cbor_encoder_close_container(&validity, &recurrences);
-                    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing Recurrence Array");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing Recurrence Array");
                 }
 
                 cborEncoderResult = cbor_encoder_close_container(&validities, &validity);
-                VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing Validity Array.");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing Validity Array.");
             }
 
             cborEncoderResult = cbor_encoder_close_container(&oicSecAclMap, &validities);
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing Validities Array.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing Validities Array.");
         }
 
 #ifdef MULTIPLE_OWNER
@@ -939,18 +939,18 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
             char *eowner = NULL;
             cborEncoderResult = cbor_encode_text_string(&oicSecAclMap, OIC_JSON_EOWNERID_NAME,
                 strlen(OIC_JSON_EOWNERID_NAME));
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding eownerId Name Tag.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding eownerId Name Tag.");
             ret = ConvertUuidToStr(ace->eownerID, &eowner);
             VERIFY_SUCCESS(TAG, ret == OC_STACK_OK, ERROR);
             cborEncoderResult = cbor_encode_text_string(&oicSecAclMap, eowner, strlen(eowner));
             OICFree(eowner);
-            VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding eownerId Value.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding eownerId Value.");
         }
 #endif //MULTIPLE_OWNER
 
         // close the map of the oic.sec.ace/ace2 object
         cborEncoderResult = cbor_encoder_close_container(&acesArray, &oicSecAclMap);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing ACES Map.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing ACES Map.");
         OIC_LOG_V(DEBUG, TAG, "%s closed v1/v2 aces map.", __func__);
     }
 
@@ -958,13 +958,13 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
     if (OIC_SEC_ACL_V1 == aclVersion)
     {
         cborEncoderResult = cbor_encoder_close_container(&aclListMap, &acesArray);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing ACE Array.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing ACE Array.");
         OIC_LOG_V(DEBUG, TAG, "%s closed v1 ACE array.", __func__);
     }
     else
     {
         cborEncoderResult = cbor_encoder_close_container(&aclMap, &acesArray);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing ACE2 Array.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing ACE2 Array.");
         OIC_LOG_V(DEBUG, TAG, "%s closed v2 ACE2 array.", __func__);
     }
 
@@ -972,7 +972,7 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
     if (OIC_SEC_ACL_V1 == aclVersion)
     {
         cborEncoderResult = cbor_encoder_close_container(&aclMap, &aclListMap);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing aclist/aclist2 Map.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing aclist/aclist2 Map.");
         OIC_LOG_V(DEBUG, TAG, "%s closed v1/v2 aclist/aclist2 map.", __func__);
     }
 
@@ -981,12 +981,12 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
         char *rowner = NULL;
         cborEncoderResult = cbor_encode_text_string(&aclMap, OIC_JSON_ROWNERID_NAME,
             strlen(OIC_JSON_ROWNERID_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding rownerid Name.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding rownerid Name.");
         OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 %s tag.", __func__, OIC_JSON_ROWNERID_NAME);
         ret = ConvertUuidToStr(&secAcl->rownerID, &rowner);
         VERIFY_SUCCESS(TAG, ret == OC_STACK_OK, ERROR);
         cborEncoderResult = cbor_encode_text_string(&aclMap, rowner, strlen(rowner));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding rownerid Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding rownerid Value.");
         OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 rowneruuid value %s.", __func__, rowner);
         OICFree(rowner);
     }
@@ -995,47 +995,47 @@ OCStackResult AclToCBORPayload(const OicSecAcl_t *secAcl,
     CborEncoder rtArray;
     cborEncoderResult = cbor_encode_text_string(&aclMap, OIC_JSON_RT_NAME,
             strlen(OIC_JSON_RT_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding RT Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding RT Tag.");
     OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 %s tag.", __func__, OIC_JSON_RT_NAME);
     cborEncoderResult = cbor_encoder_create_array(&aclMap, &rtArray, 1);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed creating RT array.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed creating RT array.");
     OIC_LOG_V(DEBUG, TAG, "%s created %s array.", __func__, OIC_JSON_RT_NAME);
     aclRsrcType = (OIC_SEC_ACL_V1 == aclVersion)?OIC_RSRC_TYPE_SEC_ACL:OIC_RSRC_TYPE_SEC_ACL2;
     for (size_t i = 0; i < 1; i++)
     {
         cborEncoderResult = cbor_encode_text_string(&rtArray, aclRsrcType,
                 strlen(aclRsrcType));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding RT Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding RT Value.");
         OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 %s tag.", __func__, aclRsrcType);
     }
     aclRsrcType = NULL;
     cborEncoderResult = cbor_encoder_close_container(&aclMap, &rtArray);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing RT.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing RT.");
     OIC_LOG_V(DEBUG, TAG, "%s closed %s array.", __func__, OIC_JSON_RT_NAME);
 
     //IF-- Mandatory
     CborEncoder ifArray;
     cborEncoderResult = cbor_encode_text_string(&aclMap, OIC_JSON_IF_NAME,
              strlen(OIC_JSON_IF_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding IF Name Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding IF Name Tag.");
     OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 %s tag.", __func__, OIC_JSON_IF_NAME);
     cborEncoderResult = cbor_encoder_create_array(&aclMap, &ifArray, 1);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed creating IF array.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed creating IF array.");
     OIC_LOG_V(DEBUG, TAG, "%s created %s array.", __func__, OIC_JSON_IF_NAME);
     for (size_t i = 0; i < 1; i++)
     {
         cborEncoderResult = cbor_encode_text_string(&ifArray, OC_RSRVD_INTERFACE_DEFAULT,
                 strlen(OC_RSRVD_INTERFACE_DEFAULT));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding IF Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding IF Value.");
         OIC_LOG_V(DEBUG, TAG, "%s encoded v1/v2 IF value %s.", __func__, OC_RSRVD_INTERFACE_DEFAULT);
     }
     cborEncoderResult = cbor_encoder_close_container(&aclMap, &ifArray);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing IF.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing IF.");
     OIC_LOG_V(DEBUG, TAG, "%s closed IF array.", __func__);
 
     // Close ACL Map
     cborEncoderResult = cbor_encoder_close_container(&encoder, &aclMap);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing ACL Map.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing ACL Map.");
     OIC_LOG_V(DEBUG, TAG, "%s closed ACL map.", __func__);
 
     if (CborNoError == cborEncoderResult)
@@ -1101,7 +1101,7 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
     // Enter ACL Map
     CborValue aclMap = { .parser = NULL, .ptr = NULL, .remaining = 0, .extra = 0, .type = 0, .flags = 0 };
     cborFindResult = cbor_value_enter_container(&aclCbor, &aclMap);
-    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering ACL Map.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering ACL Map.");
 
     while (cbor_value_is_valid(&aclMap))
     {
@@ -1111,9 +1111,9 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
         if (type == CborTextStringType)
         {
             cborFindResult = cbor_value_dup_text_string(&aclMap, &tagName, &len, NULL);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Name in ACL Map.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Name in ACL Map.");
             cborFindResult = cbor_value_advance(&aclMap);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing Value in ACL Map.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Value in ACL Map.");
         }
         if(tagName)
         {
@@ -1122,7 +1122,7 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                 // Enter ACES Array
                 CborValue acesArray = { .parser = NULL, .ptr = NULL, .remaining = 0, .extra = 0, .type = 0, .flags = 0 };
                 cborFindResult = cbor_value_enter_container(&aclMap, &acesArray);
-                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering ACES Array.");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering ACES Array.");
 
                 int acesCount = 0;
                 while (cbor_value_is_valid(&acesArray))
@@ -1130,7 +1130,7 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                     acesCount++;
                     CborValue aceMap = { .parser = NULL, .ptr = NULL, .remaining = 0, .extra = 0, .type = 0, .flags = 0 };
                     cborFindResult = cbor_value_enter_container(&acesArray, &aceMap);
-                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering ACE Map.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering ACE Map.");
 
                     OicSecAce_t *ace = NULL;
                     ace = (OicSecAce_t *) OICCalloc(1, sizeof(OicSecAce_t));
@@ -1147,9 +1147,9 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                         if (aceMapType == CborTextStringType)
                         {
                             cborFindResult = cbor_value_dup_text_string(&aceMap, &name, &tempLen, NULL);
-                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Name in ACE Map.");
+                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Name in ACE Map.");
                             cborFindResult = cbor_value_advance(&aceMap);
-                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing Value in ACE Map.");
+                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Value in ACE Map.");
                         }
                         if (name)
                         {
@@ -1158,7 +1158,7 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                             {
                                 char *subject = NULL;
                                 cborFindResult = cbor_value_dup_text_string(&aceMap, &subject, &tempLen, NULL);
-                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding subject Value.");
+                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding subject Value.");
                                 if(strcmp(subject, WILDCARD_RESOURCE_URI) == 0)
                                 {
                                     ace->subjectuuid.id[0] = '*';
@@ -1178,14 +1178,14 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                             {
                                 CborValue resources = { .parser = NULL };
                                 cborFindResult = cbor_value_enter_container(&aceMap, &resources);
-                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering a Resource Array.");
+                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering a Resource Array.");
 
                                 while (cbor_value_is_valid(&resources))
                                 {
                                     // rMap
                                     CborValue rMap = { .parser = NULL  };
                                     cborFindResult = cbor_value_enter_container(&resources, &rMap);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering Resource Map");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering Resource Map");
 
                                     OicSecRsrc_t* rsrc = (OicSecRsrc_t*)OICCalloc(1, sizeof(OicSecRsrc_t));
                                     VERIFY_NOT_NULL(TAG, rsrc, ERROR);
@@ -1196,22 +1196,22 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                                         char *rMapName = NULL;
                                         size_t rMapNameLen = 0;
                                         cborFindResult = cbor_value_dup_text_string(&rMap, &rMapName, &rMapNameLen, NULL);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding RMap Data Name Tag.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding RMap Data Name Tag.");
                                         cborFindResult = cbor_value_advance(&rMap);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding RMap Data Value.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding RMap Data Value.");
 
                                         // "href"
                                         if (0 == strcmp(OIC_JSON_HREF_NAME, rMapName))
                                         {
                                             cborFindResult = cbor_value_dup_text_string(&rMap, &rsrc->href, &tempLen, NULL);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Href Value.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Href Value.");
                                         }
 
                                         // "rt"
                                         if (0 == strcmp(OIC_JSON_RT_NAME, rMapName) && cbor_value_is_array(&rMap))
                                         {
                                             cbor_value_get_array_length(&rMap, &rsrc->typeLen);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding RT array length.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding RT array length.");
                                             VERIFY_SUCCESS(TAG, (0 != rsrc->typeLen), ERROR);
 
                                             rsrc->types = (char**)OICCalloc(rsrc->typeLen, sizeof(char*));
@@ -1219,15 +1219,15 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
 
                                             CborValue resourceTypes;
                                             cborFindResult = cbor_value_enter_container(&rMap, &resourceTypes);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering RT Array.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering RT Array.");
 
                                             for(size_t i = 0; cbor_value_is_valid(&resourceTypes) && cbor_value_is_text_string(&resourceTypes); i++)
                                             {
                                                 size_t readLen = 0;
                                                 cborFindResult = cbor_value_dup_text_string(&resourceTypes, &(rsrc->types[i]), &readLen, NULL);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding resource type.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding resource type.");
                                                 cborFindResult = cbor_value_advance(&resourceTypes);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing resource type.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing resource type.");
                                             }
                                         }
 
@@ -1235,7 +1235,7 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                                         if (0 == strcmp(OIC_JSON_IF_NAME, rMapName) && cbor_value_is_array(&rMap))
                                         {
                                             cbor_value_get_array_length(&rMap, &rsrc->interfaceLen);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding IF array length.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding IF array length.");
                                             VERIFY_SUCCESS(TAG, (0 != rsrc->interfaceLen), ERROR);
 
                                             rsrc->interfaces = (char**)OICCalloc(rsrc->interfaceLen, sizeof(char*));
@@ -1243,15 +1243,15 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
 
                                             CborValue interfaces;
                                             cborFindResult = cbor_value_enter_container(&rMap, &interfaces);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering IF Array.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering IF Array.");
 
                                             for(size_t i = 0; cbor_value_is_valid(&interfaces) && cbor_value_is_text_string(&interfaces); i++)
                                             {
                                                 size_t readLen = 0;
                                                 cborFindResult = cbor_value_dup_text_string(&interfaces, &(rsrc->interfaces[i]), &readLen, NULL);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding IF type.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding IF type.");
                                                 cborFindResult = cbor_value_advance(&interfaces);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing IF type.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing IF type.");
                                             }
                                         }
 
@@ -1259,13 +1259,13 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                                         if (0 == strcmp(OIC_JSON_REL_NAME, rMapName))
                                         {
                                             cborFindResult = cbor_value_dup_text_string(&rMap, &rsrc->rel, &tempLen, NULL);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding REL Value.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding REL Value.");
                                         }
 
                                         if (cbor_value_is_valid(&rMap))
                                         {
                                             cborFindResult = cbor_value_advance(&rMap);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing Rlist Map.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Rlist Map.");
                                         }
                                         OICFree(rMapName);
                                     }
@@ -1273,7 +1273,7 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                                     if (cbor_value_is_valid(&resources))
                                     {
                                         cborFindResult = cbor_value_advance(&resources);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing Resource Array.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Resource Array.");
                                     }
                                 }
                             }
@@ -1283,7 +1283,7 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                             {
                                 uint64_t tmp64;
                                 cborFindResult = cbor_value_get_uint64(&aceMap, &tmp64);
-                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a PERM Value.");
+                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a PERM Value.");
                                 ace->permission = (uint16_t)tmp64;
                             }
 
@@ -1295,10 +1295,10 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                                 size_t validitySize = 0;
 
                                 cborFindResult = cbor_value_get_array_length(&aceMap, &validitySize);
-                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a Validity Array Length.");
+                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a Validity Array Length.");
 
                                 cborFindResult = cbor_value_enter_container(&aceMap, &validitiesMap);
-                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a validity Array Map.");
+                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a validity Array Map.");
 
                                 while(cbor_value_is_valid(&validitiesMap))
                                 {
@@ -1309,19 +1309,19 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                                     CborValue validityMap  = {.parser = NULL};
                                     //period (string)
                                     cborFindResult = cbor_value_enter_container(&validitiesMap, &validityMap);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a validity Map.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a validity Map.");
 
                                     size_t vmLen = 0;
                                     cborFindResult = cbor_value_dup_text_string(&validityMap, &validity->period, &vmLen, NULL);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a Period value.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a Period value.");
 
                                     //recurrence (string array)
                                     CborValue recurrenceMap  = {.parser = NULL};
                                     cborFindResult = cbor_value_enter_container(&validityMap, &recurrenceMap);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a recurrence array.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a recurrence array.");
 
                                     cborFindResult = cbor_value_get_array_length(&recurrenceMap, &validity->recurrenceLen);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Adding Recurrence Array.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Adding Recurrence Array.");
 
                                     validity->recurrences = (char**)OICCalloc(validity->recurrenceLen, sizeof(char*));
                                     VERIFY_NOT_NULL(TAG, validity->recurrences, ERROR);
@@ -1329,14 +1329,14 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                                     for(size_t i = 0; cbor_value_is_text_string(&recurrenceMap) && i < validity->recurrenceLen; i++)
                                     {
                                         cborFindResult = cbor_value_dup_text_string(&recurrenceMap, &validity->recurrences[i], &vmLen, NULL);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a recurrence Value.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a recurrence Value.");
 
                                         cborFindResult = cbor_value_advance(&recurrenceMap);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing a recurrences Array.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing a recurrences Array.");
                                     }
 
                                     cborFindResult = cbor_value_advance(&validitiesMap);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing a validities Array.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing a validities Array.");
                                 }
                             }
                             OICFree(name);
@@ -1345,14 +1345,14 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
                         if (aceMapType != CborMapType && cbor_value_is_valid(&aceMap))
                         {
                             cborFindResult = cbor_value_advance(&aceMap);
-                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing the Array.");
+                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing the Array.");
                         }
                     }
 
                     if (cbor_value_is_valid(&acesArray))
                     {
                         cborFindResult = cbor_value_advance(&acesArray);
-                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing ACL Array.");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing ACL Array.");
                     }
                 }
             }
@@ -1362,7 +1362,7 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
             {
                 char *stRowner = NULL;
                 cborFindResult = cbor_value_dup_text_string(&aclMap, &stRowner, &len, NULL);
-                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Rownerid Value.");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Rownerid Value.");
                 OIC_LOG_V(DEBUG, TAG, "Converting rownerid = %s to uuid...", stRowner);
                 ret = ConvertStrToUuid(stRowner, &acl->rownerID);
                 free(stRowner);
@@ -1375,7 +1375,7 @@ OicSecAcl_t* CBORPayloadToCloudAcl(const uint8_t *cborPayload, const size_t size
         if (cbor_value_is_valid(&aclMap))
         {
             cborFindResult = cbor_value_advance(&aclMap);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing ACL Map.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing ACL Map.");
         }
     }
 
@@ -1431,7 +1431,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
 
     // Enter ACL Map
     cborFindResult = cbor_value_enter_container(&aclCbor, &aclMap);
-    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering ACL Map.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering ACL Map.");
     while (cbor_value_is_valid(&aclMap))
     {
         size_t len = 0;
@@ -1439,9 +1439,9 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
         if (type == CborTextStringType)
         {
             cborFindResult = cbor_value_dup_text_string(&aclMap, &tagName, &len, NULL);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Name in ACL Map.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Name in ACL Map.");
             cborFindResult = cbor_value_advance(&aclMap);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing Value in ACL Map.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Value in ACL Map.");
         }
         if(tagName)
         {
@@ -1491,7 +1491,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                 aclistTagJustFound = false; // don't enter this check a second time
                 // Enter ACLIST Map
                 cborFindResult = cbor_value_enter_container(&aclMap, &aclistMap);
-                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering ACLIST Map.");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering ACLIST Map.");
                 OIC_LOG_V(DEBUG, TAG, "%s entered 'aclist' map.", __func__);
 
                 bool parsedAcesTag = false;
@@ -1501,9 +1501,9 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                 if (acType == CborTextStringType)
                 {
                     cborFindResult = cbor_value_dup_text_string(&aclistMap, &acName, &readLen, NULL);
-                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Name in ACLIST Map.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Name in ACLIST Map.");
                     cborFindResult = cbor_value_advance(&aclistMap);
-                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing Value in ACLIST Map.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Value in ACLIST Map.");
                     if (acName)
                     {
                         if (strcmp(acName, OIC_JSON_ACES_NAME)  == 0)
@@ -1540,7 +1540,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                     // Enter ACES Array
                     CborValue acesArray = { .parser = NULL, .ptr = NULL, .remaining = 0, .extra = 0, .type = 0, .flags = 0 };
                     cborFindResult = cbor_value_enter_container(&aclistMap, &acesArray);
-                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering ACES Array.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering ACES Array.");
                     OIC_LOG_V(DEBUG, TAG, "%s entered ace object array.", __func__);
 
                     // decode array of ace or ace2 objects
@@ -1551,7 +1551,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                         acesCount++;
                         CborValue aceMap = { .parser = NULL, .ptr = NULL, .remaining = 0, .extra = 0, .type = 0, .flags = 0 };
                         cborFindResult = cbor_value_enter_container(&acesArray, &aceMap);
-                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering ACE Map.");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering ACE Map.");
                         OIC_LOG_V(DEBUG, TAG, "%s entered %s map.", __func__,
                             (OIC_SEC_ACL_V1 == aclistVersion)?"ace":"ace2");
 
@@ -1569,10 +1569,10 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                             if (aceMapType == CborTextStringType)
                             {
                                 cborFindResult = cbor_value_dup_text_string(&aceMap, &name, &tempLen, NULL);
-                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Name in ACE Map.");
+                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Name in ACE Map.");
                                 OIC_LOG_V(DEBUG, TAG, "%s found %s tag.", __func__, name);
                                 cborFindResult = cbor_value_advance(&aceMap);
-                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing Value in ACE Map.");
+                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Value in ACE Map.");
                                 OIC_LOG_V(DEBUG, TAG, "%s advanced to next value.", __func__);
                             }
                             if (name)
@@ -1582,7 +1582,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                 {
                                     uint64_t tmp64;
                                     cborFindResult = cbor_value_get_uint64(&aceMap, &tmp64);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding aceid Value.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding aceid Value.");
                                     OIC_LOG_V(DEBUG, TAG, "%s read aceid value %d.", __func__, (uint16_t)tmp64);
                                     ace->aceid = (uint16_t)tmp64;
                                 }
@@ -1593,7 +1593,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                     {
                                         char *subject = NULL;
                                         cborFindResult = cbor_value_dup_text_string(&aceMap, &subject, &tempLen, NULL);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding subject Value.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding subject Value.");
                                         if (0 == strcmp(subject, WILDCARD_RESOURCE_URI))
                                         {
                                             ace->subjectuuid.id[0] = '*';
@@ -1607,7 +1607,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                             {
                                                 cborFindResult = CborUnknownError;
                                                 free(subject);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed converting subject UUID");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed converting subject UUID");
                                             }
                                             OIC_LOG_V(DEBUG, TAG, "%s found subjectuuid = %s.", __func__, subject);
                                             ace->subjectType = OicSecAceUuidSubject;
@@ -1626,16 +1626,16 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                     {
                                         // next container within subject is either didtype, roletype, or conntype
                                         cborFindResult = cbor_value_enter_container(&aceMap, &subjectMap);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed entering subject map.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed entering subject map.");
                                         OIC_LOG_V(DEBUG, TAG, "%s entered acl2 subject map.", __func__);
 
                                         while (cbor_value_is_valid(&subjectMap) && cbor_value_is_text_string(&subjectMap))
                                         {
                                             cborFindResult = cbor_value_dup_text_string(&subjectMap, &subjectTag, &unusedLen, NULL);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed getting subject type tag name");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting subject type tag name");
                                             OIC_LOG_V(DEBUG, TAG, "%s found %s tag.", __func__, subjectTag);
                                             cborFindResult = cbor_value_advance(&subjectMap);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed advancing subjectMap");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing subjectMap");
                                             OIC_LOG_V(DEBUG, TAG, "%s advanced acl2 subject map.", __func__);
                                             if (NULL != subjectTag)
                                             {
@@ -1646,14 +1646,14 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                                     if (cbor_value_is_valid(&subjectMap) && cbor_value_is_text_string(&subjectMap))
                                                     {
                                                         cborFindResult = cbor_value_dup_text_string(&subjectMap, &subject, &tempLen, NULL);
-                                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding subject Value.");
+                                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding subject Value.");
                                                         OIC_LOG_V(DEBUG, TAG, "%s read UUID = %s", __func__, subject);
                                                         ret = ConvertStrToUuid(subject, &ace->subjectuuid);
                                                         if (OC_STACK_OK != ret)
                                                         {
                                                             cborFindResult = CborUnknownError;
                                                             free(subject);
-                                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed converting subject UUID");
+                                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed converting subject UUID");
                                                         }
                                                         ace->subjectType = OicSecAceUuidSubject;
                                                         free(subject);
@@ -1669,12 +1669,12 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                                     ace->subjectType = OicSecAceRoleSubject;
                                                     char *roleId = NULL;
                                                     cborFindResult = cbor_value_dup_text_string(&subjectMap, &roleId, &unusedLen, NULL);
-                                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed getting role id value");
+                                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting role id value");
                                                     if (strlen(roleId) >= sizeof(ace->subjectRole.id))
                                                     {
                                                         cborFindResult = CborUnknownError;
                                                         free(roleId);
-                                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Role ID is too long");
+                                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Role ID is too long");
                                                     }
                                                     OICStrcpy(ace->subjectRole.id, sizeof(ace->subjectRole.id), roleId);
                                                     free(roleId);
@@ -1685,12 +1685,12 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                                     ace->subjectType = OicSecAceRoleSubject;
                                                     char *authorityName = NULL;
                                                     cborFindResult = cbor_value_dup_text_string(&subjectMap, &authorityName, &unusedLen, NULL);
-                                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed getting role authority value");
+                                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting role authority value");
                                                     if (strlen(authorityName) >= sizeof(ace->subjectRole.authority))
                                                     {
                                                         cborFindResult = CborUnknownError;
                                                         free(authorityName);
-                                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Authority name is too long");
+                                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Authority name is too long");
                                                     }
                                                     OICStrcpy(ace->subjectRole.authority, sizeof(ace->subjectRole.authority), authorityName);
                                                     ace->subjectType = OicSecAceRoleSubject;
@@ -1701,7 +1701,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                                 {
                                                     char *conntype = NULL;
                                                     cborFindResult = cbor_value_dup_text_string(&subjectMap, &conntype, &unusedLen, NULL);
-                                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed getting conntype value");
+                                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed getting conntype value");
                                                     OIC_LOG_V(DEBUG, TAG, "%s read conntype value %s.", __func__, conntype);
                                                     if (0 == strcmp(conntype, OIC_JSON_AUTHCRYPT_NAME))
                                                     {
@@ -1715,7 +1715,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                                     {
                                                         cborFindResult = CborUnknownError;
                                                         free(conntype);
-                                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "conntype value not recognized.");
+                                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "conntype value not recognized.");
                                                     }
                                                     ace->subjectType = OicSecAceConntypeSubject;
                                                     free(conntype);
@@ -1730,7 +1730,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                             if (cbor_value_is_valid(&subjectMap))
                                             {
                                                 cborFindResult = cbor_value_advance(&subjectMap);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed advancing subject map");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing subject map");
                                                 OIC_LOG_V(DEBUG, TAG, "%s advanced ace2 subject map.", __func__);
                                             }
                                         }
@@ -1741,7 +1741,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                             if ('\0' == ace->subjectRole.id[0])
                                             {
                                                 cborFindResult = CborUnknownError;
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "ID for role was not present in role map");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "ID for role was not present in role map");
                                             }
                                         }
                                     }
@@ -1749,7 +1749,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                     {
                                         cborFindResult = CborUnknownError;
                                         OIC_LOG_V(ERROR, TAG, "Unknown subject value type: %d", cbor_value_get_type(&aceMap));
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Type of subject value was not expected");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Type of subject value was not expected");
                                     }
                                 }
 
@@ -1758,7 +1758,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                 {
                                     CborValue resources = { .parser = NULL };
                                     cborFindResult = cbor_value_enter_container(&aceMap, &resources);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering a Resource Array.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering a Resource Array.");
                                     OIC_LOG_V(DEBUG, TAG, "%s entered resources array.", __func__);
                                     int resourceCount = 0;
 
@@ -1767,7 +1767,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                         // rMap is the map of the current Resource being decoded
                                         CborValue rMap = { .parser = NULL  };
                                         cborFindResult = cbor_value_enter_container(&resources, &rMap);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering Resource Map");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering Resource Map");
                                         resourceCount++;
                                         OIC_LOG_V(DEBUG, TAG, "%s entered resource map for resource #%d.", __func__, resourceCount);
 
@@ -1784,17 +1784,17 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                             }
                                             size_t rMapNameLen = 0;
                                             cborFindResult = cbor_value_dup_text_string(&rMap, &rMapName, &rMapNameLen, NULL);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding RMap Data Name Tag.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding RMap Data Name Tag.");
                                             OIC_LOG_V(DEBUG, TAG, "%s found %s tag in resource #%d map.", __func__, rMapName, resourceCount);
                                             cborFindResult = cbor_value_advance(&rMap);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed advancing RMap Data Value.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing RMap Data Value.");
                                             OIC_LOG_V(DEBUG, TAG, "%s advanced resource map.", __func__);
 
                                             // "href"
                                             if (0 == strcmp(OIC_JSON_HREF_NAME, rMapName))
                                             {
                                                 cborFindResult = cbor_value_dup_text_string(&rMap, &rsrc->href, &tempLen, NULL);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Href Value.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Href Value.");
                                                 OIC_LOG_V(DEBUG, TAG, "%s found href = %s.", __func__, rsrc->href);
                                                 // OCF 1.0 shouldn't use "*" href even though it's supported; instead,
                                                 // use "wc" object.
@@ -1816,7 +1816,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                             if (0 == strcmp(OIC_JSON_RT_NAME, rMapName) && cbor_value_is_array(&rMap))
                                             {
                                                 cbor_value_get_array_length(&rMap, &rsrc->typeLen);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding RT array length.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding RT array length.");
                                                 VERIFY_SUCCESS(TAG, (0 != rsrc->typeLen), ERROR);
 
                                                 rsrc->types = (char**)OICCalloc(rsrc->typeLen, sizeof(char*));
@@ -1824,15 +1824,15 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
 
                                                 CborValue resourceTypes;
                                                 cborFindResult = cbor_value_enter_container(&rMap, &resourceTypes);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering RT Array.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering RT Array.");
 
                                                 for(size_t i = 0; cbor_value_is_valid(&resourceTypes) && cbor_value_is_text_string(&resourceTypes); i++)
                                                 {
                                                     cborFindResult = cbor_value_dup_text_string(&resourceTypes, &(rsrc->types[i]), &readLen, NULL);
-                                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding resource type.");
+                                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding resource type.");
                                                     OIC_LOG_V(DEBUG, TAG, "%s found rt = %s.", __func__, rsrc->types[i]);
                                                     cborFindResult = cbor_value_advance(&resourceTypes);
-                                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing resource type.");
+                                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing resource type.");
                                                 }
                                             }
 
@@ -1840,7 +1840,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                             if (0 == strcmp(OIC_JSON_IF_NAME, rMapName) && cbor_value_is_array(&rMap))
                                             {
                                                 cbor_value_get_array_length(&rMap, &rsrc->interfaceLen);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding IF array length.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding IF array length.");
                                                 VERIFY_SUCCESS(TAG, (0 != rsrc->interfaceLen), ERROR);
 
                                                 rsrc->interfaces = (char**)OICCalloc(rsrc->interfaceLen, sizeof(char*));
@@ -1848,15 +1848,15 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
 
                                                 CborValue interfaces;
                                                 cborFindResult = cbor_value_enter_container(&rMap, &interfaces);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering IF Array.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering IF Array.");
 
                                                 for(size_t i = 0; cbor_value_is_valid(&interfaces) && cbor_value_is_text_string(&interfaces); i++)
                                                 {
                                                     cborFindResult = cbor_value_dup_text_string(&interfaces, &(rsrc->interfaces[i]), &readLen, NULL);
-                                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding IF type.");
+                                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding IF type.");
                                                     OIC_LOG_V(DEBUG, TAG, "%s found if = %s.", __func__, rsrc->interfaces[i]);
                                                     cborFindResult = cbor_value_advance(&interfaces);
-                                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing IF type.");
+                                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing IF type.");
                                                 }
                                             }
 
@@ -1864,7 +1864,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                             if (0 == strcmp(OIC_JSON_REL_NAME, rMapName))
                                             {
                                                 cborFindResult = cbor_value_dup_text_string(&rMap, &rsrc->rel, &tempLen, NULL);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding REL Value.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding REL Value.");
                                                 OIC_LOG_V(DEBUG, TAG, "%s found rel = %s.", __func__, rsrc->rel);
                                             }
 
@@ -1873,7 +1873,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                             {
                                                 char *wc = NULL;
                                                 cborFindResult = cbor_value_dup_text_string(&rMap, &wc, &tempLen, NULL);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding wc Value.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding wc Value.");
                                                 OIC_LOG_V(DEBUG, TAG, "%s found wc = %s.", __func__, wc);
                                                 if (0 == strcmp(OIC_JSON_WC_ASTERISK_NAME, wc))
                                                 {
@@ -1901,7 +1901,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                             if (cbor_value_is_valid(&rMap))
                                             {
                                                 cborFindResult = cbor_value_advance(&rMap);
-                                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing rMap.");
+                                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing rMap.");
                                                 OIC_LOG_V(DEBUG, TAG, "%s advanced rMap.", __func__);
                                             }
                                         }
@@ -1911,7 +1911,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                         if (cbor_value_is_valid(&resources))
                                         {
                                             cborFindResult = cbor_value_advance(&resources);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing Resource Array.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing Resource Array.");
                                             OIC_LOG_V(DEBUG, TAG, "%s advanced resources map.", __func__);
                                         }
                                     }
@@ -1922,7 +1922,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                 {
                                     uint64_t tmp64;
                                     cborFindResult = cbor_value_get_uint64(&aceMap, &tmp64);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a PERM Value.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a PERM Value.");
                                     ace->permission = (uint16_t)tmp64;
                                     OIC_LOG_V(DEBUG, TAG, "%s found permission = %d.", __func__, ace->permission);
                                 }
@@ -1935,10 +1935,10 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                     size_t validitySize = 0;
 
                                     cborFindResult = cbor_value_get_array_length(&aceMap, &validitySize);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a Validity Array Length.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a Validity Array Length.");
 
                                     cborFindResult = cbor_value_enter_container(&aceMap, &validitiesMap);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a validity Array Map.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a validity Array Map.");
 
                                     while(cbor_value_is_valid(&validitiesMap))
                                     {
@@ -1949,19 +1949,19 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                         CborValue validityMap  = {.parser = NULL};
                                         //period (string)
                                         cborFindResult = cbor_value_enter_container(&validitiesMap, &validityMap);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a validity Map.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a validity Map.");
 
                                         size_t vmLen = 0;
                                         cborFindResult =cbor_value_dup_text_string(&validityMap, &validity->period, &vmLen, NULL);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a Period value.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a Period value.");
 
                                         //recurrence (string array)
                                         CborValue recurrenceMap  = {.parser = NULL};
                                         cborFindResult = cbor_value_enter_container(&validityMap, &recurrenceMap);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a recurrence array.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a recurrence array.");
 
                                         cborFindResult = cbor_value_get_array_length(&recurrenceMap, &validity->recurrenceLen);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Adding Recurrence Array.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Adding Recurrence Array.");
 
                                         validity->recurrences = (char**)OICCalloc(validity->recurrenceLen, sizeof(char*));
                                         VERIFY_NOT_NULL(TAG, validity->recurrences, ERROR);
@@ -1969,14 +1969,14 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                         for(size_t i = 0; cbor_value_is_text_string(&recurrenceMap) && i < validity->recurrenceLen; i++)
                                         {
                                             cborFindResult = cbor_value_dup_text_string(&recurrenceMap, &validity->recurrences[i], &vmLen, NULL);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding a recurrence Value.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding a recurrence Value.");
 
                                             cborFindResult = cbor_value_advance(&recurrenceMap);
-                                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing a recurrences Array.");
+                                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing a recurrences Array.");
                                         }
 
                                         cborFindResult = cbor_value_advance(&validitiesMap);
-                                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing a validities Array.");
+                                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing a validities Array.");
                                     }
                                 }
 #ifdef MULTIPLE_OWNER
@@ -1985,7 +1985,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                                 {
                                     char *eowner = NULL;
                                     cborFindResult = cbor_value_dup_text_string(&aceMap, &eowner, &tempLen, NULL);
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding eownerId Value.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding eownerId Value.");
                                     if(NULL == ace->eownerID)
                                     {
                                         ace->eownerID = (OicUuid_t*)OICCalloc(1, sizeof(OicUuid_t));
@@ -2003,7 +2003,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                             if (aceMapType != CborMapType && cbor_value_is_valid(&aceMap))
                             {
                                 cborFindResult = cbor_value_advance(&aceMap);
-                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing the Array.");
+                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing the Array.");
                                 OIC_LOG_V(DEBUG, TAG, "%s advanced aceMap.", __func__);
                             }
                         } // end decoding ACE/ACE2 object
@@ -2014,7 +2014,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                         if (cbor_value_is_valid(&acesArray))
                         {
                             cborFindResult = cbor_value_advance(&acesArray);
-                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing ACL Array.");
+                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing ACL Array.");
                         }
                     } // end ace array while loop
 
@@ -2023,7 +2023,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
                     if (cbor_value_is_valid(&aclistMap))
                     {
                         cborFindResult = cbor_value_advance(&aclistMap);
-                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing ACLIST Map.");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing ACLIST Map.");
                         OIC_LOG_V(DEBUG, TAG, "%s advanced aclist map.", __func__);
                     }
 
@@ -2039,7 +2039,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
             {
                 char *stRowner = NULL;
                 cborFindResult = cbor_value_dup_text_string(&aclMap, &stRowner, &len, NULL);
-                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Finding Rownerid Value.");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Finding Rownerid Value.");
                 ret = ConvertStrToUuid(stRowner, &acl->rownerID);
                 free(stRowner);
                 VERIFY_SUCCESS(TAG, ret == OC_STACK_OK, ERROR);
@@ -2054,7 +2054,7 @@ static OicSecAcl_t* CBORPayloadToAclVersionOpt(const uint8_t *cborPayload, const
         if (cbor_value_is_valid(&aclMap))
         {
             cborFindResult = cbor_value_advance(&aclMap);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Advancing ACL Map.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Advancing ACL Map.");
         }
     }
 

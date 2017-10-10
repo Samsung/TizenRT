@@ -397,7 +397,7 @@ OCStackResult OCCloudCertificateIssueRequest(void* ctx,
 
     OIC_LOG_V(DEBUG, TAG, "Certificate Request subject: %s", subject);
 
-    OCByteString request;
+    OCByteString request = { 0 };
     if (0 != GenerateCSR(subject, &request))
     {
         OIC_LOG(ERROR, TAG, "Cann't get the sertificate request");

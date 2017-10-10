@@ -96,7 +96,7 @@ if target_os not in ['windows']:
 liboctbstack_env.PrependUnique(LIBS=['ocsrm', 'coap'])
 
 if target_os in ['linux'] and liboctbstack_env.get('SIMULATOR', False):
-    liboctbstack_env.Append(RPATH=liboctbstack_env.Literal('\\$$ORIGIN'))
+    liboctbstack_env['RPATH']=liboctbstack_env.Literal('\\$$ORIGIN')
 
 if env.get('SECURED') == '1':
     liboctbstack_env.AppendUnique(LIBS=['mbedtls', 'mbedx509'])

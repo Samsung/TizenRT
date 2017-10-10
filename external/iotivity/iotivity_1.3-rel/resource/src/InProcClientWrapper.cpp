@@ -613,11 +613,8 @@ namespace OC
 
         try
         {
-            HeaderOptions serverHeaderOptions;
-            parseServerHeaderOptions(clientResponse, serverHeaderOptions);
             ListenOCContainer container(clientWrapper, clientResponse->devAddr,
-                    serverHeaderOptions,
-                    (OCRepPayload *) clientResponse->payload);
+                                        (OCRepPayload *) clientResponse->payload);
 
             // loop to ensure valid construction of all resources
             for (auto resource : container.Resources())

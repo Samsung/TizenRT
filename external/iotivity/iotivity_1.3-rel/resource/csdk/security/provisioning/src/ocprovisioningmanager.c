@@ -499,8 +499,7 @@ OCStackResult OC_CALL OCProvisionCredentials(void *ctx, OicSecCredType_t type, s
                                              const OCProvisionDev_t *pDev2,
                                              OCProvisionResultCB resultCallback)
 {
-    return SRPProvisionCredentialsDos(ctx, type, keySize,
-                                      pDev1, pDev2, resultCallback);
+    return SRPProvisionCredentialsDos(ctx, type, keySize, pDev1, pDev2, NULL, NULL, resultCallback);
 }
 
 /**
@@ -527,7 +526,7 @@ OCStackResult OC_CALL OCProvisionSymmetricRoleCredentials(void *ctx, OicSecCredT
                                                           const OicSecRole_t *role2,
                                                           OCProvisionResultCB resultCallback)
 {
-    return SRPProvisionCredentials(ctx, type, keySize, pDev1, pDev2, NULL, role1, role2, resultCallback);
+    return SRPProvisionCredentialsDos(ctx, type, keySize, pDev1, pDev2, role1, role2, resultCallback);
 }
 
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
@@ -1275,8 +1274,7 @@ OCStackResult OC_CALL OCProvisionPairwiseDevices(void* ctx, OicSecCredType_t typ
     link->resultCallback = resultCallback;
     link->currentCountResults = 0;
     link->resArr = (OCProvisionResult_t*) OICMalloc(sizeof(OCProvisionResult_t)*noOfResults);
-    res = SRPProvisionCredentialsDos(link, type, keySize,
-                                     pDev1, pDev2, &ProvisionCredsCB);
+    res = SRPProvisionCredentialsDos(link, type, keySize, pDev1, pDev2, NULL, NULL, &ProvisionCredsCB);
     if (res != OC_STACK_OK)
     {
         OICFree(link->resArr);

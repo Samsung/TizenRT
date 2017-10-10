@@ -109,11 +109,14 @@ OCStackApplicationResult RDPublishCallback(void *ctx,
     }
 
 exit:
-    for (size_t i = 0; i < dimensions[0]; i++)
+    if (links)
     {
-        OCRepPayloadDestroy(links[i]);
+        for (size_t i = 0; i < dimensions[0]; i++)
+        {
+            OCRepPayloadDestroy(links[i]);
+        }
+        OICFree(links);
     }
-    OICFree(links);
     return cbData->cb(cbData->context, handle, clientResponse);
 }
 

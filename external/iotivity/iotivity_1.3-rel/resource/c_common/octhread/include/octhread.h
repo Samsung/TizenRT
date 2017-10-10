@@ -106,19 +106,6 @@ OCThreadResult_t oc_thread_free(oc_thread t);
  */
 OCThreadResult_t oc_thread_wait(oc_thread t);
 
-#ifdef __TIZEN__
-/**
- * Cancel the thread without block
- *
- * @param[in] t The thread to be canceled on
- * @return OCThreadResult_t An enumeration of possible outcomes
- * @retval OC_THREAD_SUCCESS If the thread successfully completed execution
- * @retval OC_THREAD_CANCEL_FAILURE If a problem occured while canceling
- *
- */
-OCThreadResult_t oc_thread_cancel(oc_thread t);
-#endif
-
 /**
  * Creates new mutex.
  *

@@ -150,57 +150,57 @@ static OCStackResult CSRToCBORPayload(const uint8_t *csr, size_t csrLen, OicEnco
 
     // Create CSR Root Map (csr)
     cborEncoderResult = cbor_encoder_create_map(&encoder, &csrRootMap, CSR_MAP_SIZE);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding CSR Root Map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding CSR Root Map");
 
     // Create CSR string entry
     cborEncoderResult = cbor_encode_text_string(&csrRootMap, OIC_JSON_CSR_NAME, strlen(OIC_JSON_CSR_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding CSR name.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding CSR name.");
     cborEncoderResult = cbor_encode_byte_string(&csrRootMap, csr, csrLen);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding CSR value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding CSR value.");
 
     // Create encoding entry
     cborEncoderResult = cbor_encode_text_string(&csrRootMap, OIC_JSON_ENCODING_NAME, strlen(OIC_JSON_ENCODING_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding encoding name.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding encoding name.");
     strEncoding = EncodingValueToString(encoding);
     assert(strEncoding != NULL);
     cborEncoderResult = cbor_encode_text_string(&csrRootMap, strEncoding, strlen(strEncoding));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding encoding value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding encoding value.");
 
     //RT -- Mandatory
     CborEncoder rtArray;
     cborEncoderResult = cbor_encode_text_string(&csrRootMap, OIC_JSON_RT_NAME,
         strlen(OIC_JSON_RT_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding RT Name Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding RT Name Tag.");
     cborEncoderResult = cbor_encoder_create_array(&csrRootMap, &rtArray, 1);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding RT Value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding RT Value.");
     for (size_t i = 0; i < 1; i++)
     {
         cborEncoderResult = cbor_encode_text_string(&rtArray, OIC_RSRC_TYPE_SEC_CSR,
             strlen(OIC_RSRC_TYPE_SEC_CSR));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding RT Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding RT Value.");
     }
     cborEncoderResult = cbor_encoder_close_container(&csrRootMap, &rtArray);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing RT.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing RT.");
 
     //IF-- Mandatory
     CborEncoder ifArray;
     cborEncoderResult = cbor_encode_text_string(&csrRootMap, OIC_JSON_IF_NAME,
         strlen(OIC_JSON_IF_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding IF Name Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding IF Name Tag.");
     cborEncoderResult = cbor_encoder_create_array(&csrRootMap, &ifArray, 1);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding IF Value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding IF Value.");
     for (size_t i = 0; i < 1; i++)
     {
         cborEncoderResult = cbor_encode_text_string(&ifArray, OC_RSRVD_INTERFACE_DEFAULT,
             strlen(OC_RSRVD_INTERFACE_DEFAULT));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding IF Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding IF Value.");
     }
     cborEncoderResult = cbor_encoder_close_container(&csrRootMap, &ifArray);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing IF.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing IF.");
 
     // Close CSR Map
     cborEncoderResult = cbor_encoder_close_container(&encoder, &csrRootMap);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing CSR root Map.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing CSR root Map.");
 
     if (CborNoError == cborEncoderResult)
     {
@@ -252,7 +252,7 @@ OCStackResult CBORPayloadToCSR(const uint8_t *cborPayload, size_t size, uint8_t 
     size_t len = 0;
 
     cborFindResult = cbor_parser_init(cborPayload, size, 0, &parser, &csrCbor);
-    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed to initialize parser.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed to initialize parser.");
 
     if (!cbor_value_is_container(&csrCbor))
     {
@@ -262,7 +262,7 @@ OCStackResult CBORPayloadToCSR(const uint8_t *cborPayload, size_t size, uint8_t 
     // Enter CSR Root Map
     CborValue csrRootMap = { .parser = NULL, .ptr = NULL, .remaining = 0, .extra = 0, .type = 0, .flags = 0 };
     cborFindResult = cbor_value_enter_container(&csrCbor, &csrRootMap);
-    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering CSR Root Map.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering CSR Root Map.");
 
     while (cbor_value_is_valid(&csrRootMap))
     {
@@ -276,16 +276,16 @@ OCStackResult CBORPayloadToCSR(const uint8_t *cborPayload, size_t size, uint8_t 
         if (type == CborTextStringType && cbor_value_is_text_string(&csrRootMap))
         {
             cborFindResult = cbor_value_dup_text_string(&csrRootMap, &tagName, &len, NULL);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed finding name in CSR Root Map.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed finding name in CSR Root Map.");
             cborFindResult = cbor_value_advance(&csrRootMap);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed advancing value in CSR Root Map.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing value in CSR Root Map.");
         }
         if (NULL != tagName)
         {
             if (strcmp(tagName, OIC_JSON_CSR_NAME) == 0 && cbor_value_is_byte_string(&csrRootMap))
             {
                 cborFindResult = cbor_value_dup_byte_string(&csrRootMap, &cborCsr, &cborCsrLen, NULL);
-                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed finding name in CSR Map");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed finding name in CSR Map");
                 // Use our own heap allocator and copy the result in so callers can use OICFree.
                 *csr = (uint8_t *)OICCalloc(1, cborCsrLen);
                 VERIFY_NOT_NULL(TAG, *csr, ERROR);
@@ -299,7 +299,7 @@ OCStackResult CBORPayloadToCSR(const uint8_t *cborPayload, size_t size, uint8_t 
             {
                 char *strEncoding = NULL;
                 cborFindResult = cbor_value_dup_text_string(&csrRootMap, &strEncoding, &len, NULL);
-                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed finding encoding type");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed finding encoding type");
 
                 if (strcmp(strEncoding, OIC_SEC_ENCODING_DER) == 0)
                 {
@@ -329,7 +329,7 @@ OCStackResult CBORPayloadToCSR(const uint8_t *cborPayload, size_t size, uint8_t 
         if (cbor_value_is_valid(&csrRootMap))
         {
             cborFindResult = cbor_value_advance(&csrRootMap);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed advancing CSR Root Map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing CSR Root Map");
         }
     }
 

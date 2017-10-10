@@ -367,9 +367,10 @@ OCStackResult GetTCPPortInfo(OCDevAddr *endpoint, uint16_t *port, bool secured);
 
 /**
  * This function creates list of OCEndpointPayload structure,
- *  which matches with endpointType from list of CAEndpoint_t.
+ * which matches with the resource's endpointType from list of
+ * CAEndpoint_t.
  *
- * @param[in] colResource collection resource for endpointType and resourceProperties
+ * @param[in] resource the resource
  * @param[in] devAddr devAddr Structure pointing to the address.
  * @param[in] networkInfo array of CAEndpoint_t
  * @param[in] infoSize size of array
@@ -379,7 +380,7 @@ OCStackResult GetTCPPortInfo(OCDevAddr *endpoint, uint16_t *port, bool secured);
  *
  * @return if success return pointer else NULL
  */
-OCEndpointPayload* CreateEndpointPayloadList(const OCResource* colResource,
+OCEndpointPayload* CreateEndpointPayloadList(const OCResource *resource,
     const OCDevAddr *devAddr, CAEndpoint_t *networkInfo,
     size_t infoSize, OCEndpointPayload **listHead, size_t* epSize, OCEndpointPayload** selfEp);
 

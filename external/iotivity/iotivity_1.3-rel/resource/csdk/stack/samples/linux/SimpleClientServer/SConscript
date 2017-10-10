@@ -49,8 +49,6 @@ compiler = samples_env.get('CXX')
 if 'g++' in compiler:
     samples_env.AppendUnique(CXXFLAGS=['-std=c++0x', '-Wall'])
 
-samples_env.AppendUnique(RPATH=[samples_env.get('BUILD_DIR')])
-
 samples_env.PrependUnique(LIBS=['coap'])
 
 if target_os not in ['msys_nt', 'windows']:

@@ -459,11 +459,11 @@ OCStackResult RolesToCBORPayload(const RoleCertChain_t *roles, uint8_t **cborPay
 
     // Create roles root map (roles, rt, if)
     cborEncoderResult = cbor_encoder_create_map(&encoder, &rolesRootMap, 3);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding roles root map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding roles root map");
 
     // Roles array
     cborEncoderResult = cbor_encode_text_string(&rolesRootMap, OIC_JSON_ROLES_NAME, strlen(OIC_JSON_ROLES_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding roles name tag");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding roles name tag");
     VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for roles name tag")
 
     // If roles is NULL, the "roles" array will be empty
@@ -473,7 +473,7 @@ OCStackResult RolesToCBORPayload(const RoleCertChain_t *roles, uint8_t **cborPay
     }
 
     cborEncoderResult = cbor_encoder_create_array(&rolesRootMap, &rolesArray, roleCount);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding roles array");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding roles array");
 
     for (currChain = roles; NULL != currChain; currChain = currChain->next)
     {
@@ -481,84 +481,84 @@ OCStackResult RolesToCBORPayload(const RoleCertChain_t *roles, uint8_t **cborPay
         size_t mapSize = ROLE_MAP_SIZE;
 
         cborEncoderResult = cbor_encoder_create_map(&rolesArray, &roleMap, mapSize);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding role map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding role map");
 
         // credId - mandatory
         cborEncoderResult = cbor_encode_text_string(&roleMap, OIC_JSON_CREDID_NAME, strlen(OIC_JSON_CREDID_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding credId tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding credId tag");
         VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for credId tag")
         cborEncoderResult = cbor_encode_int(&roleMap, currChain->credId);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding credId value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding credId value");
         VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for credId value")
 
         // subjectuuid - mandatory - always zero for role certificates
         cborEncoderResult = cbor_encode_text_string(&roleMap, OIC_JSON_SUBJECTID_NAME, strlen(OIC_JSON_SUBJECTID_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding subject tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding subject tag");
         VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for subject tag")
         cborEncoderResult = cbor_encode_text_string(&roleMap, EMPTY_UUID, sizeof(EMPTY_UUID) - 1);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding subject value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding subject value");
         VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for subject value")
 
         // publicData - mandatory
         cborEncoderResult = SerializeEncodingToCbor(&roleMap, OIC_JSON_PUBLICDATA_NAME, &currChain->certificate);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding publicData");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding publicData");
         VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for publicData")
 
         // credType - mandatory
         cborEncoderResult = cbor_encode_text_string(&roleMap, OIC_JSON_CREDTYPE_NAME, strlen(OIC_JSON_CREDTYPE_NAME));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding credType tag");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding credType tag");
         VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for  credType tag")
         // Per security spec, only SIGNED_ASYMMETRIC_KEY is supported here.
         cborEncoderResult = cbor_encode_int(&roleMap, SIGNED_ASYMMETRIC_KEY);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed adding credType value");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed adding credType value");
         VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for credType value")
 
         cborEncoderResult = cbor_encoder_close_container(&rolesArray, &roleMap);
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed closing role map");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed closing role map");
     }
 
     cborEncoderResult = cbor_encoder_close_container(&rolesRootMap, &rolesArray);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed closing roles array");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed closing roles array");
 
     // RT -- Mandatory
     CborEncoder rtArray;
     cborEncoderResult = cbor_encode_text_string(&rolesRootMap, OIC_JSON_RT_NAME,
         strlen(OIC_JSON_RT_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding RT Name Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding RT Name Tag.");
     VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for RT Name Tag")
     cborEncoderResult = cbor_encoder_create_array(&rolesRootMap, &rtArray, 1);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding RT Value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding RT Value.");
     for (size_t i = 0; i < 1; i++)
     {
         cborEncoderResult = cbor_encode_text_string(&rtArray, OIC_RSRC_TYPE_SEC_ROLES,
             strlen(OIC_RSRC_TYPE_SEC_ROLES));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding RT Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding RT Value.");
         VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for RT Value")
     }
     cborEncoderResult = cbor_encoder_close_container(&rolesRootMap, &rtArray);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing RT.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing RT.");
 
     // IF-- Mandatory
     CborEncoder ifArray;
     cborEncoderResult = cbor_encode_text_string(&rolesRootMap, OIC_JSON_IF_NAME,
         strlen(OIC_JSON_IF_NAME));
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding IF Name Tag.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding IF Name Tag.");
     VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for IF Name Tag")
     cborEncoderResult = cbor_encoder_create_array(&rolesRootMap, &ifArray, 1);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Addding IF Value.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Addding IF Value.");
     for (size_t i = 0; i < 1; i++)
     {
         cborEncoderResult = cbor_encode_text_string(&ifArray, OC_RSRVD_INTERFACE_DEFAULT,
             strlen(OC_RSRVD_INTERFACE_DEFAULT));
-        VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Adding IF Value.");
+        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Adding IF Value.");
         VERIFY_CBOR_NOT_OUTOFMEMORY(TAG, cborEncoderResult, "Not enough memory for IF Value")
     }
     cborEncoderResult = cbor_encoder_close_container(&rolesRootMap, &ifArray);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed Closing IF.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed Closing IF.");
 
     // Close roles root map
     cborEncoderResult = cbor_encoder_close_container(&encoder, &rolesRootMap);
-    VERIFY_CBOR_SUCCESS(TAG, cborEncoderResult, "Failed closing roles root map");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborEncoderResult, "Failed closing roles root map");
 
     *cborSize = cbor_encoder_get_buffer_size(&encoder, outPayload);
     *cborPayload = outPayload;
@@ -604,7 +604,7 @@ OCStackResult CBORPayloadToRoles(const uint8_t *cborPayload, size_t size, RoleCe
     size_t len = 0;
 
     cborFindResult = cbor_parser_init(cborPayload, size, 0, &parser, &rolesCbor);
-    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed to initialize parser.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed to initialize parser.");
 
     if (!cbor_value_is_container(&rolesCbor))
     {
@@ -615,7 +615,7 @@ OCStackResult CBORPayloadToRoles(const uint8_t *cborPayload, size_t size, RoleCe
     CborValue rolesRootMap;
     memset(&rolesRootMap, 0, sizeof(rolesRootMap));
     cborFindResult = cbor_value_enter_container(&rolesCbor, &rolesRootMap);
-    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed Entering roles Root Map.");
+    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed Entering roles Root Map.");
 
     while (cbor_value_is_valid(&rolesRootMap))
     {
@@ -629,9 +629,9 @@ OCStackResult CBORPayloadToRoles(const uint8_t *cborPayload, size_t size, RoleCe
         if (type == CborTextStringType && cbor_value_is_text_string(&rolesRootMap))
         {
             cborFindResult = cbor_value_dup_text_string(&rolesRootMap, &tagName, &len, NULL);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed finding name in roles Root Map.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed finding name in roles Root Map.");
             cborFindResult = cbor_value_advance(&rolesRootMap);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed advancing value in roles Root Map.");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing value in roles Root Map.");
         }
         else
         {
@@ -649,7 +649,7 @@ OCStackResult CBORPayloadToRoles(const uint8_t *cborPayload, size_t size, RoleCe
                 memset(&roleArray, 0, sizeof(roleArray));
 
                 cborFindResult = cbor_value_enter_container(&rolesRootMap, &roleArray);
-                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed entering role array.");
+                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed entering role array.");
 
                 while (cbor_value_is_valid(&roleArray))
                 {
@@ -657,7 +657,7 @@ OCStackResult CBORPayloadToRoles(const uint8_t *cborPayload, size_t size, RoleCe
                     CborValue roleMap;
                     memset(&roleMap, 0, sizeof(roleMap));
                     cborFindResult = cbor_value_enter_container(&roleArray, &roleMap);
-                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed entering role map.");
+                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed entering role map.");
 
                     if (NULL == currEntry)
                     {
@@ -681,9 +681,9 @@ OCStackResult CBORPayloadToRoles(const uint8_t *cborPayload, size_t size, RoleCe
                         if (innerType == CborTextStringType)
                         {
                             cborFindResult = cbor_value_dup_text_string(&roleMap, &tagName, &len, NULL);
-                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed finding name in role map.");
+                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed finding name in role map.");
                             cborFindResult = cbor_value_advance(&roleMap);
-                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed advancing value in role map.");
+                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing value in role map.");
                         }
                         if (NULL != tagName)
                         {
@@ -692,18 +692,18 @@ OCStackResult CBORPayloadToRoles(const uint8_t *cborPayload, size_t size, RoleCe
                             {
                                 uint64_t credId64 = 0;
                                 cborFindResult = cbor_value_get_uint64(&roleMap, &credId64);
-                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed retrieving credId.");
+                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed retrieving credId.");
                                 if (UINT32_MAX < credId64)
                                 {
                                     cborFindResult = CborUnknownError;
-                                    VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "credId was too large.");
+                                    VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "credId was too large.");
                                 }
                                 currEntry->credId = (uint32_t)credId64;
                             }
                             else if (strcmp(tagName, OIC_JSON_PUBLICDATA_NAME) == 0)
                             {
                                 cborFindResult = DeserializeEncodingFromCbor(&roleMap, &currEntry->certificate);
-                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed to read publicData");
+                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed to read publicData");
 
                                 /* mbedtls_x509_crt_parse requires null string terminator */
                                 VERIFY_TRUE_OR_EXIT(TAG, AddNullTerminator(&currEntry->certificate), ERROR);
@@ -712,7 +712,7 @@ OCStackResult CBORPayloadToRoles(const uint8_t *cborPayload, size_t size, RoleCe
                             {
                                 uint64_t credType = 0;
                                 cborFindResult = cbor_value_get_uint64(&roleMap, &credType);
-                                VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed retrieving credType.");
+                                VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed retrieving credType.");
                                 /* Only SIGNED_ASYMMETRIC_KEY is supported. */
                                 if (SIGNED_ASYMMETRIC_KEY != (OicSecCredType_t)credType)
                                 {
@@ -730,7 +730,7 @@ OCStackResult CBORPayloadToRoles(const uint8_t *cborPayload, size_t size, RoleCe
                         if (cbor_value_is_valid(&roleMap))
                         {
                             cborFindResult = cbor_value_advance(&roleMap);
-                            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed advancing role map.");
+                            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing role map.");
                         }
                     }
 
@@ -743,7 +743,7 @@ OCStackResult CBORPayloadToRoles(const uint8_t *cborPayload, size_t size, RoleCe
                     if (cbor_value_is_valid(&roleArray))
                     {
                         cborFindResult = cbor_value_advance(&roleArray);
-                        VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed advancing role array.");
+                        VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing role array.");
                     }
                 }
             }
@@ -757,7 +757,7 @@ OCStackResult CBORPayloadToRoles(const uint8_t *cborPayload, size_t size, RoleCe
         if (cbor_value_is_valid(&rolesRootMap))
         {
             cborFindResult = cbor_value_advance(&rolesRootMap);
-            VERIFY_CBOR_SUCCESS(TAG, cborFindResult, "Failed advancing CSR Root Map");
+            VERIFY_CBOR_SUCCESS_OR_OUT_OF_MEMORY(TAG, cborFindResult, "Failed advancing CSR Root Map");
         }
     }
 
@@ -966,18 +966,29 @@ static OCEntityHandlerResult HandleDeleteRequest(OCEntityHandlerRequest *ehReque
 
     InvalidateRoleCache(entry);
 
-    RoleCertChain_t *curr1 = NULL;
-    RoleCertChain_t *curr2 = NULL;
-    LL_FOREACH_SAFE(entry->chains, curr1, curr2)
+    if (NULL != entry->chains)
     {
-        // credId of zero means delete all creds; we never assign zero as a credId.
-        if ((0 == credId) || (curr1->credId == credId))
+        RoleCertChain_t *curr1 = NULL;
+        RoleCertChain_t *curr2 = NULL;
+        LL_FOREACH_SAFE(entry->chains, curr1, curr2)
         {
-            LL_DELETE(entry->chains, curr1);
-            FreeRoleCertChain(curr1);
-            ehRet = OC_EH_RESOURCE_DELETED;
-            break;
+            // credId of zero means delete all creds; we never assign zero as a credId.
+            if ((0 == credId) || (curr1->credId == credId))
+            {
+                LL_DELETE(entry->chains, curr1);
+                FreeRoleCertChain(curr1);
+                ehRet = OC_EH_RESOURCE_DELETED;
+                break;
+            }
         }
+    }
+    else
+    {
+        /* No cert chains are present in the entry. */
+        OIC_LOG(WARNING, TAG, "No cert chains are present in the entry");
+        /* Request is successful since everything has been removed. */
+        ehRet = OC_EH_RESOURCE_DELETED;
+        goto exit;
     }
 
 exit:
@@ -1131,11 +1142,11 @@ OCStackResult GetEndpointRoles(const CAEndpoint_t *endpoint, OicSecRole_t **role
     memset(&trustedCaCerts, 0, sizeof(trustedCaCerts));
 
     OCStackResult res = GetPeerPublicKeyFromEndpoint(endpoint, &publicKey, &publicKeyLength);
-    if (OC_STACK_INVALID_PARAM == res)
+    if ((OC_STACK_INVALID_PARAM == res) || (OC_STACK_NO_RESOURCE == res))
     {
         /*
-         * OC_STACK_INVALID_PARAM means the endpoint didn't authenticate with a certificate.
-         * Look for a symmetric key-based role and return that if present.
+         * OC_STACK_INVALID_PARAM or OC_STACK_NO_RESOURCE indicate the endpoint didn't authenticate
+         * with a certificate. Look for a symmetric key-based role and return that if present.
          */
         CASecureEndpoint_t sep;
         CAResult_t caRes = GetCASecureEndpointData(endpoint, &sep);
@@ -1250,8 +1261,10 @@ OCStackResult GetEndpointRoles(const CAEndpoint_t *endpoint, OicSecRole_t **role
         return res;
     }
 
-    for (RoleCertChain_t *chain = targetEntry->chains; NULL != chain; chain = chain->next)
+    RoleCertChain_t *chain = targetEntry->chains;
+    while (NULL != chain)
     {
+        RoleCertChain_t *chainToRemove = NULL;
         OicSecRole_t *currCertRoles = NULL;
         size_t currCertRolesCount = 0;
         struct tm notValidAfter;
@@ -1266,7 +1279,7 @@ OCStackResult GetEndpointRoles(const CAEndpoint_t *endpoint, OicSecRole_t **role
             OIC_LOG_V(ERROR, TAG, "Failed to verify a role certificate: %d", res);
             /* Remove the invalid cert chain, but don't exit; try all certificates presented. */
             LL_DELETE(targetEntry->chains, chain);
-            FreeRoleCertChain(chain);
+            chainToRemove = chain;
         }
         else
         {
@@ -1304,6 +1317,13 @@ OCStackResult GetEndpointRoles(const CAEndpoint_t *endpoint, OicSecRole_t **role
         {
             memcpy(&targetEntry->cacheValidUntil, &notValidAfter, sizeof(targetEntry->cacheValidUntil));
         }
+
+        /*
+         * If the cert chain was invalid it has already been removed from the list.
+         * We clean it up here so that we can continue checking all of the certificates.
+         */
+        chain = chain->next;
+        FreeRoleCertChain(chainToRemove);
     }
 
     targetEntry->cachedRoles = rolesToReturn;

@@ -98,7 +98,7 @@ static OCStackApplicationResult handleDeleteCB(__attribute__((unused))void *ctx,
 {
     OIC_LOG(DEBUG, TAG, "Successfully delete resources.");
 
-    EXPECT_EQ(OC_STACK_RESOURCE_CHANGED, clientResponse->result);
+    EXPECT_EQ(OC_STACK_RESOURCE_DELETED, clientResponse->result);
 
     return OC_STACK_DELETE_TRANSACTION;
 }

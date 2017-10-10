@@ -110,10 +110,9 @@ if ipca_lib_env.get('SECURED') != '1':
     ipca_lib_src.append('pretendocprovision.cpp')
 
 ipca_shared_lib = ipca_lib_env.SharedLibrary('ipca', ipca_lib_src)
-ipca_lib = Flatten(ipca_shared_lib)
-
 ipca_static_lib = ipca_lib_env.StaticLibrary('ipca_static', ipca_lib_src)
-
+ipca_lib_env.InstallTarget(ipca_shared_lib, 'ipca_static')
+ipca_lib_env.InstallTarget(ipca_static_lib, 'ipca')
+ipca_lib_env.UserInstallTargetLib(ipca_shared_lib, 'ipca')
+ipca_lib_env.UserInstallTargetLib(ipca_static_lib, 'ipca_static')
 ipca_lib_env.UserInstallTargetHeader('../inc/ipca.h', 'resource', 'ipca.h')
-ipca_lib_env.UserInstallTargetLib(ipca_lib, 'ipca')
-ipca_lib_env.UserInstallTargetLib(ipca_static_lib, 'ipca')
