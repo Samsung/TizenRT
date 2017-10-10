@@ -294,8 +294,8 @@ extern "C" {
 #endif
 /**
  * @ingroup SIGNAL_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int kill(pid_t pid, int sig);
@@ -310,57 +310,57 @@ int kill(pid_t pid, int sig);
  */
 int sigemptyset(FAR sigset_t *set);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sigfillset(FAR sigset_t *set);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sigaddset(FAR sigset_t *set, int signo);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sigdelset(FAR sigset_t *set, int signo);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sigismember(FAR const sigset_t *set, int signo);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sighold(int sig);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 int sigignore(int sig);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 int sigpause(int sig);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 int raise(int sig);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int sigrelse(int sig);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 CODE void (*sigset(int sig, CODE void (*func)(int sig)))(int sig);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 CODE void (*signal(int sig, CODE void (*func)(int sig)))(int sig);
@@ -370,50 +370,50 @@ CODE void (*signal(int sig, CODE void (*func)(int sig)))(int sig);
 
 /**
  * @ingroup SIGNAL_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int sigaction(int sig, FAR const struct sigaction *act, FAR struct sigaction *oact);
 /**
  * @ingroup SIGNAL_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int sigprocmask(int how, FAR const sigset_t *set, FAR sigset_t *oset);
 /**
  * @ingroup SIGNAL_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int sigpending(FAR sigset_t *set);
 /**
  * @ingroup SIGNAL_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int sigsuspend(FAR const sigset_t *sigmask);
 /**
  * @ingroup SIGNAL_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *value);
 /**
  * @ingroup SIGNAL_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *value, FAR const struct timespec *timeout);
 /**
  * @ingroup SIGNAL_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 #ifdef CONFIG_CAN_PASS_STRUCTS

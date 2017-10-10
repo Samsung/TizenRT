@@ -110,61 +110,61 @@ extern "C" {
  * Public Function Prototypes
  ********************************************************************************/
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 mqd_t mq_open(FAR const char *mq_name, int oflags, ...);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int mq_close(mqd_t mqdes);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int mq_unlink(FAR const char *mq_name);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR const struct timespec *abstime);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 ssize_t mq_receive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio, FAR const struct timespec *abstime);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int mq_notify(mqd_t mqdes, const struct sigevent *notification);
 
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int mq_setattr(mqd_t mqdes, FAR const struct mq_attr *mq_stat, FAR struct mq_attr *oldstat);
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int mq_getattr(mqd_t mqdes, FAR struct mq_attr *mq_stat);

@@ -126,13 +126,13 @@
 
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 #define localtime(c)       gmtime(c)
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 #define localtime_r(c, r)  gmtime_r(c, r)
@@ -219,41 +219,41 @@ extern "C" {
 
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int clock_settime(clockid_t clockid, FAR const struct timespec *tp);
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int clock_gettime(clockid_t clockid, FAR struct timespec *tp);
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int clock_getres(clockid_t clockid, FAR struct timespec *res);
 
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 time_t mktime(FAR struct tm *tp);
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR struct tm *gmtime(FAR const time_t *timer);
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR struct tm *gmtime_r(FAR const time_t *timer, FAR struct tm *result);
@@ -261,13 +261,13 @@ FAR struct tm *gmtime_r(FAR const time_t *timer, FAR struct tm *result);
 #ifdef CONFIG_LIBC_LOCALTIME
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR struct tm *localtime(FAR const time_t *timer);
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 FAR struct tm *localtime_r(FAR const time_t *timer, FAR struct tm *result);
@@ -275,7 +275,7 @@ FAR struct tm *localtime_r(FAR const time_t *timer, FAR struct tm *result);
 #endif
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 size_t strftime(char *s, size_t max, FAR const char *format, FAR const struct tm *tm);
@@ -327,36 +327,36 @@ float difftime(time_t time1, time_t time0);
 
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 time_t time(FAR time_t *tloc);
 
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int timer_create(clockid_t clockid, FAR struct sigevent *evp, FAR timer_t *timerid);
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int timer_delete(timer_t timerid);
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int timer_settime(timer_t timerid, int flags, FAR const struct itimerspec *value, FAR struct itimerspec *ovalue);
 /**
  * @ingroup TIME_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int timer_gettime(timer_t timerid, FAR struct itimerspec *value);
@@ -372,7 +372,7 @@ int timer_getoverrun(timer_t timerid);
 /**
  * @ingroup TIME_KERNEL
  * @brief high-resolution sleep
- * @details [SYSTEM CALL API]
+ * @details SYSTEM CALL API
  *
  * @param[in] rqtp The amount of time to be suspended from execution.
  * @param[in] rmtp If the rmtp argument is non-NULL, the timespec structure
