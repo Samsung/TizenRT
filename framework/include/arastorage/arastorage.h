@@ -182,257 +182,239 @@ static db_output_function_t output = printf;
 ****************************************************************************/
 
 /**
-* @brief initialize database's resouces, it must be called when user arastorage
+* @brief initialize database's resources, it must be called for using arastorage
 * @param none
-* @return On success, 1 is returned. On failure, a negative value is returned.
+* @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
 */
 db_result_t db_init(void);
 
 /**
-* @brief de-initialize database's resouces, it must be called when terminate arastorage.
+* @brief de-initialize database's resources, it must be called when terminating arastorage
 * @param none
-* @return On success, 1 is returned. On failure, a negative value is returned.
+* @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
 */
 db_result_t db_deinit(void);
 
-
 /**
-* @brief Create Component of Arastorage.
+* @brief create or remove relations, attributes and indexes in arastorage
 *
-* @param[in] handle of database
-* @param[in] query sentence
-* @return On success, positive value is returned. On failure, a negative value is returned.
+* @param[in] format query sentence
+* @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
 *
 */
 db_result_t db_exec(char *format);
 
 /**
-* @brief Arastorage basic query API
+* @brief process query of arastorage
 *
-* @param[in] handle of database
-* @param[in] query sentence
-* @return On success, pointer of db_handle_t returned. On failure, a NULL is returned.
+* @param[in] format query sentence
+* @return On success, a pointer to db_cursor_t is returned. On failure, a NULL is returned.
 * @since Tizen RT v1.0
 */
 db_cursor_t *db_query(char *format);
 
-
 /**
-* @brief free allocated cursor data. This should be called before application terminated.
+* @brief free allocated cursor data, it should be called before application terminated
 *
-* @param[out] cursor of current tuple's selected data
-* @return On success, positive value is returned. On failure, a negative value is returned.
+* @param[in] cursor a pointer to cursor
+* @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
 */
 db_result_t db_cursor_free(db_cursor_t *cursor);
 
 /**
-* @brief get string of each API's result based on value of db_result_t
+* @brief get string corresponding to each result value of API
 *
-* @param[in] result value of each API
+* @param[in] code result value
 * @return string of each result value
 * @since Tizen RT v1.0
 */
 const char *db_get_result_message(db_result_t code);
 
-
 /**
-* @brief Print the related information : relation, attribute name
+* @brief print the name of relation and attributes
 *
-* @param[in] Current cursor
-* @return On success, positive value is returned. On failure, a negative value is returned.
+* @param[in] cursor a pointer to cursor
+* @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
 */
 db_result_t db_print_header(db_cursor_t *cursor);
 
-
 /**
-* @brief Print the tuple data
+* @brief print the tuple data
 *
-* @param[in] Current cursor
-* @return On success, positive value is returned. On failure, a negative value is returned.
+* @param[in] cursor a pointer to cursor
+* @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
 */
 db_result_t db_print_tuple(db_cursor_t *cursor);
 
-
 /**
-* @brief print current row's data where specific index
+* @brief print current row's data with specific attribute index
 *
-* @param[in] Current cursor
-* @param[in] Index of cursor
-* @return On success, positive value is returned. On failure, a negative value is returned.
+* @param[in] cursor a pointer to cursor
+* @param[in] attr_index index of attribute(column) in cursor
+* @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
 */
 db_result_t db_print_value(db_cursor_t *cursor, int attr_index);
 
-
 /**
-* @brief Move current position of cursor to first row
+* @brief move current position of cursor to first row
 *
-* @param[in] Current cursor
-* @return On success, positive value is returned. On failure, a negative value is returned.
+* @param[in] cursor a pointer to cursor
+* @return On success, DB_OK is returned. On failure, DB_CURSOR_ERROR is returned.
 * @since Tizen RT v1.0
 */
 db_result_t cursor_move_first(db_cursor_t *cursor);
 
-
 /**
-* @brief Move current position of cursor to last row
+* @brief move current position of cursor to last row
 *
-* @param[in] Current cursor
-* @return On success, positive value is returned. On failure, a negative value is returned.
+* @param[in] cursor a pointer to cursor
+* @return On success, DB_OK is returned. On failure, DB_CURSOR_ERROR is returned.
 * @since Tizen RT v1.0
 */
 db_result_t cursor_move_last(db_cursor_t *cursor);
 
-
 /**
-* @brief Move current position of cursor to next row
+* @brief move current position of cursor to next row
 *
-* @param[in] Current cursor
-* @return On success, positive value is returned. On failure, a negative value is returned.
+* @param[in] cursor a pointer to cursor
+* @return On success, DB_OK is returned. On failure, DB_CURSOR_ERROR is returned.
 * @since Tizen RT v1.0
 */
 db_result_t cursor_move_next(db_cursor_t *cursor);
 
-
 /**
-* @brief Move current position of cursor to previous row
+* @brief move current position of cursor to previous row
 *
-* @param[in] Current cursor
-* @return On success, positive value is returned. On failure, a negative value is returned.
+* @param[in] cursor a pointer to cursor
+* @return On success, DB_OK is returned. On failure, DB_CURSOR_ERROR is returned.
 * @since Tizen RT v1.0
 */
 db_result_t cursor_move_prev(db_cursor_t *cursor);
 
-
 /**
-* @brief Move current position of cursor to specific row
+* @brief move current position of cursor to specific row
 *
-* @param[in] Current cursor
-* @return On success, positive value is returned. On failure, a negative value is returned.
+* @param[in] cursor a pointer to cursor
+* @param[in] row_id index of row
+* @return On success, DB_OK is returned. On failure, DB_CURSOR_ERROR is returned.
 * @since Tizen RT v1.0
 */
 db_result_t cursor_move_to(db_cursor_t *cursor, tuple_id_t row_id);
 
-
 /**
-* @brief Check current position of cursor is first row
+* @brief check whether current position of cursor is first row
 *
-* @param[in] Current cursor
-* @return On success, true is returned. On failure, a false is returned.
+* @param[in] cursor a pointer to cursor
+* @return On success, true is returned. On failure, false is returned.
 * @since Tizen RT v1.0
 */
 bool cursor_is_first_row(db_cursor_t *cursor);
 
-
 /**
-* @brief Check current position of cursor is last row
+* @brief check whether current position of cursor is last row
 *
-* @param[in] Current cursor
-* @return On success, true is returned. On failure, a false is returned.
+* @param[in] cursor a pointer to cursor
+* @return On success, true is returned. On failure, false is returned.
 * @since Tizen RT v1.0
 */
 bool cursor_is_last_row(db_cursor_t *cursor);
 
 /**
-* @brief Get current position of cursor
+* @brief get current position of cursor
 *
-* @param[in] Current cursor
-* @return On success, number of current row returned. On failure, a -1 is returned.
+* @param[in] cursor a pointer to cursor
+* @return On success, the index of current row is returned. On failure, INVALID_CURSOR_VALUE is returned.
 * @since Tizen RT v1.0
 */
 cursor_row_t cursor_get_row(db_cursor_t *cursor);
 
 /**
-* @brief get count of total row of cursor
+* @brief get the number of rows of cursor
 *
-* @param[in]  Current cursor
-* @return On success, number of row is returned. On failure or it is empty cursor, a 0 is returned.
+* @param[in] cursor a pointer to cursor
+* @return On success, the number of rows is returned. On failure, INVALID_CURSOR_VALUE is returned.
 * @since Tizen RT v1.0
 */
 cursor_row_t cursor_get_count(db_cursor_t *cursor);
 
-
 /**
-* @brief get type of attribute of specific index in cursor
+* @brief get type of attribute with specific index in cursor
 *
-* @param[in] Current cursor
-* @param[in] Index of column in cursor
-* @return On success, positive value that is domain type returned. On failure, a -1 is returned.
+* @param[in] cursor a pointer to cursor
+* @param[in] attr_index index of attribute(column) in cursor
+* @return On success, positive value is returned. On failure, INVALID_CURSOR_VALUE is returned.
 * @since Tizen RT v1.0
 */
 domain_t cursor_get_attr_type(db_cursor_t *cursor, int attr_index);
 
-
 /**
-* @brief get name of attribute of specific index in cursor
+* @brief get name of attribute with specific index in cursor
 *
-* @param[in] Current cursor
-* @param[in] Index of column in cursor
-* @return On success, attribute name returned. On failure, a NULL is returned.
+* @param[in] cursor a pointer to cursor
+* @param[in] attr_index index of attribute(column) in cursor
+* @return On success, attribute name is returned. On failure, a NULL is returned.
 * @since Tizen RT v1.0
 */
 char *cursor_get_attr_name(db_cursor_t *cursor, int attr_index);
 
-
 /**
-* @brief Find index number where using specific attribute name
+* @brief get index of attribute corresponding name in cursor
 *
-* @param[in] Current cursor
-* @param[in] Candidate name of attribute
-* @return On success, index nuber returned. On failure, a -1 is returned.
+* @param[in] cursor a pointer to cursor
+* @param[in] attr_name attribute name
+* @return On success, non-negative value is returned. On failure, INVALID_CURSOR_VALUE is returned.
 * @since Tizen RT v1.0
 */
 attribute_id_t cursor_get_attr_index(db_cursor_t *cursor, const char *attr_name);
 
-
 /**
-* @brief Get value of current row's data where specific index if it is integer type.
+* @brief get value of attribute of which the type is DOMAIN_INT with specific index in current row.
 *
-* @param[in] Current cursor
-* @param[in] Index of cursor
+* @param[in] cursor a pointer to cursor
+* @param[in] attr_index index of attribute(column) in cursor
 * @return On success, integer type value of which the range is [DB_INT_MIN+1, DB_INT_MAX] is returned.
-*	  On failure, a DB_ERROR_INT is returned. These are defined in arastorage.h.
+*	  On failure, DB_INT_ERROR is returned. These are defined in arastorage.h.
 * @since Tizen RT v1.0
 */
 int cursor_get_int_value(db_cursor_t *cursor, int attr_index);
 
-
 /**
-* @brief Get value of current row's data where specific index if it is long type.
+* @brief get value of attribute of which the type is DOMAIN_LONG with specific index in current row.
 *
-* @param[in] Current cursor
-* @param[in] Index of cursor
+* @param[in] cursor a pointer to cursor
+* @param[in] attr_index index of attribute(column) in cursor
 * @return On success, long type value of which the range is [DB_LONG_MIN+1, DB_LONG_MAX] is returned.
-*	  On failure, a DB_ERROR_LONG is returned. These are defined arastorage.h.
+*	  On failure, a DB_LONG_ERROR is returned. These are defined arastorage.h.
 * @since Tizen RT v1.0
 */
 long cursor_get_long_value(db_cursor_t *cursor, int attr_index);
 
 #ifdef CONFIG_ARCH_FLOAT_H
 /**
-* @brief Get value of current row's data where specific index if it is double type.
+* @brief get value of attribute of which the type is DOMAIN_DOUBLE with specific index in current row.
 *
-* @param[in] Current cursor
-* @param[in] Index of cursor
-* @return On success, double type value of which the range is [DB_DOUBLE_MIN+1, DB_DOUBLE_MAX] is returned.
-*	  On failure, a DB_ERROR_DOUBLE is returned. These are defined arastorage.h.
+* @param[in] cursor a pointer to cursor
+* @param[in] attr_index index of attribute(column) in cursor
+* @return On success, double value of which the range is [DB_DOUBLE_MIN+1, DB_DOUBLE_MAX] is returned.
+*	  On failure, DB_DOUBLE_ERROR is returned. These are defined arastorage.h.
 * @since Tizen RT v1.0
 */
 double cursor_get_double_value(db_cursor_t *cursor, int attr_index);
 #endif
 
 /**
-* @brief Get value of current row's data where specific index if it is string type.
+* @brief get value of attribute of which the type is DOMAIN_STRING with specific index in current row.
 *
-* @param[in] Current cursor
-* @param[in] Index of cursor
-* @return On success, data value is returned. On failure, a NULL is returned.
+* @param[in] cursor a pointer to cursor
+* @param[in] attr_index index of attribute(column) in cursor
+* @return On success, string value is returned. On failure, a NULL is returned.
 * @since Tizen RT v1.0
 */
 unsigned char *cursor_get_string_value(db_cursor_t *cursor, int attr_index);
@@ -440,4 +422,3 @@ unsigned char *cursor_get_string_value(db_cursor_t *cursor, int attr_index);
 /** @} */ // end of AraStorage group
 
 #endif /* __ARASTORAGE_ARA_STORAGE_H */
-
