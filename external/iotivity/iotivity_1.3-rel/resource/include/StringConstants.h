@@ -126,6 +126,7 @@ namespace OC
         static const char INCONSISTENT_DB[]            = "Data in provisioning DB is inconsistent";
         static const char AUTHENTICATION_FAILURE[]     = "Authentication failure";
         static const char NOT_ALLOWED_OXM[]            = "Not allowed ownership transfer method";
+        static const char CONTINUE_OPERATION[]         = "Error happened but current operation should continue";
         static const char USER_DENIED_REQ[]            = "Request denied by User";
         static const char NOT_ACCEPTABLE[]             = "Request not acceptable";
         static const char PUBLISH_RESOURCE_FAILED[]    = "Publish Resource failure";
@@ -134,6 +135,7 @@ namespace OC
         static const char INTERNAL_SERVER_ERROR[]      = "Internal server error";
         static const char BAD_ENDPOINT[]               = "Bad Endpoint";
         static const char GATEWAY_TIMEOUT[]            = "Gateway Timeout";
+        static const char SERVICE_UNAVAILABLE[]        = "Service Unavailable";
     }
 
     namespace Error

@@ -333,7 +333,10 @@ exit:
 static bool addPolicyPayload(OCResourceHandle* resourceHandle, OCDevAddr* devAddr,
                              bool isOCFContentFormat, OCRepPayload** outPolicy)
 {
-    if (resourceHandle == NULL || devAddr == NULL || outPolicy == NULL) return false;
+    if (resourceHandle == NULL || devAddr == NULL || outPolicy == NULL)
+    {
+        return false;
+    }
 
     OCResourceProperty p = OCGetResourceProperties(resourceHandle);
     OCRepPayload* policy = OCRepPayloadCreate();
@@ -436,7 +439,10 @@ static bool translateEndpointsPayload(OCEndpointPayload* epPayloadOrg,
     *outArrayPayload = arrayPayload;
 exit:
     OCEndpointPayloadDestroy(epPayloadOrg);
-    if (result == false) OICFree(arrayPayload);
+    if (result == false)
+    {
+        OICFree(arrayPayload);
+    }
     return result;
 }
 

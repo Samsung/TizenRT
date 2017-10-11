@@ -1691,9 +1691,7 @@ OCStackResult AddCredential(OicSecCred_t * newCred)
     if ((DOS_RESET == dos.state) ||
         (DOS_RFNOP == dos.state))
     {
-        OIC_LOG_V(ERROR, TAG, "%s /cred resource is read-only in RESET and RFNOP.", __func__);
-        result = OC_EH_NOT_ACCEPTABLE;
-        goto exit;
+        OIC_LOG_V(WARNING, TAG, "%s /cred resource is read-only in RESET and RFNOP.", __func__);
     }
 
     //leave IOT-1936 fix for preconfig pin

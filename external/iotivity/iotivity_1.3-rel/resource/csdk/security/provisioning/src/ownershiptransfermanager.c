@@ -75,6 +75,7 @@
 #include "oxmverifycommon.h"
 #include "psinterface.h"
 #include "ocstackinternal.h"
+#include "deviceonboardingstate.h"
 
 #define TAG "OIC_OTM"
 
@@ -559,6 +560,7 @@ static void SetResult(OTMContext_t* otmCtx, const OCStackResult res)
     //If all OTM process is complete, invoke the user callback.
     if(IsComplete(otmCtx))
     {
+        SetDosState(DOS_RFNOP);
         otmCtx->ctxResultCallback(otmCtx->userCtx, otmCtx->ctxResultArraySize,
                                    otmCtx->ctxResultArray, otmCtx->ctxHasError);
         OICFree(otmCtx->ctxResultArray);
@@ -2368,6 +2370,7 @@ OCStackResult OTMDoOwnershipTransfer(void* ctx,
         OIC_LOG(ERROR, TAG, "Failed to create OTM Context");
         return OC_STACK_NO_MEMORY;
     }
+
     otmCtx->ctxResultCallback = resultCallback;
     otmCtx->ctxHasError = false;
     otmCtx->userCtx = ctx;
@@ -2401,6 +2404,7 @@ OCStackResult OTMDoOwnershipTransfer(void* ctx,
         pCurDev = pCurDev->next;
     }
 
+    SetDosState(DOS_RFPRO);
     OCStackResult res = StartOwnershipTransfer(otmCtx, selectedDevicelist);
 
     OIC_LOG(DEBUG, TAG, "OUT OTMDoOwnershipTransfer");

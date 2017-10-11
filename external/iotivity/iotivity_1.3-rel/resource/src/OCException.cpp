@@ -111,6 +111,8 @@ std::string OC::OCException::reason(const OCStackResult sr)
             return OC::Exception::AUTHENTICATION_FAILURE;
         case OC_STACK_NOT_ALLOWED_OXM:
             return OC::Exception::NOT_ALLOWED_OXM;
+        case OC_STACK_CONTINUE_OPERATION:
+            return OC::Exception::CONTINUE_OPERATION;
         case OC_STACK_USER_DENIED_REQ:
             return OC::Exception::USER_DENIED_REQ;
         case OC_STACK_NOT_ACCEPTABLE:
@@ -123,6 +125,8 @@ std::string OC::OCException::reason(const OCStackResult sr)
             return OC::Exception::BAD_ENDPOINT;
         case OC_STACK_GATEWAY_TIMEOUT:
             return OC::Exception::GATEWAY_TIMEOUT;
+        case OC_STACK_SERVICE_UNAVAILABLE:
+            return OC::Exception::SERVICE_UNAVAILABLE;
     }
 
     return OC::Exception::UNKNOWN_ERROR;

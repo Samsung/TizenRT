@@ -472,18 +472,19 @@ ResourceObserver* GetObserverUsingId (const OCObservationId observeId)
 {
     ResourceObserver *out = NULL;
 
-    if (observeId)
+    LL_FOREACH (g_serverObsList, out)
     {
-        LL_FOREACH (g_serverObsList, out)
+        if (out->observeId == observeId)
         {
-            if (out->observeId == observeId)
-            {
-                return out;
-            }
-            CheckTimedOutObserver(out);
+            return out;
         }
+        CheckTimedOutObserver(out);
     }
-    OIC_LOG(INFO, TAG, "Observer node not found!!");
+
+    if (!out)
+    {
+        OIC_LOG(INFO, TAG, "Observer node not found!!");
+    }
     return NULL;
 }
 

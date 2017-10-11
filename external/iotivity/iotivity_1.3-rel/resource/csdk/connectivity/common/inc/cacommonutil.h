@@ -83,7 +83,8 @@ extern "C"
  * @param  log_message  log message
  */
 #define VERIFY_NON_NULL_VOID(arg, log_tag, log_message) \
-    if (NULL == (arg)) { \
+    if (NULL == (arg)) \
+    { \
         OIC_LOG_V(ERROR, (log_tag), "Invalid input:%s", (log_message)); \
         return; \
     } \

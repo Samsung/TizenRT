@@ -60,9 +60,6 @@ EOF
     elif [ -d "${packageDir}/.git" ]; then
         cd "${packageDir}"
         git reset --hard "${packageRevision}"
-        git apply --whitespace=fix "../ocf.patch"
-        cd -
-        rm -rf -- "${packageDir}/.git"
     else
         echo "log: Assuming ${package} is already on correct revision: \"${packageRevision}\""
     fi

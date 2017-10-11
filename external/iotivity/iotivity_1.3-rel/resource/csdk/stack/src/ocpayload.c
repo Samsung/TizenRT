@@ -1893,7 +1893,10 @@ OCEndpointPayload* CreateEndpointPayloadList(const OCResource *resource, const O
                         lastNode->next = tmpNode;
                         lastNode = tmpNode;
                     }
-                    if (epSize != NULL) (*epSize)++;
+                    if (epSize != NULL)
+                    {
+                        (*epSize)++;
+                    }
                 }
             }
             else
@@ -2261,7 +2264,9 @@ OCRepPayload** OC_CALL OCLinksPayloadArrayCreate(const char* resourceUri,
     {
         bool isOCFContentFormat = false;
         if (!OCRequestIsOCFContentFormat(ehRequest, &isOCFContentFormat))
+        {
             return NULL;
+        }
 
         linksRepPayloadArray = BuildCollectionLinksPayloadArray(resourceUri,
                                                                 isOCFContentFormat,
