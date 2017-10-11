@@ -111,6 +111,7 @@ endif
 
 config SMARTFS_SECTOR_RECOVERY
 	bool "Enable recovery of lost sectors in Filesystem"
+	depends on MTD_SMART
 	default n
 	---help---
 		Enables recovery of lost sectors after power failure. Lost
