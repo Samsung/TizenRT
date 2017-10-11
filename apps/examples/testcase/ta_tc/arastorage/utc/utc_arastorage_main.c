@@ -23,8 +23,8 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <string.h>
+#include <semaphore.h>
 #include <arastorage/arastorage.h>
-#include <apps/shell/tash.h>
 #include <tinyara/fs/fs_utils.h>
 #include "tc_common.h"
 
@@ -46,6 +46,8 @@
 /****************************************************************************
  *  Global Variables
  ****************************************************************************/
+extern sem_t tc_sem;
+extern int working_tc;
 
 static db_cursor_t *g_cursor;
 
@@ -1434,10 +1436,19 @@ void cleanup(void)
 	TC_ASSERT_EQ("db_exec", DB_SUCCESS(res), true);
 }
 
-int arastorage_sample_launcher(int argc, FAR char *argv[])
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int utc_arastorage_main(int argc, char *argv[])
+#endif
 {
+	sem_wait(&tc_sem);
+	working_tc++;
+
 	total_pass = 0;
 	total_fail = 0;
+
+	printf("=== TINYARA Arastorage TC START! ===\n");
 
 	utc_arastorage_db_init_tc_p();
 	utc_arastorage_db_exec_tc_p();
@@ -1504,27 +1515,14 @@ int arastorage_sample_launcher(int argc, FAR char *argv[])
 	cleanup();
 	db_deinit();
 
-
 	printf("#########################################\n");
 	printf("         Arastorage Negative TC Result            \n");
 	printf("         Total TC : %d              \n", (total_pass + total_fail));
 	printf("         PASS : %d FAIL : %d        \n", total_pass, total_fail);
 	printf("#########################################\n");
 
-	return 0;
-}
+	working_tc--;
+	sem_post(&tc_sem);
 
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int utc_arastorage_main(int argc, char *argv[])
-#endif
-{
-#ifdef CONFIG_TASH
-	tash_cmd_install("arastorage_utc", arastorage_sample_launcher, TASH_EXECMD_SYNC);
-#else
-	arastorage_sample_launcher(argc, argv);
-#endif
 	return 0;
-
 }
