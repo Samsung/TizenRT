@@ -194,6 +194,7 @@ int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_pa
 		break;
 	case 2:
 		tio.c_cflag |= CSTOPB;
+		break;
 	default:
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
