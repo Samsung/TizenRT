@@ -87,6 +87,10 @@ struct hashmap_s *hashmap_create(int startsize)
 {
 	struct hashmap_s *hm = (struct hashmap_s *)malloc(sizeof(struct hashmap_s));
 
+	if (hm == NULL) {
+		return NULL;
+	}
+
 	if (!startsize) {
 		startsize = TABLE_STARTSIZE;
 	} else {

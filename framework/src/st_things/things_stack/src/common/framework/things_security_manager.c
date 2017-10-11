@@ -233,13 +233,15 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 		if (key->data == NULL) {
 			THINGS_LOG_D(THINGS_ERROR, TAG, "Memory Full");
 			THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT[FAIL]: %s", __func__);
+			fclose(fp);
 			return OC_STACK_NO_MEMORY;
 		}
 		fread(key->data, 1, size, fp);
 		key->len = size;
 		key->encoding = encoding;
 	}
-
+	
+	fclose(fp);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT: %s", __func__);
 	return OC_STACK_OK;
 }

@@ -185,6 +185,8 @@ static void *__attribute__((optimize("O0"))) t_things_wifi_join_loop(void *args)
 	wifi_net_ip4_addr_to_ip4_str(wifi_info.ip4_address, cur_device_ip_address);
 
 	things_wifi_changed_call_func(1, wifi_info.ssid, cur_device_ip_address);
+
+	return NULL;
 }
 
 void things_wifi_sta_connected(void)
@@ -572,7 +574,7 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 		return 0;
 	}
 
-	if (resetType >= RST_ENUM_EOF || resetType < RST_NEED_CONFIRM) {
+	if (resetType >= RST_ENUM_EOF) {
 		THINGS_LOG_D(THINGS_INFO, TAG, "Not support things_es_enrollee_reset_e value(%d). So, Set value with RST_NEED_CONFIRM", resetType);
 		resetType = RST_NEED_CONFIRM;
 	}
@@ -605,7 +607,6 @@ int things_reset(void *remote_owner, things_es_enrollee_reset_e resetType)
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Failed to create thread");
 			h_thread_things_reset = 0;
 			things_free(args);
-			args = NULL;
 			b_thread_things_reset = false;
 			res = -1;
 			goto GOTO_OUT;
@@ -1002,6 +1003,8 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee
 		{
 			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Create thread is failed.(for abort Thread)");
 			*h_thread_abort = 0;
+			things_free(ARGs);
+			pthread_detach(h_thread_abort);
 			eh_result = OC_EH_ERROR;
 		}
 	} else {
@@ -1009,7 +1012,6 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee
 		eh_result = OC_EH_NOT_ACCEPTABLE;
 	}
 
-	pthread_detach(h_thread_abort);
 	return eh_result;
 }
 

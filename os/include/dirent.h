@@ -128,35 +128,35 @@ extern "C" {
 
 /**
  * @ingroup DIRENT_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int closedir(FAR DIR *dirp);
 /**
  * @ingroup DIRENT_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 FAR DIR *opendir(FAR const char *path);
 /**
  * @ingroup DIRENT_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 FAR struct dirent *readdir(FAR DIR *dirp);
 /**
  * @ingroup DIRENT_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 int readdir_r(FAR DIR *dirp, FAR struct dirent *entry, FAR struct dirent **result);
 /**
  * @ingroup DIRENT_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 void rewinddir(FAR DIR *dirp);

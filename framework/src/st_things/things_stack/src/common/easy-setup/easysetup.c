@@ -189,7 +189,7 @@ es_result_e es_set_state(things_es_enrollee_state_e es_state)
 	//THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_set_state IN");
 	OCStackResult res = OC_STACK_ERROR;
 
-	if (es_state < ES_STATE_INIT || es_state >= ES_STATE_EOF) {
+	if (es_state >= ES_STATE_EOF) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "Invalid things_es_enrollee_state_e : %d", es_state);
 		return ES_ERROR;
 	}
@@ -248,7 +248,7 @@ es_result_e es_set_error_code(es_error_code_e es_err_code)
 {
 	THINGS_LOG_D(THINGS_DEBUG, ES_ENROLLEE_TAG, "es_set_error_code IN");
 
-	if (es_err_code < ES_ERRCODE_NO_ERROR || es_err_code > ES_ERRCODE_UNKNOWN) {
+	if (es_err_code > ES_ERRCODE_UNKNOWN) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "Invalid es_set_error_code : %d", es_err_code);
 		return ES_ERROR;
 	}
@@ -268,7 +268,7 @@ es_result_e es_set_cloud_error_code(ci_error_code_e es_err_code)
 
 	es_error_code_e esError = ES_ERRCODE_NO_ERROR;
 
-	if (es_err_code < ERRCI_NO_ERROR || es_err_code > ERRCI_UNKNOWN) {
+	if (es_err_code > ERRCI_UNKNOWN) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, ES_ENROLLEE_TAG, "Invalid es_set_cloud_error_code : %d", es_err_code);
 		return ES_ERROR;
 	}

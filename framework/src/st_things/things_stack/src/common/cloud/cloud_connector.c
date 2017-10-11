@@ -196,6 +196,8 @@ OCStackResult things_cloud_signup(const char *host, const char *device_id, const
 
 			create_time_out_process(g_req_handle, timeoutHandler, timeout);
 		}
+	} else {
+		OCRepPayloadDestroy(registerPayload);
 	}
 
 	return result;
@@ -280,6 +282,8 @@ OCStackResult things_cloud_session(const char *host, const char *uId, const char
 
 			create_time_out_process(g_req_handle, timeoutHandler, timeout);
 		}
+	} else {
+		OCRepPayloadDestroy(loginoutPayload);
 	}
 
 	if (IoTivityVer) {

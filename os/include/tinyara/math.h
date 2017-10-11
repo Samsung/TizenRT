@@ -178,14 +178,14 @@ extern "C" {
 /* General Functions ******************************************************* */
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float ceilf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double ceil(double x);
@@ -193,21 +193,21 @@ double ceil(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double ceill(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float floorf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 double floor(double x);
@@ -215,21 +215,21 @@ double floor(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double floorl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float roundf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double round(double x);
@@ -237,21 +237,21 @@ double round(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double roundl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float rintf(float x);		/* Not implemented */
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double rint(double x);
@@ -259,21 +259,21 @@ double rint(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double rintl(long double x);	/* Not implemented */
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float fabsf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 double fabs(double x);
@@ -281,7 +281,7 @@ double fabs(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double fabsl(long double x);
@@ -330,7 +330,7 @@ float powf(float b, float e);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 double pow(double b, double e);
@@ -347,20 +347,20 @@ long double powl(long double b, long double e);
  */
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float expf(float x);
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 #define expm1f(x) (expf(x) - 1.0)
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double exp(double x);
@@ -369,7 +369,7 @@ double exp(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double expl(long double x);
@@ -377,14 +377,14 @@ long double expl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float exp2f(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double exp2(double x);
@@ -392,7 +392,7 @@ double exp2(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double exp2l(long double x);
@@ -435,14 +435,14 @@ long double log10l(long double x);
  */
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float log2f(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double log2(double x);
@@ -450,21 +450,21 @@ double log2(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double log2l(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float cbrtf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double cbrt(double x);
@@ -472,21 +472,21 @@ double cbrt(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double cbrtl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float sqrtf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double sqrt(double x);
@@ -494,21 +494,21 @@ double sqrt(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double sqrtl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float ldexpf(float x, int n);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double ldexp(double x, int n);
@@ -516,21 +516,21 @@ double ldexp(double x, int n);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double ldexpl(long double x, int n);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float frexpf(float x, int *exp);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double frexp(double x, int *exp);
@@ -538,7 +538,7 @@ double frexp(double x, int *exp);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double frexpl(long double x, int *exp);
@@ -547,14 +547,14 @@ long double frexpl(long double x, int *exp);
 /* Trigonometric Functions ************************************************* */
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float sinf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double sin(double x);
@@ -562,21 +562,21 @@ double sin(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double sinl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float cosf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double cos(double x);
@@ -584,21 +584,21 @@ double cos(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double cosl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float tanf(float x);
 #if CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double tan(double x);
@@ -606,21 +606,21 @@ double tan(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double tanl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float asinf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double asin(double x);
@@ -628,21 +628,21 @@ double asin(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double asinl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float acosf(float x);
 #if CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double acos(double x);
@@ -650,21 +650,21 @@ double acos(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double acosl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float atanf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double atan(double x);
@@ -672,21 +672,21 @@ double atan(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double atanl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float atan2f(float y, float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double atan2(double y, double x);
@@ -694,21 +694,21 @@ double atan2(double y, double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double atan2l(long double y, long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float sinhf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double sinh(double x);
@@ -716,21 +716,21 @@ double sinh(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double sinhl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float coshf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double cosh(double x);
@@ -738,21 +738,21 @@ double cosh(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double coshl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float tanhf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double tanh(double x);
@@ -760,21 +760,21 @@ double tanh(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double tanhl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float asinhf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double asinh(double x);
@@ -782,21 +782,21 @@ double asinh(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double asinhl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float acoshf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double acosh(double x);
@@ -804,21 +804,21 @@ double acosh(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double acoshl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float atanhf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double atanh(double x);
@@ -826,14 +826,14 @@ double atanh(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double atanhl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float erff(float x);
@@ -848,7 +848,7 @@ float erff(float x);
  */
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double erf(double x);
@@ -857,7 +857,7 @@ double erf(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double erfl(long double x);
@@ -865,14 +865,14 @@ long double erfl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float copysignf(float x, float y);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double copysign(double x, double y);
@@ -880,21 +880,21 @@ double copysign(double x, double y);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double copysignl(long double x, long double y);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float truncf(float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double trunc(double x);
@@ -902,21 +902,21 @@ double trunc(double x);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double truncl(long double x);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float fdimf(float x, float y);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double fdim(double x, double y);
@@ -924,21 +924,21 @@ double fdim(double x, double y);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double fdiml(long double x, long double y);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float fmaxf(float x, float y);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double fmax(double x, double y);
@@ -946,21 +946,21 @@ double fmax(double x, double y);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double fmaxl(long double x, long double y);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float fminf(float x, float y);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double fmin(double x, double y);
@@ -968,21 +968,21 @@ double fmin(double x, double y);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double fminl(long double x, long double y);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float hypotf(float x, float y);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double hypot(double x, double y);
@@ -990,21 +990,21 @@ double hypot(double x, double y);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double hypotl(long double x, long double y);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float scalbnf(float x, int exp);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double scalbn(double x, int exp);
@@ -1012,7 +1012,7 @@ double scalbn(double x, int exp);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double scalbnl(long double x, int exp);
@@ -1048,19 +1048,19 @@ float jnf(int n, float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double j0(double x);
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double j1(double x);
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double jn(int n, double x);
@@ -1099,19 +1099,19 @@ float ynf(int n, float x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double y0(double x);
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double y1(double x);
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double yn(int n, double x);
@@ -1119,21 +1119,21 @@ double yn(int n, double x);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double nextafter(double x, double y);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float nextafterf(float x, float y);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double nextafterl(long double x, long double y);
@@ -1141,21 +1141,21 @@ long double nextafterl(long double x, long double y);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double nexttoward(double x, long double y);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float nexttowardf(float x, long double y);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double nexttowardl(long double x, long double y);
@@ -1163,21 +1163,21 @@ long double nexttowardl(long double x, long double y);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double remainder(double x, double y);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float remainderf(float x, float y);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double remainderl(long double x, long double y);
@@ -1185,21 +1185,21 @@ long double remainderl(long double x, long double y);
 #ifdef CONFIG_HAVE_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 double remquo(double x, double y, int *quo);
 #endif
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 float remquof(float x, float y, int *quo);
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 /**
  * @ingroup MATH_LIBC
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.1
  */
 long double remquol(long double x, long double y, int *quo);

@@ -80,6 +80,7 @@ OCEntityHandlerResult things_abort(pthread_t *h_thread_abort, things_es_enrollee
 static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, int req_type)
 {
 	int result = 0;
+	things_resource_s *pst_temp_resource = NULL;
 
 	if (g_builder == NULL) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "Server Builder is not registered..");
@@ -93,7 +94,7 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 	things_resource_s *child = NULL;
 	/*! Added by st_things for memory Leak fix
 	 */
-	things_resource_s *pst_temp_resource = resource;
+	pst_temp_resource = resource;
 	if (resource == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Resource Not found : %s ", uri);
 		goto EXIT_VALIDATION;
@@ -485,7 +486,6 @@ static OCEntityHandlerResult trigger_abort_request(things_resource_s *target_res
 {
 	OCEntityHandlerResult eh_result = OC_EH_ERROR;
 	static pthread_t h_thread_abort = NULL;
-//    static pthread_t h_thread_abort[4] = {NULL, };
 
 	THINGS_LOG_V(THINGS_DEBUG, TAG, "==> ABORT Easy Setup : %d", abort_es);
 
@@ -495,7 +495,6 @@ static OCEntityHandlerResult trigger_abort_request(things_resource_s *target_res
 	case ABORT_BEFORE_DATA_PROVISIONING:	// After Security Confirm
 		THINGS_LOG_V(THINGS_DEBUG, TAG, "Forwarding abort-level to st_things App.(Level: %d)", abort_es);
 		eh_result = things_abort(&h_thread_abort, abort_es);
-//        eh_result = things_abort(&h_thread_abort[abort_es], abort_es);
 		break;
 	default:
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "abort_es = %d, So, Don't need any-process", abort_es);

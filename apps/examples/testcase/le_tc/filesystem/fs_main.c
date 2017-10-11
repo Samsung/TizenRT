@@ -53,7 +53,8 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#define BUFLEN 64
+#define STDIO_BUFLEN 		64
+#define VFS_CONTENTS_LEN	20
 
 #define MOUNT_DIR CONFIG_MOUNT_POINT
 
@@ -1263,6 +1264,31 @@ static void fs_vfs_ioctl_tc(void)
 }
 
 /**
+* @testcase         libc_stdio_dprintf_tc
+* @brief            Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
+* @scenario         Exact analogs of fprintf and vfprintf, except that they output to a file descriptor fd instead of to a stdio stream.
+* @apicovered       dprintf
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_dprintf_tc(void)
+{
+	char *filename = VFS_FILE_PATH;
+	char *str = VFS_TEST_CONTENTS_1;
+	int fd;
+	int ret;
+
+	fd = open(filename, O_RDWR);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret = dprintf(fd, "%s", str);
+	close(fd);
+	TC_ASSERT_EQ("dprintf", ret, strnlen(str, VFS_CONTENTS_LEN));
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
 * @testcase         libc_stdio_fdopen_tc
 * @brief            fdopen with available fd value
 * @scenario         Open file with specific flags, and then fdopen with diffrent flag. Then check flag is changed properly
@@ -1883,6 +1909,77 @@ static void libc_stdio_fileno_tc(void)
 	TC_SUCCESS_RESULT();
 }
 
+#if CONFIG_STDIO_BUFFER_SIZE > 0
+/**
+* @testcase         libc_stdio_lib_rdflush_tc
+* @brief            Flush read data from the I/O buffer and adjust the file pointer to account for the unread data.
+* @scenario         Flush read data from the I/O buffer and adjust the file pointer to account for the unread data.
+* @apicovered       lib_rdflush
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_lib_rdflush_tc(void)
+{
+	char *filename = VFS_FILE_PATH;
+	FILE *stream;
+	int ret;
+
+	stream = fopen(filename, "r");
+	TC_ASSERT_NEQ("fopen", stream, NULL);
+
+	ret = lib_rdflush(stream);
+	fclose(stream);
+	TC_ASSERT_EQ("lib_rdflush", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+#ifdef CONFIG_STDIO_LINEBUFFER
+/**
+* @testcase         libc_stdio_lib_snoflush_tc
+* @brief            provides a common, dummy flush method for seekable output streams that are not flushable.
+* @scenario         Only used if CONFIG_STDIO_LINEBUFFER is selected.
+* @apicovered       lib_snoflush
+* @precondition     NA
+* @postcondition    NA
+*/
+static void libc_stdio_lib_snoflush_tc(void)
+{
+	int ret;
+
+	ret = lib_snoflush((FAR struct lib_sostream_s *)stdout);
+	TC_ASSERT_EQ("lib_snoflush", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/**
+* @testcase         libc_stdio_lib_sprintf_tc
+* @brief            Composes a string with the same text that would be printed if format was used on printf
+*                   But instead of being printed the content is stored as a C string in the buffer pointed by str
+* @scenario         A terminating null character is automatically appended after the content.
+* @apicovered       lib_sprintf
+* @precondition     The size of the buffer should be large enough to contain the entire resulting string
+* @postcondition    NA
+*/
+static void libc_stdio_lib_sprintf_tc(void)
+{
+	struct lib_memoutstream_s memoutstream;
+	char *str = VFS_TEST_CONTENTS_1;
+	char buf[STDIO_BUFLEN];
+	int ret;
+
+	lib_memoutstream((FAR struct lib_memoutstream_s *)&memoutstream, buf, STDIO_BUFLEN);
+	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buffer, (FAR char *)(buf));
+
+	ret = lib_sprintf((FAR struct lib_outstream_s *)&memoutstream, "%s", str);
+	TC_ASSERT_EQ("lib_sprintf", ret, strnlen(str, VFS_CONTENTS_LEN));
+
+	TC_SUCCESS_RESULT();
+}
+
 /**
 * @testcase         libc_stdio_remove_tc
 * @brief            Deletes the file whose name is specified in filename.
@@ -2002,13 +2099,13 @@ static void libc_stdio_setvbuf_tc(void)
 */
 static void libc_stdio_meminstream_tc(void)
 {
-	FAR char buf[BUFLEN];
+	FAR char buf[STDIO_BUFLEN];
 
 	struct lib_meminstream_s meminstream;
 
-	lib_meminstream((FAR struct lib_meminstream_s *)&meminstream, buf, BUFLEN);
+	lib_meminstream((FAR struct lib_meminstream_s *)&meminstream, buf, STDIO_BUFLEN);
 	TC_ASSERT_EQ("lib_meminstream", meminstream.buffer, (FAR char *)(buf));
-	TC_ASSERT_EQ("lib_meminstream", meminstream.buflen, BUFLEN);
+	TC_ASSERT_EQ("lib_meminstream", meminstream.buflen, STDIO_BUFLEN);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2023,13 +2120,13 @@ static void libc_stdio_meminstream_tc(void)
 */
 static void libc_stdio_memoutstream_tc(void)
 {
-	FAR char buf[BUFLEN];
+	FAR char buf[STDIO_BUFLEN];
 
 	struct lib_memoutstream_s memoutstream;
 
-	lib_memoutstream((FAR struct lib_memoutstream_s *)&memoutstream, buf, BUFLEN);
+	lib_memoutstream((FAR struct lib_memoutstream_s *)&memoutstream, buf, STDIO_BUFLEN);
 	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buffer, (FAR char *)(buf));
-	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buflen, (BUFLEN - 1));	/* Save space for null terminator, hence checing with (BUFLEN-1)*/
+	TC_ASSERT_EQ("lib_memoutstream", memoutstream.buflen, (STDIO_BUFLEN - 1));	/* Save space for null terminator, hence checing with (STDIO_BUFLEN-1)*/
 
 	TC_SUCCESS_RESULT();
 }
@@ -2044,16 +2141,16 @@ static void libc_stdio_memoutstream_tc(void)
 */
 static void libc_stdio_memsistream_tc(void)
 {
-	FAR char buf[BUFLEN];
+	FAR char buf[STDIO_BUFLEN];
 
 	struct lib_memsistream_s memsistream;
 
-	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, buf, BUFLEN);
+	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, buf, STDIO_BUFLEN);
 	TC_ASSERT_EQ("lib_memsistream", memsistream.buffer, (FAR char *)(buf));
 
-	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, buf + 2, BUFLEN);
+	lib_memsistream((FAR struct lib_memsistream_s *)&memsistream, buf + 2, STDIO_BUFLEN);
 	TC_ASSERT_EQ("lib_memsistream", (memsistream.buffer - (FAR char *)(buf)), 2);
-	TC_ASSERT_EQ("lib_memsistream", memsistream.buflen, BUFLEN);
+	TC_ASSERT_EQ("lib_memsistream", memsistream.buflen, STDIO_BUFLEN);
 
 	TC_SUCCESS_RESULT();
 }
@@ -2068,16 +2165,16 @@ static void libc_stdio_memsistream_tc(void)
 */
 static void libc_stdio_memsostream_tc(void)
 {
-	FAR char buf[BUFLEN];
+	FAR char buf[STDIO_BUFLEN];
 
 	struct lib_memsostream_s memsostream;
 
-	lib_memsostream((FAR struct lib_memsostream_s *)&memsostream, buf, BUFLEN);
+	lib_memsostream((FAR struct lib_memsostream_s *)&memsostream, buf, STDIO_BUFLEN);
 	TC_ASSERT_EQ("lib_memsostream", memsostream.buffer, (FAR char *)(buf));
 
-	lib_memsostream((FAR struct lib_memsostream_s *)&memsostream, buf + 4, BUFLEN);
+	lib_memsostream((FAR struct lib_memsostream_s *)&memsostream, buf + 4, STDIO_BUFLEN);
 	TC_ASSERT_EQ("lib_memsostream", (memsostream.buffer - (FAR char *)(buf)), 4);
-	TC_ASSERT_EQ("lib_memsostream", memsostream.buflen, (BUFLEN - 1));	/* Save space for null terminator, hence checing with (BUFLEN-1)*/
+	TC_ASSERT_EQ("lib_memsostream", memsostream.buflen, (STDIO_BUFLEN - 1));	/* Save space for null terminator, hence checing with (STDIO_BUFLEN-1)*/
 
 	TC_SUCCESS_RESULT();
 }
@@ -2223,6 +2320,27 @@ static void libc_stdio_rawsostream_tc(void)
 }
 
 /**
+* @testcase         libc_stdio_sprintf_tc
+* @brief            Composes a string with the same text that would be printed if format was used on printf
+*                   But instead of being printed the content is stored as a C string in the buffer pointed by str
+* @scenario         A terminating null character is automatically appended after the content.
+* @apicovered       sprintf
+* @precondition     The size of the buffer should be large enough to contain the entire resulting string
+* @postcondition    NA
+*/
+static void libc_stdio_sprintf_tc(void)
+{
+	char buf[STDIO_BUFLEN];
+	char *str = VFS_TEST_CONTENTS_1;
+	int ret;
+
+	ret = sprintf((FAR char *)&buf, "%s", str);
+	TC_ASSERT_EQ("sprintf", ret, strnlen(str, VFS_CONTENTS_LEN));
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
 * @testcase         libc_stdio_stdinstream_tc
 * @brief            Initializes a stream for use with a FILE instance
 * @scenario         Initializes a stream for use with a FILE instance
@@ -2358,6 +2476,9 @@ static void libc_stdio_ungetc_tc(void)
 	char *filename = VFS_FILE_PATH;
 	int ret;
 	int ch1, ch2;
+#if CONFIG_NUNGET_CHARS > 0
+	int num;
+#endif
 
 	fp = fopen(filename, "w+");
 	TC_ASSERT_NEQ("fopen", fp, NULL);
@@ -2372,9 +2493,23 @@ static void libc_stdio_ungetc_tc(void)
 	ch1 = fgetc(fp);
 	TC_ASSERT_NEQ_CLEANUP("fgetc", ch1, EOF, fclose(fp));
 
-	ret = ungetc(64, fp);
+	/* Negative case with invalid argument, NULL stream. It will return EOF */
+
+	ret = ungetc(STDIO_BUFLEN, NULL);
+	TC_ASSERT_EQ_CLEANUP("ungetc", ret, EOF, fclose(fp));
+
+	ret = ungetc(STDIO_BUFLEN, fp);
 	TC_ASSERT_NEQ_CLEANUP("ungetc", ret, EOF, fclose(fp));
 
+	/* Negative case with invalid argument. It will return EOF */
+
+#if CONFIG_NUNGET_CHARS > 0
+	num = fp->fs_nungotten;
+	fp->fs_nungotten = 4;
+	ret = ungetc(STDIO_BUFLEN, fp);
+	fp->fs_nungotten = num;
+	TC_ASSERT_EQ_CLEANUP("ungetc", ret, EOF, fclose(fp));
+#endif
 	ch2 = fgetc(fp);
 	fclose(fp);
 	TC_ASSERT_NEQ("fgetc", ch2, EOF);
@@ -2426,6 +2561,7 @@ static int fs_sample_launcher(int argc, char **args)
 #ifdef CONFIG_TC_FS_PROCFS
 	tc_fs_procfs_main();
 #endif
+	libc_stdio_dprintf_tc();
 	libc_stdio_fdopen_tc();
 	libc_stdio_fopen_tc();
 	libc_stdio_fclose_tc();
@@ -2447,6 +2583,13 @@ static int fs_sample_launcher(int argc, char **args)
 	libc_stdio_gets_tc();
 	libc_stdio_gets_s_tc();
 	libc_stdio_fileno_tc();
+#if CONFIG_STDIO_BUFFER_SIZE > 0
+	libc_stdio_lib_rdflush_tc();
+#endif
+#ifdef CONFIG_STDIO_LINEBUFFER
+	libc_stdio_lib_snoflush_tc();
+#endif
+	libc_stdio_lib_sprintf_tc();
 	libc_stdio_remove_tc();
 #if CONFIG_STDIO_BUFFER_SIZE > 0
 	libc_stdio_setbuf_tc();
@@ -2462,6 +2605,7 @@ static int fs_sample_launcher(int argc, char **args)
 	libc_stdio_rawoutstream_tc();
 	libc_stdio_rawsistream_tc();
 	libc_stdio_rawsostream_tc();
+	libc_stdio_sprintf_tc();
 	libc_stdio_stdinstream_tc();
 	libc_stdio_stdoutstream_tc();
 	libc_stdio_stdsistream_tc();

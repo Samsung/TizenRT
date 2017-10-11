@@ -119,6 +119,9 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_NETDB
 	net_netdb_main();
 #endif
+#ifdef CONFIG_TC_NET_DUP
+  net_dup_main();
+#endif
 #ifdef CONFIG_TC_NET_IPV4_NETMASK_VALID
 	net_ipv4_addr_netmask_valid_main();
 #endif
