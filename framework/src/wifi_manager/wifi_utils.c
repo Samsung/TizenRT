@@ -278,7 +278,7 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 		goto connect_ap_fail;
 	}
 
-	ret = WiFiNetworkJoin((uint8_t *)ap_connect_config->ssid, ap_connect_config->ssid_length, NULL, config);
+	ret = WiFiNetworkJoin((uint8_t *) ap_connect_config->ssid, ap_connect_config->ssid_length, NULL, config);
 	if (ret != SLSI_STATUS_SUCCESS) {
 		if (ret == SLSI_STATUS_ALREADY_CONNECTED) {
 			nvdbg("WiFiNetworkJoin already connected\n");

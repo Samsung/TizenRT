@@ -81,7 +81,7 @@ pthread_attr_t g_attr;
  * Private function prototypes
  ****************************************************************************/
 static index_api_t *find_index_api(index_type_t index_type);
-db_result_t db_indexing(relation_t*);
+db_result_t db_indexing(relation_t *);
 LIST(indices);
 MEMB(index_memb, index_t, DB_INDEX_POOL_SIZE);
 
@@ -445,7 +445,7 @@ db_result_t db_indexing(relation_t *rel)
 	}
 
 	row = NULL;
-	row = (storage_row_t)malloc(sizeof(char) * rel->row_length + 1);
+	row = (storage_row_t) malloc(sizeof(char) * rel->row_length + 1);
 	if (row == NULL) {
 		DB_LOG_E("DB: Failed to allocate row\n");
 		return DB_ALLOCATION_ERROR;
@@ -455,7 +455,7 @@ db_result_t db_indexing(relation_t *rel)
 #endif
 	DB_LOG_D("DB: Loading the index for %s.%s...\n", index->rel->name, index->attr->name);
 
-	offset  = 0;
+	offset = 0;
 	isfound = false;
 
 	attr = list_head(rel->attributes);

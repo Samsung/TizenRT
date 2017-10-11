@@ -143,7 +143,5 @@ int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int l
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* IOTBUS_UART_H_ */
-
-/** @} */ // end of UART group
+#endif							/* IOTBUS_UART_H_ */
+/** @} */// end of UART group

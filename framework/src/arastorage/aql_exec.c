@@ -277,7 +277,7 @@ db_cursor_t *db_query(char *format)
 		for (attr_ptr = list_head(rel->attributes); attr_ptr != NULL; attr_ptr = attr_ptr->next) {
 			AQL_ADD_ATTRIBUTE(&adt, attr_ptr->name, DOMAIN_UNSPECIFIED, 0);
 		}
-	/* FALLTHROUGH */
+		/* FALLTHROUGH */
 	case AQL_TYPE_SELECT:
 		if (DB_ERROR(aql_init_handle(&handler))) {
 			DB_LOG_E("DB: Init handle failed\n");
@@ -294,7 +294,7 @@ db_cursor_t *db_query(char *format)
 		}
 		break;
 	case AQL_TYPE_FLUSH:
-	//TODO flush operation will be implemented later
+		//TODO flush operation will be implemented later
 	default:
 		break;
 	}

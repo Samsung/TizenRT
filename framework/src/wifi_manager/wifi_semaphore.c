@@ -27,7 +27,7 @@ wifi_utils_result_e wifi_semaphore_create(wifi_semaphore *semaphore, unsigned in
 		return WIFI_UTILS_INVALID_ARGS;
 	}
 
-	if (sem_init((sem_t *)semaphore, 0, init_value)) {
+	if (sem_init((sem_t *) semaphore, 0, init_value)) {
 		return WIFI_UTILS_FAIL;
 	}
 
@@ -43,9 +43,9 @@ wifi_utils_result_e wifi_semaphore_acquire(wifi_semaphore *semaphore, int time_o
 	}
 
 	if (time_out == WIFI_UTILS_FOREVER) {
-		result = sem_wait((sem_t *)semaphore);
+		result = sem_wait((sem_t *) semaphore);
 	} else if (time_out == WIFI_UTILS_NO_WAIT) {
-		result = sem_trywait((sem_t *)semaphore);
+		result = sem_trywait((sem_t *) semaphore);
 	} else {
 		time_t sec;
 		uint32_t nsec;
@@ -63,7 +63,7 @@ wifi_utils_result_e wifi_semaphore_acquire(wifi_semaphore *semaphore, int time_o
 			abstime.tv_nsec -= 1000000000;
 		}
 
-		result = sem_timedwait((sem_t *)semaphore, &abstime);
+		result = sem_timedwait((sem_t *) semaphore, &abstime);
 	}
 
 	if (result == 0) {
@@ -83,7 +83,7 @@ wifi_utils_result_e wifi_semaphore_release(wifi_semaphore *semaphore)
 		return WIFI_UTILS_INVALID_ARGS;
 	}
 
-	if (sem_post((sem_t *)semaphore)) {
+	if (sem_post((sem_t *) semaphore)) {
 		return WIFI_UTILS_FAIL;
 	}
 
@@ -96,7 +96,7 @@ wifi_utils_result_e wifi_semaphore_destroy(wifi_semaphore *semaphore)
 		return WIFI_UTILS_INVALID_ARGS;
 	}
 
-	if (sem_destroy((sem_t *)semaphore)) {
+	if (sem_destroy((sem_t *) semaphore)) {
 		return WIFI_UTILS_FAIL;
 	}
 

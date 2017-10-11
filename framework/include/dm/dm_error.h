@@ -48,21 +48,21 @@
  */
 typedef enum {
 
-	DM_ERROR_NONE = 0, /* Successful */
+	DM_ERROR_NONE = 0,			/* Successful */
 
-	DM_ERROR_INVALID_PARAMETER = -EINVAL, /* Invalid parameter : -22 */
-	DM_ERROR_NO_DATA = -ENODATA, /* No data available : -61*/
-	DM_ERROR_TIMED_OUT = -ETIME, /* Time out : -62 */
-	DM_ERROR_NOT_IMPLEMENTED = -ENOSYS, /* Function not implemented : -38 */
+	DM_ERROR_INVALID_PARAMETER = -EINVAL,	/* Invalid parameter : -22 */
+	DM_ERROR_NO_DATA = -ENODATA,	/* No data available : -61 */
+	DM_ERROR_TIMED_OUT = -ETIME,	/* Time out : -62 */
+	DM_ERROR_NOT_IMPLEMENTED = -ENOSYS,	/* Function not implemented : -38 */
 
-	DM_ERROR_NOT_SUPPORTED = -1101, /* Not supported */
+	DM_ERROR_NOT_SUPPORTED = -1101,	/* Not supported */
 
-	DM_ERROR_ALREADY_STARTED = -1201, /* Already started */
-	DM_ERROR_ALREADY_STOPPED = -1202, /* Already stopped */
+	DM_ERROR_ALREADY_STARTED = -1201,	/* Already started */
+	DM_ERROR_ALREADY_STOPPED = -1202,	/* Already stopped */
 
-	DM_ERROR_UNKNOWN = -1999, /* Unknown error */
+	DM_ERROR_UNKNOWN = -1999,	/* Unknown error */
 } dm_error_e;
 
-#endif /* DM_ERROR_H_ */
+#endif							/* DM_ERROR_H_ */
 
-/** @} */ // end of DM group
+/** @} */// end of DM group

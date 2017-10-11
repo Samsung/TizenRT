@@ -146,7 +146,5 @@ int iotbus_pwm_get_period(iotbus_pwm_context_h pwm);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* IOTBUS_PWM_H_ */
-
-/** @} */ // end of PWM group
+#endif							/* IOTBUS_PWM_H_ */
+/** @} */// end of PWM group

@@ -48,7 +48,7 @@ bool get_int_value(struct _st_things_representation *rep, const char *key, int64
 	RET_FALSE_IF_PARAM_IS_NULL(key);
 	RET_FALSE_IF_PARAM_IS_NULL(value);
 
-	return OCRepPayloadGetPropInt((OCRepPayload *)rep->payload, key, value);
+	return OCRepPayloadGetPropInt((OCRepPayload *) rep->payload, key, value);
 }
 
 bool get_double_value(struct _st_things_representation *rep, const char *key, double *value)
@@ -70,7 +70,7 @@ bool get_byte_value(struct _st_things_representation *rep, const char *key, uint
 	RET_FALSE_IF_PARAM_IS_NULL(size);
 
 	OCByteString byte_value = { NULL, 0 };
-	if (!OCRepPayloadGetPropByteString((OCRepPayload *)rep->payload, key, &byte_value)) {
+	if (!OCRepPayloadGetPropByteString((OCRepPayload *) rep->payload, key, &byte_value)) {
 		return false;
 	}
 
@@ -211,7 +211,7 @@ bool get_double_array_value(struct _st_things_representation *rep, const char *k
 	return ret;
 }
 
-bool get_object_array_value(struct _st_things_representation *rep, const char *key, struct _st_things_representation ***array, size_t *length)
+bool get_object_array_value(struct _st_things_representation *rep, const char *key, struct _st_things_representation *** array, size_t *length)
 {
 	RET_FALSE_IF_PARAM_IS_NULL(rep);
 	RET_FALSE_IF_PARAM_IS_NULL(rep->payload);
@@ -401,7 +401,7 @@ void destroy_representation_inst_internal(st_things_representation_s *rep, bool 
 	// DA Stack will de-allocate the payload for other cases.
 	// 1. For response representations.
 	if (destroy_payload) {
-		OCPayloadDestroy((OCPayload *) (rep->payload));
+		OCPayloadDestroy((OCPayload *)(rep->payload));
 	}
 
 	util_free(rep);

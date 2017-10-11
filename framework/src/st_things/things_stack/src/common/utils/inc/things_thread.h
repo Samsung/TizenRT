@@ -21,6 +21,6 @@
 
 #include <pthread.h>
 
-int things_thread_create(pthread_t *__newthread, pthread_attr_t *__attr, void *(*__start_routine)(void *), void *__arg);
+int things_thread_create(pthread_t *__newthread, pthread_attr_t *__attr, void * (*__start_routine)(void *), void *__arg);
 
 #endif							/* OIC_THREAD_MANAGER_H_ */

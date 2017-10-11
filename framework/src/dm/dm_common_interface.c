@@ -42,8 +42,8 @@ int readonce(FAR const char *filename, FAR char *buffer, uint8_t buflen)
 		 * buffer space, or until some irrecoverable error occurs
 		 */
 
-		*buffer = '\0'; /* NUL terminate the empty buffer */
-		ret = ERROR; /* Assume failure */
+		*buffer = '\0';			/* NUL terminate the empty buffer */
+		ret = ERROR;			/* Assume failure */
 
 		nbytes = read(fd, buffer, buflen);
 		printf("%d bytes read\n", nbytes);
@@ -95,11 +95,11 @@ int readfile(FAR const char *filename, FAR char *buffer, uint8_t buflen)
 		 * buffer space, or until some irrecoverable error occurs
 		 */
 
-		ntotal = 0; /* No bytes read yet */
-		*buffer = '\0'; /* NUL terminate the empty buffer */
-		bufptr = buffer; /* Working pointer */
-		remaining = buflen - 1; /* Reserve one byte for a NUL terminator */
-		ret = ERROR; /* Assume failure */
+		ntotal = 0;				/* No bytes read yet */
+		*buffer = '\0';			/* NUL terminate the empty buffer */
+		bufptr = buffer;		/* Working pointer */
+		remaining = buflen - 1;	/* Reserve one byte for a NUL terminator */
+		ret = ERROR;			/* Assume failure */
 
 		do {
 			nbytes = read(fd, buffer, buflen);
@@ -153,4 +153,3 @@ void mount_procfs(void)
 	int ret;
 	ret = mount(NULL, PROC_MOUNTPOINT, "procfs", 0, NULL);
 }
-

@@ -155,7 +155,6 @@ enum domain_e {
 
 typedef enum domain_e domain_t;
 
-
 struct _db_handle_s;
 typedef struct _db_handle_s db_handle_t;
 
@@ -197,7 +196,6 @@ db_result_t db_init(void);
 */
 db_result_t db_deinit(void);
 
-
 /**
 * @brief Create Component of Arastorage.
 *
@@ -219,7 +217,6 @@ db_result_t db_exec(char *format);
 */
 db_cursor_t *db_query(char *format);
 
-
 /**
 * @brief free allocated cursor data. This should be called before application terminated.
 *
@@ -238,7 +235,6 @@ db_result_t db_cursor_free(db_cursor_t *cursor);
 */
 const char *db_get_result_message(db_result_t code);
 
-
 /**
 * @brief Print the related information : relation, attribute name
 *
@@ -248,7 +244,6 @@ const char *db_get_result_message(db_result_t code);
 */
 db_result_t db_print_header(db_cursor_t *cursor);
 
-
 /**
 * @brief Print the tuple data
 *
@@ -257,7 +252,6 @@ db_result_t db_print_header(db_cursor_t *cursor);
 * @since Tizen RT v1.0
 */
 db_result_t db_print_tuple(db_cursor_t *cursor);
-
 
 /**
 * @brief print current row's data where specific index
@@ -269,7 +263,6 @@ db_result_t db_print_tuple(db_cursor_t *cursor);
 */
 db_result_t db_print_value(db_cursor_t *cursor, int attr_index);
 
-
 /**
 * @brief Move current position of cursor to first row
 *
@@ -278,7 +271,6 @@ db_result_t db_print_value(db_cursor_t *cursor, int attr_index);
 * @since Tizen RT v1.0
 */
 db_result_t cursor_move_first(db_cursor_t *cursor);
-
 
 /**
 * @brief Move current position of cursor to last row
@@ -289,7 +281,6 @@ db_result_t cursor_move_first(db_cursor_t *cursor);
 */
 db_result_t cursor_move_last(db_cursor_t *cursor);
 
-
 /**
 * @brief Move current position of cursor to next row
 *
@@ -298,7 +289,6 @@ db_result_t cursor_move_last(db_cursor_t *cursor);
 * @since Tizen RT v1.0
 */
 db_result_t cursor_move_next(db_cursor_t *cursor);
-
 
 /**
 * @brief Move current position of cursor to previous row
@@ -309,7 +299,6 @@ db_result_t cursor_move_next(db_cursor_t *cursor);
 */
 db_result_t cursor_move_prev(db_cursor_t *cursor);
 
-
 /**
 * @brief Move current position of cursor to specific row
 *
@@ -319,7 +308,6 @@ db_result_t cursor_move_prev(db_cursor_t *cursor);
 */
 db_result_t cursor_move_to(db_cursor_t *cursor, tuple_id_t row_id);
 
-
 /**
 * @brief Check current position of cursor is first row
 *
@@ -328,7 +316,6 @@ db_result_t cursor_move_to(db_cursor_t *cursor, tuple_id_t row_id);
 * @since Tizen RT v1.0
 */
 bool cursor_is_first_row(db_cursor_t *cursor);
-
 
 /**
 * @brief Check current position of cursor is last row
@@ -357,7 +344,6 @@ cursor_row_t cursor_get_row(db_cursor_t *cursor);
 */
 cursor_row_t cursor_get_count(db_cursor_t *cursor);
 
-
 /**
 * @brief get type of attribute of specific index in cursor
 *
@@ -367,7 +353,6 @@ cursor_row_t cursor_get_count(db_cursor_t *cursor);
 * @since Tizen RT v1.0
 */
 domain_t cursor_get_attr_type(db_cursor_t *cursor, int attr_index);
-
 
 /**
 * @brief get name of attribute of specific index in cursor
@@ -379,7 +364,6 @@ domain_t cursor_get_attr_type(db_cursor_t *cursor, int attr_index);
 */
 char *cursor_get_attr_name(db_cursor_t *cursor, int attr_index);
 
-
 /**
 * @brief Find index number where using specific attribute name
 *
@@ -389,7 +373,6 @@ char *cursor_get_attr_name(db_cursor_t *cursor, int attr_index);
 * @since Tizen RT v1.0
 */
 attribute_id_t cursor_get_attr_index(db_cursor_t *cursor, const char *attr_name);
-
 
 /**
 * @brief Get value of current row's data where specific index if it is integer type.
@@ -401,7 +384,6 @@ attribute_id_t cursor_get_attr_index(db_cursor_t *cursor, const char *attr_name)
 * @since Tizen RT v1.0
 */
 int cursor_get_int_value(db_cursor_t *cursor, int attr_index);
-
 
 /**
 * @brief Get value of current row's data where specific index if it is long type.
@@ -437,7 +419,6 @@ double cursor_get_double_value(db_cursor_t *cursor, int attr_index);
 */
 unsigned char *cursor_get_string_value(db_cursor_t *cursor, int attr_index);
 
-/** @} */ // end of AraStorage group
+/** @} */// end of AraStorage group
 
-#endif /* __ARASTORAGE_ARA_STORAGE_H */
-
+#endif							/* __ARASTORAGE_ARA_STORAGE_H */

@@ -109,7 +109,6 @@ int get_id_value_from_query(char idvalue[], char *inputQuery, int size)
 		THINGS_LOG_D(THINGS_DEBUG, TAG, "Input size bigger than maximum query size(%d)", MAX_INPUT_QUERY_LEN);
 		return 0;
 	}
-
 	// Remove empty space
 	char queries[MAX_INPUT_QUERY_LEN + 1] = { 0, };
 	int index = 0;

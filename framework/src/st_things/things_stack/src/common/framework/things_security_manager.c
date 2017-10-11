@@ -240,7 +240,7 @@ static OCStackResult seckey_setup(const char *filename, OicSecKey_t *key, OicEnc
 		key->len = size;
 		key->encoding = encoding;
 	}
-	
+
 	fclose(fp);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "OUT: %s", __func__);
 	return OC_STACK_OK;
@@ -275,7 +275,7 @@ static int GenerateSvrDb()
 		unsigned char *svrdb = NULL;
 		unsigned char *cur_pos = NULL;
 		//To generate OxM Array.
-		uint16_t oxms[OIC_OXM_COUNT + 3 /*Number of vendor specific OxM */] = { 0 };
+		uint16_t oxms[OIC_OXM_COUNT + 3 /*Number of vendor specific OxM */ ] = { 0 };
 		size_t oxm_cnt = 0;
 		size_t oxm_size = 0;
 		size_t svrdb_size = 0;
@@ -415,7 +415,7 @@ static int get_mac_addr(unsigned char *p_id_buf, size_t p_id_buf_size, unsigned 
 	wifi_manager_get_info(&st_wifi_info);
 
 	if (wifi_manager_get_info(&st_wifi_info) != WIFI_MANAGER_SUCCESS) {
-		
+
 		THINGS_LOG_D_ERROR(THINGS_ERROR, TAG, "MAC Get Error\n");
 		return OIC_SEC_ERROR;
 	}
@@ -532,7 +532,7 @@ int sm_init_things_security(int auth_type, const char *db_path)
 
 	static OCPersistentStorage ps = { server_fopen, server_fread, server_fwrite, server_fclose, unlink };
 	THINGS_LOG(THINGS_INFO, TAG, "******* WARNING : SVR DB will be used without encryption *******");
-	
+
 	OCStackResult oc_res = OCRegisterPersistentStorageHandler(&ps);
 	if (OC_STACK_INCONSISTENT_DB == oc_res || OC_STACK_SVR_DB_NOT_EXIST == oc_res) {
 		//If failed to load SVR DB

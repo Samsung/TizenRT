@@ -87,4 +87,4 @@
 #define DB_LOG_V(...)
 #endif
 
-#endif /* DB_DEBUG_H */
+#endif							/* DB_DEBUG_H */

@@ -91,7 +91,7 @@ static char g_cloud_ip[IP_PORT] = { 0, };	//!< Current Connected Cloud Ipv4 addr
 static char g_cloud_port[IP_PORT] = { 0, };	//!< Current Connected Cloud Port number.
 static char g_cloud_address[MAX_CI_ADDRESS] = { 0, };	//!< Current Connected Cloud Address.
 
-static es_cloud_signup_s *signed_up_data = NULL;	
+static es_cloud_signup_s *signed_up_data = NULL;
 
 static things_server_builder_s *g_server_builder = NULL;	//!< Server-Builder pointer to get Resource List.
 static things_resource_s **g_resource_lists = NULL;	//!< Resource List pointer to be publishing resources to Cloud.

@@ -99,7 +99,6 @@ struct index_s {
 };
 typedef struct index_s index_t;
 
-
 struct index_iterator_s {
 	index_t *index;
 	attribute_value_t min_value;

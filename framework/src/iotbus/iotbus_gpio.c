@@ -99,13 +99,15 @@ iotbus_gpio_context_h iotbus_gpio_open(int gpiopin)
  */
 int iotbus_gpio_close(iotbus_gpio_context_h dev)
 {
-	if (!dev)
+	if (!dev) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	if (dev->isr_cb != NULL) {
 		int ret = iotbus_gpio_unregister_cb(dev);
-		if (ret != IOTBUS_ERROR_NONE)
+		if (ret != IOTBUS_ERROR_NONE) {
 			return ret;
+		}
 	}
 
 	close(dev->fd);
@@ -120,8 +122,9 @@ int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
 {
 	int ret = -1;
 
-	if (!dev)
+	if (!dev) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	dev->dir = dir;
 	switch (dev->dir) {
@@ -133,7 +136,7 @@ int iotbus_gpio_set_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
 		break;
 	case IOTBUS_GPIO_DIRECTION_NONE:
 		ret = ioctl(dev->fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_NONE);
-				break;
+		break;
 	default:
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
@@ -163,24 +166,25 @@ int iotbus_gpio_set_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge
 	int ret = -1;
 	struct gpio_pollevents_s pollevents;
 
-	if (!dev)
+	if (!dev) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	switch (edge) {
 	case IOTBUS_GPIO_EDGE_NONE:
-		pollevents.gp_rising  = false;
+		pollevents.gp_rising = false;
 		pollevents.gp_falling = false;
 		break;
 	case IOTBUS_GPIO_EDGE_BOTH:
-		pollevents.gp_rising  = true;
+		pollevents.gp_rising = true;
 		pollevents.gp_falling = true;
 		break;
 	case IOTBUS_GPIO_EDGE_RISING:
-		pollevents.gp_rising  = true;
+		pollevents.gp_rising = true;
 		pollevents.gp_falling = false;
 		break;
 	case IOTBUS_GPIO_EDGE_FALLING:
-		pollevents.gp_rising  = false;
+		pollevents.gp_rising = false;
 		pollevents.gp_falling = true;
 		break;
 	default:
@@ -214,32 +218,33 @@ int iotbus_gpio_set_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e dr
 {
 	int ret = -1;
 
-	if (!dev)
+	if (!dev) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	dev->drive = drive;
 
 	switch (dev->drive) {
-	case IOTBUS_GPIO_DRIVE_NONE:{
-			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_NONE);
-			break;
-		}
-	case IOTBUS_GPIO_DRIVE_PULLUP:{
-			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_PULLUP);
-			break;
-		}
-	case IOTBUS_GPIO_DRIVE_PULLDOWN:{
-			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_PULLDOWN);
-			break;
-		}
-	case IOTBUS_GPIO_DRIVE_FLOAT:{
-			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_FLOAT);
-			break;
-		}
-	case IOTBUS_GPIO_DRIVE_PUSHPULL:{
-			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_PUSHPULL);
-			break;
-		}
+	case IOTBUS_GPIO_DRIVE_NONE: {
+		ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_NONE);
+		break;
+	}
+	case IOTBUS_GPIO_DRIVE_PULLUP: {
+		ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_PULLUP);
+		break;
+	}
+	case IOTBUS_GPIO_DRIVE_PULLDOWN: {
+		ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_PULLDOWN);
+		break;
+	}
+	case IOTBUS_GPIO_DRIVE_FLOAT: {
+		ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_FLOAT);
+		break;
+	}
+	case IOTBUS_GPIO_DRIVE_PUSHPULL: {
+		ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_PUSHPULL);
+		break;
+	}
 	}
 
 	if (ret != 0) {
@@ -265,10 +270,12 @@ int iotbus_gpio_set_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e dr
 int iotbus_gpio_register_cb(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge, gpio_isr_cb isr_cb, void *user_data)
 {
 	int ret = iotbus_gpio_set_edge_mode(dev, edge);
-	if (ret != IOTBUS_ERROR_NONE)
+	if (ret != IOTBUS_ERROR_NONE) {
 		return ret;
-	if (isr_cb == NULL || user_data == NULL)
+	}
+	if (isr_cb == NULL || user_data == NULL) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	struct _iotbus_gpio_s *item = (struct _iotbus_gpio_s *)dev;
 	iotapi_elem elm;
@@ -289,8 +296,9 @@ int iotbus_gpio_register_cb(iotbus_gpio_context_h dev, iotbus_gpio_edge_e edge, 
  */
 int iotbus_gpio_unregister_cb(iotbus_gpio_context_h dev)
 {
-	if (dev == NULL)
+	if (dev == NULL) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 	iotapi_elem elm;
 	struct _iotbus_gpio_s *item = (struct _iotbus_gpio_s *)dev;
 	elm.fd = item->fd;
@@ -310,15 +318,18 @@ int iotbus_gpio_read(iotbus_gpio_context_h dev)
 {
 	char buf[4];
 
-	if (!dev)
+	if (!dev) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	int ret = read(dev->fd, buf, sizeof(buf));
-	if (ret < 0)
+	if (ret < 0) {
 		return IOTBUS_ERROR_UNKNOWN;
+	}
 	ret = lseek(dev->fd, 0, SEEK_SET);
-	if (ret < 0)
+	if (ret < 0) {
 		return IOTBUS_ERROR_UNKNOWN;
+	}
 
 	return buf[0] == '1';
 }
@@ -331,16 +342,19 @@ int iotbus_gpio_write(iotbus_gpio_context_h dev, int value)
 	int ret;
 	char buf[4];
 
-	if (!dev)
+	if (!dev) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	if (value != 0 && value != 1)
+	if (value != 0 && value != 1) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	ret = write(dev->fd, buf, snprintf(buf, sizeof(buf), "%d", !!value));
+	ret = write(dev->fd, buf, snprintf(buf, sizeof(buf), "%d", ! !value));
 
-	if (ret < 0)
+	if (ret < 0) {
 		return IOTBUS_ERROR_UNKNOWN;
+	}
 
 	return IOTBUS_ERROR_NONE;
 }
@@ -348,10 +362,11 @@ int iotbus_gpio_write(iotbus_gpio_context_h dev, int value)
 /**
  * @brief Gets a direction of the Gpio.
  */
-int iotbus_gpio_get_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e * dir)
+int iotbus_gpio_get_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e *dir)
 {
-	if (!dev)
+	if (!dev) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	*dir = dev->dir;
 
@@ -363,8 +378,9 @@ int iotbus_gpio_get_direction(iotbus_gpio_context_h dev, iotbus_gpio_direction_e
  */
 int iotbus_gpio_get_pin(iotbus_gpio_context_h dev)
 {
-	if (!dev)
+	if (!dev) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	return dev->pin;
 }
@@ -372,10 +388,11 @@ int iotbus_gpio_get_pin(iotbus_gpio_context_h dev)
 /**
  * @brief Gets a edge mode of the Gpio.
  */
-int iotbus_gpio_get_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e * edge)
+int iotbus_gpio_get_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e *edge)
 {
-	if (!dev)
+	if (!dev) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	*edge = dev->edge;
 
@@ -385,10 +402,11 @@ int iotbus_gpio_get_edge_mode(iotbus_gpio_context_h dev, iotbus_gpio_edge_e * ed
 /**
  * @brief Gets a drive mode of the Gpio.
  */
-int iotbus_gpio_get_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e * drive)
+int iotbus_gpio_get_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e *drive)
 {
-	if (!dev)
+	if (!dev) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	*drive = dev->drive;
 

@@ -61,4 +61,4 @@ wifi_utils_result_e wifi_utils_ip4_addr_to_ip4_str(unsigned int ip4_addr, char i
  */
 wifi_utils_result_e wifi_utils_mac_addr_to_mac_str(unsigned char mac_addr[6], char mac_str[20]);
 
-#endif //WIFI_NET_H
+#endif							//WIFI_NET_H

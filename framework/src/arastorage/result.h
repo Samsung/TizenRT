@@ -116,5 +116,5 @@ db_result_t db_get_value(attribute_value_t *value, db_handle_t *handle, unsigned
 db_result_t db_phy_to_value(attribute_value_t *value, attribute_t *attr, unsigned char *ptr);
 db_result_t db_value_to_phy(unsigned char *ptr, attribute_t *attr, attribute_value_t *value);
 
-#endif              /* !RESULT_H */
+#endif							/* !RESULT_H */
 long db_value_to_long(attribute_value_t *value);

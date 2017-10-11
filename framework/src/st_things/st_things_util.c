@@ -43,7 +43,7 @@ char *util_clone_string(const char *str)
 	RET_NULL_IF_PARAM_IS_NULL(str);
 
 	int len = strlen(str);
-	char *dest_str = (char *)util_malloc(sizeof(char) *len + 1);
+	char *dest_str = (char *)util_malloc(sizeof(char) * len + 1);
 	if (NULL != dest_str) {
 		strncpy(dest_str, str, len + 1);
 	} else {

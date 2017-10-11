@@ -98,7 +98,7 @@ enum node_type_e {
 };
 typedef enum node_type_e node_type_t;
 
-enum lvm_operator_e   {
+enum lvm_operator_e {
 	LVM_ADD = LVM_ARITH_OP | 1,
 	LVM_SUB = LVM_ARITH_OP | 2,
 	LVM_MUL = LVM_ARITH_OP | 3,

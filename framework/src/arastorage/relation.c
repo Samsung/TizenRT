@@ -527,7 +527,7 @@ db_result_t relation_insert(relation_t *rel, attribute_value_t *values)
 		if (attr->next != NULL) {
 			DB_LOG_V(", ");
 		}
-#endif              /* DEBUG */
+#endif							/* DEBUG */
 		if (attr->index == NULL) {
 			index_load(rel, attr);
 		}
@@ -577,8 +577,8 @@ static db_result_t aggregate(attribute_t *attr, attribute_value_t *value, tuple_
 		if (count == 1) {
 			attr->aggregation_value = (double)long_value;
 		} else {
-			sum_value = (double) (attr->aggregation_value * (count - 1));
-			attr->aggregation_value = (double) ((sum_value + long_value) / count);
+			sum_value = (double)(attr->aggregation_value * (count - 1));
+			attr->aggregation_value = (double)((sum_value + long_value) / count);
 		}
 		break;
 	case AQL_MAX:
@@ -746,7 +746,7 @@ static db_result_t generate_selection_result(db_handle_t **handle, relation_t *r
 		}
 	}
 
-	(*handle)->tuple = (tuple_t)malloc(sizeof(char) * result_rel->row_length + 1);
+	(*handle)->tuple = (tuple_t) malloc(sizeof(char) * result_rel->row_length + 1);
 	if ((*handle)->tuple == NULL) {
 		DB_LOG_E("DB: Failed to malloc tuple row\n");
 		free((*handle)->attr_map);
@@ -826,7 +826,7 @@ db_result_t relation_process_select(db_handle_t **handle, db_cursor_t *cursor)
 		(*handle)->tuple_id++;
 	}
 
-	row = (storage_row_t)malloc(sizeof(char) * (*handle)->rel->row_length + 1);
+	row = (storage_row_t) malloc(sizeof(char) * (*handle)->rel->row_length + 1);
 	if (row == NULL) {
 		DB_LOG_E("DB: Failed to allocate row\n");
 		return DB_ALLOCATION_ERROR;
@@ -914,7 +914,7 @@ processing_aggregation:
 	memcpy(cursor->tuple, result_row, sizeof(cursor->tuple));
 
 	(*handle)->current_row = 0;
-	(*handle)->adt_flags &= ~AQL_FLAG_AGGREGATE; /* Stop the aggregation. */
+	(*handle)->adt_flags &= ~AQL_FLAG_AGGREGATE;	/* Stop the aggregation. */
 
 	result = cursor_data_add(cursor, (*handle)->current_row);
 	if (DB_ERROR(result)) {
@@ -958,7 +958,7 @@ db_result_t relation_process_remove(db_handle_t **handle, db_cursor_t *cursor)
 	/* Search all tuples sequentially without index. */
 	(*handle)->tuple_id++;
 
-	row = (storage_row_t)malloc(sizeof(char) * (*handle)->rel->row_length + 1);
+	row = (storage_row_t) malloc(sizeof(char) * (*handle)->rel->row_length + 1);
 	if (row == NULL) {
 		DB_LOG_E("DB: Failed to allocate row\n");
 		return DB_ALLOCATION_ERROR;
@@ -1111,15 +1111,15 @@ db_result_t relation_select(db_handle_t **handle, relation_t *rel, void *adt_ptr
 	db_direction_t dir;
 	char *attribute_name;
 	attribute_t *attr, *attr_ptr;
-	relation_t * res_rel;
+	relation_t *res_rel;
 	int i;
 	int normal_attributes = 0;
-	adt = (aql_adt_t *)adt_ptr;
+	adt = (aql_adt_t *) adt_ptr;
 	(*handle)->rel = rel;
 	(*handle)->optype = AQL_GET_TYPE(adt);
 	DB_LOG_D("relation_select... optype = %d\n", (*handle)->optype);
 	(*handle)->adt_flags = AQL_GET_FLAGS(adt);
-	(*handle)->lvm_instance = (lvm_instance_t *)adt->lvm_instance;
+	(*handle)->lvm_instance = (lvm_instance_t *) adt->lvm_instance;
 
 	if (AQL_GET_FLAGS(adt) & AQL_FLAG_ASSIGN) {
 		name = adt->relations[0];

@@ -42,10 +42,10 @@
  * IOTBUS_GPIO_DRIVE_PUSHPULL = 4, Push Pull\n
  */
 typedef enum {
-	IOTBUS_GPIO_DRIVE_NONE     = 0, /* No set any state */
-	IOTBUS_GPIO_DRIVE_PULLUP   = 1, /* Resistive High */
-	IOTBUS_GPIO_DRIVE_PULLDOWN = 2, /* Resistive Low */
-	IOTBUS_GPIO_DRIVE_FLOAT    = 3,
+	IOTBUS_GPIO_DRIVE_NONE = 0,	/* No set any state */
+	IOTBUS_GPIO_DRIVE_PULLUP = 1,	/* Resistive High */
+	IOTBUS_GPIO_DRIVE_PULLDOWN = 2,	/* Resistive Low */
+	IOTBUS_GPIO_DRIVE_FLOAT = 3,
 	IOTBUS_GPIO_DRIVE_PUSHPULL = 4,
 } iotbus_gpio_drive_e;
 
@@ -59,8 +59,8 @@ typedef enum {
  */
 typedef enum {
 	IOTBUS_GPIO_DIRECTION_NONE = 0,
-	IOTBUS_GPIO_DIRECTION_OUT  = 1,  /* Output. A Mode can also be set */
-	IOTBUS_GPIO_DIRECTION_IN   = 2,  /* Input */
+	IOTBUS_GPIO_DIRECTION_OUT = 1,	/* Output. A Mode can also be set */
+	IOTBUS_GPIO_DIRECTION_IN = 2,	/* Input */
 } iotbus_gpio_direction_e;
 
 /**
@@ -73,10 +73,10 @@ typedef enum {
  * IOTBUS_GPIO_EDGE_FALLING = 3, Interrupt on falling edge only\n
  */
 typedef enum {
-	IOTBUS_GPIO_EDGE_NONE    = 0, /* No interrupt on Gpio */
-	IOTBUS_GPIO_EDGE_BOTH    = 1, /* Interrupt on rising & falling */
-	IOTBUS_GPIO_EDGE_RISING  = 2, /* Interrupt on rising only */
-	IOTBUS_GPIO_EDGE_FALLING = 3  /* Interrupt on falling only */
+	IOTBUS_GPIO_EDGE_NONE = 0,	/* No interrupt on Gpio */
+	IOTBUS_GPIO_EDGE_BOTH = 1,	/* Interrupt on rising & falling */
+	IOTBUS_GPIO_EDGE_RISING = 2,	/* Interrupt on rising only */
+	IOTBUS_GPIO_EDGE_FALLING = 3	/* Interrupt on falling only */
 } iotbus_gpio_edge_e;
 
 struct _iotbus_gpio_s;
@@ -227,7 +227,5 @@ int iotbus_gpio_get_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e *d
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* IOTBUS_GPIO_H_ */
-
-/** @} */ // end of GPIO group
+#endif							/* IOTBUS_GPIO_H_ */
+/** @} */// end of GPIO group

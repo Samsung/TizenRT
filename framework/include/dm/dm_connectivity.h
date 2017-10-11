@@ -32,14 +32,13 @@
 #define DM_CONNECTIVITY_H_
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 struct dm_scan_info_s {
-	char ssid[33];               // 802.11 spec defined unspecified or uint8
-	char bssid[18];                 // char string e.g. xx:xx:xx:xx:xx:xx
-	int8_t rssi;                    // rssi level of scanned device
+	char ssid[33];			// 802.11 spec defined unspecified or uint8
+	char bssid[18];			// char string e.g. xx:xx:xx:xx:xx:xx
+	int8_t rssi;			// rssi level of scanned device
 	struct dm_scan_info_s *next;
 };
 typedef struct dm_scan_info_s dm_scan_info_t;
@@ -194,7 +193,5 @@ int dm_conn_wifi_disconnect(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* DM_CONNECTIVITY_H_ */
-
-/** @} */ // end of Connectivity group
+#endif							/* DM_CONNECTIVITY_H_ */
+/** @} */// end of Connectivity group

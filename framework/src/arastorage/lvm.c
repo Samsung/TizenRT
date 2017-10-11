@@ -103,7 +103,7 @@ static operator_t *get_operator(lvm_instance_t *p)
 {
 	operator_t *operator;
 
-	operator = (operator_t *)&p->code[p->ip];
+	operator =(operator_t *)&p->code[p->ip];
 	p->ip += sizeof(operator_t);
 	return operator;
 }
@@ -399,7 +399,7 @@ void lvm_set_operand_value(lvm_instance_t *p, attribute_t *attr, unsigned char *
 	if (attr->domain == DOMAIN_INT) {
 		operand_value.l = value[0] << 8 | value[1];
 	} else if (attr->domain == DOMAIN_LONG) {
-		operand_value.l = (uint32_t)value[0] << 24 | (uint32_t)value[1] << 16 | (uint32_t)value[2] << 8 | value[3];
+		operand_value.l = (uint32_t) value[0] << 24 | (uint32_t) value[1] << 16 | (uint32_t) value[2] << 8 | value[3];
 	}
 
 	lvm_set_variable_value(p, attr->name, operand_value);
@@ -774,10 +774,10 @@ int main(void)
 	lvm_reset(&p, code, sizeof(code));
 
 	lvm_register_variable("z", LVM_LONG);
-	lvm_set_variable_value("z", (operand_value_t)15L);
+	lvm_set_variable_value("z", (operand_value_t) 15L);
 
 	lvm_register_variable("y", LVM_LONG);
-	lvm_set_variable_value("y", (operand_value_t)109L);
+	lvm_set_variable_value("y", (operand_value_t) 109L);
 
 	/* Infix: 109 = y /\ 20 > 70 - (6 + z * 3) => 109 = 109 /\ 20 > 19 => true */
 	lvm_set_relation(&p, LVM_AND);

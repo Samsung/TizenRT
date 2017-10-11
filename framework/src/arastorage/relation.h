@@ -174,7 +174,6 @@ db_result_t cursor_load(db_cursor_t **target, db_cursor_t *src);
 db_result_t cursor_data_add(db_cursor_t *cursor, tuple_id_t tuple_id);
 db_result_t cursor_deinit(db_cursor_t *cursor);
 
-
 /* API for relations. */
 db_result_t relation_init(void);
 db_result_t relation_deinit(void);
@@ -195,4 +194,4 @@ db_result_t relation_insert(relation_t *, attribute_value_t *);
 db_result_t relation_select(db_handle_t **, relation_t *, void *);
 tuple_id_t relation_cardinality(relation_t *);
 
-#endif              /* RELATION_H */
+#endif							/* RELATION_H */

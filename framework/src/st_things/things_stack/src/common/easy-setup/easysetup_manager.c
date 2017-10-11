@@ -341,11 +341,11 @@ esm_result_e esm_init_easysetup(int restart_flag, things_server_builder_s *serve
 	if (gthread_id_cloud_refresh_check == 0) {
 		int ret = pipe(ci_token_expire_fds);
 		if (-1 == ret) {
-			if (ci_token_expire_fds[0] != -1)  {
+			if (ci_token_expire_fds[0] != -1) {
 				close(ci_token_expire_fds[0]);
 				ci_token_expire_fds[0] = -1;
 			}
-			if (ci_token_expire_fds[1] != -1)  {
+			if (ci_token_expire_fds[1] != -1) {
 				close(ci_token_expire_fds[1]);
 				ci_token_expire_fds[1] = -1;
 			}

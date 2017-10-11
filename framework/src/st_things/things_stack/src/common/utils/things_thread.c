@@ -26,7 +26,7 @@
 
 #define TAG "[things_thread]"
 
-int things_thread_create(pthread_t *__newthread, pthread_attr_t *__attr, void *(*__start_routine)(void *), void *__arg)
+int things_thread_create(pthread_t *__newthread, pthread_attr_t *__attr, void * (*__start_routine)(void *), void *__arg)
 {
 	THINGS_LOG(THINGS_DEBUG, TAG, "Enter.");
 	int ret = 0;

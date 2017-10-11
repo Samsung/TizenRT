@@ -103,11 +103,11 @@ int things_set_mot_status(bool enable);
 
 int things_get_resource_type(const char *resource_uri, int *count, char ***resource_types);
 
-int things_get_attributes_by_resource_type(const char *res_type, int *count, things_attribute_info_s ***attributes);
+int things_get_attributes_by_resource_type(const char *res_type, int *count, things_attribute_info_s *** attributes);
 
 bool things_is_collection_resource(const char *res_uri);
 
-int things_get_child_resources(const char *col_res_uri, int *count, things_resource_info_s ***child_resources);
+int things_get_child_resources(const char *col_res_uri, int *count, things_resource_info_s *** child_resources);
 
 #ifdef __cplusplus
 }
