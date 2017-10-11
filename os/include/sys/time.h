@@ -86,7 +86,7 @@ extern "C" {
 #define EXTERN extern
 #endif
 /**
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
 EXTERN int gettimeofday(struct timeval *tv, FAR struct timezone *tz);

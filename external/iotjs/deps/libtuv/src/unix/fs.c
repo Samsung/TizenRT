@@ -407,14 +407,14 @@ static ssize_t uv__fs_scandir(uv_fs_t* req) {
       cnt++;
   }
 
+  /* Allcoate memory for the directory entries. */
+  dents = (uv__dirent_t**) malloc(sizeof (uv__dirent_t*) * cnt);
+
   if (cnt > 0 && dents == NULL) {
       closedir(dir);
       cnt = -1;
       goto error;
   }
-
-  /* Allcoate memory for the directory entries. */
-  dents = (uv__dirent_t**) malloc(sizeof (uv__dirent_t*) * cnt);
 
   rewinddir(dir);
 

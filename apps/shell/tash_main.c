@@ -162,8 +162,9 @@ static int tash_open_console(void)
 		if (ret > 0) {
 			break;
 		}
-
+#ifndef CONFIG_DISABLE_SIGNALS
 		usleep(20);
+#endif
 		if (cnt == TASH_TRY_MAXCNT) {
 			shdbg("TASH: can not open uart, tried (%d) times\n", cnt);
 			ret = ERROR;
@@ -199,7 +200,9 @@ static int tash_main(int argc, char *argv[])
 		nbytes = write(fd, tash_prompt, sizeof(tash_prompt));
 		if (nbytes <= 0) {
 			shdbg("TASH: prompt is not displayed (errno = %d)\n", get_errno());
+#ifndef CONFIG_DISABLE_SIGNALS
 			usleep(20);
+#endif
 			continue;
 		}
 		line_buff = tash_read_input_line(fd);

@@ -42,6 +42,7 @@ config TC_NET_ALL
 	select TC_NET_INET
 	select TC_NET_ETHER
 	select TC_NET_NETDB
+	select TC_NET_DUP
 
 config TC_NET_SOCKET
 	bool "socket() api"
@@ -126,6 +127,10 @@ config TC_NET_ETHER
 config TC_NET_NETDB
 	bool "netdb() api"
 	default n
+  
+config TC_NET_DUP
+	bool "dup() api"
+  default n
 
 config TC_NET_API
 	bool "api() api"

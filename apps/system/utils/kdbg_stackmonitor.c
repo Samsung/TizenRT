@@ -150,10 +150,12 @@ static void stkmon_active_check(struct tcb_s *tcb, void *arg)
 
 static void *stackmonitor_daemon(void *arg)
 {
+#ifndef CONFIG_DISABLE_SIGNALS
 	printf(STKMON_PREFIX "Running\n");
 
 	/* Loop until we detect that there is a request to stop. */
 	while (stkmon_started) {
+#endif
 		printf("\n=============================================================================\n");
 		stkmon_title_print();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -168,11 +170,13 @@ static void *stackmonitor_daemon(void *arg)
 		printf("------|----------|----------|------------|------------|------------\n");
 #endif
 		sched_foreach(stkmon_active_check, NULL);
+#ifndef CONFIG_DISABLE_SIGNALS
 		sleep(CONFIG_STACKMONITOR_INTERVAL);
 	}
 
 	/* Stopped */
 	printf(STKMON_PREFIX "Stopped well\n");
+#endif
 	return OK;
 }
 
@@ -217,6 +221,7 @@ void stkmon_logging(struct tcb_s *tcb)
 
 int kdbg_stackmonitor(int argc, char **args)
 {
+#ifndef CONFIG_DISABLE_SIGNALS
 	pthread_t stkmon;
 	pthread_attr_t stkmon_attr;
 
@@ -267,6 +272,9 @@ int kdbg_stackmonitor(int argc, char **args)
 	} else {
 		printf(STKMON_PREFIX "already started\n");
 	}
+#else
+	stackmonitor_daemon(NULL);
+#endif
 
 	return OK;
 }

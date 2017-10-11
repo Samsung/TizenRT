@@ -124,7 +124,7 @@ extern "C" {
 /**
  * @ingroup SCHED_KERNEL
  * @brief suspend execution of the calling thread
- * @details [SYSTEM CALL API]
+ * @details SYSTEM CALL API
  *      suspend execution of the calling thread until
  *   status information for one of its terminated child processes is
  *   available, or until delivery of a signal whose action is either to
@@ -146,7 +146,7 @@ EXTERN pid_t wait(FAR int *stat_loc);
 /**
  * @ingroup SCHED_KERNEL
  * @brief suspend execution of the calling thread
- * @details [SYSTEM CALL API]
+ * @details SYSTEM CALL API
  *      The waitid() function suspends the calling thread until one child of
  *   the process containing the calling thread changes state. It records the
  *   current state of a child in the structure pointed to by 'info'. If a
@@ -209,7 +209,7 @@ EXTERN int waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options);
 /**
  * @ingroup SCHED_KERNEL
  * @brief suspend execution of the calling thread
- * @details [SYSTEM CALL API]
+ * @details SYSTEM CALL API
  *     obtain status information pertaining to one
  *   of the caller's child processes. The waitpid() function will suspend
  *   execution of the calling thread until status information for one of the

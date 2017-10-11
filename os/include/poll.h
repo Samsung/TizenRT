@@ -161,8 +161,8 @@ extern "C" {
 
 /**
  * @ingroup POLL_KERNEL
- * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @details [SYSTEM CALL API]
+ * @brief  POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @details SYSTEM CALL API
  * @since Tizen RT v1.0
  */
 int poll(FAR struct pollfd *fds, nfds_t nfds, int timeout);

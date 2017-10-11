@@ -306,7 +306,7 @@ void clock_synchronize(void);
 /**
  * @ingroup CLOCK_KERNEL
  * @brief Return the current value of the 32/64-bit system timer counter
- * @details [SYSTEM CALL API]
+ * @details SYSTEM CALL API
  *
  * @return The current value of the system timer counter is returned.
  * @since Tizen RT v1.0

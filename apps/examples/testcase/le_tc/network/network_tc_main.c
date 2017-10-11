@@ -118,6 +118,9 @@ int network_tc_main(int argc, char *argv[])
 #ifdef CONFIG_TC_NET_NETDB
 	net_netdb_main();
 #endif
+#ifdef CONFIG_TC_NET_DUP
+	net_dup_main();
+#endif
 #ifdef CONFIG_TC_NET_IPV4_NETMASK_VALID
 	net_ipv4_addr_netmask_valid_main();
 #endif
@@ -163,6 +166,7 @@ int network_tc_main(int argc, char *argv[])
 	close(sock_tcp);
 	close(sock_tcp1);
 	close(sock_udp);
+
 	printf("\n=== TINYARA Network TC COMPLETE ===\n");
 	printf("\t\tTotal pass : %d\n\t\tTotal fail : %d\n", total_pass, total_fail);
 

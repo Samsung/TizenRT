@@ -119,6 +119,9 @@ endif
 ifeq ($(CONFIG_TC_NET_NETDB),y)
 CSRCS +=tc_net_netdb.c
 endif
+ifeq ($(CONFIG_TC_NET_DUP),y)
+CSRCS +=tc_net_dup.c
+endif
 ifeq ($(CONFIG_TC_NET_IPV4_NETMASK_VALID),y)
 CSRCS +=tc_net_ipv4_netmask_valid.c
 endif
@@ -167,6 +170,7 @@ endif
 ifeq ($(CONFIG_TC_NET_IGMP),y)
 CSRCS +=tc_net_igmp.c
 endif
+
 # Include network build support
 
 DEPPATH += --dep-path le_tc/network
