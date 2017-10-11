@@ -54,11 +54,11 @@ void things_tcp_session_state_cb(const CAEndpoint_t *info, bool connected);
 
 int things_set_ap_connection(access_point_info_s *APinfo);
 
-int things_get_ap_list(access_point_info_s ***p_info, int *p_count);
+int things_get_ap_list(access_point_info_s *** p_info, int *p_count);
 
 typedef int (*things_set_ap_connection_func_type)(access_point_info_s *p_info, char *p_cmd_id);
 
-typedef int (*things_get_ap_search_list_func_type)(access_point_info_s ***p_info, int *p_count);
+typedef int (*things_get_ap_search_list_func_type)(access_point_info_s *** p_info, int *p_count);
 
 /*
  * If Easy-Setup is Reseted, then need to recover about Current Connected-AP info.

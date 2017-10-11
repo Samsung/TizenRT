@@ -231,7 +231,7 @@
 #endif
 
 #ifdef DB_WIP
-#undef DB_WIP						/* DB WORK IN PROGRESS */
+#undef DB_WIP					/* DB WORK IN PROGRESS */
 #endif
 /*----------------------------------------------------------------------------*/
 

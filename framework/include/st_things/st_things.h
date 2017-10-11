@@ -92,7 +92,7 @@ int st_things_deinitialize(void);
  * @return @c true in case of success, otherwise @c false
  * @since Tizen RT v1.1
  */
-typedef bool (*st_things_get_request_cb)(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
+typedef bool(*st_things_get_request_cb)(st_things_get_request_message_s *req_msg, st_things_representation_s *resp_rep);
 
 /**
  * @brief Callback for handling SET(POST) request.
@@ -101,7 +101,7 @@ typedef bool (*st_things_get_request_cb)(st_things_get_request_message_s *req_ms
  * @return @c true in case of success, otherwise @c false
  * @since Tizen RT v1.1
  */
-typedef bool (*st_things_set_request_cb)(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
+typedef bool(*st_things_set_request_cb)(st_things_set_request_message_s *req_msg, st_things_representation_s *resp_rep);
 
 /**
  * @brief Callback registration function for handling request messages.
@@ -144,14 +144,14 @@ int st_things_start(void);
  * @return @c true to confirm, otherwise @c to deny
  * @since Tizen RT v1.1
  */
-typedef bool(*st_things_reset_confirm_cb) (void);
+typedef bool(*st_things_reset_confirm_cb)(void);
 
 /**
  * @brief Callback for carrying the result of reset.
  * @param[in] is_success Result of Stack-reset. (true : success, false : failure)
  * @since Tizen RT v1.1
  */
-typedef void (*st_things_reset_result_cb) (bool is_success);
+typedef void (*st_things_reset_result_cb)(bool is_success);
 
 /**
  * @brief Callback registration function for Reset-Confirmation and Reset-Result functions.
@@ -191,13 +191,13 @@ int st_things_reset(void);
  * @param[in] pin_size Length of the PIN String.
  * @since Tizen RT v1.1
  */
-typedef void (*st_things_pin_generated_cb) (const char *pin_data, const size_t pin_size);
+typedef void (*st_things_pin_generated_cb)(const char *pin_data, const size_t pin_size);
 
 /**
  * @brief Callback for informing the application to close the PIN display.
  * @since Tizen RT v1.1
  */
-typedef void (*st_things_pin_display_close_cb) (void);
+typedef void (*st_things_pin_display_close_cb)(void);
 
 /**
  * @brief Callback registration function for getting randomly generated PIN for the PIN-Based Ownership Transfer Request.
@@ -221,7 +221,7 @@ int st_things_register_pin_handling_cb(st_things_pin_generated_cb generated_cb, 
  * @return @c true true in cse of confirmed, otherwise @c false
  * @since Tizen RT v1.1
  */
-typedef bool(*st_things_user_confirm_cb) (void);
+typedef bool(*st_things_user_confirm_cb)(void);
 
 /**
  * @brief Callback registration function for getting user confirmation for MUTUAL VERIFICATION BASED JUST WORK Ownership transfer.
@@ -243,7 +243,7 @@ int st_things_register_user_confirm_cb(st_things_user_confirm_cb confirm_cb);
  * @param[in]  things_status ST Things State
  * @since Tizen RT v1.1
  */
-typedef void (*st_things_status_change_cb) (st_things_status_e things_status);
+typedef void (*st_things_status_change_cb)(st_things_status_e things_status);
 
 /**
  * @brief Callback registration function for getting notified when ST Things state changes.
@@ -295,4 +295,4 @@ void st_things_destroy_representation_inst(st_things_representation_s *rep);
 }
 #endif							/* __cplusplus */
 #endif							/* __ST_THINGS_H__ */
-		 /** @} */// end of SmartThings group
+/** @} */// end of SmartThings group

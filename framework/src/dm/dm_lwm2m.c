@@ -76,7 +76,7 @@ int dm_lwm2m_start_client(struct dm_lwm2m_context_s *dm_context)
 	if (dm_context == NULL) {
 		return DM_ERROR_INVALID_PARAMETER;
 	}
-	/* Set server Ip Address*/
+	/* Set server Ip Address */
 	if (dm_context->server_info.ipAddress != NULL) {
 		client_set_serverAddr(dm_context->server_info.ipAddress, dm_context->server_info.isBootstrap);
 	} else {
@@ -84,7 +84,7 @@ int dm_lwm2m_start_client(struct dm_lwm2m_context_s *dm_context)
 	}
 
 	if (dm_context->server_info.port != NULL) {
-		/* Set server Port*/
+		/* Set server Port */
 		len = strlen(dm_context->server_info.port);
 		for (i = 0; i < len; i++) {
 			if ((dm_context->server_info.port[i] < '0') || (dm_context->server_info.port[i] > '9')) {
@@ -96,7 +96,7 @@ int dm_lwm2m_start_client(struct dm_lwm2m_context_s *dm_context)
 	} else {
 		return DM_ERROR_INVALID_PARAMETER;
 	}
-	/* Set client lifetime*/
+	/* Set client lifetime */
 	if (dm_context->server_info.isBootstrap != true) {
 		if (dm_context->client_info.lifetime <= 0) {
 			printf("Invalid client lifetime\n");
@@ -111,7 +111,7 @@ int dm_lwm2m_start_client(struct dm_lwm2m_context_s *dm_context)
 	wakaama_sparam.sched_priority = SCHED_PRIORITY_DEFAULT;
 	(void)pthread_attr_setschedparam(&wakaama_attr, &wakaama_sparam);
 	(void)pthread_attr_setstacksize(&wakaama_attr, 4096);
-	ret = pthread_create(&wakaama_thread, &wakaama_attr, (pthread_startroutine_t)client_main, NULL);
+	ret = pthread_create(&wakaama_thread, &wakaama_attr, (pthread_startroutine_t) client_main, NULL);
 	pthread_detach(wakaama_thread);
 	/* Function return value */
 	if (ret != 0) {
@@ -263,8 +263,9 @@ int dm_lwm2m_display_client_resource(char *buffer)
 int dm_lwm2m_change_client_resource(char *buffer)
 {
 	int ret = DM_ERROR_INVALID_PARAMETER;
-	if (buffer != NULL)
+	if (buffer != NULL) {
 		ret = client_change_resource(buffer, NULL);
+	}
 
 	return ret;
 }

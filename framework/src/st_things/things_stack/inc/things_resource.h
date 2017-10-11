@@ -63,7 +63,7 @@ typedef struct things_representation_s {
 	 */
 	bool(*things_set_arrayvalue)(struct things_representation_s *, char *key, int length, struct things_representation_s **reps);
 
-	bool(*things_get_arrayvalue)(struct things_representation_s *, char *key, int *length, struct things_representation_s ***reps);
+	bool(*things_get_arrayvalue)(struct things_representation_s *, char *key, int *length, struct things_representation_s *** reps);
 
 	/**
 	 * @brief API for setting/getting string array type of attribute.

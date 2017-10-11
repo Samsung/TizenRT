@@ -30,8 +30,9 @@
 
 #ifndef __TIZEN__
 static const uint16_t LINE_BUFFER_SIZE = 255;
-static const char *LEVEL[] __attribute__ ((unused)) = {
-"DEBUG", "INFO", "WARNING", "ERROR", "FATAL"};
+static const char *LEVEL[] __attribute__((unused)) = {
+	"DEBUG", "INFO", "WARNING", "ERROR", "FATAL"
+};
 
 static char *p_version = NULL;
 

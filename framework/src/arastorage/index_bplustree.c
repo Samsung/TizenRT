@@ -313,7 +313,7 @@ index_api_t index_bplustree = {
  ****************************************************************************/
 int compare(const void *p1, const void *p2)
 {
-	if (((pair_t *)p1)->key <= ((pair_t *)p2)->key) {
+	if (((pair_t *) p1)->key <= ((pair_t *) p2)->key) {
 		return -1;
 	}
 	return 1;
@@ -716,7 +716,7 @@ static db_result_t insert(index_t *index, attribute_value_t *key, tuple_id_t val
 	tree_t *tree;
 	long long_key;
 
-	tree = (tree_t *)index->opaque_data;
+	tree = (tree_t *) index->opaque_data;
 	long_key = db_value_to_long(key);
 
 #ifdef CONFIG_ARASTORAGE_ENABLE_FLUSHING
@@ -778,8 +778,8 @@ static uint16_t next_bucket(tree_t *tree, bucket_t *bucket)
 {
 	uint16_t next_bucket;
 	next_bucket = bucket->info[0];
-	if ((next_bucket == (uint16_t)-1) || (next_bucket == CONFIG_BUCKETS_LIMIT - 1)) {
-		return (uint16_t)-1;
+	if ((next_bucket == (uint16_t) - 1) || (next_bucket == CONFIG_BUCKETS_LIMIT - 1)) {
+		return (uint16_t) - 1;
 	}
 	return next_bucket;
 }
@@ -812,7 +812,7 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 	tree_t *tree;
 	key_min = *(int *)&iterator->min_value;
 	key_max = *(int *)&iterator->max_value;
-	tree = (tree_t *)iterator->index->opaque_data;
+	tree = (tree_t *) iterator->index->opaque_data;
 
 	/* To initialize the iterator_cache */
 	if (iterator->next_item_no == 0) {	/* removed the condition of iterator inequality */
@@ -886,7 +886,7 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 	pthread_mutex_lock(&(tree->bucket_lock));
 	tree->lock_buckets[cache.bucket_id] = 0;
 	cache.bucket_id = next_bucket(tree, cache.bucket);
-	if (cache.bucket_id == (uint16_t)-1) {
+	if (cache.bucket_id == (uint16_t) - 1) {
 		if (iterator->found_items == 0) {
 			iterator->next_item_no = 0;
 		} else {
@@ -926,8 +926,6 @@ static tuple_id_t get_next(index_iterator_t *iterator, uint8_t matched_condition
 	iterator->next_item_no = 1;
 	return get_next(iterator, matched_condition);
 }
-
-
 
 #ifdef DB_WIP
 /****************************************************************************
@@ -1441,7 +1439,6 @@ static pair_t *tree_find(tree_t *tree, int key)
 	free(path);
 	return NULL;
 }
-
 
 #if (DEBUG & DEBUG_VERBOSE) || (DEBUG & DEBUG_ENABLE)
 /****************************************************************************

@@ -66,7 +66,7 @@ typedef struct {
 	unsigned int max_rate;				  /**<  Maximum data rate in kilobits/s                        */
 	int rssi;							  /**<  Receive Signal Strength Indication in dBm              */
 	wifi_utils_ap_auth_type_e ap_auth_type;	   /**<  @ref wifi_utils_ap_auth_type                                */
-	wifi_utils_ap_crypto_type_e ap_crypto_type;  /**<  @ref wifi_utils_ap_crypto_type                              */
+	wifi_utils_ap_crypto_type_e ap_crypto_type;	 /**<  @ref wifi_utils_ap_crypto_type                              */
 } wifi_utils_ap_scan_info_s;
 
 /**

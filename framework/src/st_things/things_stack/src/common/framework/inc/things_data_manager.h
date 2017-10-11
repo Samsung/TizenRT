@@ -92,19 +92,17 @@ const char *dm_get_certificate_file_path(void);
 const char *dm_get_privatekey_file_path(void);
 const char *dm_get_filename(int filenum);
 const char *dm_get_things_device_type(int device_id);
-const char *dm_get_resource_uri(int device_num, int index);
 const char *dm_get_things_cloud_address(char *customized_ci_server);
 
 const int dm_get_file_id(int filenum);
 const int dm_get_num_of_files(void);
-const int dm_get_num_of_children(int device_num);
 const int dm_get_wifi_property_interface();
 const int dm_get_ownership_transfer_method();
 const wifi_freq_e dm_get_wifi_property_freq();
 
 struct things_resource_s *dm_get_resource_instance(const char *uri, const int id);
 
-int dm_get_device_information(int *cnt, st_device_s ***list);
+int dm_get_device_information(int *cnt, st_device_s *** list);
 
 long dm_get_num_of_dev_cnt(void);
 st_device_s *dm_get_info_of_dev(unsigned long number);

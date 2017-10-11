@@ -88,15 +88,15 @@ typedef struct {
 } es_cloud_prov_data_s;
 
 typedef struct things_cloud_info_s {
-	char *domain;			// mandatory ( You can choose one in both "domain" and "ip". )
+	char *domain;				// mandatory ( You can choose one in both "domain" and "ip". )
 	char *ip;
-	char *port;				// optional
-	char *auth_provider;	// mandatory
-	char *access_token;		// mandatory
+	char *port;					// optional
+	char *auth_provider;		// mandatory
+	char *access_token;			// mandatory
 	char *access_token_type;	// optional
-	char *refresh_token;	// mandatory
-	char *user_id;			// mandatory
-	char *client_id;		// mandatory
+	char *refresh_token;		// mandatory
+	char *user_id;				// mandatory
+	char *client_id;			// mandatory
 } things_cloud_info_s;
 
 #define MAX_DEVICEID_LEN 8

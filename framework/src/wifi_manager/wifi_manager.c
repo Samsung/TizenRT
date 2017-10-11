@@ -115,7 +115,7 @@ static wifi_utils_result_e start_dhcp_server(void)
 
 static wifi_utils_result_e stop_dhcp_server(void)
 {
-	struct in_addr in = { .s_addr = INADDR_NONE };
+	struct in_addr in = {.s_addr = INADDR_NONE };
 	netlib_set_ipv4addr(CTRL_IFNAME, &in);
 	netlib_set_ipv4netmask(CTRL_IFNAME, &in);
 	netlib_set_dripv4addr(CTRL_IFNAME, &in);
@@ -192,7 +192,6 @@ static void wifi_linkup_event_func(void)
 		 * from DHCP server instead
 		 */
 	}
-
 #ifdef CONFIG_ENABLE_IOTIVITY
 	__tizenrt_manual_linkset("gen");
 #endif
@@ -206,7 +205,6 @@ static void wifi_linkdown_event_func(void)
 // here, send a message to callback handler and rest of this function should be done by the callback handler.
 // wifi_manager_init() creates the callback handler and deinit() joins the callback handler.
 	wifi_manager_cb_s *wifi_cb = g_manager_callback;
-
 
 	if (g_manager_info.mode == STA_MODE) {
 		nvdbg("WIFI DISCONNECTED AP - STA MODE");
@@ -230,7 +228,6 @@ static void wifi_linkdown_event_func(void)
 			ndbg("Callback wifimanager ap_disconnected failed\n");
 		}
 	}
-
 #ifdef CONFIG_ENABLE_IOTIVITY
 	__tizenrt_manual_linkset("del");
 #endif
@@ -389,8 +386,8 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 	wifi_utils_info info;
 
 	if (wmcb == NULL) {
-			ndbg("Wi-Fi Manager init fail because of no callbacks");
-			return WIFI_MANAGER_FAIL;
+		ndbg("Wi-Fi Manager init fail because of no callbacks");
+		return WIFI_MANAGER_FAIL;
 	}
 
 	if (w_info_mutex == NULL) {
@@ -438,7 +435,7 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 	lq_attr.mq_flags = 0;
 	g_dw_nwevent_mqfd = mq_open("netlink_evtq", O_WRONLY | O_CREAT, 0666, &lq_attr);
 
-	if (g_dw_nwevent_mqfd == (mqd_t)ERROR) {
+	if (g_dw_nwevent_mqfd == (mqd_t) ERROR) {
 		ndbg("iotivity connect event message queue init fail");
 		goto error_with_mutex_destory_all;
 	}
@@ -518,8 +515,7 @@ wifi_manager_result_e wifi_manager_deinit()
 
 	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
 	/* wifi_manager mode is switched to wifi_deinitializing */
-	if ((g_manager_info.mode != WIFI_INITIALIZING) && (g_manager_info.mode != WIFI_MODE_CHANGING) && \
-			(g_manager_info.mode != WIFI_DEINITIALIZING)) {
+	if ((g_manager_info.mode != WIFI_INITIALIZING) && (g_manager_info.mode != WIFI_MODE_CHANGING) && (g_manager_info.mode != WIFI_DEINITIALIZING)) {
 		g_manager_info.mode = WIFI_DEINITIALIZING;
 	} else {
 		ndbg("Can't deinitilize wifi_manager from the current wifi mode %d\n", g_manager_info.mode);

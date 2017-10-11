@@ -271,7 +271,7 @@ db_result_t cursor_get_value_storage(attribute_value_t *value, db_cursor_t *curs
 
 	if (cursor->attr_map[col].valuetype == AGGREGATE_VALUE) {
 		/* If the type of value is aggregate value, we don't need to read storage.
-		 Because aggregate result is already calculated and stored in buffer. */
+		   Because aggregate result is already calculated and stored in buffer. */
 		buf += cursor->attr_map[col].offset;
 	} else {
 		/* Otherwise, Read tuple value from storage. */

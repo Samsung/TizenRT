@@ -902,7 +902,7 @@ aql_status_t aql_parse(aql_adt_t *adt, char *input_string)
 		case REMAIN:
 			result = parse_remain(adt, &lex);
 
-		/* FALLTHROUGH */
+			/* FALLTHROUGH */
 
 		case NONE:
 		case COMMENT:

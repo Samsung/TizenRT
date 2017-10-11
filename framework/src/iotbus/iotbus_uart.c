@@ -32,19 +32,21 @@
 
 // debugging
 #include <stdio.h>
-#define zdbg printf   // adbg, idbg are already defined
+#define zdbg printf				// adbg, idbg are already defined
 
 struct _iotbus_uart_s {
 	int fd;
 };
 
 int g_iotbus_uart_br[30] = {
-B50, B75, B110, B134, B150,
-B200, B300, B600, B1200, B1800,
-B2400, B4800, B9600, B19200, B38400,
-B57600, B115200, B128000, B230400, B256000,
-B460800, B500000, B576000, B921600, B1000000,
-B1152000, B1500000, B2000000, B2500000, B3000000, };
+	B50, B75, B110, B134, B150,
+	B200, B300, B600, B1200, B1800,
+	B2400, B4800, B9600, B19200, B38400,
+	B57600, B115200, B128000, B230400, B256000,
+	B460800, B500000, B576000, B921600, B1000000,
+	B1152000, B1500000, B2000000, B2500000, B3000000,
+};
+
 int g_iotbus_uart_size = 30;
 
 #ifdef __cplusplus
@@ -59,22 +61,22 @@ int _iotbus_valid_baudrate(unsigned int rate)
 {
 	int i = 0;
 	for (; i < g_iotbus_uart_size; i++)
-		if (rate == g_iotbus_uart_br[i])
+		if (rate == g_iotbus_uart_br[i]) {
 			return 1;
+		}
 
 	return 0;
 }
 /*
  * Public Functions
- */
-
-iotbus_uart_context_h iotbus_uart_init(const char *path)
+ */ iotbus_uart_context_h iotbus_uart_init(const char *path)
 {
 	struct _iotbus_uart_s *handle = NULL;
 	int fd;
 	fd = open(path, O_RDWR, 0666);
-	if (fd < 0)
+	if (fd < 0) {
 		return handle;
+	}
 
 	handle = (struct _iotbus_uart_s *)malloc(sizeof(struct _iotbus_uart_s));
 	if (handle == NULL) {
@@ -88,8 +90,9 @@ iotbus_uart_context_h iotbus_uart_init(const char *path)
 
 int iotbus_uart_stop(iotbus_uart_context_h hnd)
 {
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	close(hnd->fd);
 
@@ -103,13 +106,15 @@ int iotbus_uart_flush(iotbus_uart_context_h hnd)
 #else
 	// tcdrain is not working even CONFIG_SERIAL_TERMIOS is defined.
 
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	int fd = hnd->fd;
 	int ret = tcflush(fd, TCIOFLUSH);
-	if (ret < 0)
+	if (ret < 0) {
 		return IOTBUS_ERROR_NOT_SUPPORTED;
+	}
 
 	return IOTBUS_ERROR_NONE;
 #endif
@@ -120,25 +125,29 @@ int iotbus_uart_set_baudrate(iotbus_uart_context_h hnd, unsigned int baud)
 #ifndef CONFIG_SERIAL_TERMIOS
 	return IOTBUS_ERROR_NOT_SUPPORTED;
 #else
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	if (!_iotbus_valid_baudrate(baud))
+	if (!_iotbus_valid_baudrate(baud)) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	int fd = hnd->fd;
 	int ret;
 	struct termios tio;
 
 	ret = tcgetattr(fd, &tio);
-	if (ret)
+	if (ret) {
 		return IOTBUS_ERROR_UNKNOWN;
+	}
 
 	tio.c_speed = baud;
 
 	ret = tcsetattr(fd, TCSANOW, &tio);
-	if (ret)
+	if (ret) {
 		return IOTBUS_ERROR_UNKNOWN;
+	}
 
 	return IOTBUS_ERROR_NONE;
 #endif
@@ -150,8 +159,9 @@ int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_pa
 #ifndef CONFIG_SERIAL_TERMIOS
 	return IOTBUS_ERROR_NOT_SUPPORTED;
 #else
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	int fd = hnd->fd;
 	int ret;
@@ -159,12 +169,14 @@ int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_pa
 	int byteinfo[4] = { CS5, CS6, CS7, CS8 };
 
 	ret = tcgetattr(fd, &tio);
-	if (ret)
+	if (ret) {
 		return IOTBUS_ERROR_UNKNOWN;
+	}
 
 	// set byte size
-	if (bytesize < 5 || bytesize > 8)
+	if (bytesize < 5 || bytesize > 8) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	tio.c_cflag &= ~CSIZE;
 	tio.c_cflag |= byteinfo[bytesize - 5];
@@ -199,8 +211,9 @@ int iotbus_uart_set_mode(iotbus_uart_context_h hnd, int bytesize, iotbus_uart_pa
 	}
 
 	ret = tcsetattr(fd, TCSANOW, &tio);
-	if (ret)
+	if (ret) {
 		return IOTBUS_ERROR_UNKNOWN;
+	}
 
 	return IOTBUS_ERROR_NONE;
 #endif
@@ -213,34 +226,41 @@ int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtsc
 #ifndef CONFIG_SERIAL_TERMIOS
 	return IOTBUS_ERROR_NOT_SUPPORTED;
 #else
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	if (xonxoff != 1 && xonxoff != 0)
+	if (xonxoff != 1 && xonxoff != 0) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	if (rtscts != 1 && rtscts != 0)
+	if (rtscts != 1 && rtscts != 0) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	int fd = hnd->fd;
 	int ret;
 	struct termios tio;
 
 	ret = tcgetattr(fd, &tio);
-	if (ret)
+	if (ret) {
 		return IOTBUS_ERROR_UNKNOWN;
+	}
 
-	if (rtscts)
+	if (rtscts) {
 		tio.c_cflag |= CRTS_IFLOW | CCTS_OFLOW;
-	else
+	} else {
 		tio.c_cflag &= ~(CRTS_IFLOW | CCTS_OFLOW);
+	}
 
-	if (xonxoff)
+	if (xonxoff) {
 		tio.c_iflag |= (IXON | IXOFF | IXANY);
+	}
 
 	ret = tcsetattr(fd, TCSANOW, &tio);
-	if (ret)
+	if (ret) {
 		return IOTBUS_ERROR_UNKNOWN;
+	}
 
 	return IOTBUS_ERROR_NONE;
 #endif
@@ -248,38 +268,46 @@ int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtsc
 
 int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length)
 {
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	if (!buf)
+	if (!buf) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	if (length <= 0)
+	if (length <= 0) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	int fd = hnd->fd;
 	int ret = read(fd, buf, length);
-	if (ret < 0)
+	if (ret < 0) {
 		return IOTBUS_ERROR_UNKNOWN;
+	}
 
 	return ret;
 }
 
 int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int length)
 {
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	if (!buf)
+	if (!buf) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	if (length <= 0)
+	if (length <= 0) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	int fd = hnd->fd;
 	int ret = write(fd, buf, length);
-	if (ret < 0)
+	if (ret < 0) {
 		return IOTBUS_ERROR_UNKNOWN;
+	}
 //    return IOTBUS_ERROR_NONE;
 	return ret;
 }

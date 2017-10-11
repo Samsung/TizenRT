@@ -271,12 +271,6 @@ static const struct things_resource_info_s const gstResources[] = {
 	}
 };
 
-bool update_and_save_device_info(st_device_s **dev_list, int dev_cnt)
-{
-	assert(1);
-	return false;
-}
-
 /**
  *	@fn get_cloud_server_address
  *	@brief Function to get cloud server address
@@ -486,7 +480,7 @@ static int init_things_info_file(cJSON *cjson, char *origin_json_str)
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "%s is empty.", g_things_info_file_path);
 		is_valid = 0;
 	}
-	
+
 	if (is_valid == 0) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Try to reset the info file.");
 		if (set_json_string_into_file(g_things_info_file_path, origin_json_str) == 0) {
@@ -666,7 +660,7 @@ wifi_manager_softap_config_s *dm_get_softap_wifi_config(void)
 {
 	st_device_s *device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)(0));
 	int ssid_type = (is_artik == true ? 1 : 0);
-	unsigned char mac_id[16] = {0, };
+	unsigned char mac_id[16] = { 0, };
 
 	wifi_manager_info_s st_wifi_info;
 	wifi_manager_get_info(&st_wifi_info);
@@ -924,7 +918,7 @@ static int parse_things_info_json(const char *filename)
 								node->collection[iter].rt_cnt = type_cnt;
 								for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 									cJSON *type = cJSON_GetArrayItem(types, typeiter);
-									node->collection[iter].resource_types[typeiter] = things_malloc(sizeof(char *) *strlen(type->valuestring) + 1);
+									node->collection[iter].resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
 									memcpy(node->collection[iter].resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 									THINGS_LOG_D(THINGS_INFO, TAG, "[COLLECTION] collection[iter].resource_types[typeiter] : %s", (node->collection[iter].resource_types[typeiter]));
 								}
@@ -938,7 +932,7 @@ static int parse_things_info_json(const char *filename)
 								node->collection[iter].if_cnt = if_cnt;
 								for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 									cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-									node->collection[iter].interface_types[ifiter] = things_malloc(sizeof(char *) *strlen(interface->valuestring) + 1);
+									node->collection[iter].interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
 									memcpy(node->collection[iter].interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 								}
 							} else {
@@ -969,7 +963,7 @@ static int parse_things_info_json(const char *filename)
 										link_resource->rt_cnt = type_cnt;
 										for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 											cJSON *type = cJSON_GetArrayItem(types, typeiter);
-											link_resource->resource_types[typeiter] = things_malloc(sizeof(char *) *strlen(type->valuestring) + 1);
+											link_resource->resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
 											memcpy(link_resource->resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 										}
 									} else {
@@ -981,7 +975,7 @@ static int parse_things_info_json(const char *filename)
 										link_resource->if_cnt = if_cnt;
 										for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 											cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-											link_resource->interface_types[ifiter] = things_malloc(sizeof(char *) *strlen(interface->valuestring) + 1);
+											link_resource->interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
 											memcpy(link_resource->interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 										}
 									} else {
@@ -1036,7 +1030,7 @@ static int parse_things_info_json(const char *filename)
 								node->single[iter].rt_cnt = type_cnt;
 								for (int typeiter = 0; typeiter < type_cnt; typeiter++) {
 									cJSON *type = cJSON_GetArrayItem(types, typeiter);
-									node->single[iter].resource_types[typeiter] = things_malloc(sizeof(char *) *strlen(type->valuestring) + 1);
+									node->single[iter].resource_types[typeiter] = things_malloc(sizeof(char *) * strlen(type->valuestring) + 1);
 									memcpy(node->single[iter].resource_types[typeiter], type->valuestring, strlen(type->valuestring) + 1);
 								}
 							} else {
@@ -1048,7 +1042,7 @@ static int parse_things_info_json(const char *filename)
 								node->single[iter].if_cnt = if_cnt;
 								for (int ifiter = 0; ifiter < if_cnt; ifiter++) {
 									cJSON *interface = cJSON_GetArrayItem(interfaces, ifiter);
-									node->single[iter].interface_types[ifiter] = things_malloc(sizeof(char *) *strlen(interface->valuestring) + 1);
+									node->single[iter].interface_types[ifiter] = things_malloc(sizeof(char *) * strlen(interface->valuestring) + 1);
 									memcpy(node->single[iter].interface_types[ifiter], interface->valuestring, strlen(interface->valuestring) + 1);
 								}
 							} else {
@@ -1185,10 +1179,10 @@ static int parse_things_info_json(const char *filename)
 
 								THINGS_LOG_D(THINGS_INFO, TAG, "[configuration] manufature_id : %s / setup_id : %s / artik : %d", manufature_id->valuestring, setup_id->valuestring, is_artik);
 
-								g_manufacturer_name = things_malloc(sizeof(char *) *strlen(manufature_id->valuestring) + 1);
+								g_manufacturer_name = things_malloc(sizeof(char *) * strlen(manufature_id->valuestring) + 1);
 								strncpy(g_manufacturer_name, manufature_id->valuestring, strlen(manufature_id->valuestring) + 1);
 
-								g_setup_id = things_malloc(sizeof(char *) *strlen(setup_id->valuestring) + 1);
+								g_setup_id = things_malloc(sizeof(char *) * strlen(setup_id->valuestring) + 1);
 								strncpy(g_setup_id, setup_id->valuestring, strlen(setup_id->valuestring) + 1);
 							} else {
 								return 0;
@@ -1689,30 +1683,6 @@ st_device_s *dm_get_info_of_dev(unsigned long number)
 	return (st_device_s *) hashmap_get(g_device_hmap, number);
 }
 
-bool dm_register_user_define_device_id(const int seq_thing_info, const char *dev_id)
-{
-	if (is_support_user_def_dev_list == false) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "No More Support User define Device ID.");
-		return false;
-	}
-
-	if (seq_thing_info < 1 || seq_thing_info > MAX_SUBDEVICE_EA || dev_id == NULL || strlen(dev_id) == 0) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "It Support Max %d EA for device ID", MAX_SUBDEVICE_EA);
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid arguments.(seq_thing_info=%d, dev_id=0x%X)", seq_thing_info, dev_id);
-		return false;
-	}
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "seq_thing_info=%d, dev_id=%s", seq_thing_info, dev_id);
-
-	if (strlen(dev_id) >= MAX_DEVICE_ID_LENGTH) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Overflow device ID length.(It Support Max length: %d)", MAX_DEVICE_ID_LENGTH);
-		return false;
-	}
-	user_def_dev_list[seq_thing_info] = strdup(dev_id);
-
-	return true;
-}
-
 static void dm_delete_user_define_device_id(void)
 {
 	int i = 0;
@@ -1734,7 +1704,7 @@ bool dm_register_device_id(void)
 		return false;
 	}
 
-	if ((dev_list = (st_device_s **) things_malloc(sizeof(st_device_s *) *device_cnt)) == NULL) {
+	if ((dev_list = (st_device_s **) things_malloc(sizeof(st_device_s *) * device_cnt)) == NULL) {
 		THINGS_LOG_ERROR(THINGS_ERROR, TAG, "st_device_s mem allocation is failed.");
 		return false;
 	}
@@ -1944,14 +1914,14 @@ struct things_resource_s *dm_get_resource_instance(const char *uri, const int id
 	return ret;
 }
 
-int dm_get_device_information(int *cnt, st_device_s ***list)
+int dm_get_device_information(int *cnt, st_device_s *** list)
 {
 	int ret = 0;
 
 	int device_cnt = (int)hashmap_count(g_device_hmap);
 	if (device_cnt > 0) {
 		st_device_s **devices = NULL;
-		if ((devices = (st_device_s **) things_malloc(sizeof(st_device_s *) *device_cnt)) == NULL) {
+		if ((devices = (st_device_s **) things_malloc(sizeof(st_device_s *) * device_cnt)) == NULL) {
 			THINGS_LOG_ERROR(THINGS_ERROR, TAG, "st_device_s memory allocation is failed.");
 			return ret;
 		}
@@ -1965,44 +1935,6 @@ int dm_get_device_information(int *cnt, st_device_s ***list)
 		ret = 1;
 	}
 
-	return ret;
-}
-
-const int dm_get_num_of_children(int device_num)
-{
-	int ret = 0;
-
-	st_device_s *device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)device_num);
-	if (NULL != device) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "DEVICE CHILDREN RESOURCE(S) : %d", device->col_cnt);
-		ret = device->col_cnt;
-	}
-
-	return ret;
-}
-
-const char *dm_get_resource_uri(int device_num, int index)
-{
-	st_device_s *device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)device_num);
-	if (NULL != device) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "DEVICE CHILDREN RESOURCE(S) : %d", device->col_cnt);
-		if ((index) >= device->col_cnt) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Index : %d", index);
-		} else {
-
-			return device->collection[0].links[index]->uri;
-		}
-	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Device Num to Search : %d", device_num);
-	}
-
-	return NULL;
-}
-
-int dm_update_device_iInfo_list(st_device_s **dev_list, int devCnt)
-{
-	int ret = 1;
-	update_and_save_device_info(dev_list, devCnt);
 	return ret;
 }
 
@@ -2202,7 +2134,7 @@ const int dm_get_ownership_transfer_method()
 	return g_ownership_transfer_method;
 }
 
-int things_get_attributes_by_resource_type(const char *res_type, int *count, things_attribute_info_s ***attributes)
+int things_get_attributes_by_resource_type(const char *res_type, int *count, things_attribute_info_s *** attributes)
 {
 	int resource_type_cnt = (int)hashmap_count(g_resource_type_hmap);
 	THINGS_LOG_D(THINGS_DEBUG, TAG, "things_get_attributes_by_resource_type : %s, resource_type_cnt : %d", res_type, resource_type_cnt);
@@ -2250,7 +2182,7 @@ bool things_is_collection_resource(const char *res_uri)
 	return false;
 }
 
-int things_get_child_resources(const char *col_res_uri, int *count, things_resource_info_s ***child_resources)
+int things_get_child_resources(const char *col_res_uri, int *count, things_resource_info_s *** child_resources)
 {
 	st_device_s *device = NULL;
 

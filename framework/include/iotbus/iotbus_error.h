@@ -46,18 +46,18 @@
  */
 typedef enum {
 
-	IOTBUS_ERROR_NONE = 0, /* Successful */
+	IOTBUS_ERROR_NONE = 0,		/* Successful */
 
-	IOTBUS_ERROR_INVALID_PARAMETER = -EINVAL, /* Invalid parameter : -22 */
-	IOTBUS_ERROR_NO_DATA = -ENODATA, /* No data available : -61*/
-	IOTBUS_ERROR_TIMED_OUT = -ETIME, /* Time out : -62 */
-	IOTBUS_ERROR_NOT_IMPLEMENTED = -ENOSYS, /* Function not implemented : -38 */
+	IOTBUS_ERROR_INVALID_PARAMETER = -EINVAL,	/* Invalid parameter : -22 */
+	IOTBUS_ERROR_NO_DATA = -ENODATA,	/* No data available : -61 */
+	IOTBUS_ERROR_TIMED_OUT = -ETIME,	/* Time out : -62 */
+	IOTBUS_ERROR_NOT_IMPLEMENTED = -ENOSYS,	/* Function not implemented : -38 */
 
-	IOTBUS_ERROR_NOT_SUPPORTED = -1101, /* Not supported */
+	IOTBUS_ERROR_NOT_SUPPORTED = -1101,	/* Not supported */
 
-	IOTBUS_ERROR_UNKNOWN = -1999, /* Unknown error */
+	IOTBUS_ERROR_UNKNOWN = -1999,	/* Unknown error */
 } iotbus_error_e;
 
-#endif /* IOTBUS_ERROR_H_ */
+#endif							/* IOTBUS_ERROR_H_ */
 
-/** @} */ // end of IOTBUS group
+/** @} */// end of IOTBUS group

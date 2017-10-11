@@ -309,8 +309,8 @@ OCStackResult initWiFiResource(bool is_secured)
 	g_wifi_resource.num_mode = 5;
 	g_wifi_resource.auth_type = NONE_AUTH;
 	g_wifi_resource.enc_type = NONE_ENC;
-	memset(g_wifi_resource.ssid, 0, sizeof(char) *MAX_SSIDLEN);
-	memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_CREDLEN);
+	memset(g_wifi_resource.ssid, 0, sizeof(char) * MAX_SSIDLEN);
+	memset(g_wifi_resource.cred, 0, sizeof(char) * MAX_CREDLEN);
 	g_wifi_resource.discovery_channel = 1;
 
 	if (is_secured) {
@@ -332,15 +332,15 @@ static void initCloudResourceData(cloud_resource_s *p_cloud_resource)
 		return;
 	}
 
-	memset(p_cloud_resource->auth_code, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_resource->auth_provider, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_resource->ci_server, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_resource->server_id, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_resource->client_id, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_resource->accesstoken, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_resource->auth_code, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_resource->auth_provider, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_resource->ci_server, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_resource->server_id, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_resource->client_id, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_resource->accesstoken, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
 	p_cloud_resource->actoken_type = 0;
-	memset(p_cloud_resource->refreshtoken, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_resource->uid, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_resource->refreshtoken, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_resource->uid, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
 
 }
 
@@ -350,18 +350,18 @@ void init_es_cloud_prov_data(es_cloud_prov_data_s *p_cloud_data)
 		return;
 	}
 
-	memset(p_cloud_data->auth_code, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_data->auth_provider, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_data->ci_server, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_data->host_name, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_data->ip, 0, sizeof(char) *IP_PORT);
-	memset(p_cloud_data->port, 0, sizeof(char) *IP_PORT);
-	memset(p_cloud_data->server_id, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_data->client_id, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_data->accesstoken, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_data->auth_code, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_data->auth_provider, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_data->ci_server, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_data->host_name, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_data->ip, 0, sizeof(char) * IP_PORT);
+	memset(p_cloud_data->port, 0, sizeof(char) * IP_PORT);
+	memset(p_cloud_data->server_id, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_data->client_id, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_data->accesstoken, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
 	p_cloud_data->actoken_type = 0;
-	memset(p_cloud_data->refreshtoken, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(p_cloud_data->uid, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_data->refreshtoken, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(p_cloud_data->uid, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
 }
 
 void clone_es_cloud_prov_data(es_cloud_prov_data_s *des, es_cloud_prov_data_s *src)
@@ -370,18 +370,18 @@ void clone_es_cloud_prov_data(es_cloud_prov_data_s *des, es_cloud_prov_data_s *s
 		return;
 	}
 
-	memcpy(des->auth_code, src->auth_code, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memcpy(des->auth_provider, src->auth_provider, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memcpy(des->ci_server, src->ci_server, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memcpy(des->host_name, src->host_name, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memcpy(des->ip, src->ip, sizeof(char) *IP_PORT);
-	memcpy(des->port, src->port, sizeof(char) *IP_PORT);
-	memcpy(des->server_id, src->server_id, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memcpy(des->client_id, src->client_id, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memcpy(des->accesstoken, src->accesstoken, sizeof(char) *THINGS_STRING_MAX_VALUE);
+	memcpy(des->auth_code, src->auth_code, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memcpy(des->auth_provider, src->auth_provider, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memcpy(des->ci_server, src->ci_server, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memcpy(des->host_name, src->host_name, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memcpy(des->ip, src->ip, sizeof(char) * IP_PORT);
+	memcpy(des->port, src->port, sizeof(char) * IP_PORT);
+	memcpy(des->server_id, src->server_id, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memcpy(des->client_id, src->client_id, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memcpy(des->accesstoken, src->accesstoken, sizeof(char) * THINGS_STRING_MAX_VALUE);
 	des->actoken_type = src->actoken_type;
-	memcpy(des->refreshtoken, src->refreshtoken, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memcpy(des->uid, src->uid, sizeof(char) *THINGS_STRING_MAX_VALUE);
+	memcpy(des->refreshtoken, src->refreshtoken, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memcpy(des->uid, src->uid, sizeof(char) * THINGS_STRING_MAX_VALUE);
 }
 
 static void initESWiFiProvData(es_wifi_prov_data_s *p_wifi_data)
@@ -390,8 +390,8 @@ static void initESWiFiProvData(es_wifi_prov_data_s *p_wifi_data)
 		return;
 	}
 
-	memset(p_wifi_data->ssid, 0, sizeof(char) *MAX_SSIDLEN);
-	memset(p_wifi_data->pwd, 0, sizeof(char) *MAX_CREDLEN);
+	memset(p_wifi_data->ssid, 0, sizeof(char) * MAX_SSIDLEN);
+	memset(p_wifi_data->pwd, 0, sizeof(char) * MAX_CREDLEN);
 	p_wifi_data->authtype = -1;
 	p_wifi_data->enctype = -1;
 	p_wifi_data->discovery_channel = -1;
@@ -400,20 +400,20 @@ static void initESWiFiProvData(es_wifi_prov_data_s *p_wifi_data)
 void set_ssid_in_wifi_resource(const char *ssid)
 {
 	if (ssid == NULL) {
-		memset(g_wifi_resource.ssid, 0, sizeof(char) *MAX_SSIDLEN);
-		memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_CREDLEN);
+		memset(g_wifi_resource.ssid, 0, sizeof(char) * MAX_SSIDLEN);
+		memset(g_wifi_resource.cred, 0, sizeof(char) * MAX_CREDLEN);
 		g_wifi_resource.auth_type = NONE_AUTH;
 		g_wifi_resource.enc_type = NONE_ENC;
 		g_wifi_resource.discovery_channel = 0;
 	} else if (strncmp(ssid, g_wifi_data.ssid, strlen(ssid)) == 0) {
-		things_strncpy(g_wifi_resource.ssid, g_wifi_data.ssid, sizeof(char) *MAX_SSIDLEN);
-		things_strncpy(g_wifi_resource.cred, g_wifi_data.pwd, sizeof(char) *MAX_CREDLEN);
+		things_strncpy(g_wifi_resource.ssid, g_wifi_data.ssid, sizeof(char) * MAX_SSIDLEN);
+		things_strncpy(g_wifi_resource.cred, g_wifi_data.pwd, sizeof(char) * MAX_CREDLEN);
 		g_wifi_resource.auth_type = g_wifi_data.authtype;
 		g_wifi_resource.enc_type = g_wifi_data.enctype;
 		g_wifi_resource.discovery_channel = g_wifi_data.discovery_channel;
 	} else {
-		things_strncpy(g_wifi_resource.ssid, ssid, sizeof(char) *MAX_SSIDLEN);
-		memset(g_wifi_resource.cred, 0, sizeof(char) *MAX_CREDLEN);
+		things_strncpy(g_wifi_resource.ssid, ssid, sizeof(char) * MAX_SSIDLEN);
+		memset(g_wifi_resource.cred, 0, sizeof(char) * MAX_CREDLEN);
 		g_wifi_resource.auth_type = NONE_AUTH;
 		g_wifi_resource.enc_type = NONE_ENC;
 		g_wifi_resource.discovery_channel = 1;
@@ -445,12 +445,12 @@ OCStackResult initDevConfResource(bool is_secured)
 {
 	OCStackResult res = OC_STACK_ERROR;
 
-	memset(g_dev_conf_resource.devName, 0, sizeof(char) *MAX_DEVICELEN);
-	memset(g_dev_conf_resource.country, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(g_dev_conf_resource.language, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(g_dev_conf_resource.device_type, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(g_dev_conf_resource.device_sub_type, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
-	memset(g_dev_conf_resource.datetime, 0, sizeof(char) *THINGS_STRING_MAX_VALUE);
+	memset(g_dev_conf_resource.devName, 0, sizeof(char) * MAX_DEVICELEN);
+	memset(g_dev_conf_resource.country, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(g_dev_conf_resource.language, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(g_dev_conf_resource.device_type, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(g_dev_conf_resource.device_sub_type, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
+	memset(g_dev_conf_resource.datetime, 0, sizeof(char) * THINGS_STRING_MAX_VALUE);
 
 	if (is_secured) {
 		res = OCCreateResource(&g_dev_conf_resource.handle, OC_RSRVD_ES_RES_TYPE_DEVCONF, OC_RSRVD_INTERFACE_DEFAULT, OC_RSRVD_ES_URI_DEVCONF, things_entity_handler_cb, NULL, OC_DISCOVERABLE | OC_OBSERVABLE | OC_SECURE);

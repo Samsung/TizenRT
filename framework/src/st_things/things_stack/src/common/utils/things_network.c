@@ -239,7 +239,7 @@ int things_set_ap_connection(access_point_info_s *APinfo)
 	return gSetAPConnection(APinfo, "0");
 }
 
-int things_get_ap_list(access_point_info_s ***p_info, int *p_count)
+int things_get_ap_list(access_point_info_s *** p_info, int *p_count)
 {
 	if (things_is_net_initialize() == 0 || p_info == NULL || p_count == NULL) {
 		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Can't Call GetAPSearchList(p_info=0x%X, p_count=0x%X).", p_info, p_count);

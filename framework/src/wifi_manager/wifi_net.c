@@ -87,8 +87,8 @@ static void convert_ntp_time(FAR uint8_t *timestamp, unsigned int *sec, unsigned
 #ifdef CONFIG_HAVE_LONG_LONG
 	/* if we have 64-bit long long values, then the computation is easy */
 
-	tmp = ((uint64_t)frac * 1953125) >> 23;
-	nsec = (uint32_t)tmp;
+	tmp = ((uint64_t) frac * 1953125) >> 23;
+	nsec = (uint32_t) tmp;
 
 #else
 	/* If we don't have 64 bit integer types, then the calculation is a little
@@ -169,7 +169,7 @@ static void convert_ntp_time(FAR uint8_t *timestamp, unsigned int *sec, unsigned
 #endif
 	*sec = seconds;
 	*usec = nsec / 1000;
-	ndbg(" %lu seconds, %lu usec\n", (uint32_t)seconds, (uint32_t)nsec / 1000);
+	ndbg(" %lu seconds, %lu usec\n", (uint32_t) seconds, (uint32_t) nsec / 1000);
 
 }
 

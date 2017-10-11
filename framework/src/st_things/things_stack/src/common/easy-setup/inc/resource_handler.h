@@ -39,7 +39,7 @@ typedef void (*es_dev_conf_cb)(es_result_e, es_dev_conf_prov_data_s *);
 /* Structure to represent a Light resource */
 typedef struct prov_resource_s {
 	OCResourceHandle handle;
-	things_prov_status_e status;		// provisiong status
+	things_prov_status_e status;	// provisiong status
 	es_error_code_e last_err_code;
 	ci_error_code_e vd_err_code;
 } prov_resource_s;

@@ -172,7 +172,7 @@ static int verify_request(OCEntityHandlerRequest *eh_request, const char *uri, i
 						if (num > 0) {
 							for (int i = 0; i < num; i++) {
 
-								result |= dm_validate_attribute_in_request(resource->things_get_res_type(child, i), (const void *) /*eh_request->payload */resource->rep->payload);
+								result |= dm_validate_attribute_in_request(resource->things_get_res_type(child, i), (const void *) /*eh_request->payload */ resource->rep->payload);
 								if (!result) {
 									goto EXIT_VALIDATION;
 								}

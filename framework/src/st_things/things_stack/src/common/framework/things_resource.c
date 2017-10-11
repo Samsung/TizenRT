@@ -70,7 +70,7 @@ void set_uri(struct things_resource_s *res, const char *key)
 		things_free(res->uri);
 		res->uri = NULL;
 	}
-	res->uri = (char *)things_malloc(sizeof(char) *strlen(key) + 1);
+	res->uri = (char *)things_malloc(sizeof(char) * strlen(key) + 1);
 	memset(res->uri, 0, strlen(key) + 1);
 	things_strncpy(res->uri, key, strlen(key) + 1);
 
@@ -172,7 +172,7 @@ bool things_set_arrayvalue(struct things_representation_s *mother, char *key, in
 	return things_set_value;
 }
 
-bool things_get_arrayvalue(struct things_representation_s *mother, char *key, int *length, struct things_representation_s ***children)
+bool things_get_arrayvalue(struct things_representation_s *mother, char *key, int *length, struct things_representation_s *** children)
 {
 	//THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "NOt Supported This Function Yet");
 	bool find_value = false;
@@ -190,7 +190,7 @@ bool things_get_arrayvalue(struct things_representation_s *mother, char *key, in
 		find_value = OCRepPayloadGetPropObjectArray((OCRepPayload *)(mother->payload), key, &payload_values, dimensions);
 		THINGS_LOG_V(THINGS_DEBUG, TAG, "Find Value : %d", find_value);
 		if (find_value) {
-			*children = (things_representation_s **) things_malloc(sizeof(things_representation_s *) *dimension_size);
+			*children = (things_representation_s **) things_malloc(sizeof(things_representation_s *) * dimension_size);
 
 			for (int iter = 0; iter < dimension_size; iter++) {
 				(*children)[iter] = things_create_representation_inst(payload_values[iter]);
@@ -334,7 +334,7 @@ void set_representation(struct things_resource_s *res, struct things_representat
 void get_uri(struct things_resource_s *res, char **value)
 {
 	if (res->uri != NULL) {
-		*value = (char *)things_malloc(sizeof(char) *strlen(res->uri) + 1);
+		*value = (char *)things_malloc(sizeof(char) * strlen(res->uri) + 1);
 		memset(*value, 0, strlen(res->uri) + 1);
 		things_strncpy(*value, res->uri, strlen(res->uri) + 1);
 	}

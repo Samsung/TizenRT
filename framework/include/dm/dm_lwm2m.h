@@ -144,4 +144,4 @@ int dm_lwm2m_display_client_resource(char *buffer);
 
 #endif
 
-/** @} */ // end of LWM2M group
+/** @} */// end of LWM2M group

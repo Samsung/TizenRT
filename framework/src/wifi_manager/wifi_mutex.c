@@ -21,20 +21,20 @@
 
 wifi_utils_result_e wifi_mutex_create(wifi_mutex *mutex)
 {
-	return wifi_semaphore_create((wifi_semaphore *)mutex, 1);
+	return wifi_semaphore_create((wifi_semaphore *) mutex, 1);
 }
 
 wifi_utils_result_e wifi_mutex_acquire(wifi_mutex *mutex, int time_out)
 {
-	return wifi_semaphore_acquire((wifi_semaphore *)mutex, time_out);
+	return wifi_semaphore_acquire((wifi_semaphore *) mutex, time_out);
 }
 
 wifi_utils_result_e wifi_mutex_release(wifi_mutex *mutex)
 {
-	return wifi_semaphore_release((wifi_semaphore *)mutex);
+	return wifi_semaphore_release((wifi_semaphore *) mutex);
 }
 
 wifi_utils_result_e wifi_mutex_destroy(wifi_mutex *mutex)
 {
-	return wifi_semaphore_destroy((wifi_semaphore *)mutex);
+	return wifi_semaphore_destroy((wifi_semaphore *) mutex);
 }

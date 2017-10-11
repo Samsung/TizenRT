@@ -56,7 +56,7 @@ typedef enum {
 struct iotbus_spi_config_s {
 	char bits_per_word;
 	unsigned int chip_select;
-	unsigned int frequency; // frequency in Hz
+	unsigned int frequency;		// frequency in Hz
 	iotbus_spi_mode_e mode;
 };
 
@@ -131,7 +131,5 @@ int iotbus_spi_close(iotbus_spi_context_h hnd);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* IOTBUS_SPI_H_ */
-
-/** @} */ // end of SPI group
+#endif							/* IOTBUS_SPI_H_ */
+/** @} */// end of SPI group

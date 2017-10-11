@@ -170,7 +170,6 @@ db_result_t db_cursor_free(db_cursor_t *cursor)
 	return cursor_deinit(cursor);
 }
 
-
 /* Print tuple value */
 db_result_t db_print_tuple(db_cursor_t *cursor)
 {

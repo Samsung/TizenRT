@@ -54,7 +54,6 @@
 
 #include "random.h"
 
-
 /****************************************************************************
 * Public Functions
 ****************************************************************************/
@@ -62,6 +61,7 @@ void random_init(unsigned short seed)
 {
 	srand(seed);
 }
+
 unsigned short random_rand(void)
 {
 	/* In gcc int rand() uses RAND_MAX and long random() uses RANDOM_MAX=0x7FFFFFFF */

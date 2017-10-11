@@ -19,19 +19,18 @@
 #ifndef WIFI_COMMON_H
 #define WIFI_COMMON_H
 
-
 /**
  * @brief time out option (used by message queue, uart, semaphore, mutex)
  *
  */
 typedef enum {
-	WIFI_UTILS_NO_WAIT = 0,   /**<  no wait contant          */
+	WIFI_UTILS_NO_WAIT = 0,	  /**<  no wait contant          */
 	WIFI_UTILS_FOREVER = -1,  /**<  wait until job finished  */
 } wifi_utils_timeout_option;
 
 /**
  * @brief <b> wifi result type FAIL, SUCCESS, INVALID ARGS</b>
- */ 
+ */
 typedef enum {
 	WIFI_UTILS_FAIL = -1,
 	WIFI_UTILS_SUCCESS,
@@ -40,5 +39,4 @@ typedef enum {
 	WIFI_UTILS_BUSY,
 } wifi_utils_result_e;
 
-
-#endif //WIFI_COMMON_H
+#endif							//WIFI_COMMON_H

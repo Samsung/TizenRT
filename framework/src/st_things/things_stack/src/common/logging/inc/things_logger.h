@@ -45,7 +45,8 @@ extern "C" {
 
 typedef enum {
 	THINGS_DEBUG = 0, THINGS_INFO, THINGS_WARNING, THINGS_ERROR, THINGS_FATAL
-} things_log_level_e;
+}
+things_log_level_e;
 
 /**
  * Initialize the logger.

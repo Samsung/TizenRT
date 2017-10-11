@@ -33,7 +33,7 @@
 
 // debugging
 #include <stdio.h>
-#define zdbg printf   // adbg, idbg are already defined
+#define zdbg printf				// adbg, idbg are already defined
 
 struct _iotbus_i2c_s {
 	int fd;
@@ -48,8 +48,9 @@ iotbus_i2c_context_h iotbus_i2c_init(int bus)
 	char dev_path[16];
 	snprintf(dev_path, 16, "/dev/i2c-%d", bus);
 	int fd = open(dev_path, O_RDWR);
-	if (fd < 0)
+	if (fd < 0) {
 		return NULL;
+	}
 
 	struct _iotbus_i2c_s *handle = NULL;
 	handle = (struct _iotbus_i2c_s *)malloc(sizeof(struct _iotbus_i2c_s));
@@ -64,8 +65,9 @@ iotbus_i2c_context_h iotbus_i2c_init(int bus)
 
 int iotbus_i2c_stop(iotbus_i2c_context_h hnd)
 {
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	close(hnd->fd);
 	free(hnd);
@@ -76,8 +78,9 @@ int iotbus_i2c_stop(iotbus_i2c_context_h hnd)
 
 int iotbus_i2c_set_frequency(iotbus_i2c_context_h hnd, iotbus_i2c_mode_e mode)
 {
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	uint32_t frequency = 0;
 
@@ -94,35 +97,41 @@ int iotbus_i2c_set_frequency(iotbus_i2c_context_h hnd, iotbus_i2c_mode_e mode)
 	default:
 		return IOTBUS_ERROR_NOT_SUPPORTED;
 	}
-	int ret = ioctl(hnd->fd, I2C_FREQUENCY, (unsigned long)((uintptr_t)&frequency));
-	if (ret < 0)
+	int ret = ioctl(hnd->fd, I2C_FREQUENCY, (unsigned long)((uintptr_t) & frequency));
+	if (ret < 0) {
 		return IOTBUS_ERROR_NOT_SUPPORTED;
+	}
 	return IOTBUS_ERROR_NONE;
 }
 
 int iotbus_i2c_set_address(iotbus_i2c_context_h hnd, uint8_t address)
 {
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	/* check if address length is 7-bit */
-	if ((address < 0x01) || (address > 0x7F))
+	if ((address < 0x01) || (address > 0x7F)) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	int addr = address;
-	int ret = ioctl(hnd->fd, I2C_SLAVE, (unsigned long)((uintptr_t)&addr));
-	if (ret < 0)
+	int ret = ioctl(hnd->fd, I2C_SLAVE, (unsigned long)((uintptr_t) & addr));
+	if (ret < 0) {
 		return IOTBUS_ERROR_NOT_SUPPORTED;
+	}
 	return IOTBUS_ERROR_NONE;
 }
 
 int iotbus_i2c_read(iotbus_i2c_context_h hnd, uint8_t *data, size_t length)
 {
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	if (!data)
+	if (!data) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	int ret = read(hnd->fd, data, length);
 	return ret;
@@ -130,11 +139,13 @@ int iotbus_i2c_read(iotbus_i2c_context_h hnd, uint8_t *data, size_t length)
 
 int iotbus_i2c_write(iotbus_i2c_context_h hnd, const uint8_t *data, size_t length)
 {
-	if (!hnd)
+	if (!hnd) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
-	if (!data)
+	if (!data) {
 		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
 
 	int ret = write(hnd->fd, data, length);
 	return ret;

@@ -25,4 +25,3 @@ int readonce(FAR const char *filename, FAR char *buffer, uint8_t buflen);
 int readfile(FAR const char *filename, FAR char *buffer, uint8_t buflen);
 void mount_procfs(void);
 #endif
-
