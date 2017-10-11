@@ -183,6 +183,8 @@ static db_output_function_t output = printf;
 
 /**
 * @brief initialize database's resources, it must be called for using arastorage
+*
+* @details @b #include <arastorage/arastorage.h>
 * @param none
 * @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
@@ -191,6 +193,8 @@ db_result_t db_init(void);
 
 /**
 * @brief de-initialize database's resources, it must be called when terminating arastorage
+*
+* @details @b #include <arastorage/arastorage.h>
 * @param none
 * @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
@@ -200,6 +204,7 @@ db_result_t db_deinit(void);
 /**
 * @brief create or remove relations, attributes and indexes in arastorage
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] format query sentence
 * @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
@@ -210,6 +215,7 @@ db_result_t db_exec(char *format);
 /**
 * @brief process query of arastorage
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] format query sentence
 * @return On success, a pointer to db_cursor_t is returned. On failure, a NULL is returned.
 * @since Tizen RT v1.0
@@ -219,6 +225,7 @@ db_cursor_t *db_query(char *format);
 /**
 * @brief free allocated cursor data, it should be called before application terminated
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
@@ -228,6 +235,7 @@ db_result_t db_cursor_free(db_cursor_t *cursor);
 /**
 * @brief get string corresponding to each result value of API
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] code result value
 * @return string of each result value
 * @since Tizen RT v1.0
@@ -237,6 +245,7 @@ const char *db_get_result_message(db_result_t code);
 /**
 * @brief print the name of relation and attributes
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
@@ -246,6 +255,7 @@ db_result_t db_print_header(db_cursor_t *cursor);
 /**
 * @brief print the tuple data
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @return On success, DB_OK is returned. On failure, a negative value is returned.
 * @since Tizen RT v1.0
@@ -255,6 +265,7 @@ db_result_t db_print_tuple(db_cursor_t *cursor);
 /**
 * @brief print current row's data with specific attribute index
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @param[in] attr_index index of attribute(column) in cursor
 * @return On success, DB_OK is returned. On failure, a negative value is returned.
@@ -265,6 +276,7 @@ db_result_t db_print_value(db_cursor_t *cursor, int attr_index);
 /**
 * @brief move current position of cursor to first row
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @return On success, DB_OK is returned. On failure, DB_CURSOR_ERROR is returned.
 * @since Tizen RT v1.0
@@ -274,6 +286,7 @@ db_result_t cursor_move_first(db_cursor_t *cursor);
 /**
 * @brief move current position of cursor to last row
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @return On success, DB_OK is returned. On failure, DB_CURSOR_ERROR is returned.
 * @since Tizen RT v1.0
@@ -283,6 +296,7 @@ db_result_t cursor_move_last(db_cursor_t *cursor);
 /**
 * @brief move current position of cursor to next row
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @return On success, DB_OK is returned. On failure, DB_CURSOR_ERROR is returned.
 * @since Tizen RT v1.0
@@ -292,6 +306,7 @@ db_result_t cursor_move_next(db_cursor_t *cursor);
 /**
 * @brief move current position of cursor to previous row
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @return On success, DB_OK is returned. On failure, DB_CURSOR_ERROR is returned.
 * @since Tizen RT v1.0
@@ -301,6 +316,7 @@ db_result_t cursor_move_prev(db_cursor_t *cursor);
 /**
 * @brief move current position of cursor to specific row
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @param[in] row_id index of row
 * @return On success, DB_OK is returned. On failure, DB_CURSOR_ERROR is returned.
@@ -311,6 +327,7 @@ db_result_t cursor_move_to(db_cursor_t *cursor, tuple_id_t row_id);
 /**
 * @brief check whether current position of cursor is first row
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @return On success, true is returned. On failure, false is returned.
 * @since Tizen RT v1.0
@@ -320,6 +337,7 @@ bool cursor_is_first_row(db_cursor_t *cursor);
 /**
 * @brief check whether current position of cursor is last row
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @return On success, true is returned. On failure, false is returned.
 * @since Tizen RT v1.0
@@ -329,6 +347,7 @@ bool cursor_is_last_row(db_cursor_t *cursor);
 /**
 * @brief get current position of cursor
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @return On success, the index of current row is returned. On failure, INVALID_CURSOR_VALUE is returned.
 * @since Tizen RT v1.0
@@ -338,6 +357,7 @@ cursor_row_t cursor_get_row(db_cursor_t *cursor);
 /**
 * @brief get the number of rows of cursor
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @return On success, the number of rows is returned. On failure, INVALID_CURSOR_VALUE is returned.
 * @since Tizen RT v1.0
@@ -347,6 +367,7 @@ cursor_row_t cursor_get_count(db_cursor_t *cursor);
 /**
 * @brief get type of attribute with specific index in cursor
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @param[in] attr_index index of attribute(column) in cursor
 * @return On success, positive value is returned. On failure, INVALID_CURSOR_VALUE is returned.
@@ -357,6 +378,7 @@ domain_t cursor_get_attr_type(db_cursor_t *cursor, int attr_index);
 /**
 * @brief get name of attribute with specific index in cursor
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @param[in] attr_index index of attribute(column) in cursor
 * @return On success, attribute name is returned. On failure, a NULL is returned.
@@ -367,6 +389,7 @@ char *cursor_get_attr_name(db_cursor_t *cursor, int attr_index);
 /**
 * @brief get index of attribute corresponding name in cursor
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @param[in] attr_name attribute name
 * @return On success, non-negative value is returned. On failure, INVALID_CURSOR_VALUE is returned.
@@ -377,6 +400,7 @@ attribute_id_t cursor_get_attr_index(db_cursor_t *cursor, const char *attr_name)
 /**
 * @brief get value of attribute of which the type is DOMAIN_INT with specific index in current row.
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @param[in] attr_index index of attribute(column) in cursor
 * @return On success, integer type value of which the range is [DB_INT_MIN+1, DB_INT_MAX] is returned.
@@ -388,6 +412,7 @@ int cursor_get_int_value(db_cursor_t *cursor, int attr_index);
 /**
 * @brief get value of attribute of which the type is DOMAIN_LONG with specific index in current row.
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @param[in] attr_index index of attribute(column) in cursor
 * @return On success, long type value of which the range is [DB_LONG_MIN+1, DB_LONG_MAX] is returned.
@@ -400,6 +425,7 @@ long cursor_get_long_value(db_cursor_t *cursor, int attr_index);
 /**
 * @brief get value of attribute of which the type is DOMAIN_DOUBLE with specific index in current row.
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @param[in] attr_index index of attribute(column) in cursor
 * @return On success, double value of which the range is [DB_DOUBLE_MIN+1, DB_DOUBLE_MAX] is returned.
@@ -412,6 +438,7 @@ double cursor_get_double_value(db_cursor_t *cursor, int attr_index);
 /**
 * @brief get value of attribute of which the type is DOMAIN_STRING with specific index in current row.
 *
+* @details @b #include <arastorage/arastorage.h>
 * @param[in] cursor a pointer to cursor
 * @param[in] attr_index index of attribute(column) in cursor
 * @return On success, string value is returned. On failure, a NULL is returned.
