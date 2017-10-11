@@ -5,6 +5,7 @@
 
 config LOGM
 	bool "Logger Module"
+	depends on !DISABLE_SIGNALS
 	default n
 	---help---
 		Logger.
