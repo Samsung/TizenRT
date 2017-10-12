@@ -70,19 +70,20 @@ void gpio_event_callback(void *user_data)
 */
 void itc_gpio_open_close_p(void)
 {
-	int gpiopin = 12;
+	int gpiopin = 41;
 	int ret;
 	g_gpio = iotbus_gpio_open(gpiopin);
 	TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
 
 	gpiopin = 14;
 	g_gpio2 = iotbus_gpio_open(gpiopin);
-	TC_ASSERT_NEQ_CLEANUP("iotbus_gpio_open", g_gpio2 , NULL , iotbus_gpio_close(g_gpio));
+	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_open", g_gpio2 , NULL , iotbus_gpio_close(g_gpio));
 
 	ret = iotbus_gpio_close(g_gpio);
 	TC_ASSERT_EQ_CLEANUP("iotbus_gpio_close", ret, 0, iotbus_gpio_close(g_gpio2));
+
 	ret = iotbus_gpio_close(g_gpio2);
-	TC_ASSERT_EQ("iotbus_gpio_close", ret, 0);
+	TC_ASSERT_LT("iotbus_gpio_close", ret, 0);
 
 	TC_SUCCESS_RESULT();
 }
@@ -102,7 +103,7 @@ void itc_gpio_set_get_direction_p(void)
 	iotbus_gpio_direction_e setDirection[] = { IOTBUS_GPIO_DIRECTION_NONE, IOTBUS_GPIO_DIRECTION_OUT, IOTBUS_GPIO_DIRECTION_IN };
 	ncount = sizeof(setDirection) / sizeof(setDirection[0]);
 	bool check = true;
-	gpiopin = 12;
+	gpiopin = 41;
 	g_gpio = iotbus_gpio_open(gpiopin);
 	TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
 
@@ -148,7 +149,7 @@ void itc_gpio_set_get_edge_mode_p(void)
 	iotbus_gpio_edge_e setEdge[] = { IOTBUS_GPIO_EDGE_NONE, IOTBUS_GPIO_EDGE_BOTH, IOTBUS_GPIO_EDGE_RISING, IOTBUS_GPIO_EDGE_FALLING };
 	ncount = sizeof(setEdge) / sizeof(setEdge[0]);
 	bool check = true;
-	gpiopin = 12;
+	gpiopin = 41;
 	g_gpio = iotbus_gpio_open(gpiopin);
 	TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
 
@@ -186,7 +187,7 @@ void itc_gpio_set_get_edge_mode_p(void)
 */
 void itc_gpio_set_get_drive_mode_p(void)
 {
-	int gpiopin = 12;
+	int gpiopin = 41;
 	int ret, index, ncount;
 	iotbus_gpio_drive_e getDrive;
 	iotbus_gpio_drive_e setDrive[] = { IOTBUS_GPIO_DRIVE_NONE, IOTBUS_GPIO_DRIVE_PULLUP, IOTBUS_GPIO_DRIVE_PULLDOWN, IOTBUS_GPIO_DRIVE_FLOAT, IOTBUS_GPIO_DRIVE_PUSHPULL };
@@ -230,7 +231,7 @@ void itc_gpio_set_get_drive_mode_p(void)
 */
 void itc_gpio_get_pin_p(void)
 {
-	int gpioSetpin = 12;
+	int gpioSetpin = 41;
 	int gpioGetpin;
 	iotbus_gpio_context_h m_gpio = iotbus_gpio_open(gpioSetpin);
 	TC_ASSERT_NEQ("iotbus_gpio_open" , m_gpio, NULL);
@@ -252,7 +253,7 @@ void itc_gpio_get_pin_p(void)
 */
 void itc_gpio_read_write_p(void)
 {
-	int ret, gpiopin = 12;
+	int ret, gpiopin = 41;
 	g_gpio = iotbus_gpio_open(gpiopin);
 	TC_ASSERT_NEQ("iotbus_gpio_open" , g_gpio, NULL);
 
