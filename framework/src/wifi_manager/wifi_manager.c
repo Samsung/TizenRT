@@ -151,7 +151,7 @@ static void wifi_linkup_event_func(void)
 	wifi_utils_info info;
 
 	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
-	if (g_manager_info.mode == STA_MODE) {
+	if (g_manager_info.mode == STA_MODE || (g_manager_info.mode == WIFI_MODE_CHANGING && g_manager_info.next_mode == STA_MODE)) {
 		nvdbg("WIFI CONNECTED AP - STA MODE");
 		wifi_status_set(AP_CONNECTED);
 
@@ -183,7 +183,7 @@ static void wifi_linkup_event_func(void)
 		} else {
 			ndbg("Callback wifimanager ap_connect failed\n");
 		}
-	} else if (g_manager_info.mode == SOFTAP_MODE) {
+	} else if (g_manager_info.mode == SOFTAP_MODE || (g_manager_info.mode == WIFI_MODE_CHANGING && g_manager_info.next_mode == SOFTAP_MODE)) {
 		nvdbg("CONNECTED FROM CLIENT - SOFT AP MODE");
 		wifi_status_set(CLIENT_CONNECTED);
 		wifi_mutex_release(w_info_mutex);
@@ -191,6 +191,9 @@ static void wifi_linkup_event_func(void)
 		/* No callbacks here, in case new client joins, we invoke callback
 		 * from DHCP server instead
 		 */
+	} else {
+		ndbg("wifi manager linkup failed: invalid mode(%d)\n", g_manager_info.mode);
+		wifi_mutex_release(w_info_mutex);
 	}
 
 #ifdef CONFIG_ENABLE_IOTIVITY
@@ -206,29 +209,36 @@ static void wifi_linkdown_event_func(void)
 // here, send a message to callback handler and rest of this function should be done by the callback handler.
 // wifi_manager_init() creates the callback handler and deinit() joins the callback handler.
 	wifi_manager_cb_s *wifi_cb = g_manager_callback;
+	wifi_mutex_acquire(w_info_mutex, WIFI_UTILS_FOREVER);
 
-
-	if (g_manager_info.mode == STA_MODE) {
+	if (g_manager_info.mode == STA_MODE || (g_manager_info.mode == WIFI_MODE_CHANGING && g_manager_info.pre_mode == STA_MODE) || \
+			(g_manager_info.mode == WIFI_DEINITIALIZING && g_manager_info.pre_mode == STA_MODE)) {
 		nvdbg("WIFI DISCONNECTED AP - STA MODE");
 		g_manager_info.ssid[0] = '\0';
 		g_manager_info.ip4_address[0] = '\0';
 		g_manager_info.rssi = 0;
 		wifi_status_set(AP_DISCONNECTED);
+		wifi_mutex_release(w_info_mutex);
 
 		if (wifi_cb != NULL && wifi_cb->sta_disconnected != NULL) {
 			wifi_cb->sta_disconnected();
 		} else {
 			ndbg("Callback wifimanager ap_disconnected failed\n");
 		}
-	} else if (g_manager_info.mode == SOFTAP_MODE) {
+	} else if (g_manager_info.mode == SOFTAP_MODE || (g_manager_info.mode == WIFI_MODE_CHANGING && g_manager_info.pre_mode == SOFTAP_MODE) || \
+			(g_manager_info.mode == WIFI_DEINITIALIZING && g_manager_info.pre_mode == SOFTAP_MODE)) {
 		nvdbg("DISCONNECTED FROM CLIENT - SOFT AP MODE");
 		wifi_status_set(CLIENT_DISCONNECTED);
+		wifi_mutex_release(w_info_mutex);
 
 		if (wifi_cb != NULL && wifi_cb->softap_sta_left != NULL) {
 			wifi_cb->softap_sta_left();
 		} else {
 			ndbg("Callback wifimanager ap_disconnected failed\n");
 		}
+	} else {
+		ndbg("wifi manager linkdown failed: invalid mode(%d)\n", g_manager_info.mode);
+		wifi_mutex_release(w_info_mutex);
 	}
 
 #ifdef CONFIG_ENABLE_IOTIVITY
@@ -428,6 +438,8 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 	}
 
 	/* wifi_manager mode is switched to wifi_initializing */
+	g_manager_info.pre_mode = WIFI_NONE;
+	g_manager_info.next_mode = STA_MODE;
 	g_manager_info.mode = WIFI_INITIALIZING;
 	wifi_mutex_release(w_info_mutex);
 
@@ -520,6 +532,8 @@ wifi_manager_result_e wifi_manager_deinit()
 	/* wifi_manager mode is switched to wifi_deinitializing */
 	if ((g_manager_info.mode != WIFI_INITIALIZING) && (g_manager_info.mode != WIFI_MODE_CHANGING) && \
 			(g_manager_info.mode != WIFI_DEINITIALIZING)) {
+		g_manager_info.pre_mode = g_manager_info.mode;
+		g_manager_info.next_mode = WIFI_NONE;
 		g_manager_info.mode = WIFI_DEINITIALIZING;
 	} else {
 		ndbg("Can't deinitilize wifi_manager from the current wifi mode %d\n", g_manager_info.mode);
@@ -602,6 +616,8 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 		return WIFI_MANAGER_FAIL;
 	}
 
+	g_manager_info.pre_mode = g_manager_info.mode;
+	g_manager_info.next_mode = mode;
 	g_manager_info.mode = WIFI_MODE_CHANGING;
 	wifi_mutex_release(w_info_mutex);
 
