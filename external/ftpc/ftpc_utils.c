@@ -173,7 +173,7 @@ void ftpc_stripcrlf(FAR char *str)
 		len = strlen(str);
 		if (len > 0) {
 			ptr = str + len - 1;
-			while (*ptr == '\r' || *ptr == '\n') {
+			while ((ptr >= str) && (*ptr == '\r' || *ptr == '\n')) {
 				*ptr = '\0';
 				ptr--;
 			}
