@@ -17,7 +17,7 @@ Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK 053 Modul
 
 Here is a [memory map](scripts/README.md).
 
-## ARTIK053 Starter Kit PinOut
+### ARTIK053 Starter Kit PinOut
 #### CON710 CON711 CON708 CON709
 ```
                  XGPIO13(gpio42) <- SW702 | SW703 -> XGPIO15(gpio44)
