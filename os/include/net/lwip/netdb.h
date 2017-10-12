@@ -140,15 +140,15 @@ struct hostent *lwip_gethostbyname(const char *name);
 int lwip_gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
 void lwip_freeaddrinfo(struct addrinfo *ai);
 int lwip_getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res);
+int lwip_getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen, char *serv, size_t servlen, int flags);
 
 #if LWIP_COMPAT_SOCKETS
-#define gethostbyname(name) lwip_gethostbyname(name)
-#define gethostbyname_r(name, ret, buf, buflen, result, h_errnop) \
-       lwip_gethostbyname_r(name, ret, buf, buflen, result, h_errnop)
-#define freeaddrinfo(addrinfo) lwip_freeaddrinfo(addrinfo)
-#define getaddrinfo(nodname, servname, hints, res) \
-       lwip_getaddrinfo(nodname, servname, hints, res)
-#define getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
+#define NI_NOFQDN       (1 << 0)
+#define NI_NUMERICHOST  (1 << 1)
+#define NI_NAMEREQD     (1 << 2)
+#define NI_NUMERICSERV  (1 << 3)
+#define NI_NUMERICSCOPE (1 << 4)
+#define NI_DGRAM        (1 << 5)
 #endif							/* LWIP_COMPAT_SOCKETS */
 
 #ifdef __cplusplus

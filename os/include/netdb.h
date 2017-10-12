@@ -93,6 +93,51 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+/**
+* @brief gethostbyname is a function to get 32bit ip address from domain name or ip address string.
+*
+* @param[in] name can be the string of ip address or domain name
+* @return On success, 0 is returned. On failure, a pointer value is returned
+* @since Tizen RT v1.0
+*/
+struct hostent *gethostbyname(const char *name);
+
+/**
+* @brief freeaddrinfo() frees the memory allocated by the getaddrinfo() function.
+*
+* @param[in] ai is the head of the addrinfo list
+* @return void
+* @since Tizen RT v1.0
+*/
+void freeaddrinfo(struct addrinfo *ai);
+
+/**
+* @brief getaddrinfo() is a function that returns information on a particular host name (such as its IP address) and loads up a struct sockaddr.
+*
+* @param[in] nodename can be among a domain name, ip address and NULL
+* @param[in] servname can be a port number passed as string or a service name
+* @param[in] hints can be either NULL or an addrinfo structure with the type of service requested
+* @param[out] res is a return pointer that points to a new addrinfo structure
+* @return On success, 0 is returned. On failure, a fail number is returned
+* @since Tizen RT v1.0
+*/
+int getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res);
+
+/**
+* @brief getnameinfo() is a function that returns translated string from 32bit(ipv4)/128bit(ipv6) IP address. As lwip doesn't support rarp and relative functions it has restricted usage.
+*
+* @param[in] sa is an ip address structure pointer
+* @param[in] salen contains the length of sa structure, it is used to figure out ipv4/v6 structure
+* @param[out] host is the return buffer that contains string that is translated from 32bit(ipv4)/128bit(ipv6) address.
+* @param[out] hostlen contains the length of host buffer length.
+* @param[out] serv is the return buffer that contains port number string.
+* @param[out] servlen contains the length of serv buffer length.
+* @param[in] flags is the bit field flag, this function supports NI_NUMERICHOST, NI_NUMERICSERV only.
+* @return On success, 0 is returned. On failure, a fail number is returned
+* @since Tizen RT v1.0
+*/
+int getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen, char *serv, size_t servlen, int flags);
+
 /* REVISIT:  This should at least be per-task? */
 EXTERN int h_errno;
 

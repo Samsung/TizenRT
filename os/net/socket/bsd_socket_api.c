@@ -61,13 +61,14 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <net/lwip/netdb.h>
+#include <net/lwip/sockets.h>
 #ifdef CONFIG_NET_IPv4
 #include <net/lwip/ip4_addr.h>
 #endif
 #ifdef CONFIG_NET_IPv6
 #include <net/lwip/ip6_addr.h>
 #endif
-#include <net/lwip/sockets.h>
 
 int bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
@@ -270,5 +271,29 @@ int inet_pton(int af, FAR const char *src, FAR void *dest)
 		return 0;
 }
 
+#ifdef CONFIG_NET_LWIP_NETDB
+struct hostent *gethostbyname(const char *name)
+{
+	return lwip_gethostbyname(name);
+}
+
+void freeaddrinfo(struct addrinfo *ai)
+{
+	lwip_freeaddrinfo(ai);
+}
+
+int getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res)
+{
+	return lwip_getaddrinfo(nodename, servname, hints, res);
+}
+
+#if LWIP_COMPAT_SOCKETS
+int getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen, char *serv, size_t servlen, int flags)
+{
+	return lwip_getnameinfo(sa, salen, host, hostlen, serv, servlen, flags);
+}
+#endif /* LWIP_COMPAT_SOCKETS */
+
+#endif /* NET_LWIP_NETDB */
 
 #endif
