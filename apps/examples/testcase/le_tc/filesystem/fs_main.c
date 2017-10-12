@@ -1991,7 +1991,7 @@ static void tc_libc_stdio_lib_sprintf(void)
 static void tc_libc_stdio_remove(void)
 {
 	char *filename = VFS_FILE_PATH;
-	int ret = NULL;
+	int ret;
 
 	ret = remove(filename);
 	TC_ASSERT_EQ("remove", ret, 0);
@@ -2051,7 +2051,7 @@ static void tc_libc_stdio_setvbuf(void)
 	FILE *fp;
 	char buffer[64];
 	char *filename = VFS_FILE_PATH;
-	int ret = NULL;
+	int ret;
 
 	/* setvbuf_test: DEFAULT buffering */
 
