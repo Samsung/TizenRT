@@ -189,7 +189,7 @@ void itc_gpio_set_get_drive_mode_p(void)
 	int gpiopin = 12;
 	int ret, index, ncount;
 	iotbus_gpio_drive_e getDrive;
-	iotbus_gpio_drive_e setDrive[] = { IOTBUS_GPIO_DRIVE_NONE, IOTBUS_GPIO_DRIVE_PULLUP, IOTBUS_GPIO_DRIVE_PULLDOWN, IOTBUS_GPIO_DRIVE_FLOAT, IOTBUS_GPIO_DRIVE_PUSHPULL };
+	iotbus_gpio_drive_e setDrive[] = { IOTBUS_GPIO_DRIVE_PULLUP, IOTBUS_GPIO_DRIVE_PULLDOWN, IOTBUS_GPIO_DRIVE_FLOAT };
 	ncount = sizeof(setDrive) / sizeof(setDrive[0]);
 	bool check = true;
 

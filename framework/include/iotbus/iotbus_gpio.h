@@ -35,18 +35,14 @@
  * @brief Enumeration of Gpio output mode
  * @details
  * Enumeration Details:\n
- * IOTBUS_GPIO_DRIVE_NONE = 0, No set any state\n
- * IOTBUS_GPIO_DRIVE_PULLUP = 1, Resistive High\n
- * IOTBUS_GPIO_DRIVE_PULLDOWN = 2, Resistive Low\n
- * IOTBUS_GPIO_DRIVE_FLOAT = 3, Float\n
- * IOTBUS_GPIO_DRIVE_PUSHPULL = 4, Push Pull\n
+ * IOTBUS_GPIO_DRIVE_PULLUP = 0, Resistive High\n
+ * IOTBUS_GPIO_DRIVE_PULLDOWN = 1, Resistive Low\n
+ * IOTBUS_GPIO_DRIVE_FLOAT = 2, Float\n
  */
 typedef enum {
-	IOTBUS_GPIO_DRIVE_NONE     = 0, /* No set any state */
-	IOTBUS_GPIO_DRIVE_PULLUP   = 1, /* Resistive High */
-	IOTBUS_GPIO_DRIVE_PULLDOWN = 2, /* Resistive Low */
-	IOTBUS_GPIO_DRIVE_FLOAT    = 3,
-	IOTBUS_GPIO_DRIVE_PUSHPULL = 4,
+	IOTBUS_GPIO_DRIVE_PULLUP   = 0, /* Resistive High */
+	IOTBUS_GPIO_DRIVE_PULLDOWN = 1, /* Resistive Low */
+	IOTBUS_GPIO_DRIVE_FLOAT    = 2,
 } iotbus_gpio_drive_e;
 
 /**

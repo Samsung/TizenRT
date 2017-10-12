@@ -220,10 +220,6 @@ int iotbus_gpio_set_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e dr
 	dev->drive = drive;
 
 	switch (dev->drive) {
-	case IOTBUS_GPIO_DRIVE_NONE:{
-			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_NONE);
-			break;
-		}
 	case IOTBUS_GPIO_DRIVE_PULLUP:{
 			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_PULLUP);
 			break;
@@ -234,10 +230,6 @@ int iotbus_gpio_set_drive_mode(iotbus_gpio_context_h dev, iotbus_gpio_drive_e dr
 		}
 	case IOTBUS_GPIO_DRIVE_FLOAT:{
 			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_FLOAT);
-			break;
-		}
-	case IOTBUS_GPIO_DRIVE_PUSHPULL:{
-			ret = ioctl(dev->fd, GPIOIOC_SET_DRIVE, (unsigned long)GPIO_DRIVE_PUSHPULL);
 			break;
 		}
 	}
