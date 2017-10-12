@@ -173,7 +173,7 @@ void ftpc_stripcrlf(FAR char *str)
 		len = strlen(str);
 		if (len > 0) {
 			ptr = str + len - 1;
-			while (*ptr == '\r' || *ptr == '\n') {
+			while ((ptr >= str) && (*ptr == '\r' || *ptr == '\n')) {
 				*ptr = '\0';
 				ptr--;
 			}
@@ -237,6 +237,8 @@ FAR char *ftpc_dequote(FAR const char *str)
 				if (str[0] == '%') {
 					/* Extract the hex value */
 
+					if (!str[1] || !str[2])
+						break;
 					ms = ftpc_nibble(str[1]);
 					if (ms >= 0) {
 						ls = ftpc_nibble(str[2]);
