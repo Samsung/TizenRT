@@ -7,7 +7,7 @@ config TLS_WITH_SSS
 
 config SUPPORT_FULL_SECURITY
 	bool "Enable full security features"
-	depends on S5J_SSS && ARCH_BOARD_ARTIK053S && ARTIK053_AUTOMOUNT_SSSRW
+	depends on S5J_SSS && (ARCH_BOARD_ARTIK053 || ARCH_BOARD_ARTIK053S)
 	default n
 	---help---
 		Supports security features with secure storage.
