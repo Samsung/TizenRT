@@ -7,7 +7,7 @@ The ARTIK055S is a SOC for Wi-Fi™ IoT solutions. The ARTIK055S has a Wi-Fi sub
 The Samsung ARTIK™ 055S Module is a highly integrated module for secure Internet of Things (IoT) devices that require Wi-Fi®. It is based on an ARM® Cortex® R4 core with on-chip memories, a complete 2.4GHz Wi-Fi® Phy, MAC layer processing, a large complement of standard digital buses, a PUF-based security system and power management. The module is packaged with additional external Flash memory, a hardware Secure Element and a single integrated 2.4GHz structural antenna.
 Aimed especially at power-sensitive devices needing Wi-Fi®, the ARTIK055S Module provides excellent performance in a variety of environments, with a feature set tailored specifically for IoT end nodes.
 
-## ARTIK055S Starter Kit PinOut
+### ARTIK055S Starter Kit PinOut
 #### CON710 CON711 CON708 CON709
 ```
                  XGPIO13(gpio42) <- SW702 | SW703 -> XGPIO15(gpio44)
