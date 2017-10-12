@@ -87,7 +87,11 @@ int http_separate_header(const char *src, int *method, char *url, int *httpver)
 	url_start = divide[0] + 1;
 	url_length = divide[1] - url_start;
 
+	if(url_length < 0) {
+		url_length = 0;
+	}
 	strncpy(url, src + url_start, url_length);
+	url[url_length] = '\0';
 
 	/* Get http version */
 	httpver_start = divide[1] + 1;
