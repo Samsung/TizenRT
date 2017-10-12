@@ -143,7 +143,7 @@ static int ftp_pasvmode(struct ftpc_session_s *session, uint8_t addrport[6])
 	/* Skip over any leading stuff before address begins */
 
 	ptr = session->reply + 4;
-	while (!isdigit((int)*ptr)) {
+	while (*ptr && !isdigit((int)*ptr)) {
 		ptr++;
 	}
 
