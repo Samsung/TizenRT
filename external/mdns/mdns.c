@@ -62,6 +62,9 @@
 #endif
 
 #define DEFAULT_TTL             120
+/* DETECT_CYCLE checks malformed packet you should handle the value carefully */
+/* https://www.kb.cert.org/vuls/id/23495 */
+#define DETECT_CYCLE            255
 
 struct name_comp {
 	uint8_t *label;				// label
@@ -116,10 +119,15 @@ char *nlabel_to_str(const uint8_t *name)
 	const uint8_t *p;
 
 	assert(name != NULL);
-
+	/* maximum multicast DNS name length is 255 */
 	label = labelp = MDNS_MALLOC(256);
 
 	for (p = name; *p; p++) {
+		if (labelp - label + *p >= 255) {
+			/* '.' and '\0' is added at the last array */
+			DEBUG_PRINTF("buffer overflow: %s:%d\n", __FUNCTION__, __LINE__);
+			return NULL;
+		}
 		strncpy(labelp, (char *)p + 1, *p);
 		labelp += *p;
 		*labelp = '.';
@@ -242,19 +250,33 @@ static uint8_t *uncompress_nlabel(uint8_t *pkt_buf, size_t pkt_len, size_t off)
 	uint8_t *e = pkt_buf + pkt_len;
 	size_t len = 0;
 	char *str, *sp;
+	uint16_t cycle = 0;
 	if (off >= pkt_len) {
 		return NULL;
 	}
 	// calculate length of uncompressed label
 	for (p = pkt_buf + off; *p && p < e; p++) {
 		size_t llen = 0;
+		if (cycle++ >= DETECT_CYCLE) {
+			DEBUG_PRINTF("malformed packet: DoS (loop in compressed labels)\n");
+			return NULL;
+		}
+
 		if ((*p & 0xC0) == 0xC0) {
 			uint8_t *p2 = pkt_buf + (((p[0] & ~0xC0) << 8) | p[1]);
+			if (p2 >= pkt_buf + pkt_len) {
+				DEBUG_PRINTF("malformed packet: heap-buffer-overflow (p2 >= pkt_buf+pkt_len)\n");
+				return NULL;
+			}
 			llen = *p2 + 1;
 			p = p2 + llen - 1;
 		} else {
 			llen = *p + 1;
 			p += llen - 1;
+			if (p + llen > pkt_buf + pkt_len) {
+				DEBUG_PRINTF("malformed packet: heap-buffer-overflow (p + llen > pkt_buf + pkt_len)\n");
+				return NULL;
+			}
 		}
 		len += llen;
 	}
@@ -796,12 +818,28 @@ static size_t mdns_parse_qn(uint8_t *pkt_buf, size_t pkt_len, size_t off, struct
 
 	assert(pkt != NULL);
 
+	if (off > pkt_len) {
+		return 0;
+	}
 	rr = MDNS_MALLOC(sizeof(struct rr_entry));
 	memset(rr, 0, sizeof(struct rr_entry));
 
 	name = uncompress_nlabel(pkt_buf, pkt_len, off);
+	if (!name) {
+		DEBUG_PRINTF("malformed packet buff overflow\n");
+		MDNS_FREE(rr);
+		return 0;
+	}
+
 	p += label_len(pkt_buf, pkt_len, off);
 	rr->name = name;
+
+	if (p + 4 > pkt_buf + pkt_len) {
+		DEBUG_PRINTF("malformed packet buff overflow\n");
+		MDNS_FREE(rr);
+		MDNS_FREE(name);
+		return 0;
+	}
 
 	rr->type = mdns_read_u16(p);
 	p += sizeof(uint16_t);
@@ -838,8 +876,21 @@ static size_t mdns_parse_rr(uint8_t *pkt_buf, size_t pkt_len, size_t off, struct
 	memset(rr, 0, sizeof(struct rr_entry));
 
 	name = uncompress_nlabel(pkt_buf, pkt_len, off);
+	if (!name) {
+		DEBUG_PRINTF("malformed packet buff overflow\n");
+		MDNS_FREE(rr);
+		return 0;
+	}
+
 	p += label_len(pkt_buf, pkt_len, off);
 	rr->name = name;
+
+	if (p + 10 - pkt_buf > pkt_len) {
+		DEBUG_PRINTF("malformed packet buff overflow\n");
+		MDNS_FREE(rr);
+		MDNS_FREE(name);
+		return 0;
+	}
 
 	rr->type = mdns_read_u16(p);
 	p += sizeof(uint16_t);
@@ -974,6 +1025,7 @@ struct mdns_pkt *mdns_parse_pkt(uint8_t *pkt_buf, size_t pkt_len)
 	int i;
 
 	if (pkt_len < 12) {
+		DEBUG_PRINTF("malformed packet: pkt size is less than mininum mdns packet\n");
 		return NULL;
 	}
 
@@ -1000,8 +1052,7 @@ struct mdns_pkt *mdns_parse_pkt(uint8_t *pkt_buf, size_t pkt_len)
 		size_t l = mdns_parse_qn(pkt_buf, pkt_len, off, pkt);
 		if (!l) {
 			DEBUG_PRINTF("error parsing question #%d\n", i);
-			mdns_pkt_destroy(pkt);
-			return NULL;
+			goto error_with_parsing;
 		}
 
 		off += l;
@@ -1012,8 +1063,7 @@ struct mdns_pkt *mdns_parse_pkt(uint8_t *pkt_buf, size_t pkt_len)
 		size_t l = mdns_parse_rr(pkt_buf, pkt_len, off, pkt, &pkt->rr_ans);
 		if (!l) {
 			DEBUG_PRINTF("error parsing answer #%d\n", i);
-			mdns_pkt_destroy(pkt);
-			return NULL;
+			goto error_with_parsing;
 		}
 
 		off += l;
@@ -1024,8 +1074,7 @@ struct mdns_pkt *mdns_parse_pkt(uint8_t *pkt_buf, size_t pkt_len)
 		size_t l = mdns_parse_rr(pkt_buf, pkt_len, off, pkt, &pkt->rr_auth);
 		if (!l) {
 			DEBUG_PRINTF("error parsing authority rr #%d\n", i);
-			mdns_pkt_destroy(pkt);
-			return NULL;
+			goto error_with_parsing;
 		}
 
 		off += l;
@@ -1036,14 +1085,15 @@ struct mdns_pkt *mdns_parse_pkt(uint8_t *pkt_buf, size_t pkt_len)
 		size_t l = mdns_parse_rr(pkt_buf, pkt_len, off, pkt, &pkt->rr_add);
 		if (!l) {
 			DEBUG_PRINTF("error parsing additional rr #%d\n", i);
-			mdns_pkt_destroy(pkt);
-			return NULL;
+			goto error_with_parsing;
 		}
 
 		off += l;
 	}
-
 	return pkt;
+error_with_parsing:
+	mdns_pkt_destroy(pkt);
+	return NULL;
 }
 
 // encodes a name (label) into a packet using the name compression scheme
