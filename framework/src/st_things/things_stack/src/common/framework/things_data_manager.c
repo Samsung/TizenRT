@@ -271,12 +271,6 @@ static const struct things_resource_info_s const gstResources[] = {
 	}
 };
 
-bool update_and_save_device_info(st_device_s **dev_list, int dev_cnt)
-{
-	assert(1);
-	return false;
-}
-
 /**
  *	@fn get_cloud_server_address
  *	@brief Function to get cloud server address
@@ -1689,30 +1683,6 @@ st_device_s *dm_get_info_of_dev(unsigned long number)
 	return (st_device_s *) hashmap_get(g_device_hmap, number);
 }
 
-bool dm_register_user_define_device_id(const int seq_thing_info, const char *dev_id)
-{
-	if (is_support_user_def_dev_list == false) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "No More Support User define Device ID.");
-		return false;
-	}
-
-	if (seq_thing_info < 1 || seq_thing_info > MAX_SUBDEVICE_EA || dev_id == NULL || strlen(dev_id) == 0) {
-		THINGS_LOG_V(THINGS_INFO, TAG, "It Support Max %d EA for device ID", MAX_SUBDEVICE_EA);
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid arguments.(seq_thing_info=%d, dev_id=0x%X)", seq_thing_info, dev_id);
-		return false;
-	}
-
-	THINGS_LOG_D(THINGS_DEBUG, TAG, "seq_thing_info=%d, dev_id=%s", seq_thing_info, dev_id);
-
-	if (strlen(dev_id) >= MAX_DEVICE_ID_LENGTH) {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Overflow device ID length.(It Support Max length: %d)", MAX_DEVICE_ID_LENGTH);
-		return false;
-	}
-	user_def_dev_list[seq_thing_info] = strdup(dev_id);
-
-	return true;
-}
-
 static void dm_delete_user_define_device_id(void)
 {
 	int i = 0;
@@ -1965,44 +1935,6 @@ int dm_get_device_information(int *cnt, st_device_s ***list)
 		ret = 1;
 	}
 
-	return ret;
-}
-
-const int dm_get_num_of_children(int device_num)
-{
-	int ret = 0;
-
-	st_device_s *device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)device_num);
-	if (NULL != device) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "DEVICE CHILDREN RESOURCE(S) : %d", device->col_cnt);
-		ret = device->col_cnt;
-	}
-
-	return ret;
-}
-
-const char *dm_get_resource_uri(int device_num, int index)
-{
-	st_device_s *device = (st_device_s *) hashmap_get(g_device_hmap, (unsigned long)device_num);
-	if (NULL != device) {
-		THINGS_LOG_D(THINGS_DEBUG, TAG, "DEVICE CHILDREN RESOURCE(S) : %d", device->col_cnt);
-		if ((index) >= device->col_cnt) {
-			THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Index : %d", index);
-		} else {
-
-			return device->collection[0].links[index]->uri;
-		}
-	} else {
-		THINGS_LOG_V_ERROR(THINGS_ERROR, TAG, "Invalid Device Num to Search : %d", device_num);
-	}
-
-	return NULL;
-}
-
-int dm_update_device_iInfo_list(st_device_s **dev_list, int devCnt)
-{
-	int ret = 1;
-	update_and_save_device_info(dev_list, devCnt);
 	return ret;
 }
 
